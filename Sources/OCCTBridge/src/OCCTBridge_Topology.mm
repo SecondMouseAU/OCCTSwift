@@ -19,6 +19,8 @@
 #import "../include/OCCTBridge.h"
 #import "OCCTBridge_Internal.h"
 
+#include <limits>
+
 #include <BRep_Tool.hxx>
 #include <BRep_Builder.hxx>
 #include <BRepAdaptor_Curve.hxx>
@@ -543,63 +545,7 @@ OCCTShapeRef OCCTShapeCopy(OCCTShapeRef shape, bool copyGeom, bool copyMesh) {
     }
 }
 
-// MARK: - Sub-Shape Extraction (v0.38.0)
-
-#include <TopExp_Explorer.hxx>
-
-int32_t OCCTShapeGetSolidCount(OCCTShapeRef shape) {
-    if (!shape) return 0;
-    int32_t count = 0;
-    for (TopExp_Explorer exp(shape->shape, TopAbs_SOLID); exp.More(); exp.Next()) {
-        count++;
-    }
-    return count;
-}
-
-int32_t OCCTShapeGetSolids(OCCTShapeRef shape, OCCTShapeRef* outSolids, int32_t maxCount) {
-    if (!shape || !outSolids || maxCount <= 0) return 0;
-    int32_t count = 0;
-    for (TopExp_Explorer exp(shape->shape, TopAbs_SOLID); exp.More() && count < maxCount; exp.Next()) {
-        outSolids[count++] = new OCCTShape(exp.Current());
-    }
-    return count;
-}
-
-int32_t OCCTShapeGetShellCount(OCCTShapeRef shape) {
-    if (!shape) return 0;
-    int32_t count = 0;
-    for (TopExp_Explorer exp(shape->shape, TopAbs_SHELL); exp.More(); exp.Next()) {
-        count++;
-    }
-    return count;
-}
-
-int32_t OCCTShapeGetShells(OCCTShapeRef shape, OCCTShapeRef* outShells, int32_t maxCount) {
-    if (!shape || !outShells || maxCount <= 0) return 0;
-    int32_t count = 0;
-    for (TopExp_Explorer exp(shape->shape, TopAbs_SHELL); exp.More() && count < maxCount; exp.Next()) {
-        outShells[count++] = new OCCTShape(exp.Current());
-    }
-    return count;
-}
-
-int32_t OCCTShapeGetWireCount(OCCTShapeRef shape) {
-    if (!shape) return 0;
-    int32_t count = 0;
-    for (TopExp_Explorer exp(shape->shape, TopAbs_WIRE); exp.More(); exp.Next()) {
-        count++;
-    }
-    return count;
-}
-
-int32_t OCCTShapeGetWires(OCCTShapeRef shape, OCCTShapeRef* outWires, int32_t maxCount) {
-    if (!shape || !outWires || maxCount <= 0) return 0;
-    int32_t count = 0;
-    for (TopExp_Explorer exp(shape->shape, TopAbs_WIRE); exp.More() && count < maxCount; exp.Next()) {
-        outWires[count++] = new OCCTShape(exp.Current());
-    }
-    return count;
-}
+#include <TopExp_Explorer.hxx>   // still used by the shell-classification and traversal helpers below
 
 // MARK: - Memory Management
 
@@ -646,6 +592,73 @@ void OCCTMeshRelease(OCCTMeshRef mesh) {
 }
 
 // MARK: - Shape Axis Extraction (v0.137)
+
+// #726/#763: OCCTShapeAxis.extentMin/extentMax/hasExtent were hardcoded 0/0/false on every call
+// (three sites: OCCTShapeRevolutionAxes below and both OCCTShapeAxis constructions inside
+// OCCTShapeSymmetryAxes) since the feature's introduction in v0.137 -- never wired up, though the
+// struct's own field comments already documented the intended contract ("extentMin: along
+// direction from origin (-inf as -DBL_MAX)", "extentMax: +inf as DBL_MAX"). Because
+// ShapeAxis.swift's `self.extent = a.hasExtent ? (...) : nil` already gates that into an Optional,
+// this reads exactly like the #583/#595/#609 "absence made representable" fix on a first look --
+// which is how an earlier census pass (Scripts/repro/726-unmeasured-values/README.md) classified
+// it. It is not: `hasExtent` is `false` on literally every reached path, so `extent` was `nil` for
+// every caller unconditionally, the same defect class as `selfIntersectionCount`, just one layer
+// removed. Fixed here by actually computing it, per the contract the header already promised.
+//
+// Method: BRepBndLib::Add's geometric (not triangulation) bounding box of the shape the axis
+// belongs to (a face for a revolution axis, the whole shape for a symmetry axis), then the 8
+// corners of that box projected onto the axis direction from the axis origin -- min and max of
+// those 8 dot products. This is exact for the cases a bounding box IS tight along the query
+// direction (a bounded cylindrical/conical face along its own axis, a box along a principal axis,
+// both verified directly in OCCTTopologyTests), and a safe enclosing interval otherwise (curved
+// geometry whose true extent is less than its box's). `IsOpen()` (an untrimmed natural-bounds
+// face, or a genuinely infinite shape) reports the axis as extending to +-DBL_MAX rather than
+// treating the box's own infinity sentinel (Precision::Infinite() = 1e100) as if it were a real
+// measured bound; `IsVoid()` (no boundable geometry at all) reports no extent, `hasExtent = false`.
+static void occtComputeAxisExtent(const TopoDS_Shape& forShape, const gp_Pnt& origin,
+                                   const gp_Dir& direction,
+                                   double& outMin, double& outMax, bool& outHasExtent) {
+    outMin = 0.0;
+    outMax = 0.0;
+    outHasExtent = false;
+    if (forShape.IsNull()) return;
+    try {
+        Bnd_Box box;
+        BRepBndLib::Add(forShape, box);
+        if (box.IsVoid()) return;
+        if (box.IsOpen()) {
+            outMin = -std::numeric_limits<double>::max();
+            outMax = std::numeric_limits<double>::max();
+            outHasExtent = true;
+            return;
+        }
+        double xmin, ymin, zmin, xmax, ymax, zmax;
+        box.Get(xmin, ymin, zmin, xmax, ymax, zmax);
+        const double ox = origin.X(), oy = origin.Y(), oz = origin.Z();
+        const double dx = direction.X(), dy = direction.Y(), dz = direction.Z();
+        double tMin = std::numeric_limits<double>::infinity();
+        double tMax = -std::numeric_limits<double>::infinity();
+        for (int ix = 0; ix < 2; ix++) {
+            double px = (ix == 0) ? xmin : xmax;
+            for (int iy = 0; iy < 2; iy++) {
+                double py = (iy == 0) ? ymin : ymax;
+                for (int iz = 0; iz < 2; iz++) {
+                    double pz = (iz == 0) ? zmin : zmax;
+                    double t = (px - ox) * dx + (py - oy) * dy + (pz - oz) * dz;
+                    if (t < tMin) tMin = t;
+                    if (t > tMax) tMax = t;
+                }
+            }
+        }
+        outMin = tMin;
+        outMax = tMax;
+        outHasExtent = true;
+    } catch (...) {
+        outMin = 0.0;
+        outMax = 0.0;
+        outHasExtent = false;
+    }
+}
 
 static bool axesCoincide(const OCCTShapeAxis& a, double ox, double oy, double oz,
                           double dx, double dy, double dz, double tol) {
@@ -706,7 +719,7 @@ int32_t OCCTShapeRevolutionAxes(OCCTShapeRef shape, double tolerance,
             OCCTShapeAxis a;
             a.originX = p.X(); a.originY = p.Y(); a.originZ = p.Z();
             a.directionX = d.X(); a.directionY = d.Y(); a.directionZ = d.Z();
-            a.extentMin = 0; a.extentMax = 0; a.hasExtent = false;
+            occtComputeAxisExtent(face, p, d, a.extentMin, a.extentMax, a.hasExtent);
             a.kind = kind;
             collected.push_back(a);
         }
@@ -723,7 +736,13 @@ int32_t OCCTShapeSymmetryAxes(OCCTShapeRef shape, double fractionalTolerance,
     if (!shape || !outAxes || maxAxes <= 0) return -1;
     try {
         GProp_GProps props;
-        BRepGProp::VolumeProperties(shape->shape, props);
+        // A zero-mass framework has three equal (zero) moments, so GProp_PrincipalProps reports
+        // BOTH HasSymmetryPoint() and HasSymmetryAxis() as true and the branch below hands back
+        // three orthonormal axes through the location origin. Measured on a face, edge, wire and
+        // vertex alike: spherical symmetry, from math_Jacobi's identity basis on a zero matrix.
+        // Inertial symmetry detection is a volume question, so outside the volume domain the
+        // answer is "no axes found", not "found three". See #609.
+        if (!occtVolumeMassProperties(shape->shape, props)) return 0;
         gp_Pnt cm = props.CentreOfMass();
         GProp_PrincipalProps pp = props.PrincipalProperties();
         double Ix, Iy, Iz;
@@ -741,7 +760,9 @@ int32_t OCCTShapeSymmetryAxes(OCCTShapeRef shape, double fractionalTolerance,
                 OCCTShapeAxis a;
                 a.originX = cm.X(); a.originY = cm.Y(); a.originZ = cm.Z();
                 a.directionX = axes[i].X(); a.directionY = axes[i].Y(); a.directionZ = axes[i].Z();
-                a.extentMin = 0; a.extentMax = 0; a.hasExtent = false; a.kind = 7;
+                occtComputeAxisExtent(shape->shape, cm, gp_Dir(axes[i].X(), axes[i].Y(), axes[i].Z()),
+                                      a.extentMin, a.extentMax, a.hasExtent);
+                a.kind = 7;
                 collected.push_back(a);
             }
         } else if (pp.HasSymmetryAxis()) {
@@ -760,7 +781,10 @@ int32_t OCCTShapeSymmetryAxes(OCCTShapeRef shape, double fractionalTolerance,
             a.directionX = axes[uniqueIdx].X();
             a.directionY = axes[uniqueIdx].Y();
             a.directionZ = axes[uniqueIdx].Z();
-            a.extentMin = 0; a.extentMax = 0; a.hasExtent = false; a.kind = 7;
+            occtComputeAxisExtent(shape->shape, cm,
+                                  gp_Dir(axes[uniqueIdx].X(), axes[uniqueIdx].Y(), axes[uniqueIdx].Z()),
+                                  a.extentMin, a.extentMax, a.hasExtent);
+            a.kind = 7;
             collected.push_back(a);
         }
         int32_t count = std::min((int32_t)collected.size(), maxAxes);
@@ -997,25 +1021,42 @@ bool OCCTShapeFindPlane(OCCTShapeRef shape, double tolerance,
     }
 }
 // MARK: - Sub-Shape Extraction (fixes #36)
+//
+// The only sub-shape enumeration in the bridge; see occtMapSubShapes in OCCTBridge_Internal.h for
+// what it counts and why the TopExp_Explorer spellings that used to sit alongside it are gone (#502).
 
 int32_t OCCTShapeGetSubShapeCount(OCCTShapeRef shape, int32_t type) {
     if (!shape) return 0;
     try {
         TopTools_IndexedMapOfShape map;
-        TopExp::MapShapes(shape->shape, static_cast<TopAbs_ShapeEnum>(type), map);
-        return map.Extent();
+        return occtMapSubShapes(shape->shape, type, map);
+    } catch (...) {
+        return 0;
+    }
+}
+
+int32_t OCCTShapeGetSubShapes(OCCTShapeRef shape, int32_t type,
+                              OCCTShapeRef* outSubShapes, int32_t maxCount) {
+    if (!shape || !outSubShapes || maxCount <= 0) return 0;
+    try {
+        TopTools_IndexedMapOfShape map;
+        int32_t total = occtMapSubShapes(shape->shape, type, map);
+        int32_t count = total < maxCount ? total : maxCount;
+        for (int32_t i = 0; i < count; i++) {
+            outSubShapes[i] = new OCCTShape(map(i + 1));  // OCCT's indexed maps are 1-based
+        }
+        return count;
     } catch (...) {
         return 0;
     }
 }
 
 OCCTShapeRef OCCTShapeGetSubShapeByTypeIndex(OCCTShapeRef shape, int32_t type, int32_t index) {
-    if (!shape || index < 0) return nullptr;
+    if (!shape) return nullptr;
     try {
-        TopTools_IndexedMapOfShape map;
-        TopExp::MapShapes(shape->shape, static_cast<TopAbs_ShapeEnum>(type), map);
-        if (index >= map.Extent()) return nullptr;
-        return new OCCTShape(map(index + 1)); // OCCT uses 1-based indexing
+        TopoDS_Shape sub = occtSubShapeAt(shape->shape, type, index);
+        if (sub.IsNull()) return nullptr;
+        return new OCCTShape(sub);
     } catch (...) {
         return nullptr;
     }
@@ -1045,6 +1086,22 @@ OCCTSelfIntersectionResult OCCTShapeSelfIntersection(OCCTShapeRef shape, double 
 }
 
 // MARK: - BRepOffset_Analyse Edge Concavity (v0.46)
+
+// #613: both of these walked a bare TopExp_Explorer, one entry per OCCURRENCE, while Swift zips the
+// result against edges() -- the deduplicated map. A 10mm box has 24 edge occurrences over 12 edges,
+// so the two desynchronised from the first repeat and every classification after it landed on the
+// wrong edge. Measured on an L-bracket (two fused boxes, inner corner at x=10, z=10): the one
+// genuinely concave edge is map index 27, the analyser finds it (2 occurrences), and
+// concaveEdges() returned an EMPTY array -- the issue's own failure scenario, where
+// `bracket.filleted(edges: bracket.concaveEdges(), radius: 3)` rounds nothing and reports success.
+// The count function was wrong on its own terms too: a 12-edge box reported 24 convex edges.
+//
+// Safe to read the map rather than the traversal, unlike the mesh entry points (#614): the edge is
+// used only as a key into BRepOffset_Analyse's own myMapEdgeType, an
+// NCollection_DataMap<..., TopTools_ShapeMapHasher> (BRepOffset_Analyse.hxx:173) whose equality IS
+// TopoDS_Shape::IsSame (TopTools_ShapeMapHasher.hxx:35-38), so orientation cannot select a
+// different entry. Confirmed by measurement rather than by reading the header: over all 12 edges of
+// a box present in both orientations, Type() returned the same interval list for both, 0 differing.
 int32_t OCCTShapeAnalyzeEdgeConcavity(OCCTShapeRef shape, double angle,
                                        OCCTEdgeConcavity* outEdgeTypes, int32_t maxEntries) {
     if (!shape || !outEdgeTypes || maxEntries <= 0) return -1;
@@ -1052,10 +1109,15 @@ int32_t OCCTShapeAnalyzeEdgeConcavity(OCCTShapeRef shape, double angle,
         BRepOffset_Analyse analyser(shape->shape, angle);
         if (!analyser.IsDone()) return -1;
 
+        TopTools_IndexedMapOfShape edgeMap;
+        int32_t edgeCount = occtMapSubShapes(shape->shape, TopAbs_EDGE, edgeMap);
+
         int32_t count = 0;
-        for (TopExp_Explorer exp(shape->shape, TopAbs_EDGE); exp.More() && count < maxEntries; exp.Next()) {
-            TopoDS_Edge edge = TopoDS::Edge(exp.Current());
-            const auto& intervals = analyser.Type(edge);
+        // No ShapeType re-check: occtMapSubShapes filters by TopAbs_EDGE, so every entry IS an edge.
+        // A `continue` here would be worse than useless -- it would advance `i` without advancing
+        // `count`, desynchronising the result array from edges(), which is the exact defect #613 fixes.
+        for (int32_t i = 0; i < edgeCount && count < maxEntries; i++) {
+            const auto& intervals = analyser.Type(TopoDS::Edge(edgeMap(i + 1)));  // maps are 1-based
             // Use the first interval's type for the overall edge classification
             for (auto it = intervals.begin(); it != intervals.end(); ++it) {
                 OCCTConcavityType type;
@@ -1084,10 +1146,15 @@ int32_t OCCTShapeCountEdgeConcavity(OCCTShapeRef shape, double angle, int32_t ty
         else if (type == 1) targetType = ChFiDS_Concave;
         else targetType = ChFiDS_Tangential;
 
+        // #613: counted occurrences, so a 12-edge box reported 24 convex edges. Distinct edges now,
+        // which is the number edgeCount reports and the number of entries the classifier above
+        // fills.
+        TopTools_IndexedMapOfShape edgeMap;
+        int32_t edgeCount = occtMapSubShapes(shape->shape, TopAbs_EDGE, edgeMap);
+
         int32_t count = 0;
-        for (TopExp_Explorer exp(shape->shape, TopAbs_EDGE); exp.More(); exp.Next()) {
-            TopoDS_Edge edge = TopoDS::Edge(exp.Current());
-            const auto& intervals = analyser.Type(edge);
+        for (int32_t i = 0; i < edgeCount; i++) {
+            const auto& intervals = analyser.Type(TopoDS::Edge(edgeMap(i + 1)));
             for (auto it = intervals.begin(); it != intervals.end(); ++it) {
                 if (it->Type() == targetType) {
                     count++;
@@ -1107,18 +1174,18 @@ OCCTEdgeEdgeExtremaResult OCCTBRepExtremaExtCC(OCCTShapeRef shape1, int32_t edge
     OCCTEdgeEdgeExtremaResult result = {};
     if (!shape1 || !shape2) return result;
     try {
-        // Find edges
-        TopoDS_Edge e1, e2;
-        int idx = 0;
-        for (TopExp_Explorer exp(shape1->shape, TopAbs_EDGE); exp.More(); exp.Next()) {
-            if (idx == edgeIndex1) { e1 = TopoDS::Edge(exp.Current()); break; }
-            idx++;
-        }
-        idx = 0;
-        for (TopExp_Explorer exp(shape2->shape, TopAbs_EDGE); exp.More(); exp.Next()) {
-            if (idx == edgeIndex2) { e2 = TopoDS::Edge(exp.Current()); break; }
-            idx++;
-        }
+        // #613: this counted TopExp_Explorer occurrences while its neighbours in this same file
+        // (OCCTBRepExtremaExtPC, ExtCF, OCCTShapeClassifyPoint2D) were converted to the shared
+        // enumeration by #541 -- so edgeIndex meant one thing here and another thing one function
+        // away. On a 10mm box the two agree up to index 8 and name DIFFERENT edges from 9 on, and
+        // indices 12..23 answered at all despite edge(at:) refusing every one of them.
+        //
+        // BRepExtrema_ExtCC reads the edge as pure geometry (BRepAdaptor_Curve over the 3D curve
+        // and its BRep_Tool::Range), so the map's stored orientation is as good as any occurrence's:
+        // measured over all 12 box edges present in both orientations, IsParallel, NbExt,
+        // SquareDistance, ParameterOnE1 and PointOnE1 were identical for both, 0 differing.
+        TopoDS_Edge e1 = occtEdgeAt(shape1->shape, edgeIndex1);
+        TopoDS_Edge e2 = occtEdgeAt(shape2->shape, edgeIndex2);
         if (e1.IsNull() || e2.IsNull()) return result;
 
         BRepExtrema_ExtCC extCC(e1, e2);
@@ -1197,13 +1264,7 @@ OCCTPointFaceExtremaResult OCCTBRepExtremaExtPF(double px, double py, double pz,
     OCCTPointFaceExtremaResult result = {};
     if (!shape) return result;
     try {
-        // Find face
-        TopoDS_Face face;
-        int idx = 0;
-        for (TopExp_Explorer exp(shape->shape, TopAbs_FACE); exp.More(); exp.Next()) {
-            if (idx == faceIndex) { face = TopoDS::Face(exp.Current()); break; }
-            idx++;
-        }
+        TopoDS_Face face = occtFaceAt(shape->shape, faceIndex);
         if (face.IsNull()) return result;
 
         TopoDS_Vertex vertex = BRepBuilderAPI_MakeVertex(gp_Pnt(px, py, pz));
@@ -1228,18 +1289,8 @@ OCCTFaceFaceExtremaResult OCCTBRepExtremaExtFF(OCCTShapeRef shape1, int32_t face
     OCCTFaceFaceExtremaResult result = {};
     if (!shape1 || !shape2) return result;
     try {
-        // Find faces
-        TopoDS_Face f1, f2;
-        int idx = 0;
-        for (TopExp_Explorer exp(shape1->shape, TopAbs_FACE); exp.More(); exp.Next()) {
-            if (idx == faceIndex1) { f1 = TopoDS::Face(exp.Current()); break; }
-            idx++;
-        }
-        idx = 0;
-        for (TopExp_Explorer exp(shape2->shape, TopAbs_FACE); exp.More(); exp.Next()) {
-            if (idx == faceIndex2) { f2 = TopoDS::Face(exp.Current()); break; }
-            idx++;
-        }
+        TopoDS_Face f1 = occtFaceAt(shape1->shape, faceIndex1);
+        TopoDS_Face f2 = occtFaceAt(shape2->shape, faceIndex2);
         if (f1.IsNull() || f2.IsNull()) return result;
 
         BRepExtrema_ExtFF extFF(f1, f2);
@@ -1262,39 +1313,64 @@ OCCTFaceFaceExtremaResult OCCTBRepExtremaExtFF(OCCTShapeRef shape1, int32_t face
 }
 
 // MARK: - BRepExtrema Ext PC/CF (v0.49)
+
+// #580: the nearest point on the edge, not the nearest of BRepExtrema_ExtPC's extrema.
+//
+// BRepExtrema_ExtPC searches for perpendicular feet, so it excludes the edge's own two ends and
+// makes no distinction between a minimum and a maximum. Reporting the smallest of what it found is
+// therefore not the smallest distance to the edge, and measurably so: over 189 edge/point
+// combinations (Scripts/repro/539-nearest-point-on-curve/580-repair-options.mm) it answered 101
+// correctly, 34 with a distance that was too large -- a point below a half circle of radius 5 read
+// as 11 rather than 7.81, because the sole extremum in range is the far side of the arc -- and
+// refused 54 outright, IsDone() being false whenever no foot exists at all.
+//
+// The measured trap: filtering the extrema to the IsMin ones scores 101, exactly what it scored
+// before. The cases that filter drops are precisely the ones it leaves with no candidate.
+//
+// occtNearestPointOnCurveRange (#539) is what answers this, so both this entry point and
+// OCCTEdgeProjectPoint reach one implementation and cannot disagree about the same edge and the
+// same point. Adding BRepExtrema_ExtPC's own ends via TrimmedSquareDistances would be the smaller
+// diff but tops out at 188/189: on a BSpline queried from (2, 0, 0) Extrema_ExtPC does not
+// converge, leaving the nearer end to answer 2 against a truth of 1.996434, where the helper's
+// GeomAPI_ProjectPointOnCurve finds the interior minimum.
 OCCTPointEdgeExtremaResult OCCTBRepExtremaExtPC(double px, double py, double pz,
                                                  OCCTShapeRef shape, int32_t edgeIndex) {
     OCCTPointEdgeExtremaResult result = {};
     if (!shape) return result;
     try {
-        TopoDS_Edge edge;
-        int idx = 0;
-        for (TopExp_Explorer exp(shape->shape, TopAbs_EDGE); exp.More(); exp.Next()) {
-            if (idx == edgeIndex) { edge = TopoDS::Edge(exp.Current()); break; }
-            idx++;
-        }
+        // #541's enumeration, which is the one Shape.edges() and Shape.edge(at:) read. This used to
+        // walk its own bare explorer, which counts one entry per *occurrence*: a box's 12 edges are
+        // 24 occurrences, since each belongs to two faces, and measured on the pinned kernel the two
+        // orders diverge from index 9 onwards -- edgeIndex 9 was the edge through (10, 0, 5) here
+        // and the edge through (5, 0, 10) to every other entry point. A caller holding an index from
+        // edges() measured to an edge it had not selected, on the most ordinary shape there is.
+        TopoDS_Edge edge = occtEdgeAt(shape->shape, edgeIndex);
         if (edge.IsNull()) return result;
 
-        TopoDS_Vertex vertex = BRepBuilderAPI_MakeVertex(gp_Pnt(px, py, pz));
-        BRepExtrema_ExtPC ext(vertex, edge);
-        if (!ext.IsDone()) return result;
+        Standard_Real first, last;
+        Handle(Geom_Curve) curve = BRep_Tool::Curve(edge, first, last);
+        if (curve.IsNull()) return result;
 
-        result.solutionCount = ext.NbExt();
-        if (result.solutionCount >= 1) {
-            // Find minimum distance
-            double minDist2 = ext.SquareDistance(1);
-            int minIdx = 1;
-            for (int i = 2; i <= ext.NbExt(); i++) {
-                if (ext.SquareDistance(i) < minDist2) {
-                    minDist2 = ext.SquareDistance(i);
-                    minIdx = i;
-                }
-            }
-            result.distance = sqrt(minDist2);
-            result.parameter = ext.Parameter(minIdx);
-            gp_Pnt pt = ext.Point(minIdx);
-            result.ptx = pt.X(); result.pty = pt.Y(); result.ptz = pt.Z();
+        gp_Pnt nearest;
+        if (!occtNearestPointOnCurveRange(curve, gp_Pnt(px, py, pz), first, last,
+                                          Precision::Confusion(),
+                                          &nearest, &result.parameter, &result.distance)) {
+            return result;
         }
+        result.ptx = nearest.X(); result.pty = nearest.Y(); result.ptz = nearest.Z();
+
+        // Still BRepExtrema_ExtPC's own count, reported for its own sake: how many perpendicular
+        // feet the point has on this edge. Zero now travels to the caller instead of erasing the
+        // answer, and a search that cannot finish leaves it zero rather than failing the call.
+        try {
+            TopoDS_Vertex vertex = BRepBuilderAPI_MakeVertex(gp_Pnt(px, py, pz));
+            BRepExtrema_ExtPC ext(vertex, edge);
+            if (ext.IsDone()) result.solutionCount = ext.NbExt();
+        } catch (...) {
+            // A count we could not take is zero feet reported, not a failed distance.
+        }
+
+        result.isValid = true;
         return result;
     } catch (...) {
         return result;
@@ -1307,20 +1383,10 @@ OCCTEdgeFaceExtremaResult OCCTBRepExtremaExtCF(OCCTShapeRef shape1, int32_t edge
     OCCTEdgeFaceExtremaResult result = {};
     if (!shape1 || !shape2) return result;
     try {
-        TopoDS_Edge edge;
-        int idx = 0;
-        for (TopExp_Explorer exp(shape1->shape, TopAbs_EDGE); exp.More(); exp.Next()) {
-            if (idx == edgeIndex) { edge = TopoDS::Edge(exp.Current()); break; }
-            idx++;
-        }
+        TopoDS_Edge edge = occtEdgeAt(shape1->shape, edgeIndex);
         if (edge.IsNull()) return result;
 
-        TopoDS_Face face;
-        idx = 0;
-        for (TopExp_Explorer exp(shape2->shape, TopAbs_FACE); exp.More(); exp.Next()) {
-            if (idx == faceIndex) { face = TopoDS::Face(exp.Current()); break; }
-            idx++;
-        }
+        TopoDS_Face face = occtFaceAt(shape2->shape, faceIndex);
         if (face.IsNull()) return result;
 
         BRepExtrema_ExtCF ext(edge, face);
@@ -1648,7 +1714,7 @@ OCCTCurveSurfaceInterRef _Nullable OCCTCurveSurfaceInterCreateCurve(
     OCCTShapeRef _Nonnull shape,
     OCCTCurve3DRef _Nonnull curve,
     double tolerance) {
-    if (!shape || !curve) return nullptr;
+    if (!shape || !curve || curve->curve.IsNull()) return nullptr;
     try {
         auto* ref = new OCCTCurveSurfaceInter();
         GeomAdaptor_Curve gac(curve->curve);
@@ -1835,10 +1901,8 @@ int32_t OCCTShapeClassifyPoint2D(OCCTShapeRef shape, int32_t faceIndex,
                                    double u, double v, double tolerance) {
     if (!shape) return 3;
     try {
-        TopExp_Explorer faceExp(shape->shape, TopAbs_FACE);
-        for (int i = 0; i < faceIndex && faceExp.More(); i++) faceExp.Next();
-        if (!faceExp.More()) return 3;
-        TopoDS_Face face = TopoDS::Face(faceExp.Current());
+        TopoDS_Face face = occtFaceAt(shape->shape, faceIndex);
+        if (face.IsNull()) return 3;
 
         BRepClass_FaceExplorer explorer(face);
         BRepClass_FClassifier classifier(explorer, gp_Pnt2d(u, v), tolerance);
@@ -2071,7 +2135,9 @@ int32_t OCCTEdgeAdjacentFaces(OCCTShapeRef shape, OCCTShapeRef edge,
         int32_t count = 0;
         for (auto it = faces.cbegin(); it != faces.cend() && count < maxFaces; ++it) {
             int fi = faceMap.FindIndex(*it);
-            if (fi > 0) faceIndices[count++] = (int32_t)fi;
+            // #541: FindIndex is 1-based; these indices address the same enumeration
+            // OCCTShapeGetFaceAtIndex reads 0-based, so they are reported 0-based too.
+            if (fi > 0) faceIndices[count++] = (int32_t)(fi - 1);
         }
         return count;
     } catch (...) { return 0; }
@@ -2091,7 +2157,8 @@ int32_t OCCTVertexAdjacentEdges(OCCTShapeRef shape, OCCTShapeRef vertex,
         int32_t count = 0;
         for (auto it = edges.cbegin(); it != edges.cend() && count < maxEdges; ++it) {
             int ei = edgeMap.FindIndex(*it);
-            if (ei > 0) edgeIndices[count++] = (int32_t)ei;
+            // #541: 0-based, matching OCCTShapeGetEdgeAtIndex. See OCCTEdgeAdjacentFaces.
+            if (ei > 0) edgeIndices[count++] = (int32_t)(ei - 1);
         }
         return count;
     } catch (...) { return 0; }
@@ -2992,6 +3059,9 @@ bool OCCTBRepLibOrientClosedSolid(OCCTShapeRef shape) {
 bool OCCTBRepLibBuildCurves3dForShape(OCCTShapeRef shape, double tolerance) {
     if (!shape) return false;
     try {
+        // The catch is load-bearing: an edge with no 3D curve and no pcurve at all reaches
+        // BuildCurve3d's approximation branch, which dereferences the pcurve handle it never
+        // found and throws Standard_NullObject. Report that as failure, not as a crash. #498.
         return BRepLib::BuildCurves3d(shape->shape, tolerance);
     } catch (...) { return false; }
 }
@@ -3092,13 +3162,10 @@ bool OCCTShapeIsClosed(OCCTShapeRef shape) {
 
 #include <TopTools_IndexedMapOfShape.hxx>
 
+// A second spelling of OCCTShapeGetSubShapeCount, kept for its Swift callers; the count itself is
+// computed in exactly one place (#502).
 int32_t OCCTShapeUniqueSubShapeCount(OCCTShapeRef shape, int32_t type) {
-    if (!shape) return 0;
-    try {
-        TopTools_IndexedMapOfShape map;
-        TopExp::MapShapes(shape->shape, (TopAbs_ShapeEnum)type, map);
-        return (int32_t)map.Extent();
-    } catch (...) { return 0; }
+    return OCCTShapeGetSubShapeCount(shape, type);
 }
 // --- Convenience unique counts ---
 
@@ -3128,40 +3195,59 @@ OCCTShapeRef OCCTShapeEmptyCopied(OCCTShapeRef shape) {
 // MARK: - v0.115: GCPnts_AbscissaPoint expansion (edge) + BRepAdaptor exposure + Additional shape queries
 // --- GCPnts_AbscissaPoint expansion ---
 
+// occtAdaptorParameterAtLength (OCCTBridge_Internal.h), so the parameter this returns and the
+// length OCCTEdgeArcLength reports are built from the same subdivided quadratures. #603.
 double OCCTEdgeParameterAtArcLength(OCCTShapeRef edge, double arcLength, double startParam) {
     if (!edge) return 0;
     try {
         BRepAdaptor_Curve adaptor(TopoDS::Edge(edge->shape));
-        GCPnts_AbscissaPoint ap(adaptor, arcLength, startParam);
-        if (ap.IsDone()) return ap.Parameter();
+        double parameter = 0;
+        if (occtAdaptorParameterAtLength(adaptor, arcLength, startParam, parameter)) return parameter;
         return 0;
     } catch (...) { return 0; }
 }
 
+// Both edge arc-length entry points report failure as -1.0, matching every other arc-length
+// function in the bridge (OCCTCurve3DGetLength/GetLengthBetween, OCCTCurve2D*): arc length is
+// never negative, so -1.0 cannot be confused with a measurement, while the 0 these two used to
+// return is exactly what a genuine zero-width interval measures. #548.
 double OCCTEdgeArcLength(OCCTShapeRef edge) {
-    if (!edge) return 0;
+    if (!edge) return -1.0;
     try {
         BRepAdaptor_Curve adaptor(TopoDS::Edge(edge->shape));
-        return GCPnts_AbscissaPoint::Length(adaptor);
-    } catch (...) { return 0; }
+        // Subdivided per GeomAbs_CN interval: an elliptical edge measured 1.485% long on the
+        // single quadrature GCPnts hands a one-interval curve. #603.
+        return occtAdaptorArcLength(adaptor, adaptor.FirstParameter(), adaptor.LastParameter());
+    } catch (...) { return -1.0; }
 }
 
+// A non-finite bound was the worst case of the three ranged entry points: with no sentinel at all
+// here, `Length(adaptor, u1, .nan)` on a straight edge returned NaN straight through to Swift, and
+// on a multi-span edge the plausible 0 / whole-length answers of #548. See
+// occtValidParameterRange (OCCTBridge_Internal.h).
 double OCCTEdgeArcLengthBetween(OCCTShapeRef edge, double u1, double u2) {
-    if (!edge) return 0;
+    if (!edge) return -1.0;
+    if (!occtValidParameterRange(u1, u2)) return -1.0;
     try {
         BRepAdaptor_Curve adaptor(TopoDS::Edge(edge->shape));
-        return GCPnts_AbscissaPoint::Length(adaptor, u1, u2);
-    } catch (...) { return 0; }
+        // Shared with the Curve3D/Curve2D spellings, so an edge and the curve it was built from
+        // answer an out-of-domain range identically. #600.
+        return occtAdaptorLengthBetween(adaptor, u1, u2);
+    } catch (...) { return -1.0; }
 }
 
+// Both halves subdivided (#603): the fraction is taken of the accurate total and then walked with
+// the same quadratures, so fraction 1.0 lands on the edge's last parameter again. On the biased
+// pair those two errors cancelled; on a mixed pair they would not.
 double OCCTEdgeParameterAtFraction(OCCTShapeRef edge, double fraction) {
     if (!edge) return 0;
     try {
         BRepAdaptor_Curve adaptor(TopoDS::Edge(edge->shape));
-        double totalLen = GCPnts_AbscissaPoint::Length(adaptor);
+        const double first = adaptor.FirstParameter();
+        double totalLen = occtAdaptorArcLength(adaptor, first, adaptor.LastParameter());
         double targetLen = totalLen * fraction;
-        GCPnts_AbscissaPoint ap(adaptor, targetLen, adaptor.FirstParameter());
-        if (ap.IsDone()) return ap.Parameter();
+        double parameter = 0;
+        if (occtAdaptorParameterAtLength(adaptor, targetLen, first, parameter)) return parameter;
         return 0;
     } catch (...) { return 0; }
 }
@@ -3318,15 +3404,15 @@ double OCCTShapeBoundingDiagonal(OCCTShapeRef shape) {
     } catch (...) { return 0; }
 }
 
-void OCCTShapeCentroid(OCCTShapeRef shape, double* x, double* y, double* z) {
-    *x = *y = *z = 0;
-    if (!shape) return;
+bool OCCTShapeCentroid(OCCTShapeRef shape, double* x, double* y, double* z) {
+    if (!shape || !x || !y || !z) return false;
     try {
         GProp_GProps props;
-        BRepGProp::VolumeProperties(shape->shape, props);
+        if (!occtVolumeMassProperties(shape->shape, props)) return false;
         gp_Pnt cg = props.CentreOfMass();
         *x = cg.X(); *y = cg.Y(); *z = cg.Z();
-    } catch (...) {}
+        return true;
+    } catch (...) { return false; }
 }
 
 double OCCTShapeTotalEdgeLength(OCCTShapeRef shape) {
@@ -3536,7 +3622,13 @@ double OCCTBRepToolsEvalAndUpdateTol(OCCTShapeRef edge, OCCTShapeRef face) {
         Handle(Geom_Curve) c3d = BRep_Tool::Curve(e, first, last);
         Handle(Geom2d_Curve) c2d = BRep_Tool::CurveOnSurface(e, f, first, last);
         Handle(Geom_Surface) surf = BRep_Tool::Surface(f);
-        if (c3d.IsNull() || surf.IsNull()) return BRep_Tool::Tolerance(e);
+        // c2d has to be guarded like the other two: BRepTools::EvalAndUpdateTol dereferences it
+        // unconditionally at `if (!C2d->IsPeriodic())`, so a null pcurve is an OS signal the
+        // catch(...) below cannot absorb. CurveOnSurface returns null whenever the edge has no
+        // pcurve on a NON-planar face (routine for mesh-sewn topology; a plane always projects
+        // one, which is why this hid), and as of OCCT 8.0.1 also when the edge's range is out of
+        // the basis curve's domain, where p1 threw a catchable Standard_Failure instead.
+        if (c3d.IsNull() || c2d.IsNull() || surf.IsNull()) return BRep_Tool::Tolerance(e);
         return BRepTools::EvalAndUpdateTol(e, c3d, c2d, surf, first, last);
     } catch (...) { return 0.0; }
 }
@@ -3608,13 +3700,6 @@ int32_t OCCTBRepLibContinuityOfFaces(OCCTShapeRef edge, OCCTShapeRef face1, OCCT
     } catch (...) { return -1; }
 }
 
-bool OCCTBRepLibBuildCurves3dAll(OCCTShapeRef shape, double tolerance) {
-    if (!shape) return false;
-    try {
-        return BRepLib::BuildCurves3d(shape->shape, tolerance);
-    } catch (...) { return false; }
-}
-
 void OCCTBRepLibSameParameterAll(OCCTShapeRef shape, double tolerance, bool forced) {
     if (!shape) return;
     try {
@@ -3680,32 +3765,13 @@ int32_t OCCTShapeOrientationValue(OCCTShapeRef shape) {
     return (int32_t)shape->shape.Orientation();
 }
 
-int32_t OCCTShapeNbEdges(OCCTShapeRef shape) {
-    if (!shape) return 0;
-    int32_t count = 0;
-    for (TopExp_Explorer exp(shape->shape, TopAbs_EDGE); exp.More(); exp.Next()) {
-        count++;
-    }
-    return count;
-}
-
-int32_t OCCTShapeNbFaces(OCCTShapeRef shape) {
-    if (!shape) return 0;
-    int32_t count = 0;
-    for (TopExp_Explorer exp(shape->shape, TopAbs_FACE); exp.More(); exp.Next()) {
-        count++;
-    }
-    return count;
-}
-
-int32_t OCCTShapeNbVertices(OCCTShapeRef shape) {
-    if (!shape) return 0;
-    int32_t count = 0;
-    for (TopExp_Explorer exp(shape->shape, TopAbs_VERTEX); exp.More(); exp.Next()) {
-        count++;
-    }
-    return count;
-}
+// OCCTShapeNbEdges / OCCTShapeNbFaces / OCCTShapeNbVertices are gone: each was a
+// TopExp_Explorer occurrence count (24 edges / 6 faces / 48 vertices on a 12-edge, 6-face,
+// 8-vertex box -- nbFaces only diverges from faceCount on a shape with a shared face), while
+// this project's own reference docs always documented the distinct count. Shape.nbEdges /
+// .nbFaces / .nbVertices are deprecated and forward to edgeCount / faceCount / vertexCount,
+// which already called OCCTShapeGetTotalEdgeCount / OCCTShapeGetFaceCount /
+// OCCTShapeGetVertexCount. #651
 
 // end of v0.123.0 implementations
 
@@ -3852,7 +3918,7 @@ double OCCTBRepToolMaxTolerance(OCCTShapeRef shape, int32_t subShapeType) {
 
 OCCTCurve2DRef OCCTBRepToolCurveOnPlane(OCCTShapeRef edge, OCCTSurfaceRef surface,
                                          double* outFirst, double* outLast) {
-    if (!edge || !surface || !outFirst || !outLast) return nullptr;
+    if (!edge || !surface || surface->surface.IsNull() || !outFirst || !outLast) return nullptr;
     try {
         TopoDS_Edge e = TopoDS::Edge(edge->shape);
         TopLoc_Location loc;
@@ -3961,31 +4027,114 @@ bool OCCTBRepToolSetUVPoints(OCCTShapeRef edge, OCCTShapeRef face,
 #include <BRepAdaptor_Curve.hxx>
 #include <GeomAbs_SurfaceType.hxx>
 
+// #541: this drove its own TopExp_Explorer, one entry per occurrence, while
+// OCCTShapeGetFaceCount/GetFaceAtIndex read the deduplicated map. Since Swift writes the array
+// position here into Face.index and hands it back to ~30 index-taking entry points, the two
+// enumerations had to be one. Reads occtMapSubShapes now, like every other face accessor.
+//
+// #614: that convergence is right for the index and lossy for the normal. TopExp::MapShapes keys
+// on TopoDS_Shape::IsSame, which ignores orientation (TopoDS_Shape.hxx:265-271), so a face
+// occurring both FORWARD and REVERSED keeps only the orientation it was first seen with -- and
+// OCCTFaceGetNormalAtUV derives the normal's SIDE from exactly that flag.
+//
+// Keeping this on the IsSame map is what OCCT does for an index: TopExp::MapShapes publishes no
+// oriented overload (TopExp.hxx:57-60) and BREP persistence indexes sub-shapes through the same
+// IsSame map (TopTools_ShapeSet.hxx:192). Orientation-sensitive work reads the traversal instead --
+// see OCCTShapeGetOrientedFaces below, and BRepGProp.cxx:318-338 for upstream doing exactly that.
 OCCTFaceRef* OCCTShapeGetFaces(OCCTShapeRef shape, int32_t* outCount) {
     if (!shape || !outCount) return nullptr;
     *outCount = 0;
 
     try {
-        // First, count faces
-        std::vector<TopoDS_Face> faces;
-        TopExp_Explorer explorer(shape->shape, TopAbs_FACE);
-        while (explorer.More()) {
-            faces.push_back(TopoDS::Face(explorer.Current()));
-            explorer.Next();
+        TopTools_IndexedMapOfShape faceMap;
+        int32_t count = occtMapSubShapes(shape->shape, TopAbs_FACE, faceMap);
+        if (count == 0) return nullptr;
+
+        OCCTFaceRef* result = new OCCTFaceRef[count];
+        for (int32_t i = 0; i < count; i++) {
+            result[i] = new OCCTFace(TopoDS::Face(faceMap(i + 1)));
         }
 
-        if (faces.empty()) return nullptr;
-
-        // Allocate array
-        OCCTFaceRef* result = new OCCTFaceRef[faces.size()];
-        for (size_t i = 0; i < faces.size(); i++) {
-            result[i] = new OCCTFace(faces[i]);
-        }
-
-        *outCount = static_cast<int32_t>(faces.size());
+        *outCount = count;
         return result;
     } catch (...) {
         return nullptr;
+    }
+}
+
+// #614: the occurrence count -- what OCCTShapeGetFaces returned before #541, and what
+// OCCTShapeGetOrientedFaces returns now. Deliberately a bare explorer walk: the whole point is the
+// repeats the map drops.
+int32_t OCCTShapeGetFaceOccurrenceCount(OCCTShapeRef shape) {
+    if (!shape) return 0;
+    try {
+        int32_t count = 0;
+        for (TopExp_Explorer ex(shape->shape, TopAbs_FACE); ex.More(); ex.Next()) count++;
+        return count;
+    } catch (...) {
+        return 0;
+    }
+}
+
+// #614: the geometry enumeration. One entry per occurrence, carrying the orientation the explorer
+// composed through the traversal -- which is the orientation that makes OCCTFaceGetNormalAtUV
+// point out of the body that owns this occurrence.
+//
+// This is upstream's own idiom for orientation-sensitive face work, not a local invention:
+// BRepGProp::VolumeProperties reads TopoDS::Face(ex.Current()).Orientation() straight off the
+// explorer (BRepGProp.cxx:322-325), and when it dedupes it keeps one IsSame map PER orientation
+// (aFwdFMap/aRvsFMap, BRepGProp.cxx:318-338) precisely so a shared wall's two orientations both
+// survive. Collapsing them is the bug; the explorer is the fix.
+//
+// Each entry also reports its position in OCCTShapeGetFaces' deduplicated enumeration, looked up
+// through the same map that enumeration is built from (FindIndex is the IsSame lookup, 1-based).
+// TopExp::MapShapes is literally this explorer walk piped into the map, so every occurrence is in
+// it and FindIndex never misses; a 0 would mean the two walks had diverged, and is reported as -1
+// rather than silently written as a valid-looking index.
+OCCTFaceRef* OCCTShapeGetOrientedFaces(OCCTShapeRef shape,
+                                        int32_t* outIndices,
+                                        int32_t indexCapacity,
+                                        int32_t* outCount) {
+    if (!shape || !outCount) return nullptr;
+    *outCount = 0;
+
+    try {
+        // One traversal serves both: TopExp::MapShapes IS this explorer walk piped into the map
+        // (TopExp.cxx:35-45), so adding as we go builds exactly the enumeration OCCTShapeGetFaces
+        // reads, without walking the shape a second time to rebuild it.
+        std::vector<TopoDS_Face> occurrences;
+        TopTools_IndexedMapOfShape faceMap;
+        for (TopExp_Explorer ex(shape->shape, TopAbs_FACE); ex.More(); ex.Next()) {
+            occurrences.push_back(TopoDS::Face(ex.Current()));
+            faceMap.Add(ex.Current());
+        }
+        if (occurrences.empty()) return nullptr;
+
+        int32_t count = static_cast<int32_t>(occurrences.size());
+        OCCTFaceRef* result = new OCCTFaceRef[count];
+        for (int32_t i = 0; i < count; i++) {
+            result[i] = new OCCTFace(occurrences[i]);
+            if (outIndices && i < indexCapacity) {
+                int32_t found = faceMap.FindIndex(occurrences[i]);
+                outIndices[i] = (found > 0) ? found - 1 : -1;
+            }
+        }
+
+        *outCount = count;
+        return result;
+    } catch (...) {
+        return nullptr;
+    }
+}
+
+// #614: the flag OCCTFaceGetNormalAtUV reverses on, exposed so a caller can tell a shared wall's
+// two occurrences apart.
+int32_t OCCTFaceGetOrientation(OCCTFaceRef face) {
+    if (!face) return 0;
+    try {
+        return static_cast<int32_t>(face->face.Orientation());
+    } catch (...) {
+        return 0;
     }
 }
 
@@ -4024,8 +4173,10 @@ bool OCCTFaceGetNormal(OCCTFaceRef face, double* outNx, double* outNy, double* o
         double uMid = (uMin + uMax) / 2.0;
         double vMid = (vMin + vMax) / 2.0;
 
-        // Get surface properties at center
-        BRepLProp_SLProps props(adaptor, uMid, vMid, 1, 1e-6);
+        // Get surface properties at center. Shares its resolution with OCCTFaceGetNormalAtUV, which
+        // answers the same question about the same face at a caller-chosen (u, v) rather than the
+        // parametric midpoint (#529).
+        BRepLProp_SLProps props = occtFaceLocalProps(adaptor, uMid, vMid, 1);
         if (!props.IsNormalDefined()) return false;
 
         gp_Dir normal = props.Normal();
@@ -4062,6 +4213,18 @@ void OCCTFaceGetBounds(OCCTFaceRef face, double* minX, double* minY, double* min
     try {
         Bnd_Box box;
         BRepBndLib::Add(face->face, box);
+        box.Get(*minX, *minY, *minZ, *maxX, *maxY, *maxZ);
+    } catch (...) {
+        *minX = *minY = *minZ = *maxX = *maxY = *maxZ = 0;
+    }
+}
+
+void OCCTFaceGetBoundsExact(OCCTFaceRef face, double* minX, double* minY, double* minZ, double* maxX, double* maxY, double* maxZ) {
+    if (!face || !minX || !minY || !minZ || !maxX || !maxY || !maxZ) return;
+
+    try {
+        Bnd_Box box;
+        BRepBndLib::Add(face->face, box, false);
         box.Get(*minX, *minY, *minZ, *maxX, *maxY, *maxZ);
     } catch (...) {
         *minX = *minY = *minZ = *maxX = *maxY = *maxZ = 0;
@@ -4109,98 +4272,14 @@ bool OCCTFaceGetZLevel(OCCTFaceRef face, double* outZ) {
     }
 }
 
-OCCTFaceRef* OCCTShapeGetHorizontalFaces(OCCTShapeRef shape, double tolerance, int32_t* outCount) {
-    if (!shape || !outCount) return nullptr;
-    *outCount = 0;
-
-    try {
-        std::vector<TopoDS_Face> horizontalFaces;
-
-        TopExp_Explorer explorer(shape->shape, TopAbs_FACE);
-        while (explorer.More()) {
-            TopoDS_Face face = TopoDS::Face(explorer.Current());
-
-            // Get normal at face center
-            BRepAdaptor_Surface adaptor(face);
-            double uMid = (adaptor.FirstUParameter() + adaptor.LastUParameter()) / 2.0;
-            double vMid = (adaptor.FirstVParameter() + adaptor.LastVParameter()) / 2.0;
-
-            BRepLProp_SLProps props(adaptor, uMid, vMid, 1, 1e-6);
-            if (props.IsNormalDefined()) {
-                gp_Dir normal = props.Normal();
-                if (face.Orientation() == TopAbs_REVERSED) {
-                    normal.Reverse();
-                }
-
-                // Check if horizontal (normal is nearly parallel to Z axis)
-                double angleToZ = std::abs(normal.Z());
-                if (angleToZ > std::cos(tolerance)) {
-                    horizontalFaces.push_back(face);
-                }
-            }
-
-            explorer.Next();
-        }
-
-        if (horizontalFaces.empty()) return nullptr;
-
-        OCCTFaceRef* result = new OCCTFaceRef[horizontalFaces.size()];
-        for (size_t i = 0; i < horizontalFaces.size(); i++) {
-            result[i] = new OCCTFace(horizontalFaces[i]);
-        }
-
-        *outCount = static_cast<int32_t>(horizontalFaces.size());
-        return result;
-    } catch (...) {
-        return nullptr;
-    }
-}
-
-OCCTFaceRef* OCCTShapeGetUpwardFaces(OCCTShapeRef shape, double tolerance, int32_t* outCount) {
-    if (!shape || !outCount) return nullptr;
-    *outCount = 0;
-
-    try {
-        std::vector<TopoDS_Face> upwardFaces;
-
-        TopExp_Explorer explorer(shape->shape, TopAbs_FACE);
-        while (explorer.More()) {
-            TopoDS_Face face = TopoDS::Face(explorer.Current());
-
-            // Get normal at face center
-            BRepAdaptor_Surface adaptor(face);
-            double uMid = (adaptor.FirstUParameter() + adaptor.LastUParameter()) / 2.0;
-            double vMid = (adaptor.FirstVParameter() + adaptor.LastVParameter()) / 2.0;
-
-            BRepLProp_SLProps props(adaptor, uMid, vMid, 1, 1e-6);
-            if (props.IsNormalDefined()) {
-                gp_Dir normal = props.Normal();
-                if (face.Orientation() == TopAbs_REVERSED) {
-                    normal.Reverse();
-                }
-
-                // Check if upward-facing (normal Z > 0 and nearly vertical)
-                if (normal.Z() > std::cos(tolerance)) {
-                    upwardFaces.push_back(face);
-                }
-            }
-
-            explorer.Next();
-        }
-
-        if (upwardFaces.empty()) return nullptr;
-
-        OCCTFaceRef* result = new OCCTFaceRef[upwardFaces.size()];
-        for (size_t i = 0; i < upwardFaces.size(); i++) {
-            result[i] = new OCCTFace(upwardFaces[i]);
-        }
-
-        *outCount = static_cast<int32_t>(upwardFaces.size());
-        return result;
-    } catch (...) {
-        return nullptr;
-    }
-}
+// OCCTShapeGetHorizontalFaces and OCCTShapeGetUpwardFaces were implemented here: second copies
+// of Face.isHorizontal / Face.isUpwardFacing (|n.Z| > cos(tolerance) and n.Z > cos(tolerance) over
+// the midpoint normal OCCTFaceGetNormal already returns), declared, compiled, and reachable from
+// nothing. Shape.horizontalFaces / Shape.upwardFaces filter the Swift-side face list through those
+// two Face predicates and never called either. Removed by #529, which would otherwise have had to
+// converge their resolution too -- an orphan keeps whatever contract it had when it was orphaned.
+// (Since #614 that Swift-side list is orientedFaces(), not faces(): both predicates read the face
+// normal, whose sign the deduplicated enumeration cannot carry for a shared face.)
 
 // MARK: - Edge Structure
 // OCCTEdge is now defined in OCCTBridge_Internal.h.
@@ -4222,28 +4301,16 @@ OCCTShapeRef OCCTShapeFromEdge(OCCTEdgeRef edgeRef) {
 // MARK: - Face Index Access (Issue #13)
 
 int32_t OCCTShapeGetFaceCount(OCCTShapeRef shape) {
-    if (!shape) return 0;
-    
-    try {
-        TopTools_IndexedMapOfShape faceMap;
-        TopExp::MapShapes(shape->shape, TopAbs_FACE, faceMap);
-        return faceMap.Extent();
-    } catch (...) {
-        return 0;
-    }
+    return OCCTShapeGetSubShapeCount(shape, TopAbs_FACE);
 }
 
 OCCTFaceRef OCCTShapeGetFaceAtIndex(OCCTShapeRef shape, int32_t index) {
-    if (!shape || index < 0) return nullptr;
-    
+    if (!shape) return nullptr;
+
     try {
-        TopTools_IndexedMapOfShape faceMap;
-        TopExp::MapShapes(shape->shape, TopAbs_FACE, faceMap);
-        
-        if (index >= faceMap.Extent()) return nullptr;
-        
-        TopoDS_Face face = TopoDS::Face(faceMap(index + 1));  // OCCT is 1-based
-        return new OCCTFace(face);
+        TopoDS_Shape face = occtSubShapeAt(shape->shape, TopAbs_FACE, index);
+        if (face.IsNull()) return nullptr;
+        return new OCCTFace(TopoDS::Face(face));
     } catch (...) {
         return nullptr;
     }
@@ -4252,28 +4319,16 @@ OCCTFaceRef OCCTShapeGetFaceAtIndex(OCCTShapeRef shape, int32_t index) {
 // MARK: - Edge Access (Issue #14)
 
 int32_t OCCTShapeGetTotalEdgeCount(OCCTShapeRef shape) {
-    if (!shape) return 0;
-    
-    try {
-        TopTools_IndexedMapOfShape edgeMap;
-        TopExp::MapShapes(shape->shape, TopAbs_EDGE, edgeMap);
-        return edgeMap.Extent();
-    } catch (...) {
-        return 0;
-    }
+    return OCCTShapeGetSubShapeCount(shape, TopAbs_EDGE);
 }
 
 OCCTEdgeRef OCCTShapeGetEdgeAtIndex(OCCTShapeRef shape, int32_t index) {
-    if (!shape || index < 0) return nullptr;
-    
+    if (!shape) return nullptr;
+
     try {
-        TopTools_IndexedMapOfShape edgeMap;
-        TopExp::MapShapes(shape->shape, TopAbs_EDGE, edgeMap);
-        
-        if (index >= edgeMap.Extent()) return nullptr;
-        
-        TopoDS_Edge edge = TopoDS::Edge(edgeMap(index + 1));  // OCCT is 1-based
-        return new OCCTEdge(edge);
+        TopoDS_Shape edge = occtSubShapeAt(shape->shape, TopAbs_EDGE, index);
+        if (edge.IsNull()) return nullptr;
+        return new OCCTEdge(TopoDS::Edge(edge));
     } catch (...) {
         return nullptr;
     }

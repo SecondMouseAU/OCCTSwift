@@ -609,11 +609,11 @@ Continuity class of the Bezier surface.
 public var bezierContinuity: Int { get }
 ```
 
-- **Returns:** Integer code: 0 = C0, 1 = C1, 2 = C2, 3 = C3, 4 = CN. Bezier surfaces are CN by construction (returns 4).
+- **Returns:** a raw `GeomAbs_Shape` ordinal (`0` = C0, `1` = G1, `2` = C1, `3` = G2, `4` = C2, `5` = C3, `6` = CN); `0` if not a Bezier surface. Bezier surfaces are CN by construction, so this returns **6**.
 - **OCCT:** `Geom_BezierSurface::Continuity`.
 - **Example:**
   ```swift
-  let c = surface.bezierContinuity  // 4 (CN)
+  let c = surface.bezierContinuity  // 6 (CN)
   ```
 
 ---
@@ -1216,6 +1216,14 @@ public struct BezierPatchGrid {
 ```
 
 Access individual patches with `patches[u * grid.vCount + v]` (0-based).
+
+| Field | Meaning |
+|---|---|
+| `uCount` | Number of Bezier patches in the U direction. |
+| `vCount` | Number of Bezier patches in the V direction. |
+| `patches` | The `uCount × vCount` patches, row-major (U varies faster). |
+
+#### `Surface.BezierPatchGrid.patches`
 
 ---
 

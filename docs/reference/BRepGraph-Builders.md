@@ -5,9 +5,9 @@ parent: API Reference
 
 # BRepGraph — Builders & Editor Mutation
 
-This page covers the **mutation surface** of `BRepGraph` — every query and builder method from
+This page covers the **mutation surface** of `BRepGraph`: every query and builder method from
 the `// MARK: Edge/Face/Shell/Solid Additional Queries`, `CompSolid Count`, `Builder:` and
-`EditorView` sections (source lines 1093–1621). See the main **BRepGraph** page for
+`EditorView` sections. See the main **BRepGraph** page for
 construction, traversal, and the core query API.
 
 ## Topics

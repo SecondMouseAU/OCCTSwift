@@ -5,7 +5,7 @@ parent: API Reference
 
 # Document — Coordinate Systems, Transforms & Completions
 
-This page covers the geometry, math, and completion APIs exposed in `Document.swift` (lines 12717–14159): coordinate systems, 2D transforms, matrix math, quaternion interpolation, vector utilities, numeric solvers, unit conversion, local surface/curve properties, projection, bounding boxes, shape analysis, boolean checking, defeaturing, polynomial conversion, transform extras, topology extras, sewing extras, and BREP serialization. See the main [`Document`](Document.md) page for XCAF assembly, attribute, and STEP/OCAF I/O.
+This page covers the geometry, math, and completion APIs exposed in `Document.swift`: coordinate systems, 2D transforms, matrix math, quaternion interpolation, vector utilities, numeric solvers, unit conversion, local surface/curve properties, projection, bounding boxes, shape analysis, boolean checking, defeaturing, polynomial conversion, transform extras, topology extras, sewing extras, and BREP serialization. See the main [`Document`](Document.md) page for XCAF assembly, attribute, and STEP/OCAF I/O.
 
 ## Topics
 
@@ -53,6 +53,26 @@ public init(origin: SIMD3<Double>, direction: SIMD3<Double>)
 - **Example:**
   ```swift
   let cs = CoordinateSystem3D(origin: .zero, direction: SIMD3(0, 1, 0))
+  ```
+
+---
+
+### `CoordinateSystem3D.isDirect`
+
+Whether this coordinate system is right-handed (direct).
+
+```swift
+public let isDirect: Bool
+```
+
+Computed by both initializers from the supplied direction(s) and stored on the value; `false` means
+the system is left-handed (indirect).
+
+- **OCCT:** `gp_Ax3::Direct()`.
+- **Example:**
+  ```swift
+  let cs = CoordinateSystem3D(origin: .zero, direction: SIMD3(0, 0, 1), xDirection: SIMD3(1, 0, 0))
+  print(cs.isDirect)   // true
   ```
 
 ---
@@ -552,6 +572,9 @@ public static func findAllRoots(
 
 - **Parameters:** `range` — search interval; `samples` — number of sample points; `function` — value + derivative.
 - **Returns:** Array of root locations (may be empty).
+- **Bounds:** `samples` is bounded through `Sampling.requested` like the sibling
+  `findAllRoots(in:samples:function:)` overload: outside `1...10,000,000` this returns `[]`
+  instead of trapping `Int32(samples)` past `Int32.max` (#640).
 - **OCCT:** `OCCTMathFunctionAllRoots` → `math_FunctionAllRoots`.
 
 ---
@@ -569,6 +592,12 @@ public static func leastSquares(
 
 - **Parameters:** `matrix` — row-major matrix of size `rows × cols`; `rhs` — right-hand side vector.
 - **Returns:** Solution vector of length `cols`, or `nil` on failure.
+- **Bounds:** `rows` and `cols` must both be positive, and `matrix.count == rows * cols` /
+  `rhs.count == rows` must hold, or this returns `nil` (#640). Before this bound there was no
+  consistency check at all: a positive `rows`/`cols` that did not match `matrix`/`rhs`'s real
+  length reached the bridge's unconditional read loop and read out of bounds, rather than
+  failing. `rows * cols` is itself checked for overflow, so a huge positive `rows`/`cols` is
+  rejected rather than trapping the multiplication (#716's review finding 8).
 - **OCCT:** `OCCTMathGaussLeastSquare` → `math_GaussLeastSquare`.
 
 ---
@@ -609,6 +638,10 @@ public static func uzawa(
 
 - **Parameters:** `constraintMatrix` — row-major `nConstraints × nVars` matrix; `constraintRHS` — RHS vector; `startPoint` — initial guess.
 - **Returns:** `(solution, iterations)` or `nil` on failure.
+- **Bounds:** `nConstraints` and `nVars` must both be positive, and `constraintMatrix`/
+  `constraintRHS`/`startPoint` must each match them exactly, or this returns `nil` (#640). None
+  of this was checked before, so the bridge's unconditional read loops read out of bounds on any
+  mismatch. `nConstraints * nVars` is itself checked for overflow (#716's review finding 8).
 - **OCCT:** `OCCTMathUzawa` → `math_Uzawa`.
 
 ---
@@ -625,6 +658,10 @@ public static func eigenvalues(
 
 - **Parameters:** `diagonal` — n diagonal entries; `subdiagonal` — n entries (last unused).
 - **Returns:** Array of eigenvalues, or `nil` on failure.
+- **Bounds:** `subdiagonal.count` must equal `diagonal.count` exactly, or this returns `nil`
+  (#640). This "must be same length" was documentation only until #640: the bridge reads
+  `subdiagonal[i]` for `i in 0..<diagonal.count` unconditionally, so a shorter `subdiagonal`
+  used to read out of bounds rather than fail.
 - **OCCT:** `OCCTMathEigenValues` → `math_EigenVectors`.
 
 ---
@@ -640,6 +677,8 @@ public static func eigenvaluesAndVectors(
 ```
 
 - **Returns:** `(eigenvalues, eigenvectors)` where each eigenvector is a `[Double]` of length n, or `nil` on failure.
+- **Bounds:** Same as `eigenvalues(diagonal:subdiagonal:)`: `subdiagonal.count` must equal
+  `diagonal.count` exactly (#640).
 - **OCCT:** `OCCTMathEigenValuesAndVectors` → `math_EigenVectors`.
 
 ---
@@ -683,7 +722,8 @@ public static func kronrodIntegrateAdaptive(
 
 ### `MathSolver.gaussMultipleIntegration(lower:upper:order:function:)`
 
-Multi-dimensional Gauss-Legendre integration.
+Multi-dimensional Gauss-Legendre integration. Genuinely supports any number of variables:
+`math_GaussMultipleIntegration` integrates recursively over every dimension.
 
 ```swift
 public static func gaussMultipleIntegration(
@@ -694,13 +734,25 @@ public static func gaussMultipleIntegration(
 
 - **Parameters:** `lower`/`upper` — integration bounds per dimension; `order` — Gauss point counts per dimension; `function` — n-variate integrand.
 - **Returns:** Integral value or `nil` on failure.
+- **Bounds:** `upper` and `order` must have the same length as `lower`, or this returns `nil`
+  (#640). The bridge derives the dimension count from `lower.count` alone and then reads
+  `upper[i]`/`order[i]` up to it unconditionally, so a shorter `upper` or `order` used to read
+  out of bounds.
 - **OCCT:** `OCCTMathGaussMultipleIntegration` → `math_GaussMultipleIntegration`.
+- **Example:**
+  ```swift
+  let integral = MathSolver.gaussMultipleIntegration(
+      lower: [0, 0], upper: [1, 1], order: [10, 10]
+  ) { x in x[0] * x[0] + x[1] * x[1] }   // 2/3
+  ```
 
 ---
 
 ### `MathSolver.gaussSetIntegration(nEquations:lower:upper:order:function:)`
 
-Gauss-Legendre integration for a system of functions.
+Gauss-Legendre integration for a **set of functions of one variable**, each integrated
+separately. Unlike `gaussMultipleIntegration`, this does **not** support more than one
+integration variable: `lower` must have exactly one element.
 
 ```swift
 public static func gaussSetIntegration(
@@ -712,7 +764,31 @@ public static func gaussSetIntegration(
 
 - **Parameters:** `nEquations` — number of integrals; `function` — closure mapping input vector to `nEquations`-length output.
 - **Returns:** Array of integral values (length `nEquations`), or `nil` on failure.
+- **Bounds:** `nEquations` must be positive, and `upper`/`order` must have the same length as
+  `lower`, or this returns `nil` (#640): the first was an `Array(repeating:count:)` trap on a
+  negative `nEquations`, and the second is the same unguarded read as
+  `gaussMultipleIntegration`. `function`'s own returned array is checked the same way as
+  `solveSystem`'s (#716's review finding 6): a closure returning fewer than `nEquations`
+  elements now fails the call (`nil`) instead of trapping.
+- **`lower` must also have exactly one element (#716's review finding 2).**
+  `math_GaussSetIntegration`'s own header documents "the case M>1 is not implemented": its
+  constructor only ever varies the *first* integration variable, leaving every other component
+  of its working vector unset. OCCT's own runtime check for this does not survive this
+  project's `No_Exception` production kernel build, so a call with more than one variable used
+  to silently succeed at the wrong answer instead of failing: measured directly,
+  `gaussSetIntegration(nEquations: 1, lower: [0, 0], upper: [1, 1], order: [10, 10])`
+  integrating `x + y` returned `0.5` (`∫x dx` over `[0, 1]` with `y` silently pinned at `0`), not
+  the `1.0` a genuine double integral of `x + y` over the unit square would be. This now returns
+  `nil` for `lower.count != 1` instead. For genuinely multi-variable integration, use
+  `gaussMultipleIntegration`.
 - **OCCT:** `OCCTMathGaussSetIntegration` → `math_GaussSetIntegration`.
+- **Example:**
+  ```swift
+  // A "set" of two functions of the SAME one variable: integral of x and of x^2 over [0, 2].
+  let integrals = MathSolver.gaussSetIntegration(
+      nEquations: 2, lower: [0], upper: [2], order: [10]
+  ) { x in [x[0], x[0] * x[0]] }   // [2.0, 8.0/3.0]
+  ```
 
 ---
 
@@ -873,6 +949,48 @@ public enum OCCTLengthUnit: Int32, Sendable {
 }
 ```
 
+Case meanings, from `UnitsMethods_LengthUnit`:
+
+#### `OCCTLengthUnit.inch`
+
+The inch (25.4 mm).
+
+#### `OCCTLengthUnit.millimeter`
+
+The millimetre.
+
+#### `OCCTLengthUnit.foot`
+
+The foot (12 inches, 304.8 mm).
+
+#### `OCCTLengthUnit.mile`
+
+The (statute) mile (5280 feet).
+
+#### `OCCTLengthUnit.meter`
+
+The metre.
+
+#### `OCCTLengthUnit.kilometer`
+
+The kilometre.
+
+#### `OCCTLengthUnit.mil`
+
+The thousandth of an inch (0.0254 mm), also called "thou".
+
+#### `OCCTLengthUnit.micron`
+
+The micrometre (1e-6 metre).
+
+#### `OCCTLengthUnit.centimeter`
+
+The centimetre.
+
+#### `OCCTLengthUnit.microinch`
+
+The millionth of an inch (1e-6 inch).
+
 ---
 
 ### `UnitsConversion.lengthFactor(igesUnit:)`
@@ -919,19 +1037,17 @@ public static func dumpLengthUnit(_ unit: OCCTLengthUnit) -> String?
 
 Extensions on `Curve3D` wrapping `LProp3d_CLProps` for local differential properties.
 
-### `Curve3D.localCurvature(at:)`
+These are alternative spellings of `Curve3D.tangentDirection(at:)`, `normal(at:)` and
+`centerOfCurvature(at:)` — same OCCT computation, same tolerance, differing only in shape. They are
+guaranteed to agree with their counterparts for the same curve at the same parameter; before #494
+they asked at a hardcoded `1e-10` resolution against the canonical family's `Precision::Confusion()`
+(`1e-7`), and the two disagreed near a degeneracy.
 
-Curvature of the curve at a parameter value.
-
-```swift
-public func localCurvature(at u: Double) -> Double
-```
-
-- **Parameters:** `u` — curve parameter.
-- **Returns:** Signed curvature (1/radius).
-- **OCCT:** `OCCTCurve3DLocalCurvature` → `LProp3d_CLProps::Curvature`.
-
----
+There were originally four. `localCurvature(at:)` was deprecated as of #595 in favour of
+`curvature(at:)` (once #494 gave the two the same resolution they were the same call line for
+line, and measured over the same curves, degenerate rows included, they never disagreed on any row)
+and removed at v2.0.0 (#784). The bridge function behind it, `OCCTCurve3DLocalCurvature`, was
+already deleted at #595.
 
 ### `Curve3D.localTangent(at:)`
 
@@ -941,7 +1057,8 @@ Tangent direction at a parameter value.
 public func localTangent(at u: Double) -> SIMD3<Double>?
 ```
 
-- **Returns:** Unit tangent vector, or `nil` if not defined (e.g. degenerate point).
+- **Returns:** Unit tangent vector, or `nil` where every derivative up to order 3 is null.
+- **Equivalent to:** `Curve3D.tangentDirection(at:)`.
 - **OCCT:** `OCCTCurve3DLocalTangent` → `LProp3d_CLProps::Tangent`.
 
 ---
@@ -954,7 +1071,9 @@ Principal normal direction at a parameter value.
 public func localNormal(at u: Double) -> SIMD3<Double>?
 ```
 
-- **Returns:** Normal vector, or `nil` at inflection or zero-curvature points.
+- **Returns:** Normal vector, or `nil` where the curvature is zero (straight or inflecting) or
+  infinite (a cusp).
+- **Equivalent to:** `Curve3D.normal(at:)`.
 - **OCCT:** `OCCTCurve3DLocalNormal` → `LProp3d_CLProps::Normal`.
 
 ---
@@ -967,7 +1086,10 @@ Centre of curvature at a parameter value.
 public func localCentreOfCurvature(at u: Double) -> SIMD3<Double>?
 ```
 
-- **Returns:** Centre of the osculating circle, or `nil` if not defined.
+- **Returns:** Centre of the osculating circle, or `nil` where the curvature cannot be inverted
+  into a radius: zero (straight or inflecting) or infinite (a cusp). Both used to return a point
+  built from `NaN` and infinity instead of `nil` (#494).
+- **Equivalent to:** `Curve3D.centerOfCurvature(at:)`.
 - **OCCT:** `OCCTCurve3DLocalCentreOfCurvature` → `LProp3d_CLProps::CentreOfCurvature`.
 
 ---
@@ -975,6 +1097,13 @@ public func localCentreOfCurvature(at u: Double) -> SIMD3<Double>?
 ## Surface LProp3d Extensions
 
 Extensions on `Surface` wrapping `LProp3d_SLProps` for local surface differential properties.
+
+Both report quantities `Surface.curvatures(u:v:)`, `gaussianCurvature(atU:v:)`,
+`meanCurvature(atU:v:)` and `principalCurvatures(atU:v:)` also report, at the same tolerance since
+#494 and with the same optionality since #595 — they previously asked at a hardcoded `1e-10` against those entry points'
+`Precision::Confusion()`, so they could report curvature at a point the rest called undefined. The
+one remaining asymmetry is by design: `localCurvatureDirections` also returns `nil` at umbilic
+points, where curvature is perfectly well defined but no principal direction is distinguished.
 
 ### `Surface.LocalCurvatures`
 
@@ -989,6 +1118,15 @@ public struct LocalCurvatures: Sendable {
 }
 ```
 
+| Field | Meaning |
+|---|---|
+| `gaussian` | Gaussian curvature (product of the two principal curvatures) at the point. |
+| `mean` | Mean curvature (average of the two principal curvatures) at the point. |
+| `maxCurvature` | The larger of the two principal curvatures at the point. |
+| `minCurvature` | The smaller of the two principal curvatures at the point. |
+
+#### `Surface.LocalCurvatures.minCurvature`
+
 ---
 
 ### `Surface.localCurvatures(u:v:)`
@@ -1000,7 +1138,10 @@ public func localCurvatures(u: Double, v: Double) -> LocalCurvatures?
 ```
 
 - **Parameters:** `u`, `v` — surface parameters.
-- **Returns:** Gaussian, mean, max and min curvatures, or `nil` if undefined.
+- **Returns:** Gaussian, mean, max and min curvatures, or `nil` where curvature is undefined — a
+  cone's apex, a sphere's pole, or any point with no defined surface normal.
+- **Agrees with:** `Surface.curvatures(u:v:)`, `gaussianCurvature(atU:v:)`,
+  `meanCurvature(atU:v:)`, `principalCurvatures(atU:v:)`.
 - **OCCT:** `OCCTSurfaceLocalCurvatures` → `LProp3d_SLProps`.
 
 ---
@@ -1018,6 +1159,16 @@ public struct CurvatureDirections: Sendable {
 
 ---
 
+#### `Surface.CurvatureDirections.maxDirection`
+
+Unit tangent direction of maximum principal curvature at the surface point.
+
+#### `Surface.CurvatureDirections.minDirection`
+
+Unit tangent direction of minimum principal curvature at the surface point; perpendicular to `maxDirection`.
+
+---
+
 ### `Surface.localCurvatureDirections(u:v:)`
 
 Principal curvature directions at a surface point.
@@ -1026,7 +1177,13 @@ Principal curvature directions at a surface point.
 public func localCurvatureDirections(u: Double, v: Double) -> CurvatureDirections?
 ```
 
-- **Returns:** Max and min curvature directions, or `nil` at umbilic points.
+- **Returns:** Max and min curvature directions, or `nil` where curvature is undefined **or** the
+  point is umbilic. OCCT's umbilic test is one ULP wide (`|maxCurv - minCurv| < Epsilon(maxCurv)`),
+  not a geometric tolerance: a plane always qualifies, but an analytically-umbilic sphere qualifies
+  only where the two computed curvatures round to the same `Double` — so a non-`nil` result on a
+  sphere is expected, not a defect.
+- **Agrees with:** `Surface.principalCurvatures(atU:v:)`, which returns the same two directions
+  alongside their curvatures (and does not reject umbilic points).
 - **OCCT:** `OCCTSurfaceLocalCurvatureDirections` → `LProp3d_SLProps`.
 
 ---
@@ -1048,6 +1205,17 @@ public struct Line2DResult: Sendable {
 }
 ```
 
+| field | meaning |
+|---|---|
+| `locationX` | X coordinate of the projected line's location point, in the target surface's parameter space. |
+| `locationY` | Y coordinate of the projected line's location point. |
+| `directionX` | X component of the projected line's (unit) direction, in parameter space. |
+| `directionY` | Y component of the projected line's (unit) direction. |
+
+*(Per-field anchors below, for cross-reference; the table above has the actual meaning of each.)*
+
+#### `directionY`
+
 ---
 
 ### `ProjLib.Circle2DResult`
@@ -1061,6 +1229,13 @@ public struct Circle2DResult: Sendable {
     public let radius: Double
 }
 ```
+
+| Field | Meaning |
+|---|---|
+| `centerX` | U coordinate of the projected circle's center in the target surface's parameter space. |
+| `centerY` | V coordinate of the projected circle's center in the target surface's parameter space. |
+
+#### `ProjLib.Circle2DResult.centerY`
 
 ---
 
@@ -1158,6 +1333,15 @@ public struct DetailedOBB: Sendable {
 }
 ```
 
+| Field | Meaning |
+|---|---|
+| `zDirection` | Unit vector for the box's local Z axis. |
+| `xHalfSize` | Half-extent of the box along `xDirection`. |
+| `yHalfSize` | Half-extent of the box along `yDirection`. |
+| `zHalfSize` | Half-extent of the box along `zDirection`. |
+
+#### `Shape.DetailedOBB.zHalfSize`
+
 ---
 
 ### `Shape.orientedBoundingBoxDetailed(optimal:)`
@@ -1194,6 +1378,13 @@ public struct OrientedBoundingBox: Sendable {
 ```
 
 - **OCCT:** populated from `Bnd_OBB` (via `BRepBndLib::AddOBB`).
+
+---
+
+#### `zDirection`
+
+Unit Z-axis direction of the box frame, alongside `xDirection`/`yDirection`; see the field comments
+in the struct above.
 
 ---
 
@@ -1253,6 +1444,16 @@ public enum ToleranceMode: Int32, Sendable {
     case minimum = -1
 }
 ```
+
+| case | meaning |
+|---|---|
+| `.average` | Average tolerance over the queried sub-shapes. |
+| `.maximum` | Largest tolerance among the queried sub-shapes. |
+| `.minimum` | Smallest tolerance among the queried sub-shapes. |
+
+*(Per-case anchors below, for cross-reference; the table above has the actual meaning of each.)*
+
+#### `minimum`
 
 ---
 
@@ -1338,14 +1539,16 @@ public func isBooleanValidWith(
 
 ### `Shape.defeature(faces:)`
 
-Remove feature faces (fillets, holes, pockets) from a solid shape.
+Remove feature faces (fillets, holes, pockets) from a solid shape. The canonical defeaturing call.
 
 ```swift
 public func defeature(faces: [Shape]) -> Shape?
 ```
 
-- **Parameters:** `faces` — the face shapes to remove as features.
-- **Returns:** Defeatured shape, or `nil` on failure.
+- **Parameters:** `faces` — each element either a face of this shape, or a shape whose faces all
+  belong to this shape.
+- **Returns:** Defeatured shape, or `nil` on failure — including when `faces` is empty and when the
+  request names a face this shape does not have.
 - **OCCT:** `OCCTShapeDefeature` → `BRepAlgoAPI_Defeaturing`.
 - **Example:**
   ```swift
@@ -1353,6 +1556,41 @@ public func defeature(faces: [Shape]) -> Shape?
       // fillets removed
   }
   ```
+
+**What may be named, and what must belong.** Each element names faces rather than having to be one: a
+compound of faces, a shell, or this whole shape all name the faces they contain, and naming a carrier
+is the same request as naming the faces it holds. The rule every element must satisfy:
+
+> Every element must name at least one face, and every face it names must be a face of this shape.
+> Otherwise the whole call returns `nil` and nothing is removed.
+
+So a request mixing this shape's faces with another shape's fails, as does one carrying an edge or a
+vertex, which name no face at all. Membership is by identity, not geometry: the same face measured off
+an identically-built shape is foreign, while the same face reversed is not.
+
+Until #578 a foreign face was dropped from the request and the rest proceeded — OCCT's own documented
+rule ("those that do not belong will be ignored"), which answered a silent success on a shape still
+carrying the feature the caller asked to remove. The index-addressed `withoutFeatures(faces:)` has
+failed the whole call on one bad index since #497; both spellings now agree. Measured in
+[`Scripts/repro/578-defeature-face-membership/`](https://github.com/SecondMouseAU/OCCTSwift/tree/main/Scripts/repro/578-defeature-face-membership).
+
+**The rest of the family.** Five Swift spellings reach the same `BRepAlgoAPI_Defeaturing`
+operation, over one shared bridge path (#497, #536):
+
+| Call | Addresses faces as | Notes |
+|------|--------------------|-------|
+| `defeature(faces:)` | `[Shape]` | this one |
+| [`withoutFeatures(faces:)`](Shape-Features.md#withoutfeaturesfaces) | `[Face]` (by index) | same operation |
+| `defeaturedWithFullHistory(faces:)` | `[Int]` (indices) | also returns the removal history |
+| [`withoutSmallFaces(minArea:)`](Shape-Features.md) | picks its own | every face below an area threshold |
+| [`removeFeatures(faces:)`](Shape-Builders-2.md#removefeaturesfaces--deprecated-536) | `[Shape]` | deprecated: this call, reached one OCCT layer down |
+
+`defeature(faces:tolerance:)` is deprecated and forwards here: `BRepAlgoAPI_Defeaturing` has no
+fuzzy tolerance to set, and never had — see
+[`Scripts/repro/497-defeaturing-fuzzy-inert/`](https://github.com/SecondMouseAU/OCCTSwift/tree/main/Scripts/repro/497-defeaturing-fuzzy-inert).
+`removeFeatures(faces:)` is deprecated too, and forwards here as well: it drove
+`BOPAlgo_RemoveFeatures` directly, which is the algorithm `BRepAlgoAPI_Defeaturing::Build` forwards
+to (#536).
 
 ---
 
@@ -1432,6 +1670,12 @@ public struct Matrix3x4: Sendable {
     public let values: [Double] // [a11,a12,a13,a14, a21,a22,a23,a24, a31,a32,a33,a34]
 }
 ```
+
+| Field | Meaning |
+|---|---|
+| `values` | The 12 matrix elements, row-major: rotation/scale in the first 3 columns of each row, translation in the 4th. |
+
+#### `TransformUtils.Matrix3x4.values`
 
 ---
 

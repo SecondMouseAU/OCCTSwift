@@ -321,6 +321,24 @@ public enum StoreStatus: Int32 {
 }
 ```
 
+| Case | `PCDM_StoreStatus` | Meaning |
+|---|---|---|
+| `ok` | `PCDM_SS_OK` | Document saved successfully. |
+| `driverFailure` | `PCDM_SS_DriverFailure` | No storage driver was found for the document's format. |
+| `writeFailure` | `PCDM_SS_WriteFailure` | Attempt to write the file to disk failed. |
+| `failure` | `PCDM_SS_Failure` | A general, unexpected error occurred. |
+| `docIsNull` | `PCDM_SS_Doc_IsNull` | Attempt to save a null document. |
+| `noObj` | `PCDM_SS_No_Obj` | The document has no objects to save. |
+| `infoSectionError` | `PCDM_SS_Info_Section_Error` | Writing the information section failed. |
+| `userBreak` | `PCDM_SS_UserBreak` | The user interrupted the save. |
+| `unrecognizedFormat` | `PCDM_SS_UnrecognizedFormat` | No storage driver exists for the document's format string. |
+
+---
+
+#### `StoreStatus.unrecognizedFormat`
+
+No storage driver exists for the document's format string.
+
 - **OCCT:** `PCDM_StoreStatus`.
 
 ---
@@ -356,6 +374,74 @@ public enum ReaderStatus: Int32 {
     case userBreak = 22
 }
 ```
+
+Case meanings, from `PCDM_ReaderStatus`:
+
+---
+
+#### `ReaderStatus.noDriver`
+
+No storage driver is registered for the file's format.
+#### `ReaderStatus.unknownFileDriver`
+
+The file failed a basic check (for example, it does not exist).
+#### `ReaderStatus.openError`
+
+The file could not be opened.
+#### `ReaderStatus.noVersion`
+
+The file's document version is out of the supported range.
+#### `ReaderStatus.noSchema`
+
+Not used by the current OCCT format drivers.
+#### `ReaderStatus.noDocument`
+
+The document is empty; it did not read correctly.
+#### `ReaderStatus.extensionFailure`
+
+Not used by the current OCCT format drivers.
+#### `ReaderStatus.wrongStreamMode`
+
+The file was not open in a mode that supports reading.
+#### `ReaderStatus.formatFailure`
+
+The document's data structure is malformed.
+#### `ReaderStatus.typeFailure`
+
+A stored data type is unknown to the reader.
+#### `ReaderStatus.typeNotFoundInSchema`
+
+A stored data type is not present in the schema (STD format).
+#### `ReaderStatus.unrecognizedFileFormat`
+
+The document's data structure is wrong (binary format).
+#### `ReaderStatus.makeFailure`
+
+Converting persistent data to transient attributes failed (XML format).
+#### `ReaderStatus.permissionDenied`
+
+The file could not be opened; permission was denied.
+#### `ReaderStatus.alreadyRetrievedAndModified`
+
+The document is already retrieved and modified in the current session.
+#### `ReaderStatus.alreadyRetrieved`
+
+The document is already retrieved in the current session.
+#### `ReaderStatus.unknownDocument`
+
+The file does not exist on disk.
+#### `ReaderStatus.wrongResource`
+
+The resource file (`.RetrievalPlugin`) is wrong.
+#### `ReaderStatus.readerException`
+
+The binary file's data structure is wrong (for example, no shape section).
+#### `ReaderStatus.noModel`
+
+Not used by the current OCCT format drivers.
+#### `ReaderStatus.userBreak`
+
+The user interrupted the read.
 
 - **OCCT:** `PCDM_ReaderStatus`.
 
@@ -718,6 +804,26 @@ public enum StepModelType: Int32, Sendable {
 }
 ```
 
+Case meanings, from `STEPControl_StepModelType`:
+
+---
+
+#### `StepModelType.brepWithVoids`
+
+Force a B-rep-with-voids STEP representation (a solid containing inner shells).
+#### `StepModelType.facetedBrep`
+
+Force a faceted (polygonal) B-rep STEP representation.
+#### `StepModelType.facetedBrepAndBrepWithVoids`
+
+Force a faceted B-rep combined with B-rep-with-voids.
+#### `StepModelType.shellBasedSurfaceModel`
+
+Force a shell-based surface model (open, non-solid geometry).
+#### `StepModelType.geometricCurveSet`
+
+Force a geometric curve set (wireframe/curve-only geometry, no faces).
+
 - **OCCT:** `STEPControl_StepModelType`.
 - **Note:** `.asIs` lets the writer choose the most appropriate representation automatically. Use `.manifoldSolidBrep` for solids when downstream tools require it explicitly.
 
@@ -745,6 +851,21 @@ public struct STEPReaderModes: Sendable {
 }
 ```
 
+| Field | Default | Meaning |
+|---|---|---|
+| `color` | `true` | Import color information. |
+| `name` | `true` | Import name/label information. |
+| `layer` | `true` | Import layer assignments. |
+| `props` | `true` | Import validation properties. |
+| `gdt` | `false` | Import GD&T (dimension/tolerance) data. |
+| `material` | `true` | Import material data. |
+
+---
+
+#### `STEPReaderModes.gdt`
+
+Import GD&T (dimension/tolerance) data; defaults to `false`.
+
 - **OCCT:** `STEPCAFControl_Reader::SetColorMode`, `SetNameMode`, `SetLayerMode`, `SetPropsMode`, `SetGDTMode`, `SetMatMode`.
 - **Note:** `gdt` (GD&T / dimension-and-tolerance) defaults to `false` because it requires additional downstream parsing; enable explicitly when PMI data is needed.
 
@@ -768,6 +889,18 @@ public struct STEPWriterModes: Sendable {
 ```
 
 - **OCCT:** `STEPCAFControl_Writer::SetColorMode`, `SetNameMode`, `SetLayerMode`, `SetDimTolMode`, `SetMatMode`.
+
+| Field | Default | Meaning |
+|-------|---------|---------|
+| `color` | `true` | Export color information (`SetColorMode`). |
+| `name` | `true` | Export name/label information (`SetNameMode`). |
+| `layer` | `true` | Export layer information (`SetLayerMode`). |
+| `dimTol` | `false` | Export dimension/tolerance (GD&T) data (`SetDimTolMode`). |
+| `material` | `true` | Export material data (`SetMatMode`). |
+
+*(Per-field anchors below, for cross-reference; the table above has the actual meaning of each.)*
+
+#### `STEPWriterModes.layer`
 
 ---
 
@@ -909,6 +1042,20 @@ public enum MeshCoordinateSystem: Int32, Sendable {
     public static let gltf: MeshCoordinateSystem     // alias for .yUp
 }
 ```
+
+Case meanings, from `RWMesh_CoordinateSystem`:
+
+---
+
+#### `MeshCoordinateSystem.undefined`
+
+No coordinate-system conversion is requested; vertices pass through unchanged.
+#### `MeshCoordinateSystem.blender`
+
+Readable alias for `.zUp`.
+#### `MeshCoordinateSystem.gltf`
+
+Readable alias for `.yUp`.
 
 - **OCCT:** `RWMesh_CoordinateSystem`.
 - **Note:** Use `MeshCoordinateSystem.blender` / `.gltf` as readable aliases when the source or target format is known.
@@ -1287,7 +1434,7 @@ Methods on `Document` for assigning and querying colors directly on `Shape` valu
 
 ### `setShapeColor(_:color:type:)`
 
-Set a color on a shape.
+Set a color on a shape, including alpha (#763).
 
 ```swift
 public func setShapeColor(_ shape: Shape, color: Color, type: OCCTColorType = OCCTColorTypeSurface)
@@ -1295,23 +1442,40 @@ public func setShapeColor(_ shape: Shape, color: Color, type: OCCTColorType = OC
 
 - **Parameters:**
   - `shape` — the shape to color.
-  - `color` — RGB color value.
+  - `color` — RGBA color value. `color.alpha` is stored, not just RGB.
   - `type` — `OCCTColorTypeGeneric` (0), `OCCTColorTypeSurface` (1), or `OCCTColorTypeCurve` (2). Default is surface color.
-- **OCCT:** `XCAFDoc_ColorTool::SetColor`.
+- **OCCT:** `XCAFDoc_ColorTool::SetColor` (the `Quantity_ColorRGBA` overload).
+- Before #763, `color.alpha` was silently dropped on write (stored through the RGB-only
+  `SetColor` overload), so a subsequent `shapeColor(_:type:)` always read back `alpha == 1.0`
+  regardless of what was set here.
+
+```swift
+let doc = Document.create()!
+let box = Shape.box(width: 10, height: 10, depth: 10)!
+doc.addShape(box)
+doc.setShapeColor(box, color: Color(red: 1, green: 0, blue: 0, alpha: 0.5))
+let readBack = doc.shapeColor(box)
+// readBack?.alpha == 0.5
+```
 
 ---
 
 ### `shapeColor(_:type:)`
 
-Get the color assigned to a shape.
+Get the color assigned to a shape, with its real alpha (#763).
 
 ```swift
 public func shapeColor(_ shape: Shape, type: OCCTColorType = OCCTColorTypeSurface) -> Color?
 ```
 
 - **Parameters:** `shape` — shape to query; `type` — color type.
-- **Returns:** `Color` if a color of the given type is set, `nil` otherwise.
-- **OCCT:** `XCAFDoc_ColorTool::GetColor`.
+- **Returns:** `Color` if a color of the given type is set, `nil` otherwise. `alpha` is the real
+  stored value: before #763 it was hardcoded to `1.0` regardless of what was actually set (the
+  bridge read through `XCAFDoc_ColorTool`'s RGB-only `GetColor` overload, which fetches the real
+  RGBA value internally and then discards alpha). A shape colored via `setShapeColor(_:color:type:)`
+  with `alpha < 1.0`, or imported from a file with a transparent surface style, now reports its
+  actual alpha.
+- **OCCT:** `XCAFDoc_ColorTool::GetColor` (the `Quantity_ColorRGBA` overload).
 
 ---
 

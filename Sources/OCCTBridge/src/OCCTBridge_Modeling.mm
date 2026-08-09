@@ -76,7 +76,6 @@
 #include <BRepLib_MakeEdge.hxx>
 #include <BRepLib_MakeFace.hxx>
 #include <BRepLib_MakeShell.hxx>
-#include <BOPAlgo_RemoveFeatures.hxx>
 #include <BOPAlgo_Section.hxx>
 #include <BRepFeat_Builder.hxx>
 #include <Law_BSplineKnotSplitting.hxx>
@@ -322,65 +321,54 @@ OCCTShapeRef OCCTDrawingGetEdges(OCCTDrawingRef drawing, OCCTEdgeType edgeType) 
 
 // MARK: - Advanced Modeling (v0.8.0)
 
+// The three edge-list fillet entry points share occtShapeFilletEdgeList (OCCTBridge_Internal.h)
+// and supply only their own radius law; OCCTShapeBlendEdges, the per-edge one, lives in
+// OCCTBridge_Healing.mm. See that helper for why the radius precondition is the bridge's. #489
+//
+// #639: `declinedEdgeIndices`/`outDeclinedCount` report which of `edgeIndices` OCCT declined
+// (occtFilletWriteDeclined). Both are nullable and the existing skip behaviour is unchanged when
+// they are null; `filleted(edges:radius:)` passes null for both, `filletedWithReport(edges:radius:)`
+// does not. `declinedEdgeIndices`, when non-null, must have capacity >= edgeCount.
 OCCTShapeRef OCCTShapeFilletEdges(OCCTShapeRef shape, const int32_t* edgeIndices,
-                                   int32_t edgeCount, double radius) {
-    if (!shape || !edgeIndices || edgeCount <= 0 || radius <= 0) return nullptr;
+                                   int32_t edgeCount, double radius,
+                                   int32_t* declinedEdgeIndices, int32_t* outDeclinedCount) {
+    if (outDeclinedCount) *outDeclinedCount = 0;
+    if (!occtValidFilletRadius(radius)) return nullptr;
 
-    try {
-        BRepFilletAPI_MakeFillet fillet(shape->shape);
-
-        // Build edge index map for lookup
-        TopTools_IndexedMapOfShape edgeMap;
-        TopExp::MapShapes(shape->shape, TopAbs_EDGE, edgeMap);
-
-        for (int32_t i = 0; i < edgeCount; i++) {
-            int32_t idx = edgeIndices[i];
-            if (idx >= 0 && idx < edgeMap.Extent()) {
-                TopoDS_Edge edge = TopoDS::Edge(edgeMap(idx + 1));  // OCCT is 1-based
-                fillet.Add(radius, edge);
-            }
-        }
-
-        fillet.Build();
-        if (!fillet.IsDone()) return nullptr;
-
-        return new OCCTShape(fillet.Shape());
-    } catch (...) {
-        return nullptr;
-    }
+    return occtShapeFilletEdgeList(shape, edgeIndices, edgeCount,
+                                   [radius](BRepFilletAPI_MakeFillet& fillet,
+                                            const TopoDS_Edge& edge, int32_t) {
+        fillet.Add(radius, edge);
+        return true;
+    }, declinedEdgeIndices, outDeclinedCount);
 }
 
+// #639: same reporting contract as OCCTShapeFilletEdges above.
 OCCTShapeRef OCCTShapeFilletEdgesLinear(OCCTShapeRef shape, const int32_t* edgeIndices,
-                                         int32_t edgeCount, double startRadius, double endRadius) {
-    if (!shape || !edgeIndices || edgeCount <= 0) return nullptr;
-    if (startRadius <= 0 || endRadius <= 0) return nullptr;
+                                         int32_t edgeCount, double startRadius, double endRadius,
+                                         int32_t* declinedEdgeIndices, int32_t* outDeclinedCount) {
+    if (outDeclinedCount) *outDeclinedCount = 0;
+    if (!occtValidFilletRadius(startRadius) || !occtValidFilletRadius(endRadius)) return nullptr;
 
-    try {
-        BRepFilletAPI_MakeFillet fillet(shape->shape);
-
-        // Build edge index map for lookup
-        TopTools_IndexedMapOfShape edgeMap;
-        TopExp::MapShapes(shape->shape, TopAbs_EDGE, edgeMap);
-
-        for (int32_t i = 0; i < edgeCount; i++) {
-            int32_t idx = edgeIndices[i];
-            if (idx >= 0 && idx < edgeMap.Extent()) {
-                TopoDS_Edge edge = TopoDS::Edge(edgeMap(idx + 1));  // OCCT is 1-based
-                // Add edge with variable radius
-                fillet.Add(edge);
-                // Set radius variation along the edge
-                int contourIndex = fillet.NbContours();
-                fillet.SetRadius(startRadius, endRadius, contourIndex, 1);
-            }
-        }
-
-        fillet.Build();
-        if (!fillet.IsDone()) return nullptr;
-
-        return new OCCTShape(fillet.Shape());
-    } catch (...) {
-        return nullptr;
-    }
+    return occtShapeFilletEdgeList(shape, edgeIndices, edgeCount,
+                                   [startRadius, endRadius](BRepFilletAPI_MakeFillet& fillet,
+                                                            const TopoDS_Edge& edge, int32_t) {
+        // #612: this used to be Add(edge) followed by SetRadius(R1, R2, NbContours(), 1). Both
+        // coordinates were wrong — a tangent-continuous edge extends an existing contour rather
+        // than creating one, and the third argument is the edge's index *within* the contour, not
+        // a constant 1, so every edge of a tangent chain landed on one slot and only the last
+        // survived (measured 10273.238348 for two edges of a slot rim at 1 -> 4, exactly what
+        // filleting the first alone produces, against 10297.711861 correct).
+        //
+        // OCCT ships the whole thing as one call: Add(R1, R2, E) is Add(E) plus the same
+        // Contains(E, IinC) slot resolution plus SetRadius(R1, R2, IC, IinC). Verified equivalent
+        // to resolving the slot by hand — identical to the digit on that rim for the pair
+        // (10297.711860842), the straight side alone (10273.238347801) and the arc alone
+        // (10276.405613964) — and it declines an unfilletable edge by construction, which is the
+        // skip the sibling entry points get from Add(Radius, E).
+        fillet.Add(startRadius, endRadius, edge);
+        return true;
+    }, declinedEdgeIndices, outDeclinedCount);
 }
 
 OCCTShapeRef OCCTShapeDraft(OCCTShapeRef shape, const int32_t* faceIndices, int32_t faceCount,
@@ -400,17 +388,14 @@ OCCTShapeRef OCCTShapeDraft(OCCTShapeRef shape, const int32_t* faceIndices, int3
 
         BRepOffsetAPI_DraftAngle draft(shape->shape);
 
-        // Build face index map
-        TopTools_IndexedMapOfShape faceMap;
-        TopExp::MapShapes(shape->shape, TopAbs_FACE, faceMap);
-
-        for (int32_t i = 0; i < faceCount; i++) {
-            int32_t idx = faceIndices[i];
-            if (idx >= 0 && idx < faceMap.Extent()) {
-                TopoDS_Face face = TopoDS::Face(faceMap(idx + 1));
-                draft.Add(face, pullDir, angle, neutralPlane);
-            }
-        }
+        // #568: a face index naming no face of this shape rejects the whole draft. It used to be
+        // skipped, and BRepOffsetAPI_DraftAngle reports IsDone() for a request it was handed no
+        // faces for at all, so a draft naming only foreign faces returned the input shape,
+        // undrafted, presented as a successful draft. See OCCTBridge_Internal.h.
+        if (!occtUseSubShapesByIndex(shape->shape, TopAbs_FACE, faceIndices, faceCount,
+                                     [&](const TopoDS_Shape& face, int32_t) {
+            draft.Add(TopoDS::Face(face), pullDir, angle, neutralPlane);
+        })) return nullptr;
 
         draft.Build();
         if (!draft.IsDone()) return nullptr;
@@ -421,74 +406,74 @@ OCCTShapeRef OCCTShapeDraft(OCCTShapeRef shape, const int32_t* faceIndices, int3
     }
 }
 
+// MARK: - Defeaturing (BRepAlgoAPI_Defeaturing)
+
+// The shared skeleton behind every defeaturing entry point, here and in OCCTBridge_Healing.mm.
+// See OCCTBridge_Internal.h for what the four copies this replaces disagreed about, and for why
+// the fuzzy-tolerance wrapper that used to be the fifth is gone rather than folded in. #497
+
+bool occtDefeaturingFacesByIndex(const TopoDS_Shape& shape, const int32_t* faceIndices,
+                                 int32_t faceCount, TopTools_ListOfShape& outFaces) {
+    if (faceIndices == nullptr || faceCount < 1) return false;
+
+    TopTools_IndexedMapOfShape faceMap;
+    TopExp::MapShapes(shape, TopAbs_FACE, faceMap);
+
+    for (int32_t i = 0; i < faceCount; i++) {
+        int32_t idx = faceIndices[i];
+        if (idx < 0 || idx >= faceMap.Extent()) return false;
+        outFaces.Append(faceMap(idx + 1));
+    }
+    return true;
+}
+
+bool occtDefeaturingFacesFromShapes(const TopoDS_Shape& shape, const OCCTShape* const* faces,
+                                    int32_t faceCount, TopTools_ListOfShape& outFaces) {
+    if (faces == nullptr || faceCount < 1) return false;
+
+    TopTools_IndexedMapOfShape faceMap;
+    TopExp::MapShapes(shape, TopAbs_FACE, faceMap);
+
+    for (int32_t i = 0; i < faceCount; i++) {
+        if (faces[i] == nullptr) return false;
+
+        // Each carrier stands for the faces it contains, so explore rather than assume a face was
+        // handed over: the kernel accepts a compound, a shell or a whole solid here, and passing the
+        // faces it explores is the same request BREP for BREP (#578, section 3 of the probe).
+        int32_t contributed = 0;
+        for (TopExp_Explorer exp(faces[i]->shape, TopAbs_FACE); exp.More(); exp.Next()) {
+            if (!faceMap.Contains(exp.Current())) return false;
+            outFaces.Append(exp.Current());
+            contributed++;
+        }
+        if (contributed == 0) return false;
+    }
+    return true;
+}
+
+bool occtDefeaturePerform(BRepAlgoAPI_Defeaturing& defeaturing, const TopoDS_Shape& shape,
+                          const TopTools_ListOfShape& facesToRemove, TopoDS_Shape& outResult) {
+    defeaturing.SetShape(shape);
+    defeaturing.AddFacesToRemove(facesToRemove);
+    defeaturing.Build();
+    if (!defeaturing.IsDone()) return false;
+
+    outResult = defeaturing.Shape();
+    return !outResult.IsNull();
+}
+
 OCCTShapeRef OCCTShapeRemoveFeatures(OCCTShapeRef shape, const int32_t* faceIndices, int32_t faceCount) {
-    if (!shape || !faceIndices || faceCount <= 0) return nullptr;
+    if (!shape) return nullptr;
 
     try {
-        BRepAlgoAPI_Defeaturing defeature;
-        defeature.SetShape(shape->shape);
-
-        // Build face index map
-        TopTools_IndexedMapOfShape faceMap;
-        TopExp::MapShapes(shape->shape, TopAbs_FACE, faceMap);
-
-        for (int32_t i = 0; i < faceCount; i++) {
-            int32_t idx = faceIndices[i];
-            if (idx >= 0 && idx < faceMap.Extent()) {
-                TopoDS_Face face = TopoDS::Face(faceMap(idx + 1));
-                defeature.AddFaceToRemove(face);
-            }
+        TopTools_ListOfShape facesToRemove;
+        if (!occtDefeaturingFacesByIndex(shape->shape, faceIndices, faceCount, facesToRemove)) {
+            return nullptr;
         }
 
-        defeature.Build();
-        if (!defeature.IsDone()) return nullptr;
-
-        return new OCCTShape(defeature.Shape());
-    } catch (...) {
-        return nullptr;
-    }
-}
-
-OCCTShapeRef OCCTShapeCreatePipeShell(OCCTWireRef spine, OCCTWireRef profile,
-                                       OCCTPipeMode mode, bool solid) {
-    if (!spine || !profile) return nullptr;
-
-    try {
-        BRepOffsetAPI_MakePipeShell pipeShell(spine->wire);
-
-        // Set sweep mode
-        switch (mode) {
-            case OCCTPipeModeFrenet:
-                pipeShell.SetMode(Standard_False);  // Frenet
-                break;
-            case OCCTPipeModeCorrectedFrenet:
-                pipeShell.SetMode(Standard_True);   // Corrected Frenet
-                break;
-            case OCCTPipeModeFixedBinormal:
-            case OCCTPipeModeAuxiliary:
-                // These modes require additional parameters
-                // Use dedicated functions for them
-                pipeShell.SetMode(Standard_False);
-                break;
-        }
-
-        // Add profile
-        pipeShell.Add(profile->wire);
-
-        // Build the shell
-        pipeShell.SetIsBuildHistory(false); // avoid SEGV on closed spine+profile (OCCT bug)
-        pipeShell.Build();
-        if (!pipeShell.IsDone()) return nullptr;
-
-        TopoDS_Shape result = pipeShell.Shape();
-
-        // Make solid if requested
-        if (solid) {
-            pipeShell.MakeSolid();
-            if (pipeShell.IsDone()) {
-                result = pipeShell.Shape();
-            }
-        }
+        BRepAlgoAPI_Defeaturing defeaturing;
+        TopoDS_Shape result;
+        if (!occtDefeaturePerform(defeaturing, shape->shape, facesToRemove, result)) return nullptr;
 
         return new OCCTShape(result);
     } catch (...) {
@@ -496,102 +481,79 @@ OCCTShapeRef OCCTShapeCreatePipeShell(OCCTWireRef spine, OCCTWireRef profile,
     }
 }
 
-OCCTShapeRef OCCTShapeCreatePipeShellWithBinormal(OCCTWireRef spine, OCCTWireRef profile,
-                                                   double bnX, double bnY, double bnZ, bool solid) {
-    if (!spine || !profile) return nullptr;
+// MARK: - Pipe shell (BRepOffsetAPI_MakePipeShell)
+//
+// Every Add()-based pipe shell in this bridge is one call to
+// OCCTShapeCreatePipeShellMultiSection. The single-profile spellings that used to sit
+// here (OCCTShapeCreatePipeShell, ...WithBinormal, ...WithAuxSpine, ...WithTransition)
+// were that function with profileCount == 1 and some of its arguments nailed shut, and
+// two of them disagreed with it about what a mode means (#503).
 
-    try {
-        BRepOffsetAPI_MakePipeShell pipeShell(spine->wire);
-
-        // Set fixed binormal direction
-        gp_Dir binormal(bnX, bnY, bnZ);
-        pipeShell.SetMode(binormal);
-
-        // Add profile
-        pipeShell.Add(profile->wire);
-
-        // Build the shell
-        pipeShell.SetIsBuildHistory(false); // avoid SEGV on closed spine+profile (OCCT bug)
-        pipeShell.Build();
-        if (!pipeShell.IsDone()) return nullptr;
-
-        TopoDS_Shape result = pipeShell.Shape();
-
-        // Make solid if requested
-        if (solid) {
-            pipeShell.MakeSolid();
-            if (pipeShell.IsDone()) {
-                result = pipeShell.Shape();
-            }
-        }
-
-        return new OCCTShape(result);
-    } catch (...) {
-        return nullptr;
+// Apply an orientation mode. Returns false when the mode's own argument is missing;
+// a zero-length binormal throws out of gp_Dir and is caught by the caller.
+//
+// SetMode's own parameter is named IsFrenet, and its header says so: "If IsFrenet is false,
+// a corrected Frenet trihedron is used." #598: this used to pass the opposite boolean for
+// both cases, so OCCTPipeModeFrenet built a corrected-Frenet sweep and OCCTPipeModeCorrectedFrenet
+// built a plain Frenet one, straight through to every public PipeSweepMode caller.
+static bool occtPipeShellSetMode(BRepOffsetAPI_MakePipeShell& pipeShell, OCCTPipeMode mode,
+                                 double bnX, double bnY, double bnZ, OCCTWireRef auxSpine) {
+    switch (mode) {
+        case OCCTPipeModeFrenet:
+            pipeShell.SetMode(Standard_True);
+            return true;
+        case OCCTPipeModeCorrectedFrenet:
+            pipeShell.SetMode(Standard_False);
+            return true;
+        case OCCTPipeModeFixedBinormal:
+            pipeShell.SetMode(gp_Dir(bnX, bnY, bnZ));
+            return true;
+        case OCCTPipeModeAuxiliary:
+            if (!auxSpine) return false;
+            pipeShell.SetMode(auxSpine->wire, Standard_False);  // curvilinear equivalence = false
+            return true;
     }
+    return false;
 }
 
-OCCTShapeRef OCCTShapeCreatePipeShellWithAuxSpine(OCCTWireRef spine, OCCTWireRef profile,
-                                                   OCCTWireRef auxSpine, bool solid) {
-    if (!spine || !profile || !auxSpine) return nullptr;
+// Build the configured shell and, when asked, close it into a solid. Holds the sole copy
+// of the build-history workaround that used to be pasted into all six entry points.
+static OCCTShapeRef occtPipeShellFinish(BRepOffsetAPI_MakePipeShell& pipeShell, bool solid) {
+    pipeShell.SetIsBuildHistory(false); // avoid SEGV on closed spine+profile (OCCT bug)
+    pipeShell.Build();
+    if (!pipeShell.IsDone()) return nullptr;
 
-    try {
-        BRepOffsetAPI_MakePipeShell pipeShell(spine->wire);
-
-        // Set auxiliary spine for twist control
-        pipeShell.SetMode(auxSpine->wire, Standard_False);  // curvilinear equivalence = false
-
-        // Add profile
-        pipeShell.Add(profile->wire);
-
-        // Build the shell
-        pipeShell.SetIsBuildHistory(false); // avoid SEGV on closed spine+profile (OCCT bug)
-        pipeShell.Build();
-        if (!pipeShell.IsDone()) return nullptr;
-
-        TopoDS_Shape result = pipeShell.Shape();
-
-        // Make solid if requested
-        if (solid) {
-            pipeShell.MakeSolid();
-            if (pipeShell.IsDone()) {
-                result = pipeShell.Shape();
-            }
+    TopoDS_Shape result = pipeShell.Shape();
+    if (solid) {
+        pipeShell.MakeSolid();
+        if (pipeShell.IsDone()) {
+            result = pipeShell.Shape();
         }
-
-        return new OCCTShape(result);
-    } catch (...) {
-        return nullptr;
     }
+    return new OCCTShape(result);
 }
 
 // Multi-section pipe shell (#180): one MakePipeShell, several Add() calls.
+// Since #503 this is also the single-profile form, and the only Add()-based pipe shell.
 OCCTShapeRef OCCTShapeCreatePipeShellMultiSection(OCCTWireRef spine,
                                                   const OCCTWireRef* profiles, int32_t profileCount,
                                                   OCCTPipeMode mode,
                                                   double bnX, double bnY, double bnZ,
                                                   OCCTWireRef auxSpine,
+                                                  int32_t transitionMode,
                                                   bool withContact, bool withCorrection,
                                                   bool solid) {
     if (!spine || !profiles || profileCount < 1) return nullptr;
-    if (mode == OCCTPipeModeAuxiliary && !auxSpine) return nullptr;
 
     try {
         BRepOffsetAPI_MakePipeShell pipeShell(spine->wire);
 
-        switch (mode) {
-            case OCCTPipeModeFrenet:
-                pipeShell.SetMode(Standard_False);
-                break;
-            case OCCTPipeModeCorrectedFrenet:
-                pipeShell.SetMode(Standard_True);
-                break;
-            case OCCTPipeModeFixedBinormal:
-                pipeShell.SetMode(gp_Dir(bnX, bnY, bnZ));
-                break;
-            case OCCTPipeModeAuxiliary:
-                pipeShell.SetMode(auxSpine->wire, Standard_False);
-                break;
+        if (!occtPipeShellSetMode(pipeShell, mode, bnX, bnY, bnZ, auxSpine)) return nullptr;
+
+        switch (transitionMode) {
+            case 1:  pipeShell.SetTransitionMode(BRepBuilderAPI_RightCorner); break;
+            case 2:  pipeShell.SetTransitionMode(BRepBuilderAPI_RoundCorner); break;
+            default: pipeShell.SetTransitionMode(BRepBuilderAPI_Transformed); break;
         }
 
         // Add every profile (variable cross-section).
@@ -602,18 +564,7 @@ OCCTShapeRef OCCTShapeCreatePipeShellMultiSection(OCCTWireRef spine,
                           withCorrection ? Standard_True : Standard_False);
         }
 
-        pipeShell.SetIsBuildHistory(false); // avoid SEGV on closed spine+profile (OCCT bug)
-        pipeShell.Build();
-        if (!pipeShell.IsDone()) return nullptr;
-
-        TopoDS_Shape result = pipeShell.Shape();
-        if (solid) {
-            pipeShell.MakeSolid();
-            if (pipeShell.IsDone()) {
-                result = pipeShell.Shape();
-            }
-        }
-        return new OCCTShape(result);
+        return occtPipeShellFinish(pipeShell, solid);
     } catch (...) {
         return nullptr;
     }
@@ -778,20 +729,18 @@ OCCTShapeRef OCCTShapeShellWithOpenFaces(OCCTShapeRef shape, double thickness,
     if (!shape || !openFaceIndices || faceCount < 1) return nullptr;
 
     try {
-        // Get indexed map of faces
-        TopTools_IndexedMapOfShape faceMap;
-        TopExp::MapShapes(shape->shape, TopAbs_FACE, faceMap);
-
-        // Build list of faces to remove (open faces)
+        // #568: a face index naming no face of this shape rejects the whole call. It used to be
+        // skipped, and the only thing that caught it was a `facesToRemove.IsEmpty()` check here --
+        // which fires only when *every* index is unresolvable. A list mixing one real open face
+        // with one foreign one shelled the solid with fewer openings than asked for and reported
+        // success. That check is gone rather than kept: the helper refuses a count below 1 and
+        // appends for every index it does resolve, so an empty list is now unreachable.
+        // See OCCTBridge_Internal.h.
         TopTools_ListOfShape facesToRemove;
-        for (int32_t i = 0; i < faceCount; i++) {
-            int32_t idx = openFaceIndices[i];
-            if (idx >= 0 && idx < faceMap.Extent()) {
-                facesToRemove.Append(faceMap(idx + 1));  // 1-based indexing
-            }
-        }
-
-        if (facesToRemove.IsEmpty()) return nullptr;
+        if (!occtUseSubShapesByIndex(shape->shape, TopAbs_FACE, openFaceIndices, faceCount,
+                                     [&](const TopoDS_Shape& face, int32_t) {
+            facesToRemove.Append(face);
+        })) return nullptr;
 
         // Create thick solid (shell) with open faces
         BRepOffsetAPI_MakeThickSolid thickSolid;
@@ -1921,16 +1870,18 @@ OCCTBooleanHistoryRef OCCTShapeHistoryFromFilletEdges(OCCTShapeRef shape,
                                                        double radius,
                                                        OCCTShapeRef* outResult) {
     if (outResult) *outResult = nullptr;
+    // Same family as OCCTShapeFilletEdges, so the same precondition and the same edge loop; it
+    // cannot use occtShapeFilletEdgeList itself because the builder outlives the call. #489
+    if (!occtValidFilletRadius(radius)) return nullptr;
     if (!shape || !edgeIndices || count < 1) return nullptr;
     try {
-        TopTools_IndexedMapOfShape edgeMap;
-        TopExp::MapShapes(shape->shape, TopAbs_EDGE, edgeMap);
         std::unique_ptr<BRepFilletAPI_MakeFillet> op(new BRepFilletAPI_MakeFillet(shape->shape));
-        for (int32_t i = 0; i < count; i++) {
-            int32_t idx = edgeIndices[i] + 1; // 0-based to 1-based
-            if (idx < 1 || idx > edgeMap.Extent()) continue;
-            op->Add(radius, TopoDS::Edge(edgeMap(idx)));
-        }
+        if (!occtFilletAddEdges(*op, shape->shape, edgeIndices, count,
+                                [radius](BRepFilletAPI_MakeFillet& fillet,
+                                         const TopoDS_Edge& edge, int32_t) {
+            fillet.Add(radius, edge);
+            return true;
+        })) return nullptr;
         op->Build();
         if (!op->IsDone()) return nullptr;
         TopoDS_Shape result = op->Shape();
@@ -1945,6 +1896,8 @@ OCCTBooleanHistoryRef OCCTShapeHistoryFromFilletEdgeVariable(OCCTShapeRef shape,
                                                               double startRadius, double endRadius,
                                                               OCCTShapeRef* outResult) {
     if (outResult) *outResult = nullptr;
+    // The single-edge sibling of OCCTShapeFilletEdgesLinear, and the same precondition. #489
+    if (!occtValidFilletRadius(startRadius) || !occtValidFilletRadius(endRadius)) return nullptr;
     if (!shape) return nullptr;
     try {
         TopTools_IndexedMapOfShape edgeMap;
@@ -1953,12 +1906,15 @@ OCCTBooleanHistoryRef OCCTShapeHistoryFromFilletEdgeVariable(OCCTShapeRef shape,
         if (idx < 1 || idx > edgeMap.Extent()) return nullptr;
         TopoDS_Edge edge = TopoDS::Edge(edgeMap(idx));
         std::unique_ptr<BRepFilletAPI_MakeFillet> op(new BRepFilletAPI_MakeFillet(shape->shape));
-        op->Add(edge);
-        // Map the variable radius along the edge: (param=0, startR), (param=1, endR).
-        TColgp_Array1OfPnt2d radii(1, 2);
-        radii.SetValue(1, gp_Pnt2d(0.0, startRadius));
-        radii.SetValue(2, gp_Pnt2d(1.0, endRadius));
-        op->SetRadius(radii, 1, 1);
+        // #612: the same one-call overload OCCTShapeFilletEdgesLinear uses, replacing Add(edge)
+        // plus a two-point array written to SetRadius(radii, 1, 1). That literal 1 was in fact
+        // safe here — a single added edge always lands at index 1 of its contour's spine, measured
+        // on all four edges of a tangent rim, and a *literal* 1 is bounds-checked upstream even
+        // when the edge was declined and there are no contours (unlike the 0 that NbContours()
+        // yields there, which is the unchecked low side that used to SIGSEGV). Converted anyway so
+        // the idiom is gone: Add(R1, R2, E) measures identical to the array law (492.500243 on an
+        // accepted edge) and declines an unfilletable edge by construction.
+        op->Add(startRadius, endRadius, edge);
         op->Build();
         if (!op->IsDone()) return nullptr;
         TopoDS_Shape result = op->Shape();
@@ -1975,14 +1931,16 @@ OCCTBooleanHistoryRef OCCTShapeHistoryFromChamferEdges(OCCTShapeRef shape,
     if (outResult) *outResult = nullptr;
     if (!shape || !edgeIndices || count < 1) return nullptr;
     try {
-        TopTools_IndexedMapOfShape edgeMap;
-        TopExp::MapShapes(shape->shape, TopAbs_EDGE, edgeMap);
         std::unique_ptr<BRepFilletAPI_MakeChamfer> op(new BRepFilletAPI_MakeChamfer(shape->shape));
-        for (int32_t i = 0; i < count; i++) {
-            int32_t idx = edgeIndices[i] + 1;
-            if (idx < 1 || idx > edgeMap.Extent()) continue;
-            op->Add(distance, TopoDS::Edge(edgeMap(idx)));
-        }
+        // #568: the chamfer counterpart of occtFilletAddEdges, which the fillet sibling two
+        // functions up already shares. Same builder shape, same contract: an edge index naming no
+        // edge of this shape rejects the call rather than chamfering the rest. It cannot use that
+        // helper itself, which is BRepFilletAPI_MakeFillet-typed, but both now resolve their
+        // indices through the same occtUseSubShapesByIndex. See OCCTBridge_Internal.h.
+        if (!occtUseSubShapesByIndex(shape->shape, TopAbs_EDGE, edgeIndices, count,
+                                     [&](const TopoDS_Shape& edge, int32_t) {
+            op->Add(distance, TopoDS::Edge(edge));
+        })) return nullptr;
         op->Build();
         if (!op->IsDone()) return nullptr;
         TopoDS_Shape result = op->Shape();
@@ -2023,23 +1981,17 @@ OCCTBooleanHistoryRef OCCTShapeHistoryFromDefeature(OCCTShapeRef shape,
                                                      const int32_t* faceIndices, int32_t faceCount,
                                                      OCCTShapeRef* outResult) {
     if (outResult) *outResult = nullptr;
-    if (!shape || !faceIndices || faceCount < 1) return nullptr;
+    if (!shape) return nullptr;
     try {
-        TopTools_IndexedMapOfShape faceMap;
-        TopExp::MapShapes(shape->shape, TopAbs_FACE, faceMap);
         TopTools_ListOfShape facesToRemove;
-        for (int32_t i = 0; i < faceCount; ++i) {
-            int32_t idx = faceIndices[i] + 1;
-            if (idx < 1 || idx > faceMap.Extent()) return nullptr;
-            facesToRemove.Append(faceMap(idx));
+        if (!occtDefeaturingFacesByIndex(shape->shape, faceIndices, faceCount, facesToRemove)) {
+            return nullptr;
         }
+        // The builder outlives this call — OCCTBooleanHistory reads its history — so it is held by
+        // pointer here rather than on the stack, but it is the same skeleton. #497
         std::unique_ptr<BRepAlgoAPI_Defeaturing> op(new BRepAlgoAPI_Defeaturing());
-        op->SetShape(shape->shape);
-        op->AddFacesToRemove(facesToRemove);
-        op->Build();
-        if (!op->IsDone()) return nullptr;
-        TopoDS_Shape result = op->Shape();
-        if (result.IsNull()) return nullptr;
+        TopoDS_Shape result;
+        if (!occtDefeaturePerform(*op, shape->shape, facesToRemove, result)) return nullptr;
         if (outResult) *outResult = new OCCTShape(result);
         return new OCCTBooleanHistory(std::move(op), occtArgList(shape->shape));
     } catch (...) { return nullptr; }
@@ -2140,47 +2092,6 @@ OCCTShapeRef OCCTShapeCreateEvolvedAdvanced(OCCTShapeRef spine, OCCTWireRef prof
         if (!evolved.IsDone()) return nullptr;
         TopoDS_Shape result = evolved.Shape();
         if (result.IsNull()) return nullptr;
-        return new OCCTShape(result);
-    } catch (...) {
-        return nullptr;
-    }
-}
-
-// MARK: - Pipe Shell with Transition Mode (v0.33.0)
-
-#include <BRepBuilderAPI_TransitionMode.hxx>
-
-OCCTShapeRef OCCTShapeCreatePipeShellWithTransition(OCCTWireRef spine, OCCTWireRef profile,
-                                                     int32_t mode, int32_t transitionMode,
-                                                     bool solid) {
-    if (!spine || !profile) return nullptr;
-    try {
-        BRepOffsetAPI_MakePipeShell pipeShell(spine->wire);
-        // Set sweep mode
-        if (mode == 1) {
-            pipeShell.SetMode(Standard_True);   // Corrected Frenet
-        } else {
-            pipeShell.SetMode(Standard_False);  // Frenet
-        }
-        // Set transition mode
-        if (transitionMode == 1) {
-            pipeShell.SetTransitionMode(BRepBuilderAPI_RightCorner);
-        } else if (transitionMode == 2) {
-            pipeShell.SetTransitionMode(BRepBuilderAPI_RoundCorner);
-        } else {
-            pipeShell.SetTransitionMode(BRepBuilderAPI_Transformed);
-        }
-        pipeShell.Add(profile->wire);
-        pipeShell.SetIsBuildHistory(false); // avoid SEGV on closed spine+profile (OCCT bug)
-        pipeShell.Build();
-        if (!pipeShell.IsDone()) return nullptr;
-        TopoDS_Shape result = pipeShell.Shape();
-        if (solid) {
-            pipeShell.MakeSolid();
-            if (pipeShell.IsDone()) {
-                result = pipeShell.Shape();
-            }
-        }
         return new OCCTShape(result);
     } catch (...) {
         return nullptr;
@@ -2482,44 +2393,58 @@ OCCTShapeRef OCCTShapeCutAndBlend(OCCTShapeRef shape1, OCCTShapeRef shape2, doub
 
 // MARK: - Multi-Edge Evolving Fillet (v0.38.0)
 
+// The multi-edge member of the radius-law pair. It shares occtFilletAddEdges with the other four
+// entry points and occtFilletSetRadiusProfile with OCCTShapeFilletVariable (OCCTBridge_Healing.mm).
+//
+// Two contract changes, #520. `edgeIndices` is 0-based, as it is for every sibling; it was the one
+// 1-based edge index in the family. And a per-edge point count below 1 is now rejected: it used to
+// take neither branch, leaving a contour with no radius at all, which SIGSEGVs in Build() rather
+// than failing IsDone(). Reachable from Swift as EvolvingFilletEdge(edge:radiusPoints: []).
+//
+// #639: `declinedEdgeIndices`/`outDeclinedCount` report which of `edgeIndices` OCCT declined, same
+// contract as OCCTShapeFilletEdges. This is the entry point the census named directly: filleting an
+// open shell's whole edge list SKIPs the edges OCCT declines with no way to learn which or how
+// many. `filletEvolving(_:)` passes null for both; `filletEvolvingWithReport(_:)` does not.
 OCCTShapeRef OCCTShapeFilletEvolving(OCCTShapeRef shape,
                                       const int32_t* edgeIndices, int32_t edgeCount,
                                       const OCCTFilletRadiusPoint* radiusPoints,
-                                      const int32_t* pointCounts) {
+                                      const int32_t* pointCounts,
+                                      int32_t* declinedEdgeIndices, int32_t* outDeclinedCount) {
+    if (outDeclinedCount) *outDeclinedCount = 0;
     if (!shape || !edgeIndices || edgeCount <= 0 || !radiusPoints || !pointCounts) return nullptr;
     try {
-        TopTools_IndexedMapOfShape edgeMap;
-        TopExp::MapShapes(shape->shape, TopAbs_EDGE, edgeMap);
-
         BRepFilletAPI_MakeFillet fillet(shape->shape);
 
-        int rpOffset = 0;
-        for (int32_t i = 0; i < edgeCount; i++) {
-            int32_t edgeIdx = edgeIndices[i];
-            if (edgeIdx < 1 || edgeIdx > edgeMap.Extent()) return nullptr;
-            const TopoDS_Edge& edge = TopoDS::Edge(edgeMap(edgeIdx));
+        // The profile of edge i starts where the profiles of edges 0..i-1 end, so the offset walks
+        // forward with the loop inside occtFilletAddEdges rather than being indexable from `entry`.
+        int32_t offset = 0;
+        bool ok = occtFilletAddEdges(fillet, shape->shape, edgeIndices, edgeCount,
+                                     [&](BRepFilletAPI_MakeFillet& f,
+                                         const TopoDS_Edge& edge, int32_t entry) {
+            f.Add(edge);
+            const OCCTFilletRadiusPoint* points = radiusPoints + offset;
+            // Both the contour and the edge's slot within it are resolved from `edge` inside the
+            // helper, not from (NbContours(), 1). Two tangent-continuous edges share a contour but
+            // not a slot, so both laws are honoured — measured 10139.793468, byte-identical to the
+            // blendedEdges request that always could. #612
+            bool profileOk = occtFilletSetRadiusProfile(f, edge, pointCounts[entry],
+                                                        [points](int32_t j) {
+                return gp_Pnt2d(points[j].parameter, points[j].radius);
+            });
+            offset += pointCounts[entry];
+            return profileOk;
+        });
+        if (!ok) return nullptr;
 
-            fillet.Add(edge);
-            int contourIndex = fillet.NbContours();
-
-            int32_t nPts = pointCounts[i];
-            if (nPts >= 2) {
-                // Build array of (parameter, radius) pairs
-                TColgp_Array1OfPnt2d UandR(1, nPts);
-                for (int32_t j = 0; j < nPts; j++) {
-                    UandR.SetValue(j + 1, gp_Pnt2d(radiusPoints[rpOffset + j].parameter,
-                                                     radiusPoints[rpOffset + j].radius));
-                }
-                fillet.SetRadius(UandR, contourIndex, 1);
-            } else if (nPts == 1) {
-                fillet.SetRadius(radiusPoints[rpOffset].radius, contourIndex, 1);
-            }
-            rpOffset += nPts;
-        }
+        occtFilletWriteDeclined(fillet, shape->shape, edgeIndices, edgeCount,
+                                declinedEdgeIndices, outDeclinedCount);
 
         fillet.Build();
         if (!fillet.IsDone()) return nullptr;
-        return new OCCTShape(fillet.Shape());
+
+        TopoDS_Shape result = fillet.Shape();
+        if (result.IsNull()) return nullptr;
+        return new OCCTShape(result);
     } catch (...) {
         return nullptr;
     }
@@ -2545,9 +2470,14 @@ OCCTShapeRef OCCTShapeOffsetPerFace(OCCTShapeRef shape, double defaultOffset,
         offset.Initialize(shape->shape, defaultOffset, tolerance,
                           BRepOffset_Skin, false, false, jt);
 
+        // #541: 0-based, matching Face.index and every sibling here. It was 1-based, so a
+        // Face.index offset the face before the one it named and index 0 was silently dropped.
+        // Out of range is a caller error rather than something to skip: skipping returned a
+        // shape offset by the default everywhere, indistinguishable from a successful run
+        // (the same failure #497 fixed for defeaturing).
         for (int32_t i = 0; i < faceCount; i++) {
-            int32_t idx = faceIndices[i];
-            if (idx < 1 || idx > faceMap.Extent()) continue;
+            int32_t idx = faceIndices[i] + 1;
+            if (idx < 1 || idx > faceMap.Extent()) return nullptr;
             const TopoDS_Face& face = TopoDS::Face(faceMap(idx));
             offset.SetOffsetOnFace(face, faceOffsets[i]);
         }
@@ -3445,12 +3375,16 @@ OCCTShapeRef OCCTShapeDrillHole(OCCTShapeRef shape,
                                  double posX, double posY, double posZ,
                                  double dirX, double dirY, double dirZ,
                                  double radius, double depth) {
-    if (!shape || radius <= 0) return nullptr;
+    // The drilling preconditions live in OCCTBridge_Internal.h so that this function and the
+    // BRepFeat_MakeCylindricalHole family cannot drift apart on what a drillable request is (#496).
+    // The radius bound is what changed here: `radius > 0` let a sub-Precision::Confusion radius
+    // through to a cut that removed nothing and reported success.
+    if (!shape) return nullptr;
+    if (!occtValidDrillDirection(dirX, dirY, dirZ)) return nullptr;
+    if (!occtValidDrillRadius(radius)) return nullptr;
 
     try {
         gp_Vec direction(dirX, dirY, dirZ);
-        double dirLen = direction.Magnitude();
-        if (dirLen < 1e-10) return nullptr;
         direction.Normalize();
 
         // Determine depth - if depth is 0 or negative, make it through the shape
@@ -4192,6 +4126,9 @@ OCCTLawFunctionRef OCCTLawCreateBSpline(const double* poles, int32_t poleCount,
     }
 }
 
+// The one pipe shell that is not an Add() sweep: SetLaw scales a single profile along the
+// spine, and OCCT's own header warns against combining the two. It shares the build tail
+// (and so the build-history workaround) with OCCTShapeCreatePipeShellMultiSection.
 OCCTShapeRef OCCTShapeCreatePipeShellWithLaw(OCCTWireRef spine,
                                               OCCTWireRef profile,
                                               OCCTLawFunctionRef law,
@@ -4199,20 +4136,12 @@ OCCTShapeRef OCCTShapeCreatePipeShellWithLaw(OCCTWireRef spine,
     if (!spine || !profile || !law || law->law.IsNull()) return nullptr;
     try {
         BRepOffsetAPI_MakePipeShell pipeShell(spine->wire);
-        pipeShell.SetMode(Standard_False); // Frenet
+        // Standard_False -> corrected Frenet (#598 found this comment claiming plain Frenet,
+        // which SetMode's own IsFrenet parameter does not: no public mode parameter reaches
+        // this entry point, so the trihedron itself is unchanged, only the comment was wrong).
+        pipeShell.SetMode(Standard_False); // corrected Frenet
         pipeShell.SetLaw(profile->wire, law->law, Standard_False, Standard_False);
-        pipeShell.SetIsBuildHistory(false); // avoid SEGV on closed spine+profile (OCCT bug)
-        pipeShell.Build();
-        if (!pipeShell.IsDone()) return nullptr;
-
-        TopoDS_Shape result = pipeShell.Shape();
-        if (solid) {
-            pipeShell.MakeSolid();
-            if (pipeShell.IsDone()) {
-                result = pipeShell.Shape();
-            }
-        }
-        return new OCCTShape(result);
+        return occtPipeShellFinish(pipeShell, solid);
     } catch (...) {
         return nullptr;
     }
@@ -4338,14 +4267,13 @@ OCCTShapeRef OCCTFace2DFillet(OCCTShapeRef shape, const int32_t* vertexIndices,
 
         BRepFilletAPI_MakeFillet2d fillet(face);
 
-        TopTools_IndexedMapOfShape vertMap;
-        TopExp::MapShapes(face, TopAbs_VERTEX, vertMap);
-
-        for (int32_t i = 0; i < count; i++) {
-            int32_t idx = vertexIndices[i] + 1; // Convert to 1-based
-            if (idx < 1 || idx > vertMap.Extent()) continue;
-            fillet.AddFillet(TopoDS::Vertex(vertMap(idx)), radii[i]);
-        }
+        // #568: a vertex index naming no vertex of that first face rejects the whole call. It used
+        // to be skipped, so a list mixing real corners with unresolvable ones rounded the corners
+        // that resolved and reported success. See OCCTBridge_Internal.h.
+        if (!occtUseSubShapesByIndex(face, TopAbs_VERTEX, vertexIndices, count,
+                                     [&](const TopoDS_Shape& vertex, int32_t i) {
+            fillet.AddFillet(TopoDS::Vertex(vertex), radii[i]);
+        })) return nullptr;
 
         fillet.Build();
         if (!fillet.IsDone()) return nullptr;
@@ -4367,17 +4295,46 @@ OCCTShapeRef OCCTFace2DChamfer(OCCTShapeRef shape,
 
         BRepFilletAPI_MakeFillet2d chamfer(face);
 
+        // #568: either half of a pair naming no edge of that first face rejects the whole call. It
+        // used to drop just that pair, so a list mixing real pairs with unresolvable ones chamfered
+        // the corners that resolved and reported success. This is the one site whose entries name
+        // two sub-shapes each, so it reads the map directly rather than through
+        // occtUseSubShapesByIndex; the map and the lookup are the same ones. See
+        // OCCTBridge_Internal.h.
         TopTools_IndexedMapOfShape edgeMap;
-        TopExp::MapShapes(face, TopAbs_EDGE, edgeMap);
+        occtMapSubShapes(face, TopAbs_EDGE, edgeMap);
 
         for (int32_t i = 0; i < count; i++) {
-            int32_t idx1 = edge1Indices[i] + 1;
-            int32_t idx2 = edge2Indices[i] + 1;
-            if (idx1 < 1 || idx1 > edgeMap.Extent()) continue;
-            if (idx2 < 1 || idx2 > edgeMap.Extent()) continue;
-            chamfer.AddChamfer(TopoDS::Edge(edgeMap(idx1)),
-                               TopoDS::Edge(edgeMap(idx2)),
-                               distances[i], distances[i]);
+            TopoDS_Shape e1 = occtMappedSubShapeAt(edgeMap, edge1Indices[i]);
+            TopoDS_Shape e2 = occtMappedSubShapeAt(edgeMap, edge2Indices[i]);
+            if (e1.IsNull() || e2.IsNull()) return nullptr;
+
+            // #705: the exact same edge pair named twice SIGSEGVs, uncatchably, inside the repeat
+            // call's own BRepFilletAPI_MakeFillet2d::AddChamfer. Measured order-independent: (0,1)
+            // then (1,0) crashes the same way as (0,1) twice. Root cause is an upstream OCCT
+            // defect, not this bridge's: AddChamfer(edge1, edge2, ...) calls
+            // ChFi2d::FindConnectedEdges to look up the pair's shared vertex and dereferences the
+            // two edges it returns without checking the returned status first; that lookup leaves
+            // both edges null on every failure path, and the pair's second call fails it, because
+            // the shared vertex was already consumed chamfering the pair the first time. The
+            // sibling overload (AddChamfer(edge, vertex, distance, angle)) checks the identical
+            // status correctly. Filed upstream as OCCT#1431 (repro) / OCCT#1432 (fix). The kernel
+            // patch carrying that fix lands in its own PR and is inert until the pinned
+            // xcframework is rebuilt, so this guard is what protects callers meanwhile. Reusing ONE edge across two DIFFERENT
+            // pairs is ordinary and measured safe, e.g. chamfering adjacent corners of a rectangle
+            // with (0,1) then (1,2); only the identical pair repeated crashes, so this checks the
+            // pair, not the individual indices. Rejected rather than skipped, matching fillet2D's
+            // own contract for a duplicated vertex (#568): this site already rejects the whole
+            // batch on one bad index instead of dropping just that entry, and a repeated pair has
+            // the same "which distance wins" ambiguity a bad index does, so the whole call fails
+            // instead of guessing.
+            for (int32_t j = 0; j < i; j++) {
+                bool sameOrder = edge1Indices[i] == edge1Indices[j] && edge2Indices[i] == edge2Indices[j];
+                bool swappedOrder = edge1Indices[i] == edge2Indices[j] && edge2Indices[i] == edge1Indices[j];
+                if (sameOrder || swappedOrder) return nullptr;
+            }
+
+            chamfer.AddChamfer(TopoDS::Edge(e1), TopoDS::Edge(e2), distances[i], distances[i]);
         }
 
         chamfer.Build();
@@ -4437,7 +4394,7 @@ void OCCTFillingRelease(OCCTFillingRef filling) {
 // #432/#433: route through occtFillingAddConstraint rather than calling the face-less
 // BRepOffsetAPI_MakeFilling::Add(edge, order) overload directly, which SIGSEGVs on any curved
 // boundary edge for continuity above C0 (see OCCTBridge_Internal.h and issue #430 for the
-// mechanism); and use occtFillingContinuityToGeomAbs for the order mapping rather than a local
+// mechanism); and use occtGeomAbsFromSurfaceContinuity for the order mapping rather than a local
 // copy — the local one that used to be here mapped order 1 to GeomAbs_C1 (curvature) instead of
 // GeomAbs_G1 (tangency) and order 2 to GeomAbs_C2 (ordinal 4, rejected outright), failing the
 // whole fill (#433). Note Add() only appends and never validates the order itself, so returning
@@ -4449,7 +4406,7 @@ bool OCCTFillingAddEdge(OCCTFillingRef filling, OCCTEdgeRef edge, int32_t contin
     try {
         occtFillingAddConstraint(filling->filler, edge->edge, TopoDS_Face(),
                                  OCCTFillingSupport::Inferred,
-                                 occtFillingContinuityToGeomAbs(continuity), /*isBound=*/true);
+                                 occtGeomAbsFromSurfaceContinuity(continuity), /*isBound=*/true);
         return true;
     } catch (...) {
         return OCCTFillingRefuse(filling);
@@ -4462,7 +4419,7 @@ bool OCCTFillingAddFreeEdge(OCCTFillingRef filling, OCCTEdgeRef edge, int32_t co
     try {
         occtFillingAddConstraint(filling->filler, edge->edge, TopoDS_Face(),
                                  OCCTFillingSupport::Inferred,
-                                 occtFillingContinuityToGeomAbs(continuity), /*isBound=*/false);
+                                 occtGeomAbsFromSurfaceContinuity(continuity), /*isBound=*/false);
         return true;
     } catch (...) {
         return OCCTFillingRefuse(filling);
@@ -4483,7 +4440,7 @@ bool OCCTFillingAddEdgeWithSupport(OCCTFillingRef filling, OCCTEdgeRef edge,
         if (!occtFillingAddConstraint(filling->filler, edge->edge, supportFace,
                                       support ? OCCTFillingSupport::Nominated
                                               : OCCTFillingSupport::Inferred,
-                                      occtFillingContinuityToGeomAbs(continuity),
+                                      occtGeomAbsFromSurfaceContinuity(continuity),
                                       /*isBound=*/true)) {
             return OCCTFillingRefuse(filling);
         }
@@ -4738,16 +4695,8 @@ OCCTShapeRef OCCTLocOpeSplitShapeByWire(OCCTShapeRef shape, int32_t faceIndex, O
     try {
         LocOpe_SplitShape splitter(shape->shape);
 
-        // Find the target face
-        TopoDS_Face face;
-        int idx = 0;
-        for (TopExp_Explorer exp(shape->shape, TopAbs_FACE); exp.More(); exp.Next()) {
-            if (idx == faceIndex) {
-                face = TopoDS::Face(exp.Current());
-                break;
-            }
-            idx++;
-        }
+        // #541: the shared face enumeration, so this names the face face(at:) names.
+        TopoDS_Face face = occtFaceAt(shape->shape, faceIndex);
         if (face.IsNull()) return nullptr;
 
         // Extract wire
@@ -4798,16 +4747,19 @@ OCCTShapeRef OCCTLocOpeSplitShapeByVertex(OCCTShapeRef shape, int32_t edgeIndex,
     try {
         LocOpe_SplitShape splitter(shape->shape);
 
-        // Find the target edge
-        TopoDS_Edge edge;
-        int idx = 0;
-        for (TopExp_Explorer exp(shape->shape, TopAbs_EDGE); exp.More(); exp.Next()) {
-            if (idx == edgeIndex) {
-                edge = TopoDS::Edge(exp.Current());
-                break;
-            }
-            idx++;
-        }
+        // #613: this counted TopExp_Explorer occurrences while OCCTLocOpeSplitShapeByWire directly
+        // above already read the shared enumeration -- so faceIndex and edgeIndex meant different
+        // things in two adjacent functions driving the same LocOpe_SplitShape. Measured on a 10mm
+        // box: splitEdge(at:) matches edges() up to index 8 and splits a DIFFERENT edge from 9 on
+        // (index 9 split edges()[4], index 11 split edges()[0]), and indices 12 and 13 split
+        // successfully although edge(at:) refuses both.
+        //
+        // Safe on the map: LocOpe_SplitShape keys the edge into its own myMap/myDblE, both
+        // NCollection containers over TopTools_ShapeMapHasher (LocOpe_SplitShape.hxx:89-90) whose
+        // equality is TopoDS_Shape::IsSame, so orientation cannot select a different entry.
+        // Measured over all 12 box edges present in both orientations: BRep_Tool::Range and the
+        // resulting DescendantShapes count were identical for both, 0 differing.
+        TopoDS_Edge edge = occtEdgeAt(shape->shape, edgeIndex);
         if (edge.IsNull()) return nullptr;
 
         // Get edge parameter range
@@ -4850,16 +4802,8 @@ OCCTShapeRef OCCTLocOpeSplitDrafts(OCCTShapeRef shape, int32_t faceIndex, OCCTSh
         LocOpe_SplitDrafts splitDrafts;
         splitDrafts.Init(shape->shape);
 
-        // Find the target face
-        TopoDS_Face face;
-        int idx = 0;
-        for (TopExp_Explorer exp(shape->shape, TopAbs_FACE); exp.More(); exp.Next()) {
-            if (idx == faceIndex) {
-                face = TopoDS::Face(exp.Current());
-                break;
-            }
-            idx++;
-        }
+        // #541: the shared face enumeration, so this names the face face(at:) names.
+        TopoDS_Face face = occtFaceAt(shape->shape, faceIndex);
         if (face.IsNull()) return nullptr;
 
         // Extract wire
@@ -4888,16 +4832,33 @@ OCCTShapeRef OCCTLocOpeSplitDrafts(OCCTShapeRef shape, int32_t faceIndex, OCCTSh
     }
 }
 
+// #613: a finder returns a SELECTION, so the position of an entry in outEdges is a result slot, not
+// an index into anything. Swift wrote that slot number into Edge.index all the same. Measured on a
+// 10mm box (identically for the origin-centred and origin-at-zero spellings), edgesInFace(at: 3)
+// handed back 0,1,2,3 for the four edges of face 3, whose real indices are 2, 6, 10 and 11 -- so
+// ALL FOUR named a different edge, their arc-length midpoints 10.00, 12.25, 7.07 and 12.25 mm from
+// the edges those slot numbers address. An Edge from either finder therefore could not be fed to
+// filleted(edges:), chamfered(...) or any other index-taking entry point, which is the whole
+// purpose of carrying an index.
+//
+// The map lookup is the fix and it is exact: the enumeration's equality is TopoDS_Shape::IsSame, so
+// whichever orientation the finder hands back resolves to the one index that names that edge.
 int32_t OCCTLocOpeFindEdges(OCCTShapeRef shape1, OCCTShapeRef shape2,
-                            OCCTShapeRef* outEdges, int32_t maxEdges) {
+                            OCCTShapeRef* outEdges, int32_t* outIndices, int32_t maxEdges) {
     if (!shape1 || !shape2 || !outEdges || maxEdges <= 0) return 0;
     try {
         LocOpe_FindEdges finder;
         finder.Set(shape1->shape, shape2->shape);
 
+        // One map for the whole batch rather than one per lookup.
+        TopTools_IndexedMapOfShape edgeMap;
+        occtMapSubShapes(shape1->shape, TopAbs_EDGE, edgeMap);
+
         int32_t count = 0;
         for (finder.InitIterator(); finder.More() && count < maxEdges; finder.Next()) {
-            outEdges[count] = new OCCTShape(finder.EdgeFrom());
+            const TopoDS_Edge& found = finder.EdgeFrom();  // an edge of shape1
+            outEdges[count] = new OCCTShape(found);
+            if (outIndices) outIndices[count] = occtMappedIndexOf(edgeMap, found);
             count++;
         }
         return count;
@@ -4907,27 +4868,24 @@ int32_t OCCTLocOpeFindEdges(OCCTShapeRef shape1, OCCTShapeRef shape2,
 }
 
 int32_t OCCTLocOpeFindEdgesInFace(OCCTShapeRef shape, int32_t faceIndex,
-                                   OCCTShapeRef* outEdges, int32_t maxEdges) {
+                                   OCCTShapeRef* outEdges, int32_t* outIndices, int32_t maxEdges) {
     if (!shape || !outEdges || maxEdges <= 0) return 0;
     try {
-        // Find the target face
-        TopoDS_Face face;
-        int idx = 0;
-        for (TopExp_Explorer exp(shape->shape, TopAbs_FACE); exp.More(); exp.Next()) {
-            if (idx == faceIndex) {
-                face = TopoDS::Face(exp.Current());
-                break;
-            }
-            idx++;
-        }
+        // #541: the shared face enumeration, so this names the face face(at:) names.
+        TopoDS_Face face = occtFaceAt(shape->shape, faceIndex);
         if (face.IsNull()) return 0;
 
         LocOpe_FindEdgesInFace finder;
         finder.Set(shape->shape, face);
 
+        TopTools_IndexedMapOfShape edgeMap;
+        occtMapSubShapes(shape->shape, TopAbs_EDGE, edgeMap);
+
         int32_t count = 0;
         for (finder.Init(); finder.More() && count < maxEdges; finder.Next()) {
-            outEdges[count] = new OCCTShape(finder.Edge());
+            const TopoDS_Edge& found = finder.Edge();
+            outEdges[count] = new OCCTShape(found);
+            if (outIndices) outIndices[count] = occtMappedIndexOf(edgeMap, found);
             count++;
         }
         return count;
@@ -5791,12 +5749,13 @@ bool OCCTLocOpeBuildWires(OCCTShapeRef shape, int32_t faceIndex,
     int32_t* outCount) {
     if (!shape) return false;
     try {
+        // #541: the face index is 0-based, like Face.index. The "every edge of the shape"
+        // sentinel used to be 0, which collided with the first face's own index and made that
+        // face unaddressable; it is now any negative value.
         NCollection_List<TopoDS_Shape> edges;
-        if (faceIndex > 0) {
-            TopTools_IndexedMapOfShape faceMap;
-            TopExp::MapShapes(shape->shape, TopAbs_FACE, faceMap);
-            if (faceIndex > faceMap.Extent()) return false;
-            TopoDS_Face face = TopoDS::Face(faceMap(faceIndex));
+        if (faceIndex >= 0) {
+            TopoDS_Face face = occtFaceAt(shape->shape, faceIndex);
+            if (face.IsNull()) return false;
             TopExp_Explorer exp(face, TopAbs_EDGE);
             for (; exp.More(); exp.Next()) edges.Append(exp.Current());
         } else {
@@ -5829,10 +5788,9 @@ OCCTShapeRef _Nullable OCCTLocOpeSplitByWireOnFace(OCCTShapeRef shape,
     OCCTShapeRef wire, int32_t faceIndex) {
     if (!shape || !wire) return nullptr;
     try {
-        TopTools_IndexedMapOfShape faceMap;
-        TopExp::MapShapes(shape->shape, TopAbs_FACE, faceMap);
-        if (faceIndex < 1 || faceIndex > faceMap.Extent()) return nullptr;
-        TopoDS_Face face = TopoDS::Face(faceMap(faceIndex));
+        // #541: 0-based, matching Face.index. It was 1-based, so face 0 was unaddressable.
+        TopoDS_Face face = occtFaceAt(shape->shape, faceIndex);
+        if (face.IsNull()) return nullptr;
 
         TopoDS_Wire w;
         if (wire->shape.ShapeType() == TopAbs_WIRE) {
@@ -5947,26 +5905,12 @@ OCCTShapeRef _Nullable OCCTBRepOffsetOffsetFace(OCCTShapeRef faceShape, double o
 }
 
 // MARK: - BOPAlgo RemoveFeatures (v0.64)
-// --- BOPAlgo_RemoveFeatures ---
-
-OCCTShapeRef _Nullable OCCTBOPAlgoRemoveFeatures(OCCTShapeRef shape,
-    const OCCTShapeRef _Nonnull * _Nonnull facesToRemove, int32_t faceCount) {
-    if (!shape || faceCount <= 0) return nullptr;
-    try {
-        BOPAlgo_RemoveFeatures remover;
-        remover.SetShape(shape->shape);
-        for (int32_t i = 0; i < faceCount; i++) {
-            if (facesToRemove[i]) {
-                remover.AddFaceToRemove(facesToRemove[i]->shape);
-            }
-        }
-        remover.Perform();
-        if (remover.HasErrors()) return nullptr;
-        TopoDS_Shape result = remover.Shape();
-        if (result.IsNull()) return nullptr;
-        return new OCCTShape(result);
-    } catch (...) { return nullptr; }
-}
+// OCCTBOPAlgoRemoveFeatures lived here. It was OCCTShapeDefeature one OCCT layer down:
+// BRepAlgoAPI_Defeaturing::Build forwards its shape, its faces, its history flag and its parallel
+// flag to a BOPAlgo_RemoveFeatures member and returns that member's result, and both paths took the
+// same defaults for the two forwarded flags. Measured identical, BREP byte for byte, on every case
+// including the refusals — see Scripts/repro/536-defeature-removefeatures-unify/. Both Swift
+// spellings now reach OCCTShapeDefeature. #536
 
 // MARK: - BOPAlgo Section (v0.64)
 // --- BOPAlgo_Section ---
@@ -5993,30 +5937,31 @@ OCCTShapeRef _Nullable OCCTBOPAlgoSection(const OCCTShapeRef _Nonnull * _Nonnull
 // MARK: - Law_BSplineKnotSplitting + Law_Composite (v0.68)
 // --- Law_BSplineKnotSplitting ---
 
+// #481: reports the true split count even when maxIndices truncated the write, and fails
+// with -1, matching OCCTLawBSplineKnotSplitParams below in both respects. The two wrap the
+// same analyzer over the same law, so a caller pairing them must be able to size a retry off
+// either one. Returning the written count instead capped LawFunction.knotSplitting at its
+// caller's first-pass buffer with nothing to signal that anything had been dropped.
 int32_t OCCTLawBSplineKnotSplitting(OCCTLawFunctionRef law,
     int32_t continuityOrder,
     int32_t* outIndices, int32_t maxIndices)
 {
+    if (!law || !outIndices || maxIndices <= 0) return -1;
     try {
         auto* wrapper = reinterpret_cast<OCCTLawFunction*>(law);
         // The law must be a BSpline-based law (Law_BSpFunc or similar)
         Handle(Law_BSpFunc) bspFunc = Handle(Law_BSpFunc)::DownCast(wrapper->law);
-        if (bspFunc.IsNull()) return 0;
+        if (bspFunc.IsNull()) return -1;
 
         Handle(Law_BSpline) bspl = bspFunc->Curve();
-        if (bspl.IsNull()) return 0;
+        if (bspl.IsNull()) return -1;
 
         Law_BSplineKnotSplitting splitter(bspl, continuityOrder);
-        int nb = splitter.NbSplits();
-        int count = std::min((int)maxIndices, nb);
-        NCollection_Array1<int> splits(1, nb);
-        splitter.Splitting(splits);
-        for (int i = 0; i < count; i++) {
-            outIndices[i] = (int32_t)splits(i + 1);
-        }
-        return (int32_t)count;
+        return occtWriteKnotSplits<int32_t>(splitter.NbSplits(),
+            [&](int32_t i) { return (int32_t)splitter.SplitValue(i); },
+            outIndices, maxIndices);
     } catch (...) {
-        return 0;
+        return -1;
     }
 }
 
@@ -6597,76 +6542,29 @@ OCCTShapeRef _Nullable OCCTBRepFeatSplitShapeWithSides(OCCTShapeRef _Nonnull sha
 }
 
 // --- BRepFeat_MakeCylindricalHole ---
+//
+// Both entry points are the same call into occtBRepFeatCylindricalHole (OCCTBridge_Internal.h),
+// which holds the Init/Perform*/Status/Build body all five modes share, plus the drilling
+// preconditions this family used to leave entirely to OCCT. See #496.
 
 OCCTShapeRef _Nullable OCCTBRepFeatCylindricalHole(OCCTShapeRef _Nonnull shape,
     double axisOriginX, double axisOriginY, double axisOriginZ,
     double axisDirX, double axisDirY, double axisDirZ,
-    double radius) {
-    try {
-        gp_Ax1 axis(gp_Pnt(axisOriginX, axisOriginY, axisOriginZ),
-                     gp_Dir(axisDirX, axisDirY, axisDirZ));
-        BRepFeat_MakeCylindricalHole hole;
-        hole.Init(shape->shape, axis);
-        hole.Perform(radius);
-        if (hole.Status() != BRepFeat_NoError) return nullptr;
-        hole.Build();
-        if (hole.Shape().IsNull()) return nullptr;
-        return new OCCTShape(hole.Shape());
-    } catch (...) { return nullptr; }
-}
-
-OCCTShapeRef _Nullable OCCTBRepFeatCylindricalHoleBlind(OCCTShapeRef _Nonnull shape,
-    double axisOriginX, double axisOriginY, double axisOriginZ,
-    double axisDirX, double axisDirY, double axisDirZ,
-    double radius, double depth) {
-    try {
-        gp_Ax1 axis(gp_Pnt(axisOriginX, axisOriginY, axisOriginZ),
-                     gp_Dir(axisDirX, axisDirY, axisDirZ));
-        BRepFeat_MakeCylindricalHole hole;
-        hole.Init(shape->shape, axis);
-        hole.PerformBlind(radius, depth);
-        if (hole.Status() != BRepFeat_NoError) return nullptr;
-        hole.Build();
-        if (hole.Shape().IsNull()) return nullptr;
-        return new OCCTShape(hole.Shape());
-    } catch (...) { return nullptr; }
-}
-
-OCCTShapeRef _Nullable OCCTBRepFeatCylindricalHoleThruNext(OCCTShapeRef _Nonnull shape,
-    double axisOriginX, double axisOriginY, double axisOriginZ,
-    double axisDirX, double axisDirY, double axisDirZ,
-    double radius) {
-    try {
-        gp_Ax1 axis(gp_Pnt(axisOriginX, axisOriginY, axisOriginZ),
-                     gp_Dir(axisDirX, axisDirY, axisDirZ));
-        BRepFeat_MakeCylindricalHole hole;
-        hole.Init(shape->shape, axis);
-        hole.PerformThruNext(radius);
-        if (hole.Status() != BRepFeat_NoError) return nullptr;
-        hole.Build();
-        if (hole.Shape().IsNull()) return nullptr;
-        return new OCCTShape(hole.Shape());
-    } catch (...) { return nullptr; }
+    double radius, int32_t extent, double extentP0, double extentP1) {
+    OCCTShapeRef result = nullptr;
+    occtBRepFeatCylindricalHole(shape, axisOriginX, axisOriginY, axisOriginZ,
+                                axisDirX, axisDirY, axisDirZ,
+                                radius, extent, extentP0, extentP1, &result);
+    return result;
 }
 
 int32_t OCCTBRepFeatCylindricalHoleStatus(OCCTShapeRef _Nonnull shape,
     double axisOriginX, double axisOriginY, double axisOriginZ,
     double axisDirX, double axisDirY, double axisDirZ,
-    double radius) {
-    try {
-        gp_Ax1 axis(gp_Pnt(axisOriginX, axisOriginY, axisOriginZ),
-                     gp_Dir(axisDirX, axisDirY, axisDirZ));
-        BRepFeat_MakeCylindricalHole hole;
-        hole.Init(shape->shape, axis);
-        hole.Perform(radius);
-        BRepFeat_Status status = hole.Status();
-        switch (status) {
-            case BRepFeat_NoError: return 0;
-            case BRepFeat_InvalidPlacement: return 1;
-            case BRepFeat_HoleTooLong: return 2;
-            default: return 3;
-        }
-    } catch (...) { return 3; }
+    double radius, int32_t extent, double extentP0, double extentP1) {
+    return occtBRepFeatCylindricalHole(shape, axisOriginX, axisOriginY, axisOriginZ,
+                                       axisDirX, axisDirY, axisDirZ,
+                                       radius, extent, extentP0, extentP1, nullptr);
 }
 
 // --- BRepFeat_Gluer ---
@@ -7189,19 +7087,26 @@ OCCTShapeRef _Nullable OCCTBiTgteBlend(OCCTShapeRef _Nonnull shape,
     try {
         BiTgte_Blend blend(shape->shape, radius, tolerance, nubs);
 
-        // Collect edges by index
-        TopExp_Explorer edgeExp(shape->shape, TopAbs_EDGE);
-        std::vector<TopoDS_Edge> allEdges;
-        while (edgeExp.More()) {
-            allEdges.push_back(TopoDS::Edge(edgeExp.Current()));
-            edgeExp.Next();
-        }
-
-        for (int32_t i = 0; i < edgeCount; i++) {
-            int32_t idx = edgeIndices[i];
-            if (idx >= 0 && idx < (int32_t)allEdges.size()) {
-                blend.SetEdge(allEdges[idx]);
-            }
+        // #613: this filled a std::vector from a bare TopExp_Explorer -- one entry per OCCURRENCE --
+        // and subscripted it with the caller's edgeIndices, which come from edges() / Edge.index and
+        // so are positions in the deduplicated enumeration. A 10mm box has 24 edge occurrences over
+        // 12 edges, so from index 9 on this blended a different edge than the caller selected, and
+        // indices 12..23 were accepted although edge(at:) refuses every one of them. Not named by
+        // the issue or its audit; found by sweeping for the same idiom.
+        //
+        // occtUseSubShapesByIndex also settles the #568 question this site got wrong in the same
+        // breath: an index naming no edge used to be SILENTLY SKIPPED, so a blend of 3 edges naming
+        // one that does not exist blended 2 and reported an ordinary success. The batch is refused
+        // now, as it is for every other index-taking builder.
+        //
+        // Safe on the map: BiTgte_Blend keys the edge into its own myEdges, an
+        // NCollection_IndexedMap<TopoDS_Shape, TopTools_ShapeMapHasher> (BiTgte_Blend.hxx:202),
+        // whose equality is TopoDS_Shape::IsSame -- orientation cannot select a different entry.
+        if (!occtUseSubShapesByIndex(shape->shape, TopAbs_EDGE, edgeIndices, edgeCount,
+                                      [&](const TopoDS_Shape& sub, int32_t) {
+                                          blend.SetEdge(TopoDS::Edge(sub));
+                                      })) {
+            return nullptr;
         }
 
         blend.Perform(true);
@@ -7227,18 +7132,14 @@ OCCTBiTgteBlendInfo OCCTBiTgteBlendInfo_(OCCTShapeRef _Nonnull shape,
     try {
         BiTgte_Blend blend(shape->shape, radius, tolerance, false);
 
-        TopExp_Explorer edgeExp(shape->shape, TopAbs_EDGE);
-        std::vector<TopoDS_Edge> allEdges;
-        while (edgeExp.More()) {
-            allEdges.push_back(TopoDS::Edge(edgeExp.Current()));
-            edgeExp.Next();
-        }
-
-        for (int32_t i = 0; i < edgeCount; i++) {
-            int32_t idx = edgeIndices[i];
-            if (idx >= 0 && idx < (int32_t)allEdges.size()) {
-                blend.SetEdge(allEdges[idx]);
-            }
+        // #613: the same explorer-indexed walk as OCCTBiTgteBlend above, written out a second time.
+        // Both are converted together -- fixing one alone would have left the two entry points
+        // disagreeing about what edgeIndices means for the identical operation.
+        if (!occtUseSubShapesByIndex(shape->shape, TopAbs_EDGE, edgeIndices, edgeCount,
+                                      [&](const TopoDS_Shape& sub, int32_t) {
+                                          blend.SetEdge(TopoDS::Edge(sub));
+                                      })) {
+            return info;
         }
 
         blend.Perform(true);
@@ -7567,10 +7468,8 @@ void OCCTBRepAlgoImageClear(OCCTBRepAlgoImageRef img) {
 int32_t OCCTShapeBuildLoops(OCCTShapeRef shape, int32_t faceIndex) {
     if (!shape) return -1;
     try {
-        TopExp_Explorer faceExp(shape->shape, TopAbs_FACE);
-        for (int i = 0; i < faceIndex && faceExp.More(); i++) faceExp.Next();
-        if (!faceExp.More()) return -1;
-        TopoDS_Face face = TopoDS::Face(faceExp.Current());
+        TopoDS_Face face = occtFaceAt(shape->shape, faceIndex);
+        if (face.IsNull()) return -1;
 
         BRepAlgo_Loop loop;
         loop.Init(face);
@@ -7593,10 +7492,8 @@ OCCTShapeRef OCCTShapeDraftModification(OCCTShapeRef shape, int32_t faceIndex,
                               double planeNX, double planeNY, double planeNZ) {
     if (!shape) return nullptr;
     try {
-        TopExp_Explorer faceExp(shape->shape, TopAbs_FACE);
-        for (int i = 0; i < faceIndex && faceExp.More(); i++) faceExp.Next();
-        if (!faceExp.More()) return nullptr;
-        TopoDS_Face face = TopoDS::Face(faceExp.Current());
+        TopoDS_Face face = occtFaceAt(shape->shape, faceIndex);
+        if (face.IsNull()) return nullptr;
 
         Handle(Draft_Modification) draft = new Draft_Modification(shape->shape);
         draft->Add(face, gp_Dir(dirX, dirY, dirZ), angle,
@@ -7904,7 +7801,7 @@ bool OCCTDraftEdgeInfoSetTangent(double dx, double dy, double dz) {
 }
 
 bool OCCTDraftFaceInfoFromSurface(OCCTSurfaceRef surface) {
-    if (!surface) return false;
+    if (!surface || surface->surface.IsNull()) return false;
     try {
         Draft_FaceInfo fi(surface->surface, false);
         return true;
@@ -8290,6 +8187,9 @@ OCCTShapeRef OCCTMakeEdgeFromEllipse(double cx, double cy, double cz,
                                       double nx, double ny, double nz,
                                       double major, double minor) {
     try {
+        // BRepBuilderAPI_MakeEdge reports IsDone() for every degenerate conic, so without this
+        // the caller gets a live edge carrying a curve that is really a point (#554).
+        if (!occtValidEllipseRadii(major, minor)) return nullptr;
         gp_Ax2 ax(gp_Pnt(cx, cy, cz), gp_Dir(nx, ny, nz));
         gp_Elips elips(ax, major, minor);
         BRepBuilderAPI_MakeEdge me(elips);
@@ -8305,6 +8205,7 @@ OCCTShapeRef OCCTMakeEdgeFromEllipseArc(double cx, double cy, double cz,
                                           double major, double minor,
                                           double u1, double u2) {
     try {
+        if (!occtValidEllipseRadii(major, minor)) return nullptr;
         gp_Ax2 ax(gp_Pnt(cx, cy, cz), gp_Dir(nx, ny, nz));
         gp_Elips elips(ax, major, minor);
         BRepBuilderAPI_MakeEdge me(elips, u1, u2);
@@ -8320,6 +8221,7 @@ OCCTShapeRef OCCTMakeEdgeFromHyperbolaArc(double cx, double cy, double cz,
                                             double major, double minor,
                                             double u1, double u2) {
     try {
+        if (!occtValidHyperbolaRadii(major, minor)) return nullptr;
         gp_Ax2 ax(gp_Pnt(cx, cy, cz), gp_Dir(nx, ny, nz));
         gp_Hypr hypr(ax, major, minor);
         BRepBuilderAPI_MakeEdge me(hypr, u1, u2);
@@ -8334,6 +8236,7 @@ OCCTShapeRef OCCTMakeEdgeFromParabolaArc(double cx, double cy, double cz,
                                            double nx, double ny, double nz,
                                            double focal, double u1, double u2) {
     try {
+        if (!occtValidParabolaFocal(focal)) return nullptr;
         gp_Ax2 ax(gp_Pnt(cx, cy, cz), gp_Dir(nx, ny, nz));
         gp_Parab parab(ax, focal);
         BRepBuilderAPI_MakeEdge me(parab, u1, u2);
@@ -8771,23 +8674,9 @@ OCCTShapeRef OCCTBooleanCutWithHistory(OCCTShapeRef s1, OCCTShapeRef s2, double 
     } catch (...) { return nullptr; }
 }
 
-OCCTShapeRef OCCTDefeatureWithTolerance(OCCTShapeRef shape, const OCCTShapeRef* facesToRemove,
-                                          int32_t count, double fuzzyTol) {
-    if (!shape || !facesToRemove || count < 1) return nullptr;
-    try {
-        BRepAlgoAPI_Defeaturing def;
-        def.SetShape(shape->shape);
-        for (int i = 0; i < count; i++) {
-            if (facesToRemove[i]) def.AddFaceToRemove(facesToRemove[i]->shape);
-        }
-        if (fuzzyTol > 0) def.SetFuzzyValue(fuzzyTol);
-        def.Build();
-        if (def.IsDone()) {
-            return new OCCTShape{def.Shape()};
-        }
-        return nullptr;
-    } catch (...) { return nullptr; }
-}
+// OCCTDefeatureWithTolerance lived here. It was OCCTShapeDefeature plus a SetFuzzyValue call that
+// BRepAlgoAPI_Defeaturing never reads, so it removed exactly the same faces the same way; both
+// Swift spellings now reach OCCTShapeDefeature. See OCCTBridge_Internal.h's defeaturing block. #497
 // --- ThruSections builder ---
 
 struct OCCTThruSections {
@@ -8843,11 +8732,7 @@ void OCCTThruSectionsSetContinuity(OCCTThruSectionsRef ref, int32_t continuity) 
     auto ts = (OCCTThruSections*)ref;
     if (!ts) return;
     ts->builder->SetCriteriumWeight(1.0, 1.0, 1.0); // ensure defaults
-    // Map 0=C0, 1=C1, 2=C2
-    GeomAbs_Shape cont = GeomAbs_C2;
-    if (continuity == 0) cont = GeomAbs_C0;
-    else if (continuity == 1) cont = GeomAbs_C1;
-    ts->builder->SetContinuity(cont);
+    ts->builder->SetContinuity(occtGeomAbsFromParametricContinuity(continuity));
 }
 
 bool OCCTThruSectionsBuild(OCCTThruSectionsRef ref) {
@@ -8995,23 +8880,20 @@ OCCTShapeRef OCCTUnifySameDomainShape(OCCTUnifySameDomainRef ref) {
 }
 
 // MARK: - v0.118: Defeature + Sewing nbMultipleEdges
+// The shape-addressed defeaturing entry point, and since #497 the only one: it absorbed
+// OCCTDefeatureWithTolerance, whose fuzzy tolerance BRepAlgoAPI_Defeaturing discards.
 OCCTShapeRef OCCTShapeDefeature(OCCTShapeRef shape,
                                  const OCCTShapeRef* faces, int32_t faceCount) {
+    if (!shape) return nullptr;
     try {
-        auto* s = static_cast<OCCTShape*>(shape);
-        BRepAlgoAPI_Defeaturing df;
-        df.SetShape(s->shape);
-        for (int32_t i = 0; i < faceCount; i++) {
-            auto* f = static_cast<OCCTShape*>(faces[i]);
-            df.AddFaceToRemove(f->shape);
-        }
-        df.Build();
-        if (df.IsDone() && !df.Shape().IsNull()) {
-            auto* result = new OCCTShape();
-            result->shape = df.Shape();
-            return result;
-        }
-        return nullptr;
+        TopTools_ListOfShape facesToRemove;
+        if (!occtDefeaturingFacesFromShapes(shape->shape, faces, faceCount, facesToRemove)) return nullptr;
+
+        BRepAlgoAPI_Defeaturing defeaturing;
+        TopoDS_Shape result;
+        if (!occtDefeaturePerform(defeaturing, shape->shape, facesToRemove, result)) return nullptr;
+
+        return new OCCTShape(result);
     } catch (...) { return nullptr; }
 }
 
@@ -9445,11 +9327,17 @@ void OCCTFilletBuilderSetParams(OCCTFilletBuilderRef builder,
     } catch (...) {}
 }
 
+// #490: this was the one request-side site that decoded nothing at all — a raw cast, which made the
+// argument a GeomAbs_Shape ordinal (1 = G1, 2 = C1) while the Swift entry point documented the
+// parametric ladder (0=C0, 1=C1, 2=C2), so every value from 1 up asked for one class less than the
+// caller read. BRepFilletAPI_MakeFillet.hxx agrees the domain is "an continuity Ci (i=0,1 or 2)".
+// Flagged in #513's census; fixed here because it is the same defect this issue is about.
 void OCCTFilletBuilderSetContinuity(OCCTFilletBuilderRef builder,
                                      int32_t internalContinuity, double angularTolerance) {
     if (!builder) return;
     try {
-        builder->fillet.SetContinuity((GeomAbs_Shape)internalContinuity, angularTolerance);
+        builder->fillet.SetContinuity(occtGeomAbsFromParametricContinuity(internalContinuity),
+                                      angularTolerance);
     } catch (...) {}
 }
 
@@ -9510,21 +9398,29 @@ bool OCCTDocumentShapeToolIsSimpleShape(OCCTDocumentRef doc, int64_t labelId) {
     } catch (...) { return false; }
 }
 
+// The three edge-keyed radius laws. All three take the same (contour index, edge) pair, all three
+// hand it to an OCCT function declared as (const Standard_Integer, const TopoDS_Edge&), and all
+// three have to reject a pair OCCT itself will use out of range: see occtFilletContourHoldsEdge in
+// OCCTBridge_Internal.h for the measurements. GetBounds and GetLaw used to take an OCCTShapeRef and
+// downcast it with TopoDS::Edge, which cost them a throw-on-non-edge that the caller could only
+// discover at runtime, and left every caller holding an Edge (the type addEdge, removeEdge,
+// setRadius and contour all take) converting it to a Shape and back (#505).
+
 bool OCCTFilletBuilderGetBounds(OCCTFilletBuilderRef builder, int32_t contourIndex,
-                                 OCCTShapeRef edge, double* outFirst, double* outLast) {
+                                 OCCTEdgeRef edge, double* outFirst, double* outLast) {
     if (!builder || !edge || !outFirst || !outLast) return false;
     try {
-        TopoDS_Edge e = TopoDS::Edge(edge->shape);
-        return builder->fillet.GetBounds(contourIndex, e, *outFirst, *outLast);
+        if (!occtFilletContourHoldsEdge(builder->fillet, contourIndex, edge->edge)) return false;
+        return builder->fillet.GetBounds(contourIndex, edge->edge, *outFirst, *outLast);
     } catch (...) { return false; }
 }
 
 OCCTLawFunctionRef OCCTFilletBuilderGetLaw(OCCTFilletBuilderRef builder, int32_t contourIndex,
-                                            OCCTShapeRef edge) {
+                                            OCCTEdgeRef edge) {
     if (!builder || !edge) return nullptr;
     try {
-        TopoDS_Edge e = TopoDS::Edge(edge->shape);
-        Handle(Law_Function) law = builder->fillet.GetLaw(contourIndex, e);
+        if (!occtFilletContourHoldsEdge(builder->fillet, contourIndex, edge->edge)) return nullptr;
+        Handle(Law_Function) law = builder->fillet.GetLaw(contourIndex, edge->edge);
         if (law.IsNull()) return nullptr;
         return new OCCTLawFunction(law);
     } catch (...) { return nullptr; }
@@ -9534,6 +9430,7 @@ bool OCCTFilletBuilderSetLaw(OCCTFilletBuilderRef builder, int32_t contourIndex,
                               OCCTEdgeRef edge, OCCTLawFunctionRef law) {
     if (!builder || !edge || !law) return false;
     try {
+        if (!occtFilletContourHoldsEdge(builder->fillet, contourIndex, edge->edge)) return false;
         builder->fillet.SetLaw(contourIndex, edge->edge, law->law);
         return true;
     } catch (...) { return false; }
@@ -9959,7 +9856,7 @@ OCCTShapeRef OCCTShapeSectionWithPlane(OCCTShapeRef shape,
 }
 
 OCCTShapeRef OCCTShapeSectionWithSurface(OCCTShapeRef shape, OCCTSurfaceRef surface) {
-    if (!shape || !surface) return nullptr;
+    if (!shape || !surface || surface->surface.IsNull()) return nullptr;
     try {
         BRepAlgoAPI_Section section(shape->shape, surface->surface);
         section.Build();
@@ -10011,7 +9908,7 @@ void OCCTSectionBuilderInit1Plane(OCCTSectionBuilderRef builder,
 }
 
 void OCCTSectionBuilderInit1Surface(OCCTSectionBuilderRef builder, OCCTSurfaceRef surface) {
-    if (!builder || !surface) return;
+    if (!builder || !surface || surface->surface.IsNull()) return;
     try { builder->section.Init1(surface->surface); } catch (...) {}
 }
 
@@ -10030,7 +9927,7 @@ void OCCTSectionBuilderInit2Plane(OCCTSectionBuilderRef builder,
 }
 
 void OCCTSectionBuilderInit2Surface(OCCTSectionBuilderRef builder, OCCTSurfaceRef surface) {
-    if (!builder || !surface) return;
+    if (!builder || !surface || surface->surface.IsNull()) return;
     try { builder->section.Init2(surface->surface); } catch (...) {}
 }
 
@@ -10934,18 +10831,6 @@ OCCTShapeRef OCCTShapeSliceAtZ(OCCTShapeRef shape, double z) {
     } catch (...) {
         return nullptr;
     }
-}
-
-int32_t OCCTShapeGetEdgeCount(OCCTShapeRef shape) {
-    if (!shape) return 0;
-
-    int32_t count = 0;
-    TopExp_Explorer explorer(shape->shape, TopAbs_EDGE);
-    while (explorer.More()) {
-        count++;
-        explorer.Next();
-    }
-    return count;
 }
 
 int32_t OCCTShapeGetEdgePoints(OCCTShapeRef shape, int32_t edgeIndex, double* outPoints, int32_t maxPoints) {

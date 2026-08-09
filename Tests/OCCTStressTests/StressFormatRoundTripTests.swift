@@ -216,10 +216,19 @@ struct StressCrossFormatConsistencyTests {
         try Exporter.writeIGES(shape: box, to: igesURL)
         let fromIGES = try Shape.loadIGES(from: igesURL)
 
-        // All three should agree on volume
+        // All three should agree on volume. IGES has no solid concept, so its import comes back as
+        // a compound of six loose faces with no shell at all: sewing is what turns those into a
+        // closed volume. Before #609 it answered 3000 anyway, because the divergence integral runs
+        // over whatever faces it is given and happens to be right when they form a consistently
+        // oriented closed surface. That was luck, not a measurement, so the sew is now explicit.
+        #expect(fromIGES.solidCount == 0, "IGES imports faces, not solids")
+        #expect(fromIGES.volume == nil, "unsewn faces are not a closed shell")
+        let sewnIGES = try #require(
+            Shape.sew(shapes: fromIGES.faces().compactMap { Shape.fromFace($0) }, tolerance: 1e-6))
+
         let vSTEP = fromSTEP.volume ?? 0
         let vBREP = fromBREP.volume ?? 0
-        let vIGES = fromIGES.volume ?? 0
+        let vIGES = sewnIGES.volume ?? 0
         #expect(abs(vSTEP - origVol) / origVol < 0.01)
         #expect(abs(vBREP - origVol) / origVol < 0.001)
         #expect(abs(vIGES - origVol) / origVol < 0.02)

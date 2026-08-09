@@ -5,17 +5,17 @@ parent: API Reference
 
 # Document — Geometry Constructors & Pipe Shells
 
-This page covers geometry construction and analysis utilities added across v0.105.0–v0.106.0 (lines 7634–8728 of `Document.swift`): 2D parabola constructors, uniform arc-length sampling, curve/surface concatenation and knot splitting, bounding-box extensions, geometric property helpers, shape reshaping, pipe-shell sweeping, directory/file access, quadric intersections, XCAF explorer queries, Unicode utilities, and shape-analysis diagnostics. For the core document lifecycle, shape tools, and STEP/IGES I/O see the main [Document](Document.md) page.
+This page covers geometry construction and analysis utilities added across v0.105.0–v0.106.0 in `Document.swift`: 2D parabola constructors, uniform arc-length sampling, curve/surface concatenation and knot splitting, bounding-box extensions, geometric property helpers, shape reshaping, pipe-shell sweeping, directory/file access, quadric intersections, XCAF explorer queries, Unicode utilities, and shape-analysis diagnostics. For the core document lifecycle, shape tools, and STEP/IGES I/O see the main [Document](Document.md) page.
 
 ## Topics
 
-- [GC_MakeParabola2d](#gc_makeparabola2d) · [GCPnts_UniformAbscissa](#gcpnts_uniformabscissa) · [GeomConvert CompCurveToBSplineCurve](#geomconvert-compculvetobsplinecurve) · [Geom2dConvert CompCurveToBSplineCurve](#geom2dconvert-compcurvetobsplinecurve) · [GeomConvert BSplineSurfaceKnotSplitting](#geomconvert-bsplinesurfaceknotsplitting) · [Geom2dConvert BSplineCurveKnotSplitting](#geom2dconvert-bsplinecurveknotsplitting) · [BndLib extras](#bndlib-extras) · [GProp Torus](#gprop-torus) · [BRepTools_ReShape](#breptools_reshape) · [BRepTools_Substitution](#breptools_substitution) · [BRepLib_MakeVertex](#breplib_makevertex) · [BRepFill_PipeShell](#brepfill_pipeshell) · [OSD_Directory](#osd_directory) · [IntAna Cone-Sphere extensions](#intana-cone-sphere-extensions) · [XCAFPrs_DocumentExplorer extensions](#xcafprs_documentexplorer-extensions) · [Resource_Unicode](#resource_unicode) · [GProp weighted point sets](#gprop-weighted-point-sets) · [Draft info types](#draft-info-types) · [GeomLib_LogSample](#geomlib_logsample) · [GC_MakeConicalSurface](#gc_makeconicalsurface) · [GC_MakeCylindricalSurface](#gc_makecylindricalsurface) · [GC_MakeTrimmedCone](#gc_maketrimmedcone) · [GC_MakeTrimmedCylinder](#gc_maketrimmedcylinder) · [BRepLib_MakeEdge2d extensions](#breplib_makeedge2d-extensions) · [ShapeAnalysis_Wire](#shapeanalysis_wire) · [ShapeAnalysis_Edge](#shapeanalysis_edge) · [OSD_DirectoryIterator](#osd_directoryiterator) · [OSD_FileIterator](#osd_fileiterator) · [BRepFill_PipeShell extensions](#brepfill_pipeshell-extensions)
+- [GC_MakeParabola2d](#gc_makeparabola2d) · [GCPnts_UniformAbscissa](#gcpnts_uniformabscissa) · [GeomConvert CompCurveToBSplineCurve](#geomconvert-compculvetobsplinecurve) · [Geom2dConvert CompCurveToBSplineCurve](#geom2dconvert-compcurvetobsplinecurve) · [Knot splitting, the deprecated v0.105.0 spellings](#geomconvert-bsplinesurfaceknotsplitting--geom2dconvert-bsplinecurveknotsplitting) · [BndLib extras](#bndlib-extras) · [GProp Torus](#gprop-torus) · [BRepTools_ReShape](#breptools_reshape) · [BRepTools_Substitution](#breptools_substitution) · [BRepLib_MakeVertex](#breplib_makevertex) · [BRepFill_PipeShell](#brepfill_pipeshell) · [OSD_Directory](#osd_directory) · [IntAna Cone-Sphere extensions](#intana-cone-sphere-extensions) · [XCAFPrs_DocumentExplorer extensions](#xcafprs_documentexplorer-extensions) · [Resource_Unicode](#resource_unicode) · [GProp weighted point sets](#gprop-weighted-point-sets) · [Draft info types](#draft-info-types) · [GeomLib_LogSample](#geomlib_logsample) · [GC_MakeConicalSurface](#gc_makeconicalsurface) · [GC_MakeCylindricalSurface](#gc_makecylindricalsurface) · [GC_MakeTrimmedCone](#gc_maketrimmedcone) · [GC_MakeTrimmedCylinder](#gc_maketrimmedcylinder) · [BRepLib_MakeEdge2d extensions](#breplib_makeedge2d-extensions) · [ShapeAnalysis_Wire](#shapeanalysis_wire) · [ShapeAnalysis_Edge](#shapeanalysis_edge) · [OSD_DirectoryIterator](#osd_directoryiterator) · [OSD_FileIterator](#osd_fileiterator) · [BRepFill_PipeShell extensions](#brepfill_pipeshell-extensions)
 
 ---
 
 ## GC_MakeParabola2d
 
-Two-dimensional parabola constructors extending `Curve2D` via `GCE2d_MakeParabola`.
+Two-dimensional parabola constructors extending `Curve2D` via `GC_MakeParabola2d`.
 
 ### `Curve2D.gceParabola(center:direction:focalDistance:)`
 
@@ -28,7 +28,7 @@ public static func gceParabola(center: SIMD2<Double>, direction: SIMD2<Double>,
 
 - **Parameters:** `center` — origin of the parabola axis; `direction` — X-direction of the axis; `focalDistance` — distance from vertex to focus.
 - **Returns:** A `Curve2D` wrapping a `Geom2d_Parabola`, or `nil` if construction fails.
-- **OCCT:** `GCE2d_MakeParabola`
+- **OCCT:** `GC_MakeParabola2d`
 - **Example:**
   ```swift
   if let p = Curve2D.gceParabola(center: .zero, direction: SIMD2(1, 0), focalDistance: 2.0) {
@@ -49,7 +49,7 @@ public static func gceParabola(directrixPoint: SIMD2<Double>, directrixDirection
 
 - **Parameters:** `directrixPoint` — a point on the directrix; `directrixDirection` — direction of the directrix; `focus` — the focus point.
 - **Returns:** A `Curve2D` wrapping a `Geom2d_Parabola`, or `nil` on failure.
-- **OCCT:** `GCE2d_MakeParabola` (directrix-focus constructor)
+- **OCCT:** `GC_MakeParabola2d` (directrix-focus constructor)
 - **Example:**
   ```swift
   if let p = Curve2D.gceParabola(directrixPoint: SIMD2(-2, 0),
@@ -73,7 +73,7 @@ Uniformly sample an edge by point count; returns parameter values.
 public func uniformAbscissa(pointCount: Int) -> [Double]?
 ```
 
-- **Parameters:** `pointCount` — number of sample points.
+- **Parameters:** `pointCount`, the number of sample points. Must be at least 2, else `nil`. OCCT documents that precondition but enforces it with a `Raise_if`, which the pinned Release kernel compiles out, so a request for zero used to come back with five parameters (#501).
 - **Returns:** Array of curve parameter values, or `nil` if the edge is invalid or sampling fails.
 - **OCCT:** `GCPnts_UniformAbscissa` (by number of points)
 - **Example:**
@@ -114,7 +114,7 @@ Uniformly sample an edge by point count within a parameter range.
 public func uniformAbscissa(pointCount: Int, u1: Double, u2: Double) -> [Double]?
 ```
 
-- **Parameters:** `pointCount` — number of points; `u1`, `u2` — parameter range on the underlying curve.
+- **Parameters:** `pointCount`, the number of points, at least 2 (else `nil`, see above); `u1`, `u2`, the parameter range on the underlying curve.
 - **Returns:** Array of parameter values, or `nil` on failure.
 - **OCCT:** `GCPnts_UniformAbscissa` (range variant, by count)
 - **Example:**
@@ -192,101 +192,39 @@ public static func concatenate(_ curves: [Curve2D], tolerance: Double = 1e-4) ->
 
 ---
 
-## GeomConvert BSplineSurfaceKnotSplitting
+## GeomConvert BSplineSurfaceKnotSplitting / Geom2dConvert BSplineCurveKnotSplitting
 
-Extensions on `Surface` wrapping `GeomConvert_BSplineSurfaceKnotSplitting`.
+Five entry points documented here — `Surface.bsplineKnotSplitsU(continuity:)`,
+`Surface.bsplineKnotSplitsV(continuity:)`, `Surface.bsplineKnotSplitValues(continuity:)`,
+`Curve2D.bsplineKnotSplits(continuity:)` and `Curve2D.bsplineKnotSplitValues(continuity:)` — are
+**deprecated as of #562**. They were added in v0.105.0 over the same two analyzers that
+[`Surface.knotSplitting(uContinuity:vContinuity:)`](Surface-Advanced.md#knotsplittingucontinuityvcontinuity)
+and [`Curve2D.splitIndicesAtDiscontinuities(continuity:)`](Curve2D.md) had already been wrapping for
+three releases, and each took one continuity for both parametric directions where the surface's
+canonical call takes one per direction — so they could not ask a question the canonical call could
+not, only fewer of them.
 
-### `Surface.bsplineKnotSplitsU(continuity:)`
+Each now forwards to its canonical sibling; their own bridge functions are gone. The one thing they
+carried that the canonical calls did not — the raw 1-based knot-table indices, rather than the
+parameters those indices resolve to — is now `KnotSplitResult.uSplitIndices` / `.vSplitIndices`.
 
-Number of U-direction knot split points required to achieve the specified continuity.
-
-```swift
-public func bsplineKnotSplitsU(continuity: Int) -> Int
-```
-
-- **Parameters:** `continuity` — desired continuity order (0 = C0, 1 = C1, …).
-- **Returns:** Count of U split indices.
-- **OCCT:** `GeomConvert_BSplineSurfaceKnotSplitting::NbUSplits`
-- **Example:**
-  ```swift
-  let n = bsplineSurf.bsplineKnotSplitsU(continuity: 1)
-  ```
-
----
-
-### `Surface.bsplineKnotSplitsV(continuity:)`
-
-Number of V-direction knot split points required to achieve the specified continuity.
+| deprecated | use |
+|---|---|
+| `Surface.bsplineKnotSplitsU(continuity:)` | `knotSplitting(uContinuity:vContinuity:).uSplitCount` |
+| `Surface.bsplineKnotSplitsV(continuity:)` | `knotSplitting(uContinuity:vContinuity:).vSplitCount` |
+| `Surface.bsplineKnotSplitValues(continuity:)` | `knotSplitting(uContinuity:vContinuity:).uSplitIndices` / `.vSplitIndices` |
+| `Curve2D.bsplineKnotSplits(continuity:)` | `splitIndicesAtDiscontinuities(continuity:)?.count` |
+| `Curve2D.bsplineKnotSplitValues(continuity:)` | `splitIndicesAtDiscontinuities(continuity:)` |
 
 ```swift
-public func bsplineKnotSplitsV(continuity: Int) -> Int
+// Was: three analyzer constructions, one continuity for both directions.
+let (uIdx, vIdx) = bsplineSurf.bsplineKnotSplitValues(continuity: .c3)
+
+// Now: one construction, and U and V can be asked different questions.
+let splits = bsplineSurf.knotSplitting(uContinuity: .c3, vContinuity: .c1)
+let uIndices = splits.uSplitIndices               // the same 1-based knot indices
+let uParams = splits.uSplitParams                 // and what they resolve to
 ```
-
-- **Parameters:** `continuity` — desired continuity order.
-- **Returns:** Count of V split indices.
-- **OCCT:** `GeomConvert_BSplineSurfaceKnotSplitting::NbVSplits`
-- **Example:**
-  ```swift
-  let n = bsplineSurf.bsplineKnotSplitsV(continuity: 1)
-  ```
-
----
-
-### `Surface.bsplineKnotSplitValues(continuity:)`
-
-Retrieve both U and V knot-split index arrays.
-
-```swift
-public func bsplineKnotSplitValues(continuity: Int) -> (uSplits: [Int32], vSplits: [Int32])
-```
-
-- **Parameters:** `continuity` — desired continuity order.
-- **Returns:** Tuple of U-split and V-split knot index arrays (1-based OCCT knot indices).
-- **OCCT:** `GeomConvert_BSplineSurfaceKnotSplitting::Splitting`
-- **Example:**
-  ```swift
-  let (uIdx, vIdx) = bsplineSurf.bsplineKnotSplitValues(continuity: 1)
-  ```
-
----
-
-## Geom2dConvert BSplineCurveKnotSplitting
-
-Extensions on `Curve2D` wrapping `Geom2dConvert_BSplineCurveKnotSplitting`.
-
-### `Curve2D.bsplineKnotSplits(continuity:)`
-
-Number of knot split points required to achieve the specified continuity for a 2D BSpline curve.
-
-```swift
-public func bsplineKnotSplits(continuity: Int) -> Int
-```
-
-- **Parameters:** `continuity` — desired continuity order.
-- **Returns:** Count of split indices.
-- **OCCT:** `Geom2dConvert_BSplineCurveKnotSplitting::NbSplits`
-- **Example:**
-  ```swift
-  let n = curve2d.bsplineKnotSplits(continuity: 1)
-  ```
-
----
-
-### `Curve2D.bsplineKnotSplitValues(continuity:)`
-
-Retrieve the knot-split index array for a 2D BSpline curve.
-
-```swift
-public func bsplineKnotSplitValues(continuity: Int) -> [Int32]
-```
-
-- **Parameters:** `continuity` — desired continuity order.
-- **Returns:** Array of knot split indices, or empty if none.
-- **OCCT:** `Geom2dConvert_BSplineCurveKnotSplitting::Splitting`
-- **Example:**
-  ```swift
-  let splits = curve2d.bsplineKnotSplitValues(continuity: 2)
-  ```
 
 ---
 
@@ -669,6 +607,16 @@ public enum PipeShellTransition: Int32, Sendable {
 ```
 
 - **OCCT:** `BRepFill_TransitionStyle`
+
+| Case | Meaning |
+|---|---|
+| `modified` | The two swept faces are extended/trimmed to meet exactly at the transition (the default OCCT behaviour). |
+| `right` | A sharp, square ("right-angle") corner is built at the transition. |
+| `round` | A rounded (filleted) corner is built at the transition. |
+
+#### `PipeShellTransition.round`
+
+A rounded (filleted) corner at the transition between spine segments.
 
 ---
 
@@ -1170,6 +1118,17 @@ public enum UnicodeFormat: Int32, Sendable {
 
 - **OCCT:** `Resource_Unicode::SetFormat` format constants
 
+| Case | Meaning |
+|------|---------|
+| `sjis` | Shift-JIS multi-byte encoding (Japanese). |
+| `euc` | Extended Unix Code multi-byte encoding (CJK). |
+| `gb` | GB (GB2312-family) multi-byte encoding (Simplified Chinese). |
+| `ansi` | Single-byte ANSI/Western encoding; also the fallback `UnicodeUtils.format` returns when the underlying raw value doesn't decode. |
+
+*(Per-case anchors below, for cross-reference; the table above has the actual meaning of each.)*
+
+#### `UnicodeFormat.sjis`
+
 ---
 
 ### `UnicodeUtils.setFormat(_:)`
@@ -1232,7 +1191,8 @@ Convert a UTF-8 string to the current multi-byte encoding.
 public static func convertFromUnicode(_ utf8Input: String, maxSize: Int = 4096) -> String?
 ```
 
-- **Parameters:** `utf8Input` — UTF-8 encoded source; `maxSize` — output buffer capacity in bytes.
+- **Parameters:** `utf8Input` — UTF-8 encoded source; `maxSize` — output buffer capacity in bytes,
+  clamped into `0...Sampling.maximumSampleCount` (10,000,000); 0 or less returns `nil` (#622).
 - **Returns:** String in the current encoding, or `nil` on failure.
 - **OCCT:** `Resource_Unicode::ConvertSJISToUnicode` / `ConvertEUCToUnicode` / etc. (inverse path)
 - **Example:**
@@ -1251,17 +1211,19 @@ Centroid and barycentre computation on discrete point sets, extending `GeometryP
 Compute the weighted centroid of a point set.
 
 ```swift
-public static func weightedCentroid(points: [SIMD3<Double>], weights: [Double]) -> (mass: Double, centroid: SIMD3<Double>)
+public static func weightedCentroid(points: [SIMD3<Double>], weights: [Double]) -> (mass: Double, centroid: SIMD3<Double>?)
 ```
 
-- **Parameters:** `points` — array of 3D points; `weights` — per-point scalar weights (must be same length as `points`).
-- **Returns:** Tuple of total mass (sum of weights) and the weighted centroid position.
-- **OCCT:** `GProp_PEquation` / `GProp_GProps` point-set weighted mass properties
+- **Parameters:** `points` — array of 3D points; `weights` — per-point scalar weights (must be same length as `points`). **Every weight must be strictly positive.**
+- **Returns:** Tuple of total mass (sum of weights) and the weighted centroid position, which is `nil` when there is none to report.
+- **A non-positive weight rejects the whole set.** `GProp_PGProps::AddPoint` throws `Standard_DomainError` on the first weight that is not strictly positive, and one bad weight discards every point rather than skipping that one. Before #609 that surfaced as mass 0 with a centroid of (0,0,0), which reads as success.
+- **OCCT:** `GProp_PGProps::AddPoint` point-set weighted mass properties
 - **Example:**
   ```swift
   let pts = [SIMD3<Double>(0,0,0), SIMD3(2,0,0)]
   let (mass, center) = GeometryProperties.weightedCentroid(points: pts, weights: [1.0, 3.0])
-  // center.x ≈ 1.5
+  // center?.x ≈ 1.5
+  GeometryProperties.weightedCentroid(points: pts, weights: [1.0, 0.0]).centroid   // nil
   ```
 
 ---
@@ -1271,16 +1233,18 @@ public static func weightedCentroid(points: [SIMD3<Double>], weights: [Double]) 
 Compute the unweighted barycentre (arithmetic mean) of a point set.
 
 ```swift
-public static func barycentre(_ points: [SIMD3<Double>]) -> SIMD3<Double>
+public static func barycentre(_ points: [SIMD3<Double>]) -> SIMD3<Double>?
 ```
 
 - **Parameters:** `points` — array of 3D points.
-- **Returns:** The average position.
-- **OCCT:** `GProp_PEquation::Barycentre`
+- **Returns:** The average position, or `nil` for an empty set, which has no barycentre. The (0,0,0)
+  reported before #609 was indistinguishable from the barycentre of a set centred on the origin.
+- **OCCT:** `GProp_PGProps::Barycentre`
 - **Example:**
   ```swift
   let c = GeometryProperties.barycentre([SIMD3(0,0,0), SIMD3(4,0,0)])
   // c == SIMD3(2, 0, 0)
+  GeometryProperties.barycentre([])   // nil
   ```
 
 ---
@@ -1401,8 +1365,13 @@ Compute logarithmically spaced parameter values in [a, b].
 public static func sample(from a: Double, to b: Double, count n: Int) -> [Double]
 ```
 
-- **Parameters:** `a` — start of interval; `b` — end of interval; `n` — number of sample points.
-- **Returns:** Array of `n` logarithmically spaced values, or empty if `n ≤ 0`.
+- **Parameters:** `a` — start of interval; `b` — end of interval; `n` — a *request* for exactly
+  this many sample points, honoured within `1...Sampling.maximumSampleCount` (10,000,000). The
+  bridge fills the buffer exactly, so this is not a capacity and is never clamped (#622).
+- **Returns:** Array of `n` logarithmically spaced values, or empty if `n` is outside
+  `1...10,000,000` — **including above the ceiling**, where it returns empty rather than a
+  coarser sampling than was asked for (#622). Before #622 a count past `Int32.max` aborted the
+  process.
 - **OCCT:** `GeomLib_LogSample`
 - **Example:**
   ```swift
@@ -1706,8 +1675,8 @@ public static func edge2dFullCircle(center: SIMD2<Double>, direction: SIMD2<Doub
                                      radius: Double) -> Shape?
 ```
 
-- **Parameters:** `center` — circle center in 2D; `direction` — X-axis direction; `radius` — radius.
-- **Returns:** A `Shape` wrapping a closed `TopoDS_Edge` in 2D, or `nil` on failure.
+- **Parameters:** `center`: circle center in 2D; `direction`: X-axis direction; `radius`: radius, must be greater than zero.
+- **Returns:** A `Shape` wrapping a closed `TopoDS_Edge` in 2D, or `nil` on failure or a degenerate radius.
 - **OCCT:** `BRepLib_MakeEdge2d` (circle overload)
 - **Example:**
   ```swift
@@ -1725,8 +1694,8 @@ public static func edge2dEllipse(center: SIMD2<Double>, direction: SIMD2<Double>
                                   majorRadius: Double, minorRadius: Double) -> Shape?
 ```
 
-- **Parameters:** `center` — center in 2D; `direction` — major-axis direction; `majorRadius`, `minorRadius` — semi-axes.
-- **Returns:** A closed 2D edge, or `nil` on failure.
+- **Parameters:** `center`: center in 2D; `direction`: major-axis direction; `majorRadius`, `minorRadius`: semi-axes, both greater than zero with `minorRadius <= majorRadius`. Equal radii are a circle and are valid.
+- **Returns:** A closed 2D edge, or `nil` on failure or a degenerate ellipse. `BRepLib_MakeEdge2d` itself reports `IsDone()` for one: a zero-radius ellipse builds a zero-length edge with both vertices at the centre, and a zero minor radius builds a segment doubled back along the major axis (#514).
 - **OCCT:** `BRepLib_MakeEdge2d` (ellipse overload)
 - **Example:**
   ```swift
@@ -1746,8 +1715,8 @@ public static func edge2dEllipseArc(center: SIMD2<Double>, direction: SIMD2<Doub
                                      u1: Double, u2: Double) -> Shape?
 ```
 
-- **Parameters:** `center`, `direction`, `majorRadius`, `minorRadius` — ellipse definition; `u1`, `u2` — parameter range (radians).
-- **Returns:** A 2D edge arc, or `nil` on failure.
+- **Parameters:** `center`, `direction`, `majorRadius`, `minorRadius`: ellipse definition, both radii greater than zero with `minorRadius <= majorRadius`; `u1`, `u2`: parameter range (radians).
+- **Returns:** A 2D edge arc, or `nil` on failure or a degenerate ellipse.
 - **OCCT:** `BRepLib_MakeEdge2d` (ellipse-arc overload)
 - **Example:**
   ```swift
@@ -2348,7 +2317,8 @@ List all directory names matching a mask (up to `maxCount`).
 public static func list(path: String, mask: String = "*", maxCount: Int = 1000) -> [String]
 ```
 
-- **Parameters:** `path`, `mask` — search location and filter; `maxCount` — result cap.
+- **Parameters:** `path`, `mask` — search location and filter; `maxCount` — output *capacity*
+  (default 1000), clamped into `0...Sampling.maximumSampleCount` (10,000,000); 0 or less returns empty (#622).
 - **Returns:** Array of directory name strings.
 - **OCCT:** `OSD_DirectoryIterator`
 - **Example:**
@@ -2408,7 +2378,8 @@ List all file names matching a mask (up to `maxCount`).
 public static func list(path: String, mask: String = "*", maxCount: Int = 1000) -> [String]
 ```
 
-- **Parameters:** `path`, `mask` — search location and filter; `maxCount` — result cap.
+- **Parameters:** `path`, `mask` — search location and filter; `maxCount` — output *capacity*
+  (default 1000), clamped into `0...Sampling.maximumSampleCount` (10,000,000); 0 or less returns empty (#622).
 - **Returns:** Array of file name strings.
 - **OCCT:** `OSD_FileIterator`
 - **Example:**

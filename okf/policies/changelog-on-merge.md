@@ -12,6 +12,18 @@ timestamp: 2026-08-07
 its entry in the PR body instead, under a `## CHANGELOG entry` heading. Whoever merges the PR copies
 that block into `docs/CHANGELOG.md` on the base branch as part of merging.
 
+**The rule binds the PR that carries the change, not the transcription itself.** A PR whose only
+purpose is to transcribe entries from other PRs' bodies is the merger doing their job, batched, and
+is not what this forbids. That case is not hypothetical: on 2026-08-08 a release-prep sweep found
+that ten merges had landed with an entry in the PR body that nobody copied across, and
+`Scripts/check-changelog-transcription.py --verify-transcribed` later put the real figure higher
+still. Writing those in one pass is the remedy, not a violation of it.
+
+Two conditions on that, and they are what keep it from becoming a loophole. The PR must transcribe
+and nothing else, so a feature PR cannot smuggle its own entry in under the same banner. And it must
+be the only open PR touching the file, which is cheap to check and is the whole reason the rule
+exists.
+
 The entry is still mandatory. [Documentation updates are mandatory](docs-current.md) is unchanged.
 Only the file the entry lives in until merge has moved.
 
@@ -55,7 +67,9 @@ tables and issue links.
 
 Do not touch `docs/CHANGELOG.md`. If your diff contains it, that is a review finding.
 
-Write it as the finished text, not as notes. The merger transcribes; they do not draft.
+Write it as the finished text, not as notes. The merger transcribes; they do not draft. This
+sentence is the canonical statement of that rule; the PR template points here rather than
+restating it.
 
 ### If you are merging a PR
 
@@ -85,7 +99,7 @@ impossible. That is a real trade and worth stating plainly rather than discoveri
 Three things hold it:
 
 1. `## CHANGELOG entry` is a required heading in
-   [`.github/pull_request_template.md`](../../.github/pull_request_template.md). A PR without one is
+   [`.github/PULL_REQUEST_TEMPLATE.md`](../../.github/PULL_REQUEST_TEMPLATE.md). A PR without one is
    incomplete, the same as a PR without a test.
 2. The merger's own checklist: the merge is not done until the entry is in the file. Treat a merged
    PR with no entry the way you would treat a merged PR whose tests never ran.

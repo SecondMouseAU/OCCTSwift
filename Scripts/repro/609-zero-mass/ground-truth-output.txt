@@ -1,0 +1,72 @@
+=== A. mass + centre of mass, per measure ===
+solid                        vol(open)=   6000.0000 @( 105.000, 210.000, 315.000)  vol(closed)=   6000.0000 @( 105.000, 210.000, 315.000)  area= 2200.0000 @( 105.000, 210.000, 315.000)  len= 480.0000 @( 105.000, 210.000, 315.000)
+solid (reversed)             vol(open)=  -6000.0000 @( 105.000, 210.000, 315.000)  vol(closed)=  -6000.0000 @( 105.000, 210.000, 315.000)  area= 2200.0000 @( 105.000, 210.000, 315.000)  len= 480.0000 @( 105.000, 210.000, 315.000)
+closed shell                 vol(open)=   6000.0000 @( 105.000, 210.000, 315.000)  vol(closed)=   6000.0000 @( 105.000, 210.000, 315.000)  area= 2200.0000 @( 105.000, 210.000, 315.000)  len= 480.0000 @( 105.000, 210.000, 315.000)
+open shell (5/6)             vol(open)=   4800.0000 @( 105.000, 210.000, 312.375)  vol(closed)=      0.0000 @(   0.000,   0.000,   0.000)  area= 2000.0000 @( 105.000, 210.000, 313.500)  len= 420.0000 @( 105.000, 210.000, 312.857)
+face                         vol(open)=      0.0000 @(   0.000,   0.000,   0.000)  vol(closed)=      0.0000 @(   0.000,   0.000,   0.000)  area=  600.0000 @( 100.000, 210.000, 315.000)  len= 100.0000 @( 100.000, 210.000, 315.000)
+wire                         vol(open)=      0.0000 @(   0.000,   0.000,   0.000)  vol(closed)=      0.0000 @(   0.000,   0.000,   0.000)  area=    0.0000 @(   0.000,   0.000,   0.000)  len= 100.0000 @( 100.000, 210.000, 315.000)
+edge                         vol(open)=      0.0000 @(   0.000,   0.000,   0.000)  vol(closed)=      0.0000 @(   0.000,   0.000,   0.000)  area=    0.0000 @(   0.000,   0.000,   0.000)  len=  30.0000 @( 100.000, 200.000, 315.000)
+vertex                       vol(open)=      0.0000 @(   0.000,   0.000,   0.000)  vol(closed)=      0.0000 @(   0.000,   0.000,   0.000)  area=    0.0000 @(   0.000,   0.000,   0.000)  len=   0.0000 @(   0.000,   0.000,   0.000)
+compound solid+face          vol(open)=   6857.1429 @( 104.509, 210.000, 315.000)  vol(closed)=   6000.0000 @( 105.000, 210.000, 315.000)  area= 2800.0000 @( 103.929, 210.000, 315.000)  len= 580.0000 @( 104.138, 210.000, 315.000)
+compound solid+edge          vol(open)=   6000.0000 @( 105.000, 210.000, 315.000)  vol(closed)=   6000.0000 @( 105.000, 210.000, 315.000)  area= 2200.0000 @( 105.000, 210.000, 315.000)  len= 490.0000 @( 123.367, 205.714, 308.571)
+compound 2 solids            vol(open)=  12000.0000 @( 355.000, 210.000, 315.000)  vol(closed)=  12000.0000 @( 355.000, 210.000, 315.000)  area= 4400.0000 @( 355.000, 210.000, 315.000)  len= 960.0000 @( 355.000, 210.000, 315.000)
+compound solid+rev           vol(open)=      0.0000 @(   0.000,   0.000,   0.000)  vol(closed)=      0.0000 @(   0.000,   0.000,   0.000)  area= 4400.0000 @( 105.000, 210.000, 315.000)  len= 960.0000 @( 105.000, 210.000, 315.000)
+cylinder (seam)              vol(open)=   1570.7963 @(  -0.000,   0.000,  10.000)  vol(closed)=   1570.7963 @(  -0.000,   0.000,  10.000)  area=  785.3982 @(   0.000,  -0.000,  10.000)  len= 165.6637 @(   1.207,  -0.000,  10.000)
+sphere (degen poles)         vol(open)=   1436.7550 @(  -0.000,   0.000,   0.000)  vol(closed)=   1436.7550 @(  -0.000,   0.000,   0.000)  area=  615.7522 @(  -0.000,  -0.000,  -0.000)  len=  43.9823 @(   4.456,  -0.000,  -0.000)
+unsewn shell                 vol(open)=   6000.0000 @(   5.000,  10.000,  15.000)  vol(closed)=      0.0000 @(   0.000,   0.000,   0.000)  area= 2200.0000 @(   5.000,  10.000,  15.000)  len= 480.0000 @(   5.000,  10.000,  15.000)
+unsewn 'solid'               vol(open)=   6000.0000 @(   5.000,  10.000,  15.000)  vol(closed)=      0.0000 @(   0.000,   0.000,   0.000)  area= 2200.0000 @(   5.000,  10.000,  15.000)  len= 480.0000 @(   5.000,  10.000,  15.000)
+sewn solid                   vol(open)=   6000.0000 @(   5.000,  10.000,  15.000)  vol(closed)=   6000.0000 @(   5.000,  10.000,  15.000)  area= 2200.0000 @(   5.000,  10.000,  15.000)  len= 480.0000 @(   5.000,  10.000,  15.000)
+
+=== B. IsClosed per shell ===
+solid                    shell[0] IsClosed=yes  Closed() flag=yes
+open shell               shell[0] IsClosed=no  Closed() flag=no
+unsewn 'solid'           shell[0] IsClosed=no  Closed() flag=no
+sewn solid               shell[0] IsClosed=yes  Closed() flag=yes
+cylinder                 shell[0] IsClosed=yes  Closed() flag=yes
+sphere                   shell[0] IsClosed=yes  Closed() flag=yes
+face                     (no shells)
+
+=== C. what a ZERO-MASS framework reports (face, volume measure) ===
+Mass            = 0.000000
+CentreOfMass    = (0.0000, 0.0000, 0.0000)   <- the shape's LOCATION, not (0,0,0)
+MatrixOfInertia = [0 0 0; 0 0 0; 0 0 0]
+StaticMoments   = (0, 0, 0)
+PrincipalMoments= (0, 0, 0)
+GyrationRadii   = (0, 0, 0)
+PrincipalAxes   = (0.000,0.000,1.000) (1.000,0.000,0.000) (0.000,1.000,0.000)  <- pure artefact
+HasSymmetryAxis = yes     HasSymmetryPoint = yes   <- reports SPHERICAL symmetry
+RadiusOfGyration(OZ) = nan   isnan=yes   <- sqrt(0/0)
+
+=== D. same, for an OPEN SHELL (mass is non-zero but fabricated) ===
+Mass=4800.0000  HasSymmetryAxis=no HasSymmetryPoint=no  moments=(446045,314045,220000)
+RadiusOfGyration(OZ) = 234.884723  (a real number derived from a fabricated mass)
+
+=== E2. the sentinel under a real TopLoc_Location ===
+face (identity loc) : mass=0.0000 com=(0.0000,0.0000,0.0000)
+face (moved by loc) : mass=0.0000 com=(100.0000,200.0000,300.0000)  <- looks like a real point
+face (moved twice)  : mass=0.0000 com=(200.0000,400.0000,600.0000)  <- and it TRACKS the shape
+
+=== E. GProp_PGProps / CelGProps degenerate inputs ===
+PGProps, no points        : mass=0.0000 com=(0.0000,0.0000,0.0000)
+PGProps, weights sum to 0 : THROWS GProp_PGProps::AddPoint: density must be positive
+PGProps, zero weight      : THROWS GProp_PGProps::AddPoint: density must be positive
+CelGProps, u1==u2         : mass=0.0000 com=(105.0000,200.0000,300.0000)
+
+=== F. BRepGProp_Vinert on a face through the location point ===
+Vinert(coplanar face) : mass=0.000000 com=(0.0000,0.0000,0.0000)
+Sinert(same face)     : mass=100.000000 com=(0.0000,0.0000,0.0000)
+Cinert(zero-len edge) : THROWS BRep_API: command not done
+
+=== H. the flux integral's SIGN is a valid orientation signal ===
+solid                  forward=   6000.0000  reversed=  -6000.0000
+open shell (5/6)       forward=   4800.0000  reversed=  -4800.0000
+lone face              forward=      0.0000  reversed=      0.0000  <- coplanar with the origin
+
+=== G. what OCCTShapeSymmetryAxes sees for a zero-mass / open-shell shape ===
+solid                mass=  6000.000 com=(105.000,210.000,315.000) hasSymPoint=no   hasSymAxis=no   moments=(650000,500000,250000)
+face                 mass=     0.000 com=(  0.000,  0.000,  0.000) hasSymPoint=yes  hasSymAxis=yes  moments=(0,0,0)
+edge                 mass=     0.000 com=(  0.000,  0.000,  0.000) hasSymPoint=yes  hasSymAxis=yes  moments=(0,0,0)
+wire                 mass=     0.000 com=(  0.000,  0.000,  0.000) hasSymPoint=yes  hasSymAxis=yes  moments=(0,0,0)
+vertex               mass=     0.000 com=(  0.000,  0.000,  0.000) hasSymPoint=yes  hasSymAxis=yes  moments=(0,0,0)
+open shell           mass=  4800.000 com=(105.000,210.000,312.375) hasSymPoint=no   hasSymAxis=no   moments=(446045,314045,220000)
+unsewn 'solid'       mass=  6000.000 com=(  5.000, 10.000, 15.000) hasSymPoint=no   hasSymAxis=no   moments=(650000,500000,250000)

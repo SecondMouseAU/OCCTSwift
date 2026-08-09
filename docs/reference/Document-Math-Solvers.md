@@ -5,25 +5,25 @@ parent: API Reference
 
 # Document — Math Solvers & Local Properties
 
-This page covers `Document.swift` lines 9930–11123: 2D conic utilities, normal projection, disk/shared-library/message system helpers, `PlateSolver` constraint extensions, extra methods on `Shape`, `Curve3D`, `Curve2D`, and `Surface`, the full `MathSolver` numerical toolkit, `PolynomialSolver` Laguerre extensions, `BRepLProp` edge/face local properties, `GeomGridEval` batch evaluators, single-parameter curve/surface evaluators, and the Newton-Hessian minimizer.
+This page covers `Document.swift`'s Math Solvers & Local Properties additions: 2D conic utilities, normal projection, disk/shared-library/message system helpers, `PlateSolver` constraint extensions, extra methods on `Shape`, `Curve3D`, `Curve2D`, and `Surface`, the full `MathSolver` numerical toolkit, `PolynomialSolver` Laguerre extensions, `BRepLProp` edge/face local properties, the deprecated `GeomGridEval` batch-evaluation spellings (#486), single-parameter curve/surface evaluators, and the Newton-Hessian minimizer.
 
 > See also the main **[Document](Document.md)** page for the `Document` class itself and the other chunk pages.
 
 ## Topics
 
-- [IntAna2d\_Conic — 2D Conics](#intana2d_conic--2d-conics) · [BRepAlgo\_NormalProjection](#brepalgo_normalprojection) · [OSD\_Disk](#osd_disk) · [OSD\_SharedLibrary](#osd_sharedlibrary) · [Message\_Msg](#message_msg) · [Plate Constraint Extensions](#plate-constraint-extensions) · [Shape Topology Extras](#shape-topology-extras) · [Curve3D Extras](#curve3d-extras) · [Curve2D Extras](#curve2d-extras) · [Surface Extras](#surface-extras) · [Math Solvers](#math-solvers) · [PolynomialSolver Laguerre Extensions](#polynomialsolver-laguerre-extensions) · [BRepLProp Edge Extensions](#breplprop-edge-extensions) · [BRepLProp Face Extensions](#breplprop-face-extensions) · [GridEval Curve3D Extensions](#grideval-curve3d-extensions) · [GridEval Curve2D Extensions](#grideval-curve2d-extensions) · [GridEval Surface Extensions](#grideval-surface-extensions) · [Curve3D Evaluation](#curve3d-evaluation) · [Curve2D Evaluation](#curve2d-evaluation) · [Surface Evaluation](#surface-evaluation) · [math\_NewtonMinimum](#math_newtonminimum)
+- [IntAna2d\_Conic — 2D Conics](#intana2d_conic--2d-conics) · [BRepAlgo\_NormalProjection](#brepalgo_normalprojection) · [OSD\_Disk](#osd_disk) · [OSD\_SharedLibrary](#osd_sharedlibrary) · [Message\_Msg](#message_msg) · [Plate Constraint Extensions](#plate-constraint-extensions) · [Shape Topology Extras](#shape-topology-extras) · [Curve3D Extras](#curve3d-extras) · [Curve2D Extras](#curve2d-extras) · [Surface Extras](#surface-extras) · [Math Solvers](#math-solvers) · [PolynomialSolver Laguerre Extensions](#polynomialsolver-laguerre-extensions) · [BRepLProp Edge Extensions](#breplprop-edge-extensions) · [BRepLProp Face Extensions](#breplprop-face-extensions) · [GridEval Extensions, deprecated](#grideval-extensions-deprecated-486) · [Curve3D Evaluation](#curve3d-evaluation) · [Curve2D Evaluation](#curve2d-evaluation) · [Surface Evaluation](#surface-evaluation) · [math\_NewtonMinimum](#math_newtonminimum)
 
 ---
 
 ## IntAna2d\_Conic — 2D Conics
 
 `Conic2D` is a value type holding the six implicit coefficients of a 2D conic
-`A·x² + B·x·y + C·y² + D·x + E·y + F = 0`, plus static factories and a line-circle
+`a·x² + b·y² + 2c·x·y + 2d·x + 2e·y + f = 0`, plus static factories and a line-circle
 intersection query. Wraps `IntAna2d_Conic` / `IntAna2d_AnaIntersection`.
 
 ### `Conic2D`
 
-Coefficients of a 2D implicit conic `A·x² + B·x·y + C·y² + D·x + E·y + F = 0`.
+Coefficients of a 2D implicit conic `a·x² + b·y² + 2c·x·y + 2d·x + 2e·y + f = 0`.
 
 ```swift
 public struct Conic2D: Sendable {
@@ -31,68 +31,116 @@ public struct Conic2D: Sendable {
 }
 ```
 
----
+The coefficients are OCCT's, in OCCT's order: the conic is the point set satisfying
 
-### `Conic2D.fromCircle(center:direction:radius:)`
-
-Create `Conic2D` coefficients from a 2D circle.
-
-```swift
-public static func fromCircle(
-    center: SIMD2<Double>, direction: SIMD2<Double>, radius: Double
-) -> Conic2D
+```
+a·x² + b·y² + 2c·x·y + 2d·x + 2e·y + f = 0
 ```
 
-- **Parameters:** `center` — circle centre; `direction` — local X axis direction; `radius` — circle radius.
-- **Returns:** `Conic2D` with the six implicit coefficients.
+`b` is the `y²` coefficient and `c` the `x·y` one, and the cross and linear terms carry a factor
+of 2. (Through v1.17.0 the doc comment named `a·x² + b·x·y + c·y² + d·x + e·y + f = 0`, which swaps
+the roles of `b` and `c` and drops the factor; the values themselves never changed. #514)
+
+Every factory returns `nil` rather than a conic when a dimension is degenerate. There is no
+in-band way to say it: all-zero coefficients are the equation `0 = 0`, which holds at every point
+of the plane, so they read as a conic rather than as no answer.
+
+| Field | Meaning |
+|-------|---------|
+| `a` | Coefficient of `x²`. |
+| `b` | Coefficient of `y²`. |
+| `c` | Half the coefficient of the `x·y` cross term (the equation carries `2c·x·y`). |
+| `d` | Half the coefficient of the linear `x` term (the equation carries `2d·x`). |
+| `e` | Half the coefficient of the linear `y` term (the equation carries `2e·y`). |
+| `f` | The constant term. |
+
+*(Per-field anchor below, for cross-reference; the table above has the actual meaning of each.)*
+
+#### `Conic2D.a`
+
+---
+
+### `Conic2D.circle(center:direction:radius:)`
+
+The implicit conic of a 2D circle.
+
+```swift
+public static func circle(
+    center: SIMD2<Double>, direction: SIMD2<Double>, radius: Double
+) -> Conic2D?
+```
+
+- **Parameters:** `center`: circle centre; `direction`: local X axis direction, must be non-zero; `radius`: circle radius, must be greater than zero.
+- **Returns:** the six implicit coefficients, or `nil` when a dimension is degenerate.
 - **OCCT:** `IntAna2d_Conic` (circle constructor) via `OCCTConic2dFromCircle`.
 - **Example:**
   ```swift
-  let c = Conic2D.fromCircle(center: SIMD2(0, 0), direction: SIMD2(1, 0), radius: 3)
-  // c.a == 1, c.c == 1, c.f == -9  (approximate unit-circle form scaled by r²)
+  if let c = Conic2D.circle(center: SIMD2(0, 0), direction: SIMD2(1, 0), radius: 3) {
+      print(c.a, c.b, c.f)   // 1.0 1.0 -9.0   (x² + y² - 9 = 0)
+  }
   ```
 
 ---
 
-### `Conic2D.fromLine(point:direction:)`
+### `Conic2D.line(point:direction:)`
 
-Create `Conic2D` coefficients from a 2D line.
+The implicit conic of a 2D line.
 
 ```swift
-public static func fromLine(
+public static func line(
     point: SIMD2<Double>, direction: SIMD2<Double>
-) -> Conic2D
+) -> Conic2D?
 ```
 
-- **Parameters:** `point` — any point on the line; `direction` — line direction vector.
-- **Returns:** `Conic2D` whose non-zero linear coefficients describe the line.
+- **Parameters:** `point`: any point on the line; `direction`: line direction vector, must be non-zero.
+- **Returns:** the coefficients, whose non-zero linear terms describe the line, or `nil` for a zero direction.
 - **OCCT:** `IntAna2d_Conic` (line constructor) via `OCCTConic2dFromLine`.
 - **Example:**
   ```swift
-  let l = Conic2D.fromLine(point: .zero, direction: SIMD2(1, 0))
+  if let l = Conic2D.line(point: .zero, direction: SIMD2(1, 0)) {
+      print(l.e)   // non-zero: the y term of the line y = 0
+  }
   ```
 
 ---
 
-### `Conic2D.fromEllipse(center:direction:majorRadius:minorRadius:)`
+### `Conic2D.ellipse(center:direction:majorRadius:minorRadius:)`
 
-Create `Conic2D` coefficients from a 2D ellipse.
+The implicit conic of a 2D ellipse.
 
 ```swift
-public static func fromEllipse(
+public static func ellipse(
     center: SIMD2<Double>, direction: SIMD2<Double>,
     majorRadius: Double, minorRadius: Double
-) -> Conic2D
+) -> Conic2D?
 ```
 
-- **Parameters:** `center` — ellipse centre; `direction` — local X axis; `majorRadius` / `minorRadius` — semi-axes.
-- **Returns:** `Conic2D` with the six implicit conic coefficients.
+- **Parameters:** `center`: ellipse centre; `direction`: local X axis, must be non-zero; `majorRadius` / `minorRadius`: semi-axes, both greater than zero with `minorRadius <= majorRadius`. Equal radii are a circle and are valid.
+- **Returns:** the six implicit conic coefficients, or `nil` when a dimension is degenerate.
 - **OCCT:** `IntAna2d_Conic` (ellipse constructor) via `OCCTConic2dFromEllipse`.
 - **Example:**
   ```swift
-  let e = Conic2D.fromEllipse(center: .zero, direction: SIMD2(1, 0),
-                               majorRadius: 5, minorRadius: 3)
+  if let e = Conic2D.ellipse(center: .zero, direction: SIMD2(1, 0),
+                             majorRadius: 5, minorRadius: 3) {
+      print(e.a, e.b, e.f)   // 0.04 0.111… -1.0   (x²/25 + y²/9 - 1 = 0)
+  }
   ```
+
+---
+
+`Conic2D.fromCircle`/`fromLine`/`fromEllipse`, the original spellings returning a non-optional
+`Conic2D` (their only way to report a degenerate input was an all-zero struct describing no conic),
+were deprecated in favour of the factories above and removed at v2.0.0 (#784):
+
+```swift
+// before (removed)
+let e = Conic2D.fromEllipse(center: .zero, direction: SIMD2(1, 0),
+                            majorRadius: 5, minorRadius: 3)
+
+// now
+if let e = Conic2D.ellipse(center: .zero, direction: SIMD2(1, 0),
+                           majorRadius: 5, minorRadius: 3) { … }
+```
 
 ---
 
@@ -107,6 +155,7 @@ public static func lineCircleIntersection(
 ) -> [SIMD2<Double>]
 ```
 
+- **Parameters:** `radius` must be greater than zero. Intersecting against a radius-0 circle is a point-on-line test, not an intersection, and returns an empty array.
 - **Returns:** 0, 1, or 2 intersection points. Empty array when the line misses the circle.
 - **OCCT:** `IntAna2d_AnaIntersection` via `OCCTConic2dLineCircleIntersect`.
 - **Example:**
@@ -560,13 +609,31 @@ public var parameterBounds: (uMin: Double, uMax: Double, vMin: Double, vMax: Dou
 
 ### `Surface.surfaceContinuityOrder`
 
-Continuity order as an integer: 0=C0, 1=C1, 2=C2, 3=C3, 99=CN.
+**Unavailable** (#619) — use `Surface.continuityClass`, or `Surface.continuity` for a raw ordinal.
+Any use is a compile error.
 
 ```swift
+@available(*, unavailable, message: "...")
 public var surfaceContinuityOrder: Int { get }
 ```
 
-- **OCCT:** `Geom_Surface::Continuity` via `OCCTSurfaceContinuity`.
+This page previously documented the encoding as `0=C0, 1=C1, 2=C2, 3=C3, 99=CN`. That was the
+hand-invented scheme #485 replaced with the real `GeomAbs_Shape` ordinal (`0=C0, 1=G1, 2=C1, 3=G2,
+4=C2, 5=C3, 6=CN`); the page was not updated at the time, so it went on describing retired numbers.
+Because the type and name were unchanged, `surfaceContinuityOrder >= 2` kept compiling and went from
+meaning "at least C2" to meaning "at least C1". #619 retires the spelling so that becomes an error.
+
+```swift
+// A continuity floor — takes the request vocabulary by type, so the wrong
+// constant cannot be written at all.
+if surface.continuityClass.satisfies(.c2) { offsetSafely() }
+
+// The analytic fast path that `== 99` used to express.
+if surface.continuityClass == .cN { useAnalyticFastPath() }
+```
+
+- **OCCT:** `Geom_Surface::Continuity` via `OCCTSurfaceGetContinuity`.
+- **No error sentinel.** The retired encoding returned `-1` for a null or unreadable handle and from its `default:` branch; `continuity` returns `0`, which is an ordinary C0. A migrated `< 0` error check can never fire (#619).
 
 ---
 
@@ -687,6 +754,14 @@ public static func solveSystem(
   - `values` — closure returning equation values `F(x)`, length `equations`.
   - `jacobian` — closure returning the row-major Jacobian `J(x)`, length `equations × variables`.
 - **Returns:** Solution point array of length `variables`, or `nil` if not converged.
+- **Bounds:** `variables` and `equations` must both be positive, and `startPoint.count` must
+  equal `variables`, or this returns `nil` (#640). None of this was checked before: a negative
+  `variables` reached `Array(repeating:count:)` and trapped, and a positive `variables` that did
+  not match `startPoint`'s real length reached the bridge's unconditional `startPoint[i]` loop
+  and read out of bounds. `values`/`jacobian`'s own returned arrays are checked the same way
+  (#716's review findings 3/4): a `values` closure returning fewer than `equations` elements, or
+  a `jacobian` closure returning fewer than `equations * variables`, now fails the call (`nil`)
+  instead of indexing the short array and trapping.
 - **OCCT:** `math_FunctionSetRoot` via `OCCTMathFunctionSetRoot`.
 - **Example:**
   ```swift
@@ -718,6 +793,11 @@ public static func minimize(
 
 - **Parameters:** `function` — closure returning `(f(x), ∇f(x))`.
 - **Returns:** `(minimizer, f(minimizer))`, or `nil` if not converged.
+- **Bounds:** `variables` must be positive and equal `startPoint.count`, or this returns `nil`
+  (#640): a mismatched positive `variables` used to reach the bridge's unconditional
+  `startPoint[i]` loop and read out of bounds. `function`'s own returned `gradient` is checked
+  the same way (#716's review finding 5): a closure returning fewer than `variables` gradient
+  components now fails the call (`nil`) instead of trapping.
 - **OCCT:** `math_BFGS` via `OCCTMathBFGS`.
 - **Example:**
   ```swift
@@ -751,6 +831,8 @@ public static func minimizePowell(
 
 - **Parameters:** `function` — closure returning a scalar value `f(x)`.
 - **Returns:** `(minimizer, f(minimizer))`, or `nil` if not converged.
+- **Bounds:** Same as `minimize`: `variables` must be positive and equal `startPoint.count`
+  (#640).
 - **OCCT:** `math_Powell` via `OCCTMathPowell`.
 - **Note:** Preferred when derivatives are unavailable or expensive; generally slower than BFGS for smooth functions.
 
@@ -806,6 +888,9 @@ public static func particleSwarm(
 
 - **Parameters:** `lower` / `upper` — per-variable bounds; `steps` — initial step sizes; `particles` — swarm size; `iterations` — number of swarm iterations.
 - **Returns:** `(minimizer, f(minimizer))`, or `nil` on failure.
+- **Bounds:** `variables` must be positive, and `lower`/`upper`/`steps` must each have
+  `variables` elements, or this returns `nil` (#640): none of this was checked before, so the
+  bridge's unconditional `lower[i]`/`upper[i]`/`steps[i]` loop read out of bounds on a mismatch.
 - **OCCT:** `math_PSO` via `OCCTMathPSO`.
 - **Note:** Good for highly multimodal or discontinuous objectives; does not require derivatives. Use `globalMinimize` for a deterministic alternative.
 
@@ -828,6 +913,8 @@ public static func globalMinimize(
 
 - **Parameters:** `lower` / `upper` — search domain bounds per variable; `function` — objective.
 - **Returns:** `(global minimizer, f(minimizer))`, or `nil` on failure.
+- **Bounds:** `variables` must be positive, and `lower`/`upper` must each have `variables`
+  elements, or this returns `nil` (#640), for the same reason as `particleSwarm`.
 - **OCCT:** `math_GlobOptMin` via `OCCTMathGlobOptMin`.
 - **Example:**
   ```swift
@@ -856,6 +943,10 @@ public static func findAllRoots(
 
 - **Parameters:** `samples` — number of sub-intervals for sign-change detection (more samples finds more roots but is slower).
 - **Returns:** Array of root values (may be empty). Up to 100 roots are returned.
+- **Bounds:** `samples` is a sampler by name and by role, not a problem dimension, so it is
+  bounded through `Sampling.requested` like every other subdivision count in this library:
+  outside `1...10,000,000` this returns `[]` instead of trapping `Int32(samples)` past
+  `Int32.max` (#640).
 - **OCCT:** `math_FunctionRoots` via `OCCTMathFunctionRoots`.
 - **Example:**
   ```swift
@@ -913,6 +1004,9 @@ public static func solveSystemNewton(
 
 - **Parameters:** Same interface as `solveSystem`; internally uses `math_NewtonFunctionSetRoot`.
 - **Returns:** Solution array of length `variables`, or `nil`.
+- **Bounds:** Same as `solveSystem`: `variables` and `equations` must both be positive, and
+  `startPoint.count` must equal `variables`, or this returns `nil` (#640), including the
+  `values`/`jacobian` closure-length check (#716's review finding 3/4).
 - **OCCT:** `math_NewtonFunctionSetRoot` via `OCCTMathNewtonFuncSetRoot`.
 - **Note:** More aggressive damping than `solveSystem`; prefer when starting close to the solution.
 
@@ -982,6 +1076,12 @@ public static func quinticRoots(a: Double, b: Double, c: Double, d: Double, e: D
 
 Extension on `Shape` for edge-level local geometric properties using `BRepLProp_CLProps`.
 
+These read an edge through a `BRepAdaptor_Curve`; [`Edge.curvature(at:)`](Edge.md) and its siblings
+read the curve underneath directly. Since #529 both decide whether a quantity exists at the same
+resolution (`Precision::Confusion()`), so the two spellings agree about definedness at every
+parameter of every edge. The values themselves can still differ in the last bits, because the
+adaptor evaluates a Bezier or B-spline through a cache the raw handle does not use.
+
 ### `Shape.edgeLPropValue(at:)`
 
 Evaluate the 3D point on an edge at the given parameter.
@@ -990,7 +1090,8 @@ Evaluate the 3D point on an edge at the given parameter.
 public func edgeLPropValue(at param: Double) -> SIMD3<Double>?
 ```
 
-- **Returns:** Point on the edge curve at `param`.
+- **Returns:** Point on the edge curve at `param`, or `nil` for a parameter the edge cannot be
+  evaluated at. Before #529 the failure case returned `(0, 0, 0)` inside a non-`nil` optional.
 - **OCCT:** `BRepLProp_CLProps::Value` via `OCCTEdgeLPropValue`.
 
 ---
@@ -1013,10 +1114,15 @@ public func edgeTangent(at param: Double) -> SIMD3<Double>?
 Scalar curvature on an edge at the given parameter.
 
 ```swift
-public func edgeCurvatureLP(at param: Double) -> Double
+public func edgeCurvatureLP(at param: Double) -> Double?
 ```
 
-- **Returns:** Signed curvature value (0 for a straight edge).
+- **Returns:** Curvature magnitude: `0` for a straight edge, which is a real answer, and `nil` where
+  there is none — this `Shape` is not an edge, the parameter cannot be evaluated, or the tangent is
+  undefined there. Those were the same `0` until #595, and the degeneracy is not exotic: a sphere
+  carries a **degenerate edge at each pole**, with no 3D curve at all, and edge traversal does not
+  skip them. `Double.greatestFiniteMagnitude` (OCCT's `RealLast()`, meaning infinite curvature) is
+  still reported at a cusp, matching [`Edge.curvature(at:)`](Edge.md) on the curve underneath.
 - **OCCT:** `BRepLProp_CLProps::Curvature` via `OCCTEdgeLPropCurvature`.
 
 ---
@@ -1026,10 +1132,12 @@ public func edgeCurvatureLP(at param: Double) -> Double
 Normal direction on an edge at the given parameter.
 
 ```swift
-public func edgeNormalLP(at param: Double) -> SIMD3<Double>
+public func edgeNormalLP(at param: Double) -> SIMD3<Double>?
 ```
 
-- **Returns:** Normal vector in the osculating plane.
+- **Returns:** Unit normal in the osculating plane, or `nil` where the curvature cannot be inverted
+  into a direction — a straight stretch has no normal, and neither does a cusp. Before #529 both
+  cases returned `(0, 0, 0)`, which is not a direction (#529, source-breaking).
 - **OCCT:** `BRepLProp_CLProps::Normal` via `OCCTEdgeLPropNormal`.
 
 ---
@@ -1039,10 +1147,14 @@ public func edgeNormalLP(at param: Double) -> SIMD3<Double>
 Centre of curvature on an edge at the given parameter.
 
 ```swift
-public func edgeCentreOfCurvature(at param: Double) -> SIMD3<Double>
+public func edgeCentreOfCurvature(at param: Double) -> SIMD3<Double>?
 ```
 
-- **Returns:** The centre of the osculating circle at `param`.
+- **Returns:** The centre of the osculating circle at `param`, or `nil` where there is no such
+  circle (a straight stretch, or a cusp). Before #529 a near-cusp returned `(nan, inf, nan)` as
+  though it were a point: `CentreOfCurvature()` tests only `|Curvature()| <= resolution`, which
+  OCCT's infinite-curvature sentinel passes, and then divides by a field that path never assigned
+  (#529, source-breaking).
 - **OCCT:** `BRepLProp_CLProps::CentreOfCurvature` via `OCCTEdgeLPropCentreOfCurvature`.
 
 ---
@@ -1052,16 +1164,17 @@ public func edgeCentreOfCurvature(at param: Double) -> SIMD3<Double>
 First derivative vector on an edge at the given parameter.
 
 ```swift
-public func edgeLPropD1(at param: Double) -> SIMD3<Double>
+public func edgeLPropD1(at param: Double) -> SIMD3<Double>?
 ```
 
-- **Returns:** The first derivative `C'(param)`.
+- **Returns:** The first derivative `C'(param)`, or `nil` for a parameter the edge cannot be
+  evaluated at (#529, source-breaking).
 - **OCCT:** `BRepLProp_CLProps::D1` via `OCCTEdgeLPropD1`.
 - **Example:**
   ```swift
   let edge: Shape = ...  // an edge shape
   let tangent = edge.edgeTangent(at: 0.5)
-  let curv    = edge.edgeCurvatureLP(at: 0.5)
+  let curv    = edge.edgeCurvatureLP(at: 0.5)   // Double?
   ```
 
 ---
@@ -1070,15 +1183,37 @@ public func edgeLPropD1(at param: Double) -> SIMD3<Double>
 
 Extension on `Shape` for face-level local surface properties using `BRepLProp_SLProps`.
 
+The `Face` counterparts ([`Face.meanCurvature(atU:v:)`](Face.md) and siblings) read the surface
+under the face directly rather than through a `BRepAdaptor_Surface`. Since #529 both use the same
+resolution, so they agree about whether a curvature exists at a given `(u, v)`, and since #583 both
+can say so: the getters here return an optional rather than spelling "undefined" as `0`. One
+contract difference is deliberate: `faceLPropNormal(u:v:)` reports the *surface* normal, while
+[`Face.normal(atU:v:)`](Face.md) applies the face's orientation, so the two agree up to sign.
+
+`nil` from any of them means one of: the curvature is undefined at that point (a cone apex, a sphere
+pole), or the receiver is not a single face. It never means "flat here", because `0` is a value these
+getters produce at every point of any developable surface, which is what made the old encoding
+lossy. Migration from the pre-#583 signatures is `if let`, or `?? 0` for the previous behaviour.
+
 ### `Shape.faceLPropValue(u:v:)`
 
 Evaluate the 3D point on a face at the given `(u, v)` parameter.
 
 ```swift
-public func faceLPropValue(u: Double, v: Double) -> SIMD3<Double>
+public func faceLPropValue(u: Double, v: Double) -> SIMD3<Double>?
 ```
 
+- **Returns:** The point, or `nil` if the receiver is not a single face. Unlike the curvature
+  getters this does not depend on the curvature gate, so a cone apex and a sphere pole still report
+  a point.
 - **OCCT:** `BRepLProp_SLProps::Value` via `OCCTFaceLPropValue`.
+- **Example:**
+  ```swift
+  let cylinder = Shape.cylinder(radius: 3, height: 12)!
+  if let p = cylinder.subShapes(ofType: .face)[0].faceLPropValue(u: 1.1, v: 6) {
+      print("point:", p)
+  }
+  ```
 
 ---
 
@@ -1100,10 +1235,17 @@ public func faceLPropNormal(u: Double, v: Double) -> SIMD3<Double>?
 Maximum principal curvature on a face at `(u, v)`.
 
 ```swift
-public func faceLPropMaxCurvature(u: Double, v: Double) -> Double
+public func faceLPropMaxCurvature(u: Double, v: Double) -> Double?
 ```
 
+- **Returns:** The curvature, or `nil` where it is undefined. On a cylinder or a cone the answer is
+  exactly `0` (the direction along the axis) at every point, and that is a value, not an absence.
 - **OCCT:** `BRepLProp_SLProps::MaxCurvature` via `OCCTFaceLPropMaxCurvature`.
+- **Example:**
+  ```swift
+  let cylinder = Shape.cylinder(radius: 3, height: 12)!.subShapes(ofType: .face)[0]
+  #expect(cylinder.faceLPropMaxCurvature(u: 1.1, v: 6) == 0)   // defined, and zero
+  ```
 
 ---
 
@@ -1112,10 +1254,16 @@ public func faceLPropMaxCurvature(u: Double, v: Double) -> Double
 Minimum principal curvature on a face at `(u, v)`.
 
 ```swift
-public func faceLPropMinCurvature(u: Double, v: Double) -> Double
+public func faceLPropMinCurvature(u: Double, v: Double) -> Double?
 ```
 
+- **Returns:** The curvature, or `nil` where it is undefined.
 - **OCCT:** `BRepLProp_SLProps::MinCurvature` via `OCCTFaceLPropMinCurvature`.
+- **Example:**
+  ```swift
+  let cylinder = Shape.cylinder(radius: 3, height: 12)!.subShapes(ofType: .face)[0]
+  if let kMin = cylinder.faceLPropMinCurvature(u: 1.1, v: 6) { print(kMin) }   // -1/3
+  ```
 
 ---
 
@@ -1124,10 +1272,17 @@ public func faceLPropMinCurvature(u: Double, v: Double) -> Double
 Mean curvature `(κ₁ + κ₂) / 2` on a face at `(u, v)`.
 
 ```swift
-public func faceLPropMeanCurvature(u: Double, v: Double) -> Double
+public func faceLPropMeanCurvature(u: Double, v: Double) -> Double?
 ```
 
+- **Returns:** The curvature, or `nil` where it is undefined. The adaptor-backed counterpart of
+  [`Face.meanCurvature(atU:v:)`](Face.md), which the two now agree with exactly about.
 - **OCCT:** `BRepLProp_SLProps::MeanCurvature` via `OCCTFaceLPropMeanCurvature`.
+- **Example:**
+  ```swift
+  let sphere = Shape.sphere(radius: 5)!.subShapes(ofType: .face)[0]
+  if let h = sphere.faceLPropMeanCurvature(u: 0, v: 0) { print(h) }   // -0.2, i.e. -1/r
+  ```
 
 ---
 
@@ -1136,10 +1291,18 @@ public func faceLPropMeanCurvature(u: Double, v: Double) -> Double
 Gaussian curvature `κ₁ · κ₂` on a face at `(u, v)`.
 
 ```swift
-public func faceLPropGaussianCurvature(u: Double, v: Double) -> Double
+public func faceLPropGaussianCurvature(u: Double, v: Double) -> Double?
 ```
 
+- **Returns:** The curvature, or `nil` where it is undefined. Every developable surface (a
+  cylinder, a cone, a plane) has Gaussian curvature `0` everywhere, so this getter returned the
+  pre-#583 "undefined" sentinel for whole faces at a time.
 - **OCCT:** `BRepLProp_SLProps::GaussianCurvature` via `OCCTFaceLPropGaussianCurvature`.
+- **Example:**
+  ```swift
+  let cylinder = Shape.cylinder(radius: 3, height: 12)!.subShapes(ofType: .face)[0]
+  #expect(cylinder.faceLPropGaussianCurvature(u: 1.1, v: 6) == 0)   // defined, and zero
+  ```
 
 ---
 
@@ -1148,10 +1311,19 @@ public func faceLPropGaussianCurvature(u: Double, v: Double) -> Double
 Test whether a face is umbilic at `(u, v)` — both principal curvatures are equal.
 
 ```swift
-public func faceLPropIsUmbilic(u: Double, v: Double) -> Bool
+public func faceLPropIsUmbilic(u: Double, v: Double) -> Bool?
 ```
 
+- **Returns:** The answer, or `nil` where there are no principal curvatures to compare. OCCT's test
+  is one ULP wide rather than a geometric tolerance, so a plane qualifies everywhere but an
+  analytically-umbilic sphere qualifies only where the two computed values round to the same
+  `Double` (#494).
 - **OCCT:** `BRepLProp_SLProps::IsUmbilic` via `OCCTFaceLPropIsUmbilic`.
+- **Example:**
+  ```swift
+  let cylinder = Shape.cylinder(radius: 3, height: 12)!.subShapes(ofType: .face)[0]
+  #expect(cylinder.faceLPropIsUmbilic(u: 1.1, v: 6) == false)   // defined, and not umbilic
+  ```
 
 ---
 
@@ -1176,102 +1348,32 @@ public func faceLPropTangentU(u: Double, v: Double) -> SIMD3<Double>?
 
 ---
 
-## GridEval Curve3D Extensions
+## GridEval Extensions, removed at v2.0.0 (#784)
 
-Extension on `Curve3D` for optimized batch evaluation using `GeomGridEval_Curve`. Preferred over calling `evalD0` / `evalD1` in a loop for large parameter sets.
+`Curve3D`/`Curve2D`/`Surface` each carried a third spelling of batch evaluation
+(`gridEvalD0`/`D1`, deprecated by #486 in favour of `evaluateGrid`/`evaluateGridD1`), over a third
+generation of bridge functions (`OCCTGridEvalCurveD0`/`D1`, `OCCTGridEvalCurve2dD0`/`D1`,
+`OCCTGridEvalSurfaceD0`/`D1`) that called exactly the same OCCT evaluators as the v0.28.0/v0.29.0
+ones already did. Worse, the Surface pair wrote the *opposite* UV layout from
+`OCCTSurfaceEvaluateGrid` while both header comments described their own layout as "row-major".
 
-### `Curve3D.gridEvalD0(params:)`
-
-Batch-evaluate 3D curve positions at multiple parameters (D0).
-
-```swift
-public func gridEvalD0(params: [Double]) -> [SIMD3<Double>]
-```
-
-- **Returns:** Point for each input parameter, in the same order.
-- **OCCT:** `GeomGridEval_Curve` D0 via `OCCTGridEvalCurveD0`.
-- **Example:**
-  ```swift
-  let pts = myCurve.gridEvalD0(params: stride(from: 0, through: 1, by: 0.1).map { $0 })
-  ```
-
----
-
-### `Curve3D.gridEvalD1(params:)`
-
-Batch-evaluate 3D curve positions and first derivatives at multiple parameters.
+#486 removed that bridge generation and pointed the six deprecated methods at their canonical
+sibling; #784 removed the six methods themselves. Use
+[`Curve3D.evaluateGrid(_:)`](Curve3D-Analysis.md)/`evaluateGridD1(_:)`,
+`Curve2D.evaluateGrid(_:)`/`evaluateGridD1(_:)` (both label the derivative `tangent`, not `d1`), or
+[`Surface.evaluateGrid(uParameters:vParameters:)`](Surface-Analysis.md#evaluategriduparametersvparameters)/[`evaluateGridD1(uParameters:vParameters:)`](Surface-Analysis.md#evaluategridd1uparametersvparameters),
+which return a `SurfaceGrid`/`SurfaceGridD1` indexed `.at(u:v:)` instead of a flat array whose
+major order the caller had to know:
 
 ```swift
-public func gridEvalD1(params: [Double]) -> [(point: SIMD3<Double>, d1: SIMD3<Double>)]
+// Before (removed)
+let pts = mySurface.gridEvalD0(uParams: us, vParams: vs)
+let p = pts[u * vs.count + v]
+
+// Now
+let grid = mySurface.evaluateGrid(uParameters: us, vParameters: vs)
+let p = grid.at(u: u, v: v)
 ```
-
-- **Returns:** `(point, first derivative)` tuples in input order.
-- **OCCT:** `GeomGridEval_Curve` D1 via `OCCTGridEvalCurveD1`.
-
----
-
-## GridEval Curve2D Extensions
-
-Extension on `Curve2D` for optimized batch evaluation using `Geom2dGridEval_Curve`.
-
-### `Curve2D.gridEvalD0(params:)`
-
-Batch-evaluate 2D curve positions at multiple parameters.
-
-```swift
-public func gridEvalD0(params: [Double]) -> [SIMD2<Double>]
-```
-
-- **OCCT:** `Geom2dGridEval_Curve` D0 via `OCCTGridEvalCurve2dD0`.
-
----
-
-### `Curve2D.gridEvalD1(params:)`
-
-Batch-evaluate 2D curve positions and first derivatives.
-
-```swift
-public func gridEvalD1(params: [Double]) -> [(point: SIMD2<Double>, d1: SIMD2<Double>)]
-```
-
-- **OCCT:** `Geom2dGridEval_Curve` D1 via `OCCTGridEvalCurve2dD1`.
-
----
-
-## GridEval Surface Extensions
-
-Extension on `Surface` for optimized grid evaluation using `GeomGridEval_Surface`. Output is row-major with dimensions `[uParams.count × vParams.count]`.
-
-### `Surface.gridEvalD0(uParams:vParams:)`
-
-Batch-evaluate surface positions at a UV grid.
-
-```swift
-public func gridEvalD0(uParams: [Double], vParams: [Double]) -> [SIMD3<Double>]
-```
-
-- **Returns:** Row-major point array, length `uParams.count × vParams.count`.
-- **OCCT:** `GeomGridEval_Surface` D0 via `OCCTGridEvalSurfaceD0`.
-- **Example:**
-  ```swift
-  let us = [0.0, 0.5, 1.0]
-  let vs = [0.0, 0.5, 1.0]
-  let pts = mySurface.gridEvalD0(uParams: us, vParams: vs)
-  // pts[row * vs.count + col] = point at (us[row], vs[col])
-  ```
-
----
-
-### `Surface.gridEvalD1(uParams:vParams:)`
-
-Batch-evaluate surface positions and first partial derivatives at a UV grid.
-
-```swift
-public func gridEvalD1(uParams: [Double], vParams: [Double]) -> [(point: SIMD3<Double>, d1u: SIMD3<Double>, d1v: SIMD3<Double>)]
-```
-
-- **Returns:** Row-major array of `(point, ∂/∂u, ∂/∂v)` tuples.
-- **OCCT:** `GeomGridEval_Surface` D1 via `OCCTGridEvalSurfaceD1`.
 
 ---
 
@@ -1331,27 +1433,12 @@ public func evalD3(at u: Double) -> (point: SIMD3<Double>, d1: SIMD3<Double>, d2
 
 ---
 
-### `Curve3D.evalBatchD0(params:)`
-
-Evaluate positions at multiple parameters (batch D0).
-
-```swift
-public func evalBatchD0(params: [Double]) -> [SIMD3<Double>]
-```
-
-- **OCCT:** `Geom_Curve::D0` (batch) via `OCCTCurve3DEvalBatchD0`.
-
----
-
-### `Curve3D.evalBatchD1(params:)`
-
-Evaluate positions and first derivatives at multiple parameters (batch D1).
-
-```swift
-public func evalBatchD1(params: [Double]) -> [(point: SIMD3<Double>, d1: SIMD3<Double>)]
-```
-
-- **OCCT:** `Geom_Curve::D1` (batch) via `OCCTCurve3DEvalBatchD1`.
+`Curve3D.evalBatchD0(params:)`/`evalBatchD1(params:)`, deprecated by #486 in favour of
+`Curve3D.evaluateGrid(_:)`/`evaluateGridD1(_:)`, were removed at v2.0.0 (#784). They had called
+`Geom_Curve::EvalD0`/`EvalD1` once per parameter, bypassing the batch `GeomGridEval_Curve`
+evaluator `evaluateGrid` had already been using since v0.29.0; #486 pointed them at the batch path
+instead (results can differ from the old per-point loop by ~1e-13 on a BSpline), and `evaluateGridD1`
+labels the derivative `tangent`, not `d1`.
 
 ---
 
@@ -1395,27 +1482,8 @@ public func evalD2(at u: Double) -> (point: SIMD2<Double>, d1: SIMD2<Double>, d2
 
 ---
 
-### `Curve2D.evalBatchD0(params:)`
-
-Evaluate 2D positions at multiple parameters (batch D0).
-
-```swift
-public func evalBatchD0(params: [Double]) -> [SIMD2<Double>]
-```
-
-- **OCCT:** `Geom2d_Curve::D0` (batch) via `OCCTCurve2DEvalBatchD0`.
-
----
-
-### `Curve2D.evalBatchD1(params:)`
-
-Evaluate 2D positions and first derivatives at multiple parameters (batch D1).
-
-```swift
-public func evalBatchD1(params: [Double]) -> [(point: SIMD2<Double>, d1: SIMD2<Double>)]
-```
-
-- **OCCT:** `Geom2d_Curve::D1` (batch) via `OCCTCurve2DEvalBatchD1`.
+`Curve2D.evalBatchD0(params:)`/`evalBatchD1(params:)` were the 2D counterpart, same story as the 3D
+pair above, and were also removed at v2.0.0 (#784). Use `Curve2D.evaluateGrid(_:)`/`evaluateGridD1(_:)`.
 
 ---
 
@@ -1487,6 +1555,11 @@ public static func minimizeNewton(
   - `startPoint` — initial guess, length `n`.
   - `function` — closure returning `(f(x), ∇f(x)[n], H(x)[n×n] row-major)`.
 - **Returns:** `(minimizer, f(minimizer))`, or `nil` if not converged.
+- **Bounds:** `n` must be positive and equal `startPoint.count`, or this returns `nil` (#640),
+  for the same reason as `minimize`. `function`'s own returned `gradient` and `hessian` are
+  checked the same way (#716's review finding 5): a closure returning fewer than `n` gradient
+  components, or fewer than `n * n` Hessian components, now fails the call (`nil`) instead of
+  trapping.
 - **OCCT:** `math_NewtonMinimum` via `OCCTMathNewtonMinimum`.
 - **Note:** Quadratic convergence near the minimum; requires a positive-definite Hessian. Falls back gracefully but may not converge if the Hessian is indefinite away from the minimum — in that case, prefer `minimize` (BFGS).
 - **Example:**

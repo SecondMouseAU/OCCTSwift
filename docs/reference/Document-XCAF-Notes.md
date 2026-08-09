@@ -5,7 +5,7 @@ parent: API Reference
 
 # Document — XCAF Notes, Views & Materials
 
-This page covers the XCAF annotation, view, material, and utility subsystems exposed on `Document`, `AssemblyNode`, and several standalone types (lines 2381–3349 of `Document.swift`). For the core document lifecycle, shape tools, and STEP/IGES I/O see the main [Document](Document.md) page.
+This page covers the XCAF annotation, view, material, and utility subsystems exposed on `Document`, `AssemblyNode`, and several standalone types in `Document.swift`. For the core document lifecycle, shape tools, and STEP/IGES I/O see the main [Document](Document.md) page.
 
 ## Topics
 
@@ -429,6 +429,37 @@ public enum NodeType: Int32 {
 
 - **OCCT:** `XCAFDoc_AssemblyGraph::NodeType`
 
+> **The case raw values below do not match `XCAFDoc_AssemblyGraph::NodeType`'s own raw values in the
+> pinned OCCT 8.0.1 header.** `nodeType(at:)` decodes `XCAFDoc_AssemblyGraph::GetNodeType`'s C++ enum
+> value directly via `NodeType(rawValue:)`, with no remapping on either side of the bridge
+> (`OCCTAssemblyGraphGetNodeType` in `OCCTBridge_Document.mm` casts the C++ value straight to
+> `int32_t`). But `XCAFDoc_AssemblyGraph.hxx` defines
+> `NodeType_UNDEFINED=0, AssemblyRoot=1, Subassembly=2, Occurrence=3, Part=4, Subshape=5`, not this
+> Swift enum's `node=0, occurrence=1, part=2, instance=3, subshape=4, free=5`. A node OCCT reports as
+> `Occurrence` (raw `3`) decodes here as `.instance`, not `.occurrence`. Verified by reading the
+> pinned header directly, not assumed from the case names; each case below is described by what its
+> raw value actually decodes to, not by its Swift name.
+
+#### `AssemblyGraph.NodeType.occurrence`
+
+Raw value `1`; decodes OCCT's `NodeType_AssemblyRoot` (a root node), not an occurrence.
+
+#### `AssemblyGraph.NodeType.part`
+
+Raw value `2`; decodes OCCT's `NodeType_Subassembly` (an intermediate node), not a leaf part.
+
+#### `AssemblyGraph.NodeType.instance`
+
+Raw value `3`; decodes OCCT's `NodeType_Occurrence` (an assembly/part occurrence node).
+
+#### `AssemblyGraph.NodeType.subshape`
+
+Raw value `4`; decodes OCCT's `NodeType_Part` (a leaf node representing a part), not a subshape.
+
+#### `AssemblyGraph.NodeType.free`
+
+Raw value `5`; decodes OCCT's `NodeType_Subshape` (a subshape node).
+
 ---
 
 ### `nodeType(at:)`
@@ -557,6 +588,7 @@ public init?()
 
 ---
 
+---
 ### `ViewObject.ProjectionType`
 
 Projection mode for this view.
@@ -567,6 +599,17 @@ public enum ProjectionType: Int32 {
     case parallel = 1
 }
 ```
+
+| Case | Meaning |
+|---|---|
+| `central` | Perspective projection (a single view point; distant geometry appears smaller). |
+| `parallel` | Orthographic projection (parallel projection rays; no perspective foreshortening). |
+
+---
+
+#### `ViewObject.ProjectionType.parallel`
+
+Orthographic projection.
 
 - **OCCT:** `XCAFView_Object::Type` / `XCAFView_ProjType`
 
@@ -1085,6 +1128,9 @@ public func isEqual(to other: PresentationStyle) -> Bool
 
 ---
 
+```swift
+```
+---
 ## XCAFDoc_VisMaterialCommon
 
 `VisMaterialCommon` — Phong shading parameters (diffuse, ambient, specular, emissive, shininess, transparency).
@@ -1101,6 +1147,9 @@ public init()
 
 ---
 
+```swift
+```
+---
 ### `diffuseColor`
 
 Diffuse color as `(red, green, blue)`.
@@ -1294,6 +1343,9 @@ public func isEqual(to other: VisMaterialPBR) -> Bool
 
 ---
 
+```swift
+```
+---
 ## VrmlAPI_Writer
 
 VRML export for `Shape` and `Document` objects.
@@ -1311,6 +1363,16 @@ public enum VrmlRepresentation: Int32, Sendable {
 ```
 
 - **OCCT:** `VrmlAPI_RepresentationOfShape`
+
+| case | meaning |
+|---|---|
+| `.shaded` | Export shaded (faceted) geometry only. |
+| `.wireFrame` | Export wireframe (edge) geometry only. |
+| `.both` | Export both shaded and wireframe representations. |
+
+*(Per-case anchors below, for cross-reference; the table above has the actual meaning of each.)*
+
+#### `both`
 
 ---
 
@@ -1968,6 +2030,22 @@ public enum SystemType: Int32, Sendable {
 }
 ```
 
+Case meanings, from `UnitsAPI_SystemUnits`:
+
+---
+
+#### `Units.SystemType.defaultSystem`
+
+The default system; equivalent to `.si`.
+
+#### `Units.SystemType.si`
+
+The SI unit system (metres and their derivatives).
+
+#### `Units.SystemType.mdtv`
+
+Equivalent to the SI system, except the length unit and its derivatives use millimetres instead of metres.
+
 - **OCCT:** `UnitsAPI_SystemUnits`
 
 ---
@@ -2096,6 +2174,26 @@ public enum Gravity: Int32, Sendable {
     case fail    = 4
 }
 ```
+
+Case meanings, from `Message_Gravity`:
+
+---
+
+#### `Messenger.Gravity.trace`
+
+Low-level details on algorithm execution, usually for debugging.
+
+#### `Messenger.Gravity.warning`
+
+A warning message.
+
+#### `Messenger.Gravity.alarm`
+
+A non-critical error.
+
+#### `Messenger.Gravity.fail`
+
+A fatal error.
 
 - **OCCT:** `Message_Gravity`
 

@@ -5,7 +5,7 @@ parent: API Reference
 
 # Document — XCAF & API Completions
 
-This page covers every public member declared from line 15061 to the end of `Sources/OCCTSwift/Document.swift` — a collection of extension completions added across versions 0.122.0–0.130.0, spanning `WireFixer`, `ShapeFix_Edge`, `BRepTools`/`BRepLib` statics, shape history, sewing, builder extensions, section operations, curve/surface queries, XCAF color/shape-tool completions, fillet/chamfer history queries, a standalone `SectionBuilder`, and the `GeomEval`/`Geom2dEval` analytical evaluators. See the main [`Document`](Document.md) page for core load/save and assembly operations.
+This page covers the last group of public members declared in `Sources/OCCTSwift/Document.swift`: a collection of extension completions added across versions 0.122.0–0.130.0, spanning `WireFixer`, `ShapeFix_Edge`, `BRepTools`/`BRepLib` statics, shape history, sewing, builder extensions, section operations, curve/surface queries, XCAF color/shape-tool completions, fillet/chamfer history queries, a standalone `SectionBuilder`, and the `GeomEval`/`Geom2dEval` analytical evaluators. See the main [`Document`](Document.md) page for core load/save and assembly operations.
 
 ## Topics
 
@@ -444,42 +444,31 @@ public func updateDeflection()
 
 ---
 
-### `Shape.continuityOfFaces(edge:face1:face2:tolerance:)`
+### `Shape.continuityClassOfFaces(edge:face1:face2:tolerance:)`
 
 Get the geometric continuity of the surface across an edge shared by two faces.
 
 ```swift
-public static func continuityOfFaces(edge: Shape, face1: Shape, face2: Shape,
-                                      tolerance: Double = 1e-6) -> Int
+public static func continuityClassOfFaces(edge: Shape, face1: Shape, face2: Shape,
+                                          tolerance: Double = 1e-6) -> ContinuityClass?
 ```
 
 - **Parameters:** `edge` — the shared edge; `face1`, `face2` — the two faces; `tolerance` — comparison tolerance.
-- **Returns:** `GeomAbs_Shape` integer: 0=C0, 1=G1, 2=C1, 3=G2, 4=C2, 5=CN, -1=error.
+- **Returns:** the measured `ContinuityClass`, or `nil` on failure (null handle, or OCCT throwing).
 - **OCCT:** `BRepLib::ContinuityOfFaces`.
+- **Domain:** six of the seven classes are reachable — `.c0` for a sharp join, `.g1` for a fillet's tangent join, and `.cN` for a seam on an elementary surface (or any elementary pair measuring C2, which OCCT promotes). `.c3` is never returned.
 - **Example:**
   ```swift
-  let c = Shape.continuityOfFaces(edge: e, face1: f1, face2: f2)
-  // c == 2 means C1 continuity
+  let box = Shape.box(width: 10, height: 10, depth: 10)!
+  let faces = box.subShapes(ofType: .face), edges = box.subShapes(ofType: .edge)
+  Shape.continuityClassOfFaces(edge: edges[0], face1: faces[0], face2: faces[1])  // .c0
   ```
 
----
-
-### `Shape.buildCurves3dAll(tolerance:)`
-
-Build 3D curves for all edges in the shape.
-
-```swift
-@discardableResult
-public func buildCurves3dAll(tolerance: Double = 1e-5) -> Bool
-```
-
-- **Parameters:** `tolerance` — the desired tolerance for curve construction.
-- **Returns:** `true` if all curves were built successfully.
-- **OCCT:** `BRepLib::BuildCurves3d` (shape overload).
-- **Example:**
-  ```swift
-  shape.buildCurves3dAll()
-  ```
+`continuityOfFaces(edge:face1:face2:tolerance:) -> Int`, the raw-ordinal spelling that reported the
+same measurement (its doc comment claimed `5=CN`, wrong twice over: CN is ordinal 6, and 5/C3 is a
+value the function could not return, #495), and `buildCurves3dAll(tolerance:)`, a byte-identical
+second wrapper over `BRepLib::BuildCurves3d` whose default had drifted 100x from `buildCurves3d`'s
+own (#498), were both deprecated in favour of the methods above and removed at v2.0.0 (#784).
 
 ---
 
@@ -593,6 +582,31 @@ public func generatedShapes(of initial: Shape) -> [Shape]
 
 ---
 
+### `Shape.History.hasGenerated`
+
+Whether any generations have been recorded (via `addGenerated(initial:generated:)`).
+
+```swift
+public var hasGenerated: Bool { get }
+```
+
+- **OCCT:** `BRepTools_History::HasGenerated` (via `OCCTHistoryHasGenerated`).
+
+---
+
+### `Shape.History.hasRemoved`
+
+Whether any removals have been recorded (via `remove(_:)`).
+
+```swift
+public var hasRemoved: Bool { get }
+```
+
+- **OCCT:** `BRepTools_History::HasRemoved` (via `OCCTHistoryHasRemoved`).
+
+---
+
+---
 ## SewingBuilder Extended
 
 Extensions on `SewingBuilder` added in v0.122.0.
@@ -947,7 +961,7 @@ public func allParts() -> Shape?
 - **OCCT:** `BOPAlgo_CellsBuilder::GetAllParts`.
 - **Example:**
   ```swift
-  if let parts = cells.allParts() { print(parts.nbFaces) }
+  if let parts = cells.allParts() { print(parts.faceCount) }
   ```
 
 ---
@@ -980,6 +994,20 @@ public enum PipeShellStatus: Int32, Sendable {
     case impossibleContact = 3
 }
 ```
+
+Case meanings, from `BRepBuilderAPI_PipeError`:
+
+### `PipeShellStatus.notOk`
+
+The pipe was not built, for a reason other than the two specific cases below.
+
+### `PipeShellStatus.planeNotIntersectGuide`
+
+A section-defining plane does not intersect the guide curve.
+
+### `PipeShellStatus.impossibleContact`
+
+The requested contact condition between the profile and a guide or auxiliary spine could not be satisfied.
 
 ---
 
@@ -1189,7 +1217,7 @@ public static func sectionWithOptions(_ shape1: Shape, _ shape2: Shape,
 - **Example:**
   ```swift
   if let section = Shape.sectionWithOptions(box, cylinder, approximation: true) {
-      print(section.nbEdges)
+      print(section.edgeCount)
   }
   ```
 
@@ -1379,51 +1407,12 @@ public var orientationValue: Int
 
 ---
 
-### `Shape.nbEdges`
-
-The number of edges in this shape.
-
-```swift
-public var nbEdges: Int
-```
-
-- **OCCT:** `TopExp_Explorer` over `TopAbs_EDGE`.
-- **Example:**
-  ```swift
-  print(box.nbEdges) // 12
-  ```
-
----
-
-### `Shape.nbFaces`
-
-The number of faces in this shape.
-
-```swift
-public var nbFaces: Int
-```
-
-- **OCCT:** `TopExp_Explorer` over `TopAbs_FACE`.
-- **Example:**
-  ```swift
-  print(box.nbFaces) // 6
-  ```
-
----
-
-### `Shape.nbVertices`
-
-The number of vertices in this shape.
-
-```swift
-public var nbVertices: Int
-```
-
-- **OCCT:** `TopExp_Explorer` over `TopAbs_VERTEX`.
-- **Example:**
-  ```swift
-  print(box.nbVertices) // 8
-  ```
+`Shape.nbEdges`, `Shape.nbFaces` and `Shape.nbVertices` (#651) counted bare `TopExp_Explorer`
+occurrences (24/6/48 on a 12-edge/6-face/8-vertex box; `nbFaces` agreed with `faceCount` only on a
+shape with no shared face), against this page's own documentation of the distinct count. Deprecated
+as forwards to [`edgeCount`](Edge.md#edgecount), [`faceCount`](Selection.md#shapefacecount) and
+[`vertexCount`](Shape-Features.md#vertexcount), and removed at v2.0.0 (#784). Use those three
+directly.
 
 ---
 
@@ -1809,60 +1798,94 @@ public func colorToolGetAllColors() -> [Int64]
 
 Extensions on `FilletBuilder` added in v0.127.0.
 
+All three are keyed by an `(contour index, edge)` pair, take the `Edge` type the rest of
+`FilletBuilder` speaks, and answer "there is no law" the same way (`nil`, or `false` for `setLaw`)
+in the same four cases (#505):
+
+| rejected because | detail |
+|---|---|
+| no such contour | `contour` outside `1...contourCount`. OCCT checks only the upper end. |
+| the contour does not hold `edge` | including an edge in no contour at all, and an edge from a *different* contour. |
+| the spine is not split yet | before `build()`, or before `simulate(contour:)`. |
+| the radius is constant | OCCT stores a constant radius as no law rather than as a flat one; ask `isConstant(contour:)`. |
+
 ### `FilletBuilder.getBounds(contour:edge:)`
 
-Get the parameter bounds of a fillet on a contour edge.
+Parameter bounds of the radius law on one edge of a contour, in the contour's own spine
+parameterisation. After `build()` the range runs past both ends of the edge, because the blend
+surface does.
 
 ```swift
-public func getBounds(contour: Int, edge: Shape) -> (first: Double, last: Double)?
+public func getBounds(contour: Int, edge: Edge) -> (first: Double, last: Double)?
 ```
 
-- **Parameters:** `contour` — 1-based contour index; `edge` — the edge within the contour.
-- **Returns:** `(first, last)` parameter range, or `nil` if not found.
-- **OCCT:** `BRepFilletAPI_MakeFillet::Bounds`.
+- **Parameters:** `contour` is a 1-based contour index; `edge` is an edge the contour holds.
+- **Returns:** `(first, last)` parameter range, or `nil` (see the table above).
+- **OCCT:** `BRepFilletAPI_MakeFillet::GetBounds`.
 - **Example:**
   ```swift
-  if let bounds = fillet.getBounds(contour: 1, edge: edge) {
+  let builder = FilletBuilder(shape: box)!
+  let edge = box.edges()[0]
+  builder.addEdge(edge, radius1: 0.5, radius2: 2.0)   // evolving: there is a law
+  _ = builder.build()
+  if let bounds = builder.getBounds(contour: 1, edge: edge) {
       print(bounds.first, bounds.last)
   }
   ```
+
+The `edge: Shape` spelling is deprecated: OCCT's own parameter is a `TopoDS_Edge`, so a `Shape` only
+ever reached it through a downcast. Convert with `Edge(_:)` if a `Shape` is what you hold.
 
 ---
 
 ### `FilletBuilder.getLaw(contour:edge:)`
 
-Get the law function controlling the fillet radius on an edge within a contour.
+The law function controlling the fillet radius on one edge of a contour.
 
 ```swift
-public func getLaw(contour: Int, edge: Shape) -> LawFunction?
+public func getLaw(contour: Int, edge: Edge) -> LawFunction?
 ```
 
-- **Parameters:** `contour` — 1-based contour index; `edge` — the edge.
-- **Returns:** A `LawFunction`, or `nil` if not available.
+- **Parameters:** `contour` is a 1-based contour index; `edge` is an edge the contour holds.
+- **Returns:** A `LawFunction`, or `nil` (see the table above).
 - **OCCT:** `BRepFilletAPI_MakeFillet::GetLaw`.
 - **Example:**
   ```swift
-  if let law = fillet.getLaw(contour: 1, edge: edge) { ... }
+  if let law = builder.getLaw(contour: 1, edge: edge) {
+      print(law.value(at: law.bounds.lowerBound))   // 0.5, the radius at the start
+  }
   ```
+
+The `edge: Shape` spelling is deprecated, as for `getBounds`.
 
 ---
 
 ### `FilletBuilder.setLaw(contour:edge:law:)`
 
-Assign a law function to control the fillet radius along an edge.
+Assign the law function controlling the fillet radius along one edge of a contour.
 
 ```swift
 @discardableResult
 public func setLaw(contour: Int, edge: Edge, law: LawFunction) -> Bool
 ```
 
-- **Parameters:** `contour` — 1-based contour index; `edge` — the target edge; `law` — the radius law.
-- **Returns:** `true` if set successfully.
+- **Parameters:** `contour` is a 1-based contour index; `edge` is an edge the contour holds; `law` is
+  the radius law, over the range `getBounds(contour:edge:)` reports.
+- **Returns:** `true` if the law was set, `false` in the four cases above.
 - **OCCT:** `BRepFilletAPI_MakeFillet::SetLaw`.
 - **Example:**
   ```swift
-  fillet.setLaw(contour: 1, edge: myEdge, law: radiusLaw)
+  let bounds = builder.getBounds(contour: 1, edge: edge)!
+  let law = LawFunction.linear(from: 4, to: 4, parameterRange: bounds.first...bounds.last)!
+  builder.setLaw(contour: 1, edge: edge, law: law)
+  builder.getLaw(contour: 1, edge: edge)?.value(at: bounds.first)   // 4.0
   ```
+
+`getLaw` reads the new law back, but it does not reach the geometry: measured against the pinned
+kernel, a `build()` after this call reports success and hands back the *unfilleted* input shape, and
+setting the law before the first build (via `simulate(contour:)`) then building produces the volume
+the original `addEdge` radii give, not the one this law asks for
+(`Scripts/repro/505-filletbuilder-edge-type/`). Treat it as editing the builder's recorded law.
 
 ---
 
@@ -1988,9 +2011,21 @@ public enum ChamferMode: Int32, Sendable {
 }
 ```
 
-- `classic` — standard equal-distance chamfer.
-- `constThroat` — constant throat width.
-- `constThroatWithPenetration` — constant throat with surface penetration.
+Case meanings, from `ChFiDS_ChamfMode`:
+
+---
+
+#### `ChamferBuilder.ChamferMode.classic`
+
+Chamfer with a constant distance from the spine to one of the two surfaces.
+
+#### `ChamferBuilder.ChamferMode.constThroat`
+
+Symmetric chamfer with a constant throat: the section is an isosceles triangle whose height is the throat.
+
+#### `ChamferBuilder.ChamferMode.constThroatWithPenetration`
+
+Chamfer with a constant throat whose section is a right triangle: the first surface (carrying the chamfer's top edge) is virtually offset into the solid, the apex sits on that offset surface's intersection with the second surface, the right angle is at the chamfer's top, and the leg from apex to top (the throat) has constant length.
 
 ---
 
@@ -2054,6 +2089,9 @@ public func simulatedSurfaceCount(contour: Int) -> Int
 
 A fine-grained builder for intersecting shapes, planes, and surfaces. Wraps `BRepAlgoAPI_Section` with explicit argument-setting and PCurve controls. Added in v0.128.0.
 
+```swift
+```
+---
 ### `SectionBuilder.init()`
 
 Create an empty section builder (arguments set via `init1`/`init2`).
@@ -2085,7 +2123,7 @@ public init?(shape1: Shape, shape2: Shape)
 - **Example:**
   ```swift
   if let sb = SectionBuilder(shape1: box, shape2: sphere) {
-      if let result = sb.build() { print(result.nbEdges) }
+      if let result = sb.build() { print(result.edgeCount) }
   }
   ```
 
@@ -2249,7 +2287,7 @@ public func build() -> Shape?
 - **Example:**
   ```swift
   if let result = sb.build() {
-      print(result.nbEdges)
+      print(result.edgeCount)
   }
   ```
 

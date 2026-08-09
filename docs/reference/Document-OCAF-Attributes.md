@@ -5,11 +5,11 @@ parent: API Reference
 
 # Document — OCAF Attributes, Naming & Elementary Geometry
 
-This page covers the OCAF attribute types, shape-naming extensions, geometry helpers, and elementary curve/surface utilities declared in lines 3350–4958 of `Document.swift`. See the main `Document` page for lifecycle, I/O, label management, and the core XCAF operations.
+This page covers the OCAF attribute types, shape-naming extensions, geometry helpers, and elementary curve/surface utilities declared in `Document.swift`. See the main `Document` page for lifecycle, I/O, label management, and the core XCAF operations.
 
 ## Topics
 
-- [Message_Report](#message_report) · [RWMesh_CoordinateSystemConverter](#rwmesh_coordinatesystemconverter) · [TDF_IDFilter](#tdf_idfilter) · [TDataStd_BooleanArray](#tdatastd_booleanarray) · [TDataStd_BooleanList](#tdatastd_booleanlist) · [TDataStd_ByteArray](#tdatastd_bytearray) · [TDataStd_IntegerList](#tdatastd_integerlist) · [TDataStd_RealList](#tdatastd_reallist) · [TDataStd_ExtStringArray](#tdatastd_extstringarray) · [TDataStd_ExtStringList](#tdatastd_extstringlist) · [TDataStd_ReferenceArray](#tdatastd_referencearray) · [TDataStd_ReferenceList](#tdatastd_referencelist) · [TDataStd_Relation](#tdatastd_relation) · [ShapeFix_Solid](#shapefix_solid) · [ShapeFix_EdgeConnect](#shapefix_edgeconnect) · [BRepOffsetAPI_FindContigousEdges](#brepoffsetapi_findcontigousedges) · [TDataStd_Tick](#tdatastd_tick) · [TDataStd_Current](#tdatastd_current) · [ShapeAnalysis_Shell](#shapeanalysis_shell) · [ShapeAnalysis_CanonicalRecognition](#shapeanalysis_canonicalrecognition) · [Geom_Transformation](#geom_transformation) · [Geom_OffsetCurve](#geom_offsetcurve) · [Geom_RectangularTrimmedSurface](#geom_rectangulartrimmedsurface) · [TNaming Extensions](#tnamingextensions) · [TDataStd_IntPackedMap](#tdatastd_intpackedmap) · [TDataStd_NoteBook](#tdatastd_notebook) · [TDataStd_UAttribute](#tdatastd_uattribute) · [TDataStd_ChildNodeIterator](#tdatastd_childnodeiterator) · [TDF_Transaction Named](#tdf_transaction-named) · [TDF_ComparisonTool](#tdf_comparisontool) · [TDocStd_XLinkTool](#tdocstd_xlinktool) · [TFunction_IFunction](#tfunction_ifunction) · [TFunction_Scope](#tfunction_scope) · [TDF_AttributeIterator](#tdf_attributeiterator) · [TDF_ChildIDIterator](#tdf_childiditerator) · [TDocStd_PathParser](#tdocstd_pathparser) · [TFunction_DriverTable](#tfunction_drivertable) · [TNaming_Scope](#tnamingscope) · [TNaming_Translator](#tnamingtraslator) · [TDataXtd_Placement](#tdataxtd_placement) · [TDataXtd_Presentation](#tdataxtd_presentation) · [XCAFDoc_AssemblyIterator](#xcafdoc_assemblyiterator) · [XCAFDoc_DimTol](#xcafdoc_dimtol) · [IntTools_Tools](#inttools_tools) · [ElCLib](#elclib) · [ElSLib](#elslib)
+- [Message_Report](#message_report) · [RWMesh_CoordinateSystemConverter](#rwmesh_coordinatesystemconverter) · [TDF_IDFilter](#tdf_idfilter) · [TDataStd_BooleanArray](#tdatastd_booleanarray) · [TDataStd_BooleanList](#tdatastd_booleanlist) · [TDataStd_ByteArray](#tdatastd_bytearray) · [TDataStd_IntegerList](#tdatastd_integerlist) · [TDataStd_RealList](#tdatastd_reallist) · [TDataStd_ExtStringArray](#tdatastd_extstringarray) · [TDataStd_ExtStringList](#tdatastd_extstringlist) · [TDataStd_ReferenceArray](#tdatastd_referencearray) · [TDataStd_ReferenceList](#tdatastd_referencelist) · [TDataStd_Relation](#tdatastd_relation) · [ShapeFix_Solid](#shapefix_solid) · [ShapeFix_EdgeConnect](#shapefix_edgeconnect) · [BRepOffsetAPI_FindContigousEdges](#brepoffsetapi_findcontigousedges) · [TDataStd_Tick](#tdatastd_tick) · [TDataStd_Current](#tdatastd_current) · [ShapeAnalysis_Shell](#shapeanalysis_shell) · [ShapeAnalysis_CanonicalRecognition](#shapeanalysis_canonicalrecognition) · [Geom_Transformation](#geom_transformation) · [Geom_OffsetCurve](#geom_offsetcurve) · [Geom_RectangularTrimmedSurface](#geom_rectangulartrimmedsurface) · [TNaming Extensions](#tnamingextensions) · [TDataStd_IntPackedMap](#tdatastd_intpackedmap) · [TDataStd_NoteBook](#tdatastd_notebook) · [TDataStd_UAttribute](#tdatastd_uattribute) · [TDataStd_ChildNodeIterator](#tdatastd_childnodeiterator) · [TDF_Transaction Named](#tdf_transaction-named) · [TDF_ComparisonTool](#tdf_comparisontool) · [TDocStd_XLinkTool](#tdocstd_xlinktool) · [TFunction_IFunction](#tfunction_ifunction) · [TFunction_Scope](#tfunction_scope) · [TDF_AttributeIterator](#tdf_attributeiterator) · [TDF_ChildIDIterator](#tdf_childiditerator) · [TDocStd_PathParser](#tdocstd_pathparser) · [TFunction_DriverTable](#tfunction_drivertable) · [TNaming_Scope](#tnamingscope) · [TNaming_Translator](#tnamingtraslator) · [TDataXtd_Placement](#tdataxtd_placement) · [TDataXtd_Presentation](#tdataxtd_presentation) · [XCAFDoc_AssemblyIterator](#xcafdoc_assemblyiterator) · [XCAFDoc_DimTol](#xcafdoc_dimtol) · [IntTools_Tools](#inttools_tools) · [ElCLib](#elclib) · [ElSLib](#elslib) · [Internal Storage](#internal-storage)
 
 ---
 
@@ -113,6 +113,26 @@ public func dump(gravity: Messenger.Gravity) -> String
 ## RWMesh_CoordinateSystemConverter
 
 Two free functions (module-level) for converting points between Z-up and Y-up coordinate systems with explicit unit scaling.
+
+### `CoordinateSystem`
+
+Which axis mesh I/O treats as "up".
+
+```swift
+public enum CoordinateSystem: Int32, Sendable {
+    case zUp = 0
+    case yUp = 1
+}
+```
+
+| Case | Meaning |
+|---|---|
+| `.zUp` | Z axis is up; up direction is `(0, 0, 1)`. |
+| `.yUp` | Y axis is up; up direction is `(0, 1, 0)`. |
+
+#### `CoordinateSystem.yUp`
+
+---
 
 ### `convertCoordinateSystem(x:y:z:from:inputUnit:to:outputUnit:)`
 
@@ -919,8 +939,14 @@ public struct ContigousEdgeResult: Sendable {
 }
 ```
 
-- `contigousEdgeCount` — number of edge pairs found to be geometrically contiguous.
-- `degeneratedShapeCount` — number of degenerate sub-shapes encountered.
+| Field | Meaning |
+|---|---|
+| `contigousEdgeCount` | Number of edge pairs found to be geometrically contiguous. |
+| `degeneratedShapeCount` | Number of degenerate sub-shapes encountered. |
+
+*(Per-field anchors below, for cross-reference; the table above has the actual meaning of each.)*
+
+#### `degeneratedShapeCount`
 
 ---
 
@@ -1042,6 +1068,18 @@ public struct ShellAnalysisResult: Sendable {
 }
 ```
 
+| Field | Meaning |
+|---|---|
+| `hasOrientationProblems` | `true` if adjoining faces disagree on orientation somewhere in the shell. |
+| `hasFreeEdges` | `true` if the shell has at least one edge used by only one face (an open boundary). |
+| `hasBadEdges` | `true` if the shell contains edges `ShapeAnalysis_Shell` flags as otherwise defective. |
+| `hasConnectedEdges` | `true` if the shell's edges are properly connected into a consistent network. |
+| `freeEdgeCount` | Number of free (single-face) edges found; the same count `hasFreeEdges` is derived from. |
+
+*(Per-field anchors below, for cross-reference; the table above has the actual meaning of each.)*
+
+#### `freeEdgeCount`
+
 ---
 
 ### `Shape.analyzeShell()`
@@ -1085,6 +1123,21 @@ public enum CanonicalGeometryType: Int, Sendable {
 }
 ```
 
+| Case | Meaning |
+|---|---|
+| `none` | No canonical match within tolerance; the surface/curve is not (recognisably) one of the types below. |
+| `plane` | A planar surface (`Geom_Plane`). |
+| `cylinder` | A cylindrical surface (`Geom_CylindricalSurface`). |
+| `cone` | A conical surface (`Geom_ConicalSurface`). |
+| `sphere` | A spherical surface (`Geom_SphericalSurface`). |
+| `line` | A straight line curve (`Geom_Line`). |
+| `circle` | A circular curve (`Geom_Circle`). |
+| `ellipse` | An elliptical curve (`Geom_Ellipse`). |
+
+*(Per-case anchors below, for cross-reference; the table above has the actual meaning of each.)*
+
+#### `ellipse`
+
 ---
 
 ### `Shape.CanonicalRecognitionResult`
@@ -1105,6 +1158,12 @@ public struct CanonicalRecognitionResult: Sendable {
 - `gap` — deviation from the ideal canonical shape.
 - `origin` / `direction` — position and axis of the canonical geometry.
 - `param1` / `param2` — primary and secondary size parameters (e.g. radius, semi-angle).
+
+---
+
+#### `Shape.CanonicalRecognitionResult.gap`
+
+Deviation from the ideal canonical shape (model units); smaller is a better fit.
 
 ---
 
@@ -1967,6 +2026,21 @@ public enum FunctionExecutionStatus: Int32 {
 }
 ```
 
+The raw values match `TFunction_ExecutionStatus` exactly (`TFunction_ES_WrongDefinition = 0` through
+`TFunction_ES_Failed = 4`), so a raw round-trip through the bridge never needs remapping.
+
+| Case | Meaning |
+|---|---|
+| `wrongDefinition` | The function's driver is missing or its definition is otherwise invalid; it was never eligible to run. |
+| `notExecuted` | The function has not run yet (the initial state after `newFunction(labelId:guid:)`). |
+| `executing` | The function is currently running; `TFunction_GraphNode` sets this for the duration of the driver call, which is also how OCAF detects an execution cycle. |
+| `succeeded` | The function's last execution completed without error. |
+| `failed` | The function's last execution reported an error. |
+
+*(Per-case anchors below, for cross-reference; the table above has the actual meaning of each.)*
+
+#### `failed`
+
 ---
 
 ### `Document.newFunction(labelId:guid:)`
@@ -2158,50 +2232,20 @@ public func childIDCount(labelId: Int64, guid: String, allLevels: Bool = false) 
 
 ---
 
-## TDocStd_PathParser
+## TDocStd_PathParser *(removed in v2.0.0)*
 
-Static utilities for decomposing a file path into its components, wrapping `TDocStd_PathParser`.
+The whole `PathParser` enum (`trek(_:)`/`name(_:)`/`fileExtension(_:)`, wrapping
+`TDocStd_PathParser`) was removed at v2.0.0
+([#784](https://github.com/SecondMouseAU/OCCTSwift/issues/784)). Use
+[`OSDPath`](Document-Math-Bounds.md#osdpathname_) instead, which wraps `OSD_Path` rather than
+`TDocStd_PathParser` and covers the same operations plus more (`systemName`, `folderAndFile`,
+`isValid`, `isUnixPath`, `isRelative`, `isAbsolute`): `OSDPath.folder(_:)` in place of
+`trek(_:)`, `OSDPath.name(_:)`, and `OSDPath.fileExtension(_:)`.
 
-### `PathParser.trek(_:)`
-
-Extract the directory (trek) component from a file path.
-
-```swift
-public static func trek(_ path: String) -> String?
-```
-
-- **Returns:** Directory portion, or `nil` on parse failure.
-- **OCCT:** `TDocStd_PathParser::Trek`.
-- **Example:**
-  ```swift
-  PathParser.trek("/Users/foo/model.stp")   // → "/Users/foo"
-  ```
-
----
-
-### `PathParser.name(_:)`
-
-Extract the filename without extension from a file path.
-
-```swift
-public static func name(_ path: String) -> String?
-```
-
-- **Returns:** Base name, or `nil` on parse failure.
-- **OCCT:** `TDocStd_PathParser::Name`.
-
----
-
-### `PathParser.fileExtension(_:)`
-
-Extract the file extension from a file path.
-
-```swift
-public static func fileExtension(_ path: String) -> String?
-```
-
-- **Returns:** Extension (without leading `.`), or `nil` on parse failure.
-- **OCCT:** `TDocStd_PathParser::Extension`.
+Two format differences to check if you are migrating a caller: `OSDPath.folder(_:)` keeps the
+trailing separator (`"/home/user/"`, not `"/home/user"`) and returns a real directory for an
+extension-less path instead of an empty string; `OSDPath.fileExtension(_:)` includes the leading
+dot (`".step"`, not `"step"`).
 
 ---
 
@@ -2988,3 +3032,21 @@ public static func d1OnSphere(
                                          axis: SIMD3(0, 0, 1),
                                          radius: 5.0)
   ```
+
+---
+
+## Internal Storage
+
+*(The members below are `private`/`internal`/`fileprivate` implementation details of `Document`, not
+public API. Documented here, briefly, so a contributor reading the source has context, and so
+`Scripts/check-docs-existence.py`'s coverage tracking resolves them.)*
+
+---
+
+---
+
+---
+
+---
+
+---

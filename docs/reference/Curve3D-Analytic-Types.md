@@ -75,23 +75,22 @@ public var degree: Int { get }
 
 ## BSpline Knot Splitting (v0.40.0)
 
-### `ContinuityOrder`
+### `ContinuityOrder` *(removed in v2.0.0)*
 
-> **Deprecated in #398.** `ContinuityOrder` was one of several copies of the same
-> continuity-floor vocabulary and is now a typealias of
-> [`ParametricContinuity`](Shape-Healing.md#parametriccontinuity).
-
-```swift
-@available(*, deprecated, renamed: "ParametricContinuity")
-public typealias ContinuityOrder = ParametricContinuity
-```
+Renamed to `ParametricContinuity` in #398; the compatibility typealias itself was removed at
+v2.0.0 ([#784](https://github.com/SecondMouseAU/OCCTSwift/issues/784)). Use
+[`ParametricContinuity`](Shape-Healing.md#parametriccontinuity) directly.
 
 The old enum stopped at `.c2`, which made **every order it could express a no-op** for the
 query it exists to answer: `GeomConvert_BSplineCurveKnotSplitting` splits where
 `degree - multiplicity < ContinuityRange`, and an ordinary cubic interpolation has interior
 knots of multiplicity 1, so it is already C2 there. Measured on a degree-3 interpolated BSpline,
 ranges 0, 1 and 2 all return just the two end knots; range 3 returns five parameters.
-`ParametricContinuity.c3` is reachable and fixes that. OCCT itself accepts any range `>= 0`.
+`ParametricContinuity.c3` is reachable and fixes that. OCCT itself accepts any range `>= 0` and
+saturates at the curve's own degree, so on a degree-4-or-higher BSpline `.c3` is the strictest
+question this vocabulary can ask; `toBezierSegments()` is the dedicated API for the every-knot
+split at the far end of that ladder. The same cap and the same fix apply to the surface, law and
+2D-curve siblings (#480).
 
 Pass to `continuityBreaks(minContinuity:)` to specify the minimum required continuity across knots.
 
@@ -171,13 +170,17 @@ Mutates the circle's radius in place.
 public func setRadius(_ r: Double) -> Bool
 ```
 
-- **Parameters:** `r` — new radius (must be > 0).
-- **Returns:** `true` on success, `false` if the curve is not a circle or the value is invalid.
+- **Parameters:** `r`: new radius, must be `> 0`.
+- **Returns:** `true` if the radius was written, `false` if the curve is not a circle or `r` is not a valid radius. On `false` the curve is left exactly as it was.
 - **OCCT:** `Geom_Circle::SetRadius`.
 - **Example:**
   ```swift
   if let curve = Curve3D.circle(center: .zero, normal: SIMD3(0, 0, 1), radius: 5) {
-      curve.circleProperties.setRadius(8)
+      #expect(curve.circleProperties.setRadius(8) == true)
+
+      // Rejected, and the radius set above survives.
+      #expect(curve.circleProperties.setRadius(0) == false)
+      #expect(curve.circleProperties.radius == 8)
   }
   ```
 
@@ -336,14 +339,18 @@ Mutates the ellipse's major radius in place.
 public func setMajorRadius(_ r: Double) -> Bool
 ```
 
-- **Parameters:** `r` — new major radius (must be > minor radius per OCCT).
-- **Returns:** `true` on success, `false` if the curve is not an ellipse or the value is invalid.
+- **Parameters:** `r`: new major radius. Judged against the minor radius already on the curve, so it must be `> 0` and no smaller than the current `minorRadius`.
+- **Returns:** `true` if the radius was written, `false` if the curve is not an ellipse or the resulting pair would not describe one. On `false` the curve is left exactly as it was.
 - **OCCT:** `Geom_Ellipse::SetMajorRadius`.
 - **Example:**
   ```swift
   if let curve = Curve3D.ellipse(center: .zero, normal: SIMD3(0, 0, 1),
                                   majorRadius: 10, minorRadius: 5) {
-      curve.ellipseProperties.setMajorRadius(12)
+      #expect(curve.ellipseProperties.setMajorRadius(12) == true)
+
+      // Below the current minor radius: no longer an ellipse.
+      #expect(curve.ellipseProperties.setMajorRadius(3) == false)
+      #expect(curve.ellipseProperties.majorRadius == 12)
   }
   ```
 
@@ -358,14 +365,18 @@ Mutates the ellipse's minor radius in place.
 public func setMinorRadius(_ r: Double) -> Bool
 ```
 
-- **Parameters:** `r` — new minor radius (must be < major radius per OCCT).
-- **Returns:** `true` on success, `false` if the curve is not an ellipse or the value is invalid.
+- **Parameters:** `r`: new minor radius. Judged against the major radius already on the curve, so it must be `> 0` and no larger than the current `majorRadius`.
+- **Returns:** `true` if the radius was written, `false` if the curve is not an ellipse or the resulting pair would not describe one. On `false` the curve is left exactly as it was.
 - **OCCT:** `Geom_Ellipse::SetMinorRadius`.
 - **Example:**
   ```swift
   if let curve = Curve3D.ellipse(center: .zero, normal: SIMD3(0, 0, 1),
                                   majorRadius: 10, minorRadius: 5) {
-      curve.ellipseProperties.setMinorRadius(3)
+      #expect(curve.ellipseProperties.setMinorRadius(3) == true)
+
+      // Zero would leave a live ellipse evaluating onto its own major axis.
+      #expect(curve.ellipseProperties.setMinorRadius(0) == false)
+      #expect(curve.ellipseProperties.minorRadius == 3)
   }
   ```
 
@@ -517,6 +528,9 @@ Meaningful only when the curve wraps a `Geom_Hyperbola`. Accessing members on a 
 
 ---
 
+```swift
+```
+---
 ### `HyperbolaProperties.majorRadius`
 
 The major radius (real semi-axis).
@@ -566,14 +580,16 @@ Mutates the hyperbola's major radius in place.
 public func setMajorRadius(_ r: Double) -> Bool
 ```
 
-- **Parameters:** `r` — new major radius (must be > 0).
-- **Returns:** `true` on success, `false` if the curve is not a hyperbola or the value is invalid.
+- **Parameters:** `r`: new major radius, must be `> 0`. Unlike an ellipse there is no ordering constraint against the minor radius.
+- **Returns:** `true` if the radius was written, `false` if the curve is not a hyperbola or `r` is not a valid radius. On `false` the curve is left exactly as it was.
 - **OCCT:** `Geom_Hyperbola::SetMajorRadius`.
 - **Example:**
   ```swift
   if let curve = Curve3D.hyperbola(center: .zero, normal: SIMD3(0, 0, 1),
                                     majorRadius: 5, minorRadius: 3) {
-      curve.hyperbolaProperties.setMajorRadius(7)
+      #expect(curve.hyperbolaProperties.setMajorRadius(7) == true)
+      #expect(curve.hyperbolaProperties.setMajorRadius(0) == false)
+      #expect(curve.hyperbolaProperties.majorRadius == 7)
   }
   ```
 
@@ -588,14 +604,18 @@ Mutates the hyperbola's minor radius in place.
 public func setMinorRadius(_ r: Double) -> Bool
 ```
 
-- **Parameters:** `r` — new minor radius (must be > 0).
-- **Returns:** `true` on success, `false` if the curve is not a hyperbola or the value is invalid.
+- **Parameters:** `r`: new minor radius, must be `> 0`. It may exceed the major radius.
+- **Returns:** `true` if the radius was written, `false` if the curve is not a hyperbola or `r` is not a valid radius. On `false` the curve is left exactly as it was.
 - **OCCT:** `Geom_Hyperbola::SetMinorRadius`.
 - **Example:**
   ```swift
   if let curve = Curve3D.hyperbola(center: .zero, normal: SIMD3(0, 0, 1),
                                     majorRadius: 5, minorRadius: 3) {
-      curve.hyperbolaProperties.setMinorRadius(4)
+      #expect(curve.hyperbolaProperties.setMinorRadius(4) == true)
+
+      // A minor radius above the major is an ordinary hyperbola, so this is accepted.
+      #expect(curve.hyperbolaProperties.setMinorRadius(8) == true)
+      #expect(curve.hyperbolaProperties.setMinorRadius(0) == false)
   }
   ```
 
@@ -736,13 +756,15 @@ Mutates the parabola's focal distance in place.
 public func setFocal(_ f: Double) -> Bool
 ```
 
-- **Parameters:** `f` — new focal distance (must be > 0).
-- **Returns:** `true` on success, `false` if the curve is not a parabola or `f` is invalid.
+- **Parameters:** `f`: new focal distance, must be `> 0`. At zero the parabola degenerates to a straight line along its own axis of symmetry, which is `gp_Parab`'s documented behaviour rather than an error it reports.
+- **Returns:** `true` if the value was written, `false` if the curve is not a parabola or `f` is not a valid focal distance. On `false` the curve is left exactly as it was.
 - **OCCT:** `Geom_Parabola::SetFocal`.
 - **Example:**
   ```swift
-  if let curve = Curve3D.parabola(vertex: .zero, normal: SIMD3(0, 0, 1), focal: 3) {
-      curve.parabolaProperties.setFocal(5)
+  if let curve = Curve3D.parabola(center: .zero, normal: SIMD3(0, 0, 1), focal: 3) {
+      #expect(curve.parabolaProperties.setFocal(5) == true)
+      #expect(curve.parabolaProperties.setFocal(0) == false)
+      #expect(curve.parabolaProperties.focal == 5)
   }
   ```
 
@@ -1097,19 +1119,19 @@ Bézier curves are never periodic in OCCT; this always returns `false` for `Geom
 
 ### `bezierContinuity`
 
-The global continuity class of the Bézier curve (0 = C0, 1 = C1, 2 = C2, 3 = C3, 4 = CN).
+The global continuity class of the Bézier curve, as a raw `GeomAbs_Shape` ordinal (`0` = C0, `1` = G1, `2` = C1, `3` = G2, `4` = C2, `5` = C3, `6` = CN).
 
 ```swift
 public var bezierContinuity: Int { get }
 ```
 
-A Bézier curve of degree ≥ 1 is always C∞ (returns `4` = CN). Returns `0` for non-Bézier curves.
+A Bézier curve of degree ≥ 1 is always C∞ (returns `6` = CN). Returns `0` for non-Bézier curves.
 
 - **OCCT:** `Geom_BezierCurve::Continuity` → `GeomAbs_Shape` mapped to Int.
 - **Example:**
   ```swift
   if let curve = Curve3D.bezier(poles: [SIMD3(0,0,0), SIMD3(1,1,0), SIMD3(2,0,0)]) {
-      let cont = curve.bezierContinuity  // 4 (CN)
+      let cont = curve.bezierContinuity  // 6 (CN)
   }
   ```
 

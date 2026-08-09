@@ -33,13 +33,35 @@ mappings, parametric-transformation scale factors, and Bezier/BSpline static lim
 
 ### `Curve3D.continuityOrder`
 
-The overall continuity order of this curve (0=C0, 1=C1, 2=C2, etc.).
+**Unavailable** (#619) — use `continuityClass`, or `continuity` for a raw ordinal. Any use is a
+compile error.
 
 ```swift
+@available(*, unavailable, message: "...")
 public var continuityOrder: Int { get }
 ```
 
-- **OCCT:** `Geom_Curve::Continuity` → `GeomAbs_Shape` mapped to an integer (via `OCCTCurve3DContinuity`).
+The values this reported changed in #485, from a hand-invented `C0=0, C1=1, C2=2, C3=3, CN=99,
+G1=-2, G2=-3` — matching neither `GeomAbs_Shape` nor its own documentation, and disagreeing with
+`continuity` on the same curve for every class except C0 — to the real ordinal `0=C0, 1=G1, 2=C1,
+3=G2, 4=C2, 5=C3, 6=CN`. The type and name were unchanged, so `continuityOrder >= 2` kept compiling
+and went from meaning "at least C2" to meaning "at least C1", and `continuityOrder == 99` (the
+analytic fast path) became unreachable. #619 retires the spelling so both become errors.
+
+```swift
+// A continuity floor — takes the request vocabulary by type, so the wrong
+// constant cannot be written at all.
+if curve.continuityClass.satisfies(.c2) { useAsC2Spline() }
+
+// The analytic fast path that `== 99` used to express.
+if curve.continuityClass == .cN { useAnalyticFastPath() }
+
+// A raw ordinal, if that is what you want — re-check the constant you compare against.
+let ordinal = curve.continuity
+```
+
+- **OCCT:** `Geom_Curve::Continuity` (via `OCCTCurve3DGetContinuity`).
+- **No error sentinel.** The retired encoding returned `-1` for a null or unreadable handle and from its `default:` branch; `continuity` returns `0`, which is an ordinary C0. A migrated `< 0` error check can never fire (#619).
 
 ---
 
@@ -119,13 +141,21 @@ public static var bezierMaxDegree: Int { get }
 
 ### `Curve2D.continuityOrder`
 
-The overall continuity order of this 2D curve (0=C0, 1=C1, 2=C2, etc.).
+**Unavailable** (#619) — use `continuityClass`, or `continuity` for a raw ordinal. Any use is a
+compile error.
 
 ```swift
+@available(*, unavailable, message: "...")
 public var continuityOrder: Int { get }
 ```
 
-- **OCCT:** `Geom2d_Curve::Continuity` (via `OCCTCurve2DContinuity`).
+```swift
+if pcurve.continuityClass.satisfies(.c2) { treatAsC2() }
+```
+
+- **Warning:** the raw values changed in #485 and the spelling was retired in #619 — see the
+  `Curve3D.continuityOrder` note above for the before/after encoding.
+- **OCCT:** `Geom2d_Curve::Continuity` (via `OCCTCurve2DGetContinuity`).
 
 ---
 
@@ -828,6 +858,8 @@ public func bsplineMovePointAndTangent(u: Double, point: SIMD2<Double>, tangent:
 
 Builder for applying rounded fillets to selected edges of a solid, wrapping `BRepFilletAPI_MakeFillet`.
 
+```swift
+```
 ### `FilletBuilder.init?(shape:)`
 
 Create a fillet builder on the given shape.

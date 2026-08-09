@@ -56,8 +56,12 @@ public final class Selector: @unchecked Sendable {
         /// The type of sub-shape that was hit.
         public let subShapeType: SubShapeType
 
-        /// 1-based index of the sub-shape within its parent shape.
-        /// Zero if the whole shape was selected (mode 0).
+        /// 0-based index of the sub-shape within its parent shape, addressable with
+        /// ``Shape/face(at:)`` or ``Shape/subShape(type:index:)``.
+        ///
+        /// `-1` when the whole shape was selected (mode 0). It used to be 1-based with `0` as
+        /// that sentinel, so a picked sub-shape's index named the one before it and the sentinel
+        /// was indistinguishable from a hit on sub-shape 0 (#541).
         public let subShapeIndex: Int32
     }
 
@@ -142,12 +146,15 @@ public final class Selector: @unchecked Sendable {
     ///   - pixel: Pixel coordinates in the viewport.
     ///   - camera: The camera providing projection/view transforms.
     ///   - viewSize: Viewport size in pixels (width, height).
-    ///   - maxResults: Maximum number of results to return (default 32).
+    ///   - maxResults: Output *capacity* (default 32), clamped into `0...`
+    ///     ``Sampling/maximumSampleCount``; 0 or less returns empty (#622).
     /// - Returns: Array of pick results sorted by depth (nearest first).
     public func pick(at pixel: SIMD2<Double>,
                      camera: Camera,
                      viewSize: SIMD2<Double>,
                      maxResults: Int = 32) -> [PickResult] {
+        let maxResults = Sampling.capacity(maxResults)
+        guard maxResults > 0 else { return [] }
         var buffer = [OCCTPickResult](repeating: OCCTPickResult(), count: maxResults)
         let count = OCCTSelectorPick(handle, camera.handle,
                                      viewSize.x, viewSize.y,
@@ -168,12 +175,15 @@ public final class Selector: @unchecked Sendable {
     ///   - rect: Rectangle defined by (min, max) pixel coordinates.
     ///   - camera: The camera providing projection/view transforms.
     ///   - viewSize: Viewport size in pixels (width, height).
-    ///   - maxResults: Maximum number of results to return (default 32).
+    ///   - maxResults: Output *capacity* (default 32), clamped into `0...`
+    ///     ``Sampling/maximumSampleCount``; 0 or less returns empty (#622).
     /// - Returns: Array of pick results for all shapes intersecting the rectangle.
     public func pick(rect: (min: SIMD2<Double>, max: SIMD2<Double>),
                      camera: Camera,
                      viewSize: SIMD2<Double>,
                      maxResults: Int = 32) -> [PickResult] {
+        let maxResults = Sampling.capacity(maxResults)
+        guard maxResults > 0 else { return [] }
         var buffer = [OCCTPickResult](repeating: OCCTPickResult(), count: maxResults)
         let count = OCCTSelectorPickRect(handle, camera.handle,
                                          viewSize.x, viewSize.y,
@@ -198,13 +208,15 @@ public final class Selector: @unchecked Sendable {
     ///   - polygon: Array of pixel coordinates defining the polygon vertices.
     ///   - camera: The camera providing projection/view transforms.
     ///   - viewSize: Viewport size in pixels (width, height).
-    ///   - maxResults: Maximum number of results to return (default 32).
+    ///   - maxResults: Output *capacity* (default 32), clamped into `0...`
+    ///     ``Sampling/maximumSampleCount``; 0 or less returns empty (#622).
     /// - Returns: Array of pick results for all shapes inside the polygon.
     public func pick(polygon: [SIMD2<Double>],
                      camera: Camera,
                      viewSize: SIMD2<Double>,
                      maxResults: Int = 32) -> [PickResult] {
-        guard polygon.count >= 3 else { return [] }
+        let maxResults = Sampling.capacity(maxResults)
+        guard polygon.count >= 3, maxResults > 0 else { return [] }
         var buffer = [OCCTPickResult](repeating: OCCTPickResult(), count: maxResults)
         var polyXY = [Double]()
         polyXY.reserveCapacity(polygon.count * 2)

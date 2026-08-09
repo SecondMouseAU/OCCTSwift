@@ -89,8 +89,15 @@ struct SweepTests {
         }
         #expect(spring.isValid)
         // The whole point of the fix: signed volume comes out positive.
+        //
+        // A pipe sweep is an OPEN shell (three faces, no solid), so `signedVolume` here is the
+        // divergence integral rather than a volume, and `volume` is nil. The sign is still the
+        // orientation signal this test cares about, since reversing a surface negates the flux.
+        // The old `volume != nil` assertion passed only because the volume path used to answer for
+        // an open surface too. See #609.
+        #expect(spring.solidCount == 0, "a pipe sweep is a shell")
         #expect(spring.signedVolume > 0)
-        #expect(spring.volume != nil)
+        #expect(spring.volume == nil, "an open shell has no volume to measure")
     }
 
     // Issue #170: orientedForward() flips a reversed solid; leaves a good one.
@@ -1038,12 +1045,36 @@ struct AAGTests {
 
     @Test("Box with pocket detects pocket via AAG")
     func detectPocket() {
+        // #703: `Shape.box(width:height:depth:)` is centred at the origin (`OCCTShapeCreateBox`),
+        // so a 20mm box spans -10...10 on every axis. The pocket tool has to actually overlap that
+        // range to remove real material -- this fixture used to place it at `origin: SIMD3(5, 5,
+        // 10)`, whose z range (10...25) only TOUCHES the box's top face at z=10 with zero volume
+        // in common (measured: `result.volume == box.volume`, unchanged), so it cut nothing at
+        // all. The one "pocket" `detectPocketsAAG()` used to report there was entirely
+        // `OCCTEdgeGetConvexity`'s own face1/face2 order-dependence -- the same false positive
+        // #703 measured on a plain, uncut box -- not a real feature of this shape. Centring the
+        // tool's footprint under the box and starting its z range below the box's own top (here,
+        // 0...15, cutting through at z=10 down to a floor at z=0) gives an actual 10mm-deep pocket.
         let box = Shape.box(width: 20, height: 20, depth: 20)!
-        let pocket = Shape.box(origin: SIMD3(5, 5, 10), width: 10, height: 10, depth: 15)!
+        let pocket = Shape.box(origin: SIMD3(-5, -5, 0), width: 10, height: 10, depth: 15)!
+        // #720 review of #703, finding 5: `(result.volume ?? 0) < (box.volume ?? 0)` would still
+        // pass if EITHER volume computation silently failed and returned nil: 0 < 0 is false,
+        // but 0 < someNil-coerced-to-0 reads as "no material removed", not "the fixture is
+        // untrustworthy", and a genuinely negative or nil `box.volume` would pass the comparison
+        // for the wrong reason. Unwrapping both and failing loudly if either is nil, matching this
+        // suite's own `guard let ..., let v0 = shape.volume else { #expect(Bool(false), ...) }`
+        // idiom (see e.g. Issue532CylindricalHolePartSelectionTests), means the assertion can only
+        // pass because material was actually removed.
         guard let result = box.subtracting(pocket) else {
             Issue.record("Boolean subtraction failed")
             return
         }
+        guard let resultVolume = result.volume, let boxVolume = box.volume else {
+            #expect(Bool(false), "volume computation failed; fixture proves nothing")
+            return
+        }
+        #expect(resultVolume < boxVolume,
+                "pocket tool must actually remove material, or this fixture proves nothing")
         let pockets = result.detectPocketsAAG()
         // Should detect at least one pocket
         #expect(pockets.count >= 1)
@@ -2141,9 +2172,13 @@ struct MultiCommonTests {
         let box1 = Shape.box(width: 5, height: 5, depth: 5)!
         let box2 = Shape.box(width: 5, height: 5, depth: 5)!.translated(by: SIMD3(20, 20, 20))!
         let result = Shape.commonAll([box1, box2])
-        // Non-overlapping common may return empty or nil
+        // Non-overlapping common may return empty or nil. When it returns an empty compound there
+        // is no closed shell in it, so `volume` is nil rather than 0 (#609). Force-unwrapping here
+        // used to work only because the old volume path answered 0 for a shape with no volume at
+        // all, which is the confusion this issue removed.
         if let r = result {
-            #expect(r.volume! < 0.001)
+            #expect(r.volume == nil, "an empty common result encloses no volume")
+            #expect(r.signedVolume == 0)
         }
     }
 }
@@ -2197,12 +2232,12 @@ struct EvolvingFilletTests {
         let box = Shape.box(width: 40, height: 40, depth: 40)!
         // Try multiple edges until one succeeds (edge ordering can vary)
         var result: Shape? = nil
-        for idx in 0..<box.edges().count {
-            let edge = EvolvingFilletEdge(edgeIndex: idx, radiusPoints: [
+        for edge in box.edges() {
+            let spec = EvolvingFilletEdge(edge: edge, radiusPoints: [
                 (parameter: 0.0, radius: 1.0),
                 (parameter: 1.0, radius: 2.0)
             ])
-            result = box.filletEvolving([edge])
+            result = box.filletEvolving([spec])
             if result != nil { break }
         }
         #expect(result != nil)
@@ -2213,25 +2248,25 @@ struct EvolvingFilletTests {
     func multiEdgeEvolving() {
         let box = Shape.box(width: 40, height: 40, depth: 40)!
         // Find two edges that work
-        var workingEdges: [Int] = []
-        for idx in 0..<box.edges().count {
-            let edge = EvolvingFilletEdge(edgeIndex: idx, radiusPoints: [
+        var workingEdges: [Edge] = []
+        for edge in box.edges() {
+            let spec = EvolvingFilletEdge(edge: edge, radiusPoints: [
                 (parameter: 0.0, radius: 1.0),
                 (parameter: 1.0, radius: 1.0)
             ])
-            if box.filletEvolving([edge]) != nil {
-                workingEdges.append(idx)
+            if box.filletEvolving([spec]) != nil {
+                workingEdges.append(edge)
                 if workingEdges.count >= 2 { break }
             }
         }
         guard workingEdges.count >= 2 else { return }
-        let edges = workingEdges.map { idx in
-            EvolvingFilletEdge(edgeIndex: idx, radiusPoints: [
+        let specs = workingEdges.map { edge in
+            EvolvingFilletEdge(edge: edge, radiusPoints: [
                 (parameter: 0.0, radius: 1.0),
                 (parameter: 1.0, radius: 1.5)
             ])
         }
-        let result = box.filletEvolving(edges)
+        let result = box.filletEvolving(specs)
         #expect(result != nil)
         if let r = result { #expect(r.isValid) }
     }
@@ -2240,12 +2275,12 @@ struct EvolvingFilletTests {
     func constantRadiusViaEvolving() {
         let box = Shape.box(width: 40, height: 40, depth: 40)!
         var result: Shape? = nil
-        for idx in 0..<box.edges().count {
-            let edge = EvolvingFilletEdge(edgeIndex: idx, radiusPoints: [
+        for edge in box.edges() {
+            let spec = EvolvingFilletEdge(edge: edge, radiusPoints: [
                 (parameter: 0.0, radius: 2.0),
                 (parameter: 1.0, radius: 2.0)
             ])
-            result = box.filletEvolving([edge])
+            result = box.filletEvolving([spec])
             if result != nil { break }
         }
         #expect(result != nil)
@@ -2922,6 +2957,9 @@ struct BRepOffsetOffsetFaceTests {
 
 // MARK: - BOPAlgo_RemoveFeatures
 
+// These used to call removeFeatures(faces:), which drove BOPAlgo_RemoveFeatures directly. #536
+// found it identical to defeature(faces:) (the same algorithm through BRepAlgoAPI_Defeaturing one
+// layer up), deprecated it as a forwarder, and removeFeatures(faces:) was removed at v2.0.0 (#784).
 @Suite("BOPAlgo RemoveFeatures")
 struct BOPAlgoRemoveFeaturesTests {
     @Test("Remove fillet from box")
@@ -2933,7 +2971,7 @@ struct BOPAlgoRemoveFeaturesTests {
             // Fillet adds faces, try removing the last face
             guard filletedFaces.count > 6 else { return }
             let lastFace = filletedFaces[filletedFaces.count - 1]
-            if let result = filleted.removeFeatures(faces: [lastFace]) {
+            if let result = filleted.defeature(faces: [lastFace]) {
                 #expect(result.isValid)
                 let resultFaces = result.subShapes(ofType: .face)
                 #expect(resultFaces.count <= filletedFaces.count)
@@ -2944,7 +2982,7 @@ struct BOPAlgoRemoveFeaturesTests {
     @Test("Remove features returns nil for empty faces")
     func removeFeaturesEmptyFaces() {
         guard let box = Shape.box(width: 10, height: 10, depth: 10) else { return }
-        let result = box.removeFeatures(faces: [])
+        let result = box.defeature(faces: [])
         #expect(result == nil)
     }
 
@@ -2955,7 +2993,7 @@ struct BOPAlgoRemoveFeaturesTests {
         guard !faces.isEmpty else { return }
         // Removing a face from a box may or may not succeed
         // depending on topology — just verify it doesn't crash
-        let _ = box.removeFeatures(faces: [faces[0]])
+        let _ = box.defeature(faces: [faces[0]])
     }
 }
 
@@ -3997,6 +4035,8 @@ struct BooleanExpansionTests {
         }
     }
 
+    // The tolerance argument this test used to pass is gone: BRepAlgoAPI_Defeaturing never read
+    // it, so the overload that took one is deprecated. Issue497DefeaturingTests covers that. #497
     @Test func defeature() {
         if let box = Shape.box(width: 20, height: 20, depth: 20) {
             let filleted = box.filleted(radius: 2.0)
@@ -4006,9 +4046,15 @@ struct BooleanExpansionTests {
                 if faces.count > 6 {
                     // Pick the extra faces (fillets)
                     let filletFaces = Array(faces.suffix(from: 6).prefix(2))
-                    let result = f.defeature(faces: filletFaces, tolerance: 0.01)
+                    let result = f.defeature(faces: filletFaces)
                     // Defeaturing may or may not succeed on filleted box
-                    let _ = result
+                    if let r = result {
+                        #expect(r.isValid)
+                        // Removing fillet faces can only add material back.
+                        if let before = f.volume, let after = r.volume {
+                            #expect(after >= before - 1e-9)
+                        }
+                    }
                 }
             }
         }
@@ -5093,40 +5139,27 @@ struct FilletBuilderCompletionsTests {
 struct FilletBuilderHistoryTests {
 
     @Test("FilletBuilder GetBounds for evolving radius")
-    func getBounds() {
-        guard let box = Shape.box(width: 10, height: 10, depth: 10) else { return }
-        guard let builder = FilletBuilder(shape: box) else { return }
+    func getBoundsForEvolvingRadius() throws {
+        let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
+        let builder = try #require(FilletBuilder(shape: box))
         let edges = box.edges()
-        guard !edges.isEmpty else { return }
-        // Use evolving radius to avoid constant-edge law crash
-        let added = builder.addEdge(edges[0], radius1: 0.5, radius2: 2.0)
-        if added {
-            if let _ = builder.build() {
-                // getBounds takes a Shape, convert edge to shape
-                if let edgeShape = Shape.fromEdge(edges[0]) {
-                    if let bounds = builder.getBounds(contour: 1, edge: edgeShape) {
-                        #expect(bounds.first < bounds.last)
-                    }
-                }
-            }
-        }
+        let edge = try #require(edges.first)
+        // An evolving radius, because a constant one has no law to bound (#505).
+        #expect(builder.addEdge(edge, radius1: 0.5, radius2: 2.0))
+        #expect(builder.build() != nil)
+        let bounds = try #require(builder.getBounds(contour: 1, edge: edge))
+        #expect(bounds.first < bounds.last)
     }
 
     @Test("FilletBuilder GetLaw for evolving radius")
-    func getLaw() {
-        guard let box = Shape.box(width: 10, height: 10, depth: 10) else { return }
-        guard let builder = FilletBuilder(shape: box) else { return }
+    func getLawForEvolvingRadius() throws {
+        let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
+        let builder = try #require(FilletBuilder(shape: box))
         let edges = box.edges()
-        guard !edges.isEmpty else { return }
-        let added = builder.addEdge(edges[0], radius1: 0.5, radius2: 2.0)
-        if added {
-            if let _ = builder.build() {
-                if let edgeShape = Shape.fromEdge(edges[0]) {
-                    let law = builder.getLaw(contour: 1, edge: edgeShape)
-                    #expect(law != nil)
-                }
-            }
-        }
+        let edge = try #require(edges.first)
+        #expect(builder.addEdge(edge, radius1: 0.5, radius2: 2.0))
+        #expect(builder.build() != nil)
+        #expect(builder.getLaw(contour: 1, edge: edge) != nil)
     }
 
     @Test("FilletBuilder Generated from edge")

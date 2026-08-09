@@ -44,6 +44,18 @@ All four vectors must be provided by the caller; no normalisation is performed. 
 
 ---
 
+### `Placement.zAxis`
+
+Unit vector along the local Z axis: the frame's third basis vector, and the plane normal for a construction plane.
+
+```swift
+public let zAxis: SIMD3<Double>   // unit
+```
+
+- **Returns:** The Z basis vector supplied at construction (or derived from `normal` by `init(origin:normal:)`); not re-normalised on read.
+
+---
+
 ### `Placement.init(origin:normal:)`
 
 Constructs a placement from an origin and a normal, deriving deterministic X/Y axes perpendicular to the normal.
@@ -318,6 +330,40 @@ public enum ConstructionResolutionError: Error, Sendable {
 
 ---
 
+### `ConstructionResolutionError.topology`
+
+The underlying `TopologyRef` could not be resolved (e.g. the node was deleted).
+
+```swift
+case topology(TopologyResolutionError)
+```
+
+### `ConstructionResolutionError.notApplicable`
+
+The referenced node is the wrong kind (e.g. an edge where a face was expected).
+
+```swift
+case notApplicable(String)
+```
+
+### `ConstructionResolutionError.degenerate`
+
+The geometry is valid but produces a degenerate result (e.g. collinear points, parallel planes).
+
+```swift
+case degenerate(String)
+```
+
+### `ConstructionResolutionError.missingGeometry`
+
+The node exists in the graph but carries no shape geometry.
+
+```swift
+case missingGeometry(BRepGraph.NodeRef)
+```
+
+---
+
 ## BRepGraph resolve extensions
 
 `BRepGraph` is extended in `ConstructionEntity.swift` to resolve the three construction entity types. These are the primary resolution entry points.
@@ -426,6 +472,18 @@ Each call to `init()` produces a unique ID backed by a new `UUID`.
 
 ---
 
+#### `ConstructionContext.PlaneID.raw`
+
+The underlying `UUID` backing this identifier.
+
+```swift
+public let raw: UUID
+```
+
+Exposed so callers who need a stable, storable key (e.g. for `Codable` persistence, or as a dictionary key outside `ConstructionContext` itself) can get at the identifier's value directly, without `ConstructionContext` providing any further lookup machinery for it. `AxisID.raw` and `PointID.raw` carry the identical role for their respective ID types.
+
+---
+
 ### `ConstructionContext.AxisID`
 
 Opaque, `Hashable`, `Sendable` identifier for a registered construction axis.
@@ -439,6 +497,12 @@ public struct AxisID: Sendable, Hashable {
 
 ---
 
+#### `ConstructionContext.AxisID.raw`
+
+The backing `UUID`; equality and hashing are `UUID`'s own.
+
+---
+
 ### `ConstructionContext.PointID`
 
 Opaque, `Hashable`, `Sendable` identifier for a registered construction point.
@@ -449,6 +513,10 @@ public struct PointID: Sendable, Hashable {
     public init()
 }
 ```
+
+- `raw`: the backing `UUID`. Each `init()` call generates a fresh one; two `PointID` values are equal exactly when their `raw` UUIDs match.
+
+#### `ConstructionContext.PointID.raw`
 
 ---
 
@@ -724,6 +792,28 @@ public struct BrokenEntities: Sendable {
 
 ---
 
+#### `BrokenEntities.planes`
+
+The registered planes that failed to resolve against the graph passed to `allBroken(in:)`.
+
+```swift
+public let planes: [(id: PlaneID, error: ConstructionResolutionError)]
+```
+
+Each entry pairs the failing plane's `PlaneID` with the `ConstructionResolutionError` `BRepGraph.resolve(_:)` returned for it. Empty if every registered plane resolved successfully.
+
+#### `BrokenEntities.axes`
+
+The registered axes that failed to resolve against the graph passed to `allBroken(in:)`.
+
+```swift
+public let axes: [(id: AxisID, error: ConstructionResolutionError)]
+```
+
+Each entry pairs the failing axis's `AxisID` with the `ConstructionResolutionError` `BRepGraph.resolve(_:)` returned for it. Empty if every registered axis resolved successfully.
+
+---
+
 ### `ConstructionContext.allBroken(in:)`
 
 Inspects every registered entity against `graph` and returns those that fail resolution.
@@ -859,6 +949,12 @@ public struct MaterializeOptions: Sendable {
 
 ---
 
+#### `ConstructionContext.MaterializeOptions.axisHalfLength`
+
+Half-length of the edge representing each axis.
+
+---
+
 ### `ConstructionContext.MaterializationResult`
 
 Summary returned by `materialize(in:graph:options:)`.
@@ -874,6 +970,18 @@ public struct MaterializationResult: Sendable {
 ```
 
 - `totalMaterialized` — combined count of successfully materialised planes, axes, and points.
+
+| Field | Meaning |
+|---|---|
+| `planeShapes` | `(PlaneID, labelId)` pairs for each plane successfully materialised. |
+| `axisShapes` | `(AxisID, labelId)` pairs for each axis successfully materialised. |
+| `pointShapes` | `(PointID, labelId)` pairs for each point successfully materialised. |
+| `failures` | One `MaterializationFailure` per entity that failed to resolve or could not become a shape. |
+| `totalMaterialized` | `planeShapes.count + axisShapes.count + pointShapes.count`. |
+
+#### `ConstructionContext.MaterializationResult.totalMaterialized`
+
+Combined count of successfully materialised planes, axes, and points.
 
 ---
 
@@ -896,6 +1004,43 @@ public enum MaterializationFailure: Sendable {
 
 ---
 
+#### `MaterializationFailure.planeResolveFailed`
+
+The plane's `BRepGraph.resolve(_:)` call returned `.failure`; carries the failing `PlaneID` and the `ConstructionResolutionError` the graph reported.
+
+#### `MaterializationFailure.axisResolveFailed`
+
+The axis's `BRepGraph.resolve(_:)` call returned `.failure`; carries the failing `AxisID` and the underlying `ConstructionResolutionError`.
+
+#### `MaterializationFailure.pointResolveFailed`
+
+The point's `BRepGraph.resolve(_:)` call returned `.failure`; carries the failing `PointID` and the underlying `ConstructionResolutionError`.
+
+#### `MaterializationFailure.planeShapeFailed`
+
+The plane recipe resolved to a `Placement`, but building its representative rectangular face (via the private `planeShape(placement:halfSize:)` helper) failed; carries the `PlaneID`.
+
+#### `MaterializationFailure.axisShapeFailed`
+
+The axis recipe resolved to an origin and direction, but building its representative edge (via the private `axisShape(origin:direction:halfLength:)` helper) failed; carries the `AxisID`.
+
+#### `MaterializationFailure.pointShapeFailed`
+
+The point recipe resolved to a coordinate, but building its representative vertex (via the private `pointShape(at:)` helper, i.e. `Shape.vertex(at:)`) failed; carries the `PointID`.
+
+`*ResolveFailed` cases indicate that the recipe could not be evaluated against the graph; `*ShapeFailed` cases indicate that the recipe resolved but the representative shape could not be constructed (e.g. degenerate wire).
+
+---
+
+```swift
+```
+
+```swift
+```
+
+```swift
+```
+---
 ### `ConstructionContext.materialize(in:graph:options:)`
 
 Materialises all registered construction entities as `TopoDS_Shape`s on the document's `CONSTRUCTION` layer.
@@ -948,6 +1093,17 @@ public enum CurveKind: Sendable, Hashable {
 ```
 
 Angles for `.arc` are in radians.
+
+| Case | Meaning |
+|------|---------|
+| `line(from:to:)` | A straight segment between two 2D points. |
+| `arc(center:radius:startAngle:endAngle:)` | A circular arc (radians). |
+| `circle(center:radius:)` | A full circle. |
+| `polyline([SIMD2<Double>])` | An ordered chain of 2D points, taken as-is (not tessellated). |
+
+*(Per-case anchor below, for cross-reference; the table above has the actual meaning of each.)*
+
+#### `SketchElement.CurveKind.polyline`
 
 ---
 
@@ -1140,8 +1296,9 @@ Construction elements are filtered at this single site — upstream views (solve
   }
   ```
 
----
+*(Internal, not public API: `buildProfile(in:graph:)` above is implemented with two `private func` helpers on `Sketch`. `lift(_:with:)` computes the `placement.origin + pt.x * placement.xAxis + pt.y * placement.yAxis` 2D-to-3D mapping described above for each tessellated point. `approxEqual(_:_:tolerance:)` compares two lifted 3D points by squared distance to decide whether the resulting polyline's first and last points coincide closely enough to close the wire.)*
 
+---
 ## Shape.section2D
 
 ### `Shape.section2D(planeOrigin:planeNormal:planeU:deflection:)`
@@ -1170,7 +1327,7 @@ Computes the 3D section edges via `sectionWithPlane`, then projects each sample 
   if let drawing = box.section2D(planeOrigin: SIMD3(0, 0, 25),
                                   planeNormal: SIMD3(0, 0, 1)) {
       // drawing.visibleEdges contains the 50×50 square contour at Z=25
-      let dxf = Exporter.exportDXF(drawing: drawing)
+      try Exporter.writeDXF(drawing: drawing, to: dxfURL)
   }
   ```
 
@@ -1194,6 +1351,40 @@ public struct SectionView: Sendable {
 - `drawing` — the `Drawing` containing the contour and any added hatching and label.
 - `label` — optional string label (e.g. `"A-A"`), added as a text annotation above the drawing bounds.
 - `cuttingPlaneOrigin` / `cuttingPlaneNormal` — the cutting plane that produced this view.
+
+---
+
+#### `SectionView.drawing`
+
+The `Drawing` containing the contour and any added hatching and label.
+
+```swift
+public let drawing: Drawing
+```
+
+#### `SectionView.label`
+
+Optional string label (e.g. `"A-A"`), added as a text annotation above the drawing bounds.
+
+```swift
+public let label: String?
+```
+
+#### `SectionView.cuttingPlaneOrigin`
+
+The origin of the cutting plane that produced this view, in world coordinates.
+
+```swift
+public let cuttingPlaneOrigin: SIMD3<Double>
+```
+
+#### `SectionView.cuttingPlaneNormal`
+
+The normal of the cutting plane that produced this view.
+
+```swift
+public let cuttingPlaneNormal: SIMD3<Double>
+```
 
 ---
 

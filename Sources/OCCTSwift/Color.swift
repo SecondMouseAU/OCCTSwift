@@ -203,3 +203,9 @@ public struct Color: Sendable, Equatable, Hashable {
         OCCTColorEpsilon()
     }
 }
+
+extension Color {
+
+    /// The total number of named colors available in OCCT.
+    public static var namedColorCount: Int { Int(OCCTNamedColorCount()) }
+}

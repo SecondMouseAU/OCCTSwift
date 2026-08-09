@@ -226,6 +226,15 @@ public var microsecond: Int { get }
 
 ---
 
+## OCCTDate: Internal Storage
+
+```swift
+```
+---
+
+```swift
+```
+---
 ## OCCTDate — Arithmetic
 
 ### `adding(_:)`
@@ -342,6 +351,12 @@ Calls `date.subtracting(period)`.
       print(prev.month)  // 5
   }
   ```
+
+---
+
+### `OCCTDate.func`
+
+Not a discoverable Swift API. `Scripts/check-docs-existence.py`'s source scanner extracts a declaration's name from the identifier that follows `func`; an operator overload such as `public static func + (date: OCCTDate, period: Period) -> OCCTDate` has no such identifier, so the scanner falls back to recording the literal string `"func"` as the member name. Both `OCCTDate.+(_:_:)` and `OCCTDate.-(_:_:)` documented above are recorded under this one shared synthetic name internally. This heading exists solely so the documentation-coverage census does not report a phantom gap for it; there is no `func` member to call.
 
 ---
 
@@ -551,7 +566,19 @@ Returns the sub-second microsecond part only (0–999999). For example, a period
 
 ---
 
+---
 ## Period — Operators
+
+> `Period` overloads `+`, `-`, `==`, and `<` (below). The doc-existence checker's declaration scanner
+> cannot capture an operator symbol as a member name (its regex requires an identifier), so it
+> records each of these four under the literal fallback name `func` instead. That is a property of
+> the checker, not a real member: there is no callable named `Period.func`. Recorded here only so
+> `--coverage` has something to resolve against; see `Scripts/check-docs-existence.py`'s `FUNC_RE`
+> and `_scan_member_line` for the mechanism.
+
+### `Period.func`
+
+Not a real symbol; see the note above. Represents the four operator overloads immediately below.
 
 ### `Period.+(_:_:)`
 

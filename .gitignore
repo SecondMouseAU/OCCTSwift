@@ -43,3 +43,4 @@ docs/CLAUDE_HANDOFF.md
 
 # Stray scheduler lock (local only)
 .claude/scheduled_tasks.lock
+__pycache__/

@@ -42,14 +42,28 @@ struct GaussMultipleIntegrationTests {
 @Suite("GaussSetIntegration")
 struct GaussSetIntegrationTests {
     @Test func integrateSet() {
+        // gaussSetIntegration supports exactly one integration variable
+        // (math_GaussSetIntegration's own header: "the case M>1 is not implemented") but any
+        // number of equations -- a "set" of functions of that one variable, each integrated
+        // separately. This case used to pass `lower: [0, 0], upper: [1, 1]` (two variables)
+        // and assert 0.5, which was never the integral of x + y over the unit square (that is
+        // 1.0): the class silently varies only the first component and pins the rest at 0,
+        // so the old assertion was pinning that silent defect (#640 review finding 2), not a
+        // correct answer. Fixed to the contract the class actually supports.
         let result = MathSolver.gaussSetIntegration(
-            nEquations: 1, lower: [0, 0], upper: [1, 1], order: [10, 10]
-        ) { x in [x[0] + x[1]] }
+            nEquations: 2, lower: [0], upper: [2], order: [10]
+        ) { x in [x[0], x[0] * x[0]] }
         #expect(result != nil)
         if let r = result {
-            #expect(r.count == 1)
-            #expect(abs(r[0] - 0.5) < 1e-6)
+            #expect(r.count == 2)
+            #expect(abs(r[0] - 2.0) < 1e-9)
+            #expect(abs(r[1] - 8.0 / 3.0) < 1e-9)
         }
+
+        // The old, invalid two-variable shape is now rejected rather than silently wrong.
+        #expect(MathSolver.gaussSetIntegration(
+            nEquations: 1, lower: [0, 0], upper: [1, 1], order: [10, 10]
+        ) { x in [x[0] + x[1]] } == nil)
     }
 }
 
@@ -75,7 +89,7 @@ struct IntegrationMountingBracketTests {
         #expect(wallRaw.isValid)
 
         // Step 3: Union base + wall
-        guard let bracket = basePlate.union(with: wallRaw) else {
+        guard let bracket = basePlate.union(wallRaw) else {
             #expect(Bool(false), "Failed to union base + wall")
             return
         }
@@ -270,7 +284,7 @@ struct IntegrationDegenerateResilienceTests {
 
     @Test func selfUnion() {
         if let box = Shape.box(width: 10, height: 10, depth: 10) {
-            if let result = box.union(with: box) {
+            if let result = box.union(box) {
                 #expect(result.isValid)
                 if let vol = result.volume, let origVol = box.volume {
                     #expect(abs(vol - origVol) / origVol < 0.01)
@@ -398,7 +412,12 @@ struct IntegrationScallopAnalysisTests {
 
         var curvatures: [Double] = []
         for (u, v) in params {
-            let gauss = sphere.gaussianCurvature(atU: u, v: v)
+            // #595: nil is now available for "no curvature here", and a sphere away from its
+            // poles is not such a point, so an absence is a failure rather than a 0 to average in.
+            guard let gauss = sphere.gaussianCurvature(atU: u, v: v) else {
+                Issue.record("Sphere curvature should be defined at (\(u), \(v))")
+                continue
+            }
             #expect(gauss.isFinite, "Curvature should be finite")
             #expect(abs(gauss - expectedGaussian) < 0.001, "Sphere curvature should be constant 1/R^2")
             curvatures.append(gauss)
@@ -425,8 +444,8 @@ struct IntegrationScallopAnalysisTests {
             let vMid = (dom.vMin + dom.vMax) / 2.0
             let g1 = bezSurf.gaussianCurvature(atU: dom.uMin + 0.1, v: dom.vMin + 0.1)
             let g2 = bezSurf.gaussianCurvature(atU: uMid, v: vMid)
-            #expect(g1.isFinite)
-            #expect(g2.isFinite)
+            #expect(g1?.isFinite == true)
+            #expect(g2?.isFinite == true)
             // On a non-trivial Bezier surface, curvature should vary
             // (It may be zero at some points, but both should be finite)
         }
@@ -457,7 +476,7 @@ struct IntegrationBottleProfileTests {
         }
 
         // Union body + cap
-        guard let bottle = body.union(with: positionedCap) else {
+        guard let bottle = body.union(positionedCap) else {
             #expect(Bool(false), "Failed to union body + cap")
             return
         }
@@ -542,7 +561,7 @@ struct IntegrationToleranceCascadeTests {
         #expect(vol2 > 0)
 
         // Union should succeed for adjacent boxes
-        if let combined = box1.union(with: box2) {
+        if let combined = box1.union(box2) {
             #expect(combined.isValid)
             if let combinedVol = combined.volume {
                 #expect(abs(combinedVol - (vol1 + vol2)) < 1.0,
@@ -560,7 +579,7 @@ struct IntegrationToleranceCascadeTests {
         let vol4 = box4.volume ?? 0
 
         // Union with tiny gap should still succeed
-        if let gappedUnion = box3.union(with: box4) {
+        if let gappedUnion = box3.union(box4) {
             #expect(gappedUnion.isValid)
             if let gVol = gappedUnion.volume {
                 // Volume should be approximately sum (gap is negligible)

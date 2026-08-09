@@ -85,31 +85,63 @@ that changed): 0 races, clean exit, across 4 repeated runs (8×30, 8×50, 10×60
 
 ## Fix
 
-`Scripts/patches/0016-Resource_Manager-atomic-Debug-Storage_Schema-mutex-374.patch`. Two
-independent fixes, matching the two distinct races, both following the established "lock/atomic
-the shared resource, don't restructure the subsystem" precedent (#341's atomic bool, #344's
-`CDF_Directory` mutex, #349's per-driver mutex, #353's table + per-object mutexes):
+`Scripts/patches/0016-Resource_Manager-atomic-Debug-Storage_Schema-per-instance-374.patch`. Two
+independent fixes, matching the two distinct races. Fix 1 follows the established "lock/atomic the
+shared resource, don't restructure the subsystem" precedent (#341's atomic bool, #344's
+`CDF_Directory` mutex, #349's per-driver mutex, #353's table + per-object mutexes). Fix 2 originally
+did too, and was revised on upstream review to remove the sharing instead (see "Revised" below):
 
 1. **`Resource_Manager::Debug`**: `static bool` → `static std::atomic<bool>`. It's a plain
    process-wide debug-logging flag, not meant to express per-instance intent (unlike #341's
    `theAutoNaming`, which needed a deeper per-instance redesign) — an atomic is sufficient and
    matches the issue's own suggested fix scope.
-2. **`Storage_Schema::ICurrentData()`**: a new `Storage_Schema::ICurrentDataMutex()` (function-local
-   static `std::recursive_mutex&`, mirroring `ICurrentData()`'s own existing accessor pattern) now
-   guards every touch point: the constructor's `Clear()`, `Write()`'s entire body (from
-   `ISetCurrentData()` through the trailing `Clear()` — the whole call is one atomic "session"
-   against this global, so the lock spans it, not just each individual access), `BindType()`,
-   `TypeBinding()`, `AddPersistent()`, `PersistentToAdd()`, `HasTypeBinding()` (inline in the
-   header), and `ISetCurrentData()` itself. Recursive because `Write()`'s own critical section
-   calls back into `BindType()`/`AddPersistent()`/`PersistentToAdd()` on the *same* thread via the
-   per-type `Storage_CallBack::Write()` callbacks it invokes — a plain mutex would deadlock there.
-   `AddPersistent()`'s pre-existing `static TCollection_AsciiString aTypeName` scratch variable
-   (itself unsynchronized, a second, smaller hazard noticed while patching this function) is
-   incidentally covered by the same lock now spanning the whole function body.
+2. **`Storage_Schema::ICurrentData()`**: the function-local static is deleted. The handle becomes a
+   `mutable occ::handle<Storage_Data> myCurrentData` field on `Storage_Schema`, so there is no
+   shared state left to guard. `Write()` assigns the field, `Clear()` nullifies its own, and
+   `HasTypeBinding()`/`BindType()`/`TypeBinding()`/`AddPersistent()`/`PersistentToAdd()` read it
+   through `*this`. The two private statics `ISetCurrentData()` and `ICurrentData()` are removed.
+   `mutable` because all of those methods are `const`.
 
-No signature changes to any public OCCT API — `ICurrentDataMutex()` is a new private static
-accessor, exactly like `ICurrentData()` itself. `OCCTBridge.xcframework` did not need rebuilding;
-only the pinned `OCCT.xcframework` kernel binary changed.
+   The same commit drops the `static` from `AddPersistent()`'s `TCollection_AsciiString aTypeName`
+   scratch variable, a separate, smaller process-wide hazard in the same class. It is assigned from
+   the `tName` argument and read two lines later, so `static` only ever saved an allocation. The
+   mutex version covered it incidentally; the per-instance field does not, and a lock is the wrong
+   answer for a value that wants to be a local.
+
+No signature changes to any public OCCT API: `ICurrentData()` and `ISetCurrentData()` were both
+private, and nothing outside `Storage_Schema` referenced either. `OCCTBridge.xcframework` did not
+need rebuilding; only the pinned `OCCT.xcframework` kernel binary changed.
+
+### Revised on upstream review (#518)
+
+The first shipped version of fix 2 (v1.15.18) added `Storage_Schema::ICurrentDataMutex()`, a
+function-local `static std::recursive_mutex&` mirroring `ICurrentData()`'s own accessor pattern,
+held across the constructor's `Clear()`, the whole body of `Write()` (one atomic session against the
+global rather than one lock per access), `BindType()`, `TypeBinding()`, `AddPersistent()`,
+`PersistentToAdd()`, `HasTypeBinding()` and `ISetCurrentData()`. Recursive, because `Write()`'s own
+critical section re-enters `BindType`/`AddPersistent`/`PersistentToAdd` on the same thread through
+the per-type `Storage_CallBack::Write()` callbacks it invokes.
+
+That was memory-safe but it synchronized access to sharing that should not exist. Reviewing
+[OCCT#1399](https://github.com/Open-Cascade-SAS/OCCT/pull/1399#issuecomment-5112586065), maintainer
+gkv311 suggested the field instead. The state was never process-wide: **every** `Storage_Schema` in
+the tree is constructed locally by its caller and used only there (`PCDM_StorageDriver::Write`, and
+`PCDM_ReadWriter_1` at three sites), no instance is cached or shared anywhere, and
+`Storage_CallBack::Add`/`Write`/`Read` all take the driving schema as an argument, so every callback
+re-entry lands back on the same instance. The other `Storage_Schema` users in the tree
+(`BinLDrivers`, `XmlMDF`, `StdLDrivers`) touch only its statics `CheckTypeMigration()` and
+`ICreationDate()`, neither of which reads the current data.
+
+The field is also strictly stronger on the failure this issue reported. Under the mutex, a throwaway
+`Storage_Schema` built by `PCDM_ReadWriter_1` during an unrelated `Open()` still nullified an
+in-flight `Write()`'s current data, it just did so without a data race. Under the field it cannot
+reach another instance's data at all. It narrows exactly one thing: the mutex incidentally
+serialized two threads driving the *same* `Storage_Schema` instance, and the field does not. No
+caller does that, because no instance is shared.
+
+Same correction, and the same lesson, as #341 to #363: a lock is the right tool only when the state
+is genuinely one shared resource; when it is per-instance data masquerading as a global, relocate
+the ownership.
 
 ## Validation
 

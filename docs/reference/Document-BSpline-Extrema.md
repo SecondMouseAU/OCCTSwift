@@ -5,7 +5,7 @@ parent: API Reference
 
 # Document — BSpline/Bezier Methods & Extrema
 
-This page covers lines 8729–9929 of `Sources/OCCTSwift/Document.swift` (v0.106–v0.109): topology-flag extensions on `Shape`, continuity properties on `Curve3D`/`Curve2D`/`Surface`, the BSpline and Bezier nested namespaces on those types, `BRepTools`/`BRepLib` utilities, `MakeFace` convenience factories, `SewingBuilder`, `HatchBuilder`, edge/face/vertex extraction, the full `Extrema` family (`ExtremaElC`, `ExtremaElCS`, `ExtremaElSS`, `ExtremaPointCurve`, `ExtremaPointSurface`), and the `TrigRoots` solver.
+This page covers `Sources/OCCTSwift/Document.swift`'s v0.106–v0.109 additions: topology-flag extensions on `Shape`, continuity properties on `Curve3D`/`Curve2D`/`Surface`, the BSpline and Bezier nested namespaces on those types, `BRepTools`/`BRepLib` utilities, `MakeFace` convenience factories, `SewingBuilder`, `HatchBuilder`, edge/face/vertex extraction, the full `Extrema` family (`ExtremaElC`, `ExtremaElCS`, `ExtremaElSS`, `ExtremaPointCurve`, `ExtremaPointSurface`), and the `TrigRoots` solver.
 
 See the [Document index page](Document.md) for the full split-chunk table of contents.
 
@@ -31,6 +31,17 @@ public enum Orientation: Int32, Sendable {
     case external = 3
 }
 ```
+
+| Case | Meaning |
+|---|---|
+| `.forward` | Sub-shape traversed in its natural direction (`TopAbs_FORWARD`). |
+| `.reversed` | Sub-shape traversed against its natural direction (`TopAbs_REVERSED`). |
+| `.internal` | Sub-shape used for construction only, ignored by most boundary algorithms (`TopAbs_INTERNAL`). |
+| `.external` | Sub-shape lies outside the normal boundary role, ignored by most boundary algorithms (`TopAbs_EXTERNAL`). |
+
+---
+
+#### `Shape.Orientation.external`
 
 - **OCCT:** `TopAbs_Orientation`.
 
@@ -251,11 +262,24 @@ public var hashCode: Int
 
 ## Curve3D/Curve2D/Surface Continuity
 
-Continuity integer accessors added to `Curve3D`, `Curve2D`, and `Surface` (v0.106.0). The integer encodes the `GeomAbs_Shape` enum: 0 = C0, 1 = C1, 2 = C2, 3 = C3, 4 = CN, 5 = G1, 6 = G2.
+Continuity integer accessors added to `Curve3D`, `Curve2D`, and `Surface` (v0.106.0). The integer is
+a raw `GeomAbs_Shape` ordinal, in that enum's own declared order, which interleaves the geometric
+classes with the parametric ones:
+
+| ordinal | 0 | 1 | 2 | 3 | 4 | 5 | 6 |
+|---|---|---|---|---|---|---|---|
+| class | C0 | G1 | C1 | G2 | C2 | C3 | CN |
+
+> This page previously documented the encoding as `0 = C0, 1 = C1, 2 = C2, 3 = C3, 4 = CN, 5 = G1,
+> 6 = G2`. That was never what a `static_cast` of `GeomAbs_Shape` produces — it was a copy of the
+> incorrect doc comment that let `continuity` and the retired `continuityOrder` disagree unnoticed
+> until #485. Prefer `continuityClass`, which names the cases, and `continuityClass.satisfies(_:)`
+> for a continuity floor; a raw ordinal compared against a hand-written constant is the defect
+> #619 was filed about.
 
 ### `Curve3D.continuity`
 
-Global geometric continuity of the 3D curve.
+Global geometric continuity of the 3D curve, as a raw `GeomAbs_Shape` ordinal.
 
 ```swift
 public var continuity: Int
@@ -264,8 +288,9 @@ public var continuity: Int
 - **OCCT:** `Geom_Curve::Continuity`.
 - **Example:**
   ```swift
-  if let c = Curve3D.makeCircle(center: .zero, normal: SIMD3(0,0,1), radius: 5) {
-      print(c.continuity) // 4 (CN — infinitely differentiable)
+  if let c = Curve3D.circle(center: .zero, normal: SIMD3(0, 0, 1), radius: 5) {
+      print(c.continuity)        // 6 — CN, infinitely differentiable
+      print(c.continuityClass)   // .cN
   }
   ```
 
@@ -273,7 +298,7 @@ public var continuity: Int
 
 ### `Curve2D.continuity`
 
-Global geometric continuity of the 2D curve.
+Global geometric continuity of the 2D curve, as a raw `GeomAbs_Shape` ordinal (see the table above).
 
 ```swift
 public var continuity: Int
@@ -285,7 +310,7 @@ public var continuity: Int
 
 ### `Surface.continuity`
 
-Global geometric continuity of the surface.
+Global geometric continuity of the surface, as a raw `GeomAbs_Shape` ordinal (see the table above).
 
 ```swift
 public var continuity: Int
@@ -1665,6 +1690,10 @@ public struct ExtremaResult: Sendable {
 - `squareDistance` — squared Euclidean distance at this extremum.
 - `point1` — closest/farthest point on the first geometric element.
 - `point2` — closest/farthest point on the second geometric element.
+
+---
+
+#### `point2`
 
 ---
 

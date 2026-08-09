@@ -1,0 +1,9 @@
+tol3d=0.0001     isDone=true  G0Error=0.20369      bboxDiag=1044.12    EXCEEDS TOLERANCE, ACCEPTED ANYWAY
+  face surface: BSpline degU=8 degV=8 nPolesU=9 nPolesV=9
+  max pole distance from boundary centre (5,5,0): 501.602
+tol3d=1e-05      isDone=true  G0Error=0.203757     bboxDiag=1043.96    EXCEEDS TOLERANCE, ACCEPTED ANYWAY
+  face surface: BSpline degU=8 degV=8 nPolesU=9 nPolesV=9
+  max pole distance from boundary centre (5,5,0): 500.763
+tol3d=1e-06      isDone=true  G0Error=0.226344     bboxDiag=1247.59    EXCEEDS TOLERANCE, ACCEPTED ANYWAY
+  face surface: BSpline degU=8 degV=8 nPolesU=9 nPolesV=9
+  max pole distance from boundary centre (5,5,0): 529.592

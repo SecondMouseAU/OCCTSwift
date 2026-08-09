@@ -20,7 +20,7 @@ public struct SurfaceGrid: Sendable {
     public let uCount: Int
     /// Number of samples in the V direction.
     public let vCount: Int
-    /// Flat storage, U-major: `points[u * vCount + v]`.
+    /// Flat storage, U-major: `points[surfaceGridIndex(u:v:vCount:)]`.
     private let points: [SIMD3<Double>]
 
     init(uCount: Int, vCount: Int, points: [SIMD3<Double>]) {
@@ -38,7 +38,63 @@ public struct SurfaceGrid: Sendable {
     public func at(u: Int, v: Int) -> SIMD3<Double> {
         precondition(u >= 0 && u < uCount && v >= 0 && v < vCount,
                       "SurfaceGrid.at(u: \(u), v: \(v)) out of range (uCount: \(uCount), vCount: \(vCount))")
-        return points[u * vCount + v]
+        return points[surfaceGridIndex(u: u, v: v, vCount: vCount)]
+    }
+}
+
+/// The one definition of a UV grid's flat storage index: **U-major**, u varying slowest.
+///
+/// Shared by ``SurfaceGrid`` and ``SurfaceGridD1``, and mirroring the bridge's own
+/// `occtSurfaceGridIndex` so the Swift and C sides of the same buffer cannot disagree. #486:
+/// two bridge functions once wrote opposite layouts, each header calling its own "row-major",
+/// a phrase that says nothing about a UV grid, where either parameter can be the row.
+@inline(__always)
+internal func surfaceGridIndex(u: Int, v: Int, vCount: Int) -> Int {
+    u * vCount + v
+}
+
+/// A 2D grid of points and first partial derivatives sampled over a surface's UV parameter space.
+///
+/// The D1 counterpart of ``SurfaceGrid``, returned by
+/// ``Surface/evaluateGridD1(uParameters:vParameters:)``. Indexing is `.at(u:v:)` for the same
+/// reason: a flat `[(point:, d1u:, d1v:)]` array leaves the caller guessing whether u or v runs
+/// fastest.
+///
+/// ```swift
+/// let grid = surface.evaluateGridD1(uParameters: [0, 0.5, 1], vParameters: [0, 1])
+/// let sample = grid.at(u: 2, v: 0)
+/// let normal = simd_normalize(simd_cross(sample.d1u, sample.d1v))
+/// ```
+public struct SurfaceGridD1: Sendable {
+    /// Number of samples in the U direction.
+    public let uCount: Int
+    /// Number of samples in the V direction.
+    public let vCount: Int
+    /// Flat storage, U-major: `points[surfaceGridIndex(u:v:vCount:)]`.
+    private let points: [SIMD3<Double>]
+    private let d1u: [SIMD3<Double>]
+    private let d1v: [SIMD3<Double>]
+
+    init(uCount: Int, vCount: Int,
+         points: [SIMD3<Double>], d1u: [SIMD3<Double>], d1v: [SIMD3<Double>]) {
+        self.uCount = uCount
+        self.vCount = vCount
+        self.points = points
+        self.d1u = d1u
+        self.d1v = d1v
+    }
+
+    static let empty = SurfaceGridD1(uCount: 0, vCount: 0, points: [], d1u: [], d1v: [])
+
+    /// Whether this grid has no samples (returned when evaluation fails).
+    public var isEmpty: Bool { points.isEmpty }
+
+    /// Point and first partial derivatives at the given U/V grid index.
+    public func at(u: Int, v: Int) -> (point: SIMD3<Double>, d1u: SIMD3<Double>, d1v: SIMD3<Double>) {
+        precondition(u >= 0 && u < uCount && v >= 0 && v < vCount,
+                      "SurfaceGridD1.at(u: \(u), v: \(v)) out of range (uCount: \(uCount), vCount: \(vCount))")
+        let i = surfaceGridIndex(u: u, v: v, vCount: vCount)
+        return (point: points[i], d1u: d1u[i], d1v: d1v[i])
     }
 }
 
@@ -73,19 +129,20 @@ public final class Surface: @unchecked Sendable {
         SurfaceType(rawValue: OCCTSurfaceGetType(handle)) ?? .other
     }
 
-    /// Surface continuity class, derived from GeomAbs_Shape.
+    /// Measured overall continuity of the surface.
     ///
-    /// - Note: This reports a surface's *measured* continuity, and its raw values are
+    /// ```swift
+    /// let cylinder = Surface.cylinder(radius: 5)
+    /// print(cylinder?.continuityClass)                    // .cN
+    /// print(cylinder?.continuityClass.satisfies(.c2))     // true
+    /// ```
+    ///
+    /// - Note: Reports a *measured* class, not a requested order. Its raw values are
     ///   `GeomAbs_Shape`'s own ordinals, which are not a 0/1/2 order. Do not confuse it with
     ///   the top-level ``SurfaceContinuity``, one dot away, which is the G0/G1/G2 order you
     ///   *request* of a filling or plate constraint. See #398 for the full census.
-    public enum Continuity: Int32, Sendable, CaseIterable {
-        case c0 = 0, g1 = 1, c1 = 2, g2 = 3, c2 = 4, c3 = 5, cN = 6
-    }
-
-    /// Typed overall continuity of the surface (wraps the Int-returning `continuity`).
-    public var continuityClass: Continuity {
-        Continuity(rawValue: OCCTSurfaceGetContinuity(handle)) ?? .c0
+    public var continuityClass: ContinuityClass {
+        ContinuityClass(rawValue: OCCTSurfaceGetContinuity(handle)) ?? .c0
     }
 
     public var isPlane:              Bool { surfaceKind == .plane }
@@ -264,10 +321,24 @@ public final class Surface: @unchecked Sendable {
 
     // MARK: - Freeform Surfaces
 
-    /// Create a Bezier surface from control points
+    /// Create a Bezier surface from control points.
+    ///
     /// - Parameters:
-    ///   - poles: 2D array of control points [uRow][vCol]
-    ///   - weights: Optional 2D array of weights (same dimensions as poles)
+    ///   - poles: 2D array of control points `[uRow][vCol]`, **at least 2 × 2**.
+    ///   - weights: Optional 2D array of weights (same dimensions as poles).
+    /// - Returns: The surface, or `nil` if either direction has fewer than 2 poles or OCCT rejects
+    ///   the poles. Unlike ``drawMesh(uCount:vCount:)``, whose superficially identical minimum of 2
+    ///   turned out to be a bridge artifact (#620), this one is the kernel's: a Bezier's degree is
+    ///   its pole count minus 1 and must be at least 1, so `Geom_BezierSurface` raises
+    ///   `Standard_ConstructionError` on a single-pole direction. A 2 × 2 patch is the smallest
+    ///   legal one, bilinear in both directions.
+    ///
+    /// ```swift
+    /// let patch = Surface.bezier(poles: [
+    ///     [SIMD3(0, 0, 0), SIMD3(0, 1, 0)],
+    ///     [SIMD3(1, 0, 0), SIMD3(1, 1, 1)],
+    /// ])
+    /// ```
     public static func bezier(poles: [[SIMD3<Double>]],
                               weights: [[Double]]? = nil) -> Surface? {
         let uCount = Int32(poles.count)
@@ -448,7 +519,30 @@ public final class Surface: @unchecked Sendable {
 
     // MARK: - Conversion
 
-    /// Convert to BSpline representation
+    /// Convert to a BSpline representation, exactly where OCCT can and by approximation where it
+    /// cannot.
+    ///
+    /// ```swift
+    /// let sphere = Surface.sphere(center: .zero, radius: 10)!
+    /// let bspline = sphere.toBSpline()      // exact: degree 2, 6x5 poles
+    ///
+    /// // An offset surface with no analytic equivalent is approximated instead.
+    /// let approximated = sphere.offset(distance: 1)?.trimmed(u1: 0, u2: 4, v1: -1, v2: 1)?.toBSpline()
+    /// ```
+    ///
+    /// - Important: This is not an exactness guarantee, and it takes no tolerance. Analytic
+    ///   families (plane, cylinder, cone, sphere, torus, surface of revolution) and Bezier and
+    ///   BSpline surfaces convert exactly. Everything else, including offset surfaces with no
+    ///   analytic equivalent, is handed to `GeomConvert_ApproxSurface` at a tolerance OCCT
+    ///   hardcodes to `1e-4`, with a continuity it derives from the surface's own `IsCNu`/`IsCNv`,
+    ///   and the result is returned whether or not that tolerance was met. Measured on a trimmed
+    ///   offset of a B-spline that is C1 but not C2 in U, the conversion caps out at degree 14 and
+    ///   sits 0.038 from its source (#572). Use ``approximated(tolerance:continuity:maxSegments:maxDegree:)``
+    ///   when you need to name the tolerance, and ``approxWithDetails(tolerance:uContinuity:vContinuity:maxSegments:maxDegree:)``
+    ///   when you need to know whether it was reached.
+    /// - Returns: The BSpline surface, or `nil` when OCCT produced none. An unbounded surface
+    ///   throws inside OCCT and surfaces here as `nil`; trim it first with
+    ///   ``trimmed(u1:u2:v1:v2:)``.
     public func toBSpline() -> Surface? {
         guard let h = OCCTSurfaceToBSpline(handle) else { return nil }
         return Surface(handle: h)
@@ -473,10 +567,22 @@ public final class Surface: @unchecked Sendable {
     /// infinite/unbounded surface must still be trimmed to a finite parameter domain before
     /// calling this (see `trimmed(u1:u2:v1:v2:)`) — approximation does not do that for you.
     ///
+    /// Returns the fitted surface whenever OCCT produced one, which — per `HasResult()` — includes
+    /// a best-effort fit that did *not* reach `tolerance`. A non-nil result is therefore not a
+    /// promise that `tolerance` was met; on a surface where `maxDegree` cannot reach it (a torus at
+    /// 1e-9, say) OCCT returns a usable surface anyway.
+    /// ``Surface/approxWithDetails(tolerance:uContinuity:vContinuity:maxDegree:maxSegments:)``
+    /// runs the identical approximation (one shared `GeomConvert_ApproxSurface` behind both since
+    /// #491) and reports the actual `maxError` plus an `isDone` flag.
+    ///
     /// ```swift
     /// let sphere = Surface.sphere(center: .zero, radius: 5)!
     /// let bsp = sphere.approximated(tolerance: 1e-3, maxDegree: 8)
     /// ```
+    ///
+    /// - Parameter continuity: A ``ParametricContinuity`` raw value (0=C0, 1=C1, 2=C2). The
+    ///   approximator accepts nothing stricter: `AdvApprox` throws for C3 and above, which
+    ///   surfaces here as `nil`.
     public func approximated(tolerance: Double = 1e-3, continuity: Int = 2,
                              maxSegments: Int = 100, maxDegree: Int = 8) -> Surface? {
         guard let h = OCCTSurfaceApproximate(handle, tolerance, Int32(continuity),
@@ -518,14 +624,25 @@ public final class Surface: @unchecked Sendable {
 
     /// Draw iso-parameter grid lines for Metal visualization
     /// - Parameters:
-    ///   - uLineCount: Number of U-iso lines
-    ///   - vLineCount: Number of V-iso lines
-    ///   - pointsPerLine: Points per iso line
-    /// - Returns: Array of polylines, each a [SIMD3<Double>]
+    ///   - uLineCount: Number of U-iso lines, at least 0.
+    ///   - vLineCount: Number of V-iso lines, at least 0.
+    ///   - pointsPerLine: Points per iso line, at least 1.
+    /// - Returns: Array of polylines, each a [SIMD3<Double>], or empty if the grid cannot be
+    ///   served. The bound is on the total: `(uLineCount + vLineCount) * pointsPerLine` must not
+    ///   exceed ``Sampling/maximumSampleCount`` (#558). Each factor is also checked on its own,
+    ///   since a negative line count used to abort the process unless the other count happened to
+    ///   outweigh it.
     public func drawGrid(uLineCount: Int = 10, vLineCount: Int = 10,
                          pointsPerLine: Int = 50) -> [[SIMD3<Double>]] {
+        // Bound each line count before adding: the sum is what sizes `lineLengths`, and two counts
+        // near `Int.max` overflow the addition itself into a trap before any ceiling is consulted.
+        guard uLineCount >= 0, uLineCount <= Sampling.maximumSampleCount,
+              vLineCount >= 0, vLineCount <= Sampling.maximumSampleCount
+        else { return [] }
         let maxLines = uLineCount + vLineCount
-        let maxPoints = maxLines * pointsPerLine
+        guard let maxPoints = Sampling.gridTotal(maxLines, pointsPerLine, atLeast: 0),
+              maxPoints > 0
+        else { return [] }
         var buffer = [Double](repeating: 0, count: maxPoints * 3)
         var lineLengths = [Int32](repeating: 0, count: maxLines)
 
@@ -552,16 +669,52 @@ public final class Surface: @unchecked Sendable {
         return result
     }
 
-    /// Sample a uniform mesh grid of points for Metal visualization.
+    /// Sample a uniform grid of points over the surface's parametric bounds.
     ///
-    /// - Returns: A ``SurfaceGrid`` indexed `.at(u:v:)`, or an empty grid if sampling fails.
+    /// - Parameters:
+    ///   - uCount: Samples in U, at least 1.
+    ///   - vCount: Samples in V, at least 1.
+    /// - Returns: A ``SurfaceGrid`` indexed `.at(u:v:)`, or an empty grid if sampling fails or the
+    ///   grid cannot be served. The bound is on the **product**: `uCount * vCount` must not exceed
+    ///   ``Sampling/maximumSampleCount`` (#558). Each factor is also checked on its own, which is
+    ///   not redundant — two negative counts multiply to a plausible positive total, so
+    ///   `drawMesh(uCount: -1, vCount: -1)` used to look well-behaved while
+    ///   `drawMesh(uCount: -1, vCount: 3)` aborted the process.
+    ///
+    /// Samples span the **sampled range**, which is the surface's parametric domain with infinite
+    /// bounds clamped to ±100. For a bounded surface that is ``domain``; for an unbounded one
+    /// (a plane, an unbounded cylinder) it is not, and the difference is extreme rather than
+    /// marginal — a plane's `domain.uMin` is about -2e100 while its first sample sits at -100.
+    ///
+    /// **One sample in a direction is a request, not a degenerate case.** Despite the name nothing
+    /// here triangulates: the bridge walks that range evaluating the surface pointwise, so
+    /// `uCount: 1` is the single iso-row at the low end of the sampled U range and a 1×1 grid is
+    /// one point. The bridge used to demand 2 per direction — its own interpolation divisor, not
+    /// an OCCT rule — so a request this doc called in-range came back as an empty grid the caller
+    /// could not tell apart from a surface that failed to sample (#620). Counts below 1 are still
+    /// rejected, and rejection is still an empty grid, the documented answer every ``Sampling``
+    /// entry point gives.
     ///
     /// ```swift
     /// let grid = surface.drawMesh(uCount: 30, vCount: 30)
     /// let p = grid.at(u: 5, v: 3)
+    ///
+    /// // A single V iso-row: 20 points along v, at the low end of the sampled U range.
+    /// let isoRow = surface.drawMesh(uCount: 1, vCount: 20)
+    /// let along = (0..<isoRow.vCount).map { isoRow.at(u: 0, v: $0) }
+    ///
+    /// // Bounded surface: that low end is domain.uMin.
+    /// let sphere = Surface.sphere(center: .zero, radius: 10)!
+    /// sphere.drawMesh(uCount: 1, vCount: 4).at(u: 0, v: 0)   // == sphere.point(atU: 0, v: -.pi / 2)
+    ///
+    /// // Unbounded surface: it is the clamp, not domain.uMin.
+    /// let plane = Surface.plane(origin: .zero, normal: SIMD3(0, 0, 1))!
+    /// plane.drawMesh(uCount: 1, vCount: 4).at(u: 0, v: 0).x   // -100, not plane.domain.uMin
     /// ```
     public func drawMesh(uCount: Int = 20, vCount: Int = 20) -> SurfaceGrid {
-        let total = uCount * vCount
+        // `atLeast: 1` is gridTotal's default, but it is spelled out because it is a contract the
+        // bridge has to match exactly: the one time it was left implicit the two disagreed (#620).
+        guard let total = Sampling.gridTotal(uCount, vCount, atLeast: 1) else { return .empty }
         var buffer = [Double](repeating: 0, count: total * 3)
         let n = Int(OCCTSurfaceDrawMesh(handle, Int32(uCount), Int32(vCount), &buffer))
         guard n == total else { return .empty }
@@ -573,13 +726,18 @@ public final class Surface: @unchecked Sendable {
 
     // MARK: - Local Properties
 
-    /// Gaussian curvature at (u, v), or `0` where curvature is undefined.
+    /// Gaussian curvature at (u, v), or `nil` where the surface has none.
     ///
     /// - Parameters:
     ///   - u: U parameter.
     ///   - v: V parameter.
-    /// - Returns: Gaussian curvature, or `0` at a point where the tangent vectors are degenerate
+    /// - Returns: Gaussian curvature, or `nil` at a point where the tangent vectors are degenerate
     ///   (a cone apex, a sphere pole) and `GeomLProp_SLProps::IsCurvatureDefined()` is false.
+    ///
+    /// This used to be `0` — which is also the Gaussian curvature of **every point of every plane,
+    /// cylinder and cone**, since those are developable. Whole surfaces read as "no answer" (#595).
+    /// ``Face/gaussianCurvature(atU:v:)`` reads the same quantity off the same surface through the
+    /// face and has always returned an optional; the two now agree.
     ///
     /// `curvatures(u:v:)` returns this value and `meanCurvature(atU:v:)` together from a single
     /// evaluation; all three share one `GeomLProp_SLProps` construction and therefore agree
@@ -587,29 +745,39 @@ public final class Surface: @unchecked Sendable {
     ///
     /// ```swift
     /// let sphere = Surface.sphere(center: .zero, radius: 5)!
-    /// #expect(abs(sphere.gaussianCurvature(atU: 0, v: 0) - 1.0 / 25) < 1e-12)  // 1/r²
+    /// if let k = sphere.gaussianCurvature(atU: 0, v: 0) { #expect(abs(k - 1.0 / 25) < 1e-12) }
+    ///
+    /// let cylinder = Surface.cylinder(axis: .zero, direction: SIMD3(0, 0, 1), radius: 3)!
+    /// cylinder.gaussianCurvature(atU: 1, v: 6)   // 0 — developable, and that is the answer
     /// ```
-    public func gaussianCurvature(atU u: Double, v: Double) -> Double {
-        OCCTSurfaceGetGaussianCurvature(handle, u, v)
+    public func gaussianCurvature(atU u: Double, v: Double) -> Double? {
+        var k = 0.0
+        guard OCCTSurfaceGetGaussianCurvature(handle, u, v, &k) else { return nil }
+        return k
     }
 
-    /// Mean curvature at (u, v), or `0` where curvature is undefined.
+    /// Mean curvature at (u, v), or `nil` where the surface has none.
     ///
     /// - Parameters:
     ///   - u: U parameter.
     ///   - v: V parameter.
-    /// - Returns: Mean curvature, or `0` at a point where the tangent vectors are degenerate and
+    /// - Returns: Mean curvature, or `nil` at a point where the tangent vectors are degenerate and
     ///   `GeomLProp_SLProps::IsCurvatureDefined()` is false.
+    ///
+    /// This used to be `0`, which is also every point of every plane's real mean curvature (#595),
+    /// and it disagreed with ``Face/meanCurvature(atU:v:)``, which already returned an optional.
     ///
     /// `curvatures(u:v:)` returns this value and `gaussianCurvature(atU:v:)` together from a
     /// single evaluation; all three share one `GeomLProp_SLProps` construction.
     ///
     /// ```swift
     /// let sphere = Surface.sphere(center: .zero, radius: 5)!
-    /// #expect(abs(abs(sphere.meanCurvature(atU: 0, v: 0)) - 1.0 / 5) < 1e-12)  // 1/r
+    /// if let h = sphere.meanCurvature(atU: 0, v: 0) { #expect(abs(abs(h) - 1.0 / 5) < 1e-12) }
     /// ```
-    public func meanCurvature(atU u: Double, v: Double) -> Double {
-        OCCTSurfaceGetMeanCurvature(handle, u, v)
+    public func meanCurvature(atU u: Double, v: Double) -> Double? {
+        var h = 0.0
+        guard OCCTSurfaceGetMeanCurvature(handle, u, v, &h) else { return nil }
+        return h
     }
 
     /// Principal curvature result
@@ -766,10 +934,29 @@ public final class Surface: @unchecked Sendable {
 
     // MARK: - Advanced Plate Surfaces (v0.23.0)
 
-    /// Create a plate surface (parametric) interpolating through 3D points.
+    /// Create a plate surface (parametric) approximating a set of 3D points.
     ///
-    /// Uses `GeomPlate_BuildPlateSurface` + `GeomPlate_MakeApprox` to produce
-    /// a BSpline surface that passes through all given points.
+    /// Uses `GeomPlate_BuildPlateSurface` + `GeomPlate_MakeApprox` to produce a BSpline surface
+    /// through the given points. It **approximates** rather than interpolates: the fit subdivides
+    /// into more Bezier patches until it is within `tolerance` of the plate, and a cloud that
+    /// cannot be fitted that tightly still returns its best effort. Check the result:
+    ///
+    /// ```swift
+    /// let points: [SIMD3<Double>] = (0..<5).flatMap { i in
+    ///     (0..<5).map { j in
+    ///         SIMD3(Double(i) * 4, Double(j) * 4,
+    ///               4 * sin(Double(i) * 1.3) * cos(Double(j) * 1.1))
+    ///     }
+    /// }
+    /// if let plate = Surface.plateThrough(points, degree: 3, tolerance: 0.01) {
+    ///     let worst = points.compactMap { plate.projectPoint($0)?.distance }.max() ?? 0
+    ///     print(worst)              // 0.0032 — inside tolerance
+    ///     print(plate.uPoleCount)   // 16 — more than one patch, so the fit did subdivide
+    /// }
+    /// ```
+    ///
+    /// A `uPoleCount` no greater than the degree cap plus one means the fit stayed on a single
+    /// Bezier patch. Before #571 that was forced, and `tolerance` was unenforceable as a result.
     ///
     /// - Parameters:
     ///   - points: Array of 3D points (minimum 3)
@@ -900,16 +1087,47 @@ extension Surface {
                                              &outXYZ))
         guard n == total else { return .empty }
 
-        // Bridge buffer is V-major (v varies slowest, per OCCTSurfaceEvaluateGrid's own doc
-        // comment); SurfaceGrid's storage is U-major, so transpose while unpacking.
-        var points = [SIMD3<Double>](repeating: SIMD3(0, 0, 0), count: total)
-        for v in 0..<vCount {
-            for u in 0..<uCount {
-                let bridgeIdx = (v * uCount + u) * 3
-                points[u * vCount + v] = SIMD3(outXYZ[bridgeIdx], outXYZ[bridgeIdx + 1], outXYZ[bridgeIdx + 2])
-            }
-        }
+        // Bridge buffer is U-major, matching SurfaceGrid's storage, so no transpose. It was
+        // V-major until #486 settled every surface grid producer on one layout.
+        let points: [SIMD3<Double>] = unpackSIMD3(outXYZ, count: total)
         return SurfaceGrid(uCount: uCount, vCount: vCount, points: points)
+    }
+
+    /// Evaluate the surface and its first partial derivatives at a UV grid in one call.
+    ///
+    /// The D1 counterpart of ``evaluateGrid(uParameters:vParameters:)``, using OCCT's batch
+    /// `GeomGridEval_Surface` evaluator rather than one `D1` call per sample.
+    ///
+    /// - Parameters:
+    ///   - uParameters: Array of U parameter values
+    ///   - vParameters: Array of V parameter values
+    /// - Returns: A ``SurfaceGridD1`` indexed `.at(u:v:)`, or an empty grid if either input is
+    ///   empty or the evaluation fails.
+    ///
+    /// ```swift
+    /// let sphere = Surface.sphere(center: .zero, radius: 5)!
+    /// let grid = sphere.evaluateGridD1(uParameters: [0, 1, 2], vParameters: [0, 0.5])
+    /// let sample = grid.at(u: 1, v: 0)
+    /// let normal = simd_normalize(simd_cross(sample.d1u, sample.d1v))
+    /// ```
+    public func evaluateGridD1(uParameters: [Double], vParameters: [Double]) -> SurfaceGridD1 {
+        guard !uParameters.isEmpty, !vParameters.isEmpty else { return .empty }
+        let uCount = uParameters.count
+        let vCount = vParameters.count
+        let total = uCount * vCount
+        var outXYZ = [Double](repeating: 0, count: total * 3)
+        var outD1U = [Double](repeating: 0, count: total * 3)
+        var outD1V = [Double](repeating: 0, count: total * 3)
+        let n = Int(OCCTSurfaceEvaluateGridD1(handle,
+                                               uParameters, Int32(uCount),
+                                               vParameters, Int32(vCount),
+                                               &outXYZ, &outD1U, &outD1V))
+        guard n == total else { return .empty }
+
+        return SurfaceGridD1(uCount: uCount, vCount: vCount,
+                             points: unpackSIMD3(outXYZ, count: total),
+                             d1u: unpackSIMD3(outD1U, count: total),
+                             d1v: unpackSIMD3(outD1V, count: total))
     }
 }
 
@@ -921,9 +1139,12 @@ extension Surface {
     /// - Parameters:
     ///   - other: The other surface
     ///   - tolerance: Intersection tolerance
-    ///   - maxCurves: Maximum number of intersection curves
+    ///   - maxCurves: Output *capacity* (default 50), clamped into `0...`
+    ///     ``Sampling/maximumSampleCount``; 0 or less returns empty (#622).
     /// - Returns: Array of intersection curves
     public func intersections(with other: Surface, tolerance: Double = 1e-6, maxCurves: Int = 50) -> [Curve3D] {
+        let maxCurves = Sampling.capacity(maxCurves)
+        guard maxCurves > 0 else { return [] }
         var handles = [OCCTCurve3DRef?](repeating: nil, count: maxCurves)
         let n = Int(OCCTSurfaceIntersect(handle, other.handle, tolerance, &handles, Int32(maxCurves)))
         return (0..<n).compactMap { i in
@@ -932,16 +1153,26 @@ extension Surface {
         }
     }
 
-    /// Convert this freeform surface to an analytical surface if possible.
+    /// Convert this surface to an analytical surface if possible.
     ///
-    /// Recognizes if the surface is actually a plane, cylinder, cone,
-    /// sphere, or torus within the given tolerance.
+    /// Recognizes if the surface is actually a plane, cylinder, cone, sphere, or torus within the
+    /// given tolerance. A surface that is already analytical converts to an equal, independent
+    /// surface rather than being rejected.
+    ///
+    /// Use ``toAnalyticalWithGap(tolerance:)`` to also get the deviation, or
+    /// ``toAnalyticalWithGap(tolerance:uMin:uMax:vMin:vMax:)`` to fit only a sub-patch.
+    ///
+    /// ```swift
+    /// let cylinder = Surface.cylinder(origin: .zero, axis: SIMD3(0, 0, 1), radius: 5)!
+    /// if let analytical = cylinder.toBSpline()?.toAnalytical(tolerance: 1e-4) {
+    ///     print(analytical.surfaceKind)   // .cylinder
+    /// }
+    /// ```
     ///
     /// - Parameter tolerance: Recognition tolerance
     /// - Returns: The analytical surface, or nil if not recognizable
     public func toAnalytical(tolerance: Double = 1e-4) -> Surface? {
-        guard let h = OCCTSurfaceToAnalytical(handle, tolerance) else { return nil }
-        return Surface(handle: h)
+        toAnalyticalWithGap(tolerance: tolerance)?.surface
     }
 }
 
@@ -1574,6 +1805,16 @@ extension Surface {
         public let uSplitParams: [Double]
         /// V parameter values (ascending, bounded by the surface's own V range) at each split
         public let vSplitParams: [Double]
+        /// 1-based indices into the surface's own U knot table, one per split:
+        /// `uSplitParams[i] == bsplineUKnot(index: uSplitIndices[i])`.
+        ///
+        /// The analyzer reports indices and this call converts them, so before #562 the raw form
+        /// was reachable only through a separate `bsplineKnotSplitValues(continuity:)`, which
+        /// constructed the analyzer three more times to get it.
+        public let uSplitIndices: [Int]
+        /// 1-based indices into the surface's own V knot table, one per split:
+        /// `vSplitParams[i] == bsplineVKnot(index: vSplitIndices[i])`.
+        public let vSplitIndices: [Int]
     }
 
     /// Analyze where a BSpline surface would need to be split to achieve
@@ -1583,39 +1824,65 @@ extension Surface {
     /// directions, each with its own knot vector -- so this reports counts *and* parameter
     /// locations per direction, unlike `Curve3D.continuityBreaks` (one 1D parameter list).
     ///
+    /// The result is a set of *split* parameters, not a set of defects: each direction's own
+    /// first and last knots are always included, so a direction that never drops below the
+    /// requested continuity reports exactly those two rather than nothing.
+    ///
     /// ```swift
-    /// let result = bsplineSurface.knotSplitting(uContinuity: 0, vContinuity: 0)
-    /// // result.uSplitParams / result.vSplitParams are real U/V parameters, usable to
-    /// // split the surface into same-continuity patches (e.g. via GeomConvert).
+    /// // Where does the surface actually kink?
+    /// let kinks = bsplineSurface.knotSplitting()
+    ///
+    /// // A bicubic surface with simple interior knots is already C2 at every interior knot,
+    /// // so .c3 is the order that reports them (.c0, .c1 and .c2 return only the bounds).
+    /// let all = bsplineSurface.knotSplitting(uContinuity: .c3, vContinuity: .c3)
+    /// // all.uSplitParams / all.vSplitParams are real U/V parameters, usable to split the
+    /// // surface into same-continuity patches.
+    ///
+    /// // The raw knot-table indices are here too, and agree with the parameters by construction.
+    /// let sameThing = all.uSplitIndices.map { bsplineSurface.bsplineUKnot(index: $0) }
+    /// // sameThing == all.uSplitParams
     /// ```
     ///
     /// - Parameters:
-    ///   - uContinuity: Desired U continuity (0=C0, 1=C1, 2=C2)
-    ///   - vContinuity: Desired V continuity (0=C0, 1=C1, 2=C2)
-    /// - Returns: Split counts plus the actual U/V parameter values, or all-empty/zero for
-    ///   a non-BSpline surface
-    public func knotSplitting(uContinuity: Int = 1, vContinuity: Int = 1) -> KnotSplitResult {
+    ///   - uContinuity: Minimum continuity to require of each U patch. This is a derivative
+    ///     order, and `GeomConvert_BSplineSurfaceKnotSplitting` splits a knot only when
+    ///     `U degree - multiplicity < uContinuity`, so the meaningful range is 0...U degree and
+    ///     it saturates there. On a degree-4-or-higher surface ``ParametricContinuity/c3`` is
+    ///     the strictest question this vocabulary can ask; `toBezierPatches()` is the dedicated
+    ///     API for the every-knot split at the far end of that ladder (#480).
+    ///   - vContinuity: Minimum continuity to require of each V patch, against the V degree
+    ///     and V knots
+    /// - Returns: Split counts, the actual U/V parameter values, and the knot-table indices those
+    ///   parameters were read from, or all-empty/zero for a non-BSpline surface
+    public func knotSplitting(uContinuity: ParametricContinuity = .c1,
+                              vContinuity: ParametricContinuity = .c1) -> KnotSplitResult {
         // Same retry-on-truncation pattern as Curve3D.continuityBreaks: the bridge always
         // reports the true split counts even when it writes fewer, so one retry sized to
         // those counts is always enough.
-        func read(uCapacity: Int32, vCapacity: Int32) -> (OCCTSurfaceKnotSplitResult, [Double], [Double]) {
+        typealias Read = (OCCTSurfaceKnotSplitResult, [Double], [Double], [Int32], [Int32])
+        func read(uCapacity: Int32, vCapacity: Int32) -> Read {
             var uParams = [Double](repeating: 0, count: Int(uCapacity))
             var vParams = [Double](repeating: 0, count: Int(vCapacity))
-            let result = OCCTSurfaceKnotSplitting(handle, Int32(uContinuity), Int32(vContinuity),
-                                                   &uParams, uCapacity, &vParams, vCapacity)
-            return (result, uParams, vParams)
+            var uIndices = [Int32](repeating: 0, count: Int(uCapacity))
+            var vIndices = [Int32](repeating: 0, count: Int(vCapacity))
+            let result = OCCTSurfaceKnotSplitting(handle, uContinuity.rawValue, vContinuity.rawValue,
+                                                  &uParams, &uIndices, uCapacity,
+                                                  &vParams, &vIndices, vCapacity)
+            return (result, uParams, vParams, uIndices, vIndices)
         }
 
-        var (result, uParams, vParams) = read(uCapacity: 64, vCapacity: 64)
+        var (result, uParams, vParams, uIndices, vIndices) = read(uCapacity: 64, vCapacity: 64)
         if result.nbUSplits > 64 || result.nbVSplits > 64 {
-            (result, uParams, vParams) = read(uCapacity: max(result.nbUSplits, 1),
-                                               vCapacity: max(result.nbVSplits, 1))
+            (result, uParams, vParams, uIndices, vIndices) = read(uCapacity: max(result.nbUSplits, 1),
+                                                                  vCapacity: max(result.nbVSplits, 1))
         }
         return KnotSplitResult(
             uSplitCount: Int(result.nbUSplits),
             vSplitCount: Int(result.nbVSplits),
             uSplitParams: Array(uParams.prefix(Int(result.nbUSplits))),
-            vSplitParams: Array(vParams.prefix(Int(result.nbVSplits)))
+            vSplitParams: Array(vParams.prefix(Int(result.nbVSplits))),
+            uSplitIndices: uIndices.prefix(Int(result.nbUSplits)).map(Int.init),
+            vSplitIndices: vIndices.prefix(Int(result.nbVSplits)).map(Int.init)
         )
     }
 
@@ -1672,7 +1939,8 @@ extension Surface {
     /// Analyze and split a BSpline surface at continuity breaks.
     ///
     /// - Parameters:
-    ///   - criterion: Continuity level (0=C0, 1=C1, 2=C2, 3=C3)
+    ///   - criterion: A ``ParametricContinuity`` raw value (0=C0, 1=C1, 2=C2, 3=C3; anything
+    ///     above asks for CN, i.e. split at every break)
     ///   - tolerance: Tolerance for continuity checking
     /// - Returns: Split analysis result
     public func splitByContinuity(criterion: Int = 2, tolerance: Double = 1e-6) -> ContinuitySplitResult {
@@ -1687,33 +1955,81 @@ extension Surface {
     // MARK: - LocalAnalysis
 
     /// Result of surface continuity analysis at a junction point.
+    ///
+    /// The curve-side twin of this type is ``Curve3D/ContinuityAnalysis``; both wrap a
+    /// `LocalAnalysis_*Continuity` and carry the same measured-set contract.
     public struct ContinuityAnalysis: Sendable {
-        /// Continuity status as GeomAbs_Shape value
-        public let status: Int
+        /// The order the junction was actually analysed at: the requested ``ContinuityClass``
+        /// after saturation at ``ContinuityClass/c2``.
+        ///
+        /// This is the request, not a finding —
+        /// `LocalAnalysis_SurfaceContinuity::ContinuityStatus()` returns the order it was
+        /// constructed with verbatim. The findings are ``measured`` and ``holds(_:)``.
+        public let order: ContinuityClass
+        /// The continuity classes this ``order`` actually measured.
+        ///
+        /// Each order computes only its own branch — `.c0` measures C0; `.g1` measures C0 and G1;
+        /// `.c1` measures C0 and C1; `.g2` measures C0, G1 and G2; `.c2` measures C0, C1 and C2.
+        /// No order measures all five, not even the `.c2` default, which never looks at G1 or G2.
+        public let measured: Set<ContinuityClass>
         /// Distance between surface points at junction
         public let c0Value: Double
-        /// Angle between normals (radians)
+        /// Angle between normals (radians), or -1 if G1 was not measured or does not hold
         public let g1Angle: Double
-        /// Angle between U-derivatives
+        /// Angle between U-derivatives, or -1
         public let c1UAngle: Double
-        /// Angle between V-derivatives
+        /// Angle between V-derivatives, or -1
         public let c1VAngle: Double
-        /// Bitmask: bit0=C0, bit1=G1, bit2=C1, bit3=G2, bit4=C2
+        /// Bitmask of the classes that hold: bit0=C0, bit1=G1, bit2=C1, bit3=G2, bit4=C2.
+        ///
+        /// Only ever sets bits for classes in ``measured``, so a clear bit means "does not hold
+        /// *or* was not measured". Prefer ``holds(_:)``, which separates the two.
         public let flags: Int
 
-        /// Whether the junction is positionally continuous (C0)
-        public var isC0: Bool { flags & 1 != 0 }
-        /// Whether the junction is geometrically tangent-continuous (G1)
-        public var isG1: Bool { flags & 2 != 0 }
-        /// Whether the junction is parametrically tangent-continuous (C1)
-        public var isC1: Bool { flags & 4 != 0 }
-        /// Whether the junction is geometrically curvature-continuous (G2)
-        public var isG2: Bool { flags & 8 != 0 }
-        /// Whether the junction is parametrically curvature-continuous (C2)
-        public var isC2: Bool { flags & 16 != 0 }
+        /// Whether `continuity` holds at the junction, or `nil` if this ``order`` never measured
+        /// it.
+        ///
+        /// ```swift
+        /// let a = plane.continuityWith(cylinder, u1: 0, v1: 0, u2: 0, v2: 0, order: .g2)!
+        /// a.holds(.g2)   // measured — .g2 computes C0, G1 and G2
+        /// a.holds(.c2)   // nil — .g2 never computes C2
+        /// ```
+        ///
+        /// - Note: This asks *exact-class membership* — "did this analysis report this one
+        ///   class?" — not a floor. It never infers one class from another, so a `true` for
+        ///   ``ContinuityClass/g2`` implies nothing about ``ContinuityClass/c1``. To test a
+        ///   *measured* class against a continuity floor instead, use
+        ///   ``ContinuityClass/satisfies(_:)``; to rank two measured classes, compare them with
+        ///   `<`/`>=`. Three different questions (#623).
+        public func holds(_ continuity: ContinuityClass) -> Bool? {
+            guard measured.contains(continuity) else { return nil }
+            return flags & continuity.analysisFlagBit != 0
+        }
+
+        /// Whether the junction is positionally continuous (C0). Always measured.
+        public var isC0: Bool? { holds(.c0) }
+        /// Whether the junction is geometrically tangent-continuous (G1), or nil if ``order``
+        /// did not measure G1 (only `.g1` and `.g2` do).
+        public var isG1: Bool? { holds(.g1) }
+        /// Whether the junction is parametrically tangent-continuous (C1), or nil if ``order``
+        /// did not measure C1 (only `.c1` and `.c2` do).
+        public var isC1: Bool? { holds(.c1) }
+        /// Whether the junction is geometrically curvature-continuous (G2), or nil if ``order``
+        /// was not `.g2`.
+        public var isG2: Bool? { holds(.g2) }
+        /// Whether the junction is parametrically curvature-continuous (C2), or nil if ``order``
+        /// was not `.c2`.
+        public var isC2: Bool? { holds(.c2) }
+
     }
 
     /// Analyze continuity between this surface at (u1, v1) and another surface at (u2, v2).
+    ///
+    /// ```swift
+    /// // Do these two patches meet tangentially? Ask for G1 — the .c2 default never measures it.
+    /// let a = patchA.continuityWith(patchB, u1: 1, v1: 0.5, u2: 0, v2: 0.5, order: .g1)
+    /// if a?.holds(.g1) == true { print("tangent, normals differ by \(a!.g1Angle) rad") }
+    /// ```
     ///
     /// - Parameters:
     ///   - u1: U parameter on this surface
@@ -1721,20 +2037,33 @@ extension Surface {
     ///   - other: Second surface
     ///   - u2: U parameter on second surface
     ///   - v2: V parameter on second surface
-    ///   - order: Maximum continuity order to check (0=C0, 1=G1, 2=C1, 3=G2, 4=C2)
+    ///   - order: Which continuity class to measure. This selects the analysis, not just a
+    ///     ceiling: `LocalAnalysis_SurfaceContinuity` computes one branch of a switch, so the
+    ///     classes outside it are never measured and ``ContinuityAnalysis/holds(_:)`` reports
+    ///     `nil` for them. `.c2` is the strictest question the class can answer, so `.c3` and
+    ///     `.cN` saturate to it, which ``ContinuityAnalysis/order`` reports back.
     /// - Returns: Continuity analysis result, or nil on failure
-    public func continuityWith(_ other: Surface, u1: Double, v1: Double, u2: Double, v2: Double, order: Int = 4) -> ContinuityAnalysis? {
-        var outStatus: Int32 = 0
+    public func continuityWith(_ other: Surface, u1: Double, v1: Double, u2: Double, v2: Double,
+                               order: ContinuityClass = .c2) -> ContinuityAnalysis? {
+        continuityAnalysis(with: other, u1: u1, v1: v1, u2: u2, v2: v2, rawOrder: order.rawValue)
+    }
+
+    private func continuityAnalysis(with other: Surface, u1: Double, v1: Double,
+                                    u2: Double, v2: Double, rawOrder: Int32) -> ContinuityAnalysis? {
+        var outEffectiveOrder: Int32 = 0
         var outC0: Double = 0, outG1: Double = 0
         var outC1U: Double = 0, outC1V: Double = 0
         let ok = OCCTLocalAnalysisSurfaceContinuity(
-            handle, u1, v1, other.handle, u2, v2, Int32(order),
-            &outStatus, &outC0, &outG1, &outC1U, &outC1V)
+            handle, u1, v1, other.handle, u2, v2, rawOrder,
+            &outEffectiveOrder, &outC0, &outG1, &outC1U, &outC1V)
         guard ok else { return nil }
+        var outMeasured: Int32 = 0
         let flags = Int(OCCTLocalAnalysisSurfaceContinuityFlags(
-            handle, u1, v1, other.handle, u2, v2, Int32(order)))
+            handle, u1, v1, other.handle, u2, v2, rawOrder, &outMeasured))
         return ContinuityAnalysis(
-            status: Int(outStatus), c0Value: outC0, g1Angle: outG1,
+            order: ContinuityClass(rawValue: outEffectiveOrder) ?? .c2,
+            measured: ContinuityClass.set(fromAnalysisMask: outMeasured),
+            c0Value: outC0, g1Angle: outG1,
             c1UAngle: outC1U, c1VAngle: outC1V, flags: flags)
     }
 
@@ -2431,6 +2760,10 @@ extension Surface {
     ///   can oscillate/self-overlap in 3D and make downstream meshing (`BRepMesh`) never converge
     ///   (OCCTSwift #244). The clamp keeps the fit well-posed; pass a smaller `degMax` for an even
     ///   smoother result.
+    ///
+    /// `continuity` is a ``ParametricContinuity`` raw value (0=C0, 1=C1, 2=C2, 3=C3). Unlike the
+    /// `approximated` family, the fitter accepts every value without failing — it treats the
+    /// request as an upper bound on what it will try to achieve.
     public static func fromPointGrid(points: [SIMD3<Double>], uCount: Int, vCount: Int,
                                      degMin: Int = 3, degMax: Int = 8,
                                      continuity: Int = 2, tolerance: Double = 1e-3) -> Surface? {
@@ -2486,24 +2819,27 @@ extension Surface {
     /// - Parameters:
     ///   - u: U parameter.
     ///   - v: V parameter.
-    /// - Returns: Both curvatures, or `(0, 0)` where curvature is undefined.
+    /// - Returns: Both curvatures, or `nil` where curvature is undefined.
     ///
     /// Equivalent to calling `gaussianCurvature(atU:v:)` and `meanCurvature(atU:v:)` at the same
     /// point, for one `GeomLProp_SLProps` evaluation instead of two. All three share that one
     /// construction, so they agree exactly — including on whether curvature is defined at all.
     /// Before #405 this method built its own with a resolution ten times looser than its
     /// siblings' `Precision::Confusion()`, and could report `(0, 0)` for a point where they
-    /// returned a real curvature.
+    /// returned a real curvature. It returned `(0, 0)` for the undefined case too until #595 —
+    /// which is also a plane's real answer, so the agreement this doc claims was not one it could
+    /// express.
     ///
     /// ```swift
     /// let sphere = Surface.sphere(center: .zero, radius: 5)!
-    /// let (gaussian, mean) = sphere.curvatures(u: 0, v: .pi / 4)
-    /// #expect(gaussian == sphere.gaussianCurvature(atU: 0, v: .pi / 4))
-    /// #expect(mean == sphere.meanCurvature(atU: 0, v: .pi / 4))
+    /// if let (gaussian, mean) = sphere.curvatures(u: 0, v: .pi / 4) {
+    ///     #expect(gaussian == sphere.gaussianCurvature(atU: 0, v: .pi / 4))
+    ///     #expect(mean == sphere.meanCurvature(atU: 0, v: .pi / 4))
+    /// }
     /// ```
-    public func curvatures(u: Double, v: Double) -> (gaussian: Double, mean: Double) {
+    public func curvatures(u: Double, v: Double) -> (gaussian: Double, mean: Double)? {
         var g = 0.0, m = 0.0
-        OCCTSurfaceCurvatures(handle, u, v, &g, &m)
+        guard OCCTSurfaceCurvatures(handle, u, v, &g, &m) else { return nil }
         return (g, m)
     }
 
@@ -2709,7 +3045,9 @@ extension Surface {
         OCCTSurfaceBezierIsVPeriodic(handle)
     }
 
-    /// Bezier surface continuity (0=C0, 1=C1, 2=C2, 3=C3, 4=CN).
+    /// Bezier surface continuity, as a raw `GeomAbs_Shape` ordinal
+    /// (`0=C0, 1=G1, 2=C1, 3=G2, 4=C2, 5=C3, 6=CN`). A Bezier surface is CN by construction, so
+    /// this is `6`; `0` if the surface is not a Bezier. Prefer ``ContinuityClass`` (#619).
     public var bezierContinuity: Int {
         Int(OCCTSurfaceBezierContinuity(handle))
     }
@@ -3123,13 +3461,40 @@ extension Surface {
     }
 
     /// Build a surface with the low-level `GeomFill_NetworkSurface` builder from a
-    /// profile/guide curve network. The curves are converted to non-periodic B-splines,
-    /// an intersection grid is sampled along each profile, and locator parameters are
-    /// uniformly spaced. Returns the surface (nil on failure) and the result status.
+    /// profile/guide curve network. The curves are converted to non-periodic B-splines; each
+    /// profile/guide pair's real contact point and parameter are then found with
+    /// `GeomAPI_ExtremaCurveCurve` (its nearest, not merely its first, extremum) and averaged
+    /// across the family the way `GeomFill_Gordon` does, giving one locator value per profile
+    /// and per guide, each already expressed in the domain the *other* family's skin needs.
+    /// This is the low-level builder: it does not reorder a scrambled network or reparametrize
+    /// curve families onto a common basis the way ``gordon(profiles:guides:tolerance:)`` /
+    /// ``gordonReport(profiles:guides:tolerance:allowApproximateFallback:)`` do, so a network
+    /// those can complete can still come back here as `.knotAlignmentFailed` or similar. A
+    /// profile/guide pair with no real contact point (parallel curves, or an extrema search
+    /// that finds nothing) rejects the whole network as `.invalidInput` rather than
+    /// substituting an unmeasured point. Returns the surface (nil on failure) and the result
+    /// status.
+    ///
+    /// Known limitation ([#748](https://github.com/SecondMouseAU/OCCTSwift/issues/748)): on
+    /// every network tried so far, `.done` can still mean a wrong surface -- the two corners on
+    /// one diagonal come back correct and the other two do not, a `GeomFill_NetworkSurface`
+    /// kernel defect this entry point exposes rather than causes.
+    /// ``gordon(profiles:guides:tolerance:)`` on the same curves is not affected; prefer it
+    /// unless you specifically need this low-level builder's behavior.
     /// - Parameters:
     ///   - profiles: profile curves evaluated in U, at least 2.
     ///   - guides: guide curves evaluated in V, at least 2.
     ///   - tolerance: geometric tolerance for closed-seam checks.
+    ///
+    /// ```swift
+    /// let p1 = Curve3D.interpolate(points: [SIMD3(0, 0, 0), SIMD3(10, 0, 0)])!
+    /// let p2 = Curve3D.interpolate(points: [SIMD3(0, 10, 0), SIMD3(10, 10, 0)])!
+    /// let g1 = Curve3D.interpolate(points: [SIMD3(0, 0, 0), SIMD3(0, 10, 0)])!
+    /// let g2 = Curve3D.interpolate(points: [SIMD3(10, 0, 0), SIMD3(10, 10, 0)])!
+    /// let (surface, status) = Surface.networkSurface(profiles: [p1, p2], guides: [g1, g2],
+    ///                                                tolerance: 1e-6)
+    /// if status != .done { print("network builder declined:", status) }
+    /// ```
     public static func networkSurface(profiles: [Curve3D], guides: [Curve3D],
                                       tolerance: Double = 1e-3)
         -> (surface: Surface?, status: NetworkSurfaceStatus) {
@@ -3208,5 +3573,1144 @@ extension Surface {
                                                              Int32(algDegreeU), Int32(algDegreeV),
                                                              alphaU, alphaV, betaU, betaV) else { return nil }
         return Surface(handle: ref)
+    }
+}
+
+extension Surface {
+    /// Convert surface to periodic form. Returns nil if already periodic or not convertible.
+    public func convertToPeriodic() -> Surface? {
+        guard let ref = OCCTSurfaceConvertToPeriodic(handle) else { return nil }
+        return Surface(handle: ref)
+    }
+
+    /// Get conversion gap (distance between original and converted surface).
+    public var conversionGap: Double {
+        OCCTSurfaceConversionGap(handle)
+    }
+}
+
+extension Surface {
+    // Continuity level for approximation is `ParametricContinuity` (Continuity.swift); the
+    // `ApproxContinuity` copy Shape.swift used to declare is now a deprecated alias of it. See #398.
+
+    /// Approximate this surface as a BSpline surface, reporting the fit's error and completion status.
+    ///
+    /// The same approximation ``Surface/approximated(tolerance:continuity:maxSegments:maxDegree:)``
+    /// performs — one shared `GeomConvert_ApproxSurface` run behind both (#491) — with the
+    /// diagnostics OCCT already computed for it. For identical arguments the two return the same
+    /// surface; use this one when you need to know how close the fit actually came.
+    ///
+    /// `hasResult` is what decides whether `surface` is populated, and OCCT documents it as true
+    /// even for a fit that is *not* within `tolerance` — `isDone` and `maxError` are how you find
+    /// out. So a non-nil `surface` is not by itself a promise that `tolerance` was met; on a
+    /// surface where `maxDegree` cannot reach the tolerance (a torus at 1e-9, say) OCCT returns a
+    /// usable best effort with `isDone` false.
+    ///
+    /// The continuity defaults are C2, matching ``Surface/approximated(tolerance:continuity:maxSegments:maxDegree:)``.
+    /// Before #491 they were C1 here, so the two no-continuity-argument calls fitted to different
+    /// smoothness and returned different surfaces. An infinite/unbounded surface must be trimmed to
+    /// a finite parameter domain first (see ``Surface/trimmed(u1:u2:v1:v2:)``).
+    ///
+    /// ```swift
+    /// let sphere = Surface.sphere(center: .zero, radius: 10)!
+    /// let fit = sphere.approxWithDetails(tolerance: 1e-5)
+    /// if let bspline = fit.surface, fit.isDone {
+    ///     print("fitted to \(fit.maxError) with \(bspline.uPoleCount)x\(bspline.vPoleCount) poles")
+    /// }
+    /// ```
+    public func approxWithDetails(tolerance: Double, uContinuity: ParametricContinuity = .c2,
+                                   vContinuity: ParametricContinuity = .c2,
+                                   maxDegree: Int = 8, maxSegments: Int = 100) -> ApproxSurfaceResult {
+        let r = OCCTGeomConvertApproxSurface(handle, tolerance, uContinuity.rawValue,
+                                              vContinuity.rawValue, Int32(maxDegree), Int32(maxSegments))
+        let surf: Surface? = r.surface.map { Surface(handle: $0) }
+        return ApproxSurfaceResult(surface: surf, maxError: r.maxError, isDone: r.isDone, hasResult: r.hasResult)
+    }
+}
+
+extension Surface {
+    /// Find the UV parameters of a 3D point on this surface.
+    /// Returns nil if the point is beyond maxDistance from the surface.
+    public func parametersOf(point: SIMD3<Double>, maxDistance: Double = 1.0) -> (u: Double, v: Double)? {
+        var u: Double = 0, v: Double = 0
+        let ok = OCCTGeomLibToolParametersSurface(handle, point.x, point.y, point.z, maxDistance, &u, &v)
+        return ok ? (u, v) : nil
+    }
+}
+
+extension Surface {
+    /// Check if this surface is planar within tolerance.
+    public func isPlanar(tolerance: Double = 1e-7) -> Bool {
+        OCCTGeomLibIsPlanarSurface(handle, tolerance)
+    }
+
+    /// If planar, returns the plane parameters: origin, normal, X direction.
+    /// Returns nil if the surface is not planar.
+    public func planarPlane(tolerance: Double = 1e-7) -> (origin: SIMD3<Double>, normal: SIMD3<Double>, xDirection: SIMD3<Double>)? {
+        var ox: Double = 0, oy: Double = 0, oz: Double = 0
+        var nx: Double = 0, ny: Double = 0, nz: Double = 0
+        var xx: Double = 0, xy: Double = 0, xz: Double = 0
+        let ok = OCCTGeomLibPlanarSurfacePlane(handle, tolerance,
+                                                &ox, &oy, &oz, &nx, &ny, &nz, &xx, &xy, &xz)
+        guard ok else { return nil }
+        return (SIMD3(ox, oy, oz), SIMD3(nx, ny, nz), SIMD3(xx, xy, xz))
+    }
+}
+
+extension Surface {
+    /// Result of surface splitting.
+    public struct SplitResult: Sendable {
+        public let uSplitCount: Int
+        public let vSplitCount: Int
+    }
+
+    /// Split this surface by continuity criterion, reporting U and V split counts.
+    ///
+    /// `criterion` is a ``ParametricContinuity`` raw value (0=C0, 1=C1, 2=C2, 3=C3; anything
+    /// above asks for CN). It used to be read as a `GeomAbs_Shape` ordinal here — 0=C0, 1=G1,
+    /// 2=C1, 3=G2, 4=C2 — even though ``Surface/splitByContinuity(criterion:tolerance:)`` wraps
+    /// the same `ShapeUpgrade_SplitSurfaceContinuity` and read the same integer as a parametric
+    /// continuity, so `criterion: 2` asked for C1 through one entry point and C2 through the
+    /// other. Both now agree. #490.
+    ///
+    /// ```swift
+    /// // Where does this surface drop below C2?
+    /// let split = bsplineSurface.splitSurfaceByContinuity(criterion: 2, tolerance: 1e-6)
+    /// ```
+    public func splitSurfaceByContinuity(criterion: Int, tolerance: Double) -> SplitResult? {
+        var uCount: Int32 = 0
+        var vCount: Int32 = 0
+        let n = OCCTSplitSurfaceContinuity(handle, Int32(criterion), tolerance, &uCount, &vCount)
+        if n == 0 { return nil }
+        return SplitResult(uSplitCount: Int(uCount), vSplitCount: Int(vCount))
+    }
+
+    /// Split this surface by maximum angle (radians).
+    public func splitByAngle(_ maxAngle: Double) -> SplitResult? {
+        var uCount: Int32 = 0
+        var vCount: Int32 = 0
+        let n = OCCTSplitSurfaceAngle(handle, maxAngle, &uCount, &vCount)
+        if n == 0 { return nil }
+        return SplitResult(uSplitCount: Int(uCount), vSplitCount: Int(vCount))
+    }
+
+    /// Split this surface into approximately equal-area parts.
+    public func splitByArea(parts: Int, intoSquares: Bool = false) -> SplitResult? {
+        var uCount: Int32 = 0
+        var vCount: Int32 = 0
+        let n = OCCTSplitSurfaceArea(handle, Int32(parts), intoSquares, &uCount, &vCount)
+        if n == 0 { return nil }
+        return SplitResult(uSplitCount: Int(uCount), vSplitCount: Int(vCount))
+    }
+}
+
+extension Surface {
+    /// Attempt to convert this surface to an analytical form, reporting the deviation.
+    ///
+    /// The detailed spelling of ``Surface/toAnalytical(tolerance:)``: same recognition, same
+    /// success and failure cases, plus the gap.
+    ///
+    /// ```swift
+    /// let bspline = Surface.cylinder(origin: .zero, axis: SIMD3(0, 0, 1), radius: 5)!
+    ///     .trimmed(u1: 0, u2: .pi, v1: -5, v2: 5)!.toBSpline()!
+    /// if let r = bspline.toAnalyticalWithGap(tolerance: 1e-4) {
+    ///     print(r.surface.surfaceKind, r.gap)   // .cylinder, ~1e-15
+    /// }
+    /// ```
+    ///
+    /// - Parameter tolerance: Recognition tolerance.
+    /// - Returns: The recognized surface with its deviation, or nil if not recognizable.
+    public func toAnalyticalWithGap(tolerance: Double) -> SurfaceToAnalyticalResult? {
+        let result = OCCTGeomConvertSurfToAnalytical(handle, tolerance)
+        guard result.success, let surfRef = result.surface else { return nil }
+        return SurfaceToAnalyticalResult(surface: Surface(handle: surfRef), gap: result.gap)
+    }
+
+    /// Attempt to convert a UV sub-patch of this surface to an analytical form.
+    ///
+    /// Fits only `[uMin, uMax] × [vMin, vMax]`, so a surface that is a cylinder over part of its
+    /// domain can be recognized there even when the whole domain is not. Inverted bounds
+    /// (`uMin > uMax`) are rejected rather than normalized.
+    ///
+    /// ```swift
+    /// let d = bsplineSurface.domain
+    /// if let r = bsplineSurface.toAnalyticalWithGap(tolerance: 1e-4,
+    ///                                               uMin: d.uMin, uMax: (d.uMin + d.uMax) / 2,
+    ///                                               vMin: d.vMin, vMax: d.vMax) {
+    ///     print(r.surface.surfaceKind)
+    /// }
+    /// ```
+    ///
+    /// - Parameters:
+    ///   - tolerance: Recognition tolerance.
+    ///   - uMin: Lower U bound of the patch to fit.
+    ///   - uMax: Upper U bound of the patch to fit.
+    ///   - vMin: Lower V bound of the patch to fit.
+    ///   - vMax: Upper V bound of the patch to fit.
+    /// - Returns: The recognized surface with its deviation, or nil if not recognizable.
+    public func toAnalyticalWithGap(tolerance: Double,
+                                      uMin: Double, uMax: Double,
+                                      vMin: Double, vMax: Double) -> SurfaceToAnalyticalResult? {
+        let result = OCCTGeomConvertSurfToAnalyticalBounded(handle, tolerance, uMin, uMax, vMin, vMax)
+        guard result.success, let surfRef = result.surface else { return nil }
+        return SurfaceToAnalyticalResult(surface: Surface(handle: surfRef), gap: result.gap)
+    }
+
+    /// Check if this surface is already a canonical (analytical) form.
+    public var isCanonical: Bool {
+        OCCTGeomConvertIsCanonical(handle)
+    }
+}
+
+extension Surface {
+    /// Result of stretch fill operation.
+    public struct StretchFillResult {
+        public let nbUPoles: Int
+        public let nbVPoles: Int
+        public let isRational: Bool
+        public let poles: [SIMD3<Double>]
+    }
+
+    /// Create a stretch-filled surface from 4 boundary point arrays.
+    public static func stretchFill(p1: [SIMD3<Double>], p2: [SIMD3<Double>],
+                                   p3: [SIMD3<Double>], p4: [SIMD3<Double>]) -> StretchFillResult? {
+        let count = p1.count
+        guard count == p2.count && count == p3.count && count == p4.count && count >= 2 else { return nil }
+
+        let flat1 = p1.flatMap { [$0.x, $0.y, $0.z] }
+        let flat2 = p2.flatMap { [$0.x, $0.y, $0.z] }
+        let flat3 = p3.flatMap { [$0.x, $0.y, $0.z] }
+        let flat4 = p4.flatMap { [$0.x, $0.y, $0.z] }
+
+        let maxPoles = 1000
+        var outPoles = [Double](repeating: 0, count: maxPoles * 3)
+        let r = OCCTGeomFillStretch(flat1, flat2, flat3, flat4, Int32(count), &outPoles, Int32(maxPoles))
+
+        guard r.nbUPoles > 0 && r.nbVPoles > 0 else { return nil }
+        let totalPoles = Int(r.nbUPoles) * Int(r.nbVPoles)
+        let poles = (0..<totalPoles).map { i in
+            SIMD3(outPoles[i * 3], outPoles[i * 3 + 1], outPoles[i * 3 + 2])
+        }
+        return StretchFillResult(nbUPoles: Int(r.nbUPoles), nbVPoles: Int(r.nbVPoles),
+                                 isRational: r.isRational, poles: poles)
+    }
+}
+
+extension Surface {
+    /// Result of surface approximation from section curves.
+    public struct AppSurfResult {
+        public let uDegree: Int
+        public let vDegree: Int
+        public let nbUPoles: Int
+        public let nbVPoles: Int
+        public let nbUKnots: Int
+        public let nbVKnots: Int
+        public let isDone: Bool
+    }
+
+    /// Approximate a surface from N section curves using GeomFill_AppSurf.
+    ///
+    /// Requires at least 2 curves. `GeomFill_AppSurf`'s underlying approximation solver
+    /// (`AppDef_Compute`, reached through `AppBlend_AppSurf::InternalPerform`) is never driven
+    /// with fewer than 2 sections anywhere in the kernel; at a single section the first and last
+    /// constraint point are the same section evaluated twice, and the solver SIGSEGVs setting up
+    /// degree-of-freedom bookkeeping that assumes at least one free interior span (#644, measured:
+    /// counts of 0 and 1 crash, 2 and 3 return `isDone: true` cleanly). Matches the guard
+    /// `nSections(curves:params:)` and `generatedFromSections(curves:tolerance:)` already carry
+    /// for the same `GeomFill_*` section-curve family.
+    ///
+    /// ```swift
+    /// let c1 = Curve3D.circle(center: SIMD3(0, 0, 0), normal: SIMD3(0, 0, 1), radius: 5)!
+    /// let c2 = Curve3D.circle(center: SIMD3(0, 0, 10), normal: SIMD3(0, 0, 1), radius: 5)!
+    /// let surf = Surface.appSurf(curves: [c1, c2])
+    /// ```
+    public static func appSurf(curves: [Curve3D], degMin: Int = 3, degMax: Int = 8,
+                               tol3d: Double = 1e-3, tol2d: Double = 1e-3) -> AppSurfResult? {
+        guard curves.count >= 2 else { return nil }
+        let refs = curves.map { $0.handle as OCCTCurve3DRef }
+        return refs.withUnsafeBufferPointer { buf in
+            let r = OCCTGeomFillAppSurf(buf.baseAddress!, Int32(curves.count),
+                                         Int32(degMin), Int32(degMax), tol3d, tol2d)
+            guard r.isDone else { return nil }
+            return AppSurfResult(uDegree: Int(r.uDegree), vDegree: Int(r.vDegree),
+                                 nbUPoles: Int(r.nbUPoles), nbVPoles: Int(r.nbVPoles),
+                                 nbUKnots: Int(r.nbUKnots), nbVKnots: Int(r.nbVKnots),
+                                 isDone: r.isDone)
+        }
+    }
+}
+
+public extension Surface {
+    /// Create a rectangular trimmed surface.
+    static func rectangularTrimmed(basis: Surface,
+                                    u1: Double, u2: Double,
+                                    v1: Double, v2: Double) -> Surface? {
+        guard let ref = OCCTSurfaceCreateRectangularTrimmed(basis.handle, u1, u2, v1, v2) else { return nil }
+        return Surface(handle: ref)
+    }
+
+    /// Create a surface trimmed in U direction only.
+    static func trimmedInU(basis: Surface, param1: Double, param2: Double) -> Surface? {
+        guard let ref = OCCTSurfaceCreateTrimmedInU(basis.handle, param1, param2) else { return nil }
+        return Surface(handle: ref)
+    }
+
+    /// Create a surface trimmed in V direction only.
+    static func trimmedInV(basis: Surface, param1: Double, param2: Double) -> Surface? {
+        guard let ref = OCCTSurfaceCreateTrimmedInV(basis.handle, param1, param2) else { return nil }
+        return Surface(handle: ref)
+    }
+}
+
+extension Surface {
+
+    /// Convert a sphere to a BSpline surface.
+    public static func fromSphere(origin: SIMD3<Double>, axis: SIMD3<Double>, radius: Double) -> Surface? {
+        guard let ref = OCCTConvertSphereToBSplineSurface(origin.x, origin.y, origin.z,
+                                                           axis.x, axis.y, axis.z, radius) else { return nil }
+        return Surface(handle: ref)
+    }
+}
+
+extension Surface {
+
+    /// Convert a cylinder patch to a BSpline surface.
+    public static func fromCylinder(origin: SIMD3<Double>, axis: SIMD3<Double>, radius: Double,
+                                     u1: Double, u2: Double, v1: Double, v2: Double) -> Surface? {
+        guard let ref = OCCTConvertCylinderToBSplineSurface(origin.x, origin.y, origin.z,
+                                                              axis.x, axis.y, axis.z, radius,
+                                                              u1, u2, v1, v2) else { return nil }
+        return Surface(handle: ref)
+    }
+
+    /// Convert a cone patch to a BSpline surface.
+    public static func fromCone(origin: SIMD3<Double>, axis: SIMD3<Double>,
+                                 semiAngle: Double, refRadius: Double,
+                                 u1: Double, u2: Double, v1: Double, v2: Double) -> Surface? {
+        guard let ref = OCCTConvertConeToBSplineSurface(origin.x, origin.y, origin.z,
+                                                          axis.x, axis.y, axis.z,
+                                                          semiAngle, refRadius,
+                                                          u1, u2, v1, v2) else { return nil }
+        return Surface(handle: ref)
+    }
+
+    /// Convert a full torus to a BSpline surface.
+    public static func fromTorus(origin: SIMD3<Double>, axis: SIMD3<Double>,
+                                  majorRadius: Double, minorRadius: Double) -> Surface? {
+        guard let ref = OCCTConvertTorusToBSplineSurface(origin.x, origin.y, origin.z,
+                                                           axis.x, axis.y, axis.z,
+                                                           majorRadius, minorRadius) else { return nil }
+        return Surface(handle: ref)
+    }
+}
+
+extension Surface {
+
+    /// Get the offset distance of this surface (only valid if it is an offset surface).
+    public var offsetValue: Double {
+        OCCTSurfaceOffsetValue(handle)
+    }
+
+    /// Set the offset distance of this surface (only has effect on offset surfaces).
+    public func setOffsetValue(_ value: Double) {
+        OCCTSurfaceSetOffsetValue(handle, value)
+    }
+
+    /// Get the basis (underlying) surface of an offset surface.
+    /// Returns nil if this surface is not an offset surface.
+    public var offsetBasis: Surface? {
+        guard let ref = OCCTSurfaceOffsetBasis(handle) else { return nil }
+        return Surface(handle: ref)
+    }
+}
+
+extension Surface {
+
+    /// Project a 3D point onto this surface using ShapeAnalysis_Surface, returning UV parameters and gap.
+    /// Unlike `projectPoint(_:)` (GeomAPI), this uses ShapeAnalysis for robust projection.
+    public func projectPointUV(_ point: SIMD3<Double>, precision: Double = 1e-6) -> (u: Double, v: Double, gap: Double) {
+        var u = 0.0, v = 0.0
+        let gap = OCCTSurfaceProjectPointUV(handle, point.x, point.y, point.z, precision, &u, &v)
+        return (u, v, gap)
+    }
+
+    /// Check if surface has singularities using ShapeAnalysis_Surface at the given precision.
+    public func hasSingularitiesSA(precision: Double = 1e-6) -> Bool {
+        OCCTSurfaceHasSingularities(handle, precision)
+    }
+
+    /// Number of singularities using ShapeAnalysis_Surface.
+    public func singularityCountSA(precision: Double = 1e-6) -> Int {
+        Int(OCCTSurfaceNbSingularities(handle, precision))
+    }
+
+    /// Check if surface is spatially U-closed using ShapeAnalysis_Surface.
+    public func isUClosedSA(precision: Double = -1) -> Bool {
+        OCCTSurfaceIsUClosedSA(handle, precision)
+    }
+
+    /// Check if surface is spatially V-closed using ShapeAnalysis_Surface.
+    public func isVClosedSA(precision: Double = -1) -> Bool {
+        OCCTSurfaceIsVClosedSA(handle, precision)
+    }
+}
+
+extension Surface {
+    /// Create a conical surface from axis (center+normal), semi-angle, and reference radius.
+    public static func gcConicalSurface(center: SIMD3<Double>, normal: SIMD3<Double>,
+                                         semiAngle: Double, radius: Double) -> Surface? {
+        guard let h = OCCTGCMakeConicalSurface(center.x, center.y, center.z,
+                                                normal.x, normal.y, normal.z,
+                                                semiAngle, radius) else { return nil }
+        return Surface(handle: h)
+    }
+
+    /// Create a conical surface from 2 points and 2 radii.
+    public static func gcConicalSurface2Pts(p1: SIMD3<Double>, p2: SIMD3<Double>,
+                                             r1: Double, r2: Double) -> Surface? {
+        guard let h = OCCTGCMakeConicalSurface2Pts(p1.x, p1.y, p1.z,
+                                                    p2.x, p2.y, p2.z,
+                                                    r1, r2) else { return nil }
+        return Surface(handle: h)
+    }
+
+    /// Create a conical surface from 4 points (2 on each circle).
+    public static func gcConicalSurface4Pts(p1: SIMD3<Double>, p2: SIMD3<Double>,
+                                             p3: SIMD3<Double>, p4: SIMD3<Double>) -> Surface? {
+        guard let h = OCCTGCMakeConicalSurface4Pts(p1.x, p1.y, p1.z,
+                                                    p2.x, p2.y, p2.z,
+                                                    p3.x, p3.y, p3.z,
+                                                    p4.x, p4.y, p4.z) else { return nil }
+        return Surface(handle: h)
+    }
+}
+
+extension Surface {
+    /// Create a cylindrical surface from axis (center+normal) and radius (GC variant).
+    public static func gcCylindricalSurface(center: SIMD3<Double>, normal: SIMD3<Double>,
+                                              radius: Double) -> Surface? {
+        guard let h = OCCTGCMakeCylindricalSurface(center.x, center.y, center.z,
+                                                     normal.x, normal.y, normal.z,
+                                                     radius) else { return nil }
+        return Surface(handle: h)
+    }
+
+    /// Create a cylindrical surface from 3 points (GC variant).
+    public static func gcCylindricalSurface3Pts(p1: SIMD3<Double>, p2: SIMD3<Double>,
+                                                  p3: SIMD3<Double>) -> Surface? {
+        guard let h = OCCTGCMakeCylindricalSurface3Pts(p1.x, p1.y, p1.z,
+                                                        p2.x, p2.y, p2.z,
+                                                        p3.x, p3.y, p3.z) else { return nil }
+        return Surface(handle: h)
+    }
+
+    /// Create a cylindrical surface from a circle (center+normal+radius).
+    public static func gcCylindricalSurfaceFromCircle(center: SIMD3<Double>, normal: SIMD3<Double>,
+                                                       radius: Double) -> Surface? {
+        guard let h = OCCTGCMakeCylindricalSurfaceFromCircle(center.x, center.y, center.z,
+                                                               normal.x, normal.y, normal.z,
+                                                               radius) else { return nil }
+        return Surface(handle: h)
+    }
+
+    /// Create a cylindrical surface parallel to another at a given distance.
+    public static func gcCylindricalSurfaceParallel(center: SIMD3<Double>, normal: SIMD3<Double>,
+                                                      radius: Double, distance: Double) -> Surface? {
+        guard let h = OCCTGCMakeCylindricalSurfaceParallel(center.x, center.y, center.z,
+                                                             normal.x, normal.y, normal.z,
+                                                             radius, distance) else { return nil }
+        return Surface(handle: h)
+    }
+
+    /// Create a cylindrical surface from axis (point+direction) and radius.
+    public static func gcCylindricalSurfaceAxis(point: SIMD3<Double>, direction: SIMD3<Double>,
+                                                  radius: Double) -> Surface? {
+        guard let h = OCCTGCMakeCylindricalSurfaceAxis(point.x, point.y, point.z,
+                                                         direction.x, direction.y, direction.z,
+                                                         radius) else { return nil }
+        return Surface(handle: h)
+    }
+}
+
+extension Surface {
+    /// Create a trimmed cone from 2 points and 2 radii.
+    public static func gcTrimmedCone2Pts(p1: SIMD3<Double>, p2: SIMD3<Double>,
+                                          r1: Double, r2: Double) -> Surface? {
+        guard let h = OCCTGCMakeTrimmedCone2Pts(p1.x, p1.y, p1.z,
+                                                 p2.x, p2.y, p2.z,
+                                                 r1, r2) else { return nil }
+        return Surface(handle: h)
+    }
+
+    /// Create a trimmed cone from 4 points.
+    public static func gcTrimmedCone4Pts(p1: SIMD3<Double>, p2: SIMD3<Double>,
+                                          p3: SIMD3<Double>, p4: SIMD3<Double>) -> Surface? {
+        guard let h = OCCTGCMakeTrimmedCone4Pts(p1.x, p1.y, p1.z,
+                                                 p2.x, p2.y, p2.z,
+                                                 p3.x, p3.y, p3.z,
+                                                 p4.x, p4.y, p4.z) else { return nil }
+        return Surface(handle: h)
+    }
+}
+
+extension Surface {
+    /// Create a trimmed cylinder from a circle (center+normal+radius) and height.
+    public static func gcTrimmedCylinderCircle(center: SIMD3<Double>, normal: SIMD3<Double>,
+                                                radius: Double, height: Double) -> Surface? {
+        guard let h = OCCTGCMakeTrimmedCylinderCircle(center.x, center.y, center.z,
+                                                       normal.x, normal.y, normal.z,
+                                                       radius, height) else { return nil }
+        return Surface(handle: h)
+    }
+
+    /// Create a trimmed cylinder from axis (point+direction), radius, and height.
+    public static func gcTrimmedCylinderAxis(point: SIMD3<Double>, direction: SIMD3<Double>,
+                                              radius: Double, height: Double) -> Surface? {
+        guard let h = OCCTGCMakeTrimmedCylinderAxis(point.x, point.y, point.z,
+                                                     direction.x, direction.y, direction.z,
+                                                     radius, height) else { return nil }
+        return Surface(handle: h)
+    }
+
+    /// Create a trimmed cylinder from 3 points.
+    public static func gcTrimmedCylinder3Pts(p1: SIMD3<Double>, p2: SIMD3<Double>,
+                                              p3: SIMD3<Double>) -> Surface? {
+        guard let h = OCCTGCMakeTrimmedCylinder3Pts(p1.x, p1.y, p1.z,
+                                                     p2.x, p2.y, p2.z,
+                                                     p3.x, p3.y, p3.z) else { return nil }
+        return Surface(handle: h)
+    }
+}
+
+extension Surface {
+    /// Measured global continuity of the surface, as a raw `GeomAbs_Shape` ordinal.
+    ///
+    /// The ordinals are `GeomAbs_Shape`'s own declared order — `0=C0, 1=G1, 2=C1, 3=G2,
+    /// 4=C2, 5=C3, 6=CN` — not a 0/1/2 order. Prefer ``continuityClass``, which names them.
+    ///
+    /// - Warning: The migration target for the retired `surfaceContinuityOrder`, but not a
+    ///   drop-in one — see ``Curve3D/continuity`` for the constants that shift (#619).
+    public var continuity: Int {
+        Int(OCCTSurfaceGetContinuity(handle))
+    }
+
+    /// Get number of UV bound spans for the surface.
+    public var nBounds: (uSpans: Int, vSpans: Int) {
+        var u: Int32 = 0, v: Int32 = 0
+        OCCTSurfaceGetNBounds(handle, &u, &v)
+        return (Int(u), Int(v))
+    }
+}
+
+extension Surface {
+
+    /// BSpline-specific surface operations.
+    public struct BSpline {
+        let surface: Surface
+
+        /// Number of U knots.
+        public var nbUKnots: Int { Int(OCCTSurfaceBSplineNbUKnots(surface.handle)) }
+
+        /// Number of V knots.
+        public var nbVKnots: Int { Int(OCCTSurfaceBSplineNbVKnots(surface.handle)) }
+
+        /// Number of U poles.
+        public var nbUPoles: Int { Int(OCCTSurfaceBSplineNbUPoles(surface.handle)) }
+
+        /// Number of V poles.
+        public var nbVPoles: Int { Int(OCCTSurfaceBSplineNbVPoles(surface.handle)) }
+
+        /// U degree.
+        public var uDegree: Int { Int(OCCTSurfaceBSplineUDegree(surface.handle)) }
+
+        /// V degree.
+        public var vDegree: Int { Int(OCCTSurfaceBSplineVDegree(surface.handle)) }
+
+        /// Whether the surface is U-rational.
+        public var isURational: Bool { OCCTSurfaceBSplineIsURational(surface.handle) }
+
+        /// Whether the surface is V-rational.
+        public var isVRational: Bool { OCCTSurfaceBSplineIsVRational(surface.handle) }
+
+        /// Get a pole at (uIndex, vIndex) — both 1-based.
+        public func pole(uIndex: Int, vIndex: Int) -> SIMD3<Double> {
+            var x = 0.0, y = 0.0, z = 0.0
+            OCCTSurfaceBSplineGetPole(surface.handle, Int32(uIndex), Int32(vIndex), &x, &y, &z)
+            return SIMD3(x, y, z)
+        }
+
+        /// Set a pole at (uIndex, vIndex) — both 1-based.
+        @discardableResult
+        public func setPole(uIndex: Int, vIndex: Int, to point: SIMD3<Double>) -> Bool {
+            OCCTSurfaceBSplineSetPole(surface.handle, Int32(uIndex), Int32(vIndex), point.x, point.y, point.z)
+        }
+
+        /// Set the weight at (uIndex, vIndex).
+        @discardableResult
+        public func setWeight(uIndex: Int, vIndex: Int, to weight: Double) -> Bool {
+            OCCTSurfaceBSplineSetWeight(surface.handle, Int32(uIndex), Int32(vIndex), weight)
+        }
+
+        /// Insert a U knot.
+        @discardableResult
+        public func insertUKnot(u: Double, multiplicity: Int = 1, tolerance: Double = 1e-6) -> Bool {
+            OCCTSurfaceBSplineInsertUKnot(surface.handle, u, Int32(multiplicity), tolerance)
+        }
+
+        /// Insert a V knot.
+        @discardableResult
+        public func insertVKnot(v: Double, multiplicity: Int = 1, tolerance: Double = 1e-6) -> Bool {
+            OCCTSurfaceBSplineInsertVKnot(surface.handle, v, Int32(multiplicity), tolerance)
+        }
+
+        /// Segment the surface to [u1,u2] x [v1,v2].
+        @discardableResult
+        public func segment(u1: Double, u2: Double, v1: Double, v2: Double) -> Bool {
+            OCCTSurfaceBSplineSegment(surface.handle, u1, u2, v1, v2)
+        }
+
+        /// Increase the degree to (uDeg, vDeg).
+        @discardableResult
+        public func increaseDegree(uDeg: Int, vDeg: Int) -> Bool {
+            OCCTSurfaceBSplineIncreaseDegree(surface.handle, Int32(uDeg), Int32(vDeg))
+        }
+
+        /// Exchange U and V directions.
+        @discardableResult
+        public func exchangeUV() -> Bool {
+            OCCTSurfaceBSplineExchangeUV(surface.handle)
+        }
+    }
+
+    /// Access BSpline-specific surface operations. Works only if the underlying surface is a Geom_BSplineSurface.
+    public var bsplineSurface: BSpline { BSpline(surface: self) }
+}
+
+extension Surface {
+
+    /// Get the parameter bounds of the surface.
+    public var parameterBounds: (uMin: Double, uMax: Double, vMin: Double, vMax: Double) {
+        var uMin = 0.0, uMax = 0.0, vMin = 0.0, vMax = 0.0
+        OCCTSurfaceBounds(handle, &uMin, &uMax, &vMin, &vMax)
+        return (uMin, uMax, vMin, vMax)
+    }
+
+    /// Unavailable: this `Int` reported a hand-invented encoding, and the numbers changed
+    /// underneath it. Use ``continuityClass`` (named cases) or ``continuity`` (raw ordinal).
+    ///
+    /// Same retirement, same reasons, as ``Curve3D/continuityOrder``: the pre-#485 encoding was
+    /// `C0=0, C1=1, C2=2, C3=3, CN=99, G1=-2, G2=-3` and the value is now the real
+    /// `GeomAbs_Shape` ordinal (`C0=0, G1=1, C1=2, G2=3, C2=4, C3=5, CN=6`), so every threshold
+    /// check kept compiling and quietly changed meaning (#619).
+    ///
+    /// ```swift
+    /// // Before: `2` was C2. After: `2` is C1, and an analytic surface answers 6, never 99.
+    /// if surface.surfaceContinuityOrder >= 2 { offsetSafely() }
+    ///
+    /// // Ask it so it cannot drift again:
+    /// if surface.continuityClass.satisfies(.c2) { offsetSafely() }
+    /// ```
+    @available(*, unavailable, message: """
+        surfaceContinuityOrder reported a hand-invented encoding (C0=0, C1=1, C2=2, C3=3, CN=99, \
+        G1=-2, G2=-3) and #485 changed it to the real GeomAbs_Shape ordinal (C0=0, G1=1, C1=2, \
+        G2=3, C2=4, C3=5, CN=6), so every threshold check silently changed meaning. Use \
+        continuityClass.satisfies(_:) for a continuity floor, continuityClass == .cN for the \
+        analytic fast path, or continuity for the raw ordinal — after re-checking the constant \
+        you compare against. Note there is no longer an error sentinel: this returned -1 for a \
+        null or unreadable handle, whereas continuity returns 0, which is an ordinary C0, so a \
+        migrated `< 0` error check can never fire (#619).
+        """)
+    public var surfaceContinuityOrder: Int { Int(OCCTSurfaceGetContinuity(handle)) }
+
+    /// Create a deep copy of this surface.
+    public func copy() -> Surface? {
+        guard let ref = OCCTSurfaceCopy(handle) else { return nil }
+        return Surface(handle: ref)
+    }
+}
+
+extension Surface {
+
+    /// Evaluate the surface point at (u, v).
+    public func evalD0(u: Double, v: Double) -> SIMD3<Double> {
+        var x = 0.0, y = 0.0, z = 0.0
+        OCCTSurfaceEvalD0(handle, u, v, &x, &y, &z)
+        return SIMD3(x, y, z)
+    }
+
+    /// Evaluate the surface point and first partial derivatives at (u, v).
+    public func evalD1(u: Double, v: Double) -> (point: SIMD3<Double>, d1u: SIMD3<Double>, d1v: SIMD3<Double>) {
+        var px = 0.0, py = 0.0, pz = 0.0
+        var d1ux = 0.0, d1uy = 0.0, d1uz = 0.0
+        var d1vx = 0.0, d1vy = 0.0, d1vz = 0.0
+        OCCTSurfaceEvalD1(handle, u, v, &px, &py, &pz, &d1ux, &d1uy, &d1uz, &d1vx, &d1vy, &d1vz)
+        return (SIMD3(px, py, pz), SIMD3(d1ux, d1uy, d1uz), SIMD3(d1vx, d1vy, d1vz))
+    }
+
+    /// Evaluate the surface point, first and second partial derivatives at (u, v).
+    public func evalD2(u: Double, v: Double) -> (point: SIMD3<Double>, d1u: SIMD3<Double>, d1v: SIMD3<Double>, d2u: SIMD3<Double>, d2v: SIMD3<Double>, d2uv: SIMD3<Double>) {
+        var px = 0.0, py = 0.0, pz = 0.0
+        var d1ux = 0.0, d1uy = 0.0, d1uz = 0.0
+        var d1vx = 0.0, d1vy = 0.0, d1vz = 0.0
+        var d2ux = 0.0, d2uy = 0.0, d2uz = 0.0
+        var d2vx = 0.0, d2vy = 0.0, d2vz = 0.0
+        var d2uvx = 0.0, d2uvy = 0.0, d2uvz = 0.0
+        OCCTSurfaceEvalD2(handle, u, v, &px, &py, &pz,
+                            &d1ux, &d1uy, &d1uz, &d1vx, &d1vy, &d1vz,
+                            &d2ux, &d2uy, &d2uz, &d2vx, &d2vy, &d2vz,
+                            &d2uvx, &d2uvy, &d2uvz)
+        return (SIMD3(px, py, pz), SIMD3(d1ux, d1uy, d1uz), SIMD3(d1vx, d1vy, d1vz),
+                SIMD3(d2ux, d2uy, d2uz), SIMD3(d2vx, d2vy, d2vz), SIMD3(d2uvx, d2uvy, d2uvz))
+    }
+}
+
+extension Surface {
+
+    /// The geometric surface type (0=Plane, 1=Cylinder, 2=Cone, 3=Sphere, 4=Torus, ..., 10=OtherSurface).
+    public var surfaceType: Int {
+        Int(OCCTSurfaceGetType(handle))
+    }
+}
+
+extension Surface {
+
+    /// Local point-on-surface search from initial (u,v) guess. Returns (u, v, distance).
+    public func locateNearestPoint(_ point: SIMD3<Double>, initU: Double, initV: Double, tolerance: Double = 1e-6) -> (u: Double, v: Double, distance: Double)? {
+        var u = 0.0, v = 0.0, dist = 0.0
+        let ok = OCCTExtremaLocateOnSurface(handle, point.x, point.y, point.z,
+                                            initU, initV, tolerance, &u, &v, &dist)
+        return ok ? (u, v, dist) : nil
+    }
+
+    /// Global point-to-surface projection returning all extrema. Returns array of (u, v, distance).
+    ///
+    /// - Parameter maxResults: Output *capacity* (default 10), clamped into `0...`
+    ///   ``Sampling/maximumSampleCount``; 0 or less returns empty (#622).
+    public func projectPointAll(_ point: SIMD3<Double>, maxResults: Int = 10) -> [(u: Double, v: Double, distance: Double)] {
+        let maxResults = Sampling.capacity(maxResults)
+        guard maxResults > 0 else { return [] }
+        var us = [Double](repeating: 0, count: maxResults)
+        var vs = [Double](repeating: 0, count: maxResults)
+        var distances = [Double](repeating: 0, count: maxResults)
+        let n = Int(OCCTExtremaPointSurface(handle, point.x, point.y, point.z,
+                                            &us, &vs, &distances, Int32(maxResults)))
+        return (0..<n).map { (us[$0], vs[$0], distances[$0]) }
+    }
+}
+
+extension Surface {
+
+    /// Set U knot at given index (1-based).
+    public func bsplineSetUKnot(index: Int, value: Double) -> Bool {
+        OCCTSurfaceBSplineSetUKnot(handle, Int32(index), value)
+    }
+
+    /// Set V knot at given index (1-based).
+    public func bsplineSetVKnot(index: Int, value: Double) -> Bool {
+        OCCTSurfaceBSplineSetVKnot(handle, Int32(index), value)
+    }
+
+    /// Get all U knots.
+    public func bsplineUKnots() -> [Double] {
+        let n = Int(OCCTSurfaceBSplineNbUKnots(handle))
+        guard n > 0 else { return [] }
+        var knots = [Double](repeating: 0, count: n)
+        OCCTSurfaceBSplineGetUKnots(handle, &knots)
+        return knots
+    }
+
+    /// Get all V knots.
+    public func bsplineVKnots() -> [Double] {
+        let n = Int(OCCTSurfaceBSplineNbVKnots(handle))
+        guard n > 0 else { return [] }
+        var knots = [Double](repeating: 0, count: n)
+        OCCTSurfaceBSplineGetVKnots(handle, &knots)
+        return knots
+    }
+
+    /// Get all weights (row-major, NbUPoles x NbVPoles).
+    public func bsplineWeights() -> (weights: [Double], rows: Int, cols: Int) {
+        let maxSize = 10000
+        var weights = [Double](repeating: 0, count: maxSize)
+        var rows: Int32 = 0, cols: Int32 = 0
+        OCCTSurfaceBSplineGetWeights(handle, &weights, &rows, &cols)
+        return (Array(weights.prefix(Int(rows) * Int(cols))), Int(rows), Int(cols))
+    }
+
+    /// Remove a U knot. Returns true if successful.
+    public func bsplineRemoveUKnot(index: Int, multiplicity: Int, tolerance: Double) -> Bool {
+        OCCTSurfaceBSplineRemoveUKnot(handle, Int32(index), Int32(multiplicity), tolerance)
+    }
+}
+
+extension Surface {
+
+    /// Evaluate the (Nu, Nv) partial derivative at (u, v).
+    public func dn(u: Double, v: Double, nu: Int, nv: Int) -> SIMD3<Double> {
+        var x = 0.0, y = 0.0, z = 0.0
+        OCCTSurfaceDN(handle, u, v, Int32(nu), Int32(nv), &x, &y, &z)
+        return SIMD3(x, y, z)
+    }
+
+    /// The type name of this surface (e.g. "Geom_Plane", "Geom_BSplineSurface").
+    public var typeName: String? {
+        guard let ptr = OCCTSurfaceTypeName(handle) else { return nil }
+        return String(cString: ptr)
+    }
+}
+
+extension Surface {
+
+    /// Surface curvature result at a point.
+    public struct LocalCurvatures: Sendable {
+        public let gaussian: Double
+        public let mean: Double
+        public let maxCurvature: Double
+        public let minCurvature: Double
+    }
+
+    /// All four curvature scalars at a surface point, in one call.
+    ///
+    /// The same quantities ``Surface/curvatures(u:v:)``, ``Surface/gaussianCurvature(atU:v:)``,
+    /// ``Surface/meanCurvature(atU:v:)`` and ``Surface/principalCurvatures(atU:v:)`` report, and
+    /// now at the same tolerance — this used to ask at a 1000x tighter resolution, so it could
+    /// report curvature near a degeneracy that every one of those called undefined (#494).
+    ///
+    /// - Parameters:
+    ///   - u: Surface U parameter.
+    ///   - v: Surface V parameter.
+    /// - Returns: Gaussian, mean, max and min curvature, or `nil` where curvature is undefined —
+    ///   a cone's apex, a sphere's pole, or any point whose surface normal is not defined.
+    ///
+    /// ```swift
+    /// let sphere = Surface.sphere(center: .zero, radius: 10)!
+    /// if let c = sphere.localCurvatures(u: 0, v: 0.5) {
+    ///     print(c.gaussian)      // 1/R^2 = 0.01
+    ///     print(abs(c.mean))     // 1/R   = 0.1
+    /// }
+    ///
+    /// // A cone's apex has no defined curvature.
+    /// let cone = Surface.cone(origin: .zero, axis: SIMD3(0, 0, 1), radius: 0, semiAngle: .pi / 6)!
+    /// #expect(cone.localCurvatures(u: 0, v: 0) == nil)
+    /// ```
+    public func localCurvatures(u: Double, v: Double) -> LocalCurvatures? {
+        var gaussian = 0.0, mean = 0.0, maxC = 0.0, minC = 0.0
+        var isDefined = false
+        OCCTSurfaceLocalCurvatures(handle, u, v, &gaussian, &mean, &maxC, &minC, &isDefined)
+        return isDefined ? LocalCurvatures(gaussian: gaussian, mean: mean,
+                                           maxCurvature: maxC, minCurvature: minC) : nil
+    }
+
+    /// Curvature direction result.
+    public struct CurvatureDirections: Sendable {
+        public let maxDirection: SIMD3<Double>
+        public let minDirection: SIMD3<Double>
+    }
+
+    /// The principal curvature directions at a surface point.
+    ///
+    /// Shares its tolerance with ``Surface/principalCurvatures(atU:v:)``, which reports the same
+    /// two directions alongside their curvatures; the two used to disagree about where curvature
+    /// exists at all (#494).
+    ///
+    /// - Parameters:
+    ///   - u: Surface U parameter.
+    ///   - v: Surface V parameter.
+    /// - Returns: The max- and min-curvature directions, or `nil` where curvature is undefined
+    ///   **or** the point is umbilic, since equal principal curvatures single out no pair of
+    ///   directions.
+    ///
+    /// Umbilic detection is OCCT's, and it is stricter than the geometry suggests: the two
+    /// principal curvatures must land within one ULP of each other. A plane qualifies (both are
+    /// exactly zero); an analytically-umbilic sphere qualifies only where the two computed values
+    /// round to the same `Double`, which varies with radius and parameter. Treat a non-`nil`
+    /// result on a sphere as normal, not as a bug.
+    ///
+    /// ```swift
+    /// // A cylinder is not umbilic: one direction follows the axis, the other wraps around it.
+    /// let cylinder = Surface.cylinder(origin: .zero, axis: SIMD3(0, 0, 1), radius: 5)!
+    /// if let d = cylinder.localCurvatureDirections(u: 0, v: 0) {
+    ///     print(d.maxDirection, d.minDirection)
+    /// }
+    ///
+    /// // A plane is umbilic everywhere, so it has directions nowhere — but its curvature is
+    /// // perfectly well defined (all four scalars are zero).
+    /// let plane = Surface.plane(origin: .zero, normal: SIMD3(0, 0, 1))!
+    /// #expect(plane.localCurvatures(u: 1, v: 2) != nil)
+    /// #expect(plane.localCurvatureDirections(u: 1, v: 2) == nil)
+    /// ```
+    public func localCurvatureDirections(u: Double, v: Double) -> CurvatureDirections? {
+        var maxDx = 0.0, maxDy = 0.0, maxDz = 0.0
+        var minDx = 0.0, minDy = 0.0, minDz = 0.0
+        var isDefined = false
+        OCCTSurfaceLocalCurvatureDirections(handle, u, v,
+                                            &maxDx, &maxDy, &maxDz,
+                                            &minDx, &minDy, &minDz, &isDefined)
+        return isDefined ? CurvatureDirections(maxDirection: SIMD3(maxDx, maxDy, maxDz),
+                                               minDirection: SIMD3(minDx, minDy, minDz)) : nil
+    }
+}
+
+extension Surface {
+    /// Bezier surface properties (meaningful only when the underlying surface is Geom_BezierSurface).
+    public struct BezierProperties: @unchecked Sendable {
+        fileprivate let handle: OCCTSurfaceRef
+
+        /// Number of U poles.
+        public var nbUPoles: Int { Int(OCCTSurfaceBezierNbUPoles(handle)) }
+
+        /// Number of V poles.
+        public var nbVPoles: Int { Int(OCCTSurfaceBezierNbVPoles(handle)) }
+
+        /// U degree.
+        public var uDegree: Int { Int(OCCTSurfaceBezierUDegree(handle)) }
+
+        /// V degree.
+        public var vDegree: Int { Int(OCCTSurfaceBezierVDegree(handle)) }
+
+        /// Whether the surface is rational in U.
+        public var isURational: Bool { OCCTSurfaceBezierIsURational(handle) }
+
+        /// Whether the surface is rational in V.
+        public var isVRational: Bool { OCCTSurfaceBezierIsVRational(handle) }
+
+        /// Get a pole (1-based indices).
+        public func pole(uIndex: Int, vIndex: Int) -> SIMD3<Double> {
+            var x = 0.0, y = 0.0, z = 0.0
+            OCCTSurfaceBezierGetPole(handle, Int32(uIndex), Int32(vIndex), &x, &y, &z)
+            return SIMD3(x, y, z)
+        }
+
+        /// Set a pole (1-based indices).
+        @discardableResult
+        public func setPole(uIndex: Int, vIndex: Int, point: SIMD3<Double>) -> Bool {
+            OCCTSurfaceBezierSetPole(handle, Int32(uIndex), Int32(vIndex), point.x, point.y, point.z)
+        }
+
+        /// Set a weight (1-based indices).
+        @discardableResult
+        public func setWeight(uIndex: Int, vIndex: Int, weight: Double) -> Bool {
+            OCCTSurfaceBezierSetWeight(handle, Int32(uIndex), Int32(vIndex), weight)
+        }
+
+        /// Extract a segment of the Bezier surface.
+        @discardableResult
+        public func segment(u1: Double, u2: Double, v1: Double, v2: Double) -> Bool {
+            OCCTSurfaceBezierSegment(handle, u1, u2, v1, v2)
+        }
+
+        /// Exchange U and V parametric directions.
+        @discardableResult
+        public func exchangeUV() -> Bool {
+            OCCTSurfaceBezierExchangeUV(handle)
+        }
+    }
+
+    /// Bezier-surface-specific properties.
+    public var bezierProperties: BezierProperties { BezierProperties(handle: handle) }
+
+    // --- BSplineSurface extras ---
+
+    /// Compute U and V parameter resolution for a given 3D tolerance (BSpline surface).
+    public func bsplineResolution(tolerance3d: Double) -> (uResolution: Double, vResolution: Double) {
+        var ur = 0.0, vr = 0.0
+        OCCTSurfaceBSplineResolution(handle, tolerance3d, &ur, &vr)
+        return (ur, vr)
+    }
+
+    /// Set U periodicity on a BSpline surface.
+    @discardableResult
+    public func bsplineSetUPeriodic(_ periodic: Bool) -> Bool {
+        OCCTSurfaceBSplineSetUPeriodic(handle, periodic)
+    }
+
+    /// Set V periodicity on a BSpline surface.
+    @discardableResult
+    public func bsplineSetVPeriodic(_ periodic: Bool) -> Bool {
+        OCCTSurfaceBSplineSetVPeriodic(handle, periodic)
+    }
+
+    /// Get a weight from a BSpline surface (1-based indices).
+    public func bsplineWeight(uIndex: Int, vIndex: Int) -> Double {
+        OCCTSurfaceBSplineGetWeight(handle, Int32(uIndex), Int32(vIndex))
+    }
+}
+
+extension Surface {
+
+    /// Check if this surface has at least Cn continuity in the U direction.
+    public func isCNu(_ n: Int) -> Bool {
+        OCCTSurfaceIsCNu(handle, Int32(n))
+    }
+
+    /// Check if this surface has at least Cn continuity in the V direction.
+    public func isCNv(_ n: Int) -> Bool {
+        OCCTSurfaceIsCNv(handle, Int32(n))
+    }
+
+    /// Create a U-reversed copy of this surface.
+    public func uReversed() -> Surface? {
+        guard let ref = OCCTSurfaceUReversed(handle) else { return nil }
+        return Surface(handle: ref)
+    }
+
+    /// Create a V-reversed copy of this surface.
+    public func vReversed() -> Surface? {
+        guard let ref = OCCTSurfaceVReversed(handle) else { return nil }
+        return Surface(handle: ref)
+    }
+
+    /// Get the reversed U parameter value.
+    public func uReversedParameter(_ u: Double) -> Double {
+        OCCTSurfaceUReversedParameter(handle, u)
+    }
+
+    /// Get the reversed V parameter value.
+    public func vReversedParameter(_ v: Double) -> Double {
+        OCCTSurfaceVReversedParameter(handle, v)
+    }
+
+    /// Remove a V knot from a BSpline surface. Returns true if successful.
+    @discardableResult
+    public func bsplineRemoveVKnot(index: Int, mult: Int, tolerance: Double) -> Bool {
+        OCCTSurfaceBSplineRemoveVKnot(handle, Int32(index), Int32(mult), tolerance)
+    }
+
+    /// Resolution for Bezier surfaces (U and V).
+    public func bezierResolution(tolerance3d: Double) -> (u: Double, v: Double) {
+        var ur = 0.0, vr = 0.0
+        OCCTSurfaceBezierResolution(handle, tolerance3d, &ur, &vr)
+        return (ur, vr)
+    }
+
+    /// Maximum degree for Bezier surfaces (static).
+    public static var bezierMaxDegree: Int { Int(OCCTSurfaceBezierMaxDegree()) }
+
+    /// Maximum degree for BSpline surfaces (static).
+    public static var bsplineMaxDegree: Int { Int(OCCTSurfaceBSplineMaxDegree()) }
+}
+
+extension Surface {
+
+    /// Remove U periodicity from BSpline surface.
+    @discardableResult
+    public func bsplineSetUNotPeriodic() -> Bool {
+        OCCTSurfaceBSplineSetUNotPeriodic(handle)
+    }
+
+    /// Remove V periodicity from BSpline surface.
+    @discardableResult
+    public func bsplineSetVNotPeriodic() -> Bool {
+        OCCTSurfaceBSplineSetVNotPeriodic(handle)
+    }
+
+    /// Set origin knot index in U direction (1-based).
+    @discardableResult
+    public func bsplineSetUOrigin(index: Int) -> Bool {
+        OCCTSurfaceBSplineSetUOrigin(handle, Int32(index))
+    }
+
+    /// Set origin knot index in V direction (1-based).
+    @discardableResult
+    public func bsplineSetVOrigin(index: Int) -> Bool {
+        OCCTSurfaceBSplineSetVOrigin(handle, Int32(index))
+    }
+
+    /// Increase U multiplicity at knot index to at least mult (1-based).
+    @discardableResult
+    public func bsplineIncreaseUMultiplicity(index: Int, multiplicity: Int) -> Bool {
+        OCCTSurfaceBSplineIncreaseUMultiplicity(handle, Int32(index), Int32(multiplicity))
+    }
+
+    /// Increase V multiplicity at knot index to at least mult (1-based).
+    @discardableResult
+    public func bsplineIncreaseVMultiplicity(index: Int, multiplicity: Int) -> Bool {
+        OCCTSurfaceBSplineIncreaseVMultiplicity(handle, Int32(index), Int32(multiplicity))
+    }
+
+    /// Batch insert U knots with multiplicities.
+    @discardableResult
+    public func bsplineInsertUKnots(_ knots: [Double], multiplicities: [Int], tolerance: Double = 1e-10) -> Bool {
+        let count = min(knots.count, multiplicities.count)
+        guard count > 0 else { return false }
+        let mults = multiplicities.map { Int32($0) }
+        return OCCTSurfaceBSplineInsertUKnots(handle, knots, mults, Int32(count), tolerance)
+    }
+
+    /// Batch insert V knots with multiplicities.
+    @discardableResult
+    public func bsplineInsertVKnots(_ knots: [Double], multiplicities: [Int], tolerance: Double = 1e-10) -> Bool {
+        let count = min(knots.count, multiplicities.count)
+        guard count > 0 else { return false }
+        let mults = multiplicities.map { Int32($0) }
+        return OCCTSurfaceBSplineInsertVKnots(handle, knots, mults, Int32(count), tolerance)
+    }
+
+    /// Move BSpline surface to pass through point at (u,v), adjusting poles in range.
+    @discardableResult
+    public func bsplineMovePoint(u: Double, v: Double, to point: SIMD3<Double>,
+                                 uPoleRange: ClosedRange<Int>, vPoleRange: ClosedRange<Int>) -> Bool {
+        OCCTSurfaceBSplineMovePoint(handle, u, v, point.x, point.y, point.z,
+                                     Int32(uPoleRange.lowerBound), Int32(uPoleRange.upperBound),
+                                     Int32(vPoleRange.lowerBound), Int32(vPoleRange.upperBound))
+    }
+
+    /// Set an entire column of poles (all U poles at vIndex, 1-based). coords is [x,y,z,...] with count = NbUPoles.
+    @discardableResult
+    public func bsplineSetPoleCol(vIndex: Int, poles: [SIMD3<Double>]) -> Bool {
+        let coords = poles.flatMap { [$0.x, $0.y, $0.z] }
+        return OCCTSurfaceBSplineSetPoleCol(handle, Int32(vIndex), coords, Int32(poles.count))
+    }
+
+    /// Set an entire row of poles (all V poles at uIndex, 1-based). coords is [x,y,z,...] with count = NbVPoles.
+    @discardableResult
+    public func bsplineSetPoleRow(uIndex: Int, poles: [SIMD3<Double>]) -> Bool {
+        let coords = poles.flatMap { [$0.x, $0.y, $0.z] }
+        return OCCTSurfaceBSplineSetPoleRow(handle, Int32(uIndex), coords, Int32(poles.count))
+    }
+
+    // --- v0.129.0 BSplineSurface completions ---
+
+    /// Set a column of weights on BSpline surface. vIndex is 1-based, count = NbUPoles.
+    @discardableResult
+    public func bsplineSetWeightCol(vIndex: Int, weights: [Double]) -> Bool {
+        OCCTSurfaceBSplineSetWeightCol(handle, Int32(vIndex), weights, Int32(weights.count))
+    }
+
+    /// Set a row of weights on BSpline surface. uIndex is 1-based, count = NbVPoles.
+    @discardableResult
+    public func bsplineSetWeightRow(uIndex: Int, weights: [Double]) -> Bool {
+        OCCTSurfaceBSplineSetWeightRow(handle, Int32(uIndex), weights, Int32(weights.count))
+    }
+
+    /// Increment U knot multiplicities in range [fromIndex, toIndex] by step.
+    @discardableResult
+    public func bsplineIncrementUMultiplicity(fromIndex: Int, toIndex: Int, step: Int) -> Bool {
+        OCCTSurfaceBSplineIncrementUMultiplicity(handle, Int32(fromIndex), Int32(toIndex), Int32(step))
+    }
+
+    /// Increment V knot multiplicities in range [fromIndex, toIndex] by step.
+    @discardableResult
+    public func bsplineIncrementVMultiplicity(fromIndex: Int, toIndex: Int, step: Int) -> Bool {
+        OCCTSurfaceBSplineIncrementVMultiplicity(handle, Int32(fromIndex), Int32(toIndex), Int32(step))
+    }
+
+    /// First U knot index of BSpline surface.
+    public var bsplineFirstUKnotIndex: Int { Int(OCCTSurfaceBSplineFirstUKnotIndex(handle)) }
+
+    /// Last U knot index of BSpline surface.
+    public var bsplineLastUKnotIndex: Int { Int(OCCTSurfaceBSplineLastUKnotIndex(handle)) }
+
+    /// First V knot index of BSpline surface.
+    public var bsplineFirstVKnotIndex: Int { Int(OCCTSurfaceBSplineFirstVKnotIndex(handle)) }
+
+    /// Last V knot index of BSpline surface.
+    public var bsplineLastVKnotIndex: Int { Int(OCCTSurfaceBSplineLastVKnotIndex(handle)) }
+
+    /// Validate parameter ranges and segment the BSpline surface.
+    @discardableResult
+    public func bsplineCheckAndSegment(u1: Double, u2: Double, v1: Double, v2: Double,
+                                        uTolerance: Double = 1e-10, vTolerance: Double = 1e-10) -> Bool {
+        OCCTSurfaceBSplineCheckAndSegment(handle, u1, u2, v1, v2, uTolerance, vTolerance)
     }
 }

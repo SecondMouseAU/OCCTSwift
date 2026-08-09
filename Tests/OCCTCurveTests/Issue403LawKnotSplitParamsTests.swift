@@ -26,8 +26,8 @@ struct Issue403LawKnotSplitParamsTests {
             Issue.record("could not build the test law")
             return
         }
-        let indices = law.knotSplitting(continuityOrder: 2)
-        let params = law.knotSplitParameters(continuityOrder: 2)
+        let indices = law.knotSplitting(continuityOrder: .c2)
+        let params = law.knotSplitParameters(continuityOrder: .c2)
         // Same underlying Law_BSplineKnotSplitting analyzer -- must agree on how many
         // splits there are, even though one returns indices and the other parameters.
         #expect(indices.count == params.count)
@@ -40,7 +40,7 @@ struct Issue403LawKnotSplitParamsTests {
             Issue.record("could not build the test law")
             return
         }
-        let params = law.knotSplitParameters(continuityOrder: 2)
+        let params = law.knotSplitParameters(continuityOrder: .c2)
         let bounds = law.bounds
 
         if let first = params.first, let last = params.last {
@@ -59,7 +59,7 @@ struct Issue403LawKnotSplitParamsTests {
         }
         // Degree 3, multiplicity 2 at the interior knot => continuity there is 3-2=1, so
         // asking for C2 must surface it as a break, in addition to the two end knots.
-        let params = law.knotSplitParameters(continuityOrder: 2)
+        let params = law.knotSplitParameters(continuityOrder: .c2)
         #expect(params.contains { abs($0 - 0.5) < 1e-9 })
     }
 
@@ -69,6 +69,6 @@ struct Issue403LawKnotSplitParamsTests {
             Issue.record("could not build the test law")
             return
         }
-        #expect(law.knotSplitParameters(continuityOrder: 1).isEmpty)
+        #expect(law.knotSplitParameters(continuityOrder: .c1).isEmpty)
     }
 }

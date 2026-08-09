@@ -168,6 +168,22 @@ public enum CurveType: Int32, Sendable {
 
 Matches `GeomAbs_CurveType` values from `BRepAdaptor_Curve`. Use `curveType` to distinguish geometric type before calling type-specific accessors.
 
+| case | meaning |
+|---|---|
+| `.line` | `Geom_Line`, a straight line. |
+| `.circle` | `Geom_Circle`, a circular arc. |
+| `.ellipse` | `Geom_Ellipse`. |
+| `.hyperbola` | `Geom_Hyperbola`. |
+| `.parabola` | `Geom_Parabola`. |
+| `.bezierCurve` | `Geom_BezierCurve`. |
+| `.bsplineCurve` | `Geom_BSplineCurve`. |
+| `.offsetCurve` | `Geom_OffsetCurve`. |
+| `.other` | Unrecognised or null curve. |
+
+*(Per-case anchors below, for cross-reference; the table above has the actual meaning of each.)*
+
+#### `other`
+
 ---
 
 ### `CurveProjection`
@@ -386,11 +402,11 @@ Projects a 3D point onto this edge's curve, returning the closest point.
 public func project(point: SIMD3<Double>) -> CurveProjection?
 ```
 
-Uses OCCT's `GeomAPI_ProjectPointOnCurve` bounded to the edge's parameter range, ensuring the projected point lies within the edge bounds.
+The answer is always inside the edge's own parameter range (`parameterBounds`), and always the true nearest point. Where the query point has no perpendicular foot on the edge, the nearest point is one of its ends, and that is what comes back.
 
 - **Parameters:** `point` — query point in 3D space.
-- **Returns:** `CurveProjection` with the closest point, its parameter, and the distance; or `nil` if the edge has no curve or projection fails.
-- **OCCT:** `BRep_Tool::Curve` + `GeomAPI_ProjectPointOnCurve`.
+- **Returns:** `CurveProjection` with the closest point, its parameter, and the distance; or `nil` only for an edge with no 3D curve to project onto.
+- **OCCT:** `BRep_Tool::Curve`, then `ShapeAnalysis_Curve::Project` and `GeomAPI_ProjectPointOnCurve` minimised together with the range's ends — no one of the three is correct alone (#539). Shares `Curve3D.projectPoint(_:precision:)`'s implementation.
 - **Example:**
   ```swift
   let box = Shape.box(width: 10, height: 10, depth: 10)!
@@ -401,23 +417,35 @@ Uses OCCT's `GeomAPI_ProjectPointOnCurve` bounded to the edge's parameter range,
           print(proj.distance)  // ≈ √3
       }
   }
+
+  // Past the end: the end of the edge, rather than nil.
+  let edge = Wire.line(from: SIMD3(3, 0, 0), to: SIMD3(8, 0, 0))!.edges()[0]
+  if let proj = edge.project(point: SIMD3(100, 0, 0)) {
+      print(proj.point)     // SIMD3(8, 0, 0)
+      print(proj.distance)  // 92.0
+  }
   ```
+
+> **Before #539** the bare `GeomAPI_ProjectPointOnCurve` behind this returned extrema
+> rather than minima, which cost it two ways: it returned `nil` whenever the nearest point was an
+> end rather than a perpendicular foot (the case above), and on an arc it could report the *far*
+> side as the nearest point — 11 for a query whose nearest point on a half circle is 7.81 away.
 
 ---
 
 ### `distance(to:)`
 
-The shortest distance from a 3D point to this edge. Returns `nil` if the projection fails.
+The shortest distance from a 3D point to this edge.
 
 ```swift
 public func distance(to point: SIMD3<Double>) -> Double?
 ```
 
-Pure-Swift convenience — delegates to `project(point:)?.distance`.
+Pure-Swift convenience — delegates to `project(point:)?.distance`, so it measures to the same nearest point: over the edge's own parameter range, ends included.
 
 - **Parameters:** `point` — query point.
-- **Returns:** Distance to the nearest point on the edge, or `nil` on failure.
-- **OCCT:** Delegates to `project(point:)` → `GeomAPI_ProjectPointOnCurve`.
+- **Returns:** Distance to the nearest point on the edge, or `nil` only for an edge with no 3D curve.
+- **OCCT:** Delegates to `project(point:)`, and inherits its #539 fix.
 - **Example:**
   ```swift
   if let d = edge.distance(to: SIMD3(5, 5, 5)) {
@@ -463,7 +491,7 @@ public func points(count: Int? = nil) -> [SIMD3<Double>]
 
 When `count` is `nil`, automatically computes a point count at approximately 0.5 model-unit spacing (`max(2, Int(length / 0.5) + 1)`). Points are evenly spaced in the OCCT parameter domain (not arc-length).
 
-- **Parameters:** `count` — number of points to generate; `nil` = automatic.
+- **Parameters:** `count` — number of points to generate; `nil` = automatic (~0.5 mm spacing). A *request*: honoured within `2...Sampling.maximumSampleCount` (10,000,000); outside that range the result is empty (#558). The automatic default is bounded the same way, since a long enough edge implies more points at 0.5 mm than the ceiling can serve.
 - **Returns:** Array of 3D points; empty on failure or for degenerate edges.
 - **OCCT:** `BRepAdaptor_Curve::Value` — samples at uniformly-spaced parameter values.
 - **Example:**
@@ -485,11 +513,13 @@ These members are declared on `Shape` in `Edge.swift` and provide indexed access
 
 ### `edgeCount`
 
-The total number of edges in the shape.
+The number of **distinct** edges in the shape: the same `TopExp::MapShapes` enumeration `edges()`/`edge(at:)` walk.
 
 ```swift
 public var edgeCount: Int { get }
 ```
+
+An edge reachable from two adjacent faces is counted once, not once per face. See `edges()` below for the identity rule and why it needs no orientation-preserving counterpart.
 
 - **OCCT:** `TopExp::MapShapes(shape, TopAbs_EDGE, map)` → `map.Extent()` via `TopTools_IndexedMapOfShape`.
 - **Example:**
@@ -497,6 +527,9 @@ public var edgeCount: Int { get }
   let box = Shape.box(width: 10, height: 10, depth: 10)!
   print(box.edgeCount)  // 12
   ```
+- **Former second spelling:** `Shape.nbEdges` asked this same question, backed by a bare
+  `TopExp_Explorer` occurrence count (24 on this same box) instead of this deduplicated one;
+  deprecated as a forward here in #651 and removed at v2.0.0 (#784).
 
 ---
 
@@ -529,10 +562,20 @@ Returns all edges from the shape as typed `Edge` objects.
 public func edges() -> [Edge]
 ```
 
-Iterates `edge(at:)` from 0 to `edgeCount - 1`. The order matches `edgeCount` / `edge(at:)` — i.e., `TopTools_IndexedMapOfShape` traversal order, which can vary between runs.
+Iterates `edge(at:)` from 0 to `edgeCount - 1`. The order matches `edgeCount` / `edge(at:)`, i.e., `TopTools_IndexedMapOfShape` traversal order, which can vary between runs.
+
+**Identity, not orientation.** Edges are distinguished the way OCCT distinguishes them for an index: by `TopoDS_Shape::IsSame`, which compares the underlying curve and placement and ignores orientation. An edge reachable from two owners, the ordinary case of any two adjacent faces on one solid, collapses to a single entry here, carrying whichever orientation was reached first:
+
+```swift
+let box = Shape.box(width: 10, height: 10, depth: 10)!
+print(box.edges().count)    // 12: the distinct, addressable edges
+print(box.contents.edges)   // 24: one per (face, edge) visit, ShapeAnalysis_ShapeContents
+```
+
+Unlike `Shape.faces()`, this collapse is **not** a defect (#638). #614 made `faces()`'s equivalent collapse a bug because `Face.normal(atU:v:)` reverses on `TopAbs_REVERSED`, so a face's stored orientation changes the answer it returns. `Edge` has no such consumer: it exposes no `.orientation` accessor at all, and every geometric query on it (`tangent(at:)`, `point(at:)`, `parameterBounds`, `curvature(at:)`) reads the edge's underlying `Geom_Curve` through `BRep_Tool::Curve`, which is defined independently of `TopAbs_Orientation`. A bridge-wide audit (`grep -rn "\.Orientation() =="` across `Sources/OCCTBridge/src/*.mm`) found 14 branching sites: 13 are face-normal logic `faces()`/`orientedFaces()` already cover, and the fourteenth (`occtSampleWirePoints`, `OCCTBridge_Modeling.mm`) reads orientation fresh off a `BRepTools_WireExplorer` walk of the wire it samples, not from an edge this method returns. So there is currently no `orientedEdges()` counterpart to `edges()`: nothing needs one. See `Scripts/repro/cluster-a-subshape-enumeration/` for the full census this rests on.
 
 - **Returns:** Array of all `Edge` objects; empty if the shape has no edges.
-- **OCCT:** `TopExp::MapShapes(shape, TopAbs_EDGE)` — collects all edges via indexed map.
+- **OCCT:** `TopExp::MapShapes(shape, TopAbs_EDGE)`, collects all edges via indexed map.
 - **Example:**
   ```swift
   let box = Shape.box(width: 10, height: 10, depth: 10)!

@@ -18,11 +18,22 @@ This page covers geometry repair, shape upgrade, point classification, proximity
 ### `ParametricContinuity`
 
 Minimum parametric continuity to require of a piece of geometry. Shared by every operation
-that splits, approximates or simplifies against a continuity floor: `Shape.divided(at:)`,
+that splits, approximates or simplifies against a continuity floor:
 `Shape.bsplineRestriction(...)`, `Curve3D.approxWithDetails(...)`,
-`Surface.approxWithDetails(tolerance:uContinuity:vContinuity:...)` and
-`Curve3D.continuityBreaks(minContinuity:)`. The raw value maps to `GeomAbs_C0` through
-`GeomAbs_C3`.
+`Surface.approxWithDetails(tolerance:uContinuity:vContinuity:...)` and the whole BSpline
+knot-splitting family: `Curve3D.continuityBreaks(minContinuity:)`,
+`Curve2D.splitIndicesAtDiscontinuities(continuity:)`,
+`Surface.knotSplitting(uContinuity:vContinuity:)`, `LawFunction.knotSplitting(continuityOrder:)`
+and `LawFunction.knotSplitParameters(continuityOrder:)`.
+
+`Shape.divided(at:)` used to be one of these too, but #438 widened it to the strict superset
+[`Shape.ContinuityLevel`](Shape-Measurement.md#continuitylevel) — see
+[`divided(at:tolerance:)`](#dividedattolerance) below.
+
+What the value becomes depends on the consumer. Most decode it to a `GeomAbs_Shape` (`GeomAbs_C0`
+through `GeomAbs_C3`); the knot-splitting family instead passes it to OCCT as a literal derivative
+order against the geometry's own degree, so `.c3` is exact for a cubic but is the strictest question
+askable of a degree-4-or-higher BSpline (#480). Each API's own page states its measured domain.
 
 ```swift
 public enum ParametricContinuity: Int32, Sendable, CaseIterable {
@@ -33,32 +44,51 @@ public enum ParametricContinuity: Int32, Sendable, CaseIterable {
 }
 ```
 
-Pass to `divided(at:)` to split a shape wherever it drops below the specified continuity.
-
 > **Renamed in #398.** This type used to be called `GeometricContinuity`, which was a misnomer:
 > the value maps to `GeomAbs_C0...C3`, so it is *parametric* continuity (equal derivative
 > vectors), not the geometric G0/G1/G2 constraint order of
 > [`SurfaceContinuity`](Shape-Features.md#surfacecontinuity) (parallel tangent directions).
 > `GeometricContinuity`, `ApproxContinuity`, `Shape.BSplineContinuity` and
-> `Curve3D.ContinuityOrder` are now deprecated typealiases of it. No raw value moved.
->
-> `Shape.ContinuityLevel` is deliberately **not** folded in: it is a strict superset used by
-> `dividedByContinuity(criterion:tolerance:)`, adding `cn`, `g1` and `g2` cases that the other
-> call sites cannot accept.
+> `Curve3D.ContinuityOrder` were deprecated typealiases of it (no raw value moved), removed at
+> v2.0.0 (#784).
 
 ---
 
-### `divided(at:)`
+| Case | Meaning |
+|---|---|
+| `.c0` | Positional continuity: the two pieces meet. |
+| `.c1` | First-derivative continuity: equal tangent vectors, not merely parallel ones. |
+| `.c2` | Second-derivative continuity. |
+| `.c3` | Third-derivative continuity. |
 
-Divide a shape at continuity discontinuities.
+---
+
+### `divided(at:tolerance:)`
+
+Divide a shape wherever its geometry drops below the required continuity.
 
 ```swift
-public func divided(at continuity: ParametricContinuity) -> Shape?
+public func divided(at continuity: Shape.ContinuityLevel, tolerance: Double = 1e-7) -> Shape?
 ```
 
-Splits the shape wherever its underlying geometry drops below the requested continuity class.
+Sets `ShapeUpgrade_ShapeDivideContinuity`'s boundary, pcurve AND surface criteria together to
+`continuity`, plus `SetSurfaceSegmentMode(true)` — the usage OCCT's own shape-healing guide
+demonstrates. Until #438 this was one of two public entry points over that same OCCT class:
+[`dividedByContinuity(criterion:tolerance:)`](Shape-Measurement.md#dividedbycontinuitycriteriontolerance)
+(now deprecated, forwarding here) set only the boundary criterion, leaving pcurve/surface pinned
+at the class's own C1 constructor default regardless of the requested continuity — measured
+(`Scripts/repro/cluster-d-continuity`) as a flat result across every criterion on a fixture where
+this method's own three-criteria behaviour varies (nil/4/4/25 faces at C0/C1/C2/C3).
 
-- **Parameters:** `continuity` — target minimum continuity; the shape is split at any face/edge boundary that does not meet this standard.
+- **Parameters:**
+  - `continuity` — target minimum continuity; the shape is split at any face/edge boundary that
+    does not meet this standard. `.cn`, `.g1` and `.g2` are accepted in addition to `.c0`...`.c3`
+    (#438 widened this from `ParametricContinuity`); OCCT's own criterion setters have no case for
+    G1/G2 and would otherwise silently substitute their own C1 default, so those two are decoded
+    ahead of the call instead.
+  - `tolerance` — tolerance for the continuity check. Defaults to `1e-7`
+    (`Precision::Confusion()`), OCCT's own default and this method's behavior before #438 added
+    the parameter.
 - **Returns:** Divided shape, or nil on failure.
 - **OCCT:** `ShapeUpgrade_ShapeDivideContinuity` (via `OCCTShapeDivide`).
 - **Example:**
@@ -115,7 +145,7 @@ Unlike `scaled(by:)` which applies a topological `gp_Trsf`, this modifies the un
 
 ### `bsplineRestriction(surfaceTolerance:curveTolerance:maxDegree:maxSegments:)`
 
-Convert BSpline surfaces to their closest analytical form.
+Re-approximate surfaces, curves and pcurves as BSplines within a degree and segment budget.
 
 ```swift
 public func bsplineRestriction(surfaceTolerance: Double = 0.01,
@@ -124,7 +154,9 @@ public func bsplineRestriction(surfaceTolerance: Double = 0.01,
                                maxSegments: Int = 10000) -> Shape?
 ```
 
-Attempts to simplify BSpline surfaces to planes, cylinders, cones, spheres, or tori within the supplied tolerances. Surfaces that cannot be recognised remain as BSplines with degree and segment count capped at the supplied limits.
+This does **not** recognise analytic forms — nothing here converts a BSpline back to a plane, cylinder, cone, sphere or torus; [`sweptToElementary()`](#swepttoelementary) and [`revolutionToElementary()`](#revolutiontoelementary) are the operations that do. Each geometry is approximated as a BSpline no worse than the supplied tolerances, capped at `maxDegree` and `maxSegments`.
+
+Continuity is fixed at C1 here; [`bsplineRestriction(tol3d:tol2d:maxDegree:maxSegments:continuity3d:continuity2d:degreePriority:rational:)`](Shape-Measurement.md#bsplinerestrictiontol3dtol2dmaxdegreemaxsegmentscontinuity3dcontinuity2ddegreepriorityrational) lets you choose it. Either way the continuity is a **ceiling, not a guarantee**: OCCT reduces what it delivers, with no diagnostic, whenever the requested continuity cannot meet the tolerance within `maxDegree`. Measured in #570, a face on an offset sphere comes back at C0 whichever of C0/C1/C2 was asked for.
 
 - **Parameters:**
   - `surfaceTolerance` — maximum allowable deviation for surface approximation (default 0.01).
@@ -271,6 +303,15 @@ public enum PointClassification: Int32, Sendable {
 }
 ```
 
+| Case | Meaning |
+|---|---|
+| `.inside` | Point lies inside the shape/face (`TopAbs_IN`). |
+| `.outside` | Point lies outside the shape/face (`TopAbs_OUT`). |
+| `.onBoundary` | Point lies on the shape/face's boundary (`TopAbs_ON`). |
+| `.unknown` | Classification could not be determined (`TopAbs_UNKNOWN`). |
+
+#### `PointClassification.unknown`
+
 ---
 
 ### `Shape.classify(point:tolerance:)`
@@ -356,6 +397,15 @@ public struct FaceProximityPair: Sendable {
     public let face2Index: Int
 }
 ```
+
+| Field | Meaning |
+|---|---|
+| `face1Index` | 0-based index (in `self`'s face-iteration order) of one face in the near-miss pair. |
+| `face2Index` | 0-based index (in `other`'s face-iteration order) of the other face in the near-miss pair. |
+
+---
+
+#### `Shape.FaceProximityPair.face2Index`
 
 Each instance identifies one pair of faces — one from `self`, one from `other` — that lie within the supplied tolerance. Indices refer to the face-iteration order of the respective shape.
 
@@ -894,23 +944,49 @@ public struct ShapeContents: Sendable {
 
 ---
 
+#### `ShapeContents.freeEdges`
+
+Edges reachable directly from the shape that do not belong to any face, per `ShapeAnalysis_ShapeContents::NbFreeEdges` (a `TopExp_Explorer` walk for `TopAbs_EDGE` that stops descending once it enters a `TopAbs_FACE`).
+
+#### `ShapeContents.freeWires`
+
+Wires reachable directly from the shape that do not belong to any face, computed the same way as `freeEdges` but for `TopAbs_WIRE`.
+
+#### `ShapeContents.freeFaces`
+
+Faces not belonging to any shell: `faces` minus the number of faces found inside shells.
+
+---
+
 ### `contents`
 
-Get a census of sub-shape counts in this shape.
+A census of sub-shape **occurrences** in this shape.
 
 ```swift
 public var contents: ShapeContents { get }
 ```
 
-Reports topology complexity metrics: counts of solids, shells, faces, wires, edges, vertices, and free (unconnected) elements.
+A complexity metric, not the addressable sub-shape enumeration. It counts one entry per visit in
+the topology tree, so a sub-shape reachable from two parents is counted twice, and every edge of a
+box is counted once per adjacent face.
 
-- **Returns:** A `ShapeContents` struct populated from `BRepTools` traversal.
-- **OCCT:** `BRepTools` iteration (via `OCCTShapeGetContents`).
+- **Returns:** A `ShapeContents` struct: counts of solids, shells, faces, wires, edges, vertices,
+  and free (unconnected) elements.
+- **OCCT:** `ShapeAnalysis_ShapeContents` (via `OCCTShapeGetContents`).
 - **Example:**
   ```swift
-  let c = solid.contents
-  print("faces: \(c.faces), freeEdges: \(c.freeEdges)")
+  let box = Shape.box(width: 10, height: 10, depth: 10)!
+  print(box.edgeCount)        // 12 — the distinct edges, and the addressable ones
+  print(box.contents.edges)   // 24 — one per (face, edge) visit
+  print(box.faceCount)        // 6
+  print(box.contents.faces)   // 6 — a box shares no face, so these agree
   ```
+- **Note:** **None of these numbers is an index bound.** `0..<contents.faces` overruns `face(at:)`
+  on any shape with a shared face; use `faceCount`. There is a third count again in
+  `contentsExtended()`: its `nbSharedFaces` deduplicates with the location *discarded*, so unlike
+  `faceCount` — which follows `TopoDS_Shape::IsSame` and keeps placements apart — it also collapses
+  two instances of one body. Measured on a compound of a box with a `moved(dx:dy:dz:)` copy of
+  itself: `faceCount` 12, `contents.faces` 12, `nbSharedFaces` 6. (#541)
 
 ---
 
@@ -938,6 +1014,14 @@ public struct CanonicalForm: Sendable {
 - `origin` and `direction` define the axis or normal of the recognised form.
 - `radius` is the primary radius; `radius2` is the secondary radius (used for ellipses and cones).
 - `gap` reports the fitting residual.
+
+| Case / Field | Meaning |
+|---|---|
+| `FormType.unknown` | No canonical form was recognised. |
+| `radius2` | Secondary radius; the minor radius for `.ellipse`, the second cone radius for `.cone`. Unused (0) for forms with a single radius. |
+| `gap` | Fitting residual: how far the actual geometry deviates from the recognised canonical form. |
+
+#### `CanonicalForm.gap`
 
 ---
 
@@ -1422,6 +1506,56 @@ public static func face(from surface: Surface, outer: Wire, innerWires: [Wire]) 
 Per-wire validity checks (`BRepCheck_Face`), Gauss-integration introspection (`BRepGProp_Face`), and
 the V tangent (`BRepLProp_SLProps`) for a single face.
 
+### `Shape.checkFaceIntersectingWires(geometricControls:)`
+
+Do this face's boundary wires cross each other. `.checkFail` if the shape isn't a single face.
+
+```swift
+public func checkFaceIntersectingWires(geometricControls: Bool = true) -> CheckStatus
+```
+
+- **Parameters:** `geometricControls`: when `true` (the default), also runs the geometric
+  (curve-level) intersection test, not just the topological one.
+- **Returns:** The specific `BRepCheck_Status` for this one check.
+- **OCCT:** `BRepCheck_Face::IntersectWires`.
+- **Example:**
+  ```swift
+  if let face = Shape.faceFromPlane(origin: .zero, normal: SIMD3(0, 0, 1),
+                                     uBounds: -5...5, vBounds: -5...5) {
+      print(face.checkFaceIntersectingWires())   // .noError on a clean face
+  }
+  ```
+
+### `Shape.checkFaceWireImbrication(geometricControls:)`
+
+Are this face's boundary wires correctly nested: exactly one outer wire, every other wire strictly
+inside it (a hole, not itself crossing the outer boundary). `.checkFail` if the shape isn't a single
+face.
+
+```swift
+public func checkFaceWireImbrication(geometricControls: Bool = true) -> CheckStatus
+```
+
+- **Parameters:** `geometricControls`: when `true` (the default), also runs the geometric nesting
+  test, not just the topological one.
+- **Returns:** The specific `BRepCheck_Status` for this one check.
+- **OCCT:** `BRepCheck_Face::ClassifyWires`.
+
+### `Shape.checkFaceWireOrientation(geometricControls:)`
+
+Is this face's outer wire wound counter-clockwise (in the face's own parameter space) and every hole
+wire wound the opposite way, the orientation convention a valid face requires. `.checkFail` if the
+shape isn't a single face.
+
+```swift
+public func checkFaceWireOrientation(geometricControls: Bool = true) -> CheckStatus
+```
+
+- **Parameters:** `geometricControls`: when `true` (the default), also runs the geometric
+  orientation test, not just the topological one.
+- **Returns:** The specific `BRepCheck_Status` for this one check.
+- **OCCT:** `BRepCheck_Face::OrientationOfWires`.
+
 ### `Shape.checkFaceIntersectingWires/WireImbrication/WireOrientation(geometricControls:)`
 
 The specific `BRepCheck_Status` for one wire-topology check: do the boundary wires intersect, are they
@@ -1452,9 +1586,12 @@ public func faceBoundaryIntegration(edgeIndex: Int, precision: Double = 1e-6)
 
 - **OCCT:** `BRepGProp_Face::UIntegrationOrder`/`VIntegrationOrder`, `GetUKnots`/`VKnots`, `SIntOrder`/`SUIntSubs`/`SVIntSubs`, and the edge-loaded `LIntOrder`/`LIntSubs`/`LKnots`.
 
+*(The four members below share the combined heading and code block above; each gets its own tiny
+anchor here purely for cross-reference.)*
+
 ### `Shape.faceLPropTangentU/V(u:v:)`
 
-The two axes of the tangent plane at a face `(u, v)` — the V companion (`faceLPropTangentV`) makes the
+The two axes of the tangent plane at a face `(u, v)`: the V companion (`faceLPropTangentV`) makes the
 tangent plane two-sided.
 
 ```swift
@@ -1463,6 +1600,10 @@ public func faceLPropTangentV(u: Double, v: Double) -> SIMD3<Double>?
 ```
 
 - **OCCT:** `BRepLProp_SLProps::TangentU` / `TangentV`.
+
+---
+
+#### `Shape.faceLPropTangentV(u:v:)`
 
 ---
 
@@ -1513,17 +1654,8 @@ Returns the intersection geometry (edges/wires) where the two shapes meet. Usefu
 
 ---
 
-### `section(with:)` *(deprecated)*
-
-```swift
-@available(*, deprecated, renamed: "section(_:)",
-           message: "Use section(_:) to match subtracting(_:) and Set convention")
-public func section(with other: Shape) -> Shape?
-```
-
-Deprecated alias for `section(_:)`. Use `section(_:)` instead.
-
----
+`section(with:)`, the deprecated `with:`-labelled alias, was removed at v2.0.0 (#784); use
+`section(_:)`.
 
 ## Boolean Pre-Validation
 
@@ -1913,6 +2045,10 @@ public struct BooleanResult: Sendable {
 
 ---
 
+#### `BooleanResult.modifiedFaces`
+
+---
+
 ### `fuseWithHistory(_:)`
 
 Fuse this shape with another and track which faces were modified.
@@ -1982,6 +2118,7 @@ public func record(of inputSubShape: Shape) -> ShapeHistoryRecord
 
 ---
 
+---
 ### `unionWithFullHistory(_:)`
 
 Boolean union with full per-input-subshape history.
@@ -2070,10 +2207,17 @@ public func filletedWithFullHistory(radius: Double, edges: [Int])
 ```
 
 - **Parameters:**
-  - `radius` — fillet radius.
-  - `edges` — 0-based edge indices to fillet.
-- **Returns:** Result shape and history, or nil on failure or empty edge list.
+  - `radius` — fillet radius. Must be > 0.
+  - `edges` — 0-based edge indices to fillet. An index that does not resolve on this shape is skipped.
+- **Returns:** Result shape and history, or nil on failure, an empty edge list, or a non-positive
+  radius (#489).
 - **OCCT:** `BRepFilletAPI_MakeFillet` (via `OCCTShapeHistoryFromFilletEdges`).
+- **Finding a declined edge (#639):** an edge OCCT declines to fillet is skipped, not rejected. To
+  find which requested edges those were, check `!history.record(of: edge).isDeleted &&
+  history.record(of: edge).generated.isEmpty` for each one. An edge that WAS filleted is always
+  deleted with the new fillet-boundary edges in `generated`. Do not test `modified.isEmpty` alone:
+  a declined edge can still show a non-empty `modified` when an *accepted* neighbour's fillet trims
+  its shared endpoint.
 - **Example:**
   ```swift
   if let (result, history) = box.filletedWithFullHistory(radius: 2, edges: [0, 1, 2]) { }
@@ -2094,9 +2238,10 @@ Radius varies linearly from `startRadius` (at the edge's first parameter) to `en
 
 - **Parameters:**
   - `edge` — 0-based edge index.
-  - `startRadius` — radius at the start of the edge.
-  - `endRadius` — radius at the end of the edge.
-- **Returns:** Result shape and history, or nil on failure.
+  - `startRadius` — radius at the start of the edge. Must be > 0.
+  - `endRadius` — radius at the end of the edge. Must be > 0.
+- **Returns:** Result shape and history, or nil on failure, or a non-positive radius at either
+  end (#489).
 - **OCCT:** `BRepFilletAPI_MakeFillet` variable-radius (via `OCCTShapeHistoryFromFilletEdgeVariable`).
 - **Example:**
   ```swift
@@ -2119,6 +2264,8 @@ public func chamferedWithFullHistory(distance: Double, edges: [Int])
   - `edges` — 0-based edge indices to chamfer.
 - **Returns:** Result shape and history, or nil on failure or empty edge list.
 - **OCCT:** `BRepFilletAPI_MakeChamfer` (via `OCCTShapeHistoryFromChamferEdges`).
+- **Note:** an index naming no edge of this shape fails the whole call rather than being skipped
+  (#568), matching `filletedWithFullHistory(radius:edges:)` (#520).
 - **Example:**
   ```swift
   if let (chamfered, history) = part.chamferedWithFullHistory(distance: 1, edges: [4, 5]) { }
@@ -2310,3 +2457,128 @@ feature-cut use cases (drill one hole, pattern the tool, subtract).
   let hole = Shape.cylinder(radius: 3, height: 10)!.translated(by: SIMD3(20, 0, 0))!
   if let (tools, history) = hole.circularPatternWithFullHistory(axisPoint: .zero, axisDirection: SIMD3(0, 0, 1), count: 6) { }
   ```
+
+---
+
+### `Shape.sewWithFullHistory(shapes:tolerance:)`
+
+Sew multiple shapes into a connected shell or solid, with full per-input-subshape history
+(vertex/edge merges, small-face removal). Where two coincident inputs merge into one shared output
+(the common case), both inputs show up as `modified` into that same output sub-shape: there is no
+ambiguity about which side "won".
+
+```swift
+public static func sewWithFullHistory(shapes: [Shape], tolerance: Double = 1e-6)
+    -> (result: Shape, history: ShapeHistoryRef)?
+```
+
+- **Parameters:**
+  - `shapes`: the shapes to sew together.
+  - `tolerance`: sewing tolerance; edges closer than this distance are merged.
+- **Returns:** `(result, history)` on success; nil if `shapes` is empty or the sew fails.
+- **OCCT:** `BRepBuilderAPI_Sewing`, history from its `ShapeBuild_ReShape` context
+  (via `OCCTShapeSewWithHistory`). If the sewn result is a closed shell, it is wrapped into a
+  solid with `BRepBuilderAPI_MakeSolid` before being returned.
+- **Example:**
+  ```swift
+  let faces = [topFace, bottomFace, frontFace, backFace, leftFace, rightFace]
+  guard let (solid, history) = Shape.sewWithFullHistory(shapes: faces, tolerance: 1e-6) else { return }
+  let record = history.record(of: topFace)
+  print(record.modified, record.isDeleted)
+  ```
+
+### `sewnWithFullHistory(with:tolerance:)` / `sewnWithFullHistory(tolerance:)`
+
+Instance-method siblings of `Shape.sewWithFullHistory(shapes:tolerance:)`: the first sews `self`
+with `other`; the second sews the disconnected faces already inside `self` together.
+
+```swift
+public func sewnWithFullHistory(with other: Shape, tolerance: Double = 1e-6)
+    -> (result: Shape, history: ShapeHistoryRef)?
+public func sewnWithFullHistory(tolerance: Double = 1e-6)
+    -> (result: Shape, history: ShapeHistoryRef)?
+```
+
+- **OCCT:** the first forwards to `sewWithFullHistory(shapes: [self, other], tolerance:)`; the
+  second calls `BRepBuilderAPI_Sewing` directly on `self` alone (via
+  `OCCTShapeSewSingleWithHistory`).
+
+### `Shape.quiltWithFullHistory(_:)`
+
+Quilt multiple shapes (faces/shells) into a single shell, with full per-input-subshape history.
+
+```swift
+public static func quiltWithFullHistory(_ shapes: [Shape])
+    -> (result: Shape, history: ShapeHistoryRef)?
+```
+
+- **Returns:** `(result, history)` on success; nil if `shapes` is empty or any entry is invalid.
+- **OCCT:** `BRepTools_Quilt` (via `OCCTShapeQuiltWithHistory`). `BRepTools_Quilt` has no
+  `ShapeBuild_ReShape` context and no `Modified`/`Generated`/`IsDeleted`, only per-shape
+  `IsCopied()`/`Copy()`, so the bridge builds the `BRepTools_History` by hand from those instead
+  of reusing the templated history path the other `WithFullHistory` entries share.
+
+### `healedWithFullHistory()`
+
+Attempt to repair/heal the shape, with full per-input-subshape history.
+
+```swift
+public func healedWithFullHistory() -> (result: Shape, history: ShapeHistoryRef)?
+```
+
+- **Returns:** `(result, history)` on success; nil if the shape has a self-intersecting wire (an
+  upfront guard, since `ShapeFix_Shape` does not reliably report that condition itself) or the fix
+  fails.
+- **OCCT:** `ShapeFix_Shape` (via `OCCTShapeHealWithHistory`). Its `Init` auto-creates a
+  `ShapeBuild_ReShape` context, and every internal sub-fixer (Solid/Shell/Face/Wire/Edge) shares
+  it, so `Context()->History()` after `Perform()` is complete without an explicit `SetContext()`
+  call.
+- **Example:**
+  ```swift
+  guard let (healed, history) = brokenShape.healedWithFullHistory() else { return }
+  let record = history.record(of: someFace)
+  ```
+
+### `Shape.solidWithFullHistory(from:)`
+
+Create a solid from a closed shell, with full per-input-subshape history. The history only
+reflects the orientation-fix pass: wrapping an already-closed shell into a solid does not itself
+modify any sub-shape.
+
+```swift
+public static func solidWithFullHistory(from shell: Shape) -> (result: Shape, history: ShapeHistoryRef)?
+```
+
+Body selection matches `Shape.solid(from:)`: one solid per body-bounding shell, a compound when
+there is more than one, cavity shells skipped. The single returned history covers every body,
+since every per-body `ShapeFix_Solid` fixer shares one `ShapeBuild_ReShape` context.
+
+- **Returns:** `(result, history)` on success; nil on failure.
+- **OCCT:** `ShapeFix_Solid` per body-bounding shell, sharing one `ShapeBuild_ReShape` context
+  (via `OCCTShapeCreateSolidFromShellWithHistory`). Unlike `ShapeFix_Shape` above,
+  `ShapeFix_Solid::Init` does not auto-create a context, so the bridge calls `SetContext()`
+  explicitly before each body's `Perform()`.
+- **Example:**
+  ```swift
+  let sewn = Shape.sew(shapes: [bodyA, bodyB], tolerance: 1e-6)!
+  guard let (solids, history) = Shape.solidWithFullHistory(from: sewn) else { return }
+  print(solids.solids.count)   // 2
+  ```
+
+---
+
+## `Shape`
+
+Further private/internal helpers (not public API)
+
+Documented here for anyone reading the source; none of these four are callable from outside the
+module.
+
+### `overwrittenDuplicateIndices`
+
+`private static func overwrittenDuplicateIndices(in:)` (`Shape+Modeling.swift`). Given a
+`[(edgeIndex, radius)]` request list, returns the 0-based edge indices where a *later* entry named
+the same edge, so it overwrote an earlier one. A property of the request list itself, not of OCCT:
+`edgeIndex` maps to a unique edge via `Shape`'s own `TopExp` enumeration, so no round trip is
+needed. Backs the public `Shape.FilletResult.overwrittenDuplicateIndices`, which reports every
+overwritten *entry* (not just the distinct edges), matching `declinedEdgeIndices`'s own convention.

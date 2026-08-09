@@ -210,6 +210,9 @@ public var ellipseProperties: EllipseProperties { get }
 
 ---
 
+```swift
+```
+---
 ### `EllipseProperties.majorRadius`
 
 The major (semi-major) radius of the ellipse.
@@ -568,6 +571,9 @@ public var lineProperties: LineProperties { get }
 
 ---
 
+```swift
+```
+---
 ### `LineProperties.direction`
 
 The unit direction of the 2D line.
@@ -1090,11 +1096,11 @@ The global geometric continuity of the BSpline.
 public var bsplineContinuity: Int { get }
 ```
 
-- **Returns:** Integer code: `0` = C0, `1` = C1, `2` = C2, `3` = C3, `4` = CN; `0` if not a BSpline.
+- **Returns:** a raw `GeomAbs_Shape` ordinal (`0` = C0, `1` = G1, `2` = C1, `3` = G2, `4` = C2, `5` = C3, `6` = CN); `0` if not a BSpline.
 - **OCCT:** `Geom2d_BSplineCurve::Continuity`.
 - **Example:**
   ```swift
-  let cont = curve.bsplineContinuity  // typically 2 (C2) for cubic B-splines
+  let cont = curve.bsplineContinuity  // typically 4 (C2) for cubic B-splines
   ```
 
 ---

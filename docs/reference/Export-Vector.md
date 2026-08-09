@@ -10,6 +10,12 @@ the first three are pure-Swift vector writers that complement the 3D [`Exporter`
 (STL/STEP/IGES/BREP/OBJ/PLY/GLTF), while `PixMap` wraps OCCT's `Image_AlienPixMap` for
 pixel-level raster image I/O and manipulation.
 
+All three writers collect edges, annotations and dimensions from a `Drawing` through one shared
+implementation rather than three copies (#795). The `DrawingPrimitiveSink` in each declaration
+below is the `internal` protocol that supplies it; it is not callable from outside the module, and
+each writer keeps its own explicit `public func collectFromDrawing`, so nothing about the public
+surface changed.
+
 ## Topics
 
 - [PDFError](#pdferror) · [Exporter — PDF](#exporter--pdf) · [PDFWriter](#pdfwriter)
@@ -31,9 +37,15 @@ public enum PDFError: Error, LocalizedError {
 }
 ```
 
-- `writeFailed(String)` — `Data.write(to:)` failed; the associated string is the underlying
-  error description.
-- `drawingEmpty` — the `PDFWriter` had no staged entities when `write(to:)` was called.
+| Case / property | Meaning |
+|---|---|
+| `writeFailed(String)` | `Data.write(to:)` failed; the associated string is the underlying error description. |
+| `drawingEmpty` | The `PDFWriter` had no staged entities when `write(to:)` was called. |
+| `errorDescription` | `LocalizedError` conformance: a human-readable message for either case. |
+
+*(Per-case anchors below, for cross-reference; the table above has the actual meaning of each.)*
+
+### `errorDescription`
 
 ---
 
@@ -146,7 +158,7 @@ Per-layer ISO 128-20 stroke weights: 0.5 mm (VISIBLE, OUTLINE, BORDER, TITLE), 0
 dash patterns automatically.
 
 ```swift
-public final class PDFWriter: @unchecked Sendable
+public final class PDFWriter: @unchecked Sendable, DrawingPrimitiveSink
 ```
 
 ### `PDFWriter.init(pageSize:deflection:)`
@@ -385,6 +397,16 @@ public enum SVGError: Error, LocalizedError {
 
 ---
 
+### `SVGError.writeFailed`
+
+`String.write(to:atomically:encoding:)` failed; the associated string is the underlying error description.
+
+### `SVGError.errorDescription`
+
+`LocalizedError` conformance: formats `.writeFailed`'s associated message as `"SVG write failed: <message>"`.
+
+---
+
 ## Exporter — SVG
 
 Two static methods on `Exporter` (defined as an extension in `SVGExporter.swift`).
@@ -455,7 +477,7 @@ group-level `transform="translate(0,maxY) scale(1,-1)"`; each `<text>` carries i
 counter-transform so glyphs read right-side up.
 
 ```swift
-public final class SVGWriter: @unchecked Sendable
+public final class SVGWriter: @unchecked Sendable, DrawingPrimitiveSink
 ```
 
 ### `SVGWriter.init(viewBox:deflection:)`
@@ -678,10 +700,15 @@ public enum DXFError: Error, LocalizedError {
 }
 ```
 
-- `writeFailed(String)` — `String.write(to:atomically:encoding:)` failed; the associated string
-  is the underlying error description.
-- `drawingEmpty` — the projection passed to `Exporter.writeDXF(shape:to:viewDirection:)` failed
-  (returned `nil` from `Drawing.project`).
+| Case / property | Meaning |
+|---|---|
+| `writeFailed(String)` | `String.write(to:atomically:encoding:)` failed; the associated string is the underlying error description. |
+| `drawingEmpty` | The projection passed to `Exporter.writeDXF(shape:to:viewDirection:)` failed (returned `nil` from `Drawing.project`). |
+| `errorDescription` | `LocalizedError` conformance: a human-readable message for either case. |
+
+*(Per-case anchors below, for cross-reference; the table above has the actual meaning of each.)*
+
+### `errorDescription`
 
 ---
 
@@ -759,7 +786,7 @@ OUTLINE (solid, 7), CENTER (CHAIN, 1), DIMENSION (solid, 5), TEXT (solid, 3), HA
 BORDER (solid, 7), TITLE (solid, 7).
 
 ```swift
-public final class DXFWriter: @unchecked Sendable
+public final class DXFWriter: @unchecked Sendable, DrawingPrimitiveSink
 ```
 
 ### `DXFWriter.init(deflection:)`
@@ -868,11 +895,11 @@ Emit a `DrawingDimension` as exploded LINE + TEXT entities.
 public func addDimension(_ d: DrawingDimension)
 ```
 
-Dispatches to inline emitters for each case (`.linear` → `emitLinear`, `.radial` → `emitRadial`,
-`.diameter` → `emitDiameter`, `.angular` → `emitAngular`, `.ordinate` → `emitOrdinate`). All
-`DrawingTolerance` variants are rendered: `.symmetric` and `.fitClass` are folded into the main
-label; `.bilateral`, `.unilateral`, and `.limits` produce stacked upper/lower text lines at 55%
-height.
+Dispatches through the shared `emitDimension` in `DrawingDispatch.swift`, the same one
+`PDFWriter` and `SVGWriter` use (#795). All `DrawingTolerance` variants are rendered: `.symmetric`
+and `.fitClass` are folded into the main label; `.bilateral`, `.unilateral`, and `.limits` produce
+stacked upper/lower text lines at 55% height. Until v2.0.0 DXF carried its own private copy of this
+dispatcher and its own tolerance formatter, so a fix to the shared one could miss DXF entirely.
 
 - **Parameters:** `d` — dimension to emit.
 - **OCCT:** Pure-Swift.
@@ -980,6 +1007,17 @@ public enum Format: Int32, Sendable {
     case bgra   = 8
 }
 ```
+
+| Case | Layout |
+|---|---|
+| `.gray` | 1 byte per pixel, single grayscale channel. |
+| `.alpha` | 1 byte per pixel, single alpha channel. |
+| `.rgb` | 3 bytes per pixel, red-green-blue byte order. |
+| `.bgr` | 3 bytes per pixel, blue-green-red byte order (the common byte order for uncompressed Windows bitmaps). |
+| `.rgb32` | 4 bytes per pixel, red-green-blue plus one padding/reserved byte. |
+| `.bgr32` | 4 bytes per pixel, blue-green-red plus one padding/reserved byte. |
+| `.rgba` | 4 bytes per pixel, red-green-blue-alpha byte order. |
+| `.bgra` | 4 bytes per pixel, blue-green-red-alpha byte order. |
 
 ### `PixMap.Format.bytesPerPixel`
 

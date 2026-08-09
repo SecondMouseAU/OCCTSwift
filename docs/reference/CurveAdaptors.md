@@ -5,14 +5,35 @@ parent: API Reference
 
 # Curve Adaptors & Wire Ordering
 
-`WireCurve` and `EdgeCurve` wrap `BRepAdaptor_CompCurve` and `BRepAdaptor_Curve` respectively, exposing arc-length parameterization and uniform sampling over a multi-edge wire or a single edge. `WireOrder` wraps `ShapeAnalysis_WireOrder` to determine the connection order and required reversals for a set of disconnected edges.
+`WireCurve` and `EdgeCurve` wrap `BRepAdaptor_CompCurve` and `BRepAdaptor_Curve` respectively, exposing arc-length parameterization and uniform sampling over a multi-edge wire or a single edge. `WireOrder` wraps `ShapeAnalysis_WireOrder` to determine the connection order and required reversals for a set of disconnected edges. `Sampling` holds the one sample-count ceiling every sampling entry point in the package measures against.
 
 ## Topics
 
-- [WireCurve](#wirecurve) · [EdgeCurve](#edgecurve) · [WireOrder](#wireorder)
+- [ArcLengthCurveAdaptor](#arclengthcurveadaptor) · [WireCurve](#wirecurve) · [EdgeCurve](#edgecurve) · [WireOrder](#wireorder) · [Sampling](#sampling)
 
 ---
 
+## ArcLengthCurveAdaptor
+
+The shared protocol `WireCurve` and `EdgeCurve` both conform to. Each type supplies its own native-parameter primitives (`length`, `point(atParameter:)`, `tangent(atParameter:)`, `parameter(atAbscissa:)`, `points(count:)`) over a distinct OCCT adaptor (`BRepAdaptor_CompCurve` vs. `BRepAdaptor_Curve`); a protocol extension then supplies the arc-length *composition* (`point`/`tangent(atAbscissa:)`, `points(spacing:)`, `maximumSampleCount`) exactly once for both.
+
+```swift
+public protocol ArcLengthCurveAdaptor: AnyObject {
+    var length: Double { get }
+    var parameterRange: (first: Double, last: Double) { get }
+    func point(atParameter u: Double) -> SIMD3<Double>?
+    func tangent(atParameter u: Double) -> SIMD3<Double>?
+    func parameter(atAbscissa s: Double) -> Double?
+    func points(count: Int) -> [SIMD3<Double>]
+}
+```
+
+---
+
+```swift
+```
+- **Parameters:**
+---
 ## WireCurve
 
 A multi-edge `Wire` treated as a single continuously-parameterized curve (`BRepAdaptor_CompCurve`). Provides total arc length and arc-length-based point/tangent sampling that walks across edge boundaries seamlessly.
@@ -52,7 +73,8 @@ public var length: Double { get }
 ```
 
 - **Returns:** Arc length in model units; `-1.0` on error.
-- **OCCT:** `GCPnts_AbscissaPoint::Length(BRepAdaptor_CompCurve&)`.
+- **OCCT:** `GCPnts_AbscissaPoint::Length(BRepAdaptor_CompCurve&)` per `GeomAbs_CN` interval,
+  subdivided to convergence (#603). Same measurement as `Wire.length`.
 - **Example:**
   ```swift
   let wc = WireCurve(Wire.rectangle(width: 10, height: 5)!)!
@@ -136,7 +158,9 @@ public func parameter(atAbscissa s: Double) -> Double?
 
 - **Parameters:** `s` — arc length from the wire start (0...`length`).
 - **Returns:** Native parameter `u`, or `nil` if `GCPnts_AbscissaPoint` does not converge.
-- **OCCT:** `GCPnts_AbscissaPoint(BRepAdaptor_CompCurve&, s, FirstParameter())`.
+- **OCCT:** the accumulated `GeomAbs_CN` sub-piece lengths, with the final narrow piece handed
+  to `GCPnts_AbscissaPoint(BRepAdaptor_CompCurve&, remainder, pieceStart)` (#603), so
+  `parameter(atAbscissa: length)` lands on `parameterRange.last`.
 - **Example:**
   ```swift
   let wc = WireCurve(wire)!
@@ -197,7 +221,7 @@ public func points(count: Int) -> [SIMD3<Double>]
 
 One bridge call — cheaper than calling `point(atAbscissa:)` in a loop.
 
-- **Parameters:** `count` — number of sample points (must be ≥ 2; returns `[]` if less).
+- **Parameters:** `count` — number of sample points, honoured within `2...maximumSampleCount`; outside that range the result is `[]` (#479).
 - **Returns:** Array of `count` evenly-spaced 3D points; fewer if the bridge yields fewer results.
 - **OCCT:** `GCPnts_UniformAbscissa(BRepAdaptor_CompCurve&, count)`.
 - **Example:**
@@ -216,14 +240,38 @@ Points spaced approximately `spacing` apart along the wire by arc length.
 public func points(spacing: Double) -> [SIMD3<Double>]
 ```
 
-Pure-Swift: computes `count = max(2, round(length / spacing) + 1)` then delegates to `points(count:)`. The exact step is adjusted so samples divide the wire evenly end-to-end.
+Pure-Swift: derives the sample count from `length / spacing` and delegates to `points(count:)`. The exact step is adjusted so samples divide the wire evenly end-to-end.
 
 - **Parameters:** `spacing` — target arc-length step in model units.
-- **Returns:** Evenly-spaced points; empty array if `spacing <= 0` or `length == 0`.
+- **Returns:** Evenly-spaced points; empty array if `spacing <= 0`, if `spacing` is NaN, if `length == 0`, or if the spacing implies more than `maximumSampleCount` points (#479).
 - **Example:**
   ```swift
   let wc = WireCurve(wire)!
   let pts = wc.points(spacing: 5.0)  // one point every ~5 units
+  wc.points(spacing: 1e-9).isEmpty   // true: implies 1e11 points, past the ceiling
+  ```
+
+---
+
+### `maximumSampleCount`
+
+The largest sample count either adaptor will produce: 10 million points. Shared by `WireCurve` and `EdgeCurve`, since it is declared once on `ArcLengthCurveAdaptor`.
+
+Since #558 the number itself lives on `Sampling.maximumSampleCount`, where the other 26 sampling entry points that had the same defect can see it; both spellings below resolve to it and stay the ones these two types' own documentation uses.
+
+```swift
+public static var maximumSampleCount: Int  // 10_000_000, == Sampling.maximumSampleCount
+```
+
+`count` sizes a Swift allocation and is then cast to the `int32_t` the bridge takes its count in, so an unbounded count is a process abort rather than a failed call: before #479 a `points(spacing:)` small enough to imply 10<sup>11</sup> points asked for a ~2.4 TB array, and one small enough to overflow `Int` trapped in the conversion itself. Both entry points now return `[]` above the ceiling instead, with no clamping: a request the ceiling cannot honour fails visibly rather than coming back silently coarser than what was asked for.
+
+The ceiling is a bound on the allocation, not on what is useful. One sample costs 24 bytes in the packed bridge buffer plus 32 in the returned array; measured on a two-edge, 200-unit wire, the ceiling itself is 10,000,000 points in 46 s at 624 MB resident, and the sampler honours it exactly (10,000,001 returns `[]`).
+
+- **Example:**
+  ```swift
+  let wc = WireCurve(wire)!
+  wc.points(count: WireCurve.maximumSampleCount + 1).isEmpty   // true
+  wc.points(count: Int(Int32.max) + 1).isEmpty                 // true, no trap
   ```
 
 ---
@@ -269,7 +317,8 @@ public var length: Double { get }
 ```
 
 - **Returns:** Arc length in model units; `-1.0` on error.
-- **OCCT:** `GCPnts_AbscissaPoint::Length(BRepAdaptor_Curve&)`.
+- **OCCT:** `GCPnts_AbscissaPoint::Length(BRepAdaptor_Curve&)` per `GeomAbs_CN` interval,
+  subdivided to convergence (#603). Same measurement as `Shape.edgeArcLength`.
 - **Example:**
   ```swift
   let ec = EdgeCurve(edge)!
@@ -348,7 +397,9 @@ public func parameter(atAbscissa s: Double) -> Double?
 
 - **Parameters:** `s` — arc length offset (0...`length`).
 - **Returns:** Native parameter `u`, or `nil` if the solver does not converge.
-- **OCCT:** `GCPnts_AbscissaPoint(BRepAdaptor_Curve&, s, FirstParameter())`.
+- **OCCT:** the accumulated `GeomAbs_CN` sub-piece lengths, with the final narrow piece handed
+  to `GCPnts_AbscissaPoint(BRepAdaptor_Curve&, remainder, pieceStart)` (#603), so
+  `parameter(atAbscissa: length)` lands on `parameterRange.last`.
 - **Example:**
   ```swift
   let ec = EdgeCurve(edge)!
@@ -409,7 +460,7 @@ public func points(count: Int) -> [SIMD3<Double>]
 
 One bridge call — cheaper than calling `point(atAbscissa:)` in a loop.
 
-- **Parameters:** `count` — number of sample points (must be ≥ 2; returns `[]` if less).
+- **Parameters:** `count` — number of sample points, honoured within `2...maximumSampleCount`; outside that range the result is `[]` (#479).
 - **Returns:** Array of up to `count` evenly-spaced 3D points.
 - **OCCT:** `GCPnts_UniformAbscissa(BRepAdaptor_Curve&, count)`.
 - **Example:**
@@ -420,6 +471,9 @@ One bridge call — cheaper than calling `point(atAbscissa:)` in a loop.
 
 ---
 
+```swift
+```
+---
 ### `points(spacing:)`
 
 Points spaced approximately `spacing` apart along the edge by arc length.
@@ -428,14 +482,31 @@ Points spaced approximately `spacing` apart along the edge by arc length.
 public func points(spacing: Double) -> [SIMD3<Double>]
 ```
 
-Pure-Swift: computes `count = max(2, round(length / spacing) + 1)` then delegates to `points(count:)`.
+Pure-Swift: derives the sample count from `length / spacing` and delegates to `points(count:)`.
 
 - **Parameters:** `spacing` — target arc-length step in model units.
-- **Returns:** Evenly-spaced points; empty array if `spacing <= 0` or `length == 0`.
+- **Returns:** Evenly-spaced points; empty array if `spacing <= 0`, if `spacing` is NaN, if `length == 0`, or if the spacing implies more than `maximumSampleCount` points (#479).
 - **Example:**
   ```swift
   let ec = EdgeCurve(edge)!
   let pts = ec.points(spacing: 1.0)  // sample every ~1 unit
+  ec.points(spacing: 1e-18).isEmpty  // true: past the ceiling, and past Int.max
+  ```
+
+---
+
+### `maximumSampleCount`
+
+The same ceiling `WireCurve` applies; see [maximumSampleCount](#maximumsamplecount) above. It is declared once on `ArcLengthCurveAdaptor` and, since #558, forwards to `Sampling.maximumSampleCount`, so `EdgeCurve.maximumSampleCount == WireCurve.maximumSampleCount == Sampling.maximumSampleCount`.
+
+```swift
+public static var maximumSampleCount: Int  // 10_000_000
+```
+
+- **Example:**
+  ```swift
+  let ec = EdgeCurve(edge)!
+  ec.points(count: EdgeCurve.maximumSampleCount + 1).isEmpty   // true
   ```
 
 ---
@@ -470,6 +541,20 @@ public enum Status: Sendable {
 
 ---
 
+#### `WireOrder.Status.closed`
+
+The edges form a closed loop; all endpoints connect (OCCT status 0).
+
+#### `WireOrder.Status.gaps`
+
+At least one gap remains between edges after ordering (OCCT status 2).
+
+#### `WireOrder.Status.failed`
+
+Analysis could not complete (OCCT status less than 0).
+
+---
+
 ### `OrderedEdge`
 
 A single entry in the ordered edge sequence returned by `WireOrder`.
@@ -483,6 +568,10 @@ public struct OrderedEdge: Sendable {
 
 - `originalIndex` — 0-based index into the input `edges` array.
 - `isReversed` — `true` if the edge must be traversed in the opposite direction to maintain continuity.
+
+---
+
+#### `isReversed`
 
 ---
 
@@ -582,3 +671,57 @@ Extracts edge endpoint coordinates from the wire via the bridge (up to 1000 edge
       print(wo.status)       // .closed or .open depending on wire
   }
   ```
+
+---
+
+## Sampling
+
+The one ceiling every sampling entry point in the package measures a caller-supplied count against. Not a curve-adaptor type — it lives on this page because this is where the ceiling's rationale is written down, and `WireCurve`/`EdgeCurve` were the first two types to get it (#479) before the other 26 followed (#558).
+
+```swift
+public enum Sampling
+```
+
+---
+
+### `maximumSampleCount`
+
+The largest sample count any sampling entry point will produce: 10 million points.
+
+```swift
+public static let maximumSampleCount = 10_000_000
+```
+
+A sampling count arrives from the caller, sizes a Swift allocation, and is then cast to the `int32_t` the bridge takes its count in. Both ends abort the process rather than failing a call: `[Double](repeating:count:)` traps on a negative and `Int32(_:)` traps past `Int32.max`. Before #479/#558 that was live at 28 public entry points across `Curve3D`, `Curve2D`, `Edge`, `Surface`, `Shape`, `Wire`, `BRepGraph`, `MedialAxis` and `QuadricIntersection`.
+
+The number is measured, not round: sampling costs about 4.5 µs per point, and one sample costs 24 bytes in the bridge's packed buffer plus 32 in the returned array, so the ceiling itself is already about 625 MB resident and 45 seconds of work. It is also two orders of magnitude below the `int32_t` the bridge counts in. See [the `WireCurve` discussion](#maximumsamplecount) for the full cost curve.
+
+**The ceiling drives three different decisions, because the parameters do not mean one thing:**
+
+| kind | parameter | behaviour |
+|---|---|---|
+| **request** | `count`, `pointCount`, `sampleCount` | Rejected outside `2...maximumSampleCount` (empty / `nil`). Never clamped — the caller asked for exactly this many, and returning fewer is the silent-coarsening defect [#501](https://github.com/SecondMouseAU/OCCTSwift/issues/501) found. |
+| **capacity** | `maxPoints` on an adaptive sampler | Clamped into `0...maximumSampleCount`. The deflection criterion decides the point count and the capacity only truncates, so clamping returns the *same* points. A capacity of 0 or less yields the entry point's own empty value. |
+| **grid** | `uCount`×`vCount`, `evalU`×`evalV`, `(uLineCount + vLineCount)`×`pointsPerLine` | The **product** is bounded, and each factor checked on its own — two negatives multiply to a plausible positive total, which is why `drawMesh(uCount: -1, vCount: -1)` looked well-behaved while `drawMesh(uCount: -1, vCount: 3)` aborted the process. Multiplications are overflow-checked. |
+
+The parameter's *name* does not settle which it is: `MedialAxis.drawArc(at:maxPoints:)` says capacity but fills its buffer exactly, so it is a request.
+
+- **Example:**
+  ```swift
+  let curve = Curve3D.segment(from: .zero, to: SIMD3(10, 0, 0))!
+
+  curve.drawUniform(pointCount: Sampling.maximumSampleCount + 1).isEmpty   // true: a request, rejected
+  curve.drawAdaptive(maxPoints: Sampling.maximumSampleCount + 1).count     // 2: a capacity, clamped
+  curve.drawUniform(pointCount: Int(Int32.max) + 1).isEmpty                // true, no trap
+  ```
+
+---
+
+### Internal helpers
+
+`Sampling` also holds three `internal static func` helpers, not public API, that implement the
+"request vs. capacity vs. grid" decisions the table above describes (#479/#558):
+
+- `requested(_:atLeast:)`: the *request* check: `nil` outside `minimum...maximumSampleCount`.
+- `capacity(_:)`: the *capacity* check: clamps into `0...maximumSampleCount`.
+- `gridTotal(_:atLeast:)`: the *grid* check: bounds each factor and their overflow-checked product.

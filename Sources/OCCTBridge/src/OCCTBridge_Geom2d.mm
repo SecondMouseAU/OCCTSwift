@@ -102,36 +102,105 @@
 #include <TopExp_Explorer.hxx>
 #include <TopoDS.hxx>
 
-// Radius precondition for the 2D circle factories. Curve2D builds a circle from a centre and a
-// radius through two entry points — OCCTCurve2DCreateCircle (direct Geom2d_Circle construction)
-// and OCCTGceMakeCirc2dFromCenterRadius (gce_MakeCirc2d) — and gce_MakeCirc2d accepts
-// Radius >= 0, so before #411 the gce path returned a live, degenerate zero-radius circle where
-// the direct path returned null for the identical input. One definition, both entry points.
-static inline bool occtValidCircle2dRadius(double radius) {
-    return radius > 0;
-}
-
-// One Geom2dAPI_ProjectPointOnCurve construction behind every entry point that wants the nearest
-// solution: OCCTCurve2DProjectPoint, OCCTCurve2DProjectPoint2D and OCCTPoint2DDistanceToCurve.
-// They were three independent constructions of the same algorithm with three different
-// failure-signalling conventions bolted on separately (#413). It also gives the two that lacked
-// one an explicit null-handle guard rather than relying on catch(...) to absorb the dereference.
+// The conic dimension preconditions this file's factories share with Curve3D's
+// (occtValidCircleRadius, occtValidEllipseRadii, occtValidHyperbolaRadii, occtValidParabolaFocal)
+// live in OCCTBridge_Internal.h. #411 introduced a 2D-suffixed copy of the circle one here, which
+// is how the 2D ellipse/hyperbola/parabola factories ended up skipped by both #411 and #399's
+// otherwise-identical pass over the 3D side; #487 converged them.
 //
-// Returns false when there is no projection at all — an ordinary outcome, not an error: a point
-// beyond the ends of a bounded curve, or the centre of a circle, has no extremum. Each caller
-// applies its own documented sentinel; none of them may report failure through the parameter,
+// #553: the same predicate now covers the solver entry points too. A circle reaches this file's
+// solvers as a centre and a radius, and there are three separate things a caller can mean by that
+// radius, which had three different contracts:
+//
+//   1. a circle the solver is GIVEN            unchecked at 13 entry points
+//   2. the radius of the circle it must FIND   checked at 3 entry points, unchecked at 4 siblings
+//   3. a circle this file is asked to BUILD    checked at 6 entry points (#514), unchecked at 4
+//
+// Negative is not the gap: gp_Circ2d's constructor is constexpr in the header, so its
+// Standard_ConstructionError_Raise_if does run in a bridge translation unit (the same finding as
+// #514's, measured again for gp_Circ2d) and the existing catch already turns it into an empty
+// result. GC_MakeCircle2d rejects a negative radius through gce_NegativeRadius, a status rather
+// than a macro, so No_Exception does not void it either. The gap is exactly zero.
+//
+// Case 1 is the one the issue held open, because a zero-radius circle handed to a tangency solver
+// is geometrically a point and several of these solvers have a documented answer for a point. The
+// probe in Scripts/repro/553-gcc-zero-radius-circle ran every family against a zero-radius
+// argument and against OCCT's own point overload of the same query. No family answers the point
+// question:
+//
+//   GccAna_Circ2dBisec        4 solutions where the point overload gives 2, each duplicated; with
+//                             both radii 0, two of the three solutions are hyperbolas of major
+//                             radius 0, which occtValidHyperbolaRadii rejects on construction
+//   GccAna_CircPnt2dBisec     2 hyperbolas of major radius 0; the point/point answer is a LINE,
+//                             so the returned type is wrong, not merely duplicated
+//   GccAna_CircLin2dBisec     the point overload's parabola, twice
+//   GccAna_Lin2dTanPar/Per    the point overload's single line, twice
+//   GccAna_Lin2d2Tan          the point overload's single line, twice
+//   GccAna_Circ2d3Tan         3 circles: the point overload's 4 solutions, each twice.
+//                             2 circles + a point: 2 distinct solutions padded to 4.
+//                             1 circle + 2 points: 0 solutions, where the all-points overload
+//                             finds the circumscribed circle - the answer is lost outright
+//   Extrema_ExtPElC2d         0 extrema; the distance the point reading asks for is lost
+//   Extrema_ExtElC2d          the right distance, twice
+//   IntAna2d_AnaIntersection  the right point, with ParamOnSecond() NaN, which the bridge writes
+//                             straight into the caller's param2
+//
+// Every one of those families already has a point entry point in this same file
+// (OCCTGccAnaPnt2dBisec, OCCTGccAnaLinPnt2dBisec, OCCTGccAnaLin2dTanParPt,
+// OCCTGccAnaLin2dTanPerPtLin, OCCTGccAnaCirc2d3TanPoints, OCCTGccAnaLin2d2TanPntPnt and the mixed
+// circle/point overloads), so the decision costs the caller no query: asking about a point has a
+// spelling, and a degenerate circle is not it. Guard, per family, on the same evidence.
+//
+// Case 2 was already decided, just not everywhere: OCCTGccCircle2d2TanRad, OCCTGccCircle2dTanPtRad
+// and OCCTGccCircle2d2PtRad each spelled `radius <= 0` inline. A requested radius of 0 makes
+// GccAna_Circ2d2TanRad and GccAna_Circ2dTanOnRad hand back solution circles of radius 0, which is
+// the degenerate geometry #514 refused to return. All seven now share one predicate.
+//
+// Case 3 is #514's decision applied to the four sites it did not reach. One of them,
+// OCCTCurve2DMakeCircleParallel, needs the offset checked as well as the radius: measured, a
+// radius-5 circle offset by -5 yields radius 0 and by -6 yields radius 1, so GC_MakeCircle2d takes
+// the absolute value rather than refusing an offset that passes through the centre.
+
+// One nearest-point answer behind every 2D entry point that wants the nearest solution:
+// OCCTCurve2DProjectPoint, OCCTCurve2DProjectPoint2D, OCCTPoint2DDistanceToCurve and
+// OCCTCurve2DNearestParameter. They were four independent constructions of the same algorithm with
+// four different failure-signalling conventions bolted on separately (#413 unified the first
+// three, #500 the fourth). It also gives those that lacked one an explicit null-handle guard
+// rather than relying on catch(...) to absorb the dereference.
+//
+// #615 makes that one construction the RIGHT one, the treatment #539/#580 gave the 3D side and
+// never gave this one. Geom2dAPI_ProjectPointOnCurve reports extrema, not minima, so LowerDistance
+// is not the nearest point and NbPoints() == 0 is not "no nearest point". Measured, on the 2D twin
+// of the geometry #539 named: a half circle of radius 5 queried from (0, -6) reported the far side
+// of the arc at distance 11 where the truth is 7.81, and a point on the circle but off the arc,
+// (3, -4), reported 10 where the truth is 4.47; a segment trimmed to [3, 8] queried at (100, 0)
+// reported no projection at all where the truth is its own end, 92 away. Every 2D spelling was
+// wrong the same way, so they agreed with each other and with nothing else.
+//
+// See occtNearestPointOnCurve2dRange (OCCTBridge_Internal.h) for the candidate set, and for the one
+// source the 3D helper has that this one cannot: ShapeAnalysis_Curve has no 2D projection.
+//
+// CONSEQUENCE, and it is the point rather than a side effect: this no longer returns false for a
+// point with no perpendicular foot. A point beyond the end of a bounded curve is nearest to that
+// end, and a circle's centre is equidistant from every point on it, so both now answer -- with a
+// real parameter and a true distance. Each caller keeps its own documented sentinel for the case
+// that remains: no curve to answer about. None of them may report failure through the parameter,
 // since 0 is a legitimate parameter on any curve whose domain includes it.
+//
+// OCCTCurve2DProjectPointAll is the multi-solution sibling: it needs every extremum rather than
+// the nearest one, so it constructs its own and is not routed through here. It therefore still
+// reports nothing where these four now answer, and that is correct -- "the extrema" and "the
+// nearest point" have been different questions since #539, and on a bounded curve queried from
+// beyond its end the honest answer to the first one is that there are none.
 static bool occtNearestProjectionOnCurve2d(OCCTCurve2DRef curve, const gp_Pnt2d& point,
                                             gp_Pnt2d* outNearest, double* outParameter,
                                             double* outDistance) {
     if (!curve || curve->curve.IsNull()) return false;
     try {
-        Geom2dAPI_ProjectPointOnCurve proj(point, curve->curve);
-        if (proj.NbPoints() == 0) return false;
-        if (outNearest) *outNearest = proj.NearestPoint();
-        if (outParameter) *outParameter = proj.LowerDistanceParameter();
-        if (outDistance) *outDistance = proj.LowerDistance();
-        return true;
+        return occtNearestPointOnCurve2dRange(curve->curve, point,
+                                              curve->curve->FirstParameter(),
+                                              curve->curve->LastParameter(),
+                                              outNearest, outParameter, outDistance);
     } catch (...) {
         return false;
     }
@@ -142,20 +211,27 @@ static bool occtNearestProjectionOnCurve2d(OCCTCurve2DRef curve, const gp_Pnt2d&
 #include <Geom2dGridEval_Curve.hxx>
 #include <Geom2dGridEval.hxx>
 
+// The canonical 2D-curve batch evaluators. Two later generations duplicated this job under
+// other names (v0.110's OCCTCurve2DEvalBatchD0/D1, which looped Geom2d_Curve::EvalD0/EvalD1
+// per point and was defined over in OCCTBridge_Curve3D.mm; v0.111's OCCTGridEvalCurve2dD0/D1,
+// the same Geom2dGridEval_Curve calls as here); #486 removed both and pointed their Swift
+// spellings at these two.
+
 int32_t OCCTCurve2DEvaluateGrid(OCCTCurve2DRef curve,
                                  const double* params, int32_t paramCount,
                                  double* outXY) {
     if (!curve || curve->curve.IsNull() || !params || !outXY || paramCount <= 0) return 0;
     try {
         Geom2dGridEval_Curve evaluator(curve->curve);
-
-        NCollection_Array1<double> paramArr(1, paramCount);
-        for (int32_t i = 0; i < paramCount; i++) {
-            paramArr.SetValue(i + 1, params[i]);
-        }
+        NCollection_Array1<double> paramArr = occtGridEvalParams(params, paramCount);
 
         NCollection_Array1<gp_Pnt2d> results = evaluator.EvaluateGrid(paramArr);
-        int32_t n = static_cast<int32_t>(results.Size());
+        // Defensive: bound the write by the caller's buffer as well as by what OCCT returned.
+        // Every evaluator in the pinned kernel returns exactly theParams.Length() or an empty
+        // array (empty only for a null curve or empty params, both rejected above), so neither
+        // direction is reachable today. Taking the min covers both anyway: a shorter result must
+        // not be read past its end, and a longer one must not be written past outXY's end.
+        int32_t n = std::min(paramCount, static_cast<int32_t>(results.Size()));
         for (int32_t i = 0; i < n; i++) {
             const gp_Pnt2d& pt = results.Value(i + 1);
             outXY[i*2]   = pt.X();
@@ -173,14 +249,10 @@ int32_t OCCTCurve2DEvaluateGridD1(OCCTCurve2DRef curve,
     if (!curve || curve->curve.IsNull() || !params || !outXY || !outDXDY || paramCount <= 0) return 0;
     try {
         Geom2dGridEval_Curve evaluator(curve->curve);
-
-        NCollection_Array1<double> paramArr(1, paramCount);
-        for (int32_t i = 0; i < paramCount; i++) {
-            paramArr.SetValue(i + 1, params[i]);
-        }
+        NCollection_Array1<double> paramArr = occtGridEvalParams(params, paramCount);
 
         NCollection_Array1<Geom2dGridEval::CurveD1> results = evaluator.EvaluateGridD1(paramArr);
-        int32_t n = static_cast<int32_t>(results.Size());
+        int32_t n = std::min(paramCount, static_cast<int32_t>(results.Size()));  // see EvaluateGrid
         for (int32_t i = 0; i < n; i++) {
             const Geom2dGridEval::CurveD1& r = results.Value(i + 1);
             outXY[i*2]     = r.Point.X();
@@ -711,7 +783,7 @@ bool OCCTCurve2DIsLinear(OCCTCurve2DRef curve2D, double tolerance, double* devia
 OCCTCurve2DRef _Nullable OCCTCurve2DConvertToLine(OCCTCurve2DRef curve2D,
     double first, double last, double tolerance,
     double* newFirst, double* newLast, double* deviation) {
-    if (!curve2D || !newFirst || !newLast || !deviation) return nullptr;
+    if (!curve2D || curve2D->curve.IsNull() || !newFirst || !newLast || !deviation) return nullptr;
     try {
         Handle(Geom2d_Line) line = ShapeCustom_Curve2d::ConvertToLine2d(
             curve2D->curve, first, last, tolerance, *newFirst, *newLast, *deviation);
@@ -741,7 +813,7 @@ bool OCCTCurve2DSimplifyBSpline(OCCTCurve2DRef curve2D, double tolerance) {
 OCCTCurve2DRef _Nullable OCCTApproxCurve2d(OCCTCurve2DRef curve2D,
     double first, double last, double tolU, double tolV,
     int32_t maxDegree, int32_t maxSegments) {
-    if (!curve2D) return nullptr;
+    if (!curve2D || curve2D->curve.IsNull()) return nullptr;
     try {
         Handle(Adaptor2d_Curve2d) adaptor = new Geom2dAdaptor_Curve(curve2D->curve, first, last);
         Approx_Curve2d approx(adaptor, first, last, tolU, tolV, GeomAbs_C2, maxDegree, maxSegments);
@@ -768,6 +840,9 @@ static GccEnt_Position toGccPosition(int32_t q) {
     }
 }
 
+// #556: no guard here by design. The return type has no null-safe value to fall back to, so the
+// precondition lives in the callers: every one of them rejects a null pointer and a null handle
+// before calling. Keep that true when adding a caller: Geom2dAdaptor_Curve::load() dereferences.
 static Geom2dGcc_QualifiedCurve makeQualifiedCurve(OCCTCurve2DRef c, int32_t q) {
     Geom2dAdaptor_Curve adaptor(c->curve);
     return Geom2dGcc_QualifiedCurve(adaptor, toGccPosition(q));
@@ -858,7 +933,7 @@ int32_t OCCTGccCircle2d2TanRad(OCCTCurve2DRef c1, int32_t q1,
                                OCCTGccCircleSolution* out, int32_t max) {
     if (!c1 || !c2 || !out || max <= 0) return 0;
     if (c1->curve.IsNull() || c2->curve.IsNull()) return 0;
-    if (radius <= 0) return 0;
+    if (!occtValidCircleRadius(radius)) return 0;
     try {
         Geom2dGcc_QualifiedCurve qc1 = makeQualifiedCurve(c1, q1);
         Geom2dGcc_QualifiedCurve qc2 = makeQualifiedCurve(c2, q2);
@@ -883,7 +958,7 @@ int32_t OCCTGccCircle2dTanPtRad(OCCTCurve2DRef curve, int32_t qualifier,
                                 double radius, double tolerance,
                                 OCCTGccCircleSolution* out, int32_t max) {
     if (!curve || curve->curve.IsNull() || !out || max <= 0) return 0;
-    if (radius <= 0) return 0;
+    if (!occtValidCircleRadius(radius)) return 0;
     try {
         Geom2dGcc_QualifiedCurve qc = makeQualifiedCurve(curve, qualifier);
         Handle(Geom2d_CartesianPoint) point = new Geom2d_CartesianPoint(px, py);
@@ -906,7 +981,7 @@ int32_t OCCTGccCircle2dTanPtRad(OCCTCurve2DRef curve, int32_t qualifier,
 int32_t OCCTGccCircle2d2PtRad(double p1x, double p1y, double p2x, double p2y,
                               double radius, double tolerance,
                               OCCTGccCircleSolution* out, int32_t max) {
-    if (!out || max <= 0 || radius <= 0) return 0;
+    if (!out || max <= 0 || !occtValidCircleRadius(radius)) return 0;
     try {
         Handle(Geom2d_CartesianPoint) pt1 = new Geom2d_CartesianPoint(p1x, p1y);
         Handle(Geom2d_CartesianPoint) pt2 = new Geom2d_CartesianPoint(p2x, p2y);
@@ -1160,6 +1235,7 @@ bool OCCTGccAnaLinPnt2dBisec(double lpx, double lpy, double ldx, double ldy,
 int32_t OCCTGccAnaCirc2dBisec(double c1x, double c1y, double c1r,
                               double c2x, double c2y, double c2r,
                               OCCTBisecSolution* out, int32_t max) {
+    if (!occtValidCircleRadius(c1r) || !occtValidCircleRadius(c2r)) return 0;
     try {
         gp_Circ2d circ1(gp_Ax22d(gp_Pnt2d(c1x, c1y), gp_Dir2d(1, 0)), c1r);
         gp_Circ2d circ2(gp_Ax22d(gp_Pnt2d(c2x, c2y), gp_Dir2d(1, 0)), c2r);
@@ -1178,6 +1254,7 @@ int32_t OCCTGccAnaCirc2dBisec(double c1x, double c1y, double c1r,
 int32_t OCCTGccAnaCircLin2dBisec(double cx, double cy, double cr,
                                  double lpx, double lpy, double ldx, double ldy,
                                  OCCTBisecSolution* out, int32_t max) {
+    if (!occtValidCircleRadius(cr)) return 0;
     try {
         gp_Circ2d circ(gp_Ax22d(gp_Pnt2d(cx, cy), gp_Dir2d(1, 0)), cr);
         gp_Lin2d line(gp_Pnt2d(lpx, lpy), gp_Dir2d(ldx, ldy));
@@ -1196,6 +1273,7 @@ int32_t OCCTGccAnaCircLin2dBisec(double cx, double cy, double cr,
 int32_t OCCTGccAnaCircPnt2dBisec(double cx, double cy, double cr,
                                  double px, double py,
                                  OCCTBisecSolution* out, int32_t max) {
+    if (!occtValidCircleRadius(cr)) return 0;
     try {
         gp_Circ2d circ(gp_Ax22d(gp_Pnt2d(cx, cy), gp_Dir2d(1, 0)), cr);
         GccAna_CircPnt2dBisec bisec(circ, gp_Pnt2d(px, py));
@@ -1235,6 +1313,7 @@ int32_t OCCTGccAnaLin2dTanParPt(double px, double py,
 int32_t OCCTGccAnaLin2dTanParCirc(double cx, double cy, double cr, int32_t qualifier,
                                   double lpx, double lpy, double ldx, double ldy,
                                   OCCTGccLineSolution* out, int32_t max) {
+    if (!occtValidCircleRadius(cr)) return 0;
     try {
         gp_Circ2d circ(gp_Ax22d(gp_Pnt2d(cx, cy), gp_Dir2d(1, 0)), cr);
         gp_Lin2d ref(gp_Pnt2d(lpx, lpy), gp_Dir2d(ldx, ldy));
@@ -1282,6 +1361,7 @@ int32_t OCCTGccAnaLin2dTanPerPtLin(double px, double py,
 int32_t OCCTGccAnaLin2dTanPerCircLin(double cx, double cy, double cr, int32_t qualifier,
                                      double lpx, double lpy, double ldx, double ldy,
                                      OCCTGccLineSolution* out, int32_t max) {
+    if (!occtValidCircleRadius(cr)) return 0;
     try {
         gp_Circ2d circ(gp_Ax22d(gp_Pnt2d(cx, cy), gp_Dir2d(1, 0)), cr);
         gp_Lin2d ref(gp_Pnt2d(lpx, lpy), gp_Dir2d(ldx, ldy));
@@ -1331,6 +1411,7 @@ int32_t OCCTGeom2dGccLin2dTanObl(OCCTCurve2DRef curve, int32_t qualifier,
                                  double lpx, double lpy, double ldx, double ldy,
                                  double tolerance, double angle,
                                  OCCTGccLineSolution* out, int32_t max) {
+    if (!curve || curve->curve.IsNull()) return 0;
     try {
         Geom2dAdaptor_Curve adaptor(curve->curve);
         Geom2dGcc_QualifiedCurve qc(adaptor, toGccPosition(qualifier));
@@ -1383,6 +1464,7 @@ int32_t OCCTGccAnaCirc2dTanOnRadLin(double lpx, double lpy, double ldx, double l
                                     double onPx, double onPy, double onDx, double onDy,
                                     double radius, double tolerance,
                                     OCCTGccCircleSolution* out, int32_t max) {
+    if (!occtValidCircleRadius(radius)) return 0;
     try {
         gp_Lin2d l1(gp_Pnt2d(lpx, lpy), gp_Dir2d(ldx, ldy));
         gp_Lin2d onLine(gp_Pnt2d(onPx, onPy), gp_Dir2d(onDx, onDy));
@@ -1408,6 +1490,8 @@ int32_t OCCTGeom2dGccCirc2d2TanOn(OCCTCurve2DRef c1, int32_t q1,
                                   double tolerance,
                                   double initParam1, double initParam2, double initParamOn,
                                   OCCTGccCircleSolution* out, int32_t max) {
+    if (!c1 || !c2 || !onCurve) return 0;
+    if (c1->curve.IsNull() || c2->curve.IsNull() || onCurve->curve.IsNull()) return 0;
     try {
         Geom2dAdaptor_Curve ac1(c1->curve), ac2(c2->curve), aon(onCurve->curve);
         Geom2dGcc_QualifiedCurve qc1(ac1, toGccPosition(q1));
@@ -1431,6 +1515,8 @@ int32_t OCCTGeom2dGccCirc2dTanOnRad(OCCTCurve2DRef curve, int32_t qualifier,
                                     OCCTCurve2DRef onCurve,
                                     double radius, double tolerance,
                                     OCCTGccCircleSolution* out, int32_t max) {
+    if (!curve || !onCurve || curve->curve.IsNull() || onCurve->curve.IsNull()) return 0;
+    if (!occtValidCircleRadius(radius)) return 0;
     try {
         Geom2dAdaptor_Curve ac(curve->curve), aon(onCurve->curve);
         Geom2dGcc_QualifiedCurve qc(ac, toGccPosition(qualifier));
@@ -1473,6 +1559,7 @@ int32_t OCCTIntAna2dLinLin(double l1px, double l1py, double l1dx, double l1dy,
 int32_t OCCTIntAna2dLinCirc(double lpx, double lpy, double ldx, double ldy,
                             double cx, double cy, double cr,
                             OCCTIntAna2dPoint* out, int32_t max) {
+    if (!occtValidCircleRadius(cr)) return 0;
     try {
         gp_Lin2d line(gp_Pnt2d(lpx, lpy), gp_Dir2d(ldx, ldy));
         gp_Circ2d circ(gp_Ax22d(gp_Pnt2d(cx, cy), gp_Dir2d(1, 0)), cr);
@@ -1494,6 +1581,7 @@ int32_t OCCTIntAna2dLinCirc(double lpx, double lpy, double ldx, double ldy,
 int32_t OCCTIntAna2dCircCirc(double c1x, double c1y, double c1r,
                              double c2x, double c2y, double c2r,
                              OCCTIntAna2dPoint* out, int32_t max) {
+    if (!occtValidCircleRadius(c1r) || !occtValidCircleRadius(c2r)) return 0;
     try {
         gp_Circ2d circ1(gp_Ax22d(gp_Pnt2d(c1x, c1y), gp_Dir2d(1, 0)), c1r);
         gp_Circ2d circ2(gp_Ax22d(gp_Pnt2d(c2x, c2y), gp_Dir2d(1, 0)), c2r);
@@ -1554,6 +1642,7 @@ int32_t OCCTExtremaExtElC2dLinCirc(double lpx, double lpy, double ldx, double ld
                                    double cx, double cy, double cr,
                                    double tolerance,
                                    OCCTExtrema2dResult* out, int32_t max) {
+    if (!occtValidCircleRadius(cr)) return -1;
     try {
         gp_Lin2d line(gp_Pnt2d(lpx, lpy), gp_Dir2d(ldx, ldy));
         gp_Circ2d circ(gp_Ax22d(gp_Pnt2d(cx, cy), gp_Dir2d(1, 0)), cr);
@@ -1580,6 +1669,7 @@ int32_t OCCTExtremaExtPElC2dCirc(double px, double py,
                                  double cx, double cy, double cr,
                                  double tolerance,
                                  OCCTExtrema2dResult* out, int32_t max) {
+    if (!occtValidCircleRadius(cr)) return -1;
     try {
         gp_Pnt2d pt(px, py);
         gp_Circ2d circ(gp_Ax22d(gp_Pnt2d(cx, cy), gp_Dir2d(1, 0)), cr);
@@ -1627,6 +1717,7 @@ int32_t OCCTExtremaExtPElC2dLin(double px, double py,
 int32_t OCCTExtremaExtCC2d(OCCTCurve2DRef c1, double first1, double last1,
                            OCCTCurve2DRef c2, double first2, double last2,
                            OCCTExtrema2dResult* out, int32_t max) {
+    if (!c1 || !c2 || c1->curve.IsNull() || c2->curve.IsNull()) return -1;
     try {
         Geom2dAdaptor_Curve ac1(c1->curve, first1, last1);
         Geom2dAdaptor_Curve ac2(c2->curve, first2, last2);
@@ -1654,6 +1745,7 @@ OCCTCurve2DRef _Nullable OCCTBisectorBisecAnaCurveCurve(
     double px, double py,
     double v1x, double v1y, double v2x, double v2y,
     double sense, double tolerance) {
+    if (!curve1 || !curve2 || curve1->curve.IsNull() || curve2->curve.IsNull()) return nullptr;
     try {
         Handle(Bisector_BisecAna) bisec = new Bisector_BisecAna();
         bisec->Perform(curve1->curve, curve2->curve,
@@ -1673,6 +1765,7 @@ OCCTCurve2DRef _Nullable OCCTBisectorBisecAnaCurvePoint(
     double px, double py,
     double v1x, double v1y, double v2x, double v2y,
     double sense, double tolerance) {
+    if (!curve || curve->curve.IsNull()) return nullptr;
     try {
         Handle(Geom2d_Point) geomPt = new Geom2d_CartesianPoint(gp_Pnt2d(ptx, pty));
         Handle(Bisector_BisecAna) bisec = new Bisector_BisecAna();
@@ -1756,6 +1849,7 @@ OCCTShapeRef _Nullable OCCTMakeEdge2dFromPoints(double x1, double y1, double x2,
 OCCTShapeRef _Nullable OCCTMakeEdge2dFromCircle(
     double cx, double cy, double dx, double dy,
     double radius, double p1, double p2) {
+    if (!occtValidCircleRadius(radius)) return nullptr;
     try {
         gp_Circ2d circ(gp_Ax2d(gp_Pnt2d(cx, cy), gp_Dir2d(dx, dy)), radius);
         BRepBuilderAPI_MakeEdge2d me(circ, p1, p2);
@@ -2154,6 +2248,7 @@ int32_t OCCTLPropAnalyticCurInf(int32_t curveType, double first, double last,
 // --- Curve2D ↔ Point2D integration ---
 
 OCCTPoint2DRef _Nullable OCCTCurve2DPointAt(OCCTCurve2DRef _Nonnull curve, double t) {
+    if (!curve || curve->curve.IsNull()) return nullptr;
     try {
         gp_Pnt2d pt;
         curve->curve->D0(t, pt);
@@ -2313,6 +2408,8 @@ int32_t OCCTGccAnaCirc2d3TanCircles(
     double tolerance,
     OCCTCircle2DSolution* outSolutions, int32_t maxSolutions)
 {
+    if (!occtValidCircleRadius(c1r) || !occtValidCircleRadius(c2r)
+        || !occtValidCircleRadius(c3r)) return 0;
     try {
         gp_Circ2d circ1(gp_Ax2d(gp_Pnt2d(c1x, c1y), gp_Dir2d(1, 0)), c1r);
         gp_Circ2d circ2(gp_Ax2d(gp_Pnt2d(c2x, c2y), gp_Dir2d(1, 0)), c2r);
@@ -2334,6 +2431,7 @@ int32_t OCCTGccAnaCirc2d2CirclesPoint(
     double px, double py, double tolerance,
     OCCTCircle2DSolution* outSolutions, int32_t maxSolutions)
 {
+    if (!occtValidCircleRadius(c1r) || !occtValidCircleRadius(c2r)) return 0;
     try {
         gp_Circ2d circ1(gp_Ax2d(gp_Pnt2d(c1x, c1y), gp_Dir2d(1, 0)), c1r);
         gp_Circ2d circ2(gp_Ax2d(gp_Pnt2d(c2x, c2y), gp_Dir2d(1, 0)), c2r);
@@ -2352,6 +2450,7 @@ int32_t OCCTGccAnaCirc2dCircle2Points(
     double p1x, double p1y, double p2x, double p2y, double tolerance,
     OCCTCircle2DSolution* outSolutions, int32_t maxSolutions)
 {
+    if (!occtValidCircleRadius(cr)) return 0;
     try {
         gp_Circ2d circ(gp_Ax2d(gp_Pnt2d(cx, cy), gp_Dir2d(1, 0)), cr);
         GccAna_Circ2d3Tan solver(
@@ -2454,7 +2553,7 @@ int32_t OCCTIntfSelfInterferencePolygon2d(
 // MARK: - ShapeConstruct Curve2D Convert + Adjust (v0.76)
 OCCTCurve2DRef _Nullable OCCTShapeConstructConvertToBSpline2D(OCCTCurve2DRef _Nonnull curve,
                                                                 double first, double last, double precision) {
-    if (!curve) return nullptr;
+    if (!curve || curve->curve.IsNull()) return nullptr;
     try {
         ShapeConstruct_Curve scc;
         Handle(Geom2d_BSplineCurve) bsp = scc.ConvertToBSpline(curve->curve, first, last, precision);
@@ -2469,7 +2568,7 @@ OCCTCurve2DRef _Nullable OCCTShapeConstructConvertToBSpline2D(OCCTCurve2DRef _No
 bool OCCTShapeConstructAdjustCurve2D(OCCTCurve2DRef _Nonnull curve,
                                       double p1x, double p1y,
                                       double p2x, double p2y) {
-    if (!curve) return false;
+    if (!curve || curve->curve.IsNull()) return false;
     try {
         ShapeConstruct_Curve scc;
         return scc.AdjustCurve2d(curve->curve, gp_Pnt2d(p1x, p1y), gp_Pnt2d(p2x, p2y));
@@ -2479,21 +2578,16 @@ bool OCCTShapeConstructAdjustCurve2D(OCCTCurve2DRef _Nonnull curve,
 }
 
 // MARK: - Bisector_PointOnBis + Bisector_Inter (v0.76)
-// --- Bisector_PointOnBis ---
 
-OCCTBisectorPointOnBis OCCTBisectorPointOnBisCreate(double param1, double param2,
-                                                      double paramBis, double distance,
-                                                      double px, double py) {
-    OCCTBisectorPointOnBis result = {};
-    result.paramOnC1 = param1;
-    result.paramOnC2 = param2;
-    result.paramOnBis = paramBis;
-    result.distance = distance;
-    result.pointX = px;
-    result.pointY = py;
-    result.isInfinite = false;
-    return result;
-}
+// OCCTBisectorPointOnBisCreate lived here: it echoed its 6 double parameters into a plain C
+// struct and never touched Bisector_PointOnBis itself, so isInfinite (this struct's one bool
+// field) was always the literal false the constructor had no parameter to override. No Swift
+// call site (BisectorPoint, the Swift struct it built for, had no public initializer either, so
+// nothing outside this bridge could construct one). Found by census-unmeasured-values.py's
+// sub-kind 3 (#771), which flags a bool struct field assigned literal false somewhere and literal
+// true nowhere; the field's fate turned out to be dead code around it, not a stuck gate on a live
+// path. Removed by #771.
+
 // --- Bisector_Inter ---
 
 int OCCTBisectorInterPointPoint(double ax, double ay, double bx, double by,
@@ -2616,6 +2710,7 @@ int OCCTGccAnaCirc2d2TanRadLineLin(double l1px, double l1py, double l1dx, double
                                      double l2px, double l2py, double l2dx, double l2dy,
                                      double radius, double tolerance,
                                      OCCTCircle2DSolution* _Nullable outSolutions, int maxSolutions) {
+    if (!occtValidCircleRadius(radius)) return 0;
     try {
         gp_Lin2d l1(gp_Pnt2d(l1px, l1py), gp_Dir2d(l1dx, l1dy));
         gp_Lin2d l2(gp_Pnt2d(l2px, l2py), gp_Dir2d(l2dx, l2dy));
@@ -2643,6 +2738,7 @@ int OCCTGccAnaCirc2d2TanRadLineLin(double l1px, double l1py, double l1dx, double
 int OCCTGccAnaCirc2d2TanRadPntPnt(double p1x, double p1y, double p2x, double p2y,
                                     double radius, double tolerance,
                                     OCCTCircle2DSolution* _Nullable outSolutions, int maxSolutions) {
+    if (!occtValidCircleRadius(radius)) return 0;
     try {
         GccAna_Circ2d2TanRad solver(gp_Pnt2d(p1x, p1y), gp_Pnt2d(p2x, p2y), radius, tolerance);
         if (!solver.IsDone()) return 0;
@@ -2740,6 +2836,7 @@ int OCCTGccAnaLin2d2TanPntPnt(double p1x, double p1y, double p2x, double p2y,
 int OCCTGccAnaLin2d2TanCircPnt(double cx, double cy, double radius,
                                  double px, double py, double tolerance,
                                  OCCTLine2DSolution* _Nullable outSolutions, int maxSolutions) {
+    if (!occtValidCircleRadius(radius)) return 0;
     try {
         gp_Circ2d circ(gp_Ax2d(gp_Pnt2d(cx, cy), gp_Dir2d(1, 0)), radius);
         GccEnt_QualifiedCirc qc(circ, GccEnt_unqualified);
@@ -2763,25 +2860,18 @@ int OCCTGccAnaLin2d2TanCircPnt(double cx, double cy, double radius,
     }
 }
 
-// MARK: - ShapeUpgrade_SplitCurve2dContinuity (v0.77, with continuityFromInt helper)
-static GeomAbs_Shape continuityFromInt(int val) {
-    switch (val) {
-        case 0: return GeomAbs_C0;
-        case 1: return GeomAbs_C1;
-        case 2: return GeomAbs_C2;
-        case 3: return GeomAbs_C3;
-        default: return GeomAbs_CN;
-    }
-}
+// MARK: - ShapeUpgrade_SplitCurve2dContinuity (v0.77)
 // MARK: - ShapeUpgrade_SplitCurve2dContinuity
 
 int OCCTSplitCurve2dContinuity(OCCTCurve2DRef _Nonnull curveRef, int criterion, double tolerance,
                                  OCCTCurve2DRef _Nullable* _Nullable outCurves, int maxCurves) {
     try {
-        auto& curve = reinterpret_cast<OCCTCurve2D*>(curveRef)->curve;
+        auto* wrapper = reinterpret_cast<OCCTCurve2D*>(curveRef);
+        if (!wrapper || wrapper->curve.IsNull()) return 0;
+        auto& curve = wrapper->curve;
         Handle(ShapeUpgrade_SplitCurve2dContinuity) splitter = new ShapeUpgrade_SplitCurve2dContinuity();
         splitter->Init(curve);
-        splitter->SetCriterion(continuityFromInt(criterion));
+        splitter->SetCriterion(occtGeomAbsFromParametricContinuity(criterion));
         splitter->SetTolerance(tolerance);
         splitter->Perform(true);
         auto curves = splitter->GetCurves();
@@ -2807,7 +2897,9 @@ int OCCTSplitCurve2dContinuity(OCCTCurve2DRef _Nonnull curveRef, int criterion, 
 int OCCTConvertCurve2dToBezier(OCCTCurve2DRef _Nonnull curveRef,
                                 OCCTCurve2DRef _Nullable* _Nullable outCurves, int maxCurves) {
     try {
-        auto& curve = reinterpret_cast<OCCTCurve2D*>(curveRef)->curve;
+        auto* wrapper = reinterpret_cast<OCCTCurve2D*>(curveRef);
+        if (!wrapper || wrapper->curve.IsNull()) return 0;
+        auto& curve = wrapper->curve;
         Handle(ShapeUpgrade_ConvertCurve2dToBezier) converter = new ShapeUpgrade_ConvertCurve2dToBezier();
         converter->Init(curve);
         converter->Perform(true);
@@ -2883,7 +2975,7 @@ OCCTExtremaLocateExtCC2dResult OCCTExtremaLocateExtCC2d(OCCTCurve2DRef curve1, d
 // MARK: - gce_Make Circ2d / Lin2d / Elips2d / Hypr2d / Parab2d (v0.80)
 OCCTCurve2DRef _Nullable OCCTGceMakeCirc2dFromCenterRadius(double cx, double cy, double radius) {
     try {
-        if (!occtValidCircle2dRadius(radius)) return nullptr;
+        if (!occtValidCircleRadius(radius)) return nullptr;
         gce_MakeCirc2d mc(gp_Pnt2d(cx, cy), radius);
         if (!mc.IsDone()) return nullptr;
         Handle(Geom2d_Circle) circ = new Geom2d_Circle(mc.Value());
@@ -2925,6 +3017,7 @@ OCCTCurve2DRef _Nullable OCCTGceMakeElips2d(double cx, double cy,
                                              double dirX, double dirY,
                                              double majorRadius, double minorRadius) {
     try {
+        if (!occtValidEllipseRadii(majorRadius, minorRadius)) return nullptr;
         gce_MakeElips2d me(gp_Ax2d(gp_Pnt2d(cx, cy), gp_Dir2d(dirX, dirY)), majorRadius, minorRadius);
         if (!me.IsDone()) return nullptr;
         Handle(Geom2d_Ellipse) elips = new Geom2d_Ellipse(me.Value());
@@ -2936,6 +3029,7 @@ OCCTCurve2DRef _Nullable OCCTGceMakeHypr2d(double cx, double cy,
                                              double dirX, double dirY,
                                              double majorRadius, double minorRadius) {
     try {
+        if (!occtValidHyperbolaRadii(majorRadius, minorRadius)) return nullptr;
         gce_MakeHypr2d mh(gp_Ax2d(gp_Pnt2d(cx, cy), gp_Dir2d(dirX, dirY)), majorRadius, minorRadius, true);
         if (!mh.IsDone()) return nullptr;
         Handle(Geom2d_Hyperbola) hypr = new Geom2d_Hyperbola(mh.Value());
@@ -2947,6 +3041,7 @@ OCCTCurve2DRef _Nullable OCCTGceMakeParab2d(double cx, double cy,
                                               double dirX, double dirY,
                                               double focal) {
     try {
+        if (!occtValidParabolaFocal(focal)) return nullptr;
         gce_MakeParab2d mp(gp_Ax2d(gp_Pnt2d(cx, cy), gp_Dir2d(dirX, dirY)), focal);
         if (!mp.IsDone()) return nullptr;
         Handle(Geom2d_Parabola) parab = new Geom2d_Parabola(mp.Value());
@@ -3027,6 +3122,7 @@ static OCCTCurve2DRef buildCurve2DFromConic(const Convert_ConicToBSplineCurve& c
 OCCTCurve2DRef OCCTConvertEllipseToBSpline2D(double cx, double cy,
                                                double majorRadius, double minorRadius,
                                                double u1, double u2) {
+    if (!occtValidEllipseRadii(majorRadius, minorRadius)) return nullptr;
     try {
         gp_Elips2d e(gp_Ax22d(gp_Pnt2d(cx,cy), gp_Dir2d(1,0), gp_Dir2d(0,1)), majorRadius, minorRadius);
         Convert_EllipseToBSplineCurve conv(e, u1, u2);
@@ -3037,6 +3133,7 @@ OCCTCurve2DRef OCCTConvertEllipseToBSpline2D(double cx, double cy,
 OCCTCurve2DRef OCCTConvertHyperbolaToBSpline2D(double cx, double cy,
                                                  double majorRadius, double minorRadius,
                                                  double u1, double u2) {
+    if (!occtValidHyperbolaRadii(majorRadius, minorRadius)) return nullptr;
     try {
         gp_Hypr2d h(gp_Ax22d(gp_Pnt2d(cx,cy), gp_Dir2d(1,0), gp_Dir2d(0,1)), majorRadius, minorRadius);
         Convert_HyperbolaToBSplineCurve conv(h, u1, u2);
@@ -3046,6 +3143,9 @@ OCCTCurve2DRef OCCTConvertHyperbolaToBSpline2D(double cx, double cy,
 
 OCCTCurve2DRef OCCTConvertParabolaToBSpline2D(double cx, double cy, double focal,
                                                 double u1, double u2) {
+    // Measured (#514): focal 0 does not fail here, it produces a 3-pole degree-2 BSpline whose
+    // poles are NaN, so everything downstream of it evaluates to NaN.
+    if (!occtValidParabolaFocal(focal)) return nullptr;
     try {
         gp_Parab2d p(gp_Ax22d(gp_Pnt2d(cx,cy), gp_Dir2d(1,0), gp_Dir2d(0,1)), focal);
         Convert_ParabolaToBSplineCurve conv(p, u1, u2);
@@ -3060,22 +3160,13 @@ OCCTCurve2DRef OCCTConvertParabolaToBSpline2D(double cx, double cy, double focal
 
 OCCTCurve2DRef OCCTConvertCircleToBSpline2D(double cx, double cy, double radius,
                                               double u1, double u2) {
+    if (!occtValidCircleRadius(radius)) return nullptr;
     try {
         gp_Circ2d circle(gp_Ax2d(gp_Pnt2d(cx, cy), gp_Dir2d(1, 0)), radius);
+        // Convert_CircleToBSplineCurve is a Convert_ConicToBSplineCurve subclass (#791), so it can
+        // share the same array-building helper its Ellipse/Hyperbola/Parabola siblings already use.
         Convert_CircleToBSplineCurve conv(circle, u1, u2);
-        int np = conv.NbPoles(), nk = conv.NbKnots(), deg = conv.Degree();
-
-        TColgp_Array1OfPnt2d poles(1, np);
-        TColStd_Array1OfReal weights(1, np), knots(1, nk);
-        TColStd_Array1OfInteger mults(1, nk);
-        for (int i = 1; i <= np; i++) { poles(i) = conv.Pole(i); weights(i) = conv.Weight(i); }
-        for (int i = 1; i <= nk; i++) { knots(i) = conv.Knot(i); mults(i) = conv.Multiplicity(i); }
-
-        Handle(Geom2d_BSplineCurve) bsc = new Geom2d_BSplineCurve(poles, weights, knots, mults, deg);
-        if (bsc.IsNull()) return nullptr;
-        OCCTCurve2D* result = new OCCTCurve2D();
-        result->curve = bsc;
-        return result;
+        return buildCurve2DFromConic(conv);
     } catch (...) { return nullptr; }
 }
 
@@ -3094,7 +3185,8 @@ OCCTCurve2DRef OCCTConvertCircleToBSpline2D(double cx, double cy, double radius,
 #include <gp_Ax22d.hxx>
 #include <gp_Circ2d.hxx>
 
-OCCTCurve2DRef OCTGCE2dMakeCircleCenterRadius(double cx, double cy, double radius) {
+OCCTCurve2DRef OCCTCurve2DMakeCircleCenterRadius(double cx, double cy, double radius) {
+    if (!occtValidCircleRadius(radius)) return nullptr;
     try {
         GC_MakeCircle2d mc(gp_Pnt2d(cx, cy), radius);
         if (!mc.IsDone()) return nullptr;
@@ -3104,9 +3196,9 @@ OCCTCurve2DRef OCTGCE2dMakeCircleCenterRadius(double cx, double cy, double radiu
     } catch (...) { return nullptr; }
 }
 
-OCCTCurve2DRef OCTGCE2dMakeCircle3Points(double x1, double y1,
-                                           double x2, double y2,
-                                           double x3, double y3) {
+OCCTCurve2DRef OCCTCurve2DMakeCircle3Points(double x1, double y1,
+                                            double x2, double y2,
+                                            double x3, double y3) {
     try {
         GC_MakeCircle2d mc(gp_Pnt2d(x1, y1), gp_Pnt2d(x2, y2), gp_Pnt2d(x3, y3));
         if (!mc.IsDone()) return nullptr;
@@ -3116,7 +3208,7 @@ OCCTCurve2DRef OCTGCE2dMakeCircle3Points(double x1, double y1,
     } catch (...) { return nullptr; }
 }
 
-OCCTCurve2DRef OCTGCE2dMakeCircleCenterPoint(double cx, double cy, double px, double py) {
+OCCTCurve2DRef OCCTCurve2DMakeCircleCenterPoint(double cx, double cy, double px, double py) {
     try {
         GC_MakeCircle2d mc(gp_Pnt2d(cx, cy), gp_Pnt2d(px, py));
         if (!mc.IsDone()) return nullptr;
@@ -3126,9 +3218,14 @@ OCCTCurve2DRef OCTGCE2dMakeCircleCenterPoint(double cx, double cy, double px, do
     } catch (...) { return nullptr; }
 }
 
-OCCTCurve2DRef OCTGCE2dMakeCircleParallel(double cx, double cy,
-                                            double dx, double dy,
-                                            double radius, double dist) {
+OCCTCurve2DRef OCCTCurve2DMakeCircleParallel(double cx, double cy,
+                                             double dx, double dy,
+                                             double radius, double dist) {
+    // The offset is checked as well as the radius. GC_MakeCircle2d takes the absolute value of
+    // radius + dist rather than refusing an offset that reaches or passes the centre: measured
+    // (#553), radius 5 offset by -5 gives radius 0 and by -6 gives radius 1, a circle inside the
+    // base rather than the one the caller asked for.
+    if (!occtValidCircleRadius(radius) || !occtValidCircleRadius(radius + dist)) return nullptr;
     try {
         gp_Circ2d circ(gp_Ax2d(gp_Pnt2d(cx, cy), gp_Dir2d(dx, dy)), radius);
         GC_MakeCircle2d mc(circ, dist);
@@ -3139,9 +3236,10 @@ OCCTCurve2DRef OCTGCE2dMakeCircleParallel(double cx, double cy,
     } catch (...) { return nullptr; }
 }
 
-OCCTCurve2DRef OCTGCE2dMakeCircleAxis(double cx, double cy,
-                                        double dx, double dy,
-                                        double radius) {
+OCCTCurve2DRef OCCTCurve2DMakeCircleAxis(double cx, double cy,
+                                         double dx, double dy,
+                                         double radius) {
+    if (!occtValidCircleRadius(radius)) return nullptr;
     try {
         gp_Ax2d ax(gp_Pnt2d(cx, cy), gp_Dir2d(dx, dy));
         GC_MakeCircle2d mc(ax, radius);
@@ -3154,9 +3252,9 @@ OCCTCurve2DRef OCTGCE2dMakeCircleAxis(double cx, double cy,
 
 // MARK: - GC_MakeEllipse2d (v0.105.0)
 
-OCCTCurve2DRef OCTGCE2dMakeEllipse(double cx, double cy,
-                                     double dx, double dy,
-                                     double major, double minor) {
+OCCTCurve2DRef OCCTCurve2DMakeEllipse(double cx, double cy,
+                                      double dx, double dy,
+                                      double major, double minor) {
     try {
         gp_Ax2d ax(gp_Pnt2d(cx, cy), gp_Dir2d(dx, dy));
         GC_MakeEllipse2d me(ax, major, minor);
@@ -3167,9 +3265,9 @@ OCCTCurve2DRef OCTGCE2dMakeEllipse(double cx, double cy,
     } catch (...) { return nullptr; }
 }
 
-OCCTCurve2DRef OCTGCE2dMakeEllipse3Points(double x1, double y1,
-                                            double x2, double y2,
-                                            double x3, double y3) {
+OCCTCurve2DRef OCCTCurve2DMakeEllipse3Points(double x1, double y1,
+                                             double x2, double y2,
+                                             double x3, double y3) {
     try {
         GC_MakeEllipse2d me(gp_Pnt2d(x1, y1), gp_Pnt2d(x2, y2), gp_Pnt2d(x3, y3));
         if (!me.IsDone()) return nullptr;
@@ -3179,10 +3277,10 @@ OCCTCurve2DRef OCTGCE2dMakeEllipse3Points(double x1, double y1,
     } catch (...) { return nullptr; }
 }
 
-OCCTCurve2DRef OCTGCE2dMakeEllipseAxis22d(double cx, double cy,
-                                            double xdx, double xdy,
-                                            double ydx, double ydy,
-                                            double major, double minor) {
+OCCTCurve2DRef OCCTCurve2DMakeEllipseAxis22d(double cx, double cy,
+                                             double xdx, double xdy,
+                                             double ydx, double ydy,
+                                             double major, double minor) {
     try {
         gp_Ax22d ax(gp_Pnt2d(cx, cy), gp_Dir2d(xdx, xdy), gp_Dir2d(ydx, ydy));
         GC_MakeEllipse2d me(ax, major, minor);
@@ -3195,9 +3293,9 @@ OCCTCurve2DRef OCTGCE2dMakeEllipseAxis22d(double cx, double cy,
 
 // MARK: - GC_MakeHyperbola2d (v0.105.0)
 
-OCCTCurve2DRef OCTGCE2dMakeHyperbola(double cx, double cy,
-                                       double dx, double dy,
-                                       double major, double minor) {
+OCCTCurve2DRef OCCTCurve2DMakeHyperbola(double cx, double cy,
+                                        double dx, double dy,
+                                        double major, double minor) {
     try {
         gp_Ax2d ax(gp_Pnt2d(cx, cy), gp_Dir2d(dx, dy));
         GC_MakeHyperbola2d mh(ax, major, minor);
@@ -3208,9 +3306,9 @@ OCCTCurve2DRef OCTGCE2dMakeHyperbola(double cx, double cy,
     } catch (...) { return nullptr; }
 }
 
-OCCTCurve2DRef OCTGCE2dMakeHyperbola3Points(double x1, double y1,
-                                              double x2, double y2,
-                                              double x3, double y3) {
+OCCTCurve2DRef OCCTCurve2DMakeHyperbola3Points(double x1, double y1,
+                                               double x2, double y2,
+                                               double x3, double y3) {
     try {
         GC_MakeHyperbola2d mh(gp_Pnt2d(x1, y1), gp_Pnt2d(x2, y2), gp_Pnt2d(x3, y3));
         if (!mh.IsDone()) return nullptr;
@@ -3222,9 +3320,9 @@ OCCTCurve2DRef OCTGCE2dMakeHyperbola3Points(double x1, double y1,
 
 // MARK: - GC_MakeParabola2d (v0.105.0)
 
-OCCTCurve2DRef OCTGCE2dMakeParabola(double cx, double cy,
-                                      double dx, double dy,
-                                      double focal) {
+OCCTCurve2DRef OCCTCurve2DMakeParabola(double cx, double cy,
+                                       double dx, double dy,
+                                       double focal) {
     try {
         gp_Ax2d ax(gp_Pnt2d(cx, cy), gp_Dir2d(dx, dy));
         GC_MakeParabola2d mp(ax, focal, true);
@@ -3235,9 +3333,9 @@ OCCTCurve2DRef OCTGCE2dMakeParabola(double cx, double cy,
     } catch (...) { return nullptr; }
 }
 
-OCCTCurve2DRef OCTGCE2dMakeParabolaDirectrixFocus(double dx, double dy,
-                                                    double ddx, double ddy,
-                                                    double fx, double fy) {
+OCCTCurve2DRef OCCTCurve2DMakeParabolaDirectrixFocus(double dx, double dy,
+                                                     double ddx, double ddy,
+                                                     double fx, double fy) {
     try {
         gp_Ax2d directrix(gp_Pnt2d(dx, dy), gp_Dir2d(ddx, ddy));
         GC_MakeParabola2d mp(directrix, gp_Pnt2d(fx, fy));
@@ -3256,6 +3354,7 @@ OCCTCurve2DRef OCTGCE2dMakeParabolaDirectrixFocus(double dx, double dy,
 OCCTCurve2DRef OCCTConcatenateCurves2D(OCCTCurve2DRef* curves, int32_t count, double tolerance) {
     if (!curves || count <= 0) return nullptr;
     try {
+        if (!curves[0] || curves[0]->curve.IsNull()) return nullptr;
         Handle(Geom2d_BoundedCurve) first = Handle(Geom2d_BoundedCurve)::DownCast(curves[0]->curve);
         if (first.IsNull()) {
             double f = curves[0]->curve->FirstParameter();
@@ -3264,6 +3363,7 @@ OCCTCurve2DRef OCCTConcatenateCurves2D(OCCTCurve2DRef* curves, int32_t count, do
         }
         Geom2dConvert_CompCurveToBSplineCurve comp(first);
         for (int32_t i = 1; i < count; i++) {
+            if (!curves[i] || curves[i]->curve.IsNull()) return nullptr;
             Handle(Geom2d_BoundedCurve) bc = Handle(Geom2d_BoundedCurve)::DownCast(curves[i]->curve);
             if (bc.IsNull()) {
                 double f = curves[i]->curve->FirstParameter();
@@ -3279,32 +3379,11 @@ OCCTCurve2DRef OCCTConcatenateCurves2D(OCCTCurve2DRef* curves, int32_t count, do
         return r;
     } catch (...) { return nullptr; }
 }
-// MARK: - Geom2dConvert_BSplineCurveKnotSplitting (v0.105.0)
-
-#include <Geom2dConvert_BSplineCurveKnotSplitting.hxx>
-
-int32_t OCCTBSplineCurve2dKnotSplits(OCCTCurve2DRef curve, int32_t continuity) {
-    if (!curve) return 0;
-    try {
-        Handle(Geom2d_BSplineCurve) bc = Handle(Geom2d_BSplineCurve)::DownCast(curve->curve);
-        if (bc.IsNull()) return 0;
-        Geom2dConvert_BSplineCurveKnotSplitting splitter(bc, continuity);
-        return (int32_t)splitter.NbSplits();
-    } catch (...) { return 0; }
-}
-
-void OCCTBSplineCurve2dKnotSplitValues(OCCTCurve2DRef curve, int32_t continuity,
-                                        int32_t* splits) {
-    if (!curve || !splits) return;
-    try {
-        Handle(Geom2d_BSplineCurve) bc = Handle(Geom2d_BSplineCurve)::DownCast(curve->curve);
-        if (bc.IsNull()) return;
-        Geom2dConvert_BSplineCurveKnotSplitting splitter(bc, continuity);
-        for (int i = 1; i <= splitter.NbSplits(); i++) {
-            splits[i - 1] = splitter.SplitValue(i);
-        }
-    } catch (...) {}
-}
+// #562: OCCTBSplineCurve2dKnotSplits and OCCTBSplineCurve2dKnotSplitValues stood here, a second
+// wrap of Geom2dConvert_BSplineCurveKnotSplitting added three releases after
+// OCCTCurve2DSplitAtDiscontinuities (further down this file) already wrapped it. Deleted; that
+// one returns the same indices, and now reports the true count when truncated, which is the one
+// respect in which these were the stronger pair rather than the weaker.
 
 // MARK: - v0.106: BRepLib_MakeEdge2d extensions + Curve2D continuity
 // MARK: - BRepLib_MakeEdge2d extensions (v0.106.0)
@@ -3312,8 +3391,13 @@ void OCCTBSplineCurve2dKnotSplitValues(OCCTCurve2DRef curve, int32_t continuity,
 #include <BRepLib_MakeEdge2d.hxx>
 #include <gp_Elips2d.hxx>
 
+// BRepLib_MakeEdge2d reports IsDone() for a degenerate conic rather than refusing it: measured
+// (#514), a zero-radius ellipse yields a zero-length edge with both vertices at the centre, and a
+// zero minor radius yields a segment doubled back along the major axis. Neither is an edge the
+// caller asked for, so the dimensions are checked before OCCT sees them.
 OCCTShapeRef OCCTMakeEdge2dFullCircle(double cx, double cy, double dx, double dy,
                                        double radius) {
+    if (!occtValidCircleRadius(radius)) return nullptr;
     try {
         gp_Ax2d ax(gp_Pnt2d(cx, cy), gp_Dir2d(dx, dy));
         gp_Circ2d circ(ax, radius);
@@ -3327,6 +3411,7 @@ OCCTShapeRef OCCTMakeEdge2dFullCircle(double cx, double cy, double dx, double dy
 
 OCCTShapeRef OCCTMakeEdge2dEllipse(double cx, double cy, double dx, double dy,
                                     double major, double minor) {
+    if (!occtValidEllipseRadii(major, minor)) return nullptr;
     try {
         gp_Ax2d ax(gp_Pnt2d(cx, cy), gp_Dir2d(dx, dy));
         gp_Elips2d elips(ax, major, minor);
@@ -3340,6 +3425,7 @@ OCCTShapeRef OCCTMakeEdge2dEllipse(double cx, double cy, double dx, double dy,
 
 OCCTShapeRef OCCTMakeEdge2dEllipseArc(double cx, double cy, double dx, double dy,
                                        double major, double minor, double u1, double u2) {
+    if (!occtValidEllipseRadii(major, minor)) return nullptr;
     try {
         gp_Ax2d ax(gp_Pnt2d(cx, cy), gp_Dir2d(dx, dy));
         gp_Elips2d elips(ax, major, minor);
@@ -3352,7 +3438,7 @@ OCCTShapeRef OCCTMakeEdge2dEllipseArc(double cx, double cy, double dx, double dy
 }
 
 OCCTShapeRef OCCTMakeEdge2dCurve(OCCTCurve2DRef curve) {
-    if (!curve) return nullptr;
+    if (!curve || curve->curve.IsNull()) return nullptr;
     try {
         BRepLib_MakeEdge2d me(curve->curve);
         if (!me.IsDone()) return nullptr;
@@ -3363,7 +3449,7 @@ OCCTShapeRef OCCTMakeEdge2dCurve(OCCTCurve2DRef curve) {
 }
 
 OCCTShapeRef OCCTMakeEdge2dCurveRange(OCCTCurve2DRef curve, double u1, double u2) {
-    if (!curve) return nullptr;
+    if (!curve || curve->curve.IsNull()) return nullptr;
     try {
         BRepLib_MakeEdge2d me(curve->curve, u1, u2);
         if (!me.IsDone()) return nullptr;
@@ -3840,52 +3926,63 @@ OCCTCurve2DRef OCCTCurve2DOffsetBasisCurve(OCCTCurve2DRef curve) {
 #include <gp_Circ2d.hxx>
 #include <gp_Elips2d.hxx>
 
-void OCCTConic2dFromCircle(double cx, double cy, double dx, double dy, double radius,
+// The three OCCTConic2dFrom* entry points share one failure encoding: the six coefficients are
+// zeroed and false returned. Zeroing alone could not carry it: 0 = 0 holds at every point of the
+// plane, so an all-zero result reads as a conic rather than as no answer, and a degenerate ellipse
+// produced exactly that (#514).
+static bool occtConic2dCoefficients(const IntAna2d_Conic& conic, double* coeffs) {
+    double A, B, C, D, E, F;
+    conic.Coefficients(A, B, C, D, E, F);
+    coeffs[0] = A; coeffs[1] = B; coeffs[2] = C;
+    coeffs[3] = D; coeffs[4] = E; coeffs[5] = F;
+    return true;
+}
+
+static bool occtConic2dFailed(double* coeffs) {
+    for (int i = 0; i < 6; i++) coeffs[i] = 0;
+    return false;
+}
+
+bool OCCTConic2dFromCircle(double cx, double cy, double dx, double dy, double radius,
                             double* coeffs) {
+    if (!occtValidCircleRadius(radius)) return occtConic2dFailed(coeffs);
     try {
         gp_Circ2d circ(gp_Ax2d(gp_Pnt2d(cx, cy), gp_Dir2d(dx, dy)), radius);
-        IntAna2d_Conic conic(circ);
-        double A, B, C, D, E, F;
-        conic.Coefficients(A, B, C, D, E, F);
-        coeffs[0] = A; coeffs[1] = B; coeffs[2] = C;
-        coeffs[3] = D; coeffs[4] = E; coeffs[5] = F;
+        return occtConic2dCoefficients(IntAna2d_Conic(circ), coeffs);
     } catch (...) {
-        for (int i = 0; i < 6; i++) coeffs[i] = 0;
+        return occtConic2dFailed(coeffs);
     }
 }
 
-void OCCTConic2dFromLine(double px, double py, double dx, double dy,
+bool OCCTConic2dFromLine(double px, double py, double dx, double dy,
                           double* coeffs) {
     try {
         gp_Lin2d line(gp_Pnt2d(px, py), gp_Dir2d(dx, dy));
-        IntAna2d_Conic conic(line);
-        double A, B, C, D, E, F;
-        conic.Coefficients(A, B, C, D, E, F);
-        coeffs[0] = A; coeffs[1] = B; coeffs[2] = C;
-        coeffs[3] = D; coeffs[4] = E; coeffs[5] = F;
+        return occtConic2dCoefficients(IntAna2d_Conic(line), coeffs);
     } catch (...) {
-        for (int i = 0; i < 6; i++) coeffs[i] = 0;
+        return occtConic2dFailed(coeffs);
     }
 }
 
-void OCCTConic2dFromEllipse(double cx, double cy, double dx, double dy,
+bool OCCTConic2dFromEllipse(double cx, double cy, double dx, double dy,
                              double majorRadius, double minorRadius,
                              double* coeffs) {
+    if (!occtValidEllipseRadii(majorRadius, minorRadius)) return occtConic2dFailed(coeffs);
     try {
         gp_Elips2d elips(gp_Ax2d(gp_Pnt2d(cx, cy), gp_Dir2d(dx, dy)), majorRadius, minorRadius);
-        IntAna2d_Conic conic(elips);
-        double A, B, C, D, E, F;
-        conic.Coefficients(A, B, C, D, E, F);
-        coeffs[0] = A; coeffs[1] = B; coeffs[2] = C;
-        coeffs[3] = D; coeffs[4] = E; coeffs[5] = F;
+        return occtConic2dCoefficients(IntAna2d_Conic(elips), coeffs);
     } catch (...) {
-        for (int i = 0; i < 6; i++) coeffs[i] = 0;
+        return occtConic2dFailed(coeffs);
     }
 }
 
 int32_t OCCTConic2dLineCircleIntersect(double lpx, double lpy, double ldx, double ldy,
                                         double cx, double cy, double cdx, double cdy, double radius,
                                         double* xs, double* ys, int32_t max) {
+    // Same circle contract as OCCTConic2dFromCircle above: intersecting against a radius-0 circle
+    // is a point-on-line test, not an intersection, and asking it here would be the one place in
+    // this block that still accepted a degenerate circle.
+    if (!occtValidCircleRadius(radius)) return -1;
     try {
         gp_Lin2d line(gp_Pnt2d(lpx, lpy), gp_Dir2d(ldx, ldy));
         gp_Circ2d circ(gp_Ax2d(gp_Pnt2d(cx, cy), gp_Dir2d(cdx, cdy)), radius);
@@ -3905,7 +4002,7 @@ int32_t OCCTConic2dLineCircleIntersect(double lpx, double lpy, double ldx, doubl
 // MARK: - Curve2D Extras (v0.109.0)
 
 bool OCCTCurve2DReverse(OCCTCurve2DRef curve) {
-    if (!curve) return false;
+    if (!curve || curve->curve.IsNull()) return false;   // #478
     try {
         curve->curve->Reverse();
         return true;
@@ -3913,7 +4010,7 @@ bool OCCTCurve2DReverse(OCCTCurve2DRef curve) {
 }
 
 OCCTCurve2DRef OCCTCurve2DCopy(OCCTCurve2DRef curve) {
-    if (!curve) return nullptr;
+    if (!curve || curve->curve.IsNull()) return nullptr;  // #478
     try {
         Handle(Geom2d_Curve) copy = Handle(Geom2d_Curve)::DownCast(curve->curve->Copy());
         if (copy.IsNull()) return nullptr;
@@ -3921,21 +4018,9 @@ OCCTCurve2DRef OCCTCurve2DCopy(OCCTCurve2DRef curve) {
     } catch (...) { return nullptr; }
 }
 
+// Delegates to OCCTCurve2DGetContinuity: same Continuity() call, one encoding (#485).
 int32_t OCCTCurve2DContinuity(OCCTCurve2DRef curve) {
-    if (!curve) return -1;
-    try {
-        GeomAbs_Shape cont = curve->curve->Continuity();
-        switch (cont) {
-            case GeomAbs_C0: return 0;
-            case GeomAbs_C1: return 1;
-            case GeomAbs_C2: return 2;
-            case GeomAbs_C3: return 3;
-            case GeomAbs_CN: return 99;
-            case GeomAbs_G1: return -2;
-            case GeomAbs_G2: return -3;
-            default: return -1;
-        }
-    } catch (...) { return -1; }
+    return OCCTCurve2DGetContinuity(curve);
 }
 // MARK: - Curve2D Evaluation (v0.110.0)
 
@@ -3973,35 +4058,10 @@ void OCCTCurve2DEvalD2(OCCTCurve2DRef curve, double u,
     } catch (...) {}
 }
 // MARK: - Geom2dGridEval_Curve (v0.111.0)
-
-void OCCTGridEvalCurve2dD0(OCCTCurve2DRef curve, const double* params, int32_t count,
-                              double* xs, double* ys) {
-    if (!curve || curve->curve.IsNull() || count <= 0) return;
-    try {
-        Geom2dGridEval_Curve eval(curve->curve);
-        NCollection_Array1<double> pArr(1, count);
-        for (int i = 0; i < count; i++) pArr(i+1) = params[i];
-        NCollection_Array1<gp_Pnt2d> results = eval.EvaluateGrid(pArr);
-        for (int i = 0; i < count; i++) {
-            xs[i] = results(i+1).X(); ys[i] = results(i+1).Y();
-        }
-    } catch (...) {}
-}
-
-void OCCTGridEvalCurve2dD1(OCCTCurve2DRef curve, const double* params, int32_t count,
-                              double* xs, double* ys, double* d1xs, double* d1ys) {
-    if (!curve || curve->curve.IsNull() || count <= 0) return;
-    try {
-        Geom2dGridEval_Curve eval(curve->curve);
-        NCollection_Array1<double> pArr(1, count);
-        for (int i = 0; i < count; i++) pArr(i+1) = params[i];
-        NCollection_Array1<Geom2dGridEval::CurveD1> results = eval.EvaluateGridD1(pArr);
-        for (int i = 0; i < count; i++) {
-            xs[i] = results(i+1).Point.X(); ys[i] = results(i+1).Point.Y();
-            d1xs[i] = results(i+1).D1.X(); d1ys[i] = results(i+1).D1.Y();
-        }
-    } catch (...) {}
-}
+//
+// #486: OCCTGridEvalCurve2dD0/D1 lived here, the same Geom2dGridEval_Curve::EvaluateGrid /
+// EvaluateGridD1 calls as OCCTCurve2DEvaluateGrid/D1 above, only writing per-axis planes
+// instead of interleaved pairs. Removed; Curve2D.gridEvalD0/D1 now forward to the v0.28.0 pair.
 
 // MARK: - v0.112: Curve2D extras
 // --- Curve2D extras ---
@@ -4014,14 +4074,13 @@ int32_t OCCTCurve2DCurveType(OCCTCurve2DRef curve) {
     } catch (...) { return 7; }
 }
 
-double OCCTCurve2DParameterAtPoint(OCCTCurve2DRef curve,
-                                   double x, double y) {
-    if (!curve || curve->curve.IsNull()) return 0;
-    try {
-        Geom2dAPI_ProjectPointOnCurve proj(gp_Pnt2d(x, y), curve->curve);
-        if (proj.NbPoints() < 1) return curve->curve->FirstParameter();
-        return proj.LowerDistanceParameter();
-    } catch (...) { return 0; }
+// Failure contract: returns false, leaving *outParameter untouched. This replaces
+// OCCTCurve2DParameterAtPoint, which reported "no projection" as curve->FirstParameter(): a real
+// parameter in the curve's own domain, indistinguishable from a genuine result, and right or
+// maximally wrong depending only on which end the point fell off (#500).
+bool OCCTCurve2DNearestParameter(OCCTCurve2DRef _Nonnull curve, double x, double y,
+                                 double* _Nonnull outParameter) {
+    return occtNearestProjectionOnCurve2d(curve, gp_Pnt2d(x, y), nullptr, outParameter, nullptr);
 }
 
 // MARK: - v0.114: Curve2D isBounded + DN + type-name
@@ -4070,17 +4129,9 @@ OCCTCurve2DRef OCCTInterpolate2DWithTangents(const double* points, int32_t count
 OCCTCurve2DRef OCCTInterpolate2DPeriodic(const double* points, int32_t count) {
     return OCCTCurve2DInterpolate(points, count, true, 1e-6);
 }
-// --- GeomAPI_PointsToBSpline expansion ---
-// Helper: map continuity int → GeomAbs_Shape (duplicate of Curve3D's mapContinuityV115, ODR-safe)
-static GeomAbs_Shape mapContinuityV115(int32_t c) {
-    switch (c) {
-        case 0: return GeomAbs_C0;
-        case 1: return GeomAbs_C1;
-        case 2: return GeomAbs_C2;
-        case 3: return GeomAbs_C3;
-        default: return GeomAbs_C2;
-    }
-}
+// --- Geom2dAPI_PointsToBSpline expansion ---
+// (the 2D half of the header's "PointsToBSpline expansion" section; the 3D and surface
+// halves live in OCCTBridge_Curve3D.mm and OCCTBridge_Surface.mm)
 
 OCCTCurve2DRef OCCTPoints2DToBSplineWithParams(const double* points, int32_t count,
                                                   int32_t degMin, int32_t degMax,
@@ -4091,7 +4142,7 @@ OCCTCurve2DRef OCCTPoints2DToBSplineWithParams(const double* points, int32_t cou
         for (int i = 0; i < count; i++) {
             pts.SetValue(i + 1, gp_Pnt2d(points[i*2], points[i*2+1]));
         }
-        Geom2dAPI_PointsToBSpline approx(pts, degMin, degMax, mapContinuityV115(continuity), tol);
+        Geom2dAPI_PointsToBSpline approx(pts, degMin, degMax, occtGeomAbsFromParametricContinuity(continuity), tol);
         if (approx.IsDone()) {
             return (OCCTCurve2DRef)new OCCTCurve2D{approx.Curve()};
         }
@@ -4128,18 +4179,15 @@ OCCTCurve2DRef OCCTCurve2DTrimmed(OCCTCurve2DRef curve, double u1, double u2) {
     } catch (...) { return nullptr; }
 }
 
-#include <Geom2dAdaptor_Curve.hxx>
-
-// Range-checked: Geom2dAdaptor_Curve's (curve,u1,u2) constructor raises
-// Standard_ConstructionError if u1 > u2, unlike OCCTCurve2DGetLengthBetween's
-// unrestricted adaptor, which tolerates either order.
-double OCCTCurve2DLength(OCCTCurve2DRef curve, double u1, double u2) {
-    if (!curve || curve->curve.IsNull()) return -1.0;
-    try {
-        Geom2dAdaptor_Curve ac(curve->curve, u1, u2);
-        return GCPnts_AbscissaPoint::Length(ac);
-    } catch (...) { return -1.0; }
-}
+// OCCTCurve2DLength lived here: GCPnts_AbscissaPoint::Length over a pre-bounded
+// Geom2dAdaptor_Curve(curve, u1, u2), which raises on a reversed range (so the catch reported a
+// reversed range as -1.0) and extrapolates past a multi-span curve's knots instead of clamping to
+// its domain. Removed by #549, which is what #506 did to the 3D spelling of the same call;
+// Curve2D.arcLength(from:to:) now routes through OCCTCurve2DGetLengthBetween, which does neither.
+// OCCTCurve2DGetLengthBetween (below) carries this PR's (#548) non-finite-bound rejection via
+// occtValidParameterRange, so the guard #602 originally added here now lives on the surviving
+// spelling instead of being re-added to the removed one. Its winding/domain-confinement fix (#600)
+// is on the same surviving spelling -- see OCCTCurve2DGetLengthBetween below.
 
 // MARK: - v0.116: gp_GTrsf2d + gp_Mat2d
 void OCCTGTrsf2dAffinity(double axPx, double axPy, double axDx, double axDy, double ratio,
@@ -4741,31 +4789,55 @@ bool OCCTCurve2DBezierReverse(OCCTCurve2DRef curve) {
         return true;
     } catch (...) { return false; }
 }
+// === #478: one gp_Trsf2d builder behind both Curve2D transform families ===
+//
+// Curve2D has the same two-family shape as Curve3D (#416) and Surface (#488): an in-place
+// mutating dispatcher (OCCTCurve2DTransform, taking a transformType selector) and an immutable
+// OCCTCurve2DTranslate/Rotate/Scale/MirrorAxis/MirrorPoint family that returns a transformed
+// copy. Both build the same five transformations; each family built them its own way, so the
+// two could drift, and had already drifted on the null guard below. They share this builder now,
+// mirroring buildTrsf3D in OCCTBridge_Curve3D.mm / OCCTBridge_Surface.mm.
+//
+// The scale case is the only one whose construction changes. The dispatcher used to compose it
+// by hand as SetScaleFactor(S) + SetTranslationPart(C * (1 - S)); gp_Trsf2d::SetScale(C, S) is
+// what the immutable family reached through Geom2d_Geometry::Scale, and what buildTrsf3D uses.
+// Verified equivalent before switching, over factors {2.5, 0.25, 1, -1, -3, 0, 1e-9, 1e9} x three
+// centres including (1e6, 1e-6): identical ScaleFactor(), identical TranslationPart(), identical
+// transformed coordinates, to the bit. The two disagree only on the internal gp_TrsfForm tag at
+// S = 1 (gp_Scale vs gp_Identity) and S = -1 (gp_Scale vs gp_PntMirror), which is a dispatch hint,
+// not a result: transforming a real BSpline curve through both gives identical poles.
+static bool buildTrsf2D(gp_Trsf2d& trsf, int32_t type,
+                         double p1, double p2, double p3, double p4) {
+    switch (type) {
+        case 0: // translation (dx, dy)
+            trsf.SetTranslation(gp_Vec2d(p1, p2));
+            return true;
+        case 1: // rotation (cx, cy, angle)
+            trsf.SetRotation(gp_Pnt2d(p1, p2), p3);
+            return true;
+        case 2: // scale (cx, cy, factor)
+            trsf.SetScale(gp_Pnt2d(p1, p2), p3);
+            return true;
+        case 3: // mirror point (px, py)
+            trsf.SetMirror(gp_Pnt2d(p1, p2));
+            return true;
+        case 4: // mirror axis (ox, oy, dx, dy)
+            trsf.SetMirror(gp_Ax2d(gp_Pnt2d(p1, p2), gp_Dir2d(p3, p4)));
+            return true;
+        default:
+            return false;
+    }
+}
+
 bool OCCTCurve2DTransform(OCCTCurve2DRef curve, int32_t transformType,
                            double p1, double p2, double p3, double p4, double p5) {
-    if (!curve) return false;
+    // #478: the handle as well as the wrapper. Geom2d_Curve::Transform is a kernel virtual, so
+    // its Standard_NullObject precondition is compiled out of this No_Exception build and a null
+    // handle is a raw dereference; the enclosing catch cannot intercept the resulting signal.
+    if (!curve || curve->curve.IsNull()) return false;
     try {
         gp_Trsf2d trsf;
-        switch (transformType) {
-            case 0: // translation (dx, dy)
-                trsf.SetTranslation(gp_Vec2d(p1, p2));
-                break;
-            case 1: // rotation (cx, cy, angle)
-                trsf.SetRotation(gp_Pnt2d(p1, p2), p3);
-                break;
-            case 2: // scale (cx, cy, factor)
-                trsf.SetScaleFactor(p3);
-                trsf.SetTranslationPart(gp_Vec2d(p1 * (1.0 - p3), p2 * (1.0 - p3)));
-                break;
-            case 3: // mirror point (px, py)
-                trsf.SetMirror(gp_Pnt2d(p1, p2));
-                break;
-            case 4: // mirror axis (ox, oy, dx, dy)
-                trsf.SetMirror(gp_Ax2d(gp_Pnt2d(p1, p2), gp_Dir2d(p3, p4)));
-                break;
-            default:
-                return false;
-        }
+        if (!buildTrsf2D(trsf, transformType, p1, p2, p3, p4)) return false;
         curve->curve->Transform(trsf);
         return true;
     } catch (...) { return false; }
@@ -5021,7 +5093,7 @@ OCCTCurve2DRef OCCTCurve2DCreateSegment(double p1x, double p1y, double p2x, doub
 
 OCCTCurve2DRef OCCTCurve2DCreateCircle(double cx, double cy, double radius) {
     try {
-        if (!occtValidCircle2dRadius(radius)) return nullptr;
+        if (!occtValidCircleRadius(radius)) return nullptr;
         gp_Pnt2d center(cx, cy);
         gp_Ax2d axis(center, gp_Dir2d(1, 0));
         Handle(Geom2d_Circle) circle = new Geom2d_Circle(axis, radius);
@@ -5034,7 +5106,7 @@ OCCTCurve2DRef OCCTCurve2DCreateCircle(double cx, double cy, double radius) {
 OCCTCurve2DRef OCCTCurve2DCreateArcOfCircle(double cx, double cy, double radius,
                                             double startAngle, double endAngle) {
     try {
-        if (!occtValidCircle2dRadius(radius)) return nullptr;
+        if (!occtValidCircleRadius(radius)) return nullptr;
         gp_Pnt2d center(cx, cy);
         gp_Ax2d axis(center, gp_Dir2d(1, 0));
         Handle(Geom2d_Circle) circle = new Geom2d_Circle(axis, radius);
@@ -5063,7 +5135,7 @@ OCCTCurve2DRef OCCTCurve2DCreateArcThrough(double p1x, double p1y,
 OCCTCurve2DRef OCCTCurve2DCreateEllipse(double cx, double cy,
                                         double majorR, double minorR, double rotation) {
     try {
-        if (majorR <= 0 || minorR <= 0 || minorR > majorR) return nullptr;
+        if (!occtValidEllipseRadii(majorR, minorR)) return nullptr;
         gp_Pnt2d center(cx, cy);
         gp_Dir2d majorDir(cos(rotation), sin(rotation));
         gp_Ax22d axes(center, majorDir);
@@ -5079,7 +5151,7 @@ OCCTCurve2DRef OCCTCurve2DCreateArcOfEllipse(double cx, double cy,
                                              double rotation,
                                              double startAngle, double endAngle) {
     try {
-        if (majorR <= 0 || minorR <= 0 || minorR > majorR) return nullptr;
+        if (!occtValidEllipseRadii(majorR, minorR)) return nullptr;
         gp_Pnt2d center(cx, cy);
         gp_Dir2d majorDir(cos(rotation), sin(rotation));
         gp_Ax22d axes(center, majorDir);
@@ -5094,7 +5166,7 @@ OCCTCurve2DRef OCCTCurve2DCreateArcOfEllipse(double cx, double cy,
 OCCTCurve2DRef OCCTCurve2DCreateParabola(double fx, double fy,
                                          double dx, double dy, double focal) {
     try {
-        if (focal <= 0) return nullptr;
+        if (!occtValidParabolaFocal(focal)) return nullptr;
         gp_Pnt2d mirrorP(fx - dx * focal, fy - dy * focal);
         gp_Dir2d dir(dx, dy);
         gp_Ax2d axis(mirrorP, dir);
@@ -5109,7 +5181,7 @@ OCCTCurve2DRef OCCTCurve2DCreateHyperbola(double cx, double cy,
                                           double majorR, double minorR,
                                           double rotation) {
     try {
-        if (majorR <= 0 || minorR <= 0) return nullptr;
+        if (!occtValidHyperbolaRadii(majorR, minorR)) return nullptr;
         gp_Pnt2d center(cx, cy);
         gp_Dir2d majorDir(cos(rotation), sin(rotation));
         gp_Ax22d axes(center, majorDir);
@@ -5142,14 +5214,17 @@ int32_t OCCTCurve2DDrawAdaptive(OCCTCurve2DRef c, double angularDefl, double cho
 }
 
 int32_t OCCTCurve2DDrawUniform(OCCTCurve2DRef c, int32_t pointCount, double* outXY) {
-    if (!c || c->curve.IsNull() || !outXY || pointCount <= 0) return 0;
+    // outXY holds pointCount pairs, which is not what the sampler is bounded by. See
+    // occtSamplerKept/occtSamplerIndex in OCCTBridge_Internal.h (#501).
+    if (!c || c->curve.IsNull() || !outXY || !occtValidSampleCount(pointCount)) return 0;
     try {
         Geom2dAdaptor_Curve adaptor(c->curve);
         GCPnts_UniformAbscissa sampler(adaptor, pointCount);
         if (!sampler.IsDone()) return 0;
-        int32_t n = sampler.NbPoints();
+        int32_t total = sampler.NbPoints();
+        int32_t n = occtSamplerKept(total, pointCount);
         for (int32_t i = 0; i < n; i++) {
-            double u = sampler.Parameter(i + 1);
+            double u = sampler.Parameter(occtSamplerIndex(i, n, total));
             gp_Pnt2d p = adaptor.Value(u);
             outXY[i * 2] = p.X();
             outXY[i * 2 + 1] = p.Y();
@@ -5377,12 +5452,17 @@ OCCTCurve2DRef OCCTCurve2DReversed(OCCTCurve2DRef c) {
     }
 }
 
+// #478: the five immutable transforms share buildTrsf2D with the in-place
+// OCCTCurve2DTransform dispatcher (defined above) rather than each building its own
+// transformation, so the two families cannot drift apart on the transform math.
+
 OCCTCurve2DRef OCCTCurve2DTranslate(OCCTCurve2DRef c, double dx, double dy) {
     if (!c || c->curve.IsNull()) return nullptr;
     try {
         Handle(Geom2d_Curve) copy = Handle(Geom2d_Curve)::DownCast(c->curve->Copy());
-        gp_Vec2d v(dx, dy);
-        copy->Translate(v);
+        gp_Trsf2d trsf;
+        if (!buildTrsf2D(trsf, 0, dx, dy, 0, 0)) return nullptr;
+        copy->Transform(trsf);
         return new OCCTCurve2D(copy);
     } catch (...) {
         return nullptr;
@@ -5393,8 +5473,9 @@ OCCTCurve2DRef OCCTCurve2DRotate(OCCTCurve2DRef c, double cx, double cy, double 
     if (!c || c->curve.IsNull()) return nullptr;
     try {
         Handle(Geom2d_Curve) copy = Handle(Geom2d_Curve)::DownCast(c->curve->Copy());
-        gp_Pnt2d center(cx, cy);
-        copy->Rotate(center, angle);
+        gp_Trsf2d trsf;
+        if (!buildTrsf2D(trsf, 1, cx, cy, angle, 0)) return nullptr;
+        copy->Transform(trsf);
         return new OCCTCurve2D(copy);
     } catch (...) {
         return nullptr;
@@ -5405,8 +5486,9 @@ OCCTCurve2DRef OCCTCurve2DScale(OCCTCurve2DRef c, double cx, double cy, double f
     if (!c || c->curve.IsNull()) return nullptr;
     try {
         Handle(Geom2d_Curve) copy = Handle(Geom2d_Curve)::DownCast(c->curve->Copy());
-        gp_Pnt2d center(cx, cy);
-        copy->Scale(center, factor);
+        gp_Trsf2d trsf;
+        if (!buildTrsf2D(trsf, 2, cx, cy, factor, 0)) return nullptr;
+        copy->Transform(trsf);
         return new OCCTCurve2D(copy);
     } catch (...) {
         return nullptr;
@@ -5418,8 +5500,9 @@ OCCTCurve2DRef OCCTCurve2DMirrorAxis(OCCTCurve2DRef c, double px, double py,
     if (!c || c->curve.IsNull()) return nullptr;
     try {
         Handle(Geom2d_Curve) copy = Handle(Geom2d_Curve)::DownCast(c->curve->Copy());
-        gp_Ax2d axis(gp_Pnt2d(px, py), gp_Dir2d(dx, dy));
-        copy->Mirror(axis);
+        gp_Trsf2d trsf;
+        if (!buildTrsf2D(trsf, 4, px, py, dx, dy)) return nullptr;
+        copy->Transform(trsf);
         return new OCCTCurve2D(copy);
     } catch (...) {
         return nullptr;
@@ -5430,29 +5513,38 @@ OCCTCurve2DRef OCCTCurve2DMirrorPoint(OCCTCurve2DRef c, double px, double py) {
     if (!c || c->curve.IsNull()) return nullptr;
     try {
         Handle(Geom2d_Curve) copy = Handle(Geom2d_Curve)::DownCast(c->curve->Copy());
-        gp_Pnt2d pt(px, py);
-        copy->Mirror(pt);
+        gp_Trsf2d trsf;
+        if (!buildTrsf2D(trsf, 3, px, py, 0, 0)) return nullptr;
+        copy->Transform(trsf);
         return new OCCTCurve2D(copy);
     } catch (...) {
         return nullptr;
     }
 }
 
+// Same subdivided measurement as the 3D sibling (occtAdaptorArcLength, OCCTBridge_Internal.h): the
+// GCPnts_AbscissaPoint::length template is shared between Adaptor3d_Curve and Adaptor2d_Curve2d,
+// so a 2D ellipse measured exactly the same 0.337% long. #603.
 double OCCTCurve2DGetLength(OCCTCurve2DRef c) {
     if (!c || c->curve.IsNull()) return -1.0;
     try {
         Geom2dAdaptor_Curve adaptor(c->curve);
-        return GCPnts_AbscissaPoint::Length(adaptor);
+        return occtAdaptorArcLength(adaptor, adaptor.FirstParameter(), adaptor.LastParameter());
     } catch (...) {
         return -1.0;
     }
 }
 
+// Same non-finite-bound rejection as the 3D sibling: Geom2dAdaptor_Curve reaches the very same
+// GCPnts_AbscissaPoint::length template, so a 2D BSpline measured 0 (NaN upper) or its whole
+// length (NaN lower) too. See occtValidParameterRange (OCCTBridge_Internal.h). #548.
+// Same shared measurement too, so 2D and 3D agree on an out-of-domain range. #600.
 double OCCTCurve2DGetLengthBetween(OCCTCurve2DRef c, double u1, double u2) {
     if (!c || c->curve.IsNull()) return -1.0;
+    if (!occtValidParameterRange(u1, u2)) return -1.0;
     try {
         Geom2dAdaptor_Curve adaptor(c->curve);
-        return GCPnts_AbscissaPoint::Length(adaptor, u1, u2);
+        return occtAdaptorLengthBetween(adaptor, u1, u2);
     } catch (...) {
         return -1.0;
     }
@@ -5678,22 +5770,31 @@ OCCTCurve2DRef OCCTCurve2DJoinToBSpline(const OCCTCurve2DRef* curves, int32_t co
 #include <Geom2dGcc_QualifiedCurve.hxx>
 #include <GccEnt_Position.hxx>
 
-double OCCTCurve2DGetCurvature(OCCTCurve2DRef c, double u) {
-    if (!c || c->curve.IsNull()) return 0.0;
+// #595: reports whether there is a curvature rather than spelling its absence 0, which is also a
+// straight 2D curve's real answer. Matches OCCTCurve3DGetCurvature, here as in #494.
+bool OCCTCurve2DGetCurvature(OCCTCurve2DRef c, double u, double* curvature) {
+    *curvature = 0.0;
+    if (!c || c->curve.IsNull()) return false;
     try {
-        GeomLProp_CLProps2d props(c->curve, u, 2, Precision::Confusion());
-        return props.Curvature();
+        GeomLProp_CLProps2d props = occtCurve2dLocalProps(c->curve, u, 2);
+        // Curvature() is only meaningful once the tangent is established. It does raise otherwise,
+        // but through LProp_NotDefined_Raise_if, which compiles out under No_Exception — defined
+        // for the OCCT build, not for this one. Matches OCCTCurve3DGetCurvature (#494).
+        if (!props.IsTangentDefined()) return false;
+        *curvature = props.Curvature();
+        return true;
     } catch (...) {
-        return 0.0;
+        return false;
     }
 }
 
 bool OCCTCurve2DGetNormal(OCCTCurve2DRef c, double u, double* nx, double* ny) {
     if (!c || c->curve.IsNull() || !nx || !ny) return false;
     try {
-        GeomLProp_CLProps2d props(c->curve, u, 2, Precision::Confusion());
+        GeomLProp_CLProps2d props = occtCurve2dLocalProps(c->curve, u, 2);
         if (!props.IsTangentDefined()) return false;
-        if (props.Curvature() < Precision::Confusion()) return false;
+        // Rejects a cusp's RealLast() curvature as well as a straight stretch's zero (#494).
+        if (!occtCurveCurvatureIsInvertible(props.Curvature())) return false;
         gp_Dir2d n;
         props.Normal(n);
         *nx = n.X(); *ny = n.Y();
@@ -5706,7 +5807,7 @@ bool OCCTCurve2DGetNormal(OCCTCurve2DRef c, double u, double* nx, double* ny) {
 bool OCCTCurve2DGetTangentDir(OCCTCurve2DRef c, double u, double* tx, double* ty) {
     if (!c || c->curve.IsNull() || !tx || !ty) return false;
     try {
-        GeomLProp_CLProps2d props(c->curve, u, 1, Precision::Confusion());
+        GeomLProp_CLProps2d props = occtCurve2dLocalProps(c->curve, u, 1);
         if (!props.IsTangentDefined()) return false;
         gp_Dir2d t;
         props.Tangent(t);
@@ -5720,9 +5821,10 @@ bool OCCTCurve2DGetTangentDir(OCCTCurve2DRef c, double u, double* tx, double* ty
 bool OCCTCurve2DGetCenterOfCurvature(OCCTCurve2DRef c, double u, double* cx, double* cy) {
     if (!c || c->curve.IsNull() || !cx || !cy) return false;
     try {
-        GeomLProp_CLProps2d props(c->curve, u, 2, Precision::Confusion());
+        GeomLProp_CLProps2d props = occtCurve2dLocalProps(c->curve, u, 2);
         if (!props.IsTangentDefined()) return false;
-        if (props.Curvature() < Precision::Confusion()) return false;
+        // Rejects a cusp's RealLast() curvature, which used to reach CentreOfCurvature (#494).
+        if (!occtCurveCurvatureIsInvertible(props.Curvature())) return false;
         gp_Pnt2d center;
         props.CentreOfCurvature(center);
         *cx = center.X(); *cy = center.Y();
@@ -5810,7 +5912,7 @@ OCCTCurve2DRef OCCTCurve2DCreateArcOfHyperbola(double cx, double cy,
                                                double rotation,
                                                double startAngle, double endAngle) {
     try {
-        if (majorR <= 0 || minorR <= 0) return nullptr;
+        if (!occtValidHyperbolaRadii(majorR, minorR)) return nullptr;
         gp_Pnt2d center(cx, cy);
         gp_Dir2d majorDir(cos(rotation), sin(rotation));
         gp_Ax22d axes(center, majorDir);
@@ -5826,7 +5928,7 @@ OCCTCurve2DRef OCCTCurve2DCreateArcOfParabola(double fx, double fy,
                                               double dx, double dy, double focal,
                                               double startParam, double endParam) {
     try {
-        if (focal <= 0) return nullptr;
+        if (!occtValidParabolaFocal(focal)) return nullptr;
         gp_Pnt2d mirrorP(fx - dx * focal, fy - dy * focal);
         gp_Dir2d dir(dx, dy);
         gp_Ax2d axis(mirrorP, dir);
@@ -5844,15 +5946,9 @@ OCCTCurve2DRef OCCTCurve2DApproximate(OCCTCurve2DRef c, double tolerance,
                                       int32_t continuity, int32_t maxSegments, int32_t maxDegree) {
     if (!c || c->curve.IsNull()) return nullptr;
     try {
-        GeomAbs_Shape cont = GeomAbs_C2;
-        switch (continuity) {
-            case 0: cont = GeomAbs_C0; break;
-            case 1: cont = GeomAbs_C1; break;
-            case 2: cont = GeomAbs_C2; break;
-            case 3: cont = GeomAbs_C3; break;
-            default: cont = GeomAbs_C2; break;
-        }
-        Geom2dConvert_ApproxCurve approx(c->curve, tolerance, cont, maxSegments, maxDegree);
+        Geom2dConvert_ApproxCurve approx(c->curve, tolerance,
+                                         occtGeomAbsFromParametricContinuity(continuity),
+                                         maxSegments, maxDegree);
         if (!approx.HasResult()) return nullptr;
         Handle(Geom2d_BSplineCurve) result = approx.Curve();
         if (result.IsNull()) return nullptr;
@@ -5862,6 +5958,10 @@ OCCTCurve2DRef OCCTCurve2DApproximate(OCCTCurve2DRef c, double tolerance,
     }
 }
 
+// #562: reports the TRUE split count even when `max` truncated the write, so the Swift caller can
+// retry at the size it was just told -- the #481 contract shared by every other member of this
+// family. It used to return the written count, which capped it silently at its caller's 256-entry
+// first pass and was indistinguishable from a curve with exactly 256 splits.
 int32_t OCCTCurve2DSplitAtDiscontinuities(OCCTCurve2DRef c, int32_t continuity,
                                           int32_t* outKnotIndices, int32_t max) {
     if (!c || c->curve.IsNull() || !outKnotIndices || max <= 0) return 0;
@@ -5869,13 +5969,9 @@ int32_t OCCTCurve2DSplitAtDiscontinuities(OCCTCurve2DRef c, int32_t continuity,
         Handle(Geom2d_BSplineCurve) bsp = Handle(Geom2d_BSplineCurve)::DownCast(c->curve);
         if (bsp.IsNull()) return 0;
         Geom2dConvert_BSplineCurveKnotSplitting splitter(bsp, continuity);
-        int32_t n = std::min((int32_t)splitter.NbSplits(), max);
-        TColStd_Array1OfInteger indices(1, splitter.NbSplits());
-        splitter.Splitting(indices);
-        for (int32_t i = 0; i < n; i++) {
-            outKnotIndices[i] = indices(i + 1);
-        }
-        return n;
+        return occtWriteKnotSplits<int32_t>(splitter.NbSplits(),
+            [&](int32_t i) { return (int32_t)splitter.SplitValue(i); },
+            outKnotIndices, max);
     } catch (...) {
         return 0;
     }
@@ -5901,13 +5997,14 @@ int32_t OCCTCurve2DToArcsAndSegments(OCCTCurve2DRef c, double tolerance,
 
 // MARK: - Issue #37: Parameter at Arc Length
 
+// Shared with the 3D spelling so both stay consistent with the length they invert. #603.
 double OCCTCurve2DParameterAtLength(OCCTCurve2DRef c, double arcLength, double fromParam) {
     if (!c || c->curve.IsNull()) return -DBL_MAX;
     try {
         Geom2dAdaptor_Curve adaptor(c->curve);
-        GCPnts_AbscissaPoint solver(adaptor, arcLength, fromParam);
-        if (!solver.IsDone()) return -DBL_MAX;
-        return solver.Parameter();
+        double parameter = 0;
+        if (!occtAdaptorParameterAtLength(adaptor, arcLength, fromParam, parameter)) return -DBL_MAX;
+        return parameter;
     } catch (...) {
         return -DBL_MAX;
     }

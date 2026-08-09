@@ -28,7 +28,7 @@ Iterator over triangulated faces of a meshed `Shape`.
 public final class MeshFaceIterator: @unchecked Sendable
 ```
 
-The shape must already be meshed (e.g. via `Mesh.fromShape(_:deflection:angle:)`) before creating this iterator.
+The shape must already be meshed (e.g. via `Shape.mesh(linearDeflection:angularDeflection:)`) before creating this iterator.
 
 - **OCCT:** `RWMesh_FaceIterator`.
 
@@ -48,7 +48,7 @@ public init?(shape: Shape)
 - **Example:**
   ```swift
   let box = Shape.box(width: 10, height: 10, depth: 10)!
-  _ = Mesh.fromShape(box, deflection: 0.1, angle: 0.5)
+  _ = box.mesh(linearDeflection: 0.1, angularDeflection: 0.5)
   if let iter = MeshFaceIterator(shape: box) {
       while iter.hasMore {
           print("triangles:", iter.triangleCount)
@@ -402,8 +402,10 @@ A curve defined by an edge lying on another edge, from blend operations (`BiTgte
 public final class BiTgteCurveOnEdge: @unchecked Sendable
 ```
 
----
+| Member | Kind | Meaning |
+|---|---|---|
 
+---
 ### `BiTgteCurveOnEdge.init(edgeOnFace:edge:)`
 
 Create a curve-on-edge from two edge shapes.
@@ -775,17 +777,28 @@ Returns: `0` = Line, `1` = Circle, `2` = Ellipse, `3` = Hyperbola, `4` = Parabol
 
 ---
 
-### `Curve3D.parameterAtPoint(_:)`
+### `Curve3D.nearestParameter(to:)`
 
 Find the curve parameter nearest to a 3D point.
 
 ```swift
-public func parameterAtPoint(_ point: SIMD3<Double>) -> Double
+public func nearestParameter(to point: SIMD3<Double>) -> Double?
 ```
 
 - **Parameters:** `point` — the 3D query point.
-- **Returns:** The nearest parameter `u` on the curve.
-- **OCCT:** `GeomAPI_ProjectPointOnCurve` (via `OCCTCurve3DParameterAtPoint`).
+- **Returns:** The nearest parameter `u` on the curve, always inside its own domain, or `nil` if
+  there is no curve to answer about.
+- **OCCT:** `occtNearestPointOnCurveRange` (via `OCCTCurve3DNearestParameter`) — the minimum over
+  `ShapeAnalysis_Curve`, every `GeomAPI_ProjectPointOnCurve` extremum in range, and both ends.
+
+The true nearest point, not the nearest perpendicular foot: a point past the end of a bounded curve
+is nearest to that end, and that is the answer. Agrees exactly with
+[`projectPoint(_:precision:)`](Curve3D-Analysis.md#projectpointprecision), which shares its helper;
+until #615 this one reported an extremum instead, so the two disagreed about which point is nearest
+and about whether there was one.
+
+Replaced `parameterAtPoint(_:)` and `closestParameter(to:)`, both deprecated and removed at v2.0.0
+(#784): they ran the identical projection and disagreed about how to report its absence (#500).
 
 ---
 
@@ -803,15 +816,28 @@ Returns same codes as `Curve3D.curveType` but for `Geom2d_Curve`.
 
 ---
 
-### `Curve2D.parameterAtPoint(_:)`
+### `Curve2D.nearestParameter(to:)`
 
 Find the 2D curve parameter nearest to a 2D point.
 
 ```swift
-public func parameterAtPoint(_ point: SIMD2<Double>) -> Double
+public func nearestParameter(to point: SIMD2<Double>) -> Double?
 ```
 
-- **OCCT:** `Geom2dAPI_ProjectPointOnCurve` (via `OCCTCurve2DParameterAtPoint`).
+- **Returns:** The nearest parameter, always inside the curve's own domain, or `nil` if there is no
+  curve to answer about. Agrees exactly with `Curve2D.project(point:)`, `Curve2D.project(_:)` and
+  `Point2D.distance(to:)`, which share its bridge path (#413, #500, #615).
+- **OCCT:** `occtNearestPointOnCurve2dRange` (via `OCCTCurve2DNearestParameter`) — the minimum over
+  every `Geom2dAPI_ProjectPointOnCurve` extremum in range and both ends. There is no third source:
+  `ShapeAnalysis_Curve` has no 2D projection.
+
+`Curve2D.allProjections(of:)` is **not** in that agreement, by design. It asks for the extrema, so
+it reports none where these four answer with an end — a point past the end of a bounded curve has a
+nearest point but no perpendicular foot. Before #615 all five agreed only because the other four
+were asking the extrema question too, and so were wrong.
+
+Replaced `parameterAtPoint(_:)`, deprecated and removed at v2.0.0 (#784): it reported the
+no-projection case as the curve's own `firstParameter`.
 
 ---
 
@@ -845,8 +871,25 @@ public func locateNearestPoint(
   - `point` — the 3D query point.
   - `initParam` — starting parameter for the local search.
   - `tolerance` — convergence tolerance.
-- **Returns:** `(parameter, distance)` tuple, or `nil` if the search diverges.
-- **OCCT:** `Extrema_ExtPC` local mode (via `OCCTExtremaLocateOnCurve`).
+- **Returns:** `(parameter, distance)` tuple, or `nil` only if there is no curve to answer about.
+- **OCCT:** `GeomAPI_ProjectPointOnCurve` over a ±10% window around `initParam`, falling back to
+  `occtNearestPointOnCurveRange` over the whole curve (via `OCCTExtremaLocateOnCurve`).
+
+Two searches with two different contracts. The **primary** one reports the **lowest-distance extremum
+inside that window** — `initParam` bounds the window, it does not rank what is found in it, so the
+extremum returned is not necessarily the one nearest the guess; where a window holds several, the one
+closest to the *query point* wins. The window is what makes the answer local, and a windowed minimum
+can still be a global *maximum*. On a half circle of radius 5 queried from `(0, -6, 0)` with a guess
+of `.pi / 2` it reports `11`, where the nearest point on the curve is `7.81` away. Use
+[`nearestParameter(to:)`](#curve3dnearestparameterto) or
+[`projectPoint(_:precision:)`](Curve3D-Analysis.md#projectpointprecision) when you want the global
+answer.
+
+The **fallback** fires only when the window holds no extremum, at which point the search has already
+abandoned locality — so since #615 it reports the whole curve's true nearest point, agreeing with
+those two. Before #615 it reported an extremum instead, so a guess sitting *on* the nearest point
+returned the point diametrically opposite it, and a bounded segment queried from past its own end
+returned `nil` for every guess.
 
 ---
 
@@ -863,7 +906,7 @@ public func projectPointAll(
 
 - **Parameters:**
   - `point` — the 3D query point.
-  - `maxResults` — maximum number of results to return (default 10).
+  - `maxResults` — output *capacity* (default 10), clamped into `0...Sampling.maximumSampleCount` (10,000,000); 0 or less returns empty (#622).
 - **Returns:** Array of `(parameter, distance)` pairs for every extremum found.
 - **OCCT:** `GeomAPI_ExtremaCurveCurve` / `Extrema_ExtPC` (via `OCCTExtremaPointCurve`).
 - **Example:**
@@ -909,7 +952,8 @@ public func projectPointAll(
 ) -> [(u: Double, v: Double, distance: Double)]
 ```
 
-- **Parameters:** `point` — 3D query point; `maxResults` — upper bound on results returned.
+- **Parameters:** `point` — 3D query point; `maxResults` — output *capacity* (default 10),
+  clamped into `0...Sampling.maximumSampleCount` (10,000,000); 0 or less returns empty (#622).
 - **Returns:** Array of `(u, v, distance)` tuples for every extremum.
 - **OCCT:** `GeomAPI_ProjectPointOnSurf` (via `OCCTExtremaPointSurface`).
 
@@ -1782,6 +1826,22 @@ public func setMode(_ pass: Pass, _ toggle: Toggle)
   fixer?.perform()
   ```
 
+| `Pass` case | `ShapeFix_Face` setter it toggles |
+|---|---|
+| `.wire` | `FixWireMode` |
+| `.orientation` | `FixOrientationMode` |
+| `.addNaturalBound` | `FixAddNaturalBoundMode` |
+| `.missingSeam` | `FixMissingSeamMode` |
+| `.smallAreaWire` | `FixSmallAreaWireMode` |
+| `.removeSmallAreaFace` | `RemoveSmallAreaFaceMode` |
+| `.intersectingWires` | `FixIntersectingWiresMode` |
+| `.loopWires` | `FixLoopWiresMode` |
+| `.splitFace` | `FixSplitFaceMode` |
+| `.autoCorrectPrecision` | `AutoCorrectPrecisionMode` |
+| `.periodicDegenerated` | `FixPeriodicDegeneratedMode` |
+
+#### `Pass.smallAreaWire`
+
 ---
 
 ### `FaceFixer` — individual fix passes (#266)
@@ -1799,6 +1859,40 @@ Run a single fix pass directly.
 
 ---
 
+#### `FaceFixer.fixPeriodicDegenerated()`
+
+Runs `ShapeFix_Face::FixPeriodicDegenerated` alone: heals a wire that belts the full period of a
+periodic surface as a single closed edge (see the `ShapeFix_Face::FixPeriodicDegenerated`
+null-Context SIGSEGV entry in `CLAUDE.md`'s Known OCCT Bugs, fixed upstream in OCCT 8.0.1).
+
+```swift
+@discardableResult public func fixPeriodicDegenerated() -> Bool
+```
+
+- **OCCT:** `ShapeFix_Face::FixPeriodicDegenerated`.
+
+#### `FaceFixer.fixWiresTwoCoincEdges()`
+
+Runs `ShapeFix_Face::FixWiresTwoCoincEdges` alone: merges a wire's two coincident edges.
+
+```swift
+@discardableResult public func fixWiresTwoCoincEdges() -> Bool
+```
+
+- **OCCT:** `ShapeFix_Face::FixWiresTwoCoincEdges`.
+
+#### `FaceFixer.fixLoopWire()`
+
+Runs `ShapeFix_Face::FixLoopWire` alone: splits a wire that loops back on itself.
+
+```swift
+@discardableResult public func fixLoopWire() -> Bool
+```
+
+- **OCCT:** `ShapeFix_Face::FixLoopWire`.
+
+---
+
 ### `FaceFixer.result` / `FaceFixer.status(_:)` (#266)
 
 `result` returns the true fix output — a **face**, or a **shell** when `fixMissingSeam()` split the
@@ -1810,6 +1904,34 @@ public var result: Shape? { get }
 public enum Status: Int32, Sendable { case ok, done1, /* … */ done8, fail1, /* … */ fail8, done, fail }
 public func status(_ status: Status) -> Bool
 ```
+
+`Status` mirrors OCCT's `ShapeExtend_Status` flag space, one bit per numbered fix. `ShapeFix_Face`
+only assigns meaning to some of the numbers; the rest exist because the same 18-flag enum is shared
+across every `ShapeFix_Root` subclass, each using a different subset.
+
+| Case | Meaning for `ShapeFix_Face` |
+|---|---|
+| `.ok` | The face needed no fix at all. |
+| `.done1` | Some wire was fixed (`ShapeFix_Wire` pass). |
+| `.done2` | Wire orientation was fixed. |
+| `.done3` | A missing seam was added. |
+| `.done4` | A small-area wire was removed. |
+| `.done5` | A natural bound was added. |
+| `.done6` | Not assigned by `ShapeFix_Face`. |
+| `.done7` | Not assigned by `ShapeFix_Face`. |
+| `.done8` | The face may have been split. |
+| `.fail1` | Some failure while fixing a wire. |
+| `.fail2` | Could not fix wire orientation. |
+| `.fail3` | Could not add a missing seam. |
+| `.fail4` | Could not remove a small-area wire. |
+| `.fail5` | Not assigned by `ShapeFix_Face`. |
+| `.fail6` | Not assigned by `ShapeFix_Face`. |
+| `.fail7` | Not assigned by `ShapeFix_Face`. |
+| `.fail8` | Not assigned by `ShapeFix_Face`. |
+| `.done` | Any `.done1`...`.done8` flag is set: something was fixed. |
+| `.fail` | Any `.fail1`...`.fail8` flag is set: some pass failed. |
+
+#### `Status.fail`
 
 - **OCCT:** `ShapeFix_Face::Result` / `ShapeFix_Root::Status`.
 
@@ -1873,6 +1995,17 @@ public var segmentCount: Int { get }
 ### `IntCSResult.IntersectionPoint`
 
 A single curve-surface intersection result.
+
+| Field | Meaning |
+|---|---|
+| `point` | The 3D intersection point in world space. |
+| `curveParam` | The curve's own parameter at the intersection. |
+| `surfaceU` | The surface's U parameter at the intersection. |
+| `surfaceV` | The surface's V parameter at the intersection. |
+
+---
+
+#### `IntersectionPoint.surfaceV`
 
 ```swift
 public struct IntersectionPoint: Sendable {
@@ -2318,6 +2451,50 @@ public struct ShapeContentsExtended: Sendable {
 }
 ```
 
+Every field is a direct 1:1 read of the matching `ShapeAnalysis_ShapeContents` accessor (`NbSolids()`,
+`NbShells()`, ...), taken once by `contentsExtended()` after a single `Perform()` pass. "Shared" below
+means structural reuse in the topology graph: the same sub-shape referenced from more than one
+parent, not the ordinary case of an edge sitting between two faces of a solid, which every valid
+solid has and which `NbSharedEdges()` does not count.
+
+| Field | Meaning |
+|---|---|
+| `nbSolids` | Number of solids. |
+| `nbShells` | Number of shells. |
+| `nbFaces` | Number of faces. |
+| `nbWires` | Number of wires. |
+| `nbEdges` | Number of edges. |
+| `nbVertices` | Number of vertices. |
+| `nbFreeEdges` | Edges used by exactly one face (naked/boundary edges). |
+| `nbFreeWires` | Wires that belong to no face. |
+| `nbFreeFaces` | Faces that belong to no shell. |
+| `nbSolidsWithVoids` | Solids with more than one shell (an outer shell plus one or more internal void shells). |
+| `nbBigSplines` | B-spline curves or surfaces OCCT flags as unusually complex (a high pole/knot count). |
+| `nbC0Surfaces` | Surfaces that are only `C0` continuous (not smooth internally). |
+| `nbC0Curves` | Curves that are only `C0` continuous. |
+| `nbOffsetSurf` | `Geom_OffsetSurface` instances. |
+| `nbIndirectSurf` | Surfaces with an indirect (left-handed) parametrization. |
+| `nbOffsetCurves` | `Geom_OffsetCurve` instances. |
+| `nbTrimmedCurve2d` | Trimmed 2D curves (pcurves). |
+| `nbTrimmedCurve3d` | Trimmed 3D curves. |
+| `nbBSplineSurf` | B-spline surfaces. |
+| `nbBezierSurf` | Bezier surfaces. |
+| `nbTrimSurf` | `Geom_RectangularTrimmedSurface` instances. |
+| `nbWireWithSeam` | Wires containing exactly one seam edge (on a closed/periodic surface). |
+| `nbWireWithSevSeams` | Wires containing more than one seam edge. |
+| `nbFaceWithSevWires` | Faces with more than one wire (i.e. with inner boundaries/holes). |
+| `nbNoPCurve` | Edges on a face with no pcurve representation there. |
+| `nbSharedSolids` | Solids referenced from more than one parent. |
+| `nbSharedShells` | Shells referenced from more than one solid. |
+| `nbSharedFaces` | Faces referenced from more than one shell. |
+| `nbSharedWires` | Wires referenced from more than one face. |
+| `nbSharedEdges` | Edges referenced from more than one wire (structural reuse, not ordinary face adjacency). |
+| `nbSharedVertices` | Vertices referenced from more than one edge (structural reuse). |
+
+*(Per-field anchors below, for cross-reference; the table above has the actual meaning of each.)*
+
+#### `nbSharedVertices`
+
 ---
 
 ### `Shape.contentsExtended()`
@@ -2347,7 +2524,39 @@ Persistent free-bounds analysis wrapping `ShapeAnalysis_FreeBoundsProperties`.
 public final class FreeBoundsProperties: @unchecked Sendable
 ```
 
-Computes area, perimeter, ratio, and width for each free (open and closed) boundary loop in a shape.
+A free bound is a boundary contour of the shape: a chain of edges each used by exactly one face,
+closed into a loop where it can be. The analysis computes area, perimeter, aspect ratio, width and
+notch count for each one.
+
+The analysis runs once and every query is answered from that one result, which is the difference between
+this and `Shape`'s `freeBoundsAnalysis(tolerance:)` family, which analyses the shape again per
+call. Both have run on this one implementation since #504.
+
+The shape needs to be a compound or shell of faces: the search runs over its direct children, so a
+lone face reports no free bounds. In practice the sewing pass closes essentially every contour it
+finds, so `openCount` is usually 0.
+
+- **Note:** Unaffected by OCCT 8.0.1's `ConnectEdgesToWires` INTERNAL/EXTERNAL skip (OCCT#1408), at
+  any tolerance; see [`Shape.freeBounds(sewingTolerance:)`](Shape-Measurement.md#freeboundssewingtolerance)
+  for why, on both branches. This type's own `init?(shape:tolerance:)` is where the `tolerance <= 0`
+  branch (no sewing stage at all) is selected, so its guarantee rests directly on the two-branch
+  measurement that note describes, not only on the sewing-branch reasoning. See
+  [#655](https://github.com/SecondMouseAU/OCCTSwift/issues/655).
+
+```swift
+// A box shell with one face removed: its free boundary is the square hole.
+let faces = Shape.box(width: 10, height: 10, depth: 10)!.subShapes(ofType: .face)
+let opened = Shape.compound(Array(faces.dropLast()))!
+
+let props = FreeBoundsProperties(shape: opened, tolerance: 1e-3)!
+print(props.closedCount, props.openCount, props.totalCount)   // 1 0 1
+
+for i in 0..<props.closedCount {
+    let bound = props.info(.closed, at: i)!
+    print(bound.area, bound.perimeter, bound.notchCount)      // 100.0 40.0 0
+    let wire = props.wire(.closed, at: i)
+}
+```
 
 ---
 
@@ -2359,24 +2568,55 @@ Create a free-bounds properties analyser.
 public init?(shape: Shape, tolerance: Double = 1e-7)
 ```
 
+- **Parameters:** `tolerance`, the sewing tolerance used to chain free edges into contours. 0 or below
+  selects a different OCCT algorithm, taking free edges from the shape's already-shared topology
+  instead of from a sewing pass.
 - **Returns:** The analyser, or `nil` on failure.
+- **Note:** This is the call that selects the branch. Both are unaffected by OCCT 8.0.1's
+  `ConnectEdgesToWires` INTERNAL/EXTERNAL skip (OCCT#1408), but for different reasons and measured
+  separately; see [`freeBounds(sewingTolerance:)`](Shape-Measurement.md#freeboundssewingtolerance).
+  See [#655](https://github.com/SecondMouseAU/OCCTSwift/issues/655).
 - **OCCT:** `ShapeAnalysis_FreeBoundsProperties` (via `OCCTFreeBoundsPropsCreate`).
 
 ---
 
 ### `FreeBoundsProperties.perform()`
 
-Perform the analysis.
+Run the analysis, if it has not already run, and report whether results are available.
 
 ```swift
 @discardableResult
 public func perform() -> Bool
 ```
 
-- **OCCT:** `ShapeAnalysis_FreeBoundsProperties::Perform`.
+Calling this is optional (every query below runs it on demand) and idempotent. Both matter:
+OCCT's own `Perform()` appends to its result sequences without clearing them, so calling it twice
+used to double every count (#504), and the accessors used to report 0 until it had been called.
+
+- **OCCT:** `ShapeAnalysis_FreeBoundsProperties::Perform`. Note that OCCT's return value is not a
+  success signal. It is `true` even for a shape with no free bounds and for one never loaded, so
+  this reports `IsLoaded()` instead.
 
 ---
 
+### `FreeBoundsProperties.BoundKind`
+
+Which of the analysis' two result sequences a query addresses.
+
+```swift
+public enum BoundKind: Sendable { case closed, open }
+```
+
+| Case | Meaning |
+|---|---|
+| `.closed` | Addresses the sequence of contours that close into a loop. |
+| `.open` | Addresses the sequence of contours that do not close. |
+
+#### `FreeBoundsProperties.BoundKind.closed`
+
+```swift
+```
+---
 ### `FreeBoundsProperties.closedCount`
 
 Number of closed free bounds found.
@@ -2397,9 +2637,57 @@ public var openCount: Int { get }
 
 ---
 
+### `FreeBoundsProperties.totalCount`
+
+Total number of free bounds, closed and open.
+
+```swift
+public var totalCount: Int { get }
+```
+
+---
+
+### `FreeBoundsProperties.info(_:at:)`
+
+Every property of one free bound (0-based index), or `nil` if the index is out of range.
+
+```swift
+public func info(_ kind: BoundKind, at index: Int) -> Shape.FreeBoundInfo?
+```
+
+`Shape.FreeBoundInfo` carries `area`, `perimeter`, `ratio`, `width` and `notchCount`. `ratio` is an
+aspect ratio: contour length over contour width, so 2 for a 20×10 bound, **not** `area / perimeter²`.
+OCCT solves it from the area and perimeter and leaves both `ratio` and `width` at 0 when that solve
+has no real root, which an exactly square bound hits by one ulp: 0 there means "not solvable", not
+"degenerate contour".
+
+```swift
+let props = FreeBoundsProperties(shape: twoStackedRects, tolerance: 0.01)!
+let bound = props.info(.closed, at: 0)!      // a 20x10 contour
+print(bound.ratio, bound.width)              // 2.0 10.0
+props.info(.closed, at: props.closedCount)   // nil, out of range
+```
+
+- **OCCT:** `ShapeAnalysis_FreeBoundData::Area`/`Perimeter`/`Ratio`/`Width`/`NbNotches`
+  (via `OCCTFreeBoundsPropsInfo`).
+
+---
+
+### `FreeBoundsProperties.wire(_:at:)`
+
+Contour wire of one free bound (0-based index), or `nil` if the index is out of range.
+
+```swift
+public func wire(_ kind: BoundKind, at index: Int) -> Shape?
+```
+
+- **OCCT:** `ShapeAnalysis_FreeBoundData::FreeBound` (via `OCCTFreeBoundsPropsWire`).
+
+---
+
 ### `FreeBoundsProperties.closedArea(at:)`
 
-Area enclosed by the `i`-th closed free bound (0-based).
+Area enclosed by the `i`-th closed free bound (0-based), or 0 if the index is out of range.
 
 ```swift
 public func closedArea(at index: Int) -> Double
@@ -2409,7 +2697,7 @@ public func closedArea(at index: Int) -> Double
 
 ### `FreeBoundsProperties.closedPerimeter(at:)`
 
-Perimeter of the `i`-th closed free bound (0-based).
+Perimeter of the `i`-th closed free bound (0-based), or 0 if the index is out of range.
 
 ```swift
 public func closedPerimeter(at index: Int) -> Double
@@ -2419,7 +2707,8 @@ public func closedPerimeter(at index: Int) -> Double
 
 ### `FreeBoundsProperties.closedRatio(at:)`
 
-Length-to-width ratio of the `i`-th closed free bound (0-based).
+Length-to-width aspect ratio of the `i`-th closed free bound (0-based), or 0 if the index is out of
+range. See `info(_:at:)`. 0 is also what OCCT reports for a bound whose ratio it cannot solve.
 
 ```swift
 public func closedRatio(at index: Int) -> Double
@@ -2429,7 +2718,8 @@ public func closedRatio(at index: Int) -> Double
 
 ### `FreeBoundsProperties.closedWidth(at:)`
 
-Width of the `i`-th closed free bound (0-based).
+Width of the `i`-th closed free bound (0-based), on the same "0 means unsolved" contract as
+`closedRatio(at:)`.
 
 ```swift
 public func closedWidth(at index: Int) -> Double
@@ -2449,7 +2739,7 @@ public func closedWire(at index: Int) -> Shape?
 
 ### `FreeBoundsProperties.openArea(at:)`
 
-Swept area of the `i`-th open free bound (0-based).
+Swept area of the `i`-th open free bound (0-based), or 0 if the index is out of range.
 
 ```swift
 public func openArea(at index: Int) -> Double
@@ -2459,7 +2749,7 @@ public func openArea(at index: Int) -> Double
 
 ### `FreeBoundsProperties.openPerimeter(at:)`
 
-Length of the `i`-th open free bound (0-based).
+Length of the `i`-th open free bound (0-based), or 0 if the index is out of range.
 
 ```swift
 public func openPerimeter(at index: Int) -> Double
@@ -2479,8 +2769,7 @@ public func openWire(at index: Int) -> Shape?
   ```swift
   let shell = Shape.box(width: 10, height: 10, depth: 10)!  // closed — 0 free bounds
   if let fp = FreeBoundsProperties(shape: shell) {
-      _ = fp.perform()
-      print("closed:", fp.closedCount, "open:", fp.openCount)
+      print("closed:", fp.closedCount, "open:", fp.openCount)   // closed: 0 open: 0
   }
   ```
 
@@ -2570,6 +2859,20 @@ public enum WireError: Int32, Sendable {
 }
 ```
 
+Case meanings, from `BRepBuilderAPI_WireError`:
+
+#### `WireBuilder.WireError.wireDone`
+
+No error occurred; the wire is correctly built.
+
+#### `WireBuilder.WireError.disconnectedWire`
+
+The last edge added was not connected to the wire.
+
+#### `WireBuilder.WireError.nonManifoldWire`
+
+The wire has some singularity.
+
 ---
 
 ### `WireBuilder.error`
@@ -2643,6 +2946,18 @@ public enum GlueMode: Int32, Sendable {
     case off   = 2   // No glue
 }
 ```
+
+Mirrors `BOPAlgo_GlueEnum`. Gluing skips real intersection computation between arguments that the
+caller guarantees are already coincident; setting it on shapes that are not coincident is likely to
+produce an incorrect result, since the algorithm does not check the guarantee itself.
+
+| Case | Meaning |
+|---|---|
+| `.off` | Default; gluing is disabled and full intersection computation runs. |
+| `.shift` | For partially-coincident arguments (overlapping but not fully coincident faces): skips FACE/FACE intersection computation; the overlapping faces are still split. |
+| `.full` | For fully-coincident arguments (no partial overlap): skips VERTEX/FACE, EDGE/FACE, and FACE/FACE intersection computation; faces are not split. |
+
+#### `Shape.GlueMode.full`
 
 ---
 
@@ -2788,15 +3103,41 @@ public func orientClosedSolid() -> Bool
 
 ### `Shape.buildCurves3d(tolerance:)`
 
-Build 3D curves for all edges in the shape that lack them.
+Build 3D curves for all edges in the shape that lack them. Edges from a loft, a sweep, or a
+surface-based face can carry a 2D curve on their support surface and no 3D curve at all; anything
+that walks edge geometry needs the 3D curve. Edges that already have one are left untouched, so a
+second call costs nothing.
 
 ```swift
 @discardableResult
-public func buildCurves3d(tolerance: Double = 1e-7) -> Bool
+public func buildCurves3d(tolerance: Double = 1e-5) -> Bool
 ```
 
-- **Returns:** `true` on success.
+- **Parameters:** `tolerance` — approximation tolerance, and also the rebuilt edge's tolerance
+  floor: OCCT sets the edge tolerance to this value rather than to the deviation it achieved. The
+  default is OCCT's own default for the operation. A tighter value buys a closer curve for a pole
+  or two more (measured on a helix: `1e-5` deviates by 2.6e-6, `1e-7` by 9.0e-8) but claims an
+  accuracy the approximation may not reach on hard geometry. Ignored when the pcurve lies on a
+  plane — that branch is analytic and exact.
+- **Returns:** `false` if any single edge could not be given a 3D curve (a degenerate edge with no
+  planar pcurve, or one stripped of every representation). The edges that did succeed are still
+  modified, so `false` means "partially built", not "nothing happened".
 - **OCCT:** `BRepLib::BuildCurves3d` (via `OCCTBRepLibBuildCurves3dForShape`).
+- **Example:**
+  ```swift
+  // An edge built from a pcurve on a cylinder has no 3D curve until this runs.
+  let cylinder = Surface.cylinder(origin: .zero, axis: SIMD3(0, 0, 1), radius: 10)!
+  let pcurve = Curve2D.line(through: SIMD2(0.2, -3), direction: SIMD2(0.6, 0.8))!
+  let edge = Shape.edgeOnSurface(pcurve: pcurve, surface: cylinder, u1: 0, u2: 2)!
+
+  print(edge.extractEdgeCurve3D() == nil)   // true
+  print(edge.buildCurves3d())               // true
+  print(edge.extractEdgeCurve3D() != nil)   // true — a BSpline approximating the helix
+  print(edge.edgeTolerance)                 // 1e-05 — the tolerance lands on the edge
+  ```
+- **Note:** the default was `1e-7` until #498. It moved to `1e-5` when this method absorbed
+  `buildCurves3dAll`, whose separate C entry point had a byte-identical body and whose default was
+  already OCCT's 1e-5. Pass `tolerance: 1e-7` to keep the old behaviour.
 
 ---
 
@@ -2843,16 +3184,19 @@ public struct LinearProperties: Sendable {
 Get linear properties (total length and center of mass) for an edge or wire shape.
 
 ```swift
-public func linearProperties() -> LinearProperties
+public func linearProperties() -> LinearProperties?
 ```
 
-- **OCCT:** `GProp_GProps` linear analysis (via `OCCTShapeLinearProperties`).
+- **Returns:** Length and length-centroid, or `nil` for a shape with no edges, such as a lone vertex.
+  The centre of mass reported there was the shape's location origin, not a recognisable zero (#609).
+- **OCCT:** `GProp_GProps` linear analysis plus a `Mass()` test (via `OCCTShapeLinearProperties`).
 - **Example:**
   ```swift
-  let wire = Wire.rectangle(width: 10, height: 5)!.asShape()
-  let lp = wire.linearProperties()
-  print("length:", lp.length)              // 30.0
-  print("centroid:", lp.centerOfMass)
+  let wire = Shape.fromWire(Wire.rectangle(width: 10, height: 5)!)!
+  if let lp = wire.linearProperties() {
+      print("length:", lp.length)              // 30.0
+      print("centroid:", lp.centerOfMass)
+  }
   ```
 
 ---
@@ -2868,17 +3212,26 @@ public struct InertiaTensor: Sendable {
 }
 ```
 
+The three diagonal terms (`ixx`, `iyy`, `izz`) and the three off-diagonal cross terms (`ixy`, `ixz`,
+`iyz`) of the symmetric 3x3 inertia matrix, referenced to the shape's own centre of mass.
+
+#### `InertiaTensor.ixy`
+
 ---
 
 ### `Shape.momentOfInertia()`
 
-Get the inertia tensor for a volumetric shape about the world origin.
+Get the inertia tensor for a volumetric shape. It is referenced to the shape's centre of mass, not
+to the world origin (#605).
 
 ```swift
-public func momentOfInertia() -> InertiaTensor
+public func momentOfInertia() -> InertiaTensor?
 ```
 
-- **OCCT:** `GProp_GProps` volumetric analysis, `BRepGProp_MatrixOfInertia` (via `OCCTShapeMomentOfInertia`).
+- **Returns:** The tensor, or `nil` for a shape with no closed volume, where it is identically zero
+  and indistinguishable from a real answer for a shape with no moments (#609).
+- **OCCT:** `GProp_GProps` volumetric analysis with `OnlyClosed = true` plus a `Mass()` test (via
+  `OCCTShapeMomentOfInertia`).
 
 ---
 
@@ -2894,6 +3247,14 @@ public struct PrincipalAxes: Sendable {
 }
 ```
 
+| Field | Meaning |
+|---|---|
+| `axis1` | Direction of the first principal axis of inertia. |
+| `axis2` | Direction of the second principal axis of inertia. |
+| `axis3` | Direction of the third principal axis of inertia. |
+
+#### `Shape.PrincipalAxes.axis3`
+
 ---
 
 ### `Shape.principalAxes()`
@@ -2901,10 +3262,13 @@ public struct PrincipalAxes: Sendable {
 Get the three principal axes of inertia.
 
 ```swift
-public func principalAxes() -> PrincipalAxes
+public func principalAxes() -> PrincipalAxes?
 ```
 
-- **OCCT:** `GProp_GProps::PrincipalProperties` (via `OCCTShapePrincipalAxes`).
+- **Returns:** The three axes, or `nil` for a shape with no closed volume. It used to return three
+  orthonormal unit vectors there, which look like a real answer but are just the identity basis that
+  `math_Jacobi` returns for the zero inertia matrix (#609).
+- **OCCT:** `GProp_GProps::PrincipalProperties` plus a `Mass()` test (via `OCCTShapePrincipalAxes`).
 
 ---
 
@@ -2916,11 +3280,15 @@ Get the radius of gyration about an arbitrary axis.
 public func radiusOfGyration(
     axisOrigin: SIMD3<Double>,
     direction: SIMD3<Double>
-) -> Double
+) -> Double?
 ```
 
 - **Parameters:** `axisOrigin` — a point on the axis; `direction` — axis direction vector.
-- **OCCT:** `GProp_GProps::RadiusOfGyration` (via `OCCTShapeRadiusOfGyration`).
+- **Returns:** The radius, or `nil` for a shape with no closed volume. OCCT computes this as
+  `sqrt(momentOfInertia / mass)` with no guard, so it used to return **NaN** there, which propagates
+  silently through any arithmetic that consumes it. Its `GProp_PrincipalProps` sibling *is* guarded,
+  which is why the radii-triple read 0 from the same framework that made this NaN (#609).
+- **OCCT:** `GProp_GProps::RadiusOfGyration` plus a `Mass()` test (via `OCCTShapeRadiusOfGyration`).
 
 ---
 
@@ -3164,6 +3532,10 @@ public struct BuildResult: Sendable {
 
 - `curve` — the resulting BSpline approximation of the helix.
 - `toleranceReached` — the actual approximation error achieved.
+
+---
+
+#### `BuildResult.toleranceReached`
 
 ---
 

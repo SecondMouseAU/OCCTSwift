@@ -156,6 +156,7 @@ Pure-Swift: returns `SIMD2(x, y)`. Identical to `coords`.
 
 ---
 
+---
 ### Mutation
 
 ---
@@ -233,18 +234,18 @@ Minimum distance from this point to a 2D curve.
 public func distance(to curve: Curve2D) -> Double
 ```
 
-Returns `.infinity` when the point has no projection onto the curve at all — one beyond the ends of a bounded curve, or the centre of a circle (equidistant from every point, so there is no local minimum). This is an ordinary outcome, not an error.
+Measured over the curve's own domain, ends included, so it is the true minimum rather than the distance to the nearest *perpendicular foot*. A point beyond the end of a bounded curve is measured to that end, and a circle's centre to the radius.
 
-Before #413 this returned the bridge's raw `-1.0` sentinel for that case, which any threshold test (`distance < tolerance`) would read as "touching" — the opposite of the truth.
+Two sentinels have been retired from this one method. It first returned the bridge's raw `-1.0` for a point with no perpendicular foot, which any threshold test (`distance < tolerance`) read as "touching" — the opposite of the truth (#413). `.infinity` replaced it, which was safe but still discarded a real, finite distance: a point 92 units from a segment measured as infinitely far from it. #615 measures it instead.
 
 - **Parameters:** `curve` — the 2D curve to measure against.
-- **Returns:** Minimum distance, or `.infinity` if there is no projection.
-- **OCCT:** `Geom2dAPI_ProjectPointOnCurve::LowerDistance()`.
-- **Note:** Shares one bridge path with [`Curve2D.project(point:)`](Curve2D-Analysis.md) and `Curve2D.project(_:)`, so all three agree on the value and on when there is no projection (#413).
+- **Returns:** Minimum distance, or `.infinity` only if there is no curve to measure to.
+- **OCCT:** `occtNearestPointOnCurve2dRange` — the minimum over every `Geom2dAPI_ProjectPointOnCurve` extremum in range and both curve ends.
+- **Note:** Shares one bridge path with [`Curve2D.project(point:)`](Curve2D-Analysis.md), `Curve2D.project(_:)` and `Curve2D.nearestParameter(to:)`, so all four agree exactly (#413, #615).
 - **Example:**
   ```swift
   if let p = Point2D(x: 5.0, y: 5.0),
-     let arc = Curve2D.arc(center: SIMD2(0, 0), radius: 3, startAngle: 0, endAngle: .pi) {
+     let arc = Curve2D.arcOfCircle(center: SIMD2(0, 0), radius: 3, startAngle: 0, endAngle: .pi) {
       let d = p.distance(to: arc)  // distance to nearest point on arc
   }
   ```
@@ -411,8 +412,11 @@ public func transformed(by transform: Transform2D) -> Point2D?
 
 A 2D geometric transformation backed by `Geom2d_Transformation`. Supports translation, rotation, uniform scaling, point/axis mirroring, composition, inversion, and power operations.
 
----
+| Member | Kind | Meaning |
+|---|---|---|
+| `handle` | internal stored property | The opaque `OCCTTransform2DRef` this wrapper owns. |
 
+---
 ### Factory Methods
 
 ---
@@ -768,18 +772,25 @@ public let direction: SIMD3<Double>
 
 #### `extent`
 
-The optional parametric extent along the axis.
+The optional extent along the axis, measured in real 3D units (not the surface's parametric U/V), as a signed offset from `origin` along `direction`.
 
 ```swift
 public let extent: ClosedRange<Double>?
 ```
 
-`nil` for axes where no extent is computed (most face types). When present, the range describes the axis length limits in the surface's own parameterisation.
+`nil` for `Face.primaryAxis` (never computed there) and for a shape with no boundable geometry at all. For `Shape.revolutionAxes(tolerance:)` and `Shape.symmetryAxes(fractionalTolerance:)`, `extent` is the geometric bounding box of the axis's own shape (the face, for a revolution axis; the whole shape, for a symmetry axis) projected onto the axis direction from `origin` — exact when the box is tight along that direction (a bounded cylindrical/conical face along its own axis, a box along a principal axis), a safe enclosing interval otherwise. An untrimmed/unbounded shape reports `-Double.greatestFiniteMagnitude...Double.greatestFiniteMagnitude` rather than `nil` — `hasExtent` (bridge-side) distinguishes "unbounded but known" from "couldn't measure at all". Before #763 this field was `nil` unconditionally: `hasExtent` was hardcoded `false` on every call.
 
 - **Example:**
   ```swift
+  // Shape.cylinder(radius:height:) bases the cylinder at the origin, so the lateral face's
+  // own axial span is exactly 0...height.
   let ax = Shape.cylinder(radius: 5, height: 20)!.revolutionAxes().first
-  print(ax?.extent as Any)  // nil for revolution axes
+  print(ax?.extent as Any)          // Optional(0.0...20.0) (or -20.0...0.0, axis direction sign varies)
+
+  // symmetryAxes()'s origin is the shape's centre of mass, so a cylinder's axial span is
+  // centred on zero.
+  let sym = Shape.cylinder(radius: 5, height: 20)!.symmetryAxes().first
+  print(sym?.extent as Any)         // Optional(-10.0...10.0)
   ```
 
 ---
@@ -819,6 +830,10 @@ public enum Kind: Int32, Sendable, Hashable {
 - `.revolution` — extracted from `Geom_SurfaceOfRevolution::Axis()`.
 - `.extrusion` — extracted from `Geom_SurfaceOfLinearExtrusion::Direction()`.
 - `.symmetry` — derived from principal moments of inertia via `GProp_PrincipalProps`.
+
+---
+
+#### `ShapeAxis.Kind.symmetry`
 
 ---
 
@@ -912,12 +927,21 @@ Returns one axis for a body with rotational symmetry (two equal principal moment
 
 - **Parameters:** `fractionalTolerance` — two moments are considered equal when their absolute difference is below this fraction of the largest moment.
 - **Returns:** Array of `ShapeAxis` values with `.kind == .symmetry`, or empty if no symmetry is detected.
-- **OCCT:** `BRepGProp::VolumeProperties` + `GProp_GProps::PrincipalProperties()` → `GProp_PrincipalProps::HasSymmetryAxis()` / `HasSymmetryPoint()`.
+- **Empty for any shape with no closed volume** (a face, wire, edge, vertex or open shell), since
+  these are the volume-based moments. Those used to report **spherical** symmetry: a zero-mass
+  framework has three equal (zero) moments, `HasSymmetryPoint()` says yes to that, and the result
+  was three orthonormal axes through the shape's location origin describing nothing (#609).
+- **OCCT:** `BRepGProp::VolumeProperties` with `OnlyClosed = true` and a `Mass()` test, then
+  `GProp_GProps::PrincipalProperties()` → `GProp_PrincipalProps::HasSymmetryAxis()` /
+  `HasSymmetryPoint()`.
 - **Example:**
   ```swift
   let sphere = Shape.sphere(radius: 5)!
-  let axes = sphere.symmetryAxes()
-  print(axes.count)  // 3 (spherical symmetry)
+  sphere.symmetryAxes().count                                  // 3 (spherical symmetry)
+  Shape.cylinder(radius: 2, height: 9)!.symmetryAxes().count   // 1
+
+  let box = Shape.box(width: 10, height: 20, depth: 30)!
+  Shape.fromFace(box.faces()[0])!.symmetryAxes()               // [], was 3
   ```
 
 ---
@@ -1041,6 +1065,7 @@ The returned vector is always of unit length (normalised by `gp_Dir2d`).
 
 ---
 
+---
 ### Operations
 
 ---

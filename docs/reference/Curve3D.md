@@ -17,6 +17,18 @@ A `Curve3D` is a parametric 3D curve — the Swift analog of OCCT's `Geom_Curve`
 
 ## Properties
 
+### `handle`
+
+*(internal, not part of the public API)*: the opaque `OCCTCurve3DRef` this `Curve3D` wraps.
+
+```swift
+internal let handle: OCCTCurve3DRef
+```
+
+Every static factory and instance method on `Curve3D` ultimately passes this handle to the matching `OCCTCurve3D...` bridge function; `deinit` releases it. Not accessible outside the module.
+
+---
+
 ### `domain`
 
 The parametric domain `[first, last]` of the curve.
@@ -128,6 +140,11 @@ Convenience for `point(at: domain.upperBound)`.
 
 ---
 
+## Continuity Analysis (internal helper)
+
+```swift
+```
+---
 ## Evaluation
 
 ### `point(at:)`
@@ -420,7 +437,7 @@ public static func interpolate(points: [SIMD3<Double>], closed: Bool = false,
                                tolerance: Double = 1e-6) -> Curve3D?
 ```
 
-Unlike `bspline(poles:…)`, the curve passes exactly through every point. Use `closed: true` for a periodic loop.
+Unlike `bspline(poles:…)`, the curve passes exactly through every point. Use `closed: true` for a periodic loop: [`interpolatePeriodic(points:tolerance:)`](Curve3D-Construction.md) is a spelling of exactly that case and delegates here (#493).
 
 - **Parameters:** `points` — points the curve must pass through (minimum 2); `closed` — closed/periodic curve; `tolerance` — interpolation precision.
 - **Returns:** Interpolated BSpline curve, or `nil` on failure.
@@ -716,10 +733,16 @@ This is the canonical, failure-distinguishing entry point for the whole-domain a
 collapses `nil` to a `-1.0` sentinel for source compatibility.
 
 - **Returns:** Arc length in model units, or `nil` if the OCCT computation fails.
-- **OCCT:** `GCPnts_AbscissaPoint::Length(adaptor)`. The curve is split at its `GeomAbs_CN`
-  interval boundaries and each span integrated separately, so a multi-span BSpline measures
-  correctly. (Through v1.16.1 this call used `CPnts_AbscissaPoint::Length`, one quadrature across
-  the whole domain, which read up to several percent low on an interpolated curve. See #477.)
+- **OCCT:** `GCPnts_AbscissaPoint::Length`, applied to each of the curve's `GeomAbs_CN` intervals
+  and then to that interval halved, quartered, ... until two successive levels agree to 1e-9
+  relative. A line, a circle and a 2-pole Bezier/BSpline keep their closed form, which is exact and
+  has nothing to converge. (Through v1.16.1 this was `CPnts_AbscissaPoint::Length`, one quadrature
+  across the whole domain, which read up to several percent low on an interpolated curve — #477.
+  Through v1.17.0 it was one quadrature *per span*, which is the same defect wherever a span is
+  wide: a full ellipse measured up to 1.7% long, a parabola over `[-100, 100]` 3.1% short, and a
+  5-point interpolation 6.0e-5 out — #603.)
+- **Note:** The measurement costs roughly 5× what a single quadrature did (an 8 × 3 ellipse 0.11 µs
+  → 3.5 µs, a 200-span BSpline 89 µs → 452 µs); a line or circle is unchanged at 0.02 µs.
 - **Note:** An unbounded curve reports its parametric extent rather than failing: an untrimmed
   `Curve3D.line(through:direction:)` spans ±2e100 and measures ~4e100. Trim before measuring.
 - **Example:**
@@ -743,19 +766,38 @@ This is the canonical, failure-distinguishing entry point for a bounded-interval
 [Curve3D-Construction](Curve3D-Construction.md)) both delegate to this and collapse `nil` to a
 `-1.0` sentinel for source compatibility.
 
-- **Parameters:** `u1` — start parameter; `u2` — end parameter.
-- **Returns:** Arc length, or `nil` on failure.
-- **OCCT:** `GCPnts_AbscissaPoint::Length(adaptor, u1, u2)`, the same composite integrator as
-  `length`.
-- **Note:** The range may be given in either order, and equal parameters measure `0`. Parameters
-  outside the curve's domain are clamped to it, so a range wholly outside measures `0` rather
-  than extrapolating the curve's polynomial past its knots.
+- **Parameters:** `u1` — start parameter, must be finite; `u2` — end parameter, must be finite.
+- **Returns:** Arc length, or `nil` if a bound is not finite or the computation fails.
+- **OCCT:** `GCPnts_AbscissaPoint::Length(adaptor, u1, u2)`, subdivided per `GeomAbs_CN` interval,
+  the same measurement as `length` (#603).
+- **Note:** The range may be given in either order, and equal parameters measure `0`.
+- **Note:** `.nan` and `±.infinity` are rejected before the integrator sees them, so they report
+  `nil` on every curve type. OCCT does not check them and answered them per type: on an
+  interpolated BSpline a NaN upper bound measured `0` and a NaN lower bound the curve's whole
+  length, neither distinguishable from a real result, while a line, segment or circle returned
+  `+infinity` for an infinite bound (#548).
+- **Note:** A *finite* range reaching outside the curve's domain is not rejected. It measures the
+  part of the range that lies on the curve, so a range wholly outside measures `0` and one
+  overhanging an end measures up to that end. A curve whose parameter domain covers a whole period
+  exists at every parameter, so a periodic curve measures the whole range and winds — a circle over
+  `[0, 4π]` travels two circumferences. An arc trimmed from a circle covers half a period, so it
+  stops at its own trim. Before #600 this held only for multi-span BSplines: a 10-long segment
+  measured 20 over `[0, 20]`, a Bezier 122.14 long measured 1002.29 one domain width past its end,
+  and a *periodic* BSpline silently measured one period for a request of two.
 - **Example:**
   ```swift
   let circle = Curve3D.circle(center: .zero, normal: SIMD3(0,0,1), radius: 1)!
   let d = circle.domain
   let halfLen = circle.length(from: d.lowerBound, to: d.lowerBound + .pi)
   // halfLen ≈ π
+  let two = circle.length(from: 0, to: 4 * .pi)
+  // two ≈ 4π — two turns, because a circle is periodic
+  let bad = circle.length(from: d.lowerBound, to: .nan)
+  // bad == nil
+
+  let seg = Curve3D.segment(from: .zero, to: SIMD3(10, 0, 0))!
+  let clipped = seg.length(from: 0, to: 20)   // 10 — the segment, not the line it lies on
+  let outside = seg.length(from: 20, to: 30)  // 0
   ```
 
 ---
@@ -841,19 +883,63 @@ public func approximated(tolerance: Double = 1e-3, continuity: Int = 2,
                          maxSegments: Int = 100, maxDegree: Int = 8) -> Curve3D?
 ```
 
-Useful for converting an analytical curve to a polynomial BSpline with controlled accuracy. `continuity` maps to `GeomAbs_Shape`: 0=C0, 1=G1, 2=C1, 3=G2, 4=C2.
+Useful for converting an analytical curve to a polynomial BSpline with controlled accuracy.
+`continuity` is a **request order** counting `0=C0, 1=C1, 2=C2, 3=C3` — not a raw `GeomAbs_Shape`
+ordinal (that enum interleaves the geometric classes: `C0=0, G1=1, C1=2, G2=3, C2=4`). Values
+outside `0...3` fall back to C2.
 
 - **Parameters:** `tolerance` — approximation error; `continuity` — minimum continuity order; `maxSegments` — maximum number of BSpline spans; `maxDegree` — maximum polynomial degree.
-- **Returns:** Approximating BSpline, or `nil` on failure.
-- **OCCT:** `GeomConvert_ApproxCurve(curve, tolerance, continuity, maxSegments, maxDegree)`.
+- **Returns:** Approximating BSpline, or `nil` when OCCT produced no fit at all.
+- **OCCT:** `GeomConvert_ApproxCurve(curve, tolerance, continuity, maxSegments, maxDegree)`, gated on `HasResult()`.
 - **Note:** Defaults are shared with `Curve2D.approximated` and `Surface.approximated` (#406) —
   all three wrap the same `GeomConvert_Approx*`/`Geom2dConvert_ApproxCurve` family applied to a
   different OCCT geometry hierarchy, not independent algorithms that would justify
   independently-tuned numeric defaults.
+- **Note:** A non-`nil` result is **not** a promise that `tolerance` was met. This gates on OCCT's
+  `HasResult()`, which is documented as true for a fit that is "not NECESSARILY within the required
+  tolerance" — the same accessor
+  [`approxWithDetails`](#approxwithdetailstolerancecontinuitymaxsegmentsmaxdegree) uses, since #491
+  put one shared implementation behind both. Use `approxWithDetails` when you need the actual
+  `maxError`. (Gating on `IsDone()` instead, as this used to, would not have helped: measured
+  against this kernel it never rejects an over-tolerance fit — a circle fitted with one segment at
+  degree 3 against a `1e-9` tolerance reports `maxError` 5.1 and `isDone` true.)
 - **Example:**
   ```swift
   let circle = Curve3D.circle(center: .zero, normal: SIMD3(0,0,1), radius: 5)!
   let approx = circle.approximated(tolerance: 0.01, continuity: 2)
+  ```
+
+---
+
+### `approxWithDetails(tolerance:continuity:maxSegments:maxDegree:)`
+
+The same approximation as [`approximated`](#approximatedtolerancecontinuitymaxsegmentsmaxdegree),
+reporting the fit's error and completion status.
+
+```swift
+public func approxWithDetails(tolerance: Double, continuity: ParametricContinuity = .c2,
+                              maxSegments: Int = 100, maxDegree: Int = 8) -> ApproxCurveResult
+```
+
+One shared `GeomConvert_ApproxCurve` run backs both entry points (#491), so for identical arguments
+they return the same curve — this one just also carries the diagnostics OCCT already computed.
+
+- **Returns:** `ApproxCurveResult(curve:maxError:isDone:hasResult:)`. `curve` is populated exactly
+  when `hasResult`; `isDone` is whether the fit reached `tolerance`; `maxError` is the greatest
+  distance between the source curve and the fit.
+- **OCCT:** `GeomConvert_ApproxCurve` — `Curve()`, `MaxError()`, `IsDone()`, `HasResult()`.
+- **Note:** `isDone` and `hasResult` are always equal in the pinned kernel. `GeomConvert_ApproxCurve`
+  copies both off `AdvApprox_ApproxAFunction`, whose only `HasResult`-without-`IsDone` path is an
+  `ErrorCode = -1` assignment that upstream has commented out
+  (`AdvApprox_ApproxAFunction.cxx:550`). Read `maxError` against your own tolerance rather than
+  trusting `isDone` to mean "within tolerance".
+- **Example:**
+  ```swift
+  let circle = Curve3D.circle(center: .zero, normal: SIMD3(0, 0, 1), radius: 10)!
+  let fit = circle.approxWithDetails(tolerance: 1e-6)
+  if let bspline = fit.curve, fit.maxError <= 1e-6 {
+      print("fitted with \(bspline.poleCount ?? 0) poles")
+  }
   ```
 
 ---
@@ -872,7 +958,7 @@ public func drawAdaptive(angularDeflection: Double = 0.1,
 
 Concentrates sample points where the curve bends sharply, producing an efficient polyline for Metal rendering. Returns an empty array if the curve cannot be discretized.
 
-- **Parameters:** `angularDeflection` — maximum angle between consecutive tangents (radians); `chordalDeflection` — maximum chord-to-curve deviation; `maxPoints` — buffer size limit.
+- **Parameters:** `angularDeflection` — maximum angle between consecutive tangents (radians); `chordalDeflection` — maximum chord-to-curve deviation; `maxPoints` — output *capacity*, clamped into `0...Sampling.maximumSampleCount` (10,000,000), so an unservable capacity returns the same points rather than a coarser sampling; 0 or less returns empty (#558). The deflection criteria decide the actual point count.
 - **Returns:** Array of 3D points along the curve; never force-unwrap.
 - **OCCT:** `GCPnts_TangentialDeflection(adaptor, angularDefl, chordalDefl)`.
 - **Example:**
@@ -892,11 +978,11 @@ Discretizes the curve at uniform arc-length intervals.
 public func drawUniform(pointCount: Int) -> [SIMD3<Double>]
 ```
 
-All consecutive point pairs are separated by the same arc-length. Good for even distribution of sample points regardless of curvature.
+All consecutive point pairs are separated by the same arc-length. Good for even distribution of sample points regardless of curvature. The first point is always the start of the curve and the last is always its end.
 
-- **Parameters:** `pointCount` — desired number of output points.
-- **Returns:** Array of 3D points, or empty array on failure.
-- **OCCT:** `GCPnts_UniformAbscissa(adaptor, pointCount)`.
+- **Parameters:** `pointCount`, the desired number of output points — a *request*, honoured within `2...Sampling.maximumSampleCount` (10,000,000); outside that range the result is empty (#501, #558). Not clamped: a count past the ceiling fails visibly rather than coming back coarser than what was asked for. Before #558 a negative aborted the process rather than returning empty.
+- **Returns:** Array of 3D points, never more than `pointCount`, or empty array on failure.
+- **OCCT:** `GCPnts_UniformAbscissa(adaptor, pointCount)`. It sizes its own array at `pointCount + 5` and can report more points than requested on a poorly-conditioned curve; the surplus is dropped and the curve's end point kept (#501).
 - **Example:**
   ```swift
   let seg = Curve3D.segment(from: .zero, to: SIMD3(10, 0, 0))!
@@ -915,7 +1001,7 @@ public func drawDeflection(deflection: Double = 0.01,
                            maxPoints: Int = 4096) -> [SIMD3<Double>]
 ```
 
-- **Parameters:** `deflection` — maximum chord-to-curve deviation; `maxPoints` — buffer size limit.
+- **Parameters:** `deflection` — maximum chord-to-curve deviation; `maxPoints` — output *capacity*, clamped into `0...Sampling.maximumSampleCount` (10,000,000), so an unservable capacity returns the same points rather than a coarser sampling; 0 or less returns empty (#558).
 - **Returns:** Array of 3D points; empty on failure.
 - **OCCT:** `GCPnts_UniformDeflection(adaptor, deflection)`.
 - **Example:**
@@ -963,8 +1049,8 @@ public static func arcOfEllipse(center: SIMD3<Double>, normal: SIMD3<Double>,
 
 The major axis direction is determined by OCCT's `gp_Ax2` construction from `normal`. Angles are measured from the major axis in the ellipse plane.
 
-- **Parameters:** `center` — ellipse centre; `normal` — plane normal; `majorRadius` — semi-major axis; `minorRadius` — semi-minor axis; `startAngle`/`endAngle` — arc bounds in radians; `counterclockwise` — winding direction.
-- **Returns:** Elliptical arc curve, or `nil` on failure.
+- **Parameters:** `center`: ellipse centre; `normal`: plane normal; `majorRadius`: semi-major axis, must be `> 0`; `minorRadius`: semi-minor axis, must be `> 0` and no larger than `majorRadius`; `startAngle`/`endAngle`: arc bounds in radians; `counterclockwise`: winding direction.
+- **Returns:** Elliptical arc curve, or `nil` on failure, including when the radii do not describe an ellipse.
 - **OCCT:** `GC_MakeArcOfEllipse(elips, angle1, angle2, sense)` → `Geom_TrimmedCurve`.
 - **Example:**
   ```swift
@@ -972,6 +1058,12 @@ The major axis direction is determined by OCCT's `gp_Ax2` construction from `nor
       center: .zero, normal: SIMD3(0, 0, 1),
       majorRadius: 10, minorRadius: 5,
       startAngle: 0, endAngle: .pi)
+
+  // A zero minor radius would otherwise build an arc that evaluates onto the major axis.
+  #expect(Curve3D.arcOfEllipse(
+      center: .zero, normal: SIMD3(0, 0, 1),
+      majorRadius: 10, minorRadius: 0,
+      startAngle: 0, endAngle: .pi) == nil)
   ```
 
 ---
@@ -989,8 +1081,8 @@ public static func arcOfEllipse(center: SIMD3<Double>, normal: SIMD3<Double>,
 
 Both `from` and `to` must lie on the ellipse (within tolerance). Use this form when angles are not known but the endpoint coordinates are.
 
-- **Parameters:** `center` — ellipse centre; `normal` — plane normal; `majorRadius`/`minorRadius` — ellipse radii; `from` — start point on the ellipse; `to` — end point on the ellipse; `counterclockwise` — winding direction.
-- **Returns:** Elliptical arc curve, or `nil` if points do not lie on the ellipse or construction fails.
+- **Parameters:** `center`: ellipse centre; `normal`: plane normal; `majorRadius`/`minorRadius`: ellipse radii, both `> 0` with minor no larger than major; `from`: start point on the ellipse; `to`: end point on the ellipse; `counterclockwise`: winding direction.
+- **Returns:** Elliptical arc curve, or `nil` if the radii do not describe an ellipse, the points do not lie on it, or construction fails.
 - **OCCT:** `GC_MakeArcOfEllipse(elips, from, to, sense)` → `Geom_TrimmedCurve`.
 - **Example:**
   ```swift
@@ -999,6 +1091,18 @@ Both `from` and `to` must lie on the ellipse (within tolerance). Use this form w
       majorRadius: 10, minorRadius: 5,
       from: SIMD3(10, 0, 0), to: SIMD3(-10, 0, 0))
   ```
+
+The radius check matters more in this form than in the angular one. Converting each endpoint back to
+a parameter divides by the minor radius, so at zero both bounds come back `NaN` — and OCCT reports
+that construction as *done*. Before #554 this returned a live curve whose parameter range and every
+evaluation were `NaN`:
+
+```swift
+#expect(Curve3D.arcOfEllipse(
+    center: .zero, normal: SIMD3(0, 0, 1),
+    majorRadius: 10, minorRadius: 0,
+    from: SIMD3(10, 0, 0), to: SIMD3(-10, 0, 0)) == nil)
+```
 
 ---
 

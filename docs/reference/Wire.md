@@ -35,8 +35,9 @@ Inverse of `Shape.fromWire(_:)`. Use when you have a wire-typed `Shape` (e.g. fr
   }
   ```
 
----
+*(Internal, not public API: `Wire.handle` is an `internal let handle: OCCTWireRef` wrapping the underlying bridge object, released in `deinit`. See [Memory Management](../architecture/overview.md#occt-handles).)*
 
+---
 ## 2D Profiles (for Extrusion/Sweep)
 
 ### `Wire.rectangle(width:height:)`
@@ -158,7 +159,7 @@ Returns `nil` if `start` and `end` are within 1e-10 of each other (degenerate ed
 - **Example:**
   ```swift
   if let spine = Wire.line(from: .zero, to: SIMD3(100, 0, 0)) {
-      let pipe = Shape.pipe(profile: Wire.circle(radius: 5)!, path: spine)
+      let pipe = Shape.pipeShell(spine: spine, profile: Wire.circle(radius: 5)!)
   }
   ```
 
@@ -458,7 +459,7 @@ Wires should be geometrically connected (end of one near the start of the next).
                      startAngle: -.pi/2, endAngle: 0)!
   let s2 = Wire.line(from: SIMD3(150, 50, 0), to: SIMD3(150, 200, 0))!
   if let path = Wire.join([s1, arc, s2]) {
-      let swept = Shape.pipe(profile: Wire.circle(radius: 5)!, path: path)
+      let swept = Shape.pipeShell(spine: path, profile: Wire.circle(radius: 5)!)
   }
   ```
 
@@ -481,7 +482,9 @@ public var curveInfo: CurveInfo? { get }
 Encapsulates length, closure/periodicity status, and the start/end 3D points. More efficient than calling `length`, `point(at:0)`, and `point(at:1)` separately.
 
 - **Returns:** `CurveInfo` struct, or `nil` if the wire is degenerate or OCCT fails.
-- **OCCT:** `BRepAdaptor_CompCurve` + `GCPnts_AbscissaPoint::Length`.
+- **OCCT:** `BRepAdaptor_CompCurve` + `GCPnts_AbscissaPoint::Length` per `GeomAbs_CN` interval,
+  subdivided to convergence — the same measurement `length` makes, so the two cannot disagree
+  (#603).
 - **Example:**
   ```swift
   if let info = Wire.circle(radius: 5)?.curveInfo {
@@ -500,7 +503,10 @@ public var length: Double? { get }
 ```
 
 - **Returns:** Length in model units, or `nil` if measurement fails. Returns `nil` (not 0) for degenerate wires.
-- **OCCT:** `BRepAdaptor_CompCurve` + `GCPnts_AbscissaPoint::Length`.
+- **OCCT:** `BRepAdaptor_CompCurve` + `GCPnts_AbscissaPoint::Length` per `GeomAbs_CN` interval,
+  subdivided until two successive levels agree to 1e-9 relative (#603).
+- **Note:** A `BRepAdaptor_CompCurve` reports one interval per edge span, so a wire of lines and
+  circles was always exact — but one elliptical edge in it measured 1.485% long before #603.
 - **Example:**
   ```swift
   let len = Wire.line(from: .zero, to: SIMD3(10, 0, 0))?.length  // 10.0
@@ -558,7 +564,12 @@ public func curvature(at parameter: Double) -> Double?
 A straight line has curvature 0; a circle of radius R has curvature 1/R.
 
 - **Parameters:** `parameter` — value in `[0, 1]`.
-- **Returns:** Curvature value ≥ 0, or `nil` on failure.
+- **Returns:** Curvature value ≥ 0, or `nil` where the wire has none there: a parameter it cannot be
+  evaluated at, or a point whose first derivative is null (a cusp), where the formula divides by
+  zero. That second case returned `0` until #595 — a straight wire's real answer — because only the
+  error path reached this optional. Unlike `Curve3D.curvature(at:)` there is no infinity sentinel to
+  report at a cusp: `BRepAdaptor_CompCurve` computes the formula directly rather than through
+  `GeomLProp_CLProps`.
 - **OCCT:** `BRepAdaptor_CompCurve::D2` — uses the formula κ = |d1 × d2| / |d1|³.
 - **Example:**
   ```swift
@@ -878,7 +889,7 @@ All of `radius`, `pitch`, and `turns` must be > 0. The default winding is counte
 - **Example:**
   ```swift
   if let spring = Wire.helix(radius: 5, pitch: 2, turns: 10) {
-      let coil = Shape.pipe(profile: Wire.circle(radius: 0.5)!, path: spring)
+      let coil = Shape.pipeShell(spine: spring, profile: Wire.circle(radius: 0.5)!)
   }
   ```
 
@@ -965,7 +976,7 @@ public func orderedEdgePoints(at index: Int, maxPoints: Int? = nil) -> [SIMD3<Do
 
 When `maxPoints` is `nil`, allocates a buffer sized to all discretised points (no truncation). When provided, limits the returned array to `maxPoints` elements.
 
-- **Parameters:** `index` — 0-based edge index; `maxPoints` — optional upper limit on returned points.
+- **Parameters:** `index` — 0-based edge index; `maxPoints` — optional output capacity, honoured within `1...Sampling.maximumSampleCount` (10,000,000); outside that range the result is `nil` (#558).
 - **Returns:** Array of 3D points along the edge, or `nil` if the index is out of range or the edge is degenerate.
 - **OCCT:** `BRepTools_WireExplorer` + `BRepAdaptor_Curve` + `GCPnts_TangentialDeflection`.
 - **Example:**
@@ -1016,7 +1027,7 @@ public func allEdgePolylines(
 
 Convenience wrapper: converts to `Shape`, then calls `shape.allEdgePolylines(deflection:maxPointsPerEdge:)`.
 
-- **Parameters:** `deflection` — maximum chord deviation; `maxPointsPerEdge` — maximum points per edge.
+- **Parameters:** `deflection` — maximum chord deviation; `maxPointsPerEdge` — per-edge capacity, honoured within `2...Sampling.maximumSampleCount` (10,000,000); outside that range the result is `[]` (#558).
 - **Returns:** Array of polylines (one per edge), or `[]` on failure.
 - **OCCT:** Delegates to `Shape.allEdgePolylines`.
 - **Example:**
@@ -1040,7 +1051,7 @@ public func edgePolyline(
 
 Convenience wrapper: converts to `Shape`, then calls `shape.edgePolyline(at:deflection:maxPoints:)`.
 
-- **Parameters:** `index` — 0-based edge index; `deflection` — chord deviation; `maxPoints` — point limit.
+- **Parameters:** `index` — 0-based edge index; `deflection` — chord deviation; `maxPoints` — output *capacity*, clamped into `0...Sampling.maximumSampleCount` (10,000,000), so an unservable capacity returns the same points rather than a coarser sampling; 0 or less returns `nil` (#558).
 - **Returns:** Polyline for the edge, or `nil` if index is out of range.
 - **OCCT:** Delegates to `Shape.edgePolyline`.
 - **Example:**
@@ -1073,6 +1084,40 @@ Converts to `Shape` via `Shape.fromWire(_:)`, then returns `shape.bounds`. Retur
 ---
 
 ## Wire Topology Analysis
+
+### `WireAnalysis`
+
+Result of `analyze(tolerance:)` below: a wire-topology health report backed by `ShapeAnalysis_Wire`.
+
+```swift
+public struct WireAnalysis: Sendable {
+    public var isClosed: Bool
+    public var hasSmallEdges: Bool
+    public var hasGaps: Bool
+    public var hasSelfIntersection: Bool
+    public var isOrdered: Bool
+    public var minGap: Double
+    public var maxGap: Double
+    public var edgeCount: Int
+}
+```
+
+| Field | Meaning |
+|-------|---------|
+| `isClosed` | Whether the wire forms a closed loop (`ShapeAnalysis_Wire::CheckClosed`). |
+| `hasSmallEdges` | Whether the wire has small/degenerate edges (`CheckSmall`). |
+| `hasGaps` | Whether there are 3D gaps between consecutive edges (`CheckGaps3d`). |
+| `hasSelfIntersection` | Whether the wire self-intersects (`CheckSelfIntersection`). |
+| `isOrdered` | Whether edges are in connected order (`CheckOrder`). |
+| `minGap` | Minimum 3D gap distance between consecutive edges (`MinDistance3d`). |
+| `maxGap` | Maximum 3D gap distance between consecutive edges (`MaxDistance3d`). |
+| `edgeCount` | Number of edges in the wire. |
+
+*(Per-field anchors below, for cross-reference; the table above has the actual meaning of each.)*
+
+#### `WireAnalysis.minGap`
+
+---
 
 ### `analyze(tolerance:)`
 

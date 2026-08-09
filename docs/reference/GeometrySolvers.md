@@ -17,9 +17,11 @@ Utility and solver types that sit alongside the primary geometry hierarchy: a B-
 
 Least-squares B-spline curve approximation through a set of 3D points. Backed by `GeomAPI_PointsToBSpline` since OCCT 8.0.0p1 (the original `Approx_BSplineApproxInterp` was removed in that release). Inspect `maxError` for the worst-case residual after calling `perform()` or `performOptimal()`.
 
+The API is kept source-compatible with the removed solver, so several of its controls survive as **no-ops**: `interpolatePoint(_:withKink:)`, `setParametrizationAlpha(_:)`, `setMinPivot(_:)`, `setClosedTolerance(_:)` and `setKnotInsertionTolerance(_:)`. `nbControlPoints` and `continuousIfClosed` are advisory, and `performOptimal(maxIterations:)` is identical to `perform()`. The two controls that still bite are `setConvergenceTolerance(_:)` and `setProjectionTolerance(_:)`, which drive one shared 3D fit tolerance. Each is flagged individually below; the contracts are pinned by `BSplineApproxInterpContractTests` in `Tests/OCCTCurveTests`.
+
 ### `init?(points:nbControlPoints:degree:continuousIfClosed:)`
 
-Creates a constrained B-spline approximation solver.
+Creates a least-squares B-spline approximation solver.
 
 ```swift
 public init?(points: [SIMD3<Double>], nbControlPoints: Int,
@@ -29,10 +31,10 @@ public init?(points: [SIMD3<Double>], nbControlPoints: Int,
 Returns `nil` if `points.count < 2`.
 
 - **Parameters:**
-  - `points` — array of 3D points to fit.
-  - `nbControlPoints` — advisory number of control points; the approximator chooses the pole count needed to meet tolerance.
-  - `degree` — B-spline degree (default `3`).
-  - `continuousIfClosed` — enforce C2 continuity when the curve is detected as closed (default `false`).
+  - `points`: array of 3D points to fit.
+  - `nbControlPoints`: advisory number of control points; the approximator chooses the pole count needed to meet tolerance.
+  - `degree`: B-spline degree (default `3`); widens the fit's degree range to `[min(3, degree), max(degree, 8)]`.
+  - `continuousIfClosed`: advisory and currently ignored; originally enforced C2 continuity when the curve was detected as closed (default `false`).
 - **Returns:** A configured solver, or `nil` on invalid input.
 - **OCCT:** `GeomAPI_PointsToBSpline` (replaces removed `Approx_BSplineApproxInterp`).
 - **Example:**
@@ -54,17 +56,17 @@ Returns `nil` if `points.count < 2`.
 
 ### `interpolatePoint(_:withKink:)`
 
-Mark a point to be exactly interpolated (0-based index).
+**No-op.** Originally marked a point to be exactly interpolated (0-based index).
 
 ```swift
 public func interpolatePoint(_ index: Int, withKink: Bool = false)
 ```
 
-> **Note:** No-op since OCCT 8.0.0p1 — `GeomAPI_PointsToBSpline` has no per-point exact interpolation. The approximation still passes near every point.
+> **Note:** No-op since OCCT 8.0.0p1. `GeomAPI_PointsToBSpline` has no per-point exact interpolation or C0-break control. The approximation still passes near every point.
 
 - **Parameters:**
-  - `index` — 0-based index into the points array.
-  - `withKink` — if `true`, inserts a C0 discontinuity at this parameter (also a no-op in the current backend).
+  - `index`: ignored; originally a 0-based index into the points array.
+  - `withKink`: ignored; originally inserted a C0 discontinuity at this parameter.
 - **OCCT:** Previously `Approx_BSplineApproxInterp::ChangeConstraints` (now inert).
 
 ---
@@ -88,14 +90,16 @@ public func perform()
 
 ### `performOptimal(maxIterations:)`
 
-Perform the fit with iterative parameter optimization.
+Perform the fit. Identical to `perform()`.
 
 ```swift
 public func performOptimal(maxIterations: Int = 10)
 ```
 
-- **Parameters:** `maxIterations` — maximum number of optimization iterations (default `10`).
-- **OCCT:** `GeomAPI_PointsToBSpline` with iterative reparametrisation.
+> **Note:** `GeomAPI_PointsToBSpline` has no iterative parameter-optimisation mode, so this runs the same single fit as `perform()` and `maxIterations` is ignored. Kept for source compatibility with the removed solver.
+
+- **Parameters:** `maxIterations`: ignored.
+- **OCCT:** `GeomAPI_PointsToBSpline` constructor, same as `perform()`.
 
 ---
 
@@ -138,75 +142,86 @@ The maximum approximation error.
 public var maxError: Double { get }
 ```
 
-- **Returns:** Worst-case 3D distance from any input point to the fitted curve.
-- **OCCT:** `GeomAPI_PointsToBSpline::MaxError`.
+- **Returns:** Worst-case 3D distance from any input point to the fitted curve, or `-1` if the fit has not run or did not succeed.
+- **OCCT:** computed by the bridge. `GeomAPI_PointsToBSpline` reports no error, so each input point is projected back onto the fitted curve with `GeomAPI_ProjectPointOnCurve` and the largest `LowerDistance()` is returned.
 
 ---
 
 ### `setParametrizationAlpha(_:)`
 
-Set parametrisation power: `0` = uniform, `0.5` = centripetal (default), `1` = chord-length.
+**No-op.** Originally set the parametrisation power: `0` = uniform, `0.5` = centripetal (default), `1` = chord-length.
 
 ```swift
 public func setParametrizationAlpha(_ alpha: Double)
 ```
 
-- **Parameters:** `alpha` — exponent in `[0, 1]`.
-- **OCCT:** `GeomAPI_PointsToBSpline` parametrisation mode.
+> **Note:** `GeomAPI_PointsToBSpline` selects parametrisation with an `Approx_ParametrizationType` rather than an alpha exponent, and the bridge does not currently forward one, so this call has no effect on the fit.
+
+- **Parameters:** `alpha`: ignored.
 
 ---
 
 ### `setMinPivot(_:)`
 
-Set minimum pivot value for the Gauss solver (default `1e-20`).
+**No-op.** Originally set the minimum pivot value for the Gauss solver (default `1e-20`).
 
 ```swift
 public func setMinPivot(_ value: Double)
 ```
 
-- **Parameters:** `value` — pivot threshold below which a column is considered singular.
+> **Note:** `GeomAPI_PointsToBSpline` exposes no solver internals, so there is no pivot threshold to set.
 
 ---
 
 ### `setClosedTolerance(_:)`
 
-Set relative tolerance for closed-curve detection (default `1e-12`).
+**No-op.** Originally set the relative tolerance for closed-curve detection (default `1e-12`).
 
 ```swift
 public func setClosedTolerance(_ value: Double)
 ```
 
+> **Note:** `GeomAPI_PointsToBSpline` performs no closed-curve detection, so there is nothing to tune.
+
 ---
 
 ### `setKnotInsertionTolerance(_:)`
 
-Set tolerance for knot insertion during kink handling (default `1e-4`).
+**No-op.** Originally set the tolerance for knot insertion during kink handling (default `1e-4`).
 
 ```swift
 public func setKnotInsertionTolerance(_ value: Double)
 ```
 
+> **Note:** Kink handling belonged to the removed solver; `GeomAPI_PointsToBSpline` has no equivalent.
+
 ---
 
 ### `setConvergenceTolerance(_:)`
 
-Set convergence tolerance for parameter optimization (default `1e-3`).
+Set the 3D fit tolerance (default `1e-3`). Values `<= 0` are ignored.
 
 ```swift
 public func setConvergenceTolerance(_ value: Double)
 ```
 
-Drive accuracy with this and `setProjectionTolerance` when the default fit is insufficient.
+This is the primary accuracy control: it becomes `Tol3D` on the next `perform()`.
+
+- **OCCT:** `GeomAPI_PointsToBSpline` constructor `Tol3D` argument.
 
 ---
 
 ### `setProjectionTolerance(_:)`
 
-Set projection tolerance for parameter optimization (default `1e-6`).
+Tighten the 3D fit tolerance to `min(current, value)` (default `1e-6`). Values `<= 0` are ignored.
 
 ```swift
 public func setProjectionTolerance(_ value: Double)
 ```
+
+> **Note:** This shares one tolerance with `setConvergenceTolerance(_:)`, so the two are not independent knobs, and this one can only tighten. A value looser than the current tolerance does nothing.
+
+- **OCCT:** `GeomAPI_PointsToBSpline` constructor `Tol3D` argument.
 
 ---
 
@@ -216,6 +231,9 @@ A thin-plate spline solver for smooth surface deformation. Wraps OCCT's `Plate_P
 
 Unlike the higher-level NLPlate methods on `Surface`, `PlateSolver` works directly in UV parameter space and returns raw XYZ displacements.
 
+```swift
+```
+---
 ### Loading Constraints
 
 #### `init()`
@@ -427,17 +445,10 @@ To attempt a constraint speculatively and carry on regardless, use
 [`add(edge:continuity:)`](#addedgecontinuity), which derives the continuity reference from the edge
 itself and so has nothing to refuse.
 
-### `FillingContinuity`
-
-> **Deprecated in #398.** `FillingContinuity` was one of three copies of the same geometric
-> constraint-order vocabulary and is now a typealias of
-> [`SurfaceContinuity`](Shape-Features.md#surfacecontinuity) (`.g0` / `.g1` / `.g2`). The
-> `.c0` / `.c1` / `.c2` spellings still resolve, as deprecated aliases. No raw value moved.
-
-```swift
-@available(*, deprecated, renamed: "SurfaceContinuity")
-public typealias FillingContinuity = SurfaceContinuity
-```
+`FillingContinuity` was one of three copies of the same geometric constraint-order vocabulary,
+deprecated in #398 as a typealias of
+[`SurfaceContinuity`](Shape-Features.md#surfacecontinuity) (`.g0` / `.g1` / `.g2`, no raw value
+moved), and removed at v2.0.0 (#784). Use `SurfaceContinuity` directly.
 
 ---
 
@@ -701,6 +712,9 @@ public var g2Error: Double? { get }
 
 An evolution function defining how a scalar value varies along a parameter range. Used with `Shape.pipeShellWithLaw()` for variable-section sweeps where the cross-section scales smoothly along the spine path.
 
+```swift
+```
+---
 ### Evaluation
 
 #### `value(at:)`
@@ -859,16 +873,32 @@ public static func composite(laws: [LawFunction],
 Find knot indices where a BSpline law drops below given continuity.
 
 ```swift
-public func knotSplitting(continuityOrder: Int = 2) -> [Int]
+public func knotSplitting(continuityOrder: ParametricContinuity = .c1) -> [Int]
 ```
 
 Only works on BSpline-based law functions created via `bspline(poles:knots:multiplicities:degree:)`.
 Returns raw indices into the law's own knot table, not directly usable against `value(at:)` or
-`bounds` — see `knotSplitParameters(continuityOrder:)` for the parameter-value form.
+`bounds`; see `knotSplitParameters(continuityOrder:)` for the parameter-value form.
 
-- **Parameters:** `continuityOrder` — continuity level to check (`0`=C0, `1`=C1, `2`=C2).
+Every split is returned, however many there are. **Before #481** the result was capped at 100:
+a law with more splits than that reported exactly 100, with nothing to say the rest had been
+dropped, so it disagreed with `knotSplitParameters(continuityOrder:)` (same analyzer, same law)
+about how many splits the law has.
+
+- **Parameters:** `continuityOrder`: minimum continuity to require of each arc.
 - **Returns:** Array of knot indices where continuity breaks, or empty array if none or if the function is not BSpline-based.
-- **OCCT:** `Law_BSplineKnotSplitting`.
+- **OCCT:** `Law_BSplineKnotSplitting::NbSplits` / `SplitValue`.
+- **Continuity range (#480):** the order is a *derivative order*, and a knot splits only when
+  `degree - multiplicity < continuityOrder`, so the meaningful range is `0...degree` and it
+  saturates there. A cubic law with simple interior knots is already C2 there, which means `.c0`,
+  `.c1` and `.c2` all report just the two end knots and `.c3` is the order that reports the
+  interior ones.
+- **Example:**
+  ```swift
+  let indices = law.knotSplitting(continuityOrder: .c2)
+  let params  = law.knotSplitParameters(continuityOrder: .c2)
+  // indices[i] is the knot-table index of params[i], so the two always agree on count
+  ```
 
 ---
 
@@ -878,19 +908,22 @@ Find parameter values (not raw knot indices) where a BSpline law drops below giv
 the law-function analogue of `Curve3D.continuityBreaks`.
 
 ```swift
-public func knotSplitParameters(continuityOrder: Int = 2) -> [Double]
+public func knotSplitParameters(continuityOrder: ParametricContinuity = .c1) -> [Double]
 ```
 
 Only works on BSpline-based law functions created via `bspline(poles:knots:multiplicities:degree:)`.
 Unlike `knotSplitting(continuityOrder:)`'s raw indices, these are real parameter values, directly
 usable with `value(at:)` and bounded by `bounds`.
 
-- **Parameters:** `continuityOrder` — continuity level to check (`0`=C0, `1`=C1, `2`=C2).
+- **Parameters:** `continuityOrder`: minimum continuity to require of each arc, same derivative-order
+  contract as `knotSplitting(continuityOrder:)` above (#480).
 - **Returns:** Split parameters in ascending order, or empty array if none or if the function is not BSpline-based.
 - **OCCT:** `Law_BSplineKnotSplitting`.
 - **Example:**
   ```swift
-  let breaks = law.knotSplitParameters(continuityOrder: 2)
+  // A cubic law with simple interior knots is already C2 there, so .c3 is the order that
+  // reports its interior knots; anything below returns just the two end knots.
+  let breaks = law.knotSplitParameters(continuityOrder: .c3)
   // breaks are real parameters within law.bounds, usable e.g. as sweep split points
   ```
 
@@ -1045,7 +1078,8 @@ public func kNearest(to point: SIMD3<Double>, k: Int) -> [(index: Int, squaredDi
 
 - **Parameters:**
   - `point` — the query point.
-  - `k` — number of neighbors to find.
+  - `k` — output *capacity*, clamped into `0...Sampling.maximumSampleCount` (10,000,000); 0 or less returns empty (#622). Fewer than `k` come back when the tree
+    holds fewer points.
 - **Returns:** Array of `(index, squaredDistance)` tuples sorted by distance. Note: distances are **squared**.
 - **OCCT:** `NCollection_KDTree` k-nearest query.
 - **Example:**
@@ -1069,7 +1103,7 @@ public func rangeSearch(center: SIMD3<Double>, radius: Double, maxResults: Int =
 - **Parameters:**
   - `center` — center of the search sphere.
   - `radius` — radius of the search sphere.
-  - `maxResults` — maximum number of results (default `1000`).
+  - `maxResults` — output *capacity* (default `1000`), clamped into `0...Sampling.maximumSampleCount` (10,000,000); 0 or less returns empty (#622).
 - **Returns:** Array of 0-based indices of points within the sphere.
 - **OCCT:** `NCollection_KDTree` range query.
 - **Example:**
@@ -1091,7 +1125,7 @@ public func boxSearch(min: SIMD3<Double>, max: SIMD3<Double>, maxResults: Int = 
 - **Parameters:**
   - `min` — minimum corner of the box.
   - `max` — maximum corner of the box.
-  - `maxResults` — maximum number of results (default `1000`).
+  - `maxResults` — output *capacity* (default `1000`), clamped into `0...Sampling.maximumSampleCount` (10,000,000); 0 or less returns empty (#622).
 - **Returns:** Array of 0-based indices of points within the box.
 - **OCCT:** `NCollection_KDTree` box query.
 - **Example:**

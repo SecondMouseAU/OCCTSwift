@@ -216,6 +216,16 @@ public struct HLS: Sendable, Equatable {
 
 Returned by `Color.hls`. Corresponds to `Quantity_Color` component values when queried in `Quantity_TOC_HLS` mode.
 
+| Field | Range | Meaning |
+|---|---|---|
+| `hue` | 0–360° | Hue angle. |
+| `lightness` | 0–1 | Perceived brightness. |
+| `saturation` | 0–1 | Colorfulness relative to lightness. |
+
+#### `Color.HLS.saturation`
+
+Colorfulness relative to lightness, 0–1.
+
 ---
 
 ### `Lab`
@@ -231,6 +241,16 @@ public struct Lab: Sendable, Equatable {
 ```
 
 Returned by `Color.lab`. Represents perceptually uniform Lab coordinates where `l` = lightness, `a` = green–red axis, `b` = blue–yellow axis.
+
+| Field | Meaning |
+|---|---|
+| `l` | Lightness (0 = black, 100 = white). |
+| `a` | Position on the green (negative) to red (positive) axis. |
+| `b` | Position on the blue (negative) to yellow (positive) axis. |
+
+*(Per-field anchors below, for cross-reference; the table above has the actual meaning of each.)*
+
+#### `b`
 
 ---
 
@@ -765,6 +785,46 @@ public struct PredefinedMaterial: Sendable, Equatable {
 
 Wraps `Graphic3d_MaterialAspect` Phong properties (ambient, diffuse, specular, emissive, shininess, refraction, transparency, material type) and the embedded `Graphic3d_PBRMaterial` fields (metallic, roughness, IOR, alpha, emission). `isPhysic` is `true` when the material type is `Graphic3d_MATERIAL_PHYSIC`.
 
+| Field | Meaning |
+|---|---|
+| `ambientColor` | Ambient reflectance color (`Graphic3d_MaterialAspect` ambient component). |
+| `diffuseColor` | Diffuse reflectance color. |
+| `specularColor` | Specular highlight color. |
+| `emissiveColor` | Self-illumination (emissive) color. |
+| `transparency` | Transparency factor, 0 (opaque) to 1 (fully transparent). |
+| `shininess` | Specular exponent / glossiness factor. |
+| `refractionIndex` | Index of refraction, used by ray-traced rendering. |
+| `isPhysic` | `true` when the material type is `Graphic3d_MATERIAL_PHYSIC` (physically based) rather than the plain Phong `Graphic3d_MATERIAL_ASPECT`. |
+| `pbrMetallic` | PBR metallic factor: 0 = dielectric, 1 = metal. |
+| `pbrRoughness` | PBR roughness factor: 0 = mirror-smooth, 1 = fully rough. |
+| `pbrIOR` | PBR index of refraction. |
+| `pbrAlpha` | PBR alpha (opacity) factor. |
+| `pbrEmission` | PBR emissive color, as an `(r, g, b)` tuple. |
+
+*(Per-field anchors below, for cross-reference; the table above has the actual meaning of each.)*
+
+#### `pbrEmission`
+
+---
+
+### `PredefinedMaterial.==(lhs:rhs:)`
+
+Structural equality, comparing every field including the `pbrEmission` tuple.
+
+```swift
+public static func == (lhs: PredefinedMaterial, rhs: PredefinedMaterial) -> Bool
+```
+
+Hand-written rather than compiler-synthesized: `Equatable` cannot synthesize a memberwise comparison
+when one of the stored properties is a plain tuple (`pbrEmission: (r: Float, g: Float, b: Float)`),
+so this operator compares that field component-by-component alongside the rest.
+
+- **Note:** `Scripts/check-docs-existence.py`'s member extractor cannot capture an operator token as a
+  name (its `func`-name regex expects an identifier after `func`), so it records this declaration
+  under the literal placeholder name `func`. That is a parser limitation, not a real symbol; there is
+  no `PredefinedMaterial.func` to call. This entry documents the real operator; `func` itself is left
+  as a known, intentional gap in `--coverage`'s report.
+
 ---
 
 ### `Material.predefinedMaterialCount`
@@ -846,6 +906,9 @@ public static func predefinedMaterial(at index: Int) -> PredefinedMaterial?
 
 ---
 
+```swift
+```
+---
 ### `Material.minRoughness`
 
 Minimum PBR roughness value enforced by OCCT.

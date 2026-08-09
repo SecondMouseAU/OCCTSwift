@@ -43,6 +43,10 @@ Returned by the `geometry` property on all four dimension types. Fields:
 
 ---
 
+### `DimensionGeometry.circleRadius`
+
+---
+
 ## LengthDimension
 
 Measures distance between two points, along a linear edge, or between two parallel faces.
@@ -387,6 +391,10 @@ public var geometry: DimensionGeometry? { get }
 
 Measures the diameter of circular geometry (edge, arc, or cylindrical face).
 
+| Member | Kind | Meaning |
+|---|---|---|
+| `handle` | internal stored property | The opaque `OCCTDimensionRef` this wrapper owns. |
+
 ### `DiameterDimension.init?(shape:)`
 
 Creates a diameter dimension from a shape with circular geometry.
@@ -679,7 +687,51 @@ public enum DimensionType: Int32, Sendable, CaseIterable {
 }
 ```
 
-Raw values match `XCAFDimTolObjects_DimensionType` integer codes directly.
+Raw values match `XCAFDimTolObjects_DimensionType` integer codes directly. The enum has two
+families: `location*` cases (a dimension between two features, distinguished by which boundary of
+each feature the measurement runs between: center, inner, or outer) and `size*` cases (a single
+feature's own extent). Neither OCCT's header nor the STEP AP242 mapping documents each case beyond
+its name; the meanings below are a direct, literal reading of that name, not a separate source.
+
+| Case | Meaning |
+|---|---|
+| `.locationNone` | Location dimension with no more specific sub-type. |
+| `.locationCurvedDistance` | Location distance measured along a curved path. |
+| `.locationLinearDistance` | Location distance measured as a straight line. |
+| `.locationLinearDistanceFromCenterToOuter` | Linear distance from one feature's center to another feature's outer boundary. |
+| `.locationLinearDistanceFromCenterToInner` | Linear distance from one feature's center to another feature's inner boundary. |
+| `.locationLinearDistanceFromOuterToCenter` | Linear distance from one feature's outer boundary to another feature's center. |
+| `.locationLinearDistanceFromOuterToOuter` | Linear distance between two features' outer boundaries. |
+| `.locationLinearDistanceFromOuterToInner` | Linear distance from one feature's outer boundary to another feature's inner boundary. |
+| `.locationLinearDistanceFromInnerToCenter` | Linear distance from one feature's inner boundary to another feature's center. |
+| `.locationLinearDistanceFromInnerToOuter` | Linear distance from one feature's inner boundary to another feature's outer boundary. |
+| `.locationLinearDistanceFromInnerToInner` | Linear distance between two features' inner boundaries. |
+| `.locationAngular` | Location expressed as an angle between two features. |
+| `.locationOriented` | Location dimension oriented against a specified reference direction rather than a plain distance. |
+| `.locationWithPath` | Location dimension measured along an explicit path curve. |
+| `.sizeCurveLength` | Size given as the length of a curve. |
+| `.sizeDiameter` | Size given as a diameter. |
+| `.sizeSphericalDiameter` | Size given as a spherical feature's diameter. |
+| `.sizeRadius` | Size given as a radius. |
+| `.sizeSphericalRadius` | Size given as a spherical feature's radius. |
+| `.sizeToroidalMinorDiameter` | Size given as a torus's minor (tube) diameter. |
+| `.sizeToroidalMajorDiameter` | Size given as a torus's major diameter. |
+| `.sizeToroidalMinorRadius` | Size given as a torus's minor (tube) radius. |
+| `.sizeToroidalMajorRadius` | Size given as a torus's major radius. |
+| `.sizeToroidalHighMajorDiameter` | Size given as a torus's major diameter at its highest point. |
+| `.sizeToroidalLowMajorDiameter` | Size given as a torus's major diameter at its lowest point. |
+| `.sizeToroidalHighMajorRadius` | Size given as a torus's major radius at its highest point. |
+| `.sizeToroidalLowMajorRadius` | Size given as a torus's major radius at its lowest point. |
+| `.sizeThickness` | Size given as a material thickness. |
+| `.sizeAngular` | Size given as an angle. |
+| `.sizeWithPath` | Size measured along an explicit path curve. |
+| `.commonLabel` | Generic dimension label carrying no specific size or location sub-type. |
+| `.dimensionPresentation` | Presentation-only dimension value, not a distinct measured sub-type. |
+
+Each case is indexed below too, so a reference link can land on one directly; the table above is
+the authoritative description.
+
+#### `Document.DimensionType.dimensionPresentation`
 
 ---
 
@@ -708,7 +760,31 @@ public enum GeomToleranceType: Int32, Sendable, CaseIterable {
 }
 ```
 
-Raw values match `XCAFDimTolObjects_GeomToleranceType` integer codes.
+Raw values match `XCAFDimTolObjects_GeomToleranceType` integer codes. Names and meanings follow the
+ASME Y14.5 / ISO 1101 geometric dimensioning and tolerancing (GD&T) standard; OCCT's enum is a
+direct transcription of that standard's tolerance classes, grouped into form, orientation,
+location, and runout controls.
+
+| Case | GD&T class | Controls |
+|---|---|---|
+| `.none` | (unset) | No tolerance type assigned. |
+| `.straightness` | Form | How close a line element of a feature is to a true straight line. |
+| `.flatness` | Form | How close a surface is to a true plane. |
+| `.circularityOrRoundness` | Form | How close a circular cross-section is to a true circle. |
+| `.cylindricity` | Form | How close a cylindrical surface is to a true cylinder (circularity and axis straightness combined). |
+| `.profileOfLine` | Profile | A 2D outline of a feature against a true profile. |
+| `.profileOfSurface` | Profile | A 3D surface of a feature against a true profile. |
+| `.angularity` | Orientation | A feature held at a specified angle (other than 0/90) to a datum. |
+| `.perpendicularity` | Orientation | A feature held at 90 degrees to a datum. |
+| `.parallelism` | Orientation | A feature held equidistant from, and parallel to, a datum. |
+| `.position` | Location | A feature's true position relative to one or more datums. |
+| `.concentricity` | Location | Median points of a feature of revolution, against a datum axis. |
+| `.coaxiality` | Location | Two features' axes, against each other or a datum axis. |
+| `.symmetry` | Location | A feature held equally disposed about a datum plane or axis. |
+| `.circularRunout` | Runout | A single circular element of a surface, as the part rotates about a datum axis. |
+| `.totalRunout` | Runout | An entire surface at once, as the part rotates about a datum axis (the multi-element counterpart of `.circularRunout`). |
+
+#### `GeomToleranceType.totalRunout`
 
 ---
 
@@ -731,6 +807,16 @@ public struct Dimension: Sendable, Hashable {
 - `lowerTolerance` — lower tolerance bound (may be 0 if not set).
 - `upperTolerance` — upper tolerance bound (may be 0 if not set).
 - `index` — position in the document's dimension sequence (for use with `setDimensionTolerance(at:lower:upper:)`).
+
+---
+
+#### `Document.Dimension.lowerTolerance`
+
+Lower tolerance bound (may be `0` if not set).
+
+#### `Document.Dimension.upperTolerance`
+
+Upper tolerance bound (may be `0` if not set).
 
 ---
 
@@ -893,7 +979,7 @@ public func createDimension(on shapeLabel: Int64,
 ```
 
 - **Parameters:**
-  - `shapeLabel` — label ID of the shape to annotate (from `Document.labelForShape(_:)` or equivalent).
+  - `shapeLabel`: label ID of the shape to annotate (from `Document.namingFindLabel(shape:)?.labelId`, or from wherever the shape's label ID was captured when it was imported or added).
   - `type` — the dimension sub-type (e.g. `.sizeDiameter`, `.locationLinearDistance`).
   - `value` — nominal measured value in model units.
   - `lowerTolerance` — lower tolerance; omit or pass `0` to leave unset.

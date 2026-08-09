@@ -1230,6 +1230,105 @@ struct QuasiUniformAbscissaTests {
     }
 }
 
+// MARK: - #501: GCPnts samplers can compute more points than were requested
+
+/// An ellipse whose arc-length walk lands ~1.6e-8 in parameter short of the end, so
+/// `GCPnts_UniformAbscissa` takes one extra step and snaps it to the end parameter. That surplus
+/// point used to be written past the end of the caller's buffer; clamping it away without keeping
+/// the sampler's last point would instead leave the distribution stopping short of the curve.
+private func overshootingEllipse() -> Curve3D? {
+    Curve3D.ellipse(center: .zero, normal: SIMD3(0, 0, 1), majorRadius: 1e6, minorRadius: 1e-3)
+}
+
+/// Counts measured to overshoot on that ellipse (22 of the first 59 do).
+private let overshootingCounts = [4, 5, 8, 12, 14, 18, 20, 22, 25, 26, 31, 33, 34, 35, 39, 40]
+
+@Suite("GCPnts sampler bounds (#501)")
+struct GCPntsSamplerBoundsTests {
+    @Test("Quasi-uniform sampling never exceeds the requested count")
+    func quasiUniformRespectsCount() {
+        guard let ellipse = overshootingEllipse() else {
+            Issue.record("could not build the high-aspect-ratio ellipse")
+            return
+        }
+        for count in overshootingCounts {
+            #expect(ellipse.quasiUniformParameters(count: count).count == count)
+        }
+    }
+
+    @Test("Quasi-uniform sampling still reaches the end of the curve when clamped")
+    func quasiUniformKeepsCurveEnd() {
+        guard let ellipse = overshootingEllipse() else { return }
+        let end = ellipse.domain.upperBound
+        for count in overshootingCounts {
+            let params = ellipse.quasiUniformParameters(count: count)
+            if let last = params.last {
+                #expect(abs(last - end) < 1e-12)
+            }
+        }
+    }
+
+    @Test("Quasi-uniform parameters stay ordered when clamped")
+    func quasiUniformStaysOrdered() {
+        guard let ellipse = overshootingEllipse() else { return }
+        for count in overshootingCounts {
+            let params = ellipse.quasiUniformParameters(count: count)
+            for i in 1..<params.count {
+                #expect(params[i] > params[i - 1])
+            }
+        }
+    }
+
+    @Test("Uniform discretization never exceeds the requested count and reaches the end")
+    func drawUniformRespectsCount() {
+        guard let ellipse = overshootingEllipse() else { return }
+        let endPoint = ellipse.point(at: ellipse.domain.upperBound)
+        for count in overshootingCounts {
+            let points = ellipse.drawUniform(pointCount: count)
+            #expect(points.count == count)
+            if let last = points.last {
+                #expect(distance(last, endPoint) < 1e-6)
+            }
+        }
+    }
+
+    /// OCCT documents `nbPoints >= 2` for both samplers but enforces it with a `Raise_if`, which
+    /// the Release kernel compiles out (No_Exception, #487). Below 2 the algorithms do not fail
+    /// cleanly: `GCPnts_QuasiUniformAbscissa(bezier_or_bspline, 0)` writes element 1 of an
+    /// empty `(1, 0)`-ranged array and SIGSEGVs, so every entry point rejects it itself.
+    @Test("Sample counts below two are rejected, not passed to OCCT")
+    func countsBelowTwoRejected() {
+        guard let ellipse = overshootingEllipse(),
+              let circle = Curve3D.circle(center: .zero, normal: SIMD3(0, 0, 1), radius: 5),
+              let bezier = Curve3D.bezier(poles: [SIMD3(0, 0, 0), SIMD3(1, 4, 0),
+                                                 SIMD3(4, -3, 1), SIMD3(6, 1, 0)])
+        else {
+            Issue.record("could not build the degenerate-count fixtures")
+            return
+        }
+        for curve in [ellipse, circle, bezier] {
+            for count in [0, 1] {
+                #expect(curve.quasiUniformParameters(count: count).isEmpty)
+                #expect(curve.drawUniform(pointCount: count).isEmpty)
+            }
+        }
+    }
+
+    @Test("Edge uniform abscissa rejects counts below two")
+    func edgeUniformAbscissaRejectsCountsBelowTwo() {
+        guard let box = Shape.box(width: 10, height: 10, depth: 10),
+              let edge = box.subShapes(ofType: .edge).first
+        else {
+            Issue.record("could not build a box edge")
+            return
+        }
+        for count in [0, 1] {
+            #expect(edge.uniformAbscissa(pointCount: count) == nil)
+            #expect(edge.uniformAbscissa(pointCount: count, u1: 0, u2: 1) == nil)
+        }
+    }
+}
+
 @Suite("Quasi-Uniform Deflection Sampling")
 struct QuasiUniformDeflectionTests {
     @Test("Sample circle with deflection")
@@ -1875,7 +1974,7 @@ struct LocalAnalysisCurveContinuityTests {
             SIMD3(5, 0, 0), SIMD3(7.5, -1, 0), SIMD3(10, 0, 0)
         ]) else { return }
         if let analysis = c1.continuityWith(c2, u1: c1.domain.upperBound, u2: c2.domain.lowerBound) {
-            #expect(analysis.isC0)
+            #expect(analysis.isC0 == true)
             #expect(analysis.c0Value < 1e-6)
         }
     }
@@ -1887,8 +1986,12 @@ struct LocalAnalysisCurveContinuityTests {
         guard let c2 = Curve3D.fit(points: [
             SIMD3(5, 0, 0), SIMD3(7.5, -1, 0), SIMD3(10, 0, 0)
         ]) else { return }
-        if let analysis = c1.continuityWith(c2, u1: c1.domain.upperBound, u2: c2.domain.lowerBound) {
-            #expect(analysis.isG1)
+        // G1 has to be requested: the `.c2` default computes C0/C1/C2 and never looks at
+        // tangency, so this assertion used to pass off an uninitialised member rather than a
+        // measurement (#495).
+        if let analysis = c1.continuityWith(c2, u1: c1.domain.upperBound,
+                                            u2: c2.domain.lowerBound, order: .g1) {
+            #expect(analysis.isG1 == true)
             #expect(analysis.g1Angle >= 0)
         }
     }
@@ -1902,7 +2005,7 @@ struct LocalAnalysisCurveContinuityTests {
             SIMD3(5, 0, 0), SIMD3(5.5, 2.5, 0), SIMD3(5, 5, 0)
         ]) else { return }
         if let analysis = c1.continuityWith(c2, u1: c1.domain.upperBound, u2: c2.domain.lowerBound) {
-            #expect(analysis.isC0)
+            #expect(analysis.isC0 == true)
         }
     }
 
@@ -1914,7 +2017,9 @@ struct LocalAnalysisCurveContinuityTests {
             SIMD3(5, 0, 0), SIMD3(7.5, -1, 0), SIMD3(10, 0, 0)
         ]) else { return }
         if let a = c1.continuityWith(c2, u1: c1.domain.upperBound, u2: c2.domain.lowerBound) {
-            #expect(a.status >= 0)
+            // `order` is the request echoed back, so pinning it to the default is all it can
+            // tell us; the measurement is `c1Ratio`, which the default order does compute.
+            #expect(a.order == .c2)
             #expect(a.c1Ratio > 0)
         }
     }
@@ -1963,7 +2068,7 @@ struct LawCompositeTests {
             knots: [0.0, 0.5, 1.0],
             multiplicities: [4, 2, 4],
             degree: 3) else { return }
-        let splits = law.knotSplitting(continuityOrder: 2)
+        let splits = law.knotSplitting(continuityOrder: .c2)
         #expect(splits.count >= 2)
     }
 }
@@ -2713,58 +2818,25 @@ struct Curve3DEvalTests {
         }
     }
 
-    @Test func batchD0() {
-        if let curve = Curve3D.circle(center: SIMD3(0, 0, 0), normal: SIMD3(0, 0, 1), radius: 5) {
-            let params = [0.0, Double.pi / 2, Double.pi, 3 * Double.pi / 2]
-            let pts = curve.evalBatchD0(params: params)
-            #expect(pts.count == 4)
-            // At pi/2, should be (0, 5, 0)
-            #expect(abs(pts[1].x) < 1e-4)
-            #expect(abs(pts[1].y - 5.0) < 1e-4)
-        }
-    }
-
-    @Test func batchD1() {
-        if let curve = Curve3D.circle(center: SIMD3(0, 0, 0), normal: SIMD3(0, 0, 1), radius: 5) {
-            let params = [0.0, Double.pi / 2]
-            let results = curve.evalBatchD1(params: params)
-            #expect(results.count == 2)
-            // At 0, tangent should be (0, 5, 0) for a circle of radius 5
-            #expect(abs(results[0].d1.x) < 1e-4)
-            #expect(abs(results[0].d1.y - 5.0) < 1e-4)
-        }
-    }
 }
 
-@Suite("GridEval 3D Curve v0.111")
-struct GridEvalCurve3DTests {
-    @Test func gridEvalD0BSpline() {
-        // Create a BSpline curve via interpolation
-        if let curve = Curve3D.interpolate(points: [
-            SIMD3(0, 0, 0), SIMD3(2, 3, 0), SIMD3(5, 5, 0), SIMD3(8, 3, 0), SIMD3(10, 0, 0)
-        ]) {
-            let domain = curve.domain
-            let params = (0..<5).map { domain.lowerBound + Double($0) / 4.0 * (domain.upperBound - domain.lowerBound) }
-            let pts = curve.gridEvalD0(params: params)
-            #expect(pts.count == 5)
-            // First point should be near origin
-            #expect(abs(pts[0].x) < 1e-3)
-            #expect(abs(pts[0].y) < 1e-3)
-        }
+/// #486 unified `Curve3D`'s three batch-evaluation spellings (`evaluateGrid`/`evaluateGridD1`,
+/// v0.29.0's `GeomGridEval_Curve`; the v0.110.0 `evalBatchD0`/`D1`; and the v0.111.0
+/// `gridEvalD0`/`D1`) onto the first. The two forwarding spellings were removed at v2.0.0 (#784).
+@Suite("Issue 486: Curve3D batch-eval spellings agree")
+struct Issue486Curve3DBatchTests {
+
+    private func bspline() -> Curve3D? {
+        Curve3D.interpolate(points: [
+            SIMD3(0, 0, 0), SIMD3(2, 3, 0.5), SIMD3(5, 5, 1.5), SIMD3(8, 3, 0), SIMD3(10, 0, 2)
+        ])
     }
 
-    @Test func gridEvalD1BSpline() {
-        if let curve = Curve3D.interpolate(points: [
-            SIMD3(0, 0, 0), SIMD3(2, 3, 0), SIMD3(5, 5, 0), SIMD3(8, 3, 0), SIMD3(10, 0, 0)
-        ]) {
-            let domain = curve.domain
-            let params = [domain.lowerBound, (domain.lowerBound + domain.upperBound) / 2, domain.upperBound]
-            let results = curve.gridEvalD1(params: params)
-            #expect(results.count == 3)
-            // Derivative should be non-zero
-            let d1Len = sqrt(results[0].d1.x * results[0].d1.x + results[0].d1.y * results[0].d1.y + results[0].d1.z * results[0].d1.z)
-            #expect(d1Len > 0.01)
-        }
+    @Test("empty parameters give an empty result, not one padded with zeroes")
+    func emptyParametersGiveEmptyResult() {
+        guard let curve = bspline() else { return }
+        #expect(curve.evaluateGrid([]).isEmpty)
+        #expect(curve.evaluateGridD1([]).isEmpty)
     }
 }
 
@@ -2838,10 +2910,11 @@ struct Curve3DExtrasV112Tests {
         }
     }
 
-    @Test func parameterAtPoint() {
+    @Test func nearestParameterOnLine() {
         if let line = Curve3D.line(through: SIMD3(0,0,0), direction: SIMD3(1,0,0)) {
-            let param = line.parameterAtPoint(SIMD3(5, 0, 0))
-            #expect(abs(param - 5.0) < 0.1)
+            let param = line.nearestParameter(to: SIMD3(5, 0, 0))
+            #expect(param != nil)
+            if let param { #expect(abs(param - 5.0) < 0.1) }
         }
     }
 }
@@ -3101,9 +3174,10 @@ struct CurveLengthTests {
 
     @Test func curve3DClosestParameter() {
         if let line = Curve3D.line(through: SIMD3(0,0,0), direction: SIMD3(1,0,0)) {
-            let param = line.closestParameter(to: SIMD3(5, 3, 0))
+            let param = line.nearestParameter(to: SIMD3(5, 3, 0))
             // For a line along X, closest to (5,3,0) should be near param=5
-            #expect(abs(param - 5.0) < 0.1)
+            #expect(param != nil)
+            if let param { #expect(abs(param - 5.0) < 0.1) }
         }
     }
 
@@ -3196,10 +3270,11 @@ struct HelixGeomBuildTests {
 @Suite("Curve3D Continuity Queries v0.120.0")
 struct Curve3DContinuityQueriesTests {
 
-    @Test func continuityOrder() {
+    @Test func lineContinuityClass() {
         if let c = Curve3D.line(through: SIMD3(0, 0, 0), direction: SIMD3(1, 0, 0)) {
-            let order = c.continuityOrder
-            #expect(order >= 0)
+            // Geom_Line is analytic, so infinitely differentiable.
+            #expect(c.continuityClass == .cN)
+            #expect(c.continuityClass.satisfies(.c2))
         }
     }
 
@@ -3836,6 +3911,168 @@ struct BSplineApproxInterpTests {
     }
 }
 
+/// Pins the behaviour `BSplineApproxInterp`'s doc comments claim, so that wiring any of the
+/// no-op setters back up to a real `GeomAPI_PointsToBSpline` control fails here and forces the
+/// docs to be updated with it. Before #507 the docs described the removed
+/// `Approx_BSplineApproxInterp` solver's controls as live, and nothing caught the drift because
+/// every existing test asserted only `isDone`.
+@Suite("BSplineApproxInterp: documented no-op / advisory contracts (#507)")
+struct BSplineApproxInterpContractTests {
+
+    private static func helix(_ count: Int = 24) -> [SIMD3<Double>] {
+        (0..<count).map { i in
+            let t = Double(i) / Double(count - 1) * 2.0 * .pi
+            return SIMD3(cos(t), sin(t), 0.1 * t)
+        }
+    }
+
+    /// Samples a fitted curve densely enough that two fits differing at all disagree here.
+    private static func fitSignature(_ solver: BSplineApproxInterp) -> [SIMD3<Double>]? {
+        guard solver.isDone, let curve = solver.curve else { return nil }
+        let d = curve.domain
+        return (0...32).map { i in
+            curve.point(at: d.lowerBound + (d.upperBound - d.lowerBound) * Double(i) / 32.0)
+        }
+    }
+
+    private static func maxDeviation(_ a: [SIMD3<Double>], _ b: [SIMD3<Double>]) -> Double {
+        guard a.count == b.count else { return .infinity }
+        return zip(a, b).reduce(0.0) { max($0, simd_distance($1.0, $1.1)) }
+    }
+
+    /// Control for every "…produces the same curve" test below: the fit tolerance is a knob that
+    /// genuinely moves the result, so agreement elsewhere means the setter did nothing, not that
+    /// this comparison is blind.
+    @Test("The 3D fit tolerance does change the fitted curve")
+    func fitToleranceIsObservable() {
+        let pts = Self.helix()
+        guard let loose = BSplineApproxInterp(points: pts, nbControlPoints: 10),
+              let tight = BSplineApproxInterp(points: pts, nbControlPoints: 10) else { return }
+        loose.setConvergenceTolerance(1e-1)
+        tight.setConvergenceTolerance(1e-8)
+        loose.perform()
+        tight.perform()
+        if let a = Self.fitSignature(loose), let b = Self.fitSignature(tight) {
+            #expect(Self.maxDeviation(a, b) > 1e-9)
+        }
+    }
+
+    @Test("setParametrizationAlpha / setMinPivot / setClosedTolerance / setKnotInsertionTolerance are no-ops")
+    func tuningSettersAreNoOps() {
+        let pts = Self.helix()
+        guard let plain = BSplineApproxInterp(points: pts, nbControlPoints: 10),
+              let tuned = BSplineApproxInterp(points: pts, nbControlPoints: 10) else { return }
+        tuned.setParametrizationAlpha(1.0)      // chord-length, vs the 0.5 centripetal default
+        tuned.setMinPivot(1e-3)
+        tuned.setClosedTolerance(1.0)
+        tuned.setKnotInsertionTolerance(1.0)
+        plain.perform()
+        tuned.perform()
+        if let a = Self.fitSignature(plain), let b = Self.fitSignature(tuned) {
+            #expect(Self.maxDeviation(a, b) == 0.0)
+        }
+    }
+
+    @Test("interpolatePoint is a no-op, with or without a kink")
+    func interpolatePointIsANoOp() {
+        let pts = Self.helix()
+        guard let plain = BSplineApproxInterp(points: pts, nbControlPoints: 10),
+              let constrained = BSplineApproxInterp(points: pts, nbControlPoints: 10) else { return }
+        constrained.interpolatePoint(0)
+        constrained.interpolatePoint(pts.count - 1)
+        constrained.interpolatePoint(pts.count / 2, withKink: true)
+        plain.perform()
+        constrained.perform()
+        if let a = Self.fitSignature(plain), let b = Self.fitSignature(constrained) {
+            #expect(Self.maxDeviation(a, b) == 0.0)
+        }
+    }
+
+    @Test("performOptimal matches perform and ignores maxIterations")
+    func performOptimalMatchesPerform() {
+        let pts = Self.helix()
+        guard let plain = BSplineApproxInterp(points: pts, nbControlPoints: 10),
+              let fewIter = BSplineApproxInterp(points: pts, nbControlPoints: 10),
+              let manyIter = BSplineApproxInterp(points: pts, nbControlPoints: 10) else { return }
+        plain.perform()
+        fewIter.performOptimal(maxIterations: 1)
+        manyIter.performOptimal(maxIterations: 10_000)
+        if let a = Self.fitSignature(plain), let b = Self.fitSignature(fewIter) {
+            #expect(Self.maxDeviation(a, b) == 0.0)
+        }
+        if let a = Self.fitSignature(fewIter), let b = Self.fitSignature(manyIter) {
+            #expect(Self.maxDeviation(a, b) == 0.0)
+        }
+    }
+
+    @Test("nbControlPoints and continuousIfClosed are advisory")
+    func poleCountRequestIsAdvisory() {
+        let pts = Self.helix()
+        guard let few = BSplineApproxInterp(points: pts, nbControlPoints: 4),
+              let many = BSplineApproxInterp(points: pts, nbControlPoints: 40,
+                                             continuousIfClosed: true) else { return }
+        few.perform()
+        many.perform()
+        if let a = Self.fitSignature(few), let b = Self.fitSignature(many) {
+            #expect(Self.maxDeviation(a, b) == 0.0)
+        }
+        // The approximator picks its own pole count, so the two requests land on the same curve.
+        if let a = few.curve?.poleCount, let b = many.curve?.poleCount {
+            #expect(a == b)
+        }
+    }
+
+    @Test("setConvergenceTolerance and setProjectionTolerance drive one shared tolerance")
+    func toleranceSettersShareOneValue() {
+        let pts = Self.helix()
+        // Projection tolerance only ever tightens, so a looser value after a tight convergence
+        // tolerance is inert, and a tight one after a loose convergence tolerance wins outright.
+        guard let convergenceOnly = BSplineApproxInterp(points: pts, nbControlPoints: 10),
+              let thenLoosened = BSplineApproxInterp(points: pts, nbControlPoints: 10),
+              let tightenedByProjection = BSplineApproxInterp(points: pts, nbControlPoints: 10) else { return }
+        convergenceOnly.setConvergenceTolerance(1e-8)
+        thenLoosened.setConvergenceTolerance(1e-8)
+        thenLoosened.setProjectionTolerance(1e-1)
+        tightenedByProjection.setConvergenceTolerance(1e-1)
+        tightenedByProjection.setProjectionTolerance(1e-8)
+        convergenceOnly.perform()
+        thenLoosened.perform()
+        tightenedByProjection.perform()
+        if let a = Self.fitSignature(convergenceOnly), let b = Self.fitSignature(thenLoosened) {
+            #expect(Self.maxDeviation(a, b) == 0.0)
+        }
+        if let a = Self.fitSignature(convergenceOnly), let b = Self.fitSignature(tightenedByProjection) {
+            #expect(Self.maxDeviation(a, b) == 0.0)
+        }
+    }
+
+    @Test("maxError is the worst back-projection distance from an input point to the fit")
+    func maxErrorIsBackProjectionDistance() {
+        let pts = Self.helix()
+        guard let solver = BSplineApproxInterp(points: pts, nbControlPoints: 10) else { return }
+        #expect(solver.maxError == -1.0)        // not run yet
+        solver.setConvergenceTolerance(1e-6)
+        solver.perform()
+        guard solver.isDone, let curve = solver.curve else { return }
+        let d = curve.domain
+        // Recompute the same quantity by dense sampling. Sampling can only over-estimate the true
+        // projection distance, and by at most half the widest chord between adjacent samples, so
+        // that half-chord is the tolerance rather than a hand-picked constant.
+        let n = 4000
+        let samples = (0...n).map { i in
+            curve.point(at: d.lowerBound + (d.upperBound - d.lowerBound) * Double(i) / Double(n))
+        }
+        let halfChord = zip(samples, samples.dropFirst())
+            .reduce(0.0) { max($0, simd_distance($1.0, $1.1)) } / 2.0
+        let worst = pts.reduce(0.0) { acc, p in
+            max(acc, samples.reduce(Double.infinity) { min($0, simd_distance($1, p)) })
+        }
+        #expect(solver.maxError >= 0)
+        #expect(worst >= solver.maxError - 1e-9)
+        #expect(worst - solver.maxError <= halfChord + 1e-9)
+    }
+}
+
 @Suite("v0.162 EditorView geometric, location, PCurve setters")
 struct EditorViewV162Tests {
     @Test("CoEdge UV box setter and per-(edge, face1, face2) regularity setter operate on existing entities")
@@ -3848,8 +4085,14 @@ struct EditorViewV162Tests {
                 // OCCT 8.0.0 GA replaced per-coedge SetContinuity / SetSeamContinuity /
                 // SetSeamPairId with EdgeOps::SetRegularity — continuity now lives on
                 // (edge, face1, face2). face1 == face2 expresses seam continuity.
-                _ = graph.setEdgeRegularity(0, face1: 0, face2: 1, continuity: 1) // C1 across faces 0,1
-                _ = graph.setEdgeRegularity(0, face1: 0, face2: 0, continuity: 0) // seam C0
+                //
+                // That write path does not exist in 8.0.0p1: BRepGraph_LayerRegularity does not
+                // compile and is absent from libOCCT, so the bridge function is a stub that
+                // reports failure and never reads the continuity argument. Assert that, rather
+                // than discarding the result — this test had shipped since the GA upgrade with
+                // `_ =` on both calls and no expectation, so nothing noticed. #490/#513.
+                #expect(graph.setEdgeRegularity(0, face1: 0, face2: 1, continuity: 1) == false)
+                #expect(graph.setEdgeRegularity(0, face1: 0, face2: 0, continuity: 0) == false)
             }
         }
     }
@@ -4425,5 +4668,275 @@ struct Curve3DArcAliasParityTests {
         let b = Curve3D.arcOfCircle(start: p, interior: p, end: p)
         #expect(a == nil)
         #expect(b == nil)
+    }
+}
+
+// MARK: - #492: one analytical-conversion contract per OCCT converter class
+
+/// Pins the contract shared by every `GeomConvert_CurveToAnaCurve` /
+/// `GeomConvert_SurfToAnaSurf` entry point, after #492 unified the two
+/// independently-grown wrapper families onto one path each.
+@Suite("Analytical conversion contract (#492)")
+struct AnalyticalConversionContractTests {
+
+    private static func dist(_ a: SIMD3<Double>, _ b: SIMD3<Double>) -> Double {
+        let d = a - b
+        return (d.x * d.x + d.y * d.y + d.z * d.z).squareRoot()
+    }
+
+    /// A wiggly interpolated curve, recognizable as neither line, circle nor ellipse.
+    private static func freeformCurve() -> Curve3D? {
+        Curve3D.interpolate(points: [
+            SIMD3(0, 0, 0), SIMD3(1, 3, 0), SIMD3(2, -2, 1),
+            SIMD3(4, 5, -3), SIMD3(6, 0, 2), SIMD3(8, 4, 0),
+        ])
+    }
+
+    /// A bumpy Bezier patch, recognizable as none of the five analytical surfaces.
+    private static func freeformSurface() -> Surface? {
+        var poles: [[SIMD3<Double>]] = []
+        for i in 0..<4 {
+            var row: [SIMD3<Double>] = []
+            for j in 0..<4 {
+                let x = Double(i) * 2, y = Double(j) * 2
+                row.append(SIMD3(x, y, sin(x * 0.7) * cos(y * 1.3) * 4))
+            }
+            poles.append(row)
+        }
+        return Surface.bspline(poles: poles,
+                               knotsU: [0, 1], multiplicitiesU: [4, 4],
+                               knotsV: [0, 1], multiplicitiesV: [4, 4],
+                               degreeU: 3, degreeV: 3)
+    }
+
+    // MARK: Independence of the result
+
+    @Test("Curve result does not alias the input curve")
+    func curveResultIsIndependent() {
+        guard let circle = Curve3D.circle(center: .zero, normal: SIMD3(0, 0, 1), radius: 5),
+              let analytical = circle.toAnalytical(tolerance: 1e-4) else {
+            Issue.record("circle did not convert")
+            return
+        }
+        let before = circle.point(at: 0)
+        #expect(analytical.translate(dx: 100, dy: 0, dz: 0))
+        let after = circle.point(at: 0)
+        #expect(Self.dist(before, after) < 1e-9)
+    }
+
+    @Test("Range-aware curve result does not alias the input curve")
+    func rangeAwareCurveResultIsIndependent() {
+        guard let circle = Curve3D.circle(center: .zero, normal: SIMD3(0, 0, 1), radius: 5) else {
+            Issue.record("circle not built")
+            return
+        }
+        let domain = circle.domain
+        guard let result = circle.toAnalytical(tolerance: 1e-4,
+                                               first: domain.lowerBound,
+                                               last: domain.upperBound) else {
+            Issue.record("circle did not convert")
+            return
+        }
+        let before = circle.point(at: 0)
+        #expect(result.curve.translate(dx: 100, dy: 0, dz: 0))
+        let after = circle.point(at: 0)
+        #expect(Self.dist(before, after) < 1e-9)
+    }
+
+    @Test("Surface result does not alias the input surface")
+    func surfaceResultIsIndependent() {
+        guard let plane = Surface.plane(origin: SIMD3(1, 2, 3), normal: SIMD3(0, 0, 1)),
+              let analytical = plane.toAnalytical(tolerance: 1e-4) else {
+            Issue.record("plane did not convert")
+            return
+        }
+        let before = plane.point(atU: 0, v: 0)
+        #expect(analytical.translate(dx: 100, dy: 0, dz: 0))
+        let after = plane.point(atU: 0, v: 0)
+        #expect(Self.dist(before, after) < 1e-9)
+    }
+
+    @Test("Gap-returning surface result does not alias the input surface")
+    func gapSurfaceResultIsIndependent() {
+        guard let plane = Surface.plane(origin: SIMD3(1, 2, 3), normal: SIMD3(0, 0, 1)),
+              let result = plane.toAnalyticalWithGap(tolerance: 1e-4) else {
+            Issue.record("plane did not convert")
+            return
+        }
+        let before = plane.point(atU: 0, v: 0)
+        #expect(result.surface.translate(dx: 100, dy: 0, dz: 0))
+        let after = plane.point(atU: 0, v: 0)
+        #expect(Self.dist(before, after) < 1e-9)
+    }
+
+    // MARK: Parity between the two spellings of each conversion
+
+    @Test("Both curve spellings agree over the curve's own range")
+    func curveSpellingsAgree() {
+        guard let circle = Curve3D.circle(center: .zero, normal: SIMD3(0, 0, 1), radius: 5),
+              let trimmed = circle.trimmed(from: 0, to: .pi),
+              let bspline = trimmed.toBSpline() else {
+            Issue.record("BSpline circle not built")
+            return
+        }
+        let domain = bspline.domain
+        let plain = bspline.toAnalytical(tolerance: 1e-4)
+        let ranged = bspline.toAnalytical(tolerance: 1e-4,
+                                          first: domain.lowerBound,
+                                          last: domain.upperBound)
+        #expect((plain == nil) == (ranged == nil))
+        if let plain, let ranged {
+            for t in stride(from: 0.0, through: 1.0, by: 0.25) {
+                let u = ranged.newFirst + (ranged.newLast - ranged.newFirst) * t
+                #expect(Self.dist(plain.point(at: u), ranged.curve.point(at: u)) < 1e-9)
+            }
+        }
+    }
+
+    @Test("Full-range curve spelling agrees with the explicit-range spelling")
+    func fullRangeCurveSpellingAgrees() {
+        guard let circle = Curve3D.circle(center: .zero, normal: SIMD3(0, 0, 1), radius: 5),
+              let trimmed = circle.trimmed(from: 0, to: .pi),
+              let bspline = trimmed.toBSpline(),
+              let freeform = Self.freeformCurve() else {
+            Issue.record("fixtures not built")
+            return
+        }
+        for curve in [bspline, freeform] {
+            let domain = curve.domain
+            let full = curve.toAnalyticalWithGap(tolerance: 1e-4)
+            let explicit = curve.toAnalytical(tolerance: 1e-4,
+                                              first: domain.lowerBound,
+                                              last: domain.upperBound)
+            #expect((full == nil) == (explicit == nil))
+            if let full, let explicit {
+                #expect(full.newFirst == explicit.newFirst)
+                #expect(full.newLast == explicit.newLast)
+                #expect(full.gap == explicit.gap)
+            }
+        }
+    }
+
+    @Test("Both surface spellings agree on success and on geometry")
+    func surfaceSpellingsAgree() {
+        guard let plane = Surface.plane(origin: .zero, normal: SIMD3(0, 0, 1)),
+              let trimmed = plane.trimmed(u1: -10, u2: 10, v1: -10, v2: 10),
+              let bspline = trimmed.toBSpline(),
+              let alreadyAnalytical = Surface.cylinder(origin: .zero, axis: SIMD3(0, 0, 1), radius: 5),
+              let freeform = Self.freeformSurface() else {
+            Issue.record("fixtures not built")
+            return
+        }
+        for surface in [bspline, alreadyAnalytical, freeform] {
+            let plain = surface.toAnalytical(tolerance: 1e-4)
+            let withGap = surface.toAnalyticalWithGap(tolerance: 1e-4)
+            #expect((plain == nil) == (withGap == nil))
+            if let plain, let withGap {
+                #expect(Self.dist(plain.point(atU: 0.3, v: 0.4),
+                                  withGap.surface.point(atU: 0.3, v: 0.4)) < 1e-9)
+            }
+        }
+    }
+
+    // MARK: Already-analytical inputs
+
+    @Test("Already-analytical inputs convert rather than being rejected")
+    func alreadyAnalyticalInputsConvert() {
+        guard let circle = Curve3D.circle(center: .zero, normal: SIMD3(0, 0, 1), radius: 5),
+              let cylinder = Surface.cylinder(origin: .zero, axis: SIMD3(0, 0, 1), radius: 5) else {
+            Issue.record("fixtures not built")
+            return
+        }
+        #expect(circle.toAnalytical(tolerance: 1e-4) != nil)
+        #expect(cylinder.toAnalytical(tolerance: 1e-4) != nil)
+        if let result = cylinder.toAnalyticalWithGap(tolerance: 1e-4) {
+            #expect(result.gap == 0)
+        } else {
+            Issue.record("cylinder did not convert")
+        }
+    }
+
+    // MARK: Unrecognizable inputs
+
+    @Test("Freeform inputs are rejected by every spelling")
+    func freeformInputsAreRejected() {
+        guard let curve = Self.freeformCurve(), let surface = Self.freeformSurface() else {
+            Issue.record("fixtures not built")
+            return
+        }
+        let domain = curve.domain
+        #expect(curve.toAnalytical(tolerance: 1e-6) == nil)
+        #expect(curve.toAnalytical(tolerance: 1e-6,
+                                   first: domain.lowerBound,
+                                   last: domain.upperBound) == nil)
+        #expect(surface.toAnalytical(tolerance: 1e-6) == nil)
+        #expect(surface.toAnalyticalWithGap(tolerance: 1e-6) == nil)
+        #expect(surface.toAnalyticalWithGap(tolerance: 1e-6,
+                                            uMin: 0, uMax: 1, vMin: 0, vMax: 1) == nil)
+    }
+
+    // MARK: The UV-bounded overload (no coverage at all before #492)
+
+    @Test("UV-bounded conversion recognizes a plane over full bounds and over a sub-range")
+    func boundedConversionRecognizesPlane() {
+        guard let plane = Surface.plane(origin: .zero, normal: SIMD3(0, 0, 1)),
+              let trimmed = plane.trimmed(u1: -10, u2: 10, v1: -10, v2: 10),
+              let bspline = trimmed.toBSpline() else {
+            Issue.record("BSpline plane not built")
+            return
+        }
+        let d = bspline.domain
+        let full = bspline.toAnalyticalWithGap(tolerance: 1e-4,
+                                               uMin: d.uMin, uMax: d.uMax,
+                                               vMin: d.vMin, vMax: d.vMax)
+        #expect(full != nil)
+        #expect((full?.gap ?? 1) < 1e-3)
+
+        let uMid = (d.uMin + d.uMax) / 2, uQ = (d.uMax - d.uMin) / 4
+        let vMid = (d.vMin + d.vMax) / 2, vQ = (d.vMax - d.vMin) / 4
+        let sub = bspline.toAnalyticalWithGap(tolerance: 1e-4,
+                                              uMin: uMid - uQ, uMax: uMid + uQ,
+                                              vMin: vMid - vQ, vMax: vMid + vQ)
+        #expect(sub != nil)
+        #expect((sub?.gap ?? 1) < 1e-3)
+    }
+
+    @Test("UV-bounded conversion rejects inverted bounds instead of trapping")
+    func boundedConversionRejectsInvertedBounds() {
+        guard let plane = Surface.plane(origin: .zero, normal: SIMD3(0, 0, 1)),
+              let trimmed = plane.trimmed(u1: -10, u2: 10, v1: -10, v2: 10),
+              let bspline = trimmed.toBSpline() else {
+            Issue.record("BSpline plane not built")
+            return
+        }
+        let d = bspline.domain
+        #expect(bspline.toAnalyticalWithGap(tolerance: 1e-4,
+                                            uMin: d.uMax, uMax: d.uMin,
+                                            vMin: d.vMax, vMax: d.vMin) == nil)
+    }
+
+    // MARK: Sub-range curve conversion
+
+    @Test("Explicit sub-range reparameterizes the recognized curve")
+    func subRangeReparameterizesResult() {
+        guard let circle = Curve3D.circle(center: .zero, normal: SIMD3(0, 0, 1), radius: 5),
+              let bspline = circle.toBSpline() else {
+            Issue.record("BSpline circle not built")
+            return
+        }
+        let domain = bspline.domain
+        let quarter = (domain.upperBound - domain.lowerBound) / 4
+        guard let result = bspline.toAnalytical(tolerance: 1e-4,
+                                                first: domain.lowerBound + quarter,
+                                                last: domain.upperBound - quarter) else {
+            Issue.record("sub-range did not convert")
+            return
+        }
+        #expect(result.gap < 1e-3)
+        // The recognized circle carries its own parameterisation, not the input's.
+        #expect(result.newLast - result.newFirst > 0)
+        let mid = (result.newFirst + result.newLast) / 2
+        let onResult = result.curve.point(at: mid)
+        #expect(abs((onResult.x * onResult.x + onResult.y * onResult.y).squareRoot() - 5) < 1e-6)
     }
 }

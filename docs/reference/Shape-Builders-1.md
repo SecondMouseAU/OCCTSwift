@@ -31,6 +31,10 @@ public struct PolyhedralDistance {
 
 ---
 
+#### `Shape.PolyhedralDistance.point2`
+
+---
+
 ### `polyhedralDistance(to:)`
 
 Compute fast polyhedral (approximate) distance to another shape.
@@ -191,6 +195,21 @@ public enum WireVertexStatus: Int32 {
 }
 ```
 
+| case | meaning |
+|---|---|
+| `.sameVertex` | The two vertices are the same OCCT vertex (shared, not merely coincident). |
+| `.sameCoords` | The two vertices sit at the same coordinates but are distinct OCCT vertices. |
+| `.close` | The vertices are within the analysis precision but not coincident. |
+| `.end` | The vertex is at the end of the wire (last vertex, open wire). |
+| `.start` | The vertex is at the start of the wire (first vertex, open wire). |
+| `.intersection` | The vertex lies at a self-intersection of the wire. |
+| `.disjoined` | No connection could be established for this vertex. |
+| `.unknown` | The bridge returned a code this wrapper does not recognise. |
+
+*(Per-case anchors below, for cross-reference; the table above has the actual meaning of each.)*
+
+#### `unknown`
+
 ---
 
 ### `wireVertexAnalysis(precision:)`
@@ -239,6 +258,10 @@ public struct NearestPlane {
 ```
 
 - **Fields:** `normal` — fitted plane normal; `origin` — a point on the plane; `maxDeviation` — maximum distance from any input point to the fitted plane.
+
+---
+
+#### `maxDeviation`
 
 ---
 
@@ -360,6 +383,10 @@ public struct AnaFilletResult {
 ```
 
 - **Fields:** `fillet` — the arc edge; `edge1`, `edge2` — trimmed input edges.
+
+---
+
+#### `edge2`
 
 ---
 
@@ -579,6 +606,10 @@ public struct FilletAlgoResult {
 
 ---
 
+#### `resultCount`
+
+---
+
 ### `Shape.filletAlgo(edge1:edge2:planeOrigin:planeNormal:radius:)` (Shape overload)
 
 Compute a 2D iterative fillet between two edge shapes in a plane.
@@ -727,6 +758,58 @@ public enum BooleanOperation: Int32 {
 
 ---
 
+#### `BooleanOperation.fuse`
+
+Union: the two shapes merged into one, keeping all material from both.
+
+```swift
+case fuse = 0
+```
+
+- **OCCT:** `BOPAlgo_FUSE`.
+
+#### `BooleanOperation.common`
+
+Intersection: only the material shared by both shapes.
+
+```swift
+case common = 1
+```
+
+- **OCCT:** `BOPAlgo_COMMON`.
+
+#### `BooleanOperation.cut`
+
+Subtraction: `shape1` minus `shape2`, the material of the first shape with the second shape's volume removed.
+
+```swift
+case cut = 2
+```
+
+- **OCCT:** `BOPAlgo_CUT`.
+
+#### `BooleanOperation.cut21`
+
+Reversed subtraction: `shape2` minus `shape1`. The same pairing as `.cut` with the roles of object and tool swapped, not a distinct third kind of cut.
+
+```swift
+case cut21 = 3
+```
+
+- **OCCT:** `BOPAlgo_CUT21`.
+
+#### `BooleanOperation.section`
+
+Section: the intersection curves and points where the two shapes' boundaries cross, not a solid result.
+
+```swift
+case section = 4
+```
+
+- **OCCT:** `BOPAlgo_SECTION`.
+
+---
+
 ### `Shape.analyzeBoolean(_:_:operation:)`
 
 Analyze whether two shapes are valid for a Boolean operation.
@@ -794,6 +877,12 @@ public enum ContourType: Int32 {
 }
 ```
 
+| Case | Meaning |
+|---|---|
+| `.other` | The contour is neither a line nor a circle (an analytical form the analysis does not further classify). |
+
+#### `Shape.ContourType.other`
+
 ---
 
 ### `ContourResult`
@@ -809,6 +898,10 @@ public struct ContourResult {
 ```
 
 - **Fields:** `type` — contour geometry kind; `count` — number of contours; `data` — raw parameters (for circles: centre and radius; for lines: location and direction).
+
+---
+
+#### `data`
 
 ---
 
@@ -1213,6 +1306,9 @@ public static func edge2dFromCircle(
 - **Parameters:** `center` — 2D circle centre; `direction` — orientation; `radius` — radius; `p1`, `p2` — angular bounds.
 - **Returns:** 2D edge shape, or `nil` on failure.
 - **OCCT:** `BRepBuilderAPI_MakeEdge2d(gp_Circ2d, p1, p2)` via `OCCTMakeEdge2dFromCircle`.
+- **Note:** `radius` must be positive (#553). `BRepBuilderAPI_MakeEdge2d` reports success for a
+  zero radius and hands back a zero-length edge with both vertices at the centre, so the radius is
+  checked before OCCT sees it. A non-positive radius returns nil.
 
 ---
 
@@ -1286,14 +1382,23 @@ Unlike the basic `scaled(by:)` transform, this propagates tolerance updates corr
 
 ### `buildWires(faceIndex:)`
 
-Build wires from the edges of a face.
+Build wires from the edges of one face, or of the whole shape.
 
 ```swift
-public func buildWires(faceIndex: Int32 = 0) -> [Shape]?
+public func buildWires(faceIndex: Int32 = -1) -> [Shape]?
 ```
 
-- **Parameters:** `faceIndex` — 1-based face index (`0` = all edges).
+- **Parameters:** `faceIndex` — 0-based face index, as `Face.index` and `face(at:)` use. Any
+  negative value means every edge of the shape.
 - **Returns:** Array of wire shapes, or `nil` on failure.
+- **Example:**
+  ```swift
+  let box = Shape.box(origin: .zero, width: 10, height: 10, depth: 10)!
+  let allEdges = box.buildWires(faceIndex: -1)!   // every edge of the box
+  let firstFace = box.buildWires(faceIndex: 0)!   // just face 0's edges
+  ```
+- **Note:** #541 moved this off 1-based and moved the "all edges" sentinel from `0`, which
+  collided with the first face's own index and left that face unaddressable.
 - **OCCT:** `LocOpe_BuildWires` via `OCCTLocOpeBuildWires`.
 
 ---
@@ -1306,7 +1411,9 @@ Split a face of this shape by projecting a wire onto it.
 public func splitByWireOnFace(_ wire: Shape, faceIndex: Int32) -> Shape?
 ```
 
-- **Parameters:** `wire` — the splitting wire shape; `faceIndex` — 1-based index of the face to split.
+- **Parameters:** `wire` — the splitting wire shape; `faceIndex` — 0-based index of the face to
+  split, as `Face.index` and `face(at:)` use. It was 1-based until #541, so face 0 could not be
+  named at all and the accepted domain was `1...faceCount` rather than `0..<faceCount`.
 - **Returns:** Modified shape with the face split, or `nil` on failure.
 - **OCCT:** `LocOpe_WiresOnShape` + `LocOpe_Spliter` via `OCCTLocOpeSplitByWireOnFace`.
 - **Note:** Only the **first** wire of `wire` is used. Passing a shape that holds several wires
@@ -1473,9 +1580,54 @@ public struct SurfaceLocalProperties: Sendable {
     public let minCurvature: Double
     public let meanCurvature: Double
     public let gaussianCurvature: Double
+    public let curvatureDefined: Bool
     public let isUmbilic: Bool
 }
 ```
+
+---
+
+#### `SurfaceLocalProperties.point`
+
+The 3D point on the surface at the evaluated (U,V) parameter.
+
+#### `SurfaceLocalProperties.normal`
+
+Unit surface normal at the parameter point, or `nil` where the normal is undefined (e.g. a singular point such as a cone's apex or a sphere's pole).
+
+#### `SurfaceLocalProperties.tangentU`
+
+Unit tangent vector along the surface's U parametric direction, or `nil` where the first U-derivative is degenerate.
+
+#### `SurfaceLocalProperties.tangentV`
+
+Unit tangent vector along the surface's V parametric direction, or `nil` where the first V-derivative is degenerate.
+
+#### `SurfaceLocalProperties.maxCurvature`
+
+The larger of the two principal curvatures at the point (`GeomLProp_SLProps::MaxCurvature()`). `0` and meaningless unless `curvatureDefined` is `true`.
+
+#### `SurfaceLocalProperties.minCurvature`
+
+The smaller of the two principal curvatures at the point (`GeomLProp_SLProps::MinCurvature()`). `0` and meaningless unless `curvatureDefined` is `true`.
+
+#### `SurfaceLocalProperties.meanCurvature`
+
+The mean curvature: the average of `maxCurvature` and `minCurvature`.
+
+#### `SurfaceLocalProperties.gaussianCurvature`
+
+The Gaussian curvature: the product of `maxCurvature` and `minCurvature`.
+
+#### `SurfaceLocalProperties.curvatureDefined`
+
+Whether `maxCurvature`, `minCurvature`, `meanCurvature`, and `gaussianCurvature` mean anything.
+
+They are all `0` where curvature is undefined (a cone's apex, a sphere's pole, any point with no defined normal), which is indistinguishable from a genuinely flat point without this flag.
+
+#### `SurfaceLocalProperties.isUmbilic`
+
+Whether the point is umbilic: the two principal curvatures are equal, so the surface curves identically in every tangent direction. Every point of a sphere or a plane is umbilic; a generic point on a cylinder is not.
 
 ---
 
@@ -1569,6 +1721,10 @@ public class SurfaceIntersectionResult {
 
 ---
 
+#### `SurfaceIntersectionResult.curveCount`
+
+---
+
 ### `Shape.surfaceSurfaceIntersection(face1:face2:tolerance:)`
 
 Compute the surface-surface intersection between two face shapes.
@@ -1606,6 +1762,17 @@ public enum ContourLineType: Int32, Sendable {
 }
 ```
 
+| case | meaning |
+|---|---|
+| `.line` | The contour line is a straight line. |
+| `.circle` | The contour line is a circular arc. |
+| `.walking` | The contour line was computed by point-by-point walking (no analytic form found). |
+| `.restriction` | The contour line lies on a face boundary (restriction curve). |
+
+*(Per-case anchors below, for cross-reference; the table above has the actual meaning of each.)*
+
+#### `restriction`
+
 ---
 
 ### `ContapContourResult`
@@ -1621,6 +1788,32 @@ public class ContapContourResult {
     public func lineType(_ line: Int) -> ContourLineType?
 }
 ```
+
+- All indices are 1-based.
+- **OCCT:** `Contap_Contour` via `OCCTContapContour*`.
+
+---
+
+#### `ContapContourResult.lineCount`
+
+The number of contour lines found by the analysis.
+
+```swift
+public var lineCount: Int { get }
+```
+
+- **OCCT:** `OCCTContapContourLineCount`.
+
+#### `ContapContourResult.lineType(_:)`
+
+The type of a contour line (1-based index): an analytic `.line` or `.circle`, a numerically traced `.walking` line, or a `.restriction` line lying along the face's own boundary.
+
+```swift
+public func lineType(_ line: Int) -> ContourLineType?
+```
+
+- **Returns:** The `ContourLineType`, or `nil` if `line` is out of range.
+- **OCCT:** `OCCTContapContourLineType`.
 
 - All indices are 1-based.
 - **OCCT:** `Contap_Contour` via `OCCTContapContour*`.
@@ -1699,6 +1892,10 @@ public struct TrihedronFrame: Sendable {
 }
 ```
 
+- **Fields:** `tangent`, unit tangent vector; `normal`, unit normal vector; `binormal`, unit binormal vector (`tangent × normal`).
+
+#### `binormal`
+
 ---
 
 ### `draftTrihedron(at:biNormal:angle:)`
@@ -1756,6 +1953,32 @@ public struct FillingPoleGrid: Sendable {
 ```
 
 - **Fields:** `poles` — control points in row-major (U-major) order; `nbU`, `nbV` — grid dimensions.
+
+---
+
+#### `FillingPoleGrid.poles`
+
+Control points of the fitted patch, flattened in row-major (U-major) order: `nbU * nbV` points total.
+
+```swift
+public let poles: [SIMD3<Double>]
+```
+
+#### `FillingPoleGrid.nbU`
+
+Number of control points along the U direction of the grid.
+
+```swift
+public let nbU: Int
+```
+
+#### `FillingPoleGrid.nbV`
+
+Number of control points along the V direction of the grid.
+
+```swift
+public let nbV: Int
+```
 
 ---
 

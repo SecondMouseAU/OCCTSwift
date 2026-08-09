@@ -1,0 +1,115 @@
+== every (uCont, vCont) combination over C0/C1/C2, tolerance 1e-3 ==
+  sphere r=10              u=C0 v=C0 tol=0.001   isDone=1 maxError=0.000106971   uDeg=1 vDeg=7 poles=2x8 realDev=19.9999         <<< MISREPORT
+  sphere r=10              u=C0 v=C1 tol=0.001   isDone=1 maxError=3.82987e-05   uDeg=8 vDeg=8 poles=17x9 realDev=1.4373e-05   
+  sphere r=10              u=C0 v=C2 tol=0.001   isDone=1 maxError=7.23078e-05   uDeg=8 vDeg=8 poles=17x9 realDev=4.33646e-05  
+  sphere r=10              u=C1 v=C0 tol=0.001   isDone=1 maxError=0.000160457   uDeg=3 vDeg=8 poles=4x9 realDev=19.9999         <<< MISREPORT
+  sphere r=10              u=C1 v=C1 tol=0.001   isDone=1 maxError=5.97449e-05   uDeg=8 vDeg=8 poles=16x9 realDev=1.68135e-05  
+  sphere r=10              u=C1 v=C2 tol=0.001   isDone=1 maxError=0.000111141   uDeg=8 vDeg=8 poles=16x9 realDev=4.4046e-05   
+  sphere r=10              u=C2 v=C0 tol=0.001   isDone=1 maxError=0.000187199   uDeg=5 vDeg=8 poles=6x9 realDev=7.66293         <<< MISREPORT
+  sphere r=10              u=C2 v=C1 tol=0.001   isDone=1 maxError=0.000134795   uDeg=8 vDeg=8 poles=15x9 realDev=4.27471e-05  
+  sphere r=10              u=C2 v=C2 tol=0.001   isDone=1 maxError=0.000205606   uDeg=8 vDeg=8 poles=15x9 realDev=5.45774e-05  
+
+  half sphere (U trimmed)  u=C0 v=C0 tol=0.001   isDone=1 maxError=0.000104422   uDeg=7 vDeg=6 poles=8x7 realDev=9.27225e-05  
+  half sphere (U trimmed)  u=C0 v=C1 tol=0.001   isDone=1 maxError=0.00022755    uDeg=7 vDeg=6 poles=8x7 realDev=0.000113155  
+  half sphere (U trimmed)  u=C0 v=C2 tol=0.001   isDone=1 maxError=0.000176671   uDeg=7 vDeg=7 poles=8x8 realDev=8.80031e-05  
+  half sphere (U trimmed)  u=C1 v=C0 tol=0.001   isDone=1 maxError=0.000171217   uDeg=7 vDeg=6 poles=8x7 realDev=0.000186876  
+  half sphere (U trimmed)  u=C1 v=C1 tol=0.001   isDone=1 maxError=0.000158351   uDeg=8 vDeg=6 poles=9x7 realDev=9.14337e-05  
+  half sphere (U trimmed)  u=C1 v=C2 tol=0.001   isDone=1 maxError=6.78887e-05   uDeg=8 vDeg=7 poles=9x8 realDev=2.975e-05    
+  half sphere (U trimmed)  u=C2 v=C0 tol=0.001   isDone=1 maxError=0.000106287   uDeg=8 vDeg=6 poles=9x7 realDev=5.37637e-05  
+  half sphere (U trimmed)  u=C2 v=C1 tol=0.001   isDone=1 maxError=8.0466e-05    uDeg=8 vDeg=7 poles=9x8 realDev=4.33893e-05  
+  half sphere (U trimmed)  u=C2 v=C2 tol=0.001   isDone=1 maxError=0.000149901   uDeg=8 vDeg=7 poles=9x8 realDev=5.4572e-05   
+
+  torus 20/5               u=C0 v=C0 tol=0.001   isDone=1 maxError=0.000213942   uDeg=8 vDeg=7 poles=17x15 realDev=9.16016e-05  
+  torus 20/5               u=C0 v=C1 tol=0.001   isDone=1 maxError=0.000130021   uDeg=8 vDeg=7 poles=17x14 realDev=9.48894e-05  
+  torus 20/5               u=C0 v=C2 tol=0.001   isDone=1 maxError=0.000106437   uDeg=8 vDeg=8 poles=17x15 realDev=2.92231e-05  
+  torus 20/5               u=C1 v=C0 tol=0.001   isDone=1 maxError=0.000118961   uDeg=8 vDeg=7 poles=16x15 realDev=4.36289e-05  
+  torus 20/5               u=C1 v=C1 tol=0.001   isDone=1 maxError=0.000198687   uDeg=8 vDeg=7 poles=16x14 realDev=0.000101953  
+  torus 20/5               u=C1 v=C2 tol=0.001   isDone=1 maxError=0.000241479   uDeg=8 vDeg=8 poles=16x15 realDev=4.8015e-05   
+  torus 20/5               u=C2 v=C0 tol=0.001   isDone=1 maxError=0.000100859   uDeg=7 vDeg=7 poles=23x15 realDev=3.14611e-05  
+  torus 20/5               u=C2 v=C1 tol=0.001   isDone=1 maxError=0.000144688   uDeg=7 vDeg=8 poles=23x16 realDev=1.10105e-05  
+  torus 20/5               u=C2 v=C2 tol=0.001   isDone=1 maxError=0.000101745   uDeg=7 vDeg=7 poles=23x23 realDev=3.43059e-05  
+
+  trimmed cylinder r=5     u=C0 v=C0 tol=0.001   isDone=1 maxError=5.34856e-05   uDeg=7 vDeg=1 poles=15x2 realDev=3.05339e-05  
+  trimmed cylinder r=5     u=C0 v=C1 tol=0.001   isDone=1 maxError=8.02283e-05   uDeg=7 vDeg=3 poles=15x4 realDev=3.05339e-05  
+  trimmed cylinder r=5     u=C0 v=C2 tol=0.001   isDone=1 maxError=9.35997e-05   uDeg=7 vDeg=5 poles=15x6 realDev=3.05339e-05  
+  trimmed cylinder r=5     u=C1 v=C0 tol=0.001   isDone=1 maxError=9.37246e-05   uDeg=7 vDeg=1 poles=14x2 realDev=9.31124e-05  
+  trimmed cylinder r=5     u=C1 v=C1 tol=0.001   isDone=1 maxError=0.000140587   uDeg=7 vDeg=3 poles=14x4 realDev=9.31124e-05  
+  trimmed cylinder r=5     u=C1 v=C2 tol=0.001   isDone=1 maxError=1.35566e-05   uDeg=8 vDeg=5 poles=16x6 realDev=7.14918e-06  
+  trimmed cylinder r=5     u=C2 v=C0 tol=0.001   isDone=1 maxError=2.28507e-05   uDeg=8 vDeg=1 poles=15x2 realDev=2.14382e-05  
+  trimmed cylinder r=5     u=C2 v=C1 tol=0.001   isDone=1 maxError=3.42761e-05   uDeg=8 vDeg=3 poles=15x4 realDev=2.14382e-05  
+  trimmed cylinder r=5     u=C2 v=C2 tol=0.001   isDone=1 maxError=3.99887e-05   uDeg=8 vDeg=5 poles=15x6 realDev=2.14382e-05  
+
+  trimmed cone             u=C0 v=C0 tol=0.001   isDone=1 maxError=8.20792e-05   uDeg=7 vDeg=1 poles=15x2 realDev=4.68574e-05  
+  trimmed cone             u=C0 v=C1 tol=0.001   isDone=1 maxError=0.000123119   uDeg=7 vDeg=3 poles=15x4 realDev=4.68574e-05  
+  trimmed cone             u=C0 v=C2 tol=0.001   isDone=1 maxError=0.000143639   uDeg=7 vDeg=5 poles=15x6 realDev=4.68574e-05  
+  trimmed cone             u=C1 v=C0 tol=0.001   isDone=1 maxError=5.62348e-05   uDeg=8 vDeg=1 poles=16x2 realDev=5.58674e-05  
+  trimmed cone             u=C1 v=C1 tol=0.001   isDone=1 maxError=8.43522e-05   uDeg=8 vDeg=3 poles=16x4 realDev=6.05767e-05  
+  trimmed cone             u=C1 v=C2 tol=0.001   isDone=1 maxError=9.84109e-05   uDeg=8 vDeg=5 poles=16x6 realDev=6.51258e-05  
+  trimmed cone             u=C2 v=C0 tol=0.001   isDone=1 maxError=3.50668e-05   uDeg=8 vDeg=1 poles=15x2 realDev=3.28991e-05  
+  trimmed cone             u=C2 v=C1 tol=0.001   isDone=1 maxError=5.26002e-05   uDeg=8 vDeg=3 poles=15x4 realDev=3.28991e-05  
+  trimmed cone             u=C2 v=C2 tol=0.001   isDone=1 maxError=6.13669e-05   uDeg=8 vDeg=5 poles=15x6 realDev=3.28991e-05  
+
+  revolved ellipse         u=C0 v=C0 tol=0.001   isDone=1 maxError=4.14416e-05   uDeg=8 vDeg=7 poles=17x15 realDev=2.30315e-05  
+  revolved ellipse         u=C0 v=C1 tol=0.001   isDone=1 maxError=0.000139319   uDeg=8 vDeg=7 poles=17x14 realDev=4.81931e-05  
+  revolved ellipse         u=C0 v=C2 tol=0.001   isDone=1 maxError=0.000145042   uDeg=8 vDeg=8 poles=17x15 realDev=2.81015e-05  
+  revolved ellipse         u=C1 v=C0 tol=0.001   isDone=1 maxError=0.000131391   uDeg=8 vDeg=7 poles=16x15 realDev=4.29598e-05  
+  revolved ellipse         u=C1 v=C1 tol=0.001   isDone=1 maxError=0.000104231   uDeg=8 vDeg=8 poles=16x16 realDev=6.50797e-05  
+  revolved ellipse         u=C1 v=C2 tol=0.001   isDone=1 maxError=9.53576e-05   uDeg=8 vDeg=8 poles=16x15 realDev=3.99427e-05  
+  revolved ellipse         u=C2 v=C0 tol=0.001   isDone=1 maxError=0.000208541   uDeg=8 vDeg=8 poles=15x17 realDev=0.000103495  
+  revolved ellipse         u=C2 v=C1 tol=0.001   isDone=1 maxError=0.000149956   uDeg=7 vDeg=8 poles=23x16 realDev=4.20663e-05  
+  revolved ellipse         u=C2 v=C2 tol=0.001   isDone=1 maxError=0.00014433    uDeg=7 vDeg=8 poles=23x15 realDev=2.71362e-05  
+
+  bezier 4x4               u=C0 v=C0 tol=0.001   isDone=1 maxError=4.08447e-15   uDeg=1 vDeg=1 poles=2x2 realDev=0.13824         <<< MISREPORT
+  bezier 4x4               u=C0 v=C1 tol=0.001   isDone=1 maxError=6.42519e-15   uDeg=3 vDeg=3 poles=4x4 realDev=4.18953e-15  
+  bezier 4x4               u=C0 v=C2 tol=0.001   isDone=1 maxError=6.53291e-15   uDeg=3 vDeg=5 poles=4x6 realDev=9.96978e-15  
+  bezier 4x4               u=C1 v=C0 tol=0.001   isDone=1 maxError=6.42519e-15   uDeg=3 vDeg=3 poles=4x4 realDev=4.18953e-15  
+  bezier 4x4               u=C1 v=C1 tol=0.001   isDone=1 maxError=1.00855e-14   uDeg=3 vDeg=3 poles=4x4 realDev=4.18953e-15  
+  bezier 4x4               u=C1 v=C2 tol=0.001   isDone=1 maxError=1.03217e-14   uDeg=3 vDeg=5 poles=4x6 realDev=9.98954e-15  
+  bezier 4x4               u=C2 v=C0 tol=0.001   isDone=1 maxError=6.53291e-15   uDeg=5 vDeg=3 poles=6x4 realDev=1.00878e-14  
+  bezier 4x4               u=C2 v=C1 tol=0.001   isDone=1 maxError=1.03217e-14   uDeg=5 vDeg=3 poles=6x4 realDev=1.00878e-14  
+  bezier 4x4               u=C2 v=C2 tol=0.001   isDone=1 maxError=1.03565e-14   uDeg=5 vDeg=5 poles=6x6 realDev=1.15804e-14  
+
+== C0/C0 across tolerances ==
+  sphere r=10              u=C0 v=C0 tol=0.1     isDone=1 maxError=0.00913165    uDeg=1 vDeg=5 poles=2x6 realDev=19.9942         <<< MISREPORT
+  sphere r=10              u=C0 v=C0 tol=0.01    isDone=1 maxError=0.0010599     uDeg=1 vDeg=6 poles=2x7 realDev=19.9999         <<< MISREPORT
+  sphere r=10              u=C0 v=C0 tol=0.001   isDone=1 maxError=0.000106971   uDeg=1 vDeg=7 poles=2x8 realDev=19.9999         <<< MISREPORT
+  sphere r=10              u=C0 v=C0 tol=1e-05   isDone=1 maxError=9.15383e-07   uDeg=7 vDeg=7 poles=29x15 realDev=3.27218e-07  
+  sphere r=10              u=C0 v=C0 tol=1e-07   isDone=1 maxError=3.5209e-09    uDeg=7 vDeg=7 poles=57x29 realDev=1.18623e-09  
+
+  half sphere (U trimmed)  u=C0 v=C0 tol=0.1     isDone=1 maxError=0.0123616     uDeg=5 vDeg=4 poles=6x5 realDev=0.00995906   
+  half sphere (U trimmed)  u=C0 v=C0 tol=0.01    isDone=1 maxError=0.00120647    uDeg=6 vDeg=5 poles=7x6 realDev=0.00141945   
+  half sphere (U trimmed)  u=C0 v=C0 tol=0.001   isDone=1 maxError=0.000104422   uDeg=7 vDeg=6 poles=8x7 realDev=9.27225e-05  
+  half sphere (U trimmed)  u=C0 v=C0 tol=1e-05   isDone=1 maxError=4.19308e-07   uDeg=7 vDeg=8 poles=15x9 realDev=2.62664e-07  
+  half sphere (U trimmed)  u=C0 v=C0 tol=1e-07   isDone=1 maxError=1.39855e-08   uDeg=7 vDeg=7 poles=29x15 realDev=7.19677e-09  
+
+  torus 20/5               u=C0 v=C0 tol=0.1     isDone=1 maxError=0.0216939     uDeg=8 vDeg=7 poles=9x8 realDev=0.0138676    
+  torus 20/5               u=C0 v=C0 tol=0.01    isDone=1 maxError=0.0021198     uDeg=7 vDeg=6 poles=15x13 realDev=0.0010707    
+  torus 20/5               u=C0 v=C0 tol=0.001   isDone=1 maxError=0.000213942   uDeg=8 vDeg=7 poles=17x15 realDev=9.16016e-05  
+  torus 20/5               u=C0 v=C0 tol=1e-05   isDone=1 maxError=1.37307e-06   uDeg=7 vDeg=7 poles=29x29 realDev=4.36485e-07  
+  torus 20/5               u=C0 v=C0 tol=1e-07   isDone=1 maxError=1.42687e-08   uDeg=7 vDeg=8 poles=57x33 realDev=6.16681e-09  
+
+  trimmed cylinder r=5     u=C0 v=C0 tol=0.1     isDone=1 maxError=0.0112778     uDeg=7 vDeg=1 poles=8x2 realDev=0.00936425   
+  trimmed cylinder r=5     u=C0 v=C0 tol=0.01    isDone=1 maxError=0.00052995    uDeg=6 vDeg=1 poles=13x2 realDev=0.000354552  
+  trimmed cylinder r=5     u=C0 v=C0 tol=0.001   isDone=1 maxError=5.34856e-05   uDeg=7 vDeg=1 poles=15x2 realDev=3.05339e-05  
+  trimmed cylinder r=5     u=C0 v=C0 tol=1e-05   isDone=1 maxError=2.28846e-07   uDeg=7 vDeg=1 poles=29x2 realDev=7.77375e-08  
+  trimmed cylinder r=5     u=C0 v=C0 tol=1e-07   isDone=1 maxError=9.86758e-09   uDeg=8 vDeg=1 poles=33x2 realDev=5.07757e-09  
+
+  trimmed cone             u=C0 v=C0 tol=0.1     isDone=1 maxError=0.00676669    uDeg=8 vDeg=1 poles=9x2 realDev=0.00561855   
+  trimmed cone             u=C0 v=C0 tol=0.01    isDone=1 maxError=0.000813264   uDeg=6 vDeg=1 poles=13x2 realDev=0.000544096  
+  trimmed cone             u=C0 v=C0 tol=0.001   isDone=1 maxError=8.20792e-05   uDeg=7 vDeg=1 poles=15x2 realDev=4.68574e-05  
+  trimmed cone             u=C0 v=C0 tol=1e-05   isDone=1 maxError=3.51188e-07   uDeg=7 vDeg=1 poles=29x2 realDev=1.19296e-07  
+  trimmed cone             u=C0 v=C0 tol=1e-07   isDone=1 maxError=1.51428e-08   uDeg=8 vDeg=1 poles=33x2 realDev=7.79206e-09  
+
+  revolved ellipse         u=C0 v=C0 tol=0.1     isDone=1 maxError=0.0216594     uDeg=8 vDeg=7 poles=9x8 realDev=0.0123767    
+  revolved ellipse         u=C0 v=C0 tol=0.01    isDone=1 maxError=0.00104723    uDeg=7 vDeg=8 poles=15x9 realDev=0.000630922  
+  revolved ellipse         u=C0 v=C0 tol=0.001   isDone=1 maxError=4.14416e-05   uDeg=8 vDeg=7 poles=17x15 realDev=2.30315e-05  
+  revolved ellipse         u=C0 v=C0 tol=1e-05   isDone=1 maxError=1.21161e-06   uDeg=7 vDeg=7 poles=29x29 realDev=3.65834e-07  
+  revolved ellipse         u=C0 v=C0 tol=1e-07   isDone=1 maxError=1.26988e-08   uDeg=7 vDeg=8 poles=57x33 realDev=5.16269e-09  
+
+  bezier 4x4               u=C0 v=C0 tol=0.1     isDone=1 maxError=4.08447e-15   uDeg=1 vDeg=1 poles=2x2 realDev=0.13824         <<< MISREPORT
+  bezier 4x4               u=C0 v=C0 tol=0.01    isDone=1 maxError=4.08447e-15   uDeg=1 vDeg=1 poles=2x2 realDev=0.13824         <<< MISREPORT
+  bezier 4x4               u=C0 v=C0 tol=0.001   isDone=1 maxError=4.08447e-15   uDeg=1 vDeg=1 poles=2x2 realDev=0.13824         <<< MISREPORT
+  bezier 4x4               u=C0 v=C0 tol=1e-05   isDone=1 maxError=4.08447e-15   uDeg=1 vDeg=1 poles=2x2 realDev=0.13824         <<< MISREPORT
+  bezier 4x4               u=C0 v=C0 tol=1e-07   isDone=1 maxError=4.08447e-15   uDeg=1 vDeg=1 poles=2x2 realDev=0.13824         <<< MISREPORT
+
+misreported (real deviation more than 10x the reported maxError): 12 of 98

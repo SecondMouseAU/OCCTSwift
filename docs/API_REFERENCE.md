@@ -25,7 +25,7 @@ two files desynced by 882 across 11 releases before this rule existed — see
 [#289](https://github.com/SecondMouseAU/OCCTSwift/issues/289).
 
 **The category rows below do not sum to the Total, and are not meant to.** They are an illustrative
-categorisation covering **3,323** of the entry points (~78% of the `Total` below); the rest are real, callable,
+categorisation covering **3,325** of the entry points (~78% of the `Total` below); the rest are real, callable,
 and documented in [reference/](reference/) but not yet slotted into a category row. Treat the rows as
 a map of the major areas, and the `Total` as the count.
 
@@ -34,18 +34,18 @@ a map of the major areas, and the `Total` as the count.
 | Category | Count | Examples |
 |----------|-------|----------|
 | **Primitives** | 13 | box, cylinder, cylinder(at:), sphere, cone, torus, surface, wedge, halfSpace, vertex, shell(from surface), shell(from Surface), nonUniformScale |
-| **Sweeps** | 23 | pipe sweep, pipeShell, pipeShellWithTransition, pipeShellWithLaw, extrude, revolve, loft, loft(ruled+vertex), ruled, revolutionFromCurve, ruledShell, advancedEvolved, pipeSweep, compatibleWires, thruSectionsCreate, thruSectionsAddWire, thruSectionsAddVertex, thruSectionsSetSmoothing, thruSectionsSetMaxDegree, thruSectionsSetContinuity, thruSectionsBuild, thruSectionsShape, thruSectionsRelease |
-| **Booleans** | 13 | union (+), subtract (-), intersect (&), section, booleanCheck, fuseAll, commonAll, fusedAndBlended, cutAndBlended, sectionWithTolerance, splitMulti, cutWithHistory, defeatureWithTolerance |
-| **Modifications** | 33 | fillet, selective fillet, variable fillet, multi-edge blend, chamfer, chamferTwoDistances, chamferDistAngle, shell, offset, offsetByJoin, draft, defeature, convertToNURBS, makeDraft, hollowed, filletEvolving, offsetPerFace, fillet2DFace, chamfer2DFace, anaFillet, anaFillet(edge/wire), filletAlgo, filletAlgo(edge/wire), offsetWire, draftFromWire, addFillet2d, addChamfer2d, addChamfer2dAngle, modifyFillet2d, removeFillet2d, removeChamfer2d |
+| **Sweeps** | 24 | pipe sweep, pipeShell, pipeShellMultiSection, pipeShellWithTransition (deprecated, #503), pipeShellWithLaw, extrude, revolve, loft, loft(ruled+vertex), ruled, revolutionFromCurve, ruledShell, advancedEvolved, pipeSweep, compatibleWires, thruSectionsCreate, thruSectionsAddWire, thruSectionsAddVertex, thruSectionsSetSmoothing, thruSectionsSetMaxDegree, thruSectionsSetContinuity, thruSectionsBuild, thruSectionsShape, thruSectionsRelease |
+| **Booleans** | 12 | union (+), subtract (-), intersect (&), section, booleanCheck, fuseAll, commonAll, fusedAndBlended, cutAndBlended, sectionWithTolerance, splitMulti, cutWithHistory |
+| **Modifications** | 37 | fillet, selective fillet, variable fillet, multi-edge blend, chamfer, chamferTwoDistances, chamferDistAngle, shell, offset, offsetByJoin, draft, defeature, convertToNURBS, makeDraft, hollowed, filletEvolving, filletedWithReport, filletedWithReport(startRadius:endRadius:), filletEvolvingWithReport, blendedEdgesWithReport, offsetPerFace, fillet2DFace, chamfer2DFace, anaFillet, anaFillet(edge/wire), filletAlgo, filletAlgo(edge/wire), offsetWire, draftFromWire, addFillet2d, addChamfer2d, addChamfer2dAngle, modifyFillet2d, removeFillet2d, removeChamfer2d |
 | **Transforms** | 10 | translate, rotate, scale, mirror, mirrorAboutPoint, mirrorAboutAxis, scaleAboutPoint, translated(from:to:), transformed(matrix:), gTransformed(matrix:) |
 | **Wires** | 31 | rectangle, circle, polygon, polygon3D, line, arc, bspline, nurbs, path, join, offset, offset3D, interpolate, fillet2D, filletAll2D, chamfer2D, chamferAll2D, helix, helixTapered, orderedEdgeCount, orderedEdgePoints, orderedEdgePointCount, analyze, wireFromEdges, edges, allEdgePolylines, allEdgePolylinesIndexed, edgePolyline, bounds |
 | **Curve Analysis** | 6 | length, curveInfo, point(at:), tangent(at:), curvature(at:), curvePoint(at:) |
 | **2D Curves (Curve2D)** | 97 | line, segment, circle, arc, ellipse, parabola, hyperbola, bspline, bezier, interpolate, fit, trim, offset, reverse, translate, rotate, scale, mirror, curvature, normal, inflection, intersect, project, Gcc solver, hatch, bisector, draw, evaluateGrid, evaluateGridD1, lineThroughPoints, lineParallel, isLinear, convertToLine, simplifyBSpline, approximated, GccAna bisectors (point/line/circle), GccAna line solvers (parallel/perpendicular/oblique), Geom2dGcc circle/line on-constraint solvers, IntAna2d intersections, Extrema2d distances, curvatureExtremaDetailed, inflectionPointsDetailed, Bisector_BisecAna |
 | **3D Curves (Curve3D)** | 84 | line, segment, circle, arc, ellipse, parabola, hyperbola, bspline, bezier, interpolate, fit, trim, reverse, translate, rotate, scale, mirror, length, curvature, tangent, normal, torsion, toBSpline, toBezierSegments, join, approximate, drawAdaptive, drawUniform, drawDeflection, projectedOnPlane, evaluateGrid, evaluateGridD1, planeNormal, minDistance(toCurve), extrema, intersectSurface, distanceToSurface, toAnalytical, quasiUniformParameters, quasiUniformDeflectionPoints, continuityBreaks, arcOfEllipse(angles), arcOfEllipse(points), joined(curves), projectPoint, validateRange, samplePoints, arcOfHyperbola, arcOfParabola, convertToPeriodic, splitAt, ellipseThreePoints, hyperbolaThreePoints |
-| **Surfaces (Surface)** | 86 | plane, cylinder, cone, sphere, torus, extrusion, revolution, bezier, bspline, trim, offset, translate, rotate, scale, mirror, toBSpline, approximate, uIso, vIso, pipe, drawGrid, drawMesh, curvatures, projectCurve, projectCurveSegments, projectCurve3D, projectPoint, plateThrough, nlPlateDeformed, nlPlateDeformedG1, nlPlateDeformedG2, nlPlateDeformedG3, nlPlateDeformedIncremental, nlPlateDerivative, evaluateGrid, intersections, toAnalytical, bezierFill(4-curve), bezierFill(2-curve), singularityCount, isDegenerated, hasSingularities, toBezierPatchGrid, bsplineFill(2-curve), bsplineFill(4-curve), extrema, valueOfUV, nextValueOfUV, conicalSurface(axis), conicalSurface(points), cylindricalSurface(axis), cylindricalSurface(points), planeFromPoints, planeFromPointNormal, trimmedCone, trimmedCylinder, knotSplitting, joinBezierPatches, convertToAnalytical, splitByContinuity, generatedFromSections, degeneratedBoundaryValue, isDegeneratedBoundary, boundaryWithSurfaceEvaluate, averagePlane, plateErrors |
-| **Face Analysis** | 20 | uvBounds, point(atU:v:), normal, gaussianCurvature, meanCurvature, principalCurvatures, surfaceType, area, project, allProjections, intersection |
+| **Surfaces (Surface)** | 87 | plane, cylinder, cone, sphere, torus, extrusion, revolution, bezier, bspline, trim, offset, translate, rotate, scale, mirror, toBSpline, approximate, uIso, vIso, pipe, drawGrid, drawMesh, curvatures, projectCurve, projectCurveSegments, projectCurve3D, projectPoint, plateThrough, nlPlateDeformed, nlPlateDeformedG1, nlPlateDeformedG2, nlPlateDeformedG3, nlPlateDeformedIncremental, nlPlateDerivative, evaluateGrid, evaluateGridD1, intersections, toAnalytical, bezierFill(4-curve), bezierFill(2-curve), singularityCount, isDegenerated, hasSingularities, toBezierPatchGrid, bsplineFill(2-curve), bsplineFill(4-curve), extrema, valueOfUV, nextValueOfUV, conicalSurface(axis), conicalSurface(points), cylindricalSurface(axis), cylindricalSurface(points), planeFromPoints, planeFromPointNormal, trimmedCone, trimmedCylinder, knotSplitting, joinBezierPatches, convertToAnalytical, splitByContinuity, generatedFromSections, degeneratedBoundaryValue, isDegeneratedBoundary, boundaryWithSurfaceEvaluate, averagePlane, plateErrors |
+| **Face Analysis** | 22 | uvBounds, point(atU:v:), normal, orientation, gaussianCurvature, meanCurvature, principalCurvatures, surfaceType, area, project, allProjections, intersection, orientedFaces |
 | **Edge Analysis** | 26 | parameterBounds, curveType, point(at:), curvature, tangent, normal, centerOfCurvature, torsion, project, hasCurve3D, isClosed3D, isSeam, adjacentFaces, dihedralAngle, split |
-| **Feature-Based** | 36 | boss, pocket, prism, drilled, split, glue, evolved, evolvedAdvanced, linearPattern, circularPattern, linearRib, revolutionForm, draftPrism, draftPrismThruAll, revolFeature, revolFeatureThruAll, pipeFeature, extrudedSemiInfinite, prismUntilFace, pipeFeatureFromProfile, localRevolution, localRevolutionWithOffset, locOpeDraftPrism, localPipe, localLinearForm, localRevolutionForm, splitFace, splitEdge, splitDrafts, commonEdges, edgesInFace, cylindricalHole, cylindricalHoleBlind, cylindricalHoleThruNext, cylindricalHoleStatus, locOpeGlue |
+| **Feature-Based** | 37 | boss, pocket, prism, drilled, split, glue, evolved, evolvedAdvanced, linearPattern, circularPattern, linearRib, revolutionForm, draftPrism, draftPrismThruAll, revolFeature, revolFeatureThruAll, pipeFeature, extrudedSemiInfinite, prismUntilFace, pipeFeatureFromProfile, localRevolution, localRevolutionWithOffset, locOpeDraftPrism, localPipe, localLinearForm, localRevolutionForm, splitFace, splitEdge, splitDrafts, commonEdges, edgesInFace, cylindricalHole, cylindricalHole(extent:), cylindricalHoleBlind, cylindricalHoleThruNext, cylindricalHoleStatus, locOpeGlue |
 | **Healing/Analysis** | 69 | analyze, fixed, unified, simplified, withoutSmallFaces, wire.fixed, face.fixed, divided, directFaces, scaledGeometry, bsplineRestriction, sweptToElementary, revolutionToElementary, convertedToBSpline, sewn, upgraded, fastSewn, normalProjection, fixedWireframe, removingInternalWires, fusedEdges, simpleOffset, fixingSmallFaces, removingLocations, quilt, splitByAngle, droppingSmallEdges, splittingFace, freeBounds, fixedFreeBounds, withSurfacesAsBSpline, withSurfacesAsRevolution, checkSmallFaces, purgedLocations, curveOnSurfaceCheck, connectedEdges, convertedToBezier, limitTolerance, setTolerance, splitCommonVertices, connectedFaces, fixEdgeSameParameter, fixEdgeVertexTolerance, fixWireVertices, removeSmallSolids, mergeSmallSolids, bsplineRestriction(advanced), freeBoundsAnalysis, closedFreeBoundInfo, openFreeBoundInfo, closedFreeBoundWire, openFreeBoundWire, wireVertexAnalysis, wireVertexStatus, nearestPlane, shellSewing, trsfModification, gtrsfModification, deepCopy(modifier), bsplineRestrictionConfigurable, convertToBSplineConfigurable |
 | **Measurement** | 36 | volume, surfaceArea, centerOfMass, properties, distance, distance(wire/edge/face), minDistance, intersects, intersects(wire/edge/face), inertiaProperties, surfaceInertiaProperties, allDistanceSolutions, isInside, findSurfaceEx, findPlane, analyzePointCloud, edgeEdgeExtrema, pointFaceExtrema, faceFaceExtrema, pointEdgeExtrema, edgeFaceExtrema, polyhedralDistance |
 | **Point Classification** | 3 | classify(point:) on solid, classify(point:) on face, classify(u:v:) on face |
@@ -88,7 +88,7 @@ a map of the major areas, and the `Total` as the count.
 | **Shape History** | 1 | History (create, addModified, addGenerated, remove, isRemoved, hasModified, hasGenerated, hasRemoved, modifiedCount, generatedCount) |
 | **Contour Analysis** | 3 | contourSphereDir, contourCylinderDir, contourSphereEye |
 | **IntCurvesFace** | 1 | intersectLine (line-face intersection) |
-| **BOPAlgo Utilities** | 17 | split (splitter), CellsBuilder (create, addAll, removeAll, removeInternalBoundaries, result), analyzeBoolean, removeFeatures, section(instance), section(static), buildFaces, buildSolids, splitShell, edgesToWires, wiresToFaces, makeWire |
+| **BOPAlgo Utilities** | 17 | split (splitter), CellsBuilder (create, addAll, removeAll, removeInternalBoundaries, result), analyzeBoolean, removeFeatures (deprecated — `defeature(faces:)` one OCCT layer down, #536), section(instance), section(static), buildFaces, buildSolids, splitShell, edgesToWires, wiresToFaces, makeWire |
 | **IntTools** | 6 | edgeEdgeIntersection, edgeFaceIntersection, faceFaceIntersection, classifyPoint2d, isHole, beanFaceIntersect |
 | **BOPTools** | 4 | normalOnEdge, pointInFace, isEmpty, isOpenShell |
 | **PCurve / BRepAdaptor** | 3 | pcurveParams, pcurveValue, approxCurveOnSurface |
@@ -159,7 +159,7 @@ a map of the major areas, and the `Total` as the count.
 | **Axis1Placement (Geom_Axis1Placement)** | 7 | create, location, direction, reverse, reversed, setDirection, setLocation |
 | **Axis2Placement (Geom_Axis2Placement)** | 7 | create, location, mainDirection, xDirection, yDirection, setDirection, setXDirection |
 | **ShapeConstruct Curve** | 4 | convertSegmentToBSpline3D, convertSegmentToBSpline2D, adjustEndpoints3D, adjustEndpoints2D |
-| **Bisector Intersection** | 2 | bisectorIntersections (point-point bisector intersection), BisectorPoint data |
+| **Bisector Intersection** | 1 | bisectorIntersections (point-point bisector intersection) |
 | **GeomLib Tool** | 3 | parameterOf (3D curve), parametersOf (surface UV), parameterOf (2D curve) |
 | **GeomLib IsPlanarSurface** | 2 | isPlanar, planarPlane (extract plane from surface) |
 | **GeomLib CheckBSpline** | 4 | checkBSplineTangents (3D/2D), fixBSplineTangents (3D/2D) |
@@ -170,7 +170,7 @@ a map of the major areas, and the `Total` as the count.
 | **Approx SameParameter** | 1 | checkSameParameter (3D vs 2D on surface) |
 | **ShapeUpgrade CurveSplit** | 3 | splitByContinuity (3D/2D), convertToBezierSegments (2D) |
 | **ShapeUpgrade SurfaceSplit** | 3 | splitSurfaceByContinuity, splitByAngle, splitByArea |
-| **GeomConvert Recognition** | 5 | curveToAnalytical, arePointsLinear, surfToAnalyticalWithGap, surfToAnalyticalBounded, isCanonical |
+| **GeomConvert Recognition** | 6 | curveToAnalytical, curveToAnalyticalWithGap, arePointsLinear, surfToAnalyticalWithGap, surfToAnalyticalBounded, isCanonical |
 | **Geom2dConvert** | 1 | approxArcsAndSegments (approximate 2D curves as arcs/lines) |
 | **Poly_Polygon2D** | 5 | create, nodeCount, node, nodes, deflection |
 | **Poly_Polygon3D** | 8 | create, createWithParams, nodeCount, node, nodes, hasParameters, parameter, deflection |
@@ -263,7 +263,7 @@ a map of the major areas, and the `Total` as the count.
 | **TDF_AttributeIterator** | 1 | attributeCount |
 | **TDF_DataSet** | 1 | dataSetIsEmpty |
 | **TDF_ChildIDIterator** | 1 | childIDCount |
-| **TDocStd_PathParser** | 3 | trek, name, fileExtension |
+| **TDocStd_PathParser** | 3 | trek, name, fileExtension (all deprecated #499; `PathParser` now forwards to `OSDPath`; `TDocStd_PathParser` is no longer wrapped) |
 | **TFunction_DriverTable** | 2 | hasDriver, clear |
 | **TNaming_Scope** | 6 | valid, validChildren, isValid, unvalid, clear, validCount |
 | **TNaming_Translator** | 2 | translatorCopy, isSame |
@@ -305,7 +305,7 @@ a map of the major areas, and the `Total` as the count.
 | **ShapeFix_IntersectionTool** | 1 | fixIntersectingWires |
 | **XCAFDoc_AssemblyItemRef** | 7 | setAssemblyItemRef, assemblyItemRefPath, setSubshape, getSubshape, hasExtra, clearExtra, isOrphan |
 | **BRepAlgo_Image** | 5 | create, setRoot, bind, hasImage, isImage, clear |
-| **OSD_Path** | 9 | name, fileExtension, trek, systemName, folderAndFile, isValid, isUnixPath, isRelative, isAbsolute |
+| **OSD_Path** | 10 | name, fileExtension, trek, systemName, folderAndFile, folder, isValid, isUnixPath, isRelative, isAbsolute |
 | **BRepClass_FClassifier** | 1 | classifyPoint2D |
 | **BRepAlgo_Loop** | 1 | buildLoops |
 | **Bnd_BoundSortBox** | 2 | create, compare |
@@ -353,15 +353,15 @@ a map of the major areas, and the `Total` as the count.
 | **GC_MakeCircle** | 4 | circle from axis+radius, 3 points, center+normal, parallel |
 | **GC_MakeEllipse** | 3 | ellipse from axis+radii, 3 points, full Ax2 |
 | **GC_MakeHyperbola** | 2 | hyperbola from axis+radii, 3 points |
-| **GCE2d_MakeCircle** | 5 | 2D circle: center+radius, 3 points, center+point, parallel, axis |
-| **GCE2d_MakeEllipse** | 3 | 2D ellipse: axis+radii, 3 points, Ax22d |
-| **GCE2d_MakeHyperbola** | 2 | 2D hyperbola: axis+radii, 3 points |
-| **GCE2d_MakeParabola** | 2 | 2D parabola: axis+focal, directrix+focus |
+| **GC_MakeCircle2d** | 5 | 2D circle: center+radius, 3 points, center+point, parallel, axis |
+| **GC_MakeEllipse2d** | 3 | 2D ellipse: axis+radii, 3 points, Ax22d |
+| **GC_MakeHyperbola2d** | 2 | 2D hyperbola: axis+radii, 3 points |
+| **GC_MakeParabola2d** | 2 | 2D parabola: axis+focal, directrix+focus |
 | **GCPnts_UniformAbscissa** | 4 | uniform arc-length points by count/distance, full/subrange |
 | **GeomConvert_CompCurveToBSpline** | 1 | concatenate bounded 3D curves into BSpline |
 | **Geom2dConvert_CompCurveToBSpline** | 1 | concatenate bounded 2D curves into BSpline |
-| **GeomConvert_BSplineSurfaceKnotSplitting** | 3 | surface knot splits U/V count and values |
-| **Geom2dConvert_BSplineCurveKnotSplitting** | 2 | 2D curve knot split count and values |
+| **GeomConvert_BSplineSurfaceKnotSplitting** | 3 | *deprecated (#562)* — surface knot splits U/V count and values; forwards to `Surface.knotSplitting`, which wraps the same analyzer |
+| **Geom2dConvert_BSplineCurveKnotSplitting** | 2 | *deprecated (#562)* — 2D curve knot split count and values; forwards to `Curve2D.splitIndicesAtDiscontinuities`, which wraps the same analyzer |
 | **BndLib Extras** | 6 | ellipse, cone, circleArc, ellipseArc, parabolaArc, hyperbolaArc bounds |
 | **GProp Torus** | 2 | torus surface area, torus volume |
 | **BRepTools_ReShape** | 8 | create, release, clear, remove, replace, isRecorded, apply, value |
@@ -418,16 +418,16 @@ a map of the major areas, and the `Total` as the count.
 | **Extrema_ExtPElC** | 4 | pointToLine, pointToCircle, pointToEllipse, pointToParabola |
 | **Extrema_ExtPElS** | 5 | pointToPlane, pointToSphere, pointToCylinder, pointToCone, pointToTorus |
 | **math_TrigonometricFunctionRoots** | 2 | solve, hasInfiniteRoots |
-| **IntAna2d_Conic** | 4 | fromCircle, fromLine, fromEllipse, lineCircleIntersection |
+| **IntAna2d_Conic** | 7 | circle, line, ellipse, lineCircleIntersection, + deprecated fromCircle / fromLine / fromEllipse |
 | **BRepAlgo_NormalProjection** | 5 | create, release, add, build, result |
 | **OSD_Disk** | 4 | size, freeSpace, isValid, name |
 | **OSD_SharedLibrary** | 5 | create, release, open, close, name |
 | **Message_Msg** | 4 | message(forKey:), loadFile, loadDefault, hasMessage |
 | **Plate Constraint Extensions (v2)** | 2 | globalTranslation, linearXYZ |
 | **Shape Topology Counting** | 3 | faceCount, edgeCount, shapeTypeString |
-| **Curve3D Extras** | 3 | reverse, copy, continuity |
-| **Curve2D Extras** | 3 | reverse, copy, continuity |
-| **Surface Extras** | 3 | parameterBounds, surfaceContinuityOrder, copy |
+| **Curve3D Extras** | 4 | reverse, copy, continuity, continuityClass |
+| **Curve2D Extras** | 4 | reverse, copy, continuity, continuityClass |
+| **Surface Extras** | 3 | parameterBounds, surfaceContinuityOrder (unavailable, #619), copy |
 | **Math Solvers** | 7 | findRoot, findRootBounded, findRootBisection, solveSystem, minimize (BFGS), minimizePowell, minimizeBrent |
 | **Curve3D Evaluation** | 6 | evalD0, evalD1, evalD2, evalD3, evalBatchD0, evalBatchD1 |
 | **Curve2D Evaluation** | 5 | evalD0, evalD1, evalD2, evalBatchD0, evalBatchD1 |
@@ -440,7 +440,7 @@ a map of the major areas, and the `Total` as the count.
 | **Shape Location/Orientation** | 9 | child, isLocked, setLocked, located, getLocation, setLocation, oriented, compounded, empty |
 | **Wire/Face Construction** | 8 | wireFromEdges, makeCompound, makeShell, isCompound, isSolid, isShell, isFace, isEdge |
 | **BRepCheck Extended** | 8 | checkFaceStatus, checkEdgeStatus, checkVertexStatus, maxTolerance, minTolerance, avgTolerance, fixTolerance, limitMaxTolerance |
-| **Curve3D/2D Type & Projection** | 5 | curveType (3D), parameterAtPoint (3D), curveType (2D), parameterAtPoint (2D), surfaceGetType |
+| **Curve3D/2D Type & Projection** | 5 | curveType (3D), nearestParameter (3D), curveType (2D), nearestParameter (2D), surfaceGetType |
 | **Extrema Extras** | 4 | locateOnCurve, locateOnSurface, pointCurve, pointSurface |
 | **MakeEdge Completions** | 12 | edgeFromEllipse, edgeFromEllipseArc, edgeFromHyperbolaArc, edgeFromParabolaArc, edgeFromCurve, edgeFromCurveParams, edgeFromCurvePoints, edgeOnSurface, edgeOnSurfaceParams, edgeVertex1, edgeVertex2, edgeError |
 | **ProjectionOnCurve** | 8 | create, release, nbPoints, point, parameter, distance, lowerDistance, lowerParam |
@@ -465,13 +465,13 @@ a map of the major areas, and the `Total` as the count.
 | **MathPoly rc4** | 4 | linearRoots, quadraticRoots, cubicRoots, quarticRoots |
 | **MathInteg rc4** | 5 | integGauss, integGaussAdaptive, integKronrod, integKronrodAdaptive, integTanhSinh |
 | **UnitsMethods** | 3 | lengthFactor, lengthUnitScale, dumpLengthUnit |
-| **LProp3d Curve** | 4 | localCurvature, localTangent, localNormal, localCentreOfCurvature |
+| **LProp3d Curve** | 4 | localTangent, localNormal, localCentreOfCurvature; localCurvature *deprecated (#595)* — it forwards to `Curve3D.curvature(at:)`, the same call since #494 gave the two one resolution |
 | **LProp3d Surface** | 2 | localCurvatures, localCurvatureDirections |
 | **ProjLib Projectors** | 3 | projectLineOnPlane, projectLineOnCylinder, projectCircleOnPlane |
 | **BRepBndLib** | 3 | boundingBox, boundingBoxOptimal, orientedBoundingBoxDetailed |
 | **ShapeAnalysis Tolerance** | 3 | toleranceValue, toleranceOverCount, toleranceInRangeCount |
 | **Boolean Validation** | 2 | isBooleanValid, isBooleanValidWith |
-| **Defeaturing** | 1 | defeature(faces:) |
+| **Defeaturing** | 2 | defeature(faces:) (also the target of the deprecated removeFeatures, #536; a face this shape does not have fails the whole request, #578), defeature(faces:tolerance:) (deprecated — the tolerance was never read, #497) |
 | **Polynomial Conversion** | 1 | polynomialToPoles |
 | **Transform Extras** | 4 | transformed(byMatrix:), isTransformNegative, displacement, transformation |
 | **TopExp Extras** | 1 | commonVertex |
@@ -484,12 +484,12 @@ a map of the major areas, and the `Total` as the count.
 | **Curve2D Bezier** | 7 | bezierProperties (degree, poleCount, isRational, pole, setPole, setWeight, resolution) |
 | **Curve2D BSpline Extras** | 3 | bsplineSetPeriodic, bsplineWeight, bsplineWeights |
 | **BSplineSurface Extras** | 4 | bsplineResolution, bsplineSetUPeriodic, bsplineSetVPeriodic, bsplineWeight |
-| **Final Cleanup** | 25 | IsCN (curve3D/curve2D/surfaceU/V), ReversedParameter (curve3D/2D), ParametricTransformation, continuityOrder (curve3D/2D), surface UReversed/VReversed/UReversedParam/VReversedParam, RemoveVKnot, vecCrossMagnitude/CrossSquareMagnitude, dirIsOpposite/IsNormal, BezierResolution (curve3D/surface), MaxDegree (bezierCurve3D/2D/surface, bsplineSurface/curve2D) |
+| **Final Cleanup** | 25 | IsCN (curve3D/curve2D/surfaceU/V), ReversedParameter (curve3D/2D), ParametricTransformation, continuityOrder (curve3D/2D, unavailable #619), surface UReversed/VReversed/UReversedParam/VReversedParam, RemoveVKnot, vecCrossMagnitude/CrossSquareMagnitude, dirIsOpposite/IsNormal, BezierResolution (curve3D/surface), MaxDegree (bezierCurve3D/2D/surface, bsplineSurface/curve2D) |
 | **GLTF Import/Export** | 5 | importGLTF, exportGLTF (GLB/GLTF), documentLoadGLTF, documentWriteGLTF |
 | **FilletBuilder** | 16 | create, addEdge, addEdgeEvolving, build, nbContours, nbEdges, hasResult, badShape, faultyContours, faultyVertices, getRadius, getLength, isConstant, removeEdge, reset |
 | **ChamferBuilder** | 8 | create, addEdge, addEdgeTwoDists, addEdgeDistAngle, build, nbContours, isDistAngle |
 | **BSpline Completions** | 25 | Surface: SetU/VNotPeriodic, SetU/VOrigin, IncreaseU/VMultiplicity, InsertU/VKnots, MovePoint, SetPoleCol/Row. Curve3D/2D: SetNotPeriodic, SetOrigin, IncreaseMultiplicity, IncrementMultiplicity, SetKnots, Reverse, MovePointAndTangent |
-| **v0.122.0 Additions** | 44 | WireFixer: fixGaps2d, fixSeam, fixShifted, fixNotchedEdges, fixTails, setMaxTailAngle, setMaxTailWidth. ShapeFix_Edge: addCurve3d, addPCurve, removeCurve3d, removePCurve, fixReversed2d. BRepTools: cleanTriangulation, removeInternals, detectClosedness, evalAndUpdateTol, map3DEdgeCount, updateFaceUVPoints, compareVertices, compareEdges, isReallyClosed, updateTopology. BRepLib: ensureNormalConsistency, updateDeflection, continuityOfFaces, buildCurves3dAll, sameParameterAll. History: merge, replaceGenerated, replaceModified, getModifiedShapes, getGeneratedShapes. Sewing: nbDeletedFaces, deletedFace, isModified, modified, isDegenerated, isSectionBound, whichFace, load, setNonManifoldMode, setFaceMode, setFloatingEdgesMode, setMinTolerance, setMaxTolerance |
+| **v0.122.0 Additions** | 44 | WireFixer: fixGaps2d, fixSeam, fixShifted, fixNotchedEdges, fixTails, setMaxTailAngle, setMaxTailWidth. ShapeFix_Edge: addCurve3d, addPCurve, removeCurve3d, removePCurve, fixReversed2d. BRepTools: cleanTriangulation, removeInternals, detectClosedness, evalAndUpdateTol, map3DEdgeCount, updateFaceUVPoints, compareVertices, compareEdges, isReallyClosed, updateTopology. BRepLib: ensureNormalConsistency, updateDeflection, continuityOfFaces, buildCurves3dAll (deprecated, #498), sameParameterAll. History: merge, replaceGenerated, replaceModified, getModifiedShapes, getGeneratedShapes. Sewing: nbDeletedFaces, deletedFace, isModified, modified, isDegenerated, isSectionBound, whichFace, load, setNonManifoldMode, setFaceMode, setFloatingEdgesMode, setMinTolerance, setMaxTolerance |
 | **v0.123.0 Additions** | 37 | ThruSections: checkCompatibility, setParType, setCriteriumWeight, generatedFace. CellsBuilder: addToResult(selective), removeFromResult, allParts, makeContainers. PipeShell: getStatus, simulate. UnifySameDomainBuilder: create, allowInternalEdges, keepShape, setSafeInputMode, setLinearTolerance, setAngularTolerance, build, shape. Section: sectionWithOptions, ancestorFaceOn1, ancestorFaceOn2. Curve3D: period, firstParameter, lastParameter. Surface: uPeriod, vPeriod. Shape: nullified, typeName, isNotEqual, emptied, moved, orientationValue, nbEdges, nbFaces, nbVertices |
 | **v0.124.0 Additions** | 54 | ChamferBuilder: nbEdges, getDist, getDists, getDistAngle, setDist, setDists, setDistAngle, length, removeEdge, reset, closed, closedAndTangent, isSymmetric, isTwoDists, edge, firstVertex, lastVertex, contour, abscissa, relativeAbscissa. FilletBuilder: setRadiusOnEdge, setRadiusAtVertex, setTwoRadii, contour, edge, firstVertex, lastVertex, abscissa, relativeAbscissa, closedAndTangent, closed, nbSurfaces, nbComputedSurfaces, stripeStatus, faultyContour, faultyVertex. WireAnalyzer: create, release, perform, checkOrder, checkConnected, checkSmall, checkDegenerated, checkGap3d, checkGap2d, checkSeam, checkLacking, checkSelfIntersection, checkClosed, minDistance3d, maxDistance3d, nbEdges, isLoaded, isReady |
 | **v0.125.0 Additions** | 56 | BSplineSurface: LocalD0/D1/D2/D3/DN/Value, UIso, VIso, LocateU/V, UKnot/VKnot, UMultiplicity/VMultiplicity, UKnotDistribution/VKnotDistribution, GetPoles, Bounds, IsUClosed/IsVClosed. Curve2D BSpline: LocalD0/D1/D2/D3/DN/Value, LocateU, FirstUKnotIndex/LastUKnotIndex, Knot, KnotDistribution, Multiplicity, GetMultiplicities, StartPoint/EndPoint, GetPoles, IsClosed/IsPeriodic, Continuity, IsCN. BezierCurve3D: StartPoint/EndPoint, GetPoles, GetWeights, IsClosed/IsPeriodic, Continuity, IsCN. BezierSurface: UIso/VIso, IsUClosed/IsVClosed, IsUPeriodic/IsVPeriodic, Continuity, IsCNu/IsCNv, GetPoles, GetWeights, Bounds |
@@ -498,12 +498,12 @@ a map of the major areas, and the `Total` as the count.
 | **v0.128.0 Additions** | 40 | ChamferBuilder: Generated, Modified, IsDeleted, SetMode, Simulate, NbSurf. SectionBuilder: full builder pattern (Create, Init1/Init2 shape/plane/surface, Approximation, ComputePCurveOn1/2, Build, AncestorFaceOn1/2). BRep_Tool: IsClosedOnFace, PolygonOnSurface, SetUVPoints. Curve3D Transform: translate, rotate, scale, mirrorPoint, mirrorAxis, mirrorPlane. Curve2D Transform: translate, rotate, scale, mirrorPoint, mirrorAxis. Surface Transform: translate, rotate, scale, mirrorPoint, mirrorAxis, mirrorPlane |
 | **v0.129.0 Additions** | 20 | BSplineCurve3D: LocalD0/D1/D2/D3/DN on knot span. BSplineSurface: SetWeightCol/Row, IncrementUMultiplicity/IncrementVMultiplicity (range), FirstU/LastU/FirstV/LastVKnotIndex, CheckAndSegment. BezierSurface: InsertPoleColBefore/RowBefore, SetPoleCol/Row (no weights), SetWeightCol/Row |
 | **v0.130.0 Additions** | 33 | GeomEval 3D curves: CircularHelix D0/D1/D2/Create, SineWave D0/D1/Create. GeomEval surfaces: Ellipsoid D0/Create, Hyperboloid D0/Create, Paraboloid D0/Create, CircularHelicoid D0/Create, HypParaboloid D0/Create. Geom2dEval: ArchimedeanSpiral D0/D1, LogSpiral D0/D1, CircleInvolute D0/D1, SineWave2D D0/D1. GeomFill_Gordon surface. PointSetLib: Props/Inertia/Barycentre/Equation. ExtremaPC: Curve/CurveBounded/MinDistance |
-| **Approx_BSplineApproxInterp** | 13 | create, interpolatePoint, perform, performOptimal, isDone, curve, maxError, setAlpha, setMinPivot, setClosedTol, setKnotTol, setConvergenceTol, setProjectionTol |
+| **Approx_BSplineApproxInterp** (removed in OCCT 8.0.0p1; now backed by `GeomAPI_PointsToBSpline`, and several of these are no-ops, see [GeometrySolvers](reference/GeometrySolvers.md#bsplineapproxinterp)) | 13 | create, interpolatePoint, perform, performOptimal, isDone, curve, maxError, setAlpha, setMinPivot, setClosedTol, setKnotTol, setConvergenceTol, setProjectionTol |
 | **GeomAdaptor_TransformedCurve** | 1 | translated (curve with translation) |
 | **GeomEval TBezier/AHTBezier Curves** | 4 | tBezier (3D), tBezierRational (3D), ahtBezier (3D), ahtBezierRational (3D) |
 | **GeomEval TBezier/AHTBezier Surfaces** | 2 | tBezier surface, ahtBezier surface |
 | **Geom2dEval TBezier/AHTBezier** | 2 | tBezier (2D), ahtBezier (2D) |
-| **Total** | **4,270** | |
+| **Total** | **4,256** | |
 
 > **Note:** OCCTSwift wraps a curated subset of OCCT. To add new functions, see [docs/EXTENDING.md](docs/EXTENDING.md).
 
@@ -568,12 +568,12 @@ OCCTSwift wraps a **subset** of OCCT's functionality. The bridge layer (`OCCTBri
 #### 2D Parametric Curves
 | Swift API | OCCT Class |
 |-----------|------------|
-| `Curve2D.segment(from:to:)` | `GCE2d_MakeSegment` |
+| `Curve2D.segment(from:to:)` | `GC_MakeSegment2d` |
 | `Curve2D.circle(center:radius:)` | `Geom2d_Circle` |
-| `Curve2D.ellipse(...)` | `GCE2d_MakeEllipse` |
+| `Curve2D.ellipse(...)` | `Geom2d_Ellipse` |
 | `Curve2D.bspline(...)` | `Geom2d_BSplineCurve` |
 | `Curve2D.interpolate(through:)` | `Geom2dAPI_Interpolate` |
-| `curve.curvature(at:)` | `Geom2dLProp_CLProps2d` |
+| `curve.curvature(at:)` — `Double?`, `nil` where no tangent is defined (#595) | `Geom2dLProp_CLProps2d` |
 | `curve.intersections(with:)` | `Geom2dAPI_InterCurveCurve` |
 | `curve.drawAdaptive()` | `GCPnts_TangentialDeflection` |
 | `Curve2DGcc.circlesTangentWithCenter(...)` | `Geom2dGcc_Circ2dTanCen` |
@@ -590,7 +590,7 @@ OCCTSwift wraps a **subset** of OCCT's functionality. The bridge layer (`OCCTBri
 | `Curve3D.bspline(...)` | `Geom_BSplineCurve` |
 | `Curve3D.interpolate(points:...)` | `GeomAPI_Interpolate` |
 | `curve.drawAdaptive()` | `GCPnts_TangentialDeflection` |
-| `curve.curvature(at:)` | `GeomLProp_CLProps` |
+| `curve.curvature(at:)` / `curve.torsion(at:)` — both `Double?` since #595 | `GeomLProp_CLProps` |
 | `Curve3D.join(_:)` | `GeomConvert::ConcatG1` |
 
 #### Parametric Surfaces (v0.20.0)
@@ -605,7 +605,7 @@ OCCTSwift wraps a **subset** of OCCT's functionality. The bridge layer (`OCCTBri
 | `Surface.pipe(path:radius:)` | `GeomFill_Pipe` |
 | `surface.uIso(at:)` / `surface.vIso(at:)` | `Geom_Surface::UIso/VIso` |
 | `surface.drawGrid(...)` / `surface.drawMesh(...)` | Grid/mesh discretization |
-| `surface.gaussianCurvature(atU:v:)` | `GeomLProp_SLProps` |
+| `surface.gaussianCurvature(atU:v:)` / `meanCurvature(atU:v:)` / `curvatures(u:v:)` — all optional since #595 | `GeomLProp_SLProps` |
 
 #### Face Surface Analysis (v0.18.0)
 | Swift API | OCCT Class |
@@ -624,7 +624,8 @@ OCCTSwift wraps a **subset** of OCCT's functionality. The bridge layer (`OCCTBri
 | `edge.parameterBounds` / `edge.curveType` | `BRep_Tool` / `GeomAdaptor_Curve` |
 | `edge.point(at:)` / `edge.tangent(at:)` / `edge.normal(at:)` | `GeomLProp_CLProps` |
 | `edge.curvature(at:)` / `edge.centerOfCurvature(at:)` / `edge.torsion(at:)` | `GeomLProp_CLProps` |
-| `edge.project(point:)` | `GeomAPI_ProjectPointOnCurve` |
+| `edge.project(point:)` / `edge.distance(to:)` — and `curve3d.projectPoint(_:precision:)` / `curve3d.distance(to:precision:)` / `curve3d.nearestParameter(to:)`, one shared implementation since #539/#615 | `ShapeAnalysis_Curve::Project` + `GeomAPI_ProjectPointOnCurve`, minimised together with the range's ends |
+| `curve2d.project(point:)` / `curve2d.project(_:)` / `curve2d.nearestParameter(to:)` / `point2d.distance(to:)` — the 2D twin, one shared implementation since #615 | `Geom2dAPI_ProjectPointOnCurve`, minimised together with the range's ends (no 2D `ShapeAnalysis_Curve` exists) |
 
 #### Shape Proximity (v0.18.0)
 | Swift API | OCCT Class |
@@ -765,6 +766,7 @@ OCCTSwift wraps a **subset** of OCCT's functionality. The bridge layer (`OCCTBri
 | `curve3d.evaluateGrid(_:)` | `GeomGridEval_Curve::EvaluateGrid` |
 | `curve3d.evaluateGridD1(_:)` | `GeomGridEval_Curve::EvaluateGridD1` |
 | `surface.evaluateGrid(uParameters:vParameters:)` | `GeomGridEval_Surface::EvaluateGrid` |
+| `surface.evaluateGridD1(uParameters:vParameters:)` | `GeomGridEval_Surface::EvaluateGridD1` |
 
 #### Wedge & Half-Space Primitives (v0.29.0)
 | Swift API | OCCT Class |
@@ -846,10 +848,19 @@ OCCTSwift wraps a **subset** of OCCT's functionality. The bridge layer (`OCCTBri
 | `surface.intersections(with: otherSurface)` | `GeomAPI_IntSS` |
 
 #### Analytical Recognition (v0.30.0)
+
+Every `GeomConvert_CurveToAnaCurve` / `GeomConvert_SurfToAnaSurf` spelling reaches one bridge entry
+point per class (#492). An already-analytical input converts, with `gap == 0`; the result never
+aliases the input.
+
 | Swift API | OCCT Class |
 |-----------|------------|
 | `curve.toAnalytical(tolerance:)` | `GeomConvert_CurveToAnaCurve` |
+| `curve.toAnalytical(tolerance:first:last:)` | `GeomConvert_CurveToAnaCurve` |
+| `curve.toAnalyticalWithGap(tolerance:)` | `GeomConvert_CurveToAnaCurve` |
 | `surface.toAnalytical(tolerance:)` | `GeomConvert_SurfToAnaSurf` |
+| `surface.toAnalyticalWithGap(tolerance:)` | `GeomConvert_SurfToAnaSurf` |
+| `surface.toAnalyticalWithGap(tolerance:uMin:uMax:vMin:vMax:)` | `GeomConvert_SurfToAnaSurf` (bounded) |
 | `shape.recognizeCanonical(tolerance:)` | `ShapeAnalysis_CanonicalRecognition` |
 
 #### Shape Census & Edge Analysis (v0.30.0)
@@ -928,11 +939,34 @@ OCCTSwift wraps a **subset** of OCCT's functionality. The bridge layer (`OCCTBri
 | `shape.copy(copyGeometry:copyMesh:)` | `BRepBuilderAPI_Copy` |
 
 #### Sub-Shape Extraction (v0.38.0)
+
+One enumeration behind all of these: `TopExp::MapShapes` into a `TopTools_IndexedMapOfShape`, in
+`TopExp_Explorer` order, one entry per **distinct** sub-shape (`TopoDS_Shape::IsSame`: same
+geometry *and* placement, orientation ignored). A sub-shape reachable from two parents appears
+once; two placements of one body appear twice. (#502)
+
 | Swift API | OCCT Class |
 |-----------|------------|
-| `shape.solids` / `shape.solidCount` | `TopExp_Explorer(TopAbs_SOLID)` |
-| `shape.shells` / `shape.shellCount` | `TopExp_Explorer(TopAbs_SHELL)` |
-| `shape.wires` / `shape.wireCount` | `TopExp_Explorer(TopAbs_WIRE)` |
+| `shape.subShapeCount(ofType:)` / `shape.uniqueSubShapeCount(ofType:)` | `TopExp::MapShapes` |
+| `shape.subShape(type:index:)` / `shape.subShapes(ofType:)` | `TopExp::MapShapes` |
+| `shape.solids` / `shape.solidCount` | `TopExp::MapShapes(TopAbs_SOLID)` |
+| `shape.shells` / `shape.shellCount` | `TopExp::MapShapes(TopAbs_SHELL)` |
+| `shape.wires` / `shape.wireCount` | `TopExp::MapShapes(TopAbs_WIRE)` |
+| `shape.faceCount` / `shape.face(at:)` | `TopExp::MapShapes(TopAbs_FACE)` |
+| `shape.edgeCount` / `shape.edge(at:)` / `shape.edges()` | `TopExp::MapShapes(TopAbs_EDGE)` |
+| `shape.vertexCount` / `shape.vertices()` | `TopExp::MapShapes(TopAbs_VERTEX)` |
+| `shape.faces()` | `TopExp::MapShapes(TopAbs_FACE)` — the same distinct enumeration as `faceCount` (#541) |
+| `shape.orientedFaces()` | `TopExp_Explorer(TopAbs_FACE)`: one entry per **occurrence**, parent-relative orientation preserved (#614) |
+| `face.orientation` | `TopoDS_Shape::Orientation()` — the flag `normal(atU:v:)` reverses on (#614) |
+
+Two face enumerations, because a face can occur in one shape with both orientations and an index
+cannot carry both. This is the split the kernel itself draws: `TopExp::MapShapes` publishes no
+orientation-sensitive overload (`TopExp.hxx:57-60`) and BREP persistence indexes sub-shapes through
+the `IsSame` map (`TopTools_ShapeSet.hxx:192`), while `BRepGProp::VolumeProperties` reads
+orientation off `ex.Current()` and keeps one `IsSame` map *per orientation* so a shared wall's two
+sides both survive (`BRepGProp.cxx:318-338`). `faces()` is the index; `orientedFaces()` is the
+normal. Entries of `orientedFaces()` still carry the `faces()` index, so an occurrence stays
+addressable. (#614)
 
 #### Shell Decomposition (outer body vs. cavities)
 | Swift API | OCCT Class |
@@ -951,6 +985,22 @@ OCCTSwift wraps a **subset** of OCCT's functionality. The bridge layer (`OCCTBri
 | Swift API | OCCT Class |
 |-----------|------------|
 | `shape.filletEvolving(_:)` | `BRepFilletAPI_MakeFillet.SetRadius(UandR)` |
+
+#### Fillet Decline Reporting (#639) and Duplicate-Overwrite Reporting (#633)
+| Swift API | OCCT Class |
+|-----------|------------|
+| `shape.filletedWithReport(edges:radius:)` | `BRepFilletAPI_MakeFillet` + `Contour(edge)` per requested edge |
+| `shape.filletedWithReport(edges:startRadius:endRadius:)` | `BRepFilletAPI_MakeFillet.Add(R1, R2, E)` + `Contour(edge)` |
+| `shape.filletEvolvingWithReport(_:)` | `BRepFilletAPI_MakeFillet.SetRadius(UandR)` + `Contour(edge)` |
+| `shape.blendedEdgesWithReport(_:)` | `BRepFilletAPI_MakeFillet.Add(radius, edge)` + `Contour(edge)` |
+
+Each of the first three shares its non-reporting sibling's build, and additionally reports which
+requested edges `Contour(edge) == 0` after `Add()`: the ones OCCT declined to fillet (a
+free-boundary edge of an open shell, most commonly), which the non-reporting siblings silently
+skip. `blendedEdgesWithReport(_:)` reports that too, plus a second, independent axis its siblings
+have no way to trigger: `overwrittenDuplicateIndices`, the requested edges whose radius a *later*
+entry in the same call silently overwrote at that edge's own fillet-contour slot (#633), computed
+Swift-side from the request array rather than from OCCT. See `Shape.FilletResult`.
 
 #### Per-Face Variable Offset (v0.38.0)
 | Swift API | OCCT Class |
@@ -1063,10 +1113,13 @@ OCCTSwift wraps a **subset** of OCCT's functionality. The bridge layer (`OCCTBri
 |-----------|------------|
 | `Shape.evolvedAdvanced(spine:profile:joinType:axeProf:solid:volume:tolerance:)` | `BRepOffsetAPI_MakeEvolved` (full constructor) |
 
-#### Pipe Shell Transition (v0.33.0)
+#### Pipe Shell (v0.33.0, unified in #503)
+Every `Add()`-based pipe sweep is one bridge function, `OCCTShapeCreatePipeShellMultiSection`.
 | Swift API | OCCT Class |
 |-----------|------------|
-| `Shape.pipeShellWithTransition(spine:profile:mode:transition:solid:)` | `BRepOffsetAPI_MakePipeShell.SetTransitionMode` |
+| `Shape.pipeShell(spine:profile:mode:transition:withContact:withCorrection:solid:)` | `BRepOffsetAPI_MakePipeShell` (one section) |
+| `Shape.pipeShellMultiSection(spine:profiles:mode:transition:withContact:withCorrection:solid:)` | `BRepOffsetAPI_MakePipeShell` (`SetMode` + `Add` per section + `SetTransitionMode`) |
+| `Shape.pipeShellWithTransition(spine:profile:mode:transition:solid:)`, **deprecated**, forwards to `pipeShell` | `BRepOffsetAPI_MakePipeShell.SetTransitionMode` |
 
 #### Face from Surface (v0.33.0)
 | Swift API | OCCT Class |
@@ -1192,8 +1245,8 @@ OCCT has thousands of classes. Some notable ones not yet exposed:
 
 To wrap additional OCCT functionality, you need to modify three files:
 
-1. **`Sources/OCCTBridge/include/OCCTBridge.h`** - Add C function declaration
-2. **`Sources/OCCTBridge/src/OCCTBridge.mm`** - Implement using OCCT C++ API
+1. **`Sources/OCCTBridge/include/OCCTBridge_<Domain>.h`** - Add C function declaration
+2. **`Sources/OCCTBridge/src/OCCTBridge_<Domain>.mm`** - Implement using OCCT C++ API
 3. **`Sources/OCCTSwift/Shape.swift`** (or Wire.swift) - Add Swift wrapper
 
 **See [docs/EXTENDING.md](docs/EXTENDING.md) for the complete guide** with:

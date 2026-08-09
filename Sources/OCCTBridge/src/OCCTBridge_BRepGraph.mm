@@ -39,21 +39,8 @@
 #include <NCollection_DynamicArray.hxx>
 #include <TCollection_AsciiString.hxx>
 #include <GeomAbs_Shape.hxx>
-
-// === Local static helper duplicated from OCCTBridge.mm ===
-//
-// `static` ensures internal linkage so the symbol doesn't conflict with the
-// canonical definition over there. The function bodies are identical.
-
-static GeomAbs_Shape continuityFromInt(int val) {
-    switch (val) {
-        case 0: return GeomAbs_C0;
-        case 1: return GeomAbs_C1;
-        case 2: return GeomAbs_C2;
-        case 3: return GeomAbs_C3;
-        default: return GeomAbs_CN;
-    }
-}
+#include <ChFi3d.hxx>
+#include <ChFiDS_TypeOfConcavity.hxx>
 
 
 // === Extracted BRepGraph block ===
@@ -2637,9 +2624,11 @@ void OCCTBRepGraphSetCoEdgeUVBox(OCCTBRepGraphRef, int32_t, double, double, doub
 
 // OCCT 8.0.0p1: edge regularity would live in BRepGraph_LayerRegularity, but that class is broken in
 // p1 (uncompilable header / absent from libOCCT — see the include note near the top of this file), so
-// there is no working write path. Report failure. continuityFromInt() is kept for the cut-path wrappers.
+// there is no working write path. Every call reports failure and the continuity argument is not read
+// at all. #490 deleted the local int -> GeomAbs_Shape copy that used to sit at the top of this file
+// purely so this body could take its address to silence an unused-static warning; the comment
+// claiming it was "kept for the cut-path wrappers" was false — nothing else ever called it.
 int32_t OCCTBRepGraphSetEdgeRegularity(OCCTBRepGraphRef, int32_t, int32_t, int32_t, int32_t) {
-    (void)&continuityFromInt;
     return 0;
 }
 
@@ -2978,13 +2967,17 @@ int32_t OCCTBRepGraphSampleFaceUVGrid(OCCTBRepGraphRef g, int32_t faceIndex,
         double uStep = (uSamples > 1) ? (uMax - uMin) / (uSamples - 1) : 0.0;
         double vStep = (vSamples > 1) ? (vMax - vMin) / (vSamples - 1) : 0.0;
 
-        for (int32_t iv = 0; iv < vSamples; ++iv) {
-            double v = vMin + iv * vStep;
-            for (int32_t iu = 0; iu < uSamples; ++iu) {
-                double u = uMin + iu * uStep;
-                int32_t idx = iv * uSamples + iu;
+        // #617: U-major, via the one shared index (occtSurfaceGridIndex, #486) rather than a
+        // hand-spelled formula. This buffer used to be written `iv * uSamples + iu` — the exact
+        // opposite of what #486 declared THE surface-grid layout, and the only guidance a caller
+        // of BRepGraph.FaceGridSample had. Loop order follows the index so writes stay sequential.
+        for (int32_t iu = 0; iu < uSamples; ++iu) {
+            double u = uMin + iu * uStep;
+            for (int32_t iv = 0; iv < vSamples; ++iv) {
+                double v = vMin + iv * vStep;
+                int32_t idx = occtSurfaceGridIndex(iu, iv, vSamples);
 
-                GeomLProp_SLProps props(surfHandle, u, v, 2, Precision::Confusion());
+                GeomLProp_SLProps props = occtSurfaceLocalProps(surfHandle, u, v, 2);
 
                 // Position
                 gp_Pnt pnt = props.Value();
@@ -3055,6 +3048,7 @@ int32_t OCCTBRepGraphSampleEdgeCurve(OCCTBRepGraphRef g, int32_t edgeIndex,
 #include <TopExp.hxx>
 #include <TopTools_ListOfShape.hxx>
 // TopTools_ListIteratorOfListOfShape.hxx removed in OCCT 8.0
+#include <cmath>
 
 int32_t OCCTEdgeGetAdjacentFaces(OCCTShapeRef shape, OCCTEdgeRef edge, OCCTFaceRef* outFace1, OCCTFaceRef* outFace2) {
     if (!shape || !edge || !outFace1 || !outFace2) return 0;
@@ -3094,136 +3088,146 @@ int32_t OCCTEdgeGetAdjacentFaces(OCCTShapeRef shape, OCCTEdgeRef edge, OCCTFaceR
 
 OCCTEdgeConvexity OCCTEdgeGetConvexity(OCCTShapeRef shape, OCCTEdgeRef edge, OCCTFaceRef face1, OCCTFaceRef face2) {
     if (!shape || !edge || !face1 || !face2) return OCCTEdgeConvexitySmooth;
-    
+
     try {
-        // Get the edge curve and midpoint
-        BRepAdaptor_Curve edgeCurve(edge->edge);
-        double midParam = (edgeCurve.FirstParameter() + edgeCurve.LastParameter()) / 2.0;
-        gp_Pnt midPt = edgeCurve.Value(midParam);
-        
-        // Get surface adapters
-        BRepAdaptor_Surface surf1(face1->face);
-        BRepAdaptor_Surface surf2(face2->face);
-        
-        // Project point onto surfaces to get UV parameters
-        Standard_Real u1, v1, u2, v2;
-        
-        // Use edge parameters on face - find the PCurve
-        Standard_Real f, l;
-        Handle(Geom2d_Curve) pcurve1 = BRep_Tool::CurveOnSurface(edge->edge, face1->face, f, l);
-        Handle(Geom2d_Curve) pcurve2 = BRep_Tool::CurveOnSurface(edge->edge, face2->face, f, l);
-        
-        if (pcurve1.IsNull() || pcurve2.IsNull()) {
-            return OCCTEdgeConvexitySmooth;
-        }
-        
-        // Get UV at midpoint
-        gp_Pnt2d uv1 = pcurve1->Value(midParam);
-        gp_Pnt2d uv2 = pcurve2->Value(midParam);
-        
-        u1 = uv1.X(); v1 = uv1.Y();
-        u2 = uv2.X(); v2 = uv2.Y();
-        
-        // Get normals at those points
-        gp_Pnt p1, p2;
-        gp_Vec d1u, d1v, d2u, d2v;
-        surf1.D1(u1, v1, p1, d1u, d1v);
-        surf2.D1(u2, v2, p2, d2u, d2v);
-        
-        gp_Vec n1 = d1u.Crossed(d1v);
-        gp_Vec n2 = d2u.Crossed(d2v);
-        
-        if (n1.Magnitude() < 1e-10 || n2.Magnitude() < 1e-10) {
-            return OCCTEdgeConvexitySmooth;
-        }
-        
-        n1.Normalize();
-        n2.Normalize();
-        
-        // Account for face orientation
-        if (face1->face.Orientation() == TopAbs_REVERSED) {
-            n1.Reverse();
-        }
-        if (face2->face.Orientation() == TopAbs_REVERSED) {
-            n2.Reverse();
-        }
-        
-        // Get edge tangent at midpoint
-        gp_Vec tangent;
-        gp_Pnt unused;
-        edgeCurve.D1(midParam, unused, tangent);
-        
-        if (tangent.Magnitude() < 1e-10) {
-            return OCCTEdgeConvexitySmooth;
-        }
-        tangent.Normalize();
-        
-        // Determine convexity:
-        // Cross product of tangent with n1 gives direction "into" face1
-        // If n2 points in same direction as this cross product, edge is concave
-        gp_Vec intoFace1 = tangent.Crossed(n1);
-        
-        double dot = intoFace1.Dot(n2);
-        
-        // Threshold for smooth (nearly tangent)
-        const double smoothThreshold = 0.01;  // ~0.5 degrees
-        
-        if (std::abs(dot) < smoothThreshold) {
-            return OCCTEdgeConvexitySmooth;
-        } else if (dot > 0) {
-            return OCCTEdgeConvexityConcave;
-        } else {
-            return OCCTEdgeConvexityConvex;
+        // #723: OCCT already ships a convexity classifier, ChFi3d::DefineConnectType, and it is
+        // the one the fillet/chamfer builder itself calls (ChFi3d_Builder_1.cxx:930, with
+        // CorrectPoint=true, the call this mirrors) to decide which edges it can round or bevel.
+        // It samples the LOCAL dihedral at the edge midpoint: each face's normal there (from its
+        // pcurve's D1 evaluation) against the edge tangent, and needs no area integration at all.
+        //
+        // Replaces the formula #703/#720 built and fixed here: that formula used each face's
+        // GLOBAL area centroid as a stand-in for "which side is material", which drifts with face
+        // proportions. #723 measured the residual directly: a through-hole rim classified concave
+        // or convex depending on plate thickness alone, since the cylindrical wall's centroid moves
+        // as the wall gets taller while the rim geometry itself never changes, the same failure
+        // class #703 fixed (a geometric answer depending on something that isn't the local
+        // geometry), re-parameterised. `ChFi3d::DefineConnectType` reports the identical
+        // classification for (face1, face2) and (face2, face1) by construction (it derives the
+        // edge tangent from each face's own pcurve rather than combining the two orientations), so
+        // #703's order-independence requirement holds with no centroid argument needed, and #720's
+        // caching (this function used to take precomputed centroids so AAG.buildGraph() didn't pay
+        // for a whole-face SurfaceProperties integration per adjacent pair) has nothing left to do.
+        //
+        // SinTol is literally sin(angular tolerance) by this API's own convention
+        // (BRepOffset_Analyse::Perform: `SinTol = std::abs(std::sin(Angle))`); reusing the previous
+        // formula's smoothThreshold (0.01, "~0.5 degrees") keeps the same practical tangency
+        // tolerance rather than introducing a new number (asin(0.01) ~= 0.57 degrees).
+        const double smoothThreshold = 0.01;
+        ChFiDS_TypeOfConcavity connectType =
+            ChFi3d::DefineConnectType(edge->edge, face1->face, face2->face, smoothThreshold, true);
+
+        switch (connectType) {
+            case ChFiDS_Concave:
+                return OCCTEdgeConvexityConcave;
+            case ChFiDS_Convex:
+                return OCCTEdgeConvexityConvex;
+            case ChFiDS_Tangential:
+                return OCCTEdgeConvexitySmooth;
+            case ChFiDS_FreeBound:
+            case ChFiDS_Other:
+            case ChFiDS_Mixed:
+            default:
+                // Same "can't classify this edge" fallback this function has always reported for
+                // an edge it can't resolve: ChFiDS_Other is returned when a face has no pcurve for
+                // this edge (this function's own null-pcurve guard, pre-#723); ChFiDS_Mixed is two
+                // spline faces whose local concavity itself isn't single-valued (ChFi3d.cxx's own
+                // "faces locally mixed" debug note); ChFiDS_FreeBound doesn't arise here since both
+                // faces are known to share this edge.
+                return OCCTEdgeConvexitySmooth;
         }
     } catch (...) {
         return OCCTEdgeConvexitySmooth;
     }
 }
 
-int32_t OCCTFaceGetSharedEdges(OCCTShapeRef shape, OCCTFaceRef face1, OCCTFaceRef face2, OCCTEdgeRef* outEdges, int32_t maxEdges) {
-    if (!shape || !face1 || !face2 || !outEdges || maxEdges <= 0) return 0;
-    
-    try {
-        // Get edges of both faces
-        TopTools_IndexedMapOfShape edges1, edges2;
-        TopExp::MapShapes(face1->face, TopAbs_EDGE, edges1);
-        TopExp::MapShapes(face2->face, TopAbs_EDGE, edges2);
-        
-        int32_t count = 0;
-        
-        // Find common edges
-        for (int i = 1; i <= edges1.Extent() && count < maxEdges; i++) {
-            const TopoDS_Edge& e1 = TopoDS::Edge(edges1(i));
-            
-            for (int j = 1; j <= edges2.Extent(); j++) {
-                const TopoDS_Edge& e2 = TopoDS::Edge(edges2(j));
-                
-                // Compare by IsEqual (same TShape)
-                if (e1.IsSame(e2)) {
-                    outEdges[count] = new OCCTEdge(e1);
-                    count++;
-                    break;
+// #761 review: OCCTFaceGetSharedEdges and OCCTFaceGetSharedEdgeCount used to carry two
+// independent copies of this nested IsSame-comparison loop -- exactly the shape of bug that let
+// the original 10-cap survive unnoticed (one copy silently disagreeing with another). Now there
+// is exactly one place the face-pair edge identity test lives, so a future change to that test
+// (e.g. tolerance-aware instead of IsSame) cannot be applied to one call and not the other.
+//
+// outEdges == nullptr: counting mode (OCCTFaceGetSharedEdgeCount). Always scans every edge of
+// both faces and returns the TRUE total, uncapped; maxEdges is ignored.
+// outEdges != nullptr: collecting mode (OCCTFaceGetSharedEdges). Stops scanning as soon as count
+// reaches maxEdges, exactly as this loop always has: every caller passes a fixed-size buffer it
+// must not overrun. The return value in this mode is therefore capped at maxEdges, same as before.
+/// Walks a face pair's shared edges exactly once. Returns the TRUE total; writes at most
+/// `maxEdges` of them to `outEdges` and reports how many through `outWritten`.
+///
+/// The total and the written count are separate because callers want different things from the same
+/// scan and used to make separate calls to get them (#783): `buildGraph()` needs the true count for
+/// `AAGEdge.sharedEdgeCount` AND one edge to ask about convexity, while `OCCTFaceGetSharedEdges`'s
+/// own callers need only what fits their fixed buffer, and must release exactly what was written.
+/// One comparison in one place, because two copies of it silently disagreeing is what let the
+/// 10-edge cap survive (#761).
+static int32_t countOrCollectSharedEdges(const TopoDS_Face& face1, const TopoDS_Face& face2,
+                                          OCCTEdgeRef* outEdges, int32_t maxEdges,
+                                          int32_t* outWritten = nullptr) {
+    TopTools_IndexedMapOfShape edges1, edges2;
+    TopExp::MapShapes(face1, TopAbs_EDGE, edges1);
+    TopExp::MapShapes(face2, TopAbs_EDGE, edges2);
+
+    int32_t total = 0;
+    int32_t written = 0;
+    for (int i = 1; i <= edges1.Extent(); i++) {
+        // Stop early only when the caller wants nothing beyond a full buffer. A caller asking for
+        // the total (outWritten non-null) needs the whole walk.
+        if (outEdges && !outWritten && written >= maxEdges) break;
+        const TopoDS_Edge& e1 = TopoDS::Edge(edges1(i));
+
+        for (int j = 1; j <= edges2.Extent(); j++) {
+            const TopoDS_Edge& e2 = TopoDS::Edge(edges2(j));
+
+            // Compare by IsSame (same TShape + Location, orientation ignored).
+            if (e1.IsSame(e2)) {
+                if (outEdges && written < maxEdges) {
+                    outEdges[written] = new OCCTEdge(e1);
+                    written++;
                 }
+                total++;
+                break;
             }
         }
-        
-        return count;
+    }
+    if (outWritten) *outWritten = written;
+    return outEdges && !outWritten ? written : total;
+}
+
+int32_t OCCTFaceGetSharedEdges(OCCTShapeRef shape, OCCTFaceRef face1, OCCTFaceRef face2, OCCTEdgeRef* outEdges, int32_t maxEdges) {
+    if (!shape || !face1 || !face2 || !outEdges || maxEdges <= 0) return 0;
+
+    try {
+        return countOrCollectSharedEdges(face1->face, face2->face, outEdges, maxEdges);
     } catch (...) {
         return 0;
     }
 }
 
-bool OCCTFacesAreAdjacent(OCCTShapeRef shape, OCCTFaceRef face1, OCCTFaceRef face2) {
-    if (!shape || !face1 || !face2) return false;
-    
-    OCCTEdgeRef edges[1];
-    int32_t count = OCCTFaceGetSharedEdges(shape, face1, face2, edges, 1);
-    
-    if (count > 0) {
-        OCCTEdgeRelease(edges[0]);
-        return true;
+int32_t OCCTFaceGetSharedEdgeCount(OCCTShapeRef shape, OCCTFaceRef face1, OCCTFaceRef face2) {
+    if (!shape || !face1 || !face2) return 0;
+
+    try {
+        return countOrCollectSharedEdges(face1->face, face2->face, nullptr, 0);
+    } catch (...) {
+        return 0;
     }
-    return false;
+}
+
+int32_t OCCTFaceGetSharedEdgeSummary(OCCTShapeRef shape, OCCTFaceRef face1, OCCTFaceRef face2,
+                                     OCCTEdgeRef* outFirstEdge) {
+    if (outFirstEdge) *outFirstEdge = nullptr;
+    if (!shape || !face1 || !face2) return 0;
+
+    try {
+        int32_t written = 0;
+        int32_t total = countOrCollectSharedEdges(face1->face, face2->face,
+                                                  outFirstEdge, outFirstEdge ? 1 : 0, &written);
+        return total;
+    } catch (...) {
+        if (outFirstEdge) *outFirstEdge = nullptr;
+        return 0;
+    }
 }
 
 double OCCTEdgeGetDihedralAngle(OCCTEdgeRef edge, OCCTFaceRef face1, OCCTFaceRef face2, double parameter) {
@@ -3425,11 +3429,6 @@ bool OCCTBRepGraphHasItemUID(OCCTBRepGraphRef graph, int32_t domain, int32_t kin
             : BRepGraph_ItemUID::Node(kindFromInt(kind), (size_t)counter);
         return graph->graph.UIDs().Has(uid);
     } catch (...) { return false; }
-}
-
-uint32_t OCCTBRepGraphGeneration(OCCTBRepGraphRef graph) {
-    if (!graph) return 0;
-    try { return graph->graph.UIDs().Generation(); } catch (...) { return 0; }
 }
 
 uint64_t OCCTBRepGraphInstanceID(OCCTBRepGraphRef graph) {

@@ -245,6 +245,35 @@ struct Curve2DTests {
         #expect(points.count == 32)
     }
 
+    /// #501: `GCPnts_UniformAbscissa` sizes its own array at `nbPoints + 5` and can report more
+    /// points than were asked for: one more, on a 1e6 x 1e-3 ellipse, for 22 of the first 59
+    /// counts. `outXY` only holds `pointCount` pairs, so the surplus used to be written past its
+    /// end; the surplus point is the curve's end parameter, so it is the last slot that keeps it.
+    @Test("Uniform draw stays within the requested count on an overshooting ellipse")
+    func uniformDrawRespectsCount() {
+        guard let ellipse = Curve2D.ellipse(center: .zero, majorRadius: 1e6, minorRadius: 1e-3)
+        else {
+            Issue.record("could not build the high-aspect-ratio ellipse")
+            return
+        }
+        let endPoint = ellipse.point(at: ellipse.domain.upperBound)
+        for count in [4, 5, 8, 12, 14, 18, 20, 22, 25, 26, 31, 33, 34, 35, 39, 40] {
+            let points = ellipse.drawUniform(pointCount: count)
+            #expect(points.count == count)
+            if let last = points.last {
+                #expect(distance(last, endPoint) < 1e-6)
+            }
+        }
+    }
+
+    @Test("Uniform draw rejects counts below two")
+    func uniformDrawRejectsCountsBelowTwo() {
+        let circle = Curve2D.circle(center: .zero, radius: 5)!
+        for count in [0, 1] {
+            #expect(circle.drawUniform(pointCount: count).isEmpty)
+        }
+    }
+
     @Test("Deflection draw produces points")
     func deflectionDraw() {
         let circle = Curve2D.circle(center: .zero, radius: 5)!
@@ -565,14 +594,15 @@ struct Curve2DLocalPropertiesTests {
         let r = 5.0
         let circle = Curve2D.circle(center: .zero, radius: r)!
         let k = circle.curvature(at: 0)
-        #expect(abs(k - 1.0 / r) < 1e-10)
+        if let k { #expect(abs(k - 1.0 / r) < 1e-10) } else { Issue.record("circle has curvature") }
     }
 
     @Test("Curvature of line is zero")
     func curvatureOfLine() {
         let seg = Curve2D.segment(from: SIMD2(0, 0), to: SIMD2(10, 0))!
+        // #595: a straight segment's 0 is an answer, so this asserts a reported 0 rather than nil.
         let k = seg.curvature(at: 0.5)
-        #expect(abs(k) < 1e-10)
+        if let k { #expect(abs(k) < 1e-10) } else { Issue.record("a straight segment has curvature 0") }
     }
 
     @Test("Normal on circle points toward center")
@@ -740,7 +770,7 @@ struct Curve2DConvertExtrasTests {
         let joined = Curve2D.join([seg1, seg2])
         #expect(joined != nil)
         if let joined = joined {
-            let indices = joined.splitIndicesAtDiscontinuities(continuity: 2)
+            let indices = joined.splitIndicesAtDiscontinuities(continuity: .c2)
             // May or may not find C2 discontinuities depending on join method
             #expect(indices != nil)
         }
@@ -1457,28 +1487,6 @@ struct Curve2DApproximatedOverloadParityTests {
 
         #expect(wholeDomain != nil)
         #expect(ranged != nil)
-    }
-
-    @available(*, deprecated, message: "Exercises the deprecated `approximated(first:last:...)` shim on purpose.")
-    @Test("Deprecated approximated(first:last:...) spelling still forwards to approximatedInRange")
-    func deprecatedShimForwardsToApproximatedInRange() {
-        // #407 renamed this overload; the retired spelling survives as a `@available(*,
-        // deprecated, renamed:)` shim per docs/SEMVER.md (a renamed method is a MAJOR-triggering
-        // breaking change, and the shim avoids forcing that immediately). Confirms the shim isn't
-        // just present but behaviorally identical to the method it forwards to.
-        let circle = Curve2D.circle(center: .zero, radius: 10)!
-        let d = circle.domain
-
-        let viaOldName = circle.approximated(first: d.lowerBound, last: d.upperBound,
-                                              toleranceU: 1e-6, toleranceV: 1e-6)
-        let viaNewName = circle.approximatedInRange(first: d.lowerBound, last: d.upperBound,
-                                                     toleranceU: 1e-6, toleranceV: 1e-6)
-        #expect(viaOldName != nil)
-        #expect(viaNewName != nil)
-        if let viaOldName, let viaNewName {
-            #expect(viaOldName.degree == viaNewName.degree)
-            #expect(viaOldName.poleCount == viaNewName.poleCount)
-        }
     }
 
     /// A curve complex enough that `Geom2dConvert_ApproxCurve`/`Approx_Curve2d` can't trivially
@@ -2843,8 +2851,8 @@ struct TransformFactory2DTests {
     }
 }
 
-@Suite("GCE2d Conic Tests")
-struct GCE2dConicTests {
+@Suite("GC_Make*2d Conic Tests")
+struct GCMake2dConicTests {
 
     @Test func circle2dCenterRadius() {
         let c = Curve2D.gceCircle(center: SIMD2(0, 0), radius: 5)
@@ -2878,12 +2886,47 @@ struct GCE2dConicTests {
         }
     }
 
+    /// `GC_MakeCircle2d(gp_Circ2d, theDist)`: a positive signed distance yields a
+    /// concentric circle that *encloses* the source, so r grows by exactly theDist.
+    @Test func circle2dParallel() {
+        let c = Curve2D.gceCircleParallel(center: SIMD2(0, 0), direction: SIMD2(1, 0),
+                                          radius: 5, distance: 2)
+        #expect(c != nil)
+        if let c = c {
+            #expect(abs(c.circleProperties.radius - 7) < 1e-9)
+            #expect(abs(c.circleProperties.center.x) < 1e-9)
+            #expect(abs(c.circleProperties.center.y) < 1e-9)
+        }
+    }
+
+    /// A negative distance shrinks instead: the result is enclosed by the source.
+    @Test func circle2dParallelInward() {
+        let c = Curve2D.gceCircleParallel(center: SIMD2(0, 0), direction: SIMD2(1, 0),
+                                          radius: 5, distance: -2)
+        #expect(c != nil)
+        if let c = c {
+            #expect(abs(c.circleProperties.radius - 3) < 1e-9)
+        }
+    }
+
     @Test func ellipse2dFromAxis() {
         let e = Curve2D.gceEllipse(center: SIMD2(0, 0), xDirection: SIMD2(1, 0),
                                     majorRadius: 10, minorRadius: 5)
         #expect(e != nil)
         if let e = e {
             #expect(e.isClosed)
+        }
+    }
+
+    /// `GC_MakeEllipse2d(S1, S2, Center)`: S1 is the apex on the major axis, so the
+    /// major radius is |S1 - Center|; S2 fixes the minor radius off that axis.
+    @Test func ellipse2dFrom3Points() {
+        let e = Curve2D.gceEllipse(s1: SIMD2(10, 0), s2: SIMD2(0, 5), center: SIMD2(0, 0))
+        #expect(e != nil)
+        if let e = e {
+            #expect(e.isClosed)
+            #expect(abs(e.ellipseProperties.majorRadius - 10) < 1e-9)
+            #expect(abs(e.ellipseProperties.minorRadius - 5) < 1e-9)
         }
     }
 
@@ -2901,6 +2944,17 @@ struct GCE2dConicTests {
         let h = Curve2D.gceHyperbola(center: SIMD2(0, 0), xDirection: SIMD2(1, 0),
                                       majorRadius: 10, minorRadius: 5)
         #expect(h != nil)
+    }
+
+    /// `GC_MakeHyperbola2d(S1, S2, Center)`: S1 is the main-branch vertex on the
+    /// major axis; S2 is the conjugate-branch vertex giving the minor radius.
+    @Test func hyperbola2dFrom3Points() {
+        let h = Curve2D.gceHyperbola(s1: SIMD2(10, 0), s2: SIMD2(0, 5), center: SIMD2(0, 0))
+        #expect(h != nil)
+        if let h = h {
+            #expect(abs(h.hyperbolaProperties.majorRadius - 10) < 1e-9)
+            #expect(abs(h.hyperbolaProperties.minorRadius - 5) < 1e-9)
+        }
     }
 
     @Test func parabola2dFromAxis() {
@@ -2921,12 +2975,9 @@ struct BSplineCurve2dKnotSplitTests {
     @Test func knotSplits() {
         // Create a 2D BSpline curve from interpolation
         if let c = Curve2D.interpolate(through: [SIMD2(0, 0), SIMD2(1, 1), SIMD2(2, 0), SIMD2(3, 1)]) {
-            let n = c.bsplineKnotSplits(continuity: 0)
-            #expect(n >= 0)
-            if n > 0 {
-                let vals = c.bsplineKnotSplitValues(continuity: 0)
-                #expect(vals.count == n)
-            }
+            // #562: was bsplineKnotSplits/bsplineKnotSplitValues, both now deprecated onto this one.
+            let indices = c.splitIndicesAtDiscontinuities(continuity: .c0)
+            #expect((indices?.count ?? 0) >= 0)
         }
     }
 }
@@ -3352,51 +3403,25 @@ struct Curve2DEvalTests {
         }
     }
 
-    @Test func batchD0() {
-        if let curve = Curve2D.circle(center: SIMD2(0, 0), radius: 5) {
-            let params = [0.0, Double.pi / 2, Double.pi]
-            let pts = curve.evalBatchD0(params: params)
-            #expect(pts.count == 3)
-            // At pi, should be (-5, 0)
-            #expect(abs(pts[2].x + 5.0) < 1e-4)
-            #expect(abs(pts[2].y) < 1e-4)
-        }
-    }
-
-    @Test func batchD1() {
-        if let curve = Curve2D.circle(center: SIMD2(0, 0), radius: 5) {
-            let params = [0.0, Double.pi / 2]
-            let results = curve.evalBatchD1(params: params)
-            #expect(results.count == 2)
-        }
-    }
 }
 
-@Suite("GridEval 2D Curve v0.111")
-struct GridEvalCurve2DTests {
-    @Test func gridEvalD0Circle() {
-        if let circle = Curve2D.circle(center: SIMD2(0, 0), radius: 5) {
-            let params = [0.0, Double.pi / 2, Double.pi, 3 * Double.pi / 2]
-            let pts = circle.gridEvalD0(params: params)
-            #expect(pts.count == 4)
-            // At u=0, point should be at (5, 0)
-            #expect(abs(pts[0].x - 5.0) < 1e-4)
-            #expect(abs(pts[0].y) < 1e-4)
-            // At u=pi/2, point should be at (0, 5)
-            #expect(abs(pts[1].x) < 1e-4)
-            #expect(abs(pts[1].y - 5.0) < 1e-4)
-        }
+/// #486 unified `Curve2D`'s three batch-evaluation spellings (`evaluateGrid`/`evaluateGridD1`,
+/// v0.28.0's `Geom2dGridEval_Curve`; the v0.110.0 `evalBatchD0`/`D1`; and the v0.111.0
+/// `gridEvalD0`/`D1`) onto the first. The two forwarding spellings were removed at v2.0.0 (#784).
+@Suite("Issue 486: Curve2D batch-eval spellings agree")
+struct Issue486Curve2DBatchTests {
+
+    private func bspline() -> Curve2D? {
+        Curve2D.interpolate(through: [
+            SIMD2(0, 0), SIMD2(2, 3), SIMD2(5, 5), SIMD2(8, 3), SIMD2(10, 0)
+        ])
     }
 
-    @Test func gridEvalD1Circle() {
-        if let circle = Curve2D.circle(center: SIMD2(0, 0), radius: 5) {
-            let params = [0.0, Double.pi / 2]
-            let results = circle.gridEvalD1(params: params)
-            #expect(results.count == 2)
-            // At u=0, tangent should be (0, 5) for CCW circle
-            #expect(abs(results[0].d1.x) < 1e-4)
-            #expect(abs(results[0].d1.y - 5.0) < 1e-4)
-        }
+    @Test("empty parameters give an empty result, not one padded with zeroes")
+    func emptyParametersGiveEmptyResult() {
+        guard let curve = bspline() else { return }
+        #expect(curve.evaluateGrid([]).isEmpty)
+        #expect(curve.evaluateGridD1([]).isEmpty)
     }
 }
 
@@ -3412,10 +3437,11 @@ struct Curve2DExtrasV112Tests {
         }
     }
 
-    @Test func parameterAtPoint() {
+    @Test func nearestParameterOnLine() {
         if let line = Curve2D.line(through: SIMD2(0, 0), direction: SIMD2(1, 0)) {
-            let param = line.parameterAtPoint(SIMD2(5, 0))
-            #expect(abs(param - 5.0) < 0.1)
+            let param = line.nearestParameter(to: SIMD2(5, 0))
+            #expect(param != nil)
+            if let param { #expect(abs(param - 5.0) < 0.1) }
         }
     }
 }
@@ -3633,10 +3659,11 @@ struct Curve2DBSplineExtrasTests {
 @Suite("Curve2D Continuity Queries v0.120.0")
 struct Curve2DContinuityQueriesTests {
 
-    @Test func continuityOrder() {
+    @Test func segmentContinuityClass() {
         if let c = Curve2D.segment(from: SIMD2(0, 0), to: SIMD2(1, 0)) {
-            let order = c.continuityOrder
-            #expect(order >= 0)
+            // A trimmed 2D line reports its basis line's continuity, which is analytic.
+            #expect(c.continuityClass == .cN)
+            #expect(c.continuityClass.satisfies(.c2))
         }
     }
 
@@ -4307,6 +4334,133 @@ struct Curve2DCircleFactoryParityTests {
     }
 }
 
+// MARK: - #487: Curve2D's two ellipse/hyperbola/parabola factory families
+
+/// The three remaining `Curve2D` conic types exist twice over, exactly as the circle did before
+/// #411 and as the four 3D conics did before #399: a direct family building a `Geom2d_*` object
+/// from a `gp_Ax22d`, and a `*FromCenterDir` family routing through OCCT's `gce_Make*2d`
+/// algorithms. The two are geometrically identical, but only the direct family carried a dimension
+/// precondition, so the gce family returned live degenerate curves for input its sibling rejected.
+///
+/// The preconditions have to live in the bridge rather than be left to OCCT. Measured against the
+/// pinned xcframework, `gce_MakeHypr2d(ax, 0, 0, true)` and `gce_MakeParab2d(ax, 0)` both report
+/// `gce_Done`, as do the corresponding `Geom2d_Hyperbola`/`Geom2d_Parabola` constructors: OCCT
+/// accepts these through every route. `gce_MakeElips2d(ax, 5, -3)` goes further and yields an
+/// ellipse reporting `MinorRadius() == -3`, because its own two checks do not cover that input and
+/// `gp_Elips2d`'s check, which does, is compiled out of the Release-built kernel by OCCT's
+/// `No_Exception`. So there is no OCCT-side contract to inherit here, only one to impose.
+@Suite("Curve2D conic factories agree (#487)")
+struct Curve2DConicFactoryParityTests {
+
+    private static let center = SIMD2<Double>(3, -4)
+    private static let xDir = SIMD2<Double>(1, 0)
+
+    @Test("Ellipse: both families reject zero, negative and inverted radii")
+    func ellipseDegenerateRadiiParity() {
+        let rejected: [(Double, Double)] = [(0, 0), (8, 0), (0, 4), (8, -4), (-8, 4), (4, 8)]
+        for (major, minor) in rejected {
+            #expect(Curve2D.ellipse(center: Self.center,
+                                    majorRadius: major, minorRadius: minor) == nil)
+            #expect(Curve2D.ellipseFromCenterDir(center: Self.center, direction: Self.xDir,
+                                                 majorRadius: major, minorRadius: minor) == nil)
+        }
+    }
+
+    @Test("Hyperbola: both families reject a zero or negative radius")
+    func hyperbolaDegenerateRadiiParity() {
+        let rejected: [(Double, Double)] = [(0, 0), (6, 0), (0, 3), (6, -3), (-6, 3)]
+        for (major, minor) in rejected {
+            #expect(Curve2D.hyperbola(center: Self.center,
+                                      majorRadius: major, minorRadius: minor) == nil)
+            #expect(Curve2D.hyperbolaFromCenterDir(center: Self.center, direction: Self.xDir,
+                                                   majorRadius: major, minorRadius: minor) == nil)
+        }
+    }
+
+    @Test("Parabola: both families reject zero and negative focal length")
+    func parabolaDegenerateFocalParity() {
+        for focal in [0.0, -1.0, -3.0] {
+            #expect(Curve2D.parabola(focus: Self.center, direction: Self.xDir,
+                                     focalLength: focal) == nil)
+            #expect(Curve2D.parabolaFromCenterDir(center: Self.center, direction: Self.xDir,
+                                                  focal: focal) == nil)
+        }
+    }
+
+    @Test("Hyperbola: a minor radius larger than the major is accepted by both families")
+    func hyperbolaMinorLargerThanMajorAcceptedByBoth() {
+        // A hyperbola puts no ordering on its radii, unlike an ellipse. Pinned so the shared
+        // precondition is not tightened into the ellipse's rule by a later pass.
+        #expect(Curve2D.hyperbola(center: Self.center, majorRadius: 3, minorRadius: 6) != nil)
+        #expect(Curve2D.hyperbolaFromCenterDir(center: Self.center, direction: Self.xDir,
+                                               majorRadius: 3, minorRadius: 6) != nil)
+    }
+
+    @Test("Ellipse: equal radii are accepted by both families")
+    func ellipseEqualRadiiAcceptedByBoth() {
+        // gp_Elips2d documents MajorRadius == MinorRadius as valid, so the shared precondition
+        // must reject only minor > major, not minor >= major.
+        #expect(Curve2D.ellipse(center: Self.center, majorRadius: 5, minorRadius: 5) != nil)
+        #expect(Curve2D.ellipseFromCenterDir(center: Self.center, direction: Self.xDir,
+                                             majorRadius: 5, minorRadius: 5) != nil)
+    }
+
+    @Test("Valid ellipse radii still build the identical curve in both families")
+    func validEllipseProducesMatchingGeometry() {
+        let direct = Curve2D.ellipse(center: Self.center, majorRadius: 8, minorRadius: 4)
+        let gce = Curve2D.ellipseFromCenterDir(center: Self.center, direction: Self.xDir,
+                                               majorRadius: 8, minorRadius: 4)
+        #expect(direct != nil)
+        #expect(gce != nil)
+        guard let a = direct, let b = gce else { return }
+
+        #expect(a.isClosed == b.isClosed)
+        #expect(a.isPeriodic == b.isPeriodic)
+        for t in stride(from: 0.0, to: 2 * .pi, by: .pi / 6) {
+            let pa = a.point(at: t), pb = b.point(at: t)
+            #expect(abs(pa.x - pb.x) < 1e-9)
+            #expect(abs(pa.y - pb.y) < 1e-9)
+        }
+    }
+
+    @Test("Valid hyperbola radii still build the identical curve in both families")
+    func validHyperbolaProducesMatchingGeometry() {
+        let direct = Curve2D.hyperbola(center: Self.center, majorRadius: 6, minorRadius: 3)
+        let gce = Curve2D.hyperbolaFromCenterDir(center: Self.center, direction: Self.xDir,
+                                                 majorRadius: 6, minorRadius: 3)
+        #expect(direct != nil)
+        #expect(gce != nil)
+        guard let a = direct, let b = gce else { return }
+
+        for t in stride(from: -1.0, through: 1.0, by: 0.25) {
+            let pa = a.point(at: t), pb = b.point(at: t)
+            #expect(abs(pa.x - pb.x) < 1e-9)
+            #expect(abs(pa.y - pb.y) < 1e-9)
+        }
+    }
+
+    @Test("Valid focal length still builds the identical parabola in both families")
+    func validParabolaProducesMatchingGeometry() {
+        // The two factories locate the curve from different points: parabolaFromCenterDir takes
+        // the vertex (gce_MakeParab2d's MirrorAxis location), parabola takes the focus and steps
+        // back along the axis to reach it. Same curve once the focus is placed accordingly.
+        let focal = 3.0
+        let vertex = Self.center
+        let focus = vertex + Self.xDir * focal
+        let direct = Curve2D.parabola(focus: focus, direction: Self.xDir, focalLength: focal)
+        let gce = Curve2D.parabolaFromCenterDir(center: vertex, direction: Self.xDir, focal: focal)
+        #expect(direct != nil)
+        #expect(gce != nil)
+        guard let a = direct, let b = gce else { return }
+
+        for t in stride(from: -2.0, through: 2.0, by: 0.5) {
+            let pa = a.point(at: t), pb = b.point(at: t)
+            #expect(abs(pa.x - pb.x) < 1e-9)
+            #expect(abs(pa.y - pb.y) < 1e-9)
+        }
+    }
+}
+
 // MARK: - #412: interpolatePeriodic is interpolate(closed: true)
 
 /// `Curve2D.interpolatePeriodic(points:)` and `Curve2D.interpolate(through:closed:tolerance:)`
@@ -4377,21 +4531,23 @@ struct Curve2DInterpolatePeriodicParityTests {
     }
 }
 
-// MARK: - #413: the four point-to-curve projection entry points
+// MARK: - #413/#500: the five point-to-curve projection entry points
 
-/// The same `Geom2dAPI_ProjectPointOnCurve` computation is reachable four ways:
-/// `Curve2D.project(point:)`, `Curve2D.allProjections(of:)`, `Curve2D.project(_ point: Point2D)`
-/// and `Point2D.distance(to:)`. They were four independent constructions with four different
-/// failure conventions bolted on separately — including one (`Point2D.distance(to:)`) that leaked
-/// the bridge's raw `-1` sentinel to callers as though it were a distance. They now share one
-/// bridge path and agree on both the values and on when there is no projection.
+/// The same `Geom2dAPI_ProjectPointOnCurve` computation is reachable five ways:
+/// `Curve2D.project(point:)`, `Curve2D.allProjections(of:)`, `Curve2D.project(_ point: Point2D)`,
+/// `Point2D.distance(to:)` and `Curve2D.nearestParameter(to:)`. They were five independent
+/// constructions with five different failure conventions bolted on separately, including one
+/// (`Point2D.distance(to:)`) that leaked the bridge's raw `-1` sentinel to callers as though it
+/// were a distance, and one (`Curve2D.parameterAtPoint(_:)`, now deprecated) that #413 missed
+/// entirely and that answered with the curve's own `firstParameter`. They now share one bridge
+/// path and agree on both the values and on when there is no projection.
 @Suite("Curve2D projection entry points agree (#413)")
 struct Curve2DProjectionParityTests {
 
     private static let segment = Curve2D.segment(from: SIMD2(0, 0), to: SIMD2(10, 0))!
 
-    @Test("All four entry points agree for an ordinary projection")
-    func successAgreesAcrossAllFour() {
+    @Test("All five entry points agree for an ordinary projection")
+    func successAgreesAcrossAllFive() {
         let cases: [(Curve2D, SIMD2<Double>)] = [
             (Self.segment, SIMD2(5, 3)),
             (Self.segment, SIMD2(0.5, -2)),
@@ -4406,14 +4562,17 @@ struct Curve2DProjectionParityTests {
             let asTuple = curve.project(point2D)
             let distance = point2D.distance(to: curve)
             let all = curve.allProjections(of: p)
+            let scalar = curve.nearestParameter(to: p)
 
             #expect(nearest != nil, comment)
             #expect(asTuple != nil, comment)
+            #expect(scalar != nil, comment)
             guard let nearest, let asTuple else { continue }
 
             #expect(nearest.parameter == asTuple.parameter, comment)
             #expect(nearest.distance == asTuple.distance, comment)
             #expect(nearest.distance == distance, comment)
+            #expect(scalar == nearest.parameter, comment)
 
             // The nearest solution must be the smallest of the full solution set.
             #expect(!all.isEmpty, comment)
@@ -4423,29 +4582,42 @@ struct Curve2DProjectionParityTests {
         }
     }
 
-    /// A point with no projection at all is an ordinary outcome, not an error: one beyond the
-    /// ends of a bounded curve, or a circle's centre (equidistant everywhere, so no local
-    /// minimum). All four entry points must report it, and none may report it as a distance a
-    /// threshold test would accept.
-    @Test("All four entry points agree when there is no projection")
-    func failureAgreesAcrossAllFour() {
-        let cases: [(Curve2D, SIMD2<Double>)] = [
-            (Self.segment, SIMD2(100, 0)),      // past the end
-            (Self.segment, SIMD2(-50, 3)),      // before the start
-            (Curve2D.circle(center: .zero, radius: 5)!, SIMD2(0, 0)),   // circle centre
+    /// A point with no *perpendicular foot* — one beyond the ends of a bounded curve, or a circle's
+    /// centre (equidistant everywhere, so no local minimum) — still has a nearest point, and since
+    /// #615 the four nearest-point spellings all report it rather than reporting nothing.
+    ///
+    /// `allProjections(of:)` is the one that still reports nothing, and correctly: it asks for the
+    /// extrema, which is a different question, and here there are none. Before #615 all five agreed
+    /// only because the other four were asking the extrema question too.
+    @Test("The four nearest-point entry points agree where there is no perpendicular foot")
+    func noPerpendicularFootAgreesAcrossTheFour() throws {
+        let cases: [(Curve2D, SIMD2<Double>, Double)] = [
+            (Self.segment, SIMD2(100, 0), 90),                  // past the end, nearest is (10, 0)
+            (Self.segment, SIMD2(-50, 3), 2509.0.squareRoot()), // before the start, nearest is (0, 0)
+            (Curve2D.circle(center: .zero, radius: 5)!, SIMD2(0, 0), 5),   // centre: tied at r
         ]
-        for (curve, p) in cases {
-            guard let point2D = Point2D(x: p.x, y: p.y) else { continue }
+        for (curve, p, truth) in cases {
+            let point2D = try #require(Point2D(x: p.x, y: p.y))
             let comment: Comment = "\(p)"
 
-            #expect(curve.project(point: p) == nil, comment)
-            #expect(curve.project(point2D) == nil, comment)
-            #expect(curve.allProjections(of: p).isEmpty, comment)
-
-            // Not -1: a raw sentinel here reads as "touching" to any `distance < tolerance` test.
+            let nearest = try #require(curve.project(point: p), comment)
+            let asTuple = try #require(curve.project(point2D), comment)
+            let scalar = try #require(curve.nearestParameter(to: p), comment)
             let distance = point2D.distance(to: curve)
-            #expect(distance == .infinity, comment)
+
+            #expect(abs(nearest.distance - truth) < 1e-4, comment)
+            #expect(nearest.parameter == asTuple.parameter, comment)
+            #expect(nearest.distance == asTuple.distance, comment)
+            #expect(nearest.distance == distance, comment)
+            #expect(scalar == nearest.parameter, comment)
+
+            // Never the old sentinels: `.infinity` from Point2D.distance(to:) was a real distance
+            // thrown away, and -1 underneath it reads as "touching" to a `distance < tolerance` test.
+            #expect(distance.isFinite, comment)
             #expect(distance > 0, comment)
+
+            // The extrema question is genuinely unanswerable here, and still says so.
+            #expect(curve.allProjections(of: p).isEmpty, comment)
         }
     }
 
@@ -4465,6 +4637,7 @@ struct Curve2DProjectionParityTests {
         #expect(nearest?.parameter == 0)
         #expect(nearest?.distance == 0)
         #expect(start.distance(to: Self.segment) == 0)
+        #expect(Self.segment.nearestParameter(to: SIMD2(0, 0)) == 0)
     }
 }
 
@@ -4535,25 +4708,29 @@ struct Curve2DInterpolateTangentsParityTests {
 
 // MARK: - #409: arcLength(from:to:) no longer collapses failure into 0.0
 
-/// `arcLength(from:to:)` and `length(from:to:)` both wrap `GCPnts_AbscissaPoint::Length` over
-/// a `Geom2dAdaptor_Curve`, but via different construction idioms: `arcLength(from:to:)` builds
-/// a range-checked adaptor (`Geom2dAdaptor_Curve(curve, u1, u2)`, which raises
-/// `Standard_ConstructionError` when `u1 > u2`), while `length(from:to:)` builds an unrestricted
-/// adaptor and calls the `Length(adaptor, u1, u2)` overload, which tolerates either order. That
-/// is a genuine behavioral difference, not just a cosmetic one, so `arcLength(from:to:)` keeps
-/// its own bridge call rather than delegating to `length(from:to:)`. `arcLength(from:to:)` stays
-/// non-optional (matching #408's `Curve3D.arcLength(from:to:)` shape, to avoid a source-breaking
-/// signature change) but now collapses failure to an unambiguous `-1.0` sentinel instead of
-/// `0.0`, which could be mistaken for a legitimate zero-length result; `length(from:to:)` is the
-/// optional, failure-distinguishing sibling for callers who need `nil` rather than a sentinel.
+/// `arcLength(from:to:)` used to collapse failure into `0.0`, indistinguishable from a genuine
+/// zero-length interval. #409 made it an unambiguous `-1.0` sentinel, keeping the non-optional
+/// signature (matching #408's `Curve3D.arcLength(from:to:)` shape) and leaving `length(from:to:)`
+/// as the optional, failure-distinguishing sibling for callers who want `nil`.
+///
+/// #409 kept the two entry points on separate bridge calls, because they built their adaptor
+/// differently: `arcLength(from:to:)` pre-bounded it (`Geom2dAdaptor_Curve(curve, u1, u2)`,
+/// which raises on `u1 > u2`), `length(from:to:)` passed the range to `Length(adaptor, u1, u2)`,
+/// which does not, and a reversed range was read as the one thing that difference bought. #549
+/// measured the rest of it: the pre-bounded form also extrapolated past a multi-span curve's
+/// knots, so the two spellings are one bridge call now and a reversed range measures the span.
+/// The sentinel this suite is about is unchanged; `Issue549Curve2DArcLengthRangeTests` covers
+/// which inputs still reach it.
 @Suite("Curve2D.arcLength(from:to:) distinguishes failure from zero (#409)")
 struct Curve2DArcLengthFailureTests {
 
     private static let bezier = Curve2D.bezier(poles: [SIMD2(0, 0), SIMD2(5, 5), SIMD2(10, 0)])!
 
-    @Test("A reversed range is a genuine failure, reported as -1.0, not 0.0")
-    func reversedRangeFails() {
-        let len = Self.bezier.arcLength(from: 0.8, to: 0.2)
+    @Test("A genuine failure is reported as -1.0, not 0.0")
+    func genuineFailureIsNotZero() {
+        // A NaN bound poisons the quadrature on a single-span curve; before #409 the bridge
+        // reported that as 0.0, the same value a zero-width interval reports.
+        let len = Self.bezier.arcLength(from: 0, to: .nan)
         #expect(len == -1.0)
         #expect(len != 0.0)
     }
@@ -4565,14 +4742,15 @@ struct Curve2DArcLengthFailureTests {
         #expect(len != -1.0)
     }
 
-    @Test("length(from:to:) tolerates the same reversed range arcLength(from:to:) rejects")
-    func lengthToleratesReversedRange() {
+    @Test("Both spellings tolerate a reversed range and agree on it")
+    func bothSpellingsTolerateReversedRange() {
         let forward = Self.bezier.length(from: 0.2, to: 0.8)
         let reversed = Self.bezier.length(from: 0.8, to: 0.2)
         #expect(forward != nil)
         #expect(reversed != nil)
         if let forward, let reversed {
             #expect(abs(forward - reversed) < 1e-9)
+            #expect(abs(Self.bezier.arcLength(from: 0.8, to: 0.2) - reversed) < 1e-9)
         }
     }
 }

@@ -5,11 +5,11 @@ parent: API Reference
 
 # Document — Math, Bounds, OSD & Conversions
 
-This page covers the math solvers, bounding-box types, quaternion/timer utilities, point classification, curve/surface conversion helpers, and OSD utilities found in lines 4959–6350 of `Document.swift`. For the core document lifecycle, shape tools, and XCAF I/O see the main [Document](Document.md) page.
+This page covers the math solvers, bounding-box types, quaternion/timer utilities, point classification, curve/surface conversion helpers, and OSD utilities found in `Document.swift`. For the core document lifecycle, shape tools, and XCAF I/O see the main [Document](Document.md) page.
 
 ## Topics
 
-- [gp_Quaternion](#gp_quaternion) · [OSD_Timer](#osd_timer) · [Bnd_OBB](#bnd_obb) · [Bnd_Range](#bnd_range) · [BRepClass3d Point Classification](#brepclass3d-point-classification) · [TDataXtd_Constraint](#tdataxtd_constraint) · [OSD_MemInfo](#osd_meminfo) · [ShapeFix_EdgeProjAux](#shapefix_edgeprojaux) · [Geom2dAPI_Interpolate](#geom2dapi_interpolate) · [Geom2dAPI_PointsToBSpline](#geom2dapi_pointstobspline) · [TDataXtd_PatternStd](#tdataxtd_patternstd) · [BRepAlgo_FaceRestrictor](#brepalgo_facerestrictor) · [math_Matrix](#math_matrix) · [math_Gauss](#math_gauss) · [math_SVD](#math_svd) · [math_DirectPolynomialRoots](#math_directpolynomialroots) · [math_Jacobi](#math_jacobi) · [Convert_CircleToBSplineCurve](#convert_circletobsplinecurve) · [Convert_SphereToBSplineSurface](#convert_spheretobsplinesurface) · [Convert Conic Curves to BSpline](#convert-conic-curves-to-bspline) · [Convert Elementary Surfaces to BSpline](#convert-elementary-surfaces-to-bspline) · [math_Householder](#math_householder) · [math_Crout](#math_crout) · [ShapeFix_IntersectionTool](#shapefix_intersectiontool) · [XCAFDoc_AssemblyItemRef](#xcafdoc_assemblyitemref) · [BRepAlgo_Image](#brepalgo_image) · [OSD_Path](#osd_path) · [BRepClass_FClassifier](#brepclass_fclassifier) · [Bnd_BoundSortBox](#bnd_boundsortbox) · [TNaming_Naming](#tnaming_naming) · [Precision Constants](#precision-constants) · [IntAna Analytic Intersections](#intana-analytic-intersections) · [OSD_Chronometer](#osd_chronometer) · [OSD_Process](#osd_process) · [Draft_Modification](#draft_modification) · [Convert_CompBezierCurvesToBSplineCurve](#convert_compbezierperformancetobsplinecurve) · [Geom_OffsetSurface Extensions](#geom_offsetsurface-extensions)
+- [gp_Quaternion](#gp_quaternion) · [OSD_Timer](#osd_timer) · [Bnd_OBB](#bnd_obb) · [Bnd_Range](#bnd_range) · [BRepClass3d Point Classification](#brepclass3d-point-classification) · [TDataXtd_Constraint](#tdataxtd_constraint) · [OSD_MemInfo](#osd_meminfo) · [ShapeFix_EdgeProjAux](#shapefix_edgeprojaux) · [Geom2dAPI_Interpolate](#geom2dapi_interpolate) · [Geom2dAPI_PointsToBSpline](#geom2dapi_pointstobspline) · [TDataXtd_PatternStd](#tdataxtd_patternstd) · [BRepAlgo_FaceRestrictor](#brepalgo_facerestrictor) · [MathDimension](#mathdimension) · [math_Matrix](#math_matrix) · [math_Gauss](#math_gauss) · [math_SVD](#math_svd) · [math_DirectPolynomialRoots](#math_directpolynomialroots) · [math_Jacobi](#math_jacobi) · [Convert_CircleToBSplineCurve](#convert_circletobsplinecurve) · [Convert_SphereToBSplineSurface](#convert_spheretobsplinesurface) · [Convert Conic Curves to BSpline](#convert-conic-curves-to-bspline) · [Convert Elementary Surfaces to BSpline](#convert-elementary-surfaces-to-bspline) · [math_Householder](#math_householder) · [math_Crout](#math_crout) · [ShapeFix_IntersectionTool](#shapefix_intersectiontool) · [XCAFDoc_AssemblyItemRef](#xcafdoc_assemblyitemref) · [BRepAlgo_Image](#brepalgo_image) · [OSD_Path](#osd_path) · [BRepClass_FClassifier](#brepclass_fclassifier) · [Bnd_BoundSortBox](#bnd_boundsortbox) · [TNaming_Naming](#tnaming_naming) · [Precision Constants](#precision-constants) · [IntAna Analytic Intersections](#intana-analytic-intersections) · [OSD_Chronometer](#osd_chronometer) · [OSD_Process](#osd_process) · [Draft_Modification](#draft_modification) · [Convert_CompBezierCurvesToBSplineCurve](#convert_compbezierperformancetobsplinecurve) · [Geom_OffsetSurface Extensions](#geom_offsetsurface-extensions)
 
 ---
 
@@ -225,8 +225,9 @@ public func normalize()
   q.normalize()
   ```
 
----
+*(Internal, not public API: `Quaternion.handle` is an unmarked `let handle: OCCTQuaternionRef` (Swift default access, i.e. `internal`) wrapping the underlying bridge object, released in `deinit`. See [Memory Management](../architecture/overview.md#occt-handles).)*
 
+---
 ## OSD_Timer
 
 Wraps `OSD_Timer` — a high-resolution wall-clock timer suitable for profiling.
@@ -328,8 +329,9 @@ public static var wallClockTime: Double { get }
   let now = Timer.wallClockTime
   ```
 
----
+*(Internal, not public API: `Timer.handle` is an unmarked `let handle: OCCTTimerRef` (Swift default access, i.e. `internal`) wrapping the underlying bridge object, released in `deinit`. See [Memory Management](../architecture/overview.md#occt-handles).)*
 
+---
 ## Bnd_OBB
 
 Wraps `Bnd_OBB` — an oriented bounding box in 3D space defined by center, local axes, and half-sizes.
@@ -647,6 +649,17 @@ public enum PointState: Int32 {
 }
 ```
 
+| Case | Meaning |
+|------|---------|
+| `inside` | The point lies strictly inside the solid. |
+| `outside` | The point lies strictly outside the solid. |
+| `on` | The point lies on the solid's boundary, within the classifier's tolerance. |
+| `unknown` | `BRepClass3d_SolidClassifier::Perform` could not classify the point (e.g. a non-solid or otherwise degenerate shape); also the fallback returned when the underlying raw value doesn't decode. |
+
+*(Per-case anchors below, for cross-reference; the table above has the actual meaning of each.)*
+
+#### `Shape.PointState.unknown`
+
 ---
 
 ### `classifyPoint(_:tolerance:)`
@@ -686,6 +699,33 @@ public enum ConstraintType: Int32 {
     case rigid, from
 }
 ```
+
+| Case | `TDataXtd_ConstraintEnum` | Meaning |
+|---|---|---|
+| `radius` | `TDataXtd_RADIUS` | Circle/arc radius value |
+| `diameter` | `TDataXtd_DIAMETER` | Circle/arc diameter value |
+| `minorRadius` | `TDataXtd_MINOR_RADIUS` | Ellipse minor-axis radius value |
+| `majorRadius` | `TDataXtd_MAJOR_RADIUS` | Ellipse major-axis radius value |
+| `tangent` | `TDataXtd_TANGENT` | Two entities forced tangent |
+| `parallel` | `TDataXtd_PARALLEL` | Two lines/planes forced parallel |
+| `perpendicular` | `TDataXtd_PERPENDICULAR` | Two lines/planes forced perpendicular |
+| `concentric` | `TDataXtd_CONCENTRIC` | Two circular/curved entities forced to share a centre |
+| `coincident` | `TDataXtd_COINCIDENT` | Two point/curve entities forced to the same location |
+| `distance` | `TDataXtd_DISTANCE` | Linear distance value between two entities |
+| `angle` | `TDataXtd_ANGLE` | Angular value between two entities |
+| `equalRadius` | `TDataXtd_EQUAL_RADIUS` | Two circles/arcs forced to equal radius |
+| `symmetry` | `TDataXtd_SYMMETRY` | Two entities forced symmetric about a third |
+| `midPoint` | `TDataXtd_MIDPOINT` | A point forced to the midpoint of two others |
+| `equalDistance` | `TDataXtd_EQUAL_DISTANCE` | Two distances forced equal |
+| `fix` | `TDataXtd_FIX` | An entity's position/orientation forced fixed |
+| `rigid` | `TDataXtd_RIGID` | An entity forced not to deform under the solver |
+| `from` | `TDataXtd_FROM` | A distance/angle constraint's reference origin entity |
+
+Eighteen of the 26 `TDataXtd_ConstraintEnum` cases are wrapped; `TDataXtd_AXIS`, `TDataXtd_MATE`, `TDataXtd_ALIGN_FACES`, `TDataXtd_ALIGN_AXES`, `TDataXtd_AXES_ANGLE`, `TDataXtd_FACES_ANGLE`, `TDataXtd_ROUND`, and `TDataXtd_OFFSET` have no Swift case yet. The upstream header carries no per-case documentation beyond the enumerator names themselves, so the meanings above are read directly off the OCCT constraint-solver vocabulary each name names.
+
+#### `Document.ConstraintType.symmetry`
+
+Two entities forced symmetric about a third.
 
 ---
 
@@ -960,6 +1000,20 @@ public enum PatternSignature: Int32 {
 }
 ```
 
+`TDataXtd_PatternStd` shares one attribute shape (`Axis1`/`Axis2`, `Value1`/`Value2`, `NbInstances1`/`NbInstances2`, `Mirror`) across all five signatures; which fields are meaningful depends on this value.
+
+| Case | Meaning |
+|------|---------|
+| `linear` | Instances translated along `Axis1` by `Value1`, repeated `NbInstances1` times (a second, independent direction via `Axis2`/`Value2`/`NbInstances2` gives a 1D array along two directions rather than a grid). |
+| `circular` | Instances rotated about `Axis1` by the angular increment `Value1`, repeated `NbInstances1` times. |
+| `rectangular` | A 2D grid: `Axis1`/`Value1`/`NbInstances1` and `Axis2`/`Value2`/`NbInstances2` each define one grid direction, spacing, and instance count. |
+| `radialCircular` | Combined radial and circular pattern: `Axis1`/`Value1`/`NbInstances1` step outward radially while `Axis2`/`Value2`/`NbInstances2` rotate about an axis. |
+| `mirror` | A single mirrored copy reflected across the plane or axis referenced by `Mirror`. |
+
+*(Per-case anchors below, for cross-reference; the table above has the actual meaning of each.)*
+
+#### `Document.PatternSignature.rectangular`
+
 ---
 
 ### `setPattern(labelId:)`
@@ -1048,6 +1102,37 @@ public func faceRestrictAlgo(faceIndex: Int) -> Int
 
 ---
 
+## MathDimension
+
+*(internal, not part of the public API)*: `internal enum MathDimension` in `MathDimension.swift`, the one problem-dimension validator every `n`/`rows`/`cols` argument in `MathMatrix`, `math_Gauss`, `math_SVD` and the rest of this page's `MathLibrary`/`MathSolver` wrappers is checked against. Has no stored state: four static validators over one shared shape ("does this dimension agree with the array(s) it sizes"), factored out so eighteen previously hand-duplicated call sites can't drift apart again (#640).
+
+```swift
+```
+- **Example:**
+  ```swift
+  ```
+---
+
+```swift
+```
+- **Example:**
+  ```swift
+  ```
+---
+
+```swift
+```
+- **Example:**
+  ```swift
+  ```
+---
+
+```swift
+```
+- **Example:**
+  ```swift
+  ```
+---
 ## math_Matrix
 
 Wraps `math_Matrix` — a dense general matrix with **1-based** row and column indexing.
@@ -1079,8 +1164,13 @@ public var cols: Int { get }
 
 - **OCCT:** `math_Matrix::RowNumber / ColNumber` (via `OCCTMathMatrixRows / OCCTMathMatrixCols`).
 
----
+`rows` is `MathMatrix.rows`; the combined heading above only registers that one, so `cols` gets its own anchor here: it is the same kind of public accessor, just the column-count half of the pair.
 
+*(Internal, not public API: `MathMatrix.handle` is an unmarked `let handle: OCCTMathMatrixRef` (Swift default access, i.e. `internal`) wrapping the underlying bridge object, released in `deinit`. See [Memory Management](../architecture/overview.md#occt-handles).)*
+
+#### `MathMatrix.cols`
+
+---
 ### `value(row:col:)`
 
 Read the element at (row, col) — **1-based**.
@@ -1247,10 +1337,17 @@ public static func solve(matrix: [Double], rhs: [Double]) -> [Double]?
 Compute the determinant of an N×N matrix using Gaussian elimination.
 
 ```swift
-public static func determinant(matrix: [Double], n: Int) -> Double
+public static func determinant(matrix: [Double], n: Int) -> Double?
 ```
 
 - **Parameters:** `matrix` — row-major N×N matrix; `n` — dimension.
+- **Returns:** The determinant, or `nil` if `n`/`matrix` are invalid.
+- **Bounds:** `n` must be positive and `matrix.count` must equal `n * n` exactly, or this returns
+  `nil` (#640, revised by #716's review finding 7). Before this bound, a mismatched positive `n`
+  read past the end of `matrix` inside the bridge. `nil`, not `0.0`: `0.0` is also the determinant
+  of a genuinely singular matrix, so a bare `Double` sentinel could not distinguish an invalid
+  dimension from a real, correctly-computed zero. `n * n` is itself checked for overflow, so
+  `n: .max` is rejected rather than trapping the multiplication.
 - **OCCT:** `math_Gauss::Determinant` (via `OCCTMathGaussDeterminant`).
 
 ---
@@ -1269,6 +1366,12 @@ public static func solve(matrix: [Double], rows: Int, cols: Int, rhs: [Double]) 
 
 - **Parameters:** `matrix` — row-major M×N matrix; `rows` — M; `cols` — N; `rhs` — right-hand side (length M).
 - **Returns:** Solution vector of length N, or `nil` on failure.
+- **Bounds:** `rows` and `cols` must both be positive, and `matrix.count == rows * cols` /
+  `rhs.count == rows` must hold, or this returns `nil` (#640). A consistency check alone is not
+  enough: `rows: 0, cols: -1` satisfies `matrix.count == rows * cols` for any `matrix`, so the
+  positivity bound is required too. `rows * cols` is itself checked for overflow, so a huge
+  positive `rows`/`cols` is rejected rather than trapping the multiplication (#716's review
+  finding 8).
 - **OCCT:** `math_SVD::Solve` (via `OCCTMathSVDSolve`).
 - **Example:**
   ```swift
@@ -1321,6 +1424,11 @@ public static func eigenvalues(matrix: [Double], n: Int) -> [Double]?
 
 - **Parameters:** `matrix` — row-major N×N symmetric matrix; `n` — dimension.
 - **Returns:** Eigenvalue array of length N, or `nil` on failure.
+- **Bounds:** `n` must be positive and `matrix.count` must equal `n * n` exactly, or this returns
+  `nil` (#640). `eigenvalues(matrix: [1.0], n: -1)` satisfies the consistency check alone
+  (`1 == (-1) * (-1)`), which is why positivity is checked separately rather than folded into it.
+  `n * n` is itself checked for overflow, so `n: .max` is rejected rather than trapping the
+  multiplication (#716's review finding 8).
 - **OCCT:** `math_Jacobi::Values` (via `OCCTMathJacobiEigenvalues`).
 - **Example:**
   ```swift
@@ -1345,8 +1453,8 @@ public static func fromCircleArc(centerX: Double, centerY: Double, radius: Doubl
                                   u1: Double, u2: Double) -> Curve2D?
 ```
 
-- **Parameters:** `centerX`, `centerY` — arc centre; `radius` — circle radius; `u1`, `u2` — start and end parameter (in radians).
-- **Returns:** The BSpline representation, or `nil` on failure.
+- **Parameters:** `centerX`, `centerY`: arc centre; `radius`: circle radius, must be greater than zero; `u1`, `u2`: start and end parameter (in radians).
+- **Returns:** The BSpline representation, or `nil` on failure or a degenerate radius.
 - **OCCT:** `Convert_CircleToBSplineCurve` (via `OCCTConvertCircleToBSpline2D`).
 - **Example:**
   ```swift
@@ -1386,6 +1494,11 @@ public static func fromSphere(origin: SIMD3<Double>, axis: SIMD3<Double>, radius
 
 Extensions on `Curve2D` for exact BSpline representations of 2D conics.
 
+Every one of these returns `nil` for a degenerate dimension. None of the `Convert_*` algorithms
+refuses one on its own: measured (#514), a zero-radius ellipse converts to a degree-2 curve that
+evaluates to its own centre at every parameter, and a zero focal length converts to a curve whose
+poles are all NaN.
+
 ### `Curve2D.fromEllipseArc(centerX:centerY:majorRadius:minorRadius:u1:u2:)`
 
 Convert a 2D ellipse arc to a BSpline curve.
@@ -1396,8 +1509,8 @@ public static func fromEllipseArc(centerX: Double, centerY: Double,
                                    u1: Double, u2: Double) -> Curve2D?
 ```
 
-- **Parameters:** `centerX`, `centerY` — ellipse centre; `majorRadius`, `minorRadius` — semi-axes; `u1`, `u2` — parameter range.
-- **Returns:** BSpline curve, or `nil` on failure.
+- **Parameters:** `centerX`, `centerY`: ellipse centre; `majorRadius`, `minorRadius`: semi-axes, both greater than zero with `minorRadius <= majorRadius` (equal radii are a circle and are valid); `u1`, `u2`: parameter range.
+- **Returns:** BSpline curve, or `nil` on failure or a degenerate ellipse.
 - **OCCT:** `Convert_EllipseToBSplineCurve` (via `OCCTConvertEllipseToBSpline2D`).
 - **Example:**
   ```swift
@@ -1418,7 +1531,15 @@ public static func fromHyperbolaArc(centerX: Double, centerY: Double,
                                      u1: Double, u2: Double) -> Curve2D?
 ```
 
+- **Parameters:** `majorRadius`, `minorRadius`: both greater than zero, in either order. A hyperbola puts no ordering on its radii, so a minor radius larger than the major is an ordinary hyperbola, not an inverted one.
+- **Returns:** BSpline curve, or `nil` on failure or a degenerate hyperbola.
 - **OCCT:** `Convert_HyperbolaToBSplineCurve` (via `OCCTConvertHyperbolaToBSpline2D`).
+- **Example:**
+  ```swift
+  if let h = Curve2D.fromHyperbolaArc(centerX: 0, centerY: 0,
+                                       majorRadius: 10, minorRadius: 5,
+                                       u1: -1, u2: 1) { }
+  ```
 
 ---
 
@@ -1431,8 +1552,13 @@ public static func fromParabolaArc(centerX: Double, centerY: Double, focal: Doub
                                     u1: Double, u2: Double) -> Curve2D?
 ```
 
-- **Parameters:** `focal` — focal distance of the parabola.
+- **Parameters:** `focal`: focal distance of the parabola, must be greater than zero.
+- **Returns:** BSpline curve, or `nil` on failure or a zero focal length, which OCCT converts into a curve with NaN poles rather than rejecting.
 - **OCCT:** `Convert_ParabolaToBSplineCurve` (via `OCCTConvertParabolaToBSpline2D`).
+- **Example:**
+  ```swift
+  if let p = Curve2D.fromParabolaArc(centerX: 0, centerY: 0, focal: 5, u1: -2, u2: 2) { }
+  ```
 
 ---
 
@@ -1507,6 +1633,10 @@ public static func solve(matrix: [Double], rows: Int, cols: Int, rhs: [Double]) 
 
 - **Parameters:** `matrix` — row-major M×N matrix; `rows` — M (must be ≥ `cols`); `cols` — N; `rhs` — right-hand side (length M).
 - **Returns:** Solution vector of length N, or `nil` on failure or under-determined input.
+- **Bounds:** `rows` and `cols` must both be positive, in addition to `rows >= cols` and the
+  existing `matrix`/`rhs` length checks, or this returns `nil` (#640): `rows >= cols` alone does
+  not exclude `rows: 0, cols: -1`. `rows * cols` is itself checked for overflow (#716's review
+  finding 8).
 - **OCCT:** `math_Householder::Solve` (via `OCCTMathHouseholderSolve`).
 - **Example:**
   ```swift
@@ -1550,9 +1680,14 @@ public static func solve(matrix: [Double], rhs: [Double]) -> [Double]?
 Compute the determinant of a symmetric matrix via Crout factorisation.
 
 ```swift
-public static func determinant(matrix: [Double], n: Int) -> Double
+public static func determinant(matrix: [Double], n: Int) -> Double?
 ```
 
+- **Returns:** The determinant, or `nil` if `n`/`matrix` are invalid.
+- **Bounds:** `n` must be positive and `matrix.count` must equal `n * n` exactly, or this returns
+  `nil` (#640, revised by #716's review finding 7), the same fix and for the same reason as
+  `MathGauss.determinant`: `nil`, not `0.0`, so an invalid dimension cannot be confused with a
+  genuinely singular matrix. `n * n` is itself checked for overflow (#716's review finding 8).
 - **OCCT:** `math_Crout::Determinant` (via `OCCTMathCroutDeterminant`).
 
 ---
@@ -1748,8 +1883,9 @@ public func clear()
 
 - **OCCT:** `BRepAlgo_Image::Clear` (via `OCCTBRepAlgoImageClear`).
 
----
+*(Internal, not public API: `ShapeImage.handle` is an unmarked `let handle: OCCTBRepAlgoImageRef` (Swift default access, i.e. `internal`) wrapping the underlying bridge object, released in `deinit`. See [Memory Management](../architecture/overview.md#occt-handles).)*
 
+---
 ## OSD_Path
 
 Namespace wrapping `OSD_Path` — platform-independent file path parsing.
@@ -1825,6 +1961,25 @@ public static func folderAndFile(_ path: String) -> (folder: String, file: Strin
   if let (folder, file) = OSDPath.folderAndFile("/tmp/parts/bolt.stp") {
       print(folder, file)
   }
+  ```
+
+---
+
+### `OSDPath.folder(_:)`
+
+Get the directory part of a path, as a real path with its trailing separator: the filesystem-usable counterpart of `trek(_:)`.
+
+```swift
+public static func folder(_ path: String) -> String?
+```
+
+- **Parameters:** `path`: path string.
+- **Returns:** The directory part with its trailing separator, or `""` if `path` has no directory part; `nil` if `path` cannot be parsed.
+- **OCCT:** `OSD_Path::TrekValue` reassembled with a trailing separator (via `OCCTOSDPathFolderAndFile`, discarding the filename).
+- **Example:**
+  ```swift
+  OSDPath.folder("/home/user/model.step")  // "/home/user/"
+  OSDPath.folder("model.step")             // ""
   ```
 
 ---
@@ -1967,8 +2122,9 @@ public func compare(xmin: Double, ymin: Double, zmin: Double,
   // hits == [0]
   ```
 
----
+*(Internal, not public API: `BoundSortBox.handle` is an unmarked `let handle: OCCTBoundSortBoxRef` (Swift default access, i.e. `internal`) wrapping the underlying bridge object, released in `deinit`. See [Memory Management](../architecture/overview.md#occt-handles).)*
 
+---
 ## TNaming_Naming
 
 Extension on `Document` wrapping `TNaming_Naming` — persistent topological naming that survives shape modifications.
@@ -2111,7 +2267,17 @@ public struct ConicQuadResult {
 }
 ```
 
-- `points` — intersection points in 3D; `params` — corresponding parameters on the line; `isParallel` — the line is parallel to the quadric surface.
+| Field | Meaning |
+|---|---|
+| `points` | Intersection points in 3D |
+| `params` | Parameter on the line for each point, aligned index-for-index with `points` |
+| `isParallel` | The line is parallel to the quadric surface |
+
+---
+
+#### `IntAna.ConicQuadResult.params`
+
+Parameter on the line for each intersection point, index-aligned with `points`.
 
 ---
 
@@ -2162,6 +2328,14 @@ public struct QuadQuadResult {
 }
 ```
 
+- `count`: number of solutions `IntAna_QuadQuadGeo` found.
+- `lines`: solution lines (origin + direction), populated for a plane-plane intersection.
+- `points`: solution points, populated for e.g. a plane-sphere intersection's circle centre.
+
+*(Per-field anchor below, for cross-reference; the list above has the actual meaning of each.)*
+
+#### `IntAna.QuadQuadResult.lines`
+
 ---
 
 ### `IntAna.planePlane(p1Origin:p1Normal:p2Origin:p2Normal:)`
@@ -2197,6 +2371,9 @@ public static func planeSphere(planeOrigin: SIMD3<Double>, planeNormal: SIMD3<Do
 
 ---
 
+```swift
+```
+---
 ### `IntAna.threePlanes(p1Origin:p1Normal:p2Origin:p2Normal:p3Origin:p3Normal:)`
 
 Compute the unique intersection point of three planes.

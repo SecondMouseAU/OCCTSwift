@@ -64,6 +64,19 @@ guard let plate = Surface.plateThrough(points, degree: 3, tolerance: 0.01) else 
 constraint points (probe data, feature points). The trade-off is less direct control over the
 parametrization than the grid fit gives you.
 
+Like the grid fit, it **approximates** — so check the result against `tolerance` rather than
+assuming it, especially on a cloud with real curvature in it:
+
+```swift
+let worst = points.compactMap { plate.projectPoint($0)?.distance }.max() ?? 0
+if worst > 0.01 { /* the plate could not be fitted this tightly */ }
+```
+
+Before #571 that check could never pass on a demanding cloud: the fit was capped at a single Bezier
+patch, which is the one setting that stops the approximator acting on its own error estimate, so a
+`tolerance: 0.01` request could return a surface `0.072` away and report success. If
+`plate.uPoleCount` is at most `degree + 1`, the fit never subdivided.
+
 ## Deform an existing surface to hit target points
 
 If you already have a surface and want to **pull it through** specific positions, the non-linear plate

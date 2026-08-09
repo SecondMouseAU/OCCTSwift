@@ -147,8 +147,52 @@
 
 // MARK: - Shape Healing & Analysis (v0.13.0)
 
+// Comments here name a #717 review finding by what it said, never by its number. That PR drew two
+// automated review passes and the second retracted the first, renumbering as it went: the
+// try/catch below was the first pass's finding 4, while the second pass's finding 4 is an
+// unrelated missing doc snippet. A bare ordinal is not a stable citation when the thing it indexes
+// can be reissued, and a cross-reference that silently comes to mean something else is worse than
+// none (the #549 tombstone lesson). Cite the substance.
+//
+// #717 review (the checkinternaledges divergence and the duplicated scan, filed against #702):
+// OCCTShapeAnalyze and OCCTShapeAnalyzeShell
+// both ran ShapeAnalysis_Shell::CheckOrientedShells and then read HasFreeEdges()/FreeEdges() off
+// it, hand-duplicated in each function. That duplication is how the divergence happened: this
+// file's two copies drifted apart on the third argument, checkinternaledges, so the two entry points
+// could silently disagree on a shell with a TopAbs_INTERNAL-oriented edge, contradicting the
+// #702 test's own "analyze() must agree with analyzeShell()" invariant. Per
+// ShapeAnalysis_Shell.cxx: an edge with no FORWARD/REVERSED partner is unconditionally free when
+// checkinternaledges is false, but is instead read as connected (through that occurrence) when
+// checkinternaledges is true and the same shape (by IsSame: same TShape and Location, ignoring
+// Orientation) also occurs with TopAbs_INTERNAL orientation elsewhere in the shell.
+// OCCTShapeAnalyzeShell already passed true; this scan now always does, for both callers, by
+// construction rather than by keeping two copies in sync by hand.
+struct OCCTShellOrientationScan {
+    bool checkResult = false;      // ShapeAnalysis_Shell::CheckOrientedShells' own return value
+    bool hasFreeEdges = false;
+    bool hasBadEdges = false;
+    bool hasConnectedEdges = false;
+    int freeEdgeCount = 0;
+};
+
+static OCCTShellOrientationScan occtAnalyzeShellOrientation(const TopoDS_Shape& shape) {
+    OCCTShellOrientationScan scan;
+    ShapeAnalysis_Shell analyzer;
+    scan.checkResult = analyzer.CheckOrientedShells(shape, /*alsofree*/ true, /*checkinternaledges*/ true);
+    scan.hasFreeEdges = analyzer.HasFreeEdges();
+    scan.hasBadEdges = analyzer.HasBadEdges();
+    scan.hasConnectedEdges = analyzer.HasConnectedEdges();
+    if (scan.hasFreeEdges) {
+        TopoDS_Compound freeEdgesCompound = analyzer.FreeEdges();
+        for (TopExp_Explorer edgeExp(freeEdgesCompound, TopAbs_EDGE); edgeExp.More(); edgeExp.Next()) {
+            scan.freeEdgeCount++;
+        }
+    }
+    return scan;
+}
+
 OCCTShapeAnalysisResult OCCTShapeAnalyze(OCCTShapeRef shape, double tolerance) {
-    OCCTShapeAnalysisResult result = {0, 0, 0, 0, 0, 0, false, false};
+    OCCTShapeAnalysisResult result = {0, 0, 0, 0, 0, false, false};
     if (!shape) return result;
 
     try {
@@ -166,19 +210,30 @@ OCCTShapeAnalysisResult OCCTShapeAnalyze(OCCTShapeRef shape, double tolerance) {
         int smallFaces = 0;
         int gaps = 0;
 
-        // Analyze shells for free faces and closure
+        // Analyze shells for free faces and closure, via the shared occtAnalyzeShellOrientation
+        // (see its comment above for the #702/#717 history: this used to call LoadShells(shell)
+        // and read HasFreeEdges()/FreeEdges(), which are populated only by CheckOrientedShells(),
+        // never by LoadShells(); that hardcoded freeEdges/freeFaces to 0 for every shape, however
+        // open, regardless of tolerance).
+        //
+        // #717 review (the missing per-shell try/catch): CheckOrientedShells is a real OCCT computation now, not the
+        // near-no-op LoadShells() was, so it can raise Standard_Failure on a malformed shell. The
+        // try/catch is scoped to one shell's iteration: a shell that throws contributes nothing to
+        // freeEdges/freeFaces and the loop continues, rather than one bad shell discarding the
+        // free-edge counts already accumulated for prior shells and the smallEdge/smallFace/gap
+        // counts computed further below (an exception here used to escape to this function's
+        // outer catch, which resets the whole result to all-zero/invalid).
         for (TopExp_Explorer shellExp(shape->shape, TopAbs_SHELL); shellExp.More(); shellExp.Next()) {
             TopoDS_Shell shell = TopoDS::Shell(shellExp.Current());
-            ShapeAnalysis_Shell shellAnalysis;
-            shellAnalysis.LoadShells(shell);
-
-            // Check for free faces
-            if (shellAnalysis.HasFreeEdges()) {
-                // Count free edges in shell
-                TopoDS_Compound freeEdgesCompound = shellAnalysis.FreeEdges();
-                for (TopExp_Explorer edgeExp(freeEdgesCompound, TopAbs_EDGE); edgeExp.More(); edgeExp.Next()) {
-                    freeEdges++;
+            try {
+                OCCTShellOrientationScan scan = occtAnalyzeShellOrientation(shell);
+                if (scan.hasFreeEdges) {
+                    freeEdges += scan.freeEdgeCount;
+                    freeFaces++;   // this shell is not fully closed (freeFaceCount's own contract)
                 }
+            } catch (...) {
+                // Skip just this shell's contribution; other shells and the categories below
+                // still get computed.
             }
         }
 
@@ -245,7 +300,7 @@ OCCTShapeAnalysisResult OCCTShapeAnalyze(OCCTShapeRef shape, double tolerance) {
         result.smallEdgeCount = smallEdges;
         result.smallFaceCount = smallFaces;
         result.gapCount = gaps;
-        result.selfIntersectionCount = 0;  // Would require more expensive computation
+        // selfIntersectionCount REMOVED (#726/#763): see OCCTBridge_Healing.h's field comment.
         result.freeEdgeCount = freeEdges;
         result.freeFaceCount = freeFaces;
         result.isValid = true;
@@ -301,6 +356,11 @@ OCCTShapeRef OCCTFaceFix(OCCTFaceRef face, double tolerance) {
 
     try {
         Handle(ShapeFix_Face) fixer = new ShapeFix_Face(face->face);
+        // #317/#484: ShapeFix_Face's base constructor leaves Context() null, and the fixes that
+        // need one then silently no-op (or, on an unpatched kernel, null-deref in
+        // FixPeriodicDegenerated). This was the fourth ShapeFix_Face call site in the bridge and
+        // the only one the #317 pass missed. Give it a context, as the other three do.
+        fixer->SetContext(new ShapeBuild_ReShape);
         fixer->SetPrecision(tolerance);
 
         // Enable fixing modes
@@ -428,18 +488,11 @@ OCCTShapeRef OCCTShapeRemoveSmallFaces(OCCTShapeRef shape, double minArea) {
             return new OCCTShape(shape->shape);
         }
 
-        // Use defeaturing to remove small faces
-        BRepAlgoAPI_Defeaturing defeaturer;
-        defeaturer.SetShape(shape->shape);
-        defeaturer.AddFacesToRemove(facesToRemove);
-        defeaturer.Build();
-
-        if (!defeaturer.IsDone()) {
-            return nullptr;
-        }
-
-        TopoDS_Shape result = defeaturer.Shape();
-        if (result.IsNull()) return nullptr;
+        // Use defeaturing to remove small faces. This entry point picks the faces itself, so it
+        // needs no face-resolution helper, but it runs the same skeleton as the rest. #497
+        BRepAlgoAPI_Defeaturing defeaturing;
+        TopoDS_Shape result;
+        if (!occtDefeaturePerform(defeaturing, shape->shape, facesToRemove, result)) return nullptr;
 
         return new OCCTShape(result);
     } catch (...) {
@@ -471,35 +524,42 @@ OCCTShapeRef OCCTShapeSimplify(OCCTShapeRef shape, double tolerance) {
 
 // MARK: - Advanced Blends & Surface Filling (v0.14.0)
 
+// The single-edge member of the radius-law pair, sharing occtFilletAddEdges (the edge lookup and
+// its bounds check) and occtFilletSetRadiusProfile (the law itself) with OCCTShapeFilletEvolving in
+// OCCTBridge_Modeling.mm. See OCCTBridge_Internal.h for what OCCT does with a profile.
+//
+// This used to map each relative parameter onto the edge's own curve parameter range and pass the
+// result to SetRadius(radii[i], param, 1). BRepFilletAPI_MakeFillet has no (Real, Real, Integer)
+// overload: `param` was truncated to an int and taken as the *contour* index, so the profile was
+// never applied. What the caller got was a constant radius, whichever profile point happened to
+// truncate to a live contour index — and, for any edge whose parameter range does not start at 0,
+// no radius at all, which SIGSEGVs in Build(). Both measured in
+// Scripts/repro/520-fillet-edge-index-contracts/. #520
 OCCTShapeRef OCCTShapeFilletVariable(OCCTShapeRef shape, int32_t edgeIndex,
                                       const double* radii, const double* params, int32_t count) {
-    if (!shape || !radii || !params || count < 2 || edgeIndex < 0) return nullptr;
+    if (!shape || !radii || !params || count < 2) return nullptr;
 
     try {
-        // Get the edge at the specified index
-        TopTools_IndexedMapOfShape edgeMap;
-        TopExp::MapShapes(shape->shape, TopAbs_EDGE, edgeMap);
-
-        if (edgeIndex >= edgeMap.Extent()) return nullptr;
-
-        TopoDS_Edge edge = TopoDS::Edge(edgeMap(edgeIndex + 1));  // OCCT uses 1-based indexing
-
-        // Create fillet maker
         BRepFilletAPI_MakeFillet fillet(shape->shape);
+        TopoDS_Edge added;
+        if (!occtFilletAddEdges(fillet, shape->shape, &edgeIndex, 1,
+                                [&added](BRepFilletAPI_MakeFillet& f,
+                                         const TopoDS_Edge& edge, int32_t) {
+            f.Add(edge);  // the radius-law overload: the profile below supplies the radius
+            added = edge;
+            return true;
+        })) return nullptr;
 
-        // Add edge with variable radius
-        fillet.Add(edge);
-
-        // Get the edge length for parameter mapping
-        double first, last;
-        Handle(Geom_Curve) curve = BRep_Tool::Curve(edge, first, last);
-        if (curve.IsNull()) return nullptr;
-
-        // Set radius at each parameter point
-        for (int32_t i = 0; i < count; i++) {
-            double param = first + params[i] * (last - first);  // Map 0-1 to curve parameter range
-            fillet.SetRadius(radii[i], param, 1);  // 1 is the contour index
-        }
+        // #612: the profile goes to this edge's own slot in this edge's own contour. One edge is
+        // added, so the contour index agreed with NbContours() whenever there was one at all — but
+        // when OCCT *declines* the edge (a free-boundary edge of an open shell) NbContours() is 0,
+        // and SetRadius(law, 0, 1) is the unchecked low side #505 measured: it used to SIGSEGV,
+        // uncatchably, rather than fail. Resolving the slot returns no slot instead, and the empty
+        // fillet then fails in Build().
+        if (!occtFilletSetRadiusProfile(fillet, added, count,
+                                        [radii, params](int32_t i) {
+            return gp_Pnt2d(params[i], radii[i]);
+        })) return nullptr;
 
         fillet.Build();
         if (!fillet.IsDone()) return nullptr;
@@ -706,54 +766,34 @@ OCCTWireRef OCCTWireChamferAll2D(OCCTWireRef wire, double distance) {
     }
 }
 
+// Shares occtShapeFilletEdgeList (OCCTBridge_Internal.h) with OCCTShapeFilletEdges and
+// OCCTShapeFilletEdgesLinear in OCCTBridge_Modeling.mm, supplying only the per-edge radius.
+// This is the entry point that had no radius precondition at all; see that helper. #489
+//
+// #633: `declinedEdgeIndices`/`outDeclinedCount` report which of `edgeIndices` OCCT declined
+// (occtFilletWriteDeclined), the same contract #639 gave the other three edge-list entry points.
+// Both are nullable and the existing skip behaviour is unchanged when they are null.
 OCCTShapeRef OCCTShapeBlendEdges(OCCTShapeRef shape,
-                                  const int32_t* edgeIndices, const double* radii, int32_t count) {
-    if (!shape || !edgeIndices || !radii || count < 1) return nullptr;
+                                  const int32_t* edgeIndices, const double* radii, int32_t count,
+                                  int32_t* declinedEdgeIndices, int32_t* outDeclinedCount) {
+    if (outDeclinedCount) *outDeclinedCount = 0;
+    if (!occtValidFilletRadii(radii, count)) return nullptr;
 
-    try {
-        // Get all edges from shape
-        TopTools_IndexedMapOfShape edgeMap;
-        TopExp::MapShapes(shape->shape, TopAbs_EDGE, edgeMap);
-
-        // Create fillet maker
-        BRepFilletAPI_MakeFillet fillet(shape->shape);
-
-        // Add each edge with its radius
-        for (int32_t i = 0; i < count; i++) {
-            int32_t idx = edgeIndices[i];
-            if (idx < 0 || idx >= edgeMap.Extent()) continue;
-
-            TopoDS_Edge edge = TopoDS::Edge(edgeMap(idx + 1));
-            fillet.Add(radii[i], edge);
-        }
-
-        fillet.Build();
-        if (!fillet.IsDone()) return nullptr;
-
-        TopoDS_Shape result = fillet.Shape();
-        if (result.IsNull()) return nullptr;
-
-        return new OCCTShape(result);
-    } catch (...) {
-        return nullptr;
-    }
+    return occtShapeFilletEdgeList(shape, edgeIndices, count,
+                                   [radii](BRepFilletAPI_MakeFillet& fillet,
+                                           const TopoDS_Edge& edge, int32_t entry) {
+        fillet.Add(radii[entry], edge);
+        return true;
+    }, declinedEdgeIndices, outDeclinedCount);
 }
 
 // MARK: - Surface filling (#430/#434)
 //
-// occtFillingContinuityToGeomAbs / occtFillingSupportFaceFromPCurve / occtFillingAddConstraint /
-// occtFillingMakeBuilder are shared with OCCTBridge_Modeling.mm's OCCTFilling* family —
-// declared, and documented at length, in OCCTBridge_Internal.h. The OCCTShapeFill* helpers
-// below are local to this file.
-
-GeomAbs_Shape occtFillingContinuityToGeomAbs(int32_t continuity) {
-    switch (continuity) {
-        case 0:  return GeomAbs_C0;  // order 0 — position
-        case 1:  return GeomAbs_G1;  // order 1 — position + tangency
-        case 2:  return GeomAbs_C1;  // order 2 — position + tangency + curvature
-        default: return GeomAbs_C0;
-    }
-}
+// occtFillingSupportFaceFromPCurve / occtFillingAddConstraint / occtFillingMakeBuilder are
+// shared with OCCTBridge_Modeling.mm's OCCTFilling* family — declared, and documented at length,
+// in OCCTBridge_Internal.h, alongside occtGeomAbsFromSurfaceContinuity, the continuity decoder
+// this family uses (#490 renamed it from occtFillingContinuityToGeomAbs and moved it next to its
+// two siblings). The OCCTShapeFill* helpers below are local to this file.
 
 bool occtFillingSupportFaceFromPCurve(const TopoDS_Edge& edge, TopoDS_Face& outFace) {
     Handle(Geom2d_Curve) pcurve;
@@ -845,6 +885,19 @@ static void OCCTShapeFillCollectEdges(const OCCTWireRef* boundaries, int32_t wir
     }
 }
 
+// #597 investigated gating this on G0Error() > Tol3d (the same "read the error" shape #741 fixed
+// for OCCTGeomFillSweep in OCCTBridge_Surface.mm). Measured and reverted: unlike that site's fixed
+// 1e-4, `Shape.fill`'s effective Tol3d is ALWAYS 1e-4 too (FillingParameters' own Swift default,
+// not a fallback for an unset value), and G0Error() — BRepFill_Filling's own header: "the maximum
+// distance between the result and the constraints" — routinely and legitimately exceeds it for
+// exactly the demanding fills this API exists for: FillingSupportFaceTests' own curvature-vs-
+// tangency and interior-pull cases build correct, already-tested surfaces whose G0Error() is
+// several times 1e-4. Gating on it breaks two existing, passing tests without those surfaces being
+// wrong. Unlike the plate case, G0Error() is a meaningful distance-to-constraints figure here, not
+// the wrong metric — the problem is 1e-4 was never a real, enforced promise for this family, and
+// nothing establishes what the right one would be without inventing a number (#726). See
+// Scripts/repro/597-bridge-modeling-healing-approx-error. FillingSurface's manual builder API
+// already exposes G0Error()/G1Error()/G2Error() for a caller who wants to check it themselves.
 static OCCTShapeRef OCCTShapeFillBuildResult(BRepOffsetAPI_MakeFilling& filling) {
     filling.Build();
     if (!filling.IsDone()) return nullptr;
@@ -861,7 +914,7 @@ OCCTShapeRef OCCTShapeFill(const OCCTWireRef* boundaries, int32_t wireCount,
 
     try {
         BRepOffsetAPI_MakeFilling filling = OCCTShapeFillMakeBuilder(params);
-        const GeomAbs_Shape order = occtFillingContinuityToGeomAbs(params.continuity);
+        const GeomAbs_Shape order = occtGeomAbsFromSurfaceContinuity(params.continuity);
 
         std::vector<TopoDS_Edge> edges;
         OCCTShapeFillCollectEdges(boundaries, wireCount, edges);
@@ -885,7 +938,7 @@ OCCTShapeRef OCCTShapeFillWithSupport(const OCCTWireRef* boundaries, int32_t wir
 
     try {
         BRepOffsetAPI_MakeFilling filling = OCCTShapeFillMakeBuilder(params);
-        const GeomAbs_Shape order = occtFillingContinuityToGeomAbs(params.continuity);
+        const GeomAbs_Shape order = occtGeomAbsFromSurfaceContinuity(params.continuity);
 
         std::vector<TopoDS_Edge> edges;
         OCCTShapeFillCollectEdges(boundaries, wireCount, edges);
@@ -938,7 +991,7 @@ OCCTShapeRef OCCTShapeFillConstraints(const OCCTFillConstraint* constraints, int
             if (!occtFillingAddConstraint(filling, c.edge->edge, support,
                                           c.support ? OCCTFillingSupport::Nominated
                                                     : OCCTFillingSupport::Inferred,
-                                          occtFillingContinuityToGeomAbs(c.continuity),
+                                          occtGeomAbsFromSurfaceContinuity(c.continuity),
                                           c.isBound != 0)) {
                 return nullptr;
             }
@@ -976,8 +1029,10 @@ OCCTShapeRef OCCTShapePlatePoints(const double* points, int32_t pointCount, doub
         if (plateSurface.IsNull()) return nullptr;
 
         // Approximate with B-spline surface
-        GeomPlate_MakeApprox approx(plateSurface, tolerance, 1, 8, tolerance * 10, 0);
-        Handle(Geom_BSplineSurface) bsplineSurf = approx.Surface();
+        Handle(Geom_BSplineSurface) bsplineSurf = occtPlateApproxSurface(
+            plateSurface, tolerance,
+            occtPlateApproxDefaultMaxDegree(), occtPlateApproxDefaultMaxSegments(),
+            occtPlateApproxDefaultContinuity());
         if (bsplineSurf.IsNull()) return nullptr;
 
         // Create face from surface
@@ -1023,8 +1078,13 @@ OCCTShapeRef OCCTShapePlateCurves(const OCCTWireRef* curves, int32_t curveCount,
         Handle(GeomPlate_Surface) plateSurface = plateBuilder.Surface();
         if (plateSurface.IsNull()) return nullptr;
 
-        GeomPlate_MakeApprox approx(plateSurface, tolerance, 1, 8, tolerance * 10, 0);
-        Handle(Geom_BSplineSurface) bsplineSurf = approx.Surface();
+        // The caller's `continuity` is the CONSTRAINT order (applied to each GeomPlate_CurveConstraint
+        // above); the approximation's own continuity is the join between Bezier patches, a separate
+        // axis, so it keeps the shared default rather than following it. See OCCTBridge_Internal.h.
+        Handle(Geom_BSplineSurface) bsplineSurf = occtPlateApproxSurface(
+            plateSurface, tolerance,
+            occtPlateApproxDefaultMaxDegree(), occtPlateApproxDefaultMaxSegments(),
+            occtPlateApproxDefaultContinuity());
         if (bsplineSurf.IsNull()) return nullptr;
 
         BRepBuilderAPI_MakeFace makeFace(bsplineSurf, tolerance);
@@ -1147,24 +1207,36 @@ OCCTShapeRef OCCTShapeRemoveLocations(OCCTShapeRef shape) {
 #include <ShapeCustom.hxx>
 #include <ShapeCustom_RestrictionParameters.hxx>
 
-OCCTShapeRef OCCTShapeDivide(OCCTShapeRef shape, int32_t continuity) {
+// #438: the sole entry point behind Shape.divided(at:tolerance:) now, folding in what used to be
+// a second, narrower bridge function (OCCTShapeUpgradeDivideContinuity) behind the now-deprecated
+// Shape.dividedByContinuity(criterion:tolerance:). That second function set ONLY
+// SetBoundaryCriterion, leaving SetPCurveCriterion/SetSurfaceCriterion pinned at the class's own
+// GeomAbs_C1 constructor default regardless of the requested continuity — measured
+// (Scripts/repro/cluster-d-continuity) as a flat result across every criterion 0..6 on a fixture
+// where this function's own three-criteria version varies (nil/4/4/25 faces at C0/C1/C2/C3). Per
+// the OCCT shape-healing guide's own worked example, all three criteria are meant to be set
+// together to the same target continuity.
+OCCTShapeRef OCCTShapeDivide(OCCTShapeRef shape, int32_t continuity, double tolerance) {
     if (!shape) return nullptr;
 
     try {
-        // Map continuity: 0=C0, 1=C1, 2=C2, 3=C3
-        GeomAbs_Shape cont;
-        switch (continuity) {
-            case 0:  cont = GeomAbs_C0; break;
-            case 1:  cont = GeomAbs_C1; break;
-            case 2:  cont = GeomAbs_C2; break;
-            case 3:  cont = GeomAbs_C3; break;
-            default: cont = GeomAbs_C1; break;
-        }
+        // Shape.ContinuityLevel is ParametricContinuity's ladder (0=C0 .. 3=C3, 4=CN, which is
+        // where occtGeomAbsFromParametricContinuity saturates anyway) with the two geometric
+        // classes tacked on at 5 and 6. Those two are the only values here that are not the
+        // shared parametric decoding — and they are also the two ShapeUpgrade_Split*Continuity::
+        // SetCriterion does not recognise at all, so OCCT quietly substitutes its own C1 default
+        // for them. Kept because the public enum has always advertised them. #490, moved here
+        // from the now-removed OCCTShapeUpgradeDivideContinuity by #438.
+        const GeomAbs_Shape cont =
+            continuity == 5 ? GeomAbs_G1 :
+            continuity == 6 ? GeomAbs_G2 :
+            occtGeomAbsFromParametricContinuity(continuity);
 
         ShapeUpgrade_ShapeDivideContinuity divider(shape->shape);
         divider.SetBoundaryCriterion(cont);
         divider.SetPCurveCriterion(cont);
         divider.SetSurfaceCriterion(cont);
+        divider.SetTolerance(tolerance);
         divider.SetSurfaceSegmentMode(Standard_True);
         if (!divider.Perform()) return nullptr;
 
@@ -2027,20 +2099,39 @@ bool OCCTBRepCheckSubShapeValid(OCCTShapeRef parentShape, int32_t subShapeType, 
     try {
         BRepCheck_Analyzer analyzer(parentShape->shape, true);
 
-        TopAbs_ShapeEnum type = (TopAbs_ShapeEnum)subShapeType;
-        int idx = 0;
-        for (TopExp_Explorer exp(parentShape->shape, type); exp.More(); exp.Next()) {
-            if (idx == subShapeIndex) {
-                return analyzer.IsValid(exp.Current());
-            }
-            idx++;
-        }
-        return false;
+        // #541: the shared enumeration, so this names the same sub-shape every other
+        // type+index entry point does.
+        TopoDS_Shape sub = occtSubShapeAt(parentShape->shape, subShapeType, subShapeIndex);
+        if (sub.IsNull()) return false;
+        return analyzer.IsValid(sub);
     } catch (...) {
         return false;
     }
 }
 
+// #613: this walked a bare TopExp_Explorer while OCCTBRepCheckSubShapeValid ten lines above -- the
+// other half of the same "is this sub-shape valid" surface -- reads occtSubShapeAt. So checkEdge(at:)
+// and isSubShapeValid(type:.edge, at:) counted different things. Measured on a 10mm box (24 edge
+// occurrences over 12 edges, 48 vertex occurrences over 8 vertices): checkEdge(at: 12) reported a
+// valid edge although edge(at: 12) is nil, and it kept answering all the way to index 23;
+// checkVertex answered to index 47 on an 8-vertex shape.
+//
+// Safe on the map rather than the traversal: BRepCheck_Edge/Wire/Shell/Vertex are handed the
+// sub-shape as geometry+topology, not as a key selecting one side of a shared boundary. Measured
+// rather than assumed -- over every box edge (12) and vertex (8) present in both orientations, the
+// full BRepCheck status list was identical for the FORWARD and the REVERSED occurrence, 0
+// differing.
+//
+// A plain box has no WIRE or SHELL occurring twice, so six fixtures were built to reach those:
+// compound{solid, solid.Reversed()} and the same for a shell, a face, a wire, an open (invalid,
+// non-closed) wire, and a fused two-body solid. Together 26 WIRE pairs and 4 SHELL pairs, BRepCheck
+// identical across orientation in every one, 0 differing, invalid geometry included. Note this does
+// NOT mean the conversion is a no-op for them: their index DOMAIN moves, and should -- on
+// compound{solid, solid.Reversed()} the WIRE enumeration goes 12 occurrences to 6 distinct. What is
+// unchanged is the answer for a wire or shell that both enumerations name.
+//
+// This function never handles FACE, which is the one type where the map/traversal choice changes a
+// result (#614) -- OCCTCheckFace takes an OCCTFaceRef directly and never indexes.
 static OCCTShapeCheckResult checkSubShape(OCCTShapeRef shape, TopAbs_ShapeEnum type, int32_t index) {
     OCCTShapeCheckResult result = {};
     result.isValid = false;
@@ -2048,15 +2139,7 @@ static OCCTShapeCheckResult checkSubShape(OCCTShapeRef shape, TopAbs_ShapeEnum t
     if (!shape) return result;
 
     try {
-        TopoDS_Shape subShape;
-        int idx = 0;
-        for (TopExp_Explorer exp(shape->shape, type); exp.More(); exp.Next()) {
-            if (idx == index) {
-                subShape = exp.Current();
-                break;
-            }
-            idx++;
-        }
+        TopoDS_Shape subShape = occtSubShapeAt(shape->shape, type, index);
         if (subShape.IsNull()) return result;
 
         Handle(BRepCheck_Result) checker;
@@ -2146,38 +2229,62 @@ OCCTShapeRef OCCTShapeFixSplitCommonVertex(OCCTShapeRef shape) {
     }
 }
 
+// Connect adjacent faces in every shell of the input, not just the first one an explorer yields
+// (#484, same first-of-N family as #439/#442/#443). ShapeFix_FaceConnect::Build takes one shell,
+// so a multi-shell input has to be driven one shell at a time; the results are reassembled with
+// the shared helper, so a single-shell input still returns a bare shell and multi-shell input
+// returns a compound.
 OCCTShapeRef OCCTShapeFixFaceConnect(OCCTShapeRef shape, double tolerance) {
     if (!shape) return nullptr;
     try {
-        // Get shell from shape
-        TopoDS_Shell shell;
+        std::vector<TopoDS_Shape> shells;
         if (shape->shape.ShapeType() == TopAbs_SHELL) {
-            shell = TopoDS::Shell(shape->shape);
+            shells.push_back(shape->shape);
         } else {
             for (TopExp_Explorer exp(shape->shape, TopAbs_SHELL); exp.More(); exp.Next()) {
-                shell = TopoDS::Shell(exp.Current());
-                break;
+                shells.push_back(exp.Current());
             }
         }
-        if (shell.IsNull()) return nullptr;
+        if (shells.empty()) return nullptr;
 
-        // Get face pairs and connect them
-        ShapeFix_FaceConnect connector;
+        std::vector<TopoDS_Shape> connected;
+        bool anyConnected = false;
+        for (const TopoDS_Shape& shellShape : shells) {
+            TopoDS_Shell shell = TopoDS::Shell(shellShape);
 
-        // Collect all faces
-        std::vector<TopoDS_Face> faces;
-        for (TopExp_Explorer exp(shell, TopAbs_FACE); exp.More(); exp.Next()) {
-            faces.push_back(TopoDS::Face(exp.Current()));
+            // Get face pairs and connect them
+            ShapeFix_FaceConnect connector;
+
+            // Collect all faces
+            std::vector<TopoDS_Face> faces;
+            for (TopExp_Explorer exp(shell, TopAbs_FACE); exp.More(); exp.Next()) {
+                faces.push_back(TopoDS::Face(exp.Current()));
+            }
+
+            // Add adjacent face pairs
+            for (size_t i = 0; i + 1 < faces.size(); i++) {
+                connector.Add(faces[i], faces[i + 1]);
+            }
+
+            TopoDS_Shell result = connector.Build(shell, tolerance, tolerance);
+            // Defensive, not reachable: read ShapeFix_FaceConnect::Build (occt-src) end to end --
+            // `result` starts as the input shell and is only ever reassigned via TopoDS::Shell() on
+            // a ReShape::Apply() result or a rebuilt shell, never a default-constructed TopoDS_Shell.
+            // Probed directly (Add() consecutive face pairs then Build(), matching this loop exactly)
+            // against a real connect, a no-Add() no-op, and a single-face shell: IsNull() is false in
+            // all three (#484). Kept for the same reason #443's equivalent branch was kept once its
+            // own "failure" was found to be dead code: the alternative is trusting an internal OCCT
+            // invariant to hold forever, and the cost of being wrong (silently dropping a shell from
+            // a multi-shell result) is worse than one unreachable branch.
+            anyConnected = anyConnected || !result.IsNull();
+            connected.push_back(result.IsNull() ? shell : (TopoDS_Shape)result);
         }
+        // Unchanged contract for the single-shell case: nil when nothing could be connected.
+        if (!anyConnected) return nullptr;
 
-        // Add adjacent face pairs
-        for (size_t i = 0; i + 1 < faces.size(); i++) {
-            connector.Add(faces[i], faces[i + 1]);
-        }
-
-        TopoDS_Shell result = connector.Build(shell, tolerance, tolerance);
-        if (result.IsNull()) return nullptr;
-        return new OCCTShape(result);
+        TopoDS_Shape out = occtSolidBodiesToShape(connected);
+        if (out.IsNull()) return nullptr;
+        return new OCCTShape(out);
     } catch (...) {
         return nullptr;
     }
@@ -2249,34 +2356,12 @@ OCCTShapeRef OCCTShapeUpgradeDivideClosed(OCCTShapeRef shape, int32_t nbSplitPoi
     }
 }
 
-OCCTShapeRef OCCTShapeUpgradeDivideContinuity(OCCTShapeRef shape, int32_t boundaryCriterion, double tolerance) {
-    if (!shape) return nullptr;
-    try {
-        ShapeUpgrade_ShapeDivideContinuity divider(shape->shape);
-
-        GeomAbs_Shape criterion;
-        switch (boundaryCriterion) {
-            case 0: criterion = GeomAbs_C0; break;
-            case 1: criterion = GeomAbs_C1; break;
-            case 2: criterion = GeomAbs_C2; break;
-            case 3: criterion = GeomAbs_C3; break;
-            case 4: criterion = GeomAbs_CN; break;
-            case 5: criterion = GeomAbs_G1; break;
-            case 6: criterion = GeomAbs_G2; break;
-            default: criterion = GeomAbs_C1; break;
-        }
-
-        divider.SetBoundaryCriterion(criterion);
-        divider.SetTolerance(tolerance);
-        bool ok = divider.Perform();
-        if (!ok) return nullptr;
-        TopoDS_Shape result = divider.Result();
-        if (result.IsNull()) return nullptr;
-        return new OCCTShape(result);
-    } catch (...) {
-        return nullptr;
-    }
-}
+// OCCTShapeUpgradeDivideContinuity, the boundary-only entry point behind the now-deprecated
+// Shape.dividedByContinuity(criterion:tolerance:), was removed here (#438): it wrapped the same
+// ShapeUpgrade_ShapeDivideContinuity as OCCTShapeDivide above with a narrower, measurably
+// different call (SetBoundaryCriterion only, no SetPCurveCriterion/SetSurfaceCriterion). The
+// deprecated Swift entry point now forwards to Shape.divided(at:tolerance:), so this bridge
+// function has no remaining caller.
 
 // MARK: - ShapeFix Small Solids (v0.49)
 // --- ShapeFix_FixSmallSolid ---
@@ -2325,16 +2410,6 @@ OCCTShapeRef OCCTShapeCustomDirectFaces(OCCTShapeRef shape) {
     }
 }
 
-static GeomAbs_Shape mapContinuity(int32_t val) {
-    switch (val) {
-        case 0: return GeomAbs_C0;
-        case 1: return GeomAbs_C1;
-        case 2: return GeomAbs_C2;
-        case 3: return GeomAbs_C3;
-        default: return GeomAbs_C1;
-    }
-}
-
 OCCTShapeRef OCCTShapeCustomBSplineRestriction(OCCTShapeRef shape,
     double tol3d, double tol2d, int32_t maxDegree, int32_t maxSegments,
     int32_t continuity3d, int32_t continuity2d, bool degreePriority, bool rational) {
@@ -2343,7 +2418,8 @@ OCCTShapeRef OCCTShapeCustomBSplineRestriction(OCCTShapeRef shape,
         Handle(ShapeCustom_RestrictionParameters) params = new ShapeCustom_RestrictionParameters();
         TopoDS_Shape result = ShapeCustom::BSplineRestriction(
             shape->shape, tol3d, tol2d, maxDegree, maxSegments,
-            mapContinuity(continuity3d), mapContinuity(continuity2d),
+            occtGeomAbsFromParametricContinuity(continuity3d),
+            occtGeomAbsFromParametricContinuity(continuity2d),
             degreePriority, rational, params);
         if (result.IsNull()) return nullptr;
         return new OCCTShape(result);
@@ -2353,94 +2429,11 @@ OCCTShapeRef OCCTShapeCustomBSplineRestriction(OCCTShapeRef shape,
 }
 
 // MARK: - ShapeAnalysis_FreeBoundsProperties (v0.49)
-// --- ShapeAnalysis_FreeBoundsProperties ---
-
-OCCTFreeBoundsResult OCCTFreeBoundsAnalyze(OCCTShapeRef shape, double tolerance) {
-    OCCTFreeBoundsResult result = {};
-    if (!shape) return result;
-    try {
-        ShapeAnalysis_FreeBoundsProperties fbp(shape->shape, tolerance);
-        if (!fbp.Perform()) return result;
-        result.totalFreeBounds = fbp.NbFreeBounds();
-        result.closedFreeBounds = fbp.NbClosedFreeBounds();
-        result.openFreeBounds = fbp.NbOpenFreeBounds();
-        return result;
-    } catch (...) {
-        return result;
-    }
-}
-
-OCCTFreeBoundInfo OCCTFreeBoundsGetClosedBoundInfo(OCCTShapeRef shape, double tolerance, int32_t index) {
-    OCCTFreeBoundInfo result = {};
-    if (!shape) return result;
-    try {
-        ShapeAnalysis_FreeBoundsProperties fbp(shape->shape, tolerance);
-        if (!fbp.Perform()) return result;
-        if (index < 0 || index >= fbp.NbClosedFreeBounds()) return result;
-        Handle(ShapeAnalysis_FreeBoundData) fbd = fbp.ClosedFreeBound(index + 1); // 1-indexed
-        if (fbd.IsNull()) return result;
-        result.area = fbd->Area();
-        result.perimeter = fbd->Perimeter();
-        result.ratio = fbd->Ratio();
-        result.width = fbd->Width();
-        result.notchCount = fbd->NbNotches();
-        return result;
-    } catch (...) {
-        return result;
-    }
-}
-
-OCCTFreeBoundInfo OCCTFreeBoundsGetOpenBoundInfo(OCCTShapeRef shape, double tolerance, int32_t index) {
-    OCCTFreeBoundInfo result = {};
-    if (!shape) return result;
-    try {
-        ShapeAnalysis_FreeBoundsProperties fbp(shape->shape, tolerance);
-        if (!fbp.Perform()) return result;
-        if (index < 0 || index >= fbp.NbOpenFreeBounds()) return result;
-        Handle(ShapeAnalysis_FreeBoundData) fbd = fbp.OpenFreeBound(index + 1); // 1-indexed
-        if (fbd.IsNull()) return result;
-        result.area = fbd->Area();
-        result.perimeter = fbd->Perimeter();
-        result.ratio = fbd->Ratio();
-        result.width = fbd->Width();
-        result.notchCount = fbd->NbNotches();
-        return result;
-    } catch (...) {
-        return result;
-    }
-}
-
-OCCTShapeRef OCCTFreeBoundsGetClosedBoundWire(OCCTShapeRef shape, double tolerance, int32_t index) {
-    if (!shape) return nullptr;
-    try {
-        ShapeAnalysis_FreeBoundsProperties fbp(shape->shape, tolerance);
-        if (!fbp.Perform()) return nullptr;
-        if (index < 0 || index >= fbp.NbClosedFreeBounds()) return nullptr;
-        Handle(ShapeAnalysis_FreeBoundData) fbd = fbp.ClosedFreeBound(index + 1);
-        if (fbd.IsNull()) return nullptr;
-        TopoDS_Wire wire = fbd->FreeBound();
-        if (wire.IsNull()) return nullptr;
-        return new OCCTShape(wire);
-    } catch (...) {
-        return nullptr;
-    }
-}
-
-OCCTShapeRef OCCTFreeBoundsGetOpenBoundWire(OCCTShapeRef shape, double tolerance, int32_t index) {
-    if (!shape) return nullptr;
-    try {
-        ShapeAnalysis_FreeBoundsProperties fbp(shape->shape, tolerance);
-        if (!fbp.Perform()) return nullptr;
-        if (index < 0 || index >= fbp.NbOpenFreeBounds()) return nullptr;
-        Handle(ShapeAnalysis_FreeBoundData) fbd = fbp.OpenFreeBound(index + 1);
-        if (fbd.IsNull()) return nullptr;
-        TopoDS_Wire wire = fbd->FreeBound();
-        if (wire.IsNull()) return nullptr;
-        return new OCCTShape(wire);
-    } catch (...) {
-        return nullptr;
-    }
-}
+//
+// OCCTFreeBoundsAnalyze, OCCTFreeBoundsGetClosedBoundInfo, OCCTFreeBoundsGetOpenBoundInfo,
+// OCCTFreeBoundsGetClosedBoundWire and OCCTFreeBoundsGetOpenBoundWire were implemented here,
+// each constructing its own ShapeAnalysis_FreeBoundsProperties and calling Perform() again.
+// Removed by #504; the one implementation is with the v0.114 block below.
 
 // MARK: - ShapeAnalysis_WireVertex (v0.50)
 OCCTWireVertexResult OCCTShapeWireVertexAnalysis(OCCTShapeRef wire, double precision) {
@@ -2666,7 +2659,6 @@ double OCCTShapeAnalysisTransferParam(OCCTShapeRef edgeShape, OCCTShapeRef faceS
 // v0.65.0: Shape Processing Completions + Boolean Completions
 // ============================================================
 
-#include <BOPAlgo_RemoveFeatures.hxx>
 #include <BOPAlgo_Section.hxx>
 #include <BOPAlgo_BuilderFace.hxx>
 #include <BOPAlgo_BuilderSolid.hxx>
@@ -3076,21 +3068,20 @@ OCCTValidateEdgeResult OCCTValidateEdge(OCCTEdgeRef _Nonnull edge, OCCTFaceRef _
     return result;
 }
 
-// MARK: - ShapeCustom_BSplineRestriction + ConvertToBSpline (v0.78, with continuityFromInt78 helper)
+// MARK: - ShapeCustom_BSplineRestriction + ConvertToBSpline (v0.78)
 // MARK: - ShapeCustom_BSplineRestriction
 
-static GeomAbs_Shape continuityFromInt78(int c) {
-    switch (c) {
-        case 0: return GeomAbs_C0;
-        case 1: return GeomAbs_G1;
-        case 2: return GeomAbs_C1;
-        case 3: return GeomAbs_G2;
-        case 4: return GeomAbs_C2;
-        case 5: return GeomAbs_C3;
-        case 6: return GeomAbs_CN;
-        default: return GeomAbs_C1;
-    }
-}
+// #490: this function and OCCTSplitSurfaceContinuity below used to read their continuity as a
+// GeomAbs_Shape ordinal (a local continuityFromInt78 helper: 0=C0, 1=G1, 2=C1, 3=G2, 4=C2, 5=C3,
+// 6=CN) while the sibling entry point for the very same OCCT operation read it as a required
+// parametric continuity. OCCTShapeCustomBSplineRestriction drives ShapeCustom::BSplineRestriction,
+// which is itself just a ShapeCustom_BSplineRestriction run through BRepTools_Modifier — exactly
+// what OCCTShapeBSplineRestrictionAdvanced constructs by hand — and OCCTSurfaceSplitByContinuity
+// wraps the same ShapeUpgrade_SplitSurfaceContinuity as OCCTSplitSurfaceContinuity. So the same
+// integer meant two different continuities in each pair. Both now decode as
+// ParametricContinuity, and the ordinal reading is gone: of the seven values it advertised, only
+// 0/2/4 ever worked here anyway (measured — ShapeCustom_BSplineRestriction returns a null shape
+// for G1, G2, C3 and CN).
 
 OCCTShapeRef _Nullable OCCTShapeBSplineRestrictionAdvanced(OCCTShapeRef _Nonnull shapeRef,
                                                              bool approxSurface, bool approxCurve3d, bool approxCurve2d,
@@ -3103,7 +3094,8 @@ OCCTShapeRef _Nullable OCCTShapeBSplineRestrictionAdvanced(OCCTShapeRef _Nonnull
         Handle(ShapeCustom_BSplineRestriction) mod = new ShapeCustom_BSplineRestriction(
             approxSurface, approxCurve3d, approxCurve2d,
             tol3d, tol2d,
-            continuityFromInt78(continuity3d), continuityFromInt78(continuity2d),
+            occtGeomAbsFromParametricContinuity(continuity3d),
+            occtGeomAbsFromParametricContinuity(continuity2d),
             maxDegree, maxSegments,
             priorityDegree, convertRational);
         BRepTools_Modifier modifier(shape, mod);
@@ -3145,10 +3137,12 @@ int OCCTSplitSurfaceContinuity(OCCTSurfaceRef _Nonnull surfaceRef,
                                  int criterion, double tolerance,
                                  int* _Nullable outUSplitCount, int* _Nullable outVSplitCount) {
     try {
-        auto& surface = reinterpret_cast<OCCTSurface*>(surfaceRef)->surface;
+        auto* wrapper = reinterpret_cast<OCCTSurface*>(surfaceRef);
+        if (!wrapper || wrapper->surface.IsNull()) return 0;
+        auto& surface = wrapper->surface;
         Handle(ShapeUpgrade_SplitSurfaceContinuity) splitter = new ShapeUpgrade_SplitSurfaceContinuity();
         splitter->Init(surface);
-        splitter->SetCriterion(continuityFromInt78(criterion));
+        splitter->SetCriterion(occtGeomAbsFromParametricContinuity(criterion));
         splitter->SetTolerance(tolerance);
         splitter->Perform(true);
         int uCount = splitter->USplitValues()->Length();
@@ -3166,7 +3160,9 @@ int OCCTSplitSurfaceContinuity(OCCTSurfaceRef _Nonnull surfaceRef,
 int OCCTSplitSurfaceAngle(OCCTSurfaceRef _Nonnull surfaceRef, double maxAngle,
                             int* _Nullable outUSplitCount, int* _Nullable outVSplitCount) {
     try {
-        auto& surface = reinterpret_cast<OCCTSurface*>(surfaceRef)->surface;
+        auto* wrapper = reinterpret_cast<OCCTSurface*>(surfaceRef);
+        if (!wrapper || wrapper->surface.IsNull()) return 0;
+        auto& surface = wrapper->surface;
         Handle(ShapeUpgrade_SplitSurfaceAngle) splitter = new ShapeUpgrade_SplitSurfaceAngle(maxAngle);
         splitter->Init(surface);
         splitter->Perform(true);
@@ -3185,7 +3181,9 @@ int OCCTSplitSurfaceAngle(OCCTSurfaceRef _Nonnull surfaceRef, double maxAngle,
 int OCCTSplitSurfaceArea(OCCTSurfaceRef _Nonnull surfaceRef, int nbParts, bool intoSquares,
                            int* _Nullable outUSplitCount, int* _Nullable outVSplitCount) {
     try {
-        auto& surface = reinterpret_cast<OCCTSurface*>(surfaceRef)->surface;
+        auto* wrapper = reinterpret_cast<OCCTSurface*>(surfaceRef);
+        if (!wrapper || wrapper->surface.IsNull()) return 0;
+        auto& surface = wrapper->surface;
         Handle(ShapeUpgrade_SplitSurfaceArea) splitter = new ShapeUpgrade_SplitSurfaceArea();
         splitter->Init(surface);
         splitter->NbParts() = nbParts;
@@ -3479,20 +3477,15 @@ OCCTShapeRef OCCTShapeFixEdgeConnect(OCCTShapeRef shape) {
 
 OCCTShellAnalysisResult OCCTShapeAnalyzeShell(OCCTShapeRef shape) {
     OCCTShellAnalysisResult result = {false, false, false, false, 0};
+    if (!shape) return result;
     try {
-        ShapeAnalysis_Shell analyzer;
-        // CheckOrientedShells returns true if BAD orientation found
-        result.hasOrientationProblems = analyzer.CheckOrientedShells(shape->shape, true, true);
-        result.hasFreeEdges = analyzer.HasFreeEdges();
-        result.hasBadEdges = analyzer.HasBadEdges();
-        result.hasConnectedEdges = analyzer.HasConnectedEdges();
-        if (result.hasFreeEdges) {
-            TopoDS_Compound freeEdges = analyzer.FreeEdges();
-            TopExp_Explorer edgeExp(freeEdges, TopAbs_EDGE);
-            int count = 0;
-            while (edgeExp.More()) { count++; edgeExp.Next(); }
-            result.freeEdgeCount = count;
-        }
+        // Shared with OCCTShapeAnalyze's per-shell loop above; see its comment for why (#717).
+        OCCTShellOrientationScan scan = occtAnalyzeShellOrientation(shape->shape);
+        result.hasOrientationProblems = scan.checkResult;  // true if BAD orientation found
+        result.hasFreeEdges = scan.hasFreeEdges;
+        result.hasBadEdges = scan.hasBadEdges;
+        result.hasConnectedEdges = scan.hasConnectedEdges;
+        result.freeEdgeCount = scan.freeEdgeCount;
     } catch (...) {}
     return result;
 }
@@ -3616,15 +3609,12 @@ bool OCCTShapeFixEdgeProjAux(OCCTShapeRef shape, int32_t faceIndex, int32_t edge
                               double precision, double* outFirst, double* outLast) {
     if (!shape) return false;
     try {
-        TopExp_Explorer faceExp(shape->shape, TopAbs_FACE);
-        for (int i = 0; i < faceIndex && faceExp.More(); i++) faceExp.Next();
-        if (!faceExp.More()) return false;
-        TopoDS_Face face = TopoDS::Face(faceExp.Current());
+        TopoDS_Face face = occtFaceAt(shape->shape, faceIndex);
+        if (face.IsNull()) return false;
 
-        TopExp_Explorer edgeExp(face, TopAbs_EDGE);
-        for (int i = 0; i < edgeIndex && edgeExp.More(); i++) edgeExp.Next();
-        if (!edgeExp.More()) return false;
-        TopoDS_Edge edge = TopoDS::Edge(edgeExp.Current());
+        // The edge index is into the face's own edge enumeration, read the same way.
+        TopoDS_Edge edge = occtEdgeAt(face, edgeIndex);
+        if (edge.IsNull()) return false;
 
         Handle(ShapeFix_EdgeProjAux) aux = new ShapeFix_EdgeProjAux(face, edge);
         aux->Compute(precision);
@@ -3642,10 +3632,8 @@ int32_t OCCTShapeFaceRestrictAlgo(OCCTShapeRef shape, int32_t faceIndex,
                                     OCCTShapeRef* outFaces, int32_t maxFaces) {
     if (!shape) return -1;
     try {
-        TopExp_Explorer faceExp(shape->shape, TopAbs_FACE);
-        for (int i = 0; i < faceIndex && faceExp.More(); i++) faceExp.Next();
-        if (!faceExp.More()) return -1;
-        TopoDS_Face face = TopoDS::Face(faceExp.Current());
+        TopoDS_Face face = occtFaceAt(shape->shape, faceIndex);
+        if (face.IsNull()) return -1;
 
         BRepAlgo_FaceRestrictor restrictor;
         restrictor.Init(face, false, true);
@@ -3681,10 +3669,8 @@ int32_t OCCTShapeFaceRestrictAlgo(OCCTShapeRef shape, int32_t faceIndex,
 bool OCCTShapeFixIntersectingWires(OCCTShapeRef shape, int32_t faceIndex, double precision) {
     if (!shape) return false;
     try {
-        TopExp_Explorer faceExp(shape->shape, TopAbs_FACE);
-        for (int i = 0; i < faceIndex && faceExp.More(); i++) faceExp.Next();
-        if (!faceExp.More()) return false;
-        TopoDS_Face face = TopoDS::Face(faceExp.Current());
+        TopoDS_Face face = occtFaceAt(shape->shape, faceIndex);
+        if (face.IsNull()) return false;
 
         Handle(ShapeBuild_ReShape) ctx = new ShapeBuild_ReShape();
         ShapeFix_IntersectionTool tool(ctx, precision, 1.0);
@@ -4544,12 +4530,53 @@ OCCTShapeContentsExtended OCCTShapeGetContentsExtended(OCCTShapeRef shape) {
     } catch (...) {}
     return result;
 }
-// --- ShapeAnalysis_FreeBoundsProperties (handle-based) ---
+// --- ShapeAnalysis_FreeBoundsProperties ---
+//
+// The one wrapping of this class since #504. See OCCTBridge.h for the contract; the two things
+// that shape this code are both OCCT behaviours measured against the pinned kernel:
+//
+//   Perform() appends to myClosedFreeBounds/myOpenFreeBounds and never clears them, and Init()
+//   does not clear them either; only the constructors allocate them. So a second Perform() on
+//   one instance doubles every count, a third triples it. `performed` therefore latches, and
+//   nothing here calls Perform() again.
+//
+//   Perform() itself returns DispatchBounds() | CheckNotches() | CheckContours(), and
+//   CheckNotches() returns true unconditionally, so it is true even for a shape with no free
+//   bounds at all, and even for one that was never loaded, contradicting its own documented
+//   "False if fail or no free bounds are found". IsLoaded() is the real signal, so that is what
+//   is checked here.
 
 struct OCCTFreeBoundsProps {
     ShapeAnalysis_FreeBoundsProperties fbp;
     bool performed;
 };
+
+// Run the analysis once. Returns whether results can be read.
+static bool occtFreeBoundsPerformed(OCCTFreeBoundsPropsRef props) {
+    if (!props) return false;
+    if (props->performed) return true;
+    try {
+        if (!props->fbp.IsLoaded()) return false;
+        props->fbp.Perform();
+        props->performed = true;
+        return true;
+    } catch (...) { return false; }
+}
+
+// Resolve a 0-based index within one of the two sequences, range-checked here rather than left
+// to NCollection_Sequence::Value's own throw: that check is compiled into this TU, so it does
+// fire, but it costs an exception per out-of-range read and cannot distinguish "no such bound"
+// from a genuine OCCT failure.
+static Handle(ShapeAnalysis_FreeBoundData) occtFreeBound(OCCTFreeBoundsPropsRef props,
+                                                          OCCTFreeBoundKind kind, int32_t index) {
+    if (!occtFreeBoundsPerformed(props) || index < 0) return nullptr;
+    const bool closed = (kind == OCCTFreeBoundClosed);
+    try {
+        if (index >= (closed ? props->fbp.NbClosedFreeBounds() : props->fbp.NbOpenFreeBounds()))
+            return nullptr;
+        return closed ? props->fbp.ClosedFreeBound(index + 1) : props->fbp.OpenFreeBound(index + 1);
+    } catch (...) { return nullptr; }
+}
 
 OCCTFreeBoundsPropsRef OCCTFreeBoundsPropsCreate(OCCTShapeRef shape, double tolerance) {
     if (!shape) return nullptr;
@@ -4566,99 +4593,44 @@ void OCCTFreeBoundsPropsRelease(OCCTFreeBoundsPropsRef props) {
 }
 
 bool OCCTFreeBoundsPropsPerform(OCCTFreeBoundsPropsRef props) {
-    if (!props) return false;
+    return occtFreeBoundsPerformed(props);
+}
+
+OCCTFreeBoundsResult OCCTFreeBoundsPropsCounts(OCCTFreeBoundsPropsRef props) {
+    OCCTFreeBoundsResult result = {};
+    if (!occtFreeBoundsPerformed(props)) return result;
     try {
-        bool ok = props->fbp.Perform();
-        props->performed = ok;
-        return ok;
+        result.totalFreeBounds = (int32_t)props->fbp.NbFreeBounds();
+        result.closedFreeBounds = (int32_t)props->fbp.NbClosedFreeBounds();
+        result.openFreeBounds = (int32_t)props->fbp.NbOpenFreeBounds();
+    } catch (...) { return OCCTFreeBoundsResult{}; }
+    return result;
+}
+
+bool OCCTFreeBoundsPropsInfo(OCCTFreeBoundsPropsRef props, OCCTFreeBoundKind kind,
+                             int32_t index, OCCTFreeBoundInfo* outInfo) {
+    Handle(ShapeAnalysis_FreeBoundData) fbd = occtFreeBound(props, kind, index);
+    if (fbd.IsNull()) return false;
+    try {
+        OCCTFreeBoundInfo info = {};
+        info.area = fbd->Area();
+        info.perimeter = fbd->Perimeter();
+        info.ratio = fbd->Ratio();
+        info.width = fbd->Width();
+        info.notchCount = (int32_t)fbd->NbNotches();
+        *outInfo = info;
+        return true;
     } catch (...) { return false; }
 }
 
-int32_t OCCTFreeBoundsPropsNbClosedFreeBounds(OCCTFreeBoundsPropsRef props) {
-    if (!props || !props->performed) return 0;
-    try { return (int32_t)props->fbp.NbClosedFreeBounds(); }
-    catch (...) { return 0; }
-}
-
-int32_t OCCTFreeBoundsPropsNbOpenFreeBounds(OCCTFreeBoundsPropsRef props) {
-    if (!props || !props->performed) return 0;
-    try { return (int32_t)props->fbp.NbOpenFreeBounds(); }
-    catch (...) { return 0; }
-}
-
-double OCCTFreeBoundsPropsClosedArea(OCCTFreeBoundsPropsRef props, int32_t index) {
-    if (!props || !props->performed) return 0;
+OCCTShapeRef OCCTFreeBoundsPropsWire(OCCTFreeBoundsPropsRef props,
+                                     OCCTFreeBoundKind kind, int32_t index) {
+    Handle(ShapeAnalysis_FreeBoundData) fbd = occtFreeBound(props, kind, index);
+    if (fbd.IsNull()) return nullptr;
     try {
-        Handle(ShapeAnalysis_FreeBoundData) fbd = props->fbp.ClosedFreeBound(index);
-        if (fbd.IsNull()) return 0;
-        return fbd->Area();
-    } catch (...) { return 0; }
-}
-
-double OCCTFreeBoundsPropsClosedPerimeter(OCCTFreeBoundsPropsRef props, int32_t index) {
-    if (!props || !props->performed) return 0;
-    try {
-        Handle(ShapeAnalysis_FreeBoundData) fbd = props->fbp.ClosedFreeBound(index);
-        if (fbd.IsNull()) return 0;
-        return fbd->Perimeter();
-    } catch (...) { return 0; }
-}
-
-double OCCTFreeBoundsPropsClosedRatio(OCCTFreeBoundsPropsRef props, int32_t index) {
-    if (!props || !props->performed) return 0;
-    try {
-        Handle(ShapeAnalysis_FreeBoundData) fbd = props->fbp.ClosedFreeBound(index);
-        if (fbd.IsNull()) return 0;
-        return fbd->Ratio();
-    } catch (...) { return 0; }
-}
-
-double OCCTFreeBoundsPropsClosedWidth(OCCTFreeBoundsPropsRef props, int32_t index) {
-    if (!props || !props->performed) return 0;
-    try {
-        Handle(ShapeAnalysis_FreeBoundData) fbd = props->fbp.ClosedFreeBound(index);
-        if (fbd.IsNull()) return 0;
-        return fbd->Width();
-    } catch (...) { return 0; }
-}
-
-OCCTShapeRef OCCTFreeBoundsPropsClosedWire(OCCTFreeBoundsPropsRef props, int32_t index) {
-    if (!props || !props->performed) return nullptr;
-    try {
-        Handle(ShapeAnalysis_FreeBoundData) fbd = props->fbp.ClosedFreeBound(index);
-        if (fbd.IsNull()) return nullptr;
-        auto ref = new OCCTShape();
-        ref->shape = fbd->FreeBound();
-        return ref;
-    } catch (...) { return nullptr; }
-}
-
-double OCCTFreeBoundsPropsOpenArea(OCCTFreeBoundsPropsRef props, int32_t index) {
-    if (!props || !props->performed) return 0;
-    try {
-        Handle(ShapeAnalysis_FreeBoundData) fbd = props->fbp.OpenFreeBound(index);
-        if (fbd.IsNull()) return 0;
-        return fbd->Area();
-    } catch (...) { return 0; }
-}
-
-double OCCTFreeBoundsPropsOpenPerimeter(OCCTFreeBoundsPropsRef props, int32_t index) {
-    if (!props || !props->performed) return 0;
-    try {
-        Handle(ShapeAnalysis_FreeBoundData) fbd = props->fbp.OpenFreeBound(index);
-        if (fbd.IsNull()) return 0;
-        return fbd->Perimeter();
-    } catch (...) { return 0; }
-}
-
-OCCTShapeRef OCCTFreeBoundsPropsOpenWire(OCCTFreeBoundsPropsRef props, int32_t index) {
-    if (!props || !props->performed) return nullptr;
-    try {
-        Handle(ShapeAnalysis_FreeBoundData) fbd = props->fbp.OpenFreeBound(index);
-        if (fbd.IsNull()) return nullptr;
-        auto ref = new OCCTShape();
-        ref->shape = fbd->FreeBound();
-        return ref;
+        TopoDS_Wire wire = fbd->FreeBound();
+        if (wire.IsNull()) return nullptr;
+        return new OCCTShape(wire);
     } catch (...) { return nullptr; }
 }
 

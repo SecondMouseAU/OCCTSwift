@@ -741,6 +741,14 @@ Gluing speeds up booleans when arguments share coincident faces. Only use when f
 
 ---
 
+| Case | OCCT | Meaning |
+|---|---|---|
+| `.off` | OCCT default | No gluing; the full intersection is computed. |
+| `.shift` | `BOPAlgo_GlueShift` | Arguments may share coincident faces but are otherwise disjoint. |
+| `.full` | `BOPAlgo_GlueFull` | Every argument is known to share coincident faces. Fastest and strictest. |
+
+---
+
 ### `defaultBooleanTimeout`
 
 Default wall-clock timeout for boolean operations, in seconds.
@@ -782,18 +790,7 @@ Also available as the `+` operator.
   // Glue: stacked blocks sharing a face
   let stacked = lower.union(upper, glue: .shift)
   ```
-- **Note:** The deprecated `union(with:)` overload is available for compatibility; prefer `union(_:)`.
-
----
-
-### `union(with:)` *(deprecated)*
-
-```swift
-@available(*, deprecated, renamed: "union(_:)", ...)
-public func union(with other: Shape) -> Shape? { union(other) }
-```
-
-Renamed to `union(_:)`. Use `union(_:fuzzyValue:glue:timeout:)` instead.
+- **Note:** `union(with:)`, the deprecated `with:`-labelled overload, was removed at v2.0.0 (#784); use `union(_:)`.
 
 ---
 
@@ -847,18 +844,7 @@ Also available as the `&` operator.
   ```swift
   let common = box.intersection(cyl)  // or: box & cyl
   ```
-- **Note:** The deprecated `intersection(with:)` overload is available for compatibility; prefer `intersection(_:)`.
-
----
-
-### `intersection(with:)` *(deprecated)*
-
-```swift
-@available(*, deprecated, renamed: "intersection(_:)", ...)
-public func intersection(with other: Shape) -> Shape? { intersection(other) }
-```
-
-Renamed to `intersection(_:)`. Use `intersection(_:fuzzyValue:glue:timeout:)` instead.
+- **Note:** `intersection(with:)`, the deprecated `with:`-labelled overload, was removed at v2.0.0 (#784); use `intersection(_:)`.
 
 ---
 
@@ -1347,7 +1333,7 @@ Adaptively samples points along a B-Rep edge using curvature-based deflection co
 - **Parameters:**
   - `index` — edge index (0-based).
   - `deflection` — maximum chord deviation.
-  - `maxPoints` — maximum number of points to return.
+  - `maxPoints` — output *capacity*, clamped into `0...Sampling.maximumSampleCount` (10,000,000), so an unservable capacity returns the same points rather than a coarser sampling; 0 or less returns `nil` (#558). The deflection decides the actual point count.
 - **Returns:** Array of 3D points along the edge, or `nil` if the edge is not found.
 - **OCCT:** `GCPnts_TangentialDeflection` / `BRep_Tool::Curve` (via `OCCTShapeGetEdgePolyline`).
 - **Example:**
@@ -1372,13 +1358,13 @@ public func allEdgePolylines(
 ) -> [[SIMD3<Double>]]
 ```
 
-Discretises every edge in a single bridge pass, building the shape's edge map once. Also calls `OCCTShapeBuildCurves3d` beforehand to ensure lofted/swept shapes (which may have only pcurves) have explicit 3D curves before discretisation.
+Discretises every edge in a single bridge pass, building the shape's edge map once. Also calls [`buildCurves3d(tolerance:)`](Document-Mesh-Fixing.md#shapebuildcurves3dtolerance) at `1e-5` beforehand to ensure lofted/swept shapes (which may have only pcurves) have explicit 3D curves before discretisation.
 
 - **Parameters:**
   - `deflection` — maximum chord deviation per edge.
-  - `maxPointsPerEdge` — maximum points per edge (values below 2 return `[]`).
+  - `maxPointsPerEdge` — per-edge capacity, honoured within `2...Sampling.maximumSampleCount` (10,000,000); outside that range the result is `[]` (#558).
 - **Returns:** Array of polylines, one per edge. Edges that fail discretisation (including degenerate ones) are skipped — the result is **dense**, so a polyline's position does not reliably equal its edge index; use [`allEdgePolylinesIndexed`](#alledgepolylinesindexeddeflectionmaxpointsperedge) when that mapping matters.
-- **OCCT:** `BRepLib::BuildCurves3d` + `GCPnts_TangentialDeflection` (via `OCCTShapeBuildCurves3d` and `OCCTShapeComputeAllEdgePolylines`).
+- **OCCT:** `BRepLib::BuildCurves3d` + `GCPnts_TangentialDeflection` (via `OCCTBRepLibBuildCurves3dForShape` and `OCCTShapeComputeAllEdgePolylines`).
 - **Performance:** Prefer this over a `for i in 0..<shape.edgeCount { shape.edgePolyline(at: i) }` loop. `edgePolyline(at:)` rebuilds the edge map on every call, so that loop is O(edges²) — 15 s for a 12k-edge shape, versus 0.02 s here ([#275](https://github.com/SecondMouseAU/OCCTSwift/issues/275)).
 - **Example:**
   ```swift

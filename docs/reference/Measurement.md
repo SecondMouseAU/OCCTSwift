@@ -5,7 +5,7 @@ parent: API Reference
 
 # Measurement
 
-OCCTSwift's measurement layer adds ergonomic, one-liner accessors for the most common spatial queries — angles between edges, faces, axes, and planes; circle/arc geometry extraction; revolution-surface properties; and a snapshot type (`ShapeMeasurements`) that pre-computes per-face areas/centroids/perimeters and per-edge arc lengths for the whole shape in a single call. These are convenience wrappers over OCCTSwift's existing geometry coverage (no new OCCT calls are introduced for angle computation; bridge calls are confined to `circleProperties` geometry recovery and `ShapeMeasurements.measure`).
+OCCTSwift's measurement layer adds ergonomic, one-liner accessors for the most common spatial queries: angles between edges, faces, axes, and planes; circle/arc geometry extraction; revolution-surface properties; and a snapshot type (`ShapeMeasurements`) that pre-computes per-face areas/centroids/perimeters and per-edge arc lengths for the whole shape in a single call. These are convenience wrappers over OCCTSwift's existing geometry coverage (no new OCCT calls are introduced for angle computation; bridge calls are confined to `circleProperties` geometry recovery and `Shape.measure(linearTolerance:)`, which produces a `ShapeMeasurements`).
 
 ## Topics
 
@@ -322,6 +322,12 @@ public struct CircleProperties: Sendable, Hashable {
 
 ---
 
+#### `Edge.CircleProperties.endAngle`
+
+End of the parameter range in radians; `2π` for a full circle.
+
+---
+
 ### `Edge.circleProperties`
 
 Circle or arc properties if this edge's underlying curve is a circle. Returns `nil` for lines, ellipses, B-splines, etc.
@@ -454,16 +460,19 @@ public let edgeLengths: [Double]
 Per-face surface centres of mass, indexed parallel to `shape.faces()`.
 
 ```swift
-public let faceCentroids: [SIMD3<Double>]
+public let faceCentroids: [SIMD3<Double>?]
 ```
 
-`faceCentroids[i]` is the surface centre-of-mass of `shape.faces()[i]`, computed via `BRepGProp_Sinert` (surface inertia). Empty array if the struct was constructed without centroids.
+`faceCentroids[i]` is the surface centre-of-mass of `shape.faces()[i]`, computed via `BRepGProp_Sinert` (surface inertia), or `nil` when that face has no area to have a centroid. Empty array if the struct was constructed without centroids.
+
+Optional since #609, for the same reason `facePerimeters` always was: a zero-area face reported (0,0,0), which a dimension widget cannot tell apart from a face genuinely centred on the origin. The entry is `nil` rather than dropped, so the array stays index-parallel with `faces()`.
 
 - **OCCT:** `OCCTBRepGPropSinert` → `BRepGProp_Sinert::CentreOfMass`.
 - **Example:**
   ```swift
   let m = Shape.box(width: 10, height: 10, depth: 5)!.measure()
   for (i, c) in m.faceCentroids.enumerated() {
+      guard let c else { print("face \(i): no area, so no centroid"); continue }
       print("face \(i) centroid: \(c)")
   }
   ```
@@ -499,7 +508,7 @@ Memberwise initialiser for constructing `ShapeMeasurements` directly.
 public init(
     faceAreas: [Double],
     edgeLengths: [Double],
-    faceCentroids: [SIMD3<Double>] = [],
+    faceCentroids: [SIMD3<Double>?] = [],
     facePerimeters: [Double?] = []
 )
 ```
@@ -598,6 +607,7 @@ Iterates `faces()` and `edge(at:)`, computing all four measurement arrays. The `
   print("surface area:", m.totalFaceArea)       // 22000
   print("total edge length:", m.totalEdgeLength) // 1440
   for (i, (area, centroid)) in zip(m.faceAreas, m.faceCentroids).enumerated() {
+      guard let centroid else { continue }   // nil when the face has no area (#609)
       print("face \(i): area=\(area) centroid=\(centroid)")
   }
   ```

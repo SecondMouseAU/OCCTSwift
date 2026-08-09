@@ -737,7 +737,7 @@ static int32_t OCCTSelectorCollectResults(OCCTSelectorRef sel, OCCTPickResult* o
 
         // Extract sub-shape information from BRepOwner
         out[count].subShapeType = static_cast<int32_t>(TopAbs_SHAPE);
-        out[count].subShapeIndex = 0;
+        out[count].subShapeIndex = -1;
 
         Handle(StdSelect_BRepOwner) brepOwner =
             Handle(StdSelect_BRepOwner)::DownCast(owner);
@@ -745,12 +745,15 @@ static int32_t OCCTSelectorCollectResults(OCCTSelectorRef sel, OCCTPickResult* o
             const TopoDS_Shape& subShape = brepOwner->Shape();
             out[count].subShapeType = static_cast<int32_t>(subShape.ShapeType());
 
-            // Find 1-based index of sub-shape within parent shape
+            // #541: a picked sub-shape's index is 0-based, so it can be handed straight to
+            // OCCTShapeGetFaceAtIndex / GetSubShapeByTypeIndex. It used to be 1-based with 0
+            // meaning "the whole shape", which both misaddressed every pick by one and made
+            // the sentinel indistinguishable from a hit on sub-shape 0; the sentinel is -1 now.
             if (brepOwner->ComesFromDecomposition()) {
                 TopTools_IndexedMapOfShape map;
                 TopExp::MapShapes(selectable->Shape(), subShape.ShapeType(), map);
                 int idx = map.FindIndex(subShape);
-                out[count].subShapeIndex = (idx > 0) ? idx : 0;
+                out[count].subShapeIndex = (idx > 0) ? idx - 1 : -1;
             }
         }
 

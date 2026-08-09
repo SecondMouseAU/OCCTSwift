@@ -31,6 +31,14 @@ Usage:
     ./Scripts/count-operations.py           # report; exit 1 if the docs disagree
     ./Scripts/count-operations.py --fix     # rewrite README + API_REFERENCE Total
     ./Scripts/count-operations.py --audit   # list counted entry points with no reference doc
+
+Exit status is 1 when README's headline or API_REFERENCE's Total disagrees with the derived
+count, so this can gate a commit — it always could; it was the one gate script whose docstring
+never said so, which is why it read as a release-time reporting tool. Exit status is 2 for an
+unrecognised option: this script has no `--self-test`, its three sibling gates do, and CI pairs
+each of theirs with its real run, so `count-operations.py --self-test` is the natural thing to
+write when extending that list — it used to be accepted silently and run the ordinary report,
+passing forever. CI runs this bare in `ci.yml`'s `gate-scripts` job (#625).
 """
 import re
 import sys
@@ -45,6 +53,12 @@ INIT = re.compile(r'^\s*public\s+(?:convenience\s+)?init[?!]?\s*\(')
 # or `public var x = 0` has no brace and is data, not an entry point.
 CVAR = re.compile(r'^\s*public\s+(?:static\s+)?var\s+([A-Za-z_][A-Za-z0-9_]*)\b[^=]*\{')
 SUBS = re.compile(r'^\s*public\s+(?:static\s+)?subscript\s*\(')
+# An @available(..., unavailable, ...) attribute: the declaration below it is a retired spelling
+# kept only so an old call site fails to build with an explanation, so it is not an entry point.
+# A `deprecated` one still is — it can still be called. Only the attribute's opening line is
+# matched, which is where `unavailable` sits; a multi-line `message:` body below it matches none
+# of the declaration patterns above (#520).
+UNAVAILABLE = re.compile(r'^\s*@available\s*\([^)]*\bunavailable\b')
 # reference docs use both ### and #### for entry points
 DOC_HEADING = re.compile(r'^#{3,4} `([^`]+)`')
 
@@ -80,22 +94,33 @@ def count_entry_points():
         rel = os.path.relpath(f, ROOT)
         stack = []      # [(type_name, brace_depth_at_open)]
         depth = 0
+        unavailable = False   # an @available(*, unavailable) seen; it applies to the next decl
         for i, line in enumerate(open(f, encoding="utf-8", errors="replace"), 1):
             code = re.sub(r'//.*', '', line)   # crude line-comment strip for brace counting
             enc = _enclosing_type(stack)
+            if UNAVAILABLE.match(line):
+                unavailable = True
             m = FUNC.match(line)
             if m:
-                breakdown["func"] += 1
-                ops.setdefault((enc, m.group(1)), (rel, i))
+                if not unavailable:
+                    breakdown["func"] += 1
+                    ops.setdefault((enc, m.group(1)), (rel, i))
+                unavailable = False
             elif INIT.match(line):
-                breakdown["init"] += 1
+                if not unavailable:
+                    breakdown["init"] += 1
+                unavailable = False
             else:
                 m = CVAR.match(line)
                 if m:
-                    breakdown["computed var"] += 1
-                    ops.setdefault((enc, m.group(1)), (rel, i))
+                    if not unavailable:
+                        breakdown["computed var"] += 1
+                        ops.setdefault((enc, m.group(1)), (rel, i))
+                    unavailable = False
                 elif SUBS.match(line):
-                    breakdown["subscript"] += 1
+                    if not unavailable:
+                        breakdown["subscript"] += 1
+                    unavailable = False
 
             # maintain the enclosing-type stack
             td = TYPE_DECL.match(line)
@@ -221,8 +246,23 @@ def fix(derived):
 
 
 def main():
-    derived, breakdown, ops = count_entry_points()
     mode = sys.argv[1] if len(sys.argv) > 1 else ""
+
+    # Reject an unrecognised option rather than falling through to the report. Silently ignoring
+    # one made `--self-test` a trap: this script has no self-test, its three sibling gates do, and
+    # CI pairs each of theirs with its real run — so the natural thing to write when adding this
+    # script to that list is `count-operations.py --self-test`, which would have run the ordinary
+    # report and passed forever, exactly the "a gate that cannot fail" defect #625 exists to end.
+    # A prose warning was the first fix and was the wrong one: #625's whole premise is that prose
+    # describing a gate is not a gate. Exit 2, matching the sibling scripts' "cannot run" status
+    # (they use it for a wrong working directory), so it is distinguishable from a real failure.
+    # Also stops `--fi` silently reporting when `--fix` was meant.
+    if mode not in ("", "--fix", "--audit"):
+        print(f"unknown option: {mode}", file=sys.stderr)
+        print("usage: count-operations.py [--fix | --audit]", file=sys.stderr)
+        return 2
+
+    derived, breakdown, ops = count_entry_points()
 
     if mode == "--audit":
         typed_doc, bare_doc = documented_index()

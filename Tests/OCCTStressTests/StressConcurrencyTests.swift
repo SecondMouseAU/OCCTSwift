@@ -161,9 +161,9 @@ struct StressConcurrentCreationTests {
         let box = standardBox()
         let sphere = standardSphere()
         await withTaskGroup(of: Shape?.self) { group in
-            group.addTask { box.union(with: sphere) }
+            group.addTask { box.union(sphere) }
             group.addTask { box.subtracting(sphere) }
-            group.addTask { box.intersection(with: sphere) }
+            group.addTask { box.intersection(sphere) }
             var results: [Shape] = []
             for await r in group { if let r { results.append(r) } }
             // May produce 0-3 results depending on thread safety

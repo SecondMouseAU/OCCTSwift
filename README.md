@@ -9,7 +9,7 @@
 
 A comprehensive Swift wrapper for [OpenCASCADE Technology (OCCT)](https://www.opencascade.com/) 8.0.0p1, providing B-Rep solid modeling for macOS and iOS. **v1.0.0 — SemVer-stable as of 2026-05-07.**
 
-**4,270 wrapped operations** | macOS 12+ / iOS 15+ / visionOS 1+ / tvOS 15+ (arm64) | OCCT 8.0.0p1
+**4,256 wrapped operations** | macOS 12+ / iOS 15+ / visionOS 1+ / tvOS 15+ (arm64) | OCCT 8.0.0p1
 
 ## Quick Start
 
@@ -70,7 +70,7 @@ OCCTSwift provides method-level coverage of all user-facing OCCT classes. Key ar
 
 | Category | Operations | Highlights |
 |----------|-----------|------------|
-| Primitives & Sweeps | 36 | box, cylinder, sphere, cone, torus, wedge, pipe, extrude, revolve, loft, thru-sections |
+| Primitives & Sweeps | 37 | box, cylinder, sphere, cone, torus, wedge, pipe, extrude, revolve, loft, thru-sections |
 | Booleans | 13 | union, subtract, intersect, section, split, cells builder, defeaturing |
 | Modifications | 33 | fillet (uniform/variable/evolving), chamfer, shell, offset, draft |
 | Wires & Edges | 56 | rectangle, circle, polygon, arc, BSpline, NURBS, helix, fillet2D, chamfer2D |
@@ -132,17 +132,17 @@ let points = curve.drawAdaptive(curvatureDeflection: 0.1)
 ### GLTF Export
 
 ```swift
-try Exporter.writeGLTF(shape: model, to: gltfURL)
-try Exporter.writeGLB(shape: model, to: glbURL)
+try Exporter.writeGLTF(shape: model, to: gltfURL, binary: false)   // text glTF (.gltf)
+try Exporter.writeGLTF(shape: model, to: glbURL)                   // binary glTF (.glb), the default
 ```
 
 ## Architecture
 
 ```
 Sources/OCCTSwift/          Swift public API
-Sources/OCCTBridge/include/ C function declarations (OCCTBridge.h)
-Sources/OCCTBridge/src/     Objective-C++ implementations (OCCTBridge.mm)
-Libraries/OCCT.xcframework  Pre-built OCCT 8.0.0p1 static library (arm64)
+Sources/OCCTBridge/include/ C function declarations (15 per-domain headers + a slim OCCTBridge.h umbrella)
+Sources/OCCTBridge/src/     Objective-C++ implementations (16 per-domain .mm files)
+Libraries/OCCT.xcframework  Pre-built OCCT 8.0.1 static library (arm64)
 Tests/OCCT<Domain>Tests/    Per-domain Swift Testing targets (focused compile/run)
 ```
 
@@ -182,7 +182,8 @@ See [docs/guides/building-occt.md](docs/guides/building-occt.md) for details.
 ### Prebuilt OCCTBridge (opt-in)
 
 The Objective-C++ bridge (16 files, ~62K lines) compiles from source by default. Consumers who
-don't need to edit it can opt into a prebuilt binary instead — set `OCCTSWIFT_BRIDGE_PREBUILT=1`.
+don't need to edit it could opt into a prebuilt binary instead. That switch is **disabled on the
+v2.0.0 line** (see [the guide](docs/guides/prebuilt-bridge.md)); the bridge always builds from source.
 See [docs/guides/prebuilt-bridge.md](docs/guides/prebuilt-bridge.md).
 
 ## Documentation

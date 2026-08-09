@@ -705,7 +705,9 @@ struct SelectorSubShapeTests {
         if !results.isEmpty {
             #expect(results[0].shapeId == 1)
             #expect(results[0].subShapeType == .face)
-            #expect(results[0].subShapeIndex > 0)
+            // #541: 0-based, so the first face is 0 rather than the "whole shape" sentinel.
+            #expect(results[0].subShapeIndex >= 0)
+            #expect(box.face(at: Int(results[0].subShapeIndex)) != nil)
         }
     }
 
@@ -731,7 +733,9 @@ struct SelectorSubShapeTests {
         // Just verify no crash and correct sub-shape type if hit
         if !results.isEmpty {
             #expect(results[0].subShapeType == .edge)
-            #expect(results[0].subShapeIndex > 0)
+            // #541: 0-based, addressable against the shape the pick came from.
+            #expect(results[0].subShapeIndex >= 0)
+            #expect(box.subShape(type: .edge, index: Int(results[0].subShapeIndex)) != nil)
         }
     }
 
@@ -742,7 +746,7 @@ struct SelectorSubShapeTests {
         #expect(selector.pixelTolerance == 5)
     }
 
-    @Test("Shape mode pick returns shape sub-shape type with index 0")
+    @Test("Shape mode pick returns the whole-shape sentinel, not an index")
     func shapeModePick() {
         let box = Shape.box(width: 10, height: 10, depth: 10)!
         let cam = makeCamera()
@@ -757,8 +761,8 @@ struct SelectorSubShapeTests {
         )
 
         if !results.isEmpty {
-            // In shape mode, subShapeIndex should be 0 (whole shape)
-            #expect(results[0].subShapeIndex == 0)
+            // #541: the "whole shape" sentinel is -1, since 0 is now a real sub-shape index.
+            #expect(results[0].subShapeIndex == -1)
         }
     }
 }
@@ -1021,9 +1025,11 @@ struct ShapeContentsTests {
         #expect(c.solids == 1)
         #expect(c.shells == 1)
         #expect(c.faces == 6)
-        // ShapeAnalysis counts topology references, not unique shapes
-        #expect(c.edges > 0)
-        #expect(c.vertices > 0)
+        // #541: ShapeAnalysis_ShapeContents counts *occurrences*, not distinct sub-shapes, so
+        // these are not edgeCount/vertexCount and are not index bounds. A box's every edge is
+        // visited once per adjacent face. Pinned exactly in Issue541FaceIndexContractTests.
+        #expect(c.edges == 24)
+        #expect(c.vertices == 48)
     }
 
     @Test("Cylinder contents")
@@ -1185,7 +1191,7 @@ struct ShapeSectionTests {
     func sectionTwoBoxes() {
         let box1 = Shape.box(width: 10, height: 10, depth: 10)!
         let box2 = Shape.box(width: 10, height: 10, depth: 10)!.translated(by: SIMD3(5, 5, 0))
-        let result = box1.section(with: box2!)
+        let result = box1.section(box2!)
         #expect(result != nil)
     }
 
@@ -1193,7 +1199,7 @@ struct ShapeSectionTests {
     func sectionBoxCylinder() {
         let box = Shape.box(width: 10, height: 10, depth: 10)!
         let cyl = Shape.cylinder(radius: 3, height: 20)!
-        let result = box.section(with: cyl)
+        let result = box.section(cyl)
         #expect(result != nil)
     }
 
@@ -1201,7 +1207,7 @@ struct ShapeSectionTests {
     func sectionNoIntersection() {
         let box1 = Shape.box(width: 5, height: 5, depth: 5)!
         let box2 = Shape.box(width: 5, height: 5, depth: 5)!.translated(by: SIMD3(100, 100, 100))
-        let result = box1.section(with: box2!)
+        let result = box1.section(box2!)
         // Non-intersecting shapes may return empty compound or nil
         _ = result
     }
@@ -1211,7 +1217,7 @@ struct ShapeSectionTests {
         let sphere = Shape.sphere(radius: 5)!
         // Create a thin box as a plane-like shape
         let plane = Shape.box(width: 20, height: 20, depth: 0.001)!
-        let result = sphere.section(with: plane)
+        let result = sphere.section(plane)
         #expect(result != nil)
     }
 }
@@ -1606,7 +1612,7 @@ struct EdgeConnectTests {
     func fusedConnectivity() {
         let box = Shape.box(width: 10, height: 10, depth: 10)!
         let sphere = Shape.sphere(radius: 7)!
-        let fused = box.union(with: sphere)
+        let fused = box.union(sphere)
         #expect(fused != nil)
         if let fused {
             let connected = fused.connectedEdges
@@ -1826,7 +1832,7 @@ struct EdgeConcavityTests {
         // A union of two overlapping boxes creates concave edges at the join
         let box1 = Shape.box(width: 10, height: 10, depth: 10)!
         let box2 = Shape.box(origin: SIMD3(5, 5, 0), width: 10, height: 10, depth: 10)!
-        if let fused = box1.union(with: box2) {
+        if let fused = box1.union(box2) {
             let concaveCount = fused.edgeConcavityCount(Shape.EdgeConcavity.concave)
             // Fused shape may have concave edges where boxes overlap
             #expect(concaveCount != nil)
@@ -1892,7 +1898,7 @@ struct ShapeCheckTests {
     func booleanResultValid() throws {
         let box1 = Shape.box(width: 10, height: 10, depth: 10)!
         let box2 = Shape.box(origin: SIMD3(5, 5, 5), width: 10, height: 10, depth: 10)!
-        if let fused = box1.union(with: box2) {
+        if let fused = box1.union(box2) {
             #expect(fused.isValid)
         }
     }
@@ -3758,11 +3764,25 @@ struct BRepLibUtilitiesTests {
         }
     }
 
-    @Test func buildCurves3d() {
-        if let box = Shape.box(width: 10, height: 10, depth: 10) {
-            let ok = box.buildCurves3d(tolerance: 1e-7)
-            #expect(ok)
+    /// A box's edges all have 3D curves already, so this is the early-return path: OCCT returns
+    /// true without computing anything, and the tolerance is never read. Asserting that (rather
+    /// than just `ok`) is the difference between testing the contract and testing nothing — the
+    /// absurd tolerance below used to be `1e-7` and passed for the same reason 42 does. #498.
+    @Test("Building 3D curves on a shape that already has them changes nothing")
+    func buildCurves3dOnFullyBuiltShapeIsANoOp() {
+        guard let box = Shape.box(width: 10, height: 10, depth: 10) else {
+            Issue.record("could not build a box")
+            return
         }
+        let edges = box.subShapes(ofType: .edge)
+        #expect(edges.count == 12)
+        #expect(edges.allSatisfy { $0.extractEdgeCurve3D() != nil })
+        let tolerancesBefore = edges.map(\.edgeTolerance)
+
+        #expect(box.buildCurves3d(tolerance: 42))
+
+        #expect(edges.map(\.edgeTolerance) == tolerancesBefore)
+        #expect(edges.allSatisfy { $0.extractEdgeCurve3D() != nil })
     }
 
     @Test func sortFaces() {
@@ -4006,8 +4026,7 @@ struct ShapeQueryTests {
     }
 
     @Test func centroid() {
-        if let box = Shape.box(width: 10, height: 10, depth: 10) {
-            let c = box.centroid
+        if let box = Shape.box(width: 10, height: 10, depth: 10), let c = box.centroid {
             // Box centered at origin
             #expect(abs(c.x) < 1)
             #expect(abs(c.y) < 1)
@@ -4392,26 +4411,19 @@ struct BRepLibExtendedTests {
     }
 
     @Test("Continuity of faces")
-    func continuityOfFaces() {
+    func continuityAcrossASharedEdge() {
         let box = Shape.box(width: 10, height: 10, depth: 10)
         if let b = box {
             let faces = b.subShapes(ofType: .face)
             let edges = b.subShapes(ofType: .edge)
             if faces.count >= 2, edges.count > 0 {
-                // Try to find a shared edge between two faces
-                let cont = Shape.continuityOfFaces(edge: edges[0], face1: faces[0], face2: faces[1])
-                // -1 means error (edge may not be shared); >= 0 is valid
-                #expect(cont >= -1)
+                // Try to find a shared edge between two faces. Whatever comes back must be a
+                // class the vocabulary actually has — the old `>= -1` was true of every Int
+                // (#495); Issue495FaceContinuityTests pins the values per geometry.
+                let cont = Shape.continuityClassOfFaces(edge: edges[0],
+                                                        face1: faces[0], face2: faces[1])
+                #expect(cont == nil || ContinuityClass.allCases.contains(cont!))
             }
-        }
-    }
-
-    @Test("Build curves 3D all")
-    func buildCurves3dAll() {
-        let box = Shape.box(width: 10, height: 10, depth: 10)
-        if let b = box {
-            let ok = b.buildCurves3dAll(tolerance: 1e-5)
-            #expect(ok)
         }
     }
 
@@ -4487,15 +4499,6 @@ struct ShapeQueriesV123Tests {
         }
     }
 
-    @Test("Shape nbEdges, nbFaces, nbVertices")
-    func shapeSubShapeCounts() {
-        let box = Shape.box(width: 10, height: 10, depth: 10)
-        if let b = box {
-            #expect(b.nbEdges > 0)
-            #expect(b.nbFaces == 6)
-            #expect(b.nbVertices > 0)
-        }
-    }
 }
 
 @Suite("WireAnalyzer v124")
@@ -5007,5 +5010,26 @@ struct ShapeSymmetryAxesTests {
     func asymmetricBoxNoSymmetry() {
         guard let box = Shape.box(width: 10, height: 7, depth: 3) else { Issue.record("box nil"); return }
         #expect(box.symmetryAxes().isEmpty)
+    }
+
+    // #726/#763: same defect as `Shape.revolutionAxes`' extent (see the sibling test in
+    // OCCTSurfaceTests.swift) -- extentMin/extentMax/hasExtent were hardcoded 0/0/false on every
+    // call here too. The symmetry axis's own extent is measured over the WHOLE SHAPE's bounding
+    // box (not one face), from the axis origin (the shape's centre of mass, per
+    // `GProp_GProps::CentreOfMass`). A cylinder's centroid sits at half its height, so its axial
+    // span should read as symmetric about 0: -10...10 for a height-20 cylinder, independent of
+    // which sign OCCT reports the axis direction in.
+    @Test("Cylinder's symmetry axis reports a real, non-nil extent centred on the centroid")
+    func cylinderSymmetryAxisHasExtent() {
+        guard let cyl = Shape.cylinder(radius: 5, height: 20) else { Issue.record("cylinder nil"); return }
+        let axes = cyl.symmetryAxes()
+        #expect(axes.count == 1)
+        guard let a = axes.first, let extent = a.extent else {
+            Issue.record("expected a non-nil extent on the cylinder's symmetry axis")
+            return
+        }
+        #expect(abs((extent.upperBound - extent.lowerBound) - 20) < 1e-6)
+        #expect(abs(extent.lowerBound + 10) < 1e-6)
+        #expect(abs(extent.upperBound - 10) < 1e-6)
     }
 }

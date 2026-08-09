@@ -24,19 +24,22 @@ Differential geometry queries evaluated at a parametric point `(u, v)` on the su
 Returns the Gaussian curvature at `(u, v)`.
 
 ```swift
-public func gaussianCurvature(atU u: Double, v: Double) -> Double
+public func gaussianCurvature(atU u: Double, v: Double) -> Double?
 ```
 
 The Gaussian curvature is the product of the two principal curvatures (`kMin × kMax`). Positive on a convex surface, negative in a saddle region, zero on a developable surface.
 
 - **Parameters:** `u` — U parameter; `v` — V parameter.
-- **Returns:** Gaussian curvature value (signed); `0` if `GeomLProp_SLProps::IsCurvatureDefined()` is false at that point (a cone apex, a sphere pole).
+- **Returns:** Gaussian curvature value (signed); `nil` if `GeomLProp_SLProps::IsCurvatureDefined()` is false at that point (a cone apex, a sphere pole). This was `0` until #595 — which is also the Gaussian curvature of **every point of every plane, cylinder and cone**, since those are developable, so whole surfaces read as "no answer". `Face.gaussianCurvature(atU:v:)` reads the same quantity through the face and has always returned an optional; the two now agree.
 - **OCCT:** `GeomLProp_SLProps::GaussianCurvature` (order 2, `Precision::Confusion()`).
 - **See also:** [`curvatures(u:v:)`](Surface.md) returns this and `meanCurvature(atU:v:)` together from a single evaluation. All three share one `GeomLProp_SLProps` construction, so they agree exactly — including on whether curvature is defined at all (#405).
 - **Example:**
   ```swift
   if let sphere = Surface.sphere(radius: 5) {
       let k = sphere.gaussianCurvature(atU: 0, v: 0)  // ≈ 0.04 (1/R²)
+      let flat = Surface.plane(origin: .zero, normal: SIMD3(0, 0, 1))!
+      flat.gaussianCurvature(atU: 3, v: 4)             // 0 — flat, and that is the answer
+      sphere.gaussianCurvature(atU: 0, v: .pi / 2)     // nil — the pole has no curvature
   }
   ```
 
@@ -47,13 +50,13 @@ The Gaussian curvature is the product of the two principal curvatures (`kMin × 
 Returns the mean curvature at `(u, v)`.
 
 ```swift
-public func meanCurvature(atU u: Double, v: Double) -> Double
+public func meanCurvature(atU u: Double, v: Double) -> Double?
 ```
 
 The mean curvature is the arithmetic mean of the two principal curvatures: `(kMin + kMax) / 2`. Zero on a minimal surface (e.g., a flat plane in its own parameter domain).
 
 - **Parameters:** `u` — U parameter; `v` — V parameter.
-- **Returns:** Mean curvature value (signed); `0` if `GeomLProp_SLProps::IsCurvatureDefined()` is false at that point.
+- **Returns:** Mean curvature value (signed); `nil` if `GeomLProp_SLProps::IsCurvatureDefined()` is false at that point. Was `0` until #595, which is also a plane's real mean curvature, and disagreed with `Face.meanCurvature(atU:v:)` (already optional).
 - **OCCT:** `GeomLProp_SLProps::MeanCurvature` (order 2, `Precision::Confusion()`).
 - **See also:** [`curvatures(u:v:)`](Surface.md) returns this and `gaussianCurvature(atU:v:)` together from a single evaluation, sharing one `GeomLProp_SLProps` construction (#405).
 - **Example:**
@@ -78,8 +81,25 @@ public struct PrincipalCurvatures: Sendable {
 }
 ```
 
-- `kMin` / `kMax` — minimum and maximum principal curvatures.
-- `dirMin` / `dirMax` — corresponding principal curvature directions in 3D.
+Same shape as `Face.PrincipalCurvatures` (`docs/reference/Face.md`), since a face's curvature query delegates to its underlying surface.
+
+---
+
+#### `Surface.PrincipalCurvatures.kMin`
+
+Minimum principal curvature (reciprocal of the maximum principal radius).
+
+#### `Surface.PrincipalCurvatures.kMax`
+
+Maximum principal curvature (reciprocal of the minimum principal radius).
+
+#### `Surface.PrincipalCurvatures.dirMin`
+
+Unit direction vector of the minimum-curvature principal line, in 3D.
+
+#### `Surface.PrincipalCurvatures.dirMax`
+
+Unit direction vector of the maximum-curvature principal line, in 3D, perpendicular to `dirMin`.
 
 ---
 
@@ -118,26 +138,44 @@ Struct returned by `continuityWith(_:u1:v1:u2:v2:order:)`.
 
 ```swift
 public struct ContinuityAnalysis: Sendable {
-    public let status: Int
+    public let order: ContinuityClass
+    public let measured: Set<ContinuityClass>
     public let c0Value: Double
     public let g1Angle: Double
     public let c1UAngle: Double
     public let c1VAngle: Double
     public let flags: Int
-    public var isC0: Bool { flags & 1  != 0 }
-    public var isG1: Bool { flags & 2  != 0 }
-    public var isC1: Bool { flags & 4  != 0 }
-    public var isG2: Bool { flags & 8  != 0 }
-    public var isC2: Bool { flags & 16 != 0 }
+    public func holds(_ continuity: ContinuityClass) -> Bool?
+    public var isC0: Bool? { holds(.c0) }
+    public var isG1: Bool? { holds(.g1) }
+    public var isC1: Bool? { holds(.c1) }
+    public var isG2: Bool? { holds(.g2) }
+    public var isC2: Bool? { holds(.c2) }
 }
 ```
 
-- `status` — raw `GeomAbs_Shape` continuity status code.
+- `order` — the class the junction was analysed at, i.e. the request after saturation. `LocalAnalysis_SurfaceContinuity::ContinuityStatus()` echoes its constructor argument, so this is never a finding; it exists to tell you where a saturated request landed.
+- `measured` — the classes this `order` actually evaluated. Each order runs one branch: `.c0` measures C0; `.g1` measures C0 and G1; `.c1` measures C0 and C1; `.g2` measures C0, G1 and G2; `.c2` measures C0, C1 and C2. **No order measures all five.**
 - `c0Value` — positional gap distance at the junction.
-- `g1Angle` — angle between surface normals at the junction (radians).
-- `c1UAngle` / `c1VAngle` — angles between first derivatives in U and V directions.
-- `flags` — bitmask: bit 0 = C0, bit 1 = G1, bit 2 = C1, bit 3 = G2, bit 4 = C2.
-- Computed boolean helpers `isC0` … `isC2` decode the bitmask.
+- `g1Angle` — angle between surface normals at the junction (radians), or `-1` if G1 was not measured or does not hold.
+- `c1UAngle` / `c1VAngle` — angles between first derivatives in U and V directions, or `-1`.
+- `flags` — bitmask: bit 0 = C0, bit 1 = G1, bit 2 = C1, bit 3 = G2, bit 4 = C2, masked to `measured`.
+- `holds(_:)` returns `nil` for a class outside `measured`, which is what separates "does not hold" from "never asked". Prefer it to `flags`.
+
+> Before #495 the `is*` helpers were non-optional and read straight off the bitmask, so a class the order never computed answered `true` from an uninitialised member — a 90° crease analysed at `.c0` reported `isC2 == true`, with `c2Angle == 0.0` alongside it.
+
+---
+
+Each `is*` helper is `holds(_:)` for one class, so each is `Bool?`: `nil` means `order` never
+measured that class, not that it fails.
+
+| Property | Measured by |
+|---|---|
+| `isC0` | every order. |
+| `isG1` | `.g1` and `.g2`. |
+| `isC1` | `.c1` and `.c2`. |
+| `isG2` | `.g2` only. |
+| `isC2` | `.c2` only. |
 
 ---
 
@@ -150,25 +188,22 @@ public func continuityWith(
     _ other: Surface,
     u1: Double, v1: Double,
     u2: Double, v2: Double,
-    order: Int = 4
+    order: ContinuityClass = .c2
 ) -> ContinuityAnalysis?
 ```
 
-`order` controls the maximum continuity level tested: 0 = C0, 1 = G1, 2 = C1, 3 = G2, 4 = C2. Use this to verify that two adjacent surface patches meet smoothly at a shared seam.
+`order` **selects** the analysis rather than capping it — see `measured` above. `.c2` is the strictest class `LocalAnalysis_SurfaceContinuity` implements, so `.c3` and `.cN` saturate to it.
 
-- **Parameters:** `other` — the second surface; `u1`/`v1` — parameters on this surface; `u2`/`v2` — parameters on `other`; `order` — maximum order to check (0–4, default 4).
-- **Returns:** `ContinuityAnalysis`, or `nil` if `LocalAnalysis_SurfaceContinuity` fails (e.g. degenerate point, invalid order).
+- **Parameters:** `other` — the second surface; `u1`/`v1` — parameters on this surface; `u2`/`v2` — parameters on `other`; `order` — the class to measure (default `.c2`).
+- **Returns:** `ContinuityAnalysis`, or `nil` if `LocalAnalysis_SurfaceContinuity` fails.
 - **OCCT:** `LocalAnalysis_SurfaceContinuity`.
+- **Note:** the `.c2` branch needs a non-zero second derivative in both U and V on both surfaces. A plane has none in either direction and a cylinder has none along its axis, so the default order returns `nil` for both — ask for `.c1` or `.g1` on planar or ruled geometry.
 - **Example:**
   ```swift
-  if let a = ContinuityAnalysis(
-         s1.continuityWith(s2, u1: u1, v1: v1, u2: u2, v2: v2)
-     ) {
-      print(a.isG1, a.g1Angle)
-  }
-  // safe unwrap form:
-  if let ca = s1.continuityWith(s2, u1: 0, v1: 0, u2: 0, v2: 0) {
-      print(ca.isC1)
+  // Tangency is its own question: the .c2 default never computes G1.
+  if let a = s1.continuityWith(s2, u1: 0, v1: 0, u2: 0, v2: 0, order: .g1) {
+      print(a.holds(.g1), a.g1Angle)   // Optional(true), 0.0
+      print(a.holds(.c1))              // nil — .g1 does not measure C1
   }
   ```
 
@@ -268,6 +303,10 @@ public struct SurfaceExtremaResult {
 - `point1` / `point2` — nearest points on the first and second surface respectively.
 - `uv1` / `uv2` — UV parameters on each surface at the nearest point.
 
+*(Per-field anchors below, for cross-reference; the list above has the actual meaning of each.)*
+
+#### `Surface.SurfaceExtremaResult.uv2`
+
 ---
 
 ### `extrema(to:uvBounds1:uvBounds2:)`
@@ -299,6 +338,33 @@ When `uvBounds1` or `uvBounds2` is `nil`, the bridge substitutes `(0, 1, 0, 1)` 
 
 ---
 
+### `Surface.ExtremaPointOnSurface`
+
+One point-to-surface extremum result, returned by `extremaPSPoint(point:index:)` (1-based index;
+`extremaPS(point:)` returns only the count via `PointSurfaceExtrema`).
+
+```swift
+public struct ExtremaPointOnSurface: Sendable {
+    public let squareDistance: Double
+    public let point: SIMD3<Double>
+    public let u: Double
+    public let v: Double
+}
+```
+
+| Field | Meaning |
+|---|---|
+| `squareDistance` | Squared distance between the query point and this extremum point. |
+| `point` | The 3D point on the surface at this extremum. |
+| `u` | Surface U parameter at this extremum. |
+| `v` | Surface V parameter at this extremum. |
+
+#### `Surface.ExtremaPointOnSurface.v`
+
+Surface V parameter at this extremum.
+
+---
+
 ## ShapeAnalysis\_Surface Expansion (v0.49.0)
 
 UV parameter recovery via `ShapeAnalysis_Surface::ValueOfUV` and `NextValueOfUV`.
@@ -318,6 +384,10 @@ public struct UVProjection: Sendable {
 
 - `uv` — surface UV parameters at the closest surface point.
 - `gap` — distance between the input 3D point and the surface evaluated at `uv`. A nonzero gap means the input point was not exactly on the surface.
+
+*(Per-field anchors below, for cross-reference; the list above has the actual meaning of each.)*
+
+#### `Surface.UVProjection.uv`
 
 ---
 
@@ -386,6 +456,39 @@ public func uvFromIso(_ point: SIMD3<Double>, precision: Double = 1e-6)
 ```
 
 - **OCCT:** `ShapeAnalysis_Surface::UVFromIso`.
+
+---
+
+### `Surface.Singularity`
+
+Detail of a surface singularity: a degenerate iso-line collapsing to a pole, e.g. the apex of a
+cone or a pole of a sphere. Returned by `singularity(_:precision:)`.
+
+```swift
+public struct Singularity: Sendable {
+    public let point: SIMD3<Double>
+    public let firstUV: SIMD2<Double>
+    public let lastUV: SIMD2<Double>
+    public let firstParameter: Double
+    public let lastParameter: Double
+    public let isUIso: Bool
+    public let precision: Double
+}
+```
+
+| Field | Meaning |
+|---|---|
+| `point` | The 3D pole point. |
+| `firstUV` | First 2D `(u, v)` point of the degenerate iso-line. |
+| `lastUV` | Last 2D `(u, v)` point of the degenerate iso-line. |
+| `firstParameter` | Parameter at the first point along the iso-line. |
+| `lastParameter` | Parameter at the last point along the iso-line. |
+| `isUIso` | `true` if the degenerate iso-line is a U-iso curve; `false` if it is a V-iso curve. |
+| `precision` | The precision at which the singularity was detected. |
+
+#### `Surface.Singularity.precision`
+
+The precision at which the singularity was detected.
 
 ---
 
@@ -466,6 +569,16 @@ public struct SurfaceProjection: Sendable {
 
 ---
 
+#### `Surface.SurfaceProjection.u`
+
+U parameter at the closest point.
+
+#### `Surface.SurfaceProjection.v`
+
+V parameter at the closest point.
+
+---
+
 ### `projectCurve(_:tolerance:)`
 
 Projects a 3D curve onto this surface, returning a 2D parametric (UV) curve.
@@ -506,7 +619,7 @@ Uses `ProjLib_CompProjectedCurve`, which handles cases where the curve projectio
 - **Example:**
   ```swift
   if let srf    = Surface.sphere(radius: 10),
-     let spiral = Curve3D.helix(radius: 10, pitch: 2, turns: 3) {
+     let spiral = Curve3D.circularHelix(radius: 10, pitch: 2) {
       let segs = srf.projectCurveSegments(spiral)
       // segs may contain multiple UV segments when the helix crosses the seam
   }
@@ -575,7 +688,8 @@ public func intersections(with other: Surface, tolerance: Double = 1e-6, maxCurv
 
 Returns an empty array when the surfaces do not intersect. This is the earlier (v0.30.0) intersection method; see also `intersectionCurves(with:tolerance:)` added in v0.35.0.
 
-- **Parameters:** `other` — the second surface; `tolerance` — intersection tolerance (default `1e-6`); `maxCurves` — upper bound on the number of returned curves (default 50).
+- **Parameters:** `other` — the second surface; `tolerance` — intersection tolerance (default
+  `1e-6`); `maxCurves` — output *capacity* (default 50), clamped into `0...Sampling.maximumSampleCount` (10,000,000); 0 or less returns empty (#622).
 - **Returns:** Array of 3D intersection curves (may be empty).
 - **OCCT:** `GeomAPI_IntSS`.
 - **Example:**
@@ -654,9 +768,17 @@ public struct CurveSurfaceIntersection: Sendable {
 }
 ```
 
-- `point` — 3D coordinates of the intersection.
-- `surfaceUV` — surface UV parameters at the intersection.
-- `curveParameter` — parameter along the curve at the intersection.
+| Field | Meaning |
+|---|---|
+| `point` | 3D coordinates of the intersection. |
+| `surfaceUV` | Surface UV parameters at the intersection. |
+| `curveParameter` | Parameter along the curve at the intersection. |
+
+---
+
+#### `CurveSurfaceIntersection.curveParameter`
+
+Parameter along the curve at the intersection.
 
 ---
 
@@ -709,7 +831,7 @@ sampling a parameter grid.
 - **Parameters:** `uParameters` — array of U parameter values; `vParameters` — array of V parameter values.
 - **Returns:** A `SurfaceGrid` of size `uParameters.count × vParameters.count`, or an empty grid if
   either input is empty or the evaluated count mismatches.
-- **OCCT:** `Geom_Surface::D0` called per grid point via the bridge buffer.
+- **OCCT:** `GeomGridEval_Surface::EvaluateGrid` via `OCCTSurfaceEvaluateGrid`.
 - **Example:**
   ```swift
   if let srf = Surface.sphere(radius: 5) {
@@ -720,3 +842,34 @@ sampling a parameter grid.
   }
   ```
 - **Note:** Result is empty (not a partial result) if the internal buffer fill count does not match `uParameters.count × vParameters.count`.
+
+---
+
+### `evaluateGridD1(uParameters:vParameters:)`
+
+Evaluates the surface *and its first partial derivatives* at a grid of UV parameters in a single
+call, the D1 counterpart of `evaluateGrid`, using the same batch `GeomGridEval_Surface` evaluator
+rather than one `evalD1(u:v:)` call per sample.
+
+```swift
+public func evaluateGridD1(uParameters: [Double], vParameters: [Double]) -> SurfaceGridD1
+```
+
+Returns a `SurfaceGridD1` (see [Surface.md](Surface.md#surfacegridd1)) indexed `.at(u:v:)`. Added
+by [#486](https://github.com/SecondMouseAU/OCCTSwift/issues/486), which finished for the D1 path
+what #404 had done for D0: the deprecated `gridEvalD1(uParams:vParams:)` returned a flat
+`[(point:, d1u:, d1v:)]` array with no stated major order, over a bridge function whose D0 sibling
+disagreed with `evaluateGrid` about exactly that.
+
+- **Parameters:** `uParameters`: array of U parameter values; `vParameters`: array of V parameter values.
+- **Returns:** A `SurfaceGridD1` of size `uParameters.count × vParameters.count`, or an empty grid
+  if either input is empty or the evaluation fails.
+- **OCCT:** `GeomGridEval_Surface::EvaluateGridD1` via `OCCTSurfaceEvaluateGridD1`.
+- **Example:**
+  ```swift
+  if let srf = Surface.sphere(radius: 5) {
+      let grid = srf.evaluateGridD1(uParameters: [0, 1, 2], vParameters: [0, 0.5])
+      let sample = grid.at(u: 1, v: 0)
+      let normal = simd_normalize(simd_cross(sample.d1u, sample.d1v))
+  }
+  ```

@@ -69,6 +69,19 @@ extension Shape {
     /// Symmetry axes derived from the principal moments of inertia. Returns one axis
     /// for rotational symmetry, three for spherical symmetry, empty otherwise.
     ///
+    /// The moments are the volume-based ones, so this is empty for any shape with no closed
+    /// volume: a face, wire, edge, vertex or open shell. Those used to report **spherical**
+    /// symmetry, because a zero-mass framework has three equal (zero) moments and OCCT's
+    /// `HasSymmetryPoint()` says yes to that, yielding three orthonormal axes through the
+    /// shape's location origin that describe nothing (#609).
+    ///
+    /// ```swift
+    /// let box = Shape.box(width: 10, height: 20, depth: 30)!
+    /// Shape.sphere(radius: 5)!.symmetryAxes().count              // 3
+    /// Shape.cylinder(radius: 2, height: 9)!.symmetryAxes().count // 1, the cylinder's own axis
+    /// Shape.fromFace(box.faces()[0])!.symmetryAxes()             // [], was 3
+    /// ```
+    ///
     /// - Parameter fractionalTolerance: Two principal moments are considered equal
     ///   when their absolute difference is below this fraction of the largest moment.
     public func symmetryAxes(fractionalTolerance: Double = 1e-4) -> [ShapeAxis] {

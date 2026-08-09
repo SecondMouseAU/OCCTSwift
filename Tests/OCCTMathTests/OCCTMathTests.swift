@@ -1416,8 +1416,11 @@ struct MathGaussTests {
     }
 
     @Test func determinant() {
-        let det = MathGauss.determinant(matrix: [2.0, 1.0, 1.0, 3.0], n: 2)
-        #expect(abs(det - 5.0) < 1e-10)
+        if let det = MathGauss.determinant(matrix: [2.0, 1.0, 1.0, 3.0], n: 2) {
+            #expect(abs(det - 5.0) < 1e-10)
+        } else {
+            Issue.record("expected a determinant")
+        }
     }
 }
 
@@ -1511,8 +1514,11 @@ struct MathCroutTests {
     }
 
     @Test func determinant() {
-        let det = MathCrout.determinant(matrix: [4.0, 2.0, 2.0, 3.0], n: 2)
-        #expect(abs(det - 8.0) < 1e-10)
+        if let det = MathCrout.determinant(matrix: [4.0, 2.0, 2.0, 3.0], n: 2) {
+            #expect(abs(det - 8.0) < 1e-10)
+        } else {
+            Issue.record("expected a determinant")
+        }
     }
 }
 
@@ -3036,15 +3042,21 @@ struct SurfaceTransformTests {
 
     @Test("Transform BezierSurface values")
     func transformBezierSurface() {
-        // Create a Bezier surface and verify transform changes values
-        let surf = Surface.bezierFill(
-            Curve3D.line(through: SIMD3(0, 0, 0), direction: SIMD3(1, 0, 0))!,
-            Curve3D.line(through: SIMD3(0, 10, 0), direction: SIMD3(1, 0, 0))!
-        )
-        if let s = surf {
-            let ok = s.translate(dx: 0, dy: 0, dz: 100)
-            #expect(ok)
+        // bezierFill down-casts its inputs to Geom_BezierCurve and returns nil for anything else, so
+        // the boundaries must be real Bezier curves. This test used to pass Curve3D.line, got nil
+        // back, and skipped its whole body via `if let` without ever calling translate (#488).
+        guard let c1 = Curve3D.bezier(poles: [SIMD3(0, 0, 0), SIMD3(5, 0, 3), SIMD3(10, 0, 0)]),
+              let c2 = Curve3D.bezier(poles: [SIMD3(0, 10, 0), SIMD3(5, 10, 3), SIMD3(10, 10, 0)]),
+              let s = Surface.bezierFill(c1, c2) else {
+            Issue.record("bezierFill setup nil")
+            return
         }
+        let before = s.point(atU: 0.5, v: 0.5)
+        #expect(s.translate(dx: 0, dy: 0, dz: 100))
+        let after = s.point(atU: 0.5, v: 0.5)
+        #expect(abs(after.x - before.x) < 1e-9)
+        #expect(abs(after.y - before.y) < 1e-9)
+        #expect(abs(after.z - before.z - 100) < 1e-9)
     }
 }
 

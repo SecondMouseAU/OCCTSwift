@@ -121,6 +121,6 @@ Coverage tracker — update as pages land. (Counts = public decls in the source 
 | Sheet Metal (SheetMetal, SheetLayout) | 39 | `SheetMetal.md` | ✅ done |
 | Bill of Materials & Selection (BillOfMaterials, Selector, Selection) | 48 | `Selection.md` | ✅ done |
 | Date & Period (Date, Period) | 33 | `DateTime.md` | ✅ done |
-| Curve Adaptors & Wire Ordering (WireCurve, EdgeCurve, WireOrder) | 31 | `CurveAdaptors.md` | ✅ done |
-| Geometry Solvers & Builders (BSplineApproxInterp, PlateSolver, FillingSurface, LawFunction, PolynomialSolver, KDTree) | 62 | `GeometrySolvers.md` | ✅ done |
+| Curve Adaptors, Wire Ordering & Sampling Bounds (WireCurve, EdgeCurve, WireOrder, Sampling) | 33 | `CurveAdaptors.md` | ✅ done |
+| Geometry Solvers & Builders (BSplineApproxInterp, PlateSolver, FillingSurface, LawFunction, PolynomialSolver, KDTree) | 60 | `GeometrySolvers.md` | ✅ done |
 | Concurrency & Progress (OCCTSerial, ImportProgress) | 6 | `Concurrency.md` | ✅ done |

@@ -97,8 +97,9 @@ The `origin` is the **bottom-right** corner of the table; the table expands upwa
   // topRight.y is the Y coordinate above which the next annotation can be placed
   ```
 
----
+*(Internal, not public API: `renderRow(textsIn:widths:leftX:baselineY:into:)` is a `private func` on `BillOfMaterials`: the shared row-drawing helper `render(into:at:rowHeight:columnWidths:)` above calls once for the header row and once per item row, writing each column's text at its cell's left edge.)*
 
+---
 ## BillOfMaterials.Item
 
 A single row in the bill of materials. All fields except `number`, `description`, and `quantity` are optional.
@@ -300,14 +301,24 @@ public struct RayHit: Sendable {
     public let faceIndex: Int
     public let distance: Double
     public let uv: SIMD2<Double>
+    public let normalDefined: Bool
 }
 ```
 
-- `point` — 3D world-space intersection point on the surface.
-- `normal` — unit outward normal at the intersection; respects face orientation (`TopAbs_REVERSED`). Falls back to `(0, 0, 1)` if the normal is undefined at the hit point.
-- `faceIndex` — 0-based index of the intersected face within the shape's `TopTools_IndexedMapOfShape`.
-- `distance` — signed ray parameter (distance from origin along the ray direction).
-- `uv` — UV surface parameters at the intersection point.
+| Field | Meaning |
+|---|---|
+| `point` | 3D world-space intersection point on the surface. |
+| `normal` | Unit outward normal at the intersection; respects face orientation (`TopAbs_REVERSED`). Falls back to `(0, 0, 1)` if the normal is undefined at the hit point. |
+| `faceIndex` | 0-based index of the intersected face within the shape's `TopTools_IndexedMapOfShape`. |
+| `distance` | Signed ray parameter (distance from origin along the ray direction). |
+| `uv` | UV surface parameters at the intersection point. |
+| `normalDefined` | Whether `normal` is the surface's own normal or the `(0, 0, 1)` fallback, which is otherwise indistinguishable from a real upward normal (added by #529). |
+
+---
+
+### `RayHit.normalDefined`
+
+Whether `normal` is the surface's own normal, or the `(0, 0, 1)` fallback.
 
 ---
 
@@ -331,10 +342,16 @@ The direction vector is automatically normalised by `gp_Dir`. Intersections beyo
 - **Parameters:**
   - `origin` — ray start point in world space.
   - `direction` — ray direction (normalised internally).
-  - `tolerance` — intersection tolerance (default 0.001).
-  - `maxHits` — maximum number of hits to collect (default 100).
+  - `tolerance` — intersection tolerance (default 0.001). Bounds the intersection only. Until #529
+    it was also passed to `BRepLProp_SLProps` as the local-property resolution, where it is a
+    dimensionless *sine* tolerance: any value at or above 1 rejected every hit normal, so
+    `raycast(tolerance: 1.0)` on a sphere reported `(0, 0, 1)` for both hits, and at 5.0 a box's
+    downward face came back pointing up.
+  - `maxHits` — output *capacity* (default 100), clamped into `0...Sampling.maximumSampleCount`
+    (10,000,000); 0 or less returns empty (#622). The ray decides how many surfaces it crosses,
+    so the capacity only truncates: clamping an unservable one returns the same hits.
 - **Returns:** Array of `RayHit` sorted by ascending `distance`; empty if no intersection.
-- **OCCT:** `IntCurvesFace_ShapeIntersector::Load` / `Perform` / `NbPnt` / `Pnt` / `WParameter` / `Face` / `UParameter` / `VParameter`; normals via `BRepAdaptor_Surface` + `BRepLProp_SLProps`.
+- **OCCT:** `IntCurvesFace_ShapeIntersector::Load` / `Perform` / `NbPnt` / `Pnt` / `WParameter` / `Face` / `UParameter` / `VParameter`; normals via `BRepAdaptor_Surface` + `BRepLProp_SLProps` at the shared `occtLocalPropsResolution()`.
 - **Example:**
   ```swift
   let box = Shape.box(width: 10, height: 10, depth: 10)!
@@ -392,13 +409,24 @@ Total number of face sub-shapes in the shape.
 public var faceCount: Int { get }
 ```
 
-- **Returns:** Count of `TopoDS_Face` sub-shapes; 0 on error or if the shape has no faces.
+This is the same enumeration `Shape.faces()` walks and `Shape.face(at:)` indexes: one entry per
+**distinct** face (`TopoDS_Shape::IsSame` — same TShape and location, orientation ignored), in
+`TopExp_Explorer` order, addressed from 0. A face reachable from two parents counts once.
+
+- **Returns:** Count of distinct `TopoDS_Face` sub-shapes; 0 on error or if the shape has none.
 - **OCCT:** `TopExp::MapShapes(shape, TopAbs_FACE, faceMap)` → `faceMap.Extent()`.
+- **Former second spelling:** `Shape.nbFaces` asked this same question, backed by a bare
+  `TopExp_Explorer` occurrence count instead of this deduplicated one; deprecated as a forward
+  here in #651 and removed at v2.0.0 (#784).
 - **Example:**
   ```swift
   let box = Shape.box(width: 10, height: 10, depth: 10)!
-  print(box.faceCount)  // 6
+  print(box.faceCount)                     // 6
+  print(box.faces().count)                 // 6, the same enumeration
+  print(box.subShapeCount(ofType: .face))  // 6, the generic spelling
   ```
+- **Note:** `contents.faces` is a different number — it counts *occurrences* and is not an index
+  bound. See `Shape.contents`. (#541)
 
 ---
 
@@ -410,9 +438,12 @@ Returns the face at a 0-based index within the shape's indexed face map.
 public func face(at index: Int) -> Face?
 ```
 
-The index corresponds to `TopTools_IndexedMapOfShape` ordering, matching the `faceIndex` field returned by `RayHit`.
+The index is the one `Face.index` carries, the `faceIndex` field `RayHit` returns, and the one
+every face-index-taking method on `Shape` expects. It is meaningful only against the shape it came
+from: an index taken from one shape and used on another names an unrelated face, or nothing at all.
+(#541)
 
-- **Parameters:** `index` — 0-based face index.
+- **Parameters:** `index` — 0-based face index, in `0..<faceCount`.
 - **Returns:** `Face` at the given index, or `nil` if `index` is out of bounds or the shape is null.
 - **OCCT:** `TopExp::MapShapes` + `TopoDS::Face(faceMap(index + 1))` (OCCT maps are 1-based internally).
 - **Example:**
@@ -436,8 +467,9 @@ public final class Selector: @unchecked Sendable
 
 Internally wraps an `OCCTHeadlessSelector` — a subclass of OCCT's `SelectMgr_ViewerSelector` — paired with a `SelectMgr_SelectionManager`. Shapes are decomposed into `SelectMgr_Selection` sensitive primitives by `StdSelect_BRepSelectionTool`.
 
----
+*(Internal, not public API: `Selector.handle` is an `internal let handle: OCCTSelectorRef` wrapping the underlying bridge object, released in `deinit`. See [Memory Management](../architecture/overview.md#occt-handles).)*
 
+---
 ### `Selector.init()`
 
 Creates an empty `Selector` with no registered shapes.
@@ -512,7 +544,14 @@ public struct PickResult: Sendable {
 - `depth` — distance from the camera to the hit.
 - `point` — 3D world-space point where the pick ray intersected the sensitive primitive.
 - `subShapeType` — topology type of the sub-shape hit (e.g. `.face`, `.edge`).
-- `subShapeIndex` — 1-based index of the hit sub-shape within its parent shape; 0 when the whole shape is selected (mode 0).
+- `subShapeIndex` — 0-based index of the hit sub-shape within its parent shape, addressable with
+  `face(at:)` or `subShape(type:index:)`; `-1` when the whole shape is selected (mode 0). This was
+  1-based with `0` as that sentinel until #541, which named the sub-shape before the one hit and
+  made the sentinel indistinguishable from a hit on sub-shape 0.
+
+*(Per-field anchors below, for cross-reference; the list above has the actual meaning of each.)*
+
+### `Selector.PickResult.subShapeType`
 
 ---
 
@@ -682,7 +721,7 @@ Results are sorted by depth (nearest first). Only shapes and sub-shape modes tha
   - `pixel` — pixel coordinate in the viewport (origin at top-left).
   - `camera` — camera providing the projection and view transforms.
   - `viewSize` — viewport dimensions in pixels `(width, height)`.
-  - `maxResults` — maximum number of results (default 32).
+  - `maxResults` — output *capacity* (default 32), clamped into `0...Sampling.maximumSampleCount` (10,000,000); 0 or less returns empty (#622).
 - **Returns:** Array of `PickResult` sorted by ascending depth; empty if nothing was hit.
 - **OCCT:** `OCCTHeadlessSelector::PickPoint` → `SelectMgr_ViewerSelector::Pick` (point volume) + `SelectMgr_SortCriterion` for depth ordering.
 - **Example:**
@@ -712,7 +751,7 @@ public func pick(rect: (min: SIMD2<Double>, max: SIMD2<Double>),
   - `rect` — rectangle defined by `(min, max)` pixel corners.
   - `camera` — camera providing the projection and view transforms.
   - `viewSize` — viewport dimensions in pixels.
-  - `maxResults` — maximum number of results (default 32).
+  - `maxResults` — output *capacity* (default 32), clamped into `0...Sampling.maximumSampleCount` (10,000,000); 0 or less returns empty (#622).
 - **Returns:** Array of `PickResult` for all shapes intersecting the rectangle.
 - **OCCT:** `OCCTHeadlessSelector::PickRect` → `SelectMgr_ViewerSelector::Pick` (box volume).
 - **Example:**
@@ -744,7 +783,7 @@ The polygon must have at least 3 points. The last point is automatically connect
   - `polygon` — array of pixel coordinates defining the polygon vertices (minimum 3 points).
   - `camera` — camera providing the projection and view transforms.
   - `viewSize` — viewport dimensions in pixels.
-  - `maxResults` — maximum number of results (default 32).
+  - `maxResults` — output *capacity* (default 32), clamped into `0...Sampling.maximumSampleCount` (10,000,000); 0 or less returns empty (#622).
 - **Returns:** Array of `PickResult` for all shapes whose sensitive primitives fall inside the polygon.
 - **OCCT:** `OCCTHeadlessSelector::PickPoly` → `SelectMgr_ViewerSelector::Pick` (polyline volume); pixel XY pairs passed as interleaved `double` array.
 - **Example:**

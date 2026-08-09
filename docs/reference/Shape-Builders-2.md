@@ -26,7 +26,9 @@ public static func geomFillSweep(path: Shape, section: Shape) -> Shape?
 ```
 
 - **Parameters:** `path` — edge defining the sweep path. `section` — edge defining the cross-section profile.
-- **Returns:** A `Shape` wrapping the swept face, or `nil` on failure.
+- **Returns:** A `Shape` wrapping the swept face, or `nil` on failure, including when `GeomFill_Sweep`
+  fits the surface but misses its own 1e-4 tolerance (`ErrorOnSurface()`); a surface reported `IsDone()`
+  is not necessarily within the tolerance it was built at, so this is checked rather than assumed (#597).
 - **OCCT:** `GeomFill_Sweep`
 - **Example:**
   ```swift
@@ -54,6 +56,16 @@ public func evolvedSectionInfo() -> EvolvedSectionInfo
   let info = edge.evolvedSectionInfo()
   print(info.degree, info.isRational)
   ```
+
+---
+
+#### `EvolvedSectionInfo.nbPoles`
+
+Number of BSpline control poles in the evolved section curve.
+
+#### `EvolvedSectionInfo.nbKnots`
+
+Number of BSpline knots in the evolved section curve.
 
 ---
 
@@ -125,7 +137,7 @@ Evaluate sample points along a U-iso curve on a face.
 public func uIsoCurvePoints(u: Double, count: Int = 20) -> [SIMD3<Double>]
 ```
 
-- **Parameters:** `u` — U parameter value. `count` — number of sample points.
+- **Parameters:** `u` — U parameter value. `count` — number of sample points, a *request* honoured within `1...Sampling.maximumSampleCount` (10,000,000); outside that range the result is empty (#558).
 - **Returns:** Array of 3D points along the iso curve.
 - **OCCT:** `Adaptor3d_IsoCurve` (iso kind 0 = U)
 - **Example:**
@@ -143,7 +155,7 @@ Evaluate sample points along a V-iso curve on a face.
 public func vIsoCurvePoints(v: Double, count: Int = 20) -> [SIMD3<Double>]
 ```
 
-- **Parameters:** `v` — V parameter value. `count` — number of sample points.
+- **Parameters:** `v` — V parameter value. `count` — number of sample points, a *request* honoured within `1...Sampling.maximumSampleCount` (10,000,000); outside that range the result is empty (#558).
 - **Returns:** Array of 3D points along the iso curve.
 - **OCCT:** `Adaptor3d_IsoCurve` (iso kind 1 = V)
 - **Example:**
@@ -229,22 +241,18 @@ public func transferParameterFromFace(_ param: Double, face: Shape) -> Double
 
 ## BOPAlgo\_RemoveFeatures
 
-### `removeFeatures(faces:)`
-
-Remove features (faces) from a solid shape, healing the result.
+`removeFeatures(faces:)` was [`defeature(faces:)`](Document-Transforms.md#shapedefeaturefaces)
+under a second name: `BRepAlgoAPI_Defeaturing`, which `defeature(faces:)` drives, is an API
+wrapper over `BOPAlgo_RemoveFeatures`, and both spellings drove one algorithm object with identical
+defaults, measured byte-for-byte identical on every case including the refusals (see
+[`Scripts/repro/536-defeature-removefeatures-unify/`](https://github.com/SecondMouseAU/OCCTSwift/tree/main/Scripts/repro/536-defeature-removefeatures-unify)).
+Deprecated as a forward to `defeature(faces:)` in #536, `removeFeatures(faces:)` was removed at
+v2.0.0 (#784); use `defeature(faces:)`.
 
 ```swift
-public func removeFeatures(faces: [Shape]) -> Shape?
+let faces = solid.subShapes(ofType: .face)
+if let cleaned = solid.defeature(faces: [faces[2]]) { }
 ```
-
-- **Parameters:** `faces` — array of face shapes to remove (e.g. fillets, boss faces, holes).
-- **Returns:** Healed shape with features removed, or `nil` on failure.
-- **OCCT:** `BOPAlgo_RemoveFeatures`
-- **Example:**
-  ```swift
-  let faces = solid.subShapes(ofType: .face)
-  if let cleaned = solid.removeFeatures(faces: [faces[2]]) { }
-  ```
 
 ---
 
@@ -504,6 +512,16 @@ Matches `TopAbs_ShapeEnum` values used by `ShapeExtend_Explorer`.
 
 ---
 
+#### `ShapeFilterType.compsolid`
+
+A compound solid: several solids sharing faces, treated as a single connected shape (`TopAbs_COMPSOLID`).
+
+```swift
+case compsolid = 1
+```
+
+---
+
 ### `sortedCompound(type:explore:)`
 
 Filter this compound, extracting only sub-shapes of the specified type.
@@ -591,6 +609,13 @@ public struct EdgeDivideResult: Sendable {
     public let hasCurve3d: Bool
 }
 ```
+
+| Field | Meaning |
+|---|---|
+| `hasCurve2d` | `true` if the edge carries a 2D (pcurve) representation on the analysed face. |
+| `hasCurve3d` | `true` if the edge carries a 3D curve representation. |
+
+#### `Shape.EdgeDivideResult.hasCurve2d`
 
 ---
 
@@ -858,6 +883,16 @@ public enum CurvaturePointType: Int32 {
 }
 ```
 
+| case | meaning |
+|---|---|
+| `.inflection` | Parameter where curvature changes sign. |
+| `.minimumCurvature` | Parameter at a local minimum of curvature. |
+| `.maximumCurvature` | Parameter at a local maximum of curvature. |
+
+*(Per-case anchors below, for cross-reference; the table above has the actual meaning of each.)*
+
+#### `maximumCurvature`
+
 ---
 
 ### `CurvatureSpecialPoint`
@@ -904,6 +939,32 @@ public enum TopologicalState: Int32, Sendable {
 }
 ```
 
+The point or curve lies strictly inside the boundary for `` `in` `` (`TopAbs_IN`, not independently documented below since `` ` ``-escaped keyword case names aren't headings this project's own tooling resolves).
+
+#### `TopologicalState.out`
+
+The point or curve lies strictly outside the boundary (`TopAbs_OUT`).
+
+```swift
+case out = 1
+```
+
+#### `TopologicalState.on`
+
+The point or curve lies exactly on the boundary element itself (`TopAbs_ON`).
+
+```swift
+case on = 2
+```
+
+#### `TopologicalState.unknown`
+
+The transition analysis could not determine a state (`TopAbs_UNKNOWN`).
+
+```swift
+case unknown = 3
+```
+
 ---
 
 ### `SurfaceTransitionResult`
@@ -915,6 +976,24 @@ public struct SurfaceTransitionResult: Sendable {
     public let stateBefore: TopologicalState
     public let stateAfter: TopologicalState
 }
+```
+
+---
+
+#### `SurfaceTransitionResult.stateBefore`
+
+The `TopologicalState` immediately before the curve crosses the surface or boundary element.
+
+```swift
+public let stateBefore: TopologicalState
+```
+
+#### `SurfaceTransitionResult.stateAfter`
+
+The `TopologicalState` immediately after the curve crosses the surface or boundary element.
+
+```swift
+public let stateAfter: TopologicalState
 ```
 
 ---
@@ -1170,6 +1249,32 @@ public struct Circle2DSolution: Sendable {
 
 ---
 
+#### `Circle2DSolution.centerX`
+
+X coordinate of the solution circle's center.
+
+```swift
+public let centerX: Double
+```
+
+#### `Circle2DSolution.centerY`
+
+Y coordinate of the solution circle's center.
+
+```swift
+public let centerY: Double
+```
+
+#### `Circle2DSolution.radius`
+
+Radius of the solution circle.
+
+```swift
+public let radius: Double
+```
+
+---
+
 ### `Shape.circleThrough3Points(p1:p2:p3:tolerance:)`
 
 Find circles through 3 points (circumscribed circle).
@@ -1230,6 +1335,11 @@ public static func circleTangent3Circles(
 
 - **Returns:** Array of up to 8 solution circles.
 - **OCCT:** `GccAna_Circ2d3Tan` (3 circles)
+- **Note:** every radius must be positive (#553). A zero-radius argument is a point, and the solver
+  does not answer the point question when it is given one: measured, it returns each solution twice,
+  because tangency to a circle of radius zero satisfies the enclosing and the outside qualifier at
+  once. Use `circleTangent2CirclesPoint`, `circleTangentCircle2Points` or `circleThrough3Points` to
+  name a point as a point. A non-positive radius returns an empty array.
 - **Example:**
   ```swift
   let sols = Shape.circleTangent3Circles(
@@ -1253,6 +1363,8 @@ public static func circleTangent2CirclesPoint(
 ```
 
 - **OCCT:** `GccAna_Circ2d3Tan` (2 circles + point)
+- **Note:** both radii must be positive (#553). With a zero radius the solution set comes back
+  padded with repeats: measured, four solutions holding two distinct circles.
 - **Example:**
   ```swift
   let sols = Shape.circleTangent2CirclesPoint(
@@ -1275,6 +1387,9 @@ public static func circleTangentCircle2Points(
 ```
 
 - **OCCT:** `GccAna_Circ2d3Tan` (circle + 2 points)
+- **Note:** `circleRadius` must be positive (#553). This is the case where reading a zero-radius
+  circle as a point fails outright: measured, the solver finds nothing at all, where
+  `circleThrough3Points` on the same three positions finds the circle through them.
 - **Example:**
   ```swift
   let sols = Shape.circleTangentCircle2Points(
@@ -1335,6 +1450,17 @@ public struct CommonPart: Sendable {
 }
 ```
 
+| field | meaning |
+|---|---|
+| `type` | `.vertex` or `.edge`: the kind of intersection found. |
+| `param1Range` | Parameter range `(first, last)` on the first edge; equal endpoints for a vertex intersection. |
+| `param2Range` | Parameter range `(first, last)` on the second edge; equal endpoints for a vertex intersection. |
+| `point` | Representative 3D point of the intersection. |
+
+*(Per-field anchors below, for cross-reference; the table above has the actual meaning of each.)*
+
+#### `param2Range`
+
 ---
 
 ### `edgeEdgeIntersection(with:)`
@@ -1388,6 +1514,24 @@ public struct FaceFaceCurve: Sendable {
 
 ---
 
+#### `FaceFaceCurve.start`
+
+Start point of the intersection curve, or `nil` if the curve is unbounded.
+
+```swift
+public let start: SIMD3<Double>?
+```
+
+#### `FaceFaceCurve.end`
+
+End point of the intersection curve, or `nil` if the curve is unbounded.
+
+```swift
+public let end: SIMD3<Double>?
+```
+
+---
+
 ### `FaceFacePoint`
 
 An intersection point from a face-face intersection.
@@ -1397,6 +1541,24 @@ public struct FaceFacePoint: Sendable {
     public let pointOnFace1: SIMD3<Double>
     public let pointOnFace2: SIMD3<Double>
 }
+```
+
+---
+
+#### `FaceFacePoint.pointOnFace1`
+
+The coincident point's coordinates as evaluated on the first face.
+
+```swift
+public let pointOnFace1: SIMD3<Double>
+```
+
+#### `FaceFacePoint.pointOnFace2`
+
+The coincident point's coordinates as evaluated on the second face.
+
+```swift
+public let pointOnFace2: SIMD3<Double>
 ```
 
 ---
@@ -1412,6 +1574,13 @@ public struct FaceFaceResult: Sendable {
     public let isTangent: Bool
 }
 ```
+
+| Field | Meaning |
+|---|---|
+| `curves` | Intersection curves between the two faces. |
+| `isTangent` | `true` if the two faces are tangent at the intersection rather than transversally crossing. |
+
+#### `Shape.FaceFaceResult.isTangent`
 
 ---
 
@@ -1643,6 +1812,15 @@ public struct BeanFaceIntersection: Sendable {
 }
 ```
 
+| field | meaning |
+|---|---|
+| `ranges` | Coincident `(first, last)` parameter ranges on the edge curve where it lies on the face. |
+| `minSquareDistance` | Minimum squared distance between the edge curve and the face surface. |
+
+*(Per-field anchors below, for cross-reference; the table above has the actual meaning of each.)*
+
+#### `minSquareDistance`
+
 ---
 
 ### `Shape.beanFaceIntersect(edge:face:)`
@@ -1737,6 +1915,32 @@ public struct SplitShapeResult: Sendable {
 
 ---
 
+#### `SplitShapeResult.shape`
+
+The resulting shape after all edge-on-face pairs have been split in.
+
+```swift
+public let shape: Shape
+```
+
+#### `SplitShapeResult.leftFaces`
+
+The faces `BRepFeat_SplitShape::Left()` classified as lying on the left side of the splitting edges.
+
+```swift
+public let leftFaces: [Shape]
+```
+
+#### `SplitShapeResult.rightFaces`
+
+The faces `BRepFeat_SplitShape::Right()` classified as lying on the right side of the splitting edges.
+
+```swift
+public let rightFaces: [Shape]
+```
+
+---
+
 ### `splitWithSides(edgesOnFaces:)`
 
 Split this shape with multiple edge-on-face pairs, returning left/right face classifications.
@@ -1759,55 +1963,114 @@ public func splitWithSides(edgesOnFaces: [(edge: Shape, face: Shape)]) -> SplitS
 
 ## BRepFeat\_MakeCylindricalHole
 
-### `cylindricalHole(axisOrigin:axisDirection:radius:)`
+OCCT's dedicated feature-drilling operator. It wants a **solid**: every extent but `.throughAll`
+reports `.invalidPlacement` for a shell or a face.
 
-Drill a through cylindrical hole in this shape.
+This is a different contract from
+[`drilled(at:direction:radius:depth:)`](Shape-Features.md#drilledatdirectionradiusdepth), not a
+better one — #496 measured six requests where the two disagree. Reach for this family when the
+solid's own faces should bound the hole, or when you need a diagnosis of *why* a drill is impossible;
+reach for `drilled` when the hole starts where you say it starts, when the input is not a solid, or
+when an over-long depth should simply drill through. Full measurements:
+[`Scripts/repro/496-drill-hole-contracts/`](https://github.com/SecondMouseAU/OCCTSwift/tree/main/Scripts/repro/496-drill-hole-contracts).
+
+`radius` must exceed `Precision::Confusion` (1e-7) for every spelling below. Under that, OCCT reports
+`BRepFeat_NoError` and hands back the **undrilled input**, so the bridge rejects it (#496).
+
+### `CylindricalHoleExtent`
+
+How a feature-drilled hole is bounded. The five modes are not interchangeable.
 
 ```swift
-public func cylindricalHole(axisOrigin: SIMD3<Double>, axisDirection: SIMD3<Double>, radius: Double) -> Shape?
+public enum CylindricalHoleExtent: Sendable, Equatable {
+    case throughAll
+    case untilEnd
+    case thruNext
+    case blind(depth: Double)
+    case range(from: Double, to: Double)
+}
 ```
 
-- **Parameters:** `axisOrigin` — hole axis origin. `axisDirection` — hole axis direction. `radius` — hole radius.
-- **Returns:** Shape with hole, or `nil` on failure.
-- **OCCT:** `BRepFeat_MakeCylindricalHole::Perform`
+| case | OCCT | bounded by |
+|---|---|---|
+| `.throughAll` | `Perform(R)` | nothing — an **infinite** cylinder, **both ways** along the axis. The origin anchors the axis; it is not where the hole starts. The only extent that tolerates a non-solid input. |
+| `.untilEnd` | `PerformUntilEnd(R)` | the stock's own first and last faces along the axis. The forward-bounded through hole most callers reach for `.throughAll` expecting. |
+| `.thruNext` | `PerformThruNext(R)` | the next face after the origin. |
+| `.blind(depth:)` | `PerformBlind(R, depth)` | `depth`, measured from the axis origin. The **only** extent that can report `.holeTooLong`: a depth that would leave the far side of the stock is refused rather than drilled through. |
+| `.range(from:to:)` | `Perform(R, PFrom, PTo)` | the entry/exit **face pair** the parameter window selects. |
+
+`.range` is the subtle one: the window **chooses a face pair, it does not trim the cut**. A window
+lying strictly inside one body still drills all the way through that body; a window naming no face
+pair (the gap between two plates) is `.invalidPlacement`. Its use is picking *which* body to drill in
+a stack — a window over one plate drills that plate, one spanning several drills all of them.
+
+On a stack, every extent that bounds the hole by the stock's own faces drills every body the axis
+crosses: `.untilEnd`, a spanning `.range`, `.throughAll` and `drilled(at:…)` all agree. Until the
+kernel patch carried for [#532](https://github.com/SecondMouseAU/OCCTSwift/issues/532) they did not —
+`.untilEnd`, `.range` and `.blind(depth:)` reported `.noError` while removing **no material at all**,
+because OCCT selected which piece of its drilling tool to keep from the *cut result* rather than from
+the split tool.
+
+The three cases the table above covers are `.thruNext`, `.untilEnd`, `.range(from:to:)` and
+`.blind(depth:)`; `.blind` bores to a fixed depth from the placement, and `.range` is the one whose
+two parameters are measured along the axis rather than from the face.
+
+`bridgeParameters` (`var bridgeParameters: (mode: Int32, p0: Double, p1: Double)`) is `internal`,
+not public API: it is the `(mode, p0, p1)` triple the bridge call reads, one row per case above.
+
+---
+### `cylindricalHole(axisOrigin:axisDirection:radius:extent:)`
+
+Drill a cylindrical hole bounded by `extent`.
+
+```swift
+public func cylindricalHole(axisOrigin: SIMD3<Double>, axisDirection: SIMD3<Double>,
+                            radius: Double, extent: CylindricalHoleExtent) -> Shape?
+```
+
+- **Parameters:** `axisOrigin` — hole axis origin. `axisDirection` — hole axis direction, any non-zero vector. `radius` — hole radius, above `Precision::Confusion`. `extent` — where the hole stops.
+- **Returns:** Shape with hole, or `nil` on failure. Ask `cylindricalHoleStatus(…extent:)` when you need to know *why*; `nil` collapses every reason into one.
+- **OCCT:** `BRepFeat_MakeCylindricalHole::Perform` / `PerformUntilEnd` / `PerformThruNext` / `PerformBlind`, per `extent`
 - **Example:**
   ```swift
-  if let holed = solid.cylindricalHole(axisOrigin: .zero, axisDirection: SIMD3(0,0,1), radius: 5) { }
+  let plate = Shape.box(width: 50, height: 50, depth: 20)!
+  let origin = SIMD3<Double>(0, 0, 15)   // 5mm above the top face
+  let axis = SIMD3<Double>(0, 0, -1)
+
+  // Bounded by the plate's own entry and exit faces:
+  let through = plate.cylindricalHole(axisOrigin: origin, axisDirection: axis,
+                                      radius: 5, extent: .untilEnd)
+
+  // A 6mm-deep blind hole, measured from the origin — so 1mm into the plate:
+  let blind = plate.cylindricalHole(axisOrigin: origin, axisDirection: axis,
+                                    radius: 5, extent: .blind(depth: 6))
   ```
 
 ---
 
-### `cylindricalHoleBlind(axisOrigin:axisDirection:radius:depth:)`
+### `cylindricalHoleStatus(axisOrigin:axisDirection:radius:extent:)`
 
-Drill a blind cylindrical hole to a specified depth.
-
-```swift
-public func cylindricalHoleBlind(axisOrigin: SIMD3<Double>, axisDirection: SIMD3<Double>, radius: Double, depth: Double) -> Shape?
-```
-
-- **Parameters:** `depth` — hole depth from entry face.
-- **Returns:** Shape with blind hole, or `nil` on failure.
-- **OCCT:** `BRepFeat_MakeCylindricalHole::PerformBlind`
-- **Example:**
-  ```swift
-  if let holed = solid.cylindricalHoleBlind(axisOrigin: .zero, axisDirection: SIMD3(0,0,1), radius: 5, depth: 10) { }
-  ```
-
----
-
-### `cylindricalHoleThruNext(axisOrigin:axisDirection:radius:)`
-
-Drill a cylindrical hole through to the next face encountered.
+Ask what the matching drill would report, without building the result.
 
 ```swift
-public func cylindricalHoleThruNext(axisOrigin: SIMD3<Double>, axisDirection: SIMD3<Double>, radius: Double) -> Shape?
+public func cylindricalHoleStatus(axisOrigin: SIMD3<Double>, axisDirection: SIMD3<Double>,
+                                  radius: Double,
+                                  extent: CylindricalHoleExtent) -> CylindricalHoleStatus
 ```
 
-- **Returns:** Shape with hole stopping at the first inner face, or `nil` on failure.
-- **OCCT:** `BRepFeat_MakeCylindricalHole::PerformThruNext`
+The extent is part of the question, because the answer depends on it: a radius wider than the whole
+solid is `.noError` for `.throughAll` and `.invalidPlacement` for `.thruNext`, and `.holeTooLong`
+exists only under `.blind(depth:)`.
+
+- **Returns:** `.noError` **if and only if** `cylindricalHole(…extent:)` would return a shape for the same request.
+- **OCCT:** `BRepFeat_MakeCylindricalHole::Status` after the matching `Perform*`
 - **Example:**
   ```swift
-  if let holed = solid.cylindricalHoleThruNext(axisOrigin: .zero, axisDirection: SIMD3(0,1,0), radius: 3) { }
+  let origin = SIMD3<Double>(0, 0, 11), axis = SIMD3<Double>(0, 0, -1)
+  if plate.cylindricalHoleStatus(axisOrigin: origin, axisDirection: axis,
+                                 radius: 5, extent: .blind(depth: 100)) == .holeTooLong {
+      // too deep for this stock — drill it through instead
+  }
   ```
 
 ---
@@ -1825,17 +2088,111 @@ public enum CylindricalHoleStatus: Int32, Sendable {
 }
 ```
 
+- `.invalidPlacement` also covers a request with no axis direction, or a radius at or below `Precision::Confusion`.
+- `.holeTooLong` is reachable only through `.blind(depth:)`.
+
+---
+
+#### `CylindricalHoleStatus.noError`
+
+The request is drillable.
+
+```swift
+case noError = 0
+```
+
+#### `CylindricalHoleStatus.invalidPlacement`
+
+The axis does not meet the shape in a way this extent can use, including a request with no axis direction, or a radius at or below `Precision::Confusion`.
+
+```swift
+case invalidPlacement = 1
+```
+
+#### `CylindricalHoleStatus.holeTooLong`
+
+A `.blind(depth:)` depth that would leave the far side of the stock. Only that extent produces this status.
+
+```swift
+case holeTooLong = 2
+```
+
+#### `CylindricalHoleStatus.unknown`
+
+OCCT raised something the bridge does not recognise.
+
+```swift
+case unknown = 3
+```
+
+---
+
+### `cylindricalHole(axisOrigin:axisDirection:radius:)`
+
+Drill a through cylindrical hole in this shape. Convenience for `extent: .throughAll`.
+
+```swift
+public func cylindricalHole(axisOrigin: SIMD3<Double>, axisDirection: SIMD3<Double>, radius: Double) -> Shape?
+```
+
+- **Parameters:** `axisOrigin` — hole axis origin. `axisDirection` — hole axis direction. `radius` — hole radius.
+- **Returns:** Shape with hole, or `nil` on failure.
+- **OCCT:** `BRepFeat_MakeCylindricalHole::Perform` — an **infinite** cylinder both ways along the axis. For a hole bounded by the stock's own faces, use `extent: .untilEnd`.
+- **Example:**
+  ```swift
+  if let holed = solid.cylindricalHole(axisOrigin: .zero, axisDirection: SIMD3(0,0,1), radius: 5) { }
+  ```
+
+---
+
+### `cylindricalHoleBlind(axisOrigin:axisDirection:radius:depth:)`
+
+Drill a blind cylindrical hole to a specified depth. Convenience for `extent: .blind(depth:)`.
+
+```swift
+public func cylindricalHoleBlind(axisOrigin: SIMD3<Double>, axisDirection: SIMD3<Double>, radius: Double, depth: Double) -> Shape?
+```
+
+- **Parameters:** `depth` — hole depth, measured **from the axis origin**.
+- **Returns:** Shape with blind hole, or `nil` on failure — including a `depth` that would leave the far side of the stock, which is refused rather than drilled through (`.holeTooLong`).
+- **OCCT:** `BRepFeat_MakeCylindricalHole::PerformBlind`
+- **Example:**
+  ```swift
+  if let holed = solid.cylindricalHoleBlind(axisOrigin: .zero, axisDirection: SIMD3(0,0,1), radius: 5, depth: 10) { }
+  ```
+
+---
+
+### `cylindricalHoleThruNext(axisOrigin:axisDirection:radius:)`
+
+Drill a cylindrical hole through to the next face encountered. Convenience for `extent: .thruNext`.
+
+```swift
+public func cylindricalHoleThruNext(axisOrigin: SIMD3<Double>, axisDirection: SIMD3<Double>, radius: Double) -> Shape?
+```
+
+- **Returns:** Shape with hole stopping at the first inner face, or `nil` on failure.
+- **OCCT:** `BRepFeat_MakeCylindricalHole::PerformThruNext`
+- **Example:**
+  ```swift
+  if let holed = solid.cylindricalHoleThruNext(axisOrigin: .zero, axisDirection: SIMD3(0,1,0), radius: 3) { }
+  ```
+
 ---
 
 ### `cylindricalHoleStatus(axisOrigin:axisDirection:radius:)`
 
-Check whether a cylindrical hole can be drilled without modifying the shape.
+Check whether a **through-all** cylindrical hole can be drilled, without modifying the shape.
 
 ```swift
 public func cylindricalHoleStatus(axisOrigin: SIMD3<Double>, axisDirection: SIMD3<Double>, radius: Double) -> CylindricalHoleStatus
 ```
 
-- **Returns:** A `CylindricalHoleStatus` indicating feasibility.
+Answers for `.throughAll` only. Pass the extent you are actually about to drill to
+`cylindricalHoleStatus(…extent:)` — this spelling reports `.noError` for requests that
+`cylindricalHoleThruNext` and `cylindricalHoleBlind` then refuse.
+
+- **Returns:** A `CylindricalHoleStatus` indicating through-all feasibility.
 - **OCCT:** `BRepFeat_MakeCylindricalHole` (status query)
 - **Example:**
   ```swift
@@ -1876,6 +2233,24 @@ public struct LocOpeSplitResult: Sendable {
     public let shape: Shape
     public let directLeftFaces: [Shape]
 }
+```
+
+---
+
+#### `LocOpeSplitResult.shape`
+
+The resulting shape after all wire-on-face pairs have been split in.
+
+```swift
+public let shape: Shape
+```
+
+#### `LocOpeSplitResult.directLeftFaces`
+
+The faces `LocOpe_Spliter::DirectLeft()` classified as lying directly to the left of the splitting wires.
+
+```swift
+public let directLeftFaces: [Shape]
 ```
 
 ---
@@ -2072,6 +2447,32 @@ public struct Chamfer2DEdgeResult: Sendable {
 
 ---
 
+#### `Chamfer2DEdgeResult.chamferEdge`
+
+The new chamfer edge connecting the two trimmed originals.
+
+```swift
+public let chamferEdge: Shape
+```
+
+#### `Chamfer2DEdgeResult.modifiedEdge1`
+
+`edge1`, trimmed back by `d1` to meet the chamfer edge.
+
+```swift
+public let modifiedEdge1: Shape
+```
+
+#### `Chamfer2DEdgeResult.modifiedEdge2`
+
+`edge2`, trimmed back by `d2` to meet the chamfer edge.
+
+```swift
+public let modifiedEdge2: Shape
+```
+
+---
+
 ### `Shape.chamfer2dEdges(edge1:edge2:d1:d2:)`
 
 Create a chamfer between two linear edges using `ChFi2d_ChamferAPI`.
@@ -2106,6 +2507,14 @@ public struct Fillet2DEdgeResult: Sendable {
     public let solutionCount: Int
 }
 ```
+
+| Field | Meaning |
+|---|---|
+| `filletEdge` | The new fillet arc edge. |
+| `modifiedEdge1` | `edge1`, trimmed to meet the fillet arc. |
+| `modifiedEdge2` | `edge2`, trimmed to meet the fillet arc. |
+
+#### `Shape.Fillet2DEdgeResult.modifiedEdge2`
 
 ---
 
@@ -2155,6 +2564,16 @@ public struct FilletSurfaceInfo: Sendable {
 }
 ```
 
+| Field | Meaning |
+|---|---|
+| `supportFace1` | The first of the two original faces this fillet surface blends between. |
+| `supportFace2` | The second of the two original faces this fillet surface blends between. |
+| `tolerance` | Geometric tolerance achieved for this fillet surface. |
+| `startStatus` | `FilletSurf_Builder` status code at the fillet's start extremity (0 = ok, 1 = not ok, 2 = partial). |
+| `endStatus` | `FilletSurf_Builder` status code at the fillet's end extremity (0 = ok, 1 = not ok, 2 = partial). |
+
+#### `Shape.FilletSurfaceInfo.endStatus`
+
 ---
 
 ### `FilletSurfaceResult`
@@ -2167,6 +2586,12 @@ public struct FilletSurfaceResult: Sendable {
     public let status: Int  // 0=ok, 1=notOk, 2=partial
 }
 ```
+
+| Field | Meaning |
+|---|---|
+| `surfaces` | One `FilletSurfaceInfo` per requested edge that produced a fillet surface. |
+
+#### `Shape.FilletSurfaceResult.surfaces`
 
 ---
 
@@ -2181,7 +2606,7 @@ public func filletSurfaces(edges: [Shape], radius: Double) -> FilletSurfaceResul
 - **Parameters:** `edges` — edges to fillet. `radius` — fillet radius.
 - **Returns:** `FilletSurfaceResult` with NURBS fillet surfaces and support faces, or `nil` on total failure. `status == 1` with an empty `surfaces` array also maps to `nil`.
 - **OCCT:** `FilletSurf_Builder`
-- **Note:** Returns raw surface geometry only — does not produce a new solid. Use `Shape.fillet(edges:radius:)` to produce a filleted solid.
+- **Note:** Returns raw surface geometry only; does not produce a new solid. Use `Shape.filleted(edges:radius:)` to produce a filleted solid.
 - **Example:**
   ```swift
   if let r = solid.filletSurfaces(edges: [e1, e2], radius: 1.0) {

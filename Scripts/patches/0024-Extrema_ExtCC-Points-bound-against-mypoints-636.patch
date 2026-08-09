@@ -1,0 +1,43 @@
+diff --git a/src/ModelingAlgorithms/TKGeomAlgo/Geom2dAPI/Geom2dAPI_ExtremaCurveCurve.hxx b/src/ModelingAlgorithms/TKGeomAlgo/Geom2dAPI/Geom2dAPI_ExtremaCurveCurve.hxx
+index cc8f9c87..36b80b57 100644
+--- a/src/ModelingAlgorithms/TKGeomAlgo/Geom2dAPI/Geom2dAPI_ExtremaCurveCurve.hxx
++++ b/src/ModelingAlgorithms/TKGeomAlgo/Geom2dAPI/Geom2dAPI_ExtremaCurveCurve.hxx
+@@ -102,6 +102,9 @@ public:
+   //! number of extrema computed by this algorithm.
+   Standard_EXPORT double Distance(const int Index) const;
+ 
++  //! Returns True if the two curves are parallel.
++  bool IsParallel() const { return myExtCC.IsParallel(); }
++
+   //! Returns the points P1 on the first curve and P2 on
+   //! the second curve, which are the ends of the shortest
+   //! extremum computed by this algorithm.
+diff --git a/src/ModelingData/TKGeomBase/Extrema/Extrema_ExtCC.cxx b/src/ModelingData/TKGeomBase/Extrema/Extrema_ExtCC.cxx
+index 135a99b2..9a40df9f 100644
+--- a/src/ModelingData/TKGeomBase/Extrema/Extrema_ExtCC.cxx
++++ b/src/ModelingData/TKGeomBase/Extrema/Extrema_ExtCC.cxx
+@@ -361,7 +361,9 @@ int Extrema_ExtCC::NbExt() const
+ 
+ void Extrema_ExtCC::Points(const int N, Extrema_POnCurv& P1, Extrema_POnCurv& P2) const
+ {
+-  if (N < 1 || N > NbExt())
++  // NbExt() counts mySqDist; some parallel-curve branches append a distance with no matching
++  // point pair (an equidistant family has no unique point), so bound against mypoints instead.
++  if (N < 1 || 2 * N > mypoints.Length())
+   {
+     throw Standard_OutOfRange();
+   }
+diff --git a/src/ModelingData/TKGeomBase/Extrema/Extrema_ExtCC.hxx b/src/ModelingData/TKGeomBase/Extrema/Extrema_ExtCC.hxx
+index c71f670e..19113744 100644
+--- a/src/ModelingData/TKGeomBase/Extrema/Extrema_ExtCC.hxx
++++ b/src/ModelingData/TKGeomBase/Extrema/Extrema_ExtCC.hxx
+@@ -97,6 +97,9 @@ public:
+ 
+   //! Returns the points of the Nth extremum distance.
+   //! P1 is on the first curve, P2 on the second one.
++  //! Exceptions
++  //! Standard_OutOfRange if N is not in [1, NbExt()], or if N has a distance but no
++  //! representative point pair (a parallel curve pair with an equidistant family).
+   Standard_EXPORT void Points(const int N, Extrema_POnCurv& P1, Extrema_POnCurv& P2) const;
+ 
+   //! if the curve is a trimmed curve,

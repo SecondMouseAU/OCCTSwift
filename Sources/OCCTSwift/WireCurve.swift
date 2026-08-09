@@ -2,7 +2,7 @@ import Foundation
 import OCCTBridge
 
 /// A multi-edge `Wire` treated as a single, continuously-parameterized curve
-/// (`BRepAdaptor_CompCurve`) — so you can measure its total length and sample
+/// (`BRepAdaptor_CompCurve`), so you can measure its total length and sample
 /// **evenly along it by arc length**, walking across edge boundaries seamlessly.
 ///
 /// Useful for placing loft cross-sections along a measured section wire, walking a
@@ -30,9 +30,12 @@ public final class WireCurve: ArcLengthCurveAdaptor, @unchecked Sendable {
     deinit { OCCTCompCurveRelease(ref) }
 
     /// Total arc length of the wire.
+    ///
+    /// Measured per `GeomAbs_CN` interval and subdivided to convergence, the same measurement
+    /// ``Wire/length`` makes, so the two cannot disagree (#603).
     public var length: Double { OCCTCompCurveLength(ref) }
 
-    /// The native parameter range `[first, last]` (not arc length — use the
+    /// The native parameter range `[first, last]` (not arc length, use the
     /// `atAbscissa:` methods for arc-length sampling).
     public var parameterRange: (first: Double, last: Double) {
         var first = 0.0, last = 0.0
@@ -56,22 +59,32 @@ public final class WireCurve: ArcLengthCurveAdaptor, @unchecked Sendable {
     }
 
     /// The native parameter at arc length `s` measured from the start of the wire.
+    ///
+    /// Walks the same subdivided pieces ``length`` is summed from, so
+    /// `parameter(atAbscissa: length)` lands on `parameterRange.last` (#603).
     public func parameter(atAbscissa s: Double) -> Double? {
         var u = 0.0
         guard OCCTCompCurveParamAtAbscissa(ref, s, &u) else { return nil }
         return u
     }
 
-    /// `count` points spaced **equally by arc length** along the wire (`count >= 2`),
-    /// including both endpoints — `GCPnts_UniformAbscissa`. One pass, cheaper than calling
+    /// `count` points spaced **equally by arc length** along the wire, including both
+    /// endpoints (`GCPnts_UniformAbscissa`). One pass, cheaper than calling
     /// ``point(atAbscissa:)`` in a loop.
+    ///
+    /// - Parameter count: Sample count, honoured within `2...`
+    ///   ``ArcLengthCurveAdaptor/maximumSampleCount``; outside that range the result is empty
+    ///   (#479). Buffer allocation and the count contract are shared with ``EdgeCurve``.
+    ///
+    /// ```swift
+    /// let wc = WireCurve(wire)!
+    /// let pts = wc.points(count: 21)                     // 21 points, endpoints included
+    /// wc.points(count: WireCurve.maximumSampleCount + 1).isEmpty   // true
+    /// ```
     public func points(count: Int) -> [SIMD3<Double>] {
-        guard count >= 2 else { return [] }
-        var buf = [Double](repeating: 0, count: count * 3)
-        let n = Int(OCCTCompCurveSampleUniform(ref, Int32(count), &buf))
-        return (0..<n).map { SIMD3(buf[$0 * 3], buf[$0 * 3 + 1], buf[$0 * 3 + 2]) }
+        sampledPoints(count: count) { n, buf in OCCTCompCurveSampleUniform(ref, n, buf) }
     }
 
     // point(atAbscissa:), tangent(atAbscissa:), points(spacing:) are supplied by the
-    // ArcLengthCurveAdaptor extension — see that protocol.
+    // ArcLengthCurveAdaptor extension: see that protocol.
 }

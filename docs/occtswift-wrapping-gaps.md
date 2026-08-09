@@ -7,7 +7,13 @@ search_exclude: true
 
 ## Coverage
 
-All user-facing OCCT classes are wrapped to method-level completeness: **3,333 operations** across **1,112 included headers**.
+All user-facing OCCT classes are wrapped to method-level completeness: **4,256 operations**
+across **1,166 OCCT headers the bridge includes** (of 6,774 shipped in the xcframework).
+
+Both numbers are derived, not maintained by hand: the first is
+`python3 Scripts/count-operations.py`'s `DERIVED` row, which the `count-operations` gate holds
+README.md and `docs/API_REFERENCE.md` to. It does **not** yet hold this file, which is how the
+figure here sat at 3,333 from 2026-04-13 until v2.0.0 while the real count grew past 4,200.
 
 ### What's Wrapped
 
@@ -46,6 +52,30 @@ These require implementing C++ abstract classes, which the bridge architecture d
 - `ChFi3d_FilBuilder`, `ChFi3d_ChBuilder` — complex stateful builders with protected virtuals
 - `Approx_FitAndDivide`, `Approx_FitAndDivide2d` — need `AppCont_Function` abstract impl
 - `BRepBlend_AppSurface` — needs `Approx_SweepFunction` abstract impl
+
+### Classes Not Wrapped Directly (reached only through another wrapper)
+
+- `ShapeFix_Shell` — no bridge function constructs one. Shell repair is reached through
+  `ShapeFix_Shape`, which drives `ShapeFix_Shell` internally; the header is `#include`d by the
+  bridge's umbrella translation unit but never used. The cross-reference index in `OCCTBridge.h`
+  claimed an `OCCTShapeFixShell` wrapper until #510 measured it and removed the entry. Wrapping it
+  directly would mean exposing per-shell orientation/mode control (`FixFaceOrientation`,
+  `SetNonManifoldFlag`) that `ShapeFix_Shape` currently chooses for the caller.
+- `ShapeUpgrade_ConvertCurve3dToBezier`, `ShapeUpgrade_ConvertSurfaceToBezierBasis` — reached
+  through `ShapeUpgrade_ShapeConvertToBezier`, the shape-level driver that owns both. The index
+  entries carry a `(via …)` aside naming that driver.
+- `BOPAlgo_RemoveFeatures` — reached through `BRepAlgoAPI_Defeaturing`, a forwarder to it. #536
+  deleted the direct wrap that duplicated the forwarder.
+- `LProp_AnalyticCurInf` — `OCCTLPropAnalyticCurInf` fills a `LProp_CurAndInf` from an inline scan
+  of the analytic curve types rather than constructing the OCCT class.
+
+### Classes Not Wrapped At All
+
+- `Geom2d_Direction`, `Geom2d_VectorWithMagnitude` — the headers are `#include`d but never used.
+  `OCCTDirection2D*` and `OCCTVector2D*` are `gp_Dir2d`/`gp_Vec2d` arithmetic on bare doubles, not
+  wrappers for the `Geom2d_` handle types; the cross-reference index claimed otherwise until #565
+  measured it. Wrapping them would mean exposing a reference-counted handle for what is currently
+  a value-type calculation.
 
 ### Constraint Solver Infrastructure (Complete)
 

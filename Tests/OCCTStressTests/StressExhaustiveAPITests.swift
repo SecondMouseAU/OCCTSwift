@@ -53,7 +53,7 @@ struct StressShapeFactoryTests {
 struct StressShapeBooleanTests {
 
     @Test func union() {
-        let result = standardBox().union(with: standardSphere())
+        let result = standardBox().union(standardSphere())
         if let r = result { #expect(r.isValid) }
     }
 
@@ -63,12 +63,12 @@ struct StressShapeBooleanTests {
     }
 
     @Test func intersect() {
-        let result = standardBox().intersection(with: standardSphere())
+        let result = standardBox().intersection(standardSphere())
         if let r = result { #expect(r.isValid) }
     }
 
     @Test func section() {
-        let result = standardBox().section(with: standardSphere())
+        let result = standardBox().section(standardSphere())
         if let r = result { #expect(r.isValid) }
     }
 
@@ -402,8 +402,9 @@ struct StressCurve3DAPITests {
 
     @Test func localCurvature() {
         let c = standardCurve3D()
-        let k = c.localCurvature(at: 0)
-        #expect(k.isFinite)
+        // #595: localCurvature is deprecated onto curvature(at:), which reports definedness.
+        let k = c.curvature(at: 0)
+        #expect(k?.isFinite == true)
     }
 
     @Test func localTangent() {
@@ -420,8 +421,9 @@ struct StressCurve3DAPITests {
 
     @Test func continuity() {
         let c = standardCurve3D()
-        let cn = c.continuityOrder
-        #expect(cn >= 0)
+        // A raw >= 0 check passed under either of the two encodings #485 unified, so pin the
+        // class instead. isCN(2) below already asserts this curve is at least C2.
+        #expect(c.continuityClass.satisfies(.c2))
         #expect(c.isCN(2))
     }
 
@@ -470,7 +472,7 @@ struct StressCurve2DAPITests {
 
     @Test func continuity() {
         let c = standardCurve2D()
-        #expect(c.continuityOrder >= 0)
+        #expect(ContinuityClass.allCases.contains(c.continuityClass))
     }
 }
 
@@ -520,14 +522,14 @@ struct StressSurfaceAPITests {
     @Test func gaussianCurvature() {
         if let s = Surface.sphere(center: .zero, radius: 10) {
             let k = s.gaussianCurvature(atU: 1.0, v: 0.5)
-            #expect(abs(k - 0.01) < 0.001)
+            if let k { #expect(abs(k - 0.01) < 0.001) } else { Issue.record("no curvature") }
         }
     }
 
     @Test func meanCurvature() {
         if let s = Surface.sphere(center: .zero, radius: 10) {
             let h = s.meanCurvature(atU: 1.0, v: 0.5)
-            #expect(abs(abs(h) - 0.1) < 0.001)
+            if let h { #expect(abs(abs(h) - 0.1) < 0.001) } else { Issue.record("no curvature") }
         }
     }
 

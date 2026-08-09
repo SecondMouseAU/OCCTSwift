@@ -283,19 +283,138 @@ The actual build script is at `Scripts/build-occt.sh`. It handles:
 To update the OCCT version, edit the variables at the top of the script:
 
 ```bash
-OCCT_VERSION="8.0.0"
-OCCT_RC="rc4"       # Clear this for stable releases
+OCCT_VERSION="8.0.1"
+OCCT_RC=""          # Pre-release suffix (rc4, beta2, p1); empty for a GA tag like V8_0_1
 ```
+
+Then **delete `Libraries/occt-src`**. The script reuses an existing tree only when its `HEAD` is at
+the tag these variables name, and aborts otherwise. Editing the version without removing the tree
+used to build the previous kernel silently and package it under the new version's number.
 
 Make executable:
 ```bash
 chmod +x Scripts/build-occt.sh
 ```
 
+## Shipping a rebuild
+
+A rebuild is normally triggered by a new patch in `Scripts/patches/`, and those are inert until the
+xcframework is rebuilt from source, so "patch merged" and "patch shipped" are two separate events
+(see `Scripts/patches/README.md`). The steps below are the second one.
+
+**1. Confirm the patch set the build actually used.** The script prints one line per patch
+(`applied` / `already applied` / `ERROR`); an `ERROR` aborts the build, and `already applied` is
+normal whenever `occt-src` was patched by an earlier run or an override-link probe. Before trusting
+it, check `occt-src` is *only* the pinned tag plus the carried patches, since a leftover diagnostic probe
+from an investigation would otherwise be compiled into a release binary:
+
+```bash
+git -C Libraries/occt-src status --porcelain          # every path must be one a patch touches
+for p in Scripts/patches/*.patch; do                 # absolute path: git -C resolves it relative to -C
+  git -C Libraries/occt-src apply --reverse --check "$(pwd)/$p" \
+    && echo "ok  $(basename "$p")" || echo "NOT APPLIED  $(basename "$p")"
+done
+```
+
+**2. Confirm the objects are genuinely newer than the patched sources.** Each slice's build dir is
+`rm -rf`'d and re-configured per run, so a normal run cannot go stale, but a *resumed* build can
+(`CMakeCache.txt` bakes in the configuring checkout's absolute path, and the script's `|| true`
+swallows the failure a mismatched path produces, leaving a fresh-timestamped but stale artifact).
+Never trust the exit code alone:
+
+```bash
+stat -f '%Sm %N' Libraries/occt-src/src/.../ThePatchedFile.cxx
+find Libraries/occt-build-macos -name 'ThePatchedFile.cxx.o' -exec stat -f '%Sm %N' {} \;
+```
+
+If a build is interrupted, resume the interrupted slice with `cmake --build <that build dir>`
+followed by `cmake --install <that build dir>` **from the same checkout that configured it**. Do
+not re-run `build-occt.sh`, which `rm -rf`s each slice's build dir before starting it.
+
+**3. Prove the fix reached the binary.** Run the patch's own reproducer against the rebuilt
+xcframework with **no** override-linked TUs, and re-check whatever "no behaviour change" evidence
+the patch's `Scripts/repro/<issue>/README.md` recorded. Then a full `swift test`.
+
+Pushing a commit that touches `Scripts/patches/**` also triggers `.github/workflows/
+kernel-integration.yml` (#585), which rebuilds from source in CI and runs `swift test` against
+that binary.
+
+`ci.yml`'s macOS check resolves whatever `Package.swift` pins, so a patch newer than the pinned
+asset makes that patch's own regression tests fail there. **Do not leave it in that state for a
+whole release.** Reading `kernel-integration.yml` instead works for one PR, but the red accumulates:
+during v2.0.0 seven suites were red at once for this reason, `build-and-test` was excluded from the
+required checks because of it, and every reviewer had to merge on parity with the base branch rather
+than on green. Publish a kernel pre-release and bump the pin instead.
+
+**4. Package and pin.** The zip is the release asset; its checksum is what SwiftPM verifies.
+
+```bash
+cd Libraries && rm -f OCCT.xcframework.zip
+zip -r -y -q OCCT.xcframework.zip OCCT.xcframework      # -y: keep symlinks as symlinks
+swift package compute-checksum OCCT.xcframework.zip     # or: shasum -a 256
+```
+
+Then, in the release commit:
+
+- `Package.swift`: bump **both** the OCCT `url:` (to the new tag) **and** `checksum:`, and extend
+  the carried-patch comment above them to name the new patch. Missing either half leaves
+  URL-resolving consumers on the old kernel while checkouts with a local `Libraries/` get the new
+  one, silently.
+- `docs/CHANGELOG.md`: add the new patch's issue number to the kernel-patch list on the
+  `## Current:` line.
+- Attach `OCCT.xcframework.zip` to the release for that tag, so the pinned `url:` resolves. The
+  Release-verification workflow (`.github/workflows/release.yml`) runs on release *publish* and
+  fails loudly on a 404 or checksum mismatch; re-run it via `workflow_dispatch` if the asset is
+  replaced after publishing.
+
+Between the rebuild and the release the two consumer paths diverge on purpose: this checkout and
+every sibling repo path-depending on its `Libraries/OCCT.xcframework` get the new kernel
+immediately, while anything resolving the remote `url:` stays on the previously released one.
+
+### Mid-release: publish a `vX.Y.Z-kernel.N` pre-release
+
+The divergence above is fine for a day. It is **not** fine for a whole release, because CI resolves
+the remote `url:`, so every regression test asserting the new patch's fix fails there until the
+release ships. During v2.0.0 that reached seven simultaneously red suites, got `build-and-test`
+excluded from the required checks, and forced every reviewer to merge on parity with the base branch
+instead of on green (#585).
+
+So when a patch lands mid-release, do not wait for the release commit and do not tell people to read
+`kernel-integration.yml` instead. Publish the kernel on its own:
+
+```bash
+gh release create vX.Y.Z-kernel.N --target <branch-head-sha> --prerelease \
+    --title "vX.Y.Z-kernel.N: OCCT <tag> + N carried patches (kernel pre-release)" \
+    --notes-file <notes>
+gh release upload vX.Y.Z-kernel.N Libraries/OCCT.xcframework.zip
+```
+
+Then bump `url:`/`checksum:` on the branch, exactly as the release commit will later do again.
+
+Three things this needs:
+
+- **Verify provenance before publishing**, using steps 1 to 3 above. A local build directory is not
+  evidence on its own: `occt-src` must be at exactly the pinned tag, every carried patch must
+  reverse-apply, and `git -C Libraries/occt-src status --porcelain` must list *only* files a patch
+  touches, or an investigation probe ships inside a public binary.
+- **`release.yml` must not run on it.** It checks out the tag and builds, but a kernel pre-release is
+  published *before* the commit that pins it, by construction, so the tag still carries the old pin
+  and the run fails for a reason unrelated to the artifact. The workflow is gated on
+  `!github.event.release.prerelease` for this reason.
+- **Do not delete the pre-release afterwards.** Every commit in the release window pins it, so
+  deleting it takes its asset with it and makes those commits unbuildable from a clean checkout,
+  which breaks `git bisect` and any historical re-measurement. Release storage is cheap; the
+  bisectability is not.
+
 ## Alternative: Pre-built Binaries
 
 If you don't want to build OCCT yourself:
 
-1. **Open Cascade Commercial**: Contact sales@opencascade.com for pre-built iOS libraries
-2. **Community Builds**: Check OCCT forum for community-provided builds
-3. **Build Service**: Use GitHub Actions to build (see `.github/workflows/build-occt.yml`)
+1. **This package's own release asset**: the normal path, and the one that carries our patches.
+   `OCCT.xcframework.zip` is attached to each release that rebuilt the kernel, and `Package.swift`
+   resolves it by `url:`/`checksum:` automatically on any checkout with no local `Libraries/`. The
+   rebuild itself is the manual local run documented above; `kernel-integration.yml` (#585) builds
+   from source too, but only to validate a carried patch in CI before release, not to produce the
+   shipped release asset.
+2. **Open Cascade Commercial**: Contact sales@opencascade.com for pre-built iOS libraries
+3. **Community Builds**: Check OCCT forum for community-provided builds

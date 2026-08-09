@@ -1,0 +1,2 @@
+isDone=true  reportedSurfaceErr=1e-07        (sentinel if unconverted)
+result surface handle == original wavy BSpline handle: YES (declined, kept original -- self-policed)

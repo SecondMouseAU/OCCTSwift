@@ -37,6 +37,22 @@ public enum HLREdgeCategory: Int32, Sendable {
 
 Used with `hlrEdges(direction:category:)` and `hlrPolyEdges(direction:category:deflection:)` to select which edge class to extract. `.visibleIso`, `.hiddenIso`, and `.visibleOutline3d` are available for exact HLR only.
 
+| Case | Edge class |
+|---|---|
+| `.visibleSharp` | Visible C0-continuity (sharp) edges. |
+| `.visibleSmooth` | Visible G1-continuity (smooth) edges. |
+| `.visibleSewn` | Visible CN-continuity (sewn) edges. |
+| `.visibleOutline` | Visible silhouette/outline edges. |
+| `.visibleIso` | Visible isoparameter lines (exact HLR only). |
+| `.visibleOutline3d` | Visible outline edges in 3D (exact HLR only). |
+| `.hiddenSharp` | Hidden C0-continuity (sharp) edges. |
+| `.hiddenSmooth` | Hidden G1-continuity (smooth) edges. |
+| `.hiddenSewn` | Hidden CN-continuity (sewn) edges. |
+| `.hiddenOutline` | Hidden silhouette/outline edges. |
+| `.hiddenIso` | Hidden isoparameter lines (exact HLR only). |
+
+#### `HLREdgeCategory.hiddenIso`
+
 ---
 
 ### `HLREdgeType`
@@ -54,7 +70,29 @@ public enum HLREdgeType: Int32, Sendable {
 }
 ```
 
-Used with `hlrCompoundOfEdges(direction:edgeType:visible:in3d:)` and the `reflectLinesFiltered` family.
+Used with `hlrCompoundOfEdges(direction:edgeType:visible:in3d:)` and the `reflectLinesFiltered` family. Case meanings, from `HLRBRep_TypeOfResultingEdge`:
+
+---
+
+#### `HLREdgeType.isoLine`
+
+An isoparametric line.
+
+#### `HLREdgeType.outLine`
+
+An outline (silhouette) edge.
+
+#### `HLREdgeType.rg1Line`
+
+A smooth edge of G1 continuity between two surfaces.
+
+#### `HLREdgeType.rgNLine`
+
+A sewn edge of CN continuity on one surface.
+
+#### `HLREdgeType.sharp`
+
+A sharp edge, of C0 continuity.
 
 ---
 
@@ -190,6 +228,13 @@ public struct EdgeFaceTransitionResult: Sendable {
 }
 ```
 
+| Field | Meaning |
+|---|---|
+| `transition` | Cumulated `TopAbs_Orientation` code (0=FORWARD, 1=REVERSED, 2=INTERNAL, 3=EXTERNAL) across all supplied faces. |
+| `boundaryTransition` | Cumulated `TopAbs_Orientation` code for the boundary transition across all supplied faces. |
+
+#### `Shape.EdgeFaceTransitionResult.boundaryTransition`
+
 ---
 
 ### `FaceInterference`
@@ -211,6 +256,14 @@ public struct FaceInterference: Sendable {
                 tolerance: Double)
 }
 ```
+
+| Field | Meaning |
+|---|---|
+| `transition` | `TopAbs_Orientation` code for how the edge crosses this face at the interference point. |
+| `boundaryTransition` | `TopAbs_Orientation` code for how the edge crosses this face's boundary. |
+| `tolerance` | Geometric tolerance for this face's contribution to the interference test. |
+
+#### `Shape.FaceInterference.tolerance`
 
 ---
 
@@ -276,6 +329,20 @@ public struct Bounds: Sendable {
     public let tolEnd: Float
 }
 ```
+
+---
+
+#### `Interval.Bounds.end`
+
+The interval's end parameter.
+
+#### `Interval.Bounds.tolStart`
+
+Tolerance at the start parameter.
+
+#### `Interval.Bounds.tolEnd`
+
+Tolerance at the end parameter.
 
 ---
 
@@ -464,6 +531,12 @@ A sorted sequence of non-overlapping `Intrv_Interval` objects supporting set-the
 public final class IntervalSet: @unchecked Sendable
 ```
 
+| Member | Kind | Meaning |
+|---|---|---|
+| `handle` | public stored property | The opaque `OCCTIntrvIntervalsRef` this wrapper owns; released in `deinit`. |
+
+#### `IntervalSet.handle`
+
 ---
 
 ### `IntervalSet.init(start:end:)`
@@ -597,6 +670,14 @@ public struct Hit {
     public let w: Double                         // parameter on the curve/line
 }
 ```
+
+---
+
+| Field | Meaning |
+|---|---|
+| `x`, `y`, `z` | The 3D intersection point. |
+| `u`, `v` | UV parameters of that point on the intersected face's surface. |
+| `w` | Parameter of that point along the intersecting line or curve. |
 
 ---
 
@@ -794,10 +875,14 @@ public var conversionGap: Double { get }
 
 Result of linear mass property computation from polygon points.
 
+`centerOfMass` is `nil` when `mass` is 0, which covers a polygon of fewer than two points and one
+whose points are all coincident. The three separate `centerX`/`centerY`/`centerZ` fields it replaced
+could not express "no centroid", and reported (0,0,0) instead (#609).
+
 ```swift
 public struct MeshCinertResult {
     public let mass: Double
-    public let centerX: Double, centerY: Double, centerZ: Double
+    public let centerOfMass: SIMD3<Double>?
 }
 ```
 
@@ -859,11 +944,15 @@ Result of mesh property computation.
 ```swift
 public struct MeshPropsResult {
     public let mass: Double
-    public let centerX: Double, centerY: Double, centerZ: Double
+    public let centerOfMass: SIMD3<Double>?
 }
 ```
 
 `mass` is surface area when `type == .surface`, or enclosed volume when `type == .volume`.
+
+`centerOfMass` is `nil` when `mass` is 0, which covers both an untriangulated face and a volume
+contribution that cancels. The mass itself stays non-optional because a zero contribution is a real
+answer for a caller summing over a shell (#609).
 
 ---
 
@@ -949,6 +1038,14 @@ public struct ValidateEdgeResult {
 }
 ```
 
+| Field | Meaning |
+|---|---|
+| `isWithinTolerance` | `true` if the maximum deviation between the 3D curve and the curve-on-surface is within `tolerance`. |
+| `maxDistance` | Maximum measured deviation between the 3D curve and the curve-on-surface. |
+| `tolerance` | The tolerance value the check was run against. |
+
+#### `ValidateEdgeResult.tolerance`
+
 ---
 
 ### `Edge.validate(on:tolerance:)`
@@ -986,16 +1083,23 @@ public func biTgteBlend(edgeIndices: [Int], radius: Double, tolerance: Double = 
 `BiTgte_Blend` is an alternative blend algorithm that can handle configurations where `BRepFilletAPI_MakeFillet` fails.
 
 - **Parameters:**
-  - `edgeIndices` — zero-based indices of edges to blend (as returned by the shape's topology explorer).
+  - `edgeIndices` — zero-based indices into `edges()`, the same enumeration `edge(at:)` and
+    `Edge.index` use, so a geometrically selected edge feeds straight in.
   - `radius` — blend radius.
   - `tolerance` — geometric tolerance.
   - `nubs` — if `true`, outputs NUBS (Non-Uniform B-Spline) surfaces; if `false`, outputs NURBS.
-- **Returns:** Blended shape, or `nil` if blending fails.
+- **Returns:** Blended shape, or `nil` if blending fails — including when any index names no edge,
+  which refuses the whole request rather than blending the rest (#568).
 - **OCCT:** `BiTgte_Blend::Perform` via `OCCTBiTgteBlend`.
+- **Changed in #613:** the indices addressed a `TopExp_Explorer` walk, one entry per topology
+  *occurrence* (24 on a 12-edge box), not `edges()`. Measured on an L-bracket, no index reached the
+  concave edge at all. An index naming no edge was also silently dropped.
 - **Example:**
   ```swift
-  if let blended = box.biTgteBlend(edgeIndices: [0, 1, 2], radius: 2.0) {
-      // blended has rounded edges
+  // Blend the edges you selected, by index, not by position in a walk
+  let seams = part.edges { $0.length > 20 }
+  if let blended = part.biTgteBlend(edgeIndices: seams.map(\.index), radius: 2.0) {
+      // blended has rounded seams
   }
   ```
 
@@ -1003,17 +1107,10 @@ public func biTgteBlend(edgeIndices: [Int], radius: Double, tolerance: Double = 
 
 ## GeomConvert_ApproxCurve/Surface
 
-### `ApproxContinuity`
-
-> **Deprecated in #398.** `ApproxContinuity` was one of several copies of the same continuity-floor
-> vocabulary and is now a typealias of
-> [`ParametricContinuity`](Shape-Healing.md#parametriccontinuity) (`.c0` ... `.c3`). No raw
-> value moved.
-
-```swift
-@available(*, deprecated, renamed: "ParametricContinuity")
-public typealias ApproxContinuity = ParametricContinuity
-```
+`ApproxContinuity` was one of several copies of the same continuity-floor vocabulary, deprecated in
+#398 as a typealias of [`ParametricContinuity`](Shape-Healing.md#parametriccontinuity)
+(`.c0` ... `.c3`, no raw value moved), and removed at v2.0.0 (#784). Use `ParametricContinuity`
+directly.
 
 ---
 
@@ -1078,8 +1175,8 @@ public struct ApproxSurfaceResult {
 Approximates a surface as a BSpline with detailed result information.
 
 ```swift
-public func approxWithDetails(tolerance: Double, uContinuity: ParametricContinuity = .c1,
-                               vContinuity: ParametricContinuity = .c1,
+public func approxWithDetails(tolerance: Double, uContinuity: ParametricContinuity = .c2,
+                               vContinuity: ParametricContinuity = .c2,
                                maxDegree: Int = 8, maxSegments: Int = 100) -> ApproxSurfaceResult
 ```
 
@@ -1091,7 +1188,7 @@ public func approxWithDetails(tolerance: Double, uContinuity: ParametricContinui
   - `maxSegments` — maximum number of BSpline segments.
 - **Returns:** `ApproxSurfaceResult` with the output `Surface` (or `nil`), `maxError`, and status flags.
 - **OCCT:** `GeomConvert_ApproxSurface` via `OCCTGeomConvertApproxSurface`.
-- **Note:** Prefer `Surface.approximated(tolerance:continuity:maxSegments:maxDegree:)` for simpler use; use this variant when you need the error and status separately.
+- **Note:** Prefer `Surface.approximated(tolerance:continuity:maxSegments:maxDegree:)` for simpler use; use this variant when you need the error and status separately. Both continuity defaults are C2, matching `Surface.approximated`; before #491 they were C1 here, so the two no-continuity-argument calls fitted to different smoothness and returned different surfaces.
 - **Example:**
   ```swift
   let result = surface.approxWithDetails(tolerance: 0.001)
@@ -1112,11 +1209,12 @@ Computes a quasi-uniform parameter distribution along an edge.
 public func quasiUniformParameters(count: Int) -> [Double]
 ```
 
-The returned parameters are distributed so that the chord lengths between consecutive curve points are approximately equal.
+The returned parameters are distributed so that the chord lengths between consecutive curve points are approximately equal. The first is always the start of the edge and the last is always its end.
 
-- **Parameters:** `count` — desired number of parameter values.
+- **Parameters:** `count`, the desired number of parameter values. Must be at least 2; below that the result is empty (#501).
 - **Returns:** Array of curve parameters of length ≤ `count`.
-- **OCCT:** `GCPnts_QuasiUniformAbscissa` via `OCCTGCPntsQuasiUniform`.
+- **OCCT:** `GCPnts_QuasiUniformAbscissa` via `OCCTGCPntsQuasiUniform`. It can compute one point beyond the request on a poorly-conditioned curve; the surplus is dropped and the edge's end parameter kept. Before #501 the surplus was dropped along with the end parameter, so the distribution stopped short of the edge.
+- **Curve3D equivalent:** `Curve3D.quasiUniformParameters(count:)`, which goes through `OCCTCurve3DQuasiUniformAbscissa`. A second Curve3D-based bridge function, `OCCTGCPntsQuasiUniformCurve`, duplicated it from v0.75 with no caller and was removed in #501.
 - **Example:**
   ```swift
   let params = edge.quasiUniformParameters(count: 20)
@@ -1178,7 +1276,7 @@ Curve linear inertia properties (arc length and centre of mass).
 ```swift
 public struct CurveInertia {
     public let length: Double
-    public let centerX: Double, centerY: Double, centerZ: Double
+    public let centerOfMass: SIMD3<Double>?
 }
 ```
 
@@ -1192,13 +1290,14 @@ Computes linear inertia (arc length and centre of mass) for this edge.
 public var curveInertia: CurveInertia { get }
 ```
 
-- **Returns:** `CurveInertia` with `length` and centre of mass coordinates.
+- **Returns:** `CurveInertia` with `length` and an optional `centerOfMass`, which is `nil` when the
+  length is 0 and there is no centroid to report (#609).
 - **OCCT:** `BRepGProp_Cinert` via `OCCTBRepGPropCinert`.
 - **Example:**
   ```swift
   let inertia = edge.curveInertia
   print("length:", inertia.length)
-  print("center:", inertia.centerX, inertia.centerY, inertia.centerZ)
+  print("center:", inertia.centerOfMass as Any)
   ```
 
 ---
@@ -1212,7 +1311,7 @@ Face surface inertia properties (area and centre of mass).
 ```swift
 public struct FaceSurfaceInertia {
     public let area: Double
-    public let centerX: Double, centerY: Double, centerZ: Double
+    public let centerOfMass: SIMD3<Double>?
     public let epsilon: Double
 }
 ```
@@ -1229,7 +1328,8 @@ Computes surface inertia (area and centre of mass) for this face.
 public var surfaceInertia: FaceSurfaceInertia { get }
 ```
 
-- **Returns:** `FaceSurfaceInertia` with `area` and centre of mass (`epsilon` = 0).
+- **Returns:** `FaceSurfaceInertia` with `area` and an optional centre of mass (`epsilon` = 0). The
+  centre is `nil` when the area is 0 (#609).
 - **OCCT:** `BRepGProp_Sinert` via `OCCTBRepGPropSinert`.
 - **Example:**
   ```swift
@@ -1248,7 +1348,8 @@ public func surfaceInertia(epsilon: Double) -> FaceSurfaceInertia
 ```
 
 - **Parameters:** `epsilon` — target integration error bound.
-- **Returns:** `FaceSurfaceInertia` with `area`, centre of mass, and actual `epsilon` achieved.
+- **Returns:** `FaceSurfaceInertia` with `area`, an optional centre of mass, and the actual
+  `epsilon` achieved.
 - **OCCT:** `BRepGProp_Sinert` adaptive overload via `OCCTBRepGPropSinertAdaptive`.
 
 ---
@@ -1259,10 +1360,16 @@ public func surfaceInertia(epsilon: Double) -> FaceSurfaceInertia
 
 Face volume inertia contribution.
 
+`volume` stays non-optional because a zero contribution is a real, useful answer: this is the
+divergence-theorem decomposition, so a face whose plane contains the reference point contributes
+exactly nothing and a caller summing over a shell needs that 0. `centerOfMass` is `nil` there,
+because a zero contribution has no centroid and the (0,0,0) reported before #609 was the framework's
+location seed.
+
 ```swift
 public struct FaceVolumeInertia {
     public let volume: Double
-    public let centerX: Double, centerY: Double, centerZ: Double
+    public let centerOfMass: SIMD3<Double>?
 }
 ```
 
@@ -1276,7 +1383,7 @@ Computes the volume inertia contribution from this face (relative to the origin)
 public var volumeInertia: FaceVolumeInertia { get }
 ```
 
-- **Returns:** `FaceVolumeInertia` with signed `volume` and centre of mass.
+- **Returns:** `FaceVolumeInertia` with signed `volume` and an optional centre of mass.
 - **OCCT:** `BRepGProp_Vinert` via `OCCTBRepGPropVinert`.
 - **Example:**
   ```swift
@@ -1366,6 +1473,12 @@ public final class GeomPoint3D: @unchecked Sendable
 
 Useful when you need OCCT's geometry-level point entity (rather than a raw `SIMD3<Double>`) for operations that take `Handle(Geom_Point)` arguments.
 
+| Member | Kind | Meaning |
+|---|---|---|
+| `handle` | public stored property | The opaque `OCCTGeomPoint3DRef` this wrapper owns; released in `deinit`. Public (unlike most wrapper handles) so other bridge-adjacent APIs can pass it through directly. |
+
+#### `GeomPoint3D.handle`
+
 ---
 
 ### `GeomPoint3D.init(x:y:z:)`
@@ -1401,6 +1514,10 @@ public var z: Double { get }
 ```
 
 - **OCCT:** `Geom_CartesianPoint::X`, `Y`, `Z`.
+
+---
+
+#### `GeomPoint3D.z`
 
 ---
 
@@ -1562,6 +1679,12 @@ A Handle-managed 3D vector with arbitrary magnitude, wrapping `Geom_VectorWithMa
 ```swift
 public final class GeomVector3D: @unchecked Sendable
 ```
+
+| Member | Kind | Meaning |
+|---|---|---|
+| `handle` | public stored property | The opaque `OCCTGeomVector3DRef` this wrapper owns; released in `deinit`. |
+
+#### `GeomVector3D.handle`
 
 ---
 

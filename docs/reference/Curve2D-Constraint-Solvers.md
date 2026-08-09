@@ -173,6 +173,12 @@ Pass these alongside curves in every `Curve2DGcc` solver call.
 
 ---
 
+#### `Curve2DQualifier.outside`
+
+The solution circle is outside the qualified curve.
+
+---
+
 ### `Curve2DCircleSolution`
 
 A circle solution from the Gcc constraint solver.
@@ -212,6 +218,29 @@ public struct Curve2DHatchSegment: Sendable {
     public let end: SIMD2<Double>
 }
 ```
+
+- `start`: start point of the hatch line segment.
+- `end`: end point of the hatch line segment.
+
+#### `Curve2DHatchSegment.end`
+
+---
+
+### `HatchSegment`
+
+A line segment in the general-purpose 2D hatch pattern generator, `HatchPattern.generate(boundary:direction:spacing:offset:maxSegments:)` (`Sources/OCCTSwift/HatchPattern.swift`). Structurally identical to `Curve2DHatchSegment` above but produced by the polygon-boundary hatcher rather than the `Geom2dHatch_Hatcher`-backed `Curve2DGcc.hatch(boundaries:...)`.
+
+```swift
+public struct HatchSegment: Sendable {
+    public let start: SIMD2<Double>
+    public let end: SIMD2<Double>
+}
+```
+
+- `start`: start point of the hatch line segment.
+- `end`: end point of the hatch line segment.
+
+#### `HatchSegment.end`
 
 ---
 
@@ -468,7 +497,13 @@ Each `Curve2DHatchSegment` is a line segment clipped to lie inside the boundary 
 - **OCCT:** `Geom2dHatch_Hatcher` + `Geom2dHatch_Intersector`.
 - **Example:**
   ```swift
-  let boundary = [Curve2D.rectangle(center: .zero, width: 10, height: 8)!]
+  // A rectangle boundary is 4 segments; there is no single Curve2D rectangle factory.
+  let boundary = [
+      Curve2D.segment(from: SIMD2(-5, -4), to: SIMD2(5, -4))!,
+      Curve2D.segment(from: SIMD2(5, -4), to: SIMD2(5, 4))!,
+      Curve2D.segment(from: SIMD2(5, 4), to: SIMD2(-5, 4))!,
+      Curve2D.segment(from: SIMD2(-5, 4), to: SIMD2(-5, -4))!
+  ]
   let hatches = Curve2DGcc.hatch(
       boundaries: boundary,
       direction: SIMD2(1, 1) / sqrt(2),
@@ -518,6 +553,10 @@ public struct BisecSolution: Sendable {
 - `position` — primary position: center for circles, a point on the line for lines, focus for conics.
 - `secondary` — secondary values: direction for lines, semi-axes for conics.
 - `radius` — radius for circle-type bisectors; 0 otherwise.
+
+*(Per-field anchor below, for cross-reference; the list above has the actual meaning of each.)*
+
+#### `BisecSolution.secondary`
 
 ---
 
@@ -613,6 +652,12 @@ public static func ofCircles(
 - **Parameters:** `center1`, `radius1` — first circle; `center2`, `radius2` — second circle.
 - **Returns:** Array of up to 4 bisector curves.
 - **OCCT:** `GccAna_Circ2dBisec`.
+- **Note:** both radii must be positive (#553). A radius of zero describes a point, and this solver
+  does not answer the point question when it is given one: measured, it returns each solution twice,
+  and with both radii zero two of the three solutions are hyperbolas of major radius zero, a conic
+  this API refuses to construct. Use `ofPoints(_:_:)` or `ofCircleAndPoint(center:radius:point:)`.
+  A non-positive radius returns an empty array; a negative one always did, through `gp_Circ2d`'s own
+  header check.
 - **Example:**
   ```swift
   let bisectors = GccAnaBisector.ofCircles(
@@ -637,6 +682,9 @@ public static func ofCircleAndLine(
 - **Parameters:** `center`, `radius` — the circle; `linePoint`, `lineDir` — point and direction of the line.
 - **Returns:** Array of bisector curve solutions.
 - **OCCT:** `GccAna_CircLin2dBisec`.
+- **Note:** the radius must be positive (#553). With a radius of zero the solver returns the
+  point/line parabola twice rather than once; `ofLineAndPoint(linePoint:lineDir:point:)` is the
+  entry point for that question. A non-positive radius returns an empty array.
 - **Example:**
   ```swift
   let bisectors = GccAnaBisector.ofCircleAndLine(
@@ -660,6 +708,10 @@ public static func ofCircleAndPoint(
 - **Parameters:** `center`, `radius` — the circle; `point` — the fixed point.
 - **Returns:** Array of bisector curve solutions.
 - **OCCT:** `GccAna_CircPnt2dBisec`.
+- **Note:** the radius must be positive (#553). This is the family where a zero radius is furthest
+  from the point reading: measured, it returns two hyperbolas of major radius zero, where the
+  bisector of two points is a straight line. Use `ofPoints(_:_:)` for that. A non-positive radius
+  returns an empty array.
 - **Example:**
   ```swift
   let bisectors = GccAnaBisector.ofCircleAndPoint(
@@ -710,6 +762,9 @@ public static func linesTangentParallel(
 - **Parameters:** `circleCenter`, `circleRadius` — the circle; `qualifier` — qualifier; `linePoint`, `lineDir` — reference line direction.
 - **Returns:** Array of parallel tangent lines (0 or 2 solutions).
 - **OCCT:** `GccAna_Lin2dTanPar`.
+- **Note:** `circleRadius` must be positive (#553). With a radius of zero the solver returns the
+  single line through the centre twice; `lineParallelThrough(point:parallelTo:lineDir:)` answers
+  that question and returns it once. A non-positive radius returns an empty array.
 - **Example:**
   ```swift
   let lines = Curve2DGcc.linesTangentParallel(
@@ -757,6 +812,10 @@ public static func linesTangentPerpendicular(
 - **Parameters:** `circleCenter`, `circleRadius` — the circle; `qualifier` — qualifier; `linePoint`, `lineDir` — reference line direction.
 - **Returns:** Array of perpendicular tangent lines.
 - **OCCT:** `GccAna_Lin2dTanPer`.
+- **Note:** `circleRadius` must be positive (#553). With a radius of zero the solver returns the
+  single line through the centre twice; use
+  `linePerpendicularThrough(point:perpendicularTo:lineDir:)` for the point question. A non-positive
+  radius returns an empty array.
 - **Example:**
   ```swift
   let lines = Curve2DGcc.linesTangentPerpendicular(
@@ -865,6 +924,9 @@ public static func circlesTangentToLineOnLineWithRadius(
 - **Parameters:** `linePoint`, `lineDir` — tangent line; `qualifier` — qualifier; `centerOnPoint`, `centerOnDir` — center-constraint line; `radius` — fixed radius; `tolerance` — tolerance.
 - **Returns:** Array of circle solutions.
 - **OCCT:** `GccAna_Circ2dTanOnRad`.
+- **Note:** `radius` is the radius of the circles to find, and it must be positive (#553). Asked
+  for zero, `GccAna_Circ2dTanOnRad` obliges and returns solution circles of radius zero. A
+  non-positive radius returns an empty array.
 - **Example:**
   ```swift
   let circles = Curve2DGcc.circlesTangentToLineOnLineWithRadius(
@@ -923,6 +985,8 @@ public static func circlesTangentOnCurveWithRadius(
 - **Parameters:** `curve` — tangent curve; `qualifier` — qualifier; `centerOn` — center-constraint curve; `radius` — fixed radius; `tolerance` — tolerance.
 - **Returns:** Array of circle solutions.
 - **OCCT:** `Geom2dGcc_Circ2dTanOnRad`.
+- **Note:** `radius` is the radius of the circles to find, and it must be positive; zero would ask
+  for a solution circle that is a point (#553). A non-positive radius returns an empty array.
 - **Example:**
   ```swift
   let spine = Curve2D.interpolate(

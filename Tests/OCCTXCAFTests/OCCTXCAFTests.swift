@@ -2372,6 +2372,55 @@ struct XDEColorToolByShapeTests {
             }
         }
     }
+
+    // #763: `shapeColor` used to hardcode `a = 1.0` regardless of what was actually stored —
+    // `XCAFDoc_ColorTool::GetColor(shape, type, Quantity_Color&)` fetches the real RGBA value
+    // internally and then discards alpha, and the bridge was reading it through that overload.
+    // A shape colored with a translucent color must read back its real alpha, not a fabricated
+    // fully-opaque constant.
+    @Test("Shape color round-trips a non-opaque alpha (#763)")
+    func shapeColorPreservesAlpha() {
+        guard let doc = Document.create() else {
+            #expect(Bool(false), "Failed to create document")
+            return
+        }
+        guard let box = Shape.box(width: 10, height: 20, depth: 30) else {
+            #expect(Bool(false), "Failed to create box")
+            return
+        }
+        doc.addShape(box)
+        let translucent = Color(red: 0.2, green: 0.4, blue: 0.6, alpha: 0.5)
+        doc.setShapeColor(box, color: translucent)
+        #expect(doc.isShapeColorSet(box))
+        if let got = doc.shapeColor(box) {
+            #expect(abs(got.red - 0.2) < 1e-5)
+            #expect(abs(got.green - 0.4) < 1e-5)
+            #expect(abs(got.blue - 0.6) < 1e-5)
+            #expect(abs(got.alpha - 0.5) < 1e-5)
+        } else {
+            #expect(Bool(false), "Expected a color to be set")
+        }
+    }
+
+    @Test("Shape color round-trips full opacity (#763 regression guard)")
+    func shapeColorOpaqueUnaffected() {
+        guard let doc = Document.create() else {
+            #expect(Bool(false), "Failed to create document")
+            return
+        }
+        guard let box = Shape.box(width: 10, height: 20, depth: 30) else {
+            #expect(Bool(false), "Failed to create box")
+            return
+        }
+        doc.addShape(box)
+        let opaque = Color(red: 1.0, green: 0.0, blue: 0.0, alpha: 1.0)
+        doc.setShapeColor(box, color: opaque)
+        if let got = doc.shapeColor(box) {
+            #expect(abs(got.alpha - 1.0) < 1e-5)
+        } else {
+            #expect(Bool(false), "Expected a color to be set")
+        }
+    }
 }
 
 @Suite("XDE Area Volume Centroid")
@@ -3773,26 +3822,6 @@ struct TDFChildIDIteratorTests {
         guard let parent = doc.createLabel() else { return }
         let count = doc.childIDCount(labelId: parent.labelId, guid: "99999999-9999-9999-9999-999999999999")
         #expect(count == 0)
-    }
-}
-
-@Suite("TDocStd PathParser Tests")
-struct TDocStdPathParserTests {
-
-    @Test func parsePath() {
-        let trek = PathParser.trek("/home/user/docs/model.step")
-        #expect(trek != nil)
-        if let trek { #expect(trek.contains("home")) }
-    }
-
-    @Test func parseName() {
-        let name = PathParser.name("model.step")
-        #expect(name == "model")
-    }
-
-    @Test func parseExtension() {
-        let ext = PathParser.fileExtension("model.step")
-        #expect(ext == "step")
     }
 }
 

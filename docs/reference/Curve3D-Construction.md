@@ -113,6 +113,15 @@ public struct SplitResult {
 }
 ```
 
+| Field | Meaning |
+|---|---|
+| `first` | Curve segment before the split parameter. |
+| `second` | Curve segment after the split parameter. |
+
+#### `Curve3D.SplitResult.first`
+
+Curve segment before the split parameter.
+
 ---
 
 ### `splitAt(parameter:)`
@@ -260,17 +269,20 @@ Controls the parameterization explicitly — each point is placed at the corresp
 
 ---
 
-### `Curve3D.interpolatePeriodic(points:)`
+### `Curve3D.interpolatePeriodic(points:tolerance:)`
 
 Interpolates a periodic (closed) BSpline through the given points.
 
 ```swift
-public static func interpolatePeriodic(points: [SIMD3<Double>]) -> Curve3D?
+public static func interpolatePeriodic(points: [SIMD3<Double>],
+                                       tolerance: Double = 1e-6) -> Curve3D?
 ```
 
 The resulting curve is periodic: it passes through all points and closes smoothly back to the first point without an explicit closing segment. The first and last points need not coincide.
 
-- **Parameters:** `points` — interpolation points (minimum 2, typically 3 or more for a non-degenerate loop).
+A spelling of [`interpolate(points:closed:tolerance:)`](Curve3D.md) with `closed: true`, and it delegates to it: the two cannot produce different curves for the same input. Before #493 it was a second, independent `GeomAPI_Interpolate` call site with the tolerance pinned at `1e-6` and unreachable, and with a stricter minimum point count (3, against the general entry point's 2) that the two had drifted into. This is the same fix #412 applied to `Curve2D.interpolatePeriodic`.
+
+- **Parameters:** `points`, interpolation points (minimum 2, typically 3 or more for a non-degenerate loop); `tolerance`, point coincidence tolerance. Points closer together than this are treated as coincident and the interpolation fails.
 - **Returns:** Periodic interpolated BSpline, or `nil` on failure.
 - **OCCT:** `GeomAPI_Interpolate(pts, Standard_True, tol)` + `Perform()`.
 - **Example:**
@@ -280,6 +292,12 @@ The resulting curve is periodic: it passes through all points and closes smoothl
   ]) {
       #expect(loop.isPeriodic)
   }
+
+  // Identical to spelling it out on the general factory:
+  let same = Curve3D.interpolate(points: [
+      SIMD3(1, 0, 0), SIMD3(0, 1, 0), SIMD3(-1, 0, 0), SIMD3(0, -1, 0)
+  ], closed: true)
+  #expect(same?.isPeriodic == true)
   ```
 
 ---
@@ -298,9 +316,9 @@ public static func approximate(
 ) -> Curve3D?
 ```
 
-Unlike `interpolate`, the curve does not pass exactly through every point; it minimises deviation within `tolerance`. `continuity` maps to `GeomAbs_Shape`: 0=C0, 1=G1, 2=C1.
+Unlike `interpolate`, the curve does not pass exactly through every point; it minimises deviation within `tolerance`. `continuity` is a `ParametricContinuity` raw value: 0=C0, 1=C1, 2=C2, 3=C3. (It was documented here as `0=C0, 1=G1, 2=C1` — the analysis-order vocabulary, which this call has never used; corrected in #490.) `GeomAPI_PointsToBSpline` treats the value as an upper bound and accepts the whole range without failing.
 
-- **Parameters:** `points` — data points (minimum 2); `degMin` — minimum polynomial degree; `degMax` — maximum polynomial degree; `continuity` — minimum continuity order (0=C0, 1=G1, 2=C1); `tolerance` — maximum allowed deviation.
+- **Parameters:** `points` — data points (minimum 2); `degMin` — minimum polynomial degree; `degMax` — maximum polynomial degree; `continuity` — minimum continuity order (0=C0, 1=C1, 2=C2, 3=C3); `tolerance` — maximum allowed deviation.
 - **Returns:** Approximating BSpline, or `nil` on failure.
 - **OCCT:** `GeomAPI_PointsToBSpline(pts, degMin, degMax, continuity, tolerance)`.
 - **Example:**
@@ -356,13 +374,17 @@ public func arcLength(from u1: Double, to u2: Double) -> Double
 ```
 
 Non-optional; delegates to `length(from:to:)` (the failure-distinguishing entry point on the
-main page) and returns `-1.0` if the curve is invalid or the computation fails. Arc length is
-otherwise always non-negative, so `-1.0` is unambiguous and never collides with a genuine
-zero-length result (e.g. `u1 == u2`). Use `length(from:to:)` directly if you need an optional.
+main page) and returns `-1.0` if the curve is invalid, a bound is not finite, or the computation
+fails. Arc length is otherwise always non-negative, so `-1.0` is unambiguous and never collides
+with a genuine zero-length result (e.g. `u1 == u2`). Use `length(from:to:)` directly if you need
+an optional.
 
-- **Parameters:** `u1` — start parameter; `u2` — end parameter (must satisfy `u1 ≤ u2`).
+- **Parameters:** `u1` — start parameter; `u2` — end parameter. Either order; both must be finite.
 - **Returns:** Arc length in model units, or `-1.0` on failure.
-- **OCCT:** `GCPnts_AbscissaPoint::Length(GeomAdaptor_Curve(curve, u1, u2))` (via `length(from:to:)`).
+- **OCCT:** `GCPnts_AbscissaPoint::Length(adaptor, u1, u2)` (via `length(from:to:)`).
+- **Note:** `.nan` and `±.infinity` return `-1.0` on every curve type. See
+  [`length(from:to:)`](Curve3D.md#lengthfromto) for what OCCT did with them (#548), and for what an
+  out-of-domain range measures (#600).
 - **Example:**
   ```swift
   if let curve = Curve3D.interpolate(
@@ -385,11 +407,20 @@ Finds the parameter at a given arc-length distance from a starting parameter.
 public func parameterAtLength(_ arcLength: Double, from startParam: Double? = nil) -> Double
 ```
 
-Uses `GCPnts_AbscissaPoint` for accurate arc-length parameterisation. Positive `arcLength` advances forward; negative reverses. Returns `0` on internal failure.
+Positive `arcLength` advances forward; negative reverses. Returns `0` on internal failure.
+
+The travel is measured with the same subdivided quadratures `length` uses, so this and the length
+it inverts always agree: `curve.parameterAtLength(curve.length!)` lands on `domain.upperBound`.
+That mattered from #603 onwards — OCCT's own root finder inverts a *single* Gauss quadrature over
+`[startParam, u]`, the very integral `length` stopped using, and fed the accurate total length of
+an 8 × 3 ellipse it answered 6.2438 for a domain ending at 6.2832.
 
 - **Parameters:** `arcLength` — distance to advance along the curve; `startParam` — starting parameter (defaults to `domain.lowerBound`).
 - **Returns:** The parameter value at the specified arc-length distance from `startParam`.
-- **OCCT:** `GCPnts_AbscissaPoint(adaptor, arcLength, startParam)::Parameter`.
+- **OCCT:** the accumulated `GeomAbs_CN` sub-piece lengths, with the final narrow piece handed to
+  `GCPnts_AbscissaPoint(adaptor, remainder, pieceStart)::Parameter`.
+- **Note:** A distance longer than the curve keeps OCCT's own answer, which reports success with a
+  parameter outside the curve's domain rather than failing.
 - **Example:**
   ```swift
   let line = Curve3D.segment(from: SIMD3(0,0,0), to: SIMD3(10,0,0))!
@@ -414,7 +445,7 @@ otherwise always non-negative, so `-1.0` is unambiguous and never collides with 
 zero-length curve. Use `length` directly if you need an optional.
 
 - **Returns:** Total arc length in model units, or `-1.0` on failure.
-- **OCCT:** `GCPnts_AbscissaPoint::Length(GeomAdaptor_Curve(curve))` (via `length`).
+- **OCCT:** `GCPnts_AbscissaPoint::Length` per `GeomAbs_CN` interval, subdivided to convergence (via `length`, #603).
 - **Example:**
   ```swift
   let circle = Curve3D.circle(center: .zero, normal: SIMD3(0,0,1), radius: 10)!
@@ -436,9 +467,10 @@ Like `arcLength(from:to:)` but with unlabelled parameters. Delegates to `length(
 returns `-1.0` on failure, never `0.0` (which would collide with a genuine zero-length interval,
 e.g. `param1 == param2`).
 
-- **Parameters:** `param1` — first parameter; `param2` — second parameter.
+- **Parameters:** `param1` — first parameter; `param2` — second parameter. Both must be finite.
 - **Returns:** Arc length between the two parameters, or `-1.0` on failure.
 - **OCCT:** `GCPnts_AbscissaPoint::Length(adaptor, param1, param2)` (via `length(from:to:)`).
+- **Note:** `.nan` and `±.infinity` return `-1.0` on every curve type (#548).
 - **Example:**
   ```swift
   let line = Curve3D.segment(from: SIMD3(0,0,0), to: SIMD3(10,0,0))!
@@ -449,26 +481,52 @@ e.g. `param1 == param2`).
 
 ---
 
-### `closestParameter(to:)`
+### `nearestParameter(to:)`
 
-Finds the parameter of the closest point on this curve to a given 3D point.
+Finds the parameter of the nearest point on this curve to a given 3D point.
 
 ```swift
-public func closestParameter(to point: SIMD3<Double>) -> Double
+public func nearestParameter(to point: SIMD3<Double>) -> Double?
 ```
 
-Uses a projection; returns `0` if projection finds no points or an exception occurs.
-
 - **Parameters:** `point` — the query point in 3D space.
-- **Returns:** Parameter `u` such that `self.point(at: u)` is the nearest point on the curve to `point`.
-- **OCCT:** `GeomAPI_ProjectPointOnCurve::LowerDistanceParameter`.
+- **Returns:** Parameter `u` such that `self.point(at: u)` is the nearest point on the curve to
+  `point`, always inside the curve's own domain, or `nil` if there is no curve to answer about.
+- **OCCT:** `occtNearestPointOnCurveRange` — the minimum over `ShapeAnalysis_Curve::Project`, every
+  `GeomAPI_ProjectPointOnCurve` extremum in range, and both curve ends.
 - **Example:**
   ```swift
   if let line = Curve3D.line(through: .zero, direction: SIMD3(1,0,0)) {
-      let param = line.closestParameter(to: SIMD3(5, 3, 0))
-      #expect(abs(param - 5.0) < 0.1)
+      let param = line.nearestParameter(to: SIMD3(5, 3, 0))
+      #expect(param.map { abs($0 - 5.0) < 0.1 } == true)
+  }
+
+  // A curve trimmed to [3, 8]: a point past the end is nearest to that end.
+  if let seg = Curve3D.line(through: .zero, direction: SIMD3(1,0,0))?.trimmed(from: 3, to: 8) {
+      #expect(seg.nearestParameter(to: SIMD3(100, 0, 0)) == 8)
+  }
+
+  // A half arc queried from below: the near end, not the extremum on the far side.
+  if let arc = Curve3D.circle(center: .zero, normal: SIMD3(0,0,1), radius: 5)?
+      .trimmed(from: 0, to: .pi) {
+      #expect(arc.nearestParameter(to: SIMD3(0, -6, 0)) == 0)   // 7.81 away, not 11
   }
   ```
+
+This is the scalar spelling of
+[`projectPoint(_:precision:)`](Curve3D-Analysis.md#projectpointprecision) and agrees with it
+exactly. Both report the true nearest point rather than the nearest *perpendicular foot*: where the
+point has no foot, the nearest point is an end, and that is the answer.
+
+Until #615 the two disagreed, because this one reported `GeomAPI_ProjectPointOnCurve`'s extremum:
+for the half arc above it answered π/2, the far side, 11 away, and for the trimmed segment it
+answered `nil` where `projectPoint` answered `8` at distance `92`. `Optional` remains because no
+`Double` can carry a failure signal — every value is a legitimate parameter on some curve — not
+because a point can fail to have a nearest one.
+
+`closestParameter(to:)` was the deprecated spelling of this method, returning `.nan` where this
+one returns `nil` (before #500 it returned `0`, which is not even inside the domain of a curve
+trimmed to `[3, 8]`); removed at v2.0.0 (#784).
 
 ---
 
@@ -486,7 +544,9 @@ public func splitAtContinuity(
 
 The curve is first converted to BSpline form, then split at C1 (or higher) discontinuities. For `continuity > 1` the implementation returns the single converted BSpline unchanged (higher-order splitting not yet implemented). Returns an empty array on failure.
 
-- **Parameters:** `continuity` — continuity level to split at (0=C0, 1=C1); `tolerance` — discontinuity detection tolerance; `maxSegments` — maximum output segment count.
+- **Parameters:** `continuity` — continuity level to split at (0=C0, 1=C1); `tolerance` —
+  discontinuity detection tolerance; `maxSegments` — output *capacity* (default 32), clamped into
+  `0...Sampling.maximumSampleCount` (10,000,000); 0 or less returns empty (#622).
 - **Returns:** Array of BSpline curve segments (at least one on success).
 - **OCCT:** `GeomConvert::C0BSplineToArrayOfC1BSplineCurve` (for `continuity ≤ 1`).
 - **Example:**
@@ -522,3 +582,5 @@ Each input curve is converted to BSpline form before joining. Curves must connec
       #expect(joined.totalArcLength > c1.totalArcLength)
   }
   ```
+
+---

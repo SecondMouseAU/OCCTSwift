@@ -11,8 +11,8 @@ This guide explains how to add new OCCT functionality to the OCCTSwift wrapper.
 
 Adding a feature requires changes at three layers:
 
-1. **OCCTBridge.h** - C function declaration
-2. **OCCTBridge.mm** - Objective-C++ implementation
+1. **`OCCTBridge_<Domain>.h`** (under `Sources/OCCTBridge/include/`) - C function declaration
+2. **`OCCTBridge_<Domain>.mm`** (under `Sources/OCCTBridge/src/`) - Objective-C++ implementation
 3. **Swift API** - Swift wrapper class/method
 
 ## Step-by-Step Example: Adding Chamfer by Edge Selection
@@ -40,7 +40,7 @@ Key documentation:
 
 ### Step 2: Design the C Interface
 
-Add to `Sources/OCCTBridge/include/OCCTBridge.h`:
+Add to `Sources/OCCTBridge/include/OCCTBridge_Modeling.h` (chamfer, like the rest of `BRepFilletAPI`, lives in the Modeling domain header):
 
 ```c
 // Edge handle type (if not already defined)
@@ -69,7 +69,7 @@ OCCTShapeRef OCCTShapeChamferEdges(
 
 ### Step 3: Implement in Objective-C++
 
-Add to `Sources/OCCTBridge/src/OCCTBridge.mm`:
+Add to `Sources/OCCTBridge/src/OCCTBridge_Modeling.mm`:
 
 ```objc
 #include <TopExp_Explorer.hxx>
@@ -374,8 +374,8 @@ struct OCCTShape {
 ## Checklist for New Features
 
 - [ ] Research OCCT API and test in isolation
-- [ ] Add C function declarations to `OCCTBridge.h`
-- [ ] Implement in `OCCTBridge.mm` with error handling
+- [ ] Add C function declarations to the matching `OCCTBridge_<Domain>.h`
+- [ ] Implement in the matching `OCCTBridge_<Domain>.mm` with error handling
 - [ ] Add Swift wrapper with documentation comments
 - [ ] Add unit tests
 - [ ] Update API documentation

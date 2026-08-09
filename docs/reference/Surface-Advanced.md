@@ -48,6 +48,34 @@ for scattered probe data, feature points, or any unstructured point set. See als
   }
   ```
 
+#### What `tolerance` means here (#571)
+
+`tolerance` bounds the distance between the fitted BSpline and the plate at the plate's own
+constraint points, and the approximator subdivides into more Bezier patches until it is met. Before
+#571 it could not be met: five of the six plate entry points capped the approximation at a single
+patch, which is the one value that stops `AdvApp2Var_ApproxAFunc2Var` from acting on its own error
+criterion, so a violated tolerance and a satisfied one produced the same surface. A 25-point wavy
+plate asked for `tolerance: 0.01` came back deviating `0.072`.
+
+Verify it rather than assume it — the fit is a least-squares approximation, not an interpolation,
+and a plate that genuinely cannot be fitted still returns its best effort:
+
+```swift
+let points: [SIMD3<Double>] = (0..<5).flatMap { i in
+    (0..<5).map { j in
+        SIMD3(Double(i) * 4, Double(j) * 4,
+              4 * sin(Double(i) * 1.3) * cos(Double(j) * 1.1))
+    }
+}
+if let plate = Surface.plateThrough(points, degree: 3, tolerance: 0.01) {
+    let worst = points.compactMap { plate.projectPoint($0)?.distance }.max() ?? 0
+    print(worst)                // 0.0032 — inside tolerance
+    print(plate.uPoleCount)     // 16 — more than one degree-8 patch, so it did subdivide
+}
+```
+
+`uPoleCount <= degreeCap + 1` (9 at the default cap of 8) means the fit never subdivided.
+
 ---
 
 ### `nlPlateDeformed(constraints:maxIterations:tolerance:)`
@@ -134,9 +162,21 @@ public enum BezierFillStyle: Int32, Sendable {
 }
 ```
 
-- `stretch` — minimal surface area (flattest).
-- `coons` — bilinear blending between boundaries.
-- `curved` — smooth curved interpolation (most curved).
+Case meanings, from `GeomFill_FillingStyle`:
+
+---
+
+#### `BezierFillStyle.stretch`
+
+The style with the flattest patches.
+
+#### `BezierFillStyle.coons`
+
+A rounded style of patch, with less depth than `curved`.
+
+#### `BezierFillStyle.curved`
+
+The style with the most rounded patches.
 
 ---
 
@@ -203,9 +243,15 @@ public enum FillStyle: Int32, Sendable {
 }
 ```
 
-- `stretch` — minimal curvature between boundaries.
-- `coons` — moderate curvature (Coons-style blending).
-- `curved` — maximum curvature.
+| Case | Meaning |
+|---|---|
+| `stretch` | Flattest result: minimal curvature between the boundaries. |
+| `coons` | Coons-style blending: moderate curvature. |
+| `curved` | Most curved result: maximum curvature. |
+
+*(Per-case anchors below, for cross-reference; the table above has the actual meaning of each.)*
+
+#### `curved`
 
 ---
 
@@ -578,21 +624,45 @@ public static func trimmedCylinder(
 Analyses where a BSpline surface would need to be split to achieve a given continuity level.
 
 ```swift
-public func knotSplitting(uContinuity: Int = 1, vContinuity: Int = 1) -> KnotSplitResult
+public func knotSplitting(
+    uContinuity: ParametricContinuity = .c1,
+    vContinuity: ParametricContinuity = .c1
+) -> KnotSplitResult
 ```
 
-Returns the number of U and V splits needed, plus the actual U/V parameter values at each
-split; does not modify the surface.
+Returns the number of U and V splits needed, the actual U/V parameter values at each split, and
+the knot-table indices those parameters were read from; does not modify the surface. Each
+direction's own first and last knots are always included, so a direction that never drops below
+the requested continuity reports exactly those two rather than nothing.
 
-- **Parameters:** `uContinuity` — desired U continuity (0=C0, 1=C1, 2=C2); `vContinuity` — desired V continuity.
-- **Returns:** `KnotSplitResult` with `uSplitCount`/`vSplitCount` and `uSplitParams`/`vSplitParams`
-  (ascending, bounded by the surface's own U/V domain).
-- **OCCT:** `BSplSLib::KnotSplitting`.
+- **Parameters:** `uContinuity`: minimum continuity to require of each U patch; `vContinuity`:
+  the same against the V degree and V knots.
+- **Returns:** `KnotSplitResult` with `uSplitCount`/`vSplitCount`, `uSplitParams`/`vSplitParams`
+  (ascending, bounded by the surface's own U/V domain) and `uSplitIndices`/`vSplitIndices`
+  (1-based into the surface's own knot tables, so
+  `uSplitParams[i] == bsplineUKnot(index: uSplitIndices[i])`).
+- **OCCT:** `GeomConvert_BSplineSurfaceKnotSplitting` — the sole wrapper of it, since #562 deleted
+  the second family (`bsplineKnotSplitsU`/`bsplineKnotSplitsV`/`bsplineKnotSplitValues`) that also
+  drove it. The indices are what that family carried and this call previously discarded.
+- **Continuity range (#480):** the continuity is a *derivative order*, and a knot splits only when
+  `degree - multiplicity < continuity`. So the meaningful range is `0...degree` and it saturates
+  there. A bicubic surface with simple interior knots is already C2 at every interior knot, which
+  means `.c0`, `.c1` and `.c2` all report just the two bounding curves per direction and `.c3` is
+  the order that reports the interior ones. On a degree-4-or-higher surface `.c3` is the strictest
+  question this vocabulary can ask; [`toBezierPatches()`](Surface.md) is the dedicated API for the
+  every-knot split at the far end of that ladder.
 - **Example:**
   ```swift
-  let result = surf.knotSplitting(uContinuity: 2, vContinuity: 2)
+  // Where does the surface actually kink? (multiplicity == degree)
+  let kinks = surf.knotSplitting()
+
+  // Every interior knot of a bicubic surface.
+  let result = surf.knotSplitting(uContinuity: .c3, vContinuity: .c3)
   print("U splits needed:", result.uSplitCount, result.uSplitParams)
   print("V splits needed:", result.vSplitCount, result.vSplitParams)
+
+  // The raw knot indices, and the identity that ties them to the parameters.
+  print(result.uSplitIndices.map { surf.bsplineUKnot(index: $0) } == result.uSplitParams)  // true
   ```
 
 ---
@@ -611,8 +681,14 @@ public static func joinBezierPatches(
 
 Adjacent patches must share boundary curves. The `patches` array is row-major (`patches[v * cols + u]`).
 
+Every patch must be non-rational in both directions. `GeomConvert_CompBezierSurfacesToBSplineSurface`
+has no rational path at all: its own precondition against rational input is compiled out by this
+project's Release kernel, so without this check it would silently join the *polynomial* surface
+through a rational patch's control net (dropping its weights) and report success (#725). Weights are
+never clamped or dropped: a rational patch is refused outright, not silently approximated.
+
 - **Parameters:** `patches` — 2D array of Bezier surfaces (row-major order; must equal `rows * cols`); `rows` — patch row count; `cols` — patch column count.
-- **Returns:** Combined BSpline surface, or `nil` if the count doesn't match `rows * cols` or joining fails.
+- **Returns:** Combined BSpline surface, or `nil` if the count doesn't match `rows * cols`, any patch is rational in either direction, or joining fails.
 - **OCCT:** `GeomConvert_CompBezierSurfacesToBSplineSurface`.
 - **Example:**
   ```swift
@@ -621,6 +697,28 @@ Adjacent patches must share boundary curves. The `patches` array is row-major (`
       let face = combined.toFace()
   }
   ```
+
+---
+
+### `Surface.AnalyticalConversion`
+
+Result of trying to recognise an analytical surface from a BSpline/Bezier surface.
+
+```swift
+public struct AnalyticalConversion {
+    public let surface: Surface
+    public let gap: Double
+}
+```
+
+| Field | Meaning |
+|---|---|
+| `surface` | The recognised analytical surface (plane, cylinder, cone, sphere, or torus) |
+| `gap` | Maximum deviation between `surface` and the original surface |
+
+#### `Surface.AnalyticalConversion.gap`
+
+Maximum deviation between the recognised analytical surface and the original BSpline/Bezier surface.
 
 ---
 
@@ -644,6 +742,20 @@ public func convertToAnalytical(tolerance: Double = 1e-4) -> AnalyticalConversio
 
 ---
 
+### `Surface.SweptProperties`
+
+Accessor for the direction and basis curve of a swept surface (extrusion or revolution). Obtained via `Surface.sweptProperties` (see [Surface Analytic Types](Surface-Analytic-Types.md)); documented separately here because `Surface-Advanced.md` is this struct's assigned reference page for its internal storage.
+
+```swift
+public struct SweptProperties: @unchecked Sendable {
+    public var direction: SIMD3<Double> { get }
+    public var basisCurve: Curve3D? { get }
+}
+```
+
+```swift
+```
+---
 ### `splitByContinuity(criterion:tolerance:)`
 
 Analyses and splits a BSpline surface at continuity breaks.
@@ -651,6 +763,48 @@ Analyses and splits a BSpline surface at continuity breaks.
 ```swift
 public func splitByContinuity(criterion: Int = 2, tolerance: Double = 1e-6) -> ContinuitySplitResult
 ```
+
+- **Parameters:** `criterion` — continuity level (0=C0, 1=C1, 2=C2, 3=C3); `tolerance` — tolerance for continuity checking.
+- **Returns:** `ContinuitySplitResult` with `wasSplit`, `alreadyMeetsCriterion`, `uSplitCount`, and `vSplitCount`.
+- **OCCT:** `BSplSLib::SplitByContinuity`.
+- **Example:**
+  ```swift
+  let r = surf.splitByContinuity(criterion: 2)
+  if r.alreadyMeetsCriterion {
+      print("surface is already C2")
+  } else {
+      print("needs \(r.uSplitCount) U splits and \(r.vSplitCount) V splits")
+  }
+  ```
+
+---
+
+#### `Surface.ContinuitySplitResult`
+
+```swift
+public struct ContinuitySplitResult {
+    public let wasSplit: Bool
+    public let alreadyMeetsCriterion: Bool
+    public let uSplitCount: Int
+    public let vSplitCount: Int
+}
+```
+
+#### `ContinuitySplitResult.wasSplit`
+
+Whether the surface was actually split.
+
+#### `ContinuitySplitResult.alreadyMeetsCriterion`
+
+Whether the surface already met the requested continuity, so no split was needed.
+
+#### `ContinuitySplitResult.uSplitCount`
+
+Number of split values found along U.
+
+#### `ContinuitySplitResult.vSplitCount`
+
+Number of split values found along V.
 
 - **Parameters:** `criterion` — continuity level (0=C0, 1=C1, 2=C2, 3=C3); `tolerance` — tolerance for continuity checking.
 - **Returns:** `ContinuitySplitResult` with `wasSplit`, `alreadyMeetsCriterion`, `uSplitCount`, and `vSplitCount`.
@@ -678,26 +832,31 @@ public func continuityWith(
     _ other: Surface,
     u1: Double, v1: Double,
     u2: Double, v2: Double,
-    order: Int = 4
+    order: ContinuityClass = .c2
 ) -> ContinuityAnalysis?
 ```
 
-Returns C0, G1, C1, G2, C2 status in a single call. The `ContinuityAnalysis` struct exposes
-both raw angular values and Boolean convenience flags (`isC0`, `isG1`, `isC1`, `isG2`, `isC2`).
+`order` selects which classes are measured, not just a ceiling — one branch of
+`LocalAnalysis_SurfaceContinuity` runs per call, and `ContinuityAnalysis.holds(_:)` reports `nil`
+for anything outside it. See [Surface-Analysis](Surface-Analysis.md#continuityanalysis) for the
+per-order measured sets and the `.c2`/second-derivative caveat.
 
-- **Parameters:** `other` — second surface; `u1`, `v1` — UV parameters on this surface; `u2`, `v2` — UV parameters on `other`; `order` — maximum order to check (0=C0 … 4=C2).
+- **Parameters:** `other` — second surface; `u1`, `v1` — UV parameters on this surface; `u2`, `v2` — UV parameters on `other`; `order` — the class to measure (default `.c2`).
 - **Returns:** `ContinuityAnalysis`, or `nil` if analysis fails.
 - **OCCT:** `LocalAnalysis_SurfaceContinuity`.
 - **Example:**
   ```swift
-  if let ca = surf1.continuityWith(surf2, u1: 1.0, v1: 0.5, u2: 0.0, v2: 0.5) {
-      #expect(ca.isG1)
+  if let ca = surf1.continuityWith(surf2, u1: 1.0, v1: 0.5, u2: 0.0, v2: 0.5, order: .g1) {
+      #expect(ca.holds(.g1) == true)
       print("C0 gap:", ca.c0Value, "G1 angle:", ca.g1Angle)
   }
   ```
 
 ---
 
+```swift
+```
+---
 ## GeomFill_NSections (v0.68.0)
 
 ### `Surface.nSections(curves:params:)`
@@ -999,6 +1158,27 @@ public static func averagePlane(
 
 Returns the plane normal, origin, and UV bounding box. Also handles the collinear case, returning
 `isLine == true` with a line origin and direction.
+
+- **Parameters:** `points` — 3D points (minimum 3); `boundaryPointCount` — number of boundary points used for orientation (defaults to all points); `tolerance` — planarity check tolerance.
+- **Returns:** `AveragePlaneResult`, or `nil` if the point set is degenerate.
+- **OCCT:** `GeomPlate_BuildAveragePlane`.
+- **Example:**
+  ```swift
+  let pts: [SIMD3<Double>] = [.zero, SIMD3(10,0,0), SIMD3(0,10,0), SIMD3(10,10,0.1)]
+  if let result = Surface.averagePlane(points: pts) {
+      if result.isPlane { print("normal:", result.normal) }
+  }
+  ```
+
+---
+
+#### `Surface.AveragePlaneResult.lineOrigin`
+
+A point on the fitted line; meaningful only when `isLine` is `true` (the input points are collinear rather than planar).
+
+#### `Surface.AveragePlaneResult.lineDirection`
+
+Unit direction of the fitted line; meaningful only when `isLine` is `true`.
 
 - **Parameters:** `points` — 3D points (minimum 3); `boundaryPointCount` — number of boundary points used for orientation (defaults to all points); `tolerance` — planarity check tolerance.
 - **Returns:** `AveragePlaneResult`, or `nil` if the point set is degenerate.

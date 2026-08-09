@@ -3030,9 +3030,19 @@ bool OCCTDocumentExpandShape(OCCTDocumentRef doc, int64_t labelId) {
 
 void OCCTDocumentSetShapeColor(OCCTDocumentRef doc, OCCTShapeRef shape,
     int32_t colorType, double r, double g, double b) {
+    // #763: delegates rather than storing through the RGB-only SetColor overload. It has no callers
+    // left (Document.setShapeColor moved to the RGBA entry point), but it stays exported and so
+    // stays reachable, and the two bodies side by side were one copy-paste away from silently
+    // reintroducing the alpha loss this pass just fixed. Opaque is the only alpha an RGB-only
+    // caller can mean.
+    OCCTDocumentSetShapeColorRGBA(doc, shape, colorType, r, g, b, 1.0f);
+}
+
+void OCCTDocumentSetShapeColorRGBA(OCCTDocumentRef doc, OCCTShapeRef shape,
+    int32_t colorType, double r, double g, double b, float alpha) {
     if (!doc || !shape || doc->colorTool.IsNull()) return;
     try {
-        Quantity_Color color(r, g, b, Quantity_TOC_RGB);
+        Quantity_ColorRGBA color(Quantity_Color(r, g, b, Quantity_TOC_RGB), alpha);
         doc->colorTool->SetColor(shape->shape, color, static_cast<XCAFDoc_ColorType>(colorType));
     } catch (...) {}
 }
@@ -3041,13 +3051,17 @@ OCCTColor OCCTDocumentGetShapeColor(OCCTDocumentRef doc, OCCTShapeRef shape, int
     OCCTColor result = {0, 0, 0, 1.0, false};
     if (!doc || !shape || doc->colorTool.IsNull()) return result;
     try {
-        Quantity_Color color;
+        // #763: read via the RGBA overload (XCAFDoc_ColorTool::GetColor(shape, type, Quantity_Color&)
+        // internally fetches the RGBA value and then discards alpha) so a real stored alpha -
+        // e.g. from a STEP import's transparent surface style, or OCCTDocumentSetShapeColorRGBA -
+        // is reported instead of the hardcoded 1.0 OCCTDocumentGetLabelColor already avoids.
+        Quantity_ColorRGBA color;
         bool hasColor = doc->colorTool->GetColor(shape->shape, static_cast<XCAFDoc_ColorType>(colorType), color);
         if (hasColor) {
-            result.r = color.Red();
-            result.g = color.Green();
-            result.b = color.Blue();
-            result.a = 1.0;
+            result.r = color.GetRGB().Red();
+            result.g = color.GetRGB().Green();
+            result.b = color.GetRGB().Blue();
+            result.a = color.Alpha();
             result.isSet = true;
         }
     } catch (...) {}
@@ -6100,7 +6114,8 @@ bool OCCTDocumentDataSetIsEmpty(OCCTDocumentRef doc, int64_t labelId) {
     } catch (...) { return true; }
 }
 
-// MARK: - v0.90: TDF_ChildIDIterator + TDocStd_PathParser + TFunction_DriverTable + TNaming_Scope/Translator + TDataXtd_Placement/Presentation + XCAFDoc_AssemblyIterator/DimTol
+// MARK: - v0.90: TDF_ChildIDIterator + TFunction_DriverTable + TNaming_Scope/Translator + TDataXtd_Placement/Presentation + XCAFDoc_AssemblyIterator/DimTol
+// (TDocStd_PathParser was wrapped here too until #499 folded it into the OSD_Path family in OCCTBridge_IO.mm)
 // MARK: - TDF_ChildIDIterator (v0.90.0)
 
 #include <TDF_ChildIDIterator.hxx>
@@ -6118,41 +6133,6 @@ int32_t OCCTDocumentChildIDCount(OCCTDocumentRef doc, int64_t labelId,
         }
         return count;
     } catch (...) { return 0; }
-}
-
-// MARK: - TDocStd_PathParser (v0.90.0)
-
-#include <TDocStd_PathParser.hxx>
-
-const char* OCCTPathParserTrek(const char* path) {
-    try {
-        TCollection_ExtendedString epath(path);
-        TDocStd_PathParser parser(epath);
-        TCollection_AsciiString astr(parser.Trek());
-        return strdup(astr.ToCString());
-    } catch (...) { return nullptr; }
-}
-
-const char* OCCTPathParserName(const char* path) {
-    try {
-        TCollection_ExtendedString epath(path);
-        TDocStd_PathParser parser(epath);
-        TCollection_AsciiString astr(parser.Name());
-        return strdup(astr.ToCString());
-    } catch (...) { return nullptr; }
-}
-
-const char* OCCTPathParserExtension(const char* path) {
-    try {
-        TCollection_ExtendedString epath(path);
-        TDocStd_PathParser parser(epath);
-        TCollection_AsciiString astr(parser.Extension());
-        return strdup(astr.ToCString());
-    } catch (...) { return nullptr; }
-}
-
-void OCCTPathParserFreeString(const char* str) {
-    if (str) free((void*)str);
 }
 
 // MARK: - TFunction_DriverTable (v0.90.0)

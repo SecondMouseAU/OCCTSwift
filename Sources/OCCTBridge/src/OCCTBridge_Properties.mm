@@ -71,6 +71,28 @@
 #include <TopoDS.hxx>
 #include <TopTools_ListOfShape.hxx>
 
+// MARK: - Mass properties (#605 / #609)
+//
+// The contract each of these implements is documented on the declarations in
+// OCCTBridge_Internal.h. In short: OCCT expects the caller to test Mass(), and to pass OnlyClosed
+// when it wants the volume integral to refuse an open surface rather than estimate one. Neither
+// happened anywhere in the bridge before #605/#609.
+
+bool occtVolumeMassProperties(const TopoDS_Shape& shape, GProp_GProps& props) {
+    BRepGProp::VolumeProperties(shape, props, /*OnlyClosed*/ true);
+    return props.Mass() != 0.0;
+}
+
+bool occtSurfaceMassProperties(const TopoDS_Shape& shape, GProp_GProps& props) {
+    BRepGProp::SurfaceProperties(shape, props);
+    return props.Mass() != 0.0;
+}
+
+bool occtLinearMassProperties(const TopoDS_Shape& shape, GProp_GProps& props) {
+    BRepGProp::LinearProperties(shape, props);
+    return props.Mass() != 0.0;
+}
+
 // MARK: - Face Surface Properties (v0.18.0)
 
 #include <GeomLProp_SLProps.hxx>
@@ -116,7 +138,7 @@ bool OCCTFaceGetNormalAtUV(OCCTFaceRef face, double u, double v,
         Handle(Geom_Surface) surface = BRep_Tool::Surface(face->face);
         if (surface.IsNull()) return false;
 
-        GeomLProp_SLProps props(surface, u, v, 1, Precision::Confusion());
+        GeomLProp_SLProps props = occtSurfaceLocalProps(surface, u, v, 1);
         if (!props.IsNormalDefined()) return false;
 
         gp_Dir normal = props.Normal();
@@ -141,7 +163,7 @@ bool OCCTFaceGetGaussianCurvature(OCCTFaceRef face, double u, double v,
         Handle(Geom_Surface) surface = BRep_Tool::Surface(face->face);
         if (surface.IsNull()) return false;
 
-        GeomLProp_SLProps props(surface, u, v, 2, Precision::Confusion());
+        GeomLProp_SLProps props = occtSurfaceLocalProps(surface, u, v, 2);
         if (!props.IsCurvatureDefined()) return false;
 
         *curvature = props.GaussianCurvature();
@@ -159,7 +181,7 @@ bool OCCTFaceGetMeanCurvature(OCCTFaceRef face, double u, double v,
         Handle(Geom_Surface) surface = BRep_Tool::Surface(face->face);
         if (surface.IsNull()) return false;
 
-        GeomLProp_SLProps props(surface, u, v, 2, Precision::Confusion());
+        GeomLProp_SLProps props = occtSurfaceLocalProps(surface, u, v, 2);
         if (!props.IsCurvatureDefined()) return false;
 
         *curvature = props.MeanCurvature();
@@ -180,7 +202,7 @@ bool OCCTFaceGetPrincipalCurvatures(OCCTFaceRef face, double u, double v,
         Handle(Geom_Surface) surface = BRep_Tool::Surface(face->face);
         if (surface.IsNull()) return false;
 
-        GeomLProp_SLProps props(surface, u, v, 2, Precision::Confusion());
+        GeomLProp_SLProps props = occtSurfaceLocalProps(surface, u, v, 2);
         if (!props.IsCurvatureDefined()) return false;
 
         *k1 = props.MinCurvature();
@@ -334,8 +356,7 @@ bool OCCTEdgeGetCurvature3D(OCCTEdgeRef edge, double param, double* curvature) {
         Handle(Geom_Curve) curve = BRep_Tool::Curve(edge->edge, f, l);
         if (curve.IsNull()) return false;
 
-        GeomLProp_CLProps props(curve, 2, Precision::Confusion());
-        props.SetParameter(param);
+        GeomLProp_CLProps props = occtCurveLocalProps(curve, param, 2);
         if (!props.IsTangentDefined()) return false;
 
         *curvature = props.Curvature();
@@ -354,8 +375,7 @@ bool OCCTEdgeGetTangent3D(OCCTEdgeRef edge, double param,
         Handle(Geom_Curve) curve = BRep_Tool::Curve(edge->edge, f, l);
         if (curve.IsNull()) return false;
 
-        GeomLProp_CLProps props(curve, 1, Precision::Confusion());
-        props.SetParameter(param);
+        GeomLProp_CLProps props = occtCurveLocalProps(curve, param, 1);
         if (!props.IsTangentDefined()) return false;
 
         gp_Dir dir;
@@ -378,8 +398,7 @@ bool OCCTEdgeGetNormal3D(OCCTEdgeRef edge, double param,
         Handle(Geom_Curve) curve = BRep_Tool::Curve(edge->edge, f, l);
         if (curve.IsNull()) return false;
 
-        GeomLProp_CLProps props(curve, 2, Precision::Confusion());
-        props.SetParameter(param);
+        GeomLProp_CLProps props = occtCurveLocalProps(curve, param, 2);
         if (!props.IsTangentDefined()) return false;
 
         gp_Dir dir;
@@ -402,11 +421,12 @@ bool OCCTEdgeGetCenterOfCurvature3D(OCCTEdgeRef edge, double param,
         Handle(Geom_Curve) curve = BRep_Tool::Curve(edge->edge, f, l);
         if (curve.IsNull()) return false;
 
-        GeomLProp_CLProps props(curve, 2, Precision::Confusion());
-        props.SetParameter(param);
+        GeomLProp_CLProps props = occtCurveLocalProps(curve, param, 2);
         if (!props.IsTangentDefined()) return false;
 
-        if (props.Curvature() < Precision::Confusion()) return false;
+        // Also rejects a cusp's RealLast() curvature, which the previous magnitude-only test let
+        // through into a (nan, inf, nan) centre reported as success (#494).
+        if (!occtCurveCurvatureIsInvertible(props.Curvature())) return false;
 
         gp_Pnt center;
         props.CentreOfCurvature(center);
@@ -557,6 +577,13 @@ int32_t OCCTFaceProjectPointAll(OCCTFaceRef face,
     }
 }
 
+// Shares OCCTCurve3DProjectPoint's nearest-point-on-a-range implementation since #539. The defect
+// here was the other half of that one: a bare GeomAPI_ProjectPointOnCurve honours the edge's range
+// but reports extrema rather than minima, so it answered 11 for the point (0, -6, 0) against a
+// half-circle edge whose nearest point is 7.81 away, and declined to answer at all -- isValid
+// false, surfacing as nil -- whenever the nearest point was an end rather than a perpendicular
+// foot, which is every point beyond the end of a straight edge. isValid now means what the header
+// says it means: false only for an edge with no 3D curve to project onto.
 OCCTCurveProjectionResult OCCTEdgeProjectPoint(OCCTEdgeRef edge,
                                                 double px, double py, double pz) {
     OCCTCurveProjectionResult result = {};
@@ -568,15 +595,15 @@ OCCTCurveProjectionResult OCCTEdgeProjectPoint(OCCTEdgeRef edge,
         Handle(Geom_Curve) curve = BRep_Tool::Curve(edge->edge, first, last);
         if (curve.IsNull()) return result;
 
-        GeomAPI_ProjectPointOnCurve proj(gp_Pnt(px, py, pz), curve, first, last);
-        if (proj.NbPoints() == 0) return result;
-
-        gp_Pnt nearest = proj.NearestPoint();
+        gp_Pnt nearest;
+        if (!occtNearestPointOnCurveRange(curve, gp_Pnt(px, py, pz), first, last,
+                                          Precision::Confusion(),
+                                          &nearest, &result.parameter, &result.distance)) {
+            return result;
+        }
         result.px = nearest.X();
         result.py = nearest.Y();
         result.pz = nearest.Z();
-        result.parameter = proj.LowerDistanceParameter();
-        result.distance = proj.LowerDistance();
         result.isValid = true;
         return result;
     } catch (...) {
@@ -651,7 +678,7 @@ bool OCCTShapeInertiaProperties(OCCTShapeRef shape, OCCTInertiaProperties* outPr
     if (!shape || !outProps) return false;
     try {
         GProp_GProps props;
-        BRepGProp::VolumeProperties(shape->shape, props);
+        if (!occtVolumeMassProperties(shape->shape, props)) return false;
 
         outProps->volume = props.Mass();
         gp_Pnt cm = props.CentreOfMass();
@@ -691,7 +718,7 @@ bool OCCTShapeSurfaceInertiaProperties(OCCTShapeRef shape, OCCTInertiaProperties
     if (!shape || !outProps) return false;
     try {
         GProp_GProps props;
-        BRepGProp::SurfaceProperties(shape->shape, props);
+        if (!occtSurfaceMassProperties(shape->shape, props)) return false;
 
         outProps->volume = props.Mass(); // Surface area in this context
         gp_Pnt cm = props.CentreOfMass();
@@ -736,8 +763,9 @@ OCCTCurveInfo OCCTWireGetCurveInfo(OCCTWireRef wire) {
     try {
         BRepAdaptor_CompCurve curve(wire->wire);
 
-        // Get length
-        result.length = GCPnts_AbscissaPoint::Length(curve);
+        // Get length -- the same subdivided measurement OCCTWireGetLength makes, so the two
+        // spellings of a wire's length cannot disagree on an elliptical edge. #603.
+        result.length = occtAdaptorArcLength(curve, curve.FirstParameter(), curve.LastParameter());
 
         // Get closed/periodic status
         result.isClosed = curve.IsClosed();
@@ -768,7 +796,10 @@ double OCCTWireGetLength(OCCTWireRef wire) {
 
     try {
         BRepAdaptor_CompCurve curve(wire->wire);
-        return GCPnts_AbscissaPoint::Length(curve);
+        // A BRepAdaptor_CompCurve reports one GeomAbs_CN interval per edge span, so a wire made of
+        // lines and circles was already exact -- but one elliptical edge in it measured 1.485%
+        // long, because that edge's span still got a single quadrature. #603.
+        return occtAdaptorArcLength(curve, curve.FirstParameter(), curve.LastParameter());
     } catch (...) {
         return -1.0;
     }
@@ -824,8 +855,13 @@ bool OCCTWireGetTangentAt(OCCTWireRef wire, double param, double* tx, double* ty
     }
 }
 
-double OCCTWireGetCurvatureAt(OCCTWireRef wire, double param) {
-    if (!wire) return -1.0;
+// #595: the -1.0 error sentinel became a bool, and the degenerate branch below stopped answering 0.
+// This one already reached Swift as an optional, but only through -1.0 -- the null-derivative case
+// returned 0.0, a straight wire's real curvature, so the optional never fired for the case that
+// actually has no answer.
+bool OCCTWireGetCurvatureAt(OCCTWireRef wire, double param, double* curvature) {
+    *curvature = 0.0;
+    if (!wire) return false;
 
     try {
         BRepAdaptor_CompCurve curve(wire->wire);
@@ -843,11 +879,15 @@ double OCCTWireGetCurvatureAt(OCCTWireRef wire, double param) {
         // Curvature formula: κ = |d1 × d2| / |d1|³
         gp_Vec cross = d1.Crossed(d2);
         double d1Mag = d1.Magnitude();
-        if (d1Mag < 1e-10) return 0.0;
+        // A null first derivative is a cusp: the formula divides by it, and unlike
+        // GeomLProp_CLProps this hand-rolled path has no RealLast() sentinel to report instead.
+        // Nothing is the answer here, not zero.
+        if (d1Mag < 1e-10) return false;
 
-        return cross.Magnitude() / (d1Mag * d1Mag * d1Mag);
+        *curvature = cross.Magnitude() / (d1Mag * d1Mag * d1Mag);
+        return true;
     } catch (...) {
-        return -1.0;
+        return false;
     }
 }
 
@@ -953,7 +993,7 @@ bool OCCTShapeVolumeInertia(OCCTShapeRef shape, OCCTVolumeInertiaResult* result)
     if (!shape || !result) return false;
     try {
         GProp_GProps props;
-        BRepGProp::VolumeProperties(shape->shape, props);
+        if (!occtVolumeMassProperties(shape->shape, props)) return false;
 
         result->volume = props.Mass();
 
@@ -962,16 +1002,16 @@ bool OCCTShapeVolumeInertia(OCCTShapeRef shape, OCCTVolumeInertiaResult* result)
         result->centerY = com.Y();
         result->centerZ = com.Z();
 
-        // Matrix of inertia about center of mass
-        GProp_GProps comProps;
-        BRepGProp::VolumeProperties(shape->shape, comProps);
-        gp_Mat mat = comProps.MatrixOfInertia();
+        // Matrix of inertia about center of mass. This used to recompute the whole framework into a
+        // second GProp_GProps before reading it, which cost a second integration for an identical
+        // answer — MatrixOfInertia() is already referenced to the centre of mass.
+        gp_Mat mat = props.MatrixOfInertia();
         result->inertia[0] = mat(1,1); result->inertia[1] = mat(1,2); result->inertia[2] = mat(1,3);
         result->inertia[3] = mat(2,1); result->inertia[4] = mat(2,2); result->inertia[5] = mat(2,3);
         result->inertia[6] = mat(3,1); result->inertia[7] = mat(3,2); result->inertia[8] = mat(3,3);
 
         // Principal properties
-        GProp_PrincipalProps principal = comProps.PrincipalProperties();
+        GProp_PrincipalProps principal = props.PrincipalProperties();
         double I1, I2, I3;
         principal.Moments(I1, I2, I3);
         result->principalMoment1 = I1;
@@ -1001,7 +1041,7 @@ bool OCCTShapeSurfaceInertia(OCCTShapeRef shape, OCCTSurfaceInertiaResult* resul
     if (!shape || !result) return false;
     try {
         GProp_GProps props;
-        BRepGProp::SurfaceProperties(shape->shape, props);
+        if (!occtSurfaceMassProperties(shape->shape, props)) return false;
 
         result->area = props.Mass();
 
@@ -1040,18 +1080,29 @@ OCCTCurveLocalProps OCCTGeomLPropCLProps(OCCTShapeRef edgeShape, double param) {
         Handle(Geom_Curve) curve = BRep_Tool::Curve(edge, f, l);
         if (curve.IsNull()) return result;
 
-        GeomLProp_CLProps props(curve, param, 2, 1e-6);
+        // Was its own 1e-6 resolution, the third value the bridge passed to a GeomLProp_* props
+        // (Precision::Confusion() from the canonical Curve3D/Surface entry points, 1e-10 from the
+        // Local* family) and the same one #405 removed from OCCTSurfaceCurvatures — so this
+        // reported a different answer than Edge.curvature3D(at:) for the same edge and parameter.
+        GeomLProp_CLProps props = occtCurveLocalProps(curve, param, 2);
         gp_Pnt pt = props.Value();
         result.px = pt.X(); result.py = pt.Y(); result.pz = pt.Z();
-        result.curvature = props.Curvature();
+        // Asked before Curvature(), which is only meaningful once the tangent is established; the
+        // old order relied on Curvature() raising, and it raises through
+        // LProp_NotDefined_Raise_if, which compiles out under No_Exception.
         result.tangentDefined = props.IsTangentDefined();
 
         if (result.tangentDefined) {
+            result.curvature = props.Curvature();
+
             gp_Dir tangent;
             props.Tangent(tangent);
             result.tx = tangent.X(); result.ty = tangent.Y(); result.tz = tangent.Z();
 
-            if (result.curvature > 1e-10) {
+            // Rejects a cusp's RealLast() curvature too: Normal() raises on it, but
+            // CentreOfCurvature() does not, and used to yield (nan, inf, nan) (#494).
+            result.curvatureInvertible = occtCurveCurvatureIsInvertible(result.curvature);
+            if (result.curvatureInvertible) {
                 gp_Dir normal;
                 props.Normal(normal);
                 result.nx = normal.X(); result.ny = normal.Y(); result.nz = normal.Z();
@@ -1075,7 +1126,10 @@ OCCTSurfaceLocalProps OCCTGeomLPropSLProps(OCCTShapeRef faceShape, double u, dou
         Handle(Geom_Surface) surf = BRep_Tool::Surface(face);
         if (surf.IsNull()) return result;
 
-        GeomLProp_SLProps props(surf, u, v, 2, 1e-6);
+        // Same 1e-6 drift as OCCTGeomLPropCLProps above: this disagreed with
+        // OCCTFaceGetGaussianCurvature/MeanCurvature/PrincipalCurvatures, which read the same
+        // quantities off the same surface through Precision::Confusion() props (#494).
+        GeomLProp_SLProps props = occtSurfaceLocalProps(surf, u, v, 2);
         gp_Pnt pt = props.Value();
         result.px = pt.X(); result.py = pt.Y(); result.pz = pt.Z();
 
@@ -1284,8 +1338,7 @@ OCCTVinertGKResult OCCTBRepGPropVinertGK(OCCTShapeRef _Nonnull faceRef,
 
         BRepGProp_VinertGK vgk(bface, loc, tolerance, computeCG, false);
         result.mass = vgk.Mass();
-        result.errorReached = 0.0;  // GetErrorReached is inline-only in OCCT 8.0.0
-        result.absoluteError = 0.0;
+        result.errorReached = vgk.GetErrorReached();
 
         if (computeCG) {
             gp_Pnt cg = vgk.CentreOfMass();
@@ -1305,10 +1358,8 @@ OCCTVinertGKResult OCCTBRepGPropVinertGK(OCCTShapeRef _Nonnull faceRef,
 int32_t OCCTShapeFaceDomainEdgeCount(OCCTShapeRef shape, int32_t faceIndex) {
     if (!shape) return 0;
     try {
-        TopExp_Explorer faceExp(shape->shape, TopAbs_FACE);
-        for (int i = 0; i < faceIndex && faceExp.More(); i++) faceExp.Next();
-        if (!faceExp.More()) return 0;
-        TopoDS_Face face = TopoDS::Face(faceExp.Current());
+        TopoDS_Face face = occtFaceAt(shape->shape, faceIndex);
+        if (face.IsNull()) return 0;
 
         BRepGProp_Domain domain(face);
         int count = 0;
@@ -1326,31 +1377,41 @@ int32_t OCCTShapeFaceDomainEdgeCount(OCCTShapeRef shape, int32_t faceIndex) {
 #include <GProp_SelGProps.hxx>
 #include <GProp_VelGProps.hxx>
 
-double OCCTGPropLineSegment(double x1, double y1, double z1, double x2, double y2, double z2,
-                             double* cx, double* cy, double* cz) {
+// GProp_CelGProps computes its centroid analytically rather than accumulating into a
+// GProp_GProps framework, so a zero-*length* result is still a correct answer: a curve sampled
+// over an empty parameter range has a mass of 0 and a centre at the point itself. What is NOT an
+// answer is a rejected input. Both of these build a gp_Dir from caller data, and gp_Dir throws
+// Standard_ConstructionError on a zero-length vector — two coincident endpoints here, a zero
+// normal there — which the catch used to turn into mass 0 with a centre of (0,0,0). See #609.
+bool OCCTGPropLineSegment(double x1, double y1, double z1, double x2, double y2, double z2,
+                          double* outLength, double* cx, double* cy, double* cz) {
+    if (!outLength || !cx || !cy || !cz) return false;
     try {
         gp_Pnt p1(x1,y1,z1), p2(x2,y2,z2);
         gp_Lin line(p1, gp_Dir(gp_Vec(p1, p2)));
         double u2 = p1.Distance(p2);
         GProp_CelGProps props(line, 0.0, u2, gp_Pnt(0,0,0));
         gp_Pnt cm = props.CentreOfMass();
+        *outLength = props.Mass();
         *cx = cm.X(); *cy = cm.Y(); *cz = cm.Z();
-        return props.Mass();
-    } catch (...) { return 0; }
+        return true;
+    } catch (...) { return false; }
 }
 
-double OCCTGPropCircularArc(double centerX, double centerY, double centerZ,
-                             double normalX, double normalY, double normalZ,
-                             double radius, double u1, double u2,
-                             double* cx, double* cy, double* cz) {
+bool OCCTGPropCircularArc(double centerX, double centerY, double centerZ,
+                          double normalX, double normalY, double normalZ,
+                          double radius, double u1, double u2,
+                          double* outLength, double* cx, double* cy, double* cz) {
+    if (!outLength || !cx || !cy || !cz) return false;
     try {
         gp_Ax2 ax(gp_Pnt(centerX,centerY,centerZ), gp_Dir(normalX,normalY,normalZ));
         gp_Circ circ(ax, radius);
         GProp_CelGProps props(circ, u1, u2, gp_Pnt(0,0,0));
         gp_Pnt cm = props.CentreOfMass();
+        *outLength = props.Mass();
         *cx = cm.X(); *cy = cm.Y(); *cz = cm.Z();
-        return props.Mass();
-    } catch (...) { return 0; }
+        return true;
+    } catch (...) { return false; }
 }
 
 double OCCTGPropPointSetCentroid(const double* points, int32_t count, double* cx, double* cy, double* cz) {
@@ -1454,33 +1515,46 @@ double OCCTGPropPointSetWeightedCentroid(const double* points, const double* wei
     } catch (...) { return 0; }
 }
 
-void OCCTGPropBarycentre(const double* points, int32_t count,
-                          double* cx, double* cy, double* cz) {
-    *cx = 0; *cy = 0; *cz = 0;
+bool OCCTGPropBarycentre(const double* points, int32_t count,
+                         double* cx, double* cy, double* cz) {
+    if (!points || !cx || !cy || !cz) return false;
     try {
         GProp_PGProps props;
         for (int32_t i = 0; i < count; i++) {
             gp_Pnt p(points[i*3], points[i*3+1], points[i*3+2]);
             props.AddPoint(p);
         }
+        // An empty point set has no barycentre. GProp_PGProps reports (0,0,0) for one, which is a
+        // point a caller cannot distinguish from the barycentre of a set centred on the origin.
+        // Mass is the point count here, so testing it is exact. See #609.
+        if (props.Mass() == 0.0) return false;
         gp_Pnt cm = props.CentreOfMass();
         *cx = cm.X(); *cy = cm.Y(); *cz = cm.Z();
-    } catch (...) {}
+        return true;
+    } catch (...) { return false; }
 }
 
 // MARK: - v0.111: BRepLProp_CLProps + SLProps
+//
+// #529: every construction below goes through occtEdgeLocalProps / occtFaceLocalProps, so these
+// fifteen entry points ask "does this quantity exist here" at the same resolution as the
+// GeomLProp_*-backed entry points a few hundred lines above, which #494 converged. They used to
+// pass a literal 1e-6, a decade looser, and a decade is where the disagreement lives: measured on a
+// cone face, OCCTFaceLPropMeanCurvature returned 0 at v = 1e-6 while OCCTFaceGetMeanCurvature
+// returned -8.66e5 for the same point of the same face.
+//
 // MARK: - BRepLProp_CLProps (v0.111.0)
 
-void OCCTEdgeLPropValue(OCCTShapeRef edge, double param, double* x, double* y, double* z) {
+bool OCCTEdgeLPropValue(OCCTShapeRef edge, double param, double* x, double* y, double* z) {
     *x = 0; *y = 0; *z = 0;
-    if (!edge) return;
+    if (!edge) return false;
     try {
         BRepAdaptor_Curve ac(TopoDS::Edge(edge->shape));
-        BRepLProp_CLProps props(ac, 2, 1e-6);
-        props.SetParameter(param);
+        BRepLProp_CLProps props = occtEdgeLocalProps(ac, param, 2);
         gp_Pnt p = props.Value();
         *x = p.X(); *y = p.Y(); *z = p.Z();
-    } catch (...) {}
+        return true;
+    } catch (...) { return false; }
 }
 
 bool OCCTEdgeLPropTangent(OCCTShapeRef edge, double param, double* dx, double* dy, double* dz) {
@@ -1488,8 +1562,7 @@ bool OCCTEdgeLPropTangent(OCCTShapeRef edge, double param, double* dx, double* d
     if (!edge) return false;
     try {
         BRepAdaptor_Curve ac(TopoDS::Edge(edge->shape));
-        BRepLProp_CLProps props(ac, 2, 1e-6);
-        props.SetParameter(param);
+        BRepLProp_CLProps props = occtEdgeLocalProps(ac, param, 2);
         if (!props.IsTangentDefined()) return false;
         gp_Dir tan;
         props.Tangent(tan);
@@ -1498,65 +1571,93 @@ bool OCCTEdgeLPropTangent(OCCTShapeRef edge, double param, double* dx, double* d
     } catch (...) { return false; }
 }
 
-double OCCTEdgeLPropCurvature(OCCTShapeRef edge, double param) {
-    if (!edge) return 0.0;
+// #595, the same change the faceLProp* block above took in #583: an undefined tangent used to be
+// spelled 0, which is a straight edge's real curvature. The degeneracy is reachable without
+// constructing anything odd -- a sphere carries a degenerate edge at each pole, with no 3D curve at
+// all, and every Shape.edge* entry point walks edges without asking. A cusp still reports
+// RealLast(), an answer rather than an absence.
+bool OCCTEdgeLPropCurvature(OCCTShapeRef edge, double param, double* curvature) {
+    *curvature = 0;
+    if (!edge) return false;
     try {
         BRepAdaptor_Curve ac(TopoDS::Edge(edge->shape));
-        BRepLProp_CLProps props(ac, 2, 1e-6);
-        props.SetParameter(param);
-        return props.Curvature();
-    } catch (...) { return 0.0; }
+        BRepLProp_CLProps props = occtEdgeLocalProps(ac, param, 2);
+        if (!props.IsTangentDefined()) return false;
+        *curvature = props.Curvature();
+        return true;
+    } catch (...) { return false; }
 }
 
-void OCCTEdgeLPropNormal(OCCTShapeRef edge, double param, double* dx, double* dy, double* dz) {
+bool OCCTEdgeLPropNormal(OCCTShapeRef edge, double param, double* dx, double* dy, double* dz) {
     *dx = 0; *dy = 0; *dz = 0;
-    if (!edge) return;
+    if (!edge) return false;
     try {
         BRepAdaptor_Curve ac(TopoDS::Edge(edge->shape));
-        BRepLProp_CLProps props(ac, 2, 1e-6);
-        props.SetParameter(param);
+        BRepLProp_CLProps props = occtEdgeLocalProps(ac, param, 2);
+        if (!props.IsTangentDefined()) return false;
+        // The same gate OCCTEdgeGetNormal3D's neighbour uses. Normal() rejects both a null and a
+        // RealLast() curvature itself, by throwing, so this only replaces an exception with a
+        // return -- but it is the predicate that makes the answer reportable rather than absorbed.
+        if (!occtCurveCurvatureIsInvertible(props.Curvature())) return false;
         gp_Dir n;
         props.Normal(n);
         *dx = n.X(); *dy = n.Y(); *dz = n.Z();
-    } catch (...) {}
+        return true;
+    } catch (...) { return false; }
 }
 
-void OCCTEdgeLPropCentreOfCurvature(OCCTShapeRef edge, double param, double* x, double* y, double* z) {
+bool OCCTEdgeLPropCentreOfCurvature(OCCTShapeRef edge, double param, double* x, double* y, double* z) {
     *x = 0; *y = 0; *z = 0;
-    if (!edge) return;
+    if (!edge) return false;
     try {
         BRepAdaptor_Curve ac(TopoDS::Edge(edge->shape));
-        BRepLProp_CLProps props(ac, 2, 1e-6);
-        props.SetParameter(param);
+        BRepLProp_CLProps props = occtEdgeLocalProps(ac, param, 2);
+        if (!props.IsTangentDefined()) return false;
+        // Unlike Normal(), CentreOfCurvature() does *not* reject the RealLast() sentinel: it tests
+        // only |Curvature()| <= resolution, which RealLast() passes, and then divides by the
+        // myCurvature field the sentinel path never assigned. So a near-cusp used to come back as a
+        // point of (nan, inf, nan) -- measured, on a Bezier whose first two poles sit 1e-8 apart.
+        // #494 found this on the Geom_ side; it is the same template.
+        if (!occtCurveCurvatureIsInvertible(props.Curvature())) return false;
         gp_Pnt p;
         props.CentreOfCurvature(p);
         *x = p.X(); *y = p.Y(); *z = p.Z();
-    } catch (...) {}
+        return true;
+    } catch (...) { return false; }
 }
 
-void OCCTEdgeLPropD1(OCCTShapeRef edge, double param, double* d1x, double* d1y, double* d1z) {
+bool OCCTEdgeLPropD1(OCCTShapeRef edge, double param, double* d1x, double* d1y, double* d1z) {
     *d1x = 0; *d1y = 0; *d1z = 0;
-    if (!edge) return;
+    if (!edge) return false;
     try {
         BRepAdaptor_Curve ac(TopoDS::Edge(edge->shape));
-        BRepLProp_CLProps props(ac, 1, 1e-6);
-        props.SetParameter(param);
+        BRepLProp_CLProps props = occtEdgeLocalProps(ac, param, 1);
         const gp_Vec& d1 = props.D1();
         *d1x = d1.X(); *d1y = d1.Y(); *d1z = d1.Z();
-    } catch (...) {}
+        return true;
+    } catch (...) { return false; }
 }
 
 // MARK: - BRepLProp_SLProps (v0.111.0)
 
-void OCCTFaceLPropValue(OCCTShapeRef face, double u, double v, double* x, double* y, double* z) {
+// #583: the six entry points that report a value below used to return it bare, with 0 (or the origin,
+// for the point, or false for the umbilic predicate) standing in for every way of not having one: a
+// null handle, a Shape that is not a face, and a point where IsCurvatureDefined() is false. That
+// encoding has no spare value to spend:
+// measured on the pinned kernel, a cylinder's Gaussian curvature and its maximum curvature are exactly
+// 0 at every point of the surface, with the curvature defined, and a plane's four curvatures and its
+// point at (0, 0) are all exactly zero as well. See Scripts/repro/583-lprop-zero-sentinel/.
+
+bool OCCTFaceLPropValue(OCCTShapeRef face, double u, double v, double* x, double* y, double* z) {
     *x = 0; *y = 0; *z = 0;
-    if (!face) return;
+    if (!face) return false;
     try {
         BRepAdaptor_Surface as(TopoDS::Face(face->shape));
-        BRepLProp_SLProps props(as, u, v, 2, 1e-6);
+        BRepLProp_SLProps props = occtFaceLocalProps(as, u, v, 2);
         gp_Pnt p = props.Value();
         *x = p.X(); *y = p.Y(); *z = p.Z();
-    } catch (...) {}
+        return true;
+    } catch (...) { return false; }
 }
 
 bool OCCTFaceLPropNormal(OCCTShapeRef face, double u, double v, double* dx, double* dy, double* dz) {
@@ -1564,7 +1665,7 @@ bool OCCTFaceLPropNormal(OCCTShapeRef face, double u, double v, double* dx, doub
     if (!face) return false;
     try {
         BRepAdaptor_Surface as(TopoDS::Face(face->shape));
-        BRepLProp_SLProps props(as, u, v, 2, 1e-6);
+        BRepLProp_SLProps props = occtFaceLocalProps(as, u, v, 2);
         if (!props.IsNormalDefined()) return false;
         gp_Dir n = props.Normal();
         *dx = n.X(); *dy = n.Y(); *dz = n.Z();
@@ -1572,53 +1673,65 @@ bool OCCTFaceLPropNormal(OCCTShapeRef face, double u, double v, double* dx, doub
     } catch (...) { return false; }
 }
 
-double OCCTFaceLPropMaxCurvature(OCCTShapeRef face, double u, double v) {
-    if (!face) return 0.0;
-    try {
-        BRepAdaptor_Surface as(TopoDS::Face(face->shape));
-        BRepLProp_SLProps props(as, u, v, 2, 1e-6);
-        if (!props.IsCurvatureDefined()) return 0.0;
-        return props.MaxCurvature();
-    } catch (...) { return 0.0; }
-}
-
-double OCCTFaceLPropMinCurvature(OCCTShapeRef face, double u, double v) {
-    if (!face) return 0.0;
-    try {
-        BRepAdaptor_Surface as(TopoDS::Face(face->shape));
-        BRepLProp_SLProps props(as, u, v, 2, 1e-6);
-        if (!props.IsCurvatureDefined()) return 0.0;
-        return props.MinCurvature();
-    } catch (...) { return 0.0; }
-}
-
-double OCCTFaceLPropMeanCurvature(OCCTShapeRef face, double u, double v) {
-    if (!face) return 0.0;
-    try {
-        BRepAdaptor_Surface as(TopoDS::Face(face->shape));
-        BRepLProp_SLProps props(as, u, v, 2, 1e-6);
-        if (!props.IsCurvatureDefined()) return 0.0;
-        return props.MeanCurvature();
-    } catch (...) { return 0.0; }
-}
-
-double OCCTFaceLPropGaussianCurvature(OCCTShapeRef face, double u, double v) {
-    if (!face) return 0.0;
-    try {
-        BRepAdaptor_Surface as(TopoDS::Face(face->shape));
-        BRepLProp_SLProps props(as, u, v, 2, 1e-6);
-        if (!props.IsCurvatureDefined()) return 0.0;
-        return props.GaussianCurvature();
-    } catch (...) { return 0.0; }
-}
-
-bool OCCTFaceLPropIsUmbilic(OCCTShapeRef face, double u, double v) {
+bool OCCTFaceLPropMaxCurvature(OCCTShapeRef face, double u, double v, double* curvature) {
+    *curvature = 0;
     if (!face) return false;
     try {
         BRepAdaptor_Surface as(TopoDS::Face(face->shape));
-        BRepLProp_SLProps props(as, u, v, 2, 1e-6);
+        BRepLProp_SLProps props = occtFaceLocalProps(as, u, v, 2);
         if (!props.IsCurvatureDefined()) return false;
-        return props.IsUmbilic();
+        *curvature = props.MaxCurvature();
+        return true;
+    } catch (...) { return false; }
+}
+
+bool OCCTFaceLPropMinCurvature(OCCTShapeRef face, double u, double v, double* curvature) {
+    *curvature = 0;
+    if (!face) return false;
+    try {
+        BRepAdaptor_Surface as(TopoDS::Face(face->shape));
+        BRepLProp_SLProps props = occtFaceLocalProps(as, u, v, 2);
+        if (!props.IsCurvatureDefined()) return false;
+        *curvature = props.MinCurvature();
+        return true;
+    } catch (...) { return false; }
+}
+
+bool OCCTFaceLPropMeanCurvature(OCCTShapeRef face, double u, double v, double* curvature) {
+    *curvature = 0;
+    if (!face) return false;
+    try {
+        BRepAdaptor_Surface as(TopoDS::Face(face->shape));
+        BRepLProp_SLProps props = occtFaceLocalProps(as, u, v, 2);
+        if (!props.IsCurvatureDefined()) return false;
+        *curvature = props.MeanCurvature();
+        return true;
+    } catch (...) { return false; }
+}
+
+bool OCCTFaceLPropGaussianCurvature(OCCTShapeRef face, double u, double v, double* curvature) {
+    *curvature = 0;
+    if (!face) return false;
+    try {
+        BRepAdaptor_Surface as(TopoDS::Face(face->shape));
+        BRepLProp_SLProps props = occtFaceLocalProps(as, u, v, 2);
+        if (!props.IsCurvatureDefined()) return false;
+        *curvature = props.GaussianCurvature();
+        return true;
+    } catch (...) { return false; }
+}
+
+bool OCCTFaceLPropIsUmbilic(OCCTShapeRef face, double u, double v, bool* isUmbilic) {
+    *isUmbilic = false;
+    if (!face) return false;
+    try {
+        BRepAdaptor_Surface as(TopoDS::Face(face->shape));
+        BRepLProp_SLProps props = occtFaceLocalProps(as, u, v, 2);
+        // The return is definedness, not the answer: without this the caller could not tell a
+        // cylinder (genuinely not umbilic) from a cone apex (no principal curvatures to compare).
+        if (!props.IsCurvatureDefined()) return false;
+        *isUmbilic = props.IsUmbilic();
+        return true;
     } catch (...) { return false; }
 }
 
@@ -1627,7 +1740,7 @@ bool OCCTFaceLPropTangentU(OCCTShapeRef face, double u, double v, double* dx, do
     if (!face) return false;
     try {
         BRepAdaptor_Surface as(TopoDS::Face(face->shape));
-        BRepLProp_SLProps props(as, u, v, 2, 1e-6);
+        BRepLProp_SLProps props = occtFaceLocalProps(as, u, v, 2);
         if (!props.IsTangentUDefined()) return false;
         gp_Dir tan;
         props.TangentU(tan);
@@ -1641,7 +1754,7 @@ bool OCCTFaceLPropTangentV(OCCTShapeRef face, double u, double v, double* dx, do
     if (!face) return false;
     try {
         BRepAdaptor_Surface as(TopoDS::Face(face->shape));
-        BRepLProp_SLProps props(as, u, v, 2, 1e-6);
+        BRepLProp_SLProps props = occtFaceLocalProps(as, u, v, 2);
         if (!props.IsTangentVDefined()) return false;
         gp_Dir tan;
         props.TangentV(tan);
@@ -1653,35 +1766,41 @@ bool OCCTFaceLPropTangentV(OCCTShapeRef face, double u, double v, double* dx, do
 // MARK: - v0.114: Shape mass properties expansion
 // --- Shape mass properties expansion ---
 
-double OCCTShapeLinearProperties(OCCTShapeRef shape, double* cx, double* cy, double* cz) {
-    if (!shape) { *cx = *cy = *cz = 0; return 0; }
+bool OCCTShapeLinearProperties(OCCTShapeRef shape, double* length,
+                               double* cx, double* cy, double* cz) {
+    if (!shape || !length || !cx || !cy || !cz) return false;
     try {
         GProp_GProps props;
-        BRepGProp::LinearProperties(shape->shape, props);
+        if (!occtLinearMassProperties(shape->shape, props)) return false;
         gp_Pnt com = props.CentreOfMass();
+        *length = props.Mass();
         *cx = com.X(); *cy = com.Y(); *cz = com.Z();
-        return props.Mass();
-    } catch (...) { *cx = *cy = *cz = 0; return 0; }
+        return true;
+    } catch (...) { return false; }
 }
 
-void OCCTShapeMomentOfInertia(OCCTShapeRef shape,
-                                double* ixx, double* iyy, double* izz,
-                                double* ixy, double* ixz, double* iyz) {
-    if (!shape) { *ixx = *iyy = *izz = *ixy = *ixz = *iyz = 0; return; }
+bool OCCTShapeMomentOfInertia(OCCTShapeRef shape,
+                              double* ixx, double* iyy, double* izz,
+                              double* ixy, double* ixz, double* iyz) {
+    if (!shape || !ixx || !iyy || !izz || !ixy || !ixz || !iyz) return false;
     try {
         GProp_GProps props;
-        BRepGProp::VolumeProperties(shape->shape, props);
+        if (!occtVolumeMassProperties(shape->shape, props)) return false;
         gp_Mat mat = props.MatrixOfInertia();
         *ixx = mat(1,1); *iyy = mat(2,2); *izz = mat(3,3);
         *ixy = mat(1,2); *ixz = mat(1,3); *iyz = mat(2,3);
-    } catch (...) { *ixx = *iyy = *izz = *ixy = *ixz = *iyz = 0; }
+        return true;
+    } catch (...) { return false; }
 }
 
-void OCCTShapePrincipalAxes(OCCTShapeRef shape, double* axes9) {
-    if (!shape) { for (int i=0;i<9;i++) axes9[i]=0; return; }
+bool OCCTShapePrincipalAxes(OCCTShapeRef shape, double* axes9) {
+    if (!shape || !axes9) return false;
     try {
         GProp_GProps props;
-        BRepGProp::VolumeProperties(shape->shape, props);
+        // Without a mass test this hands back the identity basis for anything with no volume:
+        // math_Jacobi on the zero inertia matrix returns three orthonormal eigenvectors, which
+        // read as a perfectly plausible answer. See #609.
+        if (!occtVolumeMassProperties(shape->shape, props)) return false;
         GProp_PrincipalProps pp = props.PrincipalProperties();
         const gp_Vec& v1 = pp.FirstAxisOfInertia();
         const gp_Vec& v2 = pp.SecondAxisOfInertia();
@@ -1689,19 +1808,26 @@ void OCCTShapePrincipalAxes(OCCTShapeRef shape, double* axes9) {
         axes9[0] = v1.X(); axes9[1] = v1.Y(); axes9[2] = v1.Z();
         axes9[3] = v2.X(); axes9[4] = v2.Y(); axes9[5] = v2.Z();
         axes9[6] = v3.X(); axes9[7] = v3.Y(); axes9[8] = v3.Z();
-    } catch (...) { for (int i=0;i<9;i++) axes9[i]=0; }
+        return true;
+    } catch (...) { return false; }
 }
 
-double OCCTShapeRadiusOfGyration(OCCTShapeRef shape,
-                                    double ax, double ay, double az,
-                                    double dx, double dy, double dz) {
-    if (!shape) return 0;
+bool OCCTShapeRadiusOfGyration(OCCTShapeRef shape,
+                               double ax, double ay, double az,
+                               double dx, double dy, double dz,
+                               double* outRadius) {
+    if (!shape || !outRadius) return false;
     try {
         GProp_GProps props;
-        BRepGProp::VolumeProperties(shape->shape, props);
+        // GProp_GProps::RadiusOfGyration is sqrt(MomentOfInertia(A) / dim) with no guard, so a
+        // zero-mass framework returns NaN rather than a zero. Its GProp_PrincipalProps sibling
+        // does guard (`if (0.0e0 != dim)`), which is why the radii-triple read 0 from the same
+        // framework that made this return NaN. See #609.
+        if (!occtVolumeMassProperties(shape->shape, props)) return false;
         gp_Ax1 axis(gp_Pnt(ax, ay, az), gp_Dir(dx, dy, dz));
-        return props.RadiusOfGyration(axis);
-    } catch (...) { return 0; }
+        *outRadius = props.RadiusOfGyration(axis);
+        return true;
+    } catch (...) { return false; }
 }
 
 // MARK: - Measurement & Analysis (v0.7.0)
@@ -1719,23 +1845,18 @@ OCCTShapeProperties OCCTShapeGetProperties(OCCTShapeRef shape, double density) {
     if (!shape) return result;
 
     try {
-        // Volume
+        // Volume + centre of mass. Without a closed volume there is no mass, no centre of mass and
+        // no inertia tensor, so the whole framework is empty and the caller gets nil.
         GProp_GProps volumeProps;
-        BRepGProp::VolumeProperties(shape->shape, volumeProps);
+        if (!occtVolumeMassProperties(shape->shape, volumeProps)) return result;
 
         result.volume = volumeProps.Mass();
         result.mass = result.volume * density;
 
-        // Center of mass from bounding box (workaround for OCCT 8.0 GProp issue)
-        Bnd_Box box;
-        BRepBndLib::Add(shape->shape, box);
-        if (!box.IsVoid()) {
-            double xmin, ymin, zmin, xmax, ymax, zmax;
-            box.Get(xmin, ymin, zmin, xmax, ymax, zmax);
-            result.centerX = (xmin + xmax) / 2.0;
-            result.centerY = (ymin + ymax) / 2.0;
-            result.centerZ = (zmin + zmax) / 2.0;
-        }
+        gp_Pnt com = volumeProps.CentreOfMass();
+        result.centerX = com.X();
+        result.centerY = com.Y();
+        result.centerZ = com.Z();
 
         // Inertia matrix (relative to center of mass)
         gp_Mat inertia = volumeProps.MatrixOfInertia();
@@ -1762,17 +1883,43 @@ OCCTShapeProperties OCCTShapeGetProperties(OCCTShapeRef shape, double density) {
     return result;
 }
 
-double OCCTShapeGetVolume(OCCTShapeRef shape) {
-    if (!shape) return -1.0;
+bool OCCTShapeGetVolume(OCCTShapeRef shape, double* outVolume) {
+    if (!shape || !outVolume) return false;
 
     occtEnsureSignals();
     try {
         OCC_CATCH_SIGNALS
         GProp_GProps props;
-        BRepGProp::VolumeProperties(shape->shape, props);
-        return props.Mass();
+        if (!occtVolumeMassProperties(shape->shape, props)) return false;
+        *outVolume = props.Mass();
+        return true;
     } catch (...) {
-        return -1.0;
+        return false;
+    }
+}
+
+bool OCCTShapeSignedVolumeFlux(OCCTShapeRef shape, double* outFlux) {
+    if (!shape || !outFlux) return false;
+
+    occtEnsureSignals();
+    try {
+        OCC_CATCH_SIGNALS
+        GProp_GProps props;
+        // Deliberately NOT occtVolumeMassProperties: this is the divergence integral with
+        // OnlyClosed left at its default, which is exactly what the strict volume path refuses.
+        //
+        // The two want different things. As a *measurement* the open-surface result is worthless,
+        // which is why OCCTShapeGetVolume refuses it. As an *orientation signal* it is sound for
+        // any orientable surface, closed or not, because reversing the surface negates the flux.
+        // Measured on five faces of a 10x20x30 box: +4800 forward, -4800 reversed. Shape.sweep
+        // relies on that to normalise a pipe whose faces point inward (#170), and the pipe it
+        // produces is an open shell, so a closed-only test would silently stop normalising it.
+        // See #609.
+        BRepGProp::VolumeProperties(shape->shape, props);
+        *outFlux = props.Mass();
+        return true;
+    } catch (...) {
+        return false;
     }
 }
 
@@ -1792,20 +1939,13 @@ bool OCCTShapeGetCenterOfMass(OCCTShapeRef shape, double* outX, double* outY, do
     if (!shape || !outX || !outY || !outZ) return false;
 
     try {
-        // Note: OCCT 8.0's GProp_GProps::CentreOfMass() appears to return (0,0,0)
-        // for some shapes. As a workaround, compute centroid from bounding box center,
-        // which is correct for solid primitives with uniform density.
-        Bnd_Box box;
-        BRepBndLib::Add(shape->shape, box);
+        GProp_GProps props;
+        if (!occtVolumeMassProperties(shape->shape, props)) return false;
 
-        if (box.IsVoid()) return false;
-
-        double xmin, ymin, zmin, xmax, ymax, zmax;
-        box.Get(xmin, ymin, zmin, xmax, ymax, zmax);
-
-        *outX = (xmin + xmax) / 2.0;
-        *outY = (ymin + ymax) / 2.0;
-        *outZ = (zmin + zmax) / 2.0;
+        gp_Pnt com = props.CentreOfMass();
+        *outX = com.X();
+        *outY = com.Y();
+        *outZ = com.Z();
 
         return true;
     } catch (...) {
@@ -1861,32 +2001,22 @@ bool OCCTShapeIntersects(OCCTShapeRef shape1, OCCTShapeRef shape2, double tolera
     }
 }
 
-int32_t OCCTShapeGetVertexCount(OCCTShapeRef shape) {
-    if (!shape) return 0;
+// The three vertex accessors below read the shared sub-shape enumeration (occtMapSubShapes,
+// OCCTBridge_Internal.h), so "a vertex" here means what it means everywhere else in the bridge:
+// one entry per distinct vertex, not one per occurrence in the topology tree (#502).
 
-    try {
-        // Use IndexedMapOfShape for unique vertices
-        TopTools_IndexedMapOfShape vertexMap;
-        TopExp::MapShapes(shape->shape, TopAbs_VERTEX, vertexMap);
-        return vertexMap.Extent();
-    } catch (...) {
-        return 0;
-    }
+int32_t OCCTShapeGetVertexCount(OCCTShapeRef shape) {
+    return OCCTShapeGetSubShapeCount(shape, TopAbs_VERTEX);
 }
 
 bool OCCTShapeGetVertexAt(OCCTShapeRef shape, int32_t index, double* outX, double* outY, double* outZ) {
-    if (!shape || !outX || !outY || !outZ || index < 0) return false;
+    if (!shape || !outX || !outY || !outZ) return false;
 
     try {
-        // Use IndexedMapOfShape for unique vertices
-        TopTools_IndexedMapOfShape vertexMap;
-        TopExp::MapShapes(shape->shape, TopAbs_VERTEX, vertexMap);
+        TopoDS_Shape vertex = occtSubShapeAt(shape->shape, TopAbs_VERTEX, index);
+        if (vertex.IsNull()) return false;
 
-        // IndexedMapOfShape uses 1-based indexing
-        if (index >= vertexMap.Extent()) return false;
-
-        TopoDS_Vertex vertex = TopoDS::Vertex(vertexMap(index + 1));
-        gp_Pnt point = BRep_Tool::Pnt(vertex);
+        gp_Pnt point = BRep_Tool::Pnt(TopoDS::Vertex(vertex));
         *outX = point.X();
         *outY = point.Y();
         *outZ = point.Z();
@@ -1900,15 +2030,10 @@ int32_t OCCTShapeGetVertices(OCCTShapeRef shape, double* outVertices) {
     if (!shape || !outVertices) return 0;
 
     try {
-        // Use IndexedMapOfShape for unique vertices
         TopTools_IndexedMapOfShape vertexMap;
-        TopExp::MapShapes(shape->shape, TopAbs_VERTEX, vertexMap);
-
-        int32_t count = vertexMap.Extent();
+        int32_t count = occtMapSubShapes(shape->shape, TopAbs_VERTEX, vertexMap);
         for (int32_t i = 0; i < count; i++) {
-            // IndexedMapOfShape uses 1-based indexing
-            TopoDS_Vertex vertex = TopoDS::Vertex(vertexMap(i + 1));
-            gp_Pnt point = BRep_Tool::Pnt(vertex);
+            gp_Pnt point = BRep_Tool::Pnt(TopoDS::Vertex(vertexMap(i + 1)));  // 1-based
 
             outVertices[i * 3] = point.X();
             outVertices[i * 3 + 1] = point.Y();

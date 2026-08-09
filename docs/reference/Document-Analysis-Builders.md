@@ -5,7 +5,7 @@ parent: API Reference
 
 # Document — Shape Analysis, OSD & Geometry Builders
 
-This page covers the shape analysis, file I/O helpers, analytic bounding, geometry property computation, transformation factories, and conic curve builders introduced across v0.99–v0.105 (lines 6351–7633 of `Document.swift`). For the core document lifecycle and STEP/IGES I/O see the main [Document](Document.md) page.
+This page covers the shape analysis, file I/O helpers, analytic bounding, geometry property computation, transformation factories, and conic curve builders introduced across v0.99–v0.105 in `Document.swift`. For the core document lifecycle and STEP/IGES I/O see the main [Document](Document.md) page.
 
 ## Topics
 
@@ -359,6 +359,13 @@ public struct OverlapPair: Sendable {
 }
 ```
 
+| Field | Meaning |
+|---|---|
+| `faceIndex1` | 0-based index of the first overlapping face. |
+| `faceIndex2` | 0-based index of the second overlapping face. |
+
+#### `Shape.OverlapPair.faceIndex2`
+
 ---
 
 ### `selfIntersectionPairs(tolerance:maxPairs:deflection:)`
@@ -373,7 +380,7 @@ public func selfIntersectionPairs(tolerance: Double = 0.0,
 
 - **Parameters:**
   - `tolerance` — overlap tolerance (default `0.0`).
-  - `maxPairs` — maximum number of pairs to return (default `100`).
+  - `maxPairs` — output *capacity* (default `100`), clamped into `0...Sampling.maximumSampleCount` (10,000,000); 0 or less returns empty (#622).
   - `deflection` — linear mesh deflection in mm for detection triangulation (default `0.1`).
 - **Returns:** Array of overlapping face index pairs; empty if none found.
 - **OCCT:** `BRepExtrema_SelfIntersection` via `OCCTShapeSelfIntersectionPairs`.
@@ -524,6 +531,7 @@ Count the number of closed free-boundary wires.
 public func freeBoundsClosedCount(tolerance: Double = 1e-6) -> Int
 ```
 
+- **Note:** Unaffected by OCCT 8.0.1's `ConnectEdgesToWires` INTERNAL/EXTERNAL skip (OCCT#1408); see [`freeBounds(sewingTolerance:)`](Shape-Measurement.md#freeboundssewingtolerance) for why. See [#655](https://github.com/SecondMouseAU/OCCTSwift/issues/655).
 - **Parameters:** `tolerance` — sewing tolerance for boundary detection (default `1e-6`).
 - **Returns:** Number of closed free-boundary wires.
 - **OCCT:** `ShapeAnalysis_FreeBounds` via `OCCTShapeFreeBoundsClosedCount`.
@@ -538,6 +546,7 @@ Get the compound of closed free-boundary wires.
 public func freeBoundsClosedWires(tolerance: Double = 1e-6) -> Shape?
 ```
 
+- **Note:** Unaffected by OCCT 8.0.1's `ConnectEdgesToWires` INTERNAL/EXTERNAL skip (OCCT#1408); see [`freeBounds(sewingTolerance:)`](Shape-Measurement.md#freeboundssewingtolerance) for why. See [#655](https://github.com/SecondMouseAU/OCCTSwift/issues/655).
 - **Parameters:** `tolerance` — sewing tolerance for boundary detection (default `1e-6`).
 - **Returns:** Compound shape of closed wires, or `nil` if none.
 - **OCCT:** `ShapeAnalysis_FreeBounds` via `OCCTShapeFreeBoundsClosed`.
@@ -552,6 +561,7 @@ Get the compound of open free-boundary wires.
 public func freeBoundsOpenWires(tolerance: Double = 1e-6) -> Shape?
 ```
 
+- **Note:** Unaffected by OCCT 8.0.1's `ConnectEdgesToWires` INTERNAL/EXTERNAL skip (OCCT#1408); see [`freeBounds(sewingTolerance:)`](Shape-Measurement.md#freeboundssewingtolerance) for why. See [#655](https://github.com/SecondMouseAU/OCCTSwift/issues/655).
 - **Parameters:** `tolerance` — sewing tolerance for boundary detection (default `1e-6`).
 - **Returns:** Compound shape of open wires, or `nil` if none.
 - **OCCT:** `ShapeAnalysis_FreeBounds` via `OCCTShapeFreeBoundsOpen`.
@@ -946,28 +956,39 @@ public func vertexEdgeAdjacency() -> [Int]
 
 ### `adjacentFaces(forEdge:)`
 
-Get 1-based face indices adjacent to a specific edge within this shape.
+Get the 0-based indices of the faces adjacent to a specific edge within this shape.
 
 ```swift
 public func adjacentFaces(forEdge edge: Shape) -> [Int]
 ```
 
 - **Parameters:** `edge` — the edge shape to query adjacency for.
-- **Returns:** Array of 1-based face indices (up to 64).
+- **Returns:** Array of 0-based face indices (up to 64), addressable with `face(at:)`.
+- **Example:**
+  ```swift
+  let box = Shape.box(width: 10, height: 10, depth: 10)!
+  let edge = box.subShapes(ofType: .edge).first!
+  for i in box.adjacentFaces(forEdge: edge) {
+      print(box.face(at: i)!.area())   // the two faces meeting at that edge
+  }
+  ```
+- **Note:** These were 1-based until #541, which named the face before the intended one and could
+  never name face 0. Drop any `- 1` a caller was applying.
 - **OCCT:** `TopExp` adjacency map via `OCCTEdgeAdjacentFaces`.
 
 ---
 
 ### `adjacentEdges(forVertex:)`
 
-Get 1-based edge indices adjacent to a specific vertex within this shape.
+Get the 0-based indices of the edges meeting a specific vertex within this shape.
 
 ```swift
 public func adjacentEdges(forVertex vertex: Shape) -> [Int]
 ```
 
 - **Parameters:** `vertex` — the vertex shape to query adjacency for.
-- **Returns:** Array of 1-based edge indices (up to 64).
+- **Returns:** Array of 0-based edge indices (up to 64), addressable with
+  `subShape(type: .edge, index:)`. These were 1-based until #541.
 - **OCCT:** `TopExp` adjacency map via `OCCTVertexAdjacentEdges`.
 - **Example:**
   ```swift
@@ -983,15 +1004,17 @@ public func adjacentEdges(forVertex vertex: Shape) -> [Int]
 
 ### `meshTriangleAdjacency(faceIndex:triangleIndex:)`
 
-Get adjacent triangles for a triangle in a meshed face. Indices are 1-based; `0` means no neighbour.
+Get adjacent triangles for a triangle in a meshed face. Triangle indices are 1-based; `0` means
+no neighbour.
 
 ```swift
 public func meshTriangleAdjacency(faceIndex: Int, triangleIndex: Int) -> (Int, Int, Int)?
 ```
 
 - **Parameters:**
-  - `faceIndex` — 1-based face index.
-  - `triangleIndex` — 1-based triangle index within the face.
+  - `faceIndex` — 0-based face index, as `Face.index` and `face(at:)` use (#541).
+  - `triangleIndex` — 1-based triangle index within the face, as `Poly_Triangulation` numbers
+    them. The returned neighbour indices are 1-based for the same reason.
 - **Returns:** Tuple `(adj1, adj2, adj3)` of adjacent triangle indices, or `nil` if not found.
 - **OCCT:** `Poly_Connect` via `OCCTMeshTriangleAdjacency`.
 
@@ -1006,8 +1029,8 @@ public func meshNodeTriangle(faceIndex: Int, nodeIndex: Int) -> Int?
 ```
 
 - **Parameters:**
-  - `faceIndex` — 1-based face index.
-  - `nodeIndex` — 1-based node index.
+  - `faceIndex` — 0-based face index (#541).
+  - `nodeIndex` — 1-based node index, as `Poly_Triangulation` numbers them.
 - **Returns:** 1-based triangle index, or `nil` if not found.
 - **OCCT:** `Poly_Connect` via `OCCTMeshNodeTriangle`.
 
@@ -1022,8 +1045,8 @@ public func meshNodeTriangleCount(faceIndex: Int, nodeIndex: Int) -> Int
 ```
 
 - **Parameters:**
-  - `faceIndex` — 1-based face index.
-  - `nodeIndex` — 1-based node index.
+  - `faceIndex` — 0-based face index (#541).
+  - `nodeIndex` — 1-based node index, as `Poly_Triangulation` numbers them.
 - **Returns:** Number of triangles in the fan around this node.
 - **OCCT:** `Poly_Connect` via `OCCTMeshNodeTriangleCount`.
 
@@ -1046,6 +1069,16 @@ public enum ConcavityType: Int, Sendable {
     case other = 4
 }
 ```
+
+| Case | Meaning |
+|---|---|
+| `.convex` | Edge is convex: the two adjacent faces bulge away from each other across it. |
+| `.concave` | Edge is concave: the two adjacent faces fold toward each other across it. |
+| `.tangent` | Adjacent faces meet tangentially (smooth, no sharp convex/concave transition) at this edge. |
+| `.freeBound` | Edge borders only one face (an open boundary), so convexity is not applicable. |
+| `.other` | Classification could not be determined as convex, concave, tangent, or a free bound. |
+
+#### `Shape.ConcavityType.other`
 
 ---
 
@@ -1151,6 +1184,16 @@ public enum EdgeOrientation: Int, Sendable {
 }
 ```
 
+Case meanings, from `TopAbs_Orientation`: `.forward` and `.reversed` mark a "real" edge limiting the wire's material side (reversed running opposite the wire's parametric direction); `.internal` and `.external` mark an edge that is present in the wire but does not bound material on either side (traversed on both faces, or excluded from both).
+
+#### `EdgeOrientation.forward`
+
+The edge runs in the same direction as the wire's parametric traversal and marks a real material boundary.
+
+#### `EdgeOrientation.external`
+
+The edge does not bound material on either side; it is excluded from the classification on both sides.
+
 ---
 
 ### `wireEdgeOrientations(face:)`
@@ -1198,6 +1241,16 @@ public struct AnalyticBounds: Sendable {
     public let min: SIMD3<Double>
     public let max: SIMD3<Double>
 }
+```
+
+| Field | Meaning |
+|---|---|
+| `min` | Minimum corner of the axis-aligned bounding box. |
+| `max` | Maximum corner of the axis-aligned bounding box. |
+
+#### `AnalyticBounds.max`
+
+```swift
 ```
 
 ---
@@ -1585,6 +1638,14 @@ public struct TransformMatrix3D: Sendable {
 }
 ```
 
+| Field | Meaning |
+|---|---|
+| `values` | The 12 matrix entries, row-major (rows of a 3x4 affine transform: 3x3 rotation/scale block plus a translation column, one row of 4 values per output axis). |
+
+*(Per-field anchor below, for cross-reference; the table above has the actual meaning.)*
+
+#### `values`
+
 ---
 
 ### `TransformMatrix3D.apply(to:)`
@@ -1609,6 +1670,12 @@ public struct TransformMatrix2D: Sendable {
     public let values: [Double] // 6 elements: row-major 2x3
 }
 ```
+
+---
+
+#### `TransformMatrix2D.values`
+
+The 6 matrix coefficients, row-major: `[a, b, c, d, e, f]` such that `apply(to: (x, y))` computes `(a*x + b*y + c, d*x + e*y + f)`.
 
 ---
 
@@ -1816,27 +1883,34 @@ public static func direction(from p1: SIMD2<Double>, to p2: SIMD2<Double>) -> SI
 
 ### `GeometryProperties.lineSegment(from:to:)`
 
-Line segment properties: returns `(length, centerOfMass)`.
+Line segment properties: returns `(length, centerOfMass)`, or `nil` when OCCT rejects the input.
 
 ```swift
-public static func lineSegment(from p1: SIMD3<Double>, to p2: SIMD3<Double>) -> (length: Double, center: SIMD3<Double>)
+public static func lineSegment(from p1: SIMD3<Double>, to p2: SIMD3<Double>) -> (length: Double, center: SIMD3<Double>)?
 ```
 
-- **OCCT:** `GProp_PEquation` / `GProp_PGProps` line via `OCCTGPropLineSegment`.
+- **Returns:** `nil` for two coincident endpoints, which give no direction to build a line from
+  (`gp_Dir` throws on the zero vector). That used to come back as a length of 0 with a centre of
+  (0,0,0), a plausible answer for a segment that has none (#609).
+- **OCCT:** `GProp_CelGProps` line via `OCCTGPropLineSegment`.
 
 ---
 
 ### `GeometryProperties.circularArc(center:normal:radius:u1:u2:)`
 
-Circular arc properties: returns `(arcLength, centerOfMass)`.
+Circular arc properties: returns `(arcLength, centerOfMass)`, or `nil` when OCCT rejects the input.
 
 ```swift
 public static func circularArc(center: SIMD3<Double>, normal: SIMD3<Double>,
-                                radius: Double, u1: Double, u2: Double) -> (arcLength: Double, center: SIMD3<Double>)
+                                radius: Double, u1: Double, u2: Double) -> (arcLength: Double, center: SIMD3<Double>)?
 ```
 
 - **Parameters:** `u1`, `u2` — parametric start and end angles in radians.
-- **OCCT:** `GProp_PGProps` circular arc via `OCCTGPropCircularArc`.
+- **Returns:** `nil` for a zero normal vector, which gives no plane to build a circle in. A valid arc
+  with `u1 == u2` is **not** a rejection: it answers with an arc length of 0 and the correct centre,
+  because `GProp_CelGProps` computes the centroid analytically rather than by accumulating mass
+  (#609).
+- **OCCT:** `GProp_CelGProps` circular arc via `OCCTGPropCircularArc`.
 
 ---
 
@@ -1845,11 +1919,13 @@ public static func circularArc(center: SIMD3<Double>, normal: SIMD3<Double>,
 Compute the centroid of a point set. Returns `(pointCount, centroid)`.
 
 ```swift
-public static func pointSetCentroid(_ points: [SIMD3<Double>]) -> (count: Double, centroid: SIMD3<Double>)
+public static func pointSetCentroid(_ points: [SIMD3<Double>]) -> (count: Double, centroid: SIMD3<Double>?)
 ```
 
 - **Parameters:** `points` — array of 3D points.
-- **Returns:** The point count (as `Double`) and the centroid.
+- **Returns:** The point count (as `Double`) and the centroid, which is `nil` for an empty set. An
+  empty set has no centroid, and the (0,0,0) reported before #609 was indistinguishable from the
+  centroid of a set centred on the origin.
 - **OCCT:** `GProp_PGProps` point set via `OCCTGPropPointSetCentroid`.
 
 ---
@@ -1877,8 +1953,8 @@ public static func sphereVolume(radius: Double) -> Double
 - **OCCT:** `GProp_PGProps` sphere volume via `OCCTGPropSphereVolume`.
 - **Example:**
   ```swift
-  let (len, com) = GeometryProperties.lineSegment(from: .zero, to: SIMD3(3, 4, 0))
-  // len == 5.0, com == SIMD3(1.5, 2.0, 0)
+  let seg = GeometryProperties.lineSegment(from: .zero, to: SIMD3(3, 4, 0))
+  // seg?.length == 5.0, seg?.center == SIMD3(1.5, 2.0, 0)
   ```
 
 ---
@@ -2188,7 +2264,7 @@ public static func gcHyperbola(s1: SIMD3<Double>, s2: SIMD3<Double>, center: SIM
 
 ## GC_MakeCircle2d
 
-`Curve2D` factory methods backed by `gce_MakeCirc2d`.
+`Curve2D` factory methods backed by `GC_MakeCircle2d`.
 
 ### `Curve2D.gceCircle(center:radius:)`
 
@@ -2198,7 +2274,10 @@ Create a 2D circle from center and radius.
 public static func gceCircle(center: SIMD2<Double>, radius: Double) -> Curve2D?
 ```
 
-- **OCCT:** `gce_MakeCirc2d` via `OCTGCE2dMakeCircleCenterRadius`.
+- **OCCT:** `GC_MakeCircle2d` via `OCCTCurve2DMakeCircleCenterRadius`.
+- **Note:** `radius` must be positive (#553). `GC_MakeCircle2d` reports `gce_NegativeRadius` for a
+  negative radius but succeeds for zero, returning a circle that behaves as its own centre. A
+  non-positive radius returns nil.
 
 ---
 
@@ -2210,7 +2289,7 @@ Create a 2D circle through 3 points.
 public static func gceCircle(p1: SIMD2<Double>, p2: SIMD2<Double>, p3: SIMD2<Double>) -> Curve2D?
 ```
 
-- **OCCT:** `gce_MakeCirc2d` (3 points) via `OCTGCE2dMakeCircle3Points`.
+- **OCCT:** `GC_MakeCircle2d` (3 points) via `OCCTCurve2DMakeCircle3Points`.
 
 ---
 
@@ -2222,7 +2301,7 @@ Create a 2D circle from center and a point on the circle.
 public static func gceCircle(center: SIMD2<Double>, pointOn: SIMD2<Double>) -> Curve2D?
 ```
 
-- **OCCT:** `gce_MakeCirc2d` (center + point) via `OCTGCE2dMakeCircleCenterPoint`.
+- **OCCT:** `GC_MakeCircle2d` (center + point) via `OCCTCurve2DMakeCircleCenterPoint`.
 
 ---
 
@@ -2235,7 +2314,11 @@ public static func gceCircleParallel(center: SIMD2<Double>, direction: SIMD2<Dou
                                       radius: Double, distance: Double) -> Curve2D?
 ```
 
-- **OCCT:** `gce_MakeCirc2d` (parallel) via `OCTGCE2dMakeCircleParallel`.
+- **OCCT:** `GC_MakeCircle2d` (parallel) via `OCCTCurve2DMakeCircleParallel`.
+- **Note:** `radius` must be positive, and so must `radius + distance` (#553). `GC_MakeCircle2d`
+  takes the absolute value rather than refusing an offset that reaches or passes the centre:
+  measured, radius 5 offset by -5 gives radius 0 and by -6 gives radius 1, a circle inside the base
+  rather than the one asked for. Either violation returns nil.
 
 ---
 
@@ -2248,7 +2331,8 @@ public static func gceCircle(axisCenter: SIMD2<Double>, axisDirection: SIMD2<Dou
                               radius: Double) -> Curve2D?
 ```
 
-- **OCCT:** `gce_MakeCirc2d` (axis) via `OCTGCE2dMakeCircleAxis`.
+- **OCCT:** `GC_MakeCircle2d` (axis) via `OCCTCurve2DMakeCircleAxis`.
+- **Note:** `radius` must be positive (#553); a non-positive radius returns nil.
 - **Example:**
   ```swift
   if let c = Curve2D.gceCircle(center: SIMD2(0, 0), radius: 5) {
@@ -2260,7 +2344,7 @@ public static func gceCircle(axisCenter: SIMD2<Double>, axisDirection: SIMD2<Dou
 
 ## GC_MakeEllipse2d
 
-`Curve2D` factory methods backed by `gce_MakeElips2d`.
+`Curve2D` factory methods backed by `GC_MakeEllipse2d`.
 
 ### `Curve2D.gceEllipse(center:xDirection:majorRadius:minorRadius:)`
 
@@ -2271,7 +2355,7 @@ public static func gceEllipse(center: SIMD2<Double>, xDirection: SIMD2<Double>,
                                majorRadius: Double, minorRadius: Double) -> Curve2D?
 ```
 
-- **OCCT:** `gce_MakeElips2d` via `OCTGCE2dMakeEllipse`.
+- **OCCT:** `GC_MakeEllipse2d` via `OCCTCurve2DMakeEllipse`.
 
 ---
 
@@ -2283,7 +2367,7 @@ Create a 2D ellipse from 3 points (S1, S2, center).
 public static func gceEllipse(s1: SIMD2<Double>, s2: SIMD2<Double>, center: SIMD2<Double>) -> Curve2D?
 ```
 
-- **OCCT:** `gce_MakeElips2d` (3 points) via `OCTGCE2dMakeEllipse3Points`.
+- **OCCT:** `GC_MakeEllipse2d` (3 points) via `OCCTCurve2DMakeEllipse3Points`.
 
 ---
 
@@ -2298,13 +2382,13 @@ public static func gceEllipse(center: SIMD2<Double>, xDirection: SIMD2<Double>,
 ```
 
 - **Parameters:** `yDirection` — explicit Y-axis direction for the ellipse frame.
-- **OCCT:** `gce_MakeElips2d` (Ax22d) via `OCTGCE2dMakeEllipseAxis22d`.
+- **OCCT:** `GC_MakeEllipse2d` (Ax22d) via `OCCTCurve2DMakeEllipseAxis22d`.
 
 ---
 
 ## GC_MakeHyperbola2d
 
-`Curve2D` factory methods backed by `gce_MakeHypr2d`.
+`Curve2D` factory methods backed by `GC_MakeHyperbola2d`.
 
 ### `Curve2D.gceHyperbola(center:xDirection:majorRadius:minorRadius:)`
 
@@ -2315,7 +2399,7 @@ public static func gceHyperbola(center: SIMD2<Double>, xDirection: SIMD2<Double>
                                  majorRadius: Double, minorRadius: Double) -> Curve2D?
 ```
 
-- **OCCT:** `gce_MakeHypr2d` via `OCTGCE2dMakeHyperbola`.
+- **OCCT:** `GC_MakeHyperbola2d` via `OCCTCurve2DMakeHyperbola`.
 
 ---
 
@@ -2328,7 +2412,7 @@ public static func gceHyperbola(s1: SIMD2<Double>, s2: SIMD2<Double>, center: SI
 ```
 
 - **Parameters:** `s1`, `s2` — points on the hyperbola; `center` — hyperbola center.
-- **OCCT:** `gce_MakeHypr2d` (3 points) via `OCTGCE2dMakeHyperbola3Points`.
+- **OCCT:** `GC_MakeHyperbola2d` (3 points) via `OCCTCurve2DMakeHyperbola3Points`.
 - **Example:**
   ```swift
   if let h = Curve2D.gceHyperbola(center: .zero,

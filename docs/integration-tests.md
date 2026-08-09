@@ -5,7 +5,8 @@ search_exclude: true
 
 # OCCTSwift Integration & Stress Tests
 
-Comprehensive test plan for validating the full OCCTSwift wrapper (3333 operations).
+Comprehensive test plan for validating the full OCCTSwift wrapper (4,256 operations; run
+`python3 Scripts/count-operations.py` for the current figure).
 
 These tests go beyond unit tests — they exercise realistic multi-step workflows, stress edge cases, and verify end-to-end fidelity. They are implemented across the OCCTSwift ecosystem:
 

@@ -251,27 +251,14 @@ void OCCTCurve3DD2(OCCTCurve3DRef c, double u,
 
 // Primitive Curves
 
-// Conic dimension preconditions, shared by the two factory families that build the
-// same four curve types: OCCTCurve3DCreate{Circle,Ellipse,Parabola,Hyperbola} (direct
+// Conic dimension preconditions (occtValidCircleRadius, occtValidEllipseRadii,
+// occtValidHyperbolaRadii, occtValidParabolaFocal) are shared by the two factory families that
+// build the same four curve types: OCCTCurve3DCreate{Circle,Ellipse,Parabola,Hyperbola} (direct
 // Geom_* construction) and OCCTGceMake{CircFromCenterNormal,Elips,Hypr,Parab} (gce_Make*
-// construction). The gce_Make* algorithms only reject strictly-negative dimensions, so
-// before #399 they silently produced degenerate zero-radius/zero-focal curves where the
-// direct family returned null for the identical input. One definition, both families.
-static inline bool occtValidCircleRadius(double radius) {
-    return radius > 0;
-}
-
-static inline bool occtValidEllipseRadii(double majorR, double minorR) {
-    return majorR > 0 && minorR > 0 && minorR <= majorR;
-}
-
-static inline bool occtValidHyperbolaRadii(double majorR, double minorR) {
-    return majorR > 0 && minorR > 0;
-}
-
-static inline bool occtValidParabolaFocal(double focal) {
-    return focal > 0;
-}
+// construction). #399 defined them here; #487 moved them to OCCTBridge_Internal.h once the 2D
+// factories in OCCTBridge_Geom2d.mm turned out to need the same four predicates, and its own
+// copy of one of them had already drifted out of reach of two of the passes that should have
+// applied it.
 
 OCCTCurve3DRef OCCTCurve3DCreateLine(double px, double py, double pz,
                                       double dx, double dy, double dz) {
@@ -666,25 +653,31 @@ OCCTCurve3DRef OCCTCurve3DMirrorPlane(OCCTCurve3DRef c,
     }
 }
 
-// GCPnts, not CPnts: CPnts_AbscissaPoint::Length runs one Gauss quadrature over the whole
-// domain, which is measurably wrong on a multi-span BSpline (up to 5% on an interpolated
-// curve with sharply varying speed). GCPnts splits at the GeomAbs_CN interval boundaries and
-// integrates each span. #477.
+// Not one Gauss quadrature over the whole domain: that is what CPnts_AbscissaPoint::Length does,
+// and it is up to 5% wrong on a multi-span BSpline (#477). #477 moved this to GCPnts, which splits
+// at the GeomAbs_CN interval boundaries -- but a conic has one interval, so the single quadrature
+// survived there and measured a whole ellipse up to 1.7% long. occtAdaptorArcLength
+// (OCCTBridge_Internal.h) subdivides inside each interval until it converges. #603.
 double OCCTCurve3DGetLength(OCCTCurve3DRef c) {
     if (!c || c->curve.IsNull()) return -1.0;
     try {
         GeomAdaptor_Curve adaptor(c->curve);
-        return GCPnts_AbscissaPoint::Length(adaptor);
+        return occtAdaptorArcLength(adaptor, adaptor.FirstParameter(), adaptor.LastParameter());
     } catch (...) {
         return -1.0;
     }
 }
 
+// A non-finite bound is rejected here rather than handed to GCPnts, which answers it differently
+// per curve type -- see occtValidParameterRange (OCCTBridge_Internal.h) for the measurements. #548.
+// The measurement itself is occtAdaptorLengthBetween (same header), which measures the part of the
+// range that lies on the curve, winding a curve whose domain covers a period. #600.
 double OCCTCurve3DGetLengthBetween(OCCTCurve3DRef c, double u1, double u2) {
     if (!c || c->curve.IsNull()) return -1.0;
+    if (!occtValidParameterRange(u1, u2)) return -1.0;
     try {
         GeomAdaptor_Curve adaptor(c->curve);
-        return GCPnts_AbscissaPoint::Length(adaptor, u1, u2);
+        return occtAdaptorLengthBetween(adaptor, u1, u2);
     } catch (...) {
         return -1.0;
     }
@@ -756,26 +749,58 @@ OCCTCurve3DRef OCCTCurve3DJoinToBSpline(const OCCTCurve3DRef* curves, int32_t co
     }
 }
 
+// === #491: one GeomConvert_ApproxCurve run behind both curve approximation entry points ===
+//
+// OCCTCurve3DApproximate (Curve3D.approximated) and OCCTGeomConvertApproxCurve
+// (Curve3D.approxWithDetails) are two views of the same approximation: the first returns the
+// fitted BSpline, the second returns it alongside the diagnostics OCCT already computed for it.
+// They were written independently and drifted on which completion accessor decides success —
+// IsDone() here, HasResult() there — so they run through this one helper instead.
+//
+// The shared gate is HasResult(). The header documents the two as different questions: IsDone() is
+// "the approximation has been done within required tolerance", HasResult() is "did come out with a
+// result that is not NECESSARILY within the required tolerance". In this kernel they cannot
+// actually disagree: GeomConvert_ApproxCurve copies both flags off AdvApprox_ApproxAFunction, whose
+// only HasResult-without-IsDone path is the ErrorCode = -1 assignment at
+// AdvApprox_ApproxAFunction.cxx:550 — commented out upstream ("// for now ErrorCode=-1;"). With
+// that line dead, ErrorCode is only ever 0 (both flags set) or 1 (neither), which is why gating on
+// IsDone() never actually rejected an over-tolerance fit: a circle fitted with one segment at
+// degree 3 against a 1e-9 tolerance reports maxError 5.1 and still reports IsDone.
+//
+// HasResult() is the right one to standardise on regardless. It is what OCCT's own curve conversion
+// entry points use (GeomConvert.cxx:345/441, GeomToIGES_GeomCurve.cxx:632,
+// GeomFill_Profiler.cxx:136), it is what both surface entry points already used, and it is the only
+// gate under which approxWithDetails' isDone/maxError diagnostics mean anything — reporting
+// isDone: false is the point of that API, so it cannot also be the reason to return nothing.
+//
+// Continuity decodes through the #490 shared occtGeomAbsFromParametricContinuity rather than a
+// local copy; this was the one call site that still had its own until the #491/#490 merge.
+static OCCTApproxCurveResult occtApproxCurve(OCCTCurve3DRef c, double tolerance,
+                                             int32_t continuity, int32_t maxSegments,
+                                             int32_t maxDegree) {
+    OCCTApproxCurveResult result = {};
+    // Both the outer handle and the curve it wraps: a null Geom_Curve reaches GeomAdaptor_Curve,
+    // whose own Standard_NullObject precondition is compiled out of this Release kernel.
+    if (!c || c->curve.IsNull()) return result;
+    try {
+        GeomConvert_ApproxCurve approx(c->curve, tolerance,
+                                        occtGeomAbsFromParametricContinuity(continuity),
+                                        maxSegments, maxDegree);
+        result.isDone = approx.IsDone();
+        result.hasResult = approx.HasResult();
+        if (result.hasResult) {
+            result.maxError = approx.MaxError();
+            Handle(Geom_BSplineCurve) bspl = approx.Curve();
+            if (!bspl.IsNull()) result.curve = new OCCTCurve3D(bspl);
+        }
+    } catch (...) {}
+    return result;
+}
+
 OCCTCurve3DRef OCCTCurve3DApproximate(OCCTCurve3DRef c, double tolerance,
                                        int32_t continuity, int32_t maxSegments,
                                        int32_t maxDegree) {
-    if (!c || c->curve.IsNull()) return nullptr;
-    try {
-        GeomAbs_Shape cont = GeomAbs_C2;
-        switch (continuity) {
-            case 0: cont = GeomAbs_C0; break;
-            case 1: cont = GeomAbs_C1; break;
-            case 2: cont = GeomAbs_C2; break;
-            case 3: cont = GeomAbs_C3; break;
-        }
-
-        GeomConvert_ApproxCurve approx(c->curve, tolerance, cont, maxSegments, maxDegree);
-        if (!approx.IsDone()) return nullptr;
-
-        return new OCCTCurve3D(approx.Curve());
-    } catch (...) {
-        return nullptr;
-    }
+    return occtApproxCurve(c, tolerance, continuity, maxSegments, maxDegree).curve;
 }
 
 // Draw Methods
@@ -802,14 +827,17 @@ int32_t OCCTCurve3DDrawAdaptive(OCCTCurve3DRef c,
 
 int32_t OCCTCurve3DDrawUniform(OCCTCurve3DRef c,
                                 int32_t pointCount, double* outXYZ) {
-    if (!c || c->curve.IsNull() || !outXYZ || pointCount <= 0) return 0;
+    // outXYZ holds pointCount triples, which is not what the sampler is bounded by. See
+    // occtSamplerKept/occtSamplerIndex in OCCTBridge_Internal.h (#501).
+    if (!c || c->curve.IsNull() || !outXYZ || !occtValidSampleCount(pointCount)) return 0;
     try {
         GeomAdaptor_Curve adaptor(c->curve);
         GCPnts_UniformAbscissa sampler(adaptor, pointCount);
         if (!sampler.IsDone()) return 0;
-        int32_t n = sampler.NbPoints();
+        int32_t total = sampler.NbPoints();
+        int32_t n = occtSamplerKept(total, pointCount);
         for (int32_t i = 0; i < n; i++) {
-            double u = sampler.Parameter(i + 1);
+            double u = sampler.Parameter(occtSamplerIndex(i, n, total));
             gp_Pnt p = adaptor.Value(u);
             outXYZ[i*3] = p.X();
             outXYZ[i*3+1] = p.Y();
@@ -843,15 +871,21 @@ int32_t OCCTCurve3DDrawDeflection(OCCTCurve3DRef c, double deflection,
 
 // Local Properties
 
-double OCCTCurve3DGetCurvature(OCCTCurve3DRef c, double u) {
-    if (!c || c->curve.IsNull()) return 0.0;
+// #595: the curvature is reported alongside whether there is one, rather than spelled 0 when there
+// is not. A straight curve's curvature is exactly 0 with the tangent perfectly well defined, so the
+// old encoding could not tell a line from a curve with no derivatives at all. See
+// Scripts/repro/595-curvature-zero-sentinel/. A cusp is NOT an absence: OCCT reports RealLast()
+// there, meaning infinite, and that sentinel passes through unchanged.
+bool OCCTCurve3DGetCurvature(OCCTCurve3DRef c, double u, double* curvature) {
+    *curvature = 0.0;
+    if (!c || c->curve.IsNull()) return false;
     try {
-        GeomLProp_CLProps props(c->curve, 2, Precision::Confusion());
-        props.SetParameter(u);
-        if (!props.IsTangentDefined()) return 0.0;
-        return props.Curvature();
+        GeomLProp_CLProps props = occtCurveLocalProps(c->curve, u, 2);
+        if (!props.IsTangentDefined()) return false;
+        *curvature = props.Curvature();
+        return true;
     } catch (...) {
-        return 0.0;
+        return false;
     }
 }
 
@@ -859,8 +893,7 @@ bool OCCTCurve3DGetTangent(OCCTCurve3DRef c, double u,
                             double* tx, double* ty, double* tz) {
     if (!c || c->curve.IsNull() || !tx || !ty || !tz) return false;
     try {
-        GeomLProp_CLProps props(c->curve, 1, Precision::Confusion());
-        props.SetParameter(u);
+        GeomLProp_CLProps props = occtCurveLocalProps(c->curve, u, 1);
         if (!props.IsTangentDefined()) return false;
         gp_Dir dir;
         props.Tangent(dir);
@@ -875,8 +908,7 @@ bool OCCTCurve3DGetNormal(OCCTCurve3DRef c, double u,
                            double* nx, double* ny, double* nz) {
     if (!c || c->curve.IsNull() || !nx || !ny || !nz) return false;
     try {
-        GeomLProp_CLProps props(c->curve, 2, Precision::Confusion());
-        props.SetParameter(u);
+        GeomLProp_CLProps props = occtCurveLocalProps(c->curve, u, 2);
         if (!props.IsTangentDefined()) return false;
         gp_Dir dir;
         props.Normal(dir);
@@ -891,10 +923,12 @@ bool OCCTCurve3DGetCenterOfCurvature(OCCTCurve3DRef c, double u,
                                       double* cx, double* cy, double* cz) {
     if (!c || c->curve.IsNull() || !cx || !cy || !cz) return false;
     try {
-        GeomLProp_CLProps props(c->curve, 2, Precision::Confusion());
-        props.SetParameter(u);
+        GeomLProp_CLProps props = occtCurveLocalProps(c->curve, u, 2);
         if (!props.IsTangentDefined()) return false;
-        if (props.Curvature() < Precision::Confusion()) return false;
+        // Rejects a cusp's RealLast() curvature as well as a straight stretch's zero; the plain
+        // "is it big enough" test this used to make let the sentinel through, and OCCT then handed
+        // back (nan, inf, nan) as a successfully computed centre (#494).
+        if (!occtCurveCurvatureIsInvertible(props.Curvature())) return false;
         gp_Pnt center;
         props.CentreOfCurvature(center);
         *cx = center.X(); *cy = center.Y(); *cz = center.Z();
@@ -904,8 +938,13 @@ bool OCCTCurve3DGetCenterOfCurvature(OCCTCurve3DRef c, double u,
     }
 }
 
-double OCCTCurve3DGetTorsion(OCCTCurve3DRef c, double u) {
-    if (!c || c->curve.IsNull()) return 0.0;
+// #595: torsion is only defined where the curve has an osculating plane to twist out of, and the
+// same 0 used to mean both "it does not" and "it does, and the curve lies flat in it". Every planar
+// curve -- every circle and ellipse in the suite -- reports a real torsion of exactly 0, so that
+// collision is as ordinary as the curvature one a few functions above.
+bool OCCTCurve3DGetTorsion(OCCTCurve3DRef c, double u, double* torsion) {
+    *torsion = 0.0;
+    if (!c || c->curve.IsNull()) return false;
     try {
         gp_Pnt pnt;
         gp_Vec d1, d2, d3;
@@ -913,10 +952,11 @@ double OCCTCurve3DGetTorsion(OCCTCurve3DRef c, double u) {
 
         gp_Vec cross = d1.Crossed(d2);
         double crossMag2 = cross.SquareMagnitude();
-        if (crossMag2 < Precision::Confusion()) return 0.0;
-        return cross.Dot(d3) / crossMag2;
+        if (crossMag2 < Precision::Confusion()) return false;
+        *torsion = cross.Dot(d3) / crossMag2;
+        return true;
     } catch (...) {
-        return 0.0;
+        return false;
     }
 }
 
@@ -945,19 +985,25 @@ bool OCCTCurve3DGetBoundingBox(OCCTCurve3DRef c,
 #include <GeomGridEval_Curve.hxx>
 #include <GeomGridEval.hxx>
 
+// The canonical 3D-curve batch evaluators. Two later generations duplicated this job under
+// other names (v0.110's OCCTCurve3DEvalBatchD0/D1 with a hand-rolled per-point loop, v0.111's
+// OCCTGridEvalCurveD0/D1 with the same GeomGridEval_Curve calls as here); #486 removed both and
+// pointed their Swift spellings at these two.
+
 int32_t OCCTCurve3DEvaluateGrid(OCCTCurve3DRef curve, const double* params, int32_t paramCount,
                                  double* outXYZ) {
     if (!curve || curve->curve.IsNull() || !params || !outXYZ || paramCount <= 0) return 0;
     try {
         GeomGridEval_Curve evaluator(curve->curve);
-
-        NCollection_Array1<double> paramArr(1, paramCount);
-        for (int32_t i = 0; i < paramCount; i++) {
-            paramArr.SetValue(i + 1, params[i]);
-        }
+        NCollection_Array1<double> paramArr = occtGridEvalParams(params, paramCount);
 
         NCollection_Array1<gp_Pnt> results = evaluator.EvaluateGrid(paramArr);
-        int32_t n = static_cast<int32_t>(results.Size());
+        // Defensive: bound the write by the caller's buffer as well as by what OCCT returned.
+        // Every evaluator in the pinned kernel returns exactly theParams.Length() or an empty
+        // array (empty only for a null curve or empty params, both rejected above), so neither
+        // direction is reachable today. Taking the min covers both anyway: a shorter result must
+        // not be read past its end, and a longer one must not be written past outXYZ's end.
+        int32_t n = std::min(paramCount, static_cast<int32_t>(results.Size()));
         for (int32_t i = 0; i < n; i++) {
             const gp_Pnt& pt = results.Value(i + 1);
             outXYZ[i*3]   = pt.X();
@@ -975,14 +1021,10 @@ int32_t OCCTCurve3DEvaluateGridD1(OCCTCurve3DRef curve, const double* params, in
     if (!curve || curve->curve.IsNull() || !params || !outXYZ || !outDXDYDZ || paramCount <= 0) return 0;
     try {
         GeomGridEval_Curve evaluator(curve->curve);
-
-        NCollection_Array1<double> paramArr(1, paramCount);
-        for (int32_t i = 0; i < paramCount; i++) {
-            paramArr.SetValue(i + 1, params[i]);
-        }
+        NCollection_Array1<double> paramArr = occtGridEvalParams(params, paramCount);
 
         NCollection_Array1<GeomGridEval::CurveD1> results = evaluator.EvaluateGridD1(paramArr);
-        int32_t n = static_cast<int32_t>(results.Size());
+        int32_t n = std::min(paramCount, static_cast<int32_t>(results.Size()));  // see EvaluateGrid
         for (int32_t i = 0; i < n; i++) {
             const GeomGridEval::CurveD1& r = results.Value(i + 1);
             outXYZ[i*3]     = r.Point.X();
@@ -1030,6 +1072,11 @@ double OCCTCurve3DMinDistanceToCurve(OCCTCurve3DRef c1, OCCTCurve3DRef c2) {
     try {
         GeomAPI_ExtremaCurveCurve extrema(c1->curve, c2->curve);
         if (extrema.NbExtrema() == 0) return -1.0;
+        // No IsParallel() guard needed here (#636): LowerDistance() only reads
+        // Extrema_ExtCC::mySqDist, which Extrema_ExtCC::PrepareParallelResult populates correctly
+        // even on parallel curves. Only Points()/Parameters() (below, in OCCTCurve3DExtrema) index
+        // the mypoints sequence that is left empty in that case. Measured against two parallel
+        // Geom_Line curves: returns the correct offset distance, no crash.
         return extrema.LowerDistance();
     } catch (...) {
         return -1.0;
@@ -1040,6 +1087,18 @@ int32_t OCCTCurve3DExtrema(OCCTCurve3DRef c1, OCCTCurve3DRef c2, OCCTCurveExtrem
     if (!c1 || c1->curve.IsNull() || !c2 || c2->curve.IsNull() || !outExtrema || maxCount <= 0) return 0;
     try {
         GeomAPI_ExtremaCurveCurve extrema(c1->curve, c2->curve);
+        // GeomAPI_ExtremaCurveCurve wraps Extrema_ExtCC (the same class BRepExtrema_ExtCC's
+        // documented parallel-curve crash traces back to, one layer down). On parallel curves,
+        // Extrema_ExtCC::PrepareParallelResult appends a single distance to mySqDist but leaves
+        // mypoints empty; NbExtrema() reports 1 (mySqDist.Length()), so Points() below indexes an
+        // empty NCollection_Sequence. This build's OCCT disables Standard_OutOfRange in Release
+        // (BUILD_RELEASE_DISABLE_EXCEPTIONS), so that indexing is not a caught exception: it is
+        // an OS SIGSEGV, uncatchable by the catch(...) below (#636). Query IsParallel() before
+        // touching any solution, mirroring the guard already in place for the sibling
+        // Extrema_ExtCC/Extrema_ExtCS entry points in this same file (OCCTExtremaExtCC /
+        // OCCTExtremaExtCS). LowerDistance()-only callers (OCCTCurve3DMinDistanceToCurve) are
+        // unaffected: mySqDist is populated correctly even when parallel, only mypoints is not.
+        if (extrema.IsParallel()) return 0;
         int32_t nb = extrema.NbExtrema();
         int32_t count = (nb < maxCount) ? nb : maxCount;
         for (int32_t i = 0; i < count; i++) {
@@ -1063,40 +1122,22 @@ int32_t OCCTCurve3DExtrema(OCCTCurve3DRef c1, OCCTCurve3DRef c2, OCCTCurveExtrem
     }
 }
 
-// MARK: - Curve to Analytical (v0.30.0)
-
-#include <GeomConvert_CurveToAnaCurve.hxx>
-
-OCCTCurve3DRef OCCTCurve3DToAnalytical(OCCTCurve3DRef curve, double tolerance) {
-    if (!curve || curve->curve.IsNull()) return nullptr;
-    try {
-        GeomConvert_CurveToAnaCurve converter(curve->curve);
-        Handle(Geom_Curve) result;
-        double newFirst, newLast;
-        bool ok = converter.ConvertToAnalytical(tolerance, result,
-                                                 curve->curve->FirstParameter(),
-                                                 curve->curve->LastParameter(),
-                                                 newFirst, newLast);
-        if (!ok || result.IsNull()) return nullptr;
-        return new OCCTCurve3D(result);
-    } catch (...) {
-        return nullptr;
-    }
-}
-
 // MARK: - Quasi-Uniform Curve Sampling (v0.31.0)
 
 #include <GCPnts_QuasiUniformAbscissa.hxx>
 
 int32_t OCCTCurve3DQuasiUniformAbscissa(OCCTCurve3DRef curve, int32_t nbPoints, double* outParams) {
-    if (!curve || curve->curve.IsNull() || !outParams || nbPoints <= 0) return 0;
+    // outParams holds nbPoints doubles, which is not what the sampler is bounded by. See
+    // occtSamplerKept/occtSamplerIndex in OCCTBridge_Internal.h (#501).
+    if (!curve || curve->curve.IsNull() || !outParams || !occtValidSampleCount(nbPoints)) return 0;
     try {
         GeomAdaptor_Curve adaptor(curve->curve);
         GCPnts_QuasiUniformAbscissa sampler(adaptor, nbPoints);
         if (!sampler.IsDone()) return 0;
-        int32_t n = sampler.NbPoints();
+        int32_t total = sampler.NbPoints();
+        int32_t n = occtSamplerKept(total, nbPoints);
         for (int32_t i = 0; i < n; i++) {
-            outParams[i] = sampler.Parameter(i + 1);
+            outParams[i] = sampler.Parameter(occtSamplerIndex(i, n, total));
         }
         return n;
     } catch (...) {
@@ -1132,6 +1173,7 @@ OCCTCurve3DRef OCCTCurve3DArcOfEllipse(double centerX, double centerY, double ce
                                          double majorRadius, double minorRadius,
                                          double angle1, double angle2, bool sense) {
     try {
+        if (!occtValidEllipseRadii(majorRadius, minorRadius)) return nullptr;
         gp_Ax2 ax(gp_Pnt(centerX, centerY, centerZ), gp_Dir(normalX, normalY, normalZ));
         gp_Elips elips(ax, majorRadius, minorRadius);
         GC_MakeArcOfEllipse maker(elips, angle1, angle2, sense);
@@ -1148,6 +1190,9 @@ OCCTCurve3DRef OCCTCurve3DArcOfEllipsePoints(double centerX, double centerY, dou
                                                double p1X, double p1Y, double p1Z,
                                                double p2X, double p2Y, double p2Z, bool sense) {
     try {
+        // Not redundant with the IsDone() check below: a zero minor radius makes the two-point
+        // form's ElCLib::Parameter inversion NaN, and IsDone() still reports true (#554).
+        if (!occtValidEllipseRadii(majorRadius, minorRadius)) return nullptr;
         gp_Ax2 ax(gp_Pnt(centerX, centerY, centerZ), gp_Dir(normalX, normalY, normalZ));
         gp_Elips elips(ax, majorRadius, minorRadius);
         GC_MakeArcOfEllipse maker(elips, gp_Pnt(p1X, p1Y, p1Z), gp_Pnt(p2X, p2Y, p2Z), sense);
@@ -1202,6 +1247,7 @@ OCCTCurve3DRef OCCTCurve3DJoinCurves(const OCCTCurve3DRef* curves, int32_t count
     if (!curves || count < 1) return nullptr;
     try {
         // First curve initializes the joiner
+        if (!curves[0] || curves[0]->curve.IsNull()) return nullptr;
         Handle(Geom_BoundedCurve) first = Handle(Geom_BoundedCurve)::DownCast(curves[0]->curve);
         if (first.IsNull()) return nullptr;
 
@@ -1228,15 +1274,24 @@ OCCTCurve3DRef OCCTCurve3DJoinCurves(const OCCTCurve3DRef* curves, int32_t count
 // MARK: - Curve3D Projection / Validate / Sample (v0.49)
 // --- ShapeAnalysis_Curve expansion ---
 
+// The nearest point over the curve's own domain, not over its basis curve (#539). Before, this was
+// a bare ShapeAnalysis_Curve::Project, which on a segment trimmed to [3, 8] reported (100, 0, 0) at
+// parameter 100, distance 0 -- so a `distance < tolerance` proximity test read a point 92 units
+// away as lying on the curve. See occtNearestPointOnCurveRange for what each of its three candidate
+// sources contributes and why none of them suffices alone.
 OCCTCurveProjectResult OCCTCurve3DProjectPoint(OCCTCurve3DRef curve,
     double px, double py, double pz, double precision) {
     OCCTCurveProjectResult result = {};
-    if (!curve) return result;
+    if (!curve || curve->curve.IsNull()) return result;
     try {
-        ShapeAnalysis_Curve sac;
         gp_Pnt proj;
-        double param;
-        double dist = sac.Project(curve->curve, gp_Pnt(px, py, pz), precision, proj, param);
+        double param = 0.0, dist = 0.0;
+        if (!occtNearestPointOnCurveRange(curve->curve, gp_Pnt(px, py, pz),
+                                          curve->curve->FirstParameter(),
+                                          curve->curve->LastParameter(),
+                                          precision, &proj, &param, &dist)) {
+            return result;
+        }
         result.distance = dist;
         result.parameter = param;
         result.projX = proj.X();
@@ -1254,7 +1309,7 @@ OCCTCurveValidateRangeResult OCCTCurve3DValidateRange(OCCTCurve3DRef curve,
     result.first = first;
     result.last = last;
     result.wasAdjusted = false;
-    if (!curve) return result;
+    if (!curve || curve->curve.IsNull()) return result;
     try {
         ShapeAnalysis_Curve sac;
         double f = first, l = last;
@@ -1270,7 +1325,7 @@ OCCTCurveValidateRangeResult OCCTCurve3DValidateRange(OCCTCurve3DRef curve,
 
 int32_t OCCTCurve3DGetSamplePoints3D(OCCTCurve3DRef curve, double first, double last,
     double* outXYZ, int32_t maxPoints) {
-    if (!curve || !outXYZ || maxPoints <= 0) return 0;
+    if (!curve || curve->curve.IsNull() || !outXYZ || maxPoints <= 0) return 0;
     try {
         ShapeAnalysis_Curve sac;
         NCollection_Sequence<gp_Pnt> pts;
@@ -1296,6 +1351,7 @@ OCCTCurve3DRef OCCTCurve3DArcOfHyperbola(
     double dirX, double dirY, double dirZ,
     double alpha1, double alpha2, bool sense) {
     try {
+        if (!occtValidHyperbolaRadii(majorRadius, minorRadius)) return nullptr;
         gp_Ax2 ax(gp_Pnt(axisX, axisY, axisZ), gp_Dir(dirX, dirY, dirZ));
         gp_Hypr hypr(ax, majorRadius, minorRadius);
         GC_MakeArcOfHyperbola maker(hypr, alpha1, alpha2, sense ? Standard_True : Standard_False);
@@ -1316,6 +1372,7 @@ OCCTCurve3DRef OCCTCurve3DArcOfParabola(
     double dirX, double dirY, double dirZ,
     double alpha1, double alpha2, bool sense) {
     try {
+        if (!occtValidParabolaFocal(focalDistance)) return nullptr;
         gp_Ax2 ax(gp_Pnt(axisX, axisY, axisZ), gp_Dir(dirX, dirY, dirZ));
         gp_Parab parab(ax, focalDistance);
         GC_MakeArcOfParabola maker(parab, alpha1, alpha2, sense ? Standard_True : Standard_False);
@@ -1332,7 +1389,7 @@ OCCTCurve3DRef OCCTCurve3DArcOfParabola(
 
 // MARK: - Curve3D ConvertToPeriodic / SplitAt (v0.50)
 OCCTCurve3DRef OCCTCurve3DConvertToPeriodic(OCCTCurve3DRef curve) {
-    if (!curve) return nullptr;
+    if (!curve || curve->curve.IsNull()) return nullptr;
     try {
         ShapeCustom_Curve scc(curve->curve);
         Handle(Geom_Curve) periodic = scc.ConvertToPeriodic(Standard_False);
@@ -1347,7 +1404,7 @@ OCCTCurve3DRef OCCTCurve3DConvertToPeriodic(OCCTCurve3DRef curve) {
 
 bool OCCTCurve3DSplitAt(OCCTCurve3DRef curve, double splitParam,
     OCCTCurve3DRef* outCurve1, OCCTCurve3DRef* outCurve2) {
-    if (!curve || !outCurve1 || !outCurve2) return false;
+    if (!curve || curve->curve.IsNull() || !outCurve1 || !outCurve2) return false;
     *outCurve1 = nullptr;
     *outCurve2 = nullptr;
     try {
@@ -1385,6 +1442,7 @@ bool OCCTCurve3DSplitAt(OCCTCurve3DRef curve, double splitParam,
 OCCTCurve3DRef _Nullable OCCTCurve3DMakeEllipse(double cx, double cy, double cz,
     double dx, double dy, double dz, double majorRadius, double minorRadius) {
     try {
+        if (!occtValidEllipseRadii(majorRadius, minorRadius)) return nullptr;
         gp_Ax2 ax(gp_Pnt(cx, cy, cz), gp_Dir(dx, dy, dz));
         GC_MakeEllipse me(ax, majorRadius, minorRadius);
         if (!me.IsDone()) return nullptr;
@@ -1417,6 +1475,7 @@ OCCTCurve3DRef _Nullable OCCTCurve3DMakeEllipseThreePoints(
 OCCTCurve3DRef _Nullable OCCTCurve3DMakeHyperbola(double cx, double cy, double cz,
     double dx, double dy, double dz, double majorRadius, double minorRadius) {
     try {
+        if (!occtValidHyperbolaRadii(majorRadius, minorRadius)) return nullptr;
         gp_Ax2 ax(gp_Pnt(cx, cy, cz), gp_Dir(dx, dy, dz));
         GC_MakeHyperbola mh(ax, majorRadius, minorRadius);
         if (!mh.IsDone()) return nullptr;
@@ -1570,31 +1629,18 @@ OCCTShapeRef _Nullable OCCTApproxCurvilinearParameter(OCCTShapeRef edgeShape,
 // MARK: - LocalAnalysis_CurveContinuity (v0.67)
 // --- LocalAnalysis_CurveContinuity ---
 
-static GeomAbs_Shape orderToShape(int32_t order) {
-    switch (order) {
-        case 0: return GeomAbs_C0;
-        case 1: return GeomAbs_G1;
-        case 2: return GeomAbs_C1;
-        case 3: return GeomAbs_G2;
-        case 4: return GeomAbs_C2;
-        default: return GeomAbs_C2;
-    }
-}
-
-static int32_t shapeToOrder(GeomAbs_Shape shape) {
-    switch (shape) {
-        case GeomAbs_C0: return 0;
-        case GeomAbs_G1: return 1;
-        case GeomAbs_C1: return 2;
-        case GeomAbs_G2: return 3;
-        case GeomAbs_C2: return 4;
-        default: return -1;
-    }
-}
+// The order in and the effective order out are both GeomAbs_Shape ordinals;
+// occtGeomAbsFromAnalysisOrder / occtAnalysisOrderFromGeomAbs (OCCTBridge_Internal.h) are the
+// shared pair. #490 retired the local orderToShape/shapeToOrder copies here and the identical
+// pair in OCCTBridge_Surface.mm.
+//
+// Only the requested order's own branch is computed, so every output is gated on
+// occtAnalysisMeasuredMask as well as on the predicate itself — an unmeasured predicate answers
+// true from a zero-initialised member, and its angle/ratio answers 0.0 to match. #495.
 
 bool OCCTLocalAnalysisCurveContinuity(OCCTCurve3DRef _Nonnull curve1, double u1,
     OCCTCurve3DRef _Nonnull curve2, double u2, int32_t order,
-    int32_t* _Nonnull outStatus,
+    int32_t* _Nonnull outEffectiveOrder,
     double* _Nonnull outC0Value, double* _Nonnull outG1Angle,
     double* _Nonnull outC1Angle, double* _Nonnull outC1Ratio,
     double* _Nonnull outC2Angle, double* _Nonnull outC2Ratio,
@@ -1602,30 +1648,43 @@ bool OCCTLocalAnalysisCurveContinuity(OCCTCurve3DRef _Nonnull curve1, double u1,
     try {
         auto c1 = (OCCTCurve3D*)curve1;
         auto c2 = (OCCTCurve3D*)curve2;
+        if (!c1 || c1->curve.IsNull() || !c2 || c2->curve.IsNull()) return false;
 
-        LocalAnalysis_CurveContinuity cc(c1->curve, u1, c2->curve, u2, orderToShape(order));
+        const GeomAbs_Shape effective = occtGeomAbsFromAnalysisOrder(order);
+        const int32_t measured = occtAnalysisMeasuredMask(effective);
+
+        LocalAnalysis_CurveContinuity cc(c1->curve, u1, c2->curve, u2, effective);
         if (!cc.IsDone()) return false;
 
-        *outStatus = shapeToOrder(cc.ContinuityStatus());
+        // ContinuityStatus() returns the order the analyser was constructed with, verbatim — it
+        // is the request echoed back, not a measurement. Reported as the *effective* order so a
+        // caller can see where a saturated request landed.
+        *outEffectiveOrder = occtAnalysisOrderFromGeomAbs(cc.ContinuityStatus());
         *outC0Value = cc.C0Value();
-        *outG1Angle = cc.IsG1() ? cc.G1Angle() : -1.0;
-        *outC1Angle = cc.IsC1() ? cc.C1Angle() : -1.0;
-        *outC1Ratio = cc.IsC1() ? cc.C1Ratio() : -1.0;
-        *outC2Angle = cc.IsC2() ? cc.C2Angle() : -1.0;
-        *outC2Ratio = cc.IsC2() ? cc.C2Ratio() : -1.0;
-        *outG2Angle = cc.IsG2() ? cc.G2Angle() : -1.0;
-        *outG2CurvatureVariation = cc.IsG2() ? cc.G2CurvatureVariation() : -1.0;
+        *outG1Angle = ((measured & 0x02) && cc.IsG1()) ? cc.G1Angle() : -1.0;
+        *outC1Angle = ((measured & 0x04) && cc.IsC1()) ? cc.C1Angle() : -1.0;
+        *outC1Ratio = ((measured & 0x04) && cc.IsC1()) ? cc.C1Ratio() : -1.0;
+        *outC2Angle = ((measured & 0x10) && cc.IsC2()) ? cc.C2Angle() : -1.0;
+        *outC2Ratio = ((measured & 0x10) && cc.IsC2()) ? cc.C2Ratio() : -1.0;
+        *outG2Angle = ((measured & 0x08) && cc.IsG2()) ? cc.G2Angle() : -1.0;
+        *outG2CurvatureVariation = ((measured & 0x08) && cc.IsG2()) ? cc.G2CurvatureVariation() : -1.0;
         return true;
     } catch (...) { return false; }
 }
 
 int32_t OCCTLocalAnalysisCurveContinuityFlags(OCCTCurve3DRef _Nonnull curve1, double u1,
-    OCCTCurve3DRef _Nonnull curve2, double u2, int32_t order) {
+    OCCTCurve3DRef _Nonnull curve2, double u2, int32_t order,
+    int32_t* _Nonnull outMeasured) {
+    *outMeasured = 0;
     try {
         auto c1 = (OCCTCurve3D*)curve1;
         auto c2 = (OCCTCurve3D*)curve2;
+        if (!c1 || c1->curve.IsNull() || !c2 || c2->curve.IsNull()) return 0;
 
-        LocalAnalysis_CurveContinuity cc(c1->curve, u1, c2->curve, u2, orderToShape(order));
+        const GeomAbs_Shape effective = occtGeomAbsFromAnalysisOrder(order);
+        const int32_t measured = occtAnalysisMeasuredMask(effective);
+
+        LocalAnalysis_CurveContinuity cc(c1->curve, u1, c2->curve, u2, effective);
         if (!cc.IsDone()) return 0;
 
         int32_t flags = 0;
@@ -1634,46 +1693,22 @@ int32_t OCCTLocalAnalysisCurveContinuityFlags(OCCTCurve3DRef _Nonnull curve1, do
         if (cc.IsC1()) flags |= 4;
         if (cc.IsG2()) flags |= 8;
         if (cc.IsC2()) flags |= 16;
-        return flags;
+        *outMeasured = measured;
+        return flags & measured;
     } catch (...) { return 0; }
 }
 
 // MARK: - GeomConvert_ApproxCurve (v0.75)
 // --- GeomConvert_ApproxCurve ---
 
-static GeomAbs_Shape intToContinuity(int32_t c) {
-    switch (c) {
-        case 0: return GeomAbs_C0;
-        case 1: return GeomAbs_C1;
-        case 2: return GeomAbs_C2;
-        case 3: return GeomAbs_C3;
-        default: return GeomAbs_C2;
-    }
-}
-
+// Both curve approximation entry points share occtApproxCurve, declared next to
+// OCCTCurve3DApproximate above — see the #491 note there for why the gate is HasResult().
 OCCTApproxCurveResult OCCTGeomConvertApproxCurve(OCCTCurve3DRef _Nonnull curve,
                                                   double tolerance,
                                                   int32_t continuity,
                                                   int32_t maxSegments,
                                                   int32_t maxDegree) {
-    OCCTApproxCurveResult result = {};
-    if (!curve) return result;
-    try {
-        GeomConvert_ApproxCurve approx(curve->curve, tolerance,
-                                        intToContinuity(continuity), maxSegments, maxDegree);
-        result.isDone = approx.IsDone();
-        result.hasResult = approx.HasResult();
-        if (result.hasResult) {
-            result.maxError = approx.MaxError();
-            Handle(Geom_BSplineCurve) bspl = approx.Curve();
-            if (!bspl.IsNull()) {
-                auto* ref = new OCCTCurve3D();
-                ref->curve = bspl;
-                result.curve = ref;
-            }
-        }
-    } catch (...) {}
-    return result;
+    return occtApproxCurve(curve, tolerance, continuity, maxSegments, maxDegree);
 }
 
 // MARK: - GCPnts QuasiUniform / TangentialDeflection (v0.75)
@@ -1683,14 +1718,17 @@ int32_t OCCTGCPntsQuasiUniform(OCCTEdgeRef _Nonnull edge,
                                 int32_t nbPoints,
                                 double* _Nonnull params,
                                 int32_t maxParams) {
-    if (!edge || nbPoints < 2) return 0;
+    if (!edge || !occtValidSampleCount(nbPoints)) return 0;
     try {
         BRepAdaptor_Curve curve(TopoDS::Edge(edge->edge));
         GCPnts_QuasiUniformAbscissa sampler(curve, nbPoints);
         if (!sampler.IsDone()) return 0;
-        int32_t count = std::min((int32_t)sampler.NbPoints(), maxParams);
+        // This one always clamped, but to the tail, so whenever the sampler overshot the result
+        // stopped short of the edge's last parameter. occtSamplerIndex keeps the end (#501).
+        int32_t total = sampler.NbPoints();
+        int32_t count = occtSamplerKept(total, maxParams);
         for (int32_t i = 0; i < count; i++) {
-            params[i] = sampler.Parameter(i + 1); // 1-based
+            params[i] = sampler.Parameter(occtSamplerIndex(i, count, total)); // 1-based
         }
         return count;
     } catch (...) {
@@ -1698,24 +1736,11 @@ int32_t OCCTGCPntsQuasiUniform(OCCTEdgeRef _Nonnull edge,
     }
 }
 
-int32_t OCCTGCPntsQuasiUniformCurve(OCCTCurve3DRef _Nonnull curve,
-                                      int32_t nbPoints,
-                                      double* _Nonnull params,
-                                      int32_t maxParams) {
-    if (!curve || nbPoints < 2) return 0;
-    try {
-        GeomAdaptor_Curve adaptor(curve->curve);
-        GCPnts_QuasiUniformAbscissa sampler(adaptor, nbPoints);
-        if (!sampler.IsDone()) return 0;
-        int32_t count = std::min((int32_t)sampler.NbPoints(), maxParams);
-        for (int32_t i = 0; i < count; i++) {
-            params[i] = sampler.Parameter(i + 1);
-        }
-        return count;
-    } catch (...) {
-        return 0;
-    }
-}
+// A second Curve3D-based spelling, OCCTGCPntsQuasiUniformCurve, lived here from v0.75 until #501.
+// It was byte-for-byte the same sampling as OCCTCurve3DQuasiUniformAbscissa (v0.31.0) and never
+// had a caller in Swift or in the tests; the cross-reference index that should have caught the
+// re-wrap named a function that does not exist. It is gone; its maxParams bound, the one thing the
+// older spelling lacked, is now folded into that spelling.
 
 // --- GCPnts_TangentialDeflection ---
 
@@ -1754,7 +1779,7 @@ int32_t OCCTGCPntsTangentialDeflectionCurve(OCCTCurve3DRef _Nonnull curve,
                                              double* _Nonnull params,
                                              double* _Nullable coords,
                                              int32_t maxPoints) {
-    if (!curve) return 0;
+    if (!curve || curve->curve.IsNull()) return 0;
     try {
         GeomAdaptor_Curve adaptor(curve->curve);
         GCPnts_TangentialDeflection sampler(adaptor, angularDeflection, curvatureDeflection,
@@ -2026,7 +2051,7 @@ void OCCTAxis2PlacementSetXDirection(OCCTAxis2PlacementRef _Nonnull ref, double 
 
 OCCTCurve3DRef _Nullable OCCTShapeConstructConvertToBSpline3D(OCCTCurve3DRef _Nonnull curve,
                                                                 double first, double last, double precision) {
-    if (!curve) return nullptr;
+    if (!curve || curve->curve.IsNull()) return nullptr;
     try {
         ShapeConstruct_Curve scc;
         Handle(Geom_BSplineCurve) bsp = scc.ConvertToBSpline(curve->curve, first, last, precision);
@@ -2041,7 +2066,7 @@ OCCTCurve3DRef _Nullable OCCTShapeConstructConvertToBSpline3D(OCCTCurve3DRef _No
 bool OCCTShapeConstructAdjustCurve3D(OCCTCurve3DRef _Nonnull curve,
                                       double p1x, double p1y, double p1z,
                                       double p2x, double p2y, double p2z) {
-    if (!curve) return false;
+    if (!curve || curve->curve.IsNull()) return false;
     try {
         ShapeConstruct_Curve scc;
         return scc.AdjustCurve(curve->curve, gp_Pnt(p1x, p1y, p1z), gp_Pnt(p2x, p2y, p2z));
@@ -2156,23 +2181,15 @@ bool OCCTApproxSameParameter(OCCTCurve3DRef _Nonnull curve3dRef,
 #include <ShapeUpgrade_SplitCurve2dContinuity.hxx>
 #include <ShapeUpgrade_ConvertCurve2dToBezier.hxx>
 
-static GeomAbs_Shape continuityFromInt(int val) {
-    switch (val) {
-        case 0: return GeomAbs_C0;
-        case 1: return GeomAbs_C1;
-        case 2: return GeomAbs_C2;
-        case 3: return GeomAbs_C3;
-        default: return GeomAbs_CN;
-    }
-}
-
 int OCCTSplitCurve3dContinuity(OCCTCurve3DRef _Nonnull curveRef, int criterion, double tolerance,
                                  OCCTCurve3DRef _Nullable* _Nullable outCurves, int maxCurves) {
     try {
-        auto& curve = reinterpret_cast<OCCTCurve3D*>(curveRef)->curve;
+        auto* wrapper = reinterpret_cast<OCCTCurve3D*>(curveRef);
+        if (!wrapper || wrapper->curve.IsNull()) return 0;
+        auto& curve = wrapper->curve;
         Handle(ShapeUpgrade_SplitCurve3dContinuity) splitter = new ShapeUpgrade_SplitCurve3dContinuity();
         splitter->Init(curve);
-        splitter->SetCriterion(continuityFromInt(criterion));
+        splitter->SetCriterion(occtGeomAbsFromParametricContinuity(criterion));
         splitter->SetTolerance(tolerance);
         splitter->Perform(true);
         auto curves = splitter->GetCurves();
@@ -2192,26 +2209,20 @@ int OCCTSplitCurve3dContinuity(OCCTCurve3DRef _Nonnull curveRef, int criterion, 
     }
 }
 
-// MARK: - GeomConvert_CurveToAnaCurve (v0.78)
 // MARK: - GeomConvert_CurveToAnaCurve
 
 OCCTCurveToAnaCurveResult OCCTGeomConvertCurveToAnalytical(OCCTCurve3DRef _Nonnull curveRef,
                                                              double tolerance, double first, double last) {
     OCCTCurveToAnaCurveResult result = {nullptr, 0, 0, 0, false};
-    try {
-        auto& curve = reinterpret_cast<OCCTCurve3D*>(curveRef)->curve;
-        GeomConvert_CurveToAnaCurve converter(curve);
-        Handle(Geom_Curve) resCurve;
-        double newF, newL;
-        bool ok = converter.ConvertToAnalytical(tolerance, resCurve, first, last, newF, newL);
-        if (ok && !resCurve.IsNull()) {
-            result.curve = reinterpret_cast<OCCTCurve3DRef>(new OCCTCurve3D{resCurve});
-            result.newFirst = newF;
-            result.newLast = newL;
-            result.gap = converter.Gap();
-            result.success = true;
-        }
-    } catch (...) {}
+    if (!curveRef) return result;
+    Handle(Geom_Curve) resCurve;
+    if (!occtCurveToAnalytical(reinterpret_cast<OCCTCurve3D*>(curveRef)->curve, tolerance,
+                               first, last, resCurve,
+                               result.newFirst, result.newLast, result.gap)) {
+        return result;
+    }
+    result.curve = reinterpret_cast<OCCTCurve3DRef>(new OCCTCurve3D{resCurve});
+    result.success = true;
     return result;
 }
 
@@ -2547,6 +2558,7 @@ OCCTGeomTransformRef OCCTGeomTransformInverted(OCCTGeomTransformRef transform) {
 OCCTCurve3DRef OCCTCurve3DCreateOffset(OCCTCurve3DRef basisCurve,
                                          double offset,
                                          double dirX, double dirY, double dirZ) {
+    if (!basisCurve || basisCurve->curve.IsNull()) return nullptr;
     try {
         Handle(Geom_OffsetCurve) oc = new Geom_OffsetCurve(
             basisCurve->curve, offset, gp_Dir(dirX, dirY, dirZ));
@@ -2823,14 +2835,14 @@ bool OCCTConvertCompBezier2dToBSpline2d(const double* poles, int32_t segCount, i
 // --- ShapeAnalysis_Curve static methods ---
 
 bool OCCTCurve3DIsClosedWithPreci(OCCTCurve3DRef curve, double preci) {
-    if (!curve) return false;
+    if (!curve || curve->curve.IsNull()) return false;
     try {
         return ShapeAnalysis_Curve::IsClosed(curve->curve, preci);
     } catch (...) { return false; }
 }
 
 bool OCCTCurve3DIsPeriodicSA(OCCTCurve3DRef curve) {
-    if (!curve) return false;
+    if (!curve || curve->curve.IsNull()) return false;
     try {
         return ShapeAnalysis_Curve::IsPeriodic(curve->curve);
     } catch (...) { return false; }
@@ -2852,6 +2864,7 @@ OCCTCurve3DRef OCCTCurve3DOffsetBasis(OCCTCurve3DRef curve) {
 // --- Geom_TrimmedCurve ---
 
 OCCTCurve3DRef OCCTCurve3DTrimmed(OCCTCurve3DRef basisCurve, double u1, double u2) {
+    if (!basisCurve || basisCurve->curve.IsNull()) return nullptr;
     try {
         Handle(Geom_TrimmedCurve) tc = new Geom_TrimmedCurve(basisCurve->curve, u1, u2);
         OCCTCurve3D* c = new OCCTCurve3D();
@@ -2861,6 +2874,10 @@ OCCTCurve3DRef OCCTCurve3DTrimmed(OCCTCurve3DRef basisCurve, double u1, double u
 }
 
 void OCCTCurve3DStartPoint(OCCTCurve3DRef curve, double* x, double* y, double* z) {
+    // #478: these two were the only pair in the family with no guard at all, not even the
+    // wrapper pointer. Zero out first so the guarded exit matches the catch below.
+    *x = 0; *y = 0; *z = 0;
+    if (!curve || curve->curve.IsNull()) return;
     try {
         gp_Pnt p = curve->curve->Value(curve->curve->FirstParameter());
         *x = p.X(); *y = p.Y(); *z = p.Z();
@@ -2868,6 +2885,8 @@ void OCCTCurve3DStartPoint(OCCTCurve3DRef curve, double* x, double* y, double* z
 }
 
 void OCCTCurve3DEndPoint(OCCTCurve3DRef curve, double* x, double* y, double* z) {
+    *x = 0; *y = 0; *z = 0;   // #478, as above
+    if (!curve || curve->curve.IsNull()) return;
     try {
         gp_Pnt p = curve->curve->Value(curve->curve->LastParameter());
         *x = p.X(); *y = p.Y(); *z = p.Z();
@@ -2959,6 +2978,7 @@ OCCTCurve3DRef OCCTGCMakeEllipse(double cx, double cy, double cz,
                                    double nx, double ny, double nz,
                                    double major, double minor) {
     try {
+        if (!occtValidEllipseRadii(major, minor)) return nullptr;
         gp_Ax2 ax(gp_Pnt(cx, cy, cz), gp_Dir(nx, ny, nz));
         GC_MakeEllipse me(ax, major, minor);
         if (!me.IsDone()) return nullptr;
@@ -2985,6 +3005,7 @@ OCCTCurve3DRef OCCTGCMakeEllipseFromElips(double cx, double cy, double cz,
                                             double xdx, double xdy, double xdz,
                                             double major, double minor) {
     try {
+        if (!occtValidEllipseRadii(major, minor)) return nullptr;
         gp_Ax2 ax(gp_Pnt(cx, cy, cz), gp_Dir(nx, ny, nz), gp_Dir(xdx, xdy, xdz));
         GC_MakeEllipse me(ax, major, minor);
         if (!me.IsDone()) return nullptr;
@@ -3000,6 +3021,7 @@ OCCTCurve3DRef OCCTGCMakeHyperbola(double cx, double cy, double cz,
                                      double nx, double ny, double nz,
                                      double major, double minor) {
     try {
+        if (!occtValidHyperbolaRadii(major, minor)) return nullptr;
         gp_Ax2 ax(gp_Pnt(cx, cy, cz), gp_Dir(nx, ny, nz));
         GC_MakeHyperbola mh(ax, major, minor);
         if (!mh.IsDone()) return nullptr;
@@ -3043,8 +3065,12 @@ OCCTCurve3DRef OCCTGCMakeHyperbola3Points(double x1, double y1, double z1,
 #include <GCPnts_UniformAbscissa.hxx>
 #include <BRepAdaptor_Curve.hxx>
 
+// These four are called twice by their Swift wrappers (once with params == nullptr to learn the
+// count, then again with a buffer of exactly that size), so the sampler's own overshoot is already
+// accounted for and there is nothing to clamp. The count preconditions still have to be applied
+// here: without them nbPoints == 0 reported IsDone() with five parameters (#501).
 int32_t OCCTUniformAbscissaByCount(OCCTShapeRef edge, int32_t nbPoints, double* params) {
-    if (!edge) return 0;
+    if (!edge || !occtValidSampleCount(nbPoints)) return 0;
     try {
         BRepAdaptor_Curve ac(TopoDS::Edge(edge->shape));
         GCPnts_UniformAbscissa ua(ac, nbPoints);
@@ -3077,7 +3103,7 @@ int32_t OCCTUniformAbscissaByDistance(OCCTShapeRef edge, double abscissa, double
 
 int32_t OCCTUniformAbscissaByCountRange(OCCTShapeRef edge, int32_t nbPoints,
                                          double u1, double u2, double* params) {
-    if (!edge) return 0;
+    if (!edge || !occtValidSampleCount(nbPoints)) return 0;
     try {
         BRepAdaptor_Curve ac(TopoDS::Edge(edge->shape));
         GCPnts_UniformAbscissa ua(ac, nbPoints, u1, u2);
@@ -3118,6 +3144,7 @@ OCCTCurve3DRef OCCTConcatenateCurves3D(OCCTCurve3DRef* curves, int32_t count, do
     if (!curves || count <= 0) return nullptr;
     try {
         // First curve must be bounded — try to cast
+        if (!curves[0] || curves[0]->curve.IsNull()) return nullptr;
         Handle(Geom_BoundedCurve) first = Handle(Geom_BoundedCurve)::DownCast(curves[0]->curve);
         if (first.IsNull()) {
             // Try trimming the curve using its parameter range
@@ -3127,6 +3154,7 @@ OCCTCurve3DRef OCCTConcatenateCurves3D(OCCTCurve3DRef* curves, int32_t count, do
         }
         GeomConvert_CompCurveToBSplineCurve comp(first);
         for (int32_t i = 1; i < count; i++) {
+            if (!curves[i] || curves[i]->curve.IsNull()) return nullptr;
             Handle(Geom_BoundedCurve) bc = Handle(Geom_BoundedCurve)::DownCast(curves[i]->curve);
             if (bc.IsNull()) {
                 double f = curves[i]->curve->FirstParameter();
@@ -3422,6 +3450,7 @@ bool OCCTCurve3DCircleSetRadius(OCCTCurve3DRef curve, double radius) {
     try {
         Handle(Geom_Circle) c = Handle(Geom_Circle)::DownCast(curve->curve);
         if (c.IsNull()) return false;
+        if (!occtValidCircleRadius(radius)) return false;
         c->SetRadius(radius);
         return true;
     } catch (...) { return false; }
@@ -3496,6 +3525,9 @@ bool OCCTCurve3DEllipseSetMajorRadius(OCCTCurve3DRef curve, double r) {
     try {
         Handle(Geom_Ellipse) e = Handle(Geom_Ellipse)::DownCast(curve->curve);
         if (e.IsNull()) return false;
+        // The pair has to stay a valid ellipse, so the new value is judged against the radius
+        // already on the curve, not on its own (#554).
+        if (!occtValidEllipseRadii(r, e->MinorRadius())) return false;
         e->SetMajorRadius(r);
         return true;
     } catch (...) { return false; }
@@ -3506,6 +3538,7 @@ bool OCCTCurve3DEllipseSetMinorRadius(OCCTCurve3DRef curve, double r) {
     try {
         Handle(Geom_Ellipse) e = Handle(Geom_Ellipse)::DownCast(curve->curve);
         if (e.IsNull()) return false;
+        if (!occtValidEllipseRadii(e->MajorRadius(), r)) return false;
         e->SetMinorRadius(r);
         return true;
     } catch (...) { return false; }
@@ -3597,6 +3630,7 @@ bool OCCTCurve3DHyperbolaSetMajorRadius(OCCTCurve3DRef curve, double r) {
     try {
         Handle(Geom_Hyperbola) h = Handle(Geom_Hyperbola)::DownCast(curve->curve);
         if (h.IsNull()) return false;
+        if (!occtValidHyperbolaRadii(r, h->MinorRadius())) return false;
         h->SetMajorRadius(r);
         return true;
     } catch (...) { return false; }
@@ -3607,6 +3641,7 @@ bool OCCTCurve3DHyperbolaSetMinorRadius(OCCTCurve3DRef curve, double r) {
     try {
         Handle(Geom_Hyperbola) h = Handle(Geom_Hyperbola)::DownCast(curve->curve);
         if (h.IsNull()) return false;
+        if (!occtValidHyperbolaRadii(h->MajorRadius(), r)) return false;
         h->SetMinorRadius(r);
         return true;
     } catch (...) { return false; }
@@ -3669,6 +3704,7 @@ bool OCCTCurve3DParabolaSetFocal(OCCTCurve3DRef curve, double focal) {
     try {
         Handle(Geom_Parabola) p = Handle(Geom_Parabola)::DownCast(curve->curve);
         if (p.IsNull()) return false;
+        if (!occtValidParabolaFocal(focal)) return false;
         p->SetFocal(focal);
         return true;
     } catch (...) { return false; }
@@ -3888,6 +3924,9 @@ int32_t OCCTExtremaElCLinElips(double lpx, double lpy, double lpz, double ldx, d
                                 double tolerance,
                                 OCCTExtremaElResult* out, int32_t max) {
     try {
+        // A degenerate ellipse does not give a degenerate answer here, it gives a wrong one:
+        // Extrema_ExtElC reports IsParallel() against a (0, 0) ellipse (#554).
+        if (!occtValidEllipseRadii(majorRadius, minorRadius)) return -1;
         gp_Lin l(gp_Pnt(lpx, lpy, lpz), gp_Dir(ldx, ldy, ldz));
         gp_Ax2 ax(gp_Pnt(cx, cy, cz), gp_Dir(nx, ny, nz), gp_Dir(xdx, xdy, xdz));
         gp_Elips elips(ax, majorRadius, minorRadius);
@@ -4046,6 +4085,10 @@ int32_t OCCTExtremaExtPElCElips(double px, double py, double pz,
                                   double tolerance,
                                   OCCTExtremaElResult* out, int32_t max) {
     try {
+        // Extrema_ExtPElC reports NbExt() == 0 against a (0, 0) ellipse rather than the one
+        // extremum at its centre, so "no extrema" would be a wrong answer, not a degenerate
+        // one (#554).
+        if (!occtValidEllipseRadii(majorRadius, minorRadius)) return -1;
         gp_Pnt p(px, py, pz);
         gp_Ax2 ax(gp_Pnt(cx, cy, cz), gp_Dir(nx, ny, nz), gp_Dir(xdx, xdy, xdz));
         gp_Elips elips(ax, majorRadius, minorRadius);
@@ -4071,6 +4114,7 @@ int32_t OCCTExtremaExtPElCParab(double px, double py, double pz,
                                   double tolerance,
                                   OCCTExtremaElResult* out, int32_t max) {
     try {
+        if (!occtValidParabolaFocal(focal)) return -1;
         gp_Pnt p(px, py, pz);
         gp_Ax2 ax(gp_Pnt(cx, cy, cz), gp_Dir(nx, ny, nz), gp_Dir(xdx, xdy, xdz));
         gp_Parab parab(ax, focal);
@@ -4091,7 +4135,7 @@ int32_t OCCTExtremaExtPElCParab(double px, double py, double pz,
 // MARK: - Curve3D Extras (v0.109.0)
 
 bool OCCTCurve3DReverse(OCCTCurve3DRef curve) {
-    if (!curve) return false;
+    if (!curve || curve->curve.IsNull()) return false;   // #478
     try {
         curve->curve->Reverse();
         return true;
@@ -4099,7 +4143,7 @@ bool OCCTCurve3DReverse(OCCTCurve3DRef curve) {
 }
 
 OCCTCurve3DRef OCCTCurve3DCopy(OCCTCurve3DRef curve) {
-    if (!curve) return nullptr;
+    if (!curve || curve->curve.IsNull()) return nullptr;  // #478
     try {
         Handle(Geom_Curve) copy = Handle(Geom_Curve)::DownCast(curve->curve->Copy());
         if (copy.IsNull()) return nullptr;
@@ -4107,21 +4151,9 @@ OCCTCurve3DRef OCCTCurve3DCopy(OCCTCurve3DRef curve) {
     } catch (...) { return nullptr; }
 }
 
+// Delegates to OCCTCurve3DGetContinuity: same Continuity() call, one encoding (#485).
 int32_t OCCTCurve3DContinuity(OCCTCurve3DRef curve) {
-    if (!curve) return -1;
-    try {
-        GeomAbs_Shape cont = curve->curve->Continuity();
-        switch (cont) {
-            case GeomAbs_C0: return 0;
-            case GeomAbs_C1: return 1;
-            case GeomAbs_C2: return 2;
-            case GeomAbs_C3: return 3;
-            case GeomAbs_CN: return 99;
-            case GeomAbs_G1: return -2;
-            case GeomAbs_G2: return -3;
-            default: return -1;
-        }
-    } catch (...) { return -1; }
+    return OCCTCurve3DGetContinuity(curve);
 }
 // MARK: - Curve3D Evaluation (v0.110.0)
 
@@ -4176,86 +4208,16 @@ void OCCTCurve3DEvalD3(OCCTCurve3DRef curve, double u,
         *d3x = r.D3.X(); *d3y = r.D3.Y(); *d3z = r.D3.Z();
     } catch (...) {}
 }
-// MARK: - Batch Curve Evaluation (v0.110.0)
-
-void OCCTCurve3DEvalBatchD0(OCCTCurve3DRef curve, const double* params, int32_t count,
-                              double* xs, double* ys, double* zs) {
-    if (!curve || curve->curve.IsNull() || count <= 0) return;
-    try {
-        for (int i = 0; i < count; i++) {
-            gp_Pnt p = curve->curve->EvalD0(params[i]);
-            xs[i] = p.X(); ys[i] = p.Y(); zs[i] = p.Z();
-        }
-    } catch (...) {}
-}
-
-void OCCTCurve3DEvalBatchD1(OCCTCurve3DRef curve, const double* params, int32_t count,
-                              double* xs, double* ys, double* zs,
-                              double* d1xs, double* d1ys, double* d1zs) {
-    if (!curve || curve->curve.IsNull() || count <= 0) return;
-    try {
-        for (int i = 0; i < count; i++) {
-            Geom_Curve::ResD1 r = curve->curve->EvalD1(params[i]);
-            xs[i] = r.Point.X(); ys[i] = r.Point.Y(); zs[i] = r.Point.Z();
-            d1xs[i] = r.D1.X(); d1ys[i] = r.D1.Y(); d1zs[i] = r.D1.Z();
-        }
-    } catch (...) {}
-}
-
-void OCCTCurve2DEvalBatchD0(OCCTCurve2DRef curve, const double* params, int32_t count,
-                              double* xs, double* ys) {
-    if (!curve || curve->curve.IsNull() || count <= 0) return;
-    try {
-        for (int i = 0; i < count; i++) {
-            gp_Pnt2d p = curve->curve->EvalD0(params[i]);
-            xs[i] = p.X(); ys[i] = p.Y();
-        }
-    } catch (...) {}
-}
-
-void OCCTCurve2DEvalBatchD1(OCCTCurve2DRef curve, const double* params, int32_t count,
-                              double* xs, double* ys,
-                              double* d1xs, double* d1ys) {
-    if (!curve || curve->curve.IsNull() || count <= 0) return;
-    try {
-        for (int i = 0; i < count; i++) {
-            Geom2d_Curve::ResD1 r = curve->curve->EvalD1(params[i]);
-            xs[i] = r.Point.X(); ys[i] = r.Point.Y();
-            d1xs[i] = r.D1.X(); d1ys[i] = r.D1.Y();
-        }
-    } catch (...) {}
-}
-// MARK: - GeomGridEval_Curve 3D (v0.111.0)
-
-void OCCTGridEvalCurveD0(OCCTCurve3DRef curve, const double* params, int32_t count,
-                           double* xs, double* ys, double* zs) {
-    if (!curve || curve->curve.IsNull() || count <= 0) return;
-    try {
-        GeomGridEval_Curve eval(curve->curve);
-        NCollection_Array1<double> pArr(1, count);
-        for (int i = 0; i < count; i++) pArr(i+1) = params[i];
-        NCollection_Array1<gp_Pnt> results = eval.EvaluateGrid(pArr);
-        for (int i = 0; i < count; i++) {
-            xs[i] = results(i+1).X(); ys[i] = results(i+1).Y(); zs[i] = results(i+1).Z();
-        }
-    } catch (...) {}
-}
-
-void OCCTGridEvalCurveD1(OCCTCurve3DRef curve, const double* params, int32_t count,
-                           double* xs, double* ys, double* zs,
-                           double* d1xs, double* d1ys, double* d1zs) {
-    if (!curve || curve->curve.IsNull() || count <= 0) return;
-    try {
-        GeomGridEval_Curve eval(curve->curve);
-        NCollection_Array1<double> pArr(1, count);
-        for (int i = 0; i < count; i++) pArr(i+1) = params[i];
-        NCollection_Array1<GeomGridEval::CurveD1> results = eval.EvaluateGridD1(pArr);
-        for (int i = 0; i < count; i++) {
-            xs[i] = results(i+1).Point.X(); ys[i] = results(i+1).Point.Y(); zs[i] = results(i+1).Point.Z();
-            d1xs[i] = results(i+1).D1.X(); d1ys[i] = results(i+1).D1.Y(); d1zs[i] = results(i+1).D1.Z();
-        }
-    } catch (...) {}
-}
+// MARK: - Batch Curve Evaluation (v0.110.0 / v0.111.0)
+//
+// #486: six functions lived here. OCCTCurve3DEvalBatchD0/D1 and OCCTCurve2DEvalBatchD0/D1
+// (v0.110, a plain per-point Geom_Curve::EvalD0/EvalD1 loop that bypassed the batch evaluator
+// v0.29.0 was already using) and OCCTGridEvalCurveD0/D1 (v0.111, the same GeomGridEval_Curve
+// calls as OCCTCurve3DEvaluateGrid/D1 above, only writing per-axis planes instead of interleaved
+// triples). All duplicated OCCTCurve3DEvaluateGrid/D1 or OCCTCurve2DEvaluateGrid/D1 (the latter
+// pair in OCCTBridge_Geom2d.mm, where the 2D ones belonged all along; OCCTCurve2DEvalBatchD0/D1
+// were defined in this file despite operating on Curve2D). Removed; their Swift spellings now
+// forward to the v0.28.0/v0.29.0 family.
 
 // MARK: - v0.112: Curve3D extras + Extrema extras (LocateOnCurve/Surface)
 // --- Curve3D extras ---
@@ -4268,24 +4230,106 @@ int32_t OCCTCurve3DCurveType(OCCTCurve3DRef curve) {
     } catch (...) { return 7; }
 }
 
-double OCCTCurve3DParameterAtPoint(OCCTCurve3DRef curve,
-                                   double x, double y, double z) {
-    if (!curve || curve->curve.IsNull()) return 0;
+// One nearest-point answer behind every entry point that wants the nearest solution over the curve's
+// whole range: OCCTCurve3DNearestParameter and OCCTExtremaLocateOnCurve's full-range fallback.
+//
+// #500 unified them onto a single GeomAPI_ProjectPointOnCurve construction. #615 makes that
+// construction the RIGHT one: GeomAPI reports extrema, not minima, so LowerDistance is not the
+// nearest point and NbPoints() == 0 is not "no nearest point". Measured on the geometry #539 named,
+// a half circle of radius 5 queried from (0, -6, 0): this reported the far side of the arc, 11 away,
+// where OCCTCurve3DProjectPoint -- converted by #539, same promise, same curve, same point --
+// reported the true nearest at 7.81; and on a segment trimmed to [3, 8] queried at (100, 0, 0) it
+// reported nothing at all where the converted sibling reported the segment's own end, 92 away. So
+// the two spellings disagreed about which point is nearest AND about whether there is one.
+//
+// Both are now the same answer because both are now the same helper. See
+// occtNearestPointOnCurveRange (OCCTBridge_Internal.h) for what each of its three candidate sources
+// contributes and why none of them suffices alone.
+//
+// CONSEQUENCE, and it is the point rather than a side effect: this no longer returns false for a
+// point with no perpendicular foot. A point beyond the end of a bounded curve is nearest to that
+// end, and a circle's centre is equidistant from every point on it, so both now answer -- with a
+// real parameter and a true distance. False is left meaning what it means for the converted
+// siblings: no curve to answer about. Precision::Confusion() is the projection precision, matching
+// the two converted entry points that likewise take none from their caller:
+// OCCTEdgeProjectPoint (OCCTBridge_Properties.mm) and OCCTBRepExtremaExtPC
+// (OCCTBridge_Topology.mm). Nothing in THIS file set that precedent -- OCCTCurve3DProjectPoint,
+// the only other local caller of the helper, is handed a precision by its own caller.
+//
+// Not routed through here, and why: OCCTExtremaLocateOnCurve's PRIMARY search deliberately reports
+// a windowed extremum near a caller-supplied guess (see there, and note that "near" is the window,
+// not a ranking); OCCTExtremaPointCurve and OCCTProjOnCurve* need every extremum, not the nearest;
+// OCCTEdgeProjectPoint (OCCTBridge_Properties.mm) reaches the same shared helper by its own route,
+// from BRep_Tool::Curve's range rather than a Geom_Curve's.
+static bool occtNearestProjectionOnCurve3d(OCCTCurve3DRef curve, const gp_Pnt& point,
+                                           gp_Pnt* outNearest, double* outParameter,
+                                           double* outDistance) {
+    if (!curve || curve->curve.IsNull()) return false;
     try {
-        GeomAPI_ProjectPointOnCurve proj(gp_Pnt(x, y, z), curve->curve);
-        if (proj.NbPoints() < 1) return curve->curve->FirstParameter();
-        return proj.LowerDistanceParameter();
-    } catch (...) { return 0; }
+        return occtNearestPointOnCurveRange(curve->curve, point,
+                                            curve->curve->FirstParameter(),
+                                            curve->curve->LastParameter(),
+                                            Precision::Confusion(),
+                                            outNearest, outParameter, outDistance);
+    } catch (...) {
+        return false;
+    }
+}
+
+// Failure contract: returns false, leaving *outParameter untouched. That now means only "no curve":
+// every real curve has a nearest point to every point (#615). It used to also mean "no extremum",
+// which is why this replaced two functions that computed the identical projection and disagreed
+// about how to report its absence: OCCTCurve3DParameterAtPoint returned curve->FirstParameter(),
+// OCCTCurve3DClosestParameter returned 0, which is not even in the domain of a curve trimmed to,
+// say, [3, 8] (#500).
+bool OCCTCurve3DNearestParameter(OCCTCurve3DRef _Nonnull curve, double x, double y, double z,
+                                 double* _Nonnull outParameter) {
+    return occtNearestProjectionOnCurve3d(curve, gp_Pnt(x, y, z), nullptr, outParameter, nullptr);
 }
 // --- Extrema extras ---
 
+// Two searches, and #615 deliberately changed only the second of them.
+//
+// The PRIMARY search is local by RANGE, not by proximity: it reports the LOWEST-DISTANCE extremum
+// within a window of +/-10% of the domain around the guess. Note what initParam does and does not
+// buy -- it bounds the window, and nothing selects among the extrema inside it by how near the guess
+// they are, because the selection is GeomAPI_ProjectPointOnCurve::LowerDistanceParameter(). Measured
+// on a ramped sine BSpline, a guess of 90.9114 returns param 79.9751, 10.94 away from the guess, in
+// preference to an extremum 0.13 away at 91.0378, because the far one is the closer of the two to
+// the query POINT (10.07 against 15.19); 22 of 46 multi-extremum windows in that sweep behave so.
+//
+// The window is still what makes the answer local, and a windowed minimum can be a global MAXIMUM:
+// on a half circle of radius 5 queried from (0, -6, 0) with a guess of pi/2 this reports 11, the far
+// side. That is not the nearest point on the curve and is not claimed to be.
+//
+// Adding the window's two ends to that minimum -- the #539 recipe applied to [lo, hi] rather than to
+// the whole curve -- was considered and rejected, on two grounds, and NOT on the ground that it would
+// redefine initParam. It would not: the function already minimises over the window, so the ends are
+// the only thing the change adds. The grounds are (1) it does not make the function correct under its
+// own name, answering 10.865697905689686 on the arc above where the true nearest point is 7.81 away,
+// and (2) a window's ends always evaluate, so the minimum would always be found, and the fallback
+// below would become unreachable -- deleting the one path in this function that #615 fixes. Making
+// the search global outright would leave initParam meaning nothing at all and the function a
+// duplicate of OCCTCurve3DNearestParameter. So the primary search is left exactly as it was.
+//
+// The FALLBACK is a different matter, and was wrong. It fires precisely when the window contains no
+// extremum, at which point the function has already abandoned locality and searched the whole curve.
+// Having done that, it must give the whole curve's answer, which is the one
+// OCCTCurve3DNearestParameter gives -- and #615 is that those two disagreed. Measured before:
+// locateNearestPoint((0, -6, 0), initParam: 0) on that same half circle fell through to the fallback
+// and answered pi/2 at distance 11, a point diametrically opposite a guess that sat on the true
+// nearest point; and on a segment trimmed to [3, 8] queried at (100, 0, 0) it answered nil for every
+// guess, because no window and no full-range search contains a perpendicular foot. Both now answer
+// through the shared helper: 0 at 7.81, and 8 at 92.
 bool OCCTExtremaLocateOnCurve(OCCTCurve3DRef curve,
                               double px, double py, double pz,
                               double initParam, double tol,
                               double* param, double* distance) {
     if (!curve || curve->curve.IsNull()) return false;
     try {
-        // Use ProjectPointOnCurve in a narrow window around initParam for local search
+        // Local search: the lowest-distance extremum inside a narrow window around the guess.
+        // LowerDistanceParameter() below picks by distance to the query point, not by nearness to
+        // initParam -- the guess bounds the window, it does not rank what is found in it.
         double f = curve->curve->FirstParameter();
         double l = curve->curve->LastParameter();
         double range = (l - f) * 0.1;
@@ -4293,12 +4337,10 @@ bool OCCTExtremaLocateOnCurve(OCCTCurve3DRef curve,
         double hi = std::min(l, initParam + range);
         GeomAPI_ProjectPointOnCurve proj(gp_Pnt(px, py, pz), curve->curve, lo, hi);
         if (proj.NbPoints() < 1) {
-            // Fallback to full range
-            GeomAPI_ProjectPointOnCurve projFull(gp_Pnt(px, py, pz), curve->curve);
-            if (projFull.NbPoints() < 1) return false;
-            *param = projFull.LowerDistanceParameter();
-            *distance = projFull.LowerDistance();
-            return true;
+            // No extremum near the guess: fall back to the whole curve, and to the whole curve's
+            // nearest point rather than to whichever extremum a full-range search turns up (#615).
+            return occtNearestProjectionOnCurve3d(curve, gp_Pnt(px, py, pz), nullptr,
+                                                  param, distance);
         }
         *param = proj.LowerDistanceParameter();
         *distance = proj.LowerDistance();
@@ -4595,32 +4637,17 @@ OCCTCurve3DRef OCCTInterpolateWithParameters(const double* points, int32_t count
     } catch (...) { return nullptr; }
 }
 
+// Exactly OCCTCurve3DInterpolate with the periodicity flag pinned. It used to be a second,
+// independent GeomAPI_Interpolate call site, which had already drifted: it rejected count < 3
+// where the general entry point rejects only count < 2, so the same 2-point input reached OCCT
+// through one and not the other, and it hardcoded the tolerance with no way to reach any other
+// value. Forwarding keeps the C ABI while leaving one implementation (#493, the 3D counterpart of
+// #412's fix on OCCTInterpolate2DPeriodic). Callers that need a tolerance other than the default
+// should call OCCTCurve3DInterpolate directly with closed = true.
 OCCTCurve3DRef OCCTInterpolatePeriodic(const double* points, int32_t count) {
-    if (!points || count < 3) return nullptr;
-    try {
-        Handle(TColgp_HArray1OfPnt) pts = new TColgp_HArray1OfPnt(1, count);
-        for (int i = 0; i < count; i++) {
-            pts->SetValue(i + 1, gp_Pnt(points[i*3], points[i*3+1], points[i*3+2]));
-        }
-        GeomAPI_Interpolate interp(pts, Standard_True, 1e-6);
-        interp.Perform();
-        if (interp.IsDone()) {
-            return (OCCTCurve3DRef)new OCCTCurve3D{interp.Curve()};
-        }
-        return nullptr;
-    } catch (...) { return nullptr; }
+    return OCCTCurve3DInterpolate(points, count, true, 1e-6);
 }
 
-
-static GeomAbs_Shape mapContinuityV115(int32_t c) {
-    switch (c) {
-        case 0: return GeomAbs_C0;
-        case 1: return GeomAbs_C1;
-        case 2: return GeomAbs_C2;
-        case 3: return GeomAbs_C3;
-        default: return GeomAbs_C2;
-    }
-}
 
 OCCTCurve3DRef OCCTPointsToBSplineWithParams(const double* points, int32_t count,
                                                int32_t degMin, int32_t degMax,
@@ -4631,7 +4658,7 @@ OCCTCurve3DRef OCCTPointsToBSplineWithParams(const double* points, int32_t count
         for (int i = 0; i < count; i++) {
             pts.SetValue(i + 1, gp_Pnt(points[i*3], points[i*3+1], points[i*3+2]));
         }
-        GeomAPI_PointsToBSpline approx(pts, degMin, degMax, mapContinuityV115(continuity), tol);
+        GeomAPI_PointsToBSpline approx(pts, degMin, degMax, occtGeomAbsFromParametricContinuity(continuity), tol);
         if (approx.IsDone()) {
             return (OCCTCurve3DRef)new OCCTCurve3D{approx.Curve()};
         }
@@ -4650,7 +4677,7 @@ OCCTCurve3DRef OCCTPointsToBSplineWithParameters(const double* points, const dou
             pts.SetValue(i + 1, gp_Pnt(points[i*3], points[i*3+1], points[i*3+2]));
             prms.SetValue(i + 1, params[i]);
         }
-        GeomAPI_PointsToBSpline approx(pts, prms, degMin, degMax, mapContinuityV115(continuity), tol);
+        GeomAPI_PointsToBSpline approx(pts, prms, degMin, degMax, occtGeomAbsFromParametricContinuity(continuity), tol);
         if (approx.IsDone()) {
             return (OCCTCurve3DRef)new OCCTCurve3D{approx.Curve()};
         }
@@ -4710,51 +4737,36 @@ OCCTCurve3DRef OCCTCurve3DConcatenateG1(const OCCTCurve3DRef* curves, int32_t co
 #include <GCPnts_AbscissaPoint.hxx>
 #include <GeomAdaptor_Curve.hxx>
 
-double OCCTCurve3DLength(OCCTCurve3DRef curve, double u1, double u2) {
-    if (!curve || curve->curve.IsNull()) return 0;
-    try {
-        GeomAdaptor_Curve ac(curve->curve, u1, u2);
-        return GCPnts_AbscissaPoint::Length(ac);
-    } catch (...) { return 0; }
-}
+// OCCTCurve3DLength lived here: GCPnts_AbscissaPoint::Length over a pre-bounded
+// GeomAdaptor_Curve(curve, u1, u2), which raises on a reversed range (so the catch reported a
+// reversed range as zero length) and extrapolates past the curve's knots instead of clamping to
+// its domain. Removed by #506; Curve3D.arcLength(from:to:) has routed through
+// OCCTCurve3DGetLengthBetween, which does neither, since #408.
 
-double OCCTCurve3DClosestParameter(OCCTCurve3DRef curve, double px, double py, double pz) {
-    if (!curve || curve->curve.IsNull()) return 0;
-    try {
-        GeomAPI_ProjectPointOnCurve proj(gp_Pnt(px, py, pz), curve->curve);
-        if (proj.NbPoints() > 0) {
-            return proj.LowerDistanceParameter();
-        }
-        return 0;
-    } catch (...) { return 0; }
-}
+// OCCTCurve3DClosestParameter lived here: the same projection as OCCTCurve3DNearestParameter,
+// differing only in reporting no-projection as 0 rather than FirstParameter(). Removed by #500;
+// Curve3D.closestParameter(to:) now shares the one implementation.
 
 
+// occtAdaptorParameterAtLength, not GCPnts_AbscissaPoint directly: the kernel's root finder
+// inverts the same single quadrature OCCTCurve3DGetLength no longer uses, so left alone it would
+// answer 6.2438 for the full length of an 8 x 3 ellipse whose domain ends at 6.2832. #603.
 double OCCTCurve3DParameterAtLength(OCCTCurve3DRef curve, double arcLength, double fromParam) {
-    if (!curve) return 0;
+    if (!curve || curve->curve.IsNull()) return 0;
     try {
         GeomAdaptor_Curve adaptor(curve->curve);
-        GCPnts_AbscissaPoint ap(adaptor, arcLength, fromParam);
-        if (ap.IsDone()) return ap.Parameter();
+        double parameter = 0;
+        if (occtAdaptorParameterAtLength(adaptor, arcLength, fromParam, parameter)) return parameter;
         return 0;
     } catch (...) { return 0; }
 }
 
-double OCCTCurve3DArcLength(OCCTCurve3DRef curve) {
-    if (!curve) return 0;
-    try {
-        GeomAdaptor_Curve adaptor(curve->curve);
-        return GCPnts_AbscissaPoint::Length(adaptor);
-    } catch (...) { return 0; }
-}
-
-double OCCTCurve3DArcLengthBetween(OCCTCurve3DRef curve, double param1, double param2) {
-    if (!curve) return 0;
-    try {
-        GeomAdaptor_Curve adaptor(curve->curve);
-        return GCPnts_AbscissaPoint::Length(adaptor, param1, param2);
-    } catch (...) { return 0; }
-}
+// OCCTCurve3DArcLength and OCCTCurve3DArcLengthBetween lived here: the same two
+// GCPnts_AbscissaPoint::Length calls OCCTCurve3DGetLength / OCCTCurve3DGetLengthBetween make,
+// differing only in returning 0 on failure (indistinguishable from a genuine zero-length result)
+// and in guarding the wrapper pointer without also guarding the curve handle it holds. Removed
+// by #506; Curve3D.totalArcLength and arcLengthBetween(_:_:) have routed through the -1.0
+// spellings since #408.
 
 // MARK: - v0.116: HelixGeom (BuilderHelix/Coil + HelixCurve eval/D1/D2 + ApproxToBSpline)
 #include <math_IntegerVector.hxx>
@@ -4859,18 +4871,27 @@ OCCTCurve3DRef _Nullable OCCTHelixApproxToBSpline(double t1, double t2, double p
 // gp_Ax3
 
 // MARK: - v0.116: Curve3D Local Curvature/Tangent/Normal/CentreOfCurvature
-double OCCTCurve3DLocalCurvature(OCCTCurve3DRef _Nonnull curve, double u) {
-    try {
-        GeomLProp_CLProps props(curve->curve, u, 2, 1e-10);
-        return props.Curvature();
-    } catch (...) { return 0.0; }
-}
+//
+// The same three GeomLProp_CLProps quantities as OCCTCurve3DGetTangent / GetNormal /
+// GetCenterOfCurvature, in the isDefined-out-parameter shape the v0.116 Swift API wanted. All of
+// them used to pass a hardcoded 1e-10 resolution instead of the shared one, so they disagreed with
+// their canonical counterparts about the same curve at the same parameter: on a cubic Bezier whose
+// first two poles sit 1e-8 apart, the 1e-10 props returned curvature 6.67e15 where the canonical
+// props returned RealLast(). They now build props through occtCurveLocalProps (#494).
+//
+// There were four. OCCTCurve3DLocalCurvature was removed in #595: once #494 gave it the shared
+// resolution it was OCCTCurve3DGetCurvature line for line, and measured over the same curves the two
+// agreed on every row, degenerate ones included.
 
 void OCCTCurve3DLocalTangent(OCCTCurve3DRef _Nonnull curve, double u,
                                double* _Nonnull tx, double* _Nonnull ty, double* _Nonnull tz,
                                bool* _Nonnull isDefined) {
+    if (curve->curve.IsNull()) {
+        *isDefined = false; *tx = 0; *ty = 0; *tz = 0;
+        return;
+    }
     try {
-        GeomLProp_CLProps props(curve->curve, u, 1, 1e-10);
+        GeomLProp_CLProps props = occtCurveLocalProps(curve->curve, u, 1);
         *isDefined = props.IsTangentDefined();
         if (*isDefined) {
             gp_Dir d;
@@ -4885,8 +4906,12 @@ void OCCTCurve3DLocalTangent(OCCTCurve3DRef _Nonnull curve, double u,
 void OCCTCurve3DLocalNormal(OCCTCurve3DRef _Nonnull curve, double u,
                               double* _Nonnull nx, double* _Nonnull ny, double* _Nonnull nz,
                               bool* _Nonnull isDefined) {
+    if (curve->curve.IsNull()) {
+        *isDefined = false; *nx = 0; *ny = 0; *nz = 0;
+        return;
+    }
     try {
-        GeomLProp_CLProps props(curve->curve, u, 2, 1e-10);
+        GeomLProp_CLProps props = occtCurveLocalProps(curve->curve, u, 2);
         *isDefined = props.IsTangentDefined();
         if (*isDefined) {
             gp_Dir n;
@@ -4901,10 +4926,16 @@ void OCCTCurve3DLocalNormal(OCCTCurve3DRef _Nonnull curve, double u,
 void OCCTCurve3DLocalCentreOfCurvature(OCCTCurve3DRef _Nonnull curve, double u,
                                          double* _Nonnull cx, double* _Nonnull cy, double* _Nonnull cz,
                                          bool* _Nonnull isDefined) {
+    if (curve->curve.IsNull()) {
+        *isDefined = false; *cx = 0; *cy = 0; *cz = 0;
+        return;
+    }
     try {
-        GeomLProp_CLProps props(curve->curve, u, 2, 1e-10);
-        double curv = props.Curvature();
-        if (curv > 1e-10 && props.IsTangentDefined()) {
+        GeomLProp_CLProps props = occtCurveLocalProps(curve->curve, u, 2);
+        // Two separate 1000x splits from the canonical sibling used to live on the next line: the
+        // props resolution (above) and this gate's own 1e-10 literal, which also let a cusp's
+        // RealLast() curvature through into a (nan, inf, nan) centre. Both now share one value.
+        if (props.IsTangentDefined() && occtCurveCurvatureIsInvertible(props.Curvature())) {
             gp_Pnt p;
             props.CentreOfCurvature(p);
             *cx = p.X(); *cy = p.Y(); *cz = p.Z();
@@ -5041,7 +5072,7 @@ bool OCCTCurve3DBSplineMovePointAndTangent(OCCTCurve3DRef curve, double u,
 // --- Curve3D queries ---
 
 double OCCTCurve3DPeriod(OCCTCurve3DRef curve) {
-    if (!curve) return 0.0;
+    if (!curve || curve->curve.IsNull()) return 0.0;   // #478
     try {
         if (!curve->curve->IsPeriodic()) return 0.0;
         return curve->curve->Period();
@@ -5049,12 +5080,12 @@ double OCCTCurve3DPeriod(OCCTCurve3DRef curve) {
 }
 
 double OCCTCurve3DFirstParameter(OCCTCurve3DRef curve) {
-    if (!curve) return 0.0;
+    if (!curve || curve->curve.IsNull()) return 0.0;   // #478
     try { return curve->curve->FirstParameter(); } catch (...) { return 0.0; }
 }
 
 double OCCTCurve3DLastParameter(OCCTCurve3DRef curve) {
-    if (!curve) return 0.0;
+    if (!curve || curve->curve.IsNull()) return 0.0;   // #478
     try { return curve->curve->LastParameter(); } catch (...) { return 0.0; }
 }
 // --- Geom_BezierCurve completions ---
@@ -5407,7 +5438,7 @@ int32_t OCCTExtremaPCCurve(OCCTCurve3DRef curve,
                             double* outParams, double* outDistances,
                             double* outPx, double* outPy, double* outPz,
                             int32_t maxResults) {
-    if (!curve || !outParams || !outDistances || maxResults <= 0) return 0;
+    if (!curve || curve->curve.IsNull() || !outParams || !outDistances || maxResults <= 0) return 0;
     try {
         ExtremaPC_Curve extPC(curve->curve);
         if (!extPC.IsInitialized()) return 0;
@@ -5431,7 +5462,7 @@ int32_t OCCTExtremaPCCurveBounded(OCCTCurve3DRef curve,
                                    double* outParams, double* outDistances,
                                    double* outPx, double* outPy, double* outPz,
                                    int32_t maxResults) {
-    if (!curve || !outParams || !outDistances || maxResults <= 0) return 0;
+    if (!curve || curve->curve.IsNull() || !outParams || !outDistances || maxResults <= 0) return 0;
     try {
         ExtremaPC_Curve extPC(curve->curve, uMin, uMax);
         if (!extPC.IsInitialized()) return 0;
@@ -5451,7 +5482,7 @@ int32_t OCCTExtremaPCCurveBounded(OCCTCurve3DRef curve,
 
 double OCCTExtremaPCMinDistance(OCCTCurve3DRef curve,
                                 double px, double py, double pz) {
-    if (!curve) return -1.0;
+    if (!curve || curve->curve.IsNull()) return -1.0;
     try {
         ExtremaPC_Curve extPC(curve->curve);
         if (!extPC.IsInitialized()) return -1.0;
@@ -5472,6 +5503,7 @@ double OCCTExtremaPCMinDistance(OCCTCurve3DRef curve,
 //   * InterpolatePoint()/kink markers are no-ops (PointsToBSpline has no per-point exact
 //     interpolation or C0-break control). The approximation still passes near the points.
 //   * MaxError() is computed by projecting the input points back onto the fitted curve.
+//   * PerformOptimal() is identical to Perform(); maxIter is ignored (no iterative mode).
 //   * The Gauss-solver / parametrization / closed-curve tuning setters are no-ops; the
 //     convergence and projection tolerance setters drive the 3D fit tolerance.
 struct OCCTBSplineApproxInterp {
@@ -5670,8 +5702,11 @@ OCCTCurve3DRef OCCTGeomEvalAHTBezierCurveCreateRational(
 #include <GCPnts_AbscissaPoint.hxx>
 #include <GCPnts_UniformAbscissa.hxx>
 
+// Both of these share the whole-bridge arc-length measurement and its inverse rather than calling
+// GCPnts directly, so an edge or a wire measured through EdgeCurve/WireCurve agrees with the same
+// edge measured through Shape.edgeArcLength and with the curve it was built from. #603.
 static double adaptorLength(Adaptor3d_Curve& a) {
-    return GCPnts_AbscissaPoint::Length(a);
+    return occtAdaptorArcLength(a, a.FirstParameter(), a.LastParameter());
 }
 
 static void adaptorParamRange(Adaptor3d_Curve& a, double* first, double* last) {
@@ -5695,24 +5730,26 @@ static bool adaptorTangentAtParam(Adaptor3d_Curve& a, double u, double* x, doubl
 }
 
 static bool adaptorParamAtAbscissa(Adaptor3d_Curve& a, double s, double* outParam) {
-    GCPnts_AbscissaPoint ap(a, s, a.FirstParameter());
-    if (!ap.IsDone()) return false;
-    if (outParam) *outParam = ap.Parameter();
+    double parameter = 0;
+    if (!occtAdaptorParameterAtLength(a, s, a.FirstParameter(), parameter)) return false;
+    if (outParam) *outParam = parameter;
     return true;
 }
 
 // N points spaced equally by arc length along the curve. outXYZ must hold count*3 doubles;
 // returns the number of points actually written.
 static int32_t sampleAdaptorUniform(Adaptor3d_Curve& a, int32_t count, double* outXYZ) {
-    if (count < 2 || !outXYZ) return 0;
+    if (!occtValidSampleCount(count) || !outXYZ) return 0;
     GCPnts_UniformAbscissa sampler(a, count);
     if (!sampler.IsDone()) return 0;
-    int32_t n = sampler.NbPoints();
-    for (int32_t i = 1; i <= n; ++i) {
-        gp_Pnt p = a.Value(sampler.Parameter(i));
-        outXYZ[(i - 1) * 3 + 0] = p.X();
-        outXYZ[(i - 1) * 3 + 1] = p.Y();
-        outXYZ[(i - 1) * 3 + 2] = p.Z();
+    // The sampler is not bounded by `count`. See occtSamplerKept/occtSamplerIndex (#501).
+    int32_t total = sampler.NbPoints();
+    int32_t n = occtSamplerKept(total, count);
+    for (int32_t i = 0; i < n; ++i) {
+        gp_Pnt p = a.Value(sampler.Parameter(occtSamplerIndex(i, n, total)));
+        outXYZ[i * 3 + 0] = p.X();
+        outXYZ[i * 3 + 1] = p.Y();
+        outXYZ[i * 3 + 2] = p.Z();
     }
     return n;
 }

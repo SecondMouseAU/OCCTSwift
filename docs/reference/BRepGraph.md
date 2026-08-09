@@ -429,6 +429,24 @@ Topology kinds 0–5 are the core B-Rep hierarchy; 6/7 are containers; 8 is the 
 
 ---
 
+#### `NodeKind.compSolid`
+
+A composite-solid container node (raw value 7), grouping multiple `solid` nodes into one connected unit.
+
+#### `NodeKind.coedge`
+
+A face-context coedge (raw value 8): one directed traversal of an `edge` around a specific face's wire, distinct from the edge itself since one edge can be walked by up to two coedges, one per adjoining face.
+
+#### `NodeKind.product`
+
+An assembly product node (raw value 10): a reusable part or sub-assembly definition, instantiated by zero or more `occurrence` nodes (`productCount`, `productComponentCount(_:)`).
+
+#### `NodeKind.occurrence`
+
+An assembly occurrence node (raw value 11): one placed instance of a `product` within an assembly (`occurrenceCount`, `occurrenceProduct(_:)`).
+
+---
+
 ### `childCount(rootKind:rootIndex:targetKind:)`
 
 Count descendant nodes of a given kind from a root node.
@@ -553,6 +571,12 @@ public struct ValidationResult: Sendable {
 
 ---
 
+#### `BRepGraph.ValidationResult.warningCount`
+
+Number of warning-severity issues found by `BRepGraph_Validate::Perform`.
+
+---
+
 ### `validate()`
 
 Validate the graph structure, returning detailed counts.
@@ -609,6 +633,21 @@ public struct CompactResult: Sendable {
 
 ---
 
+#### `BRepGraph.CompactResult.removedVertices`
+
+Count of vertex nodes purged by `compact()`.
+#### `BRepGraph.CompactResult.removedEdges`
+
+Count of edge nodes purged by `compact()`.
+#### `BRepGraph.CompactResult.removedFaces`
+
+Count of face nodes purged by `compact()`.
+#### `BRepGraph.CompactResult.nodesAfter`
+
+Total node count remaining after compaction.
+
+---
+
 ### `compact()`
 
 Compact the graph by permanently removing all soft-deleted nodes.
@@ -645,8 +684,12 @@ public struct DeduplicateResult: Sendable {
 }
 ```
 
-- `canonicalSurfaces/Curves` — number of unique geometry handles retained.
-- `surfaceRewrites/curveRewrites` — number of face/edge geometry references updated to point at the canonical handle.
+| Field | Meaning |
+|---|---|
+| `canonicalSurfaces` | Number of unique surface handles retained. |
+| `canonicalCurves` | Number of unique curve handles retained. |
+| `surfaceRewrites` | Number of face geometry references repointed at a canonical surface. |
+| `curveRewrites` | Number of edge geometry references repointed at a canonical curve. |
 
 ---
 
@@ -697,6 +740,32 @@ public struct Stats: Sendable, CustomStringConvertible {
 ```
 
 All counts in one allocation. `description` formats the struct as a readable summary string.
+
+---
+
+#### `Stats.coedges`
+
+Number of coedge nodes in the graph (`BRepGraph_Topo::CoEdges().Nb()`).
+
+#### `Stats.compounds`
+
+Number of compound nodes in the graph (`BRepGraph_Topo::Compounds().Nb()`).
+
+#### `Stats.totalNodes`
+
+Total node count across every kind, topology and geometry alike (`BRepGraph_Topo::Gen().NbNodes()`).
+
+#### `Stats.surfaces`
+
+Number of face-surface geometry entries referenced by the graph (`BRepGraph_Topo::Geometry().NbFaceSurfaces()`); not deduplicated unless `deduplicate()` has been run.
+
+#### `Stats.curves3D`
+
+Number of edge 3D-curve geometry entries referenced by the graph (`BRepGraph_Topo::Geometry().NbEdgeCurves3D()`).
+
+#### `Stats.curves2D`
+
+Number of coedge 2D-curve (pcurve) geometry entries referenced by the graph (`BRepGraph_Topo::Geometry().NbCoEdgeCurves2D()`).
 
 ---
 
@@ -937,7 +1006,7 @@ Get the maximum continuity order of an edge (as `GeomAbs_Shape` raw int).
 public func edgeMaxContinuity(_ edgeIndex: Int) -> Int
 ```
 
-Returns the `GeomAbs_Shape` continuity enum raw value (0 = C0, 1 = C1, 2 = C2, …). Currently returns `0` always — `BRepGraph_LayerRegularity` is unavailable in OCCT 8.0.0 p1 due to an upstream header bug. Use `Shape.maxContinuity` (`BRep_Tool::MaxContinuity`) as an alternative.
+Returns the `GeomAbs_Shape` continuity enum raw value (`0` = C0, `1` = G1, `2` = C1, `3` = G2, `4` = C2, `5` = C3, `6` = CN). Currently returns `0` always — `BRepGraph_LayerRegularity` is unavailable in OCCT 8.0.0 p1 due to an upstream header bug. Use `Shape.maxContinuity` (`BRep_Tool::MaxContinuity`) as an alternative.
 
 - **Parameters:** `edgeIndex` — zero-based edge index.
 - **Note:** Always returns 0 in OCCT 8.0.0 p1 — `BRepGraph_LayerRegularity` does not compile/link. Use `Shape.maxContinuity` instead.

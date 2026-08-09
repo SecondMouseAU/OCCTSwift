@@ -50,7 +50,7 @@ struct StressNilPropagationTests {
 
     @Test func unionWithSelf() {
         let box = standardBox()
-        let result = box.union(with: box)
+        let result = box.union(box)
         if let r = result {
             #expect(r.isValid)
             if let vol = r.volume, let origVol = box.volume {
@@ -72,7 +72,7 @@ struct StressNilPropagationTests {
     @Test func intersectDisjoint() {
         let b1 = Shape.box(width: 10, height: 10, depth: 10)!
         let b2 = Shape.box(origin: SIMD3(100, 100, 100), width: 10, height: 10, depth: 10)!
-        let result = b1.intersection(with: b2)
+        let result = b1.intersection(b2)
         // Disjoint shapes — should produce empty or nil
         if let r = result {
             if let vol = r.volume { #expect(vol < 0.001) }
@@ -264,7 +264,7 @@ struct StressInvalidParameterTests {
         let b1 = Shape.box(width: 10, height: 10, depth: 10)!
         let b2 = Shape.box(width: 10, height: 10, depth: 10)!
         // Same position — union should produce roughly same volume
-        let result = b1.union(with: b2)
+        let result = b1.union(b2)
         if let r = result { #expect(r.isValid) }
     }
 
@@ -297,7 +297,7 @@ struct StressPostOperationStateTests {
     @Test func shapeReusedAfterBoolean() {
         let box = standardBox()
         let sphere = standardSphere()
-        let r1 = box.union(with: sphere)
+        let r1 = box.union(sphere)
         // Original shapes should still be usable
         let v1 = box.volume
         let v2 = sphere.volume
@@ -359,7 +359,7 @@ struct StressUnusualInputTests {
         guard let w1 = Wire.rectangle(width: 10, height: 10),
               let w2 = Wire.rectangle(width: 5, height: 5),
               let s1 = Shape.fromWire(w1), let s2 = Shape.fromWire(w2) else { return }
-        let result = s1.union(with: s2)
+        let result = s1.union(s2)
         // May fail for non-solid inputs — should not crash
         if let r = result { _ = r.isValid }
     }
@@ -443,7 +443,8 @@ struct StressUnifySameDomainNullPCurveTests {
     // BRep_Tool::CurveOnSurface(...)->D1()/->Value() to disambiguate between multiple
     // candidate next-edges without checking whether the returned pcurve handle was null —
     // an edge with no pcurve on the current reference face (the common case for a raw
-    // mesh-sewn solid) SIGSEGVs deterministically. Fixed in the kernel (patch 0013).
+    // mesh-sewn solid) SIGSEGVs deterministically. Fixed in the kernel: carried as patch 0013,
+    // retired at the OCCT 8.0.1 re-pin once it shipped upstream as OCCT#1392.
     @Test func unifySameDomainOnMeshSewnSolidWithMissingPCurve() throws {
         let fixtureURL = URL(fileURLWithPath: #filePath)
             .deletingLastPathComponent()
@@ -453,5 +454,62 @@ struct StressUnifySameDomainNullPCurveTests {
         unifier.setAngularTolerance(1.0 * .pi / 180)
         unifier.build()
         _ = unifier.shape
+    }
+}
+
+// MARK: - evalAndUpdateTolerance Null PCurve
+
+@Suite("Stress: evalAndUpdateTolerance Null PCurve")
+struct StressEvalAndUpdateTolNullPCurveTests {
+
+    // OCCTBRepToolsEvalAndUpdateTol fetched c3d, c2d and surf but guarded only c3d and surf,
+    // then handed c2d to BRepTools::EvalAndUpdateTol, which dereferences it unconditionally at
+    // `if (!C2d->IsPeriodic())`. A null pcurve is an OS signal, so the bridge's catch(...) cannot
+    // absorb it: the same uncatchable family as #263/#310/#317/#318/#348.
+    //
+    // The face has to be NON-planar. For a plane, BRep_Tool::CurveOnSurface falls through to
+    // CurveOnPlane, which projects the 3D curve and always yields a pcurve; only a curved support
+    // the edge has no stored pcurve for produces the null. A crash here fails the whole target,
+    // not just this test, because the process dies.
+    @Test func edgePairedWithUnrelatedCylindricalFaceDoesNotCrash() throws {
+        let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
+        let cylinder = try #require(Shape.cylinder(radius: 5, height: 10))
+
+        let boxEdges = box.subShapes(ofType: .edge)
+        try #require(!boxEdges.isEmpty)
+
+        // The lateral face of a cylinder is the non-planar support; the box edge has no pcurve
+        // on it, so CurveOnSurface returns null. Every face of the cylinder is tried rather than
+        // guessing which index is the lateral one.
+        let cylinderFaces = cylinder.subShapes(ofType: .face)
+        try #require(!cylinderFaces.isEmpty)
+
+        for face in cylinderFaces {
+            let tol = Shape.evalAndUpdateTolerance(edge: boxEdges[0], face: face)
+            // The contract for "nothing to evaluate against this face" is the edge's own
+            // tolerance, which is finite and non-negative, not a fabricated zero.
+            #expect(tol.isFinite)
+            #expect(tol >= 0)
+        }
+    }
+
+    // The route OCCT 8.0.1 opened: #1402 made BRep_Tool::CurveOnPlane validate the edge range and
+    // return a null pcurve where 8.0.0p1 threw a catchable Geom_TrimmedCurve "parameters out of
+    // range" that the bridge turned into a safe 0.0. So the same crash became reachable on a
+    // PLANAR face too, with no exotic geometry at all.
+    @Test func edgePairedWithAnUnrelatedPlanarFaceDoesNotCrash() throws {
+        let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
+        let other = try #require(Shape.box(width: 3, height: 3, depth: 3))
+
+        let edges = box.subShapes(ofType: .edge)
+        let faces = other.subShapes(ofType: .face)
+        try #require(!edges.isEmpty)
+        try #require(!faces.isEmpty)
+
+        for face in faces {
+            let tol = Shape.evalAndUpdateTolerance(edge: edges[0], face: face)
+            #expect(tol.isFinite)
+            #expect(tol >= 0)
+        }
     }
 }

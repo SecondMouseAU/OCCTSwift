@@ -31,7 +31,8 @@ struct GraphHistoryAbsorbTests {
         let faces = base.faces()
         let centroids = base.measure().faceCentroids
         guard let topIndex = centroids.enumerated()
-                .max(by: { $0.element.z < $1.element.z })?.offset,
+                .compactMap({ i, c in c.map { (i, $0.z) } })
+                .max(by: { $0.1 < $1.1 })?.0,
               let topFace = Shape.fromFace(faces[topIndex]),
               let topNode = graph.findNode(for: topFace) else { return nil }
 
@@ -158,7 +159,8 @@ struct GraphHistoryAbsorbTests {
         let faces = c.base.faces()
         let centroids = c.base.measure().faceCentroids
         guard let bottomIndex = centroids.enumerated()
-                .min(by: { $0.element.z < $1.element.z })?.offset,
+                .compactMap({ i, c in c.map { (i, $0.z) } })
+                .min(by: { $0.1 < $1.1 })?.0,
               let bottomFace = Shape.fromFace(faces[bottomIndex]),
               let bottomNode = c.graph.findNode(for: bottomFace) else {
             Issue.record("bottom face lookup failed"); return

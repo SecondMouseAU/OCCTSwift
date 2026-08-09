@@ -5,7 +5,7 @@ parent: API Reference
 
 # Shape — Geometry Recognition & Polygon/Triangulation Data
 
-This page documents the geometry-utility and polygon/triangulation public API from `Sources/OCCTSwift/Shape.swift` (lines 11078–12192). It covers coordinate-system helpers, curve/surface construction utilities, 2D constraint solvers, shape modification tools, and the full polygon and triangulation layer. See the main [Shape](Shape.md) page for the core B-Rep API.
+This page documents the geometry-utility and polygon/triangulation public API from `Sources/OCCTSwift/Shape.swift`. It covers coordinate-system helpers, curve/surface construction utilities, 2D constraint solvers, shape modification tools, and the full polygon and triangulation layer. See the main [Shape](Shape.md) page for the core B-Rep API.
 
 ## Topics
 
@@ -186,24 +186,6 @@ public func adjustEndpoints(start: (Double, Double), end: (Double, Double)) -> B
 
 Free-function bisector utilities and their associated value types.
 
-### `BisectorPoint`
-
-Point on a bisector curve with parameter and distance information.
-
-```swift
-public struct BisectorPoint {
-    public let paramOnC1: Double
-    public let paramOnC2: Double
-    public let paramOnBis: Double
-    public let distance: Double
-    public let x: Double
-    public let y: Double
-    public let isInfinite: Bool
-}
-```
-
----
-
 ### `BisectorIntersection`
 
 Result of a bisector-vs-bisector intersection computation.
@@ -215,6 +197,40 @@ public struct BisectorIntersection {
     public let paramOnFirst: Double
     public let paramOnSecond: Double
 }
+```
+
+---
+
+#### `BisectorIntersection.x`
+
+X coordinate of the intersection point.
+
+```swift
+public let x: Double
+```
+
+#### `BisectorIntersection.y`
+
+Y coordinate of the intersection point.
+
+```swift
+public let y: Double
+```
+
+#### `BisectorIntersection.paramOnFirst`
+
+Parameter of the intersection point along the bisector of `(a, b)` (`IntRes2d_IntersectionPoint::ParamOnFirst()`).
+
+```swift
+public let paramOnFirst: Double
+```
+
+#### `BisectorIntersection.paramOnSecond`
+
+Parameter of the intersection point along the bisector of `(c, d)` (`IntRes2d_IntersectionPoint::ParamOnSecond()`).
+
+```swift
+public let paramOnSecond: Double
 ```
 
 ---
@@ -476,6 +492,9 @@ public func circlesTangentToLines(_ l1Origin: SIMD2<Double>, _ l1Direction: SIMD
 - **Parameters:** `l1Origin`, `l1Direction` — first line (point + direction); `l2Origin`, `l2Direction` — second line; `radius` — required circle radius; `tolerance` — geometric tolerance.
 - **Returns:** Array of up to four `Circle2DSolution` values (may be empty if no solution exists).
 - **OCCT:** `GccAna_Circ2d2TanRad` (Lin+Lin variant) via `OCCTGccAnaCirc2d2TanRadLineLin`.
+- **Note:** `radius` is the radius of the circles to find, and it must be positive (#553). Asked
+  for zero, `GccAna_Circ2d2TanRad` obliges and returns solution circles of radius zero. A
+  non-positive radius returns an empty array.
 - **Example:**
   ```swift
   let circles = circlesTangentToLines(SIMD2(0,0), SIMD2(1,0),
@@ -498,6 +517,9 @@ public func circlesThroughPointsWithRadius(_ p1: SIMD2<Double>, _ p2: SIMD2<Doub
 - **Parameters:** `p1`, `p2` — two points to pass through; `radius` — required circle radius; `tolerance` — geometric tolerance.
 - **Returns:** Array of up to two `Circle2DSolution` values.
 - **OCCT:** `GccAna_Circ2d2TanRad` (Pnt+Pnt variant) via `OCCTGccAnaCirc2d2TanRadPntPnt`.
+- **Note:** `radius` is the radius of the circles to find, and it must be positive; zero would ask
+  for a solution circle that is a point (#553). A non-positive radius returns an empty array, as
+  does a radius too small to reach both points.
 - **Example:**
   ```swift
   let circles = circlesThroughPointsWithRadius(SIMD2(-3, 0), SIMD2(3, 0), radius: 5)
@@ -606,6 +628,8 @@ public func linesTangentToCircleThroughPoint(circleCenter: SIMD2<Double>,
 - **Parameters:** `circleCenter`, `circleRadius` — the circle; `point` — point the line must pass through; `tolerance` — geometric tolerance.
 - **Returns:** Array of up to two `Line2DSolution` values (one if the point lies on the circle).
 - **OCCT:** `GccAna_Lin2d2Tan` (Circ+Pnt variant) via `OCCTGccAnaLin2d2TanCircPnt`.
+- **Note:** `circleRadius` must be positive (#553). With a radius of zero the solver returns the
+  single line through the centre twice; the point/point entry points answer that question once.
 - **Example:**
   ```swift
   let tangents = linesTangentToCircleThroughPoint(circleCenter: .zero,
@@ -629,6 +653,15 @@ public struct SameParameterResult: Sendable {
 ```
 
 `toleranceReached` is the maximum distance between the 3D curve and the surface-evaluated 2D curve.
+
+| Field | Meaning |
+|---|---|
+| `isSameParameter` | `true` if the curves already share the same parameterisation within `tolerance` |
+| `toleranceReached` | Maximum distance between the 3D curve and the surface-evaluated 2D curve |
+
+#### `SameParameterResult.toleranceReached`
+
+Maximum distance actually measured between the 3D curve and the surface-evaluated 2D curve.
 
 ---
 
@@ -665,7 +698,7 @@ Splits this 3D curve at continuity breaks.
 public func splitByContinuity(criterion: Int = 2, tolerance: Double = 1e-6) -> [Curve3D]
 ```
 
-- **Parameters:** `criterion` — continuity criterion: 0=C0, 1=C1, 2=C2, 3=C3, 4=CN; `tolerance` — geometric tolerance.
+- **Parameters:** `criterion` — a `ParametricContinuity` raw value: 0=C0, 1=C1, 2=C2, 3=C3, and anything above asks for CN (split at every break); `tolerance` — geometric tolerance.
 - **Returns:** Array of `Curve3D` segments; may be a single-element array if no breaks are found.
 - **OCCT:** `ShapeUpgrade_SplitCurve3dContinuity` via `OCCTSplitCurve3dContinuity`.
 - **Example:**
@@ -683,7 +716,7 @@ Splits this 2D curve at continuity breaks.
 public func splitByContinuity(criterion: Int = 2, tolerance: Double = 1e-6) -> [Curve2D]
 ```
 
-- **Parameters:** `criterion` — continuity criterion: 0=C0, 1=C1, 2=C2, 3=C3, 4=CN; `tolerance` — geometric tolerance.
+- **Parameters:** `criterion` — a `ParametricContinuity` raw value: 0=C0, 1=C1, 2=C2, 3=C3, and anything above asks for CN (split at every break); `tolerance` — geometric tolerance.
 - **Returns:** Array of `Curve2D` segments.
 - **OCCT:** `ShapeUpgrade_SplitCurve2dContinuity` via `OCCTSplitCurve2dContinuity`.
 
@@ -801,17 +834,17 @@ public static func bsplineRestrictionAdvanced(_ shape: Shape,
                                                 approxCurve2d: Bool = true,
                                                 tol3d: Double = 0.01,
                                                 tol2d: Double = 0.01,
-                                                continuity3d: Int = 2,
-                                                continuity2d: Int = 2,
+                                                continuity3d: ParametricContinuity = .c1,
+                                                continuity2d: ParametricContinuity = .c1,
                                                 maxDegree: Int = 5,
                                                 maxSegments: Int = 20,
                                                 priorityDegree: Bool = true,
                                                 convertRational: Bool = false) -> Shape?
 ```
 
-- **Parameters:** `approxSurface`/`approxCurve3d`/`approxCurve2d` — which geometry types to process; `tol3d`/`tol2d` — tolerances; `continuity3d`/`continuity2d` — required continuity (0=C0…6=CN); `maxDegree` — maximum polynomial degree; `maxSegments` — maximum segment count; `priorityDegree` — `true` = reduce degree first, `false` = reduce segments first; `convertRational` — convert rational BSplines to non-rational.
+- **Parameters:** `approxSurface`/`approxCurve3d`/`approxCurve2d` — which geometry types to process; `tol3d`/`tol2d` — tolerances; `continuity3d`/`continuity2d` — required continuity, `.c2` being the practical maximum (`.c3` fails the whole call); `maxDegree` — maximum polynomial degree; `maxSegments` — maximum segment count; `priorityDegree` — `true` = reduce degree first, `false` = reduce segments first; `convertRational` — convert rational BSplines to non-rational.
 - **Returns:** Restricted shape, or `nil` on failure.
-- **OCCT:** `ShapeUpgrade_ConvertSurfaceToBSplineSurface` / `ShapeUpgrade_BSplineRestriction` via `OCCTShapeBSplineRestrictionAdvanced`.
+- **OCCT:** `ShapeCustom_BSplineRestriction` driven through `BRepTools_Modifier` via `OCCTShapeBSplineRestrictionAdvanced` — the same mechanism `Shape.bsplineRestriction(...)` reaches through the static `ShapeCustom::BSplineRestriction` helper, and since #490 both read the continuity the same way. The continuity is a ceiling, not a guarantee, through either: OCCT silently reduces what it delivers when the requested one cannot meet `tol3d` within `maxDegree` (#570). This entry point used to read it as a `GeomAbs_Shape` ordinal (`1`=G1, `2`=C1), so the same integer asked for a different continuity through each, and four of the seven values that reading offered failed the whole call. A deprecated `Int` overload remains for source compatibility; it now decodes as `ParametricContinuity` too.
 
 ---
 
@@ -850,6 +883,24 @@ public struct SplitResult: Sendable {
 
 ---
 
+### `Surface.SplitResult`
+
+Split-count result shared by `splitSurfaceByContinuity(criterion:tolerance:)`, `splitByAngle(_:)`
+and `splitByArea(parts:intoSquares:)` below.
+
+```swift
+public struct SplitResult: Sendable {
+    public let uSplitCount: Int
+    public let vSplitCount: Int
+}
+```
+
+- `uSplitCount`/`vSplitCount`: number of splits introduced in each parametric direction.
+
+#### `SplitResult.vSplitCount`
+
+---
+
 ### `Surface.splitSurfaceByContinuity(criterion:tolerance:)`
 
 Splits this surface at continuity breaks.
@@ -858,9 +909,9 @@ Splits this surface at continuity breaks.
 public func splitSurfaceByContinuity(criterion: Int, tolerance: Double) -> SplitResult?
 ```
 
-- **Parameters:** `criterion` — continuity criterion: 0=C0, 1=G1, 2=C1, 3=G2, 4=C2, 5=C3, 6=CN; `tolerance` — geometric tolerance.
+- **Parameters:** `criterion` — a `ParametricContinuity` raw value: 0=C0, 1=C1, 2=C2, 3=C3, above asks for CN; `tolerance` — geometric tolerance.
 - **Returns:** `SplitResult` with U and V split counts, or `nil` if no splits are found.
-- **OCCT:** `ShapeUpgrade_SplitSurface` / continuity variant via `OCCTSplitSurfaceContinuity`.
+- **OCCT:** `ShapeUpgrade_SplitSurfaceContinuity` via `OCCTSplitSurfaceContinuity` — the same class `Surface.splitByContinuity(criterion:tolerance:)` wraps. Before #490 this entry point read `criterion` as a `GeomAbs_Shape` ordinal while its sibling read it as a parametric continuity, so `criterion: 2` asked for C1 through one and C2 through the other.
 
 ---
 
@@ -896,6 +947,15 @@ public func splitByArea(parts: Int, intoSquares: Bool = false) -> SplitResult?
 
 Types and extensions for recognising and converting geometry to analytical (canonical) forms.
 
+Every spelling below reaches one bridge entry point per OCCT converter class, and they share one
+contract (#492):
+
+- **An already-analytical input converts.** A circle recognised as a circle is a success, not a
+  rejection, and reports `gap == 0` exactly. That is how you tell it apart from a fit.
+- **The result is independent of the input.** No returned curve or surface shares state with the
+  geometry it was recognised from, so an in-place transform on one never moves the other.
+- **Failure is one outcome.** An unrecognisable input, and bounds OCCT rejects, both return `nil`.
+
 ### `CurveToAnalyticalResult`
 
 Result of converting a 3D curve to its analytical form.
@@ -910,12 +970,65 @@ public struct CurveToAnalyticalResult: Sendable {
 ```
 
 `gap` is the maximum deviation between the original and the recognized analytical curve.
+`newFirst`/`newLast` are expressed in the **recognised** curve's own parameterisation, not the
+input's: a BSpline circle examined over `[π/2, 3π/2]` reports a range starting at 0 on the
+`Geom_Circle` it returns.
+
+---
+
+#### `CurveToAnalyticalResult.newLast`
+
+---
+
+### `Curve3D.toAnalytical(tolerance:)`
+
+Attempts to convert this curve to an analytical form over its whole domain.
+
+```swift
+public func toAnalytical(tolerance: Double = 1e-4) -> Curve3D?
+```
+
+- **Parameters:** `tolerance` — recognition tolerance.
+- **Returns:** The recognised curve, or `nil` if no analytical form is recognised.
+- **OCCT:** `GeomConvert_CurveToAnaCurve` via `OCCTGeomConvertCurveToAnalytical`.
+- **Example:**
+  ```swift
+  let circle = Curve3D.circle(center: .zero, normal: SIMD3(0, 0, 1), radius: 5)!
+  if let analytical = circle.toBSpline()?.toAnalytical(tolerance: 1e-4) {
+      print(analytical.curveKind)   // .circle
+  }
+  ```
+
+---
+
+### `Curve3D.toAnalyticalWithGap(tolerance:)`
+
+Attempts to convert this curve to an analytical form over its whole domain, reporting the deviation.
+The full-range spelling of `toAnalytical(tolerance:first:last:)`, and the curve counterpart of
+`Surface.toAnalyticalWithGap(tolerance:)`.
+
+```swift
+public func toAnalyticalWithGap(tolerance: Double = 1e-4) -> CurveToAnalyticalResult?
+```
+
+- **Parameters:** `tolerance` — recognition tolerance.
+- **Returns:** `CurveToAnalyticalResult` with the recognised curve, its range and the gap, or `nil`.
+- **OCCT:** `GeomConvert_CurveToAnaCurve` via `OCCTGeomConvertCurveToAnalytical`.
+- **Example:**
+  ```swift
+  let bspline = Curve3D.circle(center: .zero, normal: SIMD3(0, 0, 1), radius: 5)!.toBSpline()!
+  if let r = bspline.toAnalyticalWithGap(tolerance: 1e-4) {
+      print(r.gap)   // how far the BSpline strayed from the circle
+  }
+  ```
 
 ---
 
 ### `Curve3D.toAnalytical(tolerance:first:last:)`
 
-Attempts to convert this curve to an analytical form (line, circle, ellipse, etc.).
+Attempts to convert this curve to an analytical form (line, circle, ellipse, etc.) over a chosen
+parameter range, so a curve that is a circle along part of its domain can be recognised there even
+when the whole domain is not.
 
 ```swift
 public func toAnalytical(tolerance: Double, first: Double, last: Double) -> CurveToAnalyticalResult?
@@ -998,8 +1111,17 @@ public func toAnalyticalWithGap(tolerance: Double,
 ```
 
 - **Parameters:** `tolerance` — recognition tolerance; `uMin`, `uMax`, `vMin`, `vMax` — UV parameter bounds to consider.
-- **Returns:** `SurfaceToAnalyticalResult`, or `nil` on failure.
+- **Returns:** `SurfaceToAnalyticalResult`, or `nil` on failure. Inverted bounds (`uMin > uMax`) are rejected rather than normalised.
 - **OCCT:** `GeomConvert_SurfToAnaSurf` (bounded variant) via `OCCTGeomConvertSurfToAnalyticalBounded`.
+- **Example:**
+  ```swift
+  let d = bsplineSurface.domain
+  if let r = bsplineSurface.toAnalyticalWithGap(tolerance: 1e-4,
+                                                uMin: d.uMin, uMax: (d.uMin + d.uMax) / 2,
+                                                vMin: d.vMin, vMax: d.vMax) {
+      print(r.surface.surfaceKind)
+  }
+  ```
 
 ---
 
@@ -1494,13 +1616,13 @@ public func mergedMeshNodes(from shape: Shape,
                               mergeTolerance: Double = 0.0) -> MergedMeshData?
 ```
 
-- **Parameters:** `shape` — a shape that has been triangulated (e.g., via `Mesh.from(shape:)`); `smoothAngle` — normal-smoothing angle threshold in radians; `mergeTolerance` — distance threshold for merging nodes (0 = positional identity only).
+- **Parameters:** `shape`: a shape that has been triangulated (e.g., via `Shape.mesh(linearDeflection:angularDeflection:)`); `smoothAngle`: normal-smoothing angle threshold in radians; `mergeTolerance`: distance threshold for merging nodes (0 = positional identity only).
 - **Returns:** `MergedMeshData` with interleaved vertex, normal, and index arrays, or `nil` if the shape has no triangulation or the output would exceed 1 000 000 vertices / 3 000 000 indices.
 - **OCCT:** `BRep_Builder` face iteration + `Poly_Triangulation` via `OCCTPolyMergeNodes`.
 - **Example:**
   ```swift
-  let shape = Shape.box(dx: 10, dy: 10, dz: 10)!
-  _ = Mesh.from(shape: shape, deflection: 0.1)
+  let shape = Shape.box(width: 10, height: 10, depth: 10)!
+  _ = shape.mesh(linearDeflection: 0.1)
   if let mesh = mergedMeshNodes(from: shape, smoothAngle: .pi / 6) {
       // Upload mesh.vertices and mesh.indices to a Metal vertex buffer
       print(mesh.vertexCount, mesh.triangleCount)

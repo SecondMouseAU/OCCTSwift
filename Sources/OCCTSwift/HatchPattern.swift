@@ -37,7 +37,8 @@ public enum HatchPattern {
     ///   - direction: Direction of hatch lines
     ///   - spacing: Distance between hatch lines
     ///   - offset: Offset of the first hatch line from origin (default: 0)
-    ///   - maxSegments: Maximum output segments (default: 10000)
+    ///   - maxSegments: Output *capacity* (default: 10000), clamped into `0...`
+    ///     ``Sampling/maximumSampleCount``; 0 or less returns empty (#622).
     /// - Returns: Array of hatch line segments
     public static func generate(
         boundary: [SIMD2<Double>],
@@ -46,6 +47,7 @@ public enum HatchPattern {
         offset: Double = 0,
         maxSegments: Int = 10000
     ) -> [HatchSegment] {
+        let maxSegments = Sampling.capacity(maxSegments)
         guard boundary.count >= 3, spacing > 0, maxSegments > 0 else { return [] }
         let flat = boundary.flatMap { [$0.x, $0.y] }
         var outBuf = [Double](repeating: 0, count: maxSegments * 4)

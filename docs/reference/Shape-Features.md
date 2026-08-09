@@ -5,7 +5,7 @@ parent: API Reference
 
 # Shape — Features, Sweeps & Surface Building
 
-This page documents the Shape API from **Geometry Construction** through **Plate Surfaces** (source lines 1258–3344 of `Shape.swift`). It covers face and solid assembly, feature-based modeling (bosses, pockets, holes, patterns), shape inspection, slicing, measurement, advanced pipe sweeps, surface building, and healing. For the primitive factories, boolean operations, and transforms that precede this range, see the main **Shape** index page (not yet written; use `Surface.md` as an exemplar for style).
+This page documents the Shape API from **Geometry Construction** through **Plate Surfaces** in `Shape.swift`. It covers face and solid assembly, feature-based modeling (bosses, pockets, holes, patterns), shape inspection, slicing, measurement, advanced pipe sweeps, surface building, and healing. For the primitive factories, boolean operations, and transforms that precede this range, see the main **Shape** index page (not yet written; use `Surface.md` as an exemplar for style).
 
 ## Topics
 
@@ -203,8 +203,21 @@ public func drilled(at position: SIMD3<Double>, direction: SIMD3<Double>,
 
 The bore is cut **along `direction`** — any axis, not just Z. `direction` is normalized internally; a zero/degenerate direction returns `nil`.
 
-- **Parameters:** `position` — hole-centre point on the entry face; `direction` — drill direction (into the shape), any non-zero axis; `radius` — hole radius; `depth` — hole depth, or `0` for through-hole.
-- **Returns:** Shape with drilled hole, or `nil` on failure (including a zero-length `direction`).
+The cutting cylinder **starts at `position`** and runs `depth` along `direction`. So an entry point inside the shape drills only forward from there, a `depth` that overshoots the far face costs nothing, and the input can be a shell or a face as readily as a solid.
+
+`radius` must exceed `Precision::Confusion` (1e-7). Below that, OCCT cuts nothing and reports success (#496), so the bridge rejects it.
+
+#### Or the feature drill
+
+[`cylindricalHole(axisOrigin:axisDirection:radius:extent:)`](Shape-Builders-2.md#cylindricalholeaxisoriginaxisdirectionradiusextent) wraps `BRepFeat_MakeCylindricalHole`, OCCT's dedicated feature-drilling operator. It is **not a better version of this method** — #496 measured six requests where the two disagree, and neither subsumes the other:
+
+| reach for | when |
+|---|---|
+| `drilled(at:…)` | the hole starts where you say it starts; the input is not a solid; an over-long `depth` should simply drill through |
+| `cylindricalHole(…extent:)` | the **solid's own faces** should bound the hole (`.untilEnd`, `.thruNext`); you need a diagnosis of *why* a drill is impossible |
+
+- **Parameters:** `position` — hole-centre point on the entry face; `direction` — drill direction (into the shape), any non-zero axis; `radius` — hole radius, above `Precision::Confusion`; `depth` — hole depth, or `0` for through-hole.
+- **Returns:** Shape with drilled hole, or `nil` on failure (including a zero-length `direction` or a degenerate `radius`).
 - **OCCT:** `BRepPrimAPI_MakeCylinder` (oriented via `gp_Ax2(position, direction)`) + `BRepAlgoAPI_Cut` (internal cylinder cutter).
 - **Example:**
   ```swift
@@ -415,6 +428,16 @@ Used by `shapeType`, `subShapeCount(ofType:)`, `subShape(type:index:)`, and `sub
 
 ---
 
+#### `ShapeType.compSolid`
+
+A composite solid (`TopAbs_COMPSOLID`): several solids sharing faces, treated as one connected block.
+
+#### `ShapeType.unknown`
+
+No recognised topological type; matches no `TopAbs_ShapeEnum` value.
+
+---
+
 ### `shapeType`
 
 The topological type of this shape.
@@ -441,9 +464,14 @@ Whether the shape is a topologically valid closed solid.
 public var isValidSolid: Bool { get }
 ```
 
-Runs `BRepCheck_Analyzer` — a **topology** check only. It does not detect global self-intersection (overlapping faces). A self-intersecting B-spline solid can pass this check yet cause booleans to hang or return garbage. Use `isSelfIntersecting(timeout:)` for the complementary geometric check.
+Runs `BRepCheck_Analyzer`, a **topology** check only. It does not detect global self-intersection (overlapping faces). A self-intersecting B-spline solid can pass this check yet cause booleans to hang or return garbage. Use `isSelfIntersecting(timeout:)` for the complementary geometric check.
 
-- **Returns:** `true` if `BRepCheck_Analyzer` reports no errors.
+Checks `shapeType == .solid` first and returns `false` immediately otherwise, so it is the
+reliable way to notice a `healed()`/`fixSolid()` demotion (#702): a shell they could not close
+reads `false` here even though plain `isValid` reads `true` on it (a shell has no closure
+requirement of its own).
+
+- **Returns:** `true` if `shapeType == .solid` and `BRepCheck_Analyzer` reports no errors.
 - **OCCT:** `BRepCheck_Analyzer` (via `OCCTShapeIsValidSolid`).
 
 ---
@@ -470,6 +498,29 @@ Backed by `BOPAlgo_ArgumentAnalyzer`'s self-interference test. Expensive (second
 
 ---
 
+### `isSelfIntersecting(hardTimeout:)`
+
+Checks whether the shape has overlapping or interfering sub-faces, with a true hard wall-clock deadline (#319): unlike `isSelfIntersecting(timeout:)`, this returns at `hardTimeout` even if OCCT never reaches a checkpoint to poll.
+
+```swift
+public func isSelfIntersecting(hardTimeout: Double) -> Bool?
+```
+
+Runs the check on a detached background thread against a `deepCopy()` of this shape (independent geometry) and waits on the calling thread with a real deadline. If the deadline passes first, this returns `nil` immediately and the background computation is abandoned, not cancelled: it keeps running orphaned on its own thread until it eventually completes. That is a deliberate trade (burned CPU for a caller-side wall-clock guarantee).
+
+- **Parameters:** `hardTimeout`: seconds to wait before giving up and returning `nil`.
+- **Returns:** `true`/`false` if the check completed in time; `nil` if the deadline passed first (indeterminate, the background check may still be running).
+- **OCCT:** `BOPAlgo_ArgumentAnalyzer` (via `OCCTShapeSelfIntersectsBounded`), on a background `DispatchQueue`.
+- **Example:**
+  ```swift
+  switch solid.isSelfIntersecting(hardTimeout: 5) {
+  case .some(true):  print("self-intersects")
+  case .some(false): print("clean")
+  case .none:        print("deadline hit, treat as unknown, not clean")
+  }
+  ```
+
+---
 ### `ImportError`
 
 Error type for failed STEP/IGES/BREP imports.
@@ -484,6 +535,14 @@ public enum ImportError: Error, LocalizedError {
 
 - `importFailed` — carries a human-readable message describing why the import failed.
 - `cancelled` — the import was cancelled via `ImportProgress.shouldCancel()`.
+
+| Case / Property | Meaning |
+|---|---|
+| `.importFailed(_:)` | The import failed; the associated string is a human-readable reason. |
+| `.cancelled` | The import was cancelled via `ImportProgress.shouldCancel()`. |
+| `errorDescription` | `LocalizedError` conformance: the associated message for `.importFailed`, or a fixed string for `.cancelled`. |
+
+#### `ImportError.errorDescription`
 
 ---
 
@@ -505,6 +564,7 @@ public struct ImportResult: Sendable {
     public let sewingApplied: Bool
     public let solidCreated: Bool
     public let healingApplied: Bool
+    public let solidsCreated: Int
     public var summary: String { get }
 }
 ```
@@ -513,23 +573,64 @@ public struct ImportResult: Sendable {
 
 ---
 
+#### `ImportResult.originalType`
+
+The shape type as read from the STEP file, before any processing.
+
+#### `ImportResult.resultType`
+
+The shape type after processing.
+
+#### `ImportResult.sewingApplied`
+
+`true` if sewing was applied to connect disconnected faces.
+
+#### `ImportResult.solidCreated`
+
+`true` if a solid was created from a shell.
+
+#### `ImportResult.healingApplied`
+
+`true` if shape healing was applied.
+
+#### `ImportResult.solidsCreated`
+
+How many shells were turned into solids. `> 1` means the file held several bodies and `shape` is a compound of that many solids. Before v1.11.3 every body after the first was silently discarded, so this count is the fact that was quietly wrong: a truncated import still returned a perfectly valid solid (#302).
+
+#### `ImportResult.summary`
+
+Human-readable description such as `"Shell -> Solid (processing: sewing, solid creation)"`.
+
+---
+
 ## Sub-Shape Extraction
+
+This is the one sub-shape enumeration in the API. `solids`/`shells`/`wires`, `faceCount`,
+`edgeCount`, `vertexCount`, `face(at:)`, `edge(at:)` and `uniqueSubShapeCount(ofType:)` all read it,
+so their answers agree with these by construction (#502). Each entry is a **distinct** sub-shape,
+meaning `TopoDS_Shape::IsSame`: same underlying geometry *and* same placement, orientation ignored.
 
 ### `subShapeCount(ofType:)`
 
-Returns the number of sub-shapes of a given topological type.
+Returns the number of distinct sub-shapes of a given topological type.
 
 ```swift
 public func subShapeCount(ofType type: ShapeType) -> Int
 ```
 
 - **Parameters:** `type` — the topological type to count (e.g. `.face`, `.edge`, `.vertex`).
-- **Returns:** Count of sub-shapes of that type.
+- **Returns:** Count of distinct sub-shapes of that type; `0` for `.unknown`.
 - **OCCT:** `TopExp::MapShapes` (via `OCCTShapeGetSubShapeCount`).
+- **Note:** A sub-shape reachable from more than one parent counts once: a box has 12 edges, not
+  the 24 edge-in-face occurrences a raw `TopExp_Explorer` walk yields. Two *placements* of one body
+  count twice, since the location is part of the comparison.
 - **Example:**
   ```swift
-  let box = Shape.box(width: 10, height: 10, depth: 10)
-  print(box.subShapeCount(ofType: .face))  // 6
+  let box = Shape.box(width: 10, height: 10, depth: 10)!
+  print(box.subShapeCount(ofType: .face))    // 6
+  print(box.subShapeCount(ofType: .edge))    // 12
+  print(box.subShapeCount(ofType: .vertex))  // 8
+  print(box.subShapeCount(ofType: .solid))   // 1, the box itself
   ```
 
 ---
@@ -553,15 +654,22 @@ Uses `TopExp::MapShapes` to enumerate sub-shapes of the given type.
 
 ### `subShapes(ofType:)`
 
-Returns all sub-shapes of a given topological type as an array.
+Returns all distinct sub-shapes of a given topological type as an array, in enumeration order.
 
 ```swift
 public func subShapes(ofType type: ShapeType) -> [Shape]
 ```
 
 - **Parameters:** `type` — topological type.
-- **Returns:** Array of all sub-shapes of that type (may be empty).
-- **OCCT:** Calls `subShapeCount` + `subShape(type:index:)` iteratively.
+- **Returns:** Array of all distinct sub-shapes of that type (may be empty).
+- **OCCT:** `TopExp::MapShapes` (via `OCCTShapeGetSubShapes`): one walk to size the buffer and one
+  to fill it, rather than one per element as reading `subShape(type:index:)` in a loop would cost.
+- **Example:**
+  ```swift
+  let box = Shape.box(width: 10, height: 10, depth: 10)!
+  print(box.subShapes(ofType: .face).count)  // 6
+  print(box.subShapes(ofType: .edge).count)  // 12
+  ```
 
 ---
 
@@ -629,17 +737,18 @@ public func sliceAtZ(_ z: Double) -> Shape?
 
 ### `sectionWiresAtZ(_:tolerance:)`
 
-Returns closed wires from a section at a Z level.
+Returns wires from a section at a Z level, chained where the section closes.
 
 ```swift
 public func sectionWiresAtZ(_ z: Double, tolerance: Double = 1e-6) -> [Wire]
 ```
 
-Unlike `sliceAtZ`, this chains the section edges into closed wires suitable for offset or CAM operations. Use a larger `tolerance` (e.g. `1e-4`) for imprecise geometry.
+Unlike `sliceAtZ`, this chains the section edges into wires (closed where the section forms a loop, open otherwise) suitable for offset or CAM operations. Use a larger `tolerance` (e.g. `1e-4`) for imprecise geometry.
 
+- **Note:** Edges whose orientation is `.internal` or `.external` are silently excluded from the result wires (OCCT 8.0.1, upstream OCCT#1408). This only matters if the input `Shape` was assembled with such edges via `Shape.setOrientation(_:)` and one happens to lie exactly in the cutting plane; in every case measured, an ordinary transverse section does not produce `.internal`/`.external` edges on its own. See [#655](https://github.com/SecondMouseAU/OCCTSwift/issues/655).
 - **Parameters:** `z` — Z level to section at; `tolerance` — tolerance for connecting edges into wires.
-- **Returns:** Array of closed `Wire` objects; empty if no contours exist at that level.
-- **OCCT:** `BRepAlgoAPI_Section` + `BRepBuilderAPI_MakeWire` (via `OCCTShapeSectionWiresAtZ`).
+- **Returns:** Array of `Wire` objects, closed where the section forms a loop and open otherwise; empty if no contours exist at that level.
+- **OCCT:** `BRepAlgoAPI_Section` + `ShapeAnalysis_FreeBounds::ConnectEdgesToWires` (via `OCCTShapeSectionWiresAtZ`).
 - **Example:**
   ```swift
   let model = try Shape.load(from: stepFile)
@@ -661,7 +770,7 @@ public func edgePoints(at index: Int, maxPoints: Int = 20) -> [SIMD3<Double>]
 
 Points are uniformly sampled from start to end of the edge curve.
 
-- **Parameters:** `index` — edge index (0 to `subShapeCount(ofType: .edge) − 1`); `maxPoints` — maximum points to return (capped at 20 internally).
+- **Parameters:** `index` — edge index (0 to `subShapeCount(ofType: .edge) − 1`); `maxPoints` — output *capacity* (capped at 20 internally), clamped into `0...Sampling.maximumSampleCount` (10,000,000), so an unservable capacity returns the same points rather than a coarser sampling; 0 or less returns empty (#558).
 - **Returns:** Array of 3D points along the edge curve.
 - **OCCT:** `BRep_Tool::Curve` + `GCPnts_UniformParameter` (via `OCCTShapeGetEdgePoints`).
 
@@ -677,7 +786,7 @@ public func contourPoints(maxPoints: Int = 1000) -> [SIMD3<Double>]
 
 Returns edge **start** vertices only, not intermediate curve samples. For curved edges use `edgePoints(at:maxPoints:)` instead. Suitable for simple polygon contours from Z-plane slices.
 
-- **Parameters:** `maxPoints` — maximum number of points to return.
+- **Parameters:** `maxPoints` — output *capacity*, clamped into `0...Sampling.maximumSampleCount` (10,000,000), so an unservable capacity returns the same points rather than a coarser sampling; 0 or less returns empty (#558).
 - **Returns:** Array of 3D points (one per edge start vertex).
 - **OCCT:** `TopExp_Explorer` over `TopAbs_EDGE` (via `OCCTShapeGetContourPoints`).
 
@@ -727,7 +836,8 @@ Intersection. Calls `lhs.intersection(rhs)`.
 
 ### `ShapeProperties`
 
-Mass and geometric properties of a shape.
+Volume mass properties of a shape. `centerOfMass` is the centre of mass of the enclosed volume, and
+`momentOfInertia` is referenced to it rather than to the world origin.
 
 ```swift
 public struct ShapeProperties: Sendable, Equatable {
@@ -769,13 +879,20 @@ public func properties(density: Double = 1.0) -> ShapeProperties?
 ```
 
 - **Parameters:** `density` — material density for mass calculation (default 1.0).
-- **Returns:** `ShapeProperties` including volume, surface area, centre of mass, and inertia tensor; or `nil` if calculation fails.
-- **OCCT:** `BRepGProp::VolumeProperties` + `BRepGProp::SurfaceProperties` (via `OCCTShapeGetProperties`).
+- **Returns:** `ShapeProperties` including volume, surface area, centre of mass, and inertia tensor;
+  or `nil` when the shape encloses no volume (a face, wire, edge, vertex or **open shell**) or the
+  calculation fails. These are volume mass properties, so without a volume there is no mass, no
+  centre of mass and no inertia tensor. Use `surfaceArea` for the area of such a shape.
+- **OCCT:** `BRepGProp::VolumeProperties` with `OnlyClosed = true` + `BRepGProp::SurfaceProperties`
+  (via `OCCTShapeGetProperties`). See `centerOfMass` below for what `OnlyClosed` means.
+- **Note:** `momentOfInertia` is referenced to the centre of mass, not to the world origin.
 - **Example:**
   ```swift
-  let box = Shape.box(width: 10, height: 10, depth: 10)
-  if let p = box.properties(density: 7.8) {
-      print("mass: \(p.mass), CoM: \(p.centerOfMass)")
+  let cone = Shape.cone(bottomRadius: 10, topRadius: 0, height: 20)!
+  if let p = cone.properties(density: 2.7) {
+      print(p.volume)        // 2094.395
+      print(p.mass)          // 5654.867 (volume x density)
+      print(p.centerOfMass)  // (0, 0, 5): a cone's centroid is at h/4
   }
   ```
 
@@ -783,34 +900,54 @@ public func properties(density: Double = 1.0) -> ShapeProperties?
 
 ### `volume`
 
-Volume of the shape in cubic units. Returns `nil` if the shape has no volume (e.g. a face).
+Volume of the shape in cubic units, or `nil` when the shape encloses no volume.
 
 ```swift
 public var volume: Double? { get }
 ```
 
-- **Returns:** Non-negative volume, or `nil` if OCCT returns a negative sentinel.
-- **OCCT:** `BRepGProp::VolumeProperties` (via `OCCTShapeGetVolume`).
+- **Returns:** Non-negative volume, or `nil` for a face, wire, edge, vertex, **open shell**, or
+  reversed solid (ask `signedVolume` for that last one).
+- **OCCT:** `BRepGProp::VolumeProperties` with `OnlyClosed = true` (via `OCCTShapeGetVolume`),
+  matching `centerOfMass`. Without that flag the divergence integral answers over a surface that
+  encloses nothing: 4800 for five faces of a 10x20x30 box, and 6857 for that box in a compound with
+  one loose face beside it, where the answer is 6000.
+- **Closedness is topological, not geometric.** A shell counts when every non-degenerate edge is
+  shared an even number of times, so faces that merely coincide are not a closed shell. Sew them
+  first. This matters for mesh-derived and IGES geometry, neither of which arrives sewn.
+- **Example:**
+  ```swift
+  let box = Shape.box(width: 10, height: 20, depth: 30)!
+  box.volume                                    // 6000
+  Shape.compound(box.faces().compactMap { Shape.fromFace($0) })?.volume   // nil, unsewn
+  Shape.sew(shapes: box.faces().compactMap { Shape.fromFace($0) })?.volume // 6000
+  ```
 
 ---
 
 ### `signedVolume`
 
-Signed volume of the shape. Negative for reversed-orientation solids.
+The signed divergence integral over the shape's faces. **An orientation signal, not a measurement.**
 
 ```swift
 public var signedVolume: Double { get }
 ```
 
-Unlike `volume`, preserves the sign. A solid whose faces point inward (e.g. produced by `sweep(profile:along:)`) has a negative `signedVolume`. Use `orientedForward()` to fix the orientation.
+The magnitude is a volume only when the surface is closed; use `volume` to measure. The *sign* is
+sound for any orientable surface, closed or not, because reversing a surface negates the flux
+(measured: +4800 forward and -4800 reversed for five faces of a box). That is why this deliberately
+keeps the unguarded integral where `volume` refuses it: `sweep(profile:along:)` produces an **open
+shell**, and normalising it (#170) depends on this sign.
 
-- **OCCT:** `BRepGProp::VolumeProperties`.
+- **Returns:** The signed flux. `0` on an internal error, where it used to return `-1`, which
+  `orientedForward()` read as "reverse me".
+- **OCCT:** `BRepGProp::VolumeProperties` with `OnlyClosed` left at its default.
 
 ---
 
 ### `orientedForward()`
 
-Returns a copy of this solid whose faces are oriented outward (positive volume).
+Returns a copy of this shape whose faces are oriented outward (positive flux).
 
 ```swift
 public func orientedForward() -> Shape?
@@ -820,6 +957,9 @@ Reverses orientation only when `signedVolume < 0`. Already-correct solids, shell
 
 - **Returns:** Outward-oriented copy, `self` if no fix needed, or `nil` if reversal fails.
 - **OCCT:** `TopoDS_Shape::Reverse` applied via `reversed` when `signedVolume < 0`.
+- **Note:** This reads `signedVolume`, the flux integral, precisely so it still normalises an open
+  shell. A strict volume test would report nothing for a pipe sweep and quietly stop normalising the
+  case it exists for.
 - **Example:**
   ```swift
   if let solid = Shape.sweep(profile: profile, along: path)?.orientedForward() {
@@ -837,21 +977,39 @@ Surface area of the shape in square units.
 public var surfaceArea: Double? { get }
 ```
 
-- **Returns:** Non-negative area, or `nil` on failure.
+- **Returns:** Non-negative area, or `nil` on failure. Unlike `volume` this answers for a face or an
+  open shell, since an area integral is well defined over any set of faces.
 - **OCCT:** `BRepGProp::SurfaceProperties` (via `OCCTShapeGetSurfaceArea`).
 
 ---
 
 ### `centerOfMass`
 
-Centre of mass (centroid) of the shape.
+Centre of mass of the volume the shape encloses. This is a *volume* measure, not the centre of the
+bounding box: a cone's centre of mass sits at a quarter of its height.
 
 ```swift
 public var centerOfMass: SIMD3<Double>? { get }
 ```
 
-- **Returns:** Centroid position, or `nil` on failure.
-- **OCCT:** `BRepGProp::VolumeProperties` (via `OCCTShapeGetCenterOfMass`).
+- **Returns:** Centre of mass, or `nil` when the shape encloses no volume (a face, wire, edge,
+  vertex or **open shell**) or the calculation fails.
+- **OCCT:** `BRepGProp::VolumeProperties` with `OnlyClosed = true` (via `OCCTShapeGetCenterOfMass`),
+  matching OCCT's own `XCAFDoc_Centroid` writer. An open shell contributes nothing rather than the
+  number the divergence integral returns over a surface enclosing nothing; close it first if you
+  need a figure, since which closure you want is your choice. Closedness is computed per shell, so a
+  closed shell outside any solid still counts.
+- **See also:** `surfaceInertia` for an area measure, `linearProperties()` for a length measure,
+  `vertices()` for a vertex position.
+- **Example:**
+  ```swift
+  let big = Shape.box(width: 10, height: 10, depth: 10)!
+  let small = Shape.box(width: 2, height: 2, depth: 2)!.translated(by: SIMD3(20, 0, 0))!
+  let part = big.union(small)!
+
+  part.centerOfMass    // (0.1587, 0, 0): the small cube barely shifts it
+                       // the bounding box centre would be 8.0
+  ```
 
 ---
 
@@ -935,6 +1093,9 @@ public var vertexCount: Int { get }
 ```
 
 - **OCCT:** `TopExp::MapShapes(TopAbs_VERTEX)` (via `OCCTShapeGetVertexCount`).
+- **Former second spelling:** `Shape.nbVertices` asked this same question, backed by a bare
+  `TopExp_Explorer` occurrence count (48 on an 8-vertex box) instead of this deduplicated one;
+  deprecated as a forward here in #651 and removed at v2.0.0 (#784).
 
 ---
 
@@ -988,6 +1149,10 @@ public enum PipeSweepMode: Sendable {
 
 ---
 
+#### `auxiliary`
+
+---
+
 ### `PipeTransitionMode`
 
 Transition behaviour at spine discontinuities.
@@ -1000,6 +1165,18 @@ public enum PipeTransitionMode: Int32, Sendable {
 }
 ```
 
+Case meanings, from `BRepBuilderAPI_TransitionMode` (via `BRepOffsetAPI_MakePipeShell::SetTransitionMode`):
+
+- `.transformed`: the pipe is "transformed" at each spine fracture; may self-intersect.
+
+#### `PipeTransitionMode.rightCorner`
+
+The two pipe segments meeting at a spine fracture are extended and intersected, forming a sharp corner. Valid only when that intersection is connected and planar; a non-linear spine near the fracture, or a profile set with a scaling law, can violate this.
+
+#### `PipeTransitionMode.roundCorner`
+
+The corner is filled by rotating the profile around an axis through the fracture point, derived from the cross product of the two adjacent segments' tangent directions. Reliable only when the profile is strictly orthogonal to the spine (`withCorrection: true`).
+
 ---
 
 ### `filleted(edges:radius:)`
@@ -1011,13 +1188,91 @@ public func filleted(edges: [Edge], radius: Double) -> Shape?
 ```
 
 - **Parameters:** `edges` — edges to fillet (must have valid `index` values from this shape); `radius` — fillet radius (must be > 0).
-- **Returns:** Filleted shape, or `nil` on failure.
+- **Returns:** Filleted shape, or `nil` on failure, which includes a non-positive or NaN radius and
+  an edge whose `index` names no edge of this shape.
 - **OCCT:** `BRepFilletAPI_MakeFillet` (via `OCCTShapeFilletEdges`).
+- **Notes:** shares one bridge implementation with
+  [`filleted(edges:startRadius:endRadius:)`](#filletededgesstartradiusendradius) and
+  [`blendedEdges(_:)`](#blendededges_), so all three apply the same positive-radius precondition
+  (#489) and the same all-or-nothing index contract (#520): an edge that does not resolve rejects
+  the call rather than being skipped, so a result is never a partial fillet reported as a complete
+  one.
 - **Example:**
   ```swift
   let box = Shape.box(width: 10, height: 10, depth: 10)
   let edges = box.subShapes(ofType: .edge).compactMap { Edge($0) }
   if let rounded = box.filleted(edges: Array(edges.prefix(4)), radius: 1.0) { }
+  ```
+
+---
+
+### `Shape.FilletResult`
+
+Result of a fillet call that also reports which requested edges OCCT declined (#639), and -- for
+`blendedEdgesWithReport(_:)` -- which duplicate entries were silently overwritten (#633).
+
+```swift
+public struct FilletResult: Sendable {
+    public let shape: Shape
+    public let declinedEdgeIndices: [Int]
+    public let overwrittenDuplicateIndices: [Int]
+}
+```
+
+- **Fields:** `shape`: the filleted shape, identical to what the non-reporting sibling returns for
+  the same input. `declinedEdgeIndices`: 0-based indices, matching `Edge.index`, of the requested
+  edges OCCT declined to fillet. Empty when every requested edge was accepted.
+  `overwrittenDuplicateIndices`: 0-based edge indices whose radius a *later* entry in the same
+  request overwrote. Empty for every `WithReport` sibling except `blendedEdgesWithReport(_:)`, the
+  one entry point whose per-edge radius array can name the same edge twice.
+- **Notes:** there is no *reason* alongside either list. `BRepFilletAPI_MakeFillet::Add` returns
+  nothing, and `NbFaultyContours()`/`BadShape()`/`StripeStatus()` describe a contour that failed
+  during `Build()`, which an edge OCCT never added to any contour never reaches. `Contour(edge) ==
+  0`, populated by `Add()` and not `Build()`, is the only signal OCCT itself exposes, so this reports
+  *which* edges were declined, not *why*. Both lists mirror the caller's request rather than
+  deduplicating it: an edge requested three times, and declined, is reported three times in
+  `declinedEdgeIndices`; an edge requested three times whose radius is overwritten twice is reported
+  twice in `overwrittenDuplicateIndices` -- the count matches how many entries of the request were
+  refused or discarded, not how many distinct edges were involved. Use `Set(...)` on either field
+  for distinct edges.
+
+---
+
+#### `Shape.FilletResult.overwrittenDuplicateIndices`
+- **Notes:** there is no *reason* alongside either list. `BRepFilletAPI_MakeFillet::Add` returns
+  nothing, and `NbFaultyContours()`/`BadShape()`/`StripeStatus()` describe a contour that failed
+  during `Build()`, which an edge OCCT never added to any contour never reaches. `Contour(edge) ==
+  0`, populated by `Add()` and not `Build()`, is the only signal OCCT itself exposes, so this reports
+  *which* edges were declined, not *why*. Both lists mirror the caller's request rather than
+  deduplicating it: an edge requested three times, and declined, is reported three times in
+  `declinedEdgeIndices`; an edge requested three times whose radius is overwritten twice is reported
+  twice in `overwrittenDuplicateIndices` -- the count matches how many entries of the request were
+  refused or discarded, not how many distinct edges were involved. Use `Set(...)` on either field
+  for distinct edges.
+
+---
+
+### `filletedWithReport(edges:radius:)`
+
+`filleted(edges:radius:)`, also reporting which requested edges OCCT declined (#639).
+
+```swift
+public func filletedWithReport(edges: [Edge], radius: Double) -> FilletResult?
+```
+
+- **Parameters:** same as `filleted(edges:radius:)`.
+- **Returns:** a `FilletResult`, or `nil` on failure under the same conditions as
+  `filleted(edges:radius:)`.
+- **OCCT:** `BRepFilletAPI_MakeFillet` (via `OCCTShapeFilletEdges`), reading `Contour(edge)` for
+  each requested edge after `Add()` and before `Build()`.
+- **Notes:** an edge OCCT cannot fillet is still skipped, not rejected: this changes only what a
+  caller can learn about it, not the shape returned. See `Shape.FilletResult` above.
+- **Example:**
+  ```swift
+  let box = Shape.box(width: 10, height: 10, depth: 10)!
+  if let report = box.filletedWithReport(edges: box.edges(), radius: 1.0) {
+      precondition(report.declinedEdgeIndices.isEmpty)   // every edge of a closed solid fillets
+  }
   ```
 
 ---
@@ -1030,11 +1285,40 @@ Fillets specific edges with a linear radius interpolation.
 public func filleted(edges: [Edge], startRadius: Double, endRadius: Double) -> Shape?
 ```
 
-The radius varies linearly from `startRadius` at the start of each edge to `endRadius` at its end.
+Each named edge is given a law running from `startRadius` to `endRadius`, placed in that edge's own
+slot within its contour. A contour is not always one edge — OCCT groups tangent-continuous edges
+into a single contour — and the radius over the whole contour is the interpolation of its edges'
+slots, so naming two edges of one tangent chain is not the same as naming one of them. Measured on
+a rounded slot's rim at 1 → 4: the straight side alone gives 10273.238348, the side plus its tangent
+arc 10297.711861 (#612).
 
-- **Parameters:** `edges` — edges to fillet; `startRadius` — radius at edge start (> 0); `endRadius` — radius at edge end (> 0).
-- **Returns:** Filleted shape, or `nil` on failure.
-- **OCCT:** `BRepFilletAPI_MakeFillet` with law-driven radius (via `OCCTShapeFilletEdgesLinear`).
+- **Parameters:** `edges` — edges to fillet; `startRadius` — radius at the start of each named edge's law (> 0); `endRadius` — radius at its end (> 0).
+- **Returns:** Filleted shape, or `nil` on failure, which includes a non-positive or NaN radius at
+  either end.
+- **OCCT:** `BRepFilletAPI_MakeFillet::Add(R1, R2, E)` (via `OCCTShapeFilletEdgesLinear`), which
+  places each law in that edge's own slot within its contour (#612).
+- **Notes:** shares one bridge implementation with [`filleted(edges:radius:)`](#filletededgesradius)
+  and [`blendedEdges(_:)`](#blendededges_) (#489), including their all-or-nothing index contract
+  (#520). An edge OCCT declines to fillet outright — a free-boundary edge of an open shell — is
+  skipped by all five edge-list fillet entry points alike; a batch in which every edge is declined
+  returns `nil` (#612).
+
+---
+
+### `filletedWithReport(edges:startRadius:endRadius:)`
+
+`filleted(edges:startRadius:endRadius:)`, also reporting which requested edges OCCT declined
+(#639). See [`Shape.FilletResult`](#shapefilletresult) and
+[`filletedWithReport(edges:radius:)`](#filletedwithreportedgesradius) for the reporting contract.
+
+```swift
+public func filletedWithReport(edges: [Edge], startRadius: Double, endRadius: Double) -> FilletResult?
+```
+
+- **Parameters:** same as `filleted(edges:startRadius:endRadius:)`.
+- **Returns:** a `FilletResult`, or `nil` on failure under the same conditions as
+  `filleted(edges:startRadius:endRadius:)`.
+- **OCCT:** `BRepFilletAPI_MakeFillet::Add(R1, R2, E)` (via `OCCTShapeFilletEdgesLinear`).
 
 ---
 
@@ -1058,6 +1342,11 @@ public func drafted(
   - `neutralPlane` — point and normal of the plane where draft angle is zero.
 - **Returns:** Drafted shape, or `nil` on failure.
 - **OCCT:** `OCCTShapeDraft` (internal `Draft_MakeDraft`-based implementation).
+- **Note:** every face must be one of *this* shape's, by index. A `Face` whose `index` names no face
+  here fails the whole call rather than being skipped (#568). Skipping was worse here than anywhere
+  else in that sweep: `BRepOffsetAPI_DraftAngle` reports success for a request it was handed no
+  faces for at all, so a list of faces taken from a different shape used to return this shape
+  undrafted, presented as a successful draft.
 
 ---
 
@@ -1072,14 +1361,20 @@ public func withoutFeatures(faces: [Face]) -> Shape?
 Useful for simplifying imported geometry or removing small features before analysis.
 
 - **Parameters:** `faces` — faces to remove (must have valid `index` values from this shape).
-- **Returns:** Shape with features removed, or `nil` on failure.
-- **OCCT:** `BOPAlgo_Defeaturing` (via `OCCTShapeRemoveFeatures`).
+- **Returns:** Shape with features removed, or `nil` on failure — including when a face's index does
+  not belong to this shape. Such an index used to be skipped, which returned a shape that still
+  carried the feature and looked no different from a successful removal (#497).
+- **OCCT:** `BRepAlgoAPI_Defeaturing` (via `OCCTShapeRemoveFeatures`). Corrected here: this row
+  previously named `BOPAlgo_Defeaturing`, which is not an OCCT class.
+- **See also:** [`defeature(faces:)`](Document-Transforms.md#shapedefeaturefaces), the same
+  operation addressing its faces as shapes, and the rest of the defeaturing family listed there. Since
+  #578 it applies the same rule to a face this shape does not have: the whole call fails.
 
 ---
 
 ## Advanced / Variable-Section Pipe Sweep
 
-### `Shape.pipeShell(spine:profile:mode:solid:)`
+### `Shape.pipeShell(spine:profile:mode:transition:withContact:withCorrection:solid:)`
 
 Creates a pipe sweep with advanced orientation mode control.
 
@@ -1088,17 +1383,31 @@ public static func pipeShell(
     spine: Wire,
     profile: Wire,
     mode: PipeSweepMode = .frenet,
+    transition: PipeTransitionMode = .transformed,
+    withContact: Bool = false,
+    withCorrection: Bool = false,
     solid: Bool = true
 ) -> Shape?
 ```
+
+Since #503 this is the single-profile form of
+[`pipeShellMultiSection`](#shapepipeshellmultisectionspineprofilesmodetransitionwithcontactwithcorrectionsolid)
+and runs the same code, so it reaches the corner-transition and profile-placement controls that
+used to be split across three other spellings.
 
 - **Parameters:**
   - `spine` — path wire.
   - `profile` — profile wire to sweep.
   - `mode` — sweep orientation mode (`.frenet`, `.correctedFrenet`, `.fixed(binormal:)`, `.auxiliary(spine:)`).
+    A mode whose own argument is unusable (a zero-length binormal, or an auxiliary spine OCCT
+    rejects) returns `nil`. It is never swapped for a different mode, which is what the
+    pre-#503 bridge did.
+  - `transition`: corner transition style at spine discontinuities.
+  - `withContact`: if `true`, the profile is moved to touch the spine before sweeping.
+  - `withCorrection`: if `true`, the profile is rotated to stay orthogonal to the spine.
   - `solid` — `true` = solid result; `false` = shell.
 - **Returns:** Swept shape, or `nil` on failure.
-- **OCCT:** `BRepOffsetAPI_MakePipeShell`.
+- **OCCT:** `BRepOffsetAPI_MakePipeShell` (via `OCCTShapeCreatePipeShellMultiSection`).
 - **Example:**
   ```swift
   let spine = Wire.helix(origin: .zero, axis: SIMD3(0,0,1), radius: 10, pitch: 5, turns: 3)!
@@ -1108,27 +1417,12 @@ public static func pipeShell(
 
 ---
 
-### `Shape.pipeShellWithTransition(spine:profile:mode:transition:solid:)`
-
-Creates a pipe sweep with both orientation mode and spine-corner transition control.
-
-```swift
-public static func pipeShellWithTransition(
-    spine: Wire,
-    profile: Wire,
-    mode: PipeSweepMode = .frenet,
-    transition: PipeTransitionMode = .transformed,
-    solid: Bool = true
-) -> Shape?
-```
-
-- **Parameters:**
-  - `spine`, `profile` — as for `pipeShell`.
-  - `mode` — orientation mode (`.frenet` or `.correctedFrenet`; other modes fall back to Frenet).
-  - `transition` — corner transition style.
-  - `solid` — produce a solid when `true`.
-- **Returns:** Swept shape, or `nil` on failure.
-- **OCCT:** `BRepOffsetAPI_MakePipeShell`.
+`Shape.pipeShellWithTransition(spine:profile:mode:transition:solid:)`, deprecated since #503 and
+removed at v2.0.0 (#784), accepted a full `PipeSweepMode` but reached a bridge function that could
+only express `.frenet` and `.correctedFrenet`; `.fixed(binormal:)` and `.auxiliary(spine:)` were
+swept as Frenet, a different solid from the one requested, returned as a success. Use
+[`pipeShell(spine:profile:mode:transition:...)`](#shapepipeshellspineprofilemodetransitionwithcontactwithcorrectionsolid),
+which takes the same `transition:` argument and honours every mode.
 
 ---
 
@@ -1153,32 +1447,36 @@ The law value defines how the profile scales along the spine: 1.0 = no scaling, 
 
 ---
 
-### `Shape.pipeShellMultiSection(spine:profiles:mode:withContact:withCorrection:solid:)`
+### `Shape.pipeShellMultiSection(spine:profiles:mode:transition:withContact:withCorrection:solid:)`
 
-Sweeps multiple profiles along a spine for a variable-section result.
+Sweeps one or more profiles along a spine for a variable-section result.
 
 ```swift
 public static func pipeShellMultiSection(
     spine: Wire,
     profiles: [Wire],
     mode: PipeSweepMode = .frenet,
+    transition: PipeTransitionMode = .transformed,
     withContact: Bool = false,
     withCorrection: Bool = false,
     solid: Bool = true
 ) -> Shape?
 ```
 
-Each profile is positioned in 3D at its station along the spine, and OCCT interpolates a smooth solid that passes through every section. Supports all `PipeSweepMode` cases, including `.auxiliary(spine:)` for twist control.
+Each profile is positioned in 3D at its station along the spine, and OCCT interpolates a smooth solid that passes through every section. Supports all `PipeSweepMode` cases, including `.auxiliary(spine:)` for twist control. Every `MakePipeShell` sweep in OCCTSwift is this call; `pipeShell` is this function with one profile (#503).
 
 - **Parameters:**
   - `spine` — path wire.
   - `profiles` — section wires, each pre-positioned at its station (at least one required).
-  - `mode` — orientation mode.
+  - `mode`: orientation mode. A mode whose own argument is unusable returns `nil` rather than
+    being swapped for another mode.
+  - `transition`: corner transition style at spine discontinuities. Reaches a multi-section
+    sweep since #503; before that only the single-profile spelling could set it.
   - `withContact` — if `true`, each profile is moved to touch the spine.
   - `withCorrection` — if `true`, each profile is rotated to stay orthogonal to the spine.
   - `solid` — produce a solid when `true`.
 - **Returns:** Swept shape, or `nil` on failure.
-- **OCCT:** `BRepOffsetAPI_MakePipeShell` multi-profile form (via `OCCTShapeCreatePipeShellMultiSection`).
+- **OCCT:** `BRepOffsetAPI_MakePipeShell` (via `OCCTShapeCreatePipeShellMultiSection`).
 
 ---
 
@@ -1309,6 +1607,9 @@ public func shelled(thickness: Double, openFaces: [Face]) -> Shape?
 - **Parameters:** `thickness` — wall thickness (positive = inward, negative = outward); `openFaces` — faces to leave open (must have valid `index` values).
 - **Returns:** Shelled shape with specified faces open, or `nil` on failure.
 - **OCCT:** `BRepOffsetAPI_MakeThickSolid::MakeThickSolidByJoin` (via `OCCTShapeShellWithOpenFaces`).
+- **Note:** every face must be one of *this* shape's, by index. A `Face` whose `index` names no face
+  here fails the whole call rather than being skipped (#568); previously such a face was dropped and
+  the solid was shelled with fewer openings than asked for.
 - **Example:**
   ```swift
   let box = Shape.box(width: 20, height: 20, depth: 20)
@@ -1329,7 +1630,7 @@ public struct ShapeAnalysisResult {
     public let smallEdgeCount: Int
     public let smallFaceCount: Int
     public let gapCount: Int
-    public let selfIntersectionCount: Int
+    public let hasSelfIntersection: Bool?
     public let freeEdgeCount: Int
     public let freeFaceCount: Int
     public let hasInvalidTopology: Bool
@@ -1340,23 +1641,120 @@ public struct ShapeAnalysisResult {
 
 `isHealthy` is `true` when `totalProblems == 0 && !hasInvalidTopology`.
 
+- **This never reports self-intersection unless asked to.** A `selfIntersectionCount` field used
+  to sit here (through v1.x) but was always 0, never computed (the bridge's own comment read
+  "would require more expensive computation"); it was removed in #763 rather than kept as a
+  permanent zero. Use `hasSelfIntersection`, populated via
+  `analyze(tolerance:selfIntersectionTimeout:)`, or `isSelfIntersecting(timeout:)` directly, for a
+  real answer.
+- **`hasSelfIntersection` is `nil` unless `analyze(selfIntersectionTimeout:)` was passed a
+  non-`nil` value (#772).** The self-intersection check (`BOPAlgo_ArgumentAnalyzer`'s
+  self-interference test, #319) is orders of magnitude more expensive than the rest of this scan,
+  and on pathological input the gap is not small: measured on the #319 pathological artifact,
+  roughly 3000x-4000x the cost of the rest of the scan combined (a few milliseconds vs 30+
+  seconds at a 30s timeout). On ordinary shapes, including a real 662-face mesh-sewn import, the
+  measured overhead was 1x-3x, cheap enough to opt into freely; see
+  `Scripts/repro/772-analyze-self-intersection/` for the full measurement, including why this
+  forwards to `isSelfIntersecting(timeout:)` and not `isSelfIntersecting(hardTimeout:)` (measuring
+  both, not just the pathological case, found the latter is not a strict improvement here). `nil`
+  covers two cases the type deliberately does not distinguish: not requested, or requested but
+  indeterminate (the check did not resolve within the timeout, matching `isSelfIntersecting`'s own
+  `nil` = indeterminate). `nil` is never "clean": only `hasSelfIntersection == false` means that.
+  `totalProblems` adds a flat +1 when `hasSelfIntersection == true`, +0 for `false` or `nil`, so
+  it never reflects self-intersection unless the analysis actually checked for it.
+- **`freeEdgeCount`/`freeFaceCount` were hardcoded to 0 for every shape before #702**: the bridge
+  called `ShapeAnalysis_Shell::LoadShells()`, which only registers a shell for bookkeeping,
+  instead of `CheckOrientedShells()`, the call that actually populates the free-edge set. Now
+  fixed: `freeEdgeCount` is the true count across every shell, and `freeFaceCount` is how many of
+  those shells are not fully closed. The bridge asks `CheckOrientedShells` to also exclude an edge
+  that has a matching `TopAbs_INTERNAL`-oriented occurrence elsewhere in the same shell from
+  `freeEdgeCount` (it is genuinely connected through that occurrence, not a boundary gap): the
+  same rule `analyzeShell()` already used, so the two agree on any shape either can see.
+- **`totalProblems` counts `freeEdgeCount`, not `freeFaceCount`.** `freeFaceCount` is a derived
+  summary over the same scan (this shell has at least one free edge), not an independent defect:
+  it is never nonzero without `freeEdgeCount` also being nonzero, and adding both would count one
+  open shell's boundary gap twice (once per edge, once more as a flat "+1 shell"). `freeFaceCount`
+  stays a public field for callers who want the shell-level breakdown; it is just not folded into
+  the total again.
+- **A "clean" (`isHealthy == true`) result never means "this is a solid."** A well-formed open
+  shell, or a shell `healed()`/`fixSolid()` demoted from a solid it could not close, has no
+  closure requirement of its own and can report zero free edges accurately while still not being a
+  solid. Check `shapeType` or `isValidSolid` for that.
+
+| field | meaning |
+|---|---|
+| `smallEdgeCount` | Number of edges smaller than the scan's `tolerance`. |
+| `smallFaceCount` | Number of faces smaller than the scan's `tolerance`. |
+| `gapCount` | Number of gaps found between edges/faces. |
+| `hasSelfIntersection` | `true`/`false` when `selfIntersectionTimeout` was passed and resolved; `nil` when not asked, or asked but indeterminate. `nil` is never "clean". |
+| `freeEdgeCount` | Free (unconnected) edges across every shell, via `ShapeAnalysis_Shell::CheckOrientedShells`. |
+| `freeFaceCount` | Shells found to have at least one free edge; a derived summary of `freeEdgeCount`, not an independent defect. |
+| `hasInvalidTopology` | Whether `BRepCheck_Analyzer` found the topology invalid. |
+| `totalProblems` | `smallEdgeCount + smallFaceCount + gapCount + freeEdgeCount`, plus +1 for invalid topology, plus +1 only when `hasSelfIntersection == true`. |
+| `isHealthy` | `true` when `totalProblems == 0 && !hasInvalidTopology`. Says nothing about self-intersection unless it was actually checked. |
+
+*(Per-field anchors below, for cross-reference; the table above has the actual meaning of each.)*
+
+#### `isHealthy`
+
 ---
 
-### `analyze(tolerance:)`
+### `analyze(tolerance:selfIntersectionTimeout:)`
 
 Analyzes a shape for problems such as small edges, gaps, and invalid topology.
 
 ```swift
-public func analyze(tolerance: Double = 1e-6) -> ShapeAnalysisResult?
+public func analyze(tolerance: Double = 1e-6, selfIntersectionTimeout: Double? = nil) -> ShapeAnalysisResult?
 ```
 
-- **Parameters:** `tolerance` — size threshold for detecting small features.
+- **Important:** passing `selfIntersectionTimeout` makes this call **synchronously block the
+  calling thread** for up to that many seconds (more, if OCCT never reaches a checkpoint to poll:
+  see `isSelfIntersecting(timeout:)`'s own warning, inherited unchanged). Do not pass it from a
+  UI/main thread without accepting that stall.
+- **Parameters:**
+  - `tolerance`: size threshold for detecting small features.
+  - `selfIntersectionTimeout`: `nil` (the default) skips the self-intersection check entirely and
+    leaves `ShapeAnalysisResult.hasSelfIntersection` `nil`. A non-`nil` value opts in, forwarded
+    as the `timeout:` to `isSelfIntersecting(timeout:)` (the cooperative check, not
+    `isSelfIntersecting(hardTimeout:)`: measuring both, not just on a pathological artifact, found
+    the `hardTimeout:` background-thread mechanism is not a strict improvement, see below). There
+    is no way to supply a timeout that does not enable the check: the two used to be separate
+    parameters (`checkSelfIntersection: Bool`, `hardTimeout: Double`) until review found that
+    shape let a caller's `hardTimeout` be silently discarded whenever they forgot
+    `checkSelfIntersection: true`, compiling and running with no signal at all (#772). Collapsing
+    them into one optional makes that mistake unrepresentable.
+
+    Costs 1x-3x the rest of this scan on ordinary shapes, including a real 662-face mesh-sewn
+    import, but roughly 3000x-4000x on the #319 pathological artifact (measured,
+    `Scripts/repro/772-analyze-self-intersection/`), so it stays opt-in rather than silently
+    turning a cheap call into an occasionally unbounded-shaped one.
 - **Returns:** `ShapeAnalysisResult` with problem counts, or `nil` if the analysis itself fails.
-- **OCCT:** `ShapeAnalysis_Shell` + `ShapeAnalysis_CheckSmallFace` + `BRepCheck_Analyzer` (via `OCCTShapeAnalyze`).
+- **OCCT:** `ShapeAnalysis_Shell` + `ShapeAnalysis_CheckSmallFace` + `BRepCheck_Analyzer` (via `OCCTShapeAnalyze`), plus `BOPAlgo_ArgumentAnalyzer` when `selfIntersectionTimeout` is non-`nil`.
+- **Why `timeout:`, not `hardTimeout:`:** `isSelfIntersecting(hardTimeout:)` looks like the safer
+  default (a true wall-clock guarantee via `deepCopy()` + a background thread + a semaphore), but
+  its `deepCopy()` step, while cheap on its own (under 1ms on every fixture measured), guards an
+  internal `OCCTShapeSelfIntersectsBounded` call that passes 0 (unbounded); the only bound left is
+  the caller-side semaphore wait. On the #319 pathological artifact this produced a **worse**
+  answer than `timeout:` at the same deadline: `timeout:` reliably returned a conclusive
+  `self-intersects` around 30.1s, while `hardTimeout:` reliably returned `nil` (indeterminate) at
+  exactly 30.0s, the same wall-clock budget for a strictly less useful answer, plus an abandoned
+  background computation left running. `analyze()` is already fully synchronous, so a caller has
+  already committed to blocking; `hardTimeout:`'s guarantee buys nothing over `timeout:` in that
+  context. A caller that genuinely needs the hard guarantee should call
+  `isSelfIntersecting(hardTimeout:)` directly and accept its documented trade-offs.
 - **Example:**
   ```swift
   if let a = shape.analyze(tolerance: 0.001) {
-      if !a.isHealthy { print("\(a.totalProblems) problems found") }
+      if !a.isHealthy { print("\(a.totalProblems) problems found") }   // self-intersection not included
+  }
+
+  // Opt into the expensive, thread-blocking check when it's actually needed:
+  if let a = shape.analyze(tolerance: 0.001, selfIntersectionTimeout: 30) {
+      switch a.hasSelfIntersection {
+      case .some(true):  print("self-intersects")
+      case .some(false): print("clean")
+      case nil:          print("indeterminate, timeout elapsed before a checkpoint")
+      }
   }
   ```
 
@@ -1497,18 +1895,36 @@ public enum SurfaceContinuity: Int32, Sendable, CaseIterable {
 }
 ```
 
-Not every API accepts every order. A bare point carries no curvature to match, so
-`GeomPlate_PointConstraint` throws above order 1 and `Shape.plateSurface(through:orders:)`
-returns `nil` if any point is given `.g2`.
+| Case | Meaning |
+|---|---|
+| `.g0` | Positional continuity: the surface passes through the constraint. |
+| `.g1` | Tangent continuity: the surface is tangent along the constraint. |
+| `.g2` | Curvature continuity: the surface matches curvature along the constraint. Rejected for a bare point constraint (see below). |
 
 > **Renamed in #398.** `PlateConstraintOrder` and `FillingContinuity` were separate copies of
-> this same vocabulary and are now deprecated typealiases of `SurfaceContinuity`. The `.c0`,
-> `.c1` and `.c2` spellings remain as deprecated aliases of `.g0`, `.g1` and `.g2`. No raw
-> value moved, so behaviour is unchanged. Not to be confused with `ParametricContinuity`
-> (C0/C1/C2/C3), which is a different contract: see `docs/reference/Shape-Healing.md`.
+> this same vocabulary, deprecated as typealiases of `SurfaceContinuity`; the `.c0`, `.c1` and
+> `.c2` spellings were deprecated aliases of `.g0`, `.g1` and `.g2`. No raw value moved. All were
+> removed at v2.0.0 (#784). Not to be confused with `ParametricContinuity` (C0/C1/C2/C3), which is
+> a different contract: see `docs/reference/Shape-Healing.md`.
 
 ---
 
+#### `SurfaceContinuity.g2`
+
+```swift
+```
+Not every API accepts every order. A bare point carries no curvature to match, so
+`GeomPlate_PointConstraint` throws above order 1. `Shape.plateSurface(through:orders:)` and the
+point half of `Shape.plateSurface(pointConstraints:curveConstraints:)` reject `.g2` in Swift
+before building any constraint, so a point given `.g2` returns `nil` deliberately rather than by
+relying on OCCT's own throw being caught (#437). Curve constraints have no such restriction:
+`GeomPlate_CurveConstraint` accepts order 2 directly, so `.g2` is fine for a curve.
+> **Renamed in #398.** `PlateConstraintOrder` and `FillingContinuity` were separate copies of
+> this same vocabulary, deprecated as typealiases of `SurfaceContinuity`; the `.c0`, `.c1` and
+> `.c2` spellings were deprecated aliases of `.g0`, `.g1` and `.g2`. No raw value moved. All were
+> removed at v2.0.0 (#784). Not to be confused with `ParametricContinuity` (C0/C1/C2/C3), which is
+> a different contract: see `docs/reference/Shape-Healing.md`.
+---
 ### `FillingParameters`
 
 Parameters for N-sided surface filling.
@@ -1525,8 +1941,18 @@ public struct FillingParameters {
 }
 ```
 
----
+| field | meaning |
+|---|---|
+| `continuity` | Surface continuity at the fill's boundaries (default `.g1`). |
+| `tolerance` | Surface tolerance for the fit (default `1e-4`). |
+| `maxDegree` | Maximum surface degree the filler may use (default `8`). |
+| `maxSegments` | Maximum number of segments the filler may use (default `9`). |
 
+*(Per-field anchors below, for cross-reference; the table above has the actual meaning of each.)*
+
+#### `tolerance`
+
+---
 ## Variable Radius Fillet (v0.14.0)
 
 ### `filletedVariable(edgeIndex:radiusProfile:)`
@@ -1542,9 +1968,18 @@ public func filletedVariable(
 
 Parameters are normalised from 0.0 (start) to 1.0 (end). At least two profile points are required.
 
-- **Parameters:** `edgeIndex` — index of the edge to fillet; `radiusProfile` — array of `(parameter, radius)` pairs (minimum 2).
-- **Returns:** Filleted shape, or `nil` on failure.
+- **Parameters:** `edgeIndex` — 0-based index of the edge to fillet, as reported by `Edge.index`;
+  `radiusProfile` — array of `(parameter, radius)` pairs (minimum 2).
+- **Returns:** Filleted shape, or `nil` on failure, which includes an `edgeIndex` naming no edge of
+  this shape, a non-positive or NaN radius anywhere in the profile, a parameter outside `0...1`,
+  and a non-increasing parameter sequence (#520).
 - **OCCT:** `BRepFilletAPI_MakeFillet` with law-driven radius (via `OCCTShapeFilletVariable`).
+- **Notes:** the profile is applied through `SetRadius(UandR, contour, 1)`, the same OCCT overload
+  [`filletEvolving(_:)`](Shape-Measurement#filletevolving_) uses, so the same profile gives the
+  same shape through either entry point. **Until #520 the profile was never applied at all**: the
+  bridge mapped each relative parameter onto the edge's own curve range and passed it where OCCT
+  wanted a contour index, which truncated it to an `int`, so the result was a constant radius (and,
+  for an edge whose parameter range does not start at 0, a `SIGSEGV`).
 - **Example:**
   ```swift
   // Radius varies from 1 mm at start to 3 mm at end
@@ -1552,7 +1987,18 @@ Parameters are normalised from 0.0 (start) to 1.0 (end). At least two profile po
       edgeIndex: 0,
       radiusProfile: [(0.0, 1.0), (1.0, 3.0)]
   )
+
+  // Rejected: a descending parameter would silently reverse the law
+  let invalid = shape.filletedVariable(
+      edgeIndex: 0,
+      radiusProfile: [(1.0, 1.0), (0.0, 3.0)]
+  )  // nil
   ```
+
+> OCCT stretches the profile across the whole edge, so it cannot fillet part of one and leave the
+> rest alone. With exactly two points the parameters are ignored and only the endpoint radii are
+> used; with three or more only the *relative* spacing of the interior points survives, because
+> OCCT renormalises the first parameter to 0 and the last to 1.
 
 ---
 
@@ -1566,9 +2012,18 @@ Applies fillets to multiple edges, each with its own radius.
 public func blendedEdges(_ edgeRadii: [(edgeIndex: Int, radius: Double)]) -> Shape?
 ```
 
-- **Parameters:** `edgeRadii` — array of `(edgeIndex, radius)` pairs.
-- **Returns:** Filleted shape with per-edge radii applied, or `nil` on failure.
+- **Parameters:** `edgeRadii` — array of `(0-based edgeIndex, radius)` pairs. Every radius must be > 0.
+- **Returns:** Filleted shape with per-edge radii applied, or `nil` on failure, which includes an
+  empty array, a non-positive or NaN radius anywhere in it, and an index that names no edge of this
+  shape.
 - **OCCT:** `BRepFilletAPI_MakeFillet` (via `OCCTShapeBlendEdges`).
+- **Notes:** one non-positive radius rejects the whole batch, the same contract
+  [`filleted(edges:radius:)`](#filletededgesradius) applies to its single radius (#489), and one
+  index that does not resolve rejects it too rather than being skipped (#520). The same edge index
+  named twice is **not** rejected: `BRepFilletAPI_MakeFillet::Add(radius, edge)` writes to that
+  edge's own fillet-contour slot, so the *second* call silently overwrites the first radius (#633).
+  Unchanged, existing behaviour -- see [`blendedEdgesWithReport(_:)`](#blendededgeswithreport_) for
+  the same fillet with a report naming which entries a duplicate overwrote.
 - **Example:**
   ```swift
   let blended = shape.blendedEdges([
@@ -1576,6 +2031,46 @@ public func blendedEdges(_ edgeRadii: [(edgeIndex: Int, radius: Double)]) -> Sha
       (1, 2.0),
       (2, 0.5)
   ])
+
+  // Rejected: a radius of zero is not a fillet
+  let invalid = shape.blendedEdges([(0, 1.0), (1, 0.0)])  // nil
+
+  // Rejected: 99_999 names no edge, so the batch fails rather than filleting edge 0
+  let outOfRange = shape.blendedEdges([(0, 1.0), (99_999, 2.0)])  // nil
+
+  // Not rejected: edge 0's first radius (1.0) is silently overwritten by the second (3.0)
+  let overwritten = shape.blendedEdges([(0, 1.0), (0, 3.0)])
+  ```
+
+---
+
+### `blendedEdgesWithReport(_:)`
+
+`blendedEdges(_:)`, also reporting which requested edges OCCT declined to fillet, and which
+duplicate entries a later request overwrote (#633).
+
+```swift
+public func blendedEdgesWithReport(_ edgeRadii: [(edgeIndex: Int, radius: Double)]) -> FilletResult?
+```
+
+- **Parameters:** same as `blendedEdges(_:)`.
+- **Returns:** a `FilletResult`, or `nil` on failure under the same conditions as
+  `blendedEdges(_:)`.
+- **OCCT:** `BRepFilletAPI_MakeFillet.Add(radius, edge)` (via `OCCTShapeBlendEdges`), reading
+  `Contour(edge)` for each requested edge after `Add()` and before `Build()` for the declined-edge
+  axis; the duplicate-overwrite axis is computed Swift-side from `edgeRadii` itself and needs no
+  OCCT call at all, since an edge index maps to exactly one edge regardless of how many times it is
+  requested.
+- **Notes:** neither report changes the shape returned, which is byte-identical to what
+  `blendedEdges(_:)` gives for the same input. See `Shape.FilletResult` above for the mirror-the-
+  request convention both of its list fields share.
+- **Example:**
+  ```swift
+  let box = Shape.box(width: 10, height: 10, depth: 10)!
+  if let report = box.blendedEdgesWithReport([(0, 2.0), (0, 5.0)]) {
+      print(report.overwrittenDuplicateIndices)   // [0]: edge 0's first radius (2.0) was overwritten
+      print(report.declinedEdgeIndices)            // []: every edge of a closed box fillets
+  }
   ```
 
 ---
@@ -1716,6 +2211,15 @@ public struct FillConstraint {
 
 ---
 
+#### `isBoundary`
+
+> **Continuity mapping.** `BRepFill_Filling` forwards the `GeomAbs_Shape` value to
+> `GeomPlate_CurveConstraint` as an integer *plate order* and rejects anything outside `[-1, 2]`.
+> So `.g2` maps to `GeomAbs_C1` (ordinal 2), not `GeomAbs_G2` (ordinal 3) — the latter always
+> throws, despite OCCT's own header docs naming it as the curvature-continuity value.
+
+---
+
 ## Plate Surfaces (v0.14.0 / v0.23.0)
 
 ### `Shape.plateSurface(through:tolerance:)`
@@ -1777,11 +2281,14 @@ public static func plateSurface(
 ) -> Shape?
 ```
 
-Each point independently specifies G0 (position), G1 (position + tangent), or G2 (position + tangent + curvature) continuity.
+Each point independently specifies G0 (position) or G1 (position + tangent) continuity.
+**`.g2` always returns `nil`**: `GeomPlate_PointConstraint` rejects order 2 outright for a bare
+point (#437), and this is checked in Swift, via `SurfaceContinuity.isUnsupportedForPointConstraint`,
+before any constraint is built, rather than relying on OCCT's own throw.
 
 - **Parameters:**
   - `points` — 3D points (minimum 3); must match `orders.count`.
-  - `orders` — per-point constraint orders.
+  - `orders` — per-point constraint orders (`.g0` or `.g1`; `.g2` is rejected, see above).
   - `degree` — maximum polynomial degree (default 3).
   - `pointsOnCurves` — sample points on internal curves (default 15).
   - `iterations` — solver iterations (default 2).
@@ -1804,10 +2311,14 @@ public static func plateSurface(
 ) -> Shape?
 ```
 
-At least one of `points` or `curves` must be non-empty.
+At least one of `points` or `curves` must be non-empty. `.g2` is rejected up front for a **point**
+constraint (`GeomPlate_PointConstraint` rejects order 2 outright, #437) but is fine for a
+**curve** constraint (`GeomPlate_CurveConstraint` accepts order 2 directly); only `points`'
+orders are checked.
 
 - **Parameters:**
-  - `points` — point constraints, each with a position and a `SurfaceContinuity`.
+  - `points` — point constraints, each with a position and a `SurfaceContinuity` (`.g2` always
+    rejected, see above).
   - `curves` — curve constraints, each with a `Wire` and a `SurfaceContinuity`.
   - `degree` — maximum polynomial degree (default 3).
   - `tolerance` — approximation tolerance.

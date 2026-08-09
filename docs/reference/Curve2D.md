@@ -304,12 +304,14 @@ public static func ellipse(center: SIMD2<Double>, majorRadius: Double,
                            minorRadius: Double, rotation: Double = 0) -> Curve2D?
 ```
 
-- **Parameters:** `center` — ellipse centre; `majorRadius` — semi-major axis (must be ≥ `minorRadius`); `minorRadius` — semi-minor axis; `rotation` — rotation of the major axis from the X axis in radians (default 0).
-- **Returns:** Full ellipse curve, or `nil` on failure.
+- **Parameters:** `center` — ellipse centre; `majorRadius` — semi-major axis (must be > 0 and ≥ `minorRadius`); `minorRadius` — semi-minor axis (must be > 0); `rotation` — rotation of the major axis from the X axis in radians (default 0).
+- **Returns:** Full ellipse curve, or `nil` if either radius is ≤ 0 or `minorRadius` exceeds `majorRadius`. Equal radii are valid.
 - **OCCT:** `Geom2d_Ellipse(gp_Elips2d(...))`.
+- **See also:** [`ellipseFromCenterDir(center:direction:majorRadius:minorRadius:)`](Curve2D-Analysis.md) builds the identical ellipse through OCCT's `gce_MakeElips2d` algorithm and enforces the same radius contract (#487).
 - **Example:**
   ```swift
   let ellipse = Curve2D.ellipse(center: .zero, majorRadius: 10, minorRadius: 5)!
+  Curve2D.ellipse(center: .zero, majorRadius: 5, minorRadius: 10)  // nil, minor exceeds major
   ```
 
 ---
@@ -347,9 +349,11 @@ public static func parabola(focus: SIMD2<Double>, direction: SIMD2<Double>,
 - **Parameters:** `focus` — focus point; `direction` — axis direction from vertex toward focus; `focalLength` — distance from vertex to focus (must be > 0).
 - **Returns:** Parabola curve, or `nil` if `focalLength ≤ 0`.
 - **OCCT:** `Geom2d_Parabola(gp_Parab2d(...))`.
+- **See also:** [`parabolaFromCenterDir(center:direction:focal:)`](Curve2D-Analysis.md) places the same curve through OCCT's `gce_MakeParab2d` algorithm, taking the vertex rather than the focus, and enforces the same focal-length contract (#487).
 - **Example:**
   ```swift
   let par = Curve2D.parabola(focus: SIMD2(0, 2), direction: SIMD2(0, 1), focalLength: 2)
+  Curve2D.parabola(focus: .zero, direction: SIMD2(0, 1), focalLength: 0)  // nil, a line
   ```
 
 ---
@@ -363,12 +367,14 @@ public static func hyperbola(center: SIMD2<Double>, majorRadius: Double,
                              minorRadius: Double, rotation: Double = 0) -> Curve2D?
 ```
 
-- **Parameters:** `center` — hyperbola centre; `majorRadius` — real semi-axis; `minorRadius` — imaginary semi-axis (both must be > 0); `rotation` — major-axis rotation in radians (default 0).
-- **Returns:** Hyperbola curve, or `nil` on failure.
+- **Parameters:** `center` — hyperbola centre; `majorRadius` — real semi-axis; `minorRadius` — imaginary semi-axis (both must be > 0, in either order); `rotation` — major-axis rotation in radians (default 0).
+- **Returns:** Hyperbola curve, or `nil` if either radius is ≤ 0. Unlike an ellipse, a minor radius larger than the major is valid.
 - **OCCT:** `Geom2d_Hyperbola(gp_Hypr2d(...))`.
+- **See also:** [`hyperbolaFromCenterDir(center:direction:majorRadius:minorRadius:)`](Curve2D-Analysis.md) builds the identical hyperbola through OCCT's `gce_MakeHypr2d` algorithm and enforces the same radius contract (#487).
 - **Example:**
   ```swift
   let hyp = Curve2D.hyperbola(center: .zero, majorRadius: 3, minorRadius: 2)
+  Curve2D.hyperbola(center: .zero, majorRadius: 2, minorRadius: 3)  // valid, not inverted
   ```
 
 ---
@@ -387,7 +393,7 @@ public func drawAdaptive(angularDeflection: Double = 0.1,
 
 Concentrates sample points where curvature is high and fewer where the curve is straight, producing an efficient polyline for Metal rendering.
 
-- **Parameters:** `angularDeflection` — maximum angle between consecutive tangents (radians); `chordalDeflection` — maximum chord-to-curve deviation; `maxPoints` — buffer size limit.
+- **Parameters:** `angularDeflection` — maximum angle between consecutive tangents (radians); `chordalDeflection` — maximum chord-to-curve deviation; `maxPoints` — output *capacity*, clamped into `0...Sampling.maximumSampleCount` (10,000,000), so an unservable capacity returns the same points rather than a coarser sampling; 0 or less returns empty (#558). The deflection criteria decide the actual point count.
 - **Returns:** Array of 2D points along the curve; empty on failure.
 - **OCCT:** `GCPnts_TangentialDeflection` (via `OCCTCurve2DDrawAdaptive`).
 - **Example:**
@@ -401,15 +407,15 @@ Concentrates sample points where curvature is high and fewer where the curve is 
 
 ### `drawUniform(pointCount:)`
 
-Discretizes the curve at exactly `pointCount` uniformly-spaced arc-length points.
+Discretizes the curve at up to `pointCount` uniformly-spaced arc-length points. The first point is always the start of the curve and the last is always its end.
 
 ```swift
 public func drawUniform(pointCount: Int) -> [SIMD2<Double>]
 ```
 
-- **Parameters:** `pointCount` — desired number of output points.
-- **Returns:** Array of 2D points; empty on failure.
-- **OCCT:** `GCPnts_UniformAbscissa` (via `OCCTCurve2DDrawUniform`).
+- **Parameters:** `pointCount`, the desired number of output points — a *request*, honoured within `2...Sampling.maximumSampleCount` (10,000,000); outside that range the result is empty (#501, #558). Not clamped: a count past the ceiling fails visibly rather than coming back coarser than what was asked for. Before #558 a negative aborted the process rather than returning empty.
+- **Returns:** Array of 2D points, never more than `pointCount`; empty on failure.
+- **OCCT:** `GCPnts_UniformAbscissa` (via `OCCTCurve2DDrawUniform`). It sizes its own array at `pointCount + 5` and can report more points than requested on a poorly-conditioned curve; the surplus is dropped and the curve's end point kept (#501).
 - **Example:**
   ```swift
   let seg = Curve2D.segment(from: .zero, to: SIMD2(10, 0))!
@@ -428,7 +434,7 @@ public func drawDeflection(deflection: Double = 0.01,
                            maxPoints: Int = 4096) -> [SIMD2<Double>]
 ```
 
-- **Parameters:** `deflection` — maximum chord-to-curve deviation; `maxPoints` — buffer size limit.
+- **Parameters:** `deflection` — maximum chord-to-curve deviation; `maxPoints` — output *capacity*, clamped into `0...Sampling.maximumSampleCount` (10,000,000), so an unservable capacity returns the same points rather than a coarser sampling; 0 or less returns empty (#558).
 - **Returns:** Array of 2D points; empty on failure.
 - **OCCT:** `GCPnts_UniformDeflection` (via `OCCTCurve2DDrawDeflection`).
 - **Example:**
@@ -813,7 +819,12 @@ public var length: Double? { get }
 ```
 
 - **Returns:** Arc length in model units, or `nil` if measurement fails.
-- **OCCT:** `GCPnts_AbscissaPoint::Length(adaptor)`.
+- **OCCT:** `GCPnts_AbscissaPoint::Length` per `GeomAbs_CN` interval, subdivided until two
+  successive levels agree to 1e-9 relative (#603). A line, a circle and a 2-pole
+  Bezier/BSpline keep their exact closed form.
+- **Note:** A whole ellipse used to measure up to 1.7% long — one Gauss quadrature over the
+  whole domain, the same defect and the same numbers as the 3D spelling, because both reach
+  one `GCPnts_AbscissaPoint::length` template (#603).
 - **Example:**
   ```swift
   let seg = Curve2D.segment(from: .zero, to: SIMD2(3, 4))!
@@ -824,23 +835,36 @@ public var length: Double? { get }
 
 ### `length(from:to:)`
 
-Arc length between two parameter values. Unlike `arcLength(from:to:)`, `u1` may be greater than
-`u2` — order doesn't affect the result, since this entry point builds an unrestricted adaptor
-rather than a range-checked one.
+Arc length between two parameter values. This is the canonical, failure-distinguishing entry
+point: `arcLength(from:to:)` delegates to it and collapses `nil` to a `-1.0` sentinel for source
+compatibility (#549).
 
 ```swift
 public func length(from u1: Double, to u2: Double) -> Double?
 ```
 
-- **Parameters:** `u1` — start parameter; `u2` — end parameter (either order).
+- **Parameters:** `u1` — start parameter, must be finite; `u2` — end parameter, must be finite
+  (either order).
 - **Returns:** Arc length, or `nil` on failure — never a sentinel value.
-- **OCCT:** `GCPnts_AbscissaPoint::Length(adaptor, u1, u2)`.
+- **OCCT:** `GCPnts_AbscissaPoint::Length(adaptor, u1, u2)`, subdivided per `GeomAbs_CN`
+  interval, the same measurement as `length` (#603).
+- **Note:** The range may be given in either order, and equal parameters measure `0`.
+- **Note:** `.nan` and `±.infinity` also report `nil`, on every curve type. They are rejected in
+  the bridge, because OCCT's integrator does not check them: on a multi-span BSpline a NaN upper
+  bound measured `0` and a NaN lower bound the curve's whole length — see
+  [Curve3D](Curve3D.md#lengthfromto) for the mechanism (#548).
+- **Note:** A range reaching outside the curve's domain measures the part of it that lies on the
+  curve (a range wholly outside measures `0`); a curve whose domain covers a whole period measures
+  the whole range and winds. Same rule and same shared implementation as the 3D spelling, so both
+  answer identically on the same geometry (#600).
 - **Example:**
   ```swift
   let circle = Curve2D.circle(center: .zero, radius: 1)!
   let d = circle.domain
   let halfLen = circle.length(from: d.lowerBound, to: d.lowerBound + .pi)
   // halfLen ≈ π
+  let bad = circle.length(from: d.lowerBound, to: .nan)
+  // bad == nil
   ```
 
 ---
@@ -857,7 +881,11 @@ Use this to trim a curve to a specific arc length, or to place features at measu
 
 - **Parameters:** `arcLength` — desired arc-length distance; may be negative to travel in reverse; `fromParameter` — starting parameter (defaults to `domain.lowerBound`).
 - **Returns:** Parameter value at the given arc-length offset, or `nil` if the computation fails.
-- **OCCT:** `GCPnts_AbscissaPoint` (via `OCCTCurve2DParameterAtLength`).
+- **OCCT:** the accumulated `GeomAbs_CN` sub-piece lengths, with the final narrow piece handed
+  to `GCPnts_AbscissaPoint` (via `OCCTCurve2DParameterAtLength`).
+- **Note:** Shares the subdivided measurement with `length`, so the two agree:
+  `curve.parameterAtLength(curve.length!)` lands on `domain.upperBound`. OCCT's own root
+  finder inverts a single quadrature and would not (#603).
 - **Example:**
   ```swift
   let seg = Curve2D.segment(from: .zero, to: SIMD2(10, 0))!
@@ -949,16 +977,30 @@ public func approximated(tolerance: Double = 1e-3, continuity: Int = 2,
 Finds knot indices where a BSpline has continuity discontinuities.
 
 ```swift
-public func splitIndicesAtDiscontinuities(continuity: Int = 1) -> [Int]?
+public func splitIndicesAtDiscontinuities(continuity: ParametricContinuity = .c1) -> [Int]?
 ```
 
-- **Parameters:** `continuity` — desired continuity level to check (0=C0, 1=C1, etc.).
+Indices are 1-based into the curve's own knot table, so `bsplineKnot(index:)` turns each one into
+a parameter. The first and last knots are always included, so a curve that never drops below
+`continuity` reports exactly those two.
+
+- **Parameters:** `continuity`: minimum continuity to require of each arc.
 - **Returns:** Array of knot indices where continuity drops below the requested level, or `nil` if not a BSpline or no discontinuities found.
-- **OCCT:** `Geom2d_BSplineCurve` knot analysis (via `OCCTCurve2DSplitAtDiscontinuities`).
+- **OCCT:** `Geom2dConvert_BSplineCurveKnotSplitting` (via `OCCTCurve2DSplitAtDiscontinuities`) —
+  the sole wrapper of it, since #562 deleted the second pair (`bsplineKnotSplits`,
+  `bsplineKnotSplitValues`) that also drove it.
+- **Continuity range (#480):** the continuity is a *derivative order*, and a knot splits only when
+  `degree - multiplicity < continuity`, so the meaningful range is `0...degree` and it saturates
+  there. A cubic with simple interior knots is already C2 there, which means `.c0`, `.c1` and `.c2`
+  all report just the two end knots and `.c3` is the order that reports the interior ones.
+- **All splits, however many (#562):** this used to read a fixed 256 entries and take whatever came
+  back, so a curve with more splits than that was cut off at 256 with nothing to notice it by. It
+  now re-reads at the true count when the first pass came up short.
 - **Example:**
   ```swift
   if let bsp = Curve2D.bspline(poles: [...], knots: [...], multiplicities: [...], degree: 3) {
-      let indices = bsp.splitIndicesAtDiscontinuities(continuity: 1)
+      let indices = bsp.splitIndicesAtDiscontinuities(continuity: .c3)
+      let params = indices?.map { bsp.bsplineKnot(index: $0) }
   }
   ```
 

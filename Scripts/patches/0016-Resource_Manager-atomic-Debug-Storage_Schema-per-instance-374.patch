@@ -1,0 +1,138 @@
+diff --git a/src/FoundationClasses/TKernel/Resource/Resource_Manager.cxx b/src/FoundationClasses/TKernel/Resource/Resource_Manager.cxx
+index e29e6751..19fdfabf 100644
+--- a/src/FoundationClasses/TKernel/Resource/Resource_Manager.cxx
++++ b/src/FoundationClasses/TKernel/Resource/Resource_Manager.cxx
+@@ -31,6 +31,7 @@
+ #include <NCollection_Array1.hxx>
+ 
+ #include <algorithm>
++#include <atomic>
+ #include <cerrno>
+ 
+ IMPLEMENT_STANDARD_RTTIEXT(Resource_Manager, Standard_Transient)
+@@ -51,7 +52,7 @@
+ 
+ static int GetLine(OSD_File& aFile, TCollection_AsciiString& aLine);
+ 
+-static bool Debug;
++static std::atomic<bool> Debug(false);
+ 
+ //=================================================================================================
+ 
+diff --git a/src/FoundationClasses/TKernel/Storage/Storage_Schema.cxx b/src/FoundationClasses/TKernel/Storage/Storage_Schema.cxx
+index 64d3f3d0..c19a99fb 100644
+--- a/src/FoundationClasses/TKernel/Storage/Storage_Schema.cxx
++++ b/src/FoundationClasses/TKernel/Storage/Storage_Schema.cxx
+@@ -318,7 +318,7 @@ void Storage_Schema::Write(const occ::handle<Storage_BaseDriver>& theDriver,
+   occ::handle<Standard_Persistent>                              p;
+   occ::handle<NCollection_HSequence<occ::handle<Storage_Root>>> plist;
+   TCollection_AsciiString                                       errorContext("AddPersistent");
+-  Storage_Schema::ISetCurrentData(aData);
++  myCurrentData = aData;
+ 
+   occ::handle<Storage_InternalData> iData = aData->InternalData();
+ 
+@@ -614,8 +614,8 @@ void Storage_Schema::BindType(const TCollection_AsciiString&       aTypeName,
+ {
+   if (!HasTypeBinding(aTypeName))
+   {
+-    occ::handle<Storage_InternalData>  iData = Storage_Schema::ICurrentData()->InternalData();
+-    occ::handle<Storage_TypeData>      tData = Storage_Schema::ICurrentData()->TypeData();
++    occ::handle<Storage_InternalData>  iData = myCurrentData->InternalData();
++    occ::handle<Storage_TypeData>      tData = myCurrentData->TypeData();
+     occ::handle<Storage_TypedCallBack> c     = new Storage_TypedCallBack(aTypeName, aCallBack);
+ 
+     tData->AddType(aTypeName, iData->myTypeId);
+@@ -633,7 +633,7 @@ occ::handle<Storage_CallBack> Storage_Schema::TypeBinding(
+ 
+   if (HasTypeBinding(aTypeName))
+   {
+-    occ::handle<Storage_InternalData> iData = Storage_Schema::ICurrentData()->InternalData();
++    occ::handle<Storage_InternalData> iData = myCurrentData->InternalData();
+ 
+     result = iData->myTypeBinding.Find(aTypeName)->CallBack();
+   }
+@@ -650,14 +650,13 @@ bool Storage_Schema::AddPersistent(const occ::handle<Standard_Persistent>& sp,
+ 
+   if (!sp.IsNull())
+   {
+-    occ::handle<Storage_InternalData> iData = Storage_Schema::ICurrentData()->InternalData();
++    occ::handle<Storage_InternalData> iData = myCurrentData->InternalData();
+ 
+     if (sp->_typenum == 0)
+     {
+-      int                            aTypenum;
+-      static TCollection_AsciiString aTypeName;
+-      aTypeName                           = tName;
+-      occ::handle<Storage_TypeData> tData = Storage_Schema::ICurrentData()->TypeData();
++      int                           aTypenum;
++      TCollection_AsciiString       aTypeName(tName);
++      occ::handle<Storage_TypeData> tData = myCurrentData->TypeData();
+ 
+       aTypenum = iData->myTypeBinding.Find(aTypeName)->Index();
+ 
+@@ -679,7 +678,7 @@ bool Storage_Schema::PersistentToAdd(const occ::handle<Standard_Persistent>& sp)
+ 
+   if (!sp.IsNull())
+   {
+-    occ::handle<Storage_InternalData> di = Storage_Schema::ICurrentData()->InternalData();
++    occ::handle<Storage_InternalData> di = myCurrentData->InternalData();
+ 
+     if (sp->_typenum == 0 && sp->_refnum != -1)
+     {
+@@ -696,7 +695,7 @@ bool Storage_Schema::PersistentToAdd(const occ::handle<Standard_Persistent>& sp)
+ 
+ void Storage_Schema::Clear() const
+ {
+-  Storage_Schema::ICurrentData().Nullify();
++  myCurrentData.Nullify();
+ }
+ 
+ #ifdef DATATYPE_MIGRATION
+@@ -790,21 +789,6 @@ bool Storage_Schema::CheckTypeMigration(const TCollection_AsciiString& oldName,
+ }
+ #endif
+ 
+-//=================================================================================================
+-
+-void Storage_Schema::ISetCurrentData(const occ::handle<Storage_Data>& dData)
+-{
+-  Storage_Schema::ICurrentData() = dData;
+-}
+-
+-//=================================================================================================
+-
+-occ::handle<Storage_Data>& Storage_Schema::ICurrentData()
+-{
+-  static occ::handle<Storage_Data> _Storage_CData;
+-  return _Storage_CData;
+-}
+-
+ #define SLENGTH 80
+ 
+ //=================================================================================================
+diff --git a/src/FoundationClasses/TKernel/Storage/Storage_Schema.hxx b/src/FoundationClasses/TKernel/Storage/Storage_Schema.hxx
+index fa0d8959..09b52cad 100644
+--- a/src/FoundationClasses/TKernel/Storage/Storage_Schema.hxx
++++ b/src/FoundationClasses/TKernel/Storage/Storage_Schema.hxx
+@@ -167,7 +167,7 @@ public:
+ protected:
+   bool HasTypeBinding(const TCollection_AsciiString& aTypeName) const
+   {
+-    return Storage_Schema::ICurrentData()->InternalData()->myTypeBinding.IsBound(aTypeName);
++    return myCurrentData->InternalData()->myTypeBinding.IsBound(aTypeName);
+   }
+ 
+   Standard_EXPORT void BindType(const TCollection_AsciiString&       aTypeName,
+@@ -179,9 +179,8 @@ protected:
+ private:
+   Standard_EXPORT void Clear() const;
+ 
+-  Standard_EXPORT static void ISetCurrentData(const occ::handle<Storage_Data>& dData);
+-
+-  Standard_EXPORT static occ::handle<Storage_Data>& ICurrentData();
++  //! Scratch state for the duration of one Write() call.
++  mutable occ::handle<Storage_Data> myCurrentData;
+ 
+   NCollection_DataMap<TCollection_AsciiString, occ::handle<Storage_TypedCallBack>> myCallBack;
+   bool                                                                             myCallBackState;

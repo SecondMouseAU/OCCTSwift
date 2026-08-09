@@ -36,7 +36,7 @@ struct Issue398ContinuityTests {
         // or vice versa. That cannot be asserted directly, but collapsing one into a typealias
         // of the other is the realistic way it would be lost, and this catches exactly that.
         #expect(ObjectIdentifier(SurfaceContinuity.self) != ObjectIdentifier(ParametricContinuity.self))
-        #expect(ObjectIdentifier(SurfaceContinuity.self) != ObjectIdentifier(Surface.Continuity.self))
+        #expect(ObjectIdentifier(SurfaceContinuity.self) != ObjectIdentifier(ContinuityClass.self))
         #expect(ObjectIdentifier(ParametricContinuity.self) != ObjectIdentifier(Shape.ContinuityLevel.self))
 
         // They agree on 0/1/2 numerically, which is precisely why the type distinction is
@@ -44,40 +44,31 @@ struct Issue398ContinuityTests {
         #expect(SurfaceContinuity.g1.rawValue == ParametricContinuity.c1.rawValue)
     }
 
-    @Test("Surface.Continuity still mirrors the real GeomAbs_Shape ordinals")
+    @Test("The result vocabulary still mirrors the real GeomAbs_Shape ordinals")
     func surfaceContinuityMirrorsGeomAbsShape() {
-        // Deliberately NOT folded into either shared enum: this one is a result type whose
-        // raw values are GeomAbs_Shape's own ordinals, which are not a 0/1/2 order at all.
-        #expect(Surface.Continuity.c0.rawValue == 0)
-        #expect(Surface.Continuity.g1.rawValue == 1)
-        #expect(Surface.Continuity.c1.rawValue == 2)
-        #expect(Surface.Continuity.g2.rawValue == 3)
-        #expect(Surface.Continuity.c2.rawValue == 4)
-        #expect(Surface.Continuity.c3.rawValue == 5)
-        #expect(Surface.Continuity.cN.rawValue == 6)
-    }
-
-    // MARK: - Source compatibility
-
-    @available(*, deprecated, message: "exercises the deprecated spellings on purpose")
-    @Test("Retired names and spellings still resolve to the same values")
-    func retiredSpellingsStillResolve() {
-        #expect(FillingContinuity.g0 == SurfaceContinuity.g0)
-        #expect(PlateConstraintOrder.g1 == SurfaceContinuity.g1)
-        #expect(SurfaceContinuity.c0 == SurfaceContinuity.g0)
-        #expect(SurfaceContinuity.c1 == SurfaceContinuity.g1)
-        #expect(SurfaceContinuity.c2 == SurfaceContinuity.g2)
-
-        #expect(GeometricContinuity.c2 == ParametricContinuity.c2)
-        #expect(ApproxContinuity.c3 == ParametricContinuity.c3)
-        #expect(Shape.BSplineContinuity.c1 == ParametricContinuity.c1)
-        #expect(Curve3D.ContinuityOrder.c0 == ParametricContinuity.c0)
+        // Deliberately NOT folded into either shared *request* enum: this one is a result type
+        // whose raw values are GeomAbs_Shape's own ordinals, not a 0/1/2 order at all. #485
+        // renamed it from Surface.Continuity to the top-level ContinuityClass and extended it
+        // to Curve3D/Curve2D, which had no typed form; the raw values did not move. The former
+        // Surface.Continuity alias was removed at v2.0.0 (#784); see Issue485SurfaceContinuityTests
+        // for the measured values.
+        #expect(ContinuityClass.c0.rawValue == 0)
+        #expect(ContinuityClass.g1.rawValue == 1)
+        #expect(ContinuityClass.c1.rawValue == 2)
+        #expect(ContinuityClass.g2.rawValue == 3)
+        #expect(ContinuityClass.c2.rawValue == 4)
+        #expect(ContinuityClass.c3.rawValue == 5)
+        #expect(ContinuityClass.cN.rawValue == 6)
     }
 
     // MARK: - Orders OCCT will not accept
 
-    // NOTE: both tests below pin a BUG, not desired behaviour. Flip the `== nil` expectations
-    // when #437 lands and .g2 either clamps or is rejected up front.
+    // #437 (fixed): `.g2` on a point constraint is now rejected deliberately, in Swift, before
+    // any `GeomPlate_PointConstraint` is built -- see `SurfaceContinuity.isUnsupportedForPointConstraint`
+    // and `Issue437PlatePointG2Tests`. The `== nil` answer below does NOT change: it was already
+    // `nil` (OCCT throws, the bridge's `catch (...)` swallows it), and stays `nil` now that the
+    // rejection is explicit. What changed is *why* -- these two tests alone cannot show that; see
+    // `Issue437PlatePointG2Tests`'s own class comment for the guard-removal matrix that does.
     @Test("Plate point constraints reject curvature order")
     func plateThroughPointsRejectsCurvatureOrder() {
         // GeomPlate_PointConstraint throws above order 1: a bare point carries no curvature

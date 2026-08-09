@@ -1750,8 +1750,16 @@ public final class BRepGraph: @unchecked Sendable {
     /// setter was removed — seam-pair-id is structural in GA (derived from two coedges on
     /// the same edge/face with opposite orientations).
     ///
-    /// - Parameter continuity: GeomAbs_Shape — 0=C0, 1=C1, 2=C2, 3=C3, 4=CN.
-    /// - Returns: `true` if written, `false` if the LayerRegularity layer is not registered.
+    /// - Important: This always returns `false` against OCCT 8.0.0p1 and `continuity` is not
+    ///   read at all. `BRepGraph_LayerRegularity` — the only write path in the GA continuity
+    ///   model — does not compile in p1 and is absent from `libOCCT`, so the bridge function is a
+    ///   stub that reports failure. There is no replacement writer; to *read* continuity, use
+    ///   ``Shape/continuity(edge:face1:face2:)`` or ``Shape/maxContinuity(edge:)``, both of which
+    ///   go through the shape-based `BRepLib`/`BRep_Tool` path and are unaffected. Tracked
+    ///   by #513.
+    ///
+    /// - Parameter continuity: Ignored (see above). Was documented as a GeomAbs_Shape value.
+    /// - Returns: Always `false` on OCCT 8.0.0p1.
     @discardableResult
     public func setEdgeRegularity(_ edgeIndex: Int, face1: Int, face2: Int, continuity: Int) -> Bool {
         OCCTBRepGraphSetEdgeRegularity(handle, Int32(edgeIndex), Int32(face1), Int32(face2), Int32(continuity)) != 0
@@ -1958,30 +1966,109 @@ public final class BRepGraph: @unchecked Sendable {
     // MARK: - UV-Grid Sampling (v0.136.0)
 
     /// Result of sampling a face surface on a regular UV grid.
+    ///
+    /// All four parallel arrays share one layout: **U-major**, u varying slowest and v fastest,
+    /// so the sample at grid position `(u, v)` lives at flat index `u * vSamples + v` — the same
+    /// index ``SurfaceGrid`` and ``SurfaceGridD1`` use (#404/#486).
+    ///
+    /// Prefer ``at(u:v:)`` over spelling the index out, because the two ways to get it wrong fail
+    /// differently and neither announces itself:
+    ///
+    /// - Using the layout but the **wrong count as the stride** (`u * uSamples + v`) is correct
+    ///   only on a square grid, where the two counts coincide. On a non-square grid it is in
+    ///   range and quietly wrong when `uSamples < vSamples` (3x10 reaches 15 of 30), and past the
+    ///   end when `uSamples > vSamples` (10x3 reaches 92 of 30).
+    /// - Reading with the **transposed index** (`v * uSamples + u`) never traps at any aspect
+    ///   ratio: it is a bijection onto the same `0..<uSamples * vSamples` range, so it can only
+    ///   ever be a silent wrong answer. That was the layout this buffer was written in until
+    ///   #617.
+    ///
+    /// ```swift
+    /// guard let sample = graph.sampleFaceUVGrid(faceIndex: 0, uSamples: 10, vSamples: 3)
+    /// else { return }
+    /// // Flat storage is U-major: index (u, v) == u * sample.vSamples + v.
+    /// let s = sample.at(u: 9, v: 2)
+    /// print(s.position, s.normal, s.gaussianCurvature, s.meanCurvature)
+    ///
+    /// // Walk the grid row by row (u outer, v inner) to read the buffers in storage order.
+    /// for u in 0..<sample.uSamples {
+    ///     for v in 0..<sample.vSamples {
+    ///         let mean = sample.at(u: u, v: v).meanCurvature
+    ///         if abs(mean) > 1e-6 { print("curved at (\(u), \(v)): \(mean)") }
+    ///     }
+    /// }
+    /// ```
     public struct FaceGridSample: Sendable {
-        /// Surface positions at grid points.
+        /// Surface positions at grid points, U-major (see ``at(u:v:)``).
         public let positions: [SIMD3<Double>]
-        /// Surface normals at grid points.
+        /// Surface normals at grid points, U-major (see ``at(u:v:)``).
         public let normals: [SIMD3<Double>]
-        /// Gaussian curvature at each grid point.
+        /// Gaussian curvature at each grid point, U-major (see ``at(u:v:)``).
         public let gaussianCurvatures: [Double]
-        /// Mean curvature at each grid point.
+        /// Mean curvature at each grid point, U-major (see ``at(u:v:)``).
         public let meanCurvatures: [Double]
         /// Number of samples in U direction.
         public let uSamples: Int
         /// Number of samples in V direction.
         public let vSamples: Int
+
+        /// Position, normal and curvatures at the given U/V grid index.
+        ///
+        /// The counterpart of ``SurfaceGrid/at(u:v:)``, resolving the same U-major index through
+        /// the same shared `surfaceGridIndex` helper, so the two grid families cannot drift apart
+        /// again (#617).
+        ///
+        /// ```swift
+        /// if let sample = graph.sampleFaceUVGrid(faceIndex: 0, uSamples: 3, vSamples: 10) {
+        ///     let corner = sample.at(u: 2, v: 9)
+        ///     print(corner.position, corner.meanCurvature)
+        /// }
+        /// ```
+        ///
+        /// - Parameters:
+        ///   - u: U grid index, `0..<uSamples`.
+        ///   - v: V grid index, `0..<vSamples`.
+        public func at(u: Int, v: Int) -> (position: SIMD3<Double>, normal: SIMD3<Double>,
+                                           gaussianCurvature: Double, meanCurvature: Double) {
+            precondition(u >= 0 && u < uSamples && v >= 0 && v < vSamples,
+                         "FaceGridSample.at(u: \(u), v: \(v)) out of range "
+                         + "(uSamples: \(uSamples), vSamples: \(vSamples))")
+            let i = surfaceGridIndex(u: u, v: v, vCount: vSamples)
+            // The buffers carry the count the bridge actually wrote, which #419 deliberately does
+            // not assume equals uSamples * vSamples — so the grid bounds above are necessary but
+            // not sufficient.
+            precondition(i < positions.count,
+                         "FaceGridSample.at(u: \(u), v: \(v)) names index \(i), but only "
+                         + "\(positions.count) samples were written")
+            return (position: positions[i], normal: normals[i],
+                    gaussianCurvature: gaussianCurvatures[i], meanCurvature: meanCurvatures[i])
+        }
     }
 
     /// Sample a face surface on a regular UV grid, evaluating positions, normals, and curvatures.
+    ///
+    /// The returned buffers are **U-major** (`u * vSamples + v`); read them through
+    /// ``FaceGridSample/at(u:v:)`` rather than indexing by hand.
+    ///
+    /// ```swift
+    /// guard let graph = BRepGraph(shape: solid),
+    ///       let sample = graph.sampleFaceUVGrid(faceIndex: 0, uSamples: 10, vSamples: 3)
+    /// else { return }
+    /// let midpoint = sample.at(u: 5, v: 1)
+    /// print(midpoint.position, midpoint.gaussianCurvature)
+    /// ```
+    ///
     /// - Parameters:
     ///   - faceIndex: Face definition index.
     ///   - uSamples: Number of samples in U direction (must be >= 1).
     ///   - vSamples: Number of samples in V direction (must be >= 1).
-    /// - Returns: Grid sample data, or nil if face has no surface or sampling fails.
+    /// - Returns: Grid sample data, or nil if face has no surface, sampling fails, or the grid
+    ///   cannot be served: the bound is on the **product**, which must not exceed
+    ///   ``Sampling/maximumSampleCount`` (#558). This sampler fills four buffers per point
+    ///   (position, normal, Gaussian and mean curvature), so it reaches the ceiling's memory cost
+    ///   sooner than the point-only samplers do.
     public func sampleFaceUVGrid(faceIndex: Int, uSamples: Int, vSamples: Int) -> FaceGridSample? {
-        guard uSamples >= 1, vSamples >= 1 else { return nil }
-        let total = uSamples * vSamples
+        guard let total = Sampling.gridTotal(uSamples, vSamples) else { return nil }
         var posBuffer = [Double](repeating: 0, count: total * 3)
         var nrmBuffer = [Double](repeating: 0, count: total * 3)
         var gaussBuffer = [Double](repeating: 0, count: total)
@@ -2026,10 +2113,11 @@ public final class BRepGraph: @unchecked Sendable {
     /// Sample evenly-spaced points along an edge curve.
     /// - Parameters:
     ///   - edgeIndex: Edge definition index.
-    ///   - count: Number of points to sample (must be >= 1).
+    ///   - count: Number of points to sample, honoured within `1...`
+    ///     ``Sampling/maximumSampleCount``; outside that range the result is empty (#558).
     /// - Returns: Array of 3D points along the edge, empty if edge has no curve.
     public func sampleEdgeCurve(edgeIndex: Int, count: Int) -> [SIMD3<Double>] {
-        guard count >= 1 else { return [] }
+        guard let count = Sampling.requested(count, atLeast: 1) else { return [] }
         var buffer = [Double](repeating: 0, count: count * 3)
         let result = buffer.withUnsafeMutableBufferPointer { buf in
             OCCTBRepGraphSampleEdgeCurve(handle, Int32(edgeIndex), Int32(count), buf.baseAddress!)
@@ -2084,11 +2172,6 @@ public final class BRepGraph: @unchecked Sendable {
         /// OCCTSwift recorded provenance. An unstamped UID resolves in no graph.
         public let graphID: UInt64
 
-        @available(*, deprecated, message: "A hand-built GraphUID has no provenance (graphID 0) and resolves in no graph. Mint one with BRepGraph.uid(ofNodeKind:index:).")
-        public init(kind: Int, counter: UInt32) {
-            self.init(kind: kind, counter: counter, graphID: 0)
-        }
-
         internal init(kind: Int, counter: UInt32, graphID: UInt64) {
             self.kind = kind
             self.counter = counter
@@ -2133,11 +2216,6 @@ public final class BRepGraph: @unchecked Sendable {
         /// unstamped, which resolves in no graph. See ``GraphUID/graphID``.
         public let graphID: UInt64
 
-        @available(*, deprecated, message: "A hand-built GraphRefUID has no provenance (graphID 0) and resolves in no graph. Mint one with BRepGraph.uid(ofRefKind:index:).")
-        public init(kind: Int, counter: UInt32) {
-            self.init(kind: kind, counter: counter, graphID: 0)
-        }
-
         internal init(kind: Int, counter: UInt32, graphID: UInt64) {
             self.kind = kind
             self.counter = counter
@@ -2175,11 +2253,6 @@ public final class BRepGraph: @unchecked Sendable {
         /// The instance that minted this UID — its ``BRepGraph/instanceID``. `0` means
         /// unstamped, which resolves in no graph. See ``GraphUID/graphID``.
         public let graphID: UInt64
-
-        @available(*, deprecated, message: "A hand-built GraphItemUID has no provenance (graphID 0) and resolves in no graph. Mint one with BRepGraph.itemUID(ofNodeKind:index:).")
-        public init(domain: Int, kind: Int, counter: UInt32) {
-            self.init(domain: domain, kind: kind, counter: counter, graphID: 0)
-        }
 
         internal init(domain: Int, kind: Int, counter: UInt32, graphID: UInt64) {
             self.domain = domain
@@ -2314,20 +2387,4 @@ public final class BRepGraph: @unchecked Sendable {
         OCCTBRepGraphInstanceID(handle)
     }
 
-    /// The graph generation counter — **always 1**.
-    ///
-    /// OCCT advances this only from `BRepGraph::Clear()`. OCCTSwift calls `Clear()` exactly once,
-    /// when it builds the graph (#303), and never rebuilds an existing one — so the counter lands
-    /// at 1 and stays there. It is the same 1 for every graph, so it still cannot tell two graphs
-    /// apart or detect a stale cache. Nothing replaces it: ``node(forUID:)`` already rejects a UID
-    /// from another graph, and ``instanceID`` compares graph identity directly (#295).
-    @available(*, deprecated, message: "Always 1 — OCCTSwift clears a graph once at build and never rebuilds it, so this counter never advances past 1 and is identical for every graph. node(forUID:) rejects foreign UIDs on its own; use instanceID to compare graph identity.")
-    public var generation: UInt32 {
-        OCCTBRepGraphGeneration(handle)
-    }
 }
-
-/// `BRepGraph`'s prior name (#333). `TopologyGraph` read as too close to the `TopoDS_*` family on a
-/// skim without signaling that this type specifically wraps the BRepGraph durable-identity engine.
-@available(*, deprecated, renamed: "BRepGraph")
-public typealias TopologyGraph = BRepGraph

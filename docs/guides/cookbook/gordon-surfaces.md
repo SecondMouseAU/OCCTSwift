@@ -79,17 +79,30 @@ let r = Surface.gordonReport(profiles: [p1, p2], guides: [g1, g2],
 
 ## The lower-level network builder
 
-`networkSurface` exposes OCCT's raw `GeomFill_NetworkSurface` and returns its own status. It's pickier
-than `gordon` — it requires the curves' knot structures to line up, so a network that `gordon` handles
-can still come back `.knotAlignmentFailed` here:
+`networkSurface` exposes OCCT's raw `GeomFill_NetworkSurface` directly and returns its own status,
+rather than `gordon`'s full curve-reordering-and-reparametrization pipeline. It finds each
+profile/guide pair's real contact point and locates it in the *other* family's own parameter domain
+(not a caller-invented fraction), which is enough for it to report `.done` on the same 2×2 domed
+network above:
 
 ```swift
 let (surface, status) = Surface.networkSurface(profiles: [p1, p2], guides: [g1, g2], tolerance: 1e-3)
-if status != .done { print("network builder declined:", status) }   // e.g. .knotAlignmentFailed
+if status != .done { print("network builder declined:", status) }
 ```
 
-Reach for `gordon` / `gordonReport` first; drop to `networkSurface` only when you need the low-level
-builder's exact behaviour.
+**Known limitation ([#748](https://github.com/SecondMouseAU/OCCTSwift/issues/748)):** on every
+network tried so far, including a plain bilinear rectangle with nothing to approximate,
+`networkSurface`'s result is correct at the two corners on one diagonal and wrong at the other two —
+`gordon`/`gordonReport` on the identical curves are not affected. Prefer `gordon`/`gordonReport` for
+anything where the built surface's shape matters, not just whether a status came back `.done`.
+
+It is still the lower-level tool. It does not reorder a scrambled network, does not run `gordon`'s
+non-linear reparametrization pass when curve families disagree on where their shared knots should
+land, and does not derive rational contact weights from the input curves (every contact point is
+weighted 1.0). A network `gordon` can complete after reordering or reparametrizing can still come
+back `.knotAlignmentFailed`, `.skinningFailed`, or similar from `networkSurface`. Reach for `gordon`
+/ `gordonReport` first; drop to `networkSurface` only when you need the low-level builder's exact
+behaviour, or already have a network in the shape it expects.
 
 ## Gordon vs. loft vs. fill
 

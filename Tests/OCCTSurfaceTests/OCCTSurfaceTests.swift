@@ -562,7 +562,7 @@ struct FillingSupportFaceTests {
     }
 }
 
-@Suite("Plate Surface Tests", .disabled("Plate surface operations cause segfault in OCCT — pre-existing issue"))
+@Suite("Plate Surface Tests")
 struct PlateSurfaceTests {
 
     @Test("Plate surface through grid of points")
@@ -730,7 +730,7 @@ struct SurfaceAnalyticTests {
         let sphere = Surface.sphere(center: .zero, radius: r)!
         let gc = sphere.gaussianCurvature(atU: 0.5, v: 0.3)
         let expected: Double = 1.0 / (r * r)
-        #expect(abs(gc - expected) < 1e-10)
+        if let gc { #expect(abs(gc - expected) < 1e-10) } else { Issue.record("no curvature") }
     }
 
     @Test("Sphere mean curvature = 1/r")
@@ -739,14 +739,15 @@ struct SurfaceAnalyticTests {
         let sphere = Surface.sphere(center: .zero, radius: r)!
         let mc = sphere.meanCurvature(atU: 0.5, v: 0.3)
         let expected: Double = 1.0 / r
-        #expect(abs(abs(mc) - expected) < 1e-10)
+        if let mc { #expect(abs(abs(mc) - expected) < 1e-10) } else { Issue.record("no curvature") }
     }
 
     @Test("Plane Gaussian curvature = 0")
     func planeGaussianCurvature() {
         let plane = Surface.plane(origin: .zero, normal: SIMD3(0, 0, 1))!
+        // #595: a plane's Gaussian curvature is 0 and defined, so this asserts a reported 0, not nil.
         let gc = plane.gaussianCurvature(atU: 0, v: 0)
-        #expect(abs(gc) < 1e-10)
+        if let gc { #expect(abs(gc) < 1e-10) } else { Issue.record("a plane has Gaussian curvature 0") }
     }
 
     @Test("Cylinder principal curvatures = (0, 1/r)")
@@ -1397,7 +1398,7 @@ struct AdvancedPlateSurfaceTests {
     }
 }
 
-@Suite("Parametric Plate Surface Tests", .disabled("Plate surface operations cause segfault in OCCT — pre-existing issue"))
+@Suite("Parametric Plate Surface Tests")
 struct ParametricPlateSurfaceTests {
 
     @Test("Plate through points returns parametric surface")
@@ -1823,7 +1824,7 @@ struct RevolutionFormTests {
         // Create two cylinders fused together as base shape
         let c1 = Shape.cylinder(radius: 2, height: 5)!
         let c2 = Shape.cylinder(at: SIMD2(0, 0), bottomZ: 5, radius: 1, height: 3)!
-        guard let s = c1.union(with: c2) else { return }
+        guard let s = c1.union(c2) else { return }
         // Create a wire profile (a line segment) for the rib
         guard let wire = Wire.line(from: SIMD3(-2, 0, 5), to: SIMD3(-1, 0, 8)) else { return }
         let result = s.addingRevolutionForm(
@@ -1847,7 +1848,7 @@ struct PipeShellTransitionTests {
         let p3 = SIMD3<Double>(10, 10, 0)
         let spine = Wire.path([p1, p2, p3])!
         let profile = Wire.circle(radius: 1)!
-        let result = Shape.pipeShellWithTransition(
+        let result = Shape.pipeShell(
             spine: spine, profile: profile,
             transition: .transformed, solid: true
         )
@@ -1860,7 +1861,7 @@ struct PipeShellTransitionTests {
         // is perpendicular to the spine tangent (required for RightCorner)
         let spine = Wire.path([SIMD3(0,0,0), SIMD3(0,0,10), SIMD3(0,10,10)])!
         let profile = Wire.circle(radius: 2)!
-        let result = Shape.pipeShellWithTransition(
+        let result = Shape.pipeShell(
             spine: spine, profile: profile,
             transition: .rightCorner, solid: true
         )
@@ -1873,21 +1874,9 @@ struct PipeShellTransitionTests {
         // is perpendicular to the spine tangent (required for RoundCorner)
         let spine = Wire.path([SIMD3(0,0,0), SIMD3(0,0,10), SIMD3(0,10,10)])!
         let profile = Wire.circle(radius: 2)!
-        let result = Shape.pipeShellWithTransition(
+        let result = Shape.pipeShell(
             spine: spine, profile: profile,
             transition: .roundCorner, solid: true
-        )
-        #expect(result != nil)
-    }
-
-    @Test("Pipe transition with corrected Frenet mode")
-    func pipeCorrectedFrenetTransition() {
-        // Simple straight spine — Frenet and CorrectedFrenet should behave the same
-        guard let spine = Wire.line(from: SIMD3(0, 0, 0), to: SIMD3(0, 0, 10)) else { return }
-        let profile = Wire.rectangle(width: 2, height: 3)!
-        let result = Shape.pipeShellWithTransition(
-            spine: spine, profile: profile,
-            mode: .correctedFrenet, transition: .transformed, solid: true
         )
         #expect(result != nil)
     }
@@ -2176,7 +2165,7 @@ struct CurveOnSurfaceCheckTests {
     func fusedConsistency() {
         let box = Shape.box(width: 10, height: 10, depth: 10)!
         let sphere = Shape.sphere(radius: 7)!
-        let fused = box.union(with: sphere)
+        let fused = box.union(sphere)
         #expect(fused != nil)
         if let fused {
             let check = fused.curveOnSurfaceCheck
@@ -2381,7 +2370,7 @@ struct SurfaceKnotSplittingTests {
         // Use trimmed cylinder (bounded) so it can convert to BSpline
         let trimCyl = try #require(Surface.trimmedCylinder(radius: 5.0, height: 10.0))
         let bspline = try #require(trimCyl.toBSpline())
-        let result = bspline.knotSplitting(uContinuity: 0, vContinuity: 0)
+        let result = bspline.knotSplitting(uContinuity: .c0, vContinuity: .c0)
         #expect(result.uSplitCount >= 1)
         #expect(result.vSplitCount >= 1)
     }
@@ -2401,6 +2390,40 @@ struct JoinBezierPatchesTests {
         ]))
         let joined = try #require(Surface.joinBezierPatches([patch1, patch2], rows: 2, cols: 1))
         #expect(joined.handle != nil)
+    }
+
+    @Test("Rejects a rational patch instead of silently dropping its weights (#725)")
+    func joinRejectsRationalPatch() throws {
+        // GeomConvert_CompBezierSurfacesToBSplineSurface has no rational path: its own
+        // Standard_NotImplemented_Raise_if(isrational, ...) guard is compiled out by this
+        // project's Release kernel (No_Exception), so without this bridge-side check the
+        // converter proceeds anyway and returns the POLYNOMIAL surface through the same
+        // control net, with IsDone() == true. This is exactly the ground-truth fixture from
+        // #725: a single rational quarter-cylinder Bezier patch (radius 10, three poles, the
+        // standard quadratic-rational-Bezier middle weight 1/sqrt(2)), measured (before this
+        // fix) to convert to a 0.606602-off polynomial surface reported as a success.
+        let invSqrt2 = 1.0 / 2.0.squareRoot()
+        let radius = 10.0
+        let height = 5.0
+        let patch = try #require(Surface.bezier(
+            poles: [
+                [SIMD3(radius, 0, 0), SIMD3(radius, 0, height)],
+                [SIMD3(radius, radius, 0), SIMD3(radius, radius, height)],
+                [SIMD3(0, radius, 0), SIMD3(0, radius, height)],
+            ],
+            weights: [
+                [1, 1],
+                [invSqrt2, invSqrt2],
+                [1, 1],
+            ]))
+        // Sanity check the fixture is genuinely rational. IsURational()/IsVRational() are
+        // OCCT's own, and this bridge's `poles[uRow][vCol]` axis does not correspond 1:1 to
+        // OCCT's internal U/V (OCCTSurfaceCreateBezier's row/col map onto
+        // Geom_BezierSurface's ColLength()/RowLength() the other way around), so check the
+        // same `isURational || isVRational` predicate the fix itself uses rather than assuming
+        // which one flips.
+        #expect(patch.bezierProperties.isURational || patch.bezierProperties.isVRational)
+        #expect(Surface.joinBezierPatches([patch], rows: 1, cols: 1) == nil)
     }
 }
 
@@ -2609,6 +2632,31 @@ struct GeomFillSweepTests {
         let result = Shape.geomFillSweep(path: path, section: section)
         #expect(result != nil)
     }
+
+    @Test("Rejects a sweep that misses its own tolerance instead of reporting it as done (#597)")
+    func sweepRejectsOutOfToleranceFit() throws {
+        // GeomFill_Sweep::Build's general path (BuildAll) always fits the swept surface with an
+        // internal Approx_SweepApproximation and records the achieved deviation in
+        // ErrorOnSurface(). IsDone() alone says only that SOME surface was produced, not that
+        // it met the tolerance this call builds at. This entry point used to accept whatever
+        // Build() returned without ever reading that number. A rapidly oscillating spine (two
+        // out-of-phase sine/cosine components, five and seven periods over the same span)
+        // stresses the fixed degree<=10/segments<=50 C2 fit: measured via a standalone
+        // GeomFill_Sweep harness, this exact path/circle(1) pair reports IsDone() true with
+        // ErrorOnSurface() == 13.0, five orders of magnitude past the 1e-4 tolerance this
+        // bridge function builds at.
+        var points: [SIMD3<Double>] = []
+        let n = 60
+        for i in 0..<n {
+            let t = Double(i) / Double(n - 1) * 20.0 * Double.pi
+            points.append(SIMD3(t, 3.0 * sin(t * 5.0), 2.0 * cos(t * 7.0)))
+        }
+        let path = try #require(Curve3D.interpolate(points: points))
+        let pathEdge = try #require(Shape.edgeFromCurve(path))
+        let sectionEdge = try #require(Shape.edgeFromCircle(
+            center: .zero, axis: SIMD3(0, 0, 1), radius: 1, p1: 0, p2: 2 * .pi))
+        #expect(Shape.geomFillSweep(path: pathEdge, section: sectionEdge) == nil)
+    }
 }
 
 @Suite("GeomFill EvolvedSection")
@@ -2634,27 +2682,32 @@ struct LocalAnalysisSurfaceContinuityTests {
     @Test func identicalPlanes() {
         guard let s1 = Surface.plane(origin: .zero, normal: SIMD3(0, 0, 1)),
               let s2 = Surface.plane(origin: .zero, normal: SIMD3(0, 0, 1)) else { return }
-        if let analysis = s1.continuityWith(s2, u1: 0, v1: 0, u2: 0, v2: 0) {
-            #expect(analysis.isC0)
-            #expect(analysis.isG1)
-            #expect(analysis.c0Value < 1e-6)
-        }
+        // Planes have no second derivative, so the `.c2` default is NullSecondDerivative and
+        // answers nil — these three suites used to assert nothing at all (#495). `.c1` is the
+        // strictest order a plane can be analysed at.
+        let analysis = s1.continuityWith(s2, u1: 0, v1: 0, u2: 0, v2: 0, order: .c1)
+        #expect(analysis?.isC0 == true)
+        #expect((analysis?.c0Value ?? .infinity) < 1e-6)
+
+        // Tangency is a separate question: neither `.c1` nor the `.c2` default computes G1.
+        let tangency = s1.continuityWith(s2, u1: 0, v1: 0, u2: 0, v2: 0, order: .g1)
+        #expect(tangency?.isG1 == true)
     }
 
     @Test func planeVsCylinder() {
         guard let s1 = Surface.plane(origin: .zero, normal: SIMD3(0, 0, 1)),
               let s2 = Surface.cylinder(origin: .zero, axis: SIMD3(0, 0, 1), radius: 5.0) else { return }
-        if let analysis = s1.continuityWith(s2, u1: 0, v1: 0, u2: 0, v2: 0) {
-            #expect(analysis.status >= 0)
-        }
+        let analysis = s1.continuityWith(s2, u1: 0, v1: 0, u2: 0, v2: 0, order: .c1)
+        #expect(analysis?.order == .c1)
+        // The two surfaces are 5 units apart at these parameters, so not even C0 holds.
+        #expect(analysis?.isC0 == false)
     }
 
     @Test func surfaceContinuityFlags() {
         guard let s1 = Surface.plane(origin: .zero, normal: SIMD3(0, 0, 1)),
               let s2 = Surface.plane(origin: .zero, normal: SIMD3(0, 0, 1)) else { return }
-        if let analysis = s1.continuityWith(s2, u1: 0, v1: 0, u2: 0, v2: 0) {
-            #expect(analysis.flags > 0)
-        }
+        let analysis = s1.continuityWith(s2, u1: 0, v1: 0, u2: 0, v2: 0, order: .c1)
+        #expect((analysis?.flags ?? 0) > 0)
     }
 }
 
@@ -3036,6 +3089,34 @@ struct GeomFillProfilerTests {
         }
     }
 
+    // #710: OCCTGeomFillProfilerAddCurve reaches its curve argument's Handle through an alias
+    // form (`*(const Handle(Geom_Curve)*)curveRef`) that check-null-handle-guards.py cannot see,
+    // and GeomFill_Profiler::AddCurve dereferences it unconditionally -- an uncatchable SIGSEGV on
+    // a null Handle(Geom_Curve). No public (or @testable-reachable) factory can currently produce
+    // a Curve3D wrapping a null Handle (measured across every OCCTCurve3D-constructing bridge
+    // site; see Scripts/repro/644-710-geomfill-appsurf-null-arity/README.md), so this guard cannot
+    // be exercised on its crashing input in-process without fabricating a hazard the public API
+    // does not produce. This test instead proves the guard does not regress the ordinary path: a
+    // real curve must still be added and homogenized. `Issue.record` (not a decorative
+    // `if let`) so a regression that makes addCurve silently drop the curve fails loudly.
+    @Test("null-handle guard does not block a valid curve (#710 regression)")
+    func nullHandleGuardAllowsValidCurve() {
+        guard let c1 = Curve3D.circle(center: SIMD3(0, 0, 0), normal: SIMD3(0, 0, 1), radius: 5),
+              let c2 = Curve3D.circle(center: SIMD3(0, 0, 10), normal: SIMD3(0, 0, 1), radius: 3) else {
+            Issue.record("failed to build probe curves")
+            return
+        }
+        let profiler = CurveProfiler.create()
+        profiler.addCurve(c1)
+        profiler.addCurve(c2)
+        profiler.perform()
+        guard profiler.degree > 0 else {
+            Issue.record("profiler.degree was 0 after adding two valid curves -- the null-handle guard rejected a valid curve")
+            return
+        }
+        #expect(profiler.poleCount > 0)
+    }
+
     @Test("extract poles")
     func extractPoles() {
         if let c1 = Curve3D.circle(center: SIMD3(0, 0, 0), normal: SIMD3(0, 0, 1), radius: 5),
@@ -3197,22 +3278,88 @@ struct GeomFillSectionPlacementTests {
             }
         }
     }
+
+    // #710: OCCTGeomFillSectionPlacement's `sectionCurve` argument reaches its Handle through the
+    // same invisible-to-the-checker alias form, and the GeomFill_SectionPlacement constructor
+    // dereferences it unconditionally (`Section->IsInstance(...)`) -- an uncatchable SIGSEGV on a
+    // null Handle(Geom_Curve). As with the Profiler guard above, no public factory can currently
+    // produce a null-handle Curve3D to drive the crashing input through, so this proves the guard
+    // does not regress the ordinary path instead. `Issue.record`, not a decorative `if let`, so a
+    // regression that makes the guard reject a valid section fails loudly rather than silently
+    // skipping the assertions.
+    @Test("null-handle guard does not block a valid section (#710 regression)")
+    func nullHandleGuardAllowsValidSection() {
+        guard let path = Curve3D.line(through: SIMD3(0, 0, 0), direction: SIMD3(1, 0, 0)),
+              let pathTrimmed = path.trimmed(from: 0, to: 10),
+              let section = Curve3D.circle(center: SIMD3(0, 0, 0), normal: SIMD3(1, 0, 0), radius: 2) else {
+            Issue.record("failed to build probe path/section")
+            return
+        }
+        let result = pathTrimmed.sectionPlacement(section: section)
+        guard result.isDone else {
+            Issue.record("sectionPlacement did not report isDone for a valid path and section -- the null-handle guard rejected a valid section")
+            return
+        }
+        #expect(result.distance >= 0)
+    }
 }
 
 @Suite("GeomFill_AppSurf")
 struct GeomFillAppSurfTests {
     @Test("approximate surface from sections")
     func approximateSurface() {
-        if let c1 = Curve3D.circle(center: SIMD3(0, 0, 0), normal: SIMD3(0, 0, 1), radius: 5),
-           let c2 = Curve3D.circle(center: SIMD3(0, 0, 10), normal: SIMD3(0, 0, 1), radius: 3) {
-            if let result = Surface.appSurf(curves: [c1, c2]) {
-                #expect(result.isDone)
-                #expect(result.uDegree > 0)
-                #expect(result.vDegree > 0)
-                #expect(result.nbUPoles > 0)
-                #expect(result.nbVPoles > 0)
-            }
+        guard let c1 = Curve3D.circle(center: SIMD3(0, 0, 0), normal: SIMD3(0, 0, 1), radius: 5),
+              let c2 = Curve3D.circle(center: SIMD3(0, 0, 10), normal: SIMD3(0, 0, 1), radius: 3) else {
+            Issue.record("failed to build probe curves")
+            return
         }
+        guard let result = Surface.appSurf(curves: [c1, c2]) else {
+            Issue.record("appSurf(curves:) unexpectedly returned nil for 2 valid curves")
+            return
+        }
+        #expect(result.isDone)
+        #expect(result.uDegree > 0)
+        #expect(result.vDegree > 0)
+        #expect(result.nbUPoles > 0)
+        #expect(result.nbVPoles > 0)
+    }
+
+    // #644: GeomFill_AppSurf's approximation solver SIGSEGVs (uncatchably) when driven with fewer
+    // than 2 sections -- confirmed 0 and 1 both crash, measured from a separate process (an
+    // in-process @Test cannot assert a SIGSEGV without killing the whole suite), see
+    // Scripts/repro/644-710-geomfill-appsurf-null-arity/README.md for the exit-code table. These
+    // two tests assert the documented, fixed contract only: `appSurf(curves:)` rejects an
+    // under-sized request instead of crashing.
+    @Test("rejects a single curve (#644)")
+    func rejectsSingleCurve() {
+        guard let c1 = Curve3D.circle(center: SIMD3(0, 0, 0), normal: SIMD3(0, 0, 1), radius: 5) else {
+            Issue.record("failed to build probe curve")
+            return
+        }
+        #expect(Surface.appSurf(curves: [c1]) == nil)
+    }
+
+    @Test("rejects an empty curve list (#644)")
+    func rejectsEmptyCurveList() {
+        #expect(Surface.appSurf(curves: []) == nil)
+    }
+
+    // Regression: the arity guard must not reject the case it exists to let through. Also
+    // exercises OCCTGeomFillAppSurf's per-curve null-handle guard (#710) on its ordinary,
+    // non-null path, since every element here is a real, valid Curve3D. `Issue.record`, not a
+    // decorative `if let`, so a regression that makes either guard over-reject fails loudly.
+    @Test("still accepts two curves after the arity guard (#644 regression)")
+    func acceptsTwoCurvesRegression() {
+        guard let c1 = Curve3D.circle(center: SIMD3(0, 0, 0), normal: SIMD3(0, 0, 1), radius: 5),
+              let c2 = Curve3D.circle(center: SIMD3(0, 0, 10), normal: SIMD3(0, 0, 1), radius: 3) else {
+            Issue.record("failed to build probe curves")
+            return
+        }
+        guard let result = Surface.appSurf(curves: [c1, c2]) else {
+            Issue.record("appSurf(curves:) unexpectedly returned nil for 2 valid curves")
+            return
+        }
+        #expect(result.isDone)
     }
 }
 
@@ -3428,7 +3575,8 @@ struct BSplineSurfaceKnotSplitTests {
         // Create a sphere surface and convert to BSpline
         if let sphere = Surface.sphere(center: .zero, radius: 5) {
             if let bsp = sphere.toBSpline() {
-                let n = bsp.bsplineKnotSplitsU(continuity: 0)
+                // #562: was bsplineKnotSplitsU, now deprecated onto this one analyzer call.
+                let n = bsp.knotSplitting(uContinuity: .c0, vContinuity: .c0).uSplitCount
                 #expect(n >= 0)
             }
         }
@@ -3695,13 +3843,14 @@ struct SurfaceExtrasTests {
         }
     }
 
-    @Test func surfaceContinuityOrder() {
+    @Test func planeContinuityClass() {
         if let box = Shape.box(width: 10, height: 10, depth: 10) {
             let faces = box.subShapes(ofType: .face)
             if faces.count > 0 {
                 if let surf = faces[0].extractFaceSurface() {
-                    // Plane is CN continuous
-                    #expect(surf.surfaceContinuityOrder >= 0)
+                    // Geom_Plane is analytic, so infinitely differentiable.
+                    #expect(surf.continuityClass == .cN)
+                    #expect(surf.continuityClass.satisfies(.c2))
                 }
             }
         }
@@ -3772,43 +3921,90 @@ struct SurfaceEvalTests {
     }
 }
 
-@Suite("GridEval Surface v0.111")
-struct GridEvalSurfaceTests {
-    @Test func gridEvalD0Sphere() {
-        if let sphere = Shape.sphere(radius: 5) {
-            let faces = sphere.subShapes(ofType: .face)
-            if faces.count > 0 {
-                if let surf = faces[0].extractFaceSurface() {
-                    let uParams = [0.0, Double.pi / 4, Double.pi / 2]
-                    let vParams = [0.0, Double.pi / 4]
-                    let pts = surf.gridEvalD0(uParams: uParams, vParams: vParams)
-                    #expect(pts.count == 6) // 3 * 2
-                    if pts.count > 0 {
-                        let dist = sqrt(pts[0].x * pts[0].x + pts[0].y * pts[0].y + pts[0].z * pts[0].z)
-                        #expect(abs(dist - 5.0) < 1.0)
-                    }
-                }
+
+/// #486: the batch grid-evaluation family had three generations per type and the two Surface
+/// spellings wrote opposite UV layouts, `OCCTSurfaceEvaluateGrid` v-major and
+/// `OCCTGridEvalSurfaceD0` u-major, both header comments calling their own layout "row-major".
+///
+/// The pre-existing tests could not have caught it: the since-removed `gridEvalD0`/`gridEvalD1`
+/// coverage used asymmetric grids but only asserted counts and rough magnitudes, never a specific
+/// `(u, v)` against an independent evaluator, the check `evalGridAsymmetricMatchesDirectEvaluation`
+/// had done for `evaluateGrid` since #404. These pin the layout on every surviving surface entry
+/// point.
+@Suite("Issue 486: surface grid layout")
+struct Issue486SurfaceGridTests {
+
+    /// Asymmetric grid: a square one cannot tell u-major from v-major apart.
+    private static let uParams = [0.0, 0.4, 1.1, 2.0, 3.5]
+    private static let vParams = [-1.2, 0.0, 1.2]
+
+    @Test("evaluateGridD1 indexes each (u, v) at its own parameter, not transposed")
+    func evaluateGridD1MatchesDirectEvaluation() {
+        guard let sphere = Surface.sphere(center: .zero, radius: 5) else { return }
+        let u = Self.uParams, v = Self.vParams
+        let grid = sphere.evaluateGridD1(uParameters: u, vParameters: v)
+        #expect(grid.uCount == u.count)
+        #expect(grid.vCount == v.count)
+        guard !grid.isEmpty else { return }
+
+        for iu in 0..<u.count {
+            for iv in 0..<v.count {
+                let expected = sphere.evalD1(u: u[iu], v: v[iv])
+                let actual = grid.at(u: iu, v: iv)
+                #expect(simd_length(actual.point - expected.point) < 1e-6)
+                #expect(simd_length(actual.d1u - expected.d1u) < 1e-6)
+                #expect(simd_length(actual.d1v - expected.d1v) < 1e-6)
             }
         }
     }
 
-    @Test func gridEvalD1Sphere() {
-        if let sphere = Shape.sphere(radius: 5) {
-            let faces = sphere.subShapes(ofType: .face)
-            if faces.count > 0 {
-                if let surf = faces[0].extractFaceSurface() {
-                    let uParams = [0.0, Double.pi / 4]
-                    let vParams = [Double.pi / 4]
-                    let results = surf.gridEvalD1(uParams: uParams, vParams: vParams)
-                    #expect(results.count == 2) // 2 * 1
-                    if results.count > 0 {
-                        // D1U should be non-zero
-                        let d1uLen = sqrt(results[0].d1u.x * results[0].d1u.x + results[0].d1u.y * results[0].d1u.y + results[0].d1u.z * results[0].d1u.z)
-                        #expect(d1uLen > 0.01)
-                    }
-                }
+    @Test("evaluateGrid and evaluateGridD1 agree point-for-point under .at(u:v:)")
+    func evaluateGridAndD1Agree() {
+        guard let sphere = Surface.sphere(center: .zero, radius: 5) else { return }
+        let u = Self.uParams, v = Self.vParams
+        let d0 = sphere.evaluateGrid(uParameters: u, vParameters: v)
+        let d1 = sphere.evaluateGridD1(uParameters: u, vParameters: v)
+        #expect(d0.uCount == d1.uCount)
+        #expect(d0.vCount == d1.vCount)
+        guard !d0.isEmpty, !d1.isEmpty else { return }
+
+        for iu in 0..<u.count {
+            for iv in 0..<v.count {
+                #expect(simd_length(d0.at(u: iu, v: iv) - d1.at(u: iu, v: iv).point) < 1e-9)
             }
         }
+    }
+
+    @Test("drawMesh, evaluateGrid and evaluateGridD1 all read U-major")
+    func drawMeshSharesTheGridLayout() {
+        guard let sphere = Surface.sphere(center: .zero, radius: 5) else { return }
+        let uCount = 5, vCount = 3
+        let mesh = sphere.drawMesh(uCount: uCount, vCount: vCount)
+
+        var (uMin, uMax, vMin, vMax) = sphere.domain
+        if uMin < -1e6 { uMin = -100 }
+        if uMax > 1e6 { uMax = 100 }
+        if vMin < -1e6 { vMin = -100 }
+        if vMax > 1e6 { vMax = 100 }
+        let u = (0..<uCount).map { uMin + (uMax - uMin) * Double($0) / Double(uCount - 1) }
+        let v = (0..<vCount).map { vMin + (vMax - vMin) * Double($0) / Double(vCount - 1) }
+
+        let d1 = sphere.evaluateGridD1(uParameters: u, vParameters: v)
+        guard !mesh.isEmpty, !d1.isEmpty else { return }
+        for iu in 0..<uCount {
+            for iv in 0..<vCount {
+                #expect(simd_length(mesh.at(u: iu, v: iv) - d1.at(u: iu, v: iv).point) < 1e-6)
+            }
+        }
+    }
+
+    @Test("empty parameter arrays give an empty grid, not a grid of zeroes")
+    func emptyParametersGiveEmptyGrid() {
+        guard let sphere = Surface.sphere(center: .zero, radius: 5) else { return }
+        #expect(sphere.evaluateGrid(uParameters: [], vParameters: [0.0]).isEmpty)
+        #expect(sphere.evaluateGrid(uParameters: [0.0], vParameters: []).isEmpty)
+        #expect(sphere.evaluateGridD1(uParameters: [], vParameters: [0.0]).isEmpty)
+        #expect(sphere.evaluateGridD1(uParameters: [0.0], vParameters: []).isEmpty)
     }
 }
 
@@ -3919,11 +4115,14 @@ struct SurfaceFromGridTests {
 
     @Test func surfaceCurvatures() {
         if let sphere = Surface.sphere(center: SIMD3(0,0,0), radius: 5) {
-            let (gaussian, mean) = sphere.curvatures(u: 0, v: Double.pi / 4)
-            // Gaussian curvature of sphere radius R = 1/R^2 = 0.04
-            #expect(abs(gaussian - 0.04) < 0.01)
-            // Mean curvature = 1/R = 0.2
-            #expect(abs(abs(mean) - 0.2) < 0.01)
+            if let (gaussian, mean) = sphere.curvatures(u: 0, v: Double.pi / 4) {
+                // Gaussian curvature of sphere radius R = 1/R^2 = 0.04
+                #expect(abs(gaussian - 0.04) < 0.01)
+                // Mean curvature = 1/R = 0.2
+                #expect(abs(abs(mean) - 0.2) < 0.01)
+            } else {
+                Issue.record("a sphere away from its poles has curvature")
+            }
         }
     }
 
@@ -5243,25 +5442,117 @@ struct GeomEvalHypParaboloidTests {
     }
 }
 
+// MARK: - #645: shared quarter-cylinder Gordon fixture
+//
+// `GeomFill_Gordon` was 5% wrong on OCCT 8.0.0p1 for RATIONAL networks specifically
+// (fixed upstream, OCCT#1335); a non-rational control matched to ~1e-15 on both p1 and
+// 8.0.1. `Curve3D.interpolate`-built networks are non-rational B-splines, so however
+// curved a fixture built from them is, it cannot exercise that path, and would have
+// been green on the broken kernel too. Feeding the builder a quarter-cylinder's own
+// isocurves gives a network with a known-exact answer AND a rational profile family: a
+// correct build reproduces the cylinder with ~0 deviation everywhere. The historical
+// bug moved the 45-degree sample from the true 5/sqrt(2) to 3.713203436, about 5%
+// off-axis.
+//
+// Argument order matters. Reproducing the historical bug (confirmed by rebuilding this
+// worktree against the pre-8.0.1 kernel directly) requires the rational arcs to be
+// passed as `profiles:`, not `guides:` -- the same curves the other way round give the
+// correct answer even on the broken kernel.
+
+private func makeQuarterCylinderGordonNetwork(radius: Double = 5, height: Double = 10)
+    -> (profiles: [Curve3D], guides: [Curve3D])? {
+    guard let cylinder = Surface.cylinder(origin: .zero, axis: SIMD3(0, 0, 1), radius: radius),
+          let quarter = cylinder.trimmed(u1: 0, u2: .pi / 2, v1: 0, v2: height)
+    else { return nil }
+    // Profiles: 3 quarter-circle V-isos (rational), one per height.
+    let profiles = [0.0, height / 2, height].compactMap { quarter.vIso(at: $0) }
+    // Guides: 3 straight-line U-isos, one per angle.
+    let guides = [0.0, Double.pi / 4, Double.pi / 2].compactMap { quarter.uIso(at: $0) }
+    guard profiles.count == 3, guides.count == 3 else { return nil }
+    return (profiles, guides)
+}
+
+/// The exact point on the reference quarter-cylinder (radius 5, height 10) at a Gordon
+/// surface's own normalized parameter fraction (fu, fv) in [0,1]x[0,1]: angle = fu *
+/// pi/2, height = fv * 10.
+private func quarterCylinderReferencePoint(fu: Double, fv: Double, radius: Double = 5, height: Double = 10)
+    -> SIMD3<Double> {
+    let angle = fu * Double.pi / 2
+    return SIMD3(radius * cos(angle), radius * sin(angle), fv * height)
+}
+
+/// Asserts `surface` matches the reference quarter-cylinder (radius 5, height 10) at its
+/// own corner, mid, and far parameters. The historical p1 defect moved the mid-parameter
+/// point by ~0.177 units (5% of the radius); `tolerance` here is 5 orders tighter.
+private func assertMatchesQuarterCylinder(_ surface: Surface, tolerance: Double = 1e-6) {
+    let bounds = surface.parameterBounds
+    let fractions: [(fu: Double, fv: Double)] = [(0, 0), (0.5, 0.5), (1, 1)]
+    for (fu, fv) in fractions {
+        let u = bounds.uMin + (bounds.uMax - bounds.uMin) * fu
+        let v = bounds.vMin + (bounds.vMax - bounds.vMin) * fv
+        let got = surface.point(atU: u, v: v)
+        let want = quarterCylinderReferencePoint(fu: fu, fv: fv)
+        #expect(abs(got.x - want.x) < tolerance)
+        #expect(abs(got.y - want.y) < tolerance)
+        #expect(abs(got.z - want.z) < tolerance)
+    }
+}
+
 @Suite("GeomFill — Gordon Surface")
 struct GeomFillGordonTests {
 
     @Test func gordonFromLineNetwork() {
-        // Create a simple 2x2 grid network using interpolated BSplines
+        // Non-rational control: a flat interpolated grid. Kept to show the builder gets
+        // a simple network's corners right, but see
+        // gordonRationalQuarterCylinderNetworkMatchesReference below -- this fixture
+        // cannot distinguish the p1/8.0.1 kernel difference #645 is actually about,
+        // because none of its curves are rational.
         guard let p1 = Curve3D.interpolate(points: [SIMD3(0,0,0), SIMD3(5,0,0), SIMD3(10,0,0)]),
               let p2 = Curve3D.interpolate(points: [SIMD3(0,10,0), SIMD3(5,10,0), SIMD3(10,10,0)]),
               let g1 = Curve3D.interpolate(points: [SIMD3(0,0,0), SIMD3(0,5,0), SIMD3(0,10,0)]),
               let g2 = Curve3D.interpolate(points: [SIMD3(10,0,0), SIMD3(10,5,0), SIMD3(10,10,0)])
         else { return }
 
-        let surf = Surface.gordon(profiles: [p1, p2], guides: [g1, g2], tolerance: 1e-3)
-        #expect(surf != nil)
+        guard let surf = Surface.gordon(profiles: [p1, p2], guides: [g1, g2], tolerance: 1e-3) else {
+            Issue.record("gordon surface nil"); return
+        }
+        let bounds = surf.parameterBounds
+        let corners = [
+            surf.point(atU: bounds.uMin, v: bounds.vMin),
+            surf.point(atU: bounds.uMax, v: bounds.vMin),
+            surf.point(atU: bounds.uMin, v: bounds.vMax),
+            surf.point(atU: bounds.uMax, v: bounds.vMax),
+        ]
+        let expectedCorners: [SIMD3<Double>] = [
+            SIMD3(0, 0, 0), SIMD3(10, 0, 0), SIMD3(0, 10, 0), SIMD3(10, 10, 0),
+        ]
+        for (got, want) in zip(corners, expectedCorners) {
+            #expect(abs(got.x - want.x) < 1e-6)
+            #expect(abs(got.y - want.y) < 1e-6)
+            #expect(abs(got.z - want.z) < 1e-6)
+        }
     }
 
     @Test func gordonTooFewCurves() {
         guard let p1 = Curve3D.interpolate(points: [SIMD3(0,0,0), SIMD3(10,0,0)]) else { return }
         let surf = Surface.gordon(profiles: [p1], guides: [p1])
         #expect(surf == nil) // need at least 2 each
+    }
+
+    @Test func gordonRationalQuarterCylinderNetworkMatchesReference() {
+        // The crux of #645: a rational network's Gordon build checked against a known
+        // exact answer, not just non-nil-ness. This is the fixture that would have
+        // failed on OCCT 8.0.0p1 (see the module-level comment above).
+        guard let network = makeQuarterCylinderGordonNetwork() else {
+            Issue.record("quarter-cylinder network fixture failed to build"); return
+        }
+        guard let surf = Surface.gordon(profiles: network.profiles, guides: network.guides, tolerance: 1e-6) else {
+            Issue.record("gordon surface nil for quarter-cylinder network"); return
+        }
+        let bsp = surf.bsplineSurface
+        #expect(bsp.isURational)
+        #expect(bsp.isVRational)
+        assertMatchesQuarterCylinder(surf)
     }
 }
 
@@ -5450,10 +5741,29 @@ struct ShapeRevolutionAxesTests {
     func coaxialDedup() {
         guard let cyl = Shape.cylinder(radius: 5, height: 20),
               let torus = Shape.torus(majorRadius: 10, minorRadius: 2),
-              let combined = cyl.union(with: torus) else { Issue.record("union nil"); return }
+              let combined = cyl.union(torus) else { Issue.record("union nil"); return }
         let axes = combined.revolutionAxes()
         // Both share the Z axis at the origin → dedup to 1.
         #expect(axes.count == 1)
+    }
+
+    // #726/#763: extentMin/extentMax/hasExtent were hardcoded 0/0/false on every call, so
+    // `extent` was `nil` for every axis regardless of input. Fixed by measuring the face's own
+    // bounding box along the axis direction. A cylindrical face's true Z-extent (in whichever
+    // sign OCCT hands back `Axis().Direction()`, not fixed -- see `cylinderOneAxis` above, which
+    // itself accepts either sign) is exactly its bounding box's, since no curvature bulges past
+    // the two flat end circles along the axis. The SPAN (upperBound - lowerBound) is
+    // sign-independent and is what's asserted; `Shape.cylinder`'s own height is the ground truth.
+    @Test("Cylinder's revolution axis reports a real, non-nil extent matching its height")
+    func cylinderRevolutionAxisHasExtent() {
+        guard let cyl = Shape.cylinder(radius: 5, height: 20) else { Issue.record("cylinder nil"); return }
+        let axes = cyl.revolutionAxes()
+        #expect(axes.count == 1)
+        guard let a = axes.first, let extent = a.extent else {
+            Issue.record("expected a non-nil extent on the cylinder's revolution axis")
+            return
+        }
+        #expect(abs((extent.upperBound - extent.lowerBound) - 20) < 1e-6)
     }
 }
 
@@ -5603,21 +5913,17 @@ struct DrawingSymbolsTests {
 @Suite("GeomFill — Gordon Report & Network Surface")
 struct GeomFillGordonReportTests {
 
-    private func makeNetwork() -> ([Curve3D], [Curve3D])? {
-        guard let p1 = Curve3D.interpolate(points: [SIMD3(0,0,0), SIMD3(5,0,0), SIMD3(10,0,0)]),
-              let p2 = Curve3D.interpolate(points: [SIMD3(0,10,0), SIMD3(5,10,0), SIMD3(10,10,0)]),
-              let g1 = Curve3D.interpolate(points: [SIMD3(0,0,0), SIMD3(0,5,0), SIMD3(0,10,0)]),
-              let g2 = Curve3D.interpolate(points: [SIMD3(10,0,0), SIMD3(10,5,0), SIMD3(10,10,0)])
-        else { return nil }
-        return ([p1, p2], [g1, g2])
-    }
-
     @Test func gordonReportDoneForGoodNetwork() {
-        guard let (profiles, guides) = makeNetwork() else { return }
-        let result = Surface.gordonReport(profiles: profiles, guides: guides, tolerance: 1e-3)
+        guard let network = makeQuarterCylinderGordonNetwork() else {
+            Issue.record("quarter-cylinder network fixture failed to build"); return
+        }
+        let result = Surface.gordonReport(profiles: network.profiles, guides: network.guides, tolerance: 1e-6)
         #expect(result.status == .done)
-        #expect(result.surface != nil)
         #expect(result.isApproximate == false)
+        guard let surface = result.surface else {
+            Issue.record("gordonReport surface nil"); return
+        }
+        assertMatchesQuarterCylinder(surface)
     }
 
     @Test func gordonReportInvalidInput() {
@@ -5628,22 +5934,129 @@ struct GeomFillGordonReportTests {
     }
 
     @Test func gordonReportApproximateFallbackMode() {
-        guard let (profiles, guides) = makeNetwork() else { return }
-        // With fallback enabled a good network still builds; status must be a defined value.
-        let result = Surface.gordonReport(profiles: profiles, guides: guides,
-                                          tolerance: 1e-3, allowApproximateFallback: true)
+        // With fallback enabled a good network still builds exactly (the fallback never
+        // has to engage), and the geometry is unaffected by allowing it.
+        guard let network = makeQuarterCylinderGordonNetwork() else {
+            Issue.record("quarter-cylinder network fixture failed to build"); return
+        }
+        let result = Surface.gordonReport(profiles: network.profiles, guides: network.guides,
+                                          tolerance: 1e-6, allowApproximateFallback: true)
         #expect(result.status == .done)
+        #expect(result.isApproximate == false)
+        guard let surface = result.surface else {
+            Issue.record("gordonReport surface nil"); return
+        }
+        assertMatchesQuarterCylinder(surface)
     }
 
-    @Test func networkSurfaceBuildsOrReportsStatus() {
-        guard let (profiles, guides) = makeNetwork() else { return }
-        let (surface, status) = Surface.networkSurface(profiles: profiles, guides: guides, tolerance: 1e-3)
-        // The low-level builder either produces a surface (status .done) or reports a
-        // defined non-.notStarted failure status — never silently returns notStarted.
-        #expect(status != .notStarted)
-        if status == .done {
-            #expect(surface != nil)
+    @Test func networkSurfaceBuildsTheQuarterCylinderNetwork() {
+        // #689: `OCCTGeomFillNetworkSurface` used to fail EVERY network tried with
+        // .knotAlignmentFailed, including the simplest possible bilinear patch (see
+        // `networkSurfaceBuildsASimpleBilinearPatch` below), and not because the intersection
+        // grid was wrong: the locator parameters it handed GeomFill_NetworkSurface were a
+        // caller-invented [0,1] fraction rather than each curve's own raw parameter in
+        // the OTHER family's domain, which `alignSurfaces`' `sameKnotRange` check requires to
+        // match before it will align anything. Fixed by computing real per-pair contact points
+        // and parameters via `GeomAPI_ExtremaCurveCurve` and averaging them the way
+        // `GeomFill_Gordon.cxx` does. This fixture is the hardest in the suite, with genuinely
+        // rational profile curves (quarter-circle arcs), and now reproduces the reference
+        // cylinder despite the intersection grid's weights all being 1.0, because
+        // `makeCorrectedProfileSkin`'s rational branch combines the already-rational profile
+        // and guide skins independently of that weight.
+        guard let network = makeQuarterCylinderGordonNetwork() else {
+            Issue.record("quarter-cylinder network fixture failed to build"); return
         }
+        let (surface, status) = Surface.networkSurface(profiles: network.profiles, guides: network.guides,
+                                                        tolerance: 1e-6)
+        #expect(status == .done)
+        guard let surface else {
+            Issue.record("networkSurface returned nil despite .done"); return
+        }
+        assertMatchesQuarterCylinder(surface)
+    }
+
+    @Test func networkSurfaceBuildsASimpleBilinearPatch() throws {
+        // The issue's own simplest repro: two straight, non-rational lines each direction,
+        // forming a flat 10x10 square. Before #689 this failed identically to every other
+        // fixture tried, despite being a perfect, error-free network: proof the defect was
+        // the parameter DOMAIN, not curve intersection accuracy (the naive uniform-fraction
+        // grid this bridge already computed for a bilinear rectangle happens to be exactly
+        // right; only the locator parameters handed alongside it were wrong).
+        let p1 = try #require(Curve3D.interpolate(points: [SIMD3(0, 0, 0), SIMD3(10, 0, 0)]))
+        let p2 = try #require(Curve3D.interpolate(points: [SIMD3(0, 10, 0), SIMD3(10, 10, 0)]))
+        let g1 = try #require(Curve3D.interpolate(points: [SIMD3(0, 0, 0), SIMD3(0, 10, 0)]))
+        let g2 = try #require(Curve3D.interpolate(points: [SIMD3(10, 0, 0), SIMD3(10, 10, 0)]))
+
+        let (surface, status) = Surface.networkSurface(profiles: [p1, p2], guides: [g1, g2], tolerance: 1e-6)
+        #expect(status == .done)
+        guard let surface else {
+            Issue.record("networkSurface returned nil despite .done"); return
+        }
+        let bounds = surface.parameterBounds
+        let mid = surface.point(atU: (bounds.uMin + bounds.uMax) / 2, v: (bounds.vMin + bounds.vMax) / 2)
+        #expect(abs(mid.x - 5) < 1e-9)
+        #expect(abs(mid.y - 5) < 1e-9)
+        #expect(abs(mid.z - 0) < 1e-9)
+    }
+
+    @Test func networkSurfaceParallelCurvesDoNotCrash() throws {
+        // A malformed network, a "guide" running parallel to the profiles instead of
+        // crossing them, reaches the same `GeomAPI_ExtremaCurveCurve` construction
+        // `Curve3D.extrema` uses, which SIGSEGVs on parallel curves with overlapping projected
+        // ranges at every capacity (#636: `NbExtrema()` reports 1 but `Points()`/`Parameters()`
+        // index an empty sequence, and this Release kernel disables the bounds check that would
+        // otherwise throw `Standard_OutOfRange`). Confirmed via a standalone ground-truth
+        // binary linked directly against `libOCCT-macos.a` (mirroring PR #730's own
+        // verification for #636): the same construction crashes with SIGSEGV when
+        // `Points()`/`Parameters()` are called unconditionally, and returns cleanly once gated
+        // on `IsParallel()`. This is the regression lock for that guard. It does not
+        // reproduce the crash (that would take down the whole test process); it asserts the
+        // guarded call keeps returning a real, non-crashing result instead.
+        //
+        // Every pair here is parallel, so this also pins the #726 fix's status for the
+        // fully-degenerate case: reject as `.invalidInput`, not average in a fabricated
+        // point. Measured, not assumed: injecting the pre-fix FirstParameter() fallback here
+        // still lands on `.invalidInput` too, by the accident of every pair collapsing to the
+        // same degenerate value at once and tripping the array's own strictly-increasing
+        // check -- this fixture alone would NOT catch that regression. See
+        // `networkSurfaceRejectsOneDegeneratePairAmongOtherwiseGoodOnes` below for the fixture
+        // (one bad pair, three good ones) where the two fallbacks disagree with the fix.
+        let p1 = try #require(Curve3D.interpolate(points: [SIMD3(0, 0, 0), SIMD3(10, 0, 0)]))
+        let p2 = try #require(Curve3D.interpolate(points: [SIMD3(0, 10, 0), SIMD3(10, 10, 0)]))
+        // Both "guides" run parallel to the profiles (along X, overlapping their projected
+        // range) instead of crossing them: not a valid network, but not a crash either.
+        let g1 = try #require(Curve3D.interpolate(points: [SIMD3(0, 5, 0), SIMD3(10, 5, 0)]))
+        let g2 = try #require(Curve3D.interpolate(points: [SIMD3(0, 6, 0), SIMD3(10, 6, 0)]))
+
+        let (surface, status) = Surface.networkSurface(profiles: [p1, p2], guides: [g1, g2], tolerance: 1e-6)
+        #expect(status == .invalidInput)
+        #expect(surface == nil)
+    }
+
+    @Test func networkSurfaceReportsDoneForTheCookbookDomedNetwork() throws {
+        // `docs/guides/cookbook/gordon-surfaces.md`'s "lower-level network builder" section
+        // used to claim `networkSurface` "is enough" to build the same domed 2x2 network its
+        // own opening example builds with `gordon`/`gordonReport` -- a real review finding
+        // (neither this PR's stated verification fixtures nor its permanent tests exercised
+        // that exact curve set, so the claim was accurate by luck, not by anything checked).
+        //
+        // Checking it turned up more than an unverified claim: `networkSurface` does report
+        // `.done` for this network (and for the plain bilinear rectangle in
+        // `networkSurfaceBuildsASimpleBilinearPatch` above), but the resulting surface is
+        // wrong at two of its four corners -- confirmed by comparing against `gordon()` on the
+        // identical curves, which gets all four right. Filed as #748 rather than fixed here:
+        // it is a kernel-level GeomFill_NetworkSurface defect, not a bridge misuse, and out of
+        // scope for this PR's three named fixes. The cookbook section was reworded rather than
+        // demonstrating a build whose interior is subtly wrong; this test locks in only the
+        // narrower, actually-verified claim (`.done`, not full corner fidelity).
+        let p1 = try #require(Curve3D.interpolate(points: [SIMD3(0, 0, 0), SIMD3(5, 0, 3), SIMD3(10, 0, 0)]))
+        let p2 = try #require(Curve3D.interpolate(points: [SIMD3(0, 10, 0), SIMD3(5, 10, 3), SIMD3(10, 10, 0)]))
+        let g1 = try #require(Curve3D.interpolate(points: [SIMD3(0, 0, 0), SIMD3(0, 5, 2), SIMD3(0, 10, 0)]))
+        let g2 = try #require(Curve3D.interpolate(points: [SIMD3(10, 0, 0), SIMD3(10, 5, 2), SIMD3(10, 10, 0)]))
+
+        let (surface, status) = Surface.networkSurface(profiles: [p1, p2], guides: [g1, g2], tolerance: 1e-3)
+        #expect(status == .done)
+        #expect(surface != nil)
     }
 
     @Test func networkSurfaceTooFewCurves() {
@@ -5651,6 +6064,62 @@ struct GeomFillGordonReportTests {
         let (surface, status) = Surface.networkSurface(profiles: [p1], guides: [p1])
         #expect(surface == nil)
         #expect(status == .invalidInput)
+    }
+
+    @Test func networkSurfaceRejectsOneDegeneratePairAmongOtherwiseGoodOnes() throws {
+        // The review's own scenario: "one degenerate pair inside an otherwise well-formed
+        // grid" (#726). p1/p2 and g1/g2 deliberately don't share one common "profile
+        // direction" / "guide direction" the way a real network normally would, so that
+        // exactly one of the four profile/guide pairs -- p2 x g2, both running along Y at
+        // z=3 -- is parallel while the other three (p1 x g1, p1 x g2, p2 x g1) are ordinary
+        // skew-line pairs with one real, unambiguous extremum each.
+        //
+        // Before this PR, the parallel pair fell back to each curve's own FirstParameter()
+        // and that fabricated point was averaged in with the three real ones -- silently,
+        // with no error, `.done` remained reachable. This network happens to still fail even
+        // under that fallback (see the injection below), but only by accident: swapping the
+        // fallback to each curve's LastParameter() instead -- an equally fabricated, equally
+        // plausible "reasonable default" -- changes the result to `.knotAlignmentFailed`
+        // rather than this test's `.invalidInput`, proving the averaging step itself has no
+        // opinion on whether a fabricated value should be allowed through at all. The fix
+        // rejects before any fallback value, fabricated or not, ever reaches the average.
+        let p1 = try #require(Curve3D.interpolate(points: [SIMD3(-5, 0, 0), SIMD3(5, 0, 0)]))
+        let p2 = try #require(Curve3D.interpolate(points: [SIMD3(0, -5, 3), SIMD3(0, 5, 3)]))
+        let g1 = try #require(Curve3D.interpolate(points: [SIMD3(2, 2, -5), SIMD3(2, 2, 5)]))
+        let g2 = try #require(Curve3D.interpolate(points: [SIMD3(4, -5, 3), SIMD3(4, 5, 3)]))
+
+        let (surface, status) = Surface.networkSurface(profiles: [p1, p2], guides: [g1, g2], tolerance: 1e-6)
+        #expect(status == .invalidInput)
+        #expect(surface == nil)
+    }
+
+    @Test func networkSurfaceReportsKnotAlignmentFailedWhenGuidesDoNotSpanProfiles() throws {
+        // Restores the coverage the base commit's `networkSurfaceReportsKnotAlignmentFailedOn-
+        // UnpreparedNetwork` used to give this status, deleted by this PR because its own
+        // precondition (the quarter-cylinder network failing outright) no longer holds. Without
+        // some other test pinning `.knotAlignmentFailed`, a regression in this PR's own
+        // contact-point/averaging logic that silently changed the enum decode, or that made
+        // GeomFill_NetworkSurface's real KnotAlignmentFailed stop propagating through
+        // `outStatus`, would go unnoticed by CI.
+        //
+        // This is a genuinely well-formed network under the FIXED algorithm (no parallel pairs,
+        // every extremum unambiguous) that still can't align: `alignSurfaces` requires the
+        // averaged guide-locator parameters to span the SAME domain as the base profile's own
+        // knot range (and the mirror image for profile-locators against the base guide's own
+        // range) -- see the comment above `OCCTGeomFillNetworkSurface`. Here the guides only
+        // cross the profiles at x=5 and x=15, well short of the profiles' own x=0...20 domain,
+        // so the real, correctly-measured contact parameters ([5, 15]) can never match that
+        // domain. This is a genuine, documented limitation of the low-level builder (it does not
+        // reparametrize the input), not a bug: `gordon`/`gordonReport` handle this same network
+        // by reparametrizing first.
+        let p1 = try #require(Curve3D.interpolate(points: [SIMD3(0, 0, 0), SIMD3(20, 0, 0)]))
+        let p2 = try #require(Curve3D.interpolate(points: [SIMD3(0, 10, 0), SIMD3(20, 10, 0)]))
+        let g1 = try #require(Curve3D.interpolate(points: [SIMD3(5, 0, 0), SIMD3(5, 10, 0)]))
+        let g2 = try #require(Curve3D.interpolate(points: [SIMD3(15, 0, 0), SIMD3(15, 10, 0)]))
+
+        let (surface, status) = Surface.networkSurface(profiles: [p1, p2], guides: [g1, g2], tolerance: 1e-6)
+        #expect(status == .knotAlignmentFailed)
+        #expect(surface == nil)
     }
 }
 
@@ -5759,9 +6228,11 @@ struct SurfaceCurvatureParityTests {
 
     private func expectAgreement(_ surface: Surface, u: Double, v: Double,
                                  _ comment: Comment? = nil) {
+        // #595: agreement is now on definedness too, not only on the value -- which is what this
+        // suite's own doc comment always claimed and could not assert while all three returned 0.
         let pair = surface.curvatures(u: u, v: v)
-        #expect(pair.gaussian == surface.gaussianCurvature(atU: u, v: v), comment)
-        #expect(pair.mean == surface.meanCurvature(atU: u, v: v), comment)
+        #expect(pair?.gaussian == surface.gaussianCurvature(atU: u, v: v), comment)
+        #expect(pair?.mean == surface.meanCurvature(atU: u, v: v), comment)
     }
 
     @Test("Well-conditioned points agree across all three entry points")
@@ -5796,18 +6267,18 @@ struct SurfaceCurvatureParityTests {
         // v = 1e-6 specifically: curvature IS defined at Precision::Confusion(), and both
         // entry points must now report the same non-zero mean curvature.
         let pair = cone.curvatures(u: 0, v: 1e-6)
-        #expect(pair.mean < -1e5)
-        #expect(pair.mean == cone.meanCurvature(atU: 0, v: 1e-6))
+        #expect((pair?.mean ?? 0) < -1e5)
+        #expect(pair?.mean == cone.meanCurvature(atU: 0, v: 1e-6))
     }
 
-    @Test("Genuinely undefined points return zero from all three entry points")
+    @Test("Genuinely undefined points return nil from all three entry points")
     func undefinedPointsAgree() {
         let cone = Self.apexCone()
+        // #595: was `== 0` on all four, which a plane also satisfies with the curvature defined.
         let pair = cone.curvatures(u: 0, v: 0)          // exactly at the apex
-        #expect(pair.gaussian == 0)
-        #expect(pair.mean == 0)
-        #expect(cone.gaussianCurvature(atU: 0, v: 0) == 0)
-        #expect(cone.meanCurvature(atU: 0, v: 0) == 0)
+        #expect(pair == nil)
+        #expect(cone.gaussianCurvature(atU: 0, v: 0) == nil)
+        #expect(cone.meanCurvature(atU: 0, v: 0) == nil)
 
         // Sphere pole: curvature (unlike the normal) is undefined there for both.
         let sphere = Surface.sphere(center: .zero, radius: 5)!
@@ -5955,5 +6426,242 @@ struct SurfaceApproximateDefaultsParityTests {
             }
             #expect(maxDeviation < 0.5)
         }
+    }
+}
+
+// MARK: - #488: Surface transform family parity
+
+/// `Surface` exposes every transform twice: an immutable copy-returning family
+/// (`translated`/`rotated`/`scaled`/`mirrored*`, backed by six separate bridge functions) and an
+/// in-place family (`translate`/`rotate`/`scale`/`mirrorPoint`/`mirrorAxis`/`mirrorPlane`, all
+/// backed by the single `OCCTSurfaceTransform` dispatcher). Both now build their `gp_Trsf` through
+/// one shared `buildTrsf3D`, so they must produce identical geometry for identical input. Before
+/// #488 the switch existed seven times over and nothing checked the copies agreed. Mirrors
+/// `Curve3DTransformFamilyParityTests`, added for the same fix on `Curve3D` (#416).
+///
+/// For each pair: take one immutable copy BEFORE mutating the original in place, apply the same
+/// transform to both, then compare a UV grid of evaluated points.
+@Suite("Surface Transform Family Parity (#488)")
+struct SurfaceTransformFamilyParityTests {
+
+    /// Bounded on both parameters, so sampling its own domain is well defined
+    /// (a plane's or cylinder's domain runs to ±1e100 and cannot be gridded).
+    private func sphere() -> Surface {
+        Surface.sphere(center: SIMD3(1, 2, 3), radius: 4)!
+    }
+
+    private func points(on surface: Surface, steps: Int = 4) -> [SIMD3<Double>] {
+        let d = surface.domain
+        var result: [SIMD3<Double>] = []
+        for i in 0...steps {
+            for j in 0...steps {
+                let u = d.uMin + (d.uMax - d.uMin) * Double(i) / Double(steps)
+                let v = d.vMin + (d.vMax - d.vMin) * Double(j) / Double(steps)
+                result.append(surface.point(atU: u, v: v))
+            }
+        }
+        return result
+    }
+
+    private func assertMatch(_ a: Surface, _ b: Surface, tolerance: Double = 1e-9) {
+        let pa = points(on: a)
+        let pb = points(on: b)
+        #expect(pa.count == pb.count)
+        for (p, q) in zip(pa, pb) {
+            #expect(abs(p.x - q.x) < tolerance)
+            #expect(abs(p.y - q.y) < tolerance)
+            #expect(abs(p.z - q.z) < tolerance)
+        }
+    }
+
+    @Test("translate vs translated(by:)")
+    func translateParity() {
+        let base = sphere()
+        let copy = base.translated(by: SIMD3(3, -2, 1.5))
+        let ok = base.translate(dx: 3, dy: -2, dz: 1.5)
+        #expect(ok)
+        #expect(copy != nil)
+        if let copy = copy {
+            assertMatch(base, copy)
+        }
+    }
+
+    @Test("rotate vs rotated(axisOrigin:axisDirection:angle:)")
+    func rotateParity() {
+        let base = sphere()
+        let axisOrigin = SIMD3<Double>(0, 0, 0)
+        let axisDirection = SIMD3<Double>(0, 0, 1)
+        let angle = Double.pi / 3
+        let copy = base.rotated(axisOrigin: axisOrigin, axisDirection: axisDirection, angle: angle)
+        let ok = base.rotate(axisOrigin: axisOrigin, axisDirection: axisDirection, angle: angle)
+        #expect(ok)
+        #expect(copy != nil)
+        if let copy = copy {
+            assertMatch(base, copy)
+        }
+    }
+
+    @Test("scale vs scaled(center:factor:)")
+    func scaleParity() {
+        let base = sphere()
+        let center = SIMD3<Double>(0, 0, 0)
+        let copy = base.scaled(center: center, factor: 2.5)
+        let ok = base.scale(center: center, factor: 2.5)
+        #expect(ok)
+        #expect(copy != nil)
+        if let copy = copy {
+            assertMatch(base, copy)
+        }
+    }
+
+    @Test("mirrorPoint vs mirrored(acrossPoint:)")
+    func mirrorPointParity() {
+        let base = sphere()
+        let point = SIMD3<Double>(1, 1, 1)
+        let copy = base.mirrored(acrossPoint: point)
+        let ok = base.mirrorPoint(point)
+        #expect(ok)
+        #expect(copy != nil)
+        if let copy = copy {
+            assertMatch(base, copy)
+        }
+    }
+
+    @Test("mirrorAxis vs mirrored(acrossAxis:direction:)")
+    func mirrorAxisParity() {
+        let base = sphere()
+        let origin = SIMD3<Double>(0, 0, 0)
+        let direction = SIMD3<Double>(1, 0, 0)
+        let copy = base.mirrored(acrossAxis: origin, direction: direction)
+        let ok = base.mirrorAxis(origin: origin, direction: direction)
+        #expect(ok)
+        #expect(copy != nil)
+        if let copy = copy {
+            assertMatch(base, copy)
+        }
+    }
+
+    @Test("mirrorPlane vs mirrored(planeOrigin:planeNormal:)")
+    func mirrorPlaneParity() {
+        let base = sphere()
+        let origin = SIMD3<Double>(0, 0, 0)
+        let normal = SIMD3<Double>(0, 0, 1)
+        let copy = base.mirrored(planeOrigin: origin, planeNormal: normal)
+        let ok = base.mirrorPlane(origin: origin, normal: normal)
+        #expect(ok)
+        #expect(copy != nil)
+        if let copy = copy {
+            assertMatch(base, copy)
+        }
+    }
+
+    /// The analytic cases above all exercise `Geom_ElementarySurface::Transform`, which just moves an
+    /// axis placement. A Bezier surface takes a different override that transforms every pole, so it
+    /// is the case most likely to expose a divergence between the two families' `gp_Trsf` values.
+    @Test("Bezier surface: both families agree across all six transform kinds")
+    func bezierParityAcrossAllKinds() {
+        // bezierFill down-casts its inputs to Geom_BezierCurve and returns nil for anything else,
+        // so these have to be real Bezier curves. A Curve3D.line or .segment yields nil.
+        func bezier() -> Surface? {
+            guard let c1 = Curve3D.bezier(poles: [SIMD3(0, 0, 0), SIMD3(5, 0, 3), SIMD3(10, 0, 0)]),
+                  let c2 = Curve3D.bezier(poles: [SIMD3(0, 10, 5), SIMD3(5, 10, 8), SIMD3(10, 10, 5)])
+            else { return nil }
+            return Surface.bezierFill(c1, c2)
+        }
+
+        guard let translateBase = bezier(), let rotateBase = bezier(),
+              let scaleBase = bezier(), let mirrorPointBase = bezier(),
+              let mirrorAxisBase = bezier(), let mirrorPlaneBase = bezier() else {
+            Issue.record("bezierFill returned nil")
+            return
+        }
+
+        let translateCopy = translateBase.translated(by: SIMD3(3, -2, 1.5))
+        #expect(translateBase.translate(dx: 3, dy: -2, dz: 1.5))
+        if let c = translateCopy { assertMatch(translateBase, c) }
+
+        let rotateCopy = rotateBase.rotated(axisOrigin: .zero, axisDirection: SIMD3(0, 0, 1),
+                                            angle: .pi / 3)
+        #expect(rotateBase.rotate(axisOrigin: .zero, axisDirection: SIMD3(0, 0, 1), angle: .pi / 3))
+        if let c = rotateCopy { assertMatch(rotateBase, c) }
+
+        let scaleCopy = scaleBase.scaled(center: .zero, factor: 2.5)
+        #expect(scaleBase.scale(center: .zero, factor: 2.5))
+        if let c = scaleCopy { assertMatch(scaleBase, c) }
+
+        let mirrorPointCopy = mirrorPointBase.mirrored(acrossPoint: SIMD3(1, 1, 1))
+        #expect(mirrorPointBase.mirrorPoint(SIMD3(1, 1, 1)))
+        if let c = mirrorPointCopy { assertMatch(mirrorPointBase, c) }
+
+        let mirrorAxisCopy = mirrorAxisBase.mirrored(acrossAxis: .zero, direction: SIMD3(1, 0, 0))
+        #expect(mirrorAxisBase.mirrorAxis(origin: .zero, direction: SIMD3(1, 0, 0)))
+        if let c = mirrorAxisCopy { assertMatch(mirrorAxisBase, c) }
+
+        let mirrorPlaneCopy = mirrorPlaneBase.mirrored(planeOrigin: .zero, planeNormal: SIMD3(0, 0, 1))
+        #expect(mirrorPlaneBase.mirrorPlane(origin: .zero, normal: SIMD3(0, 0, 1)))
+        if let c = mirrorPlaneCopy { assertMatch(mirrorPlaneBase, c) }
+    }
+}
+
+// MARK: - #748: networkSurface transposed two corners and reported .done
+
+/// The four corners of a network surface are pinned by the input curves' own endpoints, so the
+/// expected values need no derivation and no tolerance argument. That makes a corner check the
+/// cheapest regression test this API can carry, and it would have caught #748 at any point in the
+/// API's life.
+///
+/// The non-square case is the one that matters. A square network cannot detect an axis swap as a
+/// shape error, because the swapped grid still has the right dimensions: it builds, reports `.done`
+/// and returns a surface whose two off-diagonal corners are exactly point-reflected. That is how
+/// #748 shipped, and why a 2x2 fixture was not enough. On a 2x3 the same bug fails `Init` outright.
+@Suite("networkSurface places every corner where its input curves say (#748)")
+struct Issue748NetworkSurfaceCornersTests {
+
+    private static func seg(_ a: SIMD3<Double>, _ b: SIMD3<Double>) throws -> Curve3D {
+        try #require(Curve3D.segment(from: a, to: b))
+    }
+
+    private static func cornersMatch(_ s: Surface, _ expected: [SIMD3<Double>]) -> Int {
+        let d = s.domain
+        let got = [s.point(atU: d.uMin, v: d.vMin), s.point(atU: d.uMax, v: d.vMin),
+                   s.point(atU: d.uMin, v: d.vMax), s.point(atU: d.uMax, v: d.vMax)]
+        var wrong = 0
+        for (i, e) in expected.enumerated() {
+            let dx = got[i].x - e.x, dy = got[i].y - e.y, dz = got[i].z - e.z
+            if (dx * dx + dy * dy + dz * dz).squareRoot() > 1e-6 { wrong += 1 }
+        }
+        return wrong
+    }
+
+    @Test("a square 2x2 network puts all four corners where the curves do")
+    func squareNetworkCornersAreExact() throws {
+        let p0 = try Self.seg(SIMD3(0, 0, 0), SIMD3(10, 0, 0))
+        let p1 = try Self.seg(SIMD3(0, 10, 0), SIMD3(10, 10, 0))
+        let g0 = try Self.seg(SIMD3(0, 0, 0), SIMD3(0, 10, 0))
+        let g1 = try Self.seg(SIMD3(10, 0, 0), SIMD3(10, 10, 0))
+
+        let (surface, status) = Surface.networkSurface(profiles: [p0, p1], guides: [g0, g1])
+        #expect(status == .done)
+        let s = try #require(surface)
+        // Before the fix these were (0,10,0) and (10,0,0), each exactly where the other belongs,
+        // sqrt(200) out, with .done reported.
+        #expect(Self.cornersMatch(s, [SIMD3(0, 0, 0), SIMD3(10, 0, 0),
+                                      SIMD3(0, 10, 0), SIMD3(10, 10, 0)]) == 0)
+    }
+
+    @Test("a non-square 2x3 network builds at all, which the swapped grid could not")
+    func nonSquareNetworkBuilds() throws {
+        let p0 = try Self.seg(SIMD3(0, 0, 0), SIMD3(10, 0, 0))
+        let p1 = try Self.seg(SIMD3(0, 10, 0), SIMD3(10, 10, 0))
+        let g0 = try Self.seg(SIMD3(0, 0, 0), SIMD3(0, 10, 0))
+        let g1 = try Self.seg(SIMD3(5, 0, 0), SIMD3(5, 10, 0))
+        let g2 = try Self.seg(SIMD3(10, 0, 0), SIMD3(10, 10, 0))
+
+        let (surface, status) = Surface.networkSurface(profiles: [p0, p1], guides: [g0, g1, g2])
+        // Before the fix: .invalidInput and no surface, because the swapped grid is the wrong shape.
+        #expect(status == .done)
+        let s = try #require(surface)
+        #expect(Self.cornersMatch(s, [SIMD3(0, 0, 0), SIMD3(10, 0, 0),
+                                      SIMD3(0, 10, 0), SIMD3(10, 10, 0)]) == 0)
     }
 }

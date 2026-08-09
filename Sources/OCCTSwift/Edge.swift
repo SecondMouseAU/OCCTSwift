@@ -143,7 +143,25 @@ public final class Edge: @unchecked Sendable {
         return torsion
     }
 
-    /// Project a 3D point onto this edge's curve (closest point)
+    /// Project a 3D point onto this edge's curve, giving the closest point on the edge.
+    ///
+    /// The answer is always inside the edge's own parameter range (``parameterBounds``), and always
+    /// the true nearest point: where the point has no perpendicular foot on the edge, the nearest
+    /// point is one of its ends, and that is what comes back.
+    ///
+    /// ```swift
+    /// let edge = Wire.line(from: SIMD3(3, 0, 0), to: SIMD3(8, 0, 0))!.edges()[0]
+    ///
+    /// let beyond = edge.project(point: SIMD3(100, 0, 0))!
+    /// #expect(beyond.point == SIMD3(8, 0, 0))   // the end of the edge
+    /// #expect(beyond.distance == 92)
+    /// ```
+    ///
+    /// Before #539 this returned `nil` for that point, because the underlying extrema search finds
+    /// no perpendicular foot there, and on an arc it could report the *far* side of the arc as the
+    /// nearest point.
+    ///
+    /// - Returns: The closest point, or nil for an edge with no 3D curve to project onto.
     public func project(point: SIMD3<Double>) -> CurveProjection? {
         let result = OCCTEdgeProjectPoint(handle, point.x, point.y, point.z)
         guard result.isValid else { return nil }
@@ -154,15 +172,18 @@ public final class Edge: @unchecked Sendable {
         )
     }
 
-    /// Shortest distance from a 3D point to this edge. Returns nil if the
-    /// projection fails (e.g. degenerate edge).
+    /// Shortest distance from a 3D point to this edge.
+    ///
+    /// A one-liner over ``project(point:)``, so it measures to the same nearest point: over the
+    /// edge's own parameter range, ends included. Returns nil only for an edge with no 3D curve
+    /// (typically a pcurve-only edge from a loft or sweep before `BuildCurves3d`).
     public func distance(to point: SIMD3<Double>) -> Double? {
         project(point: point)?.distance
     }
 
     /// The 3D curve underlying this edge as a standalone `Curve3D`.
     ///
-    /// Returns nil for edges with no 3D curve representation (rare — typically
+    /// Returns nil for edges with no 3D curve representation (rare, typically
     /// pcurve-only edges from lofted / swept shapes before `BuildCurves3d`).
     /// Internally the returned curve is a `Geom_TrimmedCurve` over the edge's
     /// parameter range, so consumers get a finite handle even when the
@@ -180,12 +201,25 @@ public final class Edge: @unchecked Sendable {
     // MARK: - Sampling
 
     /// Get points along the edge curve
-    /// - Parameter count: Number of points to generate (default: automatic based on length)
+    /// - Parameter count: Number of points to generate (default: automatic based on length),
+    ///   honoured within `2`...``Sampling/maximumSampleCount``; outside that range the result
+    ///   is empty (#558). The automatic default is bounded too: a long enough edge implies more
+    ///   points at 0.5mm spacing than the ceiling can serve.
     /// - Returns: Array of 3D points along the edge
     public func points(count: Int? = nil) -> [SIMD3<Double>] {
-        let pointCount = count ?? max(2, Int(length / 0.5) + 1)  // ~0.5mm spacing default
-        guard pointCount >= 2 else { return [] }
-        
+        let requested: Int
+        if let count {
+            requested = count
+        } else {
+            // ~0.5mm spacing default. Derive in Double: `Int(_:)` on a Double past Int.max is a
+            // trap rather than an error, and `length` is geometry-supplied, so the implied count
+            // is not bounded a priori (#558). A NaN length fails this guard too.
+            let implied = (length / 0.5).rounded(.down) + 1
+            guard implied <= Double(Sampling.maximumSampleCount) else { return [] }
+            requested = max(2, Int(implied))
+        }
+        guard let pointCount = Sampling.requested(requested) else { return [] }
+
         var buffer = [Double](repeating: 0, count: pointCount * 3)
         let actualCount = OCCTEdgeGetPoints(handle, Int32(pointCount), &buffer)
         
@@ -208,11 +242,21 @@ public final class Edge: @unchecked Sendable {
 // MARK: - Shape Extension for Edge Access
 
 extension Shape {
-    /// Get total number of edges in the shape
+    /// The number of **distinct** edges in this shape, the same `TopExp::MapShapes` enumeration
+    /// ``edges()``/``edge(at:)`` walk.
+    ///
+    /// An edge reachable from two adjacent faces is counted once here, not once per face: a plain
+    /// box has 12 edges by this count even though every one of them borders two faces. See
+    /// ``edges()`` for the identity rule this follows and why it does not need an
+    /// orientation-preserving counterpart the way ``Shape/faces()`` does.
+    ///
+    /// ``nbEdges`` was a second spelling of this same question, backed by a bare
+    /// `TopExp_Explorer` occurrence walk instead of this deduplicated count, and is deprecated in
+    /// favour of this one (#651).
     public var edgeCount: Int {
         Int(OCCTShapeGetTotalEdgeCount(handle))
     }
-    
+
     /// Get edge by index (0-based)
     /// - Parameter index: The edge index
     /// - Returns: Edge at the given index, or nil if index is out of bounds
@@ -222,19 +266,48 @@ extension Shape {
         }
         return Edge(handle: edgeHandle, index: index)
     }
-    
-    /// Get all edges from the shape
+
+    /// Every **distinct** edge of this shape, in enumeration order: the same `TopExp::MapShapes`
+    /// enumeration ``edgeCount`` counts.
+    ///
+    /// ## Identity, not orientation
+    ///
+    /// Edges are distinguished the way OCCT distinguishes them for an index: by
+    /// `TopoDS_Shape::IsSame`, which compares the underlying curve and placement and **ignores
+    /// orientation**. An edge reachable from two owners, the ordinary case of any two adjacent
+    /// faces on one solid, collapses to a single entry here, carrying whichever orientation was
+    /// reached first.
+    ///
+    /// ```swift
+    /// let box = Shape.box(width: 10, height: 10, depth: 10)!
+    /// print(box.edges().count)    // 12: the distinct, addressable edges
+    /// print(box.contents.edges)   // 24: one per (face, edge) visit, ShapeAnalysis_ShapeContents
+    /// ```
+    ///
+    /// Unlike ``Shape/faces()``, this collapse is **not** a defect (#638, following #614's own
+    /// method rather than assuming the analogy holds). #614 was a defect because
+    /// `Face.normal(atU:v:)` reverses on `TopAbs_REVERSED`, so a face's stored orientation changes
+    /// the answer. `Edge` has no such consumer: it exposes no `.orientation` accessor at all, and
+    /// every geometric query on it, ``Edge/tangent(at:)``, ``Edge/point(at:)``,
+    /// ``Edge/parameterBounds``, ``Edge/curvature(at:)``, reads the edge's underlying `Geom_Curve`
+    /// through `BRep_Tool::Curve`, which is defined independently of `TopAbs_Orientation`. A
+    /// bridge-wide audit found no site that derives an orientation-dependent answer from an edge
+    /// obtained here; the one edge-orientation branch in the bridge
+    /// (`occtSampleWirePoints`) reads orientation fresh off a `BRepTools_WireExplorer` walk of the
+    /// wire it samples, not from an edge this method returns. If a future `Edge.orientation`
+    /// accessor or an orientation-sensitive consumer is added, re-run that audit before assuming
+    /// the collapse is still safe. See `Scripts/repro/cluster-a-subshape-enumeration/`.
     public func edges() -> [Edge] {
         let count = edgeCount
         var edges = [Edge]()
         edges.reserveCapacity(count)
-        
+
         for i in 0..<count {
             if let edge = edge(at: i) {
                 edges.append(edge)
             }
         }
-        
+
         return edges
     }
 }
@@ -427,5 +500,83 @@ extension Edge {
               let h = OCCTApproxCurveOnSurface(edgeShape, faceShape, tolerance,
                                                 Int32(maxSegments), Int32(maxDegree)) else { return nil }
         return Shape(handle: h)
+    }
+}
+
+extension Edge {
+    /// Prepare polygon points from a meshed edge.
+    public func meshPolygonPoints() -> [(Double, Double, Double)] {
+        var coords = [Double](repeating: 0, count: 3000) // up to 1000 points
+        let count = OCCTMeshCinertPreparePolygon(handle, &coords, 1000)
+        var points: [(Double, Double, Double)] = []
+        for i in 0..<Int(count) {
+            points.append((coords[i*3], coords[i*3+1], coords[i*3+2]))
+        }
+        return points
+    }
+}
+
+extension Edge {
+    /// Validate edge geometry on a face (3D curve vs curve-on-surface consistency).
+    public func validate(on face: Face, tolerance: Double = 1e-3) -> ValidateEdgeResult {
+        let r = OCCTValidateEdge(handle, face.handle, tolerance)
+        return ValidateEdgeResult(isDone: r.isDone, isWithinTolerance: r.isWithinTolerance,
+                                   maxDistance: r.maxDistance, tolerance: r.tolerance)
+    }
+}
+
+extension Edge {
+    /// Compute quasi-uniform parameter distribution on this edge.
+    ///
+    /// The first parameter is always the start of the edge and the last is always its end.
+    ///
+    /// ```swift
+    /// if let edge = Shape.box(width: 10, height: 10, depth: 10)?.edges().first {
+    ///     let params = edge.quasiUniformParameters(count: 10)
+    ///     #expect(params.count == 10)
+    /// }
+    /// ```
+    ///
+    /// - Parameter count: Desired number of sample points, honoured within `2...`
+    ///   ``Sampling/maximumSampleCount``; outside that range the result is empty (#558). Shares
+    ///   the contract of ``Curve3D/quasiUniformParameters(count:)``, which wraps the same
+    ///   `GCPnts_QuasiUniformAbscissa` for the standalone-curve case.
+    /// - Returns: Array of parameter values, never more than `count` of them, or empty on failure
+    public func quasiUniformParameters(count: Int) -> [Double] {
+        guard let count = Sampling.requested(count) else { return [] }
+        var params = [Double](repeating: 0, count: count)
+        let n = OCCTGCPntsQuasiUniform(handle, Int32(count), &params, Int32(count))
+        return Array(params.prefix(Int(n)))
+    }
+}
+
+extension Edge {
+    /// Sample this edge using tangential deflection criteria.
+    public func tangentialDeflectionPoints(angularDeflection: Double = 0.1,
+                                           curvatureDeflection: Double = 0.1,
+                                           minPoints: Int = 2) -> [TangentialDeflectionPoint] {
+        let maxPts: Int32 = 10000
+        var params = [Double](repeating: 0, count: Int(maxPts))
+        var coords = [Double](repeating: 0, count: Int(maxPts) * 3)
+        let n = OCCTGCPntsTangentialDeflection(handle, angularDeflection, curvatureDeflection,
+                                                Int32(minPoints), &params, &coords, maxPts)
+        return (0..<Int(n)).map { i in
+            TangentialDeflectionPoint(parameter: params[i], x: coords[i*3], y: coords[i*3+1], z: coords[i*3+2])
+        }
+    }
+}
+
+extension Edge {
+    /// Compute curve linear inertia (length and center of mass).
+    ///
+    /// ```swift
+    /// let e = Edge.line(from: SIMD3(0,0,0), to: SIMD3(10,0,0))!
+    /// e.curveInertia.length          // 10
+    /// e.curveInertia.centerOfMass    // (5,0,0)
+    /// ```
+    public var curveInertia: CurveInertia {
+        let r = OCCTBRepGPropCinert(handle)
+        return CurveInertia(length: r.mass,
+                            centerOfMass: r.mass == 0 ? nil : SIMD3(r.centerX, r.centerY, r.centerZ))
     }
 }

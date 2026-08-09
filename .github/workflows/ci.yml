@@ -1,12 +1,17 @@
 name: CI
 
-# Fast per-PR/per-push gate. Deliberately does NOT rebuild OCCT from source (that's
-# kernel-rebuild.yml's job, ~30-60 min) — a clean checkout has no local Libraries/, so
-# Package.swift's binaryTarget resolves OCCT.xcframework from its pinned release URL and
-# verifies the checksum, which only costs a download. OCCTBridge compiles from source by
-# default (no OCCTSWIFT_BRIDGE_PREBUILT set) — that's the repo's own intended default, see
-# the comment above `useBridgePrebuilt` in Package.swift, and it's a couple of minutes, not
-# tens of minutes.
+# Fast per-PR/per-push gate. Deliberately does NOT rebuild OCCT from source: a clean checkout has
+# no local Libraries/, so Package.swift's binaryTarget resolves OCCT.xcframework from its pinned
+# release URL and verifies the checksum, which only costs a download. A PR that touches
+# Scripts/patches/ (a carried kernel patch not yet in a release) also gets
+# kernel-integration.yml, which rebuilds from source and runs swift test against that binary.
+# This workflow's macOS check resolves whatever Package.swift pins, so a patch NEWER than the
+# pinned asset will fail that patch's own regression tests here (#585). The fix is to publish
+# the next vX.Y.Z-kernel.N pre-release and bump the pin (docs/guides/building-occt.md step 4),
+# not to treat this job as permanently unreliable: as of the v2.0.0-kernel.1 pin it is green.
+# OCCTBridge compiles from source by default (no OCCTSWIFT_BRIDGE_PREBUILT set), which is the
+# repo's own intended default, see the comment above `useBridgePrebuilt` in Package.swift, and
+# it's a couple of minutes, not tens of minutes.
 
 on:
   pull_request:
@@ -24,12 +29,161 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  # The repo's static gate scripts. Deliberately a separate job, on Linux, ahead of nothing:
+  #
+  #   - separate job, not a step in build-and-test, so it reports in well under a minute instead of
+  #     behind the ~6-minute build, and so it carries its own status check. That second half is the
+  #     load-bearing one: build-and-test goes red branch-wide whenever the branch carries a kernel
+  #     patch newer than Package.swift's pinned xcframework (#585), and a gate folded into that
+  #     job would be red for a reason that has nothing to do with it, which is the same as not
+  #     having it. That state is fixable by bumping the pin, and is fixed today, but the
+  #     separation is what makes the gate survive the next time it happens.
+  #   - ubuntu-latest, because all five are pure Python over the repo's own text: no Xcode, no
+  #     OCCT, no swift build. A macOS runner would cost 10x the minutes to run the identical checks.
+  #   - each script's --self-test runs alongside its real invocation. A gate whose detector is
+  #     wrong reports "all clear" just as confidently as a gate whose subject is clean; this branch
+  #     shipped three gate scripts that were confidently wrong (#618, #624/#630, #626), so the
+  #     detector's own fixtures are part of what CI checks, not a developer-only convenience.
+  #   - `if: '!cancelled()'` on every step after the first, so one failing gate does not hide the
+  #     other four. Without it a contributor fixes them one CI round trip at a time. It is
+  #     `!cancelled()` rather than `always()` so the concurrency group's cancel-in-progress still
+  #     takes effect.
+  #
+  # Three of the five (check-bridge-index, check-null-handle-guards, derive-bridge-header-split)
+  # resolve their inputs relative to the working directory and exit 2 with "run from the repo root"
+  # elsewhere; the other two resolve from __file__. A GitHub Actions step starts at the repo root,
+  # so both kinds are satisfied.
+  #
+  # derive-bridge-header-split.py joined as the fifth in #673: --verify answers a question that
+  # keeps mattering after the one-time #395 split it was written for -- does each bridge
+  # declaration still sit in the header its .mm owns -- and every ~100-operation release adds
+  # declarations by hand, so the drift this checks for is ongoing, not a one-off migration risk.
+  # It runs `--verify`, not the bare form: the bare form only prints the manifest and always exits
+  # 0, unlike its three self-test-carrying siblings above, whose bare invocation already gates.
+  # Deliberately NO `name:` key. The check-run name GitHub publishes is a job's `name:` when it has
+  # one and the job id otherwise, and that string is what a required-status-check rule matches. A
+  # prose name reads like a comment, so rewording it for clarity would silently stop satisfying the
+  # rule — the check would drop out of "required" and the PR UI would look identical to a working
+  # gate. Falling back to the job id makes the required context a stable identifier nobody edits for
+  # readability. This job is required on refactor/** (#649); see CLAUDE.md before renaming it.
+  gate-scripts:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      # Every action pin across .github/workflows/ now targets a Node 24 major (#648). The target
+      # for each was established by reading that action's own action.yml at the pinned ref and
+      # checking `using:`, not by assuming a version number implies a runtime — actions/github-script
+      # is node20 at v7 and only reaches node24 at v8, so a "match the v7 the other pins use" rule
+      # would have left require-issue-labels.yml deprecated while looking consistent.
+      #
+      # Deprecation annotations are emitted per JOB, not per workflow, so one stale v4 pin anywhere
+      # raises its own "Node.js 20 is deprecated" warning on that job alone; keep new jobs on these
+      # majors rather than copying an older workflow's pins.
+      - uses: actions/checkout@v7
+
+      # Pinned rather than the image default: these gates parse Swift and C++ with regexes, and a
+      # runner-image Python bump silently changing a verdict is exactly the failure mode the gates
+      # exist to prevent. Nothing here needs a third-party package — stdlib only (re, sys, os,
+      # glob, argparse, collections) — so there is no install step.
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+
+      - name: check-bridge-index.py --self-test
+        run: python3 Scripts/check-bridge-index.py --self-test
+
+      - name: check-bridge-index.py
+        if: '!cancelled()'
+        run: python3 Scripts/check-bridge-index.py
+
+      - name: check-null-handle-guards.py --self-test
+        if: '!cancelled()'
+        run: python3 Scripts/check-null-handle-guards.py --self-test
+
+      - name: check-null-handle-guards.py
+        if: '!cancelled()'
+        run: python3 Scripts/check-null-handle-guards.py
+
+      - name: check-docs-defaults.py --self-test
+        if: '!cancelled()'
+        run: python3 Scripts/check-docs-defaults.py --self-test
+
+      - name: check-docs-defaults.py
+        if: '!cancelled()'
+        run: python3 Scripts/check-docs-defaults.py
+
+      # #802: checks that a symbol docs/ documents as current API still exists in
+      # Sources/OCCTSwift. Sibling of check-docs-defaults.py above (which checks a documented
+      # *default*, not existence) — a symbol check-docs-defaults never sees because it was already
+      # resolved to a live declaration is exactly the gap this closes.
+      - name: check-docs-existence.py --self-test
+        if: '!cancelled()'
+        run: python3 Scripts/check-docs-existence.py --self-test
+
+      - name: check-docs-existence.py
+        if: '!cancelled()'
+        run: python3 Scripts/check-docs-existence.py
+
+      - name: derive-bridge-header-split.py --self-test
+        if: '!cancelled()'
+        run: python3 Scripts/derive-bridge-header-split.py --self-test
+
+      - name: derive-bridge-header-split.py --verify
+        if: '!cancelled()'
+        run: python3 Scripts/derive-bridge-header-split.py --verify
+
+      # No --self-test of its own. It takes no options other than --fix/--audit and rejects an
+      # unrecognised one (exit 2), so it is invoked bare; `--self-test` would otherwise be the
+      # natural thing to write when extending this list, and read as a passing self-test that
+      # never existed rather than the usage error it actually is.
+      - name: count-operations.py
+        if: '!cancelled()'
+        run: python3 Scripts/count-operations.py
+
+      # A hand-resolved conflict can leave a marker behind, and this repo sets
+      # merge.conflictStyle=diff3, whose `|||||||` ancestor line is exactly the one a resolver
+      # written for the default two-way style does not think to strip. Five of them reached
+      # docs/CHANGELOG.md on this branch across several merges before a reviewer noticed, because
+      # nothing was looking. grep is the whole check; the point is that something looks at all.
+      - name: no conflict markers in tracked files
+        if: '!cancelled()'
+        run: |
+          if git grep -nE '^(<<<<<<< |\|\|\|\|\|\|\| |>>>>>>> )' -- . ; then
+            echo "::error::merge conflict markers found in tracked files (see matches above)"
+            exit 1
+          fi
+          echo "no conflict markers in tracked files"
+
+
+      # #726's census is the one entry here that is NOT a gate, and only its --self-test runs.
+      # A gate answers "is the tree clean" and exits 1 when it is not; this answers "which sites
+      # need a human to adjudicate" and exits 0 either way, so running it bare would add a step
+      # that can never fail and therefore never signal. Its detector can still rot, which is the
+      # failure the other four exist to prevent, so the self-test is what CI holds it to.
+      - name: census-unmeasured-values.py --self-test
+        if: '!cancelled()'
+        run: python3 Scripts/census-unmeasured-values.py --self-test
+
+      # #742's backstop for okf/policies/changelog-on-merge.md. Both invocations run, and the real
+      # one is deliberately NOT --strict yet: measured against this branch it reports 3 merges whose
+      # entries are legitimately absent, so gating today would fail CI for correct behaviour. It
+      # reports, the report is visible in the job log, and #742 records the promotion criterion (a
+      # run of real merges with no false positives). Its --self-test gates from day one, because a
+      # blind detector is the failure this whole family exists to prevent.
+      - name: check-changelog-transcription.py --self-test
+        if: '!cancelled()'
+        run: python3 Scripts/check-changelog-transcription.py --self-test
+
+      - name: check-changelog-transcription.py
+        if: '!cancelled()'
+        run: python3 Scripts/check-changelog-transcription.py
+
   build-and-test:
     name: swift build + test (macOS)
     runs-on: macos-15
     timeout-minutes: 30
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Select Xcode
         uses: maxim-lobanov/setup-xcode@v1
@@ -39,7 +193,7 @@ jobs:
           xcode-version: latest-stable
 
       - name: Cache SwiftPM artifacts
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: |
             .build
@@ -59,7 +213,7 @@ jobs:
     runs-on: macos-15
     timeout-minutes: 20
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Select Xcode
         uses: maxim-lobanov/setup-xcode@v1
@@ -67,7 +221,7 @@ jobs:
           xcode-version: latest-stable
 
       - name: Cache SwiftPM artifacts
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: |
             .build

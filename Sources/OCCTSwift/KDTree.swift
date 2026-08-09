@@ -60,9 +60,11 @@ public final class KDTree: @unchecked Sendable {
     ///
     /// - Parameters:
     ///   - point: The query point
-    ///   - k: Number of neighbors to find
+    ///   - k: Output *capacity*, clamped into `0...` ``Sampling/maximumSampleCount``; 0 or less
+    ///     returns empty (#622). Fewer than `k` come back when the tree holds fewer points.
     /// - Returns: Array of (0-based index, squared distance) tuples, sorted by distance
     public func kNearest(to point: SIMD3<Double>, k: Int) -> [(index: Int, squaredDistance: Double)] {
+        let k = Sampling.capacity(k)
         guard k > 0 else { return [] }
         var indices = [Int32](repeating: 0, count: k)
         var sqDists = [Double](repeating: 0, count: k)
@@ -76,9 +78,11 @@ public final class KDTree: @unchecked Sendable {
     /// - Parameters:
     ///   - center: Center of the search sphere
     ///   - radius: Radius of the search sphere
-    ///   - maxResults: Maximum number of results (default: 1000)
+    ///   - maxResults: Output *capacity* (default: 1000), clamped into `0...`
+    ///     ``Sampling/maximumSampleCount``; 0 or less returns empty (#622).
     /// - Returns: Array of 0-based indices of points within the sphere
     public func rangeSearch(center: SIMD3<Double>, radius: Double, maxResults: Int = 1000) -> [Int] {
+        let maxResults = Sampling.capacity(maxResults)
         guard radius > 0, maxResults > 0 else { return [] }
         var indices = [Int32](repeating: 0, count: maxResults)
         let n = Int(OCCTKDTreeRangeSearch(handle, center.x, center.y, center.z,
@@ -91,9 +95,11 @@ public final class KDTree: @unchecked Sendable {
     /// - Parameters:
     ///   - min: Minimum corner of the box
     ///   - max: Maximum corner of the box
-    ///   - maxResults: Maximum number of results (default: 1000)
+    ///   - maxResults: Output *capacity* (default: 1000), clamped into `0...`
+    ///     ``Sampling/maximumSampleCount``; 0 or less returns empty (#622).
     /// - Returns: Array of 0-based indices of points within the box
     public func boxSearch(min: SIMD3<Double>, max: SIMD3<Double>, maxResults: Int = 1000) -> [Int] {
+        let maxResults = Sampling.capacity(maxResults)
         guard maxResults > 0 else { return [] }
         var indices = [Int32](repeating: 0, count: maxResults)
         let n = Int(OCCTKDTreeBoxSearch(handle, min.x, min.y, min.z,
