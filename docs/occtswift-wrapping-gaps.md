@@ -7,7 +7,13 @@ search_exclude: true
 
 ## Coverage
 
-All user-facing OCCT classes are wrapped to method-level completeness: **3,333 operations** across **1,112 included headers**.
+All user-facing OCCT classes are wrapped to method-level completeness: **4,256 operations**
+across **1,166 OCCT headers the bridge includes** (of 6,774 shipped in the xcframework).
+
+Both numbers are derived, not maintained by hand: the first is
+`python3 Scripts/count-operations.py`'s `DERIVED` row, which the `count-operations` gate holds
+README.md and `docs/API_REFERENCE.md` to. It does **not** yet hold this file, which is how the
+figure here sat at 3,333 from 2026-04-13 until v2.0.0 while the real count grew past 4,200.
 
 ### What's Wrapped
 
