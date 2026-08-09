@@ -174,7 +174,10 @@ def body_entry(body):
 
 # A section that says, in words, that no entry is needed. The template asks for this rather than an
 # empty section, so "None, <reason>" is a correct answer and must not read as a missing entry.
-DECLARED_NONE = re.compile(r"^\s*(?:no entry|none)\b", re.I | re.M)
+# The `#`-prefix allows for the author writing that answer as a heading, which is what #751 did
+# (`### None, investigation only, no functional change (#597)`). Without it that PR reads as a
+# missing entry forever, and there is nothing to transcribe that would ever clear it.
+DECLARED_NONE = re.compile(r"^\s*#{0,6}\s*(?:no entry|none)\b", re.I | re.M)
 
 
 def declares_none(entry):
@@ -435,6 +438,10 @@ def _verify_cases():
         # makes declares_none() fire on boilerplate instead of on the author's answer.
         "17": ("## CHANGELOG entry\n\n<!--\nNone, <reason> if this warrants no entry.\n-->\n\n"
                "### A real entry sitting under None-shaped boilerplate (#17)\n"),
+        # #751 wrote its "no entry needed" answer as a HEADING. Read as prose that is a real entry
+        # naming a symbol called None, which nothing will ever transcribe, so it reads as missing
+        # forever.
+        "18": "## CHANGELOG entry\n\n### None, investigation only, no functional change (#18)\n",
     }
     changelog = ("# Changelog\n\n## Unreleased\n\n"
                  "### Widget rotation is no longer inverted (#10)\n\nBody.\n\n"
@@ -452,6 +459,7 @@ def _verify_cases():
         ("hhh8888", "Merge pull request #15 from x/prose-present"),
         ("iii9999", "Merge pull request #16 from x/prose-missing"),
         ("jjj0000", "Merge pull request #17 from x/none-shaped-boilerplate"),
+        ("kkk1234", "Merge pull request #18 from x/none-as-heading"),
     ]
     b = classify_untranscribed(rows, changelog, lookup=lambda n: bodies.get(str(n)))
     late = {s for s, _, _ in b["late"]}
@@ -466,7 +474,10 @@ def _verify_cases():
         ("#788: a subject with no PR number is unverified, not silently clean", "eee5555" in unknown),
         ("#788: an unreadable body is unverified, not silently clean", "fff6666" in unknown),
         ("#788: a bullet-shaped entry is matched, not only a ### heading", "ddd4444" in late),
-        ("#788: a section saying None by design is not reported as missing", dnone == {"ggg7777"}),
+        ("#788: a section saying None by design is not reported as missing",
+         dnone == {"ggg7777", "kkk1234"}),
+        ("#788: None written as a ### heading is still an opt-out, not a missing entry",
+         "kkk1234" in dnone and "kkk1234" not in missing),
         ("#788: a prose entry with no heading is found in the file", "hhh8888" in late),
         ("#788: a prose entry absent from the file is still MISSING", "iii9999" in missing),
         ("#788: None-shaped template boilerplate does not mask a real entry", "jjj0000" in late),
