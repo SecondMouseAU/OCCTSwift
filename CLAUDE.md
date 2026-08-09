@@ -20,6 +20,17 @@ difference is the untested set, and any claim that a fix in it "is in the kernel
 until a rebuild. `v2.0.0-kernel.1` held eleven against a tree of fourteen, and `kernel.2` fourteen against
 fifteen within minutes of being published, both for exactly this reason (#512).
 
+**The count check is necessary and not sufficient.** At the v2.0.0 release check the count agreed
+(fifteen on disk, "fifteen" in the prose) while the enumeration immediately beside it in
+`Package.swift` listed **eleven**, having never been extended past `0021`. A total and a list
+disagree silently, and the total is the one everybody reads. What settles it is matching each
+patch's own added lines against the pinned asset: every patch that touches a shipped `.hxx` can be
+checked directly against `OCCT.xcframework/*/Headers/`, and the rest need either a green
+`build-and-test` (which resolves the asset, not a local build) or a reproducer run. Two patches,
+`0018` and `0023`, are reachable by neither, because the bridge stops both defects before OCCT sees
+them; they are the only carried patches with no CI coverage of any kind, and `Package.swift` says so
+next to them.
+
 Until 2026-08-04 this was not true: the pin was the v1.15.18 asset (`V8_0_0_p1` + patches
 `0001`-`0016`), so every test asserting a newer patch's fix failed in CI indistinguishably from a
 regression, and seven suites were red for that reason alone (#585). If you find advice to read
