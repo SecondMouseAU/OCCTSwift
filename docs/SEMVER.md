@@ -17,26 +17,22 @@ The policy is calibrated to the [SemVer 2.0.0](https://semver.org/) spec with on
 | **MINOR** (`x.y.0`) | xcframework rebuild against a new OCCT release **OR** additive new public Swift API | A new wrapped operation, a new type, a new bridge function exposed to Swift |
 | **PATCH** (`x.y.z`) | Bug fix, internal refactor, doc-only — **no public API surface change** | A `nil`-returning regression repaired, a wrong sort-order fixed, a dependency floor bump |
 
-The load-bearing guarantee is the SemVer guarantee: **no breaking change without a major bump**. Within a major line, all minor and patch updates are safe to take blindly, with **thirteen** recorded exceptions. Three of them **do not compile** until the caller acts, so an upgrade cannot silently absorb them:
+The load-bearing guarantee is the SemVer guarantee: **no breaking change without a major bump**.
+Within a major line, all minor and patch updates are safe to take blindly, with **one** recorded
+exception: [v1.17.0](#recorded-exception-v1170-2026-07-29), which breaks source compatibility in two
+named places.
 
-- [v1.17.0](#recorded-exception-v1170-2026-07-29) breaks source compatibility in two named places.
-- [#495](#recorded-exception-unreleased--junction-analysis-flags-become-optional-495) in one, making junction-analysis flags optional.
-- [#619](#recorded-exception-unreleased-continuityorder-is-retired-rather-than-reinterpreted-619) retires `Curve3D.continuityOrder`, `Curve2D.continuityOrder` and `Surface.surfaceContinuityOrder` outright — deliberately, to convert a change that had already happened to their *values* into one a caller cannot miss.
+**v2.0.0 is a major, so its breaks are not exceptions.** Twelve entries stood in this list as
+"recorded exception, Unreleased" while the work was in flight. Every one of them ships in v2.0.0,
+where a breaking change needs no exception at all, so they are now [v2.0.0's break
+set](#v200) rather than exceptions to anything. That reclassification is the assembly step
+[`semver-at-release.md`](../okf/policies/semver-at-release.md) exists to force: the ledger had
+grown to thirteen entries of which twelve were about a major that permits breaks outright, and
+reviewers had begun faulting PRs for not adding to it.
 
-The other ten change behaviour **without breaking the build**, which is the set to read before upgrading blindly:
+Read [v2.0.0](#v200) before upgrading from a v1.x. It lists every break in one table, marked as a
+compile error or a silent value change, each linked to its measurement and migration.
 
-- [#499](#recorded-exception-unreleased-pathparser-forwards-to-osdpath-499) changes what two deprecated `PathParser` methods return.
-- [#541](#recorded-exception-unreleased-one-meaning-for-a-face-index-541) moves six sub-shape index conventions onto one.
-- [#568](#recorded-exception-unreleased-an-unresolvable-sub-shape-index-refuses-the-call-568) makes five more entry points refuse an index they used to skip.
-- [#613](#recorded-exception-unreleased-the-last-seven-entry-points-join-the-one-sub-shape-enumeration-613) moves the last seven entry points off the per-occurrence walk onto that same enumeration.
-- [#498](#recorded-exception-unreleased-buildcurves3ds-default-tolerance-loosens-498) loosens `buildCurves3d`'s default tolerance 100×.
-- [#502](#recorded-exception-unreleased-the-wiresshellssolids-enumerations-join-the-deduplicated-map-502) collapses the `wires`/`shells`/`solids` enumerations onto the deduplicated sub-shape map.
-- [#642](#recorded-exception-unreleased-aag-builds-nodes-from-face-occurrences-642) moves `AAG`'s node set from distinct faces to face occurrences, so `detectPocketsAAG()` and `buildAAG().nodes` can return more entries on a shape with a shared face.
-- [#651](#recorded-exception-unreleased-nbedgesnbfacesnbvertices-are-deprecated-and-forward-to-the-deduplicated-count-651) deprecates `Shape.nbEdges`/`nbFaces`/`nbVertices` in favour of `edgeCount`/`faceCount`/`vertexCount`, and changes what the deprecated three return on the way.
-- [#699](#recorded-exception-unreleased-aag-adjacency-and-convexity-are-scoped-to-one-solid-699) restricts `AAG`'s adjacency/convexity checks to same-solid face pairs, further changing what `detectPocketsAAG()` can return on a multi-solid compound: the same public API #642 already named, corrected further rather than a new one opened.
-- [#705](#recorded-exception-unreleased-chamfer2d-refuses-a-repeated-edge-pair-instead-of-crashing-705) makes `chamfer2D(edgePairs:distances:)` return `nil` on a repeated edge pair; it used to SIGSEGV the process, uncatchably.
-
-A fourteenth was **not** taken: [#609](#held-for-the-next-major-v200)'s twelve breaks are held for v2.0.0 instead. `#640`'s math-dimension-family fix is not recorded here either, for a different reason: it ships in v2.0.0, a major, where breaking changes are permitted outright, so the recorded-exception mechanism (for breaks shipping *within* a major line) does not apply. See [`CHANGELOG.md`](CHANGELOG.md#the-math-dimension-family-traps-on-a-consistent-but-negative-dimension-and-one-site-reads-out-of-bounds-640) for the migration.
 
 ## Rules
 
@@ -48,50 +44,89 @@ A major bump is reserved for two events, either of which alone is sufficient:
 
 2. **Breaking change to the public Swift API.** A removed type, a renamed method, a changed return type, a tightened parameter type, a raised platform floor — anything a consumer might have to fix on their side after pinning forward. This is rare within a major line because we promise stability there; if it happens, it triggers a major bump of the affected package (and possibly the cohort, if the change ripples downstream).
 
-The cohort moved to v1.0.0 on 2026-05-07 alongside [OCCT 8.0.0 GA](https://github.com/Open-Cascade-SAS/OCCT/releases/tag/V8_0_0).
+The cohort moved to v1.0.0 on 2026-05-07 alongside [OCCT 8.0.0 GA](https://github.com/Open-Cascade-SAS/OCCT/releases/tag/V8_0_0),
+and to v2.0.0 under Rule 2, on the accumulated breaks recorded immediately below.
 
-#### Held for the next major: v2.0.0
+#### v2.0.0
 
-The exceptions recorded below were each taken on the same terms: one or a few breaks, none
-shimmable, each named with its migration before the tag. **Some changes are too broad for that**,
-and rather than stretch the exception mechanism to cover them they are held for **v2.0.0**.
+**A major by Rule 2, not by Rule 1.** OCCT moved 8.0.0p1 to 8.0.1 in this release, which is a MINOR
+trigger on its own and does not force a major (#654). What forces it is the accumulated set of
+breaking changes to the public Swift API, listed here in full.
 
-**What makes it a major is Rule 2 above**, the accumulated breaking changes to the public Swift API,
-not the OCCT version. Nothing in the trigger table changes: an 8.0.0 to 8.0.1 re-pin is a MINOR on
-its own, and no single held entry forces a major on its own either.
+This section replaces the "Held for the next major" list that stood while the work was in flight.
+Nothing was deferred out of the release: every entry that was held is below, and the entries that
+were taken as recorded exceptions inside the branch are now simply part of the major.
 
-v2.0.0 is not scheduled by a date. In practice it will be cut once the in-flight correctness work is
-finished, and the OCCT 8.0.1 re-pin is expected to ride along with it rather than to trigger it. A
-major for an OCCT major (8.x to 9.x) remains a separate, independently sufficient trigger.
+##### Every break, and what a caller does
 
-**A release cut before then must not include a `CHANGELOG.md` entry marked as containing source
-breaks.** Those entries name every break with its migration up front, which is the same treatment an
-exception gets at tag time.
-
-Currently held:
-
-| Entry | Breaks | Why held rather than taken as an exception |
+| Break | Kind | Detail |
 |---|---|---|
-| [#609](CHANGELOG.md#unreleased-fix-zero-mass-brepgprop-results-were-returned-as-successful-answers-609), zero-mass `BRepGProp` results | 12 named signature changes across the mass-property surface, all compile errors, all with a documented migration | Scale. The four exceptions below cover one to six call-site shapes each; this one moves the whole mass-property surface at once, and a consumer measuring geometry would meet it everywhere rather than at a named method |
+| 51 public declarations removed, every one previously `@available(*, deprecated)` | compile error | [#784](#v200-51-deprecated-declarations-removed-784) |
+| The whole mass-property surface: 12 named signature changes | compile error | #609, [CHANGELOG](CHANGELOG.md) |
+| `VinertGKResult.absoluteError` removed | compile error | [#732](#v200-three-fields-removed-rather-than-given-a-second-wrong-value-732-763-771) |
+| `ShapeAnalysisResult.selfIntersectionCount` removed | compile error | [#763](#v200-three-fields-removed-rather-than-given-a-second-wrong-value-732-763-771) |
+| `BisectorPoint` removed | compile error | [#771](#v200-three-fields-removed-rather-than-given-a-second-wrong-value-732-763-771) |
+| `PathParser` removed; `fileExtension`/`trek` had already changed format | compile error | [#499, #784](#v200-pathparser-forwards-to-osdpath-then-is-removed-499-784) |
+| `nbEdges`/`nbFaces`/`nbVertices` removed; their values had already been corrected | compile error | [#651, #784](#v200-nbedgesnbfacesnbvertices-forward-to-the-deduplicated-count-then-are-removed-651-784) |
+| `continuityOrder` / `surfaceContinuityOrder` are `@available(*, unavailable)` | compile error | [#619](#v200-continuityorder-is-retired-rather-than-reinterpreted-619) |
+| `ContinuityAnalysis`'s `isC0`/`isG1`/`isC1`/`isG2`/`isC2` become `Bool?` | compile error | [#495](#v200-junction-analysis-flags-become-optional-495) |
+| One meaning for a face index: 0-based, deduplicated, across seven entry points | silent value change | [#541](#v200-one-meaning-for-a-face-index-541) |
+| Seven more entry points join the one sub-shape enumeration | silent value change | [#613](#v200-the-last-seven-entry-points-join-the-one-sub-shape-enumeration-613) |
+| `wires`/`shells`/`solids` and their counts deduplicate | silent value change | [#502](#v200-the-wiresshellssolids-enumerations-join-the-deduplicated-map-502) |
+| An unresolvable sub-shape index refuses the call instead of skipping it | behaviour change, `nil` | [#568](#v200-an-unresolvable-sub-shape-index-refuses-the-call-568) |
+| `buildCurves3d`'s default tolerance loosens | silent value change | [#498](#v200-buildcurves3ds-default-tolerance-loosens-498) |
+| AAG builds nodes from face occurrences | silent value change | [#642](#v200-aag-builds-nodes-from-face-occurrences-642) |
+| AAG adjacency and convexity are scoped to one solid | silent value change | [#699](#v200-aag-adjacency-and-convexity-are-scoped-to-one-solid-699) |
+| `chamfer2D` refuses a repeated edge pair instead of crashing | behaviour change, `nil` | [#705](#v200-chamfer2d-refuses-a-repeated-edge-pair-instead-of-crashing-705) |
 
-#### Recorded exception: v1.17.0 (2026-07-29)
+Each row has its own section below with the measurement and the migration. Additive changes are not
+listed here; they are in [`CHANGELOG.md`](CHANGELOG.md).
 
-**v1.17.0 is a minor release that breaks source compatibility in two places.** It is the only exception to the rule above, and it is recorded here rather than left for a consumer to discover at the compiler:
+##### One thing assembly changed about the record
 
-| Break | Issue | What a caller does |
+**Two entries below were softened inside the branch and then hardened again by #784.** #499
+(`PathParser`) and #651 (`nbEdges`/`nbFaces`/`nbVertices`) were each recorded as a *deprecation*:
+both spellings compiled, the call site got a warning naming the change, and `renamed:` pointed at
+the replacement. #798 then removed every `@available(*, deprecated)` symbol in the package, those
+among them. **As released they are compile errors, and no released version ever contained the
+warning.**
+
+This is exactly what [`semver-at-release.md`](../okf/policies/semver-at-release.md) predicts and why
+the assessment is made here rather than per PR: a PR cannot see the release it lands in, and neither
+of those two PRs was wrong at the time. Their reasoning is kept in place, with a supersession note,
+rather than rewritten to match the outcome.
+
+##### v2.0.0: 51 deprecated declarations removed (#784)
+
+Every `@available(*, deprecated)` symbol in `Sources/OCCTSwift` was adjudicated and removed: 51
+public declarations, covering 61 deprecated symbols once typealiases and an enum case that were not
+independently counted are included, plus one internal bridge function with no Swift-visible surface.
+
+Each carried a `renamed:` or a message with its migration, so a consumer on an older release sees a
+compile error naming the replacement rather than a silent behaviour change. The migration table is
+in [`CHANGELOG.md`](CHANGELOG.md#61-deprecated-symbols-plus-one-bridge-deprecation-adjudicated-and-removed-784).
+
+Verified as shipped: `grep -r '@available(\*, deprecated' Sources/OCCTSwift` matches nothing. The
+four `@available(*, unavailable)` markers that remain are #619's, and they are deliberate: they turn
+a retired spelling into an error carrying its migration rather than an unresolved-symbol message.
+
+##### v2.0.0: three fields removed rather than given a second wrong value (#732, #763, #771)
+
+Three public declarations were removed outright rather than repaired, because in each case there was
+no correct value to give them:
+
+| Removed | Was | Why not repaired |
 |---|---|---|
-| `Surface.drawMesh` / `Surface.evaluateGrid` return `SurfaceGrid`, not `[[SIMD3<Double>]]` | #404 | Index via `at(u:v:)`; check index order when migrating `evaluateGrid`, whose old shape was `[v][u]` |
-| `Curve3D.interpolate(points:startTangent:endTangent:)` overload removed | #400 | Nothing, unless the overload was referenced as a value: the three-argument call now resolves to the tolerance-aware sibling with the same `1e-6` default |
+| `VinertGKResult.absoluteError` | always `0.0`, never computed | A plausible replacement (`errorReached * mass`) reproduces it in the common case and returns the wrong number in OCCT's own near-zero-mass branch. `errorReached` stays, and now carries a real value instead of `0.0` |
+| `ShapeAnalysisResult.selfIntersectionCount` | always `0`, never computed | There is no value to migrate to. Use `isSelfIntersecting(timeout:)` for a real check, or delete the read. `analyze(tolerance:selfIntersectionTimeout:)` adds the check opt-in (#772) |
+| `BisectorPoint` | a public struct with no public initializer and no in-package factory | No consumer could hold or construct one. Use `bisectorIntersections(a:b:c:d:)` / `BisectorIntersection` |
 
-Both are compile errors, never silent. The decision was to take the exception rather than spend the major version, because:
+All three are compile errors for any source naming them. This is the "silent zero" class this
+codebase tracks under #605/#609/#522/#726: a value returned as a measurement that was never
+measured. Removing it is preferred to inventing a replacement, which is [#726](https://github.com/SecondMouseAU/OCCTSwift/issues/726)'s
+whole finding.
 
-- Neither break can be shimmed into an additive change. Swift does not overload on return type alone, so a deprecated `drawMesh` returning the old type is ambiguous at every call site that binds the result. Preserving compatibility would have meant reverting #404 outright and reintroducing the `[u][v]` vs `[v][u]` hazard it removed.
-- The major version stays reserved for OCCT 9.0, so the cohort does not have to major together for a two-call-site change in one package.
-- Both are named at the top of [`CHANGELOG.md`](CHANGELOG.md)'s v1.17.0 entry with before/after code, and in the GitHub release notes.
-
-This exception does not amend the rule. A breaking change still triggers a major bump by default; taking an exception requires the same treatment given here, which is naming every break with a migration, in the release notes and in this file, before the tag is cut.
-
-#### Recorded exception: Unreleased — junction-analysis flags become optional (#495)
+#### v2.0.0: junction-analysis flags become optional (#495)
 
 **One source break, taken under the same terms as v1.17.0 above and recorded here before the tag is cut:**
 
@@ -108,9 +143,18 @@ It is a compile error at every call site, never silent. The exception was taken 
 
 Also in #495, and *not* breaking: `continuityWith`'s `order:` parameter and `Shape.continuityOfFaces` both changed type, and both kept a deprecated overload with the old signature.
 
-#### Recorded exception: Unreleased, `PathParser` forwards to `OSDPath` (#499)
+#### v2.0.0: `PathParser` forwards to `OSDPath`, then is removed (#499, #784)
 
-**Two behaviour changes, and unlike the two exceptions above these are *not* compile errors.** Recorded here before the tag is cut:
+> **Superseded at assembly.** The reasoning below describes the state this change shipped in
+> *within the branch*: a deprecation, a warning at each call site, and both spellings still
+> compiling. **#784/#798 then removed every `@available(*, deprecated)` symbol in the package,
+> `PathParser` among them.** As released, this is a compile error, not a warning, and the migration
+> is to `OSDPath` directly rather than to a forwarder. The two format changes below are still the
+> substance of what a caller must adjust; only the prompt changed, from a warning naming the format
+> to an error naming the type. Kept rather than rewritten because the reasoning is the record of why
+> the softer option was chosen at the time, and #798 unmade the premise rather than the argument.
+
+**Two behaviour changes, and at the time these were *not* compile errors.** Recorded before the tag was cut:
 
 | Break | Issue | What a caller does |
 |---|---|---|
@@ -124,7 +168,7 @@ Both spellings still compile and still return a value; the deprecation attribute
 - A warning, not an error, is the weaker prompt, stated plainly here rather than claimed otherwise. It is what the API allows: Swift cannot overload on return *value*, only on type, so there is no spelling in which the old format survives alongside the new one.
 - Named in [`CHANGELOG.md`](CHANGELOG.md) with before/after code, and to be named in the release notes.
 
-#### Recorded exception: Unreleased, one meaning for a face index (#541)
+#### v2.0.0: one meaning for a face index (#541)
 
 **Six silent behaviour changes, none a compile error.** Every one moves an index toward the single contract now stated on `Shape.faceCount`: a sub-shape index into a shape is a 0-based position in the enumeration `faces()` / `faceCount` / `face(at:)` all read. Recorded here before the tag is cut:
 
@@ -144,7 +188,7 @@ The exception was taken because:
 - **On every shape that shares no sub-shape, nothing moves.** The probe checks the enumeration order face-by-face rather than by count across ten such fixtures: identical at every index. The `faces()` change is invisible to a caller whose shapes are primitives, booleans, sewn sheets or compsolids.
 - Named in [`CHANGELOG.md`](CHANGELOG.md) with the measurement, and to be named in the release notes.
 
-#### Recorded exception: Unreleased, an unresolvable sub-shape index refuses the call (#568)
+#### v2.0.0: an unresolvable sub-shape index refuses the call (#568)
 
 **Five silent behaviour changes, none a compile error.** A sub-shape index naming nothing now rejects the whole request, finishing the sweep #520 began for the fillet family and #541 for `offsetPerFace`:
 
@@ -164,7 +208,7 @@ The exception was taken because:
 - **A request naming only valid indices is unaffected**, which is pinned by a positive-control test per entry point.
 - Named in [`CHANGELOG.md`](CHANGELOG.md) with the measurements, and to be named in the release notes.
 
-#### Recorded exception: Unreleased, the last seven entry points join the one sub-shape enumeration (#613)
+#### v2.0.0: the last seven entry points join the one sub-shape enumeration (#613)
 
 **Eight silent behaviour changes, none a compile error.** #541 put sub-shape indexing on the deduplicated `TopExp::MapShapes` enumeration and #568 settled what an unresolvable index does; seven entry points were left counting `TopExp_Explorer` *occurrences*. A plain 10 mm box has **24 edge occurrences over 12 edges** and **48 vertex occurrences over 8 vertices**, so each of these answered for indices `edge(at:)` refuses, and named a different sub-shape past the first repeat:
 
@@ -189,7 +233,16 @@ The exception was taken because:
 - **This did not finish the idiom on its own.** `Shape.nbEdges` / `nbVertices` / `nbFaces` still returned per-occurrence counts (**24** and **48** on a box against `edgeCount` 12 and `vertexCount` 8) and were filed as **#651**. That gap is closed below.
 - Named in [`CHANGELOG.md`](CHANGELOG.md) with the measurements, and to be named in the release notes.
 
-#### Recorded exception: Unreleased, `nbEdges`/`nbFaces`/`nbVertices` are deprecated and forward to the deduplicated count (#651)
+#### v2.0.0: `nbEdges`/`nbFaces`/`nbVertices` forward to the deduplicated count, then are removed (#651, #784)
+
+> **Superseded at assembly.** As with #499 above, this shipped inside the branch as a deprecation
+> with a `renamed:` forwarder, and **#784/#798 then removed all three symbols outright**. As
+> released, `Shape.nbEdges`/`nbFaces`/`nbVertices` do not exist: a caller naming one gets a compile
+> error pointing at `edgeCount`/`faceCount`/`vertexCount`, and never observes the corrected value
+> through the old spelling at all. The whole "the exception was taken over `unavailable` because the
+> risk is lower" argument below is therefore about a state no released version contains. It is kept
+> because it records why the value was repointed rather than the name left in place, which is still
+> the decision that shaped the replacement API.
 
 **One silent behaviour change, not a compile error, layered on a deprecation.** `Shape.nbEdges`,
 `Shape.nbFaces` and `Shape.nbVertices` counted bare `TopExp_Explorer` occurrences, exactly the gap
@@ -232,7 +285,7 @@ no existing correctly-named sibling to forward to). The alternative considered a
   site (`OCCTBridge` is a target, not a product, so there is no external ABI to hold stable).
 - Named in [`CHANGELOG.md`](CHANGELOG.md) with the measurements, and to be named in the release notes.
 
-#### Recorded exception: Unreleased, `continuityOrder` is retired rather than reinterpreted (#619)
+#### v2.0.0: `continuityOrder` is retired rather than reinterpreted (#619)
 
 **Three compile errors, deliberately — this exception is taken to *convert* a silent behaviour change into a break.** Recorded here before the tag is cut:
 
@@ -250,7 +303,7 @@ The values these three reported already changed, in #485, from a hand-invented `
 - **`unavailable` rather than deletion**, following `EvolvingFilletEdge.init(edgeIndex:)` (#520): deleting gives `value of type 'Curve3D' has no member 'continuityOrder'`, which says nothing about the encoding. The retained declaration puts the whole migration in the compiler's own error text.
 - Named in [`CHANGELOG.md`](CHANGELOG.md) with the before/after table, and to be named in the release notes.
 
-#### Recorded exception: Unreleased, the `wires`/`shells`/`solids` enumerations join the deduplicated map (#502)
+#### v2.0.0: the `wires`/`shells`/`solids` enumerations join the deduplicated map (#502)
 
 **Six silent behaviour changes, none a compile error.** Recorded here on the #619 sweep. #541 recorded the *face* half of the explorer→`TopExp::MapShapes` conversion and #613 the last seven entry points; these six were converted by #502 and documented only in their own `///` comments, never in this file. The criterion for recording is the one this document already applies: a change a consumer can absorb without a diagnostic belongs in the table a consumer reads before upgrading blindly.
 
@@ -269,7 +322,7 @@ The exception was taken because:
 - **On every shape that shares no sub-shape, nothing moves** — primitives, booleans, sewn sheets and compsolids are unaffected.
 - Documented in each property's `///` comment; recorded here so the guarantee paragraph above is complete.
 
-#### Recorded exception: Unreleased, `buildCurves3d`'s default tolerance loosens (#498)
+#### v2.0.0: `buildCurves3d`'s default tolerance loosens (#498)
 
 **One silent behaviour change, not a compile error.** Recorded here on the #619 sweep, which asked of every "a value changed under an unchanged signature" site whether the change was decided or merely happened:
 
@@ -284,7 +337,7 @@ The exception was taken because:
 - **Removing the default is disproportionate here.** Unlike the index rebases of #541/#568, the two values do not mean *different things* — both are tolerances, in the same units, ordered the obvious way. A caller reading `1e-5` is not misled about what it is; a caller reading a 0-based index as 1-based is. The break is a precision change, not a semantic one, so a recorded decision plus the doc note is the proportionate response.
 - Named in [`CHANGELOG.md`](CHANGELOG.md) with the measurement, and to be named in the release notes.
 
-#### Recorded exception: Unreleased, AAG builds nodes from face occurrences (#642)
+#### v2.0.0: AAG builds nodes from face occurrences (#642)
 
 **One silent behaviour change, not a compile error.** Shares its root mechanism with #614 and the
 Cluster A census (#664): a value derived from a face's normal loses information across `faces()`'s
@@ -321,7 +374,7 @@ The exception was taken because:
 - Named in [`CHANGELOG.md`](CHANGELOG.md) with the measurement, and to be named in the release
   notes.
 
-#### Recorded exception: Unreleased, AAG adjacency and convexity are scoped to one solid (#699)
+#### v2.0.0: AAG adjacency and convexity are scoped to one solid (#699)
 
 **One further silent behaviour change on the same public APIs #642 already named, not a compile
 error.** Found measuring #642's own fix: `AAG.buildGraph()`'s pairwise adjacency check had no
@@ -364,7 +417,7 @@ The exception was taken because:
 - Named in [`CHANGELOG.md`](CHANGELOG.md) with the measurement, and to be named in the release
   notes.
 
-#### Recorded exception: Unreleased, `chamfer2D` refuses a repeated edge pair instead of crashing (#705)
+#### v2.0.0: `chamfer2D` refuses a repeated edge pair instead of crashing (#705)
 
 **One behaviour change, not a compile error, and not really a break at all: the old answer was an
 uncatchable process crash.** `chamfer2D(edgePairs:distances:)` SIGSEGVs when the same edge pair
@@ -400,6 +453,23 @@ The exception was taken because:
   by two pairs) that must keep succeeding.
 - Named in [`CHANGELOG.md`](CHANGELOG.md) with the measurement, and to be named in the release
   notes.
+
+#### Recorded exception: v1.17.0 (2026-07-29)
+
+**v1.17.0 is a minor release that breaks source compatibility in two places.** It is the only exception to the rule above, and it is recorded here rather than left for a consumer to discover at the compiler:
+
+| Break | Issue | What a caller does |
+|---|---|---|
+| `Surface.drawMesh` / `Surface.evaluateGrid` return `SurfaceGrid`, not `[[SIMD3<Double>]]` | #404 | Index via `at(u:v:)`; check index order when migrating `evaluateGrid`, whose old shape was `[v][u]` |
+| `Curve3D.interpolate(points:startTangent:endTangent:)` overload removed | #400 | Nothing, unless the overload was referenced as a value: the three-argument call now resolves to the tolerance-aware sibling with the same `1e-6` default |
+
+Both are compile errors, never silent. The decision was to take the exception rather than spend the major version, because:
+
+- Neither break can be shimmed into an additive change. Swift does not overload on return type alone, so a deprecated `drawMesh` returning the old type is ambiguous at every call site that binds the result. Preserving compatibility would have meant reverting #404 outright and reintroducing the `[u][v]` vs `[v][u]` hazard it removed.
+- The major version stays reserved for OCCT 9.0, so the cohort does not have to major together for a two-call-site change in one package.
+- Both are named at the top of [`CHANGELOG.md`](CHANGELOG.md)'s v1.17.0 entry with before/after code, and in the GitHub release notes.
+
+This exception does not amend the rule. A breaking change still triggers a major bump by default; taking an exception requires the same treatment given here, which is naming every break with a migration, in the release notes and in this file, before the tag is cut.
 
 #### #639: additive fillet decline reporting, not an exception
 
@@ -516,6 +586,7 @@ Drawn from the v1.0 cohort's actual history:
 
 | Release | Bump | Why |
 |---------|------|-----|
+| OCCTSwift v2.0.0 | MAJOR | Rule 2: the accumulated public-API breaks listed under [v2.0.0](#v200). The OCCT 8.0.0p1 to 8.0.1 re-pin rode along and would have been MINOR on its own |
 | OCCTSwift v1.0.0 | MAJOR | OCCT 8.0.0 GA pin (cohort bump from v0.x) |
 | OCCTSwift v1.0.1 | PATCH | `NodeKind.product` raw-value fix — `rootNodes` had been silently returning `[]` for assembly graphs. No API change. |
 | OCCTSwift v1.0.2 | (would have been MINOR going forward) | Added `unionWithFullHistory` / `subtractedWithFullHistory` / `intersectionWithFullHistory` / `splitWithFullHistory` + `ShapeHistoryRef` class + `ShapeHistoryRecord` struct. **Additive — should have bumped minor under this policy.** Tagged as patch before this policy was formalized. |
