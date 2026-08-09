@@ -337,9 +337,14 @@ If the change introduces a genuinely new concurrent usage pattern, also add a ga
 scenario: either a new mode in an existing harness under `Scripts/repro/` or a new
 standalone harness, and register it in the `SCENARIOS` matrix at the top of
 `Scripts/tsan-stress.sh`. The existing harnesses (`341-meshcaf`, `344-cdf-directory`,
-`349-ocaf-driver-reentrancy`, `353-cdm-metadata-lookup-table`,
+`349-ocaf-driver-reentrancy`, `353-cdm-metadata-lookup-table`, `363-own-autonaming`,
 `371-getapplication-singleton-elimination`, `374-resource-manager-storage-schema-race`) are the
 templates.
+
+**Writing the harness is not registering it.** `363-own-autonaming` existed from the day patch
+`0011`'s redesign landed and was absent from the matrix until the v2.0.0 release check, so the one
+scenario that tests the property the earlier mutex fix could not guarantee ran in no gate at all.
+A harness under `Scripts/repro/` that is not in `SCENARIOS` is a file, not a gate.
 
 ### Commands
 
@@ -347,8 +352,21 @@ templates.
 Scripts/tsan-stress.sh build   # one-time: TSan-instrumented OCCT into Libraries/occt-install-tsan
 Scripts/tsan-stress.sh run     # compile + run every gate scenario; fails on unsuppressed races
 Scripts/tsan-stress.sh swift   # swift test --sanitize=thread on the concurrency-focused suites
-Scripts/tsan-stress.sh all     # build if needed, then run + swift
+Scripts/tsan-stress.sh all     # build if the instrumented kernel does not match, then run + swift
 ```
+
+`build` wipes `occt-build-tsan` and `occt-install-tsan` before configuring, and refuses to run at
+all unless `Libraries/occt-src` is at the tag `build-occt.sh` names. `all` decides whether to
+rebuild by comparing a stamp (`occt-install-tsan/.tsan-stamp`: the OCCT tag plus a digest of every
+carried patch) against the current tree, not by asking whether an install directory exists.
+
+All three of those are scar tissue from one release check. `all` used to accept any existing
+install as current, and the one on the machine was from 3 August, predating four carried patches;
+`build` had no tag check, unlike `build-occt.sh`; and because nothing was wiped, an incremental
+build over that tree finished in 1m26s and installed 48 libraries wearing that day's timestamps.
+A clean rebuild of the same thing takes about 15 minutes. Nothing in the fast result said which
+libraries had actually been recompiled, and a race that fails to reproduce against the wrong kernel
+looks exactly like a race that is fixed.
 
 ### Coverage model
 
