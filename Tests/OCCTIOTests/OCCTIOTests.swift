@@ -2654,3 +2654,2090 @@ struct MultibodyRobustImportTests {
         #expect(shape.isValid)
     }
 }
+
+// MARK: - #795: exporter drawing-collection consolidation golden output
+//
+// PDFExporter.primitiveOps()/collectFromDrawing()/collectProjectedEdges() and
+// SVGExporter's own copies scored 1.00 containment against each other (#784 duplication
+// rescan); DXFExporter shared collectProjectedEdges too and separately reimplemented
+// DrawingDispatch.swift's own formatTolerance/TolerancedLabel byte-for-byte, plus its whole
+// dimension + annotation dispatch. These are public export FORMATS -- a byte changed here is a
+// consumer-visible break, not a refactor detail (see #795). The golden bytes below were
+// captured from the pre-consolidation implementation (one independent copy of the
+// collection/dispatch pipeline per writer) and must stay byte-for-byte identical once all
+// three route through DrawingDispatch.swift's shared `DrawingPrimitiveSink` protocol.
+//
+// The fixture drawing exercises every `DrawingAnnotation` case (centreline, centermark,
+// textLabel, hatch, cuttingPlaneLine, and two balloons -- one with a leader, one without) and
+// every `DrawingTolerance` case on a linear dimension, plus one each of
+// radial/diameter/angular/ordinate -- the exact surface formatTolerance/emitAnnotation/
+// emitDimension cover. All edges come from a plain box's straight sides, so the fixture's
+// geometry is immune to any HLR-deflection nondeterminism a curved edge would introduce.
+
+private func makeGolden795Drawing() -> Drawing {
+    let box = Shape.box(width: 40, height: 25, depth: 15)!
+    let drawing = Drawing.frontView(of: box)!
+
+    drawing.addCentreLine(from: SIMD2(-5, 12.5), to: SIMD2(45, 12.5))
+    drawing.addCentermark(centre: SIMD2(20, 12.5), extent: 6)
+    drawing.addTextLabel("PART-001", at: SIMD2(0, -10), height: 4, rotation: 0)
+    drawing.addHatch(boundary: [SIMD2(0, 0), SIMD2(10, 0), SIMD2(10, 10), SIMD2(0, 10)],
+                      angle: 0, spacing: 5.0)
+    _ = drawing.addCuttingPlaneLine(label: "A",
+                                     cuttingPlaneOrigin: SIMD3(20, 12.5, 0),
+                                     cuttingPlaneNormal: SIMD3(1, 0, 0),
+                                     sectionViewDirection: SIMD3(0, 1, 0),
+                                     viewDirection: SIMD3(0, 0, 1),
+                                     traceLength: 30)
+    drawing.addBalloon(itemNumber: 1, at: SIMD2(45, 20), leaderTo: SIMD2(40, 15))
+    drawing.addBalloon(itemNumber: 2, at: SIMD2(-8, 5))
+
+    drawing.append(.linear(.init(from: SIMD2(0, 0), to: SIMD2(40, 0), offset: -8,
+                                  tolerance: .none)))
+    drawing.append(.linear(.init(from: SIMD2(0, 0), to: SIMD2(40, 0), offset: -14,
+                                  tolerance: .symmetric(0.05))))
+    drawing.append(.linear(.init(from: SIMD2(0, 0), to: SIMD2(40, 0), offset: -20,
+                                  tolerance: .bilateral(plus: 0.10, minus: 0.05))))
+    drawing.append(.linear(.init(from: SIMD2(0, 0), to: SIMD2(40, 0), offset: -26,
+                                  tolerance: .unilateral(0.10))))
+    drawing.append(.linear(.init(from: SIMD2(0, 0), to: SIMD2(40, 0), offset: -32,
+                                  tolerance: .unilateral(-0.10))))
+    drawing.append(.linear(.init(from: SIMD2(0, 0), to: SIMD2(40, 0), offset: -38,
+                                  tolerance: .fitClass("H7"))))
+    drawing.append(.linear(.init(from: SIMD2(0, 0), to: SIMD2(40, 0), offset: -44,
+                                  tolerance: .limits(lower: 19.95, upper: 20.05))))
+    drawing.append(.radial(.init(centre: SIMD2(20, 12.5), radius: 8, leaderAngle: .pi / 6,
+                                  tolerance: .symmetric(0.02))))
+    drawing.append(.diameter(.init(centre: SIMD2(20, 12.5), radius: 5, leaderAngle: .pi / 3,
+                                    tolerance: .none)))
+    drawing.append(.angular(.init(vertex: SIMD2(0, 0), ray1: SIMD2(40, 0), ray2: SIMD2(0, 25),
+                                   arcRadius: 15, tolerance: .bilateral(plus: 0.5, minus: 0.5))))
+    drawing.append(.ordinate(.init(origin: SIMD2(0, 0),
+                                    features: [.init(position: SIMD2(40, 0)),
+                                               .init(position: SIMD2(0, 25)),
+                                               .init(position: SIMD2(40, 25))],
+                                    tolerance: .none)))
+    return drawing
+}
+
+private let golden795SVG = #"""
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" version="1.1" viewBox="-20.0000 -49.0000 75.0000 93.5000" width="75.0000mm" height="93.5000mm">
+<g transform="translate(0,44.5000) scale(1,-1)">
+<g id="VISIBLE" stroke="black" stroke-width="0.5000" fill="none">
+<line x1="-7.5000" y1="-20.0000" x2="7.5000" y2="-20.0000"/>
+<line x1="-7.5000" y1="20.0000" x2="7.5000" y2="20.0000"/>
+<line x1="-7.5000" y1="-20.0000" x2="-7.5000" y2="20.0000"/>
+<line x1="7.5000" y1="-20.0000" x2="7.5000" y2="20.0000"/>
+</g>
+<g id="HIDDEN" stroke="black" stroke-width="0.2500" fill="none" stroke-dasharray="3,2">
+<line x1="-7.5000" y1="-20.0000" x2="7.5000" y2="-20.0000"/>
+<line x1="-7.5000" y1="20.0000" x2="7.5000" y2="20.0000"/>
+<line x1="-7.5000" y1="-20.0000" x2="-7.5000" y2="20.0000"/>
+<line x1="7.5000" y1="-20.0000" x2="7.5000" y2="20.0000"/>
+</g>
+<g id="CENTER" stroke="black" stroke-width="0.2500" fill="none" stroke-dasharray="8,2,2,2">
+<line x1="-5.0000" y1="12.5000" x2="45.0000" y2="12.5000"/>
+<line x1="17.0000" y1="12.5000" x2="23.0000" y2="12.5000"/>
+<line x1="20.0000" y1="9.5000" x2="20.0000" y2="15.5000"/>
+<line x1="20.0000" y1="27.5000" x2="20.0000" y2="21.5000"/>
+<line x1="20.0000" y1="3.5000" x2="20.0000" y2="-2.5000"/>
+<line x1="20.0000" y1="21.5000" x2="20.0000" y2="3.5000"/>
+</g>
+<g id="DIMENSION" stroke="black" stroke-width="0.2500" fill="none">
+<line x1="41.4645" y1="16.4645" x2="40.0000" y2="15.0000"/>
+<line x1="0.0000" y1="0.0000" x2="0.0000" y2="-8.0000"/>
+<line x1="40.0000" y1="0.0000" x2="40.0000" y2="-8.0000"/>
+<line x1="0.0000" y1="-8.0000" x2="40.0000" y2="-8.0000"/>
+<line x1="0.0000" y1="0.0000" x2="0.0000" y2="-14.0000"/>
+<line x1="40.0000" y1="0.0000" x2="40.0000" y2="-14.0000"/>
+<line x1="0.0000" y1="-14.0000" x2="40.0000" y2="-14.0000"/>
+<line x1="0.0000" y1="0.0000" x2="0.0000" y2="-20.0000"/>
+<line x1="40.0000" y1="0.0000" x2="40.0000" y2="-20.0000"/>
+<line x1="0.0000" y1="-20.0000" x2="40.0000" y2="-20.0000"/>
+<line x1="0.0000" y1="0.0000" x2="0.0000" y2="-26.0000"/>
+<line x1="40.0000" y1="0.0000" x2="40.0000" y2="-26.0000"/>
+<line x1="0.0000" y1="-26.0000" x2="40.0000" y2="-26.0000"/>
+<line x1="0.0000" y1="0.0000" x2="0.0000" y2="-32.0000"/>
+<line x1="40.0000" y1="0.0000" x2="40.0000" y2="-32.0000"/>
+<line x1="0.0000" y1="-32.0000" x2="40.0000" y2="-32.0000"/>
+<line x1="0.0000" y1="0.0000" x2="0.0000" y2="-38.0000"/>
+<line x1="40.0000" y1="0.0000" x2="40.0000" y2="-38.0000"/>
+<line x1="0.0000" y1="-38.0000" x2="40.0000" y2="-38.0000"/>
+<line x1="0.0000" y1="0.0000" x2="0.0000" y2="-44.0000"/>
+<line x1="40.0000" y1="0.0000" x2="40.0000" y2="-44.0000"/>
+<line x1="0.0000" y1="-44.0000" x2="40.0000" y2="-44.0000"/>
+<line x1="26.9282" y1="16.5000" x2="35.5885" y2="21.5000"/>
+<line x1="17.5000" y1="8.1699" x2="22.5000" y2="16.8301"/>
+<line x1="-3.0000" y1="0.0000" x2="3.0000" y2="0.0000"/>
+<line x1="0.0000" y1="-3.0000" x2="0.0000" y2="3.0000"/>
+<line x1="40.0000" y1="0.0000" x2="40.0000" y2="0.0000"/>
+<line x1="40.0000" y1="-2.0000" x2="40.0000" y2="2.0000"/>
+<line x1="0.0000" y1="25.0000" x2="0.0000" y2="25.0000"/>
+<line x1="-2.0000" y1="25.0000" x2="2.0000" y2="25.0000"/>
+<line x1="40.0000" y1="0.0000" x2="40.0000" y2="25.0000"/>
+<line x1="40.0000" y1="-2.0000" x2="40.0000" y2="2.0000"/>
+<line x1="0.0000" y1="25.0000" x2="40.0000" y2="25.0000"/>
+<line x1="-2.0000" y1="25.0000" x2="2.0000" y2="25.0000"/>
+<circle cx="45.0000" cy="20.0000" r="5.0000"/>
+<circle cx="-8.0000" cy="5.0000" r="5.0000"/>
+<circle cx="20.0000" cy="12.5000" r="8.0000"/>
+<path d="M 15.0000 0.0000 A 15.0000 15.0000 0 0 1 0.0000 15.0000"/>
+</g>
+<g id="HATCH" stroke="black" stroke-width="0.1800" fill="none">
+<line x1="0.0000" y1="0.0000" x2="10.0000" y2="0.0000"/>
+<line x1="0.0000" y1="5.0000" x2="10.0000" y2="5.0000"/>
+</g>
+<g id="TEXT" stroke="black" stroke-width="0.2500" fill="none">
+<line x1="20.0000" y1="27.5000" x2="20.0000" y2="35.5000"/>
+<line x1="20.0000" y1="35.5000" x2="18.5000" y2="32.3000"/>
+<line x1="20.0000" y1="35.5000" x2="21.5000" y2="32.3000"/>
+<line x1="20.0000" y1="-2.5000" x2="20.0000" y2="5.5000"/>
+<line x1="20.0000" y1="5.5000" x2="18.5000" y2="2.3000"/>
+<line x1="20.0000" y1="5.5000" x2="21.5000" y2="2.3000"/>
+<text x="0.0000" y="-10.0000" font-family="Helvetica" font-size="4.0000" transform="matrix(1,0,0,-1,0,0) translate(0.0000,10.0000) rotate(-0.0000) translate(-0.0000,-10.0000)" fill="black" stroke="none">PART-001</text>
+<text x="20.0000" y="39.5000" font-family="Helvetica" font-size="5.0000" transform="matrix(1,0,0,-1,0,0) translate(20.0000,-39.5000) rotate(-0.0000) translate(-20.0000,39.5000)" fill="black" stroke="none">A</text>
+<text x="20.0000" y="9.5000" font-family="Helvetica" font-size="5.0000" transform="matrix(1,0,0,-1,0,0) translate(20.0000,-9.5000) rotate(-0.0000) translate(-20.0000,9.5000)" fill="black" stroke="none">A</text>
+<text x="45.0000" y="20.0000" font-family="Helvetica" font-size="4.5000" transform="matrix(1,0,0,-1,0,0) translate(45.0000,-20.0000) rotate(-0.0000) translate(-45.0000,20.0000)" fill="black" stroke="none">1</text>
+<text x="-8.0000" y="5.0000" font-family="Helvetica" font-size="4.5000" transform="matrix(1,0,0,-1,0,0) translate(-8.0000,-5.0000) rotate(-0.0000) translate(8.0000,5.0000)" fill="black" stroke="none">2</text>
+<text x="20.0000" y="-6.0000" font-family="Helvetica" font-size="3.5000" transform="matrix(1,0,0,-1,0,0) translate(20.0000,6.0000) rotate(-0.0000) translate(-20.0000,-6.0000)" fill="black" stroke="none">40.00</text>
+<text x="20.0000" y="-12.0000" font-family="Helvetica" font-size="3.5000" transform="matrix(1,0,0,-1,0,0) translate(20.0000,12.0000) rotate(-0.0000) translate(-20.0000,-12.0000)" fill="black" stroke="none">40.00 ±0.050</text>
+<text x="20.0000" y="-18.0000" font-family="Helvetica" font-size="3.5000" transform="matrix(1,0,0,-1,0,0) translate(20.0000,18.0000) rotate(-0.0000) translate(-20.0000,-18.0000)" fill="black" stroke="none">40.00</text>
+<text x="20.0000" y="-16.0000" font-family="Helvetica" font-size="1.9250" transform="matrix(1,0,0,-1,0,0) translate(20.0000,16.0000) rotate(-0.0000) translate(-20.0000,-16.0000)" fill="black" stroke="none">+0.100</text>
+<text x="20.0000" y="-20.0000" font-family="Helvetica" font-size="1.9250" transform="matrix(1,0,0,-1,0,0) translate(20.0000,20.0000) rotate(-0.0000) translate(-20.0000,-20.0000)" fill="black" stroke="none">-0.050</text>
+<text x="20.0000" y="-24.0000" font-family="Helvetica" font-size="3.5000" transform="matrix(1,0,0,-1,0,0) translate(20.0000,24.0000) rotate(-0.0000) translate(-20.0000,-24.0000)" fill="black" stroke="none">40.00</text>
+<text x="20.0000" y="-22.0000" font-family="Helvetica" font-size="1.9250" transform="matrix(1,0,0,-1,0,0) translate(20.0000,22.0000) rotate(-0.0000) translate(-20.0000,-22.0000)" fill="black" stroke="none">+0.100</text>
+<text x="20.0000" y="-26.0000" font-family="Helvetica" font-size="1.9250" transform="matrix(1,0,0,-1,0,0) translate(20.0000,26.0000) rotate(-0.0000) translate(-20.0000,-26.0000)" fill="black" stroke="none">0</text>
+<text x="20.0000" y="-30.0000" font-family="Helvetica" font-size="3.5000" transform="matrix(1,0,0,-1,0,0) translate(20.0000,30.0000) rotate(-0.0000) translate(-20.0000,-30.0000)" fill="black" stroke="none">40.00</text>
+<text x="20.0000" y="-28.0000" font-family="Helvetica" font-size="1.9250" transform="matrix(1,0,0,-1,0,0) translate(20.0000,28.0000) rotate(-0.0000) translate(-20.0000,-28.0000)" fill="black" stroke="none">0</text>
+<text x="20.0000" y="-32.0000" font-family="Helvetica" font-size="1.9250" transform="matrix(1,0,0,-1,0,0) translate(20.0000,32.0000) rotate(-0.0000) translate(-20.0000,-32.0000)" fill="black" stroke="none">-0.100</text>
+<text x="20.0000" y="-36.0000" font-family="Helvetica" font-size="3.5000" transform="matrix(1,0,0,-1,0,0) translate(20.0000,36.0000) rotate(-0.0000) translate(-20.0000,-36.0000)" fill="black" stroke="none">40.00 H7</text>
+<text x="20.0000" y="-42.0000" font-family="Helvetica" font-size="3.5000" transform="matrix(1,0,0,-1,0,0) translate(20.0000,42.0000) rotate(-0.0000) translate(-20.0000,-42.0000)" fill="black" stroke="none">40.00</text>
+<text x="20.0000" y="-40.0000" font-family="Helvetica" font-size="1.9250" transform="matrix(1,0,0,-1,0,0) translate(20.0000,40.0000) rotate(-0.0000) translate(-20.0000,-40.0000)" fill="black" stroke="none">20.050</text>
+<text x="20.0000" y="-44.0000" font-family="Helvetica" font-size="1.9250" transform="matrix(1,0,0,-1,0,0) translate(20.0000,44.0000) rotate(-0.0000) translate(-20.0000,-44.0000)" fill="black" stroke="none">19.950</text>
+<text x="35.5885" y="21.5000" font-family="Helvetica" font-size="3.5000" transform="matrix(1,0,0,-1,0,0) translate(35.5885,-21.5000) rotate(-0.0000) translate(-35.5885,21.5000)" fill="black" stroke="none">R8.00 ±0.020</text>
+<text x="25.0000" y="21.1603" font-family="Helvetica" font-size="3.5000" transform="matrix(1,0,0,-1,0,0) translate(25.0000,-21.1603) rotate(-0.0000) translate(-25.0000,21.1603)" fill="black" stroke="none">⌀10.00</text>
+<text x="12.7279" y="12.7279" font-family="Helvetica" font-size="3.5000" transform="matrix(1,0,0,-1,0,0) translate(12.7279,-12.7279) rotate(-0.0000) translate(-12.7279,12.7279)" fill="black" stroke="none">90.0°</text>
+<text x="14.1421" y="14.1421" font-family="Helvetica" font-size="1.9250" transform="matrix(1,0,0,-1,0,0) translate(14.1421,-14.1421) rotate(-0.0000) translate(-14.1421,14.1421)" fill="black" stroke="none">+0.500</text>
+<text x="11.3137" y="11.3137" font-family="Helvetica" font-size="1.9250" transform="matrix(1,0,0,-1,0,0) translate(11.3137,-11.3137) rotate(-0.0000) translate(-11.3137,11.3137)" fill="black" stroke="none">-0.500</text>
+<text x="40.0000" y="-5.0000" font-family="Helvetica" font-size="3.5000" transform="matrix(1,0,0,-1,0,0) translate(40.0000,5.0000) rotate(-90.0000) translate(-40.0000,-5.0000)" fill="black" stroke="none">40.00</text>
+<text x="-5.0000" y="25.0000" font-family="Helvetica" font-size="3.5000" transform="matrix(1,0,0,-1,0,0) translate(-5.0000,-25.0000) rotate(-0.0000) translate(5.0000,25.0000)" fill="black" stroke="none">25.00</text>
+<text x="40.0000" y="-5.0000" font-family="Helvetica" font-size="3.5000" transform="matrix(1,0,0,-1,0,0) translate(40.0000,5.0000) rotate(-90.0000) translate(-40.0000,-5.0000)" fill="black" stroke="none">40.00</text>
+<text x="-5.0000" y="25.0000" font-family="Helvetica" font-size="3.5000" transform="matrix(1,0,0,-1,0,0) translate(-5.0000,-25.0000) rotate(-0.0000) translate(5.0000,25.0000)" fill="black" stroke="none">25.00</text>
+</g>
+</g>
+</svg>
+
+"""#
+private let golden795DXF = #"""
+0
+SECTION
+2
+HEADER
+9
+$ACADVER
+1
+AC1009
+9
+$INSUNITS
+70
+4
+0
+ENDSEC
+0
+SECTION
+2
+TABLES
+0
+TABLE
+2
+LTYPE
+70
+4
+0
+LTYPE
+2
+CONTINUOUS
+70
+0
+3
+Solid line
+72
+65
+73
+0
+40
+0.000000
+0
+LTYPE
+2
+DASHED
+70
+0
+3
+Dashed ____ ____ ____
+72
+65
+73
+2
+40
+7.500000
+49
+5.000000
+49
+-2.500000
+0
+LTYPE
+2
+CHAIN
+70
+0
+3
+Chain ____ _ ____ _
+72
+65
+73
+4
+40
+15.000000
+49
+10.000000
+49
+-2.500000
+49
+0.000000
+49
+-2.500000
+0
+ENDTAB
+0
+TABLE
+2
+LAYER
+70
+11
+0
+LAYER
+2
+0
+70
+0
+62
+7
+6
+CONTINUOUS
+0
+LAYER
+2
+VISIBLE
+70
+0
+62
+7
+6
+CONTINUOUS
+0
+LAYER
+2
+HIDDEN
+70
+0
+62
+8
+6
+DASHED
+0
+LAYER
+2
+OUTLINE
+70
+0
+62
+7
+6
+CONTINUOUS
+0
+LAYER
+2
+CENTER
+70
+0
+62
+1
+6
+CHAIN
+0
+LAYER
+2
+DIMENSION
+70
+0
+62
+5
+6
+CONTINUOUS
+0
+LAYER
+2
+TEXT
+70
+0
+62
+3
+6
+CONTINUOUS
+0
+LAYER
+2
+HATCH
+70
+0
+62
+9
+6
+CONTINUOUS
+0
+LAYER
+2
+SECTION
+70
+0
+62
+7
+6
+CONTINUOUS
+0
+LAYER
+2
+BORDER
+70
+0
+62
+7
+6
+CONTINUOUS
+0
+LAYER
+2
+TITLE
+70
+0
+62
+7
+6
+CONTINUOUS
+0
+ENDTAB
+0
+TABLE
+2
+STYLE
+70
+1
+0
+STYLE
+2
+STANDARD
+70
+0
+40
+0.000000
+41
+1.000000
+50
+0.000000
+71
+0
+42
+2.500000
+3
+txt
+4
+
+0
+ENDTAB
+0
+ENDSEC
+0
+SECTION
+2
+BLOCKS
+0
+ENDSEC
+0
+SECTION
+2
+ENTITIES
+0
+LINE
+8
+VISIBLE
+10
+-7.500000
+20
+-20.000000
+30
+0.000000
+11
+7.500000
+21
+-20.000000
+31
+0.000000
+0
+LINE
+8
+VISIBLE
+10
+-7.500000
+20
+20.000000
+30
+0.000000
+11
+7.500000
+21
+20.000000
+31
+0.000000
+0
+LINE
+8
+VISIBLE
+10
+-7.500000
+20
+-20.000000
+30
+0.000000
+11
+-7.500000
+21
+20.000000
+31
+0.000000
+0
+LINE
+8
+VISIBLE
+10
+7.500000
+20
+-20.000000
+30
+0.000000
+11
+7.500000
+21
+20.000000
+31
+0.000000
+0
+LINE
+8
+HIDDEN
+10
+-7.500000
+20
+-20.000000
+30
+0.000000
+11
+7.500000
+21
+-20.000000
+31
+0.000000
+0
+LINE
+8
+HIDDEN
+10
+-7.500000
+20
+20.000000
+30
+0.000000
+11
+7.500000
+21
+20.000000
+31
+0.000000
+0
+LINE
+8
+HIDDEN
+10
+-7.500000
+20
+-20.000000
+30
+0.000000
+11
+-7.500000
+21
+20.000000
+31
+0.000000
+0
+LINE
+8
+HIDDEN
+10
+7.500000
+20
+-20.000000
+30
+0.000000
+11
+7.500000
+21
+20.000000
+31
+0.000000
+0
+LINE
+8
+CENTER
+10
+-5.000000
+20
+12.500000
+30
+0.000000
+11
+45.000000
+21
+12.500000
+31
+0.000000
+0
+LINE
+8
+CENTER
+10
+17.000000
+20
+12.500000
+30
+0.000000
+11
+23.000000
+21
+12.500000
+31
+0.000000
+0
+LINE
+8
+CENTER
+10
+20.000000
+20
+9.500000
+30
+0.000000
+11
+20.000000
+21
+15.500000
+31
+0.000000
+0
+LINE
+8
+HATCH
+10
+0.000000
+20
+0.000000
+30
+0.000000
+11
+10.000000
+21
+0.000000
+31
+0.000000
+0
+LINE
+8
+HATCH
+10
+0.000000
+20
+5.000000
+30
+0.000000
+11
+10.000000
+21
+5.000000
+31
+0.000000
+0
+LINE
+8
+CENTER
+10
+20.000000
+20
+27.500000
+30
+0.000000
+11
+20.000000
+21
+21.500000
+31
+0.000000
+0
+LINE
+8
+CENTER
+10
+20.000000
+20
+3.500000
+30
+0.000000
+11
+20.000000
+21
+-2.500000
+31
+0.000000
+0
+LINE
+8
+CENTER
+10
+20.000000
+20
+21.500000
+30
+0.000000
+11
+20.000000
+21
+3.500000
+31
+0.000000
+0
+LINE
+8
+TEXT
+10
+20.000000
+20
+27.500000
+30
+0.000000
+11
+20.000000
+21
+35.500000
+31
+0.000000
+0
+LINE
+8
+TEXT
+10
+20.000000
+20
+35.500000
+30
+0.000000
+11
+18.500000
+21
+32.300000
+31
+0.000000
+0
+LINE
+8
+TEXT
+10
+20.000000
+20
+35.500000
+30
+0.000000
+11
+21.500000
+21
+32.300000
+31
+0.000000
+0
+LINE
+8
+TEXT
+10
+20.000000
+20
+-2.500000
+30
+0.000000
+11
+20.000000
+21
+5.500000
+31
+0.000000
+0
+LINE
+8
+TEXT
+10
+20.000000
+20
+5.500000
+30
+0.000000
+11
+18.500000
+21
+2.300000
+31
+0.000000
+0
+LINE
+8
+TEXT
+10
+20.000000
+20
+5.500000
+30
+0.000000
+11
+21.500000
+21
+2.300000
+31
+0.000000
+0
+LINE
+8
+DIMENSION
+10
+41.464466
+20
+16.464466
+30
+0.000000
+11
+40.000000
+21
+15.000000
+31
+0.000000
+0
+LINE
+8
+DIMENSION
+10
+0.000000
+20
+0.000000
+30
+0.000000
+11
+0.000000
+21
+-8.000000
+31
+0.000000
+0
+LINE
+8
+DIMENSION
+10
+40.000000
+20
+0.000000
+30
+0.000000
+11
+40.000000
+21
+-8.000000
+31
+0.000000
+0
+LINE
+8
+DIMENSION
+10
+0.000000
+20
+-8.000000
+30
+0.000000
+11
+40.000000
+21
+-8.000000
+31
+0.000000
+0
+LINE
+8
+DIMENSION
+10
+0.000000
+20
+0.000000
+30
+0.000000
+11
+0.000000
+21
+-14.000000
+31
+0.000000
+0
+LINE
+8
+DIMENSION
+10
+40.000000
+20
+0.000000
+30
+0.000000
+11
+40.000000
+21
+-14.000000
+31
+0.000000
+0
+LINE
+8
+DIMENSION
+10
+0.000000
+20
+-14.000000
+30
+0.000000
+11
+40.000000
+21
+-14.000000
+31
+0.000000
+0
+LINE
+8
+DIMENSION
+10
+0.000000
+20
+0.000000
+30
+0.000000
+11
+0.000000
+21
+-20.000000
+31
+0.000000
+0
+LINE
+8
+DIMENSION
+10
+40.000000
+20
+0.000000
+30
+0.000000
+11
+40.000000
+21
+-20.000000
+31
+0.000000
+0
+LINE
+8
+DIMENSION
+10
+0.000000
+20
+-20.000000
+30
+0.000000
+11
+40.000000
+21
+-20.000000
+31
+0.000000
+0
+LINE
+8
+DIMENSION
+10
+0.000000
+20
+0.000000
+30
+0.000000
+11
+0.000000
+21
+-26.000000
+31
+0.000000
+0
+LINE
+8
+DIMENSION
+10
+40.000000
+20
+0.000000
+30
+0.000000
+11
+40.000000
+21
+-26.000000
+31
+0.000000
+0
+LINE
+8
+DIMENSION
+10
+0.000000
+20
+-26.000000
+30
+0.000000
+11
+40.000000
+21
+-26.000000
+31
+0.000000
+0
+LINE
+8
+DIMENSION
+10
+0.000000
+20
+0.000000
+30
+0.000000
+11
+0.000000
+21
+-32.000000
+31
+0.000000
+0
+LINE
+8
+DIMENSION
+10
+40.000000
+20
+0.000000
+30
+0.000000
+11
+40.000000
+21
+-32.000000
+31
+0.000000
+0
+LINE
+8
+DIMENSION
+10
+0.000000
+20
+-32.000000
+30
+0.000000
+11
+40.000000
+21
+-32.000000
+31
+0.000000
+0
+LINE
+8
+DIMENSION
+10
+0.000000
+20
+0.000000
+30
+0.000000
+11
+0.000000
+21
+-38.000000
+31
+0.000000
+0
+LINE
+8
+DIMENSION
+10
+40.000000
+20
+0.000000
+30
+0.000000
+11
+40.000000
+21
+-38.000000
+31
+0.000000
+0
+LINE
+8
+DIMENSION
+10
+0.000000
+20
+-38.000000
+30
+0.000000
+11
+40.000000
+21
+-38.000000
+31
+0.000000
+0
+LINE
+8
+DIMENSION
+10
+0.000000
+20
+0.000000
+30
+0.000000
+11
+0.000000
+21
+-44.000000
+31
+0.000000
+0
+LINE
+8
+DIMENSION
+10
+40.000000
+20
+0.000000
+30
+0.000000
+11
+40.000000
+21
+-44.000000
+31
+0.000000
+0
+LINE
+8
+DIMENSION
+10
+0.000000
+20
+-44.000000
+30
+0.000000
+11
+40.000000
+21
+-44.000000
+31
+0.000000
+0
+LINE
+8
+DIMENSION
+10
+26.928203
+20
+16.500000
+30
+0.000000
+11
+35.588457
+21
+21.500000
+31
+0.000000
+0
+LINE
+8
+DIMENSION
+10
+17.500000
+20
+8.169873
+30
+0.000000
+11
+22.500000
+21
+16.830127
+31
+0.000000
+0
+LINE
+8
+DIMENSION
+10
+-3.000000
+20
+0.000000
+30
+0.000000
+11
+3.000000
+21
+0.000000
+31
+0.000000
+0
+LINE
+8
+DIMENSION
+10
+0.000000
+20
+-3.000000
+30
+0.000000
+11
+0.000000
+21
+3.000000
+31
+0.000000
+0
+LINE
+8
+DIMENSION
+10
+40.000000
+20
+0.000000
+30
+0.000000
+11
+40.000000
+21
+0.000000
+31
+0.000000
+0
+LINE
+8
+DIMENSION
+10
+40.000000
+20
+-2.000000
+30
+0.000000
+11
+40.000000
+21
+2.000000
+31
+0.000000
+0
+LINE
+8
+DIMENSION
+10
+0.000000
+20
+25.000000
+30
+0.000000
+11
+0.000000
+21
+25.000000
+31
+0.000000
+0
+LINE
+8
+DIMENSION
+10
+-2.000000
+20
+25.000000
+30
+0.000000
+11
+2.000000
+21
+25.000000
+31
+0.000000
+0
+LINE
+8
+DIMENSION
+10
+40.000000
+20
+0.000000
+30
+0.000000
+11
+40.000000
+21
+25.000000
+31
+0.000000
+0
+LINE
+8
+DIMENSION
+10
+40.000000
+20
+-2.000000
+30
+0.000000
+11
+40.000000
+21
+2.000000
+31
+0.000000
+0
+LINE
+8
+DIMENSION
+10
+0.000000
+20
+25.000000
+30
+0.000000
+11
+40.000000
+21
+25.000000
+31
+0.000000
+0
+LINE
+8
+DIMENSION
+10
+-2.000000
+20
+25.000000
+30
+0.000000
+11
+2.000000
+21
+25.000000
+31
+0.000000
+0
+CIRCLE
+8
+DIMENSION
+10
+45.000000
+20
+20.000000
+30
+0.000000
+40
+5.000000
+0
+CIRCLE
+8
+DIMENSION
+10
+-8.000000
+20
+5.000000
+30
+0.000000
+40
+5.000000
+0
+CIRCLE
+8
+DIMENSION
+10
+20.000000
+20
+12.500000
+30
+0.000000
+40
+8.000000
+0
+ARC
+8
+DIMENSION
+10
+0.000000
+20
+0.000000
+30
+0.000000
+40
+15.000000
+50
+0.000000
+51
+90.000000
+0
+TEXT
+8
+TEXT
+10
+0.000000
+20
+-10.000000
+30
+0.000000
+40
+4.000000
+1
+PART-001
+50
+0.000000
+0
+TEXT
+8
+TEXT
+10
+20.000000
+20
+39.500000
+30
+0.000000
+40
+5.000000
+1
+A
+50
+0.000000
+0
+TEXT
+8
+TEXT
+10
+20.000000
+20
+9.500000
+30
+0.000000
+40
+5.000000
+1
+A
+50
+0.000000
+0
+TEXT
+8
+TEXT
+10
+45.000000
+20
+20.000000
+30
+0.000000
+40
+4.500000
+1
+1
+50
+0.000000
+0
+TEXT
+8
+TEXT
+10
+-8.000000
+20
+5.000000
+30
+0.000000
+40
+4.500000
+1
+2
+50
+0.000000
+0
+TEXT
+8
+TEXT
+10
+20.000000
+20
+-6.000000
+30
+0.000000
+40
+3.500000
+1
+40.00
+50
+0.000000
+0
+TEXT
+8
+TEXT
+10
+20.000000
+20
+-12.000000
+30
+0.000000
+40
+3.500000
+1
+40.00 ±0.050
+50
+0.000000
+0
+TEXT
+8
+TEXT
+10
+20.000000
+20
+-18.000000
+30
+0.000000
+40
+3.500000
+1
+40.00
+50
+0.000000
+0
+TEXT
+8
+TEXT
+10
+20.000000
+20
+-16.000000
+30
+0.000000
+40
+1.925000
+1
++0.100
+50
+0.000000
+0
+TEXT
+8
+TEXT
+10
+20.000000
+20
+-20.000000
+30
+0.000000
+40
+1.925000
+1
+-0.050
+50
+0.000000
+0
+TEXT
+8
+TEXT
+10
+20.000000
+20
+-24.000000
+30
+0.000000
+40
+3.500000
+1
+40.00
+50
+0.000000
+0
+TEXT
+8
+TEXT
+10
+20.000000
+20
+-22.000000
+30
+0.000000
+40
+1.925000
+1
++0.100
+50
+0.000000
+0
+TEXT
+8
+TEXT
+10
+20.000000
+20
+-26.000000
+30
+0.000000
+40
+1.925000
+1
+0
+50
+0.000000
+0
+TEXT
+8
+TEXT
+10
+20.000000
+20
+-30.000000
+30
+0.000000
+40
+3.500000
+1
+40.00
+50
+0.000000
+0
+TEXT
+8
+TEXT
+10
+20.000000
+20
+-28.000000
+30
+0.000000
+40
+1.925000
+1
+0
+50
+0.000000
+0
+TEXT
+8
+TEXT
+10
+20.000000
+20
+-32.000000
+30
+0.000000
+40
+1.925000
+1
+-0.100
+50
+0.000000
+0
+TEXT
+8
+TEXT
+10
+20.000000
+20
+-36.000000
+30
+0.000000
+40
+3.500000
+1
+40.00 H7
+50
+0.000000
+0
+TEXT
+8
+TEXT
+10
+20.000000
+20
+-42.000000
+30
+0.000000
+40
+3.500000
+1
+40.00
+50
+0.000000
+0
+TEXT
+8
+TEXT
+10
+20.000000
+20
+-40.000000
+30
+0.000000
+40
+1.925000
+1
+20.050
+50
+0.000000
+0
+TEXT
+8
+TEXT
+10
+20.000000
+20
+-44.000000
+30
+0.000000
+40
+1.925000
+1
+19.950
+50
+0.000000
+0
+TEXT
+8
+TEXT
+10
+35.588457
+20
+21.500000
+30
+0.000000
+40
+3.500000
+1
+R8.00 ±0.020
+50
+0.000000
+0
+TEXT
+8
+TEXT
+10
+25.000000
+20
+21.160254
+30
+0.000000
+40
+3.500000
+1
+⌀10.00
+50
+0.000000
+0
+TEXT
+8
+TEXT
+10
+12.727922
+20
+12.727922
+30
+0.000000
+40
+3.500000
+1
+90.0°
+50
+0.000000
+0
+TEXT
+8
+TEXT
+10
+14.142136
+20
+14.142136
+30
+0.000000
+40
+1.925000
+1
++0.500
+50
+0.000000
+0
+TEXT
+8
+TEXT
+10
+11.313708
+20
+11.313708
+30
+0.000000
+40
+1.925000
+1
+-0.500
+50
+0.000000
+0
+TEXT
+8
+TEXT
+10
+40.000000
+20
+-5.000000
+30
+0.000000
+40
+3.500000
+1
+40.00
+50
+90.000000
+0
+TEXT
+8
+TEXT
+10
+-5.000000
+20
+25.000000
+30
+0.000000
+40
+3.500000
+1
+25.00
+50
+0.000000
+0
+TEXT
+8
+TEXT
+10
+40.000000
+20
+-5.000000
+30
+0.000000
+40
+3.500000
+1
+40.00
+50
+90.000000
+0
+TEXT
+8
+TEXT
+10
+-5.000000
+20
+25.000000
+30
+0.000000
+40
+3.500000
+1
+25.00
+50
+0.000000
+0
+ENDSEC
+0
+EOF
+
+"""#
+
+private let golden795PDFBase64 = """
+JVBERi0xLjQKJeLjz9MKMSAwIG9iago8PCAvVHlwZSAvQ2F0YWxvZyAvUGFnZXMgMiAwIFIgPj4KZW5kb2JqCjIgMCBvYmoKPDwg
+L1R5cGUgL1BhZ2VzIC9LaWRzIFszIDAgUl0gL0NvdW50IDEgPj4KZW5kb2JqCjMgMCBvYmoKPDwgL1R5cGUgL1BhZ2UgL1BhcmVu
+dCAyIDAgUiAvTWVkaWFCb3ggWzAgMCA4NDEuMDAwMCA1OTUuMDAwMF0gL0NvbnRlbnRzIDQgMCBSIC9SZXNvdXJjZXMgPDwgL0Zv
+bnQgPDwgL0YxIDUgMCBSID4+ID4+ID4+CmVuZG9iago0IDAgb2JqCjw8IC9MZW5ndGggNTA0MiA+PgpzdHJlYW0KcQoyLjgzNDYg
+MCAwIDIuODM0NiAwIDAgY20KMCAwIDAgUkcKMC41MDAwIHcKW10gMCBkCi03LjUwMDAgLTIwLjAwMDAgbSA3LjUwMDAgLTIwLjAw
+MDAgbCBTCi03LjUwMDAgMjAuMDAwMCBtIDcuNTAwMCAyMC4wMDAwIGwgUwotNy41MDAwIC0yMC4wMDAwIG0gLTcuNTAwMCAyMC4w
+MDAwIGwgUwo3LjUwMDAgLTIwLjAwMDAgbSA3LjUwMDAgMjAuMDAwMCBsIFMKMC4yNTAwIHcKWzMgMl0gMCBkCi03LjUwMDAgLTIw
+LjAwMDAgbSA3LjUwMDAgLTIwLjAwMDAgbCBTCi03LjUwMDAgMjAuMDAwMCBtIDcuNTAwMCAyMC4wMDAwIGwgUwotNy41MDAwIC0y
+MC4wMDAwIG0gLTcuNTAwMCAyMC4wMDAwIGwgUwo3LjUwMDAgLTIwLjAwMDAgbSA3LjUwMDAgMjAuMDAwMCBsIFMKMC4yNTAwIHcK
+WzggMiAyIDJdIDAgZAotNS4wMDAwIDEyLjUwMDAgbSA0NS4wMDAwIDEyLjUwMDAgbCBTCjE3LjAwMDAgMTIuNTAwMCBtIDIzLjAw
+MDAgMTIuNTAwMCBsIFMKMjAuMDAwMCA5LjUwMDAgbSAyMC4wMDAwIDE1LjUwMDAgbCBTCjIwLjAwMDAgMjcuNTAwMCBtIDIwLjAw
+MDAgMjEuNTAwMCBsIFMKMjAuMDAwMCAzLjUwMDAgbSAyMC4wMDAwIC0yLjUwMDAgbCBTCjIwLjAwMDAgMjEuNTAwMCBtIDIwLjAw
+MDAgMy41MDAwIGwgUwowLjI1MDAgdwpbXSAwIGQKNDEuNDY0NSAxNi40NjQ1IG0gNDAuMDAwMCAxNS4wMDAwIGwgUwowLjAwMDAg
+MC4wMDAwIG0gMC4wMDAwIC04LjAwMDAgbCBTCjQwLjAwMDAgMC4wMDAwIG0gNDAuMDAwMCAtOC4wMDAwIGwgUwowLjAwMDAgLTgu
+MDAwMCBtIDQwLjAwMDAgLTguMDAwMCBsIFMKMC4wMDAwIDAuMDAwMCBtIDAuMDAwMCAtMTQuMDAwMCBsIFMKNDAuMDAwMCAwLjAw
+MDAgbSA0MC4wMDAwIC0xNC4wMDAwIGwgUwowLjAwMDAgLTE0LjAwMDAgbSA0MC4wMDAwIC0xNC4wMDAwIGwgUwowLjAwMDAgMC4w
+MDAwIG0gMC4wMDAwIC0yMC4wMDAwIGwgUwo0MC4wMDAwIDAuMDAwMCBtIDQwLjAwMDAgLTIwLjAwMDAgbCBTCjAuMDAwMCAtMjAu
+MDAwMCBtIDQwLjAwMDAgLTIwLjAwMDAgbCBTCjAuMDAwMCAwLjAwMDAgbSAwLjAwMDAgLTI2LjAwMDAgbCBTCjQwLjAwMDAgMC4w
+MDAwIG0gNDAuMDAwMCAtMjYuMDAwMCBsIFMKMC4wMDAwIC0yNi4wMDAwIG0gNDAuMDAwMCAtMjYuMDAwMCBsIFMKMC4wMDAwIDAu
+MDAwMCBtIDAuMDAwMCAtMzIuMDAwMCBsIFMKNDAuMDAwMCAwLjAwMDAgbSA0MC4wMDAwIC0zMi4wMDAwIGwgUwowLjAwMDAgLTMy
+LjAwMDAgbSA0MC4wMDAwIC0zMi4wMDAwIGwgUwowLjAwMDAgMC4wMDAwIG0gMC4wMDAwIC0zOC4wMDAwIGwgUwo0MC4wMDAwIDAu
+MDAwMCBtIDQwLjAwMDAgLTM4LjAwMDAgbCBTCjAuMDAwMCAtMzguMDAwMCBtIDQwLjAwMDAgLTM4LjAwMDAgbCBTCjAuMDAwMCAw
+LjAwMDAgbSAwLjAwMDAgLTQ0LjAwMDAgbCBTCjQwLjAwMDAgMC4wMDAwIG0gNDAuMDAwMCAtNDQuMDAwMCBsIFMKMC4wMDAwIC00
+NC4wMDAwIG0gNDAuMDAwMCAtNDQuMDAwMCBsIFMKMjYuOTI4MiAxNi41MDAwIG0gMzUuNTg4NSAyMS41MDAwIGwgUwoxNy41MDAw
+IDguMTY5OSBtIDIyLjUwMDAgMTYuODMwMSBsIFMKLTMuMDAwMCAwLjAwMDAgbSAzLjAwMDAgMC4wMDAwIGwgUwowLjAwMDAgLTMu
+MDAwMCBtIDAuMDAwMCAzLjAwMDAgbCBTCjQwLjAwMDAgMC4wMDAwIG0gNDAuMDAwMCAwLjAwMDAgbCBTCjQwLjAwMDAgLTIuMDAw
+MCBtIDQwLjAwMDAgMi4wMDAwIGwgUwowLjAwMDAgMjUuMDAwMCBtIDAuMDAwMCAyNS4wMDAwIGwgUwotMi4wMDAwIDI1LjAwMDAg
+bSAyLjAwMDAgMjUuMDAwMCBsIFMKNDAuMDAwMCAwLjAwMDAgbSA0MC4wMDAwIDI1LjAwMDAgbCBTCjQwLjAwMDAgLTIuMDAwMCBt
+IDQwLjAwMDAgMi4wMDAwIGwgUwowLjAwMDAgMjUuMDAwMCBtIDQwLjAwMDAgMjUuMDAwMCBsIFMKLTIuMDAwMCAyNS4wMDAwIG0g
+Mi4wMDAwIDI1LjAwMDAgbCBTCjUwLjAwMDAgMjAuMDAwMCBtCjUwLjAwMDAgMjIuNzYxNCA0Ny43NjE0IDI1LjAwMDAgNDUuMDAw
+MCAyNS4wMDAwIGMKNDIuMjM4NiAyNS4wMDAwIDQwLjAwMDAgMjIuNzYxNCA0MC4wMDAwIDIwLjAwMDAgYwo0MC4wMDAwIDE3LjIz
+ODYgNDIuMjM4NiAxNS4wMDAwIDQ1LjAwMDAgMTUuMDAwMCBjCjQ3Ljc2MTQgMTUuMDAwMCA1MC4wMDAwIDE3LjIzODYgNTAuMDAw
+MCAyMC4wMDAwIGMKaCBTCi0zLjAwMDAgNS4wMDAwIG0KLTMuMDAwMCA3Ljc2MTQgLTUuMjM4NiAxMC4wMDAwIC04LjAwMDAgMTAu
+MDAwMCBjCi0xMC43NjE0IDEwLjAwMDAgLTEzLjAwMDAgNy43NjE0IC0xMy4wMDAwIDUuMDAwMCBjCi0xMy4wMDAwIDIuMjM4NiAt
+MTAuNzYxNCAwLjAwMDAgLTguMDAwMCAwLjAwMDAgYwotNS4yMzg2IDAuMDAwMCAtMy4wMDAwIDIuMjM4NiAtMy4wMDAwIDUuMDAw
+MCBjCmggUwoyOC4wMDAwIDEyLjUwMDAgbQoyOC4wMDAwIDE2LjkxODMgMjQuNDE4MyAyMC41MDAwIDIwLjAwMDAgMjAuNTAwMCBj
+CjE1LjU4MTcgMjAuNTAwMCAxMi4wMDAwIDE2LjkxODMgMTIuMDAwMCAxMi41MDAwIGMKMTIuMDAwMCA4LjA4MTcgMTUuNTgxNyA0
+LjUwMDAgMjAuMDAwMCA0LjUwMDAgYwoyNC40MTgzIDQuNTAwMCAyOC4wMDAwIDguMDgxNyAyOC4wMDAwIDEyLjUwMDAgYwpoIFMK
+MTUuMDAwMCAwLjAwMDAgbQoxNS4wMDAwIDguMjg0MyA4LjI4NDMgMTUuMDAwMCAwLjAwMDAgMTUuMDAwMCBjClMKMC4xODAwIHcK
+W10gMCBkCjAuMDAwMCAwLjAwMDAgbSAxMC4wMDAwIDAuMDAwMCBsIFMKMC4wMDAwIDUuMDAwMCBtIDEwLjAwMDAgNS4wMDAwIGwg
+UwowLjI1MDAgdwpbXSAwIGQKQlQKL0YxIDQuMDAwMCBUZgoxLjAwMDAgMC4wMDAwIC0wLjAwMDAgMS4wMDAwIDAuMDAwMCAtMTAu
+MDAwMCBUbQooUEFSVC0wMDEpIFRqCkVUCkJUCi9GMSA1LjAwMDAgVGYKMS4wMDAwIDAuMDAwMCAtMC4wMDAwIDEuMDAwMCAyMC4w
+MDAwIDM5LjUwMDAgVG0KKEEpIFRqCkVUCkJUCi9GMSA1LjAwMDAgVGYKMS4wMDAwIDAuMDAwMCAtMC4wMDAwIDEuMDAwMCAyMC4w
+MDAwIDkuNTAwMCBUbQooQSkgVGoKRVQKQlQKL0YxIDQuNTAwMCBUZgoxLjAwMDAgMC4wMDAwIC0wLjAwMDAgMS4wMDAwIDQ1LjAw
+MDAgMjAuMDAwMCBUbQooMSkgVGoKRVQKQlQKL0YxIDQuNTAwMCBUZgoxLjAwMDAgMC4wMDAwIC0wLjAwMDAgMS4wMDAwIC04LjAw
+MDAgNS4wMDAwIFRtCigyKSBUagpFVApCVAovRjEgMy41MDAwIFRmCjEuMDAwMCAwLjAwMDAgLTAuMDAwMCAxLjAwMDAgMjAuMDAw
+MCAtNi4wMDAwIFRtCig0MC4wMCkgVGoKRVQKQlQKL0YxIDMuNTAwMCBUZgoxLjAwMDAgMC4wMDAwIC0wLjAwMDAgMS4wMDAwIDIw
+LjAwMDAgLTEyLjAwMDAgVG0KKDQwLjAwIMKxMC4wNTApIFRqCkVUCkJUCi9GMSAzLjUwMDAgVGYKMS4wMDAwIDAuMDAwMCAtMC4w
+MDAwIDEuMDAwMCAyMC4wMDAwIC0xOC4wMDAwIFRtCig0MC4wMCkgVGoKRVQKQlQKL0YxIDEuOTI1MCBUZgoxLjAwMDAgMC4wMDAw
+IC0wLjAwMDAgMS4wMDAwIDIwLjAwMDAgLTE2LjAwMDAgVG0KKCswLjEwMCkgVGoKRVQKQlQKL0YxIDEuOTI1MCBUZgoxLjAwMDAg
+MC4wMDAwIC0wLjAwMDAgMS4wMDAwIDIwLjAwMDAgLTIwLjAwMDAgVG0KKC0wLjA1MCkgVGoKRVQKQlQKL0YxIDMuNTAwMCBUZgox
+LjAwMDAgMC4wMDAwIC0wLjAwMDAgMS4wMDAwIDIwLjAwMDAgLTI0LjAwMDAgVG0KKDQwLjAwKSBUagpFVApCVAovRjEgMS45MjUw
+IFRmCjEuMDAwMCAwLjAwMDAgLTAuMDAwMCAxLjAwMDAgMjAuMDAwMCAtMjIuMDAwMCBUbQooKzAuMTAwKSBUagpFVApCVAovRjEg
+MS45MjUwIFRmCjEuMDAwMCAwLjAwMDAgLTAuMDAwMCAxLjAwMDAgMjAuMDAwMCAtMjYuMDAwMCBUbQooMCkgVGoKRVQKQlQKL0Yx
+IDMuNTAwMCBUZgoxLjAwMDAgMC4wMDAwIC0wLjAwMDAgMS4wMDAwIDIwLjAwMDAgLTMwLjAwMDAgVG0KKDQwLjAwKSBUagpFVApC
+VAovRjEgMS45MjUwIFRmCjEuMDAwMCAwLjAwMDAgLTAuMDAwMCAxLjAwMDAgMjAuMDAwMCAtMjguMDAwMCBUbQooMCkgVGoKRVQK
+QlQKL0YxIDEuOTI1MCBUZgoxLjAwMDAgMC4wMDAwIC0wLjAwMDAgMS4wMDAwIDIwLjAwMDAgLTMyLjAwMDAgVG0KKC0wLjEwMCkg
+VGoKRVQKQlQKL0YxIDMuNTAwMCBUZgoxLjAwMDAgMC4wMDAwIC0wLjAwMDAgMS4wMDAwIDIwLjAwMDAgLTM2LjAwMDAgVG0KKDQw
+LjAwIEg3KSBUagpFVApCVAovRjEgMy41MDAwIFRmCjEuMDAwMCAwLjAwMDAgLTAuMDAwMCAxLjAwMDAgMjAuMDAwMCAtNDIuMDAw
+MCBUbQooNDAuMDApIFRqCkVUCkJUCi9GMSAxLjkyNTAgVGYKMS4wMDAwIDAuMDAwMCAtMC4wMDAwIDEuMDAwMCAyMC4wMDAwIC00
+MC4wMDAwIFRtCigyMC4wNTApIFRqCkVUCkJUCi9GMSAxLjkyNTAgVGYKMS4wMDAwIDAuMDAwMCAtMC4wMDAwIDEuMDAwMCAyMC4w
+MDAwIC00NC4wMDAwIFRtCigxOS45NTApIFRqCkVUCkJUCi9GMSAzLjUwMDAgVGYKMS4wMDAwIDAuMDAwMCAtMC4wMDAwIDEuMDAw
+MCAzNS41ODg1IDIxLjUwMDAgVG0KKFI4LjAwIMKxMC4wMjApIFRqCkVUCkJUCi9GMSAzLjUwMDAgVGYKMS4wMDAwIDAuMDAwMCAt
+MC4wMDAwIDEuMDAwMCAyNS4wMDAwIDIxLjE2MDMgVG0KKOKMgDEwLjAwKSBUagpFVApCVAovRjEgMy41MDAwIFRmCjEuMDAwMCAw
+LjAwMDAgLTAuMDAwMCAxLjAwMDAgMTIuNzI3OSAxMi43Mjc5IFRtCig5MC4wwrApIFRqCkVUCkJUCi9GMSAxLjkyNTAgVGYKMS4w
+MDAwIDAuMDAwMCAtMC4wMDAwIDEuMDAwMCAxNC4xNDIxIDE0LjE0MjEgVG0KKCswLjUwMCkgVGoKRVQKQlQKL0YxIDEuOTI1MCBU
+ZgoxLjAwMDAgMC4wMDAwIC0wLjAwMDAgMS4wMDAwIDExLjMxMzcgMTEuMzEzNyBUbQooLTAuNTAwKSBUagpFVApCVAovRjEgMy41
+MDAwIFRmCjAuMDAwMCAxLjAwMDAgLTEuMDAwMCAwLjAwMDAgNDAuMDAwMCAtNS4wMDAwIFRtCig0MC4wMCkgVGoKRVQKQlQKL0Yx
+IDMuNTAwMCBUZgoxLjAwMDAgMC4wMDAwIC0wLjAwMDAgMS4wMDAwIC01LjAwMDAgMjUuMDAwMCBUbQooMjUuMDApIFRqCkVUCkJU
+Ci9GMSAzLjUwMDAgVGYKMC4wMDAwIDEuMDAwMCAtMS4wMDAwIDAuMDAwMCA0MC4wMDAwIC01LjAwMDAgVG0KKDQwLjAwKSBUagpF
+VApCVAovRjEgMy41MDAwIFRmCjEuMDAwMCAwLjAwMDAgLTAuMDAwMCAxLjAwMDAgLTUuMDAwMCAyNS4wMDAwIFRtCigyNS4wMCkg
+VGoKRVQKUQoKZW5kc3RyZWFtCmVuZG9iago1IDAgb2JqCjw8IC9UeXBlIC9Gb250IC9TdWJ0eXBlIC9UeXBlMSAvQmFzZUZvbnQg
+L0hlbHZldGljYSAvRW5jb2RpbmcgL1dpbkFuc2lFbmNvZGluZyA+PgplbmRvYmoKeHJlZgowIDYKMDAwMDAwMDAwMCA2NTUzNSBm
+IAowMDAwMDAwMDE1IDAwMDAwIG4gCjAwMDAwMDAwNjQgMDAwMDAgbiAKMDAwMDAwMDEyMSAwMDAwMCBuIAowMDAwMDAwMjU3IDAw
+MDAwIG4gCjAwMDAwMDUzNTEgMDAwMDAgbiAKdHJhaWxlcgo8PCAvU2l6ZSA2IC9Sb290IDEgMCBSID4+CnN0YXJ0eHJlZgo1NDQ4
+CiUlRU9GCg==
+"""
+
+@Suite("#795 exporter drawing-collection consolidation -- golden output")
+struct ExporterDrawingCollectionGoldenTests {
+    @Test("SVGWriter.collectFromDrawing output is byte-identical to the pre-consolidation capture")
+    func svgGolden() throws {
+        let writer = SVGWriter()
+        writer.collectFromDrawing(makeGolden795Drawing())
+        let url = URL(fileURLWithPath: NSTemporaryDirectory())
+            .appendingPathComponent("795_golden_\(UUID()).svg")
+        defer { try? FileManager.default.removeItem(at: url) }
+        try writer.write(to: url)
+        let content = try String(contentsOf: url, encoding: .utf8)
+        #expect(content == golden795SVG)
+    }
+
+    @Test("DXFWriter.collectFromDrawing output is byte-identical to the pre-consolidation capture")
+    func dxfGolden() throws {
+        let writer = DXFWriter()
+        writer.collectFromDrawing(makeGolden795Drawing())
+        let url = URL(fileURLWithPath: NSTemporaryDirectory())
+            .appendingPathComponent("795_golden_\(UUID()).dxf")
+        defer { try? FileManager.default.removeItem(at: url) }
+        try writer.write(to: url)
+        let content = try String(contentsOf: url, encoding: .utf8)
+        #expect(content == golden795DXF)
+    }
+
+    @Test("PDFWriter.collectFromDrawing output is byte-identical to the pre-consolidation capture")
+    func pdfGolden() throws {
+        let writer = PDFWriter()
+        writer.collectFromDrawing(makeGolden795Drawing())
+        let url = URL(fileURLWithPath: NSTemporaryDirectory())
+            .appendingPathComponent("795_golden_\(UUID()).pdf")
+        defer { try? FileManager.default.removeItem(at: url) }
+        try writer.write(to: url)
+        let actual = try Data(contentsOf: url)
+        guard let expected = Data(base64Encoded: golden795PDFBase64,
+                                   options: .ignoreUnknownCharacters) else {
+            Issue.record("failed to decode golden PDF base64 fixture")
+            return
+        }
+        #expect(actual == expected)
+    }
+
+    /// Direct-API path (not via `Drawing`): `addDimension`/`addLine`/etc. staged by hand,
+    /// exercising `primitiveOps()` without `collectFromDrawing` in the loop. Not a golden-byte
+    /// comparison -- a lightweight structural check that every writer's direct entity-staging
+    /// API still produces the same entity counts after the consolidation.
+    @Test("Direct addDimension/addLine staging produces matching entity counts across all three writers")
+    func directStagingEntityCountsMatch() {
+        let dim = DrawingDimension.linear(.init(from: SIMD2(0, 0), to: SIMD2(10, 0),
+                                                 tolerance: .bilateral(plus: 0.1, minus: 0.05)))
+        let pdf = PDFWriter(); pdf.addLine(from: .zero, to: SIMD2(1, 1)); pdf.addDimension(dim)
+        let svg = SVGWriter(); svg.addLine(from: .zero, to: SIMD2(1, 1)); svg.addDimension(dim)
+        let dxf = DXFWriter(); dxf.addLine(from: .zero, to: SIMD2(1, 1)); dxf.addDimension(dim)
+        #expect(pdf.entityCounts.lines == svg.entityCounts.lines)
+        #expect(pdf.entityCounts.lines == dxf.entityCounts.lines)
+        #expect(pdf.entityCounts.texts == svg.entityCounts.texts)
+        #expect(pdf.entityCounts.texts == dxf.entityCounts.texts)
+        #expect(pdf.entityCounts.texts == 3)  // main + upper + lower
+    }
+}
+
+// MARK: - #800 review: no writer emits a malformed double-sign numeric token
+//
+// A golden test pins BYTES, not correctness -- a golden regenerated from a still-broken
+// implementation is indistinguishable from one refreshed to hide a regression until the
+// bytes are read by eye. `emitLayerText` (SVGExporter.swift) used to build its
+// counter-rotation transform by string-concatenating a literal "-" in front of an
+// already-formatted coordinate instead of negating the number first, so a negative x or y
+// produced an invalid double-minus SVG number token (e.g. `translate(0.0000,--10.0000)`
+// for y = -10). That bug predated this PR but the golden fixture above captured it as
+// "correct" until now. These tests assert the property directly, so a future
+// regeneration that reintroduces the bug fails here regardless of what the golden bytes say.
+
+private func xmlAttributeValues(in content: String) -> [String] {
+    // Manual scan rather than a text-content regex: attribute values are always inside a
+    // `="..."` pair, which structurally excludes a `<text>`/`<title>` element's own inner
+    // text content (arbitrary user-supplied labels, which legitimately might contain "--").
+    var values: [String] = []
+    var searchStart = content.startIndex
+    while let eq = content.range(of: "=\"", range: searchStart..<content.endIndex) {
+        let valueStart = eq.upperBound
+        guard let closeQuote = content.range(of: "\"", range: valueStart..<content.endIndex) else { break }
+        values.append(String(content[valueStart..<closeQuote.lowerBound]))
+        searchStart = closeQuote.upperBound
+    }
+    return values
+}
+
+private func pdfContentStreamNonTextTokens(_ content: String) -> String {
+    // Strip every `(...)` string literal (the payload of a `Tj` text-show operator, the
+    // only place arbitrary label text appears) before scanning; everything left is PDF
+    // operators and the numbers this writer formats itself.
+    var stripped = ""
+    var depth = 0
+    for ch in content {
+        if ch == "(" { depth += 1; continue }
+        if ch == ")" { depth -= 1; continue }
+        if depth == 0 { stripped.append(ch) }
+    }
+    return stripped
+}
+
+private func dxfNonTextValues(_ content: String) -> [String] {
+    // DXF alternates group-code/value line pairs; group code 1 is the TEXT entity's own
+    // string payload (arbitrary label text), every other code's value is this writer's own
+    // formatted number or a fixed enum-ish string (layer/linetype/style names).
+    let lines = content.split(separator: "\n", omittingEmptySubsequences: false).map(String.init)
+    var values: [String] = []
+    var i = 0
+    while i + 1 < lines.count {
+        if lines[i] != "1" { values.append(lines[i + 1]) }
+        i += 2
+    }
+    return values
+}
+
+@Suite("#800 review: no writer emits a malformed double-sign numeric token")
+struct DoubleMinusRegressionTests {
+    @Test("SVGWriter's counter-rotation transform never doubles a minus sign for a negative text position")
+    func svgTextTransformNegativePosition() throws {
+        let writer = SVGWriter()
+        writer.addText("label", at: SIMD2(-8, -10), height: 3.5, rotationDeg: 0, layer: "TEXT")
+        let url = URL(fileURLWithPath: NSTemporaryDirectory())
+            .appendingPathComponent("800_negative_text_\(UUID()).svg")
+        defer { try? FileManager.default.removeItem(at: url) }
+        try writer.write(to: url)
+        let content = try String(contentsOf: url, encoding: .utf8)
+        #expect(content.contains("<text"), "expected a <text> element to have been written")
+        for value in xmlAttributeValues(in: content) {
+            #expect(!value.contains("--"),
+                    "malformed double-sign numeric attribute value: \"\(value)\" in \(content)")
+        }
+    }
+
+    @Test("No XML attribute value in SVGWriter's golden-drawing output contains a double minus sign")
+    func svgGoldenHasNoDoubleMinus() throws {
+        let writer = SVGWriter()
+        writer.collectFromDrawing(makeGolden795Drawing())
+        let url = URL(fileURLWithPath: NSTemporaryDirectory())
+            .appendingPathComponent("800_svg_golden_scan_\(UUID()).svg")
+        defer { try? FileManager.default.removeItem(at: url) }
+        try writer.write(to: url)
+        let content = try String(contentsOf: url, encoding: .utf8)
+        let offenders = xmlAttributeValues(in: content).filter { $0.contains("--") }
+        #expect(offenders.isEmpty, "malformed double-sign attribute value(s): \(offenders)")
+    }
+
+    @Test("No numeric operand in PDFWriter's content stream contains a double minus sign")
+    func pdfGoldenHasNoDoubleMinus() throws {
+        let writer = PDFWriter()
+        writer.collectFromDrawing(makeGolden795Drawing())
+        let url = URL(fileURLWithPath: NSTemporaryDirectory())
+            .appendingPathComponent("800_pdf_golden_scan_\(UUID()).pdf")
+        defer { try? FileManager.default.removeItem(at: url) }
+        try writer.write(to: url)
+        let data = try Data(contentsOf: url)
+        let content = String(data: data, encoding: .isoLatin1) ?? ""
+        let nonText = pdfContentStreamNonTextTokens(content)
+        #expect(!nonText.contains("--"), "malformed double-sign numeric token found outside text payloads")
+    }
+
+    @Test("No numeric value in DXFWriter's golden-drawing output contains a double minus sign")
+    func dxfGoldenHasNoDoubleMinus() throws {
+        let writer = DXFWriter()
+        writer.collectFromDrawing(makeGolden795Drawing())
+        let url = URL(fileURLWithPath: NSTemporaryDirectory())
+            .appendingPathComponent("800_dxf_golden_scan_\(UUID()).dxf")
+        defer { try? FileManager.default.removeItem(at: url) }
+        try writer.write(to: url)
+        let content = try String(contentsOf: url, encoding: .utf8)
+        let offenders = dxfNonTextValues(content).filter { $0.contains("--") }
+        #expect(offenders.isEmpty, "malformed double-sign value(s): \(offenders)")
+    }
+}
