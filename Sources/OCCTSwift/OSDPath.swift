@@ -5,7 +5,7 @@ import OCCTBridge
 /// File path parsing and manipulation utilities, wrapping OCCT's `OSD_Path`.
 ///
 /// The single path-parsing surface in OCCTSwift since #499. The `TDocStd_PathParser`-backed
-/// ``PathParser`` is now a deprecated forwarder onto this type.
+/// `PathParser` was a deprecated forwarder onto this type and was removed at v2.0.0 (#784).
 ///
 /// Parsing is pure string syntax: nothing here touches the filesystem, and no method requires
 /// the path to exist.

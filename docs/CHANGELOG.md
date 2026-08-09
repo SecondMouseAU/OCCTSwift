@@ -1347,7 +1347,7 @@ last-wins, chamfer is first-wins) and is deliberately not settled here; this fix
 not a vote in that debate, though it is recorded as a data point for it.
 
 This is a behaviour change on a public API with no compile error, recorded in
-[`SEMVER.md`](SEMVER.md#recorded-exception-unreleased-chamfer2d-refuses-a-repeated-edge-pair-instead-of-crashing-705).
+[`SEMVER.md`](SEMVER.md#v200-chamfer2d-refuses-a-repeated-edge-pair-instead-of-crashing-705).
 A call with no repeated pair, which includes every existing caller, is unaffected. Tests:
 `Tests/OCCTModelingTests/Issue568IndexSkipTests.swift`'s `chamfer2DRejectsDuplicatePair` and
 `chamfer2DAcceptsSharedEdgeAcrossDifferentPairs`, the latter proven to catch an overly broad fix by
@@ -1663,7 +1663,7 @@ it is a different mechanism than #642's own (a graph lacking solid-membership tr
 normal losing information across a dedup collapse) and out of this issue's scope.
 
 This is a behaviour change on two public APIs (`Shape.buildAAG()`, `Shape.detectPocketsAAG()`) with
-no compile error, recorded in [`SEMVER.md`](SEMVER.md#recorded-exception-unreleased-aag-builds-nodes-from-face-occurrences-642).
+no compile error, recorded in [`SEMVER.md`](SEMVER.md#v200-aag-builds-nodes-from-face-occurrences-642).
 On every shape that shares no face, `orientedFaces()` equals `faces()` exactly, so nothing about a
 single-solid shape's AAG changes. Tests:
 `Tests/OCCTModelingTests/Issue642AAGNodeIdentityTests.swift`, each proven to catch its own mechanism
@@ -1735,7 +1735,7 @@ the shared wall and the wrong side of a split face, exactly the mechanism this i
 unchanged and still passes.
 
 This is a further behaviour change on `Shape.detectPocketsAAG()`, recorded alongside #642's own
-entry in [`SEMVER.md`](SEMVER.md#recorded-exception-unreleased-aag-adjacency-and-convexity-are-scoped-to-one-solid-699)
+entry in [`SEMVER.md`](SEMVER.md#v200-aag-adjacency-and-convexity-are-scoped-to-one-solid-699)
 rather than a new one, since it is the same public API. On every shape with zero or one solid,
 nothing changes. Tests: `Tests/OCCTModelingTests/Issue699AAGSolidScopedAdjacencyTests.swift`, each
 proven to catch its own mechanism by reverting the fix alone (7 assertions across 3 tests fail,
@@ -6035,7 +6035,7 @@ whose bridge family is the single path-parsing implementation; `TDocStd_PathPars
 wrapped, and its four bridge functions are deleted.
 
 **Silent behaviour change, in two places**, prompted by a deprecation warning at every call site
-rather than a compile error. [`SEMVER.md`](SEMVER.md#recorded-exception-unreleased-pathparser-forwards-to-osdpath-499)
+rather than a compile error. [`SEMVER.md`](SEMVER.md#v200-pathparser-forwards-to-osdpath-then-is-removed-499-784)
 records the exception:
 
 ```swift
