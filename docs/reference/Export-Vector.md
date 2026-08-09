@@ -10,6 +10,12 @@ the first three are pure-Swift vector writers that complement the 3D [`Exporter`
 (STL/STEP/IGES/BREP/OBJ/PLY/GLTF), while `PixMap` wraps OCCT's `Image_AlienPixMap` for
 pixel-level raster image I/O and manipulation.
 
+All three writers collect edges, annotations and dimensions from a `Drawing` through one shared
+implementation rather than three copies (#795). The `DrawingPrimitiveSink` in each declaration
+below is the `internal` protocol that supplies it; it is not callable from outside the module, and
+each writer keeps its own explicit `public func collectFromDrawing`, so nothing about the public
+surface changed.
+
 ## Topics
 
 - [PDFError](#pdferror) · [Exporter — PDF](#exporter--pdf) · [PDFWriter](#pdfwriter)
@@ -152,7 +158,7 @@ Per-layer ISO 128-20 stroke weights: 0.5 mm (VISIBLE, OUTLINE, BORDER, TITLE), 0
 dash patterns automatically.
 
 ```swift
-public final class PDFWriter: @unchecked Sendable
+public final class PDFWriter: @unchecked Sendable, DrawingPrimitiveSink
 ```
 
 ### `PDFWriter.init(pageSize:deflection:)`
@@ -471,7 +477,7 @@ group-level `transform="translate(0,maxY) scale(1,-1)"`; each `<text>` carries i
 counter-transform so glyphs read right-side up.
 
 ```swift
-public final class SVGWriter: @unchecked Sendable
+public final class SVGWriter: @unchecked Sendable, DrawingPrimitiveSink
 ```
 
 ### `SVGWriter.init(viewBox:deflection:)`
@@ -780,7 +786,7 @@ OUTLINE (solid, 7), CENTER (CHAIN, 1), DIMENSION (solid, 5), TEXT (solid, 3), HA
 BORDER (solid, 7), TITLE (solid, 7).
 
 ```swift
-public final class DXFWriter: @unchecked Sendable
+public final class DXFWriter: @unchecked Sendable, DrawingPrimitiveSink
 ```
 
 ### `DXFWriter.init(deflection:)`
@@ -889,11 +895,11 @@ Emit a `DrawingDimension` as exploded LINE + TEXT entities.
 public func addDimension(_ d: DrawingDimension)
 ```
 
-Dispatches to inline emitters for each case (`.linear` → `emitLinear`, `.radial` → `emitRadial`,
-`.diameter` → `emitDiameter`, `.angular` → `emitAngular`, `.ordinate` → `emitOrdinate`). All
-`DrawingTolerance` variants are rendered: `.symmetric` and `.fitClass` are folded into the main
-label; `.bilateral`, `.unilateral`, and `.limits` produce stacked upper/lower text lines at 55%
-height.
+Dispatches through the shared `emitDimension` in `DrawingDispatch.swift`, the same one
+`PDFWriter` and `SVGWriter` use (#795). All `DrawingTolerance` variants are rendered: `.symmetric`
+and `.fitClass` are folded into the main label; `.bilateral`, `.unilateral`, and `.limits` produce
+stacked upper/lower text lines at 55% height. Until v2.0.0 DXF carried its own private copy of this
+dispatcher and its own tolerance formatter, so a fix to the shared one could miss DXF entirely.
 
 - **Parameters:** `d` — dimension to emit.
 - **OCCT:** Pure-Swift.
