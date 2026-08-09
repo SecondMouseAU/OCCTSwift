@@ -177,6 +177,45 @@ VAR_RE = re.compile(
 TYPEALIAS_RE = re.compile(r'\btypealias\s+(?P<name>[A-Za-z_][A-Za-z0-9_]*)')
 CASE_RE = re.compile(r'^\s*case\s+(?P<rest>.+?):?\s*$')
 
+# --- access levels: used ONLY by --coverage, never by the staleness gate -------------------------
+# Most restrictive first, so `min` over this ordering is "effective access of a member inside a
+# less-visible type".
+ACCESS_ORDER = ['private', 'fileprivate', 'internal', 'package', 'public', 'open']
+ACCESS_RANK = {a: i for i, a in enumerate(ACCESS_ORDER)}
+PUBLICISH = ('public', 'open')
+
+_ATTRIBUTE_RE = re.compile(r'^\s*@[A-Za-z_][A-Za-z0-9_]*(?:\([^)]*\))?\s*')
+_NON_ACCESS_MODIFIER_RE = re.compile(
+    r'^\s*(?:static|class|final|lazy|weak|unowned(?:\([^)]*\))?|override|mutating|nonmutating'
+    r'|convenience|required|dynamic|indirect|nonisolated(?:\([^)]*\))?|distributed|borrowing'
+    r'|consuming)\s+')
+# The negative lookahead is the whole point: `public private(set) var storage` is PUBLIC to read,
+# and a scan that finds the word `private` anywhere calls it private. A bare `private(set) var`
+# with no leading access keyword is `internal`, which is also what falling through to the default
+# produces, so both spellings come out right.
+_ACCESS_KEYWORD_RE = re.compile(r'^\s*(open|public|package|internal|fileprivate|private)\b(?!\s*\()')
+
+
+def min_access(a, b):
+    return a if ACCESS_RANK[a] <= ACCESS_RANK[b] else b
+
+
+def leading_access(skeleton):
+    """The access keyword a declaration line actually carries, or None if it carries none.
+
+    None is not the same as `internal`: what an unmarked declaration defaults to depends on where it
+    sits (an enum case inherits its enum, a `public extension`'s members are public, everything else
+    is internal), and that context is not visible from the line alone.
+    """
+    s = skeleton
+    while True:
+        m = _ATTRIBUTE_RE.match(s) or _NON_ACCESS_MODIFIER_RE.match(s)
+        if not m:
+            break
+        s = s[m.end():]
+    m = _ACCESS_KEYWORD_RE.match(s)
+    return m.group(1) if m else None
+
 
 def split_top_level(text, sep=','):
     parts, depth, buf, i = [], 0, [], 0
@@ -196,14 +235,21 @@ def split_top_level(text, sep=','):
     return [p.strip() for p in parts if p.strip()]
 
 
-def _record(ctx, name, live_types, live_members, live_free):
+def _record(ctx, name, live_types, live_members, live_free, pending=None, own=None, is_case=False):
     if ctx is None:
         live_free.add(name)
-    else:
-        live_members.setdefault(ctx['qualified'], set()).add(name)
+        return
+    live_members.setdefault(ctx['qualified'], set()).add(name)
+    if pending is not None:
+        # First declaration wins, so an `internal` shadow of a `public` name cannot demote it.
+        key = (ctx['qualified'], name)
+        cand = (own, ctx['kind'], ctx.get('access'), ctx['qualified'], is_case)
+        prev = pending.get(key)
+        if prev is None or (prev[0] is None and own is not None):
+            pending[key] = cand
 
 
-def _scan_member_line(skeleton, ctx, live_types, live_members, live_free):
+def _scan_member_line(skeleton, ctx, live_types, live_members, live_free, pending=None):
     """Record every var/let/func/init/subscript/deinit/case/typealias directly in a type's body
     (or at file top level), regardless of access level.
 
@@ -217,6 +263,7 @@ def _scan_member_line(skeleton, ctx, live_types, live_members, live_free):
     is fully readable (public getter), but a naive access-modifier search finds "private" inside
     "private(set)" and would misclassify the whole declaration as non-public.
     """
+    own = leading_access(skeleton)
     is_enum_case = CASE_RE.match(skeleton)
     if is_enum_case:
         if not (ctx and ctx['kind'] == 'enum'):
@@ -224,11 +271,12 @@ def _scan_member_line(skeleton, ctx, live_types, live_members, live_free):
         for part in split_top_level(is_enum_case.group('rest')):
             m = re.match(r'[A-Za-z_][A-Za-z0-9_]*', part.strip())
             if m:
-                _record(ctx, m.group(0), live_types, live_members, live_free)
+                _record(ctx, m.group(0), live_types, live_members, live_free, pending,
+                        own=None, is_case=True)
         return
 
     if re.search(r'\bdeinit\b', skeleton):
-        _record(ctx, 'deinit', live_types, live_members, live_free)
+        _record(ctx, 'deinit', live_types, live_members, live_free, pending, own)
         return
 
     m = FUNC_RE.search(skeleton)
@@ -236,17 +284,17 @@ def _scan_member_line(skeleton, ctx, live_types, live_members, live_free):
         name = m.group('name') or m.group('kind')
         if m.group('kind') in ('init', 'subscript'):
             name = m.group('kind')
-        _record(ctx, name, live_types, live_members, live_free)
+        _record(ctx, name, live_types, live_members, live_free, pending, own)
         return
     m = TYPEALIAS_RE.search(skeleton)
     if m:
-        _record(ctx, m.group('name'), live_types, live_members, live_free)
+        _record(ctx, m.group('name'), live_types, live_members, live_free, pending, own)
         qualified = m.group('name') if ctx is None else ctx['qualified'] + '.' + m.group('name')
         live_types.add(qualified)
         return
     m = VAR_RE.search(skeleton)
     if m:
-        _record(ctx, m.group('name'), live_types, live_members, live_free)
+        _record(ctx, m.group('name'), live_types, live_members, live_free, pending, own)
 
 
 def _conformance_targets(skeleton, after):
@@ -274,13 +322,19 @@ def _conformance_targets(skeleton, after):
 
 
 def extract_source_symbols(files):
-    """files: {path: text} -> (live_types, live_members, live_free, conformances).
+    """files: {path: text} -> (live_types, live_members, live_free, conformances, access).
 
     `conformances`: qualified type name -> set of protocol/superclass names it declares itself
     conforming to, textually (see `_conformance_targets`).
+
+    `access`: {(owner_qualified, member_name): effective access level}, for `--coverage` only. The
+    staleness gate stays access-blind (see `_scan_member_line`); every member is still extracted and
+    still looked up, and this map is consulted by nothing but the census.
     """
     live_types, live_members, live_free = set(), {}, set()
     conformances = {}
+    type_decls = {}   # qualified -> {'access': explicit-or-None, 'parent': qualified-or-None}
+    pending = {}      # (owner, name) -> (own, ctx_kind, ctx_access, ctx_qualified, is_case)
     for path in sorted(files):
         lines = files[path].split('\n')
         type_stack = []
@@ -305,11 +359,25 @@ def extract_source_symbols(files):
                     # be re-prefixed by an unrelated enclosing ctx.
                     qualified = name if ('.' in name or ctx is None) else ctx['qualified'] + '.' + name
                     live_types.add(qualified)
-                    _record(ctx, name, live_types, live_members, live_free)
+                    decl_access = leading_access(skeleton)
+                    _record(ctx, name, live_types, live_members, live_free, pending, decl_access)
+                    # An `extension` never declares the type's access, only the default its own
+                    # members take, so it must not overwrite what the real declaration said.
+                    if kind != 'extension':
+                        type_decls[qualified] = {
+                            'access': decl_access,
+                            'parent': ctx['qualified'] if ctx else None,
+                            # The enclosing FRAME, not just its name: a type with no modifier of
+                            # its own inside `public extension Shape` is public, and reading only
+                            # `parent` cannot tell that extension from a bare one.
+                            'ctx_kind': ctx['kind'] if ctx else None,
+                            'ctx_access': ctx.get('access') if ctx else None,
+                        }
                     targets = _conformance_targets(skeleton, tm.end())
                     if targets:
                         conformances.setdefault(qualified, set()).update(targets)
-                    pending_type = {'short': name, 'qualified': qualified, 'kind': kind}
+                    pending_type = {'short': name, 'qualified': qualified, 'kind': kind,
+                                    'access': decl_access}
                 if pending_type and '{' in skeleton:
                     type_stack.append({**pending_type, 'depth': depth_before})
                     pending_type = None
@@ -319,15 +387,65 @@ def extract_source_symbols(files):
                 direct_member = ctx is not None and depth_before == ctx['depth'] + 1
                 top_level = ctx is None and depth_before == 0
                 if direct_member or top_level:
-                    _scan_member_line(skeleton, ctx, live_types, live_members, live_free)
+                    _scan_member_line(skeleton, ctx, live_types, live_members, live_free, pending)
 
             brace_depth += skeleton.count('{') - skeleton.count('}')
             while type_stack and brace_depth <= type_stack[-1]['depth']:
                 type_stack.pop()
-    return live_types, live_members, live_free, conformances
+    return live_types, live_members, live_free, conformances, resolve_access(pending, type_decls)
 
 
-def resolve_conformances(live_members, conformances):
+def resolve_access(pending, type_decls):
+    """Turn each member's (own keyword, enclosing context) pair into one effective access level.
+
+    Swift's defaulting rules, which are not readable off the declaration line:
+      - an enum `case` has no access keyword of its own and takes the enum's;
+      - a protocol requirement likewise takes the protocol's;
+      - a member of `public extension Foo` with no keyword is public, the same member in a bare
+        `extension Foo` is internal;
+      - everything else defaults to internal;
+      - and a member is never more visible than the type it sits in, so a `public func` inside an
+        internal struct is internal.
+
+    Reading only the keyword on the line gets the FIRST of these exactly backwards, which is how a
+    `public enum`'s 575 cases came to be counted as non-public in this repo's own coverage census.
+    """
+    memo = {}
+
+    def type_effective(q):
+        if q in memo:
+            return memo[q]
+        memo[q] = 'public'   # cycle guard, and the answer for a type declared outside this glob
+        d = type_decls.get(q)
+        if d is None:
+            return 'public'
+        eff = d['access']
+        if eff is None:
+            # Same defaulting rule as a member: inside `public extension Foo`, an unmarked nested
+            # type is public. Missing this clamped `Shape.ContigousEdgeResult`'s `public let`
+            # fields down to internal and hid real API from the census.
+            eff = (d.get('ctx_access') or 'internal') if d.get('ctx_kind') == 'extension' \
+                else 'internal'
+        if d['parent']:
+            eff = min_access(eff, type_effective(d['parent']))
+        memo[q] = eff
+        return eff
+
+    out = {}
+    for key, (own, ctx_kind, ctx_access, ctx_qualified, is_case) in pending.items():
+        if own is not None:
+            declared = own
+        elif is_case or ctx_kind == 'protocol':
+            declared = type_effective(ctx_qualified)
+        elif ctx_kind == 'extension':
+            declared = ctx_access or 'internal'
+        else:
+            declared = 'internal'
+        out[key] = min_access(declared, type_effective(ctx_qualified))
+    return out
+
+
+def resolve_conformances(live_members, conformances, access=None):
     """Mutates `live_members` so every conforming type's set also contains what it inherits from
     a protocol/superclass's own members: a protocol EXTENSION supplies a member once for every
     conformer, with no separate declaration near the conforming type to find. Called once, right
@@ -336,15 +454,23 @@ def resolve_conformances(live_members, conformances):
     """
     def expand(t, visited):
         if t in visited:
-            return set()
+            return {}
         visited = visited | {t}
-        acc = set(live_members.get(t, set()))
+        # name -> the qualified owner the declaration actually came from, so an inherited member's
+        # access is read off the protocol/superclass that declares it rather than defaulted.
+        acc = {n: t for n in live_members.get(t, set())}
         for target in conformances.get(t, set()):
-            acc |= expand(target, visited)
+            for n, src in expand(target, visited).items():
+                acc.setdefault(n, src)
         return acc
 
     for t in list(conformances):
-        live_members[t] = expand(t, set())
+        origins = expand(t, set())
+        live_members[t] = set(origins)
+        if access is not None:
+            for n, src in origins.items():
+                if (t, n) not in access and (src, n) in access:
+                    access[(t, n)] = access[(src, n)]
 
 
 # --- doc-side extraction ------------------------------------------------------------------------
@@ -361,6 +487,9 @@ INLINE_DOTTED_RE = re.compile(
 FENCE_OPEN_RE = re.compile(r'^\s*```')
 FENCED_END_RE = re.compile(r'^\s*```\s*$')
 IDENTIFIER_SHAPED_RE = re.compile(r'^[A-Za-z_][A-Za-z0-9_.]*$')
+# `` `firstPoint` ``, `` `.locationNone` ``, `` `distance(to:)` `` -- a bare, undotted symbol
+# mention. Coverage only; see the note in `scan_doc_file`.
+BARE_BACKTICK_RE = re.compile(r'`\.?([a-z_][A-Za-z0-9_]*(?:\([^`]*\))?)`')
 
 
 def strip_disambiguation(text):
@@ -508,6 +637,20 @@ def scan_doc_file(path, text, live_types, live_members, live_free, rep):
             fence_active = True
             continue
 
+        # --- coverage-only channel -------------------------------------------------------------
+        # Any backtick-quoted bare identifier counts as "this member is NAMED in docs", which is
+        # the only question `--coverage` asks. A table row `| \`firstPoint\` | ... |` documents a
+        # field as surely as a heading does, and counting only headings made the census demand a
+        # heading per field: 584 empty anchor headings were added next to tables that already
+        # explained every one of them, purely to satisfy this number.
+        #
+        # Deliberately NOT fed into the staleness check. A bare backtick-quoted word is far too
+        # weak to accuse of being a removed symbol (it is often just an English word in code
+        # font); that check keeps requiring a dotted `Type.member` or a heading, as the module
+        # docstring describes.
+        for word in BARE_BACKTICK_RE.findall(line):
+            rep.seen.add(word.split('(')[0])
+
         hb = HEADING_BACKTICK_RE.match(line)
         if hb:
             level = len(hb.group(1))
@@ -646,17 +789,29 @@ def _check_and_record(cls, resolved_type, path, lineno, historical, rep, live_ty
         rep.stale.append((path, lineno, 'heading', resolved_type, member, 'bare_member'))
 
 
-def coverage(live_members, seen):
-    """Which live public members are named nowhere in docs/ (#802 item 5).
+def coverage(live_members, seen, access):
+    """Which live PUBLIC members are named nowhere in docs/ (#802 item 5).
 
     The INVERSE of what this script normally asks. The gate walks docs and checks each reference
     resolves; this walks the source and checks each member is referenced. A clean gate run says
     nothing about coverage, which is why the two are separate modes rather than one number.
 
     Excluded, deliberately:
+      - anything whose effective access is not `public`/`open` (see `resolve_access`).
       - `_`-prefixed names, conventionally private-by-convention even when `public`.
       - PascalCase members, which are nested TYPES rather than functions or properties.
       - anything under a `CodingKeys` type, a `Codable` implementation detail no consumer calls.
+
+    The access filter is the one exclusion this mode originally lacked, and its absence cost real
+    work: the census asked for ~180 `private`/`internal` implementation helpers to be documented in
+    consumer reference pages, and two agents dutifully documented them, then raised
+    `check-docs-defaults.py`'s `EXPECTED_UNMATCHED` baseline (3 -> 66 and 3 -> 7) because that gate
+    only indexes public declarations and correctly refused to match a private one. Two gates
+    disagreeing was the signal; the census was the one that was wrong.
+
+    KNOWN LIMITATION: `seen` is a set of bare member NAMES, not (type, member) pairs, so
+    documenting `Shape.count` marks `count` covered on every type that has one. The count here is
+    therefore a floor on the real gap.
 
     Measured this way the answer is roughly a quarter of the surface. Measured with an ad hoc regex
     over `Type.member` and `member(` it comes out around 25% higher, because a member documented as
@@ -666,21 +821,26 @@ def coverage(live_members, seen):
     """
     missing = {}
     total = 0
+    nonpublic = 0
     for owner, members in live_members.items():
         if 'CodingKeys' in owner:
             continue
         for member in members:
             if member.startswith('_') or member[:1].isupper():
                 continue
+            if access.get((owner, member), 'public') not in PUBLICISH:
+                nonpublic += 1
+                continue
             total += 1
             if member not in seen:
                 missing.setdefault(owner, []).append(member)
-    return total, {k: sorted(v) for k, v in missing.items()}
+    return total, {k: sorted(v) for k, v in missing.items()}, nonpublic
 
 
-def print_coverage(total, missing):
+def print_coverage(total, missing, nonpublic):
     n = sum(len(v) for v in missing.values())
     print(f"live public members      : {total}")
+    print(f"non-public, not counted  : {nonpublic}")
     print(f"named nowhere in docs/   : {n}  ({100 * n / max(total, 1):.1f}%)")
     print(f"types with a gap         : {len(missing)}")
     if not missing:
@@ -843,8 +1003,8 @@ SELF_TEST_CASES = [
 def self_test():
     failures = 0
     for name, src_files, doc_files, expect_kind, expect_count in SELF_TEST_CASES:
-        live_types, live_members, live_free, conformances = extract_source_symbols(src_files)
-        resolve_conformances(live_members, conformances)
+        live_types, live_members, live_free, conformances, _acc = extract_source_symbols(src_files)
+        resolve_conformances(live_members, conformances, _acc)
         rep = Report()
         for path in sorted(doc_files):
             scan_doc_file(path, doc_files[path], live_types, live_members, live_free, rep)
@@ -865,7 +1025,7 @@ def self_test():
     return failures
 
 
-_COVERAGE_CASES = 4
+_COVERAGE_CASES = 16
 
 
 def _coverage_self_test():
@@ -874,6 +1034,11 @@ def _coverage_self_test():
     Worth its own cases rather than trusting the shared fixtures: coverage reads `rep.seen`, which
     the staleness path populates as a side effect, so a change that stopped recording it would leave
     every staleness case passing while coverage silently reported the whole surface as undocumented.
+
+    The access rows are the expensive ones. Getting the enum-case rule backwards mislabelled 575
+    public cases as non-public here, and reporting the wrong number stopped three agents mid-task,
+    so each of Swift's defaulting rules gets a row asserting BOTH directions: the shape that must be
+    counted, and the neighbouring shape that must not.
     """
     src = {'S.swift': (
         'public struct Widget {\n'
@@ -881,24 +1046,72 @@ def _coverage_self_test():
         '    public func undocumented() {}\n'
         '    public func _hidden() {}\n'
         '    public var Nested: Int { 0 }\n'
+        '    internal func internalHelper() {}\n'
+        '    private func privateHelper() {}\n'
+        '    fileprivate func fileprivateHelper() {}\n'
+        '    func implicitlyInternal() {}\n'
+        '    public private(set) var settableOnlyInside: Int = 0\n'
         '}\n'
         'public struct WidgetCodingKeys {\n'
         '    public var excluded: Int { 0 }\n'
-        '}\n')}
+        '}\n'
+        # An enum case carries no access keyword of its own; it takes the enum's.
+        'public enum Mode {\n    case fast\n    case slow\n}\n'
+        'internal enum HiddenMode {\n    case quiet\n}\n'
+        # A member with no keyword takes the EXTENSION's, not a blanket internal.
+        'public extension Widget {\n    func fromPublicExtension() {}\n}\n'
+        'extension Widget {\n    func fromBareExtension() {}\n}\n'
+        # A public member is never more visible than the type holding it.
+        'internal struct Hidden {\n    public func publicInsideInternal() {}\n}\n'
+        # A protocol requirement takes the protocol's access.
+        'public protocol Shaped {\n    func requirement()\n}\n'
+        # An unmarked nested type inside a `public extension` is PUBLIC, so its `public let`
+        # fields stay public. Treating the struct as internal clamps them down and hides them.
+        'public extension Widget {\n'
+        '    struct Nested: Sendable {\n        public let carried: Int\n    }\n}\n'
+        'extension Widget {\n'
+        '    struct BareNested: Sendable {\n        public let notCarried: Int\n    }\n}\n')}
     docs = {'d.md': '# Widget\n\n### `Widget.documented()`\n\nText.\n'}
-    live_types, live_members, live_free, conf = extract_source_symbols(src)
-    resolve_conformances(live_members, conf)
+    live_types, live_members, live_free, conf, access = extract_source_symbols(src)
+    resolve_conformances(live_members, conf, access)
     rep = Report()
     for path in sorted(docs):
         scan_doc_file(path, docs[path], live_types, live_members, live_free, rep)
-    total, missing = coverage(live_members, rep.seen)
-    flat = {m for v in missing.values() for m in v}
+    total, missing, nonpublic = coverage(live_members, rep.seen, access)
+    # Every fixture member except `documented()` is absent from the doc, so "appears in `missing`"
+    # and "was counted at all" coincide here, and reading the answer off `coverage`'s own return
+    # value is what makes these rows load-bearing. An earlier draft re-derived the filter inline
+    # from `access`; deleting the filter from `coverage` then failed nothing, because the assertion
+    # was checking a copy of the logic rather than the logic.
+    counted = {m for v in missing.values() for m in v}
+    flat = counted
 
     checks = [
         ('coverage: a documented member is not reported missing', 'documented' not in flat),
         ('coverage: an undocumented member IS reported missing', 'undocumented' in flat),
         ('coverage: an underscore-prefixed member is excluded', '_hidden' not in flat),
         ('coverage: a CodingKeys member is excluded', 'excluded' not in flat),
+        ('access: an explicit `internal` member is not counted',
+         'internalHelper' not in counted),
+        ('access: a `private` member is not counted', 'privateHelper' not in counted),
+        ('access: a `fileprivate` member is not counted', 'fileprivateHelper' not in counted),
+        ('access: an unmarked member of a public struct is not counted (implicit internal)',
+         'implicitlyInternal' not in counted),
+        ('access: `public private(set)` IS counted (public getter, not a private member)',
+         'settableOnlyInside' in counted),
+        ('access: a `public enum`\'s cases ARE counted (a case inherits the enum)',
+         {'fast', 'slow'} <= counted),
+        ('access: an `internal enum`\'s cases are not counted', 'quiet' not in counted),
+        ('access: `public extension` makes an unmarked member public; a bare one does not',
+         'fromPublicExtension' in counted and 'fromBareExtension' not in counted),
+        ('access: a `public func` inside an internal struct is not counted',
+         'publicInsideInternal' not in counted),
+        ('access: an unmarked requirement of a public protocol IS counted',
+         'requirement' in counted),
+        ('access: a nested type in a `public extension` keeps its public fields public',
+         'carried' in counted),
+        ('access: the same nested type in a BARE extension does not',
+         'notCarried' not in counted),
     ]
     bad = 0
     for label, ok in checks:
@@ -928,8 +1141,8 @@ def main():
     for path in sorted(glob.glob(SRC_GLOB)):
         with open(path, encoding='utf-8') as fh:
             src_files[path] = fh.read()
-    live_types, live_members, live_free, conformances = extract_source_symbols(src_files)
-    resolve_conformances(live_members, conformances)
+    live_types, live_members, live_free, conformances, access = extract_source_symbols(src_files)
+    resolve_conformances(live_members, conformances, access)
 
     rep = Report()
     for path in in_scope_doc_paths():
@@ -938,8 +1151,8 @@ def main():
         scan_doc_file(path, text, live_types, live_members, live_free, rep)
 
     if args.coverage:
-        total, missing = coverage(live_members, rep.seen)
-        print_coverage(total, missing)
+        total, missing, nonpublic = coverage(live_members, rep.seen, access)
+        print_coverage(total, missing, nonpublic)
         # Never fails. Coverage is a backlog to work through, not a property of a correct tree, and
         # a gate that fails on it would fail every build until the backlog is empty.
         return 0
