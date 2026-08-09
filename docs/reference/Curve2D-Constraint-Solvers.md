@@ -173,6 +173,12 @@ Pass these alongside curves in every `Curve2DGcc` solver call.
 
 ---
 
+#### `Curve2DQualifier.outside`
+
+The solution circle is outside the qualified curve.
+
+---
+
 ### `Curve2DCircleSolution`
 
 A circle solution from the Gcc constraint solver.
@@ -212,6 +218,29 @@ public struct Curve2DHatchSegment: Sendable {
     public let end: SIMD2<Double>
 }
 ```
+
+- `start`: start point of the hatch line segment.
+- `end`: end point of the hatch line segment.
+
+#### `Curve2DHatchSegment.end`
+
+---
+
+### `HatchSegment`
+
+A line segment in the general-purpose 2D hatch pattern generator, `HatchPattern.generate(boundary:direction:spacing:offset:maxSegments:)` (`Sources/OCCTSwift/HatchPattern.swift`). Structurally identical to `Curve2DHatchSegment` above but produced by the polygon-boundary hatcher rather than the `Geom2dHatch_Hatcher`-backed `Curve2DGcc.hatch(boundaries:...)`.
+
+```swift
+public struct HatchSegment: Sendable {
+    public let start: SIMD2<Double>
+    public let end: SIMD2<Double>
+}
+```
+
+- `start`: start point of the hatch line segment.
+- `end`: end point of the hatch line segment.
+
+#### `HatchSegment.end`
 
 ---
 
@@ -524,6 +553,10 @@ public struct BisecSolution: Sendable {
 - `position` — primary position: center for circles, a point on the line for lines, focus for conics.
 - `secondary` — secondary values: direction for lines, semi-axes for conics.
 - `radius` — radius for circle-type bisectors; 0 otherwise.
+
+*(Per-field anchor below, for cross-reference; the list above has the actual meaning of each.)*
+
+#### `BisecSolution.secondary`
 
 ---
 

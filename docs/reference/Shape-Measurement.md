@@ -9,7 +9,7 @@ This page covers the measurement, decomposition, healing, and local-operation AP
 
 ## Topics
 
-- [Sub-Shape Extraction](#sub-shape-extraction-v0380) · [Fuse and Blend](#fuse-and-blend-v0380) · [Multi-Edge Evolving Fillet](#multi-edge-evolving-fillet-v0380) · [Per-Face Variable Offset](#per-face-variable-offset-v0380) · [Free Boundary Analysis](#free-boundary-analysis-v0390) · [Pipe Feature](#pipe-feature-v0390) · [Semi-Infinite Extrusion](#semi-infinite-extrusion-v0390) · [Prism Until Face](#prism-until-face-v0390) · [Inertia Properties](#inertia-properties-v0400) · [Extended Distance](#extended-distance-v0400) · [Find Surface](#find-surface-v0400) · [Shape Surgery](#shape-surgery-v0410) · [Plane Detection](#plane-detection-v0410) · [Closed Edge Splitting](#closed-edge-splitting-v0410) · [Geometry Conversion](#geometry-conversion-v0410) · [Face Restriction](#face-restriction-v0410) · [Solid Construction / 2D Fillet / Point Cloud](#solid-construction-2d-fillet-and-point-cloud-v0420) · [Face Subdivision](#face-subdivision-v0430) · [Curve-on-Surface Check](#curve-on-surface-check) · [Edge Connection](#edge-connection) · [Self-Intersection Detection](#self-intersection-detection-v0450) · [Bezier Conversion](#bezier-conversion) · [Edge Concavity Analysis](#edge-concavity-analysis-v0460) · [Geometric Edge Selection](#geometric-edge-selection-v121) · [Local Prism / Volume Inertia](#local-prism-and-volume-inertia-v0460) · [Local Revolution](#local-revolution-v0470) · [Draft Prism](#draft-prism-v0470) · [Constrained Filling](#constrained-filling-v0470) · [Shape Validity Checking](#shape-validity-checking-v0470) · [Local Operations / Validation / Fixing / Extrema](#local-operations-validation-fixing-and-extrema-v0480) · [ShapeAnalysis FreeBoundsProperties](#shapeanalysis-freeboundsproperties)
+- [Sub-Shape Extraction](#sub-shape-extraction-v0380) · [Fuse and Blend](#fuse-and-blend-v0380) · [Multi-Edge Evolving Fillet](#multi-edge-evolving-fillet-v0380) · [Per-Face Variable Offset](#per-face-variable-offset-v0380) · [Free Boundary Analysis](#free-boundary-analysis-v0390) · [Pipe Feature](#pipe-feature-v0390) · [Semi-Infinite Extrusion](#semi-infinite-extrusion-v0390) · [Prism Until Face](#prism-until-face-v0390) · [Inertia Properties](#inertia-properties-v0400) · [Extended Distance](#extended-distance-v0400) · [Find Surface](#find-surface-v0400) · [Shape Surgery](#shape-surgery-v0410) · [Plane Detection](#plane-detection-v0410) · [Closed Edge Splitting](#closed-edge-splitting-v0410) · [Geometry Conversion](#geometry-conversion-v0410) · [Face Restriction](#face-restriction-v0410) · [Solid Construction / 2D Fillet / Point Cloud](#solid-construction-2d-fillet-and-point-cloud-v0420) · [Face Subdivision](#face-subdivision-v0430) · [Curve-on-Surface Check](#curve-on-surface-check) · [Edge Connection](#edge-connection) · [Self-Intersection Detection](#self-intersection-detection-v0450) · [Bezier Conversion](#bezier-conversion) · [Edge Concavity Analysis](#edge-concavity-analysis-v0460) · [Geometric Edge Selection](#geometric-edge-selection-v121) · [Local Prism / Volume Inertia](#local-prism-and-volume-inertia-v0460) · [Local Revolution](#local-revolution-v0470) · [Draft Prism](#draft-prism-v0470) · [Constrained Filling](#constrained-filling-v0470) · [Shape Validity Checking](#shape-validity-checking-v0470) · [Local Operations / Validation / Fixing / Extrema](#local-operations-validation-fixing-and-extrema-v0480) · [ShapeAnalysis FreeBoundsProperties](#shapeanalysis-freeboundsproperties) · [Internal Storage](#internal-storage)
 
 ---
 
@@ -262,6 +262,15 @@ public struct EvolvingFilletEdge: Sendable {
 - `radiusPoints` — Array of `(parameter, radius)` pairs defining the radius evolution along the
   edge. Parameters are relative: `0.0` is the start of the edge, `1.0` its end. Every radius must
   be positive, and the parameters must lie in `0...1` and strictly increase.
+
+| Field | Meaning |
+|---|---|
+| `edgeIndex` | 0-based index of the edge to fillet, per `Edge.index`. |
+| `radiusPoints` | `(parameter, radius)` pairs defining the radius law along the edge. |
+
+---
+
+#### `EvolvingFilletEdge.radiusPoints`
 
 > OCCT stretches the law across the whole edge, so a profile cannot fillet part of one and leave
 > the rest alone. With one or two points the parameters are ignored entirely (a single point is a
@@ -533,6 +542,24 @@ public struct InertiaProperties {
 
 ---
 
+#### `InertiaProperties.inertiaMatrix`
+
+9-element row-major 3x3 inertia tensor `[Ixx, Ixy, Ixz, Iyx, Iyy, Iyz, Izx, Izy, Izz]`, taken about the center of mass.
+
+#### `InertiaProperties.principalMoments`
+
+The three principal moments of inertia (`Ixx`, `Iyy`, `Izz` of `GProp_PrincipalProps::Moments`) in the principal-axis frame.
+
+#### `InertiaProperties.hasSymmetryAxis`
+
+`true` when the shape has an axis of symmetry (`GProp_PrincipalProps::HasSymmetryAxis`, checked to relative tolerance `1e-10`). When it does, the second and third principal axes are undefined: any axis through the center of mass parallel to a combination of those two eigenvectors is equally a principal axis.
+
+#### `InertiaProperties.hasSymmetryPoint`
+
+`true` when the shape has a point of symmetry (`GProp_PrincipalProps::HasSymmetryPoint`, checked to relative tolerance `1e-10`). When it does, every axis through the center of mass is a principal axis.
+
+---
+
 ### `inertiaProperties()`
 
 Compute volume-based inertia properties.
@@ -591,6 +618,16 @@ public struct DistanceSolution {
 }
 ```
 
+| Field | Meaning |
+|---|---|
+| `point1` | Closest point on the first shape (`self`) for this solution. |
+| `point2` | Closest point on the second shape (`other`) for this solution. |
+| `distance` | Distance between `point1` and `point2`. |
+
+*(Per-field anchors below, for cross-reference; the table above has the actual meaning of each.)*
+
+#### `point2`
+
 ---
 
 ### `allDistanceSolutions(to:maxSolutions:)`
@@ -647,6 +684,16 @@ public enum DistanceSupportType: Int32, Sendable {
 
 ---
 
+#### `DistanceSupportType.onEdge`
+
+The solution point lies on the interior of an edge (not at a vertex).
+
+#### `DistanceSupportType.inFace`
+
+The solution point lies on the interior of a face (not on its boundary).
+
+---
+
 ### `DistanceSolutionDetail`
 
 Detailed parametric info for a distance solution.
@@ -661,6 +708,15 @@ public struct DistanceSolutionDetail: Sendable {
     public let paramFaceUV2: (u: Double, v: Double)
 }
 ```
+
+| Field | Meaning |
+|---|---|
+| `paramEdge1` | Curve parameter of the closest point on `self`'s support, when `supportType1 == .onEdge`; meaningless otherwise. |
+| `paramEdge2` | Curve parameter of the closest point on `other`'s support, when `supportType2 == .onEdge`; meaningless otherwise. |
+| `paramFaceUV1` | Surface UV parameters of the closest point on `self`'s support, when `supportType1 == .inFace`; meaningless otherwise. |
+| `paramFaceUV2` | Surface UV parameters of the closest point on `other`'s support, when `supportType2 == .inFace`; meaningless otherwise. |
+
+#### `Shape.DistanceSolutionDetail.paramFaceUV2`
 
 ---
 
@@ -944,6 +1000,10 @@ public enum PointCloudGeometry {
 
 ---
 
+#### `Shape.PointCloudGeometry.space`
+
+---
+
 ### `analyzePointCloud(_:tolerance:)`
 
 Analyze a set of 3D points to determine their geometric arrangement.
@@ -1017,6 +1077,24 @@ public struct SmallFaceInfo: Sendable {
 
 ---
 
+#### `SmallFaceInfo.isSpotFace`
+
+`true` when the face has collapsed to a point.
+
+#### `SmallFaceInfo.isStripFace`
+
+`true` when the face has negligible width (a thin sliver).
+
+#### `SmallFaceInfo.isTwisted`
+
+`true` when the face's geometry is twisted.
+
+#### `SmallFaceInfo.spotLocation`
+
+Location of a spot face; only set when `isSpotFace` is `true`.
+
+---
+
 ### `checkSmallFaces(tolerance:)`
 
 Check faces for degenerate conditions (spot, strip, twisted).
@@ -1061,8 +1139,14 @@ public struct CurveOnSurfaceCheck {
 }
 ```
 
-- `maxDistance` — Maximum deviation between 3D edge curves and their pcurves on faces.
-- `maxParameter` — Curve parameter where the maximum deviation occurs.
+| Field | Meaning |
+|---|---|
+| `maxDistance` | Maximum deviation found between a 3D edge curve and its pcurve on the face. |
+| `maxParameter` | Curve parameter at which that maximum deviation occurs. |
+
+*(Per-field anchors below, for cross-reference; the table above has the actual meaning of each.)*
+
+#### `maxParameter`
 
 ---
 
@@ -1110,6 +1194,13 @@ public struct SelfIntersectionResult: Sendable {
     public let isDone: Bool
 }
 ```
+
+| Field | Meaning |
+|---|---|
+| `overlapCount` | Number of overlapping triangle pairs found between BVH-accelerated mesh triangles. |
+| `isDone` | `true` if the check completed; `false` if the underlying mesh/BVH computation failed. |
+
+#### `Shape.SelfIntersectionResult.overlapCount`
 
 ---
 
@@ -1169,9 +1260,15 @@ public enum EdgeConcavity: Sendable {
 }
 ```
 
-- `.convex` — Edge connects two faces at a convex angle (e.g., outer corner of a box).
-- `.concave` — Edge connects two faces at a concave angle (e.g., inner corner of a groove).
-- `.tangent` — Edge connects two faces with a smooth (tangent) transition.
+| Case | Meaning |
+|---|---|
+| `convex` | Edge connects two faces at a convex angle (e.g. outer corner of a box). |
+| `concave` | Edge connects two faces at a concave angle (e.g. inner corner of a groove). |
+| `tangent` | Edge connects two faces with a smooth (tangent) transition. |
+
+*(Per-case anchors below, for cross-reference; the table above has the actual meaning of each.)*
+
+#### `concave`
 
 ---
 
@@ -1379,6 +1476,20 @@ public struct VolumeInertia: Sendable {
 
 ---
 
+#### `VolumeInertia.inertiaTensor`
+
+9-element row-major 3x3 inertia tensor, taken about the center of mass.
+
+#### `VolumeInertia.principalMoments`
+
+The three principal moments of inertia in the principal-axis frame.
+
+#### `VolumeInertia.gyrationRadii`
+
+Radii of gyration about the three principal axes (`sqrt(momentOfInertia / mass)` per axis).
+
+---
+
 ### `volumeInertia`
 
 Compute volume inertia properties of this shape.
@@ -1413,6 +1524,17 @@ public struct SurfaceInertia: Sendable {
     public let principalMoments: SIMD3<Double>
 }
 ```
+
+| Field | Meaning |
+|---|---|
+| `area` | Total surface area. |
+| `centerOfMass` | Centroid of the surface. |
+| `inertiaTensor` | 3x3 inertia tensor about `centerOfMass`, row-major (9 values). |
+| `principalMoments` | The three principal moments of inertia (eigenvalues of `inertiaTensor`). |
+
+*(Per-field anchors below, for cross-reference; the table above has the actual meaning of each.)*
+
+#### `principalMoments`
 
 ---
 
@@ -1525,6 +1647,17 @@ public struct ConstrainedFillInfo: Sendable {
 }
 ```
 
+| Field | Meaning |
+|---|---|
+| `uDegree` | BSpline degree of the fill surface in the U direction. |
+| `vDegree` | BSpline degree of the fill surface in the V direction. |
+| `uPoles` | Number of control points (poles) in the U direction. |
+| `vPoles` | Number of control points (poles) in the V direction. |
+
+*(Per-field anchors below, for cross-reference; the table above has the actual meaning of each.)*
+
+#### `vPoles`
+
 ---
 
 ### `constrainedFill(edge1:edge2:edge3:edge4:maxDegree:maxSegments:)`
@@ -1609,6 +1742,156 @@ public enum CheckStatus: Int32, Sendable, CaseIterable {
 }
 ```
 
+Case meanings, verified against `BRepCheck`'s checker sources (`BRepCheck_Edge`/`_Wire`/`_Face`/`_Shell`/`_Solid`/`_Analyzer.cxx`) rather than guessed from the name:
+
+#### `CheckStatus.noError`
+
+No error; the shape passed validation.
+
+#### `CheckStatus.invalidPointOnCurve`
+
+A vertex's recorded parameter on an edge's 3D curve evaluates to a point that does not match the vertex's own point within tolerance.
+
+#### `CheckStatus.invalidPointOnCurveOnSurface`
+
+A vertex's recorded parameter on an edge's curve-on-surface (pcurve) evaluates to a point that does not match the vertex's own point within tolerance.
+
+#### `CheckStatus.invalidPointOnSurface`
+
+A vertex's recorded UV parameters on a face's surface evaluate to a point that does not match the vertex's own point within tolerance.
+
+#### `CheckStatus.no3DCurve`
+
+The edge has no 3D curve representation at all.
+
+#### `CheckStatus.multiple3DCurve`
+
+The edge has more than one 3D curve representation.
+
+#### `CheckStatus.invalid3DCurve`
+
+Declared alongside the curve-on-surface checks below, but not raised by any checker in this OCCT version: the only references in the kernel source are the status-to-string switch and the `checkshape` Draw command's option list, not an actual check site. Kept here because `BRepCheck_Analyzer` can still report it from a custom `BRepCheck_Result` subclass.
+
+#### `CheckStatus.noCurveOnSurface`
+
+The edge has neither a 3D curve nor a curve-on-surface (pcurve) for the face it is being checked against.
+
+#### `CheckStatus.invalidCurveOnSurface`
+
+The edge's pcurve, evaluated at its endpoints, does not land within tolerance of the edge's 3D endpoints.
+
+#### `CheckStatus.invalidCurveOnClosedSurface`
+
+The same failure as `invalidCurveOnSurface`, but on a closed surface where the edge carries two pcurves, one for each side of the seam.
+
+#### `CheckStatus.invalidSameRangeFlag`
+
+The edge's `SameRange` flag is not set even though `SameParameter` is: `SameParameter` requires `SameRange`.
+
+#### `CheckStatus.invalidSameParameterFlag`
+
+The edge's 3D curve and pcurve are flagged `SameParameter` but do not actually share parameterisation within tolerance.
+
+#### `CheckStatus.invalidDegeneratedFlag`
+
+The edge is marked degenerate but still carries a genuine 3D curve reference.
+
+#### `CheckStatus.freeEdge`
+
+In the context of a solid, the edge borders fewer than two faces (an open, non-manifold boundary).
+
+#### `CheckStatus.invalidMultiConnexity`
+
+In the context of a solid, the edge borders more than two faces.
+
+#### `CheckStatus.invalidRange`
+
+The edge's recorded parameter range is empty (its last parameter is at or before its first) or falls outside the range, or period, of its underlying 3D curve or pcurve.
+
+#### `CheckStatus.emptyWire`
+
+The wire has no edges.
+
+#### `CheckStatus.redundantEdge`
+
+An edge appears in the wire three or more times, or twice with the same orientation instead of once FORWARD and once REVERSED.
+
+#### `CheckStatus.selfIntersectingWire`
+
+Two of the wire's edges intersect somewhere other than a shared vertex.
+
+#### `CheckStatus.noSurface`
+
+The face has no surface geometry.
+
+#### `CheckStatus.invalidWire`
+
+Declared alongside the wire-composition checks below, but not raised by any checker in this OCCT version: verified the same way as `invalid3DCurve`, by searching the kernel source for every reference.
+
+#### `CheckStatus.redundantWire`
+
+The same wire appears more than once among the face's boundary wires.
+
+#### `CheckStatus.intersectingWires`
+
+Two of the face's wires cross each other.
+
+#### `CheckStatus.invalidImbricationOfWires`
+
+The face's wires are not correctly nested: an inner wire is not properly contained within the outer one, or the wires' classification order is inconsistent.
+
+#### `CheckStatus.emptyShell`
+
+The shell has no faces.
+
+#### `CheckStatus.redundantFace`
+
+The same face appears more than once in the shell.
+
+#### `CheckStatus.invalidImbricationOfShells`
+
+In a solid, a shell is not correctly nested inside another (a hole shell not properly contained within the outer shell).
+
+#### `CheckStatus.unorientableShape`
+
+OCCT could not compute a consistent orientation for the face's wires or the shell's faces.
+
+#### `CheckStatus.notClosed`
+
+The wire, or shell, is not topologically closed: its edges, or faces, do not form a closed loop, or envelope.
+
+#### `CheckStatus.notConnected`
+
+The wire's edges, or the shell's faces, do not form a single connected chain.
+
+#### `CheckStatus.subshapeNotInShape`
+
+A sub-shape reported in the check result is not actually part of the shape being checked (for example, at the solid level, a shell lying outside the solid it is supposed to bound).
+
+#### `CheckStatus.badOrientation`
+
+Declared alongside `badOrientationOfSubshape`, but not raised by any checker in this OCCT version: verified the same way as `invalid3DCurve`, by searching the kernel source for every reference. Only the "of subshape" form below is ever set.
+
+#### `CheckStatus.badOrientationOfSubshape`
+
+A sub-shape (an edge in a wire, a face in a shell, a shell in a solid) has an orientation inconsistent with its container.
+
+#### `CheckStatus.invalidPolygonOnTriangulation`
+
+The edge's polygon-on-triangulation representation does not match its 3D curve.
+
+#### `CheckStatus.invalidToleranceValue`
+
+Declared for `BRepCheck_Analyzer`'s own face-tolerance consistency check, but the flag that would trigger it (`isInvalidTolerance` in `BRepCheck_Analyzer.cxx`) is initialised `false` and never assigned `true` anywhere in this OCCT version's kernel source, so it is not currently reachable.
+
+#### `CheckStatus.enclosedRegion`
+
+The solid has more than one non-hole (outer) shell growth: multiple disjoint solid regions rather than one solid with holes.
+
+#### `CheckStatus.checkFail`
+
+The check itself failed to run (an internal exception), rather than the shape failing validation.
+
 ---
 
 ### `CheckResult`
@@ -1622,6 +1905,16 @@ public struct CheckResult: Sendable {
     public let firstError: CheckStatus?
 }
 ```
+
+---
+
+#### `CheckResult.errorCount`
+
+Number of `CheckStatus` errors found (`0` when `isValid` is `true`).
+
+#### `CheckResult.firstError`
+
+The first `CheckStatus` error encountered, or `nil` when `isValid` is `true`.
 
 ---
 
@@ -1852,6 +2145,16 @@ public struct CSIntersection: Sendable {
 }
 ```
 
+| Field | Meaning |
+|---|---|
+| `point` | 3D intersection point. |
+| `parameter` | Parameter along the intersecting line at `point`. |
+| `faceUV` | Parametric (u, v) location of `point` on the face it was found on. |
+
+*(Per-field anchors below, for cross-reference; the table above has the actual meaning of each.)*
+
+#### `faceUV`
+
 ---
 
 ### `intersectLine(origin:direction:)` *(LocOpe_CSIntersector variant)*
@@ -1895,6 +2198,24 @@ public enum TopAbs_ShapeEnum: Int32, Sendable {
     case face = 4, wire = 5, edge = 6, vertex = 7
 }
 ```
+
+Raw values match OCCT's own `TopAbs_ShapeEnum` exactly (`TopAbs_COMPOUND = 0` through
+`TopAbs_VERTEX = 7`), so a raw round-trip through the bridge never needs remapping.
+
+| Case | Meaning |
+|---|---|
+| `compound` | A `TopoDS_Compound`, an arbitrary grouping of other shapes. |
+| `compsolid` | A `TopoDS_CompSolid`, a connected group of solids sharing faces. |
+| `solid` | A `TopoDS_Solid`. |
+| `shell` | A `TopoDS_Shell`. |
+| `face` | A `TopoDS_Face`. |
+| `wire` | A `TopoDS_Wire`. |
+| `edge` | A `TopoDS_Edge`. |
+| `vertex` | A `TopoDS_Vertex`. |
+
+*(Per-case anchors below, for cross-reference; the table above has the actual meaning of each.)*
+
+#### `compsolid`
 
 ---
 
@@ -2081,6 +2402,15 @@ public struct EdgeEdgeExtrema: Sendable {
 }
 ```
 
+| Field | Meaning |
+|---|---|
+| `paramOnEdge1` | Curve parameter of the closest point on the first edge. |
+| `paramOnEdge2` | Curve parameter of the closest point on the second edge. |
+| `pointOnEdge1` | World-space closest point on the first edge. |
+| `pointOnEdge2` | World-space closest point on the second edge. |
+
+#### `Shape.EdgeEdgeExtrema.pointOnEdge2`
+
 ---
 
 ### `edgeEdgeExtrema(edgeIndex1:other:edgeIndex2:)`
@@ -2116,6 +2446,16 @@ public struct PointFaceExtrema: Sendable {
 
 ---
 
+#### `PointFaceExtrema.faceUV`
+
+UV parameters on the face at the nearest point.
+
+#### `PointFaceExtrema.pointOnFace`
+
+The 3D point on the face nearest to the query point.
+
+---
+
 ### `pointFaceExtrema(point:faceIndex:)`
 
 Compute distance from a point to a face.
@@ -2146,6 +2486,19 @@ public struct FaceFaceExtrema: Sendable {
     public let solutionCount: Int
 }
 ```
+
+| Field | Meaning |
+|---|---|
+| `distance` | The extremum distance between the two faces. |
+| `face1UV` | Parametric (u, v) location on the first face where the extremum point lies. |
+| `face2UV` | Parametric (u, v) location on the second face where the extremum point lies. |
+| `pointOnFace1` | 3D point on the first face at the extremum. |
+| `pointOnFace2` | 3D point on the second face at the extremum. |
+| `solutionCount` | Number of extrema solutions `BRepExtrema_ExtFF` found; this struct describes one of them. |
+
+*(Per-field anchors below, for cross-reference; the table above has the actual meaning of each.)*
+
+#### `pointOnFace2`
 
 ---
 
@@ -2192,6 +2545,30 @@ public enum ContinuityLevel: Int32, Sendable, CaseIterable {
 }
 ```
 
+| Case | Meaning |
+|---|---|
+| `.c0` | Positional continuity only (touching, no derivative match). |
+| `.c1` | First-derivative (tangent vector) continuity. |
+| `.c2` | Second-derivative (curvature vector) continuity. |
+| `.c3` | Third-derivative continuity. |
+| `.cn` | Continuity to the geometry's own maximum available derivative order. |
+| `.g1` | Geometric tangent continuity (parallel tangent direction, not equal derivative magnitude). |
+| `.g2` | Geometric curvature continuity (parallel principal curvature direction). |
+
+`dividedByContinuity(criterion:tolerance:)` duplicated `divided(at:tolerance:)` over the same
+`ShapeUpgrade_ShapeDivideContinuity`, setting only the boundary criterion where
+`divided(at:tolerance:)` sets boundary, pcurve AND surface criteria together, the usage OCCT's own
+shape-healing guide demonstrates (#438). Deprecated as a forward to `divided(at:tolerance:)`,
+it was removed at v2.0.0 (#784):
+
+```swift
+shape.divided(at: .c1, tolerance: 1e-4)   // was: shape.dividedByContinuity(criterion: .c1, tolerance: 1e-4)
+```
+
+---
+
+#### `Shape.ContinuityLevel.g2`
+
 > **Deliberately kept separate from
 > [`ParametricContinuity`](Shape-Healing.md#parametriccontinuity)** (#398). This is a strict
 > superset: `cn`, `g1` and `g2` are accepted only by
@@ -2231,6 +2608,12 @@ public struct PointEdgeExtrema: Sendable {
 extrema count, reported for its own sake. Zero means the nearest point is one of the edge's two
 ends. A non-zero count does **not** mean the nearest point is one of those feet: an extremum can be
 a maximum. Read `distance` / `parameter` / `pointOnEdge` for the answer (#580).
+
+---
+
+#### `PointEdgeExtrema.pointOnEdge`
+
+The 3D point on the edge nearest to the query point.
 
 ---
 
@@ -2288,6 +2671,24 @@ public struct EdgeFaceExtrema: Sendable {
     public let solutionCount: Int
 }
 ```
+
+---
+
+#### `EdgeFaceExtrema.paramOnEdge`
+
+Parameter on the edge at the nearest point.
+
+#### `EdgeFaceExtrema.faceUV`
+
+UV parameters on the face at the nearest point.
+
+#### `EdgeFaceExtrema.pointOnEdge`
+
+The 3D point on the edge at the nearest point.
+
+#### `EdgeFaceExtrema.pointOnFace`
+
+The 3D point on the face at the nearest point.
 
 ---
 
@@ -2403,6 +2804,14 @@ public struct FreeBoundInfo: Sendable {
   "degenerate contour"; `area` and `perimeter` are still good in that case.
 - `width`, the average contour width, on the same "0 means unsolved" contract as `ratio`.
 - `notchCount`, the narrow 'V'-like sub-contours found on the bound.
+
+| Field | Meaning |
+|---|---|
+| `perimeter` | Total length of the bound's contour. |
+| `ratio` | Contour length over contour width (0 when OCCT's solve has no real root; see above). |
+| `notchCount` | Count of narrow 'V'-like sub-contours (notches) found on the bound. |
+
+#### `Shape.FreeBoundInfo.notchCount`
 
 ---
 
@@ -2523,3 +2932,7 @@ public func openFreeBoundWire(tolerance: Double, index: Int) -> Shape?
   - `index` — 0-based index of the open free bound.
 - **Returns:** Wire as a `Shape`, or `nil` if the index is out of range.
 - **OCCT:** `ShapeAnalysis_FreeBoundsProperties` (via `OCCTFreeBoundsPropsWire`).
+
+---
+
+## Internal Storage

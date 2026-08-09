@@ -231,6 +231,9 @@ A thin-plate spline solver for smooth surface deformation. Wraps OCCT's `Plate_P
 
 Unlike the higher-level NLPlate methods on `Surface`, `PlateSolver` works directly in UV parameter space and returns raw XYZ displacements.
 
+```swift
+```
+---
 ### Loading Constraints
 
 #### `init()`
@@ -709,6 +712,9 @@ public var g2Error: Double? { get }
 
 An evolution function defining how a scalar value varies along a parameter range. Used with `Shape.pipeShellWithLaw()` for variable-section sweeps where the cross-section scales smoothly along the spine path.
 
+```swift
+```
+---
 ### Evaluation
 
 #### `value(at:)`

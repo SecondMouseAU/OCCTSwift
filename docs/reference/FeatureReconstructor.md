@@ -11,7 +11,7 @@ Obtain a result by calling `FeatureReconstructor.build(from:inputBody:)` or the 
 
 ## Topics
 
-- [FeatureSpec](#featurespec) · [FeatureSpec.Revolve](#featurespecrevolve) · [FeatureSpec.Extrude](#featurespecextrude) · [FeatureSpec.Hole](#featurespechole) · [FeatureSpec.Thread](#featurespecthread) · [FeatureSpec.EdgeSelector](#featurespecedgeselector) · [FeatureSpec.Fillet](#featurespecfillet) · [FeatureSpec.Chamfer](#featurespecchamfer) · [FeatureSpec.Boolean](#featurespecboolean) · [FeatureReconstructor — Entry point](#featurereconstructor--entry-point) · [BuildResult](#buildresult) · [Skipped](#skipped) · [Annotation](#annotation) · [JSON front end](#json-front-end)
+- [FeatureSpec](#featurespec) · [FeatureSpec.Revolve](#featurespecrevolve) · [FeatureSpec.Extrude](#featurespecextrude) · [FeatureSpec.Hole](#featurespechole) · [FeatureSpec.Thread](#featurespecthread) · [FeatureSpec.EdgeSelector](#featurespecedgeselector) · [FeatureSpec.Fillet](#featurespecfillet) · [FeatureSpec.Chamfer](#featurespecchamfer) · [FeatureSpec.Boolean](#featurespecboolean) · [FeatureReconstructor — Entry point](#featurereconstructor--entry-point) · [FeatureReconstructor.BuildContext](#featurereconstructorbuildcontext) · [BuildResult](#buildresult) · [Skipped](#skipped) · [Annotation](#annotation) · [JSON front end](#json-front-end)
 
 ---
 
@@ -34,6 +34,28 @@ public enum FeatureSpec: Sendable, Hashable, Codable {
 ```
 
 Each case wraps a typed payload struct. The enum is `Codable` via the JSON front end.
+
+---
+
+#### `FeatureSpec.hole`
+
+Wraps a `FeatureSpec.Hole` payload: an axis-aligned cylindrical hole subtracted from the current body.
+
+#### `FeatureSpec.thread`
+
+Wraps a `FeatureSpec.Thread` payload: a thread annotation recorded against a previously-created hole feature (emitted as metadata, not geometry).
+
+#### `FeatureSpec.fillet`
+
+Wraps a `FeatureSpec.Fillet` payload: a constant-radius fillet applied to selected edges.
+
+#### `FeatureSpec.chamfer`
+
+Wraps a `FeatureSpec.Chamfer` payload: a constant-distance chamfer applied to selected edges.
+
+#### `FeatureSpec.boolean`
+
+Wraps a `FeatureSpec.Boolean` payload: a union, subtract, or intersect operation between two named bodies.
 
 ---
 
@@ -78,6 +100,24 @@ public struct Revolve: Sendable, Hashable, Codable {
 ```
 
 The 2D profile is interpreted in the XZ half-plane: each `SIMD2<Double>` point `(x, y)` maps to 3D `(x, 0, y)`. The profile must have at least 3 points.
+
+---
+
+#### `FeatureSpec.Revolve.profilePoints2D`
+
+Profile polygon in the XZ half-plane (minimum 3 points).
+
+#### `FeatureSpec.Revolve.axisOrigin`
+
+A point on the revolution axis.
+
+#### `FeatureSpec.Revolve.axisDirection`
+
+Unit vector defining the revolution axis direction.
+
+#### `FeatureSpec.Revolve.angleDeg`
+
+Sweep angle in degrees (default `360` for a full revolution).
 
 ---
 
@@ -133,6 +173,12 @@ The 2D profile is projected into 3D using a `Placement` derived from `planeOrigi
 
 ---
 
+#### `FeatureSpec.Extrude.profilePoints2D`
+
+Profile polygon, in the sketch plane's local 2D coordinate system.
+
+---
+
 ### `FeatureSpec.Extrude.init(profilePoints2D:planeOrigin:planeNormal:length:id:)`
 
 Creates an extrude specification.
@@ -182,6 +228,12 @@ public struct Hole: Sendable, Hashable, Codable {
 ```
 
 When `depth` is `nil`, a through-hole cutter of depth `100.0` is used (sufficient for most models). Supply an explicit `depth` to limit the cutter.
+
+---
+
+#### `FeatureSpec.Hole.diameter`
+
+Hole diameter in model units; the cutter radius is `diameter / 2`.
 
 ---
 
@@ -235,6 +287,12 @@ Thread specs produce `Annotation` entries in `BuildResult.annotations` rather th
 
 ---
 
+#### `FeatureSpec.Thread.spec`
+
+Thread designation string (e.g. `"M5x0.8"`, `"1/4-20 UNC"`), stored verbatim, not parsed.
+
+---
+
 ### `FeatureSpec.Thread.init(holeRef:spec:length:id:)`
 
 Creates a thread annotation specification.
@@ -279,6 +337,10 @@ public enum EdgeSelector: Sendable, Hashable, Codable {
 
 ---
 
+#### `EdgeSelector.onFeature`
+
+---
+
 ## FeatureSpec.Fillet
 
 ### `FeatureSpec.Fillet`
@@ -294,6 +356,10 @@ public struct Fillet: Sendable, Hashable, Codable {
 ```
 
 The fillet stage runs after all additive and subtractive features. History recording is used when `id` is set.
+
+---
+
+#### `Fillet.edgeSelector`
 
 ---
 
@@ -338,6 +404,12 @@ The chamfer stage runs after all additive and subtractive features, alongside fi
 
 ---
 
+#### `FeatureSpec.Chamfer.edgeSelector`
+
+Which edges to chamfer (see `EdgeSelector`).
+
+---
+
 ### `FeatureSpec.Chamfer.init(edgeSelector:distance:id:)`
 
 Creates a chamfer specification.
@@ -378,6 +450,20 @@ public struct Boolean: Sendable, Hashable, Codable {
 ```
 
 Both `leftID` and `rightID` must reference feature ids already registered in the named-shape registry. Union booleans run in the additive stage; subtract and intersect run in the subtractive stage. The result is registered under `id` if set.
+
+---
+
+#### `FeatureSpec.Boolean.op`
+
+The boolean operation: `.union`, `.subtract`, or `.intersect`.
+
+#### `FeatureSpec.Boolean.leftID`
+
+Feature id of the left (base) operand; must already be registered in the named-shape registry.
+
+#### `FeatureSpec.Boolean.rightID`
+
+Feature id of the right (tool) operand; must already be registered in the named-shape registry.
 
 ---
 
@@ -463,8 +549,10 @@ Within each stage, features are processed in array order. Failures append to `Bu
   }
   ```
 
----
+`build(from:inputBody:)` is the entire public surface; the ten functions below are `private static`
+implementation behind its four stages, documented here for anyone reading the source.
 
+---
 ## BuildResult
 
 ### `FeatureReconstructor.BuildResult`
@@ -489,6 +577,12 @@ public struct BuildResult: Sendable {
 
 ---
 
+#### `FeatureReconstructor.BuildResult.histories`
+
+Per-feature `ShapeHistoryRef`, keyed by feature id.
+
+---
+
 ## Skipped
 
 ### `FeatureReconstructor.Skipped`
@@ -504,6 +598,14 @@ public struct Skipped: Sendable {
 ```
 
 Only features with a non-nil `id` produce a `Skipped` entry; anonymous features fail silently (their shape contribution is lost but no diagnostic is emitted).
+
+---
+
+| Field | Meaning |
+|---|---|
+| `featureID` | The `id` of the feature that was skipped. Only a feature with a non-nil `id` reaches here. |
+| `reason` | Which of the four `Reason` cases applies, with its associated detail string. |
+| `stage` | The build stage the feature was skipped in: `.additive`, `.subtractive`, `.finishing` or `.annotation`. |
 
 ---
 
@@ -524,6 +626,21 @@ public enum Reason: Sendable {
 - `.occtFailure(message)` — the OCCT builder returned `nil` or failed (wire construction, revolve, extrude, boolean, fillet, chamfer).
 - `.unresolvedRef(message)` — a `leftID`, `rightID`, or `EdgeSelector.onFeature` id was not found in the named-shape registry.
 - `.unsupported(message)` — the JSON front end encountered an unknown `kind` string or unrecognised boolean op.
+
+---
+
+#### `FeatureReconstructor.Skipped.Reason.underDetermined`
+
+The spec is geometrically incomplete.
+#### `FeatureReconstructor.Skipped.Reason.occtFailure`
+
+The OCCT builder returned `nil` or failed.
+#### `FeatureReconstructor.Skipped.Reason.unresolvedRef`
+
+A referenced feature id was not found in the named-shape registry.
+#### `FeatureReconstructor.Skipped.Reason.unsupported`
+
+The JSON front end encountered an unrecognised `kind` or boolean op.
 
 ---
 
@@ -556,6 +673,12 @@ Annotations carry no geometry — they describe intent (e.g. "this hole has an M
 
 ---
 
+#### `FeatureReconstructor.Annotation.featureID`
+
+The id of the `.thread` spec that produced this annotation.
+
+---
+
 ### `FeatureReconstructor.Annotation.Kind`
 
 The annotation's content.
@@ -570,6 +693,10 @@ Currently the only case is `.thread`:
 - `spec` — verbatim thread designation string (`"M6x1"`, `"1/4-20 UNC"`, etc.).
 - `holeRef` — the feature id of the associated hole.
 - `length` — engagement length, if specified.
+
+---
+
+#### `Kind.thread`
 
 ---
 
@@ -624,3 +751,9 @@ JSON field names use snake_case: `profile_points_2d`, `axis_origin`, `axis_direc
   }
   ```
 - **Note:** The JSON `fillet` and `chamfer` entries decoded by this front end always use `EdgeSelector.all` — there is no JSON syntax for `.nearPoint` or `.onFeature` in the current schema.
+
+---
+
+#### Private JSON-decoding implementation types
+
+Not part of the public API; documented for completeness since they carry `buildJSON`'s field-by-field decode of each `"features"` array entry.

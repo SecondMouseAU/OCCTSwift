@@ -359,6 +359,13 @@ public struct OverlapPair: Sendable {
 }
 ```
 
+| Field | Meaning |
+|---|---|
+| `faceIndex1` | 0-based index of the first overlapping face. |
+| `faceIndex2` | 0-based index of the second overlapping face. |
+
+#### `Shape.OverlapPair.faceIndex2`
+
 ---
 
 ### `selfIntersectionPairs(tolerance:maxPairs:deflection:)`
@@ -1063,6 +1070,16 @@ public enum ConcavityType: Int, Sendable {
 }
 ```
 
+| Case | Meaning |
+|---|---|
+| `.convex` | Edge is convex: the two adjacent faces bulge away from each other across it. |
+| `.concave` | Edge is concave: the two adjacent faces fold toward each other across it. |
+| `.tangent` | Adjacent faces meet tangentially (smooth, no sharp convex/concave transition) at this edge. |
+| `.freeBound` | Edge borders only one face (an open boundary), so convexity is not applicable. |
+| `.other` | Classification could not be determined as convex, concave, tangent, or a free bound. |
+
+#### `Shape.ConcavityType.other`
+
 ---
 
 ### `analyseEdgeConcavity(angle:)`
@@ -1167,6 +1184,16 @@ public enum EdgeOrientation: Int, Sendable {
 }
 ```
 
+Case meanings, from `TopAbs_Orientation`: `.forward` and `.reversed` mark a "real" edge limiting the wire's material side (reversed running opposite the wire's parametric direction); `.internal` and `.external` mark an edge that is present in the wire but does not bound material on either side (traversed on both faces, or excluded from both).
+
+#### `EdgeOrientation.forward`
+
+The edge runs in the same direction as the wire's parametric traversal and marks a real material boundary.
+
+#### `EdgeOrientation.external`
+
+The edge does not bound material on either side; it is excluded from the classification on both sides.
+
 ---
 
 ### `wireEdgeOrientations(face:)`
@@ -1214,6 +1241,16 @@ public struct AnalyticBounds: Sendable {
     public let min: SIMD3<Double>
     public let max: SIMD3<Double>
 }
+```
+
+| Field | Meaning |
+|---|---|
+| `min` | Minimum corner of the axis-aligned bounding box. |
+| `max` | Maximum corner of the axis-aligned bounding box. |
+
+#### `AnalyticBounds.max`
+
+```swift
 ```
 
 ---
@@ -1601,6 +1638,14 @@ public struct TransformMatrix3D: Sendable {
 }
 ```
 
+| Field | Meaning |
+|---|---|
+| `values` | The 12 matrix entries, row-major (rows of a 3x4 affine transform: 3x3 rotation/scale block plus a translation column, one row of 4 values per output axis). |
+
+*(Per-field anchor below, for cross-reference; the table above has the actual meaning.)*
+
+#### `values`
+
 ---
 
 ### `TransformMatrix3D.apply(to:)`
@@ -1625,6 +1670,12 @@ public struct TransformMatrix2D: Sendable {
     public let values: [Double] // 6 elements: row-major 2x3
 }
 ```
+
+---
+
+#### `TransformMatrix2D.values`
+
+The 6 matrix coefficients, row-major: `[a, b, c, d, e, f]` such that `apply(to: (x, y))` computes `(a*x + b*y + c, d*x + e*y + f)`.
 
 ---
 

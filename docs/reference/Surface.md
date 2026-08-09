@@ -61,6 +61,111 @@ The raw values are unchanged.
 
 ---
 
+### `ContinuityClass`
+
+The continuity OCCT *measured* on an existing curve or surface: the one continuity vocabulary that
+reports rather than requests, shared by `Curve3D`, `Curve2D` and `Surface` alike (#485). Its raw
+values are not a 0/1/2 order: they are `GeomAbs_Shape`'s own ordinals, which interleave the
+geometric classes with the parametric ones.
+
+```swift
+public enum ContinuityClass: Int32, Sendable, CaseIterable {
+    case c0 = 0
+    case g1 = 1
+    case c1 = 2
+    case g2 = 3
+    case c2 = 4
+    case c3 = 5
+    case cN = 6
+}
+```
+
+| Case | Raw | Meaning |
+|---|---|---|
+| `.c0` | 0 | Positional continuity only (`GeomAbs_C0`). |
+| `.g1` | 1 | Tangent continuity (`GeomAbs_G1`): tangent directions agree, magnitudes need not. |
+| `.c1` | 2 | First-derivative continuity (`GeomAbs_C1`). |
+| `.g2` | 3 | Curvature continuity (`GeomAbs_G2`). |
+| `.c2` | 4 | Second-derivative continuity (`GeomAbs_C2`). |
+| `.c3` | 5 | Third-derivative continuity (`GeomAbs_C3`). |
+| `.cN` | 6 | Infinite continuity (`GeomAbs_CN`): every derivative exists. Analytic geometry. |
+
+Do not compare a raw value against `ParametricContinuity` or `SurfaceContinuity`: those are request
+orders counting 0, 1, 2; these are `GeomAbs_Shape` ordinals where C1 is 2 and C2 is 4. Use
+`satisfies(_:)` for a continuity-floor check instead of comparing raw values.
+
+#### `isParametric`
+
+Whether this class guarantees *parametric* continuity (a C-class), not merely geometric.
+
+```swift
+public var isParametric: Bool { get }
+```
+
+`.g1`/`.g2` are `false`: they constrain tangent direction and curvature but not the derivative
+vectors themselves. `false` means "not a C-class", not "meets no floor at all": a geometric class
+still meets the C0 floor.
+
+#### `derivativeOrder`
+
+The highest continuously-differentiable derivative order this class guarantees, if it guarantees a
+parametric one at all.
+
+```swift
+public var derivativeOrder: Int? { get }
+```
+
+- **Returns:** `nil` for `.g1`/`.g2`, which promise nothing about derivative vectors; `Int.max` for
+  `.cN`; otherwise the C-order (`.c2` returns `2`).
+
+#### `satisfies(_:)`
+
+Whether the measured continuity meets a required parametric floor.
+
+```swift
+public func satisfies(_ required: ParametricContinuity) -> Bool
+```
+
+Use this instead of comparing raw values against `ParametricContinuity`; the two encodings differ
+(`ContinuityClass.c1` is 2, `ParametricContinuity.c1` is 1). This asks a parametric question, which
+is not what `<`/`>=` answer: those rank two measured classes by their place in `GeomAbs_Shape`'s
+ladder, and outranking a class in that ladder is not the same as entailing it. The two answers
+differ at exactly one pair: `.g2` sorts above `.c1` (raw 3 > 2) yet guarantees nothing about
+first-derivative vectors, so `.g2.satisfies(.c1)` is `false` while `.g2 >= .c1` is `true`. They
+agree everywhere else, `.c0` included: a geometric class does meet the C0 floor, since G1 entails
+G0 (#623).
+
+```swift
+ContinuityClass.g1.satisfies(.c0)   // true
+ContinuityClass.g1.satisfies(.c1)   // false
+ContinuityClass.g2 >= .c1           // true
+ContinuityClass.g2.satisfies(.c1)   // false
+```
+
+- **OCCT:** none directly; a pure-Swift comparison against the `derivativeOrder` above.
+
+#### `<(lhs:rhs:)`
+
+Ranks two *measured* classes by their place in `GeomAbs_Shape`'s ladder (`Comparable`
+conformance). `GeomAbs_Shape` declares its cases in ascending order of how much smoothness is
+being claimed (C0 < G1 < C1 < G2 < C2 < C3 < CN), so the raw values compare correctly with no
+lookup table needed.
+
+```swift
+public static func < (lhs: ContinuityClass, rhs: ContinuityClass) -> Bool
+```
+
+Read it as ranking claims, not as an implication chain: `.g2` sorts above `.c1` yet does not
+satisfy `.c1` (see `satisfies(_:)` above), because a geometric class is a claim about a
+reparametrisable curve rather than the parametrisation actually in hand.
+
+- **Note:** This is the real declaration behind a `check-docs-existence.py` `--coverage` artifact:
+  the checker's operator-overload regex cannot capture a symbolic operator name and records a
+  pseudo-member literally called `func` for `ContinuityClass` (and separately for `Shape` and
+  `Material.PredefinedMaterial`, each with their own operator). That pseudo-member is not a real
+  symbol and is intentionally left undocumented; this section is the actual, correct fix.
+
+---
 ### `continuityClass`
 
 The measured overall continuity of the surface.
@@ -118,6 +223,24 @@ Convenience wrappers around `surfaceKind`. All query `surfaceKind == .<type>`.
 
 ---
 
+#### `Surface.isCylinder`
+
+`true` when `surfaceKind == .cylinder`.
+
+#### `Surface.isCone`
+
+`true` when `surfaceKind == .cone`.
+
+#### `Surface.isSphere`
+
+`true` when `surfaceKind == .sphere`.
+
+#### `Surface.isTorus`
+
+`true` when `surfaceKind == .torus`.
+
+---
+
 ### `isBezier`, `isBSpline`, `isSurfaceOfRevolution`, `isSurfaceOfExtrusion`, `isOffsetSurface`
 
 Additional boolean type-test properties.
@@ -129,6 +252,24 @@ public var isSurfaceOfRevolution: Bool { get }
 public var isSurfaceOfExtrusion:  Bool { get }
 public var isOffsetSurface:       Bool { get }
 ```
+
+---
+
+#### `Surface.isBSpline`
+
+`true` when `surfaceKind == .bsplineSurface`.
+
+#### `Surface.isSurfaceOfRevolution`
+
+`true` when `surfaceKind == .surfaceOfRevolution`.
+
+#### `Surface.isSurfaceOfExtrusion`
+
+`true` when `surfaceKind == .surfaceOfExtrusion`.
+
+#### `Surface.isOffsetSurface`
+
+`true` when `surfaceKind == .offsetSurface`.
 
 ---
 
@@ -953,6 +1094,10 @@ wrote opposite layouts, each describing its own as "row-major".
 
 ---
 
+#### `SurfaceGrid.at`
+
+---
+
 ### `SurfaceGridD1`
 
 The D1 counterpart of `SurfaceGrid`, returned by `evaluateGridD1(uParameters:vParameters:)`
@@ -980,6 +1125,28 @@ public struct SurfaceGridD1: Sendable {
   let sample = grid.at(u: 2, v: 0)
   let normal = simd_normalize(simd_cross(sample.d1u, sample.d1v))
   ```
+
+| Member | Kind | Meaning |
+|---|---|---|
+| `uCount` | public stored property | Number of samples in the U direction. |
+| `vCount` | public stored property | Number of samples in the V direction. |
+
+#### `SurfaceGridD1.at(u:v:)`
+
+Point and both first partial derivatives at grid index `(u, v)`.
+
+```swift
+public func at(u: Int, v: Int) -> (point: SIMD3<Double>, d1u: SIMD3<Double>, d1v: SIMD3<Double>)
+```
+
+Looks up the flat, U-major backing arrays (`points`, `d1u`, `d1v`) at
+`surfaceGridIndex(u:v:vCount:)`, the same indexing function `SurfaceGrid.at(u:v:)` uses, so the two
+types can never disagree about which of U or V runs fastest.
+
+- **Parameters:** `u`, `v`: grid indices; `u` in `0..<uCount`, `v` in `0..<vCount`.
+- **Returns:** A tuple of the sampled point and its first partial derivatives in U and V.
+- **Precondition:** traps if either index is out of range.
+- **OCCT:** Pure-Swift indexing over buffers `Surface.evaluateGridD1(uParameters:vParameters:)` fills.
 
 ---
 
@@ -1265,6 +1432,35 @@ public enum GordonResultStatus: Int, Sendable {
 }
 ```
 
+One case per stage of `GeomFill_Gordon::Perform()`; the descriptions below are the C++
+`ResultStatus` enum's own doc comments in `GeomFill_Gordon.hxx`, carried over case for case.
+
+| Case | Meaning |
+|---|---|
+| `.notStarted` | `Perform()` has not been called since initialization. |
+| `.done` | Surface has been constructed. |
+| `.invalidInput` | Input network has too few profile or guide curves. |
+| `.conversionFailed` | Curves could not be converted or reparametrized to B-splines. |
+| `.intersectionFailed` | Full profile/guide intersection table could not be built. |
+| `.orderingFailed` | Network curves could not be ordered consistently. |
+| `.reparametrizationFailed` | Intersections could not be equalized in parameter space. |
+| `.compatibilityFailed` | Prepared network failed geometric compatibility checks. |
+| `.curveCompatibilityFailed` | Prepared curve families are not B-spline compatible. |
+| `.rationalReparametrizationFailed` | Rational curves require unsupported exact reparametrization. |
+| `.skinningFailed` | Intermediate profile/guide skinning has failed. |
+| `.referenceSurfaceFailed` | Intersection-grid reference surface could not be built. |
+| `.knotAlignmentFailed` | Intermediate surfaces could not be aligned. |
+| `.rationalDegreeOverflow` | Exact rational product degree exceeds OCCT's B-spline limit. |
+| `.rationalConstructionFailed` | Exact rational numerator/denominator construction has failed. |
+| `.periodicityFailed` | Closed seam could not be converted to periodic form. |
+| `.approximationFailed` | Optional approximate fallback (`allowApproximateFallback`) has failed. |
+| `.constructionFailed` | Final B-spline surface construction has failed. |
+
+Each case is indexed below too, so a reference link can land on one directly; the table above is
+the authoritative description.
+
+#### `Surface.GordonResultStatus.constructionFailed`
+
 ---
 
 ### `GordonResult`
@@ -1280,6 +1476,10 @@ public struct GordonResult: Sendable {
 ```
 
 `isApproximate` is `true` when the result was produced by a sampled B-spline fallback rather than exact interpolation.
+
+---
+
+#### `GordonResult.isApproximate`
 
 ---
 
@@ -1312,6 +1512,30 @@ public enum NetworkSurfaceStatus: Int, Sendable {
 }
 ```
 
+One case per stage of `GeomFill_NetworkSurface::Perform()`; the descriptions below are the C++
+`ResultStatus` enum's own doc comments in `GeomFill_NetworkSurface.hxx`, carried over case for case.
+`NetworkSurfaceStatus` is the low-level counterpart of [`GordonResultStatus`](#gordonresultstatus):
+fewer cases because `networkSurface(...)` receives an already-ordered, already-compatible network
+(no `orderingFailed`/`reparametrizationFailed`/`compatibilityFailed`/`conversionFailed`/
+`intersectionFailed`/`approximationFailed`, which are `GeomFill_Gordon`'s own upstream-preparation
+stages).
+
+| Case | Meaning |
+|---|---|
+| `.notStarted` | `Perform()` has not been called since initialization. |
+| `.done` | Surface has been constructed. |
+| `.invalidInput` | Prepared network does not satisfy the builder's requirements. |
+| `.curveCompatibilityFailed` | Curve families could not be converted to a compatible basis. |
+| `.skinningFailed` | Profile or guide skin interpolation has failed. |
+| `.referenceSurfaceFailed` | Intersection-grid reference surface could not be built. |
+| `.knotAlignmentFailed` | Intermediate surfaces could not be aligned to one knot basis. |
+| `.rationalDegreeOverflow` | Exact rational product degree exceeds OCCT's B-spline limit. |
+| `.rationalConstructionFailed` | Exact rational numerator/denominator construction has failed. |
+| `.constructionFailed` | Internal B-spline construction has failed. |
+| `.periodicityFailed` | Closed seam could not be converted to periodic form. |
+
+#### `Surface.NetworkSurfaceStatus.periodicityFailed`
+
 ---
 
 ### `Surface.networkSurface(profiles:guides:tolerance:)`
@@ -1335,6 +1559,42 @@ complete can still decline here.
 - **Parameters:** `profiles` — profile curves in U, at least 2; `guides` — guide curves in V, at least 2; `tolerance` — geometric tolerance for closed-seam checks.
 - **Returns:** Tuple of the surface (or `nil`) and a status code.
 - **OCCT:** `OCCTGeomFillNetworkSurface` / `GeomFill_NetworkSurface`.
+
+---
+
+### `Surface.KnotSplitResult`
+
+Result of `knotSplitting(uContinuity:vContinuity:)` (documented in full on
+[Surface-Advanced.md](Surface-Advanced.md#knotsplittingucontinuityvcontinuity)): the split counts,
+parameter values, and knot-table indices needed to divide a BSpline surface into pieces meeting a
+requested continuity in U and V.
+
+```swift
+public struct KnotSplitResult {
+    public let uSplitCount: Int
+    public let vSplitCount: Int
+    public let uSplitParams: [Double]
+    public let vSplitParams: [Double]
+    public let uSplitIndices: [Int]
+    public let vSplitIndices: [Int]
+}
+```
+
+| Field | Meaning |
+|---|---|
+| `uSplitCount` | Number of U split locations needed for the requested continuity. |
+| `vSplitCount` | Number of V split locations needed for the requested continuity. |
+| `uSplitParams` | U parameter values (ascending, bounded by the surface's own U range) at each split. |
+| `vSplitParams` | V parameter values (ascending, bounded by the surface's own V range) at each split. |
+| `uSplitIndices` | 1-based indices into the surface's own U knot table, one per split: `uSplitParams[i] == bsplineUKnot(index: uSplitIndices[i])`. |
+| `vSplitIndices` | 1-based indices into the surface's own V knot table, one per split. |
+
+All six fields are empty/zero for a non-BSpline surface. `uSplitIndices`/`vSplitIndices` exist
+because the underlying analyzer (`GeomConvert_BSplineSurfaceKnotSplitting`) reports both the
+parameter values and the knot-table indices those values came from; before #562 only the
+parameter-value form was exposed here.
+
+#### `Surface.KnotSplitResult.vSplitIndices`
 
 ---
 

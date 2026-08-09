@@ -257,6 +257,14 @@ The `mapping` encodes the fate of each affected node:
 
 ---
 
+| Field | Meaning |
+|---|---|
+| `operationName` | Name of the operation that produced the record, as supplied when it was logged. |
+| `sequenceNumber` | Monotonic position of this record in the log, so records stay ordered independently of the index they are fetched by. |
+| `mapping` | Each affected node to its replacements, using the three shapes above (in place, split, deleted). |
+
+---
+
 ### `historyRecord(at:)`
 
 Returns a single history record by 0-based index, or `nil` if the index is out of range.
@@ -1137,6 +1145,19 @@ public enum RefKind: Int32, Sendable {
     case occurrence = 7
 }
 ```
+
+---
+
+| Case | Selects |
+|---|---|
+| `.shell` | Shell reference entries (`shellRefCount`). |
+| `.face` | Face reference entries. |
+| `.wire` | Wire reference entries. |
+| `.coedge` | Coedge reference entries: the face-context use of an edge. |
+| `.vertex` | Vertex reference entries. |
+| `.solid` | Solid reference entries. |
+| `.child` | Child reference entries of an assembly product. |
+| `.occurrence` | Occurrence reference entries: a placed instance of a product. |
 
 ---
 

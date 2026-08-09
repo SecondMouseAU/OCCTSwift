@@ -210,6 +210,9 @@ public var ellipseProperties: EllipseProperties { get }
 
 ---
 
+```swift
+```
+---
 ### `EllipseProperties.majorRadius`
 
 The major (semi-major) radius of the ellipse.
@@ -568,6 +571,9 @@ public var lineProperties: LineProperties { get }
 
 ---
 
+```swift
+```
+---
 ### `LineProperties.direction`
 
 The unit direction of the 2D line.

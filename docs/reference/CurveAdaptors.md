@@ -9,10 +9,31 @@ parent: API Reference
 
 ## Topics
 
-- [WireCurve](#wirecurve) · [EdgeCurve](#edgecurve) · [WireOrder](#wireorder) · [Sampling](#sampling)
+- [ArcLengthCurveAdaptor](#arclengthcurveadaptor) · [WireCurve](#wirecurve) · [EdgeCurve](#edgecurve) · [WireOrder](#wireorder) · [Sampling](#sampling)
 
 ---
 
+## ArcLengthCurveAdaptor
+
+The shared protocol `WireCurve` and `EdgeCurve` both conform to. Each type supplies its own native-parameter primitives (`length`, `point(atParameter:)`, `tangent(atParameter:)`, `parameter(atAbscissa:)`, `points(count:)`) over a distinct OCCT adaptor (`BRepAdaptor_CompCurve` vs. `BRepAdaptor_Curve`); a protocol extension then supplies the arc-length *composition* (`point`/`tangent(atAbscissa:)`, `points(spacing:)`, `maximumSampleCount`) exactly once for both.
+
+```swift
+public protocol ArcLengthCurveAdaptor: AnyObject {
+    var length: Double { get }
+    var parameterRange: (first: Double, last: Double) { get }
+    func point(atParameter u: Double) -> SIMD3<Double>?
+    func tangent(atParameter u: Double) -> SIMD3<Double>?
+    func parameter(atAbscissa s: Double) -> Double?
+    func points(count: Int) -> [SIMD3<Double>]
+}
+```
+
+---
+
+```swift
+```
+- **Parameters:**
+---
 ## WireCurve
 
 A multi-edge `Wire` treated as a single continuously-parameterized curve (`BRepAdaptor_CompCurve`). Provides total arc length and arc-length-based point/tangent sampling that walks across edge boundaries seamlessly.
@@ -450,6 +471,9 @@ One bridge call — cheaper than calling `point(atAbscissa:)` in a loop.
 
 ---
 
+```swift
+```
+---
 ### `points(spacing:)`
 
 Points spaced approximately `spacing` apart along the edge by arc length.
@@ -517,6 +541,20 @@ public enum Status: Sendable {
 
 ---
 
+#### `WireOrder.Status.closed`
+
+The edges form a closed loop; all endpoints connect (OCCT status 0).
+
+#### `WireOrder.Status.gaps`
+
+At least one gap remains between edges after ordering (OCCT status 2).
+
+#### `WireOrder.Status.failed`
+
+Analysis could not complete (OCCT status less than 0).
+
+---
+
 ### `OrderedEdge`
 
 A single entry in the ordered edge sequence returned by `WireOrder`.
@@ -530,6 +568,10 @@ public struct OrderedEdge: Sendable {
 
 - `originalIndex` — 0-based index into the input `edges` array.
 - `isReversed` — `true` if the edge must be traversed in the opposite direction to maintain continuity.
+
+---
+
+#### `isReversed`
 
 ---
 
@@ -672,3 +714,14 @@ The parameter's *name* does not settle which it is: `MedialAxis.drawArc(at:maxPo
   curve.drawAdaptive(maxPoints: Sampling.maximumSampleCount + 1).count     // 2: a capacity, clamped
   curve.drawUniform(pointCount: Int(Int32.max) + 1).isEmpty                // true, no trap
   ```
+
+---
+
+### Internal helpers
+
+`Sampling` also holds three `internal static func` helpers, not public API, that implement the
+"request vs. capacity vs. grid" decisions the table above describes (#479/#558):
+
+- `requested(_:atLeast:)`: the *request* check: `nil` outside `minimum...maximumSampleCount`.
+- `capacity(_:)`: the *capacity* check: clamps into `0...maximumSampleCount`.
+- `gridTotal(_:atLeast:)`: the *grid* check: bounds each factor and their overflow-checked product.

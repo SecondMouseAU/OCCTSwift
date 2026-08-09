@@ -402,8 +402,10 @@ A curve defined by an edge lying on another edge, from blend operations (`BiTgte
 public final class BiTgteCurveOnEdge: @unchecked Sendable
 ```
 
----
+| Member | Kind | Meaning |
+|---|---|---|
 
+---
 ### `BiTgteCurveOnEdge.init(edgeOnFace:edge:)`
 
 Create a curve-on-edge from two edge shapes.
@@ -1824,6 +1826,22 @@ public func setMode(_ pass: Pass, _ toggle: Toggle)
   fixer?.perform()
   ```
 
+| `Pass` case | `ShapeFix_Face` setter it toggles |
+|---|---|
+| `.wire` | `FixWireMode` |
+| `.orientation` | `FixOrientationMode` |
+| `.addNaturalBound` | `FixAddNaturalBoundMode` |
+| `.missingSeam` | `FixMissingSeamMode` |
+| `.smallAreaWire` | `FixSmallAreaWireMode` |
+| `.removeSmallAreaFace` | `RemoveSmallAreaFaceMode` |
+| `.intersectingWires` | `FixIntersectingWiresMode` |
+| `.loopWires` | `FixLoopWiresMode` |
+| `.splitFace` | `FixSplitFaceMode` |
+| `.autoCorrectPrecision` | `AutoCorrectPrecisionMode` |
+| `.periodicDegenerated` | `FixPeriodicDegeneratedMode` |
+
+#### `Pass.smallAreaWire`
+
 ---
 
 ### `FaceFixer` — individual fix passes (#266)
@@ -1841,6 +1859,40 @@ Run a single fix pass directly.
 
 ---
 
+#### `FaceFixer.fixPeriodicDegenerated()`
+
+Runs `ShapeFix_Face::FixPeriodicDegenerated` alone: heals a wire that belts the full period of a
+periodic surface as a single closed edge (see the `ShapeFix_Face::FixPeriodicDegenerated`
+null-Context SIGSEGV entry in `CLAUDE.md`'s Known OCCT Bugs, fixed upstream in OCCT 8.0.1).
+
+```swift
+@discardableResult public func fixPeriodicDegenerated() -> Bool
+```
+
+- **OCCT:** `ShapeFix_Face::FixPeriodicDegenerated`.
+
+#### `FaceFixer.fixWiresTwoCoincEdges()`
+
+Runs `ShapeFix_Face::FixWiresTwoCoincEdges` alone: merges a wire's two coincident edges.
+
+```swift
+@discardableResult public func fixWiresTwoCoincEdges() -> Bool
+```
+
+- **OCCT:** `ShapeFix_Face::FixWiresTwoCoincEdges`.
+
+#### `FaceFixer.fixLoopWire()`
+
+Runs `ShapeFix_Face::FixLoopWire` alone: splits a wire that loops back on itself.
+
+```swift
+@discardableResult public func fixLoopWire() -> Bool
+```
+
+- **OCCT:** `ShapeFix_Face::FixLoopWire`.
+
+---
+
 ### `FaceFixer.result` / `FaceFixer.status(_:)` (#266)
 
 `result` returns the true fix output — a **face**, or a **shell** when `fixMissingSeam()` split the
@@ -1852,6 +1904,34 @@ public var result: Shape? { get }
 public enum Status: Int32, Sendable { case ok, done1, /* … */ done8, fail1, /* … */ fail8, done, fail }
 public func status(_ status: Status) -> Bool
 ```
+
+`Status` mirrors OCCT's `ShapeExtend_Status` flag space, one bit per numbered fix. `ShapeFix_Face`
+only assigns meaning to some of the numbers; the rest exist because the same 18-flag enum is shared
+across every `ShapeFix_Root` subclass, each using a different subset.
+
+| Case | Meaning for `ShapeFix_Face` |
+|---|---|
+| `.ok` | The face needed no fix at all. |
+| `.done1` | Some wire was fixed (`ShapeFix_Wire` pass). |
+| `.done2` | Wire orientation was fixed. |
+| `.done3` | A missing seam was added. |
+| `.done4` | A small-area wire was removed. |
+| `.done5` | A natural bound was added. |
+| `.done6` | Not assigned by `ShapeFix_Face`. |
+| `.done7` | Not assigned by `ShapeFix_Face`. |
+| `.done8` | The face may have been split. |
+| `.fail1` | Some failure while fixing a wire. |
+| `.fail2` | Could not fix wire orientation. |
+| `.fail3` | Could not add a missing seam. |
+| `.fail4` | Could not remove a small-area wire. |
+| `.fail5` | Not assigned by `ShapeFix_Face`. |
+| `.fail6` | Not assigned by `ShapeFix_Face`. |
+| `.fail7` | Not assigned by `ShapeFix_Face`. |
+| `.fail8` | Not assigned by `ShapeFix_Face`. |
+| `.done` | Any `.done1`...`.done8` flag is set: something was fixed. |
+| `.fail` | Any `.fail1`...`.fail8` flag is set: some pass failed. |
+
+#### `Status.fail`
 
 - **OCCT:** `ShapeFix_Face::Result` / `ShapeFix_Root::Status`.
 
@@ -1915,6 +1995,17 @@ public var segmentCount: Int { get }
 ### `IntCSResult.IntersectionPoint`
 
 A single curve-surface intersection result.
+
+| Field | Meaning |
+|---|---|
+| `point` | The 3D intersection point in world space. |
+| `curveParam` | The curve's own parameter at the intersection. |
+| `surfaceU` | The surface's U parameter at the intersection. |
+| `surfaceV` | The surface's V parameter at the intersection. |
+
+---
+
+#### `IntersectionPoint.surfaceV`
 
 ```swift
 public struct IntersectionPoint: Sendable {
@@ -2360,6 +2451,50 @@ public struct ShapeContentsExtended: Sendable {
 }
 ```
 
+Every field is a direct 1:1 read of the matching `ShapeAnalysis_ShapeContents` accessor (`NbSolids()`,
+`NbShells()`, ...), taken once by `contentsExtended()` after a single `Perform()` pass. "Shared" below
+means structural reuse in the topology graph: the same sub-shape referenced from more than one
+parent, not the ordinary case of an edge sitting between two faces of a solid, which every valid
+solid has and which `NbSharedEdges()` does not count.
+
+| Field | Meaning |
+|---|---|
+| `nbSolids` | Number of solids. |
+| `nbShells` | Number of shells. |
+| `nbFaces` | Number of faces. |
+| `nbWires` | Number of wires. |
+| `nbEdges` | Number of edges. |
+| `nbVertices` | Number of vertices. |
+| `nbFreeEdges` | Edges used by exactly one face (naked/boundary edges). |
+| `nbFreeWires` | Wires that belong to no face. |
+| `nbFreeFaces` | Faces that belong to no shell. |
+| `nbSolidsWithVoids` | Solids with more than one shell (an outer shell plus one or more internal void shells). |
+| `nbBigSplines` | B-spline curves or surfaces OCCT flags as unusually complex (a high pole/knot count). |
+| `nbC0Surfaces` | Surfaces that are only `C0` continuous (not smooth internally). |
+| `nbC0Curves` | Curves that are only `C0` continuous. |
+| `nbOffsetSurf` | `Geom_OffsetSurface` instances. |
+| `nbIndirectSurf` | Surfaces with an indirect (left-handed) parametrization. |
+| `nbOffsetCurves` | `Geom_OffsetCurve` instances. |
+| `nbTrimmedCurve2d` | Trimmed 2D curves (pcurves). |
+| `nbTrimmedCurve3d` | Trimmed 3D curves. |
+| `nbBSplineSurf` | B-spline surfaces. |
+| `nbBezierSurf` | Bezier surfaces. |
+| `nbTrimSurf` | `Geom_RectangularTrimmedSurface` instances. |
+| `nbWireWithSeam` | Wires containing exactly one seam edge (on a closed/periodic surface). |
+| `nbWireWithSevSeams` | Wires containing more than one seam edge. |
+| `nbFaceWithSevWires` | Faces with more than one wire (i.e. with inner boundaries/holes). |
+| `nbNoPCurve` | Edges on a face with no pcurve representation there. |
+| `nbSharedSolids` | Solids referenced from more than one parent. |
+| `nbSharedShells` | Shells referenced from more than one solid. |
+| `nbSharedFaces` | Faces referenced from more than one shell. |
+| `nbSharedWires` | Wires referenced from more than one face. |
+| `nbSharedEdges` | Edges referenced from more than one wire (structural reuse, not ordinary face adjacency). |
+| `nbSharedVertices` | Vertices referenced from more than one edge (structural reuse). |
+
+*(Per-field anchors below, for cross-reference; the table above has the actual meaning of each.)*
+
+#### `nbSharedVertices`
+
 ---
 
 ### `Shape.contentsExtended()`
@@ -2472,8 +2607,16 @@ Which of the analysis' two result sequences a query addresses.
 public enum BoundKind: Sendable { case closed, open }
 ```
 
----
+| Case | Meaning |
+|---|---|
+| `.closed` | Addresses the sequence of contours that close into a loop. |
+| `.open` | Addresses the sequence of contours that do not close. |
 
+#### `FreeBoundsProperties.BoundKind.closed`
+
+```swift
+```
+---
 ### `FreeBoundsProperties.closedCount`
 
 Number of closed free bounds found.
@@ -2716,6 +2859,20 @@ public enum WireError: Int32, Sendable {
 }
 ```
 
+Case meanings, from `BRepBuilderAPI_WireError`:
+
+#### `WireBuilder.WireError.wireDone`
+
+No error occurred; the wire is correctly built.
+
+#### `WireBuilder.WireError.disconnectedWire`
+
+The last edge added was not connected to the wire.
+
+#### `WireBuilder.WireError.nonManifoldWire`
+
+The wire has some singularity.
+
 ---
 
 ### `WireBuilder.error`
@@ -2789,6 +2946,18 @@ public enum GlueMode: Int32, Sendable {
     case off   = 2   // No glue
 }
 ```
+
+Mirrors `BOPAlgo_GlueEnum`. Gluing skips real intersection computation between arguments that the
+caller guarantees are already coincident; setting it on shapes that are not coincident is likely to
+produce an incorrect result, since the algorithm does not check the guarantee itself.
+
+| Case | Meaning |
+|---|---|
+| `.off` | Default; gluing is disabled and full intersection computation runs. |
+| `.shift` | For partially-coincident arguments (overlapping but not fully coincident faces): skips FACE/FACE intersection computation; the overlapping faces are still split. |
+| `.full` | For fully-coincident arguments (no partial overlap): skips VERTEX/FACE, EDGE/FACE, and FACE/FACE intersection computation; faces are not split. |
+
+#### `Shape.GlueMode.full`
 
 ---
 
@@ -3043,6 +3212,11 @@ public struct InertiaTensor: Sendable {
 }
 ```
 
+The three diagonal terms (`ixx`, `iyy`, `izz`) and the three off-diagonal cross terms (`ixy`, `ixz`,
+`iyz`) of the symmetric 3x3 inertia matrix, referenced to the shape's own centre of mass.
+
+#### `InertiaTensor.ixy`
+
 ---
 
 ### `Shape.momentOfInertia()`
@@ -3072,6 +3246,14 @@ public struct PrincipalAxes: Sendable {
     public let axis3: SIMD3<Double>
 }
 ```
+
+| Field | Meaning |
+|---|---|
+| `axis1` | Direction of the first principal axis of inertia. |
+| `axis2` | Direction of the second principal axis of inertia. |
+| `axis3` | Direction of the third principal axis of inertia. |
+
+#### `Shape.PrincipalAxes.axis3`
 
 ---
 
@@ -3350,6 +3532,10 @@ public struct BuildResult: Sendable {
 
 - `curve` — the resulting BSpline approximation of the helix.
 - `toleranceReached` — the actual approximation error achieved.
+
+---
+
+#### `BuildResult.toleranceReached`
 
 ---
 

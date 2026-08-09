@@ -858,6 +858,8 @@ public func bsplineMovePointAndTangent(u: Double, point: SIMD2<Double>, tangent:
 
 Builder for applying rounded fillets to selected edges of a solid, wrapping `BRepFilletAPI_MakeFillet`.
 
+```swift
+```
 ### `FilletBuilder.init?(shape:)`
 
 Create a fillet builder on the given shape.

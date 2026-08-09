@@ -45,6 +45,19 @@ Every factory returns `nil` rather than a conic when a dimension is degenerate. 
 in-band way to say it: all-zero coefficients are the equation `0 = 0`, which holds at every point
 of the plane, so they read as a conic rather than as no answer.
 
+| Field | Meaning |
+|-------|---------|
+| `a` | Coefficient of `x²`. |
+| `b` | Coefficient of `y²`. |
+| `c` | Half the coefficient of the `x·y` cross term (the equation carries `2c·x·y`). |
+| `d` | Half the coefficient of the linear `x` term (the equation carries `2d·x`). |
+| `e` | Half the coefficient of the linear `y` term (the equation carries `2e·y`). |
+| `f` | The constant term. |
+
+*(Per-field anchor below, for cross-reference; the table above has the actual meaning of each.)*
+
+#### `Conic2D.a`
+
 ---
 
 ### `Conic2D.circle(center:direction:radius:)`

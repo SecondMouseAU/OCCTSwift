@@ -181,6 +181,89 @@ public struct ContinuityAnalysis: Sendable {
 
 ---
 
+#### `ContinuityAnalysis.order`
+
+The class the junction was analysed at, i.e. the request after saturation. `LocalAnalysis_CurveContinuity::ContinuityStatus()` echoes its constructor argument, so this is never a finding; it exists to tell you where a saturated request landed.
+
+#### `ContinuityAnalysis.measured`
+
+The classes this `order` actually evaluated. Each order runs one branch: `.c0` measures C0; `.g1` measures C0 and G1; `.c1` measures C0 and C1; `.g2` measures C0, G1 and G2; `.c2` measures C0, C1 and C2. No order measures all five.
+
+#### `ContinuityAnalysis.c0Value`
+
+Positional gap distance at the junction.
+
+#### `ContinuityAnalysis.g1Angle`
+
+Angle between tangent directions (radians), or `-1` if G1 was not measured or does not hold.
+
+#### `ContinuityAnalysis.c1Angle`
+
+Angle between first derivatives, or `-1` if C1 was not measured or does not hold.
+
+#### `ContinuityAnalysis.c1Ratio`
+
+Magnitude ratio between first derivatives, or `-1` if C1 was not measured or does not hold.
+
+#### `ContinuityAnalysis.c2Angle`
+
+Angle between second derivatives, or `-1` if C2 was not measured or does not hold.
+
+#### `ContinuityAnalysis.c2Ratio`
+
+Magnitude ratio between second derivatives, or `-1` if C2 was not measured or does not hold.
+
+#### `ContinuityAnalysis.g2Angle`
+
+Angle between osculating planes, or `-1` if G2 was not measured or does not hold.
+
+#### `ContinuityAnalysis.g2CurvatureVariation`
+
+Curvature variation at the junction, or `-1` if G2 was not measured or does not hold.
+
+#### `ContinuityAnalysis.flags`
+
+Bitmask of the classes that hold (bit 0 = C0 through bit 4 = C2), masked to `measured`: a clear bit means "does not hold or was not measured". Prefer `holds(_:)`, which tells the two apart.
+
+#### `ContinuityAnalysis.holds(_:)`
+
+```swift
+public func holds(_ continuity: ContinuityClass) -> Bool?
+```
+
+Whether `continuity` holds at the junction, or `nil` if `order` never measured it. Tests exact-class membership, not a floor: a `true` for `.g2` implies nothing about `.c1`.
+
+- **Example:**
+  ```swift
+  let a = corner.continuityWith(other, u1: e1, u2: s2, order: .c1)!
+  a.holds(.c1)   // false: measured, and the junction is not C1
+  a.holds(.g1)   // nil: order .c1 never computes G1
+  ```
+
+#### `ContinuityAnalysis.isC0`
+
+`holds(.c0)`. Always measured (every order measures C0).
+
+#### `ContinuityAnalysis.isG1`
+
+`holds(.g1)`. `nil` unless `order` is `.g1` or `.g2`.
+
+#### `ContinuityAnalysis.isC1`
+
+`holds(.c1)`. `nil` unless `order` is `.c1` or `.c2`.
+
+#### `ContinuityAnalysis.isG2`
+
+`holds(.g2)`. `nil` unless `order` is `.g2`.
+
+#### `ContinuityAnalysis.isC2`
+
+`holds(.c2)`. `nil` unless `order` is `.c2`.
+
+> Before #495 the `is*` helpers were non-optional and read straight off the bitmask, so a class the order never computed answered `true` from an uninitialised member — a 90° corner analysed at `.c0` reported `isC2 == true`, with `c2Angle == 0.0` alongside it.
+
+---
+
 ### `continuityWith(_:u1:u2:order:)`
 
 Analyses the continuity between this curve at parameter `u1` and another curve at parameter `u2`.
@@ -370,6 +453,20 @@ public struct CurveSurfaceHit: Sendable {
 - `point` — 3D intersection coordinates.
 - `curveParameter` — parameter along the curve at the intersection.
 - `surfaceU` / `surfaceV` — surface UV parameters at the intersection.
+
+---
+
+#### `CurveSurfaceHit.curveParameter`
+
+Parameter along the curve at the intersection.
+
+#### `CurveSurfaceHit.surfaceU`
+
+Surface U parameter at the intersection.
+
+#### `CurveSurfaceHit.surfaceV`
+
+Surface V parameter at the intersection.
 
 ---
 
@@ -646,6 +743,16 @@ public struct ValidatedRange: Sendable {
 - `first` / `last` — validated (and possibly clamped) parameter bounds.
 - `wasAdjusted` — `true` if the input range was outside the curve's parametric domain and was adjusted.
 
+| Field | Meaning |
+|---|---|
+| `first` | Validated (and possibly clamped) first parameter. |
+| `last` | Validated (and possibly clamped) last parameter. |
+| `wasAdjusted` | `true` if the requested range was outside the curve's parametric domain and had to be adjusted. |
+
+#### `Curve3D.ValidatedRange.wasAdjusted`
+
+`true` if the requested range needed adjusting to fit the curve's domain.
+
 ---
 
 ### `validateRange(first:last:precision:)`
@@ -739,6 +846,24 @@ public struct ExtremaPointPair: Sendable {
 
 ---
 
+#### `ExtremaPointPair.point1`
+
+Point on the first curve (or the query curve, for curve-surface).
+
+#### `ExtremaPointPair.param1`
+
+Parameter on the first curve (or the query curve, for curve-surface).
+
+#### `ExtremaPointPair.point2`
+
+Point on the second curve, or the UV point packed as `(u, v, 0)` for curve-surface.
+
+#### `ExtremaPointPair.param2`
+
+Parameter on the second curve, or the surface U parameter for curve-surface (`point2.z` carries V).
+
+---
+
 ### `extremaCC(range1:other:range2:)`
 
 Computes curve-to-curve extrema using `Extrema_ExtCC`.
@@ -810,6 +935,17 @@ public struct LocalExtremaResult: Sendable {
 
 - `isDone` — `true` when the local solver converged.
 - Other fields are the same as `ExtremaPointPair`.
+
+| Field | Meaning |
+|---|---|
+| `isDone` | `true` when the local solver converged. |
+| `squareDistance` | Squared distance between the two extremal points (take `sqrt` for actual distance). |
+| `point1` / `param1` | Point and parameter on this curve. |
+| `point2` / `param2` | Point and parameter on the other curve. |
+
+#### `Curve3D.LocalExtremaResult.param2`
+
+Parameter on the other curve at the local extremum.
 
 ---
 

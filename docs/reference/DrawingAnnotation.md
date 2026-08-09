@@ -18,7 +18,7 @@ The file contains four public types at the top level and their associated nested
 
 ## Topics
 
-- [DrawingLineStyle](#drawinglinestyle) · [DrawingTolerance](#drawingtolerance) · [DrawingDimension](#drawingdimension) · [DrawingDimension.Linear](#drawingdimensionlinear) · [DrawingDimension.Radial](#drawingdimensionradial) · [DrawingDimension.Diameter](#drawingdimensiondiameter) · [DrawingDimension.Angular](#drawingdimensionangular) · [DrawingDimension.Ordinate](#drawingdimensionordinate) · [DrawingDimension.Ordinate.Feature](#drawingdimensionordinatefeature) · [DrawingDimension computed properties](#drawingdimension-computed-properties) · [DrawingAnnotation](#drawingannotation-1) · [DrawingAnnotation.Centreline](#drawingannotationcentreline) · [DrawingAnnotation.Centermark](#drawingannotationcentermark) · [DrawingAnnotation.TextLabel](#drawingannotationtextlabel) · [DrawingAnnotation.CuttingPlaneLine](#drawingannotationcuttingplaneline) · [DrawingAnnotation.Hatch](#drawingannotationhatch) · [DrawingAnnotation.Balloon](#drawingannotationballoon)
+- [DrawingLineStyle](#drawinglinestyle) · [DrawingTolerance](#drawingtolerance) · [DrawingDimension](#drawingdimension) · [DrawingDimension.Linear](#drawingdimensionlinear) · [DrawingDimension.Radial](#drawingdimensionradial) · [DrawingDimension.Diameter](#drawingdimensiondiameter) · [DrawingDimension.Angular](#drawingdimensionangular) · [DrawingDimension.Ordinate](#drawingdimensionordinate) · [DrawingDimension.Ordinate.Feature](#drawingdimensionordinatefeature) · [DrawingDimension computed properties](#drawingdimension-computed-properties) · [DrawingAnnotation](#drawingannotation-1) · [DrawingAnnotation.Centreline](#drawingannotationcentreline) · [DrawingAnnotation.Centermark](#drawingannotationcentermark) · [DrawingAnnotation.TextLabel](#drawingannotationtextlabel) · [DrawingAnnotation.CuttingPlaneLine](#drawingannotationcuttingplaneline) · [DrawingAnnotation.Hatch](#drawingannotationhatch) · [DrawingAnnotation.Balloon](#drawingannotationballoon) · [DrawingAnnotationStore](#drawingannotationstore)
 
 ---
 
@@ -64,6 +64,40 @@ Pure-Swift; no OCCT mapping.
 
 ---
 
+#### `DrawingLineStyle.dashed`
+
+Hidden-line (dash) pattern; use for hidden edges.
+
+#### `DrawingLineStyle.phantom`
+
+Long-dash plus two short-dashes; ISO designation "phantom".
+
+#### `DrawingLineStyle.chain`
+
+Long-dash plus one short-dash (also called "chain-dot"); ISO designation for centrelines.
+
+#### `DrawingLineStyle.dotted`
+
+Equally-spaced dots.
+
+Pure-Swift; no OCCT mapping.
+
+- **Example:**
+  ```swift
+  let dim = DrawingDimension.Linear(
+      from: SIMD2(0, 0),
+      to: SIMD2(50, 0),
+      style: .solid
+  )
+  let cl = DrawingAnnotation.Centreline(
+      from: SIMD2(-5, 25),
+      to: SIMD2(55, 25),
+      style: .chain
+  )
+  ```
+
+---
+
 ## DrawingTolerance
 
 ### `DrawingTolerance`
@@ -81,14 +115,30 @@ public enum DrawingTolerance: Sendable, Hashable, Codable {
 }
 ```
 
-- `none` — no tolerance text is emitted.
-- `symmetric(Double)` — renders as `20 ±0.05`; the associated value is the ± magnitude.
-- `bilateral(plus:minus:)` — renders as `20 +0.10 / -0.05`; both values are magnitudes and the writer adds the signs.
-- `unilateral(Double)` — single-sided; sign of the associated value determines direction (`+0.10 / 0` or `0 / -0.10`).
-- `fitClass(String)` — ISO 286 fit class appended as a suffix, e.g. `H7`, `g6`, `h7/H8`.
-- `limits(lower:upper:)` — explicit lower and upper limits stacked over the nominal in DXF/PDF/SVG.
+| Case | Rendered form | Meaning |
+|---|---|---|
+| `none` | no tolerance text | No tolerance is displayed. |
+| `symmetric(Double)` | `20 ±0.05` | Symmetric plus/minus tolerance; the associated value is the magnitude. |
+| `bilateral(plus:minus:)` | `20 +0.10 / -0.05` | Independent plus and minus magnitudes; the writer adds the signs. |
+| `unilateral(Double)` | `20 +0.10 / 0` or `20 0 / -0.10` | Single-sided tolerance; the sign of the associated value picks the side. |
+| `fitClass(String)` | `H7`, `g6`, `h7/H8` | ISO 286 fit class appended as a suffix. |
+| `limits(lower:upper:)` | stacked upper/lower over the nominal | Explicit lower and upper limits, rendered on two lines. |
 
 Pure-Swift; no OCCT mapping.
+
+- **Example:**
+  ```swift
+  let sym  = DrawingTolerance.symmetric(0.05)       // ±0.05
+  let bil  = DrawingTolerance.bilateral(plus: 0.10, minus: 0.05)
+  let fit  = DrawingTolerance.fitClass("H7")
+  let lims = DrawingTolerance.limits(lower: 19.95, upper: 20.10)
+  ```
+
+---
+
+#### `DrawingTolerance.limits`
+
+Explicit lower and upper limits stacked over the nominal value.
 
 - **Example:**
   ```swift
@@ -116,13 +166,28 @@ public enum DrawingDimension: Sendable, Hashable {
 }
 ```
 
-- `linear` — measured distance between two 2D points with an offset dimension line.
-- `radial` — radius callout on a circle or arc with a leader.
-- `diameter` — diameter callout (prefixed `⌀`) on a circle with a leader.
-- `angular` — angle between two rays sharing a vertex.
-- `ordinate` — ISO 129-1 §9.3 reference-datum dimensions for a set of features relative to a shared origin.
+| Case | Meaning |
+|---|---|
+| `linear(Linear)` | Measured distance between two 2D points with an offset dimension line. |
+| `radial(Radial)` | Radius callout on a circle or arc with a leader. |
+| `diameter(Diameter)` | Diameter callout (prefixed `⌀`) on a circle with a leader. |
+| `angular(Angular)` | Angle between two rays sharing a vertex. |
+| `ordinate(Ordinate)` | ISO 129-1 §9.3 reference-datum dimensions for a set of features relative to a shared origin. |
 
 Pure-Swift; no OCCT mapping.
+
+- **Example:**
+  ```swift
+  let d: DrawingDimension = .linear(
+      DrawingDimension.Linear(from: SIMD2(0, 0), to: SIMD2(100, 0))
+  )
+  ```
+
+---
+
+#### `DrawingDimension.ordinate`
+
+ISO 129-1 §9.3 reference-datum dimensions.
 
 - **Example:**
   ```swift
@@ -158,6 +223,10 @@ public struct Linear: Sendable, Hashable {
 - `style` — linestyle for the dimension lines and extension lines.
 - `id` — optional identifier for round-tripping through DXF entity handles.
 - `tolerance` — structured tolerance; see `DrawingTolerance`.
+
+*(Per-field anchors below, for cross-reference; the list above has the actual meaning of each.)*
+
+#### `DrawingDimension.Linear.tolerance`
 
 ---
 
@@ -233,7 +302,25 @@ public struct Radial: Sendable, Hashable {
 - `radius` — radius of the circle or arc (drawing units).
 - `leaderAngle` — angle in radians at which the leader line exits the circle (measured from positive X axis).
 - `label` — optional override text (writers typically prefix with `R`).
-- `style`, `id`, `tolerance` — same semantics as `Linear`.
+- `id`: same semantics as `Linear`.
+
+---
+
+#### `DrawingDimension.Radial.centre`
+
+Centre of the circle or arc.
+
+#### `DrawingDimension.Radial.leaderAngle`
+
+Angle in radians at which the leader line exits the circle, measured from the positive X axis.
+
+#### `DrawingDimension.Radial.style`
+
+Line style for the leader and dimension line; same `DrawingLineStyle` semantics as `Linear`.
+
+#### `DrawingDimension.Radial.tolerance`
+
+Tolerance annotation for the radius value; same `DrawingTolerance` semantics as `Linear`.
 
 ---
 
@@ -304,6 +391,20 @@ public struct Diameter: Sendable, Hashable {
 ```
 
 Stored as `radius`; `value` returns `2 * radius`. Fields have identical semantics to `Radial`.
+
+| Field | Meaning |
+|---|---|
+| `centre` | Centre of the circle. |
+| `radius` | Actual radius (stored); `value` returns `2 * radius`. |
+| `leaderAngle` | Angle in radians at which the leader line exits the circle. |
+| `label` | Optional override text; `nil` means auto-format as `⌀<2*radius>`. |
+| `style` | Linestyle for the dimension and leader lines. |
+| `id` | Optional identifier for round-tripping through DXF entity handles. |
+| `tolerance` | Structured tolerance; see `DrawingTolerance`. |
+
+#### `DrawingDimension.Diameter.tolerance`
+
+Structured tolerance; see `DrawingTolerance`.
 
 ---
 
@@ -376,9 +477,29 @@ public struct Angular: Sendable, Hashable {
 ```
 
 - `vertex` — the point where the two rays originate.
-- `ray1`, `ray2` — points on each ray (not necessarily unit vectors).
-- `arcRadius` — radius at which the dimension arc is drawn (drawing units).
-- `label`, `style`, `id`, `tolerance` — standard dimension fields.
+- `label`: standard dimension field.
+
+---
+
+#### `DrawingDimension.Angular.ray1`
+
+A point on the first ray (not necessarily a unit vector).
+
+#### `DrawingDimension.Angular.ray2`
+
+A point on the second ray (not necessarily a unit vector).
+
+#### `DrawingDimension.Angular.arcRadius`
+
+Radius at which the dimension arc is drawn (drawing units).
+
+#### `DrawingDimension.Angular.style`
+
+Line style for the dimension arc and extension lines; same `DrawingLineStyle` semantics as `Linear`.
+
+#### `DrawingDimension.Angular.tolerance`
+
+Tolerance annotation for the angle value; same `DrawingTolerance` semantics as `Linear`.
 
 ---
 
@@ -453,6 +574,10 @@ public struct Ordinate: Sendable, Hashable, Codable {
 - `features` — ordered list of `Feature` values, each with a position and optional label.
 - `id` — optional identifier.
 - `tolerance` — common tolerance applied to all feature values (individual tolerances are expressed via feature labels).
+
+*(Per-field anchors below, for cross-reference; the list above has the actual meaning of each.)*
+
+#### `DrawingDimension.Ordinate.tolerance`
 
 ---
 
@@ -590,6 +715,9 @@ Pure-Swift dispatch: returns `Linear.value` (distance), `Radial.value` (radius),
 
 ---
 
+```swift
+```
+---
 ## DrawingAnnotation
 
 Non-dimensional 2D annotations attached to a `Drawing` — centrelines, centremarks, construction points, free-form text, hatch fills, cutting-plane indicators, and assembly balloons.
@@ -616,8 +744,13 @@ public enum DrawingAnnotation: Sendable, Hashable {
 
 Pure-Swift; no OCCT mapping.
 
----
+*(Per-case anchors below, for cross-reference; the list above has the actual meaning of each.)*
 
+#### `DrawingAnnotation.balloon`
+
+Internal, not public API: `DrawingAnnotation.keyPoints` (`internal var`, declared in an extension in `DrawingComposition.swift`) returns each case's key 2D points, used by `Drawing.bounds(deflection:includeAnnotations:)` to include annotation extents and by the internal `transformed(translate:scale:)` composition helpers. Not part of the public API surface.
+
+---
 ## DrawingAnnotation.Centreline
 
 ### `DrawingAnnotation.Centreline`
@@ -636,6 +769,17 @@ public struct Centreline: Sendable, Hashable {
 - `from`, `to` — endpoints of the centreline segment.
 - `style` — linestyle (default `.chain` to produce the long-dash + short-dash pattern).
 - `id` — optional identifier.
+
+| Field | Meaning |
+|---|---|
+| `from` | Start endpoint of the centreline segment. |
+| `to` | End endpoint of the centreline segment. |
+| `style` | Linestyle, typically `.chain`. |
+| `id` | Optional identifier. |
+
+#### `DrawingAnnotation.Centreline.style`
+
+Linestyle, typically `.chain`.
 
 ---
 
@@ -685,6 +829,16 @@ public struct Centermark: Sendable, Hashable {
 - `extent` — full length of each crossing segment (drawing units); the cross arm extends `extent/2` on each side.
 - `style` — linestyle (default `.chain`).
 - `id` — optional identifier.
+
+---
+
+#### `DrawingAnnotation.Centermark.centre`
+
+Position of the cross centre.
+
+#### `DrawingAnnotation.Centermark.style`
+
+Line style for the crossing segments; defaults to `.chain` (the ISO centreline convention).
 
 ---
 
@@ -765,6 +919,13 @@ public init(position: SIMD2<Double>, text: String,
 
 ---
 
+## TextLabel (OCCT-backed class)
+
+Not to be confused with `DrawingAnnotation.TextLabel` above, a pure-Swift 2D annotation struct for `Drawing` output: `TextLabel` (declared with no enclosing type, in `Annotation.swift`) is a separate, OCCT-backed 3D text label used for viewport/Metal-rendered scene labels. See [Annotation](Annotation.md) for its public surface (`text`, `position`, `setHeight(_:)`).
+
+*(Internal, not public API: `TextLabel.handle` is an `internal let handle: OCCTTextLabelRef` wrapping the underlying bridge object, released in `deinit`. See [Memory Management](../architecture/overview.md#occt-handles).)*
+
+---
 ## DrawingAnnotation.CuttingPlaneLine
 
 ### `DrawingAnnotation.CuttingPlaneLine`
@@ -787,6 +948,10 @@ Rendered as heavy-chain segments at each endpoint (~10 mm), a thin-chain segment
 - `traceStart`, `traceEnd` — endpoints of the cutting-plane trace across the view.
 - `arrowDirection` — unit vector perpendicular to the trace pointing in the section look direction; stored normalised.
 - `id` — optional identifier.
+
+*(Per-field anchors below, for cross-reference; the list above has the actual meaning of each.)*
+
+#### `DrawingAnnotation.CuttingPlaneLine.traceStart`
 
 ---
 
@@ -845,6 +1010,10 @@ public struct Hatch: Sendable, Hashable {
 - `islands` — inner boundaries (holes) each as a closed polygon subtracted from the hatched region.
 - `layer` — DXF layer name for the hatch entity (default `"HATCH"`).
 - `id` — optional identifier.
+
+*(Per-field anchors below, for cross-reference; the list above has the actual meaning of each.)*
+
+#### `DrawingAnnotation.Hatch.spacing`
 
 ---
 
@@ -908,6 +1077,20 @@ public struct Balloon: Sendable, Hashable {
 
 ---
 
+#### `DrawingAnnotation.Balloon.itemNumber`
+
+BOM row number shown inside the balloon circle.
+
+#### `DrawingAnnotation.Balloon.centre`
+
+Centre of the balloon circle.
+
+#### `DrawingAnnotation.Balloon.leaderTo`
+
+Optional target point for the leader line pointing from the balloon to the referenced part; `nil` for no leader.
+
+---
+
 ### `DrawingAnnotation.Balloon.init(itemNumber:centre:radius:leaderTo:id:)`
 
 Creates a balloon callout annotation.
@@ -937,3 +1120,22 @@ public init(itemNumber: Int,
       )
   )
   ```
+
+---
+
+## DrawingAnnotationStore
+
+`internal final class DrawingAnnotationStore: @unchecked Sendable`, declared in this file. Not
+part of the public API: `Drawing` holds one internally to accumulate the dimensions and
+annotations added to it, guarded by an `NSLock` so the class can be marked `Sendable` despite its
+mutable arrays. Read access is `dimensions`/`annotations` (both internal computed properties);
+mutation goes through the three methods below.
+
+```swift
+```
+
+```swift
+```
+
+```swift
+```

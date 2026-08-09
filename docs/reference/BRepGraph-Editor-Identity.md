@@ -683,9 +683,61 @@ public struct FaceGridSample: Sendable {
 }
 ```
 
-All four arrays share one layout: **U-major**, u varying slowest and v fastest, so grid position `(u, v)` sits at `index = u * vSamples + v` for `u ∈ [0, uSamples)` and `v ∈ [0, vSamples)`. This is the layout `SurfaceGrid` and `SurfaceGridD1` use, and the one #486 declared for the whole API.
+| Field | Meaning |
+|---|---|
+| `positions` | Surface positions at grid points, U-major |
+| `normals` | Surface normals at grid points, U-major |
+| `gaussianCurvatures` | Gaussian curvature at each grid point, U-major |
+| `meanCurvatures` | Mean curvature at each grid point, U-major |
+| `uSamples` | Number of samples in the U direction |
+| `vSamples` | Number of samples in the V direction |
 
 Read through `at(u:v:)` rather than spelling the index out. Until #617 the bridge wrote these buffers *transposed* (`v * uSamples + u`) while this page already documented the U-major index above, so a caller who followed the docs read the wrong point of the face; getting the stride wrong instead (`u * uSamples + v`) is silently in range on a 3×10 grid and out of bounds on a 10×3 one. `at(u:v:)` removes both failure modes by owning the index.
+
+```swift
+guard let sample = graph.sampleFaceUVGrid(faceIndex: 0, uSamples: 10, vSamples: 3)
+else { return }
+
+for u in 0..<sample.uSamples {
+    for v in 0..<sample.vSamples {
+        let s = sample.at(u: u, v: v)
+        print("(\(u), \(v)) -> \(s.position)  kG=\(s.gaussianCurvature) kH=\(s.meanCurvature)")
+    }
+}
+```
+
+---
+
+#### `BRepGraph.FaceGridSample.vSamples`
+
+Number of samples in the V direction.
+
+All four arrays share one layout: **U-major**, u varying slowest and v fastest, so grid position `(u, v)` sits at `index = u * vSamples + v` for `u ∈ [0, uSamples)` and `v ∈ [0, vSamples)`. This is the layout `SurfaceGrid` and `SurfaceGridD1` use, and the one #486 declared for the whole API.
+
+---
+
+#### `BRepGraph.FaceGridSample.at(u:v:)`
+
+Position, normal and curvatures at the given U/V grid index. Read through this rather than spelling the flat index out yourself. Until #617 the bridge wrote these buffers *transposed* (`v * uSamples + u`) while this page already documented the U-major index above, so a caller who followed the docs read the wrong point of the face; getting the stride wrong instead (`u * uSamples + v`) is silently in range on a 3×10 grid and out of bounds on a 10×3 one. `at(u:v:)` removes both failure modes by owning the index.
+
+```swift
+public func at(u: Int, v: Int) -> (position: SIMD3<Double>, normal: SIMD3<Double>,
+                                   gaussianCurvature: Double, meanCurvature: Double)
+```
+
+- **Parameters:** `u`: U grid index, `0..<uSamples`; `v`: V grid index, `0..<vSamples`.
+- **Returns:** The position, normal, Gaussian curvature and mean curvature at that grid point.
+- **Example:**
+  ```swift
+  if let sample = graph.sampleFaceUVGrid(faceIndex: 0, uSamples: 3, vSamples: 10) {
+      let corner = sample.at(u: 2, v: 9)
+      print(corner.position, corner.meanCurvature)
+  }
+  ```
+
+---
+
+Walk the whole grid row by row (U outer, V inner) to visit every point in storage order:
 
 ```swift
 guard let sample = graph.sampleFaceUVGrid(faceIndex: 0, uSamples: 10, vSamples: 3)
@@ -833,6 +885,34 @@ public struct GraphUID: Sendable, Hashable, Codable {
 
 ---
 
+#### `GraphUID.graphID`
+
+The `instanceID` of the graph instance that minted this UID. `0` means unstamped, built by hand or decoded from a payload written before v1.12.0, and resolves in no graph. `BRepGraph.node(forUID:)` rejects a UID minted by a different graph instance.
+
+#### `GraphUID.counter`
+
+The per-kind counter component of the `(kind, counter)` pair. Never repeats within a kind, and stays stable when the node's `(kind, index)` shifts, e.g. after `compact()`. `0` is the invalid sentinel; see `isValid`.
+
+`kind` is the raw `BRepGraph_NodeId::Kind` ordinal:
+
+| Value | Node type |
+|------:|-----------|
+| 0 | Solid |
+| 1 | Shell |
+| 2 | Face |
+| 3 | Wire |
+| 4 | Edge |
+| 5 | Vertex |
+| 6 | Compound |
+| 7 | CompSolid |
+| 8 | CoEdge |
+| 10 | Product |
+| 11 | Occurrence |
+
+`isValid` returns `true` when `counter > 0`; a valid UID may still fail to resolve if the node has been removed from the graph.
+
+---
+
 ### `GraphRefUID`
 
 A durable reference-entry identifier: a `(kind, counter)` pair for a reference (ref) node. Scoped to one graph instance and stamped with `graphID`, exactly as `GraphUID` is.
@@ -858,6 +938,16 @@ public struct GraphRefUID: Sendable, Hashable, Codable {
 | 5 | Child |
 | 6 | Occurrence |
 
+| Field | Meaning |
+|---|---|
+| `kind` | Raw `BRepGraph_RefId::Kind` ordinal, see the table above |
+| `counter` | Per-kind sequence number minted when the reference was created; `0` means invalid |
+| `graphID` | The `BRepGraph` instance ID that minted this UID; `0` means unstamped, resolving in no graph |
+
+#### `BRepGraph.GraphRefUID.graphID`
+
+The minting graph's own `instanceID`; `0` means unstamped, which resolves in no graph.
+
 ---
 
 ### `GraphItemUID`
@@ -875,6 +965,10 @@ public struct GraphItemUID: Sendable, Hashable, Codable {
 ```
 
 `domain` values: 1 = node, 2 = reference. `kind` is the raw kind ordinal in that domain's enum space.
+
+---
+
+#### `GraphItemUID.graphID`
 
 ---
 

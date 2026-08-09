@@ -168,6 +168,22 @@ public enum CurveType: Int32, Sendable {
 
 Matches `GeomAbs_CurveType` values from `BRepAdaptor_Curve`. Use `curveType` to distinguish geometric type before calling type-specific accessors.
 
+| case | meaning |
+|---|---|
+| `.line` | `Geom_Line`, a straight line. |
+| `.circle` | `Geom_Circle`, a circular arc. |
+| `.ellipse` | `Geom_Ellipse`. |
+| `.hyperbola` | `Geom_Hyperbola`. |
+| `.parabola` | `Geom_Parabola`. |
+| `.bezierCurve` | `Geom_BezierCurve`. |
+| `.bsplineCurve` | `Geom_BSplineCurve`. |
+| `.offsetCurve` | `Geom_OffsetCurve`. |
+| `.other` | Unrecognised or null curve. |
+
+*(Per-case anchors below, for cross-reference; the table above has the actual meaning of each.)*
+
+#### `other`
+
 ---
 
 ### `CurveProjection`

@@ -59,6 +59,16 @@ public func evolvedSectionInfo() -> EvolvedSectionInfo
 
 ---
 
+#### `EvolvedSectionInfo.nbPoles`
+
+Number of BSpline control poles in the evolved section curve.
+
+#### `EvolvedSectionInfo.nbKnots`
+
+Number of BSpline knots in the evolved section curve.
+
+---
+
 ## ProjLib\_ComputeApprox
 
 ### `projectOntoSurface(_:tolerance:)`
@@ -502,6 +512,16 @@ Matches `TopAbs_ShapeEnum` values used by `ShapeExtend_Explorer`.
 
 ---
 
+#### `ShapeFilterType.compsolid`
+
+A compound solid: several solids sharing faces, treated as a single connected shape (`TopAbs_COMPSOLID`).
+
+```swift
+case compsolid = 1
+```
+
+---
+
 ### `sortedCompound(type:explore:)`
 
 Filter this compound, extracting only sub-shapes of the specified type.
@@ -589,6 +609,13 @@ public struct EdgeDivideResult: Sendable {
     public let hasCurve3d: Bool
 }
 ```
+
+| Field | Meaning |
+|---|---|
+| `hasCurve2d` | `true` if the edge carries a 2D (pcurve) representation on the analysed face. |
+| `hasCurve3d` | `true` if the edge carries a 3D curve representation. |
+
+#### `Shape.EdgeDivideResult.hasCurve2d`
 
 ---
 
@@ -856,6 +883,16 @@ public enum CurvaturePointType: Int32 {
 }
 ```
 
+| case | meaning |
+|---|---|
+| `.inflection` | Parameter where curvature changes sign. |
+| `.minimumCurvature` | Parameter at a local minimum of curvature. |
+| `.maximumCurvature` | Parameter at a local maximum of curvature. |
+
+*(Per-case anchors below, for cross-reference; the table above has the actual meaning of each.)*
+
+#### `maximumCurvature`
+
 ---
 
 ### `CurvatureSpecialPoint`
@@ -902,6 +939,32 @@ public enum TopologicalState: Int32, Sendable {
 }
 ```
 
+The point or curve lies strictly inside the boundary for `` `in` `` (`TopAbs_IN`, not independently documented below since `` ` ``-escaped keyword case names aren't headings this project's own tooling resolves).
+
+#### `TopologicalState.out`
+
+The point or curve lies strictly outside the boundary (`TopAbs_OUT`).
+
+```swift
+case out = 1
+```
+
+#### `TopologicalState.on`
+
+The point or curve lies exactly on the boundary element itself (`TopAbs_ON`).
+
+```swift
+case on = 2
+```
+
+#### `TopologicalState.unknown`
+
+The transition analysis could not determine a state (`TopAbs_UNKNOWN`).
+
+```swift
+case unknown = 3
+```
+
 ---
 
 ### `SurfaceTransitionResult`
@@ -913,6 +976,24 @@ public struct SurfaceTransitionResult: Sendable {
     public let stateBefore: TopologicalState
     public let stateAfter: TopologicalState
 }
+```
+
+---
+
+#### `SurfaceTransitionResult.stateBefore`
+
+The `TopologicalState` immediately before the curve crosses the surface or boundary element.
+
+```swift
+public let stateBefore: TopologicalState
+```
+
+#### `SurfaceTransitionResult.stateAfter`
+
+The `TopologicalState` immediately after the curve crosses the surface or boundary element.
+
+```swift
+public let stateAfter: TopologicalState
 ```
 
 ---
@@ -1168,6 +1249,32 @@ public struct Circle2DSolution: Sendable {
 
 ---
 
+#### `Circle2DSolution.centerX`
+
+X coordinate of the solution circle's center.
+
+```swift
+public let centerX: Double
+```
+
+#### `Circle2DSolution.centerY`
+
+Y coordinate of the solution circle's center.
+
+```swift
+public let centerY: Double
+```
+
+#### `Circle2DSolution.radius`
+
+Radius of the solution circle.
+
+```swift
+public let radius: Double
+```
+
+---
+
 ### `Shape.circleThrough3Points(p1:p2:p3:tolerance:)`
 
 Find circles through 3 points (circumscribed circle).
@@ -1343,6 +1450,17 @@ public struct CommonPart: Sendable {
 }
 ```
 
+| field | meaning |
+|---|---|
+| `type` | `.vertex` or `.edge`: the kind of intersection found. |
+| `param1Range` | Parameter range `(first, last)` on the first edge; equal endpoints for a vertex intersection. |
+| `param2Range` | Parameter range `(first, last)` on the second edge; equal endpoints for a vertex intersection. |
+| `point` | Representative 3D point of the intersection. |
+
+*(Per-field anchors below, for cross-reference; the table above has the actual meaning of each.)*
+
+#### `param2Range`
+
 ---
 
 ### `edgeEdgeIntersection(with:)`
@@ -1396,6 +1514,24 @@ public struct FaceFaceCurve: Sendable {
 
 ---
 
+#### `FaceFaceCurve.start`
+
+Start point of the intersection curve, or `nil` if the curve is unbounded.
+
+```swift
+public let start: SIMD3<Double>?
+```
+
+#### `FaceFaceCurve.end`
+
+End point of the intersection curve, or `nil` if the curve is unbounded.
+
+```swift
+public let end: SIMD3<Double>?
+```
+
+---
+
 ### `FaceFacePoint`
 
 An intersection point from a face-face intersection.
@@ -1405,6 +1541,24 @@ public struct FaceFacePoint: Sendable {
     public let pointOnFace1: SIMD3<Double>
     public let pointOnFace2: SIMD3<Double>
 }
+```
+
+---
+
+#### `FaceFacePoint.pointOnFace1`
+
+The coincident point's coordinates as evaluated on the first face.
+
+```swift
+public let pointOnFace1: SIMD3<Double>
+```
+
+#### `FaceFacePoint.pointOnFace2`
+
+The coincident point's coordinates as evaluated on the second face.
+
+```swift
+public let pointOnFace2: SIMD3<Double>
 ```
 
 ---
@@ -1420,6 +1574,13 @@ public struct FaceFaceResult: Sendable {
     public let isTangent: Bool
 }
 ```
+
+| Field | Meaning |
+|---|---|
+| `curves` | Intersection curves between the two faces. |
+| `isTangent` | `true` if the two faces are tangent at the intersection rather than transversally crossing. |
+
+#### `Shape.FaceFaceResult.isTangent`
 
 ---
 
@@ -1651,6 +1812,15 @@ public struct BeanFaceIntersection: Sendable {
 }
 ```
 
+| field | meaning |
+|---|---|
+| `ranges` | Coincident `(first, last)` parameter ranges on the edge curve where it lies on the face. |
+| `minSquareDistance` | Minimum squared distance between the edge curve and the face surface. |
+
+*(Per-field anchors below, for cross-reference; the table above has the actual meaning of each.)*
+
+#### `minSquareDistance`
+
 ---
 
 ### `Shape.beanFaceIntersect(edge:face:)`
@@ -1745,6 +1915,32 @@ public struct SplitShapeResult: Sendable {
 
 ---
 
+#### `SplitShapeResult.shape`
+
+The resulting shape after all edge-on-face pairs have been split in.
+
+```swift
+public let shape: Shape
+```
+
+#### `SplitShapeResult.leftFaces`
+
+The faces `BRepFeat_SplitShape::Left()` classified as lying on the left side of the splitting edges.
+
+```swift
+public let leftFaces: [Shape]
+```
+
+#### `SplitShapeResult.rightFaces`
+
+The faces `BRepFeat_SplitShape::Right()` classified as lying on the right side of the splitting edges.
+
+```swift
+public let rightFaces: [Shape]
+```
+
+---
+
 ### `splitWithSides(edgesOnFaces:)`
 
 Split this shape with multiple edge-on-face pairs, returning left/right face classifications.
@@ -1815,8 +2011,14 @@ kernel patch carried for [#532](https://github.com/SecondMouseAU/OCCTSwift/issue
 because OCCT selected which piece of its drilling tool to keep from the *cut result* rather than from
 the split tool.
 
----
+The three cases the table above covers are `.thruNext`, `.untilEnd`, `.range(from:to:)` and
+`.blind(depth:)`; `.blind` bores to a fixed depth from the placement, and `.range` is the one whose
+two parameters are measured along the axis rather than from the face.
 
+`bridgeParameters` (`var bridgeParameters: (mode: Int32, p0: Double, p1: Double)`) is `internal`,
+not public API: it is the `(mode, p0, p1)` triple the bridge call reads, one row per case above.
+
+---
 ### `cylindricalHole(axisOrigin:axisDirection:radius:extent:)`
 
 Drill a cylindrical hole bounded by `extent`.
@@ -1888,6 +2090,40 @@ public enum CylindricalHoleStatus: Int32, Sendable {
 
 - `.invalidPlacement` also covers a request with no axis direction, or a radius at or below `Precision::Confusion`.
 - `.holeTooLong` is reachable only through `.blind(depth:)`.
+
+---
+
+#### `CylindricalHoleStatus.noError`
+
+The request is drillable.
+
+```swift
+case noError = 0
+```
+
+#### `CylindricalHoleStatus.invalidPlacement`
+
+The axis does not meet the shape in a way this extent can use, including a request with no axis direction, or a radius at or below `Precision::Confusion`.
+
+```swift
+case invalidPlacement = 1
+```
+
+#### `CylindricalHoleStatus.holeTooLong`
+
+A `.blind(depth:)` depth that would leave the far side of the stock. Only that extent produces this status.
+
+```swift
+case holeTooLong = 2
+```
+
+#### `CylindricalHoleStatus.unknown`
+
+OCCT raised something the bridge does not recognise.
+
+```swift
+case unknown = 3
+```
 
 ---
 
@@ -1997,6 +2233,24 @@ public struct LocOpeSplitResult: Sendable {
     public let shape: Shape
     public let directLeftFaces: [Shape]
 }
+```
+
+---
+
+#### `LocOpeSplitResult.shape`
+
+The resulting shape after all wire-on-face pairs have been split in.
+
+```swift
+public let shape: Shape
+```
+
+#### `LocOpeSplitResult.directLeftFaces`
+
+The faces `LocOpe_Spliter::DirectLeft()` classified as lying directly to the left of the splitting wires.
+
+```swift
+public let directLeftFaces: [Shape]
 ```
 
 ---
@@ -2193,6 +2447,32 @@ public struct Chamfer2DEdgeResult: Sendable {
 
 ---
 
+#### `Chamfer2DEdgeResult.chamferEdge`
+
+The new chamfer edge connecting the two trimmed originals.
+
+```swift
+public let chamferEdge: Shape
+```
+
+#### `Chamfer2DEdgeResult.modifiedEdge1`
+
+`edge1`, trimmed back by `d1` to meet the chamfer edge.
+
+```swift
+public let modifiedEdge1: Shape
+```
+
+#### `Chamfer2DEdgeResult.modifiedEdge2`
+
+`edge2`, trimmed back by `d2` to meet the chamfer edge.
+
+```swift
+public let modifiedEdge2: Shape
+```
+
+---
+
 ### `Shape.chamfer2dEdges(edge1:edge2:d1:d2:)`
 
 Create a chamfer between two linear edges using `ChFi2d_ChamferAPI`.
@@ -2227,6 +2507,14 @@ public struct Fillet2DEdgeResult: Sendable {
     public let solutionCount: Int
 }
 ```
+
+| Field | Meaning |
+|---|---|
+| `filletEdge` | The new fillet arc edge. |
+| `modifiedEdge1` | `edge1`, trimmed to meet the fillet arc. |
+| `modifiedEdge2` | `edge2`, trimmed to meet the fillet arc. |
+
+#### `Shape.Fillet2DEdgeResult.modifiedEdge2`
 
 ---
 
@@ -2276,6 +2564,16 @@ public struct FilletSurfaceInfo: Sendable {
 }
 ```
 
+| Field | Meaning |
+|---|---|
+| `supportFace1` | The first of the two original faces this fillet surface blends between. |
+| `supportFace2` | The second of the two original faces this fillet surface blends between. |
+| `tolerance` | Geometric tolerance achieved for this fillet surface. |
+| `startStatus` | `FilletSurf_Builder` status code at the fillet's start extremity (0 = ok, 1 = not ok, 2 = partial). |
+| `endStatus` | `FilletSurf_Builder` status code at the fillet's end extremity (0 = ok, 1 = not ok, 2 = partial). |
+
+#### `Shape.FilletSurfaceInfo.endStatus`
+
 ---
 
 ### `FilletSurfaceResult`
@@ -2288,6 +2586,12 @@ public struct FilletSurfaceResult: Sendable {
     public let status: Int  // 0=ok, 1=notOk, 2=partial
 }
 ```
+
+| Field | Meaning |
+|---|---|
+| `surfaces` | One `FilletSurfaceInfo` per requested edge that produced a fillet surface. |
+
+#### `Shape.FilletSurfaceResult.surfaces`
 
 ---
 

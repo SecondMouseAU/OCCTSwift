@@ -210,6 +210,9 @@ public final class AssemblyNode: @unchecked Sendable
 
 `AssemblyNode` holds an `unowned` reference to its parent `Document` and is invalidated when the document is released.
 
+```swift
+```
+---
 ### `labelId`
 
 The XCAF label identifier for this node.
@@ -409,6 +412,17 @@ public struct DimensionInfo: Sendable {
 }
 ```
 
+| Field | Meaning |
+|---|---|
+| `type` | Dimension kind, as an `XCAFDimTolObjects_DimensionType` raw value. |
+| `value` | Primary (nominal) dimension value. |
+| `lowerTolerance` | Lower tolerance bound below `value`. |
+| `upperTolerance` | Upper tolerance bound above `value`. |
+
+*(Per-field anchors below, for cross-reference; the table above has the actual meaning of each.)*
+
+#### `upperTolerance`
+
 ---
 
 ### `GeomToleranceInfo`
@@ -568,6 +582,24 @@ public enum NamingEvolution: Int32, Sendable {
 }
 ```
 
+Mirrors OCCT's `TNaming_Evolution` (`TNaming_PRIMITIVE`, `TNaming_GENERATED`, `TNaming_MODIFY`,
+`TNaming_DELETE`, `TNaming_SELECTED`) by name, but **not** by raw value past `.delete`: the OCCT
+enum has a sixth case, `TNaming_REPLACE`, between `DELETE` (3) and `SELECTED` (5), that this Swift
+enum has no case for at all, so `.selected` is raw value 4 here versus 5 in OCCT. `TNaming_REPLACE`
+is not currently exposed through this API.
+
+| Case | Meaning |
+|---|---|
+| `primitive` | New entity created from scratch: the old shape of the pair is null, the new shape is the created entity. |
+| `generated` | Entity created from another entity: old shape is the generator, new shape is the created entity. |
+| `modify` | Split or merged entity: old shape is the entity before the operation, new shape is the entity after (e.g. a filleted edge). |
+| `delete` | Deletion: old shape is the deleted entity, new shape is null. |
+| `selected` | Named topological entity for persistent identification: new shape is the named entity; old shape is unused. |
+
+#### `NamingEvolution.selected`
+
+Named selection for persistent identification.
+
 ---
 
 ### `NamingHistoryEntry`
@@ -582,6 +614,17 @@ public struct NamingHistoryEntry: Sendable {
     public let isModification: Bool
 }
 ```
+
+| Field | Meaning |
+|---|---|
+| `evolution` | The kind of naming event this entry records (see `NamingEvolution`). |
+| `hasOldShape` | `true` if this entry carries an old (input) shape. |
+| `hasNewShape` | `true` if this entry carries a new (result) shape. |
+| `isModification` | `true` if this entry represents a modification (`evolution == .modify`) rather than creation, deletion, or selection. |
+
+*(Per-field anchors below, for cross-reference; the table above has the actual meaning of each.)*
+
+#### `isModification`
 
 ---
 
@@ -765,6 +808,16 @@ public enum DocumentError: Error, LocalizedError {
 
 `errorDescription` produces a human-readable message such as `"Failed to load STEP file: assembly.step"`.
 
+| Case / property | Meaning |
+|---|---|
+| `loadFailed(url:)` | A STEP file at `url` failed to load (`Document.load(from:progress:)` / `loadSTEP(from:progress:)`). |
+| `writeFailed(url:)` | A STEP file at `url` failed to write (`Document.write(to:)` / `writeSTEP(to:progress:)`). |
+| `errorDescription` | `LocalizedError` conformance: a human-readable message naming the file (by last path component) and the failed operation. |
+
+*(Per-case anchors below, for cross-reference; the table above has the actual meaning of each.)*
+
+#### `errorDescription`
+
 ---
 
 ## Length Unit
@@ -859,6 +912,16 @@ public struct MaterialInfo: Sendable {
     public let density: Double
 }
 ```
+
+| Field | Meaning |
+|---|---|
+| `name` | Material name. |
+| `description` | Material description. |
+| `density` | Material density, as recorded by `XCAFDoc_Material::GetDensity()`; units are whatever the source CAD/STEP data used and are not converted or interpreted by OCCTSwift. |
+
+#### `MaterialInfo.density`
+
+Material density, as recorded by `XCAFDoc_Material::GetDensity()` (units follow the source data, not converted here).
 
 ---
 
@@ -1813,6 +1876,23 @@ public enum GeometryType: Int32 {
 }
 ```
 
+Mirrors `TDataXtd_GeometryEnum` (`ANY_GEOM`, `POINT`, `LINE`, `CIRCLE`, `ELLIPSE`, `SPLINE`,
+`PLANE`, `CYLINDER`). OCCT's own header carries one blanket comment for the whole enum ("the types
+of geometric shapes available") rather than a per-case one.
+
+| Case | Meaning |
+|---|---|
+| `anyGeom` | No specific geometry type constraint. |
+| `point` | A point geometry. |
+| `line` | A line geometry. |
+| `circle` | A circle geometry. |
+| `ellipse` | An ellipse geometry. |
+| `spline` | A B-spline curve geometry. |
+| `plane` | A plane geometry. |
+| `cylinder` | A cylinder geometry. |
+
+#### `GeometryType.cylinder`
+
 ---
 
 ### `ExecutionStatus`
@@ -1828,6 +1908,21 @@ public enum ExecutionStatus: Int32 {
     case failed          = 4
 }
 ```
+
+Mirrors `TFunction_ExecutionStatus` (`TFunction_ES_WrongDefinition`, `TFunction_ES_NotExecuted`,
+`TFunction_ES_Executing`, `TFunction_ES_Succeeded`, `TFunction_ES_Failed`) case for case.
+
+| Case | Meaning |
+|---|---|
+| `wrongDefinition` | The function's arguments/definition are invalid; it cannot run. |
+| `notExecuted` | Not yet run in this execution pass. |
+| `executing` | Currently running (set while `TFunction_Driver::Execute` is in progress). |
+| `succeeded` | Completed without error. |
+| `failed` | Ran but reported an error. |
+
+#### `ExecutionStatus.failed`
+
+Ran but reported an error.
 
 ---
 

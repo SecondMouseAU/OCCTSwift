@@ -32,6 +32,17 @@ public enum Orientation: Int32, Sendable {
 }
 ```
 
+| Case | Meaning |
+|---|---|
+| `.forward` | Sub-shape traversed in its natural direction (`TopAbs_FORWARD`). |
+| `.reversed` | Sub-shape traversed against its natural direction (`TopAbs_REVERSED`). |
+| `.internal` | Sub-shape used for construction only, ignored by most boundary algorithms (`TopAbs_INTERNAL`). |
+| `.external` | Sub-shape lies outside the normal boundary role, ignored by most boundary algorithms (`TopAbs_EXTERNAL`). |
+
+---
+
+#### `Shape.Orientation.external`
+
 - **OCCT:** `TopAbs_Orientation`.
 
 ---
@@ -1679,6 +1690,10 @@ public struct ExtremaResult: Sendable {
 - `squareDistance` — squared Euclidean distance at this extremum.
 - `point1` — closest/farthest point on the first geometric element.
 - `point2` — closest/farthest point on the second geometric element.
+
+---
+
+#### `point2`
 
 ---
 
