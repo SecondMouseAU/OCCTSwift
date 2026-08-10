@@ -83,8 +83,9 @@ now merged. Five things worth knowing before you touch it:
   and the ruleset entry removed. The first draft of this bullet asserted it from a refusal seen on
   the integration branch *before* the rule moved, which is a different ref under a different rule,
   and a release engineer meeting this at the release commit deserves better than an extrapolation.
-  `okf/policies/changelog-on-merge.md` still describes the merger committing the transcription
-  directly onto the base, which the ruleset now forbids. Reconciling the two is open work.
+  `okf/policies/changelog-on-merge.md` used to offer committing the transcription directly onto the
+  base as one of two routes; that route is deleted, and the entry now goes on the PR's own branch as
+  the last commit before merging.
 - **No pattern rule covers `refactor/**`, deliberately.** A pattern is what made #780 expensive:
   renaming a branch to move it out of the pattern **closed its open PR**, and GitHub will not
   reopen one whose head branch was renamed. Narrowing to a single explicit branch was the remedy,

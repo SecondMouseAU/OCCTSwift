@@ -1,16 +1,20 @@
 ---
 type: policy
 title: CHANGELOG entries are written in the PR, not the diff
-description: A PR carries its CHANGELOG entry in its body, under a fixed heading. The merging agent transcribes it into docs/CHANGELOG.md at merge time. Nobody edits the Unreleased section in a feature branch.
+description: A PR carries its CHANGELOG entry in its body, under a fixed heading. The merging agent transcribes it into docs/CHANGELOG.md as the last commit on the PR branch before merging. Nobody edits the Unreleased section earlier than that.
 tags: [policy, process, changelog, merging, agents]
 timestamp: 2026-08-07
 ---
 
 # CHANGELOG entries are written in the PR, not the diff
 
-**A pull request must not modify the `## Unreleased` section of `docs/CHANGELOG.md`.** It carries
-its entry in the PR body instead, under a `## CHANGELOG entry` heading. Whoever merges the PR copies
-that block into `docs/CHANGELOG.md` on the base branch as part of merging.
+**A pull request must not carry its CHANGELOG entry in its diff while it is open.** It carries the
+entry in the PR body instead, under a `## CHANGELOG entry` heading. Whoever merges the PR copies
+that block into `docs/CHANGELOG.md` as the last commit on the branch, immediately before merging.
+
+The rule is about *when*, not *never*: an entry added at the top of a long-lived branch conflicts
+with every PR that lands before it, and an entry added thirty seconds before the merge conflicts
+with nothing.
 
 **The rule binds the PR that carries the change, not the transcription itself.** A PR whose only
 purpose is to transcribe entries from other PRs' bodies is the merger doing their job, batched, and
@@ -73,23 +77,41 @@ restating it.
 
 ### If you are merging a PR
 
-Merging is not complete until the entry is in the file. Either:
-
-- add it to `docs/CHANGELOG.md` on the base branch in a commit immediately after the merge, or
-- add it to the PR's own branch immediately before merging, once no other PR is between you and the
-  base.
-
-The second is fine and sometimes tidier; it just has to be the last thing before the merge, or the
-conflict comes back.
+Merging is not complete until the entry is in the file. **Add it to the PR's own branch as the last
+commit before merging**, once no other PR is between you and the base. It has to be last, or the
+conflict this policy exists to avoid comes back.
 
 Copy the block verbatim. If it is wrong, that is a review comment on the PR, not an edit in transit.
+
+#### Why there is only one route now
+
+This used to offer a second: commit the entry onto the base branch immediately after the merge.
+**That route is gone on any base with a required status check**, which since v2.0.0 includes `main`.
+A required check declines a direct push, measured rather than assumed: pushing an empty commit at a
+branch under the rule is refused with `Required status check "gate-scripts" is expected` /
+`push declined due to repository rule violations`. A merger following the old instruction meets that
+refusal at the least convenient moment, which is why it is deleted here rather than left as an
+option that happens to fail.
+
+Putting the entry on the PR branch has a second benefit that was not the reason for the change but
+matters: the merge commit then carries the file change, so
+`Scripts/check-changelog-transcription.py`'s **plain** run sees it. Under the batch-PR route below,
+it does not, and only `--verify-transcribed` can tell a transcribed entry from a missing one.
+
+A ruleset bypass for the merging actor would restore the old route and is deliberately not used.
+The point of the required check is that nothing reaches `main` without it; an exemption whose only
+job is to let one file skip the gate is the kind of carve-out nobody remembers auditing.
 
 ### Exceptions
 
 - **The release commit** rewrites the whole section, moving `## Unreleased` under a version heading.
-  That commit edits the file directly, by definition.
+  That commit edits the file directly, by definition. On a protected base it is still a PR, like
+  everything else.
 - **A PR that fixes the CHANGELOG itself**, for instance a stale cross-reference, edits the file
   directly. It is not adding an entry.
+- **A batch transcription PR** catching up entries that were missed, as described at the top of this
+  file. This is the repair route, not the routine one: prefer getting the entry onto the PR branch
+  before merging, so the plain audit stays meaningful.
 
 ## The failure mode this introduces, and the guard for it
 

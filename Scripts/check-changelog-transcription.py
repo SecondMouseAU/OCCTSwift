@@ -2,13 +2,20 @@
 """Find merges that landed without their CHANGELOG entry being transcribed (#742).
 
 `okf/policies/changelog-on-merge.md` moved the CHANGELOG entry out of the PR diff and into the PR
-body: the merger copies it into `docs/CHANGELOG.md` at merge time. That removed a conflict this
-branch was resolving several times a day, and it introduced a failure the old way made impossible,
-which the policy names in prose: the transcription can be forgotten, and nothing catches it.
+body: the merger copies it into `docs/CHANGELOG.md` as the last commit on the branch before merging.
+That removed a conflict this branch was resolving several times a day, and it introduced a failure
+the old way made impossible, which the policy names in prose: the transcription can be forgotten,
+and nothing catches it.
 
 This is the check. For every merge commit in the range, it asks whether `docs/CHANGELOG.md` was
-touched by the merge itself or by any commit between that merge and the next one, which is the
-window the policy allows the entry to land in.
+touched by the merge itself or by any commit between that merge and the next one.
+
+That second half is now vestigial on a protected base and is kept deliberately. It covered the
+route where the merger committed the entry onto the base right after merging, which a required
+status check declines; on `main` nothing lands between two merges, so the question collapses to
+"did the merge carry it", which is exactly what the current policy asks. On an unprotected base the
+old shape is still possible, and accepting it costs nothing: this check is permissive by design,
+and `--verify-transcribed` is what distinguishes a real miss from a late landing.
 
     python3 Scripts/check-changelog-transcription.py               # report, exits 0
     python3 Scripts/check-changelog-transcription.py --strict      # exit 1 on any untranscribed merge
