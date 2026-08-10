@@ -60,23 +60,46 @@ its own status check when `build-and-test` is red for an unrelated reason. Each 
 defect and 0 when clean; `check-bridge-index`, `check-null-handle-guards` and
 `derive-bridge-header-split` exit **2** if run from anywhere but the repo root (#625).
 
-**`gate-scripts` is a required status check on `refactor/**`** (#649), via a repository ruleset — the
-repo's only branch protection. Three consequences worth knowing before you touch it:
+**`gate-scripts` is a required status check on `main`** (#649), via a repository ruleset (id
+20252636, "require gate-scripts on main") which is the repo's only branch protection. It moved there
+at the v2.0.0 release; before that it was on `refactor/381-pass1b`, the integration branch, which is
+now merged. Five things worth knowing before you touch it:
 
 - **Do not give the job a `name:` key.** The published check-run name is the job's `name:` when it
   has one and the job id otherwise, and that string is what the rule matches. A prose name reads
   like a comment, so rewording it would silently stop satisfying the rule while the PR UI looked
   unchanged — the same class of failure the gates themselves exist to catch. The job id is a stable
   identifier nobody edits for readability.
-- **It is not required on `main`, and must not be until `ci.yml` carrying this job lands there.** A
+- **It became requirable on `main` only once `ci.yml` carrying the job had landed there.** A
   required check that never reports blocks a PR permanently with "Expected, waiting for status to be
-  reported", and there is no way to clear it. For a `pull_request` the workflow is read from the
-  merge ref, so once the base has the job every PR gets it regardless of how stale the head is.
-- **`build-and-test` is not required on `refactor/**`, and that is now worth revisiting.** It was
-  0-for-21 there under #585, because the pinned asset was an older kernel than the branch's tests
-  were written against. Pinning `v2.0.0-kernel.1` fixed that and the job is green on the branch, so
-  the reason it was excluded no longer holds. Making it required is a separate decision that has not
-  been taken: measure a run of green results first rather than requiring it on one.
+  reported", and there is no way to clear it. Before flipping it, the check was confirmed to have
+  actually published `success` on `main`'s HEAD, not merely to exist in the workflow file. For a
+  `pull_request` the workflow is read from the merge ref, so once the base has the job every PR gets
+  it regardless of how stale the head is.
+- **A required check also declines direct pushes**, so `main` now takes changes by PR only, the
+  release commit included. **Measured, not inferred**: a throwaway branch was added to this same
+  ruleset, an empty commit pushed straight at it, and the push refused with `Required status check
+  "gate-scripts" is expected` / `push declined due to repository rule violations`, then the branch
+  and the ruleset entry removed. The first draft of this bullet asserted it from a refusal seen on
+  the integration branch *before* the rule moved, which is a different ref under a different rule,
+  and a release engineer meeting this at the release commit deserves better than an extrapolation.
+  `okf/policies/changelog-on-merge.md` still describes the merger committing the transcription
+  directly onto the base, which the ruleset now forbids. Reconciling the two is open work.
+- **No pattern rule covers `refactor/**`, deliberately.** A pattern is what made #780 expensive:
+  renaming a branch to move it out of the pattern **closed its open PR**, and GitHub will not
+  reopen one whose head branch was renamed. Narrowing to a single explicit branch was the remedy,
+  and after the merge the natural landing place is `main` rather than a new pattern. Being
+  *required* is a separate question from whether the job runs: `gate-scripts` runs on any PR whose
+  **base** carries `ci.yml`, which is every branch cut from `main`, and requiring it elsewhere would
+  only decide whether it blocks. Do not read that as "it runs everywhere". A PR based on a branch
+  whose `ci.yml` predates the job never dispatches it, and marking it required there is exactly the
+  unrecoverable stall the second bullet describes.
+- **`build-and-test` is required nowhere, and that is still the right call for now.** It was
+  0-for-21 on the integration branch under #585, because the pinned asset was an older kernel than
+  the branch's tests were written against. That cause is gone. But it failed on `main` at the
+  v2.0.0 release commit for an unrelated reason (the manifest pointed at a release asset that was
+  still uploading, so SwiftPM got a 404), which is a live demonstration of why the advice here is to
+  measure a run of green results before requiring it rather than requiring it on one.
 
 ```bash
 python3 Scripts/check-bridge-index.py            # OCCTBridge.h's class → symbol index: stale / misfiled entries
