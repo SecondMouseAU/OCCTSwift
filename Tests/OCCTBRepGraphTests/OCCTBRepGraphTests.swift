@@ -2155,6 +2155,27 @@ struct TopologyRefResolverTests {
         }
     }
 
+    @Test("splitOf with occurrence out of range fails cleanly")
+    func splitOfOutOfRange() {
+        guard let box = Shape.box(width: 10, height: 10, depth: 10),
+              let graph = BRepGraph(shape: box) else {
+            Issue.record("graph nil"); return
+        }
+        graph.isHistoryEnabled = true
+        graph.clearHistory()
+        let orig = BRepGraph.NodeRef(kind: .edge, index: 3)
+        let a = BRepGraph.NodeRef(kind: .edge, index: 30)
+        let b = BRepGraph.NodeRef(kind: .edge, index: 31)
+        graph.recordHistory(operationName: "SplitEdge", original: orig, replacements: [a, b])
+        let result = graph.resolve(.splitOf(original: .literal(orig), occurrence: 5))
+        if case .failure(.occurrenceOutOfRange(_, let available, let requested)) = result {
+            #expect(available == 2)
+            #expect(requested == 5)
+        } else {
+            Issue.record("expected occurrenceOutOfRange")
+        }
+    }
+
     @Test("Ancestor resolution failure propagates")
     func ancestorMissing() {
         guard let box = Shape.box(width: 10, height: 10, depth: 10),
@@ -2390,6 +2411,22 @@ struct ContainedInTests {
         let faceBogus = TopologyRef.containedIn(parent: solid, kind: .face, occurrence: 999)
         if case .failure(.occurrenceOutOfRange) = graph.resolve(faceBogus) {} else {
             Issue.record("expected occurrenceOutOfRange")
+        }
+    }
+
+    @Test("Ancestor resolution failure propagates in containedIn")
+    func ancestorMissing() {
+        guard let box = Shape.box(width: 10, height: 10, depth: 10),
+              let graph = BRepGraph(shape: box) else {
+            Issue.record("graph nil"); return
+        }
+        graph.isHistoryEnabled = true
+        graph.clearHistory()
+        // containedIn references a parent recipe that never resolves → should fail.
+        let bogusParent = TopologyRef.createdBy(operationName: "Nonexistent", kind: .solid)
+        let result = graph.resolve(.containedIn(parent: bogusParent, kind: .face, occurrence: 0))
+        if case .failure(.ancestorMissing) = result {} else {
+            Issue.record("expected ancestorMissing")
         }
     }
 }
