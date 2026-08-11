@@ -4700,6 +4700,15 @@ bool OCCTShapeFixerStatus(OCCTShapeFixerRef ref, int32_t statusType) {
     } catch (...) { return false; }
 }
 
+// #849: the full ShapeExtend_Status flag space, mirroring OCCTFaceFixerStatus's raw passthrough.
+bool OCCTShapeFixerStatusFlag(OCCTShapeFixerRef ref, int32_t flag) {
+    auto f = (OCCTShapeFixer*)ref;
+    if (!f) return false;
+    try {
+        return f->fixer->Status(static_cast<ShapeExtend_Status>(flag));
+    } catch (...) { return false; }
+}
+
 // MARK: - v0.118: Tolerance value/over-count/in-range + Boolean check single/pair
 double OCCTShapeToleranceValue(OCCTShapeRef shape, int32_t mode, int32_t shapeType) {
     try {

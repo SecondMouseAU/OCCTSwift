@@ -124,19 +124,45 @@ public final class FaceFixer: @unchecked Sendable {
         return Shape(handle: r)
     }
 
-    /// A status flag recorded by the fixer (which passes fired / failed) — query after ``perform()``.
-    public enum Status: Int32, Sendable {
-        case ok = 0
-        case done1 = 1, done2, done3, done4, done5, done6, done7, done8
-        case fail1 = 9, fail2, fail3, fail4, fail5, fail6, fail7, fail8
-        /// Any DONEi flag set (a fix fired).
-        case done = 17
-        /// Any FAILi flag set (a fix failed).
-        case fail = 18
-    }
+    /// The `ShapeExtend_Status` flag space, shared with ``ShapeFixer`` — see ``ShapeFixStatus``.
+    ///
+    /// Was previously a `FaceFixer`-local enum whose raw values shifted everything from `.fail1`
+    /// through `.done` by one ordinal (there was no slot for OCCT's combined `DONE` flag, which
+    /// sits between `DONE8` and `FAIL1`), so e.g. `.done` actually queried `ShapeExtend_FAIL8`.
+    /// Now a typealias to the corrected, shared type — same case names, correct raw values (#849).
+    public typealias Status = ShapeFixStatus
 
-    /// Whether the given status flag is set after ``perform()`` (e.g. `.done` = something was fixed,
-    /// `.fail` = a pass failed).
+    /// Whether the given status flag is set after ``perform()`` (e.g. `.done` = something was
+    /// fixed, `.fail` = a pass failed).
+    ///
+    /// `ShapeFix_Face`'s own header documents these flags — `FAIL5`...`FAIL8` are never assigned:
+    ///
+    /// | Case | Meaning for `ShapeFix_Face` |
+    /// |---|---|
+    /// | `.ok` | The face needed no fix at all. |
+    /// | `.done1` | Some wire was fixed (`ShapeFix_Wire` pass). |
+    /// | `.done2` | Wire orientation was fixed. |
+    /// | `.done3` | A missing seam was added. |
+    /// | `.done4` | A small-area wire was removed. |
+    /// | `.done5` | A natural bound was added. |
+    /// | `.done6` | Not assigned by `ShapeFix_Face`. |
+    /// | `.done7` | Not assigned by `ShapeFix_Face`. |
+    /// | `.done8` | The face may have been split. |
+    /// | `.fail1` | Some failure while fixing a wire. |
+    /// | `.fail2` | Could not fix wire orientation. |
+    /// | `.fail3` | Could not add a missing seam. |
+    /// | `.fail4` | Could not remove a small-area wire. |
+    /// | `.fail5`...`.fail8` | Not assigned by `ShapeFix_Face`. |
+    /// | `.done` | Any `.done1`...`.done8` flag is set: something was fixed. |
+    /// | `.fail` | Any `.fail1`...`.fail8` flag is set: some pass failed. |
+    ///
+    /// ```swift
+    /// let fixer = FaceFixer(face: badFace)
+    /// fixer?.perform()
+    /// if fixer?.status(.done) == true {
+    ///     // something was fixed
+    /// }
+    /// ```
     public func status(_ status: Status) -> Bool { OCCTFaceFixerStatus(ref, status.rawValue) }
 
     /// Clamp the maximum tolerance the fixer may assign to the healed face. Call before ``perform()``.

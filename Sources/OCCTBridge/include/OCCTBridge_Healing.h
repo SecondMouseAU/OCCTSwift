@@ -1506,7 +1506,14 @@ bool OCCTShapeFixerPerform(OCCTShapeFixerRef _Nonnull fixer);
 OCCTShapeRef _Nullable OCCTShapeFixerShape(OCCTShapeFixerRef _Nonnull fixer);
 
 /// Query status. statusType: 1=ShapeFixOk, 2=ShapeFixDone, 3=ShapeFixFail.
+/// Legacy — see OCCTShapeFixerStatusFlag for the full ShapeExtend_Status flag space (#849).
 bool OCCTShapeFixerStatus(OCCTShapeFixerRef _Nonnull fixer, int32_t statusType);
+
+/// Query a specific ShapeExtend_Status flag directly (#849), mirroring OCCTFaceFixerStatus.
+/// Unlike OCCTShapeFixerStatus's legacy 1/2/3 remap, `flag` is the real ShapeExtend_Status
+/// ordinal: OK=0, DONE1..DONE8=1..8, the combined DONE=9, FAIL1..FAIL8=10..17, the combined
+/// FAIL=18.
+bool OCCTShapeFixerStatusFlag(OCCTShapeFixerRef _Nonnull fixer, int32_t flag);
 
 // MARK: - ShapeAnalysis_ShapeTolerance (v0.118.0)
 
