@@ -1320,7 +1320,11 @@ public func boundingBoxOptimal(useShapeTolerance: Bool = false) -> (min: SIMD3<D
 
 ### `Shape.DetailedOBB`
 
-Oriented bounding box with full axis and half-size information.
+Oriented bounding box with full axis and half-size information. Computes the identical `Bnd_OBB`
+as `OrientedBoundingBox` (#847) — the two never disagree for the same shape and `optimal` value —
+with the half-sizes unpacked into three separate `Double`s instead of one `SIMD3<Double>`, and no
+`volume`/`dimensions`/corners equivalent. Prefer `orientedBoundingBox(optimal:)` unless you
+specifically need the half-sizes this way.
 
 ```swift
 public struct DetailedOBB: Sendable {
@@ -1355,7 +1359,8 @@ public func orientedBoundingBoxDetailed(optimal: Bool = false) -> DetailedOBB?
 
 - **Parameters:** `optimal` — use precise geometry when `true`.
 - **Returns:** `DetailedOBB` or `nil` if the shape is void.
-- **OCCT:** `OCCTShapeOrientedBoundingBoxDetailed` → `BRepBndLib::AddOBB`.
+- **OCCT:** `OCCTShapeOrientedBoundingBoxDetailed` delegates to `OCCTShapeOrientedBoundingBox` →
+  `BRepBndLib::AddOBB` (#847), rather than computing a second `Bnd_OBB` independently.
 
 ---
 
