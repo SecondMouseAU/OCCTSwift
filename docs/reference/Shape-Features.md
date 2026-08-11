@@ -1777,16 +1777,26 @@ public func fixed(tolerance: Double = 1e-6,
 
 - **Parameters:**
   - `tolerance` — tolerance for fixing operations.
-  - `fixSolid` — whether to fix solid orientation.
-  - `fixShell` — whether to fix shell closure.
-  - `fixFace` — whether to fix face issues.
-  - `fixWire` — whether to fix wire issues.
+  - `fixSolid` — whether to fix solid orientation (`ShapeFix_Shape::FixSolidMode`).
+  - `fixShell` — whether to fix **free** shells — shells that aren't part of a solid
+    (`ShapeFix_Shape::FixFreeShellMode`).
+  - `fixFace` — whether to fix **free** faces — faces that aren't part of a shell
+    (`ShapeFix_Shape::FixFreeFaceMode`).
+  - `fixWire` — whether to fix **free** wires — wires that aren't part of a face
+    (`ShapeFix_Shape::FixFreeWireMode`).
+
+  `fixShell`/`fixFace`/`fixWire` govern **free** (standalone) content specifically, not
+  shell/face/wire fixing in general: content that *is* attached (a shell inside a solid, a face
+  inside a shell, a wire inside a face) is always fixed by `Perform()` regardless of these three
+  flags. Before #837 these three were accepted but never passed to `ShapeFix_Shape` at all — only
+  `fixSolid` had any effect — so setting any of them to `false` silently did nothing; they are now
+  live (#865).
 - **Returns:** Fixed shape, or `nil` on failure.
 - **OCCT:** `ShapeFix_Shape` (via `OCCTShapeFixDetailed`).
 - **Example:**
   ```swift
-  // Fix only wire and face issues
-  let fixed = shape.fixed(tolerance: 0.001, fixSolid: false, fixShell: false)
+  // Skip fixing free (standalone) shells/faces/wires; only fix solid orientation.
+  let fixed = shape.fixed(tolerance: 0.001, fixShell: false, fixFace: false, fixWire: false)
   ```
 
 ---

@@ -393,9 +393,18 @@ OCCTShapeRef OCCTShapeFixDetailed(OCCTShapeRef shape, double tolerance,
         Handle(ShapeFix_Shape) fixer = new ShapeFix_Shape(shape->shape);
         fixer->SetPrecision(tolerance);
 
-        // ShapeFix_Shape automatically fixes all sub-shapes
-        // The individual mode flags control specific fixing operations
+        // #837: fixShell/fixFace/fixWire used to be accepted and silently discarded here --
+        // only FixSolidMode() was ever set, so ShapeFix_Shape's own always-on default ran for
+        // the other three regardless of what the caller passed. Each flag now maps to
+        // ShapeFix_Shape's own accessor: FixSolidMode() fixes solids; FixFreeShellMode() /
+        // FixFreeFaceMode() / FixFreeWireMode() fix shells/faces/wires that are FREE --
+        // standalone, not attached to a solid/shell/face respectively (there is no
+        // "FixShellMode"/"FixFaceMode"/"FixWireMode" in this OCCT version; content that IS
+        // attached is always fixed by Perform() regardless of these three flags).
         fixer->FixSolidMode() = fixSolid ? 1 : 0;
+        fixer->FixFreeShellMode() = fixShell ? 1 : 0;
+        fixer->FixFreeFaceMode() = fixFace ? 1 : 0;
+        fixer->FixFreeWireMode() = fixWire ? 1 : 0;
 
         // Perform the fix
         if (!fixer->Perform()) {

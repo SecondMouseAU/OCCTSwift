@@ -544,6 +544,8 @@ public func convertedToNURBS() -> Shape?
 
 Ensures uniform polynomial representation before export or for algorithms that require NURBS geometry (e.g. certain CAM kernels).
 
+Internally, `BRepBuilderAPI_NurbsConvert` is `Shape.nurbsConvertViaModifier()`'s own `BRepTools_Modifier` + `BRepTools_NurbsConvertModification` pair plus one more step, `CorrectVertexTol()`, which raises a vertex's tolerance to cover any edge meeting it that the conversion enlarged. `nurbsConvertViaModifier()` skips that step; prefer this method unless you have a specific reason to drive the bare modifier pipeline directly (#836).
+
 - **Returns:** Shape with all geometry as NURBS, or nil on failure.
 - **OCCT:** `BRepBuilderAPI_NurbsConvert` (via `OCCTShapeConvertToNURBS`).
 - **Example:**
