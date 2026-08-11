@@ -5860,6 +5860,28 @@ struct BRepBndLibTests {
             }
         }
     }
+
+    // #834: neither side of this divergence had any void-shape coverage before this PR.
+    // `boundingBox` correctly answers nil for a void shape (an explicit Bnd_Box::IsVoid() guard);
+    // `bounds` cannot signal that at all (non-optional tuple) and fabricates (0,0,0)-(0,0,0),
+    // indistinguishable from a genuine zero-size shape at the origin. Pinning both sides here so
+    // any future change to either bridge function is caught by a real assertion, not silence.
+    @Test func voidShapeBoundingBoxIsNilButBoundsFabricatesZero() {
+        // A far-disjoint intersection is the reliable way to get a genuinely void Shape:
+        // Shape.compound([]) refuses to construct (OCCTShapeCreateCompound requires count >= 1).
+        let b1 = Shape.box(width: 10, height: 10, depth: 10)!
+        let b2 = Shape.box(origin: SIMD3(1000, 1000, 1000), width: 10, height: 10, depth: 10)!
+        guard let voidShape = b1.intersection(b2) else {
+            #expect(Bool(false), "disjoint intersection should still construct a (void) shape")
+            return
+        }
+        #expect(voidShape.boundingBox == nil)
+        let b = voidShape.bounds
+        #expect(b.min == SIMD3<Double>.zero)
+        #expect(b.max == SIMD3<Double>.zero)
+        #expect(voidShape.size == SIMD3<Double>.zero)
+        #expect(voidShape.center == SIMD3<Double>.zero)
+    }
 }
 
 @Suite("BezierSurface_Properties")

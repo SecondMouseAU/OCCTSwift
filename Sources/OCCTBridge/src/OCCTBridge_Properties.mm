@@ -2047,13 +2047,26 @@ int32_t OCCTShapeGetVertices(OCCTShapeRef shape, double* outVertices) {
 
 // MARK: - Bounds
 
+// #834: this used to call Bnd_Box::Get() unconditionally and rely on the surrounding catch(...)
+// to zero every output when the box is void (Get() throws Standard_ConstructionError for a void
+// box — Bnd_Box.hxx/.cxx). OCCTShapeBoundingBox/OCCTShapeBoundingBoxOptimal (OCCTBridge_Topology.mm)
+// both guard with an explicit IsVoid() check before calling Get(), and this now matches that
+// established convention instead of leaning on exception unwinding for a case that isn't
+// exceptional. Output is unchanged either way (all-zero on a void shape) — Shape.bounds's Swift
+// return type is a non-optional tuple, so it cannot signal "void" distinctly from "measured
+// zero-size shape at the origin" the way Shape.boundingBox's Optional does; see Shape.bounds's
+// doc comment for that unresolved divergence and #834 for the proposed (not executed) fix.
 void OCCTShapeGetBounds(OCCTShapeRef shape, double* minX, double* minY, double* minZ, double* maxX, double* maxY, double* maxZ) {
     if (!shape || !minX || !minY || !minZ || !maxX || !maxY || !maxZ) return;
 
     try {
         Bnd_Box box;
         BRepBndLib::Add(shape->shape, box);
-        box.Get(*minX, *minY, *minZ, *maxX, *maxY, *maxZ);
+        if (box.IsVoid()) {
+            *minX = *minY = *minZ = *maxX = *maxY = *maxZ = 0;
+        } else {
+            box.Get(*minX, *minY, *minZ, *maxX, *maxY, *maxZ);
+        }
     } catch (...) {
         *minX = *minY = *minZ = *maxX = *maxY = *maxZ = 0;
     }

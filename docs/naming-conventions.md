@@ -55,7 +55,9 @@ OCCT uses imperative verbs (`Build()`, `Perform()`, `Transform()`). OCCTSwift fo
 | `BRepBuilderAPI_Transform` (scale) | `shape.scaled(by:)` |
 | `BRepBuilderAPI_Transform` (mirror) | `shape.mirrored(planeNormal:)` |
 | `ShapeFix_Shape` | `shape.healed()` |
-| `BRepBuilderAPI_Copy` | `shape.deepCopy()` |
+| `BRepBuilderAPI_Copy` | `shape.copy(copyGeometry:copyMesh:)` |
+| `BRepTools_CopyModification` | `Shape.deepCopy(_:copyGeometry:copyMesh:)` (static) |
+| `TNaming_CopyShape::CopyTool` | `shape.deepCopy()` (instance, no parameters — topology-only; see `docs/thread-safety.md`) |
 
 ## Named Parameters
 

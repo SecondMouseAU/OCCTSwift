@@ -367,6 +367,11 @@ extension Shape {
     }
     /// Create a deep, independent copy of this shape.
     ///
+    /// Backed by `BRepBuilderAPI_Copy`. When `copyGeometry`/`copyMesh` are `true`, this clones the
+    /// actual `Geom_Surface`/`Geom_Curve`/`Poly_Triangulation` objects, not just topology — unlike
+    /// the no-argument instance ``deepCopy()``, which never clones geometry regardless of these
+    /// flags. See `docs/thread-safety.md` for why that distinction matters for concurrent use.
+    ///
     /// - Parameters:
     ///   - copyGeometry: If true, copy the underlying geometry (default: true).
     ///   - copyMesh: If true, also copy mesh data (default: false).
@@ -1421,6 +1426,11 @@ extension Shape {
     }
 
     /// Deep copy a shape via BRepTools_CopyModification.
+    ///
+    /// Same underlying mechanism as ``copy(copyGeometry:copyMesh:)`` (`BRepBuilderAPI_Copy` is a
+    /// thin wrapper around this same class), reached directly instead — note the different
+    /// `copyMesh` default (`true` here vs. `false` on `copy()`). Clones geometry/mesh when the
+    /// respective flag is `true`, unlike the no-argument instance ``deepCopy()``, which never does.
     public static func deepCopy(_ shape: Shape, copyGeometry: Bool = true, copyMesh: Bool = true) -> Shape? {
         guard let ref = OCCTShapeCopyModification(shape.handle, copyGeometry, copyMesh) else { return nil }
         return Shape(handle: ref)
@@ -1660,6 +1670,14 @@ extension Shape {
 extension Shape {
 
     /// Create a deep copy of this shape (independent copy with new topology).
+    ///
+    /// - Note: **Topology only** (#831). Backed by `TNaming_CopyShape::CopyTool`, which builds new
+    ///   `TopoDS_TShape`s but assigns the *same* `Handle(Geom_Surface)`/`Handle(Geom_Curve)`/
+    ///   `Handle(Poly_Triangulation)` to the copy — no geometry or mesh cloning. For a copy whose
+    ///   geometry is also independent (e.g. for concurrent use on separate threads — see
+    ///   `docs/thread-safety.md`), use ``copy(copyGeometry:copyMesh:)`` or the static
+    ///   ``deepCopy(_:copyGeometry:copyMesh:)`` instead, both backed by `BRepTools_CopyModification`
+    ///   / `BRepBuilderAPI_Copy`, which do clone the geometry when `copyGeometry` is `true`.
     public func deepCopy() -> Shape? {
         guard let ref = OCCTShapeDeepCopy(handle) else { return nil }
         return Shape(handle: ref)
@@ -1733,6 +1751,17 @@ extension Shape {
 extension Shape {
 
     /// Classification state for a point relative to a solid.
+    ///
+    /// - Note: ``classify(point:tolerance:)`` (`Shape+Analysis.swift`) answers the identical
+    ///   question — same `BRepClass3d_SolidClassifier` mechanism (#851), same tolerance
+    ///   semantics, same underlying `TopAbs_State` values — but returns the separately-declared
+    ///   ``PointClassification`` instead. The two enums share raw values case-for-case (`inside=0,
+    ///   outside=1, on/onBoundary=2, unknown=3`) but **not** case names (`.on` here vs.
+    ///   `.onBoundary` there), so they are intentionally kept as two declarations rather than a
+    ///   typealias — unlike ``Face/SurfaceType`` (#850), whose case names matched exactly, a
+    ///   typealias here would silently rename one side's cases and break source compatibility for
+    ///   whichever spelling was renamed away. Do not conflate the two by raw value across API
+    ///   boundaries you don't control.
     public enum PointState: Int32 {
         case inside = 0
         case outside = 1
@@ -1741,6 +1770,12 @@ extension Shape {
     }
 
     /// Classify a 3D point relative to this solid shape.
+    ///
+    /// Equivalent to ``classify(point:tolerance:)`` — both route through
+    /// `BRepClass3d_SolidClassifier` (#851) — but returns ``PointState`` instead of
+    /// ``PointClassification``. Prefer whichever result enum your call site already uses; the two
+    /// never disagree since they share one bridge mechanism and a common `TopAbs_State` mapping.
+    ///
     /// - Parameters:
     ///   - point: The 3D point to classify
     ///   - tolerance: Classification tolerance

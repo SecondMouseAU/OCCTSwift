@@ -317,6 +317,11 @@ extension Shape {
     /// Determines whether a 3D point is inside, outside, or on the boundary of
     /// this shape. The shape should be a solid for reliable results.
     ///
+    /// - Note: ``Shape/classifyPoint(_:tolerance:)`` (`Shape+Topology.swift`) answers the
+    ///   identical question via the same `BRepClass3d_SolidClassifier` mechanism (#851), returning
+    ///   ``Shape/PointState`` instead of ``PointClassification``. See that method's doc comment
+    ///   for why the two result enums are kept separate rather than unified into one.
+    ///
     /// - Parameters:
     ///   - point: The 3D point to classify
     ///   - tolerance: Tolerance for boundary detection (default: 1e-6)

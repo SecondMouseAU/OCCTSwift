@@ -2903,39 +2903,50 @@ public var error: WireError { get }
 
 ---
 
-### `Shape.fused(with:tolerance:)`
+### `Shape.fused(with:tolerance:timeout:)`
 
 Fuse two shapes using a fuzzy Boolean tolerance.
 
 ```swift
-public func fused(with other: Shape, tolerance: Double) -> Shape?
+public func fused(with other: Shape, tolerance: Double,
+                   timeout: Double = Shape.defaultBooleanTimeout) -> Shape?
 ```
 
-- **Parameters:** `tolerance` — fuzzy tolerance for coincident geometry detection.
+- **Parameters:** `tolerance` — fuzzy tolerance for coincident geometry detection. `timeout` —
+  wall-clock bound in seconds (default `Shape.defaultBooleanTimeout`, 120s); `0`/negative disables
+  the bound. Delegates to `union(_:fuzzyValue:glue:timeout:)` (#832), so it inherits the same
+  `defaultBooleanTimeout` watchdog (#206) — pass `timeout:` explicitly if this operation
+  legitimately needs longer.
 - **OCCT:** `BRepAlgoAPI_Fuse` with `SetFuzzyValue` (via `OCCTBooleanFuseWithTolerance`).
 
 ---
 
-### `Shape.subtracted(_:tolerance:)`
+### `Shape.subtracted(_:tolerance:timeout:)`
 
 Cut another shape from this shape using a fuzzy Boolean tolerance.
 
 ```swift
-public func subtracted(_ other: Shape, tolerance: Double) -> Shape?
+public func subtracted(_ other: Shape, tolerance: Double,
+                        timeout: Double = Shape.defaultBooleanTimeout) -> Shape?
 ```
 
+- **Parameters:** `timeout` — wall-clock bound in seconds (default `Shape.defaultBooleanTimeout`,
+  120s); `0`/negative disables the bound.
 - **OCCT:** `BRepAlgoAPI_Cut` with `SetFuzzyValue` (via `OCCTBooleanCutWithTolerance`).
 
 ---
 
-### `Shape.intersected(with:tolerance:)`
+### `Shape.intersected(with:tolerance:timeout:)`
 
 Compute the Boolean common of two shapes using a fuzzy tolerance.
 
 ```swift
-public func intersected(with other: Shape, tolerance: Double) -> Shape?
+public func intersected(with other: Shape, tolerance: Double,
+                         timeout: Double = Shape.defaultBooleanTimeout) -> Shape?
 ```
 
+- **Parameters:** `timeout` — wall-clock bound in seconds (default `Shape.defaultBooleanTimeout`,
+  120s); `0`/negative disables the bound.
 - **OCCT:** `BRepAlgoAPI_Common` with `SetFuzzyValue` (via `OCCTBooleanCommonWithTolerance`).
 
 ---
@@ -2966,38 +2977,47 @@ produce an incorrect result, since the algorithm does not check the guarantee it
 
 ---
 
-### `Shape.fused(with:glue:)`
+### `Shape.fused(with:glue:timeout:)`
 
 Fuse two shapes with a glue mode hint for better performance on coincident faces.
 
 ```swift
-public func fused(with other: Shape, glue: GlueMode) -> Shape?
+public func fused(with other: Shape, glue: GlueMode,
+                   timeout: Double = Shape.defaultBooleanTimeout) -> Shape?
 ```
 
+- **Parameters:** `timeout` — wall-clock bound in seconds (default `Shape.defaultBooleanTimeout`,
+  120s); `0`/negative disables the bound.
 - **OCCT:** `BRepAlgoAPI_Fuse` with `SetGlue` (via `OCCTBooleanFuseGlue`).
 
 ---
 
-### `Shape.subtracted(_:glue:)`
+### `Shape.subtracted(_:glue:timeout:)`
 
 Cut another shape with a glue mode hint.
 
 ```swift
-public func subtracted(_ other: Shape, glue: GlueMode) -> Shape?
+public func subtracted(_ other: Shape, glue: GlueMode,
+                        timeout: Double = Shape.defaultBooleanTimeout) -> Shape?
 ```
 
+- **Parameters:** `timeout` — wall-clock bound in seconds (default `Shape.defaultBooleanTimeout`,
+  120s); `0`/negative disables the bound.
 - **OCCT:** `BRepAlgoAPI_Cut` with `SetGlue` (via `OCCTBooleanCutGlue`).
 
 ---
 
-### `Shape.intersected(with:glue:)`
+### `Shape.intersected(with:glue:timeout:)`
 
 Compute the Boolean common with a glue mode hint.
 
 ```swift
-public func intersected(with other: Shape, glue: GlueMode) -> Shape?
+public func intersected(with other: Shape, glue: GlueMode,
+                         timeout: Double = Shape.defaultBooleanTimeout) -> Shape?
 ```
 
+- **Parameters:** `timeout` — wall-clock bound in seconds (default `Shape.defaultBooleanTimeout`,
+  120s); `0`/negative disables the bound.
 - **OCCT:** `BRepAlgoAPI_Common` with `SetGlue` (via `OCCTBooleanCommonGlue`).
 - **Example:**
   ```swift

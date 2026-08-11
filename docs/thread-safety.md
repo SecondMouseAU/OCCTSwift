@@ -7,7 +7,7 @@ nav_order: 9
 
 ## TL;DR
 
-OCCT is **not thread-safe** for concurrent access to shared geometry. Use `OCCTSerial.withLock { }` to serialize multi-step workflows, or `shape.deepCopy()` to create independent geometry for parallel processing.
+OCCT is **not thread-safe** for concurrent access to shared geometry. Use `OCCTSerial.withLock { }` to serialize multi-step workflows, or `shape.copy(copyGeometry: true)` / `Shape.deepCopy(shape)` to create independent geometry for parallel processing — **not** the no-argument instance `shape.deepCopy()`, which only clones topology; see below (#831).
 
 ## The Problem
 
@@ -55,15 +55,30 @@ OCCTSerial.withLock {
 }
 ```
 
-### Shape.deepCopy() — Independent Geometry for Parallelism
+### Independent Geometry for Parallelism — three copy APIs, only two actually copy geometry (#831)
 
-For parallel geometry workflows, create independent copies:
+`Shape` has three "deep copy" entry points, and this section previously conflated them —
+it claimed the no-argument `shape.deepCopy()` used `BRepBuilderAPI_Copy` with independent
+geometry, which is wrong on both counts (verified by reading the OCCT source each one
+actually calls, not just its header comment):
+
+| API | OCCT mechanism | Geometry / mesh independence |
+|---|---|---|
+| `shape.copy(copyGeometry:copyMesh:)` (instance) | `BRepBuilderAPI_Copy` | **Yes**, when `copyGeometry`/`copyMesh` are `true` (the defaults are `true`/`false`) — clones `Geom_Surface`/`Geom_Curve`/`Poly_Triangulation` via their own `->Copy()`. |
+| `Shape.deepCopy(_:copyGeometry:copyMesh:)` (static) | `BRepTools_CopyModification` | **Yes**, same clone mechanism as `copy()` — `BRepBuilderAPI_Copy` is a thin convenience wrapper around exactly this class, so the two are the same operation reached two ways (defaults `true`/`true`, note the different `copyMesh` default from `copy()`). |
+| `shape.deepCopy()` (instance, no parameters) | `TNaming_CopyShape::CopyTool` | **No.** Builds new `TopoDS_TShape`s (independent *topology*), but `TNaming_TranslateTool::UpdateFace`/`UpdateEdge` assign the *same* `Handle(Geom_Surface)`/`Handle(Geom_Curve)`/`Handle(Poly_Triangulation)` to the copy — no geometry or mesh cloning at all. |
+
+For parallel geometry workflows, use `copy(copyGeometry: true)` or the static `deepCopy(_:)` —
+**not** the no-argument instance `deepCopy()`, which does not protect against the
+shared-geometry races (items 1–4 above), since the two shapes still point at the same
+`Geom_Surface`/`Geom_Curve` objects those races live on:
 
 ```swift
 let original = Shape.box(width: 10, height: 10, depth: 10)!
 
-// Create 4 independent copies for parallel processing
-let copies = (0..<4).map { _ in original.deepCopy()! }
+// Create 4 independent copies for parallel processing — copyGeometry: true clones the
+// actual Geom_Surface/Geom_Curve handles, not just the topology.
+let copies = (0..<4).map { _ in original.copy(copyGeometry: true)! }
 
 // Process each copy on a different thread. Independence protects against the
 // shared-geometry races (items 1–4); the `filleted` call is safe because the
@@ -74,7 +89,14 @@ DispatchQueue.concurrentPerform(iterations: 4) { i in
 }
 ```
 
-`deepCopy()` uses `BRepBuilderAPI_Copy` with `copyGeom: true` to create a fully independent shape graph — new geometry handles, new TShapes, no shared caches.
+**A real, already-shipped call site relies on the weaker guarantee**:
+`Shape.isSelfIntersecting(hardTimeout:)` (`Shape.swift`) uses the no-argument instance
+`deepCopy()` to get a probe shape for a detached background thread, on the reasoning that an
+orphaned computation past the deadline can keep running without racing the caller. Per the
+table above, that probe shares `Geom_Surface`/`Geom_Curve` handles (and the mutable evaluation
+caches on them, item 1) with `self` — a well-evidenced latent risk (read from the OCCT source
+chain, not reproduced under ThreadSanitizer) rather than a confirmed race, tracked in #831 as a
+candidate follow-up rather than changed here.
 
 ### Manual Lock/Unlock
 

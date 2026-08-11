@@ -2997,46 +2997,97 @@ extension Shape {
 extension Shape {
 
     /// Fuse two shapes with fuzzy tolerance.
-    public func fused(with other: Shape, tolerance: Double) -> Shape? {
-        guard let ref = OCCTBooleanFuseWithTolerance(handle, other.handle, tolerance) else { return nil }
-        return Shape(handle: ref)
+    ///
+    /// - Note: Delegates to ``union(_:fuzzyValue:glue:timeout:)`` (#832), so this now carries the
+    ///   same ``defaultBooleanTimeout`` (120s) watchdog and the same "negative tolerance is
+    ///   ignored" contract as the canonical boolean family — neither of which this narrower,
+    ///   pre-#202/#206 entry point had on its own. Same signature, same return type by default;
+    ///   a caller whose fuzzy-tolerance boolean legitimately needs longer than 120s can pass
+    ///   `timeout:` explicitly (`0`/negative = unbounded, matching the pre-#832 behavior) — added
+    ///   as an additional parameter with a default value, so this remains source-compatible
+    ///   (review finding on PR #867).
+    public func fused(with other: Shape, tolerance: Double,
+                       timeout: Double = Shape.defaultBooleanTimeout) -> Shape? {
+        union(other, fuzzyValue: tolerance, timeout: timeout)
     }
 
     /// Cut another shape from this shape with fuzzy tolerance.
-    public func subtracted(_ other: Shape, tolerance: Double) -> Shape? {
-        guard let ref = OCCTBooleanCutWithTolerance(handle, other.handle, tolerance) else { return nil }
-        return Shape(handle: ref)
+    ///
+    /// - Note: Delegates to ``subtracting(_:fuzzyValue:glue:timeout:)`` (#832) — see
+    ///   ``fused(with:tolerance:timeout:)``'s doc comment for what changed underneath.
+    public func subtracted(_ other: Shape, tolerance: Double,
+                            timeout: Double = Shape.defaultBooleanTimeout) -> Shape? {
+        subtracting(other, fuzzyValue: tolerance, timeout: timeout)
     }
 
     /// Common of two shapes with fuzzy tolerance.
-    public func intersected(with other: Shape, tolerance: Double) -> Shape? {
-        guard let ref = OCCTBooleanCommonWithTolerance(handle, other.handle, tolerance) else { return nil }
-        return Shape(handle: ref)
+    ///
+    /// - Note: Delegates to ``intersection(_:fuzzyValue:glue:timeout:)`` (#832) — see
+    ///   ``fused(with:tolerance:timeout:)``'s doc comment for what changed underneath.
+    public func intersected(with other: Shape, tolerance: Double,
+                             timeout: Double = Shape.defaultBooleanTimeout) -> Shape? {
+        intersection(other, fuzzyValue: tolerance, timeout: timeout)
     }
 
-    /// Glue mode for boolean operations.
+    /// Glue mode for boolean operations (`BOPAlgo_GlueEnum`).
+    ///
+    /// - Warning: This encodes the same `BOPAlgo_GlueEnum` choice as ``BooleanGlue``
+    ///   (`Shape.swift`) but with **different raw values** (`shift=0, full=1, off=2` here vs.
+    ///   `off=0, shift=1, full=2` there) — a legacy artifact from before #202 introduced
+    ///   `BooleanGlue`, not corrected since to avoid changing this type's `RawRepresentable`
+    ///   contract. Kept as a separate declaration rather than a typealias for exactly that reason
+    ///   (#832): the case *names* match, so unlike the differing-raw-value pair a typealias would
+    ///   silently repoint a caller's `.rawValue`/`init(rawValue:)` use to the wrong number. Do not
+    ///   conflate the two by raw value. New code should prefer `BooleanGlue` directly via
+    ///   ``union(_:fuzzyValue:glue:timeout:)`` and friends; the three methods below map by case
+    ///   name (never by raw value) when delegating to that family.
     public enum GlueMode: Int32, Sendable {
         case shift = 0
         case full = 1
         case off = 2
+
+        /// Case-name mapping to ``Shape/BooleanGlue`` — deliberately not a raw-value cast, since
+        /// the two enums' raw values disagree (see ``GlueMode``'s doc comment). `internal`, not
+        /// `private`, so `Issue832BooleanDelegationTests` (`@testable import`) can assert the
+        /// mapping directly rather than only through an OCCT result that may not observably depend
+        /// on glue mode for simple, already-coincident geometry.
+        var asBooleanGlue: BooleanGlue {
+            switch self {
+            case .shift: return .shift
+            case .full: return .full
+            case .off: return .off
+            }
+        }
     }
 
     /// Fuse two shapes with glue mode.
-    public func fused(with other: Shape, glue: GlueMode) -> Shape? {
-        guard let ref = OCCTBooleanFuseGlue(handle, other.handle, glue.rawValue) else { return nil }
-        return Shape(handle: ref)
+    ///
+    /// - Note: Delegates to ``union(_:fuzzyValue:glue:timeout:)`` (#832), mapping ``GlueMode`` to
+    ///   ``BooleanGlue`` by case name — see ``GlueMode``'s doc comment about the raw-value
+    ///   mismatch between the two enums. Also carries ``defaultBooleanTimeout`` by default;
+    ///   pass `timeout:` explicitly to override (`0`/negative = unbounded) — see
+    ///   ``fused(with:tolerance:timeout:)``'s doc comment.
+    public func fused(with other: Shape, glue: GlueMode,
+                       timeout: Double = Shape.defaultBooleanTimeout) -> Shape? {
+        union(other, glue: glue.asBooleanGlue, timeout: timeout)
     }
 
     /// Cut another shape with glue mode.
-    public func subtracted(_ other: Shape, glue: GlueMode) -> Shape? {
-        guard let ref = OCCTBooleanCutGlue(handle, other.handle, glue.rawValue) else { return nil }
-        return Shape(handle: ref)
+    ///
+    /// - Note: Delegates to ``subtracting(_:fuzzyValue:glue:timeout:)`` (#832) — see
+    ///   ``fused(with:glue:timeout:)``'s doc comment.
+    public func subtracted(_ other: Shape, glue: GlueMode,
+                            timeout: Double = Shape.defaultBooleanTimeout) -> Shape? {
+        subtracting(other, glue: glue.asBooleanGlue, timeout: timeout)
     }
 
     /// Common of two shapes with glue mode.
-    public func intersected(with other: Shape, glue: GlueMode) -> Shape? {
-        guard let ref = OCCTBooleanCommonGlue(handle, other.handle, glue.rawValue) else { return nil }
-        return Shape(handle: ref)
+    ///
+    /// - Note: Delegates to ``intersection(_:fuzzyValue:glue:timeout:)`` (#832) — see
+    ///   ``fused(with:glue:timeout:)``'s doc comment.
+    public func intersected(with other: Shape, glue: GlueMode,
+                             timeout: Double = Shape.defaultBooleanTimeout) -> Shape? {
+        intersection(other, glue: glue.asBooleanGlue, timeout: timeout)
     }
 }
 

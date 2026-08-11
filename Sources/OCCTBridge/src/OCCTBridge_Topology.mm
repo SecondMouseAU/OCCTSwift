@@ -1939,15 +1939,18 @@ double OCCTOBBSquareExtent(OCCTOBBRef obb) {
 }
 // MARK: - BRepClass3d (v0.92.0)
 
-#include <BRepClass3d_SClassifier.hxx>
-#include <BRepClass3d_SolidExplorer.hxx>
-
+// #851: this used to hand-build BRepClass3d_SolidExplorer + BRepClass3d_SClassifier — the exact
+// pair BRepClass3d_SolidClassifier's own convenience constructor wraps internally (confirmed by
+// reading BRepClass3d_SolidClassifier.hxx) — duplicating OCCTClassifyPointInSolid's mechanism
+// under a different, more verbose spelling. Routed through the same classifier + the shared
+// mapTopAbsState() helper (declared above, ~line 387) so the two bridge functions can no longer
+// silently diverge on tolerance handling or IN/OUT/ON/UNKNOWN mapping. Zero behavior change:
+// TopAbs_State's ordinals already matched the raw (int32_t) cast this replaces.
 int32_t OCCTShapeClassifyPoint(OCCTShapeRef shape, double px, double py, double pz, double tolerance) {
     if (!shape) return 3; // UNKNOWN
     try {
-        BRepClass3d_SolidExplorer explorer(shape->shape);
-        BRepClass3d_SClassifier classifier(explorer, gp_Pnt(px, py, pz), tolerance);
-        return (int32_t)classifier.State();
+        BRepClass3d_SolidClassifier classifier(shape->shape, gp_Pnt(px, py, pz), tolerance);
+        return mapTopAbsState(classifier.State());
     } catch (...) { return 3; }
 }
 
