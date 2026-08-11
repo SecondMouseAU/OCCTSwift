@@ -511,7 +511,7 @@ Identifies the topology type of the sub-shape that was hit in a pick result.
 ```swift
 public enum SubShapeType: Int32, Sendable {
     case compound  = 0
-    case compsolid = 1
+    case compSolid = 1
     case solid     = 2
     case shell     = 3
     case face      = 4
@@ -522,7 +522,12 @@ public enum SubShapeType: Int32, Sendable {
 }
 ```
 
-Maps directly to OCCT's `TopAbs_ShapeEnum` integer values.
+Maps directly to OCCT's `TopAbs_ShapeEnum` integer values. Cases 0...7 mirror `ShapeType`'s
+ordinals and casing exactly (`compSolid` — renamed from `compsolid` in #844, which found this,
+`Shape.ShapeFilterType`, and a local `Shape.TopAbs_ShapeEnum` had all drifted from `ShapeType`'s
+spelling independently). `.shape` (`TopAbs_SHAPE` = 8, "the whole shape was selected") has no
+`ShapeType` counterpart — `ShapeType` only ever names a concrete sub-shape kind a shape's own root
+topology can be — so this stays its own type rather than becoming a `ShapeType` typealias.
 
 ---
 

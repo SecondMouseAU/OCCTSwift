@@ -265,6 +265,10 @@ public func fixSmallEdges(tolerance: Double = 1e-7,
   - `limitAngle` — maximum tangent angle for merging in radians; pass `-1` for no limit.
 - **Returns:** Fixed shape, or `nil` on failure.
 - **OCCT:** `ShapeFix_Wireframe::FixSmallEdges` via `OCCTShapeFixSmallEdges`.
+- **Note:** `fixSmallEdges(tolerance:dropSmall: true)` is equivalent to `Shape.droppingSmallEdges
+  (tolerance:)` (see "Shape-Healing") — same `ShapeFix_Wireframe` precision/drop-mode/perform
+  sequence. The two used to default to different tolerances (`1e-7` here, `1e-6` there) for the
+  identical call; `droppingSmallEdges` was aligned to this method's `1e-7` default in #839.
 
 ---
 

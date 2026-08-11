@@ -1283,6 +1283,16 @@ double OCCTShapeMinTolerance(OCCTShapeRef _Nonnull shape, int32_t type);
 /// Get average tolerance of sub-shapes of given type.
 double OCCTShapeAvgTolerance(OCCTShapeRef _Nonnull shape, int32_t type);
 
+/// Max/min/avg tolerance of sub-shapes of the given TopAbs_ShapeEnum ordinal (0=COMPOUND ...
+/// 7=VERTEX, 8=SHAPE), passed straight through to ShapeAnalysis_ShapeTolerance::Tolerance's own
+/// `type` parameter with no remapping. The additive, canonically-typed siblings of
+/// OCCTShapeMaxTolerance/MinTolerance/AvgTolerance's compressed 0/1/2 encoding above, which only
+/// ever covered vertex/edge/face and used a different integer per sub-shape kind than
+/// OCCTBRepToolMaxTolerance (BRep_Tool::MaxTolerance's own straight-cast convention) — see #833.
+double OCCTShapeMaxToleranceOfType(OCCTShapeRef _Nonnull shape, int32_t shapeType);
+double OCCTShapeMinToleranceOfType(OCCTShapeRef _Nonnull shape, int32_t shapeType);
+double OCCTShapeAvgToleranceOfType(OCCTShapeRef _Nonnull shape, int32_t shapeType);
+
 /// Fix tolerance on a shape to specified value. Returns true on success.
 bool OCCTShapeFixTolerance(OCCTShapeRef _Nonnull shape, double tolerance);
 

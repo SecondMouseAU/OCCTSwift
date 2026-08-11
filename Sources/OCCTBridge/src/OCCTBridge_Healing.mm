@@ -2855,12 +2855,19 @@ OCCTShapeRef _Nullable OCCTShapeExtendSortedCompound(OCCTShapeRef shape, int32_t
 }
 
 int32_t OCCTShapeExtendShapeType(OCCTShapeRef shape, bool compound) {
-    if (!shape) return 7; // TopAbs_SHAPE
+    // #844: this fallback is `7`, which is TopAbs_VERTEX, not TopAbs_SHAPE (8) as the comment on
+    // this line used to say -- noted, not changed, since correcting the VALUE (rather than the
+    // comment) would change predominantShapeType()'s reported result for a null shape / a caught
+    // exception (today it silently decodes as .vertex; the mislabeled intent was presumably
+    // .compound, ShapeType's own decode-failure fallback in predominantShapeType()) and deserves
+    // its own measurement and test, not a silent behavior change riding along with an enum
+    // consolidation.
+    if (!shape) return 7; // TopAbs_VERTEX
     try {
         ShapeExtend_Explorer explorer;
         return (int32_t)explorer.ShapeType(shape->shape,
             compound ? Standard_True : Standard_False);
-    } catch (...) { return 7; }
+    } catch (...) { return 7; } // TopAbs_VERTEX
 }
 
 // MARK: - ShapeUpgrade FaceDivide / WireDivide / EdgeDivide / FixSmall / ConvertToBezier (v0.64)
@@ -4209,6 +4216,41 @@ double OCCTShapeAvgTolerance(OCCTShapeRef shape, int32_t type) {
             default: se = TopAbs_SHAPE; break;
         }
         return sat.Tolerance(shape->shape, 0, se); // 0 = avg
+    } catch (...) { return 0; }
+}
+
+// #833: ShapeAnalysis_ShapeTolerance::Tolerance's own `type` parameter already accepts a real
+// TopAbs_ShapeEnum directly (ShapeAnalysis_ShapeTolerance.hxx documents VERTEX/EDGE/FACE/SHELL/
+// SHAPE), so these three pass the caller's ordinal straight through instead of remapping it
+// through the compressed 0/1/2 switch the three functions above use -- the same straight-cast
+// convention OCCTBRepToolMaxTolerance (BRep_Tool::MaxTolerance) already uses, so a caller that
+// standardizes on ShapeType/TopAbs_ShapeEnum ordinals gets the same answer from every tolerance
+// entry point in this bridge.
+static bool occtShapeToleranceOfTypeGuard(int32_t shapeType) {
+    return shapeType >= TopAbs_COMPOUND && shapeType <= TopAbs_SHAPE;
+}
+
+double OCCTShapeMaxToleranceOfType(OCCTShapeRef shape, int32_t shapeType) {
+    if (!shape || !occtShapeToleranceOfTypeGuard(shapeType)) return 0;
+    try {
+        ShapeAnalysis_ShapeTolerance sat;
+        return sat.Tolerance(shape->shape, 1, (TopAbs_ShapeEnum)shapeType); // 1 = max
+    } catch (...) { return 0; }
+}
+
+double OCCTShapeMinToleranceOfType(OCCTShapeRef shape, int32_t shapeType) {
+    if (!shape || !occtShapeToleranceOfTypeGuard(shapeType)) return 0;
+    try {
+        ShapeAnalysis_ShapeTolerance sat;
+        return sat.Tolerance(shape->shape, -1, (TopAbs_ShapeEnum)shapeType); // -1 = min
+    } catch (...) { return 0; }
+}
+
+double OCCTShapeAvgToleranceOfType(OCCTShapeRef shape, int32_t shapeType) {
+    if (!shape || !occtShapeToleranceOfTypeGuard(shapeType)) return 0;
+    try {
+        ShapeAnalysis_ShapeTolerance sat;
+        return sat.Tolerance(shape->shape, 0, (TopAbs_ShapeEnum)shapeType); // 0 = avg
     } catch (...) { return 0; }
 }
 

@@ -29,10 +29,15 @@ public final class Selector: @unchecked Sendable {
 
     /// The type of sub-shape that was picked.
     ///
-    /// Maps to OCCT's `TopAbs_ShapeEnum` values.
+    /// Maps to OCCT's `TopAbs_ShapeEnum` values. Cases 0...7 mirror ``ShapeType``'s ordinals and
+    /// casing exactly (`compSolid`, matching `ShapeType.compSolid` — renamed from `compsolid` for
+    /// #844, which found the two had drifted); `.shape` (`TopAbs_SHAPE` = 8, "the whole shape
+    /// selected") has no `ShapeType` counterpart, since `ShapeType` only ever names a concrete
+    /// sub-shape kind a shape's own root topology can be, so this stays its own type rather than
+    /// becoming a `ShapeType` typealias.
     public enum SubShapeType: Int32, Sendable {
         case compound = 0
-        case compsolid = 1
+        case compSolid = 1
         case solid = 2
         case shell = 3
         case face = 4

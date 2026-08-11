@@ -687,42 +687,88 @@ public func checkVertexStatus(vertex: Shape) -> Int
 
 ---
 
-### `Shape.maxTolerance(type:)`
+### `Shape.maxTolerance(type:)` (ShapeType overload)
 
-Get the maximum tolerance of sub-shapes of the given type.
+Get the maximum tolerance of sub-shapes of the given type. Passes `type`'s raw value straight
+through as the real `TopAbs_ShapeEnum` ordinal, agreeing with `maxTolerance(subShapeType:)` (see
+"Shape-Completions") — unlike the legacy `Int` overload below, which uses a different, compressed
+encoding for the same idea (#833).
+
+```swift
+public func maxTolerance(type: ShapeType) -> Double
+```
+
+- **Parameters:** `type` — sub-shape type to measure.
+- **OCCT:** `ShapeAnalysis_ShapeTolerance::Tolerance` with mode `1` (max).
+- **Example:**
+  ```swift
+  let box = Shape.box(width: 10, height: 10, depth: 10)!
+  print(box.maxTolerance(type: .face))
+  ```
+
+---
+
+### `Shape.maxTolerance(type:)` (Int overload, legacy)
 
 ```swift
 public func maxTolerance(type: Int) -> Double
 ```
 
 - **Parameters:** `type` — `0` = vertex, `1` = edge, `2` = face.
-- **OCCT:** `ShapeAnalysis_ShapeTolerance::Tolerance` with `Standard_True` (max).
+- **OCCT:** `ShapeAnalysis_ShapeTolerance::Tolerance` with mode `1` (max).
+- **Note:** Legacy. This compressed encoding disagrees with `maxTolerance(subShapeType:)`'s own
+  `Int` convention for the same value — `2` means FACE here but `TopAbs_SOLID` there (#833). Prefer
+  the `ShapeType` overload above. Kept unchanged for source compatibility.
 
 ---
 
-### `Shape.minTolerance(type:)`
+### `Shape.minTolerance(type:)` (ShapeType overload)
 
-Get the minimum tolerance of sub-shapes of the given type.
+Get the minimum tolerance of sub-shapes of the given type. Same two-overload shape as
+`maxTolerance(type:)` above (#833).
+
+```swift
+public func minTolerance(type: ShapeType) -> Double
+```
+
+- **OCCT:** `ShapeAnalysis_ShapeTolerance::Tolerance` with mode `-1` (min).
+
+---
+
+### `Shape.minTolerance(type:)` (Int overload, legacy)
 
 ```swift
 public func minTolerance(type: Int) -> Double
 ```
 
 - **Parameters:** `type` — `0` = vertex, `1` = edge, `2` = face.
-- **OCCT:** `ShapeAnalysis_ShapeTolerance::Tolerance` with `Standard_False` (min).
+- **OCCT:** `ShapeAnalysis_ShapeTolerance::Tolerance` with mode `-1` (min).
+- **Note:** Legacy, same caveat as `maxTolerance(type:)`'s `Int` overload above (#833).
 
 ---
 
-### `Shape.avgTolerance(type:)`
+### `Shape.avgTolerance(type:)` (ShapeType overload)
 
-Get the average tolerance of sub-shapes of the given type.
+Get the average tolerance of sub-shapes of the given type. Same two-overload shape as
+`maxTolerance(type:)` above (#833).
+
+```swift
+public func avgTolerance(type: ShapeType) -> Double
+```
+
+- **OCCT:** `ShapeAnalysis_ShapeTolerance::Tolerance` with mode `0` (average).
+
+---
+
+### `Shape.avgTolerance(type:)` (Int overload, legacy)
 
 ```swift
 public func avgTolerance(type: Int) -> Double
 ```
 
 - **Parameters:** `type` — `0` = vertex, `1` = edge, `2` = face.
-- **OCCT:** `ShapeAnalysis_ShapeTolerance::Tolerance` with `0` (average mode).
+- **OCCT:** `ShapeAnalysis_ShapeTolerance::Tolerance` with mode `0` (average).
+- **Note:** Legacy, same caveat as `maxTolerance(type:)`'s `Int` overload above (#833).
 
 ---
 
@@ -1163,7 +1209,7 @@ public static func face(
 
 ---
 
-### `Shape.faceFromPlane(origin:normal:uBounds:vBounds:)`
+### `Shape.faceFromPlane(origin:normal:uBounds:vBounds:tolerance:)`
 
 Create a planar face from a `gp_Plane` with UV bounds.
 
@@ -1172,11 +1218,19 @@ public static func faceFromPlane(
     origin: SIMD3<Double> = .zero,
     normal: SIMD3<Double> = SIMD3(0, 0, 1),
     uBounds: ClosedRange<Double>,
-    vBounds: ClosedRange<Double>
+    vBounds: ClosedRange<Double>,
+    tolerance: Double = 1e-7
 ) -> Shape?
 ```
 
-- **OCCT:** `BRepBuilderAPI_MakeFace(gp_Pln, u1, u2, v1, v2)` (via `OCCTMakeFaceFromGpPlane`).
+Delegates to `Shape.faceFromPlane(origin:normal:uRange:vRange:tolerance:)` (see "BRepLib_MakeFace"
+above) — the two overloads independently wrapped the same `BRepLib_MakeFace` engine (#841); this
+one now forwards `uBounds`/`vBounds` as `uRange`/`vRange` instead of duplicating the bridge call.
+`tolerance` defaults to `Precision::Confusion()` (`1e-7`), the value this overload silently
+hardcoded before #841 by going through `BRepBuilderAPI_MakeFace`'s tolerance-less constructor.
+
+- **Parameters:** `tolerance` — degeneracy tolerance forwarded to `BRepLib_MakeFace`.
+- **OCCT:** `BRepLib_MakeFace(Geom_Plane, u1, u2, v1, v2, tol)` (via `OCCTBRepLibMakeFaceFromPlane`).
 - **Example:**
   ```swift
   if let face = Shape.faceFromPlane(uBounds: -5...5, vBounds: -5...5) {
@@ -1186,7 +1240,7 @@ public static func faceFromPlane(
 
 ---
 
-### `Shape.faceFromCylinder(origin:axis:radius:uBounds:vBounds:)`
+### `Shape.faceFromCylinder(origin:axis:radius:uBounds:vBounds:tolerance:)`
 
 Create a cylindrical face from a `gp_Cylinder` with UV bounds.
 
@@ -1196,12 +1250,18 @@ public static func faceFromCylinder(
     axis: SIMD3<Double> = SIMD3(0, 0, 1),
     radius: Double,
     uBounds: ClosedRange<Double>,
-    vBounds: ClosedRange<Double>
+    vBounds: ClosedRange<Double>,
+    tolerance: Double = 1e-7
 ) -> Shape?
 ```
 
-- **Parameters:** `radius` — cylinder radius; `uBounds` — angular range (radians); `vBounds` — axial height range.
-- **OCCT:** `BRepBuilderAPI_MakeFace(gp_Cylinder, u1, u2, v1, v2)` (via `OCCTMakeFaceFromGpCylinder`).
+Delegates to `Shape.faceFromCylinder(origin:axis:radius:uRange:vRange:tolerance:)` (see
+"BRepLib_MakeFace" above) — see the sibling `faceFromPlane` entry above for why (#841).
+
+- **Parameters:** `radius` — cylinder radius; `uBounds` — angular range (radians); `vBounds` —
+  axial height range; `tolerance` — degeneracy tolerance forwarded to `BRepLib_MakeFace`.
+- **OCCT:** `BRepLib_MakeFace(Geom_CylindricalSurface, u1, u2, v1, v2, tol)` (via
+  `OCCTBRepLibMakeFaceFromCylinder`).
 
 ---
 

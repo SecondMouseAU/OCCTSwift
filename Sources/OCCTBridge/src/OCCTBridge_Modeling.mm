@@ -8351,35 +8351,8 @@ OCCTShapeRef OCCTMakeFaceFromSurfaceUV(OCCTSurfaceRef surface,
     } catch (...) { return nullptr; }
 }
 
-OCCTShapeRef OCCTMakeFaceFromGpPlane(double px, double py, double pz,
-                                       double nx, double ny, double nz,
-                                       double umin, double umax,
-                                       double vmin, double vmax) {
-    try {
-        gp_Pln pln(gp_Pnt(px, py, pz), gp_Dir(nx, ny, nz));
-        BRepBuilderAPI_MakeFace mf(pln, umin, umax, vmin, vmax);
-        if (!mf.IsDone()) return nullptr;
-        auto ref = new OCCTShape();
-        ref->shape = mf.Shape();
-        return ref;
-    } catch (...) { return nullptr; }
-}
-
-OCCTShapeRef OCCTMakeFaceFromGpCylinder(double cx, double cy, double cz,
-                                          double nx, double ny, double nz,
-                                          double radius,
-                                          double umin, double umax,
-                                          double vmin, double vmax) {
-    try {
-        gp_Ax3 ax(gp_Pnt(cx, cy, cz), gp_Dir(nx, ny, nz));
-        gp_Cylinder cyl(ax, radius);
-        BRepBuilderAPI_MakeFace mf(cyl, umin, umax, vmin, vmax);
-        if (!mf.IsDone()) return nullptr;
-        auto ref = new OCCTShape();
-        ref->shape = mf.Shape();
-        return ref;
-    } catch (...) { return nullptr; }
-}
+// OCCTMakeFaceFromGpPlane / OCCTMakeFaceFromGpCylinder removed (#841) -- see the note in
+// OCCTBridge_Modeling.h where they used to be declared.
 
 // MARK: - v0.114: BRepBuilderAPI_MakeWire incremental + Boolean ops with tolerance + MakeOffset/MakeThickSolid
 // --- BRepBuilderAPI_MakeWire (incremental) ---
