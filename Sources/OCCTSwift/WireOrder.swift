@@ -71,6 +71,30 @@ public struct WireOrder: Sendable {
 
         let result = OCCTWireOrderAnalyze(&starts, &ends, nbEdges, tolerance, &outOrder)
 
+        return decode(result, outOrder: outOrder)
+    }
+
+    /// Analyze the ordering of edges in an existing wire.
+    ///
+    /// - Parameters:
+    ///   - wire: Wire to analyze
+    ///   - tolerance: Connection tolerance (default 1e-3)
+    /// - Returns: Wire ordering result, or nil if analysis failed
+    public static func analyze(wire: Wire, tolerance: Double = 1e-3) -> WireOrder? {
+        let maxEntries: Int32 = 1000
+        var outOrder = [OCCTWireOrderEntry](repeating: OCCTWireOrderEntry(originalIndex: 0),
+                                             count: Int(maxEntries))
+
+        let result = OCCTWireOrderAnalyzeWire(wire.handle, tolerance, &outOrder, maxEntries)
+
+        return decode(result, outOrder: outOrder)
+    }
+
+    /// Decode a bridge `OCCTWireOrderResult` and its populated `outOrder` entries into a
+    /// `WireOrder`. Shared by both `analyze(edges:)` and `analyze(wire:)`, which differ only in
+    /// how they build the C-side inputs (caller-supplied points vs. a wire's own edges), not in
+    /// how the result is interpreted.
+    private static func decode(_ result: OCCTWireOrderResult, outOrder: [OCCTWireOrderEntry]) -> WireOrder? {
         let status: Status
         switch result.status {
         case 0: status = .closed
@@ -87,42 +111,6 @@ public struct WireOrder: Sendable {
             let idx = outOrder[i].originalIndex
             orderedEdges.append(OrderedEdge(
                 originalIndex: abs(Int(idx)) - 1, // Convert from 1-based to 0-based
-                isReversed: idx < 0
-            ))
-        }
-
-        return WireOrder(status: status, orderedEdges: orderedEdges)
-    }
-
-    /// Analyze the ordering of edges in an existing wire.
-    ///
-    /// - Parameters:
-    ///   - wire: Wire to analyze
-    ///   - tolerance: Connection tolerance (default 1e-3)
-    /// - Returns: Wire ordering result, or nil if analysis failed
-    public static func analyze(wire: Wire, tolerance: Double = 1e-3) -> WireOrder? {
-        let maxEntries: Int32 = 1000
-        var outOrder = [OCCTWireOrderEntry](repeating: OCCTWireOrderEntry(originalIndex: 0),
-                                             count: Int(maxEntries))
-
-        let result = OCCTWireOrderAnalyzeWire(wire.handle, tolerance, &outOrder, maxEntries)
-
-        let status: Status
-        switch result.status {
-        case 0: status = .closed
-        case 1: status = .open
-        case 2: status = .gaps
-        default: status = .failed
-        }
-
-        if result.status < 0 { return nil }
-
-        var orderedEdges = [OrderedEdge]()
-        orderedEdges.reserveCapacity(Int(result.nbEdges))
-        for i in 0..<Int(result.nbEdges) {
-            let idx = outOrder[i].originalIndex
-            orderedEdges.append(OrderedEdge(
-                originalIndex: abs(Int(idx)) - 1,
                 isReversed: idx < 0
             ))
         }
