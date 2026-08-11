@@ -132,10 +132,16 @@ public final class Face: @unchecked Sendable {
     /// Check if the face is horizontal (normal points up or down)
     /// - Parameter tolerance: Angle tolerance in radians (default ~0.5 degrees)
     ///
-    /// Equivalent to `isUpwardFacing(tolerance:) || isDownwardFacing(tolerance:)`, and
-    /// implemented as exactly that (#843) so the two can never drift out of sync with this one.
+    /// Logically `isUpwardFacing(tolerance:) || isDownwardFacing(tolerance:)` (#843), but not
+    /// implemented by calling them: `||` only short-circuits the second operand when the first is
+    /// true, so delegating to both public methods fetches `normal` twice — a fresh
+    /// `BRepLProp_SLProps` construction/solve through the bridge each time, not a cached read — for
+    /// every non-upward-facing face. That is most faces in a per-face scan
+    /// (`Shape.horizontalFaces()`, `facesByZLevel()`, `AAG.buildGraph()`), so this inlines
+    /// `normalZTest`'s "fetch once, test the one value" shape directly against both thresholds
+    /// instead (found in review of #859).
     public func isHorizontal(tolerance: Double = 0.01) -> Bool {
-        isUpwardFacing(tolerance: tolerance) || isDownwardFacing(tolerance: tolerance)
+        normalZTest { abs($0) > cos(tolerance) }
     }
 
     /// Check if the face is upward-facing (normal points up)
