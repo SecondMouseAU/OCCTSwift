@@ -1031,6 +1031,10 @@ bool OCCTShapeVolumeInertia(OCCTShapeRef shape, OCCTVolumeInertiaResult* result)
                                     result->gyrationRadius2,
                                     result->gyrationRadius3);
 
+        // Same `principal` object OCCTShapeInertiaProperties reads these from — #848.
+        result->hasSymmetryAxis = principal.HasSymmetryAxis();
+        result->hasSymmetryPoint = principal.HasSymmetryPoint();
+
         return true;
     } catch (...) {
         return false;
@@ -1061,6 +1065,10 @@ bool OCCTShapeSurfaceInertia(OCCTShapeRef shape, OCCTSurfaceInertiaResult* resul
         result->principalMoment1 = I1;
         result->principalMoment2 = I2;
         result->principalMoment3 = I3;
+
+        // Same `principal` object OCCTShapeSurfaceInertiaProperties reads these from — #848.
+        result->hasSymmetryAxis = principal.HasSymmetryAxis();
+        result->hasSymmetryPoint = principal.HasSymmetryPoint();
 
         return true;
     } catch (...) {

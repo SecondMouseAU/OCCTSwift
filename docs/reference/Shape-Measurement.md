@@ -1468,11 +1468,15 @@ public struct VolumeInertia: Sendable {
     public let principalMoments: SIMD3<Double>
     public let principalAxes: (SIMD3<Double>, SIMD3<Double>, SIMD3<Double>)
     public let gyrationRadii: SIMD3<Double>
+    public let hasSymmetryAxis: Bool
+    public let hasSymmetryPoint: Bool
 }
 ```
 
 - `inertiaTensor` — 9-element row-major 3×3 inertia tensor.
 - `gyrationRadii` — Radii of gyration about the three principal axes.
+- `hasSymmetryAxis`/`hasSymmetryPoint` — Added in #848 to match `InertiaProperties`, which has
+  always had these; both read them off the same `GProp_PrincipalProps` computation.
 
 ---
 
@@ -1487,6 +1491,14 @@ The three principal moments of inertia in the principal-axis frame.
 #### `VolumeInertia.gyrationRadii`
 
 Radii of gyration about the three principal axes (`sqrt(momentOfInertia / mass)` per axis).
+
+#### `VolumeInertia.hasSymmetryAxis`
+
+Whether the shape has a symmetry axis, from `GProp_PrincipalProps::HasSymmetryAxis()`.
+
+#### `VolumeInertia.hasSymmetryPoint`
+
+Whether the shape has a symmetry point, from `GProp_PrincipalProps::HasSymmetryPoint()`.
 
 ---
 
@@ -1507,6 +1519,7 @@ public var volumeInertia: VolumeInertia? { get }
   if let vi = solid.volumeInertia {
       print("volume: \(vi.volume)")
       print("gyration radii: \(vi.gyrationRadii)")
+      print("has symmetry axis: \(vi.hasSymmetryAxis)")
   }
   ```
 
@@ -1522,6 +1535,8 @@ public struct SurfaceInertia: Sendable {
     public let centerOfMass: SIMD3<Double>
     public let inertiaTensor: [Double]
     public let principalMoments: SIMD3<Double>
+    public let hasSymmetryAxis: Bool
+    public let hasSymmetryPoint: Bool
 }
 ```
 
@@ -1531,6 +1546,8 @@ public struct SurfaceInertia: Sendable {
 | `centerOfMass` | Centroid of the surface. |
 | `inertiaTensor` | 3x3 inertia tensor about `centerOfMass`, row-major (9 values). |
 | `principalMoments` | The three principal moments of inertia (eigenvalues of `inertiaTensor`). |
+| `hasSymmetryAxis` | Whether the surface has a symmetry axis. Added in #848 to match `surfaceInertiaProperties()`'s result, which has always had this field; both read it off the same `GProp_PrincipalProps`. |
+| `hasSymmetryPoint` | Whether the surface has a symmetry point. |
 
 *(Per-field anchors below, for cross-reference; the table above has the actual meaning of each.)*
 

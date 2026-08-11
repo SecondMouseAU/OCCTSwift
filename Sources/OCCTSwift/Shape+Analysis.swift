@@ -701,20 +701,28 @@ extension Shape {
         public let principalAxes: (SIMD3<Double>, SIMD3<Double>, SIMD3<Double>)
         /// Radii of gyration about principal axes
         public let gyrationRadii: SIMD3<Double>
+        /// Whether the shape has a symmetry axis (#848: added to match ``InertiaProperties``,
+        /// which has always had this field — both read it off the same `GProp_PrincipalProps`)
+        public let hasSymmetryAxis: Bool
+        /// Whether the shape has a symmetry point
+        public let hasSymmetryPoint: Bool
     }
 
     /// Compute volume inertia properties of this shape.
     ///
-    /// Returns volume, center of mass, inertia tensor, principal moments
-    /// and axes of inertia, and radii of gyration.
+    /// Returns volume, center of mass, inertia tensor, principal moments and axes of inertia,
+    /// radii of gyration, and (#848) the two symmetry flags ``inertiaProperties()`` has always
+    /// had — all read off the same `GProp_PrincipalProps` computation, so there is no extra cost
+    /// to having both here.
     ///
     /// Nil for any shape with no closed volume: a face, wire, edge, vertex or open shell. See
     /// ``inertiaProperties()`` for why every field is an artefact there rather than a zero (#609).
     ///
     /// ```swift
     /// let cyl = Shape.cylinder(radius: 3, height: 10)!
-    /// cyl.volumeInertia?.volume          // 282.7
-    /// cyl.volumeInertia?.centerOfMass    // (0, 0, 5)
+    /// cyl.volumeInertia?.volume            // 282.7
+    /// cyl.volumeInertia?.centerOfMass      // (0, 0, 5)
+    /// cyl.volumeInertia?.hasSymmetryAxis   // true
     ///
     /// // A closed shell still answers: the key is closedness, not `ShapeType() == SOLID`.
     /// cyl.subShapes(ofType: .shell).first?.volumeInertia?.volume   // 282.7
@@ -739,7 +747,9 @@ extension Shape {
                 SIMD3(result.axis2X, result.axis2Y, result.axis2Z),
                 SIMD3(result.axis3X, result.axis3Y, result.axis3Z)
             ),
-            gyrationRadii: SIMD3(result.gyrationRadius1, result.gyrationRadius2, result.gyrationRadius3)
+            gyrationRadii: SIMD3(result.gyrationRadius1, result.gyrationRadius2, result.gyrationRadius3),
+            hasSymmetryAxis: result.hasSymmetryAxis,
+            hasSymmetryPoint: result.hasSymmetryPoint
         )
     }
 
@@ -753,13 +763,20 @@ extension Shape {
         public let inertiaTensor: [Double]
         /// Principal moments of inertia
         public let principalMoments: SIMD3<Double>
+        /// Whether the shape has a symmetry axis (#848: added to match
+        /// ``surfaceInertiaProperties()``'s result, which has always had this field — both read
+        /// it off the same `GProp_PrincipalProps`)
+        public let hasSymmetryAxis: Bool
+        /// Whether the shape has a symmetry point
+        public let hasSymmetryPoint: Bool
     }
 
     /// Compute surface (area) inertia properties of this shape.
     ///
     /// Works for a face or an open shell, and is nil for a shape with no faces at all, where the
     /// reported centroid would be the shape's location origin rather than a recognisable zero
-    /// (#609).
+    /// (#609). Also reports the two symmetry flags ``surfaceInertiaProperties()`` has always had
+    /// (#848), read off the same `GProp_PrincipalProps` as ``principalMoments``.
     ///
     /// ```swift
     /// let box = Shape.box(width: 10, height: 20, depth: 30)!
@@ -781,7 +798,9 @@ extension Shape {
             area: result.area,
             centerOfMass: SIMD3(result.centerX, result.centerY, result.centerZ),
             inertiaTensor: tensor,
-            principalMoments: SIMD3(result.principalMoment1, result.principalMoment2, result.principalMoment3)
+            principalMoments: SIMD3(result.principalMoment1, result.principalMoment2, result.principalMoment3),
+            hasSymmetryAxis: result.hasSymmetryAxis,
+            hasSymmetryPoint: result.hasSymmetryPoint
         )
     }
 
@@ -1704,10 +1723,11 @@ public extension Shape {
         public let param2: Double
     }
 
-    /// Recognize canonical surface geometry from a face with detailed parameters.
-    func recognizeCanonicalSurface(tolerance: Double = 0.01) -> CanonicalRecognitionResult {
-        let r = OCCTShapeRecognizeCanonicalSurface(handle, tolerance)
-        return CanonicalRecognitionResult(
+    /// Shared field-by-field unmarshaling for ``recognizeCanonicalSurface(tolerance:)`` and
+    /// ``recognizeCanonicalCurve(tolerance:)`` (#796): the two differ only in which bridge call
+    /// produces the raw `OCCTCanonicalResult`, not in how it's decoded.
+    private static func canonicalRecognitionResult(from r: OCCTCanonicalResult) -> CanonicalRecognitionResult {
+        CanonicalRecognitionResult(
             type: CanonicalGeometryType(rawValue: Int(r.type.rawValue)) ?? .none,
             gap: r.gap,
             origin: (r.originX, r.originY, r.originZ),
@@ -1717,17 +1737,14 @@ public extension Shape {
         )
     }
 
+    /// Recognize canonical surface geometry from a face with detailed parameters.
+    func recognizeCanonicalSurface(tolerance: Double = 0.01) -> CanonicalRecognitionResult {
+        Shape.canonicalRecognitionResult(from: OCCTShapeRecognizeCanonicalSurface(handle, tolerance))
+    }
+
     /// Recognize canonical curve geometry from an edge with detailed parameters.
     func recognizeCanonicalCurve(tolerance: Double = 0.01) -> CanonicalRecognitionResult {
-        let r = OCCTShapeRecognizeCanonicalCurve(handle, tolerance)
-        return CanonicalRecognitionResult(
-            type: CanonicalGeometryType(rawValue: Int(r.type.rawValue)) ?? .none,
-            gap: r.gap,
-            origin: (r.originX, r.originY, r.originZ),
-            direction: (r.dirX, r.dirY, r.dirZ),
-            param1: r.param1,
-            param2: r.param2
-        )
+        Shape.canonicalRecognitionResult(from: OCCTShapeRecognizeCanonicalCurve(handle, tolerance))
     }
 }
 
@@ -2108,18 +2125,45 @@ extension Shape {
         return (min: SIMD3(xmin, ymin, zmin), max: SIMD3(xmax, ymax, zmax))
     }
 
-    /// Oriented bounding box with axes and half-sizes.
+    /// Oriented bounding box with axes and half-sizes as three separate scalars.
+    ///
+    /// Same underlying `Bnd_OBB` as ``OrientedBoundingBox`` (#847) — prefer
+    /// ``orientedBoundingBox(optimal:)`` for the packed ``SIMD3<Double>`` half-sizes and the
+    /// computed ``OrientedBoundingBox/volume``/``OrientedBoundingBox/dimensions`` it offers; this
+    /// type exists for callers that specifically want the half-sizes as individual `Double`s.
     public struct DetailedOBB: Sendable {
+        /// Center of the oriented bounding box
         public let center: SIMD3<Double>
+        /// Local X axis direction
         public let xDirection: SIMD3<Double>
+        /// Local Y axis direction
         public let yDirection: SIMD3<Double>
+        /// Local Z axis direction
         public let zDirection: SIMD3<Double>
+        /// Half-extent along ``xDirection``
         public let xHalfSize: Double
+        /// Half-extent along ``yDirection``
         public let yHalfSize: Double
+        /// Half-extent along ``zDirection``
         public let zHalfSize: Double
     }
 
     /// Compute oriented bounding box with detailed axis information.
+    ///
+    /// Computes the identical `Bnd_OBB` as ``orientedBoundingBox(optimal:)`` (#847) — the two
+    /// never disagree for the same shape and `optimal` value — but returns the half-sizes as
+    /// three separate `Double`s instead of one packed `SIMD3<Double>`, and has no `volume`,
+    /// `dimensions` or corners equivalent. Use ``orientedBoundingBox(optimal:)`` unless you
+    /// specifically need the half-sizes unpacked this way.
+    ///
+    /// ```swift
+    /// let box = Shape.box(width: 10, height: 20, depth: 30)!
+    /// let obb = box.orientedBoundingBoxDetailed()!
+    /// obb.xHalfSize   // half the box's extent along the OBB's local X axis
+    /// ```
+    ///
+    /// - Parameter optimal: If true, compute a tighter OBB (slower). Default is false.
+    /// - Returns: The oriented bounding box, or nil on failure.
     public func orientedBoundingBoxDetailed(optimal: Bool = false) -> DetailedOBB? {
         var cx = 0.0, cy = 0.0, cz = 0.0
         var xDx = 0.0, xDy = 0.0, xDz = 0.0

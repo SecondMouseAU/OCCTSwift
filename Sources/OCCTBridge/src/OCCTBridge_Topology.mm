@@ -3531,8 +3531,6 @@ void OCCTShapeBoundingBoxOptimal(OCCTShapeRef shape, bool useShapeTolerance,
     }
 }
 
-#include <Bnd_OBB.hxx>
-
 void OCCTShapeOrientedBoundingBoxDetailed(OCCTShapeRef shape, bool isOptimal,
                                    double* cx, double* cy, double* cz,
                                    double* xDirX, double* xDirY, double* xDirZ,
@@ -3540,30 +3538,19 @@ void OCCTShapeOrientedBoundingBoxDetailed(OCCTShapeRef shape, bool isOptimal,
                                    double* zDirX, double* zDirY, double* zDirZ,
                                    double* xHSize, double* yHSize, double* zHSize,
                                    bool* isVoid) {
-    try {
-        auto* s = static_cast<OCCTShape*>(shape);
-        Bnd_OBB obb;
-        BRepBndLib::AddOBB(s->shape, obb, true, isOptimal, true);
-        *isVoid = obb.IsVoid();
-        if (!obb.IsVoid()) {
-            gp_Pnt center = obb.Center();
-            *cx = center.X(); *cy = center.Y(); *cz = center.Z();
-            gp_XYZ xDir = obb.XDirection();
-            *xDirX = xDir.X(); *xDirY = xDir.Y(); *xDirZ = xDir.Z();
-            gp_XYZ yDir = obb.YDirection();
-            *yDirX = yDir.X(); *yDirY = yDir.Y(); *yDirZ = yDir.Z();
-            gp_XYZ zDir = obb.ZDirection();
-            *zDirX = zDir.X(); *zDirY = zDir.Y(); *zDirZ = zDir.Z();
-            *xHSize = obb.XHSize(); *yHSize = obb.YHSize(); *zHSize = obb.ZHSize();
-        } else {
-            *cx = *cy = *cz = 0.0;
-            *xDirX = 1; *xDirY = 0; *xDirZ = 0;
-            *yDirX = 0; *yDirY = 1; *yDirZ = 0;
-            *zDirX = 0; *zDirY = 0; *zDirZ = 1;
-            *xHSize = *yHSize = *zHSize = 0.0;
-        }
-    } catch (...) {
-        *isVoid = true;
+    // Delegates to OCCTShapeOrientedBoundingBox rather than building a second Bnd_OBB from a
+    // second BRepBndLib::AddOBB call: both wrap the identical computation (#847), and delegating
+    // also picks up that function's null-shape guard, which this site previously lacked.
+    OCCTOrientedBoundingBox obb{};
+    bool ok = OCCTShapeOrientedBoundingBox(shape, isOptimal, &obb);
+    *isVoid = !ok;
+    if (ok) {
+        *cx = obb.centerX; *cy = obb.centerY; *cz = obb.centerZ;
+        *xDirX = obb.xDirX; *xDirY = obb.xDirY; *xDirZ = obb.xDirZ;
+        *yDirX = obb.yDirX; *yDirY = obb.yDirY; *yDirZ = obb.yDirZ;
+        *zDirX = obb.zDirX; *zDirY = obb.zDirY; *zDirZ = obb.zDirZ;
+        *xHSize = obb.halfX; *yHSize = obb.halfY; *zHSize = obb.halfZ;
+    } else {
         *cx = *cy = *cz = 0.0;
         *xDirX = 1; *xDirY = 0; *xDirZ = 0;
         *yDirX = 0; *yDirY = 1; *yDirZ = 0;
