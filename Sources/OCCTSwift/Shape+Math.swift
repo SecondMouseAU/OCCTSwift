@@ -128,8 +128,8 @@ extension Shape {
     ///   validation (`nil` on a wrong count) for source compatibility.
     @available(*, deprecated, message: "Pass a Matrix12Grouped instead of a raw [Double] — see Matrix12Grouped's doc comment. #835")
     public func transformed(matrix: [Double]) -> Shape? {
-        guard matrix.count == 12 else { return nil }
-        return transformed(matrix: Matrix12Grouped(matrix))
+        guard let grouped = Matrix12Grouped(matrix) else { return nil }
+        return transformed(matrix: grouped)
     }
 
     /// Apply a general affine transformation (rotation + non-uniform scale/shear + translation)
@@ -169,8 +169,8 @@ extension Shape {
     ///   `matrix.count == 12` validation (`nil` on a wrong count) for source compatibility.
     @available(*, deprecated, message: "Pass a TransformMatrix3D instead of a raw [Double] — see TransformMatrix3D's doc comment. #835")
     public func gTransformed(matrix: [Double]) -> Shape? {
-        guard matrix.count == 12 else { return nil }
-        return gTransformed(matrix: TransformMatrix3D(matrix))
+        guard let interleaved = TransformMatrix3D(matrix) else { return nil }
+        return gTransformed(matrix: interleaved)
     }
 }
 
@@ -215,8 +215,8 @@ extension Shape {
     ///   `matrix.count == 12` validation (`nil` on a wrong count) for source compatibility.
     @available(*, deprecated, message: "Pass a TransformMatrix3D instead of a raw [Double] — see TransformMatrix3D's doc comment. #835")
     public func transformed(byMatrix matrix: [Double]) -> Shape? {
-        guard matrix.count == 12 else { return nil }
-        return transformed(byMatrix: TransformMatrix3D(matrix))
+        guard let interleaved = TransformMatrix3D(matrix) else { return nil }
+        return transformed(byMatrix: interleaved)
     }
 
     /// Check if the shape's location transform has negative determinant (mirror/reflection).

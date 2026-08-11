@@ -4230,28 +4230,31 @@ static bool occtShapeToleranceOfTypeGuard(int32_t shapeType) {
     return shapeType >= TopAbs_COMPOUND && shapeType <= TopAbs_SHAPE;
 }
 
-double OCCTShapeMaxToleranceOfType(OCCTShapeRef shape, int32_t shapeType) {
+// Shared by OCCTShapeMaxToleranceOfType/MinToleranceOfType/AvgToleranceOfType below (PR #870
+// aggregate review): the three differed only in the hardcoded `mode` literal (1/-1/0) passed to
+// ShapeAnalysis_ShapeTolerance::Tolerance, otherwise triplicating the identical
+// construct/guard/try-catch/call body — mirrors the `occtShapeToleranceOfTypeGuard` extraction
+// just above for the same reason: a future change to this shared logic (tightening the exception
+// handling, migrating off ShapeAnalysis_ShapeTolerance) now has one body to update instead of
+// three near-identical copies that can silently drift apart.
+static double occtShapeToleranceOfType(OCCTShapeRef shape, int32_t shapeType, int mode) {
     if (!shape || !occtShapeToleranceOfTypeGuard(shapeType)) return 0;
     try {
         ShapeAnalysis_ShapeTolerance sat;
-        return sat.Tolerance(shape->shape, 1, (TopAbs_ShapeEnum)shapeType); // 1 = max
+        return sat.Tolerance(shape->shape, mode, (TopAbs_ShapeEnum)shapeType);
     } catch (...) { return 0; }
+}
+
+double OCCTShapeMaxToleranceOfType(OCCTShapeRef shape, int32_t shapeType) {
+    return occtShapeToleranceOfType(shape, shapeType, 1); // 1 = max
 }
 
 double OCCTShapeMinToleranceOfType(OCCTShapeRef shape, int32_t shapeType) {
-    if (!shape || !occtShapeToleranceOfTypeGuard(shapeType)) return 0;
-    try {
-        ShapeAnalysis_ShapeTolerance sat;
-        return sat.Tolerance(shape->shape, -1, (TopAbs_ShapeEnum)shapeType); // -1 = min
-    } catch (...) { return 0; }
+    return occtShapeToleranceOfType(shape, shapeType, -1); // -1 = min
 }
 
 double OCCTShapeAvgToleranceOfType(OCCTShapeRef shape, int32_t shapeType) {
-    if (!shape || !occtShapeToleranceOfTypeGuard(shapeType)) return 0;
-    try {
-        ShapeAnalysis_ShapeTolerance sat;
-        return sat.Tolerance(shape->shape, 0, (TopAbs_ShapeEnum)shapeType); // 0 = avg
-    } catch (...) { return 0; }
+    return occtShapeToleranceOfType(shape, shapeType, 0); // 0 = avg
 }
 
 bool OCCTShapeFixTolerance(OCCTShapeRef shape, double tolerance) {

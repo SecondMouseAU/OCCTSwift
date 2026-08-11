@@ -351,6 +351,16 @@ extension Shape {
     /// an edge near that boundary is no longer dropped by one and kept by the other depending
     /// only on which of the two near-identical entry points was called.
     ///
+    /// - Warning: This is a **silent runtime behavior change** for any caller relying on the
+    ///   implicit default, not just an internal-consistency fix — a 10x tightening, the opposite
+    ///   direction from ``Shape/classifyPoint2d(u:v:tolerance:)``'s #840 change on this same PR.
+    ///   An edge sized in the `1e-7..1e-6` range that used to be silently dropped under the old
+    ///   `1e-6` default now survives under the new `1e-7` default, with no compile-time signal —
+    ///   e.g. imported CAD geometry containing such a sliver edge that a subsequent boolean or
+    ///   meshing call depended on being pre-removed can now fail, or produce a different result,
+    ///   with no error at this call site itself. Pass `tolerance:` explicitly to pin a specific
+    ///   value across the upgrade (PR #870 aggregate review).
+    ///
     /// - Parameter tolerance: Tolerance below which edges are considered small
     /// - Returns: Shape with small edges removed, or nil on failure
     public func droppingSmallEdges(tolerance: Double = 1e-7) -> Shape? {
@@ -1032,6 +1042,19 @@ extension Shape {
     public func isSubShapeValid(type: ShapeType, at index: Int) -> Bool {
         OCCTBRepCheckSubShapeValid(handle, Int32(type.rawValue), Int32(index))
     }
+
+    /// A typealias for the canonical ``ShapeType`` (#844) — this used to be an independent local
+    /// `TopAbs_ShapeEnum` mirror, used only by ``isSubShapeValid(type:at:)`` above, before #844
+    /// consolidated the four independent Swift mirrors of `TopAbs_ShapeEnum` in this package into
+    /// one. Kept as a deprecated alias (rather than deleted outright) for source compatibility
+    /// with external code that spells `Shape.TopAbs_ShapeEnum` explicitly — a stored variable's
+    /// type annotation, or a function parameter type — matching this same PR's own migration
+    /// pattern for every other type it consolidated (``ShapeFilterType``, and the deprecated
+    /// `[Double]`-taking overloads on the transform-matrix methods). Case names differ slightly
+    /// from the old enum's own casing (`ShapeType.compSolid` vs. the old `.compsolid`), since this
+    /// is now literally `ShapeType`, not a copy of it.
+    @available(*, deprecated, renamed: "ShapeType")
+    public typealias TopAbs_ShapeEnum = ShapeType
 
     // MARK: - BRepCheck per sub-shape type
 

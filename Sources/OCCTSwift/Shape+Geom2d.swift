@@ -512,6 +512,14 @@ extension Shape {
     /// own `IntTools_FClass2d` file-neighbor, keeps its `1e-7` default deliberately — it answers a
     /// different question (is this face a hole) than the three UV-boundary classifiers above.
     ///
+    /// - Warning: This is a **silent runtime behavior change** for any caller relying on the
+    ///   implicit default, not just an internal-consistency fix. A point ~5e-7 from a face
+    ///   boundary that classified `.outside` under the old `1e-7` default now classifies
+    ///   `.onBoundary` under the new `1e-6` default — a 10x loosening — with no compile-time
+    ///   signal, and downstream accept/reject logic keyed on that classification can change
+    ///   outcome purely from this upgrade for geometry near that boundary band. Pass `tolerance:`
+    ///   explicitly to pin a specific value across the upgrade (PR #870 aggregate review).
+    ///
     /// - Parameters:
     ///   - u: U parameter coordinate
     ///   - v: V parameter coordinate
