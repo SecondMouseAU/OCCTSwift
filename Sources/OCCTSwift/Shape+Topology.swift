@@ -192,13 +192,13 @@ extension Shape {
     /// - Returns: Counts of solids, shells, faces, wires, edges, vertices, and free
     ///   (unconnected) elements.
     public var contents: ShapeContents {
-        let c = OCCTShapeGetContents(handle)
+        let core = ShapeContentsCore(OCCTShapeGetContents(handle))
         return ShapeContents(
-            solids: Int(c.nbSolids), shells: Int(c.nbShells),
-            faces: Int(c.nbFaces), wires: Int(c.nbWires),
-            edges: Int(c.nbEdges), vertices: Int(c.nbVertices),
-            freeEdges: Int(c.nbFreeEdges), freeWires: Int(c.nbFreeWires),
-            freeFaces: Int(c.nbFreeFaces)
+            solids: core.solids, shells: core.shells,
+            faces: core.faces, wires: core.wires,
+            edges: core.edges, vertices: core.vertices,
+            freeEdges: core.freeEdges, freeWires: core.freeWires,
+            freeFaces: core.freeFaces
         )
     }
     /// Fix wireframe issues (small edges, gaps).
@@ -2523,12 +2523,13 @@ extension Shape {
     /// Get extended shape contents analysis.
     public func contentsExtended() -> ShapeContentsExtended {
         let c = OCCTShapeGetContentsExtended(handle)
+        let core = ShapeContentsCore(c)
         return ShapeContentsExtended(
-            nbSolids: Int(c.nbSolids), nbShells: Int(c.nbShells),
-            nbFaces: Int(c.nbFaces), nbWires: Int(c.nbWires),
-            nbEdges: Int(c.nbEdges), nbVertices: Int(c.nbVertices),
-            nbFreeEdges: Int(c.nbFreeEdges), nbFreeWires: Int(c.nbFreeWires),
-            nbFreeFaces: Int(c.nbFreeFaces), nbSolidsWithVoids: Int(c.nbSolidsWithVoids),
+            nbSolids: core.solids, nbShells: core.shells,
+            nbFaces: core.faces, nbWires: core.wires,
+            nbEdges: core.edges, nbVertices: core.vertices,
+            nbFreeEdges: core.freeEdges, nbFreeWires: core.freeWires,
+            nbFreeFaces: core.freeFaces, nbSolidsWithVoids: Int(c.nbSolidsWithVoids),
             nbBigSplines: Int(c.nbBigSplines), nbC0Surfaces: Int(c.nbC0Surfaces),
             nbC0Curves: Int(c.nbC0Curves), nbOffsetSurf: Int(c.nbOffsetSurf),
             nbIndirectSurf: Int(c.nbIndirectSurf), nbOffsetCurves: Int(c.nbOffsetCurves),
