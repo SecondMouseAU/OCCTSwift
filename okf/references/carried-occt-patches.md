@@ -22,7 +22,10 @@ with OCCT's own `.clang-format`, OCCT's terse comment style — not OCCTSwift's 
 2026-07-30, go straight to the PR rather than filing a separate repro issue first when the fix is
 already in hand (an OCCT maintainer asked for exactly that). Rows up to `0017` still show the
 older repro-issue-then-fix-PR pattern, left as the accurate historical record rather than retitled
-after the fact; `0018` is the first filed as a PR alone.
+after the fact; `0018` is the first filed as a PR alone. For the rest of the lifecycle, from the
+GTest a PR needs before submission through to the git mechanics of pushing to a live PR branch
+without silently closing it, see
+[Upstream OCCT patch process, start to finish](../policies/upstream-occt-patch-process.md).
 
 | Patch | Fixes | Upstream | Retire when |
 |-------|-------|----------|-------------|

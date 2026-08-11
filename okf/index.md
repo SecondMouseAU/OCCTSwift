@@ -50,6 +50,7 @@ See [`references/`](references/index.md) — OpenCASCADE upstream and licensing 
 - [Prove the test fails](policies/prove-the-test-fails.md)
 - [Search before building](policies/search-before-building.md)
 - [Upstream OCCT PRs follow OCCT's house style](policies/upstream-occt-style.md)
+- [Upstream OCCT patch process, start to finish](policies/upstream-occt-patch-process.md)
 - [Issue labels and project-board tracking](policies/issue-tracking.md)
 - [Code structure](policies/code-structure.md)
 - [CHANGELOG entries are written in the PR, not the diff](policies/changelog-on-merge.md)

@@ -45,3 +45,10 @@ policy expects. OCCT's house style applies only to code destined for the OCCT tr
 See OCCT's own coding rules and contribution workflow (dev.opencascade.org) for the authoritative
 detail; this policy just makes the non-negotiables explicit so a patch isn't bounced on style, and
 doesn't create process friction upstream maintainers have explicitly said they don't want.
+
+## Related
+
+[Upstream OCCT patch process, start to finish](upstream-occt-patch-process.md) covers the rest of the
+lifecycle this policy doesn't: the GTest a PR needs before submission, proving a fix actually changes
+behavior, the git mechanics of pushing to a live PR branch without silently closing it, and working a
+review round once comments arrive.
