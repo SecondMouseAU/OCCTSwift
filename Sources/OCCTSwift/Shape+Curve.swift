@@ -310,9 +310,10 @@ extension Shape {
     /// *request* through ``Sampling/requested(_:atLeast:)`` before the bridge is called at all,
     /// and `GCPnts_UniformAbscissa`'s count constructor returns exactly the requested count, so
     /// the check here is a no-op for those two. The `distance:` pair has no caller-supplied count
-    /// to pre-check that way — each bounds its own *implied* count from the curve length before
-    /// calling this (mirroring ``ArcLengthCurveAdaptor/points(spacing:)``, #479) — so this is the
-    /// backstop for both, catching anything that estimate undershot.
+    /// to pre-check that way — each bounds its own *implied* count via
+    /// ``Sampling/impliedCount(length:spacing:)`` before calling this (the same helper
+    /// ``ArcLengthCurveAdaptor/points(spacing:)`` uses, #479/#862) — so this is the backstop for
+    /// both, catching anything that estimate undershot.
     private func sizeAndFillUniformAbscissa(
         _ bridgeCall: (UnsafeMutablePointer<Double>?) -> Int32
     ) -> [Double]? {
@@ -339,14 +340,19 @@ extension Shape {
     ///
     /// - Parameter distance: Arc-length spacing between samples, greater than 0. A spacing small
     ///   enough that it implies more than ``Sampling/maximumSampleCount`` points is rejected
-    ///   before OCCT's sampler ever runs, the same way ``ArcLengthCurveAdaptor/points(spacing:)``
-    ///   derives and bounds its own implied count (#479) — this overload had no ceiling of any
-    ///   kind before, unlike its `pointCount:` sibling above (#853).
+    ///   before OCCT's sampler ever runs, the same derivation ``ArcLengthCurveAdaptor/points(spacing:)``
+    ///   uses (``Sampling/impliedCount(length:spacing:)``, #479) — this overload had no ceiling of
+    ///   any kind before, unlike its `pointCount:` sibling above (#853).
+    ///
+    ///   The length behind that bound is a cheap, unsubdivided estimate, not ``edgeArcLength``:
+    ///   `GCPnts_UniformAbscissa` needs the same single quadrature internally to place its points,
+    ///   so measuring the accurate, subdivided-to-convergence length here would pay for an
+    ///   equivalent computation twice on every ordinary call just to guard the rare pathological
+    ///   one (#862).
     public func uniformAbscissa(distance: Double) -> [Double]? {
-        let len = edgeArcLength
-        guard distance > 0, len > 0 else { return nil }
-        let implied = (len / distance).rounded() + 1
-        guard implied <= Double(Sampling.maximumSampleCount) else { return nil }
+        let domain = edgeAdaptorDomain
+        let len = OCCTEdgeArcLengthQuickEstimate(handle, domain.lowerBound, domain.upperBound)
+        guard Sampling.impliedCount(length: len, spacing: distance) != nil else { return nil }
         return sizeAndFillUniformAbscissa { OCCTUniformAbscissaByDistance(handle, distance, $0) }
     }
 
@@ -363,13 +369,11 @@ extension Shape {
 
     /// Uniformly sample an edge by arc distance within parameter range.
     ///
-    /// - Parameter distance: see ``uniformAbscissa(distance:)`` — the same ceiling, measured over
-    ///   `[u1, u2]` instead of the whole edge (#853).
+    /// - Parameter distance: see ``uniformAbscissa(distance:)`` — the same ceiling and the same
+    ///   cheap estimate behind it, measured over `[u1, u2]` instead of the whole edge (#853, #862).
     public func uniformAbscissa(distance: Double, u1: Double, u2: Double) -> [Double]? {
-        let len = edgeArcLength(from: u1, to: u2)
-        guard distance > 0, len > 0 else { return nil }
-        let implied = (len / distance).rounded() + 1
-        guard implied <= Double(Sampling.maximumSampleCount) else { return nil }
+        let len = OCCTEdgeArcLengthQuickEstimate(handle, u1, u2)
+        guard Sampling.impliedCount(length: len, spacing: distance) != nil else { return nil }
         return sizeAndFillUniformAbscissa {
             OCCTUniformAbscissaByDistanceRange(handle, distance, u1, u2, $0)
         }

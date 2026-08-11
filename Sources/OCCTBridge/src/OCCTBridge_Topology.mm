@@ -3236,6 +3236,24 @@ double OCCTEdgeArcLengthBetween(OCCTShapeRef edge, double u1, double u2) {
     } catch (...) { return -1.0; }
 }
 
+// A single, un-subdivided quadrature -- occtArcQuadrature's own single-span branch, i.e. exactly
+// the GCPnts_AbscissaPoint::Length call GCPnts_UniformAbscissa's constructor makes internally to
+// learn a curve's length before placing points. Unlike OCCTEdgeArcLengthBetween this does not
+// subdivide per GeomAbs_CN interval or double until two levels converge to 1e-9 relative, so a
+// caller bounding an implied sample count before running that constructor gets the estimate for
+// about what one of its own internal calls costs, not the ~2x an accurate OCCTEdgeArcLengthBetween
+// costs on top of it (#603's own bridge subdivision is already redundant at the pinned kernel,
+// whose CPnts_AbscissaPoint::Length is itself adaptive -- this reaches that directly rather than
+// paying for the extra convergence loop too). #862.
+double OCCTEdgeArcLengthQuickEstimate(OCCTShapeRef edge, double u1, double u2) {
+    if (!edge) return -1.0;
+    if (!occtValidParameterRange(u1, u2)) return -1.0;
+    try {
+        BRepAdaptor_Curve adaptor(TopoDS::Edge(edge->shape));
+        return occtArcQuadrature(adaptor, std::min(u1, u2), std::max(u1, u2), /*singleSpan=*/true);
+    } catch (...) { return -1.0; }
+}
+
 // Both halves subdivided (#603): the fraction is taken of the accurate total and then walked with
 // the same quadratures, so fraction 1.0 lands on the edge's last parameter again. On the biased
 // pair those two errors cancelled; on a mixed pair they would not.
