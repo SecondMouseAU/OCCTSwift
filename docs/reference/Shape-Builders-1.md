@@ -1335,15 +1335,17 @@ public static func edge2dFromLine(
 
 ### `nurbsConvertViaModifier()`
 
-Convert this shape to NURBS using `BRepTools_Modifier` with `BRepTools_NurbsConvertModification`.
+Convert this shape to NURBS using `BRepTools_Modifier` with `BRepTools_NurbsConvertModification`, skipping `Shape.convertedToNURBS()`'s vertex-tolerance correction pass.
 
 ```swift
 public func nurbsConvertViaModifier() -> Shape?
 ```
 
+This drives the exact same `BRepTools_Modifier` + `BRepTools_NurbsConvertModification` pair `Shape.convertedToNURBS()` (`BRepBuilderAPI_NurbsConvert`) uses internally — it is that method's own implementation minus its final `CorrectVertexTol()` step, not an independent conversion mechanism. `CorrectVertexTol()` raises a vertex's tolerance to cover any edge meeting it that the NURBS conversion enlarged, so this method's result can carry a vertex whose tolerance is smaller than an edge meeting it — a real, silent conversion-fidelity gap `.isValid` will not catch (#836).
+
 - **Returns:** NURBS-converted shape, or `nil` on failure.
 - **OCCT:** `BRepTools_Modifier` + `BRepTools_NurbsConvertModification` via `OCCTBRepToolsModifierNurbsConvert`.
-- **Note:** Prefer `nurbsConvert()` for straightforward conversions; use this variant when you need the modifier-based pipeline.
+- **Note:** Prefer `Shape.convertedToNURBS()` for ordinary NURBS conversion; use this variant only when you need the bare modifier pipeline directly (e.g. composing it with other `BRepTools_Modification` passes) and will apply your own vertex-tolerance correction afterward.
 
 ---
 

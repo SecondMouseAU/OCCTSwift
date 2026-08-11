@@ -59,10 +59,10 @@ OCCTShapeRef OCCTFaceFix(OCCTFaceRef face, double tolerance);
 /// Fix a shape with detailed control
 /// @param shape The shape to fix
 /// @param tolerance Tolerance for fixing operations
-/// @param fixSolid Whether to fix solid orientation
-/// @param fixShell Whether to fix shell closure
-/// @param fixFace Whether to fix face issues
-/// @param fixWire Whether to fix wire issues
+/// @param fixSolid Whether to fix solid orientation (ShapeFix_Shape::FixSolidMode)
+/// @param fixShell Whether to fix FREE shells -- not attached to a solid (ShapeFix_Shape::FixFreeShellMode)
+/// @param fixFace Whether to fix FREE faces -- not attached to a shell (ShapeFix_Shape::FixFreeFaceMode)
+/// @param fixWire Whether to fix FREE wires -- not attached to a face (ShapeFix_Shape::FixFreeWireMode)
 /// @return Fixed shape, or NULL on failure
 OCCTShapeRef OCCTShapeFixDetailed(OCCTShapeRef shape, double tolerance,
                                    bool fixSolid, bool fixShell,

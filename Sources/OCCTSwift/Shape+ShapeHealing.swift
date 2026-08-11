@@ -9,19 +9,38 @@ extension Shape {
 
     /// Fix shape problems with detailed control over what to fix.
     ///
+    /// A second, dedicated `ShapeFix_Shape` entry point beside ``ShapeFixer``: this one offers
+    /// per-mode control (the four flags below) but no independent tolerance range, and
+    /// ``ShapeFixer`` offers `setMinTolerance`/`setMaxTolerance` but no mode control at all — the
+    /// two are not interchangeable (#837).
+    ///
     /// - Parameters:
     ///   - tolerance: Tolerance for fixing operations
-    ///   - fixSolid: Whether to fix solid orientation
-    ///   - fixShell: Whether to fix shell closure
-    ///   - fixFace: Whether to fix face issues
-    ///   - fixWire: Whether to fix wire issues
+    ///   - fixSolid: Whether to fix solid orientation (`ShapeFix_Shape::FixSolidMode`)
+    ///   - fixShell: Whether to fix **free** shells — shells that aren't part of a solid
+    ///     (`ShapeFix_Shape::FixFreeShellMode`)
+    ///   - fixFace: Whether to fix **free** faces — faces that aren't part of a shell
+    ///     (`ShapeFix_Shape::FixFreeFaceMode`)
+    ///   - fixWire: Whether to fix **free** wires — wires that aren't part of a face
+    ///     (`ShapeFix_Shape::FixFreeWireMode`)
     /// - Returns: Fixed shape, or nil on failure
+    ///
+    /// `fixShell`/`fixFace`/`fixWire` govern **free** (standalone) content specifically — a shell
+    /// not attached to a solid, a face not attached to a shell, a wire not attached to a face —
+    /// not shell/face/wire fixing in general: content that *is* attached is always fixed by
+    /// `Perform()`, regardless of these three flags. `ShapeFix_Shape` has no plain
+    /// `FixShellMode`/`FixFaceMode`/`FixWireMode` in this OCCT version to offer broader control.
+    ///
+    /// Before #837 these three parameters were accepted but never passed to `ShapeFix_Shape` at
+    /// all — only `fixSolid` had any effect, and the other three silently behaved as if always
+    /// `true` regardless of what was passed, with no error and nothing in the return value to
+    /// reveal it.
     ///
     /// ## Example
     ///
     /// ```swift
-    /// // Fix only wire and face issues, not solid
-    /// let fixed = shape.fixed(tolerance: 0.001, fixSolid: false)
+    /// // Skip fixing free (standalone) shells/faces/wires; only fix solid orientation.
+    /// let fixed = shape.fixed(tolerance: 0.001, fixShell: false, fixFace: false, fixWire: false)
     /// ```
     public func fixed(tolerance: Double = 1e-6,
                       fixSolid: Bool = true,
@@ -259,6 +278,18 @@ extension Shape {
     ///
     /// Useful for ensuring uniform representation before export
     /// or for algorithms that require NURBS geometry.
+    ///
+    /// Wraps `BRepBuilderAPI_NurbsConvert`, which internally is exactly
+    /// ``nurbsConvertViaModifier()``'s `BRepTools_Modifier` +
+    /// `BRepTools_NurbsConvertModification` pair, plus one more step: `CorrectVertexTol()`.
+    /// Converting an analytic curve/surface to a BSpline approximation can enlarge an edge's
+    /// tolerance to bound the approximation error, and a shared vertex's own tolerance is
+    /// expected to bound everything incident to it — `CorrectVertexTol()` raises a vertex's
+    /// tolerance to cover any edge meeting it that the conversion touched.
+    /// ``nurbsConvertViaModifier()`` skips that step, so its result can carry a vertex whose
+    /// tolerance is smaller than an edge meeting it, a real (if usually small) conversion-fidelity
+    /// gap `.isValid` will not catch. Prefer this method unless you have a specific reason to drive
+    /// the bare modifier pipeline directly (#836).
     ///
     /// - Returns: A new shape with all geometry converted to NURBS, or nil on failure
     public func convertedToNURBS() -> Shape? {
@@ -846,7 +877,23 @@ extension Shape {
 
     // MARK: BRepTools_Modifier + NurbsConvertModification
 
-    /// Convert shape to NURBS via BRepTools_Modifier (flexible NURBS conversion).
+    /// Convert shape to NURBS via `BRepTools_Modifier` directly, skipping
+    /// ``convertedToNURBS()``'s vertex-tolerance correction pass.
+    ///
+    /// This drives the exact same `BRepTools_Modifier` + `BRepTools_NurbsConvertModification`
+    /// pair ``convertedToNURBS()`` (`BRepBuilderAPI_NurbsConvert`) uses internally — the two are
+    /// not independent conversion mechanisms; this one is that method's own implementation minus
+    /// its final `CorrectVertexTol()` step. That step matters: converting an analytic
+    /// curve/surface to a BSpline approximation can enlarge an edge's tolerance to bound the
+    /// approximation error, and without the correction a shared vertex's recorded tolerance can
+    /// end up smaller than an edge meeting it — a real, silent conversion-fidelity gap `.isValid`
+    /// will not catch (#836).
+    ///
+    /// Prefer ``convertedToNURBS()`` for ordinary NURBS conversion. Use this method only when you
+    /// need the bare `BRepTools_Modifier` pipeline directly — e.g. composing the conversion with
+    /// other `BRepTools_Modification` passes in one `BRepTools_Modifier` pass — and will apply
+    /// your own vertex-tolerance correction afterward if the result's vertices need to stay
+    /// consistent with their edges' tolerances.
     public func nurbsConvertViaModifier() -> Shape? {
         guard let h = OCCTBRepToolsModifierNurbsConvert(handle) else { return nil }
         return Shape(handle: h)
