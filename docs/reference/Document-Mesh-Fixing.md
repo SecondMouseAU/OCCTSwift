@@ -2977,7 +2977,9 @@ public func fused(with other: Shape, tolerance: Double,
   the bound. Delegates to `union(_:fuzzyValue:glue:timeout:)` (#832), so it inherits the same
   `defaultBooleanTimeout` watchdog (#206) — pass `timeout:` explicitly if this operation
   legitimately needs longer.
-- **OCCT:** `BRepAlgoAPI_Fuse` with `SetFuzzyValue` (via `OCCTBooleanFuseWithTolerance`).
+- **OCCT:** `BRepAlgoAPI_Fuse` with `SetFuzzyValue`, via `union(_:fuzzyValue:glue:timeout:)`'s
+  `OCCTShapeUnionEx` (not `OCCTBooleanFuseWithTolerance` — that bridge function is no longer on
+  this call path; see the "Delegates to" note above).
 
 ---
 
@@ -2992,7 +2994,9 @@ public func subtracted(_ other: Shape, tolerance: Double,
 
 - **Parameters:** `timeout` — wall-clock bound in seconds (default `Shape.defaultBooleanTimeout`,
   120s); `0`/negative disables the bound.
-- **OCCT:** `BRepAlgoAPI_Cut` with `SetFuzzyValue` (via `OCCTBooleanCutWithTolerance`).
+- **OCCT:** `BRepAlgoAPI_Cut` with `SetFuzzyValue`, via `subtracting(_:fuzzyValue:glue:timeout:)`'s
+  `OCCTShapeSubtractEx` (not `OCCTBooleanCutWithTolerance` — that bridge function is no longer on
+  this call path).
 
 ---
 
@@ -3007,7 +3011,9 @@ public func intersected(with other: Shape, tolerance: Double,
 
 - **Parameters:** `timeout` — wall-clock bound in seconds (default `Shape.defaultBooleanTimeout`,
   120s); `0`/negative disables the bound.
-- **OCCT:** `BRepAlgoAPI_Common` with `SetFuzzyValue` (via `OCCTBooleanCommonWithTolerance`).
+- **OCCT:** `BRepAlgoAPI_Common` with `SetFuzzyValue`, via `intersection(_:fuzzyValue:glue:timeout:)`'s
+  `OCCTShapeIntersectEx` (not `OCCTBooleanCommonWithTolerance` — that bridge function is no longer
+  on this call path).
 
 ---
 
@@ -3048,7 +3054,9 @@ public func fused(with other: Shape, glue: GlueMode,
 
 - **Parameters:** `timeout` — wall-clock bound in seconds (default `Shape.defaultBooleanTimeout`,
   120s); `0`/negative disables the bound.
-- **OCCT:** `BRepAlgoAPI_Fuse` with `SetGlue` (via `OCCTBooleanFuseGlue`).
+- **OCCT:** `BRepAlgoAPI_Fuse` with `SetGlue`, via `union(_:fuzzyValue:glue:timeout:)`'s
+  `OCCTShapeUnionEx` (not `OCCTBooleanFuseGlue` — that bridge function is no longer on this call
+  path).
 
 ---
 
@@ -3063,7 +3071,9 @@ public func subtracted(_ other: Shape, glue: GlueMode,
 
 - **Parameters:** `timeout` — wall-clock bound in seconds (default `Shape.defaultBooleanTimeout`,
   120s); `0`/negative disables the bound.
-- **OCCT:** `BRepAlgoAPI_Cut` with `SetGlue` (via `OCCTBooleanCutGlue`).
+- **OCCT:** `BRepAlgoAPI_Cut` with `SetGlue`, via `subtracting(_:fuzzyValue:glue:timeout:)`'s
+  `OCCTShapeSubtractEx` (not `OCCTBooleanCutGlue` — that bridge function is no longer on this call
+  path).
 
 ---
 
@@ -3078,7 +3088,9 @@ public func intersected(with other: Shape, glue: GlueMode,
 
 - **Parameters:** `timeout` — wall-clock bound in seconds (default `Shape.defaultBooleanTimeout`,
   120s); `0`/negative disables the bound.
-- **OCCT:** `BRepAlgoAPI_Common` with `SetGlue` (via `OCCTBooleanCommonGlue`).
+- **OCCT:** `BRepAlgoAPI_Common` with `SetGlue`, via `intersection(_:fuzzyValue:glue:timeout:)`'s
+  `OCCTShapeIntersectEx` (not `OCCTBooleanCommonGlue` — that bridge function is no longer on this
+  call path).
 - **Example:**
   ```swift
   let a = Shape.box(width: 10, height: 10, depth: 10)!

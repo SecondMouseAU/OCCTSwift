@@ -2229,7 +2229,7 @@ struct TransformExpansionTests {
                 0, 1, 0,  // row 1
                 0, 0, 1,  // row 2
                 5, 0, 0   // translation
-            ])
+            ])!
             let result = box.transformed(matrix: matrix)
             #expect(result != nil)
             if let r = result {
@@ -2245,7 +2245,7 @@ struct TransformExpansionTests {
                 2, 0, 0, 0,  // row 0: scaleX=2, no translate
                 0, 1, 0, 0,  // row 1: scaleY=1
                 0, 0, 0.5, 0 // row 2: scaleZ=0.5
-            ])
+            ])!
             let result = box.gTransformed(matrix: matrix)
             #expect(result != nil)
         }
@@ -2268,7 +2268,7 @@ struct TransformExpansionTests {
                 0, 1, 0,
                 0, 0, 1,
                 5, 0, 0
-            ])
+            ])!
             let result = box.transformed(matrix: matrix)
             #expect(result != nil)
             if let r = result, let bb = r.boundingBox {
@@ -2296,7 +2296,7 @@ struct TransformExpansionTests {
                 2, 0, 0,   0,
                 0, 1, 0,   0,
                 0, 0, 0.5, 0
-            ])
+            ])!
             let result = box.gTransformed(matrix: matrix)
             #expect(result != nil)
             if let r = result, let bb = r.boundingBox {
@@ -2326,7 +2326,7 @@ struct TransformExpansionTests {
             0, 1, 0,
             0, 0, 1,
             5, 10, 15
-        ])
+        ])!
         guard let box = Shape.box(origin: SIMD3(0, 0, 0), width: 10, height: 10, depth: 10) else {
             Issue.record("box construction failed")
             return
@@ -2350,11 +2350,11 @@ struct TransformExpansionTests {
     /// #835 PR #864 review finding 1, the deprecated-overload half: the old `[Double]`-taking
     /// signatures are kept (marked `@available(*, deprecated)`) so existing external source still
     /// compiles, and still perform the exact same runtime validation they always did — `nil` on
-    /// the wrong element count, not a trap. This is the one case the typed constructors can't
-    /// reach: `Matrix12Grouped`/`TransformMatrix3D`'s own raw-array initializers trap on a bad
-    /// count instead of returning nil, matching `BRepGraph.swift`'s existing precedent for a
-    /// 12-element matrix — the deprecated `[Double]` overloads exist precisely to keep offering
-    /// the old, non-trapping "just tell me it failed" behavior.
+    /// the wrong element count, not a trap. Since the PR #870 aggregate-review fix below
+    /// (`typedInitializersReturnNilRatherThanTrapOnWrongCount`), `Matrix12Grouped`/
+    /// `TransformMatrix3D`'s own raw-array initializers are `nil`-returning too, so these
+    /// deprecated overloads are no longer the *only* path to graceful failure — but they stay,
+    /// unchanged, for source compatibility with existing `[Double]` call sites.
     @Test func deprecatedArrayOverloadsStillWork() {
         guard let box = Shape.box(origin: SIMD3(0, 0, 0), width: 10, height: 10, depth: 10) else {
             Issue.record("box construction failed")
@@ -2379,6 +2379,53 @@ struct TransformExpansionTests {
         #expect(box.transformed(matrix: [1, 0, 0]) == nil)
         #expect(box.gTransformed(matrix: [1, 0, 0]) == nil)
         #expect(box.transformed(byMatrix: [1, 0, 0]) == nil)
+    }
+
+    /// PR #870 aggregate review, correctness finding 1 (`TransformFactory.swift`):
+    /// `Matrix12Grouped.init(_:)`/`TransformMatrix3D.init(_:)` used `precondition(values.count
+    /// == 12, ...)`, which traps the whole process — debug *and* release, uncatchable
+    /// in-process — on a wrong-count array, instead of returning `nil` the way the three
+    /// `Shape` transform methods these types replaced always did for any `[Double]` input. A
+    /// caller migrating off the deprecated `[Double]`-taking overloads (`deprecatedArrayOverloadsStillWork`
+    /// above) onto these typed constructors directly — exactly what the deprecation message
+    /// tells them to do — got a crash instead of the graceful `nil` they'd get either from the
+    /// pre-#835 `Shape` methods or from the still-deprecated overloads.
+    ///
+    /// This test cannot literally "prove the crash used to happen and now doesn't": a passing
+    /// test process can't also have crashed. What it proves instead is the fix — both
+    /// initializers are now `init?`, returning `nil` for 11 and 13 elements (one short, one
+    /// long) rather than trapping. Before this fix, `Matrix12Grouped(elevenElements)` and
+    /// `TransformMatrix3D(thirteenElements)` would not even type-check as an `Optional` — the
+    /// old signature was `init(_ values: [Double])`, non-failable — so this test's very shape
+    /// (binding the result as `T?` and expecting `nil`) is itself evidence the initializer
+    /// changed; on the pre-fix code this test does not compile, rather than compiling and
+    /// failing, which is a stronger signal than a runtime-only check could give here since the
+    /// defect being fixed is a process-fatal trap the test process could never observe and
+    /// report on regardless.
+    ///
+    /// Injection actually run (`okf/policies/prove-the-test-fails.md`): reverted
+    /// `TransformFactory.swift` to its exact pre-fix content (`git show HEAD:...`, non-failable
+    /// `init`s with `precondition`), left this test as written, and ran `swift build --target
+    /// OCCTMathTests`. Result: build failure before reaching this test at all — `Shape+Math.swift`
+    /// (which this same PR updated to `guard let grouped = Matrix12Grouped(matrix) else {...}`)
+    /// fails with "initializer for conditional binding must have Optional type, not
+    /// 'Matrix12Grouped'" — confirming the whole change (this test included) is genuinely coupled
+    /// to the failable initializer, not accidentally passing regardless. Restored the fix
+    /// afterwards; `swift test --filter TransformExpansionTests` then passed 7/7, this test
+    /// included.
+    @Test func typedInitializersReturnNilRatherThanTrapOnWrongCount() {
+        let elevenElements = [Double](repeating: 0, count: 11)
+        let thirteenElements = [Double](repeating: 0, count: 13)
+
+        #expect(Matrix12Grouped(elevenElements) == nil)
+        #expect(Matrix12Grouped(thirteenElements) == nil)
+        #expect(TransformMatrix3D(elevenElements) == nil)
+        #expect(TransformMatrix3D(thirteenElements) == nil)
+
+        // The exact-12 case still succeeds (the failable init isn't just always nil).
+        let twelveElements = [Double](repeating: 0, count: 12)
+        #expect(Matrix12Grouped(twelveElements) != nil)
+        #expect(TransformMatrix3D(twelveElements) != nil)
     }
 }
 
@@ -2766,7 +2813,7 @@ struct TrsfExtrasTests {
                 1, 0, 0, 5,
                 0, 1, 0, 10,
                 0, 0, 1, 15
-            ]))
+            ])!)
             #expect(result != nil)
             if let r = result {
                 let bb = r.boundingBox
@@ -2798,7 +2845,7 @@ struct TrsfExtrasTests {
                 -1, 0, 0, 0,
                  0, 1, 0, 0,
                  0, 0, 1, 0
-            ]))
+            ])!)
             #expect(mirrored != nil)
             if let m = mirrored {
                 let bb = m.boundingBox
@@ -2853,7 +2900,7 @@ struct TrsfExtrasTests {
                 1, 0, 0, 5,
                 0, 1, 0, 10,
                 0, 0, 1, 15
-            ])
+            ])!
             let result = box.transformed(byMatrix: matrix)
             #expect(result != nil)
             if let r = result, let bb = r.boundingBox {

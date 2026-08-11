@@ -3006,6 +3006,19 @@ extension Shape {
     ///   `timeout:` explicitly (`0`/negative = unbounded, matching the pre-#832 behavior) — added
     ///   as an additional parameter with a default value, so this remains source-compatible
     ///   (review finding on PR #867).
+    ///
+    /// - Warning: This is a **behavior change for existing callers who don't pass `timeout:`**,
+    ///   not just an addition. Before #832 this method had no time bound at all — a legitimately
+    ///   slow fuse on a large/complex assembly would run to completion, however long that took.
+    ///   Existing production code calling `shape.fused(with: other, tolerance: t)` with no
+    ///   `timeout:` argument still compiles unchanged, but now silently gets `nil` after 120s
+    ///   instead of the result it previously always returned — with no compiler warning and no
+    ///   error thrown to distinguish "timed out" from any other failure. This is deliberate,
+    ///   matching ``union(_:fuzzyValue:glue:timeout:)``'s own established default and closing the
+    ///   #206 hang-risk class this narrower entry point lacked protection from — but a caller
+    ///   upgrading past this change who relies on an operation that legitimately takes longer than
+    ///   120s must now pass `timeout:` explicitly (`0`/negative = unbounded) to keep the old
+    ///   behavior (PR #870 aggregate review).
     public func fused(with other: Shape, tolerance: Double,
                        timeout: Double = Shape.defaultBooleanTimeout) -> Shape? {
         union(other, fuzzyValue: tolerance, timeout: timeout)
@@ -3014,7 +3027,9 @@ extension Shape {
     /// Cut another shape from this shape with fuzzy tolerance.
     ///
     /// - Note: Delegates to ``subtracting(_:fuzzyValue:glue:timeout:)`` (#832) — see
-    ///   ``fused(with:tolerance:timeout:)``'s doc comment for what changed underneath.
+    ///   ``fused(with:tolerance:timeout:)``'s doc comment for what changed underneath, including
+    ///   the **Warning** there: an existing caller not passing `timeout:` now silently gets `nil`
+    ///   after 120s instead of running unbounded, exactly as before.
     public func subtracted(_ other: Shape, tolerance: Double,
                             timeout: Double = Shape.defaultBooleanTimeout) -> Shape? {
         subtracting(other, fuzzyValue: tolerance, timeout: timeout)
@@ -3023,7 +3038,9 @@ extension Shape {
     /// Common of two shapes with fuzzy tolerance.
     ///
     /// - Note: Delegates to ``intersection(_:fuzzyValue:glue:timeout:)`` (#832) — see
-    ///   ``fused(with:tolerance:timeout:)``'s doc comment for what changed underneath.
+    ///   ``fused(with:tolerance:timeout:)``'s doc comment for what changed underneath, including
+    ///   the **Warning** there: an existing caller not passing `timeout:` now silently gets `nil`
+    ///   after 120s instead of running unbounded, exactly as before.
     public func intersected(with other: Shape, tolerance: Double,
                              timeout: Double = Shape.defaultBooleanTimeout) -> Shape? {
         intersection(other, fuzzyValue: tolerance, timeout: timeout)
@@ -3066,7 +3083,9 @@ extension Shape {
     ///   ``BooleanGlue`` by case name — see ``GlueMode``'s doc comment about the raw-value
     ///   mismatch between the two enums. Also carries ``defaultBooleanTimeout`` by default;
     ///   pass `timeout:` explicitly to override (`0`/negative = unbounded) — see
-    ///   ``fused(with:tolerance:timeout:)``'s doc comment.
+    ///   ``fused(with:tolerance:timeout:)``'s doc comment, including the **Warning** there: an
+    ///   existing caller not passing `timeout:` now silently gets `nil` after 120s instead of
+    ///   running unbounded, exactly as before.
     public func fused(with other: Shape, glue: GlueMode,
                        timeout: Double = Shape.defaultBooleanTimeout) -> Shape? {
         union(other, glue: glue.asBooleanGlue, timeout: timeout)
@@ -3075,7 +3094,9 @@ extension Shape {
     /// Cut another shape with glue mode.
     ///
     /// - Note: Delegates to ``subtracting(_:fuzzyValue:glue:timeout:)`` (#832) — see
-    ///   ``fused(with:glue:timeout:)``'s doc comment.
+    ///   ``fused(with:glue:timeout:)``'s doc comment, including the **Warning** on
+    ///   ``fused(with:tolerance:timeout:)``: an existing caller not passing `timeout:` now
+    ///   silently gets `nil` after 120s instead of running unbounded, exactly as before.
     public func subtracted(_ other: Shape, glue: GlueMode,
                             timeout: Double = Shape.defaultBooleanTimeout) -> Shape? {
         subtracting(other, glue: glue.asBooleanGlue, timeout: timeout)
@@ -3084,7 +3105,9 @@ extension Shape {
     /// Common of two shapes with glue mode.
     ///
     /// - Note: Delegates to ``intersection(_:fuzzyValue:glue:timeout:)`` (#832) — see
-    ///   ``fused(with:glue:timeout:)``'s doc comment.
+    ///   ``fused(with:glue:timeout:)``'s doc comment, including the **Warning** on
+    ///   ``fused(with:tolerance:timeout:)``: an existing caller not passing `timeout:` now
+    ///   silently gets `nil` after 120s instead of running unbounded, exactly as before.
     public func intersected(with other: Shape, glue: GlueMode,
                              timeout: Double = Shape.defaultBooleanTimeout) -> Shape? {
         intersection(other, glue: glue.asBooleanGlue, timeout: timeout)
