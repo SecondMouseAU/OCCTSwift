@@ -3684,6 +3684,33 @@ struct ShapeContentsExtendedTests {
             #expect(c.nbSharedVertices >= 0)
         }
     }
+
+    // #855: `Shape.contents` and `Shape.contentsExtended()` each run their own independent
+    // `ShapeAnalysis_ShapeContents::Perform()` walk (two bridge calls, two C structs), but their
+    // first 9 fields are meant to report identical values for the same shape. Nothing asserted
+    // that before this test — a future divergence (e.g. a `ModifyXMode()` call added to only one
+    // bridge call site) would otherwise land silently.
+    @Test func contentsAgreesWithContentsExtended() {
+        func assertParity(_ shape: Shape) {
+            let plain = shape.contents
+            let extended = shape.contentsExtended()
+            #expect(plain.solids == extended.nbSolids)
+            #expect(plain.shells == extended.nbShells)
+            #expect(plain.faces == extended.nbFaces)
+            #expect(plain.wires == extended.nbWires)
+            #expect(plain.edges == extended.nbEdges)
+            #expect(plain.vertices == extended.nbVertices)
+            #expect(plain.freeEdges == extended.nbFreeEdges)
+            #expect(plain.freeWires == extended.nbFreeWires)
+            #expect(plain.freeFaces == extended.nbFreeFaces)
+        }
+        if let box = Shape.box(width: 10, height: 10, depth: 10) {
+            assertParity(box)
+        }
+        if let cyl = Shape.cylinder(radius: 5, height: 10) {
+            assertParity(cyl)
+        }
+    }
 }
 
 @Suite("v0.114.0 - WireBuilder")
