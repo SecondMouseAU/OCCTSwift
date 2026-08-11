@@ -97,14 +97,15 @@ extension BRepGraph {
 
     /// The bounds check shared by every recipe resolver below: `occurrence` must be a
     /// valid index into `available`, or resolution fails with `.occurrenceOutOfRange`.
-    /// Returns `nil` when `occurrence` is in range (the guard passes).
-    private func occurrenceRangeError<T>(_ occurrence: Int,
-                                         available: [T],
-                                         ref: TopologyRef) -> TopologyResolutionError? {
+    /// Returns the validated element itself on success, so call sites don't need their
+    /// own follow-up bounds check or subscript.
+    private func element<T>(at occurrence: Int,
+                            in available: [T],
+                            ref: TopologyRef) -> Result<T, TopologyResolutionError> {
         guard occurrence >= 0, occurrence < available.count else {
-            return .occurrenceOutOfRange(ref, available: available.count, requested: occurrence)
+            return .failure(.occurrenceOutOfRange(ref, available: available.count, requested: occurrence))
         }
-        return nil
+        return .success(available[occurrence])
     }
 
     /// Resolves `ancestor` and collapses any failure into `.ancestorMissing(ancestor)` —
@@ -113,10 +114,7 @@ extension BRepGraph {
     /// underlying failure reason (e.g. `.operationNotFound`, a nested `.ancestorMissing`)
     /// is intentionally discarded, same as both call sites did before consolidation.
     private func resolveAncestor(_ ancestor: TopologyRef) -> Result<NodeRef, TopologyResolutionError> {
-        switch resolve(ancestor) {
-        case .success(let n): return .success(n)
-        case .failure: return .failure(.ancestorMissing(ancestor))
-        }
+        resolve(ancestor).mapError { _ in .ancestorMissing(ancestor) }
     }
 
     private func resolveCreatedBy(opName: String,
@@ -155,10 +153,12 @@ extension BRepGraph {
             if a.origKey.index != b.origKey.index { return a.origKey.index < b.origKey.index }
             return a.posInRepls < b.posInRepls
         }
-        if let error = occurrenceRangeError(occurrence, available: candidates, ref: ref) {
-            return .failure(error)
+        let candidate: Candidate
+        switch element(at: occurrence, in: candidates, ref: ref) {
+        case .success(let c): candidate = c
+        case .failure(let error): return .failure(error)
         }
-        let seed = candidates[occurrence].node
+        let seed = candidate.node
         // leafOccurrence == nil disables forward-walk; return the node as created.
         guard let leafOcc = leafOccurrence else {
             return .success(seed)
@@ -168,10 +168,7 @@ extension BRepGraph {
         if leaves.isEmpty {
             return .success(seed)
         }
-        if let error = occurrenceRangeError(leafOcc, available: leaves, ref: ref) {
-            return .failure(error)
-        }
-        return .success(leaves[leafOcc])
+        return element(at: leafOcc, in: leaves, ref: ref)
     }
 
     private func resolveContainedIn(parent: TopologyRef,
@@ -186,10 +183,7 @@ extension BRepGraph {
         let indices = childIndices(rootKind: resolvedParent.kind,
                                     rootIndex: resolvedParent.index,
                                     targetKind: kind)
-        if let error = occurrenceRangeError(occurrence, available: indices, ref: ref) {
-            return .failure(error)
-        }
-        return .success(NodeRef(kind: kind, index: indices[occurrence]))
+        return element(at: occurrence, in: indices, ref: ref).map { NodeRef(kind: kind, index: $0) }
     }
 
     private func resolveSplitOf(original: TopologyRef,
@@ -203,10 +197,7 @@ extension BRepGraph {
         // Find the record where resolvedOriginal appears as an original with >1 replacements.
         for record in historyRecords {
             guard let repls = record.mapping[resolvedOriginal], repls.count > 1 else { continue }
-            if let error = occurrenceRangeError(occurrence, available: repls, ref: ref) {
-                return .failure(error)
-            }
-            return .success(currentForm(of: repls[occurrence]))
+            return element(at: occurrence, in: repls, ref: ref).map { currentForm(of: $0) }
         }
         return .failure(.noCurrentDescendant(ref))
     }
