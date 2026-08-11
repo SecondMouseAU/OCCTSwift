@@ -2,7 +2,14 @@ import Foundation
 import simd
 import OCCTBridge
 
-/// Iterator for line/curve–shape intersection results.
+/// Iterator for line/curve–shape intersection results, wrapping `BRepIntCurveSurface_Inter`.
+///
+/// A separate, richer sibling of ``Shape/curveShapeIntersect(origin:direction:)`` (which wraps
+/// `LocOpe_CurveShapeIntersector` and returns bare parameters only) — added independently, twelve
+/// releases later, without either being made aware of the other. Prefer this type when you need
+/// the 3D hit point, the face struck, or curve (not just line) input; prefer
+/// `curveShapeIntersect` for a one-shot line query that only needs parameters, or if you need the
+/// `gp_Circ`-axis input `LocOpe_CurveShapeIntersector` supports and this type does not (#852).
 public final class ShapeRayIntersection: @unchecked Sendable {
     let handle: OCCTCurveSurfaceInterRef
 

@@ -657,6 +657,13 @@ Iterator over line/curve–shape intersection results, wrapping `BRepIntCurveSur
 public final class ShapeRayIntersection: @unchecked Sendable
 ```
 
+- **Note:** A separate, richer sibling of `Shape.curveShapeIntersect(origin:direction:)`
+  (`LocOpe_CurveShapeIntersector`, parameters only) — added independently, twelve releases later,
+  without either being made aware of the other. Use this type for the 3D hit point, the face
+  struck, or curve (not just line) input; use `curveShapeIntersect` for a one-shot line query that
+  only needs parameters, or for the `gp_Circ`-axis input `LocOpe_CurveShapeIntersector` supports
+  that this type does not (#852).
+
 ---
 
 ### `ShapeRayIntersection.Hit`

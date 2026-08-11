@@ -1435,6 +1435,10 @@ public func curveShapeIntersect(
 - **Parameters:** `origin` — line origin; `direction` — line direction.
 - **Returns:** Array of parameter values where the line intersects the shape, or `nil` on failure.
 - **OCCT:** `LocOpe_CurveShapeIntersector` via `OCCTLocOpeCurveShapeIntersectLine`.
+- **Note:** Parameters only — the point/face each hit's `LocOpe_PntFace` also carries is never
+  read. For the 3D point, the face struck, or curve input, see `ShapeRayIntersection`
+  (`BRepIntCurveSurface_Inter`), a separate, richer intersector added independently and not a
+  drop-in replacement (#852).
 
 ---
 
