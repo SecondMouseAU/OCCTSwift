@@ -2044,9 +2044,12 @@ Classify a UV parameter-space point on a face.
 public func classifyPoint2D(faceIndex: Int, u: Double, v: Double, tolerance: Double = 1e-6) -> PointState
 ```
 
-- **Parameters:** `faceIndex` — 0-based face index; `u`, `v` — UV parameters on the face; `tolerance` — classification tolerance.
+- **Parameters:** `faceIndex` — 0-based face index; `u`, `v` — UV parameters on the face; `tolerance` — classification tolerance (default 1e-6).
 - **Returns:** `.inside`, `.outside`, `.on`, or `.unknown` (same `PointState` enum as `classifyPoint`).
 - **OCCT:** `BRepClass_FClassifier::Perform` (via `OCCTShapeClassifyPoint2D`).
+- **Note:** Answers the same question as `Face.classify(u:v:tolerance:)` (see "Shape-Healing") and
+  `Shape.classifyPoint2d(u:v:tolerance:)` (see "Shape-Builders-2"); all three now share this `1e-6`
+  default (#840).
 - **Example:**
   ```swift
   let state = shape.classifyPoint2D(faceIndex: 0, u: 0.5, v: 0.5)

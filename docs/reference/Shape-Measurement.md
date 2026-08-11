@@ -2188,44 +2188,18 @@ public func analyzeValidity(geometryChecks: Bool = true) -> Bool
 
 ---
 
-### `TopAbs_ShapeEnum`
-
-Sub-shape type specifier.
-
-```swift
-public enum TopAbs_ShapeEnum: Int32, Sendable {
-    case compound = 0, compsolid = 1, solid = 2, shell = 3
-    case face = 4, wire = 5, edge = 6, vertex = 7
-}
-```
-
-Raw values match OCCT's own `TopAbs_ShapeEnum` exactly (`TopAbs_COMPOUND = 0` through
-`TopAbs_VERTEX = 7`), so a raw round-trip through the bridge never needs remapping.
-
-| Case | Meaning |
-|---|---|
-| `compound` | A `TopoDS_Compound`, an arbitrary grouping of other shapes. |
-| `compsolid` | A `TopoDS_CompSolid`, a connected group of solids sharing faces. |
-| `solid` | A `TopoDS_Solid`. |
-| `shell` | A `TopoDS_Shell`. |
-| `face` | A `TopoDS_Face`. |
-| `wire` | A `TopoDS_Wire`. |
-| `edge` | A `TopoDS_Edge`. |
-| `vertex` | A `TopoDS_Vertex`. |
-
-*(Per-case anchors below, for cross-reference; the table above has the actual meaning of each.)*
-
-#### `compsolid`
-
----
-
 ### `isSubShapeValid(type:at:)`
 
 Check if a specific sub-shape is valid within this shape's context.
 
 ```swift
-public func isSubShapeValid(type: TopAbs_ShapeEnum, at index: Int) -> Bool
+public func isSubShapeValid(type: ShapeType, at index: Int) -> Bool
 ```
+
+Used to take a local `Shape.TopAbs_ShapeEnum` enum — a third independent mirror of the canonical
+`ShapeType` (see "Shape-Features"), used only by this one method. Switched to `ShapeType` directly
+and the local enum removed (#844); `ShapeType`'s raw values already match the real
+`TopAbs_ShapeEnum` ordinals this method's bridge call expects.
 
 - **Parameters:**
   - `type` — Type of sub-shape to check.

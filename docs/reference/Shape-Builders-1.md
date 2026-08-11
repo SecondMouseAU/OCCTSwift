@@ -1171,6 +1171,9 @@ public static func faceFromPlane(
 - **Parameters:** `origin` — point on the plane; `normal` — plane normal; `uRange`, `vRange` — parameter bounds; `tolerance` — vertex tolerance.
 - **Returns:** Face shape, or `nil` on failure.
 - **OCCT:** `BRepLib_MakeFace(gp_Pln, ...)` via `OCCTBRepLibMakeFaceFromPlane`.
+- **Note:** `Shape.faceFromPlane(origin:normal:uBounds:vBounds:tolerance:)` (see
+  "Document-Mesh-Fixing") now delegates to this overload (#841) — the two were added independently
+  and always drove the same `BRepLib_MakeFace` engine.
 
 ---
 
@@ -1192,6 +1195,9 @@ public static func faceFromCylinder(
 - **Parameters:** `origin` — axis origin; `axis` — axis direction; `radius` — cylinder radius; `uRange` — angular bounds (radians); `vRange` — axial bounds; `tolerance` — vertex tolerance.
 - **Returns:** Face shape, or `nil` on failure.
 - **OCCT:** `BRepLib_MakeFace(gp_Cylinder, ...)` via `OCCTBRepLibMakeFaceFromCylinder`.
+- **Note:** `Shape.faceFromCylinder(origin:axis:radius:uBounds:vBounds:tolerance:)` (see
+  "Document-Mesh-Fixing") now delegates to this overload (#841) — see the sibling
+  `faceFromPlane` note above.
 
 ---
 

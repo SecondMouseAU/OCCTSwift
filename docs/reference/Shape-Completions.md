@@ -1911,6 +1911,10 @@ public func maxTolerance(subShapeType: Int) -> Double
 
 - **Parameters:** `subShapeType` — OCCT `TopAbs_ShapeEnum` integer: `4`=FACE, `6`=EDGE, `7`=VERTEX.
 - **OCCT:** `BRep_Tool::MaxTolerance` / `ShapeAnalysis_ShapeTolerance`.
+- **Note:** This is the real `TopAbs_ShapeEnum` ordinal — the same convention `ShapeType`'s raw
+  values use, and the one `Shape.maxTolerance(type:)`'s `ShapeType` overload (see
+  "Document-Mesh-Fixing") passes through unchanged. It is NOT the same as that method's legacy
+  `Int` overload, which uses a different, compressed `0`/`1`/`2` encoding for the same idea (#833).
 
 ---
 

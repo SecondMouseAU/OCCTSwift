@@ -3142,18 +3142,12 @@ OCCTShapeRef _Nullable OCCTMakeFaceFromSurfaceUV(OCCTSurfaceRef _Nonnull surface
                                                    double umin, double umax,
                                                    double vmin, double vmax, double tol);
 
-/// Create a face from a gp_Plane with UV bounds.
-OCCTShapeRef _Nullable OCCTMakeFaceFromGpPlane(double px, double py, double pz,
-                                                 double nx, double ny, double nz,
-                                                 double umin, double umax,
-                                                 double vmin, double vmax);
-
-/// Create a face from a gp_Cylinder with UV bounds.
-OCCTShapeRef _Nullable OCCTMakeFaceFromGpCylinder(double cx, double cy, double cz,
-                                                    double nx, double ny, double nz,
-                                                    double radius,
-                                                    double umin, double umax,
-                                                    double vmin, double vmax);
+// OCCTMakeFaceFromGpPlane / OCCTMakeFaceFromGpCylinder used to live here (BRepBuilderAPI_MakeFace's
+// tolerance-less gp_Pln/gp_Cylinder constructors). Removed (#841): they duplicated
+// OCCTBRepLibMakeFaceFromPlane/OCCTBRepLibMakeFaceFromCylinder above with a hardcoded tolerance
+// (BRepLib_MakeFace's own Precision::Confusion() default) instead of an explicit parameter.
+// Shape.faceFromPlane(...:uBounds:vBounds:tolerance:)/faceFromCylinder(...) now delegate to the
+// tolerance-taking Swift overloads directly, defaulting to that same 1e-7 value.
 
 /// Create an empty wire builder.
 OCCTWireBuilderRef _Nonnull OCCTWireBuilderCreate(void);

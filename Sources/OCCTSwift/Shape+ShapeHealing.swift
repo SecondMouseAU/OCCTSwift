@@ -1025,17 +1025,14 @@ extension Shape {
 
     // MARK: - ShapeExtend_Explorer
 
-    /// Shape type for filtering compounds
-    public enum ShapeFilterType: Int32, Sendable {
-        case compound = 0
-        case compsolid = 1
-        case solid = 2
-        case shell = 3
-        case face = 4
-        case wire = 5
-        case edge = 6
-        case vertex = 7
-    }
+    /// Shape type for filtering compounds.
+    ///
+    /// A typealias for the canonical ``ShapeType`` (#844) — this used to be an independent local
+    /// mirror of the same `TopAbs_ShapeEnum` ordinals, with its own, differently-cased `compsolid`
+    /// case (`ShapeType` spells it `compSolid`). `ShapeExtend_Explorer` uses the identical ordinal
+    /// convention every other sub-shape-type API in this package does, so there was no reason for
+    /// a second declaration once the casing was reconciled.
+    public typealias ShapeFilterType = ShapeType
 
     /// Filter this compound shape, extracting only sub-shapes of the specified type.
     ///
@@ -1044,7 +1041,7 @@ extension Shape {
     ///   - explore: If true, explore sub-compounds recursively
     /// - Returns: Compound containing only shapes of the specified type, or nil on failure
     public func sortedCompound(type: ShapeFilterType, explore: Bool = true) -> Shape? {
-        guard let ref = OCCTShapeExtendSortedCompound(handle, type.rawValue, explore) else { return nil }
+        guard let ref = OCCTShapeExtendSortedCompound(handle, Int32(type.rawValue), explore) else { return nil }
         return Shape(handle: ref)
     }
 
@@ -1054,7 +1051,7 @@ extension Shape {
     /// - Returns: The predominant shape type
     public func predominantShapeType(lookInsideCompounds: Bool = true) -> ShapeFilterType {
         let raw = OCCTShapeExtendShapeType(handle, lookInsideCompounds)
-        return ShapeFilterType(rawValue: raw) ?? .compound
+        return ShapeFilterType(rawValue: Int(raw)) ?? .compound
     }
 
     // MARK: - ShapeUpgrade_FaceDivide
