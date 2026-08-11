@@ -2224,12 +2224,12 @@ struct TransformExpansionTests {
     @Test func generalTransform() {
         if let box = Shape.box(width: 10, height: 10, depth: 10) {
             // Identity rotation + translation by (5,0,0)
-            let matrix: [Double] = [
+            let matrix = Matrix12Grouped([
                 1, 0, 0,  // row 0 of rotation
                 0, 1, 0,  // row 1
                 0, 0, 1,  // row 2
                 5, 0, 0   // translation
-            ]
+            ])
             let result = box.transformed(matrix: matrix)
             #expect(result != nil)
             if let r = result {
@@ -2241,11 +2241,11 @@ struct TransformExpansionTests {
     @Test func nonUniformScale() {
         if let box = Shape.box(width: 10, height: 10, depth: 10) {
             // Scale by (2, 1, 0.5) = non-uniform
-            let matrix: [Double] = [
+            let matrix = TransformMatrix3D([
                 2, 0, 0, 0,  // row 0: scaleX=2, no translate
                 0, 1, 0, 0,  // row 1: scaleY=1
                 0, 0, 0.5, 0 // row 2: scaleZ=0.5
-            ]
+            ])
             let result = box.gTransformed(matrix: matrix)
             #expect(result != nil)
         }
@@ -2256,16 +2256,19 @@ struct TransformExpansionTests {
     /// the three translation entries last. Locks in the documented convention against real
     /// bounding-box geometry, not just `result != nil`, so a future edit that accidentally
     /// aligns this method's array shape with `transformed(byMatrix:)`'s INTERLEAVED layout is
-    /// caught here.
+    /// caught here. Since #835's PR #864 review, `transformed(matrix:)` takes a
+    /// ``Matrix12Grouped`` rather than a raw `[Double]`, so the layouts can no longer be
+    /// swapped at a call site at all — this test is now about the GROUPED index mapping inside
+    /// that type, not about which method you called.
     @Test func generalTransformGroupedLayoutTranslatesAsDocumented() {
         if let box = Shape.box(origin: SIMD3(0, 0, 0), width: 10, height: 10, depth: 10) {
             // Identity rotation, translate by (5, 0, 0). GROUPED: rotation first, then tx,ty,tz.
-            let matrix: [Double] = [
+            let matrix = Matrix12Grouped([
                 1, 0, 0,
                 0, 1, 0,
                 0, 0, 1,
                 5, 0, 0
-            ]
+            ])
             let result = box.transformed(matrix: matrix)
             #expect(result != nil)
             if let r = result, let bb = r.boundingBox {
@@ -2289,11 +2292,11 @@ struct TransformExpansionTests {
         // would make the prove-the-test-fails injection below pass vacuously. See #835 PR notes.
         if let box = Shape.box(origin: SIMD3(0, 0, 0), width: 10, height: 20, depth: 30) {
             // Scale by (2, 1, 0.5), no translation. INTERLEAVED: each row's own tx/ty/tz.
-            let matrix: [Double] = [
+            let matrix = TransformMatrix3D([
                 2, 0, 0,   0,
                 0, 1, 0,   0,
                 0, 0, 0.5, 0
-            ]
+            ])
             let result = box.gTransformed(matrix: matrix)
             #expect(result != nil)
             if let r = result, let bb = r.boundingBox {
@@ -2305,6 +2308,77 @@ struct TransformExpansionTests {
                 #expect(abs(bb.max.z - 15.0) < 1e-6)
             }
         }
+    }
+
+    /// #835 PR #864 review finding 1: the three transform methods used to take a plain
+    /// `[Double]` distinguished only by which method you called, so a caller could silently
+    /// garble a transform by feeding one method's array shape to another. `Matrix12Grouped` /
+    /// `TransformMatrix3D` now make that a compile error. Locks in the *conversion* between the
+    /// two layouts — `Matrix12Grouped.interleaved` / `TransformMatrix3D.grouped` — round-trips a
+    /// transform correctly, so a caller who has one layout can still reach the method that wants
+    /// the other without hand-shuffling indices.
+    @Test func groupedInterleavedConversionRoundTripsTheSameTransform() {
+        // A matrix with no accidental symmetry in either its rotation or its translation, so a
+        // shuffled index would move the box to the wrong place rather than coincidentally the
+        // right one.
+        let grouped = Matrix12Grouped([
+            1, 0, 0,
+            0, 1, 0,
+            0, 0, 1,
+            5, 10, 15
+        ])
+        guard let box = Shape.box(origin: SIMD3(0, 0, 0), width: 10, height: 10, depth: 10) else {
+            Issue.record("box construction failed")
+            return
+        }
+        let viaGrouped = box.transformed(matrix: grouped)
+        let viaInterleaved = box.transformed(byMatrix: grouped.interleaved)
+        #expect(viaGrouped != nil)
+        #expect(viaInterleaved != nil)
+        if let a = viaGrouped?.boundingBox, let b = viaInterleaved?.boundingBox {
+            #expect(abs(a.min.x - b.min.x) < 1e-6)
+            #expect(abs(a.min.y - b.min.y) < 1e-6)
+            #expect(abs(a.min.z - b.min.z) < 1e-6)
+            #expect(abs(a.min.x - 5.0) < 1e-6)
+            #expect(abs(a.min.y - 10.0) < 1e-6)
+            #expect(abs(a.min.z - 15.0) < 1e-6)
+        }
+        // And the reverse conversion agrees too.
+        #expect(grouped.interleaved.grouped.values == grouped.values)
+    }
+
+    /// #835 PR #864 review finding 1, the deprecated-overload half: the old `[Double]`-taking
+    /// signatures are kept (marked `@available(*, deprecated)`) so existing external source still
+    /// compiles, and still perform the exact same runtime validation they always did — `nil` on
+    /// the wrong element count, not a trap. This is the one case the typed constructors can't
+    /// reach: `Matrix12Grouped`/`TransformMatrix3D`'s own raw-array initializers trap on a bad
+    /// count instead of returning nil, matching `BRepGraph.swift`'s existing precedent for a
+    /// 12-element matrix — the deprecated `[Double]` overloads exist precisely to keep offering
+    /// the old, non-trapping "just tell me it failed" behavior.
+    @Test func deprecatedArrayOverloadsStillWork() {
+        guard let box = Shape.box(origin: SIMD3(0, 0, 0), width: 10, height: 10, depth: 10) else {
+            Issue.record("box construction failed")
+            return
+        }
+        let grouped: [Double] = [1, 0, 0, 0, 1, 0, 0, 0, 1, 5, 0, 0]
+        let interleaved: [Double] = [1, 0, 0, 5, 0, 1, 0, 10, 0, 0, 1, 15]
+
+        let a = box.transformed(matrix: grouped)
+        #expect(a != nil)
+        if let bb = a?.boundingBox { #expect(abs(bb.min.x - 5.0) < 1e-6) }
+
+        let b = box.gTransformed(matrix: interleaved)
+        #expect(b != nil)
+        if let bb = b?.boundingBox { #expect(abs(bb.min.x - 5.0) < 1e-6) }
+
+        let c = box.transformed(byMatrix: interleaved)
+        #expect(c != nil)
+        if let bb = c?.boundingBox { #expect(abs(bb.min.x - 5.0) < 1e-6) }
+
+        // Wrong element count still returns nil rather than trapping.
+        #expect(box.transformed(matrix: [1, 0, 0]) == nil)
+        #expect(box.gTransformed(matrix: [1, 0, 0]) == nil)
+        #expect(box.transformed(byMatrix: [1, 0, 0]) == nil)
     }
 }
 
@@ -2688,11 +2762,11 @@ struct TrsfExtrasTests {
         // Translation by (5, 10, 15)
         let box = Shape.box(width: 1, height: 1, depth: 1)
         if let b = box {
-            let result = b.transformed(byMatrix: [
+            let result = b.transformed(byMatrix: TransformMatrix3D([
                 1, 0, 0, 5,
                 0, 1, 0, 10,
                 0, 0, 1, 15
-            ])
+            ]))
             #expect(result != nil)
             if let r = result {
                 let bb = r.boundingBox
@@ -2720,11 +2794,11 @@ struct TrsfExtrasTests {
         let box = Shape.box(origin: SIMD3(5, 0, 0), width: 10, height: 10, depth: 10)
         if let b = box {
             // Mirror through YZ plane: X -> -X
-            let mirrored = b.transformed(byMatrix: [
+            let mirrored = b.transformed(byMatrix: TransformMatrix3D([
                 -1, 0, 0, 0,
                  0, 1, 0, 0,
                  0, 0, 1, 0
-            ])
+            ]))
             #expect(mirrored != nil)
             if let m = mirrored {
                 let bb = m.boundingBox
@@ -2753,6 +2827,10 @@ struct TrsfExtrasTests {
         #expect(m.values.count == 12)
     }
 
+    /// Exercises the deprecated `[Double]`-taking overload directly (an array literal here
+    /// infers `[Double]`, not `TransformMatrix3D`) — see
+    /// `TransformExpansionTests.deprecatedArrayOverloadsStillWork` for the same coverage across
+    /// all three methods.
     @Test func invalidMatrixSize() {
         let box = Shape.box(width: 10, height: 10, depth: 10)
         if let b = box {
@@ -2771,11 +2849,11 @@ struct TrsfExtrasTests {
     @Test func transformFromMatrixInterleavedLayoutTranslatesAsDocumented() {
         if let box = Shape.box(origin: SIMD3(0, 0, 0), width: 10, height: 10, depth: 10) {
             // Identity rotation, translate by (5, 10, 15). INTERLEAVED: each row's own tx/ty/tz.
-            let matrix: [Double] = [
+            let matrix = TransformMatrix3D([
                 1, 0, 0, 5,
                 0, 1, 0, 10,
                 0, 0, 1, 15
-            ]
+            ])
             let result = box.transformed(byMatrix: matrix)
             #expect(result != nil)
             if let r = result, let bb = r.boundingBox {

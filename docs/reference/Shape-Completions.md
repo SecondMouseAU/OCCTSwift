@@ -958,40 +958,47 @@ public func composeShell(precision: Double = 1e-6) -> Shape?
 
 ### `transformed(matrix:)`
 
-Applies a general affine transformation (rotation + translation) described by a 12-element matrix.
+Applies a rigid transformation (rotation + translation) described by a `Matrix12Grouped` matrix
+(GROUPED layout — see `Matrix12Grouped` in [Document-Analysis-Builders.md](Document-Analysis-Builders.md#gce-transform-factories)).
 
 ```swift
-public func transformed(matrix: [Double]) -> Shape?
+public func transformed(matrix: Matrix12Grouped) -> Shape?
 ```
 
-`matrix` must have exactly 12 elements in row-major 3×4 layout:
-`[r00, r01, r02, r10, r11, r12, r20, r21, r22, tx, ty, tz]`.
-
-- **Returns:** The transformed `Shape`, or `nil` if `matrix.count != 12`.
+- **Returns:** The transformed `Shape`, or `nil` if the operation fails.
 - **OCCT:** `BRepBuilderAPI_Transform`, `gp_Trsf`.
 - **Example:**
   ```swift
   // Identity rotation, translate by (5, 0, 0)
-  let m: [Double] = [1,0,0, 0,1,0, 0,0,1, 5,0,0]
+  let m = Matrix12Grouped([1,0,0, 0,1,0, 0,0,1, 5,0,0])
   if let moved = box.transformed(matrix: m) { print(moved.isValid) }
   ```
+- **Deprecated overload:** `transformed(matrix: [Double]) -> Shape?` still exists
+  (`@available(*, deprecated)`) for source compatibility — `nil` if `matrix.count != 12`. #835
+  (PR #864 review): before this, `transformed(matrix:)`, `transformed(byMatrix:)`, and
+  `gTransformed(matrix:)` all took a plain `[Double]` distinguished only by which method you
+  called, so a caller could silently garble a transform by feeding one method's array shape to
+  another. Passing the wrong type is now a compile error.
 
 ---
 
 ### `gTransformed(matrix:)`
 
-Applies a general affine transformation supporting non-uniform scaling.
+Applies a general affine transformation (supports non-uniform scaling/shear) described by a
+`TransformMatrix3D` matrix (INTERLEAVED layout — see `TransformMatrix3D` in
+[Document-Analysis-Builders.md](Document-Analysis-Builders.md#gce-transform-factories)).
 
 ```swift
-public func gTransformed(matrix: [Double]) -> Shape?
+public func gTransformed(matrix: TransformMatrix3D) -> Shape?
 ```
 
-`matrix` must have exactly 12 elements, row-major 3×4:
-`[r00, r01, r02, tx, r10, r11, r12, ty, r20, r21, r22, tz]`.
-
-- **Returns:** The transformed `Shape`, or `nil` if `matrix.count != 12`.
+- **Returns:** The transformed `Shape`, or `nil` if the operation fails.
 - **OCCT:** `BRepBuilderAPI_GTransform`, `gp_GTrsf`.
-- **Note:** The layout convention differs slightly from `transformed(matrix:)` — each row is `[r_i0, r_i1, r_i2, t_i]`.
+- **Note:** The layout convention differs from `transformed(matrix:)`'s `Matrix12Grouped` — this
+  method takes the same INTERLEAVED layout as `transformed(byMatrix:)` instead: each row is
+  `[r_i0, r_i1, r_i2, t_i]`.
+- **Deprecated overload:** `gTransformed(matrix: [Double]) -> Shape?` still exists
+  (`@available(*, deprecated)`) for source compatibility — `nil` if `matrix.count != 12`. See #835 above.
 
 ---
 
