@@ -1634,15 +1634,22 @@ public static func polynomialToPoles(
 
 ### `Shape.transformed(byMatrix:)`
 
-Apply a full 3×4 affine matrix to the shape.
+Apply a full 3×4 rigid affine matrix to the shape, via a `TransformMatrix3D` (INTERLEAVED layout
+— see `TransformMatrix3D` in [Document-Analysis-Builders.md](Document-Analysis-Builders.md#gce-transform-factories)).
 
 ```swift
-public func transformed(byMatrix matrix: [Double]) -> Shape?
+public func transformed(byMatrix matrix: TransformMatrix3D) -> Shape?
 ```
 
-- **Parameters:** `matrix` — 12-element row-major array `[a11..a14, a21..a24, a31..a34]`.
-- **Returns:** Transformed shape, or `nil` if `matrix.count != 12` or the operation fails.
+- **Parameters:** `matrix` — a `TransformMatrix3D`, row-major `[a11..a14, a21..a24, a31..a34]`.
+- **Returns:** Transformed shape, or `nil` if the operation fails.
 - **OCCT:** `OCCTShapeTransformFromMatrix` → `gp_Trsf` matrix form.
+- **Deprecated overload:** `transformed(byMatrix matrix: [Double]) -> Shape?` still exists
+  (`@available(*, deprecated)`) for source compatibility — `nil` if `matrix.count != 12`. #835
+  (PR #864 review): this used to be a plain `[Double]` indistinguishable at the call site from
+  `transformed(matrix:)`'s differently-laid-out array, so a caller could silently garble a
+  transform. Passing the wrong type (`Matrix12Grouped` instead of `TransformMatrix3D`) is now a
+  compile error — see `Shape.transformed(matrix:)` and `Matrix12Grouped`.
 
 ---
 
