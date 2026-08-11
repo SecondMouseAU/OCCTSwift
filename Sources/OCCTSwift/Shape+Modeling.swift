@@ -3001,26 +3001,32 @@ extension Shape {
     /// - Note: Delegates to ``union(_:fuzzyValue:glue:timeout:)`` (#832), so this now carries the
     ///   same ``defaultBooleanTimeout`` (120s) watchdog and the same "negative tolerance is
     ///   ignored" contract as the canonical boolean family — neither of which this narrower,
-    ///   pre-#202/#206 entry point had on its own. Same signature, same return type; only the
-    ///   underlying safety changed.
-    public func fused(with other: Shape, tolerance: Double) -> Shape? {
-        union(other, fuzzyValue: tolerance)
+    ///   pre-#202/#206 entry point had on its own. Same signature, same return type by default;
+    ///   a caller whose fuzzy-tolerance boolean legitimately needs longer than 120s can pass
+    ///   `timeout:` explicitly (`0`/negative = unbounded, matching the pre-#832 behavior) — added
+    ///   as an additional parameter with a default value, so this remains source-compatible
+    ///   (review finding on PR #867).
+    public func fused(with other: Shape, tolerance: Double,
+                       timeout: Double = Shape.defaultBooleanTimeout) -> Shape? {
+        union(other, fuzzyValue: tolerance, timeout: timeout)
     }
 
     /// Cut another shape from this shape with fuzzy tolerance.
     ///
     /// - Note: Delegates to ``subtracting(_:fuzzyValue:glue:timeout:)`` (#832) — see
-    ///   ``fused(with:tolerance:)``'s doc comment for what changed underneath.
-    public func subtracted(_ other: Shape, tolerance: Double) -> Shape? {
-        subtracting(other, fuzzyValue: tolerance)
+    ///   ``fused(with:tolerance:timeout:)``'s doc comment for what changed underneath.
+    public func subtracted(_ other: Shape, tolerance: Double,
+                            timeout: Double = Shape.defaultBooleanTimeout) -> Shape? {
+        subtracting(other, fuzzyValue: tolerance, timeout: timeout)
     }
 
     /// Common of two shapes with fuzzy tolerance.
     ///
     /// - Note: Delegates to ``intersection(_:fuzzyValue:glue:timeout:)`` (#832) — see
-    ///   ``fused(with:tolerance:)``'s doc comment for what changed underneath.
-    public func intersected(with other: Shape, tolerance: Double) -> Shape? {
-        intersection(other, fuzzyValue: tolerance)
+    ///   ``fused(with:tolerance:timeout:)``'s doc comment for what changed underneath.
+    public func intersected(with other: Shape, tolerance: Double,
+                             timeout: Double = Shape.defaultBooleanTimeout) -> Shape? {
+        intersection(other, fuzzyValue: tolerance, timeout: timeout)
     }
 
     /// Glue mode for boolean operations (`BOPAlgo_GlueEnum`).
@@ -3058,25 +3064,30 @@ extension Shape {
     ///
     /// - Note: Delegates to ``union(_:fuzzyValue:glue:timeout:)`` (#832), mapping ``GlueMode`` to
     ///   ``BooleanGlue`` by case name — see ``GlueMode``'s doc comment about the raw-value
-    ///   mismatch between the two enums.
-    public func fused(with other: Shape, glue: GlueMode) -> Shape? {
-        union(other, glue: glue.asBooleanGlue)
+    ///   mismatch between the two enums. Also carries ``defaultBooleanTimeout`` by default;
+    ///   pass `timeout:` explicitly to override (`0`/negative = unbounded) — see
+    ///   ``fused(with:tolerance:timeout:)``'s doc comment.
+    public func fused(with other: Shape, glue: GlueMode,
+                       timeout: Double = Shape.defaultBooleanTimeout) -> Shape? {
+        union(other, glue: glue.asBooleanGlue, timeout: timeout)
     }
 
     /// Cut another shape with glue mode.
     ///
     /// - Note: Delegates to ``subtracting(_:fuzzyValue:glue:timeout:)`` (#832) — see
-    ///   ``fused(with:glue:)``'s doc comment.
-    public func subtracted(_ other: Shape, glue: GlueMode) -> Shape? {
-        subtracting(other, glue: glue.asBooleanGlue)
+    ///   ``fused(with:glue:timeout:)``'s doc comment.
+    public func subtracted(_ other: Shape, glue: GlueMode,
+                            timeout: Double = Shape.defaultBooleanTimeout) -> Shape? {
+        subtracting(other, glue: glue.asBooleanGlue, timeout: timeout)
     }
 
     /// Common of two shapes with glue mode.
     ///
     /// - Note: Delegates to ``intersection(_:fuzzyValue:glue:timeout:)`` (#832) — see
-    ///   ``fused(with:glue:)``'s doc comment.
-    public func intersected(with other: Shape, glue: GlueMode) -> Shape? {
-        intersection(other, glue: glue.asBooleanGlue)
+    ///   ``fused(with:glue:timeout:)``'s doc comment.
+    public func intersected(with other: Shape, glue: GlueMode,
+                             timeout: Double = Shape.defaultBooleanTimeout) -> Shape? {
+        intersection(other, glue: glue.asBooleanGlue, timeout: timeout)
     }
 }
 

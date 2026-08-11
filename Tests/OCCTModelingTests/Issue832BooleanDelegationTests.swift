@@ -117,4 +117,34 @@ struct Issue832BooleanDelegation {
         if let s = a.subtracted(b, tolerance: 0) { #expect(abs((s.volume ?? 0) - 500) < 1) }
         else { #expect(Bool(false), "subtracted nil under inherited default timeout") }
     }
+
+    // Review finding on PR #867: the six delegating entry points inherited defaultBooleanTimeout
+    // (120s) with no way to override it, since none of them exposed a timeout: parameter — a
+    // caller whose fuzzy-tolerance boolean on a large assembly previously took, say, 150s and
+    // eventually succeeded would now silently get nil at 120s instead, with no opt-out. Fixed by
+    // adding timeout: (default Shape.defaultBooleanTimeout) to all six entry points, mirroring
+    // Issue206BooleanTimeoutTests.tinyTimeoutInterrupts()'s deterministic mechanism: a deadline
+    // already in the past interrupts the build at its first progress checkpoint, even for an
+    // otherwise-fast valid boolean, proving timeout: is actually threaded through to the
+    // underlying union/subtracting/intersection call rather than merely accepted and ignored.
+    @Test("explicit timeout: is threaded through to the underlying call, not ignored (all six entry points)")
+    func explicitTimeoutIsThreadedThrough() {
+        guard let (a, b) = overlappingBoxes() else { #expect(Bool(false)); return }
+        let tiny = 1e-7
+        // tolerance: overload
+        #expect(a.fused(with: b, tolerance: 0, timeout: tiny) == nil)
+        #expect(a.subtracted(b, tolerance: 0, timeout: tiny) == nil)
+        #expect(a.intersected(with: b, tolerance: 0, timeout: tiny) == nil)
+        // glue: overload
+        #expect(a.fused(with: b, glue: .off, timeout: tiny) == nil)
+        #expect(a.subtracted(b, glue: .off, timeout: tiny) == nil)
+        #expect(a.intersected(with: b, glue: .off, timeout: tiny) == nil)
+
+        // Same operations succeed with a sane explicit timeout, proving the tiny-timeout nils
+        // above are the watchdog firing and not some other failure mode.
+        if let f = a.fused(with: b, tolerance: 0, timeout: 60) { #expect(abs((f.volume ?? 0) - 1500) < 1) }
+        else { #expect(Bool(false), "fused nil under a 60s explicit timeout") }
+        if let g = a.fused(with: b, glue: .off, timeout: 60) { #expect(abs((g.volume ?? 0) - 1500) < 1) }
+        else { #expect(Bool(false), "fused(glue:) nil under a 60s explicit timeout") }
+    }
 }
