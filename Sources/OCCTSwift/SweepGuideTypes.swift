@@ -2,6 +2,25 @@ import Foundation
 import simd
 import OCCTBridge
 
+/// Shared marshaling for `GuideTrihedronAC.evaluate`/`GuideTrihedronPlan.evaluate`: both call a
+/// bridge `D0` function of the same `(ref, param, 9x double*) -> Bool` shape and pack the same
+/// tangent/normal/binormal triple, differing only in which bridge function they call (#796).
+private func evaluateGuideTrihedronD0<Ref>(
+    _ ref: Ref, param: Double,
+    using d0: (
+        Ref, Double,
+        UnsafeMutablePointer<Double>, UnsafeMutablePointer<Double>, UnsafeMutablePointer<Double>,
+        UnsafeMutablePointer<Double>, UnsafeMutablePointer<Double>, UnsafeMutablePointer<Double>,
+        UnsafeMutablePointer<Double>, UnsafeMutablePointer<Double>, UnsafeMutablePointer<Double>
+    ) -> Bool
+) -> (tangent: SIMD3<Double>, normal: SIMD3<Double>, binormal: SIMD3<Double>)? {
+    var tx = 0.0, ty = 0.0, tz = 0.0
+    var nx = 0.0, ny = 0.0, nz = 0.0
+    var bx = 0.0, by = 0.0, bz = 0.0
+    guard d0(ref, param, &tx, &ty, &tz, &nx, &ny, &nz, &bx, &by, &bz) else { return nil }
+    return (SIMD3(tx, ty, tz), SIMD3(nx, ny, nz), SIMD3(bx, by, bz))
+}
+
 /// Draft angle location law for sweep operations.
 public final class LocationDraft: @unchecked Sendable {
     let handle: OCCTLocationDraftRef
@@ -73,11 +92,7 @@ public final class GuideTrihedronAC: @unchecked Sendable {
 
     /// Evaluate the trihedron frame at a parameter.
     public func evaluate(at param: Double) -> (tangent: SIMD3<Double>, normal: SIMD3<Double>, binormal: SIMD3<Double>)? {
-        var tx = 0.0, ty = 0.0, tz = 0.0
-        var nx = 0.0, ny = 0.0, nz = 0.0
-        var bx = 0.0, by = 0.0, bz = 0.0
-        guard OCCTGeomFillGuideTrihedronACD0(handle, param, &tx, &ty, &tz, &nx, &ny, &nz, &bx, &by, &bz) else { return nil }
-        return (SIMD3(tx, ty, tz), SIMD3(nx, ny, nz), SIMD3(bx, by, bz))
+        evaluateGuideTrihedronD0(handle, param: param, using: OCCTGeomFillGuideTrihedronACD0)
     }
 }
 
@@ -107,11 +122,7 @@ public final class GuideTrihedronPlan: @unchecked Sendable {
 
     /// Evaluate the trihedron frame at a parameter.
     public func evaluate(at param: Double) -> (tangent: SIMD3<Double>, normal: SIMD3<Double>, binormal: SIMD3<Double>)? {
-        var tx = 0.0, ty = 0.0, tz = 0.0
-        var nx = 0.0, ny = 0.0, nz = 0.0
-        var bx = 0.0, by = 0.0, bz = 0.0
-        guard OCCTGeomFillGuideTrihedronPlanD0(handle, param, &tx, &ty, &tz, &nx, &ny, &nz, &bx, &by, &bz) else { return nil }
-        return (SIMD3(tx, ty, tz), SIMD3(nx, ny, nz), SIMD3(bx, by, bz))
+        evaluateGuideTrihedronD0(handle, param: param, using: OCCTGeomFillGuideTrihedronPlanD0)
     }
 }
 
