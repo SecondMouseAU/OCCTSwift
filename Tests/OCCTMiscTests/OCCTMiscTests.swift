@@ -334,6 +334,31 @@ struct MultiLeafCreatedByTests {
         case .failure: Issue.record("unexpected failure")
         }
     }
+
+    @Test("leafOccurrence out of range fails with occurrenceOutOfRange")
+    func leafOccurrenceOutOfRange() {
+        guard let box = Shape.box(width: 10, height: 10, depth: 10),
+              let graph = BRepGraph(shape: box) else {
+            Issue.record("graph nil"); return
+        }
+        graph.isHistoryEnabled = true
+        graph.clearHistory()
+
+        // Same fixture as leafOccurrencePicksNth: two leaves, requested occurrence beyond them.
+        let seed = BRepGraph.NodeRef(kind: .face, index: 1)
+        let leaf1 = BRepGraph.NodeRef(kind: .face, index: 11)
+        let leaf2 = BRepGraph.NodeRef(kind: .face, index: 22)
+        graph.recordHistory(operationName: "Op1", original: .sentinel, replacements: [seed])
+        graph.recordHistory(operationName: "Op2", original: seed, replacements: [leaf1, leaf2])
+
+        let result = graph.resolve(.createdBy(operationName: "Op1", kind: .face, leafOccurrence: 5))
+        if case .failure(.occurrenceOutOfRange(_, let available, let requested)) = result {
+            #expect(available == 2)
+            #expect(requested == 5)
+        } else {
+            Issue.record("expected occurrenceOutOfRange")
+        }
+    }
 }
 
 // MARK: - v0.143 D1: Construction layer persistence
