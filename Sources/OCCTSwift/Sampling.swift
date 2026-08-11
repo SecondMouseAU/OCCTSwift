@@ -53,6 +53,25 @@ public enum Sampling {
         return count
     }
 
+    /// The sample count implied by dividing `length` into steps of `spacing`: `round(length /
+    /// spacing) + 1`, floored at 2 (`GCPnts_UniformAbscissa`'s own minimum, #501). `nil` when
+    /// `spacing` or `length` isn't positive, or the implied count exceeds ``maximumSampleCount``.
+    ///
+    /// One derivation shared by every caller that turns a spacing into a bounded point count —
+    /// `ArcLengthCurveAdaptor.points(spacing:)` established it first (#479); `Shape.uniformAbscissa(distance:)`
+    /// and its `u1:u2:` sibling mirror it (#853) — so a future correction to the formula lands in
+    /// one place instead of three unlinked copies (#862).
+    ///
+    /// Stays in `Double` for the derivation: `Int(_:)` on a `Double` past `Int.max` is a trap, not
+    /// an error, and both `length` and `spacing` are caller-supplied. Anything the ceiling cannot
+    /// honour is rejected here, so the conversion to `Int` below is always in range.
+    internal static func impliedCount(length: Double, spacing: Double) -> Int? {
+        guard spacing > 0, length > 0 else { return nil }
+        let implied = (length / spacing).rounded() + 1
+        guard implied <= Double(maximumSampleCount) else { return nil }
+        return max(2, Int(implied))
+    }
+
     /// A caller's *capacity* for at most this many samples: clamped into `0...`
     /// ``maximumSampleCount``.
     ///

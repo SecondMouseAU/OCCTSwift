@@ -1489,6 +1489,12 @@ double OCCTEdgeArcLength(OCCTShapeRef _Nonnull edge);
 /// Compute arc length between two parameters on an edge.
 double OCCTEdgeArcLengthBetween(OCCTShapeRef _Nonnull edge, double u1, double u2);
 
+/// A cheap, unsubdivided arc-length estimate between two parameters on an edge: one quadrature
+/// pass, not the accurate measurement `OCCTEdgeArcLengthBetween` subdivides until it converges.
+/// Meant only to bound an implied sample count before running a sampler that needs the same
+/// single pass internally anyway -- see its doc comment for why (#862).
+double OCCTEdgeArcLengthQuickEstimate(OCCTShapeRef _Nonnull edge, double u1, double u2);
+
 /// Find parameter at a fraction (0..1) of total edge length.
 double OCCTEdgeParameterAtFraction(OCCTShapeRef _Nonnull edge, double fraction);
 

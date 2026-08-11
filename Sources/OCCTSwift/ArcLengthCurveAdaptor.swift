@@ -83,14 +83,8 @@ extension ArcLengthCurveAdaptor {
     /// wc.points(spacing: 1e-9).isEmpty   // true: 2e11 points is past the ceiling
     /// ```
     public func points(spacing: Double) -> [SIMD3<Double>] {
-        let len = length
-        guard spacing > 0, len > 0 else { return [] }
-        // Stay in Double for the derivation: `Int(_:)` on a Double past Int.max is a trap, not an
-        // error, and (len / spacing) is caller-supplied on both sides. Anything the ceiling cannot
-        // honour is rejected here, so the conversion below is always in range (#479).
-        let implied = (len / spacing).rounded() + 1
-        guard implied <= Double(Self.maximumSampleCount) else { return [] }
-        return points(count: max(2, Int(implied)))
+        guard let count = Sampling.impliedCount(length: length, spacing: spacing) else { return [] }
+        return points(count: count)
     }
 
     /// The shared body of both types' ``points(count:)``: applies the count contract once,
