@@ -1901,13 +1901,18 @@ failed after `perform()`.
 
 ```swift
 public var result: Shape? { get }
-public enum Status: Int32, Sendable { case ok, done1, /* … */ done8, fail1, /* … */ fail8, done, fail }
+public typealias Status = ShapeFixStatus
 public func status(_ status: Status) -> Bool
 ```
 
-`Status` mirrors OCCT's `ShapeExtend_Status` flag space, one bit per numbered fix. `ShapeFix_Face`
-only assigns meaning to some of the numbers; the rest exist because the same 18-flag enum is shared
-across every `ShapeFix_Root` subclass, each using a different subset.
+`Status` is a typealias for `ShapeFixStatus` (see `Shape-Completions.md`), the same
+`ShapeExtend_Status` flag space `ShapeFixer.status(_:)` uses. `ShapeFix_Face`
+only assigns meaning to some of the 19 ordinals; the rest exist because the same enum is shared
+across every `ShapeFix_Root` subclass, each using a different subset. (Prior to #849, `Status` was
+a `FaceFixer`-local enum whose raw values shifted everything from `.fail1` through `.done` by one
+ordinal — there was no slot for OCCT's combined `DONE` flag, which sits between `DONE8` and
+`FAIL1` — so e.g. `.done` actually queried `ShapeExtend_FAIL8`. The table below states the
+now-correct behavior.)
 
 | Case | Meaning for `ShapeFix_Face` |
 |---|---|
@@ -1931,7 +1936,7 @@ across every `ShapeFix_Root` subclass, each using a different subset.
 | `.done` | Any `.done1`...`.done8` flag is set: something was fixed. |
 | `.fail` | Any `.fail1`...`.fail8` flag is set: some pass failed. |
 
-#### `Status.fail`
+#### OCCT mapping
 
 - **OCCT:** `ShapeFix_Face::Result` / `ShapeFix_Root::Status`.
 

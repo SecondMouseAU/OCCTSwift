@@ -577,6 +577,6 @@ extension Edge {
     public var curveInertia: CurveInertia {
         let r = OCCTBRepGPropCinert(handle)
         return CurveInertia(length: r.mass,
-                            centerOfMass: r.mass == 0 ? nil : SIMD3(r.centerX, r.centerY, r.centerZ))
+                            centerOfMass: massCentroid(mass: r.mass, x: r.centerX, y: r.centerY, z: r.centerZ))
     }
 }

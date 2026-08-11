@@ -1668,15 +1668,18 @@ public var shape: Shape? { get }
 
 ---
 
-### `status(_:)`
+### `status(_:)` (ShapeFixStatus overload)
 
-Queries the fix result status.
+Queries whether a specific `ShapeExtend_Status` flag is set after `perform()` — the full
+granularity `ShapeFix_Shape::Status` actually reports, not just the three combined flags the
+legacy `Int` overload below exposes (#849).
 
 ```swift
-public func status(_ type: Int) -> Bool
+public func status(_ status: ShapeFixStatus) -> Bool
 ```
 
-- **Parameters:** `type` — `1`=OK (no fix needed), `2`=DONE (fix applied), `3`=FAIL (fix attempted but failed).
+- **Parameters:** `status` — see [`ShapeFixStatus`](#shapefixstatus) below for the flag space and
+  the `ShapeFix_Shape` meaning table.
 - **Returns:** `true` if the queried status flag is set.
 - **OCCT:** `ShapeFix_Shape::Status`.
 - **Example:**
@@ -1684,8 +1687,74 @@ public func status(_ type: Int) -> Bool
   let fixer = ShapeFixer(shape: badShape)
   fixer.setPrecision(1e-4)
   fixer.perform()
+  if fixer.status(.done3) { /* some free face was fixed */ }
+  ```
+
+---
+
+### `status(_:)` (Int overload, legacy)
+
+Queries the fix result status via an undocumented `1`/`2`/`3` remap.
+
+```swift
+public func status(_ type: Int) -> Bool
+```
+
+- **Parameters:** `type` — `1`=OK (no fix needed), `2`=DONE (fix applied), `3`=FAIL (fix attempted but failed).
+- **Returns:** `true` if the queried status flag is set; `false` for any `type` outside `1...3` —
+  there is no way to ask through this overload whether a specific `DONE`i/`FAIL`i sub-flag fired.
+- **OCCT:** `ShapeFix_Shape::Status`.
+- **Note:** Legacy. Prefer the `ShapeFixStatus` overload above (#849). Kept unchanged for source
+  compatibility.
+- **Example:**
+  ```swift
+  let fixer = ShapeFixer(shape: badShape)
+  fixer.setPrecision(1e-4)
+  fixer.perform()
   if let fixed = fixer.shape { print(fixer.status(2)) } // true = something was fixed
   ```
+
+---
+
+### `ShapeFixStatus`
+
+A status flag from OCCT's `ShapeExtend_Status` enum — the flag space every `ShapeFix_Root`
+subclass (`ShapeFix_Shape`, `ShapeFix_Face`, `ShapeFix_Wire`, ...) reports its fix result through.
+`DONE1`...`DONE8` and `FAIL1`...`FAIL8` are per-class: each subclass assigns its own meaning to the
+numbered slots, and a slot it does not use is simply never set. Shared by `ShapeFixer.status(_:)`
+above and `FaceFixer.status(_:)` (see `Document-Mesh-Fixing.md`), each with its own meaning table.
+
+```swift
+public enum ShapeFixStatus: Int32, Sendable, CaseIterable {
+    case ok = 0
+    case done1 = 1, done2, done3, done4, done5, done6, done7, done8
+    case done = 9
+    case fail1 = 10, fail2, fail3, fail4, fail5, fail6, fail7, fail8
+    case fail = 18
+}
+```
+
+Raw values mirror the real OCCT ordinals exactly (`ShapeExtend_Status.hxx`, pinned V8_0_1):
+
+| Case | Raw | Meaning for `ShapeFix_Shape` |
+|---|---|---|
+| `.ok` | 0 | The shape needed no fix at all. |
+| `.done1` | 1 | Some free edges were fixed. |
+| `.done2` | 2 | Some free wires were fixed. |
+| `.done3` | 3 | Some free faces were fixed. |
+| `.done4` | 4 | Some free shells were fixed. |
+| `.done5` | 5 | Some free solids were fixed. |
+| `.done6` | 6 | Shapes in a compound were fixed. |
+| `.done7` | 7 | Not assigned by `ShapeFix_Shape`. |
+| `.done8` | 8 | Not assigned by `ShapeFix_Shape`. |
+| `.done` | 9 | Any `.done1`...`.done8` flag is set: something was fixed. |
+| `.fail1`...`.fail8` | 10...17 | Not assigned by `ShapeFix_Shape`. |
+| `.fail` | 18 | Any `.fail1`...`.fail8` flag is set: some pass failed. |
+
+- **Note:** #849 — this replaces a previous pair of independently-wrong encodings: `ShapeFixer`'s
+  own `status(Int)` exposed only 3 of the 19 ordinals, and `FaceFixer`'s previous local `Status`
+  enum shifted everything from `.fail1` through `.done` by one ordinal. `FaceFixer.Status` is now a
+  typealias for this type.
 
 ---
 
