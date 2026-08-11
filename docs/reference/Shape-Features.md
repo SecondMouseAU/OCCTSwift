@@ -687,6 +687,7 @@ Uses OCCT's default `Bnd_Box`, which for B-spline and faceted surfaces is the **
 
 - **Returns:** Tuple of min and max AABB corners.
 - **OCCT:** `BRepBndLib::Add` (via `OCCTShapeGetBounds`).
+- **Warning (#834):** For a void/empty shape (e.g. `Shape.compound([])`), `bounds` fabricates `(0,0,0)-(0,0,0)` — indistinguishable from a genuine zero-size shape at the origin, since this is a non-optional tuple with no way to signal "no geometry." Contrast with [`boundingBox`](Document-Transforms.md), which computes the identical `Bnd_Box`/`BRepBndLib::Add` but returns `nil` for the same void shape via an explicit `IsVoid()` guard. If a void shape is reachable at your call site, check `boundingBox` first.
 - **Example:**
   ```swift
   let b = Shape.box(width: 10, height: 5, depth: 3).bounds
@@ -704,6 +705,7 @@ public var size: SIMD3<Double> { get }
 ```
 
 - **Returns:** `bounds.max − bounds.min`.
+- **Warning (#834):** `.zero` for a void/empty shape is a fabricated answer, not a measurement — inherited from `bounds` above.
 
 ---
 
@@ -716,6 +718,7 @@ public var center: SIMD3<Double> { get }
 ```
 
 - **Returns:** `(bounds.min + bounds.max) / 2`.
+- **Warning (#834):** `.zero` for a void/empty shape is a fabricated answer, not a measurement — inherited from `bounds` above.
 
 ---
 

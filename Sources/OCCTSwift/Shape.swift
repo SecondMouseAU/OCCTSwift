@@ -2109,12 +2109,24 @@ public final class Shape: @unchecked Sendable {
     /// reaches a checkpoint to poll.
     ///
     /// Runs the check on a detached background thread against a `deepCopy()` of this shape
-    /// (independent geometry — the standard pattern for concurrent OCCT work; see
-    /// `docs/thread-safety.md`) and waits on the calling thread with a real deadline. If the
-    /// deadline passes first, this returns `nil` immediately and the background computation is
-    /// **abandoned, not cancelled** — it keeps running orphaned on its own thread until it
-    /// eventually completes. That is a deliberate trade (burned CPU for a caller-side wall-clock
-    /// guarantee), the same one the #286 mesher-hang caller accepted.
+    /// and waits on the calling thread with a real deadline. If the deadline passes first, this
+    /// returns `nil` immediately and the background computation is **abandoned, not cancelled** —
+    /// it keeps running orphaned on its own thread until it eventually completes. That is a
+    /// deliberate trade (burned CPU for a caller-side wall-clock guarantee), the same one the
+    /// #286 mesher-hang caller accepted.
+    ///
+    /// - Warning: **Latent thread-safety risk, flagged but not fixed here (#831).** The
+    ///   no-argument instance `deepCopy()` used above gives independent *topology* only — it
+    ///   shares `Geom_Surface`/`Geom_Curve` handles (via `TNaming_CopyShape::CopyTool`) with
+    ///   `self`, not the independent geometry `docs/thread-safety.md` used to (incorrectly)
+    ///   describe it as providing. The orphaned background computation on `probe` and the caller
+    ///   continuing to use `self` after a timeout are therefore two `TopoDS_Shape`s with distinct
+    ///   `TShape` identity but the *same* underlying geometry objects, evaluated concurrently —
+    ///   exactly the shared-adaptor-cache race `docs/thread-safety.md` item 1 warns about. This
+    ///   was verified by reading the OCCT source chain, not reproduced under ThreadSanitizer, so
+    ///   treat it as a well-evidenced risk rather than a confirmed race. Fixing it (e.g. switching
+    ///   to `copy(copyGeometry: true)`, which does clone geometry) is left as a follow-up rather
+    ///   than changed in the PR that found this, to keep that PR's behavior change scoped to docs.
     ///
     /// - Important: `BOPAlgo_ArgumentAnalyzer`'s safety when run on a background thread
     ///   concurrently with unrelated OCCT calls on other threads was verified with a
@@ -2249,6 +2261,16 @@ public final class Shape: @unchecked Sendable {
     ///   (`Bnd_Box::AddOptimal`), or — the unambiguous ground truth — the min/max of ``mesh(linearDeflection:angularDeflection:)``
     ///   vertices. A `threadedShaft` / `threadedHole` solid is bounded *exactly* to its `length` / `depth`;
     ///   `bounds` reporting past that is the hull artifact, not real geometry.
+    ///
+    /// - Warning: **A void/empty shape (e.g. `Shape.compound([])`) fabricates `(0,0,0)-(0,0,0)`**,
+    ///   indistinguishable from a genuine zero-size shape sitting at the origin (#834). Unlike
+    ///   ``boundingBox``, which answers `nil` for the same void shape via an explicit `IsVoid()`
+    ///   check, `bounds` is a non-optional tuple with no way to signal "no geometry" — the two
+    ///   properties compute the identical `Bnd_Box`/`BRepBndLib::Add` but disagree on this one
+    ///   case. `size` and `center` below both derive from `bounds`, so they inherit the same
+    ///   fabrication (`.zero` for a void shape, not distinguishable from a real zero-size one).
+    ///   If a void shape is reachable at your call site, check ``boundingBox`` first rather than
+    ///   trusting `bounds` directly.
     public var bounds: (min: SIMD3<Double>, max: SIMD3<Double>) {
         var minX: Double = 0, minY: Double = 0, minZ: Double = 0
         var maxX: Double = 0, maxY: Double = 0, maxZ: Double = 0
@@ -2256,13 +2278,19 @@ public final class Shape: @unchecked Sendable {
         return (min: SIMD3(minX, minY, minZ), max: SIMD3(maxX, maxY, maxZ))
     }
 
-    /// Size of the bounding box
+    /// Size of the bounding box.
+    ///
+    /// - Warning: `.zero` for a void/empty shape is a fabricated answer, not a measurement — see
+    ///   ``bounds``'s doc comment (#834).
     public var size: SIMD3<Double> {
         let b = bounds
         return b.max - b.min
     }
 
-    /// Center of the bounding box
+    /// Center of the bounding box.
+    ///
+    /// - Warning: `.zero` for a void/empty shape is a fabricated answer, not a measurement — see
+    ///   ``bounds``'s doc comment (#834).
     public var center: SIMD3<Double> {
         let b = bounds
         return (b.min + b.max) / 2

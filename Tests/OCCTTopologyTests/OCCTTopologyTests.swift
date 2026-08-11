@@ -2638,6 +2638,17 @@ struct BRepClass3dTests {
         let state = sphere.classifyPoint(SIMD3(10, 0, 0))
         #expect(state == .outside)
     }
+
+    // #851: the .on boundary case had no coverage on this copy of the classifier, unlike
+    // PointClassificationTests.pointOnBoxFace on Shape.classify(point:) — mirrors that test
+    // exactly, proving the two independent bridge call paths agree at a boundary point after
+    // being unified onto the same BRepClass3d_SolidClassifier mechanism.
+    @Test func pointOnBoxFace() {
+        guard let box = Shape.box(width: 10, height: 10, depth: 10) else { return }
+        // Point on the top face at Z=5 (box extends from -5 to 5 on Z)
+        let state = box.classifyPoint(SIMD3(0, 0, 5), tolerance: 1e-3)
+        #expect(state == .on)
+    }
 }
 
 @Suite("BRepClass FClassifier Tests")

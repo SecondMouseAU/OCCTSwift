@@ -631,6 +631,11 @@ extension Shape {
 
         // self's extent along the axis (project the 8 AABB corners; exact for an axis-aligned
         // cylinder, and the cylinder volume check below rejects anything else).
+        //
+        // #834: shape.bounds fabricates (0,0,0)-(0,0,0) for a void self rather than signaling
+        // "no geometry". Investigated as a flagged consumer and found to already degrade safely:
+        // a void self collapses lo/hi to the same projected value, so `guard hi > lo` below fails
+        // and this returns nil, same as any other malformed input to this private helper.
         let b = self.bounds
         var lo = Double.greatestFiniteMagnitude, hi = -Double.greatestFiniteMagnitude
         for cx in [b.min.x, b.max.x] {

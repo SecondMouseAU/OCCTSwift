@@ -1300,6 +1300,7 @@ public var boundingBox: (min: SIMD3<Double>, max: SIMD3<Double>)?
 
 - **Returns:** `(min, max)` corner pair, or `nil` if the shape is empty.
 - **OCCT:** `OCCTShapeBoundingBox` → `BRepBndLib::Add` / `Bnd_Box`.
+- **Note (#834):** `Shape.bounds` (`Shape-Features.md`) computes the identical `Bnd_Box`/`BRepBndLib::Add`, but is a non-optional tuple that fabricates `(0,0,0)-(0,0,0)` for a void shape instead of signaling it the way `boundingBox` does here. Prefer `boundingBox` when a void shape is possible.
 
 ---
 

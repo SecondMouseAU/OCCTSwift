@@ -44,6 +44,11 @@ extension Drawing {
         var skipped: [String] = []
 
         // --- 1. Overall extents from shape's 3D bounding box ---
+        // #834: shape.bounds fabricates (0,0,0)-(0,0,0) for a void shape rather than signaling
+        // "no geometry" the way shape.boundingBox does. Investigated as a flagged consumer of that
+        // divergence and found to already degrade safely without a guard: all 8 corners collapse
+        // to the same point, so width/height below are both exactly 0 and both dimensions are
+        // skipped via the `> 1e-9` checks, not silently added at a fabricated size.
         let bb3 = shape.bounds
         let corners3D: [SIMD3<Double>] = [
             SIMD3(bb3.min.x, bb3.min.y, bb3.min.z),
