@@ -122,32 +122,38 @@ public final class Face: @unchecked Sendable {
         OCCTFaceIsPlanar(handle)
     }
 
+    /// Shared "fetch the normal, compare its Z component" shape behind all four orientation
+    /// predicates below (#843): `false` when the face has no normal, `test(n.z)` otherwise.
+    private func normalZTest(_ test: (Double) -> Bool) -> Bool {
+        guard let n = normal else { return false }
+        return test(n.z)
+    }
+
     /// Check if the face is horizontal (normal points up or down)
     /// - Parameter tolerance: Angle tolerance in radians (default ~0.5 degrees)
+    ///
+    /// Equivalent to `isUpwardFacing(tolerance:) || isDownwardFacing(tolerance:)`, and
+    /// implemented as exactly that (#843) so the two can never drift out of sync with this one.
     public func isHorizontal(tolerance: Double = 0.01) -> Bool {
-        guard let n = normal else { return false }
-        return abs(n.z) > cos(tolerance)
+        isUpwardFacing(tolerance: tolerance) || isDownwardFacing(tolerance: tolerance)
     }
 
     /// Check if the face is upward-facing (normal points up)
     /// - Parameter tolerance: Angle tolerance in radians (default ~0.5 degrees)
     public func isUpwardFacing(tolerance: Double = 0.01) -> Bool {
-        guard let n = normal else { return false }
-        return n.z > cos(tolerance)
+        normalZTest { $0 > cos(tolerance) }
     }
 
     /// Check if the face is downward-facing (normal points down)
     /// - Parameter tolerance: Angle tolerance in radians (default ~0.5 degrees)
     public func isDownwardFacing(tolerance: Double = 0.01) -> Bool {
-        guard let n = normal else { return false }
-        return n.z < -cos(tolerance)
+        normalZTest { $0 < -cos(tolerance) }
     }
 
     /// Check if the face is vertical (normal is horizontal)
     /// - Parameter tolerance: Angle tolerance in radians (default ~0.5 degrees)
     public func isVertical(tolerance: Double = 0.01) -> Bool {
-        guard let n = normal else { return false }
-        return abs(n.z) < sin(tolerance)
+        normalZTest { abs($0) < sin(tolerance) }
     }
 
     /// Get the Z level of a horizontal planar face
@@ -162,13 +168,12 @@ public final class Face: @unchecked Sendable {
 
     // MARK: - Surface Properties (v0.18.0)
 
-    /// Surface type classification
-    public enum SurfaceType: Int32, Sendable {
-        case plane = 0, cylinder = 1, cone = 2, sphere = 3, torus = 4
-        case bezierSurface = 5, bsplineSurface = 6
-        case surfaceOfRevolution = 7, surfaceOfExtrusion = 8
-        case offsetSurface = 9, other = 10
-    }
+    /// Surface type classification (matches `GeomAbs_SurfaceType`).
+    ///
+    /// The same 11-case classification as ``Surface/SurfaceType`` — this is a typealias for it,
+    /// not a separate declaration, so a face's ``surfaceType`` and its geometry's own
+    /// `Surface.surfaceKind` can never disagree about what case means what ordinal (#850).
+    public typealias SurfaceType = Surface.SurfaceType
 
     /// Principal curvature result
     public struct PrincipalCurvatures: Sendable {
@@ -692,7 +697,7 @@ extension Face {
         let t: OCCTMeshPropsType = (type == .surface) ? OCCTMeshPropsSurface : OCCTMeshPropsVolume
         let r = OCCTMeshPropsCompute(handle, t)
         return MeshPropsResult(mass: r.mass,
-                               centerOfMass: r.mass == 0 ? nil : SIMD3(r.centerX, r.centerY, r.centerZ))
+                               centerOfMass: massCentroid(mass: r.mass, x: r.centerX, y: r.centerY, z: r.centerZ))
     }
 }
 
@@ -721,7 +726,7 @@ extension Face {
     public var surfaceInertia: FaceSurfaceInertia {
         let r = OCCTBRepGPropSinert(handle)
         return FaceSurfaceInertia(area: r.mass,
-                                  centerOfMass: r.mass == 0 ? nil : SIMD3(r.centerX, r.centerY, r.centerZ),
+                                  centerOfMass: massCentroid(mass: r.mass, x: r.centerX, y: r.centerY, z: r.centerZ),
                                   epsilon: 0)
     }
 
@@ -729,7 +734,7 @@ extension Face {
     public func surfaceInertia(epsilon: Double) -> FaceSurfaceInertia {
         let r = OCCTBRepGPropSinertAdaptive(handle, epsilon)
         return FaceSurfaceInertia(area: r.mass,
-                                  centerOfMass: r.mass == 0 ? nil : SIMD3(r.centerX, r.centerY, r.centerZ),
+                                  centerOfMass: massCentroid(mass: r.mass, x: r.centerX, y: r.centerY, z: r.centerZ),
                                   epsilon: r.epsilon)
     }
 }
@@ -751,13 +756,13 @@ extension Face {
     public var volumeInertia: FaceVolumeInertia {
         let r = OCCTBRepGPropVinert(handle)
         return FaceVolumeInertia(volume: r.mass,
-                                 centerOfMass: r.mass == 0 ? nil : SIMD3(r.centerX, r.centerY, r.centerZ))
+                                 centerOfMass: massCentroid(mass: r.mass, x: r.centerX, y: r.centerY, z: r.centerZ))
     }
 
     /// Compute volume inertia with reference plane.
     public func volumeInertia(planeNormal: SIMD3<Double>, planeDistance: Double = 0) -> FaceVolumeInertia {
         let r = OCCTBRepGPropVinertPlane(handle, planeNormal.x, planeNormal.y, planeNormal.z, planeDistance)
         return FaceVolumeInertia(volume: r.mass,
-                                 centerOfMass: r.mass == 0 ? nil : SIMD3(r.centerX, r.centerY, r.centerZ))
+                                 centerOfMass: massCentroid(mass: r.mass, x: r.centerX, y: r.centerY, z: r.centerZ))
     }
 }
