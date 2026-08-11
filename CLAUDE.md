@@ -435,6 +435,9 @@ docs/
 - Wrap **everything** — comprehensive wrapper, leave nothing out
 - Each release should be ~100 new operations
 - Infinite OCCT surfaces must be trimmed before converting to BSpline
+- Stay faithful to OCCT: a legitimate feature that isn't a direct wrap of an OCCT operation belongs
+  in a downstream ecosystem package, not here — see
+  [`okf/policies/scope-boundary.md`](okf/policies/scope-boundary.md)
 
 **Scope note, 2026-08-08.** The second directive is about **wrapping** releases and is left as the
 user wrote it. It does not describe v2.0.0, which is a correctness release adding almost no
