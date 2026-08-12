@@ -2296,6 +2296,74 @@ struct ConstructionAxisTests {
         }
     }
 
+    @Test("alongEdge on a full-circle cylindrical rim resolves to the true rotation axis (#883)")
+    func alongEdgeCylindricalRimUsesRevolutionAxis() {
+        guard let cyl = Shape.cylinder(radius: 5, height: 10),
+              let graph = BRepGraph(shape: cyl) else {
+            Issue.record("cylinder/graph nil"); return
+        }
+        // A rim is a full circle: start == end, so the old secant-of-endpoints computation
+        // was always the zero vector here — this is failure mode 1 from #883.
+        guard let rim = cyl.edges().first(where: { $0.curveType == .circle }),
+              let rimShape = Shape.fromEdge(rim),
+              let node = graph.findNode(for: rimShape), node.kind == .edge else {
+            Issue.record("no circular rim edge found"); return
+        }
+        let edgeRef = TopologyRef.literal(.init(kind: .edge, index: node.index))
+        switch graph.resolve(ConstructionAxis.alongEdge(edgeRef)) {
+        case .success(let ax):
+            #expect(abs(abs(ax.direction.z) - 1.0) < 1e-6)
+        case .failure(let e):
+            Issue.record("expected success (revolution axis), got \(e)")
+        }
+    }
+
+    @Test("alongEdge on a partial cylindrical arc resolves to the axis, not the endpoint chord (#883)")
+    func alongEdgePartialCylinderUsesAxisNotChord() {
+        guard let cyl = Shape.cylinder(radius: 5, height: 10, angle: .pi / 2),
+              let graph = BRepGraph(shape: cyl) else {
+            Issue.record("partial cylinder/graph nil"); return
+        }
+        // A 90-degree arc's own endpoint chord lies in the XY plane (z ~ 0) — this is failure
+        // mode 2 from #883: a plausible-looking but wrong direction. The true rotation axis is
+        // parallel to Z.
+        guard let arc = cyl.edges().first(where: { $0.curveType == .circle && !$0.isClosed3D }),
+              let arcShape = Shape.fromEdge(arc),
+              let node = graph.findNode(for: arcShape), node.kind == .edge else {
+            Issue.record("no partial arc edge found"); return
+        }
+        let edgeRef = TopologyRef.literal(.init(kind: .edge, index: node.index))
+        switch graph.resolve(ConstructionAxis.alongEdge(edgeRef)) {
+        case .success(let ax):
+            #expect(abs(abs(ax.direction.z) - 1.0) < 1e-6)
+        case .failure(let e):
+            Issue.record("expected success (revolution axis), got \(e)")
+        }
+    }
+
+    @Test("alongEdge on a standalone closed circular wire (no adjacent face) fails with degenerate (#887)")
+    func alongEdgeStandaloneCircleNoAdjacentFaceDegenerate() {
+        // A full circle with no adjacent face at all: revolutionAxis(ofEdgeAt:) finds nothing
+        // to redirect to (faces(of:) is empty), so this falls through to the endpoint-secant
+        // path, where start == end for a closed curve — the zero-length branch that #887 found
+        // had no coverage at all.
+        guard let wire = Wire.circle(radius: 5),
+              let wireShape = Shape.fromWire(wire),
+              let graph = BRepGraph(shape: wireShape) else {
+            Issue.record("wire/shape/graph nil"); return
+        }
+        guard let edge = wireShape.edges().first,
+              let edgeShape = Shape.fromEdge(edge),
+              let node = graph.findNode(for: edgeShape), node.kind == .edge else {
+            Issue.record("no edge found"); return
+        }
+        #expect(graph.faces(of: node.index).isEmpty)
+        let edgeRef = TopologyRef.literal(.init(kind: .edge, index: node.index))
+        if case .failure(.degenerate) = graph.resolve(ConstructionAxis.alongEdge(edgeRef)) {} else {
+            Issue.record("expected degenerate")
+        }
+    }
+
     @Test("throughPoints on coincident vertices fails with degenerate")
     func coincidentPointsDegenerate() {
         guard let box = Shape.box(width: 10, height: 10, depth: 10),

@@ -202,6 +202,13 @@ An axis coinciding with a linear edge or the revolution axis of a cylindrical or
 case alongEdge(TopologyRef)
 ```
 
+For a non-linear edge (a circular or elliptical arc, typically), the axis is read off the first
+adjacent face whose `Face.primaryAxis` is a cylinder or cone — the true rotation axis, not a chord
+between the edge's own endpoints. This also resolves a full-circle edge (a hole rim, say), where
+those endpoints coincide and a chord would be the zero vector. A linear edge, or a curved edge with
+no such adjacent face, always resolves to the endpoint-to-endpoint direction; a zero-length result
+there fails with `.degenerate("zero-length edge")`.
+
 ---
 
 ### `ConstructionAxis.normalToFace(face:at:)`
