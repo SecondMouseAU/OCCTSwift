@@ -2278,6 +2278,31 @@ struct ConstructionPlaneTests {
         case .failure(let e): Issue.record("failed: \(e)")
         }
     }
+
+    @Test("tangentToFace on a cylinder uses the vertex's own local normal, not the face UV midpoint (#879)")
+    func tangentToFaceCylinderLocalNormal() {
+        // A radius-5 cylinder's lateral face is periodic in U; its seam runs
+        // through both circle vertices at u=0 (local +X, radial normal (1,0,0)).
+        // The face's own UV midpoint sits at u=π (local -X, radial normal
+        // (-1,0,0)) — the far side of the cylinder. Before #879, tangentToFace
+        // returned that antiparallel UV-midpoint normal instead of the normal at
+        // the requested vertex.
+        guard let cyl = Shape.cylinder(radius: 5, height: 10),
+              let graph = BRepGraph(shape: cyl) else {
+            Issue.record("graph nil"); return
+        }
+        let faceRef = TopologyRef.literal(.init(kind: .face, index: 0))
+        let vertexRef = TopologyRef.literal(.init(kind: .vertex, index: 1))
+        switch graph.resolve(ConstructionPlane.tangentToFace(face: faceRef, at: vertexRef)) {
+        case .success(let p):
+            #expect(abs(p.origin.x - 5) < 1e-6)
+            #expect(abs(p.origin.z) < 1e-6)
+            // The correct local normal points radially outward (+X); the old,
+            // broken UV-midpoint normal pointed radially inward (-X) instead.
+            #expect(p.zAxis.x > 0.99)
+        case .failure(let e): Issue.record("tangentToFace failed: \(e)")
+        }
+    }
 }
 
 @Suite("v0.142 ConstructionAxis resolution")
@@ -2318,6 +2343,41 @@ struct ConstructionAxisTests {
         let b = ConstructionPlane.absolute(origin: SIMD3(0, 0, 5), normal: SIMD3(0, 0, 1))
         if case .failure(.degenerate) = graph.resolve(ConstructionAxis.intersectionOfPlanes(a, b)) {} else {
             Issue.record("expected degenerate")
+        }
+    }
+
+    @Test("normalToFace on a cylinder returns the rotation axis, not the local radial normal (#882)")
+    func normalToFaceCylinderPrimaryAxis() {
+        // The doc promises the cylinder's own rotation axis (here unit Z). Before
+        // #882, normalToFace returned the UV-midpoint radial normal instead,
+        // which lies in the XY plane and has zero Z component.
+        guard let cyl = Shape.cylinder(radius: 5, height: 10),
+              let graph = BRepGraph(shape: cyl) else {
+            Issue.record("graph nil"); return
+        }
+        let faceRef = TopologyRef.literal(.init(kind: .face, index: 0))
+        let vertexRef = TopologyRef.literal(.init(kind: .vertex, index: 1))
+        switch graph.resolve(ConstructionAxis.normalToFace(face: faceRef, at: vertexRef)) {
+        case .success(let ax):
+            #expect(abs(ax.direction.z) > 0.99)
+        case .failure: Issue.record("normalToFace failed")
+        }
+    }
+
+    @Test("normalToFace on a planar face still returns the face normal")
+    func normalToFacePlaneFallback() {
+        // Planes have no primary axis, so normalToFace must fall back to the
+        // UV-midpoint surface normal — the pre-#882 behavior, still correct here.
+        guard let box = Shape.box(width: 10, height: 10, depth: 10),
+              let graph = BRepGraph(shape: box) else {
+            Issue.record("graph nil"); return
+        }
+        let faceRef = TopologyRef.literal(.init(kind: .face, index: 0))
+        let vertexRef = TopologyRef.literal(.init(kind: .vertex, index: 0))
+        switch graph.resolve(ConstructionAxis.normalToFace(face: faceRef, at: vertexRef)) {
+        case .success(let ax):
+            #expect(abs(simd_length(ax.direction) - 1.0) < 1e-6)
+        case .failure: Issue.record("normalToFace failed")
         }
     }
 }
@@ -2380,6 +2440,43 @@ struct ConstructionPointTests {
             #expect(abs(p.y - 4) < 1e-9)
             #expect(abs(p.z - 10) < 1e-9)
         case .failure: Issue.record("intersection failed")
+        }
+    }
+
+    @Test("centroidOfFace on a cylinder matches the real area centroid, not the UV midpoint (#884)")
+    func centroidOfFaceCylinderSurfaceInertia() {
+        // A radius-5, height-10 cylinder's lateral face has its true area centroid
+        // on the cylinder's own axis (x=y=0, z=5) — the UV-midpoint approximation
+        // instead sits a full radius off-axis, on the surface itself.
+        guard let cyl = Shape.cylinder(radius: 5, height: 10),
+              let graph = BRepGraph(shape: cyl) else {
+            Issue.record("graph nil"); return
+        }
+        let faceRef = TopologyRef.literal(.init(kind: .face, index: 0))
+        switch graph.resolve(ConstructionPoint.centroidOfFace(faceRef)) {
+        case .success(let p):
+            let distanceFromAxis = (p.x * p.x + p.y * p.y).squareRoot()
+            #expect(distanceFromAxis < 1e-6)
+            #expect(abs(p.z - 5) < 1e-6)
+        case .failure(let e): Issue.record("centroidOfFace failed: \(e)")
+        }
+    }
+
+    @Test("atEdgeParameter matches Edge.point(atFraction:) for the same edge and t")
+    func atEdgeParameterMatchesFraction() {
+        guard let box = Shape.box(width: 10, height: 10, depth: 10),
+              let graph = BRepGraph(shape: box) else {
+            Issue.record("graph nil"); return
+        }
+        let edgeRef = TopologyRef.literal(.init(kind: .edge, index: 0))
+        guard let edge = graph.shape(nodeKind: .edge, nodeIndex: 0)?.edges().first,
+              let expected = edge.point(atFraction: 0.25) else {
+            Issue.record("edge unavailable"); return
+        }
+        switch graph.resolve(ConstructionPoint.atEdgeParameter(edge: edgeRef, t: 0.25)) {
+        case .success(let p):
+            #expect(simd_length(p - expected) < 1e-9)
+        case .failure(let e): Issue.record("atEdgeParameter failed: \(e)")
         }
     }
 }

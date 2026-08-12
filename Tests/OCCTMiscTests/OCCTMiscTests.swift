@@ -268,6 +268,116 @@ struct AngleHelperTests {
     }
 }
 
+// MARK: - #888: Edge fraction→parameter helper
+
+@Suite("#888 Edge.parameter(atFraction:) / point(atFraction:)")
+struct EdgeFractionParameterTests {
+    @Test("parameter(atFraction:) maps 0/0.5/1 to bounds.first/mid/last")
+    func parameterAtFractionEndpoints() {
+        guard let box = Shape.box(width: 10, height: 10, depth: 10),
+              let edge = box.edges().first,
+              let bounds = edge.parameterBounds else {
+            Issue.record("edge/bounds nil"); return
+        }
+        #expect(abs(edge.parameter(atFraction: 0)! - bounds.first) < 1e-9)
+        #expect(abs(edge.parameter(atFraction: 1)! - bounds.last) < 1e-9)
+        let mid = bounds.first + (bounds.last - bounds.first) * 0.5
+        #expect(abs(edge.parameter(atFraction: 0.5)! - mid) < 1e-9)
+    }
+
+    @Test("parameter(atFraction:) clamps out-of-range fractions to [0, 1]")
+    func parameterAtFractionClamps() {
+        guard let box = Shape.box(width: 10, height: 10, depth: 10),
+              let edge = box.edges().first,
+              let bounds = edge.parameterBounds else {
+            Issue.record("edge/bounds nil"); return
+        }
+        #expect(abs(edge.parameter(atFraction: -5)! - bounds.first) < 1e-9)
+        #expect(abs(edge.parameter(atFraction: 5)! - bounds.last) < 1e-9)
+    }
+
+    @Test("point(atFraction:) matches point(at: parameter(atFraction:))")
+    func pointAtFractionMatchesManualParam() {
+        guard let box = Shape.box(width: 10, height: 10, depth: 10),
+              let edge = box.edges().first else {
+            Issue.record("edge nil"); return
+        }
+        for t in [0.0, 0.25, 0.5, 0.75, 1.0] {
+            guard let param = edge.parameter(atFraction: t),
+                  let expected = edge.point(at: param),
+                  let actual = edge.point(atFraction: t) else {
+                Issue.record("nil point at t=\(t)"); continue
+            }
+            #expect(simd_length(actual - expected) < 1e-9)
+        }
+    }
+}
+
+// MARK: - #889: Face UV-midpoint sample
+
+@Suite("#889 Face.uvMidpointSample()")
+struct FaceUVMidpointSampleTests {
+    @Test("uvMidpointSample matches point/normal at the manual UV midpoint")
+    func matchesManualUVMidpoint() {
+        guard let box = Shape.box(width: 10, height: 10, depth: 10),
+              let face = box.faces().first,
+              let bounds = face.uvBounds else {
+            Issue.record("face/bounds nil"); return
+        }
+        let uMid = (bounds.uMin + bounds.uMax) / 2
+        let vMid = (bounds.vMin + bounds.vMax) / 2
+        guard let expectedPoint = face.point(atU: uMid, v: vMid),
+              let expectedNormal = face.normal(atU: uMid, v: vMid),
+              let sample = face.uvMidpointSample() else {
+            Issue.record("sample nil"); return
+        }
+        #expect(simd_length(sample.point - expectedPoint) < 1e-9)
+        #expect(simd_length(sample.normal - expectedNormal) < 1e-9)
+    }
+
+    @Test("isCoplanar: a face is coplanar with itself")
+    func coplanarWithSelf() {
+        guard let box = Shape.box(width: 10, height: 10, depth: 10),
+              let face = box.faces().first else {
+            Issue.record("face nil"); return
+        }
+        #expect(face.isCoplanar(with: face) == true)
+    }
+
+    @Test("isCoplanar: parallel but offset faces are not coplanar")
+    func parallelOffsetFacesNotCoplanar() {
+        guard let box = Shape.box(width: 10, height: 10, depth: 10) else {
+            Issue.record("box nil"); return
+        }
+        let faces = box.faces()
+        // Find a parallel-but-not-identical pair (a box's opposite faces).
+        for i in 0..<faces.count {
+            for j in 0..<faces.count where i != j {
+                guard let parallel = faces[i].isParallel(to: faces[j]), parallel else { continue }
+                // Opposite box faces are parallel and 10 units apart, never coplanar.
+                #expect(faces[i].isCoplanar(with: faces[j]) == false)
+                return
+            }
+        }
+        Issue.record("no parallel face pair found")
+    }
+
+    @Test("revolutionProperties on a cone matches primaryAxis and has positive radius")
+    func revolutionPropertiesOnCone() {
+        guard let cone = Shape.cone(bottomRadius: 5, topRadius: 0, height: 10) else {
+            Issue.record("cone nil"); return
+        }
+        var found = false
+        for face in cone.faces() where face.surfaceType == .cone {
+            guard let props = face.revolutionProperties, let axis = face.primaryAxis else { continue }
+            #expect(props.radius > 0)
+            #expect(simd_length(props.axis.direction - axis.direction) < 1e-9)
+            found = true
+        }
+        #expect(found)
+    }
+}
+
 // MARK: - v0.143 D4: Multi-leaf .createdBy
 
 @Suite("v0.143 Multi-leaf createdBy")

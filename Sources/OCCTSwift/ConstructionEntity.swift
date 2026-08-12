@@ -1,6 +1,6 @@
 import Foundation
-import simd
 import OCCTBridge
+import simd
 
 // MARK: - Construction Geometry (#72 Phase 2)
 //
@@ -17,19 +17,22 @@ import OCCTBridge
 /// A rigid-body placement in 3D space — origin plus an orthonormal basis.
 public struct Placement: Sendable, Hashable {
     public let origin: SIMD3<Double>
-    public let xAxis: SIMD3<Double>   // unit
-    public let yAxis: SIMD3<Double>   // unit
-    public let zAxis: SIMD3<Double>   // unit (plane normal for planes)
+    public let xAxis: SIMD3<Double>  // unit
+    public let yAxis: SIMD3<Double>  // unit
+    public let zAxis: SIMD3<Double>  // unit (plane normal for planes)
 
-    public init(origin: SIMD3<Double>, xAxis: SIMD3<Double>, yAxis: SIMD3<Double>, zAxis: SIMD3<Double>) {
+    public init(
+        origin: SIMD3<Double>, xAxis: SIMD3<Double>, yAxis: SIMD3<Double>, zAxis: SIMD3<Double>
+    ) {
         self.origin = origin
         self.xAxis = xAxis
         self.yAxis = yAxis
         self.zAxis = zAxis
     }
 
-    /// Build a placement from a point on the plane and a normal. Picks
-    /// deterministic x/y axes perpendicular to the normal.
+    /// Build a placement from a point on the plane and a normal.
+    ///
+    /// Picks deterministic x/y axes perpendicular to the normal.
     public init(origin: SIMD3<Double>, normal: SIMD3<Double>) {
         let z = simd_normalize(normal)
         let worldUp = SIMD3<Double>(0, 0, 1)
@@ -43,8 +46,9 @@ public struct Placement: Sendable, Hashable {
     }
 }
 
-/// Fusion 360-style recipe for a construction plane. Each variant carries its
-/// defining inputs as `TopologyRef`s, resolved against the graph at use time.
+/// Fusion 360-style recipe for a construction plane.
+///
+/// Each variant carries its defining inputs as `TopologyRef`s, resolved against the graph at use time.
 public indirect enum ConstructionPlane: Sendable, Hashable {
     case absolute(origin: SIMD3<Double>, normal: SIMD3<Double>)
 
@@ -98,24 +102,28 @@ public indirect enum ConstructionPoint: Sendable, Hashable {
 
 public enum ConstructionResolutionError: Error, Sendable {
     case topology(TopologyResolutionError)
-    case notApplicable(String)               // e.g. "face is not planar"
-    case degenerate(String)                  // e.g. "parallel planes"
+    case notApplicable(String)  // e.g. "face is not planar"
+    case degenerate(String)  // e.g. "parallel planes"
     case missingGeometry(BRepGraph.NodeRef)
 }
 
 extension BRepGraph {
-    public func resolve(_ plane: ConstructionPlane) -> Result<Placement, ConstructionResolutionError> {
+    public func resolve(_ plane: ConstructionPlane) -> Result<
+        Placement, ConstructionResolutionError
+    > {
         switch plane {
         case .absolute(let origin, let normal):
             return .success(Placement(origin: origin, normal: normal))
 
         case .offsetFromFace(let faceRef, let distance):
             return resolveFaceOrigin(faceRef).flatMap { (origin, normal) in
-                .success(Placement(origin: origin + distance * simd_normalize(normal), normal: normal))
+                .success(
+                    Placement(origin: origin + distance * simd_normalize(normal), normal: normal))
             }
 
         case .throughAxis(let axisRef, let angleDeg):
-            return resolveEdgeDirection(axisRef).flatMap { (anchor, dir) -> Result<Placement, ConstructionResolutionError> in
+            return resolveEdgeDirection(axisRef).flatMap {
+                (anchor, dir) -> Result<Placement, ConstructionResolutionError> in
                 // Rotate a perpendicular-to-dir reference by angleDeg around dir.
                 let dirN = simd_normalize(dir)
                 let worldUp = abs(dirN.z) < 0.9 ? SIMD3<Double>(0, 0, 1) : SIMD3<Double>(0, 1, 0)
@@ -127,9 +135,10 @@ extension BRepGraph {
             }
 
         case .tangentToFace(let faceRef, let atRef):
-            return resolveVertexPoint(atRef).flatMap { (point) -> Result<Placement, ConstructionResolutionError> in
-                return resolveFaceOrigin(faceRef).flatMap { (_, normal) in
-                    .success(Placement(origin: point, normal: normal))
+            return resolveVertexPoint(atRef).flatMap {
+                point -> Result<Placement, ConstructionResolutionError> in
+                resolveFaceNormal(faceRef, at: point).map { normal in
+                    Placement(origin: point, normal: normal)
                 }
             }
 
@@ -137,9 +146,10 @@ extension BRepGraph {
             return resolveFaceOrigin(a).flatMap { (oA, nA) in
                 resolveFaceOrigin(b).flatMap { (oB, nB) in
                     let origin = (oA + oB) / 2
-                    let avgNormal = simd_length_squared(nA + nB) > 1e-12
+                    let avgNormal =
+                        simd_length_squared(nA + nB) > 1e-12
                         ? simd_normalize(nA + nB)
-                        : simd_normalize(nA - nB)   // antiparallel faces — use either normal
+                        : simd_normalize(nA - nB)  // antiparallel faces — use either normal
                     return .success(Placement(origin: origin, normal: avgNormal))
                 }
             }
@@ -147,7 +157,8 @@ extension BRepGraph {
         case .byThreePoints(let a, let b, let c):
             return resolveVertexPoint(a).flatMap { pA in
                 resolveVertexPoint(b).flatMap { pB in
-                    resolveVertexPoint(c).flatMap { pC -> Result<Placement, ConstructionResolutionError> in
+                    resolveVertexPoint(c).flatMap {
+                        pC -> Result<Placement, ConstructionResolutionError> in
                         let u = pB - pA
                         let v = pC - pA
                         let n = simd_cross(u, v)
@@ -166,7 +177,9 @@ extension BRepGraph {
         }
     }
 
-    public func resolve(_ axis: ConstructionAxis) -> Result<(origin: SIMD3<Double>, direction: SIMD3<Double>), ConstructionResolutionError> {
+    public func resolve(_ axis: ConstructionAxis) -> Result<
+        (origin: SIMD3<Double>, direction: SIMD3<Double>), ConstructionResolutionError
+    > {
         switch axis {
         case .absolute(let origin, let direction):
             return .success((origin, simd_normalize(direction)))
@@ -175,15 +188,19 @@ extension BRepGraph {
             return resolveEdgeDirection(edgeRef)
 
         case .normalToFace(let faceRef, let atRef):
-            return resolveFaceOrigin(faceRef).flatMap { (_, normal) in
+            return resolveFaceAxisDirection(faceRef).flatMap { direction in
                 resolveVertexPoint(atRef).map { anchor in
-                    (anchor, simd_normalize(normal))
+                    (anchor, direction)
                 }
             }
 
         case .throughPoints(let a, let b):
             return resolveVertexPoint(a).flatMap { pA in
-                resolveVertexPoint(b).flatMap { pB -> Result<(origin: SIMD3<Double>, direction: SIMD3<Double>), ConstructionResolutionError> in
+                resolveVertexPoint(b).flatMap {
+                    pB -> Result<
+                        (origin: SIMD3<Double>, direction: SIMD3<Double>),
+                        ConstructionResolutionError
+                    > in
                     let d = pB - pA
                     if simd_length(d) < 1e-9 {
                         return .failure(.degenerate("points coincide"))
@@ -194,7 +211,11 @@ extension BRepGraph {
 
         case .intersectionOfPlanes(let planeA, let planeB):
             return resolve(planeA).flatMap { pA in
-                resolve(planeB).flatMap { pB -> Result<(origin: SIMD3<Double>, direction: SIMD3<Double>), ConstructionResolutionError> in
+                resolve(planeB).flatMap {
+                    pB -> Result<
+                        (origin: SIMD3<Double>, direction: SIMD3<Double>),
+                        ConstructionResolutionError
+                    > in
                     let d = simd_cross(pA.zAxis, pB.zAxis)
                     if simd_length(d) < 1e-9 {
                         return .failure(.degenerate("planes are parallel"))
@@ -209,7 +230,9 @@ extension BRepGraph {
         }
     }
 
-    public func resolve(_ point: ConstructionPoint) -> Result<SIMD3<Double>, ConstructionResolutionError> {
+    public func resolve(_ point: ConstructionPoint) -> Result<
+        SIMD3<Double>, ConstructionResolutionError
+    > {
         switch point {
         case .absolute(let p):
             return .success(p)
@@ -221,7 +244,7 @@ extension BRepGraph {
             return resolveEdgePointAndTangent(ref, t: 0.5).map(\.0)
 
         case .centroidOfFace(let ref):
-            return resolveFaceOrigin(ref).map(\.0)
+            return resolveFaceCentroid(ref)
 
         case .atEdgeParameter(let ref, let t):
             return resolveEdgePointAndTangent(ref, t: t).map(\.0)
@@ -245,46 +268,120 @@ extension BRepGraph {
 
     // MARK: - Internal geometric helpers (TopologyRef → 3D data)
 
-    private func unwrapTopology(_ ref: TopologyRef) -> Result<NodeRef, ConstructionResolutionError> {
+    private func unwrapTopology(_ ref: TopologyRef) -> Result<NodeRef, ConstructionResolutionError>
+    {
         switch resolve(ref) {
         case .success(let n): return .success(n)
         case .failure(let e): return .failure(.topology(e))
         }
     }
 
-    private func resolveFaceOrigin(_ ref: TopologyRef) -> Result<(SIMD3<Double>, SIMD3<Double>), ConstructionResolutionError> {
-        return unwrapTopology(ref).flatMap { node -> Result<(SIMD3<Double>, SIMD3<Double>), ConstructionResolutionError> in
+    /// Resolves `ref` to a face node, failing with `.notApplicable`/`.missingGeometry` as appropriate.
+    ///
+    /// Shared by every face-based resolver below.
+    private func resolveFace(_ ref: TopologyRef) -> Result<
+        (node: NodeRef, face: Face), ConstructionResolutionError
+    > {
+        return unwrapTopology(ref).flatMap {
+            node -> Result<(node: NodeRef, face: Face), ConstructionResolutionError> in
             guard node.kind == .face else {
                 return .failure(.notApplicable("expected a face, got \(node.kind)"))
             }
             guard let shape = shape(nodeKind: node.kind, nodeIndex: node.index),
-                  let face = shape.faces().first else {
+                let face = shape.faces().first
+            else {
                 return .failure(.missingGeometry(node))
             }
-            // Centroid via UV mid evaluation; primary axis → normal.
-            guard let bounds = face.uvBounds else {
-                return .failure(.missingGeometry(node))
-            }
-            let uMid = (bounds.uMin + bounds.uMax) / 2
-            let vMid = (bounds.vMin + bounds.vMax) / 2
-            guard let origin = face.point(atU: uMid, v: vMid),
-                  let normal = face.normal(atU: uMid, v: vMid) else {
-                return .failure(.missingGeometry(node))
-            }
-            return .success((origin, normal))
+            return .success((node, face))
         }
     }
 
-    private func resolveEdgeDirection(_ ref: TopologyRef) -> Result<(origin: SIMD3<Double>, direction: SIMD3<Double>), ConstructionResolutionError> {
-        return unwrapTopology(ref).flatMap { node -> Result<(origin: SIMD3<Double>, direction: SIMD3<Double>), ConstructionResolutionError> in
+    /// Face-representative point + normal, sampled at the face's UV-domain midpoint.
+    ///
+    /// Used by `.offsetFromFace` and `.midPlane`, which genuinely want a
+    /// face-representative sample rather than a point-specific value.
+    private func resolveFaceOrigin(_ ref: TopologyRef) -> Result<
+        (SIMD3<Double>, SIMD3<Double>), ConstructionResolutionError
+    > {
+        return resolveFace(ref).flatMap {
+            node, face -> Result<(SIMD3<Double>, SIMD3<Double>), ConstructionResolutionError> in
+            guard let sample = face.uvMidpointSample() else {
+                return .failure(.missingGeometry(node))
+            }
+            return .success((sample.point, sample.normal))
+        }
+    }
+
+    /// The surface normal at the given point's own projected location on the face.
+    ///
+    /// Used by `.tangentToFace` so the plane is tangent at the requested point, not
+    /// at the face's unrelated UV midpoint (#879).
+    private func resolveFaceNormal(_ ref: TopologyRef, at point: SIMD3<Double>) -> Result<
+        SIMD3<Double>, ConstructionResolutionError
+    > {
+        return resolveFace(ref).flatMap {
+            node, face -> Result<SIMD3<Double>, ConstructionResolutionError> in
+            guard let projection = face.project(point: point),
+                let normal = face.normal(atU: projection.u, v: projection.v)
+            else {
+                return .failure(.missingGeometry(node))
+            }
+            return .success(normal)
+        }
+    }
+
+    /// The direction the normalToFace doc promises.
+    ///
+    /// The surface's own axis of revolution (`Face.primaryAxis`) for
+    /// cylindrical/conical/spherical/toroidal/revolved/extruded faces, falling back
+    /// to the UV-midpoint surface normal for planes and free-form faces, which
+    /// have no such axis (#882).
+    private func resolveFaceAxisDirection(_ ref: TopologyRef) -> Result<
+        SIMD3<Double>, ConstructionResolutionError
+    > {
+        return resolveFace(ref).flatMap {
+            node, face -> Result<SIMD3<Double>, ConstructionResolutionError> in
+            if let axis = face.primaryAxis {
+                return .success(simd_normalize(axis.direction))
+            }
+            guard let sample = face.uvMidpointSample() else {
+                return .failure(.missingGeometry(node))
+            }
+            return .success(simd_normalize(sample.normal))
+        }
+    }
+
+    /// The face's real area centroid (`Face.surfaceInertia.centerOfMass`) — the
+    /// same quantity `ShapeMeasurements.measure()` reports for the same face,
+    /// not the UV-midpoint approximation `resolveFaceOrigin` uses (#884).
+    private func resolveFaceCentroid(_ ref: TopologyRef) -> Result<
+        SIMD3<Double>, ConstructionResolutionError
+    > {
+        return resolveFace(ref).flatMap {
+            _, face -> Result<SIMD3<Double>, ConstructionResolutionError> in
+            guard let centroid = face.surfaceInertia.centerOfMass else {
+                return .failure(.degenerate("face has zero area"))
+            }
+            return .success(centroid)
+        }
+    }
+
+    private func resolveEdgeDirection(_ ref: TopologyRef) -> Result<
+        (origin: SIMD3<Double>, direction: SIMD3<Double>), ConstructionResolutionError
+    > {
+        return unwrapTopology(ref).flatMap {
+            node -> Result<
+                (origin: SIMD3<Double>, direction: SIMD3<Double>), ConstructionResolutionError
+            > in
             guard node.kind == .edge else {
                 return .failure(.notApplicable("expected an edge, got \(node.kind)"))
             }
             guard let shape = shape(nodeKind: node.kind, nodeIndex: node.index),
-                  let edge = shape.edges().first,
-                  let bounds = edge.parameterBounds,
-                  let start = edge.point(at: bounds.first),
-                  let end = edge.point(at: bounds.last) else {
+                let edge = shape.edges().first,
+                let bounds = edge.parameterBounds,
+                let start = edge.point(at: bounds.first),
+                let end = edge.point(at: bounds.last)
+            else {
                 return .failure(.missingGeometry(node))
             }
             let dir = end - start
@@ -295,30 +392,34 @@ extension BRepGraph {
         }
     }
 
-    private func resolveEdgePointAndTangent(_ ref: TopologyRef, t: Double) -> Result<(SIMD3<Double>, SIMD3<Double>), ConstructionResolutionError> {
-        return unwrapTopology(ref).flatMap { node -> Result<(SIMD3<Double>, SIMD3<Double>), ConstructionResolutionError> in
+    private func resolveEdgePointAndTangent(_ ref: TopologyRef, t: Double) -> Result<
+        (SIMD3<Double>, SIMD3<Double>), ConstructionResolutionError
+    > {
+        return unwrapTopology(ref).flatMap {
+            node -> Result<(SIMD3<Double>, SIMD3<Double>), ConstructionResolutionError> in
             guard node.kind == .edge else {
                 return .failure(.notApplicable("expected an edge, got \(node.kind)"))
             }
             guard let shape = shape(nodeKind: node.kind, nodeIndex: node.index),
-                  let edge = shape.edges().first,
-                  let bounds = edge.parameterBounds else {
-                return .failure(.missingGeometry(node))
-            }
-            let clampedT = max(0, min(1, t))
-            let param = bounds.first + (bounds.last - bounds.first) * clampedT
-            guard let point = edge.point(at: param),
-                  let tangent = edge.tangent(at: param) else {
+                let edge = shape.edges().first,
+                let param = edge.parameter(atFraction: t),
+                let point = edge.point(at: param),
+                let tangent = edge.tangent(at: param)
+            else {
                 return .failure(.missingGeometry(node))
             }
             return .success((point, simd_normalize(tangent)))
         }
     }
 
-    private func resolveVertexPoint(_ ref: TopologyRef) -> Result<SIMD3<Double>, ConstructionResolutionError> {
-        return unwrapTopology(ref).flatMap { node -> Result<SIMD3<Double>, ConstructionResolutionError> in
+    private func resolveVertexPoint(_ ref: TopologyRef) -> Result<
+        SIMD3<Double>, ConstructionResolutionError
+    > {
+        return unwrapTopology(ref).flatMap {
+            node -> Result<SIMD3<Double>, ConstructionResolutionError> in
             guard node.kind == .vertex else {
-                // Accept a face ref too — use its centroid — for convenience in byThreePoints etc.
+                // Accept a face ref too — use its UV-midpoint sample, not a true
+                // centroid (see resolveFaceCentroid) — for convenience in byThreePoints etc.
                 if node.kind == .face {
                     return resolveFaceOrigin(ref).map(\.0)
                 }
@@ -327,7 +428,9 @@ extension BRepGraph {
             guard let shape = shape(nodeKind: node.kind, nodeIndex: node.index) else {
                 return .failure(.missingGeometry(node))
             }
-            var x: Double = 0, y: Double = 0, z: Double = 0
+            var x: Double = 0
+            var y: Double = 0
+            var z: Double = 0
             OCCTShapeVertexPoint(shape.handle, &x, &y, &z)
             return .success(SIMD3(x, y, z))
         }
@@ -338,14 +441,16 @@ extension BRepGraph {
 
 extension BRepGraph {
     /// Indices of descendant nodes of a given kind from a root node.
+    ///
     /// Complements the existing `childCount(rootKind:rootIndex:targetKind:)`.
     public func childIndices(rootKind: NodeKind, rootIndex: Int, targetKind: NodeKind) -> [Int] {
         let total = childCount(rootKind: rootKind, rootIndex: rootIndex, targetKind: targetKind)
         guard total > 0 else { return [] }
         var buf = [Int32](repeating: 0, count: total)
         let n = buf.withUnsafeMutableBufferPointer { bp in
-            OCCTBRepGraphChildIndices(handle, rootKind.rawValue, Int32(rootIndex),
-                                       targetKind.rawValue, bp.baseAddress!, Int32(total))
+            OCCTBRepGraphChildIndices(
+                handle, rootKind.rawValue, Int32(rootIndex),
+                targetKind.rawValue, bp.baseAddress!, Int32(total))
         }
         return (0..<Int(n)).map { Int(buf[$0]) }
     }

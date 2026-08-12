@@ -110,6 +110,10 @@ case offsetFromFace(face: TopologyRef, distance: Double)
   - `face` — topology reference resolving to a face node.
   - `distance` — signed offset along the outward face normal (positive = outward).
 
+The face's own point/normal come from its UV-domain midpoint (`Face.uvMidpointSample()`), a
+face-representative sample — appropriate here, since this case wants a plane parallel to the whole
+face rather than tangent at a specific point (contrast `tangentToFace` below, #879).
+
 ---
 
 ### `ConstructionPlane.throughAxis(axis:angleDeg:)`
@@ -140,6 +144,20 @@ case tangentToFace(face: TopologyRef, at: TopologyRef)
   - `face` — topology reference resolving to the face.
   - `at` — topology reference resolving to a vertex on that face.
 
+The normal is evaluated at `at`'s own projected UV location on `face` (via `Face.project(point:)` +
+`Face.normal(atU:v:)`), not the face's UV-domain midpoint — so on a curved face (cylinder, cone,
+sphere, torus, freeform) the plane is genuinely tangent at the requested point, not just
+coincidentally correct the way a planar face makes any point's normal agree with any other's (#879).
+
+```swift
+// Tangent to a cylindrical face at a specific vertex — the plane's normal
+// follows the vertex's own local surface normal, not the face's midpoint.
+let plane = ConstructionPlane.tangentToFace(face: cylindricalFaceRef, at: vertexRef)
+if case .success(let p) = graph.resolve(plane) {
+    print(p.zAxis)   // the true local tangent-plane normal at `at`
+}
+```
+
 ---
 
 ### `ConstructionPlane.midPlane(_:_:)`
@@ -150,7 +168,9 @@ A midplane equidistant between two parallel faces.
 case midPlane(TopologyRef, TopologyRef)
 ```
 
-The normal is the average (or either half-normal for antiparallel faces) of the two face normals.
+The normal is the average (or either half-normal for antiparallel faces) of the two face normals,
+each taken from `Face.uvMidpointSample()` — a face-representative sample, appropriate here since
+both faces contribute as wholes rather than at a specific point.
 
 ---
 
@@ -212,7 +232,19 @@ An axis perpendicular to a face, anchored at a vertex.
 case normalToFace(face: TopologyRef, at: TopologyRef)
 ```
 
-For planar faces the direction is the face normal; for cylindrical faces it is the rotation axis.
+The direction comes from `Face.primaryAxis` when the face has one — cylindrical, conical,
+spherical, toroidal, surface-of-revolution, and surface-of-extrusion faces — so it is the surface's
+own constant axis of revolution, not a per-point sample (#882). For planar and free-form faces,
+which have no such axis, it falls back to the face's UV-midpoint surface normal.
+
+```swift
+// On a cylindrical face this resolves to the cylinder's own axis (constant
+// everywhere on the face), not the radial normal at any particular point.
+let axis = ConstructionAxis.normalToFace(face: cylindricalFaceRef, at: vertexRef)
+if case .success(let a) = graph.resolve(axis) {
+    print(a.direction)   // the cylinder's rotation axis
+}
+```
 
 ---
 
@@ -278,11 +310,18 @@ case midpointOfEdge(TopologyRef)
 
 ### `ConstructionPoint.centroidOfFace(_:)`
 
-The UV-centroid of a face's parametric bounds, evaluated on the surface.
+The face's real area centroid.
 
 ```swift
 case centroidOfFace(TopologyRef)
 ```
+
+Computed via `Face.surfaceInertia.centerOfMass` — the same moment-based integration
+`Shape.measure().faceCentroids` uses — not a UV-parameter midpoint (#884). For a non-uniformly
+parameterized surface (a sphere, cone, or general NURBS face) this can differ substantially from a
+UV-midpoint sample, and for a closed or symmetric face the true centroid can lie off the surface
+entirely (e.g. at a full sphere's center). Fails with `.degenerate("face has zero area")` rather
+than reporting a fabricated point when the face has no area to have a centroid.
 
 ---
 

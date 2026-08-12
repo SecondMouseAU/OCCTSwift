@@ -33,7 +33,6 @@ Sources/OCCTSwift/Color.swift
 Sources/OCCTSwift/CompBezierConverter.swift
 Sources/OCCTSwift/Conic2D.swift
 Sources/OCCTSwift/ConstructionContext.swift
-Sources/OCCTSwift/ConstructionEntity.swift
 Sources/OCCTSwift/ConstructionLayer.swift
 Sources/OCCTSwift/ContapContourResult.swift
 Sources/OCCTSwift/Continuity.swift
@@ -114,7 +113,6 @@ Sources/OCCTSwift/MathDimension.swift
 Sources/OCCTSwift/MathLibrary.swift
 Sources/OCCTSwift/MathSolver.swift
 Sources/OCCTSwift/Matrix2D.swift
-Sources/OCCTSwift/MeasurementHelpers.swift
 Sources/OCCTSwift/MedialAxis.swift
 Sources/OCCTSwift/MemInfo.swift
 Sources/OCCTSwift/Mesh.swift

@@ -11,24 +11,44 @@ import simd
 // MARK: - Angles
 
 extension Edge {
-    /// Angle between this edge's tangent and another edge's tangent, measured at
-    /// their respective mid-parameters. Returns radians in [0, π].
+    /// This edge's curve parameter at a normalized `[0, 1]` fraction of its
+    /// parameter bounds. `fraction` is clamped to `[0, 1]` first.
     ///
-    /// For straight edges the result is the line-line angle. For curved edges
-    /// it's the angle between the mid-curve tangents — useful as an approximation
-    /// but note the angle varies along a curve; pass `atParameter:` for a
-    /// specific point.
+    /// Internal: the shared fraction→parameter idiom `resolveEdgePointAndTangent`
+    /// (`ConstructionEntity.swift`) and `angle(to:atParameter:)` below both used to
+    /// inline separately (#888).
+    internal func parameter(atFraction fraction: Double) -> Double? {
+        guard let bounds = parameterBounds else { return nil }
+        let clamped = max(0, min(1, fraction))
+        return bounds.first + (bounds.last - bounds.first) * clamped
+    }
+
+    /// This edge's 3D point at a normalized `[0, 1]` fraction of its parameter bounds.
+    ///
+    /// Convenience over `parameter(atFraction:)` + `point(at:)`.
+    internal func point(atFraction fraction: Double) -> SIMD3<Double>? {
+        guard let param = parameter(atFraction: fraction) else { return nil }
+        return point(at: param)
+    }
+
+    /// Angle between this edge's tangent and another edge's tangent, measured at
+    /// their respective mid-parameters.
+    ///
+    /// Returns radians in [0, π]. For straight edges the result is the line-line
+    /// angle. For curved edges it's the angle between the mid-curve tangents —
+    /// useful as an approximation but note the angle varies along a curve; pass
+    /// `atParameter:` for a specific point.
     public func angle(to other: Edge, atParameter t: Double = 0.5) -> Double? {
-        guard let bounds = parameterBounds, let otherBounds = other.parameterBounds else { return nil }
-        let clamped = max(0, min(1, t))
-        let p = bounds.first + (bounds.last - bounds.first) * clamped
-        let op = otherBounds.first + (otherBounds.last - otherBounds.first) * clamped
+        guard let p = parameter(atFraction: t), let op = other.parameter(atFraction: t) else {
+            return nil
+        }
         guard let t1 = tangent(at: p), let t2 = other.tangent(at: op) else { return nil }
         return unsignedAngle(between: t1, and: t2)
     }
 
-    /// Whether this edge is parallel to another at the given tangent-comparison
-    /// tolerance (radians). Convenience over `angle(to:)`.
+    /// Whether this edge is parallel to another at the given tangent-comparison tolerance (radians).
+    ///
+    /// Convenience over `angle(to:)`.
     public func isParallel(to other: Edge, toleranceRadians: Double = 1e-4) -> Bool? {
         guard let a = angle(to: other) else { return nil }
         return a < toleranceRadians || (.pi - a) < toleranceRadians
@@ -43,24 +63,38 @@ extension Edge {
 }
 
 extension Face {
-    /// Angle between this face's normal and another face's normal, evaluated at
-    /// the UV midpoint of each. Returns radians in [0, π]. For two planar faces
-    /// this is the dihedral angle + π/2 correction; for curved faces it's a
-    /// point estimate.
-    public func angle(to other: Face) -> Double? {
+    /// This face's point + normal sampled at its UV-domain midpoint — a cheap,
+    /// always-available representative sample, not the area centroid (see
+    /// `surfaceInertia.centerOfMass` for that).
+    ///
+    /// Internal: this formula used to be reimplemented inline at 7 call sites
+    /// across `ConstructionEntity.swift` and this file (#889).
+    internal func uvMidpointSample() -> (point: SIMD3<Double>, normal: SIMD3<Double>)? {
         guard let bounds = uvBounds else { return nil }
         let uMid = (bounds.uMin + bounds.uMax) / 2
         let vMid = (bounds.vMin + bounds.vMax) / 2
-        guard let n1 = normal(atU: uMid, v: vMid) else { return nil }
-        guard let otherBounds = other.uvBounds else { return nil }
-        let uM2 = (otherBounds.uMin + otherBounds.uMax) / 2
-        let vM2 = (otherBounds.vMin + otherBounds.vMax) / 2
-        guard let n2 = other.normal(atU: uM2, v: vM2) else { return nil }
-        return unsignedAngle(between: n1, and: n2)
+        guard let samplePoint = point(atU: uMid, v: vMid),
+            let sampleNormal = normal(atU: uMid, v: vMid)
+        else {
+            return nil
+        }
+        return (samplePoint, sampleNormal)
     }
 
-    /// Whether this face is parallel to another at the given normal-comparison
-    /// tolerance (radians). Convenience over `angle(to:)`.
+    /// Angle between this face's normal and another face's normal, evaluated at the UV midpoint of each.
+    ///
+    /// Returns radians in [0, π]. For two planar faces this is the dihedral angle
+    /// + π/2 correction; for curved faces it's a point estimate.
+    public func angle(to other: Face) -> Double? {
+        guard let sample = uvMidpointSample(), let otherSample = other.uvMidpointSample() else {
+            return nil
+        }
+        return unsignedAngle(between: sample.normal, and: otherSample.normal)
+    }
+
+    /// Whether this face is parallel to another at the given normal-comparison tolerance (radians).
+    ///
+    /// Convenience over `angle(to:)`.
     public func isParallel(to other: Face, toleranceRadians: Double = 1e-4) -> Bool? {
         guard let a = angle(to: other) else { return nil }
         return a < toleranceRadians || (.pi - a) < toleranceRadians
@@ -73,50 +107,51 @@ extension Face {
     }
 
     /// Whether this face is coplanar with another — normals parallel AND origin
-    /// lies on the other face's plane.
+    /// lies on the other face's plane. `nil` (not `false`) when either face's
+    /// UV-midpoint sample is unavailable, or when the two faces aren't parallel.
     public func isCoplanar(with other: Face, tolerance: Double = 1e-6) -> Bool? {
-        guard let parallel = isParallel(to: other, toleranceRadians: 1e-4),
-              parallel,
-              let bounds = uvBounds,
-              let origin = point(atU: (bounds.uMin + bounds.uMax) / 2,
-                                 v: (bounds.vMin + bounds.vMax) / 2),
-              let otherOrigin = (other.uvBounds.flatMap {
-                  other.point(atU: ($0.uMin + $0.uMax) / 2, v: ($0.vMin + $0.vMax) / 2)
-              }),
-              let otherNormal = (other.uvBounds.flatMap {
-                  other.normal(atU: ($0.uMin + $0.uMax) / 2, v: ($0.vMin + $0.vMax) / 2)
-              }) else {
+        guard let sample = uvMidpointSample(), let otherSample = other.uvMidpointSample() else {
             return nil
         }
-        let offset = origin - otherOrigin
-        let signedDist = abs(simd_dot(offset, simd_normalize(otherNormal)))
+        let normalAngle = unsignedAngle(between: sample.normal, and: otherSample.normal)
+        let parallel = normalAngle < 1e-4 || (.pi - normalAngle) < 1e-4
+        guard parallel else { return nil }
+        let offset = sample.point - otherSample.point
+        let signedDist = abs(simd_dot(offset, simd_normalize(otherSample.normal)))
         return signedDist < tolerance
     }
 }
 
 extension ConstructionAxis {
     /// Angle between two construction axes, resolved against the given graph.
+    ///
     /// Returns radians in [0, π].
     public func angle(to other: ConstructionAxis, in graph: BRepGraph) -> Double? {
         guard case .success(let a) = graph.resolve(self),
-              case .success(let b) = graph.resolve(other) else { return nil }
+            case .success(let b) = graph.resolve(other)
+        else { return nil }
         return unsignedAngle(between: a.direction, and: b.direction)
     }
 }
 
 extension ConstructionPlane {
     /// Angle between two construction planes (angle between their normals).
+    ///
     /// Returns radians in [0, π].
     public func angle(to other: ConstructionPlane, in graph: BRepGraph) -> Double? {
         guard case .success(let a) = graph.resolve(self),
-              case .success(let b) = graph.resolve(other) else { return nil }
+            case .success(let b) = graph.resolve(other)
+        else { return nil }
         return unsignedAngle(between: a.zAxis, and: b.zAxis)
     }
 }
 
-/// Unsigned angle in [0, π] between two 3D vectors. Returns nil for degenerate input.
+/// Unsigned angle in [0, π] between two 3D vectors.
+///
+/// Returns nil for degenerate input.
 public func unsignedAngle(between a: SIMD3<Double>, and b: SIMD3<Double>) -> Double {
-    let la = simd_length(a), lb = simd_length(b)
+    let la = simd_length(a)
+    let lb = simd_length(b)
     guard la > 1e-12, lb > 1e-12 else { return 0 }
     let cosTheta = simd_dot(a, b) / (la * lb)
     return acos(max(-1.0, min(1.0, cosTheta)))
@@ -125,19 +160,21 @@ public func unsignedAngle(between a: SIMD3<Double>, and b: SIMD3<Double>) -> Dou
 // MARK: - Circle properties (v0.143 M4)
 
 extension Edge {
-    /// Extracted circle / arc geometry for an edge whose underlying curve is a
-    /// circle. Returns nil for non-circular edges.
+    /// Extracted circle / arc geometry for an edge whose underlying curve is a circle.
+    ///
+    /// Returns nil for non-circular edges.
     public struct CircleProperties: Sendable, Hashable {
         public let center: SIMD3<Double>
         public let radius: Double
-        public let axis: SIMD3<Double>    // unit normal to the circle's plane
+        public let axis: SIMD3<Double>  // unit normal to the circle's plane
         public let isFullCircle: Bool
-        public let startAngle: Double     // radians; 0 for a full circle
-        public let endAngle: Double       // radians; 2π for a full circle
+        public let startAngle: Double  // radians; 0 for a full circle
+        public let endAngle: Double  // radians; 2π for a full circle
     }
 
-    /// Circle / arc properties if this edge is a circular edge. Returns nil for
-    /// straight lines, ellipses, BSpline curves, etc.
+    /// Circle / arc properties if this edge is a circular edge.
+    ///
+    /// Returns nil for straight lines, ellipses, BSpline curves, etc.
     public var circleProperties: CircleProperties? {
         guard curveType == .circle else { return nil }
         guard let bounds = parameterBounds else { return nil }
@@ -153,18 +190,21 @@ extension Edge {
         let sample2Param = bounds.first + range * (full ? 1.0 / 3.0 : 0.5)
         let sample3Param = bounds.first + range * (full ? 2.0 / 3.0 : 1.0)
         guard let p1 = point(at: sample1Param),
-              let p2 = point(at: sample2Param),
-              let p3 = point(at: sample3Param) else { return nil }
+            let p2 = point(at: sample2Param),
+            let p3 = point(at: sample3Param)
+        else { return nil }
         guard let (center, radius, axis) = circleThroughThreePoints(p1, p2, p3) else { return nil }
-        return CircleProperties(center: center, radius: radius, axis: axis,
-                                 isFullCircle: full,
-                                 startAngle: bounds.first,
-                                 endAngle: bounds.last)
+        return CircleProperties(
+            center: center, radius: radius, axis: axis,
+            isFullCircle: full,
+            startAngle: bounds.first,
+            endAngle: bounds.last)
     }
 }
 
 extension Face {
     /// Axis + radius of a cylindrical / conical / toroidal / spherical face.
+    ///
     /// Returns nil for planar or free-form faces.
     public struct RevolutionProperties: Sendable, Hashable {
         public let axis: ShapeAxis
@@ -174,25 +214,14 @@ extension Face {
     public var revolutionProperties: RevolutionProperties? {
         guard let primary = primaryAxis else { return nil }
         switch surfaceType {
-        case .cylinder:
-            // Radius is the distance from the axis line to any surface point.
-            guard let bounds = uvBounds,
-                  let pt = point(atU: (bounds.uMin + bounds.uMax) / 2,
-                                 v: (bounds.vMin + bounds.vMax) / 2) else { return nil }
-            let offset = pt - primary.origin
-            let axisUnit = simd_normalize(primary.direction)
-            let axialComponent = simd_dot(offset, axisUnit) * axisUnit
-            let radial = offset - axialComponent
-            return RevolutionProperties(axis: primary, radius: simd_length(radial))
-        case .cone, .sphere, .torus, .surfaceOfRevolution:
-            // For non-cylindrical revolved surfaces "radius" is ambiguous; return
-            // the distance from the axis at the face centre as a representative
-            // value. Callers who need major/minor radii use the Surface type's
+        case .cylinder, .cone, .sphere, .torus, .surfaceOfRevolution:
+            // Radius is the distance from the axis line to a representative
+            // surface point. For non-cylindrical revolved surfaces "radius" is
+            // ambiguous; this is the distance from the axis at the face centre.
+            // Callers who need major/minor radii use the Surface type's own
             // dedicated properties.
-            guard let bounds = uvBounds,
-                  let pt = point(atU: (bounds.uMin + bounds.uMax) / 2,
-                                 v: (bounds.vMin + bounds.vMax) / 2) else { return nil }
-            let offset = pt - primary.origin
+            guard let sample = uvMidpointSample() else { return nil }
+            let offset = sample.point - primary.origin
             let axisUnit = simd_normalize(primary.direction)
             let axialComponent = simd_dot(offset, axisUnit) * axisUnit
             let radial = offset - axialComponent
@@ -206,9 +235,13 @@ extension Face {
 // MARK: - Three-point circle (internal)
 
 /// Given three non-collinear points, compute the circle through them.
+///
 /// Returns nil if the points are collinear.
-internal func circleThroughThreePoints(_ p1: SIMD3<Double>, _ p2: SIMD3<Double>, _ p3: SIMD3<Double>)
-    -> (center: SIMD3<Double>, radius: Double, axis: SIMD3<Double>)? {
+internal func circleThroughThreePoints(
+    _ p1: SIMD3<Double>, _ p2: SIMD3<Double>, _ p3: SIMD3<Double>
+)
+    -> (center: SIMD3<Double>, radius: Double, axis: SIMD3<Double>)?
+{
     let a = p2 - p1
     let b = p3 - p1
     let axb = simd_cross(a, b)
