@@ -104,8 +104,31 @@ extension Shape {
 }
 
 extension Surface {
+    /// Reads an origin/direction pair from a six-out-param `OCCT*Axis`-shaped bridge function.
+    ///
+    /// Split out from the `surfaceKind` guard below so the unwrap itself is independently
+    /// reusable — flagged by #891's review as also duplicated (outside this file's scope)
+    /// in `Surface.Cylinder.axis`/`Curve3D.Circle.xAxis`; widening this to a shared
+    /// accessor for those is tracked as a follow-up, not done here.
+    private func unwrapAxis(
+        _ bridgeFn: (
+            OCCTSurfaceRef, UnsafeMutablePointer<Double>, UnsafeMutablePointer<Double>,
+            UnsafeMutablePointer<Double>, UnsafeMutablePointer<Double>,
+            UnsafeMutablePointer<Double>, UnsafeMutablePointer<Double>
+        ) -> Void
+    ) -> (origin: SIMD3<Double>, direction: SIMD3<Double>) {
+        var px: Double = 0
+        var py: Double = 0
+        var pz: Double = 0
+        var dx: Double = 0
+        var dy: Double = 0
+        var dz: Double = 0
+        bridgeFn(handle, &px, &py, &pz, &dx, &dy, &dz)
+        return (origin: SIMD3(px, py, pz), direction: SIMD3(dx, dy, dz))
+    }
+
     /// Shared unwrap for the six-out-param `OCCT*Axis` bridge functions: guards
-    /// `surfaceKind`, then reads origin/direction from `bridgeFn`. `torusAxis` and
+    /// `surfaceKind`, then reads origin/direction via `unwrapAxis`. `torusAxis` and
     /// `revolutionAxis` are the only callers today (#891).
     private func axis(
         ifKind kind: SurfaceType,
@@ -116,14 +139,7 @@ extension Surface {
         ) -> Void
     ) -> (origin: SIMD3<Double>, direction: SIMD3<Double>)? {
         guard surfaceKind == kind else { return nil }
-        var px: Double = 0
-        var py: Double = 0
-        var pz: Double = 0
-        var dx: Double = 0
-        var dy: Double = 0
-        var dz: Double = 0
-        bridgeFn(handle, &px, &py, &pz, &dx, &dy, &dz)
-        return (origin: SIMD3(px, py, pz), direction: SIMD3(dx, dy, dz))
+        return unwrapAxis(bridgeFn)
     }
 
     /// Axis of a toroidal surface (origin + direction of the rotation axis).
