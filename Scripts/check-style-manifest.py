@@ -46,21 +46,27 @@ def run(args):
 
 
 def read_manifest_at(ref, path):
-    """The manifest's contents at `ref` ('' for the working tree), as a set of paths.
+    """The manifest's contents at `ref` ('' for the working tree), as a set of paths,
+    or None if the file doesn't exist at that ref.
 
-    Returns an empty set for a ref/path that doesn't exist (a manifest added in this
-    same PR has nothing to compare against at the base ref, which is not a violation).
+    None vs. an empty set matters: a manifest that doesn't exist yet at the base ref is
+    being seeded by this PR (fine, not a shrink violation); a manifest that exists and
+    is empty has genuinely had every entry removed (also fine, same reason). Collapsing
+    the two to "empty set" is exactly the bug this distinction exists to avoid -- it's
+    what made this script fail against its own seeding PR on first real-git-history run
+    (#876), since every entry in a brand-new manifest read as "newly added" relative to
+    a base where the file didn't exist at all.
     """
     if ref == '':
         try:
             with open(path, encoding='utf-8') as fh:
                 lines = fh.read().splitlines()
         except FileNotFoundError:
-            return set()
+            return None
     else:
         result = run(['git', 'show', f'{ref}:{path}'])
         if result.returncode != 0:
-            return set()
+            return None
         lines = result.stdout.splitlines()
     return {line.strip() for line in lines if line.strip() and not line.strip().startswith('#')}
 
@@ -78,10 +84,13 @@ def check(manifest_path, base, changed):
     set, return (touched_but_not_removed, newly_added). Both should be empty to pass.
     """
     base_entries = read_manifest_at(base, manifest_path)
-    head_entries = read_manifest_at('', manifest_path)
+    head_entries = read_manifest_at('', manifest_path) or set()
 
     touched_but_not_removed = sorted(head_entries & changed)
-    newly_added = sorted(head_entries - base_entries)
+    # base_entries is None exactly when the manifest doesn't exist at the base ref yet:
+    # this PR is seeding it, not growing an existing one. Nothing to compare against,
+    # so nothing counts as "newly added" -- see read_manifest_at's own docstring.
+    newly_added = [] if base_entries is None else sorted(head_entries - base_entries)
     return touched_but_not_removed, newly_added
 
 
@@ -139,6 +148,9 @@ def self_test():
         ('both violations at once',
          {'A.swift', 'B.swift'}, {'A.swift', 'B.swift', 'C.swift'}, {'A.swift'},
          ['A.swift'], ['C.swift']),
+        ('manifest does not exist at base: this PR is seeding it, not growing it (#876)',
+         None, {'A.swift', 'B.swift', 'C.swift'}, set(),
+         [], []),
     ]
 
     failed = 0
