@@ -1,18 +1,21 @@
 ---
 type: policy
 title: Upstream OCCT patch process, start to finish
-description: The full lifecycle for a carried OCCT patch — GTest by default, prove it fails the OCCT way, the two shallow-clone footguns that silently close or fake-conflict a live PR, and how to respond to review.
-tags: [policy, occt, upstream, contributing, testing, git, workflow]
-timestamp: 2026-08-11
+description: The full lifecycle for a carried OCCT patch — GTest by default (measured 5/5 on our own open PRs), prove it fails the OCCT way, the clang-format version-skew footgun and the format.patch fix, the two shallow-clone footguns that silently close or fake-conflict a live PR, and how to respond to review.
+tags: [policy, occt, upstream, contributing, testing, git, workflow, gtest]
+timestamp: 2026-08-12
 ---
 
 # Upstream OCCT patch process, start to finish
 
-[Upstream OCCT PRs — style and submission workflow](upstream-occt-style.md) covers formatting, comment
-voice, and going straight to a PR. This is the rest of it: what a patch needs before it's ready, the
-git mechanics of actually pushing to a live PR branch without breaking it, and how to work review
-comments once they arrive. Written after a single session (2026-08-11) that worked five open PRs'
-review comments plus one resubmission, and hit both git footguns below for real.
+[Upstream OCCT PRs — style and submission workflow](upstream-occt-style.md) covers what a PR must
+satisfy: OCCT's formatting and comment style, and going straight to a PR. This is the rest of it: what
+a patch needs before it's ready, the actual formatting mechanics (§4 below — including a version-skew
+footgun that has nothing to do with style), the git mechanics of actually pushing to a live PR branch
+without breaking it, and how to work review comments once they arrive. Written after a single session
+(2026-08-11) that worked five open PRs' review comments plus one resubmission, and hit both git
+footguns below for real; §4 was added after a follow-up session (2026-08-12) fixing one of those same
+PRs' "Check code formatting" CI job.
 
 ## 1. Root-cause and patch
 
@@ -27,8 +30,13 @@ numbering rule (numbers are never reused).
 
 **Not optional, even if the fix looks too small to need one.** Measured on our own PRs, not assumed:
 of 11 open upstream PRs as of 2026-08-10, maintainer dpasukhi asked for a GTest on every single one
-that didn't already have one (5 for 5), always the same phrasing. The one PR that already had one was
-never asked. Add it before submitting, or before the first review round if the PR is already open.
+that didn't already have one (5 for 5 — #1410, #1432, #1435, #1445, #1447), always the same phrasing
+("please add GTest to cover your changes, you can follow the logic of all exited GTests"). The one PR
+that already shipped a GTest (#1386, `Intf_TangentZone_Test.cxx` / `Intf_Interference_Test.cxx`) was
+never asked. Five other open PRs hadn't been reached by that review pass yet at measurement time and
+are likely to get the identical ask once he gets to them — this reads as a blanket expectation, not
+case-by-case discretion. Add it before submitting, or before the first review round if the PR is
+already open.
 
 - GTests are organized **per toolkit** (`TKShHealing`, `TKGeomAlgo`, `TKFillet`, ...), not per
   package. Check `src/<Toolkit>/GTests/` for an existing directory and `FILES.cmake` before creating
@@ -81,11 +89,45 @@ in doubt.
 ## 4. Format
 
 `clang-format --dry-run --Werror -style=file` against OCCT's own root `.clang-format`, restricted to
-files you touched. **`.cmake` files reliably show violations that are not real**: clang-format has no
-CMake grammar and misreads the syntax, so a `FILES.cmake` you only added a line to can show dozens of
-"violations" that are present, byte-identical, in the pristine unmodified file too. Confirm against
-the pristine version (`git show upstream/master:path/to/FILES.cmake` through the same clang-format
-invocation) before treating any `.cmake` output as something to fix.
+files you touched, before every push — it catches the bulk of real violations cheaply. **Treat a
+clean local pass as a first filter, not proof.** It fails open in two different, unrelated ways:
+
+**`.cmake` files reliably show violations that are not real**: clang-format has no CMake grammar and
+misreads the syntax, so a `FILES.cmake` you only added a line to can show dozens of "violations" that
+are present, byte-identical, in the pristine unmodified file too. Confirm against the pristine version
+(`git show upstream/master:path/to/FILES.cmake` through the same clang-format invocation) before
+treating any `.cmake` output as something to fix.
+
+**`.cxx`/`.hxx` files show the opposite problem: a clean local pass that CI's own check still rejects,
+or vice versa.** clang-format's multi-line alignment (consecutive declarations, wrapped call/
+constructor arguments) is version-specific, and a local install a couple of majors off from CI's can
+genuinely disagree with it on the identical input — this is not a bug in either run, it's two honest
+formatters answering the same question differently. Measured on PR #1445 (2026-08-12): CI's "Check
+code formatting" job failed on two lines it had itself aligned one column further right in an earlier
+round of review; reformatting locally with `clang-format 22.1.8` reintroduced the exact alignment
+CI's own `clang-format 20.1.8` had just rejected — running local clang-format again would have failed
+the same job a second time. **The workflow's own declared expected version can't be trusted as a
+target to install, either**: its version-check step greps `clang-format --version` for `18.1.8`
+through PowerShell's `Select-String`, a cmdlet — cmdlets don't set `$LASTEXITCODE`, so the script's
+`if ($LASTEXITCODE -ne 0) { exit 1 }` branches on the unrelated exit code of the previous *native*
+command instead, and the check is a silent no-op regardless of what's installed. The job in question
+was observed actually running clang-format 20.1.8, not the 18.1.8 the script claims to require.
+
+Don't chase this by pinning a local clang-format version to whatever you guess CI runs. **Once the
+"Check code formatting" job has run at least once (pass or fail), pull its own output instead of
+reformatting locally a second time** — it always uploads a `format-patch` artifact (an empty diff on
+a pass) built from the exact binary CI ran:
+
+```bash
+gh pr checks <n> --repo Open-Cascade-SAS/OCCT              # find the failing run
+gh run download <run-id> --repo Open-Cascade-SAS/OCCT --name format-patch --dir <dir>
+git apply <dir>/format.patch     # apply verbatim — do not re-run clang-format on top of this
+git diff                         # confirm whitespace/alignment only, nothing semantic, before committing
+```
+
+Applying CI's own patch is strictly more reliable than trying to match its clang-format version
+yourself: it sidesteps the version question entirely, and it's the same diff a maintainer reviewing
+the PR would get if they ran the formatter themselves.
 
 ## 5. Submit: go straight to a PR
 
