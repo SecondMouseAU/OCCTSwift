@@ -162,7 +162,7 @@ public final class Selector: @unchecked Sendable {
     ) -> [PickResult] {
         let maxResults = Sampling.capacity(maxResults)
         guard maxResults > 0 else { return [] }
-        var buffer = [OCCTPickResult](repeating: OCCTPickResult(), count: maxResults)
+        var buffer = Self.makeBuffer(count: maxResults)
         let count = OCCTSelectorPick(
             handle, camera.handle,
             viewSize.x, viewSize.y,
@@ -188,7 +188,7 @@ public final class Selector: @unchecked Sendable {
     ) -> [PickResult] {
         let maxResults = Sampling.capacity(maxResults)
         guard maxResults > 0 else { return [] }
-        var buffer = [OCCTPickResult](repeating: OCCTPickResult(), count: maxResults)
+        var buffer = Self.makeBuffer(count: maxResults)
         let count = OCCTSelectorPickRect(
             handle, camera.handle,
             viewSize.x, viewSize.y,
@@ -218,7 +218,7 @@ public final class Selector: @unchecked Sendable {
     ) -> [PickResult] {
         let maxResults = Sampling.capacity(maxResults)
         guard polygon.count >= 3, maxResults > 0 else { return [] }
-        var buffer = [OCCTPickResult](repeating: OCCTPickResult(), count: maxResults)
+        var buffer = Self.makeBuffer(count: maxResults)
         var polyXY = [Double]()
         polyXY.reserveCapacity(polygon.count * 2)
         for pt in polygon {
@@ -231,6 +231,14 @@ public final class Selector: @unchecked Sendable {
             polyXY, Int32(polygon.count),
             &buffer, Int32(maxResults))
         return Self.pickResults(from: buffer, count: count)
+    }
+
+    /// Allocates a zeroed `OCCTPickResult` output buffer for a `pick` call.
+    ///
+    /// Shared by all three `pick` overloads alongside ``pickResults(from:count:)`` so buffer
+    /// sizing/initialization is defined once, not triplicated (#890 review follow-up).
+    private static func makeBuffer(count: Int) -> [OCCTPickResult] {
+        [OCCTPickResult](repeating: OCCTPickResult(), count: count)
     }
 
     /// Maps a raw `OCCTPickResult` buffer's first `count` entries to `PickResult`s.
