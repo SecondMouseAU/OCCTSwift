@@ -983,6 +983,12 @@ public var surfaceArea: Double? { get }
 - **Returns:** Non-negative area, or `nil` on failure. Unlike `volume` this answers for a face or an
   open shell, since an area integral is well defined over any set of faces.
 - **OCCT:** `BRepGProp::SurfaceProperties` (via `OCCTShapeGetSurfaceArea`).
+- **Not the same computation as `ShapeMeasurements.totalFaceArea` (#885):** this is one untunable
+  `BRepGProp::SurfaceProperties(shape, props)` integration over the whole shape, bit-identical to
+  `surfaceInertiaProperties().mass` and `surfaceInertia.area`. `ShapeMeasurements.totalFaceArea` is
+  a different computation — a tolerance-controlled sum of per-face integrals — see
+  [`Measurement.md`](Measurement.md#shapemeasurementstotalfacearea) for the measured gap between
+  the two and which to reach for.
 
 ---
 
