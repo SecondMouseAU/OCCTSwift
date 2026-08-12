@@ -1,0 +1,39 @@
+# Exemption manifest for the code-style rollout (#876).
+# Seeded 2026-08-12 with every Sources/OCCTBridge/*.h and *.mm file that
+# existed at that point. A file is removed from this list once it's brought into
+# full clang-format compliance (Sources/OCCTBridge/.clang-format); touching a
+# listed file without removing it fails Scripts/check-style-manifest.py. See
+# okf/policies/code-style.md.
+Sources/OCCTBridge/include/OCCTBridge_AIS.h
+Sources/OCCTBridge/include/OCCTBridge_BRepGraph.h
+Sources/OCCTBridge/include/OCCTBridge_Curve3D.h
+Sources/OCCTBridge/include/OCCTBridge_Document.h
+Sources/OCCTBridge/include/OCCTBridge_Geom2d.h
+Sources/OCCTBridge/include/OCCTBridge_Healing.h
+Sources/OCCTBridge/include/OCCTBridge_IO.h
+Sources/OCCTBridge/include/OCCTBridge_Mesh.h
+Sources/OCCTBridge/include/OCCTBridge_Modeling.h
+Sources/OCCTBridge/include/OCCTBridge_ProjLib_NLPlate.h
+Sources/OCCTBridge/include/OCCTBridge_Properties.h
+Sources/OCCTBridge/include/OCCTBridge_Spatial.h
+Sources/OCCTBridge/include/OCCTBridge_Surface.h
+Sources/OCCTBridge/include/OCCTBridge_Topology.h
+Sources/OCCTBridge/include/OCCTBridge_Visualization.h
+Sources/OCCTBridge/include/OCCTBridge.h
+Sources/OCCTBridge/src/OCCTBridge_AIS.mm
+Sources/OCCTBridge/src/OCCTBridge_BRepGraph.mm
+Sources/OCCTBridge/src/OCCTBridge_Curve3D.mm
+Sources/OCCTBridge/src/OCCTBridge_Document.mm
+Sources/OCCTBridge/src/OCCTBridge_Geom2d.mm
+Sources/OCCTBridge/src/OCCTBridge_Healing.mm
+Sources/OCCTBridge/src/OCCTBridge_Internal.h
+Sources/OCCTBridge/src/OCCTBridge_IO.mm
+Sources/OCCTBridge/src/OCCTBridge_Mesh.mm
+Sources/OCCTBridge/src/OCCTBridge_Modeling.mm
+Sources/OCCTBridge/src/OCCTBridge_ProjLib_NLPlate.mm
+Sources/OCCTBridge/src/OCCTBridge_Properties.mm
+Sources/OCCTBridge/src/OCCTBridge_Spatial.mm
+Sources/OCCTBridge/src/OCCTBridge_Surface.mm
+Sources/OCCTBridge/src/OCCTBridge_Topology.mm
+Sources/OCCTBridge/src/OCCTBridge_Visualization.mm
+Sources/OCCTBridge/src/OCCTBridge.mm

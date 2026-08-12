@@ -1,0 +1,38 @@
+# Deliberately narrow: `only_rules`, not `disabled_rules`. SwiftLint's default
+# rule set covers two kinds of territory this repo doesn't want it opining on:
+#
+#   - Layout (colon/comma/opening_brace/line_length/...) — swift-format already
+#     owns this; running both fights, since they can disagree on the same line.
+#   - Code-quality/complexity (identifier_name, cyclomatic_complexity,
+#     function_body_length, nesting, type_body_length, file_length, ...) — a
+#     separate concern from code style, and one that overlaps this repo's own
+#     code-structure policy (a file/type that needs a structural pass runs one
+#     as its own scoped initiative per that policy, not as a side effect of a
+#     style-lint gate). identifier_name's default 3-char minimum in particular
+#     is not a fit for this codebase's short, conventional locals in dense
+#     geometry code (u, v, p0, p1) — measured on OCCTSwiftScripts' much smaller
+#     tree, 548 hits on first run, none of them real problems; this tree would
+#     be worse.
+#
+# What's left is the one rule that catches something swift-format has no
+# equivalent for: a doc comment not attached to any declaration.
+#
+# See docs/code-style-policy-proposal-2026-08.md in the ecosystem repo for the
+# full rationale, and okf/policies/code-style.md for this repo's own policy.
+
+only_rules:
+  - orphaned_doc_comment
+
+excluded:
+  - .build
+  - Libraries
+  - Tests
+  - Scripts
+  # Two known, named, tracked orphaned-doc-comment findings (#877), not fixed
+  # in the rollout PR that added this rule: fixing either one obligates a full
+  # swift-format sweep of the file under the manifest's own "touch it, fix it"
+  # rule (Scripts/check-style-manifest.py), and a ~1900-diagnostic reformat of
+  # two large files is out of scope for a CI-infrastructure PR. Remove these
+  # two lines once #877 lands.
+  - Sources/OCCTSwift/Surface.swift
+  - Sources/OCCTSwift/Shape+Modeling.swift

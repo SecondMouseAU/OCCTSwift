@@ -1,0 +1,94 @@
+name: code-style
+
+# Rollout of the ecosystem's code-style policy here (#876); see
+# docs/code-style-policy-proposal-2026-08.md in the `ecosystem` repo for the
+# full rationale, and okf/policies/code-style.md for this repo's own policy.
+#
+# Unlike the OCCTSwiftScripts pilot (small enough to fully sweep in one PR),
+# this repo is large (222 Swift files, 33 OCCTBridge C++ files, ~11,700
+# pre-existing swift-format diagnostics and a multi-thousand-line-per-file
+# clang-format gap measured on rollout day) so this uses gradual adoption: a
+# checked-in exemption manifest (Scripts/style-manifest-*.txt) grandfathers
+# every file that existed at rollout, and Scripts/check-style-manifest.py
+# enforces that touching a manifest file means fixing it and removing it from
+# the manifest in the same PR, not leaving it exempt while edited.
+#
+# swift-format, SwiftLint, and clang-format are blocking for everything NOT on
+# a manifest: formatting has no judgment call in it once a file complies.
+# check-style-manifest.py is blocking (its whole job is catching a specific,
+# unambiguous rule violation). The comment-ratio check is report-only by
+# design (see its own header) and never fails.
+#
+# Pure text analysis, no OCCT build needed: still a macOS runner, for the same
+# reason build-and-test needs one (swift-format/swiftlint/clang-format are all
+# readily available via Homebrew there), but with none of that job's build
+# time or its coupling to kernel-patch-pin drift.
+
+on:
+  pull_request:
+    branches:
+      - main
+      - 'refactor/**'
+  push:
+    branches:
+      - main
+      - 'refactor/**'
+  workflow_dispatch:
+
+jobs:
+  code-style:
+    runs-on: macos-15
+    timeout-minutes: 15
+    steps:
+      # fetch-depth: 0, not the default shallow clone: check-style-manifest.py
+      # diffs against origin/main's merge-base, which needs real history.
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Install swift-format, SwiftLint, clang-format
+        run: brew install swift-format swiftlint clang-format
+
+      - name: swift-format lint --strict (files not on the exemption manifest)
+        run: |
+          comm -23 \
+            <(find Sources/OCCTSwift -name '*.swift' | sort) \
+            <(grep -v '^#' Scripts/style-manifest-swift.txt | sort) \
+            | tr '\n' '\0' \
+            | xargs -0 swift-format lint --strict --configuration .swift-format
+
+      - name: swiftlint lint --strict
+        if: '!cancelled()'
+        run: swiftlint lint --strict --config .swiftlint.yml
+
+      - name: clang-format check (OCCTBridge files not on the exemption manifest)
+        if: '!cancelled()'
+        run: |
+          missing=0
+          comm -23 \
+            <(find Sources/OCCTBridge \( -name '*.h' -o -name '*.mm' \) | sort) \
+            <(grep -v '^#' Scripts/style-manifest-bridge.txt | sort) \
+            > /tmp/non-manifest-bridge.txt
+          while IFS= read -r f; do
+            [ -z "$f" ] && continue
+            if ! clang-format --dry-run --Werror -style=file "$f"; then
+              missing=1
+            fi
+          done < /tmp/non-manifest-bridge.txt
+          exit $missing
+
+      - name: check-style-manifest.py --self-test
+        if: '!cancelled()'
+        run: python3 Scripts/check-style-manifest.py --self-test
+
+      - name: check-style-manifest.py
+        if: '!cancelled()'
+        run: python3 Scripts/check-style-manifest.py --base origin/main
+
+      - name: comment-ratio-check.py --self-test
+        if: '!cancelled()'
+        run: python3 Scripts/comment-ratio-check.py --self-test
+
+      - name: comment-ratio-check.py (report-only, never fails)
+        if: '!cancelled()'
+        run: python3 Scripts/comment-ratio-check.py

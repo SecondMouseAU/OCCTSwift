@@ -56,3 +56,4 @@ See [`references/`](references/index.md) — OpenCASCADE upstream and licensing 
 - [Code structure](policies/code-structure.md)
 - [CHANGELOG entries are written in the PR, not the diff](policies/changelog-on-merge.md)
 - [SemVer is assessed at release, not per PR](policies/semver-at-release.md)
+- [Code style](policies/code-style.md)
