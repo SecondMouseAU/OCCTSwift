@@ -162,7 +162,6 @@ Sources/OCCTSwift/SAWireAnalysis.swift
 Sources/OCCTSwift/Section2D.swift
 Sources/OCCTSwift/SectionBuilder.swift
 Sources/OCCTSwift/Selection.swift
-Sources/OCCTSwift/Selector.swift
 Sources/OCCTSwift/SewingBuilder.swift
 Sources/OCCTSwift/Shape.swift
 Sources/OCCTSwift/Shape+Analysis.swift
