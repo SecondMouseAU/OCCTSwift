@@ -31,11 +31,11 @@ struct Issue870ShapeExtendShapeTypeFailureTests {
     }
 
     @Test("an ordinary shape still reports its real predominant type, unaffected")
-    func ordinaryShapeUnaffected() {
-        let box = Shape.box(width: 10, height: 10, depth: 10)!
+    func ordinaryShapeUnaffected() throws {
+        let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
         #expect(box.predominantShapeType() == .solid)
 
-        let vertex = box.subShapes(ofType: .vertex).first!
+        let vertex = try #require(box.subShapes(ofType: .vertex).first)
         #expect(vertex.predominantShapeType() == .vertex)
     }
 }

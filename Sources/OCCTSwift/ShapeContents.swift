@@ -19,20 +19,41 @@ public struct ShapeContents: Sendable {
     public let freeFaces: Int
 }
 
+/// The 9 `Int32` fields `OCCTShapeContents` and `OCCTShapeContentsExtended` both start with, in
+/// the order `ShapeAnalysis_ShapeContents::Perform()` produces them.
+///
+/// The two bridge structs are otherwise different C types — `OCCTShapeGetContents` (backing
+/// ``Shape/contents``) returns `OCCTShapeContents`, `OCCTShapeGetContentsExtended` (backing
+/// ``Shape/contentsExtended()``) returns `OCCTShapeContentsExtended` with 21 further fields — but
+/// this protocol lets ``shapeContentsCore(_:)`` read either one through the exact same field list,
+/// rather than each call site copying out all 9 values by hand (PR #875 review, #870's own
+/// aggregate review before it). Conforming a C struct to a protocol costs one line each; there is
+/// no separate generic type or initializer here for the protocol to serve, unlike the design PR
+/// #870 flagged as more machinery than the duplication it removed.
+protocol ShapeContentsCFields {
+    var nbSolids: Int32 { get }
+    var nbShells: Int32 { get }
+    var nbFaces: Int32 { get }
+    var nbWires: Int32 { get }
+    var nbEdges: Int32 { get }
+    var nbVertices: Int32 { get }
+    var nbFreeEdges: Int32 { get }
+    var nbFreeWires: Int32 { get }
+    var nbFreeFaces: Int32 { get }
+}
+
+extension OCCTShapeContents: ShapeContentsCFields {}
+extension OCCTShapeContentsExtended: ShapeContentsCFields {}
+
 /// The 9 counts `ShapeAnalysis_ShapeContents::Perform()` produces, read in one canonical order.
 ///
-/// Two bridge functions expose this same OCCT walk on two otherwise-different C structs:
-/// `OCCTShapeGetContents` (backing ``Shape/contents``) returns `OCCTShapeContents`, and
-/// `OCCTShapeGetContentsExtended` (backing ``Shape/contentsExtended()``) returns
-/// `OCCTShapeContentsExtended` with 21 further fields. This internal type is the single place
-/// that the two structs' first 9 fields are the same fact Swift-side: both ``Shape/contents``
-/// and ``Shape/contentsExtended()`` build their first 9 values through ``shapeContentsCore(nbSolids:nbShells:nbFaces:nbWires:nbEdges:nbVertices:nbFreeEdges:nbFreeWires:nbFreeFaces:)``
-/// below, rather than each duplicating 9 field reads. That means there is exactly one mapping from
-/// `nbXxx` (C field) to `xxx` (Swift property) in the whole codebase — a transposed pair (e.g.
-/// `freeEdges`/`freeWires` swapped) can only be wrong for both C structs identically, not silently
-/// diverge between them, and adding, removing or reordering a stored property here still forces
-/// every caller to be updated to satisfy Swift's "all stored properties must be initialized" rule
-/// (#855).
+/// Built by ``shapeContentsCore(_:)`` from either ``ShapeContentsCFields``-conforming bridge
+/// struct. Both ``Shape/contents`` and ``Shape/contentsExtended()`` go through that one function,
+/// so there is exactly one mapping from `nbXxx` (C field) to `xxx` (Swift property) in the whole
+/// codebase — a transposed pair (e.g. `freeEdges`/`freeWires` swapped) can only be wrong once, not
+/// silently diverge between the two call sites, and adding, removing or reordering a stored
+/// property here still forces every caller to be updated to satisfy Swift's "all stored properties
+/// must be initialized" rule (#855).
 ///
 /// This does not reduce OCCT-side work — each bridge function still performs its own
 /// `Perform()` walk over the shape; only the Swift-side field list is shared.
@@ -48,19 +69,16 @@ struct ShapeContentsCore {
     let freeFaces: Int
 }
 
-/// Builds ``ShapeContentsCore`` from the 9 raw `Int32` counts either bridge struct exposes — the
-/// one mapping from `nbXxx` (C field) to `xxx` (Swift property), shared by ``Shape/contents`` and
-/// ``Shape/contentsExtended()`` (see ``ShapeContentsCore``'s own doc comment). A plain function
-/// over the 9 values directly, rather than a protocol conformed to by both `OCCTShapeContents` and
-/// `OCCTShapeContentsExtended` plus a generic initializer reading through it — same one-mapping
-/// guarantee, three fewer declarations (PR #870 aggregate review).
-func shapeContentsCore(
-    nbSolids: Int32, nbShells: Int32, nbFaces: Int32, nbWires: Int32, nbEdges: Int32,
-    nbVertices: Int32, nbFreeEdges: Int32, nbFreeWires: Int32, nbFreeFaces: Int32
-) -> ShapeContentsCore {
+/// Builds ``ShapeContentsCore`` from either bridge struct's shared 9 fields — the one mapping
+/// from `nbXxx` (C field) to `xxx` (Swift property), shared by ``Shape/contents`` and
+/// ``Shape/contentsExtended()`` (see ``ShapeContentsCore``'s own doc comment). Generic over
+/// ``ShapeContentsCFields`` rather than a 9-`Int32`-parameter free function, so each call site
+/// passes the bridge struct itself — `shapeContentsCore(c)` — instead of re-spelling all 9 field
+/// names, which is what let the 9-argument block drift into 4 duplicated copies (PR #875 review).
+func shapeContentsCore(_ c: some ShapeContentsCFields) -> ShapeContentsCore {
     ShapeContentsCore(
-        solids: Int(nbSolids), shells: Int(nbShells), faces: Int(nbFaces), wires: Int(nbWires),
-        edges: Int(nbEdges), vertices: Int(nbVertices), freeEdges: Int(nbFreeEdges),
-        freeWires: Int(nbFreeWires), freeFaces: Int(nbFreeFaces)
+        solids: Int(c.nbSolids), shells: Int(c.nbShells), faces: Int(c.nbFaces), wires: Int(c.nbWires),
+        edges: Int(c.nbEdges), vertices: Int(c.nbVertices), freeEdges: Int(c.nbFreeEdges),
+        freeWires: Int(c.nbFreeWires), freeFaces: Int(c.nbFreeFaces)
     )
 }

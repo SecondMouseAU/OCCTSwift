@@ -3811,12 +3811,7 @@ struct ShapeContentsExtendedTests {
             nbSolids: 11, nbShells: 12, nbFaces: 13, nbWires: 14, nbEdges: 15,
             nbVertices: 16, nbFreeEdges: 17, nbFreeWires: 18, nbFreeFaces: 19
         )
-        let plainCore = shapeContentsCore(
-            nbSolids: plain.nbSolids, nbShells: plain.nbShells, nbFaces: plain.nbFaces,
-            nbWires: plain.nbWires, nbEdges: plain.nbEdges, nbVertices: plain.nbVertices,
-            nbFreeEdges: plain.nbFreeEdges, nbFreeWires: plain.nbFreeWires,
-            nbFreeFaces: plain.nbFreeFaces
-        )
+        let plainCore = shapeContentsCore(plain)
         #expect(plainCore.solids == 11)
         #expect(plainCore.shells == 12)
         #expect(plainCore.faces == 13)
@@ -3837,12 +3832,7 @@ struct ShapeContentsExtendedTests {
             nbSharedSolids: 0, nbSharedShells: 0, nbSharedFaces: 0, nbSharedWires: 0,
             nbSharedEdges: 0, nbSharedVertices: 0
         )
-        let extendedCore = shapeContentsCore(
-            nbSolids: extended.nbSolids, nbShells: extended.nbShells, nbFaces: extended.nbFaces,
-            nbWires: extended.nbWires, nbEdges: extended.nbEdges, nbVertices: extended.nbVertices,
-            nbFreeEdges: extended.nbFreeEdges, nbFreeWires: extended.nbFreeWires,
-            nbFreeFaces: extended.nbFreeFaces
-        )
+        let extendedCore = shapeContentsCore(extended)
         #expect(extendedCore.solids == 21)
         #expect(extendedCore.shells == 22)
         #expect(extendedCore.faces == 23)
