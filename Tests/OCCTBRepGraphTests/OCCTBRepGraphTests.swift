@@ -2380,6 +2380,42 @@ struct ConstructionAxisTests {
         case .failure: Issue.record("normalToFace failed")
         }
     }
+
+    @Test("normalToFace on an extrusion-surface face falls back to the UV-midpoint normal, not the sweep direction (PR #897 review)")
+    func normalToFaceExtrusionFallsBackToNormal() {
+        // Geom_SurfaceOfLinearExtrusion's primaryAxis.direction is the SWEEP direction
+        // (tangent to the surface), not a normal — unlike cylinder/cone/sphere/torus/
+        // revolution, where primaryAxis.direction genuinely is a rotation axis. A
+        // straight-line profile (along X) extruded along Z produces a planar surface
+        // whose true normal (Y) is perpendicular to both the profile and the sweep
+        // direction; before this fix, normalToFace returned the sweep direction
+        // (Z) unconditionally whenever primaryAxis was non-nil.
+        guard let line = Curve3D.segment(from: SIMD3(0, 0, 0), to: SIMD3(10, 0, 0)),
+              let surface = Surface.extrusion(profile: line, direction: SIMD3(0, 0, 1)),
+              let extrudedFace = Shape.face(from: surface, uRange: 0...10, vRange: 0...10),
+              let graph = BRepGraph(shape: extrudedFace) else {
+            Issue.record("setup"); return
+        }
+        let faceRef = TopologyRef.literal(.init(kind: .face, index: 0))
+        let vertexRef = TopologyRef.literal(.init(kind: .vertex, index: 0))
+
+        // Sanity: this fixture really does have an extrusion-kind primaryAxis along
+        // the sweep direction, so the test is exercising the branch it claims to.
+        guard let face = graph.shape(nodeKind: .face, nodeIndex: 0)?.faces().first,
+              let axis = face.primaryAxis, axis.kind == .extrusion else {
+            Issue.record("fixture is not an extrusion-surface face"); return
+        }
+        #expect(abs(axis.direction.z) > 0.99, "sweep direction should be along Z")
+
+        switch graph.resolve(ConstructionAxis.normalToFace(face: faceRef, at: vertexRef)) {
+        case .success(let ax):
+            #expect(abs(simd_length(ax.direction) - 1.0) < 1e-6)
+            // The true surface normal is perpendicular to the sweep direction (Z);
+            // the pre-fix bug returned the sweep direction itself here.
+            #expect(abs(ax.direction.z) < 0.01)
+        case .failure(let e): Issue.record("normalToFace failed: \(e)")
+        }
+    }
 }
 
 @Suite("v0.142 ConstructionPoint resolution")
@@ -2459,6 +2495,36 @@ struct ConstructionPointTests {
             #expect(distanceFromAxis < 1e-6)
             #expect(abs(p.z - 5) < 1e-6)
         case .failure(let e): Issue.record("centroidOfFace failed: \(e)")
+        }
+    }
+
+    @Test("centroidOfFace on a genuinely zero-area face fails with .degenerate, not a fabricated point (PR #897 review)")
+    func centroidOfFaceZeroAreaDegenerate() {
+        // A 2-vertex "polygon" wire is a degenerate zero-area loop — the same fixture
+        // Issue234DegenerateHoleTests uses for a degenerate hole, here used as the base
+        // face itself. Its surfaceInertia.centerOfMass is nil because BRepGProp_Sinert
+        // measures its area as exactly 0. The old UV-midpoint-based centroidOfFace always
+        // succeeded for any face with uvBounds; resolveFaceCentroid must decline instead.
+        let p0 = SIMD3<Double>(0, 0, 0)
+        let p1 = SIMD3<Double>(10, 0, 0)
+        guard let wire = Wire.polygon3D([p0, p1], closed: true),
+              let degenerateFace = Shape.face(from: wire, planar: true),
+              let graph = BRepGraph(shape: degenerateFace) else {
+            Issue.record("setup"); return
+        }
+        let faceRef = TopologyRef.literal(.init(kind: .face, index: 0))
+
+        // Sanity: the fixture really is zero-area, so this exercises the branch it claims to.
+        guard let face = graph.shape(nodeKind: .face, nodeIndex: 0)?.faces().first else {
+            Issue.record("fixture face unavailable"); return
+        }
+        #expect(face.surfaceInertia.centerOfMass == nil, "fixture should be zero-area")
+
+        if case .failure(.degenerate(let message)) =
+            graph.resolve(ConstructionPoint.centroidOfFace(faceRef)) {
+            #expect(message == "face has zero area")
+        } else {
+            Issue.record("expected .degenerate(\"face has zero area\")")
         }
     }
 

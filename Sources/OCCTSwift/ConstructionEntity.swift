@@ -333,21 +333,25 @@ extension BRepGraph {
     /// The direction the normalToFace doc promises.
     ///
     /// The surface's own axis of revolution (`Face.primaryAxis`) for
-    /// cylindrical/conical/spherical/toroidal/revolved/extruded faces, falling back
-    /// to the UV-midpoint surface normal for planes and free-form faces, which
-    /// have no such axis (#882).
+    /// cylindrical/conical/spherical/toroidal/revolved faces, falling back to the
+    /// UV-midpoint surface normal for planes, free-form faces, and
+    /// surface-of-extrusion faces (#882). Extrusion is deliberately excluded even
+    /// though it has a `primaryAxis`: that axis's `direction` is the sweep
+    /// direction of `Geom_SurfaceOfLinearExtrusion` — tangent to the surface, not
+    /// a normal — unlike every other `ShapeAxis.Kind`, where `direction` genuinely
+    /// is a rotation axis / surface normal (PR #897 review).
     private func resolveFaceAxisDirection(_ ref: TopologyRef) -> Result<
         SIMD3<Double>, ConstructionResolutionError
     > {
         return resolveFace(ref).flatMap {
             node, face -> Result<SIMD3<Double>, ConstructionResolutionError> in
-            if let axis = face.primaryAxis {
+            if let axis = face.primaryAxis, axis.kind != .extrusion {
                 return .success(simd_normalize(axis.direction))
             }
-            guard let sample = face.uvMidpointSample() else {
+            guard let normal = face.uvMidpointNormal() else {
                 return .failure(.missingGeometry(node))
             }
-            return .success(simd_normalize(sample.normal))
+            return .success(simd_normalize(normal))
         }
     }
 

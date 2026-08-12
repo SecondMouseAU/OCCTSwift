@@ -279,10 +279,22 @@ struct EdgeFractionParameterTests {
               let bounds = edge.parameterBounds else {
             Issue.record("edge/bounds nil"); return
         }
-        #expect(abs(edge.parameter(atFraction: 0)! - bounds.first) < 1e-9)
-        #expect(abs(edge.parameter(atFraction: 1)! - bounds.last) < 1e-9)
+        if let p0 = edge.parameter(atFraction: 0) {
+            #expect(abs(p0 - bounds.first) < 1e-9)
+        } else {
+            Issue.record("parameter(atFraction: 0) nil")
+        }
+        if let p1 = edge.parameter(atFraction: 1) {
+            #expect(abs(p1 - bounds.last) < 1e-9)
+        } else {
+            Issue.record("parameter(atFraction: 1) nil")
+        }
         let mid = bounds.first + (bounds.last - bounds.first) * 0.5
-        #expect(abs(edge.parameter(atFraction: 0.5)! - mid) < 1e-9)
+        if let pMid = edge.parameter(atFraction: 0.5) {
+            #expect(abs(pMid - mid) < 1e-9)
+        } else {
+            Issue.record("parameter(atFraction: 0.5) nil")
+        }
     }
 
     @Test("parameter(atFraction:) clamps out-of-range fractions to [0, 1]")
@@ -292,8 +304,16 @@ struct EdgeFractionParameterTests {
               let bounds = edge.parameterBounds else {
             Issue.record("edge/bounds nil"); return
         }
-        #expect(abs(edge.parameter(atFraction: -5)! - bounds.first) < 1e-9)
-        #expect(abs(edge.parameter(atFraction: 5)! - bounds.last) < 1e-9)
+        if let pLow = edge.parameter(atFraction: -5) {
+            #expect(abs(pLow - bounds.first) < 1e-9)
+        } else {
+            Issue.record("parameter(atFraction: -5) nil")
+        }
+        if let pHigh = edge.parameter(atFraction: 5) {
+            #expect(abs(pHigh - bounds.last) < 1e-9)
+        } else {
+            Issue.record("parameter(atFraction: 5) nil")
+        }
     }
 
     @Test("point(atFraction:) matches point(at: parameter(atFraction:))")

@@ -63,19 +63,42 @@ extension Edge {
 }
 
 extension Face {
+    /// This face's UV-domain midpoint, shared by `uvMidpointPoint()`, `uvMidpointNormal()`,
+    /// and `uvMidpointSample()` below.
+    private var uvMidpoint: (u: Double, v: Double)? {
+        guard let bounds = uvBounds else { return nil }
+        return ((bounds.uMin + bounds.uMax) / 2, (bounds.vMin + bounds.vMax) / 2)
+    }
+
+    /// This face's point sampled at its UV-domain midpoint, without evaluating the normal too.
+    ///
+    /// Use this over `uvMidpointSample()` when only the point is needed (e.g.
+    /// `revolutionProperties`, PR #897 review) to skip a redundant `normal(atU:v:)` evaluation.
+    internal func uvMidpointPoint() -> SIMD3<Double>? {
+        guard let mid = uvMidpoint else { return nil }
+        return point(atU: mid.u, v: mid.v)
+    }
+
+    /// This face's normal sampled at its UV-domain midpoint, without evaluating the point too.
+    ///
+    /// Use this over `uvMidpointSample()` when only the normal is needed (e.g. `angle(to:)`,
+    /// `resolveFaceAxisDirection`'s fallback, PR #897 review) to skip a redundant
+    /// `point(atU:v:)` evaluation.
+    internal func uvMidpointNormal() -> SIMD3<Double>? {
+        guard let mid = uvMidpoint else { return nil }
+        return normal(atU: mid.u, v: mid.v)
+    }
+
     /// This face's point + normal sampled at its UV-domain midpoint — a cheap,
     /// always-available representative sample, not the area centroid (see
     /// `surfaceInertia.centerOfMass` for that).
     ///
     /// Internal: this formula used to be reimplemented inline at 7 call sites
-    /// across `ConstructionEntity.swift` and this file (#889).
+    /// across `ConstructionEntity.swift` and this file (#889). Callers that only
+    /// need one of the two components should call `uvMidpointPoint()` /
+    /// `uvMidpointNormal()` directly instead, to avoid paying for the unused one.
     internal func uvMidpointSample() -> (point: SIMD3<Double>, normal: SIMD3<Double>)? {
-        guard let bounds = uvBounds else { return nil }
-        let uMid = (bounds.uMin + bounds.uMax) / 2
-        let vMid = (bounds.vMin + bounds.vMax) / 2
-        guard let samplePoint = point(atU: uMid, v: vMid),
-            let sampleNormal = normal(atU: uMid, v: vMid)
-        else {
+        guard let samplePoint = uvMidpointPoint(), let sampleNormal = uvMidpointNormal() else {
             return nil
         }
         return (samplePoint, sampleNormal)
@@ -86,10 +109,10 @@ extension Face {
     /// Returns radians in [0, π]. For two planar faces this is the dihedral angle
     /// + π/2 correction; for curved faces it's a point estimate.
     public func angle(to other: Face) -> Double? {
-        guard let sample = uvMidpointSample(), let otherSample = other.uvMidpointSample() else {
+        guard let normal = uvMidpointNormal(), let otherNormal = other.uvMidpointNormal() else {
             return nil
         }
-        return unsignedAngle(between: sample.normal, and: otherSample.normal)
+        return unsignedAngle(between: normal, and: otherNormal)
     }
 
     /// Whether this face is parallel to another at the given normal-comparison tolerance (radians).
@@ -219,9 +242,10 @@ extension Face {
             // surface point. For non-cylindrical revolved surfaces "radius" is
             // ambiguous; this is the distance from the axis at the face centre.
             // Callers who need major/minor radii use the Surface type's own
-            // dedicated properties.
-            guard let sample = uvMidpointSample() else { return nil }
-            let offset = sample.point - primary.origin
+            // dedicated properties. Only the point is needed here, not the
+            // normal, so use the lighter-weight accessor (PR #897 review).
+            guard let samplePoint = uvMidpointPoint() else { return nil }
+            let offset = samplePoint - primary.origin
             let axisUnit = simd_normalize(primary.direction)
             let axialComponent = simd_dot(offset, axisUnit) * axisUnit
             let radial = offset - axialComponent

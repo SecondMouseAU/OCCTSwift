@@ -232,10 +232,13 @@ An axis perpendicular to a face, anchored at a vertex.
 case normalToFace(face: TopologyRef, at: TopologyRef)
 ```
 
-The direction comes from `Face.primaryAxis` when the face has one — cylindrical, conical,
-spherical, toroidal, surface-of-revolution, and surface-of-extrusion faces — so it is the surface's
-own constant axis of revolution, not a per-point sample (#882). For planar and free-form faces,
-which have no such axis, it falls back to the face's UV-midpoint surface normal.
+The direction comes from `Face.primaryAxis` when the face has one and is genuinely a rotation
+axis — cylindrical, conical, spherical, toroidal, and surface-of-revolution faces — so it is the
+surface's own constant axis of revolution, not a per-point sample (#882). For planar and free-form
+faces, which have no such axis, it falls back to the face's UV-midpoint surface normal.
+Surface-of-extrusion faces also have a `primaryAxis`, but its `direction` is the *sweep* direction
+of `Geom_SurfaceOfLinearExtrusion` (tangent to the surface, not perpendicular to it), so they're
+deliberately excluded from this branch and fall back to the UV-midpoint normal too (PR #897 review).
 
 ```swift
 // On a cylindrical face this resolves to the cylinder's own axis (constant
@@ -322,6 +325,20 @@ parameterized surface (a sphere, cone, or general NURBS face) this can differ su
 UV-midpoint sample, and for a closed or symmetric face the true centroid can lie off the surface
 entirely (e.g. at a full sphere's center). Fails with `.degenerate("face has zero area")` rather
 than reporting a fabricated point when the face has no area to have a centroid.
+
+```swift
+// A cylinder's lateral face has its true area centroid on the cylinder's own axis
+// (radial distance 0) — a UV-midpoint sample instead sits a full radius off-axis.
+let point = ConstructionPoint.centroidOfFace(cylindricalFaceRef)
+switch graph.resolve(point) {
+case .success(let p):
+    print(p)                      // on-axis, at the face's true area centroid
+case .failure(.degenerate):
+    print("face has zero area")   // e.g. a sliver from a collapsed fillet
+case .failure(let error):
+    print(error)
+}
+```
 
 ---
 
