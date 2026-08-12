@@ -176,7 +176,6 @@ Sources/OCCTSwift/Shape+ShapeHealing.swift
 Sources/OCCTSwift/Shape+Surface.swift
 Sources/OCCTSwift/Shape+Topology.swift
 Sources/OCCTSwift/ShapeAnalysisResult.swift
-Sources/OCCTSwift/ShapeAxis.swift
 Sources/OCCTSwift/ShapeContents.swift
 Sources/OCCTSwift/ShapeContentsExtended.swift
 Sources/OCCTSwift/ShapeDistance.swift
