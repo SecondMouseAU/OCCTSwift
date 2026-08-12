@@ -540,7 +540,9 @@ public func predominantShapeType(lookInsideCompounds: Bool = true) -> ShapeFilte
 ```
 
 - **Parameters:** `lookInsideCompounds` — if `true`, inspect sub-compounds.
-- **Returns:** The most-common `ShapeFilterType` found.
+- **Returns:** The most-common `ShapeFilterType` found, or `.unknown` if the underlying OCCT walk
+  throws (PR #870 aggregate review — this used to decode as `.vertex`, a real, legitimate case,
+  indistinguishable from an actual vertex-dominated shape).
 - **OCCT:** `ShapeExtend_Explorer::ShapeType`
 - **Example:**
   ```swift

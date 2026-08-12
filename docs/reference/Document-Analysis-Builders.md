@@ -1647,7 +1647,7 @@ with `.grouped` / `Matrix12Grouped.interleaved`.
 public struct TransformMatrix3D: Sendable {
     public let values: [Double] // 12 elements: row-major 3x4, INTERLEAVED
 
-    public init(_ values: [Double])   // precondition: values.count == 12
+    public init?(_ values: [Double])  // nil on values.count != 12
     public var grouped: Matrix12Grouped { get }
 }
 ```
@@ -1690,18 +1690,18 @@ Added in #835 (PR #864 review) to replace the plain `[Double]` parameter `transf
 public struct Matrix12Grouped: Sendable {
     public let values: [Double] // 12 elements: GROUPED
 
-    public init(_ values: [Double])   // precondition: values.count == 12
+    public init?(_ values: [Double])  // nil on values.count != 12
     public var interleaved: TransformMatrix3D { get }
 }
 ```
 
 - **Example:**
   ```swift
-  let matrix = Matrix12Grouped([
-      1, 0, 0,   0, 1, 0,   0, 0, 1,   // identity rotation
-      5, 0, 0                          // translate +5 along X
-  ])
-  if let box = Shape.box(width: 10, height: 10, depth: 10),
+  if let matrix = Matrix12Grouped([
+        1, 0, 0,   0, 1, 0,   0, 0, 1,   // identity rotation
+        5, 0, 0                          // translate +5 along X
+     ]),
+     let box = Shape.box(width: 10, height: 10, depth: 10),
      let moved = box.transformed(matrix: matrix) {
       print(moved.isValid)
   }

@@ -2855,19 +2855,20 @@ OCCTShapeRef _Nullable OCCTShapeExtendSortedCompound(OCCTShapeRef shape, int32_t
 }
 
 int32_t OCCTShapeExtendShapeType(OCCTShapeRef shape, bool compound) {
-    // #844: this fallback is `7`, which is TopAbs_VERTEX, not TopAbs_SHAPE (8) as the comment on
-    // this line used to say -- noted, not changed, since correcting the VALUE (rather than the
-    // comment) would change predominantShapeType()'s reported result for a null shape / a caught
-    // exception (today it silently decodes as .vertex; the mislabeled intent was presumably
-    // .compound, ShapeType's own decode-failure fallback in predominantShapeType()) and deserves
-    // its own measurement and test, not a silent behavior change riding along with an enum
-    // consolidation.
-    if (!shape) return 7; // TopAbs_VERTEX
+    // #844 left this fallback as `7` (TopAbs_VERTEX, a real, legitimate case) though the comment
+    // on this line at the time said TopAbs_SHAPE (8) -- so a null shape or a caught exception
+    // silently decoded as ".vertex" in predominantShapeType() (Shape+ShapeHealing.swift) rather
+    // than signaling failure. Fixed (PR #870 aggregate review): -1, matching ShapeType's own
+    // `.unknown = -1` decode-failure sentinel -- predominantShapeType()'s
+    // `ShapeFilterType(rawValue: Int(raw)) ?? .compound` decodes -1 to `.unknown` directly (a
+    // defined case, so the `?? .compound` fallback never fires for this), rather than falling
+    // through to a plausible-looking real answer. See Issue870ShapeExtendShapeTypeFailureTests.
+    if (!shape) return -1; // ShapeType.unknown
     try {
         ShapeExtend_Explorer explorer;
         return (int32_t)explorer.ShapeType(shape->shape,
             compound ? Standard_True : Standard_False);
-    } catch (...) { return 7; } // TopAbs_VERTEX
+    } catch (...) { return -1; } // ShapeType.unknown
 }
 
 // MARK: - ShapeUpgrade FaceDivide / WireDivide / EdgeDivide / FixSmall / ConvertToBezier (v0.64)

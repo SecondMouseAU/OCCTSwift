@@ -970,8 +970,8 @@ public func transformed(matrix: Matrix12Grouped) -> Shape?
 - **Example:**
   ```swift
   // Identity rotation, translate by (5, 0, 0)
-  let m = Matrix12Grouped([1,0,0, 0,1,0, 0,0,1, 5,0,0])
-  if let moved = box.transformed(matrix: m) { print(moved.isValid) }
+  if let m = Matrix12Grouped([1,0,0, 0,1,0, 0,0,1, 5,0,0]),
+     let moved = box.transformed(matrix: m) { print(moved.isValid) }
   ```
 - **Deprecated overload:** `transformed(matrix: [Double]) -> Shape?` still exists
   (`@available(*, deprecated)`) for source compatibility — `nil` if `matrix.count != 12`. #835
