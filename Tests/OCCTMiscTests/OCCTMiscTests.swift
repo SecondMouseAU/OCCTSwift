@@ -117,6 +117,81 @@ struct ConstructionContextTests {
         #expect(ctx.plane(pID) == nil)
     }
 
+    // #886: `remove(axis:)`/`remove(point:)` had no coverage at all — only `remove(plane:)`
+    // (above) was exercised.
+    @Test("Remove an axis and a point")
+    func removeAxisAndPoint() {
+        let ctx = ConstructionContext()
+        let aID = ctx.add(.absolute(origin: .zero, direction: SIMD3(1, 0, 0)))
+        let ptID = ctx.add(ConstructionPoint.absolute(SIMD3(1, 2, 3)))
+        #expect(ctx.axis(aID) != nil)
+        #expect(ctx.point(ptID) != nil)
+        ctx.remove(axis: aID)
+        ctx.remove(point: ptID)
+        #expect(ctx.axis(aID) == nil)
+        #expect(ctx.point(ptID) == nil)
+    }
+
+    // #886: `removeAll()` had no coverage anywhere in `Tests/`.
+    @Test("removeAll clears every entity kind")
+    func removeAllClearsEveryKind() {
+        let ctx = ConstructionContext()
+        ctx.add(.absolute(origin: .zero, normal: SIMD3(0, 0, 1)))
+        ctx.add(.absolute(origin: .zero, direction: SIMD3(1, 0, 0)))
+        ctx.add(ConstructionPoint.absolute(SIMD3(1, 2, 3)))
+        #expect(ctx.count == (planes: 1, axes: 1, points: 1))
+
+        ctx.removeAll()
+        #expect(ctx.count == (planes: 0, axes: 0, points: 0))
+        #expect(ctx.allPlanes.isEmpty)
+        #expect(ctx.allAxes.isEmpty)
+        #expect(ctx.allPoints.isEmpty)
+    }
+
+    // #886: `resolve(_ id: AxisID, in:)`/`resolve(_ id: PointID, in:)` had no equivalent to
+    // `resolveAgainstGraph` above (plane only).
+    @Test("Resolve axis and point entities against a graph")
+    func resolveAxisAndPointAgainstGraph() {
+        guard let box = Shape.box(width: 10, height: 10, depth: 10),
+              let graph = BRepGraph(shape: box) else {
+            Issue.record("graph nil"); return
+        }
+        let ctx = ConstructionContext()
+
+        let aID = ctx.add(.absolute(origin: SIMD3(1, 2, 3), direction: SIMD3(1, 0, 0)))
+        switch ctx.resolve(aID, in: graph) {
+        case .success(let resolved): #expect(resolved.origin == SIMD3(1, 2, 3))
+        case .failure: Issue.record("axis resolve failed")
+        }
+
+        let ptID = ctx.add(ConstructionPoint.absolute(SIMD3(4, 5, 6)))
+        switch ctx.resolve(ptID, in: graph) {
+        case .success(let point): #expect(point == SIMD3(4, 5, 6))
+        case .failure: Issue.record("point resolve failed")
+        }
+    }
+
+    // #886: `allBrokenDetection` above only ever drove a broken *plane* through `allBroken`,
+    // so its axis/point branches were only ever trivially satisfied (asserted empty), never
+    // actually exercised by a genuinely broken axis/point reference.
+    @Test("allBroken detects unregistered axis and point references")
+    func allBrokenDetectsAxisAndPoint() {
+        guard let box = Shape.box(width: 10, height: 10, depth: 10),
+              let graph = BRepGraph(shape: box) else {
+            Issue.record("graph nil"); return
+        }
+        let ctx = ConstructionContext()
+        let brokenEdge = TopologyRef.createdBy(operationName: "NeverHappened", kind: .edge)
+        let brokenVertex = TopologyRef.createdBy(operationName: "NeverHappened", kind: .vertex)
+        ctx.add(ConstructionAxis.alongEdge(brokenEdge))
+        ctx.add(ConstructionPoint.atVertex(brokenVertex))
+
+        let broken = ctx.allBroken(in: graph)
+        #expect(broken.planes.isEmpty)
+        #expect(broken.axes.count == 1)
+        #expect(broken.points.count == 1)
+    }
+
     @Test("Document exposes a lazy construction context")
     func documentIntegration() {
         guard let doc = Document.create() else { Issue.record("doc nil"); return }
@@ -394,6 +469,121 @@ struct ConstructionLayerTests {
         #expect(result.failures.isEmpty)
         // Each materialized shape shows up on the CONSTRUCTION layer.
         #expect(doc.constructionShapeLabels.count >= 3)
+    }
+
+    // #886: no test asserted on a `MaterializationFailure` case by name anywhere in `Tests/` —
+    // `materializeAll` above only ever exercised the success path.
+    @Test("materialize reports a resolve failure for each entity kind")
+    func materializeReportsResolveFailuresByKind() {
+        guard let doc = Document.create(),
+              let box = Shape.box(width: 10, height: 10, depth: 10),
+              let graph = BRepGraph(shape: box) else {
+            Issue.record("setup nil"); return
+        }
+        let ctx = doc.constructionContext
+        let brokenFace = TopologyRef.createdBy(operationName: "NeverHappened", kind: .face)
+        let brokenEdge = TopologyRef.createdBy(operationName: "NeverHappened", kind: .edge)
+        let brokenVertex = TopologyRef.createdBy(operationName: "NeverHappened", kind: .vertex)
+        ctx.add(ConstructionPlane.offsetFromFace(face: brokenFace, distance: 5))
+        ctx.add(ConstructionAxis.alongEdge(brokenEdge))
+        ctx.add(ConstructionPoint.atVertex(brokenVertex))
+
+        let result = ctx.materialize(in: doc, graph: graph)
+        #expect(result.totalMaterialized == 0)
+        #expect(result.failures.count == 3)
+
+        var sawPlane = false
+        var sawAxis = false
+        var sawPoint = false
+        for failure in result.failures {
+            switch failure {
+            case .planeResolveFailed: sawPlane = true
+            case .axisResolveFailed: sawAxis = true
+            case .pointResolveFailed: sawPoint = true
+            default: Issue.record("unexpected failure kind: \(failure)")
+            }
+        }
+        #expect(sawPlane)
+        #expect(sawAxis)
+        #expect(sawPoint)
+    }
+
+    // #880: `axisShape` always materializes as a bare wire (its wire is never closed, so the
+    // face attempt above it can never succeed) — the *only* way it can still fail is the same
+    // way `Wire.line` itself already guards against: a degenerate direction. This is a
+    // regression guard that #880's dead-code removal (deleting the never-succeeding
+    // `Shape.face(from: wire) ??` attempt) didn't change that outcome.
+    @Test("materialize reports axisShapeFailed for a zero-length axis direction (#880)")
+    func materializeReportsAxisShapeFailedForZeroLengthDirection() {
+        guard let doc = Document.create(),
+              let box = Shape.box(width: 10, height: 10, depth: 10),
+              let graph = BRepGraph(shape: box) else {
+            Issue.record("setup nil"); return
+        }
+        let ctx = doc.constructionContext
+        ctx.add(ConstructionAxis.absolute(origin: .zero, direction: .zero), name: "degenerate")
+
+        let result = ctx.materialize(in: doc, graph: graph)
+        #expect(result.totalMaterialized == 0)
+        #expect(result.failures.count == 1)
+        if case .axisShapeFailed = result.failures.first {
+            // expected
+        } else {
+            Issue.record("expected axisShapeFailed, got \(String(describing: result.failures.first))")
+        }
+    }
+
+    // #880: `planeShape` has no bare-wire fallback, unlike `axisShape` — deliberately. This is
+    // the case that motivated keeping it that way: `planeHalfSize` this small collapses the
+    // rectangle's corners closer together than OCCT's confusion tolerance (~1e-7), so
+    // `BRepBuilderAPI_MakePolygon` can't even close a valid wire — `Wire.polygon3D` itself
+    // returns `nil`, before any face/fallback logic would run either way.
+    @Test("materialize reports planeShapeFailed when the plane's wire itself can't be built (#880)")
+    func materializeReportsPlaneShapeFailedForUnbuildableWire() {
+        guard let doc = Document.create(),
+              let box = Shape.box(width: 10, height: 10, depth: 10),
+              let graph = BRepGraph(shape: box) else {
+            Issue.record("setup nil"); return
+        }
+        let ctx = doc.constructionContext
+        ctx.add(ConstructionPlane.absolute(origin: .zero, normal: SIMD3(0, 0, 1)), name: "tiny")
+
+        let result = ctx.materialize(in: doc, graph: graph, options: .init(planeHalfSize: 1e-9))
+        #expect(result.totalMaterialized == 0)
+        #expect(result.failures.count == 1)
+        if case .planeShapeFailed = result.failures.first {
+            // expected
+        } else {
+            Issue.record("expected planeShapeFailed, got \(String(describing: result.failures.first))")
+        }
+    }
+
+    // #880: the *only* input measured to reach planeShape's face-build failure with a non-nil
+    // wire is a zero-length plane normal — `Placement`'s `simd_normalize` turns that into NaN,
+    // and `BRepBuilderAPI_MakePolygon` reports "done" on the resulting NaN-vertexed wire anyway.
+    // `BRepBuilderAPI_MakeFace` then correctly declines it. Giving `planeShape` the same
+    // `?? Shape.shape(from: wire)` fallback `axisShape` has would turn this case into a silent
+    // "success" that adds non-finite geometry to the document instead of reporting failure —
+    // measured directly, not assumed: this is the fixture that would regress if that fallback
+    // were ever added. `planeShape` deliberately does not have it.
+    @Test("materialize reports planeShapeFailed, not non-finite geometry, for a zero-length normal (#880)")
+    func materializeReportsPlaneShapeFailedForNonFinitePlacement() {
+        guard let doc = Document.create(),
+              let box = Shape.box(width: 10, height: 10, depth: 10),
+              let graph = BRepGraph(shape: box) else {
+            Issue.record("setup nil"); return
+        }
+        let ctx = doc.constructionContext
+        ctx.add(ConstructionPlane.absolute(origin: .zero, normal: .zero), name: "degenerate-normal")
+
+        let result = ctx.materialize(in: doc, graph: graph)
+        #expect(result.totalMaterialized == 0)
+        #expect(result.failures.count == 1)
+        if case .planeShapeFailed = result.failures.first {
+            // expected
+        } else {
+            Issue.record("expected planeShapeFailed, got \(String(describing: result.failures.first))")
+        }
     }
 
     /// Regression guard for #277.

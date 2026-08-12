@@ -32,9 +32,7 @@ Sources/OCCTSwift/ClipPlane.swift
 Sources/OCCTSwift/Color.swift
 Sources/OCCTSwift/CompBezierConverter.swift
 Sources/OCCTSwift/Conic2D.swift
-Sources/OCCTSwift/ConstructionContext.swift
 Sources/OCCTSwift/ConstructionEntity.swift
-Sources/OCCTSwift/ConstructionLayer.swift
 Sources/OCCTSwift/ContapContourResult.swift
 Sources/OCCTSwift/Continuity.swift
 Sources/OCCTSwift/CoordinateSystem.swift
