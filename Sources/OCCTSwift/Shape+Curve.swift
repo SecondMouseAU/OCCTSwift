@@ -349,6 +349,19 @@ extension Shape {
     ///   so measuring the accurate, subdivided-to-convergence length here would pay for an
     ///   equivalent computation twice on every ordinary call just to guard the rare pathological
     ///   one (#862).
+    ///
+    ///   PR #870 aggregate review, investigated and left as is: on the ordinary path this quick
+    ///   estimate is a *third* length quadrature alongside the two `GCPnts_UniformAbscissa`
+    ///   already performs internally (once inside `sizeAndFillUniformAbscissa`'s size-only call,
+    ///   again inside its fill call) — two sufficed before this guard existed. Collapsing size+fill
+    ///   into one bridge call would need a pre-allocated buffer; sizing it at
+    ///   ``Sampling/maximumSampleCount`` (10,000,000 `Double`s, ~80MB) to stay safe against the
+    ///   estimate ever undershooting is a strictly worse trade for the overwhelmingly common
+    ///   short-edge call, and sizing it off the estimate itself needs a margin plus a rare-case
+    ///   reconstruction fallback for when that margin isn't enough — real extra logic, in a widely
+    ///   used sampling entry point, to remove one already-cheap (single unsubdivided quadrature,
+    ///   O(spans) not O(points)) call. Left unchanged rather than trading a simple, already-tested
+    ///   two-call idiom for that risk.
     public func uniformAbscissa(distance: Double) -> [Double]? {
         let domain = edgeAdaptorDomain
         let len = OCCTEdgeArcLengthQuickEstimate(handle, domain.lowerBound, domain.upperBound)

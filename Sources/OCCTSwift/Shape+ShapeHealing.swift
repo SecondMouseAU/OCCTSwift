@@ -1048,7 +1048,10 @@ extension Shape {
     /// Get the predominant shape type in this compound.
     ///
     /// - Parameter lookInsideCompounds: If true, look inside sub-compounds
-    /// - Returns: The predominant shape type
+    /// - Returns: The predominant shape type, or ``ShapeType/unknown`` if the underlying
+    ///   `ShapeExtend_Explorer` walk throws (fixed in PR #870's aggregate review — this used to
+    ///   decode as ``ShapeType/vertex``, a real, legitimate case, indistinguishable from an actual
+    ///   vertex-dominated shape).
     public func predominantShapeType(lookInsideCompounds: Bool = true) -> ShapeFilterType {
         let raw = OCCTShapeExtendShapeType(handle, lookInsideCompounds)
         return ShapeFilterType(rawValue: Int(raw)) ?? .compound

@@ -192,7 +192,12 @@ extension Shape {
     /// - Returns: Counts of solids, shells, faces, wires, edges, vertices, and free
     ///   (unconnected) elements.
     public var contents: ShapeContents {
-        let core = ShapeContentsCore(OCCTShapeGetContents(handle))
+        let c = OCCTShapeGetContents(handle)
+        let core = shapeContentsCore(
+            nbSolids: c.nbSolids, nbShells: c.nbShells, nbFaces: c.nbFaces, nbWires: c.nbWires,
+            nbEdges: c.nbEdges, nbVertices: c.nbVertices, nbFreeEdges: c.nbFreeEdges,
+            nbFreeWires: c.nbFreeWires, nbFreeFaces: c.nbFreeFaces
+        )
         return ShapeContents(
             solids: core.solids, shells: core.shells,
             faces: core.faces, wires: core.wires,
@@ -2654,7 +2659,11 @@ extension Shape {
     /// Get extended shape contents analysis.
     public func contentsExtended() -> ShapeContentsExtended {
         let c = OCCTShapeGetContentsExtended(handle)
-        let core = ShapeContentsCore(c)
+        let core = shapeContentsCore(
+            nbSolids: c.nbSolids, nbShells: c.nbShells, nbFaces: c.nbFaces, nbWires: c.nbWires,
+            nbEdges: c.nbEdges, nbVertices: c.nbVertices, nbFreeEdges: c.nbFreeEdges,
+            nbFreeWires: c.nbFreeWires, nbFreeFaces: c.nbFreeFaces
+        )
         return ShapeContentsExtended(
             nbSolids: core.solids, nbShells: core.shells,
             nbFaces: core.faces, nbWires: core.wires,
