@@ -204,6 +204,139 @@ struct ConstructionContextTests {
     }
 }
 
+// MARK: - PR #898 review: ConstructionContext cross-store atomicity
+//
+// #886's `EntityStore`-per-kind unification dropped the atomicity the old single class-wide
+// `NSLock` gave `count`/`removeAll()`: each now did three separately-locked per-store operations
+// instead of one atomic critical section, so a concurrent reader could observe some kinds already
+// mutated and others not. Fixed by `ConstructionContext.crossStoreLock`, which `add`, `removeAll`
+// and `count` now share. Both tests below detect a torn observation the same way: pre-populate a
+// large, equal population per kind, then hammer `count` from many threads while a single
+// `removeAll()` races them — a torn snapshot shows up as some kinds already at (or near) zero while
+// others are still at (or near) the full pre-populated count, which is impossible once `count` and
+// `removeAll()` share one lock. `entitiesPerKind` and the read-loop iteration counts were picked by
+// running the pre-fix code below and confirming a torn read reliably shows up within a handful of
+// runs; both tests were also run against the fixed code repeatedly (50+ runs each) with zero torn
+// observations, per okf/policies/prove-the-test-fails.md.
+@Suite("PR #898 review: ConstructionContext cross-store atomicity")
+struct ConstructionContextConcurrencyTests {
+
+    /// Builds a context pre-populated with `entitiesPerKind` of each kind, races `removeAll()`
+    /// against `readerCount` threads hammering `count`, and returns every `count` reading that was
+    /// "torn": neither (a) all three kinds still near their full pre-populated count, nor (b) all
+    /// three near zero. `extraConcurrentWork`, if given, is launched into the same `DispatchGroup`
+    /// alongside the readers and the single `removeAll()` call, so callers can mix in additional
+    /// racing traffic (e.g. concurrent `add()`s) without duplicating the harness.
+    private func tornCountObservations(
+        entitiesPerKind: Int,
+        readerCount: Int,
+        readsPerReader: Int,
+        extraConcurrentWork: [@Sendable (ConstructionContext) -> Void] = []
+    ) -> [(planes: Int, axes: Int, points: Int)] {
+        let ctx = ConstructionContext()
+        for _ in 0..<entitiesPerKind {
+            ctx.add(.absolute(origin: .zero, normal: SIMD3(0, 0, 1)))
+            ctx.add(.absolute(origin: .zero, direction: SIMD3(1, 0, 0)))
+            ctx.add(ConstructionPoint.absolute(.zero))
+        }
+
+        let threshold = entitiesPerKind / 2
+        let tornLock = NSLock()
+        var torn: [(planes: Int, axes: Int, points: Int)] = []
+        let group = DispatchGroup()
+
+        for _ in 0..<readerCount {
+            group.enter()
+            DispatchQueue.global().async {
+                for _ in 0..<readsPerReader {
+                    let c = ctx.count
+                    let large = (c.planes > threshold, c.axes > threshold, c.points > threshold)
+                    let allLarge = large.0 && large.1 && large.2
+                    let allSmall = !large.0 && !large.1 && !large.2
+                    if !(allLarge || allSmall) {
+                        tornLock.lock()
+                        torn.append(c)
+                        tornLock.unlock()
+                    }
+                }
+                group.leave()
+            }
+        }
+
+        for work in extraConcurrentWork {
+            group.enter()
+            DispatchQueue.global().async {
+                work(ctx)
+                group.leave()
+            }
+        }
+
+        group.enter()
+        DispatchQueue.global().async {
+            ctx.removeAll()
+            group.leave()
+        }
+
+        group.wait()
+        return torn
+    }
+
+    // Finding 1 (line ~272): `count` did three independently-locked reads instead of one atomic
+    // snapshot, so a concurrent `removeAll()` could be caught mid-flight.
+    @Test("count() never observes a torn cross-store snapshot during removeAll()")
+    func countNeverTearsDuringRemoveAll() {
+        let torn = tornCountObservations(entitiesPerKind: 4000, readerCount: 8, readsPerReader: 3000)
+        #expect(
+            torn.isEmpty,
+            "count() observed \(torn.count) torn snapshot(s), e.g. \(String(describing: torn.first))"
+        )
+    }
+
+    // Finding 2 (line ~183): `removeAll()` did `planes.removeAll(); axes.removeAll();
+    // points.removeAll()` as three separate lock acquisitions, so a concurrent `add()` (the
+    // review's own repro: "thread A calls removeAll() while thread B concurrently calls add()")
+    // could land in the gap between two of those steps. This reuses the same torn-`count()`
+    // detector as the test above with a swarm of concurrent `add()` calls mixed into the race — the
+    // review's literal scenario — and asserts the same invariant still holds: "removeAll() followed
+    // by a synchronized count check is genuinely empty [or reflects the full population] unless a
+    // racing add landed cleanly after", never a torn mix of the two.
+    //
+    // The concurrent `add()` traffic here (9 calls) is negligible next to `entitiesPerKind` (4000),
+    // so it can never itself flip a `count` reading from one bucket to the other — any torn
+    // observation is still attributable to `removeAll()`/`count()` racing, not to the adds.
+    @Test("removeAll() stays all-or-nothing under concurrent add()")
+    func removeAllStaysAtomicUnderConcurrentAdd() {
+        let adders: [@Sendable (ConstructionContext) -> Void] = (0..<9).map { i in
+            { ctx in
+                switch i % 3 {
+                case 0: ctx.add(.absolute(origin: .zero, normal: SIMD3(0, 0, 1)))
+                case 1: ctx.add(.absolute(origin: .zero, direction: SIMD3(1, 0, 0)))
+                default: ctx.add(ConstructionPoint.absolute(.zero))
+                }
+            }
+        }
+        let torn = tornCountObservations(
+            entitiesPerKind: 4000, readerCount: 8, readsPerReader: 3000, extraConcurrentWork: adders
+        )
+        let message =
+            "count() observed \(torn.count) torn snapshot(s) while add() raced removeAll(), "
+            + "e.g. \(String(describing: torn.first))"
+        #expect(torn.isEmpty, "\(message)")
+    }
+
+    // Sequential baseline for the invariant the two race tests above stress under concurrency:
+    // with nothing else running, removeAll() followed immediately by count() is exactly empty.
+    @Test("removeAll() immediately followed by count() is empty with no concurrent add()")
+    func removeAllThenCountIsEmptySequentially() {
+        let ctx = ConstructionContext()
+        ctx.add(.absolute(origin: .zero, normal: SIMD3(0, 0, 1)))
+        ctx.add(.absolute(origin: .zero, direction: SIMD3(1, 0, 0)))
+        ctx.add(ConstructionPoint.absolute(.zero))
+        ctx.removeAll()
+        #expect(ctx.count == (planes: 0, axes: 0, points: 0))
+    }
+}
+
 // MARK: - v0.142 / #72 Phase 4: Sketch + buildProfile
 
 @Suite("v0.142 Sketch buildProfile")

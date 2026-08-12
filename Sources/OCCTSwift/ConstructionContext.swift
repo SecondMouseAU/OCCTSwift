@@ -109,23 +109,45 @@ public final class ConstructionContext: @unchecked Sendable {
     private let axes = EntityStore<AxisID, ConstructionAxis>()
     private let points = EntityStore<PointID, ConstructionPoint>()
 
+    /// Guards `add`, `removeAll` and `count` against each other so each behaves as one atomic
+    /// step across all three stores, matching the single class-wide lock the pre-#886
+    /// implementation held for every operation.
+    ///
+    /// Each `EntityStore` keeps its own internal lock (a distinct `NSLock`) for its own
+    /// single-store operations (`value`, `name`, `all`, `remove`); nesting this lock around a
+    /// call into a store's already-locked method is safe because the two locks are always
+    /// acquired in the same order (this one first) and are never the same object, so there's no
+    /// double-locking or deadlock risk.
+    ///
+    /// `remove(plane:)`/`remove(axis:)`/`remove(point:)` deliberately don't take this lock:
+    /// removing one already-unique ID is idempotent regardless of how it interleaves with
+    /// `removeAll()` — the ID ends up absent either way — so there's no torn outcome to guard
+    /// against the way there is for `add` racing `removeAll`/`count` (PR #898 review).
+    private let crossStoreLock = NSLock()
+
     public init() {}
 
     // MARK: - Insertion
 
     @discardableResult
     public func add(_ plane: ConstructionPlane, name: String? = nil) -> PlaneID {
-        planes.add(plane, name: name)
+        crossStoreLock.lock()
+        defer { crossStoreLock.unlock() }
+        return planes.add(plane, name: name)
     }
 
     @discardableResult
     public func add(_ axis: ConstructionAxis, name: String? = nil) -> AxisID {
-        axes.add(axis, name: name)
+        crossStoreLock.lock()
+        defer { crossStoreLock.unlock() }
+        return axes.add(axis, name: name)
     }
 
     @discardableResult
     public func add(_ point: ConstructionPoint, name: String? = nil) -> PointID {
-        points.add(point, name: name)
+        crossStoreLock.lock()
+        defer { crossStoreLock.unlock() }
+        return points.add(point, name: name)
     }
 
     // MARK: - Lookup
@@ -181,6 +203,8 @@ public final class ConstructionContext: @unchecked Sendable {
     }
 
     public func removeAll() {
+        crossStoreLock.lock()
+        defer { crossStoreLock.unlock() }
         planes.removeAll()
         axes.removeAll()
         points.removeAll()
@@ -191,41 +215,38 @@ public final class ConstructionContext: @unchecked Sendable {
     public func resolve(_ id: PlaneID, in graph: BRepGraph)
         -> Result<Placement, ConstructionResolutionError>
     {
-        resolveEntity(id, in: planes, kind: "plane", graph: graph) {
-            (graph: BRepGraph, plane: ConstructionPlane) in graph.resolve(plane)
-        }
+        resolveEntity(id, in: planes, kind: "plane") { graph.resolve($0) }
     }
 
     public func resolve(_ id: AxisID, in graph: BRepGraph)
         -> Result<(origin: SIMD3<Double>, direction: SIMD3<Double>), ConstructionResolutionError>
     {
-        resolveEntity(id, in: axes, kind: "axis", graph: graph) {
-            (graph: BRepGraph, axis: ConstructionAxis) in graph.resolve(axis)
-        }
+        resolveEntity(id, in: axes, kind: "axis") { graph.resolve($0) }
     }
 
     public func resolve(_ id: PointID, in graph: BRepGraph)
         -> Result<SIMD3<Double>, ConstructionResolutionError>
     {
-        resolveEntity(id, in: points, kind: "point", graph: graph) {
-            (graph: BRepGraph, point: ConstructionPoint) in graph.resolve(point)
-        }
+        resolveEntity(id, in: points, kind: "point") { graph.resolve($0) }
     }
 
     /// Shared shape for the three `resolve(_:in:)` overloads above: look the entity up by ID,
     /// resolve it against the graph, or report a not-registered failure — same message format
     /// every kind used before #886 unified them.
+    ///
+    /// `resolver` captures its `BRepGraph` from the enclosing call site rather than taking one as
+    /// a parameter — every caller already has exactly one `graph` in scope, so re-threading it
+    /// through the closure signature was a no-op indirection (PR #898 review).
     private func resolveEntity<ID: ConstructionEntityID, Entity, Resolved>(
         _ id: ID,
         in store: EntityStore<ID, Entity>,
         kind: String,
-        graph: BRepGraph,
-        resolver: (BRepGraph, Entity) -> Result<Resolved, ConstructionResolutionError>
+        resolver: (Entity) -> Result<Resolved, ConstructionResolutionError>
     ) -> Result<Resolved, ConstructionResolutionError> {
         guard let entity = store.value(id) else {
             return .failure(.notApplicable("\(kind) id \(id.raw) not registered"))
         }
-        return resolver(graph, entity)
+        return resolver(entity)
     }
 
     // MARK: - Diagnostics
@@ -245,32 +266,30 @@ public final class ConstructionContext: @unchecked Sendable {
     /// Useful for agent workflows to detect broken references after a model edit.
     public func allBroken(in graph: BRepGraph) -> BrokenEntities {
         BrokenEntities(
-            planes: broken(planes.all, graph: graph) {
-                (graph: BRepGraph, plane: ConstructionPlane) in graph.resolve(plane)
-            },
-            axes: broken(axes.all, graph: graph) {
-                (graph: BRepGraph, axis: ConstructionAxis) in graph.resolve(axis)
-            },
-            points: broken(points.all, graph: graph) {
-                (graph: BRepGraph, point: ConstructionPoint) in graph.resolve(point)
-            }
+            planes: broken(planes.all) { graph.resolve($0) },
+            axes: broken(axes.all) { graph.resolve($0) },
+            points: broken(points.all) { graph.resolve($0) }
         )
     }
 
     /// Shared shape for the three per-kind scans in `allBroken(in:)`, above.
+    ///
+    /// `resolver` captures `graph` from the enclosing `allBroken(in:)` call rather than taking
+    /// one as a parameter — same reasoning as `resolveEntity` above (PR #898 review).
     private func broken<ID: ConstructionEntityID, Entity, Resolved>(
         _ entries: [(id: ID, name: String?, value: Entity)],
-        graph: BRepGraph,
-        resolver: (BRepGraph, Entity) -> Result<Resolved, ConstructionResolutionError>
+        resolver: (Entity) -> Result<Resolved, ConstructionResolutionError>
     ) -> [(id: ID, error: ConstructionResolutionError)] {
         entries.compactMap { entry in
-            guard case .failure(let error) = resolver(graph, entry.value) else { return nil }
+            guard case .failure(let error) = resolver(entry.value) else { return nil }
             return (id: entry.id, error: error)
         }
     }
 
     public var count: (planes: Int, axes: Int, points: Int) {
-        (planes.count, axes.count, points.count)
+        crossStoreLock.lock()
+        defer { crossStoreLock.unlock() }
+        return (planes.count, axes.count, points.count)
     }
 }
 
