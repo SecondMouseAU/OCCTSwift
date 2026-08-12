@@ -104,13 +104,13 @@ extension Shape {
     ///
     /// ```swift
     /// // Pure translation by (5, 0, 0): identity rotation, translation grouped at the end.
-    /// let matrix = Matrix12Grouped([
-    ///     1, 0, 0,   // r00 r01 r02
-    ///     0, 1, 0,   // r10 r11 r12
-    ///     0, 0, 1,   // r20 r21 r22
-    ///     5, 0, 0    // tx  ty  tz
-    /// ])
-    /// if let box = Shape.box(origin: SIMD3(0, 0, 0), width: 10, height: 10, depth: 10),
+    /// if let matrix = Matrix12Grouped([
+    ///        1, 0, 0,   // r00 r01 r02
+    ///        0, 1, 0,   // r10 r11 r12
+    ///        0, 0, 1,   // r20 r21 r22
+    ///        5, 0, 0    // tx  ty  tz
+    ///    ]),
+    ///    let box = Shape.box(origin: SIMD3(0, 0, 0), width: 10, height: 10, depth: 10),
     ///    let moved = box.transformed(matrix: matrix),
     ///    let bb = moved.boundingBox {
     ///     print(bb.min.x, bb.max.x)  // 5.0 15.0 — box shifted +5 along X, matching tx = 5
@@ -146,12 +146,12 @@ extension Shape {
     ///
     /// ```swift
     /// // Non-uniform scale (2x, 1x, 0.5x) about the origin: no rotation, no translation.
-    /// let matrix = TransformMatrix3D([
-    ///     2, 0, 0,   0,   // r00 r01 r02  tx
-    ///     0, 1, 0,   0,   // r10 r11 r12  ty
-    ///     0, 0, 0.5, 0    // r20 r21 r22  tz
-    /// ])
-    /// if let box = Shape.box(origin: SIMD3(0, 0, 0), width: 10, height: 10, depth: 10),
+    /// if let matrix = TransformMatrix3D([
+    ///        2, 0, 0,   0,   // r00 r01 r02  tx
+    ///        0, 1, 0,   0,   // r10 r11 r12  ty
+    ///        0, 0, 0.5, 0    // r20 r21 r22  tz
+    ///    ]),
+    ///    let box = Shape.box(origin: SIMD3(0, 0, 0), width: 10, height: 10, depth: 10),
     ///    let scaled = box.gTransformed(matrix: matrix),
     ///    let bb = scaled.boundingBox {
     ///     print(bb.max.x, bb.max.y, bb.max.z)  // 20.0 10.0 5.0 — X doubled, Y unchanged, Z halved
@@ -187,12 +187,12 @@ extension Shape {
     ///
     /// ```swift
     /// // Pure translation by (5, 10, 15): identity rotation, translation folded into each row.
-    /// let matrix = TransformMatrix3D([
-    ///     1, 0, 0, 5,    // a11 a12 a13 a14(tx)
-    ///     0, 1, 0, 10,   // a21 a22 a23 a24(ty)
-    ///     0, 0, 1, 15    // a31 a32 a33 a34(tz)
-    /// ])
-    /// if let box = Shape.box(origin: SIMD3(0, 0, 0), width: 10, height: 10, depth: 10),
+    /// if let matrix = TransformMatrix3D([
+    ///        1, 0, 0, 5,    // a11 a12 a13 a14(tx)
+    ///        0, 1, 0, 10,   // a21 a22 a23 a24(ty)
+    ///        0, 0, 1, 15    // a31 a32 a33 a34(tz)
+    ///    ]),
+    ///    let box = Shape.box(origin: SIMD3(0, 0, 0), width: 10, height: 10, depth: 10),
     ///    let moved = box.transformed(byMatrix: matrix),
     ///    let bb = moved.boundingBox {
     ///     print(bb.min.x, bb.min.y, bb.min.z)  // 5.0 10.0 15.0

@@ -31,12 +31,12 @@ private func validated12(_ values: [Double]) -> [Double]? {
 ///
 /// ```swift
 /// // INTERLEAVED: identity rotation, translate by (5, 10, 15).
-/// let m = TransformMatrix3D([
-///     1, 0, 0, 5,    // a11 a12 a13 a14(tx)
-///     0, 1, 0, 10,   // a21 a22 a23 a24(ty)
-///     0, 0, 1, 15    // a31 a32 a33 a34(tz)
-/// ])
-/// if let box = Shape.box(origin: SIMD3(0, 0, 0), width: 10, height: 10, depth: 10),
+/// if let m = TransformMatrix3D([
+///        1, 0, 0, 5,    // a11 a12 a13 a14(tx)
+///        0, 1, 0, 10,   // a21 a22 a23 a24(ty)
+///        0, 0, 1, 15    // a31 a32 a33 a34(tz)
+///    ]),
+///    let box = Shape.box(origin: SIMD3(0, 0, 0), width: 10, height: 10, depth: 10),
 ///    let moved = box.transformed(byMatrix: m),
 ///    let bb = moved.boundingBox {
 ///     print(bb.min.x, bb.min.y, bb.min.z)  // 5.0 10.0 15.0
@@ -100,13 +100,13 @@ public struct TransformMatrix3D: Sendable {
 ///
 /// ```swift
 /// // GROUPED: identity rotation, translate by (5, 0, 0).
-/// let m = Matrix12Grouped([
-///     1, 0, 0,   // r00 r01 r02
-///     0, 1, 0,   // r10 r11 r12
-///     0, 0, 1,   // r20 r21 r22
-///     5, 0, 0    // tx  ty  tz
-/// ])
-/// if let box = Shape.box(origin: SIMD3(0, 0, 0), width: 10, height: 10, depth: 10),
+/// if let m = Matrix12Grouped([
+///        1, 0, 0,   // r00 r01 r02
+///        0, 1, 0,   // r10 r11 r12
+///        0, 0, 1,   // r20 r21 r22
+///        5, 0, 0    // tx  ty  tz
+///    ]),
+///    let box = Shape.box(origin: SIMD3(0, 0, 0), width: 10, height: 10, depth: 10),
 ///    let moved = box.transformed(matrix: m),
 ///    let bb = moved.boundingBox {
 ///     print(bb.min.x, bb.max.x)  // 5.0 15.0 — box shifted +5 along X, matching tx = 5

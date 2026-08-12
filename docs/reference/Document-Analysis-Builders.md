@@ -1697,11 +1697,11 @@ public struct Matrix12Grouped: Sendable {
 
 - **Example:**
   ```swift
-  let matrix = Matrix12Grouped([
-      1, 0, 0,   0, 1, 0,   0, 0, 1,   // identity rotation
-      5, 0, 0                          // translate +5 along X
-  ])
-  if let box = Shape.box(width: 10, height: 10, depth: 10),
+  if let matrix = Matrix12Grouped([
+        1, 0, 0,   0, 1, 0,   0, 0, 1,   // identity rotation
+        5, 0, 0                          // translate +5 along X
+     ]),
+     let box = Shape.box(width: 10, height: 10, depth: 10),
      let moved = box.transformed(matrix: matrix) {
       print(moved.isValid)
   }
