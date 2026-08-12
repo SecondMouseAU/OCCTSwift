@@ -59,10 +59,10 @@ OCCTShapeRef OCCTFaceFix(OCCTFaceRef face, double tolerance);
 /// Fix a shape with detailed control
 /// @param shape The shape to fix
 /// @param tolerance Tolerance for fixing operations
-/// @param fixSolid Whether to fix solid orientation
-/// @param fixShell Whether to fix shell closure
-/// @param fixFace Whether to fix face issues
-/// @param fixWire Whether to fix wire issues
+/// @param fixSolid Whether to fix solid orientation (ShapeFix_Shape::FixSolidMode)
+/// @param fixShell Whether to fix FREE shells -- not attached to a solid (ShapeFix_Shape::FixFreeShellMode)
+/// @param fixFace Whether to fix FREE faces -- not attached to a shell (ShapeFix_Shape::FixFreeFaceMode)
+/// @param fixWire Whether to fix FREE wires -- not attached to a face (ShapeFix_Shape::FixFreeWireMode)
 /// @return Fixed shape, or NULL on failure
 OCCTShapeRef OCCTShapeFixDetailed(OCCTShapeRef shape, double tolerance,
                                    bool fixSolid, bool fixShell,
@@ -1283,6 +1283,16 @@ double OCCTShapeMinTolerance(OCCTShapeRef _Nonnull shape, int32_t type);
 /// Get average tolerance of sub-shapes of given type.
 double OCCTShapeAvgTolerance(OCCTShapeRef _Nonnull shape, int32_t type);
 
+/// Max/min/avg tolerance of sub-shapes of the given TopAbs_ShapeEnum ordinal (0=COMPOUND ...
+/// 7=VERTEX, 8=SHAPE), passed straight through to ShapeAnalysis_ShapeTolerance::Tolerance's own
+/// `type` parameter with no remapping. The additive, canonically-typed siblings of
+/// OCCTShapeMaxTolerance/MinTolerance/AvgTolerance's compressed 0/1/2 encoding above, which only
+/// ever covered vertex/edge/face and used a different integer per sub-shape kind than
+/// OCCTBRepToolMaxTolerance (BRep_Tool::MaxTolerance's own straight-cast convention) — see #833.
+double OCCTShapeMaxToleranceOfType(OCCTShapeRef _Nonnull shape, int32_t shapeType);
+double OCCTShapeMinToleranceOfType(OCCTShapeRef _Nonnull shape, int32_t shapeType);
+double OCCTShapeAvgToleranceOfType(OCCTShapeRef _Nonnull shape, int32_t shapeType);
+
 /// Fix tolerance on a shape to specified value. Returns true on success.
 bool OCCTShapeFixTolerance(OCCTShapeRef _Nonnull shape, double tolerance);
 
@@ -1506,7 +1516,14 @@ bool OCCTShapeFixerPerform(OCCTShapeFixerRef _Nonnull fixer);
 OCCTShapeRef _Nullable OCCTShapeFixerShape(OCCTShapeFixerRef _Nonnull fixer);
 
 /// Query status. statusType: 1=ShapeFixOk, 2=ShapeFixDone, 3=ShapeFixFail.
+/// Legacy — see OCCTShapeFixerStatusFlag for the full ShapeExtend_Status flag space (#849).
 bool OCCTShapeFixerStatus(OCCTShapeFixerRef _Nonnull fixer, int32_t statusType);
+
+/// Query a specific ShapeExtend_Status flag directly (#849), mirroring OCCTFaceFixerStatus.
+/// Unlike OCCTShapeFixerStatus's legacy 1/2/3 remap, `flag` is the real ShapeExtend_Status
+/// ordinal: OK=0, DONE1..DONE8=1..8, the combined DONE=9, FAIL1..FAIL8=10..17, the combined
+/// FAIL=18.
+bool OCCTShapeFixerStatusFlag(OCCTShapeFixerRef _Nonnull fixer, int32_t flag);
 
 // MARK: - ShapeAnalysis_ShapeTolerance (v0.118.0)
 

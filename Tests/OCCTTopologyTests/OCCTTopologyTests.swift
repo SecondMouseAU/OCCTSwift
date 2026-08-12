@@ -1,6 +1,7 @@
 import Testing
 import Foundation
 import simd
+import OCCTBridge
 @testable import OCCTSwift
 
 
@@ -1763,6 +1764,82 @@ struct WireOrderTests {
         }
     }
 
+    // MARK: - #845: analyze(wire:) coverage parity with analyze(edges:)
+    //
+    // These mirror `wireOrderStatus` and `orderedEdgesValidIndices` above, but drive them
+    // through `analyze(wire:)` instead of `analyze(edges:)`, and add coverage neither
+    // overload had before: the negative-status nil-return guard inside `decode`. Both
+    // overloads now share a single `WireOrder.decode(_:outOrder:)` helper (#845), so these
+    // are a regression lock on that shared decode path from the `wire:` call site
+    // specifically, not just the `edges:` one.
+
+    @Test("Wire order status is closed for a closed rectangle wire")
+    func analyzeWireShapeStatusIsClosed() throws {
+        let wire = try #require(Wire.rectangle(width: 10, height: 10))
+        let result = try #require(WireOrder.analyze(wire: wire))
+        #expect(result.status == .closed)
+    }
+
+    @Test("Ordered edges from analyze(wire:) have valid, non-repeating indices")
+    func analyzeWireShapeOrderedEdgesValidIndices() throws {
+        let wire = try #require(Wire.rectangle(width: 10, height: 10))
+        let edgeCount = wire.edges().count
+        #expect(edgeCount == 4)
+
+        let result = try #require(WireOrder.analyze(wire: wire))
+        #expect(result.orderedEdges.count == edgeCount)
+
+        var seenIndices = Set<Int>()
+        for ordered in result.orderedEdges {
+            #expect(ordered.originalIndex >= 0)
+            #expect(ordered.originalIndex < edgeCount)
+            // A freshly-built rectangle's edges are all already walked forward
+            // (measured directly against ShapeAnalysis_WireOrder: see
+            // analyzeWireShapeReversedEdgeReturnsNil below for the case where
+            // that isn't true), so none should be flagged reversed here.
+            #expect(!ordered.isReversed)
+            seenIndices.insert(ordered.originalIndex)
+        }
+        // Every original edge should appear exactly once: a genuine permutation of
+        // 0..<edgeCount, not just values individually in range.
+        #expect(seenIndices == Set(0..<edgeCount))
+    }
+
+    @Test("analyze(wire:) returns nil for a wire that needs an edge reversed to close")
+    func analyzeWireShapeReversedEdgeReturnsNil() throws {
+        // A square walked p1 -> p2 -> p3 -> p4 -> p1. Three edges are built already
+        // matching that walk direction; the closing edge's underlying curve is built
+        // the opposite way (p1 -> p4 instead of p4 -> p1). OCCTWireOrderAnalyzeWire
+        // reads each edge's 3D curve endpoints directly (BRep_Tool::Curve +
+        // curve->Value(first/last)), independent of the edge's TopoDS orientation, so
+        // this is a genuine "some edges are reversed" case for ShapeAnalysis_WireOrder.
+        //
+        // Measured directly against the pinned kernel (a standalone
+        // ShapeAnalysis_WireOrder probe reproducing this exact point sequence):
+        // Status() reports -1 ("some edges are reversed, but no gap remain" per
+        // ShapeAnalysis_WireOrder.hxx), not one of the 0/1/2 codes the bridge's own
+        // `OCCTWireOrderResult.status` doc comment enumerates. `decode`'s
+        // `if result.status < 0 { return nil }` guard treats any negative status as
+        // failure, so this reversed-but-connected case surfaces as nil today, not as
+        // a `WireOrder` with an `isReversed` entry. That guard was previously
+        // untested by every other case in this suite (`emptyEdgesReturnsNil` hits a
+        // different, earlier guard in `analyze(edges:)` itself, before the bridge is
+        // even called); this is the first test to exercise it, on either overload.
+        let p1 = SIMD3<Double>(0, 0, 0)
+        let p2 = SIMD3<Double>(10, 0, 0)
+        let p3 = SIMD3<Double>(10, 10, 0)
+        let p4 = SIMD3<Double>(0, 10, 0)
+
+        let e1 = try #require(Wire.line(from: p1, to: p2)?.edges().first)
+        let e2 = try #require(Wire.line(from: p2, to: p3)?.edges().first)
+        let e3 = try #require(Wire.line(from: p3, to: p4)?.edges().first)
+        let e4Reversed = try #require(Wire.line(from: p1, to: p4)?.edges().first)
+
+        let wire = try #require(Wire.wireFromEdges([e1, e2, e3, e4Reversed]))
+
+        #expect(WireOrder.analyze(wire: wire) == nil)
+    }
+
     @Test("Ordered edges have valid indices")
     func orderedEdgesValidIndices() throws {
         let p1 = SIMD3<Double>(0, 0, 0)
@@ -2637,6 +2714,17 @@ struct BRepClass3dTests {
         guard let sphere = Shape.sphere(radius: 5.0) else { return }
         let state = sphere.classifyPoint(SIMD3(10, 0, 0))
         #expect(state == .outside)
+    }
+
+    // #851: the .on boundary case had no coverage on this copy of the classifier, unlike
+    // PointClassificationTests.pointOnBoxFace on Shape.classify(point:) — mirrors that test
+    // exactly, proving the two independent bridge call paths agree at a boundary point after
+    // being unified onto the same BRepClass3d_SolidClassifier mechanism.
+    @Test func pointOnBoxFace() {
+        guard let box = Shape.box(width: 10, height: 10, depth: 10) else { return }
+        // Point on the top face at Z=5 (box extends from -5 to 5 on Z)
+        let state = box.classifyPoint(SIMD3(0, 0, 5), tolerance: 1e-3)
+        #expect(state == .on)
     }
 }
 
@@ -3683,6 +3771,77 @@ struct ShapeContentsExtendedTests {
             #expect(c.nbSharedEdges >= 0)
             #expect(c.nbSharedVertices >= 0)
         }
+    }
+
+    // #855: `Shape.contents` and `Shape.contentsExtended()` each run their own independent
+    // `ShapeAnalysis_ShapeContents::Perform()` walk (two bridge calls, two C structs), but their
+    // first 9 fields are meant to report identical values for the same shape. Nothing asserted
+    // that before this test — a future divergence (e.g. a `ModifyXMode()` call added to only one
+    // bridge call site) would otherwise land silently.
+    @Test func contentsAgreesWithContentsExtended() throws {
+        func assertParity(_ shape: Shape) {
+            let plain = shape.contents
+            let extended = shape.contentsExtended()
+            #expect(plain.solids == extended.nbSolids)
+            #expect(plain.shells == extended.nbShells)
+            #expect(plain.faces == extended.nbFaces)
+            #expect(plain.wires == extended.nbWires)
+            #expect(plain.edges == extended.nbEdges)
+            #expect(plain.vertices == extended.nbVertices)
+            #expect(plain.freeEdges == extended.nbFreeEdges)
+            #expect(plain.freeWires == extended.nbFreeWires)
+            #expect(plain.freeFaces == extended.nbFreeFaces)
+        }
+        let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
+        assertParity(box)
+        let cyl = try #require(Shape.cylinder(radius: 5, height: 10))
+        assertParity(cyl)
+    }
+
+    // #855 review: `contentsAgreesWithContentsExtended()` above only proves the two bridge calls
+    // agree on a watertight box/cylinder, where every free-element count is 0 on both sides — a
+    // transposed field (e.g. `ShapeContentsCore` reading `nbFreeWires` into `freeEdges`) would
+    // pass that test by coincidence, since swapping two zeros is still 0 == 0. This test instead
+    // builds both bridge C structs directly, with 9 mutually distinct values and no OCCT call at
+    // all, and checks each `ShapeContentsCore` output field against the exact C field it must
+    // have come from, so a transposition fails even though every value involved is still a
+    // "plausible" int32_t count.
+    @Test func shapeContentsCoreMapsFieldsPositionally() {
+        let plain = OCCTShapeContents(
+            nbSolids: 11, nbShells: 12, nbFaces: 13, nbWires: 14, nbEdges: 15,
+            nbVertices: 16, nbFreeEdges: 17, nbFreeWires: 18, nbFreeFaces: 19
+        )
+        let plainCore = shapeContentsCore(plain)
+        #expect(plainCore.solids == 11)
+        #expect(plainCore.shells == 12)
+        #expect(plainCore.faces == 13)
+        #expect(plainCore.wires == 14)
+        #expect(plainCore.edges == 15)
+        #expect(plainCore.vertices == 16)
+        #expect(plainCore.freeEdges == 17)
+        #expect(plainCore.freeWires == 18)
+        #expect(plainCore.freeFaces == 19)
+
+        let extended = OCCTShapeContentsExtended(
+            nbSolids: 21, nbShells: 22, nbFaces: 23, nbWires: 24, nbEdges: 25,
+            nbVertices: 26, nbFreeEdges: 27, nbFreeWires: 28, nbFreeFaces: 29,
+            nbSolidsWithVoids: 0, nbBigSplines: 0, nbC0Surfaces: 0, nbC0Curves: 0,
+            nbOffsetSurf: 0, nbIndirectSurf: 0, nbOffsetCurves: 0, nbTrimmedCurve2d: 0,
+            nbTrimmedCurve3d: 0, nbBSplineSurf: 0, nbBezierSurf: 0, nbTrimSurf: 0,
+            nbWireWithSeam: 0, nbWireWithSevSeams: 0, nbFaceWithSevWires: 0, nbNoPCurve: 0,
+            nbSharedSolids: 0, nbSharedShells: 0, nbSharedFaces: 0, nbSharedWires: 0,
+            nbSharedEdges: 0, nbSharedVertices: 0
+        )
+        let extendedCore = shapeContentsCore(extended)
+        #expect(extendedCore.solids == 21)
+        #expect(extendedCore.shells == 22)
+        #expect(extendedCore.faces == 23)
+        #expect(extendedCore.wires == 24)
+        #expect(extendedCore.edges == 25)
+        #expect(extendedCore.vertices == 26)
+        #expect(extendedCore.freeEdges == 27)
+        #expect(extendedCore.freeWires == 28)
+        #expect(extendedCore.freeFaces == 29)
     }
 }
 

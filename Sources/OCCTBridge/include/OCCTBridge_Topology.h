@@ -1489,6 +1489,12 @@ double OCCTEdgeArcLength(OCCTShapeRef _Nonnull edge);
 /// Compute arc length between two parameters on an edge.
 double OCCTEdgeArcLengthBetween(OCCTShapeRef _Nonnull edge, double u1, double u2);
 
+/// A cheap, unsubdivided arc-length estimate between two parameters on an edge: one quadrature
+/// pass, not the accurate measurement `OCCTEdgeArcLengthBetween` subdivides until it converges.
+/// Meant only to bound an implied sample count before running a sampler that needs the same
+/// single pass internally anyway -- see its doc comment for why (#862).
+double OCCTEdgeArcLengthQuickEstimate(OCCTShapeRef _Nonnull edge, double u1, double u2);
+
 /// Find parameter at a fraction (0..1) of total edge length.
 double OCCTEdgeParameterAtFraction(OCCTShapeRef _Nonnull edge, double fraction);
 
@@ -1565,6 +1571,10 @@ void OCCTShapeBoundingBoxOptimal(OCCTShapeRef _Nonnull shape, bool useShapeToler
                                   double* _Nonnull xmax, double* _Nonnull ymax, double* _Nonnull zmax);
 
 /// Compute oriented bounding box (OBB) for a shape with detailed axes output.
+///
+/// Delegates to ``OCCTShapeOrientedBoundingBox`` for the actual `Bnd_OBB` computation (#847) —
+/// this is the same box, unpacked into separate scalar out-parameters instead of one packed
+/// struct, with failure reported through `isVoid` instead of a `bool` return.
 void OCCTShapeOrientedBoundingBoxDetailed(OCCTShapeRef _Nonnull shape, bool isOptimal,
                                            double* _Nonnull cx, double* _Nonnull cy, double* _Nonnull cz,
                                            double* _Nonnull xDirX, double* _Nonnull xDirY, double* _Nonnull xDirZ,

@@ -377,6 +377,11 @@ Tests the given parametric UV coordinate directly against the face boundary — 
   - `tolerance` — boundary-detection tolerance (default 1e-6).
 - **Returns:** `.inside`, `.outside`, `.onBoundary`, or `.unknown`.
 - **OCCT:** `BRepClass_FaceClassifier` (via `OCCTClassifyPointOnFaceUV`).
+- **Note:** Answers the same "in/on/out of the face boundary" question as
+  `Shape.classifyPoint2d(u:v:tolerance:)` (see "Shape-Builders-2") and
+  `Shape.classifyPoint2D(faceIndex:u:v:tolerance:)` (see "Document-Math-Bounds"), and now shares
+  their `1e-6` default — `classifyPoint2d` used to default to `1e-7` for the identical question,
+  aligned in #840.
 - **Example:**
   ```swift
   let face: Face = ...
@@ -543,6 +548,8 @@ public func convertedToNURBS() -> Shape?
 ```
 
 Ensures uniform polynomial representation before export or for algorithms that require NURBS geometry (e.g. certain CAM kernels).
+
+Internally, `BRepBuilderAPI_NurbsConvert` is `Shape.nurbsConvertViaModifier()`'s own `BRepTools_Modifier` + `BRepTools_NurbsConvertModification` pair plus one more step, `CorrectVertexTol()`, which raises a vertex's tolerance to cover any edge meeting it that the conversion enlarged. `nurbsConvertViaModifier()` skips that step; prefer this method unless you have a specific reason to drive the bare modifier pipeline directly (#836).
 
 - **Returns:** Shape with all geometry as NURBS, or nil on failure.
 - **OCCT:** `BRepBuilderAPI_NurbsConvert` (via `OCCTShapeConvertToNURBS`).
@@ -1750,12 +1757,17 @@ Useful for export to systems that cannot handle full 360° surfaces (e.g. splitt
 Remove degenerate/tiny edges from a shape.
 
 ```swift
-public func droppingSmallEdges(tolerance: Double = 1e-6) -> Shape?
+public func droppingSmallEdges(tolerance: Double = 1e-7) -> Shape?
 ```
 
 Useful for cleaning up imported geometry with tolerance issues where very short edges prevent boolean or meshing operations.
 
-- **Parameters:** `tolerance` — tolerance below which edges are considered small and removed (default 1e-6).
+Equivalent to `fixSmallEdges(tolerance:dropSmall: true)` (see "Document-Analysis-Builders") — both
+build a `ShapeFix_Wireframe` with the same precision/drop-mode/perform sequence. The default used
+to be `1e-6` here against `1e-7` there for the identical underlying call; aligned to `1e-7` (#839),
+matching `fixSmallEdges` and its sibling `fixWireGaps`.
+
+- **Parameters:** `tolerance` — tolerance below which edges are considered small and removed (default 1e-7).
 - **Returns:** Shape with small edges removed, or nil on failure.
 - **OCCT:** `ShapeFix_Wireframe` small-edge removal (via `OCCTShapeDropSmallEdges`).
 - **Example:**

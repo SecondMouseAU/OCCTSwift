@@ -1300,6 +1300,7 @@ public var boundingBox: (min: SIMD3<Double>, max: SIMD3<Double>)?
 
 - **Returns:** `(min, max)` corner pair, or `nil` if the shape is empty.
 - **OCCT:** `OCCTShapeBoundingBox` → `BRepBndLib::Add` / `Bnd_Box`.
+- **Note (#834):** `Shape.bounds` (`Shape-Features.md`) computes the identical `Bnd_Box`/`BRepBndLib::Add`, but is a non-optional tuple that fabricates `(0,0,0)-(0,0,0)` for a void shape instead of signaling it the way `boundingBox` does here. Prefer `boundingBox` when a void shape is possible.
 
 ---
 
@@ -1319,7 +1320,11 @@ public func boundingBoxOptimal(useShapeTolerance: Bool = false) -> (min: SIMD3<D
 
 ### `Shape.DetailedOBB`
 
-Oriented bounding box with full axis and half-size information.
+Oriented bounding box with full axis and half-size information. Computes the identical `Bnd_OBB`
+as `OrientedBoundingBox` (#847) — the two never disagree for the same shape and `optimal` value —
+with the half-sizes unpacked into three separate `Double`s instead of one `SIMD3<Double>`, and no
+`volume`/`dimensions`/corners equivalent. Prefer `orientedBoundingBox(optimal:)` unless you
+specifically need the half-sizes this way.
 
 ```swift
 public struct DetailedOBB: Sendable {
@@ -1354,7 +1359,8 @@ public func orientedBoundingBoxDetailed(optimal: Bool = false) -> DetailedOBB?
 
 - **Parameters:** `optimal` — use precise geometry when `true`.
 - **Returns:** `DetailedOBB` or `nil` if the shape is void.
-- **OCCT:** `OCCTShapeOrientedBoundingBoxDetailed` → `BRepBndLib::AddOBB`.
+- **OCCT:** `OCCTShapeOrientedBoundingBoxDetailed` delegates to `OCCTShapeOrientedBoundingBox` →
+  `BRepBndLib::AddOBB` (#847), rather than computing a second `Bnd_OBB` independently.
 
 ---
 
@@ -1633,15 +1639,22 @@ public static func polynomialToPoles(
 
 ### `Shape.transformed(byMatrix:)`
 
-Apply a full 3×4 affine matrix to the shape.
+Apply a full 3×4 rigid affine matrix to the shape, via a `TransformMatrix3D` (INTERLEAVED layout
+— see `TransformMatrix3D` in [Document-Analysis-Builders.md](Document-Analysis-Builders.md#gce-transform-factories)).
 
 ```swift
-public func transformed(byMatrix matrix: [Double]) -> Shape?
+public func transformed(byMatrix matrix: TransformMatrix3D) -> Shape?
 ```
 
-- **Parameters:** `matrix` — 12-element row-major array `[a11..a14, a21..a24, a31..a34]`.
-- **Returns:** Transformed shape, or `nil` if `matrix.count != 12` or the operation fails.
+- **Parameters:** `matrix` — a `TransformMatrix3D`, row-major `[a11..a14, a21..a24, a31..a34]`.
+- **Returns:** Transformed shape, or `nil` if the operation fails.
 - **OCCT:** `OCCTShapeTransformFromMatrix` → `gp_Trsf` matrix form.
+- **Deprecated overload:** `transformed(byMatrix matrix: [Double]) -> Shape?` still exists
+  (`@available(*, deprecated)`) for source compatibility — `nil` if `matrix.count != 12`. #835
+  (PR #864 review): this used to be a plain `[Double]` indistinguishable at the call site from
+  `transformed(matrix:)`'s differently-laid-out array, so a caller could silently garble a
+  transform. Passing the wrong type (`Matrix12Grouped` instead of `TransformMatrix3D`) is now a
+  compile error — see `Shape.transformed(matrix:)` and `Matrix12Grouped`.
 
 ---
 

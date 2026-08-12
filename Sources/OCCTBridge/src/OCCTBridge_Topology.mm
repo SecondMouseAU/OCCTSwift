@@ -263,17 +263,95 @@ bool OCCTEdgeIsSeam(OCCTShapeRef edge, OCCTShapeRef face) {
 
 #include <BRepLib_FindSurface.hxx>
 
-OCCTSurfaceRef OCCTShapeFindSurface(OCCTShapeRef shape, double tolerance) {
-    if (!shape) return nullptr;
+// Shared by every OCCTShapeFindSurface*/OCCTFindSurface* entry point below (#838): each used to
+// independently construct its own BRepLib_FindSurface, guard, try/catch and accessor reads for
+// what is logically one query. This runs the finder once; `want` selects which single accessor
+// this caller needs — Surface() for the three surface-returning entry points
+// (OCCTShapeFindSurface/Ex, OCCTFindSurface), ToleranceReached() for OCCTFindSurfaceTolerance, or
+// Existed() for OCCTFindSurfaceExisted — so a caller never invokes an accessor its own contract
+// doesn't promise, matching the pre-consolidation code (each hand-written body called only the
+// one accessor it needed). PR #870 aggregate review: an earlier version of this consolidation
+// grouped ToleranceReached()+Existed() under one `wantSurface=false` branch and always computed
+// both, even though OCCTFindSurfaceTolerance/OCCTFindSurfaceExisted each only ever consume one —
+// real, if cheap today, extra OCCT-object introspection neither pre-consolidation function
+// performed. Splitting `wantSurface` into this 3-way selector removes that: each of the three
+// `want` values computes exactly the one accessor its caller reads. (PR #866 review, still
+// honored: each requested accessor gets its own try/catch, so one accessor throwing can't discard
+// a sibling result the same call also asked for.) Also fixes a real asymmetry the consolidation
+// surfaced: OCCTFindSurface/OCCTFindSurfaceTolerance/OCCTFindSurfaceExisted previously had no
+// null-shape guard at all (relying solely on the header's `_Nonnull`), unlike
+// OCCTShapeFindSurface/Ex; not reachable from Swift today (`Shape.handle` is non-optional), so
+// this is a hardening, not an observable behavior change.
+enum class OCCTFindSurfaceWant { Surface, Tolerance, Existed };
+
+struct OCCTFindSurfaceResult {
+    bool found = false;
+    Handle(Geom_Surface) surface;
+    double toleranceReached = -1.0;
+    bool existed = false;
+};
+
+static OCCTFindSurfaceResult occtRunFindSurface(OCCTShapeRef shape, double tolerance,
+                                                 bool onlyPlane, OCCTFindSurfaceWant want) {
+    OCCTFindSurfaceResult result;
+    if (!shape) return result;
     try {
-        BRepLib_FindSurface finder(shape->shape, tolerance);
-        if (!finder.Found()) return nullptr;
-        Handle(Geom_Surface) surf = finder.Surface();
-        if (surf.IsNull()) return nullptr;
-        return new OCCTSurface(surf);
+        BRepLib_FindSurface finder(shape->shape, tolerance, onlyPlane);
+        result.found = finder.Found();
+        if (!result.found) return result;
+        switch (want) {
+            case OCCTFindSurfaceWant::Surface:
+                try {
+                    result.surface = finder.Surface();
+                } catch (...) {
+                    // Matches the pre-consolidation behavior of every surface-returning caller: a
+                    // throwing Surface() was caught by that caller's own single try/catch and
+                    // treated as "not found" (OCCTShapeFindSurfaceEx set *outFound = false in
+                    // exactly this case), not as "found, but no surface available".
+                    result.found = false;
+                    result.surface = Handle(Geom_Surface)();
+                }
+                break;
+            case OCCTFindSurfaceWant::Tolerance:
+                try {
+                    result.toleranceReached = finder.ToleranceReached();
+                } catch (...) {
+                    result.toleranceReached = -1.0;
+                }
+                break;
+            case OCCTFindSurfaceWant::Existed:
+                try {
+                    result.existed = finder.Existed();
+                } catch (...) {
+                    result.existed = false;
+                }
+                break;
+        }
+    } catch (...) {
+        result = OCCTFindSurfaceResult();
+    }
+    return result;
+}
+
+// Unwraps an OCCTFindSurfaceResult into the OCCTSurfaceRef each of the three surface-returning
+// callers (OCCTShapeFindSurface, OCCTShapeFindSurfaceEx, OCCTFindSurface) returns, or nullptr on
+// any failure — including allocation failure for the `new OCCTSurface(...)` wrapper itself, which
+// must be try/catch-guarded here rather than left to each caller: an exception escaping this
+// extern "C" bridge boundary into Swift-generated call frames is uncatchable and undefined
+// behavior, not the graceful nullptr every caller here otherwise guarantees (PR #866 review).
+static OCCTSurfaceRef occtSurfaceRefOrNull(const OCCTFindSurfaceResult& result) {
+    if (!result.found || result.surface.IsNull()) return nullptr;
+    try {
+        return new OCCTSurface(result.surface);
     } catch (...) {
         return nullptr;
     }
+}
+
+OCCTSurfaceRef OCCTShapeFindSurface(OCCTShapeRef shape, double tolerance) {
+    OCCTFindSurfaceResult result =
+        occtRunFindSurface(shape, tolerance, /*onlyPlane=*/false, OCCTFindSurfaceWant::Surface);
+    return occtSurfaceRefOrNull(result);
 }
 
 // MARK: - Contiguous Edges (v0.30.0)
@@ -931,20 +1009,13 @@ int32_t OCCTCurve3DBSplineKnotSplits(OCCTCurve3DRef curve3D, int32_t continuityO
 
 OCCTSurfaceRef OCCTShapeFindSurfaceEx(OCCTShapeRef shape, double tolerance,
                                        bool onlyPlane, bool* outFound) {
-    if (!shape || !outFound) return nullptr;
-    try {
-        BRepLib_FindSurface finder(shape->shape, tolerance, onlyPlane);
-        *outFound = finder.Found();
-        if (!finder.Found()) return nullptr;
-
-        Handle(Geom_Surface) surf = finder.Surface();
-        if (surf.IsNull()) return nullptr;
-
-        return new OCCTSurface(surf);
-    } catch (...) {
-        *outFound = false;
+    if (!shape || !outFound) {
+        if (outFound) *outFound = false;
         return nullptr;
     }
+    OCCTFindSurfaceResult result = occtRunFindSurface(shape, tolerance, onlyPlane, OCCTFindSurfaceWant::Surface);
+    *outFound = result.found;
+    return occtSurfaceRefOrNull(result);
 }
 
 // MARK: - v0.41.0: Shape Surgery, Plane Detection, Geometry Conversion
@@ -1879,15 +1950,18 @@ double OCCTOBBSquareExtent(OCCTOBBRef obb) {
 }
 // MARK: - BRepClass3d (v0.92.0)
 
-#include <BRepClass3d_SClassifier.hxx>
-#include <BRepClass3d_SolidExplorer.hxx>
-
+// #851: this used to hand-build BRepClass3d_SolidExplorer + BRepClass3d_SClassifier — the exact
+// pair BRepClass3d_SolidClassifier's own convenience constructor wraps internally (confirmed by
+// reading BRepClass3d_SolidClassifier.hxx) — duplicating OCCTClassifyPointInSolid's mechanism
+// under a different, more verbose spelling. Routed through the same classifier + the shared
+// mapTopAbsState() helper (declared above, ~line 387) so the two bridge functions can no longer
+// silently diverge on tolerance handling or IN/OUT/ON/UNKNOWN mapping. Zero behavior change:
+// TopAbs_State's ordinals already matched the raw (int32_t) cast this replaces.
 int32_t OCCTShapeClassifyPoint(OCCTShapeRef shape, double px, double py, double pz, double tolerance) {
     if (!shape) return 3; // UNKNOWN
     try {
-        BRepClass3d_SolidExplorer explorer(shape->shape);
-        BRepClass3d_SClassifier classifier(explorer, gp_Pnt(px, py, pz), tolerance);
-        return (int32_t)classifier.State();
+        BRepClass3d_SolidClassifier classifier(shape->shape, gp_Pnt(px, py, pz), tolerance);
+        return mapTopAbsState(classifier.State());
     } catch (...) { return 3; }
 }
 
@@ -1993,29 +2067,20 @@ int32_t OCCTShapeSelfIntersectionPairs(OCCTShapeRef shape, double tolerance,
 // --- BRepLib_FindSurface ---
 
 OCCTSurfaceRef OCCTFindSurface(OCCTShapeRef shape, double tolerance, bool onlyPlane) {
-    try {
-        BRepLib_FindSurface finder(shape->shape, tolerance, onlyPlane);
-        if (!finder.Found()) return nullptr;
-        Handle(Geom_Surface) surf = finder.Surface();
-        if (surf.IsNull()) return nullptr;
-        return new OCCTSurface(surf);
-    } catch (...) { return nullptr; }
+    OCCTFindSurfaceResult result = occtRunFindSurface(shape, tolerance, onlyPlane, OCCTFindSurfaceWant::Surface);
+    return occtSurfaceRefOrNull(result);
 }
 
 double OCCTFindSurfaceTolerance(OCCTShapeRef shape, double tolerance, bool onlyPlane) {
-    try {
-        BRepLib_FindSurface finder(shape->shape, tolerance, onlyPlane);
-        if (!finder.Found()) return -1.0;
-        return finder.ToleranceReached();
-    } catch (...) { return -1.0; }
+    OCCTFindSurfaceResult result = occtRunFindSurface(shape, tolerance, onlyPlane, OCCTFindSurfaceWant::Tolerance);
+    if (!result.found) return -1.0;
+    return result.toleranceReached;
 }
 
 bool OCCTFindSurfaceExisted(OCCTShapeRef shape, double tolerance, bool onlyPlane) {
-    try {
-        BRepLib_FindSurface finder(shape->shape, tolerance, onlyPlane);
-        if (!finder.Found()) return false;
-        return finder.Existed();
-    } catch (...) { return false; }
+    OCCTFindSurfaceResult result = occtRunFindSurface(shape, tolerance, onlyPlane, OCCTFindSurfaceWant::Existed);
+    if (!result.found) return false;
+    return result.existed;
 }
 
 // MARK: - v0.102: TopExp Adjacency + BRepOffset_Analyse Edge Classification + BRepTools_WireExplorer Extensions
@@ -3236,6 +3301,24 @@ double OCCTEdgeArcLengthBetween(OCCTShapeRef edge, double u1, double u2) {
     } catch (...) { return -1.0; }
 }
 
+// A single, un-subdivided quadrature -- occtArcQuadrature's own single-span branch, i.e. exactly
+// the GCPnts_AbscissaPoint::Length call GCPnts_UniformAbscissa's constructor makes internally to
+// learn a curve's length before placing points. Unlike OCCTEdgeArcLengthBetween this does not
+// subdivide per GeomAbs_CN interval or double until two levels converge to 1e-9 relative, so a
+// caller bounding an implied sample count before running that constructor gets the estimate for
+// about what one of its own internal calls costs, not the ~2x an accurate OCCTEdgeArcLengthBetween
+// costs on top of it (#603's own bridge subdivision is already redundant at the pinned kernel,
+// whose CPnts_AbscissaPoint::Length is itself adaptive -- this reaches that directly rather than
+// paying for the extra convergence loop too). #862.
+double OCCTEdgeArcLengthQuickEstimate(OCCTShapeRef edge, double u1, double u2) {
+    if (!edge) return -1.0;
+    if (!occtValidParameterRange(u1, u2)) return -1.0;
+    try {
+        BRepAdaptor_Curve adaptor(TopoDS::Edge(edge->shape));
+        return occtArcQuadrature(adaptor, std::min(u1, u2), std::max(u1, u2), /*singleSpan=*/true);
+    } catch (...) { return -1.0; }
+}
+
 // Both halves subdivided (#603): the fraction is taken of the accurate total and then walked with
 // the same quadratures, so fraction 1.0 lands on the edge's last parameter again. On the biased
 // pair those two errors cancelled; on a mixed pair they would not.
@@ -3459,8 +3542,6 @@ void OCCTShapeBoundingBoxOptimal(OCCTShapeRef shape, bool useShapeTolerance,
     }
 }
 
-#include <Bnd_OBB.hxx>
-
 void OCCTShapeOrientedBoundingBoxDetailed(OCCTShapeRef shape, bool isOptimal,
                                    double* cx, double* cy, double* cz,
                                    double* xDirX, double* xDirY, double* xDirZ,
@@ -3468,30 +3549,19 @@ void OCCTShapeOrientedBoundingBoxDetailed(OCCTShapeRef shape, bool isOptimal,
                                    double* zDirX, double* zDirY, double* zDirZ,
                                    double* xHSize, double* yHSize, double* zHSize,
                                    bool* isVoid) {
-    try {
-        auto* s = static_cast<OCCTShape*>(shape);
-        Bnd_OBB obb;
-        BRepBndLib::AddOBB(s->shape, obb, true, isOptimal, true);
-        *isVoid = obb.IsVoid();
-        if (!obb.IsVoid()) {
-            gp_Pnt center = obb.Center();
-            *cx = center.X(); *cy = center.Y(); *cz = center.Z();
-            gp_XYZ xDir = obb.XDirection();
-            *xDirX = xDir.X(); *xDirY = xDir.Y(); *xDirZ = xDir.Z();
-            gp_XYZ yDir = obb.YDirection();
-            *yDirX = yDir.X(); *yDirY = yDir.Y(); *yDirZ = yDir.Z();
-            gp_XYZ zDir = obb.ZDirection();
-            *zDirX = zDir.X(); *zDirY = zDir.Y(); *zDirZ = zDir.Z();
-            *xHSize = obb.XHSize(); *yHSize = obb.YHSize(); *zHSize = obb.ZHSize();
-        } else {
-            *cx = *cy = *cz = 0.0;
-            *xDirX = 1; *xDirY = 0; *xDirZ = 0;
-            *yDirX = 0; *yDirY = 1; *yDirZ = 0;
-            *zDirX = 0; *zDirY = 0; *zDirZ = 1;
-            *xHSize = *yHSize = *zHSize = 0.0;
-        }
-    } catch (...) {
-        *isVoid = true;
+    // Delegates to OCCTShapeOrientedBoundingBox rather than building a second Bnd_OBB from a
+    // second BRepBndLib::AddOBB call: both wrap the identical computation (#847), and delegating
+    // also picks up that function's null-shape guard, which this site previously lacked.
+    OCCTOrientedBoundingBox obb{};
+    bool ok = OCCTShapeOrientedBoundingBox(shape, isOptimal, &obb);
+    *isVoid = !ok;
+    if (ok) {
+        *cx = obb.centerX; *cy = obb.centerY; *cz = obb.centerZ;
+        *xDirX = obb.xDirX; *xDirY = obb.xDirY; *xDirZ = obb.xDirZ;
+        *yDirX = obb.yDirX; *yDirY = obb.yDirY; *yDirZ = obb.yDirZ;
+        *zDirX = obb.zDirX; *zDirY = obb.zDirY; *zDirZ = obb.zDirZ;
+        *xHSize = obb.halfX; *yHSize = obb.halfY; *zHSize = obb.halfZ;
+    } else {
         *cx = *cy = *cz = 0.0;
         *xDirX = 1; *xDirY = 0; *xDirZ = 0;
         *yDirX = 0; *yDirY = 1; *yDirZ = 0;

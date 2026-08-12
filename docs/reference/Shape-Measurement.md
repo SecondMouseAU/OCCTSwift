@@ -1468,11 +1468,15 @@ public struct VolumeInertia: Sendable {
     public let principalMoments: SIMD3<Double>
     public let principalAxes: (SIMD3<Double>, SIMD3<Double>, SIMD3<Double>)
     public let gyrationRadii: SIMD3<Double>
+    public let hasSymmetryAxis: Bool
+    public let hasSymmetryPoint: Bool
 }
 ```
 
 - `inertiaTensor` — 9-element row-major 3×3 inertia tensor.
 - `gyrationRadii` — Radii of gyration about the three principal axes.
+- `hasSymmetryAxis`/`hasSymmetryPoint` — Added in #848 to match `InertiaProperties`, which has
+  always had these; both read them off the same `GProp_PrincipalProps` computation.
 
 ---
 
@@ -1487,6 +1491,14 @@ The three principal moments of inertia in the principal-axis frame.
 #### `VolumeInertia.gyrationRadii`
 
 Radii of gyration about the three principal axes (`sqrt(momentOfInertia / mass)` per axis).
+
+#### `VolumeInertia.hasSymmetryAxis`
+
+Whether the shape has a symmetry axis, from `GProp_PrincipalProps::HasSymmetryAxis()`.
+
+#### `VolumeInertia.hasSymmetryPoint`
+
+Whether the shape has a symmetry point, from `GProp_PrincipalProps::HasSymmetryPoint()`.
 
 ---
 
@@ -1507,6 +1519,7 @@ public var volumeInertia: VolumeInertia? { get }
   if let vi = solid.volumeInertia {
       print("volume: \(vi.volume)")
       print("gyration radii: \(vi.gyrationRadii)")
+      print("has symmetry axis: \(vi.hasSymmetryAxis)")
   }
   ```
 
@@ -1522,6 +1535,8 @@ public struct SurfaceInertia: Sendable {
     public let centerOfMass: SIMD3<Double>
     public let inertiaTensor: [Double]
     public let principalMoments: SIMD3<Double>
+    public let hasSymmetryAxis: Bool
+    public let hasSymmetryPoint: Bool
 }
 ```
 
@@ -1531,6 +1546,8 @@ public struct SurfaceInertia: Sendable {
 | `centerOfMass` | Centroid of the surface. |
 | `inertiaTensor` | 3x3 inertia tensor about `centerOfMass`, row-major (9 values). |
 | `principalMoments` | The three principal moments of inertia (eigenvalues of `inertiaTensor`). |
+| `hasSymmetryAxis` | Whether the surface has a symmetry axis. Added in #848 to match `surfaceInertiaProperties()`'s result, which has always had this field; both read it off the same `GProp_PrincipalProps`. |
+| `hasSymmetryPoint` | Whether the surface has a symmetry point. |
 
 *(Per-field anchors below, for cross-reference; the table above has the actual meaning of each.)*
 
@@ -2188,44 +2205,18 @@ public func analyzeValidity(geometryChecks: Bool = true) -> Bool
 
 ---
 
-### `TopAbs_ShapeEnum`
-
-Sub-shape type specifier.
-
-```swift
-public enum TopAbs_ShapeEnum: Int32, Sendable {
-    case compound = 0, compsolid = 1, solid = 2, shell = 3
-    case face = 4, wire = 5, edge = 6, vertex = 7
-}
-```
-
-Raw values match OCCT's own `TopAbs_ShapeEnum` exactly (`TopAbs_COMPOUND = 0` through
-`TopAbs_VERTEX = 7`), so a raw round-trip through the bridge never needs remapping.
-
-| Case | Meaning |
-|---|---|
-| `compound` | A `TopoDS_Compound`, an arbitrary grouping of other shapes. |
-| `compsolid` | A `TopoDS_CompSolid`, a connected group of solids sharing faces. |
-| `solid` | A `TopoDS_Solid`. |
-| `shell` | A `TopoDS_Shell`. |
-| `face` | A `TopoDS_Face`. |
-| `wire` | A `TopoDS_Wire`. |
-| `edge` | A `TopoDS_Edge`. |
-| `vertex` | A `TopoDS_Vertex`. |
-
-*(Per-case anchors below, for cross-reference; the table above has the actual meaning of each.)*
-
-#### `compsolid`
-
----
-
 ### `isSubShapeValid(type:at:)`
 
 Check if a specific sub-shape is valid within this shape's context.
 
 ```swift
-public func isSubShapeValid(type: TopAbs_ShapeEnum, at index: Int) -> Bool
+public func isSubShapeValid(type: ShapeType, at index: Int) -> Bool
 ```
+
+Used to take a local `Shape.TopAbs_ShapeEnum` enum — a third independent mirror of the canonical
+`ShapeType` (see "Shape-Features"), used only by this one method. Switched to `ShapeType` directly
+and the local enum removed (#844); `ShapeType`'s raw values already match the real
+`TopAbs_ShapeEnum` ordinals this method's bridge call expects.
 
 - **Parameters:**
   - `type` — Type of sub-shape to check.

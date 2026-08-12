@@ -393,9 +393,18 @@ OCCTShapeRef OCCTShapeFixDetailed(OCCTShapeRef shape, double tolerance,
         Handle(ShapeFix_Shape) fixer = new ShapeFix_Shape(shape->shape);
         fixer->SetPrecision(tolerance);
 
-        // ShapeFix_Shape automatically fixes all sub-shapes
-        // The individual mode flags control specific fixing operations
+        // #837: fixShell/fixFace/fixWire used to be accepted and silently discarded here --
+        // only FixSolidMode() was ever set, so ShapeFix_Shape's own always-on default ran for
+        // the other three regardless of what the caller passed. Each flag now maps to
+        // ShapeFix_Shape's own accessor: FixSolidMode() fixes solids; FixFreeShellMode() /
+        // FixFreeFaceMode() / FixFreeWireMode() fix shells/faces/wires that are FREE --
+        // standalone, not attached to a solid/shell/face respectively (there is no
+        // "FixShellMode"/"FixFaceMode"/"FixWireMode" in this OCCT version; content that IS
+        // attached is always fixed by Perform() regardless of these three flags).
         fixer->FixSolidMode() = fixSolid ? 1 : 0;
+        fixer->FixFreeShellMode() = fixShell ? 1 : 0;
+        fixer->FixFreeFaceMode() = fixFace ? 1 : 0;
+        fixer->FixFreeWireMode() = fixWire ? 1 : 0;
 
         // Perform the fix
         if (!fixer->Perform()) {
@@ -2846,12 +2855,20 @@ OCCTShapeRef _Nullable OCCTShapeExtendSortedCompound(OCCTShapeRef shape, int32_t
 }
 
 int32_t OCCTShapeExtendShapeType(OCCTShapeRef shape, bool compound) {
-    if (!shape) return 7; // TopAbs_SHAPE
+    // #844 left this fallback as `7` (TopAbs_VERTEX, a real, legitimate case) though the comment
+    // on this line at the time said TopAbs_SHAPE (8) -- so a null shape or a caught exception
+    // silently decoded as ".vertex" in predominantShapeType() (Shape+ShapeHealing.swift) rather
+    // than signaling failure. Fixed (PR #870 aggregate review): -1, matching ShapeType's own
+    // `.unknown = -1` decode-failure sentinel -- predominantShapeType()'s
+    // `ShapeFilterType(rawValue: Int(raw)) ?? .compound` decodes -1 to `.unknown` directly (a
+    // defined case, so the `?? .compound` fallback never fires for this), rather than falling
+    // through to a plausible-looking real answer. See Issue870ShapeExtendShapeTypeFailureTests.
+    if (!shape) return -1; // ShapeType.unknown
     try {
         ShapeExtend_Explorer explorer;
         return (int32_t)explorer.ShapeType(shape->shape,
             compound ? Standard_True : Standard_False);
-    } catch (...) { return 7; }
+    } catch (...) { return -1; } // ShapeType.unknown
 }
 
 // MARK: - ShapeUpgrade FaceDivide / WireDivide / EdgeDivide / FixSmall / ConvertToBezier (v0.64)
@@ -4203,6 +4220,44 @@ double OCCTShapeAvgTolerance(OCCTShapeRef shape, int32_t type) {
     } catch (...) { return 0; }
 }
 
+// #833: ShapeAnalysis_ShapeTolerance::Tolerance's own `type` parameter already accepts a real
+// TopAbs_ShapeEnum directly (ShapeAnalysis_ShapeTolerance.hxx documents VERTEX/EDGE/FACE/SHELL/
+// SHAPE), so these three pass the caller's ordinal straight through instead of remapping it
+// through the compressed 0/1/2 switch the three functions above use -- the same straight-cast
+// convention OCCTBRepToolMaxTolerance (BRep_Tool::MaxTolerance) already uses, so a caller that
+// standardizes on ShapeType/TopAbs_ShapeEnum ordinals gets the same answer from every tolerance
+// entry point in this bridge.
+static bool occtShapeToleranceOfTypeGuard(int32_t shapeType) {
+    return shapeType >= TopAbs_COMPOUND && shapeType <= TopAbs_SHAPE;
+}
+
+// Shared by OCCTShapeMaxToleranceOfType/MinToleranceOfType/AvgToleranceOfType below (PR #870
+// aggregate review): the three differed only in the hardcoded `mode` literal (1/-1/0) passed to
+// ShapeAnalysis_ShapeTolerance::Tolerance, otherwise triplicating the identical
+// construct/guard/try-catch/call body — mirrors the `occtShapeToleranceOfTypeGuard` extraction
+// just above for the same reason: a future change to this shared logic (tightening the exception
+// handling, migrating off ShapeAnalysis_ShapeTolerance) now has one body to update instead of
+// three near-identical copies that can silently drift apart.
+static double occtShapeToleranceOfType(OCCTShapeRef shape, int32_t shapeType, int mode) {
+    if (!shape || !occtShapeToleranceOfTypeGuard(shapeType)) return 0;
+    try {
+        ShapeAnalysis_ShapeTolerance sat;
+        return sat.Tolerance(shape->shape, mode, (TopAbs_ShapeEnum)shapeType);
+    } catch (...) { return 0; }
+}
+
+double OCCTShapeMaxToleranceOfType(OCCTShapeRef shape, int32_t shapeType) {
+    return occtShapeToleranceOfType(shape, shapeType, 1); // 1 = max
+}
+
+double OCCTShapeMinToleranceOfType(OCCTShapeRef shape, int32_t shapeType) {
+    return occtShapeToleranceOfType(shape, shapeType, -1); // -1 = min
+}
+
+double OCCTShapeAvgToleranceOfType(OCCTShapeRef shape, int32_t shapeType) {
+    return occtShapeToleranceOfType(shape, shapeType, 0); // 0 = avg
+}
+
 bool OCCTShapeFixTolerance(OCCTShapeRef shape, double tolerance) {
     if (!shape) return false;
     try {
@@ -4697,6 +4752,15 @@ bool OCCTShapeFixerStatus(OCCTShapeFixerRef ref, int32_t statusType) {
             default: return false;
         }
         return f->fixer->Status(st);
+    } catch (...) { return false; }
+}
+
+// #849: the full ShapeExtend_Status flag space, mirroring OCCTFaceFixerStatus's raw passthrough.
+bool OCCTShapeFixerStatusFlag(OCCTShapeFixerRef ref, int32_t flag) {
+    auto f = (OCCTShapeFixer*)ref;
+    if (!f) return false;
+    try {
+        return f->fixer->Status(static_cast<ShapeExtend_Status>(flag));
     } catch (...) { return false; }
 }
 

@@ -847,36 +847,41 @@ extension Shape {
 
     // MARK: - GeomFill Trihedron Laws
 
-    /// Evaluate draft trihedron frame on an edge at a parameter
-    public func draftTrihedron(at param: Double, biNormal: SIMD3<Double>, angle: Double) -> TrihedronFrame? {
-        let r = OCCTGeomFillDraftTrihedron(handle, param, biNormal.x, biNormal.y, biNormal.z, angle)
+    /// Shared unpacking for the `OCCTTrihedronFrame` raw struct every trihedron-law bridge call
+    /// returns: a zero-length tangent means the law is degenerate at this parameter (#796).
+    private static func trihedronFrame(from r: OCCTTrihedronFrame) -> TrihedronFrame? {
         let t = SIMD3(r.tx, r.ty, r.tz)
         guard simd_length(t) > 1e-10 else { return nil }
         return TrihedronFrame(tangent: t, normal: SIMD3(r.nx, r.ny, r.nz), binormal: SIMD3(r.bx, r.by, r.bz))
+    }
+
+    /// Evaluate draft trihedron frame on an edge at a parameter
+    public func draftTrihedron(at param: Double, biNormal: SIMD3<Double>, angle: Double) -> TrihedronFrame? {
+        Shape.trihedronFrame(from: OCCTGeomFillDraftTrihedron(handle, param, biNormal.x, biNormal.y, biNormal.z, angle))
     }
 
     /// Evaluate discrete trihedron frame on an edge at a parameter
     public func discreteTrihedron(at param: Double) -> TrihedronFrame? {
-        let r = OCCTGeomFillDiscreteTrihedron(handle, param)
-        let t = SIMD3(r.tx, r.ty, r.tz)
-        guard simd_length(t) > 1e-10 else { return nil }
-        return TrihedronFrame(tangent: t, normal: SIMD3(r.nx, r.ny, r.nz), binormal: SIMD3(r.bx, r.by, r.bz))
+        Shape.trihedronFrame(from: OCCTGeomFillDiscreteTrihedron(handle, param))
     }
 
     /// Evaluate corrected Frenet frame on an edge at a parameter
     public func correctedFrenet(at param: Double) -> TrihedronFrame? {
-        let r = OCCTGeomFillCorrectedFrenet(handle, param)
-        let t = SIMD3(r.tx, r.ty, r.tz)
-        guard simd_length(t) > 1e-10 else { return nil }
-        return TrihedronFrame(tangent: t, normal: SIMD3(r.nx, r.ny, r.nz), binormal: SIMD3(r.bx, r.by, r.bz))
+        Shape.trihedronFrame(from: OCCTGeomFillCorrectedFrenet(handle, param))
     }
 
     // MARK: - GeomFill_Coons / GeomFill_Curved
 
-    /// Compute Coons filling pole grid from 4 boundary point arrays
-    public static func coonsFilling(
+    /// Shared marshaling for `coonsFilling`/`curvedFilling`: both validate and flatten the same 4
+    /// boundary-point arrays, size the same output buffer, and unflatten the same pole grid shape —
+    /// they differ only in which bridge fill function computes the poles (#796).
+    private static func fillPoleGrid(
         boundary1: [SIMD3<Double>], boundary2: [SIMD3<Double>],
-        boundary3: [SIMD3<Double>], boundary4: [SIMD3<Double>]
+        boundary3: [SIMD3<Double>], boundary4: [SIMD3<Double>],
+        using bridgeCall: (
+            UnsafePointer<Double>, UnsafePointer<Double>, UnsafePointer<Double>, UnsafePointer<Double>,
+            Int32, UnsafeMutablePointer<Double>, Int32, UnsafeMutablePointer<Int32>, UnsafeMutablePointer<Int32>
+        ) -> Int32
     ) -> FillingPoleGrid? {
         let n = boundary1.count
         guard n >= 2, boundary2.count == n, boundary3.count == n, boundary4.count == n else { return nil }
@@ -887,12 +892,21 @@ extension Shape {
         let maxPoles = n * n * 4
         var outPoints = [Double](repeating: 0, count: maxPoles * 3)
         var nbU: Int32 = 0, nbV: Int32 = 0
-        let count = Int(OCCTGeomFillCoonsPoles(b1, b2, b3, b4, Int32(n), &outPoints, Int32(maxPoles), &nbU, &nbV))
+        let count = Int(bridgeCall(b1, b2, b3, b4, Int32(n), &outPoints, Int32(maxPoles), &nbU, &nbV))
         guard count > 0 else { return nil }
         let poles = (0..<count).map { i in
             SIMD3(outPoints[i*3], outPoints[i*3+1], outPoints[i*3+2])
         }
         return FillingPoleGrid(poles: poles, nbU: Int(nbU), nbV: Int(nbV))
+    }
+
+    /// Compute Coons filling pole grid from 4 boundary point arrays
+    public static func coonsFilling(
+        boundary1: [SIMD3<Double>], boundary2: [SIMD3<Double>],
+        boundary3: [SIMD3<Double>], boundary4: [SIMD3<Double>]
+    ) -> FillingPoleGrid? {
+        fillPoleGrid(boundary1: boundary1, boundary2: boundary2,
+                     boundary3: boundary3, boundary4: boundary4, using: OCCTGeomFillCoonsPoles)
     }
 
     /// Compute curved filling pole grid from 4 boundary point arrays
@@ -900,21 +914,8 @@ extension Shape {
         boundary1: [SIMD3<Double>], boundary2: [SIMD3<Double>],
         boundary3: [SIMD3<Double>], boundary4: [SIMD3<Double>]
     ) -> FillingPoleGrid? {
-        let n = boundary1.count
-        guard n >= 2, boundary2.count == n, boundary3.count == n, boundary4.count == n else { return nil }
-        let b1 = boundary1.flatMap { [$0.x, $0.y, $0.z] }
-        let b2 = boundary2.flatMap { [$0.x, $0.y, $0.z] }
-        let b3 = boundary3.flatMap { [$0.x, $0.y, $0.z] }
-        let b4 = boundary4.flatMap { [$0.x, $0.y, $0.z] }
-        let maxPoles = n * n * 4
-        var outPoints = [Double](repeating: 0, count: maxPoles * 3)
-        var nbU: Int32 = 0, nbV: Int32 = 0
-        let count = Int(OCCTGeomFillCurvedPoles(b1, b2, b3, b4, Int32(n), &outPoints, Int32(maxPoles), &nbU, &nbV))
-        guard count > 0 else { return nil }
-        let poles = (0..<count).map { i in
-            SIMD3(outPoints[i*3], outPoints[i*3+1], outPoints[i*3+2])
-        }
-        return FillingPoleGrid(poles: poles, nbU: Int(nbU), nbV: Int(nbV))
+        fillPoleGrid(boundary1: boundary1, boundary2: boundary2,
+                     boundary3: boundary3, boundary4: boundary4, using: OCCTGeomFillCurvedPoles)
     }
 
     // MARK: - GeomFill_CoonsAlgPatch

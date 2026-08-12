@@ -265,6 +265,10 @@ public func fixSmallEdges(tolerance: Double = 1e-7,
   - `limitAngle` — maximum tangent angle for merging in radians; pass `-1` for no limit.
 - **Returns:** Fixed shape, or `nil` on failure.
 - **OCCT:** `ShapeFix_Wireframe::FixSmallEdges` via `OCCTShapeFixSmallEdges`.
+- **Note:** `fixSmallEdges(tolerance:dropSmall: true)` is equivalent to `Shape.droppingSmallEdges
+  (tolerance:)` (see "Shape-Healing") — same `ShapeFix_Wireframe` precision/drop-mode/perform
+  sequence. The two used to default to different tolerances (`1e-7` here, `1e-6` there) for the
+  identical call; `droppingSmallEdges` was aligned to this method's `1e-7` default in #839.
 
 ---
 
@@ -1630,11 +1634,21 @@ Transformation matrix types and factory namespaces backed by the `gce_Make*` fam
 
 ### `TransformMatrix3D`
 
-3D transformation matrix (row-major 3×4).
+3D transformation matrix (row-major 3×4), in **INTERLEAVED** layout: each row is stored
+together, with that row's translation component folded in as its 4th entry —
+`[r00,r01,r02,tx, r10,r11,r12,ty, r20,r21,r22,tz]`. Positionally, this is
+`gp_Trsf::SetValues(a11...a34)`'s own parameter order. Returned by `TransformFactory3D`'s
+builders below, and accepted by `Shape.transformed(byMatrix:)` and `Shape.gTransformed(matrix:)`.
+**Not interchangeable** with `Matrix12Grouped` (below), which `Shape.transformed(matrix:)` uses
+instead — the two were a single ambiguous `[Double]` parameter before #835; convert between them
+with `.grouped` / `Matrix12Grouped.interleaved`.
 
 ```swift
 public struct TransformMatrix3D: Sendable {
-    public let values: [Double] // 12 elements: row-major 3x4
+    public let values: [Double] // 12 elements: row-major 3x4, INTERLEAVED
+
+    public init?(_ values: [Double])  // nil on values.count != 12
+    public var grouped: Matrix12Grouped { get }
 }
 ```
 
@@ -1658,6 +1672,40 @@ public func apply(to point: SIMD3<Double>) -> SIMD3<Double>
 
 - **Parameters:** `point` — input point.
 - **Returns:** Transformed point.
+
+---
+
+### `Matrix12Grouped`
+
+Rigid transformation matrix (3x3 rotation + translation) in **GROUPED** layout: all nine
+rotation entries first, then the three translation entries last —
+`[r00,r01,r02, r10,r11,r12, r20,r21,r22, tx,ty,tz]`. Accepted by `Shape.transformed(matrix:)`,
+which re-shuffles these into `gp_Trsf::SetValues`'s own INTERLEAVED order internally. **Not
+interchangeable** with `TransformMatrix3D`'s INTERLEAVED layout — see that type's entry above.
+Added in #835 (PR #864 review) to replace the plain `[Double]` parameter `transformed(matrix:)`,
+`transformed(byMatrix:)`, and `gTransformed(matrix:)` used to share indistinguishably; the old
+`[Double]`-taking overloads are kept as `@available(*, deprecated)` forwarders.
+
+```swift
+public struct Matrix12Grouped: Sendable {
+    public let values: [Double] // 12 elements: GROUPED
+
+    public init?(_ values: [Double])  // nil on values.count != 12
+    public var interleaved: TransformMatrix3D { get }
+}
+```
+
+- **Example:**
+  ```swift
+  if let matrix = Matrix12Grouped([
+        1, 0, 0,   0, 1, 0,   0, 0, 1,   // identity rotation
+        5, 0, 0                          // translate +5 along X
+     ]),
+     let box = Shape.box(width: 10, height: 10, depth: 10),
+     let moved = box.transformed(matrix: matrix) {
+      print(moved.isValid)
+  }
+  ```
 
 ---
 

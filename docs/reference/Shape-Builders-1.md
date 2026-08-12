@@ -1171,6 +1171,9 @@ public static func faceFromPlane(
 - **Parameters:** `origin` — point on the plane; `normal` — plane normal; `uRange`, `vRange` — parameter bounds; `tolerance` — vertex tolerance.
 - **Returns:** Face shape, or `nil` on failure.
 - **OCCT:** `BRepLib_MakeFace(gp_Pln, ...)` via `OCCTBRepLibMakeFaceFromPlane`.
+- **Note:** `Shape.faceFromPlane(origin:normal:uBounds:vBounds:tolerance:)` (see
+  "Document-Mesh-Fixing") now delegates to this overload (#841) — the two were added independently
+  and always drove the same `BRepLib_MakeFace` engine.
 
 ---
 
@@ -1192,6 +1195,9 @@ public static func faceFromCylinder(
 - **Parameters:** `origin` — axis origin; `axis` — axis direction; `radius` — cylinder radius; `uRange` — angular bounds (radians); `vRange` — axial bounds; `tolerance` — vertex tolerance.
 - **Returns:** Face shape, or `nil` on failure.
 - **OCCT:** `BRepLib_MakeFace(gp_Cylinder, ...)` via `OCCTBRepLibMakeFaceFromCylinder`.
+- **Note:** `Shape.faceFromCylinder(origin:axis:radius:uBounds:vBounds:tolerance:)` (see
+  "Document-Mesh-Fixing") now delegates to this overload (#841) — see the sibling
+  `faceFromPlane` note above.
 
 ---
 
@@ -1335,15 +1341,17 @@ public static func edge2dFromLine(
 
 ### `nurbsConvertViaModifier()`
 
-Convert this shape to NURBS using `BRepTools_Modifier` with `BRepTools_NurbsConvertModification`.
+Convert this shape to NURBS using `BRepTools_Modifier` with `BRepTools_NurbsConvertModification`, skipping `Shape.convertedToNURBS()`'s vertex-tolerance correction pass.
 
 ```swift
 public func nurbsConvertViaModifier() -> Shape?
 ```
 
+This drives the exact same `BRepTools_Modifier` + `BRepTools_NurbsConvertModification` pair `Shape.convertedToNURBS()` (`BRepBuilderAPI_NurbsConvert`) uses internally — it is that method's own implementation minus its final `CorrectVertexTol()` step, not an independent conversion mechanism. `CorrectVertexTol()` raises a vertex's tolerance to cover any edge meeting it that the NURBS conversion enlarged, so this method's result can carry a vertex whose tolerance is smaller than an edge meeting it — a real, silent conversion-fidelity gap `.isValid` will not catch (#836).
+
 - **Returns:** NURBS-converted shape, or `nil` on failure.
 - **OCCT:** `BRepTools_Modifier` + `BRepTools_NurbsConvertModification` via `OCCTBRepToolsModifierNurbsConvert`.
-- **Note:** Prefer `nurbsConvert()` for straightforward conversions; use this variant when you need the modifier-based pipeline.
+- **Note:** Prefer `Shape.convertedToNURBS()` for ordinary NURBS conversion; use this variant only when you need the bare modifier pipeline directly (e.g. composing it with other `BRepTools_Modification` passes) and will apply your own vertex-tolerance correction afterward.
 
 ---
 
@@ -1435,6 +1443,10 @@ public func curveShapeIntersect(
 - **Parameters:** `origin` — line origin; `direction` — line direction.
 - **Returns:** Array of parameter values where the line intersects the shape, or `nil` on failure.
 - **OCCT:** `LocOpe_CurveShapeIntersector` via `OCCTLocOpeCurveShapeIntersectLine`.
+- **Note:** Parameters only — the point/face each hit's `LocOpe_PntFace` also carries is never
+  read. For the 3D point, the face struck, or curve input, see `ShapeRayIntersection`
+  (`BRepIntCurveSurface_Inter`), a separate, richer intersector added independently and not a
+  drop-in replacement (#852).
 
 ---
 

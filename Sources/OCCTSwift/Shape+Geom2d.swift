@@ -503,12 +503,29 @@ extension Shape {
     /// Uses IntTools_FClass2d to determine if a point in the face's UV parameter
     /// space is inside, on, or outside the face boundary.
     ///
+    /// Two other wrapped classifiers answer the identical "in/on/out of the face boundary"
+    /// question for a UV point — `Face.classify(u:v:)` and `Shape.classifyPoint2D(faceIndex:
+    /// u:v:)`, both backed by `BRepClass_FaceClassifier`/`BRepClass_FClassifier` — and both
+    /// default to `1e-6`. This method used to default to `1e-7`, an order of magnitude tighter,
+    /// so a point 5e-7 from the boundary classified `.onBoundary` through the other two but not
+    /// through this one; aligned to `1e-6` to match (#840). `isHole(tolerance:)`, this method's
+    /// own `IntTools_FClass2d` file-neighbor, keeps its `1e-7` default deliberately — it answers a
+    /// different question (is this face a hole) than the three UV-boundary classifiers above.
+    ///
+    /// - Warning: This is a **silent runtime behavior change** for any caller relying on the
+    ///   implicit default, not just an internal-consistency fix. A point ~5e-7 from a face
+    ///   boundary that classified `.outside` under the old `1e-7` default now classifies
+    ///   `.onBoundary` under the new `1e-6` default — a 10x loosening — with no compile-time
+    ///   signal, and downstream accept/reject logic keyed on that classification can change
+    ///   outcome purely from this upgrade for geometry near that boundary band. Pass `tolerance:`
+    ///   explicitly to pin a specific value across the upgrade (PR #870 aggregate review).
+    ///
     /// - Parameters:
     ///   - u: U parameter coordinate
     ///   - v: V parameter coordinate
-    ///   - tolerance: Classification tolerance (default 1e-7)
+    ///   - tolerance: Classification tolerance (default 1e-6)
     /// - Returns: Point classification
-    public func classifyPoint2d(u: Double, v: Double, tolerance: Double = 1e-7) -> OCCTSwift.PointClassification {
+    public func classifyPoint2d(u: Double, v: Double, tolerance: Double = 1e-6) -> OCCTSwift.PointClassification {
         let result = OCCTIntToolsFClass2dPerform(handle, u, v, tolerance)
         // Bridge returns: 0=IN, 1=ON, 2=OUT, 3=UNKNOWN
         // PointClassification: inside=0, outside=1, onBoundary=2, unknown=3

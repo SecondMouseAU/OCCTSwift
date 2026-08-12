@@ -193,12 +193,13 @@ extension Shape {
     ///   (unconnected) elements.
     public var contents: ShapeContents {
         let c = OCCTShapeGetContents(handle)
+        let core = shapeContentsCore(c)
         return ShapeContents(
-            solids: Int(c.nbSolids), shells: Int(c.nbShells),
-            faces: Int(c.nbFaces), wires: Int(c.nbWires),
-            edges: Int(c.nbEdges), vertices: Int(c.nbVertices),
-            freeEdges: Int(c.nbFreeEdges), freeWires: Int(c.nbFreeWires),
-            freeFaces: Int(c.nbFreeFaces)
+            solids: core.solids, shells: core.shells,
+            faces: core.faces, wires: core.wires,
+            edges: core.edges, vertices: core.vertices,
+            freeEdges: core.freeEdges, freeWires: core.freeWires,
+            freeFaces: core.freeFaces
         )
     }
     /// Fix wireframe issues (small edges, gaps).
@@ -344,9 +345,26 @@ extension Shape {
     ///
     /// Useful for cleaning up imported geometry with tolerance issues.
     ///
+    /// Equivalent to `fixSmallEdges(tolerance:dropSmall: true)` — both build a
+    /// `ShapeFix_Wireframe` with the same precision/drop-mode/perform sequence. The two used to
+    /// default to different tolerances (`1e-6` here vs `1e-7` there) for the identical underlying
+    /// call; aligned to `1e-7` (#839), matching `fixSmallEdges` and its sibling `fixWireGaps`, so
+    /// an edge near that boundary is no longer dropped by one and kept by the other depending
+    /// only on which of the two near-identical entry points was called.
+    ///
+    /// - Warning: This is a **silent runtime behavior change** for any caller relying on the
+    ///   implicit default, not just an internal-consistency fix — a 10x tightening, the opposite
+    ///   direction from ``Shape/classifyPoint2d(u:v:tolerance:)``'s #840 change on this same PR.
+    ///   An edge sized in the `1e-7..1e-6` range that used to be silently dropped under the old
+    ///   `1e-6` default now survives under the new `1e-7` default, with no compile-time signal —
+    ///   e.g. imported CAD geometry containing such a sliver edge that a subsequent boolean or
+    ///   meshing call depended on being pre-removed can now fail, or produce a different result,
+    ///   with no error at this call site itself. Pass `tolerance:` explicitly to pin a specific
+    ///   value across the upgrade (PR #870 aggregate review).
+    ///
     /// - Parameter tolerance: Tolerance below which edges are considered small
     /// - Returns: Shape with small edges removed, or nil on failure
-    public func droppingSmallEdges(tolerance: Double = 1e-6) -> Shape? {
+    public func droppingSmallEdges(tolerance: Double = 1e-7) -> Shape? {
         guard let h = OCCTShapeDropSmallEdges(handle, tolerance) else { return nil }
         return Shape(handle: h)
     }
@@ -366,6 +384,11 @@ extension Shape {
         return Shape(handle: h)
     }
     /// Create a deep, independent copy of this shape.
+    ///
+    /// Backed by `BRepBuilderAPI_Copy`. When `copyGeometry`/`copyMesh` are `true`, this clones the
+    /// actual `Geom_Surface`/`Geom_Curve`/`Poly_Triangulation` objects, not just topology — unlike
+    /// the no-argument instance ``deepCopy()``, which never clones geometry regardless of these
+    /// flags. See `docs/thread-safety.md` for why that distinction matters for concurrent use.
     ///
     /// - Parameters:
     ///   - copyGeometry: If true, copy the underlying geometry (default: true).
@@ -1017,15 +1040,22 @@ extension Shape {
     ///   - type: Type of sub-shape to check
     ///   - index: 0-based index of the sub-shape
     /// - Returns: true if the sub-shape is valid
-    public func isSubShapeValid(type: TopAbs_ShapeEnum, at index: Int) -> Bool {
-        OCCTBRepCheckSubShapeValid(handle, type.rawValue, Int32(index))
+    public func isSubShapeValid(type: ShapeType, at index: Int) -> Bool {
+        OCCTBRepCheckSubShapeValid(handle, Int32(type.rawValue), Int32(index))
     }
 
-    /// TopAbs_ShapeEnum for sub-shape type specification
-    public enum TopAbs_ShapeEnum: Int32, Sendable {
-        case compound = 0, compsolid = 1, solid = 2, shell = 3
-        case face = 4, wire = 5, edge = 6, vertex = 7
-    }
+    /// A typealias for the canonical ``ShapeType`` (#844) — this used to be an independent local
+    /// `TopAbs_ShapeEnum` mirror, used only by ``isSubShapeValid(type:at:)`` above, before #844
+    /// consolidated the four independent Swift mirrors of `TopAbs_ShapeEnum` in this package into
+    /// one. Kept as a deprecated alias (rather than deleted outright) for source compatibility
+    /// with external code that spells `Shape.TopAbs_ShapeEnum` explicitly — a stored variable's
+    /// type annotation, or a function parameter type — matching this same PR's own migration
+    /// pattern for every other type it consolidated (``ShapeFilterType``, and the deprecated
+    /// `[Double]`-taking overloads on the transform-matrix methods). Case names differ slightly
+    /// from the old enum's own casing (`ShapeType.compSolid` vs. the old `.compsolid`), since this
+    /// is now literally `ShapeType`, not a copy of it.
+    @available(*, deprecated, renamed: "ShapeType")
+    public typealias TopAbs_ShapeEnum = ShapeType
 
     // MARK: - BRepCheck per sub-shape type
 
@@ -1240,6 +1270,25 @@ extension Shape {
         public let normals: [SIMD3<Double>]
     }
 
+    /// Unpacks the bridge's raw `points`/`normals` double arrays (3 doubles per sample, `count`
+    /// samples) into a `PointCloudResult`, freeing both buffers. Shared by
+    /// ``pointCloudByTriangulation()``/``pointCloudByDensity(_:)`` (#796) — the two differ only in
+    /// which bridge call produces the raw arrays, not in how the result is unpacked.
+    private static func unpackPointCloud(points: UnsafeMutablePointer<Double>,
+                                          normals: UnsafeMutablePointer<Double>,
+                                          count: Int32) -> PointCloudResult {
+        defer { free(points); free(normals) }
+        var pts = [SIMD3<Double>]()
+        var nms = [SIMD3<Double>]()
+        pts.reserveCapacity(Int(count))
+        nms.reserveCapacity(Int(count))
+        for i in 0..<Int(count) {
+            pts.append(SIMD3(points[i*3], points[i*3+1], points[i*3+2]))
+            nms.append(SIMD3(normals[i*3], normals[i*3+1], normals[i*3+2]))
+        }
+        return PointCloudResult(points: pts, normals: nms)
+    }
+
     /// Generate a point cloud from this shape's triangulation.
     /// The shape must be meshed first.
     public func pointCloudByTriangulation() -> PointCloudResult? {
@@ -1248,14 +1297,7 @@ extension Shape {
         var outCount: Int32 = 0
         guard OCCTBRepLibPointCloudByTriangulation(handle, &outPoints, &outNormals, &outCount),
               let pts = outPoints, let nms = outNormals, outCount > 0 else { return nil }
-        defer { free(pts); free(nms) }
-        var points = [SIMD3<Double>]()
-        var normals = [SIMD3<Double>]()
-        for i in 0..<Int(outCount) {
-            points.append(SIMD3(pts[i*3], pts[i*3+1], pts[i*3+2]))
-            normals.append(SIMD3(nms[i*3], nms[i*3+1], nms[i*3+2]))
-        }
-        return PointCloudResult(points: points, normals: normals)
+        return Shape.unpackPointCloud(points: pts, normals: nms, count: outCount)
     }
 
     /// Generate a point cloud from this shape by density (points per unit area).
@@ -1266,14 +1308,7 @@ extension Shape {
         var outCount: Int32 = 0
         guard OCCTBRepLibPointCloudByDensity(handle, density, &outPoints, &outNormals, &outCount),
               let pts = outPoints, let nms = outNormals, outCount > 0 else { return nil }
-        defer { free(pts); free(nms) }
-        var points = [SIMD3<Double>]()
-        var normals = [SIMD3<Double>]()
-        for i in 0..<Int(outCount) {
-            points.append(SIMD3(pts[i*3], pts[i*3+1], pts[i*3+2]))
-            normals.append(SIMD3(nms[i*3], nms[i*3+1], nms[i*3+2]))
-        }
-        return PointCloudResult(points: points, normals: normals)
+        return Shape.unpackPointCloud(points: pts, normals: nms, count: outCount)
     }
 
     /// Check if this shape is empty (has no sub-shapes).
@@ -1421,6 +1456,11 @@ extension Shape {
     }
 
     /// Deep copy a shape via BRepTools_CopyModification.
+    ///
+    /// Same underlying mechanism as ``copy(copyGeometry:copyMesh:)`` (`BRepBuilderAPI_Copy` is a
+    /// thin wrapper around this same class), reached directly instead — note the different
+    /// `copyMesh` default (`true` here vs. `false` on `copy()`). Clones geometry/mesh when the
+    /// respective flag is `true`, unlike the no-argument instance ``deepCopy()``, which never does.
     public static func deepCopy(_ shape: Shape, copyGeometry: Bool = true, copyMesh: Bool = true) -> Shape? {
         guard let ref = OCCTShapeCopyModification(shape.handle, copyGeometry, copyMesh) else { return nil }
         return Shape(handle: ref)
@@ -1564,6 +1604,11 @@ extension Shape {
     }
 
     /// Get maximum tolerance of sub-shapes of given type. type: 6=EDGE, 4=FACE, 7=VERTEX.
+    ///
+    /// This is the real `TopAbs_ShapeEnum` ordinal, the same convention ``ShapeType``'s raw
+    /// values use and the same one the `ShapeType`-typed `maxTolerance(type:)` overload passes
+    /// through unchanged — but NOT the same as the compressed `Int` `maxTolerance(type: Int)`
+    /// overload uses (#833): the two `Int`-based overloads disagree on what `2` means.
     public func maxTolerance(subShapeType: Int) -> Double {
         OCCTBRepToolMaxTolerance(handle, Int32(subShapeType))
     }
@@ -1660,6 +1705,14 @@ extension Shape {
 extension Shape {
 
     /// Create a deep copy of this shape (independent copy with new topology).
+    ///
+    /// - Note: **Topology only** (#831). Backed by `TNaming_CopyShape::CopyTool`, which builds new
+    ///   `TopoDS_TShape`s but assigns the *same* `Handle(Geom_Surface)`/`Handle(Geom_Curve)`/
+    ///   `Handle(Poly_Triangulation)` to the copy — no geometry or mesh cloning. For a copy whose
+    ///   geometry is also independent (e.g. for concurrent use on separate threads — see
+    ///   `docs/thread-safety.md`), use ``copy(copyGeometry:copyMesh:)`` or the static
+    ///   ``deepCopy(_:copyGeometry:copyMesh:)`` instead, both backed by `BRepTools_CopyModification`
+    ///   / `BRepBuilderAPI_Copy`, which do clone the geometry when `copyGeometry` is `true`.
     public func deepCopy() -> Shape? {
         guard let ref = OCCTShapeDeepCopy(handle) else { return nil }
         return Shape(handle: ref)
@@ -1733,6 +1786,17 @@ extension Shape {
 extension Shape {
 
     /// Classification state for a point relative to a solid.
+    ///
+    /// - Note: ``classify(point:tolerance:)`` (`Shape+Analysis.swift`) answers the identical
+    ///   question — same `BRepClass3d_SolidClassifier` mechanism (#851), same tolerance
+    ///   semantics, same underlying `TopAbs_State` values — but returns the separately-declared
+    ///   ``PointClassification`` instead. The two enums share raw values case-for-case (`inside=0,
+    ///   outside=1, on/onBoundary=2, unknown=3`) but **not** case names (`.on` here vs.
+    ///   `.onBoundary` there), so they are intentionally kept as two declarations rather than a
+    ///   typealias — unlike ``Face/SurfaceType`` (#850), whose case names matched exactly, a
+    ///   typealias here would silently rename one side's cases and break source compatibility for
+    ///   whichever spelling was renamed away. Do not conflate the two by raw value across API
+    ///   boundaries you don't control.
     public enum PointState: Int32 {
         case inside = 0
         case outside = 1
@@ -1741,6 +1805,12 @@ extension Shape {
     }
 
     /// Classify a 3D point relative to this solid shape.
+    ///
+    /// Equivalent to ``classify(point:tolerance:)`` — both route through
+    /// `BRepClass3d_SolidClassifier` (#851) — but returns ``PointState`` instead of
+    /// ``PointClassification``. Prefer whichever result enum your call site already uses; the two
+    /// never disagree since they share one bridge mechanism and a common `TopAbs_State` mapping.
+    ///
     /// - Parameters:
     ///   - point: The 3D point to classify
     ///   - tolerance: Classification tolerance
@@ -2289,17 +2359,68 @@ extension Shape {
         Int(OCCTCheckVertexStatus(handle, vertex.handle))
     }
 
+    /// Max tolerance of sub-shapes of the given type.
+    ///
+    /// Additive, ``ShapeType``-typed sibling of the legacy `maxTolerance(type: Int)` overload
+    /// below (#833): that overload and ``maxTolerance(subShapeType:)`` each accept a raw `Int`
+    /// with a DIFFERENT encoding for the same concept — `maxTolerance(type: 2)` means FACE there,
+    /// while `maxTolerance(subShapeType: 2)` means `TopAbs_SOLID` (and silently returns 0, since
+    /// `BRep_Tool::MaxTolerance` only handles VERTEX/EDGE/FACE). This overload uses ``ShapeType``,
+    /// whose raw values already match the real `TopAbs_ShapeEnum` ordinals `maxTolerance
+    /// (subShapeType:)` expects, so both typed and unambiguous entry points now agree.
+    ///
+    /// ```swift
+    /// let box = Shape.box(width: 10, height: 10, depth: 10)!
+    /// print(box.maxTolerance(type: .face))
+    /// ```
+    ///
+    /// - Parameter type: Sub-shape type to measure.
+    /// - SeeAlso: `maxTolerance(subShapeType:)`, which queries the identical tolerance data via
+    ///   `BRep_Tool::MaxTolerance` and already used this same ordinal convention.
+    public func maxTolerance(type: ShapeType) -> Double {
+        OCCTShapeMaxToleranceOfType(handle, Int32(type.rawValue))
+    }
+
+    /// Min tolerance of sub-shapes of the given type. See the `ShapeType`-typed
+    /// `maxTolerance(type:)` overload above for why this additive overload exists alongside the
+    /// legacy `Int`-based one below (#833).
+    public func minTolerance(type: ShapeType) -> Double {
+        OCCTShapeMinToleranceOfType(handle, Int32(type.rawValue))
+    }
+
+    /// Average tolerance of sub-shapes of the given type. See the `ShapeType`-typed
+    /// `maxTolerance(type:)` overload above for why this additive overload exists alongside the
+    /// legacy `Int`-based one below (#833).
+    public func avgTolerance(type: ShapeType) -> Double {
+        OCCTShapeAvgToleranceOfType(handle, Int32(type.rawValue))
+    }
+
     /// Max tolerance of sub-shapes of given type (0=vertex, 1=edge, 2=face).
+    ///
+    /// - Warning: **Legacy.** This `Int` encoding is compressed and specific to this method —
+    ///   `0`/`1`/`2` mean vertex/edge/face here, but `maxTolerance(subShapeType:)` below uses a
+    ///   DIFFERENT `Int` convention (real `TopAbs_ShapeEnum` ordinals) for the same idea, so the
+    ///   same integer passed to the wrong one silently measures the wrong sub-shape kind (#833).
+    ///   Prefer the `ShapeType`-typed `maxTolerance(type:)` overload above, which removes the
+    ///   ambiguity. Kept, unchanged, for source compatibility.
     public func maxTolerance(type: Int) -> Double {
         OCCTShapeMaxTolerance(handle, Int32(type))
     }
 
     /// Min tolerance of sub-shapes of given type.
+    ///
+    /// - Warning: **Legacy.** Same compressed 0/1/2 encoding as `maxTolerance(type: Int)` above,
+    ///   and the same caveat (#833). Prefer the `ShapeType`-typed `minTolerance(type:)` overload
+    ///   above.
     public func minTolerance(type: Int) -> Double {
         OCCTShapeMinTolerance(handle, Int32(type))
     }
 
     /// Average tolerance of sub-shapes of given type.
+    ///
+    /// - Warning: **Legacy.** Same compressed 0/1/2 encoding as `maxTolerance(type: Int)` above,
+    ///   and the same caveat (#833). Prefer the `ShapeType`-typed `avgTolerance(type:)` overload
+    ///   above.
     public func avgTolerance(type: Int) -> Double {
         OCCTShapeAvgTolerance(handle, Int32(type))
     }
@@ -2452,24 +2573,35 @@ extension Shape {
     }
 
     /// Create a face from a gp_Plane with UV bounds.
+    ///
+    /// Delegates to ``faceFromPlane(origin:normal:uRange:vRange:tolerance:)`` above. The two were
+    /// added independently, ~51 releases apart, and always drove the same underlying
+    /// `BRepLib_MakeFace` engine — this overload only differed by omitting the `tolerance`
+    /// parameter, silently pinning it to whatever `BRepBuilderAPI_MakeFace`'s tolerance-less
+    /// constructor hardcodes internally (`Precision::Confusion()`, `1e-7`), which is now this
+    /// overload's own default so existing callers see byte-identical geometry (#841).
+    ///
+    /// - Parameter tolerance: Degeneracy tolerance, forwarded to `BRepLib_MakeFace`. Defaults to
+    ///   `Precision::Confusion()` (`1e-7`), matching what this overload silently used before #841.
     public static func faceFromPlane(origin: SIMD3<Double> = .zero, normal: SIMD3<Double> = SIMD3(0,0,1),
-                                      uBounds: ClosedRange<Double>, vBounds: ClosedRange<Double>) -> Shape? {
-        guard let ref = OCCTMakeFaceFromGpPlane(origin.x, origin.y, origin.z,
-                                                   normal.x, normal.y, normal.z,
-                                                   uBounds.lowerBound, uBounds.upperBound,
-                                                   vBounds.lowerBound, vBounds.upperBound) else { return nil }
-        return Shape(handle: ref)
+                                      uBounds: ClosedRange<Double>, vBounds: ClosedRange<Double>,
+                                      tolerance: Double = 1e-7) -> Shape? {
+        faceFromPlane(origin: origin, normal: normal, uRange: uBounds, vRange: vBounds, tolerance: tolerance)
     }
 
     /// Create a face from a gp_Cylinder with UV bounds.
+    ///
+    /// Delegates to ``faceFromCylinder(origin:axis:radius:uRange:vRange:tolerance:)`` above — see
+    /// that overload's sibling doc comment on ``faceFromPlane(origin:normal:uBounds:vBounds:tolerance:)``
+    /// for why (#841).
+    ///
+    /// - Parameter tolerance: Degeneracy tolerance, forwarded to `BRepLib_MakeFace`. Defaults to
+    ///   `Precision::Confusion()` (`1e-7`), matching what this overload silently used before #841.
     public static func faceFromCylinder(origin: SIMD3<Double> = .zero, axis: SIMD3<Double> = SIMD3(0,0,1),
                                          radius: Double,
-                                         uBounds: ClosedRange<Double>, vBounds: ClosedRange<Double>) -> Shape? {
-        guard let ref = OCCTMakeFaceFromGpCylinder(origin.x, origin.y, origin.z,
-                                                      axis.x, axis.y, axis.z, radius,
-                                                      uBounds.lowerBound, uBounds.upperBound,
-                                                      vBounds.lowerBound, vBounds.upperBound) else { return nil }
-        return Shape(handle: ref)
+                                         uBounds: ClosedRange<Double>, vBounds: ClosedRange<Double>,
+                                         tolerance: Double = 1e-7) -> Shape? {
+        faceFromCylinder(origin: origin, axis: axis, radius: radius, uRange: uBounds, vRange: vBounds, tolerance: tolerance)
     }
 }
 
@@ -2523,12 +2655,13 @@ extension Shape {
     /// Get extended shape contents analysis.
     public func contentsExtended() -> ShapeContentsExtended {
         let c = OCCTShapeGetContentsExtended(handle)
+        let core = shapeContentsCore(c)
         return ShapeContentsExtended(
-            nbSolids: Int(c.nbSolids), nbShells: Int(c.nbShells),
-            nbFaces: Int(c.nbFaces), nbWires: Int(c.nbWires),
-            nbEdges: Int(c.nbEdges), nbVertices: Int(c.nbVertices),
-            nbFreeEdges: Int(c.nbFreeEdges), nbFreeWires: Int(c.nbFreeWires),
-            nbFreeFaces: Int(c.nbFreeFaces), nbSolidsWithVoids: Int(c.nbSolidsWithVoids),
+            nbSolids: core.solids, nbShells: core.shells,
+            nbFaces: core.faces, nbWires: core.wires,
+            nbEdges: core.edges, nbVertices: core.vertices,
+            nbFreeEdges: core.freeEdges, nbFreeWires: core.freeWires,
+            nbFreeFaces: core.freeFaces, nbSolidsWithVoids: Int(c.nbSolidsWithVoids),
             nbBigSplines: Int(c.nbBigSplines), nbC0Surfaces: Int(c.nbC0Surfaces),
             nbC0Curves: Int(c.nbC0Curves), nbOffsetSurf: Int(c.nbOffsetSurf),
             nbIndirectSurf: Int(c.nbIndirectSurf), nbOffsetCurves: Int(c.nbOffsetCurves),

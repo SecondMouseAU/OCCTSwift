@@ -95,6 +95,28 @@ extension BRepGraph {
 
     // MARK: - Recipe evaluators
 
+    /// The bounds check shared by every recipe resolver below: `occurrence` must be a
+    /// valid index into `available`, or resolution fails with `.occurrenceOutOfRange`.
+    /// Returns the validated element itself on success, so call sites don't need their
+    /// own follow-up bounds check or subscript.
+    private func element<T>(at occurrence: Int,
+                            in available: [T],
+                            ref: TopologyRef) -> Result<T, TopologyResolutionError> {
+        guard occurrence >= 0, occurrence < available.count else {
+            return .failure(.occurrenceOutOfRange(ref, available: available.count, requested: occurrence))
+        }
+        return .success(available[occurrence])
+    }
+
+    /// Resolves `ancestor` and collapses any failure into `.ancestorMissing(ancestor)` —
+    /// the shared "resolve the ancestor recipe, or fail" step `resolveContainedIn` and
+    /// `resolveSplitOf` each perform before doing their own kind-specific lookup. The
+    /// underlying failure reason (e.g. `.operationNotFound`, a nested `.ancestorMissing`)
+    /// is intentionally discarded, same as both call sites did before consolidation.
+    private func resolveAncestor(_ ancestor: TopologyRef) -> Result<NodeRef, TopologyResolutionError> {
+        resolve(ancestor).mapError { _ in .ancestorMissing(ancestor) }
+    }
+
     private func resolveCreatedBy(opName: String,
                                   kind: NodeKind,
                                   occurrence: Int,
@@ -131,60 +153,47 @@ extension BRepGraph {
             if a.origKey.index != b.origKey.index { return a.origKey.index < b.origKey.index }
             return a.posInRepls < b.posInRepls
         }
-        guard occurrence >= 0, occurrence < candidates.count else {
-            return .failure(.occurrenceOutOfRange(ref, available: candidates.count, requested: occurrence))
+        // #870 aggregate review: collapses the same "switch a Result, bind .success, early-return
+        // .failure" block `resolveContainedIn`/`resolveSplitOf` below used to repeat verbatim —
+        // .flatMap chains straight into the leaf-occurrence walk without an intermediate binding.
+        return element(at: occurrence, in: candidates, ref: ref).flatMap { candidate in
+            let seed = candidate.node
+            // leafOccurrence == nil disables forward-walk; return the node as created.
+            guard let leafOcc = leafOccurrence else {
+                return .success(seed)
+            }
+            let leaves = currentForms(of: seed)
+            // Empty leaves means the node has no descendants — return itself.
+            if leaves.isEmpty {
+                return .success(seed)
+            }
+            return element(at: leafOcc, in: leaves, ref: ref)
         }
-        let seed = candidates[occurrence].node
-        // leafOccurrence == nil disables forward-walk; return the node as created.
-        guard let leafOcc = leafOccurrence else {
-            return .success(seed)
-        }
-        let leaves = currentForms(of: seed)
-        // Empty leaves means the node has no descendants — return itself.
-        if leaves.isEmpty {
-            return .success(seed)
-        }
-        guard leafOcc >= 0, leafOcc < leaves.count else {
-            return .failure(.occurrenceOutOfRange(ref, available: leaves.count, requested: leafOcc))
-        }
-        return .success(leaves[leafOcc])
     }
 
     private func resolveContainedIn(parent: TopologyRef,
                                     kind: NodeKind,
                                     occurrence: Int,
                                     ref: TopologyRef) -> Result<NodeRef, TopologyResolutionError> {
-        let resolvedParent: NodeRef
-        switch resolve(parent) {
-        case .success(let n): resolvedParent = n
-        case .failure: return .failure(.ancestorMissing(parent))
+        resolveAncestor(parent).flatMap { resolvedParent in
+            let indices = childIndices(rootKind: resolvedParent.kind,
+                                        rootIndex: resolvedParent.index,
+                                        targetKind: kind)
+            return element(at: occurrence, in: indices, ref: ref).map { NodeRef(kind: kind, index: $0) }
         }
-        let indices = childIndices(rootKind: resolvedParent.kind,
-                                    rootIndex: resolvedParent.index,
-                                    targetKind: kind)
-        guard occurrence >= 0, occurrence < indices.count else {
-            return .failure(.occurrenceOutOfRange(ref, available: indices.count, requested: occurrence))
-        }
-        return .success(NodeRef(kind: kind, index: indices[occurrence]))
     }
 
     private func resolveSplitOf(original: TopologyRef,
                                 occurrence: Int,
                                 ref: TopologyRef) -> Result<NodeRef, TopologyResolutionError> {
-        let resolvedOriginal: NodeRef
-        switch resolve(original) {
-        case .success(let n): resolvedOriginal = n
-        case .failure: return .failure(.ancestorMissing(original))
-        }
-        // Find the record where resolvedOriginal appears as an original with >1 replacements.
-        for record in historyRecords {
-            guard let repls = record.mapping[resolvedOriginal], repls.count > 1 else { continue }
-            guard occurrence >= 0, occurrence < repls.count else {
-                return .failure(.occurrenceOutOfRange(ref, available: repls.count, requested: occurrence))
+        resolveAncestor(original).flatMap { resolvedOriginal in
+            // Find the record where resolvedOriginal appears as an original with >1 replacements.
+            for record in historyRecords {
+                guard let repls = record.mapping[resolvedOriginal], repls.count > 1 else { continue }
+                return element(at: occurrence, in: repls, ref: ref).map { currentForm(of: $0) }
             }
-            return .success(currentForm(of: repls[occurrence]))
+            return .failure(.noCurrentDescendant(ref))
         }
-        return .failure(.noCurrentDescendant(ref))
     }
 
     /// Walk history forward from `node` to its current form. If `node` has

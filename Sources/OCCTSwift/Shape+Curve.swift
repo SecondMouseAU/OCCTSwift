@@ -22,6 +22,19 @@ extension Shape {
     // MARK: LocOpe_CurveShapeIntersector
 
     /// Intersect a line with this shape and return parameter values.
+    ///
+    /// Parameters only: the underlying bridge call already builds a `LocOpe_PntFace` per hit
+    /// (which also carries the 3D point, the face, its orientation, and its U/V parameters) but
+    /// reads only `.Parameter()` before discarding it. If you need the point or face struck, use
+    /// ``ShapeRayIntersection`` instead — a separate, richer line/curve–shape intersector wrapping
+    /// `BRepIntCurveSurface_Inter`, added independently and not a drop-in replacement (it's an
+    /// iterator, not a one-shot array, and does not support the `gp_Circ` axis this one's
+    /// underlying OCCT class also accepts but this wrapper does not yet expose) (#852).
+    ///
+    /// ```swift
+    /// let box = Shape.box(width: 10, height: 10, depth: 10)!
+    /// let params = box.curveShapeIntersect(origin: SIMD3(5, 5, -10), direction: SIMD3(0, 0, 1))
+    /// ```
     public func curveShapeIntersect(
         origin: SIMD3<Double>,
         direction: SIMD3<Double>
@@ -50,15 +63,26 @@ extension Shape {
         public let points: [SIMD3<Double>]
     }
 
-    /// Discretize an edge by uniform deflection.
-    public func uniformDeflection(_ deflection: Double) -> DeflectionResult? {
-        var outParams: UnsafeMutablePointer<Double>?
-        var outPoints: UnsafeMutablePointer<Double>?
-        var outCount: Int32 = 0
-        guard OCCTCPntsUniformDeflection(handle, deflection, &outParams, &outPoints, &outCount),
-              let params = outParams, let pts = outPoints, outCount > 0 else { return nil }
+    /// Unpacks the malloc'd `(params, points)` buffer pair both `uniformDeflection` overloads
+    /// receive, freeing both regardless of outcome (#853).
+    ///
+    /// `CPnts_UniformDeflection`'s point count is driven by chordal deflection against curve
+    /// curvature, with no documented ceiling either — the same *class* of exposure as
+    /// `uniformAbscissa(distance:)` above, which has one now. Unlike that pair, the buffers here
+    /// are already malloc'd C-side by the single bridge call before this ever runs, so bounding
+    /// the count here would only save the Swift-side unpack, not the C-side cost of producing the
+    /// buffers in the first place — closing that needs a cap inside the bridge's own accumulation
+    /// loop (`OCCTCPntsUniformDeflection`/`Range` in `OCCTBridge_Curve3D.mm`), a different fix in
+    /// a different place, deliberately left for a follow-up rather than folded in here.
+    private func unpackDeflectionResult(
+        outParams: UnsafeMutablePointer<Double>?,
+        outPoints: UnsafeMutablePointer<Double>?,
+        outCount: Int32
+    ) -> DeflectionResult? {
+        guard let params = outParams, let pts = outPoints, outCount > 0 else { return nil }
         defer { free(params); free(pts) }
         var points = [SIMD3<Double>]()
+        points.reserveCapacity(Int(outCount))
         for i in 0..<Int(outCount) {
             points.append(SIMD3(pts[i*3], pts[i*3+1], pts[i*3+2]))
         }
@@ -66,6 +90,16 @@ extension Shape {
             parameters: Array(UnsafeBufferPointer(start: params, count: Int(outCount))),
             points: points
         )
+    }
+
+    /// Discretize an edge by uniform deflection.
+    public func uniformDeflection(_ deflection: Double) -> DeflectionResult? {
+        var outParams: UnsafeMutablePointer<Double>?
+        var outPoints: UnsafeMutablePointer<Double>?
+        var outCount: Int32 = 0
+        guard OCCTCPntsUniformDeflection(handle, deflection, &outParams, &outPoints, &outCount)
+        else { return nil }
+        return unpackDeflectionResult(outParams: outParams, outPoints: outPoints, outCount: outCount)
     }
 
     /// Discretize an edge by uniform deflection within a parameter range.
@@ -77,16 +111,8 @@ extension Shape {
             handle, deflection,
             range.lowerBound, range.upperBound,
             &outParams, &outPoints, &outCount
-        ), let params = outParams, let pts = outPoints, outCount > 0 else { return nil }
-        defer { free(params); free(pts) }
-        var points = [SIMD3<Double>]()
-        for i in 0..<Int(outCount) {
-            points.append(SIMD3(pts[i*3], pts[i*3+1], pts[i*3+2]))
-        }
-        return DeflectionResult(
-            parameters: Array(UnsafeBufferPointer(start: params, count: Int(outCount))),
-            points: points
-        )
+        ) else { return nil }
+        return unpackDeflectionResult(outParams: outParams, outPoints: outPoints, outCount: outCount)
     }
 
     // MARK: - Approx_CurvilinearParameter
@@ -275,6 +301,29 @@ extension Shape {
 }
 
 extension Shape {
+    /// Runs the "call once with `nil` to learn the count, allocate, call again to fill" idiom
+    /// shared by every `uniformAbscissa` overload below, applying the one bound all four need
+    /// before ever allocating: the sizing call's own answer, bounded by
+    /// ``Sampling/maximumSampleCount`` (#853).
+    ///
+    /// `uniformAbscissa(pointCount:)` and its `u1:u2:` range sibling already bound their
+    /// *request* through ``Sampling/requested(_:atLeast:)`` before the bridge is called at all,
+    /// and `GCPnts_UniformAbscissa`'s count constructor returns exactly the requested count, so
+    /// the check here is a no-op for those two. The `distance:` pair has no caller-supplied count
+    /// to pre-check that way — each bounds its own *implied* count via
+    /// ``Sampling/impliedCount(length:spacing:)`` before calling this (the same helper
+    /// ``ArcLengthCurveAdaptor/points(spacing:)`` uses, #479/#862) — so this is the backstop for
+    /// both, catching anything that estimate undershot.
+    private func sizeAndFillUniformAbscissa(
+        _ bridgeCall: (UnsafeMutablePointer<Double>?) -> Int32
+    ) -> [Double]? {
+        let n = Int(bridgeCall(nil))
+        guard n > 0, n <= Sampling.maximumSampleCount else { return nil }
+        var params = [Double](repeating: 0, count: n)
+        _ = bridgeCall(&params)
+        return params
+    }
+
     /// Uniformly sample an edge by point count. Returns parameter values.
     ///
     /// - Parameter pointCount: Desired number of samples, honoured within `2...`
@@ -284,20 +333,40 @@ extension Shape {
     ///   bridge's `int32_t` and used to abort the process past it (#558).
     public func uniformAbscissa(pointCount: Int) -> [Double]? {
         guard let pointCount = Sampling.requested(pointCount) else { return nil }
-        let n = Int(OCCTUniformAbscissaByCount(handle, Int32(pointCount), nil))
-        guard n > 0 else { return nil }
-        var params = [Double](repeating: 0, count: n)
-        _ = OCCTUniformAbscissaByCount(handle, Int32(pointCount), &params)
-        return params
+        return sizeAndFillUniformAbscissa { OCCTUniformAbscissaByCount(handle, Int32(pointCount), $0) }
     }
 
     /// Uniformly sample an edge by arc distance. Returns parameter values.
+    ///
+    /// - Parameter distance: Arc-length spacing between samples, greater than 0. A spacing small
+    ///   enough that it implies more than ``Sampling/maximumSampleCount`` points is rejected
+    ///   before OCCT's sampler ever runs, the same derivation ``ArcLengthCurveAdaptor/points(spacing:)``
+    ///   uses (``Sampling/impliedCount(length:spacing:)``, #479) — this overload had no ceiling of
+    ///   any kind before, unlike its `pointCount:` sibling above (#853).
+    ///
+    ///   The length behind that bound is a cheap, unsubdivided estimate, not ``edgeArcLength``:
+    ///   `GCPnts_UniformAbscissa` needs the same single quadrature internally to place its points,
+    ///   so measuring the accurate, subdivided-to-convergence length here would pay for an
+    ///   equivalent computation twice on every ordinary call just to guard the rare pathological
+    ///   one (#862).
+    ///
+    ///   PR #870 aggregate review, investigated and left as is: on the ordinary path this quick
+    ///   estimate is a *third* length quadrature alongside the two `GCPnts_UniformAbscissa`
+    ///   already performs internally (once inside `sizeAndFillUniformAbscissa`'s size-only call,
+    ///   again inside its fill call) — two sufficed before this guard existed. Collapsing size+fill
+    ///   into one bridge call would need a pre-allocated buffer; sizing it at
+    ///   ``Sampling/maximumSampleCount`` (10,000,000 `Double`s, ~80MB) to stay safe against the
+    ///   estimate ever undershooting is a strictly worse trade for the overwhelmingly common
+    ///   short-edge call, and sizing it off the estimate itself needs a margin plus a rare-case
+    ///   reconstruction fallback for when that margin isn't enough — real extra logic, in a widely
+    ///   used sampling entry point, to remove one already-cheap (single unsubdivided quadrature,
+    ///   O(spans) not O(points)) call. Left unchanged rather than trading a simple, already-tested
+    ///   two-call idiom for that risk.
     public func uniformAbscissa(distance: Double) -> [Double]? {
-        let n = Int(OCCTUniformAbscissaByDistance(handle, distance, nil))
-        guard n > 0 else { return nil }
-        var params = [Double](repeating: 0, count: n)
-        _ = OCCTUniformAbscissaByDistance(handle, distance, &params)
-        return params
+        let domain = edgeAdaptorDomain
+        let len = OCCTEdgeArcLengthQuickEstimate(handle, domain.lowerBound, domain.upperBound)
+        guard Sampling.impliedCount(length: len, spacing: distance) != nil else { return nil }
+        return sizeAndFillUniformAbscissa { OCCTUniformAbscissaByDistance(handle, distance, $0) }
     }
 
     /// Uniformly sample an edge by point count within parameter range.
@@ -306,19 +375,20 @@ extension Shape {
     ///   ``Sampling/maximumSampleCount``, else `nil` (#501, #558).
     public func uniformAbscissa(pointCount: Int, u1: Double, u2: Double) -> [Double]? {
         guard let pointCount = Sampling.requested(pointCount) else { return nil }
-        let n = Int(OCCTUniformAbscissaByCountRange(handle, Int32(pointCount), u1, u2, nil))
-        guard n > 0 else { return nil }
-        var params = [Double](repeating: 0, count: n)
-        _ = OCCTUniformAbscissaByCountRange(handle, Int32(pointCount), u1, u2, &params)
-        return params
+        return sizeAndFillUniformAbscissa {
+            OCCTUniformAbscissaByCountRange(handle, Int32(pointCount), u1, u2, $0)
+        }
     }
 
     /// Uniformly sample an edge by arc distance within parameter range.
+    ///
+    /// - Parameter distance: see ``uniformAbscissa(distance:)`` — the same ceiling and the same
+    ///   cheap estimate behind it, measured over `[u1, u2]` instead of the whole edge (#853, #862).
     public func uniformAbscissa(distance: Double, u1: Double, u2: Double) -> [Double]? {
-        let n = Int(OCCTUniformAbscissaByDistanceRange(handle, distance, u1, u2, nil))
-        guard n > 0 else { return nil }
-        var params = [Double](repeating: 0, count: n)
-        _ = OCCTUniformAbscissaByDistanceRange(handle, distance, u1, u2, &params)
-        return params
+        let len = OCCTEdgeArcLengthQuickEstimate(handle, u1, u2)
+        guard Sampling.impliedCount(length: len, spacing: distance) != nil else { return nil }
+        return sizeAndFillUniformAbscissa {
+            OCCTUniformAbscissaByDistanceRange(handle, distance, u1, u2, $0)
+        }
     }
 }

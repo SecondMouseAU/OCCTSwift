@@ -367,6 +367,13 @@ typedef struct {
 
     /// Gyration radii
     double gyrationRadius1, gyrationRadius2, gyrationRadius3;
+
+    /// Whether the shape has a symmetry axis (#848: same `GProp_PrincipalProps` the gyration
+    /// radii above come from also has these; the older `OCCTInertiaProperties` sibling exposes
+    /// them but this struct didn't, for no reason other than the two never being unified).
+    bool hasSymmetryAxis;
+    /// Whether the shape has a symmetry point
+    bool hasSymmetryPoint;
 } OCCTVolumeInertiaResult;
 
 /// Compute volume inertia properties of a shape.
@@ -382,6 +389,12 @@ typedef struct {
     double centerX, centerY, centerZ;
     double inertia[9];
     double principalMoment1, principalMoment2, principalMoment3;
+
+    /// Whether the shape has a symmetry axis (#848, see `OCCTVolumeInertiaResult`'s equivalent
+    /// fields for why these were added)
+    bool hasSymmetryAxis;
+    /// Whether the shape has a symmetry point
+    bool hasSymmetryPoint;
 } OCCTSurfaceInertiaResult;
 
 /// Compute surface (area) inertia properties of a shape.

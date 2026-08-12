@@ -2333,6 +2333,45 @@ struct VolumeInertiaTests {
             #expect(abs(inertia.volume - expectedVolume) < 1.0)
         }
     }
+
+    // #848: hasSymmetryAxis/hasSymmetryPoint, added to VolumeInertia to match what
+    // InertiaProperties (the older generation) has always reported.
+    @Test("Cylinder volume inertia has symmetry axis")
+    func cylinderVolumeInertiaSymmetryAxis() throws {
+        let cyl = Shape.cylinder(radius: 5, height: 20)!
+        let inertia = cyl.volumeInertia
+        #expect(inertia != nil)
+        if let inertia {
+            #expect(inertia.hasSymmetryAxis)
+        }
+    }
+
+    @Test("Sphere volume inertia has symmetry point")
+    func sphereVolumeInertiaSymmetryPoint() throws {
+        let sphere = Shape.sphere(radius: 5)!
+        let inertia = sphere.volumeInertia
+        #expect(inertia != nil)
+        if let inertia {
+            #expect(inertia.hasSymmetryPoint)
+        }
+    }
+
+    // The two generations read the symmetry flags off the same GProp_PrincipalProps object —
+    // this is the first test in the tree able to cross-check that, since surfaceInertia/
+    // volumeInertia had no symmetry fields to compare before #848.
+    @Test("Volume inertia symmetry agrees with legacy inertiaProperties")
+    func volumeInertiaMatchesLegacySymmetry() throws {
+        let cyl = Shape.cylinder(radius: 5, height: 20)!
+        let legacy = cyl.inertiaProperties()
+        let modern = cyl.volumeInertia
+        #expect(legacy != nil)
+        #expect(modern != nil)
+        if let legacy, let modern {
+            #expect(legacy.hasSymmetryAxis == modern.hasSymmetryAxis)
+            #expect(legacy.hasSymmetryPoint == modern.hasSymmetryPoint)
+            #expect(abs(legacy.mass - modern.volume) < 1e-6)
+        }
+    }
 }
 
 @Suite("Surface Inertia Tests")
@@ -2355,6 +2394,32 @@ struct SurfaceInertiaTests {
         #expect(inertia.principalMoments.x > 0)
         #expect(inertia.principalMoments.y > 0)
         #expect(inertia.principalMoments.z > 0)
+    }
+
+    // #848: hasSymmetryAxis/hasSymmetryPoint, added to SurfaceInertia to match what
+    // surfaceInertiaProperties() (the older generation) has always reported.
+    @Test("Sphere surface inertia has symmetry point")
+    func sphereSurfaceInertiaSymmetryPoint() throws {
+        let sphere = Shape.sphere(radius: 5)!
+        let inertia = sphere.surfaceInertia
+        #expect(inertia != nil)
+        if let inertia {
+            #expect(inertia.hasSymmetryPoint)
+        }
+    }
+
+    @Test("Surface inertia symmetry agrees with legacy surfaceInertiaProperties")
+    func surfaceInertiaMatchesLegacySymmetry() throws {
+        let sphere = Shape.sphere(radius: 5)!
+        let legacy = sphere.surfaceInertiaProperties()
+        let modern = sphere.surfaceInertia
+        #expect(legacy != nil)
+        #expect(modern != nil)
+        if let legacy, let modern {
+            #expect(legacy.hasSymmetryAxis == modern.hasSymmetryAxis)
+            #expect(legacy.hasSymmetryPoint == modern.hasSymmetryPoint)
+            #expect(abs(legacy.mass - modern.area) < 1e-6)
+        }
     }
 }
 
@@ -5848,6 +5913,25 @@ struct BRepBndLibTests {
         }
     }
 
+    // #847: orientedBoundingBoxDetailed shares its Bnd_OBB computation with orientedBoundingBox —
+    // this was previously unenforced by any test, so the two could have silently diverged.
+    @Test func orientedBoundingBoxDetailedMatchesPacked() {
+        let box = Shape.box(width: 10, height: 20, depth: 30)!
+            .rotated(axis: SIMD3(0, 0, 1), angle: .pi / 6)!
+        let packed = box.orientedBoundingBox()
+        let detailed = box.orientedBoundingBoxDetailed()
+        #expect(packed != nil)
+        #expect(detailed != nil)
+        if let packed, let detailed {
+            #expect(abs(packed.center.x - detailed.center.x) < 1e-9)
+            #expect(abs(packed.center.y - detailed.center.y) < 1e-9)
+            #expect(abs(packed.center.z - detailed.center.z) < 1e-9)
+            #expect(abs(packed.halfSizes.x - detailed.xHalfSize) < 1e-9)
+            #expect(abs(packed.halfSizes.y - detailed.yHalfSize) < 1e-9)
+            #expect(abs(packed.halfSizes.z - detailed.zHalfSize) < 1e-9)
+        }
+    }
+
     @Test func boundingBoxSphere() {
         let sphere = Shape.sphere(radius: 10)
         if let s = sphere {
@@ -5859,6 +5943,28 @@ struct BRepBndLibTests {
                 #expect(bb.max.x > 9.0)
             }
         }
+    }
+
+    // #834: neither side of this divergence had any void-shape coverage before this PR.
+    // `boundingBox` correctly answers nil for a void shape (an explicit Bnd_Box::IsVoid() guard);
+    // `bounds` cannot signal that at all (non-optional tuple) and fabricates (0,0,0)-(0,0,0),
+    // indistinguishable from a genuine zero-size shape at the origin. Pinning both sides here so
+    // any future change to either bridge function is caught by a real assertion, not silence.
+    @Test func voidShapeBoundingBoxIsNilButBoundsFabricatesZero() {
+        // A far-disjoint intersection is the reliable way to get a genuinely void Shape:
+        // Shape.compound([]) refuses to construct (OCCTShapeCreateCompound requires count >= 1).
+        let b1 = Shape.box(width: 10, height: 10, depth: 10)!
+        let b2 = Shape.box(origin: SIMD3(1000, 1000, 1000), width: 10, height: 10, depth: 10)!
+        guard let voidShape = b1.intersection(b2) else {
+            #expect(Bool(false), "disjoint intersection should still construct a (void) shape")
+            return
+        }
+        #expect(voidShape.boundingBox == nil)
+        let b = voidShape.bounds
+        #expect(b.min == SIMD3<Double>.zero)
+        #expect(b.max == SIMD3<Double>.zero)
+        #expect(voidShape.size == SIMD3<Double>.zero)
+        #expect(voidShape.center == SIMD3<Double>.zero)
     }
 }
 

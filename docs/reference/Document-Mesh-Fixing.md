@@ -687,42 +687,88 @@ public func checkVertexStatus(vertex: Shape) -> Int
 
 ---
 
-### `Shape.maxTolerance(type:)`
+### `Shape.maxTolerance(type:)` (ShapeType overload)
 
-Get the maximum tolerance of sub-shapes of the given type.
+Get the maximum tolerance of sub-shapes of the given type. Passes `type`'s raw value straight
+through as the real `TopAbs_ShapeEnum` ordinal, agreeing with `maxTolerance(subShapeType:)` (see
+"Shape-Completions") — unlike the legacy `Int` overload below, which uses a different, compressed
+encoding for the same idea (#833).
+
+```swift
+public func maxTolerance(type: ShapeType) -> Double
+```
+
+- **Parameters:** `type` — sub-shape type to measure.
+- **OCCT:** `ShapeAnalysis_ShapeTolerance::Tolerance` with mode `1` (max).
+- **Example:**
+  ```swift
+  let box = Shape.box(width: 10, height: 10, depth: 10)!
+  print(box.maxTolerance(type: .face))
+  ```
+
+---
+
+### `Shape.maxTolerance(type:)` (Int overload, legacy)
 
 ```swift
 public func maxTolerance(type: Int) -> Double
 ```
 
 - **Parameters:** `type` — `0` = vertex, `1` = edge, `2` = face.
-- **OCCT:** `ShapeAnalysis_ShapeTolerance::Tolerance` with `Standard_True` (max).
+- **OCCT:** `ShapeAnalysis_ShapeTolerance::Tolerance` with mode `1` (max).
+- **Note:** Legacy. This compressed encoding disagrees with `maxTolerance(subShapeType:)`'s own
+  `Int` convention for the same value — `2` means FACE here but `TopAbs_SOLID` there (#833). Prefer
+  the `ShapeType` overload above. Kept unchanged for source compatibility.
 
 ---
 
-### `Shape.minTolerance(type:)`
+### `Shape.minTolerance(type:)` (ShapeType overload)
 
-Get the minimum tolerance of sub-shapes of the given type.
+Get the minimum tolerance of sub-shapes of the given type. Same two-overload shape as
+`maxTolerance(type:)` above (#833).
+
+```swift
+public func minTolerance(type: ShapeType) -> Double
+```
+
+- **OCCT:** `ShapeAnalysis_ShapeTolerance::Tolerance` with mode `-1` (min).
+
+---
+
+### `Shape.minTolerance(type:)` (Int overload, legacy)
 
 ```swift
 public func minTolerance(type: Int) -> Double
 ```
 
 - **Parameters:** `type` — `0` = vertex, `1` = edge, `2` = face.
-- **OCCT:** `ShapeAnalysis_ShapeTolerance::Tolerance` with `Standard_False` (min).
+- **OCCT:** `ShapeAnalysis_ShapeTolerance::Tolerance` with mode `-1` (min).
+- **Note:** Legacy, same caveat as `maxTolerance(type:)`'s `Int` overload above (#833).
 
 ---
 
-### `Shape.avgTolerance(type:)`
+### `Shape.avgTolerance(type:)` (ShapeType overload)
 
-Get the average tolerance of sub-shapes of the given type.
+Get the average tolerance of sub-shapes of the given type. Same two-overload shape as
+`maxTolerance(type:)` above (#833).
+
+```swift
+public func avgTolerance(type: ShapeType) -> Double
+```
+
+- **OCCT:** `ShapeAnalysis_ShapeTolerance::Tolerance` with mode `0` (average).
+
+---
+
+### `Shape.avgTolerance(type:)` (Int overload, legacy)
 
 ```swift
 public func avgTolerance(type: Int) -> Double
 ```
 
 - **Parameters:** `type` — `0` = vertex, `1` = edge, `2` = face.
-- **OCCT:** `ShapeAnalysis_ShapeTolerance::Tolerance` with `0` (average mode).
+- **OCCT:** `ShapeAnalysis_ShapeTolerance::Tolerance` with mode `0` (average).
+- **Note:** Legacy, same caveat as `maxTolerance(type:)`'s `Int` overload above (#833).
 
 ---
 
@@ -1163,7 +1209,7 @@ public static func face(
 
 ---
 
-### `Shape.faceFromPlane(origin:normal:uBounds:vBounds:)`
+### `Shape.faceFromPlane(origin:normal:uBounds:vBounds:tolerance:)`
 
 Create a planar face from a `gp_Plane` with UV bounds.
 
@@ -1172,11 +1218,19 @@ public static func faceFromPlane(
     origin: SIMD3<Double> = .zero,
     normal: SIMD3<Double> = SIMD3(0, 0, 1),
     uBounds: ClosedRange<Double>,
-    vBounds: ClosedRange<Double>
+    vBounds: ClosedRange<Double>,
+    tolerance: Double = 1e-7
 ) -> Shape?
 ```
 
-- **OCCT:** `BRepBuilderAPI_MakeFace(gp_Pln, u1, u2, v1, v2)` (via `OCCTMakeFaceFromGpPlane`).
+Delegates to `Shape.faceFromPlane(origin:normal:uRange:vRange:tolerance:)` (see "BRepLib_MakeFace"
+above) — the two overloads independently wrapped the same `BRepLib_MakeFace` engine (#841); this
+one now forwards `uBounds`/`vBounds` as `uRange`/`vRange` instead of duplicating the bridge call.
+`tolerance` defaults to `Precision::Confusion()` (`1e-7`), the value this overload silently
+hardcoded before #841 by going through `BRepBuilderAPI_MakeFace`'s tolerance-less constructor.
+
+- **Parameters:** `tolerance` — degeneracy tolerance forwarded to `BRepLib_MakeFace`.
+- **OCCT:** `BRepLib_MakeFace(Geom_Plane, u1, u2, v1, v2, tol)` (via `OCCTBRepLibMakeFaceFromPlane`).
 - **Example:**
   ```swift
   if let face = Shape.faceFromPlane(uBounds: -5...5, vBounds: -5...5) {
@@ -1186,7 +1240,7 @@ public static func faceFromPlane(
 
 ---
 
-### `Shape.faceFromCylinder(origin:axis:radius:uBounds:vBounds:)`
+### `Shape.faceFromCylinder(origin:axis:radius:uBounds:vBounds:tolerance:)`
 
 Create a cylindrical face from a `gp_Cylinder` with UV bounds.
 
@@ -1196,12 +1250,18 @@ public static func faceFromCylinder(
     axis: SIMD3<Double> = SIMD3(0, 0, 1),
     radius: Double,
     uBounds: ClosedRange<Double>,
-    vBounds: ClosedRange<Double>
+    vBounds: ClosedRange<Double>,
+    tolerance: Double = 1e-7
 ) -> Shape?
 ```
 
-- **Parameters:** `radius` — cylinder radius; `uBounds` — angular range (radians); `vBounds` — axial height range.
-- **OCCT:** `BRepBuilderAPI_MakeFace(gp_Cylinder, u1, u2, v1, v2)` (via `OCCTMakeFaceFromGpCylinder`).
+Delegates to `Shape.faceFromCylinder(origin:axis:radius:uRange:vRange:tolerance:)` (see
+"BRepLib_MakeFace" above) — see the sibling `faceFromPlane` entry above for why (#841).
+
+- **Parameters:** `radius` — cylinder radius; `uBounds` — angular range (radians); `vBounds` —
+  axial height range; `tolerance` — degeneracy tolerance forwarded to `BRepLib_MakeFace`.
+- **OCCT:** `BRepLib_MakeFace(Geom_CylindricalSurface, u1, u2, v1, v2, tol)` (via
+  `OCCTBRepLibMakeFaceFromCylinder`).
 
 ---
 
@@ -1901,13 +1961,18 @@ failed after `perform()`.
 
 ```swift
 public var result: Shape? { get }
-public enum Status: Int32, Sendable { case ok, done1, /* … */ done8, fail1, /* … */ fail8, done, fail }
+public typealias Status = ShapeFixStatus
 public func status(_ status: Status) -> Bool
 ```
 
-`Status` mirrors OCCT's `ShapeExtend_Status` flag space, one bit per numbered fix. `ShapeFix_Face`
-only assigns meaning to some of the numbers; the rest exist because the same 18-flag enum is shared
-across every `ShapeFix_Root` subclass, each using a different subset.
+`Status` is a typealias for `ShapeFixStatus` (see `Shape-Completions.md`), the same
+`ShapeExtend_Status` flag space `ShapeFixer.status(_:)` uses. `ShapeFix_Face`
+only assigns meaning to some of the 19 ordinals; the rest exist because the same enum is shared
+across every `ShapeFix_Root` subclass, each using a different subset. (Prior to #849, `Status` was
+a `FaceFixer`-local enum whose raw values shifted everything from `.fail1` through `.done` by one
+ordinal — there was no slot for OCCT's combined `DONE` flag, which sits between `DONE8` and
+`FAIL1` — so e.g. `.done` actually queried `ShapeExtend_FAIL8`. The table below states the
+now-correct behavior.)
 
 | Case | Meaning for `ShapeFix_Face` |
 |---|---|
@@ -1931,7 +1996,7 @@ across every `ShapeFix_Root` subclass, each using a different subset.
 | `.done` | Any `.done1`...`.done8` flag is set: something was fixed. |
 | `.fail` | Any `.fail1`...`.fail8` flag is set: some pass failed. |
 
-#### `Status.fail`
+#### OCCT mapping
 
 - **OCCT:** `ShapeFix_Face::Result` / `ShapeFix_Root::Status`.
 
@@ -2898,40 +2963,57 @@ public var error: WireError { get }
 
 ---
 
-### `Shape.fused(with:tolerance:)`
+### `Shape.fused(with:tolerance:timeout:)`
 
 Fuse two shapes using a fuzzy Boolean tolerance.
 
 ```swift
-public func fused(with other: Shape, tolerance: Double) -> Shape?
+public func fused(with other: Shape, tolerance: Double,
+                   timeout: Double = Shape.defaultBooleanTimeout) -> Shape?
 ```
 
-- **Parameters:** `tolerance` — fuzzy tolerance for coincident geometry detection.
-- **OCCT:** `BRepAlgoAPI_Fuse` with `SetFuzzyValue` (via `OCCTBooleanFuseWithTolerance`).
+- **Parameters:** `tolerance` — fuzzy tolerance for coincident geometry detection. `timeout` —
+  wall-clock bound in seconds (default `Shape.defaultBooleanTimeout`, 120s); `0`/negative disables
+  the bound. Delegates to `union(_:fuzzyValue:glue:timeout:)` (#832), so it inherits the same
+  `defaultBooleanTimeout` watchdog (#206) — pass `timeout:` explicitly if this operation
+  legitimately needs longer.
+- **OCCT:** `BRepAlgoAPI_Fuse` with `SetFuzzyValue`, via `union(_:fuzzyValue:glue:timeout:)`'s
+  `OCCTShapeUnionEx` (not `OCCTBooleanFuseWithTolerance` — that bridge function is no longer on
+  this call path; see the "Delegates to" note above).
 
 ---
 
-### `Shape.subtracted(_:tolerance:)`
+### `Shape.subtracted(_:tolerance:timeout:)`
 
 Cut another shape from this shape using a fuzzy Boolean tolerance.
 
 ```swift
-public func subtracted(_ other: Shape, tolerance: Double) -> Shape?
+public func subtracted(_ other: Shape, tolerance: Double,
+                        timeout: Double = Shape.defaultBooleanTimeout) -> Shape?
 ```
 
-- **OCCT:** `BRepAlgoAPI_Cut` with `SetFuzzyValue` (via `OCCTBooleanCutWithTolerance`).
+- **Parameters:** `timeout` — wall-clock bound in seconds (default `Shape.defaultBooleanTimeout`,
+  120s); `0`/negative disables the bound.
+- **OCCT:** `BRepAlgoAPI_Cut` with `SetFuzzyValue`, via `subtracting(_:fuzzyValue:glue:timeout:)`'s
+  `OCCTShapeSubtractEx` (not `OCCTBooleanCutWithTolerance` — that bridge function is no longer on
+  this call path).
 
 ---
 
-### `Shape.intersected(with:tolerance:)`
+### `Shape.intersected(with:tolerance:timeout:)`
 
 Compute the Boolean common of two shapes using a fuzzy tolerance.
 
 ```swift
-public func intersected(with other: Shape, tolerance: Double) -> Shape?
+public func intersected(with other: Shape, tolerance: Double,
+                         timeout: Double = Shape.defaultBooleanTimeout) -> Shape?
 ```
 
-- **OCCT:** `BRepAlgoAPI_Common` with `SetFuzzyValue` (via `OCCTBooleanCommonWithTolerance`).
+- **Parameters:** `timeout` — wall-clock bound in seconds (default `Shape.defaultBooleanTimeout`,
+  120s); `0`/negative disables the bound.
+- **OCCT:** `BRepAlgoAPI_Common` with `SetFuzzyValue`, via `intersection(_:fuzzyValue:glue:timeout:)`'s
+  `OCCTShapeIntersectEx` (not `OCCTBooleanCommonWithTolerance` — that bridge function is no longer
+  on this call path).
 
 ---
 
@@ -2961,39 +3043,54 @@ produce an incorrect result, since the algorithm does not check the guarantee it
 
 ---
 
-### `Shape.fused(with:glue:)`
+### `Shape.fused(with:glue:timeout:)`
 
 Fuse two shapes with a glue mode hint for better performance on coincident faces.
 
 ```swift
-public func fused(with other: Shape, glue: GlueMode) -> Shape?
+public func fused(with other: Shape, glue: GlueMode,
+                   timeout: Double = Shape.defaultBooleanTimeout) -> Shape?
 ```
 
-- **OCCT:** `BRepAlgoAPI_Fuse` with `SetGlue` (via `OCCTBooleanFuseGlue`).
+- **Parameters:** `timeout` — wall-clock bound in seconds (default `Shape.defaultBooleanTimeout`,
+  120s); `0`/negative disables the bound.
+- **OCCT:** `BRepAlgoAPI_Fuse` with `SetGlue`, via `union(_:fuzzyValue:glue:timeout:)`'s
+  `OCCTShapeUnionEx` (not `OCCTBooleanFuseGlue` — that bridge function is no longer on this call
+  path).
 
 ---
 
-### `Shape.subtracted(_:glue:)`
+### `Shape.subtracted(_:glue:timeout:)`
 
 Cut another shape with a glue mode hint.
 
 ```swift
-public func subtracted(_ other: Shape, glue: GlueMode) -> Shape?
+public func subtracted(_ other: Shape, glue: GlueMode,
+                        timeout: Double = Shape.defaultBooleanTimeout) -> Shape?
 ```
 
-- **OCCT:** `BRepAlgoAPI_Cut` with `SetGlue` (via `OCCTBooleanCutGlue`).
+- **Parameters:** `timeout` — wall-clock bound in seconds (default `Shape.defaultBooleanTimeout`,
+  120s); `0`/negative disables the bound.
+- **OCCT:** `BRepAlgoAPI_Cut` with `SetGlue`, via `subtracting(_:fuzzyValue:glue:timeout:)`'s
+  `OCCTShapeSubtractEx` (not `OCCTBooleanCutGlue` — that bridge function is no longer on this call
+  path).
 
 ---
 
-### `Shape.intersected(with:glue:)`
+### `Shape.intersected(with:glue:timeout:)`
 
 Compute the Boolean common with a glue mode hint.
 
 ```swift
-public func intersected(with other: Shape, glue: GlueMode) -> Shape?
+public func intersected(with other: Shape, glue: GlueMode,
+                         timeout: Double = Shape.defaultBooleanTimeout) -> Shape?
 ```
 
-- **OCCT:** `BRepAlgoAPI_Common` with `SetGlue` (via `OCCTBooleanCommonGlue`).
+- **Parameters:** `timeout` — wall-clock bound in seconds (default `Shape.defaultBooleanTimeout`,
+  120s); `0`/negative disables the bound.
+- **OCCT:** `BRepAlgoAPI_Common` with `SetGlue`, via `intersection(_:fuzzyValue:glue:timeout:)`'s
+  `OCCTShapeIntersectEx` (not `OCCTBooleanCommonGlue` — that bridge function is no longer on this
+  call path).
 - **Example:**
   ```swift
   let a = Shape.box(width: 10, height: 10, depth: 10)!

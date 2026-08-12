@@ -958,40 +958,47 @@ public func composeShell(precision: Double = 1e-6) -> Shape?
 
 ### `transformed(matrix:)`
 
-Applies a general affine transformation (rotation + translation) described by a 12-element matrix.
+Applies a rigid transformation (rotation + translation) described by a `Matrix12Grouped` matrix
+(GROUPED layout — see `Matrix12Grouped` in [Document-Analysis-Builders.md](Document-Analysis-Builders.md#gce-transform-factories)).
 
 ```swift
-public func transformed(matrix: [Double]) -> Shape?
+public func transformed(matrix: Matrix12Grouped) -> Shape?
 ```
 
-`matrix` must have exactly 12 elements in row-major 3×4 layout:
-`[r00, r01, r02, r10, r11, r12, r20, r21, r22, tx, ty, tz]`.
-
-- **Returns:** The transformed `Shape`, or `nil` if `matrix.count != 12`.
+- **Returns:** The transformed `Shape`, or `nil` if the operation fails.
 - **OCCT:** `BRepBuilderAPI_Transform`, `gp_Trsf`.
 - **Example:**
   ```swift
   // Identity rotation, translate by (5, 0, 0)
-  let m: [Double] = [1,0,0, 0,1,0, 0,0,1, 5,0,0]
-  if let moved = box.transformed(matrix: m) { print(moved.isValid) }
+  if let m = Matrix12Grouped([1,0,0, 0,1,0, 0,0,1, 5,0,0]),
+     let moved = box.transformed(matrix: m) { print(moved.isValid) }
   ```
+- **Deprecated overload:** `transformed(matrix: [Double]) -> Shape?` still exists
+  (`@available(*, deprecated)`) for source compatibility — `nil` if `matrix.count != 12`. #835
+  (PR #864 review): before this, `transformed(matrix:)`, `transformed(byMatrix:)`, and
+  `gTransformed(matrix:)` all took a plain `[Double]` distinguished only by which method you
+  called, so a caller could silently garble a transform by feeding one method's array shape to
+  another. Passing the wrong type is now a compile error.
 
 ---
 
 ### `gTransformed(matrix:)`
 
-Applies a general affine transformation supporting non-uniform scaling.
+Applies a general affine transformation (supports non-uniform scaling/shear) described by a
+`TransformMatrix3D` matrix (INTERLEAVED layout — see `TransformMatrix3D` in
+[Document-Analysis-Builders.md](Document-Analysis-Builders.md#gce-transform-factories)).
 
 ```swift
-public func gTransformed(matrix: [Double]) -> Shape?
+public func gTransformed(matrix: TransformMatrix3D) -> Shape?
 ```
 
-`matrix` must have exactly 12 elements, row-major 3×4:
-`[r00, r01, r02, tx, r10, r11, r12, ty, r20, r21, r22, tz]`.
-
-- **Returns:** The transformed `Shape`, or `nil` if `matrix.count != 12`.
+- **Returns:** The transformed `Shape`, or `nil` if the operation fails.
 - **OCCT:** `BRepBuilderAPI_GTransform`, `gp_GTrsf`.
-- **Note:** The layout convention differs slightly from `transformed(matrix:)` — each row is `[r_i0, r_i1, r_i2, t_i]`.
+- **Note:** The layout convention differs from `transformed(matrix:)`'s `Matrix12Grouped` — this
+  method takes the same INTERLEAVED layout as `transformed(byMatrix:)` instead: each row is
+  `[r_i0, r_i1, r_i2, t_i]`.
+- **Deprecated overload:** `gTransformed(matrix: [Double]) -> Shape?` still exists
+  (`@available(*, deprecated)`) for source compatibility — `nil` if `matrix.count != 12`. See #835 above.
 
 ---
 
@@ -1661,15 +1668,18 @@ public var shape: Shape? { get }
 
 ---
 
-### `status(_:)`
+### `status(_:)` (ShapeFixStatus overload)
 
-Queries the fix result status.
+Queries whether a specific `ShapeExtend_Status` flag is set after `perform()` — the full
+granularity `ShapeFix_Shape::Status` actually reports, not just the three combined flags the
+legacy `Int` overload below exposes (#849).
 
 ```swift
-public func status(_ type: Int) -> Bool
+public func status(_ status: ShapeFixStatus) -> Bool
 ```
 
-- **Parameters:** `type` — `1`=OK (no fix needed), `2`=DONE (fix applied), `3`=FAIL (fix attempted but failed).
+- **Parameters:** `status` — see [`ShapeFixStatus`](#shapefixstatus) below for the flag space and
+  the `ShapeFix_Shape` meaning table.
 - **Returns:** `true` if the queried status flag is set.
 - **OCCT:** `ShapeFix_Shape::Status`.
 - **Example:**
@@ -1677,8 +1687,74 @@ public func status(_ type: Int) -> Bool
   let fixer = ShapeFixer(shape: badShape)
   fixer.setPrecision(1e-4)
   fixer.perform()
+  if fixer.status(.done3) { /* some free face was fixed */ }
+  ```
+
+---
+
+### `status(_:)` (Int overload, legacy)
+
+Queries the fix result status via an undocumented `1`/`2`/`3` remap.
+
+```swift
+public func status(_ type: Int) -> Bool
+```
+
+- **Parameters:** `type` — `1`=OK (no fix needed), `2`=DONE (fix applied), `3`=FAIL (fix attempted but failed).
+- **Returns:** `true` if the queried status flag is set; `false` for any `type` outside `1...3` —
+  there is no way to ask through this overload whether a specific `DONE`i/`FAIL`i sub-flag fired.
+- **OCCT:** `ShapeFix_Shape::Status`.
+- **Note:** Legacy. Prefer the `ShapeFixStatus` overload above (#849). Kept unchanged for source
+  compatibility.
+- **Example:**
+  ```swift
+  let fixer = ShapeFixer(shape: badShape)
+  fixer.setPrecision(1e-4)
+  fixer.perform()
   if let fixed = fixer.shape { print(fixer.status(2)) } // true = something was fixed
   ```
+
+---
+
+### `ShapeFixStatus`
+
+A status flag from OCCT's `ShapeExtend_Status` enum — the flag space every `ShapeFix_Root`
+subclass (`ShapeFix_Shape`, `ShapeFix_Face`, `ShapeFix_Wire`, ...) reports its fix result through.
+`DONE1`...`DONE8` and `FAIL1`...`FAIL8` are per-class: each subclass assigns its own meaning to the
+numbered slots, and a slot it does not use is simply never set. Shared by `ShapeFixer.status(_:)`
+above and `FaceFixer.status(_:)` (see `Document-Mesh-Fixing.md`), each with its own meaning table.
+
+```swift
+public enum ShapeFixStatus: Int32, Sendable, CaseIterable {
+    case ok = 0
+    case done1 = 1, done2, done3, done4, done5, done6, done7, done8
+    case done = 9
+    case fail1 = 10, fail2, fail3, fail4, fail5, fail6, fail7, fail8
+    case fail = 18
+}
+```
+
+Raw values mirror the real OCCT ordinals exactly (`ShapeExtend_Status.hxx`, pinned V8_0_1):
+
+| Case | Raw | Meaning for `ShapeFix_Shape` |
+|---|---|---|
+| `.ok` | 0 | The shape needed no fix at all. |
+| `.done1` | 1 | Some free edges were fixed. |
+| `.done2` | 2 | Some free wires were fixed. |
+| `.done3` | 3 | Some free faces were fixed. |
+| `.done4` | 4 | Some free shells were fixed. |
+| `.done5` | 5 | Some free solids were fixed. |
+| `.done6` | 6 | Shapes in a compound were fixed. |
+| `.done7` | 7 | Not assigned by `ShapeFix_Shape`. |
+| `.done8` | 8 | Not assigned by `ShapeFix_Shape`. |
+| `.done` | 9 | Any `.done1`...`.done8` flag is set: something was fixed. |
+| `.fail1`...`.fail8` | 10...17 | Not assigned by `ShapeFix_Shape`. |
+| `.fail` | 18 | Any `.fail1`...`.fail8` flag is set: some pass failed. |
+
+- **Note:** #849 — this replaces a previous pair of independently-wrong encodings: `ShapeFixer`'s
+  own `status(Int)` exposed only 3 of the 19 ordinals, and `FaceFixer`'s previous local `Status`
+  enum shifted everything from `.fail1` through `.done` by one ordinal. `FaceFixer.Status` is now a
+  typealias for this type.
 
 ---
 
@@ -1835,6 +1911,10 @@ public func maxTolerance(subShapeType: Int) -> Double
 
 - **Parameters:** `subShapeType` — OCCT `TopAbs_ShapeEnum` integer: `4`=FACE, `6`=EDGE, `7`=VERTEX.
 - **OCCT:** `BRep_Tool::MaxTolerance` / `ShapeAnalysis_ShapeTolerance`.
+- **Note:** This is the real `TopAbs_ShapeEnum` ordinal — the same convention `ShapeType`'s raw
+  values use, and the one `Shape.maxTolerance(type:)`'s `ShapeType` overload (see
+  "Document-Mesh-Fixing") passes through unchanged. It is NOT the same as that method's legacy
+  `Int` overload, which uses a different, compressed `0`/`1`/`2` encoding for the same idea (#833).
 
 ---
 

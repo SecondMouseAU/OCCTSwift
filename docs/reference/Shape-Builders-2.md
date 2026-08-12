@@ -502,23 +502,14 @@ public static func combineVertices(
 Shape type enum for filtering compounds.
 
 ```swift
-public enum ShapeFilterType: Int32, Sendable {
-    case compound = 0, compsolid = 1, solid = 2, shell = 3
-    case face = 4, wire = 5, edge = 6, vertex = 7
-}
+public typealias ShapeFilterType = ShapeType
 ```
 
-Matches `TopAbs_ShapeEnum` values used by `ShapeExtend_Explorer`.
-
----
-
-#### `ShapeFilterType.compsolid`
-
-A compound solid: several solids sharing faces, treated as a single connected shape (`TopAbs_COMPSOLID`).
-
-```swift
-case compsolid = 1
-```
+A typealias for the canonical `ShapeType` (see "Shape-Features") — this used to be an independent
+local mirror of the same `TopAbs_ShapeEnum` ordinals, with its own, differently-cased `compsolid`
+case (`ShapeType` spells it `compSolid`). `ShapeExtend_Explorer` uses the identical ordinal
+convention every other sub-shape-type API in this package does, so there was no reason for a
+second declaration once the casing was reconciled (#844).
 
 ---
 
@@ -549,7 +540,9 @@ public func predominantShapeType(lookInsideCompounds: Bool = true) -> ShapeFilte
 ```
 
 - **Parameters:** `lookInsideCompounds` — if `true`, inspect sub-compounds.
-- **Returns:** The most-common `ShapeFilterType` found.
+- **Returns:** The most-common `ShapeFilterType` found, or `.unknown` if the underlying OCCT walk
+  throws (PR #870 aggregate review — this used to decode as `.vertex`, a real, legitimate case,
+  indistinguishable from an actual vertex-dominated shape).
 - **OCCT:** `ShapeExtend_Explorer::ShapeType`
 - **Example:**
   ```swift
@@ -1609,10 +1602,17 @@ public func faceFaceIntersection(with other: Shape, tolerance: Double = 1e-7) ->
 Classify a UV point relative to a face boundary in parameter space.
 
 ```swift
-public func classifyPoint2d(u: Double, v: Double, tolerance: Double = 1e-7) -> OCCTSwift.PointClassification
+public func classifyPoint2d(u: Double, v: Double, tolerance: Double = 1e-6) -> OCCTSwift.PointClassification
 ```
 
-- **Parameters:** `u`/`v` — UV coordinates. `tolerance` — classification tolerance.
+Answers the same "in/on/out of the face boundary" question as `Face.classify(u:v:tolerance:)` (see
+"Shape-Healing") and `Shape.classifyPoint2D(faceIndex:u:v:tolerance:)` (see
+"Document-Math-Bounds"), both backed by `BRepClass_FaceClassifier`/`BRepClass_FClassifier`. This
+method's default used to be `1e-7`, an order of magnitude tighter than the other two's `1e-6`;
+aligned to `1e-6` (#840). `isHole(tolerance:)` below, this method's own `IntTools_FClass2d`
+file-neighbor, keeps its `1e-7` default deliberately — it answers a different question.
+
+- **Parameters:** `u`/`v` — UV coordinates. `tolerance` — classification tolerance (default 1e-6).
 - **Returns:** `.inside`, `.onBoundary`, `.outside`, or `.unknown`.
 - **OCCT:** `IntTools_FClass2d::Perform`
 - **Example:**
