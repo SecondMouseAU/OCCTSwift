@@ -50,9 +50,13 @@ asked to receive it. Four requirements before opening (or attaching a patch to) 
    root cause, same as an issue would have. Only open a standalone issue when we don't yet have a
    fix ready to attach (a report without a PR), matching what the maintainer actually asked for.
 
-This is a **context switch, not our default**: inside OCCTSwift (the `.mm` bridge and the Swift API)
-we keep our own conventions, including the verbose doc comments the [docs-current](docs-current.md)
-policy expects. OCCT's house style applies only to code destined for the OCCT tree.
+This is a **context switch from the Swift API**, not from the bridge: the Swift public API keeps
+its own conventions, including the verbose doc comments the [docs-current](docs-current.md) policy
+expects. The `.mm`/`.h` bridge layer is different: since [code-style](code-style.md), it targets
+OCCT's own `.clang-format` and terse comment style too (it's OCCT-adjacent C++, written in OCCT's
+own idiom), phased in via that policy's exemption manifest rather than applied immediately. So a
+patch destined for the OCCT tree and a change to `Sources/OCCTBridge/` end up close in style, for
+the same reason in both cases: the code sits next to, or inside, OCCT's own house style.
 
 See OCCT's own coding rules and contribution workflow (dev.opencascade.org) for the authoritative
 detail; this policy just makes the non-negotiables explicit so a patch isn't bounced on style, and
