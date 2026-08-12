@@ -273,9 +273,30 @@ extension BRepGraph {
     ///
     /// The five call sites compare three different kinds of quantity — a raw distance, a cross
     /// product's area-scale magnitude, and a unit-vector dot/cross — that happen to share this
-    /// literal today by coincidence, not because they are numerically comparable (#887). Retuning
-    /// one site's tolerance means changing that site's own call, not this constant.
+    /// literal today by coincidence, not because they are numerically comparable (#887).
+    /// Per-site tuning isn't supported today: `requireNonDegenerate` takes no per-call epsilon
+    /// argument, so every call site shares this one constant. Supporting it would mean adding an
+    /// epsilon parameter to `requireNonDegenerate` — and picking a real per-site value, not
+    /// inventing one without measurement (#726) (#894 finding 5).
     private static let degeneracyEpsilon = 1e-9
+
+    /// Cosine-of-angle threshold for two unit directions being the same or exactly opposite.
+    ///
+    /// Used by ``axesAgree(_:_:)`` (finding 1: every adjacent cylindrical/conical face's axis must
+    /// agree before `revolutionAxis(ofEdgeAt:)` returns a definitive answer) and by
+    /// `resolveEdgeDirection`'s own straight-seam check (finding 3: an edge's chord counts as
+    /// lying along the candidate axis only when it's parallel/anti-parallel to it). `1e-6` mirrors
+    /// the unit-vector tolerance this file's own tests already use for axis-direction checks —
+    /// tight enough to catch a genuine few-degree mismatch between two non-coaxial faces, loose
+    /// enough for the floating-point noise of a real OCCT curve/surface evaluation.
+    private static let axisDirectionAgreementCosineTolerance = 1e-6
+
+    /// Distance threshold for "these two axis directions describe the same line, not just two
+    /// parallel offset lines" (finding 1).
+    ///
+    /// The perpendicular offset between one candidate's origin and the line through the other. A
+    /// fixed absolute threshold, like ``degeneracyEpsilon`` above, not a fraction of model scale.
+    private static let axisOriginAgreementDistanceTolerance = 1e-6
 
     /// Shared "is this magnitude effectively zero" guard: fails with `.degenerate(message)` when
     /// `magnitude` is below ``degeneracyEpsilon``, otherwise succeeds with `value`. `value` is an
@@ -318,22 +339,49 @@ extension BRepGraph {
         }
     }
 
-    /// The true rotation axis of a cylindrical/conical edge, read off an adjacent face.
+    /// The true rotation axis of a cylindrical/conical edge, read off its adjacent face(s).
     ///
-    /// Returns the first adjacent face whose ``Face/primaryAxis`` is a cylinder or cone — the two
-    /// surface kinds `ConstructionAxis.alongEdge`'s own doc promises (#883). Planar and free-form
-    /// neighbours, and edges with no face adjacency at all, answer `nil` so the caller can fall
-    /// back to the endpoint secant.
+    /// Collects every adjacent face's ``Face/primaryAxis`` that is a cylinder or cone — the two
+    /// surface kinds `ConstructionAxis.alongEdge`'s own doc promises (#883) — and returns a
+    /// definitive axis only when every candidate agrees with the first, per ``axesAgree(_:_:)``.
+    /// An edge at a branch (a T-junction between two non-coaxial cylindrical faces, or any
+    /// blended transition) has more than one disagreeing candidate; `nil` there tells the caller
+    /// to fall back to the endpoint secant instead of silently picking whichever face happened to
+    /// sort first (#894 finding 1). Planar and free-form neighbours, and edges with no face
+    /// adjacency at all, contribute no candidate at all, so this is `nil` for them too.
     private func revolutionAxis(ofEdgeAt edgeIndex: Int) -> ShapeAxis? {
+        var candidates: [ShapeAxis] = []
         for faceIndex in faces(of: edgeIndex) {
             guard let faceShape = shape(nodeKind: .face, nodeIndex: faceIndex),
                 let face = faceShape.faces().first,
                 let axis = face.primaryAxis,
                 axis.kind == .cylinder || axis.kind == .cone
             else { continue }
-            return axis
+            candidates.append(axis)
         }
-        return nil
+        guard let reference = candidates.first else { return nil }
+        guard candidates.dropFirst().allSatisfy({ axesAgree(reference, $0) }) else { return nil }
+        return reference
+    }
+
+    /// Whether two candidate revolution axes describe the same line.
+    ///
+    /// Their directions must be parallel or anti-parallel within
+    /// ``axisDirectionAgreementCosineTolerance``, and `other`'s origin must lie within
+    /// ``axisOriginAgreementDistanceTolerance`` of the line through `reference` — not merely a
+    /// parallel offset line, e.g. two same-diameter but genuinely distinct bores (#894 finding 1).
+    private func axesAgree(_ reference: ShapeAxis, _ other: ShapeAxis) -> Bool {
+        let referenceDirection = simd_normalize(reference.direction)
+        let otherDirection = simd_normalize(other.direction)
+        guard
+            abs(abs(simd_dot(referenceDirection, otherDirection)) - 1.0)
+                < Self.axisDirectionAgreementCosineTolerance
+        else {
+            return false
+        }
+        let offset = other.origin - reference.origin
+        let perpendicular = offset - simd_dot(offset, referenceDirection) * referenceDirection
+        return simd_length(perpendicular) < Self.axisOriginAgreementDistanceTolerance
     }
 
     private func resolveEdgeDirection(_ ref: TopologyRef) -> Result<
@@ -348,20 +396,52 @@ extension BRepGraph {
             }
             guard let shape = shape(nodeKind: node.kind, nodeIndex: node.index),
                 let edge = shape.edges().first,
-                let bounds = edge.parameterBounds,
-                let start = edge.point(at: bounds.first),
-                let end = edge.point(at: bounds.last)
+                let bounds = edge.parameterBounds
             else {
                 return .failure(.missingGeometry(node))
             }
-            // A linear edge always resolves to its own line; only a curved edge (a circular or
-            // elliptical arc, typically) can coincide with a cylindrical/conical face's true
-            // rotation axis. Gating on curveType keeps a straight edge lying on a cylinder's
-            // lateral surface (e.g. a seam) on its own line rather than the cylinder's centerline,
-            // which the doc's "coinciding with an edge's underlying line" never promised moving.
-            if edge.curveType != .line, let axis = revolutionAxis(ofEdgeAt: node.index) {
-                return .success((axis.origin, simd_normalize(axis.direction)))
+            // Only a curved edge (typically a circular/elliptical arc) can coincide with a
+            // cylindrical/conical face's true rotation axis; a linear edge always resolves to its
+            // own line. Gate on curveType first — cheap, no bridge call — so a straight edge never
+            // pays for the face walk in `revolutionAxis` (#894 finding 4); that walk is also where
+            // the answer can still legitimately come back nil (no adjacent cyl/cone face, or
+            // several that disagree — #894 finding 1).
+            let axis = edge.curveType != .line ? revolutionAxis(ofEdgeAt: node.index) : nil
+
+            guard let start = edge.point(at: bounds.first), let end = edge.point(at: bounds.last)
+            else {
+                return .failure(.missingGeometry(node))
             }
+
+            if let axis = axis {
+                let axisDirection = simd_normalize(axis.direction)
+                let chord = end - start
+                let chordLength = simd_length(chord)
+                // curveType is a proxy for straightness, not a guarantee of it: OCCT commonly
+                // re-parameterizes a geometrically-straight edge as a low-degree BSpline after a
+                // Boolean cut, fillet, or sweep, even though it's still coincident with the
+                // cylinder/cone wall — the seam case the comment above this branch's gate already
+                // calls out. When the edge's own chord already runs parallel or anti-parallel to
+                // the candidate axis, treat it as a straight seam and keep the chord itself — both
+                // origin and direction — instead of redirecting to the axis (#894 finding 3). A
+                // real seam is the degenerate case where the axis direction and the chord
+                // direction agree; the origin still has to stay on the edge, not move to wherever
+                // the adjacent surface happens to be placed.
+                if chordLength >= Self.degeneracyEpsilon,
+                    abs(abs(simd_dot(chord / chordLength, axisDirection)) - 1.0)
+                        < Self.axisDirectionAgreementCosineTolerance
+                {
+                    return .success((start, chord / chordLength))
+                }
+                // Keep the origin edge-local: project the edge's own start point onto the resolved
+                // axis line rather than returning the adjacent surface's own placement origin,
+                // which can be far from the edge itself — e.g. a cylinder's base under a rim near
+                // its top (#894 finding 2).
+                let toStart = start - axis.origin
+                let projectedOrigin = axis.origin + simd_dot(toStart, axisDirection) * axisDirection
+                return .success((projectedOrigin, axisDirection))
+            }
+
             let dir = end - start
             return requireNonDegenerate(
                 simd_length(dir), (start, simd_normalize(dir)), "zero-length edge")
