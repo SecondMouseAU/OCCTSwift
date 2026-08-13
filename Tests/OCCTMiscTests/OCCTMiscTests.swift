@@ -218,13 +218,34 @@ struct ConstructionContextTests {
 // running the pre-fix code below and confirming a torn read reliably shows up within a handful of
 // runs; both tests were also run against the fixed code repeatedly (50+ runs each) with zero torn
 // observations, per okf/policies/prove-the-test-fails.md.
+//
+// The racing work below runs as `Task`s in a `withTaskGroup`, not raw `DispatchQueue.global()` +
+// a blocking `DispatchGroup.wait()`. The first version used the latter and, on the real `swift
+// test` full-suite run (~5500 tests, all launched together by Swift Testing's own parallel
+// scheduler within milliseconds of each other), hung CI's `swift build + test (macOS)` job twice
+// in a row (#880/#886 PR #898, 30-minute timeout, zero tests completing in either attempt — not
+// just this suite, the *entire* run). Every other concurrency test in this repo
+// (`Tests/OCCTThreadTests/`, `Tests/OCCTStressTests/StressConcurrencyTests.swift`) already uses
+// `withTaskGroup`/structured concurrency for exactly this reason: a suspended `await` gives its
+// thread back to the pool, while `DispatchGroup.wait()` blocks one outright, and on Darwin `swift
+// test`'s own task scheduling and `DispatchQueue.global()` share the same underlying thread pool.
+// This suite's original ~8-18 blocking dispatches per test (two tests, so up to ~34 total) was a
+// much larger, and architecturally different, demand on that shared pool than the one existing
+// precedent in the repo (`OCCTFoundationTests.serializedConcurrentAccess`, 4 tasks) — and CI's
+// `macos-15` runner has only 3 vCPUs, a far smaller pool than a developer machine, which is
+// consistent with why this didn't reproduce casually in local testing. See the investigation
+// writeup in this PR for the CI log evidence (both attempts: every suite starts within the same
+// ~100ms window, as expected for Swift Testing's eager parallel scheduling; then zero `passed`/
+// `failed` lines anywhere in either log, ever — a process-wide stall, not a narrow deadlock in
+// `ConstructionContext` itself, which was audited lock-by-lock and has no reentrant or
+// conflicting-order acquisition of `crossStoreLock`).
 @Suite("PR #898 review: ConstructionContext cross-store atomicity")
 struct ConstructionContextConcurrencyTests {
 
     /// Builds a context pre-populated with `entitiesPerKind` of each kind, races `removeAll()`
-    /// against `readerCount` threads hammering `count`, and returns every `count` reading that was
+    /// against `readerCount` tasks hammering `count`, and returns every `count` reading that was
     /// "torn": neither (a) all three kinds still near their full pre-populated count, nor (b) all
-    /// three near zero. `extraConcurrentWork`, if given, is launched into the same `DispatchGroup`
+    /// three near zero. `extraConcurrentWork`, if given, is launched into the same task group
     /// alongside the readers and the single `removeAll()` call, so callers can mix in additional
     /// racing traffic (e.g. concurrent `add()`s) without duplicating the harness.
     private func tornCountObservations(
@@ -232,7 +253,7 @@ struct ConstructionContextConcurrencyTests {
         readerCount: Int,
         readsPerReader: Int,
         extraConcurrentWork: [@Sendable (ConstructionContext) -> Void] = []
-    ) -> [(planes: Int, axes: Int, points: Int)] {
+    ) async -> [(planes: Int, axes: Int, points: Int)] {
         let ctx = ConstructionContext()
         for _ in 0..<entitiesPerKind {
             ctx.add(.absolute(origin: .zero, normal: SIMD3(0, 0, 1)))
@@ -241,51 +262,57 @@ struct ConstructionContextConcurrencyTests {
         }
 
         let threshold = entitiesPerKind / 2
-        let tornLock = NSLock()
         var torn: [(planes: Int, axes: Int, points: Int)] = []
-        let group = DispatchGroup()
 
-        for _ in 0..<readerCount {
-            group.enter()
-            DispatchQueue.global().async {
-                for _ in 0..<readsPerReader {
-                    let c = ctx.count
-                    let large = (c.planes > threshold, c.axes > threshold, c.points > threshold)
-                    let allLarge = large.0 && large.1 && large.2
-                    let allSmall = !large.0 && !large.1 && !large.2
-                    if !(allLarge || allSmall) {
-                        tornLock.lock()
-                        torn.append(c)
-                        tornLock.unlock()
+        // Each task returns its own torn observations rather than appending to a shared array
+        // under a lock: `NSLock.lock()`/`unlock()` are `noasync` (unavailable from an
+        // asynchronous context), and collecting results through the task group's own
+        // `for await` sequence needs no lock at all — the parent task is the only one that ever
+        // touches `torn`.
+        await withTaskGroup(of: [(planes: Int, axes: Int, points: Int)].self) { group in
+            for _ in 0..<readerCount {
+                group.addTask {
+                    var localTorn: [(planes: Int, axes: Int, points: Int)] = []
+                    for _ in 0..<readsPerReader {
+                        let c = ctx.count
+                        let large = (c.planes > threshold, c.axes > threshold, c.points > threshold)
+                        let allLarge = large.0 && large.1 && large.2
+                        let allSmall = !large.0 && !large.1 && !large.2
+                        if !(allLarge || allSmall) {
+                            localTorn.append(c)
+                        }
                     }
+                    return localTorn
                 }
-                group.leave()
+            }
+
+            for work in extraConcurrentWork {
+                group.addTask {
+                    work(ctx)
+                    return []
+                }
+            }
+
+            group.addTask {
+                ctx.removeAll()
+                return []
+            }
+
+            for await result in group {
+                torn.append(contentsOf: result)
             }
         }
 
-        for work in extraConcurrentWork {
-            group.enter()
-            DispatchQueue.global().async {
-                work(ctx)
-                group.leave()
-            }
-        }
-
-        group.enter()
-        DispatchQueue.global().async {
-            ctx.removeAll()
-            group.leave()
-        }
-
-        group.wait()
         return torn
     }
 
     // Finding 1 (line ~272): `count` did three independently-locked reads instead of one atomic
     // snapshot, so a concurrent `removeAll()` could be caught mid-flight.
     @Test("count() never observes a torn cross-store snapshot during removeAll()")
-    func countNeverTearsDuringRemoveAll() {
-        let torn = tornCountObservations(entitiesPerKind: 4000, readerCount: 8, readsPerReader: 3000)
+    func countNeverTearsDuringRemoveAll() async {
+        let torn = await tornCountObservations(
+            entitiesPerKind: 4000, readerCount: 8, readsPerReader: 3000
+        )
         #expect(
             torn.isEmpty,
             "count() observed \(torn.count) torn snapshot(s), e.g. \(String(describing: torn.first))"
@@ -305,7 +332,7 @@ struct ConstructionContextConcurrencyTests {
     // so it can never itself flip a `count` reading from one bucket to the other — any torn
     // observation is still attributable to `removeAll()`/`count()` racing, not to the adds.
     @Test("removeAll() stays all-or-nothing under concurrent add()")
-    func removeAllStaysAtomicUnderConcurrentAdd() {
+    func removeAllStaysAtomicUnderConcurrentAdd() async {
         let adders: [@Sendable (ConstructionContext) -> Void] = (0..<9).map { i in
             { ctx in
                 switch i % 3 {
@@ -315,7 +342,7 @@ struct ConstructionContextConcurrencyTests {
                 }
             }
         }
-        let torn = tornCountObservations(
+        let torn = await tornCountObservations(
             entitiesPerKind: 4000, readerCount: 8, readsPerReader: 3000, extraConcurrentWork: adders
         )
         let message =
