@@ -5966,6 +5966,34 @@ struct BRepBndLibTests {
         #expect(voidShape.size == SIMD3<Double>.zero)
         #expect(voidShape.center == SIMD3<Double>.zero)
     }
+
+    // #900: a point-vertex shape at the world origin legitimately measures to all-zero
+    // coordinates, which used to be indistinguishable from bridge/void failure (both call sites
+    // inferred failure from "all six coordinates are exactly zero"). `boundingBoxOptimal` has a
+    // live repro — `BRepBndLib::AddOptimal` on a vertex at .zero measures exactly
+    // (0,0,0)-(0,0,0), so this used to return `nil` instead of the correct all-zero box.
+    // `boundingBox` (`BRepBndLib::Add`) is not concretely reachable through this same fixture —
+    // `BRep_Builder::MakeVertex` floors the vertex tolerance at `Precision::Confusion()`, so
+    // `Add`'s enlargement never lands on exact zero — but it shares the same fixed bridge
+    // contract, so this test still pins the non-regression on the ordinary path.
+    @Test func pointVertexAtOriginBoundingBoxIsNotNil() {
+        let origin = Shape.vertex(at: .zero)!
+
+        let optimal = origin.boundingBoxOptimal()
+        #expect(optimal != nil)
+        if let optimal {
+            #expect(optimal.min == SIMD3<Double>.zero)
+            #expect(optimal.max == SIMD3<Double>.zero)
+        }
+
+        // Not a live repro (see comment above) -- this asserts non-regression, not a fixed bug.
+        let ordinary = origin.boundingBox
+        #expect(ordinary != nil)
+        if let ordinary {
+            #expect(abs(ordinary.min.x) < 1e-6 && abs(ordinary.min.y) < 1e-6 && abs(ordinary.min.z) < 1e-6)
+            #expect(abs(ordinary.max.x) < 1e-6 && abs(ordinary.max.y) < 1e-6 && abs(ordinary.max.z) < 1e-6)
+        }
+    }
 }
 
 @Suite("BezierSurface_Properties")

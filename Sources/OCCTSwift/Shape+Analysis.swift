@@ -2245,6 +2245,10 @@ extension Shape {
 
 extension Shape {
     /// Axis-aligned bounding box of the shape.
+    ///
+    /// Returns `nil` only when the box is void (e.g. an empty shape) — a genuinely
+    /// degenerate/point shape at the world origin legitimately returns `(min: .zero, max: .zero)`
+    /// rather than `nil` (#900).
     public var boundingBox: (min: SIMD3<Double>, max: SIMD3<Double>)? {
         var xmin = 0.0
         var ymin = 0.0
@@ -2252,14 +2256,15 @@ extension Shape {
         var xmax = 0.0
         var ymax = 0.0
         var zmax = 0.0
-        OCCTShapeBoundingBox(handle, &xmin, &ymin, &zmin, &xmax, &ymax, &zmax)
-        if xmin == 0 && ymin == 0 && zmin == 0 && xmax == 0 && ymax == 0 && zmax == 0 {
+        guard OCCTShapeBoundingBox(handle, &xmin, &ymin, &zmin, &xmax, &ymax, &zmax) else {
             return nil
         }
         return (min: SIMD3(xmin, ymin, zmin), max: SIMD3(xmax, ymax, zmax))
     }
 
     /// Optimal (tight) axis-aligned bounding box using precise geometry.
+    ///
+    /// Returns `nil` only when the box is void (e.g. an empty shape) — see ``boundingBox`` (#900).
     public func boundingBoxOptimal(useShapeTolerance: Bool = false) -> (
         min: SIMD3<Double>, max: SIMD3<Double>
     )? {
@@ -2269,9 +2274,10 @@ extension Shape {
         var xmax = 0.0
         var ymax = 0.0
         var zmax = 0.0
-        OCCTShapeBoundingBoxOptimal(
-            handle, useShapeTolerance, &xmin, &ymin, &zmin, &xmax, &ymax, &zmax)
-        if xmin == 0 && ymin == 0 && zmin == 0 && xmax == 0 && ymax == 0 && zmax == 0 {
+        guard
+            OCCTShapeBoundingBoxOptimal(
+                handle, useShapeTolerance, &xmin, &ymin, &zmin, &xmax, &ymax, &zmax)
+        else {
             return nil
         }
         return (min: SIMD3(xmin, ymin, zmin), max: SIMD3(xmax, ymax, zmax))
