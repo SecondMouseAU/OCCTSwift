@@ -104,19 +104,24 @@ extension Shape {
 }
 
 extension Surface {
-    /// Reads an origin/direction pair from a six-out-param `OCCT*Axis`-shaped bridge function.
+    /// A six-out-param `OCCT*Axis`-shaped bridge function: origin then direction, one double each.
+    ///
+    /// Named once so `unwrapAxis`/`axis(ifKind:_:)` don't respell it (#891 review follow-up).
+    private typealias AxisBridgeFn = (
+        OCCTSurfaceRef, UnsafeMutablePointer<Double>, UnsafeMutablePointer<Double>,
+        UnsafeMutablePointer<Double>, UnsafeMutablePointer<Double>,
+        UnsafeMutablePointer<Double>, UnsafeMutablePointer<Double>
+    ) -> Void
+
+    /// Reads an origin/direction pair from an `AxisBridgeFn`.
     ///
     /// Split out from the `surfaceKind` guard below so the unwrap itself is independently
     /// reusable — flagged by #891's review as also duplicated (outside this file's scope)
     /// in `Surface.Cylinder.axis`/`Curve3D.Circle.xAxis`; widening this to a shared
     /// accessor for those is tracked as a follow-up, not done here.
-    private func unwrapAxis(
-        _ bridgeFn: (
-            OCCTSurfaceRef, UnsafeMutablePointer<Double>, UnsafeMutablePointer<Double>,
-            UnsafeMutablePointer<Double>, UnsafeMutablePointer<Double>,
-            UnsafeMutablePointer<Double>, UnsafeMutablePointer<Double>
-        ) -> Void
-    ) -> (origin: SIMD3<Double>, direction: SIMD3<Double>) {
+    private func unwrapAxis(_ bridgeFn: AxisBridgeFn) -> (
+        origin: SIMD3<Double>, direction: SIMD3<Double>
+    ) {
         var px: Double = 0
         var py: Double = 0
         var pz: Double = 0
@@ -132,11 +137,7 @@ extension Surface {
     /// `revolutionAxis` are the only callers today (#891).
     private func axis(
         ifKind kind: SurfaceType,
-        _ bridgeFn: (
-            OCCTSurfaceRef, UnsafeMutablePointer<Double>, UnsafeMutablePointer<Double>,
-            UnsafeMutablePointer<Double>, UnsafeMutablePointer<Double>,
-            UnsafeMutablePointer<Double>, UnsafeMutablePointer<Double>
-        ) -> Void
+        _ bridgeFn: AxisBridgeFn
     ) -> (origin: SIMD3<Double>, direction: SIMD3<Double>)? {
         guard surfaceKind == kind else { return nil }
         return unwrapAxis(bridgeFn)
