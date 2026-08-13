@@ -242,12 +242,22 @@ struct ConstructionContextTests {
 @Suite("PR #898 review: ConstructionContext cross-store atomicity")
 struct ConstructionContextConcurrencyTests {
 
+    /// Shared bucketing for every "torn cross-store snapshot" detector in this suite: `true` if
+    /// the three counts don't all agree on being above or below `threshold` — the signature of a
+    /// concurrent `removeAll()`/`remove()` caught mid-flight (some kinds already reflecting it,
+    /// others not).
+    private func isTornSnapshot(_ counts: (Int, Int, Int), threshold: Int) -> Bool {
+        let large = (counts.0 > threshold, counts.1 > threshold, counts.2 > threshold)
+        return !((large.0 && large.1 && large.2) || (!large.0 && !large.1 && !large.2))
+    }
+
     /// Builds a context pre-populated with `entitiesPerKind` of each kind, races `removeAll()`
     /// against `readerCount` tasks hammering `count`, and returns every `count` reading that was
     /// "torn": neither (a) all three kinds still near their full pre-populated count, nor (b) all
     /// three near zero. `extraConcurrentWork`, if given, is launched into the same task group
     /// alongside the readers and the single `removeAll()` call, so callers can mix in additional
-    /// racing traffic (e.g. concurrent `add()`s) without duplicating the harness.
+    /// racing traffic (e.g. concurrent `add()`s, or single `remove()`s for finding 5 below)
+    /// without duplicating the harness.
     private func tornCountObservations(
         entitiesPerKind: Int,
         readerCount: Int,
@@ -275,10 +285,7 @@ struct ConstructionContextConcurrencyTests {
                     var localTorn: [(planes: Int, axes: Int, points: Int)] = []
                     for _ in 0..<readsPerReader {
                         let c = ctx.count
-                        let large = (c.planes > threshold, c.axes > threshold, c.points > threshold)
-                        let allLarge = large.0 && large.1 && large.2
-                        let allSmall = !large.0 && !large.1 && !large.2
-                        if !(allLarge || allSmall) {
+                        if isTornSnapshot((c.planes, c.axes, c.points), threshold: threshold) {
                             localTorn.append(c)
                         }
                     }
@@ -351,6 +358,53 @@ struct ConstructionContextConcurrencyTests {
         #expect(torn.isEmpty, "\(message)")
     }
 
+    // Finding 5 (3772117915): `crossStoreLock` now guards `remove(plane:)`/`remove(axis:)`/
+    // `remove(point:)` too, not just `add`/`removeAll`/`count`, so a single `remove()` can no
+    // longer run its critical section while `removeAll()`'s or `count()`'s is in progress.
+    //
+    // Investigated, rather than assumed, whether that gap was actually reachable as a *torn*
+    // `count()` snapshot given `removeAll()` is already fully atomic (finding 1, above): it isn't,
+    // and the honest result is recorded here instead of a fabricated "reintroduced the bug, watched
+    // it fail" story, per okf/policies/prove-the-test-fails.md. Reverting the lock on `remove()`
+    // and re-running this exact test (9 concurrent single removes racing `removeAll()`+`count()`,
+    // same shape as `removeAllStaysAtomicUnderConcurrentAdd` above) produced zero torn snapshots —
+    // and escalating the removers to 500 concurrent single-entity removes, and separately to a
+    // full single-kind drain (`ctx.allAxes.forEach { ctx.remove(axis: $0.id) }`, the review's own
+    // literal repro), didn't discriminate either: the 500-remover case stayed clean with the lock
+    // removed exactly as with it, and the full-drain case was torn *both* with and without it (the
+    // gradual single-kind drain a caller's own loop performs is visible to a concurrent `count()`
+    // regardless of whether each individual call in that loop is locked — locking one call cannot
+    // make a caller's multi-call loop atomic as a whole). The mechanism is real in principle — an
+    // unlocked `remove()` COULD interleave with `removeAll()`'s critical section, memory-safety
+    // aside — but with `removeAll()` already atomic under the same lock (finding 1), that
+    // interleaving is not externally observable through `count()`/`allBroken`/`materialize`: none
+    // of them can catch `removeAll()` "in progress" regardless of `remove()`'s own locking, and a
+    // single `remove()` only ever touches one store, so it can't manufacture a cross-store tear on
+    // its own. This test is kept as a stress/regression guard (the same `withTaskGroup` pattern the
+    // other tests here use, exercising exactly the scenario the review described) rather than
+    // removed, since it's cheap and would catch a *future* regression that widens the gap (e.g. if
+    // `EntityStore.remove()` ever grew a second step) even though it doesn't catch today's.
+    @Test("removeAll() stays all-or-nothing under concurrent single remove()")
+    func removeAllStaysAtomicUnderConcurrentRemove() async {
+        let removers: [@Sendable (ConstructionContext) -> Void] = (0..<9).map { i in
+            { ctx in
+                switch i % 3 {
+                case 0: if let first = ctx.allPlanes.first { ctx.remove(plane: first.id) }
+                case 1: if let first = ctx.allAxes.first { ctx.remove(axis: first.id) }
+                default: if let first = ctx.allPoints.first { ctx.remove(point: first.id) }
+                }
+            }
+        }
+        let torn = await tornCountObservations(
+            entitiesPerKind: 4000, readerCount: 8, readsPerReader: 3000,
+            extraConcurrentWork: removers
+        )
+        let message =
+            "count() observed \(torn.count) torn snapshot(s) while single remove() raced "
+            + "removeAll(), e.g. \(String(describing: torn.first))"
+        #expect(torn.isEmpty, "\(message)")
+    }
+
     // Sequential baseline for the invariant the two race tests above stress under concurrency:
     // with nothing else running, removeAll() followed immediately by count() is exactly empty.
     @Test("removeAll() immediately followed by count() is empty with no concurrent add()")
@@ -361,6 +415,140 @@ struct ConstructionContextConcurrencyTests {
         ctx.add(ConstructionPoint.absolute(.zero))
         ctx.removeAll()
         #expect(ctx.count == (planes: 0, axes: 0, points: 0))
+    }
+
+    // MARK: - Finding 1 (3771374360): allBroken(in:) and materialize(in:graph:options:) did the
+    // same torn, unsynchronized three-store reads count() was fixed for above, just via
+    // `planes.all`/`axes.all`/`points.all` (allBroken) and `allPlanes`/`allAxes`/`allPoints`
+    // (materialize) instead of `planes.count`/`axes.count`/`points.count`. Both are now fixed by
+    // routing through `ConstructionContext.allEntitiesSnapshot`, the same atomic-under-
+    // `crossStoreLock` read `count`/`removeAll` already use.
+
+    /// Populates `entitiesPerKind` per kind with entities that always fail resolution (broken
+    /// `TopologyRef` references), races `removeAll()` against `readerCount` tasks hammering
+    /// `allBroken(in:)`, and returns every torn per-kind broken-count observation — same
+    /// all-or-nothing bucketing as `tornCountObservations`, applied to `allBroken`'s result
+    /// instead of `count`.
+    private func tornAllBrokenObservations(
+        entitiesPerKind: Int,
+        readerCount: Int,
+        readsPerReader: Int
+    ) async -> [(planes: Int, axes: Int, points: Int)] {
+        guard let box = Shape.box(width: 10, height: 10, depth: 10),
+              let graph = BRepGraph(shape: box)
+        else {
+            Issue.record("setup nil"); return []
+        }
+        let ctx = ConstructionContext()
+        let brokenFace = TopologyRef.createdBy(operationName: "NeverHappened", kind: .face)
+        let brokenEdge = TopologyRef.createdBy(operationName: "NeverHappened", kind: .edge)
+        let brokenVertex = TopologyRef.createdBy(operationName: "NeverHappened", kind: .vertex)
+        for _ in 0..<entitiesPerKind {
+            ctx.add(ConstructionPlane.offsetFromFace(face: brokenFace, distance: 5))
+            ctx.add(ConstructionAxis.alongEdge(brokenEdge))
+            ctx.add(ConstructionPoint.atVertex(brokenVertex))
+        }
+
+        let threshold = entitiesPerKind / 2
+        var torn: [(planes: Int, axes: Int, points: Int)] = []
+
+        await withTaskGroup(of: [(planes: Int, axes: Int, points: Int)].self) { group in
+            for _ in 0..<readerCount {
+                group.addTask {
+                    var localTorn: [(planes: Int, axes: Int, points: Int)] = []
+                    for _ in 0..<readsPerReader {
+                        let broken = ctx.allBroken(in: graph)
+                        let counts = (broken.planes.count, broken.axes.count, broken.points.count)
+                        if isTornSnapshot(counts, threshold: threshold) {
+                            localTorn.append(counts)
+                        }
+                    }
+                    return localTorn
+                }
+            }
+            group.addTask {
+                ctx.removeAll()
+                return []
+            }
+            for await result in group {
+                torn.append(contentsOf: result)
+            }
+        }
+        return torn
+    }
+
+    @Test("allBroken(in:) never observes a torn cross-store snapshot during removeAll()")
+    func allBrokenNeverTearsDuringRemoveAll() async {
+        let torn = await tornAllBrokenObservations(
+            entitiesPerKind: 1000, readerCount: 8, readsPerReader: 300
+        )
+        let message =
+            "allBroken(in:) observed \(torn.count) torn snapshot(s), "
+            + "e.g. \(String(describing: torn.first))"
+        #expect(torn.isEmpty, "\(message)")
+    }
+
+    /// Races `removeAll()` against `readerCount` tasks, each calling `materialize(in:graph:)`
+    /// once per `iterations` pass on its own private `Document`/`BRepGraph` — independent per
+    /// task, since concurrent mutation of *one* shared `Document` from multiple threads isn't a
+    /// documented-safe pattern here (see docs/thread-safety.md); every task here does get its own
+    /// private `Document`, matching the pattern #371 validated. Real OCCT geometry work per entity
+    /// makes a single, large `readsPerReader`-style loop (as `count`/`allBroken` above use)
+    /// impractically slow, so this instead repeats the whole population/race/clear cycle
+    /// `iterations` times, giving many independent chances to land in the (very narrow, since
+    /// `removeAll()` itself is fast) race window.
+    private func tornMaterializeObservations(
+        iterations: Int,
+        entitiesPerKind: Int,
+        readerCount: Int
+    ) async -> [(planes: Int, axes: Int, points: Int)] {
+        let threshold = entitiesPerKind / 2
+        var torn: [(planes: Int, axes: Int, points: Int)] = []
+
+        for _ in 0..<iterations {
+            let ctx = ConstructionContext()
+            for _ in 0..<entitiesPerKind {
+                ctx.add(.absolute(origin: .zero, normal: SIMD3(0, 0, 1)))
+                ctx.add(.absolute(origin: .zero, direction: SIMD3(1, 0, 0)))
+                ctx.add(ConstructionPoint.absolute(.zero))
+            }
+
+            await withTaskGroup(of: (planes: Int, axes: Int, points: Int)?.self) { group in
+                for _ in 0..<readerCount {
+                    group.addTask {
+                        guard let doc = Document.create(),
+                              let box = Shape.box(width: 10, height: 10, depth: 10),
+                              let graph = BRepGraph(shape: box)
+                        else { return nil }
+                        let result = ctx.materialize(in: doc, graph: graph)
+                        let counts = (
+                            result.planeShapes.count, result.axisShapes.count,
+                            result.pointShapes.count
+                        )
+                        return isTornSnapshot(counts, threshold: threshold) ? counts : nil
+                    }
+                }
+                group.addTask {
+                    ctx.removeAll()
+                    return nil
+                }
+                for await result in group {
+                    if let counts = result { torn.append(counts) }
+                }
+            }
+        }
+        return torn
+    }
+
+    @Test("materialize(in:graph:) never observes a torn cross-store snapshot during removeAll()")
+    func materializeNeverTearsDuringRemoveAll() async {
+        let torn = await tornMaterializeObservations(
+            iterations: 60, entitiesPerKind: 20, readerCount: 6
+        )
+        let message =
+            "materialize(in:graph:) observed \(torn.count) torn snapshot(s), "
+            + "e.g. \(String(describing: torn.first))"
+        #expect(torn.isEmpty, "\(message)")
     }
 }
 
@@ -743,6 +931,81 @@ struct ConstructionLayerTests {
             // expected
         } else {
             Issue.record("expected planeShapeFailed, got \(String(describing: result.failures.first))")
+        }
+    }
+
+    // PR #898 review, finding 4: `materializeOne` used to skip straight to `.success` after
+    // `document.addConstructionShape(shape)` without checking the label ID it returned, even
+    // though that call's own contract is "negative on failure" (`ConstructionLayer.swift:39`).
+    // A failed add was counted as materialized, with a garbage negative `labelId`.
+    //
+    // No input reachable through the public `materialize(in:graph:options:)` API can make
+    // `addConstructionShape` itself fail on a *successfully built* shape: every one of the three
+    // representative-shape builders above already refuses to hand back a `Shape` unless the
+    // underlying OCCT build genuinely succeeded (checked directly — `Wire.line`, `Wire.polygon3D`
+    // and `Shape.vertex(at:)`'s bridge calls all check `IsDone()`/`IsNull()` before returning), and
+    // a healthy `Document`'s `shapeTool` is never null. So this tests `materializeOne` itself
+    // (`internal`, not `private`, specifically for this — see its doc comment) with an injected
+    // `addShape` closure that fails deterministically, instead of hunting for a fragile
+    // OCCT-level trigger. `buildShape`/`addShape` are the two collaborators the fix's guard clause
+    // actually reads; injecting them directly tests that guard clause without needing a real
+    // `Document`/`BRepGraph` at all.
+    @Test("materializeOne reports an add failure instead of a bogus success (PR #898 review)")
+    func materializeOneReportsAddFailure() {
+        guard let box = Shape.box(width: 1, height: 1, depth: 1) else {
+            Issue.record("box nil"); return
+        }
+        let ctx = ConstructionContext()
+        let id = ConstructionContext.PlaneID()
+
+        let outcome = ctx.materializeOne(
+            id: id,
+            resolution: Result<Int, ConstructionResolutionError>.success(0),
+            buildShape: { (_: Int) in box },
+            addShape: { _ in -1 },  // simulates addConstructionShape failing
+            resolveFailure: { _, error in .planeResolveFailed(id, error) },
+            shapeFailure: { _ in .planeShapeFailed(id) },
+            addFailure: { _ in .planeAddFailed(id) })
+
+        switch outcome {
+        case .success(let materialized):
+            Issue.record(
+                "expected a failure, got a bogus success with labelId \(materialized.labelId)")
+        case .failure(let failure):
+            if case .planeAddFailed(let failedId) = failure {
+                #expect(failedId == id)
+            } else {
+                Issue.record("expected planeAddFailed, got \(failure)")
+            }
+        }
+    }
+
+    // Companion to the failure test above: the same `materializeOne` call, with `addShape`
+    // returning a non-negative label, still reports success — confirms the new `labelId >= 0`
+    // guard doesn't reject a genuinely successful add.
+    @Test("materializeOne still reports success for a non-negative label ID")
+    func materializeOneReportsSuccessForValidLabel() {
+        guard let box = Shape.box(width: 1, height: 1, depth: 1) else {
+            Issue.record("box nil"); return
+        }
+        let ctx = ConstructionContext()
+        let id = ConstructionContext.PlaneID()
+
+        let outcome = ctx.materializeOne(
+            id: id,
+            resolution: Result<Int, ConstructionResolutionError>.success(0),
+            buildShape: { (_: Int) in box },
+            addShape: { _ in 42 },
+            resolveFailure: { _, error in .planeResolveFailed(id, error) },
+            shapeFailure: { _ in .planeShapeFailed(id) },
+            addFailure: { _ in .planeAddFailed(id) })
+
+        switch outcome {
+        case .success(let materialized):
+            #expect(materialized.id == id)
+            #expect(materialized.labelId == 42)
+        case .failure(let failure):
+            Issue.record("expected success, got \(failure)")
         }
     }
 

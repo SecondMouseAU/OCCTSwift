@@ -73,6 +73,13 @@ extension ConstructionContext {
     /// - Points → a vertex
     ///
     /// Returns a breakdown of what got materialised and what failed to resolve.
+    ///
+    /// Reads every plane/axis/point as one atomic cross-store snapshot up front
+    /// (`allEntitiesSnapshot`, PR #898 review finding 1), so a concurrent `removeAll()`/
+    /// `remove()` can't be observed mid-flight — some kinds already cleared, others not, the same
+    /// torn-cross-store-read bug class `count()` was fixed for. The per-entity resolve/build/add
+    /// work below runs entirely against that local snapshot, outside any `ConstructionContext`
+    /// lock — see the doc comment on `allEntitiesSnapshot` for why that's safe.
     @discardableResult
     public func materialize(
         in document: Document,
@@ -84,40 +91,56 @@ extension ConstructionContext {
         var pointShapes: [(id: PointID, labelId: Int64)] = []
         var failures: [MaterializationFailure] = []
 
-        for entry in allPlanes {
+        let snapshot = allEntitiesSnapshot
+        let addShape: (Shape) -> Int64 = { document.addConstructionShape($0) }
+
+        // Hoisted above their loops (PR #898 review, finding 3): each closure closes over only
+        // loop-invariant `self`/`options`, nothing that varies per entity, so building a fresh
+        // one on every iteration was a wasted allocation.
+        let buildPlaneShape: (Placement) -> Shape? = {
+            self.planeShape(placement: $0, halfSize: options.planeHalfSize)
+        }
+        for entry in snapshot.planes {
             switch materializeOne(
-                id: entry.id, resolution: graph.resolve(entry.plane), in: document,
-                buildShape: { planeShape(placement: $0, halfSize: options.planeHalfSize) },
+                id: entry.id, resolution: graph.resolve(entry.value),
+                buildShape: buildPlaneShape,
+                addShape: addShape,
                 resolveFailure: MaterializationFailure.planeResolveFailed,
-                shapeFailure: MaterializationFailure.planeShapeFailed)
+                shapeFailure: MaterializationFailure.planeShapeFailed,
+                addFailure: MaterializationFailure.planeAddFailed)
             {
             case .success(let materialized): planeShapes.append(materialized)
             case .failure(let failure): failures.append(failure)
             }
         }
 
-        for entry in allAxes {
+        let buildAxisShape: ((origin: SIMD3<Double>, direction: SIMD3<Double>)) -> Shape? = {
+            self.axisShape(
+                origin: $0.origin, direction: $0.direction, halfLength: options.axisHalfLength)
+        }
+        for entry in snapshot.axes {
             switch materializeOne(
-                id: entry.id, resolution: graph.resolve(entry.axis), in: document,
-                buildShape: {
-                    axisShape(
-                        origin: $0.origin, direction: $0.direction,
-                        halfLength: options.axisHalfLength)
-                },
+                id: entry.id, resolution: graph.resolve(entry.value),
+                buildShape: buildAxisShape,
+                addShape: addShape,
                 resolveFailure: MaterializationFailure.axisResolveFailed,
-                shapeFailure: MaterializationFailure.axisShapeFailed)
+                shapeFailure: MaterializationFailure.axisShapeFailed,
+                addFailure: MaterializationFailure.axisAddFailed)
             {
             case .success(let materialized): axisShapes.append(materialized)
             case .failure(let failure): failures.append(failure)
             }
         }
 
-        for entry in allPoints {
+        let buildPointShape: (SIMD3<Double>) -> Shape? = { self.pointShape(at: $0) }
+        for entry in snapshot.points {
             switch materializeOne(
-                id: entry.id, resolution: graph.resolve(entry.point), in: document,
-                buildShape: { pointShape(at: $0) },
+                id: entry.id, resolution: graph.resolve(entry.value),
+                buildShape: buildPointShape,
+                addShape: addShape,
                 resolveFailure: MaterializationFailure.pointResolveFailed,
-                shapeFailure: MaterializationFailure.pointShapeFailed)
+                shapeFailure: MaterializationFailure.pointShapeFailed,
+                addFailure: MaterializationFailure.pointAddFailed)
             {
             case .success(let materialized): pointShapes.append(materialized)
             case .failure(let failure): failures.append(failure)
@@ -132,21 +155,34 @@ extension ConstructionContext {
     }
 
     /// Shared shape for the three per-kind loops in `materialize(in:graph:options:)`, above
-    /// (#886): resolve-failure and shape-build-failure are reported the same way for every
-    /// entity kind, and only the resolution, the shape builder, and the two failure-case
-    /// constructors differ.
-    private func materializeOne<ID, Resolved>(
+    /// (#886): resolve-failure, shape-build-failure and add-failure are reported the same way for
+    /// every entity kind, and only the resolution, the shape builder, the "add to document" step
+    /// and the three failure-case constructors differ.
+    ///
+    /// `addShape` is injected rather than calling `document.addConstructionShape` directly so
+    /// this can be unit-tested against a controllable failure without needing a real OCCT-level
+    /// failure to trigger it (`internal`, not `private`, for exactly that reason — PR #898 review,
+    /// finding 4).
+    ///
+    /// `document.addConstructionShape` (`ConstructionLayer.swift:39` at the time of the review)
+    /// returns a negative `Int64` on failure — this used to skip straight to
+    /// `.success((id: id, labelId: labelId))` without checking, so a failed add was still counted
+    /// as materialized with a garbage negative `labelId` and no actual CONSTRUCTION-layer shape in
+    /// the document.
+    internal func materializeOne<ID, Resolved>(
         id: ID,
         resolution: Result<Resolved, ConstructionResolutionError>,
-        in document: Document,
         buildShape: (Resolved) -> Shape?,
+        addShape: (Shape) -> Int64,
         resolveFailure: (ID, ConstructionResolutionError) -> MaterializationFailure,
-        shapeFailure: (ID) -> MaterializationFailure
+        shapeFailure: (ID) -> MaterializationFailure,
+        addFailure: (ID) -> MaterializationFailure
     ) -> MaterializeOutcome<ID> {
         switch resolution {
         case .success(let resolved):
             guard let shape = buildShape(resolved) else { return .failure(shapeFailure(id)) }
-            let labelId = document.addConstructionShape(shape)
+            let labelId = addShape(shape)
+            guard labelId >= 0 else { return .failure(addFailure(id)) }
             return .success((id: id, labelId: labelId))
         case .failure(let error):
             return .failure(resolveFailure(id, error))
@@ -158,7 +194,7 @@ extension ConstructionContext {
     /// Either the new construction-layer shape's ID/label pair, or the `MaterializationFailure`
     /// that explains why there isn't one. Not `Result<_, _>` — `MaterializationFailure` is a
     /// plain `Sendable` value, not an `Error`, by design (see its own declaration).
-    private enum MaterializeOutcome<ID> {
+    internal enum MaterializeOutcome<ID> {
         case success((id: ID, labelId: Int64))
         case failure(MaterializationFailure)
     }
@@ -181,6 +217,12 @@ extension ConstructionContext {
         case planeShapeFailed(PlaneID)
         case axisShapeFailed(AxisID)
         case pointShapeFailed(PointID)
+        /// The representative shape built fine, but `Document.addConstructionShape` failed to add
+        /// it (returned a negative label ID) — distinct from `planeShapeFailed`/etc. above, which
+        /// mean no shape was ever built at all (PR #898 review, finding 4).
+        case planeAddFailed(PlaneID)
+        case axisAddFailed(AxisID)
+        case pointAddFailed(PointID)
     }
 
     // MARK: - Representative-shape builders

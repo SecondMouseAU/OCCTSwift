@@ -109,21 +109,61 @@ public final class ConstructionContext: @unchecked Sendable {
     private let axes = EntityStore<AxisID, ConstructionAxis>()
     private let points = EntityStore<PointID, ConstructionPoint>()
 
-    /// Guards `add`, `removeAll` and `count` against each other so each behaves as one atomic
-    /// step across all three stores, matching the single class-wide lock the pre-#886
-    /// implementation held for every operation.
+    /// Guards `add`, `remove`, `removeAll`, `count` and the atomic cross-store snapshot
+    /// (`allEntitiesSnapshot`, used by `allBroken(in:)` and `ConstructionLayer.materialize`)
+    /// against each other so each behaves as one atomic step across all three stores, matching
+    /// the single class-wide lock the pre-#886 implementation held for every operation.
     ///
     /// Each `EntityStore` keeps its own internal lock (a distinct `NSLock`) for its own
-    /// single-store operations (`value`, `name`, `all`, `remove`); nesting this lock around a
-    /// call into a store's already-locked method is safe because the two locks are always
-    /// acquired in the same order (this one first) and are never the same object, so there's no
-    /// double-locking or deadlock risk.
+    /// single-store operations (`value`, `name`, `all`); nesting this lock around a call into a
+    /// store's already-locked method is safe because the two locks are always acquired in the
+    /// same order (this one first) and are never the same object, so there's no double-locking
+    /// or deadlock risk.
     ///
-    /// `remove(plane:)`/`remove(axis:)`/`remove(point:)` deliberately don't take this lock:
-    /// removing one already-unique ID is idempotent regardless of how it interleaves with
-    /// `removeAll()` — the ID ends up absent either way — so there's no torn outcome to guard
-    /// against the way there is for `add` racing `removeAll`/`count` (PR #898 review).
+    /// `remove(plane:)`/`remove(axis:)`/`remove(point:)` take this lock too (PR #898 review,
+    /// finding 5) — even though a *single* `remove()` racing a *single* `removeAll()` was, and
+    /// still is, idempotent by itself (the ID ends up absent either way, so that specific pairing
+    /// was never the problem the earlier version of this comment reasoned about). The motivating
+    /// concern was that an unlocked `remove()` could run its critical section while `removeAll()`'s
+    /// or `count()`'s was in progress; locking it removes that possibility outright, for the same
+    /// reason `add()` is locked. **Investigated, not just fixed**: with `removeAll()`/`count()`
+    /// already atomic under this lock, that specific interleaving turns out not to be observable
+    /// through `count()`/`allBroken(in:)`/`materialize(in:graph:options:)` even without this
+    /// change — `ConstructionContextConcurrencyTests.removeAllStaysAtomicUnderConcurrentRemove`'s
+    /// own doc comment has the measurements (9, then 500, concurrent single removes; a full
+    /// single-kind drain). This lock is still the right thing to hold here: it keeps `remove()`
+    /// consistent with every other mutator's contract with `removeAll()`/`count()`, and closes the
+    /// gap for good against a future change (e.g. a second step added to `EntityStore.remove()`)
+    /// that could make it observable. What it does **not**, and cannot, do: make an external
+    /// caller's *own* loop of many separate `remove()` calls atomic as a whole (nothing here
+    /// promises `ctx.allAxes.forEach { ctx.remove(axis: $0.id) }` is one atomic step; each call in
+    /// it still is, and a concurrent `count()` will legitimately see that loop's progress).
     private let crossStoreLock = NSLock()
+
+    /// Atomic snapshot of every plane/axis/point currently registered, taken under one
+    /// `crossStoreLock` critical section — the same cross-store atomicity `count`/`removeAll`
+    /// already have.
+    ///
+    /// Used by `allBroken(in:)` below and by `ConstructionLayer.materialize(in:graph:options:)`
+    /// (PR #898 review, finding 1) so neither observes a torn cross-store read: some kinds
+    /// already reflecting a concurrent `removeAll()`/`remove()` while others don't. Both callers
+    /// take the snapshot once, up front, then do their (potentially slow — graph resolution,
+    /// OCCT shape building, document mutation) per-entity work against the local copy, entirely
+    /// outside this lock. Neither `BRepGraph.resolve` nor `Document.addConstructionShape` nor any
+    /// `ConstructionLayer` shape builder calls back into `ConstructionContext`, so there's no
+    /// reentrancy or lock-ordering risk from holding the snapshot's result past the critical
+    /// section that produced it.
+    internal var allEntitiesSnapshot:
+        (
+            planes: [(id: PlaneID, name: String?, value: ConstructionPlane)],
+            axes: [(id: AxisID, name: String?, value: ConstructionAxis)],
+            points: [(id: PointID, name: String?, value: ConstructionPoint)]
+        )
+    {
+        crossStoreLock.lock()
+        defer { crossStoreLock.unlock() }
+        return (planes.all, axes.all, points.all)
+    }
 
     public init() {}
 
@@ -191,14 +231,20 @@ public final class ConstructionContext: @unchecked Sendable {
     // MARK: - Removal
 
     public func remove(plane id: PlaneID) {
+        crossStoreLock.lock()
+        defer { crossStoreLock.unlock() }
         planes.remove(id)
     }
 
     public func remove(axis id: AxisID) {
+        crossStoreLock.lock()
+        defer { crossStoreLock.unlock() }
         axes.remove(id)
     }
 
     public func remove(point id: PointID) {
+        crossStoreLock.lock()
+        defer { crossStoreLock.unlock() }
         points.remove(id)
     }
 
@@ -263,12 +309,16 @@ public final class ConstructionContext: @unchecked Sendable {
     /// Inspect every registered entity against the given graph, return those that fail
     /// resolution.
     ///
-    /// Useful for agent workflows to detect broken references after a model edit.
+    /// Useful for agent workflows to detect broken references after a model edit. Reads all
+    /// three stores as one atomic snapshot (`allEntitiesSnapshot`, PR #898 review finding 1) so a
+    /// concurrent `removeAll()`/`remove()` can't be observed mid-flight — some kinds already
+    /// cleared, others not — the same torn-cross-store-read bug class `count()` was fixed for.
     public func allBroken(in graph: BRepGraph) -> BrokenEntities {
-        BrokenEntities(
-            planes: broken(planes.all) { graph.resolve($0) },
-            axes: broken(axes.all) { graph.resolve($0) },
-            points: broken(points.all) { graph.resolve($0) }
+        let snapshot = allEntitiesSnapshot
+        return BrokenEntities(
+            planes: broken(snapshot.planes) { graph.resolve($0) },
+            axes: broken(snapshot.axes) { graph.resolve($0) },
+            points: broken(snapshot.points) { graph.resolve($0) }
         )
     }
 
