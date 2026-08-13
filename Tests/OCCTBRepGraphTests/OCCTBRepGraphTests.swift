@@ -2573,6 +2573,119 @@ struct ConstructionAxisTests {
         }
     }
 
+    @Test(
+        "alongEdge on an elliptical rim from an oblique cylinder cut does not silently return the cylinder's centerline (#894 finding 1, third pass)"
+    )
+    func alongEdgeEllipticalRimDoesNotSilentlyReturnCenterline() {
+        // A cylinder intersected with a large box tilted about Y by `theta`: the box's near face
+        // becomes an oblique cutting plane through the cylinder's mid-height, producing a closed
+        // elliptical rim (curveType == .ellipse) adjacent to the cylindrical wall. Every point of
+        // that rim sits on the wall (radius == cylinder radius everywhere, same as a true circular
+        // rim), but its height along the axis varies as you go around it — exactly the case
+        // `curveType != .line` alone can't distinguish from a genuine cross-section.
+        let radius = 5.0
+        let height = 20.0
+        let theta = 25.0 * Double.pi / 180
+        // Box spans z in [-1000, z0] before rotation; z0 is chosen so the rotated top face
+        // passes through (0, 0, 10) — the cylinder's own mid-height on its axis — with normal
+        // (sin(theta), 0, cos(theta)).
+        let z0 = 10.0 * cos(theta)
+
+        guard let cyl = Shape.cylinder(radius: radius, height: height),
+            let bigBox = Shape.box(
+                origin: SIMD3(-500, -500, -1000), width: 1000, height: 1000, depth: 1000 + z0),
+            let tiltedBox = bigBox.rotated(axis: SIMD3(0, 1, 0), angle: theta),
+            let cut = cyl.intersection(tiltedBox),
+            let graph = BRepGraph(shape: cut)
+        else {
+            Issue.record("oblique-cut cylinder fixture build failed"); return
+        }
+        guard let ellipse = cut.edges().first(where: { $0.curveType == .ellipse }),
+            let ellipseShape = Shape.fromEdge(ellipse),
+            let node = graph.findNode(for: ellipseShape), node.kind == .edge
+        else {
+            Issue.record("no elliptical rim edge found in oblique-cut fixture"); return
+        }
+        // Confirm the fixture matches finding 1's premise: exactly one adjacent face contributes
+        // a cylinder/cone axis candidate (the trimmed wall) — same as a genuine circular rim, so
+        // `revolutionAxis` has nothing to disagree with and would return it unconditionally
+        // without the geometric cross-section check this finding adds.
+        let cylConeFaceCount = graph.faces(of: node.index).filter { faceIndex in
+            guard
+                let faceShape = graph.shape(nodeKind: BRepGraph.NodeKind.face, nodeIndex: faceIndex),
+                let face = faceShape.faces().first, let axis = face.primaryAxis
+            else { return false }
+            return axis.kind == .cylinder || axis.kind == .cone
+        }.count
+        #expect(cylConeFaceCount == 1)
+
+        let edgeRef = TopologyRef.literal(.init(kind: .edge, index: node.index))
+        switch graph.resolve(ConstructionAxis.alongEdge(edgeRef)) {
+        case .success(let ax):
+            // Must not be the cylinder's centerline (direction parallel to Z AND origin on the
+            // x=y=0 axis) — a fallback to the (near-zero, closed-curve) chord landing anywhere
+            // else is fine; only silently matching the centerline is the bug.
+            let onCenterlineDirection = abs(abs(ax.direction.z) - 1.0) < 1e-6
+            let onCenterlineOrigin = abs(ax.origin.x) < 1e-6 && abs(ax.origin.y) < 1e-6
+            #expect(!(onCenterlineDirection && onCenterlineOrigin))
+        case .failure(.degenerate):
+            ()  // failing cleanly is fine too: a full ellipse's own chord is ~0, same as a full
+            // circle's would be without the (correctly declined) axis redirect.
+        case .failure(let e):
+            Issue.record("expected success (chord fallback) or a clean .degenerate failure, got \(e)")
+        }
+    }
+
+    @Test(
+        "alongEdge on a genuinely near-zero-length edge next to a clean cylindrical face still reports degenerate (#894 finding 2, third pass)"
+    )
+    func alongEdgeGenuinelyDegenerateEdgeNextToCleanCylinderStillDegenerate() {
+        // A partial cylinder with an astronomically tiny angular extent (1e-10 rad): its two rim
+        // arcs (curveType == .circle, non-linear — so the OLD `curveType != .line` gate alone
+        // would have let this reach `revolutionAxis`) measure a true length of 5e-10, genuinely
+        // near-zero and below this file's degeneracy epsilon, while still bounding one clean
+        // cylindrical wall face — the shape finding 2 needs: `revolutionAxis` finds an
+        // unambiguous candidate axis for an edge that is itself malformed, which used to let it
+        // skip the degeneracy check entirely.
+        guard let cyl = Shape.cylinder(radius: 5, height: 10, angle: 1e-10),
+            let graph = BRepGraph(shape: cyl)
+        else {
+            Issue.record("degenerate-sliver fixture build failed"); return
+        }
+
+        // Find a tiny rim arc by measured length rather than assuming an index.
+        var tinyNodeIndex: Int?
+        for edgeIndex in 0..<graph.edgeCount {
+            guard
+                let eShape = graph.shape(nodeKind: BRepGraph.NodeKind.edge, nodeIndex: edgeIndex),
+                let edge = eShape.edges().first
+            else { continue }
+            if edge.length < 1e-9, edge.curveType != .line {
+                tinyNodeIndex = edgeIndex
+                break
+            }
+        }
+        guard let tinyNodeIndex else {
+            Issue.record("no near-zero-length non-line edge found in sliver fixture"); return
+        }
+        // Confirm the fixture matches finding 2's premise: exactly one adjacent face contributes
+        // a cylinder/cone axis candidate, same as a legitimate rim — `revolutionAxis` has nothing
+        // to disagree with and would return it unconditionally without the fix.
+        let cylConeFaceCount = graph.faces(of: tinyNodeIndex).filter { faceIndex in
+            guard
+                let faceShape = graph.shape(nodeKind: BRepGraph.NodeKind.face, nodeIndex: faceIndex),
+                let face = faceShape.faces().first, let axis = face.primaryAxis
+            else { return false }
+            return axis.kind == .cylinder || axis.kind == .cone
+        }.count
+        #expect(cylConeFaceCount == 1)
+
+        let edgeRef = TopologyRef.literal(.init(kind: .edge, index: tinyNodeIndex))
+        if case .failure(.degenerate) = graph.resolve(ConstructionAxis.alongEdge(edgeRef)) {} else {
+            Issue.record("expected degenerate")
+        }
+    }
+
     @Test("throughPoints on coincident vertices fails with degenerate")
     func coincidentPointsDegenerate() {
         guard let box = Shape.box(width: 10, height: 10, depth: 10),

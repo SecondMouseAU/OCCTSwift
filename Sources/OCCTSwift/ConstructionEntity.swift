@@ -282,20 +282,37 @@ extension BRepGraph {
 
     /// Cosine-of-angle threshold for two unit directions being the same or exactly opposite.
     ///
-    /// Used by ``axesAgree(_:_:)`` (finding 1: every adjacent cylindrical/conical face's axis must
-    /// agree before `revolutionAxis(ofEdgeAt:)` returns a definitive answer) and by
-    /// `resolveEdgeDirection`'s own straight-seam check (finding 3: an edge's chord counts as
-    /// lying along the candidate axis only when it's parallel/anti-parallel to it). `1e-6` mirrors
-    /// the unit-vector tolerance this file's own tests already use for axis-direction checks —
-    /// tight enough to catch a genuine few-degree mismatch between two non-coaxial faces, loose
-    /// enough for the floating-point noise of a real OCCT curve/surface evaluation.
+    /// Used by ``axesAgree(_:_:)``: every adjacent cylindrical/conical face's axis must agree
+    /// before `revolutionAxis(ofEdgeAt:)` returns a definitive answer (finding 1, first pass).
+    /// `resolveEdgeDirection` originally had a second use — a chord-parallel-to-the-candidate-axis
+    /// check standing in for "is this edge a straight seam" — but that check was never true for a
+    /// straight seam on a *cone* (a cone's generatrix meets its axis at the cone's own nonzero
+    /// half-angle, never 0) and could misfire true for a helical edge whose two-point secant
+    /// happens to land near-parallel to the axis by coincidence of the sweep angle (both findings
+    /// 1/3, second pass). ``coaxialCrossSection(of:bounds:start:end:axis:)`` replaces it with a
+    /// direct geometric test that doesn't need this tolerance at all (finding 1, third pass), so
+    /// this constant is `axesAgree`'s alone again. `1e-6` mirrors the unit-vector tolerance this
+    /// file's own tests already use for axis-direction checks — tight enough to catch a genuine
+    /// few-degree mismatch between two non-coaxial faces, loose enough for the floating-point
+    /// noise of a real OCCT curve/surface evaluation.
     private static let axisDirectionAgreementCosineTolerance = 1e-6
 
-    /// Distance threshold for "these two axis directions describe the same line, not just two
-    /// parallel offset lines" (finding 1).
+    /// Distance threshold for "this point sits on this axis line". Used two ways:
     ///
-    /// The perpendicular offset between one candidate's origin and the line through the other. A
-    /// fixed absolute threshold, like ``degeneracyEpsilon`` above, not a fraction of model scale.
+    /// - ``axesAgree(_:_:)``: the perpendicular offset between one candidate axis's origin and
+    ///   the line through another, so two same-diameter but genuinely distinct bores don't
+    ///   count as one (finding 1, first pass).
+    /// - ``coaxialCrossSection(of:bounds:start:end:axis:)``: how much a sampled point's height
+    ///   along the axis, or its radius from it, may vary across the edge before it stops
+    ///   counting as a genuine perpendicular cross-section (finding 1, third pass).
+    ///
+    /// A fixed absolute threshold, like ``degeneracyEpsilon`` above, not a fraction of model
+    /// scale. `1e-6` matches `Shape.revolutionAxes(tolerance:)`'s own default (`ShapeAxis.swift`)
+    /// and the bridge-side `axesCoincide` it wraps (`OCCTBridge_Topology.mm`) — not because either
+    /// is called from here (that dedup runs in the C++ layer over every face of a whole shape;
+    /// this code only ever compares the 1-2 faces adjacent to a single edge, so there's no shared
+    /// function to actually call across that boundary), but so a future retune of one is at least
+    /// discoverable from the other (finding 4, third pass).
     private static let axisOriginAgreementDistanceTolerance = 1e-6
 
     /// Shared "is this magnitude effectively zero" guard: fails with `.degenerate(message)` when
@@ -400,43 +417,43 @@ extension BRepGraph {
             else {
                 return .failure(.missingGeometry(node))
             }
-            // Only a curved edge (typically a circular/elliptical arc) can coincide with a
-            // cylindrical/conical face's true rotation axis; a linear edge always resolves to its
-            // own line. Gate on curveType first — cheap, no bridge call — so a straight edge never
-            // pays for the face walk in `revolutionAxis` (#894 finding 4); that walk is also where
-            // the answer can still legitimately come back nil (no adjacent cyl/cone face, or
-            // several that disagree — #894 finding 1).
-            let axis = edge.curveType != .line ? revolutionAxis(ofEdgeAt: node.index) : nil
+            // The edge's own degeneracy is checked before any axis lookup, and by true arc
+            // length rather than the endpoint secant a few lines below: a full-circle rim is
+            // legitimately closed (start == end, secant == 0) without being remotely degenerate
+            // — that's exactly why the axis redirect below exists at all — so this can't reuse
+            // the secant the way the fallback path does. Unconditional so a genuinely
+            // near-zero-length sliver edge (a leftover fillet/boolean artifact) still reports
+            // `.degenerate` even when it happens to sit next to one clean cylindrical/conical
+            // face and would otherwise get an unambiguous but meaningless axis match below
+            // (#894 finding 2, third pass).
+            guard edge.length >= Self.degeneracyEpsilon else {
+                return .failure(.degenerate("zero-length edge"))
+            }
 
             guard let start = edge.point(at: bounds.first), let end = edge.point(at: bounds.last)
             else {
                 return .failure(.missingGeometry(node))
             }
 
-            if let axis = axis {
+            // Only a curved edge (typically a circular arc) can coincide with a
+            // cylindrical/conical face's true rotation axis; a linear edge always resolves to its
+            // own line. Gate on curveType first — cheap, no bridge call — so a straight edge never
+            // pays for the face walk in `revolutionAxis` (#894 finding 4, first pass); that walk is
+            // also where the answer can still legitimately come back nil (no adjacent cyl/cone
+            // face, or several that disagree — #894 finding 1, first pass). A candidate found there
+            // is only actually used once `coaxialCrossSection` confirms the edge is genuinely a
+            // circular cross-section of it, not merely non-linear and next to the right kind of
+            // face (#894 finding 1, third pass) — see that function's doc for the elliptical-rim,
+            // reparameterized-straight-seam, and helical-edge cases it exists to reject.
+            if edge.curveType != .line,
+                let axis = revolutionAxis(ofEdgeAt: node.index),
+                coaxialCrossSection(of: edge, bounds: bounds, start: start, end: end, axis: axis)
+            {
                 let axisDirection = simd_normalize(axis.direction)
-                let chord = end - start
-                let chordLength = simd_length(chord)
-                // curveType is a proxy for straightness, not a guarantee of it: OCCT commonly
-                // re-parameterizes a geometrically-straight edge as a low-degree BSpline after a
-                // Boolean cut, fillet, or sweep, even though it's still coincident with the
-                // cylinder/cone wall — the seam case the comment above this branch's gate already
-                // calls out. When the edge's own chord already runs parallel or anti-parallel to
-                // the candidate axis, treat it as a straight seam and keep the chord itself — both
-                // origin and direction — instead of redirecting to the axis (#894 finding 3). A
-                // real seam is the degenerate case where the axis direction and the chord
-                // direction agree; the origin still has to stay on the edge, not move to wherever
-                // the adjacent surface happens to be placed.
-                if chordLength >= Self.degeneracyEpsilon,
-                    abs(abs(simd_dot(chord / chordLength, axisDirection)) - 1.0)
-                        < Self.axisDirectionAgreementCosineTolerance
-                {
-                    return .success((start, chord / chordLength))
-                }
                 // Keep the origin edge-local: project the edge's own start point onto the resolved
                 // axis line rather than returning the adjacent surface's own placement origin,
                 // which can be far from the edge itself — e.g. a cylinder's base under a rim near
-                // its top (#894 finding 2).
+                // its top (#894 finding 2, first pass).
                 let toStart = start - axis.origin
                 let projectedOrigin = axis.origin + simd_dot(toStart, axisDirection) * axisDirection
                 return .success((projectedOrigin, axisDirection))
@@ -446,6 +463,53 @@ extension BRepGraph {
             return requireNonDegenerate(
                 simd_length(dir), (start, simd_normalize(dir)), "zero-length edge")
         }
+    }
+
+    /// Whether `edge` is genuinely a circular cross-section of `axis` — a closed rim, or an open
+    /// arc bounding one — rather than merely non-linear and adjacent to the right kind of face.
+    ///
+    /// Every point of an edge that bounds a cylindrical or conical face already sits at that
+    /// surface's own radius from the axis by construction, so radius-from-axis alone can't tell a
+    /// true circular rim from the elliptical edge an OBLIQUE plane cuts from a cylinder — both lie
+    /// exactly on the wall (#894 finding 1, third pass). What does distinguish them is height
+    /// along the axis: a genuine perpendicular cross-section's points all sit at the same signed
+    /// distance along `axis.direction`; an oblique-cut ellipse's height varies as you go around
+    /// it. Checking both radius and height also rejects two cases finding 1's own second-pass
+    /// follow-ups raised against the chord-parallel-to-axis check this replaced: a straight seam
+    /// reparameterized as a BSpline (round-1 finding 3) runs ALONG the axis, so its height changes
+    /// across the edge rather than staying constant; a helical edge's height changes with the
+    /// sweep angle the same way, regardless of how close its two-point secant happens to land to
+    /// the axis direction by coincidence of the pitch. Both fall through to the endpoint-secant
+    /// fallback in `resolveEdgeDirection`, which is already the right answer for a true straight
+    /// line and the most honest available answer for a helix.
+    ///
+    /// Samples `start`, `end`, and three interior points rather than just the two endpoints,
+    /// since two points on any curve are trivially "coplanar" and "equidistant" — the check needs
+    /// enough samples to actually see curvature/tilt across the edge's own span, not just at its
+    /// ends.
+    private func coaxialCrossSection(
+        of edge: Edge, bounds: (first: Double, last: Double), start: SIMD3<Double>,
+        end: SIMD3<Double>, axis: ShapeAxis
+    ) -> Bool {
+        let axisDirection = simd_normalize(axis.direction)
+        let span = bounds.last - bounds.first
+        var samples = [start]
+        for fraction in [0.25, 0.5, 0.75] {
+            guard let point = edge.point(at: bounds.first + span * fraction) else { return false }
+            samples.append(point)
+        }
+        samples.append(end)
+
+        let heights = samples.map { simd_dot($0 - axis.origin, axisDirection) }
+        let radii = samples.map { sample -> Double in
+            let offset = sample - axis.origin
+            return simd_length(offset - simd_dot(offset, axisDirection) * axisDirection)
+        }
+        guard let minHeight = heights.min(), let maxHeight = heights.max(),
+            let minRadius = radii.min(), let maxRadius = radii.max()
+        else { return false }
+        return maxHeight - minHeight < Self.axisOriginAgreementDistanceTolerance
+            && maxRadius - minRadius < Self.axisOriginAgreementDistanceTolerance
     }
 
     private func resolveEdgePointAndTangent(_ ref: TopologyRef, t: Double) -> Result<
