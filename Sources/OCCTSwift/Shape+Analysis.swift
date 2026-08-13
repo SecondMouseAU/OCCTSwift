@@ -115,7 +115,17 @@ extension Shape {
     /// three agree with each other exactly. Unlike ``ShapeMeasurements/totalFaceArea`` (N
     /// separately-toleranced per-face integrals, summed) this one takes no tolerance parameter:
     /// see ``Shape/measure(linearTolerance:)`` for the measured gap between the two and which to
-    /// reach for (#885).
+    /// reach for (#885). This is the canonical explanation of that divergence; the other
+    /// area-measure properties below point back here instead of restating it.
+    ///
+    /// ```swift
+    /// let box = Shape.box(width: 10, height: 20, depth: 30)!
+    /// box.surfaceArea                        // 2200, one whole-shape integral
+    /// box.surfaceInertiaProperties()?.mass   // 2200, the identical call in disguise
+    /// box.surfaceInertia?.area               // 2200, likewise
+    /// box.measure().totalFaceArea            // a *different*, tolerance-controlled sum —
+    ///                                         // usually agrees closely, not guaranteed to (#885)
+    /// ```
     public var surfaceArea: Double? {
         let a = OCCTShapeGetSurfaceArea(handle)
         return a >= 0 ? a : nil
@@ -476,10 +486,9 @@ extension Shape {
     /// well defined over any set of faces. It is nil for a shape with no faces at all (a wire,
     /// edge or vertex), where the reported centroid would be the shape's location origin (#609).
     ///
-    /// `.mass` here is ``Shape/surfaceArea`` in disguise — same untunable, whole-shape
-    /// `BRepGProp::SurfaceProperties` call, not the tolerance-controlled per-face sum
-    /// ``ShapeMeasurements/totalFaceArea`` computes; see ``Shape/measure(linearTolerance:)`` for
-    /// how far apart the two can get and which one to reach for (#885).
+    /// `.mass` here is ``Shape/surfaceArea`` in disguise — the identical call, down to the same
+    /// #885 divergence from ``ShapeMeasurements/totalFaceArea``; see ``Shape/surfaceArea`` for the
+    /// explanation.
     ///
     /// ```swift
     /// let box = Shape.box(width: 10, height: 20, depth: 30)!
@@ -812,10 +821,9 @@ extension Shape {
     /// (#609). Also reports the two symmetry flags ``surfaceInertiaProperties()`` has always had
     /// (#848), read off the same `GProp_PrincipalProps` as ``principalMoments``.
     ///
-    /// `.area` is the same untunable, whole-shape `BRepGProp::SurfaceProperties` call as
-    /// ``Shape/surfaceArea`` and ``surfaceInertiaProperties()`` `.mass`, not the
-    /// tolerance-controlled per-face sum ``ShapeMeasurements/totalFaceArea`` computes; see
-    /// ``Shape/measure(linearTolerance:)`` for how far apart the two can get (#885).
+    /// `.area` is the same call as ``Shape/surfaceArea`` and ``surfaceInertiaProperties()`` `.mass`
+    /// — see ``Shape/surfaceArea`` for the #885 divergence from
+    /// ``ShapeMeasurements/totalFaceArea``.
     ///
     /// ```swift
     /// let box = Shape.box(width: 10, height: 20, depth: 30)!

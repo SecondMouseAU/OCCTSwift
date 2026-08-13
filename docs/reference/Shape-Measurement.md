@@ -601,14 +601,9 @@ The `mass` field contains total surface area rather than volume.
   area integral is well defined over any set of faces.
 - **OCCT:** `BRepGProp::SurfaceProperties` plus a `Mass()` test (via
   `OCCTShapeSurfaceInertiaProperties`).
-- **Not the same `mass` as `ShapeMeasurements.totalFaceArea` (#885):** `.mass` here is one
-  untunable `BRepGProp::SurfaceProperties(shape, props)` integration over the whole shape, shared
-  bit-for-bit with `surfaceArea` and `surfaceInertia.area`. `ShapeMeasurements.totalFaceArea` is a
-  *different* computation — N per-face `BRepGProp::SurfaceProperties(face, props, Eps)` integrals,
-  each independently controlled by `Shape.measure(linearTolerance:)`'s `linearTolerance` — summed
-  in Swift. The two agree closely at ordinary tolerances but are not guaranteed to, and tightening
-  `linearTolerance` moves only the `measure()` total, never this one. See
-  [`Measurement.md`](Measurement.md#shapemeasurementstotalfacearea) for the measured gap.
+- **`mass` is `surfaceArea` in disguise, including its #885 divergence from
+  `ShapeMeasurements.totalFaceArea`:** see [`Shape-Features.md`](Shape-Features.md#surfacearea) for
+  the explanation.
 
 ---
 
@@ -1573,10 +1568,9 @@ public var surfaceInertia: SurfaceInertia? { get }
 
 - **Returns:** Surface inertia result, or `nil` when the shape has no faces, or on error (#609).
 - **OCCT:** `BRepGProp::SurfaceProperties` plus a `Mass()` test (via `OCCTShapeSurfaceInertia`).
-- **`area` is the same computation as `surfaceArea` and `surfaceInertiaProperties().mass`, not
-  `ShapeMeasurements.totalFaceArea` (#885):** see `surfaceInertiaProperties()` above for the
-  divergence between this untunable, whole-shape aggregate and the per-face, tolerance-controlled
-  total `Shape.measure(linearTolerance:)` produces.
+- **`area` is the same computation as `surfaceArea` and `surfaceInertiaProperties().mass`:** see
+  [`Shape-Features.md`](Shape-Features.md#surfacearea) for the #885 divergence from
+  `ShapeMeasurements.totalFaceArea`.
 
 ---
 

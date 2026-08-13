@@ -540,12 +540,11 @@ public var totalFaceArea: Double { get }
 Convenience over `faceAreas.reduce(0, +)`: N independently-toleranced per-face integrals
 (`Face.area(tolerance:)`, tunable via `Shape.measure(linearTolerance:)`).
 
-**Not the same computation as `Shape.surfaceArea`, `Shape.surfaceInertiaProperties().mass` or
-`Shape.surfaceInertia.area` (#885):** those three share one aggregate, untunable, whole-shape
-`BRepGProp::SurfaceProperties(shape, props)` integral, so this total and theirs can disagree —
-usually by an amount too small to matter, but tightening `linearTolerance` moves only this one.
-See [`Shape.measure(linearTolerance:)`](#shapemeasurelineartolerance) below for the measured gap
-and which total to reach for.
+**Not the same computation as `Shape.surfaceArea` (#885):** see
+[`Shape-Features.md`](Shape-Features.md#surfacearea) for why `Shape.surfaceArea`,
+`Shape.surfaceInertiaProperties().mass` and `Shape.surfaceInertia.area` can disagree with this
+total, and [`Shape.measure(linearTolerance:)`](#shapemeasurelineartolerance) below for the measured
+gap and which total to reach for.
 
 - **Example:**
   ```swift
@@ -605,17 +604,15 @@ public func measure(linearTolerance: Double = 1e-6) -> ShapeMeasurements
 
 Iterates `faces()` and `edge(at:)`, computing all four measurement arrays. The `faceCentroids` array is populated from `Face.surfaceInertia` (which calls `BRepGProp_Sinert`); `facePerimeters` uses `Face.outerWire?.length`.
 
-**`linearTolerance` only ever moves `faceAreas`/`totalFaceArea` (#885):** it is forwarded to the
-adaptive, per-face `Face.area(tolerance:)`, while `Shape.surfaceArea`,
-`Shape.surfaceInertiaProperties().mass` and `Shape.surfaceInertia.area` share one untunable,
-whole-shape integral this parameter cannot reach. At the default `1e-6` the two agree to ~12
-significant figures on ordinary shapes (measured on a radius-10 sphere: `1256.637061435917` vs
-`1256.6370614359175`), so tightening `linearTolerance` to "fix" a mismatch just makes
-`totalFaceArea` diverge *further* from the other, unmoved, one. Past `linearTolerance = 0.001`,
-`BRepGProp::SurfaceProperties`'s own adaptive integration gives way to a non-adaptive mode
-(documented on the OCCT call itself), and the gap can become real: the same sphere measured
-`1216.31...` at `linearTolerance: 0.5` against the other three's fixed `1256.64...`, a ~3.2%
-difference, not floating-point noise.
+**`linearTolerance` only ever moves `faceAreas`/`totalFaceArea`, never `Shape.surfaceArea` and its
+two siblings** (see [`Shape-Features.md`](Shape-Features.md#surfacearea) for why, #885). At the
+default `1e-6` the two agree to ~12 significant figures on ordinary shapes (measured on a
+radius-10 sphere: `1256.637061435917` vs `1256.6370614359175`), so tightening `linearTolerance` to
+"fix" a mismatch just makes `totalFaceArea` diverge *further* from the other, unmoved, one. Past
+`linearTolerance = 0.001`, `BRepGProp::SurfaceProperties`'s own adaptive integration gives way to a
+non-adaptive mode (documented on the OCCT call itself), and the gap can become real: the same
+sphere measured `1216.31...` at `linearTolerance: 0.5` against the other three's fixed `1256.64...`,
+a ~3.2% difference, not floating-point noise.
 
 - **Parameters:** `linearTolerance` — numerical integration tolerance forwarded to `Face.area(tolerance:)` (default `1e-6`). Tighten only if you observe precision issues — this does not converge `totalFaceArea` toward `surfaceArea` past a point, see above.
 - **Returns:** A `ShapeMeasurements` snapshot with all four arrays populated and indexed parallel to the shape's face/edge enumeration.
