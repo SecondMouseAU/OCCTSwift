@@ -33,7 +33,6 @@ Sources/OCCTSwift/Color.swift
 Sources/OCCTSwift/CompBezierConverter.swift
 Sources/OCCTSwift/Conic2D.swift
 Sources/OCCTSwift/ConstructionContext.swift
-Sources/OCCTSwift/ConstructionEntity.swift
 Sources/OCCTSwift/ConstructionLayer.swift
 Sources/OCCTSwift/ContapContourResult.swift
 Sources/OCCTSwift/Continuity.swift
@@ -54,7 +53,6 @@ Sources/OCCTSwift/DocumentError.swift
 Sources/OCCTSwift/DraftInfo.swift
 Sources/OCCTSwift/Drawing.swift
 Sources/OCCTSwift/DrawingAnnotation.swift
-Sources/OCCTSwift/DrawingAutoCenterlines.swift
 Sources/OCCTSwift/DrawingAutoDimensions.swift
 Sources/OCCTSwift/DrawingComposition.swift
 Sources/OCCTSwift/DrawingDispatch.swift
@@ -159,7 +157,6 @@ Sources/OCCTSwift/ResourceManager.swift
 Sources/OCCTSwift/SameParameterResult.swift
 Sources/OCCTSwift/Sampling.swift
 Sources/OCCTSwift/SAWireAnalysis.swift
-Sources/OCCTSwift/Section2D.swift
 Sources/OCCTSwift/SectionBuilder.swift
 Sources/OCCTSwift/Selection.swift
 Sources/OCCTSwift/Selector.swift
