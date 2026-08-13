@@ -1,7 +1,7 @@
 import Foundation
 import OCCTBridge
 
-/// An axis extracted from a shape or face — an origin+direction pair carrying the
+/// An axis extracted from a shape or face: an origin+direction pair carrying the
 /// geometric meaning of the underlying surface.
 ///
 /// Produced by `Face.primaryAxis`, `Shape.revolutionAxes`, and `Shape.symmetryAxes`.
@@ -103,19 +103,8 @@ extension Shape {
     }
 }
 
-/// Reads an origin/direction pair from a six-`Double`-out-param `OCCT*Axis`-shaped bridge call
-/// (`px/py/pz/dx/dy/dz`), given as a closure already bound to the caller's own handle.
-///
-/// Shared by every accessor of this shape across `Surface` (this file's `torusAxis`/
-/// `revolutionAxis`, plus `Surface.swift`'s `CylinderProperties.axis`/`ConeProperties.axis`) and
-/// `Curve3D` (`Curve3D.swift`'s `CircleProperties.xAxis`/`.yAxis`,
-/// `EllipseProperties.directrix1`, `HyperbolaProperties.asymptote1`, `ParabolaProperties.directrix`,
-/// `LineProperties.position`/`.lin`) — module-internal rather than a `Surface` extension method so
-/// both files can reach it without widening either type's own public surface (#891, #899).
-///
-/// ```swift
-/// let axis = unwrapAxisComponents { OCCTSurfaceCylinderAxis(handle, $0, $1, $2, $3, $4, $5) }
-/// ```
+/// Reads an origin/direction pair from a six-`Double`-out-param `OCCT*Axis`-shaped bridge call,
+/// given as a closure already bound to the caller's own handle.
 func unwrapAxisComponents(
     _ bridgeCall: (
         UnsafeMutablePointer<Double>, UnsafeMutablePointer<Double>, UnsafeMutablePointer<Double>,
@@ -132,18 +121,8 @@ func unwrapAxisComponents(
     return (origin: SIMD3(px, py, pz), direction: SIMD3(dx, dy, dz))
 }
 
-/// Reads a single point/vector from a three-`Double`-out-param bridge call (`x/y/z`), given as a
-/// closure already bound to the caller's own handle and any other arguments.
-///
-/// The single-vector sibling of `unwrapAxisComponents` above, for the many bridge functions that
-/// report one bare point or direction (a center, a focus, an apex, a pole, a derivative) rather
-/// than an origin+direction pair. Shared by every accessor of this shape across `Surface` and
-/// `Curve3D` — module-internal for the same reason as `unwrapAxisComponents` (#899, #902 review
-/// finding #4).
-///
-/// ```swift
-/// let center = unwrapVectorComponents { OCCTCurve3DCircleCenter(handle, $0, $1, $2) }
-/// ```
+/// Reads a point or direction from a three-`Double`-out-param bridge call, given as a closure
+/// already bound to the caller's own handle and any other arguments.
 func unwrapVectorComponents(
     _ bridgeCall: (
         UnsafeMutablePointer<Double>, UnsafeMutablePointer<Double>, UnsafeMutablePointer<Double>
@@ -165,9 +144,8 @@ extension Surface {
         UnsafeMutablePointer<Double>, UnsafeMutablePointer<Double>
     ) -> Void
 
-    /// Shared unwrap for the six-out-param `OCCT*Axis` bridge functions: guards
-    /// `surfaceKind`, then reads origin/direction via `unwrapAxisComponents`. `torusAxis` and
-    /// `revolutionAxis` are the only callers today (#891).
+    /// Shared unwrap for the six-out-param `OCCT*Axis` bridge functions: guards `surfaceKind`,
+    /// then reads origin/direction via `unwrapAxisComponents`.
     private func axis(
         ifKind kind: SurfaceType,
         _ bridgeFn: AxisBridgeFn

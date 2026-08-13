@@ -57,23 +57,13 @@ public final class Curve3D: @unchecked Sendable {
 
     /// Evaluate point at parameter u.
     public func point(at u: Double) -> SIMD3<Double> {
-        var x: Double = 0
-        var y: Double = 0
-        var z: Double = 0
-        OCCTCurve3DGetPoint(handle, u, &x, &y, &z)
-        return SIMD3(x, y, z)
+        unwrapVectorComponents { OCCTCurve3DGetPoint(handle, u, $0, $1, $2) }
     }
 
     /// First derivative: point and tangent vector at parameter u.
     public func d1(at u: Double) -> (point: SIMD3<Double>, tangent: SIMD3<Double>) {
-        var px: Double = 0
-        var py: Double = 0
-        var pz: Double = 0
-        var vx: Double = 0
-        var vy: Double = 0
-        var vz: Double = 0
-        OCCTCurve3DD1(handle, u, &px, &py, &pz, &vx, &vy, &vz)
-        return (SIMD3(px, py, pz), SIMD3(vx, vy, vz))
+        let r = unwrapAxisComponents { OCCTCurve3DD1(handle, u, $0, $1, $2, $3, $4, $5) }
+        return (point: r.origin, tangent: r.direction)
     }
 
     /// Second derivative: point, first and second derivative vectors.
@@ -4026,12 +4016,6 @@ extension Curve3D {
 
 extension Curve3D {
 
-    // Keep `@available(*, unavailable,` on the attribute's opening line — `count-operations.py`'s
-    // UNAVAILABLE regex only scans that line (#520), and swift-format's default multi-line
-    // wrapping for a `message: """..."""` this long defeats it silently, re-counting a retired
-    // property as a live public operation (#899, #902 review). Placed above the doc comment
-    // rather than between it and `@available`, which would orphan the doc comment (SwiftLint).
-    // swift-format-ignore
     /// Unavailable: this `Int` reported a hand-invented encoding, and the numbers changed
     /// underneath it.
     ///
@@ -4067,16 +4051,19 @@ extension Curve3D {
     ///   `if continuityOrder < 0 { handleError() }` becomes a branch that can never be taken, and
     ///   an unreadable curve now reads as a genuinely C0 one. There is no in-band way to tell the
     ///   two apart; check the handle before asking.
-    @available(*, unavailable, message: """
-        continuityOrder reported a hand-invented encoding (C0=0, C1=1, C2=2, C3=3, CN=99, G1=-2, \
-        G2=-3) and #485 changed it to the real GeomAbs_Shape ordinal (C0=0, G1=1, C1=2, G2=3, \
-        C2=4, C3=5, CN=6), so every threshold check silently changed meaning. Use \
-        continuityClass.satisfies(_:) for a continuity floor, continuityClass == .cN for the \
-        analytic fast path, or continuity for the raw ordinal — after re-checking the constant \
-        you compare against. Note there is no longer an error sentinel: this returned -1 for a \
-        null or unreadable handle, whereas continuity returns 0, which is an ordinary C0, so a \
-        migrated `< 0` error check can never fire (#619).
-        """)
+    @available(
+        *, unavailable,
+        message: """
+            continuityOrder reported a hand-invented encoding (C0=0, C1=1, C2=2, C3=3, CN=99, G1=-2, \
+            G2=-3) and #485 changed it to the real GeomAbs_Shape ordinal (C0=0, G1=1, C1=2, G2=3, \
+            C2=4, C3=5, CN=6), so every threshold check silently changed meaning. Use \
+            continuityClass.satisfies(_:) for a continuity floor, continuityClass == .cN for the \
+            analytic fast path, or continuity for the raw ordinal — after re-checking the constant \
+            you compare against. Note there is no longer an error sentinel: this returned -1 for a \
+            null or unreadable handle, whereas continuity returns 0, which is an ordinary C0, so a \
+            migrated `< 0` error check can never fire (#619).
+            """
+    )
     public var continuityOrder: Int { Int(OCCTCurve3DGetContinuity(handle)) }
 
     /// Check if this curve has at least Cn continuity.

@@ -215,11 +215,7 @@ public final class Surface: @unchecked Sendable {
 
     /// Evaluate surface point at (u, v).
     public func point(atU u: Double, v: Double) -> SIMD3<Double> {
-        var x: Double = 0
-        var y: Double = 0
-        var z: Double = 0
-        OCCTSurfaceGetPoint(handle, u, v, &x, &y, &z)
-        return SIMD3(x, y, z)
+        unwrapVectorComponents { OCCTSurfaceGetPoint(handle, u, v, $0, $1, $2) }
     }
 
     /// First-order derivatives at (u, v).
@@ -2884,14 +2880,8 @@ extension Surface {
 
         /// The plane data (origin + normal).
         public var pln: (origin: SIMD3<Double>, normal: SIMD3<Double>) {
-            var px = 0.0
-            var py = 0.0
-            var pz = 0.0
-            var nx = 0.0
-            var ny = 0.0
-            var nz = 0.0
-            OCCTSurfacePlanePln(handle, &px, &py, &pz, &nx, &ny, &nz)
-            return (SIMD3(px, py, pz), SIMD3(nx, ny, nz))
+            let r = unwrapAxisComponents { OCCTSurfacePlanePln(handle, $0, $1, $2, $3, $4, $5) }
+            return (origin: r.origin, normal: r.direction)
         }
     }
 
@@ -4826,12 +4816,6 @@ extension Surface {
         return (uMin, uMax, vMin, vMax)
     }
 
-    // Keep `@available(*, unavailable,` on the attribute's opening line — `count-operations.py`'s
-    // UNAVAILABLE regex only scans that line (#520), and swift-format's default multi-line
-    // wrapping for a `message: """..."""` this long defeats it silently, re-counting a retired
-    // property as a live public operation (#899, #902 review). Placed above the doc comment
-    // rather than between it and `@available`, which would orphan the doc comment (SwiftLint).
-    // swift-format-ignore
     /// Unavailable: this `Int` reported a hand-invented encoding, and the numbers changed
     /// underneath it.
     ///
@@ -4849,16 +4833,19 @@ extension Surface {
     /// // Ask it so it cannot drift again:
     /// if surface.continuityClass.satisfies(.c2) { offsetSafely() }
     /// ```
-    @available(*, unavailable, message: """
-        surfaceContinuityOrder reported a hand-invented encoding (C0=0, C1=1, C2=2, C3=3, CN=99, \
-        G1=-2, G2=-3) and #485 changed it to the real GeomAbs_Shape ordinal (C0=0, G1=1, C1=2, \
-        G2=3, C2=4, C3=5, CN=6), so every threshold check silently changed meaning. Use \
-        continuityClass.satisfies(_:) for a continuity floor, continuityClass == .cN for the \
-        analytic fast path, or continuity for the raw ordinal — after re-checking the constant \
-        you compare against. Note there is no longer an error sentinel: this returned -1 for a \
-        null or unreadable handle, whereas continuity returns 0, which is an ordinary C0, so a \
-        migrated `< 0` error check can never fire (#619).
-        """)
+    @available(
+        *, unavailable,
+        message: """
+            surfaceContinuityOrder reported a hand-invented encoding (C0=0, C1=1, C2=2, C3=3, CN=99, \
+            G1=-2, G2=-3) and #485 changed it to the real GeomAbs_Shape ordinal (C0=0, G1=1, C1=2, \
+            G2=3, C2=4, C3=5, CN=6), so every threshold check silently changed meaning. Use \
+            continuityClass.satisfies(_:) for a continuity floor, continuityClass == .cN for the \
+            analytic fast path, or continuity for the raw ordinal — after re-checking the constant \
+            you compare against. Note there is no longer an error sentinel: this returned -1 for a \
+            null or unreadable handle, whereas continuity returns 0, which is an ordinary C0, so a \
+            migrated `< 0` error check can never fire (#619).
+            """
+    )
     public var surfaceContinuityOrder: Int { Int(OCCTSurfaceGetContinuity(handle)) }
 
     /// Create a deep copy of this surface.

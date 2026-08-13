@@ -4127,16 +4127,27 @@ struct GeomCircle3DTests {
     }
 
     @Test func circleXAxis() {
-        if let c = Curve3D.circle(center: .zero, normal: SIMD3(0, 0, 1), radius: 5) {
+        if let c = Curve3D.circle(center: SIMD3(1, 2, 3), normal: SIMD3(0, 0, 1), radius: 5) {
             let ax = c.circleProperties.xAxis
+            // XAxis's location is the circle's own center; its direction is the circle's XDirection.
+            #expect(abs(ax.position.x - 1) < 1e-6)
+            #expect(abs(ax.position.y - 2) < 1e-6)
+            #expect(abs(ax.position.z - 3) < 1e-6)
             #expect(abs(ax.direction.x - 1) < 1e-6)
+            #expect(abs(ax.direction.y) < 1e-6)
+            #expect(abs(ax.direction.z) < 1e-6)
         }
     }
 
     @Test func circleYAxis() {
-        if let c = Curve3D.circle(center: .zero, normal: SIMD3(0, 0, 1), radius: 5) {
+        if let c = Curve3D.circle(center: SIMD3(1, 2, 3), normal: SIMD3(0, 0, 1), radius: 5) {
             let ax = c.circleProperties.yAxis
+            #expect(abs(ax.position.x - 1) < 1e-6)
+            #expect(abs(ax.position.y - 2) < 1e-6)
+            #expect(abs(ax.position.z - 3) < 1e-6)
+            #expect(abs(ax.direction.x) < 1e-6)
             #expect(abs(ax.direction.y - 1) < 1e-6)
+            #expect(abs(ax.direction.z) < 1e-6)
         }
     }
 }
@@ -4294,7 +4305,14 @@ struct GeomParabola3DTests {
     @Test func parabolaDirectrix() {
         if let p = Curve3D.parabola(center: .zero, normal: SIMD3(0, 0, 1), focal: 3) {
             let d = p.parabolaProperties.directrix
+            // The directrix sits at x = -focal on the parabola's own XAxis; its own direction
+            // is the parabola's YAxis.
             #expect(abs(d.position.x - (-3)) < 1e-6)
+            #expect(abs(d.position.y) < 1e-6)
+            #expect(abs(d.position.z) < 1e-6)
+            #expect(abs(d.direction.x) < 1e-6)
+            #expect(abs(d.direction.y - 1) < 1e-6)
+            #expect(abs(d.direction.z) < 1e-6)
         }
     }
 }
@@ -4498,8 +4516,13 @@ struct GeomCylinder3DTests {
     }
 
     @Test func cylinderAxis() {
-        if let c = Surface.cylinder(origin: .zero, axis: SIMD3(0, 0, 1), radius: 5) {
+        if let c = Surface.cylinder(origin: SIMD3(1, 2, 3), axis: SIMD3(0, 0, 1), radius: 5) {
             let ax = c.cylinderProperties.axis
+            #expect(abs(ax.position.x - 1) < 1e-6)
+            #expect(abs(ax.position.y - 2) < 1e-6)
+            #expect(abs(ax.position.z - 3) < 1e-6)
+            #expect(abs(ax.direction.x) < 1e-6)
+            #expect(abs(ax.direction.y) < 1e-6)
             #expect(abs(ax.direction.z - 1) < 1e-6)
         }
     }
@@ -4528,15 +4551,24 @@ struct GeomCone3DTests {
     }
 
     @Test func coneApex() {
-        if let c = Surface.cone(origin: .zero, axis: SIMD3(0, 0, 1), radius: 5, semiAngle: 0.3) {
+        if let c = Surface.cone(origin: SIMD3(1, 2, 3), axis: SIMD3(0, 0, 1), radius: 5, semiAngle: 0.3) {
             let a = c.coneProperties.apex
-            let _ = a  // Apex is defined by geometry
+            // The apex sits back along the axis, refRadius/tan(semiAngle) behind the origin.
+            let expectedZ = 3 - 5.0 / tan(0.3)
+            #expect(abs(a.x - 1) < 1e-6)
+            #expect(abs(a.y - 2) < 1e-6)
+            #expect(abs(a.z - expectedZ) < 1e-6)
         }
     }
 
     @Test func coneAxis() {
-        if let c = Surface.cone(origin: .zero, axis: SIMD3(0, 0, 1), radius: 5, semiAngle: 0.3) {
+        if let c = Surface.cone(origin: SIMD3(1, 2, 3), axis: SIMD3(0, 0, 1), radius: 5, semiAngle: 0.3) {
             let ax = c.coneProperties.axis
+            #expect(abs(ax.position.x - 1) < 1e-6)
+            #expect(abs(ax.position.y - 2) < 1e-6)
+            #expect(abs(ax.position.z - 3) < 1e-6)
+            #expect(abs(ax.direction.x) < 1e-6)
+            #expect(abs(ax.direction.y) < 1e-6)
             #expect(abs(ax.direction.z - 1) < 1e-6)
         }
     }
