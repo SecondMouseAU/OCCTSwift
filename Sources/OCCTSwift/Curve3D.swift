@@ -1977,11 +1977,7 @@ extension Curve3D {
 
         /// The center point of the circle.
         public var center: SIMD3<Double> {
-            var x = 0.0
-            var y = 0.0
-            var z = 0.0
-            OCCTCurve3DCircleCenter(handle, &x, &y, &z)
-            return SIMD3(x, y, z)
+            unwrapVectorComponents { OCCTCurve3DCircleCenter(handle, $0, $1, $2) }
         }
 
         /// The X axis of the circle (position + direction).
@@ -2063,20 +2059,12 @@ extension Curve3D {
 
         /// The first focus.
         public var focus1: SIMD3<Double> {
-            var x = 0.0
-            var y = 0.0
-            var z = 0.0
-            OCCTCurve3DEllipseFocus1(handle, &x, &y, &z)
-            return SIMD3(x, y, z)
+            unwrapVectorComponents { OCCTCurve3DEllipseFocus1(handle, $0, $1, $2) }
         }
 
         /// The second focus.
         public var focus2: SIMD3<Double> {
-            var x = 0.0
-            var y = 0.0
-            var z = 0.0
-            OCCTCurve3DEllipseFocus2(handle, &x, &y, &z)
-            return SIMD3(x, y, z)
+            unwrapVectorComponents { OCCTCurve3DEllipseFocus2(handle, $0, $1, $2) }
         }
 
         /// The semi-latus rectum (parameter).
@@ -2153,11 +2141,7 @@ extension Curve3D {
 
         /// The first focus.
         public var focus1: SIMD3<Double> {
-            var x = 0.0
-            var y = 0.0
-            var z = 0.0
-            OCCTCurve3DHyperbolaFocus1(handle, &x, &y, &z)
-            return SIMD3(x, y, z)
+            unwrapVectorComponents { OCCTCurve3DHyperbolaFocus1(handle, $0, $1, $2) }
         }
 
         /// The first asymptote (position + direction).
@@ -2201,11 +2185,7 @@ extension Curve3D {
 
         /// The focus point.
         public var focus: SIMD3<Double> {
-            var x = 0.0
-            var y = 0.0
-            var z = 0.0
-            OCCTCurve3DParabolaFocus(handle, &x, &y, &z)
-            return SIMD3(x, y, z)
+            unwrapVectorComponents { OCCTCurve3DParabolaFocus(handle, $0, $1, $2) }
         }
 
         /// The eccentricity (always 1 for a parabola).
@@ -2245,11 +2225,7 @@ extension Curve3D {
 
         /// The location (origin point) of the line.
         public var location: SIMD3<Double> {
-            var x = 0.0
-            var y = 0.0
-            var z = 0.0
-            OCCTCurve3DLineLocation(handle, &x, &y, &z)
-            return SIMD3(x, y, z)
+            unwrapVectorComponents { OCCTCurve3DLineLocation(handle, $0, $1, $2) }
         }
 
         /// Set the direction of the line.
@@ -2545,20 +2521,12 @@ extension Curve3D {
 
     /// Bezier start point.
     public var bezierStartPoint: SIMD3<Double> {
-        var x = 0.0
-        var y = 0.0
-        var z = 0.0
-        OCCTCurve3DBezierStartPoint(handle, &x, &y, &z)
-        return SIMD3(x, y, z)
+        unwrapVectorComponents { OCCTCurve3DBezierStartPoint(handle, $0, $1, $2) }
     }
 
     /// Bezier end point.
     public var bezierEndPoint: SIMD3<Double> {
-        var x = 0.0
-        var y = 0.0
-        var z = 0.0
-        OCCTCurve3DBezierEndPoint(handle, &x, &y, &z)
-        return SIMD3(x, y, z)
+        unwrapVectorComponents { OCCTCurve3DBezierEndPoint(handle, $0, $1, $2) }
     }
 
     /// Get all Bezier poles as flat array.
@@ -3548,11 +3516,9 @@ extension Curve3D {
 
         /// Get a pole at 1-based index.
         public func pole(at index: Int) -> SIMD3<Double> {
-            var x = 0.0
-            var y = 0.0
-            var z = 0.0
-            OCCTCurve3DBSplineGetPole(curve.handle, Int32(index), &x, &y, &z)
-            return SIMD3(x, y, z)
+            unwrapVectorComponents {
+                OCCTCurve3DBSplineGetPole(curve.handle, Int32(index), $0, $1, $2)
+            }
         }
 
         /// Set a pole at 1-based index.
@@ -3622,11 +3588,9 @@ extension Curve3D {
 
         /// Get a pole at 1-based index.
         public func pole(at index: Int) -> SIMD3<Double> {
-            var x = 0.0
-            var y = 0.0
-            var z = 0.0
-            OCCTCurve3DBezierGetPole(curve.handle, Int32(index), &x, &y, &z)
-            return SIMD3(x, y, z)
+            unwrapVectorComponents {
+                OCCTCurve3DBezierGetPole(curve.handle, Int32(index), $0, $1, $2)
+            }
         }
 
         /// Set a pole at 1-based index.
@@ -3700,11 +3664,7 @@ extension Curve3D {
 
     /// Evaluate the curve point at parameter u.
     public func evalD0(at u: Double) -> SIMD3<Double> {
-        var x = 0.0
-        var y = 0.0
-        var z = 0.0
-        OCCTCurve3DEvalD0(handle, u, &x, &y, &z)
-        return SIMD3(x, y, z)
+        unwrapVectorComponents { OCCTCurve3DEvalD0(handle, u, $0, $1, $2) }
     }
 
     /// Evaluate the curve point and first derivative at parameter u.
@@ -3881,11 +3841,9 @@ extension Curve3D {
 
     /// Evaluate the curve locally within a knot span.
     public func bsplineLocalValue(u: Double, fromKnot: Int, toKnot: Int) -> SIMD3<Double> {
-        var x = 0.0
-        var y = 0.0
-        var z = 0.0
-        OCCTCurve3DBSplineLocalValue(handle, u, Int32(fromKnot), Int32(toKnot), &x, &y, &z)
-        return SIMD3(x, y, z)
+        unwrapVectorComponents {
+            OCCTCurve3DBSplineLocalValue(handle, u, Int32(fromKnot), Int32(toKnot), $0, $1, $2)
+        }
     }
 
     /// Evaluate point on BSpline curve within knot span [fromKnot, toKnot].
@@ -3988,11 +3946,7 @@ extension Curve3D {
 
     /// Evaluate the N-th derivative at parameter u.
     public func dn(at u: Double, order n: Int) -> SIMD3<Double> {
-        var x = 0.0
-        var y = 0.0
-        var z = 0.0
-        OCCTCurve3DDN(handle, u, Int32(n), &x, &y, &z)
-        return SIMD3(x, y, z)
+        unwrapVectorComponents { OCCTCurve3DDN(handle, u, Int32(n), $0, $1, $2) }
     }
 
     /// The type name of this curve (e.g. "Geom_Line", "Geom_Circle").
@@ -4072,6 +4026,12 @@ extension Curve3D {
 
 extension Curve3D {
 
+    // Keep `@available(*, unavailable,` on the attribute's opening line — `count-operations.py`'s
+    // UNAVAILABLE regex only scans that line (#520), and swift-format's default multi-line
+    // wrapping for a `message: """..."""` this long defeats it silently, re-counting a retired
+    // property as a live public operation (#899, #902 review). Placed above the doc comment
+    // rather than between it and `@available`, which would orphan the doc comment (SwiftLint).
+    // swift-format-ignore
     /// Unavailable: this `Int` reported a hand-invented encoding, and the numbers changed
     /// underneath it.
     ///
@@ -4107,19 +4067,16 @@ extension Curve3D {
     ///   `if continuityOrder < 0 { handleError() }` becomes a branch that can never be taken, and
     ///   an unreadable curve now reads as a genuinely C0 one. There is no in-band way to tell the
     ///   two apart; check the handle before asking.
-    @available(
-        *, unavailable,
-        message: """
-            continuityOrder reported a hand-invented encoding (C0=0, C1=1, C2=2, C3=3, CN=99, G1=-2, \
-            G2=-3) and #485 changed it to the real GeomAbs_Shape ordinal (C0=0, G1=1, C1=2, G2=3, \
-            C2=4, C3=5, CN=6), so every threshold check silently changed meaning. Use \
-            continuityClass.satisfies(_:) for a continuity floor, continuityClass == .cN for the \
-            analytic fast path, or continuity for the raw ordinal — after re-checking the constant \
-            you compare against. Note there is no longer an error sentinel: this returned -1 for a \
-            null or unreadable handle, whereas continuity returns 0, which is an ordinary C0, so a \
-            migrated `< 0` error check can never fire (#619).
-            """
-    )
+    @available(*, unavailable, message: """
+        continuityOrder reported a hand-invented encoding (C0=0, C1=1, C2=2, C3=3, CN=99, G1=-2, \
+        G2=-3) and #485 changed it to the real GeomAbs_Shape ordinal (C0=0, G1=1, C1=2, G2=3, \
+        C2=4, C3=5, CN=6), so every threshold check silently changed meaning. Use \
+        continuityClass.satisfies(_:) for a continuity floor, continuityClass == .cN for the \
+        analytic fast path, or continuity for the raw ordinal — after re-checking the constant \
+        you compare against. Note there is no longer an error sentinel: this returned -1 for a \
+        null or unreadable handle, whereas continuity returns 0, which is an ordinary C0, so a \
+        migrated `< 0` error check can never fire (#619).
+        """)
     public var continuityOrder: Int { Int(OCCTCurve3DGetContinuity(handle)) }
 
     /// Check if this curve has at least Cn continuity.

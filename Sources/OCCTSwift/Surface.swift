@@ -2919,11 +2919,7 @@ extension Surface {
 
         /// The center point.
         public var center: SIMD3<Double> {
-            var x = 0.0
-            var y = 0.0
-            var z = 0.0
-            OCCTSurfaceSphereCenter(handle, &x, &y, &z)
-            return SIMD3(x, y, z)
+            unwrapVectorComponents { OCCTSurfaceSphereCenter(handle, $0, $1, $2) }
         }
 
         /// A U iso-curve on the sphere.
@@ -3029,11 +3025,7 @@ extension Surface {
 
         /// The apex of the cone.
         public var apex: SIMD3<Double> {
-            var x = 0.0
-            var y = 0.0
-            var z = 0.0
-            OCCTSurfaceConeApex(handle, &x, &y, &z)
-            return SIMD3(x, y, z)
+            unwrapVectorComponents { OCCTSurfaceConeApex(handle, $0, $1, $2) }
         }
 
         /// The axis of the cone (position + direction).
@@ -3181,13 +3173,11 @@ extension Surface {
         u: Double, v: Double, fromUK1: Int, toUK2: Int,
         fromVK1: Int, toVK2: Int
     ) -> SIMD3<Double> {
-        var x = 0.0
-        var y = 0.0
-        var z = 0.0
-        OCCTSurfaceBSplineLocalD0(
-            handle, u, v, Int32(fromUK1), Int32(toUK2),
-            Int32(fromVK1), Int32(toVK2), &x, &y, &z)
-        return SIMD3(x, y, z)
+        unwrapVectorComponents {
+            OCCTSurfaceBSplineLocalD0(
+                handle, u, v, Int32(fromUK1), Int32(toUK2),
+                Int32(fromVK1), Int32(toVK2), $0, $1, $2)
+        }
     }
 
     /// Local evaluation D1 within a specific knot span.
@@ -3329,13 +3319,11 @@ extension Surface {
         u: Double, v: Double, fromUK1: Int, toUK2: Int,
         fromVK1: Int, toVK2: Int
     ) -> SIMD3<Double> {
-        var x = 0.0
-        var y = 0.0
-        var z = 0.0
-        OCCTSurfaceBSplineLocalValue(
-            handle, u, v, Int32(fromUK1), Int32(toUK2),
-            Int32(fromVK1), Int32(toVK2), &x, &y, &z)
-        return SIMD3(x, y, z)
+        unwrapVectorComponents {
+            OCCTSurfaceBSplineLocalValue(
+                handle, u, v, Int32(fromUK1), Int32(toUK2),
+                Int32(fromVK1), Int32(toVK2), $0, $1, $2)
+        }
     }
 
     /// Extract U isoparametric curve from BSpline surface.
@@ -4769,11 +4757,9 @@ extension Surface {
 
         /// Get a pole at (uIndex, vIndex) — both 1-based.
         public func pole(uIndex: Int, vIndex: Int) -> SIMD3<Double> {
-            var x = 0.0
-            var y = 0.0
-            var z = 0.0
-            OCCTSurfaceBSplineGetPole(surface.handle, Int32(uIndex), Int32(vIndex), &x, &y, &z)
-            return SIMD3(x, y, z)
+            unwrapVectorComponents {
+                OCCTSurfaceBSplineGetPole(surface.handle, Int32(uIndex), Int32(vIndex), $0, $1, $2)
+            }
         }
 
         /// Set a pole at (uIndex, vIndex) — both 1-based.
@@ -4840,6 +4826,12 @@ extension Surface {
         return (uMin, uMax, vMin, vMax)
     }
 
+    // Keep `@available(*, unavailable,` on the attribute's opening line — `count-operations.py`'s
+    // UNAVAILABLE regex only scans that line (#520), and swift-format's default multi-line
+    // wrapping for a `message: """..."""` this long defeats it silently, re-counting a retired
+    // property as a live public operation (#899, #902 review). Placed above the doc comment
+    // rather than between it and `@available`, which would orphan the doc comment (SwiftLint).
+    // swift-format-ignore
     /// Unavailable: this `Int` reported a hand-invented encoding, and the numbers changed
     /// underneath it.
     ///
@@ -4857,19 +4849,16 @@ extension Surface {
     /// // Ask it so it cannot drift again:
     /// if surface.continuityClass.satisfies(.c2) { offsetSafely() }
     /// ```
-    @available(
-        *, unavailable,
-        message: """
-            surfaceContinuityOrder reported a hand-invented encoding (C0=0, C1=1, C2=2, C3=3, CN=99, \
-            G1=-2, G2=-3) and #485 changed it to the real GeomAbs_Shape ordinal (C0=0, G1=1, C1=2, \
-            G2=3, C2=4, C3=5, CN=6), so every threshold check silently changed meaning. Use \
-            continuityClass.satisfies(_:) for a continuity floor, continuityClass == .cN for the \
-            analytic fast path, or continuity for the raw ordinal — after re-checking the constant \
-            you compare against. Note there is no longer an error sentinel: this returned -1 for a \
-            null or unreadable handle, whereas continuity returns 0, which is an ordinary C0, so a \
-            migrated `< 0` error check can never fire (#619).
-            """
-    )
+    @available(*, unavailable, message: """
+        surfaceContinuityOrder reported a hand-invented encoding (C0=0, C1=1, C2=2, C3=3, CN=99, \
+        G1=-2, G2=-3) and #485 changed it to the real GeomAbs_Shape ordinal (C0=0, G1=1, C1=2, \
+        G2=3, C2=4, C3=5, CN=6), so every threshold check silently changed meaning. Use \
+        continuityClass.satisfies(_:) for a continuity floor, continuityClass == .cN for the \
+        analytic fast path, or continuity for the raw ordinal — after re-checking the constant \
+        you compare against. Note there is no longer an error sentinel: this returned -1 for a \
+        null or unreadable handle, whereas continuity returns 0, which is an ordinary C0, so a \
+        migrated `< 0` error check can never fire (#619).
+        """)
     public var surfaceContinuityOrder: Int { Int(OCCTSurfaceGetContinuity(handle)) }
 
     /// Create a deep copy of this surface.
@@ -4883,11 +4872,7 @@ extension Surface {
 
     /// Evaluate the surface point at (u, v).
     public func evalD0(u: Double, v: Double) -> SIMD3<Double> {
-        var x = 0.0
-        var y = 0.0
-        var z = 0.0
-        OCCTSurfaceEvalD0(handle, u, v, &x, &y, &z)
-        return SIMD3(x, y, z)
+        unwrapVectorComponents { OCCTSurfaceEvalD0(handle, u, v, $0, $1, $2) }
     }
 
     /// Evaluate the surface point and first partial derivatives at (u, v).
@@ -5044,11 +5029,7 @@ extension Surface {
 
     /// Evaluate the (Nu, Nv) partial derivative at (u, v).
     public func dn(u: Double, v: Double, nu: Int, nv: Int) -> SIMD3<Double> {
-        var x = 0.0
-        var y = 0.0
-        var z = 0.0
-        OCCTSurfaceDN(handle, u, v, Int32(nu), Int32(nv), &x, &y, &z)
-        return SIMD3(x, y, z)
+        unwrapVectorComponents { OCCTSurfaceDN(handle, u, v, Int32(nu), Int32(nv), $0, $1, $2) }
     }
 
     /// The type name of this surface (e.g. "Geom_Plane", "Geom_BSplineSurface").
@@ -5187,11 +5168,9 @@ extension Surface {
 
         /// Get a pole (1-based indices).
         public func pole(uIndex: Int, vIndex: Int) -> SIMD3<Double> {
-            var x = 0.0
-            var y = 0.0
-            var z = 0.0
-            OCCTSurfaceBezierGetPole(handle, Int32(uIndex), Int32(vIndex), &x, &y, &z)
-            return SIMD3(x, y, z)
+            unwrapVectorComponents {
+                OCCTSurfaceBezierGetPole(handle, Int32(uIndex), Int32(vIndex), $0, $1, $2)
+            }
         }
 
         /// Set a pole (1-based indices).

@@ -4197,7 +4197,9 @@ struct GeomEllipse3DTests {
             #expect(abs(d.position.x - expectedX) < 1e-6)
             #expect(abs(d.position.y) < 1e-6)
             #expect(abs(d.position.z) < 1e-6)
+            #expect(abs(d.direction.x) < 1e-6)
             #expect(abs(d.direction.y - 1) < 1e-6)
+            #expect(abs(d.direction.z) < 1e-6)
         }
     }
 }

@@ -132,6 +132,30 @@ func unwrapAxisComponents(
     return (origin: SIMD3(px, py, pz), direction: SIMD3(dx, dy, dz))
 }
 
+/// Reads a single point/vector from a three-`Double`-out-param bridge call (`x/y/z`), given as a
+/// closure already bound to the caller's own handle and any other arguments.
+///
+/// The single-vector sibling of `unwrapAxisComponents` above, for the many bridge functions that
+/// report one bare point or direction (a center, a focus, an apex, a pole, a derivative) rather
+/// than an origin+direction pair. Shared by every accessor of this shape across `Surface` and
+/// `Curve3D` — module-internal for the same reason as `unwrapAxisComponents` (#899, #902 review
+/// finding #4).
+///
+/// ```swift
+/// let center = unwrapVectorComponents { OCCTCurve3DCircleCenter(handle, $0, $1, $2) }
+/// ```
+func unwrapVectorComponents(
+    _ bridgeCall: (
+        UnsafeMutablePointer<Double>, UnsafeMutablePointer<Double>, UnsafeMutablePointer<Double>
+    ) -> Void
+) -> SIMD3<Double> {
+    var x: Double = 0
+    var y: Double = 0
+    var z: Double = 0
+    bridgeCall(&x, &y, &z)
+    return SIMD3(x, y, z)
+}
+
 extension Surface {
     /// A six-out-param `OCCT*Axis`-shaped bridge function taking a `Surface` handle first:
     /// origin then direction, one double each.
