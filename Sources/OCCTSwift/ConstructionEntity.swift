@@ -35,13 +35,7 @@ public struct Placement: Sendable, Hashable {
     /// Picks deterministic x/y axes perpendicular to the normal.
     public init(origin: SIMD3<Double>, normal: SIMD3<Double>) {
         let z = simd_normalize(normal)
-        let worldUp = SIMD3<Double>(0, 0, 1)
-        var rightRaw = simd_cross(worldUp, z)
-        if simd_length(rightRaw) < 1e-9 {
-            rightRaw = simd_cross(SIMD3(0, 1, 0), z)
-        }
-        let x = simd_normalize(rightRaw)
-        let y = simd_normalize(simd_cross(z, x))
+        let (x, y) = perpendicularBasis(to: z)
         self.init(origin: origin, xAxis: x, yAxis: y, zAxis: z)
     }
 }
@@ -127,8 +121,7 @@ extension BRepGraph {
                 (anchor, dir) -> Result<Placement, ConstructionResolutionError> in
                 // Rotate a perpendicular-to-dir reference by angleDeg around dir.
                 let dirN = simd_normalize(dir)
-                let worldUp = abs(dirN.z) < 0.9 ? SIMD3<Double>(0, 0, 1) : SIMD3<Double>(0, 1, 0)
-                let refPerp = simd_normalize(simd_cross(dirN, worldUp))
+                let (refPerp, _) = perpendicularBasis(to: dirN)
                 let rad = angleDeg * .pi / 180
                 let rotated = cos(rad) * refPerp + sin(rad) * simd_cross(dirN, refPerp)
                 let normal = simd_normalize(simd_cross(dirN, rotated))
