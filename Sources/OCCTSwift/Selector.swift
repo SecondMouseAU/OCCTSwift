@@ -1,6 +1,6 @@
 import Foundation
-import simd
 import OCCTBridge
+import simd
 
 /// BVH-accelerated hit testing for interactive picking without OpenGL.
 ///
@@ -154,24 +154,21 @@ public final class Selector: @unchecked Sendable {
     ///   - maxResults: Output *capacity* (default 32), clamped into `0...`
     ///     ``Sampling/maximumSampleCount``; 0 or less returns empty (#622).
     /// - Returns: Array of pick results sorted by depth (nearest first).
-    public func pick(at pixel: SIMD2<Double>,
-                     camera: Camera,
-                     viewSize: SIMD2<Double>,
-                     maxResults: Int = 32) -> [PickResult] {
+    public func pick(
+        at pixel: SIMD2<Double>,
+        camera: Camera,
+        viewSize: SIMD2<Double>,
+        maxResults: Int = 32
+    ) -> [PickResult] {
         let maxResults = Sampling.capacity(maxResults)
         guard maxResults > 0 else { return [] }
-        var buffer = [OCCTPickResult](repeating: OCCTPickResult(), count: maxResults)
-        let count = OCCTSelectorPick(handle, camera.handle,
-                                     viewSize.x, viewSize.y,
-                                     pixel.x, pixel.y,
-                                     &buffer, Int32(maxResults))
-        return (0..<Int(count)).map { i in
-            PickResult(shapeId: buffer[i].shapeId,
-                       depth: buffer[i].depth,
-                       point: SIMD3(buffer[i].pointX, buffer[i].pointY, buffer[i].pointZ),
-                       subShapeType: SubShapeType(rawValue: buffer[i].subShapeType) ?? .shape,
-                       subShapeIndex: buffer[i].subShapeIndex)
-        }
+        var buffer = Self.makeBuffer(count: maxResults)
+        let count = OCCTSelectorPick(
+            handle, camera.handle,
+            viewSize.x, viewSize.y,
+            pixel.x, pixel.y,
+            &buffer, Int32(maxResults))
+        return Self.pickResults(from: buffer, count: count)
     }
 
     /// Pick shapes within a rectangular region.
@@ -183,25 +180,22 @@ public final class Selector: @unchecked Sendable {
     ///   - maxResults: Output *capacity* (default 32), clamped into `0...`
     ///     ``Sampling/maximumSampleCount``; 0 or less returns empty (#622).
     /// - Returns: Array of pick results for all shapes intersecting the rectangle.
-    public func pick(rect: (min: SIMD2<Double>, max: SIMD2<Double>),
-                     camera: Camera,
-                     viewSize: SIMD2<Double>,
-                     maxResults: Int = 32) -> [PickResult] {
+    public func pick(
+        rect: (min: SIMD2<Double>, max: SIMD2<Double>),
+        camera: Camera,
+        viewSize: SIMD2<Double>,
+        maxResults: Int = 32
+    ) -> [PickResult] {
         let maxResults = Sampling.capacity(maxResults)
         guard maxResults > 0 else { return [] }
-        var buffer = [OCCTPickResult](repeating: OCCTPickResult(), count: maxResults)
-        let count = OCCTSelectorPickRect(handle, camera.handle,
-                                         viewSize.x, viewSize.y,
-                                         rect.min.x, rect.min.y,
-                                         rect.max.x, rect.max.y,
-                                         &buffer, Int32(maxResults))
-        return (0..<Int(count)).map { i in
-            PickResult(shapeId: buffer[i].shapeId,
-                       depth: buffer[i].depth,
-                       point: SIMD3(buffer[i].pointX, buffer[i].pointY, buffer[i].pointZ),
-                       subShapeType: SubShapeType(rawValue: buffer[i].subShapeType) ?? .shape,
-                       subShapeIndex: buffer[i].subShapeIndex)
-        }
+        var buffer = Self.makeBuffer(count: maxResults)
+        let count = OCCTSelectorPickRect(
+            handle, camera.handle,
+            viewSize.x, viewSize.y,
+            rect.min.x, rect.min.y,
+            rect.max.x, rect.max.y,
+            &buffer, Int32(maxResults))
+        return Self.pickResults(from: buffer, count: count)
     }
 
     /// Pick shapes within a closed polygon (lasso selection).
@@ -216,29 +210,49 @@ public final class Selector: @unchecked Sendable {
     ///   - maxResults: Output *capacity* (default 32), clamped into `0...`
     ///     ``Sampling/maximumSampleCount``; 0 or less returns empty (#622).
     /// - Returns: Array of pick results for all shapes inside the polygon.
-    public func pick(polygon: [SIMD2<Double>],
-                     camera: Camera,
-                     viewSize: SIMD2<Double>,
-                     maxResults: Int = 32) -> [PickResult] {
+    public func pick(
+        polygon: [SIMD2<Double>],
+        camera: Camera,
+        viewSize: SIMD2<Double>,
+        maxResults: Int = 32
+    ) -> [PickResult] {
         let maxResults = Sampling.capacity(maxResults)
         guard polygon.count >= 3, maxResults > 0 else { return [] }
-        var buffer = [OCCTPickResult](repeating: OCCTPickResult(), count: maxResults)
+        var buffer = Self.makeBuffer(count: maxResults)
         var polyXY = [Double]()
         polyXY.reserveCapacity(polygon.count * 2)
         for pt in polygon {
             polyXY.append(pt.x)
             polyXY.append(pt.y)
         }
-        let count = OCCTSelectorPickPoly(handle, camera.handle,
-                                         viewSize.x, viewSize.y,
-                                         polyXY, Int32(polygon.count),
-                                         &buffer, Int32(maxResults))
-        return (0..<Int(count)).map { i in
-            PickResult(shapeId: buffer[i].shapeId,
-                       depth: buffer[i].depth,
-                       point: SIMD3(buffer[i].pointX, buffer[i].pointY, buffer[i].pointZ),
-                       subShapeType: SubShapeType(rawValue: buffer[i].subShapeType) ?? .shape,
-                       subShapeIndex: buffer[i].subShapeIndex)
+        let count = OCCTSelectorPickPoly(
+            handle, camera.handle,
+            viewSize.x, viewSize.y,
+            polyXY, Int32(polygon.count),
+            &buffer, Int32(maxResults))
+        return Self.pickResults(from: buffer, count: count)
+    }
+
+    /// Allocates a zeroed `OCCTPickResult` output buffer for a `pick` call.
+    ///
+    /// Shared by all three `pick` overloads alongside ``pickResults(from:count:)`` so buffer
+    /// sizing/initialization is defined once, not triplicated (#890 review follow-up).
+    private static func makeBuffer(count: Int) -> [OCCTPickResult] {
+        [OCCTPickResult](repeating: OCCTPickResult(), count: count)
+    }
+
+    /// Maps a raw `OCCTPickResult` buffer's first `count` entries to `PickResult`s.
+    ///
+    /// Shared by all three `pick` overloads so a field change or addition (e.g. reinterpreting
+    /// the `-1` `subShapeIndex` sentinel, see ``PickResult/subShapeIndex``) is made once (#890).
+    private static func pickResults(from buffer: [OCCTPickResult], count: Int32) -> [PickResult] {
+        (0..<Int(count)).map { i in
+            PickResult(
+                shapeId: buffer[i].shapeId,
+                depth: buffer[i].depth,
+                point: SIMD3(buffer[i].pointX, buffer[i].pointY, buffer[i].pointZ),
+                subShapeType: SubShapeType(rawValue: buffer[i].subShapeType) ?? .shape,
+                subShapeIndex: buffer[i].subShapeIndex)
         }
     }
 }
