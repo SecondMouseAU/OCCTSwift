@@ -2303,6 +2303,61 @@ struct ConstructionPlaneTests {
         case .failure(let e): Issue.record("tangentToFace failed: \(e)")
         }
     }
+
+    @Test("tangentToFace at a cone apex falls back to the UV-midpoint normal instead of failing (PR #897 review, 3rd pass)")
+    func tangentToFaceConeApexFallsBackToNormal() {
+        // A cone whose apex sits at the BASE (bottomRadius: 0) puts the apex vertex
+        // at v=0 exactly on the lateral face's own parametrization -- a genuine
+        // GeomLProp_SLProps normal singularity (the two tangent directions
+        // coincide there, not merely shrink; see docs/reference/Face.md's `normal`
+        // entry and Issue401's SurfaceNormalParityTests.coneApexIsUndefinedInBoth).
+        // Before this fix, resolveFaceNormal had no fallback, so tangentToFace at
+        // this real vertex on real topology failed with .missingGeometry --
+        // regressing the pre-#879 always-succeeds-for-any-uvBounds-face behavior.
+        //
+        // (A sphere's pole is NOT an equivalent reproducer here: OCCT's own
+        // higher-derivative resolution keeps the normal defined there --
+        // SurfaceNormalParityTests.spherePoleStillHasANormal already pins that.)
+        guard let cone = Shape.cone(bottomRadius: 0, topRadius: 5, height: 10),
+              let graph = BRepGraph(shape: cone) else {
+            Issue.record("graph nil"); return
+        }
+        let faceRef = TopologyRef.literal(.init(kind: .face, index: 0))
+
+        // Sanity: find the apex vertex (at the origin) and confirm the fixture
+        // really does hit the singularity this test claims to exercise.
+        guard let face = graph.shape(nodeKind: .face, nodeIndex: 0)?.faces().first else {
+            Issue.record("face0 unavailable"); return
+        }
+        var apexIndex: Int?
+        for i in 0..<graph.vertexCount {
+            let p = graph.vertexPoint(i)
+            if abs(p.x) < 1e-6, abs(p.y) < 1e-6, abs(p.z) < 1e-6 {
+                apexIndex = i
+                break
+            }
+        }
+        guard let apexIndex else {
+            Issue.record("no vertex at the cone apex"); return
+        }
+        guard let projection = face.project(point: SIMD3(0, 0, 0)) else {
+            Issue.record("apex projection failed"); return
+        }
+        #expect(
+            face.normal(atU: projection.u, v: projection.v) == nil,
+            "fixture should hit a genuine normal singularity")
+
+        let vertexRef = TopologyRef.literal(.init(kind: .vertex, index: apexIndex))
+        switch graph.resolve(ConstructionPlane.tangentToFace(face: faceRef, at: vertexRef)) {
+        case .success(let p):
+            #expect(abs(p.origin.x) < 1e-6)
+            #expect(abs(p.origin.y) < 1e-6)
+            #expect(abs(p.origin.z) < 1e-6)
+            #expect(abs(simd_length(p.zAxis) - 1.0) < 1e-6)
+        case .failure(let e):
+            Issue.record("tangentToFace failed at the cone apex: \(e)")
+        }
+    }
 }
 
 @Suite("v0.142 ConstructionAxis resolution")
@@ -2414,6 +2469,46 @@ struct ConstructionAxisTests {
             // the pre-fix bug returned the sweep direction itself here.
             #expect(abs(ax.direction.z) < 0.01)
         case .failure(let e): Issue.record("normalToFace failed: \(e)")
+        }
+    }
+
+    @Test("normalToFace on a spherical face falls back to the UV-midpoint normal, not the arbitrary pole axis (PR #897 review, 3rd pass)")
+    func normalToFaceSphereFallsBackToNormal() {
+        // gp_Sphere::Position().Direction() (what Face.primaryAxis reports for a
+        // sphere) is just the arbitrary construction-frame pole -- a sphere is
+        // symmetric about every axis through its center, so unlike
+        // cylinder/cone/torus/revolution it has no intrinsic rotation axis at all.
+        // Before this fix, normalToFace returned that same fixed (0,0,1) pole
+        // direction for every vertex on the sphere, off by 90 degrees from the true
+        // local normal at the equator.
+        guard let sph = Shape.sphere(radius: 5),
+              let graph = BRepGraph(shape: sph) else {
+            Issue.record("graph nil"); return
+        }
+        let faceRef = TopologyRef.literal(.init(kind: .face, index: 0))
+
+        // Sanity: this fixture really does have a sphere-kind primaryAxis, so the
+        // test is exercising the branch it claims to.
+        guard let face = graph.shape(nodeKind: .face, nodeIndex: 0)?.faces().first,
+              let axis = face.primaryAxis, axis.kind == .sphere else {
+            Issue.record("fixture is not a spherical face"); return
+        }
+        let poleDirection = simd_normalize(axis.direction)
+
+        // Both poles are real vertices on a full sphere (index 0 and 1) -- checked
+        // at both to show the exclusion holds regardless of which vertex is asked.
+        for vertexIndex in [0, 1] {
+            let vertexRef = TopologyRef.literal(.init(kind: .vertex, index: vertexIndex))
+            switch graph.resolve(ConstructionAxis.normalToFace(face: faceRef, at: vertexRef)) {
+            case .success(let ax):
+                #expect(abs(simd_length(ax.direction) - 1.0) < 1e-6)
+                // The old, broken code returned the fixed pole axis unconditionally;
+                // the fallback UV-midpoint normal (at the sphere's equator) is
+                // nearly perpendicular to it instead.
+                #expect(abs(simd_dot(ax.direction, poleDirection)) < 0.1)
+            case .failure(let e):
+                Issue.record("normalToFace failed at vertex \(vertexIndex): \(e)")
+            }
         }
     }
 }

@@ -312,40 +312,59 @@ extension BRepGraph {
         }
     }
 
-    /// The surface normal at the given point's own projected location on the face.
+    /// The surface normal at the given point's own projected location on the face,
+    /// falling back to the UV-midpoint normal when the exact local normal is
+    /// undefined there.
     ///
     /// Used by `.tangentToFace` so the plane is tangent at the requested point, not
-    /// at the face's unrelated UV midpoint (#879).
+    /// at the face's unrelated UV midpoint (#879). `face.normal(atU:v:)` reports
+    /// `nil` at a genuine parametric singularity (`GeomLProp_SLProps::IsNormalDefined()`
+    /// false — the two tangent directions coincide, not merely shrink; see
+    /// `docs/reference/Face.md`'s `normal` entry). Before this point-specific
+    /// resolution existed, `tangentToFace` always used the UV-midpoint normal and so
+    /// always succeeded for any face with valid `uvBounds`; falling back here instead
+    /// of failing outright preserves that property (PR #897 review, 3rd pass).
     private func resolveFaceNormal(_ ref: TopologyRef, at point: SIMD3<Double>) -> Result<
         SIMD3<Double>, ConstructionResolutionError
     > {
         return resolveFace(ref).flatMap {
             node, face -> Result<SIMD3<Double>, ConstructionResolutionError> in
-            guard let projection = face.project(point: point),
-                let normal = face.normal(atU: projection.u, v: projection.v)
-            else {
+            guard let projection = face.project(point: point) else {
                 return .failure(.missingGeometry(node))
             }
-            return .success(normal)
+            if let normal = face.normal(atU: projection.u, v: projection.v) {
+                return .success(normal)
+            }
+            guard let fallback = face.uvMidpointNormal() else {
+                return .failure(.missingGeometry(node))
+            }
+            return .success(fallback)
         }
     }
 
     /// The direction the normalToFace doc promises.
     ///
     /// The surface's own axis of revolution (`Face.primaryAxis`) for
-    /// cylindrical/conical/spherical/toroidal/revolved faces, falling back to the
-    /// UV-midpoint surface normal for planes, free-form faces, and
-    /// surface-of-extrusion faces (#882). Extrusion is deliberately excluded even
-    /// though it has a `primaryAxis`: that axis's `direction` is the sweep
-    /// direction of `Geom_SurfaceOfLinearExtrusion` — tangent to the surface, not
-    /// a normal — unlike every other `ShapeAxis.Kind`, where `direction` genuinely
-    /// is a rotation axis / surface normal (PR #897 review).
+    /// cylindrical/conical/toroidal/revolved faces, falling back to the
+    /// UV-midpoint surface normal for planes, free-form faces,
+    /// surface-of-extrusion faces (#882), and spherical faces. Extrusion is
+    /// excluded even though it has a `primaryAxis`: that axis's `direction` is the
+    /// sweep direction of `Geom_SurfaceOfLinearExtrusion` — tangent to the
+    /// surface, not a normal. Sphere is excluded for a different reason: a sphere
+    /// has no intrinsic rotation axis at all (it's symmetric about every axis
+    /// through its center), so `gp_Sphere::Position().Direction()` — what
+    /// `primaryAxis` reports for a sphere — is just the arbitrary construction-
+    /// frame pole, the same fixed direction regardless of which point on the
+    /// sphere is being asked about (`FeatureRecognition.swift`'s
+    /// `isMaterialRadiallyInward` already carries this same exclusion for the
+    /// identical reason). Unlike every other `ShapeAxis.Kind`, where `direction`
+    /// genuinely is a rotation axis / surface normal (PR #897 review, 3rd pass).
     private func resolveFaceAxisDirection(_ ref: TopologyRef) -> Result<
         SIMD3<Double>, ConstructionResolutionError
     > {
         return resolveFace(ref).flatMap {
             node, face -> Result<SIMD3<Double>, ConstructionResolutionError> in
-            if let axis = face.primaryAxis, axis.kind != .extrusion {
+            if let axis = face.primaryAxis, axis.kind != .extrusion, axis.kind != .sphere {
                 return .success(simd_normalize(axis.direction))
             }
             guard let normal = face.uvMidpointNormal() else {

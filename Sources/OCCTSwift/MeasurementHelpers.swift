@@ -136,9 +136,11 @@ extension Face {
         guard let sample = uvMidpointSample(), let otherSample = other.uvMidpointSample() else {
             return nil
         }
-        let normalAngle = unsignedAngle(between: sample.normal, and: otherSample.normal)
-        let parallel = normalAngle < 1e-4 || (.pi - normalAngle) < 1e-4
-        guard parallel else { return nil }
+        // Shares isParallel's own tolerance check instead of reimplementing it inline,
+        // so the two can't silently drift apart (PR #897 review, 3rd pass).
+        guard let parallel = isParallel(to: other, toleranceRadians: 1e-4), parallel else {
+            return nil
+        }
         let offset = sample.point - otherSample.point
         let signedDist = abs(simd_dot(offset, simd_normalize(otherSample.normal)))
         return signedDist < tolerance
