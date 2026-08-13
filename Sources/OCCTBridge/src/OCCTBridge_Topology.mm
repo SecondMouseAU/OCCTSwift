@@ -5396,9 +5396,12 @@ double OCCTShapeTotalEdgeLength(OCCTShapeRef shape)
 // Bnd_Box (via BRepBndLib::Add or ::AddOptimal) and distinguish IsVoid() from a genuinely
 // all-zero box, the same shape occtComputeAxisExtent (above) wraps once for its own callers.
 // Zeroing the six out-params as the very first statement -- before the IsNull() check, and again
-// in the catch block, matching occtComputeAxisExtent's own idiom -- means every failure path
-// (null shape, void box, OCCT exception) leaves deterministic zeros rather than the uninitialized
-// stack memory a caller that doesn't gate on the bool return would otherwise read.
+// in the catch block, matching occtComputeAxisExtent's own idiom -- means every failure path this
+// helper itself can reach (void box, OCCT exception) leaves deterministic zeros rather than the
+// uninitialized stack memory a caller that doesn't gate on the bool return would otherwise read.
+// forShape.IsNull() can't actually be reached from either public caller below any more: both zero
+// the out-params and guard a null shape themselves before ever calling in here (#901 review
+// followup) -- it stays for defensive symmetry with occtComputeAxisExtent, not live coverage.
 static bool occtComputeBoundingBox(const TopoDS_Shape& forShape,
                                    bool                optimal,
                                    bool                useShapeTolerance,
@@ -5441,7 +5444,14 @@ bool OCCTShapeBoundingBox(OCCTShapeRef shape,
                           double*      ymax,
                           double*      zmax)
 {
-  if (!shape || !xmin || !ymin || !zmin || !xmax || !ymax || !zmax)
+  if (!xmin || !ymin || !zmin || !xmax || !ymax || !zmax)
+    return false;
+  // A null shape needs the same zero-sentinel contract as every other failure path (#901 review
+  // followup) -- the combined guard used to return before occtComputeBoundingBox's own zeroing
+  // ever ran, leaving these untouched. Zero now that every pointer is known-writable, then guard
+  // shape on its own.
+  *xmin = *ymin = *zmin = *xmax = *ymax = *zmax = 0.0;
+  if (!shape)
     return false;
   auto* s = static_cast<OCCTShape*>(shape);
   return occtComputeBoundingBox(s->shape,
@@ -5464,7 +5474,11 @@ bool OCCTShapeBoundingBoxOptimal(OCCTShapeRef shape,
                                  double*      ymax,
                                  double*      zmax)
 {
-  if (!shape || !xmin || !ymin || !zmin || !xmax || !ymax || !zmax)
+  if (!xmin || !ymin || !zmin || !xmax || !ymax || !zmax)
+    return false;
+  // Same null-shape zero-sentinel gap as OCCTShapeBoundingBox above (#901 review followup).
+  *xmin = *ymin = *zmin = *xmax = *ymax = *zmax = 0.0;
+  if (!shape)
     return false;
   auto* s = static_cast<OCCTShape*>(shape);
   return occtComputeBoundingBox(s->shape,
