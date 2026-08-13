@@ -6,7 +6,7 @@
 
 import simd
 
-/// Measurements computed from a `Shape`'s topology, indexed parallel to its
+/// Measurements computed from the topology of a `Shape`, indexed parallel to its
 /// face / edge enumeration so consumers (e.g. AIS-layer dimension widgets)
 /// can resolve a picked face / edge index directly to its scalar measurement.
 public struct ShapeMeasurements: Sendable {
@@ -46,7 +46,11 @@ public struct ShapeMeasurements: Sendable {
         self.facePerimeters = facePerimeters
     }
 
-    /// Sum of all face areas — useful as a quick total-surface metric.
+    /// Sum of all face areas.
+    ///
+    /// Convenience over `faceAreas.reduce(0, +)`: N independently-toleranced per-face
+    /// integrals (``Face/area(tolerance:)``, tunable via ``Shape/measure(linearTolerance:)``).
+    /// Diverges from ``Shape/surfaceArea`` (#885); see ``Shape/surfaceArea`` for the explanation.
     public var totalFaceArea: Double { faceAreas.reduce(0, +) }
 
     /// Sum of all edge lengths.
@@ -60,8 +64,14 @@ public struct ShapeMeasurements: Sendable {
 
 extension Shape {
     /// Compute per-face area / centroid / perimeter + per-edge length for this shape.
+    ///
+    /// `linearTolerance` only ever moves ``ShapeMeasurements/faceAreas`` and
+    /// ``ShapeMeasurements/totalFaceArea``, never ``Shape/surfaceArea`` and its two siblings; see
+    /// ``Shape/surfaceArea`` for why (#885).
     /// - Parameter linearTolerance: tolerance forwarded to `Face.area(tolerance:)`.
     ///   Defaults to OCCT's `1e-6` — tighten only if you hit precision issues.
+    /// - Returns: A `ShapeMeasurements` snapshot with all four arrays populated and indexed
+    ///   parallel to the shape's face/edge enumeration.
     public func measure(linearTolerance: Double = 1e-6) -> ShapeMeasurements {
         let faceList = faces()
         let faceAreas = faceList.map { $0.area(tolerance: linearTolerance) }

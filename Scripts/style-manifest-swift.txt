@@ -32,8 +32,6 @@ Sources/OCCTSwift/ClipPlane.swift
 Sources/OCCTSwift/Color.swift
 Sources/OCCTSwift/CompBezierConverter.swift
 Sources/OCCTSwift/Conic2D.swift
-Sources/OCCTSwift/ConstructionContext.swift
-Sources/OCCTSwift/ConstructionLayer.swift
 Sources/OCCTSwift/ContapContourResult.swift
 Sources/OCCTSwift/Continuity.swift
 Sources/OCCTSwift/CoordinateSystem.swift
@@ -159,7 +157,6 @@ Sources/OCCTSwift/Sampling.swift
 Sources/OCCTSwift/SAWireAnalysis.swift
 Sources/OCCTSwift/SectionBuilder.swift
 Sources/OCCTSwift/Selection.swift
-Sources/OCCTSwift/Selector.swift
 Sources/OCCTSwift/SewingBuilder.swift
 Sources/OCCTSwift/Shape.swift
 Sources/OCCTSwift/Shape+Curve.swift
@@ -172,7 +169,6 @@ Sources/OCCTSwift/Shape+ShapeHealing.swift
 Sources/OCCTSwift/Shape+Surface.swift
 Sources/OCCTSwift/Shape+Topology.swift
 Sources/OCCTSwift/ShapeAnalysisResult.swift
-Sources/OCCTSwift/ShapeAxis.swift
 Sources/OCCTSwift/ShapeContents.swift
 Sources/OCCTSwift/ShapeContentsExtended.swift
 Sources/OCCTSwift/ShapeDistance.swift
@@ -180,7 +176,6 @@ Sources/OCCTSwift/ShapeFixer.swift
 Sources/OCCTSwift/ShapeFixers.swift
 Sources/OCCTSwift/ShapeFixStatus.swift
 Sources/OCCTSwift/ShapeImage.swift
-Sources/OCCTSwift/ShapeMeasurements.swift
 Sources/OCCTSwift/ShapeProperties.swift
 Sources/OCCTSwift/ShapeRayIntersection.swift
 Sources/OCCTSwift/ShapeType.swift

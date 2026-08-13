@@ -202,6 +202,17 @@ An axis coinciding with a linear edge or the revolution axis of a cylindrical or
 case alongEdge(TopologyRef)
 ```
 
+For a non-linear edge, every adjacent face whose `Face.primaryAxis` is a cylinder or cone is
+gathered as a candidate; the axis redirect is taken only when all candidates agree
+(`axesAgree`, within tolerance) and the edge itself passes a coaxial-cross-section check —
+constant radius and height along the candidate axis at several sampled points along the edge.
+That check is what rejects an elliptical rim (an oblique-plane cut of a cylinder, whose height
+along the axis varies around the curve) or a helical edge: both fall through to the
+endpoint-to-endpoint chord instead, the same fallback used for a genuinely linear edge, a curved
+edge with no qualifying adjacent face, or disagreeing candidates (e.g. at a T-branch). This also
+resolves a full-circle edge (a hole rim, say), where the endpoints coincide and a chord would be
+the zero vector. A zero-length fallback result fails with `.degenerate("zero-length edge")`.
+
 ---
 
 ### `ConstructionAxis.normalToFace(face:at:)`

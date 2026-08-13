@@ -109,6 +109,23 @@ extension Shape {
     }
 
     /// Surface area of the shape in square units.
+    ///
+    /// One `BRepGProp::SurfaceProperties` integration over the whole shape at once — the same
+    /// call ``surfaceInertiaProperties()`` `.mass` and ``surfaceInertia`` `.area` share, so all
+    /// three agree with each other exactly. Unlike ``ShapeMeasurements/totalFaceArea`` (N
+    /// separately-toleranced per-face integrals, summed) this one takes no tolerance parameter:
+    /// see ``Shape/measure(linearTolerance:)`` for the measured gap between the two and which to
+    /// reach for (#885). This is the canonical explanation of that divergence; the other
+    /// area-measure properties below point back here instead of restating it.
+    ///
+    /// ```swift
+    /// let box = Shape.box(width: 10, height: 20, depth: 30)!
+    /// box.surfaceArea                        // 2200, one whole-shape integral
+    /// box.surfaceInertiaProperties()?.mass   // 2200, the identical call in disguise
+    /// box.surfaceInertia?.area               // 2200, likewise
+    /// box.measure().totalFaceArea            // a *different*, tolerance-controlled sum —
+    ///                                         // usually agrees closely, not guaranteed to (#885)
+    /// ```
     public var surfaceArea: Double? {
         let a = OCCTShapeGetSurfaceArea(handle)
         return a >= 0 ? a : nil
@@ -469,6 +486,10 @@ extension Shape {
     /// well defined over any set of faces. It is nil for a shape with no faces at all (a wire,
     /// edge or vertex), where the reported centroid would be the shape's location origin (#609).
     ///
+    /// `.mass` here is ``Shape/surfaceArea`` in disguise — the identical call, down to the same
+    /// #885 divergence from ``ShapeMeasurements/totalFaceArea``; see ``Shape/surfaceArea`` for the
+    /// explanation.
+    ///
     /// ```swift
     /// let box = Shape.box(width: 10, height: 20, depth: 30)!
     /// let sheet = Shape.fromFace(box.faces()[0])!
@@ -785,9 +806,9 @@ extension Shape {
         public let inertiaTensor: [Double]
         /// Principal moments of inertia.
         public let principalMoments: SIMD3<Double>
-        /// Whether the shape has a symmetry axis (#848: added to match
-        /// ``surfaceInertiaProperties()``, whose result has always had this field — both read it
-        /// off the same `GProp_PrincipalProps` object).
+        /// Whether the shape has a symmetry axis (#848: added to match the result of
+        /// ``surfaceInertiaProperties()``, which has always had this field — both read
+        /// it off the same `GProp_PrincipalProps`).
         public let hasSymmetryAxis: Bool
         /// Whether the shape has a symmetry point.
         public let hasSymmetryPoint: Bool
@@ -799,6 +820,10 @@ extension Shape {
     /// reported centroid would be the shape's location origin rather than a recognisable zero
     /// (#609). Also reports the two symmetry flags ``surfaceInertiaProperties()`` has always had
     /// (#848), read off the same `GProp_PrincipalProps` as ``principalMoments``.
+    ///
+    /// `.area` is the same call as ``Shape/surfaceArea`` and ``surfaceInertiaProperties()`` `.mass`
+    /// — see ``Shape/surfaceArea`` for the #885 divergence from
+    /// ``ShapeMeasurements/totalFaceArea``.
     ///
     /// ```swift
     /// let box = Shape.box(width: 10, height: 20, depth: 30)!
@@ -991,7 +1016,7 @@ extension Shape {
         public let parameter: Double
         /// The nearest point on the edge.
         public let pointOnEdge: SIMD3<Double>
-        /// How many perpendicular feet the point has on this edge (the `BRepExtrema_ExtPC` extrema).
+        /// Number of `BRepExtrema_ExtPC` extrema (perpendicular feet) the point has on this edge.
         ///
         /// Zero is an ordinary, informative answer rather than a failure: it means the nearest
         /// point is one of the edge's two ends. A non-zero count does *not* mean the nearest point
@@ -1199,9 +1224,7 @@ extension Shape {
         public let type: ContourType
         /// Number of contours found.
         public let count: Int
-        /// For circles: center and radius.
-        ///
-        /// For lines: location and direction.
+        /// Circle: center and radius; line: location and direction.
         public let data: [Double]
     }
 
@@ -1507,13 +1530,9 @@ extension Shape {
     public struct CommonPart: Sendable {
         /// Type of intersection (vertex or edge overlap).
         public let type: CommonPartType
-        /// Parameter range on edge 1 (first, last).
-        ///
-        /// Same values for vertex type.
+        /// Parameter range on edge 1 (first, last), same for vertex type.
         public let param1Range: (first: Double, last: Double)
-        /// Parameter range on edge 2 (first, last).
-        ///
-        /// Same values for vertex type.
+        /// Parameter range on edge 2 (first, last), same for vertex type.
         public let param2Range: (first: Double, last: Double)
         /// Representative 3D point of the intersection.
         public let point: SIMD3<Double>
