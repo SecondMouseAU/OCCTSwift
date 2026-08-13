@@ -4190,9 +4190,14 @@ struct GeomEllipse3DTests {
     @Test func ellipseDirectrix1() {
         if let e = Curve3D.ellipse(center: .zero, normal: SIMD3(0, 0, 1), majorRadius: 10, minorRadius: 5) {
             let d = e.ellipseProperties.directrix1
-            // Directrix position should be defined
-            let _ = d.position
-            let _ = d.direction
+            // Directrix1 is the line normal to the XAxis, at distance majorRadius/eccentricity
+            // from the center, on the positive side of the XAxis; its own direction is the
+            // ellipse's YAxis (occt-refman Geom_Ellipse::Directrix1).
+            let expectedX = e.ellipseProperties.majorRadius / e.ellipseProperties.eccentricity
+            #expect(abs(d.position.x - expectedX) < 1e-6)
+            #expect(abs(d.position.y) < 1e-6)
+            #expect(abs(d.position.z) < 1e-6)
+            #expect(abs(d.direction.y - 1) < 1e-6)
         }
     }
 }
@@ -4237,8 +4242,15 @@ struct GeomHyperbola3DTests {
     @Test func hyperbolaAsymptote1() {
         if let h = Curve3D.hyperbola(center: .zero, normal: SIMD3(0, 0, 1), majorRadius: 5, minorRadius: 3) {
             let a = h.hyperbolaProperties.asymptote1
-            let _ = a.position
-            let _ = a.direction
+            // The asymptote passes through the hyperbola's own center, with direction
+            // normalize(majorRadius, minorRadius, 0) in the local frame (Y = (B/A)*X).
+            #expect(abs(a.position.x) < 1e-6)
+            #expect(abs(a.position.y) < 1e-6)
+            #expect(abs(a.position.z) < 1e-6)
+            let expected = simd_normalize(SIMD3<Double>(5, 3, 0))
+            #expect(abs(a.direction.x - expected.x) < 1e-6)
+            #expect(abs(a.direction.y - expected.y) < 1e-6)
+            #expect(abs(a.direction.z) < 1e-6)
         }
     }
 }
@@ -4321,6 +4333,10 @@ struct GeomLine3DTests {
         if let l = Curve3D.line(through: SIMD3(1, 2, 3), direction: SIMD3(1, 0, 0)) {
             let pos = l.lineProperties.position
             #expect(abs(pos.direction.x - 1) < 1e-6)
+            // location.y/z (2, 3) are distinct from direction (1, 0, 0), so this also catches
+            // an origin/direction swap that `direction.x` alone cannot (both happen to be 1).
+            #expect(abs(pos.location.y - 2) < 1e-6)
+            #expect(abs(pos.location.z - 3) < 1e-6)
         }
     }
 
@@ -4328,6 +4344,9 @@ struct GeomLine3DTests {
         if let l = Curve3D.line(through: SIMD3(1, 2, 3), direction: SIMD3(1, 0, 0)) {
             let gl = l.lineProperties.lin
             #expect(abs(gl.location.x - 1) < 1e-6)
+            // Same rationale as linePosition: location.y/z distinguish an origin/direction swap.
+            #expect(abs(gl.location.y - 2) < 1e-6)
+            #expect(abs(gl.location.z - 3) < 1e-6)
         }
     }
 }

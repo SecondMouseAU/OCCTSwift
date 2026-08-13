@@ -103,44 +103,53 @@ extension Shape {
     }
 }
 
+/// Reads an origin/direction pair from a six-`Double`-out-param `OCCT*Axis`-shaped bridge call
+/// (`px/py/pz/dx/dy/dz`), given as a closure already bound to the caller's own handle.
+///
+/// Shared by every accessor of this shape across `Surface` (this file's `torusAxis`/
+/// `revolutionAxis`, plus `Surface.swift`'s `CylinderProperties.axis`/`ConeProperties.axis`) and
+/// `Curve3D` (`Curve3D.swift`'s `CircleProperties.xAxis`/`.yAxis`,
+/// `EllipseProperties.directrix1`, `HyperbolaProperties.asymptote1`, `ParabolaProperties.directrix`,
+/// `LineProperties.position`/`.lin`) — module-internal rather than a `Surface` extension method so
+/// both files can reach it without widening either type's own public surface (#891, #899).
+///
+/// ```swift
+/// let axis = unwrapAxisComponents { OCCTSurfaceCylinderAxis(handle, $0, $1, $2, $3, $4, $5) }
+/// ```
+func unwrapAxisComponents(
+    _ bridgeCall: (
+        UnsafeMutablePointer<Double>, UnsafeMutablePointer<Double>, UnsafeMutablePointer<Double>,
+        UnsafeMutablePointer<Double>, UnsafeMutablePointer<Double>, UnsafeMutablePointer<Double>
+    ) -> Void
+) -> (origin: SIMD3<Double>, direction: SIMD3<Double>) {
+    var px: Double = 0
+    var py: Double = 0
+    var pz: Double = 0
+    var dx: Double = 0
+    var dy: Double = 0
+    var dz: Double = 0
+    bridgeCall(&px, &py, &pz, &dx, &dy, &dz)
+    return (origin: SIMD3(px, py, pz), direction: SIMD3(dx, dy, dz))
+}
+
 extension Surface {
-    /// A six-out-param `OCCT*Axis`-shaped bridge function: origin then direction, one double each.
-    ///
-    /// Named once so `unwrapAxis`/`axis(ifKind:_:)` don't respell it (#891 review follow-up).
+    /// A six-out-param `OCCT*Axis`-shaped bridge function taking a `Surface` handle first:
+    /// origin then direction, one double each.
     private typealias AxisBridgeFn = (
         OCCTSurfaceRef, UnsafeMutablePointer<Double>, UnsafeMutablePointer<Double>,
         UnsafeMutablePointer<Double>, UnsafeMutablePointer<Double>,
         UnsafeMutablePointer<Double>, UnsafeMutablePointer<Double>
     ) -> Void
 
-    /// Reads an origin/direction pair from an `AxisBridgeFn`.
-    ///
-    /// Split out from the `surfaceKind` guard below so the unwrap itself is independently
-    /// reusable — flagged by #891's review as also duplicated (outside this file's scope)
-    /// in `Surface.Cylinder.axis`/`Curve3D.Circle.xAxis`; widening this to a shared
-    /// accessor for those is tracked as a follow-up, not done here.
-    private func unwrapAxis(_ bridgeFn: AxisBridgeFn) -> (
-        origin: SIMD3<Double>, direction: SIMD3<Double>
-    ) {
-        var px: Double = 0
-        var py: Double = 0
-        var pz: Double = 0
-        var dx: Double = 0
-        var dy: Double = 0
-        var dz: Double = 0
-        bridgeFn(handle, &px, &py, &pz, &dx, &dy, &dz)
-        return (origin: SIMD3(px, py, pz), direction: SIMD3(dx, dy, dz))
-    }
-
     /// Shared unwrap for the six-out-param `OCCT*Axis` bridge functions: guards
-    /// `surfaceKind`, then reads origin/direction via `unwrapAxis`. `torusAxis` and
+    /// `surfaceKind`, then reads origin/direction via `unwrapAxisComponents`. `torusAxis` and
     /// `revolutionAxis` are the only callers today (#891).
     private func axis(
         ifKind kind: SurfaceType,
         _ bridgeFn: AxisBridgeFn
     ) -> (origin: SIMD3<Double>, direction: SIMD3<Double>)? {
         guard surfaceKind == kind else { return nil }
-        return unwrapAxis(bridgeFn)
+        return unwrapAxisComponents { bridgeFn(handle, $0, $1, $2, $3, $4, $5) }
     }
 
     /// Axis of a toroidal surface (origin + direction of the rotation axis).

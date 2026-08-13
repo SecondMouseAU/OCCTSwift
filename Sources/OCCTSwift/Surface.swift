@@ -1,6 +1,6 @@
 import Foundation
-import simd
 import OCCTBridge
+import simd
 
 /// A 2D grid of points sampled over a surface's UV parameter space.
 ///
@@ -36,8 +36,9 @@ public struct SurfaceGrid: Sendable {
 
     /// Point at the given U/V grid index.
     public func at(u: Int, v: Int) -> SIMD3<Double> {
-        precondition(u >= 0 && u < uCount && v >= 0 && v < vCount,
-                      "SurfaceGrid.at(u: \(u), v: \(v)) out of range (uCount: \(uCount), vCount: \(vCount))")
+        precondition(
+            u >= 0 && u < uCount && v >= 0 && v < vCount,
+            "SurfaceGrid.at(u: \(u), v: \(v)) out of range (uCount: \(uCount), vCount: \(vCount))")
         return points[surfaceGridIndex(u: u, v: v, vCount: vCount)]
     }
 }
@@ -75,8 +76,10 @@ public struct SurfaceGridD1: Sendable {
     private let d1u: [SIMD3<Double>]
     private let d1v: [SIMD3<Double>]
 
-    init(uCount: Int, vCount: Int,
-         points: [SIMD3<Double>], d1u: [SIMD3<Double>], d1v: [SIMD3<Double>]) {
+    init(
+        uCount: Int, vCount: Int,
+        points: [SIMD3<Double>], d1u: [SIMD3<Double>], d1v: [SIMD3<Double>]
+    ) {
         self.uCount = uCount
         self.vCount = vCount
         self.points = points
@@ -90,9 +93,12 @@ public struct SurfaceGridD1: Sendable {
     public var isEmpty: Bool { points.isEmpty }
 
     /// Point and first partial derivatives at the given U/V grid index.
-    public func at(u: Int, v: Int) -> (point: SIMD3<Double>, d1u: SIMD3<Double>, d1v: SIMD3<Double>) {
-        precondition(u >= 0 && u < uCount && v >= 0 && v < vCount,
-                      "SurfaceGridD1.at(u: \(u), v: \(v)) out of range (uCount: \(uCount), vCount: \(vCount))")
+    public func at(u: Int, v: Int) -> (point: SIMD3<Double>, d1u: SIMD3<Double>, d1v: SIMD3<Double>)
+    {
+        precondition(
+            u >= 0 && u < uCount && v >= 0 && v < vCount,
+            "SurfaceGridD1.at(u: \(u), v: \(v)) out of range (uCount: \(uCount), vCount: \(vCount))"
+        )
         let i = surfaceGridIndex(u: u, v: v, vCount: vCount)
         return (point: points[i], d1u: d1u[i], d1v: d1v[i])
     }
@@ -118,10 +124,17 @@ public final class Surface: @unchecked Sendable {
 
     /// Surface type classification (matches GeomAbs_SurfaceType).
     public enum SurfaceType: Int32, Sendable {
-        case plane = 0, cylinder = 1, cone = 2, sphere = 3, torus = 4
-        case bezierSurface = 5, bsplineSurface = 6
-        case surfaceOfRevolution = 7, surfaceOfExtrusion = 8
-        case offsetSurface = 9, other = 10
+        case plane = 0
+        case cylinder = 1
+        case cone = 2
+        case sphere = 3
+        case torus = 4
+        case bezierSurface = 5
+        case bsplineSurface = 6
+        case surfaceOfRevolution = 7
+        case surfaceOfExtrusion = 8
+        case offsetSurface = 9
+        case other = 10
     }
 
     /// The specific geometric kind of this surface (Geom subclass).
@@ -145,51 +158,54 @@ public final class Surface: @unchecked Sendable {
         ContinuityClass(rawValue: OCCTSurfaceGetContinuity(handle)) ?? .c0
     }
 
-    public var isPlane:              Bool { surfaceKind == .plane }
-    public var isCylinder:           Bool { surfaceKind == .cylinder }
-    public var isCone:               Bool { surfaceKind == .cone }
-    public var isSphere:             Bool { surfaceKind == .sphere }
-    public var isTorus:              Bool { surfaceKind == .torus }
-    public var isBezier:             Bool { surfaceKind == .bezierSurface }
-    public var isBSpline:            Bool { surfaceKind == .bsplineSurface }
-    public var isSurfaceOfRevolution:Bool { surfaceKind == .surfaceOfRevolution }
+    public var isPlane: Bool { surfaceKind == .plane }
+    public var isCylinder: Bool { surfaceKind == .cylinder }
+    public var isCone: Bool { surfaceKind == .cone }
+    public var isSphere: Bool { surfaceKind == .sphere }
+    public var isTorus: Bool { surfaceKind == .torus }
+    public var isBezier: Bool { surfaceKind == .bezierSurface }
+    public var isBSpline: Bool { surfaceKind == .bsplineSurface }
+    public var isSurfaceOfRevolution: Bool { surfaceKind == .surfaceOfRevolution }
     public var isSurfaceOfExtrusion: Bool { surfaceKind == .surfaceOfExtrusion }
-    public var isOffsetSurface:      Bool { surfaceKind == .offsetSurface }
+    public var isOffsetSurface: Bool { surfaceKind == .offsetSurface }
 
-    /// Parameter domain (uMin, uMax, vMin, vMax)
+    /// Parameter domain (uMin, uMax, vMin, vMax).
     public var domain: (uMin: Double, uMax: Double, vMin: Double, vMax: Double) {
-        var uMin: Double = 0, uMax: Double = 0, vMin: Double = 0, vMax: Double = 0
+        var uMin: Double = 0
+        var uMax: Double = 0
+        var vMin: Double = 0
+        var vMax: Double = 0
         OCCTSurfaceGetDomain(handle, &uMin, &uMax, &vMin, &vMax)
         return (uMin, uMax, vMin, vMax)
     }
 
-    /// Whether the surface is closed in U direction
+    /// Whether the surface is closed in U direction.
     public var isUClosed: Bool {
         OCCTSurfaceIsUClosed(handle)
     }
 
-    /// Whether the surface is closed in V direction
+    /// Whether the surface is closed in V direction.
     public var isVClosed: Bool {
         OCCTSurfaceIsVClosed(handle)
     }
 
-    /// Whether the surface is periodic in U direction
+    /// Whether the surface is periodic in U direction.
     public var isUPeriodic: Bool {
         OCCTSurfaceIsUPeriodic(handle)
     }
 
-    /// Whether the surface is periodic in V direction
+    /// Whether the surface is periodic in V direction.
     public var isVPeriodic: Bool {
         OCCTSurfaceIsVPeriodic(handle)
     }
 
-    /// Period in U direction (nil if not periodic)
+    /// Period in U direction (nil if not periodic).
     public var uPeriod: Double? {
         guard isUPeriodic else { return nil }
         return OCCTSurfaceGetUPeriod(handle)
     }
 
-    /// Period in V direction (nil if not periodic)
+    /// Period in V direction (nil if not periodic).
     public var vPeriod: Double? {
         guard isVPeriodic else { return nil }
         return OCCTSurfaceGetVPeriod(handle)
@@ -197,47 +213,74 @@ public final class Surface: @unchecked Sendable {
 
     // MARK: - Evaluation
 
-    /// Evaluate surface point at (u, v)
+    /// Evaluate surface point at (u, v).
     public func point(atU u: Double, v: Double) -> SIMD3<Double> {
-        var x: Double = 0, y: Double = 0, z: Double = 0
+        var x: Double = 0
+        var y: Double = 0
+        var z: Double = 0
         OCCTSurfaceGetPoint(handle, u, v, &x, &y, &z)
         return SIMD3(x, y, z)
     }
 
-    /// First-order derivatives at (u, v)
-    public func d1(atU u: Double, v: Double) -> (point: SIMD3<Double>, du: SIMD3<Double>, dv: SIMD3<Double>) {
-        var px: Double = 0, py: Double = 0, pz: Double = 0
-        var dux: Double = 0, duy: Double = 0, duz: Double = 0
-        var dvx: Double = 0, dvy: Double = 0, dvz: Double = 0
+    /// First-order derivatives at (u, v).
+    public func d1(atU u: Double, v: Double) -> (
+        point: SIMD3<Double>, du: SIMD3<Double>, dv: SIMD3<Double>
+    ) {
+        var px: Double = 0
+        var py: Double = 0
+        var pz: Double = 0
+        var dux: Double = 0
+        var duy: Double = 0
+        var duz: Double = 0
+        var dvx: Double = 0
+        var dvy: Double = 0
+        var dvz: Double = 0
         OCCTSurfaceD1(handle, u, v, &px, &py, &pz, &dux, &duy, &duz, &dvx, &dvy, &dvz)
         return (SIMD3(px, py, pz), SIMD3(dux, duy, duz), SIMD3(dvx, dvy, dvz))
     }
 
-    /// Second-order derivatives at (u, v)
+    /// Second-order derivatives at (u, v).
     public func d2(atU u: Double, v: Double) -> (
         point: SIMD3<Double>,
         d1u: SIMD3<Double>, d1v: SIMD3<Double>,
         d2u: SIMD3<Double>, d2v: SIMD3<Double>, d2uv: SIMD3<Double>
     ) {
-        var px: Double = 0, py: Double = 0, pz: Double = 0
-        var d1ux: Double = 0, d1uy: Double = 0, d1uz: Double = 0
-        var d1vx: Double = 0, d1vy: Double = 0, d1vz: Double = 0
-        var d2ux: Double = 0, d2uy: Double = 0, d2uz: Double = 0
-        var d2vx: Double = 0, d2vy: Double = 0, d2vz: Double = 0
-        var d2uvx: Double = 0, d2uvy: Double = 0, d2uvz: Double = 0
-        OCCTSurfaceD2(handle, u, v, &px, &py, &pz,
-                       &d1ux, &d1uy, &d1uz, &d1vx, &d1vy, &d1vz,
-                       &d2ux, &d2uy, &d2uz, &d2vx, &d2vy, &d2vz,
-                       &d2uvx, &d2uvy, &d2uvz)
-        return (SIMD3(px, py, pz),
-                SIMD3(d1ux, d1uy, d1uz), SIMD3(d1vx, d1vy, d1vz),
-                SIMD3(d2ux, d2uy, d2uz), SIMD3(d2vx, d2vy, d2vz),
-                SIMD3(d2uvx, d2uvy, d2uvz))
+        var px: Double = 0
+        var py: Double = 0
+        var pz: Double = 0
+        var d1ux: Double = 0
+        var d1uy: Double = 0
+        var d1uz: Double = 0
+        var d1vx: Double = 0
+        var d1vy: Double = 0
+        var d1vz: Double = 0
+        var d2ux: Double = 0
+        var d2uy: Double = 0
+        var d2uz: Double = 0
+        var d2vx: Double = 0
+        var d2vy: Double = 0
+        var d2vz: Double = 0
+        var d2uvx: Double = 0
+        var d2uvy: Double = 0
+        var d2uvz: Double = 0
+        OCCTSurfaceD2(
+            handle, u, v, &px, &py, &pz,
+            &d1ux, &d1uy, &d1uz, &d1vx, &d1vy, &d1vz,
+            &d2ux, &d2uy, &d2uz, &d2vx, &d2vy, &d2vz,
+            &d2uvx, &d2uvy, &d2uvz)
+        return (
+            SIMD3(px, py, pz),
+            SIMD3(d1ux, d1uy, d1uz), SIMD3(d1vx, d1vy, d1vz),
+            SIMD3(d2ux, d2uy, d2uz), SIMD3(d2vx, d2vy, d2vz),
+            SIMD3(d2uvx, d2uvy, d2uvz)
+        )
     }
 
-    /// Surface normal at (u, v)
+    /// Surface normal at (u, v).
     public func normal(atU u: Double, v: Double) -> SIMD3<Double>? {
-        var nx: Double = 0, ny: Double = 0, nz: Double = 0
+        var nx: Double = 0
+        var ny: Double = 0
+        var nz: Double = 0
         guard OCCTSurfaceGetNormal(handle, u, v, &nx, &ny, &nz) else { return nil }
         return SIMD3(nx, ny, nz)
     }
@@ -262,59 +305,77 @@ public final class Surface: @unchecked Sendable {
         planeFromPointNormal(point: origin, normal: normal)
     }
 
-    /// Create a cylindrical surface
-    public static func cylinder(origin: SIMD3<Double>, axis: SIMD3<Double>,
-                                radius: Double) -> Surface? {
-        guard let h = OCCTSurfaceCreateCylinder(origin.x, origin.y, origin.z,
-                                                 axis.x, axis.y, axis.z, radius)
+    /// Create a cylindrical surface.
+    public static func cylinder(
+        origin: SIMD3<Double>, axis: SIMD3<Double>,
+        radius: Double
+    ) -> Surface? {
+        guard
+            let h = OCCTSurfaceCreateCylinder(
+                origin.x, origin.y, origin.z,
+                axis.x, axis.y, axis.z, radius)
         else { return nil }
         return Surface(handle: h)
     }
 
-    /// Create a conical surface
-    public static func cone(origin: SIMD3<Double>, axis: SIMD3<Double>,
-                            radius: Double, semiAngle: Double) -> Surface? {
-        guard let h = OCCTSurfaceCreateCone(origin.x, origin.y, origin.z,
-                                             axis.x, axis.y, axis.z,
-                                             radius, semiAngle)
+    /// Create a conical surface.
+    public static func cone(
+        origin: SIMD3<Double>, axis: SIMD3<Double>,
+        radius: Double, semiAngle: Double
+    ) -> Surface? {
+        guard
+            let h = OCCTSurfaceCreateCone(
+                origin.x, origin.y, origin.z,
+                axis.x, axis.y, axis.z,
+                radius, semiAngle)
         else { return nil }
         return Surface(handle: h)
     }
 
-    /// Create a spherical surface
+    /// Create a spherical surface.
     public static func sphere(center: SIMD3<Double>, radius: Double) -> Surface? {
         guard let h = OCCTSurfaceCreateSphere(center.x, center.y, center.z, radius)
         else { return nil }
         return Surface(handle: h)
     }
 
-    /// Create a toroidal surface
-    public static func torus(origin: SIMD3<Double>, axis: SIMD3<Double>,
-                             majorRadius: Double, minorRadius: Double) -> Surface? {
-        guard let h = OCCTSurfaceCreateTorus(origin.x, origin.y, origin.z,
-                                              axis.x, axis.y, axis.z,
-                                              majorRadius, minorRadius)
+    /// Create a toroidal surface.
+    public static func torus(
+        origin: SIMD3<Double>, axis: SIMD3<Double>,
+        majorRadius: Double, minorRadius: Double
+    ) -> Surface? {
+        guard
+            let h = OCCTSurfaceCreateTorus(
+                origin.x, origin.y, origin.z,
+                axis.x, axis.y, axis.z,
+                majorRadius, minorRadius)
         else { return nil }
         return Surface(handle: h)
     }
 
     // MARK: - Swept Surfaces
 
-    /// Create a surface by extruding a curve along a direction
+    /// Create a surface by extruding a curve along a direction.
     public static func extrusion(profile: Curve3D, direction: SIMD3<Double>) -> Surface? {
-        guard let h = OCCTSurfaceCreateExtrusion(profile.handle,
-                                                  direction.x, direction.y, direction.z)
+        guard
+            let h = OCCTSurfaceCreateExtrusion(
+                profile.handle,
+                direction.x, direction.y, direction.z)
         else { return nil }
         return Surface(handle: h)
     }
 
-    /// Create a surface of revolution by revolving a curve around an axis
-    public static func revolution(meridian: Curve3D,
-                                  axisOrigin: SIMD3<Double>,
-                                  axisDirection: SIMD3<Double>) -> Surface? {
-        guard let h = OCCTSurfaceCreateRevolution(meridian.handle,
-                                                   axisOrigin.x, axisOrigin.y, axisOrigin.z,
-                                                   axisDirection.x, axisDirection.y, axisDirection.z)
+    /// Create a surface of revolution by revolving a curve around an axis.
+    public static func revolution(
+        meridian: Curve3D,
+        axisOrigin: SIMD3<Double>,
+        axisDirection: SIMD3<Double>
+    ) -> Surface? {
+        guard
+            let h = OCCTSurfaceCreateRevolution(
+                meridian.handle,
+                axisOrigin.x, axisOrigin.y, axisOrigin.z,
+                axisDirection.x, axisDirection.y, axisDirection.z)
         else { return nil }
         return Surface(handle: h)
     }
@@ -339,8 +400,10 @@ public final class Surface: @unchecked Sendable {
     ///     [SIMD3(1, 0, 0), SIMD3(1, 1, 1)],
     /// ])
     /// ```
-    public static func bezier(poles: [[SIMD3<Double>]],
-                              weights: [[Double]]? = nil) -> Surface? {
+    public static func bezier(
+        poles: [[SIMD3<Double>]],
+        weights: [[Double]]? = nil
+    ) -> Surface? {
         let uCount = Int32(poles.count)
         guard uCount >= 2 else { return nil }
         let vCount = Int32(poles[0].count)
@@ -364,8 +427,9 @@ public final class Surface: @unchecked Sendable {
             }
             let h = flatPoles.withUnsafeBufferPointer { pPtr in
                 flatWeights.withUnsafeBufferPointer { wPtr in
-                    OCCTSurfaceCreateBezier(pPtr.baseAddress, uCount, vCount,
-                                            wPtr.baseAddress)
+                    OCCTSurfaceCreateBezier(
+                        pPtr.baseAddress, uCount, vCount,
+                        wPtr.baseAddress)
                 }
             }
             guard let h = h else { return nil }
@@ -379,7 +443,7 @@ public final class Surface: @unchecked Sendable {
         }
     }
 
-    /// Create a BSpline surface
+    /// Create a BSpline surface.
     /// - Parameters:
     ///   - poles: 2D array of control points [uRow][vCol]
     ///   - weights: Optional 2D array of weights
@@ -389,11 +453,14 @@ public final class Surface: @unchecked Sendable {
     ///   - multiplicitiesV: Knot multiplicities in V direction
     ///   - degreeU: Polynomial degree in U
     ///   - degreeV: Polynomial degree in V
-    public static func bspline(poles: [[SIMD3<Double>]],
-                               weights: [[Double]]? = nil,
-                               knotsU: [Double], multiplicitiesU: [Int32],
-                               knotsV: [Double], multiplicitiesV: [Int32],
-                               degreeU: Int, degreeV: Int) -> Surface? {
+    /// - Returns: The constructed surface, or nil if the pole/knot/multiplicity data is invalid.
+    public static func bspline(
+        poles: [[SIMD3<Double>]],
+        weights: [[Double]]? = nil,
+        knotsU: [Double], multiplicitiesU: [Int32],
+        knotsV: [Double], multiplicitiesV: [Int32],
+        degreeU: Int, degreeV: Int
+    ) -> Surface? {
         let uCount = Int32(poles.count)
         guard uCount >= 2 else { return nil }
         let vCount = Int32(poles[0].count)
@@ -447,47 +514,53 @@ public final class Surface: @unchecked Sendable {
 
     // MARK: - Operations
 
-    /// Create a rectangular trim of this surface
+    /// Create a rectangular trim of this surface.
     public func trimmed(u1: Double, u2: Double, v1: Double, v2: Double) -> Surface? {
         guard let h = OCCTSurfaceTrim(handle, u1, u2, v1, v2) else { return nil }
         return Surface(handle: h)
     }
 
-    /// Create an offset surface at a given distance from this surface
+    /// Create an offset surface at a given distance from this surface.
     public func offset(distance: Double) -> Surface? {
         guard let h = OCCTSurfaceOffset(handle, distance) else { return nil }
         return Surface(handle: h)
     }
 
-    /// Translated copy
+    /// Translated copy.
     public func translated(by delta: SIMD3<Double>) -> Surface? {
         guard let h = OCCTSurfaceTranslate(handle, delta.x, delta.y, delta.z) else { return nil }
         return Surface(handle: h)
     }
 
-    /// Rotated copy around an axis
-    public func rotated(axisOrigin: SIMD3<Double>, axisDirection: SIMD3<Double>,
-                        angle: Double) -> Surface? {
-        guard let h = OCCTSurfaceRotate(handle,
-                                         axisOrigin.x, axisOrigin.y, axisOrigin.z,
-                                         axisDirection.x, axisDirection.y, axisDirection.z,
-                                         angle)
+    /// Rotated copy around an axis.
+    public func rotated(
+        axisOrigin: SIMD3<Double>, axisDirection: SIMD3<Double>,
+        angle: Double
+    ) -> Surface? {
+        guard
+            let h = OCCTSurfaceRotate(
+                handle,
+                axisOrigin.x, axisOrigin.y, axisOrigin.z,
+                axisDirection.x, axisDirection.y, axisDirection.z,
+                angle)
         else { return nil }
         return Surface(handle: h)
     }
 
-    /// Scaled copy from a center point
+    /// Scaled copy from a center point.
     public func scaled(center: SIMD3<Double>, factor: Double) -> Surface? {
         guard let h = OCCTSurfaceScale(handle, center.x, center.y, center.z, factor)
         else { return nil }
         return Surface(handle: h)
     }
 
-    /// Mirrored copy across a plane
+    /// Mirrored copy across a plane.
     public func mirrored(planeOrigin: SIMD3<Double>, planeNormal: SIMD3<Double>) -> Surface? {
-        guard let h = OCCTSurfaceMirrorPlane(handle,
-                                              planeOrigin.x, planeOrigin.y, planeOrigin.z,
-                                              planeNormal.x, planeNormal.y, planeNormal.z)
+        guard
+            let h = OCCTSurfaceMirrorPlane(
+                handle,
+                planeOrigin.x, planeOrigin.y, planeOrigin.z,
+                planeNormal.x, planeNormal.y, planeNormal.z)
         else { return nil }
         return Surface(handle: h)
     }
@@ -511,8 +584,10 @@ public final class Surface: @unchecked Sendable {
     /// let mirrored = plane?.mirrored(acrossAxis: SIMD3(0, 0, 0), direction: SIMD3(0, 0, 1))
     /// ```
     public func mirrored(acrossAxis point: SIMD3<Double>, direction: SIMD3<Double>) -> Surface? {
-        guard let h = OCCTSurfaceMirrorAxis(handle, point.x, point.y, point.z,
-                                             direction.x, direction.y, direction.z)
+        guard
+            let h = OCCTSurfaceMirrorAxis(
+                handle, point.x, point.y, point.z,
+                direction.x, direction.y, direction.z)
         else { return nil }
         return Surface(handle: h)
     }
@@ -552,7 +627,9 @@ public final class Surface: @unchecked Sendable {
     ///
     /// - Parameters:
     ///   - tolerance: Maximum approximation error
-    ///   - continuity: Desired continuity (0=C0, 1=C1, 2=C2, 3=C3)
+    ///   - continuity: A ``ParametricContinuity`` raw value (0=C0, 1=C1, 2=C2). The
+    ///     approximator accepts nothing stricter: `AdvApprox` throws for C3 and above, which
+    ///     surfaces here as `nil`.
     ///   - maxSegments: Maximum number of B-spline segments
     ///   - maxDegree: Maximum polynomial degree
     ///
@@ -580,26 +657,28 @@ public final class Surface: @unchecked Sendable {
     /// let bsp = sphere.approximated(tolerance: 1e-3, maxDegree: 8)
     /// ```
     ///
-    /// - Parameter continuity: A ``ParametricContinuity`` raw value (0=C0, 1=C1, 2=C2). The
-    ///   approximator accepts nothing stricter: `AdvApprox` throws for C3 and above, which
-    ///   surfaces here as `nil`.
-    public func approximated(tolerance: Double = 1e-3, continuity: Int = 2,
-                             maxSegments: Int = 100, maxDegree: Int = 8) -> Surface? {
-        guard let h = OCCTSurfaceApproximate(handle, tolerance, Int32(continuity),
-                                              Int32(maxSegments), Int32(maxDegree))
+    /// - Returns: The fitted surface, or nil if the approximation could not be constructed at all.
+    public func approximated(
+        tolerance: Double = 1e-3, continuity: Int = 2,
+        maxSegments: Int = 100, maxDegree: Int = 8
+    ) -> Surface? {
+        guard
+            let h = OCCTSurfaceApproximate(
+                handle, tolerance, Int32(continuity),
+                Int32(maxSegments), Int32(maxDegree))
         else { return nil }
         return Surface(handle: h)
     }
 
     // MARK: - Iso Curves
 
-    /// Extract a U-iso curve (constant U, varying V)
+    /// Extract a U-iso curve (constant U, varying V).
     public func uIso(at u: Double) -> Curve3D? {
         guard let h = OCCTSurfaceUIso(handle, u) else { return nil }
         return Curve3D(handle: h)
     }
 
-    /// Extract a V-iso curve (constant V, varying U)
+    /// Extract a V-iso curve (constant V, varying U).
     public func vIso(at v: Double) -> Curve3D? {
         guard let h = OCCTSurfaceVIso(handle, v) else { return nil }
         return Curve3D(handle: h)
@@ -607,13 +686,13 @@ public final class Surface: @unchecked Sendable {
 
     // MARK: - Pipe Surfaces
 
-    /// Create a pipe surface by sweeping a circle along a path
+    /// Create a pipe surface by sweeping a circle along a path.
     public static func pipe(path: Curve3D, radius: Double) -> Surface? {
         guard let h = OCCTSurfaceCreatePipe(path.handle, radius) else { return nil }
         return Surface(handle: h)
     }
 
-    /// Create a pipe surface by sweeping a section curve along a path
+    /// Create a pipe surface by sweeping a section curve along a path.
     public static func pipe(path: Curve3D, section: Curve3D) -> Surface? {
         guard let h = OCCTSurfaceCreatePipeWithSection(path.handle, section.handle)
         else { return nil }
@@ -622,7 +701,7 @@ public final class Surface: @unchecked Sendable {
 
     // MARK: - Draw Methods
 
-    /// Draw iso-parameter grid lines for Metal visualization
+    /// Draw iso-parameter grid lines for Metal visualization.
     /// - Parameters:
     ///   - uLineCount: Number of U-iso lines, at least 0.
     ///   - vLineCount: Number of V-iso lines, at least 0.
@@ -632,23 +711,26 @@ public final class Surface: @unchecked Sendable {
     ///   exceed ``Sampling/maximumSampleCount`` (#558). Each factor is also checked on its own,
     ///   since a negative line count used to abort the process unless the other count happened to
     ///   outweigh it.
-    public func drawGrid(uLineCount: Int = 10, vLineCount: Int = 10,
-                         pointsPerLine: Int = 50) -> [[SIMD3<Double>]] {
+    public func drawGrid(
+        uLineCount: Int = 10, vLineCount: Int = 10,
+        pointsPerLine: Int = 50
+    ) -> [[SIMD3<Double>]] {
         // Bound each line count before adding: the sum is what sizes `lineLengths`, and two counts
         // near `Int.max` overflow the addition itself into a trap before any ceiling is consulted.
         guard uLineCount >= 0, uLineCount <= Sampling.maximumSampleCount,
-              vLineCount >= 0, vLineCount <= Sampling.maximumSampleCount
+            vLineCount >= 0, vLineCount <= Sampling.maximumSampleCount
         else { return [] }
         let maxLines = uLineCount + vLineCount
         guard let maxPoints = Sampling.gridTotal(maxLines, pointsPerLine, atLeast: 0),
-              maxPoints > 0
+            maxPoints > 0
         else { return [] }
         var buffer = [Double](repeating: 0, count: maxPoints * 3)
         var lineLengths = [Int32](repeating: 0, count: maxLines)
 
-        let totalPoints = Int(OCCTSurfaceDrawGrid(
-            handle, Int32(uLineCount), Int32(vLineCount), Int32(pointsPerLine),
-            &buffer, Int32(maxPoints), &lineLengths, Int32(maxLines)))
+        let totalPoints = Int(
+            OCCTSurfaceDrawGrid(
+                handle, Int32(uLineCount), Int32(vLineCount), Int32(pointsPerLine),
+                &buffer, Int32(maxPoints), &lineLengths, Int32(maxLines)))
 
         guard totalPoints > 0 else { return [] }
 
@@ -780,7 +862,7 @@ public final class Surface: @unchecked Sendable {
         return h
     }
 
-    /// Principal curvature result
+    /// Principal curvature result.
     public struct PrincipalCurvatures: Sendable {
         public let kMin: Double
         public let kMax: Double
@@ -788,45 +870,59 @@ public final class Surface: @unchecked Sendable {
         public let dirMax: SIMD3<Double>
     }
 
-    /// Principal curvatures and directions at (u, v)
+    /// Principal curvatures and directions at (u, v).
     public func principalCurvatures(atU u: Double, v: Double) -> PrincipalCurvatures? {
-        var kMin: Double = 0, kMax: Double = 0
-        var d1x: Double = 0, d1y: Double = 0, d1z: Double = 0
-        var d2x: Double = 0, d2y: Double = 0, d2z: Double = 0
-        guard OCCTSurfaceGetPrincipalCurvatures(handle, u, v, &kMin, &kMax,
-                                                 &d1x, &d1y, &d1z,
-                                                 &d2x, &d2y, &d2z)
+        var kMin: Double = 0
+        var kMax: Double = 0
+        var d1x: Double = 0
+        var d1y: Double = 0
+        var d1z: Double = 0
+        var d2x: Double = 0
+        var d2y: Double = 0
+        var d2z: Double = 0
+        guard
+            OCCTSurfaceGetPrincipalCurvatures(
+                handle, u, v, &kMin, &kMax,
+                &d1x, &d1y, &d1z,
+                &d2x, &d2y, &d2z)
         else { return nil }
-        return PrincipalCurvatures(kMin: kMin, kMax: kMax,
-                                   dirMin: SIMD3(d1x, d1y, d1z),
-                                   dirMax: SIMD3(d2x, d2y, d2z))
+        return PrincipalCurvatures(
+            kMin: kMin, kMax: kMax,
+            dirMin: SIMD3(d1x, d1y, d1z),
+            dirMax: SIMD3(d2x, d2y, d2z))
     }
 
     // MARK: - Bounding Box
 
-    /// Axis-aligned bounding box (nil for infinite surfaces)
+    /// Axis-aligned bounding box (nil for infinite surfaces).
     public var boundingBox: (min: SIMD3<Double>, max: SIMD3<Double>)? {
-        var xMin: Double = 0, yMin: Double = 0, zMin: Double = 0
-        var xMax: Double = 0, yMax: Double = 0, zMax: Double = 0
-        guard OCCTSurfaceGetBoundingBox(handle, &xMin, &yMin, &zMin,
-                                         &xMax, &yMax, &zMax)
+        var xMin: Double = 0
+        var yMin: Double = 0
+        var zMin: Double = 0
+        var xMax: Double = 0
+        var yMax: Double = 0
+        var zMax: Double = 0
+        guard
+            OCCTSurfaceGetBoundingBox(
+                handle, &xMin, &yMin, &zMin,
+                &xMax, &yMax, &zMax)
         else { return nil }
         return (SIMD3(xMin, yMin, zMin), SIMD3(xMax, yMax, zMax))
     }
 
     // MARK: - BSpline/Bezier Queries
 
-    /// Number of control points in U direction (0 if not BSpline/Bezier)
+    /// Number of control points in U direction (0 if not BSpline/Bezier).
     public var uPoleCount: Int {
         Int(OCCTSurfaceGetUPoleCount(handle))
     }
 
-    /// Number of control points in V direction (0 if not BSpline/Bezier)
+    /// Number of control points in V direction (0 if not BSpline/Bezier).
     public var vPoleCount: Int {
         Int(OCCTSurfaceGetVPoleCount(handle))
     }
 
-    /// Control points as 2D array [uRow][vCol] (empty if not BSpline/Bezier)
+    /// Control points as 2D array [uRow][vCol] (empty if not BSpline/Bezier).
     public var poles: [[SIMD3<Double>]] {
         let uCount = uPoleCount
         let vCount = vPoleCount
@@ -846,19 +942,19 @@ public final class Surface: @unchecked Sendable {
         return result
     }
 
-    /// Polynomial degree in U direction (0 if not BSpline/Bezier)
+    /// Polynomial degree in U direction (0 if not BSpline/Bezier).
     public var uDegree: Int {
         Int(OCCTSurfaceGetUDegree(handle))
     }
 
-    /// Polynomial degree in V direction (0 if not BSpline/Bezier)
+    /// Polynomial degree in V direction (0 if not BSpline/Bezier).
     public var vDegree: Int {
         Int(OCCTSurfaceGetVDegree(handle))
     }
 
     // MARK: - Curve Projection (v0.22.0)
 
-    /// Result of projecting a point onto a surface
+    /// Result of projecting a point onto a surface.
     public struct SurfaceProjection: Sendable {
         public let u: Double
         public let v: Double
@@ -892,8 +988,9 @@ public final class Surface: @unchecked Sendable {
     public func projectCurveSegments(_ curve: Curve3D, tolerance: Double = 1e-4) -> [Curve2D] {
         var buffer = [OCCTCurve2DRef?](repeating: nil, count: 32)
         let count = buffer.withUnsafeMutableBufferPointer { ptr in
-            OCCTSurfaceProjectCurveSegments(handle, curve.handle, tolerance,
-                                             ptr.baseAddress, 32)
+            OCCTSurfaceProjectCurveSegments(
+                handle, curve.handle, tolerance,
+                ptr.baseAddress, 32)
         }
         var result = [Curve2D]()
         for i in 0..<Int(count) {
@@ -924,9 +1021,14 @@ public final class Surface: @unchecked Sendable {
     /// - Parameter point: The 3D point to project
     /// - Returns: UV parameters and distance, or nil if projection fails
     public func projectPoint(_ point: SIMD3<Double>) -> SurfaceProjection? {
-        var u: Double = 0, v: Double = 0, distance: Double = 0
-        guard OCCTSurfaceProjectPoint(handle, point.x, point.y, point.z,
-                                       &u, &v, &distance) else {
+        var u: Double = 0
+        var v: Double = 0
+        var distance: Double = 0
+        guard
+            OCCTSurfaceProjectPoint(
+                handle, point.x, point.y, point.z,
+                &u, &v, &distance)
+        else {
             return nil
         }
         return SurfaceProjection(u: u, v: v, distance: distance)
@@ -977,10 +1079,12 @@ public final class Surface: @unchecked Sendable {
             flatPoints.append(p.z)
         }
 
-        guard let h = OCCTSurfacePlateThrough(
-            &flatPoints, Int32(points.count),
-            Int32(degree), tolerance
-        ) else { return nil }
+        guard
+            let h = OCCTSurfacePlateThrough(
+                &flatPoints, Int32(points.count),
+                Int32(degree), tolerance
+            )
+        else { return nil }
         return Surface(handle: h)
     }
 
@@ -1012,10 +1116,12 @@ public final class Surface: @unchecked Sendable {
             flat.append(c.target.z)
         }
 
-        guard let h = OCCTSurfaceNLPlateG0(
-            handle, &flat, Int32(constraints.count),
-            Int32(maxIterations), tolerance
-        ) else { return nil }
+        guard
+            let h = OCCTSurfaceNLPlateG0(
+                handle, &flat, Int32(constraints.count),
+                Int32(maxIterations), tolerance
+            )
+        else { return nil }
         return Surface(handle: h)
     }
 
@@ -1030,7 +1136,10 @@ public final class Surface: @unchecked Sendable {
     ///   - tolerance: Approximation tolerance (default 1e-3)
     /// - Returns: A new deformed surface, or nil on failure
     public func nlPlateDeformedG1(
-        constraints: [(uv: SIMD2<Double>, target: SIMD3<Double>, tangentU: SIMD3<Double>, tangentV: SIMD3<Double>)],
+        constraints: [(
+            uv: SIMD2<Double>, target: SIMD3<Double>, tangentU: SIMD3<Double>,
+            tangentV: SIMD3<Double>
+        )],
         maxIterations: Int = 4,
         tolerance: Double = 1e-3
     ) -> Surface? {
@@ -1052,10 +1161,12 @@ public final class Surface: @unchecked Sendable {
             flat.append(c.tangentV.z)
         }
 
-        guard let h = OCCTSurfaceNLPlateG1(
-            handle, &flat, Int32(constraints.count),
-            Int32(maxIterations), tolerance
-        ) else { return nil }
+        guard
+            let h = OCCTSurfaceNLPlateG1(
+                handle, &flat, Int32(constraints.count),
+                Int32(maxIterations), tolerance
+            )
+        else { return nil }
         return Surface(handle: h)
     }
 }
@@ -1081,10 +1192,12 @@ extension Surface {
         let vCount = vParameters.count
         let total = uCount * vCount
         var outXYZ = [Double](repeating: 0, count: total * 3)
-        let n = Int(OCCTSurfaceEvaluateGrid(handle,
-                                             uParameters, Int32(uCount),
-                                             vParameters, Int32(vCount),
-                                             &outXYZ))
+        let n = Int(
+            OCCTSurfaceEvaluateGrid(
+                handle,
+                uParameters, Int32(uCount),
+                vParameters, Int32(vCount),
+                &outXYZ))
         guard n == total else { return .empty }
 
         // Bridge buffer is U-major, matching SurfaceGrid's storage, so no transpose. It was
@@ -1118,16 +1231,19 @@ extension Surface {
         var outXYZ = [Double](repeating: 0, count: total * 3)
         var outD1U = [Double](repeating: 0, count: total * 3)
         var outD1V = [Double](repeating: 0, count: total * 3)
-        let n = Int(OCCTSurfaceEvaluateGridD1(handle,
-                                               uParameters, Int32(uCount),
-                                               vParameters, Int32(vCount),
-                                               &outXYZ, &outD1U, &outD1V))
+        let n = Int(
+            OCCTSurfaceEvaluateGridD1(
+                handle,
+                uParameters, Int32(uCount),
+                vParameters, Int32(vCount),
+                &outXYZ, &outD1U, &outD1V))
         guard n == total else { return .empty }
 
-        return SurfaceGridD1(uCount: uCount, vCount: vCount,
-                             points: unpackSIMD3(outXYZ, count: total),
-                             d1u: unpackSIMD3(outD1U, count: total),
-                             d1v: unpackSIMD3(outD1V, count: total))
+        return SurfaceGridD1(
+            uCount: uCount, vCount: vCount,
+            points: unpackSIMD3(outXYZ, count: total),
+            d1u: unpackSIMD3(outD1U, count: total),
+            d1v: unpackSIMD3(outD1V, count: total))
     }
 }
 
@@ -1142,11 +1258,14 @@ extension Surface {
     ///   - maxCurves: Output *capacity* (default 50), clamped into `0...`
     ///     ``Sampling/maximumSampleCount``; 0 or less returns empty (#622).
     /// - Returns: Array of intersection curves
-    public func intersections(with other: Surface, tolerance: Double = 1e-6, maxCurves: Int = 50) -> [Curve3D] {
+    public func intersections(with other: Surface, tolerance: Double = 1e-6, maxCurves: Int = 50)
+        -> [Curve3D]
+    {
         let maxCurves = Sampling.capacity(maxCurves)
         guard maxCurves > 0 else { return [] }
         var handles = [OCCTCurve3DRef?](repeating: nil, count: maxCurves)
-        let n = Int(OCCTSurfaceIntersect(handle, other.handle, tolerance, &handles, Int32(maxCurves)))
+        let n = Int(
+            OCCTSurfaceIntersect(handle, other.handle, tolerance, &handles, Int32(maxCurves)))
         return (0..<n).compactMap { i in
             guard let h = handles[i] else { return nil }
             return Curve3D(handle: h)
@@ -1200,10 +1319,15 @@ extension Surface {
     ///   - c4: Fourth boundary curve
     ///   - style: Filling style
     /// - Returns: Bezier surface, or nil on failure
-    public static func bezierFill(_ c1: Curve3D, _ c2: Curve3D, _ c3: Curve3D, _ c4: Curve3D,
-                                  style: BezierFillStyle = .stretch) -> Surface? {
-        guard let h = OCCTSurfaceBezierFill4(c1.handle, c2.handle, c3.handle, c4.handle,
-                                              style.rawValue) else { return nil }
+    public static func bezierFill(
+        _ c1: Curve3D, _ c2: Curve3D, _ c3: Curve3D, _ c4: Curve3D,
+        style: BezierFillStyle = .stretch
+    ) -> Surface? {
+        guard
+            let h = OCCTSurfaceBezierFill4(
+                c1.handle, c2.handle, c3.handle, c4.handle,
+                style.rawValue)
+        else { return nil }
         return Surface(handle: h)
     }
 
@@ -1216,9 +1340,13 @@ extension Surface {
     ///   - c2: Second boundary curve
     ///   - style: Filling style
     /// - Returns: Bezier surface, or nil on failure
-    public static func bezierFill(_ c1: Curve3D, _ c2: Curve3D,
-                                  style: BezierFillStyle = .stretch) -> Surface? {
-        guard let h = OCCTSurfaceBezierFill2(c1.handle, c2.handle, style.rawValue) else { return nil }
+    public static func bezierFill(
+        _ c1: Curve3D, _ c2: Curve3D,
+        style: BezierFillStyle = .stretch
+    ) -> Surface? {
+        guard let h = OCCTSurfaceBezierFill2(c1.handle, c2.handle, style.rawValue) else {
+            return nil
+        }
         return Surface(handle: h)
     }
 
@@ -1230,7 +1358,8 @@ extension Surface {
     /// - Returns: Face shape, or nil on failure
     public func toFace(tolerance: Double = 1e-6) -> Shape? {
         let d = domain
-        return Shape.face(from: self, uRange: d.uMin...d.uMax, vRange: d.vMin...d.vMax, tolerance: tolerance)
+        return Shape.face(
+            from: self, uRange: d.uMin...d.uMax, vRange: d.vMin...d.vMax, tolerance: tolerance)
     }
 
     /// Create a face from this surface with specific UV parameter bounds.
@@ -1240,13 +1369,17 @@ extension Surface {
     ///   - vRange: V parameter range
     ///   - tolerance: Tolerance for face creation
     /// - Returns: Face shape, or nil on failure
-    public func toFace(uRange: ClosedRange<Double>, vRange: ClosedRange<Double>,
-                       tolerance: Double = 1e-6) -> Shape? {
+    public func toFace(
+        uRange: ClosedRange<Double>, vRange: ClosedRange<Double>,
+        tolerance: Double = 1e-6
+    ) -> Shape? {
         return Shape.face(from: self, uRange: uRange, vRange: vRange, tolerance: tolerance)
     }
 
     /// Create a face trimmed to a **non-rectangular** region of this surface, given by a closed
-    /// boundary polygon in **UV space** (≥ 3 points, e.g. `[SIMD2(u,v), …]`). Each segment becomes
+    /// boundary polygon in **UV space** (≥ 3 points, e.g. `[SIMD2(u,v), …]`).
+    ///
+    /// Each segment becomes
     /// a 2D edge carrying a pcurve on the surface, so the face footprint follows the polygon —
     /// unlike ``toFace(uRange:vRange:tolerance:)``, which can only make a rectangular UV patch.
     ///
@@ -1257,11 +1390,18 @@ extension Surface {
     /// - Returns: The trimmed face, or nil on failure.
     public func toFace(uvBoundary: [SIMD2<Double>]) -> Shape? {
         guard uvBoundary.count >= 3 else { return nil }
-        var flat = [Double](); flat.reserveCapacity(uvBoundary.count * 2)
-        for p in uvBoundary { flat.append(p.x); flat.append(p.y) }
-        guard let h = flat.withUnsafeBufferPointer({ buf in
-            OCCTShapeCreateFaceFromSurfaceUVPolygon(handle, buf.baseAddress, Int32(uvBoundary.count))
-        }) else { return nil }
+        var flat = [Double]()
+        flat.reserveCapacity(uvBoundary.count * 2)
+        for p in uvBoundary {
+            flat.append(p.x)
+            flat.append(p.y)
+        }
+        guard
+            let h = flat.withUnsafeBufferPointer({ buf in
+                OCCTShapeCreateFaceFromSurfaceUVPolygon(
+                    handle, buf.baseAddress, Int32(uvBoundary.count))
+            })
+        else { return nil }
         return Shape(handle: h)
     }
 
@@ -1279,8 +1419,9 @@ extension Surface {
         let maxCurves: Int32 = 64
         var curveRefs = [OCCTCurve3DRef?](repeating: nil, count: Int(maxCurves))
         let count = curveRefs.withUnsafeMutableBufferPointer { buf in
-            OCCTSurfaceSurfaceIntersect(handle, other.handle, tolerance,
-                                         buf.baseAddress, maxCurves)
+            OCCTSurfaceSurfaceIntersect(
+                handle, other.handle, tolerance,
+                buf.baseAddress, maxCurves)
         }
         return (0..<Int(count)).compactMap { i in
             guard let ref = curveRefs[i] else { return nil }
@@ -1293,11 +1434,11 @@ extension Surface {
 
 /// Result of a curve-surface intersection point.
 public struct CurveSurfaceIntersection: Sendable {
-    /// 3D intersection point
+    /// 3D intersection point.
     public var point: SIMD3<Double>
-    /// Surface parameters (u, v) at the intersection
+    /// Surface parameters (u, v) at the intersection.
     public var surfaceUV: SIMD2<Double>
-    /// Curve parameter at the intersection
+    /// Curve parameter at the intersection.
     public var curveParameter: Double
 }
 
@@ -1308,7 +1449,8 @@ extension Curve3D {
     /// - Returns: Array of intersection results with 3D points, surface UV, and curve parameter
     public func intersections(with surface: Surface) -> [CurveSurfaceIntersection] {
         let maxPoints: Int32 = 64
-        var points = [OCCTCurveSurfacePoint](repeating: OCCTCurveSurfacePoint(), count: Int(maxPoints))
+        var points = [OCCTCurveSurfacePoint](
+            repeating: OCCTCurveSurfacePoint(), count: Int(maxPoints))
         let count = points.withUnsafeMutableBufferPointer { buf in
             OCCTCurveSurfaceIntersect(handle, surface.handle, buf.baseAddress, maxPoints)
         }
@@ -1326,12 +1468,6 @@ extension Curve3D {
 // MARK: - Surface to Bezier Patches (v0.36.0)
 
 extension Surface {
-    /// Convert this surface to an array of Bezier surface patches.
-    ///
-    /// Decomposes a B-spline surface into a grid of Bezier patches. The surface
-    /// is first converted to B-spline if needed.
-    ///
-    /// - Returns: Array of Bezier surface patches, or empty if conversion fails
     // MARK: - Surface Singularity Analysis (v0.37.0)
 
     /// Count the number of singularities (poles/degenerate regions) on this surface.
@@ -1360,10 +1496,15 @@ extension Surface {
     // MARK: - ShapeAnalysis_Surface extras (#266 follow-up)
 
     /// Refine a (U,V) for a 3D point by projecting it onto this surface's iso-lines — more robust
-    /// near degeneracies than plain ``projectPoint(_:)``. Returns the parameters and the 3D gap; a
+    /// near degeneracies than plain ``projectPoint(_:)``.
+    ///
+    /// Returns the parameters and the 3D gap; a
     /// very large gap means the projection effectively failed.
-    public func uvFromIso(_ point: SIMD3<Double>, precision: Double = 1e-6) -> (u: Double, v: Double, gap: Double)? {
-        var u = 0.0, v = 0.0
+    public func uvFromIso(_ point: SIMD3<Double>, precision: Double = 1e-6) -> (
+        u: Double, v: Double, gap: Double
+    )? {
+        var u = 0.0
+        var v = 0.0
         let gap = OCCTSurfaceUVFromIso(handle, point.x, point.y, point.z, precision, &u, &v)
         guard gap >= 0 else { return nil }
         return (u, v, gap)
@@ -1387,42 +1528,77 @@ extension Surface {
     }
 
     /// Full detail of singularity `index` (**0-based**, `0..<singularityCount(...)`), or nil if out
-    /// of range. Unlike ``singularityCount(tolerance:)`` (count only) this returns the pole point,
+    /// of range.
+    ///
+    /// Unlike ``singularityCount(tolerance:)`` (count only) this returns the pole point,
     /// iso-line 2D endpoints + parameters, and the iso direction.
     public func singularity(_ index: Int, precision: Double = 1e-6) -> Singularity? {
-        var pr = precision, px = 0.0, py = 0.0, pz = 0.0
-        var fu = 0.0, fv = 0.0, lu = 0.0, lv = 0.0, fp = 0.0, lp = 0.0
+        var pr = precision
+        var px = 0.0
+        var py = 0.0
+        var pz = 0.0
+        var fu = 0.0
+        var fv = 0.0
+        var lu = 0.0
+        var lv = 0.0
+        var fp = 0.0
+        var lp = 0.0
         var uiso = false
-        guard OCCTSurfaceSingularityDetail(handle, Int32(index + 1), &pr, &px, &py, &pz,
-                                           &fu, &fv, &lu, &lv, &fp, &lp, &uiso) else { return nil }
-        return Singularity(point: SIMD3(px, py, pz), firstUV: SIMD2(fu, fv), lastUV: SIMD2(lu, lv),
-                           firstParameter: fp, lastParameter: lp, isUIso: uiso, precision: pr)
+        guard
+            OCCTSurfaceSingularityDetail(
+                handle, Int32(index + 1), &pr, &px, &py, &pz,
+                &fu, &fv, &lu, &lv, &fp, &lp, &uiso)
+        else { return nil }
+        return Singularity(
+            point: SIMD3(px, py, pz), firstUV: SIMD2(fu, fv), lastUV: SIMD2(lu, lv),
+            firstParameter: fp, lastParameter: lp, isUIso: uiso, precision: pr)
     }
 
     /// Resolve the indeterminate 2D coordinate of a point lying in a singularity (e.g. a cone apex),
-    /// taking the well-defined coordinate from a `neighbour` 2D point. Returns the resolved (u,v).
-    public func projectDegenerated(_ point: SIMD3<Double>, neighbour: SIMD2<Double>,
-                                   precision: Double = 1e-6) -> SIMD2<Double>? {
-        var ru = 0.0, rv = 0.0
-        guard OCCTSurfaceProjectDegenerated(handle, point.x, point.y, point.z, precision,
-                                            neighbour.x, neighbour.y, &ru, &rv) else { return nil }
+    /// taking the well-defined coordinate from a `neighbour` 2D point.
+    ///
+    /// Returns the resolved (u,v).
+    public func projectDegenerated(
+        _ point: SIMD3<Double>, neighbour: SIMD2<Double>,
+        precision: Double = 1e-6
+    ) -> SIMD2<Double>? {
+        var ru = 0.0
+        var rv = 0.0
+        guard
+            OCCTSurfaceProjectDegenerated(
+                handle, point.x, point.y, point.z, precision,
+                neighbour.x, neighbour.y, &ru, &rv)
+        else { return nil }
         return SIMD2(ru, rv)
     }
 
     /// Project a 3D point onto this surface, restricting the parameter search to the given U/V
-    /// domain — disambiguates projection on periodic or self-overlapping surfaces. Returns the (u,v)
+    /// domain — disambiguates projection on periodic or self-overlapping surfaces.
+    ///
+    /// Returns the (u,v)
     /// and the 3D gap, or nil on failure.
-    public func projectPoint(_ point: SIMD3<Double>, uDomain: ClosedRange<Double>,
-                             vDomain: ClosedRange<Double>, precision: Double = 1e-6)
-        -> (uv: SIMD2<Double>, gap: Double)? {
-        var u = 0.0, v = 0.0
-        let gap = OCCTSurfaceProjectPointUVInDomain(handle, point.x, point.y, point.z, precision,
-                                                    uDomain.lowerBound, uDomain.upperBound,
-                                                    vDomain.lowerBound, vDomain.upperBound, &u, &v)
+    public func projectPoint(
+        _ point: SIMD3<Double>, uDomain: ClosedRange<Double>,
+        vDomain: ClosedRange<Double>, precision: Double = 1e-6
+    )
+        -> (uv: SIMD2<Double>, gap: Double)?
+    {
+        var u = 0.0
+        var v = 0.0
+        let gap = OCCTSurfaceProjectPointUVInDomain(
+            handle, point.x, point.y, point.z, precision,
+            uDomain.lowerBound, uDomain.upperBound,
+            vDomain.lowerBound, vDomain.upperBound, &u, &v)
         guard gap >= 0 else { return nil }
         return (SIMD2(u, v), gap)
     }
 
+    /// Convert this surface to an array of Bezier surface patches.
+    ///
+    /// Decomposes a B-spline surface into a grid of Bezier patches. The surface
+    /// is first converted to B-spline if needed.
+    ///
+    /// - Returns: Array of Bezier surface patches, or empty if conversion fails
     public func toBezierPatches() -> [Surface] {
         let maxPatches: Int32 = 256
         var patchRefs = [OCCTSurfaceRef?](repeating: nil, count: Int(maxPatches))
@@ -1437,17 +1613,17 @@ extension Surface {
 
     // MARK: - BSpline Bezier Patch Grid (v0.40.0)
 
-    /// Result of decomposing a BSpline surface into Bezier patches
+    /// Result of decomposing a BSpline surface into Bezier patches.
     public struct BezierPatchGrid {
-        /// Number of patches in U direction
+        /// Number of patches in U direction.
         public let uCount: Int
-        /// Number of patches in V direction
+        /// Number of patches in V direction.
         public let vCount: Int
-        /// Patches in row-major order (U varies faster)
+        /// Patches in row-major order (U varies faster).
         public let patches: [Surface]
     }
 
-    /// Decompose this BSpline surface into a grid of Bezier patches
+    /// Decompose this BSpline surface into a grid of Bezier patches.
     ///
     /// Returns the patches along with their U/V grid dimensions.
     /// Only works on BSpline surfaces.
@@ -1491,8 +1667,11 @@ extension Surface {
     ///   - curve2: Second boundary curve
     ///   - style: Filling style (default: .coons)
     /// - Returns: BSpline surface, or nil if curves are not BSpline or fill fails
-    public static func bsplineFill(curve1: Curve3D, curve2: Curve3D, style: FillStyle = .coons) -> Surface? {
-        guard let ref = OCCTSurfaceFillBSpline2Curves(curve1.handle, curve2.handle, style.rawValue) else {
+    public static func bsplineFill(curve1: Curve3D, curve2: Curve3D, style: FillStyle = .coons)
+        -> Surface?
+    {
+        guard let ref = OCCTSurfaceFillBSpline2Curves(curve1.handle, curve2.handle, style.rawValue)
+        else {
             return nil
         }
         return Surface(handle: ref)
@@ -1507,11 +1686,15 @@ extension Surface {
     ///   - curves: Four boundary curves in order (bottom, right, top, left)
     ///   - style: Filling style (default: .coons)
     /// - Returns: BSpline surface, or nil on failure
-    public static func bsplineFill(curves: (Curve3D, Curve3D, Curve3D, Curve3D), style: FillStyle = .coons) -> Surface? {
-        guard let ref = OCCTSurfaceFillBSpline4Curves(
-            curves.0.handle, curves.1.handle, curves.2.handle, curves.3.handle,
-            style.rawValue
-        ) else {
+    public static func bsplineFill(
+        curves: (Curve3D, Curve3D, Curve3D, Curve3D), style: FillStyle = .coons
+    ) -> Surface? {
+        guard
+            let ref = OCCTSurfaceFillBSpline4Curves(
+                curves.0.handle, curves.1.handle, curves.2.handle, curves.3.handle,
+                style.rawValue
+            )
+        else {
             return nil
         }
         return Surface(handle: ref)
@@ -1521,15 +1704,15 @@ extension Surface {
 
     /// Result of surface-to-surface extrema computation.
     public struct SurfaceExtremaResult {
-        /// Minimum distance between the surfaces
+        /// Minimum distance between the surfaces.
         public let distance: Double
-        /// Nearest point on the first surface
+        /// Nearest point on the first surface.
         public let point1: SIMD3<Double>
-        /// Nearest point on the second surface
+        /// Nearest point on the second surface.
         public let point2: SIMD3<Double>
-        /// UV parameters on the first surface
+        /// UV parameters on the first surface.
         public let uv1: SIMD2<Double>
-        /// UV parameters on the second surface
+        /// UV parameters on the second surface.
         public let uv2: SIMD2<Double>
     }
 
@@ -1543,9 +1726,11 @@ extension Surface {
     ///   - uvBounds1: UV bounds on this surface (uMin, uMax, vMin, vMax). Uses full surface bounds if nil.
     ///   - uvBounds2: UV bounds on the other surface. Uses full surface bounds if nil.
     /// - Returns: The extrema result, or nil if computation fails
-    public func extrema(to other: Surface,
-                        uvBounds1: (uMin: Double, uMax: Double, vMin: Double, vMax: Double)? = nil,
-                        uvBounds2: (uMin: Double, uMax: Double, vMin: Double, vMax: Double)? = nil) -> SurfaceExtremaResult? {
+    public func extrema(
+        to other: Surface,
+        uvBounds1: (uMin: Double, uMax: Double, vMin: Double, vMax: Double)? = nil,
+        uvBounds2: (uMin: Double, uMax: Double, vMin: Double, vMax: Double)? = nil
+    ) -> SurfaceExtremaResult? {
         let b1 = uvBounds1 ?? (0, 1, 0, 1)
         let b2 = uvBounds2 ?? (0, 1, 0, 1)
         var result = OCCTSurfaceExtremaResult()
@@ -1567,11 +1752,11 @@ extension Surface {
 
     // MARK: - ShapeAnalysis_Surface expansion (v0.49.0)
 
-    /// Result of projecting a 3D point to surface UV parameters
+    /// Result of projecting a 3D point to surface UV parameters.
     public struct UVProjection: Sendable {
-        /// UV parameters on the surface
+        /// UV parameters on the surface.
         public let uv: SIMD2<Double>
-        /// Gap: distance between the 3D point and the surface at the found UV
+        /// Gap: distance between the 3D point and the surface at the found UV.
         public let gap: Double
     }
 
@@ -1598,9 +1783,12 @@ extension Surface {
     ///   - point: 3D point to project
     ///   - precision: Projection precision (default: 1e-6)
     /// - Returns: UV coordinates and gap distance
-    public func nextValueOfUV(previousUV: SIMD2<Double>, point: SIMD3<Double>, precision: Double = 1e-6) -> UVProjection {
-        let result = OCCTSurfaceNextValueOfUV(handle, previousUV.x, previousUV.y,
-                                               point.x, point.y, point.z, precision)
+    public func nextValueOfUV(
+        previousUV: SIMD2<Double>, point: SIMD3<Double>, precision: Double = 1e-6
+    ) -> UVProjection {
+        let result = OCCTSurfaceNextValueOfUV(
+            handle, previousUV.x, previousUV.y,
+            point.x, point.y, point.z, precision)
         return UVProjection(uv: SIMD2(result.u, result.v), gap: result.gap)
     }
 
@@ -1620,10 +1808,12 @@ extension Surface {
         semiAngle: Double,
         radius: Double
     ) -> Surface? {
-        guard let ref = OCCTSurfaceConicalFromAxis(
-            origin.x, origin.y, origin.z,
-            direction.x, direction.y, direction.z,
-            semiAngle, radius) else { return nil }
+        guard
+            let ref = OCCTSurfaceConicalFromAxis(
+                origin.x, origin.y, origin.z,
+                direction.x, direction.y, direction.z,
+                semiAngle, radius)
+        else { return nil }
         return Surface(handle: ref)
     }
 
@@ -1641,10 +1831,12 @@ extension Surface {
         r1: Double,
         r2: Double
     ) -> Surface? {
-        guard let ref = OCCTSurfaceConicalFromPointsRadii(
-            point1.x, point1.y, point1.z,
-            point2.x, point2.y, point2.z,
-            r1, r2) else { return nil }
+        guard
+            let ref = OCCTSurfaceConicalFromPointsRadii(
+                point1.x, point1.y, point1.z,
+                point2.x, point2.y, point2.z,
+                r1, r2)
+        else { return nil }
         return Surface(handle: ref)
     }
 
@@ -1660,10 +1852,12 @@ extension Surface {
         direction: SIMD3<Double> = SIMD3(0, 0, 1),
         radius: Double
     ) -> Surface? {
-        guard let ref = OCCTSurfaceCylindricalFromAxis(
-            origin.x, origin.y, origin.z,
-            direction.x, direction.y, direction.z,
-            radius) else { return nil }
+        guard
+            let ref = OCCTSurfaceCylindricalFromAxis(
+                origin.x, origin.y, origin.z,
+                direction.x, direction.y, direction.z,
+                radius)
+        else { return nil }
         return Surface(handle: ref)
     }
 
@@ -1682,10 +1876,12 @@ extension Surface {
         point2: SIMD3<Double>,
         point3: SIMD3<Double>
     ) -> Surface? {
-        guard let ref = OCCTSurfaceCylindricalFromPoints(
-            point1.x, point1.y, point1.z,
-            point2.x, point2.y, point2.z,
-            point3.x, point3.y, point3.z) else { return nil }
+        guard
+            let ref = OCCTSurfaceCylindricalFromPoints(
+                point1.x, point1.y, point1.z,
+                point2.x, point2.y, point2.z,
+                point3.x, point3.y, point3.z)
+        else { return nil }
         return Surface(handle: ref)
     }
 
@@ -1715,10 +1911,12 @@ extension Surface {
         _ point2: SIMD3<Double>,
         _ point3: SIMD3<Double>
     ) -> Surface? {
-        guard let ref = OCCTSurfacePlaneFromPoints(
-            point1.x, point1.y, point1.z,
-            point2.x, point2.y, point2.z,
-            point3.x, point3.y, point3.z) else { return nil }
+        guard
+            let ref = OCCTSurfacePlaneFromPoints(
+                point1.x, point1.y, point1.z,
+                point2.x, point2.y, point2.z,
+                point3.x, point3.y, point3.z)
+        else { return nil }
         return Surface(handle: ref)
     }
 
@@ -1740,9 +1938,11 @@ extension Surface {
         point: SIMD3<Double>,
         normal: SIMD3<Double>
     ) -> Surface? {
-        guard let ref = OCCTSurfacePlaneFromPointNormal(
-            point.x, point.y, point.z,
-            normal.x, normal.y, normal.z) else { return nil }
+        guard
+            let ref = OCCTSurfacePlaneFromPointNormal(
+                point.x, point.y, point.z,
+                normal.x, normal.y, normal.z)
+        else { return nil }
         return Surface(handle: ref)
     }
 
@@ -1760,10 +1960,12 @@ extension Surface {
         r1: Double,
         r2: Double
     ) -> Surface? {
-        guard let ref = OCCTSurfaceTrimmedCone(
-            point1.x, point1.y, point1.z,
-            point2.x, point2.y, point2.z,
-            r1, r2) else { return nil }
+        guard
+            let ref = OCCTSurfaceTrimmedCone(
+                point1.x, point1.y, point1.z,
+                point2.x, point2.y, point2.z,
+                r1, r2)
+        else { return nil }
         return Surface(handle: ref)
     }
 
@@ -1781,10 +1983,12 @@ extension Surface {
         radius: Double,
         height: Double
     ) -> Surface? {
-        guard let ref = OCCTSurfaceTrimmedCylinder(
-            origin.x, origin.y, origin.z,
-            direction.x, direction.y, direction.z,
-            radius, height) else { return nil }
+        guard
+            let ref = OCCTSurfaceTrimmedCylinder(
+                origin.x, origin.y, origin.z,
+                direction.x, direction.y, direction.z,
+                radius, height)
+        else { return nil }
         return Surface(handle: ref)
     }
 
@@ -1797,13 +2001,13 @@ extension Surface {
     /// analyzer (`GeomConvert_BSplineSurfaceKnotSplitting`) always computed the locations
     /// too, via `USplitValue`/`VSplitValue`, this just wasn't surfaced.
     public struct KnotSplitResult {
-        /// Number of U split indices needed for the requested continuity
+        /// Number of U split indices needed for the requested continuity.
         public let uSplitCount: Int
-        /// Number of V split indices needed for the requested continuity
+        /// Number of V split indices needed for the requested continuity.
         public let vSplitCount: Int
-        /// U parameter values (ascending, bounded by the surface's own U range) at each split
+        /// U parameter values (ascending, bounded by the surface's own U range) at each split.
         public let uSplitParams: [Double]
-        /// V parameter values (ascending, bounded by the surface's own V range) at each split
+        /// V parameter values (ascending, bounded by the surface's own V range) at each split.
         public let vSplitParams: [Double]
         /// 1-based indices into the surface's own U knot table, one per split:
         /// `uSplitParams[i] == bsplineUKnot(index: uSplitIndices[i])`.
@@ -1854,8 +2058,10 @@ extension Surface {
     ///     and V knots
     /// - Returns: Split counts, the actual U/V parameter values, and the knot-table indices those
     ///   parameters were read from, or all-empty/zero for a non-BSpline surface
-    public func knotSplitting(uContinuity: ParametricContinuity = .c1,
-                              vContinuity: ParametricContinuity = .c1) -> KnotSplitResult {
+    public func knotSplitting(
+        uContinuity: ParametricContinuity = .c1,
+        vContinuity: ParametricContinuity = .c1
+    ) -> KnotSplitResult {
         // Same retry-on-truncation pattern as Curve3D.continuityBreaks: the bridge always
         // reports the true split counts even when it writes fewer, so one retry sized to
         // those counts is always enough.
@@ -1865,16 +2071,18 @@ extension Surface {
             var vParams = [Double](repeating: 0, count: Int(vCapacity))
             var uIndices = [Int32](repeating: 0, count: Int(uCapacity))
             var vIndices = [Int32](repeating: 0, count: Int(vCapacity))
-            let result = OCCTSurfaceKnotSplitting(handle, uContinuity.rawValue, vContinuity.rawValue,
-                                                  &uParams, &uIndices, uCapacity,
-                                                  &vParams, &vIndices, vCapacity)
+            let result = OCCTSurfaceKnotSplitting(
+                handle, uContinuity.rawValue, vContinuity.rawValue,
+                &uParams, &uIndices, uCapacity,
+                &vParams, &vIndices, vCapacity)
             return (result, uParams, vParams, uIndices, vIndices)
         }
 
         var (result, uParams, vParams, uIndices, vIndices) = read(uCapacity: 64, vCapacity: 64)
         if result.nbUSplits > 64 || result.nbVSplits > 64 {
-            (result, uParams, vParams, uIndices, vIndices) = read(uCapacity: max(result.nbUSplits, 1),
-                                                                  vCapacity: max(result.nbVSplits, 1))
+            (result, uParams, vParams, uIndices, vIndices) = read(
+                uCapacity: max(result.nbUSplits, 1),
+                vCapacity: max(result.nbVSplits, 1))
         }
         return KnotSplitResult(
             uSplitCount: Int(result.nbUSplits),
@@ -1899,15 +2107,17 @@ extension Surface {
     public static func joinBezierPatches(_ patches: [Surface], rows: Int, cols: Int) -> Surface? {
         guard patches.count == rows * cols, rows > 0, cols > 0 else { return nil }
         var handles: [OCCTSurfaceRef?] = patches.map { $0.handle }
-        guard let ref = OCCTSurfaceJoinBezierPatches(&handles, Int32(rows), Int32(cols)) else { return nil }
+        guard let ref = OCCTSurfaceJoinBezierPatches(&handles, Int32(rows), Int32(cols)) else {
+            return nil
+        }
         return Surface(handle: ref)
     }
 
     /// Result of trying to recognize an analytical surface.
     public struct AnalyticalConversion {
-        /// Recognized analytical surface (plane, cylinder, cone, sphere, torus)
+        /// Recognized analytical surface (plane, cylinder, cone, sphere, torus).
         public let surface: Surface
-        /// Maximum deviation from the original surface
+        /// Maximum deviation from the original surface.
         public let gap: Double
     }
 
@@ -1926,13 +2136,13 @@ extension Surface {
 
     /// Result of surface continuity splitting analysis.
     public struct ContinuitySplitResult {
-        /// Whether the surface was actually split
+        /// Whether the surface was actually split.
         public let wasSplit: Bool
-        /// Whether the surface already meets the criterion (no split needed)
+        /// Whether the surface already meets the criterion (no split needed).
         public let alreadyMeetsCriterion: Bool
-        /// Number of U split values
+        /// Number of U split values.
         public let uSplitCount: Int
-        /// Number of V split values
+        /// Number of V split values.
         public let vSplitCount: Int
     }
 
@@ -1943,7 +2153,9 @@ extension Surface {
     ///     above asks for CN, i.e. split at every break)
     ///   - tolerance: Tolerance for continuity checking
     /// - Returns: Split analysis result
-    public func splitByContinuity(criterion: Int = 2, tolerance: Double = 1e-6) -> ContinuitySplitResult {
+    public func splitByContinuity(criterion: Int = 2, tolerance: Double = 1e-6)
+        -> ContinuitySplitResult
+    {
         let result = OCCTSurfaceSplitByContinuity(handle, Int32(criterion), tolerance)
         return ContinuitySplitResult(
             wasSplit: result.wasSplit,
@@ -1972,13 +2184,13 @@ extension Surface {
         /// `.c1` measures C0 and C1; `.g2` measures C0, G1 and G2; `.c2` measures C0, C1 and C2.
         /// No order measures all five, not even the `.c2` default, which never looks at G1 or G2.
         public let measured: Set<ContinuityClass>
-        /// Distance between surface points at junction
+        /// Distance between surface points at junction.
         public let c0Value: Double
-        /// Angle between normals (radians), or -1 if G1 was not measured or does not hold
+        /// Angle between normals (radians), or -1 if G1 was not measured or does not hold.
         public let g1Angle: Double
-        /// Angle between U-derivatives, or -1
+        /// Angle between U-derivatives, or -1.
         public let c1UAngle: Double
-        /// Angle between V-derivatives, or -1
+        /// Angle between V-derivatives, or -1.
         public let c1VAngle: Double
         /// Bitmask of the classes that hold: bit0=C0, bit1=G1, bit2=C1, bit3=G2, bit4=C2.
         ///
@@ -2006,7 +2218,9 @@ extension Surface {
             return flags & continuity.analysisFlagBit != 0
         }
 
-        /// Whether the junction is positionally continuous (C0). Always measured.
+        /// Whether the junction is positionally continuous (C0).
+        ///
+        /// Always measured.
         public var isC0: Bool? { holds(.c0) }
         /// Whether the junction is geometrically tangent-continuous (G1), or nil if ``order``
         /// did not measure G1 (only `.g1` and `.g2` do).
@@ -2032,9 +2246,9 @@ extension Surface {
     /// ```
     ///
     /// - Parameters:
+    ///   - other: Second surface
     ///   - u1: U parameter on this surface
     ///   - v1: V parameter on this surface
-    ///   - other: Second surface
     ///   - u2: U parameter on second surface
     ///   - v2: V parameter on second surface
     ///   - order: Which continuity class to measure. This selects the analysis, not just a
@@ -2043,23 +2257,30 @@ extension Surface {
     ///     `nil` for them. `.c2` is the strictest question the class can answer, so `.c3` and
     ///     `.cN` saturate to it, which ``ContinuityAnalysis/order`` reports back.
     /// - Returns: Continuity analysis result, or nil on failure
-    public func continuityWith(_ other: Surface, u1: Double, v1: Double, u2: Double, v2: Double,
-                               order: ContinuityClass = .c2) -> ContinuityAnalysis? {
+    public func continuityWith(
+        _ other: Surface, u1: Double, v1: Double, u2: Double, v2: Double,
+        order: ContinuityClass = .c2
+    ) -> ContinuityAnalysis? {
         continuityAnalysis(with: other, u1: u1, v1: v1, u2: u2, v2: v2, rawOrder: order.rawValue)
     }
 
-    private func continuityAnalysis(with other: Surface, u1: Double, v1: Double,
-                                    u2: Double, v2: Double, rawOrder: Int32) -> ContinuityAnalysis? {
+    private func continuityAnalysis(
+        with other: Surface, u1: Double, v1: Double,
+        u2: Double, v2: Double, rawOrder: Int32
+    ) -> ContinuityAnalysis? {
         var outEffectiveOrder: Int32 = 0
-        var outC0: Double = 0, outG1: Double = 0
-        var outC1U: Double = 0, outC1V: Double = 0
+        var outC0: Double = 0
+        var outG1: Double = 0
+        var outC1U: Double = 0
+        var outC1V: Double = 0
         let ok = OCCTLocalAnalysisSurfaceContinuity(
             handle, u1, v1, other.handle, u2, v2, rawOrder,
             &outEffectiveOrder, &outC0, &outG1, &outC1U, &outC1V)
         guard ok else { return nil }
         var outMeasured: Int32 = 0
-        let flags = Int(OCCTLocalAnalysisSurfaceContinuityFlags(
-            handle, u1, v1, other.handle, u2, v2, rawOrder, &outMeasured))
+        let flags = Int(
+            OCCTLocalAnalysisSurfaceContinuityFlags(
+                handle, u1, v1, other.handle, u2, v2, rawOrder, &outMeasured))
         return ContinuityAnalysis(
             order: ContinuityClass(rawValue: outEffectiveOrder) ?? .c2,
             measured: ContinuityClass.set(fromAnalysisMask: outMeasured),
@@ -2072,7 +2293,7 @@ extension Surface {
     /// Create a BSpline surface by lofting through N section curves.
     ///
     /// - Parameters:
-    ///   - sections: Array of 3D curves defining cross-sections
+    ///   - curves: Array of 3D curves defining cross-sections
     ///   - params: Parameter values for each section (typically 0..1)
     /// - Returns: BSpline surface, or nil on failure
     public static func nSections(curves: [Curve3D], params: [Double]) -> Surface? {
@@ -2080,20 +2301,28 @@ extension Surface {
         let handles = curves.map { $0.handle as OCCTCurve3DRef }
         return handles.withUnsafeBufferPointer { hBuf in
             params.withUnsafeBufferPointer { pBuf in
-                guard let h = OCCTGeomFillNSections(hBuf.baseAddress!, pBuf.baseAddress!, Int32(curves.count)) else { return nil as Surface? }
+                guard
+                    let h = OCCTGeomFillNSections(
+                        hBuf.baseAddress!, pBuf.baseAddress!, Int32(curves.count))
+                else { return nil as Surface? }
                 return Surface(handle: h)
             }
         }
     }
 
     /// Query section info from N-sections surface creation.
-    public static func nSectionsInfo(curves: [Curve3D], params: [Double]) -> (poleCount: Int, knotCount: Int, degree: Int)? {
+    public static func nSectionsInfo(curves: [Curve3D], params: [Double]) -> (
+        poleCount: Int, knotCount: Int, degree: Int
+    )? {
         guard curves.count == params.count, curves.count >= 2 else { return nil }
         let handles = curves.map { $0.handle as OCCTCurve3DRef }
-        var nbPoles: Int32 = 0, nbKnots: Int32 = 0, deg: Int32 = 0
+        var nbPoles: Int32 = 0
+        var nbKnots: Int32 = 0
+        var deg: Int32 = 0
         handles.withUnsafeBufferPointer { hBuf in
             params.withUnsafeBufferPointer { pBuf in
-                OCCTGeomFillNSectionsInfo(hBuf.baseAddress!, pBuf.baseAddress!, Int32(curves.count),
+                OCCTGeomFillNSectionsInfo(
+                    hBuf.baseAddress!, pBuf.baseAddress!, Int32(curves.count),
                     &nbPoles, &nbKnots, &deg)
             }
         }
@@ -2117,9 +2346,11 @@ extension Surface {
     ///   - tolerance: Approximation tolerance (default 1e-3)
     /// - Returns: A new deformed surface, or nil on failure
     public func nlPlateDeformedG2(
-        constraints: [(uv: SIMD2<Double>, target: SIMD3<Double>,
-                        tangentU: SIMD3<Double>, tangentV: SIMD3<Double>,
-                        curvatureUU: SIMD3<Double>, curvatureUV: SIMD3<Double>, curvatureVV: SIMD3<Double>)],
+        constraints: [(
+            uv: SIMD2<Double>, target: SIMD3<Double>,
+            tangentU: SIMD3<Double>, tangentV: SIMD3<Double>,
+            curvatureUU: SIMD3<Double>, curvatureUV: SIMD3<Double>, curvatureVV: SIMD3<Double>
+        )],
         maxIterations: Int = 4,
         tolerance: Double = 1e-3
     ) -> Surface? {
@@ -2129,19 +2360,34 @@ extension Surface {
         var flat: [Double] = []
         flat.reserveCapacity(constraints.count * 20)
         for c in constraints {
-            flat.append(c.uv.x); flat.append(c.uv.y)
-            flat.append(c.target.x); flat.append(c.target.y); flat.append(c.target.z)
-            flat.append(c.tangentU.x); flat.append(c.tangentU.y); flat.append(c.tangentU.z)
-            flat.append(c.tangentV.x); flat.append(c.tangentV.y); flat.append(c.tangentV.z)
-            flat.append(c.curvatureUU.x); flat.append(c.curvatureUU.y); flat.append(c.curvatureUU.z)
-            flat.append(c.curvatureUV.x); flat.append(c.curvatureUV.y); flat.append(c.curvatureUV.z)
-            flat.append(c.curvatureVV.x); flat.append(c.curvatureVV.y); flat.append(c.curvatureVV.z)
+            flat.append(c.uv.x)
+            flat.append(c.uv.y)
+            flat.append(c.target.x)
+            flat.append(c.target.y)
+            flat.append(c.target.z)
+            flat.append(c.tangentU.x)
+            flat.append(c.tangentU.y)
+            flat.append(c.tangentU.z)
+            flat.append(c.tangentV.x)
+            flat.append(c.tangentV.y)
+            flat.append(c.tangentV.z)
+            flat.append(c.curvatureUU.x)
+            flat.append(c.curvatureUU.y)
+            flat.append(c.curvatureUU.z)
+            flat.append(c.curvatureUV.x)
+            flat.append(c.curvatureUV.y)
+            flat.append(c.curvatureUV.z)
+            flat.append(c.curvatureVV.x)
+            flat.append(c.curvatureVV.y)
+            flat.append(c.curvatureVV.z)
         }
 
-        guard let h = OCCTSurfaceNLPlateG2(
-            handle, &flat, Int32(constraints.count),
-            Int32(maxIterations), tolerance
-        ) else { return nil }
+        guard
+            let h = OCCTSurfaceNLPlateG2(
+                handle, &flat, Int32(constraints.count),
+                Int32(maxIterations), tolerance
+            )
+        else { return nil }
         return Surface(handle: h)
     }
 
@@ -2156,10 +2402,12 @@ extension Surface {
     ///   - tolerance: Approximation tolerance (default 1e-3)
     /// - Returns: A new deformed surface, or nil on failure
     public func nlPlateDeformedG3(
-        constraints: [(uv: SIMD2<Double>, target: SIMD3<Double>,
-                        tangentU: SIMD3<Double>, tangentV: SIMD3<Double>,
-                        curvatureUU: SIMD3<Double>, curvatureUV: SIMD3<Double>, curvatureVV: SIMD3<Double>,
-                        d3UUU: SIMD3<Double>, d3UUV: SIMD3<Double>, d3UVV: SIMD3<Double>, d3VVV: SIMD3<Double>)],
+        constraints: [(
+            uv: SIMD2<Double>, target: SIMD3<Double>,
+            tangentU: SIMD3<Double>, tangentV: SIMD3<Double>,
+            curvatureUU: SIMD3<Double>, curvatureUV: SIMD3<Double>, curvatureVV: SIMD3<Double>,
+            d3UUU: SIMD3<Double>, d3UUV: SIMD3<Double>, d3UVV: SIMD3<Double>, d3VVV: SIMD3<Double>
+        )],
         maxIterations: Int = 4,
         tolerance: Double = 1e-3
     ) -> Surface? {
@@ -2169,23 +2417,46 @@ extension Surface {
         var flat: [Double] = []
         flat.reserveCapacity(constraints.count * 32)
         for c in constraints {
-            flat.append(c.uv.x); flat.append(c.uv.y)
-            flat.append(c.target.x); flat.append(c.target.y); flat.append(c.target.z)
-            flat.append(c.tangentU.x); flat.append(c.tangentU.y); flat.append(c.tangentU.z)
-            flat.append(c.tangentV.x); flat.append(c.tangentV.y); flat.append(c.tangentV.z)
-            flat.append(c.curvatureUU.x); flat.append(c.curvatureUU.y); flat.append(c.curvatureUU.z)
-            flat.append(c.curvatureUV.x); flat.append(c.curvatureUV.y); flat.append(c.curvatureUV.z)
-            flat.append(c.curvatureVV.x); flat.append(c.curvatureVV.y); flat.append(c.curvatureVV.z)
-            flat.append(c.d3UUU.x); flat.append(c.d3UUU.y); flat.append(c.d3UUU.z)
-            flat.append(c.d3UUV.x); flat.append(c.d3UUV.y); flat.append(c.d3UUV.z)
-            flat.append(c.d3UVV.x); flat.append(c.d3UVV.y); flat.append(c.d3UVV.z)
-            flat.append(c.d3VVV.x); flat.append(c.d3VVV.y); flat.append(c.d3VVV.z)
+            flat.append(c.uv.x)
+            flat.append(c.uv.y)
+            flat.append(c.target.x)
+            flat.append(c.target.y)
+            flat.append(c.target.z)
+            flat.append(c.tangentU.x)
+            flat.append(c.tangentU.y)
+            flat.append(c.tangentU.z)
+            flat.append(c.tangentV.x)
+            flat.append(c.tangentV.y)
+            flat.append(c.tangentV.z)
+            flat.append(c.curvatureUU.x)
+            flat.append(c.curvatureUU.y)
+            flat.append(c.curvatureUU.z)
+            flat.append(c.curvatureUV.x)
+            flat.append(c.curvatureUV.y)
+            flat.append(c.curvatureUV.z)
+            flat.append(c.curvatureVV.x)
+            flat.append(c.curvatureVV.y)
+            flat.append(c.curvatureVV.z)
+            flat.append(c.d3UUU.x)
+            flat.append(c.d3UUU.y)
+            flat.append(c.d3UUU.z)
+            flat.append(c.d3UUV.x)
+            flat.append(c.d3UUV.y)
+            flat.append(c.d3UUV.z)
+            flat.append(c.d3UVV.x)
+            flat.append(c.d3UVV.y)
+            flat.append(c.d3UVV.z)
+            flat.append(c.d3VVV.x)
+            flat.append(c.d3VVV.y)
+            flat.append(c.d3VVV.z)
         }
 
-        guard let h = OCCTSurfaceNLPlateG3(
-            handle, &flat, Int32(constraints.count),
-            Int32(maxIterations), tolerance
-        ) else { return nil }
+        guard
+            let h = OCCTSurfaceNLPlateG3(
+                handle, &flat, Int32(constraints.count),
+                Int32(maxIterations), tolerance
+            )
+        else { return nil }
         return Surface(handle: h)
     }
 
@@ -2211,14 +2482,19 @@ extension Surface {
         var flat: [Double] = []
         flat.reserveCapacity(constraints.count * 5)
         for c in constraints {
-            flat.append(c.uv.x); flat.append(c.uv.y)
-            flat.append(c.target.x); flat.append(c.target.y); flat.append(c.target.z)
+            flat.append(c.uv.x)
+            flat.append(c.uv.y)
+            flat.append(c.target.x)
+            flat.append(c.target.y)
+            flat.append(c.target.z)
         }
 
-        guard let h = OCCTSurfaceNLPlateIncrementalG0(
-            handle, &flat, Int32(constraints.count),
-            Int32(maxOrder), Int32(initConstraintOrder), Int32(nbIncrements)
-        ) else { return nil }
+        guard
+            let h = OCCTSurfaceNLPlateIncrementalG0(
+                handle, &flat, Int32(constraints.count),
+                Int32(maxOrder), Int32(initConstraintOrder), Int32(nbIncrements)
+            )
+        else { return nil }
         return Surface(handle: h)
     }
 
@@ -2242,11 +2518,16 @@ extension Surface {
 
         var flat: [Double] = []
         for c in constraints {
-            flat.append(c.uv.x); flat.append(c.uv.y)
-            flat.append(c.target.x); flat.append(c.target.y); flat.append(c.target.z)
+            flat.append(c.uv.x)
+            flat.append(c.uv.y)
+            flat.append(c.target.x)
+            flat.append(c.target.y)
+            flat.append(c.target.z)
         }
 
-        var x: Double = 0, y: Double = 0, z: Double = 0
+        var x: Double = 0
+        var y: Double = 0
+        var z: Double = 0
         let ok = OCCTSurfaceNLPlateEvaluateDerivative(
             handle, &flat, Int32(constraints.count),
             u, v, Int32(iu), Int32(iv), &x, &y, &z
@@ -2322,8 +2603,12 @@ extension Surface {
         first: Double, last: Double,
         parameter: Double
     ) -> (point: SIMD3<Double>, normal: SIMD3<Double>)? {
-        var x: Double = 0, y: Double = 0, z: Double = 0
-        var nx: Double = 0, ny: Double = 0, nz: Double = 0
+        var x: Double = 0
+        var y: Double = 0
+        var z: Double = 0
+        var nx: Double = 0
+        var ny: Double = 0
+        var nz: Double = 0
         let ok = OCCTGeomFillBoundWithSurfEvaluate(
             handle, curve2d.handle,
             first, last, parameter,
@@ -2348,7 +2633,9 @@ extension Surface {
         var flat: [Double] = []
         flat.reserveCapacity(points.count * 3)
         for p in points {
-            flat.append(p.x); flat.append(p.y); flat.append(p.z)
+            flat.append(p.x)
+            flat.append(p.y)
+            flat.append(p.z)
         }
         let nbBound = Int32(boundaryPointCount ?? points.count)
         let r = OCCTGeomPlateBuildAveragePlane(&flat, Int32(points.count), nbBound, tolerance)
@@ -2366,19 +2653,19 @@ extension Surface {
 
     /// Result of average plane computation.
     public struct AveragePlaneResult: Sendable {
-        /// Whether the points form a plane
+        /// Whether the points form a plane.
         public let isPlane: Bool
-        /// Whether the points form a line (collinear)
+        /// Whether the points form a line (collinear).
         public let isLine: Bool
-        /// Plane normal (meaningful when isPlane is true)
+        /// Plane normal (meaningful when isPlane is true).
         public let normal: SIMD3<Double>
-        /// Plane origin (meaningful when isPlane is true)
+        /// Plane origin (meaningful when isPlane is true).
         public let origin: SIMD3<Double>
-        /// UV bounding box on the plane
+        /// UV bounding box on the plane.
         public let uvBox: (umin: Double, umax: Double, vmin: Double, vmax: Double)
-        /// Line origin (meaningful when isLine is true)
+        /// Line origin (meaningful when isLine is true).
         public let lineOrigin: SIMD3<Double>
-        /// Line direction (meaningful when isLine is true)
+        /// Line direction (meaningful when isLine is true).
         public let lineDirection: SIMD3<Double>
     }
 
@@ -2403,10 +2690,15 @@ extension Surface {
         var flat: [Double] = []
         flat.reserveCapacity(points.count * 3)
         for p in points {
-            flat.append(p.x); flat.append(p.y); flat.append(p.z)
+            flat.append(p.x)
+            flat.append(p.y)
+            flat.append(p.z)
         }
-        var g0: Double = 0, g1: Double = 0, g2: Double = 0
-        let ok = OCCTGeomPlateErrors(&flat, Int32(points.count),
+        var g0: Double = 0
+        var g1: Double = 0
+        var g2: Double = 0
+        let ok = OCCTGeomPlateErrors(
+            &flat, Int32(points.count),
             tolerance, Int32(maxDegree), Int32(maxSegments),
             &g0, &g1, &g2)
         guard ok else { return nil }
@@ -2415,13 +2707,13 @@ extension Surface {
 
     // MARK: - v0.80.0: Extrema, gce factories, GeomTools persistence
 
-    /// Result of point-to-surface extrema
+    /// Result of point-to-surface extrema.
     public struct PointSurfaceExtrema: Sendable {
         public let isDone: Bool
         public let count: Int
     }
 
-    /// Point on surface from extrema result
+    /// Point on surface from extrema result.
     public struct ExtremaPointOnSurface: Sendable {
         public let squareDistance: Double
         public let point: SIMD3<Double>
@@ -2429,38 +2721,41 @@ extension Surface {
         public let v: Double
     }
 
-    /// Compute point-to-surface extrema
+    /// Compute point-to-surface extrema.
     public func extremaPS(point: SIMD3<Double>) -> PointSurfaceExtrema {
         let r = OCCTExtremaExtPS(point.x, point.y, point.z, handle)
         return PointSurfaceExtrema(isDone: r.isDone, count: Int(r.nbExt))
     }
 
-    /// Get Nth extremum from point-surface computation (1-based)
+    /// Get Nth extremum from point-surface computation (1-based).
     public func extremaPSPoint(point: SIMD3<Double>, index: Int) -> ExtremaPointOnSurface {
         let r = OCCTExtremaExtPSPoint(point.x, point.y, point.z, handle, Int32(index))
-        return ExtremaPointOnSurface(squareDistance: r.squareDistance,
-                                     point: SIMD3(r.x, r.y, r.z), u: r.u, v: r.v)
+        return ExtremaPointOnSurface(
+            squareDistance: r.squareDistance,
+            point: SIMD3(r.x, r.y, r.z), u: r.u, v: r.v)
     }
 
-    /// Result of surface-to-surface extrema
+    /// Result of surface-to-surface extrema.
     public struct SurfaceSurfaceExtrema: Sendable {
         public let isDone: Bool
         public let isParallel: Bool
         public let count: Int
     }
 
-    /// Compute surface-to-surface extrema
+    /// Compute surface-to-surface extrema.
     public func extremaSS(other: Surface) -> SurfaceSurfaceExtrema {
         let r = OCCTExtremaExtSS(handle, other.handle)
-        return SurfaceSurfaceExtrema(isDone: r.isDone, isParallel: r.isParallel, count: Int(r.nbExt))
+        return SurfaceSurfaceExtrema(
+            isDone: r.isDone, isParallel: r.isParallel, count: Int(r.nbExt))
     }
 
-    /// Get Nth extremum from surface-surface computation
+    /// Get Nth extremum from surface-surface computation.
     public func extremaSSPoint(other: Surface, index: Int) -> Curve3D.ExtremaPointPair {
         let r = OCCTExtremaExtSSPoint(handle, other.handle, Int32(index))
-        return Curve3D.ExtremaPointPair(squareDistance: r.squareDistance,
-                                        point1: SIMD3(r.x1, r.y1, r.z1), param1: r.param1,
-                                        point2: SIMD3(r.x2, r.y2, r.z2), param2: r.param2)
+        return Curve3D.ExtremaPointPair(
+            squareDistance: r.squareDistance,
+            point1: SIMD3(r.x1, r.y1, r.z1), param1: r.param1,
+            point2: SIMD3(r.x2, r.y2, r.z2), param2: r.param2)
     }
 
     /// Create a conical surface from 2 points (axis) + 2 radii.
@@ -2476,8 +2771,10 @@ extension Surface {
     /// let cone = Surface.coneFrom2PointsRadii(
     ///     p1: SIMD3(0, 0, 0), p2: SIMD3(0, 0, 10), radius1: 5.0, radius2: 2.0)
     /// ```
-    public static func coneFrom2PointsRadii(p1: SIMD3<Double>, p2: SIMD3<Double>,
-                                            radius1: Double, radius2: Double) -> Surface? {
+    public static func coneFrom2PointsRadii(
+        p1: SIMD3<Double>, p2: SIMD3<Double>,
+        radius1: Double, radius2: Double
+    ) -> Surface? {
         conicalSurface(point1: p1, point2: p2, r1: radius1, r2: radius2)
     }
 
@@ -2494,12 +2791,14 @@ extension Surface {
     /// let cyl = Surface.cylinderFrom3Points(
     ///     p1: SIMD3(0, 0, 0), p2: SIMD3(0, 0, 10), p3: SIMD3(5, 0, 5))
     /// ```
-    public static func cylinderFrom3Points(p1: SIMD3<Double>, p2: SIMD3<Double>,
-                                           p3: SIMD3<Double>) -> Surface? {
+    public static func cylinderFrom3Points(
+        p1: SIMD3<Double>, p2: SIMD3<Double>,
+        p3: SIMD3<Double>
+    ) -> Surface? {
         cylindricalSurface(point1: p1, point2: p2, point3: p3)
     }
 
-    /// Create a plane from equation Ax+By+Cz+D=0 (gce_MakePln)
+    /// Create a plane from equation Ax+By+Cz+D=0 (gce_MakePln).
     public static func planeFromEquation(a: Double, b: Double, c: Double, d: Double) -> Surface? {
         guard let h = OCCTGceMakePlnFromEquation(a, b, c, d) else { return nil }
         return Surface(handle: h)
@@ -2521,23 +2820,27 @@ extension Surface {
     /// let base = Surface.planeFrom3Points(p1: SIMD3(0, 0, 0), p2: SIMD3(1, 0, 0), p3: SIMD3(0, 1, 0))
     /// #expect(base != nil)
     /// ```
-    public static func planeFrom3Points(p1: SIMD3<Double>, p2: SIMD3<Double>,
-                                        p3: SIMD3<Double>) -> Surface? {
+    public static func planeFrom3Points(
+        p1: SIMD3<Double>, p2: SIMD3<Double>,
+        p3: SIMD3<Double>
+    ) -> Surface? {
         planeFromPoints(p1, p2, p3)
     }
 
-    /// Serialize surfaces to string via GeomTools_SurfaceSet
+    /// Serialize surfaces to string via GeomTools_SurfaceSet.
     public static func serializeSurfaces(_ surfaces: [Surface]) -> String? {
         let handles = surfaces.map { $0.handle as OCCTSurfaceRef }
-        guard let cStr = handles.withUnsafeBufferPointer({
-            OCCTGeomToolsSurfaceSetWrite($0.baseAddress!, Int32(surfaces.count))
-        }) else { return nil }
+        guard
+            let cStr = handles.withUnsafeBufferPointer({
+                OCCTGeomToolsSurfaceSetWrite($0.baseAddress!, Int32(surfaces.count))
+            })
+        else { return nil }
         let result = String(cString: cStr)
         OCCTGeomToolsFreeString(cStr)
         return result
     }
 
-    /// Deserialize surfaces from string via GeomTools_SurfaceSet
+    /// Deserialize surfaces from string via GeomTools_SurfaceSet.
     public static func deserializeSurfaces(_ data: String) -> [Surface]? {
         var count: Int32 = 0
         guard let arr = OCCTGeomToolsSurfaceSetRead(data, &count), count > 0 else { return nil }
@@ -2559,7 +2862,10 @@ extension Surface {
 
         /// The plane equation coefficients (Ax + By + Cz + D = 0).
         public var coefficients: (a: Double, b: Double, c: Double, d: Double) {
-            var a = 0.0, b = 0.0, c = 0.0, d = 0.0
+            var a = 0.0
+            var b = 0.0
+            var c = 0.0
+            var d = 0.0
             OCCTSurfacePlaneCoefficients(handle, &a, &b, &c, &d)
             return (a, b, c, d)
         }
@@ -2578,7 +2884,12 @@ extension Surface {
 
         /// The plane data (origin + normal).
         public var pln: (origin: SIMD3<Double>, normal: SIMD3<Double>) {
-            var px = 0.0, py = 0.0, pz = 0.0, nx = 0.0, ny = 0.0, nz = 0.0
+            var px = 0.0
+            var py = 0.0
+            var pz = 0.0
+            var nx = 0.0
+            var ny = 0.0
+            var nz = 0.0
             OCCTSurfacePlanePln(handle, &px, &py, &pz, &nx, &ny, &nz)
             return (SIMD3(px, py, pz), SIMD3(nx, ny, nz))
         }
@@ -2608,7 +2919,9 @@ extension Surface {
 
         /// The center point.
         public var center: SIMD3<Double> {
-            var x = 0.0, y = 0.0, z = 0.0
+            var x = 0.0
+            var y = 0.0
+            var z = 0.0
             OCCTSurfaceSphereCenter(handle, &x, &y, &z)
             return SIMD3(x, y, z)
         }
@@ -2627,7 +2940,10 @@ extension Surface {
 
         /// The gp_Sphere data (center + radius).
         public var sphere: (center: SIMD3<Double>, radius: Double) {
-            var cx = 0.0, cy = 0.0, cz = 0.0, r = 0.0
+            var cx = 0.0
+            var cy = 0.0
+            var cz = 0.0
+            var r = 0.0
             OCCTSurfaceSphereSphere(handle, &cx, &cy, &cz, &r)
             return (SIMD3(cx, cy, cz), r)
         }
@@ -2650,11 +2966,15 @@ extension Surface {
 
         /// Set the major radius.
         @discardableResult
-        public func setMajorRadius(_ r: Double) -> Bool { OCCTSurfaceTorusSetMajorRadius(handle, r) }
+        public func setMajorRadius(_ r: Double) -> Bool {
+            OCCTSurfaceTorusSetMajorRadius(handle, r)
+        }
 
         /// Set the minor radius.
         @discardableResult
-        public func setMinorRadius(_ r: Double) -> Bool { OCCTSurfaceTorusSetMinorRadius(handle, r) }
+        public func setMinorRadius(_ r: Double) -> Bool {
+            OCCTSurfaceTorusSetMinorRadius(handle, r)
+        }
 
         /// The surface area (4*pi^2*R*r).
         public var area: Double { OCCTSurfaceTorusArea(handle) }
@@ -2681,9 +3001,8 @@ extension Surface {
 
         /// The axis (position + direction).
         public var axis: (position: SIMD3<Double>, direction: SIMD3<Double>) {
-            var px = 0.0, py = 0.0, pz = 0.0, dx = 0.0, dy = 0.0, dz = 0.0
-            OCCTSurfaceCylinderAxis(handle, &px, &py, &pz, &dx, &dy, &dz)
-            return (SIMD3(px, py, pz), SIMD3(dx, dy, dz))
+            let a = unwrapAxisComponents { OCCTSurfaceCylinderAxis(handle, $0, $1, $2, $3, $4, $5) }
+            return (a.origin, a.direction)
         }
 
         /// A U iso-curve on the cylinder.
@@ -2710,16 +3029,17 @@ extension Surface {
 
         /// The apex of the cone.
         public var apex: SIMD3<Double> {
-            var x = 0.0, y = 0.0, z = 0.0
+            var x = 0.0
+            var y = 0.0
+            var z = 0.0
             OCCTSurfaceConeApex(handle, &x, &y, &z)
             return SIMD3(x, y, z)
         }
 
         /// The axis of the cone (position + direction).
         public var axis: (position: SIMD3<Double>, direction: SIMD3<Double>) {
-            var px = 0.0, py = 0.0, pz = 0.0, dx = 0.0, dy = 0.0, dz = 0.0
-            OCCTSurfaceConeAxis(handle, &px, &py, &pz, &dx, &dy, &dz)
-            return (SIMD3(px, py, pz), SIMD3(dx, dy, dz))
+            let a = unwrapAxisComponents { OCCTSurfaceConeAxis(handle, $0, $1, $2, $3, $4, $5) }
+            return (a.origin, a.direction)
         }
     }
 
@@ -2734,7 +3054,9 @@ extension Surface {
 
         /// The sweep direction.
         public var direction: SIMD3<Double> {
-            var dx = 0.0, dy = 0.0, dz = 0.0
+            var dx = 0.0
+            var dy = 0.0
+            var dz = 0.0
             OCCTSurfaceSweptDirection(handle, &dx, &dy, &dz)
             return SIMD3(dx, dy, dz)
         }
@@ -2752,6 +3074,7 @@ extension Surface {
     // MARK: - v0.115.0: Surface from point grid, normal, curvatures
 
     /// Approximate a BSpline surface through a grid of 3D points.
+    ///
     /// Points are in row-major order: point[v*uCount+u].
     ///
     /// - Note: `degMax` is **clamped to the grid size** (`min(uCount, vCount) − 1`). A B-spline of
@@ -2764,9 +3087,11 @@ extension Surface {
     /// `continuity` is a ``ParametricContinuity`` raw value (0=C0, 1=C1, 2=C2, 3=C3). Unlike the
     /// `approximated` family, the fitter accepts every value without failing — it treats the
     /// request as an upper bound on what it will try to achieve.
-    public static func fromPointGrid(points: [SIMD3<Double>], uCount: Int, vCount: Int,
-                                     degMin: Int = 3, degMax: Int = 8,
-                                     continuity: Int = 2, tolerance: Double = 1e-3) -> Surface? {
+    public static func fromPointGrid(
+        points: [SIMD3<Double>], uCount: Int, vCount: Int,
+        degMin: Int = 3, degMax: Int = 8,
+        continuity: Int = 2, tolerance: Double = 1e-3
+    ) -> Surface? {
         guard points.count == uCount * vCount, uCount >= 2, vCount >= 2 else { return nil }
         // Clamp the degree to what the grid can support (#244): degree ≤ samples − 1.
         let fitMaxDegree = max(1, min(uCount, vCount) - 1)
@@ -2774,10 +3099,13 @@ extension Surface {
         let cappedMin = min(max(1, degMin), cappedMax)
         var flat = [Double]()
         for p in points { flat.append(contentsOf: [p.x, p.y, p.z]) }
-        guard let ref = flat.withUnsafeBufferPointer({ buf in
-            OCCTPointsToSurfaceBSpline(buf.baseAddress!, Int32(uCount), Int32(vCount),
-                                        Int32(cappedMin), Int32(cappedMax), Int32(continuity), tolerance)
-        }) else { return nil }
+        guard
+            let ref = flat.withUnsafeBufferPointer({ buf in
+                OCCTPointsToSurfaceBSpline(
+                    buf.baseAddress!, Int32(uCount), Int32(vCount),
+                    Int32(cappedMin), Int32(cappedMax), Int32(continuity), tolerance)
+            })
+        else { return nil }
         return Surface(handle: ref)
     }
 
@@ -2809,7 +3137,9 @@ extension Surface {
     /// > A sphere pole (`v = ±π/2`) is *not* one of these points — `GeomLProp_SLProps` still
     /// > resolves a normal there, and both methods return it.
     public func normal(u: Double, v: Double) -> SIMD3<Double> {
-        var nx = 0.0, ny = 0.0, nz = 0.0
+        var nx = 0.0
+        var ny = 0.0
+        var nz = 0.0
         OCCTSurfaceNormal(handle, u, v, &nx, &ny, &nz)
         return SIMD3(nx, ny, nz)
     }
@@ -2838,7 +3168,8 @@ extension Surface {
     /// }
     /// ```
     public func curvatures(u: Double, v: Double) -> (gaussian: Double, mean: Double)? {
-        var g = 0.0, m = 0.0
+        var g = 0.0
+        var m = 0.0
         guard OCCTSurfaceCurvatures(handle, u, v, &g, &m) else { return nil }
         return (g, m)
     }
@@ -2846,85 +3177,164 @@ extension Surface {
     // MARK: - v0.125.0: BSpline Surface deep method completion
 
     /// Local evaluation D0 within a specific knot span.
-    public func bsplineLocalD0(u: Double, v: Double, fromUK1: Int, toUK2: Int,
-                                fromVK1: Int, toVK2: Int) -> SIMD3<Double> {
-        var x = 0.0, y = 0.0, z = 0.0
-        OCCTSurfaceBSplineLocalD0(handle, u, v, Int32(fromUK1), Int32(toUK2),
-                                   Int32(fromVK1), Int32(toVK2), &x, &y, &z)
+    public func bsplineLocalD0(
+        u: Double, v: Double, fromUK1: Int, toUK2: Int,
+        fromVK1: Int, toVK2: Int
+    ) -> SIMD3<Double> {
+        var x = 0.0
+        var y = 0.0
+        var z = 0.0
+        OCCTSurfaceBSplineLocalD0(
+            handle, u, v, Int32(fromUK1), Int32(toUK2),
+            Int32(fromVK1), Int32(toVK2), &x, &y, &z)
         return SIMD3(x, y, z)
     }
 
     /// Local evaluation D1 within a specific knot span.
-    public func bsplineLocalD1(u: Double, v: Double, fromUK1: Int, toUK2: Int,
-                                fromVK1: Int, toVK2: Int)
-        -> (point: SIMD3<Double>, d1u: SIMD3<Double>, d1v: SIMD3<Double>) {
-        var px = 0.0, py = 0.0, pz = 0.0
-        var d1ux = 0.0, d1uy = 0.0, d1uz = 0.0
-        var d1vx = 0.0, d1vy = 0.0, d1vz = 0.0
-        OCCTSurfaceBSplineLocalD1(handle, u, v, Int32(fromUK1), Int32(toUK2),
-                                   Int32(fromVK1), Int32(toVK2),
-                                   &px, &py, &pz, &d1ux, &d1uy, &d1uz, &d1vx, &d1vy, &d1vz)
+    public func bsplineLocalD1(
+        u: Double, v: Double, fromUK1: Int, toUK2: Int,
+        fromVK1: Int, toVK2: Int
+    )
+        -> (point: SIMD3<Double>, d1u: SIMD3<Double>, d1v: SIMD3<Double>)
+    {
+        var px = 0.0
+        var py = 0.0
+        var pz = 0.0
+        var d1ux = 0.0
+        var d1uy = 0.0
+        var d1uz = 0.0
+        var d1vx = 0.0
+        var d1vy = 0.0
+        var d1vz = 0.0
+        OCCTSurfaceBSplineLocalD1(
+            handle, u, v, Int32(fromUK1), Int32(toUK2),
+            Int32(fromVK1), Int32(toVK2),
+            &px, &py, &pz, &d1ux, &d1uy, &d1uz, &d1vx, &d1vy, &d1vz)
         return (SIMD3(px, py, pz), SIMD3(d1ux, d1uy, d1uz), SIMD3(d1vx, d1vy, d1vz))
     }
 
     /// Local evaluation D2 within a specific knot span.
-    public func bsplineLocalD2(u: Double, v: Double, fromUK1: Int, toUK2: Int,
-                                fromVK1: Int, toVK2: Int)
-        -> (point: SIMD3<Double>, d1u: SIMD3<Double>, d1v: SIMD3<Double>,
-            d2u: SIMD3<Double>, d2v: SIMD3<Double>, d2uv: SIMD3<Double>) {
-        var px = 0.0, py = 0.0, pz = 0.0
-        var d1ux = 0.0, d1uy = 0.0, d1uz = 0.0, d1vx = 0.0, d1vy = 0.0, d1vz = 0.0
-        var d2ux = 0.0, d2uy = 0.0, d2uz = 0.0, d2vx = 0.0, d2vy = 0.0, d2vz = 0.0
-        var d2uvx = 0.0, d2uvy = 0.0, d2uvz = 0.0
-        OCCTSurfaceBSplineLocalD2(handle, u, v, Int32(fromUK1), Int32(toUK2),
-                                   Int32(fromVK1), Int32(toVK2),
-                                   &px, &py, &pz, &d1ux, &d1uy, &d1uz, &d1vx, &d1vy, &d1vz,
-                                   &d2ux, &d2uy, &d2uz, &d2vx, &d2vy, &d2vz,
-                                   &d2uvx, &d2uvy, &d2uvz)
-        return (SIMD3(px, py, pz), SIMD3(d1ux, d1uy, d1uz), SIMD3(d1vx, d1vy, d1vz),
-                SIMD3(d2ux, d2uy, d2uz), SIMD3(d2vx, d2vy, d2vz), SIMD3(d2uvx, d2uvy, d2uvz))
+    public func bsplineLocalD2(
+        u: Double, v: Double, fromUK1: Int, toUK2: Int,
+        fromVK1: Int, toVK2: Int
+    )
+        -> (
+            point: SIMD3<Double>, d1u: SIMD3<Double>, d1v: SIMD3<Double>,
+            d2u: SIMD3<Double>, d2v: SIMD3<Double>, d2uv: SIMD3<Double>
+        )
+    {
+        var px = 0.0
+        var py = 0.0
+        var pz = 0.0
+        var d1ux = 0.0
+        var d1uy = 0.0
+        var d1uz = 0.0
+        var d1vx = 0.0
+        var d1vy = 0.0
+        var d1vz = 0.0
+        var d2ux = 0.0
+        var d2uy = 0.0
+        var d2uz = 0.0
+        var d2vx = 0.0
+        var d2vy = 0.0
+        var d2vz = 0.0
+        var d2uvx = 0.0
+        var d2uvy = 0.0
+        var d2uvz = 0.0
+        OCCTSurfaceBSplineLocalD2(
+            handle, u, v, Int32(fromUK1), Int32(toUK2),
+            Int32(fromVK1), Int32(toVK2),
+            &px, &py, &pz, &d1ux, &d1uy, &d1uz, &d1vx, &d1vy, &d1vz,
+            &d2ux, &d2uy, &d2uz, &d2vx, &d2vy, &d2vz,
+            &d2uvx, &d2uvy, &d2uvz)
+        return (
+            SIMD3(px, py, pz), SIMD3(d1ux, d1uy, d1uz), SIMD3(d1vx, d1vy, d1vz),
+            SIMD3(d2ux, d2uy, d2uz), SIMD3(d2vx, d2vy, d2vz), SIMD3(d2uvx, d2uvy, d2uvz)
+        )
     }
 
     /// Local evaluation D3 within a specific knot span.
-    public func bsplineLocalD3(u: Double, v: Double, fromUK1: Int, toUK2: Int,
-                                fromVK1: Int, toVK2: Int)
-        -> (point: SIMD3<Double>, d1u: SIMD3<Double>, d1v: SIMD3<Double>,
+    public func bsplineLocalD3(
+        u: Double, v: Double, fromUK1: Int, toUK2: Int,
+        fromVK1: Int, toVK2: Int
+    )
+        -> (
+            point: SIMD3<Double>, d1u: SIMD3<Double>, d1v: SIMD3<Double>,
             d2u: SIMD3<Double>, d2v: SIMD3<Double>, d2uv: SIMD3<Double>,
-            d3u: SIMD3<Double>, d3v: SIMD3<Double>, d3uuv: SIMD3<Double>, d3uvv: SIMD3<Double>) {
-        var px = 0.0, py = 0.0, pz = 0.0
-        var d1ux = 0.0, d1uy = 0.0, d1uz = 0.0, d1vx = 0.0, d1vy = 0.0, d1vz = 0.0
-        var d2ux = 0.0, d2uy = 0.0, d2uz = 0.0, d2vx = 0.0, d2vy = 0.0, d2vz = 0.0
-        var d2uvx = 0.0, d2uvy = 0.0, d2uvz = 0.0
-        var d3ux = 0.0, d3uy = 0.0, d3uz = 0.0, d3vx = 0.0, d3vy = 0.0, d3vz = 0.0
-        var d3uuvx = 0.0, d3uuvy = 0.0, d3uuvz = 0.0, d3uvvx = 0.0, d3uvvy = 0.0, d3uvvz = 0.0
-        OCCTSurfaceBSplineLocalD3(handle, u, v, Int32(fromUK1), Int32(toUK2),
-                                   Int32(fromVK1), Int32(toVK2),
-                                   &px, &py, &pz, &d1ux, &d1uy, &d1uz, &d1vx, &d1vy, &d1vz,
-                                   &d2ux, &d2uy, &d2uz, &d2vx, &d2vy, &d2vz,
-                                   &d2uvx, &d2uvy, &d2uvz,
-                                   &d3ux, &d3uy, &d3uz, &d3vx, &d3vy, &d3vz,
-                                   &d3uuvx, &d3uuvy, &d3uuvz, &d3uvvx, &d3uvvy, &d3uvvz)
-        return (SIMD3(px, py, pz), SIMD3(d1ux, d1uy, d1uz), SIMD3(d1vx, d1vy, d1vz),
-                SIMD3(d2ux, d2uy, d2uz), SIMD3(d2vx, d2vy, d2vz), SIMD3(d2uvx, d2uvy, d2uvz),
-                SIMD3(d3ux, d3uy, d3uz), SIMD3(d3vx, d3vy, d3vz),
-                SIMD3(d3uuvx, d3uuvy, d3uuvz), SIMD3(d3uvvx, d3uvvy, d3uvvz))
+            d3u: SIMD3<Double>, d3v: SIMD3<Double>, d3uuv: SIMD3<Double>, d3uvv: SIMD3<Double>
+        )
+    {
+        var px = 0.0
+        var py = 0.0
+        var pz = 0.0
+        var d1ux = 0.0
+        var d1uy = 0.0
+        var d1uz = 0.0
+        var d1vx = 0.0
+        var d1vy = 0.0
+        var d1vz = 0.0
+        var d2ux = 0.0
+        var d2uy = 0.0
+        var d2uz = 0.0
+        var d2vx = 0.0
+        var d2vy = 0.0
+        var d2vz = 0.0
+        var d2uvx = 0.0
+        var d2uvy = 0.0
+        var d2uvz = 0.0
+        var d3ux = 0.0
+        var d3uy = 0.0
+        var d3uz = 0.0
+        var d3vx = 0.0
+        var d3vy = 0.0
+        var d3vz = 0.0
+        var d3uuvx = 0.0
+        var d3uuvy = 0.0
+        var d3uuvz = 0.0
+        var d3uvvx = 0.0
+        var d3uvvy = 0.0
+        var d3uvvz = 0.0
+        OCCTSurfaceBSplineLocalD3(
+            handle, u, v, Int32(fromUK1), Int32(toUK2),
+            Int32(fromVK1), Int32(toVK2),
+            &px, &py, &pz, &d1ux, &d1uy, &d1uz, &d1vx, &d1vy, &d1vz,
+            &d2ux, &d2uy, &d2uz, &d2vx, &d2vy, &d2vz,
+            &d2uvx, &d2uvy, &d2uvz,
+            &d3ux, &d3uy, &d3uz, &d3vx, &d3vy, &d3vz,
+            &d3uuvx, &d3uuvy, &d3uuvz, &d3uvvx, &d3uvvy, &d3uvvz)
+        return (
+            SIMD3(px, py, pz), SIMD3(d1ux, d1uy, d1uz), SIMD3(d1vx, d1vy, d1vz),
+            SIMD3(d2ux, d2uy, d2uz), SIMD3(d2vx, d2vy, d2vz), SIMD3(d2uvx, d2uvy, d2uvz),
+            SIMD3(d3ux, d3uy, d3uz), SIMD3(d3vx, d3vy, d3vz),
+            SIMD3(d3uuvx, d3uuvy, d3uuvz), SIMD3(d3uvvx, d3uvvy, d3uvvz)
+        )
     }
 
     /// Local derivative DN within a specific knot span.
-    public func bsplineLocalDN(u: Double, v: Double, fromUK1: Int, toUK2: Int,
-                                fromVK1: Int, toVK2: Int, nu: Int, nv: Int) -> SIMD3<Double> {
-        var vx = 0.0, vy = 0.0, vz = 0.0
-        OCCTSurfaceBSplineLocalDN(handle, u, v, Int32(fromUK1), Int32(toUK2),
-                                   Int32(fromVK1), Int32(toVK2), Int32(nu), Int32(nv), &vx, &vy, &vz)
+    public func bsplineLocalDN(
+        u: Double, v: Double, fromUK1: Int, toUK2: Int,
+        fromVK1: Int, toVK2: Int, nu: Int, nv: Int
+    ) -> SIMD3<Double> {
+        var vx = 0.0
+        var vy = 0.0
+        var vz = 0.0
+        OCCTSurfaceBSplineLocalDN(
+            handle, u, v, Int32(fromUK1), Int32(toUK2),
+            Int32(fromVK1), Int32(toVK2), Int32(nu), Int32(nv), &vx, &vy, &vz)
         return SIMD3(vx, vy, vz)
     }
 
     /// Local value within a specific knot span.
-    public func bsplineLocalValue(u: Double, v: Double, fromUK1: Int, toUK2: Int,
-                                   fromVK1: Int, toVK2: Int) -> SIMD3<Double> {
-        var x = 0.0, y = 0.0, z = 0.0
-        OCCTSurfaceBSplineLocalValue(handle, u, v, Int32(fromUK1), Int32(toUK2),
-                                      Int32(fromVK1), Int32(toVK2), &x, &y, &z)
+    public func bsplineLocalValue(
+        u: Double, v: Double, fromUK1: Int, toUK2: Int,
+        fromVK1: Int, toVK2: Int
+    ) -> SIMD3<Double> {
+        var x = 0.0
+        var y = 0.0
+        var z = 0.0
+        OCCTSurfaceBSplineLocalValue(
+            handle, u, v, Int32(fromUK1), Int32(toUK2),
+            Int32(fromVK1), Int32(toVK2), &x, &y, &z)
         return SIMD3(x, y, z)
     }
 
@@ -2940,16 +3350,22 @@ extension Surface {
         return Curve3D(handle: ref)
     }
 
-    /// Locate U knot span. Returns (i1, i2) indices.
+    /// Locate U knot span.
+    ///
+    /// Returns (i1, i2) indices.
     public func bsplineLocateU(u: Double, paramTol: Double) -> (i1: Int, i2: Int) {
-        var i1: Int32 = 0, i2: Int32 = 0
+        var i1: Int32 = 0
+        var i2: Int32 = 0
         OCCTSurfaceBSplineLocateU(handle, u, paramTol, &i1, &i2)
         return (Int(i1), Int(i2))
     }
 
-    /// Locate V knot span. Returns (i1, i2) indices.
+    /// Locate V knot span.
+    ///
+    /// Returns (i1, i2) indices.
     public func bsplineLocateV(v: Double, paramTol: Double) -> (i1: Int, i2: Int) {
-        var i1: Int32 = 0, i2: Int32 = 0
+        var i1: Int32 = 0
+        var i2: Int32 = 0
         OCCTSurfaceBSplineLocateV(handle, v, paramTol, &i1, &i2)
         return (Int(i1), Int(i2))
     }
@@ -2996,7 +3412,10 @@ extension Surface {
 
     /// Get parameter bounds for BSpline surface.
     public var bsplineBounds: (u1: Double, u2: Double, v1: Double, v2: Double) {
-        var u1 = 0.0, u2 = 0.0, v1 = 0.0, v2 = 0.0
+        var u1 = 0.0
+        var u2 = 0.0
+        var v1 = 0.0
+        var v2 = 0.0
         OCCTSurfaceBSplineBounds(handle, &u1, &u2, &v1, &v2)
         return (u1, u2, v1, v2)
     }
@@ -3045,7 +3464,8 @@ extension Surface {
         OCCTSurfaceBezierIsVPeriodic(handle)
     }
 
-    /// Bezier surface continuity, as a raw `GeomAbs_Shape` ordinal
+    /// Bezier surface continuity, as a raw `GeomAbs_Shape` ordinal.
+    ///
     /// (`0=C0, 1=G1, 2=C1, 3=G2, 4=C2, 5=C3, 6=CN`). A Bezier surface is CN by construction, so
     /// this is `6`; `0` if the surface is not a Bezier. Prefer ``ContinuityClass`` (#619).
     public var bezierContinuity: Int {
@@ -3072,7 +3492,9 @@ extension Surface {
         return unpackSIMD3(flat, count: uCount * vCount)
     }
 
-    /// Get all weights as flat array for Bezier surface. Returns nil if non-rational.
+    /// Get all weights as flat array for Bezier surface.
+    ///
+    /// Returns nil if non-rational.
     public var bezierWeights: [Double]? {
         let uCount = Int(OCCTSurfaceBezierNbUPoles(handle))
         let vCount = Int(OCCTSurfaceBezierNbVPoles(handle))
@@ -3084,7 +3506,10 @@ extension Surface {
 
     /// Get parameter bounds for Bezier surface.
     public var bezierBounds: (u1: Double, u2: Double, v1: Double, v2: Double) {
-        var u1 = 0.0, u2 = 0.0, v1 = 0.0, v2 = 0.0
+        var u1 = 0.0
+        var u2 = 0.0
+        var v1 = 0.0
+        var v2 = 0.0
         OCCTSurfaceBezierBounds(handle, &u1, &u2, &v1, &v2)
         return (u1, u2, v1, v2)
     }
@@ -3148,18 +3573,24 @@ extension Surface {
 
     // MARK: - Bezier Surface completions (v0.126.0)
 
-    /// Insert a pole column after index in a Bezier surface. Poles array is [SIMD3] of size NbUPoles.
+    /// Insert a pole column after index in a Bezier surface.
+    ///
+    /// Poles array is [SIMD3] of size NbUPoles.
     @discardableResult
     public func bezierInsertPoleColAfter(_ colIndex: Int, poles: [SIMD3<Double>]) -> Bool {
         let flat = poles.flatMap { [$0.x, $0.y, $0.z] }
-        return OCCTSurfaceBezierInsertPoleColAfter(handle, Int32(colIndex), flat, Int32(poles.count))
+        return OCCTSurfaceBezierInsertPoleColAfter(
+            handle, Int32(colIndex), flat, Int32(poles.count))
     }
 
-    /// Insert a pole row after index in a Bezier surface. Poles array is [SIMD3] of size NbVPoles.
+    /// Insert a pole row after index in a Bezier surface.
+    ///
+    /// Poles array is [SIMD3] of size NbVPoles.
     @discardableResult
     public func bezierInsertPoleRowAfter(_ rowIndex: Int, poles: [SIMD3<Double>]) -> Bool {
         let flat = poles.flatMap { [$0.x, $0.y, $0.z] }
-        return OCCTSurfaceBezierInsertPoleRowAfter(handle, Int32(rowIndex), flat, Int32(poles.count))
+        return OCCTSurfaceBezierInsertPoleRowAfter(
+            handle, Int32(rowIndex), flat, Int32(poles.count))
     }
 
     /// Remove a pole column from a Bezier surface (1-based index).
@@ -3199,13 +3630,21 @@ extension Surface {
     ///   - vIndex: Column index (1-based)
     ///   - poles: Array of 3D points (must have NbUPoles elements)
     ///   - weights: Array of weights (must have NbUPoles elements)
+    /// - Returns: true if the column was set, false on a count mismatch.
     @discardableResult
-    public func bezierSetPoleColWeights(vIndex: Int, poles: [SIMD3<Double>], weights: [Double]) -> Bool {
+    public func bezierSetPoleColWeights(vIndex: Int, poles: [SIMD3<Double>], weights: [Double])
+        -> Bool
+    {
         guard poles.count == weights.count else { return false }
         var flat = [Double]()
         flat.reserveCapacity(poles.count * 3)
-        for p in poles { flat.append(p.x); flat.append(p.y); flat.append(p.z) }
-        return OCCTSurfaceBezierSetPoleColWeights(handle, Int32(vIndex), flat, weights, Int32(poles.count))
+        for p in poles {
+            flat.append(p.x)
+            flat.append(p.y)
+            flat.append(p.z)
+        }
+        return OCCTSurfaceBezierSetPoleColWeights(
+            handle, Int32(vIndex), flat, weights, Int32(poles.count))
     }
 
     /// Set a pole row with weights on a Bezier surface.
@@ -3213,29 +3652,43 @@ extension Surface {
     ///   - uIndex: Row index (1-based)
     ///   - poles: Array of 3D points (must have NbVPoles elements)
     ///   - weights: Array of weights (must have NbVPoles elements)
+    /// - Returns: true if the row was set, false on a count mismatch.
     @discardableResult
-    public func bezierSetPoleRowWeights(uIndex: Int, poles: [SIMD3<Double>], weights: [Double]) -> Bool {
+    public func bezierSetPoleRowWeights(uIndex: Int, poles: [SIMD3<Double>], weights: [Double])
+        -> Bool
+    {
         guard poles.count == weights.count else { return false }
         var flat = [Double]()
         flat.reserveCapacity(poles.count * 3)
-        for p in poles { flat.append(p.x); flat.append(p.y); flat.append(p.z) }
-        return OCCTSurfaceBezierSetPoleRowWeights(handle, Int32(uIndex), flat, weights, Int32(poles.count))
+        for p in poles {
+            flat.append(p.x)
+            flat.append(p.y)
+            flat.append(p.z)
+        }
+        return OCCTSurfaceBezierSetPoleRowWeights(
+            handle, Int32(uIndex), flat, weights, Int32(poles.count))
     }
 
     // MARK: - v0.129.0: Bezier surface completions
 
-    /// Insert a pole column before index in a Bezier surface. Poles array is [SIMD3] of size NbUPoles.
+    /// Insert a pole column before index in a Bezier surface.
+    ///
+    /// Poles array is [SIMD3] of size NbUPoles.
     @discardableResult
     public func bezierInsertPoleColBefore(_ colIndex: Int, poles: [SIMD3<Double>]) -> Bool {
         let flat = poles.flatMap { [$0.x, $0.y, $0.z] }
-        return OCCTSurfaceBezierInsertPoleColBefore(handle, Int32(colIndex), flat, Int32(poles.count))
+        return OCCTSurfaceBezierInsertPoleColBefore(
+            handle, Int32(colIndex), flat, Int32(poles.count))
     }
 
-    /// Insert a pole row before index in a Bezier surface. Poles array is [SIMD3] of size NbVPoles.
+    /// Insert a pole row before index in a Bezier surface.
+    ///
+    /// Poles array is [SIMD3] of size NbVPoles.
     @discardableResult
     public func bezierInsertPoleRowBefore(_ rowIndex: Int, poles: [SIMD3<Double>]) -> Bool {
         let flat = poles.flatMap { [$0.x, $0.y, $0.z] }
-        return OCCTSurfaceBezierInsertPoleRowBefore(handle, Int32(rowIndex), flat, Int32(poles.count))
+        return OCCTSurfaceBezierInsertPoleRowBefore(
+            handle, Int32(rowIndex), flat, Int32(poles.count))
     }
 
     /// Set a pole column (without weights) on a Bezier surface. vIndex is 1-based.
@@ -3277,10 +3730,13 @@ extension Surface {
 
     /// Rotate the surface in place around an axis by the given angle (radians).
     @discardableResult
-    public func rotate(axisOrigin: SIMD3<Double>, axisDirection: SIMD3<Double>, angle: Double) -> Bool {
-        OCCTSurfaceTransform(handle, 1,
-                              axisOrigin.x, axisOrigin.y, axisOrigin.z,
-                              axisDirection.x, axisDirection.y, axisDirection.z, angle)
+    public func rotate(axisOrigin: SIMD3<Double>, axisDirection: SIMD3<Double>, angle: Double)
+        -> Bool
+    {
+        OCCTSurfaceTransform(
+            handle, 1,
+            axisOrigin.x, axisOrigin.y, axisOrigin.z,
+            axisDirection.x, axisDirection.y, axisDirection.z, angle)
     }
 
     /// Scale the surface in place from a center point by the given factor.
@@ -3298,17 +3754,19 @@ extension Surface {
     /// Mirror the surface in place through an axis.
     @discardableResult
     public func mirrorAxis(origin: SIMD3<Double>, direction: SIMD3<Double>) -> Bool {
-        OCCTSurfaceTransform(handle, 4,
-                              origin.x, origin.y, origin.z,
-                              direction.x, direction.y, direction.z, 0)
+        OCCTSurfaceTransform(
+            handle, 4,
+            origin.x, origin.y, origin.z,
+            direction.x, direction.y, direction.z, 0)
     }
 
     /// Mirror the surface in place through a plane.
     @discardableResult
     public func mirrorPlane(origin: SIMD3<Double>, normal: SIMD3<Double>) -> Bool {
-        OCCTSurfaceTransform(handle, 5,
-                              origin.x, origin.y, origin.z,
-                              normal.x, normal.y, normal.z, 0)
+        OCCTSurfaceTransform(
+            handle, 5,
+            origin.x, origin.y, origin.z,
+            normal.x, normal.y, normal.z, 0)
     }
 }
 
@@ -3322,6 +3780,7 @@ extension Surface {
     ///   - a: semi-axis along X (> 0)
     ///   - b: semi-axis along Y (> 0)
     ///   - c: semi-axis along Z (> 0)
+    /// - Returns: The constructed surface, or nil if a semi-axis is not positive.
     public static func ellipsoid(a: Double, b: Double, c: Double) -> Surface? {
         guard let ref = OCCTGeomEvalEllipsoidCreate(a, b, c) else { return nil }
         return Surface(handle: ref)
@@ -3332,6 +3791,7 @@ extension Surface {
     ///   - r1: first semi-axis radius (> 0)
     ///   - r2: second semi-axis radius (> 0)
     ///   - twoSheets: if true, creates a two-sheet hyperboloid (default: one-sheet)
+    /// - Returns: The constructed surface, or nil if a radius is not positive.
     public static func hyperboloid(r1: Double, r2: Double, twoSheets: Bool = false) -> Surface? {
         guard let ref = OCCTGeomEvalHyperboloidCreate(r1, r2, twoSheets ? 1 : 0) else { return nil }
         return Surface(handle: ref)
@@ -3339,6 +3799,7 @@ extension Surface {
 
     /// Create a circular paraboloid of revolution surface.
     /// - Parameter focal: focal distance (> 0)
+    /// - Returns: The constructed surface, or nil if `focal` is not positive.
     public static func paraboloid(focal: Double) -> Surface? {
         guard let ref = OCCTGeomEvalParaboloidCreate(focal) else { return nil }
         return Surface(handle: ref)
@@ -3347,6 +3808,7 @@ extension Surface {
     /// Create a circular helicoid (ruled surface).
     /// S(u,v) = v*cos(u)*X + v*sin(u)*Y + (P*u/(2*Pi))*Z
     /// - Parameter pitch: axial advance per 2*Pi turn (must be != 0)
+    /// - Returns: The constructed surface, or nil if `pitch` is zero.
     public static func circularHelicoid(pitch: Double) -> Surface? {
         guard let ref = OCCTGeomEvalCircularHelicoidCreate(pitch) else { return nil }
         return Surface(handle: ref)
@@ -3357,28 +3819,37 @@ extension Surface {
     /// - Parameters:
     ///   - a: first semi-axis length (> 0)
     ///   - b: second semi-axis length (> 0)
+    /// - Returns: The constructed surface, or nil if a semi-axis is not positive.
     public static func hyperbolicParaboloid(a: Double, b: Double) -> Surface? {
         guard let ref = OCCTGeomEvalHypParaboloidCreate(a, b) else { return nil }
         return Surface(handle: ref)
     }
 
     /// Build a Gordon surface from a network of profile and guide curves.
+    ///
     /// Requires at least 2 profiles and 2 guides that form a complete grid.
     /// - Parameters:
     ///   - profiles: array of profile curves (V-direction)
     ///   - guides: array of guide curves (U-direction)
     ///   - tolerance: geometric tolerance for intersection detection
     /// - Returns: the Gordon B-spline surface, or nil on failure
-    public static func gordon(profiles: [Curve3D], guides: [Curve3D], tolerance: Double = 1e-3) -> Surface? {
+    public static func gordon(profiles: [Curve3D], guides: [Curve3D], tolerance: Double = 1e-3)
+        -> Surface?
+    {
         guard profiles.count >= 2, guides.count >= 2 else { return nil }
         let profileRefs = profiles.map { $0.handle }
         let guideRefs = guides.map { $0.handle }
         return profileRefs.withUnsafeBufferPointer { pBuf in
             guideRefs.withUnsafeBufferPointer { gBuf in
-                guard let pPtr = pBuf.baseAddress, let gPtr = gBuf.baseAddress else { return nil as Surface? }
-                guard let ref = OCCTGeomFillGordon(pPtr, Int32(profiles.count),
-                                                    gPtr, Int32(guides.count),
-                                                    tolerance) else { return nil }
+                guard let pPtr = pBuf.baseAddress, let gPtr = gBuf.baseAddress else {
+                    return nil as Surface?
+                }
+                guard
+                    let ref = OCCTGeomFillGordon(
+                        pPtr, Int32(profiles.count),
+                        gPtr, Int32(guides.count),
+                        tolerance)
+                else { return nil }
                 return Surface(handle: ref)
             }
         }
@@ -3436,9 +3907,13 @@ extension Surface {
     ///   - tolerance: geometric tolerance for intersection detection.
     ///   - allowApproximateFallback: if true, permit a sampled B-spline fallback when exact
     ///     construction fails (result marked `isApproximate`); default false (`ExactOnly`).
-    public static func gordonReport(profiles: [Curve3D], guides: [Curve3D],
-                                    tolerance: Double = 1e-3,
-                                    allowApproximateFallback: Bool = false) -> GordonResult {
+    /// - Returns: The Gordon result, whose `status`/`isApproximate` describe how (or whether)
+    ///   `surface` was built.
+    public static func gordonReport(
+        profiles: [Curve3D], guides: [Curve3D],
+        tolerance: Double = 1e-3,
+        allowApproximateFallback: Bool = false
+    ) -> GordonResult {
         guard profiles.count >= 2, guides.count >= 2 else {
             return GordonResult(surface: nil, status: .invalidInput, isApproximate: false)
         }
@@ -3448,11 +3923,14 @@ extension Surface {
         var isApprox: Bool = false
         let surfaceRef: OCCTSurfaceRef? = profileRefs.withUnsafeBufferPointer { pBuf in
             guideRefs.withUnsafeBufferPointer { gBuf in
-                guard let pPtr = pBuf.baseAddress, let gPtr = gBuf.baseAddress else { return nil as OCCTSurfaceRef? }
-                return OCCTGeomFillGordonReport(pPtr, Int32(profiles.count),
-                                                gPtr, Int32(guides.count),
-                                                tolerance, allowApproximateFallback ? 1 : 0,
-                                                &statusRaw, &isApprox)
+                guard let pPtr = pBuf.baseAddress, let gPtr = gBuf.baseAddress else {
+                    return nil as OCCTSurfaceRef?
+                }
+                return OCCTGeomFillGordonReport(
+                    pPtr, Int32(profiles.count),
+                    gPtr, Int32(guides.count),
+                    tolerance, allowApproximateFallback ? 1 : 0,
+                    &statusRaw, &isApprox)
             }
         }
         let status = GordonResultStatus(rawValue: Int(statusRaw)) ?? .notStarted
@@ -3461,7 +3939,9 @@ extension Surface {
     }
 
     /// Build a surface with the low-level `GeomFill_NetworkSurface` builder from a
-    /// profile/guide curve network. The curves are converted to non-periodic B-splines; each
+    /// profile/guide curve network.
+    ///
+    /// The curves are converted to non-periodic B-splines; each
     /// profile/guide pair's real contact point and parameter are then found with
     /// `GeomAPI_ExtremaCurveCurve` (its nearest, not merely its first, extremum) and averaged
     /// across the family the way `GeomFill_Gordon` does, giving one locator value per profile
@@ -3485,6 +3965,7 @@ extension Surface {
     ///   - profiles: profile curves evaluated in U, at least 2.
     ///   - guides: guide curves evaluated in V, at least 2.
     ///   - tolerance: geometric tolerance for closed-seam checks.
+    /// - Returns: The built surface (nil on failure) alongside a `status` describing why.
     ///
     /// ```swift
     /// let p1 = Curve3D.interpolate(points: [SIMD3(0, 0, 0), SIMD3(10, 0, 0)])!
@@ -3495,19 +3976,25 @@ extension Surface {
     ///                                                tolerance: 1e-6)
     /// if status != .done { print("network builder declined:", status) }
     /// ```
-    public static func networkSurface(profiles: [Curve3D], guides: [Curve3D],
-                                      tolerance: Double = 1e-3)
-        -> (surface: Surface?, status: NetworkSurfaceStatus) {
+    public static func networkSurface(
+        profiles: [Curve3D], guides: [Curve3D],
+        tolerance: Double = 1e-3
+    )
+        -> (surface: Surface?, status: NetworkSurfaceStatus)
+    {
         guard profiles.count >= 2, guides.count >= 2 else { return (nil, .invalidInput) }
         let profileRefs = profiles.map { $0.handle }
         let guideRefs = guides.map { $0.handle }
         var statusRaw: Int32 = 0
         let surfaceRef: OCCTSurfaceRef? = profileRefs.withUnsafeBufferPointer { pBuf in
             guideRefs.withUnsafeBufferPointer { gBuf in
-                guard let pPtr = pBuf.baseAddress, let gPtr = gBuf.baseAddress else { return nil as OCCTSurfaceRef? }
-                return OCCTGeomFillNetworkSurface(pPtr, Int32(profiles.count),
-                                                  gPtr, Int32(guides.count),
-                                                  tolerance, &statusRaw)
+                guard let pPtr = pBuf.baseAddress, let gPtr = gBuf.baseAddress else {
+                    return nil as OCCTSurfaceRef?
+                }
+                return OCCTGeomFillNetworkSurface(
+                    pPtr, Int32(profiles.count),
+                    gPtr, Int32(guides.count),
+                    tolerance, &statusRaw)
             }
         }
         let status = NetworkSurfaceStatus(rawValue: Int(statusRaw)) ?? .notStarted
@@ -3531,17 +4018,25 @@ extension Surface {
     ///   - alphaU: frequency in U direction (> 0)
     ///   - alphaV: frequency in V direction (> 0)
     /// - Returns: Surface or nil on error
-    public static func tBezier(poles: [SIMD3<Double>], uCount: Int, vCount: Int,
-                                alphaU: Double, alphaV: Double) -> Surface? {
+    public static func tBezier(
+        poles: [SIMD3<Double>], uCount: Int, vCount: Int,
+        alphaU: Double, alphaV: Double
+    ) -> Surface? {
         guard poles.count == uCount * vCount,
-              uCount >= 3, vCount >= 3,
-              uCount % 2 == 1, vCount % 2 == 1 else { return nil }
+            uCount >= 3, vCount >= 3,
+            uCount % 2 == 1, vCount % 2 == 1
+        else { return nil }
         var flat = [Double](repeating: 0, count: poles.count * 3)
         for (i, p) in poles.enumerated() {
-            flat[i * 3] = p.x; flat[i * 3 + 1] = p.y; flat[i * 3 + 2] = p.z
+            flat[i * 3] = p.x
+            flat[i * 3 + 1] = p.y
+            flat[i * 3 + 2] = p.z
         }
-        guard let ref = OCCTGeomEvalTBezierSurfaceCreate(&flat, Int32(uCount), Int32(vCount),
-                                                           alphaU, alphaV) else { return nil }
+        guard
+            let ref = OCCTGeomEvalTBezierSurfaceCreate(
+                &flat, Int32(uCount), Int32(vCount),
+                alphaU, alphaV)
+        else { return nil }
         return Surface(handle: ref)
     }
 
@@ -3560,24 +4055,33 @@ extension Surface {
     ///   - betaU: trigonometric frequency in U (>= 0)
     ///   - betaV: trigonometric frequency in V (>= 0)
     /// - Returns: Surface or nil on error
-    public static func ahtBezier(poles: [SIMD3<Double>], uCount: Int, vCount: Int,
-                                  algDegreeU: Int, algDegreeV: Int,
-                                  alphaU: Double, alphaV: Double,
-                                  betaU: Double, betaV: Double) -> Surface? {
+    public static func ahtBezier(
+        poles: [SIMD3<Double>], uCount: Int, vCount: Int,
+        algDegreeU: Int, algDegreeV: Int,
+        alphaU: Double, alphaV: Double,
+        betaU: Double, betaV: Double
+    ) -> Surface? {
         guard poles.count == uCount * vCount, uCount >= 1, vCount >= 1 else { return nil }
         var flat = [Double](repeating: 0, count: poles.count * 3)
         for (i, p) in poles.enumerated() {
-            flat[i * 3] = p.x; flat[i * 3 + 1] = p.y; flat[i * 3 + 2] = p.z
+            flat[i * 3] = p.x
+            flat[i * 3 + 1] = p.y
+            flat[i * 3 + 2] = p.z
         }
-        guard let ref = OCCTGeomEvalAHTBezierSurfaceCreate(&flat, Int32(uCount), Int32(vCount),
-                                                             Int32(algDegreeU), Int32(algDegreeV),
-                                                             alphaU, alphaV, betaU, betaV) else { return nil }
+        guard
+            let ref = OCCTGeomEvalAHTBezierSurfaceCreate(
+                &flat, Int32(uCount), Int32(vCount),
+                Int32(algDegreeU), Int32(algDegreeV),
+                alphaU, alphaV, betaU, betaV)
+        else { return nil }
         return Surface(handle: ref)
     }
 }
 
 extension Surface {
-    /// Convert surface to periodic form. Returns nil if already periodic or not convertible.
+    /// Convert surface to periodic form.
+    ///
+    /// Returns nil if already periodic or not convertible.
     public func convertToPeriodic() -> Surface? {
         guard let ref = OCCTSurfaceConvertToPeriodic(handle) else { return nil }
         return Surface(handle: ref)
@@ -3618,22 +4122,31 @@ extension Surface {
     ///     print("fitted to \(fit.maxError) with \(bspline.uPoleCount)x\(bspline.vPoleCount) poles")
     /// }
     /// ```
-    public func approxWithDetails(tolerance: Double, uContinuity: ParametricContinuity = .c2,
-                                   vContinuity: ParametricContinuity = .c2,
-                                   maxDegree: Int = 8, maxSegments: Int = 100) -> ApproxSurfaceResult {
-        let r = OCCTGeomConvertApproxSurface(handle, tolerance, uContinuity.rawValue,
-                                              vContinuity.rawValue, Int32(maxDegree), Int32(maxSegments))
+    public func approxWithDetails(
+        tolerance: Double, uContinuity: ParametricContinuity = .c2,
+        vContinuity: ParametricContinuity = .c2,
+        maxDegree: Int = 8, maxSegments: Int = 100
+    ) -> ApproxSurfaceResult {
+        let r = OCCTGeomConvertApproxSurface(
+            handle, tolerance, uContinuity.rawValue,
+            vContinuity.rawValue, Int32(maxDegree), Int32(maxSegments))
         let surf: Surface? = r.surface.map { Surface(handle: $0) }
-        return ApproxSurfaceResult(surface: surf, maxError: r.maxError, isDone: r.isDone, hasResult: r.hasResult)
+        return ApproxSurfaceResult(
+            surface: surf, maxError: r.maxError, isDone: r.isDone, hasResult: r.hasResult)
     }
 }
 
 extension Surface {
     /// Find the UV parameters of a 3D point on this surface.
+    ///
     /// Returns nil if the point is beyond maxDistance from the surface.
-    public func parametersOf(point: SIMD3<Double>, maxDistance: Double = 1.0) -> (u: Double, v: Double)? {
-        var u: Double = 0, v: Double = 0
-        let ok = OCCTGeomLibToolParametersSurface(handle, point.x, point.y, point.z, maxDistance, &u, &v)
+    public func parametersOf(point: SIMD3<Double>, maxDistance: Double = 1.0) -> (
+        u: Double, v: Double
+    )? {
+        var u: Double = 0
+        var v: Double = 0
+        let ok = OCCTGeomLibToolParametersSurface(
+            handle, point.x, point.y, point.z, maxDistance, &u, &v)
         return ok ? (u, v) : nil
     }
 }
@@ -3645,13 +4158,23 @@ extension Surface {
     }
 
     /// If planar, returns the plane parameters: origin, normal, X direction.
+    ///
     /// Returns nil if the surface is not planar.
-    public func planarPlane(tolerance: Double = 1e-7) -> (origin: SIMD3<Double>, normal: SIMD3<Double>, xDirection: SIMD3<Double>)? {
-        var ox: Double = 0, oy: Double = 0, oz: Double = 0
-        var nx: Double = 0, ny: Double = 0, nz: Double = 0
-        var xx: Double = 0, xy: Double = 0, xz: Double = 0
-        let ok = OCCTGeomLibPlanarSurfacePlane(handle, tolerance,
-                                                &ox, &oy, &oz, &nx, &ny, &nz, &xx, &xy, &xz)
+    public func planarPlane(tolerance: Double = 1e-7) -> (
+        origin: SIMD3<Double>, normal: SIMD3<Double>, xDirection: SIMD3<Double>
+    )? {
+        var ox: Double = 0
+        var oy: Double = 0
+        var oz: Double = 0
+        var nx: Double = 0
+        var ny: Double = 0
+        var nz: Double = 0
+        var xx: Double = 0
+        var xy: Double = 0
+        var xz: Double = 0
+        let ok = OCCTGeomLibPlanarSurfacePlane(
+            handle, tolerance,
+            &ox, &oy, &oz, &nx, &ny, &nz, &xx, &xy, &xz)
         guard ok else { return nil }
         return (SIMD3(ox, oy, oz), SIMD3(nx, ny, nz), SIMD3(xx, xy, xz))
     }
@@ -3748,10 +4271,13 @@ extension Surface {
     ///   - vMin: Lower V bound of the patch to fit.
     ///   - vMax: Upper V bound of the patch to fit.
     /// - Returns: The recognized surface with its deviation, or nil if not recognizable.
-    public func toAnalyticalWithGap(tolerance: Double,
-                                      uMin: Double, uMax: Double,
-                                      vMin: Double, vMax: Double) -> SurfaceToAnalyticalResult? {
-        let result = OCCTGeomConvertSurfToAnalyticalBounded(handle, tolerance, uMin, uMax, vMin, vMax)
+    public func toAnalyticalWithGap(
+        tolerance: Double,
+        uMin: Double, uMax: Double,
+        vMin: Double, vMax: Double
+    ) -> SurfaceToAnalyticalResult? {
+        let result = OCCTGeomConvertSurfToAnalyticalBounded(
+            handle, tolerance, uMin, uMax, vMin, vMax)
         guard result.success, let surfRef = result.surface else { return nil }
         return SurfaceToAnalyticalResult(surface: Surface(handle: surfRef), gap: result.gap)
     }
@@ -3772,10 +4298,14 @@ extension Surface {
     }
 
     /// Create a stretch-filled surface from 4 boundary point arrays.
-    public static func stretchFill(p1: [SIMD3<Double>], p2: [SIMD3<Double>],
-                                   p3: [SIMD3<Double>], p4: [SIMD3<Double>]) -> StretchFillResult? {
+    public static func stretchFill(
+        p1: [SIMD3<Double>], p2: [SIMD3<Double>],
+        p3: [SIMD3<Double>], p4: [SIMD3<Double>]
+    ) -> StretchFillResult? {
         let count = p1.count
-        guard count == p2.count && count == p3.count && count == p4.count && count >= 2 else { return nil }
+        guard count == p2.count && count == p3.count && count == p4.count && count >= 2 else {
+            return nil
+        }
 
         let flat1 = p1.flatMap { [$0.x, $0.y, $0.z] }
         let flat2 = p2.flatMap { [$0.x, $0.y, $0.z] }
@@ -3784,15 +4314,17 @@ extension Surface {
 
         let maxPoles = 1000
         var outPoles = [Double](repeating: 0, count: maxPoles * 3)
-        let r = OCCTGeomFillStretch(flat1, flat2, flat3, flat4, Int32(count), &outPoles, Int32(maxPoles))
+        let r = OCCTGeomFillStretch(
+            flat1, flat2, flat3, flat4, Int32(count), &outPoles, Int32(maxPoles))
 
         guard r.nbUPoles > 0 && r.nbVPoles > 0 else { return nil }
         let totalPoles = Int(r.nbUPoles) * Int(r.nbVPoles)
         let poles = (0..<totalPoles).map { i in
             SIMD3(outPoles[i * 3], outPoles[i * 3 + 1], outPoles[i * 3 + 2])
         }
-        return StretchFillResult(nbUPoles: Int(r.nbUPoles), nbVPoles: Int(r.nbVPoles),
-                                 isRational: r.isRational, poles: poles)
+        return StretchFillResult(
+            nbUPoles: Int(r.nbUPoles), nbVPoles: Int(r.nbVPoles),
+            isRational: r.isRational, poles: poles)
     }
 }
 
@@ -3824,40 +4356,52 @@ extension Surface {
     /// let c2 = Curve3D.circle(center: SIMD3(0, 0, 10), normal: SIMD3(0, 0, 1), radius: 5)!
     /// let surf = Surface.appSurf(curves: [c1, c2])
     /// ```
-    public static func appSurf(curves: [Curve3D], degMin: Int = 3, degMax: Int = 8,
-                               tol3d: Double = 1e-3, tol2d: Double = 1e-3) -> AppSurfResult? {
+    public static func appSurf(
+        curves: [Curve3D], degMin: Int = 3, degMax: Int = 8,
+        tol3d: Double = 1e-3, tol2d: Double = 1e-3
+    ) -> AppSurfResult? {
         guard curves.count >= 2 else { return nil }
         let refs = curves.map { $0.handle as OCCTCurve3DRef }
         return refs.withUnsafeBufferPointer { buf in
-            let r = OCCTGeomFillAppSurf(buf.baseAddress!, Int32(curves.count),
-                                         Int32(degMin), Int32(degMax), tol3d, tol2d)
+            let r = OCCTGeomFillAppSurf(
+                buf.baseAddress!, Int32(curves.count),
+                Int32(degMin), Int32(degMax), tol3d, tol2d)
             guard r.isDone else { return nil }
-            return AppSurfResult(uDegree: Int(r.uDegree), vDegree: Int(r.vDegree),
-                                 nbUPoles: Int(r.nbUPoles), nbVPoles: Int(r.nbVPoles),
-                                 nbUKnots: Int(r.nbUKnots), nbVKnots: Int(r.nbVKnots),
-                                 isDone: r.isDone)
+            return AppSurfResult(
+                uDegree: Int(r.uDegree), vDegree: Int(r.vDegree),
+                nbUPoles: Int(r.nbUPoles), nbVPoles: Int(r.nbVPoles),
+                nbUKnots: Int(r.nbUKnots), nbVKnots: Int(r.nbVKnots),
+                isDone: r.isDone)
         }
     }
 }
 
-public extension Surface {
+extension Surface {
     /// Create a rectangular trimmed surface.
-    static func rectangularTrimmed(basis: Surface,
-                                    u1: Double, u2: Double,
-                                    v1: Double, v2: Double) -> Surface? {
-        guard let ref = OCCTSurfaceCreateRectangularTrimmed(basis.handle, u1, u2, v1, v2) else { return nil }
+    public static func rectangularTrimmed(
+        basis: Surface,
+        u1: Double, u2: Double,
+        v1: Double, v2: Double
+    ) -> Surface? {
+        guard let ref = OCCTSurfaceCreateRectangularTrimmed(basis.handle, u1, u2, v1, v2) else {
+            return nil
+        }
         return Surface(handle: ref)
     }
 
     /// Create a surface trimmed in U direction only.
-    static func trimmedInU(basis: Surface, param1: Double, param2: Double) -> Surface? {
-        guard let ref = OCCTSurfaceCreateTrimmedInU(basis.handle, param1, param2) else { return nil }
+    public static func trimmedInU(basis: Surface, param1: Double, param2: Double) -> Surface? {
+        guard let ref = OCCTSurfaceCreateTrimmedInU(basis.handle, param1, param2) else {
+            return nil
+        }
         return Surface(handle: ref)
     }
 
     /// Create a surface trimmed in V direction only.
-    static func trimmedInV(basis: Surface, param1: Double, param2: Double) -> Surface? {
-        guard let ref = OCCTSurfaceCreateTrimmedInV(basis.handle, param1, param2) else { return nil }
+    public static func trimmedInV(basis: Surface, param1: Double, param2: Double) -> Surface? {
+        guard let ref = OCCTSurfaceCreateTrimmedInV(basis.handle, param1, param2) else {
+            return nil
+        }
         return Surface(handle: ref)
     }
 }
@@ -3865,9 +4409,14 @@ public extension Surface {
 extension Surface {
 
     /// Convert a sphere to a BSpline surface.
-    public static func fromSphere(origin: SIMD3<Double>, axis: SIMD3<Double>, radius: Double) -> Surface? {
-        guard let ref = OCCTConvertSphereToBSplineSurface(origin.x, origin.y, origin.z,
-                                                           axis.x, axis.y, axis.z, radius) else { return nil }
+    public static func fromSphere(origin: SIMD3<Double>, axis: SIMD3<Double>, radius: Double)
+        -> Surface?
+    {
+        guard
+            let ref = OCCTConvertSphereToBSplineSurface(
+                origin.x, origin.y, origin.z,
+                axis.x, axis.y, axis.z, radius)
+        else { return nil }
         return Surface(handle: ref)
     }
 }
@@ -3875,31 +4424,46 @@ extension Surface {
 extension Surface {
 
     /// Convert a cylinder patch to a BSpline surface.
-    public static func fromCylinder(origin: SIMD3<Double>, axis: SIMD3<Double>, radius: Double,
-                                     u1: Double, u2: Double, v1: Double, v2: Double) -> Surface? {
-        guard let ref = OCCTConvertCylinderToBSplineSurface(origin.x, origin.y, origin.z,
-                                                              axis.x, axis.y, axis.z, radius,
-                                                              u1, u2, v1, v2) else { return nil }
+    public static func fromCylinder(
+        origin: SIMD3<Double>, axis: SIMD3<Double>, radius: Double,
+        u1: Double, u2: Double, v1: Double, v2: Double
+    ) -> Surface? {
+        guard
+            let ref = OCCTConvertCylinderToBSplineSurface(
+                origin.x, origin.y, origin.z,
+                axis.x, axis.y, axis.z, radius,
+                u1, u2, v1, v2)
+        else { return nil }
         return Surface(handle: ref)
     }
 
     /// Convert a cone patch to a BSpline surface.
-    public static func fromCone(origin: SIMD3<Double>, axis: SIMD3<Double>,
-                                 semiAngle: Double, refRadius: Double,
-                                 u1: Double, u2: Double, v1: Double, v2: Double) -> Surface? {
-        guard let ref = OCCTConvertConeToBSplineSurface(origin.x, origin.y, origin.z,
-                                                          axis.x, axis.y, axis.z,
-                                                          semiAngle, refRadius,
-                                                          u1, u2, v1, v2) else { return nil }
+    public static func fromCone(
+        origin: SIMD3<Double>, axis: SIMD3<Double>,
+        semiAngle: Double, refRadius: Double,
+        u1: Double, u2: Double, v1: Double, v2: Double
+    ) -> Surface? {
+        guard
+            let ref = OCCTConvertConeToBSplineSurface(
+                origin.x, origin.y, origin.z,
+                axis.x, axis.y, axis.z,
+                semiAngle, refRadius,
+                u1, u2, v1, v2)
+        else { return nil }
         return Surface(handle: ref)
     }
 
     /// Convert a full torus to a BSpline surface.
-    public static func fromTorus(origin: SIMD3<Double>, axis: SIMD3<Double>,
-                                  majorRadius: Double, minorRadius: Double) -> Surface? {
-        guard let ref = OCCTConvertTorusToBSplineSurface(origin.x, origin.y, origin.z,
-                                                           axis.x, axis.y, axis.z,
-                                                           majorRadius, minorRadius) else { return nil }
+    public static func fromTorus(
+        origin: SIMD3<Double>, axis: SIMD3<Double>,
+        majorRadius: Double, minorRadius: Double
+    ) -> Surface? {
+        guard
+            let ref = OCCTConvertTorusToBSplineSurface(
+                origin.x, origin.y, origin.z,
+                axis.x, axis.y, axis.z,
+                majorRadius, minorRadius)
+        else { return nil }
         return Surface(handle: ref)
     }
 }
@@ -3917,6 +4481,7 @@ extension Surface {
     }
 
     /// Get the basis (underlying) surface of an offset surface.
+    ///
     /// Returns nil if this surface is not an offset surface.
     public var offsetBasis: Surface? {
         guard let ref = OCCTSurfaceOffsetBasis(handle) else { return nil }
@@ -3927,9 +4492,13 @@ extension Surface {
 extension Surface {
 
     /// Project a 3D point onto this surface using ShapeAnalysis_Surface, returning UV parameters and gap.
+    ///
     /// Unlike `projectPoint(_:)` (GeomAPI), this uses ShapeAnalysis for robust projection.
-    public func projectPointUV(_ point: SIMD3<Double>, precision: Double = 1e-6) -> (u: Double, v: Double, gap: Double) {
-        var u = 0.0, v = 0.0
+    public func projectPointUV(_ point: SIMD3<Double>, precision: Double = 1e-6) -> (
+        u: Double, v: Double, gap: Double
+    ) {
+        var u = 0.0
+        var v = 0.0
         let gap = OCCTSurfaceProjectPointUV(handle, point.x, point.y, point.z, precision, &u, &v)
         return (u, v, gap)
     }
@@ -3957,127 +4526,192 @@ extension Surface {
 
 extension Surface {
     /// Create a conical surface from axis (center+normal), semi-angle, and reference radius.
-    public static func gcConicalSurface(center: SIMD3<Double>, normal: SIMD3<Double>,
-                                         semiAngle: Double, radius: Double) -> Surface? {
-        guard let h = OCCTGCMakeConicalSurface(center.x, center.y, center.z,
-                                                normal.x, normal.y, normal.z,
-                                                semiAngle, radius) else { return nil }
+    public static func gcConicalSurface(
+        center: SIMD3<Double>, normal: SIMD3<Double>,
+        semiAngle: Double, radius: Double
+    ) -> Surface? {
+        guard
+            let h = OCCTGCMakeConicalSurface(
+                center.x, center.y, center.z,
+                normal.x, normal.y, normal.z,
+                semiAngle, radius)
+        else { return nil }
         return Surface(handle: h)
     }
 
     /// Create a conical surface from 2 points and 2 radii.
-    public static func gcConicalSurface2Pts(p1: SIMD3<Double>, p2: SIMD3<Double>,
-                                             r1: Double, r2: Double) -> Surface? {
-        guard let h = OCCTGCMakeConicalSurface2Pts(p1.x, p1.y, p1.z,
-                                                    p2.x, p2.y, p2.z,
-                                                    r1, r2) else { return nil }
+    public static func gcConicalSurface2Pts(
+        p1: SIMD3<Double>, p2: SIMD3<Double>,
+        r1: Double, r2: Double
+    ) -> Surface? {
+        guard
+            let h = OCCTGCMakeConicalSurface2Pts(
+                p1.x, p1.y, p1.z,
+                p2.x, p2.y, p2.z,
+                r1, r2)
+        else { return nil }
         return Surface(handle: h)
     }
 
     /// Create a conical surface from 4 points (2 on each circle).
-    public static func gcConicalSurface4Pts(p1: SIMD3<Double>, p2: SIMD3<Double>,
-                                             p3: SIMD3<Double>, p4: SIMD3<Double>) -> Surface? {
-        guard let h = OCCTGCMakeConicalSurface4Pts(p1.x, p1.y, p1.z,
-                                                    p2.x, p2.y, p2.z,
-                                                    p3.x, p3.y, p3.z,
-                                                    p4.x, p4.y, p4.z) else { return nil }
+    public static func gcConicalSurface4Pts(
+        p1: SIMD3<Double>, p2: SIMD3<Double>,
+        p3: SIMD3<Double>, p4: SIMD3<Double>
+    ) -> Surface? {
+        guard
+            let h = OCCTGCMakeConicalSurface4Pts(
+                p1.x, p1.y, p1.z,
+                p2.x, p2.y, p2.z,
+                p3.x, p3.y, p3.z,
+                p4.x, p4.y, p4.z)
+        else { return nil }
         return Surface(handle: h)
     }
 }
 
 extension Surface {
     /// Create a cylindrical surface from axis (center+normal) and radius (GC variant).
-    public static func gcCylindricalSurface(center: SIMD3<Double>, normal: SIMD3<Double>,
-                                              radius: Double) -> Surface? {
-        guard let h = OCCTGCMakeCylindricalSurface(center.x, center.y, center.z,
-                                                     normal.x, normal.y, normal.z,
-                                                     radius) else { return nil }
+    public static func gcCylindricalSurface(
+        center: SIMD3<Double>, normal: SIMD3<Double>,
+        radius: Double
+    ) -> Surface? {
+        guard
+            let h = OCCTGCMakeCylindricalSurface(
+                center.x, center.y, center.z,
+                normal.x, normal.y, normal.z,
+                radius)
+        else { return nil }
         return Surface(handle: h)
     }
 
     /// Create a cylindrical surface from 3 points (GC variant).
-    public static func gcCylindricalSurface3Pts(p1: SIMD3<Double>, p2: SIMD3<Double>,
-                                                  p3: SIMD3<Double>) -> Surface? {
-        guard let h = OCCTGCMakeCylindricalSurface3Pts(p1.x, p1.y, p1.z,
-                                                        p2.x, p2.y, p2.z,
-                                                        p3.x, p3.y, p3.z) else { return nil }
+    public static func gcCylindricalSurface3Pts(
+        p1: SIMD3<Double>, p2: SIMD3<Double>,
+        p3: SIMD3<Double>
+    ) -> Surface? {
+        guard
+            let h = OCCTGCMakeCylindricalSurface3Pts(
+                p1.x, p1.y, p1.z,
+                p2.x, p2.y, p2.z,
+                p3.x, p3.y, p3.z)
+        else { return nil }
         return Surface(handle: h)
     }
 
     /// Create a cylindrical surface from a circle (center+normal+radius).
-    public static func gcCylindricalSurfaceFromCircle(center: SIMD3<Double>, normal: SIMD3<Double>,
-                                                       radius: Double) -> Surface? {
-        guard let h = OCCTGCMakeCylindricalSurfaceFromCircle(center.x, center.y, center.z,
-                                                               normal.x, normal.y, normal.z,
-                                                               radius) else { return nil }
+    public static func gcCylindricalSurfaceFromCircle(
+        center: SIMD3<Double>, normal: SIMD3<Double>,
+        radius: Double
+    ) -> Surface? {
+        guard
+            let h = OCCTGCMakeCylindricalSurfaceFromCircle(
+                center.x, center.y, center.z,
+                normal.x, normal.y, normal.z,
+                radius)
+        else { return nil }
         return Surface(handle: h)
     }
 
     /// Create a cylindrical surface parallel to another at a given distance.
-    public static func gcCylindricalSurfaceParallel(center: SIMD3<Double>, normal: SIMD3<Double>,
-                                                      radius: Double, distance: Double) -> Surface? {
-        guard let h = OCCTGCMakeCylindricalSurfaceParallel(center.x, center.y, center.z,
-                                                             normal.x, normal.y, normal.z,
-                                                             radius, distance) else { return nil }
+    public static func gcCylindricalSurfaceParallel(
+        center: SIMD3<Double>, normal: SIMD3<Double>,
+        radius: Double, distance: Double
+    ) -> Surface? {
+        guard
+            let h = OCCTGCMakeCylindricalSurfaceParallel(
+                center.x, center.y, center.z,
+                normal.x, normal.y, normal.z,
+                radius, distance)
+        else { return nil }
         return Surface(handle: h)
     }
 
     /// Create a cylindrical surface from axis (point+direction) and radius.
-    public static func gcCylindricalSurfaceAxis(point: SIMD3<Double>, direction: SIMD3<Double>,
-                                                  radius: Double) -> Surface? {
-        guard let h = OCCTGCMakeCylindricalSurfaceAxis(point.x, point.y, point.z,
-                                                         direction.x, direction.y, direction.z,
-                                                         radius) else { return nil }
+    public static func gcCylindricalSurfaceAxis(
+        point: SIMD3<Double>, direction: SIMD3<Double>,
+        radius: Double
+    ) -> Surface? {
+        guard
+            let h = OCCTGCMakeCylindricalSurfaceAxis(
+                point.x, point.y, point.z,
+                direction.x, direction.y, direction.z,
+                radius)
+        else { return nil }
         return Surface(handle: h)
     }
 }
 
 extension Surface {
     /// Create a trimmed cone from 2 points and 2 radii.
-    public static func gcTrimmedCone2Pts(p1: SIMD3<Double>, p2: SIMD3<Double>,
-                                          r1: Double, r2: Double) -> Surface? {
-        guard let h = OCCTGCMakeTrimmedCone2Pts(p1.x, p1.y, p1.z,
-                                                 p2.x, p2.y, p2.z,
-                                                 r1, r2) else { return nil }
+    public static func gcTrimmedCone2Pts(
+        p1: SIMD3<Double>, p2: SIMD3<Double>,
+        r1: Double, r2: Double
+    ) -> Surface? {
+        guard
+            let h = OCCTGCMakeTrimmedCone2Pts(
+                p1.x, p1.y, p1.z,
+                p2.x, p2.y, p2.z,
+                r1, r2)
+        else { return nil }
         return Surface(handle: h)
     }
 
     /// Create a trimmed cone from 4 points.
-    public static func gcTrimmedCone4Pts(p1: SIMD3<Double>, p2: SIMD3<Double>,
-                                          p3: SIMD3<Double>, p4: SIMD3<Double>) -> Surface? {
-        guard let h = OCCTGCMakeTrimmedCone4Pts(p1.x, p1.y, p1.z,
-                                                 p2.x, p2.y, p2.z,
-                                                 p3.x, p3.y, p3.z,
-                                                 p4.x, p4.y, p4.z) else { return nil }
+    public static func gcTrimmedCone4Pts(
+        p1: SIMD3<Double>, p2: SIMD3<Double>,
+        p3: SIMD3<Double>, p4: SIMD3<Double>
+    ) -> Surface? {
+        guard
+            let h = OCCTGCMakeTrimmedCone4Pts(
+                p1.x, p1.y, p1.z,
+                p2.x, p2.y, p2.z,
+                p3.x, p3.y, p3.z,
+                p4.x, p4.y, p4.z)
+        else { return nil }
         return Surface(handle: h)
     }
 }
 
 extension Surface {
     /// Create a trimmed cylinder from a circle (center+normal+radius) and height.
-    public static func gcTrimmedCylinderCircle(center: SIMD3<Double>, normal: SIMD3<Double>,
-                                                radius: Double, height: Double) -> Surface? {
-        guard let h = OCCTGCMakeTrimmedCylinderCircle(center.x, center.y, center.z,
-                                                       normal.x, normal.y, normal.z,
-                                                       radius, height) else { return nil }
+    public static func gcTrimmedCylinderCircle(
+        center: SIMD3<Double>, normal: SIMD3<Double>,
+        radius: Double, height: Double
+    ) -> Surface? {
+        guard
+            let h = OCCTGCMakeTrimmedCylinderCircle(
+                center.x, center.y, center.z,
+                normal.x, normal.y, normal.z,
+                radius, height)
+        else { return nil }
         return Surface(handle: h)
     }
 
     /// Create a trimmed cylinder from axis (point+direction), radius, and height.
-    public static func gcTrimmedCylinderAxis(point: SIMD3<Double>, direction: SIMD3<Double>,
-                                              radius: Double, height: Double) -> Surface? {
-        guard let h = OCCTGCMakeTrimmedCylinderAxis(point.x, point.y, point.z,
-                                                     direction.x, direction.y, direction.z,
-                                                     radius, height) else { return nil }
+    public static func gcTrimmedCylinderAxis(
+        point: SIMD3<Double>, direction: SIMD3<Double>,
+        radius: Double, height: Double
+    ) -> Surface? {
+        guard
+            let h = OCCTGCMakeTrimmedCylinderAxis(
+                point.x, point.y, point.z,
+                direction.x, direction.y, direction.z,
+                radius, height)
+        else { return nil }
         return Surface(handle: h)
     }
 
     /// Create a trimmed cylinder from 3 points.
-    public static func gcTrimmedCylinder3Pts(p1: SIMD3<Double>, p2: SIMD3<Double>,
-                                              p3: SIMD3<Double>) -> Surface? {
-        guard let h = OCCTGCMakeTrimmedCylinder3Pts(p1.x, p1.y, p1.z,
-                                                     p2.x, p2.y, p2.z,
-                                                     p3.x, p3.y, p3.z) else { return nil }
+    public static func gcTrimmedCylinder3Pts(
+        p1: SIMD3<Double>, p2: SIMD3<Double>,
+        p3: SIMD3<Double>
+    ) -> Surface? {
+        guard
+            let h = OCCTGCMakeTrimmedCylinder3Pts(
+                p1.x, p1.y, p1.z,
+                p2.x, p2.y, p2.z,
+                p3.x, p3.y, p3.z)
+        else { return nil }
         return Surface(handle: h)
     }
 }
@@ -4096,7 +4730,8 @@ extension Surface {
 
     /// Get number of UV bound spans for the surface.
     public var nBounds: (uSpans: Int, vSpans: Int) {
-        var u: Int32 = 0, v: Int32 = 0
+        var u: Int32 = 0
+        var v: Int32 = 0
         OCCTSurfaceGetNBounds(handle, &u, &v)
         return (Int(u), Int(v))
     }
@@ -4134,7 +4769,9 @@ extension Surface {
 
         /// Get a pole at (uIndex, vIndex) — both 1-based.
         public func pole(uIndex: Int, vIndex: Int) -> SIMD3<Double> {
-            var x = 0.0, y = 0.0, z = 0.0
+            var x = 0.0
+            var y = 0.0
+            var z = 0.0
             OCCTSurfaceBSplineGetPole(surface.handle, Int32(uIndex), Int32(vIndex), &x, &y, &z)
             return SIMD3(x, y, z)
         }
@@ -4142,7 +4779,8 @@ extension Surface {
         /// Set a pole at (uIndex, vIndex) — both 1-based.
         @discardableResult
         public func setPole(uIndex: Int, vIndex: Int, to point: SIMD3<Double>) -> Bool {
-            OCCTSurfaceBSplineSetPole(surface.handle, Int32(uIndex), Int32(vIndex), point.x, point.y, point.z)
+            OCCTSurfaceBSplineSetPole(
+                surface.handle, Int32(uIndex), Int32(vIndex), point.x, point.y, point.z)
         }
 
         /// Set the weight at (uIndex, vIndex).
@@ -4153,13 +4791,15 @@ extension Surface {
 
         /// Insert a U knot.
         @discardableResult
-        public func insertUKnot(u: Double, multiplicity: Int = 1, tolerance: Double = 1e-6) -> Bool {
+        public func insertUKnot(u: Double, multiplicity: Int = 1, tolerance: Double = 1e-6) -> Bool
+        {
             OCCTSurfaceBSplineInsertUKnot(surface.handle, u, Int32(multiplicity), tolerance)
         }
 
         /// Insert a V knot.
         @discardableResult
-        public func insertVKnot(v: Double, multiplicity: Int = 1, tolerance: Double = 1e-6) -> Bool {
+        public func insertVKnot(v: Double, multiplicity: Int = 1, tolerance: Double = 1e-6) -> Bool
+        {
             OCCTSurfaceBSplineInsertVKnot(surface.handle, v, Int32(multiplicity), tolerance)
         }
 
@@ -4182,7 +4822,9 @@ extension Surface {
         }
     }
 
-    /// Access BSpline-specific surface operations. Works only if the underlying surface is a Geom_BSplineSurface.
+    /// Access BSpline-specific surface operations.
+    ///
+    /// Works only if the underlying surface is a Geom_BSplineSurface.
     public var bsplineSurface: BSpline { BSpline(surface: self) }
 }
 
@@ -4190,13 +4832,18 @@ extension Surface {
 
     /// Get the parameter bounds of the surface.
     public var parameterBounds: (uMin: Double, uMax: Double, vMin: Double, vMax: Double) {
-        var uMin = 0.0, uMax = 0.0, vMin = 0.0, vMax = 0.0
+        var uMin = 0.0
+        var uMax = 0.0
+        var vMin = 0.0
+        var vMax = 0.0
         OCCTSurfaceBounds(handle, &uMin, &uMax, &vMin, &vMax)
         return (uMin, uMax, vMin, vMax)
     }
 
     /// Unavailable: this `Int` reported a hand-invented encoding, and the numbers changed
-    /// underneath it. Use ``continuityClass`` (named cases) or ``continuity`` (raw ordinal).
+    /// underneath it.
+    ///
+    /// Use ``continuityClass`` (named cases) or ``continuity`` (raw ordinal).
     ///
     /// Same retirement, same reasons, as ``Curve3D/continuityOrder``: the pre-#485 encoding was
     /// `C0=0, C1=1, C2=2, C3=3, CN=99, G1=-2, G2=-3` and the value is now the real
@@ -4210,16 +4857,19 @@ extension Surface {
     /// // Ask it so it cannot drift again:
     /// if surface.continuityClass.satisfies(.c2) { offsetSafely() }
     /// ```
-    @available(*, unavailable, message: """
-        surfaceContinuityOrder reported a hand-invented encoding (C0=0, C1=1, C2=2, C3=3, CN=99, \
-        G1=-2, G2=-3) and #485 changed it to the real GeomAbs_Shape ordinal (C0=0, G1=1, C1=2, \
-        G2=3, C2=4, C3=5, CN=6), so every threshold check silently changed meaning. Use \
-        continuityClass.satisfies(_:) for a continuity floor, continuityClass == .cN for the \
-        analytic fast path, or continuity for the raw ordinal — after re-checking the constant \
-        you compare against. Note there is no longer an error sentinel: this returned -1 for a \
-        null or unreadable handle, whereas continuity returns 0, which is an ordinary C0, so a \
-        migrated `< 0` error check can never fire (#619).
-        """)
+    @available(
+        *, unavailable,
+        message: """
+            surfaceContinuityOrder reported a hand-invented encoding (C0=0, C1=1, C2=2, C3=3, CN=99, \
+            G1=-2, G2=-3) and #485 changed it to the real GeomAbs_Shape ordinal (C0=0, G1=1, C1=2, \
+            G2=3, C2=4, C3=5, CN=6), so every threshold check silently changed meaning. Use \
+            continuityClass.satisfies(_:) for a continuity floor, continuityClass == .cN for the \
+            analytic fast path, or continuity for the raw ordinal — after re-checking the constant \
+            you compare against. Note there is no longer an error sentinel: this returned -1 for a \
+            null or unreadable handle, whereas continuity returns 0, which is an ordinary C0, so a \
+            migrated `< 0` error check can never fire (#619).
+            """
+    )
     public var surfaceContinuityOrder: Int { Int(OCCTSurfaceGetContinuity(handle)) }
 
     /// Create a deep copy of this surface.
@@ -4233,34 +4883,62 @@ extension Surface {
 
     /// Evaluate the surface point at (u, v).
     public func evalD0(u: Double, v: Double) -> SIMD3<Double> {
-        var x = 0.0, y = 0.0, z = 0.0
+        var x = 0.0
+        var y = 0.0
+        var z = 0.0
         OCCTSurfaceEvalD0(handle, u, v, &x, &y, &z)
         return SIMD3(x, y, z)
     }
 
     /// Evaluate the surface point and first partial derivatives at (u, v).
-    public func evalD1(u: Double, v: Double) -> (point: SIMD3<Double>, d1u: SIMD3<Double>, d1v: SIMD3<Double>) {
-        var px = 0.0, py = 0.0, pz = 0.0
-        var d1ux = 0.0, d1uy = 0.0, d1uz = 0.0
-        var d1vx = 0.0, d1vy = 0.0, d1vz = 0.0
+    public func evalD1(u: Double, v: Double) -> (
+        point: SIMD3<Double>, d1u: SIMD3<Double>, d1v: SIMD3<Double>
+    ) {
+        var px = 0.0
+        var py = 0.0
+        var pz = 0.0
+        var d1ux = 0.0
+        var d1uy = 0.0
+        var d1uz = 0.0
+        var d1vx = 0.0
+        var d1vy = 0.0
+        var d1vz = 0.0
         OCCTSurfaceEvalD1(handle, u, v, &px, &py, &pz, &d1ux, &d1uy, &d1uz, &d1vx, &d1vy, &d1vz)
         return (SIMD3(px, py, pz), SIMD3(d1ux, d1uy, d1uz), SIMD3(d1vx, d1vy, d1vz))
     }
 
     /// Evaluate the surface point, first and second partial derivatives at (u, v).
-    public func evalD2(u: Double, v: Double) -> (point: SIMD3<Double>, d1u: SIMD3<Double>, d1v: SIMD3<Double>, d2u: SIMD3<Double>, d2v: SIMD3<Double>, d2uv: SIMD3<Double>) {
-        var px = 0.0, py = 0.0, pz = 0.0
-        var d1ux = 0.0, d1uy = 0.0, d1uz = 0.0
-        var d1vx = 0.0, d1vy = 0.0, d1vz = 0.0
-        var d2ux = 0.0, d2uy = 0.0, d2uz = 0.0
-        var d2vx = 0.0, d2vy = 0.0, d2vz = 0.0
-        var d2uvx = 0.0, d2uvy = 0.0, d2uvz = 0.0
-        OCCTSurfaceEvalD2(handle, u, v, &px, &py, &pz,
-                            &d1ux, &d1uy, &d1uz, &d1vx, &d1vy, &d1vz,
-                            &d2ux, &d2uy, &d2uz, &d2vx, &d2vy, &d2vz,
-                            &d2uvx, &d2uvy, &d2uvz)
-        return (SIMD3(px, py, pz), SIMD3(d1ux, d1uy, d1uz), SIMD3(d1vx, d1vy, d1vz),
-                SIMD3(d2ux, d2uy, d2uz), SIMD3(d2vx, d2vy, d2vz), SIMD3(d2uvx, d2uvy, d2uvz))
+    public func evalD2(u: Double, v: Double) -> (
+        point: SIMD3<Double>, d1u: SIMD3<Double>, d1v: SIMD3<Double>, d2u: SIMD3<Double>,
+        d2v: SIMD3<Double>, d2uv: SIMD3<Double>
+    ) {
+        var px = 0.0
+        var py = 0.0
+        var pz = 0.0
+        var d1ux = 0.0
+        var d1uy = 0.0
+        var d1uz = 0.0
+        var d1vx = 0.0
+        var d1vy = 0.0
+        var d1vz = 0.0
+        var d2ux = 0.0
+        var d2uy = 0.0
+        var d2uz = 0.0
+        var d2vx = 0.0
+        var d2vy = 0.0
+        var d2vz = 0.0
+        var d2uvx = 0.0
+        var d2uvy = 0.0
+        var d2uvz = 0.0
+        OCCTSurfaceEvalD2(
+            handle, u, v, &px, &py, &pz,
+            &d1ux, &d1uy, &d1uz, &d1vx, &d1vy, &d1vz,
+            &d2ux, &d2uy, &d2uz, &d2vx, &d2vy, &d2vz,
+            &d2uvx, &d2uvy, &d2uvz)
+        return (
+            SIMD3(px, py, pz), SIMD3(d1ux, d1uy, d1uz), SIMD3(d1vx, d1vy, d1vz),
+            SIMD3(d2ux, d2uy, d2uz), SIMD3(d2vx, d2vy, d2vz), SIMD3(d2uvx, d2uvy, d2uvz)
+        )
     }
 }
 
@@ -4274,26 +4952,42 @@ extension Surface {
 
 extension Surface {
 
-    /// Local point-on-surface search from initial (u,v) guess. Returns (u, v, distance).
-    public func locateNearestPoint(_ point: SIMD3<Double>, initU: Double, initV: Double, tolerance: Double = 1e-6) -> (u: Double, v: Double, distance: Double)? {
-        var u = 0.0, v = 0.0, dist = 0.0
-        let ok = OCCTExtremaLocateOnSurface(handle, point.x, point.y, point.z,
-                                            initU, initV, tolerance, &u, &v, &dist)
+    /// Local point-on-surface search from initial (u,v) guess.
+    ///
+    /// Returns (u, v, distance).
+    public func locateNearestPoint(
+        _ point: SIMD3<Double>, initU: Double, initV: Double, tolerance: Double = 1e-6
+    ) -> (u: Double, v: Double, distance: Double)? {
+        var u = 0.0
+        var v = 0.0
+        var dist = 0.0
+        let ok = OCCTExtremaLocateOnSurface(
+            handle, point.x, point.y, point.z,
+            initU, initV, tolerance, &u, &v, &dist)
         return ok ? (u, v, dist) : nil
     }
 
-    /// Global point-to-surface projection returning all extrema. Returns array of (u, v, distance).
+    /// Global point-to-surface projection returning all extrema.
     ///
-    /// - Parameter maxResults: Output *capacity* (default 10), clamped into `0...`
-    ///   ``Sampling/maximumSampleCount``; 0 or less returns empty (#622).
-    public func projectPointAll(_ point: SIMD3<Double>, maxResults: Int = 10) -> [(u: Double, v: Double, distance: Double)] {
+    /// Returns array of (u, v, distance).
+    ///
+    /// - Parameters:
+    ///   - point: The 3D point to project.
+    ///   - maxResults: Output *capacity* (default 10), clamped into `0...`
+    ///     ``Sampling/maximumSampleCount``; 0 or less returns empty (#622).
+    /// - Returns: Every extremum found, up to `maxResults`.
+    public func projectPointAll(_ point: SIMD3<Double>, maxResults: Int = 10) -> [(
+        u: Double, v: Double, distance: Double
+    )] {
         let maxResults = Sampling.capacity(maxResults)
         guard maxResults > 0 else { return [] }
         var us = [Double](repeating: 0, count: maxResults)
         var vs = [Double](repeating: 0, count: maxResults)
         var distances = [Double](repeating: 0, count: maxResults)
-        let n = Int(OCCTExtremaPointSurface(handle, point.x, point.y, point.z,
-                                            &us, &vs, &distances, Int32(maxResults)))
+        let n = Int(
+            OCCTExtremaPointSurface(
+                handle, point.x, point.y, point.z,
+                &us, &vs, &distances, Int32(maxResults)))
         return (0..<n).map { (us[$0], vs[$0], distances[$0]) }
     }
 }
@@ -4332,12 +5026,15 @@ extension Surface {
     public func bsplineWeights() -> (weights: [Double], rows: Int, cols: Int) {
         let maxSize = 10000
         var weights = [Double](repeating: 0, count: maxSize)
-        var rows: Int32 = 0, cols: Int32 = 0
+        var rows: Int32 = 0
+        var cols: Int32 = 0
         OCCTSurfaceBSplineGetWeights(handle, &weights, &rows, &cols)
         return (Array(weights.prefix(Int(rows) * Int(cols))), Int(rows), Int(cols))
     }
 
-    /// Remove a U knot. Returns true if successful.
+    /// Remove a U knot.
+    ///
+    /// Returns true if successful.
     public func bsplineRemoveUKnot(index: Int, multiplicity: Int, tolerance: Double) -> Bool {
         OCCTSurfaceBSplineRemoveUKnot(handle, Int32(index), Int32(multiplicity), tolerance)
     }
@@ -4347,7 +5044,9 @@ extension Surface {
 
     /// Evaluate the (Nu, Nv) partial derivative at (u, v).
     public func dn(u: Double, v: Double, nu: Int, nv: Int) -> SIMD3<Double> {
-        var x = 0.0, y = 0.0, z = 0.0
+        var x = 0.0
+        var y = 0.0
+        var z = 0.0
         OCCTSurfaceDN(handle, u, v, Int32(nu), Int32(nv), &x, &y, &z)
         return SIMD3(x, y, z)
     }
@@ -4394,11 +5093,16 @@ extension Surface {
     /// #expect(cone.localCurvatures(u: 0, v: 0) == nil)
     /// ```
     public func localCurvatures(u: Double, v: Double) -> LocalCurvatures? {
-        var gaussian = 0.0, mean = 0.0, maxC = 0.0, minC = 0.0
+        var gaussian = 0.0
+        var mean = 0.0
+        var maxC = 0.0
+        var minC = 0.0
         var isDefined = false
         OCCTSurfaceLocalCurvatures(handle, u, v, &gaussian, &mean, &maxC, &minC, &isDefined)
-        return isDefined ? LocalCurvatures(gaussian: gaussian, mean: mean,
-                                           maxCurvature: maxC, minCurvature: minC) : nil
+        return isDefined
+            ? LocalCurvatures(
+                gaussian: gaussian, mean: mean,
+                maxCurvature: maxC, minCurvature: minC) : nil
     }
 
     /// Curvature direction result.
@@ -4440,14 +5144,21 @@ extension Surface {
     /// #expect(plane.localCurvatureDirections(u: 1, v: 2) == nil)
     /// ```
     public func localCurvatureDirections(u: Double, v: Double) -> CurvatureDirections? {
-        var maxDx = 0.0, maxDy = 0.0, maxDz = 0.0
-        var minDx = 0.0, minDy = 0.0, minDz = 0.0
+        var maxDx = 0.0
+        var maxDy = 0.0
+        var maxDz = 0.0
+        var minDx = 0.0
+        var minDy = 0.0
+        var minDz = 0.0
         var isDefined = false
-        OCCTSurfaceLocalCurvatureDirections(handle, u, v,
-                                            &maxDx, &maxDy, &maxDz,
-                                            &minDx, &minDy, &minDz, &isDefined)
-        return isDefined ? CurvatureDirections(maxDirection: SIMD3(maxDx, maxDy, maxDz),
-                                               minDirection: SIMD3(minDx, minDy, minDz)) : nil
+        OCCTSurfaceLocalCurvatureDirections(
+            handle, u, v,
+            &maxDx, &maxDy, &maxDz,
+            &minDx, &minDy, &minDz, &isDefined)
+        return isDefined
+            ? CurvatureDirections(
+                maxDirection: SIMD3(maxDx, maxDy, maxDz),
+                minDirection: SIMD3(minDx, minDy, minDz)) : nil
     }
 }
 
@@ -4476,7 +5187,9 @@ extension Surface {
 
         /// Get a pole (1-based indices).
         public func pole(uIndex: Int, vIndex: Int) -> SIMD3<Double> {
-            var x = 0.0, y = 0.0, z = 0.0
+            var x = 0.0
+            var y = 0.0
+            var z = 0.0
             OCCTSurfaceBezierGetPole(handle, Int32(uIndex), Int32(vIndex), &x, &y, &z)
             return SIMD3(x, y, z)
         }
@@ -4484,7 +5197,8 @@ extension Surface {
         /// Set a pole (1-based indices).
         @discardableResult
         public func setPole(uIndex: Int, vIndex: Int, point: SIMD3<Double>) -> Bool {
-            OCCTSurfaceBezierSetPole(handle, Int32(uIndex), Int32(vIndex), point.x, point.y, point.z)
+            OCCTSurfaceBezierSetPole(
+                handle, Int32(uIndex), Int32(vIndex), point.x, point.y, point.z)
         }
 
         /// Set a weight (1-based indices).
@@ -4512,8 +5226,10 @@ extension Surface {
     // --- BSplineSurface extras ---
 
     /// Compute U and V parameter resolution for a given 3D tolerance (BSpline surface).
-    public func bsplineResolution(tolerance3d: Double) -> (uResolution: Double, vResolution: Double) {
-        var ur = 0.0, vr = 0.0
+    public func bsplineResolution(tolerance3d: Double) -> (uResolution: Double, vResolution: Double)
+    {
+        var ur = 0.0
+        var vr = 0.0
         OCCTSurfaceBSplineResolution(handle, tolerance3d, &ur, &vr)
         return (ur, vr)
     }
@@ -4570,7 +5286,9 @@ extension Surface {
         OCCTSurfaceVReversedParameter(handle, v)
     }
 
-    /// Remove a V knot from a BSpline surface. Returns true if successful.
+    /// Remove a V knot from a BSpline surface.
+    ///
+    /// Returns true if successful.
     @discardableResult
     public func bsplineRemoveVKnot(index: Int, mult: Int, tolerance: Double) -> Bool {
         OCCTSurfaceBSplineRemoveVKnot(handle, Int32(index), Int32(mult), tolerance)
@@ -4578,7 +5296,8 @@ extension Surface {
 
     /// Resolution for Bezier surfaces (U and V).
     public func bezierResolution(tolerance3d: Double) -> (u: Double, v: Double) {
-        var ur = 0.0, vr = 0.0
+        var ur = 0.0
+        var vr = 0.0
         OCCTSurfaceBezierResolution(handle, tolerance3d, &ur, &vr)
         return (ur, vr)
     }
@@ -4630,7 +5349,9 @@ extension Surface {
 
     /// Batch insert U knots with multiplicities.
     @discardableResult
-    public func bsplineInsertUKnots(_ knots: [Double], multiplicities: [Int], tolerance: Double = 1e-10) -> Bool {
+    public func bsplineInsertUKnots(
+        _ knots: [Double], multiplicities: [Int], tolerance: Double = 1e-10
+    ) -> Bool {
         let count = min(knots.count, multiplicities.count)
         guard count > 0 else { return false }
         let mults = multiplicities.map { Int32($0) }
@@ -4639,7 +5360,9 @@ extension Surface {
 
     /// Batch insert V knots with multiplicities.
     @discardableResult
-    public func bsplineInsertVKnots(_ knots: [Double], multiplicities: [Int], tolerance: Double = 1e-10) -> Bool {
+    public func bsplineInsertVKnots(
+        _ knots: [Double], multiplicities: [Int], tolerance: Double = 1e-10
+    ) -> Bool {
         let count = min(knots.count, multiplicities.count)
         guard count > 0 else { return false }
         let mults = multiplicities.map { Int32($0) }
@@ -4648,11 +5371,14 @@ extension Surface {
 
     /// Move BSpline surface to pass through point at (u,v), adjusting poles in range.
     @discardableResult
-    public func bsplineMovePoint(u: Double, v: Double, to point: SIMD3<Double>,
-                                 uPoleRange: ClosedRange<Int>, vPoleRange: ClosedRange<Int>) -> Bool {
-        OCCTSurfaceBSplineMovePoint(handle, u, v, point.x, point.y, point.z,
-                                     Int32(uPoleRange.lowerBound), Int32(uPoleRange.upperBound),
-                                     Int32(vPoleRange.lowerBound), Int32(vPoleRange.upperBound))
+    public func bsplineMovePoint(
+        u: Double, v: Double, to point: SIMD3<Double>,
+        uPoleRange: ClosedRange<Int>, vPoleRange: ClosedRange<Int>
+    ) -> Bool {
+        OCCTSurfaceBSplineMovePoint(
+            handle, u, v, point.x, point.y, point.z,
+            Int32(uPoleRange.lowerBound), Int32(uPoleRange.upperBound),
+            Int32(vPoleRange.lowerBound), Int32(vPoleRange.upperBound))
     }
 
     /// Set an entire column of poles (all U poles at vIndex, 1-based). coords is [x,y,z,...] with count = NbUPoles.
@@ -4686,13 +5412,15 @@ extension Surface {
     /// Increment U knot multiplicities in range [fromIndex, toIndex] by step.
     @discardableResult
     public func bsplineIncrementUMultiplicity(fromIndex: Int, toIndex: Int, step: Int) -> Bool {
-        OCCTSurfaceBSplineIncrementUMultiplicity(handle, Int32(fromIndex), Int32(toIndex), Int32(step))
+        OCCTSurfaceBSplineIncrementUMultiplicity(
+            handle, Int32(fromIndex), Int32(toIndex), Int32(step))
     }
 
     /// Increment V knot multiplicities in range [fromIndex, toIndex] by step.
     @discardableResult
     public func bsplineIncrementVMultiplicity(fromIndex: Int, toIndex: Int, step: Int) -> Bool {
-        OCCTSurfaceBSplineIncrementVMultiplicity(handle, Int32(fromIndex), Int32(toIndex), Int32(step))
+        OCCTSurfaceBSplineIncrementVMultiplicity(
+            handle, Int32(fromIndex), Int32(toIndex), Int32(step))
     }
 
     /// First U knot index of BSpline surface.
@@ -4709,8 +5437,10 @@ extension Surface {
 
     /// Validate parameter ranges and segment the BSpline surface.
     @discardableResult
-    public func bsplineCheckAndSegment(u1: Double, u2: Double, v1: Double, v2: Double,
-                                        uTolerance: Double = 1e-10, vTolerance: Double = 1e-10) -> Bool {
+    public func bsplineCheckAndSegment(
+        u1: Double, u2: Double, v1: Double, v2: Double,
+        uTolerance: Double = 1e-10, vTolerance: Double = 1e-10
+    ) -> Bool {
         OCCTSurfaceBSplineCheckAndSegment(handle, u1, u2, v1, v2, uTolerance, vTolerance)
     }
 }
