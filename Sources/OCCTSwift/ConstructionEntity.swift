@@ -282,9 +282,9 @@ extension BRepGraph {
     /// straight seam on a *cone* (a cone's generatrix meets its axis at the cone's own nonzero
     /// half-angle, never 0) and could misfire true for a helical edge whose two-point secant
     /// happens to land near-parallel to the axis by coincidence of the sweep angle (both findings
-    /// 1/3, second pass). ``coaxialCrossSection(of:bounds:start:end:axis:)`` replaces it with a
-    /// direct geometric test that doesn't need this tolerance at all (finding 1, third pass), so
-    /// this constant is `axesAgree`'s alone again.
+    /// 1/3, second pass). ``coaxialCrossSection(of:bounds:start:end:axis:edgeTolerance:)``
+    /// replaces it with a direct geometric test that doesn't need this tolerance at all (finding
+    /// 1, third pass), so this constant is `axesAgree`'s alone again.
     ///
     /// `OCCTPrecision.angular` (`Precision::Angular()`, 1e-12), not a hand-invented literal: this
     /// codebase has a documented history of a hardcoded direction-comparison tolerance silently
@@ -303,10 +303,19 @@ extension BRepGraph {
     ///
     /// - ``axesAgree(_:_:)``: the perpendicular offset between one candidate axis's origin and
     ///   the line through another, so two same-diameter but genuinely distinct bores don't
-    ///   count as one (finding 1, first pass).
-    /// - ``coaxialCrossSection(of:bounds:start:end:axis:)``: how much a sampled point's height
-    ///   along the axis, or its radius from it, may vary across the edge before it stops
-    ///   counting as a genuine perpendicular cross-section (finding 1, third pass).
+    ///   count as one (finding 1, first pass). Used directly, unmodified — the two faces being
+    ///   compared here are either the identical `TopoDS_Face` read twice or a BOP-split piece
+    ///   sharing the same analytic `Geom_Surface` handle, so machine precision is the right bar.
+    /// - ``coaxialCrossSection(of:bounds:start:end:axis:edgeTolerance:)``: the FLOOR under how
+    ///   much a sampled point's height along the axis, or its radius from it, may vary across the
+    ///   edge before it stops counting as a genuine perpendicular cross-section (finding 1, third
+    ///   pass). The actual comparison there is `max(edge's own measured BRep_Tool::Tolerance,
+    ///   this floor)`, not this constant alone: a real edge that has survived a Boolean/fillet
+    ///   commonly measures 1e-4-1e-3, far looser than this machine-precision value, and this
+    ///   constant alone rejected genuine circular rims on exactly that kind of edge (#894
+    ///   finding 2, fifth pass). The floor still applies to a pristine, machine-precision edge —
+    ///   `max` never makes the check LOOSER than this value, only ever loosens it upward to match
+    ///   what the edge itself already measures.
     ///
     /// A fixed absolute threshold, like ``degeneracyEpsilon`` above, not a fraction of model
     /// scale. `OCCTPrecision.confusion` (`Precision::Confusion()`, 1e-7) — the canonical "points
@@ -433,15 +442,37 @@ extension BRepGraph {
             else {
                 return .failure(.missingGeometry(node))
             }
+
+            // Only a curved edge (typically a circular arc) can coincide with a
+            // cylindrical/conical face's true rotation axis; a linear edge always resolves to its
+            // own line. Gate on curveType first — cheap, no bridge call — so a straight edge never
+            // pays for the face walk in `revolutionAxis` (#894 finding 4, first pass), nor for the
+            // arc-length degeneracy check below (#894 finding 3, fifth pass): a line can never be
+            // closed with a zero secant the way a full circle can (see the comment below), so the
+            // cheap secant-based check the pre-round-3 code used is still correct for a line —
+            // only the non-line path below needs the true arc length.
+            if edge.curveType == .line {
+                guard let start = edge.point(at: bounds.first),
+                    let end = edge.point(at: bounds.last)
+                else {
+                    return .failure(.missingGeometry(node))
+                }
+                let dir = end - start
+                return requireNonDegenerate(
+                    simd_length(dir), (start, simd_normalize(dir)), "zero-length edge")
+            }
+
             // The edge's own degeneracy is checked before any axis lookup, and by true arc
             // length rather than the endpoint secant a few lines below: a full-circle rim is
             // legitimately closed (start == end, secant == 0) without being remotely degenerate
             // — that's exactly why the axis redirect below exists at all — so this can't reuse
-            // the secant the way the fallback path does. Unconditional so a genuinely
-            // near-zero-length sliver edge (a leftover fillet/boolean artifact) still reports
-            // `.degenerate` even when it happens to sit next to one clean cylindrical/conical
-            // face and would otherwise get an unambiguous but meaningless axis match below
-            // (#894 finding 2, third pass).
+            // the secant the way the fallback path does. Unconditional (for every non-line edge)
+            // so a genuinely near-zero-length sliver edge (a leftover fillet/boolean artifact)
+            // still reports `.degenerate` even when it happens to sit next to one clean
+            // cylindrical/conical face and would otherwise get an unambiguous but meaningless
+            // axis match below (#894 finding 2, third pass). Paying for this arc-length bridge
+            // call only here, not on the line fast path above, is what finding 3 (fifth pass)
+            // asked for.
             guard edge.length >= Self.degeneracyEpsilon else {
                 return .failure(.degenerate("zero-length edge"))
             }
@@ -451,19 +482,17 @@ extension BRepGraph {
                 return .failure(.missingGeometry(node))
             }
 
-            // Only a curved edge (typically a circular arc) can coincide with a
-            // cylindrical/conical face's true rotation axis; a linear edge always resolves to its
-            // own line. Gate on curveType first — cheap, no bridge call — so a straight edge never
-            // pays for the face walk in `revolutionAxis` (#894 finding 4, first pass); that walk is
-            // also where the answer can still legitimately come back nil (no adjacent cyl/cone
-            // face, or several that disagree — #894 finding 1, first pass). A candidate found there
-            // is only actually used once `coaxialCrossSection` confirms the edge is genuinely a
-            // circular cross-section of it, not merely non-linear and next to the right kind of
-            // face (#894 finding 1, third pass) — see that function's doc for the elliptical-rim,
-            // reparameterized-straight-seam, and helical-edge cases it exists to reject.
-            if edge.curveType != .line,
-                let axis = revolutionAxis(ofEdgeAt: node.index),
-                coaxialCrossSection(of: edge, bounds: bounds, start: start, end: end, axis: axis)
+            // The walk below is also where the answer can still legitimately come back nil (no
+            // adjacent cyl/cone face, or several that disagree — #894 finding 1, first pass). A
+            // candidate found there is only actually used once `coaxialCrossSection` confirms the
+            // edge is genuinely a circular cross-section of it, not merely non-linear and next to
+            // the right kind of face (#894 finding 1, third pass) — see that function's doc for
+            // the elliptical-rim, reparameterized-straight-seam, and helical-edge cases it exists
+            // to reject.
+            if let axis = revolutionAxis(ofEdgeAt: node.index),
+                coaxialCrossSection(
+                    of: edge, bounds: bounds, start: start, end: end, axis: axis,
+                    edgeTolerance: edgeTolerance(node.index))
             {
                 // `axis.direction`'s sign comes from `Face.primaryAxis` — the adjacent surface's
                 // own placement convention — which has nothing to do with which of the edge's two
@@ -479,12 +508,22 @@ extension BRepGraph {
                 // frame, `cross(radial, tangent)` is `radius^2 * axisDirection`, so its sign against
                 // `axisDirection` says whether increasing parameter — start->end — agrees with
                 // `axisDirection` or runs opposite it.
+                //
+                // `edge.tangent(at:)` can return nil even where `edge.point(at:)` already
+                // succeeded (e.g. a first-derivative singularity on a reparameterized curve).
+                // Failing loudly here rather than silently keeping the unflipped `Face.primaryAxis`
+                // sign matches this function's own "fail on ambiguity" convention elsewhere (#894
+                // finding 1, fifth pass) — a plausible-looking wrong sign is worse than an explicit
+                // `.degenerate`.
+                guard let tangentAtStart = edge.tangent(at: bounds.first) else {
+                    return .failure(
+                        .degenerate(
+                            "edge tangent unavailable at start; cannot determine axis sign"))
+                }
                 var axisDirection = simd_normalize(axis.direction)
-                if let tangentAtStart = edge.tangent(at: bounds.first) {
-                    let radial = start - axis.origin
-                    if simd_dot(axisDirection, simd_cross(radial, tangentAtStart)) < 0 {
-                        axisDirection = -axisDirection
-                    }
+                let radial = start - axis.origin
+                if simd_dot(axisDirection, simd_cross(radial, tangentAtStart)) < 0 {
+                    axisDirection = -axisDirection
                 }
                 // Keep the origin edge-local: project the edge's own start point onto the resolved
                 // axis line rather than returning the adjacent surface's own placement origin,
@@ -525,9 +564,21 @@ extension BRepGraph {
     /// since two points on any curve are trivially "coplanar" and "equidistant" — the check needs
     /// enough samples to actually see curvature/tilt across the edge's own span, not just at its
     /// ends.
-    private func coaxialCrossSection(
+    ///
+    /// The height/radius comparison tolerance is `max(edgeTolerance,
+    /// axisOriginAgreementDistanceTolerance)`, not the latter alone: a real edge that has survived
+    /// a Boolean/fillet routinely measures `BRep_Tool::Tolerance` in the 1e-4-1e-3 range —
+    /// looser than the machine-precision `axisOriginAgreementDistanceTolerance` floor — and
+    /// comparing sampled noise against that floor alone rejected genuine circular rims outright
+    /// (#894 finding 2, fifth pass). `edgeTolerance` is the caller's own measured value for this
+    /// edge (`BRepGraph.edgeTolerance(_:)`, wrapping `BRep_Tool::Tolerance`), not invented here —
+    /// this function stays a pure geometric test of its arguments, with no lookup of its own.
+    /// `internal`, not `private`, so `ConstructionAxisTests` can exercise the tolerance derivation
+    /// directly against controlled sample noise, for the same testability reason as
+    /// `revolutionAxis(ofEdgeAt:)`/`axesAgree(_:_:)` (#894 finding 5, second pass).
+    func coaxialCrossSection(
         of edge: Edge, bounds: (first: Double, last: Double), start: SIMD3<Double>,
-        end: SIMD3<Double>, axis: ShapeAxis
+        end: SIMD3<Double>, axis: ShapeAxis, edgeTolerance: Double
     ) -> Bool {
         let axisDirection = simd_normalize(axis.direction)
         let span = bounds.last - bounds.first
@@ -546,8 +597,9 @@ extension BRepGraph {
         guard let minHeight = heights.min(), let maxHeight = heights.max(),
             let minRadius = radii.min(), let maxRadius = radii.max()
         else { return false }
-        return maxHeight - minHeight < Self.axisOriginAgreementDistanceTolerance
-            && maxRadius - minRadius < Self.axisOriginAgreementDistanceTolerance
+        let crossSectionTolerance = max(edgeTolerance, Self.axisOriginAgreementDistanceTolerance)
+        return maxHeight - minHeight < crossSectionTolerance
+            && maxRadius - minRadius < crossSectionTolerance
     }
 
     private func resolveEdgePointAndTangent(_ ref: TopologyRef, t: Double) -> Result<

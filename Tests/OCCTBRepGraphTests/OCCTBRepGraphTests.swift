@@ -3003,6 +3003,152 @@ struct ConstructionAxisTests {
             Issue.record("expected degenerate")
         }
     }
+
+    @Test(
+        "alongEdge fails loudly, not silently, when the edge's tangent is undefined at its own start point (#894 finding 1, fifth pass)"
+    )
+    func alongEdgeUndefinedStartTangentFailsLoudNotSilent() {
+        // A quarter-turn "top arc" on a cylindrical wall — geometrically a genuine circular
+        // cross-section, constant height/radius across all 5 of `coaxialCrossSection`'s own
+        // sampled fractions — built as a degree-1 BSpline whose first two poles are IDENTICAL: a
+        // textbook cusp (the segment [0, 0.05] has zero length, so the right-derivative at u=0 is
+        // the zero vector). `GeomLProp_CLProps::IsTangentDefined()` — and so `Edge.tangent(at:)`
+        // — correctly reports undefined there, while `Edge.point(at:)` at the same parameter
+        // still succeeds (plain D0 evaluation, unaffected by a degenerate derivative).
+        //
+        // Knots are placed at exactly the 5 fractions `coaxialCrossSection` samples (0, 0.25,
+        // 0.5, 0.75, 1.0), with the extra cusp pole tucked into [0, 0.05] — so every sample lands
+        // exactly on a pole (an exact circle point), not on a chord between two knots, the same
+        // "poles are the samples" trick `coaxialCrossSectionAcceptsMeasuredEdgeToleranceNoise`
+        // above uses to avoid a chord's corner-cutting error.
+        let radius = 5.0
+        let height = 10.0
+        func circlePoint(_ angleDeg: Double) -> SIMD3<Double> {
+            let a = angleDeg * Double.pi / 180
+            return SIMD3(radius * cos(a), radius * sin(a), height)
+        }
+        let poles = [
+            circlePoint(0), circlePoint(0), circlePoint(22.5), circlePoint(45),
+            circlePoint(67.5), circlePoint(90),
+        ]
+        let knots: [Double] = [0, 0.05, 0.25, 0.5, 0.75, 1.0]
+        let mults: [Int32] = [2, 1, 1, 1, 1, 2]
+
+        let angle0 = 0.0
+        let angle1 = Double.pi / 2
+        let midAngle = (angle0 + angle1) / 2
+        let p0bot = SIMD3(radius * cos(angle0), radius * sin(angle0), 0.0)
+        let p1bot = SIMD3(radius * cos(angle1), radius * sin(angle1), 0.0)
+        let p0top = circlePoint(0)
+        let p1top = circlePoint(90)
+
+        guard
+            let surface = Surface.cylinder(origin: .zero, axis: SIMD3(0, 0, 1), radius: radius),
+            let cuspCurve = Curve3D.bspline(
+                poles: poles, knots: knots, multiplicities: mults, degree: 1),
+            let topArcShape = Shape.edgeFromCurve(cuspCurve),
+            let topArcEdge = Edge(topArcShape),
+            let seamWire = Wire.line(from: p0bot, to: p0top),
+            let seamEdge = seamWire.edges().first,
+            let otherSideWire = Wire.line(from: p1top, to: p1bot),
+            let otherSideEdge = otherSideWire.edges().first,
+            let botArcCurve = Curve3D.arcOfCircle(
+                start: p1bot,
+                interior: SIMD3(radius * cos(midAngle), radius * sin(midAngle), 0.0),
+                end: p0bot),
+            let botArcShape = Shape.edgeFromCurve(botArcCurve),
+            let botArcEdge = Edge(botArcShape),
+            let wire = Wire.wireFromEdges([seamEdge, topArcEdge, otherSideEdge, botArcEdge]),
+            let faceShape = Shape.face(from: surface, boundary: wire),
+            let graph = BRepGraph(shape: faceShape)
+        else {
+            Issue.record("cusp-top-arc fixture build failed"); return
+        }
+
+        // Confirm the fixture matches the intended scenario — the cusp edge really is
+        // BSpline-typed and really does have an undefined start tangent — before asserting on
+        // the fix, rather than assuming the construction above behaved as designed.
+        var cuspNodeIndex: Int?
+        for edgeIndex in 0..<graph.edgeCount {
+            guard
+                let eShape = graph.shape(nodeKind: BRepGraph.NodeKind.edge, nodeIndex: edgeIndex),
+                let edge = eShape.edges().first, edge.curveType == .bsplineCurve,
+                let bounds = edge.parameterBounds
+            else { continue }
+            #expect(edge.tangent(at: bounds.first) == nil)
+            #expect(edge.point(at: bounds.first) != nil)
+            cuspNodeIndex = edgeIndex
+            break
+        }
+        guard let cuspNodeIndex else {
+            Issue.record("no BSpline-curveType edge found in cusp fixture"); return
+        }
+
+        // Pre-fix, this silently kept `Face.primaryAxis`'s unflipped sign and returned `.success`
+        // with a plausible-looking but potentially-wrong-signed axis. Fixed: fails loud instead.
+        let edgeRef = TopologyRef.literal(.init(kind: .edge, index: cuspNodeIndex))
+        if case .failure(.degenerate) = graph.resolve(ConstructionAxis.alongEdge(edgeRef)) {} else {
+            Issue.record("expected .degenerate when the edge's own start tangent is undefined")
+        }
+    }
+
+    @Test(
+        "coaxialCrossSection accepts sampled height/radius noise within the edge's own measured BRep tolerance, not just the machine-precision floor (#894 finding 2, fifth pass)"
+    )
+    func coaxialCrossSectionAcceptsMeasuredEdgeToleranceNoise() {
+        // A degree-1 (piecewise-linear) 5-pole BSpline with a CLAMPED knot vector — [0, 0.25,
+        // 0.5, 0.75, 1] with multiplicities [2, 1, 1, 1, 2] — is the defining shape of a
+        // degree-1 B-spline with simple interior knots: it interpolates every pole exactly at
+        // its corresponding knot parameter. That gives exact, reproducible control over what
+        // `coaxialCrossSection` samples at its own fractions (0, 0.25, 0.5, 0.75, 1.0) — no
+        // interpolation-parameterization guesswork the way `Curve3D.interpolate` would need.
+        let radius = 5.0
+        let height = 10.0
+        // Per-point noise, ~3e-5 in magnitude — comfortably above the old flat 1e-7 floor, and
+        // well inside the review's own cited 1e-4-1e-3 post-Boolean/fillet BRep tolerance range —
+        // simulating a genuine circular rim that has accumulated real numerical noise.
+        let angles = [0.0, Double.pi / 2, Double.pi, 3 * Double.pi / 2, 2 * Double.pi]
+        let radiusNoise = [2e-5, -3e-5, 1e-5, -4e-5, 3e-5]
+        let heightNoise = [3e-5, -2e-5, 4e-5, -3e-5, 1e-5]
+        var poles: [SIMD3<Double>] = []
+        for i in 0..<5 {
+            let r = radius + radiusNoise[i]
+            poles.append(SIMD3(r * cos(angles[i]), r * sin(angles[i]), height + heightNoise[i]))
+        }
+        guard
+            let curve = Curve3D.bspline(
+                poles: poles, knots: [0, 0.25, 0.5, 0.75, 1.0],
+                multiplicities: [2, 1, 1, 1, 2], degree: 1),
+            let edgeShape = Shape.edgeFromCurve(curve),
+            let edge = Edge(edgeShape),
+            let bounds = edge.parameterBounds,
+            let start = edge.point(at: bounds.first),
+            let end = edge.point(at: bounds.last),
+            let anyShape = Shape.box(width: 1, height: 1, depth: 1),
+            let graph = BRepGraph(shape: anyShape)
+        else {
+            Issue.record("noisy-rim fixture build failed"); return
+        }
+
+        // The measured height/radius spread of this fixture's 5 samples (~7e-5, by construction)
+        // must exceed the old flat floor for this test to prove anything — confirmed directly
+        // below rather than assumed, per okf/policies/prove-the-test-fails.md.
+        let axis = ShapeAxis(origin: .zero, direction: SIMD3(0, 0, 1), kind: .cylinder)
+        #expect(
+            !graph.coaxialCrossSection(
+                of: edge, bounds: bounds, start: start, end: end, axis: axis, edgeTolerance: 0),
+            "fixture noise must exceed the machine-precision floor, or this test proves nothing")
+
+        // A realistic measured BRep_Tool::Tolerance for this rim (1e-4, well within the review's
+        // own cited range) widens the comparison enough to accept the same noisy points — this is
+        // the fix: pre-fix, `coaxialCrossSection` had no `edgeTolerance` parameter at all and
+        // always compared against the machine-precision floor alone, so this call would have
+        // returned `false` regardless of what tolerance the caller measured.
+        #expect(
+            graph.coaxialCrossSection(
+                of: edge, bounds: bounds, start: start, end: end, axis: axis,
+                edgeTolerance: 1e-4))
+    }
 }
 
 @Suite("v0.142 ConstructionPoint resolution")
