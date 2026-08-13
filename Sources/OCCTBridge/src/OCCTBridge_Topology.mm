@@ -5399,9 +5399,12 @@ double OCCTShapeTotalEdgeLength(OCCTShapeRef shape)
 // in the catch block, matching occtComputeAxisExtent's own idiom -- means every failure path this
 // helper itself can reach (void box, OCCT exception) leaves deterministic zeros rather than the
 // uninitialized stack memory a caller that doesn't gate on the bool return would otherwise read.
-// forShape.IsNull() can't actually be reached from either public caller below any more: both zero
-// the out-params and guard a null shape themselves before ever calling in here (#901 review
-// followup) -- it stays for defensive symmetry with occtComputeAxisExtent, not live coverage.
+// forShape.IsNull() stays reachable and load-bearing: both public callers below only guard the
+// raw OCCTShapeRef pointer (#901 review followup) before forwarding s->shape, not whether that
+// wrapped TopoDS_Shape is itself null/empty -- a non-null OCCTShapeRef wrapping an empty shape
+// (e.g. a default-constructed OCCTShape whose .shape was never assigned) reaches this check
+// with the pointer guard already passed. Do not delete it as redundant with the callers' guard;
+// it is the only thing distinguishing that case from a genuinely populated shape.
 static bool occtComputeBoundingBox(const TopoDS_Shape& forShape,
                                    bool                optimal,
                                    bool                useShapeTolerance,
