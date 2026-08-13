@@ -159,7 +159,6 @@ Sources/OCCTSwift/SectionBuilder.swift
 Sources/OCCTSwift/Selection.swift
 Sources/OCCTSwift/SewingBuilder.swift
 Sources/OCCTSwift/Shape.swift
-Sources/OCCTSwift/Shape+Analysis.swift
 Sources/OCCTSwift/Shape+Curve.swift
 Sources/OCCTSwift/Shape+Drawing.swift
 Sources/OCCTSwift/Shape+Geom2d.swift
@@ -177,7 +176,6 @@ Sources/OCCTSwift/ShapeFixer.swift
 Sources/OCCTSwift/ShapeFixers.swift
 Sources/OCCTSwift/ShapeFixStatus.swift
 Sources/OCCTSwift/ShapeImage.swift
-Sources/OCCTSwift/ShapeMeasurements.swift
 Sources/OCCTSwift/ShapeProperties.swift
 Sources/OCCTSwift/ShapeRayIntersection.swift
 Sources/OCCTSwift/ShapeType.swift

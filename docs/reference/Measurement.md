@@ -537,7 +537,14 @@ Sum of all face areas.
 public var totalFaceArea: Double { get }
 ```
 
-Convenience over `faceAreas.reduce(0, +)`. Useful as a quick total-surface metric.
+Convenience over `faceAreas.reduce(0, +)`: N independently-toleranced per-face integrals
+(`Face.area(tolerance:)`, tunable via `Shape.measure(linearTolerance:)`).
+
+**Not the same computation as `Shape.surfaceArea` (#885):** see
+[`Shape-Features.md`](Shape-Features.md#surfacearea) for why `Shape.surfaceArea`,
+`Shape.surfaceInertiaProperties().mass` and `Shape.surfaceInertia.area` can disagree with this
+total, and [`Shape.measure(linearTolerance:)`](#shapemeasurelineartolerance) below for the measured
+gap and which total to reach for.
 
 - **Example:**
   ```swift
@@ -597,7 +604,17 @@ public func measure(linearTolerance: Double = 1e-6) -> ShapeMeasurements
 
 Iterates `faces()` and `edge(at:)`, computing all four measurement arrays. The `faceCentroids` array is populated from `Face.surfaceInertia` (which calls `BRepGProp_Sinert`); `facePerimeters` uses `Face.outerWire?.length`.
 
-- **Parameters:** `linearTolerance` — numerical integration tolerance forwarded to `Face.area(tolerance:)` (default `1e-6`). Tighten only if you observe precision issues at the cost of slightly longer computation.
+**`linearTolerance` only ever moves `faceAreas`/`totalFaceArea`, never `Shape.surfaceArea` and its
+two siblings** (see [`Shape-Features.md`](Shape-Features.md#surfacearea) for why, #885). At the
+default `1e-6` the two agree to ~12 significant figures on ordinary shapes (measured on a
+radius-10 sphere: `1256.637061435917` vs `1256.6370614359175`), so tightening `linearTolerance` to
+"fix" a mismatch just makes `totalFaceArea` diverge *further* from the other, unmoved, one. Past
+`linearTolerance = 0.001`, `BRepGProp::SurfaceProperties`'s own adaptive integration gives way to a
+non-adaptive mode (documented on the OCCT call itself), and the gap can become real: the same
+sphere measured `1216.31...` at `linearTolerance: 0.5` against the other three's fixed `1256.64...`,
+a ~3.2% difference, not floating-point noise.
+
+- **Parameters:** `linearTolerance` — numerical integration tolerance forwarded to `Face.area(tolerance:)` (default `1e-6`). Tighten only if you observe precision issues — this does not converge `totalFaceArea` toward `surfaceArea` past a point, see above.
 - **Returns:** A `ShapeMeasurements` snapshot with all four arrays populated and indexed parallel to the shape's face/edge enumeration.
 - **OCCT:** `BRepGProp::SurfaceProperties` (face areas), `BRepGProp_Sinert` (centroids), `BRepGProp::LinearProperties` (edge lengths + outer-wire lengths), `BRepTools::OuterWire` (outer wire lookup).
 - **Example:**

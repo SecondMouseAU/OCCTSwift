@@ -1,9 +1,8 @@
 import Foundation
-import simd
 import OCCTBridge
+import simd
 
 extension Shape {
-
 
     /// Get full mass properties of the shape.
     ///
@@ -109,7 +108,24 @@ extension Shape {
         return v
     }
 
-    /// Surface area of the shape in square units
+    /// Surface area of the shape in square units.
+    ///
+    /// One `BRepGProp::SurfaceProperties` integration over the whole shape at once — the same
+    /// call ``surfaceInertiaProperties()`` `.mass` and ``surfaceInertia`` `.area` share, so all
+    /// three agree with each other exactly. Unlike ``ShapeMeasurements/totalFaceArea`` (N
+    /// separately-toleranced per-face integrals, summed) this one takes no tolerance parameter:
+    /// see ``Shape/measure(linearTolerance:)`` for the measured gap between the two and which to
+    /// reach for (#885). This is the canonical explanation of that divergence; the other
+    /// area-measure properties below point back here instead of restating it.
+    ///
+    /// ```swift
+    /// let box = Shape.box(width: 10, height: 20, depth: 30)!
+    /// box.surfaceArea                        // 2200, one whole-shape integral
+    /// box.surfaceInertiaProperties()?.mass   // 2200, the identical call in disguise
+    /// box.surfaceInertia?.area               // 2200, likewise
+    /// box.measure().totalFaceArea            // a *different*, tolerance-controlled sum —
+    ///                                         // usually agrees closely, not guaranteed to (#885)
+    /// ```
     public var surfaceArea: Double? {
         let a = OCCTShapeGetSurfaceArea(handle)
         return a >= 0 ? a : nil
@@ -137,12 +153,14 @@ extension Shape {
     /// Shape.fromFace(part.faces()[0])!.centerOfMass   // nil: a face encloses no volume
     /// ```
     public var centerOfMass: SIMD3<Double>? {
-        var x: Double = 0, y: Double = 0, z: Double = 0
+        var x: Double = 0
+        var y: Double = 0
+        var z: Double = 0
         guard OCCTShapeGetCenterOfMass(handle, &x, &y, &z) else { return nil }
         return SIMD3<Double>(x, y, z)
     }
 
-    /// Compute minimum distance between this shape and another
+    /// Compute minimum distance between this shape and another.
     ///
     /// - Parameters:
     ///   - other: The other shape to measure distance to
@@ -160,7 +178,7 @@ extension Shape {
         )
     }
 
-    /// Get minimum distance between this shape and another
+    /// Get minimum distance between this shape and another.
     ///
     /// - Parameter other: The other shape
     /// - Returns: Minimum distance, or nil if calculation fails
@@ -168,7 +186,7 @@ extension Shape {
         distance(to: other)?.distance
     }
 
-    /// Check if this shape intersects (overlaps or touches) another shape
+    /// Check if this shape intersects (overlaps or touches) another shape.
     ///
     /// - Parameters:
     ///   - other: The other shape to test
@@ -295,11 +313,15 @@ extension Shape {
     ///     }
     /// }
     /// ```
-    public func analyze(tolerance: Double = 1e-6, selfIntersectionTimeout: Double? = nil) -> ShapeAnalysisResult? {
+    public func analyze(tolerance: Double = 1e-6, selfIntersectionTimeout: Double? = nil)
+        -> ShapeAnalysisResult?
+    {
         let result = OCCTShapeAnalyze(handle, tolerance)
         guard result.isValid else { return nil }
 
-        let hasSelfIntersection: Bool? = selfIntersectionTimeout.flatMap { isSelfIntersecting(timeout: $0) }
+        let hasSelfIntersection: Bool? = selfIntersectionTimeout.flatMap {
+            isSelfIntersecting(timeout: $0)
+        }
 
         return ShapeAnalysisResult(
             smallEdgeCount: Int(result.smallEdgeCount),
@@ -312,7 +334,7 @@ extension Shape {
         )
     }
 
-    /// Classify a point relative to this solid
+    /// Classify a point relative to this solid.
     ///
     /// Determines whether a 3D point is inside, outside, or on the boundary of
     /// this shape. The shape should be a solid for reliable results.
@@ -350,7 +372,9 @@ extension Shape {
     /// - Returns: The recognized form, or nil if no canonical form found
     public func recognizeCanonical(tolerance: Double = 1e-4) -> CanonicalForm? {
         let r = OCCTShapeRecognizeCanonical(handle, tolerance)
-        guard let formType = CanonicalForm.FormType(rawValue: r.type), formType != .unknown else { return nil }
+        guard let formType = CanonicalForm.FormType(rawValue: r.type), formType != .unknown else {
+            return nil
+        }
         return CanonicalForm(
             type: formType,
             origin: SIMD3(r.origin.0, r.origin.1, r.origin.2),
@@ -386,32 +410,32 @@ extension Shape {
         var result = [SIMD3<Double>]()
         result.reserveCapacity(8)
         for i in stride(from: 0, to: 24, by: 3) {
-            result.append(SIMD3(corners[i], corners[i+1], corners[i+2]))
+            result.append(SIMD3(corners[i], corners[i + 1], corners[i + 2]))
         }
         return result
     }
 
     // MARK: - Inertia Properties (v0.40.0)
 
-    /// Volume-based inertia properties (volume, center of mass, inertia tensor, principal moments)
+    /// Volume-based inertia properties (volume, center of mass, inertia tensor, principal moments).
     public struct InertiaProperties {
-        /// Volume (for volume properties) or surface area (for surface properties)
+        /// Volume (for volume properties) or surface area (for surface properties).
         public let mass: Double
-        /// Center of mass
+        /// Center of mass.
         public let centerOfMass: SIMD3<Double>
-        /// 3x3 inertia matrix (row-major: [Ixx, Ixy, Ixz, Iyx, Iyy, Iyz, Izx, Izy, Izz])
+        /// 3x3 inertia matrix (row-major: [Ixx, Ixy, Ixz, Iyx, Iyy, Iyz, Izx, Izy, Izz]).
         public let inertiaMatrix: [Double]
-        /// Principal moments of inertia (Ix, Iy, Iz)
+        /// Principal moments of inertia (Ix, Iy, Iz).
         public let principalMoments: SIMD3<Double>
-        /// Principal axes of inertia (three unit vectors)
+        /// Principal axes of inertia (three unit vectors).
         public let principalAxes: (SIMD3<Double>, SIMD3<Double>, SIMD3<Double>)
-        /// Whether the shape has a symmetry axis
+        /// Whether the shape has a symmetry axis.
         public let hasSymmetryAxis: Bool
-        /// Whether the shape has a symmetry point
+        /// Whether the shape has a symmetry point.
         public let hasSymmetryPoint: Bool
     }
 
-    /// Compute volume-based inertia properties
+    /// Compute volume-based inertia properties.
     ///
     /// Returns volume, center of mass, 3x3 inertia tensor, principal moments,
     /// and principal axes of inertia.
@@ -453,7 +477,7 @@ extension Shape {
         )
     }
 
-    /// Compute surface-area-based inertia properties
+    /// Compute surface-area-based inertia properties.
     ///
     /// Similar to `inertiaProperties()` but uses surface area instead of volume.
     /// The `mass` field contains surface area.
@@ -461,6 +485,10 @@ extension Shape {
     /// Unlike the volume sibling this works for a face or an open shell, since an area integral is
     /// well defined over any set of faces. It is nil for a shape with no faces at all (a wire,
     /// edge or vertex), where the reported centroid would be the shape's location origin (#609).
+    ///
+    /// `.mass` here is ``Shape/surfaceArea`` in disguise — the identical call, down to the same
+    /// #885 divergence from ``ShapeMeasurements/totalFaceArea``; see ``Shape/surfaceArea`` for the
+    /// explanation.
     ///
     /// ```swift
     /// let box = Shape.box(width: 10, height: 20, depth: 30)!
@@ -495,17 +523,17 @@ extension Shape {
 
     // MARK: - Extended Distance (v0.40.0)
 
-    /// A distance solution between two shapes
+    /// A distance solution between two shapes.
     public struct DistanceSolution {
-        /// Closest point on the first shape
+        /// Closest point on the first shape.
         public let point1: SIMD3<Double>
-        /// Closest point on the second shape
+        /// Closest point on the second shape.
         public let point2: SIMD3<Double>
-        /// Distance between the two points
+        /// Distance between the two points.
         public let distance: Double
     }
 
-    /// Compute all distance solutions between this shape and another
+    /// Compute all distance solutions between this shape and another.
     ///
     /// Returns all extremal point pairs, not just the minimum distance.
     /// Useful for finding multiple closest/farthest point pairs.
@@ -517,11 +545,13 @@ extension Shape {
     ///     being reported as a failed measurement rather than as no room offered).
     /// - Returns: Array of distance solutions, or `nil` on failure. No capacity is not a
     ///   failure: it returns `[]`.
-    public func allDistanceSolutions(to other: Shape, maxSolutions: Int = 32) -> [DistanceSolution]? {
+    public func allDistanceSolutions(to other: Shape, maxSolutions: Int = 32) -> [DistanceSolution]?
+    {
         let maxSolutions = Sampling.capacity(maxSolutions)
         guard maxSolutions > 0 else { return [] }
         var buffer = [OCCTDistanceSolution](repeating: OCCTDistanceSolution(), count: maxSolutions)
-        let count = OCCTShapeAllDistanceSolutions(handle, other.handle, &buffer, Int32(maxSolutions))
+        let count = OCCTShapeAllDistanceSolutions(
+            handle, other.handle, &buffer, Int32(maxSolutions))
         guard count >= 0 else { return nil }
         return (0..<min(Int(count), maxSolutions)).map { i in
             DistanceSolution(
@@ -532,7 +562,7 @@ extension Shape {
         }
     }
 
-    /// Check if this shape is fully contained inside another shape
+    /// Check if this shape is fully contained inside another shape.
     ///
     /// Uses BRepExtrema_DistShapeShape inner solution detection.
     /// - Parameter container: The potential container shape
@@ -565,9 +595,12 @@ extension Shape {
     /// Returns the support type (vertex/edge/face) and parametric location
     /// for each closest point. Use with `allDistanceSolutions(to:)` to get
     /// the solution index.
-    public func distanceSolutionDetail(to other: Shape, solutionIndex: Int) -> DistanceSolutionDetail? {
+    public func distanceSolutionDetail(to other: Shape, solutionIndex: Int)
+        -> DistanceSolutionDetail?
+    {
         var detail = OCCTDistanceSolutionDetail()
-        guard OCCTShapeDistanceSolutionDetail(handle, other.handle, Int32(solutionIndex), &detail) else { return nil }
+        guard OCCTShapeDistanceSolutionDetail(handle, other.handle, Int32(solutionIndex), &detail)
+        else { return nil }
         return DistanceSolutionDetail(
             supportType1: DistanceSupportType(rawValue: detail.supportType1) ?? .vertex,
             supportType2: DistanceSupportType(rawValue: detail.supportType2) ?? .vertex,
@@ -580,23 +613,27 @@ extension Shape {
 
     // MARK: - Plane Detection (v0.41.0)
 
-    /// Result of plane detection
+    /// Result of plane detection.
     public struct DetectedPlane {
-        /// Plane normal direction
+        /// Plane normal direction.
         public let normal: SIMD3<Double>
-        /// Plane origin point
+        /// Plane origin point.
         public let origin: SIMD3<Double>
     }
 
-    /// Find if this shape's edges lie in a plane
+    /// Find if this shape's edges lie in a plane.
     ///
     /// Uses BRepBuilderAPI_FindPlane to detect if a wire, edge set, or shape
     /// lies in a single geometric plane.
     /// - Parameter tolerance: Tolerance for planarity check (default 1e-6)
     /// - Returns: Detected plane, or nil if shape is not planar
     public func findPlane(tolerance: Double = 1e-6) -> DetectedPlane? {
-        var nx = 0.0, ny = 0.0, nz = 0.0
-        var ox = 0.0, oy = 0.0, oz = 0.0
+        var nx = 0.0
+        var ny = 0.0
+        var nz = 0.0
+        var ox = 0.0
+        var oy = 0.0
+        var oz = 0.0
         guard OCCTShapeFindPlane(handle, tolerance, &nx, &ny, &nz, &ox, &oy, &oz) else {
             return nil
         }
@@ -625,7 +662,9 @@ extension Shape {
     ///   - points: Array of 3D points (minimum 1)
     ///   - tolerance: Tolerance for classification
     /// - Returns: Classification result, or nil on failure
-    public static func analyzePointCloud(_ points: [SIMD3<Double>], tolerance: Double = 1e-6) -> PointCloudGeometry? {
+    public static func analyzePointCloud(_ points: [SIMD3<Double>], tolerance: Double = 1e-6)
+        -> PointCloudGeometry?
+    {
         guard !points.isEmpty else { return nil }
         var coords: [Double] = []
         coords.reserveCapacity(points.count * 3)
@@ -661,11 +700,11 @@ extension Shape {
 
     // MARK: - Self-Intersection Detection (v0.45.0)
 
-    /// Result of a self-intersection check
+    /// Result of a self-intersection check.
     public struct SelfIntersectionResult: Sendable {
-        /// Number of overlapping triangle pairs found
+        /// Number of overlapping triangle pairs found.
         public let overlapCount: Int
-        /// Whether the check completed successfully
+        /// Whether the check completed successfully.
         public let isDone: Bool
     }
 
@@ -678,8 +717,10 @@ extension Shape {
     ///   - tolerance: Tolerance for detecting intersections (default 0.001)
     ///   - meshDeflection: Mesh deflection for triangulation (default 0.5)
     /// - Returns: Self-intersection result, or nil if the check failed
-    public func selfIntersection(tolerance: Double = 0.001,
-                                  meshDeflection: Double = 0.5) -> SelfIntersectionResult? {
+    public func selfIntersection(
+        tolerance: Double = 0.001,
+        meshDeflection: Double = 0.5
+    ) -> SelfIntersectionResult? {
         let result = OCCTShapeSelfIntersection(handle, tolerance, meshDeflection)
         guard result.isDone else { return nil }
         return SelfIntersectionResult(overlapCount: Int(result.overlapCount), isDone: true)
@@ -689,22 +730,22 @@ extension Shape {
 
     /// Volume inertia properties of a solid shape.
     public struct VolumeInertia: Sendable {
-        /// Volume of the shape
+        /// Volume of the shape.
         public let volume: Double
-        /// Center of mass
+        /// Center of mass.
         public let centerOfMass: SIMD3<Double>
-        /// 3x3 inertia tensor (row-major)
+        /// 3x3 inertia tensor (row-major).
         public let inertiaTensor: [Double]
-        /// Principal moments of inertia (sorted)
+        /// Principal moments of inertia (sorted).
         public let principalMoments: SIMD3<Double>
-        /// Principal axes of inertia (3 unit vectors)
+        /// Principal axes of inertia (3 unit vectors).
         public let principalAxes: (SIMD3<Double>, SIMD3<Double>, SIMD3<Double>)
-        /// Radii of gyration about principal axes
+        /// Radii of gyration about principal axes.
         public let gyrationRadii: SIMD3<Double>
         /// Whether the shape has a symmetry axis (#848: added to match ``InertiaProperties``,
-        /// which has always had this field — both read it off the same `GProp_PrincipalProps`)
+        /// which has always had this field — both read it off the same `GProp_PrincipalProps`).
         public let hasSymmetryAxis: Bool
-        /// Whether the shape has a symmetry point
+        /// Whether the shape has a symmetry point.
         public let hasSymmetryPoint: Bool
     }
 
@@ -741,13 +782,15 @@ extension Shape {
             volume: result.volume,
             centerOfMass: SIMD3(result.centerX, result.centerY, result.centerZ),
             inertiaTensor: tensor,
-            principalMoments: SIMD3(result.principalMoment1, result.principalMoment2, result.principalMoment3),
+            principalMoments: SIMD3(
+                result.principalMoment1, result.principalMoment2, result.principalMoment3),
             principalAxes: (
                 SIMD3(result.axis1X, result.axis1Y, result.axis1Z),
                 SIMD3(result.axis2X, result.axis2Y, result.axis2Z),
                 SIMD3(result.axis3X, result.axis3Y, result.axis3Z)
             ),
-            gyrationRadii: SIMD3(result.gyrationRadius1, result.gyrationRadius2, result.gyrationRadius3),
+            gyrationRadii: SIMD3(
+                result.gyrationRadius1, result.gyrationRadius2, result.gyrationRadius3),
             hasSymmetryAxis: result.hasSymmetryAxis,
             hasSymmetryPoint: result.hasSymmetryPoint
         )
@@ -755,19 +798,19 @@ extension Shape {
 
     /// Surface inertia properties of a shape.
     public struct SurfaceInertia: Sendable {
-        /// Total surface area
+        /// Total surface area.
         public let area: Double
-        /// Center of mass of the surface
+        /// Center of mass of the surface.
         public let centerOfMass: SIMD3<Double>
-        /// 3x3 inertia tensor (row-major)
+        /// 3x3 inertia tensor (row-major).
         public let inertiaTensor: [Double]
-        /// Principal moments of inertia
+        /// Principal moments of inertia.
         public let principalMoments: SIMD3<Double>
-        /// Whether the shape has a symmetry axis (#848: added to match
-        /// ``surfaceInertiaProperties()``'s result, which has always had this field — both read
-        /// it off the same `GProp_PrincipalProps`)
+        /// Whether the shape has a symmetry axis (#848: added to match the result of
+        /// ``surfaceInertiaProperties()``, which has always had this field — both read
+        /// it off the same `GProp_PrincipalProps`).
         public let hasSymmetryAxis: Bool
-        /// Whether the shape has a symmetry point
+        /// Whether the shape has a symmetry point.
         public let hasSymmetryPoint: Bool
     }
 
@@ -777,6 +820,10 @@ extension Shape {
     /// reported centroid would be the shape's location origin rather than a recognisable zero
     /// (#609). Also reports the two symmetry flags ``surfaceInertiaProperties()`` has always had
     /// (#848), read off the same `GProp_PrincipalProps` as ``principalMoments``.
+    ///
+    /// `.area` is the same call as ``Shape/surfaceArea`` and ``surfaceInertiaProperties()`` `.mass`
+    /// — see ``Shape/surfaceArea`` for the #885 divergence from
+    /// ``ShapeMeasurements/totalFaceArea``.
     ///
     /// ```swift
     /// let box = Shape.box(width: 10, height: 20, depth: 30)!
@@ -798,7 +845,8 @@ extension Shape {
             area: result.area,
             centerOfMass: SIMD3(result.centerX, result.centerY, result.centerZ),
             inertiaTensor: tensor,
-            principalMoments: SIMD3(result.principalMoment1, result.principalMoment2, result.principalMoment3),
+            principalMoments: SIMD3(
+                result.principalMoment1, result.principalMoment2, result.principalMoment3),
             hasSymmetryAxis: result.hasSymmetryAxis,
             hasSymmetryPoint: result.hasSymmetryPoint
         )
@@ -806,13 +854,13 @@ extension Shape {
 
     // MARK: - LocOpe_CSIntersector
 
-    /// Result of a curve-shape intersection
+    /// Result of a curve-shape intersection.
     public struct CSIntersection: Sendable {
-        /// Intersection point
+        /// Intersection point.
         public let point: SIMD3<Double>
-        /// Parameter on the curve
+        /// Parameter on the curve.
         public let parameter: Double
-        /// UV parameters on the intersected face
+        /// UV parameters on the intersected face.
         public let faceUV: SIMD2<Double>
     }
 
@@ -826,19 +874,21 @@ extension Shape {
     /// - Returns: Array of intersection points
     public func intersectLine(origin: SIMD3<Double>, direction: SIMD3<Double>) -> [CSIntersection] {
         var buffer = [OCCTCSIntersectionPoint](repeating: OCCTCSIntersectionPoint(), count: 100)
-        let count = OCCTLocOpeCSIntersectLine(handle,
-                                               origin.x, origin.y, origin.z,
-                                               direction.x, direction.y, direction.z,
-                                               &buffer, 100)
+        let count = OCCTLocOpeCSIntersectLine(
+            handle,
+            origin.x, origin.y, origin.z,
+            direction.x, direction.y, direction.z,
+            &buffer, 100)
         var results = [CSIntersection]()
         results.reserveCapacity(Int(count))
         for i in 0..<Int(count) {
             let pt = buffer[i]
-            results.append(CSIntersection(
-                point: SIMD3(pt.px, pt.py, pt.pz),
-                parameter: pt.parameter,
-                faceUV: SIMD2(pt.uOnFace, pt.vOnFace)
-            ))
+            results.append(
+                CSIntersection(
+                    point: SIMD3(pt.px, pt.py, pt.pz),
+                    parameter: pt.parameter,
+                    faceUV: SIMD2(pt.uOnFace, pt.vOnFace)
+                ))
         }
         return results
     }
@@ -865,8 +915,10 @@ extension Shape {
     ///   - other: Shape containing the second edge
     ///   - edgeIndex2: Index of second edge in other shape (0-based)
     /// - Returns: Edge-edge extrema result, or nil on failure
-    public func edgeEdgeExtrema(edgeIndex1: Int, other: Shape, edgeIndex2: Int) -> EdgeEdgeExtrema? {
-        let result = OCCTBRepExtremaExtCC(handle, Int32(edgeIndex1), other.handle, Int32(edgeIndex2))
+    public func edgeEdgeExtrema(edgeIndex1: Int, other: Shape, edgeIndex2: Int) -> EdgeEdgeExtrema?
+    {
+        let result = OCCTBRepExtremaExtCC(
+            handle, Int32(edgeIndex1), other.handle, Int32(edgeIndex2))
         guard result.solutionCount > 0 else { return nil }
         return EdgeEdgeExtrema(
             distance: result.distance,
@@ -881,15 +933,15 @@ extension Shape {
 
     // MARK: - BRepExtrema_ExtPF (Point-Face Extrema)
 
-    /// Result of point-face distance extrema computation
+    /// Result of point-face distance extrema computation.
     public struct PointFaceExtrema: Sendable {
-        /// Minimum distance from point to face
+        /// Minimum distance from point to face.
         public let distance: Double
-        /// UV parameters on the face at closest point
+        /// UV parameters on the face at closest point.
         public let faceUV: SIMD2<Double>
-        /// Closest point on the face
+        /// Closest point on the face.
         public let pointOnFace: SIMD3<Double>
-        /// Number of extrema solutions
+        /// Number of extrema solutions.
         public let solutionCount: Int
     }
 
@@ -914,19 +966,19 @@ extension Shape {
 
     // MARK: - BRepExtrema_ExtFF (Face-Face Extrema)
 
-    /// Result of face-face distance extrema computation
+    /// Result of face-face distance extrema computation.
     public struct FaceFaceExtrema: Sendable {
-        /// Minimum distance between faces
+        /// Minimum distance between faces.
         public let distance: Double
-        /// UV parameters on face 1
+        /// UV parameters on face 1.
         public let face1UV: SIMD2<Double>
-        /// UV parameters on face 2
+        /// UV parameters on face 2.
         public let face2UV: SIMD2<Double>
-        /// Closest point on face 1
+        /// Closest point on face 1.
         public let pointOnFace1: SIMD3<Double>
-        /// Closest point on face 2
+        /// Closest point on face 2.
         public let pointOnFace2: SIMD3<Double>
-        /// Number of extrema solutions
+        /// Number of extrema solutions.
         public let solutionCount: Int
     }
 
@@ -939,8 +991,10 @@ extension Shape {
     ///   - other: Shape containing the second face
     ///   - faceIndex2: Index of second face in other shape (0-based)
     /// - Returns: Face-face extrema result, or nil on failure
-    public func faceFaceExtrema(faceIndex1: Int, other: Shape, faceIndex2: Int) -> FaceFaceExtrema? {
-        let result = OCCTBRepExtremaExtFF(handle, Int32(faceIndex1), other.handle, Int32(faceIndex2))
+    public func faceFaceExtrema(faceIndex1: Int, other: Shape, faceIndex2: Int) -> FaceFaceExtrema?
+    {
+        let result = OCCTBRepExtremaExtFF(
+            handle, Int32(faceIndex1), other.handle, Int32(faceIndex2))
         guard result.solutionCount > 0 else { return nil }
         return FaceFaceExtrema(
             distance: result.distance,
@@ -954,15 +1008,15 @@ extension Shape {
 
     // MARK: - BRepExtrema_ExtPC (Point-Edge Extrema)
 
-    /// Result of point-edge distance extrema computation
+    /// Result of point-edge distance extrema computation.
     public struct PointEdgeExtrema: Sendable {
-        /// Minimum distance from the point to the edge, over the whole edge including its ends
+        /// Minimum distance from the point to the edge, over the whole edge including its ends.
         public let distance: Double
-        /// Parameter on the edge at the nearest point
+        /// Parameter on the edge at the nearest point.
         public let parameter: Double
-        /// The nearest point on the edge
+        /// The nearest point on the edge.
         public let pointOnEdge: SIMD3<Double>
-        /// How many perpendicular feet the point has on this edge (`BRepExtrema_ExtPC`'s extrema).
+        /// Number of `BRepExtrema_ExtPC` extrema (perpendicular feet) the point has on this edge.
         ///
         /// Zero is an ordinary, informative answer rather than a failure: it means the nearest
         /// point is one of the edge's two ends. A non-zero count does *not* mean the nearest point
@@ -1016,21 +1070,21 @@ extension Shape {
 
     // MARK: - BRepExtrema_ExtCF (Edge-Face Extrema)
 
-    /// Result of edge-face distance extrema computation
+    /// Result of edge-face distance extrema computation.
     public struct EdgeFaceExtrema: Sendable {
-        /// Minimum distance between edge and face
+        /// Minimum distance between edge and face.
         public let distance: Double
-        /// Parameter on edge at closest point
+        /// Parameter on edge at closest point.
         public let paramOnEdge: Double
-        /// UV parameters on face at closest point
+        /// UV parameters on face at closest point.
         public let faceUV: SIMD2<Double>
-        /// Closest point on edge
+        /// Closest point on edge.
         public let pointOnEdge: SIMD3<Double>
-        /// Closest point on face
+        /// Closest point on face.
         public let pointOnFace: SIMD3<Double>
-        /// Whether edge and face are parallel
+        /// Whether edge and face are parallel.
         public let isParallel: Bool
-        /// Number of extrema solutions found
+        /// Number of extrema solutions found.
         public let solutionCount: Int
     }
 
@@ -1067,11 +1121,11 @@ extension Shape {
 
     // MARK: - ShapeAnalysis_FreeBoundsProperties
 
-    /// Properties of a single free bound (boundary wire)
+    /// Properties of a single free bound (boundary wire).
     public struct FreeBoundInfo: Sendable {
-        /// Area enclosed by the bound
+        /// Area enclosed by the bound.
         public let area: Double
-        /// Perimeter length
+        /// Perimeter length.
         public let perimeter: Double
         /// Aspect ratio: contour length divided by contour width. 1 for a square-ish bound, 10 for
         /// a 100×10 one.
@@ -1081,9 +1135,9 @@ extension Shape {
         /// it sits precisely on the boundary between the two branches. So 0 means "not solvable
         /// here", not "degenerate contour"; `area` and `perimeter` are still good in that case.
         public let ratio: Double
-        /// Average width, on the same "0 means unsolved" contract as ``ratio``
+        /// Average width, on the same "0 means unsolved" contract as ``ratio``.
         public let width: Double
-        /// Number of notches (narrow 'V'-like sub-contours) found on the bound
+        /// Number of notches (narrow 'V'-like sub-contours) found on the bound.
         public let notchCount: Int
     }
 
@@ -1091,11 +1145,11 @@ extension Shape {
 
     /// Result of a polyhedral (approximate) distance computation.
     public struct PolyhedralDistance {
-        /// Approximate distance between the two shapes
+        /// Approximate distance between the two shapes.
         public let distance: Double
-        /// Closest point on the first shape
+        /// Closest point on the first shape.
         public let point1: SIMD3<Double>
-        /// Closest point on the second shape
+        /// Closest point on the second shape.
         public let point2: SIMD3<Double>
     }
 
@@ -1119,9 +1173,9 @@ extension Shape {
 
     /// Result of a line-face intersection.
     public struct LineFaceIntersection {
-        /// 3D intersection point
+        /// 3D intersection point.
         public let point: SIMD3<Double>
-        /// Parameter on the line
+        /// Parameter on the line.
         public let parameter: Double
     }
 
@@ -1132,21 +1186,25 @@ extension Shape {
     ///   - direction: Line direction
     ///   - paramRange: Parameter range on the line (default -1000...1000)
     /// - Returns: Array of intersection results
-    public func intersectLine(origin: SIMD3<Double>, direction: SIMD3<Double>,
-                              paramRange: ClosedRange<Double> = -1000...1000) -> [LineFaceIntersection] {
+    public func intersectLine(
+        origin: SIMD3<Double>, direction: SIMD3<Double>,
+        paramRange: ClosedRange<Double> = -1000...1000
+    ) -> [LineFaceIntersection] {
         let maxPts: Int32 = 100
         var outPoints = [Double](repeating: 0, count: Int(maxPts) * 3)
         var outParams = [Double](repeating: 0, count: Int(maxPts))
-        let count = OCCTIntersectLineFace(handle,
+        let count = OCCTIntersectLineFace(
+            handle,
             origin.x, origin.y, origin.z,
             direction.x, direction.y, direction.z,
             paramRange.lowerBound, paramRange.upperBound,
             &outPoints, &outParams, maxPts)
         var results: [LineFaceIntersection] = []
         for i in 0..<Int(count) {
-            results.append(LineFaceIntersection(
-                point: SIMD3(outPoints[i*3], outPoints[i*3+1], outPoints[i*3+2]),
-                parameter: outParams[i]))
+            results.append(
+                LineFaceIntersection(
+                    point: SIMD3(outPoints[i * 3], outPoints[i * 3 + 1], outPoints[i * 3 + 2]),
+                    parameter: outParams[i]))
         }
         return results
     }
@@ -1162,11 +1220,11 @@ extension Shape {
 
     /// Result of an analytical contour computation.
     public struct ContourResult {
-        /// Type of contour
+        /// Type of contour.
         public let type: ContourType
-        /// Number of contours found
+        /// Number of contours found.
         public let count: Int
-        /// For circles: center and radius. For lines: location and direction.
+        /// Circle: center and radius; line: location and direction.
         public let data: [Double]
     }
 
@@ -1180,16 +1238,20 @@ extension Shape {
     ///   - radius: Sphere radius
     ///   - direction: View direction
     /// - Returns: Contour result, or nil on failure
-    public static func contourSphereDir(center: SIMD3<Double>, radius: Double,
-                                         direction: SIMD3<Double>) -> ContourResult? {
+    public static func contourSphereDir(
+        center: SIMD3<Double>, radius: Double,
+        direction: SIMD3<Double>
+    ) -> ContourResult? {
         var outType: Int32 = 0
         var outData = [Double](repeating: 0, count: 8)
-        let count = OCCTContapSphereDir(center.x, center.y, center.z, radius,
-                                         direction.x, direction.y, direction.z,
-                                         &outType, &outData)
+        let count = OCCTContapSphereDir(
+            center.x, center.y, center.z, radius,
+            direction.x, direction.y, direction.z,
+            &outType, &outData)
         if count < 0 { return nil }
-        return ContourResult(type: ContourType(rawValue: outType) ?? .other,
-                             count: Int(count), data: outData)
+        return ContourResult(
+            type: ContourType(rawValue: outType) ?? .other,
+            count: Int(count), data: outData)
     }
 
     /// Compute analytical contours on a cylinder with a view direction.
@@ -1200,17 +1262,21 @@ extension Shape {
     ///   - radius: Cylinder radius
     ///   - direction: View direction
     /// - Returns: Contour result, or nil on failure
-    public static func contourCylinderDir(origin: SIMD3<Double>, axis: SIMD3<Double>,
-                                           radius: Double, direction: SIMD3<Double>) -> ContourResult? {
+    public static func contourCylinderDir(
+        origin: SIMD3<Double>, axis: SIMD3<Double>,
+        radius: Double, direction: SIMD3<Double>
+    ) -> ContourResult? {
         var outType: Int32 = 0
         var outData = [Double](repeating: 0, count: 8)
-        let count = OCCTContapCylinderDir(origin.x, origin.y, origin.z,
-                                           axis.x, axis.y, axis.z, radius,
-                                           direction.x, direction.y, direction.z,
-                                           &outType, &outData)
+        let count = OCCTContapCylinderDir(
+            origin.x, origin.y, origin.z,
+            axis.x, axis.y, axis.z, radius,
+            direction.x, direction.y, direction.z,
+            &outType, &outData)
         if count < 0 { return nil }
-        return ContourResult(type: ContourType(rawValue: outType) ?? .other,
-                             count: Int(count), data: outData)
+        return ContourResult(
+            type: ContourType(rawValue: outType) ?? .other,
+            count: Int(count), data: outData)
     }
 
     /// Compute analytical contours on a sphere with a perspective eye point.
@@ -1220,16 +1286,20 @@ extension Shape {
     ///   - radius: Sphere radius
     ///   - eye: Eye point for perspective projection
     /// - Returns: Contour result, or nil on failure
-    public static func contourSphereEye(center: SIMD3<Double>, radius: Double,
-                                         eye: SIMD3<Double>) -> ContourResult? {
+    public static func contourSphereEye(
+        center: SIMD3<Double>, radius: Double,
+        eye: SIMD3<Double>
+    ) -> ContourResult? {
         var outType: Int32 = 0
         var outData = [Double](repeating: 0, count: 8)
-        let count = OCCTContapSphereEye(center.x, center.y, center.z, radius,
-                                         eye.x, eye.y, eye.z,
-                                         &outType, &outData)
+        let count = OCCTContapSphereEye(
+            center.x, center.y, center.z, radius,
+            eye.x, eye.y, eye.z,
+            &outType, &outData)
         if count < 0 { return nil }
-        return ContourResult(type: ContourType(rawValue: outType) ?? .other,
-                             count: Int(count), data: outData)
+        return ContourResult(
+            type: ContourType(rawValue: outType) ?? .other,
+            count: Int(count), data: outData)
     }
 
     // MARK: IntCurvesFace_ShapeIntersector
@@ -1248,19 +1318,25 @@ extension Shape {
         var outPoints: UnsafeMutablePointer<Double>?
         var outParams: UnsafeMutablePointer<Double>?
         var outCount: Int32 = 0
-        guard OCCTIntCurvesFaceShapeIntersect(
-            handle,
-            origin.x, origin.y, origin.z,
-            direction.x, direction.y, direction.z,
-            &outPoints, &outParams, &outCount
-        ), let pts = outPoints, let params = outParams, outCount > 0 else { return nil }
-        defer { free(pts); free(params) }
+        guard
+            OCCTIntCurvesFaceShapeIntersect(
+                handle,
+                origin.x, origin.y, origin.z,
+                direction.x, direction.y, direction.z,
+                &outPoints, &outParams, &outCount
+            ), let pts = outPoints, let params = outParams, outCount > 0
+        else { return nil }
+        defer {
+            free(pts)
+            free(params)
+        }
         var results = [RayIntersection]()
         for i in 0..<Int(outCount) {
-            results.append(RayIntersection(
-                point: SIMD3(pts[i*3], pts[i*3+1], pts[i*3+2]),
-                parameter: params[i]
-            ))
+            results.append(
+                RayIntersection(
+                    point: SIMD3(pts[i * 3], pts[i * 3 + 1], pts[i * 3 + 2]),
+                    parameter: params[i]
+                ))
         }
         return results
     }
@@ -1270,24 +1346,28 @@ extension Shape {
         origin: SIMD3<Double>,
         direction: SIMD3<Double>
     ) -> RayIntersection? {
-        var x: Double = 0, y: Double = 0, z: Double = 0, param: Double = 0
-        guard OCCTIntCurvesFaceShapeIntersectNearest(
-            handle,
-            origin.x, origin.y, origin.z,
-            direction.x, direction.y, direction.z,
-            &x, &y, &z, &param
-        ) else { return nil }
+        var x: Double = 0
+        var y: Double = 0
+        var z: Double = 0
+        var param: Double = 0
+        guard
+            OCCTIntCurvesFaceShapeIntersectNearest(
+                handle,
+                origin.x, origin.y, origin.z,
+                direction.x, direction.y, direction.z,
+                &x, &y, &z, &param
+            )
+        else { return nil }
         return RayIntersection(point: SIMD3(x, y, z), parameter: param)
     }
 
     // MARK: - GeomLProp_CLProps
 
-    /// Compute curve local properties at a parameter on an edge
+    /// Compute curve local properties at a parameter on an edge.
     public func curveLocalProps(at param: Double) -> CurveLocalProperties {
         let r = OCCTGeomLPropCLProps(handle, param)
         let point = SIMD3(r.px, r.py, r.pz)
-        let tangent: SIMD3<Double>? = r.tangentDefined ?
-            SIMD3(r.tx, r.ty, r.tz) : nil
+        let tangent: SIMD3<Double>? = r.tangentDefined ? SIMD3(r.tx, r.ty, r.tz) : nil
         // #494: was `r.tangentDefined && r.curvature > 1e-10` here, a Swift-side copy of a
         // bridge-side literal. The bridge now reports whether it filled these in, so the threshold
         // lives in exactly one place and the two sides cannot drift apart.
@@ -1300,15 +1380,15 @@ extension Shape {
 
     // MARK: - GeomLProp_SLProps
 
-    /// Compute surface local properties at (U,V) on a face
+    /// Compute surface local properties at (U,V) on a face.
     public func surfaceLocalProps(u: Double, v: Double) -> SurfaceLocalProperties {
         let r = OCCTGeomLPropSLProps(handle, u, v)
         let point = SIMD3(r.px, r.py, r.pz)
         let normal: SIMD3<Double>? = r.normalDefined ? SIMD3(r.nx, r.ny, r.nz) : nil
-        let tu: SIMD3<Double>? = (r.tuX != 0 || r.tuY != 0 || r.tuZ != 0) ?
-            SIMD3(r.tuX, r.tuY, r.tuZ) : nil
-        let tv: SIMD3<Double>? = (r.tvX != 0 || r.tvY != 0 || r.tvZ != 0) ?
-            SIMD3(r.tvX, r.tvY, r.tvZ) : nil
+        let tu: SIMD3<Double>? =
+            (r.tuX != 0 || r.tuY != 0 || r.tuZ != 0) ? SIMD3(r.tuX, r.tuY, r.tuZ) : nil
+        let tv: SIMD3<Double>? =
+            (r.tvX != 0 || r.tvY != 0 || r.tvZ != 0) ? SIMD3(r.tvX, r.tvY, r.tvZ) : nil
         return SurfaceLocalProperties(
             point: point, normal: normal, tangentU: tu, tangentV: tv,
             maxCurvature: r.maxCurvature, minCurvature: r.minCurvature,
@@ -1318,22 +1398,27 @@ extension Shape {
 
     // MARK: - GeomInt_IntSS
 
-    /// Compute surface-surface intersection between two faces
-    public static func surfaceSurfaceIntersection(face1: Shape, face2: Shape, tolerance: Double = 1e-6) -> SurfaceIntersectionResult? {
-        guard let ref = OCCTGeomIntSSCreate(face1.handle, face2.handle, tolerance) else { return nil }
+    /// Compute surface-surface intersection between two faces.
+    public static func surfaceSurfaceIntersection(
+        face1: Shape, face2: Shape, tolerance: Double = 1e-6
+    ) -> SurfaceIntersectionResult? {
+        guard let ref = OCCTGeomIntSSCreate(face1.handle, face2.handle, tolerance) else {
+            return nil
+        }
         return SurfaceIntersectionResult(ref)
     }
 
     // MARK: - Contap_Contour
 
-    /// Compute contour lines on a face with a projection direction (orthographic)
+    /// Compute contour lines on a face with a projection direction (orthographic).
     public func contapContourDirection(_ direction: SIMD3<Double>) -> ContapContourResult? {
-        guard let ref = OCCTContapContourDirection(handle, direction.x, direction.y, direction.z) else { return nil }
+        guard let ref = OCCTContapContourDirection(handle, direction.x, direction.y, direction.z)
+        else { return nil }
         let result = ContapContourResult(ref)
         return result.lineCount > 0 ? result : nil
     }
 
-    /// Compute contour lines on a face with an eye point (perspective)
+    /// Compute contour lines on a face with an eye point (perspective).
     public func contapContourEye(_ eye: SIMD3<Double>) -> ContapContourResult? {
         guard let ref = OCCTContapContourEye(handle, eye.x, eye.y, eye.z) else { return nil }
         let result = ContapContourResult(ref)
@@ -1361,8 +1446,10 @@ extension Shape {
     ///   - first: First parameter of domain
     ///   - last: Last parameter of domain
     /// - Returns: Array of special points (inflections, min/max curvature)
-    public static func analyticCurvaturePoints(curveType: Int32, first: Double,
-                                                last: Double) -> [CurvatureSpecialPoint] {
+    public static func analyticCurvaturePoints(
+        curveType: Int32, first: Double,
+        last: Double
+    ) -> [CurvatureSpecialPoint] {
         let maxResults: Int32 = 100
         var params = [Double](repeating: 0, count: Int(maxResults))
         var types = [Int32](repeating: 0, count: Int(maxResults))
@@ -1380,7 +1467,7 @@ extension Shape {
 
     /// Result of 2D polygon interference (intersection).
     public struct PolygonIntersection: Sendable {
-        /// Intersection point coordinates
+        /// Intersection point coordinates.
         public let points: [SIMD2<Double>]
     }
 
@@ -1399,7 +1486,8 @@ extension Shape {
         var outPts = [OCCTIntfPoint2D](repeating: OCCTIntfPoint2D(x: 0, y: 0), count: Int(maxPts))
         let count = flat1.withUnsafeBufferPointer { p1 in
             flat2.withUnsafeBufferPointer { p2 in
-                OCCTIntfInterferencePolygon2d(p1.baseAddress!, Int32(poly1.count),
+                OCCTIntfInterferencePolygon2d(
+                    p1.baseAddress!, Int32(poly1.count),
                     p2.baseAddress!, Int32(poly2.count),
                     &outPts, maxPts)
             }
@@ -1419,7 +1507,8 @@ extension Shape {
         let maxPts: Int32 = 100
         var outPts = [OCCTIntfPoint2D](repeating: OCCTIntfPoint2D(x: 0, y: 0), count: Int(maxPts))
         let count = flat.withUnsafeBufferPointer { p in
-            OCCTIntfSelfInterferencePolygon2d(p.baseAddress!, Int32(polygon.count),
+            OCCTIntfSelfInterferencePolygon2d(
+                p.baseAddress!, Int32(polygon.count),
                 &outPts, maxPts)
         }
         var points: [SIMD2<Double>] = []
@@ -1441,9 +1530,9 @@ extension Shape {
     public struct CommonPart: Sendable {
         /// Type of intersection (vertex or edge overlap).
         public let type: CommonPartType
-        /// Parameter range on edge 1 (first, last). Same values for vertex type.
+        /// Parameter range on edge 1 (first, last), same for vertex type.
         public let param1Range: (first: Double, last: Double)
-        /// Parameter range on edge 2 (first, last). Same values for vertex type.
+        /// Parameter range on edge 2 (first, last), same for vertex type.
         public let param2Range: (first: Double, last: Double)
         /// Representative 3D point of the intersection.
         public let point: SIMD3<Double>
@@ -1527,16 +1616,20 @@ extension Shape {
     ///   - other: Face to intersect with
     ///   - tolerance: Approximation tolerance (default 1e-7)
     /// - Returns: Face-face intersection result, or nil if failed
-    public func faceFaceIntersection(with other: Shape, tolerance: Double = 1e-7) -> FaceFaceResult? {
+    public func faceFaceIntersection(with other: Shape, tolerance: Double = 1e-7) -> FaceFaceResult?
+    {
         var curves: UnsafeMutablePointer<OCCTFaceFaceCurve>?
         var curveCount: Int32 = 0
         var points: UnsafeMutablePointer<OCCTFaceFacePoint>?
         var pointCount: Int32 = 0
         var tangent = false
-        guard OCCTIntToolsFaceFace(handle, other.handle, tolerance,
-                                   &curves, &curveCount,
-                                   &points, &pointCount,
-                                   &tangent) else { return nil }
+        guard
+            OCCTIntToolsFaceFace(
+                handle, other.handle, tolerance,
+                &curves, &curveCount,
+                &points, &pointCount,
+                &tangent)
+        else { return nil }
         defer {
             curves?.deallocate()
             points?.deallocate()
@@ -1582,7 +1675,8 @@ extension Shape {
         var ranges: UnsafeMutablePointer<OCCTParameterRange>?
         var count: Int32 = 0
         var minDist: Double = 0
-        guard OCCTIntToolsBeanFaceIntersect(edge.handle, face.handle, &ranges, &count, &minDist) else {
+        guard OCCTIntToolsBeanFaceIntersect(edge.handle, face.handle, &ranges, &count, &minDist)
+        else {
             return nil
         }
         var result: [(first: Double, last: Double)] = []
@@ -1606,11 +1700,12 @@ extension Shape {
     /// Compute the minimum distance between two sub-shapes using BRepExtrema_DistanceSS.
     public func distanceSS(to other: Shape, deflection: Double = 100.0) -> DistanceSSResult {
         let r = OCCTBRepExtremaDistanceSS(handle, other.handle, deflection)
-        return DistanceSSResult(distance: r.distance,
-                                point1: SIMD3(r.point1X, r.point1Y, r.point1Z),
-                                point2: SIMD3(r.point2X, r.point2Y, r.point2Z),
-                                solutionCount: Int(r.solutionCount),
-                                isDone: r.isDone)
+        return DistanceSSResult(
+            distance: r.distance,
+            point1: SIMD3(r.point1X, r.point1Y, r.point1Z),
+            point2: SIMD3(r.point2X, r.point2Y, r.point2Z),
+            solutionCount: Int(r.solutionCount),
+            isDone: r.isDone)
     }
     /// Result of Gauss-Kronrod volume integration on a face.
     ///
@@ -1667,12 +1762,16 @@ extension Shape {
     /// r.errorReached  // the relative integration error reached, nonzero on curved faces
     /// r.center        // its centroid, nil when the contribution is 0 or computeCG was false
     /// ```
-    public func vinertGK(location: SIMD3<Double> = SIMD3(0, 0, 0),
-                         tolerance: Double = 0.001, computeCG: Bool = true) -> VinertGKResult {
-        let r = OCCTBRepGPropVinertGK(handle, location.x, location.y, location.z,
-                                       tolerance, computeCG)
-        return VinertGKResult(mass: r.mass, errorReached: r.errorReached,
-                              center: (computeCG && r.mass != 0) ? SIMD3(r.centerX, r.centerY, r.centerZ) : nil)
+    public func vinertGK(
+        location: SIMD3<Double> = SIMD3(0, 0, 0),
+        tolerance: Double = 0.001, computeCG: Bool = true
+    ) -> VinertGKResult {
+        let r = OCCTBRepGPropVinertGK(
+            handle, location.x, location.y, location.z,
+            tolerance, computeCG)
+        return VinertGKResult(
+            mass: r.mass, errorReached: r.errorReached,
+            center: (computeCG && r.mass != 0) ? SIMD3(r.centerX, r.centerY, r.centerZ) : nil)
     }
 
     /// Volumetric centroid of this shape, or nil when the shape encloses no volume.
@@ -1689,7 +1788,9 @@ extension Shape {
     /// Shape.fromFace(cone.faces()[0])?.centroid   // nil, was the location origin
     /// ```
     public var centroid: SIMD3<Double>? {
-        var x = 0.0, y = 0.0, z = 0.0
+        var x = 0.0
+        var y = 0.0
+        var z = 0.0
         guard OCCTShapeCentroid(handle, &x, &y, &z) else { return nil }
         return SIMD3(x, y, z)
     }
@@ -1700,9 +1801,9 @@ extension Shape {
     }
 }
 
-public extension Shape {
+extension Shape {
     /// Canonical geometry type for detailed recognition.
-    enum CanonicalGeometryType: Int, Sendable {
+    public enum CanonicalGeometryType: Int, Sendable {
         case none = 0
         case plane = 1
         case cylinder = 2
@@ -1714,7 +1815,7 @@ public extension Shape {
     }
 
     /// Detailed canonical recognition result with geometry parameters.
-    struct CanonicalRecognitionResult: Sendable {
+    public struct CanonicalRecognitionResult: Sendable {
         public let type: CanonicalGeometryType
         public let gap: Double
         public let origin: (x: Double, y: Double, z: Double)
@@ -1726,7 +1827,9 @@ public extension Shape {
     /// Shared field-by-field unmarshaling for ``recognizeCanonicalSurface(tolerance:)`` and
     /// ``recognizeCanonicalCurve(tolerance:)`` (#796): the two differ only in which bridge call
     /// produces the raw `OCCTCanonicalResult`, not in how it's decoded.
-    private static func canonicalRecognitionResult(from r: OCCTCanonicalResult) -> CanonicalRecognitionResult {
+    private static func canonicalRecognitionResult(from r: OCCTCanonicalResult)
+        -> CanonicalRecognitionResult
+    {
         CanonicalRecognitionResult(
             type: CanonicalGeometryType(rawValue: Int(r.type.rawValue)) ?? .none,
             gap: r.gap,
@@ -1738,12 +1841,13 @@ public extension Shape {
     }
 
     /// Recognize canonical surface geometry from a face with detailed parameters.
-    func recognizeCanonicalSurface(tolerance: Double = 0.01) -> CanonicalRecognitionResult {
-        Shape.canonicalRecognitionResult(from: OCCTShapeRecognizeCanonicalSurface(handle, tolerance))
+    public func recognizeCanonicalSurface(tolerance: Double = 0.01) -> CanonicalRecognitionResult {
+        Shape.canonicalRecognitionResult(
+            from: OCCTShapeRecognizeCanonicalSurface(handle, tolerance))
     }
 
     /// Recognize canonical curve geometry from an edge with detailed parameters.
-    func recognizeCanonicalCurve(tolerance: Double = 0.01) -> CanonicalRecognitionResult {
+    public func recognizeCanonicalCurve(tolerance: Double = 0.01) -> CanonicalRecognitionResult {
         Shape.canonicalRecognitionResult(from: OCCTShapeRecognizeCanonicalCurve(handle, tolerance))
     }
 }
@@ -1765,6 +1869,7 @@ extension Shape {
     }
 
     /// Detect self-intersecting face pairs in this shape.
+    ///
     /// The shape is meshed automatically.
     /// - Parameters:
     ///   - tolerance: Overlap tolerance (default: 0.0).
@@ -1772,14 +1877,17 @@ extension Shape {
     ///     ``Sampling/maximumSampleCount``; 0 or less returns empty (#622).
     ///   - deflection: Linear mesh deflection (mm) for the detection triangulation. Default `0.1`.
     /// - Returns: Array of overlapping face index pairs, empty if none found.
-    public func selfIntersectionPairs(tolerance: Double = 0.0,
-                                       maxPairs: Int = 100,
-                                       deflection: Double = 0.1) -> [OverlapPair] {
+    public func selfIntersectionPairs(
+        tolerance: Double = 0.0,
+        maxPairs: Int = 100,
+        deflection: Double = 0.1
+    ) -> [OverlapPair] {
         let maxPairs = Sampling.capacity(maxPairs)
         guard maxPairs > 0 else { return [] }
         var idx1 = [Int32](repeating: 0, count: maxPairs)
         var idx2 = [Int32](repeating: 0, count: maxPairs)
-        let count = OCCTShapeSelfIntersectionPairs(handle, tolerance, &idx1, &idx2, Int32(maxPairs), deflection)
+        let count = OCCTShapeSelfIntersectionPairs(
+            handle, tolerance, &idx1, &idx2, Int32(maxPairs), deflection)
         guard count > 0 else { return [] }
         return (0..<Int(count)).map {
             OverlapPair(faceIndex1: Int(idx1[$0]), faceIndex2: Int(idx2[$0]))
@@ -1809,14 +1917,20 @@ extension Shape {
     /// }
     /// ```
     public func edgeLPropValue(at param: Double) -> SIMD3<Double>? {
-        var x = 0.0, y = 0.0, z = 0.0
+        var x = 0.0
+        var y = 0.0
+        var z = 0.0
         let ok = OCCTEdgeLPropValue(handle, param, &x, &y, &z)
         return ok ? SIMD3(x, y, z) : nil
     }
 
-    /// Get tangent direction on an edge at parameter. Returns nil if tangent is undefined.
+    /// Get tangent direction on an edge at parameter.
+    ///
+    /// Returns nil if tangent is undefined.
     public func edgeTangent(at param: Double) -> SIMD3<Double>? {
-        var dx = 0.0, dy = 0.0, dz = 0.0
+        var dx = 0.0
+        var dy = 0.0
+        var dz = 0.0
         let ok = OCCTEdgeLPropTangent(handle, param, &dx, &dy, &dz)
         return ok ? SIMD3(dx, dy, dz) : nil
     }
@@ -1857,7 +1971,9 @@ extension Shape {
     /// if let n = edge.edgeNormalLP(at: 0) { print("points at the centre: \(n)") }
     /// ```
     public func edgeNormalLP(at param: Double) -> SIMD3<Double>? {
-        var dx = 0.0, dy = 0.0, dz = 0.0
+        var dx = 0.0
+        var dy = 0.0
+        var dz = 0.0
         let ok = OCCTEdgeLPropNormal(handle, param, &dx, &dy, &dz)
         return ok ? SIMD3(dx, dy, dz) : nil
     }
@@ -1874,15 +1990,20 @@ extension Shape {
     /// if let c = edge.edgeCentreOfCurvature(at: 0) { print(c) }   // ~ (1, 2, 0)
     /// ```
     public func edgeCentreOfCurvature(at param: Double) -> SIMD3<Double>? {
-        var x = 0.0, y = 0.0, z = 0.0
+        var x = 0.0
+        var y = 0.0
+        var z = 0.0
         let ok = OCCTEdgeLPropCentreOfCurvature(handle, param, &x, &y, &z)
         return ok ? SIMD3(x, y, z) : nil
     }
 
-    /// First derivative on an edge at `param`. Returns nil for a parameter the edge cannot be
-    /// evaluated at.
+    /// First derivative on an edge at `param`.
+    ///
+    /// Returns nil for a parameter the edge cannot be evaluated at.
     public func edgeLPropD1(at param: Double) -> SIMD3<Double>? {
-        var d1x = 0.0, d1y = 0.0, d1z = 0.0
+        var d1x = 0.0
+        var d1y = 0.0
+        var d1z = 0.0
         let ok = OCCTEdgeLPropD1(handle, param, &d1x, &d1y, &d1z)
         return ok ? SIMD3(d1x, d1y, d1z) : nil
     }
@@ -1904,14 +2025,20 @@ extension Shape {
     /// }
     /// ```
     public func faceLPropValue(u: Double, v: Double) -> SIMD3<Double>? {
-        var x = 0.0, y = 0.0, z = 0.0
+        var x = 0.0
+        var y = 0.0
+        var z = 0.0
         let ok = OCCTFaceLPropValue(handle, u, v, &x, &y, &z)
         return ok ? SIMD3(x, y, z) : nil
     }
 
-    /// Get normal on a face at (u, v). Returns nil if normal is undefined.
+    /// Get normal on a face at (u, v).
+    ///
+    /// Returns nil if normal is undefined.
     public func faceLPropNormal(u: Double, v: Double) -> SIMD3<Double>? {
-        var dx = 0.0, dy = 0.0, dz = 0.0
+        var dx = 0.0
+        var dy = 0.0
+        var dz = 0.0
         let ok = OCCTFaceLPropNormal(handle, u, v, &dx, &dy, &dz)
         return ok ? SIMD3(dx, dy, dz) : nil
     }
@@ -2025,7 +2152,10 @@ extension Shape {
     /// vertex.linearProperties()         // nil, a vertex has no length and no centroid
     /// ```
     public func linearProperties() -> LinearProperties? {
-        var length = 0.0, cx = 0.0, cy = 0.0, cz = 0.0
+        var length = 0.0
+        var cx = 0.0
+        var cy = 0.0
+        var cz = 0.0
         guard OCCTShapeLinearProperties(handle, &length, &cx, &cy, &cz) else { return nil }
         return LinearProperties(length: length, centerOfMass: SIMD3(cx, cy, cz))
     }
@@ -2047,9 +2177,15 @@ extension Shape {
     /// Shape.fromFace(box.faces()[0])?.momentOfInertia()   // nil, a face has no volume
     /// ```
     public func momentOfInertia() -> InertiaTensor? {
-        var ixx = 0.0, iyy = 0.0, izz = 0.0
-        var ixy = 0.0, ixz = 0.0, iyz = 0.0
-        guard OCCTShapeMomentOfInertia(handle, &ixx, &iyy, &izz, &ixy, &ixz, &iyz) else { return nil }
+        var ixx = 0.0
+        var iyy = 0.0
+        var izz = 0.0
+        var ixy = 0.0
+        var ixz = 0.0
+        var iyz = 0.0
+        guard OCCTShapeMomentOfInertia(handle, &ixx, &iyy, &izz, &ixy, &ixz, &iyz) else {
+            return nil
+        }
         return InertiaTensor(ixx: ixx, iyy: iyy, izz: izz, ixy: ixy, ixz: ixz, iyz: iyz)
     }
 
@@ -2096,10 +2232,13 @@ extension Shape {
     /// ```
     public func radiusOfGyration(axisOrigin: SIMD3<Double>, direction: SIMD3<Double>) -> Double? {
         var radius = 0.0
-        guard OCCTShapeRadiusOfGyration(handle,
-                                        axisOrigin.x, axisOrigin.y, axisOrigin.z,
-                                        direction.x, direction.y, direction.z,
-                                        &radius) else { return nil }
+        guard
+            OCCTShapeRadiusOfGyration(
+                handle,
+                axisOrigin.x, axisOrigin.y, axisOrigin.z,
+                direction.x, direction.y, direction.z,
+                &radius)
+        else { return nil }
         return radius
     }
 }
@@ -2107,7 +2246,12 @@ extension Shape {
 extension Shape {
     /// Axis-aligned bounding box of the shape.
     public var boundingBox: (min: SIMD3<Double>, max: SIMD3<Double>)? {
-        var xmin = 0.0, ymin = 0.0, zmin = 0.0, xmax = 0.0, ymax = 0.0, zmax = 0.0
+        var xmin = 0.0
+        var ymin = 0.0
+        var zmin = 0.0
+        var xmax = 0.0
+        var ymax = 0.0
+        var zmax = 0.0
         OCCTShapeBoundingBox(handle, &xmin, &ymin, &zmin, &xmax, &ymax, &zmax)
         if xmin == 0 && ymin == 0 && zmin == 0 && xmax == 0 && ymax == 0 && zmax == 0 {
             return nil
@@ -2116,9 +2260,17 @@ extension Shape {
     }
 
     /// Optimal (tight) axis-aligned bounding box using precise geometry.
-    public func boundingBoxOptimal(useShapeTolerance: Bool = false) -> (min: SIMD3<Double>, max: SIMD3<Double>)? {
-        var xmin = 0.0, ymin = 0.0, zmin = 0.0, xmax = 0.0, ymax = 0.0, zmax = 0.0
-        OCCTShapeBoundingBoxOptimal(handle, useShapeTolerance, &xmin, &ymin, &zmin, &xmax, &ymax, &zmax)
+    public func boundingBoxOptimal(useShapeTolerance: Bool = false) -> (
+        min: SIMD3<Double>, max: SIMD3<Double>
+    )? {
+        var xmin = 0.0
+        var ymin = 0.0
+        var zmin = 0.0
+        var xmax = 0.0
+        var ymax = 0.0
+        var zmax = 0.0
+        OCCTShapeBoundingBoxOptimal(
+            handle, useShapeTolerance, &xmin, &ymin, &zmin, &xmax, &ymax, &zmax)
         if xmin == 0 && ymin == 0 && zmin == 0 && xmax == 0 && ymax == 0 && zmax == 0 {
             return nil
         }
@@ -2132,19 +2284,19 @@ extension Shape {
     /// computed ``OrientedBoundingBox/volume``/``OrientedBoundingBox/dimensions`` it offers; this
     /// type exists for callers that specifically want the half-sizes as individual `Double`s.
     public struct DetailedOBB: Sendable {
-        /// Center of the oriented bounding box
+        /// Center of the oriented bounding box.
         public let center: SIMD3<Double>
-        /// Local X axis direction
+        /// Local X axis direction.
         public let xDirection: SIMD3<Double>
-        /// Local Y axis direction
+        /// Local Y axis direction.
         public let yDirection: SIMD3<Double>
-        /// Local Z axis direction
+        /// Local Z axis direction.
         public let zDirection: SIMD3<Double>
-        /// Half-extent along ``xDirection``
+        /// Half-extent along ``xDirection``.
         public let xHalfSize: Double
-        /// Half-extent along ``yDirection``
+        /// Half-extent along ``yDirection``.
         public let yHalfSize: Double
-        /// Half-extent along ``zDirection``
+        /// Half-extent along ``zDirection``.
         public let zHalfSize: Double
     }
 
@@ -2165,13 +2317,24 @@ extension Shape {
     /// - Parameter optimal: If true, compute a tighter OBB (slower). Default is false.
     /// - Returns: The oriented bounding box, or nil on failure.
     public func orientedBoundingBoxDetailed(optimal: Bool = false) -> DetailedOBB? {
-        var cx = 0.0, cy = 0.0, cz = 0.0
-        var xDx = 0.0, xDy = 0.0, xDz = 0.0
-        var yDx = 0.0, yDy = 0.0, yDz = 0.0
-        var zDx = 0.0, zDy = 0.0, zDz = 0.0
-        var xHS = 0.0, yHS = 0.0, zHS = 0.0
+        var cx = 0.0
+        var cy = 0.0
+        var cz = 0.0
+        var xDx = 0.0
+        var xDy = 0.0
+        var xDz = 0.0
+        var yDx = 0.0
+        var yDy = 0.0
+        var yDz = 0.0
+        var zDx = 0.0
+        var zDy = 0.0
+        var zDz = 0.0
+        var xHS = 0.0
+        var yHS = 0.0
+        var zHS = 0.0
         var isVoid = false
-        OCCTShapeOrientedBoundingBoxDetailed(handle, optimal,
+        OCCTShapeOrientedBoundingBoxDetailed(
+            handle, optimal,
             &cx, &cy, &cz,
             &xDx, &xDy, &xDz,
             &yDx, &yDy, &yDz,
