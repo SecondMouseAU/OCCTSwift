@@ -395,9 +395,8 @@ extension BRepGraph {
             }
             guard let shape = shape(nodeKind: node.kind, nodeIndex: node.index),
                 let edge = shape.edges().first,
-                let bounds = edge.parameterBounds,
-                let start = edge.point(at: bounds.first),
-                let end = edge.point(at: bounds.last)
+                let start = edge.point(atFraction: 0),
+                let end = edge.point(atFraction: 1)
             else {
                 return .failure(.missingGeometry(node))
             }

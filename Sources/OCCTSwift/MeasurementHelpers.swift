@@ -97,8 +97,16 @@ extension Face {
     /// across `ConstructionEntity.swift` and this file (#889). Callers that only
     /// need one of the two components should call `uvMidpointPoint()` /
     /// `uvMidpointNormal()` directly instead, to avoid paying for the unused one.
+    ///
+    /// Computes `uvMidpoint` once and evaluates both `point(atU:v:)`/`normal(atU:v:)`
+    /// against it directly, rather than delegating to `uvMidpointPoint()`/
+    /// `uvMidpointNormal()` — those each independently re-derive `uvMidpoint`, which
+    /// would fetch `uvBounds` twice per call here (PR #897 review, 2nd pass).
     internal func uvMidpointSample() -> (point: SIMD3<Double>, normal: SIMD3<Double>)? {
-        guard let samplePoint = uvMidpointPoint(), let sampleNormal = uvMidpointNormal() else {
+        guard let mid = uvMidpoint else { return nil }
+        guard let samplePoint = point(atU: mid.u, v: mid.v),
+            let sampleNormal = normal(atU: mid.u, v: mid.v)
+        else {
             return nil
         }
         return (samplePoint, sampleNormal)
