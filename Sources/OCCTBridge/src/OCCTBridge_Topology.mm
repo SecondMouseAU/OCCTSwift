@@ -5391,6 +5391,48 @@ double OCCTShapeTotalEdgeLength(OCCTShapeRef shape)
 
 // MARK: - v0.118: BoundingBox + Optimal + OBB + Shape transforms + EdgesCommonVertex +
 // SameParam/Range/NaturalRestriction/IsGeometric
+
+// Shared by OCCTShapeBoundingBox/OCCTShapeBoundingBoxOptimal below (PR #901 review): both build a
+// Bnd_Box (via BRepBndLib::Add or ::AddOptimal) and distinguish IsVoid() from a genuinely
+// all-zero box, the same shape occtComputeAxisExtent (above) wraps once for its own callers.
+// Zeroing the six out-params as the very first statement -- before the IsNull() check, and again
+// in the catch block, matching occtComputeAxisExtent's own idiom -- means every failure path
+// (null shape, void box, OCCT exception) leaves deterministic zeros rather than the uninitialized
+// stack memory a caller that doesn't gate on the bool return would otherwise read.
+static bool occtComputeBoundingBox(const TopoDS_Shape& forShape,
+                                   bool                optimal,
+                                   bool                useShapeTolerance,
+                                   double&             outXmin,
+                                   double&             outYmin,
+                                   double&             outZmin,
+                                   double&             outXmax,
+                                   double&             outYmax,
+                                   double&             outZmax)
+{
+  outXmin = outYmin = outZmin = outXmax = outYmax = outZmax = 0.0;
+  if (forShape.IsNull())
+    return false;
+  try
+  {
+    Bnd_Box box;
+    if (optimal)
+      BRepBndLib::AddOptimal(forShape, box, true, useShapeTolerance);
+    else
+      BRepBndLib::Add(forShape, box);
+    // All-zero coordinates are indistinguishable from a genuinely degenerate/point shape at
+    // the world origin -- IsVoid() is the real signal (#900).
+    if (box.IsVoid())
+      return false;
+    box.Get(outXmin, outYmin, outZmin, outXmax, outYmax, outZmax);
+    return true;
+  }
+  catch (...)
+  {
+    outXmin = outYmin = outZmin = outXmax = outYmax = outZmax = 0.0;
+    return false;
+  }
+}
+
 bool OCCTShapeBoundingBox(OCCTShapeRef shape,
                           double*      xmin,
                           double*      ymin,
@@ -5401,22 +5443,16 @@ bool OCCTShapeBoundingBox(OCCTShapeRef shape,
 {
   if (!shape || !xmin || !ymin || !zmin || !xmax || !ymax || !zmax)
     return false;
-  try
-  {
-    auto*   s = static_cast<OCCTShape*>(shape);
-    Bnd_Box box;
-    BRepBndLib::Add(s->shape, box);
-    // All-zero coordinates are indistinguishable from a genuinely degenerate/point shape at
-    // the world origin -- IsVoid() is the real signal (#900).
-    if (box.IsVoid())
-      return false;
-    box.Get(*xmin, *ymin, *zmin, *xmax, *ymax, *zmax);
-    return true;
-  }
-  catch (...)
-  {
-    return false;
-  }
+  auto* s = static_cast<OCCTShape*>(shape);
+  return occtComputeBoundingBox(s->shape,
+                                /*optimal=*/false,
+                                /*useShapeTolerance=*/false,
+                                *xmin,
+                                *ymin,
+                                *zmin,
+                                *xmax,
+                                *ymax,
+                                *zmax);
 }
 
 bool OCCTShapeBoundingBoxOptimal(OCCTShapeRef shape,
@@ -5430,21 +5466,16 @@ bool OCCTShapeBoundingBoxOptimal(OCCTShapeRef shape,
 {
   if (!shape || !xmin || !ymin || !zmin || !xmax || !ymax || !zmax)
     return false;
-  try
-  {
-    auto*   s = static_cast<OCCTShape*>(shape);
-    Bnd_Box box;
-    BRepBndLib::AddOptimal(s->shape, box, true, useShapeTolerance);
-    // Same IsVoid() vs. all-zero-coordinates distinction as OCCTShapeBoundingBox (#900).
-    if (box.IsVoid())
-      return false;
-    box.Get(*xmin, *ymin, *zmin, *xmax, *ymax, *zmax);
-    return true;
-  }
-  catch (...)
-  {
-    return false;
-  }
+  auto* s = static_cast<OCCTShape*>(shape);
+  return occtComputeBoundingBox(s->shape,
+                                /*optimal=*/true,
+                                useShapeTolerance,
+                                *xmin,
+                                *ymin,
+                                *zmin,
+                                *xmax,
+                                *ymax,
+                                *zmax);
 }
 
 void OCCTShapeOrientedBoundingBoxDetailed(OCCTShapeRef shape,
