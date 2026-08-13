@@ -2405,6 +2405,13 @@ struct ConstructionAxisTests {
         // a non-degenerate chord that also isn't itself nearly parallel to EITHER candidate axis —
         // so the pre-fix "first match wins" answer and the post-fix chord-fallback answer are
         // provably different regardless of which face BRepGraph happens to enumerate first.
+        //
+        // Gathering `candidates` here (via the already-public `faces(of:)`/`Face.primaryAxis`) is
+        // direct data access, not a reimplementation of production logic — there's no production
+        // API that returns the raw candidate list, only the final decision. What used to be
+        // reimplemented was the "must disagree" *test*, via a hand-rolled, hardcoded `1e-3` copy
+        // of `axesAgree`'s own comparison; that copy is gone below, replaced by a direct call to
+        // the real (`internal`, `@testable`-visible) `axesAgree` (#894 finding 5, second pass).
         var target: (edgeIndex: Int, axisA: ShapeAxis, axisB: ShapeAxis)?
         for edgeIndex in 0..<graph.edgeCount {
             var candidates: [ShapeAxis] = []
@@ -2418,10 +2425,9 @@ struct ConstructionAxisTests {
                 else { continue }
                 candidates.append(axis)
             }
-            guard candidates.count >= 2 else { continue }
-            let directionA = simd_normalize(candidates[0].direction)
-            let directionB = simd_normalize(candidates[1].direction)
-            guard abs(abs(simd_dot(directionA, directionB)) - 1.0) > 1e-3 else { continue }  // must disagree
+            guard candidates.count >= 2, !graph.axesAgree(candidates[0], candidates[1]) else {
+                continue
+            }
 
             guard
                 let edgeShape = graph.shape(
@@ -2435,6 +2441,8 @@ struct ConstructionAxisTests {
             let chordLength = simd_length(chord)
             guard chordLength > 1e-6 else { continue }
             let chordDirection = chord / chordLength
+            let directionA = simd_normalize(candidates[0].direction)
+            let directionB = simd_normalize(candidates[1].direction)
             guard abs(simd_dot(chordDirection, directionA)) < 0.9,
                 abs(simd_dot(chordDirection, directionB)) < 0.9
             else { continue }
@@ -2445,6 +2453,12 @@ struct ConstructionAxisTests {
         guard let target else {
             Issue.record("no usable branch edge found in T-branch fixture"); return
         }
+
+        // Exercise the real production decision directly, not just its downstream effect: the
+        // disagreeing candidates found above must make `revolutionAxis(ofEdgeAt:)` itself decline
+        // (#894 finding 5, second pass) — the assertions below on `resolve(.alongEdge(...))` then
+        // confirm the caller-visible consequence of that decision.
+        #expect(graph.revolutionAxis(ofEdgeAt: target.edgeIndex) == nil)
 
         let edgeRef = TopologyRef.literal(.init(kind: .edge, index: target.edgeIndex))
         switch graph.resolve(ConstructionAxis.alongEdge(edgeRef)) {
@@ -2683,6 +2697,285 @@ struct ConstructionAxisTests {
         let edgeRef = TopologyRef.literal(.init(kind: .edge, index: tinyNodeIndex))
         if case .failure(.degenerate) = graph.resolve(ConstructionAxis.alongEdge(edgeRef)) {} else {
             Issue.record("expected degenerate")
+        }
+    }
+
+    @Test(
+        "alongEdge on a cone's straight generatrix reparameterized as a BSpline keeps the chord, not the axis (#894 finding 1, second pass)"
+    )
+    func alongEdgeConeStraightSeamReparameterizedAsBSplineKeepsChord() {
+        // A cone's lateral generatrix meets its axis at the cone's own nonzero half-angle, never
+        // parallel to it — the old chord-parallel-to-axis check (removed by the third pass's
+        // `coaxialCrossSection` rewrite) could never catch a straight seam on a CONE the way it
+        // caught one on a cylinder (`alongEdgeStraightSeamReparameterizedAsBSplineKeepsChord`
+        // above). `coaxialCrossSection`'s radius/height-constancy test has no such blind spot: a
+        // generatrix's radius from the axis varies continuously from apex to base, so it fails
+        // the "radius stays constant" half of the check the same way a cylinder seam fails the
+        // "height stays constant" half.
+        let bottomRadius = 5.0
+        let semiAngle = 0.3  // radians; nonzero, so this generatrix is never axis-parallel
+        func radius(atHeight z: Double) -> Double { bottomRadius + z * tan(semiAngle) }
+        let angle0 = 0.0
+        let angle1 = 0.3
+        let midAngle = (angle0 + angle1) / 2
+        let p0bot = SIMD3(radius(atHeight: 0) * cos(angle0), radius(atHeight: 0) * sin(angle0), 0.0)
+        let p0mid = SIMD3(radius(atHeight: 5) * cos(angle0), radius(atHeight: 5) * sin(angle0), 5.0)
+        let p0top = SIMD3(
+            radius(atHeight: 10) * cos(angle0), radius(atHeight: 10) * sin(angle0), 10.0)
+        let p1bot = SIMD3(radius(atHeight: 0) * cos(angle1), radius(atHeight: 0) * sin(angle1), 0.0)
+        let p1top = SIMD3(
+            radius(atHeight: 10) * cos(angle1), radius(atHeight: 10) * sin(angle1), 10.0)
+
+        guard
+            let surface = Surface.cone(
+                origin: .zero, axis: SIMD3(0, 0, 1), radius: bottomRadius, semiAngle: semiAngle),
+            let seamCurve = Curve3D.interpolate(points: [p0bot, p0mid, p0top]),
+            let seamEdgeShape = Shape.edgeFromCurve(seamCurve),
+            let seamEdge = Edge(seamEdgeShape),
+            let otherSideWire = Wire.line(from: p1top, to: p1bot),
+            let otherSideEdge = otherSideWire.edges().first,
+            let topArcCurve = Curve3D.arcOfCircle(
+                start: p0top,
+                interior: SIMD3(
+                    radius(atHeight: 10) * cos(midAngle), radius(atHeight: 10) * sin(midAngle),
+                    10.0),
+                end: p1top),
+            let topArcShape = Shape.edgeFromCurve(topArcCurve),
+            let topArcEdge = Edge(topArcShape),
+            let botArcCurve = Curve3D.arcOfCircle(
+                start: p1bot,
+                interior: SIMD3(
+                    radius(atHeight: 0) * cos(midAngle), radius(atHeight: 0) * sin(midAngle), 0.0),
+                end: p0bot),
+            let botArcShape = Shape.edgeFromCurve(botArcCurve),
+            let botArcEdge = Edge(botArcShape),
+            let wire = Wire.wireFromEdges([seamEdge, topArcEdge, otherSideEdge, botArcEdge]),
+            let faceShape = Shape.face(from: surface, boundary: wire),
+            let graph = BRepGraph(shape: faceShape)
+        else {
+            Issue.record("synthetic cone straight-seam fixture build failed"); return
+        }
+
+        var seamNodeIndex: Int?
+        for edgeIndex in 0..<graph.edgeCount {
+            guard
+                let eShape = graph.shape(nodeKind: BRepGraph.NodeKind.edge, nodeIndex: edgeIndex),
+                let edge = eShape.edges().first
+            else { continue }
+            if edge.curveType == .bsplineCurve {
+                seamNodeIndex = edgeIndex
+                break
+            }
+        }
+        guard let seamNodeIndex else {
+            Issue.record("no BSpline-curveType edge found in cone fixture"); return
+        }
+        // Confirm the fixture matches the premise: the seam edge is adjacent to a cone-kind face
+        // (so `revolutionAxis` has a candidate to redirect to at all).
+        let coneFaceCount = graph.faces(of: seamNodeIndex).filter { faceIndex in
+            guard
+                let faceShape = graph.shape(nodeKind: BRepGraph.NodeKind.face, nodeIndex: faceIndex),
+                let face = faceShape.faces().first, let axis = face.primaryAxis
+            else { return false }
+            return axis.kind == .cone
+        }.count
+        #expect(coneFaceCount == 1)
+
+        let edgeRef = TopologyRef.literal(.init(kind: .edge, index: seamNodeIndex))
+        switch graph.resolve(ConstructionAxis.alongEdge(edgeRef)) {
+        case .success(let ax):
+            // The chord and the cone's axis are NOT parallel (nonzero half-angle) — unlike the
+            // cylinder case, direction alone distinguishes "kept the chord" from "redirected to
+            // the axis" here too, so both direction and origin are asserted directly against the
+            // seam's own geometry.
+            let expectedDirection = simd_normalize(p0top - p0bot)
+            #expect(simd_dot(ax.direction, expectedDirection) > 1 - 1e-6)
+            #expect(simd_distance(ax.origin, p0bot) < 1e-6)
+        case .failure(let e):
+            Issue.record("expected success (chord kept for cone straight seam), got \(e)")
+        }
+    }
+
+    @Test(
+        "alongEdge derives its sign from the edge's own start->end order, not the adjacent surface's placement convention (#894 finding 2, second pass)"
+    )
+    func alongEdgeSignTracksEdgeTopologyNotSurfaceConvention() {
+        // Two quarter-circle rims on the SAME cylinder wall, whose top-arc edges are
+        // parameterized with `bounds.first` at opposite physical ends (pA->pB vs pB->pA).
+        // `Face.primaryAxis` reads the same fixed direction off the shared wall surface either
+        // way, so without a fix, both would silently resolve to the identical sign;
+        // `resolveEdgeDirection` should instead track the parameterization difference, the same
+        // way `dir = end - start` already does for a straight edge.
+        //
+        // `Shape.face(from:boundary:)`'s exact wire-fitting strategy on a periodic cylindrical
+        // surface is sensitive to more than just "which point is which": which of the 4 boundary
+        // edges are built in which raw curve direction, and in which order they're handed to
+        // `Wire.wireFromEdges`, decides whether the fit succeeds or falls back to a crude
+        // point-projected polygon (many tiny BSpline fragments instead of one clean arc). Both
+        // constructions below were confirmed (by direct inspection) to build a clean 4-edge wire
+        // with the top arc still `curveType == .circle`, not a fragmented approximation — an
+        // arbitrary reshuffle of either one is not guaranteed to stay that way.
+        let radius = 5.0
+        let height = 10.0
+        let angle0 = 0.0
+        let angle1 = Double.pi / 2
+        let midAngle = (angle0 + angle1) / 2
+        let pA = SIMD3(radius * cos(angle0), radius * sin(angle0), height)
+        let pB = SIMD3(radius * cos(angle1), radius * sin(angle1), height)
+        let pMidTop = SIMD3(radius * cos(midAngle), radius * sin(midAngle), height)
+        let qA = SIMD3(radius * cos(angle0), radius * sin(angle0), 0.0)
+        let qB = SIMD3(radius * cos(angle1), radius * sin(angle1), 0.0)
+        let qMidBot = SIMD3(radius * cos(midAngle), radius * sin(midAngle), 0.0)
+
+        func topArcDirection(from faceShape: Shape) -> SIMD3<Double>? {
+            guard let graph = BRepGraph(shape: faceShape) else { return nil }
+            var topNodeIndex: Int?
+            for edgeIndex in 0..<graph.edgeCount {
+                guard
+                    let eShape = graph.shape(
+                        nodeKind: BRepGraph.NodeKind.edge, nodeIndex: edgeIndex),
+                    let edge = eShape.edges().first,
+                    edge.curveType == .circle,
+                    let bounds = edge.parameterBounds,
+                    let p = edge.point(at: bounds.first)
+                else { continue }
+                if abs(p.z - height) < 1e-6 {
+                    topNodeIndex = edgeIndex
+                    break
+                }
+            }
+            guard let topNodeIndex else { return nil }
+            let edgeRef = TopologyRef.literal(.init(kind: .edge, index: topNodeIndex))
+            guard case .success(let ax) = graph.resolve(ConstructionAxis.alongEdge(edgeRef)) else {
+                return nil
+            }
+            return ax.direction
+        }
+
+        // Top arc parameterized pA -> pB (bounds.first == pA).
+        guard
+            let surfaceForward = Surface.cylinder(
+                origin: .zero, axis: SIMD3(0, 0, 1), radius: radius),
+            let topArcForward = Curve3D.arcOfCircle(start: pA, interior: pMidTop, end: pB),
+            let topArcForwardShape = Shape.edgeFromCurve(topArcForward),
+            let topArcForwardEdge = Edge(topArcForwardShape),
+            let botArcForward = Curve3D.arcOfCircle(start: qB, interior: qMidBot, end: qA),
+            let botArcForwardShape = Shape.edgeFromCurve(botArcForward),
+            let botArcForwardEdge = Edge(botArcForwardShape),
+            let upForwardWire = Wire.line(from: qA, to: pA),
+            let upForwardEdge = upForwardWire.edges().first,
+            let downForwardWire = Wire.line(from: pB, to: qB),
+            let downForwardEdge = downForwardWire.edges().first,
+            let wireForward = Wire.wireFromEdges([
+                upForwardEdge, topArcForwardEdge, downForwardEdge, botArcForwardEdge,
+            ]),
+            let faceForward = Shape.face(from: surfaceForward, boundary: wireForward),
+            let forward = topArcDirection(from: faceForward)
+        else {
+            Issue.record("forward-order fixture build/resolve failed"); return
+        }
+
+        // Top arc parameterized pB -> pA (bounds.first == pB) — the physically identical rim,
+        // opposite parameter order. Every other edge is rebuilt to match (see the wire-fitting
+        // sensitivity noted above); this specific combination was confirmed by direct inspection
+        // to also build a clean 4-edge wire.
+        guard
+            let surfaceReversed = Surface.cylinder(
+                origin: .zero, axis: SIMD3(0, 0, 1), radius: radius),
+            let topArcReversed = Curve3D.arcOfCircle(start: pB, interior: pMidTop, end: pA),
+            let topArcReversedShape = Shape.edgeFromCurve(topArcReversed),
+            let topArcReversedEdge = Edge(topArcReversedShape),
+            let botArcReversed = Curve3D.arcOfCircle(start: qB, interior: qMidBot, end: qA),
+            let botArcReversedShape = Shape.edgeFromCurve(botArcReversed),
+            let botArcReversedEdge = Edge(botArcReversedShape),
+            let eReversed1Wire = Wire.line(from: pB, to: qB),
+            let eReversed1 = eReversed1Wire.edges().first,
+            let eReversed2Wire = Wire.line(from: qA, to: pA),
+            let eReversed2 = eReversed2Wire.edges().first,
+            let wireReversed = Wire.wireFromEdges([
+                eReversed1, topArcReversedEdge, eReversed2, botArcReversedEdge,
+            ]),
+            let faceReversed = Shape.face(from: surfaceReversed, boundary: wireReversed),
+            let reversed = topArcDirection(from: faceReversed)
+        else {
+            Issue.record("reversed-order fixture build/resolve failed"); return
+        }
+
+        // Same physical axis either way.
+        #expect(abs(abs(forward.z) - 1.0) < 1e-6)
+        #expect(abs(abs(reversed.z) - 1.0) < 1e-6)
+        // Reversing which endpoint is `first` must flip the resolved sign.
+        #expect(simd_dot(forward, reversed) < 0)
+    }
+
+    @Test(
+        "alongEdge on a helical thread edge does not silently return the cylinder's centerline (#894 finding 3, second pass)"
+    )
+    func alongEdgeHelicalEdgeDoesNotSilentlyReturnCenterline() {
+        // A helix's two-point secant can land nearly parallel to the cylinder's axis purely from
+        // the sweep angle — the old chord-parallel-to-axis check (removed by the third pass's
+        // `coaxialCrossSection` rewrite) could misfire on this. A full single turn (parameter
+        // range 0...2*pi) puts start and end at the SAME angular position, `pitch` apart in
+        // height — the secant is then EXACTLY axis-parallel, the strongest form of the old false
+        // positive. `coaxialCrossSection`'s height-constancy check has no such blind spot:
+        // sampling interior points along a genuine helix shows height varying continuously across
+        // the whole span, unlike a true perpendicular cross-section.
+        let radius = 5.0
+        let pitch = 10.0
+        guard
+            let helixBuild = Helix.build(
+                origin: .zero, direction: SIMD3(0, 0, 1), xDirection: SIMD3(1, 0, 0),
+                parameterRange: 0...(2 * Double.pi), pitch: pitch, radius: radius),
+            let surface = Surface.cylinder(origin: .zero, axis: SIMD3(0, 0, 1), radius: radius),
+            let helixEdgeShape = Shape.edgeFromCurve(helixBuild.curve),
+            let helixEdge = Edge(helixEdgeShape),
+            let closeWire = Wire.line(from: SIMD3(radius, 0, pitch), to: SIMD3(radius, 0, 0)),
+            let closeEdge = closeWire.edges().first,
+            let wire = Wire.wireFromEdges([helixEdge, closeEdge]),
+            let faceShape = Shape.face(from: surface, boundary: wire),
+            let graph = BRepGraph(shape: faceShape)
+        else {
+            Issue.record("helical-edge fixture build failed"); return
+        }
+
+        var helixNodeIndex: Int?
+        for edgeIndex in 0..<graph.edgeCount {
+            guard
+                let eShape = graph.shape(nodeKind: BRepGraph.NodeKind.edge, nodeIndex: edgeIndex),
+                let edge = eShape.edges().first,
+                edge.curveType != .line
+            else { continue }
+            helixNodeIndex = edgeIndex
+            break
+        }
+        guard let helixNodeIndex else {
+            Issue.record("no non-line edge found in helical fixture"); return
+        }
+        // Confirm the fixture matches the premise: adjacent to exactly one cylinder-kind face,
+        // same as a genuine rim — `revolutionAxis` has nothing to disagree with, so only
+        // `coaxialCrossSection`'s own height check can decline the redirect.
+        let cylFaceCount = graph.faces(of: helixNodeIndex).filter { faceIndex in
+            guard
+                let faceShape = graph.shape(nodeKind: BRepGraph.NodeKind.face, nodeIndex: faceIndex),
+                let face = faceShape.faces().first, let axis = face.primaryAxis
+            else { return false }
+            return axis.kind == .cylinder
+        }.count
+        #expect(cylFaceCount == 1)
+
+        let edgeRef = TopologyRef.literal(.init(kind: .edge, index: helixNodeIndex))
+        switch graph.resolve(ConstructionAxis.alongEdge(edgeRef)) {
+        case .success(let ax):
+            // Must not teleport to the centerline (x = y = 0): the fallback secant's origin is
+            // the helix's own start point, still on the cylinder wall — the same discriminator
+            // the straight-seam test above uses, since the secant's DIRECTION happens to coincide
+            // with the axis direction here too (chosen deliberately, matching the old false
+            // positive's strongest form).
+            let radialDistance = (ax.origin.x * ax.origin.x + ax.origin.y * ax.origin.y)
+                .squareRoot()
+            #expect(radialDistance > radius - 1e-6)
+        case .failure(let e):
+            Issue.record("expected success (chord fallback for helical edge), got \(e)")
         }
     }
 

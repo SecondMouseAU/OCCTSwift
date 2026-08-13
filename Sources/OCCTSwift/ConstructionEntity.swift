@@ -284,11 +284,20 @@ extension BRepGraph {
     /// happens to land near-parallel to the axis by coincidence of the sweep angle (both findings
     /// 1/3, second pass). ``coaxialCrossSection(of:bounds:start:end:axis:)`` replaces it with a
     /// direct geometric test that doesn't need this tolerance at all (finding 1, third pass), so
-    /// this constant is `axesAgree`'s alone again. `1e-6` mirrors the unit-vector tolerance this
-    /// file's own tests already use for axis-direction checks — tight enough to catch a genuine
-    /// few-degree mismatch between two non-coaxial faces, loose enough for the floating-point
-    /// noise of a real OCCT curve/surface evaluation.
-    private static let axisDirectionAgreementCosineTolerance = 1e-6
+    /// this constant is `axesAgree`'s alone again.
+    ///
+    /// `OCCTPrecision.angular` (`Precision::Angular()`, 1e-12), not a hand-invented literal: this
+    /// codebase has a documented history of a hardcoded direction-comparison tolerance silently
+    /// drifting from the canonical one (`docs/reference/Surface-Analysis.md`'s "ten times looser
+    /// than `Precision::Confusion()`" note; #494/#529 are whole issues about exactly this).
+    /// Verified, not assumed, that the tighter value is safe here: swapped in and re-ran the full
+    /// `OCCTBRepGraphTests` and `OCCTMiscTests` targets (#894 finding 6, second pass) — no
+    /// behavior changed, since a genuine adjacent-face-axis comparison (either the identical
+    /// `TopoDS_Face` read twice, or a BOP-split piece sharing the same analytic `Geom_Surface`
+    /// handle) agrees to within floating-point noise far tighter than even 1e-12, while two
+    /// genuinely different cylinders (e.g. this file's T-branch fixture) disagree by orders of
+    /// magnitude more than either tolerance.
+    private static let axisDirectionAgreementCosineTolerance = OCCTPrecision.angular
 
     /// Distance threshold for "this point sits on this axis line". Used two ways:
     ///
@@ -300,13 +309,18 @@ extension BRepGraph {
     ///   counting as a genuine perpendicular cross-section (finding 1, third pass).
     ///
     /// A fixed absolute threshold, like ``degeneracyEpsilon`` above, not a fraction of model
-    /// scale. `1e-6` matches `Shape.revolutionAxes(tolerance:)`'s own default (`ShapeAxis.swift`)
+    /// scale. `OCCTPrecision.confusion` (`Precision::Confusion()`, 1e-7) — the canonical "points
+    /// closer than this are 'same'" distance, not a hand-invented literal, for the same reason as
+    /// ``axisDirectionAgreementCosineTolerance`` above (#894 finding 6, second pass); also
+    /// verified against the full test sweep described there. This is 10x tighter than the `1e-6`
+    /// it replaces and than `Shape.revolutionAxes(tolerance:)`'s own default (`ShapeAxis.swift`)
     /// and the bridge-side `axesCoincide` it wraps (`OCCTBridge_Topology.mm`) — not because either
     /// is called from here (that dedup runs in the C++ layer over every face of a whole shape;
     /// this code only ever compares the 1-2 faces adjacent to a single edge, so there's no shared
     /// function to actually call across that boundary), but so a future retune of one is at least
-    /// discoverable from the other (finding 4, third pass).
-    private static let axisOriginAgreementDistanceTolerance = 1e-6
+    /// discoverable from the other (finding 4, third pass). The two are independent constants
+    /// (`1e-7` here vs. `revolutionAxes`' `1e-6`), not required to match.
+    private static let axisOriginAgreementDistanceTolerance = OCCTPrecision.confusion
 
     /// Shared "is this magnitude effectively zero" guard: fails with `.degenerate(message)` when
     /// `magnitude` is below ``degeneracyEpsilon``, otherwise succeeds with `value`. `value` is an
@@ -359,7 +373,13 @@ extension BRepGraph {
     /// to fall back to the endpoint secant instead of silently picking whichever face happened to
     /// sort first (#894 finding 1). Planar and free-form neighbours, and edges with no face
     /// adjacency at all, contribute no candidate at all, so this is `nil` for them too.
-    private func revolutionAxis(ofEdgeAt edgeIndex: Int) -> ShapeAxis? {
+    ///
+    /// `internal`, not `private`: `ConstructionAxisTests.alongEdgeBranchWithDisagreeingAxesFallsBackToChord`
+    /// calls this directly (via `@testable import`) instead of hand-rolling a parallel copy of the
+    /// candidate-gathering loop's disagreement test with its own drifted tolerance (#894 finding 5,
+    /// second pass). `count-operations.py` only counts `public` declarations, so this stays out of
+    /// the operation count either way.
+    func revolutionAxis(ofEdgeAt edgeIndex: Int) -> ShapeAxis? {
         var candidates: [ShapeAxis] = []
         for faceIndex in faces(of: edgeIndex) {
             guard let faceShape = shape(nodeKind: .face, nodeIndex: faceIndex),
@@ -380,7 +400,10 @@ extension BRepGraph {
     /// ``axisDirectionAgreementCosineTolerance``, and `other`'s origin must lie within
     /// ``axisOriginAgreementDistanceTolerance`` of the line through `reference` — not merely a
     /// parallel offset line, e.g. two same-diameter but genuinely distinct bores (#894 finding 1).
-    private func axesAgree(_ reference: ShapeAxis, _ other: ShapeAxis) -> Bool {
+    ///
+    /// `internal`, not `private`, for the same testability reason as ``revolutionAxis(ofEdgeAt:)``
+    /// (#894 finding 5, second pass).
+    func axesAgree(_ reference: ShapeAxis, _ other: ShapeAxis) -> Bool {
         let referenceDirection = simd_normalize(reference.direction)
         let otherDirection = simd_normalize(other.direction)
         guard
@@ -442,11 +465,33 @@ extension BRepGraph {
                 let axis = revolutionAxis(ofEdgeAt: node.index),
                 coaxialCrossSection(of: edge, bounds: bounds, start: start, end: end, axis: axis)
             {
-                let axisDirection = simd_normalize(axis.direction)
+                // `axis.direction`'s sign comes from `Face.primaryAxis` — the adjacent surface's
+                // own placement convention — which has nothing to do with which of the edge's two
+                // ends is `bounds.first`. Every other path through this function derives its sign
+                // from the edge's own start->end order (`dir = end - start` below); re-derive it
+                // here the same way so a caller building `throughAxis` off two edges that trace the
+                // "same" physical rim/arc with opposite parameterization gets consistent, sign-aware
+                // results instead of whatever the surface happened to store (#894 finding 2, second
+                // pass). `chord` itself can't do this — `coaxialCrossSection` just confirmed it's
+                // (near-)perpendicular to the axis, so its dot with `axisDirection` is noise, not
+                // signal. Use the tangent at the edge's own start point instead: for a point
+                // parameterized with increasing angle around `axisDirection` in a right-handed
+                // frame, `cross(radial, tangent)` is `radius^2 * axisDirection`, so its sign against
+                // `axisDirection` says whether increasing parameter — start->end — agrees with
+                // `axisDirection` or runs opposite it.
+                var axisDirection = simd_normalize(axis.direction)
+                if let tangentAtStart = edge.tangent(at: bounds.first) {
+                    let radial = start - axis.origin
+                    if simd_dot(axisDirection, simd_cross(radial, tangentAtStart)) < 0 {
+                        axisDirection = -axisDirection
+                    }
+                }
                 // Keep the origin edge-local: project the edge's own start point onto the resolved
                 // axis line rather than returning the adjacent surface's own placement origin,
                 // which can be far from the edge itself — e.g. a cylinder's base under a rim near
-                // its top (#894 finding 2, first pass).
+                // its top (#894 finding 2, first pass). Invariant to the sign flip above: negating
+                // both `axisDirection` and the dot product it's multiplied by leaves the product
+                // unchanged.
                 let toStart = start - axis.origin
                 let projectedOrigin = axis.origin + simd_dot(toStart, axisDirection) * axisDirection
                 return .success((projectedOrigin, axisDirection))
