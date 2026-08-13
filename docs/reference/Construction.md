@@ -202,12 +202,16 @@ An axis coinciding with a linear edge or the revolution axis of a cylindrical or
 case alongEdge(TopologyRef)
 ```
 
-For a non-linear edge (a circular or elliptical arc, typically), the axis is read off the first
-adjacent face whose `Face.primaryAxis` is a cylinder or cone — the true rotation axis, not a chord
-between the edge's own endpoints. This also resolves a full-circle edge (a hole rim, say), where
-those endpoints coincide and a chord would be the zero vector. A linear edge, or a curved edge with
-no such adjacent face, always resolves to the endpoint-to-endpoint direction; a zero-length result
-there fails with `.degenerate("zero-length edge")`.
+For a non-linear edge, every adjacent face whose `Face.primaryAxis` is a cylinder or cone is
+gathered as a candidate; the axis redirect is taken only when all candidates agree
+(`axesAgree`, within tolerance) and the edge itself passes a coaxial-cross-section check —
+constant radius and height along the candidate axis at several sampled points along the edge.
+That check is what rejects an elliptical rim (an oblique-plane cut of a cylinder, whose height
+along the axis varies around the curve) or a helical edge: both fall through to the
+endpoint-to-endpoint chord instead, the same fallback used for a genuinely linear edge, a curved
+edge with no qualifying adjacent face, or disagreeing candidates (e.g. at a T-branch). This also
+resolves a full-circle edge (a hole rim, say), where the endpoints coincide and a chord would be
+the zero vector. A zero-length fallback result fails with `.degenerate("zero-length edge")`.
 
 ---
 
