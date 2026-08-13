@@ -162,7 +162,6 @@ Sources/OCCTSwift/Selection.swift
 Sources/OCCTSwift/Selector.swift
 Sources/OCCTSwift/SewingBuilder.swift
 Sources/OCCTSwift/Shape.swift
-Sources/OCCTSwift/Shape+Analysis.swift
 Sources/OCCTSwift/Shape+Curve.swift
 Sources/OCCTSwift/Shape+Drawing.swift
 Sources/OCCTSwift/Shape+Geom2d.swift

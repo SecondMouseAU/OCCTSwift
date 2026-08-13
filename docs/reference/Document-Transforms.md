@@ -1298,7 +1298,7 @@ Axis-aligned bounding box of the shape.
 public var boundingBox: (min: SIMD3<Double>, max: SIMD3<Double>)?
 ```
 
-- **Returns:** `(min, max)` corner pair, or `nil` if the shape is empty.
+- **Returns:** `(min, max)` corner pair, or `nil` if the shape is empty (an explicit `Bnd_Box::IsVoid()` check — a genuinely degenerate/point shape at the world origin returns `(min: .zero, max: .zero)`, not `nil` (#900)).
 - **OCCT:** `OCCTShapeBoundingBox` → `BRepBndLib::Add` / `Bnd_Box`.
 - **Note (#834):** `Shape.bounds` (`Shape-Features.md`) computes the identical `Bnd_Box`/`BRepBndLib::Add`, but is a non-optional tuple that fabricates `(0,0,0)-(0,0,0)` for a void shape instead of signaling it the way `boundingBox` does here. Prefer `boundingBox` when a void shape is possible.
 
@@ -1313,7 +1313,7 @@ public func boundingBoxOptimal(useShapeTolerance: Bool = false) -> (min: SIMD3<D
 ```
 
 - **Parameters:** `useShapeTolerance` — include shape tolerances in box inflation.
-- **Returns:** `(min, max)` or `nil` for empty shapes.
+- **Returns:** `(min, max)`, or `nil` for a void shape (`Bnd_Box::IsVoid()`) — same distinction as `boundingBox` above; a point-vertex shape at the world origin legitimately returns `(min: .zero, max: .zero)` (#900).
 - **OCCT:** `OCCTShapeBoundingBoxOptimal` → `BRepBndLib::AddOptimal`.
 
 ---
