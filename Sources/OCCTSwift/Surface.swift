@@ -2880,8 +2880,7 @@ extension Surface {
 
         /// The plane data (origin + normal).
         public var pln: (origin: SIMD3<Double>, normal: SIMD3<Double>) {
-            let r = unwrapAxisComponents { OCCTSurfacePlanePln(handle, $0, $1, $2, $3, $4, $5) }
-            return (origin: r.origin, normal: r.direction)
+            unwrapAxisComponents { OCCTSurfacePlanePln(handle, $0, $1, $2, $3, $4, $5) }
         }
     }
 
@@ -2987,8 +2986,7 @@ extension Surface {
 
         /// The axis (position + direction).
         public var axis: (position: SIMD3<Double>, direction: SIMD3<Double>) {
-            let a = unwrapAxisComponents { OCCTSurfaceCylinderAxis(handle, $0, $1, $2, $3, $4, $5) }
-            return (a.origin, a.direction)
+            unwrapAxisComponents { OCCTSurfaceCylinderAxis(handle, $0, $1, $2, $3, $4, $5) }
         }
 
         /// A U iso-curve on the cylinder.
@@ -3020,8 +3018,7 @@ extension Surface {
 
         /// The axis of the cone (position + direction).
         public var axis: (position: SIMD3<Double>, direction: SIMD3<Double>) {
-            let a = unwrapAxisComponents { OCCTSurfaceConeAxis(handle, $0, $1, $2, $3, $4, $5) }
-            return (a.origin, a.direction)
+            unwrapAxisComponents { OCCTSurfaceConeAxis(handle, $0, $1, $2, $3, $4, $5) }
         }
     }
 
