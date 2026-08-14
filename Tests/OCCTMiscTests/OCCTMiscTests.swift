@@ -654,14 +654,30 @@ struct AngleHelperTests {
     func unsignedAngleParallel() {
         let a = SIMD3<Double>(1, 0, 0)
         let b = SIMD3<Double>(2, 0, 0)
-        #expect(unsignedAngle(between: a, and: b) < 1e-12)
+        if let angle = unsignedAngle(between: a, and: b) {
+            #expect(angle < 1e-12)
+        } else {
+            Issue.record("unsignedAngle returned nil for non-degenerate input")
+        }
     }
 
     @Test("unsignedAngle between antiparallel vectors == π")
     func unsignedAngleAntiparallel() {
         let a = SIMD3<Double>(1, 0, 0)
         let b = SIMD3<Double>(-1, 0, 0)
-        #expect(abs(unsignedAngle(between: a, and: b) - .pi) < 1e-12)
+        if let angle = unsignedAngle(between: a, and: b) {
+            #expect(abs(angle - .pi) < 1e-12)
+        } else {
+            Issue.record("unsignedAngle returned nil for non-degenerate input")
+        }
+    }
+
+    @Test("unsignedAngle returns nil for degenerate (near-zero-length) input (PR #897 review, finding 5)")
+    func unsignedAngleDegenerateReturnsNil() {
+        let zero = SIMD3<Double>(0, 0, 0)
+        let nonzero = SIMD3<Double>(1, 0, 0)
+        #expect(unsignedAngle(between: zero, and: nonzero) == nil)
+        #expect(unsignedAngle(between: zero, and: zero) == nil)
     }
 
     @Test("ConstructionAxis angle between resolved axes")
@@ -693,62 +709,62 @@ struct AngleHelperTests {
 
 // MARK: - #888: Edge fraction→parameter helper
 
-@Suite("#888 Edge.parameter(atFraction:) / point(atFraction:)")
+@Suite("#888 Edge.parameterByLinearFraction(_:) / pointByLinearFraction(_:)")
 struct EdgeFractionParameterTests {
-    @Test("parameter(atFraction:) maps 0/0.5/1 to bounds.first/mid/last")
+    @Test("parameterByLinearFraction(_:) maps 0/0.5/1 to bounds.first/mid/last")
     func parameterAtFractionEndpoints() {
         guard let box = Shape.box(width: 10, height: 10, depth: 10),
               let edge = box.edges().first,
               let bounds = edge.parameterBounds else {
             Issue.record("edge/bounds nil"); return
         }
-        if let p0 = edge.parameter(atFraction: 0) {
+        if let p0 = edge.parameterByLinearFraction(0) {
             #expect(abs(p0 - bounds.first) < 1e-9)
         } else {
-            Issue.record("parameter(atFraction: 0) nil")
+            Issue.record("parameterByLinearFraction(0) nil")
         }
-        if let p1 = edge.parameter(atFraction: 1) {
+        if let p1 = edge.parameterByLinearFraction(1) {
             #expect(abs(p1 - bounds.last) < 1e-9)
         } else {
-            Issue.record("parameter(atFraction: 1) nil")
+            Issue.record("parameterByLinearFraction(1) nil")
         }
         let mid = bounds.first + (bounds.last - bounds.first) * 0.5
-        if let pMid = edge.parameter(atFraction: 0.5) {
+        if let pMid = edge.parameterByLinearFraction(0.5) {
             #expect(abs(pMid - mid) < 1e-9)
         } else {
-            Issue.record("parameter(atFraction: 0.5) nil")
+            Issue.record("parameterByLinearFraction(0.5) nil")
         }
     }
 
-    @Test("parameter(atFraction:) clamps out-of-range fractions to [0, 1]")
+    @Test("parameterByLinearFraction(_:) clamps out-of-range fractions to [0, 1]")
     func parameterAtFractionClamps() {
         guard let box = Shape.box(width: 10, height: 10, depth: 10),
               let edge = box.edges().first,
               let bounds = edge.parameterBounds else {
             Issue.record("edge/bounds nil"); return
         }
-        if let pLow = edge.parameter(atFraction: -5) {
+        if let pLow = edge.parameterByLinearFraction(-5) {
             #expect(abs(pLow - bounds.first) < 1e-9)
         } else {
-            Issue.record("parameter(atFraction: -5) nil")
+            Issue.record("parameterByLinearFraction(-5) nil")
         }
-        if let pHigh = edge.parameter(atFraction: 5) {
+        if let pHigh = edge.parameterByLinearFraction(5) {
             #expect(abs(pHigh - bounds.last) < 1e-9)
         } else {
-            Issue.record("parameter(atFraction: 5) nil")
+            Issue.record("parameterByLinearFraction(5) nil")
         }
     }
 
-    @Test("point(atFraction:) matches point(at: parameter(atFraction:))")
+    @Test("pointByLinearFraction(_:) matches point(at: parameterByLinearFraction(_:))")
     func pointAtFractionMatchesManualParam() {
         guard let box = Shape.box(width: 10, height: 10, depth: 10),
               let edge = box.edges().first else {
             Issue.record("edge nil"); return
         }
         for t in [0.0, 0.25, 0.5, 0.75, 1.0] {
-            guard let param = edge.parameter(atFraction: t),
+            guard let param = edge.parameterByLinearFraction(t),
                   let expected = edge.point(at: param),
-                  let actual = edge.point(atFraction: t) else {
+                  let actual = edge.pointByLinearFraction(t) else {
                 Issue.record("nil point at t=\(t)"); continue
             }
             #expect(simd_length(actual - expected) < 1e-9)
@@ -818,6 +834,30 @@ struct FaceUVMidpointSampleTests {
             found = true
         }
         #expect(found)
+    }
+
+    @Test(
+        "revolutionProperties on a trimmed spherical cap reports the true constant radius, not an axis-relative radial component (PR #897 review, finding 1)"
+    )
+    func revolutionPropertiesOnSphericalCap() {
+        // A narrow cap trimmed well off the equator, near the pole. A sphere's true radius is
+        // constant everywhere on its surface, but the old formula measured the OFFSET
+        // PERPENDICULAR TO `primary.direction` -- correct only by coincidence when the UV
+        // midpoint happens to sit on the equator (radial component == R there). Near the pole
+        // that component shrinks toward 0 while the true radius stays R, so this fixture
+        // isolates the bug: v in [1.3, 1.5] sits close to the pole at pi/2 =~ 1.5708.
+        let radius = 5.0
+        guard let surface = Surface.sphere(center: SIMD3(0, 0, 0), radius: radius),
+              let capShape = Shape.face(from: surface, uBounds: 0...(2 * .pi), vBounds: 1.3...1.5),
+              let face = capShape.faces().first
+        else {
+            Issue.record("setup"); return
+        }
+        guard let props = face.revolutionProperties else {
+            Issue.record("no revolutionProperties"); return
+        }
+        #expect(props.axis.kind == .sphere)
+        #expect(abs(props.radius - radius) < 1e-6)
     }
 }
 

@@ -11,23 +11,29 @@ import simd
 // MARK: - Angles
 
 extension Edge {
-    /// This edge's curve parameter at a normalized `[0, 1]` fraction of its
-    /// parameter bounds. `fraction` is clamped to `[0, 1]` first.
+    /// This edge's curve parameter at a normalized `[0, 1]` fraction of its parameter
+    /// bounds, via naive linear interpolation over the raw parameter domain — NOT arc
+    /// length. `Shape.edgeParameterAtFraction(_:)` is the arc-length-accurate variant
+    /// (#603); the two disagree on non-uniformly-parameterized curves (ellipses,
+    /// BSplines). `fraction` is clamped to `[0, 1]` first.
     ///
-    /// Internal: the shared fraction→parameter idiom `resolveEdgePointAndTangent`
-    /// (`ConstructionEntity.swift`) and `angle(to:atParameter:)` below both used to
-    /// inline separately (#888).
-    internal func parameter(atFraction fraction: Double) -> Double? {
+    /// Internal: the shared fraction→parameter idiom `resolveEdgePointAndTangent`/
+    /// `resolveEdgeDirection` (`ConstructionEntity.swift`) and `angle(to:atParameter:)`
+    /// below both used to inline separately (#888). Named distinctly from
+    /// `edgeParameterAtFraction(_:)` so the two don't read as interchangeable (PR #897
+    /// review, finding 10).
+    internal func parameterByLinearFraction(_ fraction: Double) -> Double? {
         guard let bounds = parameterBounds else { return nil }
         let clamped = max(0, min(1, fraction))
         return bounds.first + (bounds.last - bounds.first) * clamped
     }
 
-    /// This edge's 3D point at a normalized `[0, 1]` fraction of its parameter bounds.
+    /// This edge's 3D point at a normalized `[0, 1]` fraction of its parameter bounds,
+    /// via `parameterByLinearFraction(_:)` — naive linear interpolation, not arc length.
     ///
-    /// Convenience over `parameter(atFraction:)` + `point(at:)`.
-    internal func point(atFraction fraction: Double) -> SIMD3<Double>? {
-        guard let param = parameter(atFraction: fraction) else { return nil }
+    /// Convenience over `parameterByLinearFraction(_:)` + `point(at:)`.
+    internal func pointByLinearFraction(_ fraction: Double) -> SIMD3<Double>? {
+        guard let param = parameterByLinearFraction(fraction) else { return nil }
         return point(at: param)
     }
 
@@ -39,7 +45,8 @@ extension Edge {
     /// useful as an approximation but note the angle varies along a curve; pass
     /// `atParameter:` for a specific point.
     public func angle(to other: Edge, atParameter t: Double = 0.5) -> Double? {
-        guard let p = parameter(atFraction: t), let op = other.parameter(atFraction: t) else {
+        guard let p = parameterByLinearFraction(t), let op = other.parameterByLinearFraction(t)
+        else {
             return nil
         }
         guard let t1 = tangent(at: p), let t2 = other.tangent(at: op) else { return nil }
@@ -157,7 +164,8 @@ extension Face {
         guard let sample = uvMidpointSample(), let otherSample = other.uvMidpointSample() else {
             return nil
         }
-        guard normalsAreParallel(sample.normal, otherSample.normal, toleranceRadians: 1e-4) else {
+        guard normalsAreParallel(sample.normal, otherSample.normal, toleranceRadians: 1e-4) == true
+        else {
             return nil
         }
         let offset = sample.point - otherSample.point
@@ -192,17 +200,22 @@ extension ConstructionPlane {
 
 /// Unsigned angle in [0, π] between two 3D vectors.
 ///
-/// Returns nil for degenerate input.
-public func unsignedAngle(between a: SIMD3<Double>, and b: SIMD3<Double>) -> Double {
+/// Returns nil for degenerate (near-zero-length) input — this doc already claimed
+/// nil for that case while the implementation unconditionally returned `0`, silently
+/// reporting a degenerate/near-singular normal as "parallel" to anything through
+/// `normalsAreParallel` below (PR #897 review, finding 5).
+public func unsignedAngle(between a: SIMD3<Double>, and b: SIMD3<Double>) -> Double? {
     let la = simd_length(a)
     let lb = simd_length(b)
-    guard la > 1e-12, lb > 1e-12 else { return 0 }
+    guard la > 1e-12, lb > 1e-12 else { return nil }
     let cosTheta = simd_dot(a, b) / (la * lb)
     return acos(max(-1.0, min(1.0, cosTheta)))
 }
 
 /// Whether two already-sampled face normals are parallel (or anti-parallel) within
-/// `toleranceRadians`.
+/// `toleranceRadians`. `nil` (not `false`) when either normal is degenerate
+/// (near-zero-length) — propagated from `unsignedAngle`, rather than reporting a
+/// degenerate normal as parallel to everything (PR #897 review, finding 5).
 ///
 /// Shared by `Face.isParallel(to:)` and `Face.isCoplanar(with:)` so callers that
 /// already hold both normals (`isCoplanar`, from its own `uvMidpointSample()` calls)
@@ -210,8 +223,8 @@ public func unsignedAngle(between a: SIMD3<Double>, and b: SIMD3<Double>) -> Dou
 /// 3rd + 4th pass).
 internal func normalsAreParallel(
     _ normal: SIMD3<Double>, _ otherNormal: SIMD3<Double>, toleranceRadians: Double
-) -> Bool {
-    let normalAngle = unsignedAngle(between: normal, and: otherNormal)
+) -> Bool? {
+    guard let normalAngle = unsignedAngle(between: normal, and: otherNormal) else { return nil }
     return normalAngle < toleranceRadians || (.pi - normalAngle) < toleranceRadians
 }
 
@@ -272,7 +285,22 @@ extension Face {
     public var revolutionProperties: RevolutionProperties? {
         guard let primary = primaryAxis else { return nil }
         switch surfaceType {
-        case .cylinder, .cone, .sphere, .torus, .surfaceOfRevolution:
+        case .sphere:
+            // A sphere has no genuine rotation axis (`ShapeAxis.direction`'s doc) — `primary`
+            // here is only the arbitrary construction-frame pole, the same exclusion
+            // `resolveFaceAxisDirection` applies for the identical reason. But unlike
+            // cone/torus/surfaceOfRevolution, a sphere's radius IS well-defined and constant:
+            // every surface point sits exactly R from the center regardless of which
+            // (arbitrary) pole direction is reported, so this doesn't need the axis-relative
+            // radial component below at all — just the distance to the center (PR #897
+            // review, finding 1). Using the radial component instead (as this case used to,
+            // sharing the branch below) is only correct by coincidence, for an untrimmed
+            // sphere sampled exactly on its equator, and is arbitrarily wrong for a trimmed
+            // spherical cap as the sample point approaches the pole.
+            guard let samplePoint = uvMidpointPoint() else { return nil }
+            return RevolutionProperties(
+                axis: primary, radius: simd_length(samplePoint - primary.origin))
+        case .cylinder, .cone, .torus, .surfaceOfRevolution:
             // Radius is the distance from the axis line to a representative
             // surface point. For non-cylindrical revolved surfaces "radius" is
             // ambiguous; this is the distance from the axis at the face centre.

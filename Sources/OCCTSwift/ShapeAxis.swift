@@ -10,14 +10,21 @@ public struct ShapeAxis: Sendable, Hashable {
 
     /// The axis's orientation — its meaning depends on `kind`.
     ///
-    /// For `.cylinder`/`.cone`/`.sphere`/`.torus`/`.revolution`, this is a genuine
-    /// rotation axis / surface normal. For `.extrusion`, it is instead the *sweep*
-    /// direction of the underlying `Geom_SurfaceOfLinearExtrusion` — tangent to the
-    /// surface, not perpendicular to it. A caller expecting a normal (e.g. "erect a
-    /// feature perpendicular to this face") has to check `kind` first; see
-    /// `ConstructionEntity.resolveFaceAxisDirection`, which excludes `.extrusion`
-    /// (and `.sphere`, which has no intrinsic axis at all — see below) for exactly
-    /// this reason (PR #897 review, 2nd pass).
+    /// For `.cylinder`/`.cone`/`.torus`/`.revolution`, this is a genuine rotation axis
+    /// / surface normal. For `.extrusion`, it is instead the *sweep* direction of the
+    /// underlying `Geom_SurfaceOfLinearExtrusion` — tangent to the surface, not
+    /// perpendicular to it. `.sphere` has no intrinsic axis at all — see below. A
+    /// caller expecting a normal (e.g. "erect a feature perpendicular to this face")
+    /// has to check `kind` first; see `ConstructionEntity.resolveFaceAxisDirection`,
+    /// which excludes both `.extrusion` and `.sphere` for exactly this reason (PR #897
+    /// review, 2nd pass).
+    ///
+    /// ```swift
+    /// let cylinder = Shape.cylinder(radius: 5, height: 10)!
+    /// if let axis = cylinder.faces()[0].primaryAxis, axis.kind == .cylinder {
+    ///     let rotationAxis = axis.direction  // safe: .cylinder has a genuine axis
+    /// }
+    /// ```
     public let direction: SIMD3<Double>
     public let extent: ClosedRange<Double>?
     public let kind: Kind

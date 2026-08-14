@@ -275,20 +275,24 @@ Free function (defined in `MeasurementHelpers.swift`).
 Unsigned angle in `[0, π]` between two 3D vectors.
 
 ```swift
-public func unsignedAngle(between a: SIMD3<Double>, and b: SIMD3<Double>) -> Double
+public func unsignedAngle(between a: SIMD3<Double>, and b: SIMD3<Double>) -> Double?
 ```
 
-Uses the clamped dot-product formula `acos(dot(a,b) / (|a| * |b|))`. Returns `0` for degenerate (near-zero length) input rather than `nil`.
+Uses the clamped dot-product formula `acos(dot(a,b) / (|a| * |b|))`. Returns `nil` for degenerate
+(near-zero length) input, rather than reporting a degenerate/near-singular vector as parallel (angle
+`0`) to everything (PR #897 review, finding 5).
 
 - **Parameters:**
   - `a` — first vector (need not be unit length).
   - `b` — second vector (need not be unit length).
-- **Returns:** Angle in radians in `[0, π]`. Returns `0` if either vector has length ≤ `1e-12`.
+- **Returns:** Angle in radians in `[0, π]`, or `nil` if either vector has length ≤ `1e-12`.
 - **Example:**
   ```swift
   let a = SIMD3<Double>(1, 0, 0)
   let b = SIMD3<Double>(0, 1, 0)
-  let angle = unsignedAngle(between: a, and: b)  // π/2
+  if let angle = unsignedAngle(between: a, and: b) {
+      print(angle)  // π/2
+  }
   ```
 
 ---
@@ -370,7 +374,7 @@ public struct RevolutionProperties: Sendable, Hashable {
 ```
 
 - `axis` — the primary revolution axis (a `ShapeAxis` carrying `origin` and `direction`).
-- `radius` — distance from the axis to the face centre, in model units. For cylindrical faces this is the exact cylinder radius. For cones, spheres, tori, and surfaces of revolution it is a representative radial distance at the UV midpoint; use `Surface` dedicated properties for major/minor radii.
+- `radius` — distance to a representative surface point, in model units. For cylindrical faces this is the exact cylinder radius. For spherical faces it is the exact, constant sphere radius — every surface point is equidistant from the center regardless of the (arbitrary) pole `primaryAxis` reports for a sphere, so this doesn't depend on `axis` the way the other kinds below do (PR #897 review, finding 1). For cones, tori, and surfaces of revolution it is a representative radial distance from the axis at the UV midpoint, genuinely ambiguous since the true radius varies by position; use `Surface` dedicated properties for major/minor radii.
 
 ---
 
@@ -382,7 +386,7 @@ Axis and representative radius if this face's underlying surface is cylindrical,
 public var revolutionProperties: RevolutionProperties? { get }
 ```
 
-Returns `nil` for planar faces or free-form (B-spline) surfaces. For all supported types the radius is computed as the distance from the axis line to the UV-midpoint of the face.
+Returns `nil` for planar faces or free-form (B-spline) surfaces. For spherical faces the radius is the exact distance from the UV-midpoint sample to the axis origin (the sphere's center) — not an axis-relative radial component, since a sphere's `primaryAxis` is only an arbitrary construction-frame pole, not a real axis (PR #897 review, finding 1). For every other supported type the radius is computed as the distance from the axis line to the UV-midpoint of the face.
 
 - **Returns:** `RevolutionProperties`, or `nil` if `primaryAxis` is unavailable or `surfaceType` is not one of `.cylinder`, `.cone`, `.sphere`, `.torus`, `.surfaceOfRevolution`.
 - **OCCT:** Pure-Swift over `Face.primaryAxis` + `Face.surfaceType` + `Face.uvBounds` + `Face.point(atU:v:)`. `primaryAxis` delegates to `BRepAdaptor_Surface` axis extraction.

@@ -148,11 +148,13 @@ The normal is evaluated at `at`'s own projected UV location on `face` (via `Face
 `Face.normal(atU:v:)`), not the face's UV-domain midpoint — so on a curved face (cylinder, cone,
 sphere, torus, freeform) the plane is genuinely tangent at the requested point, not just
 coincidentally correct the way a planar face makes any point's normal agree with any other's (#879).
-At a genuine parametric singularity (e.g. a cone apex, where the two tangent directions coincide
-rather than merely shrink — a sphere's pole is *not* such a point, OCCT still resolves a normal
-there) the exact local normal is undefined, and this falls back to the face's UV-midpoint normal
-instead of failing, so `tangentToFace` still succeeds for any face with valid `uvBounds` (PR #897
-review, 3rd pass).
+The `Placement`'s origin is the actual projected on-face point, not the raw `at` point verbatim —
+they can differ when `at` doesn't genuinely lie on `face` (PR #897 review, finding 2). If either
+`face.project(point:)` itself fails to converge, or the projected point is a genuine parametric
+singularity (e.g. a cone apex, where the two tangent directions coincide rather than merely shrink —
+a sphere's pole is *not* such a point, OCCT still resolves a normal there), the exact local normal
+is undefined, and this falls back to the face's UV-midpoint sample instead of failing, so
+`tangentToFace` still succeeds for any face with valid `uvBounds` (PR #897 review, 3rd + xhigh pass).
 
 ```swift
 // Tangent to a cylindrical face at a specific vertex — the plane's normal
@@ -249,16 +251,26 @@ case normalToFace(face: TopologyRef, at: TopologyRef)
 ```
 
 The direction comes from `Face.primaryAxis` when the face has one and is genuinely a rotation
-axis — cylindrical, conical, toroidal, and surface-of-revolution faces — so it is the surface's own
+axis — cylindrical, conical, toroidal, and surface-of-revolution faces (an allow-list, so a future
+`ShapeAxis.Kind` this code doesn't yet know about defaults to the normal-based fallback below rather
+than being treated as a genuine axis, PR #897 review, finding 8) — so it is the surface's own
 constant axis of revolution, not a per-point sample (#882). For planar and free-form faces, which
-have no such axis, it falls back to the face's UV-midpoint surface normal.
+have no `primaryAxis` at all, it falls back to the local surface normal at `at`'s own projected
+location on the face — the same point-aware projection `tangentToFace` uses above, so this varies
+with `at` instead of always answering the fixed UV-midpoint normal (PR #897 review, finding 4) —
+falling back further to the UV-midpoint normal if that projection or normal lookup fails.
+
 Surface-of-extrusion faces also have a `primaryAxis`, but its `direction` is the *sweep* direction
 of `Geom_SurfaceOfLinearExtrusion` (tangent to the surface, not perpendicular to it), so they're
-deliberately excluded from this branch and fall back to the UV-midpoint normal too (PR #897 review).
-Spherical faces are excluded too, for a different reason: a sphere has no intrinsic rotation axis
-at all (it's symmetric about every axis through its center), so `Face.primaryAxis` reports the
-arbitrary construction-frame pole — the same fixed direction regardless of which point on the
-sphere `at` names — rather than a property of the surface (PR #897 review, 3rd pass).
+deliberately excluded from the axis branch. Spherical faces are excluded too, for a different
+reason: a sphere has no intrinsic rotation axis at all (it's symmetric about every axis through its
+center), so `Face.primaryAxis` reports the arbitrary construction-frame pole — the same fixed
+direction regardless of which point on the sphere `at` names — rather than a property of the
+surface (PR #897 review, 3rd pass). Both fall back to the face's UNconditional UV-midpoint normal,
+not the point-aware projection above: a sphere's *true* local normal at its own pole is parallel to
+this very (excluded) axis — the radial direction from center — so a point-aware fallback there would
+silently reproduce the excluded axis by another route at exactly the vertex the exclusion exists to
+guard (PR #897 review, xhigh pass).
 
 ```swift
 // On a cylindrical face this resolves to the cylinder's own axis (constant

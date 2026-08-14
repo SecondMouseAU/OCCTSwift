@@ -2358,6 +2358,50 @@ struct ConstructionPlaneTests {
             Issue.record("tangentToFace failed at the cone apex: \(e)")
         }
     }
+
+    @Test(
+        "tangentToFace: Placement.origin is the actual on-face point, not `at`'s raw position, when `at` doesn't lie on `face` (PR #897 review, finding 2)"
+    )
+    func tangentToFaceOriginIsOnFaceNotRawPoint() {
+        guard let box = Shape.box(width: 10, height: 10, depth: 10),
+              let graph = BRepGraph(shape: box) else {
+            Issue.record("graph nil"); return
+        }
+        let faceRef = TopologyRef.literal(.init(kind: .face, index: 0))
+        guard let face = graph.shape(nodeKind: .face, nodeIndex: 0)?.faces().first,
+              let sample = face.uvMidpointSample() else {
+            Issue.record("face0 unavailable"); return
+        }
+        let faceNormalUnit = simd_normalize(sample.normal)
+
+        // Find a vertex that does NOT lie on face 0 -- the genuine misuse scenario finding 2
+        // describes, where `at` doesn't actually reference a point on `face`.
+        var offFaceVertexIndex: Int?
+        for vertexIndex in 0..<graph.vertexCount {
+            let raw = graph.vertexPoint(vertexIndex)
+            let p = SIMD3(raw.x, raw.y, raw.z)
+            if abs(simd_dot(p - sample.point, faceNormalUnit)) > 1e-3 {
+                offFaceVertexIndex = vertexIndex
+                break
+            }
+        }
+        guard let offFaceVertexIndex else {
+            Issue.record("no off-face vertex found"); return
+        }
+        let rawTuple = graph.vertexPoint(offFaceVertexIndex)
+        let rawPoint = SIMD3(rawTuple.x, rawTuple.y, rawTuple.z)
+        let vertexRef = TopologyRef.literal(.init(kind: .vertex, index: offFaceVertexIndex))
+        switch graph.resolve(ConstructionPlane.tangentToFace(face: faceRef, at: vertexRef)) {
+        case .success(let p):
+            // The origin must lie ON face 0's plane, not at the raw off-face vertex position.
+            #expect(abs(simd_dot(p.origin - sample.point, faceNormalUnit)) < 1e-6)
+            #expect(
+                simd_length(p.origin - rawPoint) > 1e-3,
+                "origin should differ from the raw off-face point")
+        case .failure(let e):
+            Issue.record("tangentToFace failed: \(e)")
+        }
+    }
 }
 
 @Suite("v0.142 ConstructionAxis resolution")
@@ -3196,6 +3240,51 @@ struct ConstructionAxisTests {
     }
 
     @Test(
+        "normalToFace on a free-form face is point-aware, not a fixed UV-midpoint normal (PR #897 review, finding 4)"
+    )
+    func normalToFaceFreeFormVariesWithPoint() {
+        // A non-planar (saddle / hyperbolic-paraboloid) bilinear Bezier patch: doubly ruled,
+        // genuinely curved, and has NO primaryAxis at all (only cylinder/cone/torus/sphere/
+        // revolution/extrusion surfaces do) -- its true local normal varies substantially
+        // across the surface. The 4 corner poles are non-coplanar (p11 != p01 + p10 - p00),
+        // which is what makes this a genuine saddle rather than a degenerate plane.
+        let poles: [[SIMD3<Double>]] = [
+            [SIMD3(0, 0, 0), SIMD3(0, 3, 3)],
+            [SIMD3(3, 0, 3), SIMD3(3, 3, 0)],
+        ]
+        guard let surface = Surface.bezier(poles: poles),
+              let face = Shape.face(from: surface, uBounds: 0...1, vBounds: 0...1),
+              let graph = BRepGraph(shape: face) else {
+            Issue.record("setup"); return
+        }
+
+        // Sanity: this fixture really has no primaryAxis, so the test exercises the no-axis
+        // fallback branch it claims to.
+        guard let occFace = graph.shape(nodeKind: .face, nodeIndex: 0)?.faces().first else {
+            Issue.record("face0 unavailable"); return
+        }
+        #expect(occFace.primaryAxis == nil, "fixture should have no primary axis")
+
+        let faceRef = TopologyRef.literal(.init(kind: .face, index: 0))
+        var directions: [SIMD3<Double>] = []
+        for vertexIndex in 0..<graph.vertexCount {
+            let vertexRef = TopologyRef.literal(.init(kind: .vertex, index: vertexIndex))
+            if case .success(let ax) = graph.resolve(
+                ConstructionAxis.normalToFace(face: faceRef, at: vertexRef))
+            {
+                directions.append(simd_normalize(ax.direction))
+            }
+        }
+        guard directions.count >= 2 else {
+            Issue.record("need at least 2 resolved vertices"); return
+        }
+        // Before this fix, every vertex answered the SAME fixed UV-midpoint normal regardless
+        // of `at`; this saddle's corners have genuinely different local normals.
+        let minDot = directions.dropFirst().reduce(1.0) { min($0, simd_dot(directions[0], $1)) }
+        #expect(minDot < 0.99, "normalToFace should vary across a genuinely curved free-form face")
+    }
+
+    @Test(
         "alongEdge fails loudly, not silently, when the edge's tangent is undefined at its own start point (#894 finding 1, fifth pass)"
     )
     func alongEdgeUndefinedStartTangentFailsLoudNotSilent() {
@@ -3452,21 +3541,28 @@ struct ConstructionPointTests {
         }
     }
 
-    @Test("atEdgeParameter matches Edge.point(atFraction:) for the same edge and t")
+    @Test("atEdgeParameter matches Edge.pointByLinearFraction(_:) for the same edge and t")
     func atEdgeParameterMatchesFraction() {
         guard let box = Shape.box(width: 10, height: 10, depth: 10),
               let graph = BRepGraph(shape: box) else {
             Issue.record("graph nil"); return
         }
-        let edgeRef = TopologyRef.literal(.init(kind: .edge, index: 0))
-        guard let edge = graph.shape(nodeKind: .edge, nodeIndex: 0)?.edges().first,
-              let expected = edge.point(atFraction: 0.25) else {
-            Issue.record("edge unavailable"); return
-        }
-        switch graph.resolve(ConstructionPoint.atEdgeParameter(edge: edgeRef, t: 0.25)) {
-        case .success(let p):
-            #expect(simd_length(p - expected) < 1e-9)
-        case .failure(let e): Issue.record("atEdgeParameter failed: \(e)")
+        // Edge enumeration order isn't guaranteed stable across an OCCT kernel rebuild
+        // or platform — iterate every edge rather than hardcoding index 0 (CLAUDE.md
+        // Test Conventions; PR #897 review, finding 12).
+        #expect(graph.edgeCount > 0)
+        for edgeIndex in 0..<graph.edgeCount {
+            guard let edge = graph.shape(nodeKind: .edge, nodeIndex: edgeIndex)?.edges().first,
+                  let expected = edge.pointByLinearFraction(0.25)
+            else {
+                Issue.record("edge \(edgeIndex) unavailable"); continue
+            }
+            let edgeRef = TopologyRef.literal(.init(kind: .edge, index: edgeIndex))
+            switch graph.resolve(ConstructionPoint.atEdgeParameter(edge: edgeRef, t: 0.25)) {
+            case .success(let p):
+                #expect(simd_length(p - expected) < 1e-9)
+            case .failure(let e): Issue.record("atEdgeParameter failed at edge \(edgeIndex): \(e)")
+            }
         }
     }
 }
