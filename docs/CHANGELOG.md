@@ -17,6 +17,27 @@ each named with its migration in [`SEMVER.md`](SEMVER.md#v200).
 
 ---
 
+## Unreleased
+
+### `ThruSectionsBuilder(isSolid: true)` no longer silently reports success on an uncapped loft (#905)
+
+`ThruSectionsBuilder(isSolid: true)` used to silently omit both end-cap faces for a closed section
+wire with two or more periods of out-of-plane variation around the loop — a genuinely non-planar
+closed curve, not just one with nonzero Z spread. `build()` returned `true`, but
+`shape.checkResult.isValid` was `false` with `errorCount == 0` and no localized error, and a
+subsequent `.healed()` call silently demoted the result from a solid to a shell rather than
+repairing it (root cause of #702). `MakeSolid()`'s capping helper (`PerformPlan()`, which only fits
+a plane or a surface already attached to a wire's edges) already tracked whether capping actually
+succeeded in a local flag and discarded it, unconditionally marking the result `Closed(true)`
+regardless. Fixed in `Scripts/patches/0026-*`: throw instead, matching the pattern this same
+function already uses for a null shell. Filed upstream as
+[OCCT#1462](https://github.com/Open-Cascade-SAS/OCCT/pull/1462), validated via override-link.
+**Not yet shipped**: the fix is carried, not baked into this release's xcframework —
+`ThruSectionsBuilder(isSolid: true).build()` for this input still reports the old, wrong `true`
+until the kernel is next rebuilt and re-pinned.
+
+---
+
 ## v2.0.0
 
 <!--
