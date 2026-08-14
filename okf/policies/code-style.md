@@ -52,6 +52,17 @@ source: `docs/` is the single source of truth for *why* and *how*, per
 `Scripts/comment-ratio-check.py` flags (never fails) a file whose comment lines outnumber its code
 lines, as a signal for review, not an automatic failure.
 
+**An internal helper that only unpacks bridge output returns an unlabeled tuple.** Swift does not
+implicitly relabel a labeled source tuple into a differently-labeled destination tuple, so a
+shared helper that bakes in its own labels (`origin`/`direction`, `min`/`max`, ...) forces every
+call site whose own labels differ into a two-step bind-then-relabel instead of a direct return.
+Returning the bare, unlabeled tuple lets each call site's own declared return type supply whatever
+labels it wants, with no relabeling step and no loss: the helper's labels were only ever
+documentation, never load-bearing, so dropping them costs nothing a `- Returns:` tag can't restate
+once, on the helper itself. Established by
+[#903](https://github.com/SecondMouseAU/OCCTSwift/issues/903)/[#904](https://github.com/SecondMouseAU/OCCTSwift/pull/904)
+on `ShapeAxis.swift`'s `unwrapAxisComponents(_:)`.
+
 ## Gradual rollout: the exemption manifest, not a big-bang sweep
 
 Unlike the ecosystem's pilot repo (`OCCTSwiftScripts`, small enough to sweep into full compliance

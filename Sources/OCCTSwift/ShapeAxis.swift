@@ -105,6 +105,8 @@ extension Shape {
 
 /// Reads an origin/direction pair from a six-`Double`-out-param `OCCT*Axis`-shaped bridge call,
 /// given as a closure already bound to the caller's own handle.
+/// - Returns: element 0 is origin, element 1 is direction, by position; the caller's own
+///   declared return type supplies whatever labels it wants.
 func unwrapAxisComponents(
     _ bridgeCall: (
         UnsafeMutablePointer<Double>, UnsafeMutablePointer<Double>, UnsafeMutablePointer<Double>,
@@ -149,7 +151,7 @@ extension Surface {
     private func axis(
         ifKind kind: SurfaceType,
         _ bridgeFn: AxisBridgeFn
-    ) -> (origin: SIMD3<Double>, direction: SIMD3<Double>)? {
+    ) -> (SIMD3<Double>, SIMD3<Double>)? {
         guard surfaceKind == kind else { return nil }
         return unwrapAxisComponents { bridgeFn(handle, $0, $1, $2, $3, $4, $5) }
     }
