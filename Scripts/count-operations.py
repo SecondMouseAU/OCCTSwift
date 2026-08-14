@@ -59,9 +59,13 @@ SUBS = re.compile(r'^\s*public\s+(?:static\s+)?subscript\s*\(')
 # opening line (#520 introduced the single-line-only version; #899/#902 found swift-format's own
 # strict-mode wrapping of a long `message: """..."""` argument breaks it, silently un-retiring
 # the declaration below). AVAILABLE_OPEN below finds where the attribute starts; the caller in
-# count_entry_points() walks forward from there.
+# count_entry_points() walks forward from there, treating the attribute's own message string as
+# opaque once it opens (never handing a string-body line to the declaration matchers) and only
+# searching for `unavailable` in the argument-list text before a `message:`/`renamed:` label,
+# never inside the string value itself.
 AVAILABLE_OPEN = re.compile(r'^\s*@available\s*\(')
 UNAVAILABLE_WORD = re.compile(r'\bunavailable\b')
+AVAIL_LABEL_ARG = re.compile(r'\b(?:message|renamed)\s*:')
 # reference docs use both ### and #### for entry points
 DOC_HEADING = re.compile(r'^#{3,4} `([^`]+)`')
 
@@ -98,35 +102,58 @@ def count_entry_points():
         stack = []      # [(type_name, brace_depth_at_open)]
         depth = 0
         unavailable = False   # an @available(*, unavailable) seen; it applies to the next decl
-        in_avail_attr = False   # scanning an @available(...) attribute's keyword span
+        in_avail_attr = False     # scanning an @available(...) attribute's pre-string header
+        in_avail_string = False   # inside the attribute's own message string body: opaque
         avail_paren_depth = 0
         avail_pending_unavailable = False
         for i, line in enumerate(open(f, encoding="utf-8", errors="replace"), 1):
             code = re.sub(r'//.*', '', line)   # crude line-comment strip for brace counting
             enc = _enclosing_type(stack)
 
-            attr_line = in_avail_attr or AVAILABLE_OPEN.match(line)
-            if attr_line:
+            if in_avail_string:
+                # A line inside the attribute's own `"""..."""` message: not attribute syntax,
+                # not a declaration, just prose. Never handed to the matchers below, however
+                # declaration-shaped it looks, until its own closing `"""` is seen.
+                if '"""' in line:
+                    in_avail_string = False
+            elif in_avail_attr or AVAILABLE_OPEN.match(line):
                 # Only look at text before any `"""`: the availability keyword (unavailable /
                 # deprecated / a platform spec) always precedes a `message:` string argument in
                 # this codebase's usage, never appears inside one, so stopping there keeps
                 # parens *inside* the message prose (e.g. "continuityClass.satisfies(_:)") from
-                # ever being counted as attribute-argument-list parens.
-                header = line.split('"""', 1)[0]
-                if UNAVAILABLE_WORD.search(header):
+                # ever being counted as attribute-argument-list parens. Comment-stripped (`code`,
+                # not `line`) for the same reason brace-counting below is.
+                header = code.split('"""', 1)[0]
+                # Search only the part before a `message:`/`renamed:` label, not the whole
+                # header: past that label is the argument's own string *value*, where the bare
+                # word "unavailable" can appear in ordinary prose (e.g. a deprecation message
+                # that happens to say a feature "is currently unavailable on tvOS") without it
+                # being the attribute's own unavailable/deprecated flag.
+                spec = AVAIL_LABEL_ARG.split(header, 1)[0]
+                if UNAVAILABLE_WORD.search(spec):
                     avail_pending_unavailable = True
                 avail_paren_depth += header.count('(') - header.count(')')
-                if '"""' in line or avail_paren_depth <= 0:
-                    # closed on this line, or the message body starts here: nothing past this
-                    # point can add `unavailable`, so resolve now and stop scanning it as an
-                    # attribute (a still-open trailing `)` on the string's own last line, or a
-                    # standalone `)` line closing the attribute, both fall through as ordinary
-                    # lines below, which is fine, since neither matches a declaration pattern).
+                if '"""' in line:
+                    # The message string starts here (raw `line`, not `code`: the string's own
+                    # boundary is real source text, not something a comment-strip should touch).
+                    rest = line.split('"""', 1)[1]
                     in_avail_attr = False
                     if avail_pending_unavailable:
                         unavailable = True
                     avail_pending_unavailable = False
                     avail_paren_depth = 0
+                    if '"""' not in rest:
+                        # Opens but does not also close on this same line: the body continues
+                        # onto following lines, which in_avail_string now shields entirely.
+                        in_avail_string = True
+                elif avail_paren_depth <= 0:
+                    # Attribute closed on this line with no message string at all (e.g. a bare
+                    # `@available(iOS 18.0, macOS 15.0, *)`, or `unavailable`/`deprecated` with
+                    # no `message:`).
+                    in_avail_attr = False
+                    if avail_pending_unavailable:
+                        unavailable = True
+                    avail_pending_unavailable = False
                 else:
                     in_avail_attr = True
             else:

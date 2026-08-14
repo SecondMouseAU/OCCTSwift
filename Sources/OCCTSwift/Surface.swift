@@ -3036,11 +3036,7 @@ extension Surface {
 
         /// The sweep direction.
         public var direction: SIMD3<Double> {
-            var dx = 0.0
-            var dy = 0.0
-            var dz = 0.0
-            OCCTSurfaceSweptDirection(handle, &dx, &dy, &dz)
-            return SIMD3(dx, dy, dz)
+            unwrapVectorComponents { OCCTSurfaceSweptDirection(handle, $0, $1, $2) }
         }
 
         /// The basis curve of the swept surface.
@@ -3119,11 +3115,7 @@ extension Surface {
     /// > A sphere pole (`v = ±π/2`) is *not* one of these points — `GeomLProp_SLProps` still
     /// > resolves a normal there, and both methods return it.
     public func normal(u: Double, v: Double) -> SIMD3<Double> {
-        var nx = 0.0
-        var ny = 0.0
-        var nz = 0.0
-        OCCTSurfaceNormal(handle, u, v, &nx, &ny, &nz)
-        return SIMD3(nx, ny, nz)
+        unwrapVectorComponents { OCCTSurfaceNormal(handle, u, v, $0, $1, $2) }
     }
 
     /// Compute Gaussian and mean curvature at (u, v) in one evaluation.
@@ -3295,13 +3287,11 @@ extension Surface {
         u: Double, v: Double, fromUK1: Int, toUK2: Int,
         fromVK1: Int, toVK2: Int, nu: Int, nv: Int
     ) -> SIMD3<Double> {
-        var vx = 0.0
-        var vy = 0.0
-        var vz = 0.0
-        OCCTSurfaceBSplineLocalDN(
-            handle, u, v, Int32(fromUK1), Int32(toUK2),
-            Int32(fromVK1), Int32(toVK2), Int32(nu), Int32(nv), &vx, &vy, &vz)
-        return SIMD3(vx, vy, vz)
+        unwrapVectorComponents {
+            OCCTSurfaceBSplineLocalDN(
+                handle, u, v, Int32(fromUK1), Int32(toUK2),
+                Int32(fromVK1), Int32(toVK2), Int32(nu), Int32(nv), $0, $1, $2)
+        }
     }
 
     /// Local value within a specific knot span.
@@ -4840,7 +4830,7 @@ extension Surface {
             G1=-2, G2=-3) and #485 changed it to the real GeomAbs_Shape ordinal (C0=0, G1=1, C1=2, \
             G2=3, C2=4, C3=5, CN=6), so every threshold check silently changed meaning. Use \
             continuityClass.satisfies(_:) for a continuity floor, continuityClass == .cN for the \
-            analytic fast path, or continuity for the raw ordinal — after re-checking the constant \
+            analytic fast path, or continuity for the raw ordinal, after re-checking the constant \
             you compare against. Note there is no longer an error sentinel: this returned -1 for a \
             null or unreadable handle, whereas continuity returns 0, which is an ordinary C0, so a \
             migrated `< 0` error check can never fire (#619).

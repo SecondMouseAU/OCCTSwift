@@ -2206,11 +2206,7 @@ extension Curve3D {
 
         /// The direction of the line.
         public var direction: SIMD3<Double> {
-            var dx = 0.0
-            var dy = 0.0
-            var dz = 0.0
-            OCCTCurve3DLineDirection(handle, &dx, &dy, &dz)
-            return SIMD3(dx, dy, dz)
+            unwrapVectorComponents { OCCTCurve3DLineDirection(handle, $0, $1, $2) }
         }
 
         /// The location (origin point) of the line.
@@ -3659,14 +3655,8 @@ extension Curve3D {
 
     /// Evaluate the curve point and first derivative at parameter u.
     public func evalD1(at u: Double) -> (point: SIMD3<Double>, d1: SIMD3<Double>) {
-        var px = 0.0
-        var py = 0.0
-        var pz = 0.0
-        var d1x = 0.0
-        var d1y = 0.0
-        var d1z = 0.0
-        OCCTCurve3DEvalD1(handle, u, &px, &py, &pz, &d1x, &d1y, &d1z)
-        return (SIMD3(px, py, pz), SIMD3(d1x, d1y, d1z))
+        let r = unwrapAxisComponents { OCCTCurve3DEvalD1(handle, u, $0, $1, $2, $3, $4, $5) }
+        return (point: r.origin, d1: r.direction)
     }
 
     /// Evaluate the curve point, first and second derivatives at parameter u.
@@ -3838,11 +3828,9 @@ extension Curve3D {
 
     /// Evaluate point on BSpline curve within knot span [fromKnot, toKnot].
     public func bsplineLocalD0(u: Double, fromKnot: Int, toKnot: Int) -> SIMD3<Double> {
-        var px = 0.0
-        var py = 0.0
-        var pz = 0.0
-        OCCTCurve3DBSplineLocalD0(handle, u, Int32(fromKnot), Int32(toKnot), &px, &py, &pz)
-        return SIMD3(px, py, pz)
+        unwrapVectorComponents {
+            OCCTCurve3DBSplineLocalD0(handle, u, Int32(fromKnot), Int32(toKnot), $0, $1, $2)
+        }
     }
 
     /// Evaluate point + 1st derivative on BSpline curve within knot span.
@@ -3908,13 +3896,10 @@ extension Curve3D {
 
     /// Evaluate Nth derivative on BSpline curve within knot span.
     public func bsplineLocalDN(u: Double, fromKnot: Int, toKnot: Int, n: Int) -> SIMD3<Double> {
-        var vx = 0.0
-        var vy = 0.0
-        var vz = 0.0
-        OCCTCurve3DBSplineLocalDN(
-            handle, u, Int32(fromKnot), Int32(toKnot), Int32(n),
-            &vx, &vy, &vz)
-        return SIMD3(vx, vy, vz)
+        unwrapVectorComponents {
+            OCCTCurve3DBSplineLocalDN(
+                handle, u, Int32(fromKnot), Int32(toKnot), Int32(n), $0, $1, $2)
+        }
     }
 
     /// Maximum BSpline degree supported (static).
@@ -4058,7 +4043,7 @@ extension Curve3D {
             G2=-3) and #485 changed it to the real GeomAbs_Shape ordinal (C0=0, G1=1, C1=2, G2=3, \
             C2=4, C3=5, CN=6), so every threshold check silently changed meaning. Use \
             continuityClass.satisfies(_:) for a continuity floor, continuityClass == .cN for the \
-            analytic fast path, or continuity for the raw ordinal — after re-checking the constant \
+            analytic fast path, or continuity for the raw ordinal, after re-checking the constant \
             you compare against. Note there is no longer an error sentinel: this returned -1 for a \
             null or unreadable handle, whereas continuity returns 0, which is an ordinary C0, so a \
             migrated `< 0` error check can never fire (#619).
