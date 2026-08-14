@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-count-operations.py — derive OCCTSwift's canonical operation count and keep the two
+count-operations.py: derive OCCTSwift's canonical operation count and keep the two
 headline figures from drifting apart.
 
 CANONICAL COUNTING RULE (decided on issue #289):
@@ -11,7 +11,7 @@ Concretely, an "operation" is any of these in the `OCCTSwift` module:
 
     public func / public static func / public class func
     public init
-    public var  — computed only (has a `{` accessor block)
+    public var  : computed only (has a `{` accessor block)
     public subscript
 
 Overloads count separately: `cylinder(radius:height:)` and
@@ -19,12 +19,12 @@ Overloads count separately: `cylinder(radius:height:)` and
 entry points a caller can reach.
 
 NOT operations (they are data, not entry points):
-    public let                       — stored constants
-    public var x: T = ...            — stored properties (no accessor block)
-    enum cases, typealiases, types   — documented, but not called
+    public let                       : stored constants
+    public var x: T = ...            : stored properties (no accessor block)
+    enum cases, typealiases, types   : documented, but not called
 
 Why derive rather than hand-maintain: README and docs/API_REFERENCE.md desynced by 882
-across 11 releases, and API_REFERENCE's own Total sat 111 above the sum of its rows —
+across 11 releases, and API_REFERENCE's own Total sat 111 above the sum of its rows,
 both written in the same commit, so at most one was ever right (#289).
 
 Usage:
@@ -33,11 +33,11 @@ Usage:
     ./Scripts/count-operations.py --audit   # list counted entry points with no reference doc
 
 Exit status is 1 when README's headline or API_REFERENCE's Total disagrees with the derived
-count, so this can gate a commit — it always could; it was the one gate script whose docstring
+count, so this can gate a commit: it always could; it was the one gate script whose docstring
 never said so, which is why it read as a release-time reporting tool. Exit status is 2 for an
 unrecognised option: this script has no `--self-test`, its three sibling gates do, and CI pairs
 each of theirs with its real run, so `count-operations.py --self-test` is the natural thing to
-write when extending that list — it used to be accepted silently and run the ordinary report,
+write when extending that list: it used to be accepted silently and run the ordinary report,
 passing forever. CI runs this bare in `ci.yml`'s `gate-scripts` job (#625).
 """
 import re
@@ -55,10 +55,17 @@ CVAR = re.compile(r'^\s*public\s+(?:static\s+)?var\s+([A-Za-z_][A-Za-z0-9_]*)\b[
 SUBS = re.compile(r'^\s*public\s+(?:static\s+)?subscript\s*\(')
 # An @available(..., unavailable, ...) attribute: the declaration below it is a retired spelling
 # kept only so an old call site fails to build with an explanation, so it is not an entry point.
-# A `deprecated` one still is — it can still be called. Only the attribute's opening line is
-# matched, which is where `unavailable` sits; a multi-line `message:` body below it matches none
-# of the declaration patterns above (#520).
-UNAVAILABLE = re.compile(r'^\s*@available\s*\([^)]*\bunavailable\b')
+# A `deprecated` one still is: it can still be called. Scans the whole attribute, not just its
+# opening line (#520 introduced the single-line-only version; #899/#902 found swift-format's own
+# strict-mode wrapping of a long `message: """..."""` argument breaks it, silently un-retiring
+# the declaration below). AVAILABLE_OPEN below finds where the attribute starts; the caller in
+# count_entry_points() walks forward from there, treating the attribute's own message string as
+# opaque once it opens (never handing a string-body line to the declaration matchers) and only
+# searching for `unavailable` in the argument-list text before a `message:`/`renamed:` label,
+# never inside the string value itself.
+AVAILABLE_OPEN = re.compile(r'^\s*@available\s*\(')
+UNAVAILABLE_WORD = re.compile(r'\bunavailable\b')
+AVAIL_LABEL_ARG = re.compile(r'\b(?:message|renamed)\s*:')
 # reference docs use both ### and #### for entry points
 DOC_HEADING = re.compile(r'^#{3,4} `([^`]+)`')
 
@@ -86,7 +93,7 @@ def count_entry_points():
     `type` is the innermost enclosing struct/class/enum/actor/extension name (last
     component of a nested/qualified name), or None at file scope. Overloads and same-named
     members on different types collapse to one row per (type, name), which is all the audit
-    needs — the derived Total still comes from `breakdown`, which counts every declaration.
+    needs: the derived Total still comes from `breakdown`, which counts every declaration.
     """
     breakdown = {"func": 0, "init": 0, "computed var": 0, "subscript": 0}
     ops = {}
@@ -95,51 +102,107 @@ def count_entry_points():
         stack = []      # [(type_name, brace_depth_at_open)]
         depth = 0
         unavailable = False   # an @available(*, unavailable) seen; it applies to the next decl
+        in_avail_attr = False     # scanning an @available(...) attribute's pre-string header
+        in_avail_string = False   # inside the attribute's own message string body: opaque
+        avail_paren_depth = 0
+        avail_pending_unavailable = False
         for i, line in enumerate(open(f, encoding="utf-8", errors="replace"), 1):
             code = re.sub(r'//.*', '', line)   # crude line-comment strip for brace counting
             enc = _enclosing_type(stack)
-            if UNAVAILABLE.match(line):
-                unavailable = True
-            m = FUNC.match(line)
-            if m:
-                if not unavailable:
-                    breakdown["func"] += 1
-                    ops.setdefault((enc, m.group(1)), (rel, i))
-                unavailable = False
-            elif INIT.match(line):
-                if not unavailable:
-                    breakdown["init"] += 1
-                unavailable = False
+
+            if in_avail_string:
+                # A line inside the attribute's own `"""..."""` message: not attribute syntax,
+                # not a declaration, just prose. Never handed to the matchers below, however
+                # declaration-shaped it looks, until its own closing `"""` is seen.
+                if '"""' in line:
+                    in_avail_string = False
+            elif in_avail_attr or AVAILABLE_OPEN.match(line):
+                # Only look at text before any `"""`: the availability keyword (unavailable /
+                # deprecated / a platform spec) always precedes a `message:` string argument in
+                # this codebase's usage, never appears inside one, so stopping there keeps
+                # parens *inside* the message prose (e.g. "continuityClass.satisfies(_:)") from
+                # ever being counted as attribute-argument-list parens. Comment-stripped (`code`,
+                # not `line`) for the same reason brace-counting below is.
+                header = code.split('"""', 1)[0]
+                # Search only the part before a `message:`/`renamed:` label, not the whole
+                # header: past that label is the argument's own string *value*, where the bare
+                # word "unavailable" can appear in ordinary prose (e.g. a deprecation message
+                # that happens to say a feature "is currently unavailable on tvOS") without it
+                # being the attribute's own unavailable/deprecated flag.
+                spec = AVAIL_LABEL_ARG.split(header, 1)[0]
+                if UNAVAILABLE_WORD.search(spec):
+                    avail_pending_unavailable = True
+                avail_paren_depth += header.count('(') - header.count(')')
+                if '"""' in line:
+                    # The message string starts here (raw `line`, not `code`: the string's own
+                    # boundary is real source text, not something a comment-strip should touch).
+                    rest = line.split('"""', 1)[1]
+                    in_avail_attr = False
+                    if avail_pending_unavailable:
+                        unavailable = True
+                    avail_pending_unavailable = False
+                    avail_paren_depth = 0
+                    if '"""' not in rest:
+                        # Opens but does not also close on this same line: the body continues
+                        # onto following lines, which in_avail_string now shields entirely.
+                        in_avail_string = True
+                elif avail_paren_depth <= 0:
+                    # Attribute closed on this line with no message string at all (e.g. a bare
+                    # `@available(iOS 18.0, macOS 15.0, *)`, or `unavailable`/`deprecated` with
+                    # no `message:`).
+                    in_avail_attr = False
+                    if avail_pending_unavailable:
+                        unavailable = True
+                    avail_pending_unavailable = False
+                    avail_paren_depth = 0
+                else:
+                    in_avail_attr = True
             else:
-                m = CVAR.match(line)
+                m = FUNC.match(line)
                 if m:
                     if not unavailable:
-                        breakdown["computed var"] += 1
+                        breakdown["func"] += 1
                         ops.setdefault((enc, m.group(1)), (rel, i))
                     unavailable = False
-                elif SUBS.match(line):
+                elif INIT.match(line):
                     if not unavailable:
-                        breakdown["subscript"] += 1
+                        breakdown["init"] += 1
                     unavailable = False
+                else:
+                    m = CVAR.match(line)
+                    if m:
+                        if not unavailable:
+                            breakdown["computed var"] += 1
+                            ops.setdefault((enc, m.group(1)), (rel, i))
+                        unavailable = False
+                    elif SUBS.match(line):
+                        if not unavailable:
+                            breakdown["subscript"] += 1
+                        unavailable = False
 
-            # maintain the enclosing-type stack
-            td = TYPE_DECL.match(line)
-            opens, closes = code.count('{'), code.count('}')
-            depth += opens - closes
-            if td is not None and opens > closes:
-                # body opens and stays open below this line; a one-liner like
-                # `enum Toggle { case a, b }` (opens == closes) encloses nothing.
-                stack.append((td.group(1), depth))
-            else:
-                while stack and depth < stack[-1][1]:
-                    stack.pop()
+            # Maintain the enclosing-type stack, skipping a line still inside the attribute's
+            # message string (in_avail_string, as of the top of this iteration): prose there is
+            # opaque to this too, not just to the declaration matchers above, so a code sample
+            # in the message that happens to contain `{`/`}` or read as a type declaration can't
+            # corrupt the stack for the file's real, subsequent declarations.
+            if not in_avail_string:
+                td = TYPE_DECL.match(line)
+                opens, closes = code.count('{'), code.count('}')
+                depth += opens - closes
+                if td is not None and opens > closes:
+                    # body opens and stays open below this line; a one-liner like
+                    # `enum Toggle { case a, b }` (opens == closes) encloses nothing.
+                    stack.append((td.group(1), depth))
+                else:
+                    while stack and depth < stack[-1][1]:
+                        stack.pop()
     return sum(breakdown.values()), breakdown, ops
 
 
 def documented_index():
     """Scan docs/reference/*.md and return (typed, bare).
 
-    `typed` is a set of (type, name) pairs the docs associate with an owning type — parsed
+    `typed` is a set of (type, name) pairs the docs associate with an owning type, parsed
     from `### `Type.name(...)`` headings AND from the public members listed inside a ```swift
     code block that sits under a `### `Type`` heading. `bare` is the set of names documented
     by a heading that carries NO type qualifier (e.g. `### `analyze(tolerance:)`` or a
@@ -164,8 +227,8 @@ def documented_index():
             spans = re.findall(r'`([^`]+)`', line)
             # A heading governs the ```swift block beneath it; derive that block's owning
             # (innermost) type so its members register under the same type the source side
-            # sees. Read the type from the first backtick span, or — for a plain heading like
-            # `## DXFError` with no backticks — from the heading text itself. Distinguish by
+            # sees. Read the type from the first backtick span, or, for a plain heading like
+            # `## DXFError` with no backticks, from the heading text itself. Distinguish by
             # the last dotted component:
             #   `ImportResult` / `Outer.Inner`  (last is a Type)   -> owner = innermost type
             #   `Shape.faceLPropTangentU/V(...)` (last is a member) -> owner = its qualifier
@@ -220,7 +283,7 @@ def fix(derived):
     s = open(readme, encoding="utf-8").read()
     new_s, n = re.subn(r'\*\*[\d,]+ wrapped operations\*\*', f'**{derived:,} wrapped operations**', s, count=1)
     if n != 1:
-        sys.exit("README: could not find the 'N wrapped operations' headline — refusing to guess")
+        sys.exit("README: could not find the 'N wrapped operations' headline: refusing to guess")
     open(readme, "w", encoding="utf-8").write(new_s)
 
     apiref = os.path.join(ROOT, "docs/API_REFERENCE.md")
@@ -228,7 +291,7 @@ def fix(derived):
     new_s, n = re.subn(r'^(\|\s*\*\*Total\*\*\s*\|\s*\*\*)[\d,]+(\*\*\s*\|)',
                        rf'\g<1>{derived:,}\g<2>', s, count=1, flags=re.M)
     if n != 1:
-        sys.exit("API_REFERENCE: could not find the Total row — refusing to guess")
+        sys.exit("API_REFERENCE: could not find the Total row: refusing to guess")
 
     # The prose figure for the row sum drifts by the same mechanism as the Total did:
     # it is written by hand and nothing checks it. Derive it too, or #289 recurs here
@@ -239,7 +302,7 @@ def fix(derived):
                        rf'\g<1>{rowsum:,}\g<2>{pct}\g<3>', new_s, count=1)
     if n != 1:
         sys.exit("API_REFERENCE: could not find the 'covering **N** of the entry points (~P%)' "
-                 "note — refusing to guess")
+                 "note: refusing to guess")
     open(apiref, "w", encoding="utf-8").write(new_s)
     print(f"  rewrote README + API_REFERENCE Total -> {derived:,}")
     print(f"  rewrote the categorisation note -> {rowsum:,} (~{pct}%)")
@@ -250,7 +313,7 @@ def main():
 
     # Reject an unrecognised option rather than falling through to the report. Silently ignoring
     # one made `--self-test` a trap: this script has no self-test, its three sibling gates do, and
-    # CI pairs each of theirs with its real run — so the natural thing to write when adding this
+    # CI pairs each of theirs with its real run, so the natural thing to write when adding this
     # script to that list is `count-operations.py --self-test`, which would have run the ordinary
     # report and passed forever, exactly the "a gate that cannot fail" defect #625 exists to end.
     # A prose warning was the first fix and was the wrong one: #625's whole premise is that prose
@@ -267,8 +330,8 @@ def main():
     if mode == "--audit":
         typed_doc, bare_doc = documented_index()
         # Type-aware match: a counted (type, name) is documented if the docs associate that
-        # exact (type, name) — via a `Type.name` heading or a member listed in the type's
-        # code block — OR if `name` appears in a type-less heading (matches any owner). This
+        # exact (type, name), via a `Type.name` heading or a member listed in the type's
+        # code block, OR if `name` appears in a type-less heading (matches any owner). This
         # eliminates the bare-name false positives the old matcher over-reported (#294).
         undoc = sorted(
             (t, n, ops[(t, n)])
