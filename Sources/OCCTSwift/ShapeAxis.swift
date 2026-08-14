@@ -110,7 +110,7 @@ func unwrapAxisComponents(
         UnsafeMutablePointer<Double>, UnsafeMutablePointer<Double>, UnsafeMutablePointer<Double>,
         UnsafeMutablePointer<Double>, UnsafeMutablePointer<Double>, UnsafeMutablePointer<Double>
     ) -> Void
-) -> (origin: SIMD3<Double>, direction: SIMD3<Double>) {
+) -> (SIMD3<Double>, SIMD3<Double>) {
     var px: Double = 0
     var py: Double = 0
     var pz: Double = 0
@@ -118,7 +118,7 @@ func unwrapAxisComponents(
     var dy: Double = 0
     var dz: Double = 0
     bridgeCall(&px, &py, &pz, &dx, &dy, &dz)
-    return (origin: SIMD3(px, py, pz), direction: SIMD3(dx, dy, dz))
+    return (SIMD3(px, py, pz), SIMD3(dx, dy, dz))
 }
 
 /// Reads a point or direction from a three-`Double`-out-param bridge call, given as a closure

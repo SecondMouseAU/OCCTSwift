@@ -62,8 +62,7 @@ public final class Curve3D: @unchecked Sendable {
 
     /// First derivative: point and tangent vector at parameter u.
     public func d1(at u: Double) -> (point: SIMD3<Double>, tangent: SIMD3<Double>) {
-        let r = unwrapAxisComponents { OCCTCurve3DD1(handle, u, $0, $1, $2, $3, $4, $5) }
-        return (point: r.origin, tangent: r.direction)
+        unwrapAxisComponents { OCCTCurve3DD1(handle, u, $0, $1, $2, $3, $4, $5) }
     }
 
     /// Second derivative: point, first and second derivative vectors.
@@ -1972,14 +1971,12 @@ extension Curve3D {
 
         /// The X axis of the circle (position + direction).
         public var xAxis: (position: SIMD3<Double>, direction: SIMD3<Double>) {
-            let a = unwrapAxisComponents { OCCTCurve3DCircleXAxis(handle, $0, $1, $2, $3, $4, $5) }
-            return (a.origin, a.direction)
+            unwrapAxisComponents { OCCTCurve3DCircleXAxis(handle, $0, $1, $2, $3, $4, $5) }
         }
 
         /// The Y axis of the circle (position + direction).
         public var yAxis: (position: SIMD3<Double>, direction: SIMD3<Double>) {
-            let a = unwrapAxisComponents { OCCTCurve3DCircleYAxis(handle, $0, $1, $2, $3, $4, $5) }
-            return (a.origin, a.direction)
+            unwrapAxisComponents { OCCTCurve3DCircleYAxis(handle, $0, $1, $2, $3, $4, $5) }
         }
     }
 
@@ -2062,10 +2059,7 @@ extension Curve3D {
 
         /// The first directrix (position + direction).
         public var directrix1: (position: SIMD3<Double>, direction: SIMD3<Double>) {
-            let a = unwrapAxisComponents {
-                OCCTCurve3DEllipseDirectrix1(handle, $0, $1, $2, $3, $4, $5)
-            }
-            return (a.origin, a.direction)
+            unwrapAxisComponents { OCCTCurve3DEllipseDirectrix1(handle, $0, $1, $2, $3, $4, $5) }
         }
     }
 
@@ -2136,10 +2130,7 @@ extension Curve3D {
 
         /// The first asymptote (position + direction).
         public var asymptote1: (position: SIMD3<Double>, direction: SIMD3<Double>) {
-            let a = unwrapAxisComponents {
-                OCCTCurve3DHyperbolaAsymptote1(handle, $0, $1, $2, $3, $4, $5)
-            }
-            return (a.origin, a.direction)
+            unwrapAxisComponents { OCCTCurve3DHyperbolaAsymptote1(handle, $0, $1, $2, $3, $4, $5) }
         }
     }
 
@@ -2186,10 +2177,7 @@ extension Curve3D {
 
         /// The directrix (position + direction).
         public var directrix: (position: SIMD3<Double>, direction: SIMD3<Double>) {
-            let a = unwrapAxisComponents {
-                OCCTCurve3DParabolaDirectrix(handle, $0, $1, $2, $3, $4, $5)
-            }
-            return (a.origin, a.direction)
+            unwrapAxisComponents { OCCTCurve3DParabolaDirectrix(handle, $0, $1, $2, $3, $4, $5) }
         }
     }
 
@@ -2228,14 +2216,12 @@ extension Curve3D {
 
         /// The position axis (location + direction).
         public var position: (location: SIMD3<Double>, direction: SIMD3<Double>) {
-            let a = unwrapAxisComponents { OCCTCurve3DLinePosition(handle, $0, $1, $2, $3, $4, $5) }
-            return (a.origin, a.direction)
+            unwrapAxisComponents { OCCTCurve3DLinePosition(handle, $0, $1, $2, $3, $4, $5) }
         }
 
         /// The gp_Lin representation (location + direction).
         public var lin: (location: SIMD3<Double>, direction: SIMD3<Double>) {
-            let a = unwrapAxisComponents { OCCTCurve3DLineLin(handle, $0, $1, $2, $3, $4, $5) }
-            return (a.origin, a.direction)
+            unwrapAxisComponents { OCCTCurve3DLineLin(handle, $0, $1, $2, $3, $4, $5) }
         }
     }
 
@@ -3655,8 +3641,7 @@ extension Curve3D {
 
     /// Evaluate the curve point and first derivative at parameter u.
     public func evalD1(at u: Double) -> (point: SIMD3<Double>, d1: SIMD3<Double>) {
-        let r = unwrapAxisComponents { OCCTCurve3DEvalD1(handle, u, $0, $1, $2, $3, $4, $5) }
-        return (point: r.origin, d1: r.direction)
+        unwrapAxisComponents { OCCTCurve3DEvalD1(handle, u, $0, $1, $2, $3, $4, $5) }
     }
 
     /// Evaluate the curve point, first and second derivatives at parameter u.
