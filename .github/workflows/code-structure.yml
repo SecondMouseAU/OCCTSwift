@@ -1,0 +1,37 @@
+name: code-structure
+
+# Report-only enforcement companion to okf/policies/code-structure.md (#906); see
+# ecosystem/OKF-STANDARD.md's "Code structure" section for the ecosystem-wide rationale.
+#
+# Deliberately separate from code-style.yml: code-structure.md is a distinct mandatory
+# policy from code-style.md (file granularity vs. formatting/naming), and code-style.md's
+# own SwiftLint scoping explicitly declined file-length/complexity rules because they
+# "overlap code-structure rather than this policy" -- this workflow is that other policy's
+# own enforcement, not folded into the same job.
+#
+# Pure text analysis (stdlib-only Python), so ubuntu-latest and no toolchain installs,
+# unlike code-style.yml's swift-format/SwiftLint/clang-format job.
+
+on:
+  pull_request:
+    branches:
+      - main
+      - 'refactor/**'
+  push:
+    branches:
+      - main
+      - 'refactor/**'
+  workflow_dispatch:
+
+jobs:
+  code-structure:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: file-size-check.py --self-test
+        run: python3 Scripts/file-size-check.py --self-test
+
+      - name: file-size-check.py (report-only, never fails)
+        run: python3 Scripts/file-size-check.py
