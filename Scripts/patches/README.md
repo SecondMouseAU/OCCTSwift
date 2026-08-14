@@ -8,7 +8,7 @@ until a rebuild + release. See ["Shipping a rebuild"](../../docs/guides/building
 for what that takes.
 
 **Numbers are never reused.** Re-pinning to OCCT `V8_0_1` on 2026-08-03 retired ten patches, so the
-carried sequence now reads 0010–0012, 0014–0021. The gaps are the retirements, not missing files:
+carried sequence now reads 0010–0012, 0014–0026. The gaps are the retirements, not missing files:
 the numbers are cited across `CLAUDE.md`, `docs/`, closed issues and `Scripts/repro/`, and
 renumbering would have silently repointed every one of those citations at a different fix.
 [Retired patches](#retired-patches) below keeps each one's writeup, with the equivalence check that
@@ -660,6 +660,79 @@ time of writing) re-pins to `v2.0.0-kernel.2`, folding in all fourteen (`0010`-`
 `0014`-`0024`); once that merges, `0025` becomes the *only* patch left outside the pin, exactly the
 gap `docs/v2.0.0-plan.md`'s RESOLVED block already names by number ahead of time. Watch for it at
 the next re-pin, same as `0022`-`0024`.
+
+## 0026-BRepOffsetAPI_ThruSections-capping-guard-905.patch
+
+**Fixes the upstream OCCT defect behind [#905](https://github.com/SecondMouseAU/OCCTSwift/issues/905)**
+— `ThruSectionsBuilder(isSolid: true)` silently omits both end-cap faces for a closed section wire
+with two or more periods of out-of-plane variation around the loop (a genuinely non-planar closed
+curve). `build()` returns `true`, `checkResult.isValid` is `false`, and `checkResult.errorCount`/
+`detailedCheckStatuses` localize nothing.
+
+`MakeSolid()` (the static helper `CreateRuled()`/`CreateSmoothed()` both call to close a loft's two
+open ends) caps each end via `PerformPlan()`, which only fits a plane (`BRepBuilderAPI_FindPlane`)
+or reuses a surface already attached to the wire's edges (`BRepLib_FindSurface`-backed
+`MakeFace(wire)`). A wire with `k >= 2` out-of-plane periods has neither, so `PerformPlan()` fails —
+but `MakeSolid()` already tracks this in its own local `B` (threaded through both `PerformPlan()`
+calls) and discards it: it unconditionally marks the shell/solid `Closed(true)` and returns
+regardless of whether capping actually succeeded. `k == 1` (e.g. `z = amp * cos(theta)` at constant
+radius) caps fine, because that curve is secretly planar — the intersection of the cylinder
+`r = const` with a tilted plane — so `BRepBuilderAPI_FindPlane` finds it; `k >= 2` has no such plane.
+
+**A first attempt at this fix, checked and rejected before landing here.** Guarding the two call
+sites on `myFirst.IsNull() || myLast.IsNull()` looks right and is not: `PerformPlan()` also leaves
+the output face null, and returns `true` (no failure), when every edge of the wire is degenerate — a
+single-vertex "point" section built via `AddVertex()`, e.g. a cone's apex, which needs no cap face
+at all. A null-face check cannot tell that case apart from a genuine capping failure. CI on the
+fork PR caught this directly: `BOPAlgo_PaveFillerTest.FuseConeLoftWithBox_DegeneratedEdge` (a
+circle-to-vertex loft) regressed, `IsDone()` reading `false` for input that has always legitimately
+succeeded. Reproduced locally byte-for-byte against that exact GTest before writing the real fix
+(same failure line, same message).
+
+**Fix:** after the capping block, if `B` is still `false` — capping was needed and failed, not
+skipped because it wasn't needed — throw `StdFail_NotDone`, matching the exception this same
+function already throws for a null shell two lines above:
+
+```cpp
+if (!B)
+{
+  throw StdFail_NotDone("BRepOffsetAPI_ThruSections: could not close a non-planar extremity");
+}
+```
+
+No signature change and no call-site change: both call sites already run inside `Build()`'s only
+`try`/`catch` (`catch (Standard_Failure const&) { NotDone(); return; }`), so the throw propagates
+there and `IsDone()` correctly reads `false`. `GetStatus()` is not updated by this fix and stays
+`BRepFill_ThruSectionErrorStatus_Done` on this path — a pre-existing characteristic of `Build()`'s
+generic catch (it doesn't touch `myStatus` for *any* exception source, not one this patch
+introduces), not fixed here; `IsDone()` is the correct signal.
+
+**Validation** (override-link, no full rebuild — see `#0001`'s retired entry for the technique):
+compiled and linked both the unpatched and patched `.cxx` ahead of the pinned `libOCCT-macos.a`.
+Against the unpatched override, a new GTest (`BRepOffsetAPI_ThruSections_Test.cxx`,
+`NonPlanarClosedWireCappingFails`) fails exactly as the issue describes (`IsDone()` reads `true`
+for a `k=2` two-wire loft); against the patched override it passes, along with a second new test
+(`DegenerateVertexEndStillSucceeds`, the cone/apex shape) and all three pre-existing tests in the
+file. The actual upstream `BOPAlgo_PaveFillerTest.FuseConeLoftWithBox_DegeneratedEdge` (compiled
+unmodified from `Libraries/occt-src`) passes against the patched override — direct confirmation the
+fix does not reintroduce the first attempt's regression, not just an equivalent local test standing
+in for it. `clang-format --dry-run --Werror` against OCCT's own `.clang-format` reports zero
+violations on both changed files.
+
+Filed upstream as [OCCT#1462](https://github.com/Open-Cascade-SAS/OCCT/pull/1462). **Note on
+process, not on the fix**: an earlier session had opened a same-repo
+staging PR on the `gsdali/OCCT` fork itself ([gsdali/OCCT#1](https://github.com/gsdali/OCCT/pull/1),
+that fork's first and, now, only PR) to CI-validate a first attempt before submitting upstream —
+that attempt's null-face guard is what regressed `FuseConeLoftWithBox_DegeneratedEdge` (see above).
+Staging a PR on our own fork isn't how any other carried patch in this file was validated; every one
+went straight from local override-link testing to the real upstream PR. gsdali/OCCT#1 is closed as
+erroneous; OCCT#1462 above is the only submission.
+
+**Retire** once the bundled OCCT includes this fix.
+
+**Pin consequence**: carried outside the pinned `v2.0.0` release asset, same as `0022`-`0025`; the
+asset has fifteen patches baked in (`0010`-`0012`, `0014`-`0025`), this is the sixteenth on disk.
+Watch for it at the next kernel re-pin.
 
 # Retired patches
 
