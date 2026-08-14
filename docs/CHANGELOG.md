@@ -17,6 +17,29 @@ each named with its migration in [`SEMVER.md`](SEMVER.md#v200).
 
 ---
 
+## Unreleased
+
+### Deduplicated the axis-unwrap (six-double) and point/vector-unwrap (three-double) bridge patterns across `Surface`/`Curve3D` onto two shared helpers (#899)
+
+`Surface.CylinderProperties.axis`, `.ConeProperties.axis`, `.PlaneProperties.pln`,
+`.torusAxis`/`.revolutionAxis`, `.SweptProperties.direction`, `Curve3D.CircleProperties.xAxis`/
+`.yAxis`, `.EllipseProperties.directrix1`, `.HyperbolaProperties.asymptote1`,
+`.ParabolaProperties.directrix`, `.LineProperties.position`/`.lin`, `.d1(at:)`, and `.evalD1(at:)`
+(14 properties/methods total) each hand-rolled the same six-`Double`-out-param origin+direction
+unwrap. A further 29 accessors (`Surface`'s sphere/cone centers and apex, plane/BSpline/Bezier
+surface evaluators and poles, `point(atU:v:)`, `normal(u:v:)`, `bsplineLocalDN`; `Curve3D`'s
+circle/ellipse/hyperbola/parabola/line points and foci, Bezier/BSpline curve evaluators and poles,
+`point(at:)`, `bsplineLocalD0`, `bsplineLocalDN`) hand-rolled the equivalent three-`Double`
+single-vector unwrap. Both patterns now go through one new pair of module-internal helpers in
+`ShapeAxis.swift`, `unwrapAxisComponents(_:)` and `unwrapVectorComponents(_:)`. Pure internal
+refactor: no return type, argument label, or computed value changed for any of the 43 touched call
+sites.
+
+Also (test-only, no source behavior change): six accessors' tests
+(`circleXAxis`/`circleYAxis`/`cylinderAxis`/`coneAxis`/`parabolaDirectrix`/`evalD1BSpline`) checked
+only a single component or magnitude, and `coneApex()` made no assertion at all; all seven now
+check the full point/origin/direction the accessor returns.
+
 ## v2.0.0
 
 <!--
