@@ -68,7 +68,6 @@ Sources/OCCTSwift/EvolvedSectionInfo.swift
 Sources/OCCTSwift/EvolvingFilletEdge.swift
 Sources/OCCTSwift/Exporter.swift
 Sources/OCCTSwift/ExtremaTypes.swift
-Sources/OCCTSwift/Face.swift
 Sources/OCCTSwift/FeatureRecognition.swift
 Sources/OCCTSwift/FeatureReconstructor.swift
 Sources/OCCTSwift/FillConstraint.swift
@@ -187,7 +186,6 @@ Sources/OCCTSwift/StepHeader.swift
 Sources/OCCTSwift/STEPOptions.swift
 Sources/OCCTSwift/SurfaceIntersectionResult.swift
 Sources/OCCTSwift/SVGExporter.swift
-Sources/OCCTSwift/SweepGuideTypes.swift
 Sources/OCCTSwift/TangentialDeflectionPoint.swift
 Sources/OCCTSwift/ThreadFeatures.swift
 Sources/OCCTSwift/ThruSectionsBuilder.swift
