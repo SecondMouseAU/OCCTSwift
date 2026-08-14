@@ -25,12 +25,18 @@ exactly the intersection of the cylinder r = const with a tilted plane, so
 BRepBuilderAPI_FindPlane finds it. >= 2 periods has no such plane.
 
 Fix: after the capping block, if `B` is still false -- capping was needed
-and failed, not skipped because it wasn't needed -- throw StdFail_NotDone,
-matching the exception this same function already throws for a null shell
-two lines above. No signature change and no call-site change: both call
-sites already run inside Build()'s only try/catch
-(`catch (Standard_Failure const&) { NotDone(); return; }`), so the throw
-propagates there and IsDone() correctly reads false.
+and failed, not skipped because it wasn't needed -- nullify both output
+faces and throw StdFail_NotDone, matching the exception this same function
+already throws for a null shell two lines above. No signature change and no
+call-site change: both call sites already run inside Build()'s only
+try/catch (`catch (Standard_Failure const&) { NotDone(); return; }`), so the
+throw propagates there and IsDone() correctly reads false.
+
+The nullify matters because face1/face2 alias the caller's myFirst/myLast,
+exposed publicly via FirstShape()/LastShape(): if wire1's PerformPlan()
+succeeds (writing a real face) but wire2's fails, `B` ends false on wire2's
+failure alone, and without the nullify myFirst would still hold a genuine,
+but never-added-to-the-shell, face after a failed Build().
 
 This is deliberately not a null-face check (`face1.IsNull() ||
 face2.IsNull()`). PerformPlan() also leaves the output face null, and
@@ -49,12 +55,12 @@ loft (the same shape as the regression above) still succeeds.
 
 SecondMouseAU/OCCTSwift#905.
 ---
- .../TKOffset/BRepOffsetAPI/BRepOffsetAPI_ThruSections.cxx    | 8 ++++++++
- 1 file changed, 8 insertions(+)
+ .../TKOffset/BRepOffsetAPI/BRepOffsetAPI_ThruSections.cxx    | 13 +++++++++++++
+ 1 file changed, 13 insertions(+)
 
 --- a/src/ModelingAlgorithms/TKOffset/BRepOffsetAPI/BRepOffsetAPI_ThruSections.cxx
 +++ b/src/ModelingAlgorithms/TKOffset/BRepOffsetAPI/BRepOffsetAPI_ThruSections.cxx
-@@ -234,6 +234,14 @@ static TopoDS_Solid MakeSolid(TopoDS_Shell&      shell,
+@@ -234,6 +234,19 @@ static TopoDS_Solid MakeSolid(TopoDS_Shell&      shell,
      }
    }
 
@@ -62,7 +68,12 @@ SecondMouseAU/OCCTSwift#905.
 +  {
 +    // Neither extremity was already closed nor could be capped (no plane or attached
 +    // surface fits a genuinely non-planar wire); fail instead of returning an unclosed
-+    // shape marked Closed(true) below.
++    // shape marked Closed(true) below. face1/face2 (aliased to the caller's myFirst/myLast)
++    // may already hold a real face from the other extremity's successful PerformPlan() call;
++    // clear both so a caller that inspects FirstShape()/LastShape() after a failed Build()
++    // cannot observe a face that was never added to the shell.
++    face1.Nullify();
++    face2.Nullify();
 +    throw StdFail_NotDone("BRepOffsetAPI_ThruSections: could not close a non-planar extremity");
 +  }
 +

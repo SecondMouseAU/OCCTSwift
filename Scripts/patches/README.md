@@ -690,22 +690,50 @@ succeeded. Reproduced locally byte-for-byte against that exact GTest before writ
 (same failure line, same message).
 
 **Fix:** after the capping block, if `B` is still `false` — capping was needed and failed, not
-skipped because it wasn't needed — throw `StdFail_NotDone`, matching the exception this same
-function already throws for a null shell two lines above:
+skipped because it wasn't needed — nullify both output faces and throw `StdFail_NotDone`, matching
+the exception this same function already throws for a null shell two lines above:
 
 ```cpp
 if (!B)
 {
+  face1.Nullify();
+  face2.Nullify();
   throw StdFail_NotDone("BRepOffsetAPI_ThruSections: could not close a non-planar extremity");
 }
 ```
 
+The nullify matters because `face1`/`face2` alias the caller's `myFirst`/`myLast` (exposed publicly
+via `FirstShape()`/`LastShape()`): if wire1's `PerformPlan()` succeeds (writing a real face) but
+wire2's fails, `B` ends `false` on wire2's failure alone, and without the nullify `myFirst` would
+still hold a genuine, but never-added-to-the-shell, face after a failed `Build()`. Found in review
+(PR #909); OCCTSwift's own bridge never calls `FirstShape()`/`LastShape()` on `ThruSections` so this
+was unreachable here, but it is a real contract hazard for any other OCCT consumer, corrected before
+filing upstream.
+
 No signature change and no call-site change: both call sites already run inside `Build()`'s only
 `try`/`catch` (`catch (Standard_Failure const&) { NotDone(); return; }`), so the throw propagates
-there and `IsDone()` correctly reads `false`. `GetStatus()` is not updated by this fix and stays
-`BRepFill_ThruSectionErrorStatus_Done` on this path — a pre-existing characteristic of `Build()`'s
-generic catch (it doesn't touch `myStatus` for *any* exception source, not one this patch
-introduces), not fixed here; `IsDone()` is the correct signal.
+there and `IsDone()` correctly reads `false`.
+
+**`GetStatus()` is deliberately left unfixed, not merely unfixed by omission.** It stays
+`BRepFill_ThruSectionErrorStatus_Done` on this path, because `Build()`'s catch is generic — it
+doesn't set `myStatus` for *any* exception source, not one this patch introduces. `MakeSolid()` is
+a free function with no access to `myStatus` (a private member), so making `GetStatus()` correct
+here would mean either a new out-parameter threaded through both call sites, or wrapping both
+`MakeSolid()` calls in their own local `try`/`catch` to set `myStatus` before rethrowing — the
+same multi-site-touch shape the rejected null-face guard had, for a return value nothing in this
+tree reads (`IsDone()` is what every caller, including OCCTSwift's own bridge, actually checks).
+Sibling patch `0022` (#705, `ChFi2d_Builder::AddChamfer`) took the other side of this trade-off —
+it populates its class's own status enum for the identical "silently proceeds with a bad result"
+bug class — but that fix had no `Build()`-style shared catch to route around; here, the throw
+already reaches the one place (`Build()`'s catch) every caller of `IsDone()` already depends on, so
+adding a second signaling path for a value nothing reads was judged not worth the doubled diff.
+**Why a throw, not surfacing a number** (contrast with sibling `0025` / #597, same TKOffset/loft
+family, which fixed its bug by surfacing a discarded `MaxError()` through an existing diagnostic
+accessor at zero control-flow change): `0025`'s bug was a wrong *diagnostic* value on an operation
+that had already succeeded; this bug is a wrong *pass/fail* answer, and `IsDone()`/exceptions are
+how this exact function already reports pass/fail for every other failure mode in it (the null-shell
+throw two lines above, `Georges.GetStatus()` failures, `BRepFill_CompatibleWires` failures) — no
+existing accessor plays `MaxError()`'s role for capping success.
 
 **Validation** (override-link, no full rebuild — see `#0001`'s retired entry for the technique):
 compiled and linked both the unpatched and patched `.cxx` ahead of the pinned `libOCCT-macos.a`.
@@ -717,7 +745,9 @@ file. The actual upstream `BOPAlgo_PaveFillerTest.FuseConeLoftWithBox_Degenerate
 unmodified from `Libraries/occt-src`) passes against the patched override — direct confirmation the
 fix does not reintroduce the first attempt's regression, not just an equivalent local test standing
 in for it. `clang-format --dry-run --Werror` against OCCT's own `.clang-format` reports zero
-violations on both changed files.
+violations on both changed files. All three checks re-run and re-confirmed after adding the
+`face1`/`face2` nullify (PR #909 review): same five/five, same `FuseConeLoftWithBox_DegeneratedEdge`
+pass.
 
 Filed upstream as [OCCT#1462](https://github.com/Open-Cascade-SAS/OCCT/pull/1462). **Note on
 process, not on the fix**: an earlier session had opened a same-repo
@@ -730,9 +760,10 @@ erroneous; OCCT#1462 above is the only submission.
 
 **Retire** once the bundled OCCT includes this fix.
 
-**Pin consequence**: carried outside the pinned `v2.0.0` release asset, same as `0022`-`0025`; the
-asset has fifteen patches baked in (`0010`-`0012`, `0014`-`0025`), this is the sixteenth on disk.
-Watch for it at the next kernel re-pin.
+**Pin consequence**: the pinned `v2.0.0` release asset has all fifteen patches through `0025`
+baked in (`Package.swift`'s own census: "ALL FIFTEEN ARE VERIFIED PRESENT IN THE PINNED ASSET").
+`0026` is carried on disk only — the first patch since `0022`-`0025` themselves were folded into
+that release to sit outside the pin. Watch for it at the next kernel re-pin.
 
 # Retired patches
 
