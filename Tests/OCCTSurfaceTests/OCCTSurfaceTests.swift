@@ -3234,6 +3234,33 @@ struct GeomFillGuideTrihedronACTests {
             }
         }
     }
+
+    /// `evaluate(at:)`'s three components are only distinguished by the labels
+    /// `evaluateGuideTrihedronD0` (`SweepGuideTypes.swift`) attaches at the call site, not by any
+    /// difference the type system enforces (#908, following #903/#904). `d0Evaluation()` above
+    /// only asserts `tangent.x`, which never reads `normal`/`binormal` at all, so a pairwise swap
+    /// among the three would not necessarily fail it. Orthonormality alone is symmetric under a
+    /// normal/binormal swap too, so this checks the frame is right-handed
+    /// (`binormal == tangent x normal`), which a swap of any two of the three breaks.
+    @Test("D0 evaluation returns an orthonormal, right-handed frame (#908)")
+    func d0EvaluationIsOrthonormalRightHanded() throws {
+        let guide = try #require(Curve3D.line(through: SIMD3(0, 5, 0), direction: SIMD3(1, 0, 0)))
+        let guideTrimmed = try #require(guide.trimmed(from: 0, to: 10))
+        let path = try #require(Curve3D.line(through: SIMD3(0, 0, 0), direction: SIMD3(1, 0, 0)))
+        let pathTrimmed = try #require(path.trimmed(from: 0, to: 10))
+        let triAC = GuideTrihedronAC.create(guideCurve: guideTrimmed)
+        triAC.setCurve(pathTrimmed)
+        let frame = try #require(triAC.evaluate(at: 5.0))
+
+        let t = frame.tangent, n = frame.normal, b = frame.binormal
+        #expect(abs(simd_length(t) - 1) < 1e-6)
+        #expect(abs(simd_length(n) - 1) < 1e-6)
+        #expect(abs(simd_length(b) - 1) < 1e-6)
+        #expect(abs(simd_dot(t, n)) < 1e-6)
+        #expect(abs(simd_dot(t, b)) < 1e-6)
+        #expect(abs(simd_dot(n, b)) < 1e-6)
+        #expect(simd_length(simd_cross(t, n) - b) < 1e-6)
+    }
 }
 
 @Suite("GeomFill_GuideTrihedronPlan")
@@ -3250,6 +3277,29 @@ struct GeomFillGuideTrihedronPlanTests {
                 #expect(frame != nil)
             }
         }
+    }
+
+    /// `createAndEvaluate()` above only checks non-nil, so it could not catch a pairwise swap
+    /// among `tangent`/`normal`/`binormal` at all (#908, following #903/#904). Same reasoning and
+    /// same right-handedness check as `GeomFillGuideTrihedronACTests`'s sibling test.
+    @Test("evaluate(at:) returns an orthonormal, right-handed frame (#908)")
+    func evaluateIsOrthonormalRightHanded() throws {
+        let guide = try #require(Curve3D.line(through: SIMD3(0, 5, 0), direction: SIMD3(1, 0, 0)))
+        let guideTrimmed = try #require(guide.trimmed(from: 0, to: 10))
+        let path = try #require(Curve3D.line(through: SIMD3(0, 0, 0), direction: SIMD3(1, 0, 0)))
+        let pathTrimmed = try #require(path.trimmed(from: 0, to: 10))
+        let triPlan = GuideTrihedronPlan.create(guideCurve: guideTrimmed)
+        triPlan.setCurve(pathTrimmed)
+        let frame = try #require(triPlan.evaluate(at: 5.0))
+
+        let t = frame.tangent, n = frame.normal, b = frame.binormal
+        #expect(abs(simd_length(t) - 1) < 1e-6)
+        #expect(abs(simd_length(n) - 1) < 1e-6)
+        #expect(abs(simd_length(b) - 1) < 1e-6)
+        #expect(abs(simd_dot(t, n)) < 1e-6)
+        #expect(abs(simd_dot(t, b)) < 1e-6)
+        #expect(abs(simd_dot(n, b)) < 1e-6)
+        #expect(simd_length(simd_cross(t, n) - b) < 1e-6)
     }
 }
 
