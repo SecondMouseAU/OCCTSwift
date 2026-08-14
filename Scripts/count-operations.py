@@ -154,6 +154,7 @@ def count_entry_points():
                     if avail_pending_unavailable:
                         unavailable = True
                     avail_pending_unavailable = False
+                    avail_paren_depth = 0
                 else:
                     in_avail_attr = True
             else:
@@ -179,17 +180,22 @@ def count_entry_points():
                             breakdown["subscript"] += 1
                         unavailable = False
 
-            # maintain the enclosing-type stack
-            td = TYPE_DECL.match(line)
-            opens, closes = code.count('{'), code.count('}')
-            depth += opens - closes
-            if td is not None and opens > closes:
-                # body opens and stays open below this line; a one-liner like
-                # `enum Toggle { case a, b }` (opens == closes) encloses nothing.
-                stack.append((td.group(1), depth))
-            else:
-                while stack and depth < stack[-1][1]:
-                    stack.pop()
+            # Maintain the enclosing-type stack, skipping a line still inside the attribute's
+            # message string (in_avail_string, as of the top of this iteration): prose there is
+            # opaque to this too, not just to the declaration matchers above, so a code sample
+            # in the message that happens to contain `{`/`}` or read as a type declaration can't
+            # corrupt the stack for the file's real, subsequent declarations.
+            if not in_avail_string:
+                td = TYPE_DECL.match(line)
+                opens, closes = code.count('{'), code.count('}')
+                depth += opens - closes
+                if td is not None and opens > closes:
+                    # body opens and stays open below this line; a one-liner like
+                    # `enum Toggle { case a, b }` (opens == closes) encloses nothing.
+                    stack.append((td.group(1), depth))
+                else:
+                    while stack and depth < stack[-1][1]:
+                        stack.pop()
     return sum(breakdown.values()), breakdown, ops
 
 

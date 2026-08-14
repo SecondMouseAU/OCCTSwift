@@ -4043,9 +4043,10 @@ extension Curve3D {
             G2=-3) and #485 changed it to the real GeomAbs_Shape ordinal (C0=0, G1=1, C1=2, G2=3, \
             C2=4, C3=5, CN=6), so every threshold check silently changed meaning. Use \
             continuityClass.satisfies(_:) for a continuity floor, continuityClass == .cN for the \
-            analytic fast path, or continuity for the raw ordinal, after re-checking the constant \
-            you compare against. Note there is no longer an error sentinel: this returned -1 for a \
-            null or unreadable handle, whereas continuity returns 0, which is an ordinary C0, so a \
+            analytic fast path, or continuity for the raw ordinal. Whichever you use, re-check the \
+            constant you compare against. Note there is no longer an error sentinel: this returned \
+            -1 for a null or unreadable handle, whereas continuity returns 0, which is an ordinary \
+            C0, so a \
             migrated `< 0` error check can never fire (#619).
             """
     )
