@@ -1,6 +1,6 @@
 import Foundation
-import simd
 import OCCTBridge
+import simd
 
 /// A 3D parametric curve backed by OpenCASCADE Handle(Geom_Curve).
 ///
@@ -19,78 +19,86 @@ public final class Curve3D: @unchecked Sendable {
 
     // MARK: - Properties
 
-    /// Parameter domain [first, last]
+    /// Parameter domain [first, last].
     public var domain: ClosedRange<Double> {
-        var first: Double = 0, last: Double = 0
+        var first: Double = 0
+        var last: Double = 0
         OCCTCurve3DGetDomain(handle, &first, &last)
         return first...last
     }
 
-    /// Whether the curve forms a closed loop
+    /// Whether the curve forms a closed loop.
     public var isClosed: Bool {
         OCCTCurve3DIsClosed(handle)
     }
 
-    /// Whether the curve is periodic (repeats)
+    /// Whether the curve is periodic (repeats).
     public var isPeriodic: Bool {
         OCCTCurve3DIsPeriodic(handle)
     }
 
-    /// Period of the curve (nil if not periodic)
+    /// Period of the curve (nil if not periodic).
     public var period: Double? {
         guard isPeriodic else { return nil }
         return OCCTCurve3DGetPeriod(handle)
     }
 
-    /// Point at start of domain
+    /// Point at start of domain.
     public var startPoint: SIMD3<Double> {
         point(at: domain.lowerBound)
     }
 
-    /// Point at end of domain
+    /// Point at end of domain.
     public var endPoint: SIMD3<Double> {
         point(at: domain.upperBound)
     }
 
     // MARK: - Evaluation
 
-    /// Evaluate point at parameter u
+    /// Evaluate point at parameter u.
     public func point(at u: Double) -> SIMD3<Double> {
-        var x: Double = 0, y: Double = 0, z: Double = 0
-        OCCTCurve3DGetPoint(handle, u, &x, &y, &z)
-        return SIMD3(x, y, z)
+        unwrapVectorComponents { OCCTCurve3DGetPoint(handle, u, $0, $1, $2) }
     }
 
-    /// First derivative: point and tangent vector at parameter u
+    /// First derivative: point and tangent vector at parameter u.
     public func d1(at u: Double) -> (point: SIMD3<Double>, tangent: SIMD3<Double>) {
-        var px: Double = 0, py: Double = 0, pz: Double = 0
-        var vx: Double = 0, vy: Double = 0, vz: Double = 0
-        OCCTCurve3DD1(handle, u, &px, &py, &pz, &vx, &vy, &vz)
-        return (SIMD3(px, py, pz), SIMD3(vx, vy, vz))
+        unwrapAxisComponents { OCCTCurve3DD1(handle, u, $0, $1, $2, $3, $4, $5) }
     }
 
-    /// Second derivative: point, first and second derivative vectors
+    /// Second derivative: point, first and second derivative vectors.
     public func d2(at u: Double) -> (point: SIMD3<Double>, d1: SIMD3<Double>, d2: SIMD3<Double>) {
-        var px: Double = 0, py: Double = 0, pz: Double = 0
-        var v1x: Double = 0, v1y: Double = 0, v1z: Double = 0
-        var v2x: Double = 0, v2y: Double = 0, v2z: Double = 0
+        var px: Double = 0
+        var py: Double = 0
+        var pz: Double = 0
+        var v1x: Double = 0
+        var v1y: Double = 0
+        var v1z: Double = 0
+        var v2x: Double = 0
+        var v2y: Double = 0
+        var v2z: Double = 0
         OCCTCurve3DD2(handle, u, &px, &py, &pz, &v1x, &v1y, &v1z, &v2x, &v2y, &v2z)
         return (SIMD3(px, py, pz), SIMD3(v1x, v1y, v1z), SIMD3(v2x, v2y, v2z))
     }
 
     // MARK: - Primitive Curves
 
-    /// Infinite line through a point in a direction
+    /// Infinite line through a point in a direction.
     public static func line(through point: SIMD3<Double>, direction: SIMD3<Double>) -> Curve3D? {
-        guard let h = OCCTCurve3DCreateLine(point.x, point.y, point.z,
-                                             direction.x, direction.y, direction.z) else { return nil }
+        guard
+            let h = OCCTCurve3DCreateLine(
+                point.x, point.y, point.z,
+                direction.x, direction.y, direction.z)
+        else { return nil }
         return Curve3D(handle: h)
     }
 
-    /// Line segment between two points
+    /// Line segment between two points.
     public static func segment(from p1: SIMD3<Double>, to p2: SIMD3<Double>) -> Curve3D? {
-        guard let h = OCCTCurve3DCreateSegment(p1.x, p1.y, p1.z,
-                                                p2.x, p2.y, p2.z) else { return nil }
+        guard
+            let h = OCCTCurve3DCreateSegment(
+                p1.x, p1.y, p1.z,
+                p2.x, p2.y, p2.z)
+        else { return nil }
         return Curve3D(handle: h)
     }
 
@@ -110,18 +118,28 @@ public final class Curve3D: @unchecked Sendable {
     /// #expect(c != nil)
     /// #expect(Curve3D.circle(center: .zero, normal: SIMD3(0, 0, 1), radius: 0) == nil)
     /// ```
-    public static func circle(center: SIMD3<Double>, normal: SIMD3<Double>, radius: Double) -> Curve3D? {
-        guard let h = OCCTCurve3DCreateCircle(center.x, center.y, center.z,
-                                               normal.x, normal.y, normal.z,
-                                               radius) else { return nil }
+    public static func circle(center: SIMD3<Double>, normal: SIMD3<Double>, radius: Double)
+        -> Curve3D?
+    {
+        guard
+            let h = OCCTCurve3DCreateCircle(
+                center.x, center.y, center.z,
+                normal.x, normal.y, normal.z,
+                radius)
+        else { return nil }
         return Curve3D(handle: h)
     }
 
-    /// Circular arc through three points (start, interior, end)
-    public static func arcOfCircle(start: SIMD3<Double>, interior: SIMD3<Double>, end: SIMD3<Double>) -> Curve3D? {
-        guard let h = OCCTCurve3DCreateArcOfCircle(start.x, start.y, start.z,
-                                                    interior.x, interior.y, interior.z,
-                                                    end.x, end.y, end.z) else { return nil }
+    /// Circular arc through three points (start, interior, end).
+    public static func arcOfCircle(
+        start: SIMD3<Double>, interior: SIMD3<Double>, end: SIMD3<Double>
+    ) -> Curve3D? {
+        guard
+            let h = OCCTCurve3DCreateArcOfCircle(
+                start.x, start.y, start.z,
+                interior.x, interior.y, interior.z,
+                end.x, end.y, end.z)
+        else { return nil }
         return Curve3D(handle: h)
     }
 
@@ -140,7 +158,9 @@ public final class Curve3D: @unchecked Sendable {
     /// let arc = Curve3D.arc(through: SIMD3(5, 0, 0), SIMD3(0, 5, 0), SIMD3(-5, 0, 0))
     /// #expect(arc != nil)
     /// ```
-    public static func arc(through p1: SIMD3<Double>, _ pm: SIMD3<Double>, _ p2: SIMD3<Double>) -> Curve3D? {
+    public static func arc(through p1: SIMD3<Double>, _ pm: SIMD3<Double>, _ p2: SIMD3<Double>)
+        -> Curve3D?
+    {
         arcOfCircle(start: p1, interior: pm, end: p2)
     }
 
@@ -166,11 +186,16 @@ public final class Curve3D: @unchecked Sendable {
     /// #expect(Curve3D.ellipse(center: .zero, normal: SIMD3(0, 0, 1),
     ///                         majorRadius: 10, minorRadius: 0) == nil)
     /// ```
-    public static func ellipse(center: SIMD3<Double>, normal: SIMD3<Double>,
-                               majorRadius: Double, minorRadius: Double) -> Curve3D? {
-        guard let h = OCCTCurve3DCreateEllipse(center.x, center.y, center.z,
-                                                normal.x, normal.y, normal.z,
-                                                majorRadius, minorRadius) else { return nil }
+    public static func ellipse(
+        center: SIMD3<Double>, normal: SIMD3<Double>,
+        majorRadius: Double, minorRadius: Double
+    ) -> Curve3D? {
+        guard
+            let h = OCCTCurve3DCreateEllipse(
+                center.x, center.y, center.z,
+                normal.x, normal.y, normal.z,
+                majorRadius, minorRadius)
+        else { return nil }
         return Curve3D(handle: h)
     }
 
@@ -190,11 +215,16 @@ public final class Curve3D: @unchecked Sendable {
     /// #expect(p != nil)
     /// #expect(Curve3D.parabola(center: .zero, normal: SIMD3(0, 0, 1), focal: 0) == nil)
     /// ```
-    public static func parabola(center: SIMD3<Double>, normal: SIMD3<Double>,
-                                focal: Double) -> Curve3D? {
-        guard let h = OCCTCurve3DCreateParabola(center.x, center.y, center.z,
-                                                 normal.x, normal.y, normal.z,
-                                                 focal) else { return nil }
+    public static func parabola(
+        center: SIMD3<Double>, normal: SIMD3<Double>,
+        focal: Double
+    ) -> Curve3D? {
+        guard
+            let h = OCCTCurve3DCreateParabola(
+                center.x, center.y, center.z,
+                normal.x, normal.y, normal.z,
+                focal)
+        else { return nil }
         return Curve3D(handle: h)
     }
 
@@ -218,36 +248,45 @@ public final class Curve3D: @unchecked Sendable {
     /// #expect(Curve3D.hyperbola(center: .zero, normal: SIMD3(0, 0, 1),
     ///                           majorRadius: 0, minorRadius: 3) == nil)
     /// ```
-    public static func hyperbola(center: SIMD3<Double>, normal: SIMD3<Double>,
-                                 majorRadius: Double, minorRadius: Double) -> Curve3D? {
-        guard let h = OCCTCurve3DCreateHyperbola(center.x, center.y, center.z,
-                                                  normal.x, normal.y, normal.z,
-                                                  majorRadius, minorRadius) else { return nil }
+    public static func hyperbola(
+        center: SIMD3<Double>, normal: SIMD3<Double>,
+        majorRadius: Double, minorRadius: Double
+    ) -> Curve3D? {
+        guard
+            let h = OCCTCurve3DCreateHyperbola(
+                center.x, center.y, center.z,
+                normal.x, normal.y, normal.z,
+                majorRadius, minorRadius)
+        else { return nil }
         return Curve3D(handle: h)
     }
 
     // MARK: - BSpline & Bezier
 
-    /// Create a BSpline curve from poles, knots, and multiplicities
-    public static func bspline(poles: [SIMD3<Double>], weights: [Double]? = nil,
-                               knots: [Double], multiplicities: [Int32],
-                               degree: Int) -> Curve3D? {
+    /// Create a BSpline curve from poles, knots, and multiplicities.
+    public static func bspline(
+        poles: [SIMD3<Double>], weights: [Double]? = nil,
+        knots: [Double], multiplicities: [Int32],
+        degree: Int
+    ) -> Curve3D? {
         let flatPoles = poles.flatMap { [$0.x, $0.y, $0.z] }
         let h = flatPoles.withUnsafeBufferPointer { polesPtr in
             knots.withUnsafeBufferPointer { knotsPtr in
                 multiplicities.withUnsafeBufferPointer { multsPtr in
                     if let w = weights {
                         return w.withUnsafeBufferPointer { wPtr in
-                            OCCTCurve3DCreateBSpline(polesPtr.baseAddress, Int32(poles.count),
-                                                      wPtr.baseAddress,
-                                                      knotsPtr.baseAddress, Int32(knots.count),
-                                                      multsPtr.baseAddress, Int32(degree))
+                            OCCTCurve3DCreateBSpline(
+                                polesPtr.baseAddress, Int32(poles.count),
+                                wPtr.baseAddress,
+                                knotsPtr.baseAddress, Int32(knots.count),
+                                multsPtr.baseAddress, Int32(degree))
                         }
                     } else {
-                        return OCCTCurve3DCreateBSpline(polesPtr.baseAddress, Int32(poles.count),
-                                                         nil,
-                                                         knotsPtr.baseAddress, Int32(knots.count),
-                                                         multsPtr.baseAddress, Int32(degree))
+                        return OCCTCurve3DCreateBSpline(
+                            polesPtr.baseAddress, Int32(poles.count),
+                            nil,
+                            knotsPtr.baseAddress, Int32(knots.count),
+                            multsPtr.baseAddress, Int32(degree))
                     }
                 }
             }
@@ -256,7 +295,7 @@ public final class Curve3D: @unchecked Sendable {
         return Curve3D(handle: h)
     }
 
-    /// Create a Bezier curve from control points
+    /// Create a Bezier curve from control points.
     public static func bezier(poles: [SIMD3<Double>], weights: [Double]? = nil) -> Curve3D? {
         let flatPoles = poles.flatMap { [$0.x, $0.y, $0.z] }
         let h: OCCTCurve3DRef?
@@ -275,9 +314,11 @@ public final class Curve3D: @unchecked Sendable {
         return Curve3D(handle: h)
     }
 
-    /// Interpolate through 3D points
-    public static func interpolate(points: [SIMD3<Double>], closed: Bool = false,
-                                   tolerance: Double = 1e-6) -> Curve3D? {
+    /// Interpolate through 3D points.
+    public static func interpolate(
+        points: [SIMD3<Double>], closed: Bool = false,
+        tolerance: Double = 1e-6
+    ) -> Curve3D? {
         let flat = points.flatMap { [$0.x, $0.y, $0.z] }
         let h = flat.withUnsafeBufferPointer { ptr in
             OCCTCurve3DInterpolate(ptr.baseAddress, Int32(points.count), closed, tolerance)
@@ -304,28 +345,34 @@ public final class Curve3D: @unchecked Sendable {
     ///                                 endTangent: SIMD3(1, -1, -1),
     ///                                 tolerance: 1e-9)
     /// ```
-    public static func interpolate(points: [SIMD3<Double>],
-                                   startTangent: SIMD3<Double>,
-                                   endTangent: SIMD3<Double>,
-                                   tolerance: Double = 1e-6) -> Curve3D? {
+    public static func interpolate(
+        points: [SIMD3<Double>],
+        startTangent: SIMD3<Double>,
+        endTangent: SIMD3<Double>,
+        tolerance: Double = 1e-6
+    ) -> Curve3D? {
         let flat = points.flatMap { [$0.x, $0.y, $0.z] }
         let h = flat.withUnsafeBufferPointer { ptr in
-            OCCTCurve3DInterpolateWithTangents(ptr.baseAddress, Int32(points.count),
-                                                startTangent.x, startTangent.y, startTangent.z,
-                                                endTangent.x, endTangent.y, endTangent.z,
-                                                tolerance)
+            OCCTCurve3DInterpolateWithTangents(
+                ptr.baseAddress, Int32(points.count),
+                startTangent.x, startTangent.y, startTangent.z,
+                endTangent.x, endTangent.y, endTangent.z,
+                tolerance)
         }
         guard let h = h else { return nil }
         return Curve3D(handle: h)
     }
 
-    /// Fit a BSpline curve through points (least-squares approximation)
-    public static func fit(points: [SIMD3<Double>], minDegree: Int = 3, maxDegree: Int = 8,
-                           tolerance: Double = 1e-3) -> Curve3D? {
+    /// Fit a BSpline curve through points (least-squares approximation).
+    public static func fit(
+        points: [SIMD3<Double>], minDegree: Int = 3, maxDegree: Int = 8,
+        tolerance: Double = 1e-3
+    ) -> Curve3D? {
         let flat = points.flatMap { [$0.x, $0.y, $0.z] }
         let h = flat.withUnsafeBufferPointer { ptr in
-            OCCTCurve3DFitPoints(ptr.baseAddress, Int32(points.count),
-                                  Int32(minDegree), Int32(maxDegree), tolerance)
+            OCCTCurve3DFitPoints(
+                ptr.baseAddress, Int32(points.count),
+                Int32(minDegree), Int32(maxDegree), tolerance)
         }
         guard let h = h else { return nil }
         return Curve3D(handle: h)
@@ -339,7 +386,7 @@ public final class Curve3D: @unchecked Sendable {
         return n > 0 ? n : nil
     }
 
-    /// Get poles (control points) for BSpline/Bezier curves
+    /// Get poles (control points) for BSpline/Bezier curves.
     public var poles: [SIMD3<Double>]? {
         guard let n = poleCount else { return nil }
         var buffer = [Double](repeating: 0, count: n * 3)
@@ -348,65 +395,79 @@ public final class Curve3D: @unchecked Sendable {
         return unpackSIMD3(buffer, count: actual)
     }
 
-    /// Degree of BSpline/Bezier curve (-1 if not applicable)
+    /// Degree of BSpline/Bezier curve (-1 if not applicable).
     public var degree: Int {
         Int(OCCTCurve3DGetDegree(handle))
     }
 
     // MARK: - Operations
 
-    /// Trim curve to parameter range [u1, u2]
+    /// Trim curve to parameter range [u1, u2].
     public func trimmed(from u1: Double, to u2: Double) -> Curve3D? {
         guard let h = OCCTCurve3DTrim(handle, u1, u2) else { return nil }
         return Curve3D(handle: h)
     }
 
-    /// Reverse curve parameterization
+    /// Reverse curve parameterization.
     public func reversed() -> Curve3D? {
         guard let h = OCCTCurve3DReversed(handle) else { return nil }
         return Curve3D(handle: h)
     }
 
-    /// Translate curve by a displacement vector
+    /// Translate curve by a displacement vector.
     public func translated(by delta: SIMD3<Double>) -> Curve3D? {
         guard let h = OCCTCurve3DTranslate(handle, delta.x, delta.y, delta.z) else { return nil }
         return Curve3D(handle: h)
     }
 
-    /// Rotate curve around an axis
-    public func rotated(around axisOrigin: SIMD3<Double>, direction: SIMD3<Double>,
-                        angle: Double) -> Curve3D? {
-        guard let h = OCCTCurve3DRotate(handle,
-                                         axisOrigin.x, axisOrigin.y, axisOrigin.z,
-                                         direction.x, direction.y, direction.z,
-                                         angle) else { return nil }
+    /// Rotate curve around an axis.
+    public func rotated(
+        around axisOrigin: SIMD3<Double>, direction: SIMD3<Double>,
+        angle: Double
+    ) -> Curve3D? {
+        guard
+            let h = OCCTCurve3DRotate(
+                handle,
+                axisOrigin.x, axisOrigin.y, axisOrigin.z,
+                direction.x, direction.y, direction.z,
+                angle)
+        else { return nil }
         return Curve3D(handle: h)
     }
 
-    /// Scale curve from a center point
+    /// Scale curve from a center point.
     public func scaled(from center: SIMD3<Double>, factor: Double) -> Curve3D? {
-        guard let h = OCCTCurve3DScale(handle, center.x, center.y, center.z,
-                                        factor) else { return nil }
+        guard
+            let h = OCCTCurve3DScale(
+                handle, center.x, center.y, center.z,
+                factor)
+        else { return nil }
         return Curve3D(handle: h)
     }
 
-    /// Mirror curve across a point
+    /// Mirror curve across a point.
     public func mirrored(acrossPoint point: SIMD3<Double>) -> Curve3D? {
         guard let h = OCCTCurve3DMirrorPoint(handle, point.x, point.y, point.z) else { return nil }
         return Curve3D(handle: h)
     }
 
-    /// Mirror curve across an axis (line)
+    /// Mirror curve across an axis (line).
     public func mirrored(acrossAxis point: SIMD3<Double>, direction: SIMD3<Double>) -> Curve3D? {
-        guard let h = OCCTCurve3DMirrorAxis(handle, point.x, point.y, point.z,
-                                             direction.x, direction.y, direction.z) else { return nil }
+        guard
+            let h = OCCTCurve3DMirrorAxis(
+                handle, point.x, point.y, point.z,
+                direction.x, direction.y, direction.z)
+        else { return nil }
         return Curve3D(handle: h)
     }
 
-    /// Mirror curve across a plane
+    /// Mirror curve across a plane.
     public func mirrored(acrossPlane point: SIMD3<Double>, normal: SIMD3<Double>) -> Curve3D? {
-        guard let h = OCCTCurve3DMirrorPlane(handle, point.x, point.y, point.z,
-                                              normal.x, normal.y, normal.z) else { return nil }
+        guard
+            let h = OCCTCurve3DMirrorPlane(
+                handle, point.x, point.y, point.z,
+                normal.x, normal.y, normal.z)
+        else { return nil }
         return Curve3D(handle: h)
     }
 
@@ -491,13 +552,13 @@ public final class Curve3D: @unchecked Sendable {
 
     // MARK: - Conversion (GeomConvert)
 
-    /// Convert to BSpline representation
+    /// Convert to BSpline representation.
     public func toBSpline() -> Curve3D? {
         guard let h = OCCTCurve3DToBSpline(handle) else { return nil }
         return Curve3D(handle: h)
     }
 
-    /// Split BSpline into Bezier segments
+    /// Split BSpline into Bezier segments.
     public func toBezierSegments() -> [Curve3D]? {
         var buffer = [OCCTCurve3DRef?](repeating: nil, count: 128)
         let n = buffer.withUnsafeMutableBufferPointer { ptr in
@@ -513,7 +574,7 @@ public final class Curve3D: @unchecked Sendable {
         return result.isEmpty ? nil : result
     }
 
-    /// Join multiple curves into a single BSpline
+    /// Join multiple curves into a single BSpline.
     public static func join(_ curves: [Curve3D], tolerance: Double = 1e-6) -> Curve3D? {
         let handles: [OCCTCurve3DRef?] = curves.map { $0.handle }
         let h = handles.withUnsafeBufferPointer { ptr in
@@ -543,13 +604,23 @@ public final class Curve3D: @unchecked Sendable {
     /// let bspline = circle.approximated(tolerance: 1e-4)
     /// ```
     ///
-    /// - Parameter continuity: A ``ParametricContinuity`` raw value (0=C0, 1=C1, 2=C2). The
-    ///   approximator accepts nothing stricter: `AdvApprox` throws for C3 and above, which
-    ///   surfaces here as `nil`.
-    public func approximated(tolerance: Double = 1e-3, continuity: Int = 2,
-                             maxSegments: Int = 100, maxDegree: Int = 8) -> Curve3D? {
-        guard let h = OCCTCurve3DApproximate(handle, tolerance, Int32(continuity),
-                                              Int32(maxSegments), Int32(maxDegree)) else { return nil }
+    /// - Parameters:
+    ///   - tolerance: Maximum approximation error.
+    ///   - continuity: A ``ParametricContinuity`` raw value (0=C0, 1=C1, 2=C2). The
+    ///     approximator accepts nothing stricter: `AdvApprox` throws for C3 and above, which
+    ///     surfaces here as `nil`.
+    ///   - maxSegments: Maximum number of B-spline segments.
+    ///   - maxDegree: Maximum polynomial degree.
+    /// - Returns: The fitted curve, or nil if the approximation could not be constructed at all.
+    public func approximated(
+        tolerance: Double = 1e-3, continuity: Int = 2,
+        maxSegments: Int = 100, maxDegree: Int = 8
+    ) -> Curve3D? {
+        guard
+            let h = OCCTCurve3DApproximate(
+                handle, tolerance, Int32(continuity),
+                Int32(maxSegments), Int32(maxDegree))
+        else { return nil }
         return Curve3D(handle: h)
     }
 
@@ -557,18 +628,26 @@ public final class Curve3D: @unchecked Sendable {
 
     /// Adaptive discretization using angular and chordal deflection criteria.
     ///
-    /// - Parameter maxPoints: Output *capacity*, clamped into `0...`
-    ///   ``Sampling/maximumSampleCount`` (#558). The deflection criteria decide the actual point
-    ///   count; `maxPoints` only truncates, so clamping an unservable capacity returns the same
-    ///   points rather than a coarser sampling. A capacity of 0 or less returns empty.
-    public func drawAdaptive(angularDeflection: Double = 0.1,
-                             chordalDeflection: Double = 0.01,
-                             maxPoints: Int = 4096) -> [SIMD3<Double>] {
+    /// - Parameters:
+    ///   - angularDeflection: Maximum angular deviation between consecutive points, in radians.
+    ///   - chordalDeflection: Maximum chordal deviation from the true curve.
+    ///   - maxPoints: Output *capacity*, clamped into `0...`
+    ///     ``Sampling/maximumSampleCount`` (#558). The deflection criteria decide the actual point
+    ///     count; `maxPoints` only truncates, so clamping an unservable capacity returns the same
+    ///     points rather than a coarser sampling. A capacity of 0 or less returns empty.
+    /// - Returns: The sampled points, in curve order.
+    public func drawAdaptive(
+        angularDeflection: Double = 0.1,
+        chordalDeflection: Double = 0.01,
+        maxPoints: Int = 4096
+    ) -> [SIMD3<Double>] {
         let capacity = Sampling.capacity(maxPoints)
         guard capacity > 0 else { return [] }
         var buffer = [Double](repeating: 0, count: capacity * 3)
-        let n = Int(OCCTCurve3DDrawAdaptive(handle, angularDeflection, chordalDeflection,
-                                             &buffer, Int32(capacity)))
+        let n = Int(
+            OCCTCurve3DDrawAdaptive(
+                handle, angularDeflection, chordalDeflection,
+                &buffer, Int32(capacity)))
         return unpackSIMD3(buffer, count: n)
     }
 
@@ -597,10 +676,15 @@ public final class Curve3D: @unchecked Sendable {
 
     /// Chordal deflection discretization.
     ///
-    /// - Parameter maxPoints: Output *capacity*, clamped into `0...`
-    ///   ``Sampling/maximumSampleCount``; 0 or less returns empty (#558).
-    public func drawDeflection(deflection: Double = 0.01,
-                               maxPoints: Int = 4096) -> [SIMD3<Double>] {
+    /// - Parameters:
+    ///   - deflection: Maximum chordal deviation from the true curve.
+    ///   - maxPoints: Output *capacity*, clamped into `0...`
+    ///     ``Sampling/maximumSampleCount``; 0 or less returns empty (#558).
+    /// - Returns: The sampled points, in curve order.
+    public func drawDeflection(
+        deflection: Double = 0.01,
+        maxPoints: Int = 4096
+    ) -> [SIMD3<Double>] {
         let capacity = Sampling.capacity(maxPoints)
         guard capacity > 0 else { return [] }
         var buffer = [Double](repeating: 0, count: capacity * 3)
@@ -634,23 +718,29 @@ public final class Curve3D: @unchecked Sendable {
         return k
     }
 
-    /// Unit tangent direction at parameter u
+    /// Unit tangent direction at parameter u.
     public func tangentDirection(at u: Double) -> SIMD3<Double>? {
-        var tx: Double = 0, ty: Double = 0, tz: Double = 0
+        var tx: Double = 0
+        var ty: Double = 0
+        var tz: Double = 0
         guard OCCTCurve3DGetTangent(handle, u, &tx, &ty, &tz) else { return nil }
         return SIMD3(tx, ty, tz)
     }
 
-    /// Principal normal direction at parameter u
+    /// Principal normal direction at parameter u.
     public func normal(at u: Double) -> SIMD3<Double>? {
-        var nx: Double = 0, ny: Double = 0, nz: Double = 0
+        var nx: Double = 0
+        var ny: Double = 0
+        var nz: Double = 0
         guard OCCTCurve3DGetNormal(handle, u, &nx, &ny, &nz) else { return nil }
         return SIMD3(nx, ny, nz)
     }
 
-    /// Center of curvature at parameter u
+    /// Center of curvature at parameter u.
     public func centerOfCurvature(at u: Double) -> SIMD3<Double>? {
-        var cx: Double = 0, cy: Double = 0, cz: Double = 0
+        var cx: Double = 0
+        var cy: Double = 0
+        var cz: Double = 0
         guard OCCTCurve3DGetCenterOfCurvature(handle, u, &cx, &cy, &cz) else { return nil }
         return SIMD3(cx, cy, cz)
     }
@@ -679,12 +769,19 @@ public final class Curve3D: @unchecked Sendable {
 
     // MARK: - Bounding Box
 
-    /// Axis-aligned bounding box of the curve
+    /// Axis-aligned bounding box of the curve.
     public var boundingBox: (min: SIMD3<Double>, max: SIMD3<Double>)? {
-        var xMin: Double = 0, yMin: Double = 0, zMin: Double = 0
-        var xMax: Double = 0, yMax: Double = 0, zMax: Double = 0
-        guard OCCTCurve3DGetBoundingBox(handle, &xMin, &yMin, &zMin,
-                                         &xMax, &yMax, &zMax) else { return nil }
+        var xMin: Double = 0
+        var yMin: Double = 0
+        var zMin: Double = 0
+        var xMax: Double = 0
+        var yMax: Double = 0
+        var zMax: Double = 0
+        guard
+            OCCTCurve3DGetBoundingBox(
+                handle, &xMin, &yMin, &zMin,
+                &xMax, &yMax, &zMax)
+        else { return nil }
         return (min: SIMD3(xMin, yMin, zMin), max: SIMD3(xMax, yMax, zMax))
     }
 
@@ -699,13 +796,17 @@ public final class Curve3D: @unchecked Sendable {
     ///   - normal: Normal direction of the target plane
     ///   - direction: Projection direction (must not be parallel to the plane normal)
     /// - Returns: The projected 3D curve, or nil if projection fails
-    public func projectedOnPlane(origin: SIMD3<Double>,
-                                  normal: SIMD3<Double>,
-                                  direction: SIMD3<Double>) -> Curve3D? {
-        guard let h = OCCTCurve3DProjectOnPlane(handle,
-                                                 origin.x, origin.y, origin.z,
-                                                 normal.x, normal.y, normal.z,
-                                                 direction.x, direction.y, direction.z)
+    public func projectedOnPlane(
+        origin: SIMD3<Double>,
+        normal: SIMD3<Double>,
+        direction: SIMD3<Double>
+    ) -> Curve3D? {
+        guard
+            let h = OCCTCurve3DProjectOnPlane(
+                handle,
+                origin.x, origin.y, origin.z,
+                normal.x, normal.y, normal.z,
+                direction.x, direction.y, direction.z)
         else { return nil }
         return Curve3D(handle: h)
     }
@@ -729,11 +830,15 @@ extension Curve3D {
     ///
     /// - Parameter parameters: Array of parameter values
     /// - Returns: Array of tuples with point and tangent vector
-    public func evaluateGridD1(_ parameters: [Double]) -> [(point: SIMD3<Double>, tangent: SIMD3<Double>)] {
+    public func evaluateGridD1(_ parameters: [Double]) -> [(
+        point: SIMD3<Double>, tangent: SIMD3<Double>
+    )] {
         guard !parameters.isEmpty else { return [] }
         var outXYZ = [Double](repeating: 0, count: parameters.count * 3)
         var outDXDYDZ = [Double](repeating: 0, count: parameters.count * 3)
-        let n = Int(OCCTCurve3DEvaluateGridD1(handle, parameters, Int32(parameters.count), &outXYZ, &outDXDYDZ))
+        let n = Int(
+            OCCTCurve3DEvaluateGridD1(
+                handle, parameters, Int32(parameters.count), &outXYZ, &outDXDYDZ))
         let points: [SIMD3<Double>] = unpackSIMD3(outXYZ, count: n)
         let tangents: [SIMD3<Double>] = unpackSIMD3(outDXDYDZ, count: n)
         return zip(points, tangents).map { (point: $0, tangent: $1) }
@@ -744,7 +849,9 @@ extension Curve3D {
     /// - Parameter tolerance: Planarity tolerance (default: 0)
     /// - Returns: The plane normal if planar, or nil if not planar
     public func planeNormal(tolerance: Double = 0) -> SIMD3<Double>? {
-        var nx: Double = 0, ny: Double = 0, nz: Double = 0
+        var nx: Double = 0
+        var ny: Double = 0
+        var nz: Double = 0
         guard OCCTCurve3DIsPlanar(handle, tolerance, &nx, &ny, &nz) else { return nil }
         return SIMD3(nx, ny, nz)
     }
@@ -839,7 +946,8 @@ extension Curve3D {
     public func intersections(with surface: Surface, maxHits: Int = 100) -> [CurveSurfaceHit] {
         let maxHits = Sampling.capacity(maxHits)
         guard maxHits > 0 else { return [] }
-        var buffer = [OCCTCurveSurfaceIntersection](repeating: OCCTCurveSurfaceIntersection(), count: maxHits)
+        var buffer = [OCCTCurveSurfaceIntersection](
+            repeating: OCCTCurveSurfaceIntersection(), count: maxHits)
         let n = Int(OCCTCurve3DIntersectSurface(handle, surface.handle, &buffer, Int32(maxHits)))
         return (0..<n).map { i in
             let h = buffer[i]
@@ -923,7 +1031,9 @@ extension Curve3D {
     ///   - maxPoints: Output *capacity*, clamped into `0`...``Sampling/maximumSampleCount``;
     ///     0 or less returns empty (#558). The deflection decides the actual point count.
     /// - Returns: Array of 3D points, or empty array on failure
-    public func quasiUniformDeflectionPoints(deflection: Double, maxPoints: Int = 500) -> [SIMD3<Double>] {
+    public func quasiUniformDeflectionPoints(deflection: Double, maxPoints: Int = 500) -> [SIMD3<
+        Double
+    >] {
         let capacity = Sampling.capacity(maxPoints)
         guard capacity > 0 else { return [] }
         var xyz = [Double](repeating: 0, count: capacity * 3)
@@ -936,7 +1046,7 @@ extension Curve3D {
     // Continuity order for knot splitting is `ParametricContinuity` (Continuity.swift); the
     // nested `ContinuityOrder` copy declared here is now a deprecated alias of it. See #398.
 
-    /// Knot parameters at which to split a BSpline so every arc is at least `minContinuity`
+    /// Knot parameters at which to split a BSpline so every arc is at least `minContinuity`.
     ///
     /// Only works on BSpline curves. The result is a set of *split* parameters, not a set of
     /// defects: the curve's own first and last knots are always included, so a curve that never
@@ -971,8 +1081,9 @@ extension Curve3D {
         // 256-entry buffer within reach of real imported geometry.
         func read(capacity: Int32) -> (count: Int32, params: [Double]) {
             var params = [Double](repeating: 0, count: Int(capacity))
-            let count = OCCTCurve3DBSplineKnotSplits(handle, minContinuity.rawValue,
-                                                     &params, capacity)
+            let count = OCCTCurve3DBSplineKnotSplits(
+                handle, minContinuity.rawValue,
+                &params, capacity)
             return (count, params)
         }
 
@@ -1016,16 +1127,20 @@ extension Curve3D {
     ///                              majorRadius: 10, minorRadius: 0,
     ///                              startAngle: 0, endAngle: .pi) == nil)
     /// ```
-    public static func arcOfEllipse(center: SIMD3<Double>, normal: SIMD3<Double>,
-                                     majorRadius: Double, minorRadius: Double,
-                                     startAngle: Double, endAngle: Double,
-                                     counterclockwise: Bool = true) -> Curve3D? {
-        guard let ref = OCCTCurve3DArcOfEllipse(
-            center.x, center.y, center.z,
-            normal.x, normal.y, normal.z,
-            majorRadius, minorRadius,
-            startAngle, endAngle, counterclockwise
-        ) else {
+    public static func arcOfEllipse(
+        center: SIMD3<Double>, normal: SIMD3<Double>,
+        majorRadius: Double, minorRadius: Double,
+        startAngle: Double, endAngle: Double,
+        counterclockwise: Bool = true
+    ) -> Curve3D? {
+        guard
+            let ref = OCCTCurve3DArcOfEllipse(
+                center.x, center.y, center.z,
+                normal.x, normal.y, normal.z,
+                majorRadius, minorRadius,
+                startAngle, endAngle, counterclockwise
+            )
+        else {
             return nil
         }
         return Curve3D(handle: ref)
@@ -1058,17 +1173,21 @@ extension Curve3D {
     ///                              majorRadius: 10, minorRadius: 0,
     ///                              from: SIMD3(10, 0, 0), to: SIMD3(-10, 0, 0)) == nil)
     /// ```
-    public static func arcOfEllipse(center: SIMD3<Double>, normal: SIMD3<Double>,
-                                     majorRadius: Double, minorRadius: Double,
-                                     from: SIMD3<Double>, to: SIMD3<Double>,
-                                     counterclockwise: Bool = true) -> Curve3D? {
-        guard let ref = OCCTCurve3DArcOfEllipsePoints(
-            center.x, center.y, center.z,
-            normal.x, normal.y, normal.z,
-            majorRadius, minorRadius,
-            from.x, from.y, from.z,
-            to.x, to.y, to.z, counterclockwise
-        ) else {
+    public static func arcOfEllipse(
+        center: SIMD3<Double>, normal: SIMD3<Double>,
+        majorRadius: Double, minorRadius: Double,
+        from: SIMD3<Double>, to: SIMD3<Double>,
+        counterclockwise: Bool = true
+    ) -> Curve3D? {
+        guard
+            let ref = OCCTCurve3DArcOfEllipsePoints(
+                center.x, center.y, center.z,
+                normal.x, normal.y, normal.z,
+                majorRadius, minorRadius,
+                from.x, from.y, from.z,
+                to.x, to.y, to.z, counterclockwise
+            )
+        else {
             return nil
         }
         return Curve3D(handle: ref)
@@ -1097,13 +1216,13 @@ extension Curve3D {
 
     // MARK: - ShapeAnalysis_Curve expansion (v0.49.0)
 
-    /// Result of projecting a point onto a curve
+    /// Result of projecting a point onto a curve.
     public struct PointProjection: Sendable {
-        /// Distance from the original point to the projection
+        /// Distance from the original point to the projection.
         public let distance: Double
-        /// Parameter on the curve at the closest point
+        /// Parameter on the curve at the closest point.
         public let parameter: Double
-        /// Projected point on the curve
+        /// Projected point on the curve.
         public let point: SIMD3<Double>
     }
 
@@ -1162,13 +1281,13 @@ extension Curve3D {
         projectPoint(point, precision: precision).distance
     }
 
-    /// Result of validating a curve parameter range
+    /// Result of validating a curve parameter range.
     public struct ValidatedRange: Sendable {
-        /// Validated first parameter
+        /// Validated first parameter.
         public let first: Double
-        /// Validated last parameter
+        /// Validated last parameter.
         public let last: Double
-        /// Whether the range was adjusted
+        /// Whether the range was adjusted.
         public let wasAdjusted: Bool
     }
 
@@ -1182,9 +1301,12 @@ extension Curve3D {
     ///   - last: Desired last parameter
     ///   - precision: Tolerance (default: 1e-6)
     /// - Returns: Validated range (potentially adjusted)
-    public func validateRange(first: Double, last: Double, precision: Double = 1e-6) -> ValidatedRange {
+    public func validateRange(first: Double, last: Double, precision: Double = 1e-6)
+        -> ValidatedRange
+    {
         let result = OCCTCurve3DValidateRange(handle, first, last, precision)
-        return ValidatedRange(first: result.first, last: result.last, wasAdjusted: result.wasAdjusted)
+        return ValidatedRange(
+            first: result.first, last: result.last, wasAdjusted: result.wasAdjusted)
     }
 
     /// Get sample points along this curve.
@@ -1198,7 +1320,8 @@ extension Curve3D {
     ///   - maxPoints: Output *capacity* (default: 1000), clamped into `0...`
     ///     ``Sampling/maximumSampleCount``; 0 or less returns empty (#558).
     /// - Returns: Array of 3D sample points
-    public func samplePoints(first: Double, last: Double, maxPoints: Int = 1000) -> [SIMD3<Double>] {
+    public func samplePoints(first: Double, last: Double, maxPoints: Int = 1000) -> [SIMD3<Double>]
+    {
         let capacity = Sampling.capacity(maxPoints)
         guard capacity > 0 else { return [] }
         var buffer = [Double](repeating: 0, count: capacity * 3)
@@ -1239,11 +1362,13 @@ extension Curve3D {
         alpha2: Double,
         sense: Bool = true
     ) -> Curve3D? {
-        guard let ref = OCCTCurve3DArcOfHyperbola(
-            majorRadius, minorRadius,
-            center.x, center.y, center.z,
-            direction.x, direction.y, direction.z,
-            alpha1, alpha2, sense) else { return nil }
+        guard
+            let ref = OCCTCurve3DArcOfHyperbola(
+                majorRadius, minorRadius,
+                center.x, center.y, center.z,
+                direction.x, direction.y, direction.z,
+                alpha1, alpha2, sense)
+        else { return nil }
         return Curve3D(handle: ref)
     }
 
@@ -1276,11 +1401,13 @@ extension Curve3D {
         alpha2: Double,
         sense: Bool = true
     ) -> Curve3D? {
-        guard let ref = OCCTCurve3DArcOfParabola(
-            focalDistance,
-            center.x, center.y, center.z,
-            direction.x, direction.y, direction.z,
-            alpha1, alpha2, sense) else { return nil }
+        guard
+            let ref = OCCTCurve3DArcOfParabola(
+                focalDistance,
+                center.x, center.y, center.z,
+                direction.x, direction.y, direction.z,
+                alpha1, alpha2, sense)
+        else { return nil }
         return Curve3D(handle: ref)
     }
 
@@ -1297,9 +1424,9 @@ extension Curve3D {
 
     /// Split result containing the two curve segments.
     public struct SplitResult {
-        /// First segment (before split parameter)
+        /// First segment (before split parameter).
         public let first: Curve3D
-        /// Second segment (after split parameter)
+        /// Second segment (after split parameter).
         public let second: Curve3D
     }
 
@@ -1311,7 +1438,8 @@ extension Curve3D {
         var ref1: OCCTCurve3DRef?
         var ref2: OCCTCurve3DRef?
         guard OCCTCurve3DSplitAt(handle, parameter, &ref1, &ref2),
-              let r1 = ref1, let r2 = ref2 else { return nil }
+            let r1 = ref1, let r2 = ref2
+        else { return nil }
         return SplitResult(first: Curve3D(handle: r1), second: Curve3D(handle: r2))
     }
 
@@ -1327,9 +1455,11 @@ extension Curve3D {
     public static func ellipseThreePoints(
         s1: SIMD3<Double>, s2: SIMD3<Double>, center: SIMD3<Double>
     ) -> Curve3D? {
-        guard let h = OCCTCurve3DMakeEllipseThreePoints(
-            s1.x, s1.y, s1.z, s2.x, s2.y, s2.z,
-            center.x, center.y, center.z) else { return nil }
+        guard
+            let h = OCCTCurve3DMakeEllipseThreePoints(
+                s1.x, s1.y, s1.z, s2.x, s2.y, s2.z,
+                center.x, center.y, center.z)
+        else { return nil }
         return Curve3D(handle: h)
     }
 
@@ -1343,9 +1473,11 @@ extension Curve3D {
     public static func hyperbolaThreePoints(
         s1: SIMD3<Double>, s2: SIMD3<Double>, center: SIMD3<Double>
     ) -> Curve3D? {
-        guard let h = OCCTCurve3DMakeHyperbolaThreePoints(
-            s1.x, s1.y, s1.z, s2.x, s2.y, s2.z,
-            center.x, center.y, center.z) else { return nil }
+        guard
+            let h = OCCTCurve3DMakeHyperbolaThreePoints(
+                s1.x, s1.y, s1.z, s2.x, s2.y, s2.z,
+                center.x, center.y, center.z)
+        else { return nil }
         return Curve3D(handle: h)
     }
 
@@ -1366,21 +1498,21 @@ extension Curve3D {
         /// `.c1` measures C0 and C1; `.g2` measures C0, G1 and G2; `.c2` measures C0, C1 and C2.
         /// No order measures all five, not even the `.c2` default, which never looks at G1 or G2.
         public let measured: Set<ContinuityClass>
-        /// Distance between curve endpoints at junction
+        /// Distance between curve endpoints at junction.
         public let c0Value: Double
-        /// Angle between tangents (radians), or -1 if G1 was not measured or does not hold
+        /// Angle between tangents (radians), or -1 if G1 was not measured or does not hold.
         public let g1Angle: Double
-        /// Angle between first derivatives, or -1
+        /// Angle between first derivatives, or -1.
         public let c1Angle: Double
-        /// Ratio of first derivative magnitudes, or -1
+        /// Ratio of first derivative magnitudes, or -1.
         public let c1Ratio: Double
-        /// Angle between second derivatives, or -1
+        /// Angle between second derivatives, or -1.
         public let c2Angle: Double
-        /// Ratio of second derivative magnitudes, or -1
+        /// Ratio of second derivative magnitudes, or -1.
         public let c2Ratio: Double
-        /// Angle between osculating planes, or -1
+        /// Angle between osculating planes, or -1.
         public let g2Angle: Double
-        /// Variation of curvature at junction, or -1
+        /// Variation of curvature at junction, or -1.
         public let g2CurvatureVariation: Double
         /// Bitmask of the classes that hold: bit0=C0, bit1=G1, bit2=C1, bit3=G2, bit4=C2.
         ///
@@ -1408,7 +1540,9 @@ extension Curve3D {
             return flags & continuity.analysisFlagBit != 0
         }
 
-        /// Whether the junction is positionally continuous (C0). Always measured.
+        /// Whether the junction is positionally continuous (C0).
+        ///
+        /// Always measured.
         public var isC0: Bool? { holds(.c0) }
         /// Whether the junction is geometrically tangent-continuous (G1), or nil if ``order``
         /// did not measure G1 (only `.g1` and `.g2` do).
@@ -1435,8 +1569,8 @@ extension Curve3D {
     /// ```
     ///
     /// - Parameters:
-    ///   - u1: Parameter on this curve
     ///   - other: Second curve
+    ///   - u1: Parameter on this curve
     ///   - u2: Parameter on second curve
     ///   - order: Which continuity class to measure. This selects the analysis, not just a
     ///     ceiling: `LocalAnalysis_CurveContinuity` computes one branch of a switch, so the
@@ -1445,26 +1579,35 @@ extension Curve3D {
     ///     no predicate above C2/G2 — so `.c3` and `.cN` saturate to `.c2`, which
     ///     ``ContinuityAnalysis/order`` reports back.
     /// - Returns: Continuity analysis result, or nil on failure
-    public func continuityWith(_ other: Curve3D, u1: Double, u2: Double,
-                               order: ContinuityClass = .c2) -> ContinuityAnalysis? {
+    public func continuityWith(
+        _ other: Curve3D, u1: Double, u2: Double,
+        order: ContinuityClass = .c2
+    ) -> ContinuityAnalysis? {
         continuityAnalysis(with: other, u1: u1, u2: u2, rawOrder: order.rawValue)
     }
 
-    private func continuityAnalysis(with other: Curve3D, u1: Double, u2: Double,
-                                    rawOrder: Int32) -> ContinuityAnalysis? {
+    private func continuityAnalysis(
+        with other: Curve3D, u1: Double, u2: Double,
+        rawOrder: Int32
+    ) -> ContinuityAnalysis? {
         var outEffectiveOrder: Int32 = 0
-        var outC0: Double = 0, outG1: Double = 0
-        var outC1A: Double = 0, outC1R: Double = 0
-        var outC2A: Double = 0, outC2R: Double = 0
-        var outG2A: Double = 0, outG2CV: Double = 0
+        var outC0: Double = 0
+        var outG1: Double = 0
+        var outC1A: Double = 0
+        var outC1R: Double = 0
+        var outC2A: Double = 0
+        var outC2R: Double = 0
+        var outG2A: Double = 0
+        var outG2CV: Double = 0
         let ok = OCCTLocalAnalysisCurveContinuity(
             handle, u1, other.handle, u2, rawOrder,
             &outEffectiveOrder, &outC0, &outG1, &outC1A, &outC1R,
             &outC2A, &outC2R, &outG2A, &outG2CV)
         guard ok else { return nil }
         var outMeasured: Int32 = 0
-        let flags = Int(OCCTLocalAnalysisCurveContinuityFlags(
-            handle, u1, other.handle, u2, rawOrder, &outMeasured))
+        let flags = Int(
+            OCCTLocalAnalysisCurveContinuityFlags(
+                handle, u1, other.handle, u2, rawOrder, &outMeasured))
         return ContinuityAnalysis(
             order: ContinuityClass(rawValue: outEffectiveOrder) ?? .c2,
             measured: ContinuityClass.set(fromAnalysisMask: outMeasured),
@@ -1477,14 +1620,14 @@ extension Curve3D {
 
     // MARK: - v0.80.0: Extrema, ProjLib, gce factories
 
-    /// Result of curve-to-curve extrema computation
+    /// Result of curve-to-curve extrema computation.
     public struct CurveCurveExtrema: Sendable {
         public let isDone: Bool
         public let isParallel: Bool
         public let count: Int
     }
 
-    /// A point pair from an extrema result
+    /// A point pair from an extrema result.
     public struct ExtremaPointPair: Sendable {
         public let squareDistance: Double
         public let point1: SIMD3<Double>
@@ -1493,33 +1636,40 @@ extension Curve3D {
         public let param2: Double
     }
 
-    /// Compute curve-to-curve extrema (closest/farthest distances)
-    public func extremaCC(range1: ClosedRange<Double>? = nil,
-                          other: Curve3D,
-                          range2: ClosedRange<Double>? = nil) -> CurveCurveExtrema {
+    /// Compute curve-to-curve extrema (closest/farthest distances).
+    public func extremaCC(
+        range1: ClosedRange<Double>? = nil,
+        other: Curve3D,
+        range2: ClosedRange<Double>? = nil
+    ) -> CurveCurveExtrema {
         let d1 = range1 ?? domain
         let d2 = range2 ?? other.domain
-        let r = OCCTExtremaExtCC(handle, d1.lowerBound, d1.upperBound,
-                                  other.handle, d2.lowerBound, d2.upperBound)
+        let r = OCCTExtremaExtCC(
+            handle, d1.lowerBound, d1.upperBound,
+            other.handle, d2.lowerBound, d2.upperBound)
         return CurveCurveExtrema(isDone: r.isDone, isParallel: r.isParallel, count: Int(r.nbExt))
     }
 
-    /// Get Nth extremum point pair from curve-curve computation (1-based)
-    public func extremaCCPoint(range1: ClosedRange<Double>? = nil,
-                               other: Curve3D,
-                               range2: ClosedRange<Double>? = nil,
-                               index: Int) -> ExtremaPointPair {
+    /// Get Nth extremum point pair from curve-curve computation (1-based).
+    public func extremaCCPoint(
+        range1: ClosedRange<Double>? = nil,
+        other: Curve3D,
+        range2: ClosedRange<Double>? = nil,
+        index: Int
+    ) -> ExtremaPointPair {
         let d1 = range1 ?? domain
         let d2 = range2 ?? other.domain
-        let r = OCCTExtremaExtCCPoint(handle, d1.lowerBound, d1.upperBound,
-                                       other.handle, d2.lowerBound, d2.upperBound,
-                                       Int32(index))
-        return ExtremaPointPair(squareDistance: r.squareDistance,
-                                point1: SIMD3(r.x1, r.y1, r.z1), param1: r.param1,
-                                point2: SIMD3(r.x2, r.y2, r.z2), param2: r.param2)
+        let r = OCCTExtremaExtCCPoint(
+            handle, d1.lowerBound, d1.upperBound,
+            other.handle, d2.lowerBound, d2.upperBound,
+            Int32(index))
+        return ExtremaPointPair(
+            squareDistance: r.squareDistance,
+            point1: SIMD3(r.x1, r.y1, r.z1), param1: r.param1,
+            point2: SIMD3(r.x2, r.y2, r.z2), param2: r.param2)
     }
 
-    /// Result of local curve-curve extrema search
+    /// Result of local curve-curve extrema search.
     public struct LocalExtremaResult: Sendable {
         public let isDone: Bool
         public let squareDistance: Double
@@ -1529,63 +1679,83 @@ extension Curve3D {
         public let param2: Double
     }
 
-    /// Find local curve-curve extremum near seed parameters
-    public func locateExtremaCC(range1: ClosedRange<Double>? = nil,
-                                other: Curve3D,
-                                range2: ClosedRange<Double>? = nil,
-                                seedU: Double, seedV: Double) -> LocalExtremaResult {
+    /// Find local curve-curve extremum near seed parameters.
+    public func locateExtremaCC(
+        range1: ClosedRange<Double>? = nil,
+        other: Curve3D,
+        range2: ClosedRange<Double>? = nil,
+        seedU: Double, seedV: Double
+    ) -> LocalExtremaResult {
         let d1 = range1 ?? domain
         let d2 = range2 ?? other.domain
-        let r = OCCTExtremaLocateExtCC(handle, d1.lowerBound, d1.upperBound,
-                                        other.handle, d2.lowerBound, d2.upperBound,
-                                        seedU, seedV)
-        return LocalExtremaResult(isDone: r.isDone, squareDistance: r.squareDistance,
-                                  point1: SIMD3(r.x1, r.y1, r.z1), param1: r.param1,
-                                  point2: SIMD3(r.x2, r.y2, r.z2), param2: r.param2)
+        let r = OCCTExtremaLocateExtCC(
+            handle, d1.lowerBound, d1.upperBound,
+            other.handle, d2.lowerBound, d2.upperBound,
+            seedU, seedV)
+        return LocalExtremaResult(
+            isDone: r.isDone, squareDistance: r.squareDistance,
+            point1: SIMD3(r.x1, r.y1, r.z1), param1: r.param1,
+            point2: SIMD3(r.x2, r.y2, r.z2), param2: r.param2)
     }
 
-    /// Result of curve-to-surface extrema
+    /// Result of curve-to-surface extrema.
     public struct CurveSurfaceExtrema: Sendable {
         public let isDone: Bool
         public let isParallel: Bool
         public let count: Int
     }
 
-    /// Compute curve-to-surface extrema
-    public func extremaCS(range: ClosedRange<Double>? = nil,
-                          surface: Surface) -> CurveSurfaceExtrema {
+    /// Compute curve-to-surface extrema.
+    public func extremaCS(
+        range: ClosedRange<Double>? = nil,
+        surface: Surface
+    ) -> CurveSurfaceExtrema {
         let d = range ?? domain
         let r = OCCTExtremaExtCS(handle, d.lowerBound, d.upperBound, surface.handle)
         return CurveSurfaceExtrema(isDone: r.isDone, isParallel: r.isParallel, count: Int(r.nbExt))
     }
 
-    /// Get Nth extremum from curve-surface computation
-    public func extremaCSPoint(range: ClosedRange<Double>? = nil,
-                               surface: Surface,
-                               index: Int) -> ExtremaPointPair {
+    /// Get Nth extremum from curve-surface computation.
+    public func extremaCSPoint(
+        range: ClosedRange<Double>? = nil,
+        surface: Surface,
+        index: Int
+    ) -> ExtremaPointPair {
         let d = range ?? domain
-        let r = OCCTExtremaExtCSPoint(handle, d.lowerBound, d.upperBound,
-                                       surface.handle, Int32(index))
-        return ExtremaPointPair(squareDistance: r.squareDistance,
-                                point1: SIMD3(r.x1, r.y1, r.z1), param1: r.param1,
-                                point2: SIMD3(r.x2, r.y2, r.z2), param2: r.param2)
+        let r = OCCTExtremaExtCSPoint(
+            handle, d.lowerBound, d.upperBound,
+            surface.handle, Int32(index))
+        return ExtremaPointPair(
+            squareDistance: r.squareDistance,
+            point1: SIMD3(r.x1, r.y1, r.z1), param1: r.param1,
+            point2: SIMD3(r.x2, r.y2, r.z2), param2: r.param2)
     }
 
-    /// Project this curve onto a surface, returning BSpline approximation
-    public func projectOnSurface(_ surface: Surface, range: ClosedRange<Double>? = nil,
-                                 tolerance: Double = 1e-3) -> Curve3D? {
+    /// Project this curve onto a surface, returning BSpline approximation.
+    public func projectOnSurface(
+        _ surface: Surface, range: ClosedRange<Double>? = nil,
+        tolerance: Double = 1e-3
+    ) -> Curve3D? {
         let d = range ?? domain
-        guard let h = OCCTProjLibProjectOnSurface(handle, d.lowerBound, d.upperBound,
-                                                   surface.handle, tolerance) else { return nil }
+        guard
+            let h = OCCTProjLibProjectOnSurface(
+                handle, d.lowerBound, d.upperBound,
+                surface.handle, tolerance)
+        else { return nil }
         return Curve3D(handle: h)
     }
 
-    /// Create a circle through 3 points (gce_MakeCirc)
-    public static func circleThrough3Points(_ p1: SIMD3<Double>, _ p2: SIMD3<Double>,
-                                            _ p3: SIMD3<Double>) -> Curve3D? {
-        guard let h = OCCTGceMakeCircFrom3Points(p1.x, p1.y, p1.z,
-                                                  p2.x, p2.y, p2.z,
-                                                  p3.x, p3.y, p3.z) else { return nil }
+    /// Create a circle through 3 points (gce_MakeCirc).
+    public static func circleThrough3Points(
+        _ p1: SIMD3<Double>, _ p2: SIMD3<Double>,
+        _ p3: SIMD3<Double>
+    ) -> Curve3D? {
+        guard
+            let h = OCCTGceMakeCircFrom3Points(
+                p1.x, p1.y, p1.z,
+                p2.x, p2.y, p2.z,
+                p3.x, p3.y, p3.z)
+        else { return nil }
         return Curve3D(handle: h)
     }
 
@@ -1607,25 +1777,37 @@ extension Curve3D {
     /// #expect(Curve3D.circleFromCenterNormal(center: .zero, normal: SIMD3(0, 0, 1),
     ///                                        radius: 0) == nil)
     /// ```
-    public static func circleFromCenterNormal(center: SIMD3<Double>, normal: SIMD3<Double>,
-                                              radius: Double) -> Curve3D? {
-        guard let h = OCCTGceMakeCircFromCenterNormal(center.x, center.y, center.z,
-                                                       normal.x, normal.y, normal.z,
-                                                       radius) else { return nil }
+    public static func circleFromCenterNormal(
+        center: SIMD3<Double>, normal: SIMD3<Double>,
+        radius: Double
+    ) -> Curve3D? {
+        guard
+            let h = OCCTGceMakeCircFromCenterNormal(
+                center.x, center.y, center.z,
+                normal.x, normal.y, normal.z,
+                radius)
+        else { return nil }
         return Curve3D(handle: h)
     }
 
-    /// Create a line from 2 points (gce_MakeLin)
+    /// Create a line from 2 points (gce_MakeLin).
     public static func lineFrom2Points(_ p1: SIMD3<Double>, _ p2: SIMD3<Double>) -> Curve3D? {
-        guard let h = OCCTGceMakeLinFrom2Points(p1.x, p1.y, p1.z,
-                                                 p2.x, p2.y, p2.z) else { return nil }
+        guard
+            let h = OCCTGceMakeLinFrom2Points(
+                p1.x, p1.y, p1.z,
+                p2.x, p2.y, p2.z)
+        else { return nil }
         return Curve3D(handle: h)
     }
 
-    /// Create a direction from 2 points (gce_MakeDir)
-    public static func directionFrom2Points(_ p1: SIMD3<Double>,
-                                            _ p2: SIMD3<Double>) -> SIMD3<Double>? {
-        var x: Double = 0, y: Double = 0, z: Double = 0
+    /// Create a direction from 2 points (gce_MakeDir).
+    public static func directionFrom2Points(
+        _ p1: SIMD3<Double>,
+        _ p2: SIMD3<Double>
+    ) -> SIMD3<Double>? {
+        var x: Double = 0
+        var y: Double = 0
+        var z: Double = 0
         guard OCCTGceMakeDir(p1.x, p1.y, p1.z, p2.x, p2.y, p2.z, &x, &y, &z) else { return nil }
         return SIMD3(x, y, z)
     }
@@ -1649,12 +1831,17 @@ extension Curve3D {
     /// #expect(Curve3D.ellipseFromCenterNormal(center: .zero, normal: SIMD3(0, 0, 1),
     ///                                         majorRadius: 10, minorRadius: 0) == nil)
     /// ```
-    public static func ellipseFromCenterNormal(center: SIMD3<Double>, normal: SIMD3<Double>,
-                                               majorRadius: Double,
-                                               minorRadius: Double) -> Curve3D? {
-        guard let h = OCCTGceMakeElips(center.x, center.y, center.z,
-                                        normal.x, normal.y, normal.z,
-                                        majorRadius, minorRadius) else { return nil }
+    public static func ellipseFromCenterNormal(
+        center: SIMD3<Double>, normal: SIMD3<Double>,
+        majorRadius: Double,
+        minorRadius: Double
+    ) -> Curve3D? {
+        guard
+            let h = OCCTGceMakeElips(
+                center.x, center.y, center.z,
+                normal.x, normal.y, normal.z,
+                majorRadius, minorRadius)
+        else { return nil }
         return Curve3D(handle: h)
     }
 
@@ -1677,12 +1864,17 @@ extension Curve3D {
     /// #expect(Curve3D.hyperbolaFromCenterNormal(center: .zero, normal: SIMD3(0, 0, 1),
     ///                                           majorRadius: 8, minorRadius: 0) == nil)
     /// ```
-    public static func hyperbolaFromCenterNormal(center: SIMD3<Double>, normal: SIMD3<Double>,
-                                                 majorRadius: Double,
-                                                 minorRadius: Double) -> Curve3D? {
-        guard let h = OCCTGceMakeHypr(center.x, center.y, center.z,
-                                       normal.x, normal.y, normal.z,
-                                       majorRadius, minorRadius) else { return nil }
+    public static func hyperbolaFromCenterNormal(
+        center: SIMD3<Double>, normal: SIMD3<Double>,
+        majorRadius: Double,
+        minorRadius: Double
+    ) -> Curve3D? {
+        guard
+            let h = OCCTGceMakeHypr(
+                center.x, center.y, center.z,
+                normal.x, normal.y, normal.z,
+                majorRadius, minorRadius)
+        else { return nil }
         return Curve3D(handle: h)
     }
 
@@ -1703,26 +1895,33 @@ extension Curve3D {
     /// #expect(Curve3D.parabolaFromCenterNormal(center: .zero, normal: SIMD3(0, 0, 1),
     ///                                          focal: 0) == nil)
     /// ```
-    public static func parabolaFromCenterNormal(center: SIMD3<Double>, normal: SIMD3<Double>,
-                                                focal: Double) -> Curve3D? {
-        guard let h = OCCTGceMakeParab(center.x, center.y, center.z,
-                                        normal.x, normal.y, normal.z,
-                                        focal) else { return nil }
+    public static func parabolaFromCenterNormal(
+        center: SIMD3<Double>, normal: SIMD3<Double>,
+        focal: Double
+    ) -> Curve3D? {
+        guard
+            let h = OCCTGceMakeParab(
+                center.x, center.y, center.z,
+                normal.x, normal.y, normal.z,
+                focal)
+        else { return nil }
         return Curve3D(handle: h)
     }
 
-    /// Serialize curves to string via GeomTools_CurveSet
+    /// Serialize curves to string via GeomTools_CurveSet.
     public static func serializeCurves(_ curves: [Curve3D]) -> String? {
         let handles = curves.map { $0.handle as OCCTCurve3DRef }
-        guard let cStr = handles.withUnsafeBufferPointer({
-            OCCTGeomToolsCurveSetWrite($0.baseAddress!, Int32(curves.count))
-        }) else { return nil }
+        guard
+            let cStr = handles.withUnsafeBufferPointer({
+                OCCTGeomToolsCurveSetWrite($0.baseAddress!, Int32(curves.count))
+            })
+        else { return nil }
         let result = String(cString: cStr)
         OCCTGeomToolsFreeString(cStr)
         return result
     }
 
-    /// Deserialize curves from string via GeomTools_CurveSet
+    /// Deserialize curves from string via GeomTools_CurveSet.
     public static func deserializeCurves(_ data: String) -> [Curve3D]? {
         var count: Int32 = 0
         guard let arr = OCCTGeomToolsCurveSetRead(data, &count), count > 0 else { return nil }
@@ -1738,7 +1937,9 @@ extension Curve3D {
 
     // MARK: - Geom_Circle Properties (v0.108.0)
 
-    /// Access circle-specific properties. Returns meaningful values only if the underlying curve is a Geom_Circle.
+    /// Access circle-specific properties.
+    ///
+    /// Returns meaningful values only if the underlying curve is a Geom_Circle.
     public struct CircleProperties: @unchecked Sendable {
         fileprivate let handle: OCCTCurve3DRef
 
@@ -1765,23 +1966,17 @@ extension Curve3D {
 
         /// The center point of the circle.
         public var center: SIMD3<Double> {
-            var x = 0.0, y = 0.0, z = 0.0
-            OCCTCurve3DCircleCenter(handle, &x, &y, &z)
-            return SIMD3(x, y, z)
+            unwrapVectorComponents { OCCTCurve3DCircleCenter(handle, $0, $1, $2) }
         }
 
         /// The X axis of the circle (position + direction).
         public var xAxis: (position: SIMD3<Double>, direction: SIMD3<Double>) {
-            var px = 0.0, py = 0.0, pz = 0.0, dx = 0.0, dy = 0.0, dz = 0.0
-            OCCTCurve3DCircleXAxis(handle, &px, &py, &pz, &dx, &dy, &dz)
-            return (SIMD3(px, py, pz), SIMD3(dx, dy, dz))
+            unwrapAxisComponents { OCCTCurve3DCircleXAxis(handle, $0, $1, $2, $3, $4, $5) }
         }
 
         /// The Y axis of the circle (position + direction).
         public var yAxis: (position: SIMD3<Double>, direction: SIMD3<Double>) {
-            var px = 0.0, py = 0.0, pz = 0.0, dx = 0.0, dy = 0.0, dz = 0.0
-            OCCTCurve3DCircleYAxis(handle, &px, &py, &pz, &dx, &dy, &dz)
-            return (SIMD3(px, py, pz), SIMD3(dx, dy, dz))
+            unwrapAxisComponents { OCCTCurve3DCircleYAxis(handle, $0, $1, $2, $3, $4, $5) }
         }
     }
 
@@ -1790,7 +1985,9 @@ extension Curve3D {
 
     // MARK: - Geom_Ellipse Properties (v0.108.0)
 
-    /// Access ellipse-specific properties. Returns meaningful values only if the underlying curve is a Geom_Ellipse.
+    /// Access ellipse-specific properties.
+    ///
+    /// Returns meaningful values only if the underlying curve is a Geom_Ellipse.
     public struct EllipseProperties: @unchecked Sendable {
         fileprivate let handle: OCCTCurve3DRef
 
@@ -1815,7 +2012,9 @@ extension Curve3D {
         /// }
         /// ```
         @discardableResult
-        public func setMajorRadius(_ r: Double) -> Bool { OCCTCurve3DEllipseSetMajorRadius(handle, r) }
+        public func setMajorRadius(_ r: Double) -> Bool {
+            OCCTCurve3DEllipseSetMajorRadius(handle, r)
+        }
 
         /// Set the minor radius.
         ///
@@ -1835,7 +2034,9 @@ extension Curve3D {
         /// }
         /// ```
         @discardableResult
-        public func setMinorRadius(_ r: Double) -> Bool { OCCTCurve3DEllipseSetMinorRadius(handle, r) }
+        public func setMinorRadius(_ r: Double) -> Bool {
+            OCCTCurve3DEllipseSetMinorRadius(handle, r)
+        }
 
         /// The eccentricity (0 < e < 1 for an ellipse).
         public var eccentricity: Double { OCCTCurve3DEllipseEccentricity(handle) }
@@ -1845,16 +2046,12 @@ extension Curve3D {
 
         /// The first focus.
         public var focus1: SIMD3<Double> {
-            var x = 0.0, y = 0.0, z = 0.0
-            OCCTCurve3DEllipseFocus1(handle, &x, &y, &z)
-            return SIMD3(x, y, z)
+            unwrapVectorComponents { OCCTCurve3DEllipseFocus1(handle, $0, $1, $2) }
         }
 
         /// The second focus.
         public var focus2: SIMD3<Double> {
-            var x = 0.0, y = 0.0, z = 0.0
-            OCCTCurve3DEllipseFocus2(handle, &x, &y, &z)
-            return SIMD3(x, y, z)
+            unwrapVectorComponents { OCCTCurve3DEllipseFocus2(handle, $0, $1, $2) }
         }
 
         /// The semi-latus rectum (parameter).
@@ -1862,9 +2059,7 @@ extension Curve3D {
 
         /// The first directrix (position + direction).
         public var directrix1: (position: SIMD3<Double>, direction: SIMD3<Double>) {
-            var px = 0.0, py = 0.0, pz = 0.0, dx = 0.0, dy = 0.0, dz = 0.0
-            OCCTCurve3DEllipseDirectrix1(handle, &px, &py, &pz, &dx, &dy, &dz)
-            return (SIMD3(px, py, pz), SIMD3(dx, dy, dz))
+            unwrapAxisComponents { OCCTCurve3DEllipseDirectrix1(handle, $0, $1, $2, $3, $4, $5) }
         }
     }
 
@@ -1873,7 +2068,9 @@ extension Curve3D {
 
     // MARK: - Geom_Hyperbola Properties (v0.108.0)
 
-    /// Access hyperbola-specific properties. Returns meaningful values only if the underlying curve is a Geom_Hyperbola.
+    /// Access hyperbola-specific properties.
+    ///
+    /// Returns meaningful values only if the underlying curve is a Geom_Hyperbola.
     public struct HyperbolaProperties: @unchecked Sendable {
         fileprivate let handle: OCCTCurve3DRef
 
@@ -1898,7 +2095,9 @@ extension Curve3D {
         /// }
         /// ```
         @discardableResult
-        public func setMajorRadius(_ r: Double) -> Bool { OCCTCurve3DHyperbolaSetMajorRadius(handle, r) }
+        public func setMajorRadius(_ r: Double) -> Bool {
+            OCCTCurve3DHyperbolaSetMajorRadius(handle, r)
+        }
 
         /// Set the minor radius.
         ///
@@ -1914,7 +2113,9 @@ extension Curve3D {
         /// }
         /// ```
         @discardableResult
-        public func setMinorRadius(_ r: Double) -> Bool { OCCTCurve3DHyperbolaSetMinorRadius(handle, r) }
+        public func setMinorRadius(_ r: Double) -> Bool {
+            OCCTCurve3DHyperbolaSetMinorRadius(handle, r)
+        }
 
         /// The eccentricity (e > 1 for a hyperbola).
         public var eccentricity: Double { OCCTCurve3DHyperbolaEccentricity(handle) }
@@ -1924,16 +2125,12 @@ extension Curve3D {
 
         /// The first focus.
         public var focus1: SIMD3<Double> {
-            var x = 0.0, y = 0.0, z = 0.0
-            OCCTCurve3DHyperbolaFocus1(handle, &x, &y, &z)
-            return SIMD3(x, y, z)
+            unwrapVectorComponents { OCCTCurve3DHyperbolaFocus1(handle, $0, $1, $2) }
         }
 
         /// The first asymptote (position + direction).
         public var asymptote1: (position: SIMD3<Double>, direction: SIMD3<Double>) {
-            var px = 0.0, py = 0.0, pz = 0.0, dx = 0.0, dy = 0.0, dz = 0.0
-            OCCTCurve3DHyperbolaAsymptote1(handle, &px, &py, &pz, &dx, &dy, &dz)
-            return (SIMD3(px, py, pz), SIMD3(dx, dy, dz))
+            unwrapAxisComponents { OCCTCurve3DHyperbolaAsymptote1(handle, $0, $1, $2, $3, $4, $5) }
         }
     }
 
@@ -1942,7 +2139,9 @@ extension Curve3D {
 
     // MARK: - Geom_Parabola Properties (v0.108.0)
 
-    /// Access parabola-specific properties. Returns meaningful values only if the underlying curve is a Geom_Parabola.
+    /// Access parabola-specific properties.
+    ///
+    /// Returns meaningful values only if the underlying curve is a Geom_Parabola.
     public struct ParabolaProperties: @unchecked Sendable {
         fileprivate let handle: OCCTCurve3DRef
 
@@ -1967,9 +2166,7 @@ extension Curve3D {
 
         /// The focus point.
         public var focus: SIMD3<Double> {
-            var x = 0.0, y = 0.0, z = 0.0
-            OCCTCurve3DParabolaFocus(handle, &x, &y, &z)
-            return SIMD3(x, y, z)
+            unwrapVectorComponents { OCCTCurve3DParabolaFocus(handle, $0, $1, $2) }
         }
 
         /// The eccentricity (always 1 for a parabola).
@@ -1980,9 +2177,7 @@ extension Curve3D {
 
         /// The directrix (position + direction).
         public var directrix: (position: SIMD3<Double>, direction: SIMD3<Double>) {
-            var px = 0.0, py = 0.0, pz = 0.0, dx = 0.0, dy = 0.0, dz = 0.0
-            OCCTCurve3DParabolaDirectrix(handle, &px, &py, &pz, &dx, &dy, &dz)
-            return (SIMD3(px, py, pz), SIMD3(dx, dy, dz))
+            unwrapAxisComponents { OCCTCurve3DParabolaDirectrix(handle, $0, $1, $2, $3, $4, $5) }
         }
     }
 
@@ -1991,22 +2186,20 @@ extension Curve3D {
 
     // MARK: - Geom_Line Properties (v0.108.0)
 
-    /// Access line-specific properties. Returns meaningful values only if the underlying curve is a Geom_Line.
+    /// Access line-specific properties.
+    ///
+    /// Returns meaningful values only if the underlying curve is a Geom_Line.
     public struct LineProperties: @unchecked Sendable {
         fileprivate let handle: OCCTCurve3DRef
 
         /// The direction of the line.
         public var direction: SIMD3<Double> {
-            var dx = 0.0, dy = 0.0, dz = 0.0
-            OCCTCurve3DLineDirection(handle, &dx, &dy, &dz)
-            return SIMD3(dx, dy, dz)
+            unwrapVectorComponents { OCCTCurve3DLineDirection(handle, $0, $1, $2) }
         }
 
         /// The location (origin point) of the line.
         public var location: SIMD3<Double> {
-            var x = 0.0, y = 0.0, z = 0.0
-            OCCTCurve3DLineLocation(handle, &x, &y, &z)
-            return SIMD3(x, y, z)
+            unwrapVectorComponents { OCCTCurve3DLineLocation(handle, $0, $1, $2) }
         }
 
         /// Set the direction of the line.
@@ -2023,16 +2216,12 @@ extension Curve3D {
 
         /// The position axis (location + direction).
         public var position: (location: SIMD3<Double>, direction: SIMD3<Double>) {
-            var px = 0.0, py = 0.0, pz = 0.0, dx = 0.0, dy = 0.0, dz = 0.0
-            OCCTCurve3DLinePosition(handle, &px, &py, &pz, &dx, &dy, &dz)
-            return (SIMD3(px, py, pz), SIMD3(dx, dy, dz))
+            unwrapAxisComponents { OCCTCurve3DLinePosition(handle, $0, $1, $2, $3, $4, $5) }
         }
 
         /// The gp_Lin representation (location + direction).
         public var lin: (location: SIMD3<Double>, direction: SIMD3<Double>) {
-            var px = 0.0, py = 0.0, pz = 0.0, dx = 0.0, dy = 0.0, dz = 0.0
-            OCCTCurve3DLineLin(handle, &px, &py, &pz, &dx, &dy, &dz)
-            return (SIMD3(px, py, pz), SIMD3(dx, dy, dz))
+            unwrapAxisComponents { OCCTCurve3DLineLin(handle, $0, $1, $2, $3, $4, $5) }
         }
     }
 
@@ -2042,36 +2231,46 @@ extension Curve3D {
     // MARK: - v0.115.0: Interpolation expansion, length, closest point
 
     /// Interpolate a 3D BSpline with per-point tangent constraints.
-    public static func interpolate(points: [SIMD3<Double>],
-                                   tangents: [SIMD3<Double>],
-                                   tangentFlags: [Bool]) -> Curve3D? {
+    public static func interpolate(
+        points: [SIMD3<Double>],
+        tangents: [SIMD3<Double>],
+        tangentFlags: [Bool]
+    ) -> Curve3D? {
         guard points.count == tangents.count, points.count == tangentFlags.count else { return nil }
         var flatPts = [Double]()
         for p in points { flatPts.append(contentsOf: [p.x, p.y, p.z]) }
         var flatTans = [Double]()
         for t in tangents { flatTans.append(contentsOf: [t.x, t.y, t.z]) }
-        guard let ref = flatPts.withUnsafeBufferPointer({ pBuf in
-            flatTans.withUnsafeBufferPointer({ tBuf in
-                tangentFlags.withUnsafeBufferPointer({ fBuf in
-                    OCCTInterpolateWithAllTangents(pBuf.baseAddress!, Int32(points.count),
-                                                   tBuf.baseAddress!, fBuf.baseAddress!)
+        guard
+            let ref = flatPts.withUnsafeBufferPointer({ pBuf in
+                flatTans.withUnsafeBufferPointer({ tBuf in
+                    tangentFlags.withUnsafeBufferPointer({ fBuf in
+                        OCCTInterpolateWithAllTangents(
+                            pBuf.baseAddress!, Int32(points.count),
+                            tBuf.baseAddress!, fBuf.baseAddress!)
+                    })
                 })
             })
-        }) else { return nil }
+        else { return nil }
         return Curve3D(handle: ref)
     }
 
     /// Interpolate a 3D BSpline with explicit parameter values.
-    public static func interpolate(points: [SIMD3<Double>],
-                                   parameters: [Double]) -> Curve3D? {
+    public static func interpolate(
+        points: [SIMD3<Double>],
+        parameters: [Double]
+    ) -> Curve3D? {
         guard points.count == parameters.count else { return nil }
         var flat = [Double]()
         for p in points { flat.append(contentsOf: [p.x, p.y, p.z]) }
-        guard let ref = flat.withUnsafeBufferPointer({ pBuf in
-            parameters.withUnsafeBufferPointer({ paramBuf in
-                OCCTInterpolateWithParameters(pBuf.baseAddress!, Int32(points.count), paramBuf.baseAddress!)
+        guard
+            let ref = flat.withUnsafeBufferPointer({ pBuf in
+                parameters.withUnsafeBufferPointer({ paramBuf in
+                    OCCTInterpolateWithParameters(
+                        pBuf.baseAddress!, Int32(points.count), paramBuf.baseAddress!)
+                })
             })
-        }) else { return nil }
+        else { return nil }
         return Curve3D(handle: ref)
     }
 
@@ -2099,8 +2298,10 @@ extension Curve3D {
     /// ], closed: true)
     /// #expect(loop?.domain == same?.domain)
     /// ```
-    public static func interpolatePeriodic(points: [SIMD3<Double>],
-                                           tolerance: Double = 1e-6) -> Curve3D? {
+    public static func interpolatePeriodic(
+        points: [SIMD3<Double>],
+        tolerance: Double = 1e-6
+    ) -> Curve3D? {
         interpolate(points: points, closed: true, tolerance: tolerance)
     }
 
@@ -2109,35 +2310,45 @@ extension Curve3D {
     /// `continuity` is a ``ParametricContinuity`` raw value (0=C0, 1=C1, 2=C2, 3=C3). Unlike the
     /// `approximated` family, the fitter accepts every value without failing — it treats the
     /// request as an upper bound on what it will try to achieve.
-    public static func approximate(points: [SIMD3<Double>],
-                                   degMin: Int = 3, degMax: Int = 8,
-                                   continuity: Int = 2, tolerance: Double = 1e-3) -> Curve3D? {
+    public static func approximate(
+        points: [SIMD3<Double>],
+        degMin: Int = 3, degMax: Int = 8,
+        continuity: Int = 2, tolerance: Double = 1e-3
+    ) -> Curve3D? {
         var flat = [Double]()
         for p in points { flat.append(contentsOf: [p.x, p.y, p.z]) }
-        guard let ref = flat.withUnsafeBufferPointer({ buf in
-            OCCTPointsToBSplineWithParams(buf.baseAddress!, Int32(points.count),
-                                          Int32(degMin), Int32(degMax),
-                                          Int32(continuity), tolerance)
-        }) else { return nil }
+        guard
+            let ref = flat.withUnsafeBufferPointer({ buf in
+                OCCTPointsToBSplineWithParams(
+                    buf.baseAddress!, Int32(points.count),
+                    Int32(degMin), Int32(degMax),
+                    Int32(continuity), tolerance)
+            })
+        else { return nil }
         return Curve3D(handle: ref)
     }
 
     /// Approximate a 3D BSpline with explicit parameter values.
-    public static func approximate(points: [SIMD3<Double>],
-                                   parameters: [Double],
-                                   degMin: Int = 3, degMax: Int = 8,
-                                   continuity: Int = 2, tolerance: Double = 1e-3) -> Curve3D? {
+    public static func approximate(
+        points: [SIMD3<Double>],
+        parameters: [Double],
+        degMin: Int = 3, degMax: Int = 8,
+        continuity: Int = 2, tolerance: Double = 1e-3
+    ) -> Curve3D? {
         guard points.count == parameters.count else { return nil }
         var flat = [Double]()
         for p in points { flat.append(contentsOf: [p.x, p.y, p.z]) }
-        guard let ref = flat.withUnsafeBufferPointer({ pBuf in
-            parameters.withUnsafeBufferPointer({ paramBuf in
-                OCCTPointsToBSplineWithParameters(pBuf.baseAddress!, paramBuf.baseAddress!,
-                                                   Int32(points.count),
-                                                   Int32(degMin), Int32(degMax),
-                                                   Int32(continuity), tolerance)
+        guard
+            let ref = flat.withUnsafeBufferPointer({ pBuf in
+                parameters.withUnsafeBufferPointer({ paramBuf in
+                    OCCTPointsToBSplineWithParameters(
+                        pBuf.baseAddress!, paramBuf.baseAddress!,
+                        Int32(points.count),
+                        Int32(degMin), Int32(degMax),
+                        Int32(continuity), tolerance)
+                })
             })
-        }) else { return nil }
+        else { return nil }
         return Curve3D(handle: ref)
     }
 
@@ -2165,7 +2376,7 @@ extension Curve3D {
     ///
     /// - Parameters:
     ///   - arcLength: Distance along the curve (positive = forward, negative = backward).
-    ///   - from: Starting parameter (defaults to curve start).
+    ///   - startParam: Starting parameter (defaults to curve start).
     /// - Returns: The parameter value at the specified arc length.
     ///
     /// ```swift
@@ -2239,17 +2450,24 @@ extension Curve3D {
 
     /// Split this curve at C1 discontinuities.
     ///
-    /// - Parameter maxSegments: Output *capacity* (default 32), clamped into `0...`
-    ///   ``Sampling/maximumSampleCount``; 0 or less returns empty (#622).
+    /// - Parameters:
+    ///   - continuity: A ``ParametricContinuity`` raw value; the curve is split wherever it
+    ///     drops below this continuity.
+    ///   - tolerance: Geometric tolerance for the continuity check.
+    ///   - maxSegments: Output *capacity* (default 32), clamped into `0...`
+    ///     ``Sampling/maximumSampleCount``; 0 or less returns empty (#622).
     /// - Returns: Array of BSpline segments.
-    public func splitAtContinuity(continuity: Int = 1, tolerance: Double = 1e-6,
-                                  maxSegments: Int = 32) -> [Curve3D] {
+    public func splitAtContinuity(
+        continuity: Int = 1, tolerance: Double = 1e-6,
+        maxSegments: Int = 32
+    ) -> [Curve3D] {
         let maxSegments = Sampling.capacity(maxSegments)
         guard maxSegments > 0 else { return [] }
         var refs = [OCCTCurve3DRef?](repeating: nil, count: maxSegments)
         let n = refs.withUnsafeMutableBufferPointer { buf in
-            OCCTCurve3DSplitAtContinuity(handle, Int32(continuity), tolerance,
-                                          buf.baseAddress!, Int32(maxSegments))
+            OCCTCurve3DSplitAtContinuity(
+                handle, Int32(continuity), tolerance,
+                buf.baseAddress!, Int32(maxSegments))
         }
         var result = [Curve3D]()
         for i in 0..<Int(n) {
@@ -2263,9 +2481,11 @@ extension Curve3D {
     /// Concatenate an array of curves into a single BSpline with G1 continuity.
     public static func concatenateG1(curves: [Curve3D], tolerance: Double = 1e-6) -> Curve3D? {
         let refs = curves.map { $0.handle as OCCTCurve3DRef }
-        guard let ref = refs.withUnsafeBufferPointer({ buf in
-            OCCTCurve3DConcatenateG1(buf.baseAddress!, Int32(curves.count), tolerance)
-        }) else { return nil }
+        guard
+            let ref = refs.withUnsafeBufferPointer({ buf in
+                OCCTCurve3DConcatenateG1(buf.baseAddress!, Int32(curves.count), tolerance)
+            })
+        else { return nil }
         return Curve3D(handle: ref)
     }
 
@@ -2273,16 +2493,12 @@ extension Curve3D {
 
     /// Bezier start point.
     public var bezierStartPoint: SIMD3<Double> {
-        var x = 0.0, y = 0.0, z = 0.0
-        OCCTCurve3DBezierStartPoint(handle, &x, &y, &z)
-        return SIMD3(x, y, z)
+        unwrapVectorComponents { OCCTCurve3DBezierStartPoint(handle, $0, $1, $2) }
     }
 
     /// Bezier end point.
     public var bezierEndPoint: SIMD3<Double> {
-        var x = 0.0, y = 0.0, z = 0.0
-        OCCTCurve3DBezierEndPoint(handle, &x, &y, &z)
-        return SIMD3(x, y, z)
+        unwrapVectorComponents { OCCTCurve3DBezierEndPoint(handle, $0, $1, $2) }
     }
 
     /// Get all Bezier poles as flat array.
@@ -2299,7 +2515,9 @@ extension Curve3D {
         return result
     }
 
-    /// Get all Bezier weights. Returns nil if non-rational.
+    /// Get all Bezier weights.
+    ///
+    /// Returns nil if non-rational.
     public var bezierWeights: [Double]? {
         let count = Int(OCCTCurve3DBezierPoleCount(handle))
         guard count > 0 else { return nil }
@@ -2318,7 +2536,8 @@ extension Curve3D {
         OCCTCurve3DBezierIsPeriodic(handle)
     }
 
-    /// Bezier curve continuity, as a raw `GeomAbs_Shape` ordinal
+    /// Bezier curve continuity, as a raw `GeomAbs_Shape` ordinal.
+    ///
     /// (`0=C0, 1=G1, 2=C1, 3=G2, 4=C2, 5=C3, 6=CN`). A Bezier curve is CN by construction, so
     /// this is `6`; `0` if the curve is not a Bezier. Prefer ``ContinuityClass`` for a named
     /// result (#619).
@@ -2354,6 +2573,7 @@ extension Curve3D {
     // MARK: - v0.127.0: BSpline completions
 
     /// Normalize a parameter value for a periodic BSpline curve.
+    ///
     /// Returns the normalized parameter, or nil if the curve is not periodic.
     public func bsplinePeriodicNormalization(_ u: Double) -> Double? {
         var param = u
@@ -2367,7 +2587,8 @@ extension Curve3D {
     ///   - tLast: End of parameter range
     ///   - angularTolerance: Angular tolerance for tangent comparison (radians)
     /// - Returns: true if the curve is G1 continuous on the given range
-    public func bsplineIsG1(tFirst: Double, tLast: Double, angularTolerance: Double = 0.01) -> Bool {
+    public func bsplineIsG1(tFirst: Double, tLast: Double, angularTolerance: Double = 0.01) -> Bool
+    {
         OCCTCurve3DBSplineIsG1(handle, tFirst, tLast, angularTolerance)
     }
 }
@@ -2389,46 +2610,54 @@ extension Curve3D {
     /// Translate the curve in place by (dx, dy, dz).
     @discardableResult
     public func translate(dx: Double, dy: Double, dz: Double) -> Bool {
-        OCCTCurve3DTransform(handle, TransformType.translation.rawValue,
-                              dx, dy, dz, 0, 0, 0, 0)
+        OCCTCurve3DTransform(
+            handle, TransformType.translation.rawValue,
+            dx, dy, dz, 0, 0, 0, 0)
     }
 
     /// Rotate the curve in place around an axis by the given angle (radians).
     @discardableResult
-    public func rotate(axisOrigin: SIMD3<Double>, axisDirection: SIMD3<Double>, angle: Double) -> Bool {
-        OCCTCurve3DTransform(handle, TransformType.rotation.rawValue,
-                              axisOrigin.x, axisOrigin.y, axisOrigin.z,
-                              axisDirection.x, axisDirection.y, axisDirection.z, angle)
+    public func rotate(axisOrigin: SIMD3<Double>, axisDirection: SIMD3<Double>, angle: Double)
+        -> Bool
+    {
+        OCCTCurve3DTransform(
+            handle, TransformType.rotation.rawValue,
+            axisOrigin.x, axisOrigin.y, axisOrigin.z,
+            axisDirection.x, axisDirection.y, axisDirection.z, angle)
     }
 
     /// Scale the curve in place from a center point by the given factor.
     @discardableResult
     public func scale(center: SIMD3<Double>, factor: Double) -> Bool {
-        OCCTCurve3DTransform(handle, TransformType.scale.rawValue,
-                              center.x, center.y, center.z, factor, 0, 0, 0)
+        OCCTCurve3DTransform(
+            handle, TransformType.scale.rawValue,
+            center.x, center.y, center.z, factor, 0, 0, 0)
     }
 
     /// Mirror the curve in place through a point.
     @discardableResult
     public func mirrorPoint(_ point: SIMD3<Double>) -> Bool {
-        OCCTCurve3DTransform(handle, TransformType.mirrorPoint.rawValue,
-                              point.x, point.y, point.z, 0, 0, 0, 0)
+        OCCTCurve3DTransform(
+            handle, TransformType.mirrorPoint.rawValue,
+            point.x, point.y, point.z, 0, 0, 0, 0)
     }
 
     /// Mirror the curve in place through an axis.
     @discardableResult
     public func mirrorAxis(origin: SIMD3<Double>, direction: SIMD3<Double>) -> Bool {
-        OCCTCurve3DTransform(handle, TransformType.mirrorAxis.rawValue,
-                              origin.x, origin.y, origin.z,
-                              direction.x, direction.y, direction.z, 0)
+        OCCTCurve3DTransform(
+            handle, TransformType.mirrorAxis.rawValue,
+            origin.x, origin.y, origin.z,
+            direction.x, direction.y, direction.z, 0)
     }
 
     /// Mirror the curve in place through a plane.
     @discardableResult
     public func mirrorPlane(origin: SIMD3<Double>, normal: SIMD3<Double>) -> Bool {
-        OCCTCurve3DTransform(handle, TransformType.mirrorPlane.rawValue,
-                              origin.x, origin.y, origin.z,
-                              normal.x, normal.y, normal.z, 0)
+        OCCTCurve3DTransform(
+            handle, TransformType.mirrorPlane.rawValue,
+            origin.x, origin.y, origin.z,
+            normal.x, normal.y, normal.z, 0)
     }
 }
 
@@ -2466,11 +2695,11 @@ extension Curve3D {
 
     /// Result of a point-curve extrema computation.
     public struct ExtremumResult: Sendable {
-        /// Parameter on the curve
+        /// Parameter on the curve.
         public let parameter: Double
-        /// Distance from query point to curve point
+        /// Distance from query point to curve point.
         public let distance: Double
-        /// Closest point on the curve
+        /// Closest point on the curve.
         public let point: SIMD3<Double>
     }
 
@@ -2484,12 +2713,14 @@ extension Curve3D {
         var px = [Double](repeating: 0, count: Int(maxResults))
         var py = [Double](repeating: 0, count: Int(maxResults))
         var pz = [Double](repeating: 0, count: Int(maxResults))
-        let n = OCCTExtremaPCCurve(handle, point.x, point.y, point.z,
-                                    &params, &dists, &px, &py, &pz, maxResults)
+        let n = OCCTExtremaPCCurve(
+            handle, point.x, point.y, point.z,
+            &params, &dists, &px, &py, &pz, maxResults)
         guard n > 0 else { return [] }
         return (0..<Int(n)).map { i in
-            ExtremumResult(parameter: params[i], distance: dists[i],
-                          point: SIMD3(px[i], py[i], pz[i]))
+            ExtremumResult(
+                parameter: params[i], distance: dists[i],
+                point: SIMD3(px[i], py[i], pz[i]))
         }
     }
 
@@ -2506,13 +2737,15 @@ extension Curve3D {
         var px = [Double](repeating: 0, count: Int(maxResults))
         var py = [Double](repeating: 0, count: Int(maxResults))
         var pz = [Double](repeating: 0, count: Int(maxResults))
-        let n = OCCTExtremaPCCurveBounded(handle, point.x, point.y, point.z,
-                                           uMin, uMax,
-                                           &params, &dists, &px, &py, &pz, maxResults)
+        let n = OCCTExtremaPCCurveBounded(
+            handle, point.x, point.y, point.z,
+            uMin, uMax,
+            &params, &dists, &px, &py, &pz, maxResults)
         guard n > 0 else { return [] }
         return (0..<Int(n)).map { i in
-            ExtremumResult(parameter: params[i], distance: dists[i],
-                          point: SIMD3(px[i], py[i], pz[i]))
+            ExtremumResult(
+                parameter: params[i], distance: dists[i],
+                point: SIMD3(px[i], py[i], pz[i]))
         }
     }
 
@@ -2536,7 +2769,9 @@ extension Curve3D {
     ///   - tz: Z translation
     /// - Returns: A new Curve3D with the translation applied, or nil on error
     public func translated(tx: Double, ty: Double, tz: Double) -> Curve3D? {
-        guard let ref = OCCTGeomAdaptorTransformedCurveCreate(handle, tx, ty, tz) else { return nil }
+        guard let ref = OCCTGeomAdaptorTransformedCurveCreate(handle, tx, ty, tz) else {
+            return nil
+        }
         return Curve3D(handle: ref)
     }
 
@@ -2552,9 +2787,13 @@ extension Curve3D {
         guard poles.count >= 3, poles.count % 2 == 1 else { return nil }
         var flat = [Double](repeating: 0, count: poles.count * 3)
         for (i, p) in poles.enumerated() {
-            flat[i * 3] = p.x; flat[i * 3 + 1] = p.y; flat[i * 3 + 2] = p.z
+            flat[i * 3] = p.x
+            flat[i * 3 + 1] = p.y
+            flat[i * 3 + 2] = p.z
         }
-        guard let ref = OCCTGeomEvalTBezierCurveCreate(&flat, Int32(poles.count), alpha) else { return nil }
+        guard let ref = OCCTGeomEvalTBezierCurveCreate(&flat, Int32(poles.count), alpha) else {
+            return nil
+        }
         return Curve3D(handle: ref)
     }
 
@@ -2564,14 +2803,22 @@ extension Curve3D {
     ///   - weights: weights for each pole (all > 0)
     ///   - alpha: frequency parameter (> 0)
     /// - Returns: Curve3D or nil on error
-    public static func tBezierRational(poles: [SIMD3<Double>], weights: [Double], alpha: Double) -> Curve3D? {
-        guard poles.count >= 3, poles.count % 2 == 1, poles.count == weights.count else { return nil }
+    public static func tBezierRational(poles: [SIMD3<Double>], weights: [Double], alpha: Double)
+        -> Curve3D?
+    {
+        guard poles.count >= 3, poles.count % 2 == 1, poles.count == weights.count else {
+            return nil
+        }
         var flat = [Double](repeating: 0, count: poles.count * 3)
         for (i, p) in poles.enumerated() {
-            flat[i * 3] = p.x; flat[i * 3 + 1] = p.y; flat[i * 3 + 2] = p.z
+            flat[i * 3] = p.x
+            flat[i * 3 + 1] = p.y
+            flat[i * 3 + 2] = p.z
         }
         var wts = weights
-        guard let ref = OCCTGeomEvalTBezierCurveCreateRational(&flat, &wts, Int32(poles.count), alpha) else { return nil }
+        guard
+            let ref = OCCTGeomEvalTBezierCurveCreateRational(&flat, &wts, Int32(poles.count), alpha)
+        else { return nil }
         return Curve3D(handle: ref)
     }
 
@@ -2586,14 +2833,21 @@ extension Curve3D {
     ///   - alpha: hyperbolic frequency (>= 0, 0 = no hyperbolic terms)
     ///   - beta: trigonometric frequency (>= 0, 0 = no trig terms)
     /// - Returns: Curve3D or nil on error
-    public static func ahtBezier(poles: [SIMD3<Double>], algDegree: Int, alpha: Double, beta: Double) -> Curve3D? {
+    public static func ahtBezier(
+        poles: [SIMD3<Double>], algDegree: Int, alpha: Double, beta: Double
+    ) -> Curve3D? {
         guard !poles.isEmpty else { return nil }
         var flat = [Double](repeating: 0, count: poles.count * 3)
         for (i, p) in poles.enumerated() {
-            flat[i * 3] = p.x; flat[i * 3 + 1] = p.y; flat[i * 3 + 2] = p.z
+            flat[i * 3] = p.x
+            flat[i * 3 + 1] = p.y
+            flat[i * 3 + 2] = p.z
         }
-        guard let ref = OCCTGeomEvalAHTBezierCurveCreate(&flat, Int32(poles.count),
-                                                          Int32(algDegree), alpha, beta) else { return nil }
+        guard
+            let ref = OCCTGeomEvalAHTBezierCurveCreate(
+                &flat, Int32(poles.count),
+                Int32(algDegree), alpha, beta)
+        else { return nil }
         return Curve3D(handle: ref)
     }
 
@@ -2605,16 +2859,23 @@ extension Curve3D {
     ///   - alpha: hyperbolic frequency (>= 0)
     ///   - beta: trigonometric frequency (>= 0)
     /// - Returns: Curve3D or nil on error
-    public static func ahtBezierRational(poles: [SIMD3<Double>], weights: [Double],
-                                          algDegree: Int, alpha: Double, beta: Double) -> Curve3D? {
+    public static func ahtBezierRational(
+        poles: [SIMD3<Double>], weights: [Double],
+        algDegree: Int, alpha: Double, beta: Double
+    ) -> Curve3D? {
         guard !poles.isEmpty, poles.count == weights.count else { return nil }
         var flat = [Double](repeating: 0, count: poles.count * 3)
         for (i, p) in poles.enumerated() {
-            flat[i * 3] = p.x; flat[i * 3 + 1] = p.y; flat[i * 3 + 2] = p.z
+            flat[i * 3] = p.x
+            flat[i * 3 + 1] = p.y
+            flat[i * 3 + 2] = p.z
         }
         var wts = weights
-        guard let ref = OCCTGeomEvalAHTBezierCurveCreateRational(&flat, &wts, Int32(poles.count),
-                                                                   Int32(algDegree), alpha, beta) else { return nil }
+        guard
+            let ref = OCCTGeomEvalAHTBezierCurveCreateRational(
+                &flat, &wts, Int32(poles.count),
+                Int32(algDegree), alpha, beta)
+        else { return nil }
         return Curve3D(handle: ref)
     }
 }
@@ -2641,31 +2902,43 @@ extension Curve3D {
     ///     print("fitted to \(fit.maxError) with \(bspline.poleCount ?? 0) poles")
     /// }
     /// ```
-    public func approxWithDetails(tolerance: Double, continuity: ParametricContinuity = .c2,
-                                   maxSegments: Int = 100, maxDegree: Int = 8) -> ApproxCurveResult {
-        let r = OCCTGeomConvertApproxCurve(handle, tolerance, continuity.rawValue,
-                                            Int32(maxSegments), Int32(maxDegree))
+    public func approxWithDetails(
+        tolerance: Double, continuity: ParametricContinuity = .c2,
+        maxSegments: Int = 100, maxDegree: Int = 8
+    ) -> ApproxCurveResult {
+        let r = OCCTGeomConvertApproxCurve(
+            handle, tolerance, continuity.rawValue,
+            Int32(maxSegments), Int32(maxDegree))
         let curve: Curve3D? = r.curve.map { Curve3D(handle: $0) }
-        return ApproxCurveResult(curve: curve, maxError: r.maxError, isDone: r.isDone, hasResult: r.hasResult)
+        return ApproxCurveResult(
+            curve: curve, maxError: r.maxError, isDone: r.isDone, hasResult: r.hasResult)
     }
 }
 
 extension Curve3D {
     /// Project this 3D curve onto a surface as a 2D curve.
-    public func projectOnSurface(_ surface: Surface, firstParam: Double? = nil,
-                                  lastParam: Double? = nil, precision: Double = 1e-6) -> Curve2D? {
+    public func projectOnSurface(
+        _ surface: Surface, firstParam: Double? = nil,
+        lastParam: Double? = nil, precision: Double = 1e-6
+    ) -> Curve2D? {
         let domain = self.domain
         let f = firstParam ?? domain.lowerBound
         let l = lastParam ?? domain.upperBound
-        guard let ref = OCCTProjectCurveOnSurface(handle, surface.handle, f, l, precision) else { return nil }
+        guard let ref = OCCTProjectCurveOnSurface(handle, surface.handle, f, l, precision) else {
+            return nil
+        }
         return Curve2D(handle: ref)
     }
 }
 
 extension Curve3D {
     /// Convert this curve segment to a BSpline using ShapeConstruct_Curve.
-    public func convertSegmentToBSpline(first: Double, last: Double, precision: Double = 1e-6) -> Curve3D? {
-        guard let ref = OCCTShapeConstructConvertToBSpline3D(handle, first, last, precision) else { return nil }
+    public func convertSegmentToBSpline(first: Double, last: Double, precision: Double = 1e-6)
+        -> Curve3D?
+    {
+        guard let ref = OCCTShapeConstructConvertToBSpline3D(handle, first, last, precision) else {
+            return nil
+        }
         return Curve3D(handle: ref)
     }
 
@@ -2677,6 +2950,7 @@ extension Curve3D {
 
 extension Curve3D {
     /// Find the parameter of a 3D point on this curve.
+    ///
     /// Returns nil if the point is beyond maxDistance from the curve.
     public func parameterOf(point: SIMD3<Double>, maxDistance: Double = 1.0) -> Double? {
         var param: Double = 0
@@ -2687,41 +2961,62 @@ extension Curve3D {
 
 extension Curve3D {
     /// Check if this BSpline curve has reversed end tangents.
+    ///
     /// Returns (needFixFirst, needFixLast) or nil if not a BSpline or check failed.
-    public func checkBSplineTangents(tolerance: Double = 0.01, angularTolerance: Double = 0.1) -> (fixFirst: Bool, fixLast: Bool)? {
-        var first = false, last = false
+    public func checkBSplineTangents(tolerance: Double = 0.01, angularTolerance: Double = 0.1) -> (
+        fixFirst: Bool, fixLast: Bool
+    )? {
+        var first = false
+        var last = false
         let ok = OCCTGeomLibCheckBSpline3D(handle, tolerance, angularTolerance, &first, &last)
         return ok ? (first, last) : nil
     }
 
-    /// Fix reversed end tangents on a BSpline curve. Returns new curve or nil.
-    public func fixBSplineTangents(fixFirst: Bool, fixLast: Bool,
-                                    tolerance: Double = 0.01, angularTolerance: Double = 0.1) -> Curve3D? {
-        guard let ref = OCCTGeomLibFixBSpline3D(handle, tolerance, angularTolerance, fixFirst, fixLast) else { return nil }
+    /// Fix reversed end tangents on a BSpline curve.
+    ///
+    /// Returns new curve or nil.
+    public func fixBSplineTangents(
+        fixFirst: Bool, fixLast: Bool,
+        tolerance: Double = 0.01, angularTolerance: Double = 0.1
+    ) -> Curve3D? {
+        guard
+            let ref = OCCTGeomLibFixBSpline3D(
+                handle, tolerance, angularTolerance, fixFirst, fixLast)
+        else { return nil }
         return Curve3D(handle: ref)
     }
 }
 
 extension Curve3D {
     /// Create a BSpline curve by polynomial interpolation of points at given parameters.
-    public static func polynomialInterpolation(degree: Int, points: [SIMD3<Double>], parameters: [Double]) -> Curve3D? {
+    public static func polynomialInterpolation(
+        degree: Int, points: [SIMD3<Double>], parameters: [Double]
+    ) -> Curve3D? {
         guard points.count == parameters.count, points.count >= 2 else { return nil }
         var xyz = [Double]()
         xyz.reserveCapacity(points.count * 3)
-        for p in points { xyz.append(p.x); xyz.append(p.y); xyz.append(p.z) }
-        guard let ref = OCCTGeomLibInterpolate(Int32(degree), Int32(points.count), xyz, parameters) else { return nil }
+        for p in points {
+            xyz.append(p.x)
+            xyz.append(p.y)
+            xyz.append(p.z)
+        }
+        guard let ref = OCCTGeomLibInterpolate(Int32(degree), Int32(points.count), xyz, parameters)
+        else { return nil }
         return Curve3D(handle: ref)
     }
 }
 
 extension Curve3D {
     /// Check if a 2D curve on a surface has the same parameterization as this 3D curve.
-    public func checkSameParameter(curve2D: Curve2D, surface: Surface,
-                                    tolerance: Double = 1e-6) -> SameParameterResult? {
+    public func checkSameParameter(
+        curve2D: Curve2D, surface: Surface,
+        tolerance: Double = 1e-6
+    ) -> SameParameterResult? {
         var isSame = false
         var tolReached: Double = 0
-        let ok = OCCTApproxSameParameter(handle, curve2D.handle, surface.handle,
-                                          tolerance, &isSame, &tolReached)
+        let ok = OCCTApproxSameParameter(
+            handle, curve2D.handle, surface.handle,
+            tolerance, &isSame, &tolReached)
         guard ok else { return nil }
         return SameParameterResult(isSameParameter: isSame, toleranceReached: tolReached)
     }
@@ -2741,8 +3036,9 @@ extension Curve3D {
     public func splitByContinuity(criterion: Int = 2, tolerance: Double = 1e-6) -> [Curve3D] {
         var refs = [OCCTCurve3DRef?](repeating: nil, count: 32)
         let n = refs.withUnsafeMutableBufferPointer { buf in
-            OCCTSplitCurve3dContinuity(handle, Int32(criterion), tolerance,
-                                        buf.baseAddress, Int32(buf.count))
+            OCCTSplitCurve3dContinuity(
+                handle, Int32(criterion), tolerance,
+                buf.baseAddress, Int32(buf.count))
         }
         return (0..<Int(n)).compactMap { i in
             guard let ref = refs[i] else { return nil }
@@ -2774,7 +3070,9 @@ extension Curve3D {
     ///   - first: Start of the parameter range to examine.
     ///   - last: End of the parameter range to examine.
     /// - Returns: The recognized curve with its range and deviation, or nil if not recognizable.
-    public func toAnalytical(tolerance: Double, first: Double, last: Double) -> CurveToAnalyticalResult? {
+    public func toAnalytical(tolerance: Double, first: Double, last: Double)
+        -> CurveToAnalyticalResult?
+    {
         let result = OCCTGeomConvertCurveToAnalytical(handle, tolerance, first, last)
         guard result.success, let curveRef = result.curve else { return nil }
         return CurveToAnalyticalResult(
@@ -2802,17 +3100,22 @@ extension Curve3D {
     /// - Returns: The recognized curve with its range and deviation, or nil if not recognizable.
     public func toAnalyticalWithGap(tolerance: Double = 1e-4) -> CurveToAnalyticalResult? {
         let domain = self.domain
-        return toAnalytical(tolerance: tolerance,
-                            first: domain.lowerBound,
-                            last: domain.upperBound)
+        return toAnalytical(
+            tolerance: tolerance,
+            first: domain.lowerBound,
+            last: domain.upperBound)
     }
 
     /// Check if a set of 3D points are collinear within tolerance.
-    public static func arePointsLinear(_ points: [SIMD3<Double>], tolerance: Double) -> (isLinear: Bool, deviation: Double) {
+    public static func arePointsLinear(_ points: [SIMD3<Double>], tolerance: Double) -> (
+        isLinear: Bool, deviation: Double
+    ) {
         var flat = [Double]()
         flat.reserveCapacity(points.count * 3)
         for p in points {
-            flat.append(p.x); flat.append(p.y); flat.append(p.z)
+            flat.append(p.x)
+            flat.append(p.y)
+            flat.append(p.z)
         }
         var deviation: Double = 0
         let result = flat.withUnsafeBufferPointer { buf in
@@ -2833,35 +3136,45 @@ extension Curve3D {
     }
 
     /// Place a section curve on a path using a draft location law.
-    public func sectionPlacement(section: Curve3D,
-                                 direction: SIMD3<Double> = SIMD3(0, 0, 1),
-                                 draftAngle: Double = 0,
-                                 tolerance: Double = 1e-3) -> SectionPlacementResult {
-        let r = OCCTGeomFillSectionPlacement(handle, section.handle,
-                                              direction.x, direction.y, direction.z,
-                                              draftAngle, tolerance)
-        return SectionPlacementResult(parameterOnPath: r.parameterOnPath,
-                                      parameterOnSection: r.parameterOnSection,
-                                      distance: r.distance, angle: r.angle, isDone: r.isDone)
+    public func sectionPlacement(
+        section: Curve3D,
+        direction: SIMD3<Double> = SIMD3(0, 0, 1),
+        draftAngle: Double = 0,
+        tolerance: Double = 1e-3
+    ) -> SectionPlacementResult {
+        let r = OCCTGeomFillSectionPlacement(
+            handle, section.handle,
+            direction.x, direction.y, direction.z,
+            draftAngle, tolerance)
+        return SectionPlacementResult(
+            parameterOnPath: r.parameterOnPath,
+            parameterOnSection: r.parameterOnSection,
+            distance: r.distance, angle: r.angle, isDone: r.isDone)
     }
 }
 
-public extension Curve3D {
+extension Curve3D {
     /// Create an offset curve.
-    static func offset(basis: Curve3D, offset: Double,
-                       dirX: Double, dirY: Double, dirZ: Double) -> Curve3D? {
-        guard let ref = OCCTCurve3DCreateOffset(basis.handle, offset, dirX, dirY, dirZ) else { return nil }
+    public static func offset(
+        basis: Curve3D, offset: Double,
+        dirX: Double, dirY: Double, dirZ: Double
+    ) -> Curve3D? {
+        guard let ref = OCCTCurve3DCreateOffset(basis.handle, offset, dirX, dirY, dirZ) else {
+            return nil
+        }
         return Curve3D(handle: ref)
     }
 
     /// Get the offset value (returns 0 if not an offset curve).
-    var offsetValue: Double {
+    public var offsetValue: Double {
         OCCTCurve3DOffsetValue(handle)
     }
 
     /// Get the offset direction (returns nil if not an offset curve).
-    var offsetDirection: (x: Double, y: Double, z: Double)? {
-        var dx: Double = 0, dy: Double = 0, dz: Double = 0
+    public var offsetDirection: (x: Double, y: Double, z: Double)? {
+        var dx: Double = 0
+        var dy: Double = 0
+        var dz: Double = 0
         if OCCTCurve3DOffsetDirection(handle, &dx, &dy, &dz) {
             return (dx, dy, dz)
         }
@@ -2872,6 +3185,7 @@ public extension Curve3D {
 extension Curve3D {
 
     /// Check if this curve is closed within the given precision.
+    ///
     /// Uses ShapeAnalysis_Curve::IsClosed (static method).
     /// - Parameter precision: Tolerance for closure check.
     /// - Returns: true if the curve endpoints coincide within precision.
@@ -2880,6 +3194,7 @@ extension Curve3D {
     }
 
     /// Check if this curve is periodic using ShapeAnalysis_Curve::IsPeriodic.
+    ///
     /// More robust than the basic isPeriodic property.
     public var isPeriodicSA: Bool {
         OCCTCurve3DIsPeriodicSA(handle)
@@ -2920,33 +3235,52 @@ extension Curve3D {
 
 extension Curve3D {
     /// Create a 3D circle from axis (center + normal) and radius.
-    public static func gcCircle(center: SIMD3<Double>, normal: SIMD3<Double>, radius: Double) -> Curve3D? {
-        guard let ref = OCCTGCMakeCircle(center.x, center.y, center.z,
-                                          normal.x, normal.y, normal.z, radius) else { return nil }
+    public static func gcCircle(center: SIMD3<Double>, normal: SIMD3<Double>, radius: Double)
+        -> Curve3D?
+    {
+        guard
+            let ref = OCCTGCMakeCircle(
+                center.x, center.y, center.z,
+                normal.x, normal.y, normal.z, radius)
+        else { return nil }
         return Curve3D(handle: ref)
     }
 
     /// Create a 3D circle through 3 points.
-    public static func gcCircle(p1: SIMD3<Double>, p2: SIMD3<Double>, p3: SIMD3<Double>) -> Curve3D? {
-        guard let ref = OCCTGCMakeCircle3Points(p1.x, p1.y, p1.z,
-                                                  p2.x, p2.y, p2.z,
-                                                  p3.x, p3.y, p3.z) else { return nil }
+    public static func gcCircle(p1: SIMD3<Double>, p2: SIMD3<Double>, p3: SIMD3<Double>) -> Curve3D?
+    {
+        guard
+            let ref = OCCTGCMakeCircle3Points(
+                p1.x, p1.y, p1.z,
+                p2.x, p2.y, p2.z,
+                p3.x, p3.y, p3.z)
+        else { return nil }
         return Curve3D(handle: ref)
     }
 
     /// Create a 3D circle from center, normal, and radius (alias).
-    public static func gcCircleCenterNormal(center: SIMD3<Double>, normal: SIMD3<Double>, radius: Double) -> Curve3D? {
-        guard let ref = OCCTGCMakeCircleCenterNormal(center.x, center.y, center.z,
-                                                       normal.x, normal.y, normal.z, radius) else { return nil }
+    public static func gcCircleCenterNormal(
+        center: SIMD3<Double>, normal: SIMD3<Double>, radius: Double
+    ) -> Curve3D? {
+        guard
+            let ref = OCCTGCMakeCircleCenterNormal(
+                center.x, center.y, center.z,
+                normal.x, normal.y, normal.z, radius)
+        else { return nil }
         return Curve3D(handle: ref)
     }
 
     /// Create a 3D circle parallel to an existing circle at given distance.
-    public static func gcCircleParallel(center: SIMD3<Double>, normal: SIMD3<Double>,
-                                         radius: Double, distance: Double) -> Curve3D? {
-        guard let ref = OCCTGCMakeCircleParallel(center.x, center.y, center.z,
-                                                   normal.x, normal.y, normal.z,
-                                                   radius, distance) else { return nil }
+    public static func gcCircleParallel(
+        center: SIMD3<Double>, normal: SIMD3<Double>,
+        radius: Double, distance: Double
+    ) -> Curve3D? {
+        guard
+            let ref = OCCTGCMakeCircleParallel(
+                center.x, center.y, center.z,
+                normal.x, normal.y, normal.z,
+                radius, distance)
+        else { return nil }
         return Curve3D(handle: ref)
     }
 }
@@ -2972,19 +3306,29 @@ extension Curve3D {
     /// #expect(Curve3D.gcEllipse(center: .zero, normal: SIMD3(0, 0, 1),
     ///                           majorRadius: 10, minorRadius: 0) == nil)
     /// ```
-    public static func gcEllipse(center: SIMD3<Double>, normal: SIMD3<Double>,
-                                  majorRadius: Double, minorRadius: Double) -> Curve3D? {
-        guard let ref = OCCTGCMakeEllipse(center.x, center.y, center.z,
-                                            normal.x, normal.y, normal.z,
-                                            majorRadius, minorRadius) else { return nil }
+    public static func gcEllipse(
+        center: SIMD3<Double>, normal: SIMD3<Double>,
+        majorRadius: Double, minorRadius: Double
+    ) -> Curve3D? {
+        guard
+            let ref = OCCTGCMakeEllipse(
+                center.x, center.y, center.z,
+                normal.x, normal.y, normal.z,
+                majorRadius, minorRadius)
+        else { return nil }
         return Curve3D(handle: ref)
     }
 
     /// Create a 3D ellipse from 3 points (S1, S2, center).
-    public static func gcEllipse(s1: SIMD3<Double>, s2: SIMD3<Double>, center: SIMD3<Double>) -> Curve3D? {
-        guard let ref = OCCTGCMakeEllipse3Points(s1.x, s1.y, s1.z,
-                                                    s2.x, s2.y, s2.z,
-                                                    center.x, center.y, center.z) else { return nil }
+    public static func gcEllipse(s1: SIMD3<Double>, s2: SIMD3<Double>, center: SIMD3<Double>)
+        -> Curve3D?
+    {
+        guard
+            let ref = OCCTGCMakeEllipse3Points(
+                s1.x, s1.y, s1.z,
+                s2.x, s2.y, s2.z,
+                center.x, center.y, center.z)
+        else { return nil }
         return Curve3D(handle: ref)
     }
 
@@ -2999,12 +3343,17 @@ extension Curve3D {
     ///                           majorRadius: 10, minorRadius: 5)
     /// #expect(e != nil)
     /// ```
-    public static func gcEllipse(center: SIMD3<Double>, normal: SIMD3<Double>, xDirection: SIMD3<Double>,
-                                  majorRadius: Double, minorRadius: Double) -> Curve3D? {
-        guard let ref = OCCTGCMakeEllipseFromElips(center.x, center.y, center.z,
-                                                      normal.x, normal.y, normal.z,
-                                                      xDirection.x, xDirection.y, xDirection.z,
-                                                      majorRadius, minorRadius) else { return nil }
+    public static func gcEllipse(
+        center: SIMD3<Double>, normal: SIMD3<Double>, xDirection: SIMD3<Double>,
+        majorRadius: Double, minorRadius: Double
+    ) -> Curve3D? {
+        guard
+            let ref = OCCTGCMakeEllipseFromElips(
+                center.x, center.y, center.z,
+                normal.x, normal.y, normal.z,
+                xDirection.x, xDirection.y, xDirection.z,
+                majorRadius, minorRadius)
+        else { return nil }
         return Curve3D(handle: ref)
     }
 }
@@ -3026,19 +3375,29 @@ extension Curve3D {
     /// #expect(Curve3D.gcHyperbola(center: .zero, normal: SIMD3(0, 0, 1),
     ///                             majorRadius: 0, minorRadius: 3) == nil)
     /// ```
-    public static func gcHyperbola(center: SIMD3<Double>, normal: SIMD3<Double>,
-                                    majorRadius: Double, minorRadius: Double) -> Curve3D? {
-        guard let ref = OCCTGCMakeHyperbola(center.x, center.y, center.z,
-                                              normal.x, normal.y, normal.z,
-                                              majorRadius, minorRadius) else { return nil }
+    public static func gcHyperbola(
+        center: SIMD3<Double>, normal: SIMD3<Double>,
+        majorRadius: Double, minorRadius: Double
+    ) -> Curve3D? {
+        guard
+            let ref = OCCTGCMakeHyperbola(
+                center.x, center.y, center.z,
+                normal.x, normal.y, normal.z,
+                majorRadius, minorRadius)
+        else { return nil }
         return Curve3D(handle: ref)
     }
 
     /// Create a 3D hyperbola from 3 points (S1, S2, center).
-    public static func gcHyperbola(s1: SIMD3<Double>, s2: SIMD3<Double>, center: SIMD3<Double>) -> Curve3D? {
-        guard let ref = OCCTGCMakeHyperbola3Points(s1.x, s1.y, s1.z,
-                                                      s2.x, s2.y, s2.z,
-                                                      center.x, center.y, center.z) else { return nil }
+    public static func gcHyperbola(s1: SIMD3<Double>, s2: SIMD3<Double>, center: SIMD3<Double>)
+        -> Curve3D?
+    {
+        guard
+            let ref = OCCTGCMakeHyperbola3Points(
+                s1.x, s1.y, s1.z,
+                s2.x, s2.y, s2.z,
+                center.x, center.y, center.z)
+        else { return nil }
         return Curve3D(handle: ref)
     }
 }
@@ -3048,7 +3407,9 @@ extension Curve3D {
     public static func concatenate(_ curves: [Curve3D], tolerance: Double = 1e-4) -> Curve3D? {
         guard !curves.isEmpty else { return nil }
         var handles = curves.map { $0.handle as OCCTCurve3DRef }
-        guard let ref = OCCTConcatenateCurves3D(&handles, Int32(curves.count), tolerance) else { return nil }
+        guard let ref = OCCTConcatenateCurves3D(&handles, Int32(curves.count), tolerance) else {
+            return nil
+        }
         return Curve3D(handle: ref)
     }
 }
@@ -3089,7 +3450,9 @@ extension Curve3D {
 
 extension Curve3D {
 
-    /// BSpline-specific operations. Returns nil values if the curve is not a BSpline.
+    /// BSpline-specific operations.
+    ///
+    /// Returns nil values if the curve is not a BSpline.
     public struct BSpline {
         let curve: Curve3D
 
@@ -3125,9 +3488,9 @@ extension Curve3D {
 
         /// Get a pole at 1-based index.
         public func pole(at index: Int) -> SIMD3<Double> {
-            var x = 0.0, y = 0.0, z = 0.0
-            OCCTCurve3DBSplineGetPole(curve.handle, Int32(index), &x, &y, &z)
-            return SIMD3(x, y, z)
+            unwrapVectorComponents {
+                OCCTCurve3DBSplineGetPole(curve.handle, Int32(index), $0, $1, $2)
+            }
         }
 
         /// Set a pole at 1-based index.
@@ -3183,7 +3546,9 @@ extension Curve3D {
         }
     }
 
-    /// Access BSpline-specific operations. Works only if the underlying curve is a Geom_BSplineCurve.
+    /// Access BSpline-specific operations.
+    ///
+    /// Works only if the underlying curve is a Geom_BSplineCurve.
     public var bspline: BSpline { BSpline(curve: self) }
 }
 
@@ -3195,9 +3560,9 @@ extension Curve3D {
 
         /// Get a pole at 1-based index.
         public func pole(at index: Int) -> SIMD3<Double> {
-            var x = 0.0, y = 0.0, z = 0.0
-            OCCTCurve3DBezierGetPole(curve.handle, Int32(index), &x, &y, &z)
-            return SIMD3(x, y, z)
+            unwrapVectorComponents {
+                OCCTCurve3DBezierGetPole(curve.handle, Int32(index), $0, $1, $2)
+            }
         }
 
         /// Set a pole at 1-based index.
@@ -3246,7 +3611,9 @@ extension Curve3D {
         public var poleCount: Int { Int(OCCTCurve3DBezierPoleCount(curve.handle)) }
     }
 
-    /// Access Bezier-specific operations. Works only if the underlying curve is a Geom_BezierCurve.
+    /// Access Bezier-specific operations.
+    ///
+    /// Works only if the underlying curve is a Geom_BezierCurve.
     public var bezier: Bezier { Bezier(curve: self) }
 }
 
@@ -3269,35 +3636,48 @@ extension Curve3D {
 
     /// Evaluate the curve point at parameter u.
     public func evalD0(at u: Double) -> SIMD3<Double> {
-        var x = 0.0, y = 0.0, z = 0.0
-        OCCTCurve3DEvalD0(handle, u, &x, &y, &z)
-        return SIMD3(x, y, z)
+        unwrapVectorComponents { OCCTCurve3DEvalD0(handle, u, $0, $1, $2) }
     }
 
     /// Evaluate the curve point and first derivative at parameter u.
     public func evalD1(at u: Double) -> (point: SIMD3<Double>, d1: SIMD3<Double>) {
-        var px = 0.0, py = 0.0, pz = 0.0
-        var d1x = 0.0, d1y = 0.0, d1z = 0.0
-        OCCTCurve3DEvalD1(handle, u, &px, &py, &pz, &d1x, &d1y, &d1z)
-        return (SIMD3(px, py, pz), SIMD3(d1x, d1y, d1z))
+        unwrapAxisComponents { OCCTCurve3DEvalD1(handle, u, $0, $1, $2, $3, $4, $5) }
     }
 
     /// Evaluate the curve point, first and second derivatives at parameter u.
-    public func evalD2(at u: Double) -> (point: SIMD3<Double>, d1: SIMD3<Double>, d2: SIMD3<Double>) {
-        var px = 0.0, py = 0.0, pz = 0.0
-        var d1x = 0.0, d1y = 0.0, d1z = 0.0
-        var d2x = 0.0, d2y = 0.0, d2z = 0.0
+    public func evalD2(at u: Double) -> (point: SIMD3<Double>, d1: SIMD3<Double>, d2: SIMD3<Double>)
+    {
+        var px = 0.0
+        var py = 0.0
+        var pz = 0.0
+        var d1x = 0.0
+        var d1y = 0.0
+        var d1z = 0.0
+        var d2x = 0.0
+        var d2y = 0.0
+        var d2z = 0.0
         OCCTCurve3DEvalD2(handle, u, &px, &py, &pz, &d1x, &d1y, &d1z, &d2x, &d2y, &d2z)
         return (SIMD3(px, py, pz), SIMD3(d1x, d1y, d1z), SIMD3(d2x, d2y, d2z))
     }
 
     /// Evaluate the curve point, first, second, and third derivatives at parameter u.
-    public func evalD3(at u: Double) -> (point: SIMD3<Double>, d1: SIMD3<Double>, d2: SIMD3<Double>, d3: SIMD3<Double>) {
-        var px = 0.0, py = 0.0, pz = 0.0
-        var d1x = 0.0, d1y = 0.0, d1z = 0.0
-        var d2x = 0.0, d2y = 0.0, d2z = 0.0
-        var d3x = 0.0, d3y = 0.0, d3z = 0.0
-        OCCTCurve3DEvalD3(handle, u, &px, &py, &pz, &d1x, &d1y, &d1z, &d2x, &d2y, &d2z, &d3x, &d3y, &d3z)
+    public func evalD3(at u: Double) -> (
+        point: SIMD3<Double>, d1: SIMD3<Double>, d2: SIMD3<Double>, d3: SIMD3<Double>
+    ) {
+        var px = 0.0
+        var py = 0.0
+        var pz = 0.0
+        var d1x = 0.0
+        var d1y = 0.0
+        var d1z = 0.0
+        var d2x = 0.0
+        var d2y = 0.0
+        var d2z = 0.0
+        var d3x = 0.0
+        var d3y = 0.0
+        var d3z = 0.0
+        OCCTCurve3DEvalD3(
+            handle, u, &px, &py, &pz, &d1x, &d1y, &d1z, &d2x, &d2y, &d2z, &d3x, &d3y, &d3z)
         return (SIMD3(px, py, pz), SIMD3(d1x, d1y, d1z), SIMD3(d2x, d2y, d2z), SIMD3(d3x, d3y, d3z))
     }
 
@@ -3313,9 +3693,10 @@ extension Curve3D {
 
 extension Curve3D {
 
-    /// Local point-on-curve search from an initial parameter guess. Returns `(parameter, distance)`.
+    /// Local point-on-curve search from an initial parameter guess.
     ///
-    /// Searches a window of ±10% of the domain around `initParam` and reports the
+    /// Returns `(parameter, distance)`. Searches a window of ±10% of the domain around
+    /// `initParam` and reports the
     /// **lowest-distance extremum inside that window**. `initParam` bounds the window; it does not
     /// rank what is found in it, so the extremum you get back is not necessarily the one nearest
     /// your guess — where a window holds several, the one closest to the *query point* wins.
@@ -3344,24 +3725,37 @@ extension Curve3D {
     /// ```
     ///
     /// - Returns: `nil` only when the curve cannot be read.
-    public func locateNearestPoint(_ point: SIMD3<Double>, initParam: Double, tolerance: Double = 1e-6) -> (parameter: Double, distance: Double)? {
-        var param = 0.0, dist = 0.0
-        let ok = OCCTExtremaLocateOnCurve(handle, point.x, point.y, point.z,
-                                          initParam, tolerance, &param, &dist)
+    public func locateNearestPoint(
+        _ point: SIMD3<Double>, initParam: Double, tolerance: Double = 1e-6
+    ) -> (parameter: Double, distance: Double)? {
+        var param = 0.0
+        var dist = 0.0
+        let ok = OCCTExtremaLocateOnCurve(
+            handle, point.x, point.y, point.z,
+            initParam, tolerance, &param, &dist)
         return ok ? (param, dist) : nil
     }
 
-    /// Global point-to-curve projection returning all extrema. Returns array of (parameter, distance).
+    /// Global point-to-curve projection returning all extrema.
     ///
-    /// - Parameter maxResults: Output *capacity* (default 10), clamped into `0...`
-    ///   ``Sampling/maximumSampleCount``; 0 or less returns empty (#622).
-    public func projectPointAll(_ point: SIMD3<Double>, maxResults: Int = 10) -> [(parameter: Double, distance: Double)] {
+    /// Returns array of (parameter, distance).
+    ///
+    /// - Parameters:
+    ///   - point: The 3D point to project.
+    ///   - maxResults: Output *capacity* (default 10), clamped into `0...`
+    ///     ``Sampling/maximumSampleCount``; 0 or less returns empty (#622).
+    /// - Returns: Every extremum found, up to `maxResults`.
+    public func projectPointAll(_ point: SIMD3<Double>, maxResults: Int = 10) -> [(
+        parameter: Double, distance: Double
+    )] {
         let maxResults = Sampling.capacity(maxResults)
         guard maxResults > 0 else { return [] }
         var params = [Double](repeating: 0, count: maxResults)
         var distances = [Double](repeating: 0, count: maxResults)
-        let n = Int(OCCTExtremaPointCurve(handle, point.x, point.y, point.z,
-                                          &params, &distances, Int32(maxResults)))
+        let n = Int(
+            OCCTExtremaPointCurve(
+                handle, point.x, point.y, point.z,
+                &params, &distances, Int32(maxResults)))
         return (0..<n).map { (params[$0], distances[$0]) }
     }
 }
@@ -3392,7 +3786,9 @@ extension Curve3D {
     }
 
     /// Insert multiple knots at once.
-    public func bsplineInsertKnots(_ knots: [Double], multiplicities: [Int], tolerance: Double = 1e-10) -> Bool {
+    public func bsplineInsertKnots(
+        _ knots: [Double], multiplicities: [Int], tolerance: Double = 1e-10
+    ) -> Bool {
         let count = min(knots.count, multiplicities.count)
         guard count > 0 else { return false }
         let mults = multiplicities.map { Int32($0) }
@@ -3400,66 +3796,95 @@ extension Curve3D {
     }
 
     /// Move a point on the BSpline curve to a new position.
-    public func bsplineMovePoint(u: Double, to point: SIMD3<Double>, poleRange: ClosedRange<Int>) -> Bool {
-        OCCTCurve3DBSplineMovePoint(handle, u, point.x, point.y, point.z,
-                                     Int32(poleRange.lowerBound), Int32(poleRange.upperBound))
+    public func bsplineMovePoint(u: Double, to point: SIMD3<Double>, poleRange: ClosedRange<Int>)
+        -> Bool
+    {
+        OCCTCurve3DBSplineMovePoint(
+            handle, u, point.x, point.y, point.z,
+            Int32(poleRange.lowerBound), Int32(poleRange.upperBound))
     }
 
     /// Evaluate the curve locally within a knot span.
     public func bsplineLocalValue(u: Double, fromKnot: Int, toKnot: Int) -> SIMD3<Double> {
-        var x = 0.0, y = 0.0, z = 0.0
-        OCCTCurve3DBSplineLocalValue(handle, u, Int32(fromKnot), Int32(toKnot), &x, &y, &z)
-        return SIMD3(x, y, z)
+        unwrapVectorComponents {
+            OCCTCurve3DBSplineLocalValue(handle, u, Int32(fromKnot), Int32(toKnot), $0, $1, $2)
+        }
     }
 
     /// Evaluate point on BSpline curve within knot span [fromKnot, toKnot].
     public func bsplineLocalD0(u: Double, fromKnot: Int, toKnot: Int) -> SIMD3<Double> {
-        var px = 0.0, py = 0.0, pz = 0.0
-        OCCTCurve3DBSplineLocalD0(handle, u, Int32(fromKnot), Int32(toKnot), &px, &py, &pz)
-        return SIMD3(px, py, pz)
+        unwrapVectorComponents {
+            OCCTCurve3DBSplineLocalD0(handle, u, Int32(fromKnot), Int32(toKnot), $0, $1, $2)
+        }
     }
 
     /// Evaluate point + 1st derivative on BSpline curve within knot span.
     public func bsplineLocalD1(u: Double, fromKnot: Int, toKnot: Int)
-        -> (point: SIMD3<Double>, d1: SIMD3<Double>) {
-        var px = 0.0, py = 0.0, pz = 0.0
-        var vx = 0.0, vy = 0.0, vz = 0.0
-        OCCTCurve3DBSplineLocalD1(handle, u, Int32(fromKnot), Int32(toKnot),
-                                   &px, &py, &pz, &vx, &vy, &vz)
+        -> (point: SIMD3<Double>, d1: SIMD3<Double>)
+    {
+        var px = 0.0
+        var py = 0.0
+        var pz = 0.0
+        var vx = 0.0
+        var vy = 0.0
+        var vz = 0.0
+        OCCTCurve3DBSplineLocalD1(
+            handle, u, Int32(fromKnot), Int32(toKnot),
+            &px, &py, &pz, &vx, &vy, &vz)
         return (SIMD3(px, py, pz), SIMD3(vx, vy, vz))
     }
 
     /// Evaluate point + 1st + 2nd derivative on BSpline curve within knot span.
     public func bsplineLocalD2(u: Double, fromKnot: Int, toKnot: Int)
-        -> (point: SIMD3<Double>, d1: SIMD3<Double>, d2: SIMD3<Double>) {
-        var px = 0.0, py = 0.0, pz = 0.0
-        var v1x = 0.0, v1y = 0.0, v1z = 0.0
-        var v2x = 0.0, v2y = 0.0, v2z = 0.0
-        OCCTCurve3DBSplineLocalD2(handle, u, Int32(fromKnot), Int32(toKnot),
-                                   &px, &py, &pz, &v1x, &v1y, &v1z, &v2x, &v2y, &v2z)
+        -> (point: SIMD3<Double>, d1: SIMD3<Double>, d2: SIMD3<Double>)
+    {
+        var px = 0.0
+        var py = 0.0
+        var pz = 0.0
+        var v1x = 0.0
+        var v1y = 0.0
+        var v1z = 0.0
+        var v2x = 0.0
+        var v2y = 0.0
+        var v2z = 0.0
+        OCCTCurve3DBSplineLocalD2(
+            handle, u, Int32(fromKnot), Int32(toKnot),
+            &px, &py, &pz, &v1x, &v1y, &v1z, &v2x, &v2y, &v2z)
         return (SIMD3(px, py, pz), SIMD3(v1x, v1y, v1z), SIMD3(v2x, v2y, v2z))
     }
 
     /// Evaluate point + 1st + 2nd + 3rd derivative on BSpline curve within knot span.
     public func bsplineLocalD3(u: Double, fromKnot: Int, toKnot: Int)
-        -> (point: SIMD3<Double>, d1: SIMD3<Double>, d2: SIMD3<Double>, d3: SIMD3<Double>) {
-        var px = 0.0, py = 0.0, pz = 0.0
-        var v1x = 0.0, v1y = 0.0, v1z = 0.0
-        var v2x = 0.0, v2y = 0.0, v2z = 0.0
-        var v3x = 0.0, v3y = 0.0, v3z = 0.0
-        OCCTCurve3DBSplineLocalD3(handle, u, Int32(fromKnot), Int32(toKnot),
-                                   &px, &py, &pz, &v1x, &v1y, &v1z,
-                                   &v2x, &v2y, &v2z, &v3x, &v3y, &v3z)
-        return (SIMD3(px, py, pz), SIMD3(v1x, v1y, v1z),
-                SIMD3(v2x, v2y, v2z), SIMD3(v3x, v3y, v3z))
+        -> (point: SIMD3<Double>, d1: SIMD3<Double>, d2: SIMD3<Double>, d3: SIMD3<Double>)
+    {
+        var px = 0.0
+        var py = 0.0
+        var pz = 0.0
+        var v1x = 0.0
+        var v1y = 0.0
+        var v1z = 0.0
+        var v2x = 0.0
+        var v2y = 0.0
+        var v2z = 0.0
+        var v3x = 0.0
+        var v3y = 0.0
+        var v3z = 0.0
+        OCCTCurve3DBSplineLocalD3(
+            handle, u, Int32(fromKnot), Int32(toKnot),
+            &px, &py, &pz, &v1x, &v1y, &v1z,
+            &v2x, &v2y, &v2z, &v3x, &v3y, &v3z)
+        return (
+            SIMD3(px, py, pz), SIMD3(v1x, v1y, v1z),
+            SIMD3(v2x, v2y, v2z), SIMD3(v3x, v3y, v3z)
+        )
     }
 
     /// Evaluate Nth derivative on BSpline curve within knot span.
     public func bsplineLocalDN(u: Double, fromKnot: Int, toKnot: Int, n: Int) -> SIMD3<Double> {
-        var vx = 0.0, vy = 0.0, vz = 0.0
-        OCCTCurve3DBSplineLocalDN(handle, u, Int32(fromKnot), Int32(toKnot), Int32(n),
-                                   &vx, &vy, &vz)
-        return SIMD3(vx, vy, vz)
+        unwrapVectorComponents {
+            OCCTCurve3DBSplineLocalDN(
+                handle, u, Int32(fromKnot), Int32(toKnot), Int32(n), $0, $1, $2)
+        }
     }
 
     /// Maximum BSpline degree supported (static).
@@ -3481,9 +3906,7 @@ extension Curve3D {
 
     /// Evaluate the N-th derivative at parameter u.
     public func dn(at u: Double, order n: Int) -> SIMD3<Double> {
-        var x = 0.0, y = 0.0, z = 0.0
-        OCCTCurve3DDN(handle, u, Int32(n), &x, &y, &z)
-        return SIMD3(x, y, z)
+        unwrapVectorComponents { OCCTCurve3DDN(handle, u, Int32(n), $0, $1, $2) }
     }
 
     /// The type name of this curve (e.g. "Geom_Line", "Geom_Circle").
@@ -3507,7 +3930,9 @@ extension Curve3D {
     /// if let t = circle.localTangent(at: 0) { print(t) }   // (0, 1, 0)
     /// ```
     public func localTangent(at u: Double) -> SIMD3<Double>? {
-        var tx = 0.0, ty = 0.0, tz = 0.0
+        var tx = 0.0
+        var ty = 0.0
+        var tz = 0.0
         var isDefined = false
         OCCTCurve3DLocalTangent(handle, u, &tx, &ty, &tz, &isDefined)
         return isDefined ? SIMD3(tx, ty, tz) : nil
@@ -3528,7 +3953,9 @@ extension Curve3D {
     /// #expect(straight.localNormal(at: 0) == nil)          // no curvature, no normal
     /// ```
     public func localNormal(at u: Double) -> SIMD3<Double>? {
-        var nx = 0.0, ny = 0.0, nz = 0.0
+        var nx = 0.0
+        var ny = 0.0
+        var nz = 0.0
         var isDefined = false
         OCCTCurve3DLocalNormal(handle, u, &nx, &ny, &nz, &isDefined)
         return isDefined ? SIMD3(nx, ny, nz) : nil
@@ -3548,7 +3975,9 @@ extension Curve3D {
     /// let c = circle.localCentreOfCurvature(at: 0)   // (1, 2, 0), the circle's own centre
     /// ```
     public func localCentreOfCurvature(at u: Double) -> SIMD3<Double>? {
-        var cx = 0.0, cy = 0.0, cz = 0.0
+        var cx = 0.0
+        var cy = 0.0
+        var cz = 0.0
         var isDefined = false
         OCCTCurve3DLocalCentreOfCurvature(handle, u, &cx, &cy, &cz, &isDefined)
         return isDefined ? SIMD3(cx, cy, cz) : nil
@@ -3558,7 +3987,9 @@ extension Curve3D {
 extension Curve3D {
 
     /// Unavailable: this `Int` reported a hand-invented encoding, and the numbers changed
-    /// underneath it. Use ``continuityClass`` (named cases) or ``continuity`` (raw ordinal).
+    /// underneath it.
+    ///
+    /// Use ``continuityClass`` (named cases) or ``continuity`` (raw ordinal).
     ///
     /// Until #485 this property answered `C0=0, C1=1, C2=2, C3=3, CN=99, G1=-2, G2=-3` — a
     /// scheme of OCCTSwift's own invention that matched neither `GeomAbs_Shape` nor its own doc
@@ -3590,16 +4021,20 @@ extension Curve3D {
     ///   `if continuityOrder < 0 { handleError() }` becomes a branch that can never be taken, and
     ///   an unreadable curve now reads as a genuinely C0 one. There is no in-band way to tell the
     ///   two apart; check the handle before asking.
-    @available(*, unavailable, message: """
-        continuityOrder reported a hand-invented encoding (C0=0, C1=1, C2=2, C3=3, CN=99, G1=-2, \
-        G2=-3) and #485 changed it to the real GeomAbs_Shape ordinal (C0=0, G1=1, C1=2, G2=3, \
-        C2=4, C3=5, CN=6), so every threshold check silently changed meaning. Use \
-        continuityClass.satisfies(_:) for a continuity floor, continuityClass == .cN for the \
-        analytic fast path, or continuity for the raw ordinal — after re-checking the constant \
-        you compare against. Note there is no longer an error sentinel: this returned -1 for a \
-        null or unreadable handle, whereas continuity returns 0, which is an ordinary C0, so a \
-        migrated `< 0` error check can never fire (#619).
-        """)
+    @available(
+        *, unavailable,
+        message: """
+            continuityOrder reported a hand-invented encoding (C0=0, C1=1, C2=2, C3=3, CN=99, G1=-2, \
+            G2=-3) and #485 changed it to the real GeomAbs_Shape ordinal (C0=0, G1=1, C1=2, G2=3, \
+            C2=4, C3=5, CN=6), so every threshold check silently changed meaning. Use \
+            continuityClass.satisfies(_:) for a continuity floor, continuityClass == .cN for the \
+            analytic fast path, or continuity for the raw ordinal. Whichever you use, re-check the \
+            constant you compare against. Note there is no longer an error sentinel: this returned \
+            -1 for a null or unreadable handle, whereas continuity returns 0, which is an ordinary \
+            C0, so a \
+            migrated `< 0` error check can never fire (#619).
+            """
+    )
     public var continuityOrder: Int { Int(OCCTCurve3DGetContinuity(handle)) }
 
     /// Check if this curve has at least Cn continuity.
@@ -3613,6 +4048,7 @@ extension Curve3D {
     }
 
     /// Get the parametric transformation scale factor under a geometric transform.
+    ///
     /// The transform is specified as a 3x3 rotation matrix (row-major) + 3 translation values.
     public func parametricTransformation(rotation: [Double], translation: SIMD3<Double>) -> Double {
         guard rotation.count == 9 else { return 1.0 }
@@ -3672,12 +4108,15 @@ extension Curve3D {
 
     /// Move point and tangent at parameter u on BSpline curve.
     @discardableResult
-    public func bsplineMovePointAndTangent(u: Double, point: SIMD3<Double>, tangent: SIMD3<Double>,
-                                           tolerance: Double, poleRange: ClosedRange<Int>) -> Bool {
-        OCCTCurve3DBSplineMovePointAndTangent(handle, u, point.x, point.y, point.z,
-                                               tangent.x, tangent.y, tangent.z,
-                                               tolerance,
-                                               Int32(poleRange.lowerBound), Int32(poleRange.upperBound))
+    public func bsplineMovePointAndTangent(
+        u: Double, point: SIMD3<Double>, tangent: SIMD3<Double>,
+        tolerance: Double, poleRange: ClosedRange<Int>
+    ) -> Bool {
+        OCCTCurve3DBSplineMovePointAndTangent(
+            handle, u, point.x, point.y, point.z,
+            tangent.x, tangent.y, tangent.z,
+            tolerance,
+            Int32(poleRange.lowerBound), Int32(poleRange.upperBound))
     }
 }
 

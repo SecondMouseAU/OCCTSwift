@@ -1,7 +1,7 @@
 import Foundation
 import OCCTBridge
 
-/// An axis extracted from a shape or face — an origin+direction pair carrying the
+/// An axis extracted from a shape or face: an origin+direction pair carrying the
 /// geometric meaning of the underlying surface.
 ///
 /// Produced by `Face.primaryAxis`, `Shape.revolutionAxes`, and `Shape.symmetryAxes`.
@@ -118,44 +118,57 @@ extension Shape {
     }
 }
 
+/// Reads an origin/direction pair from a six-`Double`-out-param `OCCT*Axis`-shaped bridge call,
+/// given as a closure already bound to the caller's own handle.
+/// - Returns: element 0 is origin, element 1 is direction, by position; the caller's own
+///   declared return type supplies whatever labels it wants.
+func unwrapAxisComponents(
+    _ bridgeCall: (
+        UnsafeMutablePointer<Double>, UnsafeMutablePointer<Double>, UnsafeMutablePointer<Double>,
+        UnsafeMutablePointer<Double>, UnsafeMutablePointer<Double>, UnsafeMutablePointer<Double>
+    ) -> Void
+) -> (SIMD3<Double>, SIMD3<Double>) {
+    var px: Double = 0
+    var py: Double = 0
+    var pz: Double = 0
+    var dx: Double = 0
+    var dy: Double = 0
+    var dz: Double = 0
+    bridgeCall(&px, &py, &pz, &dx, &dy, &dz)
+    return (SIMD3(px, py, pz), SIMD3(dx, dy, dz))
+}
+
+/// Reads a point or direction from a three-`Double`-out-param bridge call, given as a closure
+/// already bound to the caller's own handle and any other arguments.
+func unwrapVectorComponents(
+    _ bridgeCall: (
+        UnsafeMutablePointer<Double>, UnsafeMutablePointer<Double>, UnsafeMutablePointer<Double>
+    ) -> Void
+) -> SIMD3<Double> {
+    var x: Double = 0
+    var y: Double = 0
+    var z: Double = 0
+    bridgeCall(&x, &y, &z)
+    return SIMD3(x, y, z)
+}
+
 extension Surface {
-    /// A six-out-param `OCCT*Axis`-shaped bridge function: origin then direction, one double each.
-    ///
-    /// Named once so `unwrapAxis`/`axis(ifKind:_:)` don't respell it (#891 review follow-up).
+    /// A six-out-param `OCCT*Axis`-shaped bridge function taking a `Surface` handle first:
+    /// origin then direction, one double each.
     private typealias AxisBridgeFn = (
         OCCTSurfaceRef, UnsafeMutablePointer<Double>, UnsafeMutablePointer<Double>,
         UnsafeMutablePointer<Double>, UnsafeMutablePointer<Double>,
         UnsafeMutablePointer<Double>, UnsafeMutablePointer<Double>
     ) -> Void
 
-    /// Reads an origin/direction pair from an `AxisBridgeFn`.
-    ///
-    /// Split out from the `surfaceKind` guard below so the unwrap itself is independently
-    /// reusable — flagged by #891's review as also duplicated (outside this file's scope)
-    /// in `Surface.Cylinder.axis`/`Curve3D.Circle.xAxis`; widening this to a shared
-    /// accessor for those is tracked as a follow-up, not done here.
-    private func unwrapAxis(_ bridgeFn: AxisBridgeFn) -> (
-        origin: SIMD3<Double>, direction: SIMD3<Double>
-    ) {
-        var px: Double = 0
-        var py: Double = 0
-        var pz: Double = 0
-        var dx: Double = 0
-        var dy: Double = 0
-        var dz: Double = 0
-        bridgeFn(handle, &px, &py, &pz, &dx, &dy, &dz)
-        return (origin: SIMD3(px, py, pz), direction: SIMD3(dx, dy, dz))
-    }
-
-    /// Shared unwrap for the six-out-param `OCCT*Axis` bridge functions: guards
-    /// `surfaceKind`, then reads origin/direction via `unwrapAxis`. `torusAxis` and
-    /// `revolutionAxis` are the only callers today (#891).
+    /// Shared unwrap for the six-out-param `OCCT*Axis` bridge functions: guards `surfaceKind`,
+    /// then reads origin/direction via `unwrapAxisComponents`.
     private func axis(
         ifKind kind: SurfaceType,
         _ bridgeFn: AxisBridgeFn
-    ) -> (origin: SIMD3<Double>, direction: SIMD3<Double>)? {
+    ) -> (SIMD3<Double>, SIMD3<Double>)? {
         guard surfaceKind == kind else { return nil }
-        return unwrapAxis(bridgeFn)
+        return unwrapAxisComponents { bridgeFn(handle, $0, $1, $2, $3, $4, $5) }
     }
 
     /// Axis of a toroidal surface (origin + direction of the rotation axis).

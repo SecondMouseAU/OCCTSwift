@@ -153,13 +153,10 @@ extension BRepGraph {
                 resolveVertexPoint(b).flatMap { pB in
                     resolveVertexPoint(c).flatMap {
                         pC -> Result<Placement, ConstructionResolutionError> in
-                        let u = pB - pA
-                        let v = pC - pA
-                        let n = simd_cross(u, v)
-                        if simd_length(n) < 1e-9 {
-                            return .failure(.degenerate("three points are collinear"))
-                        }
-                        return .success(Placement(origin: pA, normal: n))
+                        let n = simd_cross(pB - pA, pC - pA)
+                        return requireNonDegenerate(
+                            simd_length(n), Placement(origin: pA, normal: n),
+                            "three points are collinear")
                     }
                 }
             }
@@ -196,10 +193,8 @@ extension BRepGraph {
                         ConstructionResolutionError
                     > in
                     let d = pB - pA
-                    if simd_length(d) < 1e-9 {
-                        return .failure(.degenerate("points coincide"))
-                    }
-                    return .success((pA, simd_normalize(d)))
+                    return requireNonDegenerate(
+                        simd_length(d), (pA, simd_normalize(d)), "points coincide")
                 }
             }
 
@@ -211,14 +206,12 @@ extension BRepGraph {
                         ConstructionResolutionError
                     > in
                     let d = simd_cross(pA.zAxis, pB.zAxis)
-                    if simd_length(d) < 1e-9 {
-                        return .failure(.degenerate("planes are parallel"))
-                    }
                     // Origin: project pA.origin onto the line of intersection.
                     // Simple approximation: the midpoint of the two origins
                     // projected onto the intersection direction.
                     let mid = (pA.origin + pB.origin) / 2
-                    return .success((mid, simd_normalize(d)))
+                    return requireNonDegenerate(
+                        simd_length(d), (mid, simd_normalize(d)), "planes are parallel")
                 }
             }
         }
@@ -250,11 +243,10 @@ extension BRepGraph {
                     // (plane.origin - axOrigin) . plane.normal == t * axDir . plane.normal
                     let n = pl.zAxis
                     let denom = simd_dot(axDir, n)
-                    if abs(denom) < 1e-9 {
-                        return .failure(.degenerate("axis parallel to plane"))
-                    }
-                    let t = simd_dot(pl.origin - axOrigin, n) / denom
-                    return .success(axOrigin + t * axDir)
+                    return requireNonDegenerate(
+                        abs(denom),
+                        axOrigin + (simd_dot(pl.origin - axOrigin, n) / denom) * axDir,
+                        "axis parallel to plane")
                 }
             }
         }
@@ -268,6 +260,88 @@ extension BRepGraph {
         case .success(let n): return .success(n)
         case .failure(let e): return .failure(.topology(e))
         }
+    }
+
+    /// Degeneracy threshold shared by every `resolve` guard below.
+    ///
+    /// The five call sites compare three different kinds of quantity — a raw distance, a cross
+    /// product's area-scale magnitude, and a unit-vector dot/cross — that happen to share this
+    /// literal today by coincidence, not because they are numerically comparable (#887).
+    /// Per-site tuning isn't supported today: `requireNonDegenerate` takes no per-call epsilon
+    /// argument, so every call site shares this one constant. Supporting it would mean adding an
+    /// epsilon parameter to `requireNonDegenerate` — and picking a real per-site value, not
+    /// inventing one without measurement (#726) (#894 finding 5).
+    private static let degeneracyEpsilon = 1e-9
+
+    /// Cosine-of-angle threshold for two unit directions being the same or exactly opposite.
+    ///
+    /// Used by ``axesAgree(_:_:)``: every adjacent cylindrical/conical face's axis must agree
+    /// before `revolutionAxis(ofEdgeAt:)` returns a definitive answer (finding 1, first pass).
+    /// `resolveEdgeDirection` originally had a second use — a chord-parallel-to-the-candidate-axis
+    /// check standing in for "is this edge a straight seam" — but that check was never true for a
+    /// straight seam on a *cone* (a cone's generatrix meets its axis at the cone's own nonzero
+    /// half-angle, never 0) and could misfire true for a helical edge whose two-point secant
+    /// happens to land near-parallel to the axis by coincidence of the sweep angle (both findings
+    /// 1/3, second pass). ``coaxialCrossSection(of:bounds:start:end:axis:edgeTolerance:)``
+    /// replaces it with a direct geometric test that doesn't need this tolerance at all (finding
+    /// 1, third pass), so this constant is `axesAgree`'s alone again.
+    ///
+    /// `OCCTPrecision.angular` (`Precision::Angular()`, 1e-12), not a hand-invented literal: this
+    /// codebase has a documented history of a hardcoded direction-comparison tolerance silently
+    /// drifting from the canonical one (`docs/reference/Surface-Analysis.md`'s "ten times looser
+    /// than `Precision::Confusion()`" note; #494/#529 are whole issues about exactly this).
+    /// Verified, not assumed, that the tighter value is safe here: swapped in and re-ran the full
+    /// `OCCTBRepGraphTests` and `OCCTMiscTests` targets (#894 finding 6, second pass) — no
+    /// behavior changed, since a genuine adjacent-face-axis comparison (either the identical
+    /// `TopoDS_Face` read twice, or a BOP-split piece sharing the same analytic `Geom_Surface`
+    /// handle) agrees to within floating-point noise far tighter than even 1e-12, while two
+    /// genuinely different cylinders (e.g. this file's T-branch fixture) disagree by orders of
+    /// magnitude more than either tolerance.
+    private static let axisDirectionAgreementCosineTolerance = OCCTPrecision.angular
+
+    /// Distance threshold for "this point sits on this axis line". Used two ways:
+    ///
+    /// - ``axesAgree(_:_:)``: the perpendicular offset between one candidate axis's origin and
+    ///   the line through another, so two same-diameter but genuinely distinct bores don't
+    ///   count as one (finding 1, first pass). Used directly, unmodified — the two faces being
+    ///   compared here are either the identical `TopoDS_Face` read twice or a BOP-split piece
+    ///   sharing the same analytic `Geom_Surface` handle, so machine precision is the right bar.
+    /// - ``coaxialCrossSection(of:bounds:start:end:axis:edgeTolerance:)``: the FLOOR under how
+    ///   much a sampled point's height along the axis, or its radius from it, may vary across the
+    ///   edge before it stops counting as a genuine perpendicular cross-section (finding 1, third
+    ///   pass). The actual comparison there is `max(edge's own measured BRep_Tool::Tolerance,
+    ///   this floor)`, not this constant alone: a real edge that has survived a Boolean/fillet
+    ///   commonly measures 1e-4-1e-3, far looser than this machine-precision value, and this
+    ///   constant alone rejected genuine circular rims on exactly that kind of edge (#894
+    ///   finding 2, fifth pass). The floor still applies to a pristine, machine-precision edge —
+    ///   `max` never makes the check LOOSER than this value, only ever loosens it upward to match
+    ///   what the edge itself already measures.
+    ///
+    /// A fixed absolute threshold, like ``degeneracyEpsilon`` above, not a fraction of model
+    /// scale. `OCCTPrecision.confusion` (`Precision::Confusion()`, 1e-7) — the canonical "points
+    /// closer than this are 'same'" distance, not a hand-invented literal, for the same reason as
+    /// ``axisDirectionAgreementCosineTolerance`` above (#894 finding 6, second pass); also
+    /// verified against the full test sweep described there. This is 10x tighter than the `1e-6`
+    /// it replaces and than `Shape.revolutionAxes(tolerance:)`'s own default (`ShapeAxis.swift`)
+    /// and the bridge-side `axesCoincide` it wraps (`OCCTBridge_Topology.mm`) — not because either
+    /// is called from here (that dedup runs in the C++ layer over every face of a whole shape;
+    /// this code only ever compares the 1-2 faces adjacent to a single edge, so there's no shared
+    /// function to actually call across that boundary), but so a future retune of one is at least
+    /// discoverable from the other (finding 4, third pass). The two are independent constants
+    /// (`1e-7` here vs. `revolutionAxes`' `1e-6`), not required to match.
+    private static let axisOriginAgreementDistanceTolerance = OCCTPrecision.confusion
+
+    /// Shared "is this magnitude effectively zero" guard: fails with `.degenerate(message)` when
+    /// `magnitude` is below ``degeneracyEpsilon``, otherwise succeeds with `value`. `value` is an
+    /// autoclosure so a division or normalization that depends on `magnitude` being safe is never
+    /// evaluated on the failing path.
+    private func requireNonDegenerate<T>(
+        _ magnitude: Double, _ value: @autoclosure () -> T, _ message: String
+    ) -> Result<T, ConstructionResolutionError> {
+        guard magnitude >= Self.degeneracyEpsilon else {
+            return .failure(.degenerate(message))
+        }
+        return .success(value())
     }
 
     /// Resolves `ref` to a face node, failing with `.notApplicable`/`.missingGeometry` as appropriate.
@@ -383,6 +457,60 @@ extension BRepGraph {
         }
     }
 
+    /// The true rotation axis of a cylindrical/conical edge, read off its adjacent face(s).
+    ///
+    /// Collects every adjacent face's ``Face/primaryAxis`` that is a cylinder or cone — the two
+    /// surface kinds `ConstructionAxis.alongEdge`'s own doc promises (#883) — and returns a
+    /// definitive axis only when every candidate agrees with the first, per ``axesAgree(_:_:)``.
+    /// An edge at a branch (a T-junction between two non-coaxial cylindrical faces, or any
+    /// blended transition) has more than one disagreeing candidate; `nil` there tells the caller
+    /// to fall back to the endpoint secant instead of silently picking whichever face happened to
+    /// sort first (#894 finding 1). Planar and free-form neighbours, and edges with no face
+    /// adjacency at all, contribute no candidate at all, so this is `nil` for them too.
+    ///
+    /// `internal`, not `private`: `ConstructionAxisTests.alongEdgeBranchWithDisagreeingAxesFallsBackToChord`
+    /// calls this directly (via `@testable import`) instead of hand-rolling a parallel copy of the
+    /// candidate-gathering loop's disagreement test with its own drifted tolerance (#894 finding 5,
+    /// second pass). `count-operations.py` only counts `public` declarations, so this stays out of
+    /// the operation count either way.
+    func revolutionAxis(ofEdgeAt edgeIndex: Int) -> ShapeAxis? {
+        var candidates: [ShapeAxis] = []
+        for faceIndex in faces(of: edgeIndex) {
+            guard let faceShape = shape(nodeKind: .face, nodeIndex: faceIndex),
+                let face = faceShape.faces().first,
+                let axis = face.primaryAxis,
+                axis.kind == .cylinder || axis.kind == .cone
+            else { continue }
+            candidates.append(axis)
+        }
+        guard let reference = candidates.first else { return nil }
+        guard candidates.dropFirst().allSatisfy({ axesAgree(reference, $0) }) else { return nil }
+        return reference
+    }
+
+    /// Whether two candidate revolution axes describe the same line.
+    ///
+    /// Their directions must be parallel or anti-parallel within
+    /// ``axisDirectionAgreementCosineTolerance``, and `other`'s origin must lie within
+    /// ``axisOriginAgreementDistanceTolerance`` of the line through `reference` — not merely a
+    /// parallel offset line, e.g. two same-diameter but genuinely distinct bores (#894 finding 1).
+    ///
+    /// `internal`, not `private`, for the same testability reason as ``revolutionAxis(ofEdgeAt:)``
+    /// (#894 finding 5, second pass).
+    func axesAgree(_ reference: ShapeAxis, _ other: ShapeAxis) -> Bool {
+        let referenceDirection = simd_normalize(reference.direction)
+        let otherDirection = simd_normalize(other.direction)
+        guard
+            abs(abs(simd_dot(referenceDirection, otherDirection)) - 1.0)
+                < Self.axisDirectionAgreementCosineTolerance
+        else {
+            return false
+        }
+        let offset = other.origin - reference.origin
+        let perpendicular = offset - simd_dot(offset, referenceDirection) * referenceDirection
+        return simd_length(perpendicular) < Self.axisOriginAgreementDistanceTolerance
+    }
+
     private func resolveEdgeDirection(_ ref: TopologyRef) -> Result<
         (origin: SIMD3<Double>, direction: SIMD3<Double>), ConstructionResolutionError
     > {
@@ -395,17 +523,168 @@ extension BRepGraph {
             }
             guard let shape = shape(nodeKind: node.kind, nodeIndex: node.index),
                 let edge = shape.edges().first,
-                let start = edge.point(atFraction: 0),
-                let end = edge.point(atFraction: 1)
+                let bounds = edge.parameterBounds
             else {
                 return .failure(.missingGeometry(node))
             }
-            let dir = end - start
-            if simd_length(dir) < 1e-9 {
+
+            // Only a curved edge (typically a circular arc) can coincide with a
+            // cylindrical/conical face's true rotation axis; a linear edge always resolves to its
+            // own line. Gate on curveType first — cheap, no bridge call — so a straight edge never
+            // pays for the face walk in `revolutionAxis` (#894 finding 4, first pass), nor for the
+            // arc-length degeneracy check below (#894 finding 3, fifth pass): a line can never be
+            // closed with a zero secant the way a full circle can (see the comment below), so the
+            // cheap secant-based check the pre-round-3 code used is still correct for a line —
+            // only the non-line path below needs the true arc length.
+            if edge.curveType == .line {
+                guard let start = edge.point(at: bounds.first),
+                    let end = edge.point(at: bounds.last)
+                else {
+                    return .failure(.missingGeometry(node))
+                }
+                let dir = end - start
+                return requireNonDegenerate(
+                    simd_length(dir), (start, simd_normalize(dir)), "zero-length edge")
+            }
+
+            // The edge's own degeneracy is checked before any axis lookup, and by true arc
+            // length rather than the endpoint secant a few lines below: a full-circle rim is
+            // legitimately closed (start == end, secant == 0) without being remotely degenerate
+            // — that's exactly why the axis redirect below exists at all — so this can't reuse
+            // the secant the way the fallback path does. Unconditional (for every non-line edge)
+            // so a genuinely near-zero-length sliver edge (a leftover fillet/boolean artifact)
+            // still reports `.degenerate` even when it happens to sit next to one clean
+            // cylindrical/conical face and would otherwise get an unambiguous but meaningless
+            // axis match below (#894 finding 2, third pass). Paying for this arc-length bridge
+            // call only here, not on the line fast path above, is what finding 3 (fifth pass)
+            // asked for.
+            guard edge.length >= Self.degeneracyEpsilon else {
                 return .failure(.degenerate("zero-length edge"))
             }
-            return .success((start, simd_normalize(dir)))
+
+            guard let start = edge.point(at: bounds.first), let end = edge.point(at: bounds.last)
+            else {
+                return .failure(.missingGeometry(node))
+            }
+
+            // The walk below is also where the answer can still legitimately come back nil (no
+            // adjacent cyl/cone face, or several that disagree — #894 finding 1, first pass). A
+            // candidate found there is only actually used once `coaxialCrossSection` confirms the
+            // edge is genuinely a circular cross-section of it, not merely non-linear and next to
+            // the right kind of face (#894 finding 1, third pass) — see that function's doc for
+            // the elliptical-rim, reparameterized-straight-seam, and helical-edge cases it exists
+            // to reject.
+            if let axis = revolutionAxis(ofEdgeAt: node.index),
+                coaxialCrossSection(
+                    of: edge, bounds: bounds, start: start, end: end, axis: axis,
+                    edgeTolerance: edgeTolerance(node.index))
+            {
+                // `axis.direction`'s sign comes from `Face.primaryAxis` — the adjacent surface's
+                // own placement convention — which has nothing to do with which of the edge's two
+                // ends is `bounds.first`. Every other path through this function derives its sign
+                // from the edge's own start->end order (`dir = end - start` below); re-derive it
+                // here the same way so a caller building `throughAxis` off two edges that trace the
+                // "same" physical rim/arc with opposite parameterization gets consistent, sign-aware
+                // results instead of whatever the surface happened to store (#894 finding 2, second
+                // pass). `chord` itself can't do this — `coaxialCrossSection` just confirmed it's
+                // (near-)perpendicular to the axis, so its dot with `axisDirection` is noise, not
+                // signal. Use the tangent at the edge's own start point instead: for a point
+                // parameterized with increasing angle around `axisDirection` in a right-handed
+                // frame, `cross(radial, tangent)` is `radius^2 * axisDirection`, so its sign against
+                // `axisDirection` says whether increasing parameter — start->end — agrees with
+                // `axisDirection` or runs opposite it.
+                //
+                // `edge.tangent(at:)` can return nil even where `edge.point(at:)` already
+                // succeeded (e.g. a first-derivative singularity on a reparameterized curve).
+                // Failing loudly here rather than silently keeping the unflipped `Face.primaryAxis`
+                // sign matches this function's own "fail on ambiguity" convention elsewhere (#894
+                // finding 1, fifth pass) — a plausible-looking wrong sign is worse than an explicit
+                // `.degenerate`.
+                guard let tangentAtStart = edge.tangent(at: bounds.first) else {
+                    return .failure(
+                        .degenerate(
+                            "edge tangent unavailable at start; cannot determine axis sign"))
+                }
+                var axisDirection = simd_normalize(axis.direction)
+                let radial = start - axis.origin
+                if simd_dot(axisDirection, simd_cross(radial, tangentAtStart)) < 0 {
+                    axisDirection = -axisDirection
+                }
+                // Keep the origin edge-local: project the edge's own start point onto the resolved
+                // axis line rather than returning the adjacent surface's own placement origin,
+                // which can be far from the edge itself — e.g. a cylinder's base under a rim near
+                // its top (#894 finding 2, first pass). Invariant to the sign flip above: negating
+                // both `axisDirection` and the dot product it's multiplied by leaves the product
+                // unchanged.
+                let toStart = start - axis.origin
+                let projectedOrigin = axis.origin + simd_dot(toStart, axisDirection) * axisDirection
+                return .success((projectedOrigin, axisDirection))
+            }
+
+            let dir = end - start
+            return requireNonDegenerate(
+                simd_length(dir), (start, simd_normalize(dir)), "zero-length edge")
         }
+    }
+
+    /// Whether `edge` is genuinely a circular cross-section of `axis` — a closed rim, or an open
+    /// arc bounding one — rather than merely non-linear and adjacent to the right kind of face.
+    ///
+    /// Every point of an edge that bounds a cylindrical or conical face already sits at that
+    /// surface's own radius from the axis by construction, so radius-from-axis alone can't tell a
+    /// true circular rim from the elliptical edge an OBLIQUE plane cuts from a cylinder — both lie
+    /// exactly on the wall (#894 finding 1, third pass). What does distinguish them is height
+    /// along the axis: a genuine perpendicular cross-section's points all sit at the same signed
+    /// distance along `axis.direction`; an oblique-cut ellipse's height varies as you go around
+    /// it. Checking both radius and height also rejects two cases finding 1's own second-pass
+    /// follow-ups raised against the chord-parallel-to-axis check this replaced: a straight seam
+    /// reparameterized as a BSpline (round-1 finding 3) runs ALONG the axis, so its height changes
+    /// across the edge rather than staying constant; a helical edge's height changes with the
+    /// sweep angle the same way, regardless of how close its two-point secant happens to land to
+    /// the axis direction by coincidence of the pitch. Both fall through to the endpoint-secant
+    /// fallback in `resolveEdgeDirection`, which is already the right answer for a true straight
+    /// line and the most honest available answer for a helix.
+    ///
+    /// Samples `start`, `end`, and three interior points rather than just the two endpoints,
+    /// since two points on any curve are trivially "coplanar" and "equidistant" — the check needs
+    /// enough samples to actually see curvature/tilt across the edge's own span, not just at its
+    /// ends.
+    ///
+    /// The height/radius comparison tolerance is `max(edgeTolerance,
+    /// axisOriginAgreementDistanceTolerance)`, not the latter alone: a real edge that has survived
+    /// a Boolean/fillet routinely measures `BRep_Tool::Tolerance` in the 1e-4-1e-3 range —
+    /// looser than the machine-precision `axisOriginAgreementDistanceTolerance` floor — and
+    /// comparing sampled noise against that floor alone rejected genuine circular rims outright
+    /// (#894 finding 2, fifth pass). `edgeTolerance` is the caller's own measured value for this
+    /// edge (`BRepGraph.edgeTolerance(_:)`, wrapping `BRep_Tool::Tolerance`), not invented here —
+    /// this function stays a pure geometric test of its arguments, with no lookup of its own.
+    /// `internal`, not `private`, so `ConstructionAxisTests` can exercise the tolerance derivation
+    /// directly against controlled sample noise, for the same testability reason as
+    /// `revolutionAxis(ofEdgeAt:)`/`axesAgree(_:_:)` (#894 finding 5, second pass).
+    func coaxialCrossSection(
+        of edge: Edge, bounds: (first: Double, last: Double), start: SIMD3<Double>,
+        end: SIMD3<Double>, axis: ShapeAxis, edgeTolerance: Double
+    ) -> Bool {
+        let axisDirection = simd_normalize(axis.direction)
+        let span = bounds.last - bounds.first
+        var samples = [start]
+        for fraction in [0.25, 0.5, 0.75] {
+            guard let point = edge.point(at: bounds.first + span * fraction) else { return false }
+            samples.append(point)
+        }
+        samples.append(end)
+
+        let heights = samples.map { simd_dot($0 - axis.origin, axisDirection) }
+        let radii = samples.map { sample -> Double in
+            let offset = sample - axis.origin
+            return simd_length(offset - simd_dot(offset, axisDirection) * axisDirection)
+        }
+        guard let minHeight = heights.min(), let maxHeight = heights.max(),
+            let minRadius = radii.min(), let maxRadius = radii.max()
+        else { return false }
+        let crossSectionTolerance = max(edgeTolerance, Self.axisOriginAgreementDistanceTolerance)
+        return maxHeight - minHeight < crossSectionTolerance
+            && maxRadius - minRadius < crossSectionTolerance
     }
 
     private func resolveEdgePointAndTangent(_ ref: TopologyRef, t: Double) -> Result<
