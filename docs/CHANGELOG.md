@@ -40,6 +40,23 @@ Also (test-only, no source behavior change): six accessors' tests
 only a single component or magnitude, and `coneApex()` made no assertion at all; all seven now
 check the full point/origin/direction the accessor returns.
 
+### `unwrapAxisComponents` returns a bare, unlabeled tuple so every call site is a one-liner (#903)
+
+`ShapeAxis.swift`'s `unwrapAxisComponents(_:)` (added by #899/#902) returned a labeled
+`(origin: SIMD3<Double>, direction: SIMD3<Double>)`, which Swift cannot implicitly relabel into a
+differently-labeled destination tuple, so 12 of its 13 call sites needed an intermediate binding
+plus an explicit relabel instead of a direct return. Changed the return type to a bare
+`(SIMD3<Double>, SIMD3<Double>)`; all 12 now return the helper's result directly, picking up
+whatever labels their own declared return type wants. Its sibling `unwrapVectorComponents(_:)`
+already returned a bare `SIMD3<Double>`, so this makes the two helpers consistent with each other.
+The 13th call site, the private `Surface.axis(ifKind:_:)` helper, gets the same bare return type
+for consistency, closing off the same relabel wall for any future caller wanting different labels.
+Pure internal refactor: no return type, argument label, or computed value changed on any public
+accessor. Added a codified convention for this shape to `okf/policies/code-style.md`, and filed
+[#908](https://github.com/SecondMouseAU/OCCTSwift/issues/908) for the two further internal
+helpers (`Face.swift`'s `boundsVia`, `SweepGuideTypes.swift`'s `evaluateGuideTrihedronD0`) found to
+share it.
+
 ## v2.0.0
 
 <!--
