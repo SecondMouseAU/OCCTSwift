@@ -8662,6 +8662,14 @@ struct OCCTThruSections {
     // through a later failed rebuild. Recording the real outcome once here, in the one place that
     // actually calls Build(), is what every other accessor (Shape(), GeneratedFace(), and any
     // future one) gates on instead of re-deriving it from OCCT state per call.
+    //
+    // Bridge-side, not a kernel patch: the WrongUsage-skips-NotDone() gap IS a real upstream OCCT
+    // defect (unlike #905/#913's memory corruption, nothing here is unsafe to leave as-is), but
+    // fixing it in Build() wouldn't remove the need for this pattern — GetStatus()/IsDone() only
+    // answer "what did the last Build() call decide", and this bridge's own contract is "did the
+    // last build() call on THIS Swift-visible instance succeed", which needs bridge-owned state
+    // regardless of how precise OCCT's own bookkeeping is. OCCTSectionBuilder (below in this same
+    // file) already carries an identical `built` field for the same reason, predating this PR.
     bool built = false;
 };
 
@@ -8685,6 +8693,10 @@ void OCCTThruSectionsAddWire(OCCTThruSectionsRef ref, OCCTShapeRef wire) {
     try {
         ts->builder->AddWire(TopoDS::Wire(wire->shape));
         ts->sectionCount++;
+        // #910 review (PR #912) finding 6: a section added after a successful build belongs to a
+        // build that hasn't happened yet. Shape()/GeneratedFace() must not keep answering from
+        // the PRIOR build until the caller actually calls Build() again.
+        ts->built = false;
     } catch (...) {}
 }
 
@@ -8694,6 +8706,7 @@ void OCCTThruSectionsAddVertex(OCCTThruSectionsRef ref, OCCTShapeRef vertex) {
     try {
         ts->builder->AddVertex(TopoDS::Vertex(vertex->shape));
         ts->sectionCount++;
+        ts->built = false; // see OCCTThruSectionsAddWire's comment
     } catch (...) {}
 }
 

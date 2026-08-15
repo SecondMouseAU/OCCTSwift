@@ -434,31 +434,42 @@ struct StressThruSectionsBuilderLifecycleTests {
     // #910: a reused builder's `generatedFace(from:)` must not hand back a first, successful
     // build's face data once a later rebuild on the same instance has failed. OCCT's own
     // `GeneratedFace()` is a bare `myEdgeFace` lookup that `Build()` never clears, so the guard
-    // has to be gated on the bridge's own `built` outcome flag, matching `shape`'s existing guard
-    // — NOT on `IsDone()` alone, which OCCT itself can leave stale (see the sibling test below,
-    // PR #912 review finding 1).
+    // has to be gated on the bridge's own `built` outcome flag, matching `shape`'s existing guard.
+    //
+    // Three sections (not two) for the successful build: `Build()` dispatches ANY 2-section call
+    // to `CreateRuled()` regardless of `isRuled` (`myWires.Length() == 2 || myIsRuled`), so a
+    // 2-section fixture would never exercise `CreateSmoothed()`'s own `myEdgeFace` binding (PR
+    // #912 review, finding 4 — the previous 2-section fixture here silently tested `CreateRuled()`
+    // for every "smoothed path" test in this file, including the one below).
+    //
+    // This test's own failure trigger (an open wire mixed with closed sections,
+    // `BRepFill_CompatibleWires`' "NotSameTopology" rejection) was already handled correctly
+    // before this PR — it doesn't exercise finding 1's `IsDone()`-staleness mechanism, only the
+    // sibling test below does (PR #912 review, finding 5).
     @Test func generatedFaceNilAfterFailedRebuild() throws {
         let w1 = try #require(Wire.circle(origin: SIMD3(0, 0, 0), normal: SIMD3(0, 0, 1), radius: 5))
         let w2 = try #require(Wire.circle(origin: SIMD3(0, 0, 10), normal: SIMD3(0, 0, 1), radius: 3))
+        let w3 = try #require(Wire.circle(origin: SIMD3(0, 0, 20), normal: SIMD3(0, 0, 1), radius: 2))
         let s1 = try #require(Shape.fromWire(w1))
         let s2 = try #require(Shape.fromWire(w2))
+        let s3 = try #require(Shape.fromWire(w3))
         let loft = ThruSectionsBuilder(isSolid: true, isRuled: false)
         loft.addWire(s1)
         loft.addWire(s2)
+        loft.addWire(s3)
         #expect(loft.build())
         let edge = try #require(s1.subShapes(ofType: .edge).first)
-        // This edge is bound in myEdgeFace only because two same-topology closed circles need no
+        // This edge is bound in myEdgeFace only because same-topology closed circles need no
         // BRepFill_CompatibleWires re-splitting, so the input TShape survives into myWires
-        // unchanged (PR #912 review, finding 5) — not a guarantee generatedFace(from:) itself
-        // makes for an arbitrary input edge.
+        // unchanged — not a guarantee generatedFace(from:) itself makes for an arbitrary edge.
         #expect(loft.generatedFace(from: edge) != nil)
 
-        // Reuse the same builder: an open third section next to two closed sections is
+        // Reuse the same builder: an open fourth section next to three closed sections is
         // BRepFill_CompatibleWires' documented "NotSameTopology" rejection, so this rebuild
         // fails for real (not just the sectionCount < 2 guard) — and, before the #910 fix,
         // generatedFace(from:) kept answering from the first build's never-cleared myEdgeFace.
         let openWire = try #require(Wire.polygon3D(
-            [SIMD3(-5, 0, 20), SIMD3(5, 0, 20), SIMD3(0, 5, 20)], closed: false))
+            [SIMD3(-5, 0, 30), SIMD3(5, 0, 30), SIMD3(0, 5, 30)], closed: false))
         let openShape = try #require(Shape.fromWire(openWire))
         loft.addWire(openShape)
         #expect(!loft.build())
@@ -473,16 +484,22 @@ struct StressThruSectionsBuilderLifecycleTests {
     // `generatedFace(from:)`/`shape` on `IsDone()` alone (the original #910 fix) does NOT catch
     // this case, only the bridge's own outcome-tracking `built` flag does. Proved this defeated
     // the `IsDone()`-only guard before switching to `built`.
+    //
+    // Three sections for the successful build, same reasoning as the sibling test above: this
+    // exercises CreateSmoothed()'s myEdgeFace binding, not CreateRuled()'s.
     @Test func generatedFaceNilAfterWrongUsageOnReusedBuilder() throws {
         let w1 = try #require(Wire.circle(origin: SIMD3(0, 0, 0), normal: SIMD3(0, 0, 1), radius: 5))
         let w2 = try #require(Wire.circle(origin: SIMD3(0, 0, 10), normal: SIMD3(0, 0, 1), radius: 3))
         let w3 = try #require(Wire.circle(origin: SIMD3(0, 0, 20), normal: SIMD3(0, 0, 1), radius: 2))
+        let w4 = try #require(Wire.circle(origin: SIMD3(0, 0, 30), normal: SIMD3(0, 0, 1), radius: 1))
         let s1 = try #require(Shape.fromWire(w1))
         let s2 = try #require(Shape.fromWire(w2))
         let s3 = try #require(Shape.fromWire(w3))
+        let s4 = try #require(Shape.fromWire(w4))
         let loft = ThruSectionsBuilder(isSolid: true, isRuled: false)
         loft.addWire(s1)
         loft.addWire(s2)
+        loft.addWire(s3)
         #expect(loft.build())
         let edge = try #require(s1.subShapes(ofType: .edge).first)
         #expect(loft.generatedFace(from: edge) != nil)
@@ -490,24 +507,26 @@ struct StressThruSectionsBuilderLifecycleTests {
         // A vertex section inserted BETWEEN two real wire sections is a punctual MIDDLE section
         // — invalid usage OCCT itself rejects (WrongUsage), but via the early-return path that
         // never resets IsDone().
-        let v = try #require(Shape.vertex(at: SIMD3(0, 0, 15)))
+        let v = try #require(Shape.vertex(at: SIMD3(0, 0, 25)))
         loft.addVertex(v)
-        loft.addWire(s3)
+        loft.addWire(s4)
         #expect(!loft.build())
         #expect(loft.shape == nil)
         #expect(loft.generatedFace(from: edge) == nil)
     }
 
-    // #910 review finding 4: the two tests above only exercise the smoothed path (3+ sections,
-    // isRuled: false); the ruled path (isRuled: true, or exactly 2 sections) binds myEdgeFace via
-    // a different mechanism (BRepFill_Generator inside CreateRuled(), not CreateSmoothed's own
-    // loop) and gets no coverage otherwise.
+    // #910 review finding 4: the two tests above exercise the smoothed path (3+ sections,
+    // isRuled: false forces CreateSmoothed()). The ruled path binds myEdgeFace via a different
+    // mechanism (BRepFill_Generator inside CreateRuled(), not CreateSmoothed's own loop) and gets
+    // no coverage otherwise — exactly 2 sections reaches it regardless of isRuled
+    // (`myWires.Length() == 2 || myIsRuled` in Build()'s own dispatch), which is what actually
+    // matters here, not the isRuled argument itself.
     @Test func generatedFaceNilAfterFailedRebuildRuledPath() throws {
         let w1 = try #require(Wire.circle(origin: SIMD3(0, 0, 0), normal: SIMD3(0, 0, 1), radius: 5))
         let w2 = try #require(Wire.circle(origin: SIMD3(0, 0, 10), normal: SIMD3(0, 0, 1), radius: 3))
         let s1 = try #require(Shape.fromWire(w1))
         let s2 = try #require(Shape.fromWire(w2))
-        let loft = ThruSectionsBuilder(isSolid: true, isRuled: true)
+        let loft = ThruSectionsBuilder(isSolid: true, isRuled: false)
         loft.addWire(s1)
         loft.addWire(s2)
         #expect(loft.build())

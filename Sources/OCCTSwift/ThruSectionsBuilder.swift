@@ -1,6 +1,6 @@
 import Foundation
-import simd
 import OCCTBridge
+import simd
 
 /// Builder for lofted shapes through multiple wire sections.
 public final class ThruSectionsBuilder: @unchecked Sendable {
@@ -81,8 +81,10 @@ extension ThruSectionsBuilder {
     /// Get the face generated from a profile edge after the loft is built.
     ///
     /// Returns `nil` if `edge` isn't a profile edge the build used, or if the most recent
-    /// ``build()`` call on this instance did not succeed — including on a reused builder, where a
-    /// later failed rebuild never invalidates an earlier successful build's geometry on its own.
+    /// ``build()`` call on this instance did not succeed. This is checked explicitly on every
+    /// call, including on a reused builder: OCCT's own internal state does not reset itself
+    /// between builds, so without this check a failed rebuild could otherwise return an earlier
+    /// successful build's geometry instead of `nil`.
     public func generatedFace(from edge: Shape) -> Shape? {
         guard let h = OCCTThruSectionsGeneratedFace(ref, edge.handle) else { return nil }
         return Shape(handle: h)

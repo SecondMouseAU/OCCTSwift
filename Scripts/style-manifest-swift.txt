@@ -201,7 +201,6 @@ Sources/OCCTSwift/SVGExporter.swift
 Sources/OCCTSwift/SweepGuideTypes.swift
 Sources/OCCTSwift/TangentialDeflectionPoint.swift
 Sources/OCCTSwift/ThreadFeatures.swift
-Sources/OCCTSwift/ThruSectionsBuilder.swift
 Sources/OCCTSwift/Timer.swift
 Sources/OCCTSwift/TObjApplication.swift
 Sources/OCCTSwift/TopologyRef.swift
