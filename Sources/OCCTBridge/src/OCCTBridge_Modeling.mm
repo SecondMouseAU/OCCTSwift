@@ -8763,6 +8763,11 @@ OCCTShapeRef OCCTThruSectionsGeneratedFace(OCCTThruSectionsRef ref, OCCTShapeRef
     auto ts = (OCCTThruSections*)ref;
     if (!ts || !edge) return nullptr;
     try {
+        // #910: GeneratedFace() is a bare lookup into myEdgeFace, which Build() never clears —
+        // a failed rebuild on a reused builder leaves it holding the prior successful build's
+        // (or the failed build's own partial) bindings. Match OCCTThruSectionsShape's own
+        // IsDone() guard so a caller can't read post-build state past a build that didn't happen.
+        if (!ts->builder->IsDone()) return nullptr;
         TopoDS_Shape face = ts->builder->GeneratedFace(edge->shape);
         if (face.IsNull()) return nullptr;
         return new OCCTShape{face};

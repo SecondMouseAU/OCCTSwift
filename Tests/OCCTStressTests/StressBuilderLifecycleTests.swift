@@ -430,6 +430,34 @@ struct StressThruSectionsBuilderLifecycleTests {
         _ = loft.build()
         _ = loft.build()
     }
+
+    // #910: a reused builder's `generatedFace(from:)` must not hand back a first, successful
+    // build's face data once a later rebuild on the same instance has failed. OCCT's own
+    // `GeneratedFace()` is a bare `myEdgeFace` lookup that `Build()` never clears, so the guard
+    // has to be `IsDone()`-gated at the bridge, matching `shape`'s own existing guard.
+    @Test func generatedFaceNilAfterFailedRebuild() {
+        guard let w1 = Wire.circle(origin: SIMD3(0, 0, 0), normal: SIMD3(0, 0, 1), radius: 5),
+              let w2 = Wire.circle(origin: SIMD3(0, 0, 10), normal: SIMD3(0, 0, 1), radius: 3),
+              let s1 = Shape.fromWire(w1), let s2 = Shape.fromWire(w2) else { return }
+        let loft = ThruSectionsBuilder(isSolid: true, isRuled: false)
+        loft.checkCompatibility(true)
+        loft.addWire(s1)
+        loft.addWire(s2)
+        #expect(loft.build())
+        guard let edge = s1.subShapes(ofType: .edge).first else { return }
+        #expect(loft.generatedFace(from: edge) != nil)
+
+        // Reuse the same builder: an open third section next to two closed sections is
+        // BRepFill_CompatibleWires' documented "NotSameTopology" rejection, so this rebuild
+        // fails for real (not just the sectionCount < 2 guard) — and, before the #910 fix,
+        // generatedFace(from:) kept answering from the first build's never-cleared myEdgeFace.
+        guard let openWire = Wire.polygon3D(
+            [SIMD3(-5, 0, 20), SIMD3(5, 0, 20), SIMD3(0, 5, 20)], closed: false),
+            let openShape = Shape.fromWire(openWire) else { return }
+        loft.addWire(openShape)
+        #expect(!loft.build())
+        #expect(loft.generatedFace(from: edge) == nil)
+    }
 }
 
 // MARK: - CellsBuilder
