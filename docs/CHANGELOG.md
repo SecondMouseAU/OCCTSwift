@@ -19,6 +19,96 @@ each named with its migration in [`SEMVER.md`](SEMVER.md#v200).
 
 ## Unreleased
 
+### Unified the 5 duplicated "perpendicular basis from a direction" implementations onto OCCT's own `gp_Ax2` algorithm (#881)
+
+`Placement.init(origin:normal:)`, the `.throughAxis` construction-plane case, `Drawing`'s
+axis/point projection helpers, and `Shape.sectionPlaneBasis`'s auto-derive branch previously
+computed the basis perpendicular to a direction 3 different, mutually-inconsistent ways — a
+different `worldUp` fallback threshold, and in one case a reversed cross-product operand order
+that sign-flipped the result. All 5 now share one internal helper matching OCCT's own `gp_Ax2`
+canonical algorithm exactly. **Behavior change**: for a non-axis-aligned direction/normal — the
+common case in practice, previously untested — the computed basis (and, for `.throughAxis` and
+`sectionPlaneBasis`, downstream geometry) may differ from prior releases; axis-aligned inputs are
+unaffected.
+
+```swift
+// Placement.init(origin:normal:) now derives its x/y axes the same way for every normal,
+// matching the basis OCCT's own gp_Ax2 would derive from the same direction:
+let p = Placement(origin: .zero, normal: SIMD3(0.16, 0.21, 0.97))
+```
+
+### `Selector`'s three `pick` overloads share one `OCCTPickResult` -> `PickResult` mapping helper (#890)
+
+Internal dedup, no behavior change: `pick(at:)`/`pick(rect:)`/`pick(polygon:)` used to carry three
+byte-identical copies of the closure that maps a raw pick-result buffer into `[PickResult]`. Now
+one private helper. No public API change.
+
+### `Surface.torusAxis`/`Surface.revolutionAxis` share a bridge-unwrap helper (#891)
+
+Internal dedup, no behavior change: the two accessors used to duplicate the same six-variable
+out-param bridge-unwrap body they'd each hand-rolled independently. Now share a private helper.
+
+### Unify ConstructionContext/ConstructionLayer entity storage; fix planeShape/axisShape fallback asymmetry (#880, #886)
+
+- `ConstructionContext`'s plane/axis/point storage now shares one generic `EntityStore`
+  implementation instead of three hand-written copies (#886). No public API change.
+- `ConstructionLayer.materialize(in:graph:options:)`'s three per-kind loops now share one
+  `materializeOne` helper for the resolve/build/failure-reporting scaffolding (#886). No public
+  API change.
+- Fixed a materialization-fallback asymmetry: `axisShape`'s `Shape.face(from: wire) ??` attempt was
+  provably dead code (an axis's wire is never closed, so it can never succeed) and has been
+  removed; `planeShape` deliberately does **not** gain the equivalent fallback, because the only
+  input that would reach it is a placement corrupted by a zero-length plane normal, where a bare-
+  wire fallback would silently add non-finite (NaN) geometry to the document instead of correctly
+  reporting `.planeShapeFailed` (#880).
+
+### `ShapeMeasurements.totalFaceArea` and `Shape.surfaceArea`/`surfaceInertiaProperties()`/`surfaceInertia` are documented as separate measurements, not merged (#885)
+
+`ShapeMeasurements.totalFaceArea` (a tolerance-controlled sum of per-face
+`BRepGProp::SurfaceProperties` integrals) and `Shape.surfaceArea` /
+`Shape.surfaceInertiaProperties()?.mass` / `Shape.surfaceInertia?.area` (one untunable,
+whole-shape `BRepGProp::SurfaceProperties` integral, shared bit-for-bit by all three) both answer
+"total surface area" but are different computations that can disagree — usually by an amount too
+small to matter, but tightening `Shape.measure(linearTolerance:)`'s `linearTolerance` moves only
+the first one, and can make the two disagree *more*, not less. No behavior changed; both are now
+documented with explicit cross-references and a measured example of the gap
+(`docs/reference/Measurement.md`, `docs/reference/Shape-Features.md`,
+`docs/reference/Shape-Measurement.md`), and a new regression suite
+(`Tests/OCCTAnalysisTests/Issue885TotalAreaDivergenceTests.swift`) pins the measured behavior.
+
+### `ConstructionAxis.alongEdge` now resolves the true rotation axis for cylindrical/conical edges instead of the endpoint secant (#883, #887)
+
+`ConstructionAxis.alongEdge(_:)` previously computed only the secant between an edge's two
+parameter-bound endpoints, contradicting its own doc comment: a full-circle edge (a hole rim, a
+closed fillet edge) failed with `.degenerate("zero-length edge")` since its endpoints coincide, and
+a partial arc on a cylindrical/conical edge returned the chord between its endpoints as a
+plausible-looking but wrong direction. It now reads the true rotation axis off the edge's adjacent
+face via the existing `Face.primaryAxis` whenever the edge is non-linear and such a face exists,
+falling back to the endpoint secant for genuinely linear edges. Also deduplicated the five
+`BRepGraph.resolve` degeneracy checks (`.byThreePoints`, `.throughPoints`, `.intersectionOfPlanes`,
+`.intersectionOfAxisAndPlane`, `resolveEdgeDirection`) onto one shared helper — no behavior change,
+internal only.
+
+### `boundingBox`/`boundingBoxOptimal` no longer mistake a zero-coordinate shape for bridge failure (#900)
+
+`Shape.boundingBox` and `Shape.boundingBoxOptimal(useShapeTolerance:)` used to infer bridge failure
+from "all six returned coordinates are exactly zero" — indistinguishable from a genuinely
+degenerate/point shape at the world origin, which legitimately computes to all-zero output.
+`OCCTShapeBoundingBox`/`OCCTShapeBoundingBoxOptimal` now return `bool`, backed by an explicit
+`Bnd_Box::IsVoid()` check, matching the `radiusOfGyration`/`centroid` pattern. `nil` now means only
+"the box is void" — a point-vertex shape at the world origin correctly returns
+`(min: .zero, max: .zero)` instead of `nil`:
+
+```swift
+let origin = Shape.vertex(at: .zero)!
+origin.boundingBoxOptimal()   // was nil -> now (min: .zero, max: .zero)
+```
+
+`boundingBoxOptimal` had a live, demonstrated repro (`BRepBndLib::AddOptimal` on a point-vertex at
+the origin); `boundingBox`'s equivalent case is not reachable through any real shape today (OCCT's
+`BRep_Builder::MakeVertex` floors vertex tolerance above zero), but was fixed for the same
+contract regardless.
+
 ### Deduplicated the axis-unwrap (six-double) and point/vector-unwrap (three-double) bridge patterns across `Surface`/`Curve3D` onto two shared helpers (#899)
 
 `Surface.CylinderProperties.axis`, `.ConeProperties.axis`, `.PlaneProperties.pln`,
@@ -56,6 +146,72 @@ accessor. Added a codified convention for this shape to `okf/policies/code-style
 [#908](https://github.com/SecondMouseAU/OCCTSwift/issues/908) for the two further internal
 helpers (`Face.swift`'s `boundsVia`, `SweepGuideTypes.swift`'s `evaluateGuideTrihedronD0`) found to
 share it.
+
+### `boundsVia` and `evaluateGuideTrihedronD0` return bare, unlabeled tuples (#908)
+
+`Face.swift`'s `boundsVia(...)` (shared by `Face.bounds`/`Face.exactBounds`) and
+`SweepGuideTypes.swift`'s `evaluateGuideTrihedronD0(...)` (shared by
+`GuideTrihedronAC.evaluate`/`GuideTrihedronPlan.evaluate`) had the same labeled-tuple-helper shape
+#903/#904 fixed on `ShapeAxis.swift`'s `unwrapAxisComponents(_:)`: a shared internal/private helper
+baking in its own tuple labels, which Swift cannot implicitly relabel into a differently-labeled
+destination tuple. Neither was a live bug (every current caller already used matching labels), but
+both hit the same wall the moment a caller wanted different ones. Changed both return types to bare
+tuples; `boundsVia` additionally now delegates to `unwrapAxisComponents(_:)` directly instead of
+hand-rolling a second copy of the same six-out-param unpack. Pure `internal`/`private` refactor: no
+public accessor's return type, argument labels, or computed value changed. Added value-level tests
+for `GuideTrihedronAC`/`GuideTrihedronPlan.evaluate` (an orthonormal, right-handed frame check that
+catches any pairwise `tangent`/`normal`/`binormal` swap) and `Face.exactBounds` (a direct
+`min <= max` check per axis, per face), since the existing coverage for those two call sites was
+either non-nil-only or checked only a single component.
+
+### `ConstructionPlane.tangentToFace`, `ConstructionAxis.normalToFace`, `ConstructionPoint.centroidOfFace` now resolve correctly on curved faces (#879, #882, #884, #888, #889)
+
+- **#879**: `ConstructionPlane.tangentToFace(face:at:)` now evaluates the plane's normal at the
+  requested point's own projected location on the face, not the face's UV-domain midpoint. Fixes
+  silently-wrong results on any curved face (cylinder, cone, sphere, torus, freeform); planar faces
+  were already correct by coincidence and are unaffected.
+- **#882**: `ConstructionAxis.normalToFace(face:at:)` now uses the surface's own axis of revolution
+  (`Face.primaryAxis`) for cylindrical, conical, spherical, toroidal, surface-of-revolution, and
+  surface-of-extrusion faces, matching its documented contract. Falls back to the UV-midpoint
+  surface normal for planar and freeform faces, unchanged from before.
+- **#884**: `ConstructionPoint.centroidOfFace` now resolves to the face's real area centroid
+  (`Face.surfaceInertia.centerOfMass`, the same value `Shape.measure().faceCentroids` reports),
+  not a UV-parameter midpoint approximation. Fails with `.degenerate(...)` for a zero-area (or
+  otherwise uncomputable) face instead of returning a fabricated point.
+- **#888/#889**: internal dedup only, no observable behavior change — the edge fraction→parameter
+  and face UV-midpoint-sample formulas each now have one implementation instead of several
+  copy-pasted ones.
+
+Landed across four review rounds on the same PR (#897), three of which found further real issues
+in the same functions rather than just polish:
+
+- **Round 2**: `Face.revolutionProperties` no longer computes a spherical face's radius from the
+  axis-relative radial component (correct only by coincidence on an untrimmed sphere sampled at
+  the equator) — now the true, constant sphere radius. `tangentToFace`'s `Placement.origin` is now
+  the actual on-face point the normal was evaluated at, not the raw `at` point verbatim (they could
+  differ, landing the origin off the face's surface, when `at` didn't genuinely lie on `face`), and
+  it now falls back to the UV-midpoint sample when `Face.project(point:)` itself fails to converge,
+  not just when the subsequent normal lookup fails. `normalToFace`'s fallback for faces with no
+  genuine axis (planes, free-form/BSpline surfaces) is now point-aware instead of always answering
+  the fixed UV-midpoint normal. **Source-breaking**: `unsignedAngle(between:and:)` now returns
+  `nil` for degenerate (near-zero-length) input, matching its own doc comment, instead of silently
+  returning `0` — return type changes from `Double` to `Double?`; every existing call site already
+  only consumed it through a guard/optional-chain.
+- **Round 3**: `resolveFaceNormal`'s `Face.project(point:)`-failure fallback (`.tangentToFace`) now
+  returns a genuine on-face point as `Placement.origin` instead of the raw, unprojected input point
+  (measured up to 5 units off the face's actual surface). `normalToFace`'s returned origin is now
+  the actual on-face point the direction was evaluated at, for the same no-primary-axis fallback
+  case.
+- **Round 4**: `resolveFaceAxisDirection`'s cylinder/cone/torus/revolution branch now anchors the
+  returned axis on the true rotation axis line instead of the caller's raw, off-axis `at` point —
+  measured 5 units off on a cylinder and 25 units off (its widest point) on a torus; the
+  sphere/extrusion fallback branch had an analogous, lower-severity origin/direction mismatch, also
+  fixed. `revolutionProperties` and `resolveFaceAxisDirection` now switch on the same
+  `ShapeAxis.Kind` enum instead of two independently-maintained case-lists across `Face.SurfaceType`
+  and `ShapeAxis.Kind`.
+- Also (internal, `okf/policies/code-style.md`): unified `resolveFace(_:)`/`resolveEdge(_:)` onto
+  one generic helper, all now returning unlabeled tuples; deleted `Edge.pointByLinearFraction(_:)`
+  (added mid-PR, zero production callers) after `/ultrareview` flagged it as dead code.
 
 ## v2.0.0
 
