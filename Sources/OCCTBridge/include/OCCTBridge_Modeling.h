@@ -3250,20 +3250,27 @@ void OCCTThruSectionsAddWire(OCCTThruSectionsRef _Nonnull ts, OCCTShapeRef _Nonn
 /// Add a vertex (point) as a degenerate section.
 void OCCTThruSectionsAddVertex(OCCTThruSectionsRef _Nonnull ts, OCCTShapeRef _Nonnull vertex);
 
-/// Enable/disable smoothing (default: true for non-ruled).
+/// Enable/disable smoothing (default: true for non-ruled). Invalidates the cached "built"
+/// result until the next successful OCCTThruSectionsBuild — see its own doc comment.
 void OCCTThruSectionsSetSmoothing(OCCTThruSectionsRef _Nonnull ts, bool smoothing);
 
-/// Set maximum BSpline degree.
+/// Set maximum BSpline degree. Invalidates the cached "built" result — see OCCTThruSectionsBuild.
 void OCCTThruSectionsSetMaxDegree(OCCTThruSectionsRef _Nonnull ts, int32_t maxDeg);
 
 /// Set continuity: parametric continuity — see "Continuity vocabularies" at the top of this
-/// header. Before #490 only 0 and 1 were read; everything else meant C2.
+/// header. Before #490 only 0 and 1 were read; everything else meant C2. Invalidates the cached
+/// "built" result — see OCCTThruSectionsBuild.
 void OCCTThruSectionsSetContinuity(OCCTThruSectionsRef _Nonnull ts, int32_t continuity);
 
-/// Build the ThruSections shape. Returns true if successful.
+/// Build the ThruSections shape. Returns true if successful. OCCTThruSectionsShape and
+/// OCCTThruSectionsGeneratedFace both answer nil unless this has succeeded since the most recent
+/// AddWire/AddVertex/Set*/CheckCompatibility call on this instance — every one of those
+/// invalidates the previous build's result, since none of OCCT's own internal state resets
+/// itself on a reused builder (#910).
 bool OCCTThruSectionsBuild(OCCTThruSectionsRef _Nonnull ts);
 
-/// Get the result shape from the ThruSections builder.
+/// Get the result shape from the ThruSections builder — see OCCTThruSectionsBuild's doc comment
+/// for when this is nil.
 OCCTShapeRef _Nullable OCCTThruSectionsShape(OCCTThruSectionsRef _Nonnull ts);
 
 // MARK: - BRepAlgoAPI_Defeaturing (v0.118.0)
@@ -3559,16 +3566,22 @@ void OCCTSewingSetMaxTolerance(OCCTSewingRef _Nonnull sewing, double maxTol);
 
 // --- ThruSections extensions ---
 
-/// Enable/disable wire compatibility checking.
+/// Enable/disable wire compatibility checking. Invalidates the cached "built" result — see
+/// OCCTThruSectionsBuild.
 void OCCTThruSectionsCheckCompatibility(OCCTThruSectionsRef _Nonnull ts, bool check);
 
-/// Set parameterization type (0=ChordLength, 1=Centripetal, 2=IsoParametric).
+/// Set parameterization type (0=ChordLength, 1=Centripetal, 2=IsoParametric). Invalidates the
+/// cached "built" result — see OCCTThruSectionsBuild.
 void OCCTThruSectionsSetParType(OCCTThruSectionsRef _Nonnull ts, int32_t parType);
 
-/// Set criterium weights for the approximation.
+/// Set criterium weights for the approximation. Invalidates the cached "built" result — see
+/// OCCTThruSectionsBuild.
 void OCCTThruSectionsSetCriteriumWeight(OCCTThruSectionsRef _Nonnull ts, double w1, double w2, double w3);
 
-/// Get the face generated from a profile edge. Null if not found or the last build did not succeed.
+/// Get the face generated from a profile edge. Null if not found, if the last build did not
+/// succeed (see OCCTThruSectionsBuild), or if the found face is not part of the current build's
+/// own Shape() — a stale binding from an earlier build that a later reconciliation never
+/// overwrote in OCCT's own edge->face map (#910 review round 2).
 OCCTShapeRef _Nullable OCCTThruSectionsGeneratedFace(OCCTThruSectionsRef _Nonnull ts, OCCTShapeRef _Nonnull edge);
 
 // --- CellsBuilder extensions ---

@@ -521,25 +521,112 @@ struct StressThruSectionsBuilderLifecycleTests {
     // no coverage otherwise — exactly 2 sections reaches it regardless of isRuled
     // (`myWires.Length() == 2 || myIsRuled` in Build()'s own dispatch), which is what actually
     // matters here, not the isRuled argument itself.
+    //
+    // #910 review round 2 finding 10: the previous version of this test used isRuled: false and
+    // relied on the 2-section coincidence above to reach CreateRuled() — so `myIsRuled == true`
+    // itself (the branch a 3+-section ruled loft actually takes) had no coverage anywhere in the
+    // suite, under a test named "RuledPath". 3 sections + isRuled: true reaches CreateRuled() via
+    // the explicit flag instead of the 2-section shortcut.
     @Test func generatedFaceNilAfterFailedRebuildRuledPath() throws {
         let w1 = try #require(Wire.circle(origin: SIMD3(0, 0, 0), normal: SIMD3(0, 0, 1), radius: 5))
         let w2 = try #require(Wire.circle(origin: SIMD3(0, 0, 10), normal: SIMD3(0, 0, 1), radius: 3))
+        let w3 = try #require(Wire.circle(origin: SIMD3(0, 0, 20), normal: SIMD3(0, 0, 1), radius: 2))
         let s1 = try #require(Shape.fromWire(w1))
         let s2 = try #require(Shape.fromWire(w2))
-        let loft = ThruSectionsBuilder(isSolid: true, isRuled: false)
+        let s3 = try #require(Shape.fromWire(w3))
+        let loft = ThruSectionsBuilder(isSolid: true, isRuled: true)
         loft.addWire(s1)
         loft.addWire(s2)
+        loft.addWire(s3)
         #expect(loft.build())
         let edge = try #require(s1.subShapes(ofType: .edge).first)
         #expect(loft.generatedFace(from: edge) != nil)
 
         let openWire = try #require(Wire.polygon3D(
-            [SIMD3(-5, 0, 20), SIMD3(5, 0, 20), SIMD3(0, 5, 20)], closed: false))
+            [SIMD3(-5, 0, 30), SIMD3(5, 0, 30), SIMD3(0, 5, 30)], closed: false))
         let openShape = try #require(Shape.fromWire(openWire))
         loft.addWire(openShape)
         #expect(!loft.build())
         #expect(loft.shape == nil)
         #expect(loft.generatedFace(from: edge) == nil)
+    }
+
+    // #910 review round 2 finding 1: `built` alone is not enough. `myEdgeFace` itself is never
+    // cleared, so a THIRD build succeeding after an intervening failure can still answer with an
+    // edge -> face binding left over from the FIRST build, because CheckCompatibility(true)'s
+    // reconciliation of a newly-mismatched section can rebuild every section's edges, not just
+    // the new one's — stranding the original binding in the map without ever overwriting it.
+    // Measured empirically before the fix: `generatedFace(from: edge)` answered non-nil here with
+    // a face that was provably not part of the successful third build's own `shape`. The
+    // invariant this asserts — any non-nil result is a genuine member of the current `shape` — is
+    // what the bridge fix (confirming face membership via TopExp_Explorer) guarantees regardless
+    // of how myEdgeFace's internal reconciliation behaves.
+    @Test func generatedFaceIsMemberOfShapeAfterSuccessFailureSuccessOnReusedBuilder() throws {
+        let w1 = try #require(Wire.circle(origin: SIMD3(0, 0, 0), normal: SIMD3(0, 0, 1), radius: 5))
+        let w2 = try #require(Wire.circle(origin: SIMD3(0, 0, 10), normal: SIMD3(0, 0, 1), radius: 3))
+        let w3 = try #require(Wire.circle(origin: SIMD3(0, 0, 20), normal: SIMD3(0, 0, 1), radius: 2))
+        let s1 = try #require(Shape.fromWire(w1))
+        let s2 = try #require(Shape.fromWire(w2))
+        let s3 = try #require(Shape.fromWire(w3))
+        let loft = ThruSectionsBuilder(isSolid: true, isRuled: false)
+        loft.addWire(s1)
+        loft.addWire(s2)
+        loft.addWire(s3)
+        #expect(loft.build())
+        let edge = try #require(s1.subShapes(ofType: .edge).first)
+        #expect(loft.generatedFace(from: edge) != nil)
+
+        // Build B: a mismatched triangle under checkCompatibility(false) fails cleanly (no
+        // reconciliation attempted).
+        loft.checkCompatibility(false)
+        let triangle = try #require(Wire.polygon3D(
+            [SIMD3(2, 0, 30), SIMD3(-1, 1.7320508, 30), SIMD3(-1, -1.7320508, 30)], closed: true))
+        let s4 = try #require(Shape.fromWire(triangle))
+        loft.addWire(s4)
+        #expect(!loft.build())
+        #expect(loft.generatedFace(from: edge) == nil)
+
+        // Build C: flip checkCompatibility back on so BRepFill_CompatibleWires reconciles the
+        // triangle against the three circles, and build again — succeeds, but via a wire set
+        // BRepFill_CompatibleWires rebuilt, not necessarily the original section edges.
+        loft.checkCompatibility(true)
+        #expect(loft.build())
+        if let face = loft.generatedFace(from: edge), let shape = loft.shape {
+            let isMember = shape.subShapes(ofType: .face).contains { $0.isSame(as: face) }
+            #expect(isMember)
+        }
+    }
+
+    // #910 review round 2 finding 2: `addWire`/`addVertex` invalidate `built` on a successful
+    // build, but the six setters (setSmoothing, setMaxDegree, setContinuity, checkCompatibility,
+    // setParType, setCriteriumWeight) didn't — so `setContinuity(_:)` right after a successful
+    // build used to leave `.shape` still serving the PRE-change geometry until the caller happened
+    // to add a section too. All eight mutators now invalidate the same way; this proves it for one
+    // representative of each of the two call sites the fix touches (Set* directly, and
+    // CheckCompatibility which is declared separately from the others).
+    @Test func shapeNilAfterSettingChangedWithoutRebuild() throws {
+        let w1 = try #require(Wire.circle(origin: SIMD3(0, 0, 0), normal: SIMD3(0, 0, 1), radius: 5))
+        let w2 = try #require(Wire.circle(origin: SIMD3(0, 0, 10), normal: SIMD3(0, 0, 1), radius: 3))
+        let w3 = try #require(Wire.circle(origin: SIMD3(0, 0, 20), normal: SIMD3(0, 0, 1), radius: 2))
+        let s1 = try #require(Shape.fromWire(w1))
+        let s2 = try #require(Shape.fromWire(w2))
+        let s3 = try #require(Shape.fromWire(w3))
+        let loft = ThruSectionsBuilder(isSolid: true, isRuled: false)
+        loft.addWire(s1)
+        loft.addWire(s2)
+        loft.addWire(s3)
+        #expect(loft.build())
+        #expect(loft.shape != nil)
+
+        loft.setContinuity(2)
+        #expect(loft.shape == nil)
+
+        // A second, differently-declared setter (checkCompatibility lives in the "extensions"
+        // block, not alongside setContinuity) needs its own rebuild to re-arm the guard.
+        #expect(loft.build())
+        #expect(loft.shape != nil)
+        loft.checkCompatibility(false)
+        #expect(loft.shape == nil)
     }
 }
 
