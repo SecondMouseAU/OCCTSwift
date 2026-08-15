@@ -179,7 +179,6 @@ Sources/OCCTSwift/ShapeType.swift
 Sources/OCCTSwift/SharedLibrary.swift
 Sources/OCCTSwift/SheetLayout.swift
 Sources/OCCTSwift/SheetMetal.swift
-Sources/OCCTSwift/SIMD3Unpacking.swift
 Sources/OCCTSwift/Sketch.swift
 Sources/OCCTSwift/StepHeader.swift
 Sources/OCCTSwift/STEPOptions.swift

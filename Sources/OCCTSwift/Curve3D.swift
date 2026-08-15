@@ -3158,7 +3158,10 @@ extension Curve3D {
     public var offsetDirection: (x: Double, y: Double, z: Double)? {
         // Public return type is a labeled tuple, not SIMD3<Double>, so the shared helper's
         // result is unpacked into it rather than returned directly — no signature change.
-        guard let v = unwrapVectorComponentsIfSuccessful({ OCCTCurve3DOffsetDirection(handle, $0, $1, $2) })
+        guard
+            let v = unwrapVectorComponentsIfSuccessful({
+                OCCTCurve3DOffsetDirection(handle, $0, $1, $2)
+            })
         else { return nil }
         return (v.x, v.y, v.z)
     }
