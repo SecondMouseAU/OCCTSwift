@@ -3568,7 +3568,7 @@ void OCCTThruSectionsSetParType(OCCTThruSectionsRef _Nonnull ts, int32_t parType
 /// Set criterium weights for the approximation.
 void OCCTThruSectionsSetCriteriumWeight(OCCTThruSectionsRef _Nonnull ts, double w1, double w2, double w3);
 
-/// Get the face generated from an edge after building.
+/// Get the face generated from a profile edge. Null if not found or the last build did not succeed.
 OCCTShapeRef _Nullable OCCTThruSectionsGeneratedFace(OCCTThruSectionsRef _Nonnull ts, OCCTShapeRef _Nonnull edge);
 
 // --- CellsBuilder extensions ---
