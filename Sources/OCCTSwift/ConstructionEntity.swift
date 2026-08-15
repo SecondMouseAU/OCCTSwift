@@ -438,10 +438,21 @@ extension BRepGraph {
     /// the point actually used.
     ///
     /// That returned point is `point` itself only when `point` already lies on
-    /// `face` — an on-face origin the caller can trust even when it doesn't (#897
-    /// review, finding 2). Falls back to the UV-midpoint sample (point AND normal
-    /// together, so the two stay mutually consistent) when the projection itself
-    /// fails to converge —
+    /// `face` (#897 review, finding 2) — closer to the truth than the raw `point`,
+    /// not a guaranteed on-face location: `Face.project(point:)` bounds its search to
+    /// `face`'s UV bounds (`BRepTools::UVBounds`, a rectangular box in parameter
+    /// space), not the exact trimmed boundary, so for a non-convex or holed face the
+    /// result can land inside that box but outside the real trimmed region (#914
+    /// review, finding 3 — the specific "point past a face's v-range converges
+    /// anyway" reproducer that finding proposed was checked directly against the
+    /// bridge and does NOT reproduce: `GeomAPI_ProjectPointOnSurf`'s bounded
+    /// constructor genuinely constrains convergence to those bounds, confirmed with a
+    /// cylindrical face trimmed to `v ∈ [0, 10]`, projecting a point at `v = 25` on
+    /// the same infinite cylinder — `project(point:)` correctly returns `nil`, not a
+    /// point at `v = 25`).
+    ///
+    /// Falls back to the UV-midpoint sample (point AND normal together, so the two
+    /// stay mutually consistent) when the projection itself fails to converge —
     /// `nil`, not just a defensive guard: `GeomAPI_ProjectPointOnSurf`'s gradient
     /// search has no stationary point to find for a point equidistant from an entire
     /// symmetric surface, e.g. a sphere's or torus's own center projected onto its
@@ -449,8 +460,9 @@ extension BRepGraph {
     /// 1/3). Falls back to the UV-midpoint normal ALONE, keeping the real projected
     /// point as the origin, when the projection succeeds but the local normal at
     /// that exact location is undefined — a genuine parametric singularity (e.g. a
-    /// cone apex) distinct from a projection failure, since `projection.point` there
-    /// IS still a genuine on-face location.
+    /// cone apex) distinct from a projection failure; `projection.point` there is
+    /// still within `face`'s UV bounds, with the same box-vs-exact-boundary caveat
+    /// as above.
     ///
     /// Shared by `resolveFaceNormal` (`.tangentToFace`) and `resolveFaceAxisDirection`'s
     /// no-`primaryAxis` fallback (`.normalToFace`) — both used to duplicate this same

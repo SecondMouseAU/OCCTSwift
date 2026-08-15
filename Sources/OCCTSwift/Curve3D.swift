@@ -720,29 +720,19 @@ public final class Curve3D: @unchecked Sendable {
 
     /// Unit tangent direction at parameter u.
     public func tangentDirection(at u: Double) -> SIMD3<Double>? {
-        var tx: Double = 0
-        var ty: Double = 0
-        var tz: Double = 0
-        guard OCCTCurve3DGetTangent(handle, u, &tx, &ty, &tz) else { return nil }
-        return SIMD3(tx, ty, tz)
+        unwrapVectorComponentsIfSuccessful { OCCTCurve3DGetTangent(handle, u, $0, $1, $2) }
     }
 
     /// Principal normal direction at parameter u.
     public func normal(at u: Double) -> SIMD3<Double>? {
-        var nx: Double = 0
-        var ny: Double = 0
-        var nz: Double = 0
-        guard OCCTCurve3DGetNormal(handle, u, &nx, &ny, &nz) else { return nil }
-        return SIMD3(nx, ny, nz)
+        unwrapVectorComponentsIfSuccessful { OCCTCurve3DGetNormal(handle, u, $0, $1, $2) }
     }
 
     /// Center of curvature at parameter u.
     public func centerOfCurvature(at u: Double) -> SIMD3<Double>? {
-        var cx: Double = 0
-        var cy: Double = 0
-        var cz: Double = 0
-        guard OCCTCurve3DGetCenterOfCurvature(handle, u, &cx, &cy, &cz) else { return nil }
-        return SIMD3(cx, cy, cz)
+        unwrapVectorComponentsIfSuccessful {
+            OCCTCurve3DGetCenterOfCurvature(handle, u, $0, $1, $2)
+        }
     }
 
     /// Torsion at parameter `u` — the rate the curve twists out of its osculating plane — or `nil`
@@ -849,11 +839,7 @@ extension Curve3D {
     /// - Parameter tolerance: Planarity tolerance (default: 0)
     /// - Returns: The plane normal if planar, or nil if not planar
     public func planeNormal(tolerance: Double = 0) -> SIMD3<Double>? {
-        var nx: Double = 0
-        var ny: Double = 0
-        var nz: Double = 0
-        guard OCCTCurve3DIsPlanar(handle, tolerance, &nx, &ny, &nz) else { return nil }
-        return SIMD3(nx, ny, nz)
+        unwrapVectorComponentsIfSuccessful { OCCTCurve3DIsPlanar(handle, tolerance, $0, $1, $2) }
     }
 }
 
@@ -1805,11 +1791,9 @@ extension Curve3D {
         _ p1: SIMD3<Double>,
         _ p2: SIMD3<Double>
     ) -> SIMD3<Double>? {
-        var x: Double = 0
-        var y: Double = 0
-        var z: Double = 0
-        guard OCCTGceMakeDir(p1.x, p1.y, p1.z, p2.x, p2.y, p2.z, &x, &y, &z) else { return nil }
-        return SIMD3(x, y, z)
+        unwrapVectorComponentsIfSuccessful {
+            OCCTGceMakeDir(p1.x, p1.y, p1.z, p2.x, p2.y, p2.z, $0, $1, $2)
+        }
     }
 
     /// Create an ellipse (`gce_MakeElips`).
@@ -3172,13 +3156,11 @@ extension Curve3D {
 
     /// Get the offset direction (returns nil if not an offset curve).
     public var offsetDirection: (x: Double, y: Double, z: Double)? {
-        var dx: Double = 0
-        var dy: Double = 0
-        var dz: Double = 0
-        if OCCTCurve3DOffsetDirection(handle, &dx, &dy, &dz) {
-            return (dx, dy, dz)
-        }
-        return nil
+        // Public return type is a labeled tuple, not SIMD3<Double>, so the shared helper's
+        // result is unpacked into it rather than returned directly — no signature change.
+        guard let v = unwrapVectorComponentsIfSuccessful({ OCCTCurve3DOffsetDirection(handle, $0, $1, $2) })
+        else { return nil }
+        return (v.x, v.y, v.z)
     }
 }
 

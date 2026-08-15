@@ -274,11 +274,7 @@ public final class Surface: @unchecked Sendable {
 
     /// Surface normal at (u, v).
     public func normal(atU u: Double, v: Double) -> SIMD3<Double>? {
-        var nx: Double = 0
-        var ny: Double = 0
-        var nz: Double = 0
-        guard OCCTSurfaceGetNormal(handle, u, v, &nx, &ny, &nz) else { return nil }
-        return SIMD3(nx, ny, nz)
+        unwrapVectorComponentsIfSuccessful { OCCTSurfaceGetNormal(handle, u, v, $0, $1, $2) }
     }
 
     // MARK: - Analytic Surfaces
@@ -2521,15 +2517,12 @@ extension Surface {
             flat.append(c.target.z)
         }
 
-        var x: Double = 0
-        var y: Double = 0
-        var z: Double = 0
-        let ok = OCCTSurfaceNLPlateEvaluateDerivative(
-            handle, &flat, Int32(constraints.count),
-            u, v, Int32(iu), Int32(iv), &x, &y, &z
-        )
-        guard ok else { return nil }
-        return SIMD3(x, y, z)
+        return unwrapVectorComponentsIfSuccessful {
+            OCCTSurfaceNLPlateEvaluateDerivative(
+                handle, &flat, Int32(constraints.count),
+                u, v, Int32(iu), Int32(iv), $0, $1, $2
+            )
+        }
     }
 
     /// Generate a ruled/lofted surface from a sequence of section curves.

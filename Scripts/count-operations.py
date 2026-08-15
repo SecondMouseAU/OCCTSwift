@@ -53,6 +53,22 @@ INIT = re.compile(r'^\s*public\s+(?:convenience\s+)?init[?!]?\s*\(')
 # or `public var x = 0` has no brace and is data, not an entry point.
 CVAR = re.compile(r'^\s*public\s+(?:static\s+)?var\s+([A-Za-z_][A-Za-z0-9_]*)\b[^=]*\{')
 SUBS = re.compile(r'^\s*public\s+(?:static\s+)?subscript\s*\(')
+# Bare (no explicit `public`) forms of the same four, used only when the innermost enclosing
+# scope is a `public extension` body: Swift raises a member's default access level to match an
+# extension's own stated modifier, so `public extension Foo { func bar() {} }` makes `bar()`
+# genuinely public with no `public` keyword on its own line — invisible to FUNC/INIT/CVAR/SUBS
+# above, which all anchor on a literal `public`. 86 such members across 22 blocks in 6 files were
+# undercounted this way before this fix (#914 review, finding 8; #899/#902's own count moving
+# 4267 -> 4275 on a pure `public extension` -> `extension` + per-member `public` reformat in
+# `Shape+Analysis.swift` was this exact defect, caught by accident rather than by the scanner).
+FUNC_BARE = re.compile(r'^\s*(?:static\s+|class\s+)?func\s+([A-Za-z_][A-Za-z0-9_]*)')
+INIT_BARE = re.compile(r'^\s*(?:convenience\s+)?init[?!]?\s*\(')
+CVAR_BARE = re.compile(r'^\s*(?:static\s+)?var\s+([A-Za-z_][A-Za-z0-9_]*)\b[^=]*\{')
+SUBS_BARE = re.compile(r'^\s*(?:static\s+)?subscript\s*\(')
+# A member explicitly narrowing below the extension's default: not implicitly public even inside
+# a `public extension` body.
+NARROWER_ACCESS = re.compile(r'^\s*(?:private|fileprivate|internal)\b')
+PUBLIC_EXTENSION_DECL = re.compile(r'^\s*public\s+extension\s+[A-Za-z_]')
 # An @available(..., unavailable, ...) attribute: the declaration below it is a retired spelling
 # kept only so an old call site fails to build with an explanation, so it is not an entry point.
 # A `deprecated` one still is: it can still be called. Scans the whole attribute, not just its
@@ -87,6 +103,16 @@ def _enclosing_type(stack):
     return stack[-1][0].split('.')[-1] if stack else None
 
 
+def _in_public_extension(stack):
+    """Whether the innermost enclosing scope is itself a `public extension` body.
+
+    Per-frame, not inherited past the innermost one: a plain (non-`public`) type nested inside a
+    `public extension` reverts to Swift's ordinary internal default for its own members, same as
+    it would outside one.
+    """
+    return stack[-1][2] if stack else False
+
+
 def count_entry_points():
     """Returns (total, breakdown, ops) where ops maps (type, name) -> (file, line).
 
@@ -99,7 +125,7 @@ def count_entry_points():
     ops = {}
     for f in sorted(glob.glob(os.path.join(ROOT, "Sources/OCCTSwift/*.swift"))):
         rel = os.path.relpath(f, ROOT)
-        stack = []      # [(type_name, brace_depth_at_open)]
+        stack = []      # [(type_name, brace_depth_at_open, is_public_extension)]
         depth = 0
         unavailable = False   # an @available(*, unavailable) seen; it applies to the next decl
         in_avail_attr = False     # scanning an @available(...) attribute's pre-string header
@@ -132,7 +158,16 @@ def count_entry_points():
                 spec = AVAIL_LABEL_ARG.split(header, 1)[0]
                 if UNAVAILABLE_WORD.search(spec):
                     avail_pending_unavailable = True
-                avail_paren_depth += header.count('(') - header.count(')')
+                # Strip complete `"..."` string literals before counting parens: a single-line
+                # `message: "... (see #123)"` has an unbalanced `(` inside the string, which is
+                # prose, not attribute-argument-list syntax. Uncorrected, that leaves
+                # avail_paren_depth stuck above 0 and in_avail_attr true for the rest of the
+                # file, silently routing every later declaration away from the FUNC/INIT/CVAR
+                # matchers (#914 review, finding 7 — the mechanism was present, though no
+                # `message:` string in this tree currently contains an unbalanced paren, so it
+                # had not yet miscounted anything).
+                header_parens = re.sub(r'"(?:[^"\\]|\\.)*"', '""', header)
+                avail_paren_depth += header_parens.count('(') - header_parens.count(')')
                 if '"""' in line:
                     # The message string starts here (raw `line`, not `code`: the string's own
                     # boundary is real source text, not something a comment-strip should touch).
@@ -158,24 +193,28 @@ def count_entry_points():
                 else:
                     in_avail_attr = True
             else:
-                m = FUNC.match(line)
+                # Inside a `public extension` body, a member with no access modifier of its own
+                # is implicitly public too (see FUNC_BARE et al above) — but one that explicitly
+                # narrows (`private`/`fileprivate`/`internal`) is not.
+                implicit_public = _in_public_extension(stack) and not NARROWER_ACCESS.match(line)
+                m = FUNC.match(line) or (implicit_public and FUNC_BARE.match(line))
                 if m:
                     if not unavailable:
                         breakdown["func"] += 1
                         ops.setdefault((enc, m.group(1)), (rel, i))
                     unavailable = False
-                elif INIT.match(line):
+                elif INIT.match(line) or (implicit_public and INIT_BARE.match(line)):
                     if not unavailable:
                         breakdown["init"] += 1
                     unavailable = False
                 else:
-                    m = CVAR.match(line)
+                    m = CVAR.match(line) or (implicit_public and CVAR_BARE.match(line))
                     if m:
                         if not unavailable:
                             breakdown["computed var"] += 1
                             ops.setdefault((enc, m.group(1)), (rel, i))
                         unavailable = False
-                    elif SUBS.match(line):
+                    elif SUBS.match(line) or (implicit_public and SUBS_BARE.match(line)):
                         if not unavailable:
                             breakdown["subscript"] += 1
                         unavailable = False
@@ -192,7 +231,7 @@ def count_entry_points():
                 if td is not None and opens > closes:
                     # body opens and stays open below this line; a one-liner like
                     # `enum Toggle { case a, b }` (opens == closes) encloses nothing.
-                    stack.append((td.group(1), depth))
+                    stack.append((td.group(1), depth, bool(PUBLIC_EXTENSION_DECL.match(line))))
                 else:
                     while stack and depth < stack[-1][1]:
                         stack.pop()

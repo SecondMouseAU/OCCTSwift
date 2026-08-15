@@ -148,8 +148,11 @@ The normal is evaluated at `at`'s own projected UV location on `face` (via `Face
 `Face.normal(atU:v:)`), not the face's UV-domain midpoint — so on a curved face (cylinder, cone,
 sphere, torus, freeform) the plane is genuinely tangent at the requested point, not just
 coincidentally correct the way a planar face makes any point's normal agree with any other's (#879).
-The `Placement`'s origin is the actual projected on-face point, not the raw `at` point verbatim —
-they can differ when `at` doesn't genuinely lie on `face` (PR #897 review, finding 2). If either
+The `Placement`'s origin is the actual projected point, not the raw `at` point verbatim — they can
+differ when `at` doesn't genuinely lie on `face` (PR #897 review, finding 2). The projection is
+bounded to `face`'s UV bounds (a rectangular box in parameter space), not the exact trimmed
+boundary, so for a non-convex or holed face the origin can land inside that box but outside the
+real trimmed region (#914 review, finding 3). If either
 `face.project(point:)` itself fails to converge, or the projected point is a genuine parametric
 singularity (e.g. a cone apex, where the two tangent directions coincide rather than merely shrink —
 a sphere's pole is *not* such a point, OCCT still resolves a normal there), the exact local normal
@@ -244,7 +247,9 @@ the zero vector. A zero-length fallback result fails with `.degenerate("zero-len
 
 ### `ConstructionAxis.normalToFace(face:at:)`
 
-An axis perpendicular to a face, anchored at a vertex.
+An axis perpendicular to a face at a reference vertex — anchored on the face's true rotation axis
+line (projected from `at`) for cylindrical/conical/toroidal/revolved faces, or at `at`'s own
+projected on-face location otherwise. See below for the full per-kind breakdown.
 
 ```swift
 case normalToFace(face: TopologyRef, at: TopologyRef)
@@ -272,12 +277,26 @@ this very (excluded) axis — the radial direction from center — so a point-aw
 silently reproduce the excluded axis by another route at exactly the vertex the exclusion exists to
 guard (PR #897 review, xhigh pass).
 
+The returned axis's **origin** is never the raw `at` point verbatim, for the same reason
+`tangentToFace`'s origin isn't (finding 2 above). For cylindrical/conical/toroidal/revolved faces
+it's `at`'s own position projected onto the face's true rotation axis LINE — `axis.origin +
+((at − axis.origin) · direction) * direction` — kept edge-local (nearest to `at` along the axis)
+rather than snapped to the surface's own placement origin, which can be far away (#914 review,
+finding 1 corollary; #897 review, third pass). Pairing the correct direction with the raw,
+generally off-axis `at` point (a vertex on the surface sits offset from the true centerline by the
+surface's own radius) would describe a different line entirely, parallel to but not coincident
+with the real axis. For the no-`primaryAxis` fallback, the origin is `at`'s own projected on-face
+location, the same point the direction was evaluated at. For the sphere/extrusion exclusion
+branch, both origin and direction come from the face's UV midpoint together.
+
 ```swift
 // On a cylindrical face this resolves to the cylinder's own axis (constant
-// everywhere on the face), not the radial normal at any particular point.
+// direction everywhere on the face), anchored ON that axis line, not at the
+// vertex's own off-axis position on the surface.
 let axis = ConstructionAxis.normalToFace(face: cylindricalFaceRef, at: vertexRef)
 if case .success(let a) = graph.resolve(axis) {
     print(a.direction)   // the cylinder's rotation axis
+    print(a.origin)       // on the true centerline, not on the cylinder's surface
 }
 ```
 

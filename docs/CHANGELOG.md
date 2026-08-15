@@ -26,16 +26,61 @@ axis/point projection helpers, and `Shape.sectionPlaneBasis`'s auto-derive branc
 computed the basis perpendicular to a direction 3 different, mutually-inconsistent ways — a
 different `worldUp` fallback threshold, and in one case a reversed cross-product operand order
 that sign-flipped the result. All 5 now share one internal helper matching OCCT's own `gp_Ax2`
-canonical algorithm exactly. **Behavior change**: for a non-axis-aligned direction/normal — the
-common case in practice, previously untested — the computed basis (and, for `.throughAxis` and
-`sectionPlaneBasis`, downstream geometry) may differ from prior releases; axis-aligned inputs are
-unaffected.
+canonical algorithm exactly — verified directly against `gp_Ax2::gp_Ax2(const gp_Pnt&, const
+gp_Dir&)`'s own source (`gp_Ax2.cxx`), not just the constructor's name.
+
+**Behavior change, broader than first stated here:** an earlier version of this entry claimed
+axis-aligned input was unaffected; that was checked against only one axis-aligned direction, not
+all six. **Only world ±Z is unaffected** — every other input, including world ±X and ±Y (the most
+common CAD section-plane normals and view directions), computes a *different* basis than before:
+e.g. for `normal = (1, 0, 0)`, `xAxis` moves from world +Y to world +Z and `yAxis` from +Z to −Y.
+The old per-call-site `cross(worldUp, direction)` construction happened to coincide with `gp_Ax2`'s
+algorithm only at `direction = ±(0, 0, 1)`, where the old code's own degenerate-cross fallback
+branch was already firing. Confirmed by hand for all three axis pairs, not merely reasoned about;
+`Issue881PerpendicularBasisTests` gained axis-aligned cases in a follow-up commit to close the gap.
+This propagates to `Placement(origin:normal:)`, `.throughAxis`, and — via
+`Shape.sectionPlaneBasis`'s auto-derive branch — `Shape.section2D(planeNormal:)`: an X- or
+Y-normal section view built against a prior release renders rotated/mirrored relative to this one.
 
 ```swift
 // Placement.init(origin:normal:) now derives its x/y axes the same way for every normal,
-// matching the basis OCCT's own gp_Ax2 would derive from the same direction:
+// matching the basis OCCT's own gp_Ax2 would derive from the same direction — including the
+// common X/Y/Z-aligned normals, not just oblique ones:
 let p = Placement(origin: .zero, normal: SIMD3(0.16, 0.21, 0.97))
 ```
+
+### `count-operations.py` fixed two undercounting bugs; headline moves 4,275 -> 4,339 (#914 review, findings 7 + 8)
+
+Neither bug changed any Swift source — both are in the derivation script itself, so the true
+public-API count was always higher than what README/API_REFERENCE reported.
+
+- **Finding 7**: the `@available(...)` attribute scanner tracked its own argument-list paren depth
+  by counting `(`/`)` across the whole pre-`"""` header of the line, including inside any ordinary
+  (non-triple-quoted) `message:`/`renamed:` string. A single-line attribute whose message contains
+  an unbalanced paren — e.g. `message: "removed in 2.1 (see #123"` — left the scanner's internal
+  depth stuck above zero, which pins `in_avail_attr` true for the rest of the *file*: every later
+  declaration silently stops being counted. Not observed in this tree's current `@available` usage
+  (none of its message strings contain an unbalanced paren today), but the mechanism was live and
+  would recur on the next such message. Fixed by neutralizing complete `"..."` string literals
+  before counting parens. Proven: a synthetic fixture (an `unavailable` declaration with an
+  unbalanced-paren message, followed by two ordinary public functions) went from a derived count of
+  0 for the whole file to the correct 2, both before/after checked directly against the un-fixed and
+  fixed script.
+- **Finding 8**: the FUNC/INIT/CVAR/SUBS matchers all anchor on a literal `public` keyword, but
+  Swift raises a member's default access level to match its enclosing `public extension`'s stated
+  modifier — `public extension Document { func foo() {...} }` makes `foo()` genuinely public with
+  no `public` keyword on its own line. 22 such blocks across `Document.swift`, `DrawingSymbols.swift`,
+  `DrawingThreadAnnotation.swift`, `PresentationMesh.swift`, `Shape+ShapeHealing.swift` and
+  `Shape+Topology.swift` were invisible to the scanner this way. This is the same defect that moved
+  the count 4,267 -> 4,275 once already in this same PR, on a `Shape+Analysis.swift` reformat from
+  `public extension` to `extension` + per-member `public` — caught by accident there, not by the
+  scanner. Fixed at the root instead of by reformatting every remaining site: the scanner now
+  tracks, per enclosing-scope stack frame, whether that frame is a `public extension` body, and
+  treats an unmarked member as public there unless it explicitly narrows
+  (`private`/`fileprivate`/`internal`). README/`API_REFERENCE.md`'s headline and Total move from
+  4,275 to the now-correctly-derived 4,339 (`--fix`); the illustrative categorisation percentage
+  moves from ~78% to ~77% of the total for the same reason (its own row count is unchanged, only
+  the denominator grew).
 
 ### `Selector`'s three `pick` overloads share one `OCCTPickResult` -> `PickResult` mapping helper (#890)
 
@@ -61,6 +106,26 @@ out-param bridge-unwrap body they'd each hand-rolled independently. Now share a 
   input that would reach it is a placement corrupted by a zero-length plane normal, where a bare-
   wire fallback would silently add non-finite (NaN) geometry to the document instead of correctly
   reporting `.planeShapeFailed` (#880).
+- Fixed a second, separate bug found in the same PR's own review: `materializeOne` wrapped
+  `Document.addConstructionShape`'s result in `.success` without checking its own documented
+  "negative on failure" contract, so a failed add was counted as materialized with a garbage
+  negative `labelId`. Now guards `labelId >= 0` and reports failure instead. **Public API addition**:
+  `ConstructionContext.MaterializationFailure` gains three new cases — `planeAddFailed(PlaneID)`,
+  `axisAddFailed(AxisID)`, `pointAddFailed(PointID)` — distinguishing "the representative shape
+  never built" (the existing `plane`/`axis`/`pointShapeFailed` cases) from "it built fine but
+  `Document.addConstructionShape` rejected it" (these three). Any exhaustive `switch` over the enum
+  outside this package needs updating for the new cases; `MaterializationResult.failures` can now
+  surface them. No input reachable through the public API is currently known to trigger the new
+  guard — confirmed no way to make `addConstructionShape` fail on a shape `materializeOne` just
+  built successfully — so it's exercised only via an injectable `addShape` closure kept internal for
+  testing (#898, review finding 4; flagged as an undocumented public API change in the #914 review).
+- `EntityStore<ID, Value>` now requires `Value: Sendable` instead of leaving `Value` unconstrained
+  under a bare `@unchecked Sendable`. The lock genuinely does make the class's own storage
+  thread-safe, but `@unchecked` disables Sendable checking for the whole type, including whatever
+  `Value` turns out to be — an unconstrained `Value` would let a future non-`Sendable` payload
+  cross concurrency boundaries through `value(_:)`/`all` with no compiler check at all. Costs
+  nothing today: all three instantiations (`ConstructionPlane`/`ConstructionAxis`/`ConstructionPoint`)
+  are already `Sendable` (#914 review, finding 13).
 
 ### `ShapeMeasurements.totalFaceArea` and `Shape.surfaceArea`/`surfaceInertiaProperties()`/`surfaceInertia` are documented as separate measurements, not merged (#885)
 
@@ -130,6 +195,29 @@ Also (test-only, no source behavior change): six accessors' tests
 only a single component or magnitude, and `coneApex()` made no assertion at all; all seven now
 check the full point/origin/direction the accessor returns.
 
+**Follow-up (#914 review, finding 10):** `unwrapVectorComponents(_:)` only covers the
+always-succeeds shape (a `Void`-returning bridge call). 10 more three-`Double`-out-param sites in
+these same two files report success through their own `Bool` return instead — a different enough
+shape that the original 43-site sweep skipped them rather than mis-converting them. 8 of the 10 are
+a genuine point/vector (`Curve3D.tangentDirection(at:)`, `.normal(at:)`, `.centerOfCurvature(at:)`,
+`.planeNormal(tolerance:)`, `.directionFrom2Points(_:_:)`, `.offsetDirection`;
+`Surface.normal(atU:v:)`, `.nlPlateDerivative(...)`), now sharing a new sibling helper,
+`unwrapVectorComponentsIfSuccessful(_:)`, that returns `SIMD3<Double>?` instead of always
+`SIMD3<Double>`. `offsetDirection`'s own public return type is a labeled `(x:y:z:)` tuple, not
+`SIMD3<Double>`; the shared helper's result is unpacked into that shape rather than changing it —
+another pure internal refactor, no return type, label, or computed value changed at any of the 8.
+The remaining 2 (`Surface.projectPoint`'s `(u, v, distance)`, `.plateErrors`'s `(g0Error, g1Error,
+g2Error)`) are left hand-rolled deliberately: neither triple is a point or a direction, and forcing
+non-vector values through a helper named for vector components would read worse than the three
+lines it would save.
+
+**Also (#914 review, finding 11):** all three helpers (`unwrapAxisComponents`,
+`unwrapVectorComponents`, `unwrapVectorComponentsIfSuccessful`) moved from `ShapeAxis.swift` to
+`SIMD3Unpacking.swift` — module-wide bridge-unwrap helpers, not `ShapeAxis`-specific, and
+`SIMD3Unpacking.swift` is this project's designated home for exactly this duplication class
+(created by #419 for `unpackSIMD3`, the equivalent helper for the batch/array case). No behavior
+change; internal free functions, visible identically from every file in the module either way.
+
 ### `unwrapAxisComponents` returns a bare, unlabeled tuple so every call site is a one-liner (#903)
 
 `ShapeAxis.swift`'s `unwrapAxisComponents(_:)` (added by #899/#902) returned a labeled
@@ -196,7 +284,15 @@ in the same functions rather than just polish:
   the fixed UV-midpoint normal. **Source-breaking**: `unsignedAngle(between:and:)` now returns
   `nil` for degenerate (near-zero-length) input, matching its own doc comment, instead of silently
   returning `0` — return type changes from `Double` to `Double?`; every existing call site already
-  only consumed it through a guard/optional-chain.
+  only consumed it through a guard/optional-chain. That fix's behavior change isn't contained to
+  `unsignedAngle` itself: `Edge.angle(to:)`, `Face.angle(to:)`, `ConstructionAxis.angle(to:in:)`
+  and `ConstructionPlane.angle(to:in:)` all forward its result directly, so a degenerate tangent or
+  normal (a zero-length edge, a cusp, a singular UV-midpoint sample) now makes each of those return
+  `nil` too, instead of silently reporting `0` radians — a false "parallel" answer. `Edge.isParallel
+  (to:)`/`isPerpendicular(to:)` and `Face.isParallel(to:)`/`isPerpendicular(to:)`/`isCoplanar(with:)`
+  go through `angle(to:)` or `normalsAreParallel(_:_:toleranceRadians:)` (both new in this PR, #897
+  review finding 6/11) and so inherit the same `nil`-on-degenerate-input change one level further
+  out (#914 review, finding 5).
 - **Round 3**: `resolveFaceNormal`'s `Face.project(point:)`-failure fallback (`.tangentToFace`) now
   returns a genuine on-face point as `Placement.origin` instead of the raw, unprojected input point
   (measured up to 5 units off the face's actual surface). `normalToFace`'s returned origin is now

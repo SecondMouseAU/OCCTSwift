@@ -32,7 +32,15 @@ internal protocol ConstructionEntityID: Sendable, Hashable {
 /// Thread-safe via an internal lock. Backs `ConstructionContext`'s plane/axis/point storage
 /// (#886): the three entity kinds used to be three independently hand-written copies of this
 /// same add/lookup/name/remove/allX shape.
-internal final class EntityStore<ID: ConstructionEntityID, Value>: @unchecked Sendable {
+///
+/// `@unchecked Sendable` covers the lock-guarded storage itself, not what `Value` is — an
+/// unconstrained `Value` would let the compiler wave through a future non-`Sendable` payload
+/// crossing concurrency boundaries through `value(_:)`/`all` with no check at all, since
+/// `@unchecked` disables Sendable checking entirely rather than narrowing it to the mutable
+/// state the lock actually protects. `Value: Sendable` restores that check at zero cost to
+/// today's three instantiations (`ConstructionPlane`/`ConstructionAxis`/`ConstructionPoint`,
+/// all already `Sendable`) (#914 review, finding 13).
+internal final class EntityStore<ID: ConstructionEntityID, Value: Sendable>: @unchecked Sendable {
     private let lock = NSLock()
     private var entries: [ID: (name: String?, value: Value)] = [:]
     private var order: [ID] = []

@@ -388,8 +388,8 @@ public var revolutionProperties: RevolutionProperties? { get }
 
 Returns `nil` for planar faces or free-form (B-spline) surfaces. For spherical faces the radius is the exact distance from the UV-midpoint sample to the axis origin (the sphere's center) — not an axis-relative radial component, since a sphere's `primaryAxis` is only an arbitrary construction-frame pole, not a real axis (PR #897 review, finding 1). For every other supported type the radius is computed as the distance from the axis line to the UV-midpoint of the face.
 
-- **Returns:** `RevolutionProperties`, or `nil` if `primaryAxis` is unavailable or `surfaceType` is not one of `.cylinder`, `.cone`, `.sphere`, `.torus`, `.surfaceOfRevolution`.
-- **OCCT:** Pure-Swift over `Face.primaryAxis` + `Face.surfaceType` + `Face.uvBounds` + `Face.point(atU:v:)`. `primaryAxis` delegates to `BRepAdaptor_Surface` axis extraction.
+- **Returns:** `RevolutionProperties`, or `nil` if `primaryAxis` is unavailable or its `kind` is not one of `.cylinder`, `.cone`, `.sphere`, `.torus`, `.revolution` (`ShapeAxis.Kind` — not `Face.surfaceType`, switched from the latter to the former in the #914 review, third pass, so this predicate and `resolveFaceAxisDirection`'s identical one in `ConstructionEntity.swift` can't drift apart across two separately-maintained enums).
+- **OCCT:** Pure-Swift over `Face.primaryAxis` + `Face.uvBounds` + `Face.point(atU:v:)`. `primaryAxis` delegates to `BRepAdaptor_Surface` axis extraction.
 - **Note:** For surfaces where "radius" is ambiguous (e.g. a torus has major and minor radius), this returns only a single representative value. Use `Surface` for full parametric detail.
 - **Example:**
   ```swift
