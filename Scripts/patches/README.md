@@ -765,6 +765,63 @@ baked in (`Package.swift`'s own census: "ALL FIFTEEN ARE VERIFIED PRESENT IN THE
 `0026` is carried on disk only — the first patch since `0022`-`0025` themselves were folded into
 that release to sit outside the pin. Watch for it at the next kernel re-pin.
 
+## 0027-BRepOffsetAPI_ThruSections-CreateSmoothed-section-edge-count-guard-913.patch
+
+**Fixes the upstream OCCT defect behind [#913](https://github.com/SecondMouseAU/OCCTSwift/issues/913)**
+— found incidentally while investigating #910 (a different, bridge-side #905-review finding):
+`ThruSectionsBuilder`, given `checkCompatibility(false)` and a section whose edge count differs
+from the first section, SIGSEGVs instead of failing cleanly.
+
+`CreateSmoothed()` derives `nbEdges` — the edge count it assumes every section has — from section 1
+alone (or section 2, if section 1 is a punctual/degenerate vertex section). It allocates `shapes`,
+an `NCollection_Array1<TopoDS_Shape>` sized exactly `nbSects * nbEdges`, then fills it by walking
+each section's wire with a `BRepTools_WireExplorer`, incrementing a running index with **no bounds
+check**. Nothing enforces that every section actually has `nbEdges` edges: `BRepFill_CompatibleWires`
+(via `checkCompatibility(true)`, the default) normally reconciles differing edge counts across
+sections before `CreateSmoothed()` ever runs, but `checkCompatibility(false)` skips that entirely.
+A later section with **more** edges than section 1 walks the fill loop straight past the end of
+`shapes` — an out-of-bounds write, corrupting adjacent heap memory rather than raising a catchable
+failure.
+
+**Reached only with 3+ sections.** With exactly 2 sections, `Build()` always takes the
+`CreateRuled()` path instead (`if (myWires.Length() == 2 || myIsRuled) CreateRuled(); else
+CreateSmoothed();`), which builds its shell via `BRepFill_Generator` — a different mechanism that
+doesn't share this fixed-stride allocation. A single `Build()` call with all mismatched sections
+present from the start does **not** reliably crash even though the identical out-of-bounds write
+still occurs; what actually varies is process/allocator state at the time of the overrun (confirmed
+directly: instrumenting the fill loop shows the write index reaching one past `shapes.Upper()`
+either way, but a from-scratch process quietly lands the write in unmapped-but-harmless heap slack
+where a process that already ran one successful `Build()` call does not). Symptom, not cause: this
+made the defect look like it needed a *reused* builder when it doesn't — any 3+-section
+`checkCompatibility(false)` call with mismatched edge counts carries the same latent corruption.
+
+**Fix:** before allocating `shapes`, walk every non-punctual section and count its edges; on a
+mismatch, set `myStatus` to `BRepFill_ThruSectionErrorStatus_ProfilesInconsistent` and return,
+matching the early-return idiom this function already uses two lines below (`TS.IsNull()` ->
+`myStatus = Failed; return;`). Punctual end sections (`AddVertex()`, e.g. a cone's apex) are exempt,
+matching the existing `w1Point`/`w2Point` handling throughout the rest of the function — a point
+section legitimately has a different (zero) edge count and the fill loop's punctual branch doesn't
+walk it the same way.
+
+**Validation** (override-link, no full rebuild for this patch's own writeup — see `#0001`'s retired
+entry for the technique; the OCCTSwift-side PR carrying this one also rebuilds the local
+xcframework, since #913 asked for that explicitly rather than deferring it like `0026`): compiled
+and linked both the unpatched and patched `.cxx` ahead of the pinned `libOCCT-macos.a`. Against the
+unpatched override, a new GTest (`BRepOffsetAPI_ThruSections_Test.cxx`,
+`MismatchedSectionEdgeCountFailsCleanlyWithoutCheck`) crashes (SIGBUS) exactly as the issue
+describes; against the patched override it passes (`IsDone() == false`, no crash), along with a
+second new regression-guard test (`MatchingSectionEdgeCountsStillSucceedWithoutCheck`, matching
+edge counts including a punctual end section) and all three pre-existing tests in the file — 5/5.
+Re-confirmed the fix holds with `No_Exception`/`NDEBUG` defined (matching a Release build
+configuration close to what the shipped archive itself was likely built with): the fix eliminates
+the out-of-bounds write itself, so it does not depend on `Standard_OutOfRange`'s range check being
+compiled in. `clang-format --dry-run --Werror` against OCCT's own `.clang-format` reports zero
+violations on both changed files.
+
+Filed upstream as [OCCT#1466](https://github.com/Open-Cascade-SAS/OCCT/pull/1466).
+
+**Retire** once the bundled OCCT includes this fix.
+
 # Retired patches
 
 The `.patch` files below are **deleted**. Each fix now comes from the pinned OCCT release itself, so

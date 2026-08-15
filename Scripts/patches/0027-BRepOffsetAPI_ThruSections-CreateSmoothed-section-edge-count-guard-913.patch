@@ -1,0 +1,87 @@
+From: OCCTSwift ecosystem <noreply@secondmouse.au>
+Subject: [PATCH] Modeling Algorithms - guard CreateSmoothed's fixed-stride
+ shapes array against a section with more edges than section 1
+
+BRepOffsetAPI_ThruSections::CreateSmoothed() derives `nbEdges` -- the edge
+count it assumes every section has -- from section 1 alone (or section 2, if
+section 1 is a punctual/degenerate vertex section). It then allocates
+`shapes`, an NCollection_Array1<TopoDS_Shape>, sized exactly
+`nbSects * nbEdges`, and fills it by walking each section's wire with a
+BRepTools_WireExplorer, incrementing a running index with no bounds check.
+
+Nothing enforces that every section actually has `nbEdges` edges.
+BRepFill_CompatibleWires (via CheckCompatibility(true), the default)
+normally reconciles differing edge counts across sections before
+CreateSmoothed() ever runs. With CheckCompatibility(false) ("no check"),
+that reconciliation is skipped entirely, so a later section with MORE edges
+than section 1 makes the fill loop walk past the end of `shapes` -- an
+out-of-bounds write, observed as heap corruption and a later SIGSEGV inside
+CreateSmoothed() itself once at least 3 sections are involved (2 sections
+always take the CreateRuled() path instead, which does not share this
+allocation shape). Confirmed via a minimal, from-scratch C++ reproducer with
+no OCCTSwift/bridge involvement: two matching circle sections build
+successfully, reusing the same builder with a third, differently-shaped
+section (more edges than the first two) and rebuilding SIGSEGVs on the
+stock library. Needs no reused builder as such -- what actually varies is
+process/allocator state at the time of the overrun, which is why an
+otherwise-identical single Build() call with all three sections added up
+front does not reliably crash even though the same out-of-bounds write
+still occurs.
+
+Fix: before allocating `shapes`, walk every non-punctual section and count
+its edges; if any section's count differs from `nbEdges`, set myStatus to
+BRepFill_ThruSectionErrorStatus_ProfilesInconsistent and return, matching
+the early-return idiom this function already uses two lines below
+(TS.IsNull() -> myStatus = Failed; return;). Punctual end sections (a
+degenerate vertex added via AddVertex(), e.g. a cone's apex) are exempt,
+matching the existing w1Point/w2Point handling throughout the rest of the
+function -- a point section legitimately has a different edge count and is
+not itself walked by the fill loop's "punctual" branch.
+
+Validated by override-linking the patched translation unit ahead of the
+stock archive (both with and without No_Exception/NDEBUG, matching the
+production Release configuration this project ships): the original 3
+scenarios that legitimately succeed today (checkCompatibility(false) with
+genuinely matching section edge counts; a punctual section at either end
+mixed with matching wire sections; checkCompatibility(true) with
+mismatched sections, reconciled by BRepFill_CompatibleWires as before) are
+all byte-for-byte unaffected, and the crashing scenario now fails cleanly
+(IsDone() == false) instead of crashing.
+
+SecondMouseAU/OCCTSwift#913.
+---
+ .../TKOffset/BRepOffsetAPI/BRepOffsetAPI_ThruSections.cxx    | 23 +++++++++++++++++++++
+ 1 file changed, 23 insertions(+)
+
+--- a/src/ModelingAlgorithms/TKOffset/BRepOffsetAPI/BRepOffsetAPI_ThruSections.cxx
++++ b/src/ModelingAlgorithms/TKOffset/BRepOffsetAPI/BRepOffsetAPI_ThruSections.cxx
+@@ -747,6 +747,29 @@
+     }
+   }
+
++  // #913: nbEdges above comes from section 1 (or 2, if punctual) alone. CheckCompatibility(false)
++  // skips BRepFill_CompatibleWires, so nothing else guarantees every other section has the same
++  // edge count -- and the fixed-stride fill loop below indexes `shapes` on that assumption with no
++  // bounds check, overrunning it (heap corruption, observed as a later SIGSEGV) for a section with
++  // more edges than section 1. Refuse cleanly instead of writing out of bounds.
++  for (int iSect = 1; iSect <= nbSects; iSect++)
++  {
++    if ((iSect == 1 && w1Point) || (iSect == nbSects && w2Point))
++    {
++      continue; // a punctual end section legitimately has a different (zero) edge count
++    }
++    int aSectEdges = 0;
++    for (anExp.Init(TopoDS::Wire(myWires(iSect))); anExp.More(); anExp.Next())
++    {
++      aSectEdges++;
++    }
++    if (aSectEdges != nbEdges)
++    {
++      myStatus = BRepFill_ThruSectionErrorStatus_ProfilesInconsistent;
++      return;
++    }
++  }
++
+   // recover the shapes
+   bool                             uClosed = true;
+   NCollection_Array1<TopoDS_Shape> shapes(1, nbSects * nbEdges);

@@ -430,6 +430,29 @@ struct StressThruSectionsBuilderLifecycleTests {
         _ = loft.build()
         _ = loft.build()
     }
+
+    // #913: checkCompatibility(false) skips BRepFill_CompatibleWires' section reconciliation, so
+    // nothing else guarantees every section has the same edge count. CreateSmoothed()'s fill loop
+    // (reached only at 3+ sections — 2 sections always take the CreateRuled() path instead) walked
+    // a fixed-stride array sized from section 1 alone with no bounds check, overrunning it and
+    // SIGSEGVing for a later section with more edges than the first. Must fail cleanly instead.
+    @Test func mismatchedSectionEdgeCountWithoutCheckFailsCleanly() {
+        guard let w1 = Wire.circle(origin: SIMD3(0, 0, 0), normal: SIMD3(0, 0, 1), radius: 5),
+              let w2 = Wire.circle(origin: SIMD3(0, 0, 10), normal: SIMD3(0, 0, 1), radius: 3),
+              let s1 = Shape.fromWire(w1), let s2 = Shape.fromWire(w2) else { return }
+        let loft = ThruSectionsBuilder(isSolid: true, isRuled: false)
+        loft.checkCompatibility(false)
+        loft.addWire(s1)
+        loft.addWire(s2)
+        #expect(loft.build())
+
+        // A third section with MORE edges (a triangle, 3) than the first two (1 each, circles).
+        guard let triangle = Wire.polygon3D([
+            SIMD3(2, 0, 20), SIMD3(-1, 1.7320508, 20), SIMD3(-1, -1.7320508, 20)
+        ], closed: true), let triangleShape = Shape.fromWire(triangle) else { return }
+        loft.addWire(triangleShape)
+        #expect(!loft.build())
+    }
 }
 
 // MARK: - CellsBuilder
