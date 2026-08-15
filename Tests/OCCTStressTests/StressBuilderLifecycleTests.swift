@@ -436,10 +436,21 @@ struct StressThruSectionsBuilderLifecycleTests {
     // (reached only at 3+ sections — 2 sections always take the CreateRuled() path instead) walked
     // a fixed-stride array sized from section 1 alone with no bounds check, overrunning it and
     // SIGSEGVing for a later section with more edges than the first. Must fail cleanly instead.
-    @Test func mismatchedSectionEdgeCountWithoutCheckFailsCleanly() {
-        guard let w1 = Wire.circle(origin: SIMD3(0, 0, 0), normal: SIMD3(0, 0, 1), radius: 5),
-              let w2 = Wire.circle(origin: SIMD3(0, 0, 10), normal: SIMD3(0, 0, 1), radius: 3),
-              let s1 = Shape.fromWire(w1), let s2 = Shape.fromWire(w2) else { return }
+    //
+    // Gated on OCCTSWIFT_LOCAL (PR #915 review, finding 1): the fix ships as Scripts/patches/0027,
+    // not yet in Package.swift's pinned kernel asset. ci.yml's default `swift test` resolves that
+    // pinned kernel, where this exact scenario still SIGSEGVs for real — SwiftPM runs every test
+    // target in one process, so an unguarded run here would abort the whole suite, not just this
+    // test, indistinguishable from a real regression (the #585 failure shape). kernel-integration.yml
+    // sets OCCTSWIFT_LOCAL=1 when it builds Scripts/patches/ from source and runs against that
+    // binary instead — matching this repo's own convention, see #905/PR #909, which added no Swift
+    // test at all for the identical reason. This test only runs there, not against the pinned kernel.
+    @Test(.enabled(if: ProcessInfo.processInfo.environment["OCCTSWIFT_LOCAL"] == "1"))
+    func mismatchedSectionEdgeCountWithoutCheckFailsCleanly() throws {
+        let w1 = try #require(Wire.circle(origin: SIMD3(0, 0, 0), normal: SIMD3(0, 0, 1), radius: 5))
+        let w2 = try #require(Wire.circle(origin: SIMD3(0, 0, 10), normal: SIMD3(0, 0, 1), radius: 3))
+        let s1 = try #require(Shape.fromWire(w1))
+        let s2 = try #require(Shape.fromWire(w2))
         let loft = ThruSectionsBuilder(isSolid: true, isRuled: false)
         loft.checkCompatibility(false)
         loft.addWire(s1)
@@ -447,11 +458,34 @@ struct StressThruSectionsBuilderLifecycleTests {
         #expect(loft.build())
 
         // A third section with MORE edges (a triangle, 3) than the first two (1 each, circles).
-        guard let triangle = Wire.polygon3D([
+        let triangle = try #require(Wire.polygon3D([
             SIMD3(2, 0, 20), SIMD3(-1, 1.7320508, 20), SIMD3(-1, -1.7320508, 20)
-        ], closed: true), let triangleShape = Shape.fromWire(triangle) else { return }
+        ], closed: true))
+        let triangleShape = try #require(Shape.fromWire(triangle))
         loft.addWire(triangleShape)
         #expect(!loft.build())
+    }
+
+    // #913 patch review (PR #915), finding 5: the w1Point/w2Point punctual-section exemption is
+    // the only thing keeping a cone-apex loft (addVertex(), public API) working once #913's guard
+    // reaches CreateSmoothed (3+ sections). The only existing addVertex() loft test
+    // (ThruSectionsGuardTests.singleVertexBuildReturnsFalse) is a single-vertex build that fails
+    // by design; nothing pinned a legitimate punctual + 3-section loft succeeding. Unlike the
+    // crash/mismatch tests above, this doesn't depend on patch 0027 at all — the exemption itself
+    // is unmodified pre-existing OCCT behavior — so it isn't gated on OCCTSWIFT_LOCAL.
+    @Test func punctualApexWithMatchingSectionsStillSucceedsUnderCreateSmoothed() throws {
+        let apex = try #require(Shape.vertex(at: SIMD3(0, 0, 0)))
+        let w1 = try #require(Wire.circle(origin: SIMD3(0, 0, 10), normal: SIMD3(0, 0, 1), radius: 4))
+        let w2 = try #require(Wire.circle(origin: SIMD3(0, 0, 20), normal: SIMD3(0, 0, 1), radius: 3))
+        let s1 = try #require(Shape.fromWire(w1))
+        let s2 = try #require(Shape.fromWire(w2))
+        let loft = ThruSectionsBuilder(isSolid: true, isRuled: false)
+        loft.checkCompatibility(false)
+        loft.addVertex(apex)
+        loft.addWire(s1)
+        loft.addWire(s2)
+        #expect(loft.build())
+        #expect(loft.shape != nil)
     }
 }
 

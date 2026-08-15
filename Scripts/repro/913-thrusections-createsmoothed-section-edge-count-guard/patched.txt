@@ -1,0 +1,9 @@
+1. matching (3x 4-gon, no-check): IsDone=1 (want 1)
+2. punctual (apex + 2x 5-gon, no-check): IsDone=1 (want 1)
+3. reconciled (circle,circle,triangle, WITH check): IsDone=1 (want 1)
+4. overrun: build #1 (2 circles): IsDone=1
+4. overrun: about to build #2 (+triangle, more edges, no-check)...
+4. overrun: build #2: IsDone=0 (want 0, no crash)
+5. fewer (2,1,3 edges, no-check): IsDone=0 (want 0)
+6. emptyPunctual (empty wire + 2x matching 4-gon, no-check): IsDone=0 (want 0, no crash on stock OR patched)
+ALL DONE, no crash

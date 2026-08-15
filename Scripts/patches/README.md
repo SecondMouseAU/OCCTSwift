@@ -779,44 +779,96 @@ each section's wire with a `BRepTools_WireExplorer`, incrementing a running inde
 check**. Nothing enforces that every section actually has `nbEdges` edges: `BRepFill_CompatibleWires`
 (via `checkCompatibility(true)`, the default) normally reconciles differing edge counts across
 sections before `CreateSmoothed()` ever runs, but `checkCompatibility(false)` skips that entirely.
-A later section with **more** edges than section 1 walks the fill loop straight past the end of
-`shapes` — an out-of-bounds write, corrupting adjacent heap memory rather than raising a catchable
-failure.
+A section with a **different** edge count than section 1 goes one of two ways:
+
+- **More edges**: the fill loop walks the array straight past the end of `shapes` — an
+  out-of-bounds write, corrupting adjacent heap memory rather than raising a catchable failure.
+- **Fewer edges**: no overrun (the total write count can still land inside `shapes`' bounds), so
+  `Build()` reports success today — but with per-section strides silently misaligned to different
+  geometry than intended. Confirmed directly: a 2/1/3-edge three-section input under
+  `checkCompatibility(false)` reports `Build() == true` and `Shape().IsValid() == false` against
+  the stock library, deterministically, no process-state dependency (PR #915 review finding 3 —
+  the first version of this patch's own SemVer note undersold this, describing only the crashing
+  direction).
 
 **Reached only with 3+ sections.** With exactly 2 sections, `Build()` always takes the
 `CreateRuled()` path instead (`if (myWires.Length() == 2 || myIsRuled) CreateRuled(); else
 CreateSmoothed();`), which builds its shell via `BRepFill_Generator` — a different mechanism that
-doesn't share this fixed-stride allocation. A single `Build()` call with all mismatched sections
-present from the start does **not** reliably crash even though the identical out-of-bounds write
-still occurs; what actually varies is process/allocator state at the time of the overrun (confirmed
-directly: instrumenting the fill loop shows the write index reaching one past `shapes.Upper()`
-either way, but a from-scratch process quietly lands the write in unmapped-but-harmless heap slack
-where a process that already ran one successful `Build()` call does not). Symptom, not cause: this
-made the defect look like it needed a *reused* builder when it doesn't — any 3+-section
-`checkCompatibility(false)` call with mismatched edge counts carries the same latent corruption.
+doesn't share this fixed-stride allocation. A single `Build()` call with all mismatched (more-edges)
+sections present from the start does **not** reliably crash even though the identical out-of-bounds
+write still occurs; what actually varies is process/allocator state at the time of the overrun
+(confirmed directly: instrumenting the fill loop shows the write index reaching one past
+`shapes.Upper()` either way, but a from-scratch process quietly lands the write in
+unmapped-but-harmless heap slack where a process that already ran one successful `Build()` call does
+not). Symptom, not cause: this made the defect look like it needed a *reused* builder when it
+doesn't — any 3+-section `checkCompatibility(false)` call with mismatched edge counts carries the
+same latent corruption (or, in the fewer-edges direction, the same silent misalignment,
+deterministically regardless of process state).
 
 **Fix:** before allocating `shapes`, walk every non-punctual section and count its edges; on a
-mismatch, set `myStatus` to `BRepFill_ThruSectionErrorStatus_ProfilesInconsistent` and return,
-matching the early-return idiom this function already uses two lines below (`TS.IsNull()` ->
-`myStatus = Failed; return;`). Punctual end sections (`AddVertex()`, e.g. a cone's apex) are exempt,
-matching the existing `w1Point`/`w2Point` handling throughout the rest of the function — a point
-section legitimately has a different (zero) edge count and the fill loop's punctual branch doesn't
-walk it the same way.
+mismatch (an inequality test, not a "too many" test — deliberately symmetric, since both directions
+are the same underlying contract violation and only one of them used to crash), set `myStatus` to
+`BRepFill_ThruSectionErrorStatus_ProfilesInconsistent` and return, matching the early-return idiom
+this function already uses two lines below (`TS.IsNull()` -> `myStatus = Failed; return;`). Punctual
+end sections (`AddVertex()`, e.g. a cone's apex) are exempt, matching the existing
+`w1Point`/`w2Point` handling throughout the rest of the function — a point section legitimately has
+a different edge count and the fill loop's punctual branch doesn't walk it the same way: that branch
+repeats the section's own edge `nbEdges` times to fill its slots, so it needs at least one edge to
+exist, not zero (PR #915 review finding 11 — an earlier draft of this entry, and the patch's own
+first-draft comment, said "(zero) edge count"; `AddVertex()` creates a wire with exactly **one**
+degenerate edge). `w1Point`/`w2Point` themselves are computed by a pre-existing loop that is
+vacuously `true` for a wire with no edges at all — not reachable through any wrapper this project
+ships (a `Wire` needs at least one edge to exist), but the guard checks for at least one edge before
+exempting a section as punctual rather than trusting that classification unconditionally (PR #915
+review finding 4; attempted to reproduce a live crash for this specific case via both a fresh and a
+reused builder and could not — OCCT's own pipeline handles a genuinely empty wire more gracefully
+than the code reading alone suggested — but the added check is correct and cheap regardless of
+whether today's fill loop actually reaches the unguarded path it describes).
+
+The guard shares its punctual-section test (`isPunctualSection`, a local lambda) with the
+pre-existing fill loop 15 lines below, which used to duplicate the same two-clause boolean
+expression separately (PR #915 review finding 9) — hoisted so the two cannot silently drift apart on
+which sections take the punctual branch.
 
 **Validation** (override-link, no full rebuild for this patch's own writeup — see `#0001`'s retired
 entry for the technique; the OCCTSwift-side PR carrying this one also rebuilds the local
 xcframework, since #913 asked for that explicitly rather than deferring it like `0026`): compiled
-and linked both the unpatched and patched `.cxx` ahead of the pinned `libOCCT-macos.a`. Against the
-unpatched override, a new GTest (`BRepOffsetAPI_ThruSections_Test.cxx`,
-`MismatchedSectionEdgeCountFailsCleanlyWithoutCheck`) crashes (SIGBUS) exactly as the issue
-describes; against the patched override it passes (`IsDone() == false`, no crash), along with a
-second new regression-guard test (`MatchingSectionEdgeCountsStillSucceedWithoutCheck`, matching
-edge counts including a punctual end section) and all three pre-existing tests in the file — 5/5.
-Re-confirmed the fix holds with `No_Exception`/`NDEBUG` defined (matching a Release build
-configuration close to what the shipped archive itself was likely built with): the fix eliminates
-the out-of-bounds write itself, so it does not depend on `Standard_OutOfRange`'s range check being
-compiled in. `clang-format --dry-run --Werror` against OCCT's own `.clang-format` reports zero
-violations on both changed files.
+and linked both the unpatched and patched `.cxx` ahead of the pinned `libOCCT-macos.a`, across six
+scenarios — the three that legitimately succeed today (matching edge counts under
+`checkCompatibility(false)`; a punctual section at either end mixed with matching wire sections;
+`checkCompatibility(true)` with mismatched sections, reconciled by `BRepFill_CompatibleWires` as
+before) are all byte-for-byte unaffected; the original more-edges scenario now fails cleanly
+(`IsDone() == false`) instead of crashing; the new fewer-edges scenario, silently "successful" with
+invalid geometry on the stock library, now also fails cleanly; and a section with genuinely zero
+edges at the punctual position no longer reaches the fill loop's unguarded walk. Re-confirmed all
+six hold with `No_Exception`/`NDEBUG` defined (matching a Release build configuration close to what
+the shipped archive itself was likely built with): the fix eliminates the out-of-bounds write
+itself, so it does not depend on `Standard_OutOfRange`'s range check being compiled in.
+`clang-format --dry-run --Werror` against OCCT's own `.clang-format` reports zero violations on
+both changed files.
+
+**The zero-edge-at-punctual-position scenario is a code hardening, not a proven-live fix.**
+Committed only the fewer-edges GTest, not a zero-edge one: the fewer-edges scenario genuinely fails
+`EXPECT_FALSE(IsDone())` against the pristine, unpatched source (proved first, per this project's
+own "prove the test fails" convention, before writing the fix), but a from-scratch equivalent for a
+genuinely empty wire at the punctual position passes *even against pristine, unpatched code* —
+something else downstream (most likely `TotalSurf()`'s own null-surface guard, a few lines below,
+reacting to whatever a degenerate empty-wire input produces) already reports `IsDone() == false`
+for it today, by a different and unconfirmed mechanism, independent of this patch. The explicit
+`hasAnyEdge` check is kept anyway (it is correct regardless, and cheap), but no committed test
+claims to be proof it closes a live gap, because the one written could not be made to fail without
+it — see finding 4 in the PR #915 review thread for the full attempt, including a reused-builder
+variant that also did not reproduce a crash.
+
+**SIGSEGV vs. SIGBUS** (PR #915 review finding 12): both signals were genuinely observed for the
+more-edges overrun, in different binaries, and that is not a contradiction to reconcile down to one
+— it's exactly what heap corruption looks like. The standalone from-scratch C++ reproducer (its own
+`backtrace_symbols_fd`-based signal handler installed) reported signal 11 (SIGSEGV) consistently.
+The upstream GTest (`MismatchedSectionEdgeCountFailsCleanlyWithoutCheck`, linked against the stock
+archive with no custom handler, OS default handling) reported signal 10 (SIGBUS). Same defect, same
+out-of-bounds write, two different binaries with different allocator/memory layout at the moment of
+the overrun — which of the two manifests is exactly the kind of detail this defect's own root-cause
+section says depends on process/allocator state, not something either transcript got wrong.
 
 Filed upstream as [OCCT#1466](https://github.com/Open-Cascade-SAS/OCCT/pull/1466).
 
