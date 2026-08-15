@@ -713,62 +713,75 @@ struct AngleHelperTests {
 struct EdgeFractionParameterTests {
     @Test("parameterByLinearFraction(_:) maps 0/0.5/1 to bounds.first/mid/last")
     func parameterAtFractionEndpoints() {
-        guard let box = Shape.box(width: 10, height: 10, depth: 10),
-              let edge = box.edges().first,
-              let bounds = edge.parameterBounds else {
-            Issue.record("edge/bounds nil"); return
+        guard let box = Shape.box(width: 10, height: 10, depth: 10) else {
+            Issue.record("box nil"); return
         }
-        if let p0 = edge.parameterByLinearFraction(0) {
-            #expect(abs(p0 - bounds.first) < 1e-9)
-        } else {
-            Issue.record("parameterByLinearFraction(0) nil")
+        // Edge enumeration order isn't guaranteed stable across an OCCT kernel rebuild
+        // or platform — iterate to find a working edge rather than trusting `.first`
+        // (CLAUDE.md Test Conventions; #897 review, second xhigh pass, finding 5).
+        for edge in box.edges() {
+            guard let bounds = edge.parameterBounds else { continue }
+            if let p0 = edge.parameterByLinearFraction(0) {
+                #expect(abs(p0 - bounds.first) < 1e-9)
+            } else {
+                Issue.record("parameterByLinearFraction(0) nil")
+            }
+            if let p1 = edge.parameterByLinearFraction(1) {
+                #expect(abs(p1 - bounds.last) < 1e-9)
+            } else {
+                Issue.record("parameterByLinearFraction(1) nil")
+            }
+            let mid = bounds.first + (bounds.last - bounds.first) * 0.5
+            if let pMid = edge.parameterByLinearFraction(0.5) {
+                #expect(abs(pMid - mid) < 1e-9)
+            } else {
+                Issue.record("parameterByLinearFraction(0.5) nil")
+            }
+            return
         }
-        if let p1 = edge.parameterByLinearFraction(1) {
-            #expect(abs(p1 - bounds.last) < 1e-9)
-        } else {
-            Issue.record("parameterByLinearFraction(1) nil")
-        }
-        let mid = bounds.first + (bounds.last - bounds.first) * 0.5
-        if let pMid = edge.parameterByLinearFraction(0.5) {
-            #expect(abs(pMid - mid) < 1e-9)
-        } else {
-            Issue.record("parameterByLinearFraction(0.5) nil")
-        }
+        Issue.record("no edge with parameterBounds found")
     }
 
     @Test("parameterByLinearFraction(_:) clamps out-of-range fractions to [0, 1]")
     func parameterAtFractionClamps() {
-        guard let box = Shape.box(width: 10, height: 10, depth: 10),
-              let edge = box.edges().first,
-              let bounds = edge.parameterBounds else {
-            Issue.record("edge/bounds nil"); return
+        guard let box = Shape.box(width: 10, height: 10, depth: 10) else {
+            Issue.record("box nil"); return
         }
-        if let pLow = edge.parameterByLinearFraction(-5) {
-            #expect(abs(pLow - bounds.first) < 1e-9)
-        } else {
-            Issue.record("parameterByLinearFraction(-5) nil")
+        for edge in box.edges() {
+            guard let bounds = edge.parameterBounds else { continue }
+            if let pLow = edge.parameterByLinearFraction(-5) {
+                #expect(abs(pLow - bounds.first) < 1e-9)
+            } else {
+                Issue.record("parameterByLinearFraction(-5) nil")
+            }
+            if let pHigh = edge.parameterByLinearFraction(5) {
+                #expect(abs(pHigh - bounds.last) < 1e-9)
+            } else {
+                Issue.record("parameterByLinearFraction(5) nil")
+            }
+            return
         }
-        if let pHigh = edge.parameterByLinearFraction(5) {
-            #expect(abs(pHigh - bounds.last) < 1e-9)
-        } else {
-            Issue.record("parameterByLinearFraction(5) nil")
-        }
+        Issue.record("no edge with parameterBounds found")
     }
 
     @Test("pointByLinearFraction(_:) matches point(at: parameterByLinearFraction(_:))")
     func pointAtFractionMatchesManualParam() {
-        guard let box = Shape.box(width: 10, height: 10, depth: 10),
-              let edge = box.edges().first else {
-            Issue.record("edge nil"); return
+        guard let box = Shape.box(width: 10, height: 10, depth: 10) else {
+            Issue.record("box nil"); return
         }
-        for t in [0.0, 0.25, 0.5, 0.75, 1.0] {
-            guard let param = edge.parameterByLinearFraction(t),
-                  let expected = edge.point(at: param),
-                  let actual = edge.pointByLinearFraction(t) else {
-                Issue.record("nil point at t=\(t)"); continue
+        for edge in box.edges() {
+            guard edge.parameterBounds != nil else { continue }
+            for t in [0.0, 0.25, 0.5, 0.75, 1.0] {
+                guard let param = edge.parameterByLinearFraction(t),
+                      let expected = edge.point(at: param),
+                      let actual = edge.pointByLinearFraction(t) else {
+                    Issue.record("nil point at t=\(t)"); continue
+                }
+                #expect(simd_length(actual - expected) < 1e-9)
             }
-            #expect(simd_length(actual - expected) < 1e-9)
+            return
         }
+        Issue.record("no edge with parameterBounds found")
     }
 }
 

@@ -10,14 +10,19 @@ public struct ShapeAxis: Sendable, Hashable {
 
     /// The axis's orientation — its meaning depends on `kind`.
     ///
-    /// For `.cylinder`/`.cone`/`.torus`/`.revolution`, this is a genuine rotation axis
-    /// / surface normal. For `.extrusion`, it is instead the *sweep* direction of the
-    /// underlying `Geom_SurfaceOfLinearExtrusion` — tangent to the surface, not
+    /// For `.cylinder`/`.cone`/`.torus`/`.revolution`, this is a genuine rotation axis —
+    /// never a surface normal: on a cylinder, for instance, `direction` runs along the
+    /// cylinder's length, perpendicular to the local surface normal, not aligned with
+    /// it. For `.extrusion`, it is instead the *sweep* direction of the underlying
+    /// `Geom_SurfaceOfLinearExtrusion` — also tangent to the surface, not
     /// perpendicular to it. `.sphere` has no intrinsic axis at all — see below. A
-    /// caller expecting a normal (e.g. "erect a feature perpendicular to this face")
-    /// has to check `kind` first; see `ConstructionEntity.resolveFaceAxisDirection`,
-    /// which excludes both `.extrusion` and `.sphere` for exactly this reason (PR #897
-    /// review, 2nd pass).
+    /// caller expecting an actual surface *normal* (e.g. "erect a feature
+    /// perpendicular to this face") should not use `direction` at all for any of
+    /// these kinds; see `ConstructionEntity.resolveFaceAxisDirection`, which falls
+    /// back to the real local surface normal (`Face.normal(atU:v:)`) instead of
+    /// `direction` for exactly the kinds that don't have a genuine axis (`.extrusion`
+    /// and `.sphere`) or no `primaryAxis` at all (planes, free-form faces) (PR #897
+    /// review, 2nd + second xhigh pass finding 6).
     ///
     /// ```swift
     /// let cylinder = Shape.cylinder(radius: 5, height: 10)!

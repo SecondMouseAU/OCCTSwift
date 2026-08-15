@@ -55,10 +55,12 @@ extension Edge {
 
     /// Whether this edge is parallel to another at the given tangent-comparison tolerance (radians).
     ///
-    /// Convenience over `angle(to:)`.
+    /// Convenience over `angle(to:)`. Shares its tolerance-comparison formula with
+    /// `normalsAreParallel(_:_:toleranceRadians:)` below via `angleIsParallel(_:toleranceRadians:)`
+    /// instead of inlining its own copy (PR #897 review, second xhigh pass, finding 6/11).
     public func isParallel(to other: Edge, toleranceRadians: Double = 1e-4) -> Bool? {
         guard let a = angle(to: other) else { return nil }
-        return a < toleranceRadians || (.pi - a) < toleranceRadians
+        return angleIsParallel(a, toleranceRadians: toleranceRadians)
     }
 
     /// Whether this edge is perpendicular to another at the given tangent-comparison
@@ -133,9 +135,7 @@ extension Face {
     /// Whether this face is parallel to another at the given normal-comparison tolerance (radians).
     ///
     /// Samples both normals directly (rather than via `angle(to:)`) so this and
-    /// `isCoplanar(with:)` can share `normalsAreParallel(_:_:toleranceRadians:)` below —
-    /// `isCoplanar` already has both normals from its own `uvMidpointSample()` calls and
-    /// would otherwise re-derive them a second time (PR #897 review, 4th pass).
+    /// `isCoplanar(with:)` can share `normalsAreParallel(_:_:toleranceRadians:)` below.
     public func isParallel(to other: Face, toleranceRadians: Double = 1e-4) -> Bool? {
         guard let normal = uvMidpointNormal(), let otherNormal = other.uvMidpointNormal() else {
             return nil
@@ -151,25 +151,30 @@ extension Face {
 
     /// Whether this face is coplanar with another — normals parallel AND origin
     /// lies on the other face's plane. `nil` (not `false`) when either face's
-    /// UV-midpoint sample is unavailable, or when the two faces aren't parallel.
+    /// UV-midpoint normal/point is unavailable, or when the two faces aren't parallel.
     ///
-    /// Reads `sample.normal`/`otherSample.normal` — already fetched by
-    /// `uvMidpointSample()` above — through the shared `normalsAreParallel(_:_:
-    /// toleranceRadians:)` helper instead of delegating to `isParallel(to:)`, which
-    /// would re-derive both normals a second time via `uvMidpointNormal()` (PR #897
-    /// review, 4th pass). The helper keeps this tolerance check identical to
-    /// `isParallel(to:)`'s own, so the two still can't silently drift apart (PR #897
-    /// review, 3rd pass).
+    /// Checks the (cheaper) normals first, via the same `uvMidpointNormal()` +
+    /// `normalsAreParallel(_:_:toleranceRadians:)` shape `isParallel(to:)` above uses, and only
+    /// fetches each face's UV-midpoint *point* — a second, independent `point(atU:v:)`
+    /// evaluation per face — once the normals are confirmed parallel. An all-pairs coplanarity
+    /// sweep (feature recognition, symmetry detection) spends most of its calls on non-parallel
+    /// pairs, so short-circuiting there before ever touching `point(atU:v:)` matters: the
+    /// previous shape called `uvMidpointSample()` (point AND normal) for both faces unconditionally
+    /// up front, paying for 2 points it would then discard on every non-parallel pair (PR #897
+    /// review, second xhigh pass, finding 7) — the same class of avoidable re-evaluation this
+    /// file's `uvMidpointPoint()`/`uvMidpointNormal()` split exists to let callers skip.
     public func isCoplanar(with other: Face, tolerance: Double = 1e-6) -> Bool? {
-        guard let sample = uvMidpointSample(), let otherSample = other.uvMidpointSample() else {
+        guard let normal = uvMidpointNormal(), let otherNormal = other.uvMidpointNormal() else {
             return nil
         }
-        guard normalsAreParallel(sample.normal, otherSample.normal, toleranceRadians: 1e-4) == true
-        else {
+        guard normalsAreParallel(normal, otherNormal, toleranceRadians: 1e-4) == true else {
             return nil
         }
-        let offset = sample.point - otherSample.point
-        let signedDist = abs(simd_dot(offset, simd_normalize(otherSample.normal)))
+        guard let point = uvMidpointPoint(), let otherPoint = other.uvMidpointPoint() else {
+            return nil
+        }
+        let offset = point - otherPoint
+        let signedDist = abs(simd_dot(offset, simd_normalize(otherNormal)))
         return signedDist < tolerance
     }
 }
@@ -212,6 +217,18 @@ public func unsignedAngle(between a: SIMD3<Double>, and b: SIMD3<Double>) -> Dou
     return acos(max(-1.0, min(1.0, cosTheta)))
 }
 
+/// Whether `angle` (already computed, radians in `[0, π]`) is within `toleranceRadians` of `0`
+/// or `π` — i.e. whether the two directions it was measured between are parallel or
+/// anti-parallel.
+///
+/// Shared by `Edge.isParallel(to:)` above and `normalsAreParallel(_:_:toleranceRadians:)` below,
+/// which used to each inline this identical comparison independently (PR #897 review, second
+/// xhigh pass, finding 6/11) — a future correction to the boundary behavior (e.g. exactly at
+/// `angle == toleranceRadians`) now only has one implementation to fix.
+internal func angleIsParallel(_ angle: Double, toleranceRadians: Double) -> Bool {
+    angle < toleranceRadians || (.pi - angle) < toleranceRadians
+}
+
 /// Whether two already-sampled face normals are parallel (or anti-parallel) within
 /// `toleranceRadians`. `nil` (not `false`) when either normal is degenerate
 /// (near-zero-length) — propagated from `unsignedAngle`, rather than reporting a
@@ -225,7 +242,7 @@ internal func normalsAreParallel(
     _ normal: SIMD3<Double>, _ otherNormal: SIMD3<Double>, toleranceRadians: Double
 ) -> Bool? {
     guard let normalAngle = unsignedAngle(between: normal, and: otherNormal) else { return nil }
-    return normalAngle < toleranceRadians || (.pi - normalAngle) < toleranceRadians
+    return angleIsParallel(normalAngle, toleranceRadians: toleranceRadians)
 }
 
 // MARK: - Circle properties (v0.143 M4)
