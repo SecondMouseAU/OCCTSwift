@@ -902,7 +902,8 @@ public func generatedFace(from edge: Shape) -> Shape?
 ```
 
 - **Parameters:** `edge` — a profile edge from one of the input wires.
-- **Returns:** The generated face shape, or `nil` if not found.
+- **Returns:** The generated face shape, or `nil` if not found, or if the builder's most recent
+  `build()` call did not succeed (including on a reused builder, after a later failed rebuild).
 - **OCCT:** `BRepOffsetAPI_ThruSections::GeneratedFace`.
 - **Example:**
   ```swift

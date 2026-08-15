@@ -54,7 +54,7 @@ public final class ThruSectionsBuilder: @unchecked Sendable {
         OCCTThruSectionsBuild(ref)
     }
 
-    /// Get the result shape.
+    /// Get the result shape, or `nil` if the most recent ``build()`` call did not succeed.
     public var shape: Shape? {
         guard let h = OCCTThruSectionsShape(ref) else { return nil }
         return Shape(handle: h)
@@ -78,7 +78,11 @@ extension ThruSectionsBuilder {
         OCCTThruSectionsSetCriteriumWeight(ref, w1, w2, w3)
     }
 
-    /// Get the face generated from an edge after building.
+    /// Get the face generated from a profile edge after the loft is built.
+    ///
+    /// Returns `nil` if `edge` isn't a profile edge the build used, or if the most recent
+    /// ``build()`` call on this instance did not succeed — including on a reused builder, where a
+    /// later failed rebuild never invalidates an earlier successful build's geometry on its own.
     public func generatedFace(from edge: Shape) -> Shape? {
         guard let h = OCCTThruSectionsGeneratedFace(ref, edge.handle) else { return nil }
         return Shape(handle: h)

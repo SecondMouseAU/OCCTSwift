@@ -8655,6 +8655,14 @@ OCCTShapeRef OCCTBooleanCutWithHistory(OCCTShapeRef s1, OCCTShapeRef s2, double 
 struct OCCTThruSections {
     BRepOffsetAPI_ThruSections* builder;
     int sectionCount = 0;
+    // #910 review (PR #912): OCCT's own IsDone() is not a reliable "did the last Build() succeed"
+    // signal on a REUSED builder. Build()'s two punctual-section validation loops (a middle
+    // section that's wholly degenerate, e.g. via AddVertex()) return WrongUsage WITHOUT calling
+    // NotDone() — so on a builder that already built successfully once, IsDone() stays stale-true
+    // through a later failed rebuild. Recording the real outcome once here, in the one place that
+    // actually calls Build(), is what every other accessor (Shape(), GeneratedFace(), and any
+    // future one) gates on instead of re-deriving it from OCCT state per call.
+    bool built = false;
 };
 
 OCCTThruSectionsRef OCCTThruSectionsCreate(bool isSolid, bool isRuled, double pres3d) {
@@ -8712,18 +8720,23 @@ bool OCCTThruSectionsBuild(OCCTThruSectionsRef ref) {
     auto ts = (OCCTThruSections*)ref;
     if (!ts) return false;
     // ThruSections requires at least 2 sections — OCCT segfaults otherwise
-    if (ts->sectionCount < 2) return false;
+    if (ts->sectionCount < 2) { ts->built = false; return false; }
     try {
         ts->builder->Build();
-        return ts->builder->IsDone();
-    } catch (...) { return false; }
+        // IsDone() alone is not enough: see the struct's own comment. GetStatus() reports what
+        // Build() actually decided, including the two WrongUsage returns that leave IsDone() in
+        // whatever state a PRIOR successful build left it.
+        ts->built = ts->builder->IsDone()
+            && ts->builder->GetStatus() == BRepFill_ThruSectionErrorStatus_Done;
+        return ts->built;
+    } catch (...) { ts->built = false; return false; }
 }
 
 OCCTShapeRef OCCTThruSectionsShape(OCCTThruSectionsRef ref) {
     auto ts = (OCCTThruSections*)ref;
     if (!ts) return nullptr;
     try {
-        if (!ts->builder->IsDone()) return nullptr;
+        if (!ts->built) return nullptr;
         return new OCCTShape{ts->builder->Shape()};
     } catch (...) { return nullptr; }
 }
@@ -8765,9 +8778,10 @@ OCCTShapeRef OCCTThruSectionsGeneratedFace(OCCTThruSectionsRef ref, OCCTShapeRef
     try {
         // #910: GeneratedFace() is a bare lookup into myEdgeFace, which Build() never clears —
         // a failed rebuild on a reused builder leaves it holding the prior successful build's
-        // (or the failed build's own partial) bindings. Match OCCTThruSectionsShape's own
-        // IsDone() guard so a caller can't read post-build state past a build that didn't happen.
-        if (!ts->builder->IsDone()) return nullptr;
+        // (or the failed build's own partial) bindings. Gate on the same `built` flag
+        // OCCTThruSectionsShape uses (see the struct's comment for why IsDone() alone isn't
+        // enough) so a caller can't read post-build state past a build that didn't happen.
+        if (!ts->built) return nullptr;
         TopoDS_Shape face = ts->builder->GeneratedFace(edge->shape);
         if (face.IsNull()) return nullptr;
         return new OCCTShape{face};
