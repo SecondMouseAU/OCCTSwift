@@ -1,0 +1,12 @@
+occt_916_section_builder_stale, run against Sources/OCCTBridge/src/OCCTBridge_Modeling.mm AFTER
+the #916 fix:
+
+1st build result != nullptr: 1
+ancestorFaceOn1 after successful build (informational; this probe uses an arbitrary box edge, not necessarily a section edge): 0
+2nd build (after Init1 with a null shape) result != nullptr (should be 0 -- build() should report failure): 0
+ancestorFaceOn1 after FAILED rebuild (should be 0): 0
+(exit 0)
+
+No crash. built is correctly reset to false by OCCTSectionBuilderBuild's !IsDone() path before
+returning, so ancestorFaceOn1 short-circuits on the `!builder->built` guard and never reaches
+HasAncestorFaceOn1 at all.

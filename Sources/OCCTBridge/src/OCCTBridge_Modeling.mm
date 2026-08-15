@@ -9844,6 +9844,15 @@ OCCTShapeRef OCCTShapeSectionWithSurface(OCCTShapeRef shape, OCCTSurfaceRef surf
 
 struct OCCTSectionBuilder {
     BRepAlgoAPI_Section section;
+    // #916, the same class of bug #910/PR #912 fixed for OCCTThruSections (predates it, though —
+    // this struct's `built` field is the older of the two). Section() is a BOPAlgo-backed op:
+    // AncestorFaceOn1/2 read intersection data (myDSFiller) that Build() never clears on a failed
+    // rebuild, so `built` has to be tracked and reset explicitly rather than re-derived from
+    // IsDone() per accessor. Set true only on success; every Build()/Init* path that invalidates
+    // the last build's result must reset it to false, or a reused builder keeps answering from a
+    // prior successful build (or worse: a builder that failed via a null/too-few-arguments early
+    // return in BOPAlgo_PaveFiller::Init() leaves its PaveFiller's myDS unset, and
+    // HasAncestorFaceOn1/2 dereferencing it uncatchably SIGSEGVs, not just returns stale data).
     bool built;
     OCCTSectionBuilder() : section(), built(false) {}
     OCCTSectionBuilder(const TopoDS_Shape& s1, const TopoDS_Shape& s2) : section(s1, s2, false), built(false) {}
@@ -9868,7 +9877,7 @@ void OCCTSectionBuilderRelease(OCCTSectionBuilderRef builder) {
 
 void OCCTSectionBuilderInit1Shape(OCCTSectionBuilderRef builder, OCCTShapeRef shape) {
     if (!builder || !shape) return;
-    try { builder->section.Init1(shape->shape); } catch (...) {}
+    try { builder->section.Init1(shape->shape); builder->built = false; } catch (...) {}
 }
 
 void OCCTSectionBuilderInit1Plane(OCCTSectionBuilderRef builder,
@@ -9877,17 +9886,18 @@ void OCCTSectionBuilderInit1Plane(OCCTSectionBuilderRef builder,
     try {
         gp_Pln plane(a, b, c, d);
         builder->section.Init1(plane);
+        builder->built = false;
     } catch (...) {}
 }
 
 void OCCTSectionBuilderInit1Surface(OCCTSectionBuilderRef builder, OCCTSurfaceRef surface) {
     if (!builder || !surface || surface->surface.IsNull()) return;
-    try { builder->section.Init1(surface->surface); } catch (...) {}
+    try { builder->section.Init1(surface->surface); builder->built = false; } catch (...) {}
 }
 
 void OCCTSectionBuilderInit2Shape(OCCTSectionBuilderRef builder, OCCTShapeRef shape) {
     if (!builder || !shape) return;
-    try { builder->section.Init2(shape->shape); } catch (...) {}
+    try { builder->section.Init2(shape->shape); builder->built = false; } catch (...) {}
 }
 
 void OCCTSectionBuilderInit2Plane(OCCTSectionBuilderRef builder,
@@ -9896,12 +9906,13 @@ void OCCTSectionBuilderInit2Plane(OCCTSectionBuilderRef builder,
     try {
         gp_Pln plane(a, b, c, d);
         builder->section.Init2(plane);
+        builder->built = false;
     } catch (...) {}
 }
 
 void OCCTSectionBuilderInit2Surface(OCCTSectionBuilderRef builder, OCCTSurfaceRef surface) {
     if (!builder || !surface || surface->surface.IsNull()) return;
-    try { builder->section.Init2(surface->surface); } catch (...) {}
+    try { builder->section.Init2(surface->surface); builder->built = false; } catch (...) {}
 }
 
 void OCCTSectionBuilderSetApproximation(OCCTSectionBuilderRef builder, bool approx) {
@@ -9923,10 +9934,14 @@ OCCTShapeRef OCCTSectionBuilderBuild(OCCTSectionBuilderRef builder) {
     if (!builder) return nullptr;
     try {
         builder->section.Build();
-        if (!builder->section.IsDone()) return nullptr;
+        // #916: a failed rebuild must clear `built`, not just skip setting it — see the struct's
+        // own comment. Without this, a builder that already built successfully once keeps
+        // AncestorFaceOn1/2 answering (or, worse, uncatchably SIGSEGVing — measured, not assumed:
+        // see Scripts/repro/916-sectionbuilder-built-flag-stale/) past a build that failed.
+        if (!builder->section.IsDone()) { builder->built = false; return nullptr; }
         builder->built = true;
         return new OCCTShape{builder->section.Shape()};
-    } catch (...) { return nullptr; }
+    } catch (...) { builder->built = false; return nullptr; }
 }
 
 OCCTShapeRef OCCTSectionBuilderAncestorFaceOn1(OCCTSectionBuilderRef builder, OCCTShapeRef edge) {

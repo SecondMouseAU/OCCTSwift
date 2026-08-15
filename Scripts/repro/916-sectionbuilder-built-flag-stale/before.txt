@@ -1,0 +1,19 @@
+occt_916_section_builder_stale, run against Sources/OCCTBridge/src/OCCTBridge_Modeling.mm BEFORE
+the #916 fix (built -> false added on both the !IsDone() and catch(...) paths in
+OCCTSectionBuilderBuild):
+
+1st build result != nullptr: 1
+ancestorFaceOn1 after successful build (informational; this probe uses an arbitrary box edge, not necessarily a section edge): 0
+2nd build (after Init1 with a null shape) result != nullptr (should be 0 -- build() should report failure): 0
+Segmentation fault: 11 (exit 139)
+
+The crash: builder->built stayed true (set on the first successful build, never reset by the
+failed rebuild), so OCCTSectionBuilderAncestorFaceOn1 proceeded into
+BRepAlgoAPI_Section::HasAncestorFaceOn1 -> HasAncestorFace -> pPF->PDS(), where pPF is the SECOND
+build's freshly-allocated (non-null) BOPAlgo_PaveFiller. That PaveFiller's own Init() bailed via
+`AddError(new BOPAlgo_AlertNullInputShapes); return;` (BOPAlgo_PaveFiller.cxx) BEFORE reaching
+`myDS = new BOPDS_DS(...)`, so myDS is still its default-constructed null value. PDS() returns it,
+and BOPDS_DS's own InterfFF() dereferences a null this-pointer.
+
+This is worse than the wrong-answer the issue anticipated: an uncatchable SIGSEGV, not a stale
+non-nil return.
