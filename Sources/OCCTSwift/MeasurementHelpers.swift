@@ -153,26 +153,29 @@ extension Face {
     /// lies on the other face's plane. `nil` (not `false`) when either face's
     /// UV-midpoint normal/point is unavailable, or when the two faces aren't parallel.
     ///
-    /// Checks the (cheaper) normals first, via the same `uvMidpointNormal()` +
-    /// `normalsAreParallel(_:_:toleranceRadians:)` shape `isParallel(to:)` above uses, and only
-    /// fetches each face's UV-midpoint *point* — a second, independent `point(atU:v:)`
-    /// evaluation per face — once the normals are confirmed parallel. An all-pairs coplanarity
-    /// sweep (feature recognition, symmetry detection) spends most of its calls on non-parallel
-    /// pairs, so short-circuiting there before ever touching `point(atU:v:)` matters: the
-    /// previous shape called `uvMidpointSample()` (point AND normal) for both faces unconditionally
-    /// up front, paying for 2 points it would then discard on every non-parallel pair (PR #897
-    /// review, second xhigh pass, finding 7) — the same class of avoidable re-evaluation this
-    /// file's `uvMidpointPoint()`/`uvMidpointNormal()` split exists to let callers skip.
+    /// Checks the (cheaper) normals first and only evaluates each face's UV-midpoint
+    /// *point* once the normals are confirmed parallel — an all-pairs coplanarity sweep
+    /// (feature recognition, symmetry detection) spends most of its calls on non-parallel
+    /// pairs, so short-circuiting there matters. Computes each face's `uvMidpoint` tuple
+    /// exactly once (`mid`/`otherMid`), reusing it for both the normal and (if reached)
+    /// point evaluation directly — NOT via `uvMidpointNormal()` then `uvMidpointPoint()`,
+    /// which would each independently re-derive `uvMidpoint` (a real `uvBounds` bridge
+    /// call, no caching), fetching it twice per face on a parallel pair instead of once
+    /// (PR #897 review, third pass, finding 3 — a regression the second xhigh pass's own
+    /// finding-7 fix introduced while fixing a different, real problem: this file's
+    /// `uvMidpointSample()` doc already warns delegating to the split accessors "would
+    /// fetch `uvBounds` twice per call").
     public func isCoplanar(with other: Face, tolerance: Double = 1e-6) -> Bool? {
-        guard let normal = uvMidpointNormal(), let otherNormal = other.uvMidpointNormal() else {
-            return nil
-        }
+        guard let mid = uvMidpoint, let otherMid = other.uvMidpoint else { return nil }
+        guard let normal = normal(atU: mid.u, v: mid.v),
+            let otherNormal = other.normal(atU: otherMid.u, v: otherMid.v)
+        else { return nil }
         guard normalsAreParallel(normal, otherNormal, toleranceRadians: 1e-4) == true else {
             return nil
         }
-        guard let point = uvMidpointPoint(), let otherPoint = other.uvMidpointPoint() else {
-            return nil
-        }
+        guard let point = point(atU: mid.u, v: mid.v),
+            let otherPoint = other.point(atU: otherMid.u, v: otherMid.v)
+        else { return nil }
         let offset = point - otherPoint
         let signedDist = abs(simd_dot(offset, simd_normalize(otherNormal)))
         return signedDist < tolerance
@@ -301,7 +304,14 @@ extension Face {
 
     public var revolutionProperties: RevolutionProperties? {
         guard let primary = primaryAxis else { return nil }
-        switch surfaceType {
+        // Switches on `primary.kind` (`ShapeAxis.Kind`), not `surfaceType` (`Face.SurfaceType`):
+        // two different enums encoding the identical "does this surface kind have a genuine
+        // axis" predicate independently used to drift out of sync with each other (#897 review,
+        // second xhigh pass finding 3) — `resolveFaceAxisDirection`
+        // (`ConstructionEntity.swift`) already switches on `ShapeAxis.Kind` for the same
+        // question, so this makes the two agree by construction instead of by manual upkeep
+        // across two case-lists in two files.
+        switch primary.kind {
         case .sphere:
             // A sphere has no genuine rotation axis (`ShapeAxis.direction`'s doc) — `primary`
             // here is only the arbitrary construction-frame pole, the same exclusion
@@ -317,7 +327,7 @@ extension Face {
             guard let samplePoint = uvMidpointPoint() else { return nil }
             return RevolutionProperties(
                 axis: primary, radius: simd_length(samplePoint - primary.origin))
-        case .cylinder, .cone, .torus, .surfaceOfRevolution:
+        case .cylinder, .cone, .torus, .revolution:
             // Radius is the distance from the axis line to a representative
             // surface point. For non-cylindrical revolved surfaces "radius" is
             // ambiguous; this is the distance from the axis at the face centre.

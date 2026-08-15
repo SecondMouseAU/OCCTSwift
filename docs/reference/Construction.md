@@ -355,8 +355,12 @@ Computed via `Face.surfaceInertia.centerOfMass` — the same moment-based integr
 `Shape.measure().faceCentroids` uses — not a UV-parameter midpoint (#884). For a non-uniformly
 parameterized surface (a sphere, cone, or general NURBS face) this can differ substantially from a
 UV-midpoint sample, and for a closed or symmetric face the true centroid can lie off the surface
-entirely (e.g. at a full sphere's center). Fails with `.degenerate("face has zero area")` rather
-than reporting a fabricated point when the face has no area to have a centroid.
+entirely (e.g. at a full sphere's center). Fails with
+`.degenerate("face area is zero, or its inertia could not be computed")` rather than reporting a
+fabricated point — the message doesn't commit to "zero area" alone because `centerOfMass` is also
+nil when the underlying `BRepGProp_Sinert` computation itself fails (e.g. a self-intersecting
+face), a distinct cause the Swift API can't currently tell apart from genuine zero area (#897
+review, third pass).
 
 ```swift
 // A cylinder's lateral face has its true area centroid on the cylinder's own axis
@@ -366,7 +370,7 @@ switch graph.resolve(point) {
 case .success(let p):
     print(p)                      // on-axis, at the face's true area centroid
 case .failure(.degenerate):
-    print("face has zero area")   // e.g. a sliver from a collapsed fillet
+    print("zero area, or inertia couldn't be computed")   // e.g. a collapsed-fillet sliver
 case .failure(let error):
     print(error)
 }
