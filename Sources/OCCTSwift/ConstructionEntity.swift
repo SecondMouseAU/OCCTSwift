@@ -130,9 +130,12 @@ extension BRepGraph {
 
         case .tangentToFace(let faceRef, let atRef):
             return resolveVertexPoint(atRef).flatMap {
-                (point) -> Result<Placement, ConstructionResolutionError> in
-                return resolveFaceOrigin(faceRef).flatMap { (_, normal) in
-                    .success(Placement(origin: point, normal: normal))
+                point -> Result<Placement, ConstructionResolutionError> in
+                resolveFaceNormal(faceRef, at: point).map { (onFacePoint, normal) in
+                    // Use the actual on-face point the normal was evaluated at, not the raw
+                    // `atRef` point: they can differ when `at` doesn't genuinely lie on `face`
+                    // (#897 review, finding 2).
+                    Placement(origin: onFacePoint, normal: normal)
                 }
             }
 
@@ -179,9 +182,14 @@ extension BRepGraph {
             return resolveEdgeDirection(edgeRef)
 
         case .normalToFace(let faceRef, let atRef):
-            return resolveFaceOrigin(faceRef).flatMap { (_, normal) in
-                resolveVertexPoint(atRef).map { anchor in
-                    (anchor, simd_normalize(normal))
+            return resolveVertexPoint(atRef).flatMap { anchor in
+                resolveFaceAxisDirection(faceRef, at: anchor).map { (point, direction) in
+                    // Use the actual on-axis or on-face point the direction was evaluated
+                    // at, not the raw `atRef` point, for the same reason `tangentToFace`
+                    // does (#897 review, second xhigh pass finding 2, third pass): they can
+                    // differ, and returning them mismatched produces an axis anchored at
+                    // one point but pointing in the direction measured at another.
+                    (point, direction)
                 }
             }
 
@@ -231,7 +239,7 @@ extension BRepGraph {
             return resolveEdgePointAndTangent(ref, t: 0.5).map(\.0)
 
         case .centroidOfFace(let ref):
-            return resolveFaceOrigin(ref).map(\.0)
+            return resolveFaceCentroid(ref)
 
         case .atEdgeParameter(let ref, let t):
             return resolveEdgePointAndTangent(ref, t: t).map(\.0)
@@ -344,31 +352,256 @@ extension BRepGraph {
         return .success(value())
     }
 
+    /// Resolves `ref` to a node of the given `kind`, extracting a typed topology element via
+    /// `extract`, and failing with `.notApplicable`/`.missingGeometry` as appropriate.
+    ///
+    /// Shared by `resolveFace(_:)` and `resolveEdge(_:)` below, which used to duplicate this
+    /// unwrap→kind-guard→extract→success shape independently — the same
+    /// `unwrapTopology(ref)` → kind check → `shape(nodeKind:nodeIndex:)` → first-element →
+    /// success-tuple steps, differing only in the `NodeKind` and the extracted type (#897
+    /// review, third pass, finding 1). Unlabeled, like `projectedNormal(on:at:)` below, for the
+    /// same reason (`okf/policies/code-style.md`) — every call site of `resolveFace(_:)`/
+    /// `resolveEdge(_:)` already destructures positionally, never by label, so the labels those
+    /// two used to bake in were pure documentation, costless to drop (#897 review, third pass).
+    private func resolveTopologyNode<T>(
+        _ ref: TopologyRef, kind: NodeKind, expected: String, extract: (Shape) -> T?
+    ) -> Result<(NodeRef, T), ConstructionResolutionError> {
+        return unwrapTopology(ref).flatMap {
+            node -> Result<(NodeRef, T), ConstructionResolutionError> in
+            guard node.kind == kind else {
+                return .failure(.notApplicable("expected \(expected), got \(node.kind)"))
+            }
+            guard let shape = shape(nodeKind: node.kind, nodeIndex: node.index),
+                let value = extract(shape)
+            else {
+                return .failure(.missingGeometry(node))
+            }
+            return .success((node, value))
+        }
+    }
+
+    /// Resolves `ref` to a face node, failing with `.notApplicable`/`.missingGeometry` as appropriate.
+    ///
+    /// Shared by every face-based resolver below.
+    private func resolveFace(_ ref: TopologyRef) -> Result<
+        (NodeRef, Face), ConstructionResolutionError
+    > {
+        return resolveTopologyNode(ref, kind: .face, expected: "a face") { $0.faces().first }
+    }
+
+    /// Resolves `ref` to an edge node, failing with `.notApplicable`/`.missingGeometry` as appropriate.
+    ///
+    /// Shared by `resolveEdgeDirection` and `resolveEdgePointAndTangent` below.
+    private func resolveEdge(_ ref: TopologyRef) -> Result<
+        (NodeRef, Edge), ConstructionResolutionError
+    > {
+        return resolveTopologyNode(ref, kind: .edge, expected: "an edge") { $0.edges().first }
+    }
+
+    /// Face-representative point + normal, sampled at the face's UV-domain midpoint.
+    ///
+    /// Used by `.offsetFromFace` and `.midPlane`, which genuinely want a
+    /// face-representative sample rather than a point-specific value.
     private func resolveFaceOrigin(_ ref: TopologyRef) -> Result<
         (SIMD3<Double>, SIMD3<Double>), ConstructionResolutionError
     > {
-        return unwrapTopology(ref).flatMap {
-            node -> Result<(SIMD3<Double>, SIMD3<Double>), ConstructionResolutionError> in
-            guard node.kind == .face else {
-                return .failure(.notApplicable("expected a face, got \(node.kind)"))
-            }
-            guard let shape = shape(nodeKind: node.kind, nodeIndex: node.index),
-                let face = shape.faces().first
-            else {
+        return resolveFace(ref).flatMap {
+            node, face -> Result<(SIMD3<Double>, SIMD3<Double>), ConstructionResolutionError> in
+            guard let sample = face.uvMidpointSample() else {
                 return .failure(.missingGeometry(node))
             }
-            // Centroid via UV mid evaluation; primary axis → normal.
-            guard let bounds = face.uvBounds else {
+            return .success((sample.point, sample.normal))
+        }
+    }
+
+    /// Face-representative point only, sampled at the face's UV-domain midpoint,
+    /// without evaluating the normal.
+    ///
+    /// Used by `resolveVertexPoint`'s face-ref fallback, which — unlike
+    /// `resolveFaceOrigin`'s callers — only ever reads the point, so this skips the
+    /// unused `normal(atU:v:)` evaluation `resolveFaceOrigin`'s `uvMidpointSample()`
+    /// would otherwise pay for on every `.byThreePoints`/`.tangentToFace(at:)`
+    /// resolution through this path (#897 review, finding 9).
+    private func resolveFacePoint(_ ref: TopologyRef) -> Result<
+        SIMD3<Double>, ConstructionResolutionError
+    > {
+        return resolveFace(ref).flatMap {
+            node, face -> Result<SIMD3<Double>, ConstructionResolutionError> in
+            guard let point = face.uvMidpointPoint() else {
                 return .failure(.missingGeometry(node))
             }
-            let uMid = (bounds.uMin + bounds.uMax) / 2
-            let vMid = (bounds.vMin + bounds.vMax) / 2
-            guard let origin = face.point(atU: uMid, v: vMid),
-                let normal = face.normal(atU: uMid, v: vMid)
-            else {
+            return .success(point)
+        }
+    }
+
+    /// The surface normal at the projected location of `point` on the face, and
+    /// the point actually used.
+    ///
+    /// That returned point is `point` itself only when `point` already lies on
+    /// `face` — an on-face origin the caller can trust even when it doesn't (#897
+    /// review, finding 2). Falls back to the UV-midpoint sample (point AND normal
+    /// together, so the two stay mutually consistent) when the projection itself
+    /// fails to converge —
+    /// `nil`, not just a defensive guard: `GeomAPI_ProjectPointOnSurf`'s gradient
+    /// search has no stationary point to find for a point equidistant from an entire
+    /// symmetric surface, e.g. a sphere's or torus's own center projected onto its
+    /// own lateral face (measured directly, #897 review, second xhigh pass, finding
+    /// 1/3). Falls back to the UV-midpoint normal ALONE, keeping the real projected
+    /// point as the origin, when the projection succeeds but the local normal at
+    /// that exact location is undefined — a genuine parametric singularity (e.g. a
+    /// cone apex) distinct from a projection failure, since `projection.point` there
+    /// IS still a genuine on-face location.
+    ///
+    /// Shared by `resolveFaceNormal` (`.tangentToFace`) and `resolveFaceAxisDirection`'s
+    /// no-`primaryAxis` fallback (`.normalToFace`) — both used to duplicate this same
+    /// project→normal→fallback shape independently (#897 review, second xhigh pass,
+    /// finding 9).
+    ///
+    /// Unlabeled: an internal function returning a tuple with baked-in labels forces
+    /// every call site whose own labels differ into a two-step bind-then-relabel
+    /// instead of a direct return (`okf/policies/code-style.md`, established on this
+    /// same file's sibling `ShapeAxis.swift` by #903/#904; #897 review, third pass).
+    private func projectedNormal(on face: Face, at point: SIMD3<Double>) -> (
+        SIMD3<Double>, SIMD3<Double>
+    )? {
+        guard let projection = face.project(point: point) else {
+            guard let fallback = face.uvMidpointSample() else { return nil }
+            return (fallback.point, fallback.normal)
+        }
+        if let normal = face.normal(atU: projection.u, v: projection.v) {
+            return (projection.point, normal)
+        }
+        guard let fallback = face.uvMidpointNormal() else { return nil }
+        return (projection.point, fallback)
+    }
+
+    /// The `(point, normal)` `.tangentToFace` needs, via ``projectedNormal(on:at:)``.
+    ///
+    /// Used by `.tangentToFace` so the plane is tangent at the requested point, not
+    /// at the face's unrelated UV midpoint (#879). `face.normal(atU:v:)` reports
+    /// `nil` at a genuine parametric singularity (`GeomLProp_SLProps::IsNormalDefined()`
+    /// false — the two tangent directions coincide, not merely shrink; see
+    /// `docs/reference/Face.md`'s `normal` entry). Before this point-specific
+    /// resolution existed, `tangentToFace` always used the UV-midpoint normal and so
+    /// always succeeded for any face with valid `uvBounds`; ``projectedNormal(on:at:)``'s
+    /// fallback on either failure mode instead of failing outright preserves that
+    /// property (PR #897 review, 3rd + xhigh pass).
+    private func resolveFaceNormal(_ ref: TopologyRef, at point: SIMD3<Double>) -> Result<
+        (SIMD3<Double>, SIMD3<Double>), ConstructionResolutionError
+    > {
+        return resolveFace(ref).flatMap {
+            node, face -> Result<(SIMD3<Double>, SIMD3<Double>), ConstructionResolutionError> in
+            guard let resolved = projectedNormal(on: face, at: point) else {
                 return .failure(.missingGeometry(node))
             }
-            return .success((origin, normal))
+            return .success(resolved)
+        }
+    }
+
+    /// The direction (and its own on-axis or on-face anchor point) the normalToFace
+    /// doc promises.
+    ///
+    /// The surface's own axis of revolution (`Face.primaryAxis`) for
+    /// cylindrical/conical/toroidal/revolved faces — an ALLOW-list, not a deny-list,
+    /// so a future `ShapeAxis.Kind` this file doesn't yet know about defaults to the
+    /// safe normal-based fallback below rather than silently being treated as a
+    /// genuine axis (PR #897 review, finding 8). NOT the same allow-list as the
+    /// sibling `revolutionAxis(ofEdgeAt:)` a few dozen lines above, despite an earlier
+    /// version of this comment claiming so: that one only accepts `.cylinder`/`.cone`
+    /// (#897 review, third pass) — `.torus`/`.revolution` faces have a genuine
+    /// `primaryAxis` this branch correctly uses, but an edge merely adjacent to one
+    /// doesn't get the same recognition from `alongEdge`, a real (if narrow)
+    /// inconsistency between the two `Construction*` APIs, not a documentation bug to
+    /// paper over — tracked, not fixed, here.
+    ///
+    /// The returned point is `point` projected onto the true axis line — `axis.origin
+    /// + ((point - axis.origin) · direction) * direction` — not `point` itself: a
+    /// true rotation axis's direction is the same everywhere on the surface, but its
+    /// LOCATION is not `point` unless `point` already happens to sit on that line,
+    /// which it generally doesn't (a vertex `at` names is usually on the surface,
+    /// offset from the true centerline by the cylinder's own radius). Pairing the
+    /// correct direction with an off-axis point would describe a different line
+    /// entirely — parallel to, but not coincident with, the true axis (#897 review,
+    /// third pass). Kept edge-local rather than snapped to `axis.origin` itself
+    /// (which can be far from `point`, e.g. a cylinder's base under a rim near its
+    /// top), matching `resolveEdgeDirection`'s identical projection a few dozen lines
+    /// below.
+    ///
+    /// Falls back to ``projectedNormal(on:at:)`` — the local surface normal at `point`'s
+    /// own projected location, and the point it was actually evaluated at — for planes
+    /// and free-form/BSpline faces, which have no `primaryAxis` at all: the same
+    /// point-aware projection `resolveFaceNormal` uses for `tangentToFace`, so the
+    /// direction varies with `point`, and its paired origin is never a different point
+    /// than the one the direction was measured at (#897 review, finding 4 + second
+    /// xhigh pass finding 2).
+    ///
+    /// Falls back to the UV-midpoint SAMPLE — point and normal together, not
+    /// `projectedNormal(on:at:)`'s point-aware resolution above, but also not the raw
+    /// `point` paired with an unrelated normal — for `.extrusion` and `.sphere`,
+    /// which DO have a `primaryAxis` but not a genuine one: extrusion's `direction`
+    /// is the sweep direction of `Geom_SurfaceOfLinearExtrusion` — tangent to the
+    /// surface, not a normal. Sphere has no intrinsic rotation axis at all (it's
+    /// symmetric about every axis through its center), so
+    /// `gp_Sphere::Position().Direction()` — what `primaryAxis` reports for a sphere
+    /// — is just the arbitrary construction-frame pole (`FeatureRecognition.swift`'s
+    /// `isMaterialRadiallyInward` already carries this same exclusion for the
+    /// identical reason). These two are deliberately kept off the point-aware path: a
+    /// sphere's TRUE local normal at its own pole is parallel to this very (excluded)
+    /// axis — the radial direction from center — so making this branch point-aware
+    /// there would silently reproduce the excluded axis by another route at exactly
+    /// the vertex the exclusion exists to guard (see
+    /// `normalToFaceSphereFallsBackToNormal`). But pairing the raw, possibly off-face
+    /// `point` with a normal sampled at the UNRELATED UV midpoint is its own
+    /// origin/direction mismatch (#897 review, third pass) — the same class of bug
+    /// this whole function exists to fix elsewhere — so both come from the UV
+    /// midpoint together instead.
+    private func resolveFaceAxisDirection(_ ref: TopologyRef, at point: SIMD3<Double>) -> Result<
+        (SIMD3<Double>, SIMD3<Double>), ConstructionResolutionError
+    > {
+        return resolveFace(ref).flatMap {
+            node, face -> Result<(SIMD3<Double>, SIMD3<Double>), ConstructionResolutionError> in
+            if let axis = face.primaryAxis {
+                switch axis.kind {
+                case .cylinder, .cone, .torus, .revolution:
+                    let axisDirection = simd_normalize(axis.direction)
+                    let toPoint = point - axis.origin
+                    let onAxis = axis.origin + simd_dot(toPoint, axisDirection) * axisDirection
+                    return .success((onAxis, axisDirection))
+                default:
+                    guard let fallback = face.uvMidpointSample() else {
+                        return .failure(.missingGeometry(node))
+                    }
+                    return .success((fallback.point, simd_normalize(fallback.normal)))
+                }
+            }
+            guard let resolved = projectedNormal(on: face, at: point) else {
+                return .failure(.missingGeometry(node))
+            }
+            return .success((resolved.0, simd_normalize(resolved.1)))
+        }
+    }
+
+    /// The face's real area centroid (`Face.surfaceInertia.centerOfMass`) — the
+    /// same quantity `ShapeMeasurements.measure()` reports for the same face,
+    /// not the UV-midpoint approximation `resolveFaceOrigin` uses (#884).
+    ///
+    /// `centerOfMass` is nil exactly when `area == 0` at the Swift level (see
+    /// `MassProperties.swift`), but the bridge function behind it (`OCCTBRepGPropSinert`)
+    /// catches any exception and returns a zero-initialized result on failure too — so a
+    /// self-intersecting or otherwise ill-conditioned face whose `BRepGProp_Sinert`
+    /// computation genuinely fails is indistinguishable, at this layer, from one that's
+    /// truly zero-area. The failure message says so rather than diagnosing a specific
+    /// cause this API can't actually tell apart (#897 review, third pass).
+    private func resolveFaceCentroid(_ ref: TopologyRef) -> Result<
+        SIMD3<Double>, ConstructionResolutionError
+    > {
+        return resolveFace(ref).flatMap {
+            _, face -> Result<SIMD3<Double>, ConstructionResolutionError> in
+            guard let centroid = face.surfaceInertia.centerOfMass else {
+                return .failure(
+                    .degenerate("face area is zero, or its inertia could not be computed"))
+            }
+            return .success(centroid)
         }
     }
 
@@ -429,17 +662,11 @@ extension BRepGraph {
     private func resolveEdgeDirection(_ ref: TopologyRef) -> Result<
         (origin: SIMD3<Double>, direction: SIMD3<Double>), ConstructionResolutionError
     > {
-        return unwrapTopology(ref).flatMap {
-            node -> Result<
+        return resolveEdge(ref).flatMap {
+            node, edge -> Result<
                 (origin: SIMD3<Double>, direction: SIMD3<Double>), ConstructionResolutionError
             > in
-            guard node.kind == .edge else {
-                return .failure(.notApplicable("expected an edge, got \(node.kind)"))
-            }
-            guard let shape = shape(nodeKind: node.kind, nodeIndex: node.index),
-                let edge = shape.edges().first,
-                let bounds = edge.parameterBounds
-            else {
+            guard let bounds = edge.parameterBounds else {
                 return .failure(.missingGeometry(node))
             }
 
@@ -452,6 +679,12 @@ extension BRepGraph {
             // cheap secant-based check the pre-round-3 code used is still correct for a line —
             // only the non-line path below needs the true arc length.
             if edge.curveType == .line {
+                // `edge.point(at:)` directly against the already-held `bounds` tuple, not a
+                // fraction→point helper that would re-derive `parameterBounds` internally: a
+                // redundant bridge round-trip when `bounds` is already in scope from the guard
+                // above (#897 review, second xhigh pass, finding 8) — this file is otherwise
+                // deliberate about avoiding exactly this class of extra OCCT call (see the
+                // comments a few lines below).
                 guard let start = edge.point(at: bounds.first),
                     let end = edge.point(at: bounds.last)
                 else {
@@ -477,6 +710,9 @@ extension BRepGraph {
                 return .failure(.degenerate("zero-length edge"))
             }
 
+            // Same reasoning as the `.line` fast path above: `bounds` is already held, so use it
+            // directly rather than re-deriving it via a fraction→point helper (#897 review,
+            // second xhigh pass, finding 8).
             guard let start = edge.point(at: bounds.first), let end = edge.point(at: bounds.last)
             else {
                 return .failure(.missingGeometry(node))
@@ -605,20 +841,10 @@ extension BRepGraph {
     private func resolveEdgePointAndTangent(_ ref: TopologyRef, t: Double) -> Result<
         (SIMD3<Double>, SIMD3<Double>), ConstructionResolutionError
     > {
-        return unwrapTopology(ref).flatMap {
-            node -> Result<(SIMD3<Double>, SIMD3<Double>), ConstructionResolutionError> in
-            guard node.kind == .edge else {
-                return .failure(.notApplicable("expected an edge, got \(node.kind)"))
-            }
-            guard let shape = shape(nodeKind: node.kind, nodeIndex: node.index),
-                let edge = shape.edges().first,
-                let bounds = edge.parameterBounds
-            else {
-                return .failure(.missingGeometry(node))
-            }
-            let clampedT = max(0, min(1, t))
-            let param = bounds.first + (bounds.last - bounds.first) * clampedT
-            guard let point = edge.point(at: param),
+        return resolveEdge(ref).flatMap {
+            node, edge -> Result<(SIMD3<Double>, SIMD3<Double>), ConstructionResolutionError> in
+            guard let param = edge.parameterByLinearFraction(t),
+                let point = edge.point(at: param),
                 let tangent = edge.tangent(at: param)
             else {
                 return .failure(.missingGeometry(node))
@@ -633,9 +859,10 @@ extension BRepGraph {
         return unwrapTopology(ref).flatMap {
             node -> Result<SIMD3<Double>, ConstructionResolutionError> in
             guard node.kind == .vertex else {
-                // Accept a face ref too — use its centroid — for convenience in byThreePoints etc.
+                // Accept a face ref too — use its UV-midpoint sample, not a true
+                // centroid (see resolveFaceCentroid) — for convenience in byThreePoints etc.
                 if node.kind == .face {
-                    return resolveFaceOrigin(ref).map(\.0)
+                    return resolveFacePoint(ref)
                 }
                 return .failure(.notApplicable("expected a vertex, got \(node.kind)"))
             }

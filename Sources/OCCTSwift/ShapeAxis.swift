@@ -7,6 +7,29 @@ import OCCTBridge
 /// Produced by `Face.primaryAxis`, `Shape.revolutionAxes`, and `Shape.symmetryAxes`.
 public struct ShapeAxis: Sendable, Hashable {
     public let origin: SIMD3<Double>
+
+    /// The axis's orientation — its meaning depends on `kind`.
+    ///
+    /// For `.cylinder`/`.cone`/`.torus`/`.revolution`, this is a genuine rotation axis —
+    /// never a surface normal: on a cylinder, for instance, `direction` runs along the
+    /// cylinder's length, perpendicular to the local surface normal, not aligned with
+    /// it. For `.extrusion`, it is instead the *sweep* direction of the underlying
+    /// `Geom_SurfaceOfLinearExtrusion` — also tangent to the surface, not
+    /// perpendicular to it. `.sphere` has no intrinsic axis at all — see below. A
+    /// caller expecting an actual surface *normal* (e.g. "erect a feature
+    /// perpendicular to this face") should not use `direction` at all for any of
+    /// these kinds; see `ConstructionEntity.resolveFaceAxisDirection`, which falls
+    /// back to the real local surface normal (`Face.normal(atU:v:)`) instead of
+    /// `direction` for exactly the kinds that don't have a genuine axis (`.extrusion`
+    /// and `.sphere`) or no `primaryAxis` at all (planes, free-form faces) (PR #897
+    /// review, 2nd + second xhigh pass finding 6).
+    ///
+    /// ```swift
+    /// let cylinder = Shape.cylinder(radius: 5, height: 10)!
+    /// if let axis = cylinder.faces()[0].primaryAxis, axis.kind == .cylinder {
+    ///     let rotationAxis = axis.direction  // safe: .cylinder has a genuine axis
+    /// }
+    /// ```
     public let direction: SIMD3<Double>
     public let extent: ClosedRange<Double>?
     public let kind: Kind
@@ -14,9 +37,13 @@ public struct ShapeAxis: Sendable, Hashable {
     public enum Kind: Int32, Sendable, Hashable {
         case cylinder = 1
         case cone = 2
+        /// A sphere has no intrinsic rotation axis (it's symmetric about every axis
+        /// through its center) — `direction` here is just the arbitrary
+        /// construction-frame pole, not a property of the surface.
         case sphere = 3
         case torus = 4
         case revolution = 5
+        /// `direction` is the sweep direction, not a surface normal — see `direction`'s doc above.
         case extrusion = 6
         case symmetry = 7
     }

@@ -110,6 +110,10 @@ case offsetFromFace(face: TopologyRef, distance: Double)
   - `face` — topology reference resolving to a face node.
   - `distance` — signed offset along the outward face normal (positive = outward).
 
+The face's own point/normal come from its UV-domain midpoint (`Face.uvMidpointSample()`), a
+face-representative sample — appropriate here, since this case wants a plane parallel to the whole
+face rather than tangent at a specific point (contrast `tangentToFace` below, #879).
+
 ---
 
 ### `ConstructionPlane.throughAxis(axis:angleDeg:)`
@@ -140,6 +144,27 @@ case tangentToFace(face: TopologyRef, at: TopologyRef)
   - `face` — topology reference resolving to the face.
   - `at` — topology reference resolving to a vertex on that face.
 
+The normal is evaluated at `at`'s own projected UV location on `face` (via `Face.project(point:)` +
+`Face.normal(atU:v:)`), not the face's UV-domain midpoint — so on a curved face (cylinder, cone,
+sphere, torus, freeform) the plane is genuinely tangent at the requested point, not just
+coincidentally correct the way a planar face makes any point's normal agree with any other's (#879).
+The `Placement`'s origin is the actual projected on-face point, not the raw `at` point verbatim —
+they can differ when `at` doesn't genuinely lie on `face` (PR #897 review, finding 2). If either
+`face.project(point:)` itself fails to converge, or the projected point is a genuine parametric
+singularity (e.g. a cone apex, where the two tangent directions coincide rather than merely shrink —
+a sphere's pole is *not* such a point, OCCT still resolves a normal there), the exact local normal
+is undefined, and this falls back to the face's UV-midpoint sample instead of failing, so
+`tangentToFace` still succeeds for any face with valid `uvBounds` (PR #897 review, 3rd + xhigh pass).
+
+```swift
+// Tangent to a cylindrical face at a specific vertex — the plane's normal
+// follows the vertex's own local surface normal, not the face's midpoint.
+let plane = ConstructionPlane.tangentToFace(face: cylindricalFaceRef, at: vertexRef)
+if case .success(let p) = graph.resolve(plane) {
+    print(p.zAxis)   // the true local tangent-plane normal at `at`
+}
+```
+
 ---
 
 ### `ConstructionPlane.midPlane(_:_:)`
@@ -150,7 +175,9 @@ A midplane equidistant between two parallel faces.
 case midPlane(TopologyRef, TopologyRef)
 ```
 
-The normal is the average (or either half-normal for antiparallel faces) of the two face normals.
+The normal is the average (or either half-normal for antiparallel faces) of the two face normals,
+each taken from `Face.uvMidpointSample()` — a face-representative sample, appropriate here since
+both faces contribute as wholes rather than at a specific point.
 
 ---
 
@@ -223,7 +250,36 @@ An axis perpendicular to a face, anchored at a vertex.
 case normalToFace(face: TopologyRef, at: TopologyRef)
 ```
 
-For planar faces the direction is the face normal; for cylindrical faces it is the rotation axis.
+The direction comes from `Face.primaryAxis` when the face has one and is genuinely a rotation
+axis — cylindrical, conical, toroidal, and surface-of-revolution faces (an allow-list, so a future
+`ShapeAxis.Kind` this code doesn't yet know about defaults to the normal-based fallback below rather
+than being treated as a genuine axis, PR #897 review, finding 8) — so it is the surface's own
+constant axis of revolution, not a per-point sample (#882). For planar and free-form faces, which
+have no `primaryAxis` at all, it falls back to the local surface normal at `at`'s own projected
+location on the face — the same point-aware projection `tangentToFace` uses above, so this varies
+with `at` instead of always answering the fixed UV-midpoint normal (PR #897 review, finding 4) —
+falling back further to the UV-midpoint normal if that projection or normal lookup fails.
+
+Surface-of-extrusion faces also have a `primaryAxis`, but its `direction` is the *sweep* direction
+of `Geom_SurfaceOfLinearExtrusion` (tangent to the surface, not perpendicular to it), so they're
+deliberately excluded from the axis branch. Spherical faces are excluded too, for a different
+reason: a sphere has no intrinsic rotation axis at all (it's symmetric about every axis through its
+center), so `Face.primaryAxis` reports the arbitrary construction-frame pole — the same fixed
+direction regardless of which point on the sphere `at` names — rather than a property of the
+surface (PR #897 review, 3rd pass). Both fall back to the face's UNconditional UV-midpoint normal,
+not the point-aware projection above: a sphere's *true* local normal at its own pole is parallel to
+this very (excluded) axis — the radial direction from center — so a point-aware fallback there would
+silently reproduce the excluded axis by another route at exactly the vertex the exclusion exists to
+guard (PR #897 review, xhigh pass).
+
+```swift
+// On a cylindrical face this resolves to the cylinder's own axis (constant
+// everywhere on the face), not the radial normal at any particular point.
+let axis = ConstructionAxis.normalToFace(face: cylindricalFaceRef, at: vertexRef)
+if case .success(let a) = graph.resolve(axis) {
+    print(a.direction)   // the cylinder's rotation axis
+}
+```
 
 ---
 
@@ -289,10 +345,35 @@ case midpointOfEdge(TopologyRef)
 
 ### `ConstructionPoint.centroidOfFace(_:)`
 
-The UV-centroid of a face's parametric bounds, evaluated on the surface.
+The face's real area centroid.
 
 ```swift
 case centroidOfFace(TopologyRef)
+```
+
+Computed via `Face.surfaceInertia.centerOfMass` — the same moment-based integration
+`Shape.measure().faceCentroids` uses — not a UV-parameter midpoint (#884). For a non-uniformly
+parameterized surface (a sphere, cone, or general NURBS face) this can differ substantially from a
+UV-midpoint sample, and for a closed or symmetric face the true centroid can lie off the surface
+entirely (e.g. at a full sphere's center). Fails with
+`.degenerate("face area is zero, or its inertia could not be computed")` rather than reporting a
+fabricated point — the message doesn't commit to "zero area" alone because `centerOfMass` is also
+nil when the underlying `BRepGProp_Sinert` computation itself fails (e.g. a self-intersecting
+face), a distinct cause the Swift API can't currently tell apart from genuine zero area (#897
+review, third pass).
+
+```swift
+// A cylinder's lateral face has its true area centroid on the cylinder's own axis
+// (radial distance 0) — a UV-midpoint sample instead sits a full radius off-axis.
+let point = ConstructionPoint.centroidOfFace(cylindricalFaceRef)
+switch graph.resolve(point) {
+case .success(let p):
+    print(p)                      // on-axis, at the face's true area centroid
+case .failure(.degenerate):
+    print("zero area, or inertia couldn't be computed")   // e.g. a collapsed-fillet sliver
+case .failure(let error):
+    print(error)
+}
 ```
 
 ---

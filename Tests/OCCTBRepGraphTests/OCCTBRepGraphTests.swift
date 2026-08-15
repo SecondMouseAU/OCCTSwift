@@ -2278,6 +2278,216 @@ struct ConstructionPlaneTests {
         case .failure(let e): Issue.record("failed: \(e)")
         }
     }
+
+    @Test("tangentToFace on a cylinder uses the vertex's own local normal, not the face UV midpoint (#879)")
+    func tangentToFaceCylinderLocalNormal() {
+        // A radius-5 cylinder's lateral face is periodic in U; its seam runs
+        // through both circle vertices at u=0 (local +X, radial normal (1,0,0)).
+        // The face's own UV midpoint sits at u=π (local -X, radial normal
+        // (-1,0,0)) — the far side of the cylinder. Before #879, tangentToFace
+        // returned that antiparallel UV-midpoint normal instead of the normal at
+        // the requested vertex.
+        guard let cyl = Shape.cylinder(radius: 5, height: 10),
+              let graph = BRepGraph(shape: cyl) else {
+            Issue.record("graph nil"); return
+        }
+        let faceRef = TopologyRef.literal(.init(kind: .face, index: 0))
+        let vertexRef = TopologyRef.literal(.init(kind: .vertex, index: 1))
+        // The lateral face's seam runs through TWO structurally symmetric vertices at u=0
+        // (top z=10, bottom z=0) — read the actual z of vertex 1 rather than assuming which
+        // one it is: vertex enumeration order isn't guaranteed stable across an OCCT kernel
+        // rebuild or platform (CLAUDE.md Test Conventions; #897 review, third pass) — the
+        // property under test (local normal follows the vertex, not the UV midpoint) holds
+        // at either seam vertex.
+        let expectedZ = graph.vertexPoint(1).z
+        switch graph.resolve(ConstructionPlane.tangentToFace(face: faceRef, at: vertexRef)) {
+        case .success(let p):
+            #expect(abs(p.origin.x - 5) < 1e-6)
+            #expect(abs(p.origin.z - expectedZ) < 1e-6)
+            // The correct local normal points radially outward (+X); the old,
+            // broken UV-midpoint normal pointed radially inward (-X) instead.
+            #expect(p.zAxis.x > 0.99)
+        case .failure(let e): Issue.record("tangentToFace failed: \(e)")
+        }
+    }
+
+    @Test("tangentToFace at a cone apex falls back to the UV-midpoint normal instead of failing (PR #897 review, 3rd pass)")
+    func tangentToFaceConeApexFallsBackToNormal() {
+        // A cone whose apex sits at the BASE (bottomRadius: 0) puts the apex vertex
+        // at v=0 exactly on the lateral face's own parametrization -- a genuine
+        // GeomLProp_SLProps normal singularity (the two tangent directions
+        // coincide there, not merely shrink; see docs/reference/Face.md's `normal`
+        // entry and Issue401's SurfaceNormalParityTests.coneApexIsUndefinedInBoth).
+        // Before this fix, resolveFaceNormal had no fallback, so tangentToFace at
+        // this real vertex on real topology failed with .missingGeometry --
+        // regressing the pre-#879 always-succeeds-for-any-uvBounds-face behavior.
+        //
+        // (A sphere's pole is NOT an equivalent reproducer here: OCCT's own
+        // higher-derivative resolution keeps the normal defined there --
+        // SurfaceNormalParityTests.spherePoleStillHasANormal already pins that.)
+        guard let cone = Shape.cone(bottomRadius: 0, topRadius: 5, height: 10),
+              let graph = BRepGraph(shape: cone) else {
+            Issue.record("graph nil"); return
+        }
+        let faceRef = TopologyRef.literal(.init(kind: .face, index: 0))
+
+        // Sanity: find the apex vertex (at the origin) and confirm the fixture
+        // really does hit the singularity this test claims to exercise.
+        guard let face = graph.shape(nodeKind: .face, nodeIndex: 0)?.faces().first else {
+            Issue.record("face0 unavailable"); return
+        }
+        var apexIndex: Int?
+        for i in 0..<graph.vertexCount {
+            let p = graph.vertexPoint(i)
+            if abs(p.x) < 1e-6, abs(p.y) < 1e-6, abs(p.z) < 1e-6 {
+                apexIndex = i
+                break
+            }
+        }
+        guard let apexIndex else {
+            Issue.record("no vertex at the cone apex"); return
+        }
+        guard let projection = face.project(point: SIMD3(0, 0, 0)) else {
+            Issue.record("apex projection failed"); return
+        }
+        #expect(
+            face.normal(atU: projection.u, v: projection.v) == nil,
+            "fixture should hit a genuine normal singularity")
+        // This fixture exercises resolveFaceNormal's "projection succeeds, normal-at-that-uv
+        // fails" branch specifically -- NOT the "projection itself fails" branch (see
+        // projectedNormalWhenProjectionItselfFails below for that one). The apex vertex already
+        // lies exactly on the face, so `projection.point` and the raw input point coincide here,
+        // which is why this test alone can't distinguish the two fallback branches (#897 review,
+        // second xhigh pass, finding 3).
+        guard let expectedFallback = face.uvMidpointNormal() else {
+            Issue.record("uvMidpointNormal unavailable"); return
+        }
+
+        let vertexRef = TopologyRef.literal(.init(kind: .vertex, index: apexIndex))
+        switch graph.resolve(ConstructionPlane.tangentToFace(face: faceRef, at: vertexRef)) {
+        case .success(let p):
+            #expect(abs(p.origin.x) < 1e-6)
+            #expect(abs(p.origin.y) < 1e-6)
+            #expect(abs(p.origin.z) < 1e-6)
+            #expect(abs(simd_length(p.zAxis) - 1.0) < 1e-6)
+            // Compare against the actual UV-midpoint normal value, not just unit length, so a
+            // wrong (but still unit-length) fallback normal would be caught (#897 review, second
+            // xhigh pass, finding 3).
+            #expect(simd_length(p.zAxis - simd_normalize(expectedFallback)) < 1e-6)
+        case .failure(let e):
+            Issue.record("tangentToFace failed at the cone apex: \(e)")
+        }
+    }
+
+    @Test(
+        "tangentToFace falls back to the UV-midpoint sample, with an on-face origin, when Face.project(point:) itself fails to converge (PR #897 review, second xhigh pass, findings 1 + 3)"
+    )
+    func tangentToFaceProjectionItselfFailsFallsBackToOnFaceOrigin() {
+        // A sphere's own center is equidistant from its ENTIRE surface, so
+        // GeomAPI_ProjectPointOnSurf's gradient search has no unique stationary point to
+        // converge to -- Face.project(point:) genuinely returns nil here (measured directly,
+        // not assumed), unlike the cone-apex fixture above, where `project()` itself succeeds
+        // and only the subsequent `normal(atU:v:)` lookup fails. This is the ONLY branch of
+        // resolveFaceNormal's 3-way fallback the rest of this suite doesn't otherwise exercise.
+        //
+        // A sphere has no real vertex at its own center, so a standalone vertex shape is added
+        // there and the two are grouped in a compound -- `at` resolving to a vertex from a
+        // DIFFERENT shape than `face` is the same "genuine misuse" pattern
+        // `tangentToFaceOriginIsOnFaceNotRawPoint` below already uses, here specifically to
+        // place a real topological vertex exactly at the sphere's center.
+        guard let sph = Shape.sphere(radius: 5),
+            let centerVertex = Shape.vertex(at: SIMD3(0, 0, 0)),
+            let compound = Shape.compound([sph, centerVertex]),
+            let graph = BRepGraph(shape: compound)
+        else {
+            Issue.record("setup failed"); return
+        }
+
+        // Sphere added first -- confirm face 0 of the compound really is the sphere, not
+        // assumed.
+        guard let faceShape = graph.shape(nodeKind: .face, nodeIndex: 0),
+            let face = faceShape.faces().first, face.surfaceType == .sphere
+        else {
+            Issue.record("face 0 of the compound is not the sphere"); return
+        }
+        // Sanity: confirm the fixture really does hit the branch this test claims to exercise.
+        #expect(face.project(point: SIMD3(0, 0, 0)) == nil, "fixture should fail to project")
+        guard let expectedFallback = face.uvMidpointSample() else {
+            Issue.record("uvMidpointSample unavailable"); return
+        }
+
+        // The standalone vertex, wherever BRepGraph placed it -- found by position, not assumed
+        // to be a specific index (CLAUDE.md Test Conventions).
+        var centerIndex: Int?
+        for i in 0..<graph.vertexCount {
+            let p = graph.vertexPoint(i)
+            if abs(p.x) < 1e-9, abs(p.y) < 1e-9, abs(p.z) < 1e-9 {
+                centerIndex = i
+                break
+            }
+        }
+        guard let centerIndex else {
+            Issue.record("no vertex at the sphere center"); return
+        }
+
+        let faceRef = TopologyRef.literal(.init(kind: .face, index: 0))
+        let vertexRef = TopologyRef.literal(.init(kind: .vertex, index: centerIndex))
+        switch graph.resolve(ConstructionPlane.tangentToFace(face: faceRef, at: vertexRef)) {
+        case .success(let p):
+            // The origin must be the UV-midpoint sample's own point -- a genuine on-face
+            // location -- NOT the raw sphere-center input point, which is nowhere near the
+            // face's surface (distance = the sphere's own radius, 5).
+            #expect(simd_length(p.origin - expectedFallback.point) < 1e-6)
+            #expect(simd_length(p.origin) > 1.0, "origin should not be the raw center point")
+            #expect(simd_length(p.zAxis - simd_normalize(expectedFallback.normal)) < 1e-6)
+        case .failure(let e):
+            Issue.record("tangentToFace failed: \(e)")
+        }
+    }
+
+    @Test(
+        "tangentToFace: Placement.origin is the actual on-face point, not `at`'s raw position, when `at` doesn't lie on `face` (PR #897 review, finding 2)"
+    )
+    func tangentToFaceOriginIsOnFaceNotRawPoint() {
+        guard let box = Shape.box(width: 10, height: 10, depth: 10),
+              let graph = BRepGraph(shape: box) else {
+            Issue.record("graph nil"); return
+        }
+        let faceRef = TopologyRef.literal(.init(kind: .face, index: 0))
+        guard let face = graph.shape(nodeKind: .face, nodeIndex: 0)?.faces().first,
+              let sample = face.uvMidpointSample() else {
+            Issue.record("face0 unavailable"); return
+        }
+        let faceNormalUnit = simd_normalize(sample.normal)
+
+        // Find a vertex that does NOT lie on face 0 -- the genuine misuse scenario finding 2
+        // describes, where `at` doesn't actually reference a point on `face`.
+        var offFaceVertexIndex: Int?
+        for vertexIndex in 0..<graph.vertexCount {
+            let raw = graph.vertexPoint(vertexIndex)
+            let p = SIMD3(raw.x, raw.y, raw.z)
+            if abs(simd_dot(p - sample.point, faceNormalUnit)) > 1e-3 {
+                offFaceVertexIndex = vertexIndex
+                break
+            }
+        }
+        guard let offFaceVertexIndex else {
+            Issue.record("no off-face vertex found"); return
+        }
+        let rawTuple = graph.vertexPoint(offFaceVertexIndex)
+        let rawPoint = SIMD3(rawTuple.x, rawTuple.y, rawTuple.z)
+        let vertexRef = TopologyRef.literal(.init(kind: .vertex, index: offFaceVertexIndex))
+        switch graph.resolve(ConstructionPlane.tangentToFace(face: faceRef, at: vertexRef)) {
+        case .success(let p):
+            // The origin must lie ON face 0's plane, not at the raw off-face vertex position.
+            #expect(abs(simd_dot(p.origin - sample.point, faceNormalUnit)) < 1e-6)
+            #expect(
+                simd_length(p.origin - rawPoint) > 1e-3,
+                "origin should differ from the raw off-face point")
+        case .failure(let e):
+            Issue.record("tangentToFace failed: \(e)")
+        }
+    }
 }
 
 @Suite("v0.142 ConstructionAxis resolution")
@@ -3004,6 +3214,336 @@ struct ConstructionAxisTests {
         }
     }
 
+    @Test("normalToFace on a cylinder returns the rotation axis, not the local radial normal (#882)")
+    func normalToFaceCylinderPrimaryAxis() {
+        // The doc promises the cylinder's own rotation axis (here unit Z). Before
+        // #882, normalToFace returned the UV-midpoint radial normal instead,
+        // which lies in the XY plane and has zero Z component.
+        guard let cyl = Shape.cylinder(radius: 5, height: 10),
+              let graph = BRepGraph(shape: cyl) else {
+            Issue.record("graph nil"); return
+        }
+        let faceRef = TopologyRef.literal(.init(kind: .face, index: 0))
+        let vertexRef = TopologyRef.literal(.init(kind: .vertex, index: 1))
+        switch graph.resolve(ConstructionAxis.normalToFace(face: faceRef, at: vertexRef)) {
+        case .success(let ax):
+            #expect(abs(ax.direction.z) > 0.99)
+        case .failure: Issue.record("normalToFace failed")
+        }
+    }
+
+    @Test(
+        "normalToFace on a cylinder anchors the returned axis on the true centerline, not the off-axis vertex it was asked at (PR #897 review, third pass)"
+    )
+    func normalToFaceCylinderOriginOnAxis() {
+        // Vertex 1 sits ON the lateral surface, radius 5 from the true centerline (the Z
+        // axis, since Shape.cylinder is centered on it). Before this fix, normalToFace's
+        // returned origin was always the raw, off-axis vertex position -- pairing a correct
+        // axis DIRECTION with a WRONG axis LOCATION, a line parallel to, but offset by the
+        // full radius from, the true rotation axis.
+        guard let cyl = Shape.cylinder(radius: 5, height: 10),
+              let graph = BRepGraph(shape: cyl) else {
+            Issue.record("graph nil"); return
+        }
+        let faceRef = TopologyRef.literal(.init(kind: .face, index: 0))
+        let vertexRef = TopologyRef.literal(.init(kind: .vertex, index: 1))
+        let rawVertex = graph.vertexPoint(1)
+        switch graph.resolve(ConstructionAxis.normalToFace(face: faceRef, at: vertexRef)) {
+        case .success(let ax):
+            // The origin must lie ON the true centerline (radial distance 0 from the Z
+            // axis), not at the vertex's own radius-5 position.
+            let radialDistance = (ax.origin.x * ax.origin.x + ax.origin.y * ax.origin.y)
+                .squareRoot()
+            #expect(radialDistance < 1e-6)
+            // Kept edge-local (projected at the requested vertex's own height along the
+            // axis), not snapped to the surface's own placement origin elsewhere on the axis.
+            #expect(abs(ax.origin.z - rawVertex.z) < 1e-6)
+            #expect(abs(ax.direction.z) > 0.99)
+        case .failure(let e): Issue.record("normalToFace failed: \(e)")
+        }
+    }
+
+    @Test(
+        "normalToFace on a torus also anchors the returned axis on the true centerline, not the vertex's own far-off-axis position (PR #897 review, third pass)"
+    )
+    func normalToFaceTorusOriginOnAxis() {
+        // A torus's single seam vertex sits at (majorRadius + minorRadius) from the true
+        // centerline -- 25 units here, the widest point on the whole surface -- so this is
+        // the most extreme case of the same bug the cylinder test above covers, and the only
+        // fixture in this suite that exercises the axis-projection formula for a kind other
+        // than `.cylinder` (`.cone`/`.torus`/`.revolution` share the identical code path, but
+        // only `.cylinder` had a dedicated origin test before this one).
+        guard let torus = Shape.torus(majorRadius: 20, minorRadius: 5),
+              let graph = BRepGraph(shape: torus) else {
+            Issue.record("setup"); return
+        }
+        guard let face = graph.shape(nodeKind: .face, nodeIndex: 0)?.faces().first,
+              let axis = face.primaryAxis, axis.kind == .torus
+        else {
+            Issue.record("fixture is not a toroidal face"); return
+        }
+        guard graph.vertexCount > 0 else {
+            Issue.record("torus fixture has no vertex"); return
+        }
+        let faceRef = TopologyRef.literal(.init(kind: .face, index: 0))
+        let vertexRef = TopologyRef.literal(.init(kind: .vertex, index: 0))
+        let rawVertex = graph.vertexPoint(0)
+        let axisDirection = simd_normalize(axis.direction)
+        switch graph.resolve(ConstructionAxis.normalToFace(face: faceRef, at: vertexRef)) {
+        case .success(let ax):
+            // The origin must lie ON the true centerline, not at the vertex's own
+            // far-off-axis position (radius 25 here).
+            let toOrigin = ax.origin - axis.origin
+            let radial = toOrigin - simd_dot(toOrigin, axisDirection) * axisDirection
+            #expect(simd_length(radial) < 1e-6)
+            // Kept edge-local: projected at the requested vertex's own height along the
+            // axis, not snapped to the surface's own placement origin.
+            let expectedHeight = simd_dot(
+                SIMD3(rawVertex.x, rawVertex.y, rawVertex.z) - axis.origin, axisDirection)
+            let actualHeight = simd_dot(toOrigin, axisDirection)
+            #expect(abs(actualHeight - expectedHeight) < 1e-6)
+            #expect(abs(simd_length(ax.direction) - 1.0) < 1e-6)
+        case .failure(let e): Issue.record("normalToFace failed: \(e)")
+        }
+    }
+
+    @Test("normalToFace on a planar face still returns the face normal")
+    func normalToFacePlaneFallback() {
+        // Planes have no primary axis, so normalToFace must fall back to the
+        // UV-midpoint surface normal — the pre-#882 behavior, still correct here.
+        guard let box = Shape.box(width: 10, height: 10, depth: 10),
+              let graph = BRepGraph(shape: box) else {
+            Issue.record("graph nil"); return
+        }
+        let faceRef = TopologyRef.literal(.init(kind: .face, index: 0))
+        let vertexRef = TopologyRef.literal(.init(kind: .vertex, index: 0))
+        switch graph.resolve(ConstructionAxis.normalToFace(face: faceRef, at: vertexRef)) {
+        case .success(let ax):
+            #expect(abs(simd_length(ax.direction) - 1.0) < 1e-6)
+        case .failure: Issue.record("normalToFace failed")
+        }
+    }
+
+    @Test("normalToFace on an extrusion-surface face falls back to the UV-midpoint normal, not the sweep direction (PR #897 review)")
+    func normalToFaceExtrusionFallsBackToNormal() {
+        // Geom_SurfaceOfLinearExtrusion's primaryAxis.direction is the SWEEP direction
+        // (tangent to the surface), not a normal — unlike cylinder/cone/sphere/torus/
+        // revolution, where primaryAxis.direction genuinely is a rotation axis. A
+        // straight-line profile (along X) extruded along Z produces a planar surface
+        // whose true normal (Y) is perpendicular to both the profile and the sweep
+        // direction; before this fix, normalToFace returned the sweep direction
+        // (Z) unconditionally whenever primaryAxis was non-nil.
+        guard let line = Curve3D.segment(from: SIMD3(0, 0, 0), to: SIMD3(10, 0, 0)),
+              let surface = Surface.extrusion(profile: line, direction: SIMD3(0, 0, 1)),
+              let extrudedFace = Shape.face(from: surface, uRange: 0...10, vRange: 0...10),
+              let graph = BRepGraph(shape: extrudedFace) else {
+            Issue.record("setup"); return
+        }
+        let faceRef = TopologyRef.literal(.init(kind: .face, index: 0))
+        let vertexRef = TopologyRef.literal(.init(kind: .vertex, index: 0))
+
+        // Sanity: this fixture really does have an extrusion-kind primaryAxis along
+        // the sweep direction, so the test is exercising the branch it claims to.
+        guard let face = graph.shape(nodeKind: .face, nodeIndex: 0)?.faces().first,
+              let axis = face.primaryAxis, axis.kind == .extrusion else {
+            Issue.record("fixture is not an extrusion-surface face"); return
+        }
+        #expect(abs(axis.direction.z) > 0.99, "sweep direction should be along Z")
+
+        switch graph.resolve(ConstructionAxis.normalToFace(face: faceRef, at: vertexRef)) {
+        case .success(let ax):
+            #expect(abs(simd_length(ax.direction) - 1.0) < 1e-6)
+            // The true surface normal is perpendicular to the sweep direction (Z);
+            // the pre-fix bug returned the sweep direction itself here.
+            #expect(abs(ax.direction.z) < 0.01)
+        case .failure(let e): Issue.record("normalToFace failed: \(e)")
+        }
+    }
+
+    @Test("normalToFace on a spherical face falls back to the UV-midpoint normal, not the arbitrary pole axis (PR #897 review, 3rd pass)")
+    func normalToFaceSphereFallsBackToNormal() {
+        // gp_Sphere::Position().Direction() (what Face.primaryAxis reports for a
+        // sphere) is just the arbitrary construction-frame pole -- a sphere is
+        // symmetric about every axis through its center, so unlike
+        // cylinder/cone/torus/revolution it has no intrinsic rotation axis at all.
+        // Before this fix, normalToFace returned that same fixed (0,0,1) pole
+        // direction for every vertex on the sphere, off by 90 degrees from the true
+        // local normal at the equator.
+        let radius = 5.0
+        guard let sph = Shape.sphere(radius: radius),
+              let graph = BRepGraph(shape: sph) else {
+            Issue.record("graph nil"); return
+        }
+        let faceRef = TopologyRef.literal(.init(kind: .face, index: 0))
+
+        // Sanity: this fixture really does have a sphere-kind primaryAxis, so the
+        // test is exercising the branch it claims to.
+        guard let face = graph.shape(nodeKind: .face, nodeIndex: 0)?.faces().first,
+              let axis = face.primaryAxis, axis.kind == .sphere else {
+            Issue.record("fixture is not a spherical face"); return
+        }
+        let poleDirection = simd_normalize(axis.direction)
+
+        // Find the two real pole vertices by position, not by assuming fixed indices 0/1 --
+        // vertex enumeration order isn't guaranteed stable across an OCCT kernel rebuild or
+        // platform (CLAUDE.md Test Conventions; #897 review, second xhigh pass, finding 4) --
+        // matching `tangentToFaceConeApexFallsBackToNormal`'s own by-position search a few
+        // hundred lines above.
+        var poleIndices: [Int] = []
+        for vertexIndex in 0..<graph.vertexCount {
+            let raw = graph.vertexPoint(vertexIndex)
+            let offset = SIMD3(raw.x, raw.y, raw.z) - axis.origin
+            let axial = simd_dot(offset, poleDirection)
+            let radial = offset - axial * poleDirection
+            if abs(abs(axial) - radius) < 1e-6, simd_length(radial) < 1e-6 {
+                poleIndices.append(vertexIndex)
+            }
+        }
+        guard poleIndices.count == 2 else {
+            Issue.record("expected exactly 2 pole vertices, found \(poleIndices.count)")
+            return
+        }
+        // The origin and direction must come from the SAME location -- the UV midpoint --
+        // not the raw, off-face pole vertex paired with a normal sampled elsewhere (#897
+        // review, third pass, finding 2).
+        guard let expectedFallback = face.uvMidpointSample() else {
+            Issue.record("uvMidpointSample unavailable"); return
+        }
+
+        // Checked at both poles to show the exclusion holds regardless of which vertex is asked.
+        for vertexIndex in poleIndices {
+            let vertexRef = TopologyRef.literal(.init(kind: .vertex, index: vertexIndex))
+            switch graph.resolve(ConstructionAxis.normalToFace(face: faceRef, at: vertexRef)) {
+            case .success(let ax):
+                #expect(abs(simd_length(ax.direction) - 1.0) < 1e-6)
+                // The old, broken code returned the fixed pole axis unconditionally;
+                // the fallback UV-midpoint normal (at the sphere's equator) is
+                // nearly perpendicular to it instead.
+                #expect(abs(simd_dot(ax.direction, poleDirection)) < 0.1)
+                #expect(simd_length(ax.origin - expectedFallback.point) < 1e-6)
+                #expect(
+                    simd_length(simd_normalize(ax.direction) - simd_normalize(expectedFallback.normal))
+                        < 1e-6)
+            case .failure(let e):
+                Issue.record("normalToFace failed at vertex \(vertexIndex): \(e)")
+            }
+        }
+    }
+
+    @Test(
+        "normalToFace on a free-form face is point-aware, not a fixed UV-midpoint normal (PR #897 review, finding 4)"
+    )
+    func normalToFaceFreeFormVariesWithPoint() {
+        // A non-planar (saddle / hyperbolic-paraboloid) bilinear Bezier patch: doubly ruled,
+        // genuinely curved, and has NO primaryAxis at all (only cylinder/cone/torus/sphere/
+        // revolution/extrusion surfaces do) -- its true local normal varies substantially
+        // across the surface. The 4 corner poles are non-coplanar (p11 != p01 + p10 - p00),
+        // which is what makes this a genuine saddle rather than a degenerate plane.
+        let poles: [[SIMD3<Double>]] = [
+            [SIMD3(0, 0, 0), SIMD3(0, 3, 3)],
+            [SIMD3(3, 0, 3), SIMD3(3, 3, 0)],
+        ]
+        guard let surface = Surface.bezier(poles: poles),
+              let face = Shape.face(from: surface, uBounds: 0...1, vBounds: 0...1),
+              let graph = BRepGraph(shape: face) else {
+            Issue.record("setup"); return
+        }
+
+        // Sanity: this fixture really has no primaryAxis, so the test exercises the no-axis
+        // fallback branch it claims to.
+        guard let occFace = graph.shape(nodeKind: .face, nodeIndex: 0)?.faces().first else {
+            Issue.record("face0 unavailable"); return
+        }
+        #expect(occFace.primaryAxis == nil, "fixture should have no primary axis")
+
+        let faceRef = TopologyRef.literal(.init(kind: .face, index: 0))
+        var directions: [SIMD3<Double>] = []
+        for vertexIndex in 0..<graph.vertexCount {
+            let vertexRef = TopologyRef.literal(.init(kind: .vertex, index: vertexIndex))
+            if case .success(let ax) = graph.resolve(
+                ConstructionAxis.normalToFace(face: faceRef, at: vertexRef))
+            {
+                directions.append(simd_normalize(ax.direction))
+            }
+        }
+        guard directions.count >= 2 else {
+            Issue.record("need at least 2 resolved vertices"); return
+        }
+        // Before this fix, every vertex answered the SAME fixed UV-midpoint normal regardless
+        // of `at`; this saddle's corners have genuinely different local normals.
+        let minDot = directions.dropFirst().reduce(1.0) { min($0, simd_dot(directions[0], $1)) }
+        #expect(minDot < 0.99, "normalToFace should vary across a genuinely curved free-form face")
+    }
+
+    @Test(
+        "normalToFace: the returned origin is the actual on-face point the direction was evaluated at, not `at`'s raw position, when `at` doesn't lie on `face` (PR #897 review, second xhigh pass, finding 2)"
+    )
+    func normalToFaceOriginIsOnFaceNotRawPoint() {
+        // Same saddle fixture as normalToFaceFreeFormVariesWithPoint above (no primaryAxis, so
+        // this exercises resolveFaceAxisDirection's point-aware fallback branch), but `at` is a
+        // vertex from a SEPARATE box shape entirely -- the same "genuine misuse" pattern
+        // tangentToFaceOriginIsOnFaceNotRawPoint already uses for tangentToFace.
+        let poles: [[SIMD3<Double>]] = [
+            [SIMD3(0, 0, 0), SIMD3(0, 3, 3)],
+            [SIMD3(3, 0, 3), SIMD3(3, 3, 0)],
+        ]
+        guard let surface = Surface.bezier(poles: poles),
+            let saddleFace = Shape.face(from: surface, uBounds: 0...1, vBounds: 0...1),
+            let box = Shape.box(width: 10, height: 10, depth: 10),
+            let compound = Shape.compound([saddleFace, box]),
+            let graph = BRepGraph(shape: compound)
+        else {
+            Issue.record("setup"); return
+        }
+
+        // Saddle added first -- confirm face 0 of the compound really is the saddle, not the
+        // box, and really has no primaryAxis.
+        guard let faceShape = graph.shape(nodeKind: .face, nodeIndex: 0),
+            let saddle = faceShape.faces().first, saddle.primaryAxis == nil
+        else {
+            Issue.record("face 0 of the compound is not the no-axis saddle"); return
+        }
+
+        // A vertex on the BOX, far from the saddle patch -- find one whose projection onto the
+        // saddle is not itself.
+        var offFaceVertexIndex: Int?
+        for vertexIndex in 0..<graph.vertexCount {
+            let raw = graph.vertexPoint(vertexIndex)
+            let p = SIMD3(raw.x, raw.y, raw.z)
+            guard simd_length(p) > 1.0 else { continue }  // skip the saddle's own corners near 0
+            guard let projection = saddle.project(point: p) else { continue }
+            if simd_length(projection.point - p) > 1e-3 {
+                offFaceVertexIndex = vertexIndex
+                break
+            }
+        }
+        guard let offFaceVertexIndex else {
+            Issue.record("no usable off-face vertex found"); return
+        }
+        let rawTuple = graph.vertexPoint(offFaceVertexIndex)
+        let rawPoint = SIMD3(rawTuple.x, rawTuple.y, rawTuple.z)
+        guard let expectedProjection = saddle.project(point: rawPoint),
+            let expectedNormal = saddle.normal(atU: expectedProjection.u, v: expectedProjection.v)
+        else {
+            Issue.record("expected projection/normal unavailable"); return
+        }
+
+        let faceRef = TopologyRef.literal(.init(kind: .face, index: 0))
+        let vertexRef = TopologyRef.literal(.init(kind: .vertex, index: offFaceVertexIndex))
+        switch graph.resolve(ConstructionAxis.normalToFace(face: faceRef, at: vertexRef)) {
+        case .success(let ax):
+            // The origin must be the actual on-face projected point -- the same location the
+            // direction was evaluated at -- not the raw off-face vertex position.
+            #expect(simd_length(ax.origin - expectedProjection.point) < 1e-6)
+            #expect(
+                simd_length(ax.origin - rawPoint) > 1e-3,
+                "origin should differ from the raw off-face point")
+            #expect(simd_length(simd_normalize(ax.direction) - simd_normalize(expectedNormal)) < 1e-6)
+        case .failure(let e):
+            Issue.record("normalToFace failed: \(e)")
+        }
+    }
+
     @Test(
         "alongEdge fails loudly, not silently, when the edge's tangent is undefined at its own start point (#894 finding 1, fifth pass)"
     )
@@ -3209,6 +3749,82 @@ struct ConstructionPointTests {
             #expect(abs(p.y - 4) < 1e-9)
             #expect(abs(p.z - 10) < 1e-9)
         case .failure: Issue.record("intersection failed")
+        }
+    }
+
+    @Test("centroidOfFace on a cylinder matches the real area centroid, not the UV midpoint (#884)")
+    func centroidOfFaceCylinderSurfaceInertia() {
+        // A radius-5, height-10 cylinder's lateral face has its true area centroid
+        // on the cylinder's own axis (x=y=0, z=5) — the UV-midpoint approximation
+        // instead sits a full radius off-axis, on the surface itself.
+        guard let cyl = Shape.cylinder(radius: 5, height: 10),
+              let graph = BRepGraph(shape: cyl) else {
+            Issue.record("graph nil"); return
+        }
+        let faceRef = TopologyRef.literal(.init(kind: .face, index: 0))
+        switch graph.resolve(ConstructionPoint.centroidOfFace(faceRef)) {
+        case .success(let p):
+            let distanceFromAxis = (p.x * p.x + p.y * p.y).squareRoot()
+            #expect(distanceFromAxis < 1e-6)
+            #expect(abs(p.z - 5) < 1e-6)
+        case .failure(let e): Issue.record("centroidOfFace failed: \(e)")
+        }
+    }
+
+    @Test("centroidOfFace on a genuinely zero-area face fails with .degenerate, not a fabricated point (PR #897 review)")
+    func centroidOfFaceZeroAreaDegenerate() {
+        // A 2-vertex "polygon" wire is a degenerate zero-area loop — the same fixture
+        // Issue234DegenerateHoleTests uses for a degenerate hole, here used as the base
+        // face itself. Its surfaceInertia.centerOfMass is nil because BRepGProp_Sinert
+        // measures its area as exactly 0. The old UV-midpoint-based centroidOfFace always
+        // succeeded for any face with uvBounds; resolveFaceCentroid must decline instead.
+        let p0 = SIMD3<Double>(0, 0, 0)
+        let p1 = SIMD3<Double>(10, 0, 0)
+        guard let wire = Wire.polygon3D([p0, p1], closed: true),
+              let degenerateFace = Shape.face(from: wire, planar: true),
+              let graph = BRepGraph(shape: degenerateFace) else {
+            Issue.record("setup"); return
+        }
+        let faceRef = TopologyRef.literal(.init(kind: .face, index: 0))
+
+        // Sanity: the fixture really is zero-area, so this exercises the branch it claims to.
+        guard let face = graph.shape(nodeKind: .face, nodeIndex: 0)?.faces().first else {
+            Issue.record("fixture face unavailable"); return
+        }
+        #expect(face.surfaceInertia.centerOfMass == nil, "fixture should be zero-area")
+
+        if case .failure(.degenerate(let message)) =
+            graph.resolve(ConstructionPoint.centroidOfFace(faceRef)) {
+            #expect(message == "face area is zero, or its inertia could not be computed")
+        } else {
+            Issue.record(
+                "expected .degenerate(\"face area is zero, or its inertia could not be computed\")")
+        }
+    }
+
+    @Test("atEdgeParameter matches Edge.parameterByLinearFraction(_:) + point(at:) for the same edge and t")
+    func atEdgeParameterMatchesFraction() {
+        guard let box = Shape.box(width: 10, height: 10, depth: 10),
+              let graph = BRepGraph(shape: box) else {
+            Issue.record("graph nil"); return
+        }
+        // Edge enumeration order isn't guaranteed stable across an OCCT kernel rebuild
+        // or platform — iterate every edge rather than hardcoding index 0 (CLAUDE.md
+        // Test Conventions; PR #897 review, finding 12).
+        #expect(graph.edgeCount > 0)
+        for edgeIndex in 0..<graph.edgeCount {
+            guard let edge = graph.shape(nodeKind: .edge, nodeIndex: edgeIndex)?.edges().first,
+                  let param = edge.parameterByLinearFraction(0.25),
+                  let expected = edge.point(at: param)
+            else {
+                Issue.record("edge \(edgeIndex) unavailable"); continue
+            }
+            let edgeRef = TopologyRef.literal(.init(kind: .edge, index: edgeIndex))
+            switch graph.resolve(ConstructionPoint.atEdgeParameter(edge: edgeRef, t: 0.25)) {
+            case .success(let p):
+                #expect(simd_length(p - expected) < 1e-9)
+            case .failure(let e): Issue.record("atEdgeParameter failed at edge \(edgeIndex): \(e)")
+            }
         }
     }
 }

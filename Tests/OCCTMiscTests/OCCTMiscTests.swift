@@ -654,14 +654,30 @@ struct AngleHelperTests {
     func unsignedAngleParallel() {
         let a = SIMD3<Double>(1, 0, 0)
         let b = SIMD3<Double>(2, 0, 0)
-        #expect(unsignedAngle(between: a, and: b) < 1e-12)
+        if let angle = unsignedAngle(between: a, and: b) {
+            #expect(angle < 1e-12)
+        } else {
+            Issue.record("unsignedAngle returned nil for non-degenerate input")
+        }
     }
 
     @Test("unsignedAngle between antiparallel vectors == π")
     func unsignedAngleAntiparallel() {
         let a = SIMD3<Double>(1, 0, 0)
         let b = SIMD3<Double>(-1, 0, 0)
-        #expect(abs(unsignedAngle(between: a, and: b) - .pi) < 1e-12)
+        if let angle = unsignedAngle(between: a, and: b) {
+            #expect(abs(angle - .pi) < 1e-12)
+        } else {
+            Issue.record("unsignedAngle returned nil for non-degenerate input")
+        }
+    }
+
+    @Test("unsignedAngle returns nil for degenerate (near-zero-length) input (PR #897 review, finding 5)")
+    func unsignedAngleDegenerateReturnsNil() {
+        let zero = SIMD3<Double>(0, 0, 0)
+        let nonzero = SIMD3<Double>(1, 0, 0)
+        #expect(unsignedAngle(between: zero, and: nonzero) == nil)
+        #expect(unsignedAngle(between: zero, and: zero) == nil)
     }
 
     @Test("ConstructionAxis angle between resolved axes")
@@ -688,6 +704,153 @@ struct AngleHelperTests {
         if let a = xy.angle(to: xz, in: graph) {
             #expect(abs(a - .pi / 2) < 1e-9)
         } else { Issue.record("angle nil") }
+    }
+}
+
+// MARK: - #888: Edge fraction→parameter helper
+
+@Suite("#888 Edge.parameterByLinearFraction(_:)")
+struct EdgeFractionParameterTests {
+    @Test("parameterByLinearFraction(_:) maps 0/0.5/1 to bounds.first/mid/last")
+    func parameterAtFractionEndpoints() {
+        guard let box = Shape.box(width: 10, height: 10, depth: 10) else {
+            Issue.record("box nil"); return
+        }
+        // Edge enumeration order isn't guaranteed stable across an OCCT kernel rebuild
+        // or platform — iterate to find a working edge rather than trusting `.first`
+        // (CLAUDE.md Test Conventions; #897 review, second xhigh pass, finding 5).
+        for edge in box.edges() {
+            guard let bounds = edge.parameterBounds else { continue }
+            if let p0 = edge.parameterByLinearFraction(0) {
+                #expect(abs(p0 - bounds.first) < 1e-9)
+            } else {
+                Issue.record("parameterByLinearFraction(0) nil")
+            }
+            if let p1 = edge.parameterByLinearFraction(1) {
+                #expect(abs(p1 - bounds.last) < 1e-9)
+            } else {
+                Issue.record("parameterByLinearFraction(1) nil")
+            }
+            let mid = bounds.first + (bounds.last - bounds.first) * 0.5
+            if let pMid = edge.parameterByLinearFraction(0.5) {
+                #expect(abs(pMid - mid) < 1e-9)
+            } else {
+                Issue.record("parameterByLinearFraction(0.5) nil")
+            }
+            return
+        }
+        Issue.record("no edge with parameterBounds found")
+    }
+
+    @Test("parameterByLinearFraction(_:) clamps out-of-range fractions to [0, 1]")
+    func parameterAtFractionClamps() {
+        guard let box = Shape.box(width: 10, height: 10, depth: 10) else {
+            Issue.record("box nil"); return
+        }
+        for edge in box.edges() {
+            guard let bounds = edge.parameterBounds else { continue }
+            if let pLow = edge.parameterByLinearFraction(-5) {
+                #expect(abs(pLow - bounds.first) < 1e-9)
+            } else {
+                Issue.record("parameterByLinearFraction(-5) nil")
+            }
+            if let pHigh = edge.parameterByLinearFraction(5) {
+                #expect(abs(pHigh - bounds.last) < 1e-9)
+            } else {
+                Issue.record("parameterByLinearFraction(5) nil")
+            }
+            return
+        }
+        Issue.record("no edge with parameterBounds found")
+    }
+}
+
+// MARK: - #889: Face UV-midpoint sample
+
+@Suite("#889 Face.uvMidpointSample()")
+struct FaceUVMidpointSampleTests {
+    @Test("uvMidpointSample matches point/normal at the manual UV midpoint")
+    func matchesManualUVMidpoint() {
+        guard let box = Shape.box(width: 10, height: 10, depth: 10),
+              let face = box.faces().first,
+              let bounds = face.uvBounds else {
+            Issue.record("face/bounds nil"); return
+        }
+        let uMid = (bounds.uMin + bounds.uMax) / 2
+        let vMid = (bounds.vMin + bounds.vMax) / 2
+        guard let expectedPoint = face.point(atU: uMid, v: vMid),
+              let expectedNormal = face.normal(atU: uMid, v: vMid),
+              let sample = face.uvMidpointSample() else {
+            Issue.record("sample nil"); return
+        }
+        #expect(simd_length(sample.point - expectedPoint) < 1e-9)
+        #expect(simd_length(sample.normal - expectedNormal) < 1e-9)
+    }
+
+    @Test("isCoplanar: a face is coplanar with itself")
+    func coplanarWithSelf() {
+        guard let box = Shape.box(width: 10, height: 10, depth: 10),
+              let face = box.faces().first else {
+            Issue.record("face nil"); return
+        }
+        #expect(face.isCoplanar(with: face) == true)
+    }
+
+    @Test("isCoplanar: parallel but offset faces are not coplanar")
+    func parallelOffsetFacesNotCoplanar() {
+        guard let box = Shape.box(width: 10, height: 10, depth: 10) else {
+            Issue.record("box nil"); return
+        }
+        let faces = box.faces()
+        // Find a parallel-but-not-identical pair (a box's opposite faces).
+        for i in 0..<faces.count {
+            for j in 0..<faces.count where i != j {
+                guard let parallel = faces[i].isParallel(to: faces[j]), parallel else { continue }
+                // Opposite box faces are parallel and 10 units apart, never coplanar.
+                #expect(faces[i].isCoplanar(with: faces[j]) == false)
+                return
+            }
+        }
+        Issue.record("no parallel face pair found")
+    }
+
+    @Test("revolutionProperties on a cone matches primaryAxis and has positive radius")
+    func revolutionPropertiesOnCone() {
+        guard let cone = Shape.cone(bottomRadius: 5, topRadius: 0, height: 10) else {
+            Issue.record("cone nil"); return
+        }
+        var found = false
+        for face in cone.faces() where face.surfaceType == .cone {
+            guard let props = face.revolutionProperties, let axis = face.primaryAxis else { continue }
+            #expect(props.radius > 0)
+            #expect(simd_length(props.axis.direction - axis.direction) < 1e-9)
+            found = true
+        }
+        #expect(found)
+    }
+
+    @Test(
+        "revolutionProperties on a trimmed spherical cap reports the true constant radius, not an axis-relative radial component (PR #897 review, finding 1)"
+    )
+    func revolutionPropertiesOnSphericalCap() {
+        // A narrow cap trimmed well off the equator, near the pole. A sphere's true radius is
+        // constant everywhere on its surface, but the old formula measured the OFFSET
+        // PERPENDICULAR TO `primary.direction` -- correct only by coincidence when the UV
+        // midpoint happens to sit on the equator (radial component == R there). Near the pole
+        // that component shrinks toward 0 while the true radius stays R, so this fixture
+        // isolates the bug: v in [1.3, 1.5] sits close to the pole at pi/2 =~ 1.5708.
+        let radius = 5.0
+        guard let surface = Surface.sphere(center: SIMD3(0, 0, 0), radius: radius),
+              let capShape = Shape.face(from: surface, uBounds: 0...(2 * .pi), vBounds: 1.3...1.5),
+              let face = capShape.faces().first
+        else {
+            Issue.record("setup"); return
+        }
+        guard let props = face.revolutionProperties else {
+            Issue.record("no revolutionProperties"); return
+        }
+        #expect(props.axis.kind == .sphere)
+        #expect(abs(props.radius - radius) < 1e-6)
     }
 }
 

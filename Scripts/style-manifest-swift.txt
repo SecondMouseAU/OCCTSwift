@@ -108,7 +108,6 @@ Sources/OCCTSwift/MathDimension.swift
 Sources/OCCTSwift/MathLibrary.swift
 Sources/OCCTSwift/MathSolver.swift
 Sources/OCCTSwift/Matrix2D.swift
-Sources/OCCTSwift/MeasurementHelpers.swift
 Sources/OCCTSwift/MedialAxis.swift
 Sources/OCCTSwift/MemInfo.swift
 Sources/OCCTSwift/Mesh.swift
