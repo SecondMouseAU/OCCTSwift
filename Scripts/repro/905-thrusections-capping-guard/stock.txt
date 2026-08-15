@@ -1,0 +1,2 @@
+saddle: IsDone()=1  threw=0  faceCount=60  checkValid=0
+cone: IsDone()=1  threw=0  faceCount=2  checkValid=1

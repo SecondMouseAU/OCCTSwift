@@ -1,0 +1,82 @@
+From: OCCTSwift ecosystem <noreply@secondmouse.au>
+Subject: [PATCH] Modeling Algorithms - fail instead of returning an unclosed
+ solid when BRepOffsetAPI_ThruSections cannot cap a non-planar section wire
+
+BRepOffsetAPI_ThruSections(isSolid: true) silently omits both end-cap faces
+when a closed section wire has two or more periods of out-of-plane variation
+around the loop -- a genuinely non-planar closed curve, not just one with
+nonzero out-of-plane spread. Build() still reports IsDone() == true and
+Shape() returns a TopoDS_Solid that is missing two faces and is not actually
+closed; BRepCheck_Analyzer catches this later, but with no localized error.
+
+MakeSolid() (the static helper CreateRuled() and CreateSmoothed() both call
+to close a loft's two open ends) caps each end via PerformPlan(), which tries
+BRepBuilderAPI_FindPlane and then a BRepLib_FindSurface-backed MakeFace(wire)
+fallback. Neither fits anything but a plane or a surface already attached to
+the wire's edges. A section wire with >= 2 periods of out-of-plane variation
+has no such surface, so PerformPlan() fails for it -- but MakeSolid() already
+tracks this in its own local `B`, and then discards it: it unconditionally
+marks the shell/solid Closed(true) and returns regardless of whether capping
+actually succeeded.
+
+A single period of out-of-plane variation (e.g. z = amp * cos(theta) at
+constant radius) caps fine, because that curve is secretly planar: it is
+exactly the intersection of the cylinder r = const with a tilted plane, so
+BRepBuilderAPI_FindPlane finds it. >= 2 periods has no such plane.
+
+Fix: after the capping block, if `B` is still false -- capping was needed
+and failed, not skipped because it wasn't needed -- nullify both output
+faces and throw StdFail_NotDone, matching the exception this same function
+already throws for a null shell two lines above. No signature change and no
+call-site change: both call sites already run inside Build()'s only
+try/catch (`catch (Standard_Failure const&) { NotDone(); return; }`), so the
+throw propagates there and IsDone() correctly reads false.
+
+The nullify matters because face1/face2 alias the caller's myFirst/myLast,
+exposed publicly via FirstShape()/LastShape(): if wire1's PerformPlan()
+succeeds (writing a real face) but wire2's fails, `B` ends false on wire2's
+failure alone, and without the nullify myFirst would still hold a genuine,
+but never-added-to-the-shell, face after a failed Build().
+
+This is deliberately not a null-face check (`face1.IsNull() ||
+face2.IsNull()`). PerformPlan() also leaves the output face null, and
+returns true, when every edge of the wire is degenerate (a single-vertex
+"point" section built via AddVertex(), e.g. a cone's apex) -- that end
+needs no cap face at all, and a null-face check cannot tell that case apart
+from a genuine capping failure. `B` already carries the distinction:
+PerformPlan()'s isDegen shortcut leaves it true, a genuine failure leaves
+it false. Confirmed against BOPAlgo_PaveFiller_Test.cxx's
+FuseConeLoftWithBox_DegeneratedEdge (a circle-to-vertex loft), which an
+earlier null-face-based attempt at this fix broke.
+
+GTest added in BRepOffsetAPI_ThruSections_Test.cxx: a two-wire, k=2
+out-of-plane loft now correctly fails, and a circle-to-degenerate-vertex
+loft (the same shape as the regression above) still succeeds.
+
+SecondMouseAU/OCCTSwift#905.
+---
+ .../TKOffset/BRepOffsetAPI/BRepOffsetAPI_ThruSections.cxx    | 13 +++++++++++++
+ 1 file changed, 13 insertions(+)
+
+--- a/src/ModelingAlgorithms/TKOffset/BRepOffsetAPI/BRepOffsetAPI_ThruSections.cxx
++++ b/src/ModelingAlgorithms/TKOffset/BRepOffsetAPI/BRepOffsetAPI_ThruSections.cxx
+@@ -234,6 +234,19 @@ static TopoDS_Solid MakeSolid(TopoDS_Shell&      shell,
+     }
+   }
+
++  if (!B)
++  {
++    // Neither extremity was already closed nor could be capped (no plane or attached
++    // surface fits a genuinely non-planar wire); fail instead of returning an unclosed
++    // shape marked Closed(true) below. face1/face2 (aliased to the caller's myFirst/myLast)
++    // may already hold a real face from the other extremity's successful PerformPlan() call;
++    // clear both so a caller that inspects FirstShape()/LastShape() after a failed Build()
++    // cannot observe a face that was never added to the shell.
++    face1.Nullify();
++    face2.Nullify();
++    throw StdFail_NotDone("BRepOffsetAPI_ThruSections: could not close a non-planar extremity");
++  }
++
+   TopoDS_Solid solid;
+   BB.MakeSolid(solid);
+   BB.Add(solid, shell);
