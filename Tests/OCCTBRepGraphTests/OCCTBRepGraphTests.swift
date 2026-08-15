@@ -3802,7 +3802,7 @@ struct ConstructionPointTests {
         }
     }
 
-    @Test("atEdgeParameter matches Edge.pointByLinearFraction(_:) for the same edge and t")
+    @Test("atEdgeParameter matches Edge.parameterByLinearFraction(_:) + point(at:) for the same edge and t")
     func atEdgeParameterMatchesFraction() {
         guard let box = Shape.box(width: 10, height: 10, depth: 10),
               let graph = BRepGraph(shape: box) else {
@@ -3814,7 +3814,8 @@ struct ConstructionPointTests {
         #expect(graph.edgeCount > 0)
         for edgeIndex in 0..<graph.edgeCount {
             guard let edge = graph.shape(nodeKind: .edge, nodeIndex: edgeIndex)?.edges().first,
-                  let expected = edge.pointByLinearFraction(0.25)
+                  let param = edge.parameterByLinearFraction(0.25),
+                  let expected = edge.point(at: param)
             else {
                 Issue.record("edge \(edgeIndex) unavailable"); continue
             }

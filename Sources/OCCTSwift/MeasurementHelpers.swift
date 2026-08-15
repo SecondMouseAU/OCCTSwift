@@ -28,15 +28,6 @@ extension Edge {
         return bounds.first + (bounds.last - bounds.first) * clamped
     }
 
-    /// This edge's 3D point at a normalized `[0, 1]` fraction of its parameter bounds,
-    /// via `parameterByLinearFraction(_:)` — naive linear interpolation, not arc length.
-    ///
-    /// Convenience over `parameterByLinearFraction(_:)` + `point(at:)`.
-    internal func pointByLinearFraction(_ fraction: Double) -> SIMD3<Double>? {
-        guard let param = parameterByLinearFraction(fraction) else { return nil }
-        return point(at: param)
-    }
-
     /// Angle between this edge's tangent and another edge's tangent, measured at
     /// their respective mid-parameters.
     ///

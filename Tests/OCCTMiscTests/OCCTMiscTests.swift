@@ -709,7 +709,7 @@ struct AngleHelperTests {
 
 // MARK: - #888: Edge fraction→parameter helper
 
-@Suite("#888 Edge.parameterByLinearFraction(_:) / pointByLinearFraction(_:)")
+@Suite("#888 Edge.parameterByLinearFraction(_:)")
 struct EdgeFractionParameterTests {
     @Test("parameterByLinearFraction(_:) maps 0/0.5/1 to bounds.first/mid/last")
     func parameterAtFractionEndpoints() {
@@ -758,26 +758,6 @@ struct EdgeFractionParameterTests {
                 #expect(abs(pHigh - bounds.last) < 1e-9)
             } else {
                 Issue.record("parameterByLinearFraction(5) nil")
-            }
-            return
-        }
-        Issue.record("no edge with parameterBounds found")
-    }
-
-    @Test("pointByLinearFraction(_:) matches point(at: parameterByLinearFraction(_:))")
-    func pointAtFractionMatchesManualParam() {
-        guard let box = Shape.box(width: 10, height: 10, depth: 10) else {
-            Issue.record("box nil"); return
-        }
-        for edge in box.edges() {
-            guard edge.parameterBounds != nil else { continue }
-            for t in [0.0, 0.25, 0.5, 0.75, 1.0] {
-                guard let param = edge.parameterByLinearFraction(t),
-                      let expected = edge.point(at: param),
-                      let actual = edge.pointByLinearFraction(t) else {
-                    Issue.record("nil point at t=\(t)"); continue
-                }
-                #expect(simd_length(actual - expected) < 1e-9)
             }
             return
         }

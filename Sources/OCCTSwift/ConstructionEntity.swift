@@ -679,12 +679,12 @@ extension BRepGraph {
             // cheap secant-based check the pre-round-3 code used is still correct for a line —
             // only the non-line path below needs the true arc length.
             if edge.curveType == .line {
-                // `edge.point(at:)` directly against the already-held `bounds` tuple, not
-                // `pointByLinearFraction(0)`/`(1)`: those re-derive `parameterBounds` internally
-                // (`MeasurementHelpers.swift`), a redundant bridge round-trip when `bounds` is
-                // already in scope from the guard above (#897 review, second xhigh pass, finding
-                // 8) — this file is otherwise deliberate about avoiding exactly this class of
-                // extra OCCT call (see the comments a few lines below).
+                // `edge.point(at:)` directly against the already-held `bounds` tuple, not a
+                // fraction→point helper that would re-derive `parameterBounds` internally: a
+                // redundant bridge round-trip when `bounds` is already in scope from the guard
+                // above (#897 review, second xhigh pass, finding 8) — this file is otherwise
+                // deliberate about avoiding exactly this class of extra OCCT call (see the
+                // comments a few lines below).
                 guard let start = edge.point(at: bounds.first),
                     let end = edge.point(at: bounds.last)
                 else {
@@ -711,7 +711,7 @@ extension BRepGraph {
             }
 
             // Same reasoning as the `.line` fast path above: `bounds` is already held, so use it
-            // directly rather than re-deriving it via `pointByLinearFraction` (#897 review,
+            // directly rather than re-deriving it via a fraction→point helper (#897 review,
             // second xhigh pass, finding 8).
             guard let start = edge.point(at: bounds.first), let end = edge.point(at: bounds.last)
             else {
