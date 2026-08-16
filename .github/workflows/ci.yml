@@ -178,6 +178,17 @@ jobs:
         if: '!cancelled()'
         run: python3 Scripts/check-changelog-transcription.py
 
+      # #928's over-coverage detector, and the second entry here that is a census rather than a
+      # gate: it exits 0 either way, so a bare run could never fail and therefore never signal.
+      # Only the --self-test runs, for the same reason census-unmeasured-values.py's does. It is
+      # also the only one of these whose bare run would need `Libraries/OCCT.xcframework`, absent
+      # on this runner, and it would report a smaller number rather than saying so if it were run
+      # here. The measured false-positive rate (41% over a 40-row adjudicated sample) is why it is
+      # not a gate today; #928's PR body records what promoting it would take.
+      - name: census-doc-occt-attribution.py --self-test
+        if: '!cancelled()'
+        run: python3 Scripts/census-doc-occt-attribution.py --self-test
+
   build-and-test:
     name: swift build + test (macOS)
     runs-on: macos-15
