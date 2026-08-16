@@ -19,6 +19,33 @@ each named with its migration in [`SEMVER.md`](SEMVER.md#v200).
 
 ## Unreleased
 
+### `ThruSectionsBuilder` no longer returns stale results after a failed rebuild, or after a build on a changed builder that hasn't been rebuilt (#910)
+
+`generatedFace(from:)` and `shape` both read post-build OCCT state without reliably checking
+whether the *last* `build()` call on that instance actually succeeded, and without accounting for
+OCCT's own internal state never resetting between builds or setting changes on a reused builder.
+Fixed in two rounds:
+
+- **Outcome tracking.** A `ThruSectionsBuilder` reused across multiple `build()` calls could
+  silently keep returning a prior successful build's geometry — through `generatedFace(from:)`,
+  `shape`, and `build()`'s own return value — after a later `build()` call on the same instance
+  genuinely failed, including failures that OCCT's own `IsDone()` does not reliably report on a
+  reused builder (a punctual middle section added via `addVertex()`).
+- **Stale binding after a later success.** Even with outcome tracking, a builder that succeeded,
+  then failed, then succeeded again could still have `generatedFace(from:)` answer with a face left
+  over from the *first* success rather than the current one — OCCT's internal edge→face map is
+  additive-only. `generatedFace(from:)` now confirms its answer is actually part of the current
+  `shape` before returning it.
+- **Setting changes without a rebuild.** `setSmoothing`, `setMaxDegree`, `setContinuity`,
+  `checkCompatibility`, `setParType`, and `setCriteriumWeight` now invalidate a prior successful
+  build the same way `addWire`/`addVertex` already did — previously, changing a setting after a
+  successful build left `.shape`/`generatedFace(from:)` silently serving geometry built under the
+  old setting until the caller happened to add a new section too.
+
+Fixed by tracking the real build outcome bridge-side rather than trusting `IsDone()` alone, and by
+verifying `generatedFace(from:)`'s answer against the current build's own shape rather than
+trusting OCCT's internal map.
+
 ### `Document.constructionContext`'s lazy-init was a check-then-set race; fixed, plus the rest of the #914 review's second and third rounds
 
 **The one substantive bug, found in the review round after the round that added the concurrency
