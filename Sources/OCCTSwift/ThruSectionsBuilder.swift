@@ -112,8 +112,11 @@ extension ThruSectionsBuilder {
 
     /// Set criterium weights for the approximation algorithm. Invalidates
     /// ``shape``/``generatedFace(from:)`` until the next successful ``build()`` — see ``shape``'s
-    /// doc comment.
-    public func setCriteriumWeight(w1: Double, w2: Double, w3: Double) {
+    /// doc comment. Returns `true` if all weights are non-negative; returns `false` and does not
+    /// update the builder if any weight is negative (OCCT silently ignores negative weights and
+    /// `Build()` erases the failure status, making the rejection unobservable otherwise).
+    @discardableResult
+    public func setCriteriumWeight(w1: Double, w2: Double, w3: Double) -> Bool {
         OCCTThruSectionsSetCriteriumWeight(ref, w1, w2, w3)
     }
 

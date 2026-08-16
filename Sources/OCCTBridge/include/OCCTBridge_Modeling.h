@@ -4451,8 +4451,10 @@ void OCCTThruSectionsCheckCompatibility(OCCTThruSectionsRef _Nonnull ts, bool ch
 void OCCTThruSectionsSetParType(OCCTThruSectionsRef _Nonnull ts, int32_t parType);
 
 /// Set criterium weights for the approximation. Invalidates the cached "built" result — see
-/// OCCTThruSectionsBuild.
-void OCCTThruSectionsSetCriteriumWeight(OCCTThruSectionsRef _Nonnull ts,
+/// OCCTThruSectionsBuild. Returns true if all weights are non-negative (valid); returns false
+/// and does not call OCCT if any weight is negative (OCCT silently ignores negative weights
+/// and Build() erases the failure status, making it unobservable otherwise).
+bool OCCTThruSectionsSetCriteriumWeight(OCCTThruSectionsRef _Nonnull ts,
                                         double w1,
                                         double w2,
                                         double w3);
