@@ -91,7 +91,7 @@ extension ConstructionContext {
         var pointShapes: [(id: PointID, labelId: Int64)] = []
         var failures: [MaterializationFailure] = []
 
-        let snapshot = allEntitiesSnapshot
+        let (planes, axes, points) = allEntitiesSnapshot
         let addShape: (Shape) -> Int64 = { document.addConstructionShape($0) }
 
         // Hoisted above their loops (PR #898 review, finding 3): each closure closes over only
@@ -100,7 +100,7 @@ extension ConstructionContext {
         let buildPlaneShape: (Placement) -> Shape? = {
             self.planeShape(placement: $0, halfSize: options.planeHalfSize)
         }
-        for entry in snapshot.planes {
+        for entry in planes {
             switch materializeOne(
                 id: entry.id, resolution: graph.resolve(entry.value),
                 buildShape: buildPlaneShape,
@@ -118,7 +118,7 @@ extension ConstructionContext {
             self.axisShape(
                 origin: $0.origin, direction: $0.direction, halfLength: options.axisHalfLength)
         }
-        for entry in snapshot.axes {
+        for entry in axes {
             switch materializeOne(
                 id: entry.id, resolution: graph.resolve(entry.value),
                 buildShape: buildAxisShape,
@@ -133,7 +133,7 @@ extension ConstructionContext {
         }
 
         let buildPointShape: (SIMD3<Double>) -> Shape? = { self.pointShape(at: $0) }
-        for entry in snapshot.points {
+        for entry in points {
             switch materializeOne(
                 id: entry.id, resolution: graph.resolve(entry.value),
                 buildShape: buildPointShape,

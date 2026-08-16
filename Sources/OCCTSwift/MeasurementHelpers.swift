@@ -65,7 +65,11 @@ extension Edge {
 extension Face {
     /// This face's UV-domain midpoint, shared by `uvMidpointPoint()`, `uvMidpointNormal()`,
     /// and `uvMidpointSample()` below.
-    private var uvMidpoint: (u: Double, v: Double)? {
+    ///
+    /// - Returns: `(u, v)`, unlabeled — an internal function returning a tuple with baked-in
+    ///   labels forces every call site whose own labels differ into a two-step bind-then-relabel
+    ///   instead of a direct return (`okf/policies/code-style.md`; #914 review, second round).
+    private var uvMidpoint: (Double, Double)? {
         guard let bounds = uvBounds else { return nil }
         return ((bounds.uMin + bounds.uMax) / 2, (bounds.vMin + bounds.vMax) / 2)
     }
@@ -75,8 +79,8 @@ extension Face {
     /// Use this over `uvMidpointSample()` when only the point is needed (e.g.
     /// `revolutionProperties`, PR #897 review) to skip a redundant `normal(atU:v:)` evaluation.
     internal func uvMidpointPoint() -> SIMD3<Double>? {
-        guard let mid = uvMidpoint else { return nil }
-        return point(atU: mid.u, v: mid.v)
+        guard let (u, v) = uvMidpoint else { return nil }
+        return point(atU: u, v: v)
     }
 
     /// This face's normal sampled at its UV-domain midpoint, without evaluating the point too.
@@ -85,8 +89,8 @@ extension Face {
     /// `resolveFaceAxisDirection`'s fallback, PR #897 review) to skip a redundant
     /// `point(atU:v:)` evaluation.
     internal func uvMidpointNormal() -> SIMD3<Double>? {
-        guard let mid = uvMidpoint else { return nil }
-        return normal(atU: mid.u, v: mid.v)
+        guard let (u, v) = uvMidpoint else { return nil }
+        return normal(atU: u, v: v)
     }
 
     /// This face's point + normal sampled at its UV-domain midpoint — a cheap,
@@ -102,10 +106,16 @@ extension Face {
     /// against it directly, rather than delegating to `uvMidpointPoint()`/
     /// `uvMidpointNormal()` — those each independently re-derive `uvMidpoint`, which
     /// would fetch `uvBounds` twice per call here (PR #897 review, 2nd pass).
-    internal func uvMidpointSample() -> (point: SIMD3<Double>, normal: SIMD3<Double>)? {
-        guard let mid = uvMidpoint else { return nil }
-        guard let samplePoint = point(atU: mid.u, v: mid.v),
-            let sampleNormal = normal(atU: mid.u, v: mid.v)
+    ///
+    /// - Returns: `(point, normal)`, unlabeled — an internal function returning a tuple with
+    ///   baked-in labels forces every call site whose own labels differ into a two-step
+    ///   bind-then-relabel instead of a direct return (`okf/policies/code-style.md`; #914
+    ///   review, second round). Every call site destructures into named locals immediately, so
+    ///   this costs nothing at the point of use.
+    internal func uvMidpointSample() -> (SIMD3<Double>, SIMD3<Double>)? {
+        guard let (u, v) = uvMidpoint else { return nil }
+        guard let samplePoint = point(atU: u, v: v),
+            let sampleNormal = normal(atU: u, v: v)
         else {
             return nil
         }
@@ -157,15 +167,17 @@ extension Face {
     /// `uvMidpointSample()` doc already warns delegating to the split accessors "would
     /// fetch `uvBounds` twice per call").
     public func isCoplanar(with other: Face, tolerance: Double = 1e-6) -> Bool? {
-        guard let mid = uvMidpoint, let otherMid = other.uvMidpoint else { return nil }
-        guard let normal = normal(atU: mid.u, v: mid.v),
-            let otherNormal = other.normal(atU: otherMid.u, v: otherMid.v)
+        guard let (midU, midV) = uvMidpoint, let (otherMidU, otherMidV) = other.uvMidpoint else {
+            return nil
+        }
+        guard let normal = normal(atU: midU, v: midV),
+            let otherNormal = other.normal(atU: otherMidU, v: otherMidV)
         else { return nil }
         guard normalsAreParallel(normal, otherNormal, toleranceRadians: 1e-4) == true else {
             return nil
         }
-        guard let point = point(atU: mid.u, v: mid.v),
-            let otherPoint = other.point(atU: otherMid.u, v: otherMid.v)
+        guard let point = point(atU: midU, v: midV),
+            let otherPoint = other.point(atU: otherMidU, v: otherMidV)
         else { return nil }
         let offset = point - otherPoint
         let signedDist = abs(simd_dot(offset, simd_normalize(otherNormal)))

@@ -92,12 +92,17 @@ extension Shape {
     ) -> (SIMD3<Double>, SIMD3<Double>) {
         let n = simd_normalize(normal)
         let u: SIMD3<Double>
+        let v: SIMD3<Double>
         if let explicit = explicitU {
             u = simd_normalize(explicit - simd_dot(explicit, n) * n)
+            v = simd_normalize(simd_cross(n, u))
         } else {
-            (u, _) = perpendicularBasis(to: n)
+            // perpendicularBasis(to:)'s own `up` is already `normalize(cross(v, right))` with
+            // `v == n` and `right == u` here, i.e. bit-for-bit `simd_normalize(simd_cross(n, u))`
+            // — so the explicit-`u` branch's cross product is redundant in this branch and would
+            // just recompute the same answer a second time (#914 review, second round).
+            (u, v) = perpendicularBasis(to: n)
         }
-        let v = simd_normalize(simd_cross(n, u))
         return (u, v)
     }
 

@@ -2412,7 +2412,7 @@ struct ConstructionPlaneTests {
         }
         // Sanity: confirm the fixture really does hit the branch this test claims to exercise.
         #expect(face.project(point: SIMD3(0, 0, 0)) == nil, "fixture should fail to project")
-        guard let expectedFallback = face.uvMidpointSample() else {
+        guard let (expectedFallbackPoint, expectedFallbackNormal) = face.uvMidpointSample() else {
             Issue.record("uvMidpointSample unavailable"); return
         }
 
@@ -2437,9 +2437,9 @@ struct ConstructionPlaneTests {
             // The origin must be the UV-midpoint sample's own point -- a genuine on-face
             // location -- NOT the raw sphere-center input point, which is nowhere near the
             // face's surface (distance = the sphere's own radius, 5).
-            #expect(simd_length(p.origin - expectedFallback.point) < 1e-6)
+            #expect(simd_length(p.origin - expectedFallbackPoint) < 1e-6)
             #expect(simd_length(p.origin) > 1.0, "origin should not be the raw center point")
-            #expect(simd_length(p.zAxis - simd_normalize(expectedFallback.normal)) < 1e-6)
+            #expect(simd_length(p.zAxis - simd_normalize(expectedFallbackNormal)) < 1e-6)
         case .failure(let e):
             Issue.record("tangentToFace failed: \(e)")
         }
@@ -2455,10 +2455,10 @@ struct ConstructionPlaneTests {
         }
         let faceRef = TopologyRef.literal(.init(kind: .face, index: 0))
         guard let face = graph.shape(nodeKind: .face, nodeIndex: 0)?.faces().first,
-              let sample = face.uvMidpointSample() else {
+              let (samplePoint, sampleNormal) = face.uvMidpointSample() else {
             Issue.record("face0 unavailable"); return
         }
-        let faceNormalUnit = simd_normalize(sample.normal)
+        let faceNormalUnit = simd_normalize(sampleNormal)
 
         // Find a vertex that does NOT lie on face 0 -- the genuine misuse scenario finding 2
         // describes, where `at` doesn't actually reference a point on `face`.
@@ -2466,7 +2466,7 @@ struct ConstructionPlaneTests {
         for vertexIndex in 0..<graph.vertexCount {
             let raw = graph.vertexPoint(vertexIndex)
             let p = SIMD3(raw.x, raw.y, raw.z)
-            if abs(simd_dot(p - sample.point, faceNormalUnit)) > 1e-3 {
+            if abs(simd_dot(p - samplePoint, faceNormalUnit)) > 1e-3 {
                 offFaceVertexIndex = vertexIndex
                 break
             }
@@ -2480,7 +2480,7 @@ struct ConstructionPlaneTests {
         switch graph.resolve(ConstructionPlane.tangentToFace(face: faceRef, at: vertexRef)) {
         case .success(let p):
             // The origin must lie ON face 0's plane, not at the raw off-face vertex position.
-            #expect(abs(simd_dot(p.origin - sample.point, faceNormalUnit)) < 1e-6)
+            #expect(abs(simd_dot(p.origin - samplePoint, faceNormalUnit)) < 1e-6)
             #expect(
                 simd_length(p.origin - rawPoint) > 1e-3,
                 "origin should differ from the raw off-face point")
@@ -3406,7 +3406,7 @@ struct ConstructionAxisTests {
         // The origin and direction must come from the SAME location -- the UV midpoint --
         // not the raw, off-face pole vertex paired with a normal sampled elsewhere (#897
         // review, third pass, finding 2).
-        guard let expectedFallback = face.uvMidpointSample() else {
+        guard let (expectedFallbackPoint, expectedFallbackNormal) = face.uvMidpointSample() else {
             Issue.record("uvMidpointSample unavailable"); return
         }
 
@@ -3420,9 +3420,10 @@ struct ConstructionAxisTests {
                 // the fallback UV-midpoint normal (at the sphere's equator) is
                 // nearly perpendicular to it instead.
                 #expect(abs(simd_dot(ax.direction, poleDirection)) < 0.1)
-                #expect(simd_length(ax.origin - expectedFallback.point) < 1e-6)
+                #expect(simd_length(ax.origin - expectedFallbackPoint) < 1e-6)
                 #expect(
-                    simd_length(simd_normalize(ax.direction) - simd_normalize(expectedFallback.normal))
+                    simd_length(
+                        simd_normalize(ax.direction) - simd_normalize(expectedFallbackNormal))
                         < 1e-6)
             case .failure(let e):
                 Issue.record("normalToFace failed at vertex \(vertexIndex): \(e)")

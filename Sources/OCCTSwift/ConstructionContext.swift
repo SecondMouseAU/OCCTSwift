@@ -70,11 +70,17 @@ internal final class EntityStore<ID: ConstructionEntityID, Value: Sendable>: @un
     /// Every entry in insertion order.
     ///
     /// A removed entry is skipped rather than returned as a gap.
-    var all: [(id: ID, name: String?, value: Value)] {
+    ///
+    /// - Returns: `(id, name, value)`, unlabeled — an internal function returning a tuple with
+    ///   baked-in labels forces every call site whose own labels differ into a two-step
+    ///   bind-then-relabel instead of a direct return (`okf/policies/code-style.md`; #914 review,
+    ///   second round). Every consumer of this either passes the array through opaquely or
+    ///   destructures positionally into its own labels.
+    var all: [(ID, String?, Value)] {
         lock.lock()
         defer { lock.unlock() }
         return order.compactMap { id in
-            entries[id].map { (id: id, name: $0.name, value: $0.value) }
+            entries[id].map { (id, $0.name, $0.value) }
         }
     }
 
@@ -119,8 +125,16 @@ public final class ConstructionContext: @unchecked Sendable {
 
     /// Guards `add`, `remove`, `removeAll`, `count` and the atomic cross-store snapshot
     /// (`allEntitiesSnapshot`, used by `allBroken(in:)` and `ConstructionLayer.materialize`)
-    /// against each other so each behaves as one atomic step across all three stores, matching
-    /// the single class-wide lock the pre-#886 implementation held for every operation.
+    /// against each other so each behaves as one atomic step across all three stores.
+    ///
+    /// **Not** every operation this type exposes: `plane(_:)`/`axis(_:)`/`point(_:)`, `name(_:)`,
+    /// and `allPlanes`/`allAxes`/`allPoints` read a single store and take only that store's own
+    /// `EntityStore` lock, not this one. That's a deliberate narrowing from the pre-#886
+    /// implementation's single class-wide lock (which serialized every operation, cross-store
+    /// reads and single-store ones alike) rather than a regression: nothing about a single-store
+    /// read is made incorrect by another store mutating concurrently, and a caller reading two
+    /// different kinds back to back was already two separate, non-atomic lock acquisitions before
+    /// #886 too (#914 review, second round — a doc comment ambiguity, not a behavior bug).
     ///
     /// Each `EntityStore` keeps its own internal lock (a distinct `NSLock`) for its own
     /// single-store operations (`value`, `name`, `all`); nesting this lock around a call into a
@@ -161,16 +175,27 @@ public final class ConstructionContext: @unchecked Sendable {
     /// `ConstructionLayer` shape builder calls back into `ConstructionContext`, so there's no
     /// reentrancy or lock-ordering risk from holding the snapshot's result past the critical
     /// section that produced it.
+    /// - Returns: `(planes, axes, points)`, unlabeled — an internal property returning a tuple
+    ///   with baked-in labels forces every call site whose own labels differ into a two-step
+    ///   bind-then-relabel instead of a direct return (`okf/policies/code-style.md`; #914 review,
+    ///   second round). The inner per-entity element tuples keep their `(id:, name:, value:)`
+    ///   labels — those genuinely are read by name at both call sites, `broken(_:)`'s parameter
+    ///   type and `ConstructionLayer.materialize`'s `entry.id`/`entry.value` — only the outer
+    ///   `(planes:, axes:, points:)` grouping is unlabeled.
     internal var allEntitiesSnapshot:
         (
-            planes: [(id: PlaneID, name: String?, value: ConstructionPlane)],
-            axes: [(id: AxisID, name: String?, value: ConstructionAxis)],
-            points: [(id: PointID, name: String?, value: ConstructionPoint)]
+            [(id: PlaneID, name: String?, value: ConstructionPlane)],
+            [(id: AxisID, name: String?, value: ConstructionAxis)],
+            [(id: PointID, name: String?, value: ConstructionPoint)]
         )
     {
         crossStoreLock.lock()
         defer { crossStoreLock.unlock() }
-        return (planes.all, axes.all, points.all)
+        return (
+            planes.all.map { (id: $0.0, name: $0.1, value: $0.2) },
+            axes.all.map { (id: $0.0, name: $0.1, value: $0.2) },
+            points.all.map { (id: $0.0, name: $0.1, value: $0.2) }
+        )
     }
 
     public init() {}
@@ -225,15 +250,15 @@ public final class ConstructionContext: @unchecked Sendable {
     }
 
     public var allPlanes: [(id: PlaneID, name: String?, plane: ConstructionPlane)] {
-        planes.all.map { (id: $0.id, name: $0.name, plane: $0.value) }
+        planes.all.map { id, name, value in (id: id, name: name, plane: value) }
     }
 
     public var allAxes: [(id: AxisID, name: String?, axis: ConstructionAxis)] {
-        axes.all.map { (id: $0.id, name: $0.name, axis: $0.value) }
+        axes.all.map { id, name, value in (id: id, name: name, axis: value) }
     }
 
     public var allPoints: [(id: PointID, name: String?, point: ConstructionPoint)] {
-        points.all.map { (id: $0.id, name: $0.name, point: $0.value) }
+        points.all.map { id, name, value in (id: id, name: name, point: value) }
     }
 
     // MARK: - Removal
@@ -322,11 +347,11 @@ public final class ConstructionContext: @unchecked Sendable {
     /// concurrent `removeAll()`/`remove()` can't be observed mid-flight — some kinds already
     /// cleared, others not — the same torn-cross-store-read bug class `count()` was fixed for.
     public func allBroken(in graph: BRepGraph) -> BrokenEntities {
-        let snapshot = allEntitiesSnapshot
+        let (planes, axes, points) = allEntitiesSnapshot
         return BrokenEntities(
-            planes: broken(snapshot.planes) { graph.resolve($0) },
-            axes: broken(snapshot.axes) { graph.resolve($0) },
-            points: broken(snapshot.points) { graph.resolve($0) }
+            planes: broken(planes) { graph.resolve($0) },
+            axes: broken(axes) { graph.resolve($0) },
+            points: broken(points) { graph.resolve($0) }
         )
     }
 
@@ -359,13 +384,15 @@ extension Document {
     /// Lazy-associated; created on first access. Construction entities added to the context live
     /// alongside the document's shapes but are not part of the XDE shape tree — they're pure
     /// Swift-side recipes. For persistence guidance see ConstructionContext doc comments.
+    ///
+    /// `valueOrInsert(for:make:)` looks up and (on a miss) constructs+inserts under one lock
+    /// acquisition — a separate `value(for:)` then `set(_:for:)` pair would be a check-then-set
+    /// race: two threads' first access could both miss, both construct a `ConstructionContext`,
+    /// and the loser's instance would be silently unreachable from this document the moment the
+    /// winner's `set` ran, even though it was already handed back to its own caller (#914 review,
+    /// second round).
     public var constructionContext: ConstructionContext {
-        if let existing = Self.constructionContextStorage.value(for: self) {
-            return existing
-        }
-        let new = ConstructionContext()
-        Self.constructionContextStorage.set(new, for: self)
-        return new
+        Self.constructionContextStorage.valueOrInsert(for: self) { ConstructionContext() }
     }
 
     /// Drop this document's associated construction context.
@@ -410,6 +437,26 @@ internal final class DocumentAssociatedStorage<T: AnyObject>: @unchecked Sendabl
         lock.lock()
         defer { lock.unlock() }
         table[ObjectIdentifier(owner)] = value
+    }
+
+    /// Look up an existing value, or construct and insert one, as a single atomic step.
+    ///
+    /// `value(for:)` immediately followed by `set(_:for:)` on a miss is a check-then-set race:
+    /// two callers can both miss the lookup, both construct, and the loser's instance — handed
+    /// back to its own caller as if it were live — is immediately orphaned by the winner's
+    /// `set(_:for:)` overwriting the table entry. `make()` runs while the lock is held, so no
+    /// second caller can observe a miss for the same owner while the first is still constructing
+    /// (#914 review, second round, finding on `Document.constructionContext`).
+    func valueOrInsert(for owner: AnyObject, make: () -> T) -> T {
+        lock.lock()
+        defer { lock.unlock() }
+        let key = ObjectIdentifier(owner)
+        if let existing = table[key] {
+            return existing
+        }
+        let value = make()
+        table[key] = value
+        return value
     }
 
     func clear(for owner: AnyObject) {

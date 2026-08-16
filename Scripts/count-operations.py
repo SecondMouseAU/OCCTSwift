@@ -57,9 +57,11 @@ SUBS = re.compile(r'^\s*public\s+(?:static\s+)?subscript\s*\(')
 # scope is a `public extension` body: Swift raises a member's default access level to match an
 # extension's own stated modifier, so `public extension Foo { func bar() {} }` makes `bar()`
 # genuinely public with no `public` keyword on its own line — invisible to FUNC/INIT/CVAR/SUBS
-# above, which all anchor on a literal `public`. 86 such members across 22 blocks in 6 files were
-# undercounted this way before this fix (#914 review, finding 8; #899/#902's own count moving
-# 4267 -> 4275 on a pure `public extension` -> `extension` + per-member `public` reformat in
+# above, which all anchor on a literal `public`. 64 such members across 22 blocks in 6 files were
+# undercounted this way before this fix (#914 review, finding 8 — corrected from an earlier draft
+# of this comment, which said 86: the derived count only moved 4275 -> 4339, i.e. +64, and a
+# second round of review caught the arithmetic didn't match the comment; #899/#902's own count
+# moving 4267 -> 4275 on a pure `public extension` -> `extension` + per-member `public` reformat in
 # `Shape+Analysis.swift` was this exact defect, caught by accident rather than by the scanner).
 FUNC_BARE = re.compile(r'^\s*(?:static\s+|class\s+)?func\s+([A-Za-z_][A-Za-z0-9_]*)')
 INIT_BARE = re.compile(r'^\s*(?:convenience\s+)?init[?!]?\s*\(')
@@ -98,9 +100,50 @@ DOC_MEMBER = re.compile(
 TYPEISH = re.compile(r'^[A-Z][A-Za-z0-9_]*(?:\.[A-Za-z_][A-Za-z0-9_]*)*$')
 
 
+def _strip_trailing_comment(line):
+    '''Strip a `//...` line comment, but only a `//` that starts outside any double-quoted
+    string literal on this line -- a `//` inside a string (a URL in an @available message is
+    the obvious case) is string content, not a comment marker.
+
+    The blind regex this replaces truncated a message containing a URL at the first `//`,
+    losing the string's own closing quote and the attribute's closing paren -- which then pins
+    the @available scanner's paren depth above zero and silently stops counting the rest of the
+    *file* (#914 review, third pass -- the same "gate that cannot fail" failure mode finding 7
+    fixed, reached through a different door finding 7's fix didn't close). Naive about a
+    triple-quoted string opening mid-line (three double-quote characters in a row toggle
+    in_string an odd number of times, ending up "in a string" rather than genuinely closed) --
+    harmless here: the only caller that reads text past where a triple-quote begins on this same
+    line discards everything from that point on regardless of what this function decided about
+    text after it.
+    '''
+    in_string = False
+    i = 0
+    n = len(line)
+    while i < n - 1:
+        c = line[i]
+        if in_string and c == '\\':
+            i += 2
+            continue
+        if c == '"':
+            in_string = not in_string
+        elif not in_string and c == '/' and line[i + 1] == '/':
+            return line[:i]
+        i += 1
+    return line
+
+
 def _enclosing_type(stack):
-    """Innermost type name on the brace stack, or None at file scope."""
-    return stack[-1][0].split('.')[-1] if stack else None
+    """Innermost *named* type name on the brace stack, or None at file scope.
+
+    Skips shield frames (`name is None`, pushed for a member body/closure/if/for opening
+    directly inside a `public extension` — see `_in_public_extension`'s doc) rather than
+    reading `stack[-1]` directly: those frames carry no type identity of their own, and a
+    counted operation still wants its enclosing type's name, not the frame closest to it.
+    """
+    for name, _, _ in reversed(stack):
+        if name is not None:
+            return name.split('.')[-1]
+    return None
 
 
 def _in_public_extension(stack):
@@ -108,7 +151,10 @@ def _in_public_extension(stack):
 
     Per-frame, not inherited past the innermost one: a plain (non-`public`) type nested inside a
     `public extension` reverts to Swift's ordinary internal default for its own members, same as
-    it would outside one.
+    it would outside one. A member body (or any other non-type brace — closure, `if`, `for`...)
+    opening directly inside a `public extension` gets an explicit shield frame pushed for it (see
+    the main loop below) for the identical reason: a local function nested inside a public
+    extension's member is not itself public just because the enclosing extension is.
     """
     return stack[-1][2] if stack else False
 
@@ -133,7 +179,7 @@ def count_entry_points():
         avail_paren_depth = 0
         avail_pending_unavailable = False
         for i, line in enumerate(open(f, encoding="utf-8", errors="replace"), 1):
-            code = re.sub(r'//.*', '', line)   # crude line-comment strip for brace counting
+            code = _strip_trailing_comment(line)   # string-aware line-comment strip
             enc = _enclosing_type(stack)
 
             if in_avail_string:
@@ -232,6 +278,20 @@ def count_entry_points():
                     # body opens and stays open below this line; a one-liner like
                     # `enum Toggle { case a, b }` (opens == closes) encloses nothing.
                     stack.append((td.group(1), depth, bool(PUBLIC_EXTENSION_DECL.match(line))))
+                elif opens > closes and _in_public_extension(stack):
+                    # A non-type body — a member's own `{` (whichever line it lands on: same
+                    # line as `func`/`var` for the common case, or a later line for a wrapped
+                    # multi-line signature), a closure, an `if`/`for`/`switch`... — opening
+                    # directly inside a `public extension` scope shields everything below it
+                    # from the extension's implicit-public default (#914 review, second round:
+                    # a local `func` nested inside a public extension's member was being counted
+                    # as a public operation, since nothing reset `_in_public_extension` for the
+                    # member body it's actually inside). Pushing this for every body-opener, not
+                    # just member declarations, is deliberately over-broad but harmless: once one
+                    # shield frame is on top, `_in_public_extension` is already False, so this
+                    # branch never re-fires for a construct nested inside an already-shielded
+                    # body — there is no need to special-case which shape of brace this is.
+                    stack.append((None, depth, False))
                 else:
                     while stack and depth < stack[-1][1]:
                         stack.pop()

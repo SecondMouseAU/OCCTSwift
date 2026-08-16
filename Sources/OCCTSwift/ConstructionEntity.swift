@@ -179,7 +179,11 @@ extension BRepGraph {
             return .success((origin, simd_normalize(direction)))
 
         case .alongEdge(let edgeRef):
-            return resolveEdgeDirection(edgeRef)
+            // Result's Success isn't tuple-label-covariant the way a bare tuple return is, so
+            // the relabel has to be explicit here even though the names are identical.
+            return resolveEdgeDirection(edgeRef).map { origin, direction in
+                (origin: origin, direction: direction)
+            }
 
         case .normalToFace(let faceRef, let atRef):
             return resolveVertexPoint(atRef).flatMap { anchor in
@@ -305,6 +309,19 @@ extension BRepGraph {
     /// handle) agrees to within floating-point noise far tighter than even 1e-12, while two
     /// genuinely different cylinders (e.g. this file's T-branch fixture) disagree by orders of
     /// magnitude more than either tolerance.
+    ///
+    /// **This value is a cosine tolerance, not a direct radian one, despite the name's own
+    /// provenance claim above.** `axesAgree` below compares it against `|dot(a, b)| - 1|`, not
+    /// against an angle from `acos`. For unit vectors separated by a small angle θ,
+    /// `1 - |cos θ| ≈ θ²/2`, so the guard actually admits any θ up to
+    /// `sqrt(2 × OCCTPrecision.angular) ≈ 1.41e-6` rad — about six orders of magnitude looser than
+    /// `Precision::Angular()`'s own 1e-12 rad, and looser than a direct `acos(dot(a, b)) <
+    /// OCCTPrecision.angular` comparison would be by the same factor (#914 review, second round).
+    /// Not a live bug: on a 100mm part that's ~0.14 µm of divergence over the part's length,
+    /// harmless in practice and well inside the margin the verification paragraph above already
+    /// measured (floating-point-noise agreement vs. orders-of-magnitude disagreement) — but the
+    /// quantity being compared is `angular²/2`-equivalent, not `angular` itself, and a future
+    /// tightening of this constant should account for the squaring.
     private static let axisDirectionAgreementCosineTolerance = OCCTPrecision.angular
 
     /// Distance threshold for "this point sits on this axis line". Used two ways:
@@ -407,10 +424,10 @@ extension BRepGraph {
     > {
         return resolveFace(ref).flatMap {
             node, face -> Result<(SIMD3<Double>, SIMD3<Double>), ConstructionResolutionError> in
-            guard let sample = face.uvMidpointSample() else {
+            guard let (point, normal) = face.uvMidpointSample() else {
                 return .failure(.missingGeometry(node))
             }
-            return .success((sample.point, sample.normal))
+            return .success((point, normal))
         }
     }
 
@@ -477,8 +494,8 @@ extension BRepGraph {
         SIMD3<Double>, SIMD3<Double>
     )? {
         guard let projection = face.project(point: point) else {
-            guard let fallback = face.uvMidpointSample() else { return nil }
-            return (fallback.point, fallback.normal)
+            guard let (fallbackPoint, fallbackNormal) = face.uvMidpointSample() else { return nil }
+            return (fallbackPoint, fallbackNormal)
         }
         if let normal = face.normal(atU: projection.u, v: projection.v) {
             return (projection.point, normal)
@@ -580,10 +597,10 @@ extension BRepGraph {
                     let onAxis = axis.origin + simd_dot(toPoint, axisDirection) * axisDirection
                     return .success((onAxis, axisDirection))
                 default:
-                    guard let fallback = face.uvMidpointSample() else {
+                    guard let (fallbackPoint, fallbackNormal) = face.uvMidpointSample() else {
                         return .failure(.missingGeometry(node))
                     }
-                    return .success((fallback.point, simd_normalize(fallback.normal)))
+                    return .success((fallbackPoint, simd_normalize(fallbackNormal)))
                 }
             }
             guard let resolved = projectedNormal(on: face, at: point) else {
@@ -671,12 +688,17 @@ extension BRepGraph {
         return simd_length(perpendicular) < Self.axisOriginAgreementDistanceTolerance
     }
 
+    /// - Returns: `(origin, direction)`, unlabeled — an internal function returning a tuple with
+    ///   baked-in labels forces every call site whose own labels differ into a two-step
+    ///   bind-then-relabel instead of a direct return (`okf/policies/code-style.md`; #914 review,
+    ///   second round). The public `resolve(_ axis:)` above returns this directly and its own
+    ///   declared, labeled `(origin:, direction:)` return type supplies the labels for that call.
     private func resolveEdgeDirection(_ ref: TopologyRef) -> Result<
-        (origin: SIMD3<Double>, direction: SIMD3<Double>), ConstructionResolutionError
+        (SIMD3<Double>, SIMD3<Double>), ConstructionResolutionError
     > {
         return resolveEdge(ref).flatMap {
             node, edge -> Result<
-                (origin: SIMD3<Double>, direction: SIMD3<Double>), ConstructionResolutionError
+                (SIMD3<Double>, SIMD3<Double>), ConstructionResolutionError
             > in
             guard let bounds = edge.parameterBounds else {
                 return .failure(.missingGeometry(node))

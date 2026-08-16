@@ -552,6 +552,64 @@ struct ConstructionContextConcurrencyTests {
     }
 }
 
+// MARK: - #914 review, second round: Document.constructionContext lazy-init race
+//
+// `constructionContext` used to be a check-then-set: `value(for:)` miss, construct a
+// `ConstructionContext`, `set(_:for:)`. Two threads' first access to the same fresh `Document`
+// could both miss the lookup and both construct — the loser's instance is returned to its own
+// caller exactly as if it were live, but is immediately unreachable from the document the moment
+// the winner's `set` overwrites the table entry. Anything the loser's caller then adds through it
+// silently disappears: it's in a `ConstructionContext` nothing else can ever reach again. Fixed
+// by `DocumentAssociatedStorage.valueOrInsert(for:make:)`, which does the lookup-and-insert as one
+// atomic step under a single lock acquisition.
+//
+// Same `withTaskGroup` shape as `ConstructionContextConcurrencyTests` above, for the same reason
+// documented there (a blocking `DispatchGroup.wait()` hung CI's full-suite run twice under #898).
+// A single race window is not reliably hit by one run, so this repeats the race `roundCount` times
+// against a fresh `Document` each round rather than relying on one large `taskCount` — matches how
+// `Issue341MeshCafThreadSafetyTests`/`Issue344CDFDirectoryThreadSafetyTests` size their own
+// first-access races. Proven per okf/policies/prove-the-test-fails.md: run against the pre-fix
+// check-then-set implementation, this failed on the first attempt — 2 of 200 rounds torn, one of
+// them all 8 tasks each constructing their own instance; against the fixed
+// `valueOrInsert(for:make:)`, 5 repeated full runs (200 rounds x 8 tasks each = 1000 first-access
+// races per run, 5000 total) produced zero divergent observations.
+@Suite("#914 review, second round: Document.constructionContext lazy-init race")
+struct DocumentConstructionContextRaceTests {
+    @Test("every concurrent first access to a fresh document's constructionContext returns the same instance")
+    func firstAccessRaceReturnsOneInstance() async {
+        let roundCount = 200
+        let taskCount = 8
+        var divergentRounds: [(round: Int, distinct: Int)] = []
+
+        for round in 0..<roundCount {
+            guard let doc = Document.create() else {
+                Issue.record("Document.create() returned nil")
+                return
+            }
+            let ids = await withTaskGroup(of: ObjectIdentifier.self) { group in
+                for _ in 0..<taskCount {
+                    group.addTask {
+                        ObjectIdentifier(doc.constructionContext)
+                    }
+                }
+                var collected: [ObjectIdentifier] = []
+                for await id in group { collected.append(id) }
+                return collected
+            }
+            let distinct = Set(ids).count
+            if distinct != 1 {
+                divergentRounds.append((round, distinct))
+            }
+        }
+
+        let message =
+            "constructionContext returned more than one instance in \(divergentRounds.count) of "
+            + "\(roundCount) rounds under \(taskCount)-way concurrent first access, e.g. "
+            + "\(String(describing: divergentRounds.first))"
+        #expect(divergentRounds.isEmpty, "\(message)")
+    }
+}
+
 // MARK: - v0.142 / #72 Phase 4: Sketch + buildProfile
 
 @Suite("v0.142 Sketch buildProfile")
@@ -780,11 +838,11 @@ struct FaceUVMidpointSampleTests {
         let vMid = (bounds.vMin + bounds.vMax) / 2
         guard let expectedPoint = face.point(atU: uMid, v: vMid),
               let expectedNormal = face.normal(atU: uMid, v: vMid),
-              let sample = face.uvMidpointSample() else {
+              let (samplePoint, sampleNormal) = face.uvMidpointSample() else {
             Issue.record("sample nil"); return
         }
-        #expect(simd_length(sample.point - expectedPoint) < 1e-9)
-        #expect(simd_length(sample.normal - expectedNormal) < 1e-9)
+        #expect(simd_length(samplePoint - expectedPoint) < 1e-9)
+        #expect(simd_length(sampleNormal - expectedNormal) < 1e-9)
     }
 
     @Test("isCoplanar: a face is coplanar with itself")

@@ -124,11 +124,25 @@ A plane containing an edge-derived axis, rotated `angleDeg` degrees from the ref
 case throughAxis(axis: TopologyRef, angleDeg: Double)
 ```
 
-The reference perpendicular is deduced from `worldUp × axis`. Rotation is about the axis direction.
+`axis` resolves through the same `resolveEdgeDirection` helper `alongEdge` uses (see that entry
+above), not a bare endpoint-to-endpoint chord: for a non-linear edge next to a cylindrical or
+conical face whose axis the edge is a genuine circular cross-section of, this resolves to that
+face's true rotation axis, not the edge's own chord — e.g. `axis` naming a hole rim's edge
+resolves to the hole's own axis, anchored where that edge sits along it (#894). A linear edge, or
+a curved one with no qualifying adjacent face, still resolves to its chord as before.
+
+The reference perpendicular is `perpendicularBasis(to: dir)` — the same canonical, `gp_Ax2`-
+matching basis every other perpendicular-to-a-direction site in this module now shares (#881), not
+the previous per-call-site `worldUp × axis`. **Behavior change**, same scope as #881's own: the
+zero-degree reference plane moved for every axis direction except world ±Z (see #881's own
+CHANGELOG entry for the full explanation and a worked example) — a `throughAxis` plane built
+against a world ±X- or ±Y-direction axis at a given `angleDeg` is not the same plane a prior
+release would have built at that angle. Rotation is about the axis direction.
 
 - **Parameters:**
-  - `axis` — topology reference to a linear edge.
-  - `angleDeg` — rotation angle in degrees around the axis.
+  - `axis` — topology reference to an edge; need not be linear (see above).
+  - `angleDeg` — rotation angle in degrees around the axis, from the `perpendicularBasis(to:)`
+    reference.
 
 ---
 
@@ -242,6 +256,15 @@ endpoint-to-endpoint chord instead, the same fallback used for a genuinely linea
 edge with no qualifying adjacent face, or disagreeing candidates (e.g. at a T-branch). This also
 resolves a full-circle edge (a hole rim, say), where the endpoints coincide and a chord would be
 the zero vector. A zero-length fallback result fails with `.degenerate("zero-length edge")`.
+
+Once a qualifying axis is found, its sign is re-derived from the edge's own start→end
+parameterization (`Face.primaryAxis`'s stored sign is the adjacent surface's convention, unrelated
+to which end of the edge is "first") — this needs `Edge.tangent(at:)` at the edge's own start
+point, which can fail even where `Edge.point(at:)` already succeeded (a first-derivative
+singularity on a reparameterized curve). Where that happens, this fails with
+`.degenerate("edge tangent unavailable at start; cannot determine axis sign")` rather than falling
+back to `Face.primaryAxis`'s unflipped, possibly-wrong-signed direction — a plausible-looking wrong
+sign is worse than an explicit failure (#914 review, second round).
 
 ---
 

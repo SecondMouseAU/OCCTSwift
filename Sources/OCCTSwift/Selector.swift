@@ -245,8 +245,25 @@ public final class Selector: @unchecked Sendable {
     ///
     /// Shared by all three `pick` overloads so a field change or addition (e.g. reinterpreting
     /// the `-1` `subShapeIndex` sentinel, see ``PickResult/subShapeIndex``) is made once (#890).
+    ///
+    /// `count` is asserted, not clamped, against `buffer.count`: `OCCTSelectorCollectResults`
+    /// (`OCCTBridge_Visualization.mm`, the shared helper behind all three `OCCTSelectorPick*`
+    /// bridge calls) writes `out[count]` inside a loop gated `count < maxResults` and starts
+    /// `count` at 0, so it is provably always in `[0, maxResults]` on every path, including the
+    /// early `return 0` for a null selector/camera/buffer or `maxResults <= 0` — this was
+    /// measured against the bridge source, not assumed. `0..<Int(count)` unconditionally
+    /// consolidated three copies of that range into one place without adding a guard consolidation
+    /// makes free; an unconditional `assert` here documents and enforces the invariant (a debug
+    /// build traps immediately on the contract being violated by a future bridge change, rather
+    /// than silently reading past `buffer.count` or trapping deeper inside the `map`) while
+    /// costing nothing in a release build, in this picking-hot-path called from UI event handlers
+    /// (#914 review, second round).
     private static func pickResults(from buffer: [OCCTPickResult], count: Int32) -> [PickResult] {
-        (0..<Int(count)).map { i in
+        assert(
+            count >= 0 && Int(count) <= buffer.count,
+            "OCCTSelectorPick* returned \(count), outside its documented [0, \(buffer.count)] range"
+        )
+        return (0..<Int(count)).map { i in
             PickResult(
                 shapeId: buffer[i].shapeId,
                 depth: buffer[i].depth,

@@ -116,35 +116,9 @@ extension Drawing {
     }
 }
 
-/// Deterministic perpendicular basis for `direction`, matching OCCT's own `gp_Ax2(gp_Pnt,
-/// gp_Dir)` algorithm: no magnitude threshold, no fallback branch (#881).
-///
-/// Picks whichever of `direction`'s components has the smallest magnitude and derives the
-/// perpendicular algebraically from it, so it never needs a fallback the way a
-/// `cross(worldUp, direction)` construction does. Shared by every OCCTSwift site that needs a
-/// stable basis perpendicular to one direction.
-///
-/// - Returns: `(right, up)`, unit vectors with `direction` forming a right-handed
-///   basis: `up == cross(direction, right)`.
-internal func perpendicularBasis(to direction: SIMD3<Double>) -> (
-    right: SIMD3<Double>, up: SIMD3<Double>
-) {
-    let v = simd_normalize(direction)
-    let aAbs = abs(v.x)
-    let bAbs = abs(v.y)
-    let cAbs = abs(v.z)
-    let raw: SIMD3<Double>
-    if bAbs <= aAbs && bAbs <= cAbs {
-        raw = aAbs > cAbs ? SIMD3(-v.z, 0, v.x) : SIMD3(v.z, 0, -v.x)
-    } else if aAbs <= bAbs && aAbs <= cAbs {
-        raw = bAbs > cAbs ? SIMD3(0, -v.z, v.y) : SIMD3(0, v.z, -v.y)
-    } else {
-        raw = aAbs > bAbs ? SIMD3(-v.y, v.x, 0) : SIMD3(v.y, -v.x, 0)
-    }
-    let right = simd_normalize(raw)
-    let up = simd_normalize(simd_cross(v, right))
-    return (right, up)
-}
+// perpendicularBasis(to:) moved to PerpendicularBasis.swift (#914 review, second round) —
+// module-wide, not drawing-specific: 3 of its 5 call sites are geometry/construction code, the
+// same misplacement finding 11 fixed for the bridge-unwrap helpers this file never had.
 
 /// Project a 3D point onto the 2D plane perpendicular to `viewDirection`, using
 /// `perpendicularBasis(to:)` — the same perpendicular-axis algorithm `gp_Ax2` uses

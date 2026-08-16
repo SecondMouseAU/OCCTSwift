@@ -95,7 +95,7 @@ public final class Face: @unchecked Sendable {
     /// parameter dance lives here once.
     ///
     /// A third variant, or a validity check on the result, then has one place to go rather than
-    /// two that can drift apart. Delegates to ``unwrapAxisComponents(_:)`` (`ShapeAxis.swift`)
+    /// two that can drift apart. Delegates to ``unwrapAxisComponents(_:)`` (`SIMD3Unpacking.swift`)
     /// for the actual six-out-param unpack, rather than hand-rolling a second copy of it: the two
     /// helpers read the identical shape, and a bare, unlabeled return type is what makes the
     /// delegation a one-liner (#908, following #903/#904's fix to `unwrapAxisComponents` itself).
