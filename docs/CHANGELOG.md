@@ -19,6 +19,445 @@ each named with its migration in [`SEMVER.md`](SEMVER.md#v200).
 
 ## Unreleased
 
+### `ThruSectionsBuilder` no longer returns stale results after a failed rebuild, or after a build on a changed builder that hasn't been rebuilt (#910)
+
+`generatedFace(from:)` and `shape` both read post-build OCCT state without reliably checking
+whether the *last* `build()` call on that instance actually succeeded, and without accounting for
+OCCT's own internal state never resetting between builds or setting changes on a reused builder.
+Fixed in two rounds:
+
+- **Outcome tracking.** A `ThruSectionsBuilder` reused across multiple `build()` calls could
+  silently keep returning a prior successful build's geometry — through `generatedFace(from:)`,
+  `shape`, and `build()`'s own return value — after a later `build()` call on the same instance
+  genuinely failed, including failures that OCCT's own `IsDone()` does not reliably report on a
+  reused builder (a punctual middle section added via `addVertex()`).
+- **Stale binding after a later success.** Even with outcome tracking, a builder that succeeded,
+  then failed, then succeeded again could still have `generatedFace(from:)` answer with a face left
+  over from the *first* success rather than the current one — OCCT's internal edge→face map is
+  additive-only. `generatedFace(from:)` now confirms its answer is actually part of the current
+  `shape` before returning it.
+- **Setting changes without a rebuild.** `setSmoothing`, `setMaxDegree`, `setContinuity`,
+  `checkCompatibility`, `setParType`, and `setCriteriumWeight` now invalidate a prior successful
+  build the same way `addWire`/`addVertex` already did — previously, changing a setting after a
+  successful build left `.shape`/`generatedFace(from:)` silently serving geometry built under the
+  old setting until the caller happened to add a new section too.
+
+Fixed by tracking the real build outcome bridge-side rather than trusting `IsDone()` alone, and by
+verifying `generatedFace(from:)`'s answer against the current build's own shape rather than
+trusting OCCT's internal map.
+
+### `Document.constructionContext`'s lazy-init was a check-then-set race; fixed, plus the rest of the #914 review's second and third rounds
+
+**The one substantive bug, found in the review round after the round that added the concurrency
+hardening it slipped past.** `Document.constructionContext` looked up an existing
+`ConstructionContext` and, on a miss, constructed and stored one — as two separate lock
+acquisitions with nothing atomic across them. Two threads' first access to the same fresh
+`Document` could both miss, both construct, and the loser's instance was returned to its own
+caller exactly as if it were live, but was immediately unreachable from the document once the
+winner's store overwrote the table entry: anything added through the loser's context silently
+disappeared, in a `ConstructionContext` nothing else could ever reach again. This sat directly
+under a `DocumentAssociatedStorage` this same branch had just finished hardening for a different
+purpose (`EntityStore`'s `Value: Sendable`, `crossStoreLock`) and had no coverage of its own.
+Fixed with `DocumentAssociatedStorage.valueOrInsert(for:make:)`, doing the lookup-and-insert as one
+atomic step under a single lock acquisition. New regression test
+(`DocumentConstructionContextRaceTests`) races 8 concurrent first accesses against a fresh
+document across 200 rounds; proven per `okf/policies/prove-the-test-fails.md` — against the
+pre-fix check-then-set code it failed on the first attempt (2 of 200 rounds torn, one with all 8
+tasks each constructing their own instance), against the fix 5 repeated full runs (5000
+first-access races total) produced zero.
+
+Everything else from the same two review rounds, all verified independently rather than accepted
+on the review's word (a "reported (mechanism present, not yet observed)" claim was proven with a
+synthetic fixture and prove-the-test-fails both ways before being trusted):
+
+- **`count-operations.py`**, two more latent scanner bugs, both proven with synthetic fixtures:
+  the `public extension`-body fix (finding 8, previous round) tracked implicit-public status
+  per enclosing-scope *frame*, but a member's own body never pushed a frame, so a local `func`
+  nested inside a public extension's member was itself miscounted as a public entry point — fixed
+  by pushing a shielding, non-public frame for any non-type body (member, closure, `if`/`for`...)
+  opening directly inside a `public extension` scope. Separately, the `@available` string-literal
+  neutraliser (finding 7, previous round) ran on an already comment-stripped line, so a message
+  containing an unescaped `//` (a URL) still truncated the string and re-triggered finding 7's own
+  "gate that cannot fail" failure mode through a different door — fixed by making the line-comment
+  strip itself string-literal-aware. Also corrected a code comment that said 86 previously-
+  undercounted members where the derived count's own arithmetic (4,275 → 4,339, i.e. +64) already
+  said 64.
+- **Stale docs, one pre-existing (not from this branch's own work), rest introduced by the prior
+  round's own fixes**: the CHANGELOG's `#882` bullet wrongly listed spherical and
+  surface-of-extrusion faces as using the axis-of-revolution branch — `resolveFaceAxisDirection`
+  only ever allow-listed cylinder/cone/torus/revolution, and `docs/reference/Construction.md`
+  already said so correctly; only the CHANGELOG bullet was wrong. `Face.swift`'s doc still pointed
+  `unwrapAxisComponents(_:)` at `ShapeAxis.swift`, which the previous round's own finding-11 move
+  had emptied. `docs/reference/Construction.md`'s `throughAxis` entry hadn't been touched despite
+  two real behavior changes reaching it through `resolveEdgeDirection` (the curved-edge axis
+  redirect, and the `perpendicularBasis` reference-perpendicular swap); `alongEdge`'s entry
+  documented one of its two `.degenerate` failure messages but not the second, newer one.
+- **`Drawing.addAutoCentrelines`/`.addAutoCentermarks` are affected by #881 too, and there the
+  change is a *fix*, not a behavior difference**: ground-truthed against the bridge —
+  `OCCTDrawingCreate` builds its 2D projection frame from the same `gp_Ax2`-based basis
+  `perpendicularBasis(to:)` now computes, so for any view direction other than ±Z these two
+  helpers were placing annotations in a frame rotated/mirrored relative to the drawing's own
+  projected edges (worked example: a circle at world `(0, 10, 5)` viewed along `(1, 0, 0)` — old
+  centermark `(10, 5)`, real projected circle at `(5, -10)`). Zero coordinate-level test coverage
+  existed for this before now: `Issue881PerpendicularBasisTests` only checks the helper against
+  `gp_Ax2` constants in isolation, and the pre-existing `DrawingAutoCentrelinesTests`/
+  `AutoCentermarksTests` assert only counts and line style. New test
+  (`AutoCentermarkFrameAgreementTests`) closes the gap directly: builds an off-axis cylinder,
+  projects it, and compares `addAutoCentermarks`'s computed centre against the *actual*
+  OCCT-projected circle's centre read from `drawing.visibleEdges`'s own bounding box — not
+  recomputed via `perpendicularBasis(to:)` a second time, which would just be the existing
+  isolated test again. Proven per prove-the-test-fails: reverting `perpendicularBasis(to:)`
+  reproduces the exact worked-example mismatch above; restored, both agree. Also moved
+  `perpendicularBasis(to:)` itself out of `DrawingAutoCenterlines.swift` into its own file
+  (`PerpendicularBasis.swift`) — module-wide (3 of 5 call sites aren't drawing code), the same
+  misplacement the previous round's finding 11 fixed for the bridge-unwrap helpers.
+- **`okf/policies/code-style.md`'s unlabeled-tuple rule, applied consistently**: six non-public
+  declarations that returned a labeled tuple despite the policy's own absolute rule
+  (`Face.uvMidpointSample()`, `Face.uvMidpoint`, `perpendicularBasis(to:)`,
+  `resolveEdgeDirection(_:)`, `ConstructionContext.allEntitiesSnapshot`, `EntityStore.all`) are now
+  unlabeled, with every call site updated to destructure into named locals rather than losing the
+  names to `.0`/`.1` — no call site's actual field-name readability regressed, including
+  `uvMidpointSample()`'s, whose callers genuinely read `.point`/`.normal` by name and are the case
+  the policy's own "labels were only ever documentation" rationale doesn't cover on its face.
+- **Minor cleanups, all reported findings, no behavior change**: `Selector.pickResults`'s
+  `0..<Int(count)` range now carries an explicit `assert` documenting and enforcing that
+  `OCCTSelectorCollectResults` (the shared helper behind all three `OCCTSelectorPick*` bridge
+  calls) provably keeps `count` in `[0, maxResults]` on every path — measured against the bridge
+  source, not assumed; an assertion rather than a silent clamp, since the invariant already holds
+  and a clamp would paper over a future contract violation instead of catching it. `Shape.
+  sectionPlaneBasis`'s auto-derive branch no longer discards `perpendicularBasis(to:)`'s `up` only
+  to recompute the bit-identical value a second time via its own `cross`+`normalize`.
+  `axisDirectionAgreementCosineTolerance`'s doc corrected: it's compared as `|dot| - 1|`, not via
+  `acos`, so the effective tolerance is `sqrt(2 × OCCTPrecision.angular) ≈ 1.4 µrad`, about six
+  orders of magnitude looser than the `1e-12 rad` the doc's provenance argument implied — not a
+  live bug (still ~0.14 µm of divergence on a 100mm part), just a wrong quantity in the reasoning.
+  `crossStoreLock`'s doc clarified: it does **not** guard every `ConstructionContext` operation,
+  only the cross-store ones it's explicitly named for — `plane(_:)`/`allPlanes`/etc. take only
+  their own per-store lock, a deliberate narrowing from the pre-#886 class-wide lock, not a
+  regression the ambiguous old phrasing could be misread as.
+- **Finding 4 (isCoplanar returning nil, not false, for non-parallel faces) and one further
+  "reported" item (`Shape+Analysis.swift`'s undercounting claim) were investigated and found to
+  need no change**: `isCoplanar`'s nil-for-non-parallel behavior is already documented as
+  intentional in its own doc comment, predating this review.
+
+Verification for the whole round: `swift build` clean; full `swift test` — every touched test
+target run individually plus the full suite; all 6 static gates + their `--self-test`s clean;
+`swift-format lint --strict` + `check-style-manifest.py` clean (the two that broke CI on the
+previous round's own response commit).
+
+### Unified the 5 duplicated "perpendicular basis from a direction" implementations onto OCCT's own `gp_Ax2` algorithm (#881)
+
+`Placement.init(origin:normal:)`, the `.throughAxis` construction-plane case, `Drawing`'s
+axis/point projection helpers, and `Shape.sectionPlaneBasis`'s auto-derive branch previously
+computed the basis perpendicular to a direction 3 different, mutually-inconsistent ways — a
+different `worldUp` fallback threshold, and in one case a reversed cross-product operand order
+that sign-flipped the result. All 5 now share one internal helper matching OCCT's own `gp_Ax2`
+canonical algorithm exactly — verified directly against `gp_Ax2::gp_Ax2(const gp_Pnt&, const
+gp_Dir&)`'s own source (`gp_Ax2.cxx`), not just the constructor's name.
+
+**Behavior change, broader than first stated here:** an earlier version of this entry claimed
+axis-aligned input was unaffected; that was checked against only one axis-aligned direction, not
+all six. **Only world ±Z is unaffected** — every other input, including world ±X and ±Y (the most
+common CAD section-plane normals and view directions), computes a *different* basis than before:
+e.g. for `normal = (1, 0, 0)`, `xAxis` moves from world +Y to world +Z and `yAxis` from +Z to −Y.
+The old per-call-site `cross(worldUp, direction)` construction happened to coincide with `gp_Ax2`'s
+algorithm only at `direction = ±(0, 0, 1)`, where the old code's own degenerate-cross fallback
+branch was already firing. Confirmed by hand for all three axis pairs, not merely reasoned about;
+`Issue881PerpendicularBasisTests` gained axis-aligned cases in a follow-up commit to close the gap.
+This propagates to `Placement(origin:normal:)`, `.throughAxis`, and — via
+`Shape.sectionPlaneBasis`'s auto-derive branch — `Shape.section2D(planeNormal:)`: an X- or
+Y-normal section view built against a prior release renders rotated/mirrored relative to this one.
+
+**`Drawing.addAutoCentrelines(from:viewDirection:)`/`.addAutoCentermarks(...)` are also affected —
+and here the change is a *fix*, not merely a difference.** Ground-truthed against the bridge, not
+inferred: `OCCTDrawingCreate` (`OCCTBridge_Modeling.mm`) builds the drawing's own 2D projection
+frame from `gp_Ax2(gp_Pnt(0,0,0), viewDir)` via `HLRAlgo_Projector` — i.e. exactly the basis
+`perpendicularBasis(to:)` now computes. The removed per-call-site code these two helpers used
+(`right = normalize(cross((0,0,1), viewDirection))`, `up = normalize(cross(viewDirection, right))`)
+coincided with that only at `viewDirection = ±(0,0,1)`, same as everywhere else in this entry —
+so for any other view direction, `addAutoCentrelines`/`addAutoCentermarks` were placing annotations
+in a frame rotated and mirrored relative to the drawing's own projected edges, not merely a
+"differs from before" change. Worked example: a circle centred at world `(0, 10, 5)`, viewed along
+`(1, 0, 0)` — the old code placed its centermark at `(10, 5)`; the drawing's own projected circle
+(via `gp_Ax2`) actually draws at `(5, −10)`. Now they agree. `Issue881PerpendicularBasisTests`
+pins `perpendicularBasis(to:)` itself against `gp_Ax2` constants, not against the projector
+`Drawing.project` actually builds, and the pre-existing `DrawingAutoCentrelinesTests`/
+`AutoCentermarksTests` assert only counts and style, never a coordinate — so this fix has zero
+direct coordinate-level test coverage; see the new test added alongside this note (#914 review,
+third pass, finding 2).
+
+```swift
+// Placement.init(origin:normal:) now derives its x/y axes the same way for every normal,
+// matching the basis OCCT's own gp_Ax2 would derive from the same direction — including the
+// common X/Y/Z-aligned normals, not just oblique ones:
+let p = Placement(origin: .zero, normal: SIMD3(0.16, 0.21, 0.97))
+```
+
+### `count-operations.py` fixed two undercounting bugs; headline moves 4,275 -> 4,339 (#914 review, findings 7 + 8)
+
+Neither bug changed any Swift source — both are in the derivation script itself, so the true
+public-API count was always higher than what README/API_REFERENCE reported.
+
+- **Finding 7**: the `@available(...)` attribute scanner tracked its own argument-list paren depth
+  by counting `(`/`)` across the whole pre-`"""` header of the line, including inside any ordinary
+  (non-triple-quoted) `message:`/`renamed:` string. A single-line attribute whose message contains
+  an unbalanced paren — e.g. `message: "removed in 2.1 (see #123"` — left the scanner's internal
+  depth stuck above zero, which pins `in_avail_attr` true for the rest of the *file*: every later
+  declaration silently stops being counted. Not observed in this tree's current `@available` usage
+  (none of its message strings contain an unbalanced paren today), but the mechanism was live and
+  would recur on the next such message. Fixed by neutralizing complete `"..."` string literals
+  before counting parens. Proven: a synthetic fixture (an `unavailable` declaration with an
+  unbalanced-paren message, followed by two ordinary public functions) went from a derived count of
+  0 for the whole file to the correct 2, both before/after checked directly against the un-fixed and
+  fixed script.
+- **Finding 8**: the FUNC/INIT/CVAR/SUBS matchers all anchor on a literal `public` keyword, but
+  Swift raises a member's default access level to match its enclosing `public extension`'s stated
+  modifier — `public extension Document { func foo() {...} }` makes `foo()` genuinely public with
+  no `public` keyword on its own line. 22 such blocks across `Document.swift`, `DrawingSymbols.swift`,
+  `DrawingThreadAnnotation.swift`, `PresentationMesh.swift`, `Shape+ShapeHealing.swift` and
+  `Shape+Topology.swift` were invisible to the scanner this way. This is the same defect that moved
+  the count 4,267 -> 4,275 once already in this same PR, on a `Shape+Analysis.swift` reformat from
+  `public extension` to `extension` + per-member `public` — caught by accident there, not by the
+  scanner. Fixed at the root instead of by reformatting every remaining site: the scanner now
+  tracks, per enclosing-scope stack frame, whether that frame is a `public extension` body, and
+  treats an unmarked member as public there unless it explicitly narrows
+  (`private`/`fileprivate`/`internal`). README/`API_REFERENCE.md`'s headline and Total move from
+  4,275 to the now-correctly-derived 4,339 (`--fix`); the illustrative categorisation percentage
+  moves from ~78% to ~77% of the total for the same reason (its own row count is unchanged, only
+  the denominator grew).
+
+### `Selector`'s three `pick` overloads share one `OCCTPickResult` -> `PickResult` mapping helper (#890)
+
+Internal dedup, no behavior change: `pick(at:)`/`pick(rect:)`/`pick(polygon:)` used to carry three
+byte-identical copies of the closure that maps a raw pick-result buffer into `[PickResult]`. Now
+one private helper. No public API change.
+
+### `Surface.torusAxis`/`Surface.revolutionAxis` share a bridge-unwrap helper (#891)
+
+Internal dedup, no behavior change: the two accessors used to duplicate the same six-variable
+out-param bridge-unwrap body they'd each hand-rolled independently. Now share a private helper.
+
+### Unify ConstructionContext/ConstructionLayer entity storage; fix planeShape/axisShape fallback asymmetry (#880, #886)
+
+- `ConstructionContext`'s plane/axis/point storage now shares one generic `EntityStore`
+  implementation instead of three hand-written copies (#886). No public API change.
+- `ConstructionLayer.materialize(in:graph:options:)`'s three per-kind loops now share one
+  `materializeOne` helper for the resolve/build/failure-reporting scaffolding (#886). No public
+  API change.
+- Fixed a materialization-fallback asymmetry: `axisShape`'s `Shape.face(from: wire) ??` attempt was
+  provably dead code (an axis's wire is never closed, so it can never succeed) and has been
+  removed; `planeShape` deliberately does **not** gain the equivalent fallback, because the only
+  input that would reach it is a placement corrupted by a zero-length plane normal, where a bare-
+  wire fallback would silently add non-finite (NaN) geometry to the document instead of correctly
+  reporting `.planeShapeFailed` (#880).
+- Fixed a second, separate bug found in the same PR's own review: `materializeOne` wrapped
+  `Document.addConstructionShape`'s result in `.success` without checking its own documented
+  "negative on failure" contract, so a failed add was counted as materialized with a garbage
+  negative `labelId`. Now guards `labelId >= 0` and reports failure instead. **Public API addition**:
+  `ConstructionContext.MaterializationFailure` gains three new cases — `planeAddFailed(PlaneID)`,
+  `axisAddFailed(AxisID)`, `pointAddFailed(PointID)` — distinguishing "the representative shape
+  never built" (the existing `plane`/`axis`/`pointShapeFailed` cases) from "it built fine but
+  `Document.addConstructionShape` rejected it" (these three). Any exhaustive `switch` over the enum
+  outside this package needs updating for the new cases; `MaterializationResult.failures` can now
+  surface them. No input reachable through the public API is currently known to trigger the new
+  guard — confirmed no way to make `addConstructionShape` fail on a shape `materializeOne` just
+  built successfully — so it's exercised only via an injectable `addShape` closure kept internal for
+  testing (#898, review finding 4; flagged as an undocumented public API change in the #914 review).
+- `EntityStore<ID, Value>` now requires `Value: Sendable` instead of leaving `Value` unconstrained
+  under a bare `@unchecked Sendable`. The lock genuinely does make the class's own storage
+  thread-safe, but `@unchecked` disables Sendable checking for the whole type, including whatever
+  `Value` turns out to be — an unconstrained `Value` would let a future non-`Sendable` payload
+  cross concurrency boundaries through `value(_:)`/`all` with no compiler check at all. Costs
+  nothing today: all three instantiations (`ConstructionPlane`/`ConstructionAxis`/`ConstructionPoint`)
+  are already `Sendable` (#914 review, finding 13).
+
+### `ShapeMeasurements.totalFaceArea` and `Shape.surfaceArea`/`surfaceInertiaProperties()`/`surfaceInertia` are documented as separate measurements, not merged (#885)
+
+`ShapeMeasurements.totalFaceArea` (a tolerance-controlled sum of per-face
+`BRepGProp::SurfaceProperties` integrals) and `Shape.surfaceArea` /
+`Shape.surfaceInertiaProperties()?.mass` / `Shape.surfaceInertia?.area` (one untunable,
+whole-shape `BRepGProp::SurfaceProperties` integral, shared bit-for-bit by all three) both answer
+"total surface area" but are different computations that can disagree — usually by an amount too
+small to matter, but tightening `Shape.measure(linearTolerance:)`'s `linearTolerance` moves only
+the first one, and can make the two disagree *more*, not less. No behavior changed; both are now
+documented with explicit cross-references and a measured example of the gap
+(`docs/reference/Measurement.md`, `docs/reference/Shape-Features.md`,
+`docs/reference/Shape-Measurement.md`), and a new regression suite
+(`Tests/OCCTAnalysisTests/Issue885TotalAreaDivergenceTests.swift`) pins the measured behavior.
+
+### `ConstructionAxis.alongEdge` now resolves the true rotation axis for cylindrical/conical edges instead of the endpoint secant (#883, #887)
+
+`ConstructionAxis.alongEdge(_:)` previously computed only the secant between an edge's two
+parameter-bound endpoints, contradicting its own doc comment: a full-circle edge (a hole rim, a
+closed fillet edge) failed with `.degenerate("zero-length edge")` since its endpoints coincide, and
+a partial arc on a cylindrical/conical edge returned the chord between its endpoints as a
+plausible-looking but wrong direction. It now reads the true rotation axis off the edge's adjacent
+face via the existing `Face.primaryAxis` whenever the edge is non-linear and such a face exists,
+falling back to the endpoint secant for genuinely linear edges. Also deduplicated the five
+`BRepGraph.resolve` degeneracy checks (`.byThreePoints`, `.throughPoints`, `.intersectionOfPlanes`,
+`.intersectionOfAxisAndPlane`, `resolveEdgeDirection`) onto one shared helper — no behavior change,
+internal only.
+
+### `boundingBox`/`boundingBoxOptimal` no longer mistake a zero-coordinate shape for bridge failure (#900)
+
+`Shape.boundingBox` and `Shape.boundingBoxOptimal(useShapeTolerance:)` used to infer bridge failure
+from "all six returned coordinates are exactly zero" — indistinguishable from a genuinely
+degenerate/point shape at the world origin, which legitimately computes to all-zero output.
+`OCCTShapeBoundingBox`/`OCCTShapeBoundingBoxOptimal` now return `bool`, backed by an explicit
+`Bnd_Box::IsVoid()` check, matching the `radiusOfGyration`/`centroid` pattern. `nil` now means only
+"the box is void" — a point-vertex shape at the world origin correctly returns
+`(min: .zero, max: .zero)` instead of `nil`:
+
+```swift
+let origin = Shape.vertex(at: .zero)!
+origin.boundingBoxOptimal()   // was nil -> now (min: .zero, max: .zero)
+```
+
+`boundingBoxOptimal` had a live, demonstrated repro (`BRepBndLib::AddOptimal` on a point-vertex at
+the origin); `boundingBox`'s equivalent case is not reachable through any real shape today (OCCT's
+`BRep_Builder::MakeVertex` floors vertex tolerance above zero), but was fixed for the same
+contract regardless.
+
+### Deduplicated the axis-unwrap (six-double) and point/vector-unwrap (three-double) bridge patterns across `Surface`/`Curve3D` onto two shared helpers (#899)
+
+`Surface.CylinderProperties.axis`, `.ConeProperties.axis`, `.PlaneProperties.pln`,
+`.torusAxis`/`.revolutionAxis`, `.SweptProperties.direction`, `Curve3D.CircleProperties.xAxis`/
+`.yAxis`, `.EllipseProperties.directrix1`, `.HyperbolaProperties.asymptote1`,
+`.ParabolaProperties.directrix`, `.LineProperties.position`/`.lin`, `.d1(at:)`, and `.evalD1(at:)`
+(14 properties/methods total) each hand-rolled the same six-`Double`-out-param origin+direction
+unwrap. A further 29 accessors (`Surface`'s sphere/cone centers and apex, plane/BSpline/Bezier
+surface evaluators and poles, `point(atU:v:)`, `normal(u:v:)`, `bsplineLocalDN`; `Curve3D`'s
+circle/ellipse/hyperbola/parabola/line points and foci, Bezier/BSpline curve evaluators and poles,
+`point(at:)`, `bsplineLocalD0`, `bsplineLocalDN`) hand-rolled the equivalent three-`Double`
+single-vector unwrap. Both patterns now go through one new pair of module-internal helpers in
+`ShapeAxis.swift`, `unwrapAxisComponents(_:)` and `unwrapVectorComponents(_:)`. Pure internal
+refactor: no return type, argument label, or computed value changed for any of the 43 touched call
+sites.
+
+Also (test-only, no source behavior change): six accessors' tests
+(`circleXAxis`/`circleYAxis`/`cylinderAxis`/`coneAxis`/`parabolaDirectrix`/`evalD1BSpline`) checked
+only a single component or magnitude, and `coneApex()` made no assertion at all; all seven now
+check the full point/origin/direction the accessor returns.
+
+**Follow-up (#914 review, finding 10):** `unwrapVectorComponents(_:)` only covers the
+always-succeeds shape (a `Void`-returning bridge call). 10 more three-`Double`-out-param sites in
+these same two files report success through their own `Bool` return instead — a different enough
+shape that the original 43-site sweep skipped them rather than mis-converting them. 8 of the 10 are
+a genuine point/vector (`Curve3D.tangentDirection(at:)`, `.normal(at:)`, `.centerOfCurvature(at:)`,
+`.planeNormal(tolerance:)`, `.directionFrom2Points(_:_:)`, `.offsetDirection`;
+`Surface.normal(atU:v:)`, `.nlPlateDerivative(...)`), now sharing a new sibling helper,
+`unwrapVectorComponentsIfSuccessful(_:)`, that returns `SIMD3<Double>?` instead of always
+`SIMD3<Double>`. `offsetDirection`'s own public return type is a labeled `(x:y:z:)` tuple, not
+`SIMD3<Double>`; the shared helper's result is unpacked into that shape rather than changing it —
+another pure internal refactor, no return type, label, or computed value changed at any of the 8.
+The remaining 2 (`Surface.projectPoint`'s `(u, v, distance)`, `.plateErrors`'s `(g0Error, g1Error,
+g2Error)`) are left hand-rolled deliberately: neither triple is a point or a direction, and forcing
+non-vector values through a helper named for vector components would read worse than the three
+lines it would save.
+
+**Also (#914 review, finding 11):** all three helpers (`unwrapAxisComponents`,
+`unwrapVectorComponents`, `unwrapVectorComponentsIfSuccessful`) moved from `ShapeAxis.swift` to
+`SIMD3Unpacking.swift` — module-wide bridge-unwrap helpers, not `ShapeAxis`-specific, and
+`SIMD3Unpacking.swift` is this project's designated home for exactly this duplication class
+(created by #419 for `unpackSIMD3`, the equivalent helper for the batch/array case). No behavior
+change; internal free functions, visible identically from every file in the module either way.
+
+### `unwrapAxisComponents` returns a bare, unlabeled tuple so every call site is a one-liner (#903)
+
+`ShapeAxis.swift`'s `unwrapAxisComponents(_:)` (added by #899/#902) returned a labeled
+`(origin: SIMD3<Double>, direction: SIMD3<Double>)`, which Swift cannot implicitly relabel into a
+differently-labeled destination tuple, so 12 of its 13 call sites needed an intermediate binding
+plus an explicit relabel instead of a direct return. Changed the return type to a bare
+`(SIMD3<Double>, SIMD3<Double>)`; all 12 now return the helper's result directly, picking up
+whatever labels their own declared return type wants. Its sibling `unwrapVectorComponents(_:)`
+already returned a bare `SIMD3<Double>`, so this makes the two helpers consistent with each other.
+The 13th call site, the private `Surface.axis(ifKind:_:)` helper, gets the same bare return type
+for consistency, closing off the same relabel wall for any future caller wanting different labels.
+Pure internal refactor: no return type, argument label, or computed value changed on any public
+accessor. Added a codified convention for this shape to `okf/policies/code-style.md`, and filed
+[#908](https://github.com/SecondMouseAU/OCCTSwift/issues/908) for the two further internal
+helpers (`Face.swift`'s `boundsVia`, `SweepGuideTypes.swift`'s `evaluateGuideTrihedronD0`) found to
+share it.
+
+### `boundsVia` and `evaluateGuideTrihedronD0` return bare, unlabeled tuples (#908)
+
+`Face.swift`'s `boundsVia(...)` (shared by `Face.bounds`/`Face.exactBounds`) and
+`SweepGuideTypes.swift`'s `evaluateGuideTrihedronD0(...)` (shared by
+`GuideTrihedronAC.evaluate`/`GuideTrihedronPlan.evaluate`) had the same labeled-tuple-helper shape
+#903/#904 fixed on `ShapeAxis.swift`'s `unwrapAxisComponents(_:)`: a shared internal/private helper
+baking in its own tuple labels, which Swift cannot implicitly relabel into a differently-labeled
+destination tuple. Neither was a live bug (every current caller already used matching labels), but
+both hit the same wall the moment a caller wanted different ones. Changed both return types to bare
+tuples; `boundsVia` additionally now delegates to `unwrapAxisComponents(_:)` directly instead of
+hand-rolling a second copy of the same six-out-param unpack. Pure `internal`/`private` refactor: no
+public accessor's return type, argument labels, or computed value changed. Added value-level tests
+for `GuideTrihedronAC`/`GuideTrihedronPlan.evaluate` (an orthonormal, right-handed frame check that
+catches any pairwise `tangent`/`normal`/`binormal` swap) and `Face.exactBounds` (a direct
+`min <= max` check per axis, per face), since the existing coverage for those two call sites was
+either non-nil-only or checked only a single component.
+
+### `ConstructionPlane.tangentToFace`, `ConstructionAxis.normalToFace`, `ConstructionPoint.centroidOfFace` now resolve correctly on curved faces (#879, #882, #884, #888, #889)
+
+- **#879**: `ConstructionPlane.tangentToFace(face:at:)` now evaluates the plane's normal at the
+  requested point's own projected location on the face, not the face's UV-domain midpoint. Fixes
+  silently-wrong results on any curved face (cylinder, cone, sphere, torus, freeform); planar faces
+  were already correct by coincidence and are unaffected.
+- **#882**: `ConstructionAxis.normalToFace(face:at:)` now uses the surface's own axis of revolution
+  (`Face.primaryAxis`) for cylindrical, conical, toroidal, and surface-of-revolution faces,
+  matching its documented contract. **Not** spherical or surface-of-extrusion faces, corrected
+  from an earlier draft of this bullet that wrongly listed both: `resolveFaceAxisDirection`
+  allow-lists `.cylinder, .cone, .torus, .revolution` only (`ConstructionEntity.swift`) —
+  extrusion's `primaryAxis.direction` is the sweep tangent, not a surface normal, and a sphere has
+  no intrinsic rotation axis at all, so both take the same UV-midpoint-normal fallback as planar
+  and freeform faces (see `docs/reference/Construction.md`'s `normalToFace` section for the full
+  per-kind breakdown and why each is excluded) (#914 review, third pass).
+- **#884**: `ConstructionPoint.centroidOfFace` now resolves to the face's real area centroid
+  (`Face.surfaceInertia.centerOfMass`, the same value `Shape.measure().faceCentroids` reports),
+  not a UV-parameter midpoint approximation. Fails with `.degenerate(...)` for a zero-area (or
+  otherwise uncomputable) face instead of returning a fabricated point.
+- **#888/#889**: internal dedup only, no observable behavior change — the edge fraction→parameter
+  and face UV-midpoint-sample formulas each now have one implementation instead of several
+  copy-pasted ones.
+
+Landed across four review rounds on the same PR (#897), three of which found further real issues
+in the same functions rather than just polish:
+
+- **Round 2**: `Face.revolutionProperties` no longer computes a spherical face's radius from the
+  axis-relative radial component (correct only by coincidence on an untrimmed sphere sampled at
+  the equator) — now the true, constant sphere radius. `tangentToFace`'s `Placement.origin` is now
+  the actual on-face point the normal was evaluated at, not the raw `at` point verbatim (they could
+  differ, landing the origin off the face's surface, when `at` didn't genuinely lie on `face`), and
+  it now falls back to the UV-midpoint sample when `Face.project(point:)` itself fails to converge,
+  not just when the subsequent normal lookup fails. `normalToFace`'s fallback for faces with no
+  genuine axis (planes, free-form/BSpline surfaces) is now point-aware instead of always answering
+  the fixed UV-midpoint normal. **Source-breaking**: `unsignedAngle(between:and:)` now returns
+  `nil` for degenerate (near-zero-length) input, matching its own doc comment, instead of silently
+  returning `0` — return type changes from `Double` to `Double?`; every existing call site already
+  only consumed it through a guard/optional-chain. That fix's behavior change isn't contained to
+  `unsignedAngle` itself: `Edge.angle(to:)`, `Face.angle(to:)`, `ConstructionAxis.angle(to:in:)`
+  and `ConstructionPlane.angle(to:in:)` all forward its result directly, so a degenerate tangent or
+  normal (a zero-length edge, a cusp, a singular UV-midpoint sample) now makes each of those return
+  `nil` too, instead of silently reporting `0` radians — a false "parallel" answer. `Edge.isParallel
+  (to:)`/`isPerpendicular(to:)` and `Face.isParallel(to:)`/`isPerpendicular(to:)`/`isCoplanar(with:)`
+  go through `angle(to:)` or `normalsAreParallel(_:_:toleranceRadians:)` (both new in this PR, #897
+  review finding 6/11) and so inherit the same `nil`-on-degenerate-input change one level further
+  out (#914 review, finding 5).
+- **Round 3**: `resolveFaceNormal`'s `Face.project(point:)`-failure fallback (`.tangentToFace`) now
+  returns a genuine on-face point as `Placement.origin` instead of the raw, unprojected input point
+  (measured up to 5 units off the face's actual surface). `normalToFace`'s returned origin is now
+  the actual on-face point the direction was evaluated at, for the same no-primary-axis fallback
+  case.
+- **Round 4**: `resolveFaceAxisDirection`'s cylinder/cone/torus/revolution branch now anchors the
+  returned axis on the true rotation axis line instead of the caller's raw, off-axis `at` point —
+  measured 5 units off on a cylinder and 25 units off (its widest point) on a torus; the
+  sphere/extrusion fallback branch had an analogous, lower-severity origin/direction mismatch, also
+  fixed. `revolutionProperties` and `resolveFaceAxisDirection` now switch on the same
+  `ShapeAxis.Kind` enum instead of two independently-maintained case-lists across `Face.SurfaceType`
+  and `ShapeAxis.Kind`.
+- Also (internal, `okf/policies/code-style.md`): unified `resolveFace(_:)`/`resolveEdge(_:)` onto
+  one generic helper, all now returning unlabeled tuples; deleted `Edge.pointByLinearFraction(_:)`
+  (added mid-PR, zero production callers) after `/ultrareview` flagged it as dead code.
+
 ### `ThruSectionsBuilder(isSolid: true)` no longer silently reports success on an uncapped loft (#905)
 
 `ThruSectionsBuilder(isSolid: true)` used to silently omit both end-cap faces for a closed section

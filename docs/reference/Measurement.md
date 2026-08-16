@@ -275,20 +275,24 @@ Free function (defined in `MeasurementHelpers.swift`).
 Unsigned angle in `[0, π]` between two 3D vectors.
 
 ```swift
-public func unsignedAngle(between a: SIMD3<Double>, and b: SIMD3<Double>) -> Double
+public func unsignedAngle(between a: SIMD3<Double>, and b: SIMD3<Double>) -> Double?
 ```
 
-Uses the clamped dot-product formula `acos(dot(a,b) / (|a| * |b|))`. Returns `0` for degenerate (near-zero length) input rather than `nil`.
+Uses the clamped dot-product formula `acos(dot(a,b) / (|a| * |b|))`. Returns `nil` for degenerate
+(near-zero length) input, rather than reporting a degenerate/near-singular vector as parallel (angle
+`0`) to everything (PR #897 review, finding 5).
 
 - **Parameters:**
   - `a` — first vector (need not be unit length).
   - `b` — second vector (need not be unit length).
-- **Returns:** Angle in radians in `[0, π]`. Returns `0` if either vector has length ≤ `1e-12`.
+- **Returns:** Angle in radians in `[0, π]`, or `nil` if either vector has length ≤ `1e-12`.
 - **Example:**
   ```swift
   let a = SIMD3<Double>(1, 0, 0)
   let b = SIMD3<Double>(0, 1, 0)
-  let angle = unsignedAngle(between: a, and: b)  // π/2
+  if let angle = unsignedAngle(between: a, and: b) {
+      print(angle)  // π/2
+  }
   ```
 
 ---
@@ -370,7 +374,7 @@ public struct RevolutionProperties: Sendable, Hashable {
 ```
 
 - `axis` — the primary revolution axis (a `ShapeAxis` carrying `origin` and `direction`).
-- `radius` — distance from the axis to the face centre, in model units. For cylindrical faces this is the exact cylinder radius. For cones, spheres, tori, and surfaces of revolution it is a representative radial distance at the UV midpoint; use `Surface` dedicated properties for major/minor radii.
+- `radius` — distance to a representative surface point, in model units. For cylindrical faces this is the exact cylinder radius. For spherical faces it is the exact, constant sphere radius — every surface point is equidistant from the center regardless of the (arbitrary) pole `primaryAxis` reports for a sphere, so this doesn't depend on `axis` the way the other kinds below do (PR #897 review, finding 1). For cones, tori, and surfaces of revolution it is a representative radial distance from the axis at the UV midpoint, genuinely ambiguous since the true radius varies by position; use `Surface` dedicated properties for major/minor radii.
 
 ---
 
@@ -382,10 +386,10 @@ Axis and representative radius if this face's underlying surface is cylindrical,
 public var revolutionProperties: RevolutionProperties? { get }
 ```
 
-Returns `nil` for planar faces or free-form (B-spline) surfaces. For all supported types the radius is computed as the distance from the axis line to the UV-midpoint of the face.
+Returns `nil` for planar faces or free-form (B-spline) surfaces. For spherical faces the radius is the exact distance from the UV-midpoint sample to the axis origin (the sphere's center) — not an axis-relative radial component, since a sphere's `primaryAxis` is only an arbitrary construction-frame pole, not a real axis (PR #897 review, finding 1). For every other supported type the radius is computed as the distance from the axis line to the UV-midpoint of the face.
 
-- **Returns:** `RevolutionProperties`, or `nil` if `primaryAxis` is unavailable or `surfaceType` is not one of `.cylinder`, `.cone`, `.sphere`, `.torus`, `.surfaceOfRevolution`.
-- **OCCT:** Pure-Swift over `Face.primaryAxis` + `Face.surfaceType` + `Face.uvBounds` + `Face.point(atU:v:)`. `primaryAxis` delegates to `BRepAdaptor_Surface` axis extraction.
+- **Returns:** `RevolutionProperties`, or `nil` if `primaryAxis` is unavailable or its `kind` is not one of `.cylinder`, `.cone`, `.sphere`, `.torus`, `.revolution` (`ShapeAxis.Kind` — not `Face.surfaceType`, switched from the latter to the former in the #914 review, third pass, so this predicate and `resolveFaceAxisDirection`'s identical one in `ConstructionEntity.swift` can't drift apart across two separately-maintained enums).
+- **OCCT:** Pure-Swift over `Face.primaryAxis` + `Face.uvBounds` + `Face.point(atU:v:)`. `primaryAxis` delegates to `BRepAdaptor_Surface` axis extraction.
 - **Note:** For surfaces where "radius" is ambiguous (e.g. a torus has major and minor radius), this returns only a single representative value. Use `Surface` for full parametric detail.
 - **Example:**
   ```swift
@@ -537,7 +541,14 @@ Sum of all face areas.
 public var totalFaceArea: Double { get }
 ```
 
-Convenience over `faceAreas.reduce(0, +)`. Useful as a quick total-surface metric.
+Convenience over `faceAreas.reduce(0, +)`: N independently-toleranced per-face integrals
+(`Face.area(tolerance:)`, tunable via `Shape.measure(linearTolerance:)`).
+
+**Not the same computation as `Shape.surfaceArea` (#885):** see
+[`Shape-Features.md`](Shape-Features.md#surfacearea) for why `Shape.surfaceArea`,
+`Shape.surfaceInertiaProperties().mass` and `Shape.surfaceInertia.area` can disagree with this
+total, and [`Shape.measure(linearTolerance:)`](#shapemeasurelineartolerance) below for the measured
+gap and which total to reach for.
 
 - **Example:**
   ```swift
@@ -597,7 +608,17 @@ public func measure(linearTolerance: Double = 1e-6) -> ShapeMeasurements
 
 Iterates `faces()` and `edge(at:)`, computing all four measurement arrays. The `faceCentroids` array is populated from `Face.surfaceInertia` (which calls `BRepGProp_Sinert`); `facePerimeters` uses `Face.outerWire?.length`.
 
-- **Parameters:** `linearTolerance` — numerical integration tolerance forwarded to `Face.area(tolerance:)` (default `1e-6`). Tighten only if you observe precision issues at the cost of slightly longer computation.
+**`linearTolerance` only ever moves `faceAreas`/`totalFaceArea`, never `Shape.surfaceArea` and its
+two siblings** (see [`Shape-Features.md`](Shape-Features.md#surfacearea) for why, #885). At the
+default `1e-6` the two agree to ~12 significant figures on ordinary shapes (measured on a
+radius-10 sphere: `1256.637061435917` vs `1256.6370614359175`), so tightening `linearTolerance` to
+"fix" a mismatch just makes `totalFaceArea` diverge *further* from the other, unmoved, one. Past
+`linearTolerance = 0.001`, `BRepGProp::SurfaceProperties`'s own adaptive integration gives way to a
+non-adaptive mode (documented on the OCCT call itself), and the gap can become real: the same
+sphere measured `1216.31...` at `linearTolerance: 0.5` against the other three's fixed `1256.64...`,
+a ~3.2% difference, not floating-point noise.
+
+- **Parameters:** `linearTolerance` — numerical integration tolerance forwarded to `Face.area(tolerance:)` (default `1e-6`). Tighten only if you observe precision issues — this does not converge `totalFaceArea` toward `surfaceArea` past a point, see above.
 - **Returns:** A `ShapeMeasurements` snapshot with all four arrays populated and indexed parallel to the shape's face/edge enumeration.
 - **OCCT:** `BRepGProp::SurfaceProperties` (face areas), `BRepGProp_Sinert` (centroids), `BRepGProp::LinearProperties` (edge lengths + outer-wire lengths), `BRepTools::OuterWire` (outer wire lookup).
 - **Example:**
