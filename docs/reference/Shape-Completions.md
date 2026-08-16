@@ -1363,7 +1363,10 @@ Maximum tolerance across all edges in this shape.
 public var maxEdgeTolerance: Double { get }
 ```
 
-- **OCCT:** `BRep_Tool::MaxTolerance` / `ShapeAnalysis_ShapeTolerance`.
+- **OCCT:** `ShapeAnalysis_ShapeTolerance::Tolerance(shape, 1, TopAbs_EDGE)` (via
+  `OCCTShapeMaxEdgeTolerance`). Not `BRep_Tool::MaxTolerance`, which this entry also used to name
+  and which the bridge does not call here; that one is wrapped separately as
+  [`maxTolerance(subShapeType:)`](#maxtolerancesubshapetype). (#808)
 
 ---
 
@@ -1399,7 +1402,12 @@ Whether this shape contains free (non-shared) edges.
 public var hasFreeEdges: Bool { get }
 ```
 
-- **OCCT:** `ShapeAnalysis_FreeBounds` or `BRepCheck_Analyzer`.
+- **OCCT:** `TopExp::MapShapesAndAncestors(shape, TopAbs_EDGE, TopAbs_FACE, map)` into a
+  `TopTools_IndexedDataMapOfShapeListOfShape`, then true as soon as one edge has fewer than two
+  faces (via `OCCTShapeHasFreeEdges`). Neither `ShapeAnalysis_FreeBounds` nor `BRepCheck_Analyzer`,
+  which this entry used to name and neither of which is called here. This is a pure incidence
+  count, so unlike [`freeBounds(sewingTolerance:)`](Shape-Measurement.md#freeboundssewingtolerance)
+  it applies no tolerance and chains nothing into wires. (#808)
 
 ---
 
@@ -1914,7 +1922,10 @@ public func maxTolerance(subShapeType: Int) -> Double
 ```
 
 - **Parameters:** `subShapeType` — OCCT `TopAbs_ShapeEnum` integer: `4`=FACE, `6`=EDGE, `7`=VERTEX.
-- **OCCT:** `BRep_Tool::MaxTolerance` / `ShapeAnalysis_ShapeTolerance`.
+- **OCCT:** `BRep_Tool::MaxTolerance(shape, TopAbs_ShapeEnum)` (via `OCCTBRepToolMaxTolerance`).
+  Not `ShapeAnalysis_ShapeTolerance`, which this entry also used to name and which is not in this
+  chain; that one backs [`maxEdgeTolerance`](#maxedgetolerance) instead. The same wrong pairing
+  appeared on both entries with the two classes the wrong way round; #808 corrected both.
 - **Note:** This is the real `TopAbs_ShapeEnum` ordinal — the same convention `ShapeType`'s raw
   values use, and the one `Shape.maxTolerance(type:)`'s `ShapeType` overload (see
   "Document-Mesh-Fixing") passes through unchanged. It is NOT the same as that method's legacy
@@ -2040,7 +2051,10 @@ public static func setUVPoints(edge: Shape, face: Shape,
 ```
 
 - **Returns:** `true` on success.
-- **OCCT:** `BRep_Tool::UVPoints` (setter overload via `BRep_Builder`).
+- **OCCT:** `BRep_Tool::SetUVPoints(edge, face, first, last)` (via `OCCTBRepToolSetUVPoints`). Not
+  a "setter overload of `BRep_Tool::UVPoints`", and not `BRep_Builder`, which this entry named until
+  #808: `SetUVPoints` is its own static and writes through the edge's
+  `BRep_CurveOnSurface` representation directly. (#808)
 - **Example:**
   ```swift
   let ok = Shape.setUVPoints(edge: e, face: f,

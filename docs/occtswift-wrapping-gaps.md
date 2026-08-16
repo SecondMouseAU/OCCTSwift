@@ -106,6 +106,52 @@ These require implementing C++ abstract classes, which the bridge architecture d
   `DistShapeShape`'s own accessor methods (`PointOnShape1`/`SupportTypeShape1`/…) without the
   bridge ever constructing or naming this class; its header is `#include`d in
   `OCCTBridge_Topology.mm` but never used, same shape as `Geom2d_Direction` below. (#809)
+- `BRep_Curve3D`, `BRep_CurveOn2Surfaces`, `BRep_CurveOnClosedSurface`, `BRep_CurveOnSurface`,
+  `BRep_PointOnCurve`, `BRep_PointOnCurveOnSurface`, `BRep_PointOnSurface`, `BRep_Polygon3D`,
+  `BRep_PolygonOnClosedSurface`, `BRep_PolygonOnClosedTriangulation`, `BRep_PolygonOnSurface`,
+  `BRep_PolygonOnTriangulation`, `BRep_TEdge`, `BRep_TFace`, `BRep_TVertex`, `TopoDS_TCompSolid`,
+  `TopoDS_TCompound`, `TopoDS_TFace`, `TopoDS_TShell`, `TopoDS_TSolid`, `TopoDS_TWire`: the
+  concrete B-Rep storage records behind a `TopoDS_Shape`. A `TopoDS_Shape` is a handle onto one of
+  the `T*` records, and each record holds a list of `BRep_CurveRepresentation` /
+  `BRep_PointRepresentation` entries. Everything a caller can do with them is already reached
+  through `BRep_Tool` (read) and `BRep_Builder`/`TopoDS_Builder` (write), both wrapped;
+  `TopoDS_TShape`'s own header settles the intent, "Users have no direct access to the classes
+  derived from TShape". `BRep_TEdge` is named once in a bridge comment and constructed nowhere.
+  (#808)
+- `BRepAlgoAPI_Algo`, `BRepAlgoAPI_BooleanOperation`, `BRepBuilderAPI_Command`,
+  `BRepBuilderAPI_ModifyShape`, `BRepPrimAPI_MakeOneAxis`, `BRepPrimAPI_MakeSweep`,
+  `BRep_CurveRepresentation`, `BRep_GCurve`, `BRep_PointRepresentation`, `BRep_PointsOnSurface`,
+  `TopoDS_TShape`, `TopoDS_TEdge`, `TopoDS_TVertex`: abstract bases, each with a pure virtual or a
+  protected-only constructor in the pinned header, matching the "Abstract base classes" row in the
+  summary table above. Every concrete subclass a caller would want is wrapped:
+  `BRepAlgoAPI_Common`/`Cut`/`Fuse`/`Section` under `BooleanOperation`,
+  `BRepBuilderAPI_Copy`/`Transform`/`GTransform`/`NurbsConvert` under `ModifyShape`,
+  `BRepPrimAPI_MakeCone`/`MakeCylinder`/`MakeSphere`/`MakeTorus`/`MakeRevolution` under
+  `MakeOneAxis`, and `BRepPrimAPI_MakePrism`/`MakeRevol` plus `BRepOffsetAPI_MakePipe`/
+  `MakePipeShell` under `MakeSweep`. (#808)
+- `BRepCheck` (the package class), `BRepBuilderAPI_BndBoxTreeSelector`,
+  `BRepBuilderAPI_VertexInspector`, `TopTools_LocationSet`, `TopTools_LocationSetPtr`,
+  `TopTools_ShapeSet`, `TopoDS_AlertAttribute`, `TopoDS_AlertWithShape`: internal plumbing of an
+  already-wrapped entry point. `BRepCheck` itself is two statics that append a `BRepCheck_Status`
+  to a result list, while every checker in the package (`BRepCheck_Analyzer`, `_Edge`, `_Face`,
+  `_Wire`, `_Shell`, `_Solid`, `_Vertex`, `_Result`, `_Status`) is wrapped. `TopTools_ShapeSet` and
+  its `TopTools_LocationSet` are the BREP file's shape and location tables, reached through
+  `BRepTools::Write`/`Read`; both are cited by file and line in the docs and in the bridge as the
+  source of the `IsSame` sub-shape enumeration (#541), and neither is ever constructed.
+  `BRepBuilderAPI_VertexInspector`'s only consumer in the whole pinned header set is the deprecated
+  `BRepBuilderAPI_CellFilter` typedef, and `BRepBuilderAPI_BndBoxTreeSelector` has none at all, so
+  both are reachable only from OCCT's own `.cxx`. `TopoDS_AlertWithShape`/`TopoDS_AlertAttribute`
+  carry a `TopoDS_Shape` on a `Message_Alert`; the wrapped `Message_Report` surface reads alert
+  text, not attached shapes, so exposing them would mean adding a shape-valued attribute channel to
+  that surface rather than wrapping a class. (#808)
+- `BRepBuilderAPI_Collect`, `TopoDS_HShape`: the capability is wrapped through a different class.
+  `BRepBuilderAPI_Collect` accumulates `Modified`/`Generated` history across successive
+  `BRepBuilderAPI_MakeShape` runs, and its one consumer in the pinned headers is a private member
+  of `BRepBuilderAPI_GTransform`; the same capability is wrapped as `BRepTools_History`
+  (`History.merge`, `replaceGenerated`, `replaceModified`, `getModifiedShapes`,
+  `getGeneratedShapes`). `TopoDS_HShape` is a `Standard_Transient` handle wrapper around a
+  `TopoDS_Shape`, and OCCTSwift's own `Shape` is already a reference-counted wrapper over the same
+  value, so a second handle type adds a lifetime to manage and no capability. (#808)
 
 ### Classes Not Wrapped At All
 
@@ -165,6 +211,53 @@ These require implementing C++ abstract classes, which the bridge architecture d
   is noted on #917 to land with that file's eventual compliance sweep, not forced in here. So one
   `GCE2d_*` reference remains in the bridge as of this entry; current docs (outside
   `docs/CHANGELOG.md`, a historical record) reference none. (#809, #917)
+- Thirty deprecated collection typedefs: `BRepBuilderAPI_CellFilter`,
+  `BRepCheck_DataMapOfShapeListOfStatus`, `BRepCheck_IndexedDataMapOfShapeResult`,
+  `BRep_ListOfCurveRepresentation`, `BRep_ListOfPointRepresentation`,
+  `TopTools_Array1OfListOfShape`, `TopTools_Array1OfShape`, `TopTools_Array2OfShape`,
+  `TopTools_DataMapOfIntegerListOfShape`, `TopTools_DataMapOfIntegerShape`,
+  `TopTools_DataMapOfOrientedShapeInteger`, `TopTools_DataMapOfOrientedShapeShape`,
+  `TopTools_DataMapOfShapeBox`, `TopTools_DataMapOfShapeInteger`,
+  `TopTools_DataMapOfShapeListOfInteger`, `TopTools_DataMapOfShapeListOfShape`,
+  `TopTools_DataMapOfShapeReal`, `TopTools_DataMapOfShapeSequenceOfShape`,
+  `TopTools_DataMapOfShapeShape`, `TopTools_HArray1OfListOfShape`, `TopTools_HArray1OfShape`,
+  `TopTools_HArray2OfShape`, `TopTools_IndexedDataMapOfShapeAddress`,
+  `TopTools_IndexedDataMapOfShapeReal`, `TopTools_IndexedDataMapOfShapeShape`,
+  `TopTools_IndexedMapOfOrientedShape`, `TopTools_ListOfListOfShape`,
+  `TopTools_MapOfOrientedShape`, `TopTools_MapOfShape`, `TopTools_SequenceOfShape`. Each header
+  carries both `Standard_HEADER_DEPRECATED` at file scope and `Standard_DEPRECATED` on the typedef,
+  all "deprecated since OCCT 8.0.0", and each is a `typedef` for an `NCollection_*` instantiation
+  rather than a distinct class, so the "NCollection containers" row in the summary table above
+  already covers them. **Five more headers in the same deprecated family are still called by the
+  bridge** and so are not listed here: `TopTools_ListOfShape`, `TopTools_IndexedMapOfShape`,
+  `TopTools_IndexedDataMapOfShapeListOfShape`, `TopTools_HSequenceOfShape` and
+  `BRepCheck_ListOfStatus`. `docs/occt-upgrades.md`'s GA breaking-change table names only the
+  second of those as "not yet migrated"; the migration to the canonical `NCollection_*` spelling is
+  outstanding for all five, and none of the five is a wrapping gap, only a spelling one. (#808)
+- `TopoDS_FrozenShape`, `TopoDS_LockedShape`, `TopoDS_UnCompatibleShapes`: `Standard_DomainError`
+  exception types (`DEFINE_STANDARD_EXCEPTION`), not constructible topology. The first two are what
+  a `TopoDS_Shape` modification raises when the shape, or its geometry, is already shared or
+  protected; the third is what `TopoDS_Builder::Add` raises for an incorrect insertion. All three
+  are absorbed by the bridge-wide `catch (...)` the #345 entry in `CLAUDE.md`'s Known OCCT Bugs
+  describes, the same treatment `gp_VectorWithNullMagnitude` gets above. (#808)
+- `BRepBuilderAPI_WireError`, `BRepBuilderAPI_PipeError`, `BRepBuilderAPI_TransitionMode`,
+  `TopTools_FormatVersion`: enums whose **values** the Swift surface already mirrors, without the
+  bridge ever naming the type. `WireBuilder.WireError`, `PipeShellStatus` and `PipeTransitionMode`
+  each mirror their enum case for case in ordinal order (checked against the pinned headers), and
+  the bridge passes the ordinal through as an `int32_t`. `TopTools_FormatVersion` is the one
+  partial case: `BRepTools::Write` is always called with `TopTools_FormatVersion_CURRENT`, so
+  writing an **older** BREP format version is not exposed. That is a deliberate gap rather than an
+  oversight, since an older version is only useful for interoperating with an older OCCT and the
+  reader side handles every version already; a caller who needs it should open an issue. (#808)
+- `BRepBuilderAPI_FaceError`, `BRepBuilderAPI_ShellError`, `BRepBuilderAPI_EdgeError`,
+  `BRepBuilderAPI_ShapeModification`: enums nothing in the tree reads. The first three are the
+  `Error()` status of `BRepBuilderAPI_MakeFace`, `MakeShell` and `MakeEdge`/`MakeEdge2d`
+  respectively (each enum's only consumer in the pinned header set), and the corresponding Swift
+  factories report failure as a `nil` `Shape` and drop the reason, unlike `WireBuilder.error` which
+  surfaces it. Surfacing the other three means changing those factories' return types, which is a
+  public API change rather than a wrap, so it is recorded here rather than done.
+  `BRepBuilderAPI_ShapeModification` is different again: **no** header in the pinned xcframework
+  names it, so OCCT 8.0.1 has no entry point returning it and there is nothing to wrap. (#808)
 
 ### Constraint Solver Infrastructure (Complete)
 

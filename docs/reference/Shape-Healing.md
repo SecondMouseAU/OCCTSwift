@@ -225,7 +225,13 @@ public func convertedToBSpline() -> Shape?
 Replaces every analytic and swept surface with an equivalent BSpline/NURBS form. Useful for export to systems that only handle polynomial geometry.
 
 - **Returns:** Shape with BSpline surfaces, or nil on failure.
-- **OCCT:** `ShapeCustom_BSplineRestriction` / `BRepBuilderAPI_NurbsConvert` (via `OCCTShapeConvertToBSpline`).
+- **OCCT:** `ShapeCustom::ConvertToBSpline(shape, extrusion: true, revolution: true, offset: true,
+  plane: false)`, which drives `ShapeCustom_ConvertToBSpline` through a `BRepTools_Modifier` (via
+  `OCCTShapeConvertToBSpline`). Neither `ShapeCustom_BSplineRestriction` nor
+  `BRepBuilderAPI_NurbsConvert`, which this entry used to name: both are wrapped, but by
+  [`bsplineRestriction(surfaceTolerance:curveTolerance:maxDegree:maxSegments:)`](#bsplinerestrictionsurfacetolerancecurvetolerancemaxdegreemaxsegments)
+  and [`convertedToNURBS()`](#convertedtonurbs) respectively, and neither shares this call path.
+  Note the `plane: false` argument: planar faces are left alone. (#808)
 - **Example:**
   ```swift
   if let bspline = solid.convertedToBSpline() {
@@ -1071,7 +1077,11 @@ Determines the best-fit surface for a set of edges or a wire. Useful for reconst
 
 - **Parameters:** `tolerance` — surface-fitting tolerance; pass -1 to use an automatic value (default).
 - **Returns:** The best-fit `Surface`, or nil if none could be determined.
-- **OCCT:** `BRepBuilderAPI_FindPlane` / `GeomPlate` (via `OCCTShapeFindSurface`).
+- **OCCT:** `BRepLib_FindSurface(shape, tolerance, onlyPlane = false)` (via
+  `OCCTShapeFindSurface`). Neither `BRepBuilderAPI_FindPlane` nor `GeomPlate`, which this entry used
+  to name: `BRepLib_FindSurface` fits any surface, not only a plane, which is what this method's
+  own `Returns` promises. `BRepBuilderAPI_FindPlane` is wrapped, separately, by
+  [`findPlane(tolerance:)`](Shape-Measurement.md#findplanetolerance). (#808)
 - **Example:**
   ```swift
   if let surface = wireFrame.findSurface() {
@@ -1162,7 +1172,10 @@ Joins faces that share common edges into a connected shell by identifying and me
 
 - **Parameters:** `shapes` — array of face or shell shapes to quilt.
 - **Returns:** Quilted shell, or nil on failure.
-- **OCCT:** `BRepBuilderAPI_Sewing` (via `OCCTShapeQuilt`).
+- **OCCT:** `BRepTools_Quilt::Add` then `Shells()` (via `OCCTShapeQuilt`). Not
+  `BRepBuilderAPI_Sewing`, which this entry used to name: quilting joins faces that **already**
+  share edges, where sewing reconciles near-coincident ones within a tolerance. Use
+  [`sewn(tolerance:)`](#sewntolerance) for the latter. (#808)
 - **Example:**
   ```swift
   if let shell = Shape.quilt([top, bottom, left, right, front, back]) { }
@@ -1205,7 +1218,10 @@ public func removingLocations() -> Shape?
 Converts a shape with nested `TopLoc_Location` transforms (as set by assembly placement) into an equivalent shape with all geometry coordinates in the global frame.
 
 - **Returns:** Shape with locations removed (geometry in world coordinates), or nil on failure.
-- **OCCT:** `BRepBuilderAPI_Copy` with location removal (via `OCCTShapeRemoveLocations`).
+- **OCCT:** `ShapeUpgrade_RemoveLocations::Remove` then `GetResult()` (via
+  `OCCTShapeRemoveLocations`). Not `BRepBuilderAPI_Copy`, which this entry used to name and which
+  the bridge does not call here; `BRepBuilderAPI_Copy` is wrapped by
+  `Shape.copy(copyGeometry:copyMesh:)` and does not remove locations. (#808)
 - **Example:**
   ```swift
   if let flat = assemblyShape.removingLocations() {
@@ -1236,7 +1252,11 @@ Unlike `Shape.revolution(profile:...)` which takes a wire, this revolves a `Geom
   - `axisDirection` — direction of the revolution axis (default Z+).
   - `angle` — revolution angle in radians (default full revolution, 2π).
 - **Returns:** Revolved shape, or nil on failure.
-- **OCCT:** `BRepPrimAPI_MakeRevol` (via `OCCTShapeCreateRevolutionFromCurve`).
+- **OCCT:** `BRepPrimAPI_MakeRevolution(gp_Ax2, meridian, angle)` (via
+  `OCCTShapeCreateRevolutionFromCurve`). Not `BRepPrimAPI_MakeRevol`, which this entry used to name:
+  that is the separate class revolving an existing **shape**, and it backs
+  [`Shape.revolve(profile:...)`](Shape.md#shaperevolveprofileaxisoriginaxisdirectionangle). This one revolves a
+  `Geom_Curve` meridian. (#808)
 - **Example:**
   ```swift
   let arc = Curve3D.arc(center: .zero, radius: 5, startAngle: 0, endAngle: .pi)!
@@ -1718,7 +1738,10 @@ The wire is projected/imprinted onto the specified face, dividing it into multip
   - `wire` — wire to imprint onto the face.
   - `faceIndex` — 0-based index of the face to split.
 - **Returns:** Shape with the face split by the wire, or nil on failure.
-- **OCCT:** `BRepAlgoAPI_Splitter` (via `OCCTShapeSplitByWire`).
+- **OCCT:** `BRepFeat_SplitShape::Add(wire, face)` then `Build()` (via `OCCTShapeSplitByWire`),
+  with the face resolved through `TopExp::MapShapes(TopAbs_FACE)`. Not `BRepAlgoAPI_Splitter`, which
+  this entry used to name: that is the boolean splitter taking whole tool shapes, reached from
+  [`split(by:)`](Shape-Features.md#splitby). (#808)
 - **Example:**
   ```swift
   if let split = plate.splittingFace(with: splitWire, faceIndex: 0) { }
@@ -1791,7 +1814,10 @@ More robust than sequential pairwise `union(with:)` calls — processes all inte
 
 - **Parameters:** `shapes` — array of shapes to fuse (must have ≥ 2 elements).
 - **Returns:** Fused shape, or nil on failure.
-- **OCCT:** `BRepAlgoAPI_Fuse` multi-tool mode (via `OCCTShapeFuseMulti`).
+- **OCCT:** `BRepAlgoAPI_BuilderAlgo::SetArguments` then `Build()` (via `OCCTShapeFuseMulti`). Not
+  `BRepAlgoAPI_Fuse`, which this entry used to name and which is never constructed here:
+  `BuilderAlgo` is the general-fuse base, and passing every shape as an argument with no tools is
+  what makes this one pass rather than a chain of pairwise fuses. (#808)
 - **Example:**
   ```swift
   if let merged = Shape.fuseAll([a, b, c, d]) { }
