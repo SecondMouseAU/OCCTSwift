@@ -20,6 +20,11 @@ import simd
 /// print(loft.shape) // nil — build() hasn't run since the new section was added
 /// _ = loft.build() // re-arms shape/generatedFace(from:) for the new section set
 /// ```
+///
+/// `@unchecked Sendable` reflects that a single instance's `ref` is a plain bridge handle, not
+/// that concurrent use of one instance from multiple threads is safe — it isn't (no internal
+/// synchronization, same as every other builder wrapper in this package). Serialize access to a
+/// shared instance with `OCCTSerial.withLock { }`; see `docs/thread-safety.md`.
 public final class ThruSectionsBuilder: @unchecked Sendable {
     internal let ref: OCCTThruSectionsRef
 
@@ -74,14 +79,16 @@ public final class ThruSectionsBuilder: @unchecked Sendable {
         OCCTThruSectionsBuild(ref)
     }
 
-    /// Get the result shape, or `nil` unless a ``build()`` call has succeeded *since* the most
-    /// recent change to this builder's sections (``addWire(_:)``/``addVertex(_:)``) or settings
-    /// (``setSmoothing(_:)``, ``setMaxDegree(_:)``, ``setContinuity(_:)``,
-    /// ``checkCompatibility(_:)``, ``setParType(_:)``, ``setCriteriumWeight(w1:w2:w3:)``). Every
-    /// one of those calls invalidates the previous build's result the same way, so this never
-    /// answers with geometry that predates a change the caller has since made — including on a
-    /// builder reused across multiple `build()` calls, where OCCT's own internal state does not
-    /// reset itself between builds.
+    /// The result shape from the most recent successful build, or `nil`.
+    ///
+    /// `nil` unless a ``build()`` call has succeeded *since* the most recent change to this
+    /// builder's sections (``addWire(_:)``/``addVertex(_:)``) or settings (``setSmoothing(_:)``,
+    /// ``setMaxDegree(_:)``, ``setContinuity(_:)``, ``checkCompatibility(_:)``,
+    /// ``setParType(_:)``, ``setCriteriumWeight(w1:w2:w3:)``). Every one of those calls
+    /// invalidates the previous build's result the same way, so this never answers with geometry
+    /// that predates a change the caller has since made — including on a builder reused across
+    /// multiple `build()` calls, where OCCT's own internal state does not reset itself between
+    /// builds.
     public var shape: Shape? {
         guard let h = OCCTThruSectionsShape(ref) else { return nil }
         return Shape(handle: h)
@@ -112,15 +119,29 @@ extension ThruSectionsBuilder {
 
     /// Get the face generated from a profile edge after the loft is built.
     ///
-    /// Returns `nil` if `edge` isn't a profile edge the current build used, if ``shape`` itself
-    /// would be `nil` right now (see its doc comment for the full invalidation list), or — on a
-    /// builder reused across a success/failure/success sequence — if `edge`'s bound face is a
-    /// leftover from an *earlier* successful build that the current one never overwrote. OCCT's
-    /// `myEdgeFace` map is never cleared between builds, so a reconciliation
-    /// (``checkCompatibility(_:)``) can rebuild every section's edges and leave a stale
-    /// edge → face binding queryable through an edge the caller obtained before the failed build
-    /// in between; this is checked by confirming the returned face is actually part of the
-    /// current ``shape``, not just present in the map, before returning it (#910 review round 2).
+    /// - Parameter edge: A profile edge from one of the input wires.
+    /// - Returns: The generated face, or `nil` if `edge` isn't a profile edge of the current
+    ///   build, if ``shape`` itself would be `nil` right now (see its doc comment for the full
+    ///   invalidation list), or — on a builder reused across a success → failure → success
+    ///   sequence — if `edge`'s bound face is a leftover from an *earlier* successful build that
+    ///   the current one never overwrote. OCCT's `myEdgeFace` map is never cleared between
+    ///   builds, so a reconciliation (``checkCompatibility(_:)``) can rebuild every section's
+    ///   edges and leave a stale edge → face binding queryable through an edge the caller
+    ///   obtained before the failed build in between; this is checked by confirming the returned
+    ///   face is actually part of the current ``shape``, not just present in the map, before
+    ///   returning it (#910 review round 2).
+    ///
+    /// ```swift
+    /// let loft = ThruSectionsBuilder(isSolid: true)
+    /// loft.addWire(bottom)
+    /// loft.addWire(top)
+    /// guard loft.build(), let edge = bottom.subShapes(ofType: .edge).first else { return }
+    /// let face = loft.generatedFace(from: edge)  // the side face swept from `edge`
+    ///
+    /// loft.addWire(mismatchedSection)
+    /// _ = loft.build()                    // false
+    /// loft.generatedFace(from: edge)      // nil — not the previous build's face
+    /// ```
     public func generatedFace(from edge: Shape) -> Shape? {
         guard let h = OCCTThruSectionsGeneratedFace(ref, edge.handle) else { return nil }
         return Shape(handle: h)

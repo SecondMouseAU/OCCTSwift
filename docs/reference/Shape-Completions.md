@@ -1574,7 +1574,11 @@ The result shape after a successful `build()`.
 public var shape: Shape? { get }
 ```
 
-- **Returns:** The lofted `Shape`, or `nil` if `build()` has not been called or failed.
+- **Returns:** The lofted `Shape`, or `nil` unless a `build()` call has succeeded *since* the most
+  recent change to this builder's sections (`addWire(_:)`/`addVertex(_:)`) or settings
+  (`setSmoothing(_:)`, `setMaxDegree(_:)`, `setContinuity(_:)`, `checkCompatibility(_:)`,
+  `setParType(_:)`, `setCriteriumWeight(w1:w2:w3:)`) — every one of those invalidates a prior
+  successful build's result, including on a builder reused across multiple `build()` calls.
 - **OCCT:** `BRepOffsetAPI_ThruSections::Shape`.
 - **Example:**
   ```swift

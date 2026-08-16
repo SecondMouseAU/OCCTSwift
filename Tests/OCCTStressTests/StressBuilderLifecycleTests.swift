@@ -502,6 +502,9 @@ struct StressThruSectionsBuilderLifecycleTests {
         loft.addWire(s3)
         #expect(loft.build())
         let edge = try #require(s1.subShapes(ofType: .edge).first)
+        // Same-topology closed circles need no BRepFill_CompatibleWires re-splitting, so this
+        // edge is bound in myEdgeFace only because the input TShape survives into myWires
+        // unchanged — not a guarantee generatedFace(from:) itself makes for an arbitrary edge.
         #expect(loft.generatedFace(from: edge) != nil)
 
         // A vertex section inserted BETWEEN two real wire sections is a punctual MIDDLE section
@@ -540,6 +543,8 @@ struct StressThruSectionsBuilderLifecycleTests {
         loft.addWire(s3)
         #expect(loft.build())
         let edge = try #require(s1.subShapes(ofType: .edge).first)
+        // Same caveat as generatedFaceNilAfterFailedRebuild: this holds because same-topology
+        // closed circles need no BRepFill_CompatibleWires re-splitting, not as a general contract.
         #expect(loft.generatedFace(from: edge) != nil)
 
         let openWire = try #require(Wire.polygon3D(

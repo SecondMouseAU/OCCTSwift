@@ -902,8 +902,13 @@ public func generatedFace(from edge: Shape) -> Shape?
 ```
 
 - **Parameters:** `edge` — a profile edge from one of the input wires.
-- **Returns:** The generated face shape, or `nil` if not found, or if the builder's most recent
-  `build()` call did not succeed (including on a reused builder, after a later failed rebuild).
+- **Returns:** The generated face shape, or `nil` if `edge` isn't a profile edge of the current
+  build, or if no successful `build()` has happened *since* the most recent change to this
+  builder's sections (`addWire(_:)`/`addVertex(_:)`) or settings (`setSmoothing(_:)`,
+  `setMaxDegree(_:)`, `setContinuity(_:)`, `checkCompatibility(_:)`, `setParType(_:)`,
+  `setCriteriumWeight(w1:w2:w3:)`) — every one of those invalidates the previous build's result,
+  including on a builder reused across a success → failure → success sequence, where OCCT's own
+  internal edge→face map can otherwise hand back an earlier, now-stale build's face.
 - **OCCT:** `BRepOffsetAPI_ThruSections::GeneratedFace`.
 - **Example:**
   ```swift

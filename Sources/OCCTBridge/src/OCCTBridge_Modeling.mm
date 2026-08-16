@@ -8664,6 +8664,13 @@ struct OCCTThruSections {
     // — see each of those functions' own comments for why. OCCTSectionBuilder (below in this same
     // file) has the identical unfixed bug as of this writing (#916) — not a working precedent to
     // copy, a sibling still waiting on this same fix.
+    //
+    // Bridge-side, not a kernel patch: the WrongUsage-skips-NotDone() gap IS a real upstream OCCT
+    // defect (unlike #905/#913's memory corruption, nothing here is unsafe to leave as-is), but
+    // fixing it in Build() wouldn't remove the need for this pattern — GetStatus()/IsDone() only
+    // answer "what did the last Build() call decide", and this bridge's own contract is "did the
+    // last build() call on THIS Swift-visible instance succeed", which needs bridge-owned state
+    // regardless of how precise OCCT's own bookkeeping is.
     bool built = false;
 };
 
