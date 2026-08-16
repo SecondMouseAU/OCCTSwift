@@ -503,8 +503,11 @@ The topology type of the shape as a lowercase string (`"compound"`, `"solid"`, `
 public var shapeTypeString: String { get }
 ```
 
-- **Returns:** Type name string; `"unknown"` if the handle is invalid.
-- **OCCT:** `BRep_Builder` / `TopAbs_ShapeEnum` via `OCCTShapeTypeString`.
+- **Returns:** Type name string. `"null"` for a null handle, `"shape"` for a `TopAbs_ShapeEnum`
+  value outside the eight named ones, and `"unknown"` only if the lookup itself throws.
+- **OCCT:** a `switch` on `TopoDS_Shape::ShapeType()`'s `TopAbs_ShapeEnum` (via
+  `OCCTShapeTypeString`). Not `BRep_Builder`, which this entry also used to name and which is not
+  called here. (#808)
 - **Example:**
   ```swift
   let box = Shape.box(dx: 1, dy: 1, dz: 1)!
