@@ -1434,6 +1434,7 @@ int32_t OCCTShapeHashCode(OCCTShapeRef _Nonnull shape);
 // MARK: - BRepTools/BRepLib Utilities (v0.107.0)
 
 /// Clean all tessellation data from a shape.
+/// Alias kept for the v0.107 name; forwards to OCCTBRepToolsCleanTriangulation.
 void OCCTShapeClean(OCCTShapeRef _Nonnull shape);
 
 /// Clean geometry (PCurves etc.) from a shape.
@@ -1443,6 +1444,7 @@ void OCCTShapeCleanGeometry(OCCTShapeRef _Nonnull shape);
 void OCCTShapeRemoveUnusedPCurves(OCCTShapeRef _Nonnull shape);
 
 /// Update BRep data structures.
+/// Alias kept for the v0.107 name; forwards to OCCTBRepToolsUpdate.
 void OCCTShapeUpdate(OCCTShapeRef _Nonnull shape);
 
 /// Check if an edge has same-range parametrisation.
@@ -1911,6 +1913,7 @@ bool OCCTFaceIsGeometric(OCCTShapeRef _Nonnull face);
 // --- BRepTools statics ---
 
 /// Remove triangulation from a shape (BRepTools::Clean).
+/// Canonical implementation; OCCTShapeClean forwards here.
 void OCCTBRepToolsCleanTriangulation(OCCTShapeRef _Nonnull shape);
 
 /// Remove internal edges/vertices from a shape (BRepTools::RemoveInternals).
@@ -1942,6 +1945,7 @@ bool OCCTBRepToolsCompareEdges(OCCTShapeRef _Nonnull e1, OCCTShapeRef _Nonnull e
 bool OCCTBRepToolsIsReallyClosed(OCCTShapeRef _Nonnull edge, OCCTShapeRef _Nonnull face);
 
 /// Update a shape (all sub-shape types, BRepTools::Update).
+/// Canonical implementation; OCCTShapeUpdate forwards here.
 void OCCTBRepToolsUpdate(OCCTShapeRef _Nonnull shape);
 
 // --- BRepLib extended statics ---
