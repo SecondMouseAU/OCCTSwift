@@ -171,7 +171,7 @@
 #include <BRepBuilderAPI_MakeSolid.hxx>
 #include <BRepBuilderAPI_Sewing.hxx>
 #include <BRepBuilderAPI_MakeEdge.hxx>
-#include <GCE2d_MakeSegment.hxx>
+#include <GC_MakeSegment2d.hxx>
 #include <Geom2d_TrimmedCurve.hxx>
 #include <ShapeFix_Face.hxx>
 #include <ShapeBuild_ReShape.hxx>
@@ -2129,7 +2129,7 @@ OCCTShapeRef OCCTShapeCreateFaceFromSurfaceUVPolygon(OCCTSurfaceRef surface,
             gp_Pnt2d a(uv[2 * i], uv[2 * i + 1]);
             gp_Pnt2d b(uv[2 * j], uv[2 * j + 1]);
             if (a.Distance(b) < Precision::Confusion()) continue;   // skip degenerate segment
-            Handle(Geom2d_TrimmedCurve) seg = GCE2d_MakeSegment(a, b).Value();
+            Handle(Geom2d_TrimmedCurve) seg = GC_MakeSegment2d(a, b).Value();
             TopoDS_Edge e = BRepBuilderAPI_MakeEdge(seg, surf).Edge();
             wireMaker.Add(e);
         }

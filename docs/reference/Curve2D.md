@@ -265,7 +265,8 @@ public static func arcOfCircle(center: SIMD2<Double>, radius: Double,
 
 - **Parameters:** `center` — circle centre; `radius` — radius (> 0); `startAngle` — start angle in radians; `endAngle` — end angle in radians.
 - **Returns:** Circular arc, or `nil` on failure.
-- **OCCT:** `GCE2d_MakeArcOfCircle` → `Geom2d_TrimmedCurve`.
+- **OCCT:** `Geom2d_Circle` + `Geom2d_TrimmedCurve` (direct construction — no `GC_`/`GCE2d_` `Make`
+  helper is used; corrected from a stale `GCE2d_MakeArcOfCircle` attribution by #809).
 - **Example:**
   ```swift
   let arc = Curve2D.arcOfCircle(center: .zero, radius: 5,
@@ -287,7 +288,9 @@ OCCT derives the centre and radius from the three points. The arc sweeps from `p
 
 - **Parameters:** `p1` — start point; `p2` — interior point; `p3` — end point.
 - **Returns:** Arc curve, or `nil` if points are collinear or coincident.
-- **OCCT:** `GCE2d_MakeArcOfCircle(p1, p2, p3)` → `Geom2d_TrimmedCurve`.
+- **OCCT:** `GC_MakeArcOfCircle2d(p1, p2, p3)` → `Geom2d_TrimmedCurve` (corrected from the deprecated
+  `GCE2d_MakeArcOfCircle` spelling by #809 — `GCE2d_MakeArcOfCircle` has been a `using` alias for
+  `GC_MakeArcOfCircle2d` since OCCT 8.0.0, and the implementation calls the latter directly).
 - **Example:**
   ```swift
   let arc = Curve2D.arcThrough(SIMD2(5, 0), SIMD2(0, 5), SIMD2(-5, 0))
@@ -328,7 +331,8 @@ public static func arcOfEllipse(center: SIMD2<Double>, majorRadius: Double,
 
 - **Parameters:** `center` — centre; `majorRadius` — semi-major axis; `minorRadius` — semi-minor axis; `rotation` — major-axis rotation in radians (default 0); `startAngle`/`endAngle` — arc bounds in radians.
 - **Returns:** Elliptical arc, or `nil` on failure.
-- **OCCT:** `GCE2d_MakeArcOfEllipse` → `Geom2d_TrimmedCurve`.
+- **OCCT:** `Geom2d_Ellipse` + `Geom2d_TrimmedCurve` (direct construction — no `GC_`/`GCE2d_` `Make`
+  helper is used; corrected from a stale `GCE2d_MakeArcOfEllipse` attribution by #809).
 - **Example:**
   ```swift
   let arc = Curve2D.arcOfEllipse(center: .zero, majorRadius: 10, minorRadius: 5,
@@ -910,7 +914,8 @@ public static func arcOfHyperbola(center: SIMD2<Double>, majorRadius: Double,
 
 - **Parameters:** `center` — hyperbola centre; `majorRadius` — real semi-axis; `minorRadius` — imaginary semi-axis; `rotation` — major-axis rotation in radians (default 0); `startAngle`/`endAngle` — arc bounds in radians.
 - **Returns:** Hyperbolic arc, or `nil` on failure.
-- **OCCT:** `GCE2d_MakeArcOfHyperbola` → `Geom2d_TrimmedCurve`.
+- **OCCT:** `Geom2d_Hyperbola` + `Geom2d_TrimmedCurve` (direct construction — no `GC_`/`GCE2d_`
+  `Make` helper is used; corrected from a stale `GCE2d_MakeArcOfHyperbola` attribution by #809).
 - **Example:**
   ```swift
   let arc = Curve2D.arcOfHyperbola(center: .zero, majorRadius: 3, minorRadius: 2,
@@ -931,7 +936,8 @@ public static func arcOfParabola(focus: SIMD2<Double>, direction: SIMD2<Double>,
 
 - **Parameters:** `focus` — focus point; `direction` — axis direction; `focalLength` — focal distance (> 0); `startParam`/`endParam` — parameter range of the arc.
 - **Returns:** Parabolic arc, or `nil` on failure.
-- **OCCT:** `GCE2d_MakeArcOfParabola` → `Geom2d_TrimmedCurve`.
+- **OCCT:** `Geom2d_Parabola` + `Geom2d_TrimmedCurve` (direct construction — no `GC_`/`GCE2d_`
+  `Make` helper is used; corrected from a stale `GCE2d_MakeArcOfParabola` attribution by #809).
 - **Example:**
   ```swift
   let arc = Curve2D.arcOfParabola(focus: SIMD2(0, 1), direction: SIMD2(0, 1),
