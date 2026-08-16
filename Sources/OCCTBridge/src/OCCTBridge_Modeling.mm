@@ -12854,11 +12854,16 @@ void OCCTThruSectionsSetParType(OCCTThruSectionsRef ref, int32_t parType)
   }
 }
 
-void OCCTThruSectionsSetCriteriumWeight(OCCTThruSectionsRef ref, double w1, double w2, double w3)
+bool OCCTThruSectionsSetCriteriumWeight(OCCTThruSectionsRef ref, double w1, double w2, double w3)
 {
   auto ts = (OCCTThruSections*)ref;
   if (!ts)
-    return;
+    return false;
+  // Reject negative weights before calling OCCT: OCCT's SetCriteriumWeight silently
+  // ignores them (sets myStatus = Failed but doesn't update myCritWeights), and
+  // Build() then resets myStatus = Done, making the rejection unobservable.
+  if (w1 < 0 || w2 < 0 || w3 < 0)
+    return false;
   try
   {
     ts->builder->SetCriteriumWeight(w1, w2, w3);
@@ -12866,8 +12871,10 @@ void OCCTThruSectionsSetCriteriumWeight(OCCTThruSectionsRef ref, double w1, doub
   }
   catch (...)
   {
+    return false;
   }
   // see OCCTThruSectionsSetSmoothing's comment
+  return true;
 }
 
 OCCTShapeRef OCCTThruSectionsGeneratedFace(OCCTThruSectionsRef ref, OCCTShapeRef edge)

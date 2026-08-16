@@ -19,6 +19,14 @@ each named with its migration in [`SEMVER.md`](SEMVER.md#v200).
 
 ## Unreleased
 
+### `ThruSectionsBuilder.setCriteriumWeight` rejects negative weights (#919)
+
+`setCriteriumWeight(w1:w2:w3:)` now returns `Bool` indicating whether all three weights are
+non-negative. Previously, OCCT's `SetCriteriumWeight` silently ignored negative weights (setting an
+internal `Failed` status that `Build()` then unconditionally overwrites with `Done`), making the
+rejection unobservable. The bridge now validates before calling OCCT and returns `false` if any
+weight is negative. The method is `@discardableResult`, so existing call sites compile unchanged.
+
 ### Over-coverage detector for the #807 refman-coverage audit (#928)
 
 `Scripts/census-doc-occt-attribution.py` checks every OCCT class a doc claim attributes a documented
