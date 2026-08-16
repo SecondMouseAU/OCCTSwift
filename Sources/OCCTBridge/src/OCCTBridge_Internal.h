@@ -421,6 +421,19 @@ inline int32_t occtAnalysisOrderFromGeomAbs(GeomAbs_Shape shape) {
     }
 }
 
+/// #793: int -> TopAbs_Orientation decoder (shared between BRepGraph and Topology)
+/// Both OCCTBridge_BRepGraph.mm (oriFromInt) and OCCTBridge_Topology.mm (intToOrientation)
+/// had identical copies. This is the canonical implementation.
+inline TopAbs_Orientation occtOrientationFromInt(int32_t o) {
+    switch (o) {
+        case 0: return TopAbs_FORWARD;
+        case 1: return TopAbs_REVERSED;
+        case 2: return TopAbs_INTERNAL;
+        case 3: return TopAbs_EXTERNAL;
+        default: return TopAbs_FORWARD;
+    }
+}
+
 // Which of the five analysis predicates an analysis order actually computes. Bit layout matches
 // the OCCTLocalAnalysis*ContinuityFlags bitmask: bit0=C0, bit1=G1, bit2=C1, bit3=G2, bit4=C2.
 //

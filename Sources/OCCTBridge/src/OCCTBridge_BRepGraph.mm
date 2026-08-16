@@ -1849,15 +1849,7 @@ int32_t OCCTBRepGraphEdgeFindCoEdge(OCCTBRepGraphRef g, int32_t edgeIndex, int32
 #include <BRepGraph_Tool.hxx>
 #include <BRepGraph_DeferredScope.hxx>
 
-static TopAbs_Orientation oriFromInt(int32_t o) {
-    switch (o) {
-        case 0: return TopAbs_FORWARD;
-        case 1: return TopAbs_REVERSED;
-        case 2: return TopAbs_INTERNAL;
-        case 3: return TopAbs_EXTERNAL;
-        default: return TopAbs_FORWARD;
-    }
-}
+// #793: use shared occtOrientationFromInt from OCCTBridge_Internal.h
 
 // --- Add Topology Nodes ---
 
@@ -1892,7 +1884,7 @@ int32_t OCCTBRepGraphBuilderAddFaceToShell(OCCTBRepGraphRef g, int32_t shellInde
         auto rid = g->graph.Editor().Shells().Append(
             BRepGraph_ShellId(shellIndex),
             BRepGraph_FaceId(faceIndex),
-            oriFromInt(orientation));
+            occtOrientationFromInt(orientation));
         return rid.IsValid() ? (int32_t)rid.Index : -1;
     } catch (...) { return -1; }
 }
@@ -1904,7 +1896,7 @@ int32_t OCCTBRepGraphBuilderAddShellToSolid(OCCTBRepGraphRef g, int32_t solidInd
         auto rid = g->graph.Editor().Solids().Append(
             BRepGraph_SolidId(solidIndex),
             BRepGraph_ShellId(shellIndex),
-            oriFromInt(orientation));
+            occtOrientationFromInt(orientation));
         return rid.IsValid() ? (int32_t)rid.Index : -1;
     } catch (...) { return -1; }
 }
@@ -2139,7 +2131,7 @@ void OCCTBRepGraphSetCoEdgeParamRange(OCCTBRepGraphRef g, int32_t coedgeIndex, d
 void OCCTBRepGraphSetCoEdgeOrientation(OCCTBRepGraphRef g, int32_t coedgeIndex, int32_t orientation) {
     if (!g) return;
     try {
-        g->graph.Editor().CoEdges().SetOrientation(BRepGraph_CoEdgeId(coedgeIndex), oriFromInt(orientation));
+        g->graph.Editor().CoEdges().SetOrientation(BRepGraph_CoEdgeId(coedgeIndex), occtOrientationFromInt(orientation));
     } catch (...) {}
 }
 
@@ -2214,7 +2206,7 @@ int32_t OCCTBRepGraphShellAddChild(OCCTBRepGraphRef g, int32_t shellIndex,
         auto rid = g->graph.Editor().Shells().Append(
             BRepGraph_ShellId(shellIndex),
             BRepGraph_FaceId(childIndex),
-            oriFromInt(orientation));
+            occtOrientationFromInt(orientation));
         return rid.IsValid() ? (int32_t)rid.Index : -1;
     } catch (...) { return -1; }
 }
@@ -2228,7 +2220,7 @@ int32_t OCCTBRepGraphSolidAddChild(OCCTBRepGraphRef g, int32_t solidIndex,
         auto rid = g->graph.Editor().Solids().Append(
             BRepGraph_SolidId(solidIndex),
             BRepGraph_ShellId(childIndex),
-            oriFromInt(orientation));
+            occtOrientationFromInt(orientation));
         return rid.IsValid() ? (int32_t)rid.Index : -1;
     } catch (...) { return -1; }
 }
@@ -2241,7 +2233,7 @@ int32_t OCCTBRepGraphCompoundAddChild(OCCTBRepGraphRef g, int32_t compoundIndex,
         auto rid = g->graph.Editor().Compounds().Append(
             BRepGraph_CompoundId(compoundIndex),
             BRepGraph_NodeId(kindFromInt(childKind), childIndex),
-            oriFromInt(orientation));
+            occtOrientationFromInt(orientation));
         return rid.IsValid() ? (int32_t)rid.Index : -1;
     } catch (...) { return -1; }
 }
@@ -2254,7 +2246,7 @@ int32_t OCCTBRepGraphCompSolidAddSolid(OCCTBRepGraphRef g, int32_t compSolidInde
         auto rid = g->graph.Editor().CompSolids().Append(
             BRepGraph_CompSolidId(compSolidIndex),
             BRepGraph_SolidId(solidIndex),
-            oriFromInt(orientation));
+            occtOrientationFromInt(orientation));
         return rid.IsValid() ? (int32_t)rid.Index : -1;
     } catch (...) { return -1; }
 }
@@ -2391,7 +2383,7 @@ void OCCTBRepGraphSetVertexRefOrientation(OCCTBRepGraphRef g, int32_t vertexRefI
     if (!g) return;
     try {
         g->graph.Editor().Vertices().SetRefOrientation(
-            BRepGraph_VertexRefId(vertexRefIndex), oriFromInt(orientation));
+            BRepGraph_VertexRefId(vertexRefIndex), occtOrientationFromInt(orientation));
     } catch (...) {}
 }
 
@@ -2498,7 +2490,7 @@ void OCCTBRepGraphSetWireRefOrientation(OCCTBRepGraphRef g, int32_t wireRefIndex
     if (!g) return;
     try {
         g->graph.Editor().Wires().SetRefOrientation(
-            BRepGraph_WireRefId(wireRefIndex), oriFromInt(orientation));
+            BRepGraph_WireRefId(wireRefIndex), occtOrientationFromInt(orientation));
     } catch (...) {}
 }
 
@@ -2526,7 +2518,7 @@ void OCCTBRepGraphSetFaceRefOrientation(OCCTBRepGraphRef g, int32_t faceRefIndex
     if (!g) return;
     try {
         g->graph.Editor().Faces().SetRefOrientation(
-            BRepGraph_FaceRefId(faceRefIndex), oriFromInt(orientation));
+            BRepGraph_FaceRefId(faceRefIndex), occtOrientationFromInt(orientation));
     } catch (...) {}
 }
 
@@ -2543,7 +2535,7 @@ void OCCTBRepGraphSetShellRefOrientation(OCCTBRepGraphRef g, int32_t shellRefInd
     if (!g) return;
     try {
         g->graph.Editor().Shells().SetRefOrientation(
-            BRepGraph_ShellRefId(shellRefIndex), oriFromInt(orientation));
+            BRepGraph_ShellRefId(shellRefIndex), occtOrientationFromInt(orientation));
     } catch (...) {}
 }
 
@@ -2560,7 +2552,7 @@ void OCCTBRepGraphSetSolidRefOrientation(OCCTBRepGraphRef g, int32_t solidRefInd
     if (!g) return;
     try {
         g->graph.Editor().Solids().SetRefOrientation(
-            BRepGraph_SolidRefId(solidRefIndex), oriFromInt(orientation));
+            BRepGraph_SolidRefId(solidRefIndex), occtOrientationFromInt(orientation));
     } catch (...) {}
 }
 
@@ -2599,7 +2591,7 @@ void OCCTBRepGraphSetChildRefOrientation(OCCTBRepGraphRef g, int32_t childRefInd
     if (!g) return;
     try {
         g->graph.Editor().Gen().SetChildRefOrientation(
-            BRepGraph_ChildRefId(childRefIndex), oriFromInt(orientation));
+            BRepGraph_ChildRefId(childRefIndex), occtOrientationFromInt(orientation));
     } catch (...) {}
 }
 
@@ -2680,7 +2672,7 @@ void OCCTBRepGraphCoEdgeAddPCurve(OCCTBRepGraphRef g, int32_t edgeIndex, int32_t
         (void)g->graph.Editor().CoEdges().Add(
             BRepGraph_EdgeId(edgeIndex),
             BRepGraph_FaceId(faceIndex),
-            h, first, last, oriFromInt(orientation));
+            h, first, last, occtOrientationFromInt(orientation));
     } catch (...) {}
 }
 
