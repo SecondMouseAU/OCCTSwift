@@ -1,10 +1,16 @@
 import Foundation
-import simd
 import OCCTBridge
+import simd
 
 /// Shared marshaling for `GuideTrihedronAC.evaluate`/`GuideTrihedronPlan.evaluate`: both call a
 /// bridge `D0` function of the same `(ref, param, 9x double*) -> Bool` shape and pack the same
 /// tangent/normal/binormal triple, differing only in which bridge function they call (#796).
+///
+/// Returns a bare, unlabeled tuple, not `(tangent:, normal:, binormal:)`, so both callers' own
+/// declared return types supply whatever labels they want directly, the same reasoning
+/// `unwrapAxisComponents(_:)` (`ShapeAxis.swift`) was given in #903/#904 (#908): a labeled source
+/// tuple does not implicitly convert into a differently-labeled destination, even when every
+/// caller today happens to agree on the same labels.
 private func evaluateGuideTrihedronD0<Ref>(
     _ ref: Ref, param: Double,
     using d0: (
@@ -13,10 +19,16 @@ private func evaluateGuideTrihedronD0<Ref>(
         UnsafeMutablePointer<Double>, UnsafeMutablePointer<Double>, UnsafeMutablePointer<Double>,
         UnsafeMutablePointer<Double>, UnsafeMutablePointer<Double>, UnsafeMutablePointer<Double>
     ) -> Bool
-) -> (tangent: SIMD3<Double>, normal: SIMD3<Double>, binormal: SIMD3<Double>)? {
-    var tx = 0.0, ty = 0.0, tz = 0.0
-    var nx = 0.0, ny = 0.0, nz = 0.0
-    var bx = 0.0, by = 0.0, bz = 0.0
+) -> (SIMD3<Double>, SIMD3<Double>, SIMD3<Double>)? {
+    var tx = 0.0
+    var ty = 0.0
+    var tz = 0.0
+    var nx = 0.0
+    var ny = 0.0
+    var nz = 0.0
+    var bx = 0.0
+    var by = 0.0
+    var bz = 0.0
     guard d0(ref, param, &tx, &ty, &tz, &nx, &ny, &nz, &bx, &by, &bz) else { return nil }
     return (SIMD3(tx, ty, tz), SIMD3(nx, ny, nz), SIMD3(bx, by, bz))
 }
@@ -39,16 +51,22 @@ public final class LocationDraft: @unchecked Sendable {
         return LocationDraft(handle: ref)
     }
 
-    /// Set the sweep path curve. Returns true on success.
+    /// Set the sweep path curve.
+    ///
+    /// Returns true on success.
     @discardableResult
     public func setCurve(_ curve: Curve3D) -> Bool {
         OCCTGeomFillLocationDraftSetCurve(handle, curve.handle)
     }
 
-    /// Evaluate the frame at a parameter. Returns (matrix3x3, translation) or nil.
+    /// Evaluate the frame at a parameter.
+    ///
+    /// Returns (matrix3x3, translation) or nil.
     public func evaluate(at param: Double) -> (matrix: [Double], translation: SIMD3<Double>)? {
         var mat = [Double](repeating: 0, count: 9)
-        var vx = 0.0, vy = 0.0, vz = 0.0
+        var vx = 0.0
+        var vy = 0.0
+        var vz = 0.0
         guard OCCTGeomFillLocationDraftD0(handle, param, &mat, &vx, &vy, &vz) else { return nil }
         return (mat, SIMD3(vx, vy, vz))
     }
@@ -60,7 +78,9 @@ public final class LocationDraft: @unchecked Sendable {
 
     /// Get the draft direction.
     public var direction: SIMD3<Double> {
-        var x = 0.0, y = 0.0, z = 0.0
+        var x = 0.0
+        var y = 0.0
+        var z = 0.0
         OCCTGeomFillLocationDraftDirection(handle, &x, &y, &z)
         return SIMD3(x, y, z)
     }
@@ -84,14 +104,18 @@ public final class GuideTrihedronAC: @unchecked Sendable {
         return GuideTrihedronAC(handle: ref)
     }
 
-    /// Set the sweep path curve. Returns true on success.
+    /// Set the sweep path curve.
+    ///
+    /// Returns true on success.
     @discardableResult
     public func setCurve(_ curve: Curve3D) -> Bool {
         OCCTGeomFillGuideTrihedronACSetCurve(handle, curve.handle)
     }
 
     /// Evaluate the trihedron frame at a parameter.
-    public func evaluate(at param: Double) -> (tangent: SIMD3<Double>, normal: SIMD3<Double>, binormal: SIMD3<Double>)? {
+    public func evaluate(at param: Double) -> (
+        tangent: SIMD3<Double>, normal: SIMD3<Double>, binormal: SIMD3<Double>
+    )? {
         evaluateGuideTrihedronD0(handle, param: param, using: OCCTGeomFillGuideTrihedronACD0)
     }
 }
@@ -114,14 +138,18 @@ public final class GuideTrihedronPlan: @unchecked Sendable {
         return GuideTrihedronPlan(handle: ref)
     }
 
-    /// Set the sweep path curve. Returns true on success.
+    /// Set the sweep path curve.
+    ///
+    /// Returns true on success.
     @discardableResult
     public func setCurve(_ curve: Curve3D) -> Bool {
         OCCTGeomFillGuideTrihedronPlanSetCurve(handle, curve.handle)
     }
 
     /// Evaluate the trihedron frame at a parameter.
-    public func evaluate(at param: Double) -> (tangent: SIMD3<Double>, normal: SIMD3<Double>, binormal: SIMD3<Double>)? {
+    public func evaluate(at param: Double) -> (
+        tangent: SIMD3<Double>, normal: SIMD3<Double>, binormal: SIMD3<Double>
+    )? {
         evaluateGuideTrihedronD0(handle, param: param, using: OCCTGeomFillGuideTrihedronPlanD0)
     }
 }
@@ -142,7 +170,9 @@ public final class NSections: @unchecked Sendable {
     public static func create(wires: [Shape]) -> NSections? {
         let refs = wires.map { $0.handle as OCCTShapeRef }
         return refs.withUnsafeBufferPointer { buf in
-            guard let ref = OCCTBRepFillNSectionsCreate(buf.baseAddress!, Int32(wires.count)) else { return nil }
+            guard let ref = OCCTBRepFillNSectionsCreate(buf.baseAddress!, Int32(wires.count)) else {
+                return nil
+            }
             return NSections(handle: ref)
         }
     }

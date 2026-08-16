@@ -8655,6 +8655,23 @@ OCCTShapeRef OCCTBooleanCutWithHistory(OCCTShapeRef s1, OCCTShapeRef s2, double 
 struct OCCTThruSections {
     BRepOffsetAPI_ThruSections* builder;
     int sectionCount = 0;
+    // #910: neither IsDone() nor GetStatus() alone is a reliable "did the last Build() succeed"
+    // signal on a REUSED builder — Build()'s two punctual-section WrongUsage returns skip
+    // NotDone(), so IsDone() can stay stale-true past a failed rebuild; the AND-form here is what
+    // Shape()/GeneratedFace() gate on instead of re-deriving it from OCCT state per call. Every
+    // mutator (AddWire/AddVertex/the six Set*/CheckCompatibility calls) resets this to false, and
+    // GeneratedFace() separately confirms the face it finds is still part of the current Shape()
+    // — see each of those functions' own comments for why. OCCTSectionBuilder (below in this same
+    // file) has the identical unfixed bug as of this writing (#916) — not a working precedent to
+    // copy, a sibling still waiting on this same fix.
+    //
+    // Bridge-side, not a kernel patch: the WrongUsage-skips-NotDone() gap IS a real upstream OCCT
+    // defect (unlike #905/#913's memory corruption, nothing here is unsafe to leave as-is), but
+    // fixing it in Build() wouldn't remove the need for this pattern — GetStatus()/IsDone() only
+    // answer "what did the last Build() call decide", and this bridge's own contract is "did the
+    // last build() call on THIS Swift-visible instance succeed", which needs bridge-owned state
+    // regardless of how precise OCCT's own bookkeeping is.
+    bool built = false;
 };
 
 OCCTThruSectionsRef OCCTThruSectionsCreate(bool isSolid, bool isRuled, double pres3d) {
@@ -8677,6 +8694,9 @@ void OCCTThruSectionsAddWire(OCCTThruSectionsRef ref, OCCTShapeRef wire) {
     try {
         ts->builder->AddWire(TopoDS::Wire(wire->shape));
         ts->sectionCount++;
+        // #910: a section added after a successful build belongs to a build that hasn't happened
+        // yet — see the struct's `built` comment.
+        ts->built = false;
     } catch (...) {}
 }
 
@@ -8686,6 +8706,7 @@ void OCCTThruSectionsAddVertex(OCCTThruSectionsRef ref, OCCTShapeRef vertex) {
     try {
         ts->builder->AddVertex(TopoDS::Vertex(vertex->shape));
         ts->sectionCount++;
+        ts->built = false; // see OCCTThruSectionsAddWire's comment
     } catch (...) {}
 }
 
@@ -8693,12 +8714,17 @@ void OCCTThruSectionsSetSmoothing(OCCTThruSectionsRef ref, bool smoothing) {
     auto ts = (OCCTThruSections*)ref;
     if (!ts) return;
     ts->builder->SetSmoothing(smoothing);
+    ts->built = false; // #910 review round 2 finding 2: see OCCTThruSectionsAddWire's comment —
+    // every setter that changes what the NEXT Build() will produce needs the same invalidation
+    // AddWire/AddVertex already got, or a caller reading .shape/.generatedFace after changing a
+    // setting on a previously-built instance gets stale geometry that predates the change.
 }
 
 void OCCTThruSectionsSetMaxDegree(OCCTThruSectionsRef ref, int32_t maxDeg) {
     auto ts = (OCCTThruSections*)ref;
     if (!ts) return;
     ts->builder->SetMaxDegree(maxDeg);
+    ts->built = false; // see OCCTThruSectionsSetSmoothing's comment
 }
 
 void OCCTThruSectionsSetContinuity(OCCTThruSectionsRef ref, int32_t continuity) {
@@ -8706,24 +8732,30 @@ void OCCTThruSectionsSetContinuity(OCCTThruSectionsRef ref, int32_t continuity) 
     if (!ts) return;
     ts->builder->SetCriteriumWeight(1.0, 1.0, 1.0); // ensure defaults
     ts->builder->SetContinuity(occtGeomAbsFromParametricContinuity(continuity));
+    ts->built = false; // see OCCTThruSectionsSetSmoothing's comment
 }
 
 bool OCCTThruSectionsBuild(OCCTThruSectionsRef ref) {
     auto ts = (OCCTThruSections*)ref;
     if (!ts) return false;
     // ThruSections requires at least 2 sections — OCCT segfaults otherwise
-    if (ts->sectionCount < 2) return false;
+    if (ts->sectionCount < 2) { ts->built = false; return false; }
     try {
         ts->builder->Build();
-        return ts->builder->IsDone();
-    } catch (...) { return false; }
+        // IsDone() alone is not enough: see the struct's own comment. GetStatus() reports what
+        // Build() actually decided, including the two WrongUsage returns that leave IsDone() in
+        // whatever state a PRIOR successful build left it.
+        ts->built = ts->builder->IsDone()
+            && ts->builder->GetStatus() == BRepFill_ThruSectionErrorStatus_Done;
+        return ts->built;
+    } catch (...) { ts->built = false; return false; }
 }
 
 OCCTShapeRef OCCTThruSectionsShape(OCCTThruSectionsRef ref) {
     auto ts = (OCCTThruSections*)ref;
     if (!ts) return nullptr;
     try {
-        if (!ts->builder->IsDone()) return nullptr;
+        if (!ts->built) return nullptr;
         return new OCCTShape{ts->builder->Shape()};
     } catch (...) { return nullptr; }
 }
@@ -8736,7 +8768,8 @@ OCCTShapeRef OCCTThruSectionsShape(OCCTThruSectionsRef ref) {
 void OCCTThruSectionsCheckCompatibility(OCCTThruSectionsRef ref, bool check) {
     auto ts = (OCCTThruSections*)ref;
     if (!ts) return;
-    try { ts->builder->CheckCompatibility(check); } catch (...) {}
+    try { ts->builder->CheckCompatibility(check); ts->built = false; } catch (...) {}
+    // see OCCTThruSectionsSetSmoothing's comment
 }
 
 void OCCTThruSectionsSetParType(OCCTThruSectionsRef ref, int32_t parType) {
@@ -8750,22 +8783,40 @@ void OCCTThruSectionsSetParType(OCCTThruSectionsRef ref, int32_t parType) {
             case 2: pt = Approx_IsoParametric; break;
         }
         ts->builder->SetParType(pt);
+        ts->built = false; // see OCCTThruSectionsSetSmoothing's comment
     } catch (...) {}
 }
 
 void OCCTThruSectionsSetCriteriumWeight(OCCTThruSectionsRef ref, double w1, double w2, double w3) {
     auto ts = (OCCTThruSections*)ref;
     if (!ts) return;
-    try { ts->builder->SetCriteriumWeight(w1, w2, w3); } catch (...) {}
+    try { ts->builder->SetCriteriumWeight(w1, w2, w3); ts->built = false; } catch (...) {}
+    // see OCCTThruSectionsSetSmoothing's comment
 }
 
 OCCTShapeRef OCCTThruSectionsGeneratedFace(OCCTThruSectionsRef ref, OCCTShapeRef edge) {
     auto ts = (OCCTThruSections*)ref;
     if (!ts || !edge) return nullptr;
     try {
+        // #910: GeneratedFace() is a bare lookup into myEdgeFace, which Build() never clears —
+        // see the struct's `built` comment. `built` alone isn't sufficient here, though: a THIRD
+        // build succeeding after an intervening failure (build ok -> add a mismatched section,
+        // build fails -> CheckCompatibility(true) reconciles it, build ok again) can rebuild every
+        // section's edges, not just the new one's, stranding `edge`'s ORIGINAL binding in the map
+        // without ever overwriting it — measured empirically, `built` is true and GeneratedFace()
+        // answers non-null with a face that provably isn't part of the new build's own Shape().
+        // myEdgeFace is a private OCCT member with no public clear(), so confirm membership in the
+        // current Shape() directly instead of trusting the map (#910 review round 2 finding 1).
+        if (!ts->built) return nullptr;
         TopoDS_Shape face = ts->builder->GeneratedFace(edge->shape);
         if (face.IsNull()) return nullptr;
-        return new OCCTShape{face};
+        TopoDS_Shape current = ts->builder->Shape();
+        for (TopExp_Explorer exp(current, TopAbs_FACE); exp.More(); exp.Next()) {
+            if (exp.Current().IsSame(face)) {
+                return new OCCTShape{face};
+            }
+        }
+        return nullptr;
     } catch (...) { return nullptr; }
 }
 

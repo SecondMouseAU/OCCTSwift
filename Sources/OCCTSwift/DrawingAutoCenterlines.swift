@@ -13,7 +13,7 @@ extension Drawing {
     /// inspect what was added without re-querying `annotations`.
     public struct AutoCentrelineResult: Sendable {
         public let added: [DrawingAnnotation]
-        public let skipped: [ShapeAxis]        // axes that projected to a point in view
+        public let skipped: [ShapeAxis]  // axes that projected to a point in view
     }
 
     /// Project the shape's axes of revolution into this drawing's view plane and
@@ -29,12 +29,15 @@ extension Drawing {
     ///   - bounds: Optional override for the 2D bounding box used for clipping. When nil,
     ///     falls back to a sensible default (±1000 square centred at origin) — the caller
     ///     should pass the drawing's actual bbox when it's known.
+    /// - Returns: The added centrelines plus any axes skipped because they projected to a point.
     @discardableResult
-    public func addAutoCentrelines(from shape: Shape,
-                                   viewDirection: SIMD3<Double>,
-                                   overshoot: Double = 5,
-                                   tolerance: Double = 1e-6,
-                                   bounds: (min: SIMD2<Double>, max: SIMD2<Double>)? = nil) -> AutoCentrelineResult {
+    public func addAutoCentrelines(
+        from shape: Shape,
+        viewDirection: SIMD3<Double>,
+        overshoot: Double = 5,
+        tolerance: Double = 1e-6,
+        bounds: (min: SIMD2<Double>, max: SIMD2<Double>)? = nil
+    ) -> AutoCentrelineResult {
         let axes = shape.revolutionAxes(tolerance: tolerance)
         let bb = bounds ?? (min: SIMD2(-1000, -1000), max: SIMD2(1000, 1000))
         var added: [DrawingAnnotation] = []
@@ -42,11 +45,14 @@ extension Drawing {
         let viewZ = simd_normalize(viewDirection)
 
         for axis in axes {
-            guard let (p1, p2) = projectAxisToPlane(origin: axis.origin,
-                                                     direction: axis.direction,
-                                                     viewDirection: viewZ,
-                                                     bounds: bb,
-                                                     overshoot: overshoot) else {
+            guard
+                let (p1, p2) = projectAxisToPlane(
+                    origin: axis.origin,
+                    direction: axis.direction,
+                    viewDirection: viewZ,
+                    bounds: bb,
+                    overshoot: overshoot)
+            else {
                 skipped.append(axis)
                 continue
             }
@@ -62,20 +68,22 @@ extension Drawing {
 extension Drawing {
     public struct AutoCentermarkResult: Sendable {
         public let added: [DrawingAnnotation]
-        public let skipped: [Edge]              // edges whose circle projects edge-on
+        public let skipped: [Edge]  // edges whose circle projects edge-on
     }
 
-    /// Walk `shape`'s circular edges, project each circle's centre into this
-    /// drawing's view plane, and add a `.centermark` annotation when the
-    /// circle is visible (its plane normal is not parallel to the view
-    /// direction). Complements `addAutoCentrelines` which handles revolution
-    /// axes.
+    /// Walk the circular edges of `shape` and add a `.centermark` at each visible circle's
+    /// projected centre.
+    ///
+    /// A circle is visible when its plane normal isn't parallel to the view direction.
+    /// Complements `addAutoCentrelines`, which handles revolution axes.
     @discardableResult
-    public func addAutoCentermarks(from shape: Shape,
-                                    viewDirection: SIMD3<Double>,
-                                    extent: Double = 8,
-                                    minRadius: Double = 0,
-                                    bounds: (min: SIMD2<Double>, max: SIMD2<Double>)? = nil) -> AutoCentermarkResult {
+    public func addAutoCentermarks(
+        from shape: Shape,
+        viewDirection: SIMD3<Double>,
+        extent: Double = 8,
+        minRadius: Double = 0,
+        bounds: (min: SIMD2<Double>, max: SIMD2<Double>)? = nil
+    ) -> AutoCentermarkResult {
         let viewZ = simd_normalize(viewDirection)
         var added: [DrawingAnnotation] = []
         var skipped: [Edge] = []
@@ -93,53 +101,52 @@ extension Drawing {
                 continue
             }
             let centre2D = projectPointToPlane(props.center, viewDirection: viewZ)
-            if let bb = bounds, (centre2D.x < bb.min.x || centre2D.x > bb.max.x ||
-                                  centre2D.y < bb.min.y || centre2D.y > bb.max.y) {
+            if let bb = bounds,
+                centre2D.x < bb.min.x || centre2D.x > bb.max.x || centre2D.y < bb.min.y
+                    || centre2D.y > bb.max.y
+            {
                 continue
             }
-            let ann = addCentermark(centre: centre2D, extent: extent,
-                                     id: "auto-mark-\(added.count)")
+            let ann = addCentermark(
+                centre: centre2D, extent: extent,
+                id: "auto-mark-\(added.count)")
             added.append(ann)
         }
         return AutoCentermarkResult(added: added, skipped: skipped)
     }
 }
 
-/// Project a 3D point onto the 2D plane perpendicular to `viewDirection` using
-/// the OCCTSwift HLR convention: `right = cross(worldUp, viewDirection)`,
-/// `up = cross(viewDirection, right)`.
-internal func projectPointToPlane(_ p: SIMD3<Double>,
-                                   viewDirection: SIMD3<Double>) -> SIMD2<Double> {
-    let worldUp = SIMD3<Double>(0, 0, 1)
-    var rightRaw = simd_cross(worldUp, viewDirection)
-    if simd_length(rightRaw) < 1e-9 {
-        rightRaw = simd_cross(SIMD3(0, 1, 0), viewDirection)
-    }
-    let right = simd_normalize(rightRaw)
-    let up = simd_normalize(simd_cross(viewDirection, right))
+// perpendicularBasis(to:) moved to PerpendicularBasis.swift (#914 review, second round) —
+// module-wide, not drawing-specific: 3 of its 5 call sites are geometry/construction code, the
+// same misplacement finding 11 fixed for the bridge-unwrap helpers this file never had.
+
+/// Project a 3D point onto the 2D plane perpendicular to `viewDirection`, using
+/// `perpendicularBasis(to:)` — the same perpendicular-axis algorithm `gp_Ax2` uses
+/// to build the `HLRAlgo_Projector` `OCCTDrawingCreate` projects this drawing's own
+/// edges with.
+internal func projectPointToPlane(
+    _ p: SIMD3<Double>,
+    viewDirection: SIMD3<Double>
+) -> SIMD2<Double> {
+    let (right, up) = perpendicularBasis(to: viewDirection)
     return SIMD2(simd_dot(p, right), simd_dot(p, up))
 }
 
 /// Project a 3D axis (origin + direction) into the 2D plane perpendicular to
-/// `viewDirection` and clip to the given bounds. Returns nil if the axis projects
-/// to a point (i.e. it is parallel to the view direction).
+/// `viewDirection` and clip to the given bounds.
 ///
-/// The 2D coordinate frame follows OCCT's HLR convention used by `Drawing.project`:
-/// X goes along the projection's right axis and Y along the up axis. We recover
-/// these by orthogonalising against an arbitrary up vector.
-internal func projectAxisToPlane(origin: SIMD3<Double>,
-                                  direction: SIMD3<Double>,
-                                  viewDirection: SIMD3<Double>,
-                                  bounds: (min: SIMD2<Double>, max: SIMD2<Double>),
-                                  overshoot: Double) -> (SIMD2<Double>, SIMD2<Double>)? {
+/// Returns nil if the axis projects to a point (i.e. it is parallel to the view direction). The
+/// 2D coordinate frame matches `projectPointToPlane`'s: X along `perpendicularBasis(to:)`'s
+/// `right`, Y along its `up`.
+internal func projectAxisToPlane(
+    origin: SIMD3<Double>,
+    direction: SIMD3<Double>,
+    viewDirection: SIMD3<Double>,
+    bounds: (min: SIMD2<Double>, max: SIMD2<Double>),
+    overshoot: Double
+) -> (SIMD2<Double>, SIMD2<Double>)? {
     // Build a basis (right, up) perpendicular to viewDirection.
-    let worldUp = SIMD3<Double>(0, 0, 1)
-    var rightRaw = simd_cross(worldUp, viewDirection)
-    if simd_length(rightRaw) < 1e-9 {
-        rightRaw = simd_cross(SIMD3(0, 1, 0), viewDirection)
-    }
-    let right = simd_normalize(rightRaw)
-    let up = simd_normalize(simd_cross(viewDirection, right))
+    let (right, up) = perpendicularBasis(to: viewDirection)
 
     // Project axis direction onto view plane. If it collapses to a point, skip.
     let dir2 = SIMD2(simd_dot(direction, right), simd_dot(direction, up))

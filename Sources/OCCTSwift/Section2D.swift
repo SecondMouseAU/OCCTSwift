@@ -18,26 +18,28 @@ extension Shape {
     /// in the plane's own coordinate frame.
     ///
     /// The plane's `u` axis (derived from `planeU` if supplied, otherwise
-    /// perpendicular-to-normal with a deterministic world-up choice) becomes
-    /// the Drawing's X axis; its `v` axis (u × normal) becomes Y. Each 3D
+    /// `perpendicularBasis(to:)`'s canonical perpendicular) becomes the
+    /// Drawing's X axis; its `v` axis (u × normal) becomes Y. Each 3D
     /// contour point `p` is projected as `(u · (p − origin), v · (p − origin))`.
     ///
     /// - Parameters:
     ///   - planeOrigin: Any point on the cutting plane, in world coordinates.
     ///   - planeNormal: Plane normal. Will be normalised.
     ///   - planeU: Explicit X axis for the resulting 2D frame. Must be
-    ///     perpendicular to `planeNormal`. When nil (default), a deterministic
-    ///     perpendicular is derived from world-up or world-Y.
+    ///     perpendicular to `planeNormal`. When nil (default), the perpendicular
+    ///     is derived deterministically via `perpendicularBasis(to:)`.
     ///   - deflection: Tessellation tolerance for edge sampling. ISO-quality
     ///     section drawings typically use 0.01–0.1 mm.
     /// - Returns: A `Drawing` whose `visibleEdges` contain the 2D contour
     ///   polylines. Dimensions, centrelines, hatching etc. can be added via
     ///   the normal `Drawing` API. Returns nil if the plane doesn't intersect
     ///   the shape or projection fails.
-    public func section2D(planeOrigin: SIMD3<Double>,
-                          planeNormal: SIMD3<Double>,
-                          planeU: SIMD3<Double>? = nil,
-                          deflection: Double = 0.1) -> Drawing? {
+    public func section2D(
+        planeOrigin: SIMD3<Double>,
+        planeNormal: SIMD3<Double>,
+        planeU: SIMD3<Double>? = nil,
+        deflection: Double = 0.1
+    ) -> Drawing? {
         guard let contour = sectionWithPlane(normal: planeNormal, origin: planeOrigin) else {
             return nil
         }
@@ -75,7 +77,8 @@ extension Shape {
         let compoundShape = Shape.compound(from: wires.compactMap { Shape.shape(from: $0) })
         // Project along Z to get a Drawing whose visibleEdges are our 2D contour.
         guard let compoundShape,
-              let drawing = Drawing.project(compoundShape, direction: SIMD3(0, 0, 1)) else {
+            let drawing = Drawing.project(compoundShape, direction: SIMD3(0, 0, 1))
+        else {
             return nil
         }
         return drawing
@@ -83,26 +86,29 @@ extension Shape {
 
     /// Derive a deterministic orthonormal basis (u, v) in the plane defined by
     /// `normal` and the optional explicit `u` direction.
-    internal static func sectionPlaneBasis(normal: SIMD3<Double>,
-                                            explicitU: SIMD3<Double>?) -> (SIMD3<Double>, SIMD3<Double>) {
+    internal static func sectionPlaneBasis(
+        normal: SIMD3<Double>,
+        explicitU: SIMD3<Double>?
+    ) -> (SIMD3<Double>, SIMD3<Double>) {
         let n = simd_normalize(normal)
         let u: SIMD3<Double>
+        let v: SIMD3<Double>
         if let explicit = explicitU {
             u = simd_normalize(explicit - simd_dot(explicit, n) * n)
+            v = simd_normalize(simd_cross(n, u))
         } else {
-            let worldUp = abs(n.z) < 0.9 ? SIMD3<Double>(0, 0, 1) : SIMD3<Double>(0, 1, 0)
-            var raw = simd_cross(worldUp, n)
-            if simd_length(raw) < 1e-9 {
-                raw = simd_cross(SIMD3(1, 0, 0), n)
-            }
-            u = simd_normalize(raw)
+            // perpendicularBasis(to:)'s own `up` is already `normalize(cross(v, right))` with
+            // `v == n` and `right == u` here, i.e. bit-for-bit `simd_normalize(simd_cross(n, u))`
+            // — so the explicit-`u` branch's cross product is redundant in this branch and would
+            // just recompute the same answer a second time (#914 review, second round).
+            (u, v) = perpendicularBasis(to: n)
         }
-        let v = simd_normalize(simd_cross(n, u))
         return (u, v)
     }
 
-    /// Compound a list of shapes into one. Convenience for Section2D assembly;
-    /// returns nil on empty input.
+    /// Compound a list of shapes into one.
+    ///
+    /// Convenience for Section2D assembly; returns nil on empty input.
     internal static func compound(from shapes: [Shape]) -> Shape? {
         guard !shapes.isEmpty else { return nil }
         if shapes.count == 1 { return shapes[0] }
@@ -129,15 +135,20 @@ extension Shape {
 
     /// ISO 128-40-styled section view: slice + hatching + label bundled into a
     /// single `Drawing` ready to place on a sheet.
-    public func section2DView(planeOrigin: SIMD3<Double>,
-                              planeNormal: SIMD3<Double>,
-                              label: String? = nil,
-                              hatchAngle: Double = .pi / 4,
-                              hatchSpacing: Double = 3.0,
-                              deflection: Double = 0.1) -> SectionView? {
-        guard let drawing = section2D(planeOrigin: planeOrigin,
-                                       planeNormal: planeNormal,
-                                       deflection: deflection) else { return nil }
+    public func section2DView(
+        planeOrigin: SIMD3<Double>,
+        planeNormal: SIMD3<Double>,
+        label: String? = nil,
+        hatchAngle: Double = .pi / 4,
+        hatchSpacing: Double = 3.0,
+        deflection: Double = 0.1
+    ) -> SectionView? {
+        guard
+            let drawing = section2D(
+                planeOrigin: planeOrigin,
+                planeNormal: planeNormal,
+                deflection: deflection)
+        else { return nil }
         // Hatch the outer boundary (best-effort — uses the drawing's own bounds
         // as the boundary polygon for now; full contour-based hatching comes
         // when we have polygon identification of section interiors).
@@ -146,18 +157,20 @@ extension Shape {
                 SIMD2(bounds.min.x, bounds.min.y),
                 SIMD2(bounds.max.x, bounds.min.y),
                 SIMD2(bounds.max.x, bounds.max.y),
-                SIMD2(bounds.min.x, bounds.max.y)
+                SIMD2(bounds.min.x, bounds.max.y),
             ]
             drawing.addHatch(boundary: boundary, angle: hatchAngle, spacing: hatchSpacing)
         }
         if let label = label, let bounds = drawing.bounds() {
-            drawing.addTextLabel(label,
-                                 at: SIMD2(bounds.min.x, bounds.max.y + 5),
-                                 height: 5.0)
+            drawing.addTextLabel(
+                label,
+                at: SIMD2(bounds.min.x, bounds.max.y + 5),
+                height: 5.0)
         }
-        return SectionView(drawing: drawing,
-                           label: label,
-                           cuttingPlaneOrigin: planeOrigin,
-                           cuttingPlaneNormal: planeNormal)
+        return SectionView(
+            drawing: drawing,
+            label: label,
+            cuttingPlaneOrigin: planeOrigin,
+            cuttingPlaneNormal: planeNormal)
     }
 }
