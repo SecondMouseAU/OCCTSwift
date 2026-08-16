@@ -1,3 +1,28 @@
+**Status: never posted, and now moot.** Drafted 2026-08-07 as a reply to gkv311's review on
+[OCCT#1418](https://github.com/Open-Cascade-SAS/OCCT/pull/1418), held at prepare-and-stop, and
+overtaken: dpasukhi merged #1418 on 2026-08-10 with "Thank you for the patch!", as the one-line
+one-file change it was opened as. Kept because the measurement it reports is real, and because a
+draft that reads as pending is worth marking rather than deleting.
+
+**Two things it describes as done were never done**, and both are visible on the merged PR:
+
+- The PR description was **not** rewritten to lead with the provenance. `pr-1418-description.md`
+  beside this file is that rewrite; the live description is still the behavioural writeup filed
+  first. The provenance itself is recorded in [`../README.md`](../README.md)'s "Upstream provenance
+  (#756)" section, which is where it now lives.
+- The Draw test was **not** added. `tests/bugs/moddata_3/bug1418` beside this file is still staged,
+  and the merged PR touches exactly one file,
+  `src/ModelingData/TKGeomBase/AdvApp2Var/AdvApp2Var_ApproxF2var.cxx`, 1 insertion and 1 deletion.
+  Contributing it now would be a separate PR against a merged fix, which nobody has decided to do.
+
+Two edits #803 asked for were never applied either, and no longer matter because nothing is going to
+be sent: the "I did not have the OCCT tree checked out anywhere convenient" sentence in §1 (we have
+one now, see §0 of the upstream patch process), and §2's claim that the Draw test uses "the same
+idiom" as `tests/bugs/modalg_7/bug23942`, which is true of the `dlog`/`dump` capture but not of the
+regex, where `bug23942` has a quirk we deliberately did not copy.
+
+---
+
 Thanks, both points landed. Answering in order.
 
 ## 1. Provenance

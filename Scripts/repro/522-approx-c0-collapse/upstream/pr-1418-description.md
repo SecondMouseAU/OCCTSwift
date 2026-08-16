@@ -1,3 +1,13 @@
+**Status: never applied.** A rewritten description for
+[OCCT#1418](https://github.com/Open-Cascade-SAS/OCCT/pull/1418), drafted 2026-08-07 to lead with the
+regression provenance instead of the behavioural writeup. It was never pushed to the PR, and #1418
+merged on 2026-08-10 with its original description. Kept as the record of what the provenance-first
+framing looked like; the provenance itself is in [`../README.md`](../README.md) under "Upstream
+provenance (#756)". See [`reply-to-gkv311.md`](reply-to-gkv311.md) beside it for the rest of what
+was staged and not sent.
+
+---
+
 # Modeling Data - Fix AdvApp2Var Jacobi maxima written to the wrong workspace slot
 
 ## This is a regression, and the mechanism is a single missed decrement

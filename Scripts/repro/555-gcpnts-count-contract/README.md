@@ -81,7 +81,9 @@ points with five is not a defensible result.
   step.
 
 Nothing in either class' public API changes. Filed upstream as
-[Open-Cascade-SAS/OCCT#1417](https://github.com/Open-Cascade-SAS/OCCT/pull/1417).
+[Open-Cascade-SAS/OCCT#1417](https://github.com/Open-Cascade-SAS/OCCT/pull/1417), now
+[OCCT#1457](https://github.com/Open-Cascade-SAS/OCCT/pull/1457): same branch, same fix, reopened after
+#1417 was closed by an amend against a shallow clone. See "Upstream review (#755)" below.
 
 ## Building and running
 
@@ -175,6 +177,16 @@ Re-ran both reproducers against the revised patch, override-linked with producti
 (`-DNDEBUG -DNo_Exception`): `repro_555_count.mm` and `repro_555_equivalence.mm` both report the same
 numbers as "Results" above, byte for byte.
 
-See [`upstream/`](upstream/) for the prepared post-review commit
-(`0001-gcpnts-review-fixes.patch`, `git am`-verified) and the drafted reply
-(`reply-to-gkv311.md`), neither pushed nor posted; see #755.
+See [`upstream/`](upstream/) for the post-review commit (`0001-gcpnts-review-fixes.patch`,
+`git am`-verified) and the reply (`reply-to-gkv311.md`). Both went out on 2026-08-10, after #755 had
+held them at prepare-and-stop: the patch is on the branch as commit `8adab6565` (hunks identical to
+the staged file bar one blank line), and the reply is
+[OCCT#1457 (comment)](https://github.com/Open-Cascade-SAS/OCCT/pull/1457#issuecomment-5246831466).
+
+**The PR moved from #1417 to #1457 in the process, on the same branch.** #1417 was closed at
+2026-08-10T20:43:18Z with `state_reason: null` and no closing comment, which is what an amend against
+a shallow clone does to a live PR (footgun A in
+[the upstream patch process](../../../okf/policies/upstream-occt-patch-process.md#6-pushing-to-a-live-pr-branch-the-two-footguns-0-exists-to-prevent)).
+#1457 is the same fix, same head branch, reopened 116 minutes later, and is the live PR. That
+incident is the argument behind §0 of the same policy, which replaced the clone-per-task pattern with
+one persistent checkout of the fork (#803).
