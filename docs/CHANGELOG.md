@@ -19,6 +19,154 @@ each named with its migration in [`SEMVER.md`](SEMVER.md#v200).
 
 ## Unreleased
 
+### Code-style CI: swift-format, SwiftLint, and clang-format gates (#876)
+
+Adds automated style enforcement for new/touched code: `swift-format` (Swift formatting),
+`SwiftLint` (scoped to `orphaned_doc_comment`), and `clang-format` (the `OCCTBridge` C++ layer,
+using OCCT's own style). Pre-existing files are grandfathered on a manifest until touched. No
+public API change; tooling and CI only.
+
+### Pass 2a: Shape/Topology core duplication audit — 25 findings plus #796's census resolved, several were live bugs
+
+A duplication audit of `Shape.swift`'s domain-split descendants (`Shape+Analysis`, `+Curve`,
+`+Geom2d`, `+Math`, `+Mesh`, `+Modeling`, `+ShapeHealing`, `+Surface`, `+Topology`) plus
+`Edge`/`Face`/`Wire`/`WireOrder`/`TopologyRef` (#382, part of the #377 segmented audit). Grouped
+by what actually changed for a consumer:
+
+**Fixed: already-diverged duplicate copies, i.e. real bugs**
+
+- `FaceFixer.Status`'s raw `Int32` values were wrong from `.fail1` onward (shifted by one ordinal
+  against the real `ShapeExtend_Status` enum — `.done` queried `ShapeExtend_FAIL8` instead of the
+  combined `DONE` flag) since the type was added; corrected. `ShapeFixer` gains a type-safe
+  `status(_ status: ShapeFixStatus) -> Bool` overload sharing the corrected type; the legacy
+  `status(Int)` is unchanged. (#849)
+- `Shape.fixed(tolerance:fixSolid:fixShell:fixFace:fixWire:)`'s `fixShell`/`fixFace`/`fixWire`
+  parameters were accepted and silently discarded — only `fixSolid` ever reached
+  `ShapeFix_Shape`. Wired to `FixFreeShellMode()`/`FixFreeFaceMode()`/`FixFreeWireMode()` (which
+  govern **free**, unattached content specifically). Existing callers passing non-default values
+  for these three will see different, correct output. (#837)
+- `Shape.uniformAbscissa(distance:)`/`(distance:u1:u2:)` had no ceiling at all, unlike their
+  `pointCount:` siblings — a small enough `distance` could ask OCCT to discretize an unbounded
+  number of points. Both now derive the implied count from curve length and reject before calling
+  OCCT. (#853)
+- `Shape.bounds` fabricated `(0,0,0)`-`(0,0,0)` for a void shape as if it were real geometry,
+  unlike the identical `Shape.boundingBox` computation, which correctly signals failure. Bridge
+  hygiene fixed (explicit `IsVoid()` guard); the full fix (`bounds` becoming `Optional`) is a
+  breaking change to 20 call sites and is documented as a candidate follow-up, not executed here.
+  (#834)
+- `Shape.droppingSmallEdges(tolerance:)` defaulted to `1e-6` against the identical
+  `fixSmallEdges(tolerance:dropSmall: true)`'s `1e-7` — aligned to `1e-7`. (#839)
+- `Shape.classifyPoint2d(u:v:tolerance:)` defaulted to `1e-7` against `Face.classify(u:v:)`/
+  `Shape.classifyPoint2D`'s `1e-6` for the same UV-boundary question — aligned to `1e-6`. (#840)
+- `Shape.maxTolerance(type:)`/`minTolerance(type:)`/`avgTolerance(type:)` used an `Int` encoding
+  incompatible with `maxTolerance(subShapeType:)`'s real `TopAbs_ShapeEnum` ordinals (the same
+  literal meant a different sub-shape type under each). Gained additive `ShapeType`-typed
+  overloads that agree with the ordinal convention; legacy `Int` overloads unchanged, documented
+  as legacy. The three new bridge functions backing them originally triplicated their body
+  (differing only in a hardcoded mode literal); deduplicated behind one shared helper in the same
+  review pass that caught it. (#833)
+- `docs/thread-safety.md`/`docs/naming-conventions.md` incorrectly claimed the no-argument
+  `Shape.deepCopy()` uses `BRepBuilderAPI_Copy` with independent geometry. It actually uses
+  `TNaming_CopyShape::CopyTool` and only clones topology — `Geom_Surface`/`Geom_Curve`/
+  `Poly_Triangulation` handles are shared with the original. Docs corrected on all three copy
+  methods. `Shape.isSelfIntersecting(hardTimeout:)`'s reliance on this for background-thread
+  isolation is flagged as a latent risk, not changed. (#831)
+
+**Breaking change**
+
+- `Selector.SubShapeType.compsolid` is renamed `compSolid`, matching `ShapeType`'s casing (the two
+  had drifted). `Shape.ShapeFilterType`'s `RawValue` changes from `Int32` to `Int` as part of
+  becoming a `ShapeType` typealias. Migration: rename `.compsolid` → `.compSolid`; if code depends
+  on `ShapeFilterType`'s raw type being `Int32`, cast explicitly. A third consolidated type,
+  `Shape.TopAbs_ShapeEnum`, was originally deleted outright with no compatibility path — the only
+  one of the four #844 consolidated without one, inconsistent with `ShapeFilterType`'s typealias
+  and the transform-matrix methods' deprecated overloads. Caught by the aggregate review; restored
+  as `@available(*, deprecated, renamed: "ShapeType") public typealias TopAbs_ShapeEnum =
+  ShapeType` before this PR went any further, so this is additive-again rather than a third
+  breaking change. (#844)
+
+**Additive**
+
+- `Shape+Modeling`'s six legacy `fused`/`subtracted`/`intersected(tolerance:/glue:)` entry points
+  now delegate to `union`/`subtracting`/`intersection`, inheriting the `#206` boolean-op timeout
+  watchdog they previously lacked entirely. Each gained a `timeout:` parameter (default
+  `Shape.defaultBooleanTimeout`, matching the safer family's own parameter) so a caller needing
+  longer can opt out of the new bound. (#832)
+- `Shape.transformed(matrix:)` now takes a new `Matrix12Grouped` type; `transformed(byMatrix:)`/
+  `gTransformed(matrix:)` now take `TransformMatrix3D` (previously only a `TransformFactory3D`
+  return type, now also constructible directly). The two layouts these three methods use
+  (GROUPED vs. INTERLEAVED) were previously indistinguishable `[Double]` arrays that could be
+  silently swapped with no error; that's now a compile error. Conversions
+  (`Matrix12Grouped.interleaved`/`TransformMatrix3D.grouped`) are provided. The previous
+  `[Double]`-taking overloads are kept as `@available(*, deprecated)` forwarders — existing source
+  still compiles, with a warning. Both new types' initializers were briefly a trapping
+  `precondition` on a wrong element count instead of the graceful `nil` the methods they replace
+  always guaranteed — a caller migrating off the deprecated overload with malformed/deserialized
+  data would crash the process instead of getting `nil`. Caught by the aggregate review; changed
+  to a failable `init?(_:)` before this PR went any further. (#835)
+- `Shape.VolumeInertia`/`SurfaceInertia` gain `hasSymmetryAxis`/`hasSymmetryPoint` fields, matching
+  what `InertiaProperties` has always reported, read from the same already-computed
+  `GProp_PrincipalProps` object — no extra cost. (#848)
+- `Shape.faceFromPlane`/`faceFromCylinder`'s `uBounds`/`vBounds` overload pair gains an additive
+  `tolerance:` parameter (default `1e-7`, matching prior silent behavior); now delegates to the
+  `uRange`/`vRange` pair instead of duplicating the underlying `BRepLib_MakeFace` call. (#841)
+
+**Internal only, zero behavior change**
+
+- `TopologyRef`'s occurrence-bounds guard (duplicated 4x) and ancestor-resolve switch (duplicated
+  2x) consolidated into two shared private helpers; three previously-untested failure branches
+  gained regression coverage. The three resolver functions still each repeated the same
+  switch/bind/early-return block to *use* those helpers' `Result`s — caught by the aggregate
+  review and collapsed to `.flatMap` chaining, matching the `.map` style the same functions
+  already used elsewhere. (#846, #854)
+- `Face`'s six-way-duplicated zero-mass centroid ternary consolidated into one `massCentroid`
+  helper; `isHorizontal` is now provably `isUpwardFacing || isDownwardFacing` computed from a
+  single `normal` fetch instead of two (a real fix for a review-caught performance regression: the
+  first version of this consolidation fetched `normal` twice). `Face.SurfaceType` is now a
+  typealias for `Surface.SurfaceType`. (#842, #843, #850)
+- `ShapeContents`/`ShapeContentsExtended`'s two independent 9-field mappings unified behind one
+  internal `ShapeContentsCore` type, so the two can no longer silently transpose relative to each
+  other. (#855)
+- `WireOrder.analyze(edges:)`/`analyze(wire:)` share one decode helper instead of duplicating the
+  status/index-rebuild logic. (#845)
+- `Shape.findSurface`/`findSurfaceEx`/`findSurfaceTolerance`/`findSurfaceExisted` (5 entry points)
+  share one internal `BRepLib_FindSurface` helper; gained a null-shape guard the 3 unguarded ones
+  lacked (not reachable from Swift today). Two review passes caught and fixed three regressions
+  the consolidation introduced along the way: an `OCCTSurface` allocation briefly sat outside its
+  try/catch (risking a crash instead of a graceful `nil` on allocation failure), the shared
+  accessor call briefly fate-shared callers that used to be independent (a tolerance-only caller
+  could have failed for reasons that never touched tolerance before), and — caught only once the
+  two fixes above landed and the *aggregate* diff was reviewed — the fix for the second regression
+  still computed both `ToleranceReached()` and `Existed()` on every diagnostic call even though
+  each of `findSurfaceTolerance`/`findSurfaceExisted` only ever reads one; a 3-way selector
+  (`OCCTFindSurfaceWant`) now computes exactly the one each caller needs, matching the
+  pre-consolidation code. All three fixed before this PR went any further. (#838)
+- `Shape.orientedBoundingBoxDetailed` shares its `Bnd_OBB` computation with `orientedBoundingBox`
+  instead of computing a second one. (#847)
+- `Shape.recognizeCanonicalSurface`/`recognizeCanonicalCurve`, `Shape.pointCloudByTriangulation`/
+  `pointCloudByDensity`, `Shape.coonsFilling`/`curvedFilling`, `Shape.discreteTrihedron`/
+  `correctedFrenet`/`draftTrihedron`, and `GuideTrihedronAC.evaluate`/`GuideTrihedronPlan.evaluate`
+  each share a private helper for their previously-copy-pasted marshaling. No behavioral
+  divergence found in any of the 5 pairs — all pure duplication. (#796, all 5 pairs)
+- `Shape.classifyPoint`/`classify(point:)` now route through the same `BRepClass3d_SolidClassifier`
+  mechanism (previously `classifyPoint` hand-built the lower-level pieces that class already
+  wraps). (#851)
+- `Shape.uniformAbscissa`'s four overloads and `uniformDeflection`'s two overloads share their
+  size-then-fill/malloc-then-unpack idioms; a review pass found and fixed a doubled arc-length
+  computation the first version of the `distance:` ceiling fix introduced, replacing it with a
+  purpose-built cheap quadrature bridge call. `Shape.curveShapeIntersect`/`ShapeRayIntersection`
+  now cross-reference each other in their docs (two independent line/shape intersectors, neither
+  aware of the other). (#852, #853)
+- `nurbsConvertViaModifier()`/`convertedToNURBS()` now cross-reference their real divergence (the
+  former skips the latter's final vertex-tolerance correction pass) instead of two undocumented,
+  unrelated-looking entry points. (#836)
+
+### Add scope-boundary policy: extensions belong downstream, not in the kernel wrapper
+
+Documentation only — `okf/policies/scope-boundary.md` names the test for whether a proposed
+feature belongs in OCCTSwift (a direct wrap of an OCCT operation) or in a downstream ecosystem
+package, with a table of which package owns which kind of extension.
+
 ### `ThruSectionsBuilder` no longer returns stale results after a failed rebuild, or after a build on a changed builder that hasn't been rebuilt (#910)
 
 `generatedFace(from:)` and `shape` both read post-build OCCT state without reliably checking
