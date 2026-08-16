@@ -4664,7 +4664,7 @@ struct ThruSectionsExtensionsTests {
     @Test("SetCriteriumWeight")
     func setCriteriumWeight() {
         let ts = ThruSectionsBuilder(isSolid: true)
-        ts.setCriteriumWeight(w1: 1.0, w2: 1.0, w3: 1.0)
+        #expect(ts.setCriteriumWeight(w1: 1.0, w2: 1.0, w3: 1.0) == true)
         let w1 = Wire.circle(origin: .zero, normal: SIMD3(0,0,1), radius: 5.0)
         let w2 = Wire.circle(origin: SIMD3(0,0,10), normal: SIMD3(0,0,1), radius: 3.0)
         if let w1 = w1, let w2 = w2 {
@@ -4675,6 +4675,17 @@ struct ThruSectionsExtensionsTests {
                 #expect(ts.shape != nil)
             }
         }
+    }
+
+    @Test("SetCriteriumWeight rejects negative weights")
+    func setCriteriumWeightRejectsNegative() {
+        let ts = ThruSectionsBuilder(isSolid: true)
+        #expect(ts.setCriteriumWeight(w1: -1.0, w2: 1.0, w3: 1.0) == false)
+        #expect(ts.setCriteriumWeight(w1: 1.0, w2: -1.0, w3: 1.0) == false)
+        #expect(ts.setCriteriumWeight(w1: 1.0, w2: 1.0, w3: -1.0) == false)
+        #expect(ts.setCriteriumWeight(w1: -1.0, w2: -1.0, w3: -1.0) == false)
+        // Verify builder still works after rejection
+        #expect(ts.setCriteriumWeight(w1: 1.0, w2: 1.0, w3: 1.0) == true)
     }
 
     @Test("GeneratedFace from edge")

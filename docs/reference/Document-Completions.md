@@ -881,10 +881,11 @@ public func setParType(_ type: Int)
 Set the approximation criterion weights for the loft.
 
 ```swift
-public func setCriteriumWeight(w1: Double, w2: Double, w3: Double)
+public func setCriteriumWeight(w1: Double, w2: Double, w3: Double) -> Bool
 ```
 
 - **Parameters:** `w1`, `w2`, `w3` — weights for the three approximation criteria.
+- **Returns:** `true` if all weights are non-negative; `false` if any weight is negative (OCCT silently ignores negative weights and `Build()` erases the failure status).
 - **OCCT:** `BRepOffsetAPI_ThruSections::SetCriteriumWeight`.
 - **Example:**
   ```swift
