@@ -14305,17 +14305,19 @@ bool OCCTFilletBuilderSetLaw(OCCTFilletBuilderRef builder,
   }
 }
 
-int32_t OCCTFilletBuilderGenerated(OCCTFilletBuilderRef builder,
-                                   OCCTShapeRef         shape,
-                                   OCCTShapeRef**       outShapes)
+// #794: shared helper for FilletBuilder history queries (Generated/Modified)
+static int32_t occtFilletBuilderHistoryQuery(OCCTFilletBuilderRef builder,
+                                             OCCTShapeRef shape,
+                                             OCCTShapeRef** outShapes,
+                                             const TopTools_ListOfShape& (BRepFilletAPI_MakeFillet::*query)(const TopoDS_Shape&))
 {
   if (!builder || !shape || !outShapes)
     return 0;
   *outShapes = nullptr;
   try
   {
-    const TopTools_ListOfShape& list  = builder->fillet.Generated(shape->shape);
-    int                         count = static_cast<int>(list.Size());
+    const TopTools_ListOfShape& list = (builder->fillet.*query)(shape->shape);
+    int count = static_cast<int>(list.Size());
     if (count == 0)
       return 0;
     OCCTShapeRef* shapes = (OCCTShapeRef*)malloc(count * sizeof(OCCTShapeRef));
@@ -14335,34 +14337,18 @@ int32_t OCCTFilletBuilderGenerated(OCCTFilletBuilderRef builder,
   }
 }
 
+int32_t OCCTFilletBuilderGenerated(OCCTFilletBuilderRef builder,
+                                   OCCTShapeRef         shape,
+                                   OCCTShapeRef**       outShapes)
+{
+  return occtFilletBuilderHistoryQuery(builder, shape, outShapes, &BRepFilletAPI_MakeFillet::Generated);
+}
+
 int32_t OCCTFilletBuilderModified(OCCTFilletBuilderRef builder,
                                   OCCTShapeRef         shape,
                                   OCCTShapeRef**       outShapes)
 {
-  if (!builder || !shape || !outShapes)
-    return 0;
-  *outShapes = nullptr;
-  try
-  {
-    const TopTools_ListOfShape& list  = builder->fillet.Modified(shape->shape);
-    int                         count = static_cast<int>(list.Size());
-    if (count == 0)
-      return 0;
-    OCCTShapeRef* shapes = (OCCTShapeRef*)malloc(count * sizeof(OCCTShapeRef));
-    if (!shapes)
-      return 0;
-    int i = 0;
-    for (auto it = list.cbegin(); it != list.cend(); ++it, ++i)
-    {
-      shapes[i] = new OCCTShape(*it);
-    }
-    *outShapes = shapes;
-    return count;
-  }
-  catch (...)
-  {
-    return 0;
-  }
+  return occtFilletBuilderHistoryQuery(builder, shape, outShapes, &BRepFilletAPI_MakeFillet::Modified);
 }
 
 bool OCCTFilletBuilderIsDeleted(OCCTFilletBuilderRef builder, OCCTShapeRef shape)
@@ -14387,21 +14373,23 @@ bool OCCTFilletBuilderIsDeleted(OCCTFilletBuilderRef builder, OCCTShapeRef shape
 
 // --- ChamferBuilder history & extras ---
 
-int32_t OCCTChamferBuilderGenerated(OCCTChamferBuilderRef builder,
-                                    OCCTShapeRef          shape,
-                                    OCCTShapeRef**        outShapes)
+// #794: shared helper for ChamferBuilder history queries (Generated/Modified)
+static int32_t occtChamferBuilderHistoryQuery(OCCTChamferBuilderRef builder,
+                                              OCCTShapeRef shape,
+                                              OCCTShapeRef** outShapes,
+                                              const TopTools_ListOfShape& (BRepFilletAPI_MakeChamfer::*query)(const TopoDS_Shape&))
 {
   if (!builder || !shape || !outShapes)
     return 0;
   *outShapes = nullptr;
   try
   {
-    const TopTools_ListOfShape& list  = builder->chamfer.Generated(shape->shape);
-    int32_t                     count = static_cast<int32_t>(list.Size());
+    const TopTools_ListOfShape& list = (builder->chamfer.*query)(shape->shape);
+    int32_t count = static_cast<int32_t>(list.Size());
     if (count == 0)
       return 0;
     *outShapes = (OCCTShapeRef*)malloc(count * sizeof(OCCTShapeRef));
-    int32_t i  = 0;
+    int32_t i = 0;
     for (auto it = list.cbegin(); it != list.cend(); ++it, ++i)
     {
       (*outShapes)[i] = new OCCTShape{*it};
@@ -14414,31 +14402,18 @@ int32_t OCCTChamferBuilderGenerated(OCCTChamferBuilderRef builder,
   }
 }
 
+int32_t OCCTChamferBuilderGenerated(OCCTChamferBuilderRef builder,
+                                    OCCTShapeRef          shape,
+                                    OCCTShapeRef**        outShapes)
+{
+  return occtChamferBuilderHistoryQuery(builder, shape, outShapes, &BRepFilletAPI_MakeChamfer::Generated);
+}
+
 int32_t OCCTChamferBuilderModified(OCCTChamferBuilderRef builder,
                                    OCCTShapeRef          shape,
                                    OCCTShapeRef**        outShapes)
 {
-  if (!builder || !shape || !outShapes)
-    return 0;
-  *outShapes = nullptr;
-  try
-  {
-    const TopTools_ListOfShape& list  = builder->chamfer.Modified(shape->shape);
-    int32_t                     count = static_cast<int32_t>(list.Size());
-    if (count == 0)
-      return 0;
-    *outShapes = (OCCTShapeRef*)malloc(count * sizeof(OCCTShapeRef));
-    int32_t i  = 0;
-    for (auto it = list.cbegin(); it != list.cend(); ++it, ++i)
-    {
-      (*outShapes)[i] = new OCCTShape{*it};
-    }
-    return count;
-  }
-  catch (...)
-  {
-    return 0;
-  }
+  return occtChamferBuilderHistoryQuery(builder, shape, outShapes, &BRepFilletAPI_MakeChamfer::Modified);
 }
 
 bool OCCTChamferBuilderIsDeleted(OCCTChamferBuilderRef builder, OCCTShapeRef shape)

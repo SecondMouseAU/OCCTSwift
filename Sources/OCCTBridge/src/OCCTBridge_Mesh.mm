@@ -567,8 +567,12 @@ OCCTShapeRef OCCTMeshToShape(OCCTMeshRef mesh) {
 
 // MARK: - Mesh Booleans (via B-Rep Roundtrip)
 
-OCCTMeshRef OCCTMeshUnion(OCCTMeshRef mesh1, OCCTMeshRef mesh2, double deflection) {
-    if (!mesh1 || !mesh2) return nullptr;
+// #794: shared helper for mesh booleans (union/subtract/intersect)
+static OCCTMeshRef occtMeshBoolean(OCCTMeshRef mesh1, OCCTMeshRef mesh2, double deflection,
+                                   OCCTShapeRef (*boolOp)(OCCTShapeRef, OCCTShapeRef))
+{
+    if (!mesh1 || !mesh2)
+        return nullptr;
 
     try {
         // Convert meshes to shapes
@@ -580,12 +584,13 @@ OCCTMeshRef OCCTMeshUnion(OCCTMeshRef mesh1, OCCTMeshRef mesh2, double deflectio
             return nullptr;
         }
 
-        // Perform boolean union
-        OCCTShapeRef result = OCCTShapeUnion(shape1, shape2);
+        // Perform boolean operation
+        OCCTShapeRef result = boolOp(shape1, shape2);
         OCCTShapeRelease(shape1);
         OCCTShapeRelease(shape2);
 
-        if (!result) return nullptr;
+        if (!result)
+            return nullptr;
 
         // Re-mesh the result
         OCCTMeshRef resultMesh = OCCTShapeCreateMesh(result, deflection, 0.5);
@@ -595,66 +600,18 @@ OCCTMeshRef OCCTMeshUnion(OCCTMeshRef mesh1, OCCTMeshRef mesh2, double deflectio
     } catch (...) {
         return nullptr;
     }
+}
+
+OCCTMeshRef OCCTMeshUnion(OCCTMeshRef mesh1, OCCTMeshRef mesh2, double deflection) {
+    return occtMeshBoolean(mesh1, mesh2, deflection, OCCTShapeUnion);
 }
 
 OCCTMeshRef OCCTMeshSubtract(OCCTMeshRef mesh1, OCCTMeshRef mesh2, double deflection) {
-    if (!mesh1 || !mesh2) return nullptr;
-
-    try {
-        // Convert meshes to shapes
-        OCCTShapeRef shape1 = OCCTMeshToShape(mesh1);
-        OCCTShapeRef shape2 = OCCTMeshToShape(mesh2);
-        if (!shape1 || !shape2) {
-            OCCTShapeRelease(shape1);
-            OCCTShapeRelease(shape2);
-            return nullptr;
-        }
-
-        // Perform boolean subtraction
-        OCCTShapeRef result = OCCTShapeSubtract(shape1, shape2);
-        OCCTShapeRelease(shape1);
-        OCCTShapeRelease(shape2);
-
-        if (!result) return nullptr;
-
-        // Re-mesh the result
-        OCCTMeshRef resultMesh = OCCTShapeCreateMesh(result, deflection, 0.5);
-        OCCTShapeRelease(result);
-
-        return resultMesh;
-    } catch (...) {
-        return nullptr;
-    }
+    return occtMeshBoolean(mesh1, mesh2, deflection, OCCTShapeSubtract);
 }
 
 OCCTMeshRef OCCTMeshIntersect(OCCTMeshRef mesh1, OCCTMeshRef mesh2, double deflection) {
-    if (!mesh1 || !mesh2) return nullptr;
-
-    try {
-        // Convert meshes to shapes
-        OCCTShapeRef shape1 = OCCTMeshToShape(mesh1);
-        OCCTShapeRef shape2 = OCCTMeshToShape(mesh2);
-        if (!shape1 || !shape2) {
-            OCCTShapeRelease(shape1);
-            OCCTShapeRelease(shape2);
-            return nullptr;
-        }
-
-        // Perform boolean intersection
-        OCCTShapeRef result = OCCTShapeIntersect(shape1, shape2);
-        OCCTShapeRelease(shape1);
-        OCCTShapeRelease(shape2);
-
-        if (!result) return nullptr;
-
-        // Re-mesh the result
-        OCCTMeshRef resultMesh = OCCTShapeCreateMesh(result, deflection, 0.5);
-        OCCTShapeRelease(result);
-
-        return resultMesh;
-    } catch (...) {
-        return nullptr;
-    }
+    return occtMeshBoolean(mesh1, mesh2, deflection, OCCTShapeIntersect);
 }
 
 // MARK: - Mesh Access
