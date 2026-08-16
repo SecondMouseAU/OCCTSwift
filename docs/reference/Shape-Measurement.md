@@ -489,7 +489,11 @@ Creates a solid that extends infinitely in one direction from the profile. Usefu
   - `direction` — Direction of extrusion.
   - `infinite` — If `true`, extrude in both directions (fully infinite); if `false`, extrude in one direction (semi-infinite).
 - **Returns:** Extruded shape, or `nil` on failure.
-- **OCCT:** `BRepPrimAPI_MakeHalfSpace` / `BRepBuilderAPI_MakeSolid` (via `OCCTShapeExtrudeSemiInfinite`).
+- **OCCT:** `BRepPrimAPI_MakePrism(profile, dir, Copy = !infinite)` (via
+  `OCCTShapeExtrudeSemiInfinite`). Neither `BRepPrimAPI_MakeHalfSpace` nor
+  `BRepBuilderAPI_MakeSolid`, which this entry used to name and neither of which the bridge calls
+  here; for a true half-space see
+  [`halfSpace(face:referencePoint:)`](Shape-Healing.md#shapehalfspacefacereferencepoint). (#808)
 
 ---
 
@@ -848,7 +852,10 @@ Periodic edges (like circles) can cause issues in some algorithms. This splits e
 
 - **Parameters:** `splitPoints` — Number of split points per closed edge (default `1`, which doubles the edge count).
 - **Returns:** Shape with closed edges split, or `nil` on failure.
-- **OCCT:** `ShapeUpgrade_ShapeDivideAngle` / `BRep_Builder` (via `OCCTShapeDivideClosedEdges`).
+- **OCCT:** `ShapeUpgrade_ShapeDivideClosedEdges::SetNbSplitPoints` then `Perform()` (via
+  `OCCTShapeDivideClosedEdges`). Neither `ShapeUpgrade_ShapeDivideAngle`, a different sibling of the
+  same base that splits by angular span, nor `BRep_Builder`, which is not called here; both were
+  named by this entry until #808. (#808)
 
 ---
 

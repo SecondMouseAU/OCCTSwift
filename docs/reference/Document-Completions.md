@@ -1390,7 +1390,11 @@ public func moved(dx: Double, dy: Double, dz: Double) -> Shape?
 
 - **Parameters:** `dx`, `dy`, `dz` — translation components.
 - **Returns:** The translated shape, or `nil` on failure.
-- **OCCT:** `gp_Trsf` translation → `BRepBuilderAPI_Transform`.
+- **OCCT:** `gp_Trsf::SetTranslation` fed to `TopoDS_Shape::Moved(TopLoc_Location(trsf))` (via
+  `OCCTShapeMoved`). Not `BRepBuilderAPI_Transform`, which this entry used to name: `Moved` attaches
+  a `TopLoc_Location` and leaves the underlying geometry untouched and shared, where
+  `BRepBuilderAPI_Transform` rebuilds it. Use `Shape.translated(by:)` for the rebuilding form.
+  (#808)
 - **Example:**
   ```swift
   if let shifted = box.moved(dx: 10, dy: 0, dz: 0) { ... }

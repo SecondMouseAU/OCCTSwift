@@ -19,6 +19,32 @@ each named with its migration in [`SEMVER.md`](SEMVER.md#v200).
 
 ## Unreleased
 
+### Refman coverage audit, Pass 2a: Shape/Topology core (#808)
+
+`Scripts/repro/808-refman-shape-topology/refman_census.py` enumerates every OCCT class under
+`TopoDS_*`, `TopExp*`, `TopTools_*`, `BRep_*`, `BRepBuilderAPI_*`, `BRepPrimAPI_*`,
+`BRepAlgoAPI_*` and `BRepCheck*` (151 classes) and verdicts each against `Sources/OCCTBridge` and
+`docs/`.
+
+Fixed **26 doc attributions across 12 files** that named an OCCT class the implementation does not
+call. Five named `TopExp_Explorer`, which counts one entry per sub-shape *occurrence*, where the
+bridge calls `TopExp::MapShapes` / `MapShapesAndUniqueAncestors`, which count one per *distinct*
+sub-shape (`Shape.edgeCount`, `uniqueEdgeCount`, `uniqueSubShapeCount(ofType:)`,
+`edgeFaceAdjacency()`, `vertexEdgeAdjacency()`). The rest named a class that is nowhere in the call
+chain, several of them semantically different from the one that runs: `Shape.isClosedShape` reads
+`TopoDS_Shape::Closed()`'s stored flag rather than computing closure with `BRep_Tool::IsClosed`,
+`Shape.moved(dx:dy:dz:)` attaches a `TopLoc_Location` rather than rebuilding geometry with
+`BRepBuilderAPI_Transform`, and `Shape.quilt(_:)` uses `BRepTools_Quilt`, which needs faces that
+already share edges, rather than `BRepBuilderAPI_Sewing`, which does not. `OCCTMakeEdgeError`'s
+bridge header comment claimed it returns a `BRepBuilderAPI_EdgeError`; it returns a
+`BRepCheck_Analyzer` verdict, because `MakeEdge::Error()` is a property of a live builder and cannot
+be recovered from a finished `TopoDS_Edge`.
+
+Recorded 85 previously-unrecorded unwrapped classes in `docs/occtswift-wrapping-gaps.md`: deprecated
+`NCollection` typedefs, B-Rep storage records, abstract bases, internal helpers, enums whose values
+the Swift surface already mirrors, and enums OCCT 8.0.1 has no entry point returning. No public API
+change.
+
 ### `ThruSectionsBuilder` no longer returns wrong or crashing results for a mismatched section edge count under `checkCompatibility(false)` (#913)
 
 `BRepOffsetAPI_ThruSections::CreateSmoothed()` derived the edge count it assumes every section has

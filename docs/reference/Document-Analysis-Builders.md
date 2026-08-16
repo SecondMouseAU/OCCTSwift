@@ -941,7 +941,9 @@ public func edgeFaceAdjacency() -> [Int]
 ```
 
 - **Returns:** Array of face counts per edge (in edge iteration order); empty if no edges.
-- **OCCT:** `TopExp_Explorer` / adjacency map via `OCCTEdgeFaceAdjacency`.
+- **OCCT:** `TopExp::MapShapesAndUniqueAncestors(shape, TopAbs_EDGE, TopAbs_FACE, map)` via
+  `OCCTEdgeFaceAdjacency`. No explorer is constructed; this entry used to name `TopExp_Explorer`,
+  which would give per-occurrence rather than per-distinct-edge counts. (#808)
 
 ---
 
@@ -954,7 +956,9 @@ public func vertexEdgeAdjacency() -> [Int]
 ```
 
 - **Returns:** Array of edge counts per vertex (in vertex iteration order); empty if no vertices.
-- **OCCT:** `TopExp_Explorer` / adjacency map via `OCCTVertexEdgeAdjacency`.
+- **OCCT:** `TopExp::MapShapesAndUniqueAncestors(shape, TopAbs_VERTEX, TopAbs_EDGE, map)` via
+  `OCCTVertexEdgeAdjacency`. Not `TopExp_Explorer`, for the same reason as
+  [`edgeFaceAdjacency()`](#edgefaceadjacency) above. (#808)
 
 ---
 

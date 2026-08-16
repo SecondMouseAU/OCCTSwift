@@ -1618,7 +1618,12 @@ public func mergedMeshNodes(from shape: Shape,
 
 - **Parameters:** `shape`: a shape that has been triangulated (e.g., via `Shape.mesh(linearDeflection:angularDeflection:)`); `smoothAngle`: normal-smoothing angle threshold in radians; `mergeTolerance`: distance threshold for merging nodes (0 = positional identity only).
 - **Returns:** `MergedMeshData` with interleaved vertex, normal, and index arrays, or `nil` if the shape has no triangulation or the output would exceed 1 000 000 vertices / 3 000 000 indices.
-- **OCCT:** `BRep_Builder` face iteration + `Poly_Triangulation` via `OCCTPolyMergeNodes`.
+- **OCCT:** a per-occurrence `TopExp_Explorer(TopAbs_FACE)` walk (the shared
+  `occtForEachOrientedFace` helper) feeding each face's `BRep_Tool::Triangulation` into
+  `Poly_MergeNodesTool::AddTriangulation` (via `OCCTPolyMergeNodes`). Not `BRep_Builder`, which this
+  entry used to name and which is not called here. The walk is deliberately per-occurrence rather
+  than deduplicated (#613): a face shared by two solids is added once per owner, each wound outward
+  for that owner. (#808)
 - **Example:**
   ```swift
   let shape = Shape.box(width: 10, height: 10, depth: 10)!

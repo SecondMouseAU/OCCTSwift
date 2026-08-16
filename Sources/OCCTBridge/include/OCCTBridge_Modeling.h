@@ -3933,7 +3933,10 @@ void OCCTEdgeVertex2(OCCTShapeRef _Nonnull edge,
                      double* _Nonnull y,
                      double* _Nonnull z);
 
-/// Get the BRepBuilderAPI_EdgeError for the last MakeEdge (0=done, 1=PointProjectionFailed, etc).
+/// Validity verdict for a finished edge: 0 valid, 1 invalid, -1 null input or exception.
+/// NOT BRepBuilderAPI_EdgeError, which this comment claimed until #808: that enum is a property of
+/// a live BRepBuilderAPI_MakeEdge builder and cannot be recovered from a TopoDS_Edge, so the
+/// implementation runs BRepCheck_Analyzer instead.
 int32_t OCCTMakeEdgeError(OCCTShapeRef _Nonnull edge);
 
 // --- BRepBuilderAPI_MakeFace completions ---
