@@ -12,9 +12,6 @@ Sources/OCCTBridge/include/OCCTBridge_Geom2d.h
 Sources/OCCTBridge/include/OCCTBridge_Healing.h
 Sources/OCCTBridge/include/OCCTBridge_IO.h
 Sources/OCCTBridge/include/OCCTBridge_Mesh.h
-# Deferred (not fixed): touched by PR #912 (#910), which measured the diff at 3,392 clang-format
-# lines for this header alone and judged full compliance out of scope for that PR. Tracked as #917.
-Sources/OCCTBridge/include/OCCTBridge_Modeling.h
 Sources/OCCTBridge/include/OCCTBridge_ProjLib_NLPlate.h
 Sources/OCCTBridge/include/OCCTBridge_Properties.h
 Sources/OCCTBridge/include/OCCTBridge_Spatial.h
@@ -30,10 +27,6 @@ Sources/OCCTBridge/src/OCCTBridge_Healing.mm
 Sources/OCCTBridge/src/OCCTBridge_Internal.h
 Sources/OCCTBridge/src/OCCTBridge_IO.mm
 Sources/OCCTBridge/src/OCCTBridge_Mesh.mm
-# Deferred (not fixed): PR #912 (#910) measured the diff at 24,133 clang-format lines for this
-# file alone and judged full compliance out of scope for that PR; PR #918 (#916) hit the identical
-# wall days later — every PR touching this file does. Tracked as #917.
-Sources/OCCTBridge/src/OCCTBridge_Modeling.mm
 Sources/OCCTBridge/src/OCCTBridge_ProjLib_NLPlate.mm
 Sources/OCCTBridge/src/OCCTBridge_Properties.mm
 Sources/OCCTBridge/src/OCCTBridge_Spatial.mm
