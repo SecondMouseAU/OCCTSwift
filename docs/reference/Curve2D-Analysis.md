@@ -1557,7 +1557,8 @@ Distinct from `segment(from:to:)` taking `SIMD2<Double>` parameters.
 
 - **Parameters:** `p1`/`p2` — `Point2D` endpoints.
 - **Returns:** `Curve2D` (trimmed line segment), or `nil` on failure.
-- **OCCT:** `GCE2d_MakeSegment`.
+- **OCCT:** `Geom2d_Line` + `Geom2d_TrimmedCurve` (direct construction — no `GC_`/`GCE2d_` `Make`
+  helper is used; corrected from a stale `GCE2d_MakeSegment` attribution by #809).
 - **Example:**
   ```swift
   if let a = someEdge.startPoint2D,
