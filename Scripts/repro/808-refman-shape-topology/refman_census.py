@@ -758,8 +758,16 @@ def main() -> int:
     for r in rows:
         counts[r["verdict"]] = counts.get(r["verdict"], 0) + 1
     print(f"Total classes in lane: {len(rows)}")
-    for verdict in ("ok", "deliberate, recorded", "under", "over"):
+    # Only three verdicts are reachable here. `classify()` returns exactly `ok`,
+    # `deliberate, recorded` or `under`; NOTHING in this script can return `over`, because
+    # over-coverage is a wrong ATTRIBUTION in prose, not a property of a class's wrapped/documented
+    # state. Printing `over: 0` beside the three derived counts would read as a measured all-clear
+    # when it is a literal that cannot be anything else, so it is deliberately not printed. See the
+    # OVER-COVERAGE paragraph in the module docstring, and #928 for the detector that makes this a
+    # real verdict.
+    for verdict in ("ok", "deliberate, recorded", "under"):
         print(f"  {verdict}: {counts.get(verdict, 0)}")
+    assert not any(r["verdict"] == "over" for r in rows), "classify() cannot return 'over'"
 
     exit_code = 0
 
@@ -773,6 +781,10 @@ def main() -> int:
         exit_code = 1
     else:
         print("All known over-coverage findings remain fixed (bad text not found in current docs).")
+        print("  NOTE: this is a regression check over the 26 findings #808's investigation found by")
+        print("  reading each claim against the refman. It does NOT search for NEW over-coverage,")
+        print("  and cannot: see the docstring, and #928 for the detector that will. A clean run")
+        print("  here means 'the known ones stayed fixed', not 'this lane has none'.")
 
     unrecorded = [r for r in rows if r["verdict"] == "under"]
     if unrecorded:
