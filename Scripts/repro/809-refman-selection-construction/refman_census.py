@@ -271,6 +271,42 @@ KNOWN_OVER_FINDINGS = [
         "bad_phrase": "**OCCT:** `GCE2d_MakeSegment`.",
         "correct": "Geom2d_Line + Geom2d_TrimmedCurve, direct construction, no Make helper",
     },
+    # #930: Pass 2b over-coverage findings in lane 809
+    {
+        "lane": "GC_*",
+        "swift_method": "Shape.translated(from:to:)",
+        "doc_file": "docs/reference/Shape-Builders-1.md",
+        "bad_phrase": "**OCCT:** `gp_Vec` translation via `OCCTShapeTranslateByPoints`.",
+        "correct": "`GC_MakeTranslation(gp_Pnt, gp_Pnt)` → `gp_Trsf` + `BRepBuilderAPI_Transform`, via `OCCTShapeTranslateByPoints`.",
+    },
+    {
+        "lane": "gp_*",
+        "swift_method": "Shape.vector2DCross(a:b:)",
+        "doc_file": "docs/reference/Shape-Builders-2.md",
+        "bad_phrase": "**OCCT:** `gp_Vec2d::Crossed`",
+        "correct": "Inline arithmetic `ax * by - ay * bx` via `OCCTVector2DCross` (no `gp_Vec2d` constructed).",
+    },
+    {
+        "lane": "gp_*",
+        "swift_method": "Shape.vector2DDot(a:b:)",
+        "doc_file": "docs/reference/Shape-Builders-2.md",
+        "bad_phrase": "**OCCT:** `gp_Vec2d::Dot`",
+        "correct": "Inline arithmetic `ax * bx + ay * by` via `OCCTVector2DDot` (no `gp_Vec2d` constructed).",
+    },
+    {
+        "lane": "gp_*",
+        "swift_method": "Surface.torusAxis",
+        "doc_file": "docs/reference/Geometry2D.md",
+        "bad_phrase": "**OCCT:** `OCCTSurfaceTorusAxis` — reads `gp_Torus::Axis()` from the underlying `Geom_ToroidalSurface`.",
+        "correct": "`OCCTSurfaceTorusAxis` — reads `Geom_ToroidalSurface::Axis()` (inherited from `Geom_ElementarySurface`, returns `gp_Ax1` from `gp_Ax3`); no `gp_Torus` is constructed.",
+    },
+    {
+        "lane": "GC_*",
+        "swift_method": "Shape.faceFromCylinder(origin:axis:radius:uBounds:vBounds:tolerance:)",
+        "doc_file": "docs/reference/Shape-Builders-1.md",
+        "bad_phrase": "**OCCT:** `BRepLib_MakeFace(gp_Cylinder, ...)` via `OCCTBRepLibMakeFaceFromCylinder`.",
+        "correct": "`BRepLib_MakeFace(Geom_CylindricalSurface, ...)` via `OCCTBRepLibMakeFaceFromCylinder` (builds `Geom_CylindricalSurface(gp_Ax2, radius)`; not `gp_Cylinder`).",
+    },
 ]
 
 

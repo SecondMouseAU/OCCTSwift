@@ -961,7 +961,7 @@ public var torusAxis: (origin: SIMD3<Double>, direction: SIMD3<Double>)? { get }
 Returns `nil` if the surface is not a torus.
 
 - **Returns:** Tuple with axis origin and direction, or `nil` if `surfaceKind != .torus`.
-- **OCCT:** `OCCTSurfaceTorusAxis` — reads `gp_Torus::Axis()` from the underlying `Geom_ToroidalSurface`.
+- **OCCT:** `OCCTSurfaceTorusAxis` — reads `Geom_ToroidalSurface::Axis()` (inherited from `Geom_ElementarySurface`, returns `gp_Ax1` from `gp_Ax3`); no `gp_Torus` is constructed.
 - **Example:**
   ```swift
   let torus = Surface.torus(majorRadius: 10, minorRadius: 2)!
