@@ -152,7 +152,6 @@ Sources/OCCTSwift/ResourceManager.swift
 Sources/OCCTSwift/SameParameterResult.swift
 Sources/OCCTSwift/Sampling.swift
 Sources/OCCTSwift/SAWireAnalysis.swift
-Sources/OCCTSwift/SectionBuilder.swift
 Sources/OCCTSwift/Selection.swift
 Sources/OCCTSwift/SewingBuilder.swift
 Sources/OCCTSwift/Shape.swift

@@ -798,6 +798,58 @@ struct StressSectionBuilderLifecycleTests {
         if let r1 { #expect(r1.isValid) }
         if let r2 { #expect(r2.isValid) }
     }
+
+    // #916: OCCTSectionBuilder's `built` flag (gating ancestorFaceOn1/2) is only ever set true on a
+    // successful build() — it was never reset when the builder is REUSED via init1/init2 without a
+    // following build() call. That's the same staleness class PR #912 fixed for OCCTThruSections'
+    // AddWire/AddVertex (its own review finding 6): a call that invalidates the last build's result
+    // must clear the flag itself, since the accessor has no other way to know the result it would
+    // read no longer corresponds to the builder's current arguments.
+    //
+    // This is the half of #916 reachable through the public Swift API: BRepAlgoAPI_Section's own
+    // clean (non-throwing) `!IsDone()` failure path requires either zero arguments (unreachable on
+    // a reused builder — init1/init2 always bind something) or a literal null TopoDS_Shape argument
+    // (unreachable through Shape, which never wraps one — verified directly against the pinned
+    // kernel across 13 candidate triggers: self-intersecting/bowtie faces, coincident/duplicate
+    // solids, an empty compound, a degenerate collinear-point face, NaN and zero-coefficient plane
+    // coefficients, and an invalid #905-style uncapped loft solid all still report IsDone()==true).
+    // The OTHER half of #916 — build() ITSELF cleanly failing on a reused, already-successful
+    // builder — was proven live at the bridge boundary instead, using the real, unmodified
+    // OCCTSectionBuilder* functions with a hand-constructed null-wrapping shape as the one input
+    // Swift's type system cannot produce; see Scripts/repro/916-sectionbuilder-built-flag-stale/.
+    // That reproducer found something worse than a stale answer: an uncatchable SIGSEGV, because
+    // the failed rebuild leaves BOPAlgo_PaveFiller's own internal data structure unset, and
+    // HasAncestorFaceOn1/2 (called only because `built` was wrongly still true) dereferences it.
+    @Test func ancestorFaceNilAfterReinitWithoutRebuild() throws {
+        // Both boxes corner-placed (Shape.box(origin:...:) takes origin as a CORNER, not a
+        // center, unlike the no-origin overload) so they share a genuine 3D overlap region
+        // rather than merely touching tangentially along a shared face plane.
+        let box1 = try #require(Shape.box(origin: SIMD3(0, 0, 0), width: 10, height: 10, depth: 10))
+        let box2 = try #require(Shape.box(origin: SIMD3(5, 5, 0), width: 10, height: 10, depth: 10))
+        let builder = try #require(SectionBuilder(shape1: box1, shape2: box2))
+        let result = try #require(builder.build())
+        #expect(result.isValid)
+
+        // Iterate the section's own edges to find one HasAncestorFaceOn1 actually resolves (per
+        // this project's own Test Conventions: edge-specific results can vary, so probe for a
+        // working one rather than assuming index/edge 0 qualifies).
+        let sectionEdges = result.subShapes(ofType: .edge)
+        var workingEdge: Shape?
+        for edge in sectionEdges where builder.ancestorFaceOn1(edge: edge) != nil {
+            workingEdge = edge
+            break
+        }
+        let edge = try #require(workingEdge, "fixture must produce at least one ancestor-resolving section edge")
+        #expect(builder.ancestorFaceOn1(edge: edge) != nil)
+
+        // Reuse the SAME builder: rebind arg1 to a different valid shape WITHOUT calling build()
+        // again. The section's internal BOPAlgo data still belongs to the FIRST build — before the
+        // #916 fix, `built` stayed true and ancestorFaceOn1 kept answering from that stale data
+        // despite no longer matching the builder's current arguments.
+        builder.init1(shape: standardSphere())
+        #expect(builder.ancestorFaceOn1(edge: edge) == nil)
+        #expect(builder.ancestorFaceOn2(edge: edge) == nil)
+    }
 }
 
 // MARK: - WireAnalyzer

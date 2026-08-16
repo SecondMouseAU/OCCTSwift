@@ -2308,7 +2308,9 @@ public func ancestorFaceOn1(edge: Shape) -> Shape?
 ```
 
 - **Parameters:** `edge` — a section result edge.
-- **Returns:** The face on the first argument that produced the edge, or `nil`.
+- **Returns:** The face on the first argument that produced the edge, or `nil` if not found, or if
+  the builder's most recent `build()` call did not succeed (including on a reused builder, after a
+  later failed rebuild, or after `init1`/`init2` was called again without a following `build()`).
 - **OCCT:** `BRepAlgoAPI_Section::HasAncestorFaceOn1` / `AncestorFaceOn1`.
 - **Example:**
   ```swift
@@ -2326,7 +2328,9 @@ public func ancestorFaceOn2(edge: Shape) -> Shape?
 ```
 
 - **Parameters:** `edge` — a section result edge.
-- **Returns:** The face on the second argument that produced the edge, or `nil`.
+- **Returns:** The face on the second argument that produced the edge, or `nil` if not found, or if
+  the builder's most recent `build()` call did not succeed (including on a reused builder, after a
+  later failed rebuild, or after `init1`/`init2` was called again without a following `build()`).
 - **OCCT:** `BRepAlgoAPI_Section::HasAncestorFaceOn2` / `AncestorFaceOn2`.
 - **Example:**
   ```swift
