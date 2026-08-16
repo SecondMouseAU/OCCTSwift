@@ -77,7 +77,11 @@ let occtTarget: Target = useLocalBinary
     //     locally built kernel. IT DOES NOT RUN IN ci.yml, which resolves this asset rather than
     //     building from source, so a green build-and-test is NOT evidence for 0027. Re-verify it
     //     with `OCCTSWIFT_LOCAL=1 swift test --filter StressBuilderLifecycle` against a local
-    //     build, and check the log says the test started rather than was skipped.
+    //     build, and check the log says the test STARTED rather than was skipped. That wording is
+    //     measured, not cautious: the same suite reports "5614 tests" either way. Against a local
+    //     kernel the log reads `started` then `passed after 66.774 seconds`; against the downloaded
+    //     asset it reads `skipped`, and the headline total does not move. A green run and a correct
+    //     total are both blind to this, so the per-test line is the only signal.
     //   - Five (0017, 0019, 0020, 0022, 0025) are .cxx-only and carry their own Swift regression
     //     suites (Issue484*, Issue522*, Issue532*, Issue568*, and the #597 case in
     //     OCCTSurfaceTests). ci.yml's build-and-test resolves this asset, not a local build, so a
