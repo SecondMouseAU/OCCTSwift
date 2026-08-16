@@ -33,10 +33,10 @@ let occtTarget: Target = useLocalBinary
         name: "OCCT",
         path: "Libraries/OCCT.xcframework"
     )
-    // OCCT V8_0_1 + the fifteen carried patches listed below.
+    // OCCT V8_0_1 + the seventeen carried patches listed below.
     //
     // Scripts/build-occt.sh builds V8_0_1, which absorbed ten of the previously carried patches (0001-0009 and 0013; their files are deleted,
-    // their writeups kept in Scripts/patches/README.md under "Retired patches"). The fifteen that
+    // their writeups kept in Scripts/patches/README.md under "Retired patches"). The seventeen that
     // survive, all present in Scripts/patches/, are:
     //
     //   0010  Intf_Interference O(1) tangent-zone lookup + checkpointed breaker            #319
@@ -55,16 +55,29 @@ let occtTarget: Target = useLocalBinary
     //   0023  GeomTools_Curve2dSet/SurfaceSet null-handle guard                            #643
     //   0024  Extrema_ExtCC::Points bound against mypoints                                 #636
     //   0025  GeomFill_Sweep reports the achieved conversion error                         #597
+    //   0026  BRepOffsetAPI_ThruSections refuses an uncappable non-planar extremity        #905
+    //   0027  ThruSections CreateSmoothed section-edge-count guard                         #913
     //
     // This list said "fifteen" above a list of eleven until the release check ran, which is the
     // #585 failure shape in miniature: `ls Scripts/patches/*.patch | wc -l` agreed with the count
     // while the enumeration next to it did not.
     //
-    // ALL FIFTEEN ARE VERIFIED PRESENT IN THE PINNED ASSET, measured rather than assumed:
+    // ALL SEVENTEEN ARE VERIFIED PRESENT IN THE PINNED ASSET, measured rather than assumed:
     //
     //   - Eight (0010, 0011, 0012, 0014, 0015, 0016, 0021, 0024) touch a shipped .hxx. Every line
     //     each patch adds to a header was matched, line for line, against the header inside the
-    //     downloaded asset: 17 headers, 178 added lines, 0 mismatches.
+    //     built asset: 210 added lines, 0 missing.
+    //   - One (0026) is .cxx-only but adds a distinctive string literal, so it was verified
+    //     directly in the binary: the message it throws appears exactly once in each of the three
+    //     slice archives (libOCCT-macos.a, libOCCT-ios.a, libOCCT-sim.a).
+    //   - One (0027) is .cxx-only and adds NO string literal, signalling through myStatus instead,
+    //     so nothing in the binary can be grepped for it. It is verified behaviourally by
+    //     StressBuilderLifecycleTests.mismatchedSectionEdgeCountWithoutCheckFailsCleanly, which is
+    //     gated on OCCTSWIFT_LOCAL=1 (PR #915 review, finding 1) precisely because it needs a
+    //     locally built kernel. IT DOES NOT RUN IN ci.yml, which resolves this asset rather than
+    //     building from source, so a green build-and-test is NOT evidence for 0027. Re-verify it
+    //     with `OCCTSWIFT_LOCAL=1 swift test --filter StressBuilderLifecycle` against a local
+    //     build, and check the log says the test started rather than was skipped.
     //   - Five (0017, 0019, 0020, 0022, 0025) are .cxx-only and carry their own Swift regression
     //     suites (Issue484*, Issue522*, Issue532*, Issue568*, and the #597 case in
     //     OCCTSurfaceTests). ci.yml's build-and-test resolves this asset, not a local build, so a
@@ -76,10 +89,15 @@ let occtTarget: Target = useLocalBinary
     //     They are the only two patches in the tree with no CI coverage of any kind, which is
     //     worth knowing before trusting "the fix is in the kernel" about either.
     //
-    // Pinned to the v2.0.0 RELEASE asset: upstream V8_0_1 plus the fifteen patches listed above.
-    // The v2.0.0-kernel.1/.2/.3 pre-releases carried the same kernel while the work was in flight,
-    // so ci.yml built what the branch's tests were written against; kernel.3's asset and this one
-    // are the same file, same sha256.
+    // Pinned to the v3.0.0-rc1 KERNEL PRE-RELEASE: upstream V8_0_1 plus the seventeen patches
+    // listed above. This is NOT the same file as the v2.0.0 asset it replaces: that one carried
+    // fifteen, and 0026 (#905) and 0027 (#913) had landed in Scripts/patches/ since without ever
+    // reaching a built kernel, so both were exercised by no CI job at all. That is the #585 shape,
+    // and it is why the count check at the top of this comment is worth the ten seconds.
+    //
+    // The v3.0.0 RELEASE commit re-points this pair again, at the release asset. Until then every
+    // commit pins v3.0.0-rc1, so do NOT delete that pre-release afterwards: deleting it takes its
+    // asset with it and makes this window unbuildable from a clean checkout.
     //
     // Until it was published, ci.yml resolved v1.15.18 (V8_0_0_p1 + patches 0001-0016) while the
     // branch built V8_0_1 + 0010-0021, so every test asserting a newer patch's fix failed in CI
@@ -118,8 +136,8 @@ let occtTarget: Target = useLocalBinary
     // new one.
     : .binaryTarget(
         name: "OCCT",
-        url: "https://github.com/SecondMouseAU/OCCTSwift/releases/download/v2.0.0/OCCT.xcframework.zip",
-        checksum: "8da567699b0ed1fcd0033373d64c2ee97052c57ee2dffe3091d6d55addc41f2a"
+        url: "https://github.com/SecondMouseAU/OCCTSwift/releases/download/v3.0.0-rc1/OCCT.xcframework.zip",
+        checksum: "77df5a0ae860b0f947353ff6eabf0ab25eb810ef0ce135b56bc60ff1e3e52ef2"
     )
 
 // OCCTBridge is 16 Objective-C++ files / ~62K lines wrapping the OCCT header tree; SwiftPM recompiles
