@@ -93,14 +93,14 @@ let occtTarget: Target = useLocalBinary
     //     They are the only two patches in the tree with no CI coverage of any kind, which is
     //     worth knowing before trusting "the fix is in the kernel" about either.
     //
-    // Pinned to the v3.0.0-rc1 KERNEL PRE-RELEASE: upstream V8_0_1 plus the seventeen patches
+    // Pinned to the v3.0.0-kernel.1 KERNEL PRE-RELEASE: upstream V8_0_1 plus the seventeen patches
     // listed above. This is NOT the same file as the v2.0.0 asset it replaces: that one carried
     // fifteen, and 0026 (#905) and 0027 (#913) had landed in Scripts/patches/ since without ever
     // reaching a built kernel, so both were exercised by no CI job at all. That is the #585 shape,
     // and it is why the count check at the top of this comment is worth the ten seconds.
     //
     // The v3.0.0 RELEASE commit re-points this pair again, at the release asset. Until then every
-    // commit pins v3.0.0-rc1, so do NOT delete that pre-release afterwards: deleting it takes its
+    // commit pins v3.0.0-kernel.1, so do NOT delete that pre-release afterwards: deleting it takes its
     // asset with it and makes this window unbuildable from a clean checkout.
     //
     // Until it was published, ci.yml resolved v1.15.18 (V8_0_0_p1 + patches 0001-0016) while the
@@ -129,14 +129,14 @@ let occtTarget: Target = useLocalBinary
     // asset first and landing the pin after, so its tag points at a commit pinning the PREVIOUS
     // asset. Measured, not assumed:
     //
-    //     v2.0.0-kernel.1 -> tree pins v1.15.18
-    //     v2.0.0-kernel.2 -> tree pins v2.0.0-kernel.1
-    //     v2.0.0-kernel.3 -> tree pins v2.0.0-kernel.2
-    //     v3.0.0-rc1      -> tree pins v2.0.0
-    //     v2.0.0 (RELEASE)-> tree pins v2.0.0   <- only the release tag is self-consistent
+    //     v2.0.0-kernel.1  -> tree pins v1.15.18
+    //     v2.0.0-kernel.2  -> tree pins v2.0.0-kernel.1
+    //     v2.0.0-kernel.3  -> tree pins v2.0.0-kernel.2
+    //     v3.0.0-kernel.1  -> tree pins v2.0.0
+    //     v2.0.0 (RELEASE) -> tree pins v2.0.0   <- only the release tag is self-consistent
     //
     // So a pre-release tag whose tree pins its predecessor is CORRECT and must not be "fixed" by
-    // re-pointing it. That correction was proposed during the v3.0.0-rc1 rebuild on the strength of
+    // re-pointing it. That correction was proposed during the v3.0.0-kernel.1 rebuild on the strength of
     // the paragraph above, and the history is what refuted it.
     //
     //   1. commit the `url:` change and push it
@@ -153,13 +153,13 @@ let occtTarget: Target = useLocalBinary
     // v2.0.0-kernel.3 assets are both 149,133,257 bytes, and downloading the v2.0.0 one hashes to
     // 8da567699b0ed1fcd0033373d64c2ee97052c57ee2dffe3091d6d55addc41f2a, the value BOTH commits
     // pinned. The release commit re-uploaded kernel.3's zip unchanged and swapped only `url:`.
-    // Expect to do the same at the v3.0.0 release with the v3.0.0-rc1 asset.
+    // Expect to do the same at the v3.0.0 release with the v3.0.0-kernel.1 asset.
     // Bump BOTH url and checksum whenever the xcframework is rebuilt, or
     // URL-resolving consumers silently keep the previous kernel while local sibling builds get the
     // new one.
     : .binaryTarget(
         name: "OCCT",
-        url: "https://github.com/SecondMouseAU/OCCTSwift/releases/download/v3.0.0-rc1/OCCT.xcframework.zip",
+        url: "https://github.com/SecondMouseAU/OCCTSwift/releases/download/v3.0.0-kernel.1/OCCT.xcframework.zip",
         checksum: "77df5a0ae860b0f947353ff6eabf0ab25eb810ef0ce135b56bc60ff1e3e52ef2"
     )
 
