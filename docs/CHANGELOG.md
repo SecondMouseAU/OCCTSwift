@@ -19,6 +19,21 @@ each named with its migration in [`SEMVER.md`](SEMVER.md#v200).
 
 ## Unreleased
 
+### `ThruSectionsBuilder` no longer returns wrong or crashing results for a mismatched section edge count under `checkCompatibility(false)` (#913)
+
+`BRepOffsetAPI_ThruSections::CreateSmoothed()` derived the edge count it assumes every section has
+from section 1 alone, and filled a fixed-size array on that assumption with no bounds check. With
+`checkCompatibility(false)`, nothing reconciles differing section edge counts first (the default,
+`checkCompatibility(true)`, does this via `BRepFill_CompatibleWires`). A later section with **more**
+edges than section 1 overran the array — heap corruption, observed as a SIGSEGV/SIGBUS once at
+least 3 sections are involved (2 sections always take a different code path that doesn't share this
+allocation shape). A section with **fewer** edges didn't crash, but silently misaligned per-section
+strides to the wrong geometry, reporting `build() == true` for an invalid result. Both directions
+are the same contract violation and are now rejected the same way. Fixed upstream:
+[OCCT#1466](https://github.com/Open-Cascade-SAS/OCCT/pull/1466), carried as
+`Scripts/patches/0027-*` and verified against a full local kernel rebuild (all 17 carried patches,
+full `swift test` passing).
+
 ### `ThruSectionsBuilder` no longer returns stale results after a failed rebuild, or after a build on a changed builder that hasn't been rebuilt (#910)
 
 `generatedFace(from:)` and `shape` both read post-build OCCT state without reliably checking
