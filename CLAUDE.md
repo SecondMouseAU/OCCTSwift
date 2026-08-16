@@ -52,7 +52,7 @@ Scripts/tsan-stress.sh all           # ThreadSanitizer gate: REQUIRED for concur
 
 ### Static Gate Scripts
 
-Six gates, one census and one merge-history audit, all pure Python over the repo's own text. No
+Six gates, two censuses and one merge-history audit, all pure Python over the repo's own text. No
 OCCT, no build, no network, ~3s for the lot. **CI runs every gate, plus every `--self-test` including the census's, in `ci.yml`'s
 `gate-scripts` job** — a separate
 `ubuntu-latest` job, not a step inside the macOS build, so it reports in under a minute and keeps
@@ -110,16 +110,29 @@ python3 Scripts/check-docs-existence.py          # every symbol docs/ documents 
 python3 Scripts/derive-bridge-header-split.py --verify  # every declaration sits in the header its .mm owns (#673)
 python3 Scripts/count-operations.py              # README + API_REFERENCE totals match the derived count
 python3 Scripts/census-unmeasured-values.py      # CENSUS, not a gate: values returned as measurements that were never computed (#726)
+python3 Scripts/census-doc-occt-attribution.py   # CENSUS, not a gate: docs attributing a method to an OCCT class its bridge fn never reaches (#928)
 python3 Scripts/check-changelog-transcription.py # REPORT, not a gate yet: merges that landed with no CHANGELOG entry (#742)
 ```
 
-`census-unmeasured-values.py` is the one entry that is **not a gate**. It exits 0 whether or not it
-finds anything, because its output is a list of sites for a human to adjudicate, not a verdict on
-the tree. CI therefore runs only its `--self-test`: a bare run could never fail and so could never
-signal. Its detector can still go blind, which is the failure every other entry here exists to
-prevent, so that is what CI holds it to.
+`census-unmeasured-values.py` and `census-doc-occt-attribution.py` are the two entries that are
+**not gates**. Each exits 0 whether or not it finds anything, because the output is a list of sites
+for a human to adjudicate, not a verdict on the tree. CI therefore runs only their `--self-test`s:
+a bare run could never fail and so could never signal. Their detectors can still go blind, which is
+the failure every other entry here exists to prevent, so that is what CI holds them to.
 
-Five of the six gates take `--self-test`, as do the census and the merge-history audit, each running a fixture battery proving the *detector* catches each
+**`census-doc-occt-attribution.py` is #807's over-coverage detector** (#928), and the only entry
+whose bare run wants `Libraries/OCCT.xcframework`: the class-existence half is asked of the pinned
+headers, never of the `occt-refman` MCP cache, and reports SKIPPED when they are absent, which is
+the normal case in CI and in a fresh clone. The attribution half needs no kernel and runs anywhere,
+off the committed `Scripts/occt-packages.txt` (354 package prefixes plus 168 no-underscore package
+classes, derived from the pinned headers; `--reverify-packages` diffs it against them,
+`--write-packages` rewrites it). Under a one-at-a-time removal matrix it caught **25 of #808's 26
+confirmed findings and 6 of #809's 6**, and its measured false-positive rate is **41% over a 40-row
+hand-adjudicated sample** (`Scripts/repro/928-over-coverage-detector/`, re-scorable with
+`score_sample.py`). That rate is why it reports rather than gates; promoting it is a separate
+decision on a better number, and it comes with a rename to `check-` per the convention above.
+
+Five of the six gates take `--self-test`, as do both censuses and the merge-history audit, each running a fixture battery proving the *detector* catches each
 failure mode. Run it whenever you change one of these scripts — three gate scripts on this branch
 were confidently wrong (#618, #624/#630, #626), and a detector that reports "all clear" because it
 is blind looks exactly like one reporting "all clear" because the tree is clean.
@@ -127,7 +140,7 @@ is blind looks exactly like one reporting "all clear" because the tree is clean.
 running the report, so writing `count-operations.py --self-test` to match its siblings fails loudly
 instead of passing forever.
 
-**Optional pre-commit hook** (`Scripts/git-hooks/pre-commit`) runs thirteen of CI's fourteen
+**Optional pre-commit hook** (`Scripts/git-hooks/pre-commit`) runs fourteen of CI's fifteen
 invocations, flag for flag. The one it omits is `check-changelog-transcription.py`'s real run, which
 audits the branch's merge history and so answers a question about the branch rather than about the
 commit you are making; its `--self-test` does run. That is the only deliberate divergence between

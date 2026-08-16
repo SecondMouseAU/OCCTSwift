@@ -19,6 +19,25 @@ each named with its migration in [`SEMVER.md`](SEMVER.md#v200).
 
 ## Unreleased
 
+### Over-coverage detector for the #807 refman-coverage audit (#928)
+
+`Scripts/census-doc-occt-attribution.py` checks every OCCT class a doc claim attributes a documented
+method to, against the pinned kernel's headers and against what that method's bridge function
+actually reaches. Shared by all twelve passes rather than written per lane. Validated one finding at
+a time against the 32 that #808 and #809 confirmed by hand: 25 of #808's 26 and 6 of #809's 6. It
+reports rather than gates, exiting 0 like `census-unmeasured-values.py` with CI running only its
+`--self-test`, because the measured false-positive rate is 41% over a 40-row hand-adjudicated sample
+committed under `Scripts/repro/928-over-coverage-detector/`. Its retro pass over the two finished
+lanes found no new over-coverage in #808's and four confirmed findings in #809's, filed as #930.
+
+`Scripts/repro/809-refman-selection-construction/refman_census.py` no longer prints `over: 0` as
+though it were measured. Nothing in that script can return `over`; the line came from a hardcoded
+four-name tuple beside three derived counts. It now prints the three reachable verdicts, asserts the
+fourth stays unreachable, and states that a clean regression check means its six known findings
+stayed fixed, not that the lane has none. The same fix was made to #808's copy in `ff2c852`.
+
+No public API change; tooling, CI and one census script only.
+
 ### Refman coverage audit, Pass 2a: Shape/Topology core (#808)
 
 `Scripts/repro/808-refman-shape-topology/refman_census.py` enumerates every OCCT class under

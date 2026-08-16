@@ -1,0 +1,84 @@
+# The false-positive measurement for Scripts/census-doc-occt-attribution.py (#928).
+#
+# Forty findings, drawn with `--sample 40 --seed 928` from the run against `origin/main`, then read
+# one at a time: the doc claim in context, the bridge function's whole body, its helpers, the
+# pinned headers, and where the attribution turned on kernel internals, `Libraries/occt-src`.
+#
+# TRUE  = the doc attributes the method to an OCCT class the implementation does not use.
+# FALSE = the class IS in the chain (directly, through a helper, a wrapper field, a base-class
+#         virtual, or an accessor chain), or the mention is not an attribution at all.
+#
+# The tally over these forty is the measured false-positive rate quoted in #928's PR. Re-score a
+# later version of the detector against the same forty with `score_sample.py`, which reports how
+# many of them the detector still reports and what that does to the rate. The sample is fixed on
+# purpose: a rate measured against a fresh sample each time cannot be compared with the last one.
+#
+# Three batches. The first is the uniform random sample the headline rate is computed from; the
+# other two are lane-restricted samples drawn for the retro pass over #808's and #809's finished
+# lanes, with each lane's own known findings excluded, and they answer a different question: how
+# complete was that lane's hand read-through. Do not pool them into one rate.
+#
+# path:line	class	verdict	reason
+# [batch: uniform-40]
+docs/reference/Document-Persistence-IO.md:571	XCAFApp_Application::Save	TRUE	OCCTDocumentSaveOCAFInPlace calls doc->app->Save on a Handle(TDocStd_Application); XCAFApp_Application was retired bridge-wide in #371
+docs/reference/Shape-Completions.md:2043	BRep_Builder	TRUE	OCCTBRepToolSetUVPoints calls BRep_Tool::SetUVPoints; the kernel's own implementation uses no BRep_Builder either
+docs/reference/BRepGraph-Builders.md:1194	BRepGraph_EditorView::Faces	FALSE	reached through g->graph.Editor().Faces(); BRepGraph::Editor() returns EditorView&
+docs/reference/BRepGraph-Builders.md:1112	BRepGraph_EditorView::CoEdges	FALSE	reached through g->graph.Editor().CoEdges(); only the p1 method rename is elided
+docs/reference/Surface-Advanced.md:99	GeomPlate_MakeApprox	TRUE	OCCTSurfaceNLPlateG0 fits with GeomAPI_PointsToBSplineSurface and never calls occtPlateApproxSurface
+docs/reference/Document-Geometry-Constructors.md:267	BndLib_AddSurface	TRUE	OCCTBndLibCone calls BndLib::Add, which forwards to a file-static ComputeCone; BndLib_AddSurface backs a different bridge function
+docs/reference/Document-OCAF-Attributes.md:1542	TNaming_Iterator	TRUE	OCCTNamingOriginalShape calls TNaming_Tool::OriginalShape; the iterator is reached only inside the kernel's own body
+docs/reference/Curve3D.md:1086	Geom_TrimmedCurve	FALSE	GC_MakeArcOfEllipse::Value() is declared to return Handle(Geom_TrimmedCurve): a result-type description, not an attribution
+docs/reference/BRepGraph-Builders.md:520	BRepGraph_EditorView::Mesh	TRUE	the call is BRepGraph::MeshView::EditorView::FaceOps::Clear; BRepGraph::EditorView has no Mesh member at all
+docs/reference/Document-Mesh-Fixing.md:516	TopLoc_Location::IsIdentity	FALSE	OCCTShapeGetLocation calls shape->shape.Location().IsIdentity() literally
+docs/reference/Document-XCAF-Notes.md:886	XCAFNoteObjects_NoteObject	FALSE	subject misresolved: the heading is NoteObject.init?(), whose OCCTNoteObjectCreate does new XCAFNoteObjects_NoteObject()
+docs/reference/BRepGraph-Editor-Identity.md:468	BRepGraph_RepStore	TRUE	the bridge function is an empty ABI-compat no-op, and BRepGraph_RepStore is in neither Sources/ nor the pinned headers
+docs/reference/BRepGraph-Editor-Identity.md:455	BRepGraph_RepStore	TRUE	writes into the bridge's own polyOnTriReps side-registry; EditorView::Reps() was removed in 8.0.0p1
+docs/reference/Shape-Features.md:2267	GeomPlate_MakeApprox	FALSE	reached through the shared helper occtPlateApproxSurface, defined in a different .mm
+docs/reference/BRepGraph-Builders.md:1294	BRepGraph_EditorView::Compounds	TRUE	the call is Editor().Gen().SetChildRefChildNodeId, the GenOps sub-editor, not CompoundOps
+docs/reference/Shape-Healing.md:209	ShapeCustom_SweptToElementary	TRUE	OCCTShapeRevolutionToElementary calls ShapeCustom::ConvertToRevolution, the opposite conversion
+Sources/OCCTBridge/include/OCCTBridge_Healing.h:311	Precision	FALSE	"@param tolerance Precision for fixing" is English, not the OCCT Precision class
+docs/reference/Document-Mesh-Fixing.md:3668	GeomAPI_PointsToBSpline	TRUE	OCCTHelixBuild approximates through HelixGeom_Tools -> AdvApprox_ApproxAFunction
+docs/reference/BRepGraph-Builders.md:1132	BRepGraph_EditorView::CoEdges	FALSE	reached through Editor().CoEdges().SetPersistentPolygon2D
+docs/reference/BRepGraph-Editor-Identity.md:55	BRepGraph_LayerRegularity	TRUE	the bridge function's whole body is return 0, and the class is absent from the pinned headers
+docs/reference/BRepGraph-Builders.md:1052	BRepGraph_EditorView::Edges	FALSE	reached through Editor().Edges().SetStartVertexRefId
+docs/reference/Shape-HLR-Geom.md:1757	Geom_Vector::Magnitude	FALSE	the wrapper field is Handle(Geom_VectorWithMagnitude), a Geom_Vector subclass, and Magnitude() is the base virtual
+docs/API_REFERENCE.md:617	BRepGProp	FALSE	the row pairs two subjects with two classes and the detector mis-paired; face.area does call BRepGProp::SurfaceProperties
+docs/reference/Document-Mesh-Fixing.md:242	TopoDS_Vertex	FALSE	subject misresolved; the real function OCCTMeshVertexIterPoint reaches TopoDS::Vertex through RWMesh_VertexIterator::Next
+docs/API_REFERENCE.md:560	GC_MakeSegment	TRUE	OCCTWireCreateRectangle builds its edges with BRepBuilderAPI_MakeEdge(gp_Pnt, gp_Pnt), which constructs a Geom_Line directly
+docs/reference/Display.md:1298	Font_SystemFont::HasFontAspect	FALSE	OCCTFontMgrFontHasAspect calls HasFontAspect on a Handle(Font_SystemFont)
+docs/reference/BRepGraph-Editor-Identity.md:83	BRepGraph_FaceDef	TRUE	no such class in the pinned headers (the p1 name is BRepGraphInc::FaceDef), and the impl writes the mesh cache instead
+docs/reference/BRepGraph-Editor-Identity.md:443	BRepGraph_RepStore	TRUE	absent from the pinned headers; the function writes the bridge's own poly2dReps vector
+docs/reference/Document-OCAF-Attributes.md:1591	TNaming_Tool::SameShape	TRUE	TNaming_Tool has no SameShape member; the function loops TNaming_SameShapeIterator
+docs/reference/Document.md:849	STEPCAFControl_Reader	TRUE	OCCTDocumentGetLengthUnit reads the XCAFDoc_LengthUnit attribute; the STEP reader backs a different function
+docs/reference/Shape-Builders-2.md:196	Adaptor3d_IsoCurve	TRUE	OCCTAdaptor3dIsoCurveEdge builds from Geom_Surface::VIso plus BRepBuilderAPI_MakeEdge
+docs/reference/Document-OCAF-Attributes.md:1604	TNaming_Tool::SameShape	TRUE	same as above: TNaming_SameShapeIterator, and OCCTBridge.h already indexes it there
+docs/reference/BRepGraph-Editor-Identity.md:217	TopLoc_Location	TRUE	the bridge function is an empty ABI-compat stub, so no TopLoc_Location is ever built
+docs/reference/Shape-Healing.md:1970	BRepOffsetAPI_NormalProjection	TRUE	OCCTShapeProjectWireConical uses BRepProj_Projection, the conical projector
+docs/reference/Annotation.md:318	TopoDS_Face	FALSE	subject misresolved; the heading's real function OCCTDimensionCreateAngleFromFaces uses TopoDS::Face
+docs/reference/Document-XCAF-Notes.md:2115	BinTools::Read	TRUE	OCCTBinToolsReadShape uses BinTools_ShapeReader::Read, a different format path
+docs/reference/Document-XCAF-Notes.md:1855	TPrsStd_AISPresentation	TRUE	the function calls TPrsStd_DriverTable::InitStandardDrivers; TPrsStd_AISPresentation appears nowhere in the bridge
+docs/reference/BRepGraph-Builders.md:811	BRepGraph_EditorView::Solids	FALSE	reached through Editor().Solids().Append
+docs/reference/Mesh.md:352	BRepAlgoAPI_Fuse	FALSE	OCCTMeshUnion delegates to OCCTShapeUnion, which uses BRepAlgoAPI_Fuse
+docs/reference/Document-Math-Solvers.md:649	Geom_Geometry::Copy	FALSE	Copy() is declared pure virtual only on Geom_Geometry, so that is exactly the method invoked
+# [batch: retro-808]
+docs/reference/Mesh.md:381	BRepAlgoAPI_Cut	FALSE	OCCTMeshSubtract calls OCCTShapeSubtract, which is BRepAlgoAPI_Cut; a bridge-to-bridge call across files
+docs/reference/Shape-Features.md:1112	TopExp::MapShapes	FALSE	OCCTShapeGetVertexCount -> OCCTShapeGetSubShapeCount -> occtMapSubShapes, whose body is that exact call
+docs/reference/Shape.md:1338	BRep_Tool::Curve	FALSE	reached inside BRepAdaptor_Curve, which the bridge does construct; naming BRepAdaptor_Curve would be more precise but nothing is over-claimed
+docs/reference/Document-Mesh-Fixing.md:673	BRepCheck_Edge::Status	FALSE	BRepCheck_Analyzer::Result(edge) returns a BRepCheck_Edge, whose Status() is the inherited accessor
+docs/reference/Document-Mesh-Fixing.md:660	BRepCheck_Face::Status	FALSE	same mechanism, for a face
+docs/reference/Shape.md:1131	TopoDS	FALSE	the bullet describes the implicit TopoDS_Wire -> TopoDS_Shape upcast, not a call to TopoDS::'s static downcasts
+docs/reference/FeatureReconstructor.md:258	BRepAlgoAPI_Cut	FALSE	subject misresolved; applyHole reaches OCCTBooleanSubtractWithHistory -> BRepAlgoAPI_Cut
+docs/reference/FeatureReconstructor.md:483	BRepAlgoAPI_Fuse	FALSE	subject misresolved; applyBoolean reaches OCCTBooleanUnionWithHistory -> BRepAlgoAPI_Fuse
+docs/reference/FeatureReconstructor.md:200	BRepPrimAPI_MakePrism	FALSE	subject misresolved; applyExtrude reaches OCCTShapeCreateExtrusion -> BRepPrimAPI_MakePrism
+docs/reference/Annotation.md:408	TopoDS_Shape	FALSE	heading misresolved; the real function is OCCTDimensionCreateDiameterFromShape, and TopoDS_Shape is its parameter type
+# [batch: retro-809]
+docs/reference/Geometry2D.md:1017	gp_Pnt2d	FALSE	heading misresolved; OCCTAxisPlacement2DCreate writes gp_Pnt2d and gp_Dir2d literally
+docs/reference/Shape-Features.md:1062	BRepExtrema_DistShapeShape	FALSE	subject misresolved; Shape.minDistance delegates to OCCTShapeDistance, which constructs it
+docs/reference/Shape-Builders-1.md:369	gp_Vec	TRUE	OCCTShapeTranslateByPoints uses GC_MakeTranslation(gp_Pnt, gp_Pnt) -> gp_Trsf -> BRepBuilderAPI_Transform; no gp_Vec anywhere
+docs/reference/Geometry2D.md:696	gp_Trsf2d::Transforms	FALSE	OCCTTransform2DApply is ref->transform->Trsf2d().Transforms(*x, *y)
+docs/reference/Shape-Measurement.md:2494	BRepExtrema_ExtFF	FALSE	subject misresolved; FaceFaceExtrema.solutionCount comes from OCCTBRepExtremaExtFF, which constructs it
+docs/reference/SheetMetal.md:374	GC_MakeArcOfCircle	FALSE	subject misresolved; the convex-bend arc reaches OCCTWireCreateArcThroughPoints, which builds GC_MakeArcOfCircle
+docs/reference/Shape-Builders-2.md:763	gp_Vec2d::Crossed	TRUE	OCCTVector2DCross is inline arithmetic ax*by - ay*bx; no gp_Vec2d is constructed
+docs/reference/Document-Transforms.md:1669	gp_Trsf::IsNegative	FALSE	OCCTShapeTransformIsNegative calls loc.Transformation().IsNegative() on a gp_Trsf
+docs/reference/Geometry2D.md:964	gp_Torus::Axis	TRUE	OCCTSurfaceTorusAxis calls Geom_ToroidalSurface::Axis(), the inherited Geom_ElementarySurface accessor on a gp_Ax3; no gp_Torus is built
+docs/reference/Shape-Builders-1.md:1197	gp_Cylinder	TRUE	OCCTBRepLibMakeFaceFromCylinder builds a Geom_CylindricalSurface and calls the Handle(Geom_Surface) overload of BRepLib_MakeFace
