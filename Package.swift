@@ -119,9 +119,25 @@ let occtTarget: Target = useLocalBinary
     // correct checksum against a 404 fails just the same, which is how the kernel.3 asset was once
     // published under the wrong filename and passed a checksum check while resolving to nothing.
     //
-    // The order below is the one that works. An earlier draft of this comment put "create the
-    // release" first, which cannot be right: the tag has to point at the commit that carries the
-    // swapped URL, so the commit must exist before the release is cut from it.
+    // The order below is the one that works FOR THE RELEASE TAG. An earlier draft of this comment
+    // put "create the release" first, which cannot be right there: the tag has to point at the
+    // commit that carries the swapped URL, so the commit must exist before the release is cut.
+    //
+    // IT DOES NOT APPLY TO A KERNEL PRE-RELEASE, where it is circular: you cannot pin a URL that
+    // does not exist yet, and you cannot cut the release from a commit that does not exist yet.
+    // Every kernel pre-release in this repo resolves that the only way it can, by publishing the
+    // asset first and landing the pin after, so its tag points at a commit pinning the PREVIOUS
+    // asset. Measured, not assumed:
+    //
+    //     v2.0.0-kernel.1 -> tree pins v1.15.18
+    //     v2.0.0-kernel.2 -> tree pins v2.0.0-kernel.1
+    //     v2.0.0-kernel.3 -> tree pins v2.0.0-kernel.2
+    //     v3.0.0-rc1      -> tree pins v2.0.0
+    //     v2.0.0 (RELEASE)-> tree pins v2.0.0   <- only the release tag is self-consistent
+    //
+    // So a pre-release tag whose tree pins its predecessor is CORRECT and must not be "fixed" by
+    // re-pointing it. That correction was proposed during the v3.0.0-rc1 rebuild on the strength of
+    // the paragraph above, and the history is what refuted it.
     //
     //   1. commit the `url:` change and push it
     //   2. gh release create <tag> --target <that commit> with OCCT.xcframework.zip attached, so
@@ -133,8 +149,11 @@ let occtTarget: Target = useLocalBinary
     // matters is checking step 3 rather than assuming.
     //
     // `checksum:` does NOT change between the kernel.N pre-release and the release when the asset
-    // is the identical file, which it is here: downloading the kernel.3 asset and hashing it
-    // reproduces the value below exactly.
+    // is the identical file. That is what v2.0.0 did, and it is re-verifiable today: the v2.0.0 and
+    // v2.0.0-kernel.3 assets are both 149,133,257 bytes, and downloading the v2.0.0 one hashes to
+    // 8da567699b0ed1fcd0033373d64c2ee97052c57ee2dffe3091d6d55addc41f2a, the value BOTH commits
+    // pinned. The release commit re-uploaded kernel.3's zip unchanged and swapped only `url:`.
+    // Expect to do the same at the v3.0.0 release with the v3.0.0-rc1 asset.
     // Bump BOTH url and checksum whenever the xcframework is rebuilt, or
     // URL-resolving consumers silently keep the previous kernel while local sibling builds get the
     // new one.
