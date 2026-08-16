@@ -3105,13 +3105,26 @@ OCCTCurve2DRef OCCTCurve2DApproximate2D(const double* xs, const double* ys, int3
 #include <Convert_TorusToBSplineSurface.hxx>
 
 // Helper: build Geom2d_BSplineCurve from Convert_ConicToBSplineCurve result
+// #801: use batch accessors (Poles/Weights/Knots/Multiplicities) instead of deprecated
+// per-index accessors (Pole/Weight/Knot/Multiplicity) on Convert_ConicToBSplineCurve.
 static OCCTCurve2DRef buildCurve2DFromConic(const Convert_ConicToBSplineCurve& conv) {
     int np = conv.NbPoles(), nk = conv.NbKnots(), deg = conv.Degree();
     TColgp_Array1OfPnt2d poles(1, np);
     TColStd_Array1OfReal weights(1, np), knots(1, nk);
     TColStd_Array1OfInteger mults(1, nk);
-    for (int i = 1; i <= np; i++) { poles(i) = conv.Pole(i); weights(i) = conv.Weight(i); }
-    for (int i = 1; i <= nk; i++) { knots(i) = conv.Knot(i); mults(i) = conv.Multiplicity(i); }
+    // Batch copy: batch accessors return NCollection_Array1 by const reference
+    const TColgp_Array1OfPnt2d& convPoles = conv.Poles();
+    const TColStd_Array1OfReal& convWeights = conv.Weights();
+    const TColStd_Array1OfReal& convKnots = conv.Knots();
+    const TColStd_Array1OfInteger& convMults = conv.Multiplicities();
+    for (int i = 1; i <= np; i++) {
+        poles(i) = convPoles.Value(i);
+        weights(i) = convWeights.Value(i);
+    }
+    for (int i = 1; i <= nk; i++) {
+        knots(i) = convKnots.Value(i);
+        mults(i) = convMults.Value(i);
+    }
     Handle(Geom2d_BSplineCurve) bsc = new Geom2d_BSplineCurve(poles, weights, knots, mults, deg);
     if (bsc.IsNull()) return nullptr;
     OCCTCurve2D* result = new OCCTCurve2D();

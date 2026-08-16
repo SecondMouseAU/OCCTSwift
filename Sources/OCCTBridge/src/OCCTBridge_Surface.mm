@@ -3639,6 +3639,8 @@ OCCTSurfaceRef OCCTConvertSphereToBSplineSurface(double ox, double oy, double oz
 #include <Convert_ElementarySurfaceToBSplineSurface.hxx>
 
 // Helper: build Geom_BSplineSurface from Convert_ElementarySurfaceToBSplineSurface result
+// #801: use batch accessors (Poles/Weights/UKnots/VKnots/UMultiplicities/VMultiplicities)
+// instead of deprecated per-index accessors on Convert_ElementarySurfaceToBSplineSurface.
 static OCCTSurfaceRef buildSurfaceFromElementary(const Convert_ElementarySurfaceToBSplineSurface& conv) {
     int nup = conv.NbUPoles(), nvp = conv.NbVPoles();
     int nuk = conv.NbUKnots(), nvk = conv.NbVKnots();
@@ -3646,16 +3648,24 @@ static OCCTSurfaceRef buildSurfaceFromElementary(const Convert_ElementarySurface
 
     TColgp_Array2OfPnt poles(1, nup, 1, nvp);
     TColStd_Array2OfReal weights(1, nup, 1, nvp);
+    // Batch copy for poles/weights (2D arrays)
+    const TColgp_Array2OfPnt& convPoles = conv.Poles();
+    const TColStd_Array2OfReal& convWeights = conv.Weights();
     for (int i = 1; i <= nup; i++)
         for (int j = 1; j <= nvp; j++) {
-            poles(i,j) = conv.Pole(i,j);
-            weights(i,j) = conv.Weight(i,j);
+            poles(i,j) = convPoles.Value(i,j);
+            weights(i,j) = convWeights.Value(i,j);
         }
 
     TColStd_Array1OfReal uknots(1, nuk), vknots(1, nvk);
     TColStd_Array1OfInteger umults(1, nuk), vmults(1, nvk);
-    for (int i = 1; i <= nuk; i++) { uknots(i) = conv.UKnot(i); umults(i) = conv.UMultiplicity(i); }
-    for (int i = 1; i <= nvk; i++) { vknots(i) = conv.VKnot(i); vmults(i) = conv.VMultiplicity(i); }
+    // Batch copy for knots/mults (1D arrays)
+    const TColStd_Array1OfReal& convUKnots = conv.UKnots();
+    const TColStd_Array1OfInteger& convUMults = conv.UMultiplicities();
+    const TColStd_Array1OfReal& convVKnots = conv.VKnots();
+    const TColStd_Array1OfInteger& convVMults = conv.VMultiplicities();
+    for (int i = 1; i <= nuk; i++) { uknots(i) = convUKnots.Value(i); umults(i) = convUMults.Value(i); }
+    for (int i = 1; i <= nvk; i++) { vknots(i) = convVKnots.Value(i); vmults(i) = convVMults.Value(i); }
 
     Handle(Geom_BSplineSurface) bss = new Geom_BSplineSurface(
         poles, weights, uknots, vknots, umults, vmults, udeg, vdeg,
