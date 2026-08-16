@@ -148,9 +148,25 @@ GCE2D_DEPRECATED_PACKAGE = {
         "GCE2d_MakeArcOfCircle", "GCE2d_MakeArcOfEllipse", "GCE2d_MakeArcOfHyperbola",
         "GCE2d_MakeArcOfParabola", "GCE2d_MakeCircle", "GCE2d_MakeEllipse", "GCE2d_MakeHyperbola",
         "GCE2d_MakeLine", "GCE2d_MakeMirror", "GCE2d_MakeParabola", "GCE2d_MakeRotation",
-        "GCE2d_MakeScale", "GCE2d_MakeSegment", "GCE2d_MakeTranslation", "GCE2d_Root",
+        "GCE2d_MakeScale", "GCE2d_MakeTranslation", "GCE2d_Root",
     )
 }
+
+# GCE2d_MakeSegment is the one deprecated-alias exception: OCCTBridge_Modeling.mm still calls it
+# (OCCTShapeCreateFaceFromSurfaceUVPolygon). The obvious fix (rename to the canonical
+# GC_MakeSegment2d spelling) was reverted from this PR before merge: that file is grandfathered on
+# Scripts/style-manifest-bridge.txt, and check-style-manifest.py mechanically requires bringing the
+# WHOLE file into clang-format compliance (~24,000 diff lines) the moment any line in it is touched
+# -- the exact situation #917 already tracks (deferred from PR #912 for the same reason). Left as
+# GCE2d_MakeSegment here rather than force a disproportionate reformat into this PR; noted on #917
+# so the rename lands whenever that file's own compliance sweep does.
+GCE2D_DEPRECATED_PACKAGE["GCE2d_MakeSegment"] = (
+    "deprecated since OCCT 8.0.0, a `using` alias for the corresponding GC_*2d/GC_Root class. "
+    "Still referenced once, in OCCTBridge_Modeling.mm's OCCTShapeCreateFaceFromSurfaceUVPolygon -- "
+    "a rename to the canonical GC_MakeSegment2d spelling is behavior-identical but was deferred "
+    "rather than force that whole grandfathered file into clang-format compliance in this PR; "
+    "see #917 (#508, #809)."
+)
 
 INTERNAL_HELPERS = {
     "GC_Root": "the common Status()/IsDone()/Value() base class every GC_Make* subclass already "

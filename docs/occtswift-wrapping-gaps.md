@@ -148,18 +148,23 @@ These require implementing C++ abstract classes, which the bridge architecture d
   every header in the package has been a `using GCE2d_X = GC_X2d` (or `= GC_Root`) deprecated
   compatibility alias since OCCT 8.0.0, not a distinct class; the refman generates no page for any
   of them (queried via the `context` MCP's `occt-refman@8.0.0-p1`, #809). v0.156.0 already migrated
-  every internal use onto the canonical `GC_*2d` names, and #809's own sweep found and fixed the one
-  site that regressed back to the deprecated spelling (`OCCTBridge_Modeling.mm`'s
-  `OCCTShapeCreateFaceFromSurfaceUVPolygon`, `GCE2d_MakeSegment` → `GC_MakeSegment2d` — a behavior-
-  identical rename, since the deprecated name was always literally a type alias for the one it now
-  spells directly) and six `docs/reference/Curve2D.md`/`Curve2D-Analysis.md` entries that still
-  named the deprecated `GCE2d_Make*` class as the backing implementation for a Swift method that,
-  per direct inspection of the bridge, either used the canonical `GC_*2d` name already
-  (`arcThrough`) or never used any `GC_`/`GCE2d_` Make helper at all, constructing the `Geom2d_*`
-  primitive directly (`arcOfCircle`, `arcOfEllipse`, `arcOfHyperbola`, `arcOfParabola`, the
-  `Point2D`-taking `segment` overload) — the exact `GCE2d_*`/`GC_*` prefix confusion #508 warned
-  future audits to watch for. Nothing in the bridge or current docs (outside `docs/CHANGELOG.md`,
-  a historical record) references any `GCE2d_*` symbol as of this entry. (#809)
+  most internal use onto the canonical `GC_*2d` names, and #809's own sweep found six
+  `docs/reference/Curve2D.md`/`Curve2D-Analysis.md` entries that still named the deprecated
+  `GCE2d_Make*` class as the backing implementation for a Swift method that, per direct inspection
+  of the bridge, either used the canonical `GC_*2d` name already (`arcThrough`) or never used any
+  `GC_`/`GCE2d_` Make helper at all, constructing the `Geom2d_*` primitive directly (`arcOfCircle`,
+  `arcOfEllipse`, `arcOfHyperbola`, `arcOfParabola`, the `Point2D`-taking `segment` overload) — the
+  exact `GCE2d_*`/`GC_*` prefix confusion #508 warned future audits to watch for; all six corrected
+  here. #809's sweep also found one site that regressed back to the deprecated spelling —
+  `OCCTBridge_Modeling.mm`'s `OCCTShapeCreateFaceFromSurfaceUVPolygon` still calls
+  `GCE2d_MakeSegment` — but **left it unrenamed**: that file is grandfathered on
+  `Scripts/style-manifest-bridge.txt`, and `check-style-manifest.py` mechanically requires bringing
+  the *whole* file into `clang-format` compliance (a ~24,000-line diff) the moment any line in it
+  changes, the same situation #917 already tracks (deferred from PR #912). The rename is
+  behavior-identical (the deprecated name is literally a type alias for the one it would become) and
+  is noted on #917 to land with that file's eventual compliance sweep, not forced in here. So one
+  `GCE2d_*` reference remains in the bridge as of this entry; current docs (outside
+  `docs/CHANGELOG.md`, a historical record) reference none. (#809, #917)
 
 ### Constraint Solver Infrastructure (Complete)
 
