@@ -721,7 +721,7 @@ OCCTSwift wraps a **subset** of OCCT's functionality. The bridge layer (`OCCTBri
 | Swift API | OCCT Class |
 |-----------|------------|
 | `shape.sliceAtZ(_:)` | `BRepAlgoAPI_Section`, `gp_Pln` |
-| `shape.edgeCount` | `TopExp_Explorer` |
+| `shape.edgeCount` | `TopExp::MapShapes(TopAbs_EDGE)` + `TopTools_IndexedMapOfShape` |
 | `shape.edgePoints(at:maxPoints:)` | `BRep_Tool::Curve`, `Geom_Curve` |
 | `shape.contourPoints(maxPoints:)` | `TopExp::Vertices`, `BRep_Tool::Pnt` |
 

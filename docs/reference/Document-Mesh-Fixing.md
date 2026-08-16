@@ -644,7 +644,10 @@ public static func shellFromFaces(_ faces: [Shape]) -> Shape?
 
 - **Parameters:** `faces` — face shapes to assemble into a shell.
 - **Returns:** A shell, or `nil` on failure.
-- **OCCT:** `BRepBuilderAPI_Sewing` or `TopoDS_Builder` (via `OCCTMakeShell`).
+- **OCCT:** `BRep_Builder::MakeShell` then `Add` per face (via `OCCTMakeShell`); `BRep_Builder`
+  derives from `TopoDS_Builder`, so the second class this entry named holds. The first,
+  `BRepBuilderAPI_Sewing`, does not: nothing is sewn, so the faces must already share edges. Use
+  [`sewn(tolerance:)`](Shape-Healing.md#sewntolerance) when they do not. (#808)
 
 ---
 
@@ -3466,7 +3469,11 @@ Whether this shape (wire or shell) is closed.
 public var isClosedShape: Bool { get }
 ```
 
-- **OCCT:** `BRep_Tool::IsClosed` (via `OCCTShapeIsClosed`).
+- **OCCT:** `TopoDS_Shape::Closed()` (via `OCCTShapeIsClosed`). Not `BRep_Tool::IsClosed`, which
+  this entry used to name: `Closed()` reads the flag stored on the shape, where `BRep_Tool::IsClosed`
+  computes closure from the topology. They disagree on a shape whose flag was never set, so this
+  property answers "is this shape **marked** closed", which is what `BRepBuilderAPI_MakeShell` and
+  the loft builders set and what #905 found `ThruSections` setting wrongly. (#808)
 
 ---
 
@@ -3478,7 +3485,11 @@ Number of unique (topologically distinct) edges in this shape.
 public var uniqueEdgeCount: Int { get }
 ```
 
-- **OCCT:** `TopExp_Explorer` with `TopAbs_EDGE`, deduplicated (via `OCCTShapeUniqueEdgeCount`).
+- **OCCT:** `TopExp::MapShapes(shape, TopAbs_EDGE, map)` into a `TopTools_IndexedMapOfShape`, then
+  `map.Extent()` (via `OCCTShapeUniqueEdgeCount`). The deduplication is `MapShapes`' own, keyed on
+  `TopoDS_Shape::IsSame`; `TopExp_Explorer`, which this entry used to name, is the class that does
+  **not** deduplicate (24 entries on a 12-edge box). Same value as
+  [`edgeCount`](Edge.md#edgecount), which shares the bridge function. (#808)
 
 ---
 
@@ -3511,7 +3522,9 @@ public func uniqueSubShapeCount(ofType type: ShapeType) -> Int
 ```
 
 - **Parameters:** `type` — the `ShapeType` to count.
-- **OCCT:** `TopExp_Explorer` deduplicated (via `OCCTShapeUniqueSubShapeCount`).
+- **OCCT:** `TopExp::MapShapes(shape, type, map)` into a `TopTools_IndexedMapOfShape`, then
+  `map.Extent()` (via `OCCTShapeUniqueSubShapeCount`). Not `TopExp_Explorer`, which this entry used
+  to name and which counts one entry per occurrence rather than per distinct sub-shape. (#808)
 
 ---
 

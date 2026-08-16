@@ -244,7 +244,9 @@ Number of direct child sub-shapes.
 public var nbChildren: Int
 ```
 
-- **OCCT:** `TopoDS_Iterator` child count.
+- **OCCT:** `TopoDS_Shape::NbChildren()`, which forwards to `TopoDS_TShape::NbChildren()` (via
+  `OCCTShapeNbChildren`). Not `TopoDS_Iterator`, which this entry used to name: no iterator is
+  constructed, and `NbChildren()` counts the `TShape`'s stored children directly. (#808)
 
 ---
 
@@ -1144,7 +1146,9 @@ Recompute internal BRep book-keeping after direct topology edits.
 public func updateShape()
 ```
 
-- **OCCT:** `BRep_Builder::UpdateVertex`/`UpdateEdge` (bridge-internal).
+- **OCCT:** `BRepTools::Update(shape)` (via `OCCTShapeUpdate`), which walks the shape recomputing
+  each face's UV points. Not `BRep_Builder::UpdateVertex`/`UpdateEdge`, which this entry used to
+  name and which the bridge does not call here. (#808)
 
 ---
 
@@ -1643,7 +1647,9 @@ Number of wire boundaries on a face shape.
 public var faceWireCount: Int
 ```
 
-- **OCCT:** `TopoDS_Face` wire iterator count.
+- **OCCT:** `TopExp_Explorer(shape, TopAbs_WIRE)`, counted (via `OCCTFaceWireCount`). The shape is
+  never cast to `TopoDS_Face`, which this entry used to imply, so the count is well defined for any
+  shape and is not restricted to a face. (#808)
 
 ---
 
