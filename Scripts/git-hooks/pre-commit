@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 #
-# Opt-in pre-commit hook: runs the same six static gate scripts CI's `gate-scripts` job runs.
+# Opt-in pre-commit hook: runs the same static gate scripts and censuses CI's `gate-scripts` job
+# runs, flag for flag.
 #
 # NOT installed by cloning. A repo cannot install its own hooks — `.git/hooks` is not versioned —
 # and that is the right default here: a hook that appears in a contributor's workflow without them
@@ -98,6 +99,10 @@ run "census-unmeasured-values.py --self-test" Scripts/census-unmeasured-values.p
 # which is present locally but is a report rather than a verdict, so it belongs in CI's log
 # rather than in the path of every commit.
 run "check-changelog-transcription.py --self-test" Scripts/check-changelog-transcription.py --self-test
+# #928's over-coverage detector. Self-test only, like the census above and for the same reason: it
+# exits 0 either way. Its bare run also needs Libraries/OCCT.xcframework for the class-existence
+# half, which a fresh clone does not have.
+run "census-doc-occt-attribution.py --self-test" Scripts/census-doc-occt-attribution.py --self-test
 
 if [ ${#failed[@]} -ne 0 ]; then
     echo ""
