@@ -623,7 +623,26 @@ struct StressThruSectionsBuilderLifecycleTests {
     // invariant this asserts — any non-nil result is a genuine member of the current `shape` — is
     // what the bridge fix (confirming face membership via TopExp_Explorer) guarantees regardless
     // of how myEdgeFace's internal reconciliation behaves.
-    @Test func generatedFaceIsMemberOfShapeAfterSuccessFailureSuccessOnReusedBuilder() throws {
+    //
+    // #920/#922 root cause: build B here is exactly #913's crash trigger — `checkCompatibility
+    // (false)` then a 4th section (the triangle, 3 edges) with MORE edges than section 1 (the
+    // first circle, 1 edge), 4 sections total. `CreateSmoothed()`'s fixed-stride array, sized from
+    // section 1 alone, overruns on a kernel without patch 0027 (#913) — heap corruption, observed
+    // as an uncatchable SIGSEGV in unrelated, seemingly-random parts of the parallel test suite
+    // (the corruption's effects surface wherever the clobbered memory is next touched, not here).
+    // `Package.swift`'s remote pin (what `swift build + test (macOS)` in CI actually resolves,
+    // and what a fresh checkout with no local `Libraries/` gets by default) is the v2.0.0 release
+    // asset, predating patch 0027 — same situation `mismatchedSectionEdgeCountWithoutCheckFailsCle
+    // anly` (this file, `OCCTSWIFT_LOCAL`-gated for exactly this reason since #913/PR #915) already
+    // documents. This test's own `checkCompatibility(false)` + mismatched-section step needed the
+    // identical gate and didn't have it — confirmed directly: run against the real remote v2.0.0
+    // kernel (`OCCTSWIFT_REMOTE=1 swift test --filter
+    // generatedFaceIsMemberOfShapeAfterSuccessFailureSuccessOnReusedBuilder`), build B's `#expect
+    // (!loft.build())` at :648 failed — `build()` returned `true` on the unpatched kernel instead
+    // of failing cleanly, matching #913's own "silently misaligned... reporting build() == true for
+    // an invalid result" description of the un-guarded defect. Gated the same way.
+    @Test(.enabled(if: ProcessInfo.processInfo.environment["OCCTSWIFT_LOCAL"] == "1"))
+    func generatedFaceIsMemberOfShapeAfterSuccessFailureSuccessOnReusedBuilder() throws {
         let w1 = try #require(Wire.circle(origin: SIMD3(0, 0, 0), normal: SIMD3(0, 0, 1), radius: 5))
         let w2 = try #require(Wire.circle(origin: SIMD3(0, 0, 10), normal: SIMD3(0, 0, 1), radius: 3))
         let w3 = try #require(Wire.circle(origin: SIMD3(0, 0, 20), normal: SIMD3(0, 0, 1), radius: 2))
