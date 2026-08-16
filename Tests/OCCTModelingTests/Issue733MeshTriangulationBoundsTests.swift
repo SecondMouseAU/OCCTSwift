@@ -89,6 +89,27 @@ struct Issue733MeshTriangulationBoundsTests {
         }
         #expect(checkedAWall, "fixture produced no candidate wall to check, test is vacuous")
     }
+
+    /// Direct value-level check of `Face.exactBounds` itself, not through `AAGNode.bounds` (#908).
+    /// `wallBoundsDoNotDriftAfterMeshing` above only ever reads `.min.z`, so it cannot tell a
+    /// min/max swap from a correct read on the other 5 of 6 min/max values `exactBounds` returns.
+    /// Every face of an axis-aligned box has exactly two non-degenerate axes (spanning the box's
+    /// full extent, `min < max`) and one degenerate axis (the face's own plane, `min == max`), so
+    /// checking `min <= max` on all three axes of all six faces directly exercises the ordering a
+    /// swap breaks, with no need to know which face is which.
+    @Test("exactBounds min is never greater than max, on any axis of any face")
+    func exactBoundsMinNeverExceedsMax() throws {
+        let box = try #require(Shape.box(width: 20, height: 10, depth: 6))
+        var checkedNonDegenerateAxis = false
+        for face in box.faces() {
+            let b = face.exactBounds
+            for (lo, hi) in [(b.min.x, b.max.x), (b.min.y, b.max.y), (b.min.z, b.max.z)] {
+                #expect(lo <= hi + 1e-9, "min=\(lo) exceeds max=\(hi)")
+                if hi - lo > 1e-6 { checkedNonDegenerateAxis = true }
+            }
+        }
+        #expect(checkedNonDegenerateAxis, "no face produced a non-degenerate axis to check, test is vacuous")
+    }
 }
 
 // #733, second finding: `floorRestsOnWallTolerance` was a `private static let`, the only

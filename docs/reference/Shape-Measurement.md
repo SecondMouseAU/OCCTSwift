@@ -601,6 +601,9 @@ The `mass` field contains total surface area rather than volume.
   area integral is well defined over any set of faces.
 - **OCCT:** `BRepGProp::SurfaceProperties` plus a `Mass()` test (via
   `OCCTShapeSurfaceInertiaProperties`).
+- **`mass` is `surfaceArea` in disguise, including its #885 divergence from
+  `ShapeMeasurements.totalFaceArea`:** see [`Shape-Features.md`](Shape-Features.md#surfacearea) for
+  the explanation.
 
 ---
 
@@ -1565,6 +1568,9 @@ public var surfaceInertia: SurfaceInertia? { get }
 
 - **Returns:** Surface inertia result, or `nil` when the shape has no faces, or on error (#609).
 - **OCCT:** `BRepGProp::SurfaceProperties` plus a `Mass()` test (via `OCCTShapeSurfaceInertia`).
+- **`area` is the same computation as `surfaceArea` and `surfaceInertiaProperties().mass`:** see
+  [`Shape-Features.md`](Shape-Features.md#surfacearea) for the #885 divergence from
+  `ShapeMeasurements.totalFaceArea`.
 
 ---
 
