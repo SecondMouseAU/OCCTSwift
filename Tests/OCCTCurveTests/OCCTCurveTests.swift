@@ -2781,6 +2781,13 @@ struct Curve3DEvalTests {
         ]) {
             let mid = (curve.domain.lowerBound + curve.domain.upperBound) / 2
             let r = curve.evalD1(at: mid)
+            // The point half must agree with the independently-tested point(at:) accessor
+            // (a different bridge call, OCCTCurve3DGetPoint vs. OCCTCurve3DEvalD1), which
+            // catches a point/tangent swap that a magnitude-only check on d1 alone would miss.
+            let independentPoint = curve.point(at: mid)
+            #expect(abs(r.point.x - independentPoint.x) < 1e-9)
+            #expect(abs(r.point.y - independentPoint.y) < 1e-9)
+            #expect(abs(r.point.z - independentPoint.z) < 1e-9)
             // Tangent should be non-zero at midpoint
             let tangentLength = sqrt(r.d1.x * r.d1.x + r.d1.y * r.d1.y + r.d1.z * r.d1.z)
             #expect(tangentLength > 0.1)

@@ -10,7 +10,6 @@
 #ifndef OCCTBridge_Topology_h
 #define OCCTBridge_Topology_h
 
-
 // MARK: - Shape Conversion
 
 OCCTShapeRef OCCTShapeFromWire(OCCTWireRef wireRef);
@@ -120,9 +119,9 @@ int32_t OCCTShapeGetFaceOccurrenceCount(OCCTShapeRef shape);
 /// @param outCount Output: number of faces returned
 /// @return Array of face references, or NULL on failure. Caller must free with OCCTFreeFaceArray.
 OCCTFaceRef* OCCTShapeGetOrientedFaces(OCCTShapeRef shape,
-                                        int32_t* outIndices,
-                                        int32_t indexCapacity,
-                                        int32_t* outCount);
+                                       int32_t*     outIndices,
+                                       int32_t      indexCapacity,
+                                       int32_t*     outCount);
 
 /// The orientation this face carries: 0=FORWARD, 1=REVERSED, 2=INTERNAL, 3=EXTERNAL.
 ///
@@ -155,7 +154,13 @@ OCCTWireRef OCCTFaceGetOuterWire(OCCTFaceRef face);
 
 /// Get the bounding box of a face
 /// @param face The face to get bounds from
-void OCCTFaceGetBounds(OCCTFaceRef face, double* minX, double* minY, double* minZ, double* maxX, double* maxY, double* maxZ);
+void OCCTFaceGetBounds(OCCTFaceRef face,
+                       double*     minX,
+                       double*     minY,
+                       double*     minZ,
+                       double*     maxX,
+                       double*     maxY,
+                       double*     maxZ);
 
 /// Get the bounding box of a face from its exact geometry, ignoring any triangulation the face
 /// may carry (#733). `OCCTFaceGetBounds` calls `BRepBndLib::Add` with `useTriangulation=true`
@@ -164,7 +169,13 @@ void OCCTFaceGetBounds(OCCTFaceRef face, double* minX, double* minY, double* min
 /// meshed before this call, not just on the face's geometry. This variant always passes
 /// `useTriangulation=false`, so the result is deterministic across meshed and unmeshed shapes.
 /// @param face The face to get bounds from
-void OCCTFaceGetBoundsExact(OCCTFaceRef face, double* minX, double* minY, double* minZ, double* maxX, double* maxY, double* maxZ);
+void OCCTFaceGetBoundsExact(OCCTFaceRef face,
+                            double*     minX,
+                            double*     minY,
+                            double*     minZ,
+                            double*     maxX,
+                            double*     maxY,
+                            double*     maxZ);
 
 /// Check if a face is planar (flat)
 /// @param face The face to check
@@ -215,7 +226,13 @@ OCCTEdgeRef OCCTEdgeFromShape(OCCTShapeRef shape);
 double OCCTEdgeGetLength(OCCTEdgeRef edge);
 
 /// Get edge bounding box
-void OCCTEdgeGetBounds(OCCTEdgeRef edge, double* minX, double* minY, double* minZ, double* maxX, double* maxY, double* maxZ);
+void OCCTEdgeGetBounds(OCCTEdgeRef edge,
+                       double*     minX,
+                       double*     minY,
+                       double*     minZ,
+                       double*     maxX,
+                       double*     maxY,
+                       double*     maxZ);
 
 /// Get points along edge curve
 /// @param edge The edge to sample
@@ -231,7 +248,13 @@ bool OCCTEdgeIsLine(OCCTEdgeRef edge);
 bool OCCTEdgeIsCircle(OCCTEdgeRef edge);
 
 /// Get start and end vertices of edge
-void OCCTEdgeGetEndpoints(OCCTEdgeRef edge, double* startX, double* startY, double* startZ, double* endX, double* endY, double* endZ);
+void OCCTEdgeGetEndpoints(OCCTEdgeRef edge,
+                          double*     startX,
+                          double*     startY,
+                          double*     startZ,
+                          double*     endX,
+                          double*     endY,
+                          double*     endZ);
 
 // MARK: - Point Classification (v0.17.0)
 
@@ -240,18 +263,20 @@ typedef int32_t OCCTTopAbsState;
 
 /// Classify a point relative to a solid
 OCCTTopAbsState OCCTClassifyPointInSolid(OCCTShapeRef solid,
-                                          double px, double py, double pz,
-                                          double tolerance);
+                                         double       px,
+                                         double       py,
+                                         double       pz,
+                                         double       tolerance);
 
 /// Classify a point relative to a face (using 3D point)
 OCCTTopAbsState OCCTClassifyPointOnFace(OCCTFaceRef face,
-                                         double px, double py, double pz,
-                                         double tolerance);
+                                        double      px,
+                                        double      py,
+                                        double      pz,
+                                        double      tolerance);
 
 /// Classify a point relative to a face (using UV parameters)
-OCCTTopAbsState OCCTClassifyPointOnFaceUV(OCCTFaceRef face,
-                                           double u, double v,
-                                           double tolerance);
+OCCTTopAbsState OCCTClassifyPointOnFaceUV(OCCTFaceRef face, double u, double v, double tolerance);
 
 // MARK: - Wire Explorer (v0.29.0)
 
@@ -267,8 +292,11 @@ int32_t OCCTWireExplorerEdgeCount(OCCTWireRef wire);
 /// @param maxPoints Maximum number of points to output
 /// @param outPointCount Output: actual number of points written
 /// @return true on success
-bool OCCTWireExplorerGetEdge(OCCTWireRef wire, int32_t index,
-                              double* outPoints, int32_t maxPoints, int32_t* outPointCount);
+bool OCCTWireExplorerGetEdge(OCCTWireRef wire,
+                             int32_t     index,
+                             double*     outPoints,
+                             int32_t     maxPoints,
+                             int32_t*    outPointCount);
 
 /// Get the number of discretized points for an edge in a wire.
 /// @param wire The wire to explore
@@ -294,16 +322,17 @@ OCCTShapeRef OCCTShapeRemoveSubShape(OCCTShapeRef shape, OCCTShapeRef subToRemov
 // MARK: - Shape Contents (v0.30.0)
 
 /// Structure containing counts of topological entities in a shape.
-typedef struct {
-    int32_t nbSolids;      ///< Number of solids
-    int32_t nbShells;      ///< Number of shells
-    int32_t nbFaces;       ///< Number of faces
-    int32_t nbWires;       ///< Number of wires
-    int32_t nbEdges;       ///< Number of edges
-    int32_t nbVertices;    ///< Number of vertices
-    int32_t nbFreeEdges;   ///< Number of free (unattached) edges
-    int32_t nbFreeWires;   ///< Number of free (unattached) wires
-    int32_t nbFreeFaces;   ///< Number of free (unattached) faces
+typedef struct
+{
+  int32_t nbSolids;    ///< Number of solids
+  int32_t nbShells;    ///< Number of shells
+  int32_t nbFaces;     ///< Number of faces
+  int32_t nbWires;     ///< Number of wires
+  int32_t nbEdges;     ///< Number of edges
+  int32_t nbVertices;  ///< Number of vertices
+  int32_t nbFreeEdges; ///< Number of free (unattached) edges
+  int32_t nbFreeWires; ///< Number of free (unattached) wires
+  int32_t nbFreeFaces; ///< Number of free (unattached) faces
 } OCCTShapeContents;
 
 /// Analyze shape contents and return counts of topological entities.
@@ -348,15 +377,16 @@ int32_t OCCTShapeFindContiguousEdges(OCCTShapeRef shape, double tolerance);
 // MARK: - Wire Analysis (v0.37.0)
 
 /// Result of wire topology analysis.
-typedef struct {
-    bool isClosed;
-    bool hasSmallEdges;
-    bool hasGaps3d;
-    bool hasSelfIntersection;
-    bool isOrdered;
-    double minDistance3d;
-    double maxDistance3d;
-    int32_t edgeCount;
+typedef struct
+{
+  bool    isClosed;
+  bool    hasSmallEdges;
+  bool    hasGaps3d;
+  bool    hasSelfIntersection;
+  bool    isOrdered;
+  double  minDistance3d;
+  double  maxDistance3d;
+  int32_t edgeCount;
 } OCCTWireAnalysisResult;
 
 /// Analyze wire topology for potential issues.
@@ -369,12 +399,13 @@ bool OCCTWireAnalyze(OCCTWireRef wire, double tolerance, OCCTWireAnalysisResult*
 // MARK: - Oriented Bounding Box (v0.38.0)
 
 /// Oriented bounding box result
-typedef struct {
-    double centerX, centerY, centerZ;     // center point
-    double xDirX, xDirY, xDirZ;          // X-axis direction
-    double yDirX, yDirY, yDirZ;          // Y-axis direction
-    double zDirX, zDirY, zDirZ;          // Z-axis direction
-    double halfX, halfY, halfZ;           // half-dimensions along each axis
+typedef struct
+{
+  double centerX, centerY, centerZ; // center point
+  double xDirX, xDirY, xDirZ;       // X-axis direction
+  double yDirX, yDirY, yDirZ;       // Y-axis direction
+  double zDirX, zDirY, zDirZ;       // Z-axis direction
+  double halfX, halfY, halfZ;       // half-dimensions along each axis
 } OCCTOrientedBoundingBox;
 
 /// Compute an oriented bounding box for a shape.
@@ -382,7 +413,9 @@ typedef struct {
 /// @param optimal If true, compute tighter (but slower) OBB
 /// @param result Output OBB structure
 /// @return true on success
-bool OCCTShapeOrientedBoundingBox(OCCTShapeRef shape, bool optimal, OCCTOrientedBoundingBox* result);
+bool OCCTShapeOrientedBoundingBox(OCCTShapeRef             shape,
+                                  bool                     optimal,
+                                  OCCTOrientedBoundingBox* result);
 
 /// Get the volume of the oriented bounding box.
 /// @param result Pointer to an OBB structure
@@ -421,7 +454,8 @@ OCCTShapeRef OCCTShapeOuterShell(OCCTShapeRef shape);
 /// outShells=NULL returns a sizing UPPER BOUND (the solid count) rather than an exact count, so
 /// the query stays one traversal — classifying there would make every caller pay
 /// BRepClass3d::OuterShell twice per solid. The fill call returns the exact number written, which
-/// may be smaller (a solid with no usable outer shell is skipped). 0 for a shape with no solids. #439
+/// may be smaller (a solid with no usable outer shell is skipped). 0 for a shape with no solids.
+/// #439
 int32_t OCCTShapeOuterShells(OCCTShapeRef shape, OCCTShapeRef* outShells, int32_t maxCount);
 
 /// Inner (void/cavity) shells of a solid — all shells except the outer one. Count-then-fill
@@ -433,47 +467,51 @@ int32_t OCCTShapeInnerShells(OCCTShapeRef shape, OCCTShapeRef* outShells, int32_
 
 /// Axis record emitted by OCCTShapeRevolutionAxes / OCCTShapeSymmetryAxes.
 /// kind: 1=cylinder, 2=cone, 3=sphere, 4=torus, 5=revolution, 6=extrusion, 7=symmetry
-typedef struct {
-    double originX, originY, originZ;
-    double directionX, directionY, directionZ;
-    double extentMin;       // along direction from origin (-inf as -DBL_MAX)
-    double extentMax;       // +inf as DBL_MAX
-    bool   hasExtent;       // false only when the axis's own shape has no boundable geometry at
-                             // all (an empty/void bounding box); an unbounded-but-real shape still
-                             // reports true, with extentMin/extentMax at the +-DBL_MAX sentinels
-                             // above (#763)
-    int32_t kind;
+typedef struct
+{
+  double originX, originY, originZ;
+  double directionX, directionY, directionZ;
+  double extentMin; // along direction from origin (-inf as -DBL_MAX)
+  double extentMax; // +inf as DBL_MAX
+  bool   hasExtent; // false only when the axis's own shape has no boundable geometry at
+                    // all (an empty/void bounding box); an unbounded-but-real shape still
+                    // reports true, with extentMin/extentMax at the +-DBL_MAX sentinels
+                    // above (#763)
+  int32_t kind;
 } OCCTShapeAxis;
 
 /// Collect revolution axes from all cylindrical/conical/toroidal/revolved faces in a shape.
 /// Axes are deduplicated by origin+direction within the given tolerance. Returns count,
 /// writes up to maxAxes entries into outAxes. Returns -1 on failure.
 int32_t OCCTShapeRevolutionAxes(OCCTShapeRef _Nonnull shape,
-                                 double tolerance,
-                                 OCCTShapeAxis* _Nonnull outAxes,
-                                 int32_t maxAxes);
+                                double tolerance,
+                                OCCTShapeAxis* _Nonnull outAxes,
+                                int32_t maxAxes);
 
 /// Detect symmetry axes from principal moments of inertia — when two moments are nearly
 /// equal (within fractionalTolerance of the larger), the third is a symmetry axis.
 /// Returns count (0 for none, 1 for rotational symmetry, 3 for spherical symmetry).
 int32_t OCCTShapeSymmetryAxes(OCCTShapeRef _Nonnull shape,
-                               double fractionalTolerance,
-                               OCCTShapeAxis* _Nonnull outAxes,
-                               int32_t maxAxes);
+                              double fractionalTolerance,
+                              OCCTShapeAxis* _Nonnull outAxes,
+                              int32_t maxAxes);
 
 /// Distance solution entry
-typedef struct {
-    double point1X, point1Y, point1Z;
-    double point2X, point2Y, point2Z;
-    double distance;
+typedef struct
+{
+  double point1X, point1Y, point1Z;
+  double point2X, point2Y, point2Z;
+  double distance;
 } OCCTDistanceSolution;
 
 /// Compute all distance solutions between two shapes
 /// @param outSolutions Pre-allocated array for results
 /// @param maxSolutions Maximum number of solutions to return
 /// @return Number of solutions found, -1 on failure
-int32_t OCCTShapeAllDistanceSolutions(OCCTShapeRef shape1, OCCTShapeRef shape2,
-                                       OCCTDistanceSolution* outSolutions, int32_t maxSolutions);
+int32_t OCCTShapeAllDistanceSolutions(OCCTShapeRef          shape1,
+                                      OCCTShapeRef          shape2,
+                                      OCCTDistanceSolution* outSolutions,
+                                      int32_t               maxSolutions);
 
 /// Check if one shape is fully inside another (inner solution)
 /// @return 1 if inner, 0 if not inner, -1 on failure
@@ -481,22 +519,25 @@ int32_t OCCTShapeIsInnerDistance(OCCTShapeRef shape1, OCCTShapeRef shape2);
 
 /// Distance solution detail: support type and parametric location.
 /// supportType: 0=Vertex, 1=OnEdge, 2=InFace
-typedef struct {
-    int32_t supportType1;
-    int32_t supportType2;
-    double paramEdge1;   // parameter on edge (if supportType1 == 1)
-    double paramEdge2;   // parameter on edge (if supportType2 == 1)
-    double paramFaceU1;  // U parameter on face (if supportType1 == 2)
-    double paramFaceV1;  // V parameter on face (if supportType1 == 2)
-    double paramFaceU2;  // U parameter on face (if supportType2 == 2)
-    double paramFaceV2;  // V parameter on face (if supportType2 == 2)
+typedef struct
+{
+  int32_t supportType1;
+  int32_t supportType2;
+  double  paramEdge1;  // parameter on edge (if supportType1 == 1)
+  double  paramEdge2;  // parameter on edge (if supportType2 == 1)
+  double  paramFaceU1; // U parameter on face (if supportType1 == 2)
+  double  paramFaceV1; // V parameter on face (if supportType1 == 2)
+  double  paramFaceU2; // U parameter on face (if supportType2 == 2)
+  double  paramFaceV2; // V parameter on face (if supportType2 == 2)
 } OCCTDistanceSolutionDetail;
 
 /// Get detailed parametric info for a distance solution.
 /// @param solutionIndex 0-based solution index
 /// @return true on success
-bool OCCTShapeDistanceSolutionDetail(OCCTShapeRef _Nonnull shape1, OCCTShapeRef _Nonnull shape2,
-    int32_t solutionIndex, OCCTDistanceSolutionDetail* _Nonnull outDetail);
+bool OCCTShapeDistanceSolutionDetail(OCCTShapeRef _Nonnull shape1,
+                                     OCCTShapeRef _Nonnull shape2,
+                                     int32_t solutionIndex,
+                                     OCCTDistanceSolutionDetail* _Nonnull outDetail);
 
 /// Decompose a BSpline surface into Bezier patches
 /// @param surface BSpline surface reference
@@ -505,9 +546,11 @@ bool OCCTShapeDistanceSolutionDetail(OCCTShapeRef _Nonnull shape1, OCCTShapeRef 
 /// @param outNbUPatches Number of patches in U direction
 /// @param outNbVPatches Number of patches in V direction
 /// @return Total number of patches, or -1 on failure
-int32_t OCCTSurfaceBSplineToBezierPatches(OCCTSurfaceRef surface,
-                                           OCCTSurfaceRef* outPatches, int32_t maxPatches,
-                                           int32_t* outNbUPatches, int32_t* outNbVPatches);
+int32_t OCCTSurfaceBSplineToBezierPatches(OCCTSurfaceRef  surface,
+                                          OCCTSurfaceRef* outPatches,
+                                          int32_t         maxPatches,
+                                          int32_t*        outNbUPatches,
+                                          int32_t*        outNbVPatches);
 
 /// Find continuity break parameters in a BSpline curve
 /// @param curve3D BSpline curve reference
@@ -518,8 +561,10 @@ int32_t OCCTSurfaceBSplineToBezierPatches(OCCTSurfaceRef surface,
 /// @param outParams Pre-allocated array for break parameters
 /// @param maxParams Maximum number of parameters to return
 /// @return Number of break parameters found, or -1 on failure
-int32_t OCCTCurve3DBSplineKnotSplits(OCCTCurve3DRef curve3D, int32_t continuityOrder,
-                                       double* outParams, int32_t maxParams);
+int32_t OCCTCurve3DBSplineKnotSplits(OCCTCurve3DRef curve3D,
+                                     int32_t        continuityOrder,
+                                     double*        outParams,
+                                     int32_t        maxParams);
 
 /// Find the underlying geometric surface of a shape (wire, edge set) with options
 /// @param shape Shape whose edges define a surface
@@ -527,8 +572,10 @@ int32_t OCCTCurve3DBSplineKnotSplits(OCCTCurve3DRef curve3D, int32_t continuityO
 /// @param onlyPlane If true, only look for planar surfaces
 /// @param outFound Set to true if a surface was found
 /// @return Surface reference, or NULL if not found
-OCCTSurfaceRef OCCTShapeFindSurfaceEx(OCCTShapeRef shape, double tolerance,
-                                       bool onlyPlane, bool* outFound);
+OCCTSurfaceRef OCCTShapeFindSurfaceEx(OCCTShapeRef shape,
+                                      double       tolerance,
+                                      bool         onlyPlane,
+                                      bool*        outFound);
 
 // MARK: - v0.41.0: Shape Surgery, Plane Detection, Geometry Conversion
 
@@ -545,9 +592,10 @@ OCCTShapeRef OCCTShapeRemoveSubShapes(OCCTShapeRef shape, OCCTShapeRef* subShape
 /// @param newShapes Array of new sub-shapes (must match oldShapes count)
 /// @param count Number of replacements
 /// @return Modified shape, or NULL on failure
-OCCTShapeRef OCCTShapeReplaceSubShapes(OCCTShapeRef shape,
-                                        OCCTShapeRef* oldShapes, OCCTShapeRef* newShapes,
-                                        int32_t count);
+OCCTShapeRef OCCTShapeReplaceSubShapes(OCCTShapeRef  shape,
+                                       OCCTShapeRef* oldShapes,
+                                       OCCTShapeRef* newShapes,
+                                       int32_t       count);
 
 /// Find if a shape's edges lie in a plane
 /// @param shape Shape to analyze
@@ -555,9 +603,14 @@ OCCTShapeRef OCCTShapeReplaceSubShapes(OCCTShapeRef shape,
 /// @param outNormalX/Y/Z Plane normal (set if found)
 /// @param outOriginX/Y/Z Plane origin (set if found)
 /// @return true if a plane was found
-bool OCCTShapeFindPlane(OCCTShapeRef shape, double tolerance,
-                         double* outNormalX, double* outNormalY, double* outNormalZ,
-                         double* outOriginX, double* outOriginY, double* outOriginZ);
+bool OCCTShapeFindPlane(OCCTShapeRef shape,
+                        double       tolerance,
+                        double*      outNormalX,
+                        double*      outNormalY,
+                        double*      outNormalZ,
+                        double*      outOriginX,
+                        double*      outOriginY,
+                        double*      outOriginZ);
 
 // MARK: - Sub-Shape Extraction (fixes #36)
 //
@@ -581,8 +634,10 @@ int32_t OCCTShapeGetSubShapeCount(OCCTShapeRef shape, int32_t type);
 /// @param outSubShapes Output array, caller-allocated (size it with OCCTShapeGetSubShapeCount)
 /// @param maxCount Capacity of outSubShapes
 /// @return Number of sub-shapes actually written
-int32_t OCCTShapeGetSubShapes(OCCTShapeRef shape, int32_t type,
-                              OCCTShapeRef* outSubShapes, int32_t maxCount);
+int32_t OCCTShapeGetSubShapes(OCCTShapeRef  shape,
+                              int32_t       type,
+                              OCCTShapeRef* outSubShapes,
+                              int32_t       maxCount);
 
 /// Get a sub-shape by type and 0-based index
 /// @param shape The parent shape
@@ -594,9 +649,10 @@ OCCTShapeRef OCCTShapeGetSubShapeByTypeIndex(OCCTShapeRef shape, int32_t type, i
 // --- BRepExtrema_SelfIntersection ---
 
 /// Result of self-intersection check
-typedef struct {
-    int32_t overlapCount;    ///< Number of overlapping triangle pairs
-    bool isDone;             ///< Whether the check completed
+typedef struct
+{
+  int32_t overlapCount; ///< Number of overlapping triangle pairs
+  bool    isDone;       ///< Whether the check completed
 } OCCTSelfIntersectionResult;
 
 /// Check a shape for self-intersection using BVH-accelerated triangle mesh overlap.
@@ -605,23 +661,26 @@ typedef struct {
 /// @param tolerance Tolerance for detecting intersections
 /// @param meshDeflection Mesh deflection for auto-meshing (default 0.5)
 /// @return Self-intersection result
-OCCTSelfIntersectionResult OCCTShapeSelfIntersection(OCCTShapeRef shape, double tolerance,
-                                                      double meshDeflection);
+OCCTSelfIntersectionResult OCCTShapeSelfIntersection(OCCTShapeRef shape,
+                                                     double       tolerance,
+                                                     double       meshDeflection);
 
 // MARK: - v0.46.0: BRepOffset_Analyse, Approx_Curve3d, LocOpe_Prism, Volume Inertia
 
 // --- BRepOffset_Analyse: Edge convexity classification ---
 
 /// Edge concavity type from BRepOffset_Analyse
-typedef enum {
-    OCCTConcavityConvex = 0,
-    OCCTConcavityConcave = 1,
-    OCCTConcavityTangent = 2
+typedef enum
+{
+  OCCTConcavityConvex  = 0,
+  OCCTConcavityConcave = 1,
+  OCCTConcavityTangent = 2
 } OCCTConcavityType;
 
 /// Result for a single edge classification
-typedef struct {
-    OCCTConcavityType type;
+typedef struct
+{
+  OCCTConcavityType type;
 } OCCTEdgeConcavity;
 
 /// Analyze edge convexity/concavity in a shape.
@@ -630,8 +689,10 @@ typedef struct {
 /// @param outEdgeTypes Output array of edge concavity types (must hold shapeEdgeCount entries)
 /// @param maxEntries Maximum entries in output array
 /// @return Number of edges classified, or -1 on error
-int32_t OCCTShapeAnalyzeEdgeConcavity(OCCTShapeRef shape, double angle,
-                                       OCCTEdgeConcavity* outEdgeTypes, int32_t maxEntries);
+int32_t OCCTShapeAnalyzeEdgeConcavity(OCCTShapeRef       shape,
+                                      double             angle,
+                                      OCCTEdgeConcavity* outEdgeTypes,
+                                      int32_t            maxEntries);
 
 /// Count edges of a specific concavity type in a shape.
 /// @param shape Shape to analyze
@@ -643,14 +704,15 @@ int32_t OCCTShapeCountEdgeConcavity(OCCTShapeRef shape, double angle, int32_t ty
 // --- BRepExtrema_ExtCC ---
 
 /// Edge-edge extrema result
-typedef struct {
-    double distance;      // Minimum distance
-    double paramOnE1;     // Parameter on first edge
-    double paramOnE2;     // Parameter on second edge
-    double pt1x, pt1y, pt1z;  // Closest point on edge 1
-    double pt2x, pt2y, pt2z;  // Closest point on edge 2
-    bool isParallel;      // Whether edges are parallel
-    int32_t solutionCount; // Number of extrema
+typedef struct
+{
+  double  distance;         // Minimum distance
+  double  paramOnE1;        // Parameter on first edge
+  double  paramOnE2;        // Parameter on second edge
+  double  pt1x, pt1y, pt1z; // Closest point on edge 1
+  double  pt2x, pt2y, pt2z; // Closest point on edge 2
+  bool    isParallel;       // Whether edges are parallel
+  int32_t solutionCount;    // Number of extrema
 } OCCTEdgeEdgeExtremaResult;
 
 /// Compute distance extrema between two edges.
@@ -659,8 +721,10 @@ typedef struct {
 /// @param shape2 Shape containing second edge
 /// @param edgeIndex2 Index of second edge (0-based)
 /// @return Extrema result
-OCCTEdgeEdgeExtremaResult OCCTBRepExtremaExtCC(OCCTShapeRef shape1, int32_t edgeIndex1,
-                                                OCCTShapeRef shape2, int32_t edgeIndex2);
+OCCTEdgeEdgeExtremaResult OCCTBRepExtremaExtCC(OCCTShapeRef shape1,
+                                               int32_t      edgeIndex1,
+                                               OCCTShapeRef shape2,
+                                               int32_t      edgeIndex2);
 
 /// Compute distance extrema between two standalone edges (from wire shapes).
 /// @param edge1 First edge shape
@@ -671,11 +735,12 @@ OCCTEdgeEdgeExtremaResult OCCTBRepExtremaExtCCEdges(OCCTShapeRef edge1, OCCTShap
 // --- BRepExtrema_ExtPF ---
 
 /// Point-face extrema result
-typedef struct {
-    double distance;      // Minimum distance
-    double u, v;          // Parameters on face
-    double ptx, pty, ptz; // Closest point on face
-    int32_t solutionCount;
+typedef struct
+{
+  double  distance;      // Minimum distance
+  double  u, v;          // Parameters on face
+  double  ptx, pty, ptz; // Closest point on face
+  int32_t solutionCount;
 } OCCTPointFaceExtremaResult;
 
 /// Compute distance from a point to a face.
@@ -683,19 +748,23 @@ typedef struct {
 /// @param shape Shape containing the face
 /// @param faceIndex Face index (0-based)
 /// @return Extrema result
-OCCTPointFaceExtremaResult OCCTBRepExtremaExtPF(double px, double py, double pz,
-                                                 OCCTShapeRef shape, int32_t faceIndex);
+OCCTPointFaceExtremaResult OCCTBRepExtremaExtPF(double       px,
+                                                double       py,
+                                                double       pz,
+                                                OCCTShapeRef shape,
+                                                int32_t      faceIndex);
 
 // --- BRepExtrema_ExtFF ---
 
 /// Face-face extrema result
-typedef struct {
-    double distance;
-    double u1, v1;        // Parameters on face 1
-    double u2, v2;        // Parameters on face 2
-    double pt1x, pt1y, pt1z;
-    double pt2x, pt2y, pt2z;
-    int32_t solutionCount;
+typedef struct
+{
+  double  distance;
+  double  u1, v1; // Parameters on face 1
+  double  u2, v2; // Parameters on face 2
+  double  pt1x, pt1y, pt1z;
+  double  pt2x, pt2y, pt2z;
+  int32_t solutionCount;
 } OCCTFaceFaceExtremaResult;
 
 /// Compute distance extrema between two faces.
@@ -704,21 +773,25 @@ typedef struct {
 /// @param shape2 Shape containing second face
 /// @param faceIndex2 Second face index (0-based)
 /// @return Extrema result
-OCCTFaceFaceExtremaResult OCCTBRepExtremaExtFF(OCCTShapeRef shape1, int32_t faceIndex1,
-                                                OCCTShapeRef shape2, int32_t faceIndex2);
+OCCTFaceFaceExtremaResult OCCTBRepExtremaExtFF(OCCTShapeRef shape1,
+                                               int32_t      faceIndex1,
+                                               OCCTShapeRef shape2,
+                                               int32_t      faceIndex2);
 
-// MARK: - v0.49.0: BRepExtrema_ExtPC, ExtCF, FreeBounds, ShapeCustom, ShapeFix, Surface/Curve expansion
+// MARK: - v0.49.0: BRepExtrema_ExtPC, ExtCF, FreeBounds, ShapeCustom, ShapeFix, Surface/Curve
+// expansion
 
 // --- BRepExtrema_ExtPC ---
 
 /// Point-edge extrema result
-typedef struct {
-    double distance;           // Minimum distance over the edge, ends included (#580)
-    double parameter;          // Parameter on edge at the nearest point
-    double ptx, pty, ptz;     // Nearest point on edge
-    int32_t solutionCount;    // Number of perpendicular feet BRepExtrema_ExtPC found; 0 is a
-                              // reportable state, not a failure -- see below
-    bool isValid;             // false only when there is no such edge, or it has no 3D curve
+typedef struct
+{
+  double  distance;      // Minimum distance over the edge, ends included (#580)
+  double  parameter;     // Parameter on edge at the nearest point
+  double  ptx, pty, ptz; // Nearest point on edge
+  int32_t solutionCount; // Number of perpendicular feet BRepExtrema_ExtPC found; 0 is a
+                         // reportable state, not a failure -- see below
+  bool isValid;          // false only when there is no such edge, or it has no 3D curve
 } OCCTPointEdgeExtremaResult;
 
 /// Compute the minimum distance from a point to an edge of a shape, over the whole edge.
@@ -738,20 +811,24 @@ typedef struct {
 /// @param shape Shape containing the edge
 /// @param edgeIndex Edge index (0-based, in the enumeration Shape.edges() reads)
 /// @return Nearest-point result; check isValid, not solutionCount
-OCCTPointEdgeExtremaResult OCCTBRepExtremaExtPC(double px, double py, double pz,
-                                                 OCCTShapeRef shape, int32_t edgeIndex);
+OCCTPointEdgeExtremaResult OCCTBRepExtremaExtPC(double       px,
+                                                double       py,
+                                                double       pz,
+                                                OCCTShapeRef shape,
+                                                int32_t      edgeIndex);
 
 // --- BRepExtrema_ExtCF ---
 
 /// Edge-face (curve-face) extrema result
-typedef struct {
-    double distance;
-    double paramOnEdge;
-    double uOnFace, vOnFace;
-    double edgePtx, edgePty, edgePtz;
-    double facePtx, facePty, facePtz;
-    int32_t solutionCount;
-    bool isParallel;
+typedef struct
+{
+  double  distance;
+  double  paramOnEdge;
+  double  uOnFace, vOnFace;
+  double  edgePtx, edgePty, edgePtz;
+  double  facePtx, facePty, facePtz;
+  int32_t solutionCount;
+  bool    isParallel;
 } OCCTEdgeFaceExtremaResult;
 
 /// Compute distance extrema between an edge and a face.
@@ -760,15 +837,18 @@ typedef struct {
 /// @param shape2 Shape containing the face
 /// @param faceIndex Face index (0-based)
 /// @return Extrema result (minimum distance solution)
-OCCTEdgeFaceExtremaResult OCCTBRepExtremaExtCF(OCCTShapeRef shape1, int32_t edgeIndex,
-                                                OCCTShapeRef shape2, int32_t faceIndex);
+OCCTEdgeFaceExtremaResult OCCTBRepExtremaExtCF(OCCTShapeRef shape1,
+                                               int32_t      edgeIndex,
+                                               OCCTShapeRef shape2,
+                                               int32_t      faceIndex);
 
 /// Result of polyhedral distance computation.
-typedef struct {
-    double distance;    // Polyhedral distance between shapes
-    double p1x, p1y, p1z;  // Closest point on shape 1
-    double p2x, p2y, p2z;  // Closest point on shape 2
-    bool success;       // True if computation succeeded
+typedef struct
+{
+  double distance;      // Polyhedral distance between shapes
+  double p1x, p1y, p1z; // Closest point on shape 1
+  double p2x, p2y, p2z; // Closest point on shape 2
+  bool   success;       // True if computation succeeded
 } OCCTPolyDistanceResult;
 
 /// Compute fast polyhedral (approximate) distance between two shapes.
@@ -781,10 +861,17 @@ OCCTPolyDistanceResult OCCTShapePolyhedralDistance(OCCTShapeRef shape1, OCCTShap
 /// outPoints must have space for maxPts * 3 doubles (x,y,z triples).
 /// outParams must have space for maxPts doubles (w parameter on line).
 int32_t OCCTIntersectLineFace(OCCTShapeRef face,
-    double origX, double origY, double origZ,
-    double dirX, double dirY, double dirZ,
-    double pInf, double pSup,
-    double* outPoints, double* outParams, int32_t maxPts);
+                              double       origX,
+                              double       origY,
+                              double       origZ,
+                              double       dirX,
+                              double       dirY,
+                              double       dirZ,
+                              double       pInf,
+                              double       pSup,
+                              double*      outPoints,
+                              double*      outParams,
+                              int32_t      maxPts);
 
 // --- IntCurvesFace_ShapeIntersector ---
 
@@ -797,19 +884,29 @@ int32_t OCCTIntersectLineFace(OCCTShapeRef face,
 /// @param outCount Number of intersection points
 /// @return true if intersections found
 bool OCCTIntCurvesFaceShapeIntersect(OCCTShapeRef shape,
-    double ox, double oy, double oz,
-    double dx, double dy, double dz,
-    double* _Nullable * _Nonnull outPoints,
-    double* _Nullable * _Nonnull outParams,
-    int32_t* outCount);
+                                     double       ox,
+                                     double       oy,
+                                     double       oz,
+                                     double       dx,
+                                     double       dy,
+                                     double       dz,
+                                     double* _Nullable* _Nonnull outPoints,
+                                     double* _Nullable* _Nonnull outParams,
+                                     int32_t* outCount);
 
 /// Find the nearest intersection of a ray with a shape.
 /// @return true if an intersection was found, with the point in outX/Y/Z and parameter in outParam
 bool OCCTIntCurvesFaceShapeIntersectNearest(OCCTShapeRef shape,
-    double ox, double oy, double oz,
-    double dx, double dy, double dz,
-    double* outX, double* outY, double* outZ,
-    double* outParam);
+                                            double       ox,
+                                            double       oy,
+                                            double       oz,
+                                            double       dx,
+                                            double       dy,
+                                            double       dz,
+                                            double*      outX,
+                                            double*      outY,
+                                            double*      outZ,
+                                            double*      outParam);
 
 // --- TopTrans_SurfaceTransition ---
 
@@ -822,58 +919,101 @@ bool OCCTIntCurvesFaceShapeIntersectNearest(OCCTShapeRef shape,
 /// @param boundOrientation Orientation of the boundary (0=FORWARD, 1=REVERSED)
 /// @param outStateBefore Output: state before crossing (0=IN, 1=OUT, 2=ON, 3=UNKNOWN)
 /// @param outStateAfter Output: state after crossing (0=IN, 1=OUT, 2=ON, 3=UNKNOWN)
-void OCCTTopTransSurfaceTransition(
-    double tgtX, double tgtY, double tgtZ,
-    double normX, double normY, double normZ,
-    double surfNormX, double surfNormY, double surfNormZ,
-    double tolerance,
-    int32_t surfOrientation, int32_t boundOrientation,
-    int32_t* _Nonnull outStateBefore, int32_t* _Nonnull outStateAfter);
+void OCCTTopTransSurfaceTransition(double  tgtX,
+                                   double  tgtY,
+                                   double  tgtZ,
+                                   double  normX,
+                                   double  normY,
+                                   double  normZ,
+                                   double  surfNormX,
+                                   double  surfNormY,
+                                   double  surfNormZ,
+                                   double  tolerance,
+                                   int32_t surfOrientation,
+                                   int32_t boundOrientation,
+                                   int32_t* _Nonnull outStateBefore,
+                                   int32_t* _Nonnull outStateAfter);
 
 /// Compute surface transition with curvature information.
-void OCCTTopTransSurfaceTransitionCurvature(
-    double tgtX, double tgtY, double tgtZ,
-    double normX, double normY, double normZ,
-    double maxDX, double maxDY, double maxDZ,
-    double minDX, double minDY, double minDZ,
-    double maxCurv, double minCurv,
-    double surfNormX, double surfNormY, double surfNormZ,
-    double surfMaxDX, double surfMaxDY, double surfMaxDZ,
-    double surfMinDX, double surfMinDY, double surfMinDZ,
-    double surfMaxCurv, double surfMinCurv,
-    double tolerance,
-    int32_t surfOrientation, int32_t boundOrientation,
-    int32_t* _Nonnull outStateBefore, int32_t* _Nonnull outStateAfter);
+void OCCTTopTransSurfaceTransitionCurvature(double  tgtX,
+                                            double  tgtY,
+                                            double  tgtZ,
+                                            double  normX,
+                                            double  normY,
+                                            double  normZ,
+                                            double  maxDX,
+                                            double  maxDY,
+                                            double  maxDZ,
+                                            double  minDX,
+                                            double  minDY,
+                                            double  minDZ,
+                                            double  maxCurv,
+                                            double  minCurv,
+                                            double  surfNormX,
+                                            double  surfNormY,
+                                            double  surfNormZ,
+                                            double  surfMaxDX,
+                                            double  surfMaxDY,
+                                            double  surfMaxDZ,
+                                            double  surfMinDX,
+                                            double  surfMinDY,
+                                            double  surfMinDZ,
+                                            double  surfMaxCurv,
+                                            double  surfMinCurv,
+                                            double  tolerance,
+                                            int32_t surfOrientation,
+                                            int32_t boundOrientation,
+                                            int32_t* _Nonnull outStateBefore,
+                                            int32_t* _Nonnull outStateAfter);
 
 // MARK: - v0.68.0: TKGeomAlgo Part 2 — CurveTransition, Trihedrons, NSections, Law, GccAna, Intf
 
 // --- TopTrans_CurveTransition ---
 /// Compute curve transition states at a boundary crossing (simple, no curvature).
-void OCCTTopTransCurveTransition(
-    double tgtX, double tgtY, double tgtZ,
-    double tangX, double tangY, double tangZ,
-    double normX, double normY, double normZ,
-    double curvature, double tolerance,
-    int32_t surfOrientation, int32_t boundOrientation,
-    int32_t* _Nonnull outStateBefore, int32_t* _Nonnull outStateAfter);
+void OCCTTopTransCurveTransition(double  tgtX,
+                                 double  tgtY,
+                                 double  tgtZ,
+                                 double  tangX,
+                                 double  tangY,
+                                 double  tangZ,
+                                 double  normX,
+                                 double  normY,
+                                 double  normZ,
+                                 double  curvature,
+                                 double  tolerance,
+                                 int32_t surfOrientation,
+                                 int32_t boundOrientation,
+                                 int32_t* _Nonnull outStateBefore,
+                                 int32_t* _Nonnull outStateAfter);
 
 /// Compute curve transition states with curvature on the boundary curve.
-void OCCTTopTransCurveTransitionWithCurvature(
-    double tgtX, double tgtY, double tgtZ,
-    double curveNormX, double curveNormY, double curveNormZ,
-    double curveCurv,
-    double tangX, double tangY, double tangZ,
-    double normX, double normY, double normZ,
-    double surfCurv, double tolerance,
-    int32_t surfOrientation, int32_t boundOrientation,
-    int32_t* _Nonnull outStateBefore, int32_t* _Nonnull outStateAfter);
+void OCCTTopTransCurveTransitionWithCurvature(double  tgtX,
+                                              double  tgtY,
+                                              double  tgtZ,
+                                              double  curveNormX,
+                                              double  curveNormY,
+                                              double  curveNormZ,
+                                              double  curveCurv,
+                                              double  tangX,
+                                              double  tangY,
+                                              double  tangZ,
+                                              double  normX,
+                                              double  normY,
+                                              double  normZ,
+                                              double  surfCurv,
+                                              double  tolerance,
+                                              int32_t surfOrientation,
+                                              int32_t boundOrientation,
+                                              int32_t* _Nonnull outStateBefore,
+                                              int32_t* _Nonnull outStateAfter);
 
 // --- TopCnx_EdgeFaceTransition ---
 
 /// Result of edge-face transition computation.
-typedef struct {
-    int32_t transition;          ///< TopAbs_Orientation: 0=FORWARD, 1=REVERSED, 2=INTERNAL, 3=EXTERNAL
-    int32_t boundaryTransition;  ///< TopAbs_Orientation for boundary
+typedef struct
+{
+  int32_t transition;         ///< TopAbs_Orientation: 0=FORWARD, 1=REVERSED, 2=INTERNAL, 3=EXTERNAL
+  int32_t boundaryTransition; ///< TopAbs_Orientation for boundary
 } OCCTEdgeFaceTransitionResult;
 
 /// Compute cumulated edge-face transition for multiple face interferences on an edge.
@@ -890,37 +1030,44 @@ typedef struct {
 /// @param faceCount Number of faces
 /// @return Transition result
 OCCTEdgeFaceTransitionResult OCCTTopCnxEdgeFaceTransition(
-    double edgeTangentX, double edgeTangentY, double edgeTangentZ,
-    double edgeNormalX, double edgeNormalY, double edgeNormalZ,
-    double edgeCurvature,
-    const double* _Nonnull faceTangents,
-    const double* _Nonnull faceNormals,
-    const double* _Nonnull faceCurvatures,
-    const int32_t* _Nonnull faceOrientations,
-    const int32_t* _Nonnull faceTransitions,
-    const int32_t* _Nonnull faceBoundaryTransitions,
-    const double* _Nonnull tolerances,
-    int32_t faceCount);
+  double edgeTangentX,
+  double edgeTangentY,
+  double edgeTangentZ,
+  double edgeNormalX,
+  double edgeNormalY,
+  double edgeNormalZ,
+  double edgeCurvature,
+  const double* _Nonnull faceTangents,
+  const double* _Nonnull faceNormals,
+  const double* _Nonnull faceCurvatures,
+  const int32_t* _Nonnull faceOrientations,
+  const int32_t* _Nonnull faceTransitions,
+  const int32_t* _Nonnull faceBoundaryTransitions,
+  const double* _Nonnull tolerances,
+  int32_t faceCount);
 
 /// Result for each intersection hit.
-typedef struct {
-    double x, y, z;  // Intersection point
-    double u, v;      // Surface parameters
-    double w;         // Curve parameter
+typedef struct
+{
+  double x, y, z; // Intersection point
+  double u, v;    // Surface parameters
+  double w;       // Curve parameter
 } OCCTCurveSurfaceHit;
 
 /// Create a line–shape intersection iterator.
-OCCTCurveSurfaceInterRef _Nullable OCCTCurveSurfaceInterCreateLine(
-    OCCTShapeRef _Nonnull shape,
-    double originX, double originY, double originZ,
-    double dirX, double dirY, double dirZ,
-    double tolerance);
+OCCTCurveSurfaceInterRef _Nullable OCCTCurveSurfaceInterCreateLine(OCCTShapeRef _Nonnull shape,
+                                                                   double originX,
+                                                                   double originY,
+                                                                   double originZ,
+                                                                   double dirX,
+                                                                   double dirY,
+                                                                   double dirZ,
+                                                                   double tolerance);
 
 /// Create a curve–shape intersection iterator (uses existing Curve3D).
-OCCTCurveSurfaceInterRef _Nullable OCCTCurveSurfaceInterCreateCurve(
-    OCCTShapeRef _Nonnull shape,
-    OCCTCurve3DRef _Nonnull curve,
-    double tolerance);
+OCCTCurveSurfaceInterRef _Nullable OCCTCurveSurfaceInterCreateCurve(OCCTShapeRef _Nonnull shape,
+                                                                    OCCTCurve3DRef _Nonnull curve,
+                                                                    double tolerance);
 
 /// Release the iterator.
 void OCCTCurveSurfaceInterRelease(OCCTCurveSurfaceInterRef _Nonnull inter);
@@ -939,28 +1086,39 @@ OCCTFaceRef _Nullable OCCTCurveSurfaceInterFace(OCCTCurveSurfaceInterRef _Nonnul
 
 /// Collect all hits into an array. Returns count, fills hits array (caller provides buffer).
 int32_t OCCTCurveSurfaceInterAllHits(OCCTCurveSurfaceInterRef _Nonnull inter,
-                                      OCCTCurveSurfaceHit* _Nonnull hits,
-                                      int32_t maxHits);
+                                     OCCTCurveSurfaceHit* _Nonnull hits,
+                                     int32_t maxHits);
 
 // --- BRepExtrema_DistanceSS ---
-typedef struct {
-    double distance;
-    double point1X, point1Y, point1Z;
-    double point2X, point2Y, point2Z;
-    int solutionCount;
-    bool isDone;
+typedef struct
+{
+  double distance;
+  double point1X, point1Y, point1Z;
+  double point2X, point2Y, point2Z;
+  int    solutionCount;
+  bool   isDone;
 } OCCTDistanceSSResult;
 
 OCCTDistanceSSResult OCCTBRepExtremaDistanceSS(OCCTShapeRef _Nonnull shape1Ref,
-                                                OCCTShapeRef _Nonnull shape2Ref,
-                                                double deflection);
+                                               OCCTShapeRef _Nonnull shape2Ref,
+                                               double deflection);
 
 /// Create an OBB from center, axes, and half-sizes.
-OCCTOBBRef _Nonnull OCCTOBBCreate(double cx, double cy, double cz,
-                                    double xDirX, double xDirY, double xDirZ,
-                                    double yDirX, double yDirY, double yDirZ,
-                                    double zDirX, double zDirY, double zDirZ,
-                                    double hx, double hy, double hz);
+OCCTOBBRef _Nonnull OCCTOBBCreate(double cx,
+                                  double cy,
+                                  double cz,
+                                  double xDirX,
+                                  double xDirY,
+                                  double xDirZ,
+                                  double yDirX,
+                                  double yDirY,
+                                  double yDirZ,
+                                  double zDirX,
+                                  double zDirY,
+                                  double zDirZ,
+                                  double hx,
+                                  double hy,
+                                  double hz);
 
 /// Create an OBB from a shape's bounding box.
 OCCTOBBRef _Nullable OCCTOBBCreateFromShape(OCCTShapeRef _Nonnull shape);
@@ -972,10 +1130,16 @@ void OCCTOBBRelease(OCCTOBBRef _Nonnull obb);
 bool OCCTOBBIsVoid(OCCTOBBRef _Nonnull obb);
 
 /// Get center of OBB.
-void OCCTOBBGetCenter(OCCTOBBRef _Nonnull obb, double* _Nonnull x, double* _Nonnull y, double* _Nonnull z);
+void OCCTOBBGetCenter(OCCTOBBRef _Nonnull obb,
+                      double* _Nonnull x,
+                      double* _Nonnull y,
+                      double* _Nonnull z);
 
 /// Get half-sizes of OBB.
-void OCCTOBBGetHalfSizes(OCCTOBBRef _Nonnull obb, double* _Nonnull hx, double* _Nonnull hy, double* _Nonnull hz);
+void OCCTOBBGetHalfSizes(OCCTOBBRef _Nonnull obb,
+                         double* _Nonnull hx,
+                         double* _Nonnull hy,
+                         double* _Nonnull hz);
 
 /// Check if a point is outside the OBB.
 bool OCCTOBBIsOutPoint(OCCTOBBRef _Nonnull obb, double px, double py, double pz);
@@ -994,14 +1158,20 @@ double OCCTOBBSquareExtent(OCCTOBBRef _Nonnull obb);
 /// Classify a 3D point relative to a solid shape.
 /// @return 0=IN, 1=OUT, 2=ON, 3=UNKNOWN
 int32_t OCCTShapeClassifyPoint(OCCTShapeRef _Nonnull shape,
-                                double px, double py, double pz, double tolerance);
+                               double px,
+                               double py,
+                               double pz,
+                               double tolerance);
 
 // MARK: - BRepClass_FClassifier (v0.96.0)
 
 /// Classify a 2D point on a face (in UV space).
 /// @return 0=IN, 1=OUT, 2=ON, 3=UNKNOWN
-int32_t OCCTShapeClassifyPoint2D(OCCTShapeRef _Nonnull shape, int32_t faceIndex,
-                                   double u, double v, double tolerance);
+int32_t OCCTShapeClassifyPoint2D(OCCTShapeRef _Nonnull shape,
+                                 int32_t faceIndex,
+                                 double  u,
+                                 double  v,
+                                 double  tolerance);
 
 /// Create a bound sort box with boxes.
 /// @param boxes Array of bounding boxes (6 doubles each: xmin,ymin,zmin,xmax,ymax,zmax)
@@ -1014,9 +1184,14 @@ void OCCTBoundSortBoxRelease(OCCTBoundSortBoxRef _Nonnull bsb);
 /// Find indices of boxes that intersect a query box.
 /// @return Number of hits
 int32_t OCCTBoundSortBoxCompare(OCCTBoundSortBoxRef _Nonnull bsb,
-                                  double xmin, double ymin, double zmin,
-                                  double xmax, double ymax, double zmax,
-                                  int32_t* _Nonnull outIndices, int32_t maxIndices);
+                                double xmin,
+                                double ymin,
+                                double zmin,
+                                double xmax,
+                                double ymax,
+                                double zmax,
+                                int32_t* _Nonnull outIndices,
+                                int32_t maxIndices);
 
 // --- BRepExtrema_SelfIntersection face pair reporting ---
 
@@ -1027,17 +1202,21 @@ int32_t OCCTBoundSortBoxCompare(OCCTBoundSortBoxRef _Nonnull bsb,
 /// @param outFaceIdx2 Output array of second face indices for each overlapping pair
 /// @param maxPairs Maximum number of pairs to return
 /// @return Number of overlapping pairs found, or -1 on error
-int32_t OCCTShapeSelfIntersectionPairs(OCCTShapeRef _Nonnull shape, double tolerance,
-                                        int32_t* _Nonnull outFaceIdx1,
-                                        int32_t* _Nonnull outFaceIdx2,
-                                        int32_t maxPairs, double deflection);
+int32_t OCCTShapeSelfIntersectionPairs(OCCTShapeRef _Nonnull shape,
+                                       double tolerance,
+                                       int32_t* _Nonnull outFaceIdx1,
+                                       int32_t* _Nonnull outFaceIdx2,
+                                       int32_t maxPairs,
+                                       double  deflection);
 
 // --- BRepLib_FindSurface ---
 
 /// Find a surface (typically plane) through the edges of a shape.
 /// @param onlyPlane If true, only planes are considered
 /// @return Found surface, or NULL if not found
-OCCTSurfaceRef _Nullable OCCTFindSurface(OCCTShapeRef _Nonnull shape, double tolerance, bool onlyPlane);
+OCCTSurfaceRef _Nullable OCCTFindSurface(OCCTShapeRef _Nonnull shape,
+                                         double tolerance,
+                                         bool   onlyPlane);
 
 /// Find surface and return the tolerance reached.
 double OCCTFindSurfaceTolerance(OCCTShapeRef _Nonnull shape, double tolerance, bool onlyPlane);
@@ -1047,80 +1226,118 @@ bool OCCTFindSurfaceExisted(OCCTShapeRef _Nonnull shape, double tolerance, bool 
 
 // MARK: - TopExp Adjacency (v0.102.0)
 
-/// Get the first (FORWARD) vertex of an edge. Returns vertex coordinates. Returns false if no vertex.
-bool OCCTEdgeFirstVertex(OCCTShapeRef _Nonnull edge, double* _Nonnull x, double* _Nonnull y, double* _Nonnull z);
+/// Get the first (FORWARD) vertex of an edge. Returns vertex coordinates. Returns false if no
+/// vertex.
+bool OCCTEdgeFirstVertex(OCCTShapeRef _Nonnull edge,
+                         double* _Nonnull x,
+                         double* _Nonnull y,
+                         double* _Nonnull z);
 
-/// Get the last (REVERSED) vertex of an edge. Returns vertex coordinates. Returns false if no vertex.
-bool OCCTEdgeLastVertex(OCCTShapeRef _Nonnull edge, double* _Nonnull x, double* _Nonnull y, double* _Nonnull z);
+/// Get the last (REVERSED) vertex of an edge. Returns vertex coordinates. Returns false if no
+/// vertex.
+bool OCCTEdgeLastVertex(OCCTShapeRef _Nonnull edge,
+                        double* _Nonnull x,
+                        double* _Nonnull y,
+                        double* _Nonnull z);
 
 /// Get both vertices of an edge. Returns false if null vertices.
 bool OCCTEdgeVertices(OCCTShapeRef _Nonnull edge,
-                      double* _Nonnull x1, double* _Nonnull y1, double* _Nonnull z1,
-                      double* _Nonnull x2, double* _Nonnull y2, double* _Nonnull z2);
+                      double* _Nonnull x1,
+                      double* _Nonnull y1,
+                      double* _Nonnull z1,
+                      double* _Nonnull x2,
+                      double* _Nonnull y2,
+                      double* _Nonnull z2);
 
-/// Get first and last vertices of a wire. For closed wires, both are the same vertex. Returns false if null.
+/// Get first and last vertices of a wire. For closed wires, both are the same vertex. Returns false
+/// if null.
 bool OCCTWireVertices(OCCTShapeRef _Nonnull wire,
-                      double* _Nonnull x1, double* _Nonnull y1, double* _Nonnull z1,
-                      double* _Nonnull x2, double* _Nonnull y2, double* _Nonnull z2);
+                      double* _Nonnull x1,
+                      double* _Nonnull y1,
+                      double* _Nonnull z1,
+                      double* _Nonnull x2,
+                      double* _Nonnull y2,
+                      double* _Nonnull z2);
 
 /// Find common vertex between two edges. Returns false if no shared vertex.
-bool OCCTEdgeCommonVertex(OCCTShapeRef _Nonnull edge1, OCCTShapeRef _Nonnull edge2,
-                          double* _Nonnull x, double* _Nonnull y, double* _Nonnull z);
+bool OCCTEdgeCommonVertex(OCCTShapeRef _Nonnull edge1,
+                          OCCTShapeRef _Nonnull edge2,
+                          double* _Nonnull x,
+                          double* _Nonnull y,
+                          double* _Nonnull z);
 
-/// Build edge→face adjacency map. Returns number of edges, and for each edge the count of adjacent faces.
-/// adjacentFaceCounts must be pre-allocated with edgeCount entries (call with NULL first to get count).
+/// Build edge→face adjacency map. Returns number of edges, and for each edge the count of adjacent
+/// faces. adjacentFaceCounts must be pre-allocated with edgeCount entries (call with NULL first to
+/// get count).
 int32_t OCCTEdgeFaceAdjacency(OCCTShapeRef _Nonnull shape, int32_t* _Nullable adjacentFaceCounts);
 
-/// Build vertex→edge adjacency map. Returns number of vertices, and for each vertex the count of adjacent edges.
+/// Build vertex→edge adjacency map. Returns number of vertices, and for each vertex the count of
+/// adjacent edges.
 int32_t OCCTVertexEdgeAdjacency(OCCTShapeRef _Nonnull shape, int32_t* _Nullable adjacentEdgeCounts);
 
 /// Get adjacent faces for a specific edge within a shape. Returns count of faces found.
 /// faceIndices is an output array of 0-based face indices, addressable with
 /// OCCTShapeGetFaceAtIndex. Caller allocates (max 64).
-int32_t OCCTEdgeAdjacentFaces(OCCTShapeRef _Nonnull shape, OCCTShapeRef _Nonnull edge,
-                              int32_t* _Nonnull faceIndices, int32_t maxFaces);
+int32_t OCCTEdgeAdjacentFaces(OCCTShapeRef _Nonnull shape,
+                              OCCTShapeRef _Nonnull edge,
+                              int32_t* _Nonnull faceIndices,
+                              int32_t maxFaces);
 
 /// Get adjacent edges for a specific vertex within a shape. Returns count of edges found.
 /// edgeIndices is an output array of 0-based edge indices, addressable with
 /// OCCTShapeGetEdgeAtIndex. Caller allocates (max 64).
-int32_t OCCTVertexAdjacentEdges(OCCTShapeRef _Nonnull shape, OCCTShapeRef _Nonnull vertex,
-                                int32_t* _Nonnull edgeIndices, int32_t maxEdges);
+int32_t OCCTVertexAdjacentEdges(OCCTShapeRef _Nonnull shape,
+                                OCCTShapeRef _Nonnull vertex,
+                                int32_t* _Nonnull edgeIndices,
+                                int32_t maxEdges);
 
 // MARK: - BRepOffset_Analyse Edge Classification (v0.102.0)
 
 /// Analyze edge concavity for all edges in a shape. Returns number of edges analyzed.
 /// edgeTypes must be pre-allocated with returned count entries (call with NULL first to get count).
 /// Uses existing OCCTConcavityType: 0=Convex, 1=Concave, 2=Tangent.
-int32_t OCCTAnalyseEdgeConcavity(OCCTShapeRef _Nonnull shape, double angle,
-                                  int32_t* _Nullable edgeTypes);
+int32_t OCCTAnalyseEdgeConcavity(OCCTShapeRef _Nonnull shape,
+                                 double angle,
+                                 int32_t* _Nullable edgeTypes);
 
 /// Get faces grouped by edge concavity type. Returns compound of connected face groups.
 /// concavityType: 0=Convex, 1=Concave, 2=Tangent (matches OCCTConcavityType)
-OCCTShapeRef _Nullable OCCTAnalyseExplode(OCCTShapeRef _Nonnull shape, double angle,
-                                           int32_t concavityType);
+OCCTShapeRef _Nullable OCCTAnalyseExplode(OCCTShapeRef _Nonnull shape,
+                                          double  angle,
+                                          int32_t concavityType);
 
 /// Count edges of a given concavity type on a specific face. 0=Convex, 1=Concave, 2=Tangent
-int32_t OCCTAnalyseEdgesOnFace(OCCTShapeRef _Nonnull shape, double angle,
-                                OCCTShapeRef _Nonnull face, int32_t concavityType);
+int32_t OCCTAnalyseEdgesOnFace(OCCTShapeRef _Nonnull shape,
+                               double angle,
+                               OCCTShapeRef _Nonnull face,
+                               int32_t concavityType);
 
 /// Get ancestor faces for an edge in the offset analysis.
-int32_t OCCTAnalyseAncestorCount(OCCTShapeRef _Nonnull shape, double angle, OCCTShapeRef _Nonnull edge);
+int32_t OCCTAnalyseAncestorCount(OCCTShapeRef _Nonnull shape,
+                                 double angle,
+                                 OCCTShapeRef _Nonnull edge);
 
 /// Count tangent edges at a vertex along a given edge.
-int32_t OCCTAnalyseTangentEdgeCount(OCCTShapeRef _Nonnull shape, double angle,
-                                     OCCTShapeRef _Nonnull edge, OCCTShapeRef _Nonnull vertex);
+int32_t OCCTAnalyseTangentEdgeCount(OCCTShapeRef _Nonnull shape,
+                                    double angle,
+                                    OCCTShapeRef _Nonnull edge,
+                                    OCCTShapeRef _Nonnull vertex);
 
 // MARK: - BRepTools_WireExplorer Extensions (v0.102.0)
 
-/// Explore wire edges with face context. Returns edge orientations (0=FORWARD, 1=REVERSED, 2=INTERNAL, 3=EXTERNAL).
-/// orientations must be pre-allocated. Returns edge count.
-int32_t OCCTWireExplorerOrientations(OCCTShapeRef _Nonnull wire, OCCTShapeRef _Nullable face,
-                                      int32_t* _Nullable orientations);
+/// Explore wire edges with face context. Returns edge orientations (0=FORWARD, 1=REVERSED,
+/// 2=INTERNAL, 3=EXTERNAL). orientations must be pre-allocated. Returns edge count.
+int32_t OCCTWireExplorerOrientations(OCCTShapeRef _Nonnull wire,
+                                     OCCTShapeRef _Nullable face,
+                                     int32_t* _Nullable orientations);
 
 /// Get connecting vertices from wire explorer (vertex between consecutive edges).
 /// xs/ys/zs must be pre-allocated with edge count entries. Returns vertex count.
-int32_t OCCTWireExplorerVertices(OCCTShapeRef _Nonnull wire, OCCTShapeRef _Nullable face,
-                                  double* _Nullable xs, double* _Nullable ys, double* _Nullable zs);
+int32_t OCCTWireExplorerVertices(OCCTShapeRef _Nonnull wire,
+                                 OCCTShapeRef _Nullable face,
+                                 double* _Nullable xs,
+                                 double* _Nullable ys,
+                                 double* _Nullable zs);
 
 /// Create a new ReShape context.
 OCCTReShapeRef _Nonnull OCCTReShapeCreate(void);
@@ -1135,8 +1352,9 @@ void OCCTReShapeClear(OCCTReShapeRef _Nonnull rs);
 void OCCTReShapeRemove(OCCTReShapeRef _Nonnull rs, OCCTShapeRef _Nonnull shape);
 
 /// Record a shape replacement.
-void OCCTReShapeReplace(OCCTReShapeRef _Nonnull rs, OCCTShapeRef _Nonnull oldShape,
-                         OCCTShapeRef _Nonnull newShape);
+void OCCTReShapeReplace(OCCTReShapeRef _Nonnull rs,
+                        OCCTShapeRef _Nonnull oldShape,
+                        OCCTShapeRef _Nonnull newShape);
 
 /// Check if a shape has been recorded for modification.
 bool OCCTReShapeIsRecorded(OCCTReShapeRef _Nonnull rs, OCCTShapeRef _Nonnull shape);
@@ -1151,9 +1369,9 @@ OCCTShapeRef _Nullable OCCTReShapeValue(OCCTReShapeRef _Nonnull rs, OCCTShapeRef
 
 /// Substitute a subshape with a list of new shapes. newSubs can be NULL (count=0) to remove.
 OCCTShapeRef _Nullable OCCTShapeSubstitute(OCCTShapeRef _Nonnull shape,
-                                            OCCTShapeRef _Nonnull oldSub,
-                                            OCCTShapeRef _Nullable * _Nullable newSubs,
-                                            int32_t newCount);
+                                           OCCTShapeRef _Nonnull oldSub,
+                                           OCCTShapeRef _Nullable* _Nullable newSubs,
+                                           int32_t newCount);
 
 /// Check if a shape was copied during substitution build.
 bool OCCTSubstitutionIsCopied(OCCTShapeRef _Nonnull shape, OCCTShapeRef _Nonnull subshape);
@@ -1248,10 +1466,15 @@ bool OCCTBRepLibUpdateEdgeTolerance(OCCTShapeRef _Nonnull edge, double tol);
 // MARK: - Edge/Face Extraction (v0.107.0)
 
 /// Extract the 3D curve from an edge. Returns null if no curve. Writes first/last parameters.
-OCCTCurve3DRef _Nullable OCCTEdgeExtractCurve3D(OCCTShapeRef _Nonnull edge, double* _Nonnull first, double* _Nonnull last);
+OCCTCurve3DRef _Nullable OCCTEdgeExtractCurve3D(OCCTShapeRef _Nonnull edge,
+                                                double* _Nonnull first,
+                                                double* _Nonnull last);
 
 /// Extract the PCurve of an edge on a face. Returns null if no PCurve.
-OCCTCurve2DRef _Nullable OCCTEdgeExtractPCurve(OCCTShapeRef _Nonnull edge, OCCTShapeRef _Nonnull face, double* _Nonnull first, double* _Nonnull last);
+OCCTCurve2DRef _Nullable OCCTEdgeExtractPCurve(OCCTShapeRef _Nonnull edge,
+                                               OCCTShapeRef _Nonnull face,
+                                               double* _Nonnull first,
+                                               double* _Nonnull last);
 
 /// Get the tolerance of an edge.
 double OCCTEdgeGetTolerance(OCCTShapeRef _Nonnull edge);
@@ -1272,7 +1495,10 @@ int32_t OCCTFaceWireCount(OCCTShapeRef _Nonnull face);
 double OCCTVertexGetTolerance(OCCTShapeRef _Nonnull vertex);
 
 /// Get the point of a vertex.
-void OCCTVertexGetPoint(OCCTShapeRef _Nonnull vertex, double* _Nonnull x, double* _Nonnull y, double* _Nonnull z);
+void OCCTVertexGetPoint(OCCTShapeRef _Nonnull vertex,
+                        double* _Nonnull x,
+                        double* _Nonnull y,
+                        double* _Nonnull z);
 
 // MARK: - Shape Topology Counting (v0.109.0)
 
@@ -1297,7 +1523,8 @@ bool OCCTShapeIsLocked(OCCTShapeRef _Nonnull shape);
 void OCCTShapeSetLocked(OCCTShapeRef _Nonnull shape, bool locked);
 
 /// Create a shape with an applied location transform (4x3 row-major matrix).
-OCCTShapeRef _Nullable OCCTShapeLocated(OCCTShapeRef _Nonnull shape, const double* _Nonnull matrix12);
+OCCTShapeRef _Nullable OCCTShapeLocated(OCCTShapeRef _Nonnull shape,
+                                        const double* _Nonnull matrix12);
 
 /// Get the current location transform as a 4x3 row-major matrix.
 void OCCTShapeGetLocation(OCCTShapeRef _Nonnull shape, double* _Nonnull matrix12);
@@ -1309,7 +1536,8 @@ void OCCTShapeSetLocation(OCCTShapeRef _Nonnull shape, const double* _Nonnull ma
 OCCTShapeRef _Nullable OCCTShapeOriented(OCCTShapeRef _Nonnull shape, int32_t orientation);
 
 /// Create a compound from an array of shapes.
-OCCTShapeRef _Nullable OCCTShapeCompounded(const OCCTShapeRef _Nonnull * _Nonnull shapes, int32_t count);
+OCCTShapeRef _Nullable OCCTShapeCompounded(const OCCTShapeRef _Nonnull* _Nonnull shapes,
+                                           int32_t count);
 
 /// Create an empty shape of a given type (0=COMPOUND..7=VERTEX).
 OCCTShapeRef _Nullable OCCTShapeEmpty(int32_t type);
@@ -1317,13 +1545,15 @@ OCCTShapeRef _Nullable OCCTShapeEmpty(int32_t type);
 // --- Wire/Face construction ---
 
 /// Create a wire from an array of edge shapes.
-OCCTShapeRef _Nullable OCCTMakeWireFromEdges(const OCCTShapeRef _Nonnull * _Nonnull edges, int32_t count);
+OCCTShapeRef _Nullable OCCTMakeWireFromEdges(const OCCTShapeRef _Nonnull* _Nonnull edges,
+                                             int32_t count);
 
 /// Create a compound from an array of shapes.
-OCCTShapeRef _Nullable OCCTMakeCompound(const OCCTShapeRef _Nonnull * _Nonnull shapes, int32_t count);
+OCCTShapeRef _Nullable OCCTMakeCompound(const OCCTShapeRef _Nonnull* _Nonnull shapes,
+                                        int32_t count);
 
 /// Create a shell from an array of face shapes.
-OCCTShapeRef _Nullable OCCTMakeShell(const OCCTShapeRef _Nonnull * _Nonnull faces, int32_t count);
+OCCTShapeRef _Nullable OCCTMakeShell(const OCCTShapeRef _Nonnull* _Nonnull faces, int32_t count);
 
 /// Check if shape is a compound.
 bool OCCTShapeIsCompound(OCCTShapeRef _Nonnull shape);
@@ -1356,12 +1586,18 @@ double OCCTDistSSValue(OCCTDistSSRef _Nonnull dist);
 int32_t OCCTDistSSNbSolution(OCCTDistSSRef _Nonnull dist);
 
 /// Get the i-th point on shape 1 (1-based).
-void OCCTDistSSPointOnShape1(OCCTDistSSRef _Nonnull dist, int32_t index,
-                              double* _Nonnull x, double* _Nonnull y, double* _Nonnull z);
+void OCCTDistSSPointOnShape1(OCCTDistSSRef _Nonnull dist,
+                             int32_t index,
+                             double* _Nonnull x,
+                             double* _Nonnull y,
+                             double* _Nonnull z);
 
 /// Get the i-th point on shape 2 (1-based).
-void OCCTDistSSPointOnShape2(OCCTDistSSRef _Nonnull dist, int32_t index,
-                              double* _Nonnull x, double* _Nonnull y, double* _Nonnull z);
+void OCCTDistSSPointOnShape2(OCCTDistSSRef _Nonnull dist,
+                             int32_t index,
+                             double* _Nonnull x,
+                             double* _Nonnull y,
+                             double* _Nonnull z);
 
 /// Get the support type on shape 1 (0=vertex, 1=edge, 2=face).
 int32_t OCCTDistSSSupportType1(OCCTDistSSRef _Nonnull dist, int32_t index);
@@ -1440,11 +1676,14 @@ double OCCTShapeVertexTolerance(OCCTShapeRef _Nonnull vertex);
 
 /// Get the 3D point of a vertex shape.
 void OCCTShapeVertexPoint(OCCTShapeRef _Nonnull vertex,
-                           double* _Nonnull x, double* _Nonnull y, double* _Nonnull z);
+                          double* _Nonnull x,
+                          double* _Nonnull y,
+                          double* _Nonnull z);
 
 /// Get the curve from an edge shape. Returns NULL if edge has no 3D curve.
 OCCTCurve3DRef _Nullable OCCTShapeEdgeCurve(OCCTShapeRef _Nonnull edge,
-                                              double* _Nonnull first, double* _Nonnull last);
+                                            double* _Nonnull first,
+                                            double* _Nonnull last);
 
 /// Get the surface from a face shape. Returns NULL if face has no surface.
 OCCTSurfaceRef _Nullable OCCTShapeFaceSurface(OCCTShapeRef _Nonnull face);
@@ -1477,7 +1716,9 @@ OCCTShapeRef _Nullable OCCTShapeEmptyCopied(OCCTShapeRef _Nonnull shape);
 // --- GCPnts_AbscissaPoint expansion ---
 
 /// Find parameter on an edge at a given arc length from startParam.
-double OCCTEdgeParameterAtArcLength(OCCTShapeRef _Nonnull edge, double arcLength, double startParam);
+double OCCTEdgeParameterAtArcLength(OCCTShapeRef _Nonnull edge,
+                                    double arcLength,
+                                    double startParam);
 
 /// Compute total arc length of an edge.
 double OCCTEdgeArcLength(OCCTShapeRef _Nonnull edge);
@@ -1501,23 +1742,34 @@ double OCCTEdgeParameterAtFraction(OCCTShapeRef _Nonnull edge, double fraction);
 // --- BRepAdaptor exposure ---
 
 /// Get the parameter domain of an edge curve.
-void OCCTEdgeAdaptorDomain(OCCTShapeRef _Nonnull edge, double* _Nonnull first, double* _Nonnull last);
+void OCCTEdgeAdaptorDomain(OCCTShapeRef _Nonnull edge,
+                           double* _Nonnull first,
+                           double* _Nonnull last);
 
 /// Evaluate the edge curve at a parameter.
-void OCCTEdgeAdaptorValue(OCCTShapeRef _Nonnull edge, double param,
-                            double* _Nonnull x, double* _Nonnull y, double* _Nonnull z);
+void OCCTEdgeAdaptorValue(OCCTShapeRef _Nonnull edge,
+                          double param,
+                          double* _Nonnull x,
+                          double* _Nonnull y,
+                          double* _Nonnull z);
 
 /// Get the curve type of an edge (GeomAbs_CurveType: 0=Line, 1=Circle, etc.).
 int32_t OCCTEdgeAdaptorCurveType(OCCTShapeRef _Nonnull edge);
 
 /// Get the UV bounds of a face surface.
 void OCCTFaceAdaptorBounds(OCCTShapeRef _Nonnull face,
-                             double* _Nonnull uMin, double* _Nonnull uMax,
-                             double* _Nonnull vMin, double* _Nonnull vMax);
+                           double* _Nonnull uMin,
+                           double* _Nonnull uMax,
+                           double* _Nonnull vMin,
+                           double* _Nonnull vMax);
 
 /// Evaluate the face surface at (u,v).
-void OCCTFaceAdaptorValue(OCCTShapeRef _Nonnull face, double u, double v,
-                            double* _Nonnull x, double* _Nonnull y, double* _Nonnull z);
+void OCCTFaceAdaptorValue(OCCTShapeRef _Nonnull face,
+                          double u,
+                          double v,
+                          double* _Nonnull x,
+                          double* _Nonnull y,
+                          double* _Nonnull z);
 
 /// Get the surface type of a face (GeomAbs_SurfaceType: 0=Plane, 1=Cylinder, etc.).
 int32_t OCCTFaceAdaptorSurfaceType(OCCTShapeRef _Nonnull face);
@@ -1553,7 +1805,9 @@ double OCCTShapeBoundingDiagonal(OCCTShapeRef _Nonnull shape);
 ///         was the shape's location origin, which follows the part around and is not a
 ///         recognisable sentinel (#609).
 bool OCCTShapeCentroid(OCCTShapeRef _Nonnull shape,
-                       double* _Nonnull x, double* _Nonnull y, double* _Nonnull z);
+                       double* _Nonnull x,
+                       double* _Nonnull y,
+                       double* _Nonnull z);
 
 /// Compute the total edge length of all edges in a shape.
 double OCCTShapeTotalEdgeLength(OCCTShapeRef _Nonnull shape);
@@ -1561,36 +1815,69 @@ double OCCTShapeTotalEdgeLength(OCCTShapeRef _Nonnull shape);
 // MARK: - BRepBndLib (v0.118.0)
 
 /// Compute axis-aligned bounding box for a shape.
-void OCCTShapeBoundingBox(OCCTShapeRef _Nonnull shape,
-                          double* _Nonnull xmin, double* _Nonnull ymin, double* _Nonnull zmin,
-                          double* _Nonnull xmax, double* _Nonnull ymax, double* _Nonnull zmax);
+/// @return false when the box is void (e.g. an empty shape) — distinguishes that case from a
+///         genuinely degenerate/point shape at the world origin, which legitimately computes to
+///         all-zero coordinates (#900).
+bool OCCTShapeBoundingBox(OCCTShapeRef _Nonnull shape,
+                          double* _Nonnull xmin,
+                          double* _Nonnull ymin,
+                          double* _Nonnull zmin,
+                          double* _Nonnull xmax,
+                          double* _Nonnull ymax,
+                          double* _Nonnull zmax);
 
 /// Compute optimal (tight) axis-aligned bounding box for a shape.
-void OCCTShapeBoundingBoxOptimal(OCCTShapeRef _Nonnull shape, bool useShapeTolerance,
-                                  double* _Nonnull xmin, double* _Nonnull ymin, double* _Nonnull zmin,
-                                  double* _Nonnull xmax, double* _Nonnull ymax, double* _Nonnull zmax);
+/// @return false when the box is void (e.g. an empty shape) — see ``OCCTShapeBoundingBox`` (#900).
+bool OCCTShapeBoundingBoxOptimal(OCCTShapeRef _Nonnull shape,
+                                 bool useShapeTolerance,
+                                 double* _Nonnull xmin,
+                                 double* _Nonnull ymin,
+                                 double* _Nonnull zmin,
+                                 double* _Nonnull xmax,
+                                 double* _Nonnull ymax,
+                                 double* _Nonnull zmax);
 
 /// Compute oriented bounding box (OBB) for a shape with detailed axes output.
 ///
 /// Delegates to ``OCCTShapeOrientedBoundingBox`` for the actual `Bnd_OBB` computation (#847) —
 /// this is the same box, unpacked into separate scalar out-parameters instead of one packed
 /// struct, with failure reported through `isVoid` instead of a `bool` return.
-void OCCTShapeOrientedBoundingBoxDetailed(OCCTShapeRef _Nonnull shape, bool isOptimal,
-                                           double* _Nonnull cx, double* _Nonnull cy, double* _Nonnull cz,
-                                           double* _Nonnull xDirX, double* _Nonnull xDirY, double* _Nonnull xDirZ,
-                                           double* _Nonnull yDirX, double* _Nonnull yDirY, double* _Nonnull yDirZ,
-                                           double* _Nonnull zDirX, double* _Nonnull zDirY, double* _Nonnull zDirZ,
-                                           double* _Nonnull xHSize, double* _Nonnull yHSize, double* _Nonnull zHSize,
-                                           bool* _Nonnull isVoid);
+void OCCTShapeOrientedBoundingBoxDetailed(OCCTShapeRef _Nonnull shape,
+                                          bool isOptimal,
+                                          double* _Nonnull cx,
+                                          double* _Nonnull cy,
+                                          double* _Nonnull cz,
+                                          double* _Nonnull xDirX,
+                                          double* _Nonnull xDirY,
+                                          double* _Nonnull xDirZ,
+                                          double* _Nonnull yDirX,
+                                          double* _Nonnull yDirY,
+                                          double* _Nonnull yDirZ,
+                                          double* _Nonnull zDirX,
+                                          double* _Nonnull zDirY,
+                                          double* _Nonnull zDirZ,
+                                          double* _Nonnull xHSize,
+                                          double* _Nonnull yHSize,
+                                          double* _Nonnull zHSize,
+                                          bool* _Nonnull isVoid);
 
 // MARK: - gp_Trsf extras (v0.118.0)
 
 /// Create a transform from 3x4 matrix values.
 void OCCTShapeTransformFromMatrix(OCCTShapeRef _Nonnull shape,
-                                   double a11, double a12, double a13, double a14,
-                                   double a21, double a22, double a23, double a24,
-                                   double a31, double a32, double a33, double a34,
-                                   OCCTShapeRef _Nullable * _Nonnull result);
+                                  double a11,
+                                  double a12,
+                                  double a13,
+                                  double a14,
+                                  double a21,
+                                  double a22,
+                                  double a23,
+                                  double a24,
+                                  double a31,
+                                  double a32,
+                                  double a33,
+                                  double a34,
+                                  OCCTShapeRef _Nullable* _Nonnull result);
 
 /// Check if a transform is negative (IsNegative).
 bool OCCTShapeTransformIsNegative(OCCTShapeRef _Nonnull shape);
@@ -1598,8 +1885,11 @@ bool OCCTShapeTransformIsNegative(OCCTShapeRef _Nonnull shape);
 // MARK: - TopExp extras (v0.118.0)
 
 /// Find common vertex between two edges. Returns false if none.
-bool OCCTEdgesCommonVertex(OCCTShapeRef _Nonnull edge1, OCCTShapeRef _Nonnull edge2,
-                            double* _Nonnull x, double* _Nonnull y, double* _Nonnull z);
+bool OCCTEdgesCommonVertex(OCCTShapeRef _Nonnull edge1,
+                           OCCTShapeRef _Nonnull edge2,
+                           double* _Nonnull x,
+                           double* _Nonnull y,
+                           double* _Nonnull z);
 
 // MARK: - BRep_Tool extras (v0.118.0)
 
@@ -1629,12 +1919,12 @@ void OCCTBRepToolsRemoveInternals(OCCTShapeRef _Nonnull shape);
 /// Detect if a face is closed in U and/or V (BRepTools::DetectClosedness).
 /// Sets isClosedU and isClosedV.
 void OCCTBRepToolsDetectClosedness(OCCTShapeRef _Nonnull face,
-                                    bool* _Nonnull isClosedU, bool* _Nonnull isClosedV);
+                                   bool* _Nonnull isClosedU,
+                                   bool* _Nonnull isClosedV);
 
 /// Evaluate and update tolerance of an edge on a face. Returns the new tolerance.
 /// Uses BRep_Tool to extract curves, then BRepTools::EvalAndUpdateTol.
-double OCCTBRepToolsEvalAndUpdateTol(OCCTShapeRef _Nonnull edge,
-                                      OCCTShapeRef _Nonnull face);
+double OCCTBRepToolsEvalAndUpdateTol(OCCTShapeRef _Nonnull edge, OCCTShapeRef _Nonnull face);
 
 /// Count 3D edges in a shape (via BRepTools::Map3DEdges).
 int32_t OCCTBRepToolsMap3DEdgeCount(OCCTShapeRef _Nonnull shape);
@@ -1671,16 +1961,16 @@ void OCCTBRepLibUpdateDeflection(OCCTShapeRef _Nonnull shape);
 /// nor a value this function can return; the implementation casts the enum straight through, so
 /// there was never a lookup table for it to be describing. #495.)
 int32_t OCCTBRepLibContinuityOfFaces(OCCTShapeRef _Nonnull edge,
-                                      OCCTShapeRef _Nonnull face1, OCCTShapeRef _Nonnull face2,
-                                      double tolerance);
+                                     OCCTShapeRef _Nonnull face1,
+                                     OCCTShapeRef _Nonnull face2,
+                                     double tolerance);
 
 // OCCTBRepLibBuildCurves3dAll used to be declared here (v0.122.0), with a body byte-identical to
 // OCCTBRepLibBuildCurves3dForShape (v0.114.0) ~1700 header lines above: same overload, same two
 // arguments. Use that one. #498.
 
 /// Same-parameter all edges in a shape.
-void OCCTBRepLibSameParameterAll(OCCTShapeRef _Nonnull shape, double tolerance,
-                                  bool forced);
+void OCCTBRepLibSameParameterAll(OCCTShapeRef _Nonnull shape, double tolerance, bool forced);
 
 // --- Additional Shape queries ---
 
@@ -1718,19 +2008,19 @@ int32_t OCCTShapeOrientationValue(OCCTShapeRef _Nonnull shape);
 
 /// Get the 2D curve (pcurve) of an edge on a face. Returns the Curve2D ref and parameter range.
 OCCTCurve2DRef _Nullable OCCTBRepToolCurveOnSurface(OCCTShapeRef _Nonnull edge,
-                                                     OCCTShapeRef _Nonnull face,
-                                                     double* _Nonnull outFirst,
-                                                     double* _Nonnull outLast);
+                                                    OCCTShapeRef _Nonnull face,
+                                                    double* _Nonnull outFirst,
+                                                    double* _Nonnull outLast);
 
 /// Check if edge has continuity regularity between two faces.
 bool OCCTBRepToolHasContinuity(OCCTShapeRef _Nonnull edge,
-                                OCCTShapeRef _Nonnull face1,
-                                OCCTShapeRef _Nonnull face2);
+                               OCCTShapeRef _Nonnull face1,
+                               OCCTShapeRef _Nonnull face2);
 
 /// Get the continuity of edge between two faces. Returns GeomAbs_Shape as int.
 int32_t OCCTBRepToolContinuity(OCCTShapeRef _Nonnull edge,
-                                OCCTShapeRef _Nonnull face1,
-                                OCCTShapeRef _Nonnull face2);
+                               OCCTShapeRef _Nonnull face1,
+                               OCCTShapeRef _Nonnull face2);
 
 /// Check if edge has any regularity on some two surfaces.
 bool OCCTBRepToolHasAnyContinuity(OCCTShapeRef _Nonnull edge);
@@ -1745,21 +2035,30 @@ bool OCCTBRepToolDegenerated(OCCTShapeRef _Nonnull edge);
 bool OCCTBRepToolNaturalRestriction(OCCTShapeRef _Nonnull face);
 
 /// Get the parameter range of edge on a face (pcurve range).
-bool OCCTBRepToolRangeOnFace(OCCTShapeRef _Nonnull edge, OCCTShapeRef _Nonnull face,
-                              double* _Nonnull outFirst, double* _Nonnull outLast);
+bool OCCTBRepToolRangeOnFace(OCCTShapeRef _Nonnull edge,
+                             OCCTShapeRef _Nonnull face,
+                             double* _Nonnull outFirst,
+                             double* _Nonnull outLast);
 
 /// Get the parameter of vertex on pcurve of edge on face.
-bool OCCTBRepToolParameterOnFace(OCCTShapeRef _Nonnull vertex, OCCTShapeRef _Nonnull edge,
-                                  OCCTShapeRef _Nonnull face, double* _Nonnull outParam);
+bool OCCTBRepToolParameterOnFace(OCCTShapeRef _Nonnull vertex,
+                                 OCCTShapeRef _Nonnull edge,
+                                 OCCTShapeRef _Nonnull face,
+                                 double* _Nonnull outParam);
 
 /// Get the UV parameters of vertex on face.
-bool OCCTBRepToolParametersOnFace(OCCTShapeRef _Nonnull vertex, OCCTShapeRef _Nonnull face,
-                                   double* _Nonnull outU, double* _Nonnull outV);
+bool OCCTBRepToolParametersOnFace(OCCTShapeRef _Nonnull vertex,
+                                  OCCTShapeRef _Nonnull face,
+                                  double* _Nonnull outU,
+                                  double* _Nonnull outV);
 
 /// Get UV points at extremities of edge on face.
-bool OCCTBRepToolUVPoints(OCCTShapeRef _Nonnull edge, OCCTShapeRef _Nonnull face,
-                           double* _Nonnull firstU, double* _Nonnull firstV,
-                           double* _Nonnull lastU, double* _Nonnull lastV);
+bool OCCTBRepToolUVPoints(OCCTShapeRef _Nonnull edge,
+                          OCCTShapeRef _Nonnull face,
+                          double* _Nonnull firstU,
+                          double* _Nonnull firstV,
+                          double* _Nonnull lastU,
+                          double* _Nonnull lastV);
 
 /// Get maximum tolerance of sub-shapes of given type. type: 6=EDGE, 4=FACE, 7=VERTEX.
 double OCCTBRepToolMaxTolerance(OCCTShapeRef _Nonnull shape, int32_t subShapeType);
@@ -1769,19 +2068,19 @@ double OCCTBRepToolMaxTolerance(OCCTShapeRef _Nonnull shape, int32_t subShapeTyp
 /// Get the 2D curve of an edge computed on a plane surface.
 /// Returns the Curve2D and parameter range. May return NULL for non-planar surfaces.
 OCCTCurve2DRef _Nullable OCCTBRepToolCurveOnPlane(OCCTShapeRef _Nonnull edge,
-                                                    OCCTSurfaceRef _Nonnull surface,
-                                                    double* _Nonnull outFirst,
-                                                    double* _Nonnull outLast);
+                                                  OCCTSurfaceRef _Nonnull surface,
+                                                  double* _Nonnull outFirst,
+                                                  double* _Nonnull outLast);
 
 /// Get the 3D polygon of a meshed edge. Returns node count (0 if not available).
 /// Points are returned as flat array [x1,y1,z1,...]. Caller must free with free().
-int32_t OCCTBRepToolPolygon3D(OCCTShapeRef _Nonnull edge,
-                               double* _Nullable * _Nonnull outPoints);
+int32_t OCCTBRepToolPolygon3D(OCCTShapeRef _Nonnull edge, double* _Nullable* _Nonnull outPoints);
 
 /// Get the polygon-on-triangulation of a meshed edge.
-/// Returns node indices (1-based) into the triangulation. Count returned. Caller must free with free().
+/// Returns node indices (1-based) into the triangulation. Count returned. Caller must free with
+/// free().
 int32_t OCCTBRepToolPolygonOnTriangulation(OCCTShapeRef _Nonnull edge,
-                                            int32_t* _Nullable * _Nonnull outIndices);
+                                           int32_t* _Nullable* _Nonnull outIndices);
 
 // --- BRep_Tool completions ---
 
@@ -1790,11 +2089,16 @@ bool OCCTBRepToolIsClosedOnFace(OCCTShapeRef _Nonnull edge, OCCTShapeRef _Nonnul
 
 /// Get the 2D polygon of an edge on a face. Returns 2D point count (0 if not available).
 /// Points are returned as flat array [x1,y1,x2,y2,...]. Caller must free with free().
-int32_t OCCTBRepToolPolygonOnSurface(OCCTShapeRef _Nonnull edge, OCCTShapeRef _Nonnull face,
-                                      double* _Nullable * _Nonnull outPoints);
+int32_t OCCTBRepToolPolygonOnSurface(OCCTShapeRef _Nonnull edge,
+                                     OCCTShapeRef _Nonnull face,
+                                     double* _Nullable* _Nonnull outPoints);
 
 /// Set UV points of an edge on a face.
-bool OCCTBRepToolSetUVPoints(OCCTShapeRef _Nonnull edge, OCCTShapeRef _Nonnull face,
-                              double fU, double fV, double lU, double lV);
+bool OCCTBRepToolSetUVPoints(OCCTShapeRef _Nonnull edge,
+                             OCCTShapeRef _Nonnull face,
+                             double fU,
+                             double fV,
+                             double lU,
+                             double lV);
 
 #endif /* OCCTBridge_Topology_h */
