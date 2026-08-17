@@ -1,5 +1,20 @@
-Reply drafted for [OCCT#1417](https://github.com/Open-Cascade-SAS/OCCT/pull/1417#issuecomment-3150937),
-not yet posted (see #755's hard constraint: prepare and stop, do not comment on OCCT#1417).
+**Status: posted, 2026-08-10.** This is the local copy of a live comment,
+[OCCT#1457 (comment)](https://github.com/Open-Cascade-SAS/OCCT/pull/1457#issuecomment-5246831466).
+Everything below the rule is byte-identical to what is on the PR. The two-line drafting note that
+used to sit here was stripped before posting, which is the rule in
+[§7 of the upstream patch process](../../../../okf/policies/upstream-occt-patch-process.md#7-responding-to-review).
+
+**It went to #1457, not the #1417 it was drafted for**, and the two are the same PR in every other
+respect: same head branch (`fix/555-gcpnts-point-count`), same fix, same review thread to answer.
+#1417 was closed at 2026-08-10T20:43:18Z with `state_reason: null` and no closing comment, the
+signature of footgun A in that same policy (an amend against a shallow clone drops the parent, and
+GitHub closes the PR as unrelated history the moment it is pushed). #1457 was opened on the same
+branch 116 minutes later, and the reply went there.
+
+Its opening line, "Pushed an update addressing all three points", is accurate as posted: the branch
+carries `0001-gcpnts-review-fixes.patch` from beside this file, whose hunks match the landed commit
+`8adab6565` apart from one blank line. #803 was filed while that was still untrue and reads as
+though the reply is unsent; it is not.
 
 ---
 

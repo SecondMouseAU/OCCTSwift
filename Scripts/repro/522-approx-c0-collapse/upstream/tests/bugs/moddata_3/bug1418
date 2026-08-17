@@ -13,8 +13,10 @@ puts ""
 # was introduced by 3016a390713d2e893f4bfa797882b9f0266840e1 (0032495, a 2021 UBSan cleanup)
 # renumbering every workspace offset in the function down by one, except this one call.
 #
-# This PR has not yet been assigned an internal bug id. Rename this file to the assigned
-# number at merge time.
+# STAGED, NEVER CONTRIBUTED. OCCT#1418 merged on 2026-08-10 as a one-file, one-line change; this
+# script was drafted for it and never pushed. Sending it now would be a separate PR against an
+# already-merged fix, which nobody has decided to do. The PR was never assigned an internal bug id,
+# so the file is named after the PR number; rename it if one is assigned.
 
 pload MODELING
 

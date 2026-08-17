@@ -1,4 +1,4 @@
-# OCCTSwift#522 reproducer — `mma2ce1_` fills the U Jacobi-maxima buffer from the V slot, so every U truncation error evaluates to zero
+# OCCTSwift#522 reproducer: `mma2ce1_` fills the U Jacobi-maxima buffer from the V slot, so every U truncation error evaluates to zero
 
 Standalone, deterministic reproducers for an upstream defect found while building #491's approximation
 parity tests. Committed here rather than left in scratch because #491's own tests had to work around
@@ -23,7 +23,7 @@ clang++ -std=c++17 -ObjC++ -w \
 /tmp/occt_522_c0
 ```
 
-No fixture file is needed — a plain `Geom_SphericalSurface` reproduces it.
+No fixture file is needed; a plain `Geom_SphericalSurface` reproduces it.
 
 ## Root cause
 
@@ -38,7 +38,7 @@ AdvApp2Var_ApproxF2var::mma2jmx_(ndjacv, iordrv, &wrkar_off[ipt5]);
 ```
 
 so `XMAXJU` is never written. `mma2ce2_` still reads it at `ipt4`, where the allocation left whatever
-was there — in practice zeros — and hands it to `mma2er1_`/`mma2er2_`, whose whole error model is
+was there (in practice zeros) and hands it to `mma2er1_`/`mma2er2_`, whose whole error model is
 
 ```
 error += |PATJAC(i,j)| * XMAXJU(i - 2*(IORDRU+1)) * XMAXJV(j - 2*(IORDRV+1))
@@ -51,20 +51,20 @@ A zero `XMAXJU` zeroes every term. Two consequences, both silent:
    fire on it, and what `AdvApp2Var_ApproxAFunc2Var::MaxError` ends up reporting is only the
    boundary-iso error that `AdvApp2Var_Patch::AddErrors` adds afterwards.
 2. **`mma2er2_`, asked for the lowest degree whose truncation error still fits the tolerance, always
-   answers `NDMINU`** — the floor derived from the constraint order and the neighbouring isos —
+   answers `NDMINU`** (the floor derived from the constraint order and the neighbouring isos),
    because every candidate scores 0.
 
 Where that floor happens to be low, the fit collapses onto it. `GeomAbs_C0` gives `IORDRU = 0`, and a
 full sphere's V-boundary isos degenerate to its two poles, one coefficient each, so `NDMINU` is 1 and
-the fit comes back at degree 1. C1 and C2 hide the collapse — their floor is already 8 — but not the
+the fit comes back at degree 1. C1 and C2 hide the collapse (their floor is already 8) but not the
 misreported error, which is why every reported error in `sweep-after.txt` is slightly larger than in
 `sweep-before.txt`: the interior contribution is being counted for the first time.
 
 The write is also out of bounds for the buffer it was given: `mma2jmx_` writes
 `ndjacu + 1 - 2*(IORDRU+1)` doubles and the `ipt5` slot is sized for the `ndjacv` equivalent, so a
 request with `MaxDegU` well above `MaxDegV` runs past `XMAXJV` into the `VECERR` slot behind it. That
-part is benign in practice — `VECERR` is re-zeroed on entry to `mma2ce2_`, and the run stays inside
-the single allocation — but it is still a write past the end of its buffer.
+part is benign in practice, since `VECERR` is re-zeroed on entry to `mma2ce2_` and the run stays
+inside the single allocation, but it is still a write past the end of its buffer.
 
 ### Confirming the mechanism
 
@@ -107,8 +107,8 @@ cont=C2  precis=0 isDone=1 hasResult=1 maxError=0.000205606  uDeg=8 vDeg=8 uPole
     real max deviation over the source domain: 5.45774e-05  (at u=2.51327 v=0.314159)
 ```
 
-At C0 the fit was 2 poles at degree 1 across the sphere's full `[0, 2*pi]` of longitude — a straight
-line through the sphere, deviating by its own diameter — while `IsDone()` reported the tolerance met
+At C0 the fit was 2 poles at degree 1 across the sphere's full `[0, 2*pi]` of longitude, a straight
+line through the sphere deviating by its own diameter, while `IsDone()` reported the tolerance met
 and `MaxError()` reported `1.07e-4`. After the fix the same request returns degree 7x7, 15x8 poles,
 `maxError` 2.61e-4 and a real deviation of 1.21e-4:
 
@@ -134,8 +134,8 @@ let detailed = sphere.approxWithDetails(tolerance: 1e-3, uContinuity: .c0, vCont
 
 ## How wide it was
 
-`occt_522_c0_sweep.mm` runs 98 requests — 7 surface families x all 9 `(uContinuity, vContinuity)`
-combinations of C0/C1/C2 at tolerance `1e-3`, plus C0/C0 across five tolerances — and flags any whose
+`occt_522_c0_sweep.mm` runs 98 requests (7 surface families x all 9 `(uContinuity, vContinuity)`
+combinations of C0/C1/C2 at tolerance `1e-3`, plus C0/C0 across five tolerances) and flags any whose
 real deviation exceeds 10x the reported error. Full transcripts in `sweep-before.txt` /
 `sweep-after.txt`.
 
@@ -146,7 +146,7 @@ real deviation exceeds 10x the reported error. Full transcripts in `sweep-before
 | worst ratio of real deviation to reported error | **3.4e13** | 1.0018 |
 
 The one row still over the line after the fix is the Bezier at `C0/C2`, reported `9.95221e-15`
-against a measured `9.96978e-15` — a surface reproduced exactly, disagreeing at the last bit.
+against a measured `9.96978e-15`: a surface reproduced exactly, disagreeing at the last bit.
 
 Every one of the 12 requested C0 in at least one direction:
 
@@ -159,8 +159,8 @@ Every one of the 12 requested C0 in at least one direction:
 
 Two observations from the original investigation, both explained by the root cause above:
 
-- **Degree collapse alone was not the bug.** A cylinder trimmed in V legitimately gets `vDegree = 1` —
-  it *is* linear in V — and reported correctly, before and after. Collapsing where the input is not
+- **Degree collapse alone was not the bug.** A cylinder trimmed in V legitimately gets `vDegree = 1`,
+  it *is* linear in V, and reported correctly, before and after. Collapsing where the input is not
   linear was the defect: `NDMINU` is the floor the search falls back to, and it is low exactly where
   the boundary constraints carry no information.
 - **At C0/C0 the requested tolerance stopped mattering.** The bicubic Bezier returned the identical
@@ -190,7 +190,7 @@ passes:
 `GeomConvert_ApproxSurface`, defaulting to `GeomAbs_C1`, so it took the always-zero interior error
 without being on this list at all.
 
-Most of these pass C1 or C2, where the collapse cannot happen — but the always-zero interior error
+Most of these pass C1 or C2, where the collapse cannot happen, but the always-zero interior error
 affected all of them. The healing paths reach C0 on purpose: `ShapeConstruct::ConvertSurfaceToBSpline`
 loops the requested continuity down to 0 on failure and `ShapeCustom_BSplineRestriction` degrades it
 the same way, both then deciding whether to accept the result with `anApprox.MaxError() <= tol`, i.e.
@@ -210,7 +210,7 @@ and #572 (the C1/C2 consumers).
 
 ## Interaction with #491
 
-`Tests/OCCTSurfaceTests/Issue491SurfaceApproxParityTests.swift` always kept `.c0` in its request set —
+`Tests/OCCTSurfaceTests/Issue491SurfaceApproxParityTests.swift` always kept `.c0` in its request set:
 both entry points must return the *same* surface for the same request, and after #491 they did,
 garbage included. Its `maxErrorDescribesTheSharedFit` test used to exclude `.c0`, because asserting
 "sampled deviation <= reported `maxError`" failed on OCCT's own numbers there. That exclusion is gone;
@@ -224,7 +224,10 @@ Maintainer gkv311's review on [OCCT#1418](https://github.com/Open-Cascade-SAS/OC
 attributed the defect to `3016a390713d2e893f4bfa797882b9f0266840e1` (2021-07-28, a UBSan coding-rules
 cleanup) and asked for the 7.5.x behaviour to be confirmed by measurement rather than asserted. Done,
 against a disposable shallow clone of `Open-Cascade-SAS/OCCT` rather than this project's own
-`Libraries/occt-src` (left untouched):
+`Libraries/occt-src` (left untouched). Leaving `occt-src` alone was right and still is; the
+disposable clone is what has since been replaced, by the persistent fork checkout in
+[§0 of the upstream patch process](../../../okf/policies/upstream-occt-patch-process.md#0-where-the-work-happens-one-persistent-checkout-of-the-fork)
+(#803), which answers the same question without cloning anything.
 
 That commit rebases every workspace offset in `mma2ce1_` down by one position (folding the old
 `ipt1` base into a new `wrkar_off` pointer), and every other call site in the same diff moves with
@@ -260,8 +263,20 @@ this tree, and `Standard_Dump::DumpFieldToName` strips the `my` prefix from `myU
 does not change case, so the real `DumpJson` keys are `"UDeg"`/`"VDeg"`, not `"udeg"`/`"vdeg"`.
 Either problem alone leaves the Tcl variable unset. The staged test instead captures `dump r`'s
 existing textual output through `dlog` and reads the `Degrees :` line
-`GeomTools_SurfaceSet::PrintSurface` writes for a `Geom_BSplineSurface`, the same idiom
-`tests/bugs/modalg_7/bug23942` already uses for the same purpose. See
-`Scripts/repro/522-approx-c0-collapse/upstream/pr-1418-description.md` (the rewritten PR description,
-leading with the missed decrement) and `.../reply-to-gkv311.md` (the drafted reply) for the full
-writeup.
+`GeomTools_SurfaceSet::PrintSurface` writes for a `Geom_BSplineSurface`. `tests/bugs/modalg_7/bug23942`
+uses the same `dlog`/`dump` capture for the same purpose, though not the same regex: it captures the
+U degree into a throwaway and stores V in a variable it calls `Degrees_1`, a quirk the staged test
+deliberately does not copy.
+
+### None of that staging was ever sent (#803)
+
+`upstream/` holds three artifacts prepared for a reply that never happened: the rewritten PR
+description leading with the missed decrement (`pr-1418-description.md`), the reply itself
+(`reply-to-gkv311.md`), and the Draw test (`tests/bugs/moddata_3/bug1418`). All three were held at
+prepare-and-stop, and **dpasukhi merged OCCT#1418 on 2026-08-10 without any of them**, with "Thank you
+for the patch!". The merged PR touches exactly one file, `AdvApp2Var_ApproxF2var.cxx`, 1 insertion and
+1 deletion, and its description is still the behavioural writeup filed first.
+
+So the provenance above is the surviving record of that measurement, and the three files carry status
+headers saying so. Nothing is owed upstream on #1418. Contributing the Draw test would now be a fresh
+PR against a merged fix, which is a decision nobody has taken.
