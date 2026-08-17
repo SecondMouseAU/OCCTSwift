@@ -18,6 +18,7 @@ Sources/OCCTBridge/include/OCCTBridge_Surface.h
 Sources/OCCTBridge/include/OCCTBridge_Visualization.h
 Sources/OCCTBridge/include/OCCTBridge.h
 Sources/OCCTBridge/src/OCCTBridge_AIS.mm
+Sources/OCCTBridge/src/OCCTBridge_BRepGraph.mm
 Sources/OCCTBridge/src/OCCTBridge_Curve3D.mm
 Sources/OCCTBridge/src/OCCTBridge_Document.mm
 Sources/OCCTBridge/src/OCCTBridge_Healing.mm
