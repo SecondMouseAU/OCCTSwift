@@ -27,5 +27,6 @@ Sources/OCCTBridge/src/OCCTBridge_Mesh.mm
 Sources/OCCTBridge/src/OCCTBridge_ProjLib_NLPlate.mm
 Sources/OCCTBridge/src/OCCTBridge_Properties.mm
 Sources/OCCTBridge/src/OCCTBridge_Spatial.mm
+Sources/OCCTBridge/src/OCCTBridge_Surface.mm
 Sources/OCCTBridge/src/OCCTBridge_Visualization.mm
 Sources/OCCTBridge/src/OCCTBridge.mm
