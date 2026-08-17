@@ -637,7 +637,7 @@ int32_t OCCTBRepGraphMeshCreatePolygonOnTriRep(OCCTBRepGraphRef _Nonnull graph,
                                                int32_t triRepId);
 
 /// Set the triangulation rep on a face's cached mesh (replaces any existing — OCCT 8.0.0p1 holds
-/// exactly one triangulation per face; no multi-LOD). Alias kept for the v0.133 name; forwards to
+/// exactly one triangulation per face; no multi-LOD). Alias kept for the v0.160 name; forwards to
 /// OCCTBRepGraphSetFaceTriangulationRep.
 void OCCTBRepGraphMeshAppendCachedTriangulation(OCCTBRepGraphRef _Nonnull graph,
                                                 int32_t faceIndex,
