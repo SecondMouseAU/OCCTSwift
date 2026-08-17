@@ -160,7 +160,6 @@ Sources/OCCTSwift/Shape+Drawing.swift
 Sources/OCCTSwift/Shape+Geom2d.swift
 Sources/OCCTSwift/Shape+Math.swift
 Sources/OCCTSwift/Shape+Mesh.swift
-Sources/OCCTSwift/Shape+Modeling.swift
 Sources/OCCTSwift/Shape+ShapeHealing.swift
 Sources/OCCTSwift/Shape+Surface.swift
 Sources/OCCTSwift/Shape+Topology.swift
