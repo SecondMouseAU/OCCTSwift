@@ -1,6 +1,6 @@
 import Foundation
-import simd
 import OCCTBridge
+import simd
 
 extension Shape {
 
@@ -95,7 +95,9 @@ extension Shape {
         /// say about a duplicate index. `blendedEdgesWithReport(_:)` is the first caller that needs
         /// to pass a **non-default** value, and that is what the synthesized init structurally
         /// cannot express.
-        public init(shape: Shape, declinedEdgeIndices: [Int], overwrittenDuplicateIndices: [Int] = []) {
+        public init(
+            shape: Shape, declinedEdgeIndices: [Int], overwrittenDuplicateIndices: [Int] = []
+        ) {
             self.shape = shape
             self.declinedEdgeIndices = declinedEdgeIndices
             self.overwrittenDuplicateIndices = overwrittenDuplicateIndices
@@ -129,7 +131,10 @@ extension Shape {
         }
 
         return indices.withUnsafeBufferPointer { buffer in
-            guard let result = OCCTShapeFilletEdges(handle, buffer.baseAddress, Int32(indices.count), radius, nil, nil) else {
+            guard
+                let result = OCCTShapeFilletEdges(
+                    handle, buffer.baseAddress, Int32(indices.count), radius, nil, nil)
+            else {
                 return nil
             }
             return Shape(handle: result)
@@ -168,8 +173,9 @@ extension Shape {
             var declined = [Int32](repeating: 0, count: indices.count)
             var declinedCount: Int32 = 0
             let result: OCCTShapeRef? = declined.withUnsafeMutableBufferPointer { declinedBuffer in
-                OCCTShapeFilletEdges(handle, buffer.baseAddress, Int32(indices.count), radius,
-                                     declinedBuffer.baseAddress, &declinedCount)
+                OCCTShapeFilletEdges(
+                    handle, buffer.baseAddress, Int32(indices.count), radius,
+                    declinedBuffer.baseAddress, &declinedCount)
             }
             guard let result else { return nil }
             let declinedIndices = declined.prefix(Int(declinedCount)).map { Int($0) }
@@ -204,7 +210,11 @@ extension Shape {
         }
 
         return indices.withUnsafeBufferPointer { buffer in
-            guard let result = OCCTShapeFilletEdgesLinear(handle, buffer.baseAddress, Int32(indices.count), startRadius, endRadius, nil, nil) else {
+            guard
+                let result = OCCTShapeFilletEdgesLinear(
+                    handle, buffer.baseAddress, Int32(indices.count), startRadius, endRadius, nil,
+                    nil)
+            else {
                 return nil
             }
             return Shape(handle: result)
@@ -220,7 +230,9 @@ extension Shape {
     ///   - endRadius: Radius at end of each edge; must be > 0
     /// - Returns: A ``FilletResult``, or nil on failure, including when the list names an edge that is not
     ///   this shape's.
-    public func filletedWithReport(edges: [Edge], startRadius: Double, endRadius: Double) -> FilletResult? {
+    public func filletedWithReport(edges: [Edge], startRadius: Double, endRadius: Double)
+        -> FilletResult?
+    {
         guard !edges.isEmpty, startRadius > 0, endRadius > 0 else { return nil }
 
         var indices = [Int32]()
@@ -234,9 +246,10 @@ extension Shape {
             var declined = [Int32](repeating: 0, count: indices.count)
             var declinedCount: Int32 = 0
             let result: OCCTShapeRef? = declined.withUnsafeMutableBufferPointer { declinedBuffer in
-                OCCTShapeFilletEdgesLinear(handle, buffer.baseAddress, Int32(indices.count),
-                                           startRadius, endRadius,
-                                           declinedBuffer.baseAddress, &declinedCount)
+                OCCTShapeFilletEdgesLinear(
+                    handle, buffer.baseAddress, Int32(indices.count),
+                    startRadius, endRadius,
+                    declinedBuffer.baseAddress, &declinedCount)
             }
             guard let result else { return nil }
             let declinedIndices = declined.prefix(Int(declinedCount)).map { Int($0) }
@@ -289,15 +302,17 @@ extension Shape {
         }
 
         return indices.withUnsafeBufferPointer { buffer in
-            guard let result = OCCTShapeDraft(
-                handle,
-                buffer.baseAddress,
-                Int32(indices.count),
-                direction.x, direction.y, direction.z,
-                angle,
-                neutralPlane.point.x, neutralPlane.point.y, neutralPlane.point.z,
-                neutralPlane.normal.x, neutralPlane.normal.y, neutralPlane.normal.z
-            ) else {
+            guard
+                let result = OCCTShapeDraft(
+                    handle,
+                    buffer.baseAddress,
+                    Int32(indices.count),
+                    direction.x, direction.y, direction.z,
+                    angle,
+                    neutralPlane.point.x, neutralPlane.point.y, neutralPlane.point.z,
+                    neutralPlane.normal.x, neutralPlane.normal.y, neutralPlane.normal.z
+                )
+            else {
                 return nil
             }
             return Shape(handle: result)
@@ -342,7 +357,10 @@ extension Shape {
         }
 
         return indices.withUnsafeBufferPointer { buffer in
-            guard let result = OCCTShapeRemoveFeatures(handle, buffer.baseAddress, Int32(indices.count)) else {
+            guard
+                let result = OCCTShapeRemoveFeatures(
+                    handle, buffer.baseAddress, Int32(indices.count))
+            else {
                 return nil
             }
             return Shape(handle: result)
@@ -425,8 +443,9 @@ extension Shape {
         law: LawFunction,
         solid: Bool = true
     ) -> Shape? {
-        guard let result = OCCTShapeCreatePipeShellWithLaw(
-            spine.handle, profile.handle, law.handle, solid)
+        guard
+            let result = OCCTShapeCreatePipeShellWithLaw(
+                spine.handle, profile.handle, law.handle, solid)
         else { return nil }
         return Shape(handle: result)
     }
@@ -492,12 +511,14 @@ extension Shape {
         }
 
         let handles: [OCCTWireRef?] = profiles.map { $0.handle }
-        guard let result = handles.withUnsafeBufferPointer({ buffer in
-            OCCTShapeCreatePipeShellMultiSection(
-                spine.handle, buffer.baseAddress, Int32(profiles.count),
-                modeValue, binormal.x, binormal.y, binormal.z,
-                auxHandle, transition.rawValue, withContact, withCorrection, solid)
-        }) else { return nil }
+        guard
+            let result = handles.withUnsafeBufferPointer({ buffer in
+                OCCTShapeCreatePipeShellMultiSection(
+                    spine.handle, buffer.baseAddress, Int32(profiles.count),
+                    modeValue, binormal.x, binormal.y, binormal.z,
+                    auxHandle, transition.rawValue, withContact, withCorrection, solid)
+            })
+        else { return nil }
         return Shape(handle: result)
     }
 
@@ -544,18 +565,23 @@ extension Shape {
     ///   - clockwise: Helix handedness.
     ///   - solid: If true, create a solid; if false, a shell.
     /// - Returns: The swept helicoid, or nil on failure.
-    public static func helicalSweep(profiles: [Wire],
-                                    axisOrigin: SIMD3<Double>,
-                                    axisDirection: SIMD3<Double>,
-                                    radius: Double,
-                                    pitch: Double,
-                                    turns: Double,
-                                    clockwise: Bool = false,
-                                    solid: Bool = true) -> Shape? {
+    public static func helicalSweep(
+        profiles: [Wire],
+        axisOrigin: SIMD3<Double>,
+        axisDirection: SIMD3<Double>,
+        radius: Double,
+        pitch: Double,
+        turns: Double,
+        clockwise: Bool = false,
+        solid: Bool = true
+    ) -> Shape? {
         guard !profiles.isEmpty, radius > 0, pitch > 0, turns > 0 else { return nil }
         let axis = simd_normalize(axisDirection)
-        guard let helix = Wire.helix(origin: axisOrigin, axis: axis, radius: radius,
-                                     pitch: pitch, turns: turns, clockwise: clockwise) else {
+        guard
+            let helix = Wire.helix(
+                origin: axisOrigin, axis: axis, radius: radius,
+                pitch: pitch, turns: turns, clockwise: clockwise)
+        else {
             return nil
         }
         // Auxiliary spine = the central axis, spanning the helix's full axial extent in
@@ -563,24 +589,31 @@ extension Shape {
         // section plane intersects it. A short/one-sided aux line is the usual cause of a
         // nil auxiliary-spine sweep (#185).
         let span = pitch * turns + max(pitch, radius)
-        guard let aux = Wire.line(from: axisOrigin - span * axis,
-                                  to: axisOrigin + span * axis) else { return nil }
-        return pipeShellMultiSection(spine: helix, profiles: profiles,
-                                     mode: .auxiliary(spine: aux), solid: solid)
+        guard
+            let aux = Wire.line(
+                from: axisOrigin - span * axis,
+                to: axisOrigin + span * axis)
+        else { return nil }
+        return pipeShellMultiSection(
+            spine: helix, profiles: profiles,
+            mode: .auxiliary(spine: aux), solid: solid)
     }
 
     /// Single-profile helical sweep — a uniform worm/screw-thread helicoid.
     /// See ``helicalSweep(profiles:axisOrigin:axisDirection:radius:pitch:turns:clockwise:solid:)``.
-    public static func helicalSweep(profile: Wire,
-                                    axisOrigin: SIMD3<Double>,
-                                    axisDirection: SIMD3<Double>,
-                                    radius: Double,
-                                    pitch: Double,
-                                    turns: Double,
-                                    clockwise: Bool = false,
-                                    solid: Bool = true) -> Shape? {
-        helicalSweep(profiles: [profile], axisOrigin: axisOrigin, axisDirection: axisDirection,
-                     radius: radius, pitch: pitch, turns: turns, clockwise: clockwise, solid: solid)
+    public static func helicalSweep(
+        profile: Wire,
+        axisOrigin: SIMD3<Double>,
+        axisDirection: SIMD3<Double>,
+        radius: Double,
+        pitch: Double,
+        turns: Double,
+        clockwise: Bool = false,
+        solid: Bool = true
+    ) -> Shape? {
+        helicalSweep(
+            profiles: [profile], axisOrigin: axisOrigin, axisDirection: axisDirection,
+            radius: radius, pitch: pitch, turns: turns, clockwise: clockwise, solid: solid)
     }
 
     /// Create a ruled surface between two wires.
@@ -642,12 +675,14 @@ extension Shape {
         }
 
         return indices.withUnsafeBufferPointer { buffer in
-            guard let result = OCCTShapeShellWithOpenFaces(
-                handle,
-                thickness,
-                buffer.baseAddress,
-                Int32(indices.count)
-            ) else {
+            guard
+                let result = OCCTShapeShellWithOpenFaces(
+                    handle,
+                    thickness,
+                    buffer.baseAddress,
+                    Int32(indices.count)
+                )
+            else {
                 return nil
             }
             return Shape(handle: result)
@@ -725,13 +760,15 @@ extension Shape {
         var radii = radiusProfile.map { $0.radius }
         var params = radiusProfile.map { $0.parameter }
 
-        guard let result = OCCTShapeFilletVariable(
-            handle,
-            Int32(edgeIndex),
-            &radii,
-            &params,
-            Int32(radii.count)
-        ) else {
+        guard
+            let result = OCCTShapeFilletVariable(
+                handle,
+                Int32(edgeIndex),
+                &radii,
+                &params,
+                Int32(radii.count)
+            )
+        else {
             return nil
         }
         return Shape(handle: result)
@@ -782,14 +819,16 @@ extension Shape {
         var indices = edgeRadii.map { Int32($0.edgeIndex) }
         var radii = edgeRadii.map { $0.radius }
 
-        guard let result = OCCTShapeBlendEdges(
-            handle,
-            &indices,
-            &radii,
-            Int32(edgeRadii.count),
-            nil,
-            nil
-        ) else {
+        guard
+            let result = OCCTShapeBlendEdges(
+                handle,
+                &indices,
+                &radii,
+                Int32(edgeRadii.count),
+                nil,
+                nil
+            )
+        else {
             return nil
         }
         return Shape(handle: result)
@@ -816,7 +855,9 @@ extension Shape {
     /// - Parameter edgeRadii: Array of (0-based edgeIndex, radius) pairs; each radius must be > 0
     /// - Returns: A ``FilletResult``, or nil on failure under the same conditions as
     ///   ``blendedEdges(_:)``.
-    public func blendedEdgesWithReport(_ edgeRadii: [(edgeIndex: Int, radius: Double)]) -> FilletResult? {
+    public func blendedEdgesWithReport(_ edgeRadii: [(edgeIndex: Int, radius: Double)])
+        -> FilletResult?
+    {
         guard !edgeRadii.isEmpty, edgeRadii.allSatisfy({ $0.radius > 0 }) else { return nil }
 
         var indices = edgeRadii.map { Int32($0.edgeIndex) }
@@ -836,8 +877,9 @@ extension Shape {
         }
         guard let result else { return nil }
         let declinedIndices = declined.prefix(Int(declinedCount)).map { Int($0) }
-        return FilletResult(shape: Shape(handle: result), declinedEdgeIndices: declinedIndices,
-                            overwrittenDuplicateIndices: Shape.overwrittenDuplicateIndices(in: edgeRadii))
+        return FilletResult(
+            shape: Shape(handle: result), declinedEdgeIndices: declinedIndices,
+            overwrittenDuplicateIndices: Shape.overwrittenDuplicateIndices(in: edgeRadii))
     }
 
     /// 0-based edge indices from `edgeRadii` that a later entry in the same request overwrote.
@@ -848,13 +890,16 @@ extension Shape {
     /// `declinedEdgeIndices`'s own convention: every overwritten *entry* is reported, not just the
     /// distinct edges, so `[(0, 1.0), (0, 2.0), (0, 3.0)]` reports `[0, 0]` -- two entries lost, one
     /// (the last) won -- not `[0]`.
-    private static func overwrittenDuplicateIndices(in edgeRadii: [(edgeIndex: Int, radius: Double)]) -> [Int] {
+    private static func overwrittenDuplicateIndices(
+        in edgeRadii: [(edgeIndex: Int, radius: Double)]
+    ) -> [Int] {
         var lastPosition: [Int: Int] = [:]
         for (position, pair) in edgeRadii.enumerated() {
             lastPosition[pair.edgeIndex] = position
         }
         var overwritten: [Int] = []
-        for (position, pair) in edgeRadii.enumerated() where lastPosition[pair.edgeIndex] != position {
+        for (position, pair) in edgeRadii.enumerated()
+        where lastPosition[pair.edgeIndex] != position {
             overwritten.append(pair.edgeIndex)
         }
         return overwritten
@@ -884,9 +929,11 @@ extension Shape {
     ///   - dx, dy, dz: Box dimensions
     ///   - xmin, zmin, xmax, zmax: Top face bounds within the box
     /// - Returns: A wedge solid, or nil on failure
-    public static func wedge(dx: Double, dy: Double, dz: Double,
-                             xmin: Double, zmin: Double,
-                             xmax: Double, zmax: Double) -> Shape? {
+    public static func wedge(
+        dx: Double, dy: Double, dz: Double,
+        xmin: Double, zmin: Double,
+        xmax: Double, zmax: Double
+    ) -> Shape? {
         guard dx > 0, dy > 0, dz > 0 else { return nil }
         guard let h = OCCTShapeCreateWedgeAdvanced(dx, dy, dz, xmin, zmin, xmax, zmax)
         else { return nil }
@@ -907,11 +954,13 @@ extension Shape {
         dx: Double, dy: Double, dz: Double,
         ltx: Double
     ) -> Shape? {
-        guard let h = OCCTShapeCreateWedgeOriented(
-            origin.x, origin.y, origin.z,
-            direction.x, direction.y, direction.z,
-            dx, dy, dz, ltx
-        ) else { return nil }
+        guard
+            let h = OCCTShapeCreateWedgeOriented(
+                origin.x, origin.y, origin.z,
+                direction.x, direction.y, direction.z,
+                dx, dy, dz, ltx
+            )
+        else { return nil }
         return Shape(handle: h)
     }
     /// Create a half-space solid from a face.
@@ -928,8 +977,10 @@ extension Shape {
     ///   - referencePoint: A point on the solid side
     /// - Returns: A half-space solid, or nil on failure
     public static func halfSpace(face: Shape, referencePoint: SIMD3<Double>) -> Shape? {
-        guard let h = OCCTShapeCreateHalfSpace(face.handle,
-                                                referencePoint.x, referencePoint.y, referencePoint.z)
+        guard
+            let h = OCCTShapeCreateHalfSpace(
+                face.handle,
+                referencePoint.x, referencePoint.y, referencePoint.z)
         else { return nil }
         return Shape(handle: h)
     }
@@ -941,9 +992,11 @@ extension Shape {
     ///   - length: Maximum draft length
     /// - Returns: A draft shell shape, or nil on failure
     public func draft(direction: SIMD3<Double>, angle: Double, length: Double) -> Shape? {
-        guard let h = OCCTShapeMakeDraft(handle,
-                                          direction.x, direction.y, direction.z,
-                                          angle, length)
+        guard
+            let h = OCCTShapeMakeDraft(
+                handle,
+                direction.x, direction.y, direction.z,
+                angle, length)
         else { return nil }
         return Shape(handle: h)
     }
@@ -969,7 +1022,9 @@ extension Shape {
     ///   - endShape: Other end of the pipe (face or wire)
     /// - Returns: The middle path wire, or nil on failure
     public func middlePath(start startShape: Shape, end endShape: Shape) -> Shape? {
-        guard let h = OCCTShapeMiddlePath(handle, startShape.handle, endShape.handle) else { return nil }
+        guard let h = OCCTShapeMiddlePath(handle, startShape.handle, endShape.handle) else {
+            return nil
+        }
         return Shape(handle: h)
     }
 
@@ -996,15 +1051,19 @@ extension Shape {
     ///   - draftDirection: Secondary direction controlling draft angle
     ///   - fuse: true to add material (rib), false to remove material (slot)
     /// - Returns: Shape with rib/slot added, or nil on failure
-    public func addingLinearRib(profile: Wire,
-                                direction: SIMD3<Double>,
-                                draftDirection: SIMD3<Double>,
-                                fuse: Bool = true) -> Shape? {
-        guard let h = OCCTShapeAddLinearRib(
-            handle, profile.handle,
-            direction.x, direction.y, direction.z,
-            draftDirection.x, draftDirection.y, draftDirection.z,
-            fuse) else { return nil }
+    public func addingLinearRib(
+        profile: Wire,
+        direction: SIMD3<Double>,
+        draftDirection: SIMD3<Double>,
+        fuse: Bool = true
+    ) -> Shape? {
+        guard
+            let h = OCCTShapeAddLinearRib(
+                handle, profile.handle,
+                direction.x, direction.y, direction.z,
+                draftDirection.x, draftDirection.y, draftDirection.z,
+                fuse)
+        else { return nil }
         return Shape(handle: h)
     }
     /// Add a draft prism (tapered extrusion) to a shape.
@@ -1019,12 +1078,17 @@ extension Shape {
     ///   - height: Extrusion height
     ///   - fuse: true to add material (boss), false to cut (pocket)
     /// - Returns: Shape with draft prism, or nil on failure
-    public func addingDraftPrism(profile: Wire, sketchFaceIndex: Int,
-                                 draftAngle: Double, height: Double,
-                                 fuse: Bool = true) -> Shape? {
-        guard let h = OCCTShapeDraftPrism(handle, Int32(sketchFaceIndex),
-                                           profile.handle, draftAngle,
-                                           height, fuse) else { return nil }
+    public func addingDraftPrism(
+        profile: Wire, sketchFaceIndex: Int,
+        draftAngle: Double, height: Double,
+        fuse: Bool = true
+    ) -> Shape? {
+        guard
+            let h = OCCTShapeDraftPrism(
+                handle, Int32(sketchFaceIndex),
+                profile.handle, draftAngle,
+                height, fuse)
+        else { return nil }
         return Shape(handle: h)
     }
 
@@ -1036,12 +1100,17 @@ extension Shape {
     ///   - draftAngle: Draft angle in degrees
     ///   - fuse: true to add material, false to cut
     /// - Returns: Shape with draft prism, or nil on failure
-    public func addingDraftPrismThruAll(profile: Wire, sketchFaceIndex: Int,
-                                        draftAngle: Double,
-                                        fuse: Bool = true) -> Shape? {
-        guard let h = OCCTShapeDraftPrismThruAll(handle, Int32(sketchFaceIndex),
-                                                  profile.handle, draftAngle,
-                                                  fuse) else { return nil }
+    public func addingDraftPrismThruAll(
+        profile: Wire, sketchFaceIndex: Int,
+        draftAngle: Double,
+        fuse: Bool = true
+    ) -> Shape? {
+        guard
+            let h = OCCTShapeDraftPrismThruAll(
+                handle, Int32(sketchFaceIndex),
+                profile.handle, draftAngle,
+                fuse)
+        else { return nil }
         return Shape(handle: h)
     }
     /// Compute the intersection curves/edges between two shapes.
@@ -1080,7 +1149,9 @@ extension Shape {
     ///   - faceIndex: 0-based index of the face to split
     /// - Returns: Shape with the face split by the wire, or nil on failure
     public func splittingFace(with wire: Wire, faceIndex: Int) -> Shape? {
-        guard let h = OCCTShapeSplitByWire(handle, wire.handle, Int32(faceIndex)) else { return nil }
+        guard let h = OCCTShapeSplitByWire(handle, wire.handle, Int32(faceIndex)) else {
+            return nil
+        }
         return Shape(handle: h)
     }
     /// Split surfaces that span more than a specified angle.
@@ -1119,15 +1190,18 @@ extension Shape {
     ///   - offsets: Array of offset distances (positive = outward, negative = inward)
     ///   - joinType: How to join offset segments (default: .arc)
     /// - Returns: Array of offset wires
-    public func multiOffsetWires(offsets: [Double],
-                                 joinType: OffsetJoinType = .arc) -> [Wire] {
+    public func multiOffsetWires(
+        offsets: [Double],
+        joinType: OffsetJoinType = .arc
+    ) -> [Wire] {
         guard !offsets.isEmpty else { return [] }
-        let maxWires = offsets.count * 10 // Allow for multi-contour results
+        let maxWires = offsets.count * 10  // Allow for multi-contour results
         var wireRefs = [OCCTWireRef?](repeating: nil, count: maxWires)
         let count = offsets.withUnsafeBufferPointer { offsetBuf in
             wireRefs.withUnsafeMutableBufferPointer { wireBuf in
-                OCCTWireMultiOffset(handle, offsetBuf.baseAddress, Int32(offsets.count),
-                                    joinType.rawValue, wireBuf.baseAddress, Int32(maxWires))
+                OCCTWireMultiOffset(
+                    handle, offsetBuf.baseAddress, Int32(offsets.count),
+                    joinType.rawValue, wireBuf.baseAddress, Int32(maxWires))
             }
         }
         return (0..<Int(count)).compactMap { i in
@@ -1159,33 +1233,42 @@ extension Shape {
     public func unionWithFullHistory(_ other: Shape) -> (result: Shape, history: ShapeHistoryRef)? {
         var resultRef: OCCTShapeRef?
         guard let h = OCCTBooleanUnionWithHistory(handle, other.handle, &resultRef),
-              let resultRef else { return nil }
+            let resultRef
+        else { return nil }
         return (Shape(handle: resultRef), ShapeHistoryRef(h))
     }
 
     /// Boolean subtract (`self \ tool`) with full per-input-subshape history.
-    public func subtractedWithFullHistory(_ tool: Shape) -> (result: Shape, history: ShapeHistoryRef)? {
+    public func subtractedWithFullHistory(_ tool: Shape) -> (
+        result: Shape, history: ShapeHistoryRef
+    )? {
         var resultRef: OCCTShapeRef?
         guard let h = OCCTBooleanSubtractWithHistory(handle, tool.handle, &resultRef),
-              let resultRef else { return nil }
+            let resultRef
+        else { return nil }
         return (Shape(handle: resultRef), ShapeHistoryRef(h))
     }
 
     /// Boolean intersect (`self ∩ other`) with full per-input-subshape history.
-    public func intersectionWithFullHistory(_ other: Shape) -> (result: Shape, history: ShapeHistoryRef)? {
+    public func intersectionWithFullHistory(_ other: Shape) -> (
+        result: Shape, history: ShapeHistoryRef
+    )? {
         var resultRef: OCCTShapeRef?
         guard let h = OCCTBooleanIntersectWithHistory(handle, other.handle, &resultRef),
-              let resultRef else { return nil }
+            let resultRef
+        else { return nil }
         return (Shape(handle: resultRef), ShapeHistoryRef(h))
     }
 
     /// Split `self` by `tool` (BRepAlgoAPI_Splitter). The pieces are the
     /// top-level children of the compound result; query history per input
     /// sub-shape via `history.record(of:)`.
-    public func splitWithFullHistory(by tool: Shape) -> (pieces: [Shape], history: ShapeHistoryRef)? {
+    public func splitWithFullHistory(by tool: Shape) -> (pieces: [Shape], history: ShapeHistoryRef)?
+    {
         var compoundRef: OCCTShapeRef?
         guard let h = OCCTBooleanSplitWithHistory(handle, tool.handle, &compoundRef),
-              let compoundRef else { return nil }
+            let compoundRef
+        else { return nil }
         let compound = Shape(handle: compoundRef)
 
         let pieceCount = OCCTShapeCompoundChildren(compound.handle, nil, 0)
@@ -1218,8 +1301,9 @@ extension Shape {
         let edgeIndices = edges.map { Int32($0) }
         var resultRef: OCCTShapeRef?
         let h = edgeIndices.withUnsafeBufferPointer { buf in
-            OCCTShapeHistoryFromFilletEdges(handle, buf.baseAddress!, Int32(edgeIndices.count),
-                                              radius, &resultRef)
+            OCCTShapeHistoryFromFilletEdges(
+                handle, buf.baseAddress!, Int32(edgeIndices.count),
+                radius, &resultRef)
         }
         guard let h, let resultRef else { return nil }
         return (Shape(handle: resultRef), ShapeHistoryRef(h))
@@ -1234,10 +1318,13 @@ extension Shape {
     {
         guard startRadius > 0, endRadius > 0 else { return nil }
         var resultRef: OCCTShapeRef?
-        guard let h = OCCTShapeHistoryFromFilletEdgeVariable(handle, Int32(edge),
-                                                               startRadius, endRadius,
-                                                               &resultRef),
-              let resultRef else { return nil }
+        guard
+            let h = OCCTShapeHistoryFromFilletEdgeVariable(
+                handle, Int32(edge),
+                startRadius, endRadius,
+                &resultRef),
+            let resultRef
+        else { return nil }
         return (Shape(handle: resultRef), ShapeHistoryRef(h))
     }
 
@@ -1262,8 +1349,9 @@ extension Shape {
         let edgeIndices = edges.map { Int32($0) }
         var resultRef: OCCTShapeRef?
         let h = edgeIndices.withUnsafeBufferPointer { buf in
-            OCCTShapeHistoryFromChamferEdges(handle, buf.baseAddress!, Int32(edgeIndices.count),
-                                               distance, &resultRef)
+            OCCTShapeHistoryFromChamferEdges(
+                handle, buf.baseAddress!, Int32(edgeIndices.count),
+                distance, &resultRef)
         }
         guard let h, let resultRef else { return nil }
         return (Shape(handle: resultRef), ShapeHistoryRef(h))
@@ -1272,15 +1360,18 @@ extension Shape {
     /// Shell / hollow: remove the listed faces and offset the remaining shell
     /// inward by `thickness` (use a negative `thickness` for outward), with a
     /// queryable per-face history.
-    public func shelledWithFullHistory(facesToRemove: [Int], thickness: Double, tolerance: Double = 1e-3)
+    public func shelledWithFullHistory(
+        facesToRemove: [Int], thickness: Double, tolerance: Double = 1e-3
+    )
         -> (result: Shape, history: ShapeHistoryRef)?
     {
         guard !facesToRemove.isEmpty else { return nil }
         let faceIndices = facesToRemove.map { Int32($0) }
         var resultRef: OCCTShapeRef?
         let h = faceIndices.withUnsafeBufferPointer { buf in
-            OCCTShapeHistoryFromShell(handle, buf.baseAddress!, Int32(faceIndices.count),
-                                       thickness, tolerance, &resultRef)
+            OCCTShapeHistoryFromShell(
+                handle, buf.baseAddress!, Int32(faceIndices.count),
+                thickness, tolerance, &resultRef)
         }
         guard let h, let resultRef else { return nil }
         return (Shape(handle: resultRef), ShapeHistoryRef(h))
@@ -1296,8 +1387,9 @@ extension Shape {
         let faceIndices = faces.map { Int32($0) }
         var resultRef: OCCTShapeRef?
         let h = faceIndices.withUnsafeBufferPointer { buf in
-            OCCTShapeHistoryFromDefeature(handle, buf.baseAddress!, Int32(faceIndices.count),
-                                            &resultRef)
+            OCCTShapeHistoryFromDefeature(
+                handle, buf.baseAddress!, Int32(faceIndices.count),
+                &resultRef)
         }
         guard let h, let resultRef else { return nil }
         return (Shape(handle: resultRef), ShapeHistoryRef(h))
@@ -1345,7 +1437,8 @@ extension Shape {
     {
         var resultRef: OCCTShapeRef?
         guard let h = OCCTShapeSewSingleWithHistory(handle, tolerance, &resultRef),
-              let resultRef else { return nil }
+            let resultRef
+        else { return nil }
         return (Shape(handle: resultRef), ShapeHistoryRef(h))
     }
 
@@ -1358,7 +1451,8 @@ extension Shape {
         var handles = shapes.map { $0.handle as OCCTShapeRef? }
         var resultRef: OCCTShapeRef?
         guard let h = OCCTShapeQuiltWithHistory(&handles, Int32(shapes.count), &resultRef),
-              let resultRef else { return nil }
+            let resultRef
+        else { return nil }
         return (Shape(handle: resultRef), ShapeHistoryRef(h))
     }
 
@@ -1373,7 +1467,8 @@ extension Shape {
     public func healedWithFullHistory() -> (result: Shape, history: ShapeHistoryRef)? {
         var resultRef: OCCTShapeRef?
         guard let h = OCCTShapeHealWithHistory(handle, &resultRef),
-              let resultRef else { return nil }
+            let resultRef
+        else { return nil }
         return (Shape(handle: resultRef), ShapeHistoryRef(h))
     }
 
@@ -1390,10 +1485,13 @@ extension Shape {
     /// guard let (solids, history) = Shape.solidWithFullHistory(from: sewn) else { return }
     /// print(solids.solids.count)   // 2
     /// ```
-    public static func solidWithFullHistory(from shell: Shape) -> (result: Shape, history: ShapeHistoryRef)? {
+    public static func solidWithFullHistory(from shell: Shape) -> (
+        result: Shape, history: ShapeHistoryRef
+    )? {
         var resultRef: OCCTShapeRef?
         guard let h = OCCTShapeCreateSolidFromShellWithHistory(shell.handle, &resultRef),
-              let resultRef else { return nil }
+            let resultRef
+        else { return nil }
         return (Shape(handle: resultRef), ShapeHistoryRef(h))
     }
     /// Translate the shape, with full per-input-subshape history.
@@ -1408,8 +1506,10 @@ extension Shape {
         -> (result: Shape, history: ShapeHistoryRef)?
     {
         var resultRef: OCCTShapeRef?
-        guard let h = OCCTShapeHistoryFromTranslate(handle, offset.x, offset.y, offset.z, &resultRef),
-              let resultRef else { return nil }
+        guard
+            let h = OCCTShapeHistoryFromTranslate(handle, offset.x, offset.y, offset.z, &resultRef),
+            let resultRef
+        else { return nil }
         return (Shape(handle: resultRef), ShapeHistoryRef(h))
     }
 
@@ -1419,7 +1519,8 @@ extension Shape {
     {
         var resultRef: OCCTShapeRef?
         guard let h = OCCTShapeHistoryFromRotate(handle, axis.x, axis.y, axis.z, angle, &resultRef),
-              let resultRef else { return nil }
+            let resultRef
+        else { return nil }
         return (Shape(handle: resultRef), ShapeHistoryRef(h))
     }
 
@@ -1429,21 +1530,26 @@ extension Shape {
     {
         var resultRef: OCCTShapeRef?
         guard let h = OCCTShapeHistoryFromScale(handle, factor, &resultRef),
-              let resultRef else { return nil }
+            let resultRef
+        else { return nil }
         return (Shape(handle: resultRef), ShapeHistoryRef(h))
     }
 
     /// Mirror across a plane, with full per-input-subshape history.
-    public func mirroredWithFullHistory(planeNormal: SIMD3<Double>, planeOrigin: SIMD3<Double> = .zero)
+    public func mirroredWithFullHistory(
+        planeNormal: SIMD3<Double>, planeOrigin: SIMD3<Double> = .zero
+    )
         -> (result: Shape, history: ShapeHistoryRef)?
     {
         var resultRef: OCCTShapeRef?
-        guard let h = OCCTShapeHistoryFromMirror(
-            handle,
-            planeOrigin.x, planeOrigin.y, planeOrigin.z,
-            planeNormal.x, planeNormal.y, planeNormal.z,
-            &resultRef
-        ), let resultRef else { return nil }
+        guard
+            let h = OCCTShapeHistoryFromMirror(
+                handle,
+                planeOrigin.x, planeOrigin.y, planeOrigin.z,
+                planeNormal.x, planeNormal.y, planeNormal.z,
+                &resultRef
+            ), let resultRef
+        else { return nil }
         return (Shape(handle: resultRef), ShapeHistoryRef(h))
     }
 
@@ -1470,9 +1576,11 @@ extension Shape {
         -> (result: Shape, history: ShapeHistoryRef)?
     {
         var resultRef: OCCTShapeRef?
-        guard let h = OCCTShapeHistoryFromLinearPattern(
-            handle, direction.x, direction.y, direction.z, spacing, Int32(count), &resultRef
-        ), let resultRef else { return nil }
+        guard
+            let h = OCCTShapeHistoryFromLinearPattern(
+                handle, direction.x, direction.y, direction.z, spacing, Int32(count), &resultRef
+            ), let resultRef
+        else { return nil }
         return (Shape(handle: resultRef), ShapeHistoryRef(h))
     }
 
@@ -1483,17 +1591,21 @@ extension Shape {
     /// "duplicates the whole body" means for feature-cut use cases.
     ///
     /// - Returns: `(result, history)` where `result` is a compound of all copies.
-    public func circularPatternWithFullHistory(axisPoint: SIMD3<Double>, axisDirection: SIMD3<Double>,
-                                                count: Int, angle: Double = 0)
+    public func circularPatternWithFullHistory(
+        axisPoint: SIMD3<Double>, axisDirection: SIMD3<Double>,
+        count: Int, angle: Double = 0
+    )
         -> (result: Shape, history: ShapeHistoryRef)?
     {
         var resultRef: OCCTShapeRef?
-        guard let h = OCCTShapeHistoryFromCircularPattern(
-            handle,
-            axisPoint.x, axisPoint.y, axisPoint.z,
-            axisDirection.x, axisDirection.y, axisDirection.z,
-            Int32(count), angle, &resultRef
-        ), let resultRef else { return nil }
+        guard
+            let h = OCCTShapeHistoryFromCircularPattern(
+                handle,
+                axisPoint.x, axisPoint.y, axisPoint.z,
+                axisDirection.x, axisDirection.y, axisDirection.z,
+                Int32(count), angle, &resultRef
+            ), let resultRef
+        else { return nil }
         return (Shape(handle: resultRef), ShapeHistoryRef(h))
     }
     /// Create a hollowed (thick) solid by removing faces and offsetting inward.
@@ -1507,15 +1619,18 @@ extension Shape {
     ///   - tolerance: Tolerance for the operation
     ///   - joinType: How to join offset edges (default: .arc)
     /// - Returns: Hollowed solid, or nil on failure
-    public func hollowed(removingFaces faceIndices: [Int],
-                         thickness: Double,
-                         tolerance: Double = 1e-3,
-                         joinType: OffsetJoinType = .arc) -> Shape? {
+    public func hollowed(
+        removingFaces faceIndices: [Int],
+        thickness: Double,
+        tolerance: Double = 1e-3,
+        joinType: OffsetJoinType = .arc
+    ) -> Shape? {
         guard !faceIndices.isEmpty else { return nil }
         let indices = faceIndices.map { Int32($0) }
         let result = indices.withUnsafeBufferPointer { buf in
-            OCCTShapeMakeThickSolid(handle, buf.baseAddress, Int32(faceIndices.count),
-                                     thickness, tolerance, joinType.rawValue)
+            OCCTShapeMakeThickSolid(
+                handle, buf.baseAddress, Int32(faceIndices.count),
+                thickness, tolerance, joinType.rawValue)
         }
         guard let h = result else { return nil }
         return Shape(handle: h)
@@ -1605,12 +1720,16 @@ extension Shape {
         var radiusPoints = [OCCTFilletRadiusPoint]()
         for edge in edges {
             for rp in edge.radiusPoints {
-                radiusPoints.append(OCCTFilletRadiusPoint(parameter: rp.parameter, radius: rp.radius))
+                radiusPoints.append(
+                    OCCTFilletRadiusPoint(parameter: rp.parameter, radius: rp.radius))
             }
         }
 
-        guard let h = OCCTShapeFilletEvolving(handle, edgeIndices, Int32(edges.count),
-                                               radiusPoints, pointCounts, nil, nil) else { return nil }
+        guard
+            let h = OCCTShapeFilletEvolving(
+                handle, edgeIndices, Int32(edges.count),
+                radiusPoints, pointCounts, nil, nil)
+        else { return nil }
         return Shape(handle: h)
     }
 
@@ -1641,16 +1760,18 @@ extension Shape {
         var radiusPoints = [OCCTFilletRadiusPoint]()
         for edge in edges {
             for rp in edge.radiusPoints {
-                radiusPoints.append(OCCTFilletRadiusPoint(parameter: rp.parameter, radius: rp.radius))
+                radiusPoints.append(
+                    OCCTFilletRadiusPoint(parameter: rp.parameter, radius: rp.radius))
             }
         }
 
         var declined = [Int32](repeating: 0, count: edges.count)
         var declinedCount: Int32 = 0
         let h: OCCTShapeRef? = declined.withUnsafeMutableBufferPointer { declinedBuffer in
-            OCCTShapeFilletEvolving(handle, edgeIndices, Int32(edges.count),
-                                    radiusPoints, pointCounts,
-                                    declinedBuffer.baseAddress, &declinedCount)
+            OCCTShapeFilletEvolving(
+                handle, edgeIndices, Int32(edges.count),
+                radiusPoints, pointCounts,
+                declinedBuffer.baseAddress, &declinedCount)
         }
         guard let h else { return nil }
         let declinedIndices = declined.prefix(Int(declinedCount)).map { Int($0) }
@@ -1667,17 +1788,22 @@ extension Shape {
     ///   - tolerance: Offset tolerance (default: 1e-3).
     ///   - joinType: Join type for offset gaps (default: .arc).
     /// - Returns: Offset shape, or nil on failure.
-    public func offsetPerFace(defaultOffset: Double,
-                               faceOffsets: [Int: Double],
-                               tolerance: Double = 1e-3,
-                               joinType: OffsetJoinType = .arc) -> Shape? {
+    public func offsetPerFace(
+        defaultOffset: Double,
+        faceOffsets: [Int: Double],
+        tolerance: Double = 1e-3,
+        joinType: OffsetJoinType = .arc
+    ) -> Shape? {
         let indices = Array(faceOffsets.keys).map { Int32($0) }
         let offsets = Array(faceOffsets.keys).map { faceOffsets[$0]! }
 
-        guard let h = OCCTShapeOffsetPerFace(handle, defaultOffset,
-                                              indices, offsets,
-                                              Int32(faceOffsets.count),
-                                              tolerance, Int32(joinType.rawValue)) else { return nil }
+        guard
+            let h = OCCTShapeOffsetPerFace(
+                handle, defaultOffset,
+                indices, offsets,
+                Int32(faceOffsets.count),
+                tolerance, Int32(joinType.rawValue))
+        else { return nil }
         return Shape(handle: h)
     }
 
@@ -1692,9 +1818,12 @@ extension Shape {
     ///   - infinite: If true, extrude in both directions (infinite); if false, one direction (semi-infinite)
     /// - Returns: Extruded shape, or nil on failure
     public func extrudedSemiInfinite(direction: SIMD3<Double>, infinite: Bool = false) -> Shape? {
-        guard let h = OCCTShapeExtrudeSemiInfinite(handle,
-                                                    direction.x, direction.y, direction.z,
-                                                    !infinite) else { return nil }
+        guard
+            let h = OCCTShapeExtrudeSemiInfinite(
+                handle,
+                direction.x, direction.y, direction.z,
+                !infinite)
+        else { return nil }
         return Shape(handle: h)
     }
 
@@ -1710,14 +1839,18 @@ extension Shape {
     ///   - fuse: If true, add material; if false, remove material
     ///   - untilFaceIndex: Face index (0-based) where extrusion stops. Pass nil for thru-all.
     /// - Returns: Modified shape, or nil on failure
-    public func prismUntilFace(profile: Shape, sketchFaceIndex: Int,
-                               direction: SIMD3<Double>, fuse: Bool = true,
-                               untilFaceIndex: Int? = nil) -> Shape? {
-        guard let h = OCCTShapePrismUntilFace(
-            handle, profile.handle, Int32(sketchFaceIndex),
-            direction.x, direction.y, direction.z,
-            fuse ? 1 : 0, Int32(untilFaceIndex ?? -1)
-        ) else { return nil }
+    public func prismUntilFace(
+        profile: Shape, sketchFaceIndex: Int,
+        direction: SIMD3<Double>, fuse: Bool = true,
+        untilFaceIndex: Int? = nil
+    ) -> Shape? {
+        guard
+            let h = OCCTShapePrismUntilFace(
+                handle, profile.handle, Int32(sketchFaceIndex),
+                direction.x, direction.y, direction.z,
+                fuse ? 1 : 0, Int32(untilFaceIndex ?? -1)
+            )
+        else { return nil }
         return Shape(handle: h)
     }
 
@@ -1757,10 +1890,12 @@ extension Shape {
     ///   - translation: Secondary translation vector
     /// - Returns: Extruded shape, or nil on failure
     public func localPrism(direction: SIMD3<Double>, translation: SIMD3<Double>) -> Shape? {
-        guard let ref = OCCTLocOpePrismWithTranslation(
-            handle, direction.x, direction.y, direction.z,
-            translation.x, translation.y, translation.z
-        ) else {
+        guard
+            let ref = OCCTLocOpePrismWithTranslation(
+                handle, direction.x, direction.y, direction.z,
+                translation.x, translation.y, translation.z
+            )
+        else {
             return nil
         }
         return Shape(handle: ref)
@@ -1790,13 +1925,18 @@ extension Shape {
     ///   - maxDegree: Maximum BSpline degree (default 8)
     ///   - maxSegments: Maximum number of segments (default 15)
     /// - Returns: Face shape built on the filled surface, or nil on failure
-    public static func constrainedFill(edge1: Edge, edge2: Edge, edge3: Edge,
-                                        edge4: Edge? = nil,
-                                        maxDegree: Int = 8,
-                                        maxSegments: Int = 15) -> Shape? {
-        guard let ref = OCCTGeomFillConstrained(edge1.handle, edge2.handle,
-                                                 edge3.handle, edge4?.handle,
-                                                 Int32(maxDegree), Int32(maxSegments)) else {
+    public static func constrainedFill(
+        edge1: Edge, edge2: Edge, edge3: Edge,
+        edge4: Edge? = nil,
+        maxDegree: Int = 8,
+        maxSegments: Int = 15
+    ) -> Shape? {
+        guard
+            let ref = OCCTGeomFillConstrained(
+                edge1.handle, edge2.handle,
+                edge3.handle, edge4?.handle,
+                Int32(maxDegree), Int32(maxSegments))
+        else {
             return nil
         }
         return Shape(handle: ref)
@@ -1827,13 +1967,18 @@ extension Shape {
     ///   - from: Start point of the sweep
     ///   - to: End point of the sweep
     /// - Returns: The swept shape, or nil on failure
-    public func localLinearForm(direction: SIMD3<Double>,
-                                from start: SIMD3<Double>,
-                                to end: SIMD3<Double>) -> Shape? {
-        guard let ref = OCCTLocOpeLinearForm(handle,
-                                              direction.x, direction.y, direction.z,
-                                              start.x, start.y, start.z,
-                                              end.x, end.y, end.z) else { return nil }
+    public func localLinearForm(
+        direction: SIMD3<Double>,
+        from start: SIMD3<Double>,
+        to end: SIMD3<Double>
+    ) -> Shape? {
+        guard
+            let ref = OCCTLocOpeLinearForm(
+                handle,
+                direction.x, direction.y, direction.z,
+                start.x, start.y, start.z,
+                end.x, end.y, end.z)
+        else { return nil }
         return Shape(handle: ref)
     }
 
@@ -1849,7 +1994,8 @@ extension Shape {
     /// - Returns: Modified shape with the face split, or nil on failure
     public func splitFace(at faceIndex: Int, with wire: Wire) -> Shape? {
         let wireShape = Shape(handle: OCCTShapeFromWire(wire.handle))
-        guard let ref = OCCTLocOpeSplitShapeByWire(handle, Int32(faceIndex), wireShape.handle) else { return nil }
+        guard let ref = OCCTLocOpeSplitShapeByWire(handle, Int32(faceIndex), wireShape.handle)
+        else { return nil }
         return Shape(handle: ref)
     }
 
@@ -1862,7 +2008,9 @@ extension Shape {
     ///   - parameter: Parameter along the edge (0.0 to 1.0)
     /// - Returns: The split edge parts as a compound, or nil on failure
     public func splitEdge(at edgeIndex: Int, parameter: Double) -> Shape? {
-        guard let ref = OCCTLocOpeSplitShapeByVertex(handle, Int32(edgeIndex), parameter) else { return nil }
+        guard let ref = OCCTLocOpeSplitShapeByVertex(handle, Int32(edgeIndex), parameter) else {
+            return nil
+        }
         return Shape(handle: ref)
     }
 
@@ -1880,17 +2028,22 @@ extension Shape {
     ///   - planeNormal: Normal of the neutral plane
     ///   - angle: Draft angle in radians
     /// - Returns: Modified shape with draft, or nil on failure
-    public func splitDrafts(faceIndex: Int, wire: Wire,
-                            direction: SIMD3<Double>,
-                            planeOrigin: SIMD3<Double>,
-                            planeNormal: SIMD3<Double>,
-                            angle: Double) -> Shape? {
+    public func splitDrafts(
+        faceIndex: Int, wire: Wire,
+        direction: SIMD3<Double>,
+        planeOrigin: SIMD3<Double>,
+        planeNormal: SIMD3<Double>,
+        angle: Double
+    ) -> Shape? {
         let wireShape = Shape(handle: OCCTShapeFromWire(wire.handle))
-        guard let ref = OCCTLocOpeSplitDrafts(handle, Int32(faceIndex), wireShape.handle,
-                                               direction.x, direction.y, direction.z,
-                                               planeOrigin.x, planeOrigin.y, planeOrigin.z,
-                                               planeNormal.x, planeNormal.y, planeNormal.z,
-                                               angle) else { return nil }
+        guard
+            let ref = OCCTLocOpeSplitDrafts(
+                handle, Int32(faceIndex), wireShape.handle,
+                direction.x, direction.y, direction.z,
+                planeOrigin.x, planeOrigin.y, planeOrigin.z,
+                planeNormal.x, planeNormal.y, planeNormal.z,
+                angle)
+        else { return nil }
         return Shape(handle: ref)
     }
 
@@ -1991,8 +2144,10 @@ extension Shape {
         spine: Wire, profile: Wire,
         tolerance: Double = 1e-3, solid: Bool = true
     ) -> Shape? {
-        guard let h = OCCTBRepFillAdvancedEvolved(
-            spine.handle, profile.handle, tolerance, solid) else { return nil }
+        guard
+            let h = OCCTBRepFillAdvancedEvolved(
+                spine.handle, profile.handle, tolerance, solid)
+        else { return nil }
         return Shape(handle: h)
     }
 
@@ -2029,9 +2184,11 @@ extension Shape {
         wire: Wire, direction: SIMD3<Double>,
         angle: Double, length: Double
     ) -> Shape? {
-        guard let h = OCCTBRepFillDraft(
-            wire.handle, direction.x, direction.y, direction.z,
-            angle, length) else { return nil }
+        guard
+            let h = OCCTBRepFillDraft(
+                wire.handle, direction.x, direction.y, direction.z,
+                angle, length)
+        else { return nil }
         return Shape(handle: h)
     }
 
@@ -2050,7 +2207,8 @@ extension Shape {
         var outHandles = [OCCTWireRef?](repeating: nil, count: wires.count)
         let count = handles.withUnsafeBufferPointer { inBuf in
             outHandles.withUnsafeMutableBufferPointer { outBuf in
-                OCCTBRepFillCompatibleWires(inBuf.baseAddress!, Int32(wires.count), outBuf.baseAddress!)
+                OCCTBRepFillCompatibleWires(
+                    inBuf.baseAddress!, Int32(wires.count), outBuf.baseAddress!)
             }
         }
         guard count > 0 else { return nil }
@@ -2085,12 +2243,15 @@ extension Shape {
     public static func split(objects: [Shape], by tools: [Shape]) -> Shape? {
         let objPtrs = objects.map { $0.handle as OCCTShapeRef? }
         let toolPtrs = tools.map { $0.handle as OCCTShapeRef? }
-        guard let h = objPtrs.withUnsafeBufferPointer({ objBuf in
-            toolPtrs.withUnsafeBufferPointer({ toolBuf in
-                OCCTBOPAlgoSplit(objBuf.baseAddress, Int32(objBuf.count),
-                                 toolBuf.baseAddress, Int32(toolBuf.count))
+        guard
+            let h = objPtrs.withUnsafeBufferPointer({ objBuf in
+                toolPtrs.withUnsafeBufferPointer({ toolBuf in
+                    OCCTBOPAlgoSplit(
+                        objBuf.baseAddress, Int32(objBuf.count),
+                        toolBuf.baseAddress, Int32(toolBuf.count))
+                })
             })
-        }) else { return nil }
+        else { return nil }
         return Shape(handle: h)
     }
 
@@ -2114,8 +2275,10 @@ extension Shape {
     ///   - shape2: Second shape (tool)
     ///   - operation: The Boolean operation to check
     /// - Returns: true if the shapes are valid for the operation
-    public static func analyzeBoolean(_ shape1: Shape, _ shape2: Shape,
-                                       operation: BooleanOperation = .fuse) -> Bool {
+    public static func analyzeBoolean(
+        _ shape1: Shape, _ shape2: Shape,
+        operation: BooleanOperation = .fuse
+    ) -> Bool {
         return OCCTBOPAlgoAnalyzeArguments(shape1.handle, shape2.handle, operation.rawValue)
     }
 
@@ -2159,7 +2322,9 @@ extension Shape {
     ///   - faceIndex: 0-based index of the face to split, as ``face(at:)`` and ``Face/index``
     ///     use. It was 1-based, so face 0 could not be named at all (#541).
     public func splitByWireOnFace(_ wire: Shape, faceIndex: Int32) -> Shape? {
-        guard let h = OCCTLocOpeSplitByWireOnFace(handle, wire.handle, faceIndex) else { return nil }
+        guard let h = OCCTLocOpeSplitByWireOnFace(handle, wire.handle, faceIndex) else {
+            return nil
+        }
         return Shape(handle: h)
     }
 
@@ -2208,12 +2373,15 @@ extension Shape {
     public func section(with tools: [Shape]) -> Shape? {
         let objHandles = [handle as OCCTShapeRef]
         let toolHandles = tools.map { $0.handle as OCCTShapeRef }
-        guard let ref = objHandles.withUnsafeBufferPointer({ objBuf in
-            toolHandles.withUnsafeBufferPointer({ toolBuf in
-                OCCTBOPAlgoSection(objBuf.baseAddress!, Int32(objBuf.count),
-                                   toolBuf.baseAddress!, Int32(toolBuf.count))
+        guard
+            let ref = objHandles.withUnsafeBufferPointer({ objBuf in
+                toolHandles.withUnsafeBufferPointer({ toolBuf in
+                    OCCTBOPAlgoSection(
+                        objBuf.baseAddress!, Int32(objBuf.count),
+                        toolBuf.baseAddress!, Int32(toolBuf.count))
+                })
             })
-        }) else { return nil }
+        else { return nil }
         return Shape(handle: ref)
     }
 
@@ -2228,8 +2396,11 @@ extension Shape {
             // Pass all shapes as objects (BOPAlgo_Section treats all arguments equally)
             let empty = [OCCTShapeRef]()
             return empty.withUnsafeBufferPointer({ emptyBuf in
-                guard let ref = OCCTBOPAlgoSection(buf.baseAddress!, Int32(buf.count),
-                                                    emptyBuf.baseAddress!, Int32(0)) else { return nil }
+                guard
+                    let ref = OCCTBOPAlgoSection(
+                        buf.baseAddress!, Int32(buf.count),
+                        emptyBuf.baseAddress!, Int32(0))
+                else { return nil }
                 return Shape(handle: ref)
             })
         })
@@ -2248,9 +2419,12 @@ extension Shape {
         let edgeHandles = edges.map { $0.handle as OCCTShapeRef }
         var outFaces: UnsafeMutablePointer<OCCTShapeRef?>?
         var outCount: Int32 = 0
-        guard edgeHandles.withUnsafeBufferPointer({ buf in
-            OCCTBOPAlgoBuilderFace(handle, buf.baseAddress!, Int32(buf.count), &outFaces, &outCount)
-        }) else { return nil }
+        guard
+            edgeHandles.withUnsafeBufferPointer({ buf in
+                OCCTBOPAlgoBuilderFace(
+                    handle, buf.baseAddress!, Int32(buf.count), &outFaces, &outCount)
+            })
+        else { return nil }
         defer { outFaces?.deallocate() }
         return (0..<Int(outCount)).compactMap { i in
             if let ref = outFaces?[i] { return Shape(handle: ref) }
@@ -2268,9 +2442,11 @@ extension Shape {
         let faceHandles = faces.map { $0.handle as OCCTShapeRef }
         var outSolids: UnsafeMutablePointer<OCCTShapeRef?>?
         var outCount: Int32 = 0
-        guard faceHandles.withUnsafeBufferPointer({ buf in
-            OCCTBOPAlgoBuilderSolid(buf.baseAddress!, Int32(buf.count), &outSolids, &outCount)
-        }) else { return nil }
+        guard
+            faceHandles.withUnsafeBufferPointer({ buf in
+                OCCTBOPAlgoBuilderSolid(buf.baseAddress!, Int32(buf.count), &outSolids, &outCount)
+            })
+        else { return nil }
         defer { outSolids?.deallocate() }
         return (0..<Int(outCount)).compactMap { i in
             if let ref = outSolids?[i] { return Shape(handle: ref) }
@@ -2327,7 +2503,9 @@ extension Shape {
     ///   - face: Face containing the edge
     /// - Returns: Normal direction, or nil on failure
     public static func normalOnEdge(edge: Shape, face: Shape) -> SIMD3<Double>? {
-        var nx: Double = 0, ny: Double = 0, nz: Double = 0
+        var nx: Double = 0
+        var ny: Double = 0
+        var nz: Double = 0
         guard OCCTBOPToolsNormalOnEdge(edge.handle, face.handle, &nx, &ny, &nz) else { return nil }
         return SIMD3(nx, ny, nz)
     }
@@ -2338,7 +2516,9 @@ extension Shape {
     ///
     /// - Returns: A 3D point inside this face, or nil on failure
     public func pointInFace() -> SIMD3<Double>? {
-        var x: Double = 0, y: Double = 0, z: Double = 0
+        var x: Double = 0
+        var y: Double = 0
+        var z: Double = 0
         guard OCCTBOPToolsPointInFace(handle, &x, &y, &z) else { return nil }
         return SIMD3(x, y, z)
     }
@@ -2359,9 +2539,11 @@ extension Shape {
     /// - Returns: Result wire as a shape, or nil on failure.
     public static func makeWire(from edges: [Shape]) -> Shape? {
         let handles = edges.map { $0.handle as OCCTShapeRef }
-        guard let ref = handles.withUnsafeBufferPointer({ buf in
-            OCCTBOPAlgoMakeWire(buf.baseAddress!, Int32(edges.count))
-        }) else { return nil }
+        guard
+            let ref = handles.withUnsafeBufferPointer({ buf in
+                OCCTBOPAlgoMakeWire(buf.baseAddress!, Int32(edges.count))
+            })
+        else { return nil }
         return Shape(handle: ref)
     }
 
@@ -2375,7 +2557,9 @@ extension Shape {
     ///   - face: Face on which to add the edge.
     /// - Returns: Result shape with split face, or nil on failure.
     public func splitByEdge(_ edge: Shape, onFace face: Shape) -> Shape? {
-        guard let ref = OCCTBRepFeatSplitShapeEdge(handle, edge.handle, face.handle) else { return nil }
+        guard let ref = OCCTBRepFeatSplitShapeEdge(handle, edge.handle, face.handle) else {
+            return nil
+        }
         return Shape(handle: ref)
     }
 
@@ -2387,7 +2571,9 @@ extension Shape {
     ///   - face: Face on which to add the wire.
     /// - Returns: Result shape with split face, or nil on failure.
     public func splitByWire(_ wire: Shape, onFace face: Shape) -> Shape? {
-        guard let ref = OCCTBRepFeatSplitShapeWire(handle, wire.handle, face.handle) else { return nil }
+        guard let ref = OCCTBRepFeatSplitShapeWire(handle, wire.handle, face.handle) else {
+            return nil
+        }
         return Shape(handle: ref)
     }
 
@@ -2416,12 +2602,17 @@ extension Shape {
         var outLeftCount: Int32 = 0
         var outRight: UnsafeMutablePointer<OCCTShapeRef?>?
         var outRightCount: Int32 = 0
-        guard let ref = handles.withUnsafeBufferPointer({ buf in
-            OCCTBRepFeatSplitShapeWithSides(handle,
-                buf.baseAddress!.withMemoryRebound(to: OCCTShapeRef.self, capacity: handles.count) { $0 },
-                Int32(edgesOnFaces.count),
-                &outLeft, &outLeftCount, &outRight, &outRightCount)
-        }) else { return nil }
+        guard
+            let ref = handles.withUnsafeBufferPointer({ buf in
+                OCCTBRepFeatSplitShapeWithSides(
+                    handle,
+                    buf.baseAddress!.withMemoryRebound(
+                        to: OCCTShapeRef.self, capacity: handles.count
+                    ) { $0 },
+                    Int32(edgesOnFaces.count),
+                    &outLeft, &outLeftCount, &outRight, &outRightCount)
+            })
+        else { return nil }
 
         var leftShapes: [Shape] = []
         if let outLeft = outLeft {
@@ -2437,7 +2628,8 @@ extension Shape {
             }
             free(outRight)
         }
-        return SplitShapeResult(shape: Shape(handle: ref), leftFaces: leftShapes, rightFaces: rightShapes)
+        return SplitShapeResult(
+            shape: Shape(handle: ref), leftFaces: leftShapes, rightFaces: rightShapes)
     }
 
     // MARK: - BRepFeat_MakeCylindricalHole (v0.71.0, unified #496)
@@ -2497,10 +2689,10 @@ extension Shape {
         /// The (mode, p0, p1) triple the bridge reads.
         var bridgeParameters: (mode: Int32, p0: Double, p1: Double) {
             switch self {
-            case .throughAll:              return (0, 0, 0)
-            case .untilEnd:                return (1, 0, 0)
-            case .thruNext:                return (2, 0, 0)
-            case .blind(let depth):        return (3, depth, 0)
+            case .throughAll: return (0, 0, 0)
+            case .untilEnd: return (1, 0, 0)
+            case .thruNext: return (2, 0, 0)
+            case .blind(let depth): return (3, depth, 0)
             case .range(let from, let to): return (4, from, to)
             }
         }
@@ -2545,13 +2737,18 @@ extension Shape {
     ///                                   axisDirection: SIMD3(0, 0, -1),
     ///                                   radius: 5, extent: .untilEnd)
     /// ```
-    public func cylindricalHole(axisOrigin: SIMD3<Double>, axisDirection: SIMD3<Double>,
-                                radius: Double, extent: CylindricalHoleExtent) -> Shape? {
+    public func cylindricalHole(
+        axisOrigin: SIMD3<Double>, axisDirection: SIMD3<Double>,
+        radius: Double, extent: CylindricalHoleExtent
+    ) -> Shape? {
         let (mode, p0, p1) = extent.bridgeParameters
-        guard let ref = OCCTBRepFeatCylindricalHole(handle,
-            axisOrigin.x, axisOrigin.y, axisOrigin.z,
-            axisDirection.x, axisDirection.y, axisDirection.z,
-            radius, mode, p0, p1) else { return nil }
+        guard
+            let ref = OCCTBRepFeatCylindricalHole(
+                handle,
+                axisOrigin.x, axisOrigin.y, axisOrigin.z,
+                axisDirection.x, axisDirection.y, axisDirection.z,
+                radius, mode, p0, p1)
+        else { return nil }
         return Shape(handle: ref)
     }
 
@@ -2574,11 +2771,14 @@ extension Shape {
     ///     // ... too deep for this stock; drill it through instead
     /// }
     /// ```
-    public func cylindricalHoleStatus(axisOrigin: SIMD3<Double>, axisDirection: SIMD3<Double>,
-                                      radius: Double,
-                                      extent: CylindricalHoleExtent) -> CylindricalHoleStatus {
+    public func cylindricalHoleStatus(
+        axisOrigin: SIMD3<Double>, axisDirection: SIMD3<Double>,
+        radius: Double,
+        extent: CylindricalHoleExtent
+    ) -> CylindricalHoleStatus {
         let (mode, p0, p1) = extent.bridgeParameters
-        let raw = OCCTBRepFeatCylindricalHoleStatus(handle,
+        let raw = OCCTBRepFeatCylindricalHoleStatus(
+            handle,
             axisOrigin.x, axisOrigin.y, axisOrigin.z,
             axisDirection.x, axisDirection.y, axisDirection.z,
             radius, mode, p0, p1)
@@ -2598,9 +2798,12 @@ extension Shape {
     ///   - axisDirection: Direction of the hole axis.
     ///   - radius: Hole radius.
     /// - Returns: Shape with hole, or nil on failure.
-    public func cylindricalHole(axisOrigin: SIMD3<Double>, axisDirection: SIMD3<Double>, radius: Double) -> Shape? {
-        cylindricalHole(axisOrigin: axisOrigin, axisDirection: axisDirection,
-                        radius: radius, extent: .throughAll)
+    public func cylindricalHole(
+        axisOrigin: SIMD3<Double>, axisDirection: SIMD3<Double>, radius: Double
+    ) -> Shape? {
+        cylindricalHole(
+            axisOrigin: axisOrigin, axisDirection: axisDirection,
+            radius: radius, extent: .throughAll)
     }
 
     /// Drill a blind cylindrical hole in this shape.
@@ -2615,9 +2818,12 @@ extension Shape {
     ///   - radius: Hole radius.
     ///   - depth: Hole depth.
     /// - Returns: Shape with hole, or nil on failure.
-    public func cylindricalHoleBlind(axisOrigin: SIMD3<Double>, axisDirection: SIMD3<Double>, radius: Double, depth: Double) -> Shape? {
-        cylindricalHole(axisOrigin: axisOrigin, axisDirection: axisDirection,
-                        radius: radius, extent: .blind(depth: depth))
+    public func cylindricalHoleBlind(
+        axisOrigin: SIMD3<Double>, axisDirection: SIMD3<Double>, radius: Double, depth: Double
+    ) -> Shape? {
+        cylindricalHole(
+            axisOrigin: axisOrigin, axisDirection: axisDirection,
+            radius: radius, extent: .blind(depth: depth))
     }
 
     /// Drill a cylindrical hole through to the next face.
@@ -2628,9 +2834,12 @@ extension Shape {
     ///   - axisDirection: Direction of the hole axis.
     ///   - radius: Hole radius.
     /// - Returns: Shape with hole, or nil on failure.
-    public func cylindricalHoleThruNext(axisOrigin: SIMD3<Double>, axisDirection: SIMD3<Double>, radius: Double) -> Shape? {
-        cylindricalHole(axisOrigin: axisOrigin, axisDirection: axisDirection,
-                        radius: radius, extent: .thruNext)
+    public func cylindricalHoleThruNext(
+        axisOrigin: SIMD3<Double>, axisDirection: SIMD3<Double>, radius: Double
+    ) -> Shape? {
+        cylindricalHole(
+            axisOrigin: axisOrigin, axisDirection: axisDirection,
+            radius: radius, extent: .thruNext)
     }
 
     /// Check the status of a through-all cylindrical hole operation without modifying the shape.
@@ -2645,9 +2854,12 @@ extension Shape {
     ///   - axisDirection: Direction of the hole axis.
     ///   - radius: Hole radius.
     /// - Returns: Status indicating whether the through-all hole can be drilled.
-    public func cylindricalHoleStatus(axisOrigin: SIMD3<Double>, axisDirection: SIMD3<Double>, radius: Double) -> CylindricalHoleStatus {
-        cylindricalHoleStatus(axisOrigin: axisOrigin, axisDirection: axisDirection,
-                              radius: radius, extent: .throughAll)
+    public func cylindricalHoleStatus(
+        axisOrigin: SIMD3<Double>, axisDirection: SIMD3<Double>, radius: Double
+    ) -> CylindricalHoleStatus {
+        cylindricalHoleStatus(
+            axisOrigin: axisOrigin, axisDirection: axisDirection,
+            radius: radius, extent: .throughAll)
     }
 
     // MARK: - BRepFeat_Gluer (v0.71.0)
@@ -2662,13 +2874,16 @@ extension Shape {
     public func glue(_ gluedShape: Shape, facePairs: [(base: Shape, glued: Shape)]) -> Shape? {
         let baseFaces = facePairs.map { $0.base.handle as OCCTShapeRef }
         let gluedFaces = facePairs.map { $0.glued.handle as OCCTShapeRef }
-        guard let ref = baseFaces.withUnsafeBufferPointer({ baseBuf in
-            gluedFaces.withUnsafeBufferPointer({ gluedBuf in
-                OCCTBRepFeatGluer(handle, gluedShape.handle,
-                    baseBuf.baseAddress!, gluedBuf.baseAddress!,
-                    Int32(facePairs.count))
+        guard
+            let ref = baseFaces.withUnsafeBufferPointer({ baseBuf in
+                gluedFaces.withUnsafeBufferPointer({ gluedBuf in
+                    OCCTBRepFeatGluer(
+                        handle, gluedShape.handle,
+                        baseBuf.baseAddress!, gluedBuf.baseAddress!,
+                        Int32(facePairs.count))
+                })
             })
-        }) else { return nil }
+        else { return nil }
         return Shape(handle: ref)
     }
 
@@ -2700,12 +2915,17 @@ extension Shape {
         }
         var outDirectLeft: UnsafeMutablePointer<OCCTShapeRef?>?
         var outDirectLeftCount: Int32 = 0
-        guard let ref = handles.withUnsafeBufferPointer({ buf in
-            OCCTLocOpeSplitByWires(handle,
-                buf.baseAddress!.withMemoryRebound(to: OCCTShapeRef.self, capacity: handles.count) { $0 },
-                Int32(wiresOnFaces.count),
-                &outDirectLeft, &outDirectLeftCount)
-        }) else { return nil }
+        guard
+            let ref = handles.withUnsafeBufferPointer({ buf in
+                OCCTLocOpeSplitByWires(
+                    handle,
+                    buf.baseAddress!.withMemoryRebound(
+                        to: OCCTShapeRef.self, capacity: handles.count
+                    ) { $0 },
+                    Int32(wiresOnFaces.count),
+                    &outDirectLeft, &outDirectLeftCount)
+            })
+        else { return nil }
 
         var dlShapes: [Shape] = []
         if let outDirectLeft = outDirectLeft {
@@ -2724,9 +2944,11 @@ extension Shape {
     /// - Returns: Result shape, or nil on failure.
     public func locOpeSplitAuto(wires: [Shape]) -> Shape? {
         let wireHandles = wires.map { $0.handle as OCCTShapeRef }
-        guard let ref = wireHandles.withUnsafeBufferPointer({ buf in
-            OCCTLocOpeSplitByWiresAuto(handle, buf.baseAddress!, Int32(wires.count))
-        }) else { return nil }
+        guard
+            let ref = wireHandles.withUnsafeBufferPointer({ buf in
+                OCCTLocOpeSplitByWiresAuto(handle, buf.baseAddress!, Int32(wires.count))
+            })
+        else { return nil }
         return Shape(handle: ref)
     }
 
@@ -2740,9 +2962,11 @@ extension Shape {
     ///     Empty array will return nil.
     ///   - edgePairs: Optional matching edge pairs for precise alignment.
     /// - Returns: Result shape, or nil on failure (including empty facePairs).
-    public func locOpeGlue(_ gluedShape: Shape,
-                           facePairs: [(base: Shape, glued: Shape)],
-                           edgePairs: [(base: Shape, glued: Shape)] = []) -> Shape? {
+    public func locOpeGlue(
+        _ gluedShape: Shape,
+        facePairs: [(base: Shape, glued: Shape)],
+        edgePairs: [(base: Shape, glued: Shape)] = []
+    ) -> Shape? {
         let baseFaces = facePairs.map { $0.base.handle as OCCTShapeRef }
         let gluedFaces = facePairs.map { $0.glued.handle as OCCTShapeRef }
         let baseEdges = edgePairs.map { $0.base.handle as OCCTShapeRef? }
@@ -2751,13 +2975,15 @@ extension Shape {
         let ref: OCCTShapeRef? = baseFaces.withUnsafeBufferPointer { baseFBuf in
             gluedFaces.withUnsafeBufferPointer { gluedFBuf in
                 if edgePairs.isEmpty {
-                    return OCCTLocOpeGlue(handle, gluedShape.handle,
+                    return OCCTLocOpeGlue(
+                        handle, gluedShape.handle,
                         baseFBuf.baseAddress!, gluedFBuf.baseAddress!,
                         Int32(facePairs.count), nil, nil, 0)
                 } else {
                     return baseEdges.withUnsafeBufferPointer { baseEBuf in
                         gluedEdges.withUnsafeBufferPointer { gluedEBuf in
-                            OCCTLocOpeGlue(handle, gluedShape.handle,
+                            OCCTLocOpeGlue(
+                                handle, gluedShape.handle,
                                 baseFBuf.baseAddress!, gluedFBuf.baseAddress!,
                                 Int32(facePairs.count),
                                 baseEBuf.baseAddress!, gluedEBuf.baseAddress!,
@@ -2814,7 +3040,8 @@ extension Shape {
         var outSurfaces: UnsafeMutablePointer<OCCTFilletSurfInfo>?
         var outCount: Int32 = 0
         let status = edgeHandles.withUnsafeBufferPointer { buf in
-            OCCTFilletSurfBuild(handle, buf.baseAddress!, Int32(edges.count), radius, &outSurfaces, &outCount)
+            OCCTFilletSurfBuild(
+                handle, buf.baseAddress!, Int32(edges.count), radius, &outSurfaces, &outCount)
         }
         if status == 1 && outCount == 0 { return nil }
 
@@ -2822,17 +3049,20 @@ extension Shape {
         if let outSurfaces {
             for i in 0..<Int(outCount) {
                 let info = outSurfaces[i]
-                guard let surfH = info.surface, let sf1 = info.supportFace1, let sf2 = info.supportFace2 else { continue }
-                infos.append(FilletSurfaceInfo(
-                    surface: Surface(handle: surfH),
-                    supportFace1: Shape(handle: sf1),
-                    supportFace2: Shape(handle: sf2),
-                    tolerance: info.tolerance,
-                    firstParameter: info.firstParam,
-                    lastParameter: info.lastParam,
-                    startStatus: Int(info.startStatus),
-                    endStatus: Int(info.endStatus)
-                ))
+                guard let surfH = info.surface, let sf1 = info.supportFace1,
+                    let sf2 = info.supportFace2
+                else { continue }
+                infos.append(
+                    FilletSurfaceInfo(
+                        surface: Surface(handle: surfH),
+                        supportFace1: Shape(handle: sf1),
+                        supportFace2: Shape(handle: sf2),
+                        tolerance: info.tolerance,
+                        firstParameter: info.firstParam,
+                        lastParameter: info.lastParam,
+                        startStatus: Int(info.startStatus),
+                        endStatus: Int(info.endStatus)
+                    ))
             }
             free(outSurfaces)
         }
@@ -2850,11 +3080,16 @@ extension Shape {
     ///
     /// The whole request is refused (`nil`) if any index names no edge, rather than blending the
     /// rest — a partial blend is not distinguishable from a complete one (#568).
-    public func biTgteBlend(edgeIndices: [Int], radius: Double, tolerance: Double = 1e-3, nubs: Bool = false) -> Shape? {
+    public func biTgteBlend(
+        edgeIndices: [Int], radius: Double, tolerance: Double = 1e-3, nubs: Bool = false
+    ) -> Shape? {
         let indices = edgeIndices.map { Int32($0) }
-        guard let ref = indices.withUnsafeBufferPointer({ buf in
-            OCCTBiTgteBlend(handle, buf.baseAddress!, Int32(edgeIndices.count), radius, tolerance, nubs)
-        }) else { return nil }
+        guard
+            let ref = indices.withUnsafeBufferPointer({ buf in
+                OCCTBiTgteBlend(
+                    handle, buf.baseAddress!, Int32(edgeIndices.count), radius, tolerance, nubs)
+            })
+        else { return nil }
         return Shape(handle: ref)
     }
     /// Create a preview box shape (handles degenerate dimensions: face, edge, vertex).
@@ -2863,31 +3098,40 @@ extension Shape {
         return Shape(handle: ref)
     }
     /// Create an evolved shape from a face spine and wire profile.
-    public static func evolved(spineFace: Shape, profileWire: Shape,
-                               axisOrigin: SIMD3<Double> = SIMD3(0, 0, 0),
-                               axisNormal: SIMD3<Double> = SIMD3(0, 0, 1),
-                               axisXDir: SIMD3<Double> = SIMD3(1, 0, 0),
-                               joinType: Int = 0, makeSolid: Bool = false) -> Shape? {
-        guard let ref = OCCTBRepFillEvolved(spineFace.handle, profileWire.handle,
-                                             axisOrigin.x, axisOrigin.y, axisOrigin.z,
-                                             axisNormal.x, axisNormal.y, axisNormal.z,
-                                             axisXDir.x, axisXDir.y, axisXDir.z,
-                                             Int32(joinType), makeSolid) else { return nil }
+    public static func evolved(
+        spineFace: Shape, profileWire: Shape,
+        axisOrigin: SIMD3<Double> = SIMD3(0, 0, 0),
+        axisNormal: SIMD3<Double> = SIMD3(0, 0, 1),
+        axisXDir: SIMD3<Double> = SIMD3(1, 0, 0),
+        joinType: Int = 0, makeSolid: Bool = false
+    ) -> Shape? {
+        guard
+            let ref = OCCTBRepFillEvolved(
+                spineFace.handle, profileWire.handle,
+                axisOrigin.x, axisOrigin.y, axisOrigin.z,
+                axisNormal.x, axisNormal.y, axisNormal.z,
+                axisXDir.x, axisXDir.y, axisXDir.z,
+                Int32(joinType), makeSolid)
+        else { return nil }
         return Shape(handle: ref)
     }
 
     /// Boolean section with fuzzy tolerance.
     public func section(with other: Shape, tolerance: Double) -> Shape? {
-        guard let ref = OCCTBooleanSectionWithTolerance(handle, other.handle, tolerance) else { return nil }
+        guard let ref = OCCTBooleanSectionWithTolerance(handle, other.handle, tolerance) else {
+            return nil
+        }
         return Shape(handle: ref)
     }
 
     /// Split this shape by multiple tool shapes.
     public func split(tools: [Shape], tolerance: Double = 0) -> Shape? {
         let toolRefs = tools.map { $0.handle as OCCTShapeRef }
-        guard let ref = toolRefs.withUnsafeBufferPointer({ buf in
-            OCCTBooleanSplitMulti(handle, buf.baseAddress!, Int32(tools.count), tolerance)
-        }) else { return nil }
+        guard
+            let ref = toolRefs.withUnsafeBufferPointer({ buf in
+                OCCTBooleanSplitMulti(handle, buf.baseAddress!, Int32(tools.count), tolerance)
+            })
+        else { return nil }
         return Shape(handle: ref)
     }
 
@@ -2900,12 +3144,19 @@ extension Shape {
     }
 
     /// Boolean cut with history tracking.
-    public func subtractedWithHistory(_ tool: Shape, tolerance: Double = 0) -> BooleanHistoryResult? {
-        var hasDel = false, hasMod = false, hasGen = false
-        guard let ref = OCCTBooleanCutWithHistory(handle, tool.handle, tolerance,
-                                                   &hasDel, &hasMod, &hasGen) else { return nil }
-        return BooleanHistoryResult(shape: Shape(handle: ref),
-                                     hasDeleted: hasDel, hasModified: hasMod, hasGenerated: hasGen)
+    public func subtractedWithHistory(_ tool: Shape, tolerance: Double = 0) -> BooleanHistoryResult?
+    {
+        var hasDel = false
+        var hasMod = false
+        var hasGen = false
+        guard
+            let ref = OCCTBooleanCutWithHistory(
+                handle, tool.handle, tolerance,
+                &hasDel, &hasMod, &hasGen)
+        else { return nil }
+        return BooleanHistoryResult(
+            shape: Shape(handle: ref),
+            hasDeleted: hasDel, hasModified: hasMod, hasGenerated: hasGen)
     }
 
 }
@@ -2939,13 +3190,18 @@ extension Shape {
     ///   - neutralPlaneOrigin: Origin of the neutral plane
     ///   - neutralPlaneNormal: Normal of the neutral plane
     /// - Returns: Modified shape, or nil on failure
-    public func draftModification(faceIndex: Int, direction: SIMD3<Double>, angle: Double,
-                                   neutralPlaneOrigin: SIMD3<Double>,
-                                   neutralPlaneNormal: SIMD3<Double>) -> Shape? {
-        guard let ref = OCCTShapeDraftModification(handle, Int32(faceIndex),
-                                                     direction.x, direction.y, direction.z, angle,
-                                                     neutralPlaneOrigin.x, neutralPlaneOrigin.y, neutralPlaneOrigin.z,
-                                                     neutralPlaneNormal.x, neutralPlaneNormal.y, neutralPlaneNormal.z) else {
+    public func draftModification(
+        faceIndex: Int, direction: SIMD3<Double>, angle: Double,
+        neutralPlaneOrigin: SIMD3<Double>,
+        neutralPlaneNormal: SIMD3<Double>
+    ) -> Shape? {
+        guard
+            let ref = OCCTShapeDraftModification(
+                handle, Int32(faceIndex),
+                direction.x, direction.y, direction.z, angle,
+                neutralPlaneOrigin.x, neutralPlaneOrigin.y, neutralPlaneOrigin.z,
+                neutralPlaneNormal.x, neutralPlaneNormal.y, neutralPlaneNormal.z)
+        else {
             return nil
         }
         return Shape(handle: ref)
@@ -2979,7 +3235,9 @@ extension Shape {
     }
 
     /// Count edges of a given concavity type on a specific face.
-    public func analyseEdgesOnFace(_ face: Shape, angle: Double = .pi / 6.0, type: ConcavityType) -> Int {
+    public func analyseEdgesOnFace(_ face: Shape, angle: Double = .pi / 6.0, type: ConcavityType)
+        -> Int
+    {
         Int(OCCTAnalyseEdgesOnFace(handle, angle, face.handle, Int32(type.rawValue)))
     }
 
@@ -2989,7 +3247,9 @@ extension Shape {
     }
 
     /// Count tangent edges at a vertex along a given edge.
-    public func analyseTangentEdgeCount(edge: Shape, vertex: Shape, angle: Double = .pi / 6.0) -> Int {
+    public func analyseTangentEdgeCount(edge: Shape, vertex: Shape, angle: Double = .pi / 6.0)
+        -> Int
+    {
         Int(OCCTAnalyseTangentEdgeCount(handle, angle, edge.handle, vertex.handle))
     }
 }
@@ -3019,8 +3279,10 @@ extension Shape {
     ///   upgrading past this change who relies on an operation that legitimately takes longer than
     ///   120s must now pass `timeout:` explicitly (`0`/negative = unbounded) to keep the old
     ///   behavior (PR #870 aggregate review).
-    public func fused(with other: Shape, tolerance: Double,
-                       timeout: Double = Shape.defaultBooleanTimeout) -> Shape? {
+    public func fused(
+        with other: Shape, tolerance: Double,
+        timeout: Double = Shape.defaultBooleanTimeout
+    ) -> Shape? {
         union(other, fuzzyValue: tolerance, timeout: timeout)
     }
 
@@ -3030,8 +3292,10 @@ extension Shape {
     ///   ``fused(with:tolerance:timeout:)``'s doc comment for what changed underneath, including
     ///   the **Warning** there: an existing caller not passing `timeout:` now silently gets `nil`
     ///   after 120s instead of running unbounded, exactly as before.
-    public func subtracted(_ other: Shape, tolerance: Double,
-                            timeout: Double = Shape.defaultBooleanTimeout) -> Shape? {
+    public func subtracted(
+        _ other: Shape, tolerance: Double,
+        timeout: Double = Shape.defaultBooleanTimeout
+    ) -> Shape? {
         subtracting(other, fuzzyValue: tolerance, timeout: timeout)
     }
 
@@ -3041,8 +3305,10 @@ extension Shape {
     ///   ``fused(with:tolerance:timeout:)``'s doc comment for what changed underneath, including
     ///   the **Warning** there: an existing caller not passing `timeout:` now silently gets `nil`
     ///   after 120s instead of running unbounded, exactly as before.
-    public func intersected(with other: Shape, tolerance: Double,
-                             timeout: Double = Shape.defaultBooleanTimeout) -> Shape? {
+    public func intersected(
+        with other: Shape, tolerance: Double,
+        timeout: Double = Shape.defaultBooleanTimeout
+    ) -> Shape? {
         intersection(other, fuzzyValue: tolerance, timeout: timeout)
     }
 
@@ -3086,8 +3352,10 @@ extension Shape {
     ///   ``fused(with:tolerance:timeout:)``'s doc comment, including the **Warning** there: an
     ///   existing caller not passing `timeout:` now silently gets `nil` after 120s instead of
     ///   running unbounded, exactly as before.
-    public func fused(with other: Shape, glue: GlueMode,
-                       timeout: Double = Shape.defaultBooleanTimeout) -> Shape? {
+    public func fused(
+        with other: Shape, glue: GlueMode,
+        timeout: Double = Shape.defaultBooleanTimeout
+    ) -> Shape? {
         union(other, glue: glue.asBooleanGlue, timeout: timeout)
     }
 
@@ -3097,8 +3365,10 @@ extension Shape {
     ///   ``fused(with:glue:timeout:)``'s doc comment, including the **Warning** on
     ///   ``fused(with:tolerance:timeout:)``: an existing caller not passing `timeout:` now
     ///   silently gets `nil` after 120s instead of running unbounded, exactly as before.
-    public func subtracted(_ other: Shape, glue: GlueMode,
-                            timeout: Double = Shape.defaultBooleanTimeout) -> Shape? {
+    public func subtracted(
+        _ other: Shape, glue: GlueMode,
+        timeout: Double = Shape.defaultBooleanTimeout
+    ) -> Shape? {
         subtracting(other, glue: glue.asBooleanGlue, timeout: timeout)
     }
 
@@ -3108,8 +3378,10 @@ extension Shape {
     ///   ``fused(with:glue:timeout:)``'s doc comment, including the **Warning** on
     ///   ``fused(with:tolerance:timeout:)``: an existing caller not passing `timeout:` now
     ///   silently gets `nil` after 120s instead of running unbounded, exactly as before.
-    public func intersected(with other: Shape, glue: GlueMode,
-                             timeout: Double = Shape.defaultBooleanTimeout) -> Shape? {
+    public func intersected(
+        with other: Shape, glue: GlueMode,
+        timeout: Double = Shape.defaultBooleanTimeout
+    ) -> Shape? {
         intersection(other, glue: glue.asBooleanGlue, timeout: timeout)
     }
 }
@@ -3125,7 +3397,9 @@ extension Shape {
 
     /// Offset a wire on a plane.
     public func offsetWireOnPlane(distance: Double, joinType: OffsetJoinType = .arc) -> Shape? {
-        guard let ref = OCCTOffsetWireOnPlane(handle, distance, joinType.rawValue) else { return nil }
+        guard let ref = OCCTOffsetWireOnPlane(handle, distance, joinType.rawValue) else {
+            return nil
+        }
         return Shape(handle: ref)
     }
 
@@ -3138,16 +3412,21 @@ extension Shape {
 
 extension Shape {
     /// Check shape validity for boolean operations (small edges, self-interference).
-    public func isBooleanValid(testSmallEdges: Bool = true, testSelfInterference: Bool = true) -> Bool {
+    public func isBooleanValid(testSmallEdges: Bool = true, testSelfInterference: Bool = true)
+        -> Bool
+    {
         OCCTShapeBooleanCheckSingle(handle, testSmallEdges, testSelfInterference)
     }
 
     /// Check if two shapes are valid for a boolean operation.
     /// Operation: 0=unknown, 1=common, 2=fuse, 3=cut, 4=section.
-    public func isBooleanValidWith(_ other: Shape, operation: Int32 = 0,
-                                    testSmallEdges: Bool = true,
-                                    testSelfInterference: Bool = true) -> Bool {
-        OCCTShapeBooleanCheckPair(handle, other.handle, operation, testSmallEdges, testSelfInterference)
+    public func isBooleanValidWith(
+        _ other: Shape, operation: Int32 = 0,
+        testSmallEdges: Bool = true,
+        testSelfInterference: Bool = true
+    ) -> Bool {
+        OCCTShapeBooleanCheckPair(
+            handle, other.handle, operation, testSmallEdges, testSelfInterference)
     }
 }
 
@@ -3210,7 +3489,9 @@ extension Shape {
             guard let baseAddress = buf.baseAddress else { return nil }
             // Need to cast from UnsafePointer<OCCTShapeRef?> to UnsafePointer<OCCTShapeRef>
             let ptr = UnsafeRawPointer(baseAddress).assumingMemoryBound(to: OCCTShapeRef.self)
-            guard let result = OCCTShapeDefeature(handle, ptr, Int32(faces.count)) else { return nil }
+            guard let result = OCCTShapeDefeature(handle, ptr, Int32(faces.count)) else {
+                return nil
+            }
             return Shape(handle: result)
         }
     }
@@ -3261,32 +3542,47 @@ extension Shape.History {
 
 extension Shape {
     /// Compute section between two shapes with approximation and pcurve options.
-    public static func sectionWithOptions(_ shape1: Shape, _ shape2: Shape,
-                                           approximation: Bool = false,
-                                           computePCurve1: Bool = false,
-                                           computePCurve2: Bool = false) -> Shape? {
-        guard let h = OCCTShapeSectionWithOptions(shape1.handle, shape2.handle,
-                                                    approximation, computePCurve1, computePCurve2) else { return nil }
+    public static func sectionWithOptions(
+        _ shape1: Shape, _ shape2: Shape,
+        approximation: Bool = false,
+        computePCurve1: Bool = false,
+        computePCurve2: Bool = false
+    ) -> Shape? {
+        guard
+            let h = OCCTShapeSectionWithOptions(
+                shape1.handle, shape2.handle,
+                approximation, computePCurve1, computePCurve2)
+        else { return nil }
         return Shape(handle: h)
     }
 
     /// Get the ancestor face on shape1 for a section edge.
-    public static func sectionAncestorFaceOn1(_ shape1: Shape, _ shape2: Shape, edge: Shape,
-                                               approximation: Bool = false,
-                                               computePCurve1: Bool = false,
-                                               computePCurve2: Bool = false) -> Shape? {
-        guard let h = OCCTSectionAncestorFaceOn1(shape1.handle, shape2.handle, edge.handle,
-                                                    approximation, computePCurve1, computePCurve2) else { return nil }
+    public static func sectionAncestorFaceOn1(
+        _ shape1: Shape, _ shape2: Shape, edge: Shape,
+        approximation: Bool = false,
+        computePCurve1: Bool = false,
+        computePCurve2: Bool = false
+    ) -> Shape? {
+        guard
+            let h = OCCTSectionAncestorFaceOn1(
+                shape1.handle, shape2.handle, edge.handle,
+                approximation, computePCurve1, computePCurve2)
+        else { return nil }
         return Shape(handle: h)
     }
 
     /// Get the ancestor face on shape2 for a section edge.
-    public static func sectionAncestorFaceOn2(_ shape1: Shape, _ shape2: Shape, edge: Shape,
-                                               approximation: Bool = false,
-                                               computePCurve1: Bool = false,
-                                               computePCurve2: Bool = false) -> Shape? {
-        guard let h = OCCTSectionAncestorFaceOn2(shape1.handle, shape2.handle, edge.handle,
-                                                    approximation, computePCurve1, computePCurve2) else { return nil }
+    public static func sectionAncestorFaceOn2(
+        _ shape1: Shape, _ shape2: Shape, edge: Shape,
+        approximation: Bool = false,
+        computePCurve1: Bool = false,
+        computePCurve2: Bool = false
+    ) -> Shape? {
+        guard
+            let h = OCCTSectionAncestorFaceOn2(
+                shape1.handle, shape2.handle, edge.handle,
+                approximation, computePCurve1, computePCurve2)
+        else { return nil }
         return Shape(handle: h)
     }
 }
