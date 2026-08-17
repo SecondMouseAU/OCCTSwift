@@ -760,7 +760,7 @@ Cross product of two 2D vectors (scalar Z component).
 public static func vector2DCross(a: SIMD2<Double>, b: SIMD2<Double>) -> Double
 ```
 
-- **OCCT:** `gp_Vec2d::Crossed`
+- **OCCT:** Inline arithmetic `ax * by - ay * bx` via `OCCTVector2DCross` (no `gp_Vec2d` constructed).
 - **Example:**
   ```swift
   let z = Shape.vector2DCross(a: SIMD2(1, 0), b: SIMD2(0, 1))  // 1.0
@@ -776,7 +776,7 @@ Dot product of two 2D vectors.
 public static func vector2DDot(a: SIMD2<Double>, b: SIMD2<Double>) -> Double
 ```
 
-- **OCCT:** `gp_Vec2d::Dot`
+- **OCCT:** Inline arithmetic `ax * bx + ay * by` via `OCCTVector2DDot` (no `gp_Vec2d` constructed).
 - **Example:**
   ```swift
   let d = Shape.vector2DDot(a: SIMD2(1, 0), b: SIMD2(0.5, 0.5))

@@ -366,7 +366,7 @@ public func translated(from: SIMD3<Double>, to: SIMD3<Double>) -> Shape?
 
 - **Parameters:** `from` — start of the translation vector; `to` — end of the translation vector.
 - **Returns:** Translated shape, or `nil` on failure.
-- **OCCT:** `gp_Vec` translation via `OCCTShapeTranslateByPoints`.
+- **OCCT:** `GC_MakeTranslation(gp_Pnt, gp_Pnt)` → `gp_Trsf` + `BRepBuilderAPI_Transform`, via `OCCTShapeTranslateByPoints`.
 
 ---
 
@@ -1194,7 +1194,7 @@ public static func faceFromCylinder(
 
 - **Parameters:** `origin` — axis origin; `axis` — axis direction; `radius` — cylinder radius; `uRange` — angular bounds (radians); `vRange` — axial bounds; `tolerance` — vertex tolerance.
 - **Returns:** Face shape, or `nil` on failure.
-- **OCCT:** `BRepLib_MakeFace(gp_Cylinder, ...)` via `OCCTBRepLibMakeFaceFromCylinder`.
+- **OCCT:** `BRepLib_MakeFace(Geom_CylindricalSurface, ...)` via `OCCTBRepLibMakeFaceFromCylinder` (builds `Geom_CylindricalSurface(gp_Ax2, radius)`; not `gp_Cylinder`).
 - **Note:** `Shape.faceFromCylinder(origin:axis:radius:uBounds:vBounds:tolerance:)` (see
   "Document-Mesh-Fixing") now delegates to this overload (#841) — see the sibling
   `faceFromPlane` note above.
