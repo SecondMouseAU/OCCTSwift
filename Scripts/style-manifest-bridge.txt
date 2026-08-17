@@ -22,7 +22,6 @@ Sources/OCCTBridge/src/OCCTBridge_Curve3D.mm
 Sources/OCCTBridge/src/OCCTBridge_Document.mm
 Sources/OCCTBridge/src/OCCTBridge_Healing.mm
 Sources/OCCTBridge/src/OCCTBridge_IO.mm
-Sources/OCCTBridge/src/OCCTBridge_Mesh.mm
 Sources/OCCTBridge/src/OCCTBridge_ProjLib_NLPlate.mm
 Sources/OCCTBridge/src/OCCTBridge_Properties.mm
 Sources/OCCTBridge/src/OCCTBridge_Spatial.mm
