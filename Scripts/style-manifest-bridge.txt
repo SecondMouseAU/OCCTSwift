@@ -5,7 +5,6 @@
 # listed file without removing it fails Scripts/check-style-manifest.py. See
 # okf/policies/code-style.md.
 Sources/OCCTBridge/include/OCCTBridge_AIS.h
-Sources/OCCTBridge/include/OCCTBridge_BRepGraph.h
 Sources/OCCTBridge/include/OCCTBridge_Curve3D.h
 Sources/OCCTBridge/include/OCCTBridge_Document.h
 Sources/OCCTBridge/include/OCCTBridge_Geom2d.h

@@ -2194,9 +2194,9 @@ bool OCCTIntCurvesFaceShapeIntersectNearest(OCCTShapeRef shape,
 }
 
 // MARK: - TopTrans_SurfaceTransition (v0.67)
-// --- TopTrans_SurfaceTransition ---
 
 // #793: use shared occtOrientationFromInt from OCCTBridge_Internal.h
+// --- TopTrans_SurfaceTransition ---
 
 void OCCTTopTransSurfaceTransition(double  tgtX,
                                    double  tgtY,
@@ -3743,15 +3743,7 @@ int32_t OCCTShapeHashCode(OCCTShapeRef shape)
 
 void OCCTShapeClean(OCCTShapeRef shape)
 {
-  if (!shape)
-    return;
-  try
-  {
-    BRepTools::Clean(shape->shape);
-  }
-  catch (...)
-  {
-  }
+  OCCTBRepToolsCleanTriangulation(shape);
 }
 
 void OCCTShapeCleanGeometry(OCCTShapeRef shape)
@@ -3782,15 +3774,7 @@ void OCCTShapeRemoveUnusedPCurves(OCCTShapeRef shape)
 
 void OCCTShapeUpdate(OCCTShapeRef shape)
 {
-  if (!shape)
-    return;
-  try
-  {
-    BRepTools::Update(shape->shape);
-  }
-  catch (...)
-  {
-  }
+  OCCTBRepToolsUpdate(shape);
 }
 
 bool OCCTBRepLibCheckSameRange(OCCTShapeRef edge)

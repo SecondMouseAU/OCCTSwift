@@ -2028,16 +2028,7 @@ void OCCTBRepGraphMeshAppendCachedTriangulation(OCCTBRepGraphRef g,
                                                 int32_t          faceIndex,
                                                 int32_t          triRepId)
 {
-  if (!g || triRepId < 0 || (size_t)triRepId >= g->triReps.size())
-    return;
-  try
-  {
-    g->graph.Mesh().Editor().Faces().SetCachedTriangulation(BRepGraph_FaceId(faceIndex),
-                                                            g->triReps[triRepId]);
-  }
-  catch (...)
-  {
-  }
+  OCCTBRepGraphSetFaceTriangulationRep(g, faceIndex, triRepId);
 }
 
 void OCCTBRepGraphMeshSetCachedActiveIndex(OCCTBRepGraphRef g,
