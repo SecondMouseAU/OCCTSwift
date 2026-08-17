@@ -420,17 +420,6 @@ extension Shape {
             withContact: withContact, withCorrection: withCorrection, solid: solid)
     }
 
-    /// Create a pipe shell with transition mode control.
-    ///
-    /// Controls how the profile transitions at discontinuities (corners) in the spine.
-    ///
-    /// - Parameters:
-    ///   - spine: Path wire along which to sweep
-    ///   - profile: Profile wire to sweep
-    ///   - mode: Sweep mode controlling profile orientation
-    ///   - transition: How to handle transitions at spine corners
-    ///   - solid: If true, create a solid; if false, create a shell
-    /// - Returns: Swept shape, or nil on failure
     // MARK: - Variable-Section Sweep (v0.21.0)
 
     /// Create a pipe shell with a law function controlling cross-section scaling.

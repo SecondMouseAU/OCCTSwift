@@ -454,6 +454,27 @@ The exception was taken because:
 - Named in [`CHANGELOG.md`](CHANGELOG.md) with the measurement, and to be named in the release
   notes.
 
+#### v2.0.0: six curvature getters return `Double?` instead of `Double` (#595)
+
+**Six compile errors.** The following curvature getters used to return `Double`, with `0` meaning "undefined" (cusp, degenerate, etc.). They now return `Double?`, where `nil` means undefined and a value means defined. This is a compile error for any caller — the migration is to unwrap or provide a default:
+
+| Break | Issue | What a caller does |
+|---|---|---|
+| `Curve2D.curvature(at:)` returns `Double?` | #595 | `if let k = curve.curvature(at: t) { … }` or `curve.curvature(at: t) ?? 0` |
+| `Curve3D.curvature(at:)` returns `Double?` | #595 | `if let k = curve.curvature(at: t) { … }` or `curve.curvature(at: t) ?? 0` |
+| `Curve3D.localCurvature(at:)` returns `Double?` | #595 | `if let k = curve.localCurvature(at: t) { … }` or `curve.localCurvature(at: t) ?? 0` |
+| `Surface.gaussianCurvature(atU:v:)` returns `Double?` | #595 | `if let k = surface.gaussianCurvature(atU: u, v: v) { … }` or `surface.gaussianCurvature(atU: u, v: v) ?? 0` |
+| `Surface.meanCurvature(atU:v:)` returns `Double?` | #595 | `if let k = surface.meanCurvature(atU: u, v: v) { … }` or `surface.meanCurvature(atU: u, v: v) ?? 0` |
+| `Shape.edgeCurvatureLP(at:)` returns `Double?` | #595 | `if let k = shape.edgeCurvatureLP(at: edge) { … }` or `shape.edgeCurvatureLP(at: edge) ?? 0` |
+
+The exception was taken because:
+
+- **This is a correctness fix, not a cosmetic change.** The old API spelled "undefined" as `0`, which is a valid curvature (straight line, flat surface). A caller checking `k == 0` could not distinguish "flat" from "undefined at a cusp" — the two are geometrically opposite. Returning `nil` for undefined makes the distinction observable at compile time.
+- **There is no spelling in which both survive.** Swift cannot overload on return type alone (`Double` vs `Double?`); a deprecation attribute has nothing to attach to. The break is unavoidable and loud, which is the intended outcome.
+- **The default fallback `?? 0` preserves the old numeric behaviour exactly** for callers who want it. A caller who knows their geometry never produces undefined curvature (e.g. circles, ellipses, cylinders) can coalesce `nil` to `0` without semantic change.
+- **This completed a family sweep.** #495, #490, #520 and #639 already moved related geometry queries to optionals; #595 was the last batch. The milestone `v2.0.0` on the issue confirms it was intended for this release.
+- Named in [`CHANGELOG.md`](CHANGELOG.md) with the before/after table, and to be named in the release notes.
+
 #### Recorded exception: v1.17.0 (2026-07-29)
 
 **v1.17.0 is a minor release that breaks source compatibility in two places.** It is the only exception to the rule above, and it is recorded here rather than left for a consumer to discover at the compiler:
