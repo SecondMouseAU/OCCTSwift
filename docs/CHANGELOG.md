@@ -19,6 +19,23 @@ each named with its migration in [`SEMVER.md`](SEMVER.md#v200).
 
 ## Unreleased
 
+### Kernel rebuilt: `v3.0.0-kernel.1` carries seventeen patches, up from fifteen
+
+`Package.swift` now pins the `v3.0.0-kernel.1` kernel pre-release (`V8_0_1` plus carried patches
+`0010`-`0012` and `0014`-`0027`), replacing the v2.0.0 asset's fifteen. The two additions are
+`0026` (#905, `BRepOffsetAPI_ThruSections` refuses a loft whose non-planar extremity could not be
+capped, instead of marking it `Closed(true)`) and `0027` (#913, `CreateSmoothed` refuses mismatched
+section edge counts under `checkCompatibility(false)` instead of overrunning a fixed-stride array).
+Both fixes previously existed only in the source tree, so a consumer installing the package received
+neither, and neither was exercised by any CI job. No public API change.
+
+Three verification facts are recorded in `Package.swift` rather than left to be rediscovered.
+`0027` is the first carried patch a green `build-and-test` cannot vouch for, because its only test
+is `OCCTSWIFT_LOCAL`-gated and so never runs in CI. The suite total is blind to that: the same run
+reports 5614 tests whether the test executes or is skipped, so only the per-test line distinguishes
+them. And a kernel pre-release tag pointing at a commit that pins its *predecessor* is correct, not
+a mistake to be fixed, because the alternative ordering is circular.
+
 ### `ThruSectionsBuilder.setCriteriumWeight` rejects negative weights (#919)
 
 `setCriteriumWeight(w1:w2:w3:)` now returns `Bool` indicating whether all three weights are

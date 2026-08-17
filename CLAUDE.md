@@ -7,9 +7,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 OCCTSwift is a comprehensive Swift wrapper for OpenCASCADE Technology (OCCT) 8.0.1. It exposes B-Rep solid modeling capabilities to Swift for macOS (arm64, v12+) and iOS (arm64, v15+) via a three-layer architecture: Swift public API → Objective-C++ bridge (C functions) → OCCT C++ library. Uses Swift 6 language mode (strict concurrency).
 
 **One OCCT version is in play.** `Scripts/build-occt.sh` builds `V8_0_1` and `Package.swift` pins
-the **`v2.0.0-kernel.3` pre-release**, which is that same `V8_0_1` plus the fifteen carried patches
-`0010`-`0012` and `0014`-`0025`. A clean checkout with no local `Libraries/` now gets the right
-kernel, and `ci.yml`'s macOS job is a real signal again.
+the **`v3.0.0-kernel.1` kernel pre-release**, which is that same `V8_0_1` plus the seventeen carried
+patches `0010`-`0012` and `0014`-`0027`. A clean checkout with no local `Libraries/` now gets the
+right kernel, and `ci.yml`'s macOS job is a real signal again.
 
 **Check the count against `Scripts/patches/` before trusting it.** The pin holds whatever was in the
 tree when the asset was built, and patches land after. Any patch present in `Scripts/patches/` but
@@ -18,7 +18,10 @@ the asset rather than building from source. That is #585's failure shape, so it 
 `ls Scripts/patches/*.patch | wc -l` against the number in this paragraph. If they differ, the
 difference is the untested set, and any claim that a fix in it "is in the kernel" is unevidenced
 until a rebuild. `v2.0.0-kernel.1` held eleven against a tree of fourteen, and `kernel.2` fourteen against
-fifteen within minutes of being published, both for exactly this reason (#512).
+fifteen within minutes of being published, both for exactly this reason (#512). **It happened again
+on 2026-08-17**, and inside a single session: the v2.0.0 asset held fifteen while `0026` (#905) and
+`0027` (#913) sat in `Scripts/patches/` untested by anything, and `0027` arrived on `main` partway
+through the very check that found `0026`. `v3.0.0-kernel.1` is the rebuild that closed it.
 
 **The count check is necessary and not sufficient.** At the v2.0.0 release check the count agreed
 (fifteen on disk, "fifteen" in the prose) while the enumeration immediately beside it in
@@ -26,7 +29,12 @@ fifteen within minutes of being published, both for exactly this reason (#512).
 disagree silently, and the total is the one everybody reads. What settles it is matching each
 patch's own added lines against the pinned asset: every patch that touches a shipped `.hxx` can be
 checked directly against `OCCT.xcframework/*/Headers/`, and the rest need either a green
-`build-and-test` (which resolves the asset, not a local build) or a reproducer run. Two patches,
+`build-and-test` (which resolves the asset, not a local build) or a reproducer run. A `.cxx`-only
+patch that adds a distinctive **string literal** is a third option and the cheapest: `0026`'s throw
+message was confirmed with `strings` in all three slice archives. `0027` shows the limit of that
+trick, since it signals through `myStatus` and adds no literal, so nothing in the binary can be
+grepped for it; it is held instead by an `OCCTSWIFT_LOCAL=1`-gated test that **does not run in CI at
+all**, which means a green `build-and-test` is not evidence for it and never was. Two patches,
 `0018` and `0023`, are reachable by neither, because the bridge stops both defects before OCCT sees
 them; they are the only carried patches with no CI coverage of any kind, and `Package.swift` says so
 next to them.
