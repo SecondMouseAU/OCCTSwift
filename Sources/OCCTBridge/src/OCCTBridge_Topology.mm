@@ -2194,24 +2194,9 @@ bool OCCTIntCurvesFaceShapeIntersectNearest(OCCTShapeRef shape,
 }
 
 // MARK: - TopTrans_SurfaceTransition (v0.67)
-// --- TopTrans_SurfaceTransition ---
 
-static TopAbs_Orientation intToOrientation(int32_t o)
-{
-  switch (o)
-  {
-    case 0:
-      return TopAbs_FORWARD;
-    case 1:
-      return TopAbs_REVERSED;
-    case 2:
-      return TopAbs_INTERNAL;
-    case 3:
-      return TopAbs_EXTERNAL;
-    default:
-      return TopAbs_FORWARD;
-  }
-}
+// #793: use shared occtOrientationFromInt from OCCTBridge_Internal.h
+// --- TopTrans_SurfaceTransition ---
 
 void OCCTTopTransSurfaceTransition(double  tgtX,
                                    double  tgtY,
@@ -2234,8 +2219,8 @@ void OCCTTopTransSurfaceTransition(double  tgtX,
     st.Reset(gp_Dir(tgtX, tgtY, tgtZ), gp_Dir(normX, normY, normZ));
     st.Compare(tolerance,
                gp_Dir(surfNormX, surfNormY, surfNormZ),
-               intToOrientation(surfOrientation),
-               intToOrientation(boundOrientation));
+               occtOrientationFromInt(surfOrientation),
+               occtOrientationFromInt(boundOrientation));
     *outStateBefore = (int32_t)st.StateBefore();
     *outStateAfter  = (int32_t)st.StateAfter();
   }
@@ -2292,8 +2277,8 @@ void OCCTTopTransSurfaceTransitionCurvature(double  tgtX,
                gp_Dir(surfMinDX, surfMinDY, surfMinDZ),
                surfMaxCurv,
                surfMinCurv,
-               intToOrientation(surfOrientation),
-               intToOrientation(boundOrientation));
+               occtOrientationFromInt(surfOrientation),
+               occtOrientationFromInt(boundOrientation));
     *outStateBefore = (int32_t)st.StateBefore();
     *outStateAfter  = (int32_t)st.StateAfter();
   }
@@ -2331,8 +2316,8 @@ void OCCTTopTransCurveTransition(double   tgtX,
                gp_Dir(tangX, tangY, tangZ),
                gp_Dir(normX, normY, normZ),
                curvature,
-               intToOrientation(surfOrientation),
-               intToOrientation(boundOrientation));
+               occtOrientationFromInt(surfOrientation),
+               occtOrientationFromInt(boundOrientation));
     *outStateBefore = (int32_t)ct.StateBefore();
     *outStateAfter  = (int32_t)ct.StateAfter();
   }
@@ -2371,8 +2356,8 @@ void OCCTTopTransCurveTransitionWithCurvature(double   tgtX,
                gp_Dir(tangX, tangY, tangZ),
                gp_Dir(normX, normY, normZ),
                surfCurv,
-               intToOrientation(surfOrientation),
-               intToOrientation(boundOrientation));
+               occtOrientationFromInt(surfOrientation),
+               occtOrientationFromInt(boundOrientation));
     *outStateBefore = (int32_t)ct.StateBefore();
     *outStateAfter  = (int32_t)ct.StateAfter();
   }
@@ -3625,7 +3610,7 @@ void OCCTShapeSetOrientation(OCCTShapeRef shape, int32_t orientation)
 {
   if (!shape)
     return;
-  shape->shape.Orientation(static_cast<TopAbs_Orientation>(orientation));
+  shape->shape.Orientation(occtOrientationFromInt(orientation));
 }
 
 OCCTShapeRef OCCTShapeReversed(OCCTShapeRef shape)
@@ -3667,7 +3652,7 @@ OCCTShapeRef OCCTShapeComposed(OCCTShapeRef shape, int32_t orientation)
   try
   {
     auto result   = new OCCTShape();
-    result->shape = shape->shape.Composed(static_cast<TopAbs_Orientation>(orientation));
+    result->shape = shape->shape.Composed(occtOrientationFromInt(orientation));
     return result;
   }
   catch (...)
@@ -4224,7 +4209,7 @@ OCCTShapeRef OCCTShapeOriented(OCCTShapeRef shape, int32_t orientation)
   try
   {
     OCCTShape* result = new OCCTShape();
-    result->shape     = shape->shape.Oriented(static_cast<TopAbs_Orientation>(orientation));
+    result->shape     = shape->shape.Oriented(occtOrientationFromInt(orientation));
     return result;
   }
   catch (...)

@@ -20,9 +20,7 @@ Sources/OCCTBridge/include/OCCTBridge.h
 Sources/OCCTBridge/src/OCCTBridge_AIS.mm
 Sources/OCCTBridge/src/OCCTBridge_Curve3D.mm
 Sources/OCCTBridge/src/OCCTBridge_Document.mm
-Sources/OCCTBridge/src/OCCTBridge_Geom2d.mm
 Sources/OCCTBridge/src/OCCTBridge_Healing.mm
-Sources/OCCTBridge/src/OCCTBridge_Internal.h
 Sources/OCCTBridge/src/OCCTBridge_IO.mm
 Sources/OCCTBridge/src/OCCTBridge_Mesh.mm
 Sources/OCCTBridge/src/OCCTBridge_ProjLib_NLPlate.mm
