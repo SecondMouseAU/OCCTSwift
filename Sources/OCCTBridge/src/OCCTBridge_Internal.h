@@ -66,7 +66,7 @@
 #include <gp_Dir.hxx>
 #include <gp_Pnt.hxx>
 #include <TopExp.hxx>
-#include <TopExp_Explorer.hxx>  // #613: occtForEachOrientedFace's per-occurrence walk
+#include <TopExp_Explorer.hxx> // #613: occtForEachOrientedFace's per-occurrence walk
 #include <TopoDS.hxx>
 #include <TopTools_IndexedMapOfShape.hxx>
 #include <TopTools_ListOfShape.hxx>
@@ -78,142 +78,187 @@
 #include <BRepLProp_SLProps.hxx>
 #include <BRepLProp_CLProps.hxx>
 #include <Precision.hxx>
-#include <GCPnts_AbscissaPoint.hxx>   // occtAdaptorLengthBetween, the shared ranged arc length
-#include <CPnts_AbscissaPoint.hxx>   // occtArcQuadrature's per-span integrator (#603)
-#include <TColStd_Array1OfReal.hxx>  // the GeomAbs_CN interval array the same helpers walk
+#include <GCPnts_AbscissaPoint.hxx> // occtAdaptorLengthBetween, the shared ranged arc length
+#include <CPnts_AbscissaPoint.hxx>  // occtArcQuadrature's per-span integrator (#603)
+#include <TColStd_Array1OfReal.hxx> // the GeomAbs_CN interval array the same helpers walk
 #include <cmath>
 
 // === Foundation struct definitions ===
 
-struct OCCTShape {
-    TopoDS_Shape shape;
+struct OCCTShape
+{
+  TopoDS_Shape shape;
 
-    OCCTShape() {}
-    OCCTShape(const TopoDS_Shape& s) : shape(s) {}
+  OCCTShape() {}
+
+  OCCTShape(const TopoDS_Shape& s)
+      : shape(s)
+  {
+  }
 };
 
-struct OCCTWire {
-    TopoDS_Wire wire;
+struct OCCTWire
+{
+  TopoDS_Wire wire;
 
-    OCCTWire() {}
-    OCCTWire(const TopoDS_Wire& w) : wire(w) {}
+  OCCTWire() {}
+
+  OCCTWire(const TopoDS_Wire& w)
+      : wire(w)
+  {
+  }
 };
 
-struct OCCTEdge {
-    TopoDS_Edge edge;
+struct OCCTEdge
+{
+  TopoDS_Edge edge;
 
-    OCCTEdge() {}
-    OCCTEdge(const TopoDS_Edge& e) : edge(e) {}
+  OCCTEdge() {}
+
+  OCCTEdge(const TopoDS_Edge& e)
+      : edge(e)
+  {
+  }
 };
 
-struct OCCTFace {
-    TopoDS_Face face;
+struct OCCTFace
+{
+  TopoDS_Face face;
 
-    OCCTFace() {}
-    OCCTFace(const TopoDS_Face& f) : face(f) {}
+  OCCTFace() {}
+
+  OCCTFace(const TopoDS_Face& f)
+      : face(f)
+  {
+  }
 };
 
-struct OCCTMesh {
-    std::vector<float> vertices;
-    std::vector<float> normals;
-    std::vector<uint32_t> indices;
-    std::vector<int32_t> faceIndices;     // Source B-Rep face index per triangle
-    std::vector<float> triangleNormals;   // Per-triangle normals (nx,ny,nz per triangle)
+struct OCCTMesh
+{
+  std::vector<float>    vertices;
+  std::vector<float>    normals;
+  std::vector<uint32_t> indices;
+  std::vector<int32_t>  faceIndices;     // Source B-Rep face index per triangle
+  std::vector<float>    triangleNormals; // Per-triangle normals (nx,ny,nz per triangle)
 };
 
 // XDE Document for assembly structure, colors, materials (v0.6.0)
-struct OCCTDocument {
-    // #371: a private instance, NOT XCAFApp_Application::GetApplication() -- that singleton is
-    // shared process-wide and was the root cause of #344/#349/#353 (CDF_Directory/driver-cache/
-    // metadata-table races), per upstream maintainer feedback on OCCT#1396: OCCT's own guidance
-    // since 7.1 is a private TDocStd_Application per caller, not the shared singleton.
-    Handle(TDocStd_Application) app;
-    Handle(TDocStd_Document) doc;
-    Handle(XCAFDoc_ShapeTool) shapeTool;
-    Handle(XCAFDoc_ColorTool) colorTool;
-    Handle(XCAFDoc_VisMaterialTool) materialTool;
-    std::vector<TDF_Label> labels;  // Label registry (index = labelId)
-    // #363: per-document, not a shared process-wide static (see docNamingScopeMutex's
-    // old comment / issue #361) -- TNaming_Scope's own NCollection_Map<TDF_Label>
-    // myValid has no internal synchronization, and (independent of the race) sharing
-    // one instance across every document meant one document's valid-label set could
-    // leak into another's. Each OCCTDocument owns its own scope instead; the WithValid
-    // ctor arg matches the shared instance's prior behavior (map-defined scope).
-    TNaming_Scope namingScope{true};
+struct OCCTDocument
+{
+  // #371: a private instance, NOT XCAFApp_Application::GetApplication() -- that singleton is
+  // shared process-wide and was the root cause of #344/#349/#353 (CDF_Directory/driver-cache/
+  // metadata-table races), per upstream maintainer feedback on OCCT#1396: OCCT's own guidance
+  // since 7.1 is a private TDocStd_Application per caller, not the shared singleton.
+  Handle(TDocStd_Application)     app;
+  Handle(TDocStd_Document)        doc;
+  Handle(XCAFDoc_ShapeTool)       shapeTool;
+  Handle(XCAFDoc_ColorTool)       colorTool;
+  Handle(XCAFDoc_VisMaterialTool) materialTool;
+  std::vector<TDF_Label>          labels; // Label registry (index = labelId)
+  // #363: per-document, not a shared process-wide static (see docNamingScopeMutex's
+  // old comment / issue #361) -- TNaming_Scope's own NCollection_Map<TDF_Label>
+  // myValid has no internal synchronization, and (independent of the race) sharing
+  // one instance across every document meant one document's valid-label set could
+  // leak into another's. Each OCCTDocument owns its own scope instead; the WithValid
+  // ctor arg matches the shared instance's prior behavior (map-defined scope).
+  TNaming_Scope namingScope{true};
 
-    OCCTDocument() {
-        app = new TDocStd_Application();
-    }
+  OCCTDocument() { app = new TDocStd_Application(); }
 
-    // Get or register a label, returns labelId
-    int64_t registerLabel(const TDF_Label& label) {
-        for (size_t i = 0; i < labels.size(); i++) {
-            if (labels[i].IsEqual(label)) {
-                return static_cast<int64_t>(i);
-            }
-        }
-        labels.push_back(label);
-        return static_cast<int64_t>(labels.size() - 1);
+  // Get or register a label, returns labelId
+  int64_t registerLabel(const TDF_Label& label)
+  {
+    for (size_t i = 0; i < labels.size(); i++)
+    {
+      if (labels[i].IsEqual(label))
+      {
+        return static_cast<int64_t>(i);
+      }
     }
+    labels.push_back(label);
+    return static_cast<int64_t>(labels.size() - 1);
+  }
 
-    // Get label by ID
-    TDF_Label getLabel(int64_t labelId) const {
-        if (labelId < 0 || labelId >= static_cast<int64_t>(labels.size())) {
-            return TDF_Label();
-        }
-        return labels[labelId];
+  // Get label by ID
+  TDF_Label getLabel(int64_t labelId) const
+  {
+    if (labelId < 0 || labelId >= static_cast<int64_t>(labels.size()))
+    {
+      return TDF_Label();
     }
+    return labels[labelId];
+  }
 };
 
 // 2D Drawing from HLR projection (v0.6.0)
-struct OCCTDrawing {
-    TopoDS_Shape visibleSharp;
-    TopoDS_Shape visibleSmooth;
-    TopoDS_Shape visibleOutline;
-    TopoDS_Shape hiddenSharp;
-    TopoDS_Shape hiddenSmooth;
-    TopoDS_Shape hiddenOutline;
+struct OCCTDrawing
+{
+  TopoDS_Shape visibleSharp;
+  TopoDS_Shape visibleSmooth;
+  TopoDS_Shape visibleOutline;
+  TopoDS_Shape hiddenSharp;
+  TopoDS_Shape hiddenSmooth;
+  TopoDS_Shape hiddenOutline;
 };
 
 // === Geometry handle wrappers ===
 
-struct OCCTCurve3D {
-    Handle(Geom_Curve) curve;
+struct OCCTCurve3D
+{
+  Handle(Geom_Curve) curve;
 
-    OCCTCurve3D() {}
-    OCCTCurve3D(const Handle(Geom_Curve)& c) : curve(c) {}
+  OCCTCurve3D() {}
+
+  OCCTCurve3D(const Handle(Geom_Curve)& c)
+      : curve(c)
+  {
+  }
 };
 
-struct OCCTCurve2D {
-    Handle(Geom2d_Curve) curve;
+struct OCCTCurve2D
+{
+  Handle(Geom2d_Curve) curve;
 
-    OCCTCurve2D() {}
-    OCCTCurve2D(const Handle(Geom2d_Curve)& c) : curve(c) {}
+  OCCTCurve2D() {}
+
+  OCCTCurve2D(const Handle(Geom2d_Curve)& c)
+      : curve(c)
+  {
+  }
 };
 
-struct OCCTSurface {
-    Handle(Geom_Surface) surface;
+struct OCCTSurface
+{
+  Handle(Geom_Surface) surface;
 
-    OCCTSurface() {}
-    OCCTSurface(const Handle(Geom_Surface)& s) : surface(s) {}
+  OCCTSurface() {}
+
+  OCCTSurface(const Handle(Geom_Surface)& s)
+      : surface(s)
+  {
+  }
 };
 
 // === Poly handle opaques ===
 
-struct Poly_TriangulationOpaque {
-    Handle(Poly_Triangulation) triangulation;
+struct Poly_TriangulationOpaque
+{
+  Handle(Poly_Triangulation) triangulation;
 };
 
-struct Poly_Polygon3DOpaque {
-    Handle(Poly_Polygon3D) polygon;
+struct Poly_Polygon3DOpaque
+{
+  Handle(Poly_Polygon3D) polygon;
 };
 
-struct Poly_Polygon2DOpaque {
-    Handle(Poly_Polygon2D) polygon;
+struct Poly_Polygon2DOpaque
+{
+  Handle(Poly_Polygon2D) polygon;
 };
 
-struct Poly_PolygonOnTriangulationOpaque {
-    Handle(Poly_PolygonOnTriangulation) polygon;
+struct Poly_PolygonOnTriangulationOpaque
+{
+  Handle(Poly_PolygonOnTriangulation) polygon;
 };
 
 // === History ===
@@ -221,8 +266,9 @@ struct Poly_PolygonOnTriangulationOpaque {
 // Wrapper for a BRepTools_History handle. Shared rather than area-local because
 // two areas exchange it: the modeling area synthesizes one from a retained
 // builder, and the BRepGraph area absorbs it into a graph's history layer.
-struct OCCTHistoryStorage {
-    Handle(BRepTools_History) history;
+struct OCCTHistoryStorage
+{
+  Handle(BRepTools_History) history;
 };
 
 // === Mutex helpers ===
@@ -231,7 +277,7 @@ struct OCCTHistoryStorage {
 // them without each ending up with its own static instance.
 
 std::recursive_mutex& occtGlobalMutex();
-std::mutex& igesMutex();
+std::mutex&           igesMutex();
 // #298: the fillet/chamfer serialization lock (occtFilletMutex) was removed in
 // v1.12.3 — the underlying OCCT non-reentrancy (STATIC_SOLIDINDEX and the blend
 // scratch) is now fixed in the pinned kernel via Scripts/patches/0003, so 3D
@@ -308,7 +354,9 @@ TopoDS_Shape occtUnifySameDomainMapped(const TopoDS_Shape& sub, BRepBuilderAPI_C
 // One-shot unify over a private copy: the whole copy/construct/Build/result sequence the
 // non-builder entry points share. Returns a null shape on failure.
 TopoDS_Shape occtUnifySameDomain(const TopoDS_Shape& shape,
-                                 bool unifyEdges, bool unifyFaces, bool concatBSplines);
+                                 bool                unifyEdges,
+                                 bool                unifyFaces,
+                                 bool                concatBSplines);
 
 // === #442/#443: multi-body shell selection ===
 //
@@ -356,10 +404,13 @@ TopoDS_Shape occtSolidBodiesToShape(const std::vector<TopoDS_Shape>& bodies);
 // GeomPlate_CurveConstraint/BRepFill_CurveConstraint as an integer order, and both reject
 // anything outside [-1, 2]. So curvature is GeomAbs_C1 (ordinal 2); GeomAbs_G2 (ordinal 3) and
 // GeomAbs_C2 (ordinal 4) always throw, whatever BRepOffsetAPI_MakeFilling.hxx claims. #430/#434.
-inline GeomAbs_Shape occtGeomAbsFromSurfaceContinuity(int32_t order) {
-    if (order <= 0) return GeomAbs_C0;   // order 0 — position
-    if (order == 1) return GeomAbs_G1;   // order 1 — position + tangency
-    return GeomAbs_C1;                   // order 2 — position + tangency + curvature
+inline GeomAbs_Shape occtGeomAbsFromSurfaceContinuity(int32_t order)
+{
+  if (order <= 0)
+    return GeomAbs_C0; // order 0 — position
+  if (order == 1)
+    return GeomAbs_G1; // order 1 — position + tangency
+  return GeomAbs_C1;   // order 2 — position + tangency + curvature
 }
 
 // `ParametricContinuity` (0=C0, 1=C1, 2=C2, 3=C3): "make every piece at least Cn". Saturates at
@@ -378,14 +429,21 @@ inline GeomAbs_Shape occtGeomAbsFromSurfaceContinuity(int32_t order) {
 //   - ShapeCustom_BSplineRestriction likewise yields a null shape above C2.
 //   - GeomAPI_PointsToBSpline/Geom2dAPI_PointsToBSpline/GeomAPI_PointsToBSplineSurface accept
 //     every value without throwing.
-inline GeomAbs_Shape occtGeomAbsFromParametricContinuity(int32_t level) {
-    switch (level) {
-        case 0:  return GeomAbs_C0;
-        case 1:  return GeomAbs_C1;
-        case 2:  return GeomAbs_C2;
-        case 3:  return GeomAbs_C3;
-        default: return level < 0 ? GeomAbs_C0 : GeomAbs_CN;
-    }
+inline GeomAbs_Shape occtGeomAbsFromParametricContinuity(int32_t level)
+{
+  switch (level)
+  {
+    case 0:
+      return GeomAbs_C0;
+    case 1:
+      return GeomAbs_C1;
+    case 2:
+      return GeomAbs_C2;
+    case 3:
+      return GeomAbs_C3;
+    default:
+      return level < 0 ? GeomAbs_C0 : GeomAbs_CN;
+  }
 }
 
 // A GeomAbs_Shape class named by its own ordinal (0=C0, 1=G1, 2=C1, 3=G2, 4=C2), which is the
@@ -396,42 +454,65 @@ inline GeomAbs_Shape occtGeomAbsFromParametricContinuity(int32_t level) {
 // no predicate above C2/G2, and asking them for C3 or CN leaves every predicate reporting true
 // (measured), i.e. the analysis silently becomes meaningless. C2 is the strictest question these
 // two classes can actually answer.
-inline GeomAbs_Shape occtGeomAbsFromAnalysisOrder(int32_t order) {
-    switch (order) {
-        case 0:  return GeomAbs_C0;
-        case 1:  return GeomAbs_G1;
-        case 2:  return GeomAbs_C1;
-        case 3:  return GeomAbs_G2;
-        case 4:  return GeomAbs_C2;
-        default: return order < 0 ? GeomAbs_C0 : GeomAbs_C2;
-    }
+inline GeomAbs_Shape occtGeomAbsFromAnalysisOrder(int32_t order)
+{
+  switch (order)
+  {
+    case 0:
+      return GeomAbs_C0;
+    case 1:
+      return GeomAbs_G1;
+    case 2:
+      return GeomAbs_C1;
+    case 3:
+      return GeomAbs_G2;
+    case 4:
+      return GeomAbs_C2;
+    default:
+      return order < 0 ? GeomAbs_C0 : GeomAbs_C2;
+  }
 }
 
 // The inverse of occtGeomAbsFromAnalysisOrder, for reporting a measured class back to Swift.
 // Returns -1 for GeomAbs_C3/GeomAbs_CN: those are outside the analysers' vocabulary, so a
 // caller seeing -1 knows the status was not one of the five classes it can interpret.
-inline int32_t occtAnalysisOrderFromGeomAbs(GeomAbs_Shape shape) {
-    switch (shape) {
-        case GeomAbs_C0: return 0;
-        case GeomAbs_G1: return 1;
-        case GeomAbs_C1: return 2;
-        case GeomAbs_G2: return 3;
-        case GeomAbs_C2: return 4;
-        default:         return -1;
-    }
+inline int32_t occtAnalysisOrderFromGeomAbs(GeomAbs_Shape shape)
+{
+  switch (shape)
+  {
+    case GeomAbs_C0:
+      return 0;
+    case GeomAbs_G1:
+      return 1;
+    case GeomAbs_C1:
+      return 2;
+    case GeomAbs_G2:
+      return 3;
+    case GeomAbs_C2:
+      return 4;
+    default:
+      return -1;
+  }
 }
 
 /// #793: int -> TopAbs_Orientation decoder (shared between BRepGraph and Topology)
 /// Both OCCTBridge_BRepGraph.mm (oriFromInt) and OCCTBridge_Topology.mm (intToOrientation)
 /// had identical copies. This is the canonical implementation.
-inline TopAbs_Orientation occtOrientationFromInt(int32_t o) {
-    switch (o) {
-        case 0: return TopAbs_FORWARD;
-        case 1: return TopAbs_REVERSED;
-        case 2: return TopAbs_INTERNAL;
-        case 3: return TopAbs_EXTERNAL;
-        default: return TopAbs_FORWARD;
-    }
+inline TopAbs_Orientation occtOrientationFromInt(int32_t o)
+{
+  switch (o)
+  {
+    case 0:
+      return TopAbs_FORWARD;
+    case 1:
+      return TopAbs_REVERSED;
+    case 2:
+      return TopAbs_INTERNAL;
+    case 3:
+      return TopAbs_EXTERNAL;
+    default:
+      return TopAbs_FORWARD;
+  }
 }
 
 // Which of the five analysis predicates an analysis order actually computes. Bit layout matches
@@ -449,15 +530,23 @@ inline TopAbs_Orientation occtOrientationFromInt(int32_t o) {
 // false positive. #495; OCCT's own header says as much ("the constructor computes the quantities
 // which are necessary to check the continuity in the following cases"), just not in a form any
 // caller can act on.
-inline int32_t occtAnalysisMeasuredMask(GeomAbs_Shape order) {
-    switch (order) {
-        case GeomAbs_C0: return 0x01;                      // C0
-        case GeomAbs_G1: return 0x01 | 0x02;               // C0, G1
-        case GeomAbs_C1: return 0x01 | 0x04;               // C0, C1
-        case GeomAbs_G2: return 0x01 | 0x02 | 0x08;        // C0, G1, G2
-        case GeomAbs_C2: return 0x01 | 0x04 | 0x10;        // C0, C1, C2
-        default:         return 0x01;                      // unreachable: the order saturates
-    }
+inline int32_t occtAnalysisMeasuredMask(GeomAbs_Shape order)
+{
+  switch (order)
+  {
+    case GeomAbs_C0:
+      return 0x01; // C0
+    case GeomAbs_G1:
+      return 0x01 | 0x02; // C0, G1
+    case GeomAbs_C1:
+      return 0x01 | 0x04; // C0, C1
+    case GeomAbs_G2:
+      return 0x01 | 0x02 | 0x08; // C0, G1, G2
+    case GeomAbs_C2:
+      return 0x01 | 0x04 | 0x10; // C0, C1, C2
+    default:
+      return 0x01; // unreachable: the order saturates
+  }
 }
 
 // === #430/#432/#434: surface-filling helpers ===
@@ -475,9 +564,11 @@ inline int32_t occtAnalysisMeasuredMask(GeomAbs_Shape order) {
 //
 // Returned by value: C++17 guaranteed copy elision (Package.swift sets .cxx17) constructs it
 // directly into the caller's variable, so no copy or move of the filler is performed.
-BRepOffsetAPI_MakeFilling occtFillingMakeBuilder(int32_t degree, int32_t nbPtsOnCur,
-                                                  int32_t maxDegree, int32_t maxSegments,
-                                                  double tolerance3d);
+BRepOffsetAPI_MakeFilling occtFillingMakeBuilder(int32_t degree,
+                                                 int32_t nbPtsOnCur,
+                                                 int32_t maxDegree,
+                                                 int32_t maxSegments,
+                                                 double  tolerance3d);
 
 // Build a support face carrying the edge's own pcurve, for edges with no nominated support face.
 //
@@ -498,14 +589,15 @@ BRepOffsetAPI_MakeFilling occtFillingMakeBuilder(int32_t degree, int32_t nbPtsOn
 bool occtFillingSupportFaceFromPCurve(const TopoDS_Edge& edge, TopoDS_Face& outFace);
 
 // Where a support face came from, which decides what happens when it turns out to be unusable.
-enum class OCCTFillingSupport {
-    // The caller named this exact face. If it cannot serve as the continuity reference, that is
-    // a failure, not something to paper over — substituting a different surface would answer a
-    // question the caller did not ask.
-    Nominated,
-    // The bridge picked or derived this face on the caller's behalf (an ancestor lookup, or none
-    // at all). Falling back to another reference is the documented behaviour.
-    Inferred,
+enum class OCCTFillingSupport
+{
+  // The caller named this exact face. If it cannot serve as the continuity reference, that is
+  // a failure, not something to paper over — substituting a different surface would answer a
+  // question the caller did not ask.
+  Nominated,
+  // The bridge picked or derived this face on the caller's behalf (an ancestor lookup, or none
+  // at all). Falling back to another reference is the documented behaviour.
+  Inferred,
 };
 
 // Add one edge constraint to `filling`, preferring the face-carrying overload whenever a
@@ -521,11 +613,11 @@ enum class OCCTFillingSupport {
 // a constraint and returns true — including the no-pcurve-anywhere case, which reaches the
 // face-less overload and surfaces as OCCT's documented Standard_Failure at Build() time.
 bool occtFillingAddConstraint(BRepOffsetAPI_MakeFilling& filling,
-                              const TopoDS_Edge& edge,
-                              const TopoDS_Face& support,
-                              OCCTFillingSupport kind,
-                              GeomAbs_Shape order,
-                              bool isBound);
+                              const TopoDS_Edge&         edge,
+                              const TopoDS_Face&         support,
+                              OCCTFillingSupport         kind,
+                              GeomAbs_Shape              order,
+                              bool                       isBound);
 
 // === #605 / #609: mass properties, computed the way OCCT itself computes them ===
 //
@@ -634,24 +726,33 @@ class Geom_BSplineSurface;
 // gating on ApproxError() would reject results Issue571PlateApproxTests already proves are within
 // the tolerance that matters. See Scripts/repro/597-bridge-modeling-healing-approx-error.
 occ::handle<Geom_BSplineSurface> occtPlateApproxSurface(const occ::handle<GeomPlate_Surface>& plate,
-                                                        double tolerance,
-                                                        int32_t maxDegree,
-                                                        int32_t maxSegments,
+                                                        double        tolerance,
+                                                        int32_t       maxDegree,
+                                                        int32_t       maxSegments,
                                                         GeomAbs_Shape continuity);
 
 // The patch-join continuity every plate entry point asks for unless told otherwise. C1 is what all
 // six sites got from GeomPlate_MakeApprox's own default before #571 made it explicit.
-inline GeomAbs_Shape occtPlateApproxDefaultContinuity() { return GeomAbs_C1; }
+inline GeomAbs_Shape occtPlateApproxDefaultContinuity()
+{
+  return GeomAbs_C1;
+}
 
 // The largest number of Bezier patches a plate approximation may use unless the caller names one.
 // A cap, not a target: the approximator stops as soon as the criterion is met, and on the #571
 // fixture everything from 2 upwards produces the identical surface. Matches the `maxSegments: 20`
 // default that Shape.plateSurface(points:) already exposed.
-inline int32_t occtPlateApproxDefaultMaxSegments() { return 20; }
+inline int32_t occtPlateApproxDefaultMaxSegments()
+{
+  return 20;
+}
 
 // The largest Bezier degree a plate approximation may use unless the caller names one. All six
 // sites already used 8.
-inline int32_t occtPlateApproxDefaultMaxDegree() { return 8; }
+inline int32_t occtPlateApproxDefaultMaxDegree()
+{
+  return 8;
+}
 
 // === #497: one BRepAlgoAPI_Defeaturing skeleton ===
 //
@@ -681,8 +782,10 @@ class BRepAlgoAPI_Defeaturing;
 // already had: quietly dropping it (the pre-#497 OCCTShapeRemoveFeatures behaviour) hands back a
 // shape that still carries the feature the caller asked to remove, with nothing to distinguish it
 // from a successful removal.
-bool occtDefeaturingFacesByIndex(const TopoDS_Shape& shape, const int32_t* faceIndices,
-                                 int32_t faceCount, TopTools_ListOfShape& outFaces);
+bool occtDefeaturingFacesByIndex(const TopoDS_Shape&   shape,
+                                 const int32_t*        faceIndices,
+                                 int32_t               faceCount,
+                                 TopTools_ListOfShape& outFaces);
 
 // The same resolution for faces addressed as shape handles. Returns false when the request is
 // empty, the array itself is null, or any element is null — a null element used to be dereferenced
@@ -699,20 +802,24 @@ bool occtDefeaturingFacesByIndex(const TopoDS_Shape& shape, const int32_t* faceI
 //   `shape` — otherwise the whole request fails and nothing is removed.
 //
 // Membership is TopTools_ShapeMapHasher, i.e. IsSame, so a reversed face still belongs (measured)
-// while a face off an identically-built shape does not. The kernel's own rule is to ignore what does
-// not belong ("those that do not belong will be ignored", BRepAlgoAPI_Defeaturing.hxx), which
+// while a face off an identically-built shape does not. The kernel's own rule is to ignore what
+// does not belong ("those that do not belong will be ignored", BRepAlgoAPI_Defeaturing.hxx), which
 // succeeds while silently leaving the named feature in place — the failure mode #497 removed from
 // the index-addressed spelling, on the entry point #536 made canonical. This changes only requests
 // that were being partly discarded: nothing whose carriers all belong behaves differently. See
 // Scripts/repro/578-defeature-face-membership/ for the whole matrix.
-bool occtDefeaturingFacesFromShapes(const TopoDS_Shape& shape, const OCCTShape* const* faces,
-                                    int32_t faceCount, TopTools_ListOfShape& outFaces);
+bool occtDefeaturingFacesFromShapes(const TopoDS_Shape&     shape,
+                                    const OCCTShape* const* faces,
+                                    int32_t                 faceCount,
+                                    TopTools_ListOfShape&   outFaces);
 
 // Run `defeaturing` over `shape`, removing `facesToRemove`. The builder is the caller's, because
 // OCCTShapeHistoryFromDefeature has to outlive this call to read its history. Returns false unless
 // the operation is done AND produced a non-null shape.
-bool occtDefeaturePerform(BRepAlgoAPI_Defeaturing& defeaturing, const TopoDS_Shape& shape,
-                          const TopTools_ListOfShape& facesToRemove, TopoDS_Shape& outResult);
+bool occtDefeaturePerform(BRepAlgoAPI_Defeaturing&    defeaturing,
+                          const TopoDS_Shape&         shape,
+                          const TopTools_ListOfShape& facesToRemove,
+                          TopoDS_Shape&               outResult);
 
 // === #480: what a knot-splitting `continuity` argument actually means ===
 //
@@ -752,21 +859,30 @@ bool occtDefeaturePerform(BRepAlgoAPI_Defeaturing& defeaturing, const TopoDS_Sha
 // valueAt(i) produces split i's value (1-based, matching every *KnotSplitting class's own
 // SplitValue/USplitValue/VSplitValue numbering).
 template <class T, class ValueAt>
-int32_t occtWriteKnotSplits(int32_t nbSplits, ValueAt valueAt, T* outValues, int32_t maxOut) {
-    int32_t count = std::min(nbSplits, maxOut);
-    for (int32_t i = 0; i < count; i++) {
-        outValues[i] = valueAt(i + 1);
-    }
-    return nbSplits;
+int32_t occtWriteKnotSplits(int32_t nbSplits, ValueAt valueAt, T* outValues, int32_t maxOut)
+{
+  int32_t count = std::min(nbSplits, maxOut);
+  for (int32_t i = 0; i < count; i++)
+  {
+    outValues[i] = valueAt(i + 1);
+  }
+  return nbSplits;
 }
 
 // The parameter-valued form of the above: splitIndexAt(i) returns the underlying knot-table
 // index for split i, and knotAt(index) converts that index to an actual parameter value.
 template <class SplitIndexAt, class KnotAt>
-int32_t occtWriteKnotSplitParams(int32_t nbSplits, SplitIndexAt splitIndexAt, KnotAt knotAt,
-                                  double* outParams, int32_t maxParams) {
-    return occtWriteKnotSplits<double>(nbSplits,
-        [&](int32_t i) { return knotAt(splitIndexAt(i)); }, outParams, maxParams);
+int32_t occtWriteKnotSplitParams(int32_t      nbSplits,
+                                 SplitIndexAt splitIndexAt,
+                                 KnotAt       knotAt,
+                                 double*      outParams,
+                                 int32_t      maxParams)
+{
+  return occtWriteKnotSplits<double>(
+    nbSplits,
+    [&](int32_t i) { return knotAt(splitIndexAt(i)); },
+    outParams,
+    maxParams);
 }
 
 // === #399/#411/#487/#514/#554: conic dimension preconditions ===
@@ -836,26 +952,30 @@ int32_t occtWriteKnotSplitParams(int32_t nbSplits, SplitIndexAt splitIndexAt, Kn
 //     (a tolerance-sized box at the centre for (0, 0)), and return void.
 
 // A circle needs a positive radius. Zero collapses it to its own centre.
-inline bool occtValidCircleRadius(double radius) {
-    return radius > 0;
+inline bool occtValidCircleRadius(double radius)
+{
+  return radius > 0;
 }
 
 // An ellipse needs both radii positive, and the minor no larger than the major, which is the
 // orientation OCCT's own gp_Elips2d/gp_Elips invariant requires.
-inline bool occtValidEllipseRadii(double majorR, double minorR) {
-    return majorR > 0 && minorR > 0 && minorR <= majorR;
+inline bool occtValidEllipseRadii(double majorR, double minorR)
+{
+  return majorR > 0 && minorR > 0 && minorR <= majorR;
 }
 
 // A hyperbola needs both radii positive. Unlike an ellipse it puts no ordering on them: a minor
 // radius larger than the major is an ordinary hyperbola, not an inverted one.
-inline bool occtValidHyperbolaRadii(double majorR, double minorR) {
-    return majorR > 0 && minorR > 0;
+inline bool occtValidHyperbolaRadii(double majorR, double minorR)
+{
+  return majorR > 0 && minorR > 0;
 }
 
 // A parabola needs a positive focal length. At zero it degenerates to a line parallel to its own
 // axis of symmetry, which is gp_Parab2d's documented behaviour, not an error it reports.
-inline bool occtValidParabolaFocal(double focal) {
-    return focal > 0;
+inline bool occtValidParabolaFocal(double focal)
+{
+  return focal > 0;
 }
 
 // === #486: shared batch grid-evaluation packing/unpacking ===
@@ -870,12 +990,14 @@ inline bool occtValidParabolaFocal(double focal) {
 
 /// Copy a caller's parameter array into the 1-based NCollection_Array1 that every
 /// GeomGridEval_* / Geom2dGridEval_* evaluator takes.
-inline NCollection_Array1<double> occtGridEvalParams(const double* params, int32_t count) {
-    NCollection_Array1<double> arr(1, count);
-    for (int32_t i = 0; i < count; i++) {
-        arr.SetValue(i + 1, params[i]);
-    }
-    return arr;
+inline NCollection_Array1<double> occtGridEvalParams(const double* params, int32_t count)
+{
+  NCollection_Array1<double> arr(1, count);
+  for (int32_t i = 0; i < count; i++)
+  {
+    arr.SetValue(i + 1, params[i]);
+  }
+  return arr;
 }
 
 /// THE definition of OCCTSwift's surface-grid buffer layout: **U-major**, u varying slowest and
@@ -883,8 +1005,9 @@ inline NCollection_Array1<double> occtGridEvalParams(const double* params, int32
 /// and the Swift SurfaceGrid/SurfaceGridD1 types (#404). "Row-major" is ambiguous for a UV grid,
 /// since either parameter can be the row, so the index lives here in code instead of being
 /// re-spelled in prose at each call site.
-inline int32_t occtSurfaceGridIndex(int32_t iu, int32_t iv, int32_t vCount) {
-    return iu * vCount + iv;
+inline int32_t occtSurfaceGridIndex(int32_t iu, int32_t iv, int32_t vCount)
+{
+  return iu * vCount + iv;
 }
 
 /// THE definition of the i-th of `count` uniformly spaced parameters across `[lo, hi]`.
@@ -904,8 +1027,9 @@ inline int32_t occtSurfaceGridIndex(int32_t iu, int32_t iv, int32_t vCount) {
 /// pair reads `(evalU > 1) ? (double)i / (evalU - 1) : 0.5` — its single-sample answer is the
 /// patch MIDPOINT, not the low end, so it is a different contract that happens to share a shape.
 /// Check the else-branch before folding a site in here.
-inline double occtUniformParameter(double lo, double hi, int32_t index, int32_t count) {
-    return lo + (hi - lo) * index / (count > 1 ? (count - 1) : 1);
+inline double occtUniformParameter(double lo, double hi, int32_t index, int32_t count)
+{
+  return lo + (hi - lo) * index / (count > 1 ? (count - 1) : 1);
 }
 
 // === #501: GCPnts arc-length samplers can return more points than were asked for ===
@@ -928,15 +1052,17 @@ inline double occtUniformParameter(double lo, double hi, int32_t index, int32_t 
 // was silently getting wrong.
 
 /// How many of a GCPnts sampler's `nbPoints` samples fit in a buffer of `capacity` slots.
-inline int32_t occtSamplerKept(int32_t nbPoints, int32_t capacity) {
-    return std::min(nbPoints, std::max(capacity, 0));
+inline int32_t occtSamplerKept(int32_t nbPoints, int32_t capacity)
+{
+  return std::min(nbPoints, std::max(capacity, 0));
 }
 
 /// The 1-based sampler index feeding output slot `slot`, given `kept` of `nbPoints` samples fit.
 /// Identity while everything fits; otherwise the final slot takes the sampler's last point so a
 /// clamped distribution still spans the whole curve.
-inline int32_t occtSamplerIndex(int32_t slot, int32_t kept, int32_t nbPoints) {
-    return (slot == kept - 1) ? nbPoints : slot + 1;
+inline int32_t occtSamplerIndex(int32_t slot, int32_t kept, int32_t nbPoints)
+{
+  return (slot == kept - 1) ? nbPoints : slot + 1;
 }
 
 /// The point-count precondition every GCPnts_UniformAbscissa / GCPnts_QuasiUniformAbscissa entry
@@ -947,8 +1073,9 @@ inline int32_t occtSamplerIndex(int32_t slot, int32_t kept, int32_t nbPoints) {
 /// range (1, 0) and then writes element 1 of it, an out-of-bounds store that SIGSEGVs (measured on
 /// a 4-pole Bezier, an all-coincident-pole Bezier and an 8-point BSpline fit); on an ellipse the
 /// same call reports IsDone() with five points for a request of zero.
-inline bool occtValidSampleCount(int32_t nbPoints) {
-    return nbPoints >= 2;
+inline bool occtValidSampleCount(int32_t nbPoints)
+{
+  return nbPoints >= 2;
 }
 
 /// The parameter-range precondition every ranged arc-length entry point has to apply itself:
@@ -972,8 +1099,9 @@ inline bool occtValidSampleCount(int32_t nbPoints) {
 /// per-span skip test (`aTI(i) > aUU2`, `aTI(i+1) < aUU1`) false and integrates every span in
 /// full. Single-span curves take the branches that propagate NaN instead, which is the only
 /// reason the existing parity test (built on a segment) passed. #548.
-inline bool occtValidParameterRange(double u1, double u2) {
-    return std::isfinite(u1) && std::isfinite(u2);
+inline bool occtValidParameterRange(double u1, double u2)
+{
+  return std::isfinite(u1) && std::isfinite(u2);
 }
 
 // === #603: one Gauss quadrature is not enough to measure an arc ===
@@ -1036,68 +1164,85 @@ constexpr int kOCCTArcLengthMaxPieces = 512;
 /// GCPnts per piece would only re-derive the whole interval array on each call before delegating
 /// to CPnts for the one interval the piece lies in, so it is called directly.
 template <class TheAdaptor>
-inline double occtArcQuadrature(const TheAdaptor& adaptor, double lo, double hi, bool singleSpan) {
-    return singleSpan ? GCPnts_AbscissaPoint::Length(adaptor, lo, hi)
-                      : CPnts_AbscissaPoint::Length(adaptor, lo, hi);
+inline double occtArcQuadrature(const TheAdaptor& adaptor, double lo, double hi, bool singleSpan)
+{
+  return singleSpan ? GCPnts_AbscissaPoint::Length(adaptor, lo, hi)
+                    : CPnts_AbscissaPoint::Length(adaptor, lo, hi);
 }
 
 /// The converged length of ONE GeomAbs_CN interval's [lo, hi]. `pieces` reports the subdivision it
 /// settled on, which occtAdaptorParameterAtLength re-walks so the measurement and its inverse are
 /// built out of the same quadratures rather than merely aiming at the same number.
 template <class TheAdaptor>
-inline double occtArcConvergedLength(const TheAdaptor& adaptor, double lo, double hi,
-                                     bool singleSpan, int& pieces) {
-    double previous = occtArcQuadrature(adaptor, lo, hi, singleSpan);
-    pieces = 1;
-    for (int n = 2; n <= kOCCTArcLengthMaxPieces; n *= 2) {
-        const double h = (hi - lo) / n;
-        double total = 0.0;
-        for (int i = 0; i < n; ++i) {
-            total += occtArcQuadrature(adaptor, lo + i * h, (i + 1 == n) ? hi : lo + (i + 1) * h,
-                                       singleSpan);
-        }
-        pieces = n;
-        if (std::abs(total - previous) <= kOCCTArcLengthTolerance * std::abs(total)) return total;
-        previous = total;
+inline double occtArcConvergedLength(const TheAdaptor& adaptor,
+                                     double            lo,
+                                     double            hi,
+                                     bool              singleSpan,
+                                     int&              pieces)
+{
+  double previous = occtArcQuadrature(adaptor, lo, hi, singleSpan);
+  pieces          = 1;
+  for (int n = 2; n <= kOCCTArcLengthMaxPieces; n *= 2)
+  {
+    const double h     = (hi - lo) / n;
+    double       total = 0.0;
+    for (int i = 0; i < n; ++i)
+    {
+      total +=
+        occtArcQuadrature(adaptor, lo + i * h, (i + 1 == n) ? hi : lo + (i + 1) * h, singleSpan);
     }
-    return previous;
+    pieces = n;
+    if (std::abs(total - previous) <= kOCCTArcLengthTolerance * std::abs(total))
+      return total;
+    previous = total;
+  }
+  return previous;
 }
 
 /// Fill `bounds` (sized 1..count+1) with the adaptor's GeomAbs_CN interval boundaries, or with its
 /// own parameter range when `count` is 1 -- so a caller can walk "the intervals" uniformly without
 /// branching on whether the curve has more than one.
 template <class TheAdaptor>
-inline void occtArcIntervals(const TheAdaptor& adaptor, int count, TColStd_Array1OfReal& bounds) {
-    if (count > 1) {
-        adaptor.Intervals(bounds, GeomAbs_CN);
-    } else {
-        bounds(1) = adaptor.FirstParameter();
-        bounds(2) = adaptor.LastParameter();
-    }
+inline void occtArcIntervals(const TheAdaptor& adaptor, int count, TColStd_Array1OfReal& bounds)
+{
+  if (count > 1)
+  {
+    adaptor.Intervals(bounds, GeomAbs_CN);
+  }
+  else
+  {
+    bounds(1) = adaptor.FirstParameter();
+    bounds(2) = adaptor.LastParameter();
+  }
 }
 
 /// The arc length of [u1, u2], subdivided per GeomAbs_CN interval until it converges. Bounds may
 /// be given in either order; a range that misses the curve's intervals measures 0, exactly as
 /// GCPnts' own composite branch does. Callers keep their own try/catch and null checks.
 template <class TheAdaptor>
-inline double occtAdaptorArcLength(const TheAdaptor& adaptor, double u1, double u2) {
-    const double lo = std::min(u1, u2), hi = std::max(u1, u2);
-    if (!(hi > lo)) return 0.0;
+inline double occtAdaptorArcLength(const TheAdaptor& adaptor, double u1, double u2)
+{
+  const double lo = std::min(u1, u2), hi = std::max(u1, u2);
+  if (!(hi > lo))
+    return 0.0;
 
-    const int intervals = adaptor.NbIntervals(GeomAbs_CN);
-    int pieces = 0;
-    if (intervals <= 1) return occtArcConvergedLength(adaptor, lo, hi, true, pieces);
+  const int intervals = adaptor.NbIntervals(GeomAbs_CN);
+  int       pieces    = 0;
+  if (intervals <= 1)
+    return occtArcConvergedLength(adaptor, lo, hi, true, pieces);
 
-    TColStd_Array1OfReal bounds(1, intervals + 1);
-    adaptor.Intervals(bounds, GeomAbs_CN);
-    double total = 0.0;
-    for (int i = 1; i <= intervals; ++i) {
-        const double pieceLo = std::max(bounds(i), lo), pieceHi = std::min(bounds(i + 1), hi);
-        if (pieceHi > pieceLo) {
-            total += occtArcConvergedLength(adaptor, pieceLo, pieceHi, false, pieces);
-        }
+  TColStd_Array1OfReal bounds(1, intervals + 1);
+  adaptor.Intervals(bounds, GeomAbs_CN);
+  double total = 0.0;
+  for (int i = 1; i <= intervals; ++i)
+  {
+    const double pieceLo = std::max(bounds(i), lo), pieceHi = std::min(bounds(i + 1), hi);
+    if (pieceHi > pieceLo)
+    {
+      total += occtArcConvergedLength(adaptor, pieceLo, pieceHi, false, pieces);
     }
-    return total;
+  }
+  return total;
 }
 
 /// Walk `abscissa` of arc length from `u0` (backwards when it is negative) using the same
@@ -1113,52 +1258,71 @@ inline double occtAdaptorArcLength(const TheAdaptor& adaptor, double u1, double 
 /// a 10 x 1 ellipse 6.0358 for 40.6397, 1.0% short. Measured the same way, this walk lands within
 /// 2e-13 on every fixture, at every fraction of the length.
 template <class TheAdaptor>
-inline bool occtArcWalkToLength(const TheAdaptor& adaptor, double abscissa, double u0,
-                                double& parameter) {
-    if (!std::isfinite(abscissa) || !std::isfinite(u0)) return false;
-    if (abscissa == 0.0) { parameter = u0; return true; }
-
-    const bool backwards = abscissa < 0.0;
-    const double want = std::abs(abscissa);
-    const double first = adaptor.FirstParameter(), last = adaptor.LastParameter();
-    const int intervals = adaptor.NbIntervals(GeomAbs_CN);
-    const bool singleSpan = intervals <= 1;
-    const int count = singleSpan ? 1 : intervals;
-
-    TColStd_Array1OfReal bounds(1, count + 1);
-    occtArcIntervals(adaptor, count, bounds);
-
-    double walked = 0.0;
-    for (int k = 0; k < count; ++k) {
-        const int i = backwards ? count - k : k + 1;
-        const double lo = std::max(bounds(i), backwards ? first : u0);
-        const double hi = std::min(bounds(i + 1), backwards ? u0 : last);
-        if (!(hi > lo)) continue;
-
-        int pieces = 0;
-        const double whole = occtArcConvergedLength(adaptor, lo, hi, singleSpan, pieces);
-        if (walked + whole < want) { walked += whole; continue; }
-
-        // Inside this interval: re-walk the very pieces its converged length was summed from, so
-        // the running total is the same arithmetic and cannot drift away from it.
-        const double h = (hi - lo) / pieces;
-        for (int j = 0; j < pieces; ++j) {
-            const double pieceLo = backwards ? hi - (j + 1) * h : lo + j * h;
-            const double pieceHi = backwards ? hi - j * h : lo + (j + 1) * h;
-            const double piece = occtArcQuadrature(adaptor, pieceLo, pieceHi, singleSpan);
-            // The last piece is always taken: `want` cannot exceed `whole` here, so only the
-            // rounding of the running sum can leave it fractionally short of this piece's end.
-            if (walked + piece < want && j + 1 < pieces) { walked += piece; continue; }
-            const double rest = want - walked;
-            GCPnts_AbscissaPoint solver(adaptor, backwards ? -rest : rest,
-                                        backwards ? pieceHi : pieceLo);
-            if (!solver.IsDone()) return false;
-            parameter = solver.Parameter();
-            return true;
-        }
-        walked += whole;
-    }
+inline bool occtArcWalkToLength(const TheAdaptor& adaptor,
+                                double            abscissa,
+                                double            u0,
+                                double&           parameter)
+{
+  if (!std::isfinite(abscissa) || !std::isfinite(u0))
     return false;
+  if (abscissa == 0.0)
+  {
+    parameter = u0;
+    return true;
+  }
+
+  const bool   backwards = abscissa < 0.0;
+  const double want      = std::abs(abscissa);
+  const double first = adaptor.FirstParameter(), last = adaptor.LastParameter();
+  const int    intervals  = adaptor.NbIntervals(GeomAbs_CN);
+  const bool   singleSpan = intervals <= 1;
+  const int    count      = singleSpan ? 1 : intervals;
+
+  TColStd_Array1OfReal bounds(1, count + 1);
+  occtArcIntervals(adaptor, count, bounds);
+
+  double walked = 0.0;
+  for (int k = 0; k < count; ++k)
+  {
+    const int    i  = backwards ? count - k : k + 1;
+    const double lo = std::max(bounds(i), backwards ? first : u0);
+    const double hi = std::min(bounds(i + 1), backwards ? u0 : last);
+    if (!(hi > lo))
+      continue;
+
+    int          pieces = 0;
+    const double whole  = occtArcConvergedLength(adaptor, lo, hi, singleSpan, pieces);
+    if (walked + whole < want)
+    {
+      walked += whole;
+      continue;
+    }
+
+    // Inside this interval: re-walk the very pieces its converged length was summed from, so
+    // the running total is the same arithmetic and cannot drift away from it.
+    const double h = (hi - lo) / pieces;
+    for (int j = 0; j < pieces; ++j)
+    {
+      const double pieceLo = backwards ? hi - (j + 1) * h : lo + j * h;
+      const double pieceHi = backwards ? hi - j * h : lo + (j + 1) * h;
+      const double piece   = occtArcQuadrature(adaptor, pieceLo, pieceHi, singleSpan);
+      // The last piece is always taken: `want` cannot exceed `whole` here, so only the
+      // rounding of the running sum can leave it fractionally short of this piece's end.
+      if (walked + piece < want && j + 1 < pieces)
+      {
+        walked += piece;
+        continue;
+      }
+      const double         rest = want - walked;
+      GCPnts_AbscissaPoint solver(adaptor, backwards ? -rest : rest, backwards ? pieceHi : pieceLo);
+      if (!solver.IsDone())
+        return false;
+      parameter = solver.Parameter();
+      return true;
+    }
+    walked += whole;
+  }
+  return false;
 }
 
 /// The one "parameter at arc length" every entry point makes: the accurate walk when the travel
@@ -1167,13 +1331,18 @@ inline bool occtArcWalkToLength(const TheAdaptor& adaptor, double abscissa, doub
 /// (12.566 on an ellipse bounded by 2*pi) yet reports IsDone, and turning that into a failure is
 /// a contract change #603 has no measurement to justify.
 template <class TheAdaptor>
-inline bool occtAdaptorParameterAtLength(const TheAdaptor& adaptor, double abscissa, double u0,
-                                         double& parameter) {
-    if (occtArcWalkToLength(adaptor, abscissa, u0, parameter)) return true;
-    GCPnts_AbscissaPoint solver(adaptor, abscissa, u0);
-    if (!solver.IsDone()) return false;
-    parameter = solver.Parameter();
+inline bool occtAdaptorParameterAtLength(const TheAdaptor& adaptor,
+                                         double            abscissa,
+                                         double            u0,
+                                         double&           parameter)
+{
+  if (occtArcWalkToLength(adaptor, abscissa, u0, parameter))
     return true;
+  GCPnts_AbscissaPoint solver(adaptor, abscissa, u0);
+  if (!solver.IsDone())
+    return false;
+  parameter = solver.Parameter();
+  return true;
 }
 
 // === #600: what a ranged arc length measures when the range reaches outside the domain ===
@@ -1207,21 +1376,25 @@ inline bool occtAdaptorParameterAtLength(const TheAdaptor& adaptor, double absci
 // trimmed away, so the domain must cover a whole period before the range is allowed to wind.
 
 template <class TheAdaptor>
-inline bool occtAdaptorWindsPeriodically(const TheAdaptor& adaptor) {
-    if (!adaptor.IsPeriodic()) return false;
-    const double period = adaptor.Period();
-    if (!(period > 0)) return false;
-    const double span = adaptor.LastParameter() - adaptor.FirstParameter();
-    return span >= period * (1.0 - 1e-9);
+inline bool occtAdaptorWindsPeriodically(const TheAdaptor& adaptor)
+{
+  if (!adaptor.IsPeriodic())
+    return false;
+  const double period = adaptor.Period();
+  if (!(period > 0))
+    return false;
+  const double span = adaptor.LastParameter() - adaptor.FirstParameter();
+  return span >= period * (1.0 - 1e-9);
 }
 
 /// Clamp `u1`/`u2` into the adaptor's own parameter range, preserving their order (so a caller
 /// that raises on a reversed range still sees one). Used for curves that do not wind.
 template <class TheAdaptor>
-inline void occtConfineToDomain(const TheAdaptor& adaptor, double& u1, double& u2) {
-    const double first = adaptor.FirstParameter(), last = adaptor.LastParameter();
-    u1 = std::min(std::max(u1, first), last);
-    u2 = std::min(std::max(u2, first), last);
+inline void occtConfineToDomain(const TheAdaptor& adaptor, double& u1, double& u2)
+{
+  const double first = adaptor.FirstParameter(), last = adaptor.LastParameter();
+  u1 = std::min(std::max(u1, first), last);
+  u2 = std::min(std::max(u2, first), last);
 }
 
 /// The one ranged arc-length measurement every entry point makes: the length of the part of
@@ -1230,34 +1403,38 @@ inline void occtConfineToDomain(const TheAdaptor& adaptor, double& u1, double& u
 /// Every integral here goes through occtAdaptorArcLength, so a wound period is as accurate as a
 /// single one and a whole ellipse no longer measures 0.337% long. #603.
 template <class TheAdaptor>
-inline double occtAdaptorLengthBetween(const TheAdaptor& adaptor, double u1, double u2) {
-    double lo = std::min(u1, u2), hi = std::max(u1, u2);
+inline double occtAdaptorLengthBetween(const TheAdaptor& adaptor, double u1, double u2)
+{
+  double lo = std::min(u1, u2), hi = std::max(u1, u2);
 
-    if (occtAdaptorWindsPeriodically(adaptor)) {
-        const double first  = adaptor.FirstParameter();
-        const double period = adaptor.Period();
-        const double seam   = first + period;
-        // One period's worth, not the whole domain: a curve trimmed to more than a period would
-        // otherwise multiply the wrong number.
-        const double perPeriod = occtAdaptorArcLength(adaptor, first, seam);
-        const double turns     = std::floor((hi - lo) / period);
-        double       total     = turns * perPeriod;
-        const double rest      = (hi - lo) - turns * period;
-        if (rest > 0) {
-            double start = first + std::fmod(lo - first, period);
-            if (start < first) start += period;
-            const double end = start + rest;
-            total += (end <= seam)
-                         ? occtAdaptorArcLength(adaptor, start, end)
-                         : occtAdaptorArcLength(adaptor, start, seam) +
-                               occtAdaptorArcLength(adaptor, first, first + (end - seam));
-        }
-        return total;
+  if (occtAdaptorWindsPeriodically(adaptor))
+  {
+    const double first  = adaptor.FirstParameter();
+    const double period = adaptor.Period();
+    const double seam   = first + period;
+    // One period's worth, not the whole domain: a curve trimmed to more than a period would
+    // otherwise multiply the wrong number.
+    const double perPeriod = occtAdaptorArcLength(adaptor, first, seam);
+    const double turns     = std::floor((hi - lo) / period);
+    double       total     = turns * perPeriod;
+    const double rest      = (hi - lo) - turns * period;
+    if (rest > 0)
+    {
+      double start = first + std::fmod(lo - first, period);
+      if (start < first)
+        start += period;
+      const double end = start + rest;
+      total += (end <= seam) ? occtAdaptorArcLength(adaptor, start, end)
+                             : occtAdaptorArcLength(adaptor, start, seam)
+                                 + occtAdaptorArcLength(adaptor, first, first + (end - seam));
     }
+    return total;
+  }
 
-    occtConfineToDomain(adaptor, lo, hi);
-    if (hi <= lo) return 0.0;
-    return occtAdaptorArcLength(adaptor, lo, hi);
+  occtConfineToDomain(adaptor, lo, hi);
+  if (hi <= lo)
+    return 0.0;
+  return occtAdaptorArcLength(adaptor, lo, hi);
 }
 
 // === #502: one sub-shape enumeration ===
@@ -1296,21 +1473,27 @@ inline double occtAdaptorLengthBetween(const TheAdaptor& adaptor, double u1, dou
 /// anything outside that range yields 0 rather than being cast to an enum it has no value in.
 /// Note that a shape IS its own sub-shape when it is of the requested type: a solid asked for
 /// SOLID answers 1.
-inline int32_t occtMapSubShapes(const TopoDS_Shape& shape, int32_t type,
-                                TopTools_IndexedMapOfShape& outMap) {
-    if (type < TopAbs_COMPOUND || type > TopAbs_VERTEX) return 0;
-    TopExp::MapShapes(shape, static_cast<TopAbs_ShapeEnum>(type), outMap);
-    return outMap.Extent();
+inline int32_t occtMapSubShapes(const TopoDS_Shape&         shape,
+                                int32_t                     type,
+                                TopTools_IndexedMapOfShape& outMap)
+{
+  if (type < TopAbs_COMPOUND || type > TopAbs_VERTEX)
+    return 0;
+  TopExp::MapShapes(shape, static_cast<TopAbs_ShapeEnum>(type), outMap);
+  return outMap.Extent();
 }
 
 /// The single sub-shape at 0-based `index` in the enumeration above, or a null TopoDS_Shape when
 /// the index is negative or past the end. Callers that want the whole set should map once and
 /// read the map, rather than calling this in a loop.
-inline TopoDS_Shape occtSubShapeAt(const TopoDS_Shape& shape, int32_t type, int32_t index) {
-    if (index < 0) return TopoDS_Shape();
-    TopTools_IndexedMapOfShape map;
-    if (index >= occtMapSubShapes(shape, type, map)) return TopoDS_Shape();
-    return map(index + 1);  // OCCT's indexed maps are 1-based
+inline TopoDS_Shape occtSubShapeAt(const TopoDS_Shape& shape, int32_t type, int32_t index)
+{
+  if (index < 0)
+    return TopoDS_Shape();
+  TopTools_IndexedMapOfShape map;
+  if (index >= occtMapSubShapes(shape, type, map))
+    return TopoDS_Shape();
+  return map(index + 1); // OCCT's indexed maps are 1-based
 }
 
 // === #541: one meaning for a face index ===
@@ -1335,19 +1518,23 @@ inline TopoDS_Shape occtSubShapeAt(const TopoDS_Shape& shape, int32_t type, int3
 
 /// The face at 0-based `index` in `shape`'s face enumeration, or a null face when the index is
 /// negative, past the end, or names a sub-shape that is not a face.
-inline TopoDS_Face occtFaceAt(const TopoDS_Shape& shape, int32_t index) {
-    TopoDS_Shape sub = occtSubShapeAt(shape, TopAbs_FACE, index);
-    if (sub.IsNull() || sub.ShapeType() != TopAbs_FACE) return TopoDS_Face();
-    return TopoDS::Face(sub);
+inline TopoDS_Face occtFaceAt(const TopoDS_Shape& shape, int32_t index)
+{
+  TopoDS_Shape sub = occtSubShapeAt(shape, TopAbs_FACE, index);
+  if (sub.IsNull() || sub.ShapeType() != TopAbs_FACE)
+    return TopoDS_Face();
+  return TopoDS::Face(sub);
 }
 
 /// The edge at 0-based `index` in `shape`'s edge enumeration, or a null edge when the index is
 /// negative, past the end, or names a sub-shape that is not an edge. `shape` is often a single
 /// face, whose edges are enumerated the same way.
-inline TopoDS_Edge occtEdgeAt(const TopoDS_Shape& shape, int32_t index) {
-    TopoDS_Shape sub = occtSubShapeAt(shape, TopAbs_EDGE, index);
-    if (sub.IsNull() || sub.ShapeType() != TopAbs_EDGE) return TopoDS_Edge();
-    return TopoDS::Edge(sub);
+inline TopoDS_Edge occtEdgeAt(const TopoDS_Shape& shape, int32_t index)
+{
+  TopoDS_Shape sub = occtSubShapeAt(shape, TopAbs_EDGE, index);
+  if (sub.IsNull() || sub.ShapeType() != TopAbs_EDGE)
+    return TopoDS_Edge();
+  return TopoDS::Edge(sub);
 }
 
 // === #613: the same enumeration, read backwards ===
@@ -1370,22 +1557,26 @@ inline TopoDS_Edge occtEdgeAt(const TopoDS_Shape& shape, int32_t index) {
 /// The 0-based index of `sub` in `shape`'s sub-shape enumeration of TopAbs type `type`, or -1 when
 /// `shape` has no such sub-shape. Matching is `TopoDS_Shape::IsSame`, so orientation is ignored --
 /// both occurrences of a shared sub-shape report the one index that names it.
-inline int32_t occtIndexOfSubShape(const TopoDS_Shape& shape, int32_t type,
-                                   const TopoDS_Shape& sub) {
-    if (sub.IsNull()) return -1;
-    TopTools_IndexedMapOfShape map;
-    if (occtMapSubShapes(shape, type, map) == 0) return -1;
-    int32_t found = map.FindIndex(sub);
-    return (found > 0) ? found - 1 : -1;  // OCCT's indexed maps are 1-based
+inline int32_t occtIndexOfSubShape(const TopoDS_Shape& shape, int32_t type, const TopoDS_Shape& sub)
+{
+  if (sub.IsNull())
+    return -1;
+  TopTools_IndexedMapOfShape map;
+  if (occtMapSubShapes(shape, type, map) == 0)
+    return -1;
+  int32_t found = map.FindIndex(sub);
+  return (found > 0) ? found - 1 : -1; // OCCT's indexed maps are 1-based
 }
 
 /// The 0-based index of `sub` in an already-built enumeration map, or -1 when the map has no such
 /// entry. The read half of occtIndexOfSubShape, for callers resolving many sub-shapes against one
 /// map rather than mapping per lookup.
-inline int32_t occtMappedIndexOf(const TopTools_IndexedMapOfShape& map, const TopoDS_Shape& sub) {
-    if (sub.IsNull()) return -1;
-    int32_t found = map.FindIndex(sub);
-    return (found > 0) ? found - 1 : -1;
+inline int32_t occtMappedIndexOf(const TopTools_IndexedMapOfShape& map, const TopoDS_Shape& sub)
+{
+  if (sub.IsNull())
+    return -1;
+  int32_t found = map.FindIndex(sub);
+  return (found > 0) ? found - 1 : -1;
 }
 
 // === #613/#614: the walk that needs BOTH the orientation and the index ===
@@ -1407,25 +1598,27 @@ inline int32_t occtMappedIndexOf(const TopTools_IndexedMapOfShape& map, const To
 //
 // Neither enumeration alone is right. This hands out both from one traversal: the occurrence for
 // its orientation, and the index the same occurrence has in the enumeration faces() reads.
-// TopExp::MapShapes(S, T, M) is literally this explorer walk piped into that map (TopExp.cxx:35-45),
-// so adding each occurrence as it is visited builds exactly that enumeration in exactly that order,
-// and the just-added occurrence is always findable -- a repeat returns the existing index and
-// leaves the stored key untouched (NCollection_IndexedMap.hxx:684-710).
+// TopExp::MapShapes(S, T, M) is literally this explorer walk piped into that map
+// (TopExp.cxx:35-45), so adding each occurrence as it is visited builds exactly that enumeration in
+// exactly that order, and the just-added occurrence is always findable -- a repeat returns the
+// existing index and leaves the stored key untouched (NCollection_IndexedMap.hxx:684-710).
 
 /// Walk `shape`'s FACE occurrences in TopExp_Explorer order, calling `use(face, mapIndex)` once per
-/// occurrence. `face` carries the orientation it has in its parent -- the flag that decides triangle
-/// winding and the sign of a surface normal. `mapIndex` is that face's 0-based position in the
-/// deduplicated enumeration Shape.faces() / Shape.face(at:) read, so a shared face's two
+/// occurrence. `face` carries the orientation it has in its parent -- the flag that decides
+/// triangle winding and the sign of a surface normal. `mapIndex` is that face's 0-based position in
+/// the deduplicated enumeration Shape.faces() / Shape.face(at:) read, so a shared face's two
 /// occurrences report the SAME index. -1 would mean the two walks had diverged and is never
 /// expected; it is reported rather than silently written as a valid-looking index.
 template <class Use>
-void occtForEachOrientedFace(const TopoDS_Shape& shape, Use use) {
-    TopTools_IndexedMapOfShape faceMap;
-    for (TopExp_Explorer ex(shape, TopAbs_FACE); ex.More(); ex.Next()) {
-        const TopoDS_Shape& current = ex.Current();
-        faceMap.Add(current);
-        use(TopoDS::Face(current), occtMappedIndexOf(faceMap, current));
-    }
+void occtForEachOrientedFace(const TopoDS_Shape& shape, Use use)
+{
+  TopTools_IndexedMapOfShape faceMap;
+  for (TopExp_Explorer ex(shape, TopAbs_FACE); ex.More(); ex.Next())
+  {
+    const TopoDS_Shape& current = ex.Current();
+    faceMap.Add(current);
+    use(TopoDS::Face(current), occtMappedIndexOf(faceMap, current));
+  }
 }
 
 // === #568: one answer for an index that names no sub-shape ===
@@ -1457,9 +1650,11 @@ void occtForEachOrientedFace(const TopoDS_Shape& shape, Use use) {
 /// The sub-shape at 0-based `index` in an already-built enumeration map, or a null TopoDS_Shape
 /// when the index is negative or past the end. This is the read half of occtSubShapeAt, for the
 /// callers that resolve several indices against one map rather than mapping per lookup.
-inline TopoDS_Shape occtMappedSubShapeAt(const TopTools_IndexedMapOfShape& map, int32_t index) {
-    if (index < 0 || index >= map.Extent()) return TopoDS_Shape();
-    return map(index + 1);  // OCCT's indexed maps are 1-based
+inline TopoDS_Shape occtMappedSubShapeAt(const TopTools_IndexedMapOfShape& map, int32_t index)
+{
+  if (index < 0 || index >= map.Extent())
+    return TopoDS_Shape();
+  return map(index + 1); // OCCT's indexed maps are 1-based
 }
 
 /// Resolve all `count` 0-based `indices` against `shape`'s sub-shapes of TopAbs type `type` and
@@ -1471,19 +1666,26 @@ inline TopoDS_Shape occtMappedSubShapeAt(const TopTools_IndexedMapOfShape& map, 
 /// `type` is passed through occtMapSubShapes, so the enumeration is exactly the one Shape.faces(),
 /// Shape.edges() and Face.index read; an index out of range here is out of range there too.
 template <class Use>
-bool occtUseSubShapesByIndex(const TopoDS_Shape& shape, int32_t type,
-                             const int32_t* indices, int32_t count, Use use) {
-    if (!indices || count < 1) return false;
+bool occtUseSubShapesByIndex(const TopoDS_Shape& shape,
+                             int32_t             type,
+                             const int32_t*      indices,
+                             int32_t             count,
+                             Use                 use)
+{
+  if (!indices || count < 1)
+    return false;
 
-    TopTools_IndexedMapOfShape map;
-    occtMapSubShapes(shape, type, map);
+  TopTools_IndexedMapOfShape map;
+  occtMapSubShapes(shape, type, map);
 
-    for (int32_t i = 0; i < count; i++) {
-        TopoDS_Shape sub = occtMappedSubShapeAt(map, indices[i]);
-        if (sub.IsNull()) return false;
-        use(sub, i);
-    }
-    return true;
+  for (int32_t i = 0; i < count; i++)
+  {
+    TopoDS_Shape sub = occtMappedSubShapeAt(map, indices[i]);
+    if (sub.IsNull())
+      return false;
+    use(sub, i);
+  }
+  return true;
 }
 
 // === #489: shared BRepFilletAPI_MakeFillet edge-list skeleton ===
@@ -1515,19 +1717,24 @@ bool occtUseSubShapesByIndex(const TopoDS_Shape& shape, int32_t type,
 // A fillet radius has to be positive. Zero and negative both fail BRepFilletAPI_MakeFillet's own
 // Build(), so this rejects them before that work is done rather than after; NaN fails the same
 // comparison, since NaN > 0 is false.
-inline bool occtValidFilletRadius(double radius) {
-    return radius > 0;
+inline bool occtValidFilletRadius(double radius)
+{
+  return radius > 0;
 }
 
 // Every radius in a per-edge radius array, checked up front. One bad element rejects the whole
 // batch, matching the uniform-radius entry point: it rejects its single radius before looking at
 // any index, so a per-edge list cannot make its own validity depend on which indices resolve.
-inline bool occtValidFilletRadii(const double* radii, int32_t count) {
-    if (!radii || count < 1) return false;
-    for (int32_t i = 0; i < count; i++) {
-        if (!occtValidFilletRadius(radii[i])) return false;
-    }
-    return true;
+inline bool occtValidFilletRadii(const double* radii, int32_t count)
+{
+  if (!radii || count < 1)
+    return false;
+  for (int32_t i = 0; i < count; i++)
+  {
+    if (!occtValidFilletRadius(radii[i]))
+      return false;
+  }
+  return true;
 }
 
 // Add the edges named by `edgeIndices` (0-based, indexing `shape`'s own TopExp edge map) to
@@ -1558,15 +1765,23 @@ inline bool occtValidFilletRadii(const double* radii, int32_t count) {
 // measured, below). The shared index resolver's own visitor stays void: the five other families
 // that share it have nothing to refuse.
 template <class AddEdge>
-bool occtFilletAddEdges(BRepFilletAPI_MakeFillet& fillet, const TopoDS_Shape& shape,
-                        const int32_t* edgeIndices, int32_t edgeCount, AddEdge addEdge) {
-    bool honoured = true;
-    bool resolved = occtUseSubShapesByIndex(shape, TopAbs_EDGE, edgeIndices, edgeCount,
-                                            [&](const TopoDS_Shape& edge, int32_t i) {
-        if (!honoured) return;
-        honoured = addEdge(fillet, TopoDS::Edge(edge), i);
-    });
-    return resolved && honoured;
+bool occtFilletAddEdges(BRepFilletAPI_MakeFillet& fillet,
+                        const TopoDS_Shape&       shape,
+                        const int32_t*            edgeIndices,
+                        int32_t                   edgeCount,
+                        AddEdge                   addEdge)
+{
+  bool honoured = true;
+  bool resolved = occtUseSubShapesByIndex(shape,
+                                          TopAbs_EDGE,
+                                          edgeIndices,
+                                          edgeCount,
+                                          [&](const TopoDS_Shape& edge, int32_t i) {
+                                            if (!honoured)
+                                              return;
+                                            honoured = addEdge(fillet, TopoDS::Edge(edge), i);
+                                          });
+  return resolved && honoured;
 }
 
 // === #612: a radius law belongs to the edge's own slot, in the edge's own contour ===
@@ -1619,17 +1834,23 @@ bool occtFilletAddEdges(BRepFilletAPI_MakeFillet& fillet, const TopoDS_Shape& sh
 //
 // A batch in which *every* edge is refused leaves zero contours and Build() throws, so an
 // all-refused request still fails rather than quietly returning the unfilleted input.
-inline bool occtFilletEdgeSlot(const BRepFilletAPI_MakeFillet& fillet, const TopoDS_Edge& edge,
-                               int32_t& contourIndex, int32_t& indexInContour) {
-    contourIndex = fillet.Contour(edge);
-    if (contourIndex < 1 || contourIndex > fillet.NbContours()) return false;
-    for (int32_t j = 1; j <= fillet.NbEdges(contourIndex); j++) {
-        if (fillet.Edge(contourIndex, j).IsSame(edge)) {
-            indexInContour = j;
-            return true;
-        }
-    }
+inline bool occtFilletEdgeSlot(const BRepFilletAPI_MakeFillet& fillet,
+                               const TopoDS_Edge&              edge,
+                               int32_t&                        contourIndex,
+                               int32_t&                        indexInContour)
+{
+  contourIndex = fillet.Contour(edge);
+  if (contourIndex < 1 || contourIndex > fillet.NbContours())
     return false;
+  for (int32_t j = 1; j <= fillet.NbEdges(contourIndex); j++)
+  {
+    if (fillet.Edge(contourIndex, j).IsSame(edge))
+    {
+      indexInContour = j;
+      return true;
+    }
+  }
+  return false;
 }
 
 // === #520: the radius law, for the two entry points that take one ===
@@ -1672,28 +1893,37 @@ inline bool occtFilletEdgeSlot(const BRepFilletAPI_MakeFillet& fillet, const Top
 // edge OCCT declined to add is not a caller error and returns true having placed nothing: see
 // occtFilletEdgeSlot for why that matches what Add(Radius, E) does with the same edge.
 template <class PointAt>
-bool occtFilletSetRadiusProfile(BRepFilletAPI_MakeFillet& fillet, const TopoDS_Edge& edge,
-                                int32_t pointCount, PointAt pointAt) {
-    if (pointCount < 1) return false;
+bool occtFilletSetRadiusProfile(BRepFilletAPI_MakeFillet& fillet,
+                                const TopoDS_Edge&        edge,
+                                int32_t                   pointCount,
+                                PointAt                   pointAt)
+{
+  if (pointCount < 1)
+    return false;
 
-    TColgp_Array1OfPnt2d UandR(1, pointCount);
-    double previous = 0;
-    for (int32_t i = 0; i < pointCount; i++) {
-        gp_Pnt2d point = pointAt(i);
-        if (!occtValidFilletRadius(point.Y())) return false;
-        // Written as a positive test so NaN, which compares false against everything, is rejected
-        // by the same expression rather than needing its own.
-        if (!(point.X() >= 0.0 && point.X() <= 1.0)) return false;
-        if (i > 0 && !(point.X() > previous)) return false;
-        previous = point.X();
-        UandR.SetValue(i + 1, point);
-    }
+  TColgp_Array1OfPnt2d UandR(1, pointCount);
+  double               previous = 0;
+  for (int32_t i = 0; i < pointCount; i++)
+  {
+    gp_Pnt2d point = pointAt(i);
+    if (!occtValidFilletRadius(point.Y()))
+      return false;
+    // Written as a positive test so NaN, which compares false against everything, is rejected
+    // by the same expression rather than needing its own.
+    if (!(point.X() >= 0.0 && point.X() <= 1.0))
+      return false;
+    if (i > 0 && !(point.X() > previous))
+      return false;
+    previous = point.X();
+    UandR.SetValue(i + 1, point);
+  }
 
-    int32_t contourIndex = 0, indexInContour = 0;
-    if (!occtFilletEdgeSlot(fillet, edge, contourIndex, indexInContour)) return true;
-
-    fillet.SetRadius(UandR, contourIndex, indexInContour);
+  int32_t contourIndex = 0, indexInContour = 0;
+  if (!occtFilletEdgeSlot(fillet, edge, contourIndex, indexInContour))
     return true;
+
+  fillet.SetRadius(UandR, contourIndex, indexInContour);
+  return true;
 }
 
 // === #639: which requested edges did OCCT decline ===
@@ -1717,17 +1947,22 @@ bool occtFilletSetRadiusProfile(BRepFilletAPI_MakeFillet& fillet, const TopoDS_E
 // (occtFilletAddEdges) already rejected the whole request in that case, so every index reaching
 // here resolved the first time too.
 inline std::vector<int32_t> occtFilletDeclinedIndices(const BRepFilletAPI_MakeFillet& fillet,
-                                                       const TopoDS_Shape& shape,
-                                                       const int32_t* edgeIndices, int32_t count) {
-    std::vector<int32_t> declined;
-    TopTools_IndexedMapOfShape map;
-    occtMapSubShapes(shape, TopAbs_EDGE, map);
-    for (int32_t i = 0; i < count; i++) {
-        TopoDS_Shape sub = occtMappedSubShapeAt(map, edgeIndices[i]);
-        if (sub.IsNull()) continue;
-        if (fillet.Contour(TopoDS::Edge(sub)) == 0) declined.push_back(edgeIndices[i]);
-    }
-    return declined;
+                                                      const TopoDS_Shape&             shape,
+                                                      const int32_t*                  edgeIndices,
+                                                      int32_t                         count)
+{
+  std::vector<int32_t>       declined;
+  TopTools_IndexedMapOfShape map;
+  occtMapSubShapes(shape, TopAbs_EDGE, map);
+  for (int32_t i = 0; i < count; i++)
+  {
+    TopoDS_Shape sub = occtMappedSubShapeAt(map, edgeIndices[i]);
+    if (sub.IsNull())
+      continue;
+    if (fillet.Contour(TopoDS::Edge(sub)) == 0)
+      declined.push_back(edgeIndices[i]);
+  }
+  return declined;
 }
 
 // Writes occtFilletDeclinedIndices's result into the two optional caller-owned out-params every
@@ -1736,15 +1971,23 @@ inline std::vector<int32_t> occtFilletDeclinedIndices(const BRepFilletAPI_MakeFi
 // responsible for sizing `declinedEdgeIndices` to at least `edgeCount` -- the mathematical upper
 // bound on how many of `edgeCount` requested edges can be declined -- so there is no separate
 // capacity parameter to get wrong.
-inline void occtFilletWriteDeclined(const BRepFilletAPI_MakeFillet& fillet, const TopoDS_Shape& shape,
-                                    const int32_t* edgeIndices, int32_t edgeCount,
-                                    int32_t* declinedEdgeIndices, int32_t* outDeclinedCount) {
-    if (!declinedEdgeIndices && !outDeclinedCount) return;
-    std::vector<int32_t> declined = occtFilletDeclinedIndices(fillet, shape, edgeIndices, edgeCount);
-    if (outDeclinedCount) *outDeclinedCount = static_cast<int32_t>(declined.size());
-    if (declinedEdgeIndices) {
-        for (size_t i = 0; i < declined.size(); i++) declinedEdgeIndices[i] = declined[i];
-    }
+inline void occtFilletWriteDeclined(const BRepFilletAPI_MakeFillet& fillet,
+                                    const TopoDS_Shape&             shape,
+                                    const int32_t*                  edgeIndices,
+                                    int32_t                         edgeCount,
+                                    int32_t*                        declinedEdgeIndices,
+                                    int32_t*                        outDeclinedCount)
+{
+  if (!declinedEdgeIndices && !outDeclinedCount)
+    return;
+  std::vector<int32_t> declined = occtFilletDeclinedIndices(fillet, shape, edgeIndices, edgeCount);
+  if (outDeclinedCount)
+    *outDeclinedCount = static_cast<int32_t>(declined.size());
+  if (declinedEdgeIndices)
+  {
+    for (size_t i = 0; i < declined.size(); i++)
+      declinedEdgeIndices[i] = declined[i];
+  }
 }
 
 // occtFilletAddEdges plus the build-and-wrap half: the guard, the perform/check/result triad, and
@@ -1755,44 +1998,58 @@ inline void occtFilletWriteDeclined(const BRepFilletAPI_MakeFillet& fillet, cons
 // (#639): occtFilletWriteDeclined is then a no-op and nothing about the existing skip behaviour or
 // its cost changes.
 template <class AddEdge>
-OCCTShapeRef occtShapeFilletEdgeList(OCCTShapeRef shape,
-                                     const int32_t* edgeIndices, int32_t edgeCount,
-                                     AddEdge addEdge,
-                                     int32_t* declinedEdgeIndices = nullptr,
-                                     int32_t* outDeclinedCount = nullptr) {
-    if (outDeclinedCount) *outDeclinedCount = 0;
-    if (!shape || !edgeIndices || edgeCount < 1) return nullptr;
+OCCTShapeRef occtShapeFilletEdgeList(OCCTShapeRef   shape,
+                                     const int32_t* edgeIndices,
+                                     int32_t        edgeCount,
+                                     AddEdge        addEdge,
+                                     int32_t*       declinedEdgeIndices = nullptr,
+                                     int32_t*       outDeclinedCount    = nullptr)
+{
+  if (outDeclinedCount)
+    *outDeclinedCount = 0;
+  if (!shape || !edgeIndices || edgeCount < 1)
+    return nullptr;
 
-    try {
-        BRepFilletAPI_MakeFillet fillet(shape->shape);
-        if (!occtFilletAddEdges(fillet, shape->shape, edgeIndices, edgeCount, addEdge)) {
-            return nullptr;
-        }
-
-        occtFilletWriteDeclined(fillet, shape->shape, edgeIndices, edgeCount,
-                                declinedEdgeIndices, outDeclinedCount);
-
-        fillet.Build();
-        if (!fillet.IsDone()) return nullptr;
-
-        TopoDS_Shape result = fillet.Shape();
-        if (result.IsNull()) return nullptr;
-
-        return new OCCTShape(result);
-    } catch (...) {
-        return nullptr;
+  try
+  {
+    BRepFilletAPI_MakeFillet fillet(shape->shape);
+    if (!occtFilletAddEdges(fillet, shape->shape, edgeIndices, edgeCount, addEdge))
+    {
+      return nullptr;
     }
+
+    occtFilletWriteDeclined(fillet,
+                            shape->shape,
+                            edgeIndices,
+                            edgeCount,
+                            declinedEdgeIndices,
+                            outDeclinedCount);
+
+    fillet.Build();
+    if (!fillet.IsDone())
+      return nullptr;
+
+    TopoDS_Shape result = fillet.Shape();
+    if (result.IsNull())
+      return nullptr;
+
+    return new OCCTShape(result);
+  }
+  catch (...)
+  {
+    return nullptr;
+  }
 }
 
 // === #505: the precondition BRepFilletAPI_MakeFillet's edge-keyed radius laws never check ===
 //
 // GetBounds, GetLaw and SetLaw each take a (contour index, TopoDS_Edge) pair and each resolve it
 // through ChFiDS_FilSpine::ChangeLaw(E), which asks ChFiDS_Spine::Index(E) where the edge sits in
-// that contour's spine. Index returns 0 for an edge the spine does not hold, and ChangeLaw then uses
-// it anyway: ElSpine(0) -> FirstParameter(0) -> abscissa->Value(-1). Neither that access nor
+// that contour's spine. Index returns 0 for an edge the spine does not hold, and ChangeLaw then
+// uses it anyway: ElSpine(0) -> FirstParameter(0) -> abscissa->Value(-1). Neither that access nor
 // ChFi3d_FilBuilder's own Value(IC) has a live bounds check, because OCCT's *_Raise_if macros are
-// compiled out of the pinned Release build. So nothing anywhere rejects the request; it just answers
-// about whatever the out-of-range index lands on. Measured on a 10x10x10 box
+// compiled out of the pinned Release build. So nothing anywhere rejects the request; it just
+// answers about whatever the out-of-range index lands on. Measured on a 10x10x10 box
 // (Scripts/repro/505-filletbuilder-edge-type/):
 //
 //   - Two contours, GetBounds(1, edgeOfContour2): returns true, with contour 1's bounds and contour
@@ -1806,9 +2063,12 @@ OCCTShapeRef occtShapeFilletEdgeList(OCCTShapeRef shape,
 // do, so it decides exactly this question, and it is populated by Add() rather than by Build(),
 // which means it is equally valid before and after the fillet is built.
 inline bool occtFilletContourHoldsEdge(const BRepFilletAPI_MakeFillet& fillet,
-                                       int32_t contourIndex, const TopoDS_Edge& edge) {
-    if (contourIndex < 1 || contourIndex > fillet.NbContours()) return false;
-    return fillet.Contour(edge) == contourIndex;
+                                       int32_t                         contourIndex,
+                                       const TopoDS_Edge&              edge)
+{
+  if (contourIndex < 1 || contourIndex > fillet.NbContours())
+    return false;
+  return fillet.Contour(edge) == contourIndex;
 }
 
 // === #492: one analytical-conversion path per GeomConvert converter class ===
@@ -1823,8 +2083,8 @@ inline bool occtFilletContourHoldsEdge(const BRepFilletAPI_MakeFillet& fillet,
 //
 //   1. Success yields a NEW object that shares no state with the input. This is not decoration.
 //      GeomConvert_CurveToAnaCurve::ConvertToAnalytical hands back the *input handle itself* when
-//      the curve is already analytical -- ComputeLine and ComputeCircle both down-cast the input and
-//      return it (GeomConvert_CurveToAnaCurve.cxx:186, :296) -- and for a Geom_TrimmedCurve it
+//      the curve is already analytical -- ComputeLine and ComputeCircle both down-cast the input
+//      and return it (GeomConvert_CurveToAnaCurve.cxx:186, :296) -- and for a Geom_TrimmedCurve it
 //      returns the basis curve the trim still holds. Both wrappers then handed that shared curve to
 //      Swift as a separate Curve3D, so an in-place transform on the "converted" curve moved the
 //      original too. Measured, not theorised: translating the result of
@@ -1833,9 +2093,10 @@ inline bool occtFilletContourHoldsEdge(const BRepFilletAPI_MakeFillet& fillet,
 //      GeomConvert_SurfToAnaSurf never does this -- every branch allocates
 //      (GeomConvert_SurfToAnaSurf.cxx:791-807 for already-analytical input, and every newSurf[]
 //      assignment elsewhere), so the old same-handle guard was dead code against this kernel. It is
-//      still copied here, because "the current kernel happens to allocate" is exactly the assumption
-//      that let the two families drift apart in the first place. Both results are tiny analytic
-//      objects (line/circle/ellipse; plane/cylinder/cone/sphere/torus), so the copy is free.
+//      still copied here, because "the current kernel happens to allocate" is exactly the
+//      assumption that let the two families drift apart in the first place. Both results are tiny
+//      analytic objects (line/circle/ellipse; plane/cylinder/cone/sphere/torus), so the copy is
+//      free.
 //
 //   2. Failure is one outcome, not three. A null input, an unrecognisable input and a thrown
 //      Standard_Failure (the bounded surface overload throws Geom_BSplineSurface::Segment on
@@ -1852,29 +2113,41 @@ inline bool occtFilletContourHoldsEdge(const BRepFilletAPI_MakeFillet& fillet,
 // outFirst/outLast come back in the RECOGNISED curve's own parameterisation, which is not the
 // input's: a BSpline circle asked about [pi/2, 3pi/2] reports [0, 3.06] on the Geom_Circle it
 // returns. Trimmed curves are unwrapped to their basis curve before recognition.
-inline bool occtCurveToAnalytical(const occ::handle<Geom_Curve>& curve, double tolerance,
-                                  double first, double last,
-                                  occ::handle<Geom_Curve>& outCurve,
-                                  double& outFirst, double& outLast, double& outGap) {
-    if (curve.IsNull()) return false;
-    try {
-        GeomConvert_CurveToAnaCurve converter(curve);
-        occ::handle<Geom_Curve> result;
-        double newFirst = first, newLast = last;
-        if (!converter.ConvertToAnalytical(tolerance, result, first, last, newFirst, newLast)) {
-            return false;
-        }
-        if (result.IsNull()) return false;
-        occ::handle<Geom_Curve> detached = occ::handle<Geom_Curve>::DownCast(result->Copy());
-        if (detached.IsNull()) return false;
-        outCurve = detached;
-        outFirst = newFirst;
-        outLast = newLast;
-        outGap = converter.Gap();
-        return true;
-    } catch (...) {
-        return false;
+inline bool occtCurveToAnalytical(const occ::handle<Geom_Curve>& curve,
+                                  double                         tolerance,
+                                  double                         first,
+                                  double                         last,
+                                  occ::handle<Geom_Curve>&       outCurve,
+                                  double&                        outFirst,
+                                  double&                        outLast,
+                                  double&                        outGap)
+{
+  if (curve.IsNull())
+    return false;
+  try
+  {
+    GeomConvert_CurveToAnaCurve converter(curve);
+    occ::handle<Geom_Curve>     result;
+    double                      newFirst = first, newLast = last;
+    if (!converter.ConvertToAnalytical(tolerance, result, first, last, newFirst, newLast))
+    {
+      return false;
     }
+    if (result.IsNull())
+      return false;
+    occ::handle<Geom_Curve> detached = occ::handle<Geom_Curve>::DownCast(result->Copy());
+    if (detached.IsNull())
+      return false;
+    outCurve = detached;
+    outFirst = newFirst;
+    outLast  = newLast;
+    outGap   = converter.Gap();
+    return true;
+  }
+  catch (...)
+  {
+    return false;
+  }
 }
 
 // Recognise `surface` as a plane, cylinder, cone, sphere or torus.
@@ -1882,25 +2155,36 @@ inline bool occtCurveToAnalytical(const occ::handle<Geom_Curve>& curve, double t
 // uvBounds is either null, for the whole surface, or four doubles {uMin, uMax, vMin, vMax}
 // selecting the sub-patch to fit. Those are the two ConvertToAnalytical overloads; nothing else
 // differs between them.
-inline bool occtSurfaceToAnalytical(const occ::handle<Geom_Surface>& surface, double tolerance,
-                                    const double* uvBounds,
-                                    occ::handle<Geom_Surface>& outSurface, double& outGap) {
-    if (surface.IsNull()) return false;
-    try {
-        GeomConvert_SurfToAnaSurf converter(surface);
-        occ::handle<Geom_Surface> result =
-            uvBounds ? converter.ConvertToAnalytical(tolerance, uvBounds[0], uvBounds[1],
-                                                     uvBounds[2], uvBounds[3])
-                     : converter.ConvertToAnalytical(tolerance);
-        if (result.IsNull()) return false;
-        occ::handle<Geom_Surface> detached = occ::handle<Geom_Surface>::DownCast(result->Copy());
-        if (detached.IsNull()) return false;
-        outSurface = detached;
-        outGap = converter.Gap();
-        return true;
-    } catch (...) {
-        return false;
-    }
+inline bool occtSurfaceToAnalytical(const occ::handle<Geom_Surface>& surface,
+                                    double                           tolerance,
+                                    const double*                    uvBounds,
+                                    occ::handle<Geom_Surface>&       outSurface,
+                                    double&                          outGap)
+{
+  if (surface.IsNull())
+    return false;
+  try
+  {
+    GeomConvert_SurfToAnaSurf converter(surface);
+    occ::handle<Geom_Surface> result = uvBounds ? converter.ConvertToAnalytical(tolerance,
+                                                                                uvBounds[0],
+                                                                                uvBounds[1],
+                                                                                uvBounds[2],
+                                                                                uvBounds[3])
+                                                : converter.ConvertToAnalytical(tolerance);
+    if (result.IsNull())
+      return false;
+    occ::handle<Geom_Surface> detached = occ::handle<Geom_Surface>::DownCast(result->Copy());
+    if (detached.IsNull())
+      return false;
+    outSurface = detached;
+    outGap     = converter.Gap();
+    return true;
+  }
+  catch (...)
+  {
+    return false;
+  }
 }
 
 // === #405/#494: one resolution behind every GeomLProp_* local-property construction ===
@@ -1927,30 +2211,41 @@ inline bool occtSurfaceToAnalytical(const occ::handle<Geom_Surface>& surface, do
 //
 // #529 finished the job on the adaptor side. BRepLProp_SLProps and BRepLProp_CLProps are not a
 // different class family at all: in OCCT 8.0 they are `using` aliases for the very templates
-// GeomLProp_SLProps/GeomLProp_CLProps alias, instantiated over BRepAdaptor_Surface/BRepAdaptor_Curve
-// instead of a Geom_ handle (BRepLProp_SLProps.hxx is nine lines long). Same Resolution, same
-// meaning, so the same value -- see occtFaceLocalProps/occtEdgeLocalProps below.
-inline double occtLocalPropsResolution() { return Precision::Confusion(); }
+// GeomLProp_SLProps/GeomLProp_CLProps alias, instantiated over
+// BRepAdaptor_Surface/BRepAdaptor_Curve instead of a Geom_ handle (BRepLProp_SLProps.hxx is nine
+// lines long). Same Resolution, same meaning, so the same value -- see
+// occtFaceLocalProps/occtEdgeLocalProps below.
+inline double occtLocalPropsResolution()
+{
+  return Precision::Confusion();
+}
 
 // Construct the local-properties object for a surface at (u, v), computing derivatives up to
 // `order` (1 for tangents and the normal, 2 for curvature). C++17 guarantees the returned prvalue
 // is constructed directly into the caller's variable, so nothing is copied or moved.
 inline GeomLProp_SLProps occtSurfaceLocalProps(const occ::handle<Geom_Surface>& surface,
-                                                double u, double v, int order) {
-    return GeomLProp_SLProps(surface, u, v, order, occtLocalPropsResolution());
+                                               double                           u,
+                                               double                           v,
+                                               int                              order)
+{
+  return GeomLProp_SLProps(surface, u, v, order, occtLocalPropsResolution());
 }
 
 // Curve counterpart. The parameter is bound here rather than through a later SetParameter() call,
 // which the two-step callers (construct, then SetParameter) get for free.
 inline GeomLProp_CLProps occtCurveLocalProps(const occ::handle<Geom_Curve>& curve,
-                                              double u, int order) {
-    return GeomLProp_CLProps(curve, u, order, occtLocalPropsResolution());
+                                             double                         u,
+                                             int                            order)
+{
+  return GeomLProp_CLProps(curve, u, order, occtLocalPropsResolution());
 }
 
 // 2D curve counterpart, over Geom2d_Curve.
 inline GeomLProp_CLProps2d occtCurve2dLocalProps(const occ::handle<Geom2d_Curve>& curve,
-                                                  double u, int order) {
-    return GeomLProp_CLProps2d(curve, u, order, occtLocalPropsResolution());
+                                                 double                           u,
+                                                 int                              order)
+{
+  return GeomLProp_CLProps2d(curve, u, order, occtLocalPropsResolution());
 }
 
 // The topological counterparts (#529). A face and the surface under it are the same geometry asked
@@ -1966,15 +2261,18 @@ inline GeomLProp_CLProps2d occtCurve2dLocalProps(const occ::handle<Geom2d_Curve>
 // The adaptor is the caller's, not built here: every one of these call sites needs it for something
 // else too -- its parameter bounds, or a second props object at a different order.
 inline BRepLProp_SLProps occtFaceLocalProps(const BRepAdaptor_Surface& surface,
-                                             double u, double v, int order) {
-    return BRepLProp_SLProps(surface, u, v, order, occtLocalPropsResolution());
+                                            double                     u,
+                                            double                     v,
+                                            int                        order)
+{
+  return BRepLProp_SLProps(surface, u, v, order, occtLocalPropsResolution());
 }
 
 // Edge counterpart, over BRepAdaptor_Curve. As with occtCurveLocalProps the parameter is bound in
 // the constructor rather than through a later SetParameter() call.
-inline BRepLProp_CLProps occtEdgeLocalProps(const BRepAdaptor_Curve& curve,
-                                             double u, int order) {
-    return BRepLProp_CLProps(curve, u, order, occtLocalPropsResolution());
+inline BRepLProp_CLProps occtEdgeLocalProps(const BRepAdaptor_Curve& curve, double u, int order)
+{
+  return BRepLProp_CLProps(curve, u, order, occtLocalPropsResolution());
 }
 
 // Whether a curvature reported by GeomLProp_CLProps/CLProps2d can be turned into a radius, and so
@@ -1997,10 +2295,10 @@ inline BRepLProp_CLProps occtEdgeLocalProps(const BRepAdaptor_Curve& curve,
 //
 // Non-finite values cannot arise from OCCT's own arithmetic here, but are rejected too so that a
 // caller of this predicate never has to ask a second question about the value it approved.
-inline bool occtCurveCurvatureIsInvertible(double curvature) {
-    return std::isfinite(curvature)
-        && curvature != RealLast()
-        && std::abs(curvature) > occtLocalPropsResolution();
+inline bool occtCurveCurvatureIsInvertible(double curvature)
+{
+  return std::isfinite(curvature) && curvature != RealLast()
+         && std::abs(curvature) > occtLocalPropsResolution();
 }
 
 // === #539: the nearest point on a curve, over the range the caller actually has ===
@@ -2049,158 +2347,205 @@ inline bool occtCurveCurvatureIsInvertible(double curvature) {
 #include <ShapeAnalysis_Curve.hxx>
 #include <GeomAPI_ProjectPointOnCurve.hxx>
 
-inline bool occtNearestPointOnCurveRange(const occ::handle<Geom_Curve>& curve, const gp_Pnt& point,
-                                         double first, double last, double precision,
-                                         gp_Pnt* outPoint, double* outParameter,
-                                         double* outDistance) {
-    if (curve.IsNull()) return false;
+inline bool occtNearestPointOnCurveRange(const occ::handle<Geom_Curve>& curve,
+                                         const gp_Pnt&                  point,
+                                         double                         first,
+                                         double                         last,
+                                         double                         precision,
+                                         gp_Pnt*                        outPoint,
+                                         double*                        outParameter,
+                                         double*                        outDistance)
+{
+  if (curve.IsNull())
+    return false;
 
-    const bool firstFinite = !Precision::IsInfinite(first);
-    const bool lastFinite = !Precision::IsInfinite(last);
+  const bool firstFinite = !Precision::IsInfinite(first);
+  const bool lastFinite  = !Precision::IsInfinite(last);
 
-    double bestParam = 0.0, bestDistance = RealLast();
-    gp_Pnt bestPoint;
-    bool found = false;
+  double bestParam = 0.0, bestDistance = RealLast();
+  gp_Pnt bestPoint;
+  bool   found = false;
 
-    // A candidate parameter counts only if it lies in the range AND the curve can be evaluated
-    // there; everything else about it is decided by the distance it produces.
-    auto consider = [&](double param) {
-        if (firstFinite && param < first) return;
-        if (lastFinite && param > last) return;
-        gp_Pnt candidate;
-        try {
-            candidate = curve->Value(param);
-        } catch (...) {
-            return;
-        }
-        double distance = point.Distance(candidate);
-        if (distance < bestDistance) {
-            bestDistance = distance;
-            bestParam = param;
-            bestPoint = candidate;
-            found = true;
-        }
-    };
-
-    // 1. ShapeAnalysis_Curve's answer, kept when it landed inside the range.
-    gp_Pnt analysisPoint;
-    double analysisParam = 0.0, analysisDistance = RealLast();
-    bool haveAnalysis = false;
-    try {
-        ShapeAnalysis_Curve analyzer;
-        analysisDistance = analyzer.Project(curve, point, precision, analysisPoint, analysisParam);
-        haveAnalysis = true;
-        consider(analysisParam);
-    } catch (...) {
-        // Leave it to the other two sources.
+  // A candidate parameter counts only if it lies in the range AND the curve can be evaluated
+  // there; everything else about it is decided by the distance it produces.
+  auto consider = [&](double param) {
+    if (firstFinite && param < first)
+      return;
+    if (lastFinite && param > last)
+      return;
+    gp_Pnt candidate;
+    try
+    {
+      candidate = curve->Value(param);
     }
-
-    // 2. Every extremum inside the range, since the nearest one is not always the first.
-    try {
-        GeomAPI_ProjectPointOnCurve projector(point, curve, first, last);
-        for (int i = 1; i <= projector.NbPoints(); i++) consider(projector.Parameter(i));
-    } catch (...) {
-        // Same.
+    catch (...)
+    {
+      return;
     }
-
-    // 3. The ends, where they are real parameters rather than OCCT's infinity sentinel.
-    if (firstFinite) consider(first);
-    if (lastFinite) consider(last);
-
-    if (!found) {
-        if (!haveAnalysis) return false;
-        bestParam = analysisParam;
-        bestDistance = analysisDistance;
-        bestPoint = analysisPoint;
+    double distance = point.Distance(candidate);
+    if (distance < bestDistance)
+    {
+      bestDistance = distance;
+      bestParam    = param;
+      bestPoint    = candidate;
+      found        = true;
     }
+  };
 
-    if (outPoint) *outPoint = bestPoint;
-    if (outParameter) *outParameter = bestParam;
-    if (outDistance) *outDistance = bestDistance;
-    return true;
+  // 1. ShapeAnalysis_Curve's answer, kept when it landed inside the range.
+  gp_Pnt analysisPoint;
+  double analysisParam = 0.0, analysisDistance = RealLast();
+  bool   haveAnalysis = false;
+  try
+  {
+    ShapeAnalysis_Curve analyzer;
+    analysisDistance = analyzer.Project(curve, point, precision, analysisPoint, analysisParam);
+    haveAnalysis     = true;
+    consider(analysisParam);
+  }
+  catch (...)
+  {
+    // Leave it to the other two sources.
+  }
+
+  // 2. Every extremum inside the range, since the nearest one is not always the first.
+  try
+  {
+    GeomAPI_ProjectPointOnCurve projector(point, curve, first, last);
+    for (int i = 1; i <= projector.NbPoints(); i++)
+      consider(projector.Parameter(i));
+  }
+  catch (...)
+  {
+    // Same.
+  }
+
+  // 3. The ends, where they are real parameters rather than OCCT's infinity sentinel.
+  if (firstFinite)
+    consider(first);
+  if (lastFinite)
+    consider(last);
+
+  if (!found)
+  {
+    if (!haveAnalysis)
+      return false;
+    bestParam    = analysisParam;
+    bestDistance = analysisDistance;
+    bestPoint    = analysisPoint;
+  }
+
+  if (outPoint)
+    *outPoint = bestPoint;
+  if (outParameter)
+    *outParameter = bestParam;
+  if (outDistance)
+    *outDistance = bestDistance;
+  return true;
 }
 
 // === #615: the same question in 2D ===
 //
-// The twin of occtNearestPointOnCurveRange above, for every 2D entry point that promises the CLOSEST
-// point on a bounded curve. #539/#580 converted the 3D side and left this one reporting
+// The twin of occtNearestPointOnCurveRange above, for every 2D entry point that promises the
+// CLOSEST point on a bounded curve. #539/#580 converted the 3D side and left this one reporting
 // Geom2dAPI_ProjectPointOnCurve::LowerDistance directly, so the 2D API was wrong in exactly the two
-// ways the 3D API used to be: a half circle of radius 5 queried from (0, -6) reported the FAR side at
-// distance 11 where the truth is 7.81, and a segment trimmed to [3, 8] queried at (100, 0) reported no
-// projection at all where the truth is its own end, 92 away.
+// ways the 3D API used to be: a half circle of radius 5 queried from (0, -6) reported the FAR side
+// at distance 11 where the truth is 7.81, and a segment trimmed to [3, 8] queried at (100, 0)
+// reported no projection at all where the truth is its own end, 92 away.
 //
 // ONE candidate source is missing relative to the 3D helper, and it is missing from OCCT, not from
 // here: ShapeAnalysis_Curve has no 2D projection. Its Project overloads take Geom_Curve or
 // Adaptor3d_Curve only -- the Geom2d_Curve members of that class (FillBndBox, SelectForwardSeam,
 // GetSamplePoints, IsPeriodic) do something else entirely. So the 2D candidate set is the extrema
-// plus both ends, which is the "all extrema + the two ends" row #580 measured at 188/189 rather than
-// the 189/189 the 3D helper's third source buys. The one case that row misses is Extrema failing to
-// converge on a BSpline, where an end then wins by a fraction of a percent; there is no 2D-NATIVE
-// second algorithm to break that tie. (A Geom2d_Curve could in principle be lifted into the z = 0
-// plane and run through the 3D ShapeAnalysis_Curve. Not done: #580 measured extrema-plus-ends at
-// 188/189, so the lift would buy one case in 189 at the cost of a per-call curve conversion.)
+// plus both ends, which is the "all extrema + the two ends" row #580 measured at 188/189 rather
+// than the 189/189 the 3D helper's third source buys. The one case that row misses is Extrema
+// failing to converge on a BSpline, where an end then wins by a fraction of a percent; there is no
+// 2D-NATIVE second algorithm to break that tie. (A Geom2d_Curve could in principle be lifted into
+// the z = 0 plane and run through the 3D ShapeAnalysis_Curve. Not done: #580 measured
+// extrema-plus-ends at 188/189, so the lift would buy one case in 189 at the cost of a per-call
+// curve conversion.)
 //
-// Everything else matches the 3D helper deliberately, including the treatment of infinite bounds and
-// of periodic bases; see its comment for why each choice is what it is.
+// Everything else matches the 3D helper deliberately, including the treatment of infinite bounds
+// and of periodic bases; see its comment for why each choice is what it is.
 //
 // Returns false only when there is nothing to answer with: a null curve, or a curve on which every
-// candidate failed to evaluate. With no ShapeAnalysis fallback there is no "kept the analytic answer"
-// path, so an unbounded 2D curve with no extremum at all -- which no Geom2d type measured here
-// actually produces, since a line, parabola and hyperbola each always have a perpendicular foot --
-// would report false rather than a wrong answer.
+// candidate failed to evaluate. With no ShapeAnalysis fallback there is no "kept the analytic
+// answer" path, so an unbounded 2D curve with no extremum at all -- which no Geom2d type measured
+// here actually produces, since a line, parabola and hyperbola each always have a perpendicular
+// foot -- would report false rather than a wrong answer.
 
 #include <Geom2dAPI_ProjectPointOnCurve.hxx>
 
 inline bool occtNearestPointOnCurve2dRange(const occ::handle<Geom2d_Curve>& curve,
-                                           const gp_Pnt2d& point,
-                                           double first, double last,
-                                           gp_Pnt2d* outPoint, double* outParameter,
-                                           double* outDistance) {
-    if (curve.IsNull()) return false;
+                                           const gp_Pnt2d&                  point,
+                                           double                           first,
+                                           double                           last,
+                                           gp_Pnt2d*                        outPoint,
+                                           double*                          outParameter,
+                                           double*                          outDistance)
+{
+  if (curve.IsNull())
+    return false;
 
-    const bool firstFinite = !Precision::IsInfinite(first);
-    const bool lastFinite = !Precision::IsInfinite(last);
+  const bool firstFinite = !Precision::IsInfinite(first);
+  const bool lastFinite  = !Precision::IsInfinite(last);
 
-    double bestParam = 0.0, bestDistance = RealLast();
-    gp_Pnt2d bestPoint;
-    bool found = false;
+  double   bestParam = 0.0, bestDistance = RealLast();
+  gp_Pnt2d bestPoint;
+  bool     found = false;
 
-    auto consider = [&](double param) {
-        if (firstFinite && param < first) return;
-        if (lastFinite && param > last) return;
-        gp_Pnt2d candidate;
-        try {
-            candidate = curve->Value(param);
-        } catch (...) {
-            return;
-        }
-        double distance = point.Distance(candidate);
-        if (distance < bestDistance) {
-            bestDistance = distance;
-            bestParam = param;
-            bestPoint = candidate;
-            found = true;
-        }
-    };
-
-    // 1. Every extremum inside the range, since the nearest one is not always the first.
-    try {
-        Geom2dAPI_ProjectPointOnCurve projector(point, curve, first, last);
-        for (int i = 1; i <= projector.NbPoints(); i++) consider(projector.Parameter(i));
-    } catch (...) {
-        // Leave it to the ends.
+  auto consider = [&](double param) {
+    if (firstFinite && param < first)
+      return;
+    if (lastFinite && param > last)
+      return;
+    gp_Pnt2d candidate;
+    try
+    {
+      candidate = curve->Value(param);
     }
+    catch (...)
+    {
+      return;
+    }
+    double distance = point.Distance(candidate);
+    if (distance < bestDistance)
+    {
+      bestDistance = distance;
+      bestParam    = param;
+      bestPoint    = candidate;
+      found        = true;
+    }
+  };
 
-    // 2. The ends, where they are real parameters rather than OCCT's infinity sentinel.
-    if (firstFinite) consider(first);
-    if (lastFinite) consider(last);
+  // 1. Every extremum inside the range, since the nearest one is not always the first.
+  try
+  {
+    Geom2dAPI_ProjectPointOnCurve projector(point, curve, first, last);
+    for (int i = 1; i <= projector.NbPoints(); i++)
+      consider(projector.Parameter(i));
+  }
+  catch (...)
+  {
+    // Leave it to the ends.
+  }
 
-    if (!found) return false;
+  // 2. The ends, where they are real parameters rather than OCCT's infinity sentinel.
+  if (firstFinite)
+    consider(first);
+  if (lastFinite)
+    consider(last);
 
-    if (outPoint) *outPoint = bestPoint;
-    if (outParameter) *outParameter = bestParam;
-    if (outDistance) *outDistance = bestDistance;
-    return true;
+  if (!found)
+    return false;
+
+  if (outPoint)
+    *outPoint = bestPoint;
+  if (outParameter)
+    *outParameter = bestParam;
+  if (outDistance)
+    *outDistance = bestDistance;
+  return true;
 }
 
 // === #496: the drilling preconditions, and one BRepFeat_MakeCylindricalHole skeleton ===
@@ -2215,9 +2560,9 @@ inline bool occtNearestPointOnCurve2dRange(const occ::handle<Geom2d_Curve>& curv
 //                           BRepAlgoAPI_Cut. Works on any shape, overshoots harmlessly, and cannot
 //                           say why it failed.
 //   BRepFeat_MakeCylindricalHole  is OCCT's local-operation feature drill. Needs a solid, reports a
-//                           real BRepFeat_Status, and each of its five modes bounds the hole its own
-//                           way — none of which is "start at the origin and run for a length" except
-//                           PerformBlind, which then rejects a length that leaves the stock.
+//                           real BRepFeat_Status, and each of its five modes bounds the hole its
+//                           own way — none of which is "start at the origin and run for a length"
+//                           except PerformBlind, which then rejects a length that leaves the stock.
 //
 // So this section does not merge the two algorithms. It gives them the one thing they genuinely
 // should share — the preconditions on a drilling request — and collapses the feature family's five
@@ -2227,9 +2572,10 @@ inline bool occtNearestPointOnCurve2dRange(const occ::handle<Geom2d_Curve>& curv
 // reached gp_Dir, threw Standard_ConstructionError ("input vector has zero norm") and swallowed it
 // in its own catch (...). Same answer today, by an accident that any narrowing of that catch would
 // have taken away. NaN fails this too, since every NaN comparison is false.
-inline bool occtValidDrillDirection(double dirX, double dirY, double dirZ) {
-    double sq = dirX * dirX + dirY * dirY + dirZ * dirZ;
-    return sq >= 1e-20;   // matches OCCTShapeDrillHole's historical 1e-10 on the magnitude
+inline bool occtValidDrillDirection(double dirX, double dirY, double dirZ)
+{
+  double sq = dirX * dirX + dirY * dirY + dirZ * dirZ;
+  return sq >= 1e-20; // matches OCCTShapeDrillHole's historical 1e-10 on the magnitude
 }
 
 // Both families need a radius OCCT can actually build a cylinder from. Not just positive: the
@@ -2241,41 +2587,50 @@ inline bool occtValidDrillDirection(double dirX, double dirY, double dirZ) {
 // the input: same volume, same six faces, no material removed. A drill that reports success and
 // removes nothing is the worst of the three possible answers. A negative radius throws, and both
 // families already turned that into a failure.
-inline bool occtValidDrillRadius(double radius) {
-    return radius > Precision::Confusion();
+inline bool occtValidDrillRadius(double radius)
+{
+  return radius > Precision::Confusion();
 }
 
 // The five ways BRepFeat_MakeCylindricalHole can bound a hole. Kept in one place because the Swift
 // CylindricalHoleExtent enum, the two bridge entry points and this skeleton all have to agree.
-enum OCCTCylindricalHoleExtent : int32_t {
-    OCCTCylindricalHoleThroughAll = 0,   // Perform(R)                — an INFINITE cylinder, both
-                                         //   ways along the axis; the origin anchors it, and is not
-                                         //   a starting point
-    OCCTCylindricalHoleUntilEnd   = 1,   // PerformUntilEnd(R)        — bounded by the stock's own
-                                         //   entry and exit faces
-    OCCTCylindricalHoleThruNext   = 2,   // PerformThruNext(R)        — stops at the next face
-    OCCTCylindricalHoleBlind      = 3,   // PerformBlind(R, length)   — `p0` is the length, measured
-                                         //   from the origin; HoleTooLong if it leaves the stock
-    OCCTCylindricalHoleRange      = 4,   // Perform(R, PFrom, PTo)    — `p0`/`p1` are parameters on
-                                         //   the axis
+enum OCCTCylindricalHoleExtent : int32_t
+{
+  OCCTCylindricalHoleThroughAll = 0, // Perform(R)                — an INFINITE cylinder, both
+                                     //   ways along the axis; the origin anchors it, and is not
+                                     //   a starting point
+  OCCTCylindricalHoleUntilEnd = 1,   // PerformUntilEnd(R)        — bounded by the stock's own
+                                     //   entry and exit faces
+  OCCTCylindricalHoleThruNext = 2,   // PerformThruNext(R)        — stops at the next face
+  OCCTCylindricalHoleBlind    = 3,   // PerformBlind(R, length)   — `p0` is the length, measured
+                                     //   from the origin; HoleTooLong if it leaves the stock
+  OCCTCylindricalHoleRange = 4,      // Perform(R, PFrom, PTo)    — `p0`/`p1` are parameters on
+                                     //   the axis
 };
 
 // The status vocabulary shared with Swift's Shape.CylindricalHoleStatus. Values are the wire
 // contract; do not renumber.
-enum OCCTCylindricalHoleStatus : int32_t {
-    OCCTCylindricalHoleNoError          = 0,
-    OCCTCylindricalHoleInvalidPlacement = 1,
-    OCCTCylindricalHoleHoleTooLong      = 2,
-    OCCTCylindricalHoleUnknown          = 3,
+enum OCCTCylindricalHoleStatus : int32_t
+{
+  OCCTCylindricalHoleNoError          = 0,
+  OCCTCylindricalHoleInvalidPlacement = 1,
+  OCCTCylindricalHoleHoleTooLong      = 2,
+  OCCTCylindricalHoleUnknown          = 3,
 };
 
-inline int32_t occtCylindricalHoleStatusCode(BRepFeat_Status status) {
-    switch (status) {
-        case BRepFeat_NoError:          return OCCTCylindricalHoleNoError;
-        case BRepFeat_InvalidPlacement: return OCCTCylindricalHoleInvalidPlacement;
-        case BRepFeat_HoleTooLong:      return OCCTCylindricalHoleHoleTooLong;
-        default:                        return OCCTCylindricalHoleUnknown;
-    }
+inline int32_t occtCylindricalHoleStatusCode(BRepFeat_Status status)
+{
+  switch (status)
+  {
+    case BRepFeat_NoError:
+      return OCCTCylindricalHoleNoError;
+    case BRepFeat_InvalidPlacement:
+      return OCCTCylindricalHoleInvalidPlacement;
+    case BRepFeat_HoleTooLong:
+      return OCCTCylindricalHoleHoleTooLong;
+    default:
+      return OCCTCylindricalHoleUnknown;
+  }
 }
 
 // Init, run the requested mode, read Status(), and — only when `outShape` is given and the status
@@ -2292,43 +2647,71 @@ inline int32_t occtCylindricalHoleStatusCode(BRepFeat_Status status) {
 // A malformed request (no axis direction, a radius OCCT cannot build) is InvalidPlacement rather
 // than Unknown: the caller named a placement that cannot define a hole, which is actionable, where
 // Unknown means "OCCT raised something we do not recognise".
-inline int32_t occtBRepFeatCylindricalHole(OCCTShapeRef shape,
-                                           double originX, double originY, double originZ,
-                                           double dirX, double dirY, double dirZ,
-                                           double radius, int32_t extent,
-                                           double p0, double p1,
-                                           OCCTShapeRef* outShape) {
-    if (outShape) *outShape = nullptr;
-    if (!shape) return OCCTCylindricalHoleInvalidPlacement;
-    if (!occtValidDrillDirection(dirX, dirY, dirZ)) return OCCTCylindricalHoleInvalidPlacement;
-    if (!occtValidDrillRadius(radius)) return OCCTCylindricalHoleInvalidPlacement;
+inline int32_t occtBRepFeatCylindricalHole(OCCTShapeRef  shape,
+                                           double        originX,
+                                           double        originY,
+                                           double        originZ,
+                                           double        dirX,
+                                           double        dirY,
+                                           double        dirZ,
+                                           double        radius,
+                                           int32_t       extent,
+                                           double        p0,
+                                           double        p1,
+                                           OCCTShapeRef* outShape)
+{
+  if (outShape)
+    *outShape = nullptr;
+  if (!shape)
+    return OCCTCylindricalHoleInvalidPlacement;
+  if (!occtValidDrillDirection(dirX, dirY, dirZ))
+    return OCCTCylindricalHoleInvalidPlacement;
+  if (!occtValidDrillRadius(radius))
+    return OCCTCylindricalHoleInvalidPlacement;
 
-    try {
-        gp_Ax1 axis(gp_Pnt(originX, originY, originZ), gp_Dir(dirX, dirY, dirZ));
-        BRepFeat_MakeCylindricalHole hole;
-        hole.Init(shape->shape, axis);
+  try
+  {
+    gp_Ax1                       axis(gp_Pnt(originX, originY, originZ), gp_Dir(dirX, dirY, dirZ));
+    BRepFeat_MakeCylindricalHole hole;
+    hole.Init(shape->shape, axis);
 
-        switch (extent) {
-            case OCCTCylindricalHoleUntilEnd: hole.PerformUntilEnd(radius);  break;
-            case OCCTCylindricalHoleThruNext: hole.PerformThruNext(radius);  break;
-            case OCCTCylindricalHoleBlind:    hole.PerformBlind(radius, p0); break;
-            case OCCTCylindricalHoleRange:    hole.Perform(radius, p0, p1);  break;
-            case OCCTCylindricalHoleThroughAll: hole.Perform(radius);        break;
-            default: return OCCTCylindricalHoleInvalidPlacement;
-        }
-
-        int32_t status = occtCylindricalHoleStatusCode(hole.Status());
-        if (!outShape || status != OCCTCylindricalHoleNoError) return status;
-
-        hole.Build();
-        TopoDS_Shape result = hole.Shape();
-        if (result.IsNull()) return OCCTCylindricalHoleUnknown;
-
-        *outShape = new OCCTShape(result);
-        return OCCTCylindricalHoleNoError;
-    } catch (...) {
-        return OCCTCylindricalHoleUnknown;
+    switch (extent)
+    {
+      case OCCTCylindricalHoleUntilEnd:
+        hole.PerformUntilEnd(radius);
+        break;
+      case OCCTCylindricalHoleThruNext:
+        hole.PerformThruNext(radius);
+        break;
+      case OCCTCylindricalHoleBlind:
+        hole.PerformBlind(radius, p0);
+        break;
+      case OCCTCylindricalHoleRange:
+        hole.Perform(radius, p0, p1);
+        break;
+      case OCCTCylindricalHoleThroughAll:
+        hole.Perform(radius);
+        break;
+      default:
+        return OCCTCylindricalHoleInvalidPlacement;
     }
+
+    int32_t status = occtCylindricalHoleStatusCode(hole.Status());
+    if (!outShape || status != OCCTCylindricalHoleNoError)
+      return status;
+
+    hole.Build();
+    TopoDS_Shape result = hole.Shape();
+    if (result.IsNull())
+      return OCCTCylindricalHoleUnknown;
+
+    *outShape = new OCCTShape(result);
+    return OCCTCylindricalHoleNoError;
+  }
+  catch (...)
+  {
+    return OCCTCylindricalHoleUnknown;
+  }
 }
 
 #endif /* OCCTBridge_Internal_h */
