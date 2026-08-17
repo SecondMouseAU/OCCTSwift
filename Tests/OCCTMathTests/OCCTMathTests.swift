@@ -150,7 +150,7 @@ struct NonUniformScaleTests {
         let scaled = box.nonUniformScaled(sx: 2, sy: 1, sz: 0.5)
         #expect(scaled != nil)
         #expect(scaled!.isValid)
-        let size = scaled!.size
+        let size = scaled!.size!
         #expect(abs(size.x - 20) < 0.1)
         #expect(abs(size.y - 10) < 0.1)
         #expect(abs(size.z - 5) < 0.1)
@@ -280,7 +280,7 @@ struct ShapeMirrorTests {
         #expect(mirrored != nil)
         if let m = mirrored {
             #expect(m.isValid)
-            let bb = m.bounds
+            let bb = m.bounds!
             // Box (-5..5) mirrored about x=20 gives (35..45)
             #expect(abs(bb.min.x - 35) < 0.5)
             #expect(abs(bb.max.x - 45) < 0.5)
@@ -307,7 +307,7 @@ struct ShapeScaleAboutPointTests {
         #expect(scaled != nil)
         if let s = scaled {
             #expect(s.isValid)
-            let size = s.size
+            let size = s.size!
             #expect(abs(size.x - 20) < 0.5)
             #expect(abs(size.y - 20) < 0.5)
             #expect(abs(size.z - 20) < 0.5)
@@ -321,7 +321,7 @@ struct ShapeScaleAboutPointTests {
         #expect(scaled != nil)
         if let s = scaled {
             #expect(s.isValid)
-            let size = s.size
+            let size = s.size!
             #expect(abs(size.x - 10) < 0.5)
         }
     }
@@ -336,7 +336,7 @@ struct ShapeTranslateByPointsTests {
         #expect(translated != nil)
         if let t = translated {
             #expect(t.isValid)
-            let bb = t.bounds
+            let bb = t.bounds!
             // Box centered at origin (-5..5) translated by (20,0,0) → (15..25)
             #expect(abs(bb.min.x - 15) < 0.5)
             #expect(abs(bb.max.x - 25) < 0.5)

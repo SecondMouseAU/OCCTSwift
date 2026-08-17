@@ -1152,7 +1152,7 @@ struct MissingShapeOpsTests {
         let scaled = box.scaled(by: 2.0)
         #expect(scaled != nil)
         #expect(scaled!.isValid)
-        let scaledSize = scaled!.size
+        let scaledSize = scaled!.size!
         #expect(abs(scaledSize.x - 20) < 0.01)
         #expect(abs(scaledSize.y - 20) < 0.01)
         #expect(abs(scaledSize.z - 20) < 0.01)
@@ -1165,7 +1165,7 @@ struct MissingShapeOpsTests {
         #expect(mirrored != nil)
         #expect(mirrored!.isValid)
         // Original center is at (10, 5, 5), mirrored should be at (-10, 5, 5)
-        let mirroredCenter = mirrored!.center
+        let mirroredCenter = mirrored!.center!
         #expect(mirroredCenter.x < 0)
     }
 
@@ -4329,7 +4329,7 @@ struct IntegrationThicknessAnalysisTests {
                 if len < 1e-10 { continue }
                 let normalized = n / len
 
-                let fb = face.bounds
+                let fb = face.bounds!
                 let centroid = (fb.min + fb.max) / 2.0
 
                 // Cast ray inward (opposite of outward normal)
@@ -5894,7 +5894,7 @@ struct FeatureReconstructorInputBodyTests {
         #expect(result.shape != nil)
         // Volume preserved — no features applied.
         if let s = result.shape {
-            let box1 = box.bounds, box2 = s.bounds
+            let box1 = box.bounds!, box2 = s.bounds!
             #expect(abs(box1.min.x - box2.min.x) < 1e-9)
             #expect(abs(box1.max.x - box2.max.x) < 1e-9)
         }
@@ -5903,7 +5903,7 @@ struct FeatureReconstructorInputBodyTests {
     @Test("Hole subtracts from inputBody without an additive seed")
     func holeOnInputBody() {
         let plate = Shape.box(width: 50, height: 50, depth: 5)!
-        let plateBoundsBefore = plate.bounds
+        let plateBoundsBefore = plate.bounds!
         let h = FeatureSpec.Hole(
             axisPoint: SIMD3(25, 25, 0),
             axisDirection: SIMD3(0, 0, 1),
@@ -5913,7 +5913,7 @@ struct FeatureReconstructorInputBodyTests {
         #expect(result.shape != nil)
         // Outer bbox unchanged (hole is internal).
         if let s = result.shape {
-            let after = s.bounds
+            let after = s.bounds!
             #expect(abs(plateBoundsBefore.min.x - after.min.x) < 1e-6)
             #expect(abs(plateBoundsBefore.max.z - after.max.z) < 1e-6)
         }
@@ -6039,8 +6039,8 @@ struct FeatureReconstructorInputBodyTests {
         #expect(result.fulfilled.contains("tab"))
         #expect(result.shape != nil)
         // Combined bbox extends past z=5 (the tab adds 5mm above the plate).
-        if let s = result.shape {
-            #expect(s.bounds.max.z > 9.0)
+        if let s = result.shape, let b = s.bounds {
+            #expect(b.max.z > 9.0)
         }
     }
 }
@@ -6053,7 +6053,7 @@ struct FeatureReconstructorJSONBooleanTests {
     @Test("JSON boolean subtract referencing @input cuts the input body")
     func jsonBooleanSubtractAtInput() throws {
         let plate = Shape.box(width: 40, height: 40, depth: 5)!
-        let plateBoundsBefore = plate.bounds
+        let plateBoundsBefore = plate.bounds!
         let json = """
         {
           "features": [
@@ -6081,8 +6081,7 @@ struct FeatureReconstructorJSONBooleanTests {
                  "expected cut_slot to be fulfilled, was: \(result.fulfilled)")
         #expect(result.shape != nil)
         // Outer bbox unchanged (slot is internal).
-        if let s = result.shape {
-            let after = s.bounds
+        if let s = result.shape, let after = s.bounds {
             #expect(abs(plateBoundsBefore.max.x - after.max.x) < 1e-6)
             #expect(abs(plateBoundsBefore.max.y - after.max.y) < 1e-6)
         }
@@ -6347,7 +6346,9 @@ struct SewQuiltHealFullHistoryTests {
     }
 
     static func edgeNearX(_ shape: Shape, _ x: Double) -> Shape {
-        shape.subShapes(ofType: .edge).min { abs($0.center.x - x) < abs($1.center.x - x) }!
+        shape.subShapes(ofType: .edge).min { 
+            abs(($0.center?.x ?? .greatestFiniteMagnitude) - x) < abs(($1.center?.x ?? .greatestFiniteMagnitude) - x)
+        }!
     }
 
     @Test("Sew: two touching inputs merge into ONE shared output edge, both reported Modified")

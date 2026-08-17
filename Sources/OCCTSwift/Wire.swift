@@ -1293,9 +1293,9 @@ extension Wire {
     /// - Warning: Forwards to ``Shape/bounds``, including its void-shape fabrication: an
     ///   unconvertible or degenerate wire reports `(0,0,0)-(0,0,0)`, indistinguishable from a
     ///   genuine zero-size wire at the origin (#834).
-    public var bounds: (min: SIMD3<Double>, max: SIMD3<Double>) {
+    public var bounds: (min: SIMD3<Double>, max: SIMD3<Double>)? {
         guard let shape = Shape.fromWire(self) else {
-            return (min: .zero, max: .zero)
+            return nil
         }
         return shape.bounds
     }

@@ -248,7 +248,7 @@ public final class AAG: @unchecked Sendable {
                 // meshed this shape. AAGNode represents the shape's geometry, not its incidental
                 // tessellation state, so its bounds must not move depending on whether the caller
                 // happened to call mesh() first.
-                bounds: face.exactBounds
+                bounds: face.exactBounds!
             )
             nodes.append(node)
         }

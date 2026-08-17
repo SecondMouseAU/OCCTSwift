@@ -57,7 +57,7 @@ struct Issue187ScrewThreadTests {
         let spec = ThreadSpec(form: .iso68, nominalDiameter: 6, pitch: 1.0)
         func run() -> Double? {
             shank.threadedShaft(axisOrigin: .zero, axisDirection: SIMD3(0, 0, 1),
-                                spec: spec, length: 16)?.bounds.max.x
+                                spec: spec, length: 16)?.bounds!.max.x
         }
         let a = run(), b = run()
         #expect(a != nil); #expect(b != nil)
@@ -91,7 +91,7 @@ struct Issue187ScrewThreadTests {
         if let tapped {
             #expect(tapped.isValid)
             // Tapping the bore wall only adds material toward the axis; outer Ø24 unchanged.
-            #expect(tapped.bounds.max.x <= block.bounds.max.x + 0.25)
+            #expect(tapped.bounds!.max.x <= block.bounds!.max.x + 0.25)
         }
     }
 }

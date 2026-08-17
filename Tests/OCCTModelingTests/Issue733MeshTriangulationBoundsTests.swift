@@ -102,7 +102,7 @@ struct Issue733MeshTriangulationBoundsTests {
         let box = try #require(Shape.box(width: 20, height: 10, depth: 6))
         var checkedNonDegenerateAxis = false
         for face in box.faces() {
-            let b = face.exactBounds
+            let b = face.exactBounds!
             for (lo, hi) in [(b.min.x, b.max.x), (b.min.y, b.max.y), (b.min.z, b.max.z)] {
                 #expect(lo <= hi + 1e-9, "min=\(lo) exceeds max=\(hi)")
                 if hi - lo > 1e-6 { checkedNonDegenerateAxis = true }

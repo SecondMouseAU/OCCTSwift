@@ -1753,7 +1753,7 @@ struct OrientedBoundingBoxTests {
         // OBB volume should be close to original volume (10 * 2 * 2 = 40)
         #expect(obb!.volume < 60.0) // Some tolerance
         // AABB would be much larger for a 45° rotated shape
-        let aabb = box.bounds
+        let aabb = box.bounds!
         let aabbVolume = (aabb.max.x - aabb.min.x) * (aabb.max.y - aabb.min.y) * (aabb.max.z - aabb.min.z)
         #expect(obb!.volume < aabbVolume)
     }
@@ -6013,11 +6013,9 @@ struct BRepBndLibTests {
             return
         }
         #expect(voidShape.boundingBox == nil)
-        let b = voidShape.bounds
-        #expect(b.min == SIMD3<Double>.zero)
-        #expect(b.max == SIMD3<Double>.zero)
-        #expect(voidShape.size == SIMD3<Double>.zero)
-        #expect(voidShape.center == SIMD3<Double>.zero)
+        #expect(voidShape.bounds == nil)
+        #expect(voidShape.size == nil)
+        #expect(voidShape.center == nil)
     }
 
     // #900: a point-vertex shape at the world origin legitimately measures to all-zero
@@ -6391,7 +6389,7 @@ struct ShapeMeasurementsTests {
                 Issue.record("face \(i) of a box has an area, so it has a centroid")
                 continue
             }
-            let b = faceList[i].bounds
+            let b = faceList[i].bounds!
             #expect(c.x >= b.min.x - 1e-6 && c.x <= b.max.x + 1e-6,
                     "face \(i) centroid X=\(c.x) outside [\(b.min.x), \(b.max.x)]")
             #expect(c.y >= b.min.y - 1e-6 && c.y <= b.max.y + 1e-6,

@@ -33,11 +33,15 @@ public final class Edge: @unchecked Sendable {
     }
     
     /// Get the bounding box of the edge
-    public var bounds: (min: SIMD3<Double>, max: SIMD3<Double>) {
+    ///
+    /// - Returns: The bounding box as `(min, max)` corners, or `nil` if the edge is void/empty
+    public var bounds: (min: SIMD3<Double>, max: SIMD3<Double>)? {
         var minX: Double = 0, minY: Double = 0, minZ: Double = 0
         var maxX: Double = 0, maxY: Double = 0, maxZ: Double = 0
         OCCTEdgeGetBounds(handle, &minX, &minY, &minZ, &maxX, &maxY, &maxZ)
-        return (min: SIMD3(minX, minY, minZ), max: SIMD3(maxX, maxY, maxZ))
+        let min = SIMD3(minX, minY, minZ)
+        let max = SIMD3(maxX, maxY, maxZ)
+        return min == .zero && max == .zero ? nil : (min: min, max: max)
     }
     
     /// Check if the edge is a straight line

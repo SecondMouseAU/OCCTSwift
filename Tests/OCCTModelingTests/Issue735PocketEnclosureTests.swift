@@ -286,7 +286,7 @@ struct Issue753FilletedJunctionDetectedTests {
         let prePockets = cut.detectPocketsAAG()
         #expect(prePockets.count == 1)
 
-        let junctionEdges = cut.edges(where: { abs($0.bounds.min.z) < 1e-6 && abs($0.bounds.max.z) < 1e-6 })
+        let junctionEdges = cut.edges(where: { abs($0.bounds!.min.z) < 1e-6 && abs($0.bounds!.max.z) < 1e-6 })
         #expect(junctionEdges.count == 4)
         let filleted = try #require(cut.filleted(edges: junctionEdges, radius: 1.0))
 

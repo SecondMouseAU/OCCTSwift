@@ -549,7 +549,7 @@ struct GeometricEdgeSelectionTests {
         let bottom = box.edges(inBounds: SIMD3(-6, -6, -5.1), SIMD3(6, 6, -4.9))
         #expect(bottom.count == 4)
         for e in bottom {
-            #expect(e.bounds.max.z < -4.9)
+            #expect(e.bounds!.max.z < -4.9)
         }
         // A region covering the whole box contains every edge.
         let all = box.edges(inBounds: SIMD3(-6, -6, -6), SIMD3(6, 6, 6))
@@ -2313,7 +2313,7 @@ struct ShapeCSIntersectorTestsV52 {
     func rectangleBounds() {
         let wire = Wire.rectangle(width: 10, height: 6)
         if let wire {
-            let b = wire.bounds
+            let b = wire.bounds!
             #expect(b.min.x < b.max.x)
             #expect(b.min.y < b.max.y)
             #expect(abs(b.max.x - b.min.x - 10) < 0.01)
@@ -2325,7 +2325,7 @@ struct ShapeCSIntersectorTestsV52 {
     func circleBounds() {
         let wire = Wire.circle(radius: 5)
         if let wire {
-            let b = wire.bounds
+            let b = wire.bounds!
             #expect(abs(b.max.x - b.min.x - 10) < 0.01)
             #expect(abs(b.max.y - b.min.y - 10) < 0.01)
         }

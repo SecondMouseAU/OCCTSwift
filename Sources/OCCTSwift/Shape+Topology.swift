@@ -872,7 +872,7 @@ extension Shape {
         let lo = simd_min(min, max)
         let hi = simd_max(min, max)
         return edges().filter { edge in
-            let b = edge.bounds
+            guard let b = edge.bounds else { return false }
             return all(b.min .>= lo) && all(b.max .<= hi)
         }
     }

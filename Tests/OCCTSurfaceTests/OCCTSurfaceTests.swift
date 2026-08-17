@@ -118,7 +118,7 @@ struct FillingSupportFaceTests {
     private func rimEdge(of shape: Shape) -> Edge? {
         shape.edges()
             .filter { $0.isClosed3D }
-            .max(by: { $0.bounds.max.z < $1.bounds.max.z })
+            .max(by: { $0.bounds!.max.z < $1.bounds!.max.z })
     }
 
     private func rimWire(of shape: Shape) -> Wire? {
@@ -154,7 +154,7 @@ struct FillingSupportFaceTests {
 
         if let flat = flat {
             // A positional fill of a planar rim is a flat disc: no z extent.
-            #expect(flat.size.z < 1e-6)
+            #expect(flat.size!.z < 1e-6)
         } else {
             Issue.record("Positional fill of the rim should succeed")
         }
@@ -162,7 +162,7 @@ struct FillingSupportFaceTests {
         if let tangent = tangent {
             #expect(tangent.isValid)
             // Tangency to the spherical wall forces the cap off the rim plane.
-            #expect(tangent.size.z > 0.5)
+            #expect(tangent.size!.z > 0.5)
         } else {
             Issue.record("Tangent fill with a support shape should succeed")
         }
@@ -185,7 +185,7 @@ struct FillingSupportFaceTests {
 
         if let capped = capped {
             #expect(capped.isValid)
-            #expect(capped.size.z > 0.5)
+            #expect(capped.size!.z > 0.5)
         } else {
             Issue.record("Explicit constraint fill with a support face should succeed")
         }
@@ -214,7 +214,7 @@ struct FillingSupportFaceTests {
         // Non-nil alone would also pass if .g2 silently behaved as .g1, which is the other way
         // this mapping can break. Matching the sphere's curvature as well as its tangent pushes
         // the cap measurably further than tangency alone does.
-        #expect(curvature.size.z > tangent.size.z + 0.5)
+        #expect(curvature.size!.z > tangent.size!.z + 0.5)
     }
 
     @Test("maxDegree caps the degree of the resulting surface (#431)")
@@ -258,7 +258,7 @@ struct FillingSupportFaceTests {
 
         if let capped = capped {
             #expect(capped.isValid)
-            #expect(capped.size.z > 0.5)
+            #expect(capped.size!.z > 0.5)
         } else {
             Issue.record("Fill should fall back per edge, not fail outright")
         }
@@ -294,8 +294,8 @@ struct FillingSupportFaceTests {
             return
         }
 
-        #expect(boundaryOnly.size.z < 1e-6)      // flat disc across the rim
-        #expect(withInterior.size.z > 0.5)       // pulled up to the interior edge
+        #expect(boundaryOnly.size!.z < 1e-6)      // flat disc across the rim
+        #expect(withInterior.size!.z > 0.5)       // pulled up to the interior edge
     }
 
     @Test("Free-standing boundary has nothing to be tangent to and fails cleanly")
@@ -352,7 +352,7 @@ struct FillingSupportFaceTests {
             FillConstraint(edge: rim, continuity: .g1)
         ])
         if let derived = derived {
-            #expect(derived.size.z > 0.5)
+            #expect(derived.size!.z > 0.5)
         } else {
             Issue.record("Deriving a support face from the edge should still succeed")
         }
@@ -427,10 +427,10 @@ struct FillingSupportFaceTests {
             return
         }
 
-        #expect(tangentFace.size.z > 0.5)
+        #expect(tangentFace.size!.z > 0.5)
         // Non-nil alone would also pass if .g2 silently behaved as .g1. Matching curvature as
         // well as tangency pushes the cap measurably further than tangency alone.
-        #expect(curvatureFace.size.z > tangentFace.size.z + 0.5)
+        #expect(curvatureFace.size!.z > tangentFace.size!.z + 0.5)
     }
 
     @Test("add(edge:support:continuity:) rejects a support face that cannot serve (#434)")
@@ -480,7 +480,7 @@ struct FillingSupportFaceTests {
             Issue.record("Default-continuity fill with a real support face should succeed")
             return
         }
-        #expect(face.size.z > 0.5)   // tangent to the sphere, not a flat disc
+        #expect(face.size!.z > 0.5)   // tangent to the sphere, not a flat disc
 
         // ...and an unrelated support face is rejected with no continuity argument either.
         let rejecting = FillingSurface()

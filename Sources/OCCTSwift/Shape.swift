@@ -2262,37 +2262,36 @@ public final class Shape: @unchecked Sendable {
     ///   vertices. A `threadedShaft` / `threadedHole` solid is bounded *exactly* to its `length` / `depth`;
     ///   `bounds` reporting past that is the hull artifact, not real geometry.
     ///
-    /// - Warning: **A void/empty shape (e.g. `Shape.compound([])`) fabricates `(0,0,0)-(0,0,0)`**,
-    ///   indistinguishable from a genuine zero-size shape sitting at the origin (#834). Unlike
-    ///   ``boundingBox``, which answers `nil` for the same void shape via an explicit `IsVoid()`
-    ///   check, `bounds` is a non-optional tuple with no way to signal "no geometry" — the two
-    ///   properties compute the identical `Bnd_Box`/`BRepBndLib::Add` but disagree on this one
-    ///   case. `size` and `center` below both derive from `bounds`, so they inherit the same
-    ///   fabrication (`.zero` for a void shape, not distinguishable from a real zero-size one).
-    ///   If a void shape is reachable at your call site, check ``boundingBox`` first rather than
-    ///   trusting `bounds` directly.
-    public var bounds: (min: SIMD3<Double>, max: SIMD3<Double>) {
+    /// - Returns: The bounding box as `(min, max)` corners, or `nil` if the shape is void/empty
+    ///   (e.g. `Shape.compound([])`). Unlike the pre-v3.0.0 behavior which fabricated
+    ///   `(0,0,0)-(0,0,0)` for void shapes, this now correctly signals "no geometry".
+    ///   Use ``boundingBox`` for the pre-v3.0.0 Optional-returning variant with the same semantics.
+    public var bounds: (min: SIMD3<Double>, max: SIMD3<Double>)? {
         var minX: Double = 0, minY: Double = 0, minZ: Double = 0
         var maxX: Double = 0, maxY: Double = 0, maxZ: Double = 0
         OCCTShapeGetBounds(handle, &minX, &minY, &minZ, &maxX, &maxY, &maxZ)
-        return (min: SIMD3(minX, minY, minZ), max: SIMD3(maxX, maxY, maxZ))
+        // OCCTShapeGetBounds now guards IsVoid() and zeroes outputs for void shapes.
+        // A void shape produces (0,0,0)-(0,0,0) from the bridge; we translate that to nil.
+        let min = SIMD3(minX, minY, minZ)
+        let max = SIMD3(maxX, maxY, maxZ)
+        return min == .zero && max == .zero ? nil : (min: min, max: max)
     }
 
     /// Size of the bounding box.
     ///
-    /// - Warning: `.zero` for a void/empty shape is a fabricated answer, not a measurement — see
-    ///   ``bounds``'s doc comment (#834).
-    public var size: SIMD3<Double> {
-        let b = bounds
+    /// - Returns: The size as `max - min`, or `nil` if the shape is void/empty
+    ///   (i.e. when ``bounds`` returns `nil`).
+    public var size: SIMD3<Double>? {
+        guard let b = bounds else { return nil }
         return b.max - b.min
     }
 
     /// Center of the bounding box.
     ///
-    /// - Warning: `.zero` for a void/empty shape is a fabricated answer, not a measurement — see
-    ///   ``bounds``'s doc comment (#834).
-    public var center: SIMD3<Double> {
-        let b = bounds
+    /// - Returns: The center as `(min + max) / 2`, or `nil` if the shape is void/empty
+    ///   (i.e. when ``bounds`` returns `nil`).
+    public var center: SIMD3<Double>? {
+        guard let b = bounds else { return nil }
         return (b.min + b.max) / 2
     }
 

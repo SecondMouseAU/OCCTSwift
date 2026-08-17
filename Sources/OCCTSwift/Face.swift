@@ -87,7 +87,9 @@ public final class Face: @unchecked Sendable {
     ///   `Face` can report a looser box after a call to ``Shape/mesh(linearDeflection:angularDeflection:)``
     ///   than before it, with no other change. Code that needs a bound tied only to the face's own
     ///   geometry, independent of any prior meshing, should use ``exactBounds`` instead (#733).
-    public var bounds: (min: SIMD3<Double>, max: SIMD3<Double>) {
+    ///
+    /// - Returns: The bounding box as `(min, max)` corners, or `nil` if the face is void/empty
+    public var bounds: (min: SIMD3<Double>, max: SIMD3<Double>)? {
         boundsVia(OCCTFaceGetBounds)
     }
 
@@ -105,8 +107,9 @@ public final class Face: @unchecked Sendable {
             UnsafeMutablePointer<Double>?, UnsafeMutablePointer<Double>?,
             UnsafeMutablePointer<Double>?, UnsafeMutablePointer<Double>?
         ) -> Void
-    ) -> (SIMD3<Double>, SIMD3<Double>) {
-        unwrapAxisComponents { fn(handle, $0, $1, $2, $3, $4, $5) }
+    ) -> (min: SIMD3<Double>, max: SIMD3<Double>)? {
+        let (min, max) = unwrapAxisComponents { fn(handle, $0, $1, $2, $3, $4, $5) }
+        return min == .zero && max == .zero ? nil : (min: min, max: max)
     }
 
     /// The face's bounding box computed from its exact geometry only, ignoring any triangulation
@@ -120,7 +123,9 @@ public final class Face: @unchecked Sendable {
     /// meshing, ~300x AAG's own 1e-4 floor/wall tolerance, and even the finest deflection tried
     /// (0.001) still drifted 5x past it. `exactBounds` is unaffected by meshing at any deflection,
     /// which is what ``AAG`` uses internally for its own floor/wall matching.
-    internal var exactBounds: (min: SIMD3<Double>, max: SIMD3<Double>) {
+    ///
+    /// - Returns: The exact bounding box as `(min, max)` corners, or `nil` if the face is void/empty
+    internal var exactBounds: (min: SIMD3<Double>, max: SIMD3<Double>)? {
         boundsVia(OCCTFaceGetBoundsExact)
     }
 

@@ -51,7 +51,7 @@ struct Issue189ThreadGuardTests {
         if let worm {
             // If it returns a solid, it must be within blank + one thread depth (~0.95),
             // never the ~Ø22 balloon.
-            let b = shank.bounds, c = worm.bounds
+            let b = shank.bounds!, c = worm.bounds!
             let tol = spec.cutDepth + 0.05
             #expect(c.max.x <= b.max.x + tol)
             #expect(c.max.y <= b.max.y + tol)

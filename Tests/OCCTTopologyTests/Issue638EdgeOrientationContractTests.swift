@@ -135,8 +135,8 @@ struct Issue638EdgeOrientationContractTests {
         // endpoints/bounds/points(count:) are whole-edge queries; still must agree.
         #expect(forwardEdge.endpoints.start == reversedEdge.endpoints.start)
         #expect(forwardEdge.endpoints.end == reversedEdge.endpoints.end)
-        #expect(forwardEdge.bounds.min == reversedEdge.bounds.min)
-        #expect(forwardEdge.bounds.max == reversedEdge.bounds.max)
+        #expect(forwardEdge.bounds!.min == reversedEdge.bounds!.min)
+        #expect(forwardEdge.bounds!.max == reversedEdge.bounds!.max)
     }
 
     /// Same comparison, on a circular edge rather than a straight one, so the claim isn't
@@ -204,7 +204,7 @@ struct Issue638EdgeOrientationContractTests {
         // guaranteed, so compare as sets.
         func fingerprint(_ face: Face?) -> String? {
             guard let face else { return nil }
-            let b = face.bounds
+            let b = face.bounds!
             return String(format: "%.6f,%.6f,%.6f/%.6f,%.6f,%.6f",
                           b.min.x, b.min.y, b.min.z, b.max.x, b.max.y, b.max.z)
         }

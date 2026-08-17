@@ -305,7 +305,7 @@ struct IntegrationOBBTightnessTests {
         }
         #expect(rotated.isValid)
 
-        let bounds = rotated.bounds
+        let bounds = rotated.bounds!
         let aabbSize = bounds.max - bounds.min
         let aabbVolume = aabbSize.x * aabbSize.y * aabbSize.z
 
