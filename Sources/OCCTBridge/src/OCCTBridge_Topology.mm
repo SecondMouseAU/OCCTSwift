@@ -3610,7 +3610,7 @@ void OCCTShapeSetOrientation(OCCTShapeRef shape, int32_t orientation)
 {
   if (!shape)
     return;
-  shape->shape.Orientation(static_cast<TopAbs_Orientation>(orientation));
+  shape->shape.Orientation(occtOrientationFromInt(orientation));
 }
 
 OCCTShapeRef OCCTShapeReversed(OCCTShapeRef shape)
@@ -3652,7 +3652,7 @@ OCCTShapeRef OCCTShapeComposed(OCCTShapeRef shape, int32_t orientation)
   try
   {
     auto result   = new OCCTShape();
-    result->shape = shape->shape.Composed(static_cast<TopAbs_Orientation>(orientation));
+    result->shape = shape->shape.Composed(occtOrientationFromInt(orientation));
     return result;
   }
   catch (...)
@@ -4225,7 +4225,7 @@ OCCTShapeRef OCCTShapeOriented(OCCTShapeRef shape, int32_t orientation)
   try
   {
     OCCTShape* result = new OCCTShape();
-    result->shape     = shape->shape.Oriented(static_cast<TopAbs_Orientation>(orientation));
+    result->shape     = shape->shape.Oriented(occtOrientationFromInt(orientation));
     return result;
   }
   catch (...)

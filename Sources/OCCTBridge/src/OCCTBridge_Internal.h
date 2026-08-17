@@ -498,6 +498,7 @@ inline int32_t occtAnalysisOrderFromGeomAbs(GeomAbs_Shape shape)
 /// #793: int -> TopAbs_Orientation decoder (shared between BRepGraph and Topology)
 /// Both OCCTBridge_BRepGraph.mm (oriFromInt) and OCCTBridge_Topology.mm (intToOrientation)
 /// had identical copies. This is the canonical implementation.
+/// Out-of-range saturates to FORWARD (behavior preserved from both originals).
 inline TopAbs_Orientation occtOrientationFromInt(int32_t o)
 {
   switch (o)
