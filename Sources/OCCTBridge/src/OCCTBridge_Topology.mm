@@ -3758,15 +3758,7 @@ int32_t OCCTShapeHashCode(OCCTShapeRef shape)
 
 void OCCTShapeClean(OCCTShapeRef shape)
 {
-  if (!shape)
-    return;
-  try
-  {
-    BRepTools::Clean(shape->shape);
-  }
-  catch (...)
-  {
-  }
+  OCCTBRepToolsCleanTriangulation(shape);
 }
 
 void OCCTShapeCleanGeometry(OCCTShapeRef shape)
@@ -3797,15 +3789,7 @@ void OCCTShapeRemoveUnusedPCurves(OCCTShapeRef shape)
 
 void OCCTShapeUpdate(OCCTShapeRef shape)
 {
-  if (!shape)
-    return;
-  try
-  {
-    BRepTools::Update(shape->shape);
-  }
-  catch (...)
-  {
-  }
+  OCCTBRepToolsUpdate(shape);
 }
 
 bool OCCTBRepLibCheckSameRange(OCCTShapeRef edge)
