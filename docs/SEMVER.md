@@ -54,7 +54,9 @@ immediately below.
 **A major by Rule 2, on a much smaller set than v2.0.0.** OCCT does not move in this release: the
 kernel stays at `V8_0_1`, rebuilt as `v3.0.0-kernel.1` to carry two patches the v2.0.0 asset was
 missing (#905, #913), which is a MINOR trigger at most and forces nothing. What forces the major is
-Rule 2, and as of this section it is carried by a single merged change.
+Rule 2, carried by two changes: an enum rename (#844) and six bounding-box accessors becoming
+Optional (#943). The second is the one a consumer is most likely to hit, because `bounds`, `size`
+and `center` are read casually.
 
 Almost everything else in this release is internal: duplication passes, refman-coverage audits, and
 bridge deduplication, all of which are deliberately non-breaking. Read the entries in
@@ -66,6 +68,7 @@ bridge deduplication, all of which are deliberately non-breaking. Read the entri
 |---|---|---|
 | `Selector.SubShapeType.compsolid` renamed `.compSolid` | compile error | [#844](#v300-selectorsubshapetypecompsolid-is-renamed-compsolid-844) |
 | `Shape.ShapeFilterType.RawValue` changes `Int32` → `Int` | compile error *if* the raw type is named | [#844](#v300-selectorsubshapetypecompsolid-is-renamed-compsolid-844) |
+| `Shape.bounds`, `Shape.size`, `Shape.center`, `Wire.bounds`, `Edge.bounds`, `Face.bounds` become Optional | compile error | [#943](#v300-bounds-size-and-center-become-optional-943) |
 
 ##### v3.0.0: `Selector.SubShapeType.compsolid` is renamed `.compSolid` (#844)
 
@@ -94,6 +97,41 @@ outright, which the aggregate review caught as inconsistent with the compatibili
 three got, and it now stands as
 `@available(*, deprecated, renamed: "ShapeType") public typealias TopAbs_ShapeEnum = ShapeType`.
 Existing code compiles with a warning.
+
+##### v3.0.0: `bounds`, `size` and `center` become Optional (#943)
+
+Six accessors fabricated `(0,0,0)-(0,0,0)` for a shape with no bounding box, which is
+indistinguishable from a genuine zero-size shape sitting at the world origin. `Shape.boundingBox`
+never had this defect, so the two disagreed about the same `Bnd_Box`.
+
+They now return `nil`, and the verdict is OCCT's own `Bnd_Box::IsVoid()` carried across the bridge
+as a `Bool` rather than inferred from the coordinates. Inferring it would have been the same
+fabrication relocated: a vertex at the world origin measures exactly `(0,0,0)-(0,0,0)` through
+`BRepBndLib::AddOptimal`, so a value-based test cannot tell it from void.
+
+| accessor | was | is |
+|---|---|---|
+| `Shape.bounds` | `(min: SIMD3<Double>, max: SIMD3<Double>)` | `(min: SIMD3<Double>, max: SIMD3<Double>)?` |
+| `Shape.size` | `SIMD3<Double>` | `SIMD3<Double>?` |
+| `Shape.center` | `SIMD3<Double>` | `SIMD3<Double>?` |
+| `Wire.bounds` | `(min:max:)` | `(min:max:)?` |
+| `Edge.bounds` | `(min:max:)` | `(min:max:)?` |
+| `Face.bounds`, `Face.exactBounds` | `(min:max:)` | `(min:max:)?` |
+
+**Migration.** Unwrap at the call site:
+
+```swift
+// before
+let span = shape.bounds.max - shape.bounds.min
+
+// after
+guard let b = shape.bounds else { return nil }   // or `shape.bounds?.max`
+let span = b.max - b.min
+```
+
+`Shape.boundingBox` and `boundingBoxOptimal(_:)` already returned Optional and are unchanged, so
+code already using them needs nothing. `AAG` now drops a face with no bounding box instead of
+force-unwrapping it, which is a behaviour change only for input that previously crashed.
 
 ##### Deliberately not breaks
 
