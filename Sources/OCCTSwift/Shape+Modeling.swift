@@ -64,8 +64,8 @@ extension Shape {
     public struct FilletResult: Sendable {
         /// The filleted shape.
         ///
-        /// Identical to what the non-reporting sibling returns for the same
-        /// input: this reports skipped edges, it does not reject the call over them.
+        /// Identical to what the non-reporting sibling returns for the same input: this reports
+        /// skipped edges, it does not reject the call over them.
         public let shape: Shape
         /// 0-based indices, matching ``Edge/index``, of the requested edges OCCT declined to
         /// fillet.
@@ -79,9 +79,9 @@ extension Shape {
         /// 0-based edge indices, matching ``Edge/index``, whose radius a *later* entry in the same
         /// request overwrote (#633).
         ///
-        /// Empty for every `WithReport` sibling except
-        /// ``Shape/blendedEdgesWithReport(_:)``, the one entry point that takes a per-edge radius
-        /// array where naming an edge twice is even possible.
+        /// Empty for every `WithReport` sibling except ``Shape/blendedEdgesWithReport(_:)``, the
+        /// one entry point that takes a per-edge radius array where naming an edge twice is even
+        /// possible.
         ///
         /// `BRepFilletAPI_MakeFillet::Add(radius, edge)` resolves the edge's own slot within its
         /// contour and writes there, so a second `Add` on the same edge silently replaces the first
@@ -94,9 +94,9 @@ extension Shape {
         /// Explicit rather than the synthesized memberwise init, and the reason is this method,
         /// not the three that came before it.
         ///
-        /// A `let` property with a default value is dropped from
-        /// Swift's synthesized memberwise init entirely: it is not an overridable parameter the way
-        /// a `var` with a default is, so a caller **cannot pass it at all**.
+        /// A `let` property with a default value is dropped from Swift's synthesized memberwise
+        /// init entirely: it is not an overridable parameter the way a `var` with a default is, so
+        /// a caller **cannot pass it at all**.
         ///
         /// The three existing `WithReport` call sites would have compiled unchanged against the
         /// synthesized init, silently taking the `[]` default, since none of them has anything to
@@ -598,7 +598,7 @@ extension Shape {
             mode: .auxiliary(spine: aux), solid: solid)
     }
 
-    /// Single-profile helical sweep — a uniform worm/screw-thread helicoid.
+    /// Single-profile helical sweep, a uniform worm/screw-thread helicoid.
     ///
     /// See ``helicalSweep(profiles:axisOrigin:axisDirection:radius:pitch:turns:clockwise:solid:)``.
     public static func helicalSweep(
@@ -929,10 +929,10 @@ extension Shape {
     ///   - dx: Width in X
     ///   - dy: Height in Y
     ///   - dz: Depth in Z
-    ///   - xmin: Minimum X of top face
-    ///   - zmin: Minimum Z of top face
-    ///   - xmax: Maximum X of top face
-    ///   - zmax: Maximum Z of top face
+    ///   - xmin: Minimum X of the face at `dy`
+    ///   - zmin: Minimum Z of the face at `dy`
+    ///   - xmax: Maximum X of the face at `dy`
+    ///   - zmax: Maximum Z of the face at `dy`
     /// - Returns: A wedge solid, or nil on failure
     public static func wedge(
         dx: Double, dy: Double, dz: Double,
@@ -953,7 +953,7 @@ extension Shape {
     ///   - dy: Height in Y (local frame).
     ///   - dz: Depth in Z (local frame).
     ///   - ltx: Width of top face in X (0 to dx).
-    /// - Returns: An oriented wedge solid, or nil on failure
+    /// - Returns: A wedge solid, or nil on failure.
     public static func wedge(
         at origin: SIMD3<Double>,
         direction: SIMD3<Double>,
@@ -1266,9 +1266,8 @@ extension Shape {
         return (Shape(handle: resultRef), ShapeHistoryRef(h))
     }
 
-    /// Split `self` by `tool` (BRepAlgoAPI_Splitter). The pieces are the
-    ///
-    /// top-level children of the compound result; query history per input
+    /// Split `self` by `tool` (BRepAlgoAPI_Splitter).
+    /// The pieces are the top-level children of the compound result; query history per input
     /// sub-shape via `history.record(of:)`.
     public func splitWithFullHistory(by tool: Shape) -> (pieces: [Shape], history: ShapeHistoryRef)?
     {
@@ -1386,8 +1385,7 @@ extension Shape {
 
     /// Defeature: remove given faces by reconnecting surrounding topology.
     ///
-    /// History reports each removed face as deleted and surrounding faces as
-    /// modified.
+    /// History reports each removed face as deleted and surrounding faces as modified.
     public func defeaturedWithFullHistory(faces: [Int])
         -> (result: Shape, history: ShapeHistoryRef)?
     {
@@ -1480,11 +1478,10 @@ extension Shape {
         return (Shape(handle: resultRef), ShapeHistoryRef(h))
     }
 
-    /// Create a solid from a closed shell, with full per-input-subshape
-    /// history.
+    /// Create a solid from a closed shell, with full per-input-subshape history.
     ///
-    /// History only reflects the orientation-fix pass — wrapping an
-    /// already-closed shell into a solid does not itself modify any sub-shape.
+    /// History only reflects the orientation-fix pass: wrapping an already-closed shell into a
+    /// solid does not itself modify any sub-shape.
     ///
     /// Body selection matches ``Shape/solid(from:)``: one solid per body-bounding shell,
     /// a compound when there is more than one, cavity shells skipped. The single history
@@ -1746,10 +1743,9 @@ extension Shape {
     /// ``filletEvolving(_:)``, also reporting which requested edges OCCT declined (#639): the
     /// entry point the census named directly.
     ///
-    /// Filleting an open shell's whole edge list SKIPs the
-    /// edges OCCT declines, with nothing that says which or how many. See
-    /// ``filletedWithReport(edges:radius:)`` for the reporting contract; the meaning is identical
-    /// here, keyed by ``EvolvingFilletEdge/edgeIndex``.
+    /// Filleting an open shell's whole edge list SKIPs the edges OCCT declines, with nothing that
+    /// says which or how many. See ``filletedWithReport(edges:radius:)`` for the reporting
+    /// contract; the meaning is identical here, keyed by ``EvolvingFilletEdge/edgeIndex``.
     ///
     /// ```swift
     /// let box = Shape.box(width: 10, height: 10, depth: 10)!
@@ -1976,8 +1972,8 @@ extension Shape {
     ///
     /// - Parameters:
     ///   - direction: Direction vector of the sweep
-    ///   - start: Start point of the sweep
-    ///   - end: End point of the sweep
+    ///   - start: Start point of the sweep (passed as `from:`)
+    ///   - end: End point of the sweep (passed as `to:`)
     /// - Returns: The swept shape, or nil on failure
     public func localLinearForm(
         direction: SIMD3<Double>,
@@ -2301,6 +2297,7 @@ extension Shape {
     /// - Parameter faceIndex: 0-based face index, as ``face(at:)`` and ``Face/index`` use.
     ///   Any negative value means every edge of the shape. The sentinel used to be `0`, which
     ///   collided with the first face's own index and left that face unaddressable (#541).
+    /// - Returns: The wires built from those edges, or nil on failure.
     ///
     /// ```swift
     /// let box = Shape.box(origin: .zero, width: 10, height: 10, depth: 10)!
@@ -2334,7 +2331,7 @@ extension Shape {
     ///   - wire: The splitting wire
     ///   - faceIndex: 0-based index of the face to split, as ``face(at:)`` and ``Face/index``
     ///     use. It was 1-based, so face 0 could not be named at all (#541).
-    /// - Returns: The shape with the face split by the wire, or nil on failure
+    /// - Returns: The shape with that face split by the wire, or nil on failure.
     public func splitByWireOnFace(_ wire: Shape, faceIndex: Int32) -> Shape? {
         guard let h = OCCTLocOpeSplitByWireOnFace(handle, wire.handle, faceIndex) else {
             return nil
@@ -3343,12 +3340,12 @@ extension Shape {
         case full = 1
         case off = 2
 
-        /// Case-name mapping to the BooleanGlue enum — deliberately not a raw-value cast,
-        /// since the two enums' raw values disagree (see the GlueMode doc comment).
-        ///
-        /// `internal`, not `private`, so `Issue832BooleanDelegationTests` (`@testable import`)
-        /// can assert the mapping directly rather than only through an OCCT result that may not
-        /// observably depend on glue mode for simple, already-coincident geometry.
+        /// Case-name mapping to ``Shape/BooleanGlue``
+        /// Deliberately not a raw-value cast, since the two enums' raw values disagree (see
+        /// ``GlueMode``'s doc comment). `internal`, not `private`, so
+        /// `Issue832BooleanDelegationTests` (`@testable import`) can assert the mapping directly
+        /// rather than only through an OCCT result that may not observably depend on glue mode for
+        /// simple, already-coincident geometry.
         var asBooleanGlue: BooleanGlue {
             switch self {
             case .shift: return .shift

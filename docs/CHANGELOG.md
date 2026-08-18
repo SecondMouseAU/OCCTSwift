@@ -19,6 +19,131 @@ each named with its migration in [`SEMVER.md`](SEMVER.md#v200).
 
 ## Unreleased
 
+### `docs/SEMVER.md`'s v2.0.0 break table gains #595, and an orphaned doc comment goes (#829, #877)
+
+The v2.0.0 break table listed seventeen entries and omitted #595, which changed six curvature
+getters from `Double` to `Double?`. That is a compile error for any caller, and the omission was
+found the expensive way: building a real downstream consumer (swiftGCS) against v2.0.0 broke at two
+call sites that reading the table could not have predicted. All six are now listed with their
+migration: `Curve2D.curvature(at:)`, `Curve3D.curvature(at:)`, `Curve3D.localCurvature(at:)`,
+`Surface.gaussianCurvature(atU:v:)`, `Surface.meanCurvature(atU:v:)`, `Shape.edgeCurvatureLP(at:)`.
+Separately, a duplicated doc comment orphaned before a `// MARK:` in `Shape+Modeling.swift` was
+deleted; the method it described already carries the same text. Docs only, no API change.
+
+### Four more bridge sibling-entry-point pairs share their scaffolding (#794)
+
+`OCCTFilletBuilderGenerated`/`Modified` and `OCCTChamferBuilderGenerated`/`Modified` each duplicated
+the whole list-to-C-array marshalling loop, differing only in which OCCT member function ran, and
+`OCCTMeshUnion`/`Subtract`/`Intersect` triplicated the mesh-to-shape roundtrip and re-mesh
+extraction. Factored onto `occtFilletBuilderHistoryQuery`, `occtChamferBuilderHistoryQuery` and
+`occtMeshBoolean`. Four of the census's eleven pairs; the other seven remain open on #794. Internal only,
+no public API or behaviour change.
+
+### The `int` → `TopAbs_Orientation` decoder is shared, and three setters stop relying on undefined behaviour (#793)
+
+`oriFromInt` (`OCCTBridge_BRepGraph.mm`) and `intToOrientation` (`OCCTBridge_Topology.mm`) were
+byte-equivalent reimplementations of the same four-case decode; both now call one
+`occtOrientationFromInt` in `OCCTBridge_Internal.h`. They agreed at the time, so this prevents drift
+rather than fixing a divergence.
+
+**One real behaviour change came with it.** `OCCTShapeSetOrientation`, `OCCTShapeComposed` and
+`OCCTShapeOriented` did not use either decoder: they did
+`static_cast<TopAbs_Orientation>(orientation)` on the caller's raw `int`, so a value outside `0...3`
+produced an out-of-range enum, which is undefined behaviour. They now route through the shared
+decoder, which saturates such a value to `TopAbs_FORWARD`. A caller passing a valid orientation sees
+no change; a caller passing an invalid one gets a defined, if lossy, result instead of undefined
+behaviour.
+
+### The `Convert_*` bridge helpers stop calling accessors OCCT marks deprecated (#801)
+
+`buildCurve2DFromConic` and `buildSurfaceFromElementary` read poles, weights, knots and
+multiplicities one index at a time through accessors that `Convert_ConicToBSplineCurve` and
+`Convert_ElementarySurfaceToBSplineSurface` both mark `Standard_DEPRECATED`, each naming its batch
+replacement. Ten such call sites across the two helpers, not the four the issue first counted: the
+surface family has the same shape and needed the same fix. Both now use the batch forms, which
+return the `NCollection_Array1`/`Array2` the helpers were assembling by hand. Not a defect today,
+since the deprecated accessors work; the risk is that this repo bumps its kernel regularly and a
+removed accessor becomes a build break during an upgrade. Internal only, no public API change.
+
+### Pass 2b left over-coverage behind: five doc attributions corrected (#930)
+
+#928's detector, run retroactively over Pass 2b's lane with its six known findings excluded,
+surfaced 24 candidates; ten were adjudicated by reading each claim against the bridge body, its
+helpers and the pinned headers. **Four were real**, and a fifth sibling outside the sample shares
+the defect. `Shape.vector2DCross(a:b:)` and `vector2DDot(a:b:)` were documented as `gp_Vec2d::Crossed`
+and `::Dot` when the implementations are inline arithmetic that constructs no `gp_Vec2d` at all;
+`Shape.translated(from:to:)` named `gp_Vec` where `GC_MakeTranslation` runs; `Surface.torusAxis`
+named `gp_Torus::Axis` where `Geom_ToroidalSurface::Axis` runs. The same ten-row exercise on Pass
+2a's lane produced **zero** real findings, so the four-to-one gap between the two lanes' original
+counts was completeness, not subject matter. Docs only, no API change.
+
+### Three duplicated bridge wrapper pairs now forward to one implementation (#792)
+
+`OCCTShapeClean`/`OCCTBRepToolsCleanTriangulation`, `OCCTShapeUpdate`/`OCCTBRepToolsUpdate` and
+`OCCTBRepGraphMeshAppendCachedTriangulation`/`OCCTBRepGraphSetFaceTriangulationRep` each wrapped one
+OCCT call under two names added in different releases, with no cross-reference between them. Each
+pair keeps one real implementation and forwards the other. Both names remain, so nothing calling
+either changes. This is the shape that let #761's buffer cap and PR #768's dropped alpha channel
+survive: a fix applied to one name silently misses callers of the other. Internal only, no public
+API or behaviour change.
+
+### Upstream OCCT work moves to a persistent branch checkout of our fork (#803)
+
+Process and documentation only, no library change. Upstream patches are now developed in one
+persistent blobless checkout of `gsdali/OCCT` with `Open-Cascade-SAS/OCCT` as a second remote, shared
+across worktrees, instead of a shallow clone created per task and discarded. The old pattern is what
+closed [OCCT#1417](https://github.com/Open-Cascade-SAS/OCCT/pull/1417) (a `git commit --amend`
+against a `--depth 1` clone produces a rootless commit, and GitHub closes the PR as unrelated history
+with no way to reopen it); that PR was reopened as
+[OCCT#1457](https://github.com/Open-Cascade-SAS/OCCT/pull/1457). Documented as §0 of
+`okf/policies/upstream-occt-patch-process.md`. The four upstream replies and test files staged under
+`Scripts/repro/*/upstream/` now each carry a status header recording whether they were sent, so a
+file that was posted no longer reads as a pending draft.
+
+### `SectionBuilder` no longer returns stale results after a failed rebuild (#916)
+
+`ancestorFaceOn1(edge:)` and `ancestorFaceOn2(edge:)` read post-build OCCT state gated on a
+bridge-side `built` flag that was only ever set `true`, never reset on a failed rebuild. A
+`SectionBuilder` reused across multiple `build()` calls could silently keep answering from a prior
+successful build's geometry after a later `build()` call on the same instance genuinely failed —
+and, in the worst case (an argument that fails `BRepAlgoAPI_Section::Build()`'s own internal
+null-shape check), could crash instead of returning `nil`. Calling `init1`/`init2` again after a
+successful build without a following `build()` call had the identical staleness gap. Fixed by
+resetting the tracked build outcome on every path that invalidates the previous result.
+
+### Refman coverage audit, Pass 2b: Selection/Construction (#809)
+
+`Scripts/repro/809-refman-selection-construction/refman_census.py` enumerates every OCCT class
+under `BRepExtrema_*`, `BRepClass*`, `gp_*`, and `GC_*`/`GCE2d_*` (126 classes) and verdicts each
+against `Sources/OCCTBridge` and `docs/`. Fixed six `docs/reference/Curve2D.md`/
+`Curve2D-Analysis.md` entries that cited the deprecated `GCE2d_Make*` class (a `using` alias for
+`GC_*2d` since OCCT 8.0.0) as the implementation behind `Curve2D.arcOfCircle`/`arcThrough`/
+`arcOfEllipse`/`arcOfHyperbola`/`arcOfParabola`/`segment(from:Point2D,to:Point2D)` — five of the
+six never call a `GC_`/`GCE2d_` Make helper at all. Also found one live `GCE2d_MakeSegment` call in
+`OCCTBridge_Modeling.mm` still using the deprecated spelling — left as is and noted on #917 rather
+than forcing that grandfathered file's ~24,000-line compliance sweep into this PR (see #917).
+Recorded 24 previously-unrecorded under-wrapped classes in `docs/occtswift-wrapping-gaps.md`, all
+internal algorithm plumbing, exception types, deprecated aliases, or capability already covered by
+a wrapped `gce_*` sibling. No public API change.
+
+### A file-size gate joins `code-structure` (#906)
+
+`Scripts/file-size-check.py` and a `code-structure` workflow flag files that grow past the
+thresholds `okf/policies/code-structure.md` sets, so the "evict foreign material before splitting"
+rule has something enforcing it rather than only describing it. Tooling and CI only, no public API
+change.
+
+### The upstream-OCCT contribution policies are written down and merged into two (#858, #856, #874)
+
+`okf/policies/upstream-occt-patch-process.md` is new and records how a carried patch becomes an
+upstream PR; `okf/policies/upstream-occt-style.md` gains the project's actual GTest and formatting
+expectations, and the overlap between the two files was reconciled rather than left to drift.
+`okf/references/carried-occt-patches.md` was updated to match. Internal working policy only: nothing
+under `Sources/` or `docs/` changed, and no consumer-visible behaviour is affected. Recorded here
+rather than left absent because the merge-history audit
+(`Scripts/check-changelog-transcription.py`) reports any merge with neither an entry nor a
+`No-Changelog:` trailer, and these three predate the trailer being used.
+
 ### Kernel rebuilt: `v3.0.0-kernel.1` carries seventeen patches, up from fifteen
 
 `Package.swift` now pins the `v3.0.0-kernel.1` kernel pre-release (`V8_0_1` plus carried patches
