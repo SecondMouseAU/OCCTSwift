@@ -229,8 +229,7 @@ extension Shape {
     }
     /// Find pairs of edges that are coincident within tolerance.
     ///
-    /// Useful for pre-sewing diagnostics to identify edges that
-    /// could be merged.
+    /// Useful for pre-sewing diagnostics to identify edges that could be merged.
     ///
     /// - Parameter tolerance: Contiguity tolerance
     /// - Returns: Number of contiguous edge pairs found
@@ -987,8 +986,8 @@ extension Shape {
 
     /// Get detailed error status codes for this shape.
     ///
-    /// Returns all individual error codes found during validation,
-    /// useful for diagnosing exactly what's wrong with an invalid shape.
+    /// Returns all individual error codes found during validation, useful for diagnosing exactly
+    /// what's wrong with an invalid shape.
     ///
     /// - Returns: Array of check status codes
     public var detailedCheckStatuses: [CheckStatus] {
@@ -1089,16 +1088,16 @@ extension Shape {
 
     /// A typealias for the canonical ``ShapeType`` (#844).
     ///
-    /// This used to be an independent local
-    /// `TopAbs_ShapeEnum` mirror, used only by ``isSubShapeValid(type:at:)`` above, before #844
-    /// consolidated the four independent Swift mirrors of `TopAbs_ShapeEnum` in this package into
-    /// one. Kept as a deprecated alias (rather than deleted outright) for source compatibility
-    /// with external code that spells `Shape.TopAbs_ShapeEnum` explicitly — a stored variable's
-    /// type annotation, or a function parameter type — matching this same PR's own migration
-    /// pattern for every other type it consolidated (``ShapeFilterType``, and the deprecated
-    /// `[Double]`-taking overloads on the transform-matrix methods). Case names differ slightly
-    /// from the old enum's own casing (`ShapeType.compSolid` vs. the old `.compsolid`), since this
-    /// is now literally `ShapeType`, not a copy of it.
+    /// This used to be an independent local `TopAbs_ShapeEnum` mirror, used only by
+    /// ``isSubShapeValid(type:at:)`` above, before #844 consolidated the four independent Swift
+    /// mirrors of `TopAbs_ShapeEnum` in this package into one. Kept as a deprecated alias (rather
+    /// than deleted outright) for source compatibility with external code that spells
+    /// `Shape.TopAbs_ShapeEnum` explicitly — a stored variable's type annotation, or a function
+    /// parameter type — matching this same PR's own migration pattern for every other type it
+    /// consolidated (``ShapeFilterType``, and the deprecated `[Double]`-taking overloads on the
+    /// transform-matrix methods). Case names differ slightly from the old enum's own casing
+    /// (`ShapeType.compSolid` vs. the old `.compsolid`), since this is now literally `ShapeType`,
+    /// not a copy of it.
     @available(*, deprecated, renamed: "ShapeType")
     public typealias TopAbs_ShapeEnum = ShapeType
 
@@ -2594,18 +2593,16 @@ extension Shape {
 
     /// Min tolerance of sub-shapes of the given type.
     ///
-    /// See the `ShapeType`-typed
-    /// `maxTolerance(type:)` overload above for why this additive overload exists alongside the
-    /// legacy `Int`-based one below (#833).
+    /// See the `ShapeType`-typed `maxTolerance(type:)` overload above for why this additive
+    /// overload exists alongside the legacy `Int`-based one below (#833).
     public func minTolerance(type: ShapeType) -> Double {
         OCCTShapeMinToleranceOfType(handle, Int32(type.rawValue))
     }
 
     /// Average tolerance of sub-shapes of the given type.
     ///
-    /// See the `ShapeType`-typed
-    /// `maxTolerance(type:)` overload above for why this additive overload exists alongside the
-    /// legacy `Int`-based one below (#833).
+    /// See the `ShapeType`-typed `maxTolerance(type:)` overload above for why this additive
+    /// overload exists alongside the legacy `Int`-based one below (#833).
     public func avgTolerance(type: ShapeType) -> Double {
         OCCTShapeAvgToleranceOfType(handle, Int32(type.rawValue))
     }

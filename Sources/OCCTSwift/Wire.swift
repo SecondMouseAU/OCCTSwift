@@ -246,11 +246,10 @@ public final class Wire: @unchecked Sendable {
     /// Build an arc-wire passing through three points (start, midpoint
     /// on the arc, end).
     ///
-    /// Uses OCCT's `GC_MakeArcOfCircle` so the centre
-    /// and radius are derived from the points; the midpoint resolves
-    /// the curvature direction. Avoids the X-direction ambiguity of the
-    /// angle-based `arc(center:radius:startAngle:endAngle:normal:)`
-    /// constructor when the bend axis isn't a canonical world axis.
+    /// Uses OCCT's `GC_MakeArcOfCircle` so the centre and radius are derived from the points; the
+    /// midpoint resolves the curvature direction. Avoids the X-direction ambiguity of the
+    /// angle-based `arc(center:radius:startAngle:endAngle:normal:)` constructor when the bend axis
+    /// isn't a canonical world axis.
     public static func arc(
         start: SIMD3<Double>,
         midpoint: SIMD3<Double>,
@@ -1031,8 +1030,8 @@ extension Wire {
 
     /// Apply a 2D fillet (rounded corner) to a specific vertex.
     ///
-    /// The wire must be planar. The fillet creates a circular arc
-    /// that smoothly connects the two edges meeting at the vertex.
+    /// The wire must be planar. The fillet creates a circular arc that smoothly connects the two
+    /// edges meeting at the vertex.
     ///
     /// - Parameters:
     ///   - vertexIndex: Index of the vertex to fillet (0-based)
@@ -1150,11 +1149,10 @@ extension Wire {
     ///   let (start, tangent) = curve.d1(at: curve.domain.lowerBound)
     ///   ```
     ///
-    ///   Computing it analytically and
-    ///   getting the axis convention backwards is exactly what produced OCCTSwift #721, where a
-    ///   profile ended up 2×radius from the spine with an inverted tangent, silently corrupting
-    ///   `.correctedFrenet` sweeps (but not `.frenet`, by an unrelated coincidence) on the
-    ///   resulting pipe shell.
+    /// Computing it analytically and getting the axis convention backwards is exactly what produced
+    /// OCCTSwift #721, where a profile ended up 2×radius from the spine with an inverted tangent,
+    /// silently corrupting `.correctedFrenet` sweeps (but not `.frenet`, by an unrelated
+    /// coincidence) on the resulting pipe shell.
     ///
     /// ## Example
     ///

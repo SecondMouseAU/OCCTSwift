@@ -72,9 +72,8 @@ public struct AAGNode: Sendable {
 
     /// Bounding box of the face's exact geometry (#733).
     ///
-    /// Unlike ``Face/bounds``, this is never
-    /// enlarged by mesh triangulation, so it does not change depending on whether the shape has
-    /// been meshed before ``AAG`` was built from it.
+    /// Unlike ``Face/bounds``, this is never enlarged by mesh triangulation, so it does not change
+    /// depending on whether the shape has been meshed before ``AAG`` was built from it.
     public let bounds: (min: SIMD3<Double>, max: SIMD3<Double>)
 }
 
@@ -478,9 +477,8 @@ extension AAG {
     /// Default tolerance (model units) used to decide whether a candidate floor sits at the
     /// bottom of one of its candidate walls (#724).
     ///
-    /// Far tighter than any real pocket depth in the
-    /// test suite (millimeters or more), far looser than the ~1e-7 bounding-box noise
-    /// `Face.exactBounds` reports on an exact primitive.
+    /// Far tighter than any real pocket depth in the test suite (millimeters or more), far looser
+    /// than the ~1e-7 bounding-box noise `Face.exactBounds` reports on an exact primitive.
     ///
     /// This is a default, not a fixed constant: ``detectPockets(tolerance:)`` and
     /// ``Shape/detectPocketsAAG(tolerance:)`` both take a caller-supplied `tolerance:` parameter
@@ -728,11 +726,11 @@ extension AAG {
     /// Finds a floor's walls by tracing concave edges, and any absorbed fillet/chamfer
     /// junction, outward from it (#762).
     ///
-    /// Returns the true (vertical) walls (what
-    /// ``PocketFeature/wallFaceIndices`` reports, with exactly the same meaning it had before
-    /// this fix), and, separately, every junction face absorbed along the way, which the
-    /// enclosure test in ``detectPockets(tolerance:)`` needs: the floor's own outer-wire
-    /// boundary edges border THOSE, not the far wall, whenever one is interposed.
+    /// Returns the true (vertical) walls (what ``PocketFeature/wallFaceIndices`` reports, with
+    /// exactly the same meaning it had before this fix), and, separately, every junction face
+    /// absorbed along the way, which the enclosure test in ``detectPockets(tolerance:)`` needs: the
+    /// floor's own outer-wire boundary edges border THOSE, not the far wall, whenever one is
+    /// interposed.
     ///
     /// ## Why a fillet needs a chain, and a chamfer needs a shorter one
     ///

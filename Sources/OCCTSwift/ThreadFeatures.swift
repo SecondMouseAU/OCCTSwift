@@ -69,8 +69,8 @@ public struct ThreadProfile: Sendable, Hashable, Codable {
 
     /// Validate and create a custom profile.
     ///
-    /// Returns nil unless the vertices form a well-ordered,
-    /// periodic, full-depth-spanning tooth outline (the contract above).
+    /// Returns nil unless the vertices form a well-ordered, periodic, full-depth-spanning tooth
+    /// outline (the contract above).
     public init?(vertices: [Vertex]) {
         let eps = 1e-9
         guard vertices.count >= 3,
@@ -126,10 +126,10 @@ public struct ThreadProfile: Sendable, Hashable, Codable {
     /// (``Shape/threadedRod(customProfile:nominalDiameter:pitch:cutDepth:length:axisOrigin:axisDirection:leftHanded:)``
     /// and the direct branch of `threadedShaft`).
     ///
-    /// It requires a real **crest flat** (so the
-    /// unthreaded margin can attach) and **at most two flank segments** (piecewise-linear forms:
-    /// trapezoidal / ACME / square / buttress / worm). Pointed-crest or many-flank (rounded /
-    /// knuckle) profiles return `false` and must use the faceted boolean cut path instead.
+    /// It requires a real **crest flat** (so the unthreaded margin can attach) and **at most two
+    /// flank segments** (piecewise-linear forms: trapezoidal / ACME / square / buttress / worm).
+    /// Pointed-crest or many-flank (rounded / knuckle) profiles return `false` and must use the
+    /// faceted boolean cut path instead.
     public var supportsSmoothRodBuild: Bool {
         hasCrestFlat && segments.filter { $0.kind == .flank }.count <= 2
     }
@@ -194,10 +194,10 @@ public struct ThreadProfile: Sendable, Hashable, Codable {
     }
     /// Whitworth / BSW / BSP 55° — `cutDepth = 0.640327·P`.
     ///
-    /// BS 84 rounds the outer/inner sixth of the
-    /// tooth; this is the standard flat-truncation of that form (crest flat = root flat = P/6, the straight
-    /// 55° flank spanning the middle two-thirds). A truly *rounded* crest makes the deep tooth's `ruled:false`
-    /// loft spike past the nominal radius (OCCTSwift #213), so the truncation is what builds smooth.
+    /// BS 84 rounds the outer/inner sixth of the tooth; this is the standard flat-truncation of
+    /// that form (crest flat = root flat = P/6, the straight 55° flank spanning the middle
+    /// two-thirds). A truly *rounded* crest makes the deep tooth's `ruled:false` loft spike past
+    /// the nominal radius (OCCTSwift #213), so the truncation is what builds smooth.
     public static let whitworth55 = trapezoid(crestFlatFraction: 1.0 / 6, rootFlatFraction: 1.0 / 6)
     /// ACME 29° general-purpose (crest flat = root flat = 0.3707·P at `cutDepth = P/2`).
     public static let acme29 = trapezoid(crestFlatFraction: 0.3707, rootFlatFraction: 0.3707)
@@ -376,8 +376,7 @@ public struct ThreadSpec: Sendable, Hashable, Codable {
 
     /// Diametral taper (NPT/BSPT are 1:16; parallel forms are 0).
     ///
-    /// The radius changes by
-    /// `taperRatio / 2` per unit of axial length.
+    /// The radius changes by `taperRatio / 2` per unit of axial length.
     public var taperRatio: Double {
         switch form {
         case .nptTapered, .bsptTapered: return 1.0 / 16
@@ -723,11 +722,11 @@ extension Shape {
     /// Build a smooth external threaded rod directly (no boolean) when `self` is a plain cylinder
     /// of radius ≈ `spec.nominalDiameter / 2` coaxial with the axis (#213).
     ///
-    /// Returns nil — so the
-    /// caller falls back to the boolean cut — when `self` is not such a cylinder, or the build
-    /// isn't a sound thread. `threadedRodSolid` lofts the thread's cross-section (`ruled=false`,
-    /// smooth, solid-to-axis, flat caps) and sews on any unthreaded margin; the boolean engine is
-    /// never invoked, so the result is orientation-robust and valid where the cut path is faceted.
+    /// Returns nil — so the caller falls back to the boolean cut — when `self` is not such a
+    /// cylinder, or the build isn't a sound thread. `threadedRodSolid` lofts the thread's
+    /// cross-section (`ruled=false`, smooth, solid-to-axis, flat caps) and sews on any unthreaded
+    /// margin; the boolean engine is never invoked, so the result is orientation-robust and valid
+    /// where the cut path is faceted.
     private func buildThreadedRodDirect(
         axisOrigin: SIMD3<Double>,
         axisDirection: SIMD3<Double>,
@@ -791,8 +790,8 @@ extension Shape {
     /// Build the smooth external threaded rod by composing already-wrapped OCCT primitives —
     /// NO boolean, so the result is orientation-robust AND BRepCheck-valid (#213).
     ///
-    /// The kernel
-    /// bridge stays a thin wrapper; all the thread-specific geometry lives here in Swift.
+    /// The kernel bridge stays a thin wrapper; all the thread-specific geometry lives here in
+    /// Swift.
     ///
     /// The thread region is a `ruled=false` ThruSections loft of the thread's true cross-section
     /// (a "cam": root arc → flank spiral → crest arc → flank spiral, rotated by the helix per
@@ -1136,10 +1135,10 @@ extension Shape {
     /// form): sweep the V-groove cross-section through a pure screw motion (rotate about the axis +
     /// translate along it) and loft the closely-spaced sections.
     ///
-    /// Internal cuts (apexSign +1) loft it
-    /// SMOOTH (`ruled=false`) — cutting a smooth helical cutter into a thick wall is robust, so
-    /// internal threads come out smooth; external fallbacks (apexSign −1) loft it faceted, since
-    /// subtracting a smooth cutter from a thin external cylinder is the unreliable case (#187/#213).
+    /// Internal cuts (apexSign +1) loft it SMOOTH (`ruled=false`) — cutting a smooth helical cutter
+    /// into a thick wall is robust, so internal threads come out smooth; external fallbacks
+    /// (apexSign −1) loft it faceted, since subtracting a smooth cutter from a thin external
+    /// cylinder is the unreliable case (#187/#213).
     ///
     /// The groove is a trapezoid derived from the form's `profile`: its bottom (the thread root) is
     /// the root-flat width, its mouth (at the blank surface) is the inter-crest span (pitch − crest

@@ -576,10 +576,10 @@ public final class Shape: @unchecked Sendable {
 
     /// Default wall-clock bound (seconds) for the boolean ops.
     ///
-    /// A self-intersecting /
-    /// inside-out operand (e.g. from `loft(ruled: false)`) can make `BRepAlgoAPI_Cut`
-    /// spin indefinitely; the boolean ops abort and return `nil` once this elapses rather
-    /// than hanging a pipeline. Override per call; pass `0` (or negative) to disable. (#206)
+    /// A self-intersecting / inside-out operand (e.g. from `loft(ruled: false)`) can make
+    /// `BRepAlgoAPI_Cut` spin indefinitely; the boolean ops abort and return `nil` once this
+    /// elapses rather than hanging a pipeline. Override per call; pass `0` (or negative) to
+    /// disable. (#206)
     public static let defaultBooleanTimeout: Double = 120
 
     /// Union (add) two shapes together.
@@ -2163,10 +2163,10 @@ public final class Shape: @unchecked Sendable {
     /// copies from this body in one operation.
     ///
     /// This is the feature-aware companion to
-    /// ``circularPattern(axisPoint:axisDirection:count:angle:)``. Where the plain
-    /// pattern duplicates the *body*, this one duplicates the *tool* `count` times
-    /// around the axis and subtracts the resulting compound from `self`. It is the
-    /// natural primitive for a bolt circle: build one hole tool, then pattern it.
+    /// ``circularPattern(axisPoint:axisDirection:count:angle:)``. Where the plain pattern
+    /// duplicates the *body*, this one duplicates the *tool* `count` times around the axis and
+    /// subtracts the resulting compound from `self`. It is the natural primitive for a bolt circle:
+    /// build one hole tool, then pattern it.
     ///
     /// - Parameters:
     ///   - tool: The cutting feature to replicate (e.g. a cylinder positioned at
