@@ -1158,66 +1158,97 @@ OCCTShapeRef OCCTShapeCreateHalfSpace(OCCTShapeRef faceShape, double refX, doubl
 
 // #794: shared helper for ShapeMakePeriodic / ShapeRepeat
 static OCCTShapeRef occtShapePeriodicImpl(OCCTShapeRef shape,
-                                           bool xPeriodic, double xPeriod, int32_t xTimes,
-                                           bool yPeriodic, double yPeriod, int32_t yTimes,
-                                           bool zPeriodic, double zPeriod, int32_t zTimes,
-                                           bool useRepeatedShape)
+                                          bool         xPeriodic,
+                                          double       xPeriod,
+                                          int32_t      xTimes,
+                                          bool         yPeriodic,
+                                          double       yPeriod,
+                                          int32_t      yTimes,
+                                          bool         zPeriodic,
+                                          double       zPeriod,
+                                          int32_t      zTimes,
+                                          bool         useRepeatedShape)
 {
-    if (!shape) return nullptr;
-    try
-    {
-        BOPAlgo_MakePeriodic maker;
-        maker.SetShape(shape->shape);
-        if (xPeriodic) maker.MakeXPeriodic(true, xPeriod);
-        if (yPeriodic) maker.MakeYPeriodic(true, yPeriod);
-        if (zPeriodic) maker.MakeZPeriodic(true, zPeriod);
-        maker.Perform();
-        if (maker.HasErrors()) return nullptr;
+  if (!shape)
+    return nullptr;
+  try
+  {
+    BOPAlgo_MakePeriodic maker;
+    maker.SetShape(shape->shape);
+    if (xPeriodic)
+      maker.MakeXPeriodic(true, xPeriod);
+    if (yPeriodic)
+      maker.MakeYPeriodic(true, yPeriod);
+    if (zPeriodic)
+      maker.MakeZPeriodic(true, zPeriod);
+    maker.Perform();
+    if (maker.HasErrors())
+      return nullptr;
 
-        if (useRepeatedShape)
-        {
-            if (xPeriodic && xTimes > 0) maker.XRepeat(xTimes);
-            if (yPeriodic && yTimes > 0) maker.YRepeat(yTimes);
-            if (zPeriodic && zTimes > 0) maker.ZRepeat(zTimes);
-            return new OCCTShape(maker.RepeatedShape());
-        }
-        else
-        {
-            return new OCCTShape(maker.Shape());
-        }
+    if (useRepeatedShape)
+    {
+      if (xPeriodic && xTimes > 0)
+        maker.XRepeat(xTimes);
+      if (yPeriodic && yTimes > 0)
+        maker.YRepeat(yTimes);
+      if (zPeriodic && zTimes > 0)
+        maker.ZRepeat(zTimes);
+      return new OCCTShape(maker.RepeatedShape());
     }
-    catch (...) { return nullptr; }
+    else
+    {
+      return new OCCTShape(maker.Shape());
+    }
+  }
+  catch (...)
+  {
+    return nullptr;
+  }
 }
 
 OCCTShapeRef OCCTShapeMakePeriodic(OCCTShapeRef shape,
-                                    bool         xPeriodic,
-                                    double       xPeriod,
-                                    bool         yPeriodic,
-                                    double       yPeriod,
-                                    bool         zPeriodic,
-                                    double       zPeriod)
+                                   bool         xPeriodic,
+                                   double       xPeriod,
+                                   bool         yPeriodic,
+                                   double       yPeriod,
+                                   bool         zPeriodic,
+                                   double       zPeriod)
 {
-    return occtShapePeriodicImpl(shape, xPeriodic, xPeriod, 0,
-                                  yPeriodic, yPeriod, 0,
-                                  zPeriodic, zPeriod, 0,
-                                  false);
+  return occtShapePeriodicImpl(shape,
+                               xPeriodic,
+                               xPeriod,
+                               0,
+                               yPeriodic,
+                               yPeriod,
+                               0,
+                               zPeriodic,
+                               zPeriod,
+                               0,
+                               false);
 }
 
 OCCTShapeRef OCCTShapeRepeat(OCCTShapeRef shape,
-                              bool         xPeriodic,
-                              double       xPeriod,
-                              bool         yPeriodic,
-                              double       yPeriod,
-                              bool         zPeriodic,
-                              double       zPeriod,
-                              int32_t      xTimes,
-                              int32_t      yTimes,
-                              int32_t      zTimes)
+                             bool         xPeriodic,
+                             double       xPeriod,
+                             bool         yPeriodic,
+                             double       yPeriod,
+                             bool         zPeriodic,
+                             double       zPeriod,
+                             int32_t      xTimes,
+                             int32_t      yTimes,
+                             int32_t      zTimes)
 {
-    return occtShapePeriodicImpl(shape, xPeriodic, xPeriod, xTimes,
-                                  yPeriodic, yPeriod, yTimes,
-                                  zPeriodic, zPeriod, zTimes,
-                                  true);
+  return occtShapePeriodicImpl(shape,
+                               xPeriodic,
+                               xPeriod,
+                               xTimes,
+                               yPeriodic,
+                               yPeriod,
+                               yTimes,
+                               zPeriodic,
+                               zPeriod,
+                               zTimes,
+                               true);
 }
 
 // MARK: - Draft from Shape (v0.29.0)
@@ -2226,13 +2257,13 @@ struct OCCTBooleanHistory
 
   OCCTBooleanHistory(std::unique_ptr<BRepBuilderAPI_MakeShape> theOp,
                      const TopTools_ListOfShape&               theArgs)
-    : op(std::move(theOp)),
-      args(theArgs)
+      : op(std::move(theOp)),
+        args(theArgs)
   {
   }
 
   explicit OCCTBooleanHistory(const Handle(BRepTools_History)& thePrebuilt)
-    : prebuilt(thePrebuilt)
+      : prebuilt(thePrebuilt)
   {
   }
 };
@@ -4464,71 +4495,93 @@ OCCTBooleanHistoryRef OCCTShapeHistoryFromCircularPattern(OCCTShapeRef  shape,
 }
 
 // #794: shared helper for WireInterpolate (base vs WithTangents)
-static OCCTWireRef occtWireInterpolateImpl(const double* points, int32_t count,
-                                            double tolerance, bool closed,
-                                            double startTanX, double startTanY, double startTanZ,
-                                            double endTanX, double endTanY, double endTanZ,
-                                            bool hasTangents)
+static OCCTWireRef occtWireInterpolateImpl(const double* points,
+                                           int32_t       count,
+                                           double        tolerance,
+                                           bool          closed,
+                                           double        startTanX,
+                                           double        startTanY,
+                                           double        startTanZ,
+                                           double        endTanX,
+                                           double        endTanY,
+                                           double        endTanZ,
+                                           bool          hasTangents)
 {
-    if (!points || count < 2) return nullptr;
+  if (!points || count < 2)
+    return nullptr;
 
-    try
+  try
+  {
+    // Build array of points
+    Handle(TColgp_HArray1OfPnt) hPoints = new TColgp_HArray1OfPnt(1, count);
+    for (int32_t i = 0; i < count; i++)
     {
-        // Build array of points
-        Handle(TColgp_HArray1OfPnt) hPoints = new TColgp_HArray1OfPnt(1, count);
-        for (int32_t i = 0; i < count; i++)
-        {
-            hPoints->SetValue(i + 1, gp_Pnt(points[i * 3], points[i * 3 + 1], points[i * 3 + 2]));
-        }
-
-        // Create interpolator
-        GeomAPI_Interpolate interpolator(hPoints, closed ? Standard_True : Standard_False, tolerance);
-
-        if (hasTangents)
-        {
-            gp_Vec startTangent(startTanX, startTanY, startTanZ);
-            gp_Vec endTangent(endTanX, endTanY, endTanZ);
-            interpolator.Load(startTangent, endTangent);
-        }
-
-        interpolator.Perform();
-
-        if (!interpolator.IsDone()) return nullptr;
-
-        Handle(Geom_BSplineCurve) curve = interpolator.Curve();
-        if (curve.IsNull()) return nullptr;
-
-        // Create edge from curve
-        BRepBuilderAPI_MakeEdge makeEdge(curve);
-        if (!makeEdge.IsDone()) return nullptr;
-
-        // Create wire from edge
-        BRepBuilderAPI_MakeWire makeWire(makeEdge.Edge());
-        if (!makeWire.IsDone()) return nullptr;
-
-        return new OCCTWire(makeWire.Wire());
+      hPoints->SetValue(i + 1, gp_Pnt(points[i * 3], points[i * 3 + 1], points[i * 3 + 2]));
     }
-    catch (...) { return nullptr; }
+
+    // Create interpolator
+    GeomAPI_Interpolate interpolator(hPoints, closed ? Standard_True : Standard_False, tolerance);
+
+    if (hasTangents)
+    {
+      gp_Vec startTangent(startTanX, startTanY, startTanZ);
+      gp_Vec endTangent(endTanX, endTanY, endTanZ);
+      interpolator.Load(startTangent, endTangent);
+    }
+
+    interpolator.Perform();
+
+    if (!interpolator.IsDone())
+      return nullptr;
+
+    Handle(Geom_BSplineCurve) curve = interpolator.Curve();
+    if (curve.IsNull())
+      return nullptr;
+
+    // Create edge from curve
+    BRepBuilderAPI_MakeEdge makeEdge(curve);
+    if (!makeEdge.IsDone())
+      return nullptr;
+
+    // Create wire from edge
+    BRepBuilderAPI_MakeWire makeWire(makeEdge.Edge());
+    if (!makeWire.IsDone())
+      return nullptr;
+
+    return new OCCTWire(makeWire.Wire());
+  }
+  catch (...)
+  {
+    return nullptr;
+  }
 }
 
 OCCTWireRef OCCTWireInterpolate(const double* points, int32_t count, bool closed, double tolerance)
 {
-    return occtWireInterpolateImpl(points, count, tolerance, closed, 0, 0, 0, 0, 0, 0, false);
+  return occtWireInterpolateImpl(points, count, tolerance, closed, 0, 0, 0, 0, 0, 0, false);
 }
 
 OCCTWireRef OCCTWireInterpolateWithTangents(const double* points,
-                                             int32_t       count,
-                                             double        startTanX,
-                                             double        startTanY,
-                                             double        startTanZ,
-                                             double        endTanX,
-                                             double        endTanY,
-                                             double        endTanZ,
-                                             double        tolerance)
+                                            int32_t       count,
+                                            double        startTanX,
+                                            double        startTanY,
+                                            double        startTanZ,
+                                            double        endTanX,
+                                            double        endTanY,
+                                            double        endTanZ,
+                                            double        tolerance)
 {
-    return occtWireInterpolateImpl(points, count, tolerance, false, // not closed when tangents specified
-                                     startTanX, startTanY, startTanZ,
-                                     endTanX, endTanY, endTanZ, true);
+  return occtWireInterpolateImpl(points,
+                                 count,
+                                 tolerance,
+                                 false, // not closed when tangents specified
+                                 startTanX,
+                                 startTanY,
+                                 startTanZ,
+                                 endTanX,
+                                 endTanY,
+                                 endTanZ,
+                                 true);
 }
 
 // MARK: - Feature-Based Modeling (v0.12.0)

@@ -1431,7 +1431,7 @@ extension Shape {
         return (Shape(handle: resultRef), ShapeHistoryRef(h))
     }
 
-/// Quilt multiple shapes (faces/shells) into a single shell, with full
+    /// Quilt multiple shapes (faces/shells) into a single shell, with full
     /// per-input-subshape history.
     public static func quiltWithFullHistory(_ shapes: [Shape])
         -> (result: Shape, history: ShapeHistoryRef)?

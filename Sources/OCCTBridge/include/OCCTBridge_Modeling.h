@@ -1573,7 +1573,7 @@ OCCTBooleanHistoryRef _Nullable OCCTShapeSewSingleWithHistory(
 /// See OCCTShapeSewWithHistory above for why `shapes` is unannotated.
 OCCTBooleanHistoryRef _Nullable OCCTShapeQuiltWithHistory(
   OCCTShapeRef _Nonnull* _Nonnull shapes,
-  int32_t       count,
+  int32_t count,
   OCCTShapeRef _Nullable* _Nullable outResult);
 
 /// Heal/repair a shape (ShapeFix_Shape), with full history.
