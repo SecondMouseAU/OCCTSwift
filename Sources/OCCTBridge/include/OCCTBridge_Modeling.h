@@ -1572,7 +1572,7 @@ OCCTBooleanHistoryRef _Nullable OCCTShapeSewSingleWithHistory(
 /// Quilt multiple shapes (faces/shells) into a single shell, with full history.
 /// See OCCTShapeSewWithHistory above for why `shapes` is unannotated.
 OCCTBooleanHistoryRef _Nullable OCCTShapeQuiltWithHistory(
-  OCCTShapeRef* shapes,
+  OCCTShapeRef _Nonnull* _Nonnull shapes,
   int32_t       count,
   OCCTShapeRef _Nullable* _Nullable outResult);
 

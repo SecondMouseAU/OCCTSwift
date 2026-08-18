@@ -882,21 +882,9 @@ bool OCCTStepTidyOptimize(const char* inputPath, const char* outputPath) {
 
 #include <StlAPI_Reader.hxx>
 
-OCCTShapeRef OCCTImportSTL(const char* path) {
-    if (!path) return nullptr;
-
-    try {
-        TopoDS_Shape shape;
-        StlAPI_Reader reader;
-        if (!reader.Read(shape, path)) return nullptr;
-        if (shape.IsNull()) return nullptr;
-        return new OCCTShape(shape);
-    } catch (...) {
-        return nullptr;
-    }
-}
-
-OCCTShapeRef OCCTImportSTLRobust(const char* path, double sewingTolerance) {
+// #794: shared helper for STL Import (base vs Robust)
+static OCCTShapeRef occtImportSTLImpl(const char* path, double sewingTolerance, bool robust)
+{
     if (!path) return nullptr;
 
     try {
@@ -905,7 +893,11 @@ OCCTShapeRef OCCTImportSTLRobust(const char* path, double sewingTolerance) {
         if (!reader.Read(shape, path)) return nullptr;
         if (shape.IsNull()) return nullptr;
 
-        // Sew disconnected faces
+        if (!robust) {
+            return new OCCTShape(shape);
+        }
+
+        // Robust path: sew disconnected faces
         BRepBuilderAPI_Sewing sewing(sewingTolerance);
         sewing.Add(shape);
         sewing.Perform();
@@ -927,6 +919,14 @@ OCCTShapeRef OCCTImportSTLRobust(const char* path, double sewingTolerance) {
     } catch (...) {
         return nullptr;
     }
+}
+
+OCCTShapeRef OCCTImportSTL(const char* path) {
+    return occtImportSTLImpl(path, 0, false);
+}
+
+OCCTShapeRef OCCTImportSTLRobust(const char* path, double sewingTolerance) {
+    return occtImportSTLImpl(path, sewingTolerance, true);
 }
 
 
@@ -1007,41 +1007,6 @@ bool OCCTExportOBJ(OCCTShapeRef shape, const char* path, double deflection) {
 // MARK: - PLY Export (v0.17.0)
 
 #include <RWPly_CafWriter.hxx>
-
-bool OCCTExportPLY(OCCTShapeRef shape, const char* path, double deflection) {
-    if (!shape || !path) return false;
-
-    try {
-        // Tessellate the shape first
-        BRepMesh_IncrementalMesh mesher(shape->shape, deflection);
-        mesher.Perform();
-
-        // Create an XDE document
-        Handle(TDocStd_Document) doc;
-        Handle(TDocStd_Application) app = new TDocStd_Application();
-        app->NewDocument("MDTV-XCAF", doc);
-
-        Handle(XCAFDoc_ShapeTool) shapeTool = XCAFDoc_DocumentTool::ShapeTool(doc->Main());
-        shapeTool->AddShape(shape->shape);
-
-        // Write PLY
-        RWPly_CafWriter writer(path);
-        writer.SetNormals(true);
-        NCollection_Sequence<TDF_Label> rootLabels;
-        TDF_LabelSequence freeShapes;
-        shapeTool->GetFreeShapes(freeShapes);
-        for (int i = 1; i <= freeShapes.Length(); ++i) {
-            rootLabels.Append(freeShapes.Value(i));
-        }
-        NCollection_IndexedDataMap<TCollection_AsciiString, TCollection_AsciiString> fileInfo;
-        bool success = writer.Perform(doc, rootLabels, nullptr, fileInfo, Message_ProgressRange());
-
-        app->Close(doc);
-        return success;
-    } catch (...) {
-        return false;
-    }
-}
 
 
 // MARK: - STEP Full Coverage — STEPControl_Writer (v0.58.0)
@@ -1386,7 +1351,10 @@ OCCTDocumentRef OCCTDocumentLoadOBJWithOptions(const char* path,
     } catch (...) { return nullptr; }
 }
 
-bool OCCTDocumentWriteOBJ(OCCTDocumentRef doc, const char* path, double deflection) {
+// #794: shared helper for Document Write (OBJ vs PLY with options)
+static bool occtDocumentWriteImpl(OCCTDocumentRef doc, const char* path, double deflection,
+                                   bool isPLY, bool normals, bool colors, bool texCoords)
+{
     if (!doc || !path || doc->doc.IsNull() || doc->shapeTool.IsNull()) return false;
     try {
         // Re-mesh if deflection > 0
@@ -1402,47 +1370,45 @@ bool OCCTDocumentWriteOBJ(OCCTDocumentRef doc, const char* path, double deflecti
             }
         }
 
-        RWObj_CafWriter writer(path);
-        NCollection_IndexedDataMap<TCollection_AsciiString, TCollection_AsciiString> fileInfo;
-        return writer.Perform(doc->doc, fileInfo, Message_ProgressRange());
+        if (isPLY) {
+            RWPly_CafWriter writer(path);
+            writer.SetNormals(normals);
+            writer.SetColors(colors);
+            writer.SetTexCoords(texCoords);
+            NCollection_IndexedDataMap<TCollection_AsciiString, TCollection_AsciiString> fileInfo;
+            return writer.Perform(doc->doc, fileInfo, Message_ProgressRange());
+        } else {
+            RWObj_CafWriter writer(path);
+            NCollection_IndexedDataMap<TCollection_AsciiString, TCollection_AsciiString> fileInfo;
+            return writer.Perform(doc->doc, fileInfo, Message_ProgressRange());
+        }
     } catch (...) { return false; }
 }
 
-// MARK: - PLY Export Expansion (v0.59.0)
+bool OCCTDocumentWriteOBJ(OCCTDocumentRef doc, const char* path, double deflection) {
+    return occtDocumentWriteImpl(doc, path, deflection, false, false, false, false);
+}
 
 bool OCCTDocumentWritePLY(OCCTDocumentRef doc, const char* path, double deflection,
     bool normals, bool colors, bool texCoords) {
-    if (!doc || !path || doc->doc.IsNull() || doc->shapeTool.IsNull()) return false;
-    try {
-        // Re-mesh if deflection > 0
-        if (deflection > 0) {
-            TDF_LabelSequence freeShapes;
-            doc->shapeTool->GetFreeShapes(freeShapes);
-            for (int i = 1; i <= freeShapes.Length(); i++) {
-                TopoDS_Shape shape = doc->shapeTool->GetShape(freeShapes.Value(i));
-                if (!shape.IsNull()) {
-                    BRepMesh_IncrementalMesh mesher(shape, deflection);
-                    mesher.Perform();
-                }
-            }
-        }
-
-        RWPly_CafWriter writer(path);
-        writer.SetNormals(normals);
-        writer.SetColors(colors);
-        writer.SetTexCoords(texCoords);
-        NCollection_IndexedDataMap<TCollection_AsciiString, TCollection_AsciiString> fileInfo;
-        return writer.Perform(doc->doc, fileInfo, Message_ProgressRange());
-    } catch (...) { return false; }
+    return occtDocumentWriteImpl(doc, path, deflection, true, normals, colors, texCoords);
 }
 
-bool OCCTExportPLYWithOptions(OCCTShapeRef shape, const char* path, double deflection,
-    bool normals, bool colors, bool texCoords) {
+// MARK: - PLY Export (v0.17.0)
+
+#include <RWPly_CafWriter.hxx>
+
+// #794: shared helper for PLY Export (base vs WithOptions)
+static bool occtExportPLYImpl(OCCTShapeRef shape, const char* path, double deflection,
+                               bool normals, bool colors, bool texCoords)
+{
     if (!shape || !path) return false;
     try {
+        // Tessellate the shape first
         BRepMesh_IncrementalMesh mesher(shape->shape, deflection);
         mesher.Perform();
 
+        // Create an XDE document
         Handle(TDocStd_Document) doc;
         Handle(TDocStd_Application) app = new TDocStd_Application();
         app->NewDocument("MDTV-XCAF", doc);
@@ -1450,6 +1416,7 @@ bool OCCTExportPLYWithOptions(OCCTShapeRef shape, const char* path, double defle
         Handle(XCAFDoc_ShapeTool) shapeTool = XCAFDoc_DocumentTool::ShapeTool(doc->Main());
         shapeTool->AddShape(shape->shape);
 
+        // Write PLY
         RWPly_CafWriter writer(path);
         writer.SetNormals(normals);
         writer.SetColors(colors);
@@ -1462,9 +1429,21 @@ bool OCCTExportPLYWithOptions(OCCTShapeRef shape, const char* path, double defle
         }
         NCollection_IndexedDataMap<TCollection_AsciiString, TCollection_AsciiString> fileInfo;
         bool success = writer.Perform(doc, rootLabels, nullptr, fileInfo, Message_ProgressRange());
+
         app->Close(doc);
         return success;
-    } catch (...) { return false; }
+    } catch (...) {
+        return false;
+    }
+}
+
+bool OCCTExportPLY(OCCTShapeRef shape, const char* path, double deflection) {
+    return occtExportPLYImpl(shape, path, deflection, true, false, false);
+}
+
+bool OCCTExportPLYWithOptions(OCCTShapeRef shape, const char* path, double deflection,
+    bool normals, bool colors, bool texCoords) {
+    return occtExportPLYImpl(shape, path, deflection, normals, colors, texCoords);
 }
 
 // MARK: - RWMesh Coordinate System (v0.59.0)

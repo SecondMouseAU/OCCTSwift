@@ -1542,36 +1542,73 @@ OCCTShapeRef OCCTApproxCurveOnSurface(OCCTShapeRef edge, OCCTShapeRef face,
 // MARK: - CPnts_UniformDeflection (v0.62)
 // --- CPnts_UniformDeflection ---
 
-bool OCCTCPntsUniformDeflection(OCCTShapeRef shape, double deflection,
-    double* _Nullable * _Nonnull outParams,
-    double* _Nullable * _Nonnull outPoints,
-    int32_t* outCount) {
+// #794: shared helper for CPnts_UniformDeflection (full range vs explicit u1,u2)
+static bool occtCPntsUniformDeflectionImpl(OCCTShapeRef shape, double deflection,
+                                            double u1, double u2, bool hasRange,
+                                            double* _Nullable * _Nonnull outParams,
+                                            double* _Nullable * _Nonnull outPoints,
+                                            int32_t* outCount) {
     if (!shape) return false;
     try {
         TopoDS_Edge edge = TopoDS::Edge(shape->shape);
         BRepAdaptor_Curve bac(edge);
-        CPnts_UniformDeflection ud(bac, deflection, 1e-7, true);
-        std::vector<double> params;
-        std::vector<gp_Pnt> pts;
-        while (ud.More()) {
-            double p = ud.Value();
-            params.push_back(p);
-            pts.push_back(bac.Value(p));
-            ud.Next();
+        double firstParam = bac.FirstParameter();
+        double lastParam = bac.LastParameter();
+        if (hasRange) {
+            // CPnts_UniformDeflection with explicit parameter range
+            CPnts_UniformDeflection ud(bac, deflection, u1, u2, 1e-7, true);
+            std::vector<double> params;
+            std::vector<gp_Pnt> pts;
+            while (ud.More()) {
+                double p = ud.Value();
+                params.push_back(p);
+                pts.push_back(bac.Value(p));
+                ud.Next();
+            }
+            int32_t n = (int32_t)params.size();
+            *outCount = n;
+            if (n == 0) { *outParams = nullptr; *outPoints = nullptr; return false; }
+            *outParams = (double*)malloc(n * sizeof(double));
+            *outPoints = (double*)malloc(n * 3 * sizeof(double));
+            for (int32_t i = 0; i < n; i++) {
+                (*outParams)[i] = params[i];
+                (*outPoints)[i*3]   = pts[i].X();
+                (*outPoints)[i*3+1] = pts[i].Y();
+                (*outPoints)[i*3+2] = pts[i].Z();
+            }
+            return true;
+        } else {
+            // CPnts_UniformDeflection with full range
+            CPnts_UniformDeflection ud(bac, deflection, firstParam, lastParam, 1e-7, true);
+            std::vector<double> params;
+            std::vector<gp_Pnt> pts;
+            while (ud.More()) {
+                double p = ud.Value();
+                params.push_back(p);
+                pts.push_back(bac.Value(p));
+                ud.Next();
+            }
+            int32_t n = (int32_t)params.size();
+            *outCount = n;
+            if (n == 0) { *outParams = nullptr; *outPoints = nullptr; return false; }
+            *outParams = (double*)malloc(n * sizeof(double));
+            *outPoints = (double*)malloc(n * 3 * sizeof(double));
+            for (int32_t i = 0; i < n; i++) {
+                (*outParams)[i] = params[i];
+                (*outPoints)[i*3]   = pts[i].X();
+                (*outPoints)[i*3+1] = pts[i].Y();
+                (*outPoints)[i*3+2] = pts[i].Z();
+            }
+            return true;
         }
-        int32_t n = (int32_t)params.size();
-        *outCount = n;
-        if (n == 0) { *outParams = nullptr; *outPoints = nullptr; return false; }
-        *outParams = (double*)malloc(n * sizeof(double));
-        *outPoints = (double*)malloc(n * 3 * sizeof(double));
-        for (int32_t i = 0; i < n; i++) {
-            (*outParams)[i] = params[i];
-            (*outPoints)[i*3]   = pts[i].X();
-            (*outPoints)[i*3+1] = pts[i].Y();
-            (*outPoints)[i*3+2] = pts[i].Z();
-        }
-        return true;
     } catch (...) { return false; }
+}
+
+bool OCCTCPntsUniformDeflection(OCCTShapeRef shape, double deflection,
+    double* _Nullable * _Nonnull outParams,
+    double* _Nullable * _Nonnull outPoints,
+    int32_t* outCount) {
+    return occtCPntsUniformDeflectionImpl(shape, deflection, 0, 0, false, outParams, outPoints, outCount);
 }
 
 bool OCCTCPntsUniformDeflectionRange(OCCTShapeRef shape, double deflection,
@@ -1579,32 +1616,7 @@ bool OCCTCPntsUniformDeflectionRange(OCCTShapeRef shape, double deflection,
     double* _Nullable * _Nonnull outParams,
     double* _Nullable * _Nonnull outPoints,
     int32_t* outCount) {
-    if (!shape) return false;
-    try {
-        TopoDS_Edge edge = TopoDS::Edge(shape->shape);
-        BRepAdaptor_Curve bac(edge);
-        CPnts_UniformDeflection ud(bac, deflection, u1, u2, 1e-7, true);
-        std::vector<double> params;
-        std::vector<gp_Pnt> pts;
-        while (ud.More()) {
-            double p = ud.Value();
-            params.push_back(p);
-            pts.push_back(bac.Value(p));
-            ud.Next();
-        }
-        int32_t n = (int32_t)params.size();
-        *outCount = n;
-        if (n == 0) { *outParams = nullptr; *outPoints = nullptr; return false; }
-        *outParams = (double*)malloc(n * sizeof(double));
-        *outPoints = (double*)malloc(n * 3 * sizeof(double));
-        for (int32_t i = 0; i < n; i++) {
-            (*outParams)[i] = params[i];
-            (*outPoints)[i*3]   = pts[i].X();
-            (*outPoints)[i*3+1] = pts[i].Y();
-            (*outPoints)[i*3+2] = pts[i].Z();
-        }
-        return true;
-    } catch (...) { return false; }
+    return occtCPntsUniformDeflectionImpl(shape, deflection, u1, u2, true, outParams, outPoints, outCount);
 }
 
 // MARK: - Approx_CurvilinearParameter (v0.63)
@@ -5433,14 +5445,18 @@ OCCTCurve3DRef OCCTGeomEvalSineWaveCurveCreate(double amplitude, double omega, d
 }
 // --- ExtremaPC ---
 
-int32_t OCCTExtremaPCCurve(OCCTCurve3DRef curve,
-                            double px, double py, double pz,
-                            double* outParams, double* outDistances,
-                            double* outPx, double* outPy, double* outPz,
-                            int32_t maxResults) {
+// #794: shared helper for ExtremaPC (whole curve vs bounded)
+static int32_t occtExtremaPCCurveImpl(OCCTCurve3DRef curve,
+                                       double px, double py, double pz,
+                                       double* outParams, double* outDistances,
+                                       double* outPx, double* outPy, double* outPz,
+                                       int32_t maxResults,
+                                       double uMin, double uMax, bool hasBounds) {
     if (!curve || curve->curve.IsNull() || !outParams || !outDistances || maxResults <= 0) return 0;
     try {
-        ExtremaPC_Curve extPC(curve->curve);
+        // ExtremaPC_Curve has deleted copy/move, so construct directly
+        ExtremaPC_Curve extPC(hasBounds ? curve->curve : curve->curve,
+                              hasBounds ? uMin : 0, hasBounds ? uMax : 0);
         if (!extPC.IsInitialized()) return 0;
         const auto& result = extPC.Perform(gp_Pnt(px, py, pz), 1e-9);
         if (!result.IsDone()) return 0;
@@ -5456,28 +5472,23 @@ int32_t OCCTExtremaPCCurve(OCCTCurve3DRef curve,
     } catch (...) { return 0; }
 }
 
+int32_t OCCTExtremaPCCurve(OCCTCurve3DRef curve,
+                            double px, double py, double pz,
+                            double* outParams, double* outDistances,
+                            double* outPx, double* outPy, double* outPz,
+                            int32_t maxResults) {
+    return occtExtremaPCCurveImpl(curve, px, py, pz, outParams, outDistances,
+                                   outPx, outPy, outPz, maxResults, 0, 0, false);
+}
+
 int32_t OCCTExtremaPCCurveBounded(OCCTCurve3DRef curve,
                                    double px, double py, double pz,
                                    double uMin, double uMax,
                                    double* outParams, double* outDistances,
                                    double* outPx, double* outPy, double* outPz,
                                    int32_t maxResults) {
-    if (!curve || curve->curve.IsNull() || !outParams || !outDistances || maxResults <= 0) return 0;
-    try {
-        ExtremaPC_Curve extPC(curve->curve, uMin, uMax);
-        if (!extPC.IsInitialized()) return 0;
-        const auto& result = extPC.Perform(gp_Pnt(px, py, pz), 1e-9);
-        if (!result.IsDone()) return 0;
-        int n = std::min((int)result.NbExt(), (int)maxResults);
-        for (int i = 0; i < n; i++) {
-            outParams[i] = result[i].Parameter;
-            outDistances[i] = std::sqrt(result[i].SquareDistance);
-            if (outPx) outPx[i] = result[i].Point.X();
-            if (outPy) outPy[i] = result[i].Point.Y();
-            if (outPz) outPz[i] = result[i].Point.Z();
-        }
-        return n;
-    } catch (...) { return 0; }
+    return occtExtremaPCCurveImpl(curve, px, py, pz, outParams, outDistances,
+                                   outPx, outPy, outPz, maxResults, uMin, uMax, true);
 }
 
 double OCCTExtremaPCMinDistance(OCCTCurve3DRef curve,

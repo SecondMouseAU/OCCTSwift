@@ -181,12 +181,15 @@ int32_t OCCTKDTreeBoxSearch(OCCTKDTreeRef tree,
 #include <math_DirectPolynomialRoots.hxx>
 #include <algorithm>
 
-OCCTPolynomialRoots OCCTSolveQuadratic(double a, double b, double c) {
+// #794: shared helper for polynomial solvers (Quadratic/Cubic/Quartic)
+// Uses template parameter pack to handle different constructor arities
+template <typename... Args>
+static OCCTPolynomialRoots occtSolvePolynomial(Args... args) {
     OCCTPolynomialRoots result;
     result.count = 0;
     result.roots[0] = result.roots[1] = result.roots[2] = result.roots[3] = 0.0;
     try {
-        math_DirectPolynomialRoots solver(a, b, c);
+        math_DirectPolynomialRoots solver(args...);
         if (!solver.IsDone()) return result;
         result.count = std::min(solver.NbSolutions(), 4);
         for (int i = 0; i < result.count; i++) {
@@ -195,38 +198,18 @@ OCCTPolynomialRoots OCCTSolveQuadratic(double a, double b, double c) {
         std::sort(result.roots, result.roots + result.count);
     } catch (...) {}
     return result;
+}
+
+OCCTPolynomialRoots OCCTSolveQuadratic(double a, double b, double c) {
+    return occtSolvePolynomial(a, b, c);
 }
 
 OCCTPolynomialRoots OCCTSolveCubic(double a, double b, double c, double d) {
-    OCCTPolynomialRoots result;
-    result.count = 0;
-    result.roots[0] = result.roots[1] = result.roots[2] = result.roots[3] = 0.0;
-    try {
-        math_DirectPolynomialRoots solver(a, b, c, d);
-        if (!solver.IsDone()) return result;
-        result.count = std::min(solver.NbSolutions(), 4);
-        for (int i = 0; i < result.count; i++) {
-            result.roots[i] = solver.Value(i + 1);
-        }
-        std::sort(result.roots, result.roots + result.count);
-    } catch (...) {}
-    return result;
+    return occtSolvePolynomial(a, b, c, d);
 }
 
 OCCTPolynomialRoots OCCTSolveQuartic(double a, double b, double c, double d, double e) {
-    OCCTPolynomialRoots result;
-    result.count = 0;
-    result.roots[0] = result.roots[1] = result.roots[2] = result.roots[3] = 0.0;
-    try {
-        math_DirectPolynomialRoots solver(a, b, c, d, e);
-        if (!solver.IsDone()) return result;
-        result.count = std::min(solver.NbSolutions(), 4);
-        for (int i = 0; i < result.count; i++) {
-            result.roots[i] = solver.Value(i + 1);
-        }
-        std::sort(result.roots, result.roots + result.count);
-    } catch (...) {}
-    return result;
+    return occtSolvePolynomial(a, b, c, d, e);
 }
 
 
