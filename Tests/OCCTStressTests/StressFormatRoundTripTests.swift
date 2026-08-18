@@ -125,8 +125,8 @@ struct StressRoundTripSTLTests {
         let reimported = try Shape.loadSTL(from: url)
         #expect(reimported.isValid, "STL round-trip failed for \(name)")
         // STL loses topology — just verify bounding box roughly matches
-        let origBounds = shape.bounds
-        let reimBounds = reimported.bounds
+        let origBounds = shape.bounds!
+        let reimBounds = reimported.bounds!
         let origSize = origBounds.max - origBounds.min
         let reimSize = reimBounds.max - reimBounds.min
         // Size should be within 10% (STL mesh approximation)

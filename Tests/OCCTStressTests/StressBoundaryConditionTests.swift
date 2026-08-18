@@ -130,7 +130,7 @@ struct StressMixedScaleTests {
             let result = box.translated(by: SIMD3(1e6, 1e6, 1e6))
             if let r = result {
                 #expect(r.isValid)
-                let bounds = r.bounds
+                let bounds = r.bounds!
                 #expect(bounds.max.x > 1e5)
             }
         }

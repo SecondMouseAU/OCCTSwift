@@ -59,6 +59,8 @@
 // structs above.
 #include <BRepOffsetAPI_MakeFilling.hxx>
 #include <BRepFilletAPI_MakeFillet.hxx>
+#include <Bnd_Box.hxx>    // #943: the shared bounding-box helper below
+#include <BRepBndLib.hxx> // #943: same
 #include <BRepFeat_MakeCylindricalHole.hxx>
 #include <BRepFeat_Status.hxx>
 #include <Precision.hxx>
@@ -1499,6 +1501,78 @@ inline TopoDS_Shape occtSubShapeAt(const TopoDS_Shape& shape, int32_t type, int3
   if (index >= occtMapSubShapes(shape, type, map))
     return TopoDS_Shape();
   return map(index + 1); // OCCT's indexed maps are 1-based
+}
+
+// === #943: one meaning for "this shape has no bounding box" ===
+//
+// Every bounds entry point in the bridge builds a Bnd_Box and hands six doubles back. A void box
+// (no geometry contributed anything) and a genuinely zero-size box (a point-like shape at the
+// world origin) are different answers that serialize to the same six zeros, so the six doubles
+// alone cannot carry the distinction: only the bool return can. Inferring "void" from all-zero
+// values at the Swift end is the sentinel this issue exists to remove, and #900 already fixed
+// exactly that for OCCTShapeBoundingBoxOptimal, where BRepBndLib::AddOptimal measures a vertex at
+// the origin as exactly (0,0,0)-(0,0,0) (measured, Scripts/repro/943-bounds-void-vs-zero/).
+//
+// Add() escapes the same collision today only because BRep_Tool::Tolerance floors every
+// vertex/edge/face tolerance at Precision::Confusion() and Add() enlarges by it, so its boxes
+// land on +/-1e-7 rather than exact zero. That is a kernel constant this package neither controls
+// nor pins, which is why the guard belongs here rather than in a value comparison upstream.
+//
+// This helper is that one decision point, shared by every bounds entry point (#834's duplication
+// finding was that only one of them guarded at all). It came from OCCTBridge_Topology.mm, where
+// it served OCCTShapeBoundingBox/OCCTShapeBoundingBoxOptimal; OCCTShapeGetBounds lives in
+// OCCTBridge_Properties.mm and could not reach a file-static, which is how the two implementations
+// drifted apart in the first place.
+
+/// Builds `forShape`'s axis-aligned bounding box and writes its six corners, returning false when
+/// there is no box to report.
+///
+/// `optimal` picks `BRepBndLib::AddOptimal` over `BRepBndLib::Add`; `useTriangulation` and
+/// `useShapeTolerance` are those calls' own flags (`useShapeTolerance` is read only by
+/// `AddOptimal`, matching OCCT's own signature).
+///
+/// Zeroing the six out-params as the very first statement, before the IsNull() check and again in
+/// the catch block, means every failure path leaves deterministic zeros rather than the
+/// uninitialized stack memory a caller that doesn't gate on the bool return would otherwise read.
+/// forShape.IsNull() stays reachable and load-bearing: the public callers only guard the raw
+/// handle pointer, not whether the wrapped TopoDS_Shape is itself null, so a non-null handle
+/// wrapping an empty shape reaches this check with the pointer guard already passed.
+///
+/// - Returns: true when the six out-params hold a measured box, false when the box is void, the
+///   shape is null, or OCCT raised.
+inline bool occtComputeBoundingBox(const TopoDS_Shape& forShape,
+                                   bool                optimal,
+                                   bool                useTriangulation,
+                                   bool                useShapeTolerance,
+                                   double&             outXmin,
+                                   double&             outYmin,
+                                   double&             outZmin,
+                                   double&             outXmax,
+                                   double&             outYmax,
+                                   double&             outZmax)
+{
+  outXmin = outYmin = outZmin = outXmax = outYmax = outZmax = 0.0;
+  if (forShape.IsNull())
+    return false;
+  try
+  {
+    Bnd_Box box;
+    if (optimal)
+      BRepBndLib::AddOptimal(forShape, box, useTriangulation, useShapeTolerance);
+    else
+      BRepBndLib::Add(forShape, box, useTriangulation);
+    // All-zero coordinates are indistinguishable from a genuinely degenerate/point shape at
+    // the world origin -- IsVoid() is the real signal (#900, #943).
+    if (box.IsVoid())
+      return false;
+    box.Get(outXmin, outYmin, outZmin, outXmax, outYmax, outZmax);
+    return true;
+  }
+  catch (...)
+  {
+    outXmin = outYmin = outZmin = outXmax = outYmax = outZmax = 0.0;
+    return false;
+  }
 }
 
 // === #541: one meaning for a face index ===

@@ -1,6 +1,6 @@
 import Foundation
-import simd
 import OCCTBridge
+import simd
 
 // MARK: - Thread feature API (#66, v0.139 Thread Form v2)
 //
@@ -32,18 +32,18 @@ import OCCTBridge
 // not form geometry.
 
 public enum ThreadForm: String, Sendable, Codable, CaseIterable {
-    case iso68          // Metric M-series, 60° V
-    case unified        // Unified (UNC / UNF / metric-fine / SAE all live here — just a pitch), 60° V
-    case whitworth      // BSW Whitworth, 55° (crest/root rounding approximated by truncation)
-    case bspParallel    // BSP parallel "G", Whitworth 55° form
-    case acme           // ACME general-purpose, 29° trapezoidal
-    case trapezoidal    // ISO metric trapezoidal "Tr", 30°
-    case square         // square / 0° walls
-    case buttress       // asymmetric buttress, 7° load / 45° trailing
-    case knuckle        // rounded / sinusoidal (DIN 405)
-    case nptTapered     // NPT — 60° V on a 1:16 taper
-    case bsptTapered    // BSPT — 55° on a 1:16 taper
-    case custom         // arbitrary cross-section (see ThreadSpec.customProfile)
+    case iso68  // Metric M-series, 60° V
+    case unified  // Unified (UNC / UNF / metric-fine / SAE all live here — just a pitch), 60° V
+    case whitworth  // BSW Whitworth, 55° (crest/root rounding approximated by truncation)
+    case bspParallel  // BSP parallel "G", Whitworth 55° form
+    case acme  // ACME general-purpose, 29° trapezoidal
+    case trapezoidal  // ISO metric trapezoidal "Tr", 30°
+    case square  // square / 0° walls
+    case buttress  // asymmetric buttress, 7° load / 45° trailing
+    case knuckle  // rounded / sinusoidal (DIN 405)
+    case nptTapered  // NPT — 60° V on a 1:16 taper
+    case bsptTapered  // BSPT — 55° on a 1:16 taper
+    case custom  // arbitrary cross-section (see ThreadSpec.customProfile)
 }
 
 /// A thread's tooth cross-section over ONE pitch, normalized — the general representation behind
@@ -57,26 +57,36 @@ public enum ThreadForm: String, Sendable, Codable, CaseIterable {
 public struct ThreadProfile: Sendable, Hashable, Codable {
 
     public struct Vertex: Sendable, Hashable, Codable {
-        public var axial: Double   // 0…1 along the pitch
-        public var depth: Double   // 0 = crest (major R), 1 = root (minor R)
-        public init(axial: Double, depth: Double) { self.axial = axial; self.depth = depth }
+        public var axial: Double  // 0…1 along the pitch
+        public var depth: Double  // 0 = crest (major R), 1 = root (minor R)
+        public init(axial: Double, depth: Double) {
+            self.axial = axial
+            self.depth = depth
+        }
     }
 
     public let vertices: [Vertex]
 
-    /// Validate and create a custom profile. Returns nil unless the vertices form a well-ordered,
-    /// periodic, full-depth-spanning tooth outline (the contract above).
+    /// Validate and create a custom profile.
+    ///
+    /// Returns nil unless the vertices form a well-ordered, periodic, full-depth-spanning tooth
+    /// outline (the contract above).
     public init?(vertices: [Vertex]) {
         let eps = 1e-9
         guard vertices.count >= 3,
-              abs(vertices.first!.axial) < eps, abs(vertices.last!.axial - 1) < eps,
-              abs(vertices.first!.depth - vertices.last!.depth) < 1e-6 else { return nil }
-        var prevA = -eps, minD = 1.0, maxD = 0.0
+            abs(vertices.first!.axial) < eps, abs(vertices.last!.axial - 1) < eps,
+            abs(vertices.first!.depth - vertices.last!.depth) < 1e-6
+        else { return nil }
+        var prevA = -eps
+        var minD = 1.0
+        var maxD = 0.0
         for v in vertices {
             guard v.axial >= prevA - eps, v.depth >= -eps, v.depth <= 1 + eps else { return nil }
-            prevA = v.axial; minD = min(minD, v.depth); maxD = max(maxD, v.depth)
+            prevA = v.axial
+            minD = min(minD, v.depth)
+            maxD = max(maxD, v.depth)
         }
-        guard minD < 1e-6, maxD > 1 - 1e-6 else { return nil }   // must span a crest and a root
+        guard minD < 1e-6, maxD > 1 - 1e-6 else { return nil }  // must span a crest and a root
         self.vertices = vertices
     }
 
@@ -95,24 +105,31 @@ public struct ThreadProfile: Sendable, Hashable, Codable {
         var out: [Segment] = []
         out.reserveCapacity(vertices.count - 1)
         for i in 0..<(vertices.count - 1) {
-            let a = vertices[i], b = vertices[i + 1]
-            let kind: SegmentKind = abs(a.depth - b.depth) < 1e-9 ? .flat
-                                  : abs(a.axial - b.axial) < 1e-9 ? .wall : .flank
+            let a = vertices[i]
+            let b = vertices[i + 1]
+            let kind: SegmentKind =
+                abs(a.depth - b.depth) < 1e-9
+                ? .flat
+                : abs(a.axial - b.axial) < 1e-9 ? .wall : .flank
             out.append(Segment(a: a, b: b, kind: kind))
         }
         return out
     }
     /// True if the crest (depth ≈ 0) is a real flat of non-zero axial width, not a single point.
     public var hasCrestFlat: Bool {
-        segments.contains { $0.kind == .flat && $0.a.depth < 1e-6 && abs($0.b.axial - $0.a.axial) > 1e-9 }
+        segments.contains {
+            $0.kind == .flat && $0.a.depth < 1e-6 && abs($0.b.axial - $0.a.axial) > 1e-9
+        }
     }
 
     /// Whether this profile can be built by the smooth, boolean-free direct rod path
     /// (``Shape/threadedRod(customProfile:nominalDiameter:pitch:cutDepth:length:axisOrigin:axisDirection:leftHanded:)``
-    /// and the direct branch of `threadedShaft`). It requires a real **crest flat** (so the
-    /// unthreaded margin can attach) and **at most two flank segments** (piecewise-linear forms:
-    /// trapezoidal / ACME / square / buttress / worm). Pointed-crest or many-flank (rounded /
-    /// knuckle) profiles return `false` and must use the faceted boolean cut path instead.
+    /// and the direct branch of `threadedShaft`).
+    ///
+    /// It requires a real **crest flat** (so the unthreaded margin can attach) and **at most two
+    /// flank segments** (piecewise-linear forms: trapezoidal / ACME / square / buttress / worm).
+    /// Pointed-crest or many-flank (rounded / knuckle) profiles return `false` and must use the
+    /// faceted boolean cut path instead.
     public var supportsSmoothRodBuild: Bool {
         hasCrestFlat && segments.filter { $0.kind == .flank }.count <= 2
     }
@@ -121,76 +138,94 @@ public struct ThreadProfile: Sendable, Hashable, Codable {
 
     /// Symmetric truncated trapezoid: root half-flats at the ends, crest flat in the middle,
     /// straight flanks between. `cf`/`rf` are the crest/root flat widths as fractions of the pitch.
-    static func trapezoid(crestFlatFraction cf: Double, rootFlatFraction rf: Double) -> ThreadProfile {
+    static func trapezoid(crestFlatFraction cf: Double, rootFlatFraction rf: Double)
+        -> ThreadProfile
+    {
         ThreadProfile(trusted: [
-            .init(axial: 0,           depth: 1),
-            .init(axial: rf / 2,      depth: 1),
+            .init(axial: 0, depth: 1),
+            .init(axial: rf / 2, depth: 1),
             .init(axial: 0.5 - cf / 2, depth: 0),
             .init(axial: 0.5 + cf / 2, depth: 0),
-            .init(axial: 1 - rf / 2,  depth: 1),
-            .init(axial: 1,           depth: 1),
+            .init(axial: 1 - rf / 2, depth: 1),
+            .init(axial: 1, depth: 1),
         ])
     }
 
-    /// ISO-68 / Unified 60° V. Defaults reproduce the shipped geometry exactly: crest flat P/8,
+    /// ISO-68 / Unified 60° V.
+    ///
+    /// Defaults reproduce the shipped geometry exactly: crest flat P/8,
     /// root flat P/4 → 30° flanks at `cutDepth = 5H/8`.
-    public static func iso60V(crestFlatFraction: Double = 1.0 / 8,
-                              rootFlatFraction: Double = 1.0 / 4) -> ThreadProfile {
+    public static func iso60V(
+        crestFlatFraction: Double = 1.0 / 8,
+        rootFlatFraction: Double = 1.0 / 4
+    ) -> ThreadProfile {
         trapezoid(crestFlatFraction: crestFlatFraction, rootFlatFraction: rootFlatFraction)
     }
     /// A rounded thread: straight `halfFlankDeg` flanks with circular-arc crest & root (radius solved
     /// for tangency), plus a small crest/root land so the smooth direct build can attach a crest. `h`
     /// is the depth as a fraction of pitch (must equal the form's `cutDepth / P`).
-    static func rounded(h: Double, halfFlankDeg: Double, flat: Double = 0.05, samples: Int = 4) -> ThreadProfile {
+    static func rounded(h: Double, halfFlankDeg: Double, flat: Double = 0.05, samples: Int = 4)
+        -> ThreadProfile
+    {
         let beta = halfFlankDeg * Double.pi / 180
-        let phiMax = .pi / 2 - beta                              // fillet sweep: flat-tangent → flank
-        let s = sin(phiMax), cc = 1 - cos(phiMax)
-        let r = (0.5 - flat - h * tan(beta)) / (2 * s - 2 * cc * tan(beta))   // tangent fillet radius (cf = rf = flat)
-        func df(_ depthP: Double) -> Double { depthP / h }       // pitch-unit depth → 0…1 fraction
-        var left: [Vertex] = [.init(axial: 0, depth: 1), .init(axial: flat / 2, depth: 1)]   // root flat
-        for i in 1...samples {                                   // root fillet (concave)
+        let phiMax = .pi / 2 - beta  // fillet sweep: flat-tangent → flank
+        let s = sin(phiMax)
+        let cc = 1 - cos(phiMax)
+        // tangent fillet radius (cf = rf = flat)
+        let r = (0.5 - flat - h * tan(beta)) / (2 * s - 2 * cc * tan(beta))
+        func df(_ depthP: Double) -> Double { depthP / h }  // pitch-unit depth → 0…1 fraction
+        // root flat
+        var left: [Vertex] = [.init(axial: 0, depth: 1), .init(axial: flat / 2, depth: 1)]
+        for i in 1...samples {  // root fillet (concave)
             let psi = phiMax * Double(i) / Double(samples)
             left.append(.init(axial: flat / 2 + r * sin(psi), depth: df(h - r * (1 - cos(psi)))))
         }
-        for i in 0...samples {                                   // flank, then crest fillet (convex)
+        for i in 0...samples {  // flank, then crest fillet (convex)
             let psi = phiMax * Double(samples - i) / Double(samples)
-            left.append(.init(axial: (0.5 - flat / 2) - r * sin(psi), depth: df(r * (1 - cos(psi)))))
+            left.append(
+                .init(axial: (0.5 - flat / 2) - r * sin(psi), depth: df(r * (1 - cos(psi)))))
         }
-        left.append(.init(axial: 0.5, depth: 0))                 // crest flat to centre
+        left.append(.init(axial: 0.5, depth: 0))  // crest flat to centre
         var vs = left
         for i in stride(from: left.count - 2, through: 0, by: -1) {
             vs.append(.init(axial: 1 - left[i].axial, depth: left[i].depth))
         }
         return ThreadProfile(trusted: vs)
     }
-    /// Whitworth / BSW / BSP 55° — `cutDepth = 0.640327·P`. BS 84 rounds the outer/inner sixth of the
-    /// tooth; this is the standard flat-truncation of that form (crest flat = root flat = P/6, the straight
-    /// 55° flank spanning the middle two-thirds). A truly *rounded* crest makes the deep tooth's `ruled:false`
-    /// loft spike past the nominal radius (OCCTSwift #213), so the truncation is what builds smooth.
+    /// Whitworth / BSW / BSP 55° — `cutDepth = 0.640327·P`.
+    ///
+    /// BS 84 rounds the outer/inner sixth of the tooth; this is the standard flat-truncation of
+    /// that form (crest flat = root flat = P/6, the straight 55° flank spanning the middle
+    /// two-thirds). A truly *rounded* crest makes the deep tooth's `ruled:false` loft spike past
+    /// the nominal radius (OCCTSwift #213), so the truncation is what builds smooth.
     public static let whitworth55 = trapezoid(crestFlatFraction: 1.0 / 6, rootFlatFraction: 1.0 / 6)
     /// ACME 29° general-purpose (crest flat = root flat = 0.3707·P at `cutDepth = P/2`).
     public static let acme29 = trapezoid(crestFlatFraction: 0.3707, rootFlatFraction: 0.3707)
     /// ISO metric trapezoidal "Tr" 30° (crest flat = root flat = 0.366·P at `cutDepth = P/2`).
-    public static let trapezoidalMetric30 = trapezoid(crestFlatFraction: 0.366, rootFlatFraction: 0.366)
+    public static let trapezoidalMetric30 = trapezoid(
+        crestFlatFraction: 0.366, rootFlatFraction: 0.366)
     /// Square — 0° radial walls, equal land and groove (`cutDepth = P/2`).
     public static let square = ThreadProfile(trusted: [
-        .init(axial: 0,    depth: 1), .init(axial: 0.25, depth: 1),
+        .init(axial: 0, depth: 1), .init(axial: 0.25, depth: 1),
         .init(axial: 0.25, depth: 0), .init(axial: 0.75, depth: 0),
-        .init(axial: 0.75, depth: 1), .init(axial: 1,    depth: 1),
+        .init(axial: 0.75, depth: 1), .init(axial: 1, depth: 1),
     ])
     /// Buttress (DIN 513) — asymmetric 3° load flank / 30° clearance flank (33° total), `cutDepth = 0.86777·P`.
+    ///
     /// (Bolt core d3 = d − 2·0.86777·P, verified against the DIN 513 table, e.g. S 10×2 → d3 = 6.528.)
     /// The near-radial load flank rises steeply to the crest; the 30° clearance flank falls back to the root.
     public static let buttress = ThreadProfile(trusted: [
-        .init(axial: 0,      depth: 1), .init(axial: 0.0968, depth: 1),   // root flat (half)
-        .init(axial: 0.1422, depth: 0),                                   // 3° load flank → crest
-        .init(axial: 0.4022, depth: 0),                                   // crest flat
-        .init(axial: 0.9032, depth: 1),                                   // 30° clearance flank → root
-        .init(axial: 1,      depth: 1),                                   // root flat (half)
+        .init(axial: 0, depth: 1), .init(axial: 0.0968, depth: 1),  // root flat (half)
+        .init(axial: 0.1422, depth: 0),  // 3° load flank → crest
+        .init(axial: 0.4022, depth: 0),  // crest flat
+        .init(axial: 0.9032, depth: 1),  // 30° clearance flank → root
+        .init(axial: 1, depth: 1),  // root flat (half)
     ])
     /// Knuckle / round thread (DIN 405): 30°-included (15° per side) flanks with circular-arc rounded
     /// crest and root, at the standard depth `0.55·P` (bolt minor d3 = d − 1.1·P, verified against the
-    /// DIN 405 dimension table). Small crest/root lands are kept so the smooth direct build can attach a crest.
+    /// DIN 405 dimension table).
+    ///
+    /// Small crest/root lands are kept so the smooth direct build can attach a crest.
     public static let knuckle = rounded(h: 0.55, halfFlankDeg: 15, flat: 0.06)
 }
 
@@ -256,9 +291,12 @@ public enum ThreadBuild: Sendable, Hashable, Codable {
         } else if container.contains(.direct) {
             self = .direct
         } else {
-            throw DecodingError.dataCorrupted(DecodingError.Context(
-                codingPath: decoder.codingPath,
-                debugDescription: "ThreadBuild: expected one of \"auto\", \"direct\" or the retired \"boolean\""))
+            throw DecodingError.dataCorrupted(
+                DecodingError.Context(
+                    codingPath: decoder.codingPath,
+                    debugDescription:
+                        "ThreadBuild: expected one of \"auto\", \"direct\" or the retired \"boolean\""
+                ))
         }
     }
 
@@ -278,13 +316,19 @@ public struct ThreadSpec: Sendable, Hashable, Codable {
     /// Axial advance per revolution in mm.
     public let pitch: Double
     public let leftHanded: Bool
-    /// Cross-section for `form == .custom` (ignored otherwise). Set via the custom initializer.
+    /// Cross-section for `form == .custom` (ignored otherwise).
+    ///
+    /// Set via the custom initializer.
     public let customProfile: ThreadProfile?
-    /// Overrides the form's default radial depth (mm). Required for `.custom`; optional elsewhere.
+    /// Overrides the form's default radial depth (mm).
+    ///
+    /// Required for `.custom`; optional elsewhere.
     public let customCutDepth: Double?
 
-    public init(form: ThreadForm, nominalDiameter: Double, pitch: Double, leftHanded: Bool = false,
-                customProfile: ThreadProfile? = nil, customCutDepth: Double? = nil) {
+    public init(
+        form: ThreadForm, nominalDiameter: Double, pitch: Double, leftHanded: Bool = false,
+        customProfile: ThreadProfile? = nil, customCutDepth: Double? = nil
+    ) {
         self.form = form
         self.nominalDiameter = nominalDiameter
         self.pitch = pitch
@@ -294,23 +338,26 @@ public struct ThreadSpec: Sendable, Hashable, Codable {
     }
 
     /// Thread a cylinder with an arbitrary cross-section (`ThreadProfile`) — "any valid shape".
-    public init(customProfile: ThreadProfile, nominalDiameter: Double, pitch: Double,
-                cutDepth: Double, leftHanded: Bool = false) {
-        self.init(form: .custom, nominalDiameter: nominalDiameter, pitch: pitch,
-                  leftHanded: leftHanded, customProfile: customProfile, customCutDepth: cutDepth)
+    public init(
+        customProfile: ThreadProfile, nominalDiameter: Double, pitch: Double,
+        cutDepth: Double, leftHanded: Bool = false
+    ) {
+        self.init(
+            form: .custom, nominalDiameter: nominalDiameter, pitch: pitch,
+            leftHanded: leftHanded, customProfile: customProfile, customCutDepth: cutDepth)
     }
 
     /// The tooth cross-section for this spec's form (or the custom profile).
     public var profile: ThreadProfile {
         switch form {
-        case .iso68, .unified, .nptTapered:        return .iso60V()
+        case .iso68, .unified, .nptTapered: return .iso60V()
         case .whitworth, .bspParallel, .bsptTapered: return .whitworth55
-        case .acme:                                 return .acme29
-        case .trapezoidal:                          return .trapezoidalMetric30
-        case .square:                               return .square
-        case .buttress:                             return .buttress
-        case .knuckle:                              return .knuckle
-        case .custom:                               return customProfile ?? .iso60V()
+        case .acme: return .acme29
+        case .trapezoidal: return .trapezoidalMetric30
+        case .square: return .square
+        case .buttress: return .buttress
+        case .knuckle: return .knuckle
+        case .custom: return customProfile ?? .iso60V()
         }
     }
 
@@ -318,21 +365,22 @@ public struct ThreadSpec: Sendable, Hashable, Codable {
     public var cutDepth: Double {
         if let c = customCutDepth { return c }
         switch form {
-        case .iso68, .unified, .nptTapered:           return theoreticalDepth * 5 / 8   // 5H/8
-        case .whitworth, .bspParallel, .bsptTapered:  return 0.640327 * pitch
-        case .acme, .trapezoidal, .square:            return 0.5 * pitch
-        case .knuckle:                                return 0.55 * pitch       // DIN 405: d3 = d − 1.1·P
-        case .buttress:                               return 0.86777 * pitch    // DIN 513: d3 = d − 2·0.86777·P
-        case .custom:                                 return 0.5 * pitch
+        case .iso68, .unified, .nptTapered: return theoreticalDepth * 5 / 8  // 5H/8
+        case .whitworth, .bspParallel, .bsptTapered: return 0.640327 * pitch
+        case .acme, .trapezoidal, .square: return 0.5 * pitch
+        case .knuckle: return 0.55 * pitch  // DIN 405: d3 = d − 1.1·P
+        case .buttress: return 0.86777 * pitch  // DIN 513: d3 = d − 2·0.86777·P
+        case .custom: return 0.5 * pitch
         }
     }
 
-    /// Diametral taper (NPT/BSPT are 1:16; parallel forms are 0). The radius changes by
-    /// `taperRatio / 2` per unit of axial length.
+    /// Diametral taper (NPT/BSPT are 1:16; parallel forms are 0).
+    ///
+    /// The radius changes by `taperRatio / 2` per unit of axial length.
     public var taperRatio: Double {
         switch form {
         case .nptTapered, .bsptTapered: return 1.0 / 16
-        default:                        return 0
+        default: return 0
         }
     }
 
@@ -344,17 +392,25 @@ public struct ThreadSpec: Sendable, Hashable, Codable {
     /// Theoretical (untruncated) 60° V thread depth — H = pitch * √3 / 2 per ISO-68.
     public var theoreticalDepth: Double { pitch * sqrt(3) / 2 }
 
-    /// Axial width of the truncated crest flat (ISO-68). P/8.
+    /// Axial width of the truncated crest flat (ISO-68).
+    ///
+    /// P/8.
     public var crestFlat: Double { pitch / 8 }
 
-    /// Axial width of the truncated root flat (ISO-68 external). P/4.
+    /// Axial width of the truncated root flat (ISO-68 external).
+    ///
+    /// P/4.
     public var rootFlat: Double { pitch / 4 }
 
     /// Minor diameter (inner diameter of the threaded feature — where thread roots sit
-    /// for external threads, where thread crests sit for internal threads). Form-dependent via `cutDepth`.
+    /// for external threads, where thread crests sit for internal threads).
+    ///
+    /// Form-dependent via `cutDepth`.
     public var minorDiameter: Double { nominalDiameter - 2 * cutDepth }
 
-    /// Parse a thread designation. Recognises:
+    /// Parse a thread designation.
+    ///
+    /// Recognises:
     /// metric `M5x0.8` / `M10`; Unified/UNC/UNF/SAE `1/4-20 UNC`, `3/8-16`; trapezoidal `Tr40x7[LH]`;
     /// ACME `1.5-4 ACME`; Whitworth `W1/2` / `1/2 BSW`; BSP parallel `G1/2`; BSP taper `R1/2`/`Rc1/2`;
     /// NPT `1/2-14 NPT`. Returns nil on unrecognised input.
@@ -374,7 +430,9 @@ public struct ThreadSpec: Sendable, Hashable, Codable {
         let lh = body.uppercased().hasSuffix("LH")
         if lh { body = String(body.dropLast(2)) }
         let parts = body.lowercased().split(separator: "x")
-        guard parts.count == 2, let d = Double(parts[0]), let p = Double(parts[1]) else { return nil }
+        guard parts.count == 2, let d = Double(parts[0]), let p = Double(parts[1]) else {
+            return nil
+        }
         return ThreadSpec(form: .trapezoidal, nominalDiameter: d, pitch: p, leftHanded: lh)
     }
 
@@ -384,35 +442,57 @@ public struct ThreadSpec: Sendable, Hashable, Codable {
         let core = upper.dropLast(4).trimmingCharacters(in: .whitespaces)
         let sep = core.split(separator: "-", maxSplits: 1)
         guard sep.count == 2,
-              let d = parseFractionOrDecimal(sep[0].trimmingCharacters(in: .whitespaces)),
-              let tpi = Double(sep[1].trimmingCharacters(in: .whitespaces)), tpi > 0 else { return nil }
+            let d = parseFractionOrDecimal(sep[0].trimmingCharacters(in: .whitespaces)),
+            let tpi = Double(sep[1].trimmingCharacters(in: .whitespaces)), tpi > 0
+        else { return nil }
         return ThreadSpec(form: .acme, nominalDiameter: d * 25.4, pitch: 25.4 / tpi)
     }
 
     // BSP (G parallel / R-Rc taper) and Whitworth/NPT share fraction → (OD mm, TPI) tables.
     private static func parsePipeOrWhitworth(_ text: String) -> ThreadSpec? {
-        let bsp: [String: (od: Double, tpi: Double)] = [    // BS 2779 / EN 10226
+        let bsp: [String: (od: Double, tpi: Double)] = [  // BS 2779 / EN 10226
             "1/8": (9.728, 28), "1/4": (13.157, 19), "3/8": (16.662, 19), "1/2": (20.955, 14),
-            "5/8": (22.911, 14), "3/4": (26.441, 14), "1": (33.249, 11)]
-        let bsw: [String: (od: Double, tpi: Double)] = [    // BS 84 Whitworth (OD = fraction·25.4)
+            "5/8": (22.911, 14), "3/4": (26.441, 14), "1": (33.249, 11),
+        ]
+        let bsw: [String: (od: Double, tpi: Double)] = [  // BS 84 Whitworth (OD = fraction·25.4)
             "1/4": (6.35, 20), "5/16": (7.938, 18), "3/8": (9.525, 16), "1/2": (12.7, 12),
-            "5/8": (15.875, 11), "3/4": (19.05, 10), "1": (25.4, 8)]
-        let npt: [String: (od: Double, tpi: Double)] = [    // ANSI B1.20.1 (nominal OD at large end)
+            "5/8": (15.875, 11), "3/4": (19.05, 10), "1": (25.4, 8),
+        ]
+        let npt: [String: (od: Double, tpi: Double)] = [  // ANSI B1.20.1 (nominal OD at large end)
             "1/8": (10.272, 27), "1/4": (13.716, 18), "3/8": (17.145, 18), "1/2": (21.336, 14),
-            "3/4": (26.670, 14), "1": (33.401, 11.5)]
-        func spec(_ tbl: [String: (od: Double, tpi: Double)], _ key: String, _ form: ThreadForm) -> ThreadSpec? {
+            "3/4": (26.670, 14), "1": (33.401, 11.5),
+        ]
+        func spec(_ tbl: [String: (od: Double, tpi: Double)], _ key: String, _ form: ThreadForm)
+            -> ThreadSpec?
+        {
             guard let e = tbl[key] else { return nil }
             return ThreadSpec(form: form, nominalDiameter: e.od, pitch: 25.4 / e.tpi)
         }
         let u = text.uppercased()
-        if u.hasPrefix("G")  { return spec(bsp, String(text.dropFirst(1)).trimmingCharacters(in: .whitespaces), .bspParallel) }
-        if u.hasPrefix("RC") { return spec(bsp, String(text.dropFirst(2)).trimmingCharacters(in: .whitespaces), .bsptTapered) }
-        if u.hasPrefix("R")  { return spec(bsp, String(text.dropFirst(1)).trimmingCharacters(in: .whitespaces), .bsptTapered) }
-        if u.hasPrefix("W")  { return spec(bsw, String(text.dropFirst(1)).trimmingCharacters(in: .whitespaces), .whitworth) }
-        if u.hasSuffix("BSW") { return spec(bsw, u.dropLast(3).trimmingCharacters(in: .whitespaces), .whitworth) }
+        if u.hasPrefix("G") {
+            return spec(
+                bsp, String(text.dropFirst(1)).trimmingCharacters(in: .whitespaces), .bspParallel)
+        }
+        if u.hasPrefix("RC") {
+            return spec(
+                bsp, String(text.dropFirst(2)).trimmingCharacters(in: .whitespaces), .bsptTapered)
+        }
+        if u.hasPrefix("R") {
+            return spec(
+                bsp, String(text.dropFirst(1)).trimmingCharacters(in: .whitespaces), .bsptTapered)
+        }
+        if u.hasPrefix("W") {
+            return spec(
+                bsw, String(text.dropFirst(1)).trimmingCharacters(in: .whitespaces), .whitworth)
+        }
+        if u.hasSuffix("BSW") {
+            return spec(bsw, u.dropLast(3).trimmingCharacters(in: .whitespaces), .whitworth)
+        }
         if u.hasSuffix("NPT") {
             let core = u.dropLast(3).trimmingCharacters(in: .whitespaces)
-            let key = core.split(separator: "-").first.map { $0.trimmingCharacters(in: .whitespaces) } ?? core
+            let key =
+                core.split(separator: "-").first.map { $0.trimmingCharacters(in: .whitespaces) }
+                ?? core
             return spec(npt, key, .nptTapered)
         }
         return nil
@@ -454,8 +534,9 @@ public struct ThreadSpec: Sendable, Hashable, Codable {
         if let direct = Double(text) { return direct }
         let parts = text.split(separator: "/")
         guard parts.count == 2,
-              let num = Double(parts[0]),
-              let den = Double(parts[1]), den != 0 else { return nil }
+            let num = Double(parts[0]),
+            let den = Double(parts[1]), den != 0
+        else { return nil }
         return num / den
     }
 
@@ -464,7 +545,7 @@ public struct ThreadSpec: Sendable, Hashable, Codable {
             (2, 0.4), (2.5, 0.45), (3, 0.5), (4, 0.7), (5, 0.8), (6, 1.0),
             (8, 1.25), (10, 1.5), (12, 1.75), (14, 2.0), (16, 2.0), (18, 2.5),
             (20, 2.5), (22, 2.5), (24, 3.0), (27, 3.0), (30, 3.5), (36, 4.0),
-            (42, 4.5), (48, 5.0)
+            (42, 4.5), (48, 5.0),
         ]
         return table.first(where: { abs($0.0 - d) < 1e-6 }).map(\.1)
     }
@@ -496,20 +577,23 @@ extension Shape {
     ///   - starts: Number of thread starts (1 for standard fasteners; >1 for multi-start / lead screws).
     ///   - runout: How the thread terminates at its ends.
     /// - Returns: Shape with the V-thread cut, or nil on sweep / boolean failure.
-    public func threadedHole(axisOrigin: SIMD3<Double>,
-                              axisDirection: SIMD3<Double>,
-                              spec: ThreadSpec,
-                              depth: Double? = nil,
-                              starts: Int = 1,
-                              runout: RunoutStyle = .none) -> Shape? {
-        applyThreadCut(axisOrigin: axisOrigin,
-                       axisDirection: axisDirection,
-                       spec: spec,
-                       length: depth ?? (2 * spec.nominalDiameter),
-                       starts: starts,
-                       runout: runout,
-                       apexSign: +1,
-                       helixRadius: spec.nominalDiameter / 2)
+    public func threadedHole(
+        axisOrigin: SIMD3<Double>,
+        axisDirection: SIMD3<Double>,
+        spec: ThreadSpec,
+        depth: Double? = nil,
+        starts: Int = 1,
+        runout: RunoutStyle = .none
+    ) -> Shape? {
+        applyThreadCut(
+            axisOrigin: axisOrigin,
+            axisDirection: axisDirection,
+            spec: spec,
+            length: depth ?? (2 * spec.nominalDiameter),
+            starts: starts,
+            runout: runout,
+            apexSign: +1,
+            helixRadius: spec.nominalDiameter / 2)
     }
 
     /// Cut a helical V-profile thread into a cylindrical shaft.
@@ -523,17 +607,27 @@ extension Shape {
     /// interleaved multi-helix. For non-cylinder targets, rounded/tapered forms, or if the direct
     /// build fails, it falls back to the boolean cut path (``applyThreadCut``).
     ///
-    /// - Parameter build: chooses the construction path. `.auto` (default) and `.direct` use the
-    ///   smooth, boolean-free direct build for single- and multi-start coaxial cylinders, falling
-    ///   back to the faceted cut path only for non-cylinder / rounded / tapered cases. See
-    ///   ``ThreadBuild``.
-    public func threadedShaft(axisOrigin: SIMD3<Double>,
-                               axisDirection: SIMD3<Double>,
-                               spec: ThreadSpec,
-                               length: Double? = nil,
-                               starts: Int = 1,
-                               runout: RunoutStyle = .none,
-                               build: ThreadBuild = .auto) -> Shape? {
+    /// - Parameters:
+    ///   - axisOrigin: A point on the thread axis.
+    ///   - axisDirection: The thread axis direction; normalized internally.
+    ///   - spec: The thread form, diameter and pitch to cut.
+    ///   - length: Threaded length along the axis. Defaults to twice the nominal diameter.
+    ///   - starts: Number of thread starts; the lead is `starts * pitch`.
+    ///   - runout: How the thread terminates at each end.
+    ///   - build: chooses the construction path. `.auto` (default) and `.direct` use the
+    ///     smooth, boolean-free direct build for single- and multi-start coaxial cylinders,
+    ///     falling back to the faceted cut path only for non-cylinder / rounded / tapered cases.
+    ///     See ``ThreadBuild``.
+    /// - Returns: The threaded solid, or nil when the sweep or the boolean cut fails.
+    public func threadedShaft(
+        axisOrigin: SIMD3<Double>,
+        axisDirection: SIMD3<Double>,
+        spec: ThreadSpec,
+        length: Double? = nil,
+        starts: Int = 1,
+        runout: RunoutStyle = .none,
+        build: ThreadBuild = .auto
+    ) -> Shape? {
         let len = length ?? (2 * spec.nominalDiameter)
         // Coaxial cylinders take the smooth direct build, regardless of `build` (#254): the cut path's
         // only historical advantage — an "in-envelope" crest — was disproved by #232, and it otherwise
@@ -541,22 +635,25 @@ extension Shape {
         // (#257); it returns nil for the cases it can't do (rounded forms, non-cylinder, taper) →
         // faceted cut fallback.
         if starts >= 1,
-           let direct = buildThreadedRodDirect(axisOrigin: axisOrigin, axisDirection: axisDirection,
-                                               spec: spec, length: len, starts: starts) {
+            let direct = buildThreadedRodDirect(
+                axisOrigin: axisOrigin, axisDirection: axisDirection,
+                spec: spec, length: len, starts: starts)
+        {
             switch runout {
-            case .none:            return direct
+            case .none: return direct
             case .filleted(let r): return direct.filleted(radius: r) ?? direct
-            case .tapered:         return direct.filleted(radius: spec.pitch * 0.5) ?? direct
+            case .tapered: return direct.filleted(radius: spec.pitch * 0.5) ?? direct
             }
         }
-        return applyThreadCut(axisOrigin: axisOrigin,
-                       axisDirection: axisDirection,
-                       spec: spec,
-                       length: len,
-                       starts: starts,
-                       runout: runout,
-                       apexSign: -1,
-                       helixRadius: spec.nominalDiameter / 2)
+        return applyThreadCut(
+            axisOrigin: axisOrigin,
+            axisDirection: axisDirection,
+            spec: spec,
+            length: len,
+            starts: starts,
+            runout: runout,
+            apexSign: -1,
+            helixRadius: spec.nominalDiameter / 2)
     }
 
     /// Build a smooth worm / screw thread from a **custom radial cross-section**, directly and with
@@ -590,41 +687,56 @@ extension Shape {
     /// - Returns: A valid, smooth threaded rod, or `nil` if the inputs are degenerate, the profile
     ///   isn't smooth-rod-buildable, or the direct build can't produce a valid solid (it never
     ///   silently falls back to an invalid boolean result).
-    public static func threadedRod(customProfile: ThreadProfile,
-                                   nominalDiameter: Double,
-                                   pitch: Double,
-                                   cutDepth: Double,
-                                   length: Double,
-                                   axisOrigin: SIMD3<Double> = .zero,
-                                   axisDirection: SIMD3<Double> = SIMD3(0, 0, 1),
-                                   leftHanded: Bool = false) -> Shape? {
+    public static func threadedRod(
+        customProfile: ThreadProfile,
+        nominalDiameter: Double,
+        pitch: Double,
+        cutDepth: Double,
+        length: Double,
+        axisOrigin: SIMD3<Double> = .zero,
+        axisDirection: SIMD3<Double> = SIMD3(0, 0, 1),
+        leftHanded: Bool = false
+    ) -> Shape? {
         guard length > 0, pitch > 0, nominalDiameter > 0,
-              cutDepth > 0, cutDepth < nominalDiameter / 2,
-              customProfile.supportsSmoothRodBuild else { return nil }
+            cutDepth > 0, cutDepth < nominalDiameter / 2,
+            customProfile.supportsSmoothRodBuild
+        else { return nil }
         let axis = simd_normalize(axisDirection)
-        guard let stock = Shape.cylinder(at: axisOrigin, direction: axis,
-                                         radius: nominalDiameter / 2, height: length) else { return nil }
-        let spec = ThreadSpec(customProfile: customProfile, nominalDiameter: nominalDiameter,
-                              pitch: pitch, cutDepth: cutDepth, leftHanded: leftHanded)
-        guard let rod = stock.threadedShaft(axisOrigin: axisOrigin, axisDirection: axis,
-                                            spec: spec, length: length, build: .direct),
-              rod.isValidSolid else { return nil }
+        guard
+            let stock = Shape.cylinder(
+                at: axisOrigin, direction: axis,
+                radius: nominalDiameter / 2, height: length)
+        else { return nil }
+        let spec = ThreadSpec(
+            customProfile: customProfile, nominalDiameter: nominalDiameter,
+            pitch: pitch, cutDepth: cutDepth, leftHanded: leftHanded)
+        guard
+            let rod = stock.threadedShaft(
+                axisOrigin: axisOrigin, axisDirection: axis,
+                spec: spec, length: length, build: .direct),
+            rod.isValidSolid
+        else { return nil }
         return rod
     }
 
     /// Build a smooth external threaded rod directly (no boolean) when `self` is a plain cylinder
-    /// of radius ≈ `spec.nominalDiameter / 2` coaxial with the axis (#213). Returns nil — so the
-    /// caller falls back to the boolean cut — when `self` is not such a cylinder, or the build
-    /// isn't a sound thread. `threadedRodSolid` lofts the thread's cross-section (`ruled=false`,
-    /// smooth, solid-to-axis, flat caps) and sews on any unthreaded margin; the boolean engine is
-    /// never invoked, so the result is orientation-robust and valid where the cut path is faceted.
-    private func buildThreadedRodDirect(axisOrigin: SIMD3<Double>,
-                                        axisDirection: SIMD3<Double>,
-                                        spec: ThreadSpec,
-                                        length: Double,
-                                        starts: Int = 1) -> Shape? {
+    /// of radius ≈ `spec.nominalDiameter / 2` coaxial with the axis (#213).
+    ///
+    /// Returns nil — so the caller falls back to the boolean cut — when `self` is not such a
+    /// cylinder, or the build isn't a sound thread. `threadedRodSolid` lofts the thread's
+    /// cross-section (`ruled=false`, smooth, solid-to-axis, flat caps) and sews on any unthreaded
+    /// margin; the boolean engine is never invoked, so the result is orientation-robust and valid
+    /// where the cut path is faceted.
+    private func buildThreadedRodDirect(
+        axisOrigin: SIMD3<Double>,
+        axisDirection: SIMD3<Double>,
+        spec: ThreadSpec,
+        length: Double,
+        starts: Int = 1
+    ) -> Shape? {
         guard length > 0, spec.pitch > 0, starts >= 1,
-              spec.cutDepth < spec.nominalDiameter / 2 else { return nil }
+            spec.cutDepth < spec.nominalDiameter / 2
+        else { return nil }
         let axis = simd_normalize(axisDirection)
         let radial0 = orthonormalRadial(axis: axis)
         let majorR = spec.nominalDiameter / 2
@@ -632,17 +744,17 @@ extension Shape {
         // self's extent along the axis (project the 8 AABB corners; exact for an axis-aligned
         // cylinder, and the cylinder volume check below rejects anything else).
         //
-        // #834: shape.bounds fabricates (0,0,0)-(0,0,0) for a void self rather than signaling
-        // "no geometry". Investigated as a flagged consumer and found to already degrade safely:
-        // a void self collapses lo/hi to the same projected value, so `guard hi > lo` below fails
-        // and this returns nil, same as any other malformed input to this private helper.
-        let b = self.bounds
-        var lo = Double.greatestFiniteMagnitude, hi = -Double.greatestFiniteMagnitude
+        // A shape with no bounding box (#943) has no axial extent to project, which is a
+        // malformed input to this private helper like any other: nil, same as the guards above.
+        guard let b = self.bounds else { return nil }
+        var lo = Double.greatestFiniteMagnitude
+        var hi = -Double.greatestFiniteMagnitude
         for cx in [b.min.x, b.max.x] {
             for cy in [b.min.y, b.max.y] {
                 for cz in [b.min.z, b.max.z] {
                     let proj = simd_dot(SIMD3(cx, cy, cz) - axisOrigin, axis)
-                    lo = min(lo, proj); hi = max(hi, proj)
+                    lo = min(lo, proj)
+                    hi = max(hi, proj)
                 }
             }
         }
@@ -651,30 +763,35 @@ extension Shape {
         // Only build directly when `self` really is a cylinder of radius majorR over [lo,hi].
         let expectedVol = Double.pi * majorR * majorR * (hi - lo)
         guard let v0 = self.volume, expectedVol > 0,
-              abs(v0 - expectedVol) / expectedVol < 0.02 else { return nil }
+            abs(v0 - expectedVol) / expectedVol < 0.02
+        else { return nil }
 
         let threadLo = max(0.0, lo)
         let threadHi = min(length, hi)
         guard threadHi > threadLo + 1e-6 else { return nil }
         let handed: Double = spec.leftHanded ? -1 : 1
 
-        guard let result = Shape.threadedRodSolid(
-            origin: axisOrigin, axis: axis, radial0: radial0,
-            rodLo: lo, rodHi: hi, threadLo: threadLo, threadHi: threadHi,
-            pitch: spec.pitch, majorRadius: majorR, cutDepth: spec.cutDepth,
-            profile: spec.profile, taperRatio: spec.taperRatio, handed: handed,
-            starts: starts, perTurn: 16)
+        guard
+            let result = Shape.threadedRodSolid(
+                origin: axisOrigin, axis: axis, radial0: radial0,
+                rodLo: lo, rodHi: hi, threadLo: threadLo, threadHi: threadHi,
+                pitch: spec.pitch, majorRadius: majorR, cutDepth: spec.cutDepth,
+                profile: spec.profile, taperRatio: spec.taperRatio, handed: handed,
+                starts: starts, perTurn: 16)
         else { return nil }
         // Sound thread: valid, in-envelope, removed some material but not collapsed. Deep forms
         // (square/buttress/Whitworth) remove much more than a 60° V, so the floor is generous.
         guard result.isValid, let v1 = result.volume,
-              v1 < v0 * 1.001, v1 > v0 * 0.25 else { return nil }
+            v1 < v0 * 1.001, v1 > v0 * 0.25
+        else { return nil }
         return result
     }
 
     /// Build the smooth external threaded rod by composing already-wrapped OCCT primitives —
-    /// NO boolean, so the result is orientation-robust AND BRepCheck-valid (#213). The kernel
-    /// bridge stays a thin wrapper; all the thread-specific geometry lives here in Swift.
+    /// NO boolean, so the result is orientation-robust AND BRepCheck-valid (#213).
+    ///
+    /// The kernel bridge stays a thin wrapper; all the thread-specific geometry lives here in
+    /// Swift.
     ///
     /// The thread region is a `ruled=false` ThruSections loft of the thread's true cross-section
     /// (a "cam": root arc → flank spiral → crest arc → flank spiral, rotated by the helix per
@@ -695,7 +812,8 @@ extension Shape {
         // The single-loop shoulder needs a crest flat to attach the margin cylinder to. Crest-less
         // profiles (a pointed crest) fall back to the boolean cut path.
         let segs = profile.segments
-        guard let crestIndex = segs.firstIndex(where: { $0.kind == .flat && $0.a.depth < 1e-6 }) else { return nil }
+        guard let crestIndex = segs.firstIndex(where: { $0.kind == .flat && $0.a.depth < 1e-6 })
+        else { return nil }
         // Rounded profiles (knuckle/Whitworth-rounded) decompose into many small fillet chords. A
         // `ruled:false` loft of those over a helix balloons radially past the nominal crest (a thin
         // outward flap — OCCTSwift #213) and is slow, so route piecewise-curved profiles to the faceted
@@ -709,13 +827,16 @@ extension Shape {
         let p = pitch
         let twoPi = 2 * Double.pi
         let nStart = max(1, starts)
-        let lead = Double(nStart) * p          // axial advance per full turn (lead = N·pitch)
+        let lead = Double(nStart) * p  // axial advance per full turn (lead = N·pitch)
 
-        func ang(_ s: Double) -> Double { handed * s * twoPi / lead }   // helix angle from axial length
+        // helix angle from axial length
+        func ang(_ s: Double) -> Double { handed * s * twoPi / lead }
         // Angle of profile axial-fraction `af` within thread-start `k` (0…N−1). Each start's one-pitch
         // profile occupies a 2π/N angular slot; the N slots tile the full turn (single-start: k=0 →
         // af·2π, unchanged).
-        func angN(_ k: Int, _ af: Double) -> Double { handed * (Double(k) + af) * twoPi / Double(nStart) }
+        func angN(_ k: Int, _ af: Double) -> Double {
+            handed * (Double(k) + af) * twoPi / Double(nStart)
+        }
         func rOf(_ depth: Double) -> Double { rMaj - depth * cutDepth }
         func pt(_ r: Double, _ aAng: Double, _ z: Double) -> SIMD3<Double> {
             origin + a * z + (x * cos(aAng) + y * sin(aAng)) * r
@@ -726,8 +847,10 @@ extension Shape {
         // One cam edge per profile segment of start `k`, at slice z: flat→arc, wall→radial line, flank→spline.
         func camEdge(_ seg: ThreadProfile.Segment, start k: Int, _ z: Double) -> Wire? {
             let al = ang(z)
-            let ra = rOf(seg.a.depth), rb = rOf(seg.b.depth)
-            let angA = al + angN(k, seg.a.axial), angB = al + angN(k, seg.b.axial)
+            let ra = rOf(seg.a.depth)
+            let rb = rOf(seg.b.depth)
+            let angA = al + angN(k, seg.a.axial)
+            let angB = al + angN(k, seg.b.axial)
             switch seg.kind {
             case .flat: return arcW(ra, angA, angB, z)
             case .wall: return Wire.line(from: pt(ra, angA, z), to: pt(rb, angB, z))
@@ -747,19 +870,26 @@ extension Shape {
         func camWire(_ z: Double) -> Wire? {
             var ws: [Wire] = []
             for k in 0..<nStart {
-                for seg in segs { guard let e = camEdge(seg, start: k, z) else { return nil }; ws.append(e) }
+                for seg in segs {
+                    guard let e = camEdge(seg, start: k, z) else { return nil }
+                    ws.append(e)
+                }
             }
             return Wire.join(ws)
         }
         func circleWire(_ z: Double) -> Wire? {
             var ws: [Wire] = []
             for k in 0..<4 {
-                guard let w = arcW(rMaj, Double(k) * .pi / 2, Double(k + 1) * .pi / 2, z) else { return nil }
+                guard let w = arcW(rMaj, Double(k) * .pi / 2, Double(k + 1) * .pi / 2, z) else {
+                    return nil
+                }
                 ws.append(w)
             }
             return Wire.join(ws)
         }
-        func planarFace(_ wire: Wire?) -> Shape? { wire.flatMap { Shape.face(from: $0, planar: true) } }
+        func planarFace(_ wire: Wire?) -> Shape? {
+            wire.flatMap { Shape.face(from: $0, planar: true) }
+        }
         // Shoulder faces (partial-length thread): one planar face per start, each closing that start's
         // groove to the major-radius arc spanning its groove mouth. The crest flat joins the margin
         // cylinder straight (both at rMaj), so it's excluded — the arc runs from start k's crest end to
@@ -774,28 +904,34 @@ extension Shape {
                 // crossing the slot boundary (af 1 of k ≡ af 0 of k+1). Using `start: k+1` (not mod N)
                 // gives the correct +2π wrap so the leading segments land in the next slot — for N=1
                 // this reduces to the single tooth's groove with the +2π wrap (unchanged behaviour).
-                let aEnd  = al + angN(k, crest.b.axial)        // end of start k's crest flat
-                let aNext = al + angN(k + 1, crest.a.axial)    // start of the next start's crest flat
-                guard let arc = arcW(rMaj, aNext, aEnd, z) else { return nil }  // closes the groove mouth
+                let aEnd = al + angN(k, crest.b.axial)  // end of start k's crest flat
+                let aNext = al + angN(k + 1, crest.a.axial)  // start of the next start's crest flat
+                // closes the groove mouth
+                guard let arc = arcW(rMaj, aNext, aEnd, z) else { return nil }
                 var ws: [Wire] = [arc]
-                for j in (crestIndex + 1)..<segs.count {       // trailing non-crest segments of start k
-                    guard let e = camEdge(segs[j], start: k, z) else { return nil }; ws.append(e)
+                for j in (crestIndex + 1)..<segs.count {  // trailing non-crest segments of start k
+                    guard let e = camEdge(segs[j], start: k, z) else { return nil }
+                    ws.append(e)
                 }
-                for j in 0..<crestIndex {                       // leading non-crest segments of start k+1
-                    guard let e = camEdge(segs[j], start: k + 1, z) else { return nil }; ws.append(e)
+                for j in 0..<crestIndex {  // leading non-crest segments of start k+1
+                    guard let e = camEdge(segs[j], start: k + 1, z) else { return nil }
+                    ws.append(e)
                 }
-                guard let f = Wire.join(ws).flatMap({ Shape.face(from: $0, planar: true) }) else { return nil }
+                guard let f = Wire.join(ws).flatMap({ Shape.face(from: $0, planar: true) }) else {
+                    return nil
+                }
                 faces.append(f)
             }
             return faces
         }
         func cylinderLateral(_ zLo: Double, _ zHi: Double) -> Shape? {
-            Shape.faceFromCylinder(origin: pt(0, 0, zLo), axis: a, radius: rMaj,
-                                   uRange: 0...twoPi, vRange: 0...(zHi - zLo))
+            Shape.faceFromCylinder(
+                origin: pt(0, 0, zLo), axis: a, radius: rMaj,
+                uRange: 0...twoPi, vRange: 0...(zHi - zLo))
         }
 
-        let bottomEnd = threadLo <= rodLo + 1e-7   // thread runs off the rod's bottom face
-        let topEnd    = threadHi >= rodHi - 1e-7    // thread runs off the rod's top face
+        let bottomEnd = threadLo <= rodLo + 1e-7  // thread runs off the rod's bottom face
+        let topEnd = threadHi >= rodHi - 1e-7  // thread runs off the rod's top face
         let fullSolid = bottomEnd && topEnd
 
         // Sample per PITCH (not per lead): perTurn sections per pitch keeps the ruled:false loft
@@ -810,7 +946,9 @@ extension Shape {
             guard let w = camWire(z) else { return nil }
             profiles.append(w)
         }
-        guard let skin = Shape.loft(profiles: profiles, solid: fullSolid, ruled: false) else { return nil }
+        guard let skin = Shape.loft(profiles: profiles, solid: fullSolid, ruled: false) else {
+            return nil
+        }
         if fullSolid { return skin }
 
         var faces: [Shape] = [skin]
@@ -819,8 +957,9 @@ extension Shape {
             faces.append(cap)
         } else {
             guard let sh = shoulderFaces(threadLo),
-                  let lat = cylinderLateral(rodLo, threadLo),
-                  let disk = planarFace(circleWire(rodLo)) else { return nil }
+                let lat = cylinderLateral(rodLo, threadLo),
+                let disk = planarFace(circleWire(rodLo))
+            else { return nil }
             faces.append(contentsOf: sh)
             faces.append(contentsOf: [lat, disk])
         }
@@ -829,8 +968,9 @@ extension Shape {
             faces.append(cap)
         } else {
             guard let sh = shoulderFaces(threadHi),
-                  let lat = cylinderLateral(threadHi, rodHi),
-                  let disk = planarFace(circleWire(rodHi)) else { return nil }
+                let lat = cylinderLateral(threadHi, rodHi),
+                let disk = planarFace(circleWire(rodHi))
+            else { return nil }
             faces.append(contentsOf: sh)
             faces.append(contentsOf: [lat, disk])
         }
@@ -840,14 +980,16 @@ extension Shape {
         return solid
     }
 
-    private func applyThreadCut(axisOrigin: SIMD3<Double>,
-                                 axisDirection: SIMD3<Double>,
-                                 spec: ThreadSpec,
-                                 length: Double,
-                                 starts: Int,
-                                 runout: RunoutStyle,
-                                 apexSign: Double,
-                                 helixRadius: Double) -> Shape? {
+    private func applyThreadCut(
+        axisOrigin: SIMD3<Double>,
+        axisDirection: SIMD3<Double>,
+        spec: ThreadSpec,
+        length: Double,
+        starts: Int,
+        runout: RunoutStyle,
+        apexSign: Double,
+        helixRadius: Double
+    ) -> Shape? {
         guard starts >= 1, length > 0 else { return nil }
         let turns = length / spec.pitch
         guard turns > 0 else { return nil }
@@ -876,11 +1018,13 @@ extension Shape {
         // Build with (A); validate; fall back to (B) if (A)'s result is not a sound cut.
         let nAnalytic = Int32(min(400, max(64, Int((turns * 24).rounded()))))
         func analyticCutter(_ s: Int) -> Shape? {
-            OCCTShapeBuildThreadCutter(axisOrigin.x, axisOrigin.y, axisOrigin.z,
-                                       axis.x, axis.y, axis.z, radial0.x, radial0.y, radial0.z,
-                                       spec.pitch, turns, apexSign, helixRadius,
-                                       spec.cutDepth, outerHalf, apexHalf, bleed,
-                                       phase(s), handed, nAnalytic).map { Shape(handle: $0) }
+            OCCTShapeBuildThreadCutter(
+                axisOrigin.x, axisOrigin.y, axisOrigin.z,
+                axis.x, axis.y, axis.z, radial0.x, radial0.y, radial0.z,
+                spec.pitch, turns, apexSign, helixRadius,
+                spec.cutDepth, outerHalf, apexHalf, bleed,
+                phase(s), handed, nAnalytic
+            ).map { Shape(handle: $0) }
         }
         // Faceted fallback density (~14 sections/turn): enough for a usable cut, not so many that
         // the long-thread boolean slows to a crawl.
@@ -889,21 +1033,30 @@ extension Shape {
         // band around ~14 sections/turn (axial step per section ≪ the groove's axial half-width, so
         // consecutive sections overlap many-deep and the BSpline pinches → a no-op boolean → faceted
         // fallback). A denser loft (~24+/turn) conditions cleanly; the volume converges by 24.
-        func nSmooth(_ mult: Int) -> Int { min(260, max(48, Int((turns * Double(mult)).rounded()))) }
+        func nSmooth(_ mult: Int) -> Int {
+            min(260, max(48, Int((turns * Double(mult)).rounded())))
+        }
         func screwLoftCutter(_ s: Int, ruled: Bool, nSections: Int) -> Shape? {
-            Shape.screwSweptThreadCutter(axisOrigin: axisOrigin, axis: axis,
-                                         radial0: radial0, tangential0: tangential0,
-                                         spec: spec, turns: turns, apexSign: apexSign,
-                                         helixRadius: helixRadius, phase: phase(s),
-                                         handed: handed, nSections: nSections, ruled: ruled)
+            Shape.screwSweptThreadCutter(
+                axisOrigin: axisOrigin, axis: axis,
+                radial0: radial0, tangential0: tangential0,
+                spec: spec, turns: turns, apexSign: apexSign,
+                helixRadius: helixRadius, phase: phase(s),
+                handed: handed, nSections: nSections, ruled: ruled)
         }
 
         // Fuse the per-start cutters and subtract from the blank.
         func threadResult(_ cutterFor: (Int) -> Shape?) -> Shape? {
             var cutters: [Shape] = []
-            for s in 0..<starts { guard let c = cutterFor(s) else { return nil }; cutters.append(c) }
+            for s in 0..<starts {
+                guard let c = cutterFor(s) else { return nil }
+                cutters.append(c)
+            }
             var combined = cutters[0]
-            for c in cutters.dropFirst() { guard let f = combined.union(c) else { return nil }; combined = f }
+            for c in cutters.dropFirst() {
+                guard let f = combined.union(c) else { return nil }
+                combined = f
+            }
             return self.subtracting(combined)
         }
 
@@ -924,15 +1077,16 @@ extension Shape {
         // ~0.1–0.35 mm (control-pole artifact — AddOptimal returns the blank's exact extent).
         func isSoundCut(_ result: Shape?) -> Bool {
             guard let r = result,
-                  let blank = self.boundingBoxOptimal(), let cut = r.boundingBoxOptimal()
+                let blank = self.boundingBoxOptimal(), let cut = r.boundingBoxOptimal()
             else { return false }
             let tol = 1e-2
             guard cut.min.x >= blank.min.x - tol, cut.min.y >= blank.min.y - tol,
-                  cut.min.z >= blank.min.z - tol, cut.max.x <= blank.max.x + tol,
-                  cut.max.y <= blank.max.y + tol, cut.max.z <= blank.max.z + tol
+                cut.min.z >= blank.min.z - tol, cut.max.x <= blank.max.x + tol,
+                cut.max.y <= blank.max.y + tol, cut.max.z <= blank.max.z + tol
             else { return false }
             if let vb = self.volume, let vt = r.volume {
-                return vt < vb * 0.999 && vt > vb * 0.3   // removed some, not garbage (deep forms remove more)
+                // removed some, not garbage (deep forms remove more)
+                return vt < vb * 0.999 && vt > vb * 0.3
             }
             return true
         }
@@ -955,9 +1109,11 @@ extension Shape {
             }
             return nil
         }
-        let candidate = isSoundCut(analytic) ? analytic
-                      : smoothInternalCut()
-                      ?? threadResult { screwLoftCutter($0, ruled: true, nSections: nScrew) }
+        let candidate =
+            isSoundCut(analytic)
+            ? analytic
+            : smoothInternalCut()
+                ?? threadResult { screwLoftCutter($0, ruled: true, nSections: nScrew) }
         guard let threaded = candidate, isSoundCut(threaded) else { return nil }
 
         switch runout {
@@ -977,10 +1133,12 @@ extension Shape {
 
     /// Screw-motion cutter (the path for internal threads, non-cylinder targets, and any non-60°-V
     /// form): sweep the V-groove cross-section through a pure screw motion (rotate about the axis +
-    /// translate along it) and loft the closely-spaced sections. Internal cuts (apexSign +1) loft it
-    /// SMOOTH (`ruled=false`) — cutting a smooth helical cutter into a thick wall is robust, so
-    /// internal threads come out smooth; external fallbacks (apexSign −1) loft it faceted, since
-    /// subtracting a smooth cutter from a thin external cylinder is the unreliable case (#187/#213).
+    /// translate along it) and loft the closely-spaced sections.
+    ///
+    /// Internal cuts (apexSign +1) loft it SMOOTH (`ruled=false`) — cutting a smooth helical cutter
+    /// into a thick wall is robust, so internal threads come out smooth; external fallbacks
+    /// (apexSign −1) loft it faceted, since subtracting a smooth cutter from a thin external
+    /// cylinder is the unreliable case (#187/#213).
     ///
     /// The groove is a trapezoid derived from the form's `profile`: its bottom (the thread root) is
     /// the root-flat width, its mouth (at the blank surface) is the inter-crest span (pitch − crest
@@ -1003,8 +1161,9 @@ extension Shape {
                 .filter { $0.kind == .flat && abs($0.a.depth - d0) < 1e-6 }
                 .reduce(0) { $0 + ($1.b.axial - $1.a.axial) } * pitch
         }
-        let apexHalf = flatWidth(atDepth: 1) / 2                  // half the root flat (groove bottom)
-        let outerHalf = max(apexHalf + 1e-4, (pitch - flatWidth(atDepth: 0)) / 2)  // half the inter-crest mouth
+        let apexHalf = flatWidth(atDepth: 1) / 2  // half the root flat (groove bottom)
+        // half the inter-crest mouth
+        let outerHalf = max(apexHalf + 1e-4, (pitch - flatWidth(atDepth: 0)) / 2)
         // Tapered pipe forms (NPT/BSPT): the thread surface lies on a 1:16 cone, so the local
         // radius shrinks by taperRatio/2 per unit of axial length. Parallel forms: taper = 0.
         let taper = spec.taperRatio / 2
@@ -1022,10 +1181,11 @@ extension Shape {
             let crestR = hr + apexSign * depth
             let radial = cos(theta) * radial0 + sin(theta) * tangential0
             let axisPt = axisOrigin + z * axis
-            let p0 = axisPt + rootR * radial - outerHalf * axis   // mouth − (wide, at surface)
-            let p1 = axisPt + crestR * radial - apexHalf * axis   // apex −  (narrow, at depth = root)
-            let p2 = axisPt + crestR * radial + apexHalf * axis   // apex +
-            let p3 = axisPt + rootR * radial + outerHalf * axis   // mouth +
+            let p0 = axisPt + rootR * radial - outerHalf * axis  // mouth − (wide, at surface)
+            // apex −  (narrow, at depth = root)
+            let p1 = axisPt + crestR * radial - apexHalf * axis
+            let p2 = axisPt + crestR * radial + apexHalf * axis  // apex +
+            let p3 = axisPt + rootR * radial + outerHalf * axis  // mouth +
             guard let w = Wire.polygon3D([p0, p1, p2, p3], closed: true) else { return nil }
             sections.append(w)
         }

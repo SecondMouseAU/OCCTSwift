@@ -167,7 +167,7 @@ struct StressShapeQueryTests {
     @Test func volume() { if let v = standardBox().volume { #expect(v > 0) } }
     @Test func surfaceArea() { if let a = standardBox().surfaceArea { #expect(a > 0) } }
     @Test func bounds() {
-        let b = standardBox().bounds
+        let b = standardBox().bounds!
         #expect(b.max.x > b.min.x)
     }
     @Test func faceCount() { #expect(standardBox().subShapeCount(ofType: .face) == 6) }
@@ -345,7 +345,7 @@ struct StressFaceAPITests {
         let box = standardBox()
         let faces = box.faces()
         for face in faces {
-            let b = face.bounds
+            let b = face.bounds!
             _ = b.min; _ = b.max
         }
     }

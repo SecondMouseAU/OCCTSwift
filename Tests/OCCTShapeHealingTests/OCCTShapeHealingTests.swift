@@ -1735,7 +1735,7 @@ struct BSplineRestrictionAdvancedTests {
                                                             maxDegree: 5, maxSegments: 20)
             // May return nil if no BSpline geometry to restrict; just verify no crash
             if let r = result {
-                #expect(r.size.x > 0)
+                #expect(r.size!.x > 0)
             }
         }
     }

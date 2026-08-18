@@ -50,7 +50,7 @@ hull** and overshoots the real surface by ~13% — a pole artifact, *not* a bulg
 (the crest sits exactly at the nominal radius), use `boundingBoxOptimal()`:
 
 ```swift
-threaded.bounds.max.x               // ~6.8 — pole hull, misleading
+threaded.bounds?.max.x              // ~6.8 — pole hull, misleading
 threaded.boundingBoxOptimal()?.max.x // ~6.0 — the real crest radius (= nominal/2)
 ```
 

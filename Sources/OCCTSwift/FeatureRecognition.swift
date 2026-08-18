@@ -1,14 +1,14 @@
 import Foundation
-import simd
 import OCCTBridge
+import simd
 
 // MARK: - Edge Convexity
 
-/// Classification of the dihedral angle at an edge between two faces
+/// Classification of the dihedral angle at an edge between two faces.
 public enum EdgeConvexity: Int32, Sendable {
-    case concave = -1   // Interior angle > 180° (pocket-like, going inward)
-    case smooth = 0     // Tangent faces (~180°)
-    case convex = 1     // Interior angle < 180° (fillet-like, going outward)
+    case concave = -1  // Interior angle > 180° (pocket-like, going inward)
+    case smooth = 0  // Tangent faces (~180°)
+    case convex = 1  // Interior angle < 180° (fillet-like, going outward)
 
     init(fromOCCT value: OCCTEdgeConvexity) {
         switch value {
@@ -33,7 +33,9 @@ public enum EdgeConvexity: Int32, Sendable {
 public struct AAGNode: Sendable {
     /// This node's position in the graph, the index every `AAG` method (``AAG/neighbors(of:)``,
     /// ``AAG/edge(between:and:)``, ``AAG/concaveNeighbors(of:)``, ``AAG/convexNeighbors(of:)``)
-    /// takes and returns. An **occurrence** index into ``Shape/orientedFaces()``, not a distinct
+    /// takes and returns.
+    ///
+    /// An **occurrence** index into ``Shape/orientedFaces()``, not a distinct
     /// face index: two nodes can share the same underlying face (see ``distinctFaceIndex``).
     public let faceIndex: Int
 
@@ -47,49 +49,50 @@ public struct AAGNode: Sendable {
     /// has a distinct `distinctFaceIndex`, equal to its `faceIndex`.
     public let distinctFaceIndex: Int
 
-    /// Face normal at center (if computable)
+    /// Face normal at center (if computable).
     public let normal: SIMD3<Double>?
 
-    /// Whether face is planar
+    /// Whether face is planar.
     public let isPlanar: Bool
 
-    /// Whether face is horizontal (normal points up or down)
+    /// Whether face is horizontal (normal points up or down).
     public let isHorizontal: Bool
 
-    /// Whether face is upward-facing
+    /// Whether face is upward-facing.
     public let isUpward: Bool
 
-    /// Whether face is downward-facing
+    /// Whether face is downward-facing.
     public let isDownward: Bool
 
-    /// Whether face is vertical
+    /// Whether face is vertical.
     public let isVertical: Bool
 
-    /// Z level if horizontal planar face
+    /// Z level if horizontal planar face.
     public let zLevel: Double?
 
-    /// Bounding box of the face's exact geometry (#733). Unlike ``Face/bounds``, this is never
-    /// enlarged by mesh triangulation, so it does not change depending on whether the shape has
-    /// been meshed before ``AAG`` was built from it.
+    /// Bounding box of the face's exact geometry (#733).
+    ///
+    /// Unlike ``Face/bounds``, this is never enlarged by mesh triangulation, so it does not change
+    /// depending on whether the shape has been meshed before ``AAG`` was built from it.
     public let bounds: (min: SIMD3<Double>, max: SIMD3<Double>)
 }
 
-/// An edge in the Attributed Adjacency Graph representing adjacency between two faces
+/// An edge in the Attributed Adjacency Graph representing adjacency between two faces.
 public struct AAGEdge: Sendable {
-    /// Index of first adjacent face
+    /// Index of first adjacent face.
     public let face1Index: Int
 
-    /// Index of second adjacent face
+    /// Index of second adjacent face.
     public let face2Index: Int
 
-    /// Convexity classification of the shared edge(s)
+    /// Convexity classification of the shared edge(s).
     public let convexity: EdgeConvexity
 
-    /// Number of shared edges between the faces
+    /// Number of shared edges between the faces.
     public let sharedEdgeCount: Int
 }
 
-/// Attributed Adjacency Graph for feature recognition
+/// Attributed Adjacency Graph for feature recognition.
 ///
 /// The AAG represents the topology of a shape as a graph where:
 /// - Nodes are face **occurrences** (``Shape/orientedFaces()``, #642). A face shared between two
@@ -187,27 +190,29 @@ public struct AAGEdge: Sendable {
 /// same O(e1 * e2) cost as before (run twice on each face's own small edge set, never the whole
 /// shape), with none of the scaling cost a `BRepGraph`-routed fix would have carried.
 public final class AAG: @unchecked Sendable {
-    /// The shape this graph represents
+    /// The shape this graph represents.
     public let shape: Shape
 
-    /// All nodes (faces) in the graph
+    /// All nodes (faces) in the graph.
     public private(set) var nodes: [AAGNode] = []
 
-    /// All edges (adjacencies) in the graph
+    /// All edges (adjacencies) in the graph.
     public private(set) var edges: [AAGEdge] = []
 
-    /// Adjacency list: for each face index, list of (neighbor index, edge index)
+    /// Adjacency list: for each face index, list of (neighbor index, edge index).
     public private(set) var adjacencyList: [[Int: Int]] = []
 
     /// The same face occurrences ``nodes`` was built from (``Shape/orientedFaces()``), cached
     /// once here so a consumer that needs the underlying `Face` (``AAG/detectPockets(tolerance:)``,
     /// for the floor's own outer wire) does not re-run the traversal `buildGraph()` already paid
-    /// for (#753). Index-for-index aligned with ``nodes``, by construction: both come from this
+    /// for (#753).
+    ///
+    /// Index-for-index aligned with ``nodes``, by construction: both come from this
     /// one array. Not `Sendable`-relevant beyond what ``nodes``/``edges``/``adjacencyList`` already
     /// are, since it is written once here, in `buildGraph()`, and never mutated again.
     private var faceOccurrences: [Face] = []
 
-    /// Create an AAG from a shape
+    /// Create an AAG from a shape.
     public init(shape: Shape) {
         self.shape = shape
         buildGraph()
@@ -221,7 +226,21 @@ public final class AAG: @unchecked Sendable {
         // keeps both sides as separate occurrences, each with the normal its own owning solid
         // sees, so the node set, and everything built on it, stops depending on that order. On a
         // shape whose faces are not shared this is exactly the faces() node set, in the same order.
-        let faces = shape.orientedFaces()
+        // #943: a face whose bounding box is void has no extent for any of the geometric
+        // comparisons below (floor/wall matching, pocket depth, adjacency ranking), and `bounds`
+        // is a stored, non-optional property of AAGNode. Dropping such a face is the only answer
+        // that neither fabricates a box nor crashes on a force-unwrap; `faces` is filtered before
+        // anything derives from it, so `nodes`, `faceOccurrences` and `adjacencyList` stay
+        // index-for-index aligned by construction, and `distinctFaceIndex` still maps each node
+        // back to the shape's own face enumeration. An explorer-derived face with no box is not
+        // reachable on any fixture in this tree; this is the contract, not a live case.
+        var faces: [Face] = []
+        var faceBounds: [(min: SIMD3<Double>, max: SIMD3<Double>)] = []
+        for face in shape.orientedFaces() {
+            guard let box = face.exactBounds else { continue }
+            faces.append(face)
+            faceBounds.append(box)
+        }
         let faceCount = faces.count
         // Cached for detectPockets() (#753): same array, same traversal, so caching it here
         // costs nothing this method wasn't already paying and saves a re-traversal per call.
@@ -248,7 +267,7 @@ public final class AAG: @unchecked Sendable {
                 // meshed this shape. AAGNode represents the shape's geometry, not its incidental
                 // tessellation state, so its bounds must not move depending on whether the caller
                 // happened to call mesh() first.
-                bounds: face.exactBounds
+                bounds: faceBounds[index]
             )
             nodes.append(node)
         }
@@ -265,7 +284,7 @@ public final class AAG: @unchecked Sendable {
 
         // Build edges by checking all face pairs for adjacency
         for i in 0..<faceCount {
-            for j in (i+1)..<faceCount {
+            for j in (i + 1)..<faceCount {
                 let face1 = faces[i]
                 let face2 = faces[j]
 
@@ -294,8 +313,9 @@ public final class AAG: @unchecked Sendable {
                 // under-reported -- measured directly, a synthetic 11-notch fixture shares 12 and
                 // the old code said 10.
                 var firstShared: OCCTEdgeRef?
-                let trueCount = Int(OCCTFaceGetSharedEdgeSummary(
-                    shape.handle, face1.handle, face2.handle, &firstShared))
+                let trueCount = Int(
+                    OCCTFaceGetSharedEdgeSummary(
+                        shape.handle, face1.handle, face2.handle, &firstShared))
                 if trueCount > 0 {
                     var convexity: EdgeConvexity = .smooth
                     if let firstEdge = firstShared {
@@ -373,20 +393,20 @@ public final class AAG: @unchecked Sendable {
         return groups
     }
 
-    /// Get neighbors of a face
+    /// Get neighbors of a face.
     public func neighbors(of faceIndex: Int) -> [Int] {
         guard faceIndex < adjacencyList.count else { return [] }
         return Array(adjacencyList[faceIndex].keys)
     }
 
-    /// Get the edge between two faces (if adjacent)
+    /// Get the edge between two faces (if adjacent).
     public func edge(between face1: Int, and face2: Int) -> AAGEdge? {
         guard face1 < adjacencyList.count else { return nil }
         guard let edgeIndex = adjacencyList[face1][face2] else { return nil }
         return edges[edgeIndex]
     }
 
-    /// Get all concave neighbors of a face
+    /// Get all concave neighbors of a face.
     public func concaveNeighbors(of faceIndex: Int) -> [Int] {
         guard faceIndex < adjacencyList.count else { return [] }
         return adjacencyList[faceIndex].compactMap { (neighbor, edgeIndex) in
@@ -394,7 +414,7 @@ public final class AAG: @unchecked Sendable {
         }
     }
 
-    /// Get all convex neighbors of a face
+    /// Get all convex neighbors of a face.
     public func convexNeighbors(of faceIndex: Int) -> [Int] {
         guard faceIndex < adjacencyList.count else { return [] }
         return adjacencyList[faceIndex].compactMap { (neighbor, edgeIndex) in
@@ -405,7 +425,7 @@ public final class AAG: @unchecked Sendable {
 
 // MARK: - Pocket Feature
 
-/// A recognized pocket feature in a solid
+/// A recognized pocket feature in a solid.
 public struct PocketFeature: Sendable {
     /// Index of the floor face.
     ///
@@ -431,10 +451,10 @@ public struct PocketFeature: Sendable {
     /// ``floorFaceIndex`` (#642).
     public let wallFaceIndices: [Int]
 
-    /// Z level of the pocket floor
+    /// Z level of the pocket floor.
     public let zLevel: Double
 
-    /// Bounding box of the pocket
+    /// Bounding box of the pocket.
     public let bounds: (min: SIMD3<Double>, max: SIMD3<Double>)
 
     /// Whether this is an open pocket (not fully enclosed).
@@ -445,7 +465,7 @@ public struct PocketFeature: Sendable {
     /// containment check was rejected in favor of this.
     public let isOpen: Bool
 
-    /// Approximate depth of the pocket
+    /// Approximate depth of the pocket.
     public var depth: Double {
         bounds.max.z - zLevel
     }
@@ -455,9 +475,10 @@ public struct PocketFeature: Sendable {
 
 extension AAG {
     /// Default tolerance (model units) used to decide whether a candidate floor sits at the
-    /// bottom of one of its candidate walls (#724). Far tighter than any real pocket depth in the
-    /// test suite (millimeters or more), far looser than the ~1e-7 bounding-box noise
-    /// `Face.exactBounds` reports on an exact primitive.
+    /// bottom of one of its candidate walls (#724).
+    ///
+    /// Far tighter than any real pocket depth in the test suite (millimeters or more), far looser
+    /// than the ~1e-7 bounding-box noise `Face.exactBounds` reports on an exact primitive.
     ///
     /// This is a default, not a fixed constant: ``detectPockets(tolerance:)`` and
     /// ``Shape/detectPocketsAAG(tolerance:)`` both take a caller-supplied `tolerance:` parameter
@@ -466,7 +487,7 @@ extension AAG {
     /// millimeter-scale constant for every caller regardless of the model's own units.
     public static let defaultFloorRestsOnWallTolerance = 1e-4
 
-    /// Detect pockets in the shape using AAG analysis
+    /// Detect pockets in the shape using AAG analysis.
     ///
     /// A pocket is identified by:
     /// 1. An upward-facing horizontal floor face
@@ -615,7 +636,10 @@ extension AAG {
     ///   millimeter-scale parts, and a shape modeled in meters or in thousandths of an inch may
     ///   need a different value (#733). `AAGNode.bounds` itself is unaffected by meshing either
     ///   way (#733), so widening this is about the model's own units, not about tessellation noise.
-    public func detectPockets(tolerance: Double = defaultFloorRestsOnWallTolerance) -> [PocketFeature] {
+    /// - Returns: One entry per detected pocket, empty when the shape has none.
+    public func detectPockets(tolerance: Double = defaultFloorRestsOnWallTolerance)
+        -> [PocketFeature]
+    {
         var pockets: [PocketFeature] = []
 
         // Find all upward-facing horizontal faces as potential floors
@@ -636,7 +660,8 @@ extension AAG {
             // junction is found through the fillet/chamfer face instead of stopping at it. See
             // this method's own doc comment ("A filleted or chamfered junction is absorbed,
             // not reclassified") for the full reasoning.
-            let (wallIndices, junctionIndices) = wallsAndJunctions(fromFloor: floorIndex, floorZ: floorZ, tolerance: tolerance)
+            let (wallIndices, junctionIndices) = wallsAndJunctions(
+                fromFloor: floorIndex, floorZ: floorZ, tolerance: tolerance)
 
             // Need at least one wall to be a pocket
             guard !wallIndices.isEmpty else { continue }
@@ -672,9 +697,11 @@ extension AAG {
             // coverage is tested against walls UNION junctions, not walls alone.
             let floorOuterEdges = occFaces[floorIndex].outerWire?.edges() ?? []
             let coveringFaces = wallIndices + junctionIndices
-            let isOpen = floorOuterEdges.isEmpty || floorOuterEdges.contains { boundaryEdge in
-                !isEdgeCoveredByAWall(boundaryEdge, among: coveringFaces, in: occFaces)
-            }
+            let isOpen =
+                floorOuterEdges.isEmpty
+                || floorOuterEdges.contains { boundaryEdge in
+                    !isEdgeCoveredByAWall(boundaryEdge, among: coveringFaces, in: occFaces)
+                }
 
             let pocket = PocketFeature(
                 floorFaceIndex: floorIndex,
@@ -697,11 +724,13 @@ extension AAG {
     }
 
     /// Finds a floor's walls by tracing concave edges, and any absorbed fillet/chamfer
-    /// junction, outward from it (#762). Returns the true (vertical) walls (what
-    /// ``PocketFeature/wallFaceIndices`` reports, with exactly the same meaning it had before
-    /// this fix), and, separately, every junction face absorbed along the way, which the
-    /// enclosure test in ``detectPockets(tolerance:)`` needs: the floor's own outer-wire
-    /// boundary edges border THOSE, not the far wall, whenever one is interposed.
+    /// junction, outward from it (#762).
+    ///
+    /// Returns the true (vertical) walls (what ``PocketFeature/wallFaceIndices`` reports, with
+    /// exactly the same meaning it had before this fix), and, separately, every junction face
+    /// absorbed along the way, which the enclosure test in ``detectPockets(tolerance:)`` needs: the
+    /// floor's own outer-wire boundary edges border THOSE, not the far wall, whenever one is
+    /// interposed.
     ///
     /// ## Why a fillet needs a chain, and a chamfer needs a shorter one
     ///
@@ -956,7 +985,8 @@ extension AAG {
                         // including an unrelated tangent face. Crossability alone does not
                         // decide wall vs. junction below; `currentBordersFloorDirectly` does.
                         if currentIsConfirmedFillet {
-                            crossable = nodes[neighbor].isVertical || isRadiallyInwardFillet(neighbor)
+                            crossable =
+                                nodes[neighbor].isVertical || isRadiallyInwardFillet(neighbor)
                         } else {
                             crossable = isRadiallyInwardFillet(neighbor)
                         }
@@ -1013,10 +1043,11 @@ extension AAG {
         return (walls, junctions)
     }
 
-    /// Whether `nodeIndex`'s face is a cylindrical, conical or spherical fillet curving INTO
-    /// the material it borders (#762): its own outward normal, sampled at its own UV
-    /// mid-parameter, points back toward its axis (or, for a sphere, its center) rather than
-    /// away from it.
+    /// Whether the face at `nodeIndex` is a cylindrical, conical or spherical fillet curving
+    /// INTO the material it borders.
+    ///
+    /// Its own outward normal, sampled at its own UV mid-parameter, points back toward its axis
+    /// (or, for a sphere, its center) rather than away from it (#762).
     ///
     /// This is the identical material-side test ``detectHoles()`` uses (#747/#760) to tell a
     /// hole's bore from a boss's or a standalone cylinder's own wall, aimed at a narrower
@@ -1039,13 +1070,17 @@ extension AAG {
         guard nodeIndex < faceOccurrences.count else { return false }
         let face = faceOccurrences[nodeIndex]
         guard let revolution = face.revolutionProperties,
-              let uv = face.uvBounds else { return false }
-        return AAG.isMaterialRadiallyInward(of: face, revolution: revolution, uv: uv, allowSphere: true)
+            let uv = face.uvBounds
+        else { return false }
+        return AAG.isMaterialRadiallyInward(
+            of: face, revolution: revolution, uv: uv, allowSphere: true)
     }
 
     /// Whether a face's own outward normal, sampled at its own UV mid-parameter, points back
     /// toward its axis (or, when `allowSphere` is true and the face is a sphere, its center)
-    /// rather than away from it: the material-side test shared by ``detectHoles()`` (#747/#760,
+    /// rather than away from it.
+    ///
+    /// The material-side test shared by ``detectHoles()`` (#747/#760,
     /// which tells a hole's bore from a boss's or a standalone cylinder's own wall) and
     /// ``isRadiallyInwardFillet(_:)`` (#762, which asks the identical question of a fillet
     /// junction). Factored into one place after review found the two had drifted into
@@ -1069,7 +1104,8 @@ extension AAG {
         let uMid = (uv.uMin + uv.uMax) / 2
         let vMid = (uv.vMin + uv.vMax) / 2
         guard let midPoint = face.point(atU: uMid, v: vMid),
-              let midNormal = face.normal(atU: uMid, v: vMid) else { return false }
+            let midNormal = face.normal(atU: uMid, v: vMid)
+        else { return false }
 
         let offset = midPoint - revolution.axis.origin
         let radial: SIMD3<Double>
@@ -1102,11 +1138,14 @@ extension AAG {
     /// `shape` by its underlying geometry and location (`TopoDS_Shape::IsSame`, the same identity
     /// rule the wire-to-shape conversion preserves), not by index, so which throwaway shape the
     /// `Edge` was minted from does not matter here.
-    private func isEdgeCoveredByAWall(_ edge: Edge, among coveringFaces: [Int], in occFaces: [Face]) -> Bool {
+    private func isEdgeCoveredByAWall(_ edge: Edge, among coveringFaces: [Int], in occFaces: [Face])
+        -> Bool
+    {
         guard let (face1, face2) = edge.adjacentFaces(in: shape) else { return false }
         return coveringFaces.contains { coveringIndex in
             let covering = occFaces[coveringIndex]
-            return facesAreSame(face1, covering) || (face2.map { facesAreSame($0, covering) } ?? false)
+            return facesAreSame(face1, covering)
+                || (face2.map { facesAreSame($0, covering) } ?? false)
         }
     }
 
@@ -1186,7 +1225,11 @@ extension AAG {
     ///   same thing and only the occurrence one is correct here.
     public func detectHoles() -> [(faceIndex: Int, radius: Double, depth: Double)] {
         var holes: [(faceIndex: Int, radius: Double, depth: Double)] = []
-        let faces = shape.orientedFaces()
+        // faceOccurrences, not a fresh shape.orientedFaces(): this loop indexes by node index, and
+        // nodes were built from the cached array (#753), which buildGraph() may filter (#943). A
+        // re-derived array is only index-aligned with nodes when nothing was filtered, and the
+        // cache is what #753 added it for.
+        let faces = faceOccurrences
 
         for index in nodes.indices {
             guard index < faces.count else { continue }
@@ -1214,7 +1257,10 @@ extension AAG {
             // so the surface-type check the sphere branch guards never fires either way) but
             // states plainly that a sphere reaching here would use the axis-projection branch,
             // not the from-center one a spherical fillet junction needs.
-            guard AAG.isMaterialRadiallyInward(of: face, revolution: revolution, uv: uv, allowSphere: false) else {
+            guard
+                AAG.isMaterialRadiallyInward(
+                    of: face, revolution: revolution, uv: uv, allowSphere: false)
+            else {
                 continue
             }
 
@@ -1222,7 +1268,8 @@ extension AAG {
             // for a vertical hole as for one bored on any other axis.
             let uMid = (uv.uMin + uv.uMax) / 2
             guard let low = face.point(atU: uMid, v: uv.vMin),
-                  let high = face.point(atU: uMid, v: uv.vMax) else {
+                let high = face.point(atU: uMid, v: uv.vMax)
+            else {
                 continue
             }
             let depth = abs(simd_dot(high - low, axisUnit))
@@ -1272,7 +1319,10 @@ extension Shape {
     ///
     /// - Parameter tolerance: Forwarded to ``AAG/detectPockets(tolerance:)``. See its doc for
     ///   what it controls and why it defaults the way it does (#733).
-    public func detectPocketsAAG(tolerance: Double = AAG.defaultFloorRestsOnWallTolerance) -> [PocketFeature] {
+    /// - Returns: One entry per detected pocket, empty when the shape has none.
+    public func detectPocketsAAG(tolerance: Double = AAG.defaultFloorRestsOnWallTolerance)
+        -> [PocketFeature]
+    {
         let aag = buildAAG()
         return aag.detectPockets(tolerance: tolerance)
     }

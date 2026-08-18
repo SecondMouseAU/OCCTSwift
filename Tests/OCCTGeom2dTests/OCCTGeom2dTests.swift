@@ -1317,7 +1317,7 @@ struct WireFromCurve2DOnPlaneTests {
         if let w = wire {
             // Z-extent of the bounding box should be near 5
             if let shape = Shape.fromWire(w) {
-                let bb = shape.bounds
+                let bb = shape.bounds!
                 #expect(abs(bb.min.z - 5.0) < 0.01)
                 #expect(abs(bb.max.z - 5.0) < 0.01)
             }
@@ -1335,7 +1335,7 @@ struct WireFromCurve2DOnPlaneTests {
         if let w = wire {
             // X should stay at 3; Y spans 0–5; Z stays 0
             if let shape = Shape.fromWire(w) {
-                let bb = shape.bounds
+                let bb = shape.bounds!
                 #expect(abs(bb.min.x - 3.0) < 0.01)
                 #expect(abs(bb.max.x - 3.0) < 0.01)
                 #expect(abs(bb.max.y - 5.0) < 0.01)

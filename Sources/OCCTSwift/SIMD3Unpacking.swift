@@ -96,3 +96,28 @@ func unwrapVectorComponentsIfSuccessful(
     guard bridgeCall(&x, &y, &z) else { return nil }
     return SIMD3(x, y, z)
 }
+
+/// The `unwrapAxisComponents(_:)` sibling for a six-`Double`-out-param bridge call that reports
+/// success/failure through its own `Bool` return.
+///
+/// The bounding-box entry points are the reason this exists: a void box and a genuinely zero-size
+/// box at the world origin write the same six zeros, so the values cannot carry the distinction
+/// and only the `Bool` can (#943). `nil` on failure, matching every call site's existing
+/// `guard ... else { return nil }` idiom.
+/// - Returns: element 0 is the low corner (or origin), element 1 the high corner (or direction),
+///   by position; the caller's own declared return type supplies whatever labels it wants.
+func unwrapAxisComponentsIfSuccessful(
+    _ bridgeCall: (
+        UnsafeMutablePointer<Double>, UnsafeMutablePointer<Double>, UnsafeMutablePointer<Double>,
+        UnsafeMutablePointer<Double>, UnsafeMutablePointer<Double>, UnsafeMutablePointer<Double>
+    ) -> Bool
+) -> (SIMD3<Double>, SIMD3<Double>)? {
+    var px: Double = 0
+    var py: Double = 0
+    var pz: Double = 0
+    var dx: Double = 0
+    var dy: Double = 0
+    var dz: Double = 0
+    guard bridgeCall(&px, &py, &pz, &dx, &dy, &dz) else { return nil }
+    return (SIMD3(px, py, pz), SIMD3(dx, dy, dz))
+}

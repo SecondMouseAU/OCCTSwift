@@ -209,8 +209,8 @@ struct Issue503PipeShellTests {
             // not the solid, so compare where it lands rather than how big it is.
             if let plainShape = Shape.pipeShell(spine: spine, profile: profile),
                let contactedShape = Shape.pipeShell(spine: spine, profile: profile, withContact: true) {
-                #expect(!plainShape.bounds.min.x.isApproximatelyEqual(
-                            to: contactedShape.bounds.min.x, tolerance: 1e-6),
+                #expect(!plainShape.bounds!.min.x.isApproximatelyEqual(
+                            to: contactedShape.bounds!.min.x, tolerance: 1e-6),
                         "withContact had no effect")
             }
             #expect(contacted.volume > 0)

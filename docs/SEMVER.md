@@ -45,7 +45,72 @@ A major bump is reserved for two events, either of which alone is sufficient:
 2. **Breaking change to the public Swift API.** A removed type, a renamed method, a changed return type, a tightened parameter type, a raised platform floor — anything a consumer might have to fix on their side after pinning forward. This is rare within a major line because we promise stability there; if it happens, it triggers a major bump of the affected package (and possibly the cohort, if the change ripples downstream).
 
 The cohort moved to v1.0.0 on 2026-05-07 alongside [OCCT 8.0.0 GA](https://github.com/Open-Cascade-SAS/OCCT/releases/tag/V8_0_0),
-and to v2.0.0 under Rule 2, on the accumulated breaks recorded immediately below.
+and to v2.0.0 under Rule 2, on the accumulated breaks recorded below. v3.0.0 is a further
+Rule 2 major on a much smaller set: the kernel does not move, and the breaks are listed
+immediately below.
+
+#### v3.0.0
+
+**A major by Rule 2, on a much smaller set than v2.0.0.** OCCT does not move in this release: the
+kernel stays at `V8_0_1`, rebuilt as `v3.0.0-kernel.1` to carry two patches the v2.0.0 asset was
+missing (#905, #913), which is a MINOR trigger at most and forces nothing. What forces the major is
+Rule 2, and as of this section it is carried by a single merged change.
+
+Almost everything else in this release is internal: duplication passes, refman-coverage audits, and
+bridge deduplication, all of which are deliberately non-breaking. Read the entries in
+[`CHANGELOG.md`](CHANGELOG.md) marked "Internal only" as exactly that.
+
+##### Every break, and what a caller does
+
+| Break | Kind | Detail |
+|---|---|---|
+| `Selector.SubShapeType.compsolid` renamed `.compSolid` | compile error | [#844](#v300-selectorsubshapetypecompsolid-is-renamed-compsolid-844) |
+| `Shape.ShapeFilterType.RawValue` changes `Int32` → `Int` | compile error *if* the raw type is named | [#844](#v300-selectorsubshapetypecompsolid-is-renamed-compsolid-844) |
+
+##### v3.0.0: `Selector.SubShapeType.compsolid` is renamed `.compSolid` (#844)
+
+Four independent Swift mirrors of `TopAbs_ShapeEnum` existed with no shared source of truth, and
+their casing had already drifted: `ShapeType` spelled it `compSolid`, `Selector.SubShapeType`
+spelled it `compsolid`. Consolidating them onto `ShapeType` picks one spelling, and `.compsolid` is
+the one that goes.
+
+`Shape.ShapeFilterType` becomes a `ShapeType` typealias in the same change, so its `RawValue` moves
+from `Int32` to `Int`. Code that only passes the enum around is unaffected; code that names the raw
+type, or stores it, is not.
+
+**Migration.** Rename `.compsolid` to `.compSolid`. If you depend on `ShapeFilterType`'s raw value
+being `Int32`, convert explicitly at the boundary:
+
+```swift
+// before
+let raw: Int32 = filterType.rawValue
+
+// after
+let raw = Int32(filterType.rawValue)
+```
+
+A third consolidated type, `Shape.TopAbs_ShapeEnum`, is **not** a break: it was briefly deleted
+outright, which the aggregate review caught as inconsistent with the compatibility path the other
+three got, and it now stands as
+`@available(*, deprecated, renamed: "ShapeType") public typealias TopAbs_ShapeEnum = ShapeType`.
+Existing code compiles with a warning.
+
+##### Deliberately not breaks
+
+Recorded because each looks like one and is not, and because answering that question is what this
+file is for.
+
+- **`ThruSectionsBuilder.setCriteriumWeight(w1:w2:w3:)` returns `Bool` where it returned `Void`
+  (#919).** The method is `@discardableResult`, so existing call sites compile unchanged with no
+  warning. Only a code path that forms a reference to the method itself
+  (`let f = builder.setCriteriumWeight`) sees a different type, which no shipped consumer does.
+- **Three bridge orientation setters stop relying on undefined behaviour (#793).** `OCCTShapeSetOrientation`,
+  `OCCTShapeComposed` and `OCCTShapeOriented` used to `static_cast` the caller's raw `Int` to
+  `TopAbs_Orientation`, so a value outside `0...3` produced an out-of-range enum. They now saturate
+  to `TopAbs_FORWARD`. This changes behaviour only for input that was previously undefined, and the
+  Swift surface does not expose a way to pass such a value.
+- **`OCCTShapeClean`/`OCCTShapeUpdate` and their `BRepTools`-named twins (#792).** Both names in each
+  pair survive; one now forwards to the other. Nothing calling either changes.
 
 #### v2.0.0
 

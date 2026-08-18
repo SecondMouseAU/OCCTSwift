@@ -680,17 +680,17 @@ public func subShapes(ofType type: ShapeType) -> [Shape]
 Axis-aligned bounding box of the shape.
 
 ```swift
-public var bounds: (min: SIMD3<Double>, max: SIMD3<Double>) { get }
+public var bounds: (min: SIMD3<Double>, max: SIMD3<Double>)? { get }
 ```
 
 Uses OCCT's default `Bnd_Box`, which for B-spline and faceted surfaces is the **control-point hull** and can over-report the true extent. For a tight AABB use `boundingBoxOptimal()` (`Bnd_Box::AddOptimal`), or the ground-truth min/max of `mesh(...)` vertices.
 
-- **Returns:** Tuple of min and max AABB corners.
-- **OCCT:** `BRepBndLib::Add` (via `OCCTShapeGetBounds`).
-- **Warning (#834):** For a void/empty shape (e.g. `Shape.compound([])`), `bounds` fabricates `(0,0,0)-(0,0,0)` — indistinguishable from a genuine zero-size shape at the origin, since this is a non-optional tuple with no way to signal "no geometry." Contrast with [`boundingBox`](Document-Transforms.md), which computes the identical `Bnd_Box`/`BRepBndLib::Add` but returns `nil` for the same void shape via an explicit `IsVoid()` guard. If a void shape is reachable at your call site, check `boundingBox` first.
+- **Returns:** Tuple of min and max AABB corners, or `nil` when there is no box. A shape that contributes no geometry to the box (`Bnd_Box::IsVoid()`, e.g. the empty result of a disjoint intersection) returns `nil`. A shape whose box genuinely measures zero, such as a point-vertex at the world origin, returns that all-zero box: the verdict comes from OCCT across the bridge as a `Bool`, never from comparing the returned coordinates against zero (#943).
+- **OCCT:** `BRepBndLib::Add` (via `OCCTShapeGetBounds`, which returns `false` for a void box).
+- **Note (#834, #943):** `bounds` and [`boundingBox`](Document-Transforms.md) compute the identical `Bnd_Box` through one shared bridge helper and answer `nil` on exactly the same inputs. They used to disagree: `boundingBox` returned `nil` for a void shape while `bounds` fabricated `(0,0,0)-(0,0,0)`.
 - **Example:**
   ```swift
-  let b = Shape.box(width: 10, height: 5, depth: 3).bounds
+  let b = Shape.box(width: 10, height: 5, depth: 3)!.bounds!
   // b.min ≈ SIMD3(0, 0, 0), b.max ≈ SIMD3(10, 5, 3)
   ```
 
@@ -701,11 +701,10 @@ Uses OCCT's default `Bnd_Box`, which for B-spline and faceted surfaces is the **
 Size of the bounding box (max − min).
 
 ```swift
-public var size: SIMD3<Double> { get }
+public var size: SIMD3<Double>? { get }
 ```
 
-- **Returns:** `bounds.max − bounds.min`.
-- **Warning (#834):** `.zero` for a void/empty shape is a fabricated answer, not a measurement — inherited from `bounds` above.
+- **Returns:** `bounds.max − bounds.min`, or `nil` when `bounds` is `nil`. `.zero` here is a measurement of a zero-size shape, not a fallback (#943).
 
 ---
 
@@ -714,11 +713,10 @@ public var size: SIMD3<Double> { get }
 Centre of the bounding box.
 
 ```swift
-public var center: SIMD3<Double> { get }
+public var center: SIMD3<Double>? { get }
 ```
 
-- **Returns:** `(bounds.min + bounds.max) / 2`.
-- **Warning (#834):** `.zero` for a void/empty shape is a fabricated answer, not a measurement — inherited from `bounds` above.
+- **Returns:** `(bounds.min + bounds.max) / 2`, or `nil` when `bounds` is `nil`. `.zero` here is a measurement of a point-like shape at the world origin, not a fallback (#943).
 
 ---
 
