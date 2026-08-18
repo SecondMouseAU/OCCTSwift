@@ -1455,7 +1455,7 @@ extension Shape {
         -> (result: Shape, history: ShapeHistoryRef)?
     {
         guard !shapes.isEmpty else { return nil }
-        var handles = shapes.map { $0.handle as OCCTShapeRef? }
+        var handles = shapes.map { $0.handle }
         var resultRef: OCCTShapeRef?
         guard let h = OCCTShapeQuiltWithHistory(&handles, Int32(shapes.count), &resultRef),
             let resultRef
