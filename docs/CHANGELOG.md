@@ -19,6 +19,27 @@ each named with its migration in [`SEMVER.md`](SEMVER.md#v200).
 
 ## Unreleased
 
+### The last seven bridge sibling-entry-point pairs share their scaffolding (#794)
+
+Completes the #784 duplication rescan's eleven-pair census, four of which landed earlier. Each pair
+duplicated its setup and extraction wholesale and differed only in the one OCCT call or constructor
+overload in the middle: `OCCTExtremaPCCurve`/`Bounded` and `OCCTCPntsUniformDeflection`/`Range`
+(`Curve3D.mm`), `OCCTShapeMakePeriodic`/`OCCTShapeRepeat` and `OCCTWireInterpolate`/`WithTangents`
+(`Modeling.mm`), `OCCTImportSTL`/`Robust`, `OCCTExportPLY`/`WithOptions` and
+`OCCTDocumentWriteOBJ`/`WritePLY` (`IO.mm`), and the `OCCTSolveQuadratic`/`Cubic`/`Quartic` trio
+(`Spatial.mm`), which differed only in constructor arity.
+
+This is the shape that let #761's buffer cap and PR #768's dropped alpha channel survive: with two
+copies and no shared helper, a fix applied to one silently misses callers of the other.
+
+`OCCTShapeQuilt`/`OCCTShapeQuiltWithHistory` is the one pair left unshared, deliberately. Factoring
+it broke `quiltBoxFacesWithHistory`, so both paths keep their own `BRepTools_Quilt` handling rather
+than shipping a shared helper that passes review and fails the test.
+
+`Sources/OCCTBridge/src/{Curve3D,IO,Spatial}.mm` come off the clang-format exemption manifest as part
+of the same work. `docs/guides/cookbook/quilting.md` is new, documenting the quilting API the pair
+above backs. Internal only, no public API or behaviour change.
+
 ### `bounds`, `size` and `center` are Optional, and "no bounding box" now comes from OCCT (#943)
 
 `Shape.bounds`, `Shape.size`, `Shape.center`, `Wire.bounds`, `Edge.bounds` and `Face.bounds` return
