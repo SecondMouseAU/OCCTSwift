@@ -262,8 +262,8 @@ struct STLImportTests {
         #expect(imported.isValid)
 
         // Verify bounds are roughly the same
-        let origBounds = box.bounds
-        let importBounds = imported.bounds
+        let origBounds = box.bounds!
+        let importBounds = imported.bounds!
         let origSize = origBounds.max - origBounds.min
         let importSize = importBounds.max - importBounds.min
         // STL is tessellated so dimensions should be close but not exact
@@ -406,7 +406,7 @@ struct OBJImportExportTests {
         let imported = try Shape.loadOBJ(from: tempURL)
         // OBJ imports as a compound of triangulated faces, which may not pass strict BRep validity
         // but should have valid bounds
-        let importSize = imported.size
+        let importSize = imported.size!
         #expect(importSize.x > 0)
         #expect(importSize.y > 0)
         #expect(importSize.z > 0)

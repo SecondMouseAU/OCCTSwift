@@ -5361,52 +5361,11 @@ double OCCTShapeTotalEdgeLength(OCCTShapeRef shape)
 // MARK: - v0.118: BoundingBox + Optimal + OBB + Shape transforms + EdgesCommonVertex +
 // SameParam/Range/NaturalRestriction/IsGeometric
 
-// Shared by OCCTShapeBoundingBox/OCCTShapeBoundingBoxOptimal below (PR #901 review): both build a
-// Bnd_Box (via BRepBndLib::Add or ::AddOptimal) and distinguish IsVoid() from a genuinely
-// all-zero box, the same shape occtComputeAxisExtent (above) wraps once for its own callers.
-// Zeroing the six out-params as the very first statement -- before the IsNull() check, and again
-// in the catch block, matching occtComputeAxisExtent's own idiom -- means every failure path this
-// helper itself can reach (void box, OCCT exception) leaves deterministic zeros rather than the
-// uninitialized stack memory a caller that doesn't gate on the bool return would otherwise read.
-// forShape.IsNull() stays reachable and load-bearing: both public callers below only guard the
-// raw OCCTShapeRef pointer (#901 review followup) before forwarding s->shape, not whether that
-// wrapped TopoDS_Shape is itself null/empty -- a non-null OCCTShapeRef wrapping an empty shape
-// (e.g. a default-constructed OCCTShape whose .shape was never assigned) reaches this check
-// with the pointer guard already passed. Do not delete it as redundant with the callers' guard;
-// it is the only thing distinguishing that case from a genuinely populated shape.
-static bool occtComputeBoundingBox(const TopoDS_Shape& forShape,
-                                   bool                optimal,
-                                   bool                useShapeTolerance,
-                                   double&             outXmin,
-                                   double&             outYmin,
-                                   double&             outZmin,
-                                   double&             outXmax,
-                                   double&             outYmax,
-                                   double&             outZmax)
-{
-  outXmin = outYmin = outZmin = outXmax = outYmax = outZmax = 0.0;
-  if (forShape.IsNull())
-    return false;
-  try
-  {
-    Bnd_Box box;
-    if (optimal)
-      BRepBndLib::AddOptimal(forShape, box, true, useShapeTolerance);
-    else
-      BRepBndLib::Add(forShape, box);
-    // All-zero coordinates are indistinguishable from a genuinely degenerate/point shape at
-    // the world origin -- IsVoid() is the real signal (#900).
-    if (box.IsVoid())
-      return false;
-    box.Get(outXmin, outYmin, outZmin, outXmax, outYmax, outZmax);
-    return true;
-  }
-  catch (...)
-  {
-    outXmin = outYmin = outZmin = outXmax = outYmax = outZmax = 0.0;
-    return false;
-  }
-}
+// occtComputeBoundingBox moved to OCCTBridge_Internal.h (#943): OCCTShapeGetBounds lives in
+// OCCTBridge_Properties.mm and could not reach a file-static here, which is how it ended up as the
+// one bounds entry point with no IsVoid() guard at all (#834). Same body, plus a useTriangulation
+// parameter for the two face entry points that need it; both callers below pass true, which is
+// what BRepBndLib::Add/AddOptimal default to and therefore what they did before.
 
 bool OCCTShapeBoundingBox(OCCTShapeRef shape,
                           double*      xmin,
@@ -5428,6 +5387,7 @@ bool OCCTShapeBoundingBox(OCCTShapeRef shape,
   auto* s = static_cast<OCCTShape*>(shape);
   return occtComputeBoundingBox(s->shape,
                                 /*optimal=*/false,
+                                /*useTriangulation=*/true,
                                 /*useShapeTolerance=*/false,
                                 *xmin,
                                 *ymin,
@@ -5455,6 +5415,7 @@ bool OCCTShapeBoundingBoxOptimal(OCCTShapeRef shape,
   auto* s = static_cast<OCCTShape*>(shape);
   return occtComputeBoundingBox(s->shape,
                                 /*optimal=*/true,
+                                /*useTriangulation=*/true,
                                 useShapeTolerance,
                                 *xmin,
                                 *ymin,
@@ -6640,7 +6601,7 @@ OCCTWireRef OCCTFaceGetOuterWire(OCCTFaceRef face)
   }
 }
 
-void OCCTFaceGetBounds(OCCTFaceRef face,
+bool OCCTFaceGetBounds(OCCTFaceRef face,
                        double*     minX,
                        double*     minY,
                        double*     minZ,
@@ -6648,22 +6609,24 @@ void OCCTFaceGetBounds(OCCTFaceRef face,
                        double*     maxY,
                        double*     maxZ)
 {
-  if (!face || !minX || !minY || !minZ || !maxX || !maxY || !maxZ)
-    return;
-
-  try
-  {
-    Bnd_Box box;
-    BRepBndLib::Add(face->face, box);
-    box.Get(*minX, *minY, *minZ, *maxX, *maxY, *maxZ);
-  }
-  catch (...)
-  {
-    *minX = *minY = *minZ = *maxX = *maxY = *maxZ = 0;
-  }
+  if (!minX || !minY || !minZ || !maxX || !maxY || !maxZ)
+    return false;
+  *minX = *minY = *minZ = *maxX = *maxY = *maxZ = 0.0;
+  if (!face)
+    return false;
+  return occtComputeBoundingBox(face->face,
+                                /*optimal=*/false,
+                                /*useTriangulation=*/true,
+                                /*useShapeTolerance=*/false,
+                                *minX,
+                                *minY,
+                                *minZ,
+                                *maxX,
+                                *maxY,
+                                *maxZ);
 }
 
-void OCCTFaceGetBoundsExact(OCCTFaceRef face,
+bool OCCTFaceGetBoundsExact(OCCTFaceRef face,
                             double*     minX,
                             double*     minY,
                             double*     minZ,
@@ -6671,19 +6634,21 @@ void OCCTFaceGetBoundsExact(OCCTFaceRef face,
                             double*     maxY,
                             double*     maxZ)
 {
-  if (!face || !minX || !minY || !minZ || !maxX || !maxY || !maxZ)
-    return;
-
-  try
-  {
-    Bnd_Box box;
-    BRepBndLib::Add(face->face, box, false);
-    box.Get(*minX, *minY, *minZ, *maxX, *maxY, *maxZ);
-  }
-  catch (...)
-  {
-    *minX = *minY = *minZ = *maxX = *maxY = *maxZ = 0;
-  }
+  if (!minX || !minY || !minZ || !maxX || !maxY || !maxZ)
+    return false;
+  *minX = *minY = *minZ = *maxX = *maxY = *maxZ = 0.0;
+  if (!face)
+    return false;
+  return occtComputeBoundingBox(face->face,
+                                /*optimal=*/false,
+                                /*useTriangulation=*/false,
+                                /*useShapeTolerance=*/false,
+                                *minX,
+                                *minY,
+                                *minZ,
+                                *maxX,
+                                *maxY,
+                                *maxZ);
 }
 
 bool OCCTFaceIsPlanar(OCCTFaceRef face)
@@ -6849,7 +6814,7 @@ double OCCTEdgeGetLength(OCCTEdgeRef edge)
   }
 }
 
-void OCCTEdgeGetBounds(OCCTEdgeRef edge,
+bool OCCTEdgeGetBounds(OCCTEdgeRef edge,
                        double*     minX,
                        double*     minY,
                        double*     minZ,
@@ -6857,19 +6822,21 @@ void OCCTEdgeGetBounds(OCCTEdgeRef edge,
                        double*     maxY,
                        double*     maxZ)
 {
-  if (!edge || !minX || !minY || !minZ || !maxX || !maxY || !maxZ)
-    return;
-
-  try
-  {
-    Bnd_Box box;
-    BRepBndLib::Add(edge->edge, box);
-    box.Get(*minX, *minY, *minZ, *maxX, *maxY, *maxZ);
-  }
-  catch (...)
-  {
-    *minX = *minY = *minZ = *maxX = *maxY = *maxZ = 0;
-  }
+  if (!minX || !minY || !minZ || !maxX || !maxY || !maxZ)
+    return false;
+  *minX = *minY = *minZ = *maxX = *maxY = *maxZ = 0.0;
+  if (!edge)
+    return false;
+  return occtComputeBoundingBox(edge->edge,
+                                /*optimal=*/false,
+                                /*useTriangulation=*/true,
+                                /*useShapeTolerance=*/false,
+                                *minX,
+                                *minY,
+                                *minZ,
+                                *maxX,
+                                *maxY,
+                                *maxZ);
 }
 
 int32_t OCCTEdgeGetPoints(OCCTEdgeRef edge, int32_t count, double* outPoints)

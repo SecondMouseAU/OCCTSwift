@@ -82,15 +82,16 @@ public var length: Double { get }
 The axis-aligned bounding box of the edge.
 
 ```swift
-public var bounds: (min: SIMD3<Double>, max: SIMD3<Double>) { get }
+public var bounds: (min: SIMD3<Double>, max: SIMD3<Double>)? { get }
 ```
 
-- **Returns:** Tuple of the AABB min and max corners. Returns `(.zero, .zero)` on failure.
-- **OCCT:** `BRepBndLib::Add` + `Bnd_Box::Get`.
+- **Returns:** Tuple of the AABB min and max corners, or `nil` when there is no box. A shape that contributes no geometry to the box (`Bnd_Box::IsVoid()`, e.g. the empty result of a disjoint intersection) returns `nil`. A shape whose box genuinely measures zero, such as a point-vertex at the world origin, returns that all-zero box: the verdict comes from OCCT across the bridge as a `Bool`, never from comparing the returned coordinates against zero (#943).
+- **OCCT:** `BRepBndLib::Add` + `Bnd_Box::Get` (via `OCCTEdgeGetBounds`, which returns `false` for a void box).
 - **Example:**
   ```swift
-  let b = box.edge(at: 0)!.bounds
-  // b.min and b.max define the bounding box of that edge
+  if let b = box.edge(at: 0)!.bounds {
+      // b.min and b.max define the bounding box of that edge
+  }
   ```
 
 ---

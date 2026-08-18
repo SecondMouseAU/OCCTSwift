@@ -175,8 +175,8 @@ struct StressTransformChainTests {
         }
         #expect(shape.isValid)
         // Should be offset by ~1.0 in X
-        let center = shape.bounds
-        #expect(center.max.x > 0.5)
+        let b = shape.bounds!
+        #expect(b.max.x > 0.5)
     }
 
     @Test func thousandRotations() {

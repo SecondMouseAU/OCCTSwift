@@ -36,7 +36,7 @@ struct Issue185HelicalSweepTests {
             // envelope is ~radius 7. The point of this bound is to catch the CATASTROPHIC
             // failure mode (radius ~8–11) seen with narrow / fine-pitch profiles, while
             // documenting the mild bulge that helicalSweep does have. See #187.
-            let b = worm.bounds
+            let b = worm.bounds!
             let maxR = 7.0
             #expect(b.max.x <= maxR)
             #expect(b.min.x >= -maxR)

@@ -1753,7 +1753,7 @@ struct OrientedBoundingBoxTests {
         // OBB volume should be close to original volume (10 * 2 * 2 = 40)
         #expect(obb!.volume < 60.0) // Some tolerance
         // AABB would be much larger for a 45° rotated shape
-        let aabb = box.bounds
+        let aabb = box.bounds!
         let aabbVolume = (aabb.max.x - aabb.min.x) * (aabb.max.y - aabb.min.y) * (aabb.max.z - aabb.min.z)
         #expect(obb!.volume < aabbVolume)
     }
@@ -5998,12 +5998,12 @@ struct BRepBndLibTests {
         }
     }
 
-    // #834: neither side of this divergence had any void-shape coverage before this PR.
-    // `boundingBox` correctly answers nil for a void shape (an explicit Bnd_Box::IsVoid() guard);
-    // `bounds` cannot signal that at all (non-optional tuple) and fabricates (0,0,0)-(0,0,0),
-    // indistinguishable from a genuine zero-size shape at the origin. Pinning both sides here so
-    // any future change to either bridge function is caught by a real assertion, not silence.
-    @Test func voidShapeBoundingBoxIsNilButBoundsFabricatesZero() {
+    // #834 added this with the two sides disagreeing: `boundingBox` answered nil for a void
+    // shape and `bounds` fabricated (0,0,0)-(0,0,0), indistinguishable from a genuine zero-size
+    // shape at the origin. #943 converged them, so all four accessors answer nil here and the
+    // test name says so. The zero-size half of the same contract is
+    // pointVertexAtOriginBoundingBoxIsNotNil below, and Issue943BoundsVoid covers both.
+    @Test func voidShapeReportsNoBoxFromAnyAccessor() {
         // A far-disjoint intersection is the reliable way to get a genuinely void Shape:
         // Shape.compound([]) refuses to construct (OCCTShapeCreateCompound requires count >= 1).
         let b1 = Shape.box(width: 10, height: 10, depth: 10)!
@@ -6013,11 +6013,9 @@ struct BRepBndLibTests {
             return
         }
         #expect(voidShape.boundingBox == nil)
-        let b = voidShape.bounds
-        #expect(b.min == SIMD3<Double>.zero)
-        #expect(b.max == SIMD3<Double>.zero)
-        #expect(voidShape.size == SIMD3<Double>.zero)
-        #expect(voidShape.center == SIMD3<Double>.zero)
+        #expect(voidShape.bounds == nil)
+        #expect(voidShape.size == nil)
+        #expect(voidShape.center == nil)
     }
 
     // #900: a point-vertex shape at the world origin legitimately measures to all-zero
@@ -6391,7 +6389,7 @@ struct ShapeMeasurementsTests {
                 Issue.record("face \(i) of a box has an area, so it has a centroid")
                 continue
             }
-            let b = faceList[i].bounds
+            let b = faceList[i].bounds!
             #expect(c.x >= b.min.x - 1e-6 && c.x <= b.max.x + 1e-6,
                     "face \(i) centroid X=\(c.x) outside [\(b.min.x), \(b.max.x)]")
             #expect(c.y >= b.min.y - 1e-6 && c.y <= b.max.y + 1e-6,

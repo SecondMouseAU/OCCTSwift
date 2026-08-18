@@ -12,7 +12,6 @@ Sources/OCCTBridge/include/OCCTBridge_Healing.h
 Sources/OCCTBridge/include/OCCTBridge_IO.h
 Sources/OCCTBridge/include/OCCTBridge_Mesh.h
 Sources/OCCTBridge/include/OCCTBridge_ProjLib_NLPlate.h
-Sources/OCCTBridge/include/OCCTBridge_Properties.h
 Sources/OCCTBridge/include/OCCTBridge_Spatial.h
 Sources/OCCTBridge/include/OCCTBridge_Surface.h
 Sources/OCCTBridge/include/OCCTBridge_Visualization.h
@@ -23,7 +22,6 @@ Sources/OCCTBridge/src/OCCTBridge_Document.mm
 Sources/OCCTBridge/src/OCCTBridge_Healing.mm
 Sources/OCCTBridge/src/OCCTBridge_IO.mm
 Sources/OCCTBridge/src/OCCTBridge_ProjLib_NLPlate.mm
-Sources/OCCTBridge/src/OCCTBridge_Properties.mm
 Sources/OCCTBridge/src/OCCTBridge_Spatial.mm
 Sources/OCCTBridge/src/OCCTBridge_Visualization.mm
 Sources/OCCTBridge/src/OCCTBridge.mm

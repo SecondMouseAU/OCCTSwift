@@ -26,7 +26,7 @@ import OCCTBridge
 struct Issue900BoundingBoxOutParamZeroingTests {
 
     /// A far-disjoint intersection is the reliable way to get a genuinely void `Shape` (matching
-    /// `OCCTAnalysisTests.voidShapeBoundingBoxIsNilButBoundsFabricatesZero`'s fixture) —
+    /// `OCCTAnalysisTests.voidShapeReportsNoBoxFromAnyAccessor`'s fixture) --
     /// `Shape.compound([])` refuses to construct at all.
     private func makeVoidShape() throws -> Shape {
         let b1 = try #require(Shape.box(width: 10, height: 10, depth: 10))

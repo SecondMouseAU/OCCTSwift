@@ -73,7 +73,7 @@ struct Issue762FilletedPocketDetectionTests {
         let pocketTool = try #require(Shape.box(origin: SIMD3(-5, -5, 0), width: 10, height: 10, depth: 15))
         let cut = try #require(box.subtracting(pocketTool))
 
-        let junctionEdges = cut.edges(where: { abs($0.bounds.min.z) < 1e-6 && abs($0.bounds.max.z) < 1e-6 })
+        let junctionEdges = cut.edges(where: { abs($0.bounds!.min.z) < 1e-6 && abs($0.bounds!.max.z) < 1e-6 })
         #expect(junctionEdges.count == 4)
         let filleted = try #require(cut.filleted(edges: junctionEdges, radius: radius))
         expectShapeChanged(cut, filleted, "filleted on cut")
@@ -104,7 +104,7 @@ struct Issue762ChamferedPocketDetectionTests {
         let allFaces = cut.faces()
         var chamferSpecs: [(edgeIndex: Int, faceIndex: Int, dist1: Double, dist2: Double)] = []
         for (i, edge) in allEdges.enumerated() {
-            guard abs(edge.bounds.min.z) < 1e-6, abs(edge.bounds.max.z) < 1e-6 else { continue }
+            guard abs(edge.bounds!.min.z) < 1e-6, abs(edge.bounds!.max.z) < 1e-6 else { continue }
             guard let (face1, _) = edge.adjacentFaces(in: cut) else { continue }
             guard let faceIndex = allFaces.firstIndex(where: { abs($0.area() - face1.area()) < 1e-6 }) else { continue }
             chamferSpecs.append((edgeIndex: i, faceIndex: faceIndex, dist1: 1.0, dist2: 1.0))
@@ -132,7 +132,7 @@ struct Issue762PartialFilletDetectionTests {
         let pocketTool = try #require(Shape.box(origin: SIMD3(-5, -5, 0), width: 10, height: 10, depth: 15))
         let cut = try #require(box.subtracting(pocketTool))
 
-        let junctionEdges = cut.edges(where: { abs($0.bounds.min.z) < 1e-6 && abs($0.bounds.max.z) < 1e-6 })
+        let junctionEdges = cut.edges(where: { abs($0.bounds!.min.z) < 1e-6 && abs($0.bounds!.max.z) < 1e-6 })
         #expect(junctionEdges.count == 4)
         let filleted = try #require(cut.filleted(edges: Array(junctionEdges.prefix(2)), radius: 1.0))
         expectShapeChanged(cut, filleted, "filleted on cut")
@@ -216,9 +216,9 @@ struct Issue762ReflexCornerPartialFilletTests {
         // WallY0: the floor/wall junction edge at y=0, z=0, x in [0,6] (bounds the reflex
         // corner's own material block from below).
         let wallY0Edges = cut.edges(where: { edge in
-            abs(edge.bounds.min.z) < 1e-6 && abs(edge.bounds.max.z) < 1e-6 &&
-            abs(edge.bounds.min.y) < 1e-6 && abs(edge.bounds.max.y) < 1e-6 &&
-            edge.bounds.min.x > -1e-6 && edge.bounds.max.x > 5.9 && edge.bounds.max.x < 6.1
+            abs(edge.bounds!.min.z) < 1e-6 && abs(edge.bounds!.max.z) < 1e-6 &&
+            abs(edge.bounds!.min.y) < 1e-6 && abs(edge.bounds!.max.y) < 1e-6 &&
+            edge.bounds!.min.x > -1e-6 && edge.bounds!.max.x > 5.9 && edge.bounds!.max.x < 6.1
         })
         #expect(wallY0Edges.count == 1)
         let filleted = try #require(cut.filleted(edges: wallY0Edges, radius: 1.0))
@@ -269,7 +269,7 @@ struct Issue762DeadEndRevisitableThroughJunctionTests {
         let pocketTool = try #require(Shape.box(origin: SIMD3(-5, -5, 0), width: 10, height: 10, depth: 15))
         let cut = try #require(box.subtracting(pocketTool))
 
-        let junctionEdges = cut.edges(where: { abs($0.bounds.min.z) < 1e-6 && abs($0.bounds.max.z) < 1e-6 })
+        let junctionEdges = cut.edges(where: { abs($0.bounds!.min.z) < 1e-6 && abs($0.bounds!.max.z) < 1e-6 })
         #expect(junctionEdges.count == 4)
         let filleted = try #require(cut.filleted(edges: Array(junctionEdges.prefix(2)), radius: 1.0))
         expectShapeChanged(cut, filleted, "filleted on cut")
@@ -342,17 +342,17 @@ struct Issue762VerticalCornerBlendNotAWallTests {
         let cut = try #require(box.subtracting(pocketTool))
 
         let southEdge = cut.edges(where: {
-            abs($0.bounds.min.z) < 1e-6 && abs($0.bounds.max.z) < 1e-6 &&
-            abs($0.bounds.min.y - (-5)) < 1e-6 && abs($0.bounds.max.y - (-5)) < 1e-6
+            abs($0.bounds!.min.z) < 1e-6 && abs($0.bounds!.max.z) < 1e-6 &&
+            abs($0.bounds!.min.y - (-5)) < 1e-6 && abs($0.bounds!.max.y - (-5)) < 1e-6
         })
         #expect(southEdge.count == 1)
         let filletedSouth = try #require(cut.filleted(edges: southEdge, radius: 3.0))
         expectShapeChanged(cut, filletedSouth, "filleted on cut")
 
         let cornerEdge = filletedSouth.edges(where: {
-            abs($0.bounds.min.x - (-5)) < 1e-3 && abs($0.bounds.max.x - (-5)) < 1e-3 &&
-            abs($0.bounds.min.y - (-5)) < 1e-3 && abs($0.bounds.max.y - (-5)) < 1e-3 &&
-            ($0.bounds.max.z - $0.bounds.min.z) > 1.0
+            abs($0.bounds!.min.x - (-5)) < 1e-3 && abs($0.bounds!.max.x - (-5)) < 1e-3 &&
+            abs($0.bounds!.min.y - (-5)) < 1e-3 && abs($0.bounds!.max.y - (-5)) < 1e-3 &&
+            ($0.bounds!.max.z - $0.bounds!.min.z) > 1.0
         })
         #expect(cornerEdge.count == 1)
         let doubleFillet = try #require(filletedSouth.filleted(edges: cornerEdge, radius: 2.0))
@@ -412,20 +412,20 @@ struct Issue762FullyRoundedPocketChainingTests {
         let cut = try #require(box.subtracting(pocketTool))
 
         let floorEdges = cut.edges(where: {
-            abs($0.bounds.min.z) < 1e-6 && abs($0.bounds.max.z) < 1e-6 &&
-            $0.bounds.min.x > -5.5 && $0.bounds.max.x < 5.5 &&
-            $0.bounds.min.y > -5.5 && $0.bounds.max.y < 5.5
+            abs($0.bounds!.min.z) < 1e-6 && abs($0.bounds!.max.z) < 1e-6 &&
+            $0.bounds!.min.x > -5.5 && $0.bounds!.max.x < 5.5 &&
+            $0.bounds!.min.y > -5.5 && $0.bounds!.max.y < 5.5
         })
         #expect(floorEdges.count == 4)
         let filletedFloor = try #require(cut.filleted(edges: floorEdges, radius: 3.0))
         expectShapeChanged(cut, filletedFloor, "filleted on cut")
 
         let cornerEdges = filletedFloor.edges(where: {
-            ($0.bounds.max.z - $0.bounds.min.z) > 1.0 &&
-            ($0.bounds.max.x - $0.bounds.min.x) < 0.5 &&
-            ($0.bounds.max.y - $0.bounds.min.y) < 0.5 &&
-            abs(abs($0.bounds.min.x) - 5) < 1e-2 &&
-            abs(abs($0.bounds.min.y) - 5) < 1e-2
+            ($0.bounds!.max.z - $0.bounds!.min.z) > 1.0 &&
+            ($0.bounds!.max.x - $0.bounds!.min.x) < 0.5 &&
+            ($0.bounds!.max.y - $0.bounds!.min.y) < 0.5 &&
+            abs(abs($0.bounds!.min.x) - 5) < 1e-2 &&
+            abs(abs($0.bounds!.min.y) - 5) < 1e-2
         })
         #expect(cornerEdges.count == 4)
         let doubleRing = try #require(filletedFloor.filleted(edges: cornerEdges, radius: 2.0))
@@ -480,8 +480,8 @@ struct Issue762FilletedThroughSlotStaysOpenTests {
         let cut = try #require(box.subtracting(tool))
 
         let longEdges = cut.edges(where: { edge in
-            abs(edge.bounds.min.z) < 1e-6 && abs(edge.bounds.max.z) < 1e-6 &&
-            (edge.bounds.max.x - edge.bounds.min.x) > 15.0
+            abs(edge.bounds!.min.z) < 1e-6 && abs(edge.bounds!.max.z) < 1e-6 &&
+            (edge.bounds!.max.x - edge.bounds!.min.x) > 15.0
         })
         #expect(longEdges.count == 2)
         let filleted = try #require(cut.filleted(edges: longEdges, radius: 1.0))
@@ -531,9 +531,9 @@ struct Issue762FilletedBossFalsePositiveTests {
         let fused = try #require(plate.union(boss))
 
         let baseEdges = fused.edges(where: { edge in
-            abs(edge.bounds.min.z) < 1e-6 && abs(edge.bounds.max.z) < 1e-6 &&
-            edge.bounds.min.x > -3.5 && edge.bounds.max.x < 3.5 &&
-            edge.bounds.min.y > -3.5 && edge.bounds.max.y < 3.5
+            abs(edge.bounds!.min.z) < 1e-6 && abs(edge.bounds!.max.z) < 1e-6 &&
+            edge.bounds!.min.x > -3.5 && edge.bounds!.max.x < 3.5 &&
+            edge.bounds!.min.y > -3.5 && edge.bounds!.max.y < 3.5
         })
         #expect(baseEdges.count == 4)
         let filletedBoss = try #require(fused.filleted(edges: baseEdges, radius: 1.0))
@@ -567,7 +567,7 @@ struct Issue762FilletedExternalCornerFalsePositiveTests {
     @Test("a box with its own top exterior edges filleted still has no pockets")
     func filletedExteriorEdgeBoxHasNoPockets() throws {
         let box = try #require(Shape.box(width: 20, height: 20, depth: 20))
-        let topEdges = box.edges(where: { abs($0.bounds.min.z - 10) < 1e-6 && abs($0.bounds.max.z - 10) < 1e-6 })
+        let topEdges = box.edges(where: { abs($0.bounds!.min.z - 10) < 1e-6 && abs($0.bounds!.max.z - 10) < 1e-6 })
         #expect(topEdges.count == 4)
         let filletedTop = try #require(box.filleted(edges: topEdges, radius: 2.0))
         expectShapeChanged(box, filletedTop, "filleted on box")

@@ -53,7 +53,7 @@ struct StressConcurrentReadTests {
         let cyl = standardCylinder()
         await withTaskGroup(of: SIMD3<Double>.self) { group in
             for _ in 0..<4 {
-                group.addTask { cyl.bounds.max }
+                group.addTask { cyl.bounds!.max }
             }
             var maxes: [SIMD3<Double>] = []
             for await m in group { maxes.append(m) }

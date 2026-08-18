@@ -1,6 +1,6 @@
 import Foundation
-import simd
 import OCCTBridge
+import simd
 
 /// A wire represents a connected sequence of edges (curves).
 ///
@@ -51,7 +51,9 @@ public final class Wire: @unchecked Sendable {
         self.handle = handle
     }
 
-    /// Construct a Wire from a Shape that wraps a TopoDS_Wire. Returns nil
+    /// Construct a Wire from a Shape that wraps a TopoDS_Wire.
+    ///
+    /// Returns nil
     /// if `shape` is null or wraps a non-wire topology type.
     ///
     /// Inverse of getting a wire-typed `Shape` (e.g. via `Shape.wires` or
@@ -94,9 +96,12 @@ public final class Wire: @unchecked Sendable {
         radius: Double
     ) -> Wire? {
         guard radius > 0 else { return nil }
-        guard let handle = OCCTWireCreateCircleEx(radius,
-            origin.x, origin.y, origin.z,
-            normal.x, normal.y, normal.z) else { return nil }
+        guard
+            let handle = OCCTWireCreateCircleEx(
+                radius,
+                origin.x, origin.y, origin.z,
+                normal.x, normal.y, normal.z)
+        else { return nil }
         return Wire(handle: handle)
     }
 
@@ -176,18 +181,20 @@ public final class Wire: @unchecked Sendable {
     /// Create a straight line segment in 3D space.
     ///
     /// - Parameters:
-    ///   - from: Start point
-    ///   - to: End point
+    ///   - start: Start point
+    ///   - end: End point
     /// - Returns: A wire consisting of a single straight edge, or nil if creation fails
     public static func line(from start: SIMD3<Double>, to end: SIMD3<Double>) -> Wire? {
         // Check for degenerate edge (start == end)
         let dist = simd_distance(start, end)
         guard dist > 1e-10 else { return nil }
 
-        guard let handle = OCCTWireCreateLine(
-            start.x, start.y, start.z,
-            end.x, end.y, end.z
-        ) else { return nil }
+        guard
+            let handle = OCCTWireCreateLine(
+                start.x, start.y, start.z,
+                end.x, end.y, end.z
+            )
+        else { return nil }
         return Wire(handle: handle)
     }
 
@@ -225,31 +232,36 @@ public final class Wire: @unchecked Sendable {
         guard radius > 0 else { return nil }
         guard abs(endAngle - startAngle) > 1e-10 else { return nil }
 
-        guard let handle = OCCTWireCreateArc(
-            center.x, center.y, center.z,
-            radius,
-            startAngle, endAngle,
-            normal.x, normal.y, normal.z
-        ) else { return nil }
+        guard
+            let handle = OCCTWireCreateArc(
+                center.x, center.y, center.z,
+                radius,
+                startAngle, endAngle,
+                normal.x, normal.y, normal.z
+            )
+        else { return nil }
         return Wire(handle: handle)
     }
 
     /// Build an arc-wire passing through three points (start, midpoint
-    /// on the arc, end). Uses OCCT's `GC_MakeArcOfCircle` so the centre
-    /// and radius are derived from the points; the midpoint resolves
-    /// the curvature direction. Avoids the X-direction ambiguity of the
-    /// angle-based `arc(center:radius:startAngle:endAngle:normal:)`
-    /// constructor when the bend axis isn't a canonical world axis.
+    /// on the arc, end).
+    ///
+    /// Uses OCCT's `GC_MakeArcOfCircle` so the centre and radius are derived from the points; the
+    /// midpoint resolves the curvature direction. Avoids the X-direction ambiguity of the
+    /// angle-based `arc(center:radius:startAngle:endAngle:normal:)` constructor when the bend axis
+    /// isn't a canonical world axis.
     public static func arc(
         start: SIMD3<Double>,
         midpoint: SIMD3<Double>,
         end: SIMD3<Double>
     ) -> Wire? {
-        guard let handle = OCCTWireCreateArcThroughPoints(
-            start.x, start.y, start.z,
-            midpoint.x, midpoint.y, midpoint.z,
-            end.x, end.y, end.z
-        ) else { return nil }
+        guard
+            let handle = OCCTWireCreateArcThroughPoints(
+                start.x, start.y, start.z,
+                midpoint.x, midpoint.y, midpoint.z,
+                end.x, end.y, end.z
+            )
+        else { return nil }
         return Wire(handle: handle)
     }
 
@@ -542,7 +554,9 @@ public final class Wire: @unchecked Sendable {
         guard !edges.isEmpty else { return nil }
         let handles: [OCCTEdgeRef] = edges.map { $0.handle }
         return handles.withUnsafeBufferPointer { buffer in
-            guard let wireRef = OCCTWireMakeWireFromEdgeRefs(buffer.baseAddress!, Int32(edges.count)) else {
+            guard
+                let wireRef = OCCTWireMakeWireFromEdgeRefs(buffer.baseAddress!, Int32(edges.count))
+            else {
                 return nil
             }
             return Wire(handle: wireRef)
@@ -578,15 +592,19 @@ public final class Wire: @unchecked Sendable {
     ///                               xAxis:  SIMD3(1, 0, 0))!
     /// // Use wire3D as a profile for Shape.pipeShell(spine:profile:)
     /// ```
-    public static func fromCurve2D(_ curve: Curve2D,
-                                   origin: SIMD3<Double> = .zero,
-                                   normal: SIMD3<Double> = SIMD3(0, 0, 1),
-                                   xAxis:  SIMD3<Double> = SIMD3(1, 0, 0)) -> Wire? {
-        guard let h = OCCTWireFromCurve2DOnPlane(
-            curve.handle,
-            origin.x, origin.y, origin.z,
-            normal.x, normal.y, normal.z,
-            xAxis.x,  xAxis.y,  xAxis.z) else { return nil }
+    public static func fromCurve2D(
+        _ curve: Curve2D,
+        origin: SIMD3<Double> = .zero,
+        normal: SIMD3<Double> = SIMD3(0, 0, 1),
+        xAxis: SIMD3<Double> = SIMD3(1, 0, 0)
+    ) -> Wire? {
+        guard
+            let h = OCCTWireFromCurve2DOnPlane(
+                curve.handle,
+                origin.x, origin.y, origin.z,
+                normal.x, normal.y, normal.z,
+                xAxis.x, xAxis.y, xAxis.z)
+        else { return nil }
         return Wire(handle: h)
     }
 
@@ -623,30 +641,30 @@ public final class Wire: @unchecked Sendable {
 
 // MARK: - Curve Analysis (v0.9.0)
 
-/// Information about a wire/curve
+/// Information about a wire/curve.
 public struct CurveInfo: Sendable, Equatable {
-    /// Total length of the curve
+    /// Total length of the curve.
     public var length: Double
-    /// Whether the curve is closed (start meets end)
+    /// Whether the curve is closed (start meets end).
     public var isClosed: Bool
-    /// Whether the curve is periodic
+    /// Whether the curve is periodic.
     public var isPeriodic: Bool
-    /// Start point of the curve
+    /// Start point of the curve.
     public var startPoint: SIMD3<Double>
-    /// End point of the curve
+    /// End point of the curve.
     public var endPoint: SIMD3<Double>
 }
 
-/// Point on a curve with differential geometry properties
+/// Point on a curve with differential geometry properties.
 public struct CurvePoint: Sendable, Equatable {
-    /// Position on the curve
+    /// Position on the curve.
     public var position: SIMD3<Double>
-    /// Unit tangent vector at this point
+    /// Unit tangent vector at this point.
     public var tangent: SIMD3<Double>
-    /// Curvature at this point (1/radius, 0 for straight lines)
+    /// Curvature at this point (1/radius, 0 for straight lines).
     public var curvature: Double
     /// Principal normal vector (perpendicular to tangent, toward center of curvature)
-    /// Only available when curvature > 0
+    /// Only available when curvature > 0.
     public var normal: SIMD3<Double>?
 }
 
@@ -695,7 +713,9 @@ extension Wire {
     /// let midpoint = arc?.point(at: 0.5)  // Point at middle of arc
     /// ```
     public func point(at parameter: Double) -> SIMD3<Double>? {
-        var x: Double = 0, y: Double = 0, z: Double = 0
+        var x: Double = 0
+        var y: Double = 0
+        var z: Double = 0
         guard OCCTWireGetPointAt(handle, parameter, &x, &y, &z) else { return nil }
         return SIMD3(x, y, z)
     }
@@ -712,7 +732,9 @@ extension Wire {
     /// let tangent = line?.tangent(at: 0.5)  // Returns (1, 0, 0)
     /// ```
     public func tangent(at parameter: Double) -> SIMD3<Double>? {
-        var tx: Double = 0, ty: Double = 0, tz: Double = 0
+        var tx: Double = 0
+        var ty: Double = 0
+        var tz: Double = 0
         guard OCCTWireGetTangentAt(handle, parameter, &tx, &ty, &tz) else { return nil }
         return SIMD3(tx, ty, tz)
     }
@@ -754,8 +776,7 @@ extension Wire {
         let cp = OCCTWireGetCurvePointAt(handle, parameter)
         guard cp.isValid else { return nil }
 
-        let normal: SIMD3<Double>? = cp.hasNormal ?
-            SIMD3(cp.normX, cp.normY, cp.normZ) : nil
+        let normal: SIMD3<Double>? = cp.hasNormal ? SIMD3(cp.normX, cp.normY, cp.normZ) : nil
 
         return CurvePoint(
             position: SIMD3(cp.posX, cp.posY, cp.posZ),
@@ -783,7 +804,8 @@ extension Wire {
     /// // raised is a circle at Z=10
     /// ```
     public func offset3D(distance: Double, direction: SIMD3<Double>) -> Wire? {
-        guard let handle = OCCTWireOffset3D(handle, distance, direction.x, direction.y, direction.z) else {
+        guard let handle = OCCTWireOffset3D(handle, distance, direction.x, direction.y, direction.z)
+        else {
             return nil
         }
         return Wire(handle: handle)
@@ -791,7 +813,7 @@ extension Wire {
 
     // MARK: - Curve Interpolation (v0.11.0)
 
-    /// Create a smooth curve that interpolates through given points
+    /// Create a smooth curve that interpolates through given points.
     ///
     /// Unlike B-splines where control points influence but don't lie on the curve,
     /// interpolated curves pass exactly through all specified points.
@@ -831,13 +853,14 @@ extension Wire {
             flatPoints.append(p.z)
         }
 
-        guard let handle = OCCTWireInterpolate(flatPoints, Int32(points.count), closed, tolerance) else {
+        guard let handle = OCCTWireInterpolate(flatPoints, Int32(points.count), closed, tolerance)
+        else {
             return nil
         }
         return Wire(handle: handle)
     }
 
-    /// Create a smooth curve through points with specified end tangents
+    /// Create a smooth curve through points with specified end tangents.
     ///
     /// This allows controlling the direction of the curve at its start and end,
     /// which is useful for ensuring smooth connections with other curves.
@@ -881,12 +904,14 @@ extension Wire {
             flatPoints.append(p.z)
         }
 
-        guard let handle = OCCTWireInterpolateWithTangents(
-            flatPoints, Int32(points.count),
-            startTangent.x, startTangent.y, startTangent.z,
-            endTangent.x, endTangent.y, endTangent.z,
-            tolerance
-        ) else {
+        guard
+            let handle = OCCTWireInterpolateWithTangents(
+                flatPoints, Int32(points.count),
+                startTangent.x, startTangent.y, startTangent.z,
+                endTangent.x, endTangent.y, endTangent.z,
+                tolerance
+            )
+        else {
             return nil
         }
         return Wire(handle: handle)
@@ -896,7 +921,7 @@ extension Wire {
 // MARK: - CAM Operations
 
 extension Wire {
-    /// Join type for wire offsetting
+    /// Join type for wire offsetting.
     public enum JoinType: Int32 {
         /// Round corners (arc)
         case arc = 0
@@ -995,7 +1020,7 @@ extension Wire {
             SIMD2((baseWidth - webThickness) / 2, baseHeight),
 
             // Back to base
-            SIMD2(0, baseHeight)
+            SIMD2(0, baseHeight),
         ]
 
         return polygon(points, closed: true)
@@ -1005,8 +1030,8 @@ extension Wire {
 
     /// Apply a 2D fillet (rounded corner) to a specific vertex.
     ///
-    /// The wire must be planar. The fillet creates a circular arc
-    /// that smoothly connects the two edges meeting at the vertex.
+    /// The wire must be planar. The fillet creates a circular arc that smoothly connects the two
+    /// edges meeting at the vertex.
     ///
     /// - Parameters:
     ///   - vertexIndex: Index of the vertex to fillet (0-based)
@@ -1070,7 +1095,8 @@ extension Wire {
     /// let chamfered = rect?.chamfered2D(vertexIndex: 0, distance1: 1.0, distance2: 1.0)
     /// ```
     public func chamfered2D(vertexIndex: Int, distance1: Double, distance2: Double) -> Wire? {
-        guard let result = OCCTWireChamfer2D(handle, Int32(vertexIndex), distance1, distance2) else {
+        guard let result = OCCTWireChamfer2D(handle, Int32(vertexIndex), distance1, distance2)
+        else {
             return nil
         }
         return Wire(handle: result)
@@ -1123,11 +1149,10 @@ extension Wire {
     ///   let (start, tangent) = curve.d1(at: curve.domain.lowerBound)
     ///   ```
     ///
-    ///   Computing it analytically and
-    ///   getting the axis convention backwards is exactly what produced OCCTSwift #721, where a
-    ///   profile ended up 2×radius from the spine with an inverted tangent, silently corrupting
-    ///   `.correctedFrenet` sweeps (but not `.frenet`, by an unrelated coincidence) on the
-    ///   resulting pipe shell.
+    /// Computing it analytically and getting the axis convention backwards is exactly what produced
+    /// OCCTSwift #721, where a profile ended up 2×radius from the spine with an inverted tangent,
+    /// silently corrupting `.correctedFrenet` sweeps (but not `.frenet`, by an unrelated
+    /// coincidence) on the resulting pipe shell.
     ///
     /// ## Example
     ///
@@ -1143,11 +1168,13 @@ extension Wire {
         clockwise: Bool = false
     ) -> Wire? {
         guard radius > 0, pitch > 0, turns > 0 else { return nil }
-        guard let handle = OCCTWireCreateHelix(
-            origin.x, origin.y, origin.z,
-            axis.x, axis.y, axis.z,
-            radius, pitch, turns, clockwise
-        ) else { return nil }
+        guard
+            let handle = OCCTWireCreateHelix(
+                origin.x, origin.y, origin.z,
+                axis.x, axis.y, axis.z,
+                radius, pitch, turns, clockwise
+            )
+        else { return nil }
         return Wire(handle: handle)
     }
 
@@ -1180,11 +1207,13 @@ extension Wire {
         clockwise: Bool = false
     ) -> Wire? {
         guard startRadius > 0, endRadius > 0, pitch > 0, turns > 0 else { return nil }
-        guard let handle = OCCTWireCreateHelixTapered(
-            origin.x, origin.y, origin.z,
-            axis.x, axis.y, axis.z,
-            startRadius, endRadius, pitch, turns, clockwise
-        ) else { return nil }
+        guard
+            let handle = OCCTWireCreateHelixTapered(
+                origin.x, origin.y, origin.z,
+                axis.x, axis.y, axis.z,
+                startRadius, endRadius, pitch, turns, clockwise
+            )
+        else { return nil }
         return Wire(handle: handle)
     }
 }
@@ -1290,12 +1319,13 @@ extension Wire {
 
     /// Get the bounding box of this wire.
     ///
-    /// - Warning: Forwards to ``Shape/bounds``, including its void-shape fabrication: an
-    ///   unconvertible or degenerate wire reports `(0,0,0)-(0,0,0)`, indistinguishable from a
-    ///   genuine zero-size wire at the origin (#834).
-    public var bounds: (min: SIMD3<Double>, max: SIMD3<Double>) {
+    /// - Returns: The box as `(min, max)` corners, or `nil` when the wire cannot be converted to a
+    ///   shape at all, or when that shape contributes no geometry to the box. Forwards to
+    ///   ``Shape/bounds``, so a genuinely zero-size wire at the origin reports a real all-zero box
+    ///   rather than `nil` (#834, #943).
+    public var bounds: (min: SIMD3<Double>, max: SIMD3<Double>)? {
         guard let shape = Shape.fromWire(self) else {
-            return (min: .zero, max: .zero)
+            return nil
         }
         return shape.bounds
     }
@@ -1305,21 +1335,21 @@ extension Wire {
 
 /// Result of wire topology analysis.
 public struct WireAnalysis: Sendable {
-    /// Whether the wire forms a closed loop
+    /// Whether the wire forms a closed loop.
     public var isClosed: Bool
-    /// Whether the wire has small/degenerate edges
+    /// Whether the wire has small/degenerate edges.
     public var hasSmallEdges: Bool
-    /// Whether there are 3D gaps between edges
+    /// Whether there are 3D gaps between edges.
     public var hasGaps: Bool
-    /// Whether the wire self-intersects
+    /// Whether the wire self-intersects.
     public var hasSelfIntersection: Bool
-    /// Whether edges are properly ordered
+    /// Whether edges are properly ordered.
     public var isOrdered: Bool
-    /// Minimum 3D gap distance
+    /// Minimum 3D gap distance.
     public var minGap: Double
-    /// Maximum 3D gap distance
+    /// Maximum 3D gap distance.
     public var maxGap: Double
-    /// Number of edges
+    /// Number of edges.
     public var edgeCount: Int
 }
 

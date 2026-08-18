@@ -21,7 +21,7 @@ struct Issue211OuterShell {
         #expect(hollow.shellCount >= 2)                  // outer + inner void
         guard let outer = hollow.outerShell else { #expect(Bool(false), "outerShell nil"); return }
         // The outer shell spans the full 20-cube, not the 8-cube cavity.
-        let bb = outer.bounds
+        let bb = outer.bounds!
         #expect(abs((bb.max.x - bb.min.x) - 20.0) < 1e-3)
     }
 
@@ -45,7 +45,7 @@ struct Issue211OuterShell {
         #expect(inner.count == 1)   // exactly one cavity
         // the cavity shell spans the 8-cube, not the 20-cube
         if let cavity = inner.first {
-            let bb = cavity.bounds
+            let bb = cavity.bounds!
             #expect(abs((bb.max.x - bb.min.x) - 8.0) < 1e-3)
         }
         // a plain solid has no inner shells
