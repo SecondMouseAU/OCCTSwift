@@ -7,17 +7,19 @@ nav_order: 13
 
 All notable changes to OCCTSwift.
 
-## Current: v2.0.0
+## Current: v3.0.0
 
-**macOS / iOS (device + simulator) | OCCT 8.0.1 (+ the fifteen carried patches `0010`-`0012` and
-`0014`-`0025`; ten earlier patches were absorbed by 8.0.1 itself and retired)**
+**macOS / iOS (device + simulator) | OCCT 8.0.1 (+ the seventeen carried patches `0010`-`0012` and
+`0014`-`0027`; ten earlier patches were absorbed by 8.0.1 itself and retired)**
 
-A correctness release, not a wrapping one: it adds almost no operations. Seventeen breaking changes,
-each named with its migration in [`SEMVER.md`](SEMVER.md#v200).
+A correctness and consolidation release. The kernel does not move, but it is rebuilt: the v2.0.0
+asset was missing two carried patches (#905, #913) that no CI job exercised. Two breaking changes,
+each named with its migration in [`SEMVER.md`](SEMVER.md#v300) — an enum rename (#844), and six
+bounding-box accessors becoming Optional so a void shape stops fabricating `(0,0,0)-(0,0,0)` (#943).
 
 ---
 
-## Unreleased
+## v3.0.0
 
 ### The last seven bridge sibling-entry-point pairs share their scaffolding (#794)
 

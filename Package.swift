@@ -93,8 +93,10 @@ let occtTarget: Target = useLocalBinary
     //     They are the only two patches in the tree with no CI coverage of any kind, which is
     //     worth knowing before trusting "the fix is in the kernel" about either.
     //
-    // Pinned to the v3.0.0-kernel.1 KERNEL PRE-RELEASE: upstream V8_0_1 plus the seventeen patches
-    // listed above. This is NOT the same file as the v2.0.0 asset it replaces: that one carried
+    // Pinned to the v3.0.0 RELEASE asset: upstream V8_0_1 plus the seventeen patches listed above.
+    // Byte-identical to the v3.0.0-kernel.1 pre-release asset, which is why `checksum:` below did
+    // NOT change when `url:` did; the release commit re-uploaded the same zip. Same shape v2.0.0
+    // used with its own kernel.3 asset. This is NOT the same file as the v2.0.0 asset it replaces: that one carried
     // fifteen, and 0026 (#905) and 0027 (#913) had landed in Scripts/patches/ since without ever
     // reaching a built kernel, so both were exercised by no CI job at all. That is the #585 shape,
     // and it is why the count check at the top of this comment is worth the ten seconds.
@@ -159,7 +161,7 @@ let occtTarget: Target = useLocalBinary
     // new one.
     : .binaryTarget(
         name: "OCCT",
-        url: "https://github.com/SecondMouseAU/OCCTSwift/releases/download/v3.0.0-kernel.1/OCCT.xcframework.zip",
+        url: "https://github.com/SecondMouseAU/OCCTSwift/releases/download/v3.0.0/OCCT.xcframework.zip",
         checksum: "77df5a0ae860b0f947353ff6eabf0ab25eb810ef0ce135b56bc60ff1e3e52ef2"
     )
 
