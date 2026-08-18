@@ -1068,10 +1068,10 @@ Convenience wrapper: converts to `Shape`, then calls `shape.edgePolyline(at:defl
 The axis-aligned bounding box of the wire.
 
 ```swift
-public var bounds: (min: SIMD3<Double>, max: SIMD3<Double>) { get }
+public var bounds: (min: SIMD3<Double>, max: SIMD3<Double>)? { get }
 ```
 
-Converts to `Shape` via `Shape.fromWire(_:)`, then returns `shape.bounds`. Returns `(.zero, .zero)` if conversion fails.
+Converts to `Shape` via `Shape.fromWire(_:)`, then returns `shape.bounds`. Returns `nil` if the conversion fails, and also when the converted shape has no box. A shape that contributes no geometry to the box (`Bnd_Box::IsVoid()`, e.g. the empty result of a disjoint intersection) returns `nil`. A shape whose box genuinely measures zero, such as a point-vertex at the world origin, returns that all-zero box: the verdict comes from OCCT across the bridge as a `Bool`, never from comparing the returned coordinates against zero (#943).
 
 - **Returns:** Tuple of min and max corners of the AABB.
 - **OCCT:** Delegates to `Shape.bounds` (uses `BRepBndLib::Add`).

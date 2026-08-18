@@ -62,24 +62,18 @@ extension Shape {
     /// }
     /// ```
     public struct FilletResult: Sendable {
-        /// The filleted shape.
-        ///
-        /// Identical to what the non-reporting sibling returns for the same
+        /// The filleted shape. Identical to what the non-reporting sibling returns for the same
         /// input: this reports skipped edges, it does not reject the call over them.
         public let shape: Shape
         /// 0-based indices, matching ``Edge/index``, of the requested edges OCCT declined to
-        /// fillet.
-        ///
-        /// Empty when every requested edge was accepted.
+        /// fillet. Empty when every requested edge was accepted.
         ///
         /// This mirrors the request list rather than deduplicating it: naming the same declined
         /// edge twice reports it twice, so the count matches how many entries of the caller's list
         /// were refused. Use `Set(declinedEdgeIndices)` for distinct edges.
         public let declinedEdgeIndices: [Int]
         /// 0-based edge indices, matching ``Edge/index``, whose radius a *later* entry in the same
-        /// request overwrote (#633).
-        ///
-        /// Empty for every `WithReport` sibling except
+        /// request overwrote (#633). Empty for every `WithReport` sibling except
         /// ``Shape/blendedEdgesWithReport(_:)``, the one entry point that takes a per-edge radius
         /// array where naming an edge twice is even possible.
         ///
@@ -92,9 +86,7 @@ extension Shape {
         public let overwrittenDuplicateIndices: [Int]
 
         /// Explicit rather than the synthesized memberwise init, and the reason is this method,
-        /// not the three that came before it.
-        ///
-        /// A `let` property with a default value is dropped from
+        /// not the three that came before it. A `let` property with a default value is dropped from
         /// Swift's synthesized memberwise init entirely: it is not an overridable parameter the way
         /// a `var` with a default is, so a caller **cannot pass it at all**.
         ///
@@ -112,7 +104,7 @@ extension Shape {
         }
     }
 
-    /// Fillet specific edges with uniform radius.
+    /// Fillet specific edges with uniform radius
     ///
     /// Every edge must belong to this shape: only ``Edge/index`` is carried across, so an edge
     /// whose index names nothing here rejects the whole call rather than being skipped.
@@ -191,7 +183,7 @@ extension Shape {
         }
     }
 
-    /// Fillet specific edges with linear radius interpolation.
+    /// Fillet specific edges with linear radius interpolation
     ///
     /// Every edge must belong to this shape, on the same all-or-nothing basis as
     /// ``filleted(edges:radius:)``.
@@ -230,9 +222,7 @@ extension Shape {
     }
 
     /// ``filleted(edges:startRadius:endRadius:)``, also reporting which requested edges OCCT
-    /// declined (#639).
-    ///
-    /// See ``filletedWithReport(edges:radius:)`` for the reporting contract.
+    /// declined (#639). See ``filletedWithReport(edges:radius:)`` for the reporting contract.
     ///
     /// - Parameters:
     ///   - edges: Edges to fillet (must have valid indices from this shape)
@@ -269,7 +259,7 @@ extension Shape {
 
     // MARK: - Draft Angle
 
-    /// Add draft angle to faces for mold release.
+    /// Add draft angle to faces for mold release
     ///
     /// Draft angles are used in injection molding and casting to allow parts to
     /// be released from the mold. The angle is measured from the pull direction.
@@ -331,7 +321,7 @@ extension Shape {
 
     // MARK: - Defeaturing
 
-    /// Remove features by deleting faces.
+    /// Remove features by deleting faces
     ///
     /// The defeaturing algorithm removes specified faces and heals the resulting
     /// gaps by extending adjacent faces. Useful for simplifying geometry for
@@ -379,7 +369,7 @@ extension Shape {
 
     // MARK: - Advanced Pipe Sweep
 
-    /// Create a pipe (sweep) with advanced sweep modes.
+    /// Create a pipe (sweep) with advanced sweep modes
     ///
     /// Unlike the basic `pipe(profile:path:)`, this method controls how the profile is
     /// oriented along the sweep path, what happens at corners in the spine, and whether the
@@ -599,7 +589,6 @@ extension Shape {
     }
 
     /// Single-profile helical sweep — a uniform worm/screw-thread helicoid.
-    ///
     /// See ``helicalSweep(profiles:axisOrigin:axisDirection:radius:pitch:turns:clockwise:solid:)``.
     public static func helicalSweep(
         profile: Wire,
@@ -926,13 +915,8 @@ extension Shape {
     /// Create an advanced wedge with custom top face bounds.
     ///
     /// - Parameters:
-    ///   - dx: Width in X
-    ///   - dy: Height in Y
-    ///   - dz: Depth in Z
-    ///   - xmin: Minimum X of top face
-    ///   - zmin: Minimum Z of top face
-    ///   - xmax: Maximum X of top face
-    ///   - zmax: Maximum Z of top face
+    ///   - dx, dy, dz: Box dimensions
+    ///   - xmin, zmin, xmax, zmax: Top face bounds within the box
     /// - Returns: A wedge solid, or nil on failure
     public static func wedge(
         dx: Double, dy: Double, dz: Double,
@@ -953,7 +937,6 @@ extension Shape {
     ///   - dy: Height in Y (local frame).
     ///   - dz: Depth in Z (local frame).
     ///   - ltx: Width of top face in X (0 to dx).
-    /// - Returns: An oriented wedge solid, or nil on failure
     public static func wedge(
         at origin: SIMD3<Double>,
         direction: SIMD3<Double>,
@@ -1267,7 +1250,6 @@ extension Shape {
     }
 
     /// Split `self` by `tool` (BRepAlgoAPI_Splitter). The pieces are the
-    ///
     /// top-level children of the compound result; query history per input
     /// sub-shape via `history.record(of:)`.
     public func splitWithFullHistory(by tool: Shape) -> (pieces: [Shape], history: ShapeHistoryRef)?
@@ -1385,7 +1367,6 @@ extension Shape {
     }
 
     /// Defeature: remove given faces by reconnecting surrounding topology.
-    ///
     /// History reports each removed face as deleted and surrounding faces as
     /// modified.
     public func defeaturedWithFullHistory(faces: [Int])
@@ -1481,9 +1462,7 @@ extension Shape {
     }
 
     /// Create a solid from a closed shell, with full per-input-subshape
-    /// history.
-    ///
-    /// History only reflects the orientation-fix pass — wrapping an
+    /// history. History only reflects the orientation-fix pass — wrapping an
     /// already-closed shell into a solid does not itself modify any sub-shape.
     ///
     /// Body selection matches ``Shape/solid(from:)``: one solid per body-bounding shell,
@@ -1744,9 +1723,7 @@ extension Shape {
     }
 
     /// ``filletEvolving(_:)``, also reporting which requested edges OCCT declined (#639): the
-    /// entry point the census named directly.
-    ///
-    /// Filleting an open shell's whole edge list SKIPs the
+    /// entry point the census named directly. Filleting an open shell's whole edge list SKIPs the
     /// edges OCCT declines, with nothing that says which or how many. See
     /// ``filletedWithReport(edges:radius:)`` for the reporting contract; the meaning is identical
     /// here, keyed by ``EvolvingFilletEdge/edgeIndex``.
@@ -1868,7 +1845,7 @@ extension Shape {
 
     // MARK: - Closed Edge Splitting (v0.41.0)
 
-    /// Split closed (periodic) edges in the shape.
+    /// Split closed (periodic) edges in the shape
     ///
     /// Periodic edges (like circles) can cause issues in some algorithms.
     /// This splits each closed edge into segments.
@@ -1912,15 +1889,15 @@ extension Shape {
         }
         return Shape(handle: ref)
     }
-    /// Information about a constrained-fill BSpline surface.
+    /// Information about a constrained-fill BSpline surface
     public struct ConstrainedFillInfo: Sendable {
-        /// U-direction BSpline degree.
+        /// U-direction BSpline degree
         public let uDegree: Int
-        /// V-direction BSpline degree.
+        /// V-direction BSpline degree
         public let vDegree: Int
-        /// Number of control points in U.
+        /// Number of control points in U
         public let uPoles: Int
-        /// Number of control points in V.
+        /// Number of control points in V
         public let vPoles: Int
     }
 
@@ -1976,8 +1953,8 @@ extension Shape {
     ///
     /// - Parameters:
     ///   - direction: Direction vector of the sweep
-    ///   - start: Start point of the sweep
-    ///   - end: End point of the sweep
+    ///   - from: Start point of the sweep
+    ///   - to: End point of the sweep
     /// - Returns: The swept shape, or nil on failure
     public func localLinearForm(
         direction: SIMD3<Double>,
@@ -2307,7 +2284,6 @@ extension Shape {
     /// let allEdges = box.buildWires(faceIndex: -1)!   // every edge of the box
     /// let firstFace = box.buildWires(faceIndex: 0)!   // just face 0's edges
     /// ```
-    /// - Returns: Array of wire shapes, or nil on failure
     public func buildWires(faceIndex: Int32 = -1) -> [Shape]? {
         var outWires: UnsafeMutablePointer<OCCTShapeRef?>?
         var outCount: Int32 = 0
@@ -2334,7 +2310,6 @@ extension Shape {
     ///   - wire: The splitting wire
     ///   - faceIndex: 0-based index of the face to split, as ``face(at:)`` and ``Face/index``
     ///     use. It was 1-based, so face 0 could not be named at all (#541).
-    /// - Returns: The shape with the face split by the wire, or nil on failure
     public func splitByWireOnFace(_ wire: Shape, faceIndex: Int32) -> Shape? {
         guard let h = OCCTLocOpeSplitByWireOnFace(handle, wire.handle, faceIndex) else {
             return nil
@@ -2344,7 +2319,7 @@ extension Shape {
 
     // MARK: - BRepOffset_SimpleOffset
 
-    /// Create a simple surface offset of the shape.
+    /// Create a simple surface offset of the shape
     public func simpleOffsetShape(distance: Double, tolerance: Double = 1e-3) -> Shape? {
         guard let h = OCCTBRepOffsetSimpleOffset(handle, distance, tolerance) else { return nil }
         return Shape(handle: h)
@@ -2352,13 +2327,13 @@ extension Shape {
 
     // MARK: - BRepFeat_Builder
 
-    /// Feature-based fuse (union with part selection).
+    /// Feature-based fuse (union with part selection)
     public func featFuse(with tool: Shape) -> Shape? {
         guard let h = OCCTBRepFeatBuilderFuse(handle, tool.handle) else { return nil }
         return Shape(handle: h)
     }
 
-    /// Feature-based cut (subtraction with part selection).
+    /// Feature-based cut (subtraction with part selection)
     public func featCut(with tool: Shape) -> Shape? {
         guard let h = OCCTBRepFeatBuilderCut(handle, tool.handle) else { return nil }
         return Shape(handle: h)
@@ -2366,7 +2341,7 @@ extension Shape {
 
     // MARK: - BRepOffset_Offset
 
-    /// Offset a face by a distance, creating a new offset face.
+    /// Offset a face by a distance, creating a new offset face
     public func offsetFace(distance: Double) -> Shape? {
         guard let h = OCCTBRepOffsetOffsetFace(handle, distance) else { return nil }
         return Shape(handle: h)
@@ -3343,12 +3318,11 @@ extension Shape {
         case full = 1
         case off = 2
 
-        /// Case-name mapping to the BooleanGlue enum — deliberately not a raw-value cast,
-        /// since the two enums' raw values disagree (see the GlueMode doc comment).
-        ///
-        /// `internal`, not `private`, so `Issue832BooleanDelegationTests` (`@testable import`)
-        /// can assert the mapping directly rather than only through an OCCT result that may not
-        /// observably depend on glue mode for simple, already-coincident geometry.
+        /// Case-name mapping to ``Shape/BooleanGlue`` — deliberately not a raw-value cast, since
+        /// the two enums' raw values disagree (see ``GlueMode``'s doc comment). `internal`, not
+        /// `private`, so `Issue832BooleanDelegationTests` (`@testable import`) can assert the
+        /// mapping directly rather than only through an OCCT result that may not observably depend
+        /// on glue mode for simple, already-coincident geometry.
         var asBooleanGlue: BooleanGlue {
             switch self {
             case .shift: return .shift
@@ -3434,7 +3408,6 @@ extension Shape {
     }
 
     /// Check if two shapes are valid for a boolean operation.
-    ///
     /// Operation: 0=unknown, 1=common, 2=fuse, 3=cut, 4=section.
     public func isBooleanValidWith(
         _ other: Shape, operation: Int32 = 0,

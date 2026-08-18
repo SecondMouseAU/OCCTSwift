@@ -2891,17 +2891,17 @@ int32_t OCCTShapeGetVertices(OCCTShapeRef shape, double* outVertices)
 
 // MARK: - Bounds
 
-// #834: this used to call Bnd_Box::Get() unconditionally and rely on the surrounding catch(...)
-// to zero every output when the box is void (Get() throws Standard_ConstructionError for a void
-// box — Bnd_Box.hxx/.cxx). OCCTShapeBoundingBox/OCCTShapeBoundingBoxOptimal
-// (OCCTBridge_Topology.mm) both guard with an explicit IsVoid() check before calling Get(), and
-// this now matches that established convention instead of leaning on exception unwinding for a case
-// that isn't exceptional. Output is unchanged either way (all-zero on a void shape) —
-// Shape.bounds's Swift return type is a non-optional tuple, so it cannot signal "void" distinctly
-// from "measured zero-size shape at the origin" the way Shape.boundingBox's Optional does; see
-// Shape.bounds's doc comment for that unresolved divergence and #834 for the proposed (not
-// executed) fix.
-void OCCTShapeGetBounds(OCCTShapeRef shape,
+// #943: returns false when the box is void, matching OCCTShapeBoundingBox/
+// OCCTShapeBoundingBoxOptimal. The six doubles cannot carry the distinction on their own: a void
+// shape and a genuinely zero-size shape at the world origin both serialize to six zeros, so a
+// Swift caller reading only the values has to guess. Both this and the two entry points above now
+// share occtComputeBoundingBox (OCCTBridge_Internal.h), which is the single place that decides
+// void-vs-measured; before #834 this was the only bounds entry point with no IsVoid() check at
+// all, and before #943 the guard it gained still could not be reported to the caller.
+//
+// The box itself is unchanged: BRepBndLib::Add with useTriangulation, exactly as
+// OCCTShapeBoundingBox computes it.
+bool OCCTShapeGetBounds(OCCTShapeRef shape,
                         double*      minX,
                         double*      minY,
                         double*      minZ,
@@ -2909,24 +2909,19 @@ void OCCTShapeGetBounds(OCCTShapeRef shape,
                         double*      maxY,
                         double*      maxZ)
 {
-  if (!shape || !minX || !minY || !minZ || !maxX || !maxY || !maxZ)
-    return;
-
-  try
-  {
-    Bnd_Box box;
-    BRepBndLib::Add(shape->shape, box);
-    if (box.IsVoid())
-    {
-      *minX = *minY = *minZ = *maxX = *maxY = *maxZ = 0;
-    }
-    else
-    {
-      box.Get(*minX, *minY, *minZ, *maxX, *maxY, *maxZ);
-    }
-  }
-  catch (...)
-  {
-    *minX = *minY = *minZ = *maxX = *maxY = *maxZ = 0;
-  }
+  if (!minX || !minY || !minZ || !maxX || !maxY || !maxZ)
+    return false;
+  *minX = *minY = *minZ = *maxX = *maxY = *maxZ = 0.0;
+  if (!shape)
+    return false;
+  return occtComputeBoundingBox(shape->shape,
+                                /*optimal=*/false,
+                                /*useTriangulation=*/true,
+                                /*useShapeTolerance=*/false,
+                                *minX,
+                                *minY,
+                                *minZ,
+                                *maxX,
+                                *maxY,
+                                *maxZ);
 }

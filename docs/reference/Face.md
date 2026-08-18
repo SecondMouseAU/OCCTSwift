@@ -158,11 +158,11 @@ Returns the outermost wire (the single outer boundary loop); inner wires (holes)
 The axis-aligned bounding box of the face.
 
 ```swift
-public var bounds: (min: SIMD3<Double>, max: SIMD3<Double>) { get }
+public var bounds: (min: SIMD3<Double>, max: SIMD3<Double>)? { get }
 ```
 
-- **Returns:** Tuple of min and max corners of the AABB. Returns `(.zero, .zero)` on error.
-- **OCCT:** `BRepBndLib::Add` + `Bnd_Box::Get`.
+- **Returns:** Tuple of min and max corners of the AABB, or `nil` when the face contributes no geometry to the box (`Bnd_Box::IsVoid()`). A face whose box genuinely measures zero returns that all-zero box: the verdict comes from OCCT across the bridge as a `Bool`, never from comparing the returned coordinates against zero (#943).
+- **OCCT:** `BRepBndLib::Add` + `Bnd_Box::Get` (via `OCCTFaceGetBounds`, which returns `false` for a void box).
 - **Note:** This box is enlarged by the face's mesh deflection whenever the shape has already been
   meshed (`BRepBndLib::Add`'s documented `useTriangulation=true` behavior); the same face can
   report a looser box after a call to `Shape.mesh(linearDeflection:angularDeflection:)` than before
@@ -171,11 +171,12 @@ public var bounds: (min: SIMD3<Double>, max: SIMD3<Double>) { get }
 - **Example:**
   ```swift
   let face = Shape.box(width: 10, height: 5, depth: 2)!.faces()[0]
-  let bb = face.bounds
-  // bb.min and bb.max define the face's extents
+  if let bb = face.bounds {
+      // bb.min and bb.max define the face's extents
+  }
   ```
 
-*(Internal, not public API. `Face` stores its bridge pointer as `internal let handle: OCCTFaceRef` (Swift default access), released by the OCCT bridge; see [Memory Management](../architecture/overview.md#occt-handles). `exactBounds` (`internal var`) is the counterpart to `bounds` above, computed from the face's exact geometry only via `OCCTFaceGetBoundsExact`, ignoring any triangulation the shape may carry (#733). Used internally by `AAG`'s floor/wall matching, not exposed publicly. `boundsVia(_:)` (`private func`) is the shared implementation `bounds` and `exactBounds` both call into, parameterized by which bridge function to invoke, so the six-out-parameter unpacking dance lives in one place.)*
+*(Internal, not public API. `Face` stores its bridge pointer as `internal let handle: OCCTFaceRef` (Swift default access), released by the OCCT bridge; see [Memory Management](../architecture/overview.md#occt-handles). `exactBounds` (`internal var`) is the counterpart to `bounds` above, computed from the face's exact geometry only via `OCCTFaceGetBoundsExact`, ignoring any triangulation the shape may carry (#733); it is Optional on the same contract as `bounds` (#943). Used internally by `AAG`'s floor/wall matching, not exposed publicly. `boundsVia(_:)` (`private func`) is the shared implementation `bounds` and `exactBounds` both call into, parameterized by which bridge function to invoke, so the six-out-parameter unpacking dance lives in one place.)*
 
 ---
 ### `isPlanar`

@@ -5998,12 +5998,12 @@ struct BRepBndLibTests {
         }
     }
 
-    // #834: neither side of this divergence had any void-shape coverage before this PR.
-    // `boundingBox` correctly answers nil for a void shape (an explicit Bnd_Box::IsVoid() guard);
-    // `bounds` cannot signal that at all (non-optional tuple) and fabricates (0,0,0)-(0,0,0),
-    // indistinguishable from a genuine zero-size shape at the origin. Pinning both sides here so
-    // any future change to either bridge function is caught by a real assertion, not silence.
-    @Test func voidShapeBoundingBoxIsNilButBoundsFabricatesZero() {
+    // #834 added this with the two sides disagreeing: `boundingBox` answered nil for a void
+    // shape and `bounds` fabricated (0,0,0)-(0,0,0), indistinguishable from a genuine zero-size
+    // shape at the origin. #943 converged them, so all four accessors answer nil here and the
+    // test name says so. The zero-size half of the same contract is
+    // pointVertexAtOriginBoundingBoxIsNotNil below, and Issue943BoundsVoid covers both.
+    @Test func voidShapeReportsNoBoxFromAnyAccessor() {
         // A far-disjoint intersection is the reliable way to get a genuinely void Shape:
         // Shape.compound([]) refuses to construct (OCCTShapeCreateCompound requires count >= 1).
         let b1 = Shape.box(width: 10, height: 10, depth: 10)!

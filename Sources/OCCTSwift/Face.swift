@@ -88,7 +88,8 @@ public final class Face: @unchecked Sendable {
     ///   than before it, with no other change. Code that needs a bound tied only to the face's own
     ///   geometry, independent of any prior meshing, should use ``exactBounds`` instead (#733).
     ///
-    /// - Returns: The bounding box as `(min, max)` corners, or `nil` if the face is void/empty
+    /// - Returns: The box as `(min, max)` corners, or `nil` when the face contributes no geometry
+    ///   to it (#943). A genuinely zero-size face at the world origin returns a real all-zero box.
     public var bounds: (min: SIMD3<Double>, max: SIMD3<Double>)? {
         boundsVia(OCCTFaceGetBounds)
     }
@@ -97,19 +98,20 @@ public final class Face: @unchecked Sendable {
     /// parameter dance lives here once.
     ///
     /// A third variant, or a validity check on the result, then has one place to go rather than
-    /// two that can drift apart. Delegates to ``unwrapAxisComponents(_:)`` (`SIMD3Unpacking.swift`)
-    /// for the actual six-out-param unpack, rather than hand-rolling a second copy of it: the two
-    /// helpers read the identical shape, and a bare, unlabeled return type is what makes the
-    /// delegation a one-liner (#908, following #903/#904's fix to `unwrapAxisComponents` itself).
+    /// two that can drift apart. Delegates to ``unwrapAxisComponentsIfSuccessful(_:)``
+    /// (`SIMD3Unpacking.swift`) for the actual six-out-param unpack, rather than hand-rolling a
+    /// second copy of it: the two helpers read the identical shape, and a bare, unlabeled return
+    /// type is what makes the delegation a one-liner (#908, following #903/#904's fix to
+    /// `unwrapAxisComponents` itself). The `IfSuccessful` variant is what carries the bridge's
+    /// void-vs-measured verdict, which the six doubles cannot express on their own (#943).
     private func boundsVia(
         _ fn: (
             OCCTFaceRef?, UnsafeMutablePointer<Double>?, UnsafeMutablePointer<Double>?,
             UnsafeMutablePointer<Double>?, UnsafeMutablePointer<Double>?,
             UnsafeMutablePointer<Double>?, UnsafeMutablePointer<Double>?
-        ) -> Void
+        ) -> Bool
     ) -> (min: SIMD3<Double>, max: SIMD3<Double>)? {
-        let (min, max) = unwrapAxisComponents { fn(handle, $0, $1, $2, $3, $4, $5) }
-        return min == .zero && max == .zero ? nil : (min: min, max: max)
+        unwrapAxisComponentsIfSuccessful { fn(handle, $0, $1, $2, $3, $4, $5) }
     }
 
     /// The face's bounding box computed from its exact geometry only, ignoring any triangulation
@@ -124,7 +126,8 @@ public final class Face: @unchecked Sendable {
     /// (0.001) still drifted 5x past it. `exactBounds` is unaffected by meshing at any deflection,
     /// which is what ``AAG`` uses internally for its own floor/wall matching.
     ///
-    /// - Returns: The exact bounding box as `(min, max)` corners, or `nil` if the face is void/empty
+    /// - Returns: The box as `(min, max)` corners, or `nil` when the face contributes no geometry
+    ///   to it (#943), on the same contract as ``bounds``.
     internal var exactBounds: (min: SIMD3<Double>, max: SIMD3<Double>)? {
         boundsVia(OCCTFaceGetBoundsExact)
     }

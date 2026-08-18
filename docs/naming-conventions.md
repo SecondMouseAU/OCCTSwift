@@ -120,7 +120,7 @@ OCCTSwift uses computed properties for zero-argument queries:
 shape.volume           // Double?
 shape.surfaceArea      // Double?
 shape.centerOfMass     // SIMD3<Double>?
-shape.bounds           // (min: SIMD3<Double>, max: SIMD3<Double>)
+shape.bounds           // (min: SIMD3<Double>, max: SIMD3<Double>)?
 shape.isValid          // Bool
 ```
 

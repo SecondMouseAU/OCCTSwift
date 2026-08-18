@@ -2250,16 +2250,7 @@ extension Shape {
     /// degenerate/point shape at the world origin legitimately returns `(min: .zero, max: .zero)`
     /// rather than `nil` (#900).
     public var boundingBox: (min: SIMD3<Double>, max: SIMD3<Double>)? {
-        var xmin = 0.0
-        var ymin = 0.0
-        var zmin = 0.0
-        var xmax = 0.0
-        var ymax = 0.0
-        var zmax = 0.0
-        guard OCCTShapeBoundingBox(handle, &xmin, &ymin, &zmin, &xmax, &ymax, &zmax) else {
-            return nil
-        }
-        return (min: SIMD3(xmin, ymin, zmin), max: SIMD3(xmax, ymax, zmax))
+        unwrapAxisComponentsIfSuccessful { OCCTShapeBoundingBox(handle, $0, $1, $2, $3, $4, $5) }
     }
 
     /// Optimal (tight) axis-aligned bounding box using precise geometry.
@@ -2268,19 +2259,9 @@ extension Shape {
     public func boundingBoxOptimal(useShapeTolerance: Bool = false) -> (
         min: SIMD3<Double>, max: SIMD3<Double>
     )? {
-        var xmin = 0.0
-        var ymin = 0.0
-        var zmin = 0.0
-        var xmax = 0.0
-        var ymax = 0.0
-        var zmax = 0.0
-        guard
-            OCCTShapeBoundingBoxOptimal(
-                handle, useShapeTolerance, &xmin, &ymin, &zmin, &xmax, &ymax, &zmax)
-        else {
-            return nil
+        unwrapAxisComponentsIfSuccessful {
+            OCCTShapeBoundingBoxOptimal(handle, useShapeTolerance, $0, $1, $2, $3, $4, $5)
         }
-        return (min: SIMD3(xmin, ymin, zmin), max: SIMD3(xmax, ymax, zmax))
     }
 
     /// Oriented bounding box with axes and half-sizes as three separate scalars.

@@ -154,7 +154,10 @@ OCCTWireRef OCCTFaceGetOuterWire(OCCTFaceRef face);
 
 /// Get the bounding box of a face
 /// @param face The face to get bounds from
-void OCCTFaceGetBounds(OCCTFaceRef face,
+/// @return false when the box is void (no geometry contributed to it), the face is null, or OCCT
+/// raised. A face whose measured box is genuinely zero-size returns true with six zeros, which is
+/// why the six doubles alone cannot carry this distinction (#943).
+bool OCCTFaceGetBounds(OCCTFaceRef face,
                        double*     minX,
                        double*     minY,
                        double*     minZ,
@@ -169,7 +172,9 @@ void OCCTFaceGetBounds(OCCTFaceRef face,
 /// meshed before this call, not just on the face's geometry. This variant always passes
 /// `useTriangulation=false`, so the result is deterministic across meshed and unmeshed shapes.
 /// @param face The face to get bounds from
-void OCCTFaceGetBoundsExact(OCCTFaceRef face,
+/// @return false when the box is void, the face is null, or OCCT raised -- see
+/// ``OCCTFaceGetBounds`` (#943).
+bool OCCTFaceGetBoundsExact(OCCTFaceRef face,
                             double*     minX,
                             double*     minY,
                             double*     minZ,
@@ -226,7 +231,9 @@ OCCTEdgeRef OCCTEdgeFromShape(OCCTShapeRef shape);
 double OCCTEdgeGetLength(OCCTEdgeRef edge);
 
 /// Get edge bounding box
-void OCCTEdgeGetBounds(OCCTEdgeRef edge,
+/// @return false when the box is void, the edge is null, or OCCT raised -- see
+/// ``OCCTFaceGetBounds`` (#943).
+bool OCCTEdgeGetBounds(OCCTEdgeRef edge,
                        double*     minX,
                        double*     minY,
                        double*     minZ,
