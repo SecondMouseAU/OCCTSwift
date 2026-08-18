@@ -19,6 +19,29 @@ each named with its migration in [`SEMVER.md`](SEMVER.md#v200).
 
 ## Unreleased
 
+### `bounds`, `size` and `center` are Optional, and "no bounding box" now comes from OCCT (#943)
+
+`Shape.bounds`, `Shape.size`, `Shape.center`, `Wire.bounds`, `Edge.bounds` and `Face.bounds` return
+`nil` for a shape with no bounding box instead of fabricating `(0,0,0)-(0,0,0)`, which was
+indistinguishable from a genuine zero-size shape at the origin (#834 documented this and left it in
+place). `Shape.boundingBox` already behaved this way, so the two no longer disagree.
+
+The verdict comes from OCCT's own `Bnd_Box::IsVoid()`, reported across the bridge as a `Bool`:
+`OCCTShapeGetBounds`, `OCCTFaceGetBounds`, `OCCTFaceGetBoundsExact` and `OCCTEdgeGetBounds` now
+return `bool` like `OCCTShapeBoundingBox` already did, and all six share one helper
+(`occtComputeBoundingBox`), which is the single place reading `IsVoid()`. That helper being
+file-static in `OCCTBridge_Topology.mm` is why `OCCTShapeGetBounds`, over in
+`OCCTBridge_Properties.mm`, was the one bounds entry point with no guard at all.
+
+A Swift-side comparison of the returned coordinates against zero would be the same fabrication in a
+new place: a vertex at the world origin measures exactly `(0,0,0)-(0,0,0)` through
+`BRepBndLib::AddOptimal` (measured, `Scripts/repro/943-bounds-void-vs-zero/`). Through the ordinary
+`BRepBndLib::Add` it measures `±1e-7`, because `BRep_Tool::Tolerance` floors every tolerance at
+`Precision::Confusion()`, so the sentinel would have misfired on one path and not the other.
+
+Migration: unwrap. `shape.bounds.max` becomes `shape.bounds?.max`, or `guard let b = shape.bounds`.
+`AAG` drops any face with no bounding box rather than force-unwrapping it.
+
 ### `docs/SEMVER.md`'s v2.0.0 break table gains #595, and an orphaned doc comment goes (#829, #877)
 
 The v2.0.0 break table listed seventeen entries and omitted #595, which changed six curvature
