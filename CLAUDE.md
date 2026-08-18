@@ -7,7 +7,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 OCCTSwift is a comprehensive Swift wrapper for OpenCASCADE Technology (OCCT) 8.0.1. It exposes B-Rep solid modeling capabilities to Swift for macOS (arm64, v12+) and iOS (arm64, v15+) via a three-layer architecture: Swift public API → Objective-C++ bridge (C functions) → OCCT C++ library. Uses Swift 6 language mode (strict concurrency).
 
 **One OCCT version is in play.** `Scripts/build-occt.sh` builds `V8_0_1` and `Package.swift` pins
-the **`v3.0.0-kernel.1` kernel pre-release**, which is that same `V8_0_1` plus the seventeen carried
+the **`v3.0.0` release asset**, which is that same `V8_0_1` plus the seventeen carried
 patches `0010`-`0012` and `0014`-`0027`. A clean checkout with no local `Libraries/` now gets the
 right kernel, and `ci.yml`'s macOS job is a real signal again.
 
