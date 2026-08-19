@@ -3,8 +3,8 @@ import OCCTBridge
 import simd
 
 /// XDE Document for loading STEP files with assembly structure, names, colors, and materials.
-    ///
-    ///
+///
+///
 ///
 /// Use `Document` when you need to:
 /// - Preserve assembly hierarchy from STEP files
@@ -33,7 +33,7 @@ public final class Document: @unchecked Sendable {
     ///
     ///
     ///
-/// - Parameters: url: URL to the STEP file
+    /// - Parameters: url: URL to the STEP file
     /// - Returns: Document containing the assembly structure
     /// - Throws: `DocumentError` if loading fails
     public static func load(from url: URL, progress: ImportProgress? = nil) throws -> Document {
@@ -49,6 +49,7 @@ public final class Document: @unchecked Sendable {
     }
 
     /// Load a STEP file as an XCAF document with optional progress + cancellation.
+    ///
     /// Alias for ``load(from:progress:)`` with explicit naming.
     ///
     /// - Returns: Document value.
@@ -209,7 +210,7 @@ public final class Document: @unchecked Sendable {
     ///
     ///
     ///
-/// - Parameters: url: Output file URL
+    /// - Parameters: url: Output file URL
     /// - Throws: `DocumentError` if writing fails
     public func write(to url: URL) throws {
         if !OCCTDocumentWriteSTEP(handle, url.path) {
@@ -310,7 +311,7 @@ extension Document {
     ///
     ///
     ///
-/// - Parameters: parent: Parent node (nil for document root)
+    /// - Parameters: parent: Parent node (nil for document root)
     /// - Returns: Assembly node representing the new label, or nil on failure
     public func createLabel(parent: AssemblyNode? = nil) -> AssemblyNode? {
         let parentId = parent?.labelId ?? -1
@@ -482,7 +483,7 @@ extension Document {
     ///
     ///
     ///
-/// - Parameters: node: The label containing the selection
+    /// - Parameters: node: The label containing the selection
     /// - Returns: The resolved shape, or nil on failure
     public func resolveShape(on node: AssemblyNode) -> Shape? {
         guard let h = OCCTDocumentNamingResolve(handle, node.labelId) else { return nil }
@@ -526,7 +527,7 @@ extension Document {
     ///
     ///
     ///
-/// - Parameters: index: Zero-based layer index
+    /// - Parameters: index: Zero-based layer index
     /// - Returns: Layer name, or nil if index is out of range
     public func layerName(at index: Int) -> String? {
         var buf = [CChar](repeating: 0, count: 256)
@@ -558,7 +559,7 @@ extension Document {
     ///
     ///
     ///
-/// - Parameters: index: Zero-based material index
+    /// - Parameters: index: Zero-based material index
     /// - Returns: Material info, or nil if index is out of range
     public func materialInfo(at index: Int) -> MaterialInfo? {
         var info = OCCTMaterialInfo()
@@ -781,8 +782,9 @@ extension Document {
 
     // MARK: - Save/Load
 
-    /// Save the OCAF document to a file. Format is determined by storage format.
-    /// Call `defineAllFormats()` or specific format registration before saving.
+    /// Save the OCAF document to a file.
+    ///
+    /// Format is determined by storage format. Call `defineAllFormats()` or specific format registration before saving.
     ///
     /// - Returns: StoreStatus value.
     ///
@@ -801,8 +803,9 @@ extension Document {
         let raw = OCCTDocumentSaveOCAFInPlace(handle)
         return StoreStatus(rawValue: raw) ?? .failure
     }
-
-    /// Load an OCAF document from a file. Registers all format drivers automatically.
+    /// Load an OCAF document from a file.
+    ///
+    /// Registers all format drivers automatically.
     ///
     ///
     ///
@@ -817,6 +820,7 @@ extension Document {
     }
 
     /// Create a new document with a specific OCAF format.
+    ///
     /// Supported: "BinOcaf", "XmlOcaf", "BinLOcaf", "XmlLOcaf", "BinXCAF", "XmlXCAF".
     ///
     /// - Returns: Document? value.
@@ -1019,6 +1023,8 @@ extension Document {
     ///   - singlePrecision: Use single precision for vertex data (default: false)
     ///   - systemLengthUnit: System length unit in meters (e.g. 0.001 for mm). 0 = default.
     ///
+    /// - Returns: Document? value.
+    ///
     public static func loadOBJ(from url: URL, singlePrecision: Bool, systemLengthUnit: Double = 0)
         -> Document?
     {
@@ -1146,7 +1152,7 @@ extension Document {
     ///
     ///
     ///
-/// - Parameters: labelId: Label ID of the shape to remove
+    /// - Parameters: labelId: Label ID of the shape to remove
     /// - Returns: true if removed successfully
     @discardableResult
     public func removeShape(labelId: Int64) -> Bool {
@@ -1191,6 +1197,7 @@ extension Document {
     }
 
     /// Add a component occurrence with a FULL rigid placement, from a 12-element row-major matrix.
+    ///
     /// `[r00 r01 r02 r10 r11 r12 r20 r21 r22 tx ty tz]`. Returns the component label id, or -1 if the
     /// matrix isn't a proper rigid transform (a reflection — bake a mirrored product instead). #174.
     ///
@@ -1394,7 +1401,9 @@ extension Document {
         OCCTDocumentNotesToolNbNotes(handle)
     }
 
-    /// Create a comment note via NotesTool. Returns the note label node.
+    /// Create a comment note via NotesTool.
+    ///
+    /// Returns the note label node.
     ///
     public func notesToolCreateComment(userName: String, timeStamp: String, comment: String)
         -> AssemblyNode?
@@ -1404,7 +1413,9 @@ extension Document {
         return AssemblyNode(document: self, labelId: labelId)
     }
 
-    /// Create a balloon note via NotesTool. Returns the note label node.
+    /// Create a balloon note via NotesTool.
+    ///
+    /// Returns the note label node.
     ///
     public func notesToolCreateBalloon(userName: String, timeStamp: String, comment: String)
         -> AssemblyNode?
@@ -1414,7 +1425,9 @@ extension Document {
         return AssemblyNode(document: self, labelId: labelId)
     }
 
-    /// Create a binary data note via NotesTool. Returns the note label node.
+    /// Create a binary data note via NotesTool.
+    ///
+    /// Returns the note label node.
     ///
     public func notesToolCreateBinData(
         userName: String, timeStamp: String, title: String,
@@ -1436,7 +1449,9 @@ extension Document {
         OCCTDocumentNotesToolDeleteNote(handle, node.labelId)
     }
 
-    /// Delete all notes. Returns the number of deleted notes.
+    /// Delete all notes.
+    ///
+    /// Returns the number of deleted notes.
     ///
     @discardableResult
     public func notesToolDeleteAllNotes() -> Int32 {
@@ -1449,7 +1464,9 @@ extension Document {
         OCCTDocumentNotesToolNbOrphanNotes(handle)
     }
 
-    /// Delete all orphan notes. Returns the number of deleted notes.
+    /// Delete all orphan notes.
+    ///
+    /// Returns the number of deleted notes.
     ///
     @discardableResult
     public func notesToolDeleteOrphanNotes() -> Int32 {
@@ -1460,7 +1477,9 @@ extension Document {
 // MARK: - XCAFDoc_ClippingPlaneTool (v0.83.0)
 
 extension Document {
-    /// Add a clipping plane. Returns the clipping plane label node.
+    /// Add a clipping plane.
+    ///
+    /// Returns the clipping plane label node.
     ///
     public func clippingPlaneToolAdd(
         originX: Double, originY: Double, originZ: Double,
@@ -1541,7 +1560,7 @@ extension Document {
     ///
     ///
     ///
-/// - Parameters: labelTag: Label child tag (0 = main label)
+    /// - Parameters: labelTag: Label child tag (0 = main label)
     @discardableResult
     public func createDirectory(at labelTag: Int = 0) -> Bool {
         OCCTDocumentDirectoryNew(handle, Int32(labelTag))
@@ -2732,7 +2751,7 @@ extension Document {
     ///
     ///
     ///
-/// - Parameters: name: Transaction name for identification
+    /// - Parameters: name: Transaction name for identification
     /// - Returns: Transaction number (>= 1 on success), or 0 on error
     @discardableResult
     public func openNamedTransaction(_ name: String) -> Int {
@@ -2746,6 +2765,7 @@ extension Document {
     }
 
     /// Commit the current transaction and return a delta for inspection.
+    ///
     /// The delta must be released when no longer needed.
     ///
     /// - Returns: An opaque delta handle, or nil if no changes
@@ -2763,7 +2783,7 @@ extension Document {
     ///
     ///
     ///
-/// - Parameters: labelId: The label to check
+    /// - Parameters: labelId: The label to check
     /// - Returns: true if self-contained
     public func isSelfContained(labelId: Int64) -> Bool {
         OCCTDocumentIsSelfContained(handle, labelId)
@@ -2816,6 +2836,7 @@ extension Document {
     }
 
     /// Create a new function at a label with a given GUID.
+    ///
     /// Automatically creates a TFunction_Scope if not present.
     ///
     /// - Parameters:
@@ -2831,7 +2852,7 @@ extension Document {
     ///
     ///
     ///
-/// - Parameters: labelId: Label with the function
+    /// - Parameters: labelId: Label with the function
     /// - Returns: true on success
     @discardableResult
     public func deleteFunction(labelId: Int64) -> Bool {
@@ -2842,7 +2863,7 @@ extension Document {
     ///
     ///
     ///
-/// - Parameters: labelId: Label with the function
+    /// - Parameters: labelId: Label with the function
     /// - Returns: The execution status, or nil if no function found
     public func functionExecStatus(labelId: Int64) -> FunctionExecutionStatus? {
         let raw = OCCTDocumentFunctionGetExecStatus(handle, labelId)
@@ -2869,6 +2890,7 @@ extension Document {
 extension Document {
 
     /// Set (find or create) a function scope on the document root.
+    ///
     /// Required before using function mechanism operations.
     ///
     /// - Returns: true on success
@@ -2881,7 +2903,7 @@ extension Document {
     ///
     ///
     ///
-/// - Parameters: labelId: Label to register as a function
+    /// - Parameters: labelId: Label to register as a function
     /// - Returns: true on success
     @discardableResult
     public func functionScopeAdd(labelId: Int64) -> Bool {
@@ -2892,7 +2914,7 @@ extension Document {
     ///
     ///
     ///
-/// - Parameters: labelId: Label to unregister
+    /// - Parameters: labelId: Label to unregister
     /// - Returns: true on success
     @discardableResult
     public func functionScopeRemove(labelId: Int64) -> Bool {
@@ -2903,7 +2925,7 @@ extension Document {
     ///
     ///
     ///
-/// - Parameters: labelId: Label to check
+    /// - Parameters: labelId: Label to check
     /// - Returns: true if in scope
     public func functionScopeHas(labelId: Int64) -> Bool {
         OCCTDocumentFunctionScopeHas(handle, labelId)
@@ -2949,6 +2971,7 @@ extension Document {
     }
 
     /// Check if a label has any content in a DataSet context.
+    ///
     /// Returns false if the label is not empty (has been added to the data framework).
     ///
     /// - Returns: `true` on success, `false` on failure.
@@ -3097,7 +3120,9 @@ extension Document {
         OCCTDocumentPresentationSetColor(handle, labelId, colorIndex)
     }
 
-    /// Get the color of a presentation. Returns nil if no own color.
+    /// Get the color of a presentation.
+    ///
+    /// Returns nil if no own color.
     ///
     ///
     ///
@@ -3115,7 +3140,9 @@ extension Document {
         OCCTDocumentPresentationSetTransparency(handle, labelId, value)
     }
 
-    /// Get the transparency. Returns nil if no own transparency.
+    /// Get the transparency.
+    ///
+    /// Returns nil if no own transparency.
     ///
     ///
     ///
@@ -3133,7 +3160,9 @@ extension Document {
         OCCTDocumentPresentationSetWidth(handle, labelId, width)
     }
 
-    /// Get the line width. Returns nil if no own width.
+    /// Get the line width.
+    ///
+    /// Returns nil if no own width.
     ///
     ///
     ///
@@ -3151,7 +3180,9 @@ extension Document {
         OCCTDocumentPresentationSetMode(handle, labelId, mode)
     }
 
-    /// Get the display mode. Returns nil if no own mode.
+    /// Get the display mode.
+    ///
+    /// Returns nil if no own mode.
     ///
     ///
     ///
@@ -3171,7 +3202,7 @@ extension Document {
     ///
     ///
     ///
-/// - Parameters: maxDepth: Maximum traversal depth (0 = unlimited)
+    /// - Parameters: maxDepth: Maximum traversal depth (0 = unlimited)
     /// - Returns: The number of assembly items
     /// - Throws: `DocumentError.cycleDetected` if a cycle is detected in the assembly tree
     public func assemblyItemCount(maxDepth: Int = 0) throws -> Int {
@@ -3197,9 +3228,10 @@ extension Document {
     ///   - values: Array of numeric values
     ///   - name: Name string
     ///   - description: Description string
-    @discardableResult
+    ///
     /// - Returns: `true` on success, `false` on failure.
     ///
+    @discardableResult
     public func setDimTol(
         labelId: Int64, kind: Int32, values: [Double],
         name: String, description: String
@@ -3212,7 +3244,9 @@ extension Document {
         }
     }
 
-    /// Get the kind of a DimTol attribute. Returns nil if not found.
+    /// Get the kind of a DimTol attribute.
+    ///
+    /// Returns nil if not found.
     ///
     ///
     ///
@@ -3292,7 +3326,9 @@ extension Document {
         OCCTDocumentConstraintSetType(handle, labelId, type.rawValue)
     }
 
-    /// Get the constraint type. Returns nil if not found.
+    /// Get the constraint type.
+    ///
+    /// Returns nil if not found.
     ///
     ///
     ///
@@ -3397,7 +3433,9 @@ extension Document {
         OCCTDocumentPatternSetSignature(handle, labelId, signature.rawValue)
     }
 
-    /// Get pattern signature. Returns nil if not found.
+    /// Get pattern signature.
+    ///
+    /// Returns nil if not found.
     ///
     ///
     ///
@@ -3450,7 +3488,9 @@ extension Document {
         OCCTDocumentAssemblyItemRefSetSubshape(handle, labelId, index)
     }
 
-    /// Get subshape index. Returns nil if not set.
+    /// Get subshape index.
+    ///
+    /// Returns nil if not set.
     ///
     ///
     ///
@@ -3633,7 +3673,9 @@ extension Document {
 // MARK: - XCAFDoc_ColorTool and ShapeTool completions (v0.126.0)
 
 extension Document {
-    /// Add a color to the document color table. Returns label tag or -1 on failure.
+    /// Add a color to the document color table.
+    ///
+    /// Returns label tag or -1 on failure.
     ///
     ///
     ///
@@ -3697,7 +3739,9 @@ extension Document {
         OCCTDocumentColorToolSetColorByLayer(handle, labelId, isByLayer)
     }
 
-    /// Find a color in the color table. Returns label tag or -1 if not found.
+    /// Find a color in the color table.
+    ///
+    /// Returns label tag or -1 if not found.
     ///
     ///
     ///
@@ -3716,11 +3760,13 @@ extension Document {
         OCCTDocumentColorToolSetInstanceColor(handle, shape.handle, Int32(colorType), r, g, b)
     }
 
-    /// Get instance color of a shape component. Returns (r,g,b) or nil.
+    /// Get instance color of a shape component.
+    ///
+    /// Returns (r,g,b) or nil.
     ///
     ///
     ///
-    /// - Returns: ( value.
+    /// - Returns: (r: Double, g: Double, b: Double)? value.
     ///
     public func colorToolGetInstanceColor(shape: Shape, colorType: Int) -> (
         r: Double, g: Double, b: Double
@@ -3826,6 +3872,7 @@ extension Document {
     // MARK: - v0.127.0: ColorTool completions
 
     /// Get all color labels in the document.
+    ///
     /// Returns an array of label IDs for all colors defined in the color tool.
     ///
     /// - Returns: [Int64] value.
