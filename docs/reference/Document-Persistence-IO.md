@@ -549,7 +549,10 @@ public func saveOCAF(to path: String) -> StoreStatus
 
 - **Parameters:** `path` — absolute file path.
 - **Returns:** `StoreStatus.ok` on success; a failure case otherwise.
-- **OCCT:** `XCAFApp_Application::SaveAs` / `PCDM_StoreStatus`.
+- **OCCT:** `TDocStd_Application::SaveAs` -> `PCDM_StoreStatus` (via `OCCTDocumentSaveOCAF`).
+  Not `XCAFApp_Application`: #371 retired that singleton bridge-side and `OCCTDocument`
+  constructs a private `TDocStd_Application` per document. See "Why not
+  `XCAFApp_Application`" below.
 - **Example:**
   ```swift
   doc.defineAllFormats()
@@ -568,7 +571,7 @@ public func saveOCAFInPlace() -> StoreStatus
 ```
 
 - **Returns:** `StoreStatus.ok` on success, or a failure case if the document was never saved.
-- **OCCT:** `XCAFApp_Application::Save`.
+- **OCCT:** `TDocStd_Application::Save` (via `OCCTDocumentSaveOCAFInPlace`).
 
 ---
 
@@ -582,7 +585,8 @@ public static func loadOCAF(from path: String) -> (document: Document?, status: 
 
 - **Parameters:** `path` — absolute file path.
 - **Returns:** A tuple `(document, status)`. `document` is non-nil only when `status == .ok`.
-- **OCCT:** `XCAFApp_Application::Open` (with `BinDrivers`, `XmlDrivers`, `BinXCAFDrivers`, `XmlXCAFDrivers` registered).
+- **OCCT:** `TDocStd_Application::Open` (with `BinDrivers`, `XmlDrivers`, `BinXCAFDrivers`,
+  `XmlXCAFDrivers` registered on the document's own private application instance).
 - **Example:**
   ```swift
   let result = Document.loadOCAF(from: "/tmp/model.cbf")
@@ -603,13 +607,45 @@ public static func create(format: String) -> Document?
 
 - **Parameters:** `format` — one of `"BinOcaf"`, `"XmlOcaf"`, `"BinLOcaf"`, `"XmlLOcaf"`, `"BinXCAF"`, `"XmlXCAF"`.
 - **Returns:** A new empty `Document`, or `nil` if the format string is unrecognised.
-- **OCCT:** `XCAFApp_Application::NewDocument`.
+- **OCCT:** `TDocStd_Application::NewDocument` (via `OCCTDocumentCreateWithFormat`).
 - **Example:**
   ```swift
   if let doc = Document.create(format: "BinXCAF") {
       // doc is ready for XDE operations
   }
   ```
+
+---
+
+### Why not `XCAFApp_Application`
+
+Every entry above names `TDocStd_Application`, and OCCT's own reference manual says that is not how
+you get an XDE application. `XCAFApp_Application.hxx` documents `GetApplication()` as "the only
+valid method to get `XCAFApp_Application` object, and it should be called at least once before any
+actions with documents", and the class has a protected constructor, so that static really is the
+only route to one.
+
+OCCTSwift takes the other route deliberately. Since v1.15.17 (#371), `OCCTDocument`'s constructor
+does `app = new TDocStd_Application()` and `XCAFApp_Application` is not constructed anywhere in
+`Sources/OCCTBridge`. The reason is measured rather than stylistic: `GetApplication()` returns one
+process-wide instance, and that shared instance is what made the whole #341 / #344 / #349 / #353
+race cluster reachable, four separate crashes in state that is per-instance in the headers and
+therefore exclusive to one document once each document owns its own application. Upstream
+maintainer gkv311's review of [OCCT#1396](https://github.com/Open-Cascade-SAS/OCCT/issues/1396)
+states the same conclusion from the other side: `GetApplication()` "exists solely for compatibility
+reasons", and OCCT's guidance since 7.1 is a private `TDocStd_Application` per caller.
+
+Two consequences worth knowing:
+
+- **Nothing is lost.** `XCAFApp_Application` adds `ResourcesName()` and `InitDocument()` over its
+  base; the bridge registers the XDE format drivers and attaches `XCAFDoc_DocumentTool` itself, and
+  a ground-truth C++ test (create, attach XDE tools, add a shape, set a colour, retarget the storage
+  format, save, reload through a second private instance) confirmed the two routes behave
+  identically for this surface before the change landed.
+- **It did not make everything lock-free.** `ocafStoreMutex()` still serialises save, load and
+  format registration. A private application per document is what first makes
+  `Resource_Manager`'s and `Storage_Schema`'s process-wide state concurrent (#374), which is a
+  different hazard from the one the change removed. `docs/thread-safety.md` has the detail.
 
 ---
 
@@ -665,7 +701,8 @@ Number of documents currently open in the application session.
 public var documentCount: Int32
 ```
 
-- **OCCT:** `CDF_Application::NbDocuments`.
+- **OCCT:** `TDocStd_Application::NbDocuments` (via `OCCTDocumentNbDocuments`).
+  `CDF_Application`, its base, does not declare this method.
 
 ---
 
@@ -677,7 +714,8 @@ The list of format identifiers that the application can currently read.
 public var readingFormats: [String]
 ```
 
-- **OCCT:** `CDF_Application::ReadingFormats`.
+- **OCCT:** `TDocStd_Application::ReadingFormats` (via `OCCTDocumentReadingFormats`).
+  `CDF_Application`, its base, does not declare this method.
 
 ---
 
@@ -689,7 +727,8 @@ The list of format identifiers that the application can currently write.
 public var writingFormats: [String]
 ```
 
-- **OCCT:** `CDF_Application::WritingFormats`.
+- **OCCT:** `TDocStd_Application::WritingFormats` (via `OCCTDocumentWritingFormats`).
+  `CDF_Application`, its base, does not declare this method.
 
 ---
 

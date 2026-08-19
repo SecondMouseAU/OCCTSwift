@@ -408,7 +408,8 @@ Number of root nodes (nodes with no parent).
 public var rootCount: Int32 { get }
 ```
 
-- **OCCT:** `XCAFDoc_AssemblyGraph::NbRoots`
+- **OCCT:** `XCAFDoc_AssemblyGraph::GetRoots().Extent()` (via `OCCTAssemblyGraphNbRoots`).
+  There is no `NbRoots` member in OCCT 8.0.1.
 
 ---
 
@@ -542,7 +543,8 @@ Number of individual label entries in the path.
 public var pathCount: Int32 { get }
 ```
 
-- **OCCT:** `XCAFDoc_AssemblyItemId::GetPathLength`
+- **OCCT:** `XCAFDoc_AssemblyItemId::GetPath().Size()` (via `OCCTAssemblyItemIdPathCount`).
+  There is no `GetPathLength` member in OCCT 8.0.1.
 - **Example:**
   ```swift
   let id = AssemblyItemId("0:1:1:1/0:1:1:2")
@@ -1696,7 +1698,7 @@ public func setExpressionString(_ expression: String, at labelTag: Int) -> Bool
 ```
 
 - **Parameters:** `expression` — formula string (e.g. `"Width * 2"`).
-- **OCCT:** `TDataStd_Expression::SetExpressionString`
+- **OCCT:** `TDataStd_Expression::SetExpression` (via `OCCTDocumentExpressionSetString`).
 
 ---
 
@@ -1708,7 +1710,7 @@ Get the expression formula string, or `nil` if not set.
 public func expressionString(at labelTag: Int) -> String?
 ```
 
-- **OCCT:** `TDataStd_Expression::GetExpressionString`
+- **OCCT:** `TDataStd_Expression::GetExpression` (via `OCCTDocumentExpressionGetString`).
 
 ---
 
@@ -1756,7 +1758,8 @@ Set the document entry path (URL or path) of the external link.
 public func setXLinkDocumentEntry(_ entry: String, at labelTag: Int) -> Bool
 ```
 
-- **OCCT:** `TDocStd_XLink::SetDocumentEntry`
+- **OCCT:** `TDocStd_XLink::DocumentEntry(entry)`, the setter overload (via
+  `OCCTDocumentXLinkSetDocumentEntry`).
 
 ---
 
@@ -1768,7 +1771,8 @@ Get the document entry path of the external link, or `nil` if not set.
 public func xLinkDocumentEntry(at labelTag: Int) -> String?
 ```
 
-- **OCCT:** `TDocStd_XLink::GetDocumentEntry`
+- **OCCT:** `TDocStd_XLink::DocumentEntry()`, the getter overload (via
+  `OCCTDocumentXLinkGetDocumentEntry`).
 
 ---
 
@@ -1781,7 +1785,8 @@ Set the label entry string (e.g. `"0:1:2"`) within the external document.
 public func setXLinkLabelEntry(_ entry: String, at labelTag: Int) -> Bool
 ```
 
-- **OCCT:** `TDocStd_XLink::SetLabelEntry`
+- **OCCT:** `TDocStd_XLink::LabelEntry(entry)`, the setter overload (via
+  `OCCTDocumentXLinkSetLabelEntry`).
 
 ---
 
@@ -1793,7 +1798,8 @@ Get the label entry string of the external link, or `nil` if not set.
 public func xLinkLabelEntry(at labelTag: Int) -> String?
 ```
 
-- **OCCT:** `TDocStd_XLink::GetLabelEntry`
+- **OCCT:** `TDocStd_XLink::LabelEntry()`, the getter overload (via
+  `OCCTDocumentXLinkGetLabelEntry`).
 - **Example:**
   ```swift
   document.setXLink(at: 3)
