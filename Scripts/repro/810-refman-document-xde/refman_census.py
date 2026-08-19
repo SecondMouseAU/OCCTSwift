@@ -60,7 +60,7 @@ TWO QUESTIONS, per #810:
        claim names is reached; it cannot see that `TNaming_Tool::SameShape` names a member the
        pinned `TNaming_Tool.hxx` does not declare, because `TNaming_Tool` itself is reached
        elsewhere. This check resolves every ``Class::Member`` attribution in the lane against that
-       class's own pinned header and its ancestors. It found 17 findings #928 could not, in six
+       class's own pinned header and its ancestors. It found 18 findings #928 could not, in six
        families, and it is the reason this lane's count is 36 rather than 18.
 
   Both are floors. The one finding neither produced (`docs/thread-safety.md` describing document
