@@ -1259,6 +1259,41 @@ bool OCCTDocumentSetDimensionTolerance(OCCTDocumentRef doc,
 #include <TDF_LabelMap.hxx>
 #include <TDF_Data.hxx>
 
+// Helper: common iteration logic for naming trace (forward/backward)
+// Template parameter: the iterator type (TNaming_NewShapeIterator or TNaming_OldShapeIterator)
+template <typename Iterator>
+static int32_t occtDocumentNamingTraceImpl(OCCTDocumentRef doc,
+                                           int64_t         accessLabelId,
+                                           OCCTShapeRef    shape,
+                                           OCCTShapeRef*   outShapes,
+                                           int32_t         maxCount)
+{
+  if (!doc || !shape || !outShapes || doc->doc.IsNull())
+    return 0;
+  try
+  {
+    TDF_Label access = doc->getLabel(accessLabelId);
+    if (access.IsNull())
+      return 0;
+
+    int32_t count = 0;
+    for (Iterator it(shape->shape, access); it.More() && count < maxCount; it.Next())
+    {
+      TopoDS_Shape s = it.Shape();
+      if (!s.IsNull())
+      {
+        outShapes[count] = new OCCTShape(s);
+        count++;
+      }
+    }
+    return count;
+  }
+  catch (...)
+  {
+    return 0;
+  }
+}
+
 int64_t OCCTDocumentCreateLabel(OCCTDocumentRef doc, int64_t parentLabelId)
 {
   if (!doc || doc->doc.IsNull())
@@ -1552,31 +1587,11 @@ int32_t OCCTDocumentNamingTraceForward(OCCTDocumentRef doc,
                                        OCCTShapeRef*   outShapes,
                                        int32_t         maxCount)
 {
-  if (!doc || !shape || !outShapes || doc->doc.IsNull())
-    return 0;
-  try
-  {
-    TDF_Label access = doc->getLabel(accessLabelId);
-    if (access.IsNull())
-      return 0;
-
-    int32_t count = 0;
-    for (TNaming_NewShapeIterator it(shape->shape, access); it.More() && count < maxCount;
-         it.Next())
-    {
-      TopoDS_Shape s = it.Shape();
-      if (!s.IsNull())
-      {
-        outShapes[count] = new OCCTShape(s);
-        count++;
-      }
-    }
-    return count;
-  }
-  catch (...)
-  {
-    return 0;
-  }
+  return occtDocumentNamingTraceImpl<TNaming_NewShapeIterator>(doc,
+                                                               accessLabelId,
+                                                               shape,
+                                                               outShapes,
+                                                               maxCount);
 }
 
 int32_t OCCTDocumentNamingTraceBackward(OCCTDocumentRef doc,
@@ -1585,31 +1600,11 @@ int32_t OCCTDocumentNamingTraceBackward(OCCTDocumentRef doc,
                                         OCCTShapeRef*   outShapes,
                                         int32_t         maxCount)
 {
-  if (!doc || !shape || !outShapes || doc->doc.IsNull())
-    return 0;
-  try
-  {
-    TDF_Label access = doc->getLabel(accessLabelId);
-    if (access.IsNull())
-      return 0;
-
-    int32_t count = 0;
-    for (TNaming_OldShapeIterator it(shape->shape, access); it.More() && count < maxCount;
-         it.Next())
-    {
-      TopoDS_Shape s = it.Shape();
-      if (!s.IsNull())
-      {
-        outShapes[count] = new OCCTShape(s);
-        count++;
-      }
-    }
-    return count;
-  }
-  catch (...)
-  {
-    return 0;
-  }
+  return occtDocumentNamingTraceImpl<TNaming_OldShapeIterator>(doc,
+                                                               accessLabelId,
+                                                               shape,
+                                                               outShapes,
+                                                               maxCount);
 }
 
 bool OCCTDocumentNamingSelect(OCCTDocumentRef doc,
