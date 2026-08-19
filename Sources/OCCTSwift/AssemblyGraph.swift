@@ -1,6 +1,6 @@
 import Foundation
-import simd
 import OCCTBridge
+import simd
 
 /// Wrapper for XCAFDoc_AssemblyGraph — read-only graph of assembly structure.
 public final class AssemblyGraph: @unchecked Sendable {

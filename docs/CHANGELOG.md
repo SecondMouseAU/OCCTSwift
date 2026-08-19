@@ -19,6 +19,47 @@ bounding-box accessors becoming Optional so a void shape stops fabricating `(0,0
 
 ---
 
+## Unreleased
+
+### Pass 3: Document/XDE assembly duplication audit (#384)
+
+Five duplications found and fixed in the XDE/OCAF document layer, all internal. Grouped by what
+changed for a consumer, which for this pass is nothing.
+
+**Internal only, zero behaviour change**
+
+- `OCCTDocumentCreate` and `OCCTDocumentLoadSTEP` duplicated the whole XCAF document-creation
+  prologue and the three-tool epilogue; both now call `occtDocumentInit` (#949).
+- The helper then moved from a file-static in `OCCTBridge_Document.mm` to `OCCTBridge_Internal.h`
+  as `inline`, and **all fourteen** document-creation sites route through it — the other twelve
+  live in `OCCTBridge_IO.mm` and could not reach a file-static (#957). Six of those twelve
+  proceeded without the `IsNull()` check their eight siblings performed; all fourteen now share
+  one guarded path. **This is consistency, not a crash fix**: a probe committed at
+  `Scripts/repro/957-newdocument-null/` measures `TDocStd_Application::NewDocument("MDTV-XCAF", doc)`
+  against the pinned kernel and it does not return null, so the unguarded branch was never
+  reachable. The asymmetry was real; the defect was not.
+- `OCCTDocumentNamingTraceForward`/`Backward` differed only in iterator type and are now one
+  function templated on it (#950).
+- `OCCTDocumentReadingFormats`/`WritingFormats` differed only in which member function they
+  called and now share a helper parameterised by it (#951).
+- `Document.readingFormats`/`writingFormats` and `tracedForward`/`tracedBackward` were the same
+  duplication one layer up, byte-identical apart from the bridge symbol; both pairs now delegate
+  to private helpers taking the bridge call as a parameter (#952).
+
+**Documentation and tooling**
+
+- `Document.swift` and ten further files in this lane (`Color`, `Material`, `BillOfMaterials`,
+  `DocumentError`, `AssemblyGraph`, `AssemblyItemId`, `AssemblyNode`, `GDTInfo`, `GDTWrite`,
+  `Annotation`) are brought `swift-format` clean and removed from
+  `Scripts/style-manifest-swift.txt`. That is 91 violations in `Document.swift` and 372 across the
+  other ten, plus sixteen parameter lists in `Document.swift` written as `- Parameters: x:` on one
+  line, a shape `swift-format` accepts and DocC does not render.
+- `OCCTBridge_Document.mm` is likewise clang-format clean and off `Scripts/style-manifest-bridge.txt`.
+- `Document.assemblyItemCount(maxDepth:)` gains a `- Warning:` recording that the bridge stops
+  counting at 100,001 and returns that as the total, filed as #964. Documented, not fixed.
+
+---
+
 ## v3.0.0
 
 ### The last seven bridge sibling-entry-point pairs share their scaffolding (#794)

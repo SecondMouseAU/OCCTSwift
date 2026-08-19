@@ -1,8 +1,8 @@
 import Foundation
-import simd
 import OCCTBridge
+import simd
 
-/// A node in an XDE assembly tree
+/// A node in an XDE assembly tree.
 ///
 /// Represents a part or sub-assembly in a STEP file with:
 /// - Name (if assigned in CAD software)
@@ -14,8 +14,10 @@ import OCCTBridge
 public final class AssemblyNode: @unchecked Sendable {
     unowned let document: Document
 
-    /// The XCAF label identifier for this node. Stable across calls within a
-    /// single `Document` instance; round-trips with `Document.node(at:)`.
+    /// The XCAF label identifier for this node.
+    ///
+    /// Stable across calls within a single `Document` instance; round-trips with
+    /// `Document.node(at:)`.
     public let labelId: Int64
 
     internal init(document: Document, labelId: Int64) {
@@ -23,7 +25,7 @@ public final class AssemblyNode: @unchecked Sendable {
         self.labelId = labelId
     }
 
-    /// The name of this node (from CAD software)
+    /// The name of this node (from CAD software).
     public var name: String? {
         guard let cString = OCCTDocumentGetLabelName(document.handle, labelId) else {
             return nil
@@ -33,17 +35,17 @@ public final class AssemblyNode: @unchecked Sendable {
         return result
     }
 
-    /// Whether this node is an assembly (has children)
+    /// Whether this node is an assembly (has children).
     public var isAssembly: Bool {
         OCCTDocumentIsAssembly(document.handle, labelId)
     }
 
-    /// Whether this node is a reference (instance of another shape)
+    /// Whether this node is a reference (instance of another shape).
     public var isReference: Bool {
         OCCTDocumentIsReference(document.handle, labelId)
     }
 
-    /// Transform matrix (position/rotation relative to parent)
+    /// Transform matrix (position/rotation relative to parent).
     public var transform: simd_float4x4 {
         var matrix = [Float](repeating: 0, count: 16)
         OCCTDocumentGetLocation(document.handle, labelId, &matrix)
@@ -55,7 +57,7 @@ public final class AssemblyNode: @unchecked Sendable {
         )
     }
 
-    /// Color assigned to this node (if any)
+    /// Color assigned to this node (if any).
     public var color: Color? {
         // Try surface color first, then generic
         var occtColor = OCCTDocumentGetLabelColor(document.handle, labelId, OCCTColorTypeSurface)
@@ -72,8 +74,9 @@ public final class AssemblyNode: @unchecked Sendable {
     ///
     /// - Parameter color: The color to assign
     public func setColor(_ color: Color) {
-        OCCTDocumentSetLabelColor(document.handle, labelId, OCCTColorTypeSurface,
-                                  color.red, color.green, color.blue)
+        OCCTDocumentSetLabelColor(
+            document.handle, labelId, OCCTColorTypeSurface,
+            color.red, color.green, color.blue)
     }
 
     /// Set the color on this node with a specific color type.
@@ -82,8 +85,9 @@ public final class AssemblyNode: @unchecked Sendable {
     ///   - color: The color to assign
     ///   - type: Color type — generic (0), surface (1), or curve (2)
     public func setColor(_ color: Color, type: OCCTColorType) {
-        OCCTDocumentSetLabelColor(document.handle, labelId, type,
-                                  color.red, color.green, color.blue)
+        OCCTDocumentSetLabelColor(
+            document.handle, labelId, type,
+            color.red, color.green, color.blue)
     }
 
     /// Set the PBR material on this node.
@@ -91,13 +95,15 @@ public final class AssemblyNode: @unchecked Sendable {
     /// - Parameter material: The material properties to assign
     public func setMaterial(_ material: Material) {
         var occtMat = OCCTMaterial()
-        occtMat.baseColor = OCCTColor(r: material.baseColor.red, g: material.baseColor.green,
-                                       b: material.baseColor.blue, a: material.baseColor.alpha, isSet: true)
+        occtMat.baseColor = OCCTColor(
+            r: material.baseColor.red, g: material.baseColor.green,
+            b: material.baseColor.blue, a: material.baseColor.alpha, isSet: true)
         occtMat.metallic = material.metallic
         occtMat.roughness = material.roughness
         if let emissive = material.emissive {
-            occtMat.emissive = OCCTColor(r: emissive.red, g: emissive.green,
-                                          b: emissive.blue, a: emissive.alpha, isSet: true)
+            occtMat.emissive = OCCTColor(
+                r: emissive.red, g: emissive.green,
+                b: emissive.blue, a: emissive.alpha, isSet: true)
         } else {
             occtMat.emissive = OCCTColor(r: 0, g: 0, b: 0, a: 1, isSet: false)
         }
@@ -106,7 +112,7 @@ public final class AssemblyNode: @unchecked Sendable {
         OCCTDocumentSetLabelMaterial(document.handle, labelId, occtMat)
     }
 
-    /// PBR material assigned to this node (if any)
+    /// PBR material assigned to this node (if any).
     public var material: Material? {
         let occtMat = OCCTDocumentGetLabelMaterial(document.handle, labelId)
         guard occtMat.isSet else { return nil }
@@ -137,7 +143,7 @@ public final class AssemblyNode: @unchecked Sendable {
         )
     }
 
-    /// Child nodes (for assemblies)
+    /// Child nodes (for assemblies).
     public var children: [AssemblyNode] {
         let count = OCCTDocumentGetChildCount(document.handle, labelId)
         var nodes: [AssemblyNode] = []
@@ -153,7 +159,7 @@ public final class AssemblyNode: @unchecked Sendable {
         return nodes
     }
 
-    /// The shape geometry (with transform applied)
+    /// The shape geometry (with transform applied).
     ///
     /// Returns nil for pure assemblies that have no direct geometry
     public var shape: Shape? {
@@ -163,7 +169,7 @@ public final class AssemblyNode: @unchecked Sendable {
         return Shape(handle: shapeHandle)
     }
 
-    /// The shape geometry without transform (original definition)
+    /// The shape geometry without transform (original definition).
     public var shapeWithoutTransform: Shape? {
         guard let shapeHandle = OCCTDocumentGetShape(document.handle, labelId) else {
             return nil
@@ -171,7 +177,7 @@ public final class AssemblyNode: @unchecked Sendable {
         return Shape(handle: shapeHandle)
     }
 
-    /// For references, get the referred node
+    /// For references, get the referred node.
     public var referredNode: AssemblyNode? {
         guard isReference else { return nil }
         let referredLabelId = OCCTDocumentGetReferredLabelId(document.handle, labelId)
@@ -261,8 +267,9 @@ extension AssemblyNode {
     public func descendants(allLevels: Bool = false) -> [AssemblyNode] {
         let maxCount: Int32 = 1024
         var labelIds = [Int64](repeating: -1, count: Int(maxCount))
-        let count = OCCTDocumentGetDescendantLabels(document.handle, labelId,
-                                                      allLevels, &labelIds, maxCount)
+        let count = OCCTDocumentGetDescendantLabels(
+            document.handle, labelId,
+            allLevels, &labelIds, maxCount)
         return (0..<Int(count)).map { AssemblyNode(document: document, labelId: labelIds[$0]) }
     }
 
@@ -331,7 +338,9 @@ extension AssemblyNode {
 
     /// Get the ASCII string attribute from this label.
     public var asciiString: String? {
-        guard let cStr = OCCTDocumentGetAsciiStringAttr(document.handle, labelId) else { return nil }
+        guard let cStr = OCCTDocumentGetAsciiStringAttr(document.handle, labelId) else {
+            return nil
+        }
         let result = String(cString: cStr)
         OCCTStringFree(cStr)
         return result
@@ -358,6 +367,8 @@ extension AssemblyNode {
     /// - Parameters:
     ///   - lower: Lower bound index
     ///   - upper: Upper bound index
+    /// - Returns: `true` when the `TDataStd_IntegerArray` attribute was set on this
+    ///   label; `false` if the document or the label is null, or OCCT raised.
     @discardableResult
     public func initIntegerArray(lower: Int32, upper: Int32) -> Bool {
         OCCTDocumentInitIntegerArray(document.handle, labelId, lower, upper)
@@ -372,14 +383,19 @@ extension AssemblyNode {
     /// Get a value from the integer array attribute.
     public func integerArrayValue(at index: Int32) -> Int32? {
         var value: Int32 = 0
-        guard OCCTDocumentGetIntegerArrayValue(document.handle, labelId, index, &value) else { return nil }
+        guard OCCTDocumentGetIntegerArrayValue(document.handle, labelId, index, &value) else {
+            return nil
+        }
         return value
     }
 
     /// Get the bounds of the integer array attribute.
     public var integerArrayBounds: (lower: Int32, upper: Int32)? {
-        var lower: Int32 = 0, upper: Int32 = 0
-        guard OCCTDocumentGetIntegerArrayBounds(document.handle, labelId, &lower, &upper) else { return nil }
+        var lower: Int32 = 0
+        var upper: Int32 = 0
+        guard OCCTDocumentGetIntegerArrayBounds(document.handle, labelId, &lower, &upper) else {
+            return nil
+        }
         return (lower, upper)
     }
 }
@@ -390,6 +406,8 @@ extension AssemblyNode {
     /// - Parameters:
     ///   - lower: Lower bound index
     ///   - upper: Upper bound index
+    /// - Returns: `true` when the `TDataStd_RealArray` attribute was set on this
+    ///   label; `false` if the document or the label is null, or OCCT raised.
     @discardableResult
     public func initRealArray(lower: Int32, upper: Int32) -> Bool {
         OCCTDocumentInitRealArray(document.handle, labelId, lower, upper)
@@ -404,14 +422,19 @@ extension AssemblyNode {
     /// Get a value from the real array attribute.
     public func realArrayValue(at index: Int32) -> Double? {
         var value: Double = 0
-        guard OCCTDocumentGetRealArrayValue(document.handle, labelId, index, &value) else { return nil }
+        guard OCCTDocumentGetRealArrayValue(document.handle, labelId, index, &value) else {
+            return nil
+        }
         return value
     }
 
     /// Get the bounds of the real array attribute.
     public var realArrayBounds: (lower: Int32, upper: Int32)? {
-        var lower: Int32 = 0, upper: Int32 = 0
-        guard OCCTDocumentGetRealArrayBounds(document.handle, labelId, &lower, &upper) else { return nil }
+        var lower: Int32 = 0
+        var upper: Int32 = 0
+        guard OCCTDocumentGetRealArrayBounds(document.handle, labelId, &lower, &upper) else {
+            return nil
+        }
         return (lower, upper)
     }
 }
@@ -476,7 +499,9 @@ extension AssemblyNode {
     /// Get a named integer value from this label.
     public func namedInteger(_ name: String) -> Int32? {
         var value: Int32 = 0
-        guard OCCTDocumentNamedDataGetInteger(document.handle, labelId, name, &value) else { return nil }
+        guard OCCTDocumentNamedDataGetInteger(document.handle, labelId, name, &value) else {
+            return nil
+        }
         return value
     }
 
@@ -494,7 +519,9 @@ extension AssemblyNode {
     /// Get a named real value from this label.
     public func namedReal(_ name: String) -> Double? {
         var value: Double = 0
-        guard OCCTDocumentNamedDataGetReal(document.handle, labelId, name, &value) else { return nil }
+        guard OCCTDocumentNamedDataGetReal(document.handle, labelId, name, &value) else {
+            return nil
+        }
         return value
     }
 
@@ -511,7 +538,9 @@ extension AssemblyNode {
 
     /// Get a named string value from this label.
     public func namedString(_ name: String) -> String? {
-        guard let cStr = OCCTDocumentNamedDataGetString(document.handle, labelId, name) else { return nil }
+        guard let cStr = OCCTDocumentNamedDataGetString(document.handle, labelId, name) else {
+            return nil
+        }
         let result = String(cString: cStr)
         OCCTStringFree(cStr)
         return result
@@ -575,7 +604,9 @@ extension AssemblyNode {
 
     /// Get the position attribute from this label.
     public func positionAttribute() -> (x: Double, y: Double, z: Double)? {
-        var x: Double = 0, y: Double = 0, z: Double = 0
+        var x: Double = 0
+        var y: Double = 0
+        var z: Double = 0
         guard OCCTDocumentGetPositionAttr(document.handle, labelId, &x, &y, &z) else { return nil }
         return (x, y, z)
     }
@@ -721,16 +752,22 @@ extension AssemblyNode {
 
     /// Set an axis attribute on this label (origin + direction).
     @discardableResult
-    public func setAxisAttribute(originX: Double, originY: Double, originZ: Double,
-                                  directionX: Double, directionY: Double, directionZ: Double) -> Bool {
-        OCCTDocumentSetAxisAttr(document.handle, labelId, originX, originY, originZ, directionX, directionY, directionZ)
+    public func setAxisAttribute(
+        originX: Double, originY: Double, originZ: Double,
+        directionX: Double, directionY: Double, directionZ: Double
+    ) -> Bool {
+        OCCTDocumentSetAxisAttr(
+            document.handle, labelId, originX, originY, originZ, directionX, directionY, directionZ)
     }
 
     /// Set a plane attribute on this label (origin + normal).
     @discardableResult
-    public func setPlaneAttribute(originX: Double, originY: Double, originZ: Double,
-                                   normalX: Double, normalY: Double, normalZ: Double) -> Bool {
-        OCCTDocumentSetPlaneAttr(document.handle, labelId, originX, originY, originZ, normalX, normalY, normalZ)
+    public func setPlaneAttribute(
+        originX: Double, originY: Double, originZ: Double,
+        normalX: Double, normalY: Double, normalZ: Double
+    ) -> Bool {
+        OCCTDocumentSetPlaneAttr(
+            document.handle, labelId, originX, originY, originZ, normalX, normalY, normalZ)
     }
 }
 
@@ -922,7 +959,9 @@ extension AssemblyNode {
     /// Get centroid attribute from this label.
     /// - Returns: Centroid as (x, y, z), or nil if not set
     public var centroid: (x: Double, y: Double, z: Double)? {
-        var x: Double = 0, y: Double = 0, z: Double = 0
+        var x: Double = 0
+        var y: Double = 0
+        var z: Double = 0
         if OCCTDocumentGetCentroid(document.handle, labelId, &x, &y, &z) {
             return (x, y, z)
         }
@@ -946,7 +985,8 @@ extension AssemblyNode {
         let maxNames: Int32 = 16
         let maxLen: Int32 = 256
         // Allocate C string buffers
-        let buffers = UnsafeMutablePointer<UnsafeMutablePointer<CChar>?>.allocate(capacity: Int(maxNames))
+        let buffers = UnsafeMutablePointer<UnsafeMutablePointer<CChar>?>.allocate(
+            capacity: Int(maxNames))
         defer { buffers.deallocate() }
         for i in 0..<Int(maxNames) {
             let buf = UnsafeMutablePointer<CChar>.allocate(capacity: Int(maxLen))
@@ -976,8 +1016,12 @@ extension AssemblyNode {
 
     /// Get the TopLoc_Location translation from this label.
     public var locationTranslation: (x: Double, y: Double, z: Double)? {
-        var x: Double = 0, y: Double = 0, z: Double = 0
-        guard OCCTDocumentGetLocationTranslation(document.handle, labelId, &x, &y, &z) else { return nil }
+        var x: Double = 0
+        var y: Double = 0
+        var z: Double = 0
+        guard OCCTDocumentGetLocationTranslation(document.handle, labelId, &x, &y, &z) else {
+            return nil
+        }
         return (x, y, z)
     }
 
@@ -1060,16 +1104,22 @@ extension AssemblyNode {
 
     /// Get the RGB color from an XCAFDoc_Color attribute.
     public var colorAttribute: (red: Double, green: Double, blue: Double)? {
-        var r: Double = 0, g: Double = 0, b: Double = 0
+        var r: Double = 0
+        var g: Double = 0
+        var b: Double = 0
         guard OCCTDocumentGetColorAttr(document.handle, labelId, &r, &g, &b) else { return nil }
         return (r, g, b)
     }
 
     /// Get the RGBA color from an XCAFDoc_Color attribute.
     public var colorRGBAAttribute: (red: Double, green: Double, blue: Double, alpha: Float)? {
-        var r: Double = 0, g: Double = 0, b: Double = 0
+        var r: Double = 0
+        var g: Double = 0
+        var b: Double = 0
         var a: Float = 1.0
-        guard OCCTDocumentGetColorRGBAAttr(document.handle, labelId, &r, &g, &b, &a) else { return nil }
+        guard OCCTDocumentGetColorRGBAAttr(document.handle, labelId, &r, &g, &b, &a) else {
+            return nil
+        }
         return (r, g, b, a)
     }
 
@@ -1087,14 +1137,19 @@ extension AssemblyNode {
 extension AssemblyNode {
     /// Set an XCAFDoc_Material attribute on this label.
     @discardableResult
-    public func setMaterialAttribute(name: String, description: String, density: Double,
-                                      densityName: String, densityValueType: String) -> Bool {
-        OCCTDocumentSetMaterialAttr(document.handle, labelId, name, description, density, densityName, densityValueType)
+    public func setMaterialAttribute(
+        name: String, description: String, density: Double,
+        densityName: String, densityValueType: String
+    ) -> Bool {
+        OCCTDocumentSetMaterialAttr(
+            document.handle, labelId, name, description, density, densityName, densityValueType)
     }
 
     /// Get the material name from an XCAFDoc_Material attribute.
     public var materialAttributeName: String? {
-        guard let cStr = OCCTDocumentGetMaterialAttrName(document.handle, labelId) else { return nil }
+        guard let cStr = OCCTDocumentGetMaterialAttrName(document.handle, labelId) else {
+            return nil
+        }
         let result = String(cString: cStr)
         OCCTStringFree(cStr)
         return result
@@ -1102,7 +1157,9 @@ extension AssemblyNode {
 
     /// Get the material description from an XCAFDoc_Material attribute.
     public var materialAttributeDescription: String? {
-        guard let cStr = OCCTDocumentGetMaterialAttrDescription(document.handle, labelId) else { return nil }
+        guard let cStr = OCCTDocumentGetMaterialAttrDescription(document.handle, labelId) else {
+            return nil
+        }
         let result = String(cString: cStr)
         OCCTStringFree(cStr)
         return result
@@ -1111,7 +1168,9 @@ extension AssemblyNode {
     /// Get the material density from an XCAFDoc_Material attribute.
     public var materialAttributeDensity: Double? {
         var density: Double = 0
-        guard OCCTDocumentGetMaterialAttrDensity(document.handle, labelId, &density) else { return nil }
+        guard OCCTDocumentGetMaterialAttrDensity(document.handle, labelId, &density) else {
+            return nil
+        }
         return density
     }
 
@@ -1130,7 +1189,9 @@ extension AssemblyNode {
 
     /// Get the comment text from an XCAFDoc_NoteComment attribute.
     public var noteCommentText: String? {
-        guard let cStr = OCCTDocumentGetNoteCommentText(document.handle, labelId) else { return nil }
+        guard let cStr = OCCTDocumentGetNoteCommentText(document.handle, labelId) else {
+            return nil
+        }
         let result = String(cString: cStr)
         OCCTStringFree(cStr)
         return result
@@ -1152,11 +1213,14 @@ extension AssemblyNode {
 
     /// Set an XCAFDoc_NoteBinData attribute on this label.
     @discardableResult
-    public func setNoteBinData(userName: String, timeStamp: String, title: String,
-                                mimeType: String, data: [UInt8]) -> Bool {
+    public func setNoteBinData(
+        userName: String, timeStamp: String, title: String,
+        mimeType: String, data: [UInt8]
+    ) -> Bool {
         data.withUnsafeBufferPointer { buf in
-            OCCTDocumentSetNoteBinData(document.handle, labelId, userName, timeStamp,
-                                       title, mimeType, buf.baseAddress!, Int32(data.count))
+            OCCTDocumentSetNoteBinData(
+                document.handle, labelId, userName, timeStamp,
+                title, mimeType, buf.baseAddress!, Int32(data.count))
         }
     }
 

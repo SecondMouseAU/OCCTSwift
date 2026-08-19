@@ -5,15 +5,10 @@
 # fails Scripts/check-style-manifest.py. See okf/policies/code-style.md.
 Sources/OCCTSwift/AnalyticalResult.swift
 Sources/OCCTSwift/AnalyticGeometry.swift
-Sources/OCCTSwift/Annotation.swift
 Sources/OCCTSwift/ApproxResult.swift
 Sources/OCCTSwift/ArcLengthCurveAdaptor.swift
 Sources/OCCTSwift/AsDesTracker.swift
-Sources/OCCTSwift/AssemblyGraph.swift
-Sources/OCCTSwift/AssemblyItemId.swift
-Sources/OCCTSwift/AssemblyNode.swift
 Sources/OCCTSwift/AxisPlacement2D.swift
-Sources/OCCTSwift/BillOfMaterials.swift
 Sources/OCCTSwift/BisectorResult.swift
 Sources/OCCTSwift/BiTgteCurveOnEdge.swift
 Sources/OCCTSwift/BndLib.swift
@@ -29,7 +24,6 @@ Sources/OCCTSwift/CellsBuilder.swift
 Sources/OCCTSwift/ChamferBuilder.swift
 Sources/OCCTSwift/Circle2DSolution.swift
 Sources/OCCTSwift/ClipPlane.swift
-Sources/OCCTSwift/Color.swift
 Sources/OCCTSwift/CompBezierConverter.swift
 Sources/OCCTSwift/Conic2D.swift
 Sources/OCCTSwift/ContapContourResult.swift
@@ -45,7 +39,6 @@ Sources/OCCTSwift/DirectoryUtils.swift
 Sources/OCCTSwift/DiskInfo.swift
 Sources/OCCTSwift/DisplayDrawer.swift
 Sources/OCCTSwift/DistanceResult.swift
-Sources/OCCTSwift/DocumentError.swift
 Sources/OCCTSwift/DraftInfo.swift
 Sources/OCCTSwift/Drawing.swift
 Sources/OCCTSwift/DrawingAnnotation.swift
@@ -72,8 +65,6 @@ Sources/OCCTSwift/FillingPoleGrid.swift
 Sources/OCCTSwift/FillingSurface.swift
 Sources/OCCTSwift/FontManager.swift
 Sources/OCCTSwift/FreeBoundsProperties.swift
-Sources/OCCTSwift/GDTInfo.swift
-Sources/OCCTSwift/GDTWrite.swift
 Sources/OCCTSwift/GeneralTransform2D.swift
 Sources/OCCTSwift/GeometryProperties.swift
 Sources/OCCTSwift/GeomEval.swift
@@ -98,7 +89,6 @@ Sources/OCCTSwift/LocalProperties.swift
 Sources/OCCTSwift/LogSample.swift
 Sources/OCCTSwift/MassCentroid.swift
 Sources/OCCTSwift/MassProperties.swift
-Sources/OCCTSwift/Material.swift
 Sources/OCCTSwift/MaterialInfo.swift
 Sources/OCCTSwift/MathDimension.swift
 Sources/OCCTSwift/MathLibrary.swift
