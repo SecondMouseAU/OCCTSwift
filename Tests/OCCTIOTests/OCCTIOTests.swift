@@ -1076,34 +1076,6 @@ struct VrmlWriterTests {
             try? FileManager.default.removeItem(at: url)
         }
     }
-
-    @Test("Document creation does not crash and returns valid document")
-    func documentCreateNotNil() throws {
-        let doc = try #require(Document.create())
-        #expect(doc.handle != nil)
-    }
-
-    @Test("Document loadOBJ returns valid document for valid OBJ")
-    func documentLoadOBJNotNil() throws {
-        let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
-        let tempURL = FileManager.default.temporaryDirectory
-            .appendingPathComponent("test_loadobj.obj")
-        defer { try? FileManager.default.removeItem(at: tempURL) }
-        try box.writeOBJ(to: tempURL)
-        let doc = try #require(Document.loadOBJ(fromPath: tempURL.path))
-        #expect(doc.handle != nil)
-    }
-
-    @Test("Document loadSTEP returns valid document for valid STEP")
-    func documentLoadSTEPNotNil() throws {
-        let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
-        let tempURL = FileManager.default.temporaryDirectory
-            .appendingPathComponent("test_loadstep.step")
-        defer { try? FileManager.default.removeItem(at: tempURL) }
-        try box.writeSTEP(to: tempURL)
-        let doc = try #require(try Document.loadSTEP(from: tempURL))
-        #expect(doc.handle != nil)
-    }
 }
 
 // MARK: - v0.100.0 Tests

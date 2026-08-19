@@ -637,8 +637,8 @@ OCCTDocumentRef OCCTDocumentLoadSTEPProgress(const char*               path,
   try
   {
     document = new OCCTDocument();
-
-    if (!occtDocumentInit(document))
+    document->app->NewDocument("MDTV-XCAF", document->doc);
+    if (document->doc.IsNull())
     {
       delete document;
       return nullptr;
@@ -673,7 +673,9 @@ OCCTDocumentRef OCCTDocumentLoadSTEPProgress(const char*               path,
       return nullptr;
     }
 
-    // Tools already initialized by occtDocumentInit
+    document->shapeTool    = XCAFDoc_DocumentTool::ShapeTool(document->doc->Main());
+    document->colorTool    = XCAFDoc_DocumentTool::ColorTool(document->doc->Main());
+    document->materialTool = XCAFDoc_DocumentTool::VisMaterialTool(document->doc->Main());
     return document;
   }
   catch (...)
@@ -907,8 +909,8 @@ OCCTDocumentRef OCCTDocumentLoadSTEPWithModesProgress(const char*               
   try
   {
     document = new OCCTDocument();
-
-    if (!occtDocumentInit(document))
+    document->app->NewDocument("MDTV-XCAF", document->doc);
+    if (document->doc.IsNull())
     {
       delete document;
       return nullptr;
@@ -944,7 +946,9 @@ OCCTDocumentRef OCCTDocumentLoadSTEPWithModesProgress(const char*               
       return nullptr;
     }
 
-    // Tools already initialized by occtDocumentInit
+    document->shapeTool    = XCAFDoc_DocumentTool::ShapeTool(document->doc->Main());
+    document->colorTool    = XCAFDoc_DocumentTool::ColorTool(document->doc->Main());
+    document->materialTool = XCAFDoc_DocumentTool::VisMaterialTool(document->doc->Main());
     return document;
   }
   catch (...)
@@ -1293,9 +1297,7 @@ OCCTShapeRef OCCTImportOBJ(const char* path)
     // Create an XDE document
     Handle(TDocStd_Document)    doc;
     Handle(TDocStd_Application) app = new TDocStd_Application();
-    Handle(XCAFDoc_ShapeTool)   shapeTool;
-    if (!occtDocumentInit(app, doc, &shapeTool, nullptr, nullptr))
-      return nullptr;
+    app->NewDocument("MDTV-XCAF", doc);
 
     objReader.SetDocument(doc);
     TCollection_AsciiString filePath(path);
@@ -1303,7 +1305,8 @@ OCCTShapeRef OCCTImportOBJ(const char* path)
       return nullptr;
 
     // Extract shape from document
-    TopoDS_Shape shape = shapeTool->GetOneShape();
+    Handle(XCAFDoc_ShapeTool) shapeTool = XCAFDoc_DocumentTool::ShapeTool(doc->Main());
+    TopoDS_Shape              shape     = shapeTool->GetOneShape();
     if (shape.IsNull())
       return nullptr;
 
@@ -1332,10 +1335,9 @@ bool OCCTExportOBJ(OCCTShapeRef shape, const char* path, double deflection)
     // Create an XDE document
     Handle(TDocStd_Document)    doc;
     Handle(TDocStd_Application) app = new TDocStd_Application();
-    Handle(XCAFDoc_ShapeTool)   shapeTool;
-    if (!occtDocumentInit(app, doc, &shapeTool, nullptr, nullptr))
-      return false;
+    app->NewDocument("MDTV-XCAF", doc);
 
+    Handle(XCAFDoc_ShapeTool) shapeTool = XCAFDoc_DocumentTool::ShapeTool(doc->Main());
     shapeTool->AddShape(shape->shape);
 
     // Write OBJ
@@ -1554,8 +1556,8 @@ OCCTDocumentRef OCCTDocumentLoadSTEPWithModes(const char* path,
   try
   {
     document = new OCCTDocument();
-
-    if (!occtDocumentInit(document))
+    document->app->NewDocument("MDTV-XCAF", document->doc);
+    if (document->doc.IsNull())
     {
       delete document;
       return nullptr;
@@ -1582,7 +1584,10 @@ OCCTDocumentRef OCCTDocumentLoadSTEPWithModes(const char* path,
       return nullptr;
     }
 
-    // Tools already initialized by occtDocumentInit
+    document->shapeTool    = XCAFDoc_DocumentTool::ShapeTool(document->doc->Main());
+    document->colorTool    = XCAFDoc_DocumentTool::ColorTool(document->doc->Main());
+    document->materialTool = XCAFDoc_DocumentTool::VisMaterialTool(document->doc->Main());
+
     return document;
   }
   catch (...)
@@ -1813,8 +1818,8 @@ OCCTDocumentRef OCCTDocumentLoadOBJ(const char* path)
   try
   {
     OCCTDocument* document = new OCCTDocument();
-
-    if (!occtDocumentInit(document))
+    document->app->NewDocument("MDTV-XCAF", document->doc);
+    if (document->doc.IsNull())
     {
       delete document;
       return nullptr;
@@ -1829,7 +1834,9 @@ OCCTDocumentRef OCCTDocumentLoadOBJ(const char* path)
       return nullptr;
     }
 
-    // Tools already initialized by occtDocumentInit
+    document->shapeTool    = XCAFDoc_DocumentTool::ShapeTool(document->doc->Main());
+    document->colorTool    = XCAFDoc_DocumentTool::ColorTool(document->doc->Main());
+    document->materialTool = XCAFDoc_DocumentTool::VisMaterialTool(document->doc->Main());
     return document;
   }
   catch (...)
@@ -1847,8 +1854,8 @@ OCCTDocumentRef OCCTDocumentLoadOBJWithOptions(const char* path,
   try
   {
     OCCTDocument* document = new OCCTDocument();
-
-    if (!occtDocumentInit(document))
+    document->app->NewDocument("MDTV-XCAF", document->doc);
+    if (document->doc.IsNull())
     {
       delete document;
       return nullptr;
@@ -1869,7 +1876,9 @@ OCCTDocumentRef OCCTDocumentLoadOBJWithOptions(const char* path,
       return nullptr;
     }
 
-    // Tools already initialized by occtDocumentInit
+    document->shapeTool    = XCAFDoc_DocumentTool::ShapeTool(document->doc->Main());
+    document->colorTool    = XCAFDoc_DocumentTool::ColorTool(document->doc->Main());
+    document->materialTool = XCAFDoc_DocumentTool::VisMaterialTool(document->doc->Main());
     return document;
   }
   catch (...)
@@ -1967,10 +1976,9 @@ static bool occtExportPLYImpl(OCCTShapeRef shape,
     // Create an XDE document
     Handle(TDocStd_Document)    doc;
     Handle(TDocStd_Application) app = new TDocStd_Application();
-    Handle(XCAFDoc_ShapeTool)   shapeTool;
-    if (!occtDocumentInit(app, doc, &shapeTool, nullptr, nullptr))
-      return false;
+    app->NewDocument("MDTV-XCAF", doc);
 
+    Handle(XCAFDoc_ShapeTool) shapeTool = XCAFDoc_DocumentTool::ShapeTool(doc->Main());
     shapeTool->AddShape(shape->shape);
 
     // Write PLY
@@ -2025,8 +2033,8 @@ OCCTDocumentRef OCCTDocumentLoadOBJWithCS(const char* path,
   try
   {
     OCCTDocument* document = new OCCTDocument();
-
-    if (!occtDocumentInit(document))
+    document->app->NewDocument("MDTV-XCAF", document->doc);
+    if (document->doc.IsNull())
     {
       delete document;
       return nullptr;
@@ -2056,7 +2064,9 @@ OCCTDocumentRef OCCTDocumentLoadOBJWithCS(const char* path,
       return nullptr;
     }
 
-    // Tools already initialized by occtDocumentInit
+    document->shapeTool    = XCAFDoc_DocumentTool::ShapeTool(document->doc->Main());
+    document->colorTool    = XCAFDoc_DocumentTool::ColorTool(document->doc->Main());
+    document->materialTool = XCAFDoc_DocumentTool::VisMaterialTool(document->doc->Main());
     return document;
   }
   catch (...)
@@ -4412,14 +4422,13 @@ OCCTShapeRef _Nullable OCCTImportGLTF(const char* _Nonnull path)
     RWGltf_CafReader            reader;
     Handle(TDocStd_Document)    doc;
     Handle(TDocStd_Application) app = new TDocStd_Application();
-    Handle(XCAFDoc_ShapeTool)   shapeTool;
-    if (!occtDocumentInit(app, doc, &shapeTool, nullptr, nullptr))
-      return nullptr;
+    app->NewDocument("MDTV-XCAF", doc);
     reader.SetDocument(doc);
     TCollection_AsciiString filePath(path);
     if (!reader.Perform(filePath, Message_ProgressRange()))
       return nullptr;
-    TopoDS_Shape shape = shapeTool->GetOneShape();
+    Handle(XCAFDoc_ShapeTool) shapeTool = XCAFDoc_DocumentTool::ShapeTool(doc->Main());
+    TopoDS_Shape              shape     = shapeTool->GetOneShape();
     if (shape.IsNull())
       return nullptr;
     auto* ref  = new OCCTShape;
@@ -4444,9 +4453,8 @@ bool OCCTExportGLTF(OCCTShapeRef _Nonnull shape,
     BRepMesh_IncrementalMesh    mesher(shape->shape, deflection);
     Handle(TDocStd_Document)    doc;
     Handle(TDocStd_Application) app = new TDocStd_Application();
-    Handle(XCAFDoc_ShapeTool)   shapeTool;
-    if (!occtDocumentInit(app, doc, &shapeTool, nullptr, nullptr))
-      return false;
+    app->NewDocument("MDTV-XCAF", doc);
+    Handle(XCAFDoc_ShapeTool) shapeTool = XCAFDoc_DocumentTool::ShapeTool(doc->Main());
     shapeTool->AddShape(shape->shape);
     TCollection_AsciiString filePath(path);
     RWGltf_CafWriter        writer(filePath, isBinary);
@@ -4466,13 +4474,7 @@ OCCTDocumentRef _Nullable OCCTDocumentLoadGLTF(const char* _Nonnull path)
   try
   {
     auto* docRef = new OCCTDocument;
-
-    if (!occtDocumentInit(docRef))
-    {
-      delete docRef;
-      return nullptr;
-    }
-
+    docRef->app->NewDocument("MDTV-XCAF", docRef->doc);
     RWGltf_CafReader reader;
     reader.SetDocument(docRef->doc);
     TCollection_AsciiString filePath(path);
