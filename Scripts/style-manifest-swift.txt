@@ -45,6 +45,7 @@ Sources/OCCTSwift/DirectoryUtils.swift
 Sources/OCCTSwift/DiskInfo.swift
 Sources/OCCTSwift/DisplayDrawer.swift
 Sources/OCCTSwift/DistanceResult.swift
+Sources/OCCTSwift/Document.swift
 Sources/OCCTSwift/DocumentError.swift
 Sources/OCCTSwift/DraftInfo.swift
 Sources/OCCTSwift/Drawing.swift

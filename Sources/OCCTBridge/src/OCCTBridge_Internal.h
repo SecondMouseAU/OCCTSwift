@@ -51,7 +51,6 @@
 #include <XCAFDoc_ShapeTool.hxx>
 #include <XCAFDoc_ColorTool.hxx>
 #include <XCAFDoc_VisMaterialTool.hxx>
-#include <XCAFDoc_DocumentTool.hxx>
 #include <TDF_Label.hxx>
 #include <TNaming_Scope.hxx>
 // The rest serve the shared algorithm helpers at the bottom of this header
@@ -192,53 +191,6 @@ struct OCCTDocument
     return labels[labelId];
   }
 };
-
-// === Document initialization helpers (shared across TUs) ===
-//
-// Extracts the common document creation + XCAF tool initialization boilerplate.
-// Used by OCCTDocumentCreate, OCCTDocumentLoadSTEP, and 12 sites in OCCTBridge_IO.mm.
-// Returns false on failure (doc null or tool fetch failed).
-//
-// Pattern A: OCCTDocument* (full tool initialization)
-inline bool occtDocumentInit(OCCTDocument* document)
-{
-  document->app->NewDocument("MDTV-XCAF", document->doc);
-
-  if (document->doc.IsNull())
-    return false;
-
-  document->shapeTool    = XCAFDoc_DocumentTool::ShapeTool(document->doc->Main());
-  document->colorTool    = XCAFDoc_DocumentTool::ColorTool(document->doc->Main());
-  document->materialTool = XCAFDoc_DocumentTool::VisMaterialTool(document->doc->Main());
-
-  return true;
-}
-
-// Pattern B: bare Handle(TDocStd_Document) + Handle(TDocStd_Application)
-// Overload for sites that don't use OCCTDocument struct.
-// Optional tool pointers are fetched only when non-null.
-inline bool occtDocumentInit(Handle(TDocStd_Application)&     app,
-                             Handle(TDocStd_Document)&        doc,
-                             Handle(XCAFDoc_ShapeTool)*       shapeTool    = nullptr,
-                             Handle(XCAFDoc_ColorTool)*       colorTool    = nullptr,
-                             Handle(XCAFDoc_VisMaterialTool)* materialTool = nullptr)
-{
-  if (app.IsNull())
-    return false;
-  app->NewDocument("MDTV-XCAF", doc);
-
-  if (doc.IsNull())
-    return false;
-
-  if (shapeTool)
-    *shapeTool = XCAFDoc_DocumentTool::ShapeTool(doc->Main());
-  if (colorTool)
-    *colorTool = XCAFDoc_DocumentTool::ColorTool(doc->Main());
-  if (materialTool)
-    *materialTool = XCAFDoc_DocumentTool::VisMaterialTool(doc->Main());
-
-  return true;
-}
 
 // 2D Drawing from HLR projection (v0.6.0)
 struct OCCTDrawing
