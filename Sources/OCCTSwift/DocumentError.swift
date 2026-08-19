@@ -1,8 +1,8 @@
 import Foundation
-import simd
 import OCCTBridge
+import simd
 
-/// Errors that can occur when working with XDE documents
+/// Errors that can occur when working with XDE documents.
 public enum DocumentError: Error, LocalizedError {
     case loadFailed(url: URL)
     case writeFailed(url: URL)
