@@ -1,6 +1,6 @@
 import Foundation
-import simd
 import OCCTBridge
+import simd
 
 /// A parametric 2D curve backed by `Geom2d_Curve`.
 ///
@@ -74,24 +74,30 @@ public final class Curve2D: @unchecked Sendable {
 
     /// Evaluate the curve position at parameter `u`.
     public func point(at u: Double) -> SIMD2<Double> {
-        var x: Double = 0, y: Double = 0
+        var x: Double = 0
+        var y: Double = 0
         OCCTCurve2DGetPoint(handle, u, &x, &y)
         return SIMD2(x, y)
     }
 
     /// Evaluate position and first derivative (tangent) at parameter `u`.
     public func d1(at u: Double) -> (point: SIMD2<Double>, tangent: SIMD2<Double>) {
-        var px: Double = 0, py: Double = 0
-        var vx: Double = 0, vy: Double = 0
+        var px: Double = 0
+        var py: Double = 0
+        var vx: Double = 0
+        var vy: Double = 0
         OCCTCurve2DD1(handle, u, &px, &py, &vx, &vy)
         return (SIMD2(px, py), SIMD2(vx, vy))
     }
 
     /// Evaluate position, first derivative, and second derivative at parameter `u`.
     public func d2(at u: Double) -> (point: SIMD2<Double>, d1: SIMD2<Double>, d2: SIMD2<Double>) {
-        var px: Double = 0, py: Double = 0
-        var v1x: Double = 0, v1y: Double = 0
-        var v2x: Double = 0, v2y: Double = 0
+        var px: Double = 0
+        var py: Double = 0
+        var v1x: Double = 0
+        var v1y: Double = 0
+        var v2x: Double = 0
+        var v2y: Double = 0
         OCCTCurve2DD2(handle, u, &px, &py, &v1x, &v1y, &v2x, &v2y)
         return (SIMD2(px, py), SIMD2(v1x, v1y), SIMD2(v2x, v2y))
     }
@@ -100,7 +106,9 @@ public final class Curve2D: @unchecked Sendable {
 
     /// Create an infinite line through a point in a given direction.
     public static func line(through point: SIMD2<Double>, direction: SIMD2<Double>) -> Curve2D? {
-        guard let h = OCCTCurve2DCreateLine(point.x, point.y, direction.x, direction.y) else { return nil }
+        guard let h = OCCTCurve2DCreateLine(point.x, point.y, direction.x, direction.y) else {
+            return nil
+        }
         return Curve2D(handle: h)
     }
 
@@ -131,18 +139,28 @@ public final class Curve2D: @unchecked Sendable {
     }
 
     /// Create an arc of a circle between two angles (in radians).
-    public static func arcOfCircle(center: SIMD2<Double>, radius: Double,
-                                   startAngle: Double, endAngle: Double) -> Curve2D? {
-        guard let h = OCCTCurve2DCreateArcOfCircle(center.x, center.y, radius,
-                                                    startAngle, endAngle) else { return nil }
+    public static func arcOfCircle(
+        center: SIMD2<Double>, radius: Double,
+        startAngle: Double, endAngle: Double
+    ) -> Curve2D? {
+        guard
+            let h = OCCTCurve2DCreateArcOfCircle(
+                center.x, center.y, radius,
+                startAngle, endAngle)
+        else { return nil }
         return Curve2D(handle: h)
     }
 
     /// Create a circular arc passing through three points.
-    public static func arcThrough(_ p1: SIMD2<Double>, _ p2: SIMD2<Double>,
-                                  _ p3: SIMD2<Double>) -> Curve2D? {
-        guard let h = OCCTCurve2DCreateArcThrough(p1.x, p1.y, p2.x, p2.y,
-                                                   p3.x, p3.y) else { return nil }
+    public static func arcThrough(
+        _ p1: SIMD2<Double>, _ p2: SIMD2<Double>,
+        _ p3: SIMD2<Double>
+    ) -> Curve2D? {
+        guard
+            let h = OCCTCurve2DCreateArcThrough(
+                p1.x, p1.y, p2.x, p2.y,
+                p3.x, p3.y)
+        else { return nil }
         return Curve2D(handle: h)
     }
 
@@ -162,20 +180,30 @@ public final class Curve2D: @unchecked Sendable {
     /// #expect(Curve2D.ellipse(center: .zero, majorRadius: 0, minorRadius: 0) == nil)
     /// #expect(Curve2D.ellipse(center: .zero, majorRadius: 5, minorRadius: 10) == nil)
     /// ```
-    public static func ellipse(center: SIMD2<Double>, majorRadius: Double,
-                               minorRadius: Double, rotation: Double = 0) -> Curve2D? {
-        guard let h = OCCTCurve2DCreateEllipse(center.x, center.y,
-                                                majorRadius, minorRadius, rotation) else { return nil }
+    public static func ellipse(
+        center: SIMD2<Double>, majorRadius: Double,
+        minorRadius: Double, rotation: Double = 0
+    ) -> Curve2D? {
+        guard
+            let h = OCCTCurve2DCreateEllipse(
+                center.x, center.y,
+                majorRadius, minorRadius, rotation)
+        else { return nil }
         return Curve2D(handle: h)
     }
 
     /// Create an arc of an ellipse between two angles.
-    public static func arcOfEllipse(center: SIMD2<Double>, majorRadius: Double,
-                                    minorRadius: Double, rotation: Double = 0,
-                                    startAngle: Double, endAngle: Double) -> Curve2D? {
-        guard let h = OCCTCurve2DCreateArcOfEllipse(center.x, center.y,
-                                                     majorRadius, minorRadius, rotation,
-                                                     startAngle, endAngle) else { return nil }
+    public static func arcOfEllipse(
+        center: SIMD2<Double>, majorRadius: Double,
+        minorRadius: Double, rotation: Double = 0,
+        startAngle: Double, endAngle: Double
+    ) -> Curve2D? {
+        guard
+            let h = OCCTCurve2DCreateArcOfEllipse(
+                center.x, center.y,
+                majorRadius, minorRadius, rotation,
+                startAngle, endAngle)
+        else { return nil }
         return Curve2D(handle: h)
     }
 
@@ -193,11 +221,16 @@ public final class Curve2D: @unchecked Sendable {
     /// #expect(p != nil)
     /// #expect(Curve2D.parabola(focus: .zero, direction: SIMD2(1, 0), focalLength: 0) == nil)
     /// ```
-    public static func parabola(focus: SIMD2<Double>, direction: SIMD2<Double>,
-                                focalLength: Double) -> Curve2D? {
-        guard let h = OCCTCurve2DCreateParabola(focus.x, focus.y,
-                                                 direction.x, direction.y,
-                                                 focalLength) else { return nil }
+    public static func parabola(
+        focus: SIMD2<Double>, direction: SIMD2<Double>,
+        focalLength: Double
+    ) -> Curve2D? {
+        guard
+            let h = OCCTCurve2DCreateParabola(
+                focus.x, focus.y,
+                direction.x, direction.y,
+                focalLength)
+        else { return nil }
         return Curve2D(handle: h)
     }
 
@@ -219,10 +252,15 @@ public final class Curve2D: @unchecked Sendable {
     /// #expect(Curve2D.hyperbola(center: .zero, majorRadius: 3, minorRadius: 5) != nil)
     /// #expect(Curve2D.hyperbola(center: .zero, majorRadius: 0, minorRadius: 0) == nil)
     /// ```
-    public static func hyperbola(center: SIMD2<Double>, majorRadius: Double,
-                                 minorRadius: Double, rotation: Double = 0) -> Curve2D? {
-        guard let h = OCCTCurve2DCreateHyperbola(center.x, center.y,
-                                                  majorRadius, minorRadius, rotation) else { return nil }
+    public static func hyperbola(
+        center: SIMD2<Double>, majorRadius: Double,
+        minorRadius: Double, rotation: Double = 0
+    ) -> Curve2D? {
+        guard
+            let h = OCCTCurve2DCreateHyperbola(
+                center.x, center.y,
+                majorRadius, minorRadius, rotation)
+        else { return nil }
         return Curve2D(handle: h)
     }
 
@@ -239,14 +277,18 @@ public final class Curve2D: @unchecked Sendable {
     ///     criteria decide the actual point count, so clamping an unservable capacity returns the
     ///     same points rather than a coarser sampling.
     /// - Returns: Array of 2D points approximating the curve
-    public func drawAdaptive(angularDeflection: Double = 0.1,
-                             chordalDeflection: Double = 0.01,
-                             maxPoints: Int = 4096) -> [SIMD2<Double>] {
+    public func drawAdaptive(
+        angularDeflection: Double = 0.1,
+        chordalDeflection: Double = 0.01,
+        maxPoints: Int = 4096
+    ) -> [SIMD2<Double>] {
         let capacity = Sampling.capacity(maxPoints)
         guard capacity > 0 else { return [] }
         var buffer = [Double](repeating: 0, count: capacity * 2)
-        let n = Int(OCCTCurve2DDrawAdaptive(handle, angularDeflection, chordalDeflection,
-                                            &buffer, Int32(capacity)))
+        let n = Int(
+            OCCTCurve2DDrawAdaptive(
+                handle, angularDeflection, chordalDeflection,
+                &buffer, Int32(capacity)))
         return (0..<n).map { SIMD2(buffer[$0 * 2], buffer[$0 * 2 + 1]) }
     }
 
@@ -275,10 +317,16 @@ public final class Curve2D: @unchecked Sendable {
 
     /// Discretize the curve with a maximum chordal deflection.
     ///
-    /// - Parameter maxPoints: Output *capacity* (default 4096), clamped into `0...`
-    ///   ``Sampling/maximumSampleCount``; 0 or less returns empty (#558).
-    public func drawDeflection(deflection: Double = 0.01,
-                               maxPoints: Int = 4096) -> [SIMD2<Double>] {
+    /// - Parameters:
+    ///   - deflection: Maximum distance between the curve and the chord joining two consecutive
+    ///     output points.
+    ///   - maxPoints: Output *capacity* (default 4096), clamped into `0...`
+    ///     ``Sampling/maximumSampleCount``; 0 or less returns empty (#558).
+    /// - Returns: The sampled points, or an empty array if the sampler fails.
+    public func drawDeflection(
+        deflection: Double = 0.01,
+        maxPoints: Int = 4096
+    ) -> [SIMD2<Double>] {
         let capacity = Sampling.capacity(maxPoints)
         guard capacity > 0 else { return [] }
         var buffer = [Double](repeating: 0, count: capacity * 2)
@@ -289,25 +337,29 @@ public final class Curve2D: @unchecked Sendable {
     // MARK: - BSpline & Bezier
 
     /// Create a B-spline curve from control points, knots, and multiplicities.
-    public static func bspline(poles: [SIMD2<Double>], weights: [Double]? = nil,
-                               knots: [Double], multiplicities: [Int32],
-                               degree: Int) -> Curve2D? {
+    public static func bspline(
+        poles: [SIMD2<Double>], weights: [Double]? = nil,
+        knots: [Double], multiplicities: [Int32],
+        degree: Int
+    ) -> Curve2D? {
         let flatPoles = poles.flatMap { [$0.x, $0.y] }
         let h = flatPoles.withUnsafeBufferPointer { polesPtr in
             knots.withUnsafeBufferPointer { knotsPtr in
                 multiplicities.withUnsafeBufferPointer { multsPtr in
                     if let w = weights {
                         return w.withUnsafeBufferPointer { wPtr in
-                            OCCTCurve2DCreateBSpline(polesPtr.baseAddress, Int32(poles.count),
-                                                     wPtr.baseAddress,
-                                                     knotsPtr.baseAddress, Int32(knots.count),
-                                                     multsPtr.baseAddress, Int32(degree))
+                            OCCTCurve2DCreateBSpline(
+                                polesPtr.baseAddress, Int32(poles.count),
+                                wPtr.baseAddress,
+                                knotsPtr.baseAddress, Int32(knots.count),
+                                multsPtr.baseAddress, Int32(degree))
                         }
                     } else {
-                        return OCCTCurve2DCreateBSpline(polesPtr.baseAddress, Int32(poles.count),
-                                                        nil,
-                                                        knotsPtr.baseAddress, Int32(knots.count),
-                                                        multsPtr.baseAddress, Int32(degree))
+                        return OCCTCurve2DCreateBSpline(
+                            polesPtr.baseAddress, Int32(poles.count),
+                            nil,
+                            knotsPtr.baseAddress, Int32(knots.count),
+                            multsPtr.baseAddress, Int32(degree))
                     }
                 }
             }
@@ -339,7 +391,7 @@ public final class Curve2D: @unchecked Sendable {
     ///
     /// - Parameters:
     ///   - points: Points to interpolate. At least 2.
-    ///   - closed: Pass `true` for a periodic loop that closes back to `points[0]` — do not repeat
+    ///   - closed: Pass `true` for a periodic loop that closes back to `points[0]`; do not repeat
     ///     the first point at the end. `interpolatePeriodic(points:tolerance:)` is a spelling of
     ///     this case and delegates here.
     ///   - tolerance: Interpolation tolerance.
@@ -353,12 +405,16 @@ public final class Curve2D: @unchecked Sendable {
     ///                                closed: true, tolerance: 1e-4)
     /// #expect(loop?.isPeriodic == true)
     /// ```
-    public static func interpolate(through points: [SIMD2<Double>], closed: Bool = false,
-                                   tolerance: Double = 1e-6) -> Curve2D? {
+    public static func interpolate(
+        through points: [SIMD2<Double>], closed: Bool = false,
+        tolerance: Double = 1e-6
+    ) -> Curve2D? {
         let flat = points.flatMap { [$0.x, $0.y] }
-        guard let h = flat.withUnsafeBufferPointer({ ptr in
-            OCCTCurve2DInterpolate(ptr.baseAddress, Int32(points.count), closed, tolerance)
-        }) else { return nil }
+        guard
+            let h = flat.withUnsafeBufferPointer({ ptr in
+                OCCTCurve2DInterpolate(ptr.baseAddress, Int32(points.count), closed, tolerance)
+            })
+        else { return nil }
         return Curve2D(handle: h)
     }
 
@@ -366,16 +422,21 @@ public final class Curve2D: @unchecked Sendable {
     ///
     /// `interpolate(points:startTangent:endTangent:tolerance:)` is a spelling of this with the
     /// `points:` argument label, and delegates here.
-    public static func interpolate(through points: [SIMD2<Double>],
-                                   startTangent: SIMD2<Double>,
-                                   endTangent: SIMD2<Double>,
-                                   tolerance: Double = 1e-6) -> Curve2D? {
+    public static func interpolate(
+        through points: [SIMD2<Double>],
+        startTangent: SIMD2<Double>,
+        endTangent: SIMD2<Double>,
+        tolerance: Double = 1e-6
+    ) -> Curve2D? {
         let flat = points.flatMap { [$0.x, $0.y] }
-        guard let h = flat.withUnsafeBufferPointer({ ptr in
-            OCCTCurve2DInterpolateWithTangents(ptr.baseAddress, Int32(points.count),
-                                               startTangent.x, startTangent.y,
-                                               endTangent.x, endTangent.y, tolerance)
-        }) else { return nil }
+        guard
+            let h = flat.withUnsafeBufferPointer({ ptr in
+                OCCTCurve2DInterpolateWithTangents(
+                    ptr.baseAddress, Int32(points.count),
+                    startTangent.x, startTangent.y,
+                    endTangent.x, endTangent.y, tolerance)
+            })
+        else { return nil }
         return Curve2D(handle: h)
     }
 
@@ -392,10 +453,12 @@ public final class Curve2D: @unchecked Sendable {
     ///   - tolerance: Point coincidence tolerance (default 1e-6).
     /// - Returns: A B-spline interpolating curve, or `nil` on failure.
     /// - Note: Resolves GitHub issue #38.
-    public static func interpolate(through points: [SIMD2<Double>],
-                                   tangents: [Int: SIMD2<Double>],
-                                   closed: Bool = false,
-                                   tolerance: Double = 1e-6) -> Curve2D? {
+    public static func interpolate(
+        through points: [SIMD2<Double>],
+        tangents: [Int: SIMD2<Double>],
+        closed: Bool = false,
+        tolerance: Double = 1e-6
+    ) -> Curve2D? {
         guard points.count >= 2 else { return nil }
         let n = points.count
         let flatPoints = points.flatMap { [$0.x, $0.y] }
@@ -403,31 +466,38 @@ public final class Curve2D: @unchecked Sendable {
         var flatTangents = [Double](repeating: 0, count: n * 2)
         var flags = [Bool](repeating: false, count: n)
         for (idx, tan) in tangents where idx >= 0 && idx < n {
-            flatTangents[idx * 2]     = tan.x
+            flatTangents[idx * 2] = tan.x
             flatTangents[idx * 2 + 1] = tan.y
             flags[idx] = true
         }
-        guard let h = flatPoints.withUnsafeBufferPointer({ ptsPtr in
-            flatTangents.withUnsafeBufferPointer { tanPtr in
-                flags.withUnsafeBufferPointer { flagPtr in
-                    OCCTCurve2DInterpolateWithInteriorTangents(
-                        ptsPtr.baseAddress, Int32(n),
-                        tanPtr.baseAddress, flagPtr.baseAddress,
-                        closed, tolerance)
+        guard
+            let h = flatPoints.withUnsafeBufferPointer({ ptsPtr in
+                flatTangents.withUnsafeBufferPointer { tanPtr in
+                    flags.withUnsafeBufferPointer { flagPtr in
+                        OCCTCurve2DInterpolateWithInteriorTangents(
+                            ptsPtr.baseAddress, Int32(n),
+                            tanPtr.baseAddress, flagPtr.baseAddress,
+                            closed, tolerance)
+                    }
                 }
-            }
-        }) else { return nil }
+            })
+        else { return nil }
         return Curve2D(handle: h)
     }
 
     /// Approximate a B-spline curve fitting through points within tolerance.
-    public static func fit(through points: [SIMD2<Double>], minDegree: Int = 3,
-                           maxDegree: Int = 8, tolerance: Double = 1e-3) -> Curve2D? {
+    public static func fit(
+        through points: [SIMD2<Double>], minDegree: Int = 3,
+        maxDegree: Int = 8, tolerance: Double = 1e-3
+    ) -> Curve2D? {
         let flat = points.flatMap { [$0.x, $0.y] }
-        guard let h = flat.withUnsafeBufferPointer({ ptr in
-            OCCTCurve2DFitPoints(ptr.baseAddress, Int32(points.count),
-                                 Int32(minDegree), Int32(maxDegree), tolerance)
-        }) else { return nil }
+        guard
+            let h = flat.withUnsafeBufferPointer({ ptr in
+                OCCTCurve2DFitPoints(
+                    ptr.baseAddress, Int32(points.count),
+                    Int32(minDegree), Int32(maxDegree), tolerance)
+            })
+        else { return nil }
         return Curve2D(handle: h)
     }
 
@@ -463,6 +533,7 @@ public final class Curve2D: @unchecked Sendable {
     }
 
     /// Create an offset curve at the given distance.
+    ///
     /// Positive distance offsets to the left of the curve direction.
     public func offset(by distance: Double) -> Curve2D? {
         guard let h = OCCTCurve2DOffset(handle, distance) else { return nil }
@@ -495,8 +566,11 @@ public final class Curve2D: @unchecked Sendable {
 
     /// Create a copy mirrored across an axis line.
     public func mirrored(acrossLine point: SIMD2<Double>, direction: SIMD2<Double>) -> Curve2D? {
-        guard let h = OCCTCurve2DMirrorAxis(handle, point.x, point.y,
-                                             direction.x, direction.y) else { return nil }
+        guard
+            let h = OCCTCurve2DMirrorAxis(
+                handle, point.x, point.y,
+                direction.x, direction.y)
+        else { return nil }
         return Curve2D(handle: h)
     }
 
@@ -510,7 +584,7 @@ public final class Curve2D: @unchecked Sendable {
     ///
     /// Measured per `GeomAbs_CN` interval and subdivided until two successive levels agree to
     /// 1e-9 relative. A whole 2D ellipse used to measure 0.337% long on the single Gauss
-    /// quadrature `GCPnts_AbscissaPoint::Length` hands a one-interval curve — the same defect and
+    /// quadrature `GCPnts_AbscissaPoint::Length` hands a one-interval curve, the same defect and
     /// the same numbers as the 3D spelling, since both reach one shared template (#603).
     ///
     /// ```swift
@@ -532,7 +606,7 @@ public final class Curve2D: @unchecked Sendable {
     ///
     /// Both bounds must also be finite: `.nan` and `±.infinity` report `nil`. OCCT's integrator
     /// does not check them itself, and on a multi-span BSpline a NaN upper bound measured `0`
-    /// and a NaN lower bound the curve's whole length — see ``Curve3D/length(from:to:)`` for the
+    /// and a NaN lower bound the curve's whole length; see ``Curve3D/length(from:to:)`` for the
     /// mechanism (#548).
     ///
     /// A range reaching outside the curve's domain measures the part of it that lies on the curve,
@@ -568,11 +642,12 @@ public final class Curve2D: @unchecked Sendable {
     ///                    (the start of the curve).
     /// - Returns: The parameter value at the given arc-length distance,
     ///            or `nil` if the computation fails (e.g. distance exceeds the curve).
-    /// - Note: Shares the subdivided measurement with `length`, so the two agree —
+    /// - Note: Shares the subdivided measurement with `length`, so the two agree:
     ///         `curve.parameterAtLength(curve.length!)` lands on `domain.upperBound`. OCCT's own
     ///         root finder inverts a single quadrature and would not (#603).
     /// - Note: Resolves GitHub issue #37.
-    public func parameterAtLength(_ arcLength: Double, from fromParameter: Double? = nil) -> Double? {
+    public func parameterAtLength(_ arcLength: Double, from fromParameter: Double? = nil) -> Double?
+    {
         let start = fromParameter ?? domain.lowerBound
         let result = OCCTCurve2DParameterAtLength(handle, arcLength, start)
         return result > -Double.greatestFiniteMagnitude ? result : nil
@@ -583,7 +658,7 @@ public final class Curve2D: @unchecked Sendable {
     /// The curvature (1/radius) at parameter `u`, or `nil` where the curve has none.
     ///
     /// - Parameter u: Curve parameter.
-    /// - Returns: The curvature — `0` for a straight segment, which is a real answer — or `nil` at
+    /// - Returns: The curvature (`0` for a straight segment, which is a real answer), or `nil` at
     ///   a parameter the curve cannot be evaluated at and where
     ///   `GeomLProp_CLProps2d::IsTangentDefined()` is false. Straight and undefined used to be the
     ///   same `0` (#595).
@@ -603,14 +678,16 @@ public final class Curve2D: @unchecked Sendable {
 
     /// The unit normal vector at parameter `u`, or `nil` if undefined (e.g. on a straight line).
     public func normal(at u: Double) -> SIMD2<Double>? {
-        var nx: Double = 0, ny: Double = 0
+        var nx: Double = 0
+        var ny: Double = 0
         guard OCCTCurve2DGetNormal(handle, u, &nx, &ny) else { return nil }
         return SIMD2(nx, ny)
     }
 
     /// The unit tangent direction at parameter `u`, or `nil` if undefined.
     public func tangentDirection(at u: Double) -> SIMD2<Double>? {
-        var tx: Double = 0, ty: Double = 0
+        var tx: Double = 0
+        var ty: Double = 0
         guard OCCTCurve2DGetTangentDir(handle, u, &tx, &ty) else { return nil }
         return SIMD2(tx, ty)
     }
@@ -618,12 +695,14 @@ public final class Curve2D: @unchecked Sendable {
     /// The center of curvature (osculating circle center) at parameter `u`,
     /// or `nil` if curvature is zero (straight segment).
     public func centerOfCurvature(at u: Double) -> SIMD2<Double>? {
-        var cx: Double = 0, cy: Double = 0
+        var cx: Double = 0
+        var cy: Double = 0
         guard OCCTCurve2DGetCenterOfCurvature(handle, u, &cx, &cy) else { return nil }
         return SIMD2(cx, cy)
     }
 
     /// Find all inflection points (where curvature changes sign).
+    ///
     /// Returns an array of parameter values.
     public func inflectionPoints() -> [Double] {
         var buffer = [Double](repeating: 0, count: 256)
@@ -636,8 +715,9 @@ public final class Curve2D: @unchecked Sendable {
         var buffer = [OCCTCurve2DCurvePoint](repeating: OCCTCurve2DCurvePoint(), count: 256)
         let n = Int(OCCTCurve2DGetCurvatureExtrema(handle, &buffer, 256))
         return (0..<n).map {
-            Curve2DSpecialPoint(parameter: buffer[$0].parameter,
-                                type: Curve2DSpecialPointType(rawValue: buffer[$0].type) ?? .minCurvature)
+            Curve2DSpecialPoint(
+                parameter: buffer[$0].parameter,
+                type: Curve2DSpecialPointType(rawValue: buffer[$0].type) ?? .minCurvature)
         }
     }
 
@@ -646,8 +726,9 @@ public final class Curve2D: @unchecked Sendable {
         var buffer = [OCCTCurve2DCurvePoint](repeating: OCCTCurve2DCurvePoint(), count: 256)
         let n = Int(OCCTCurve2DGetAllSpecialPoints(handle, &buffer, 256))
         return (0..<n).map {
-            Curve2DSpecialPoint(parameter: buffer[$0].parameter,
-                                type: Curve2DSpecialPointType(rawValue: buffer[$0].type) ?? .inflection)
+            Curve2DSpecialPoint(
+                parameter: buffer[$0].parameter,
+                type: Curve2DSpecialPointType(rawValue: buffer[$0].type) ?? .inflection)
         }
     }
 
@@ -655,7 +736,10 @@ public final class Curve2D: @unchecked Sendable {
 
     /// The axis-aligned bounding box of this curve.
     public var boundingBox: (min: SIMD2<Double>, max: SIMD2<Double>)? {
-        var xMin: Double = 0, yMin: Double = 0, xMax: Double = 0, yMax: Double = 0
+        var xMin: Double = 0
+        var yMin: Double = 0
+        var xMax: Double = 0
+        var yMax: Double = 0
         guard OCCTCurve2DGetBoundingBox(handle, &xMin, &yMin, &xMax, &yMax) else { return nil }
         return (min: SIMD2(xMin, yMin), max: SIMD2(xMax, yMax))
     }
@@ -663,22 +747,32 @@ public final class Curve2D: @unchecked Sendable {
     // MARK: - Additional Arc Types
 
     /// Create a trimmed arc of a hyperbola.
-    public static func arcOfHyperbola(center: SIMD2<Double>, majorRadius: Double,
-                                      minorRadius: Double, rotation: Double = 0,
-                                      startAngle: Double, endAngle: Double) -> Curve2D? {
-        guard let h = OCCTCurve2DCreateArcOfHyperbola(center.x, center.y,
-                                                       majorRadius, minorRadius, rotation,
-                                                       startAngle, endAngle) else { return nil }
+    public static func arcOfHyperbola(
+        center: SIMD2<Double>, majorRadius: Double,
+        minorRadius: Double, rotation: Double = 0,
+        startAngle: Double, endAngle: Double
+    ) -> Curve2D? {
+        guard
+            let h = OCCTCurve2DCreateArcOfHyperbola(
+                center.x, center.y,
+                majorRadius, minorRadius, rotation,
+                startAngle, endAngle)
+        else { return nil }
         return Curve2D(handle: h)
     }
 
     /// Create a trimmed arc of a parabola.
-    public static func arcOfParabola(focus: SIMD2<Double>, direction: SIMD2<Double>,
-                                     focalLength: Double,
-                                     startParam: Double, endParam: Double) -> Curve2D? {
-        guard let h = OCCTCurve2DCreateArcOfParabola(focus.x, focus.y,
-                                                      direction.x, direction.y, focalLength,
-                                                      startParam, endParam) else { return nil }
+    public static func arcOfParabola(
+        focus: SIMD2<Double>, direction: SIMD2<Double>,
+        focalLength: Double,
+        startParam: Double, endParam: Double
+    ) -> Curve2D? {
+        guard
+            let h = OCCTCurve2DCreateArcOfParabola(
+                focus.x, focus.y,
+                direction.x, direction.y, focalLength,
+                startParam, endParam)
+        else { return nil }
         return Curve2D(handle: h)
     }
 
@@ -690,7 +784,7 @@ public final class Curve2D: @unchecked Sendable {
     /// Wraps `Geom2dConvert_ApproxCurve`, which fits the curve's entire native range in one
     /// pass. This is a **different OCCT algorithm** from
     /// ``approximatedInRange(first:last:toleranceU:toleranceV:maxDegree:maxSegments:)``, not a
-    /// whole-domain shorthand for it — the two aren't interchangeable by adding or dropping a
+    /// whole-domain shorthand for it: the two aren't interchangeable by adding or dropping a
     /// range, and their tolerance defaults (`1e-3` here vs. `1e-6` there) are not comparable:
     /// this one bounds a single whole-curve error, the other bounds independent per-axis error
     /// on a restricted range.
@@ -704,7 +798,7 @@ public final class Curve2D: @unchecked Sendable {
     ///   - maxDegree: Maximum polynomial degree
     ///
     /// Defaults (`tolerance: 1e-3`, `maxDegree: 8`) are shared with `Curve3D.approximated` and
-    /// `Surface.approximated` (#406) — all three wrap the same `GeomConvert_Approx*`/
+    /// `Surface.approximated` (#406). All three wrap the same `GeomConvert_Approx*`/
     /// `Geom2dConvert_ApproxCurve` family applied to a different OCCT geometry hierarchy, not
     /// independent algorithms that would justify independently-tuned numeric defaults.
     ///
@@ -714,10 +808,15 @@ public final class Curve2D: @unchecked Sendable {
     /// let circle = Curve2D.circle(center: .zero, radius: 5)!
     /// let approx = circle.approximated(tolerance: 1e-3, continuity: 2)
     /// ```
-    public func approximated(tolerance: Double = 1e-3, continuity: Int = 2,
-                             maxSegments: Int = 100, maxDegree: Int = 8) -> Curve2D? {
-        guard let h = OCCTCurve2DApproximate(handle, tolerance, Int32(continuity),
-                                              Int32(maxSegments), Int32(maxDegree)) else { return nil }
+    public func approximated(
+        tolerance: Double = 1e-3, continuity: Int = 2,
+        maxSegments: Int = 100, maxDegree: Int = 8
+    ) -> Curve2D? {
+        guard
+            let h = OCCTCurve2DApproximate(
+                handle, tolerance, Int32(continuity),
+                Int32(maxSegments), Int32(maxDegree))
+        else { return nil }
         return Curve2D(handle: h)
     }
 
@@ -746,8 +845,10 @@ public final class Curve2D: @unchecked Sendable {
         // more splits than that was silently cut off at 256 with nothing to notice it by.
         func read(capacity: Int) -> (count: Int, buffer: [Int32]) {
             var buffer = [Int32](repeating: 0, count: capacity)
-            let n = Int(OCCTCurve2DSplitAtDiscontinuities(handle, continuity.rawValue,
-                                                          &buffer, Int32(capacity)))
+            let n = Int(
+                OCCTCurve2DSplitAtDiscontinuities(
+                    handle, continuity.rawValue,
+                    &buffer, Int32(capacity)))
             return (n, buffer)
         }
 
@@ -758,13 +859,18 @@ public final class Curve2D: @unchecked Sendable {
     }
 
     /// Approximate this curve as a sequence of arcs and line segments.
+    ///
     /// Useful for CNC G-code generation.
-    public func toArcsAndSegments(tolerance: Double = 0.01,
-                                  angleTolerance: Double = 0.04) -> [Curve2D]? {
+    public func toArcsAndSegments(
+        tolerance: Double = 0.01,
+        angleTolerance: Double = 0.04
+    ) -> [Curve2D]? {
         var buffer = [OCCTCurve2DRef?](repeating: nil, count: 256)
-        let n = Int(buffer.withUnsafeMutableBufferPointer { ptr in
-            OCCTCurve2DToArcsAndSegments(handle, tolerance, angleTolerance, ptr.baseAddress, 256)
-        })
+        let n = Int(
+            buffer.withUnsafeMutableBufferPointer { ptr in
+                OCCTCurve2DToArcsAndSegments(
+                    handle, tolerance, angleTolerance, ptr.baseAddress, 256)
+            })
         guard n > 0 else { return nil }
         return (0..<n).compactMap { i in
             guard let h = buffer[i] else { return nil }
@@ -775,31 +881,45 @@ public final class Curve2D: @unchecked Sendable {
     // MARK: - Bisector
 
     /// Compute the bisector curve between this curve and another.
+    ///
     /// The bisector is the locus of points equidistant from both curves.
-    public func bisector(with other: Curve2D, origin: SIMD2<Double>,
-                         side: Bool = true) -> Curve2D? {
-        guard let h = OCCTCurve2DBisectorCC(handle, other.handle,
-                                             origin.x, origin.y, side) else { return nil }
+    public func bisector(
+        with other: Curve2D, origin: SIMD2<Double>,
+        side: Bool = true
+    ) -> Curve2D? {
+        guard
+            let h = OCCTCurve2DBisectorCC(
+                handle, other.handle,
+                origin.x, origin.y, side)
+        else { return nil }
         return Curve2D(handle: h)
     }
 
     /// Compute the bisector curve between a point and this curve.
-    public func bisector(withPoint point: SIMD2<Double>, origin: SIMD2<Double>,
-                         side: Bool = true) -> Curve2D? {
-        guard let h = OCCTCurve2DBisectorPC(point.x, point.y, handle,
-                                             origin.x, origin.y, side) else { return nil }
+    public func bisector(
+        withPoint point: SIMD2<Double>, origin: SIMD2<Double>,
+        side: Bool = true
+    ) -> Curve2D? {
+        guard
+            let h = OCCTCurve2DBisectorPC(
+                point.x, point.y, handle,
+                origin.x, origin.y, side)
+        else { return nil }
         return Curve2D(handle: h)
     }
 
     // MARK: - Analysis
 
     /// Find intersection points between this curve and another.
-    public func intersections(with other: Curve2D, tolerance: Double = 1e-6) -> [Curve2DIntersection] {
+    public func intersections(with other: Curve2D, tolerance: Double = 1e-6)
+        -> [Curve2DIntersection]
+    {
         var buffer = [OCCTCurve2DIntersection](repeating: OCCTCurve2DIntersection(), count: 128)
         let n = Int(OCCTCurve2DIntersect(handle, other.handle, tolerance, &buffer, 128))
         return (0..<n).map {
-            Curve2DIntersection(point: SIMD2(buffer[$0].x, buffer[$0].y),
-                                parameter1: buffer[$0].u1, parameter2: buffer[$0].u2)
+            Curve2DIntersection(
+                point: SIMD2(buffer[$0].x, buffer[$0].y),
+                parameter1: buffer[$0].u1, parameter2: buffer[$0].u2)
         }
     }
 
@@ -808,8 +928,9 @@ public final class Curve2D: @unchecked Sendable {
         var buffer = [OCCTCurve2DIntersection](repeating: OCCTCurve2DIntersection(), count: 128)
         let n = Int(OCCTCurve2DSelfIntersect(handle, tolerance, &buffer, 128))
         return (0..<n).map {
-            Curve2DIntersection(point: SIMD2(buffer[$0].x, buffer[$0].y),
-                                parameter1: buffer[$0].u1, parameter2: buffer[$0].u2)
+            Curve2DIntersection(
+                point: SIMD2(buffer[$0].x, buffer[$0].y),
+                parameter1: buffer[$0].u1, parameter2: buffer[$0].u2)
         }
     }
 
@@ -819,8 +940,8 @@ public final class Curve2D: @unchecked Sendable {
     /// - Returns: The nearest projection, or `nil` if there is no curve to answer about.
     ///
     /// The answer is always inside this curve's own ``domain``, and always the true nearest point:
-    /// where the point has no perpendicular foot on the curve — anything past the end of a trimmed
-    /// curve, or off to one side of an arc — the nearest point is an end, and that is what comes
+    /// where the point has no perpendicular foot on the curve (anything past the end of a trimmed
+    /// curve, or off to one side of an arc), the nearest point is an end, and that is what comes
     /// back. `project(_:)` (the `Point2D` overload), `Point2D.distance(to:)` and
     /// ``nearestParameter(to:)`` compute the same nearest solution through the same shared bridge
     /// path and agree with it exactly.
@@ -835,13 +956,14 @@ public final class Curve2D: @unchecked Sendable {
     /// #expect(arc.project(point: SIMD2(0, -6))?.parameter == 0)        // the near end, 7.81 away
     /// ```
     ///
-    /// Before #615 this reported `Geom2dAPI_ProjectPointOnCurve`'s extremum instead — the arc above
-    /// answered π/2, the far side, 11 away — and `nil` for the segment. ``allProjections(of:)`` asks
+    /// Before #615 this reported `Geom2dAPI_ProjectPointOnCurve`'s extremum instead: the arc above
+    /// answered π/2, the far side, 11 away, and `nil` for the segment. ``allProjections(of:)`` asks
     /// for the extrema, which is a different question, and still reports none in both cases.
     public func project(point p: SIMD2<Double>) -> Curve2DProjection? {
         let r = OCCTCurve2DProjectPoint(handle, p.x, p.y)
         guard r.distance >= 0 else { return nil }
-        return Curve2DProjection(point: SIMD2(r.x, r.y), parameter: r.parameter, distance: r.distance)
+        return Curve2DProjection(
+            point: SIMD2(r.x, r.y), parameter: r.parameter, distance: r.distance)
     }
 
     /// The parameter of the point on this curve nearest to `point`.
@@ -877,7 +999,7 @@ public final class Curve2D: @unchecked Sendable {
 
     /// Project a point onto this curve, returning every projection.
     ///
-    /// This asks for the **extrema** of the distance function — the perpendicular feet — which is a
+    /// This asks for the **extrema** of the distance function (the perpendicular feet), which is a
     /// different question from "the nearest point", and since #615 gives a visibly different answer.
     /// A bounded curve queried from beyond its end has no perpendicular foot at all, so this
     /// correctly returns empty where ``project(point:)`` and ``nearestParameter(to:)`` answer with
@@ -894,8 +1016,9 @@ public final class Curve2D: @unchecked Sendable {
         var buffer = [OCCTCurve2DProjection](repeating: OCCTCurve2DProjection(), count: 64)
         let n = Int(OCCTCurve2DProjectPointAll(handle, p.x, p.y, &buffer, 64))
         return (0..<n).map {
-            Curve2DProjection(point: SIMD2(buffer[$0].x, buffer[$0].y),
-                              parameter: buffer[$0].parameter, distance: buffer[$0].distance)
+            Curve2DProjection(
+                point: SIMD2(buffer[$0].x, buffer[$0].y),
+                parameter: buffer[$0].parameter, distance: buffer[$0].distance)
         }
     }
 
@@ -903,10 +1026,11 @@ public final class Curve2D: @unchecked Sendable {
     public func minDistance(to other: Curve2D) -> Curve2DExtremaResult? {
         let r = OCCTCurve2DMinDistance(handle, other.handle)
         guard r.distance >= 0 else { return nil }
-        return Curve2DExtremaResult(pointOnCurve1: SIMD2(r.p1x, r.p1y),
-                                    pointOnCurve2: SIMD2(r.p2x, r.p2y),
-                                    parameter1: r.u1, parameter2: r.u2,
-                                    distance: r.distance)
+        return Curve2DExtremaResult(
+            pointOnCurve1: SIMD2(r.p1x, r.p1y),
+            pointOnCurve2: SIMD2(r.p2x, r.p2y),
+            parameter1: r.u1, parameter2: r.u2,
+            distance: r.distance)
     }
 
     /// Find all extrema (local min/max distances) between this curve and another.
@@ -914,10 +1038,11 @@ public final class Curve2D: @unchecked Sendable {
         var buffer = [OCCTCurve2DExtrema](repeating: OCCTCurve2DExtrema(), count: 64)
         let n = Int(OCCTCurve2DAllExtrema(handle, other.handle, &buffer, 64))
         return (0..<n).map {
-            Curve2DExtremaResult(pointOnCurve1: SIMD2(buffer[$0].p1x, buffer[$0].p1y),
-                                 pointOnCurve2: SIMD2(buffer[$0].p2x, buffer[$0].p2y),
-                                 parameter1: buffer[$0].u1, parameter2: buffer[$0].u2,
-                                 distance: buffer[$0].distance)
+            Curve2DExtremaResult(
+                pointOnCurve1: SIMD2(buffer[$0].p1x, buffer[$0].p1y),
+                pointOnCurve2: SIMD2(buffer[$0].p2x, buffer[$0].p2y),
+                parameter1: buffer[$0].u1, parameter2: buffer[$0].u2,
+                distance: buffer[$0].distance)
         }
     }
 
@@ -932,9 +1057,10 @@ public final class Curve2D: @unchecked Sendable {
     /// Split a B-spline curve into its constituent Bezier segments.
     public func toBezierSegments() -> [Curve2D]? {
         var buffer = [OCCTCurve2DRef?](repeating: nil, count: 64)
-        let n = Int(buffer.withUnsafeMutableBufferPointer { ptr in
-            OCCTCurve2DBSplineToBeziers(handle, ptr.baseAddress, 64)
-        })
+        let n = Int(
+            buffer.withUnsafeMutableBufferPointer { ptr in
+                OCCTCurve2DBSplineToBeziers(handle, ptr.baseAddress, 64)
+            })
         guard n > 0 else { return nil }
         return (0..<n).compactMap { i in
             guard let h = buffer[i] else { return nil }
@@ -1044,7 +1170,7 @@ public struct Curve2DHatchSegment: Sendable {
 
 /// Constraint-based 2D geometric construction (circle/line solver).
 ///
-/// Wraps the OpenCASCADE `Geom2dGcc` package — given tangency, passing-through,
+/// Wraps the OpenCASCADE `Geom2dGcc` package: given tangency, passing-through,
 /// and radius constraints, finds all circles or lines satisfying them.
 ///
 /// ## Examples
@@ -1070,13 +1196,16 @@ public enum Curve2DGcc {
         tolerance: Double = 1e-6
     ) -> [Curve2DCircleSolution] {
         var buffer = [OCCTGccCircleSolution](repeating: OCCTGccCircleSolution(), count: 32)
-        let n = Int(OCCTGccCircle2d3Tan(c1.handle, q1.rawValue,
-                                         c2.handle, q2.rawValue,
-                                         c3.handle, q3.rawValue,
-                                         tolerance, &buffer, 32))
+        let n = Int(
+            OCCTGccCircle2d3Tan(
+                c1.handle, q1.rawValue,
+                c2.handle, q2.rawValue,
+                c3.handle, q3.rawValue,
+                tolerance, &buffer, 32))
         return (0..<n).map {
-            Curve2DCircleSolution(center: SIMD2(buffer[$0].cx, buffer[$0].cy),
-                                  radius: buffer[$0].radius)
+            Curve2DCircleSolution(
+                center: SIMD2(buffer[$0].cx, buffer[$0].cy),
+                radius: buffer[$0].radius)
         }
     }
 
@@ -1088,13 +1217,16 @@ public enum Curve2DGcc {
         tolerance: Double = 1e-6
     ) -> [Curve2DCircleSolution] {
         var buffer = [OCCTGccCircleSolution](repeating: OCCTGccCircleSolution(), count: 32)
-        let n = Int(OCCTGccCircle2d2TanPt(c1.handle, q1.rawValue,
-                                           c2.handle, q2.rawValue,
-                                           point.x, point.y,
-                                           tolerance, &buffer, 32))
+        let n = Int(
+            OCCTGccCircle2d2TanPt(
+                c1.handle, q1.rawValue,
+                c2.handle, q2.rawValue,
+                point.x, point.y,
+                tolerance, &buffer, 32))
         return (0..<n).map {
-            Curve2DCircleSolution(center: SIMD2(buffer[$0].cx, buffer[$0].cy),
-                                  radius: buffer[$0].radius)
+            Curve2DCircleSolution(
+                center: SIMD2(buffer[$0].cx, buffer[$0].cy),
+                radius: buffer[$0].radius)
         }
     }
 
@@ -1105,12 +1237,15 @@ public enum Curve2DGcc {
         tolerance: Double = 1e-6
     ) -> [Curve2DCircleSolution] {
         var buffer = [OCCTGccCircleSolution](repeating: OCCTGccCircleSolution(), count: 32)
-        let n = Int(OCCTGccCircle2dTanCen(curve.handle, qualifier.rawValue,
-                                           center.x, center.y, tolerance,
-                                           &buffer, 32))
+        let n = Int(
+            OCCTGccCircle2dTanCen(
+                curve.handle, qualifier.rawValue,
+                center.x, center.y, tolerance,
+                &buffer, 32))
         return (0..<n).map {
-            Curve2DCircleSolution(center: SIMD2(buffer[$0].cx, buffer[$0].cy),
-                                  radius: buffer[$0].radius)
+            Curve2DCircleSolution(
+                center: SIMD2(buffer[$0].cx, buffer[$0].cy),
+                radius: buffer[$0].radius)
         }
     }
 
@@ -1122,12 +1257,15 @@ public enum Curve2DGcc {
         tolerance: Double = 1e-6
     ) -> [Curve2DCircleSolution] {
         var buffer = [OCCTGccCircleSolution](repeating: OCCTGccCircleSolution(), count: 32)
-        let n = Int(OCCTGccCircle2d2TanRad(c1.handle, q1.rawValue,
-                                            c2.handle, q2.rawValue,
-                                            radius, tolerance, &buffer, 32))
+        let n = Int(
+            OCCTGccCircle2d2TanRad(
+                c1.handle, q1.rawValue,
+                c2.handle, q2.rawValue,
+                radius, tolerance, &buffer, 32))
         return (0..<n).map {
-            Curve2DCircleSolution(center: SIMD2(buffer[$0].cx, buffer[$0].cy),
-                                  radius: buffer[$0].radius)
+            Curve2DCircleSolution(
+                center: SIMD2(buffer[$0].cx, buffer[$0].cy),
+                radius: buffer[$0].radius)
         }
     }
 
@@ -1138,12 +1276,15 @@ public enum Curve2DGcc {
         tolerance: Double = 1e-6
     ) -> [Curve2DCircleSolution] {
         var buffer = [OCCTGccCircleSolution](repeating: OCCTGccCircleSolution(), count: 32)
-        let n = Int(OCCTGccCircle2dTanPtRad(curve.handle, qualifier.rawValue,
-                                             point.x, point.y, radius, tolerance,
-                                             &buffer, 32))
+        let n = Int(
+            OCCTGccCircle2dTanPtRad(
+                curve.handle, qualifier.rawValue,
+                point.x, point.y, radius, tolerance,
+                &buffer, 32))
         return (0..<n).map {
-            Curve2DCircleSolution(center: SIMD2(buffer[$0].cx, buffer[$0].cy),
-                                  radius: buffer[$0].radius)
+            Curve2DCircleSolution(
+                center: SIMD2(buffer[$0].cx, buffer[$0].cy),
+                radius: buffer[$0].radius)
         }
     }
 
@@ -1154,11 +1295,14 @@ public enum Curve2DGcc {
         tolerance: Double = 1e-6
     ) -> [Curve2DCircleSolution] {
         var buffer = [OCCTGccCircleSolution](repeating: OCCTGccCircleSolution(), count: 32)
-        let n = Int(OCCTGccCircle2d2PtRad(p1.x, p1.y, p2.x, p2.y,
-                                           radius, tolerance, &buffer, 32))
+        let n = Int(
+            OCCTGccCircle2d2PtRad(
+                p1.x, p1.y, p2.x, p2.y,
+                radius, tolerance, &buffer, 32))
         return (0..<n).map {
-            Curve2DCircleSolution(center: SIMD2(buffer[$0].cx, buffer[$0].cy),
-                                  radius: buffer[$0].radius)
+            Curve2DCircleSolution(
+                center: SIMD2(buffer[$0].cx, buffer[$0].cy),
+                radius: buffer[$0].radius)
         }
     }
 
@@ -1168,11 +1312,14 @@ public enum Curve2DGcc {
         tolerance: Double = 1e-6
     ) -> [Curve2DCircleSolution] {
         var buffer = [OCCTGccCircleSolution](repeating: OCCTGccCircleSolution(), count: 32)
-        let n = Int(OCCTGccCircle2d3Pt(p1.x, p1.y, p2.x, p2.y, p3.x, p3.y,
-                                        tolerance, &buffer, 32))
+        let n = Int(
+            OCCTGccCircle2d3Pt(
+                p1.x, p1.y, p2.x, p2.y, p3.x, p3.y,
+                tolerance, &buffer, 32))
         return (0..<n).map {
-            Curve2DCircleSolution(center: SIMD2(buffer[$0].cx, buffer[$0].cy),
-                                  radius: buffer[$0].radius)
+            Curve2DCircleSolution(
+                center: SIMD2(buffer[$0].cx, buffer[$0].cy),
+                radius: buffer[$0].radius)
         }
     }
 
@@ -1185,12 +1332,15 @@ public enum Curve2DGcc {
         tolerance: Double = 1e-6
     ) -> [Curve2DLineSolution] {
         var buffer = [OCCTGccLineSolution](repeating: OCCTGccLineSolution(), count: 32)
-        let n = Int(OCCTGccLine2d2Tan(c1.handle, q1.rawValue,
-                                       c2.handle, q2.rawValue,
-                                       tolerance, &buffer, 32))
+        let n = Int(
+            OCCTGccLine2d2Tan(
+                c1.handle, q1.rawValue,
+                c2.handle, q2.rawValue,
+                tolerance, &buffer, 32))
         return (0..<n).map {
-            Curve2DLineSolution(point: SIMD2(buffer[$0].px, buffer[$0].py),
-                                direction: SIMD2(buffer[$0].dx, buffer[$0].dy))
+            Curve2DLineSolution(
+                point: SIMD2(buffer[$0].px, buffer[$0].py),
+                direction: SIMD2(buffer[$0].dx, buffer[$0].dy))
         }
     }
 
@@ -1201,12 +1351,15 @@ public enum Curve2DGcc {
         tolerance: Double = 1e-6
     ) -> [Curve2DLineSolution] {
         var buffer = [OCCTGccLineSolution](repeating: OCCTGccLineSolution(), count: 32)
-        let n = Int(OCCTGccLine2dTanPt(curve.handle, qualifier.rawValue,
-                                        point.x, point.y, tolerance,
-                                        &buffer, 32))
+        let n = Int(
+            OCCTGccLine2dTanPt(
+                curve.handle, qualifier.rawValue,
+                point.x, point.y, tolerance,
+                &buffer, 32))
         return (0..<n).map {
-            Curve2DLineSolution(point: SIMD2(buffer[$0].px, buffer[$0].py),
-                                direction: SIMD2(buffer[$0].dx, buffer[$0].dy))
+            Curve2DLineSolution(
+                point: SIMD2(buffer[$0].px, buffer[$0].py),
+                direction: SIMD2(buffer[$0].dx, buffer[$0].dy))
         }
     }
 
@@ -1220,19 +1373,23 @@ public enum Curve2DGcc {
     ///   - spacing: Distance between hatch lines
     ///   - tolerance: Intersection tolerance
     /// - Returns: Array of hatch line segments
-    public static func hatch(boundaries: [Curve2D],
-                             origin: SIMD2<Double> = .zero,
-                             direction: SIMD2<Double> = SIMD2(1, 0),
-                             spacing: Double,
-                             tolerance: Double = 1e-6) -> [Curve2DHatchSegment] {
+    public static func hatch(
+        boundaries: [Curve2D],
+        origin: SIMD2<Double> = .zero,
+        direction: SIMD2<Double> = SIMD2(1, 0),
+        spacing: Double,
+        tolerance: Double = 1e-6
+    ) -> [Curve2DHatchSegment] {
         let maxSegments = 4096
         var buffer = [Double](repeating: 0, count: maxSegments * 4)
         let handles = boundaries.map { $0.handle as OCCTCurve2DRef? }
-        let n = Int(handles.withUnsafeBufferPointer { ptr in
-            OCCTCurve2DHatch(ptr.baseAddress, Int32(boundaries.count),
-                             origin.x, origin.y, direction.x, direction.y,
-                             spacing, tolerance, &buffer, Int32(maxSegments))
-        })
+        let n = Int(
+            handles.withUnsafeBufferPointer { ptr in
+                OCCTCurve2DHatch(
+                    ptr.baseAddress, Int32(boundaries.count),
+                    origin.x, origin.y, direction.x, direction.y,
+                    spacing, tolerance, &buffer, Int32(maxSegments))
+            })
         return (0..<n).map { i in
             let base = i * 4
             return Curve2DHatchSegment(
@@ -1271,14 +1428,20 @@ extension Curve2D {
     ///
     /// - Parameter parameters: Array of parameter values
     /// - Returns: Array of tuples with point and tangent vector
-    public func evaluateGridD1(_ parameters: [Double]) -> [(point: SIMD2<Double>, tangent: SIMD2<Double>)] {
+    public func evaluateGridD1(_ parameters: [Double]) -> [(
+        point: SIMD2<Double>, tangent: SIMD2<Double>
+    )] {
         guard !parameters.isEmpty else { return [] }
         var outXY = [Double](repeating: 0, count: parameters.count * 2)
         var outDXDY = [Double](repeating: 0, count: parameters.count * 2)
-        let n = Int(OCCTCurve2DEvaluateGridD1(handle, parameters, Int32(parameters.count), &outXY, &outDXDY))
+        let n = Int(
+            OCCTCurve2DEvaluateGridD1(handle, parameters, Int32(parameters.count), &outXY, &outDXDY)
+        )
         return (0..<n).map { i in
-            (point: SIMD2(outXY[i * 2], outXY[i * 2 + 1]),
-             tangent: SIMD2(outDXDY[i * 2], outDXDY[i * 2 + 1]))
+            (
+                point: SIMD2(outXY[i * 2], outXY[i * 2 + 1]),
+                tangent: SIMD2(outDXDY[i * 2], outDXDY[i * 2 + 1])
+            )
         }
     }
 
@@ -1308,8 +1471,10 @@ extension Curve2D {
     public static func lineParallel(
         point: SIMD2<Double>, direction: SIMD2<Double>, distance: Double
     ) -> Curve2D? {
-        guard let h = OCCTCurve2DMakeLineParallel(
-            point.x, point.y, direction.x, direction.y, distance) else { return nil }
+        guard
+            let h = OCCTCurve2DMakeLineParallel(
+                point.x, point.y, direction.x, direction.y, distance)
+        else { return nil }
         return Curve2D(handle: h)
     }
 }
@@ -1342,10 +1507,16 @@ extension Curve2D {
     public func convertToLine(
         first: Double, last: Double, tolerance: Double = 1e-3
     ) -> (line: Curve2D, newFirst: Double, newLast: Double, deviation: Double)? {
-        var newFirst: Double = 0, newLast: Double = 0, deviation: Double = 0
-        guard let h = OCCTCurve2DConvertToLine(
-            handle, first, last, tolerance, &newFirst, &newLast, &deviation) else { return nil }
-        return (line: Curve2D(handle: h), newFirst: newFirst, newLast: newLast, deviation: deviation)
+        var newFirst: Double = 0
+        var newLast: Double = 0
+        var deviation: Double = 0
+        guard
+            let h = OCCTCurve2DConvertToLine(
+                handle, first, last, tolerance, &newFirst, &newLast, &deviation)
+        else { return nil }
+        return (
+            line: Curve2D(handle: h), newFirst: newFirst, newLast: newLast, deviation: deviation
+        )
     }
 
     /// Simplify a 2D BSpline curve by removing unnecessary knots.
@@ -1366,7 +1537,7 @@ extension Curve2D {
     /// Wraps `Approx_Curve2d`, which fits only `[first, last]` and tracks separate U/V error
     /// bounds. This is a **different OCCT algorithm** from
     /// ``approximated(tolerance:continuity:maxSegments:maxDegree:)``, not that method with an
-    /// added range — a caller cannot migrate incrementally between the two by adding
+    /// added range. A caller cannot migrate incrementally between the two by adding
     /// `first`/`last`, since switching overloads changes the algorithm, the tolerance
     /// semantics, and the default tolerance magnitude (`1e-6` here vs. `1e-3` there) all at
     /// once. Continuity is fixed at C2 and is not configurable through this overload; use
@@ -1393,9 +1564,11 @@ extension Curve2D {
         toleranceU: Double = 1e-6, toleranceV: Double = 1e-6,
         maxDegree: Int = 8, maxSegments: Int = 100
     ) -> Curve2D? {
-        guard let h = OCCTApproxCurve2d(
-            handle, first, last, toleranceU, toleranceV,
-            Int32(maxDegree), Int32(maxSegments)) else { return nil }
+        guard
+            let h = OCCTApproxCurve2d(
+                handle, first, last, toleranceU, toleranceV,
+                Int32(maxDegree), Int32(maxSegments))
+        else { return nil }
         return Curve2D(handle: h)
     }
 
@@ -1409,14 +1582,19 @@ extension Curve2D {
 
 /// Bisector curve type classification.
 public enum BisecType: Int32, Sendable {
-    case line = 0, circle = 1, ellipse = 2, hyperbola = 3, parabola = 4, point = 5
+    case line = 0
+    case circle = 1
+    case ellipse = 2
+    case hyperbola = 3
+    case parabola = 4
+    case point = 5
 }
 
 /// A bisector solution from an analytical bisector computation.
 public struct BisecSolution: Sendable {
     /// The type of bisector curve.
     public let type: BisecType
-    /// Primary position (depends on type — center, point on line, focus).
+    /// Primary position (depends on type: center, point on line, focus).
     public let position: SIMD2<Double>
     /// Secondary values (direction for line, radii for conics).
     public let secondary: SIMD2<Double>
@@ -1436,7 +1614,10 @@ public enum GccAnaBisector {
     public static func ofPoints(
         _ p1: SIMD2<Double>, _ p2: SIMD2<Double>
     ) -> Curve2DLineSolution? {
-        var px: Double = 0, py: Double = 0, dx: Double = 0, dy: Double = 0
+        var px: Double = 0
+        var py: Double = 0
+        var dx: Double = 0
+        var dy: Double = 0
         guard OCCTGccAnaPnt2dBisec(p1.x, p1.y, p2.x, p2.y, &px, &py, &dx, &dy) else {
             return nil
         }
@@ -1451,12 +1632,15 @@ public enum GccAnaBisector {
         line2Point: SIMD2<Double>, line2Dir: SIMD2<Double>
     ) -> [Curve2DLineSolution] {
         var buffer = [OCCTGccLineSolution](repeating: OCCTGccLineSolution(), count: 4)
-        let n = Int(OCCTGccAnaLin2dBisec(line1Point.x, line1Point.y, line1Dir.x, line1Dir.y,
-                                         line2Point.x, line2Point.y, line2Dir.x, line2Dir.y,
-                                         &buffer, 4))
+        let n = Int(
+            OCCTGccAnaLin2dBisec(
+                line1Point.x, line1Point.y, line1Dir.x, line1Dir.y,
+                line2Point.x, line2Point.y, line2Dir.x, line2Dir.y,
+                &buffer, 4))
         return (0..<n).map {
-            Curve2DLineSolution(point: SIMD2(buffer[$0].px, buffer[$0].py),
-                               direction: SIMD2(buffer[$0].dx, buffer[$0].dy))
+            Curve2DLineSolution(
+                point: SIMD2(buffer[$0].px, buffer[$0].py),
+                direction: SIMD2(buffer[$0].dx, buffer[$0].dy))
         }
     }
 
@@ -1469,12 +1653,16 @@ public enum GccAnaBisector {
         point: SIMD2<Double>
     ) -> BisecSolution? {
         var sol = OCCTBisecSolution()
-        guard OCCTGccAnaLinPnt2dBisec(linePoint.x, linePoint.y, lineDir.x, lineDir.y,
-                                      point.x, point.y, &sol) else { return nil }
-        return BisecSolution(type: BisecType(rawValue: Int32(sol.type.rawValue)) ?? .point,
-                            position: SIMD2(sol.px, sol.py),
-                            secondary: SIMD2(sol.dx, sol.dy),
-                            radius: sol.radius)
+        guard
+            OCCTGccAnaLinPnt2dBisec(
+                linePoint.x, linePoint.y, lineDir.x, lineDir.y,
+                point.x, point.y, &sol)
+        else { return nil }
+        return BisecSolution(
+            type: BisecType(rawValue: Int32(sol.type.rawValue)) ?? .point,
+            position: SIMD2(sol.px, sol.py),
+            secondary: SIMD2(sol.dx, sol.dy),
+            radius: sol.radius)
     }
 
     /// Bisectors between two circles.
@@ -1503,14 +1691,17 @@ public enum GccAnaBisector {
         center2: SIMD2<Double>, radius2: Double
     ) -> [BisecSolution] {
         var buffer = [OCCTBisecSolution](repeating: OCCTBisecSolution(), count: 8)
-        let n = Int(OCCTGccAnaCirc2dBisec(center1.x, center1.y, radius1,
-                                          center2.x, center2.y, radius2,
-                                          &buffer, 8))
+        let n = Int(
+            OCCTGccAnaCirc2dBisec(
+                center1.x, center1.y, radius1,
+                center2.x, center2.y, radius2,
+                &buffer, 8))
         return (0..<n).map {
-            BisecSolution(type: BisecType(rawValue: Int32(buffer[$0].type.rawValue)) ?? .point,
-                         position: SIMD2(buffer[$0].px, buffer[$0].py),
-                         secondary: SIMD2(buffer[$0].dx, buffer[$0].dy),
-                         radius: buffer[$0].radius)
+            BisecSolution(
+                type: BisecType(rawValue: Int32(buffer[$0].type.rawValue)) ?? .point,
+                position: SIMD2(buffer[$0].px, buffer[$0].py),
+                secondary: SIMD2(buffer[$0].dx, buffer[$0].dy),
+                radius: buffer[$0].radius)
         }
     }
 
@@ -1531,14 +1722,17 @@ public enum GccAnaBisector {
         linePoint: SIMD2<Double>, lineDir: SIMD2<Double>
     ) -> [BisecSolution] {
         var buffer = [OCCTBisecSolution](repeating: OCCTBisecSolution(), count: 8)
-        let n = Int(OCCTGccAnaCircLin2dBisec(center.x, center.y, radius,
-                                             linePoint.x, linePoint.y, lineDir.x, lineDir.y,
-                                             &buffer, 8))
+        let n = Int(
+            OCCTGccAnaCircLin2dBisec(
+                center.x, center.y, radius,
+                linePoint.x, linePoint.y, lineDir.x, lineDir.y,
+                &buffer, 8))
         return (0..<n).map {
-            BisecSolution(type: BisecType(rawValue: Int32(buffer[$0].type.rawValue)) ?? .point,
-                         position: SIMD2(buffer[$0].px, buffer[$0].py),
-                         secondary: SIMD2(buffer[$0].dx, buffer[$0].dy),
-                         radius: buffer[$0].radius)
+            BisecSolution(
+                type: BisecType(rawValue: Int32(buffer[$0].type.rawValue)) ?? .point,
+                position: SIMD2(buffer[$0].px, buffer[$0].py),
+                secondary: SIMD2(buffer[$0].dx, buffer[$0].dy),
+                radius: buffer[$0].radius)
         }
     }
 
@@ -1559,14 +1753,17 @@ public enum GccAnaBisector {
         point: SIMD2<Double>
     ) -> [BisecSolution] {
         var buffer = [OCCTBisecSolution](repeating: OCCTBisecSolution(), count: 8)
-        let n = Int(OCCTGccAnaCircPnt2dBisec(center.x, center.y, radius,
-                                             point.x, point.y,
-                                             &buffer, 8))
+        let n = Int(
+            OCCTGccAnaCircPnt2dBisec(
+                center.x, center.y, radius,
+                point.x, point.y,
+                &buffer, 8))
         return (0..<n).map {
-            BisecSolution(type: BisecType(rawValue: Int32(buffer[$0].type.rawValue)) ?? .point,
-                         position: SIMD2(buffer[$0].px, buffer[$0].py),
-                         secondary: SIMD2(buffer[$0].dx, buffer[$0].dy),
-                         radius: buffer[$0].radius)
+            BisecSolution(
+                type: BisecType(rawValue: Int32(buffer[$0].type.rawValue)) ?? .point,
+                position: SIMD2(buffer[$0].px, buffer[$0].py),
+                secondary: SIMD2(buffer[$0].dx, buffer[$0].dy),
+                radius: buffer[$0].radius)
         }
     }
 }
@@ -1581,12 +1778,15 @@ extension Curve2DGcc {
         parallelTo linePoint: SIMD2<Double>, lineDir: SIMD2<Double>
     ) -> [Curve2DLineSolution] {
         var buffer = [OCCTGccLineSolution](repeating: OCCTGccLineSolution(), count: 4)
-        let n = Int(OCCTGccAnaLin2dTanParPt(point.x, point.y,
-                                            linePoint.x, linePoint.y, lineDir.x, lineDir.y,
-                                            &buffer, 4))
+        let n = Int(
+            OCCTGccAnaLin2dTanParPt(
+                point.x, point.y,
+                linePoint.x, linePoint.y, lineDir.x, lineDir.y,
+                &buffer, 4))
         return (0..<n).map {
-            Curve2DLineSolution(point: SIMD2(buffer[$0].px, buffer[$0].py),
-                               direction: SIMD2(buffer[$0].dx, buffer[$0].dy))
+            Curve2DLineSolution(
+                point: SIMD2(buffer[$0].px, buffer[$0].py),
+                direction: SIMD2(buffer[$0].dx, buffer[$0].dy))
         }
     }
 
@@ -1609,13 +1809,16 @@ extension Curve2DGcc {
         parallelTo linePoint: SIMD2<Double>, lineDir: SIMD2<Double>
     ) -> [Curve2DLineSolution] {
         var buffer = [OCCTGccLineSolution](repeating: OCCTGccLineSolution(), count: 4)
-        let n = Int(OCCTGccAnaLin2dTanParCirc(circleCenter.x, circleCenter.y, circleRadius,
-                                              qualifier.rawValue,
-                                              linePoint.x, linePoint.y, lineDir.x, lineDir.y,
-                                              &buffer, 4))
+        let n = Int(
+            OCCTGccAnaLin2dTanParCirc(
+                circleCenter.x, circleCenter.y, circleRadius,
+                qualifier.rawValue,
+                linePoint.x, linePoint.y, lineDir.x, lineDir.y,
+                &buffer, 4))
         return (0..<n).map {
-            Curve2DLineSolution(point: SIMD2(buffer[$0].px, buffer[$0].py),
-                               direction: SIMD2(buffer[$0].dx, buffer[$0].dy))
+            Curve2DLineSolution(
+                point: SIMD2(buffer[$0].px, buffer[$0].py),
+                direction: SIMD2(buffer[$0].dx, buffer[$0].dy))
         }
     }
 
@@ -1625,12 +1828,15 @@ extension Curve2DGcc {
         perpendicularTo linePoint: SIMD2<Double>, lineDir: SIMD2<Double>
     ) -> [Curve2DLineSolution] {
         var buffer = [OCCTGccLineSolution](repeating: OCCTGccLineSolution(), count: 4)
-        let n = Int(OCCTGccAnaLin2dTanPerPtLin(point.x, point.y,
-                                               linePoint.x, linePoint.y, lineDir.x, lineDir.y,
-                                               &buffer, 4))
+        let n = Int(
+            OCCTGccAnaLin2dTanPerPtLin(
+                point.x, point.y,
+                linePoint.x, linePoint.y, lineDir.x, lineDir.y,
+                &buffer, 4))
         return (0..<n).map {
-            Curve2DLineSolution(point: SIMD2(buffer[$0].px, buffer[$0].py),
-                               direction: SIMD2(buffer[$0].dx, buffer[$0].dy))
+            Curve2DLineSolution(
+                point: SIMD2(buffer[$0].px, buffer[$0].py),
+                direction: SIMD2(buffer[$0].dx, buffer[$0].dy))
         }
     }
 
@@ -1654,13 +1860,16 @@ extension Curve2DGcc {
         perpendicularTo linePoint: SIMD2<Double>, lineDir: SIMD2<Double>
     ) -> [Curve2DLineSolution] {
         var buffer = [OCCTGccLineSolution](repeating: OCCTGccLineSolution(), count: 4)
-        let n = Int(OCCTGccAnaLin2dTanPerCircLin(circleCenter.x, circleCenter.y, circleRadius,
-                                                 qualifier.rawValue,
-                                                 linePoint.x, linePoint.y, lineDir.x, lineDir.y,
-                                                 &buffer, 4))
+        let n = Int(
+            OCCTGccAnaLin2dTanPerCircLin(
+                circleCenter.x, circleCenter.y, circleRadius,
+                qualifier.rawValue,
+                linePoint.x, linePoint.y, lineDir.x, lineDir.y,
+                &buffer, 4))
         return (0..<n).map {
-            Curve2DLineSolution(point: SIMD2(buffer[$0].px, buffer[$0].py),
-                               direction: SIMD2(buffer[$0].dx, buffer[$0].dy))
+            Curve2DLineSolution(
+                point: SIMD2(buffer[$0].px, buffer[$0].py),
+                direction: SIMD2(buffer[$0].dx, buffer[$0].dy))
         }
     }
 
@@ -1671,13 +1880,16 @@ extension Curve2DGcc {
         angle: Double
     ) -> [Curve2DLineSolution] {
         var buffer = [OCCTGccLineSolution](repeating: OCCTGccLineSolution(), count: 4)
-        let n = Int(OCCTGccAnaLin2dTanOblPt(point.x, point.y,
-                                            linePoint.x, linePoint.y, lineDir.x, lineDir.y,
-                                            angle,
-                                            &buffer, 4))
+        let n = Int(
+            OCCTGccAnaLin2dTanOblPt(
+                point.x, point.y,
+                linePoint.x, linePoint.y, lineDir.x, lineDir.y,
+                angle,
+                &buffer, 4))
         return (0..<n).map {
-            Curve2DLineSolution(point: SIMD2(buffer[$0].px, buffer[$0].py),
-                               direction: SIMD2(buffer[$0].dx, buffer[$0].dy))
+            Curve2DLineSolution(
+                point: SIMD2(buffer[$0].px, buffer[$0].py),
+                direction: SIMD2(buffer[$0].dx, buffer[$0].dy))
         }
     }
 
@@ -1688,13 +1900,16 @@ extension Curve2DGcc {
         angle: Double, tolerance: Double = 1e-6
     ) -> [Curve2DLineSolution] {
         var buffer = [OCCTGccLineSolution](repeating: OCCTGccLineSolution(), count: 32)
-        let n = Int(OCCTGeom2dGccLin2dTanObl(curve.handle, qualifier.rawValue,
-                                             linePoint.x, linePoint.y, lineDir.x, lineDir.y,
-                                             tolerance, angle,
-                                             &buffer, 32))
+        let n = Int(
+            OCCTGeom2dGccLin2dTanObl(
+                curve.handle, qualifier.rawValue,
+                linePoint.x, linePoint.y, lineDir.x, lineDir.y,
+                tolerance, angle,
+                &buffer, 32))
         return (0..<n).map {
-            Curve2DLineSolution(point: SIMD2(buffer[$0].px, buffer[$0].py),
-                               direction: SIMD2(buffer[$0].dx, buffer[$0].dy))
+            Curve2DLineSolution(
+                point: SIMD2(buffer[$0].px, buffer[$0].py),
+                direction: SIMD2(buffer[$0].dx, buffer[$0].dy))
         }
     }
 
@@ -1708,14 +1923,16 @@ extension Curve2DGcc {
         tolerance: Double = 1e-6
     ) -> [Curve2DCircleSolution] {
         var buffer = [OCCTGccCircleSolution](repeating: OCCTGccCircleSolution(), count: 32)
-        let n = Int(OCCTGccAnaCirc2d2TanOnLinLin(
-            line1Point.x, line1Point.y, line1Dir.x, line1Dir.y, q1.rawValue,
-            line2Point.x, line2Point.y, line2Dir.x, line2Dir.y, q2.rawValue,
-            centerOnPoint.x, centerOnPoint.y, centerOnDir.x, centerOnDir.y,
-            tolerance, &buffer, 32))
+        let n = Int(
+            OCCTGccAnaCirc2d2TanOnLinLin(
+                line1Point.x, line1Point.y, line1Dir.x, line1Dir.y, q1.rawValue,
+                line2Point.x, line2Point.y, line2Dir.x, line2Dir.y, q2.rawValue,
+                centerOnPoint.x, centerOnPoint.y, centerOnDir.x, centerOnDir.y,
+                tolerance, &buffer, 32))
         return (0..<n).map {
-            Curve2DCircleSolution(center: SIMD2(buffer[$0].cx, buffer[$0].cy),
-                                  radius: buffer[$0].radius)
+            Curve2DCircleSolution(
+                center: SIMD2(buffer[$0].cx, buffer[$0].cy),
+                radius: buffer[$0].radius)
         }
     }
 
@@ -1738,13 +1955,15 @@ extension Curve2DGcc {
         radius: Double, tolerance: Double = 1e-6
     ) -> [Curve2DCircleSolution] {
         var buffer = [OCCTGccCircleSolution](repeating: OCCTGccCircleSolution(), count: 32)
-        let n = Int(OCCTGccAnaCirc2dTanOnRadLin(
-            linePoint.x, linePoint.y, lineDir.x, lineDir.y, qualifier.rawValue,
-            centerOnPoint.x, centerOnPoint.y, centerOnDir.x, centerOnDir.y,
-            radius, tolerance, &buffer, 32))
+        let n = Int(
+            OCCTGccAnaCirc2dTanOnRadLin(
+                linePoint.x, linePoint.y, lineDir.x, lineDir.y, qualifier.rawValue,
+                centerOnPoint.x, centerOnPoint.y, centerOnDir.x, centerOnDir.y,
+                radius, tolerance, &buffer, 32))
         return (0..<n).map {
-            Curve2DCircleSolution(center: SIMD2(buffer[$0].cx, buffer[$0].cy),
-                                  radius: buffer[$0].radius)
+            Curve2DCircleSolution(
+                center: SIMD2(buffer[$0].cx, buffer[$0].cy),
+                radius: buffer[$0].radius)
         }
     }
 
@@ -1759,14 +1978,17 @@ extension Curve2DGcc {
         initParam1: Double = 0, initParam2: Double = 0, initParamOn: Double = 0
     ) -> [Curve2DCircleSolution] {
         var buffer = [OCCTGccCircleSolution](repeating: OCCTGccCircleSolution(), count: 32)
-        let n = Int(OCCTGeom2dGccCirc2d2TanOn(c1.handle, q1.rawValue,
-                                              c2.handle, q2.rawValue,
-                                              centerOn.handle,
-                                              tolerance, initParam1, initParam2, initParamOn,
-                                              &buffer, 32))
+        let n = Int(
+            OCCTGeom2dGccCirc2d2TanOn(
+                c1.handle, q1.rawValue,
+                c2.handle, q2.rawValue,
+                centerOn.handle,
+                tolerance, initParam1, initParam2, initParamOn,
+                &buffer, 32))
         return (0..<n).map {
-            Curve2DCircleSolution(center: SIMD2(buffer[$0].cx, buffer[$0].cy),
-                                  radius: buffer[$0].radius)
+            Curve2DCircleSolution(
+                center: SIMD2(buffer[$0].cx, buffer[$0].cy),
+                radius: buffer[$0].radius)
         }
     }
 
@@ -1786,13 +2008,16 @@ extension Curve2DGcc {
         radius: Double, tolerance: Double = 1e-6
     ) -> [Curve2DCircleSolution] {
         var buffer = [OCCTGccCircleSolution](repeating: OCCTGccCircleSolution(), count: 32)
-        let n = Int(OCCTGeom2dGccCirc2dTanOnRad(curve.handle, qualifier.rawValue,
-                                                centerOn.handle,
-                                                radius, tolerance,
-                                                &buffer, 32))
+        let n = Int(
+            OCCTGeom2dGccCirc2dTanOnRad(
+                curve.handle, qualifier.rawValue,
+                centerOn.handle,
+                radius, tolerance,
+                &buffer, 32))
         return (0..<n).map {
-            Curve2DCircleSolution(center: SIMD2(buffer[$0].cx, buffer[$0].cy),
-                                  radius: buffer[$0].radius)
+            Curve2DCircleSolution(
+                center: SIMD2(buffer[$0].cx, buffer[$0].cy),
+                radius: buffer[$0].radius)
         }
     }
 }
@@ -1818,12 +2043,15 @@ public enum IntAna2d {
         line2Point: SIMD2<Double>, line2Dir: SIMD2<Double>
     ) -> [Intersection2DPoint] {
         var buffer = [OCCTIntAna2dPoint](repeating: OCCTIntAna2dPoint(), count: 4)
-        let n = Int(OCCTIntAna2dLinLin(line1Point.x, line1Point.y, line1Dir.x, line1Dir.y,
-                                       line2Point.x, line2Point.y, line2Dir.x, line2Dir.y,
-                                       &buffer, 4))
+        let n = Int(
+            OCCTIntAna2dLinLin(
+                line1Point.x, line1Point.y, line1Dir.x, line1Dir.y,
+                line2Point.x, line2Point.y, line2Dir.x, line2Dir.y,
+                &buffer, 4))
         return (0..<n).map {
-            Intersection2DPoint(point: SIMD2(buffer[$0].x, buffer[$0].y),
-                               param1: buffer[$0].param1, param2: buffer[$0].param2)
+            Intersection2DPoint(
+                point: SIMD2(buffer[$0].x, buffer[$0].y),
+                param1: buffer[$0].param1, param2: buffer[$0].param2)
         }
     }
 
@@ -1844,12 +2072,15 @@ public enum IntAna2d {
         circleCenter: SIMD2<Double>, circleRadius: Double
     ) -> [Intersection2DPoint] {
         var buffer = [OCCTIntAna2dPoint](repeating: OCCTIntAna2dPoint(), count: 4)
-        let n = Int(OCCTIntAna2dLinCirc(linePoint.x, linePoint.y, lineDir.x, lineDir.y,
-                                        circleCenter.x, circleCenter.y, circleRadius,
-                                        &buffer, 4))
+        let n = Int(
+            OCCTIntAna2dLinCirc(
+                linePoint.x, linePoint.y, lineDir.x, lineDir.y,
+                circleCenter.x, circleCenter.y, circleRadius,
+                &buffer, 4))
         return (0..<n).map {
-            Intersection2DPoint(point: SIMD2(buffer[$0].x, buffer[$0].y),
-                               param1: buffer[$0].param1, param2: buffer[$0].param2)
+            Intersection2DPoint(
+                point: SIMD2(buffer[$0].x, buffer[$0].y),
+                param1: buffer[$0].param1, param2: buffer[$0].param2)
         }
     }
 
@@ -1870,12 +2101,15 @@ public enum IntAna2d {
         center2: SIMD2<Double>, radius2: Double
     ) -> [Intersection2DPoint] {
         var buffer = [OCCTIntAna2dPoint](repeating: OCCTIntAna2dPoint(), count: 4)
-        let n = Int(OCCTIntAna2dCircCirc(center1.x, center1.y, radius1,
-                                         center2.x, center2.y, radius2,
-                                         &buffer, 4))
+        let n = Int(
+            OCCTIntAna2dCircCirc(
+                center1.x, center1.y, radius1,
+                center2.x, center2.y, radius2,
+                &buffer, 4))
         return (0..<n).map {
-            Intersection2DPoint(point: SIMD2(buffer[$0].x, buffer[$0].y),
-                               param1: buffer[$0].param1, param2: buffer[$0].param2)
+            Intersection2DPoint(
+                point: SIMD2(buffer[$0].x, buffer[$0].y),
+                param1: buffer[$0].param1, param2: buffer[$0].param2)
         }
     }
 }
@@ -1911,15 +2145,17 @@ public enum Extrema2d {
     ) -> (isParallel: Bool, results: [Extrema2DResult]) {
         var buffer = [OCCTExtrema2dResult](repeating: OCCTExtrema2dResult(), count: 4)
         var isParallel = false
-        let n = Int(OCCTExtremaExtElC2dLinLin(
-            line1Point.x, line1Point.y, line1Dir.x, line1Dir.y,
-            line2Point.x, line2Point.y, line2Dir.x, line2Dir.y,
-            tolerance, &isParallel, &buffer, 4))
+        let n = Int(
+            OCCTExtremaExtElC2dLinLin(
+                line1Point.x, line1Point.y, line1Dir.x, line1Dir.y,
+                line2Point.x, line2Point.y, line2Dir.x, line2Dir.y,
+                tolerance, &isParallel, &buffer, 4))
         let results = (0..<max(n, 0)).map {
-            Extrema2DResult(squareDistance: buffer[$0].squareDistance,
-                           param1: buffer[$0].param1, param2: buffer[$0].param2,
-                           point1: SIMD2(buffer[$0].p1x, buffer[$0].p1y),
-                           point2: SIMD2(buffer[$0].p2x, buffer[$0].p2y))
+            Extrema2DResult(
+                squareDistance: buffer[$0].squareDistance,
+                param1: buffer[$0].param1, param2: buffer[$0].param2,
+                point1: SIMD2(buffer[$0].p1x, buffer[$0].p1y),
+                point2: SIMD2(buffer[$0].p2x, buffer[$0].p2y))
         }
         return (isParallel: isParallel, results: results)
     }
@@ -1943,15 +2179,17 @@ public enum Extrema2d {
         tolerance: Double = 1e-6
     ) -> [Extrema2DResult] {
         var buffer = [OCCTExtrema2dResult](repeating: OCCTExtrema2dResult(), count: 4)
-        let n = Int(OCCTExtremaExtElC2dLinCirc(
-            linePoint.x, linePoint.y, lineDir.x, lineDir.y,
-            circleCenter.x, circleCenter.y, circleRadius,
-            tolerance, &buffer, 4))
+        let n = Int(
+            OCCTExtremaExtElC2dLinCirc(
+                linePoint.x, linePoint.y, lineDir.x, lineDir.y,
+                circleCenter.x, circleCenter.y, circleRadius,
+                tolerance, &buffer, 4))
         return (0..<max(n, 0)).map {
-            Extrema2DResult(squareDistance: buffer[$0].squareDistance,
-                           param1: buffer[$0].param1, param2: buffer[$0].param2,
-                           point1: SIMD2(buffer[$0].p1x, buffer[$0].p1y),
-                           point2: SIMD2(buffer[$0].p2x, buffer[$0].p2y))
+            Extrema2DResult(
+                squareDistance: buffer[$0].squareDistance,
+                param1: buffer[$0].param1, param2: buffer[$0].param2,
+                point1: SIMD2(buffer[$0].p1x, buffer[$0].p1y),
+                point2: SIMD2(buffer[$0].p2x, buffer[$0].p2y))
         }
     }
 
@@ -1973,15 +2211,17 @@ public enum Extrema2d {
         tolerance: Double = 1e-6
     ) -> [Extrema2DResult] {
         var buffer = [OCCTExtrema2dResult](repeating: OCCTExtrema2dResult(), count: 4)
-        let n = Int(OCCTExtremaExtPElC2dCirc(
-            point.x, point.y,
-            circleCenter.x, circleCenter.y, circleRadius,
-            tolerance, &buffer, 4))
+        let n = Int(
+            OCCTExtremaExtPElC2dCirc(
+                point.x, point.y,
+                circleCenter.x, circleCenter.y, circleRadius,
+                tolerance, &buffer, 4))
         return (0..<max(n, 0)).map {
-            Extrema2DResult(squareDistance: buffer[$0].squareDistance,
-                           param1: buffer[$0].param1, param2: buffer[$0].param2,
-                           point1: SIMD2(buffer[$0].p1x, buffer[$0].p1y),
-                           point2: SIMD2(buffer[$0].p2x, buffer[$0].p2y))
+            Extrema2DResult(
+                squareDistance: buffer[$0].squareDistance,
+                param1: buffer[$0].param1, param2: buffer[$0].param2,
+                point1: SIMD2(buffer[$0].p1x, buffer[$0].p1y),
+                point2: SIMD2(buffer[$0].p2x, buffer[$0].p2y))
         }
     }
 
@@ -1992,15 +2232,17 @@ public enum Extrema2d {
         tolerance: Double = 1e-6
     ) -> [Extrema2DResult] {
         var buffer = [OCCTExtrema2dResult](repeating: OCCTExtrema2dResult(), count: 4)
-        let n = Int(OCCTExtremaExtPElC2dLin(
-            point.x, point.y,
-            linePoint.x, linePoint.y, lineDir.x, lineDir.y,
-            tolerance, &buffer, 4))
+        let n = Int(
+            OCCTExtremaExtPElC2dLin(
+                point.x, point.y,
+                linePoint.x, linePoint.y, lineDir.x, lineDir.y,
+                tolerance, &buffer, 4))
         return (0..<max(n, 0)).map {
-            Extrema2DResult(squareDistance: buffer[$0].squareDistance,
-                           param1: buffer[$0].param1, param2: buffer[$0].param2,
-                           point1: SIMD2(buffer[$0].p1x, buffer[$0].p1y),
-                           point2: SIMD2(buffer[$0].p2x, buffer[$0].p2y))
+            Extrema2DResult(
+                squareDistance: buffer[$0].squareDistance,
+                param1: buffer[$0].param1, param2: buffer[$0].param2,
+                point1: SIMD2(buffer[$0].p1x, buffer[$0].p1y),
+                point2: SIMD2(buffer[$0].p2x, buffer[$0].p2y))
         }
     }
 
@@ -2010,14 +2252,17 @@ public enum Extrema2d {
         _ c2: Curve2D, first2: Double, last2: Double
     ) -> [Extrema2DResult] {
         var buffer = [OCCTExtrema2dResult](repeating: OCCTExtrema2dResult(), count: 32)
-        let n = Int(OCCTExtremaExtCC2d(c1.handle, first1, last1,
-                                       c2.handle, first2, last2,
-                                       &buffer, 32))
+        let n = Int(
+            OCCTExtremaExtCC2d(
+                c1.handle, first1, last1,
+                c2.handle, first2, last2,
+                &buffer, 32))
         return (0..<max(n, 0)).map {
-            Extrema2DResult(squareDistance: buffer[$0].squareDistance,
-                           param1: buffer[$0].param1, param2: buffer[$0].param2,
-                           point1: SIMD2(buffer[$0].p1x, buffer[$0].p1y),
-                           point2: SIMD2(buffer[$0].p2x, buffer[$0].p2y))
+            Extrema2DResult(
+                squareDistance: buffer[$0].squareDistance,
+                param1: buffer[$0].param1, param2: buffer[$0].param2,
+                point1: SIMD2(buffer[$0].p1x, buffer[$0].p1y),
+                point2: SIMD2(buffer[$0].p2x, buffer[$0].p2y))
         }
     }
 }
@@ -2058,7 +2303,7 @@ public struct CurInfPoint: Sendable {
 extension Curve2D {
     /// Find curvature extrema (min/max) on this 2D curve with type classification.
     ///
-    /// Delegates to `curvatureExtrema()` — the same `GeomLProp_CurAndInf2d` computation —
+    /// Delegates to `curvatureExtrema()`, the same `GeomLProp_CurAndInf2d` computation,
     /// translating its results into the `CurInfPoint`/`CurInfType` vocabulary.
     public func curvatureExtremaDetailed() -> [CurInfPoint] {
         curvatureExtrema().map { CurInfPoint(parameter: $0.parameter, type: CurInfType($0.type)) }
@@ -2066,7 +2311,7 @@ extension Curve2D {
 
     /// Find inflection points on this 2D curve with type information.
     ///
-    /// Delegates to `inflectionPoints()` — the same `GeomLProp_CurAndInf2d` computation —
+    /// Delegates to `inflectionPoints()`, the same `GeomLProp_CurAndInf2d` computation,
     /// translating its results into the `CurInfPoint`/`CurInfType` vocabulary.
     public func inflectionPointsDetailed() -> [CurInfPoint] {
         inflectionPoints().map { CurInfPoint(parameter: $0, type: .inflection) }
@@ -2094,11 +2339,13 @@ extension Curve2D {
         direction1: SIMD2<Double>, direction2: SIMD2<Double>,
         sense: Double = 1.0, tolerance: Double = 1e-6
     ) -> Curve2D? {
-        guard let h = OCCTBisectorBisecAnaCurveCurve(
-            handle, other.handle,
-            referencePoint.x, referencePoint.y,
-            direction1.x, direction1.y, direction2.x, direction2.y,
-            sense, tolerance) else { return nil }
+        guard
+            let h = OCCTBisectorBisecAnaCurveCurve(
+                handle, other.handle,
+                referencePoint.x, referencePoint.y,
+                direction1.x, direction1.y, direction2.x, direction2.y,
+                sense, tolerance)
+        else { return nil }
         return Curve2D(handle: h)
     }
 
@@ -2118,12 +2365,14 @@ extension Curve2D {
         direction1: SIMD2<Double>, direction2: SIMD2<Double>,
         sense: Double = 1.0, tolerance: Double = 1e-6
     ) -> Curve2D? {
-        guard let h = OCCTBisectorBisecAnaCurvePoint(
-            handle,
-            point.x, point.y,
-            referencePoint.x, referencePoint.y,
-            direction1.x, direction1.y, direction2.x, direction2.y,
-            sense, tolerance) else { return nil }
+        guard
+            let h = OCCTBisectorBisecAnaCurvePoint(
+                handle,
+                point.x, point.y,
+                referencePoint.x, referencePoint.y,
+                direction1.x, direction1.y, direction2.x, direction2.y,
+                sense, tolerance)
+        else { return nil }
         return Curve2D(handle: h)
     }
 
@@ -2144,11 +2393,13 @@ extension Curve2D {
         direction1: SIMD2<Double>, direction2: SIMD2<Double>,
         sense: Double = 1.0, tolerance: Double = 1e-6
     ) -> Curve2D? {
-        guard let h = OCCTBisectorBisecAnaPointPoint(
-            p1.x, p1.y, p2.x, p2.y,
-            referencePoint.x, referencePoint.y,
-            direction1.x, direction1.y, direction2.x, direction2.y,
-            sense, tolerance) else { return nil }
+        guard
+            let h = OCCTBisectorBisecAnaPointPoint(
+                p1.x, p1.y, p2.x, p2.y,
+                referencePoint.x, referencePoint.y,
+                direction1.x, direction1.y, direction2.x, direction2.y,
+                sense, tolerance)
+        else { return nil }
         return Curve2D(handle: h)
     }
 
@@ -2173,9 +2424,9 @@ extension Curve2D {
     ///   answer about.
     ///
     /// The same nearest-solution computation as ``project(point:)``, returned without the projected
-    /// point itself, so it reports the true nearest point over the curve's own domain — a point past
+    /// point itself, so it reports the true nearest point over the curve's own domain: a point past
     /// the end answers with that end (#615). Note that a parameter of `0` is a perfectly ordinary
-    /// success — projecting a segment's own start point onto it returns exactly that — so `nil` is
+    /// success (projecting a segment's own start point onto it returns exactly that), so `nil` is
     /// the only failure signal.
     ///
     /// ```swift
@@ -2225,11 +2476,13 @@ extension Curve2D {
         freeSliding: Bool = true
     ) -> (curve: Curve2D, code: FairCurveCode)? {
         var outCode: Int32 = 0
-        guard let h = OCCTFairCurveBatten(
-            p1.x, p1.y, p2.x, p2.y,
-            height, slope, angle1, angle2,
-            Int32(constraintOrder1), Int32(constraintOrder2), freeSliding,
-            &outCode) else { return nil }
+        guard
+            let h = OCCTFairCurveBatten(
+                p1.x, p1.y, p2.x, p2.y,
+                height, slope, angle1, angle2,
+                Int32(constraintOrder1), Int32(constraintOrder2), freeSliding,
+                &outCode)
+        else { return nil }
         let code = FairCurveCode(rawValue: outCode) ?? .ok
         return (Curve2D(handle: h), code)
     }
@@ -2263,19 +2516,21 @@ extension Curve2D {
         curvature1: Double = 0.0, curvature2: Double = 0.0
     ) -> (curve: Curve2D, code: FairCurveCode)? {
         var outCode: Int32 = 0
-        guard let h = OCCTFairCurveMinimalVariation(
-            p1.x, p1.y, p2.x, p2.y,
-            height, slope, angle1, angle2,
-            Int32(constraintOrder1), Int32(constraintOrder2), freeSliding,
-            physicalRatio, curvature1, curvature2,
-            &outCode) else { return nil }
+        guard
+            let h = OCCTFairCurveMinimalVariation(
+                p1.x, p1.y, p2.x, p2.y,
+                height, slope, angle1, angle2,
+                Int32(constraintOrder1), Int32(constraintOrder2), freeSliding,
+                physicalRatio, curvature1, curvature2,
+                &outCode)
+        else { return nil }
         let code = FairCurveCode(rawValue: outCode) ?? .ok
         return (Curve2D(handle: h), code)
     }
 
     // MARK: - v0.80.0: Extrema, gce factories, GeomTools persistence
 
-    /// Result of local 2D curve-curve extrema search
+    /// Result of local 2D curve-curve extrema search.
     public struct LocalExtrema2dResult: Sendable {
         public let isDone: Bool
         public let squareDistance: Double
@@ -2285,19 +2540,23 @@ extension Curve2D {
         public let param2: Double
     }
 
-    /// Find local 2D curve-curve extremum near seed parameters
-    public func locateExtremaCC(range1: ClosedRange<Double>? = nil,
-                                other: Curve2D,
-                                range2: ClosedRange<Double>? = nil,
-                                seedU: Double, seedV: Double) -> LocalExtrema2dResult {
+    /// Find local 2D curve-curve extremum near seed parameters.
+    public func locateExtremaCC(
+        range1: ClosedRange<Double>? = nil,
+        other: Curve2D,
+        range2: ClosedRange<Double>? = nil,
+        seedU: Double, seedV: Double
+    ) -> LocalExtrema2dResult {
         let d1 = range1 ?? domain
         let d2 = range2 ?? other.domain
-        let r = OCCTExtremaLocateExtCC2d(handle, d1.lowerBound, d1.upperBound,
-                                          other.handle, d2.lowerBound, d2.upperBound,
-                                          seedU, seedV)
-        return LocalExtrema2dResult(isDone: r.isDone, squareDistance: r.squareDistance,
-                                    point1: SIMD2(r.x1, r.y1), param1: r.param1,
-                                    point2: SIMD2(r.x2, r.y2), param2: r.param2)
+        let r = OCCTExtremaLocateExtCC2d(
+            handle, d1.lowerBound, d1.upperBound,
+            other.handle, d2.lowerBound, d2.upperBound,
+            seedU, seedV)
+        return LocalExtrema2dResult(
+            isDone: r.isDone, squareDistance: r.squareDistance,
+            point1: SIMD2(r.x1, r.y1), param1: r.param1,
+            point2: SIMD2(r.x2, r.y2), param2: r.param2)
     }
 
     /// Create a 2D circle from center + radius (`gce_MakeCirc2d`).
@@ -2316,27 +2575,36 @@ extension Curve2D {
     /// // Same rejection as the direct factory: no degenerate zero-radius circle.
     /// #expect(Curve2D.circleFromCenterRadius(center: .zero, radius: 0) == nil)
     /// ```
-    public static func circleFromCenterRadius(center: SIMD2<Double>,
-                                              radius: Double) -> Curve2D? {
-        guard let h = OCCTGceMakeCirc2dFromCenterRadius(center.x, center.y, radius) else { return nil }
+    public static func circleFromCenterRadius(
+        center: SIMD2<Double>,
+        radius: Double
+    ) -> Curve2D? {
+        guard let h = OCCTGceMakeCirc2dFromCenterRadius(center.x, center.y, radius) else {
+            return nil
+        }
         return Curve2D(handle: h)
     }
 
-    /// Create a 2D circle through 3 points (gce_MakeCirc2d)
-    public static func circleThrough3Points(_ p1: SIMD2<Double>, _ p2: SIMD2<Double>,
-                                            _ p3: SIMD2<Double>) -> Curve2D? {
-        guard let h = OCCTGceMakeCirc2dFrom3Points(p1.x, p1.y, p2.x, p2.y,
-                                                    p3.x, p3.y) else { return nil }
+    /// Create a 2D circle through 3 points (gce_MakeCirc2d).
+    public static func circleThrough3Points(
+        _ p1: SIMD2<Double>, _ p2: SIMD2<Double>,
+        _ p3: SIMD2<Double>
+    ) -> Curve2D? {
+        guard
+            let h = OCCTGceMakeCirc2dFrom3Points(
+                p1.x, p1.y, p2.x, p2.y,
+                p3.x, p3.y)
+        else { return nil }
         return Curve2D(handle: h)
     }
 
-    /// Create a 2D line from 2 points (gce_MakeLin2d)
+    /// Create a 2D line from 2 points (gce_MakeLin2d).
     public static func lineFrom2Points(_ p1: SIMD2<Double>, _ p2: SIMD2<Double>) -> Curve2D? {
         guard let h = OCCTGceMakeLin2dFrom2Points(p1.x, p1.y, p2.x, p2.y) else { return nil }
         return Curve2D(handle: h)
     }
 
-    /// Create a 2D line from equation Ax+By+C=0 (gce_MakeLin2d)
+    /// Create a 2D line from equation Ax+By+C=0 (gce_MakeLin2d).
     public static func lineFromEquation(a: Double, b: Double, c: Double) -> Curve2D? {
         guard let h = OCCTGceMakeLin2dFromEquation(a, b, c) else { return nil }
         return Curve2D(handle: h)
@@ -2366,11 +2634,16 @@ extension Curve2D {
     /// #expect(Curve2D.ellipseFromCenterDir(center: .zero, direction: SIMD2(1, 0),
     ///                                      majorRadius: 5, minorRadius: -3) == nil)
     /// ```
-    public static func ellipseFromCenterDir(center: SIMD2<Double>, direction: SIMD2<Double>,
-                                            majorRadius: Double,
-                                            minorRadius: Double) -> Curve2D? {
-        guard let h = OCCTGceMakeElips2d(center.x, center.y, direction.x, direction.y,
-                                          majorRadius, minorRadius) else { return nil }
+    public static func ellipseFromCenterDir(
+        center: SIMD2<Double>, direction: SIMD2<Double>,
+        majorRadius: Double,
+        minorRadius: Double
+    ) -> Curve2D? {
+        guard
+            let h = OCCTGceMakeElips2d(
+                center.x, center.y, direction.x, direction.y,
+                majorRadius, minorRadius)
+        else { return nil }
         return Curve2D(handle: h)
     }
 
@@ -2401,11 +2674,16 @@ extension Curve2D {
     /// #expect(Curve2D.hyperbolaFromCenterDir(center: .zero, direction: SIMD2(1, 0),
     ///                                        majorRadius: 0, minorRadius: 0) == nil)
     /// ```
-    public static func hyperbolaFromCenterDir(center: SIMD2<Double>, direction: SIMD2<Double>,
-                                              majorRadius: Double,
-                                              minorRadius: Double) -> Curve2D? {
-        guard let h = OCCTGceMakeHypr2d(center.x, center.y, direction.x, direction.y,
-                                          majorRadius, minorRadius) else { return nil }
+    public static func hyperbolaFromCenterDir(
+        center: SIMD2<Double>, direction: SIMD2<Double>,
+        majorRadius: Double,
+        minorRadius: Double
+    ) -> Curve2D? {
+        guard
+            let h = OCCTGceMakeHypr2d(
+                center.x, center.y, direction.x, direction.y,
+                majorRadius, minorRadius)
+        else { return nil }
         return Curve2D(handle: h)
     }
 
@@ -2429,25 +2707,32 @@ extension Curve2D {
     /// // Same rejection as the direct factory: a zero focal length is a line, not a parabola.
     /// #expect(Curve2D.parabolaFromCenterDir(center: .zero, direction: SIMD2(1, 0), focal: 0) == nil)
     /// ```
-    public static func parabolaFromCenterDir(center: SIMD2<Double>, direction: SIMD2<Double>,
-                                             focal: Double) -> Curve2D? {
-        guard let h = OCCTGceMakeParab2d(center.x, center.y, direction.x, direction.y,
-                                          focal) else { return nil }
+    public static func parabolaFromCenterDir(
+        center: SIMD2<Double>, direction: SIMD2<Double>,
+        focal: Double
+    ) -> Curve2D? {
+        guard
+            let h = OCCTGceMakeParab2d(
+                center.x, center.y, direction.x, direction.y,
+                focal)
+        else { return nil }
         return Curve2D(handle: h)
     }
 
-    /// Serialize 2D curves to string via GeomTools_Curve2dSet
+    /// Serialize 2D curves to string via GeomTools_Curve2dSet.
     public static func serializeCurves(_ curves: [Curve2D]) -> String? {
         let handles = curves.map { $0.handle as OCCTCurve2DRef }
-        guard let cStr = handles.withUnsafeBufferPointer({
-            OCCTGeomToolsCurve2dSetWrite($0.baseAddress!, Int32(curves.count))
-        }) else { return nil }
+        guard
+            let cStr = handles.withUnsafeBufferPointer({
+                OCCTGeomToolsCurve2dSetWrite($0.baseAddress!, Int32(curves.count))
+            })
+        else { return nil }
         let result = String(cString: cStr)
         OCCTGeomToolsFreeString(cStr)
         return result
     }
 
-    /// Deserialize 2D curves from string via GeomTools_Curve2dSet
+    /// Deserialize 2D curves from string via GeomTools_Curve2dSet.
     public static func deserializeCurves(_ data: String) -> [Curve2D]? {
         var count: Int32 = 0
         guard let arr = OCCTGeomToolsCurve2dSetRead(data, &count), count > 0 else { return nil }
@@ -2464,8 +2749,8 @@ extension Curve2D {
     // MARK: - Geom2d_Circle Properties (v0.108.0)
 
     /// Access 2D circle-specific properties.
-    public struct CircleProperties: @unchecked Sendable {
-        fileprivate let handle: OCCTCurve2DRef
+    public struct CircleProperties: Sendable, NativeHandleView {
+        let owner: Curve2D
 
         /// The radius.
         public var radius: Double { OCCTCurve2DCircleRadius(handle) }
@@ -2479,27 +2764,31 @@ extension Curve2D {
 
         /// The center point.
         public var center: SIMD2<Double> {
-            var x = 0.0, y = 0.0
+            var x = 0.0
+            var y = 0.0
             OCCTCurve2DCircleCenter(handle, &x, &y)
             return SIMD2(x, y)
         }
 
         /// The X axis (position + direction).
         public var xAxis: (position: SIMD2<Double>, direction: SIMD2<Double>) {
-            var px = 0.0, py = 0.0, dx = 0.0, dy = 0.0
+            var px = 0.0
+            var py = 0.0
+            var dx = 0.0
+            var dy = 0.0
             OCCTCurve2DCircleXAxis(handle, &px, &py, &dx, &dy)
             return (SIMD2(px, py), SIMD2(dx, dy))
         }
     }
 
     /// Circle-specific properties (meaningful only when the underlying curve is a Geom2d_Circle).
-    public var circleProperties: CircleProperties { CircleProperties(handle: handle) }
+    public var circleProperties: CircleProperties { CircleProperties(owner: self) }
 
     // MARK: - Geom2d_Ellipse Properties (v0.108.0)
 
     /// Access 2D ellipse-specific properties.
-    public struct EllipseProperties: @unchecked Sendable {
-        fileprivate let handle: OCCTCurve2DRef
+    public struct EllipseProperties: Sendable, NativeHandleView {
+        let owner: Curve2D
 
         /// The major radius.
         public var majorRadius: Double { OCCTCurve2DEllipseMajorRadius(handle) }
@@ -2509,11 +2798,15 @@ extension Curve2D {
 
         /// Set the major radius.
         @discardableResult
-        public func setMajorRadius(_ r: Double) -> Bool { OCCTCurve2DEllipseSetMajorRadius(handle, r) }
+        public func setMajorRadius(_ r: Double) -> Bool {
+            OCCTCurve2DEllipseSetMajorRadius(handle, r)
+        }
 
         /// Set the minor radius.
         @discardableResult
-        public func setMinorRadius(_ r: Double) -> Bool { OCCTCurve2DEllipseSetMinorRadius(handle, r) }
+        public func setMinorRadius(_ r: Double) -> Bool {
+            OCCTCurve2DEllipseSetMinorRadius(handle, r)
+        }
 
         /// The eccentricity.
         public var eccentricity: Double { OCCTCurve2DEllipseEccentricity(handle) }
@@ -2523,20 +2816,21 @@ extension Curve2D {
 
         /// The first focus.
         public var focus1: SIMD2<Double> {
-            var x = 0.0, y = 0.0
+            var x = 0.0
+            var y = 0.0
             OCCTCurve2DEllipseFocus1(handle, &x, &y)
             return SIMD2(x, y)
         }
     }
 
     /// Ellipse-specific properties (meaningful only when the underlying curve is a Geom2d_Ellipse).
-    public var ellipseProperties: EllipseProperties { EllipseProperties(handle: handle) }
+    public var ellipseProperties: EllipseProperties { EllipseProperties(owner: self) }
 
     // MARK: - Geom2d_Hyperbola Properties (v0.108.0)
 
     /// Access 2D hyperbola-specific properties.
-    public struct HyperbolaProperties: @unchecked Sendable {
-        fileprivate let handle: OCCTCurve2DRef
+    public struct HyperbolaProperties: Sendable, NativeHandleView {
+        let owner: Curve2D
 
         /// The major radius.
         public var majorRadius: Double { OCCTCurve2DHyperbolaMajorRadius(handle) }
@@ -2552,20 +2846,21 @@ extension Curve2D {
 
         /// The first focus.
         public var focus1: SIMD2<Double> {
-            var x = 0.0, y = 0.0
+            var x = 0.0
+            var y = 0.0
             OCCTCurve2DHyperbolaFocus1(handle, &x, &y)
             return SIMD2(x, y)
         }
     }
 
     /// Hyperbola-specific properties (meaningful only when the underlying curve is a Geom2d_Hyperbola).
-    public var hyperbolaProperties: HyperbolaProperties { HyperbolaProperties(handle: handle) }
+    public var hyperbolaProperties: HyperbolaProperties { HyperbolaProperties(owner: self) }
 
     // MARK: - Geom2d_Parabola Properties (v0.108.0)
 
     /// Access 2D parabola-specific properties.
-    public struct ParabolaProperties: @unchecked Sendable {
-        fileprivate let handle: OCCTCurve2DRef
+    public struct ParabolaProperties: Sendable, NativeHandleView {
+        let owner: Curve2D
 
         /// The focal distance.
         public var focal: Double { OCCTCurve2DParabolaFocal(handle) }
@@ -2576,7 +2871,8 @@ extension Curve2D {
 
         /// The focus point.
         public var focus: SIMD2<Double> {
-            var x = 0.0, y = 0.0
+            var x = 0.0
+            var y = 0.0
             OCCTCurve2DParabolaFocus(handle, &x, &y)
             return SIMD2(x, y)
         }
@@ -2589,24 +2885,26 @@ extension Curve2D {
     }
 
     /// Parabola-specific properties (meaningful only when the underlying curve is a Geom2d_Parabola).
-    public var parabolaProperties: ParabolaProperties { ParabolaProperties(handle: handle) }
+    public var parabolaProperties: ParabolaProperties { ParabolaProperties(owner: self) }
 
     // MARK: - Geom2d_Line Properties (v0.108.0)
 
     /// Access 2D line-specific properties.
-    public struct LineProperties: @unchecked Sendable {
-        fileprivate let handle: OCCTCurve2DRef
+    public struct LineProperties: Sendable, NativeHandleView {
+        let owner: Curve2D
 
         /// The direction.
         public var direction: SIMD2<Double> {
-            var dx = 0.0, dy = 0.0
+            var dx = 0.0
+            var dy = 0.0
             OCCTCurve2DLineDirection(handle, &dx, &dy)
             return SIMD2(dx, dy)
         }
 
         /// The location (origin).
         public var location: SIMD2<Double> {
-            var x = 0.0, y = 0.0
+            var x = 0.0
+            var y = 0.0
             OCCTCurve2DLineLocation(handle, &x, &y)
             return SIMD2(x, y)
         }
@@ -2630,20 +2928,23 @@ extension Curve2D {
 
         /// The gp_Lin2d representation (location + direction).
         public var lin2d: (location: SIMD2<Double>, direction: SIMD2<Double>) {
-            var px = 0.0, py = 0.0, dx = 0.0, dy = 0.0
+            var px = 0.0
+            var py = 0.0
+            var dx = 0.0
+            var dy = 0.0
             OCCTCurve2DLineLin2d(handle, &px, &py, &dx, &dy)
             return (SIMD2(px, py), SIMD2(dx, dy))
         }
     }
 
     /// Line-specific properties (meaningful only when the underlying curve is a Geom2d_Line).
-    public var lineProperties: LineProperties { LineProperties(handle: handle) }
+    public var lineProperties: LineProperties { LineProperties(owner: self) }
 
     // MARK: - Geom2d_OffsetCurve Properties (v0.108.0)
 
     /// Access 2D offset curve-specific properties.
-    public struct OffsetProperties: @unchecked Sendable {
-        fileprivate let handle: OCCTCurve2DRef
+    public struct OffsetProperties: Sendable, NativeHandleView {
+        let owner: Curve2D
 
         /// The offset value.
         public var offset: Double { OCCTCurve2DOffsetValue(handle) }
@@ -2660,14 +2961,14 @@ extension Curve2D {
     }
 
     /// Offset curve properties (meaningful only when the underlying curve is a Geom2d_OffsetCurve).
-    public var offsetProperties: OffsetProperties { OffsetProperties(handle: handle) }
+    public var offsetProperties: OffsetProperties { OffsetProperties(owner: self) }
 
     // MARK: - v0.115.0: Interpolation expansion, trim, length
 
     /// Interpolate a 2D BSpline through points with endpoint tangents.
     ///
     /// A spelling of `interpolate(through:startTangent:endTangent:tolerance:)` with the `points:`
-    /// argument label, and it delegates to it — the two cannot produce different curves for the
+    /// argument label, and it delegates to it, so the two cannot produce different curves for the
     /// same input.
     ///
     /// - Parameters:
@@ -2684,18 +2985,21 @@ extension Curve2D {
     ///                                  tolerance: 1e-4)
     /// #expect(curve != nil)
     /// ```
-    public static func interpolate(points: [SIMD2<Double>],
-                                   startTangent: SIMD2<Double>,
-                                   endTangent: SIMD2<Double>,
-                                   tolerance: Double = 1e-6) -> Curve2D? {
-        interpolate(through: points, startTangent: startTangent, endTangent: endTangent,
-                    tolerance: tolerance)
+    public static func interpolate(
+        points: [SIMD2<Double>],
+        startTangent: SIMD2<Double>,
+        endTangent: SIMD2<Double>,
+        tolerance: Double = 1e-6
+    ) -> Curve2D? {
+        interpolate(
+            through: points, startTangent: startTangent, endTangent: endTangent,
+            tolerance: tolerance)
     }
 
     /// Interpolate a periodic (closed) 2D BSpline through points.
     ///
     /// A spelling of `interpolate(through:closed:tolerance:)` with `closed: true`, and it
-    /// delegates to it — the two cannot produce different curves for the same input.
+    /// delegates to it, so the two cannot produce different curves for the same input.
     ///
     /// - Parameters:
     ///   - points: Points to interpolate. At least 2; the curve closes back to `points[0]`, so
@@ -2716,26 +3020,33 @@ extension Curve2D {
     /// ], closed: true)
     /// #expect(loop?.domain == same?.domain)
     /// ```
-    public static func interpolatePeriodic(points: [SIMD2<Double>],
-                                           tolerance: Double = 1e-6) -> Curve2D? {
+    public static func interpolatePeriodic(
+        points: [SIMD2<Double>],
+        tolerance: Double = 1e-6
+    ) -> Curve2D? {
         interpolate(through: points, closed: true, tolerance: tolerance)
     }
 
     /// Approximate a 2D BSpline through points with degree and continuity control.
     ///
     /// `continuity` is a ``ParametricContinuity`` raw value (0=C0, 1=C1, 2=C2, 3=C3). Unlike the
-    /// `approximated` family, the fitter accepts every value without failing — it treats the
+    /// `approximated` family, the fitter accepts every value without failing: it treats the
     /// request as an upper bound on what it will try to achieve.
-    public static func approximate(points: [SIMD2<Double>],
-                                   degMin: Int = 3, degMax: Int = 8,
-                                   continuity: Int = 2, tolerance: Double = 1e-3) -> Curve2D? {
+    public static func approximate(
+        points: [SIMD2<Double>],
+        degMin: Int = 3, degMax: Int = 8,
+        continuity: Int = 2, tolerance: Double = 1e-3
+    ) -> Curve2D? {
         var flat = [Double]()
         for p in points { flat.append(contentsOf: [p.x, p.y]) }
-        guard let ref = flat.withUnsafeBufferPointer({ buf in
-            OCCTPoints2DToBSplineWithParams(buf.baseAddress!, Int32(points.count),
-                                             Int32(degMin), Int32(degMax),
-                                             Int32(continuity), tolerance)
-        }) else { return nil }
+        guard
+            let ref = flat.withUnsafeBufferPointer({ buf in
+                OCCTPoints2DToBSplineWithParams(
+                    buf.baseAddress!, Int32(points.count),
+                    Int32(degMin), Int32(degMax),
+                    Int32(continuity), tolerance)
+            })
+        else { return nil }
         return Curve2D(handle: ref)
     }
 
@@ -2757,7 +3068,7 @@ extension Curve2D {
     /// ```
     ///
     /// - Note: Until #549 this measured through a pre-bounded `Geom2dAdaptor_Curve`, which
-    ///   reported a reversed range as `-1.0` and extrapolated past a multi-span curve's knots —
+    ///   reported a reversed range as `-1.0` and extrapolated past a multi-span curve's knots:
     ///   4771.88 for a BSpline 457.26 long, past what #600 fixed on the surviving delegate.
     ///   `Curve3D.arcLength(from:to:)` dropped the same adaptor in #506.
     public func arcLength(from u1: Double, to u2: Double) -> Double {
@@ -2766,16 +3077,24 @@ extension Curve2D {
 
     /// Split this curve at C1 discontinuities.
     ///
-    /// - Parameter maxSegments: Output *capacity* (default 32), clamped into `0...`
-    ///   ``Sampling/maximumSampleCount``; 0 or less returns empty (#622).
-    public func splitAtContinuity(continuity: Int = 1, tolerance: Double = 1e-6,
-                                  maxSegments: Int = 32) -> [Curve2D] {
+    /// - Parameters:
+    ///   - continuity: `1` or less splits at C1 discontinuities; above `1` returns the curve
+    ///     unsplit, as a single segment.
+    ///   - tolerance: Knot-removal tolerance passed to the underlying conversion.
+    ///   - maxSegments: Output *capacity* (default 32), clamped into `0...`
+    ///     ``Sampling/maximumSampleCount``; 0 or less returns empty (#622).
+    /// - Returns: The segments, or an empty array if the curve cannot be converted.
+    public func splitAtContinuity(
+        continuity: Int = 1, tolerance: Double = 1e-6,
+        maxSegments: Int = 32
+    ) -> [Curve2D] {
         let maxSegments = Sampling.capacity(maxSegments)
         guard maxSegments > 0 else { return [] }
         var refs = [OCCTCurve2DRef?](repeating: nil, count: maxSegments)
         let n = refs.withUnsafeMutableBufferPointer { buf in
-            OCCTCurve2DSplitAtContinuity(handle, Int32(continuity), tolerance,
-                                          buf.baseAddress!, Int32(maxSegments))
+            OCCTCurve2DSplitAtContinuity(
+                handle, Int32(continuity), tolerance,
+                buf.baseAddress!, Int32(maxSegments))
         }
         var result = [Curve2D]()
         for i in 0..<Int(n) {
@@ -2790,56 +3109,82 @@ extension Curve2D {
 
     /// Local D0 within a specific knot span.
     public func bsplineLocalD0(u: Double, fromK1: Int, toK2: Int) -> SIMD2<Double> {
-        var x = 0.0, y = 0.0
+        var x = 0.0
+        var y = 0.0
         OCCTCurve2DBSplineLocalD0(handle, u, Int32(fromK1), Int32(toK2), &x, &y)
         return SIMD2(x, y)
     }
 
     /// Local D1 within a specific knot span.
     public func bsplineLocalD1(u: Double, fromK1: Int, toK2: Int)
-        -> (point: SIMD2<Double>, v1: SIMD2<Double>) {
-        var px = 0.0, py = 0.0, v1x = 0.0, v1y = 0.0
-        OCCTCurve2DBSplineLocalD1(handle, u, Int32(fromK1), Int32(toK2),
-                                   &px, &py, &v1x, &v1y)
+        -> (point: SIMD2<Double>, v1: SIMD2<Double>)
+    {
+        var px = 0.0
+        var py = 0.0
+        var v1x = 0.0
+        var v1y = 0.0
+        OCCTCurve2DBSplineLocalD1(
+            handle, u, Int32(fromK1), Int32(toK2),
+            &px, &py, &v1x, &v1y)
         return (SIMD2(px, py), SIMD2(v1x, v1y))
     }
 
     /// Local D2 within a specific knot span.
     public func bsplineLocalD2(u: Double, fromK1: Int, toK2: Int)
-        -> (point: SIMD2<Double>, v1: SIMD2<Double>, v2: SIMD2<Double>) {
-        var px = 0.0, py = 0.0, v1x = 0.0, v1y = 0.0, v2x = 0.0, v2y = 0.0
-        OCCTCurve2DBSplineLocalD2(handle, u, Int32(fromK1), Int32(toK2),
-                                   &px, &py, &v1x, &v1y, &v2x, &v2y)
+        -> (point: SIMD2<Double>, v1: SIMD2<Double>, v2: SIMD2<Double>)
+    {
+        var px = 0.0
+        var py = 0.0
+        var v1x = 0.0
+        var v1y = 0.0
+        var v2x = 0.0
+        var v2y = 0.0
+        OCCTCurve2DBSplineLocalD2(
+            handle, u, Int32(fromK1), Int32(toK2),
+            &px, &py, &v1x, &v1y, &v2x, &v2y)
         return (SIMD2(px, py), SIMD2(v1x, v1y), SIMD2(v2x, v2y))
     }
 
     /// Local D3 within a specific knot span.
     public func bsplineLocalD3(u: Double, fromK1: Int, toK2: Int)
-        -> (point: SIMD2<Double>, v1: SIMD2<Double>, v2: SIMD2<Double>, v3: SIMD2<Double>) {
-        var px = 0.0, py = 0.0
-        var v1x = 0.0, v1y = 0.0, v2x = 0.0, v2y = 0.0, v3x = 0.0, v3y = 0.0
-        OCCTCurve2DBSplineLocalD3(handle, u, Int32(fromK1), Int32(toK2),
-                                   &px, &py, &v1x, &v1y, &v2x, &v2y, &v3x, &v3y)
+        -> (point: SIMD2<Double>, v1: SIMD2<Double>, v2: SIMD2<Double>, v3: SIMD2<Double>)
+    {
+        var px = 0.0
+        var py = 0.0
+        var v1x = 0.0
+        var v1y = 0.0
+        var v2x = 0.0
+        var v2y = 0.0
+        var v3x = 0.0
+        var v3y = 0.0
+        OCCTCurve2DBSplineLocalD3(
+            handle, u, Int32(fromK1), Int32(toK2),
+            &px, &py, &v1x, &v1y, &v2x, &v2y, &v3x, &v3y)
         return (SIMD2(px, py), SIMD2(v1x, v1y), SIMD2(v2x, v2y), SIMD2(v3x, v3y))
     }
 
     /// Local DN within a specific knot span.
     public func bsplineLocalDN(u: Double, fromK1: Int, toK2: Int, n: Int) -> SIMD2<Double> {
-        var vx = 0.0, vy = 0.0
+        var vx = 0.0
+        var vy = 0.0
         OCCTCurve2DBSplineLocalDN(handle, u, Int32(fromK1), Int32(toK2), Int32(n), &vx, &vy)
         return SIMD2(vx, vy)
     }
 
     /// Local value within a specific knot span.
     public func bsplineLocalValue(u: Double, fromK1: Int, toK2: Int) -> SIMD2<Double> {
-        var x = 0.0, y = 0.0
+        var x = 0.0
+        var y = 0.0
         OCCTCurve2DBSplineLocalValue(handle, u, Int32(fromK1), Int32(toK2), &x, &y)
         return SIMD2(x, y)
     }
 
-    /// Locate U knot span. Returns (i1, i2) indices.
+    /// Locate U knot span.
+    ///
+    /// Returns (i1, i2) indices.
     public func bsplineLocateU(u: Double, paramTol: Double) -> (i1: Int, i2: Int) {
-        var i1: Int32 = 0, i2: Int32 = 0
+        var i1: Int32 = 0
+        var i2: Int32 = 0
         OCCTCurve2DBSplineLocateU(handle, u, paramTol, &i1, &i2)
         return (Int(i1), Int(i2))
     }
@@ -2880,14 +3225,16 @@ extension Curve2D {
 
     /// BSpline start point.
     public var bsplineStartPoint: SIMD2<Double> {
-        var x = 0.0, y = 0.0
+        var x = 0.0
+        var y = 0.0
         OCCTCurve2DBSplineStartPoint(handle, &x, &y)
         return SIMD2(x, y)
     }
 
     /// BSpline end point.
     public var bsplineEndPoint: SIMD2<Double> {
-        var x = 0.0, y = 0.0
+        var x = 0.0
+        var y = 0.0
         OCCTCurve2DBSplineEndPoint(handle, &x, &y)
         return SIMD2(x, y)
     }
@@ -2917,7 +3264,8 @@ extension Curve2D {
     }
 
     /// BSpline curve continuity, as a raw `GeomAbs_Shape` ordinal
-    /// (`0=C0, 1=G1, 2=C1, 3=G2, 4=C2, 5=C3, 6=CN`) — so a C2 cubic reports `4`, not `2`.
+    /// (`0=C0, 1=G1, 2=C1, 3=G2, 4=C2, 5=C3, 6=CN`), so a C2 cubic reports `4`, not `2`.
+    ///
     /// `0` if the curve is not a BSpline. Prefer ``ContinuityClass`` (#619).
     public var bsplineContinuity: Int {
         Int(OCCTCurve2DBSplineContinuity(handle))
@@ -2956,14 +3304,16 @@ extension Curve2D {
 
     /// Get start point of a 2D Bezier curve.
     public var bezierStartPoint: SIMD2<Double> {
-        var x = 0.0, y = 0.0
+        var x = 0.0
+        var y = 0.0
         OCCTCurve2DBezierStartPoint(handle, &x, &y)
         return SIMD2(x, y)
     }
 
     /// Get end point of a 2D Bezier curve.
     public var bezierEndPoint: SIMD2<Double> {
-        var x = 0.0, y = 0.0
+        var x = 0.0
+        var y = 0.0
         OCCTCurve2DBezierEndPoint(handle, &x, &y)
         return SIMD2(x, y)
     }
@@ -2974,7 +3324,7 @@ extension Curve2D {
         guard count > 0 else { return [] }
         var flat = [Double](repeating: 0, count: count * 2)
         OCCTCurve2DBezierGetPoles(handle, &flat)
-        return (0..<count).map { SIMD2(flat[$0*2], flat[$0*2+1]) }
+        return (0..<count).map { SIMD2(flat[$0 * 2], flat[$0 * 2 + 1]) }
     }
 
     /// Reverse the parameterization of a 2D Bezier curve.
@@ -3006,26 +3356,30 @@ extension Curve2D {
     /// Rotate the 2D curve in place around a center point by the given angle (radians).
     @discardableResult
     public func rotate(center: SIMD2<Double>, angle: Double) -> Bool {
-        OCCTCurve2DTransform(handle, TransformType2D.rotation.rawValue, center.x, center.y, angle, 0, 0)
+        OCCTCurve2DTransform(
+            handle, TransformType2D.rotation.rawValue, center.x, center.y, angle, 0, 0)
     }
 
     /// Scale the 2D curve in place from a center point by the given factor.
     @discardableResult
     public func scale(center: SIMD2<Double>, factor: Double) -> Bool {
-        OCCTCurve2DTransform(handle, TransformType2D.scale.rawValue, center.x, center.y, factor, 0, 0)
+        OCCTCurve2DTransform(
+            handle, TransformType2D.scale.rawValue, center.x, center.y, factor, 0, 0)
     }
 
     /// Mirror the 2D curve in place through a point.
     @discardableResult
     public func mirrorPoint(_ point: SIMD2<Double>) -> Bool {
-        OCCTCurve2DTransform(handle, TransformType2D.mirrorPoint.rawValue, point.x, point.y, 0, 0, 0)
+        OCCTCurve2DTransform(
+            handle, TransformType2D.mirrorPoint.rawValue, point.x, point.y, 0, 0, 0)
     }
 
     /// Mirror the 2D curve in place through an axis.
     @discardableResult
     public func mirrorAxis(origin: SIMD2<Double>, direction: SIMD2<Double>) -> Bool {
-        OCCTCurve2DTransform(handle, TransformType2D.mirrorAxis.rawValue,
-                              origin.x, origin.y, direction.x, direction.y, 0)
+        OCCTCurve2DTransform(
+            handle, TransformType2D.mirrorAxis.rawValue,
+            origin.x, origin.y, direction.x, direction.y, 0)
     }
 }
 
@@ -3045,9 +3399,12 @@ extension Curve2D {
         guard poles.count >= 3, poles.count % 2 == 1 else { return nil }
         var flat = [Double](repeating: 0, count: poles.count * 2)
         for (i, p) in poles.enumerated() {
-            flat[i * 2] = p.x; flat[i * 2 + 1] = p.y
+            flat[i * 2] = p.x
+            flat[i * 2 + 1] = p.y
         }
-        guard let ref = OCCTGeom2dEvalTBezierCurveCreate(&flat, Int32(poles.count), alpha) else { return nil }
+        guard let ref = OCCTGeom2dEvalTBezierCurveCreate(&flat, Int32(poles.count), alpha) else {
+            return nil
+        }
         return Curve2D(handle: ref)
     }
 
@@ -3062,22 +3419,32 @@ extension Curve2D {
     ///   - alpha: hyperbolic frequency (>= 0, 0 = no hyperbolic terms)
     ///   - beta: trigonometric frequency (>= 0, 0 = no trig terms)
     /// - Returns: Curve2D or nil on error
-    public static func ahtBezier(poles: [SIMD2<Double>], algDegree: Int, alpha: Double, beta: Double) -> Curve2D? {
+    public static func ahtBezier(
+        poles: [SIMD2<Double>], algDegree: Int, alpha: Double, beta: Double
+    ) -> Curve2D? {
         guard !poles.isEmpty else { return nil }
         var flat = [Double](repeating: 0, count: poles.count * 2)
         for (i, p) in poles.enumerated() {
-            flat[i * 2] = p.x; flat[i * 2 + 1] = p.y
+            flat[i * 2] = p.x
+            flat[i * 2 + 1] = p.y
         }
-        guard let ref = OCCTGeom2dEvalAHTBezierCurveCreate(&flat, Int32(poles.count),
-                                                             Int32(algDegree), alpha, beta) else { return nil }
+        guard
+            let ref = OCCTGeom2dEvalAHTBezierCurveCreate(
+                &flat, Int32(poles.count),
+                Int32(algDegree), alpha, beta)
+        else { return nil }
         return Curve2D(handle: ref)
     }
 }
 
 extension Curve2D {
     /// Convert this 2D curve segment to a BSpline using ShapeConstruct_Curve.
-    public func convertSegmentToBSpline(first: Double, last: Double, precision: Double = 1e-6) -> Curve2D? {
-        guard let ref = OCCTShapeConstructConvertToBSpline2D(handle, first, last, precision) else { return nil }
+    public func convertSegmentToBSpline(first: Double, last: Double, precision: Double = 1e-6)
+        -> Curve2D?
+    {
+        guard let ref = OCCTShapeConstructConvertToBSpline2D(handle, first, last, precision) else {
+            return nil
+        }
         return Curve2D(handle: ref)
     }
 
@@ -3089,6 +3456,7 @@ extension Curve2D {
 
 extension Curve2D {
     /// Find the parameter of a 2D point on this curve.
+    ///
     /// Returns nil if the point is beyond maxDistance from the curve.
     public func parameterOf(point: SIMD2<Double>, maxDistance: Double = 1.0) -> Double? {
         var param: Double = 0
@@ -3099,17 +3467,28 @@ extension Curve2D {
 
 extension Curve2D {
     /// Check if this BSpline 2D curve has reversed end tangents.
+    ///
     /// Returns (needFixFirst, needFixLast) or nil if not a BSpline or check failed.
-    public func checkBSplineTangents(tolerance: Double = 0.01, angularTolerance: Double = 0.1) -> (fixFirst: Bool, fixLast: Bool)? {
-        var first = false, last = false
+    public func checkBSplineTangents(tolerance: Double = 0.01, angularTolerance: Double = 0.1) -> (
+        fixFirst: Bool, fixLast: Bool
+    )? {
+        var first = false
+        var last = false
         let ok = OCCTGeomLibCheckBSpline2D(handle, tolerance, angularTolerance, &first, &last)
         return ok ? (first, last) : nil
     }
 
-    /// Fix reversed end tangents on a BSpline 2D curve. Returns new curve or nil.
-    public func fixBSplineTangents(fixFirst: Bool, fixLast: Bool,
-                                    tolerance: Double = 0.01, angularTolerance: Double = 0.1) -> Curve2D? {
-        guard let ref = OCCTGeomLibFixBSpline2D(handle, tolerance, angularTolerance, fixFirst, fixLast) else { return nil }
+    /// Fix reversed end tangents on a BSpline 2D curve.
+    ///
+    /// Returns new curve or nil.
+    public func fixBSplineTangents(
+        fixFirst: Bool, fixLast: Bool,
+        tolerance: Double = 0.01, angularTolerance: Double = 0.1
+    ) -> Curve2D? {
+        guard
+            let ref = OCCTGeomLibFixBSpline2D(
+                handle, tolerance, angularTolerance, fixFirst, fixLast)
+        else { return nil }
         return Curve2D(handle: ref)
     }
 }
@@ -3123,8 +3502,9 @@ extension Curve2D {
     public func splitByContinuity(criterion: Int = 2, tolerance: Double = 1e-6) -> [Curve2D] {
         var refs = [OCCTCurve2DRef?](repeating: nil, count: 32)
         let n = refs.withUnsafeMutableBufferPointer { buf in
-            OCCTSplitCurve2dContinuity(handle, Int32(criterion), tolerance,
-                                        buf.baseAddress, Int32(buf.count))
+            OCCTSplitCurve2dContinuity(
+                handle, Int32(criterion), tolerance,
+                buf.baseAddress, Int32(buf.count))
         }
         return (0..<Int(n)).compactMap { i in
             guard let ref = refs[i] else { return nil }
@@ -3148,8 +3528,9 @@ extension Curve2D {
     public func approxArcsAndSegments(tolerance: Double, angleTolerance: Double) -> [Curve2D] {
         var refs = [OCCTCurve2DRef?](repeating: nil, count: 256)
         let n = refs.withUnsafeMutableBufferPointer { buf in
-            OCCTGeom2dConvertApproxArcsSegments(handle, tolerance, angleTolerance,
-                                                  buf.baseAddress, Int32(buf.count))
+            OCCTGeom2dConvertApproxArcsSegments(
+                handle, tolerance, angleTolerance,
+                buf.baseAddress, Int32(buf.count))
         }
         return (0..<Int(n)).compactMap { i in
             guard let ref = refs[i] else { return nil }
@@ -3166,13 +3547,18 @@ extension Curve2D {
     ///   - periodic: If true, create a periodic (closed) curve
     ///   - tolerance: Interpolation tolerance
     /// - Returns: The interpolated curve, or nil on failure
-    public static func interpolate2D(points: [(Double, Double)], periodic: Bool = false, tolerance: Double = 1e-6) -> Curve2D? {
+    public static func interpolate2D(
+        points: [(Double, Double)], periodic: Bool = false, tolerance: Double = 1e-6
+    ) -> Curve2D? {
         let xs = points.map(\.0)
         let ys = points.map(\.1)
         return xs.withUnsafeBufferPointer { xBuf in
             ys.withUnsafeBufferPointer { yBuf in
-                guard let ref = OCCTCurve2DInterpolate2D(xBuf.baseAddress!, yBuf.baseAddress!,
-                                                         Int32(points.count), periodic, tolerance) else {
+                guard
+                    let ref = OCCTCurve2DInterpolate2D(
+                        xBuf.baseAddress!, yBuf.baseAddress!,
+                        Int32(points.count), periodic, tolerance)
+                else {
                     return nil
                 }
                 return Curve2D(handle: ref)
@@ -3191,8 +3577,11 @@ extension Curve2D {
         let ys = points.map(\.1)
         return xs.withUnsafeBufferPointer { xBuf in
             ys.withUnsafeBufferPointer { yBuf in
-                guard let ref = OCCTCurve2DApproximate2D(xBuf.baseAddress!, yBuf.baseAddress!,
-                                                          Int32(points.count)) else {
+                guard
+                    let ref = OCCTCurve2DApproximate2D(
+                        xBuf.baseAddress!, yBuf.baseAddress!,
+                        Int32(points.count))
+                else {
                     return nil
                 }
                 return Curve2D(handle: ref)
@@ -3205,7 +3594,12 @@ extension Curve2D {
 
     /// Convert a 2D circle arc to a BSpline curve.
     ///
-    /// - Parameter radius: circle radius. Must be greater than zero.
+    /// - Parameters:
+    ///   - centerX: centre X.
+    ///   - centerY: centre Y.
+    ///   - radius: circle radius. Must be greater than zero.
+    ///   - u1: start angle, in radians.
+    ///   - u2: end angle, in radians.
     /// - Returns: the converted curve, or `nil` if the circle is degenerate.
     ///
     /// ```swift
@@ -3213,9 +3607,13 @@ extension Curve2D {
     ///     print(c.degree)
     /// }
     /// ```
-    public static func fromCircleArc(centerX: Double, centerY: Double, radius: Double,
-                                      u1: Double, u2: Double) -> Curve2D? {
-        guard let ref = OCCTConvertCircleToBSpline2D(centerX, centerY, radius, u1, u2) else { return nil }
+    public static func fromCircleArc(
+        centerX: Double, centerY: Double, radius: Double,
+        u1: Double, u2: Double
+    ) -> Curve2D? {
+        guard let ref = OCCTConvertCircleToBSpline2D(centerX, centerY, radius, u1, u2) else {
+            return nil
+        }
         return Curve2D(handle: ref)
     }
 }
@@ -3225,9 +3623,13 @@ extension Curve2D {
     /// Convert a 2D ellipse arc to a BSpline curve.
     ///
     /// - Parameters:
+    ///   - centerX: centre X.
+    ///   - centerY: centre Y.
     ///   - majorRadius: semi-major axis. Must be greater than zero.
     ///   - minorRadius: semi-minor axis. Must be greater than zero and no larger than
     ///     `majorRadius`; equal radii are a circle and are valid.
+    ///   - u1: start angle, in radians.
+    ///   - u2: end angle, in radians.
     /// - Returns: the converted curve, or `nil` if the ellipse is degenerate.
     ///
     /// ```swift
@@ -3237,19 +3639,28 @@ extension Curve2D {
     ///     print(c.degree)
     /// }
     /// ```
-    public static func fromEllipseArc(centerX: Double, centerY: Double,
-                                       majorRadius: Double, minorRadius: Double,
-                                       u1: Double, u2: Double) -> Curve2D? {
-        guard let ref = OCCTConvertEllipseToBSpline2D(centerX, centerY, majorRadius, minorRadius, u1, u2) else { return nil }
+    public static func fromEllipseArc(
+        centerX: Double, centerY: Double,
+        majorRadius: Double, minorRadius: Double,
+        u1: Double, u2: Double
+    ) -> Curve2D? {
+        guard
+            let ref = OCCTConvertEllipseToBSpline2D(
+                centerX, centerY, majorRadius, minorRadius, u1, u2)
+        else { return nil }
         return Curve2D(handle: ref)
     }
 
     /// Convert a 2D hyperbola arc to a BSpline curve.
     ///
     /// - Parameters:
+    ///   - centerX: centre X.
+    ///   - centerY: centre Y.
     ///   - majorRadius: major radius. Must be greater than zero.
     ///   - minorRadius: minor radius. Must be greater than zero. A hyperbola puts no ordering on
     ///     its radii, so a minor radius larger than the major is an ordinary hyperbola.
+    ///   - u1: start parameter on the hyperbola.
+    ///   - u2: end parameter on the hyperbola.
     /// - Returns: the converted curve, or `nil` if the hyperbola is degenerate.
     ///
     /// ```swift
@@ -3259,17 +3670,27 @@ extension Curve2D {
     ///     print(c.degree)
     /// }
     /// ```
-    public static func fromHyperbolaArc(centerX: Double, centerY: Double,
-                                         majorRadius: Double, minorRadius: Double,
-                                         u1: Double, u2: Double) -> Curve2D? {
-        guard let ref = OCCTConvertHyperbolaToBSpline2D(centerX, centerY, majorRadius, minorRadius, u1, u2) else { return nil }
+    public static func fromHyperbolaArc(
+        centerX: Double, centerY: Double,
+        majorRadius: Double, minorRadius: Double,
+        u1: Double, u2: Double
+    ) -> Curve2D? {
+        guard
+            let ref = OCCTConvertHyperbolaToBSpline2D(
+                centerX, centerY, majorRadius, minorRadius, u1, u2)
+        else { return nil }
         return Curve2D(handle: ref)
     }
 
     /// Convert a 2D parabola arc to a BSpline curve.
     ///
-    /// - Parameter focal: focal length. Must be greater than zero: OCCT converts a focal length of
-    ///   zero without complaint, into a curve whose poles are all NaN.
+    /// - Parameters:
+    ///   - centerX: apex X.
+    ///   - centerY: apex Y.
+    ///   - focal: focal length. Must be greater than zero: OCCT converts a focal length of zero
+    ///     without complaint, into a curve whose poles are all NaN.
+    ///   - u1: start parameter on the parabola.
+    ///   - u2: end parameter on the parabola.
     /// - Returns: the converted curve, or `nil` if the parabola is degenerate.
     ///
     /// ```swift
@@ -3277,9 +3698,13 @@ extension Curve2D {
     ///     print(c.degree)
     /// }
     /// ```
-    public static func fromParabolaArc(centerX: Double, centerY: Double, focal: Double,
-                                        u1: Double, u2: Double) -> Curve2D? {
-        guard let ref = OCCTConvertParabolaToBSpline2D(centerX, centerY, focal, u1, u2) else { return nil }
+    public static func fromParabolaArc(
+        centerX: Double, centerY: Double, focal: Double,
+        u1: Double, u2: Double
+    ) -> Curve2D? {
+        guard let ref = OCCTConvertParabolaToBSpline2D(centerX, centerY, focal, u1, u2) else {
+            return nil
+        }
         return Curve2D(handle: ref)
     }
 }
@@ -3287,103 +3712,155 @@ extension Curve2D {
 extension Curve2D {
     /// Create a 2D circle from center and radius.
     public static func gceCircle(center: SIMD2<Double>, radius: Double) -> Curve2D? {
-        guard let ref = OCCTCurve2DMakeCircleCenterRadius(center.x, center.y, radius) else { return nil }
+        guard let ref = OCCTCurve2DMakeCircleCenterRadius(center.x, center.y, radius) else {
+            return nil
+        }
         return Curve2D(handle: ref)
     }
 
     /// Create a 2D circle through 3 points.
-    public static func gceCircle(p1: SIMD2<Double>, p2: SIMD2<Double>, p3: SIMD2<Double>) -> Curve2D? {
-        guard let ref = OCCTCurve2DMakeCircle3Points(p1.x, p1.y, p2.x, p2.y, p3.x, p3.y) else { return nil }
+    public static func gceCircle(p1: SIMD2<Double>, p2: SIMD2<Double>, p3: SIMD2<Double>)
+        -> Curve2D?
+    {
+        guard let ref = OCCTCurve2DMakeCircle3Points(p1.x, p1.y, p2.x, p2.y, p3.x, p3.y) else {
+            return nil
+        }
         return Curve2D(handle: ref)
     }
 
     /// Create a 2D circle from center and point on circle.
     public static func gceCircle(center: SIMD2<Double>, pointOn: SIMD2<Double>) -> Curve2D? {
-        guard let ref = OCCTCurve2DMakeCircleCenterPoint(center.x, center.y, pointOn.x, pointOn.y) else { return nil }
+        guard let ref = OCCTCurve2DMakeCircleCenterPoint(center.x, center.y, pointOn.x, pointOn.y)
+        else { return nil }
         return Curve2D(handle: ref)
     }
 
     /// Create a 2D circle parallel to existing circle at distance.
-    public static func gceCircleParallel(center: SIMD2<Double>, direction: SIMD2<Double>,
-                                          radius: Double, distance: Double) -> Curve2D? {
-        guard let ref = OCCTCurve2DMakeCircleParallel(center.x, center.y,
-                                                      direction.x, direction.y,
-                                                      radius, distance) else { return nil }
+    public static func gceCircleParallel(
+        center: SIMD2<Double>, direction: SIMD2<Double>,
+        radius: Double, distance: Double
+    ) -> Curve2D? {
+        guard
+            let ref = OCCTCurve2DMakeCircleParallel(
+                center.x, center.y,
+                direction.x, direction.y,
+                radius, distance)
+        else { return nil }
         return Curve2D(handle: ref)
     }
 
     /// Create a 2D circle from axis and radius.
-    public static func gceCircle(axisCenter: SIMD2<Double>, axisDirection: SIMD2<Double>,
-                                  radius: Double) -> Curve2D? {
-        guard let ref = OCCTCurve2DMakeCircleAxis(axisCenter.x, axisCenter.y,
-                                                  axisDirection.x, axisDirection.y,
-                                                  radius) else { return nil }
+    public static func gceCircle(
+        axisCenter: SIMD2<Double>, axisDirection: SIMD2<Double>,
+        radius: Double
+    ) -> Curve2D? {
+        guard
+            let ref = OCCTCurve2DMakeCircleAxis(
+                axisCenter.x, axisCenter.y,
+                axisDirection.x, axisDirection.y,
+                radius)
+        else { return nil }
         return Curve2D(handle: ref)
     }
 }
 
 extension Curve2D {
     /// Create a 2D ellipse from axis and radii.
-    public static func gceEllipse(center: SIMD2<Double>, xDirection: SIMD2<Double>,
-                                   majorRadius: Double, minorRadius: Double) -> Curve2D? {
-        guard let ref = OCCTCurve2DMakeEllipse(center.x, center.y,
-                                               xDirection.x, xDirection.y,
-                                               majorRadius, minorRadius) else { return nil }
+    public static func gceEllipse(
+        center: SIMD2<Double>, xDirection: SIMD2<Double>,
+        majorRadius: Double, minorRadius: Double
+    ) -> Curve2D? {
+        guard
+            let ref = OCCTCurve2DMakeEllipse(
+                center.x, center.y,
+                xDirection.x, xDirection.y,
+                majorRadius, minorRadius)
+        else { return nil }
         return Curve2D(handle: ref)
     }
 
     /// Create a 2D ellipse from 3 points (S1, S2, center).
-    public static func gceEllipse(s1: SIMD2<Double>, s2: SIMD2<Double>, center: SIMD2<Double>) -> Curve2D? {
-        guard let ref = OCCTCurve2DMakeEllipse3Points(s1.x, s1.y, s2.x, s2.y,
-                                                      center.x, center.y) else { return nil }
+    public static func gceEllipse(s1: SIMD2<Double>, s2: SIMD2<Double>, center: SIMD2<Double>)
+        -> Curve2D?
+    {
+        guard
+            let ref = OCCTCurve2DMakeEllipse3Points(
+                s1.x, s1.y, s2.x, s2.y,
+                center.x, center.y)
+        else { return nil }
         return Curve2D(handle: ref)
     }
 
     /// Create a 2D ellipse from full Ax22d and radii.
-    public static func gceEllipse(center: SIMD2<Double>, xDirection: SIMD2<Double>,
-                                   yDirection: SIMD2<Double>,
-                                   majorRadius: Double, minorRadius: Double) -> Curve2D? {
-        guard let ref = OCCTCurve2DMakeEllipseAxis22d(center.x, center.y,
-                                                      xDirection.x, xDirection.y,
-                                                      yDirection.x, yDirection.y,
-                                                      majorRadius, minorRadius) else { return nil }
+    public static func gceEllipse(
+        center: SIMD2<Double>, xDirection: SIMD2<Double>,
+        yDirection: SIMD2<Double>,
+        majorRadius: Double, minorRadius: Double
+    ) -> Curve2D? {
+        guard
+            let ref = OCCTCurve2DMakeEllipseAxis22d(
+                center.x, center.y,
+                xDirection.x, xDirection.y,
+                yDirection.x, yDirection.y,
+                majorRadius, minorRadius)
+        else { return nil }
         return Curve2D(handle: ref)
     }
 }
 
 extension Curve2D {
     /// Create a 2D hyperbola from axis and radii.
-    public static func gceHyperbola(center: SIMD2<Double>, xDirection: SIMD2<Double>,
-                                     majorRadius: Double, minorRadius: Double) -> Curve2D? {
-        guard let ref = OCCTCurve2DMakeHyperbola(center.x, center.y,
-                                                 xDirection.x, xDirection.y,
-                                                 majorRadius, minorRadius) else { return nil }
+    public static func gceHyperbola(
+        center: SIMD2<Double>, xDirection: SIMD2<Double>,
+        majorRadius: Double, minorRadius: Double
+    ) -> Curve2D? {
+        guard
+            let ref = OCCTCurve2DMakeHyperbola(
+                center.x, center.y,
+                xDirection.x, xDirection.y,
+                majorRadius, minorRadius)
+        else { return nil }
         return Curve2D(handle: ref)
     }
 
     /// Create a 2D hyperbola from 3 points (S1, S2, center).
-    public static func gceHyperbola(s1: SIMD2<Double>, s2: SIMD2<Double>, center: SIMD2<Double>) -> Curve2D? {
-        guard let ref = OCCTCurve2DMakeHyperbola3Points(s1.x, s1.y, s2.x, s2.y,
-                                                        center.x, center.y) else { return nil }
+    public static func gceHyperbola(s1: SIMD2<Double>, s2: SIMD2<Double>, center: SIMD2<Double>)
+        -> Curve2D?
+    {
+        guard
+            let ref = OCCTCurve2DMakeHyperbola3Points(
+                s1.x, s1.y, s2.x, s2.y,
+                center.x, center.y)
+        else { return nil }
         return Curve2D(handle: ref)
     }
 }
 
 extension Curve2D {
     /// Create a 2D parabola from axis and focal distance.
-    public static func gceParabola(center: SIMD2<Double>, direction: SIMD2<Double>,
-                                    focalDistance: Double) -> Curve2D? {
-        guard let ref = OCCTCurve2DMakeParabola(center.x, center.y,
-                                                direction.x, direction.y, focalDistance) else { return nil }
+    public static func gceParabola(
+        center: SIMD2<Double>, direction: SIMD2<Double>,
+        focalDistance: Double
+    ) -> Curve2D? {
+        guard
+            let ref = OCCTCurve2DMakeParabola(
+                center.x, center.y,
+                direction.x, direction.y, focalDistance)
+        else { return nil }
         return Curve2D(handle: ref)
     }
 
     /// Create a 2D parabola from directrix and focus.
-    public static func gceParabola(directrixPoint: SIMD2<Double>, directrixDirection: SIMD2<Double>,
-                                    focus: SIMD2<Double>) -> Curve2D? {
-        guard let ref = OCCTCurve2DMakeParabolaDirectrixFocus(directrixPoint.x, directrixPoint.y,
-                                                              directrixDirection.x, directrixDirection.y,
-                                                              focus.x, focus.y) else { return nil }
+    public static func gceParabola(
+        directrixPoint: SIMD2<Double>, directrixDirection: SIMD2<Double>,
+        focus: SIMD2<Double>
+    ) -> Curve2D? {
+        guard
+            let ref = OCCTCurve2DMakeParabolaDirectrixFocus(
+                directrixPoint.x, directrixPoint.y,
+                directrixDirection.x, directrixDirection.y,
+                focus.x, focus.y)
+        else { return nil }
         return Curve2D(handle: ref)
     }
 }
@@ -3393,7 +3870,9 @@ extension Curve2D {
     public static func concatenate(_ curves: [Curve2D], tolerance: Double = 1e-4) -> Curve2D? {
         guard !curves.isEmpty else { return nil }
         var handles = curves.map { $0.handle as OCCTCurve2DRef }
-        guard let ref = OCCTConcatenateCurves2D(&handles, Int32(curves.count), tolerance) else { return nil }
+        guard let ref = OCCTConcatenateCurves2D(&handles, Int32(curves.count), tolerance) else {
+            return nil
+        }
         return Curve2D(handle: ref)
     }
 }
@@ -3401,10 +3880,10 @@ extension Curve2D {
 extension Curve2D {
     /// Measured global continuity of the 2D curve, as a raw `GeomAbs_Shape` ordinal.
     ///
-    /// The ordinals are `GeomAbs_Shape`'s own declared order — `0=C0, 1=G1, 2=C1, 3=G2,
-    /// 4=C2, 5=C3, 6=CN` — not a 0/1/2 order. Prefer ``continuityClass``, which names them.
+    /// The ordinals are `GeomAbs_Shape`'s own declared order (`0=C0, 1=G1, 2=C1, 3=G2,
+    /// 4=C2, 5=C3, 6=CN`), not a 0/1/2 order. Prefer ``continuityClass``, which names them.
     ///
-    /// - Warning: The migration target for the retired `continuityOrder`, but not a drop-in one —
+    /// - Warning: The migration target for the retired `continuityOrder`, but not a drop-in one;
     ///   see ``Curve3D/continuity`` for the constants that shift (#619).
     public var continuity: Int {
         Int(OCCTCurve2DGetContinuity(handle))
@@ -3441,7 +3920,8 @@ extension Curve2D {
 
         /// Get a pole at 1-based index.
         public func pole(at index: Int) -> SIMD2<Double> {
-            var x = 0.0, y = 0.0
+            var x = 0.0
+            var y = 0.0
             OCCTCurve2DBSplineGetPole(curve.handle, Int32(index), &x, &y)
             return SIMD2(x, y)
         }
@@ -3488,7 +3968,9 @@ extension Curve2D {
         }
     }
 
-    /// Access BSpline-specific operations. Works only if the underlying curve is a Geom2d_BSplineCurve.
+    /// Access BSpline-specific operations.
+    ///
+    /// Works only if the underlying curve is a Geom2d_BSplineCurve.
     public var bspline: BSpline { BSpline(curve: self) }
 }
 
@@ -3511,21 +3993,31 @@ extension Curve2D {
 
     /// Evaluate the 2D curve point at parameter u.
     public func evalD0(at u: Double) -> SIMD2<Double> {
-        var x = 0.0, y = 0.0
+        var x = 0.0
+        var y = 0.0
         OCCTCurve2DEvalD0(handle, u, &x, &y)
         return SIMD2(x, y)
     }
 
     /// Evaluate the 2D curve point and first derivative at parameter u.
     public func evalD1(at u: Double) -> (point: SIMD2<Double>, d1: SIMD2<Double>) {
-        var px = 0.0, py = 0.0, d1x = 0.0, d1y = 0.0
+        var px = 0.0
+        var py = 0.0
+        var d1x = 0.0
+        var d1y = 0.0
         OCCTCurve2DEvalD1(handle, u, &px, &py, &d1x, &d1y)
         return (SIMD2(px, py), SIMD2(d1x, d1y))
     }
 
     /// Evaluate the 2D curve point, first and second derivatives at parameter u.
-    public func evalD2(at u: Double) -> (point: SIMD2<Double>, d1: SIMD2<Double>, d2: SIMD2<Double>) {
-        var px = 0.0, py = 0.0, d1x = 0.0, d1y = 0.0, d2x = 0.0, d2y = 0.0
+    public func evalD2(at u: Double) -> (point: SIMD2<Double>, d1: SIMD2<Double>, d2: SIMD2<Double>)
+    {
+        var px = 0.0
+        var py = 0.0
+        var d1x = 0.0
+        var d1y = 0.0
+        var d2x = 0.0
+        var d2y = 0.0
         OCCTCurve2DEvalD2(handle, u, &px, &py, &d1x, &d1y, &d2x, &d2y)
         return (SIMD2(px, py), SIMD2(d1x, d1y), SIMD2(d2x, d2y))
     }
@@ -3550,7 +4042,8 @@ extension Curve2D {
 
     /// Evaluate the N-th derivative at parameter u.
     public func dn(at u: Double, order n: Int) -> SIMD2<Double> {
-        var x = 0.0, y = 0.0
+        var x = 0.0
+        var y = 0.0
         OCCTCurve2DDN(handle, u, Int32(n), &x, &y)
         return SIMD2(x, y)
     }
@@ -3564,8 +4057,8 @@ extension Curve2D {
 
 extension Curve2D {
     /// 2D Bezier curve properties (meaningful only when the underlying curve is Geom2d_BezierCurve).
-    public struct BezierProperties: @unchecked Sendable {
-        fileprivate let handle: OCCTCurve2DRef
+    public struct BezierProperties: Sendable, NativeHandleView {
+        let owner: Curve2D
 
         /// Degree of the Bezier curve.
         public var degree: Int { Int(OCCTCurve2DBezierDegree(handle)) }
@@ -3578,7 +4071,8 @@ extension Curve2D {
 
         /// Get a pole (1-based index).
         public func pole(at index: Int) -> SIMD2<Double> {
-            var x = 0.0, y = 0.0
+            var x = 0.0
+            var y = 0.0
             OCCTCurve2DBezierGetPole(handle, Int32(index), &x, &y)
             return SIMD2(x, y)
         }
@@ -3602,7 +4096,7 @@ extension Curve2D {
     }
 
     /// 2D Bezier curve-specific properties.
-    public var bezierProperties: BezierProperties { BezierProperties(handle: handle) }
+    public var bezierProperties: BezierProperties { BezierProperties(owner: self) }
 
     // --- Curve2D BSpline extras ---
 
@@ -3632,7 +4126,9 @@ extension Curve2D {
 extension Curve2D {
 
     /// Unavailable: this `Int` reported a hand-invented encoding, and the numbers changed
-    /// underneath it. Use ``continuityClass`` (named cases) or ``continuity`` (raw ordinal).
+    /// underneath it.
+    ///
+    /// Use ``continuityClass`` (named cases) or ``continuity`` (raw ordinal).
     ///
     /// Same retirement, same reasons, as ``Curve3D/continuityOrder``: the pre-#485 encoding was
     /// `C0=0, C1=1, C2=2, C3=3, CN=99, G1=-2, G2=-3` and the value is now the real
@@ -3646,16 +4142,19 @@ extension Curve2D {
     /// // Ask it so it cannot drift again:
     /// if pcurve.continuityClass.satisfies(.c2) { treatAsC2() }
     /// ```
-    @available(*, unavailable, message: """
-        continuityOrder reported a hand-invented encoding (C0=0, C1=1, C2=2, C3=3, CN=99, G1=-2, \
-        G2=-3) and #485 changed it to the real GeomAbs_Shape ordinal (C0=0, G1=1, C1=2, G2=3, \
-        C2=4, C3=5, CN=6), so every threshold check silently changed meaning. Use \
-        continuityClass.satisfies(_:) for a continuity floor, continuityClass == .cN for the \
-        analytic fast path, or continuity for the raw ordinal — after re-checking the constant \
-        you compare against. Note there is no longer an error sentinel: this returned -1 for a \
-        null or unreadable handle, whereas continuity returns 0, which is an ordinary C0, so a \
-        migrated `< 0` error check can never fire (#619).
-        """)
+    @available(
+        *, unavailable,
+        message: """
+            continuityOrder reported a hand-invented encoding (C0=0, C1=1, C2=2, C3=3, CN=99, G1=-2, \
+            G2=-3) and #485 changed it to the real GeomAbs_Shape ordinal (C0=0, G1=1, C1=2, G2=3, \
+            C2=4, C3=5, CN=6), so every threshold check silently changed meaning. Use \
+            continuityClass.satisfies(_:) for a continuity floor, continuityClass == .cN for the \
+            analytic fast path, or continuity for the raw ordinal, after re-checking the constant \
+            you compare against. Note there is no longer an error sentinel: this returned -1 for a \
+            null or unreadable handle, whereas continuity returns 0, which is an ordinary C0, so a \
+            migrated `< 0` error check can never fire (#619).
+            """
+    )
     public var continuityOrder: Int { Int(OCCTCurve2DGetContinuity(handle)) }
 
     /// Check if this curve has at least Cn continuity.
@@ -3715,11 +4214,14 @@ extension Curve2D {
 
     /// Move point and tangent at parameter u on 2D BSpline curve.
     @discardableResult
-    public func bsplineMovePointAndTangent(u: Double, point: SIMD2<Double>, tangent: SIMD2<Double>,
-                                           tolerance: Double, poleRange: ClosedRange<Int>) -> Bool {
-        OCCTCurve2DBSplineMovePointAndTangent(handle, u, point.x, point.y,
-                                               tangent.x, tangent.y,
-                                               tolerance,
-                                               Int32(poleRange.lowerBound), Int32(poleRange.upperBound))
+    public func bsplineMovePointAndTangent(
+        u: Double, point: SIMD2<Double>, tangent: SIMD2<Double>,
+        tolerance: Double, poleRange: ClosedRange<Int>
+    ) -> Bool {
+        OCCTCurve2DBSplineMovePointAndTangent(
+            handle, u, point.x, point.y,
+            tangent.x, tangent.y,
+            tolerance,
+            Int32(poleRange.lowerBound), Int32(poleRange.upperBound))
     }
 }

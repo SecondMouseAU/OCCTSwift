@@ -19,6 +19,9 @@ enum HarnessRunner {
         RunnableEntry(name: "772-self-intersection",
                       summary: "analyze(tolerance:) vs isSelfIntersecting(timeout:) cost (#772)",
                       run: AnalyzeSelfIntersectionTiming.run),
+        RunnableEntry(name: "965-properties-lifetime",
+                      summary: "do the *Properties views keep their parent alive? (#965)",
+                      run: PropertiesLifetime.run),
     ]
 
     static func main() {

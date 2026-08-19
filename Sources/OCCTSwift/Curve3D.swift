@@ -1924,8 +1924,8 @@ extension Curve3D {
     /// Access circle-specific properties.
     ///
     /// Returns meaningful values only if the underlying curve is a Geom_Circle.
-    public struct CircleProperties: @unchecked Sendable {
-        fileprivate let handle: OCCTCurve3DRef
+    public struct CircleProperties: Sendable, NativeHandleView {
+        let owner: Curve3D
 
         /// The radius of the circle.
         public var radius: Double { OCCTCurve3DCircleRadius(handle) }
@@ -1965,15 +1965,15 @@ extension Curve3D {
     }
 
     /// Circle-specific properties (meaningful only when the underlying curve is a Geom_Circle).
-    public var circleProperties: CircleProperties { CircleProperties(handle: handle) }
+    public var circleProperties: CircleProperties { CircleProperties(owner: self) }
 
     // MARK: - Geom_Ellipse Properties (v0.108.0)
 
     /// Access ellipse-specific properties.
     ///
     /// Returns meaningful values only if the underlying curve is a Geom_Ellipse.
-    public struct EllipseProperties: @unchecked Sendable {
-        fileprivate let handle: OCCTCurve3DRef
+    public struct EllipseProperties: Sendable, NativeHandleView {
+        let owner: Curve3D
 
         /// The major radius.
         public var majorRadius: Double { OCCTCurve3DEllipseMajorRadius(handle) }
@@ -2048,15 +2048,15 @@ extension Curve3D {
     }
 
     /// Ellipse-specific properties (meaningful only when the underlying curve is a Geom_Ellipse).
-    public var ellipseProperties: EllipseProperties { EllipseProperties(handle: handle) }
+    public var ellipseProperties: EllipseProperties { EllipseProperties(owner: self) }
 
     // MARK: - Geom_Hyperbola Properties (v0.108.0)
 
     /// Access hyperbola-specific properties.
     ///
     /// Returns meaningful values only if the underlying curve is a Geom_Hyperbola.
-    public struct HyperbolaProperties: @unchecked Sendable {
-        fileprivate let handle: OCCTCurve3DRef
+    public struct HyperbolaProperties: Sendable, NativeHandleView {
+        let owner: Curve3D
 
         /// The major radius (real semi-axis).
         public var majorRadius: Double { OCCTCurve3DHyperbolaMajorRadius(handle) }
@@ -2119,15 +2119,15 @@ extension Curve3D {
     }
 
     /// Hyperbola-specific properties (meaningful only when the underlying curve is a Geom_Hyperbola).
-    public var hyperbolaProperties: HyperbolaProperties { HyperbolaProperties(handle: handle) }
+    public var hyperbolaProperties: HyperbolaProperties { HyperbolaProperties(owner: self) }
 
     // MARK: - Geom_Parabola Properties (v0.108.0)
 
     /// Access parabola-specific properties.
     ///
     /// Returns meaningful values only if the underlying curve is a Geom_Parabola.
-    public struct ParabolaProperties: @unchecked Sendable {
-        fileprivate let handle: OCCTCurve3DRef
+    public struct ParabolaProperties: Sendable, NativeHandleView {
+        let owner: Curve3D
 
         /// The focal distance.
         public var focal: Double { OCCTCurve3DParabolaFocal(handle) }
@@ -2166,15 +2166,15 @@ extension Curve3D {
     }
 
     /// Parabola-specific properties (meaningful only when the underlying curve is a Geom_Parabola).
-    public var parabolaProperties: ParabolaProperties { ParabolaProperties(handle: handle) }
+    public var parabolaProperties: ParabolaProperties { ParabolaProperties(owner: self) }
 
     // MARK: - Geom_Line Properties (v0.108.0)
 
     /// Access line-specific properties.
     ///
     /// Returns meaningful values only if the underlying curve is a Geom_Line.
-    public struct LineProperties: @unchecked Sendable {
-        fileprivate let handle: OCCTCurve3DRef
+    public struct LineProperties: Sendable, NativeHandleView {
+        let owner: Curve3D
 
         /// The direction of the line.
         public var direction: SIMD3<Double> {
@@ -2210,7 +2210,7 @@ extension Curve3D {
     }
 
     /// Line-specific properties (meaningful only when the underlying curve is a Geom_Line).
-    public var lineProperties: LineProperties { LineProperties(handle: handle) }
+    public var lineProperties: LineProperties { LineProperties(owner: self) }
 
     // MARK: - v0.115.0: Interpolation expansion, length, closest point
 

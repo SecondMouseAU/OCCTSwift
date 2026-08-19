@@ -21,6 +21,33 @@ bounding-box accessors becoming Optional so a void shape stops fabricating `(0,0
 
 ## Unreleased
 
+### `*Properties` accessors no longer hand back a dangling handle (#965)
+
+Nineteen `*Properties` accessors on `Curve2D`, `Curve3D` and `Surface` returned a value that stored
+the parent's native handle without retaining it. The parent releases that handle in `deinit`, so a
+view outliving its parent was reading freed memory. The chained form crashed:
+
+```swift
+let radius = edge.curve3D?.circleProperties.radius   // SIGSEGV before this fix
+```
+
+`Edge.curve3D` builds a fresh `Curve3D` per read, so nothing held the parent past the expression.
+The documented workaround (binding the parent to a local first) was invisible at the call site,
+unenforceable, and silently worked whenever the parent happened to be stored somewhere.
+
+Each view now stores its parent and reads the handle through it, so the chained form is correct and
+the workaround is unnecessary. The affected accessors are `bezierProperties`, `circleProperties`,
+`coneProperties`, `cylinderProperties`, `ellipseProperties`, `hyperbolaProperties`,
+`lineProperties`, `offsetProperties`, `parabolaProperties`, `planeProperties`, `sphereProperties`,
+`sweptProperties` and `torusProperties`, several of which appear on more than one parent type.
+
+Each of the nineteen is now plainly `Sendable` instead of `@unchecked Sendable`. The conformance is
+unchanged from a consumer's point of view; it is now compiler-checked rather than asserted.
+
+`Scripts/check-borrowed-handles.py` is a new static gate, run by `ci.yml`'s `gate-scripts` job: it
+fails on any struct or enum in `Sources/OCCTSwift` that stores an `OCCT*Ref`, since neither has a
+`deinit` to release one.
+
 ### Pass 3: Document/XDE assembly duplication audit (#384)
 
 Five duplications found and fixed in the XDE/OCAF document layer, all internal. Grouped by what

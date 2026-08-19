@@ -31,7 +31,6 @@ Sources/OCCTSwift/Continuity.swift
 Sources/OCCTSwift/CoordinateSystem.swift
 Sources/OCCTSwift/CoordinateSystem3D.swift
 Sources/OCCTSwift/CPUTime.swift
-Sources/OCCTSwift/Curve2D.swift
 Sources/OCCTSwift/CurveProfiler.swift
 Sources/OCCTSwift/Date.swift
 Sources/OCCTSwift/DirectoryIterator.swift

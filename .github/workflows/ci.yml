@@ -124,6 +124,18 @@ jobs:
         if: '!cancelled()'
         run: python3 Scripts/check-docs-existence.py
 
+      # #965: a struct has no deinit, so a struct that stores an OCCT*Ref borrows a handle whose
+      # lifetime it does not control. Nineteen `*Properties` views did exactly that, which made
+      # `edge.curve3D?.circleProperties.radius` a use-after-free. The fix is nineteen conversions,
+      # and this is what keeps them from silently becoming eighteen.
+      - name: check-borrowed-handles.py --self-test
+        if: '!cancelled()'
+        run: python3 Scripts/check-borrowed-handles.py --self-test
+
+      - name: check-borrowed-handles.py
+        if: '!cancelled()'
+        run: python3 Scripts/check-borrowed-handles.py
+
       - name: derive-bridge-header-split.py --self-test
         if: '!cancelled()'
         run: python3 Scripts/derive-bridge-header-split.py --self-test

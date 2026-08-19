@@ -78,6 +78,11 @@ run "check-docs-defaults.py --self-test"      Scripts/check-docs-defaults.py --s
 run "check-docs-defaults.py"                  Scripts/check-docs-defaults.py
 run "check-docs-existence.py --self-test"     Scripts/check-docs-existence.py --self-test
 run "check-docs-existence.py"                 Scripts/check-docs-existence.py
+# #965. A struct has no deinit, so a struct storing an OCCT*Ref borrows a handle whose lifetime
+# it does not control. Nineteen such views were a use-after-free; this is what keeps a twentieth
+# from being written.
+run "check-borrowed-handles.py --self-test"   Scripts/check-borrowed-handles.py --self-test
+run "check-borrowed-handles.py"               Scripts/check-borrowed-handles.py
 run "derive-bridge-header-split.py --self-test" Scripts/derive-bridge-header-split.py --self-test
 run "derive-bridge-header-split.py --verify"    Scripts/derive-bridge-header-split.py --verify
 run "count-operations.py"                     Scripts/count-operations.py

@@ -1,0 +1,38 @@
+$ OCCTSWIFT_LOCAL=1 swift run Harnesses 965-properties-lifetime
+#965: do the *Properties value views keep their parent alive?
+
+Phase 1: does taking a view keep the parent alive? (no dangling read here)
+  Curve3D.circleProperties  parent alive: false
+  Curve2D.circleProperties  parent alive: false
+  Surface.sphereProperties  parent alive: false
+
+Phase 2: reading through the view. Before the fix these read a released handle.
+  control  Curve3D circle radius = 5.0, expecting 5.0
+  control  Curve2D circle radius = 7.0, expecting 7.0
+  control  Surface sphere radius = 11.0, expecting 11.0
+  chained  edge.curve3D?.circleProperties.radius, expecting 5.0
+Segmentation fault: 11   (exit 139)
+
+$ OCCT965_READ=escaped OCCTSWIFT_LOCAL=1 swift run Harnesses 965-properties-lifetime
+#965: do the *Properties value views keep their parent alive?
+
+Phase 1: does taking a view keep the parent alive? (no dangling read here)
+  Curve3D.circleProperties  parent alive: false
+  Curve2D.circleProperties  parent alive: false
+  Surface.sphereProperties  parent alive: false
+
+Phase 2: reading through the view. Before the fix these read a released handle.
+  escaped  Curve3D circle radius, expecting 5.0
+Segmentation fault: 11   (exit 139)
+
+$ OCCT965_READ=churned OCCTSWIFT_LOCAL=1 swift run Harnesses 965-properties-lifetime
+#965: do the *Properties value views keep their parent alive?
+
+Phase 1: does taking a view keep the parent alive? (no dangling read here)
+  Curve3D.circleProperties  parent alive: false
+  Curve2D.circleProperties  parent alive: false
+  Surface.sphereProperties  parent alive: false
+
+Phase 2: reading through the view. Before the fix these read a released handle.
+  churned  Curve3D circle radius after 400 allocations, expecting 5.0
+Segmentation fault: 11   (exit 139)
