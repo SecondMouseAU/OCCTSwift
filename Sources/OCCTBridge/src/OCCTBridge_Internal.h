@@ -216,13 +216,15 @@ inline bool occtDocumentInit(OCCTDocument* document)
 
 // Pattern B: bare Handle(TDocStd_Document) + Handle(TDocStd_Application)
 // Overload for sites that don't use OCCTDocument struct.
-// toolMask: bit 0 = shapeTool, bit 1 = colorTool, bit 2 = materialTool
+// Optional tool pointers are fetched only when non-null.
 inline bool occtDocumentInit(Handle(TDocStd_Application)&     app,
                              Handle(TDocStd_Document)&        doc,
                              Handle(XCAFDoc_ShapeTool)*       shapeTool    = nullptr,
                              Handle(XCAFDoc_ColorTool)*       colorTool    = nullptr,
                              Handle(XCAFDoc_VisMaterialTool)* materialTool = nullptr)
 {
+  if (app.IsNull())
+    return false;
   app->NewDocument("MDTV-XCAF", doc);
 
   if (doc.IsNull())
