@@ -59,6 +59,27 @@
 
 #include <cstring>
 
+// MARK: - Document initialization helper (shared by OCCTDocumentCreate / OCCTDocumentLoadSTEP)
+//
+// Extracts the common document creation + XCAF tool initialization boilerplate.
+// Returns false on failure (doc null or tool fetch failed).
+static bool occtDocumentInit(OCCTDocument* document)
+{
+    // Create a new document
+    document->app->NewDocument("MDTV-XCAF", document->doc);
+
+    if (document->doc.IsNull()) {
+        return false;
+    }
+
+    // Get the tools
+    document->shapeTool = XCAFDoc_DocumentTool::ShapeTool(document->doc->Main());
+    document->colorTool = XCAFDoc_DocumentTool::ColorTool(document->doc->Main());
+    document->materialTool = XCAFDoc_DocumentTool::VisMaterialTool(document->doc->Main());
+
+    return true;
+}
+
 // MARK: - XDE/XCAF Document Support (v0.6.0)
 
 OCCTDocumentRef OCCTDocumentCreate(void) {
@@ -66,18 +87,10 @@ OCCTDocumentRef OCCTDocumentCreate(void) {
     try {
         document = new OCCTDocument();
 
-        // Create a new document
-        document->app->NewDocument("MDTV-XCAF", document->doc);
-
-        if (document->doc.IsNull()) {
+        if (!occtDocumentInit(document)) {
             delete document;
             return nullptr;
         }
-
-        // Get the tools
-        document->shapeTool = XCAFDoc_DocumentTool::ShapeTool(document->doc->Main());
-        document->colorTool = XCAFDoc_DocumentTool::ColorTool(document->doc->Main());
-        document->materialTool = XCAFDoc_DocumentTool::VisMaterialTool(document->doc->Main());
 
         return document;
     } catch (...) {
@@ -95,10 +108,7 @@ OCCTDocumentRef OCCTDocumentLoadSTEP(const char* path) {
     try {
         document = new OCCTDocument();
 
-        // Create a new document
-        document->app->NewDocument("MDTV-XCAF", document->doc);
-
-        if (document->doc.IsNull()) {
+        if (!occtDocumentInit(document)) {
             delete document;
             return nullptr;
         }
@@ -123,11 +133,6 @@ OCCTDocumentRef OCCTDocumentLoadSTEP(const char* path) {
             delete document;
             return nullptr;
         }
-
-        // Get the tools
-        document->shapeTool = XCAFDoc_DocumentTool::ShapeTool(document->doc->Main());
-        document->colorTool = XCAFDoc_DocumentTool::ColorTool(document->doc->Main());
-        document->materialTool = XCAFDoc_DocumentTool::VisMaterialTool(document->doc->Main());
 
         return document;
     } catch (...) {
