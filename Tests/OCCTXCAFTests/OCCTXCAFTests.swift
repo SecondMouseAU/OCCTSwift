@@ -3971,14 +3971,14 @@ struct TDataXtdPresentationTests {
     }
 }
 
-@Suite("XCAFDoc AssemblyIterator Tests")
+@Suite("XCAFDoc Assembly Iterator Tests")
 struct XCAFDocAssemblyIteratorTests {
 
-    @Test func iterateAssembly() {
+    @Test func iterateAssembly() throws {
         guard let doc = Document.create() else { return }
         guard let box = Shape.box(width: 10, height: 10, depth: 10) else { return }
         doc.addShape(box)
-        let count = doc.assemblyItemCount()
+        let count = try doc.assemblyItemCount()
         #expect(count >= 1)
     }
 }

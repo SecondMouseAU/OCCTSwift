@@ -1,6 +1,6 @@
 import Foundation
-import simd
 import OCCTBridge
+import simd
 
 /// XDE Document for loading STEP files with assembly structure, names, colors, and materials
 ///
@@ -146,7 +146,9 @@ public final class Document: @unchecked Sendable {
         }
     }
 
-    private func collectShapesWithColors(from nodes: [AssemblyNode], into results: inout [(Shape, Color?)]) {
+    private func collectShapesWithColors(
+        from nodes: [AssemblyNode], into results: inout [(Shape, Color?)]
+    ) {
         for node in nodes {
             if let shape = node.shape {
                 results.append((shape, node.color))
@@ -155,7 +157,9 @@ public final class Document: @unchecked Sendable {
         }
     }
 
-    private func collectShapesWithMaterials(from nodes: [AssemblyNode], into results: inout [(Shape, Material?)]) {
+    private func collectShapesWithMaterials(
+        from nodes: [AssemblyNode], into results: inout [(Shape, Material?)]
+    ) {
         for node in nodes {
             if let shape = node.shape {
                 results.append((shape, node.material))
@@ -199,9 +203,10 @@ extension Document {
     public func dimension(at index: Int) -> DimensionInfo? {
         let info = OCCTDocumentGetDimensionInfo(handle, Int32(index))
         guard info.isValid else { return nil }
-        return DimensionInfo(type: info.type, value: info.value,
-                             lowerTolerance: info.lowerTol,
-                             upperTolerance: info.upperTol)
+        return DimensionInfo(
+            type: info.type, value: info.value,
+            lowerTolerance: info.lowerTol,
+            upperTolerance: info.upperTol)
     }
 
     /// Get geometric tolerance info at the given index
@@ -263,11 +268,14 @@ extension Document {
     ///   - newShape: Result shape (nil for delete)
     /// - Returns: true if recording succeeded
     @discardableResult
-    public func recordNaming(on node: AssemblyNode, evolution: NamingEvolution,
-                             oldShape: Shape? = nil, newShape: Shape? = nil) -> Bool {
-        OCCTDocumentNamingRecord(handle, node.labelId,
-                                OCCTNamingEvolution(UInt32(evolution.rawValue)),
-                                oldShape?.handle, newShape?.handle)
+    public func recordNaming(
+        on node: AssemblyNode, evolution: NamingEvolution,
+        oldShape: Shape? = nil, newShape: Shape? = nil
+    ) -> Bool {
+        OCCTDocumentNamingRecord(
+            handle, node.labelId,
+            OCCTNamingEvolution(UInt32(evolution.rawValue)),
+            oldShape?.handle, newShape?.handle)
     }
 
     /// Get the current (most recent) shape on a label
@@ -300,12 +308,14 @@ extension Document {
         for i in 0..<count {
             var entry = OCCTNamingHistoryEntry()
             if OCCTDocumentNamingGetHistoryEntry(handle, node.labelId, i, &entry) {
-                entries.append(NamingHistoryEntry(
-                    evolution: NamingEvolution(rawValue: Int32(entry.evolution.rawValue)) ?? .primitive,
-                    hasOldShape: entry.hasOldShape,
-                    hasNewShape: entry.hasNewShape,
-                    isModification: entry.isModification
-                ))
+                entries.append(
+                    NamingHistoryEntry(
+                        evolution: NamingEvolution(rawValue: Int32(entry.evolution.rawValue))
+                            ?? .primitive,
+                        hasOldShape: entry.hasOldShape,
+                        hasNewShape: entry.hasNewShape,
+                        isModification: entry.isModification
+                    ))
             }
         }
 
@@ -314,13 +324,17 @@ extension Document {
 
     /// Get the old (input) shape from a history entry
     public func oldShape(on node: AssemblyNode, at index: Int) -> Shape? {
-        guard let h = OCCTDocumentNamingGetOldShape(handle, node.labelId, Int32(index)) else { return nil }
+        guard let h = OCCTDocumentNamingGetOldShape(handle, node.labelId, Int32(index)) else {
+            return nil
+        }
         return Shape(handle: h)
     }
 
     /// Get the new (result) shape from a history entry
     public func newShape(on node: AssemblyNode, at index: Int) -> Shape? {
-        guard let h = OCCTDocumentNamingGetNewShape(handle, node.labelId, Int32(index)) else { return nil }
+        guard let h = OCCTDocumentNamingGetNewShape(handle, node.labelId, Int32(index)) else {
+            return nil
+        }
         return Shape(handle: h)
     }
 
@@ -333,8 +347,9 @@ extension Document {
     public func tracedForward(from shape: Shape, scope: AssemblyNode) -> [Shape] {
         let maxCount: Int32 = 64
         var handles = [OCCTShapeRef?](repeating: nil, count: Int(maxCount))
-        let count = OCCTDocumentNamingTraceForward(handle, scope.labelId, shape.handle,
-                                                    &handles, maxCount)
+        let count = OCCTDocumentNamingTraceForward(
+            handle, scope.labelId, shape.handle,
+            &handles, maxCount)
         return (0..<Int(count)).compactMap { handles[$0].map { Shape(handle: $0) } }
     }
 
@@ -347,8 +362,9 @@ extension Document {
     public func tracedBackward(from shape: Shape, scope: AssemblyNode) -> [Shape] {
         let maxCount: Int32 = 64
         var handles = [OCCTShapeRef?](repeating: nil, count: Int(maxCount))
-        let count = OCCTDocumentNamingTraceBackward(handle, scope.labelId, shape.handle,
-                                                     &handles, maxCount)
+        let count = OCCTDocumentNamingTraceBackward(
+            handle, scope.labelId, shape.handle,
+            &handles, maxCount)
         return (0..<Int(count)).compactMap { handles[$0].map { Shape(handle: $0) } }
     }
 
@@ -386,7 +402,9 @@ extension Document {
         var nameBuf = [CChar](repeating: 0, count: 64)
         guard OCCTDocumentGetLengthUnit(handle, &scale, &nameBuf, 64) else { return nil }
         let name = nameBuf.withUnsafeBufferPointer { buf in
-            String(decoding: buf.prefix(while: { $0 != 0 }).map { UInt8(bitPattern: $0) }, as: UTF8.self)
+            String(
+                decoding: buf.prefix(while: { $0 != 0 }).map { UInt8(bitPattern: $0) },
+                as: UTF8.self)
         }
         return LengthUnit(scale: scale, name: name)
     }
@@ -408,7 +426,9 @@ extension Document {
         var buf = [CChar](repeating: 0, count: 256)
         guard OCCTDocumentGetLayerName(handle, Int32(index), &buf, 256) else { return nil }
         return buf.withUnsafeBufferPointer { ptr in
-            String(decoding: ptr.prefix(while: { $0 != 0 }).map { UInt8(bitPattern: $0) }, as: UTF8.self)
+            String(
+                decoding: ptr.prefix(while: { $0 != 0 }).map { UInt8(bitPattern: $0) },
+                as: UTF8.self)
         }
     }
 
@@ -711,27 +731,36 @@ extension Document {
     ///   - modes: Reader mode flags controlling which data to import
     /// - Returns: Document with the requested data, or nil on failure
     public static func loadSTEP(from url: URL, modes: STEPReaderModes) -> Document? {
-        guard let ref = OCCTDocumentLoadSTEPWithModes(url.path,
-            modes.color, modes.name, modes.layer,
-            modes.props, modes.gdt, modes.material) else { return nil }
+        guard
+            let ref = OCCTDocumentLoadSTEPWithModes(
+                url.path,
+                modes.color, modes.name, modes.layer,
+                modes.props, modes.gdt, modes.material)
+        else { return nil }
         return Document(handle: ref)
     }
 
     /// Load a STEP file with individual mode control for what data to import.
     public static func loadSTEP(fromPath path: String, modes: STEPReaderModes) -> Document? {
-        guard let ref = OCCTDocumentLoadSTEPWithModes(path,
-            modes.color, modes.name, modes.layer,
-            modes.props, modes.gdt, modes.material) else { return nil }
+        guard
+            let ref = OCCTDocumentLoadSTEPWithModes(
+                path,
+                modes.color, modes.name, modes.layer,
+                modes.props, modes.gdt, modes.material)
+        else { return nil }
         return Document(handle: ref)
     }
 
     /// Load a STEP file with individual mode control plus progress + cancellation.
     ///
     /// Throws `ImportError.cancelled` if cancelled, `ImportError.importFailed` on other failure.
-    public static func loadSTEP(from url: URL, modes: STEPReaderModes, progress: ImportProgress?) throws -> Document {
+    public static func loadSTEP(from url: URL, modes: STEPReaderModes, progress: ImportProgress?)
+        throws -> Document
+    {
         var cancelled: Bool = false
         let handle: OCCTDocumentRef? = withImportProgress(progress) { ctx in
-            OCCTDocumentLoadSTEPWithModesProgress(url.path,
+            OCCTDocumentLoadSTEPWithModesProgress(
+                url.path,
                 modes.color, modes.name, modes.layer,
                 modes.props, modes.gdt, modes.material,
                 ctx, &cancelled)
@@ -751,8 +780,11 @@ extension Document {
     ///   - modes: Writer mode flags controlling which data to export
     /// - Returns: true on success
     @discardableResult
-    public func writeSTEP(to url: URL, modelType: StepModelType = .asIs, modes: STEPWriterModes = STEPWriterModes()) -> Bool {
-        OCCTDocumentWriteSTEPWithModes(handle, url.path,
+    public func writeSTEP(
+        to url: URL, modelType: StepModelType = .asIs, modes: STEPWriterModes = STEPWriterModes()
+    ) -> Bool {
+        OCCTDocumentWriteSTEPWithModes(
+            handle, url.path,
             modelType.rawValue,
             modes.color, modes.name, modes.layer,
             modes.dimTol, modes.material)
@@ -760,8 +792,12 @@ extension Document {
 
     /// Write the document to a STEP file with model type and mode control.
     @discardableResult
-    public func writeSTEP(toPath path: String, modelType: StepModelType = .asIs, modes: STEPWriterModes = STEPWriterModes()) -> Bool {
-        OCCTDocumentWriteSTEPWithModes(handle, path,
+    public func writeSTEP(
+        toPath path: String, modelType: StepModelType = .asIs,
+        modes: STEPWriterModes = STEPWriterModes()
+    ) -> Bool {
+        OCCTDocumentWriteSTEPWithModes(
+            handle, path,
             modelType.rawValue,
             modes.color, modes.name, modes.layer,
             modes.dimTol, modes.material)
@@ -790,8 +826,11 @@ extension Document {
     ///   - url: URL to the OBJ file
     ///   - singlePrecision: Use single precision for vertex data (default: false)
     ///   - systemLengthUnit: System length unit in meters (e.g. 0.001 for mm). 0 = default.
-    public static func loadOBJ(from url: URL, singlePrecision: Bool, systemLengthUnit: Double = 0) -> Document? {
-        guard let ref = OCCTDocumentLoadOBJWithOptions(url.path, singlePrecision, systemLengthUnit) else { return nil }
+    public static func loadOBJ(from url: URL, singlePrecision: Bool, systemLengthUnit: Double = 0)
+        -> Document?
+    {
+        guard let ref = OCCTDocumentLoadOBJWithOptions(url.path, singlePrecision, systemLengthUnit)
+        else { return nil }
         return Document(handle: ref)
     }
 
@@ -803,11 +842,16 @@ extension Document {
     ///   - outputCS: Output coordinate system
     ///   - inputLengthUnit: Input length unit in meters (0 = default)
     ///   - outputLengthUnit: Output length unit in meters (0 = default)
-    public static func loadOBJ(from url: URL, inputCS: MeshCoordinateSystem, outputCS: MeshCoordinateSystem,
-                                inputLengthUnit: Double = 0, outputLengthUnit: Double = 0) -> Document? {
-        guard let ref = OCCTDocumentLoadOBJWithCS(url.path,
-            inputCS.rawValue, outputCS.rawValue,
-            inputLengthUnit, outputLengthUnit) else { return nil }
+    public static func loadOBJ(
+        from url: URL, inputCS: MeshCoordinateSystem, outputCS: MeshCoordinateSystem,
+        inputLengthUnit: Double = 0, outputLengthUnit: Double = 0
+    ) -> Document? {
+        guard
+            let ref = OCCTDocumentLoadOBJWithCS(
+                url.path,
+                inputCS.rawValue, outputCS.rawValue,
+                inputLengthUnit, outputLengthUnit)
+        else { return nil }
         return Document(handle: ref)
     }
 
@@ -832,8 +876,10 @@ extension Document {
     ///   - texCoords: Include texture coordinates (default: false)
     /// - Returns: true on success
     @discardableResult
-    public func writePLY(to url: URL, deflection: Double = 1.0,
-                          normals: Bool = true, colors: Bool = false, texCoords: Bool = false) -> Bool {
+    public func writePLY(
+        to url: URL, deflection: Double = 1.0,
+        normals: Bool = true, colors: Bool = false, texCoords: Bool = false
+    ) -> Bool {
         OCCTDocumentWritePLY(handle, url.path, deflection, normals, colors, texCoords)
     }
 }
@@ -904,17 +950,21 @@ extension Document {
     ///   - translation: Translation (tx, ty, tz)
     /// - Returns: Component label ID, or -1 on failure
     @discardableResult
-    public func addComponent(assemblyLabelId: Int64, shapeLabelId: Int64,
-                              translation: (Double, Double, Double) = (0, 0, 0)) -> Int64 {
-        OCCTDocumentAddComponent(handle, assemblyLabelId, shapeLabelId,
-                                  translation.0, translation.1, translation.2)
+    public func addComponent(
+        assemblyLabelId: Int64, shapeLabelId: Int64,
+        translation: (Double, Double, Double) = (0, 0, 0)
+    ) -> Int64 {
+        OCCTDocumentAddComponent(
+            handle, assemblyLabelId, shapeLabelId,
+            translation.0, translation.1, translation.2)
     }
 
     /// Add a component occurrence with a FULL rigid placement, from a 12-element row-major matrix
     /// `[r00 r01 r02 r10 r11 r12 r20 r21 r22 tx ty tz]`. Returns the component label id, or -1 if the
     /// matrix isn't a proper rigid transform (a reflection — bake a mirrored product instead). #174.
     @discardableResult
-    public func addComponent(assemblyLabelId: Int64, shapeLabelId: Int64, matrix: [Double]) -> Int64 {
+    public func addComponent(assemblyLabelId: Int64, shapeLabelId: Int64, matrix: [Double]) -> Int64
+    {
         guard matrix.count == 12 else { return -1 }
         return matrix.withUnsafeBufferPointer {
             OCCTDocumentAddComponentMatrix(handle, assemblyLabelId, shapeLabelId, $0.baseAddress!)
@@ -980,9 +1030,12 @@ extension Document {
     /// let readBack = doc.shapeColor(box)
     /// // readBack?.alpha == 0.5
     /// ```
-    public func setShapeColor(_ shape: Shape, color: Color, type: OCCTColorType = OCCTColorTypeSurface) {
-        OCCTDocumentSetShapeColorRGBA(handle, shape.handle, Int32(type.rawValue),
-                                       color.red, color.green, color.blue, Float(color.alpha))
+    public func setShapeColor(
+        _ shape: Shape, color: Color, type: OCCTColorType = OCCTColorTypeSurface
+    ) {
+        OCCTDocumentSetShapeColorRGBA(
+            handle, shape.handle, Int32(type.rawValue),
+            color.red, color.green, color.blue, Float(color.alpha))
     }
 
     /// Get color for a shape (not by label).
@@ -1002,7 +1055,8 @@ extension Document {
     }
 
     /// Check if color is set on a shape.
-    public func isShapeColorSet(_ shape: Shape, type: OCCTColorType = OCCTColorTypeSurface) -> Bool {
+    public func isShapeColorSet(_ shape: Shape, type: OCCTColorType = OCCTColorTypeSurface) -> Bool
+    {
         OCCTDocumentIsShapeColorSet(handle, shape.handle, Int32(type.rawValue))
     }
 }
@@ -1047,7 +1101,9 @@ extension Document {
     ///   - forceIfNotRoot: Force rescale even if label is not root
     /// - Returns: true on success
     @discardableResult
-    public func rescaleGeometry(labelId: Int64, scaleFactor: Double, forceIfNotRoot: Bool = false) -> Bool {
+    public func rescaleGeometry(labelId: Int64, scaleFactor: Double, forceIfNotRoot: Bool = false)
+        -> Bool
+    {
         OCCTDocumentEditorRescaleGeometry(handle, labelId, scaleFactor, forceIfNotRoot)
     }
 }
@@ -1061,25 +1117,32 @@ extension Document {
     }
 
     /// Create a comment note via NotesTool. Returns the note label node.
-    public func notesToolCreateComment(userName: String, timeStamp: String, comment: String) -> AssemblyNode? {
+    public func notesToolCreateComment(userName: String, timeStamp: String, comment: String)
+        -> AssemblyNode?
+    {
         let labelId = OCCTDocumentNotesToolCreateComment(handle, userName, timeStamp, comment)
         guard labelId >= 0 else { return nil }
         return AssemblyNode(document: self, labelId: labelId)
     }
 
     /// Create a balloon note via NotesTool. Returns the note label node.
-    public func notesToolCreateBalloon(userName: String, timeStamp: String, comment: String) -> AssemblyNode? {
+    public func notesToolCreateBalloon(userName: String, timeStamp: String, comment: String)
+        -> AssemblyNode?
+    {
         let labelId = OCCTDocumentNotesToolCreateBalloon(handle, userName, timeStamp, comment)
         guard labelId >= 0 else { return nil }
         return AssemblyNode(document: self, labelId: labelId)
     }
 
     /// Create a binary data note via NotesTool. Returns the note label node.
-    public func notesToolCreateBinData(userName: String, timeStamp: String, title: String,
-                                        mimeType: String, data: [UInt8]) -> AssemblyNode? {
+    public func notesToolCreateBinData(
+        userName: String, timeStamp: String, title: String,
+        mimeType: String, data: [UInt8]
+    ) -> AssemblyNode? {
         let labelId = data.withUnsafeBufferPointer { buf in
-            OCCTDocumentNotesToolCreateBinData(handle, userName, timeStamp,
-                                                title, mimeType, buf.baseAddress!, Int32(data.count))
+            OCCTDocumentNotesToolCreateBinData(
+                handle, userName, timeStamp,
+                title, mimeType, buf.baseAddress!, Int32(data.count))
         }
         guard labelId >= 0 else { return nil }
         return AssemblyNode(document: self, labelId: labelId)
@@ -1113,25 +1176,35 @@ extension Document {
 
 extension Document {
     /// Add a clipping plane. Returns the clipping plane label node.
-    public func clippingPlaneToolAdd(originX: Double, originY: Double, originZ: Double,
-                                      normalX: Double, normalY: Double, normalZ: Double,
-                                      name: String, capping: Bool) -> AssemblyNode? {
-        let labelId = OCCTDocumentClipPlaneToolAdd(handle,
-                                                     originX, originY, originZ,
-                                                     normalX, normalY, normalZ,
-                                                     name, capping)
+    public func clippingPlaneToolAdd(
+        originX: Double, originY: Double, originZ: Double,
+        normalX: Double, normalY: Double, normalZ: Double,
+        name: String, capping: Bool
+    ) -> AssemblyNode? {
+        let labelId = OCCTDocumentClipPlaneToolAdd(
+            handle,
+            originX, originY, originZ,
+            normalX, normalY, normalZ,
+            name, capping)
         guard labelId >= 0 else { return nil }
         return AssemblyNode(document: self, labelId: labelId)
     }
 
     /// Get a clipping plane from a label.
-    public func clippingPlaneToolGet(_ node: AssemblyNode) -> (originX: Double, originY: Double, originZ: Double,
-                                                                normalX: Double, normalY: Double, normalZ: Double,
-                                                                capping: Bool)? {
-        var ox: Double = 0, oy: Double = 0, oz: Double = 0
-        var nx: Double = 0, ny: Double = 0, nz: Double = 0
+    public func clippingPlaneToolGet(_ node: AssemblyNode) -> (
+        originX: Double, originY: Double, originZ: Double,
+        normalX: Double, normalY: Double, normalZ: Double,
+        capping: Bool
+    )? {
+        var ox: Double = 0
+        var oy: Double = 0
+        var oz: Double = 0
+        var nx: Double = 0
+        var ny: Double = 0
+        var nz: Double = 0
         var cap = false
-        guard OCCTDocumentClipPlaneToolGet(handle, node.labelId, &ox, &oy, &oz, &nx, &ny, &nz, &cap) else { return nil }
+        guard OCCTDocumentClipPlaneToolGet(handle, node.labelId, &ox, &oy, &oz, &nx, &ny, &nz, &cap)
+        else { return nil }
         return (ox, oy, oz, nx, ny, nz, cap)
     }
 
@@ -1290,7 +1363,9 @@ extension Document {
 
     /// Get expression string.
     public func expressionString(at labelTag: Int) -> String? {
-        guard let cStr = OCCTDocumentExpressionGetString(handle, Int32(labelTag)) else { return nil }
+        guard let cStr = OCCTDocumentExpressionGetString(handle, Int32(labelTag)) else {
+            return nil
+        }
         let result = String(cString: cStr)
         OCCTGeomToolsFreeString(UnsafeMutablePointer(mutating: cStr))
         return result
@@ -1322,7 +1397,9 @@ extension Document {
 
     /// Get XLink document entry path.
     public func xLinkDocumentEntry(at labelTag: Int) -> String? {
-        guard let cStr = OCCTDocumentXLinkGetDocumentEntry(handle, Int32(labelTag)) else { return nil }
+        guard let cStr = OCCTDocumentXLinkGetDocumentEntry(handle, Int32(labelTag)) else {
+            return nil
+        }
         let result = String(cString: cStr)
         OCCTGeomToolsFreeString(UnsafeMutablePointer(mutating: cStr))
         return result
@@ -1359,18 +1436,19 @@ extension Document {
 
 // MARK: - TDataStd_BooleanArray
 
-public extension Document {
+extension Document {
     /// Set a boolean array attribute on a label.
-    func setBooleanArray(tag: Int, values: [Bool]) -> Bool {
+    public func setBooleanArray(tag: Int, values: [Bool]) -> Bool {
         let cValues = values.map { $0 }
         return cValues.withUnsafeBufferPointer { buf in
-            OCCTDocumentSetBooleanArray(handle, Int32(tag), 1, Int32(values.count),
-                                         buf.baseAddress!, Int32(values.count))
+            OCCTDocumentSetBooleanArray(
+                handle, Int32(tag), 1, Int32(values.count),
+                buf.baseAddress!, Int32(values.count))
         }
     }
 
     /// Get a boolean array attribute from a label.
-    func booleanArray(tag: Int) -> [Bool]? {
+    public func booleanArray(tag: Int) -> [Bool]? {
         let count = OCCTDocumentGetBooleanArray(handle, Int32(tag), nil, 0)
         if count < 0 { return nil }
         if count == 0 { return [] }
@@ -1382,23 +1460,23 @@ public extension Document {
     }
 
     /// Check if a label has a boolean array attribute.
-    func hasBooleanArray(tag: Int) -> Bool {
+    public func hasBooleanArray(tag: Int) -> Bool {
         OCCTDocumentHasBooleanArray(handle, Int32(tag))
     }
 }
 
 // MARK: - TDataStd_BooleanList
 
-public extension Document {
+extension Document {
     /// Set a boolean list attribute on a label.
-    func setBooleanList(tag: Int, values: [Bool]) -> Bool {
+    public func setBooleanList(tag: Int, values: [Bool]) -> Bool {
         values.withUnsafeBufferPointer { buf in
             OCCTDocumentSetBooleanList(handle, Int32(tag), buf.baseAddress!, Int32(values.count))
         }
     }
 
     /// Get a boolean list attribute from a label.
-    func booleanList(tag: Int) -> [Bool]? {
+    public func booleanList(tag: Int) -> [Bool]? {
         let count = OCCTDocumentGetBooleanList(handle, Int32(tag), nil, 0)
         if count < 0 { return nil }
         if count == 0 { return [] }
@@ -1410,34 +1488,35 @@ public extension Document {
     }
 
     /// Append a value to a boolean list attribute.
-    func booleanListAppend(tag: Int, value: Bool) -> Bool {
+    public func booleanListAppend(tag: Int, value: Bool) -> Bool {
         OCCTDocumentBooleanListAppend(handle, Int32(tag), value)
     }
 
     /// Clear a boolean list attribute.
-    func booleanListClear(tag: Int) -> Bool {
+    public func booleanListClear(tag: Int) -> Bool {
         OCCTDocumentBooleanListClear(handle, Int32(tag))
     }
 
     /// Check if a label has a boolean list attribute.
-    func hasBooleanList(tag: Int) -> Bool {
+    public func hasBooleanList(tag: Int) -> Bool {
         OCCTDocumentHasBooleanList(handle, Int32(tag))
     }
 }
 
 // MARK: - TDataStd_ByteArray
 
-public extension Document {
+extension Document {
     /// Set a byte array attribute on a label.
-    func setByteArray(tag: Int, values: [UInt8]) -> Bool {
+    public func setByteArray(tag: Int, values: [UInt8]) -> Bool {
         values.withUnsafeBufferPointer { buf in
-            OCCTDocumentSetByteArray(handle, Int32(tag), 0, Int32(values.count - 1),
-                                      buf.baseAddress!, Int32(values.count))
+            OCCTDocumentSetByteArray(
+                handle, Int32(tag), 0, Int32(values.count - 1),
+                buf.baseAddress!, Int32(values.count))
         }
     }
 
     /// Get a byte array attribute from a label.
-    func byteArray(tag: Int) -> [UInt8]? {
+    public func byteArray(tag: Int) -> [UInt8]? {
         let count = OCCTDocumentGetByteArray(handle, Int32(tag), nil, 0)
         if count < 0 { return nil }
         if count == 0 { return [] }
@@ -1449,23 +1528,23 @@ public extension Document {
     }
 
     /// Check if a label has a byte array attribute.
-    func hasByteArray(tag: Int) -> Bool {
+    public func hasByteArray(tag: Int) -> Bool {
         OCCTDocumentHasByteArray(handle, Int32(tag))
     }
 }
 
 // MARK: - TDataStd_IntegerList
 
-public extension Document {
+extension Document {
     /// Set an integer list attribute on a label.
-    func setIntegerList(tag: Int, values: [Int32]) -> Bool {
+    public func setIntegerList(tag: Int, values: [Int32]) -> Bool {
         values.withUnsafeBufferPointer { buf in
             OCCTDocumentSetIntegerList(handle, Int32(tag), buf.baseAddress!, Int32(values.count))
         }
     }
 
     /// Get an integer list attribute from a label.
-    func integerList(tag: Int) -> [Int32]? {
+    public func integerList(tag: Int) -> [Int32]? {
         let count = OCCTDocumentGetIntegerList(handle, Int32(tag), nil, 0)
         if count < 0 { return nil }
         if count == 0 { return [] }
@@ -1477,33 +1556,33 @@ public extension Document {
     }
 
     /// Append a value to an integer list attribute.
-    func integerListAppend(tag: Int, value: Int32) -> Bool {
+    public func integerListAppend(tag: Int, value: Int32) -> Bool {
         OCCTDocumentIntegerListAppend(handle, Int32(tag), value)
     }
 
     /// Clear an integer list attribute.
-    func integerListClear(tag: Int) -> Bool {
+    public func integerListClear(tag: Int) -> Bool {
         OCCTDocumentIntegerListClear(handle, Int32(tag))
     }
 
     /// Check if a label has an integer list attribute.
-    func hasIntegerList(tag: Int) -> Bool {
+    public func hasIntegerList(tag: Int) -> Bool {
         OCCTDocumentHasIntegerList(handle, Int32(tag))
     }
 }
 
 // MARK: - TDataStd_RealList
 
-public extension Document {
+extension Document {
     /// Set a real list attribute on a label.
-    func setRealList(tag: Int, values: [Double]) -> Bool {
+    public func setRealList(tag: Int, values: [Double]) -> Bool {
         values.withUnsafeBufferPointer { buf in
             OCCTDocumentSetRealList(handle, Int32(tag), buf.baseAddress!, Int32(values.count))
         }
     }
 
     /// Get a real list attribute from a label.
-    func realList(tag: Int) -> [Double]? {
+    public func realList(tag: Int) -> [Double]? {
         let count = OCCTDocumentGetRealList(handle, Int32(tag), nil, 0)
         if count < 0 { return nil }
         if count == 0 { return [] }
@@ -1515,116 +1594,123 @@ public extension Document {
     }
 
     /// Append a value to a real list attribute.
-    func realListAppend(tag: Int, value: Double) -> Bool {
+    public func realListAppend(tag: Int, value: Double) -> Bool {
         OCCTDocumentRealListAppend(handle, Int32(tag), value)
     }
 
     /// Clear a real list attribute.
-    func realListClear(tag: Int) -> Bool {
+    public func realListClear(tag: Int) -> Bool {
         OCCTDocumentRealListClear(handle, Int32(tag))
     }
 
     /// Check if a label has a real list attribute.
-    func hasRealList(tag: Int) -> Bool {
+    public func hasRealList(tag: Int) -> Bool {
         OCCTDocumentHasRealList(handle, Int32(tag))
     }
 }
 
 // MARK: - TDataStd_ExtStringArray
 
-public extension Document {
+extension Document {
     /// Set an extended string array attribute on a label.
-    func setExtStringArray(tag: Int, values: [String]) -> Bool {
+    public func setExtStringArray(tag: Int, values: [String]) -> Bool {
         var result = false
         let count = values.count
         let cStrings: [UnsafePointer<CChar>] = values.map { str in
             (str as NSString).utf8String!
         }
         cStrings.withUnsafeBufferPointer { buf in
-            result = OCCTDocumentSetExtStringArray(handle, Int32(tag), 1, Int32(count),
-                                                    buf.baseAddress!, Int32(count))
+            result = OCCTDocumentSetExtStringArray(
+                handle, Int32(tag), 1, Int32(count),
+                buf.baseAddress!, Int32(count))
         }
         return result
     }
 
     /// Get an extended string array element by index (1-based).
-    func extStringArrayValue(tag: Int, index: Int) -> String? {
-        guard let cStr = OCCTDocumentGetExtStringArrayValue(handle, Int32(tag), Int32(index)) else { return nil }
+    public func extStringArrayValue(tag: Int, index: Int) -> String? {
+        guard let cStr = OCCTDocumentGetExtStringArrayValue(handle, Int32(tag), Int32(index)) else {
+            return nil
+        }
         defer { free(cStr) }
         return String(cString: cStr)
     }
 
     /// Get the length of an extended string array.
-    func extStringArrayLength(tag: Int) -> Int? {
+    public func extStringArrayLength(tag: Int) -> Int? {
         let len = OCCTDocumentGetExtStringArrayLength(handle, Int32(tag))
         return len >= 0 ? Int(len) : nil
     }
 
     /// Check if a label has an extended string array attribute.
-    func hasExtStringArray(tag: Int) -> Bool {
+    public func hasExtStringArray(tag: Int) -> Bool {
         OCCTDocumentHasExtStringArray(handle, Int32(tag))
     }
 }
 
 // MARK: - TDataStd_ExtStringList
 
-public extension Document {
+extension Document {
     /// Set an extended string list attribute on a label.
-    func setExtStringList(tag: Int, values: [String]) -> Bool {
+    public func setExtStringList(tag: Int, values: [String]) -> Bool {
         var result = false
         let count = values.count
         let cStrings: [UnsafePointer<CChar>] = values.map { str in
             (str as NSString).utf8String!
         }
         cStrings.withUnsafeBufferPointer { buf in
-            result = OCCTDocumentSetExtStringList(handle, Int32(tag),
-                                                   buf.baseAddress!, Int32(count))
+            result = OCCTDocumentSetExtStringList(
+                handle, Int32(tag),
+                buf.baseAddress!, Int32(count))
         }
         return result
     }
 
     /// Get the count of an extended string list.
-    func extStringListCount(tag: Int) -> Int? {
+    public func extStringListCount(tag: Int) -> Int? {
         let count = OCCTDocumentGetExtStringListCount(handle, Int32(tag))
         return count >= 0 ? Int(count) : nil
     }
 
     /// Get an extended string list element by index (0-based).
-    func extStringListValue(tag: Int, index: Int) -> String? {
-        guard let cStr = OCCTDocumentGetExtStringListValue(handle, Int32(tag), Int32(index)) else { return nil }
+    public func extStringListValue(tag: Int, index: Int) -> String? {
+        guard let cStr = OCCTDocumentGetExtStringListValue(handle, Int32(tag), Int32(index)) else {
+            return nil
+        }
         defer { free(cStr) }
         return String(cString: cStr)
     }
 
     /// Append a string to an extended string list attribute.
-    func extStringListAppend(tag: Int, value: String) -> Bool {
+    public func extStringListAppend(tag: Int, value: String) -> Bool {
         OCCTDocumentExtStringListAppend(handle, Int32(tag), value)
     }
 
     /// Clear an extended string list attribute.
-    func extStringListClear(tag: Int) -> Bool {
+    public func extStringListClear(tag: Int) -> Bool {
         OCCTDocumentExtStringListClear(handle, Int32(tag))
     }
 
     /// Check if a label has an extended string list attribute.
-    func hasExtStringList(tag: Int) -> Bool {
+    public func hasExtStringList(tag: Int) -> Bool {
         OCCTDocumentHasExtStringList(handle, Int32(tag))
     }
 }
 
 // MARK: - TDataStd_ReferenceArray
 
-public extension Document {
+extension Document {
     /// Set a reference array attribute on a label (array of label tags).
-    func setReferenceArray(tag: Int, refTags: [Int32]) -> Bool {
+    public func setReferenceArray(tag: Int, refTags: [Int32]) -> Bool {
         refTags.withUnsafeBufferPointer { buf in
-            OCCTDocumentSetReferenceArray(handle, Int32(tag), 1, Int32(refTags.count),
-                                           buf.baseAddress!, Int32(refTags.count))
+            OCCTDocumentSetReferenceArray(
+                handle, Int32(tag), 1, Int32(refTags.count),
+                buf.baseAddress!, Int32(refTags.count))
         }
     }
 
     /// Get a reference array from a label (array of label tags).
-    func referenceArray(tag: Int) -> [Int32]? {
+    public func referenceArray(tag: Int) -> [Int32]? {
         let count = OCCTDocumentGetReferenceArray(handle, Int32(tag), nil, 0)
         if count < 0 { return nil }
         if count == 0 { return [] }
@@ -1636,24 +1722,25 @@ public extension Document {
     }
 
     /// Check if a label has a reference array attribute.
-    func hasReferenceArray(tag: Int) -> Bool {
+    public func hasReferenceArray(tag: Int) -> Bool {
         OCCTDocumentHasReferenceArray(handle, Int32(tag))
     }
 }
 
 // MARK: - TDataStd_ReferenceList
 
-public extension Document {
+extension Document {
     /// Set a reference list attribute on a label (list of label tags).
-    func setReferenceList(tag: Int, refTags: [Int32]) -> Bool {
+    public func setReferenceList(tag: Int, refTags: [Int32]) -> Bool {
         refTags.withUnsafeBufferPointer { buf in
-            OCCTDocumentSetReferenceList(handle, Int32(tag),
-                                          buf.baseAddress!, Int32(refTags.count))
+            OCCTDocumentSetReferenceList(
+                handle, Int32(tag),
+                buf.baseAddress!, Int32(refTags.count))
         }
     }
 
     /// Get a reference list from a label (list of label tags).
-    func referenceList(tag: Int) -> [Int32]? {
+    public func referenceList(tag: Int) -> [Int32]? {
         let count = OCCTDocumentGetReferenceList(handle, Int32(tag), nil, 0)
         if count < 0 { return nil }
         if count == 0 { return [] }
@@ -1665,77 +1752,77 @@ public extension Document {
     }
 
     /// Append a reference to a reference list attribute.
-    func referenceListAppend(tag: Int, refTag: Int32) -> Bool {
+    public func referenceListAppend(tag: Int, refTag: Int32) -> Bool {
         OCCTDocumentReferenceListAppend(handle, Int32(tag), refTag)
     }
 
     /// Clear a reference list attribute.
-    func referenceListClear(tag: Int) -> Bool {
+    public func referenceListClear(tag: Int) -> Bool {
         OCCTDocumentReferenceListClear(handle, Int32(tag))
     }
 
     /// Check if a label has a reference list attribute.
-    func hasReferenceList(tag: Int) -> Bool {
+    public func hasReferenceList(tag: Int) -> Bool {
         OCCTDocumentHasReferenceList(handle, Int32(tag))
     }
 }
 
 // MARK: - TDataStd_Relation
 
-public extension Document {
+extension Document {
     /// Set a relation string on a label.
-    func setRelation(tag: Int, relation: String) -> Bool {
+    public func setRelation(tag: Int, relation: String) -> Bool {
         OCCTDocumentSetRelation(handle, Int32(tag), relation)
     }
 
     /// Get a relation string from a label.
-    func relation(tag: Int) -> String? {
+    public func relation(tag: Int) -> String? {
         guard let cStr = OCCTDocumentGetRelation(handle, Int32(tag)) else { return nil }
         defer { free(cStr) }
         return String(cString: cStr)
     }
 
     /// Check if a label has a relation attribute.
-    func hasRelation(tag: Int) -> Bool {
+    public func hasRelation(tag: Int) -> Bool {
         OCCTDocumentHasRelation(handle, Int32(tag))
     }
 }
 
 // MARK: - TDataStd_Tick
 
-public extension Document {
+extension Document {
     /// Set a tick (boolean flag) attribute on a label.
-    func setTick(tag: Int) -> Bool {
+    public func setTick(tag: Int) -> Bool {
         OCCTDocumentSetTick(handle, Int32(tag))
     }
 
     /// Check if a label has a tick attribute.
-    func hasTick(tag: Int) -> Bool {
+    public func hasTick(tag: Int) -> Bool {
         OCCTDocumentHasTick(handle, Int32(tag))
     }
 
     /// Remove a tick attribute from a label.
-    func removeTick(tag: Int) -> Bool {
+    public func removeTick(tag: Int) -> Bool {
         OCCTDocumentRemoveTick(handle, Int32(tag))
     }
 }
 
 // MARK: - TDataStd_Current
 
-public extension Document {
+extension Document {
     /// Set a label as the current label in the document.
-    func setCurrentLabel(tag: Int) -> Bool {
+    public func setCurrentLabel(tag: Int) -> Bool {
         OCCTDocumentSetCurrentLabel(handle, Int32(tag))
     }
 
     /// Get the current label tag, or nil if none set.
-    func currentLabel() -> Int? {
+    public func currentLabel() -> Int? {
         let tag = OCCTDocumentGetCurrentLabel(handle)
         return tag >= 0 ? Int(tag) : nil
     }
 
     /// Check if the document has a current label set.
-    func hasCurrentLabel() -> Bool {
+    public func hasCurrentLabel() -> Bool {
         OCCTDocumentHasCurrentLabel(handle)
     }
 }
@@ -2264,8 +2351,14 @@ extension Document {
 
     /// Count the number of assembly items in the document.
     /// - Parameter maxDepth: Maximum traversal depth (0 = unlimited)
-    public func assemblyItemCount(maxDepth: Int = 0) -> Int {
-        Int(OCCTDocumentAssemblyItemCount(handle, Int32(maxDepth)))
+    /// - Returns: The number of assembly items
+    /// - Throws: `DocumentError.cycleDetected` if a cycle is detected in the assembly tree
+    public func assemblyItemCount(maxDepth: Int = 0) throws -> Int {
+        let count = OCCTDocumentAssemblyItemCount(handle, Int32(maxDepth))
+        if count < 0 {
+            throw DocumentError.cycleDetected
+        }
+        return Int(count)
     }
 }
 
@@ -2281,12 +2374,15 @@ extension Document {
     ///   - name: Name string
     ///   - description: Description string
     @discardableResult
-    public func setDimTol(labelId: Int64, kind: Int32, values: [Double],
-                          name: String, description: String) -> Bool {
+    public func setDimTol(
+        labelId: Int64, kind: Int32, values: [Double],
+        name: String, description: String
+    ) -> Bool {
         values.withUnsafeBufferPointer { buf in
-            OCCTDocumentSetDimTol(handle, labelId, kind,
-                                  buf.baseAddress!, Int32(values.count),
-                                  name, description)
+            OCCTDocumentSetDimTol(
+                handle, labelId, kind,
+                buf.baseAddress!, Int32(values.count),
+                name, description)
         }
     }
 
@@ -2327,7 +2423,8 @@ extension Document {
 
     /// Constraint type enum matching TDataXtd_ConstraintEnum.
     public enum ConstraintType: Int32 {
-        case radius = 0, diameter, minorRadius, majorRadius
+        case radius = 0
+        case diameter, minorRadius, majorRadius
         case tangent, parallel, perpendicular, concentric
         case coincident, distance, angle, equalRadius
         case symmetry, midPoint, equalDistance, fix
@@ -2617,14 +2714,23 @@ extension Document {
 
     /// Set instance color on a shape component.
     @discardableResult
-    public func colorToolSetInstanceColor(shape: Shape, colorType: Int, r: Double, g: Double, b: Double) -> Bool {
+    public func colorToolSetInstanceColor(
+        shape: Shape, colorType: Int, r: Double, g: Double, b: Double
+    ) -> Bool {
         OCCTDocumentColorToolSetInstanceColor(handle, shape.handle, Int32(colorType), r, g, b)
     }
 
     /// Get instance color of a shape component. Returns (r,g,b) or nil.
-    public func colorToolGetInstanceColor(shape: Shape, colorType: Int) -> (r: Double, g: Double, b: Double)? {
-        var r = 0.0, g = 0.0, b = 0.0
-        guard OCCTDocumentColorToolGetInstanceColor(handle, shape.handle, Int32(colorType), &r, &g, &b) else { return nil }
+    public func colorToolGetInstanceColor(shape: Shape, colorType: Int) -> (
+        r: Double, g: Double, b: Double
+    )? {
+        var r = 0.0
+        var g = 0.0
+        var b = 0.0
+        guard
+            OCCTDocumentColorToolGetInstanceColor(
+                handle, shape.handle, Int32(colorType), &r, &g, &b)
+        else { return nil }
         return (r, g, b)
     }
 

@@ -6,6 +6,7 @@ import OCCTBridge
 public enum DocumentError: Error, LocalizedError {
     case loadFailed(url: URL)
     case writeFailed(url: URL)
+    case cycleDetected
 
     public var errorDescription: String? {
         switch self {
@@ -13,6 +14,8 @@ public enum DocumentError: Error, LocalizedError {
             return "Failed to load STEP file: \(url.lastPathComponent)"
         case .writeFailed(let url):
             return "Failed to write STEP file: \(url.lastPathComponent)"
+        case .cycleDetected:
+            return "Cycle detected in assembly tree during item count"
         }
     }
 }
