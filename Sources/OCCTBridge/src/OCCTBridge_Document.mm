@@ -4137,14 +4137,21 @@ int32_t OCCTDocumentNbDocuments(OCCTDocumentRef doc)
   }
 }
 
-int32_t OCCTDocumentReadingFormats(OCCTDocumentRef doc, const char** outFormats, int32_t maxFormats)
+// Helper: common iteration logic for format enumeration (reading/writing)
+// FormatsFn is a pointer-to-member-function of TDocStd_Application taking
+// NCollection_Sequence<TCollection_AsciiString>&
+template <typename FormatsFn>
+static int32_t occtDocumentFormatsImpl(OCCTDocumentRef doc,
+                                       const char**    outFormats,
+                                       int32_t         maxFormats,
+                                       FormatsFn       formatsFn)
 {
   if (!doc || doc->app.IsNull() || !outFormats || maxFormats <= 0)
     return 0;
   try
   {
     NCollection_Sequence<TCollection_AsciiString> formats;
-    doc->app->ReadingFormats(formats);
+    (doc->app.get()->*formatsFn)(formats);
     int32_t count = std::min((int32_t)formats.Length(), maxFormats);
     for (int32_t i = 0; i < count; i++)
     {
@@ -4158,25 +4165,14 @@ int32_t OCCTDocumentReadingFormats(OCCTDocumentRef doc, const char** outFormats,
   }
 }
 
+int32_t OCCTDocumentReadingFormats(OCCTDocumentRef doc, const char** outFormats, int32_t maxFormats)
+{
+  return occtDocumentFormatsImpl(doc, outFormats, maxFormats, &TDocStd_Application::ReadingFormats);
+}
+
 int32_t OCCTDocumentWritingFormats(OCCTDocumentRef doc, const char** outFormats, int32_t maxFormats)
 {
-  if (!doc || doc->app.IsNull() || !outFormats || maxFormats <= 0)
-    return 0;
-  try
-  {
-    NCollection_Sequence<TCollection_AsciiString> formats;
-    doc->app->WritingFormats(formats);
-    int32_t count = std::min((int32_t)formats.Length(), maxFormats);
-    for (int32_t i = 0; i < count; i++)
-    {
-      outFormats[i] = strdup(formats.Value(i + 1).ToCString());
-    }
-    return count;
-  }
-  catch (...)
-  {
-    return 0;
-  }
+  return occtDocumentFormatsImpl(doc, outFormats, maxFormats, &TDocStd_Application::WritingFormats);
 }
 
 OCCTDocumentRef OCCTDocumentCreateWithFormat(const char* format)
