@@ -2464,8 +2464,8 @@ extension Curve2D {
     // MARK: - Geom2d_Circle Properties (v0.108.0)
 
     /// Access 2D circle-specific properties.
-    public struct CircleProperties: @unchecked Sendable {
-        fileprivate let handle: OCCTCurve2DRef
+    public struct CircleProperties: Sendable, NativeHandleView {
+        let owner: Curve2D
 
         /// The radius.
         public var radius: Double { OCCTCurve2DCircleRadius(handle) }
@@ -2493,13 +2493,13 @@ extension Curve2D {
     }
 
     /// Circle-specific properties (meaningful only when the underlying curve is a Geom2d_Circle).
-    public var circleProperties: CircleProperties { CircleProperties(handle: handle) }
+    public var circleProperties: CircleProperties { CircleProperties(owner: self) }
 
     // MARK: - Geom2d_Ellipse Properties (v0.108.0)
 
     /// Access 2D ellipse-specific properties.
-    public struct EllipseProperties: @unchecked Sendable {
-        fileprivate let handle: OCCTCurve2DRef
+    public struct EllipseProperties: Sendable, NativeHandleView {
+        let owner: Curve2D
 
         /// The major radius.
         public var majorRadius: Double { OCCTCurve2DEllipseMajorRadius(handle) }
@@ -2530,13 +2530,13 @@ extension Curve2D {
     }
 
     /// Ellipse-specific properties (meaningful only when the underlying curve is a Geom2d_Ellipse).
-    public var ellipseProperties: EllipseProperties { EllipseProperties(handle: handle) }
+    public var ellipseProperties: EllipseProperties { EllipseProperties(owner: self) }
 
     // MARK: - Geom2d_Hyperbola Properties (v0.108.0)
 
     /// Access 2D hyperbola-specific properties.
-    public struct HyperbolaProperties: @unchecked Sendable {
-        fileprivate let handle: OCCTCurve2DRef
+    public struct HyperbolaProperties: Sendable, NativeHandleView {
+        let owner: Curve2D
 
         /// The major radius.
         public var majorRadius: Double { OCCTCurve2DHyperbolaMajorRadius(handle) }
@@ -2559,13 +2559,13 @@ extension Curve2D {
     }
 
     /// Hyperbola-specific properties (meaningful only when the underlying curve is a Geom2d_Hyperbola).
-    public var hyperbolaProperties: HyperbolaProperties { HyperbolaProperties(handle: handle) }
+    public var hyperbolaProperties: HyperbolaProperties { HyperbolaProperties(owner: self) }
 
     // MARK: - Geom2d_Parabola Properties (v0.108.0)
 
     /// Access 2D parabola-specific properties.
-    public struct ParabolaProperties: @unchecked Sendable {
-        fileprivate let handle: OCCTCurve2DRef
+    public struct ParabolaProperties: Sendable, NativeHandleView {
+        let owner: Curve2D
 
         /// The focal distance.
         public var focal: Double { OCCTCurve2DParabolaFocal(handle) }
@@ -2589,13 +2589,13 @@ extension Curve2D {
     }
 
     /// Parabola-specific properties (meaningful only when the underlying curve is a Geom2d_Parabola).
-    public var parabolaProperties: ParabolaProperties { ParabolaProperties(handle: handle) }
+    public var parabolaProperties: ParabolaProperties { ParabolaProperties(owner: self) }
 
     // MARK: - Geom2d_Line Properties (v0.108.0)
 
     /// Access 2D line-specific properties.
-    public struct LineProperties: @unchecked Sendable {
-        fileprivate let handle: OCCTCurve2DRef
+    public struct LineProperties: Sendable, NativeHandleView {
+        let owner: Curve2D
 
         /// The direction.
         public var direction: SIMD2<Double> {
@@ -2637,13 +2637,13 @@ extension Curve2D {
     }
 
     /// Line-specific properties (meaningful only when the underlying curve is a Geom2d_Line).
-    public var lineProperties: LineProperties { LineProperties(handle: handle) }
+    public var lineProperties: LineProperties { LineProperties(owner: self) }
 
     // MARK: - Geom2d_OffsetCurve Properties (v0.108.0)
 
     /// Access 2D offset curve-specific properties.
-    public struct OffsetProperties: @unchecked Sendable {
-        fileprivate let handle: OCCTCurve2DRef
+    public struct OffsetProperties: Sendable, NativeHandleView {
+        let owner: Curve2D
 
         /// The offset value.
         public var offset: Double { OCCTCurve2DOffsetValue(handle) }
@@ -2660,7 +2660,7 @@ extension Curve2D {
     }
 
     /// Offset curve properties (meaningful only when the underlying curve is a Geom2d_OffsetCurve).
-    public var offsetProperties: OffsetProperties { OffsetProperties(handle: handle) }
+    public var offsetProperties: OffsetProperties { OffsetProperties(owner: self) }
 
     // MARK: - v0.115.0: Interpolation expansion, trim, length
 
@@ -3564,8 +3564,8 @@ extension Curve2D {
 
 extension Curve2D {
     /// 2D Bezier curve properties (meaningful only when the underlying curve is Geom2d_BezierCurve).
-    public struct BezierProperties: @unchecked Sendable {
-        fileprivate let handle: OCCTCurve2DRef
+    public struct BezierProperties: Sendable, NativeHandleView {
+        let owner: Curve2D
 
         /// Degree of the Bezier curve.
         public var degree: Int { Int(OCCTCurve2DBezierDegree(handle)) }
@@ -3602,7 +3602,7 @@ extension Curve2D {
     }
 
     /// 2D Bezier curve-specific properties.
-    public var bezierProperties: BezierProperties { BezierProperties(handle: handle) }
+    public var bezierProperties: BezierProperties { BezierProperties(owner: self) }
 
     // --- Curve2D BSpline extras ---
 

@@ -2846,8 +2846,8 @@ extension Surface {
     // MARK: - Geom_Plane Properties (v0.108.0)
 
     /// Access plane-specific properties.
-    public struct PlaneProperties: @unchecked Sendable {
-        fileprivate let handle: OCCTSurfaceRef
+    public struct PlaneProperties: Sendable, NativeHandleView {
+        let owner: Surface
 
         /// The plane equation coefficients (Ax + By + Cz + D = 0).
         public var coefficients: (a: Double, b: Double, c: Double, d: Double) {
@@ -2878,13 +2878,13 @@ extension Surface {
     }
 
     /// Plane-specific properties (meaningful only when the underlying surface is a Geom_Plane).
-    public var planeProperties: PlaneProperties { PlaneProperties(handle: handle) }
+    public var planeProperties: PlaneProperties { PlaneProperties(owner: self) }
 
     // MARK: - Geom_SphericalSurface Properties (v0.108.0)
 
     /// Access sphere-specific properties.
-    public struct SphereProperties: @unchecked Sendable {
-        fileprivate let handle: OCCTSurfaceRef
+    public struct SphereProperties: Sendable, NativeHandleView {
+        let owner: Surface
 
         /// The radius.
         public var radius: Double { OCCTSurfaceSphereRadius(handle) }
@@ -2928,13 +2928,13 @@ extension Surface {
     }
 
     /// Sphere-specific properties (meaningful only when the underlying surface is a Geom_SphericalSurface).
-    public var sphereProperties: SphereProperties { SphereProperties(handle: handle) }
+    public var sphereProperties: SphereProperties { SphereProperties(owner: self) }
 
     // MARK: - Geom_ToroidalSurface Properties (v0.108.0)
 
     /// Access torus-specific properties.
-    public struct TorusProperties: @unchecked Sendable {
-        fileprivate let handle: OCCTSurfaceRef
+    public struct TorusProperties: Sendable, NativeHandleView {
+        let owner: Surface
 
         /// The major radius.
         public var majorRadius: Double { OCCTSurfaceTorusMajorRadius(handle) }
@@ -2962,13 +2962,13 @@ extension Surface {
     }
 
     /// Torus-specific properties (meaningful only when the underlying surface is a Geom_ToroidalSurface).
-    public var torusProperties: TorusProperties { TorusProperties(handle: handle) }
+    public var torusProperties: TorusProperties { TorusProperties(owner: self) }
 
     // MARK: - Geom_CylindricalSurface Properties (v0.108.0)
 
     /// Access cylinder-specific properties.
-    public struct CylinderProperties: @unchecked Sendable {
-        fileprivate let handle: OCCTSurfaceRef
+    public struct CylinderProperties: Sendable, NativeHandleView {
+        let owner: Surface
 
         /// The radius.
         public var radius: Double { OCCTSurfaceCylinderRadius(handle) }
@@ -2990,13 +2990,13 @@ extension Surface {
     }
 
     /// Cylinder-specific properties (meaningful only when the underlying surface is a Geom_CylindricalSurface).
-    public var cylinderProperties: CylinderProperties { CylinderProperties(handle: handle) }
+    public var cylinderProperties: CylinderProperties { CylinderProperties(owner: self) }
 
     // MARK: - Geom_ConicalSurface Properties (v0.108.0)
 
     /// Access cone-specific properties.
-    public struct ConeProperties: @unchecked Sendable {
-        fileprivate let handle: OCCTSurfaceRef
+    public struct ConeProperties: Sendable, NativeHandleView {
+        let owner: Surface
 
         /// The semi-angle of the cone.
         public var semiAngle: Double { OCCTSurfaceConeSemiAngle(handle) }
@@ -3016,13 +3016,13 @@ extension Surface {
     }
 
     /// Cone-specific properties (meaningful only when the underlying surface is a Geom_ConicalSurface).
-    public var coneProperties: ConeProperties { ConeProperties(handle: handle) }
+    public var coneProperties: ConeProperties { ConeProperties(owner: self) }
 
     // MARK: - Geom_SweptSurface Properties (v0.108.0)
 
     /// Access swept-surface-specific properties (extrusion or revolution).
-    public struct SweptProperties: @unchecked Sendable {
-        fileprivate let handle: OCCTSurfaceRef
+    public struct SweptProperties: Sendable, NativeHandleView {
+        let owner: Surface
 
         /// The sweep direction.
         public var direction: SIMD3<Double> {
@@ -3037,7 +3037,7 @@ extension Surface {
     }
 
     /// Swept-surface-specific properties (meaningful for extrusion or revolution surfaces).
-    public var sweptProperties: SweptProperties { SweptProperties(handle: handle) }
+    public var sweptProperties: SweptProperties { SweptProperties(owner: self) }
 
     // MARK: - v0.115.0: Surface from point grid, normal, curvatures
 
@@ -5113,8 +5113,8 @@ extension Surface {
 
 extension Surface {
     /// Bezier surface properties (meaningful only when the underlying surface is Geom_BezierSurface).
-    public struct BezierProperties: @unchecked Sendable {
-        fileprivate let handle: OCCTSurfaceRef
+    public struct BezierProperties: Sendable, NativeHandleView {
+        let owner: Surface
 
         /// Number of U poles.
         public var nbUPoles: Int { Int(OCCTSurfaceBezierNbUPoles(handle)) }
@@ -5168,7 +5168,7 @@ extension Surface {
     }
 
     /// Bezier-surface-specific properties.
-    public var bezierProperties: BezierProperties { BezierProperties(handle: handle) }
+    public var bezierProperties: BezierProperties { BezierProperties(owner: self) }
 
     // --- BSplineSurface extras ---
 
