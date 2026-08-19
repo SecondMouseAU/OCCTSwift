@@ -1,0 +1,63 @@
+  Curve3D.circleProperties  parent alive: false
+  Curve2D.circleProperties  parent alive: false
+  Surface.sphereProperties  parent alive: false
+
+Phase 2: reading through the view. Before the fix these read a released handle.
+  escaped  Curve3D circle radius, expecting 5.0
+=================================================================
+==336==ERROR: AddressSanitizer: heap-use-after-free on address 0x6020000015f0 at pc 0x000104d346a8 bp 0x00016b1fd0a0 sp 0x00016b1fd098
+READ of size 8 at 0x6020000015f0 thread T0
+    #0 0x000104d346a4 in opencascade::handle<Geom_Curve>::get() const Standard_Handle.hxx:122
+    #1 0x000104cfa374 in std::__1::enable_if<is_base_but_not_same<Geom_Curve, Geom_Circle>::value, opencascade::handle<Geom_Circle>>::type opencascade::handle<Geom_Circle>::DownCast<Geom_Curve>(opencascade::handle<Geom_Curve> const&) Standard_Handle.hxx:184
+    #2 0x000104cfa188 in OCCTCurve3DCircleRadius OCCTBridge_Curve3D.mm:5332
+    #3 0x0001054e6824 in Curve3D.CircleProperties.radius.getter Curve3D.swift:1931
+    #4 0x000104c0f380 in static PropertiesLifetime.escapedReads() PropertiesLifetime.swift:105
+    #5 0x000104c11458 in static PropertiesLifetime.run() PropertiesLifetime.swift:157
+    #6 0x000104c0b9b4 in implicit closure #2 in variable initialization expression of static HarnessRunner.harnesses HarnessRunner.swift
+    #7 0x000105b8f8b8 in static GenericRunner.main(toolName:blurb:entries:) GenericRunner.swift:53
+    #8 0x000104c0bb30 in static HarnessRunner.main() HarnessRunner.swift:28
+    #9 0x000104c11668 in Harnesses_main main.swift:7
+    #10 0x00018d0c04e0 in start+0x1b4c (dyld:arm64e+0x204e0)
+
+0x6020000015f0 is located 0 bytes inside of 8-byte region [0x6020000015f0,0x6020000015f8)
+freed by thread T0 here:
+    #0 0x00010a6b8358 in _ZdlPv+0x74 (libclang_rt.asan_osx_dynamic.dylib:arm64e+0x50358)
+    #1 0x000104ca9abc in OCCTCurve3DRelease OCCTBridge_Curve3D.mm:174
+    #2 0x0001054b3f18 in Curve3D.deinit Curve3D.swift:17
+    #3 0x0001054b3f54 in Curve3D.__deallocating_deinit Curve3D.swift
+    #4 0x0001a0be6e84 in _swift_release_dealloc+0x3c (libswiftCore.dylib:arm64e+0xbe84)
+    #5 0x0001a0c49fc4 in bool swift::RefCounts<swift::SideTableRefCountBits>::doDecrementSlow<(swift::PerformDeinit)1>(swift::SideTableRefCountBits, unsigned int)+0xac (libswiftCore.dylib:arm64e+0x6efc4)
+    #6 0x000104c0c684 in static PropertiesLifetime.escapedCircle3D() /<compiler-generated>
+    #7 0x000104c0f2d0 in static PropertiesLifetime.escapedReads() PropertiesLifetime.swift:103
+    #8 0x000104c11458 in static PropertiesLifetime.run() PropertiesLifetime.swift:157
+    #9 0x000104c0b9b4 in implicit closure #2 in variable initialization expression of static HarnessRunner.harnesses HarnessRunner.swift
+    #10 0x000105b8f8b8 in static GenericRunner.main(toolName:blurb:entries:) GenericRunner.swift:53
+    #11 0x000104c0bb30 in static HarnessRunner.main() HarnessRunner.swift:28
+    #12 0x000104c11668 in Harnesses_main main.swift:7
+    #13 0x00018d0c04e0 in start+0x1b4c (dyld:arm64e+0x204e0)
+
+previously allocated by thread T0 here:
+    #0 0x00010a6b7f50 in _Znwm+0x74 (libclang_rt.asan_osx_dynamic.dylib:arm64e+0x4ff50)
+    #1 0x000104cac6bc in OCCTCurve3DCreateCircle OCCTBridge_Curve3D.mm:377
+    #2 0x0001054b76d0 in static Curve3D.circle(center:normal:radius:) Curve3D.swift:125
+    #3 0x000104c0c5d0 in static PropertiesLifetime.escapedCircle3D() PropertiesLifetime.swift:43
+    #4 0x000104c0f2d0 in static PropertiesLifetime.escapedReads() PropertiesLifetime.swift:103
+    #5 0x000104c11458 in static PropertiesLifetime.run() PropertiesLifetime.swift:157
+    #6 0x000104c0b9b4 in implicit closure #2 in variable initialization expression of static HarnessRunner.harnesses HarnessRunner.swift
+    #7 0x000105b8f8b8 in static GenericRunner.main(toolName:blurb:entries:) GenericRunner.swift:53
+    #8 0x000104c0bb30 in static HarnessRunner.main() HarnessRunner.swift:28
+    #9 0x000104c11668 in Harnesses_main main.swift:7
+    #10 0x00018d0c04e0 in start+0x1b4c (dyld:arm64e+0x204e0)
+
+SUMMARY: AddressSanitizer: heap-use-after-free Standard_Handle.hxx:122 in opencascade::handle<Geom_Curve>::get() const
+Shadow bytes around the buggy address:
+  0x602000001300: fa fa fd fa fa fa fd fd fa fa fd fd fa fa fd fd
+  0x602000001380: fa fa fd fd fa fa fd fd fa fa fd fd fa fa fd fd
+  0x602000001400: fa fa fd fa fa fa fd fd fa fa fd fd fa fa fd fd
+  0x602000001480: fa fa fd fa fa fa fd fd fa fa fd fd fa fa fd fd
+  0x602000001500: fa fa fd fd fa fa fd fd fa fa fd fd fa fa fd fd
+=>0x602000001580: fa fa fd fa fa fa fd fd fa fa fd fd fa fa[fd]fa
+  0x602000001600: fa fa fa fa fa fa fa fa fa fa fa fa fa fa fa fa
+  0x602000001680: fa fa fa fa fa fa fa fa fa fa fa fa fa fa fa fa
+  0x602000001700: fa fa fa fa fa fa fa fa fa fa fa fa fa fa fa fa
+  0x602000001780: fa fa fa fa fa fa fa fa fa fa fa fa fa fa fa fa

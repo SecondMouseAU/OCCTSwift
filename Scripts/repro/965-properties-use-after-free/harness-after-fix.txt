@@ -1,0 +1,26 @@
+Build of product 'Harnesses' complete! (5.12s)
+#965: do the *Properties value views keep their parent alive?
+
+Phase 1: does taking a view keep the parent alive? (no dangling read here)
+  Curve3D.circleProperties  parent alive: true
+  Curve2D.circleProperties  parent alive: true
+  Surface.sphereProperties  parent alive: true
+
+Phase 2: reading through the view. Before the fix these read a released handle.
+  control  Curve3D circle radius = 5.0, expecting 5.0
+  control  Curve2D circle radius = 7.0, expecting 7.0
+  control  Surface sphere radius = 11.0, expecting 11.0
+  chained  edge.curve3D?.circleProperties.radius, expecting 5.0
+  chained  = Optional(5.0)
+  escaped  Curve3D circle radius, expecting 5.0
+  escaped  = Optional(5.0)
+  escaped  Curve2D circle radius, expecting 7.0
+  escaped  = Optional(7.0)
+  escaped  Surface sphere radius, expecting 11.0
+  escaped  = Optional(11.0)
+  churned  Curve3D circle radius after 400 allocations, expecting 5.0
+  churned  = Optional(5.0)
+
+Done. A `parent alive: false` in phase 1 is the defect on its own: the view outlived
+the object whose deinit released the handle it reads, so whatever phase 2 printed
+under it came from freed memory, correct-looking or not.
