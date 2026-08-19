@@ -193,6 +193,30 @@ Swift Shape        OCCTShape struct       OCCT Handle
 OCCTShapeRelease() ─── delete struct ─── releases handle
 ```
 
+### Value views onto a handle
+
+A handle is owned by exactly one reference type, whose `deinit` releases it. A value type has no
+`deinit`, so it cannot own one, and a struct that stores a raw `OCCT*Ref` is borrowing a handle
+whose lifetime it does not control. When such a value outlives the object it borrowed from, every
+read through it is a use-after-free.
+
+The nineteen `*Properties` views on `Curve2D`, `Curve3D` and `Surface` were written that way, which
+made `edge.curve3D?.circleProperties.radius` crash: `Edge.curve3D` builds a fresh `Curve3D` per
+read, nothing holds it past the expression, and its `deinit` runs before `.radius` (#965).
+
+They now conform to `NativeHandleView` (`Sources/OCCTSwift/NativeHandleView.swift`), which stores
+the owner and reads the handle through it:
+
+```swift
+public struct CircleProperties: Sendable, NativeHandleView {
+    let owner: Curve3D                                       // strong, so the handle outlives it
+    public var radius: Double { OCCTCurve3DCircleRadius(handle) }  // handle comes from `owner`
+}
+```
+
+`Scripts/check-borrowed-handles.py` fails the build on any struct or enum in `Sources/OCCTSwift`
+that stores an `OCCT*Ref`, so a new view cannot reintroduce the borrow.
+
 ### Thread Safety
 
 - OCCT is not thread-safe for shared objects

@@ -4,7 +4,7 @@ protocol NativeHandleOwner: AnyObject {
     var handle: NativeHandle { get }
 }
 
-/// A value type that reads a ``NativeHandleOwner``'s handle without owning it.
+/// A value type that reads the handle owned by a ``NativeHandleOwner``, without owning it.
 ///
 /// A conformer stores the owner, not the raw handle, and reads the handle through it. That is
 /// what keeps the handle alive: a value view is free to outlive the expression that produced it,
@@ -15,6 +15,13 @@ protocol NativeHandleOwner: AnyObject {
 /// Conform rather than writing the retain by hand, and do not declare a stored `handle`: the
 /// extension below supplies it, so a conformer that adds its own is reintroducing the defect.
 /// `Scripts/check-borrowed-handles.py` fails the build on one that does.
+///
+/// A conformer can be plainly `Sendable` rather than `@unchecked Sendable`. Its only stored
+/// property is the owner, and `Curve2D`/`Curve3D`/`Surface` already declare `@unchecked Sendable`
+/// themselves, so the compiler checks the view and the view's claim rests entirely on the owner's,
+/// which is where the OCCT thread-safety argument in `docs/thread-safety.md` actually lives. The
+/// views' own `@unchecked` was asserting something narrower and unexamined: that a borrowed
+/// handle with no owner was safe to send, which it was not, since it was not safe to read at all.
 protocol NativeHandleView {
     associatedtype Owner: NativeHandleOwner
     var owner: Owner { get }
