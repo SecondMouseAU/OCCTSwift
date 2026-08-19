@@ -1,19 +1,26 @@
 #!/usr/bin/env python3
-"""Prove each guard in `refman_census.declares_member` is load-bearing (#810).
+"""Prove each guard in `refman_census`'s method-attribution detector is load-bearing (#810).
 
 `okf/policies/prove-the-test-fails.md`: a self-test that passes with a guard removed proves
-nothing about that guard. `refman_census.py --self-test` has eight cases and `declares_member`
-has four accepting shapes; this script disables each shape in turn, in memory, re-runs the eight
-cases, and reports which fail. A shape that fails no case is decorative and either the shape or
-the case is wrong.
+nothing about that guard. The detector has two halves and this script covers both.
+
+`declares_member` has four accepting shapes; the matrix disables each in turn, in memory, re-runs
+the ten header cases, and reports which fail. `_ATTRIBUTION_RE` has two constraints (a leading
+backtick, and no anchor on a closing one); the matrix restores each constraint's opposite and
+re-runs the four parser cases. A guard that fails no case is decorative, and either the guard or
+the battery is wrong.
+
+The closing-backtick anchor is why this half exists. The pattern was anchored on it in this
+file's first version, which silently skipped `XCAFDoc_ShapeMapTool::Map().Extent()`, a real
+finding, and no case at the time could tell.
 
 Run from anywhere:
 
     python3 Scripts/repro/810-refman-document-xde/selftest_removal_matrix.py
 
-Exits 1 if any shape fails zero cases, or if the unmodified battery does not pass. Needs
-`Libraries/OCCT.xcframework`, like the self-test itself; reports SKIPPED and exits 0 without it,
-which is the case in CI.
+Exits 1 if any guard fails zero cases, or if either unmodified battery does not pass. The parser
+half runs anywhere; the header half needs `Libraries/OCCT.xcframework` and reports SKIPPED without
+it, which is the case in CI.
 """
 
 from __future__ import annotations
@@ -61,11 +68,50 @@ def declares_member_without(cls: str, member: str, disabled: str,
     return False
 
 
+# Each variant re-imposes one constraint the shipped pattern deliberately does not have.
+PATTERN_VARIANTS = {
+    "closing-backtick-anchor": r"`([A-Za-z][A-Za-z0-9]*(?:_[A-Za-z0-9]+)?)::([A-Za-z_][A-Za-z0-9_]*)`",
+    "no-leading-backtick": r"([A-Za-z][A-Za-z0-9]*(?:_[A-Za-z0-9]+)?)::([A-Za-z_][A-Za-z0-9_]*)",
+}
+
+
+def parser_matrix() -> int:
+    """Run the parser cases against each variant; every variant must fail at least one."""
+    cases = census.PARSE_SELF_TEST_CASES
+    baseline = [
+        (line, expected, census._ATTRIBUTION_RE.findall(line) == expected)
+        for line, expected, _why in cases
+    ]
+    if not all(ok for *_r, ok in baseline):
+        print("PARSER BASELINE FAILED: the shipped pattern does not pass its own cases.")
+        return 1
+    print(f"parser baseline: {len(cases)}/{len(cases)} cases pass with the shipped pattern")
+    print()
+
+    exit_code = 0
+    for name, pattern in PATTERN_VARIANTS.items():
+        rx = re.compile(pattern)
+        broken = [line for line, expected, _why in cases if rx.findall(line) != expected]
+        status = "load-bearing" if broken else "DECORATIVE"
+        print(f"{name:26} imposed -> {len(broken)}/{len(cases)} cases fail  [{status}]")
+        for b in broken:
+            print(f"                            {b[:78]!r}")
+        if not broken:
+            print("                            No case distinguishes this constraint. The pattern")
+            print("                            could be tightened this way with nothing noticing.")
+            exit_code = 1
+        print()
+    return exit_code
+
+
 def main() -> int:
+    exit_parser = parser_matrix()
+
     if not os.path.isdir(census.OCCT_HEADERS):
-        print("SKIPPED: Libraries/OCCT.xcframework is not present, so the pinned headers this")
-        print("matrix reads are unavailable. This is the normal case in CI and a fresh clone.")
-        return 0
+        print("HEADER MATRIX SKIPPED: Libraries/OCCT.xcframework is not present, so the pinned")
+        print("headers that half reads are unavailable. This is the normal case in CI and a")
+        print("fresh clone. The parser matrix above ran.")
+        return exit_parser
 
     cases = census.SELF_TEST_CASES
     baseline = [
@@ -78,10 +124,10 @@ def main() -> int:
             if not ok:
                 print(f"  {cls}::{member} expected {expected}")
         return 1
-    print(f"baseline: {len(cases)}/{len(cases)} cases pass unmodified")
+    print(f"header baseline: {len(cases)}/{len(cases)} cases pass unmodified")
     print()
 
-    exit_code = 0
+    exit_code = exit_parser
     for shape in SHAPES:
         broken = []
         for cls, member, expected, _why in cases:
@@ -99,7 +145,8 @@ def main() -> int:
         print()
 
     if exit_code == 0:
-        print("MATRIX PASSED: every accepting shape in declares_member fails at least one case.")
+        print("MATRIX PASSED: every accepting shape in declares_member, and every constraint the")
+        print("attribution pattern deliberately omits, fails at least one case.")
     return exit_code
 
 

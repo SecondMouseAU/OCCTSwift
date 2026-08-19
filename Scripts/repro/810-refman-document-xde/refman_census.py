@@ -61,7 +61,7 @@ TWO QUESTIONS, per #810:
        pinned `TNaming_Tool.hxx` does not declare, because `TNaming_Tool` itself is reached
        elsewhere. This check resolves every ``Class::Member`` attribution in the lane against that
        class's own pinned header and its ancestors. It found 17 findings #928 could not, in six
-       families, and it is the reason this lane's count is 35 rather than 18.
+       families, and it is the reason this lane's count is 36 rather than 18.
 
   Both are floors. The one finding neither produced (`docs/thread-safety.md` describing document
   creation in the present tense as going through a singleton retired in #371) came from reading,
@@ -559,7 +559,7 @@ CURATED_TABLES = [
 # reappears, and reports the finding as fixed otherwise. Whitespace is collapsed on both sides, so
 # a re-wrap of the same wrong sentence still counts as a regression.
 #
-# Thirty-four findings in six families.
+# Thirty-six findings in six families.
 #
 # THE APPLICATION FAMILY (7). Four claims name `XCAFApp_Application`, which #371 retired
 # bridge-side and which the pinned header's own comment insists is the only way to get one; three
@@ -579,15 +579,17 @@ CURATED_TABLES = [
 # builder records a raw select pair, the selector computes a resolvable name);
 # `TNaming_NamedShape::Get`/`TNaming_Iterator` for `TNaming_Tool::OriginalShape`.
 #
-# THE SPELLED-WRONG ACCESSOR FAMILY (13). A member name that does not exist beside one that does:
+# THE SPELLED-WRONG ACCESSOR FAMILY (14). A member name that does not exist beside one that does:
 # `GetColor`/`GetTransparency`/`GetWidth`/`GetMode` for `TDataXtd_Presentation`'s `Color`/
 # `Transparency`/`Width`/`Mode`; `SetExpressionString`/`GetExpressionString` for
 # `TDataStd_Expression`'s `SetExpression`/`GetExpression`; four `TDocStd_XLink` Get/Set spellings
 # for its two overloaded `DocumentEntry`/`LabelEntry`; `TNaming_Scope::Clear` for `ClearValid`;
 # `TDataXtd_PatternStd::SetSignature` for `Signature`; `XCAFDoc_AssemblyItemRef::RemoveExtraRef`
-# for `ClearExtraRef`.
+# for `ClearExtraRef`; `XCAFDoc_ShapeMapTool::Map` for `GetMap`, which the strict first version of
+# `_ATTRIBUTION_RE` skipped because the claim is written `Map().Extent()` and the pattern was
+# anchored on a closing backtick.
 #
-# THE WRONG-CLASS-ENTIRELY FAMILY (4). `TDF_LabelSequence` for a `TDF_ChildIterator` walk;
+# THE WRONG-CLASS-ENTIRELY FAMILY (5). `TDF_LabelSequence` for a `TDF_ChildIterator` walk;
 # `XCAFDoc_AssemblyGraph::NbRoots` for `GetRoots().Extent()`;
 # `XCAFDoc_AssemblyItemId::GetPathLength` for `GetPath().Size()`;
 # `XCAFDoc_AssemblyItemRef::GetPath` for `GetItem()` plus `XCAFDoc_AssemblyItemId::ToString()`.
@@ -599,7 +601,22 @@ CURATED_TABLES = [
 #
 # Every finding was confirmed by reading the Swift method, following it to its bridge function, and
 # reading that function's body, per okf/policies/measure-dont-assume.md.
+#
+# THE SIX COUNTS ABOVE ARE DERIVED, NOT TYPED. `FAMILY_COUNTS` below repeats them as data and
+# `main()` asserts each against the table, because a hand-written total beside a list is exactly
+# what CLAUDE.md's own patch-count paragraph warns about: a total and a list disagree silently and
+# the total is the one everybody reads. Two of these were wrong when written by hand, in a prose
+# block that had been read three times.
 # ---------------------------------------------------------------------------------------------
+
+FAMILY_COUNTS = {
+    "application": 7,
+    "transaction": 3,
+    "naming": 6,
+    "accessor spelling": 14,
+    "wrong class": 5,
+    "behaviour": 1,
+}
 
 KNOWN_OVER_FINDINGS = [
     # --- the application family ---
@@ -829,6 +846,15 @@ KNOWN_OVER_FINDINGS = [
         "correct": "TDF_ChildIterator(label, allLevels), via OCCTDocumentGetDescendantLabels.",
     },
     {
+        "family": "accessor spelling",
+        "subject": "AssemblyNode.shapeMapToolExtent",
+        "doc_file": "docs/reference/Document-XCAF-Notes.md",
+        "bad_phrase": "- **OCCT:** `XCAFDoc_ShapeMapTool::Map().Extent()`",
+        "correct": "XCAFDoc_ShapeMapTool::GetMap().Extent(). There is no Map member. Found only "
+            "after this file's attribution pattern was widened to see a parenthesised claim; see "
+            "the note on _ATTRIBUTION_RE.",
+    },
+    {
         "family": "wrong class",
         "subject": "AssemblyGraph.rootCount",
         "doc_file": "docs/reference/Document-XCAF-Notes.md",
@@ -1036,8 +1062,19 @@ def check_deferred_findings() -> list[dict]:
 # The method-attribution check (new in this pass; see the docstring's OVER-COVERAGE section).
 # ---------------------------------------------------------------------------------------------
 
+# A backtick, a class name, `::`, a member name. Deliberately NOT anchored on a CLOSING backtick.
+#
+# It was, in this file's first version, and that cost a finding. `docs/` writes attributions three
+# ways: `` `Class::Member` ``, `` `Class::Member()` `` and
+# `` `Class::Member().Something()` ``. Requiring the closing backtick right after the member name
+# sees only the first, and 471 of this lane's `Class::Member` occurrences are matched by the loose
+# form against a smaller number by the strict one. The difference contained
+# `XCAFDoc_ShapeMapTool::Map().Extent()`, which is wrong (the member is `GetMap`) and which the
+# strict pattern skipped in silence. That is the exact failure mode this whole programme exists to
+# catch, found in a detector written to catch it, so the pattern is loose and the self-test has a
+# case for each of the three spellings.
 _ATTRIBUTION_RE = re.compile(
-    r"`([A-Za-z][A-Za-z0-9]*(?:_[A-Za-z0-9]+)?)::([A-Za-z_][A-Za-z0-9_]*)`"
+    r"`([A-Za-z][A-Za-z0-9]*(?:_[A-Za-z0-9]+)?)::([A-Za-z_][A-Za-z0-9_]*)"
 )
 
 
@@ -1174,18 +1211,56 @@ SELF_TEST_CASES = [
      "this PR writes are themselves checked."),
     ("XCAFDoc_AssemblyItemRef", "ClearExtraRef", True,
      "the correct spelling for RemoveExtraRef, same reason."),
+    ("XCAFDoc_ShapeMapTool", "Map", False,
+     "the finding the strict, closing-backtick-anchored pattern missed: the doc wrote "
+     "`XCAFDoc_ShapeMapTool::Map().Extent()` and the member is GetMap. Paired with the parse "
+     "case below, which is what proves the pattern sees it at all."),
+    ("XCAFDoc_ShapeMapTool", "GetMap", True,
+     "the correct spelling, so a check that answered False for everything would fail here."),
+]
+
+# Fixtures for `_ATTRIBUTION_RE` itself, one per spelling `docs/` actually uses. `declares_member`
+# can only adjudicate a pair the pattern produced, so a battery that exercises only the former
+# proves nothing about a pattern that silently skips a whole spelling. It did.
+PARSE_SELF_TEST_CASES = [
+    ("- **OCCT:** `TNaming_Tool::SameShape`.",
+     [("TNaming_Tool", "SameShape")],
+     "the plain spelling, closing backtick straight after the member."),
+    ("- **OCCT:** `XCAFDoc_ShapeMapTool::Map().Extent()`",
+     [("XCAFDoc_ShapeMapTool", "Map")],
+     "the parenthesised spelling. The strict pattern returned nothing here, which is how "
+     "XCAFDoc_ShapeMapTool::Map survived the first run of this census."),
+    ("- **OCCT:** `TDF_Label::FindAttribute(TDataXtd_Pattern::GetID())` (via `X`).",
+     [("TDF_Label", "FindAttribute")],
+     "a nested call. Only the backticked head is a claim; the inner TDataXtd_Pattern::GetID has "
+     "no backtick of its own and is deliberately not extracted twice."),
+    ("Plain prose naming TNaming_Tool::SameShape with no backticks at all.",
+     [],
+     "no backtick, no claim. Without this case the pattern could drop its backtick anchor "
+     "entirely and every case above would still pass."),
 ]
 
 
 def self_test() -> int:
     failures = 0
+
+    print(f"self-test, parser: {len(PARSE_SELF_TEST_CASES)} cases against _ATTRIBUTION_RE")
+    for line, expected, why in PARSE_SELF_TEST_CASES:
+        got = _ATTRIBUTION_RE.findall(line)
+        ok = got == expected
+        print(f"  [{'PASS' if ok else 'FAIL'}] {line[:64]!r} -> {got}")
+        if not ok:
+            print(f"         expected {expected}: {why}")
+            failures += 1
+    print()
+
     if not os.path.isdir(OCCT_HEADERS):
-        print("SELF-TEST SKIPPED: Libraries/OCCT.xcframework is not present.")
-        print("  This check reads the pinned headers by design (CLAUDE.md's source of truth for")
+        print("SELF-TEST, HEADERS: SKIPPED, Libraries/OCCT.xcframework is not present.")
+        print("  This half reads the pinned headers by design (CLAUDE.md's source of truth for")
         print("  version-sensitive detail), so it cannot run in CI or in a fresh clone. It is")
-        print("  reported rather than passed silently.")
-        return 0
-    print(f"self-test: {len(SELF_TEST_CASES)} cases against the pinned headers")
+        print("  reported rather than passed silently. The parser half above ran.")
+        return 1 if failures else 0
+    print(f"self-test, headers: {len(SELF_TEST_CASES)} cases against the pinned headers")
     for cls, member, expected, why in SELF_TEST_CASES:
         got = declares_member(cls, member)
         ok = got is expected
@@ -1193,11 +1268,13 @@ def self_test() -> int:
         if not ok:
             print(f"         {why}")
             failures += 1
+    total = len(PARSE_SELF_TEST_CASES) + len(SELF_TEST_CASES)
     print()
     if failures:
-        print(f"SELF-TEST FAILED: {failures} of {len(SELF_TEST_CASES)}")
+        print(f"SELF-TEST FAILED: {failures} of {total}")
         return 1
-    print(f"SELF-TEST PASSED: {len(SELF_TEST_CASES)} of {len(SELF_TEST_CASES)}")
+    print(f"SELF-TEST PASSED: {total} of {total} "
+          f"({len(PARSE_SELF_TEST_CASES)} parser, {len(SELF_TEST_CASES)} headers)")
     return 0
 
 
@@ -1268,7 +1345,19 @@ def main() -> int:
     exit_code = 0
 
     print()
-    print(f"Known over-coverage findings tracked: {len(KNOWN_OVER_FINDINGS)}")
+    derived: dict[str, int] = {}
+    for f in KNOWN_OVER_FINDINGS:
+        derived[f["family"]] = derived.get(f["family"], 0) + 1
+    if derived != FAMILY_COUNTS:
+        print("FAMILY COUNT DRIFT: the docstring's per-family totals no longer match the table.")
+        for fam in sorted(set(derived) | set(FAMILY_COUNTS)):
+            if derived.get(fam) != FAMILY_COUNTS.get(fam):
+                print(f"  {fam}: table has {derived.get(fam, 0)}, "
+                      f"FAMILY_COUNTS says {FAMILY_COUNTS.get(fam, 0)}")
+        exit_code = 1
+
+    print(f"Known over-coverage findings tracked: {len(KNOWN_OVER_FINDINGS)} "
+          f"({', '.join(f'{k} {v}' for k, v in sorted(derived.items()))})")
     regressions = check_over_findings()
     if regressions:
         print("REGRESSION: the following fixed over-coverage findings have reappeared:")

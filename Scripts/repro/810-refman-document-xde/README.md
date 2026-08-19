@@ -4,14 +4,14 @@ Two files:
 
 | file | what it is |
 |---|---|
-| `refman_census.py` | the census. 278 classes, four verdicts, two over-coverage checks, a lane re-derivation, and its own self-test. |
-| `selftest_removal_matrix.py` | the proof that the self-test's guards are load-bearing. |
+| `refman_census.py` | the census. 278 classes, four verdicts, two over-coverage checks, a family-count assertion, a lane re-derivation, and its own self-test. |
+| `selftest_removal_matrix.py` | the proof that the self-test's guards are load-bearing, both halves. |
 
 ```bash
 python3 Scripts/repro/810-refman-document-xde/refman_census.py                 # the table
 python3 Scripts/repro/810-refman-document-xde/refman_census.py --verbose       # + matching files
 python3 Scripts/repro/810-refman-document-xde/refman_census.py --reverify-lane # + lane drift check
-python3 Scripts/repro/810-refman-document-xde/refman_census.py --self-test     # the 8 detector cases
+python3 Scripts/repro/810-refman-document-xde/refman_census.py --self-test     # 14 detector cases
 python3 Scripts/repro/810-refman-document-xde/selftest_removal_matrix.py       # the removal matrix
 ```
 
@@ -25,7 +25,7 @@ headers, and report SKIPPED rather than passing silently without it, which is th
 | `ok` | 118 |
 | `deliberate, recorded` | 160 |
 | `under` | 0 |
-| `over` | 35 fixed in this PR, 1 deferred to #971 |
+| `over` | 36 fixed in this PR, 1 deferred to #971 |
 
 The lane is 278 classes against #810's own seven prefixes (188) plus six packages named by no pass
 at all. The widening, and the forty-four further packages handed off to #973 rather than absorbed,
@@ -40,12 +40,12 @@ and then built a second detector for the half it cannot see.
 | source | candidates | true | false | rate |
 |---|---|---|---|---|
 | `census-doc-occt-attribution.py --lane ...` (#928) | 34 | 18 | 16 | 47.1% false |
-| `check_method_attributions()` (this file, new) | 24 | 22 | 2 | 8.3% false |
+| `check_method_attributions()` (this file, new) | 25 | 23 | 2 | 8.0% false |
 | reading | 1 | 1 | 0 | |
 
 Five findings appear in both detectors' output, because the claim names both a class that is not
 reached and a member that is not declared: `CDF_Application::NbDocuments`/`ReadingFormats`/
-`WritingFormats`, and `TNaming_Tool::SameShape` twice. So the union is 36 rather than 41: 35 fixed
+`WritingFormats`, and `TNaming_Tool::SameShape` twice. So the union is 37 rather than 42: 36 fixed
 here and one (#971) deferred, which is #928's alone.
 
 **#928's 47.1% on this lane is close to its own measured 41.0%** over a uniform 40-row sample, which
@@ -103,14 +103,14 @@ pass over this lane does not read 22 as 22 defects.
 Per `okf/policies/prove-the-test-fails.md`, and the reason this directory has a second file.
 
 **The regression check.** Run against the tree before this PR's corrections, `refman_census.py`
-reports all 35 findings as regressions and exits 1. That is the whole battery failing on its
+reports all 36 findings as regressions and exits 1. That is the whole battery failing on its
 subject, not a constructed case:
 
 ```
-Known over-coverage findings tracked: 35
+Known over-coverage findings tracked: 36 (accessor spelling 14, application 7, ...)
 REGRESSION: the following fixed over-coverage findings have reappeared:
   docs/reference/Document-Persistence-IO.md: Document.saveOCAF(to:) -- '- **OCCT:** `XCAFApp_Application::SaveAs` / `PCDM_StoreStatus`.'
-  ... 34 more ...
+  ... 35 more ...
 ```
 
 After the corrections it exits 0. The comparison collapses whitespace on both sides, so re-wrapping
@@ -127,21 +127,42 @@ reverted, exit 0.
 `docs/occtswift-wrapping-gaps.md` moves that class from `deliberate, recorded` to `under` and exits
 1; restored, exit 0.
 
-**The method-attribution detector.** Eight self-test cases, and `selftest_removal_matrix.py`
-switches off each of `declares_member`'s four accepting shapes in turn:
+**The method-attribution detector.** Fourteen self-test cases in two halves, and
+`selftest_removal_matrix.py` covers both: it re-imposes each constraint `_ATTRIBUTION_RE`
+deliberately omits, and switches off each of `declares_member`'s four accepting shapes:
 
 ```
-baseline: 8/8 cases pass unmodified
+parser baseline: 4/4 cases pass with the shipped pattern
 
-method-call        disabled -> 4/8 cases fail  [load-bearing]
-nested-type        disabled -> 1/8 cases fail  [load-bearing]
-data-member        disabled -> 1/8 cases fail  [load-bearing]
-base-class-walk    disabled -> 1/8 cases fail  [load-bearing]
+closing-backtick-anchor    imposed -> 2/4 cases fail  [load-bearing]
+no-leading-backtick        imposed -> 2/4 cases fail  [load-bearing]
+
+header baseline: 10/10 cases pass unmodified
+
+method-call        disabled -> 5/10 cases fail  [load-bearing]
+nested-type        disabled -> 1/10 cases fail  [load-bearing]
+data-member        disabled -> 1/10 cases fail  [load-bearing]
+base-class-walk    disabled -> 1/10 cases fail  [load-bearing]
 ```
 
-Every shape was added because omitting it produced a false report on this lane's real docs, and the
-matrix is what holds that claim. Three of the four are single-case, which is the minimum that
-proves anything; each names the real doc line it protects in `SELF_TEST_CASES`.
+Every shape was added because omitting it produced a false report on this lane's real docs, and
+the matrix is what holds that claim; each names the real doc line it protects in
+`SELF_TEST_CASES`.
+
+**The parser half exists because the first version of this detector was blind, and the matrix is
+what found out.** `_ATTRIBUTION_RE` was anchored on a closing backtick, so it saw
+`` `Class::Member` `` and silently skipped `` `Class::Member()` ``. `docs/` writes attributions
+both ways, and the difference contained a real finding:
+`XCAFDoc_ShapeMapTool::Map().Extent()`, where the member is `GetMap`. Twenty-four candidates
+became twenty-five and thirty-five findings became thirty-six. A detector written to catch
+"the docs say something the kernel does not support" was itself saying something it could not
+support, which is why the pattern now has a case per spelling and the matrix has a variant per
+constraint.
+
+**The family counts are asserted, not typed.** `FAMILY_COUNTS` repeats the docstring's six
+per-family totals as data and `main()` diffs them against the table. Two of the six were wrong
+when written by hand, in a prose block that had been read three times. Proved: setting
+`application` to 8 gives `FAMILY COUNT DRIFT: ... table has 7, FAMILY_COUNTS says 8` and exit 1.
 
 ## The flagship finding
 

@@ -344,7 +344,8 @@ Number of entries (sub-shapes) currently in the map.
 public var shapeMapToolExtent: Int32 { get }
 ```
 
-- **OCCT:** `XCAFDoc_ShapeMapTool::Map().Extent()`
+- **OCCT:** `XCAFDoc_ShapeMapTool::GetMap().Extent()` (via `OCCTDocumentShapeMapToolExtent`).
+  There is no `Map` member in OCCT 8.0.1; the accessor is `GetMap`.
 - **Example:**
   ```swift
   print(node.shapeMapToolExtent)
