@@ -1,10 +1,10 @@
 import Foundation
-import simd
 import OCCTBridge
+import simd
 
 /// Value-type wrapper for XCAFDoc_AssemblyItemId (represented as a string path).
 public struct AssemblyItemId: Sendable {
-    /// The string representation (e.g. "0:1:1:1/0:1:1:2")
+    /// The string representation (e.g. "0:1:1:1/0:1:1:2").
     public let path: String
 
     public init(_ path: String) {

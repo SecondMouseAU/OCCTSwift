@@ -97,17 +97,20 @@ extension Document {
     public func typedDimension(at index: Int) -> Dimension? {
         let info = OCCTDocumentGetDimensionInfo(handle, Int32(index))
         guard info.isValid,
-              let type = DimensionType(rawValue: info.type) else { return nil }
-        return Dimension(type: type, value: info.value,
-                         lowerTolerance: info.lowerTol,
-                         upperTolerance: info.upperTol,
-                         index: index)
+            let type = DimensionType(rawValue: info.type)
+        else { return nil }
+        return Dimension(
+            type: type, value: info.value,
+            lowerTolerance: info.lowerTol,
+            upperTolerance: info.upperTol,
+            index: index)
     }
 
     public func typedGeomTolerance(at index: Int) -> GeomTolerance? {
         let info = OCCTDocumentGetGeomToleranceInfo(handle, Int32(index))
         guard info.isValid,
-              let type = GeomToleranceType(rawValue: info.type) else { return nil }
+            let type = GeomToleranceType(rawValue: info.type)
+        else { return nil }
         return GeomTolerance(type: type, value: info.value, index: index)
     }
 
@@ -133,11 +136,13 @@ extension Document {
     /// Create a new dimension on the document, attached to the shape at `shapeLabel`.
     /// - Returns: the new dimension's index, or nil on failure.
     @discardableResult
-    public func createDimension(on shapeLabel: Int64,
-                                type: DimensionType,
-                                value: Double,
-                                lowerTolerance: Double = 0,
-                                upperTolerance: Double = 0) -> Int? {
+    public func createDimension(
+        on shapeLabel: Int64,
+        type: DimensionType,
+        value: Double,
+        lowerTolerance: Double = 0,
+        upperTolerance: Double = 0
+    ) -> Int? {
         let idx = OCCTDocumentCreateDimension(handle, shapeLabel, type.rawValue, value)
         guard idx >= 0 else { return nil }
         if lowerTolerance != 0 || upperTolerance != 0 {
@@ -147,9 +152,11 @@ extension Document {
     }
 
     @discardableResult
-    public func createGeomTolerance(on shapeLabel: Int64,
-                                    type: GeomToleranceType,
-                                    value: Double) -> Int? {
+    public func createGeomTolerance(
+        on shapeLabel: Int64,
+        type: GeomToleranceType,
+        value: Double
+    ) -> Int? {
         let idx = OCCTDocumentCreateGeomTolerance(handle, shapeLabel, type.rawValue, value)
         return idx >= 0 ? Int(idx) : nil
     }
@@ -161,9 +168,11 @@ extension Document {
     }
 
     @discardableResult
-    public func setDimensionTolerance(at index: Int,
-                                      lower: Double,
-                                      upper: Double) -> Bool {
+    public func setDimensionTolerance(
+        at index: Int,
+        lower: Double,
+        upper: Double
+    ) -> Bool {
         OCCTDocumentSetDimensionTolerance(handle, Int32(index), lower, upper)
     }
 }

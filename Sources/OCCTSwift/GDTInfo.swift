@@ -1,29 +1,29 @@
 import Foundation
-import simd
 import OCCTBridge
+import simd
 
-/// Dimension information from STEP GD&T data
+/// Dimension information from STEP GD&T data.
 public struct DimensionInfo: Sendable {
-    /// Dimension type (maps to XCAFDimTolObjects_DimensionType)
+    /// Dimension type (maps to XCAFDimTolObjects_DimensionType).
     public let type: Int32
-    /// Primary dimension value
+    /// Primary dimension value.
     public let value: Double
-    /// Lower tolerance
+    /// Lower tolerance.
     public let lowerTolerance: Double
-    /// Upper tolerance
+    /// Upper tolerance.
     public let upperTolerance: Double
 }
 
-/// Geometric tolerance information from STEP GD&T data
+/// Geometric tolerance information from STEP GD&T data.
 public struct GeomToleranceInfo: Sendable {
-    /// Tolerance type (maps to XCAFDimTolObjects_GeomToleranceType)
+    /// Tolerance type (maps to XCAFDimTolObjects_GeomToleranceType).
     public let type: Int32
-    /// Tolerance value
+    /// Tolerance value.
     public let value: Double
 }
 
-/// Datum reference information from STEP GD&T data
+/// Datum reference information from STEP GD&T data.
 public struct DatumInfo: Sendable {
-    /// Datum identifier (e.g. "A", "B", "C")
+    /// Datum identifier (e.g. "A", "B", "C").
     public let name: String
 }

@@ -30,9 +30,12 @@ public final class Document: @unchecked Sendable {
 
     /// Load a STEP file with full XDE support (assembly structure, names, colors, materials).
     ///
-    /// - Parameters: url: URL to the STEP file
-    /// - Returns: Document containing the assembly structure
-    /// - Throws: `DocumentError` if loading fails
+    /// - Parameters:
+    ///   - url: URL to the STEP file.
+    ///   - progress: Optional reporter for read progress and cancellation. Pass `nil` to
+    ///     load without progress reporting.
+    /// - Returns: Document containing the assembly structure.
+    /// - Throws: `DocumentError` if loading fails.
     public static func load(from url: URL, progress: ImportProgress? = nil) throws -> Document {
         var cancelled: Bool = false
         let handle: OCCTDocumentRef? = withImportProgress(progress) { ctx in
@@ -175,7 +178,7 @@ public final class Document: @unchecked Sendable {
 
     /// Write the document to a STEP file (preserves assembly structure, colors, materials).
     ///
-    /// - Parameters: url: Output file URL
+    /// - Parameter url: Output file URL.
     /// - Throws: `DocumentError` if writing fails
     public func write(to url: URL) throws {
         if !OCCTDocumentWriteSTEP(handle, url.path) {
@@ -253,7 +256,7 @@ extension Document {
 
     /// Create a new label for naming history tracking.
     ///
-    /// - Parameters: parent: Parent node (nil for document root)
+    /// - Parameter parent: Parent node (nil for document root).
     /// - Returns: Assembly node representing the new label, or nil on failure
     public func createLabel(parent: AssemblyNode? = nil) -> AssemblyNode? {
         let parentId = parent?.labelId ?? -1
@@ -389,7 +392,7 @@ extension Document {
 
     /// Resolve a previously selected shape after modifications.
     ///
-    /// - Parameters: node: The label containing the selection
+    /// - Parameter node: The label containing the selection.
     /// - Returns: The resolved shape, or nil on failure
     public func resolveShape(on node: AssemblyNode) -> Shape? {
         guard let h = OCCTDocumentNamingResolve(handle, node.labelId) else { return nil }
@@ -427,7 +430,7 @@ extension Document {
 
     /// Get the name of a layer by index.
     ///
-    /// - Parameters: index: Zero-based layer index
+    /// - Parameter index: Zero-based layer index.
     /// - Returns: Layer name, or nil if index is out of range
     public func layerName(at index: Int) -> String? {
         var buf = [CChar](repeating: 0, count: 256)
@@ -455,7 +458,7 @@ extension Document {
 
     /// Get material info by index.
     ///
-    /// - Parameters: index: Zero-based material index
+    /// - Parameter index: Zero-based material index.
     /// - Returns: Material info, or nil if index is out of range
     public func materialInfo(at index: Int) -> MaterialInfo? {
         var info = OCCTMaterialInfo()
@@ -957,7 +960,7 @@ extension Document {
 
     /// Remove a shape from the document.
     ///
-    /// - Parameters: labelId: Label ID of the shape to remove
+    /// - Parameter labelId: Label ID of the shape to remove.
     /// - Returns: true if removed successfully
     @discardableResult
     public func removeShape(labelId: Int64) -> Bool {
@@ -1306,7 +1309,9 @@ extension Document {
 extension Document {
     /// Create a new directory attribute on a label.
     ///
-    /// - Parameters: labelTag: Label child tag (0 = main label)
+    /// - Parameter labelTag: Label child tag (0 = main label).
+    /// - Returns: `true` when a `TDataStd_Directory` attribute was created on the
+    ///   label; `false` if OCCT returned a null handle or raised.
     @discardableResult
     public func createDirectory(at labelTag: Int = 0) -> Bool {
         OCCTDocumentDirectoryNew(handle, Int32(labelTag))
@@ -2084,7 +2089,7 @@ extension Document {
 
     /// Open a named transaction on the document.
     ///
-    /// - Parameters: name: Transaction name for identification
+    /// - Parameter name: Transaction name for identification.
     /// - Returns: Transaction number (>= 1 on success), or 0 on error
     @discardableResult
     public func openNamedTransaction(_ name: String) -> Int {
@@ -2113,7 +2118,7 @@ extension Document {
 
     /// Check if a label's references are all contained within its descendants.
     ///
-    /// - Parameters: labelId: The label to check
+    /// - Parameter labelId: The label to check.
     /// - Returns: true if self-contained
     public func isSelfContained(labelId: Int64) -> Bool {
         OCCTDocumentIsSelfContained(handle, labelId)
@@ -2177,7 +2182,7 @@ extension Document {
 
     /// Delete a function from a label.
     ///
-    /// - Parameters: labelId: Label with the function
+    /// - Parameter labelId: Label with the function.
     /// - Returns: true on success
     @discardableResult
     public func deleteFunction(labelId: Int64) -> Bool {
@@ -2186,7 +2191,7 @@ extension Document {
 
     /// Get the execution status of a function.
     ///
-    /// - Parameters: labelId: Label with the function
+    /// - Parameter labelId: Label with the function.
     /// - Returns: The execution status, or nil if no function found
     public func functionExecStatus(labelId: Int64) -> FunctionExecutionStatus? {
         let raw = OCCTDocumentFunctionGetExecStatus(handle, labelId)
@@ -2223,7 +2228,7 @@ extension Document {
 
     /// Add a label to the function scope.
     ///
-    /// - Parameters: labelId: Label to register as a function
+    /// - Parameter labelId: Label to register as a function.
     /// - Returns: true on success
     @discardableResult
     public func functionScopeAdd(labelId: Int64) -> Bool {
@@ -2232,7 +2237,7 @@ extension Document {
 
     /// Remove a label from the function scope.
     ///
-    /// - Parameters: labelId: Label to unregister
+    /// - Parameter labelId: Label to unregister.
     /// - Returns: true on success
     @discardableResult
     public func functionScopeRemove(labelId: Int64) -> Bool {
@@ -2241,7 +2246,7 @@ extension Document {
 
     /// Check if a label is registered in the function scope.
     ///
-    /// - Parameters: labelId: Label to check
+    /// - Parameter labelId: Label to check.
     /// - Returns: true if in scope
     public func functionScopeHas(labelId: Int64) -> Bool {
         OCCTDocumentFunctionScopeHas(handle, labelId)
@@ -2458,7 +2463,13 @@ extension Document {
 
     /// Count the number of assembly items in the document.
     ///
-    /// - Parameters: maxDepth: Maximum traversal depth (0 = unlimited)
+    /// - Parameter maxDepth: Maximum traversal depth (0 = unlimited).
+    /// - Returns: The number of items `XCAFDoc_AssemblyIterator` visits, or `0` if the
+    ///   document is null or OCCT raised.
+    /// - Warning: **The bridge stops counting at 100,001 and returns that as though it
+    ///   were the real total** (#964). A document with more assembly items is reported
+    ///   as 100001, indistinguishable from one that genuinely has that many. Do not
+    ///   treat a result of 100001 as a measurement.
     public func assemblyItemCount(maxDepth: Int = 0) -> Int {
         Int(OCCTDocumentAssemblyItemCount(handle, Int32(maxDepth)))
     }
