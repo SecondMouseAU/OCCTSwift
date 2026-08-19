@@ -907,8 +907,8 @@ OCCTDocumentRef OCCTDocumentLoadSTEPWithModesProgress(const char*               
   try
   {
     document = new OCCTDocument();
-    document->app->NewDocument("MDTV-XCAF", document->doc);
-    if (document->doc.IsNull())
+
+    if (!occtDocumentInit(document))
     {
       delete document;
       return nullptr;
@@ -1554,8 +1554,8 @@ OCCTDocumentRef OCCTDocumentLoadSTEPWithModes(const char* path,
   try
   {
     document = new OCCTDocument();
-    document->app->NewDocument("MDTV-XCAF", document->doc);
-    if (document->doc.IsNull())
+
+    if (!occtDocumentInit(document))
     {
       delete document;
       return nullptr;
