@@ -1252,7 +1252,7 @@ public func addComponent(
 
 ### `addComponent(assemblyLabelId:shapeLabelId:matrix:)`
 
-Add a component with a full rigid placement specified as a 12-element row-major matrix.
+Add a component with a full placement specified as a 12-element GROUPED matrix.
 
 ```swift
 @discardableResult
@@ -1262,10 +1262,19 @@ public func addComponent(assemblyLabelId: Int64, shapeLabelId: Int64, matrix: [D
 - **Parameters:**
   - `assemblyLabelId` — parent assembly label ID.
   - `shapeLabelId` — shape to instantiate.
-  - `matrix` — 12 `Double` values `[r00 r01 r02 r10 r11 r12 r20 r21 r22 tx ty tz]` (row-major rotation + translation). Must be a proper rigid transform — reflections return `-1`.
-- **Returns:** Component label ID, or `-1` on failure or bad matrix.
+  - `matrix` — 12 `Double` values `[r00 r01 r02 r10 r11 r12 r20 r21 r22 tx ty tz]`: the nine rotation values, then the three translations. This is `Matrix12Grouped`'s GROUPED layout, not `TransformMatrix3D`'s INTERLEAVED one.
+- **Returns:** Component label ID, or `-1` if `matrix` does not hold exactly twelve values, or on failure.
 - **OCCT:** `XCAFDoc_ShapeTool::AddComponent` with `TopLoc_Location`.
-- **Note:** The matrix must not be a reflection (det = +1). Build a mirrored product shape separately if mirroring is required.
+- **Note:** A reflection is accepted and applied. This entry said the opposite until #1009 measured it: `gp_Trsf::SetValues` names a null determinant as its only precondition, not orthonormality, and it is compiled inside OCCT's Release library where that precondition is removed outright. Measured against the pinned kernel, a box spanning `x ∈ [1, 11]` placed by a mirror in X spans `[-11, -1]`.
+
+  ```swift
+  doc.addComponent(assemblyLabelId: asmId, shapeLabelId: partId, matrix: [
+      -1, 0, 0,   // negative determinant: a mirror in X
+       0, 1, 0,
+       0, 0, 1,
+       0, 0, 0
+  ])
+  ```
 
 ---
 
