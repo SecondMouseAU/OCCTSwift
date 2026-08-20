@@ -1,0 +1,56 @@
+From: OCCTSwift ecosystem <noreply@secondmouse.au>
+Subject: [PATCH] Data Exchange, XCAF - read the datum point from its own array,
+ not the annotation plane's
+
+XCAFDoc_Datum::GetObject builds the datum's point from aLoc, the array the
+ChildLab_PlaneLoc block above it fills, instead of aPnt, the point's own:
+
+  gp_Pnt aP(aLoc->Value(aPnt->Lower()),
+            aPnt->Value(aPnt->Lower() + 1),
+            aPnt->Value(aPnt->Lower() + 2));
+
+The sibling block in XCAFDoc_GeomTolerance::GetObject is otherwise identical
+and reads aPnt->Value(aPnt->Lower()), so this is a one-character divergence
+rather than a shared idiom.
+
+Two consequences.
+
+A wrong answer when the datum has both. Measured: a datum written with plane
+location (6,6,6) and point (7,7,7) reads back with point (6,7,7). The stored
+point is not recoverable from the returned object.
+
+A null handle dereference when the datum has a point and no plane. aLoc is
+declared before the plane block and assigned only by a successful
+FindAttribute there, so it is still null when the point block runs. Measured:
+SIGSEGV, both in the process that wrote the datum and after saving the same
+document to BinXCAF and reloading it into a fresh TDocStd_Application, so the
+crashing shape survives persistence and any reader of such a file meets it.
+XCAFDimTolObjects_DatumObject's HasPlane and HasPoint are independent flags and
+XCAFDoc_Datum::SetObject writes the two blocks independently, so a
+point-without-plane datum is what the public API produces for that object.
+
+Fix: read the point's own array. Three GTests in the existing
+XCAFDoc_GDT_Test.cxx cover the value with both present, the crash with a point
+and no plane, and a plane with no point as the control, that last being the
+shape STEPCAFControl_Reader produces (it sets a datum plane and never a datum
+point).
+
+SecondMouseAU/OCCTSwift#1022.
+---
+ src/DataExchange/TKXCAF/XCAFDoc/XCAFDoc_Datum.cxx | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/src/DataExchange/TKXCAF/XCAFDoc/XCAFDoc_Datum.cxx b/src/DataExchange/TKXCAF/XCAFDoc/XCAFDoc_Datum.cxx
+index ca4abc714..4b39ca810 100644
+--- a/src/DataExchange/TKXCAF/XCAFDoc/XCAFDoc_Datum.cxx
++++ b/src/DataExchange/TKXCAF/XCAFDoc/XCAFDoc_Datum.cxx
+@@ -436,7 +436,8 @@ occ::handle<XCAFDimTolObjects_DatumObject> XCAFDoc_Datum::GetObject() const
+   if (Label().FindChild(ChildLab_Pnt).FindAttribute(TDataStd_RealArray::GetID(), aPnt)
+       && aPnt->Length() == 3)
+   {
+-    gp_Pnt aP(aLoc->Value(aPnt->Lower()),
++    // aLoc is the annotation plane's array and is null without a plane; read the point's own.
++    gp_Pnt aP(aPnt->Value(aPnt->Lower()),
+               aPnt->Value(aPnt->Lower() + 1),
+               aPnt->Value(aPnt->Lower() + 2));
+     anObj->SetPoint(aP);
