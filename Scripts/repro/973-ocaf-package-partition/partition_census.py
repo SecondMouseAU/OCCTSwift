@@ -210,7 +210,9 @@ GROUP_REASONS = {
         "persistent object model, the schema and stream layer, and the XML DOM the Xml drivers "
         "read through. Eight classes of 342 headers are reached from the bridge, all of them "
         "format-registration entry points. Folding into #813 (#973's own candidate) was rejected "
-        "on measurement: #813's lane is 192 headers and this is 342, which would treble it.",
+        "on measurement: after this partition #813's lane is 192 headers and this is 342, so "
+        "folding would take Pass 4c to 534, nearly three times its size and 45% larger than the "
+        "largest pass in the epic (Pass 4d at 368).",
     ("983", "ocaf-only"):
         "Outside OCCT's ApplicationFramework module, and in this lane because every OCCT package "
         "that references their symbols is an OCAF package, or because they are OCAF attribute "

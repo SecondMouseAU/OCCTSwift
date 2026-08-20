@@ -49,8 +49,9 @@ Thirteen of the 61 were already Pass 3's. The other **48, 459 headers**, were ow
   format, plus the persistent object model, the schema and stream layer, the plugin loader and the
   XML DOM. Eight classes of 342 headers are reached from the bridge and all eight are
   format-registration entry points. **Folding into #813 was rejected on measurement**, which is
-  the candidate #973 itself proposed: #813's lane is 192 headers and this is 342, so folding would
-  treble it and produce a pass 84% larger than the largest in the epic. The subjects also differ.
+  the candidate #973 itself proposed: after this partition #813's lane is 192 headers and this is
+  342, so folding would take Pass 4c to 534, nearly three times its size and 45% larger than the
+  largest pass in the epic (Pass 4d at 368). The subjects also differ.
   #813 audits formats a consumer names and reaches through a wrapped reader or writer; this is one
   format family the consumer never names, reached through `Document.save(format:)`, where the right
   answer for most of 342 headers is one family-level entry in `docs/occtswift-wrapping-gaps.md`.
