@@ -63,7 +63,8 @@ public enum SheetMetal {
             let n = Vector3DMath.normalize(normal) ?? normal
             self.normal = n
             self.vAxis = vAxis ?? Vector3DMath.cross(n, uAxis)
-            self.placement = Placement(origin: origin, xAxis: uAxis, yAxis: self.vAxis, zAxis: normal)
+            self.placement = Placement(
+                origin: origin, xAxis: uAxis, yAxis: self.vAxis, zAxis: normal)
         }
     }
 
@@ -110,22 +111,27 @@ public enum SheetMetal {
         public let fromFlangeID: String
         public let toFlangeID: String
 
-        /// Bend angle in radians. 0 = flat continuation, ±π = closed sheet.
-        /// Positive = concave; negative = convex. `nil` = infer from
+        /// Bend angle in radians.
+        ///
+        /// 0 = flat continuation, ±π = closed sheet. Positive = concave; negative = convex. `nil` = infer from
         /// flange placements.
         public let angle: Double?
 
         /// Inside bend radius (the smaller, concave radius from inside the
-        /// metal). Set to 0 for a sharp inside corner.
+        /// metal).
+        ///
+        /// Set to 0 for a sharp inside corner.
         public let insideRadius: Double
 
         /// Outside bend radius (the larger, convex radius from outside the
-        /// metal). `nil` means use the natural sheet-metal default
-        /// `insideRadius + materialThicknessAtBend`.
+        /// metal).
+        ///
+        /// `nil` means use the natural sheet-metal default `insideRadius + materialThicknessAtBend`.
         public let outsideRadius: Double?
 
-        /// Material thickness through the bend region. `nil` means use the
-        /// Builder's global `thickness`. For etched parts, set to a
+        /// Material thickness through the bend region.
+        ///
+        /// `nil` means use the Builder's global `thickness`. For etched parts, set to a
         /// fraction of the flange thickness.
         public let materialThicknessAtBend: Double?
 
@@ -133,9 +139,9 @@ public enum SheetMetal {
         public let direction: BendDirection
 
         /// Backward-compatible init from v0.151+: `radius` becomes the
-        /// inside bend radius. Outside radius defaults to
-        /// `radius + thickness` (the sheet-metal-physics default).
-        /// Direction is inferred.
+        /// inside bend radius.
+        ///
+        /// Outside radius defaults to `radius + thickness` (the sheet-metal-physics default). Direction is inferred.
         public init(from fromID: String, to toID: String, radius: Double) {
             self.fromFlangeID = fromID
             self.toFlangeID = toID
@@ -166,8 +172,9 @@ public enum SheetMetal {
         }
 
         /// Legacy alias — the `radius` you'd have passed to the
-        /// pre-v0.155 init. Equal to `insideRadius`. Deprecated callers
-        /// retain access without a migration. New callers should use the
+        /// pre-v0.155 init.
+        ///
+        /// Equal to `insideRadius`. Deprecated callers retain access without a migration. New callers should use the
         /// explicit `insideRadius`/`outsideRadius` fields.
         public var radius: Double { insideRadius }
     }
@@ -205,13 +212,16 @@ public enum SheetMetal {
             case .parallelFlangesHaveNoSeam(let a, let b):
                 return "SheetMetal: flanges '\(a)' and '\(b)' are parallel — no bend seam"
             case .noSeamEdgeFound(let a, let b):
-                return "SheetMetal: no shared seam edge found between '\(a)' and '\(b)' — check flange placement"
+                return
+                    "SheetMetal: no shared seam edge found between '\(a)' and '\(b)' — check flange placement"
             case .filletFailed(let a, let b, let r):
                 return "SheetMetal: fillet of radius \(r) between '\(a)' and '\(b)' failed"
             case .seamsDoNotOverlap(let a, let b):
-                return "SheetMetal: flanges '\(a)' and '\(b)' have no overlap along the seam direction"
+                return
+                    "SheetMetal: flanges '\(a)' and '\(b)' have no overlap along the seam direction"
             case .nonRectangularStepFlange(let id):
-                return "SheetMetal: flange '\(id)' has a stepped seam but a non-rectangular profile; step-aware bends require rectangular profiles in v0.153"
+                return
+                    "SheetMetal: flange '\(id)' has a stepped seam but a non-rectangular profile; step-aware bends require rectangular profiles in v0.153"
             }
         }
     }
@@ -279,14 +289,15 @@ public enum SheetMetal {
             // the bend so the post-union fillet only targets that piece's
             // seam edges.
             var pieces: [Flange] = []
-            var matchedPieceID: [Int: (a: String, b: String)] = [:] // bend index → matched piece ids
+            var matchedPieceID: [Int: (a: String, b: String)] = [:]
             for f in flanges {
                 let splits = Self.collectSplitsFor(flange: f, bendInfos: bendInfos)
                 if splits.isEmpty {
                     pieces.append(f)
-                    Self.recordMatched(for: f.id, asPieceID: f.id,
-                                        bendInfos: bendInfos,
-                                        matchedPieceID: &matchedPieceID)
+                    Self.recordMatched(
+                        for: f.id, asPieceID: f.id,
+                        bendInfos: bendInfos,
+                        matchedPieceID: &matchedPieceID)
                     continue
                 }
                 let split = try Self.splitFlange(f, splitsAlong: splits, bendInfos: bendInfos)
@@ -334,7 +345,8 @@ public enum SheetMetal {
                 let aID = matchedPieceID[i]?.a ?? bend.fromFlangeID
                 let bID = matchedPieceID[i]?.b ?? bend.toFlangeID
                 guard let aPiece = pieces.first(where: { $0.id == aID }),
-                      let bPiece = pieces.first(where: { $0.id == bID }) else {
+                    let bPiece = pieces.first(where: { $0.id == bID })
+                else {
                     throw BuildError.unknownFlangeID(aID)
                 }
 
@@ -359,8 +371,10 @@ public enum SheetMetal {
                         throw BuildError.noSeamEdgeFound(
                             fromID: bend.fromFlangeID, toID: bend.toFlangeID)
                     }
-                    guard let filleted = fused.filleted(
-                        edges: seamEdges, radius: bend.insideRadius) else {
+                    guard
+                        let filleted = fused.filleted(
+                            edges: seamEdges, radius: bend.insideRadius)
+                    else {
                         throw BuildError.filletFailed(
                             fromID: bend.fromFlangeID, toID: bend.toFlangeID,
                             radius: bend.insideRadius)
@@ -368,12 +382,13 @@ public enum SheetMetal {
                     fused = filleted
 
                 case .convex:
-                    guard let bendMaterial = Self.buildConvexBendMaterial(
-                        bend: bend,
-                        a: aPiece, b: bPiece,
-                        bendIntersection: bendInfos[i],
-                        seamUnit: seamUnit,
-                        thickness: thickness)
+                    guard
+                        let bendMaterial = Self.buildConvexBendMaterial(
+                            bend: bend,
+                            a: aPiece, b: bPiece,
+                            bendIntersection: bendInfos[i],
+                            seamUnit: seamUnit,
+                            thickness: thickness)
                     else {
                         throw BuildError.filletFailed(
                             fromID: bend.fromFlangeID, toID: bend.toFlangeID,
@@ -395,10 +410,10 @@ public enum SheetMetal {
             return Shape.extrude(profile: wire, direction: flange.normal, length: thickness)
         }
 
-        /// Resolve the bend direction. If the user pinned a direction
-        /// explicitly, honour it. Otherwise infer from flange-body
-        /// positions: a bend is concave when b's body centroid sits on
-        /// a's `+normal` side (the two flanges' bodies overlap in volume
+        /// Resolve the bend direction.
+        ///
+        /// If the user pinned a direction explicitly, honour it. Otherwise infer from flange-body
+        /// positions: a bend is concave when b's body centroid sits on a's `+normal` side (the two flanges' bodies overlap in volume
         /// around the seam, like an L-bracket); convex otherwise.
         fileprivate static func resolvedDirection(
             bend: Bend,
@@ -467,8 +482,9 @@ public enum SheetMetal {
             // Simpler approach: walk a's profile edges and find the one
             // whose worldPoints are on the seam line (parallel to
             // seamUnit).
-            guard let (kissStart, kissEnd) = seamSegment(
-                of: a, seamUnit: seamUnit, otherFlange: b, tolerance: 1e-4)
+            guard
+                let (kissStart, kissEnd) = seamSegment(
+                    of: a, seamUnit: seamUnit, otherFlange: b, tolerance: 1e-4)
             else { return nil }
 
             // Flange-a outer face direction = `+a.normal` displaced by
@@ -539,8 +555,9 @@ public enum SheetMetal {
         }
 
         /// Build a 3-point arc wire (start → mid → end) using OCCT's
-        /// `GC_MakeArcOfCircle`. The midpoint determines the arc's
-        /// curvature direction.
+        /// `GC_MakeArcOfCircle`.
+        ///
+        /// The midpoint determines the arc's curvature direction.
         fileprivate static func arcWireThroughThreePoints(
             start: SIMD3<Double>,
             mid: SIMD3<Double>,
@@ -550,6 +567,7 @@ public enum SheetMetal {
         }
 
         /// Find the seam segment for flange `a` opposite flange `b`.
+        ///
         /// Returns the two endpoints of the kiss line in 3D.
         ///
         /// Walks `a`'s profile end-edge (the edge of the profile that
@@ -615,8 +633,10 @@ public enum SheetMetal {
             // is farther from (i.e., the face the other flange sits beside).
             let midA = bodyMidpoint(of: a, thickness: thickness)
             let midB = bodyMidpoint(of: b, thickness: thickness)
-            let aTowardB: Double = Vector3DMath.dot(midB - a.origin, a.normal) > thickness * 0.5 ? thickness : 0
-            let bTowardA: Double = Vector3DMath.dot(midA - b.origin, b.normal) > thickness * 0.5 ? thickness : 0
+            let aTowardB: Double =
+                Vector3DMath.dot(midB - a.origin, a.normal) > thickness * 0.5 ? thickness : 0
+            let bTowardA: Double =
+                Vector3DMath.dot(midA - b.origin, b.normal) > thickness * 0.5 ? thickness : 0
 
             return shape.edges().filter { edge in
                 guard edge.isLine else { return false }
@@ -674,11 +694,13 @@ public enum SheetMetal {
         }
 
         /// Compute seam direction and intersection range between two
-        /// rectangular flanges. Falls back to "no split needed" when the
-        /// seam direction doesn't align with either flange's u or v axis —
-        /// that case continues to use the v0.151 single-fillet path with no
-        /// flange splitting.
-        fileprivate static func intersect(bend: Bend, a: Flange, b: Flange) throws -> BendIntersection {
+        /// rectangular flanges.
+        ///
+        /// Falls back to "no split needed" when the seam direction doesn't align with either flange's u or v axis —
+        /// that case continues to use the v0.151 single-fillet path with no flange splitting.
+        fileprivate static func intersect(bend: Bend, a: Flange, b: Flange) throws
+            -> BendIntersection
+        {
             let seamDir = Vector3DMath.cross(a.normal, b.normal)
             guard let seamUnit = Vector3DMath.normalize(seamDir) else {
                 throw BuildError.parallelFlangesHaveNoSeam(
@@ -743,13 +765,15 @@ public enum SheetMetal {
 
         private static func axisParallel(_ a: SIMD3<Double>, to b: SIMD3<Double>) -> Bool {
             guard let an = Vector3DMath.normalize(a),
-                  let bn = Vector3DMath.normalize(b) else { return false }
+                let bn = Vector3DMath.normalize(b)
+            else { return false }
             return abs(abs(Vector3DMath.dot(an, bn)) - 1.0) < 1e-6
         }
 
         /// Range of the rectangular profile along its u-axis (if `alongU`)
-        /// or v-axis (otherwise). For a 4-vertex rectangle with axis-
-        /// aligned edges, this is just `[min, max]` of the corresponding
+        /// or v-axis (otherwise).
+        ///
+        /// For a 4-vertex rectangle with axis-aligned edges, this is just `[min, max]` of the corresponding
         /// component.
         private static func profileRange(of f: Flange, alongU: Bool) -> ClosedRange<Double> {
             let coords: [Double] = alongU ? f.profile.map(\.x) : f.profile.map(\.y)
@@ -757,8 +781,9 @@ public enum SheetMetal {
         }
 
         /// For a flange, return the split coordinates along whichever axis
-        /// the bends' seams are aligned with. Splits are added at any
-        /// bend's intersection endpoint that falls strictly inside the
+        /// the bends' seams are aligned with.
+        ///
+        /// Splits are added at any bend's intersection endpoint that falls strictly inside the
         /// flange's seam range. Sorted, deduplicated.
         fileprivate static func collectSplitsFor(
             flange f: Flange,
@@ -797,7 +822,8 @@ public enum SheetMetal {
             bendInfos: [BendIntersection]
         ) throws -> SplitResult {
             guard f.profile.count == 4,
-                  Self.isAxisAlignedRect(f.profile) else {
+                Self.isAxisAlignedRect(f.profile)
+            else {
                 throw BuildError.nonRectangularStepFlange(id: f.id)
             }
             let uMin = f.profile.map(\.x).min()!
@@ -817,14 +843,17 @@ public enum SheetMetal {
                 }
 
             var pieces: [Flange] = []
-            var pieceCells: [(piece: Flange, uRange: ClosedRange<Double>, vRange: ClosedRange<Double>)] = []
+            var pieceCells:
+                [(piece: Flange, uRange: ClosedRange<Double>, vRange: ClosedRange<Double>)] = []
             var first = true
             for i in 0..<(uCuts.count - 1) {
                 for j in 0..<(vCuts.count - 1) {
-                    let u0 = uCuts[i], u1 = uCuts[i + 1]
-                    let v0 = vCuts[j], v1 = vCuts[j + 1]
+                    let u0 = uCuts[i]
+                    let u1 = uCuts[i + 1]
+                    let v0 = vCuts[j]
+                    let v1 = vCuts[j + 1]
                     let pieceProfile: [SIMD2<Double>] = [
-                        SIMD2(u0, v0), SIMD2(u1, v0), SIMD2(u1, v1), SIMD2(u0, v1)
+                        SIMD2(u0, v0), SIMD2(u1, v0), SIMD2(u1, v1), SIMD2(u0, v1),
                     ]
                     let pieceID = first ? f.id : "\(f.id)__split_\(i)_\(j)"
                     first = false
@@ -851,8 +880,9 @@ public enum SheetMetal {
                 let intersection = touchesAsA ? info.aIntersection : info.bIntersection
                 for cell in pieceCells {
                     let cellRange = alongU ? cell.uRange : cell.vRange
-                    if abs(cellRange.lowerBound - intersection.lowerBound) < 1e-9 &&
-                        abs(cellRange.upperBound - intersection.upperBound) < 1e-9 {
+                    if abs(cellRange.lowerBound - intersection.lowerBound) < 1e-9
+                        && abs(cellRange.upperBound - intersection.upperBound) < 1e-9
+                    {
                         matchedByBend[i] = cell.piece.id
                         break
                     }
