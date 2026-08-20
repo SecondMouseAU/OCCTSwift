@@ -22,6 +22,12 @@ bounding-box accessors becoming Optional so a void shape stops fabricating `(0,0
 ## Unreleased
 
 
+### `setDimensionBounds` refuses a plus/minus dimension instead of corrupting it (#996)
+
+`Document.setDimensionBounds(at:lower:upper:)` returned `true` on a dimension that already carried plus/minus tolerances, while leaving it in a state matching neither the request nor the original: the requested upper bound was stored as the lower tolerance, the original upper tolerance survived, and `bounds` stayed `.plusMinus` rather than becoming the documented `.range`. It now returns `false` and leaves the dimension untouched. Converting a dimension that has no tolerances is unchanged.
+
+
+
 ### `Shape.wireFromEdges` and `Shape.shellFromFaces` no longer crash on a null or wrong-typed shape (#1008)
 
 Both entry points cast every element they are handed with `TopoDS::Edge` / `TopoDS::Face` and passed
