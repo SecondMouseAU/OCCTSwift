@@ -7661,11 +7661,11 @@ bool OCCTCurve2DBezierReverse(OCCTCurve2DRef curve)
 // OCCTCurve2DTranslate/Rotate/Scale/MirrorAxis/MirrorPoint family that returns a transformed
 // copy. Both build the same five transformations; each family built them its own way, so the
 // two could drift, and had already drifted on the null guard below. They share this builder now,
-// mirroring buildTrsf3D in OCCTBridge_Curve3D.mm / OCCTBridge_Surface.mm.
+// mirroring occtBuildTrsf3D, which the two 3D families share from OCCTBridge_Internal.h (#995).
 //
 // The scale case is the only one whose construction changes. The dispatcher used to compose it
 // by hand as SetScaleFactor(S) + SetTranslationPart(C * (1 - S)); gp_Trsf2d::SetScale(C, S) is
-// what the immutable family reached through Geom2d_Geometry::Scale, and what buildTrsf3D uses.
+// what the immutable family reached through Geom2d_Geometry::Scale, and what occtBuildTrsf3D uses.
 // Verified equivalent before switching, over factors {2.5, 0.25, 1, -1, -3, 0, 1e-9, 1e9} x three
 // centres including (1e6, 1e-6): identical ScaleFactor(), identical TranslationPart(), identical
 // transformed coordinates, to the bit. The two disagree only on the internal gp_TrsfForm tag at

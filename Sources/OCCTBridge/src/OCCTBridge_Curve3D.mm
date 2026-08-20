@@ -726,18 +726,9 @@ int32_t OCCTCurve3DGetDegree(OCCTCurve3DRef c)
 
 // Operations
 
-// Shared gp_Trsf builder (defined below, near OCCTCurve3DTransform); forward-declared here so
-// the immutable translate/rotate/scale/mirror* family can reuse the same transform-construction
-// logic as the in-place OCCTCurve3DTransform dispatcher instead of duplicating it.
-static bool buildTrsf3D(gp_Trsf& trsf,
-                        int32_t  type,
-                        double   p1,
-                        double   p2,
-                        double   p3,
-                        double   p4,
-                        double   p5,
-                        double   p6,
-                        double   p7);
+// #995: the discriminated gp_Trsf builder both this file's transform families used to define for
+// themselves is occtBuildTrsf3D in OCCTBridge_Internal.h, shared with OCCTBridge_Surface.mm, which
+// carried a byte-identical copy.
 
 OCCTCurve3DRef OCCTCurve3DTrim(OCCTCurve3DRef c, double u1, double u2)
 {
@@ -779,7 +770,7 @@ OCCTCurve3DRef OCCTCurve3DTranslate(OCCTCurve3DRef c, double dx, double dy, doub
   {
     Handle(Geom_Curve) copy = Handle(Geom_Curve)::DownCast(c->curve->Copy());
     gp_Trsf            t;
-    if (!buildTrsf3D(t, 0, dx, dy, dz, 0, 0, 0, 0))
+    if (!occtBuildTrsf3D(t, 0, dx, dy, dz, 0, 0, 0, 0))
       return nullptr;
     copy->Transform(t);
     return new OCCTCurve3D(copy);
@@ -805,7 +796,7 @@ OCCTCurve3DRef OCCTCurve3DRotate(OCCTCurve3DRef c,
   {
     Handle(Geom_Curve) copy = Handle(Geom_Curve)::DownCast(c->curve->Copy());
     gp_Trsf            t;
-    if (!buildTrsf3D(t, 1, axisOx, axisOy, axisOz, axisDx, axisDy, axisDz, angle))
+    if (!occtBuildTrsf3D(t, 1, axisOx, axisOy, axisOz, axisDx, axisDy, axisDz, angle))
       return nullptr;
     copy->Transform(t);
     return new OCCTCurve3D(copy);
@@ -824,7 +815,7 @@ OCCTCurve3DRef OCCTCurve3DScale(OCCTCurve3DRef c, double cx, double cy, double c
   {
     Handle(Geom_Curve) copy = Handle(Geom_Curve)::DownCast(c->curve->Copy());
     gp_Trsf            t;
-    if (!buildTrsf3D(t, 2, cx, cy, cz, factor, 0, 0, 0))
+    if (!occtBuildTrsf3D(t, 2, cx, cy, cz, factor, 0, 0, 0))
       return nullptr;
     copy->Transform(t);
     return new OCCTCurve3D(copy);
@@ -843,7 +834,7 @@ OCCTCurve3DRef OCCTCurve3DMirrorPoint(OCCTCurve3DRef c, double px, double py, do
   {
     Handle(Geom_Curve) copy = Handle(Geom_Curve)::DownCast(c->curve->Copy());
     gp_Trsf            t;
-    if (!buildTrsf3D(t, 3, px, py, pz, 0, 0, 0, 0))
+    if (!occtBuildTrsf3D(t, 3, px, py, pz, 0, 0, 0, 0))
       return nullptr;
     copy->Transform(t);
     return new OCCTCurve3D(copy);
@@ -868,7 +859,7 @@ OCCTCurve3DRef OCCTCurve3DMirrorAxis(OCCTCurve3DRef c,
   {
     Handle(Geom_Curve) copy = Handle(Geom_Curve)::DownCast(c->curve->Copy());
     gp_Trsf            t;
-    if (!buildTrsf3D(t, 4, px, py, pz, dx, dy, dz, 0))
+    if (!occtBuildTrsf3D(t, 4, px, py, pz, dx, dy, dz, 0))
       return nullptr;
     copy->Transform(t);
     return new OCCTCurve3D(copy);
@@ -893,7 +884,7 @@ OCCTCurve3DRef OCCTCurve3DMirrorPlane(OCCTCurve3DRef c,
   {
     Handle(Geom_Curve) copy = Handle(Geom_Curve)::DownCast(c->curve->Copy());
     gp_Trsf            t;
-    if (!buildTrsf3D(t, 5, px, py, pz, nx, ny, nz, 0))
+    if (!occtBuildTrsf3D(t, 5, px, py, pz, nx, ny, nz, 0))
       return nullptr;
     copy->Transform(t);
     return new OCCTCurve3D(copy);
@@ -8668,41 +8659,6 @@ bool OCCTCurve3DBezierSetPoleWithWeight(OCCTCurve3DRef curve,
 
 // --- Geometry Transform (in-place) ---
 
-static bool buildTrsf3D(gp_Trsf& trsf,
-                        int32_t  type,
-                        double   p1,
-                        double   p2,
-                        double   p3,
-                        double   p4,
-                        double   p5,
-                        double   p6,
-                        double   p7)
-{
-  switch (type)
-  {
-    case 0: // translation (dx, dy, dz)
-      trsf.SetTranslation(gp_Vec(p1, p2, p3));
-      return true;
-    case 1: // rotation (ox, oy, oz, dx, dy, dz, angle)
-      trsf.SetRotation(gp_Ax1(gp_Pnt(p1, p2, p3), gp_Dir(p4, p5, p6)), p7);
-      return true;
-    case 2: // scale (cx, cy, cz, factor)
-      trsf.SetScale(gp_Pnt(p1, p2, p3), p4);
-      return true;
-    case 3: // mirror point (px, py, pz)
-      trsf.SetMirror(gp_Pnt(p1, p2, p3));
-      return true;
-    case 4: // mirror axis (ox, oy, oz, dx, dy, dz)
-      trsf.SetMirror(gp_Ax1(gp_Pnt(p1, p2, p3), gp_Dir(p4, p5, p6)));
-      return true;
-    case 5: // mirror plane (ox, oy, oz, nx, ny, nz)
-      trsf.SetMirror(gp_Ax2(gp_Pnt(p1, p2, p3), gp_Dir(p4, p5, p6)));
-      return true;
-    default:
-      return false;
-  }
-}
-
 bool OCCTCurve3DTransform(OCCTCurve3DRef curve,
                           int32_t        transformType,
                           double         p1,
@@ -8718,7 +8674,7 @@ bool OCCTCurve3DTransform(OCCTCurve3DRef curve,
   try
   {
     gp_Trsf trsf;
-    if (!buildTrsf3D(trsf, transformType, p1, p2, p3, p4, p5, p6, p7))
+    if (!occtBuildTrsf3D(trsf, transformType, p1, p2, p3, p4, p5, p6, p7))
       return false;
     curve->curve->Transform(trsf);
     return true;

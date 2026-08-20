@@ -2918,4 +2918,66 @@ inline TopLoc_Location occtLocationFromMatrix12Interleaved(const double* m)
   return TopLoc_Location(occtTrsfFromMatrix12Interleaved(m));
 }
 
+// === #995: one discriminated gp_Trsf builder for the 3D transform families ===
+//
+// OCCTBridge_Curve3D.mm and OCCTBridge_Surface.mm each defined this, forward-declared near the top
+// of the file and defined next to their own in-place transform dispatcher, with byte-identical
+// bodies. Each file's copy served seven call sites: the dispatcher (OCCTCurve3DTransform /
+// OCCTSurfaceTransform, which take the type selector straight from Swift) and the six immutable
+// translate/rotate/scale/mirror-point/mirror-axis/mirror-plane entry points. Two files, so the
+// builder lives here rather than static in either (#943, #957).
+//
+// The type codes are the bridge's own public contract, documented on OCCTCurve3DTransform in
+// OCCTBridge_Curve3D.h and referenced by OCCTSurfaceTransform in OCCTBridge_Surface.h; do not
+// renumber them. OCCTBridge_Geom2d.mm's buildTrsf2D is the 2D sibling and shares codes 0-4, but it
+// builds gp_Trsf2d from four doubles rather than gp_Trsf from seven and has exactly one file's
+// worth of call sites, so it stays static there (#478).
+//
+// #345: this constructs gp_Dir/gp_Ax1/gp_Ax2 from caller-supplied doubles, and gp_Dir's
+// constructor throws Standard_ConstructionError for a zero-length direction. It is safe without
+// its own try only because every one of the fourteen call sites already runs inside its function's
+// own try/catch, which is what the #345 sweep measured and left it alone for. Keep that true: a
+// caller that reaches this from outside a try turns a degenerate axis into a std::terminate.
+
+#include <gp_Ax2.hxx>
+#include <gp_Trsf.hxx>
+#include <gp_Vec.hxx>
+
+/// Build `trsf` as the transform named by `type`, reading as many of `p1`..`p7` as that type
+/// takes. Returns false, leaving `trsf` untouched, for any other `type`.
+inline bool occtBuildTrsf3D(gp_Trsf& trsf,
+                            int32_t  type,
+                            double   p1,
+                            double   p2,
+                            double   p3,
+                            double   p4,
+                            double   p5,
+                            double   p6,
+                            double   p7)
+{
+  switch (type)
+  {
+    case 0: // translation (dx, dy, dz)
+      trsf.SetTranslation(gp_Vec(p1, p2, p3));
+      return true;
+    case 1: // rotation (ox, oy, oz, dx, dy, dz, angle)
+      trsf.SetRotation(gp_Ax1(gp_Pnt(p1, p2, p3), gp_Dir(p4, p5, p6)), p7);
+      return true;
+    case 2: // scale (cx, cy, cz, factor)
+      trsf.SetScale(gp_Pnt(p1, p2, p3), p4);
+      return true;
+    case 3: // mirror point (px, py, pz)
+      trsf.SetMirror(gp_Pnt(p1, p2, p3));
+      return true;
+    case 4: // mirror axis (ox, oy, oz, dx, dy, dz)
+      trsf.SetMirror(gp_Ax1(gp_Pnt(p1, p2, p3), gp_Dir(p4, p5, p6)));
+      return true;
+    case 5: // mirror plane (ox, oy, oz, nx, ny, nz)
+      trsf.SetMirror(gp_Ax2(gp_Pnt(p1, p2, p3), gp_Dir(p4, p5, p6)));
+      return true;
+    default:
+      return false;
+  }
+}
+
 #endif /* OCCTBridge_Internal_h */
