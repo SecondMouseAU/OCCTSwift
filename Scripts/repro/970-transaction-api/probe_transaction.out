@@ -1,0 +1,49 @@
+--- A: default undo limit (0) ---
+fresh                 | HasOpenCommand=0 | bridgeFlagExpr=0 | Data->Transaction()=0 | Data->Time()=0 | undoLimit=0 | undos=0
+after OpenCommand     | HasOpenCommand=0 | bridgeFlagExpr=0 | Data->Transaction()=0 | Data->Time()=0 | undoLimit=0 | undos=0
+after CommitCommand   | HasOpenCommand=0 | bridgeFlagExpr=0 | Data->Transaction()=0 | Data->Time()=0 | undoLimit=0 | undos=0
+--- B: undo limit 10, flat ---
+fresh                 | HasOpenCommand=0 | bridgeFlagExpr=0 | Data->Transaction()=0 | Data->Time()=0 | undoLimit=10 | undos=0
+after OpenCommand     | HasOpenCommand=1 | bridgeFlagExpr=1 | Data->Transaction()=1 | Data->Time()=0 | undoLimit=10 | undos=0
+after CommitCommand   | HasOpenCommand=0 | bridgeFlagExpr=0 | Data->Transaction()=0 | Data->Time()=1 | undoLimit=10 | undos=1
+after NewCommand      | HasOpenCommand=1 | bridgeFlagExpr=1 | Data->Transaction()=1 | Data->Time()=1 | undoLimit=10 | undos=1
+after AbortCommand    | HasOpenCommand=0 | bridgeFlagExpr=0 | Data->Transaction()=0 | Data->Time()=1 | undoLimit=10 | undos=1
+--- C: undo limit 10, nested transaction mode ---
+fresh nested          | HasOpenCommand=0 | bridgeFlagExpr=0 | Data->Transaction()=0 | Data->Time()=0 | undoLimit=10 | undos=0
+open #1               | HasOpenCommand=1 | bridgeFlagExpr=1 | Data->Transaction()=1 | Data->Time()=0 | undoLimit=10 | undos=0
+open #2 (nested)      | HasOpenCommand=1 | bridgeFlagExpr=1 | Data->Transaction()=1 | Data->Time()=0 | undoLimit=10 | undos=0
+open #3 (nested)      | HasOpenCommand=1 | bridgeFlagExpr=1 | Data->Transaction()=1 | Data->Time()=0 | undoLimit=10 | undos=0
+commit (1 of 3)       | HasOpenCommand=1 | bridgeFlagExpr=1 | Data->Transaction()=1 | Data->Time()=0 | undoLimit=10 | undos=0
+commit (2 of 3)       | HasOpenCommand=1 | bridgeFlagExpr=1 | Data->Transaction()=1 | Data->Time()=0 | undoLimit=10 | undos=0
+commit (3 of 3)       | HasOpenCommand=0 | bridgeFlagExpr=0 | Data->Transaction()=0 | Data->Time()=0 | undoLimit=10 | undos=0
+--- D: a second OpenCommand without nested mode ---
+open #1               | HasOpenCommand=1 | bridgeFlagExpr=1 | Data->Transaction()=1 | Data->Time()=0 | undoLimit=10 | undos=0
+open #2 threw: TDocStd_Document::OpenCommand : already open
+after the throw       | HasOpenCommand=1 | bridgeFlagExpr=1 | Data->Transaction()=1 | Data->Time()=0 | undoLimit=10 | undos=0
+--- E: raw TDF_Transaction stack on the document's own TDF_Data ---
+doc open              | HasOpenCommand=1 | bridgeFlagExpr=1 | Data->Transaction()=1 | Data->Time()=0 | undoLimit=10 | undos=0
+t1.Open() -> 2 name='outer' Data->Transaction()=2 HasOpenCommand=1
+t2.Open() -> 3 name='inner' Data->Transaction()=3 HasOpenCommand=1
+after aborting t2,t1  | HasOpenCommand=1 | bridgeFlagExpr=1 | Data->Transaction()=1 | Data->Time()=0 | undoLimit=10 | undos=0
+--- F: where a transaction name can live ---
+delta name before SetName = ''
+delta name after  SetName = 'add part'
+delta BeginTime=0 EndTime=1 Data->Time()=1
+--- G: does Data->Time() advance per committed transaction? ---
+before open #0 Time()=0 Transaction()=0
+before open #1 Time()=1 Transaction()=0
+before open #2 Time()=2 Transaction()=0
+before open #3 Time()=3 Transaction()=0
+after 4 commits Time()=4 undos=4
+after Undo      Time()=3 undos=3 redos=1
+after Redo      Time()=4 undos=4 redos=0
+--- H: empty transaction (nothing changed) ---
+empty commit returned 0 Time() 4 -> 4 undos=4
+--- I: what OCCTDocumentCommitWithDelta actually does ---
+before: HasOpenCommand=1 undos=0
+after SetUndoLimit(100): HasOpenCommand=0 undos=1
+CommitCommand() -> 0 undos=1   (the bridge returns nullptr when this is false)
+--- J: does a delta name survive undo and redo? ---
+undo delta name = 'add part'
+after Undo, redo delta name = 'add part'
+after Redo, undo delta name = 'add part'

@@ -2087,16 +2087,20 @@ extension Document {
 
 extension Document {
 
-    /// Open a named transaction on the document.
+    /// Open a transaction whose name is recorded on the delta its commit produces.
     ///
-    /// - Parameter name: Transaction name for identification.
-    /// - Returns: Transaction number (>= 1 on success), or 0 on error
+    /// - Parameter name: Name to record on the committed transaction, readable afterwards as
+    ///   `TransactionDelta.name`.
+    /// - Returns: The number of the transaction just opened, or 0 if none opened.
     @discardableResult
     public func openNamedTransaction(_ name: String) -> Int {
         Int(OCCTDocumentOpenNamedTransaction(handle, name))
     }
 
-    /// Get the current transaction number.
+    /// The number of the currently open transaction, or 0 when none is open.
+    ///
+    /// A document holds at most one transaction, so this is never greater than 1; use
+    /// `hasOpenTransaction` when the open/closed state is all that is wanted.
     public var transactionNumber: Int {
         Int(OCCTDocumentGetTransactionNumber(handle))
     }

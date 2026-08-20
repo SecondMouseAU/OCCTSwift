@@ -21,6 +21,7 @@
 
 #include <algorithm>
 #include <mutex>
+#include <string>
 #include <vector>
 
 // === Foundation OCCT headers ===
@@ -165,6 +166,14 @@ struct OCCTDocument
   // leak into another's. Each OCCTDocument owns its own scope instead; the WithValid
   // ctor arg matches the shared instance's prior behavior (map-defined scope).
   TNaming_Scope namingScope{true};
+
+  // #970: the name handed to OCCTDocumentOpenNamedTransaction, held until the commit that can
+  // record it. TDocStd_Document::OpenCommand takes no name and the document's own TDF_Transaction
+  // is named "UNDO" at construction with no setter, so an open transaction has nowhere to carry
+  // one. OCCT puts a caller-supplied transaction name on the committed TDF_Delta instead. Empty
+  // when no named transaction is open; see occtApplyPendingTransactionName in
+  // OCCTBridge_Document.mm.
+  std::string pendingTransactionName;
 
   OCCTDocument() { app = new TDocStd_Application(); }
 

@@ -3587,7 +3587,9 @@ struct TDFTransactionNamedTests {
         if let node = doc.createLabel() {
             node.setInteger(42)
         }
-        if let delta = doc.commitWithDelta() {
+        let delta = doc.commitWithDelta()
+        #expect(delta != nil)
+        if let delta {
             #expect(!delta.isEmpty)
             #expect(delta.attributeDeltaCount >= 1)
             #expect(delta.beginTime >= 0)
@@ -3602,10 +3604,11 @@ struct TDFTransactionNamedTests {
         if let node = doc.createLabel() {
             node.setInteger(99)
         }
-        if let delta = doc.commitWithDelta() {
+        let delta = doc.commitWithDelta()
+        #expect(delta != nil)
+        if let delta {
             delta.setName("MyDelta")
-            let name = delta.name
-            #expect(name == "MyDelta")
+            #expect(delta.name == "MyDelta")
         }
     }
 }
