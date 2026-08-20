@@ -2310,8 +2310,8 @@ int32_t OCCTDocumentPresentationGetMode(OCCTDocumentRef _Nonnull doc, int64_t la
 /// `outTruncated` is set true when that bound is reached, in which case the return value is a
 /// floor rather than a count (#964). Pass NULL if you do not care.
 int32_t OCCTDocumentAssemblyItemCount(OCCTDocumentRef _Nonnull doc,
-                                      int32_t                  maxDepth,
-                                      bool* _Nullable          outTruncated);
+                                      int32_t maxDepth,
+                                      bool* _Nullable outTruncated);
 
 // MARK: - XCAFDoc_DimTol (v0.90.0)
 
