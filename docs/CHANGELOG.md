@@ -21,6 +21,261 @@ bounding-box accessors becoming Optional so a void shape stops fabricating `(0,0
 
 ## Unreleased
 
+### One 2D-to-3D lifting formula instead of three (#972)
+
+`Placement.lift(_:)` is the single implementation of "map a 2D point through this placement's basis".
+It replaces `Sketch`'s private `lift(_:with:)`, `SheetMetal.Flange.worldPoint(_:)` and an inline
+`map` in `FeatureReconstructor.applyExtrude`, all three of which computed
+`origin + x * xAxis + y * yAxis` independently.
+
+```swift
+let plane = Placement(origin: SIMD3(1, 2, 3), normal: SIMD3(0, 0, 1))
+let corner = plane.lift(SIMD2(4, 5))
+```
+
+No behaviour change to any of the three call sites. `Flange` gains an internal `placement`, built
+once in its initialiser rather than per point, and deliberately not public: `Placement` documents an
+orthonormal basis, and `Flange` lets a caller supply any `uAxis`/`vAxis` by its own documented
+design, so the frame it carries is not one a caller may treat as unit.
+
+
+### `DraftInfo` is removed (#1000)
+
+`DraftInfo`'s six members never read the caller's input. Five constructed a default
+`Draft_EdgeInfo` / `Draft_FaceInfo` / `Draft_VertexInfo`, read one property off that throwaway and
+returned it, so `edgeInfoNewGeometry`, `faceInfoNewGeometry` and `vertexInfoGeometry` were
+constants; `edgeInfoSetTangent(direction:)` ignored the direction and returned a value that was
+trivially `true`; `faceInfoFromSurface(_:)` performed no `RootFace` check, only reporting whether
+the constructor threw; and `vertexInfoAddParameter(_:)` echoed its argument.
+
+There is no replacement, and none is possible through OCCT's public API: `Draft_Modification` is the
+only class that populates `Draft_*Info` objects, and it holds them in private members with no
+accessor. Real draft introspection would need an upstream kernel change, not a wrapper fix. Delete
+any call; every one of the six had a fixed answer.
+
+
+
+### `Drawing.project(_:direction:type:)` honours `.perspective` (#999)
+
+`Drawing.ProjectionType.perspective` was accepted and discarded: `OCCTDrawingCreate` declared the
+projection type and never read it, so every perspective request returned the orthographic
+projection with no error. It now builds `HLRAlgo_Projector(gp_Ax2, Focus)`, and `ProjectionType`
+carries the focal distance the perspective constructor requires:
+
+```swift
+let box = Shape.box(width: 100, height: 50, depth: 30)!
+// The near face is 15 units towards the eye, so it projects 50/(50-15) = 1.4286x larger.
+let near = Drawing.project(box, direction: SIMD3(0, 0, 1), type: .perspective(focus: 50))
+```
+
+`ProjectionType` is no longer `UInt32`-backed, and `.perspective` now takes a `focus:`. A focal
+distance that is not strictly positive returns `nil` rather than a projection: OCCT raises nothing
+for one, returning either an empty result (zero) or a differently scaled projection (negative).
+
+`Drawing.projectFast(_:direction:deflection:)` is unchanged and remains orthographic. It never
+exposed a projection type, and `HLRBRep_PolyAlgo` ignores a projector's perspective flag entirely,
+so there was nothing to expose.
+
+
+
+### One quilt path and one first-edge answer inside the bridge (#974, #975)
+
+`OCCTShapeQuilt` and `OCCTShapeQuiltWithHistory` now share one `BRepTools_Quilt` feeding helper
+instead of two byte-identical copies, and the four entry points that open-coded "the first edge of
+this shape" (`OCCTWireMakeWireFromEdges`, `OCCTChFi2dFilletAlgo`, `OCCTChFi2dAnaFillet`,
+`OCCTBRepExtremaExtCCEdges`, seven copies across two files) now call `occtEdgeAt(shape, 0)`, the
+shared enumeration `OCCTBRepExtremaExtCC` was converted to by #613. No behaviour change: the two
+edge spellings were measured equivalent over eleven fixtures first, same edge and same orientation
+on every one ([`Scripts/repro/975-first-edge-idiom/`](Scripts/repro/975-first-edge-idiom/)).
+`Shape.quilt`, `Shape.quiltWithFullHistory`, `Shape.anaFillet` and `Shape.filletAlgo` gain their
+first assertions on what they actually build.
+
+
+
+### One INTERLEAVED matrix-to-transform conversion inside the bridge (#994)
+
+`OCCTBridge_Topology.mm` and `OCCTBridge_BRepGraph.mm` each carried their own conversion between a
+12-double matrix and a `gp_Trsf`. Both now use `occtTrsfFromMatrix12Interleaved`,
+`occtMatrix12InterleavedFromTrsf` and `occtLocationFromMatrix12Interleaved` in
+`OCCTBridge_Internal.h`, whose names carry the layout because the bridge's other 12-double
+convention (GROUPED, `Matrix12Grouped`, #835) is silently accepted rather than refused when the two
+are confused. No behaviour change: the two spellings were measured to agree bit for bit over five
+matrices first, with an exact round trip
+([`Scripts/repro/994-matrix12-interleaved/`](Scripts/repro/994-matrix12-interleaved/)).
+`Shape.located(matrix:)`, `Shape.locationMatrix` and `Shape.setLocation(matrix:)` gain their first
+tests.
+
+
+
+### One discriminated `gp_Trsf` builder for the 3D transform families (#995)
+
+`OCCTBridge_Curve3D.mm` and `OCCTBridge_Surface.mm` each carried a byte-identical `buildTrsf3D`,
+the discriminated builder behind both files' in-place transform dispatcher and their six immutable
+translate/rotate/scale/mirror entry points. Both now call `occtBuildTrsf3D` in
+`OCCTBridge_Internal.h`. No behaviour change and no public API change: the type codes are
+unchanged, and the six transforms are now pinned by tests that map one probe point through the
+curve and surface families, immutable and in place, against values computed independently.
+
+
+
+### One GD&T read family, and OCCT's dimension kinds instead of zero-filled fields (#996)
+
+`Document`'s GD&T read surface existed twice: an untyped family (`DimensionInfo`,
+`GeomToleranceInfo`, `DatumInfo`, reached through `dimension(at:)` and friends) and a typed family
+(`Document.Dimension`, `GeomTolerance`, `Datum`, reached through `typedDimension(at:)` and friends),
+both reading the same three bridge calls. There is now one: the typed value types under the untyped
+family's method names. `DimensionInfo`, `GeomToleranceInfo`, `DatumInfo`, `typedDimension(at:)`,
+`typedGeomTolerance(at:)`, `typedDatum(at:)`, `typedDimensions`, `typedGeomTolerances` and
+`typedDatums` are removed.
+
+**A range dimension used to read back as a different dimension.**
+`XCAFDimTolObjects_DimensionObject` encodes a dimension's magnitude in a values array whose length
+is the discriminator, and the bridge read the first slot and called it `value`. For a range that is
+the lower bound, and both tolerance accessors answer 0, so a 10..12 range came back as
+`value = 10, lowerTolerance = 0, upperTolerance = 0`, which is exactly what a plain 10mm dimension
+with zero tolerance comes back as. `Document.Dimension.bounds` mirrors OCCT's own predicates
+instead:
+
+```swift
+if let dim = doc.dimension(at: 0) {
+    switch dim.bounds {
+    case .range(let lower, let upper): print("ranges \(lower) to \(upper)")
+    case .plusMinus(let lo, let hi): print("\(dim.value ?? 0) \(lo)/\(hi)")
+    case .simple: print("\(dim.value ?? 0)")
+    case .unset: print("no value")
+    }
+}
+```
+
+`value` is now `Double?` and `classOfTolerance` is optional, so nothing OCCT reports as an
+inapplicable 0 is surfaced as a measurement. The four flat accessors survive as computed properties
+returning `Double?`: `lowerBound`, `upperBound`, `lowerTolerance`, `upperTolerance`.
+
+**The ISO 286 tolerance class is now readable.** `Document.DimensionFormVariance` (29 cases) and
+`Document.DimensionGrade` (20 cases) join `DimensionType` and `GeomToleranceType`, and
+`Dimension.classOfTolerance` reports the `H7`-style class OCCT stores outside the values array.
+Three new write methods reach the kinds: `setDimensionBounds(at:lower:upper:)`,
+`setDimensionClassOfTolerance(at:isHole:formVariance:grade:)`, and
+`setDimensionTolerance(at:lower:upper:)` which now returns `false` instead of a silent `true` when
+OCCT refuses the call, as it does for a dimension that is already a range.
+
+**The four enums are now gated against the pinned kernel.** `Scripts/derive-gdt-enums.py` derives
+all 97 members from OCCT's own headers into `Scripts/occt-gdt-enums.txt` and fails CI on any
+divergence, which nothing checked before: the bridge casts OCCT's enum across unremapped, so a
+member OCCT adds used to become a silently dropped dimension.
+
+Reproducer and measurements: [`Scripts/repro/996-gdt-read-surface/`](Scripts/repro/996-gdt-read-surface/).
+The remaining accessor surface, 71 of 85 across the three `XCAFDimTolObjects` classes, is #1004.
+
+
+
+### Thread clocking now comes from the shared `gp_Ax2` perpendicular basis (#990)
+
+`Shape.threadedShaft`, `Shape.threadedHole` and `Shape.threadedRod` measure a thread's start angle
+from a datum perpendicular to the thread axis. That datum was built by a `cross(axis, worldUp)`
+construction private to `ThreadFeatures.swift`; it is now the same deterministic
+`perpendicularBasis(to:)` (#881) that `Placement`, `ConstructionPlane`, `Shape.sectionPlaneBasis`
+and `Drawing`'s projection helpers already share, and which reproduces OCCT's own
+`gp_Ax2(gp_Pnt, gp_Dir)` exactly.
+
+Threads about `+X`, `+Y` and `+Z` are unchanged, bit for bit: measured against `gp_Ax2` read from
+the pinned kernel, the old construction already agreed with the shared basis there. Threads about
+`-X`, `-Y`, `-Z` and oblique axes start at a different angle around the axis than they did before.
+Nothing in the API specifies a start angle, and a thread rotated about its own axis is the same
+thread, so this changes no dimension, volume or validity; it does change the exact vertex positions
+of a thread built about one of those axes, so a byte-comparison against a stored STEP/BREP of one
+will differ. A shaft and the hole it screws into, built on the same axis, remain clocked alike, and
+the clocking remains a deterministic function of the axis direction alone.
+
+Measurement, reproducers and the reasoning for taking the basis's second element rather than its
+first are in
+[`Scripts/repro/990-orthonormal-radial-basis/`](https://github.com/SecondMouseAU/OCCTSwift/tree/main/Scripts/repro/990-orthonormal-radial-basis).
+
+
+
+### `ThreadProfile`'s built-in forms all come from one construction (#988, #991)
+
+`ThreadProfile.square` and `ThreadProfile.buttress` are now built by the same truncated-trapezoid
+factory as `whitworth55`, `acme29` and `trapezoidalMetric30`, rather than by literal vertex lists.
+`square` is that construction's limiting case (crest flat = root flat = `P/2`, so the flanks become
+radial walls) and `buttress` is it with the crest flat centred at `0.2722 * P` instead of at
+mid-pitch, which is what makes its load and clearance flanks differ. Both profiles' vertices are
+bit-for-bit unchanged.
+
+The thread cutter no longer re-derives the crest and root flat widths from the profile's segments;
+`ThreadProfile` answers that itself, and the "is this segment a flat at this depth" test that
+`hasCrestFlat`, the direct rod build's crest lookup and the cutter each spelled separately is now
+one predicate. No geometry changes.
+
+
+
+### ACME and Unified thread designations share one parse (#989)
+
+`ThreadSpec.parse(_:)`'s ACME and Unified branches were the same imperial
+`"<diameter>-<threads per inch>"` parse written twice, including the inch-to-millimetre conversion.
+They now share one, so a fix to either reaches both. Every well-formed designation parses to the
+same form, diameter and pitch as before.
+
+One malformed-input case changes answer: an ACME designation with a stray token between the thread
+count and the suffix, `"1.5-4 x ACME"`, is now accepted (reading the thread count up to the first
+space) where it was previously refused. That leniency is what `"1/4-20 UNC"` requires, and it is the
+only input class whose result moved.
+
+
+
+### NLPlate G2/G3 lose a phantom iteration count, and `Surface.plateErrors` is removed (#999)
+
+`Surface.nlPlateDeformedG2(constraints:maxIterations:tolerance:)` and
+`nlPlateDeformedG3(constraints:maxIterations:tolerance:)` are now
+`nlPlateDeformedG2(constraints:tolerance:)` and `nlPlateDeformedG3(constraints:tolerance:)`.
+`maxIterations` was never read: `NLPlate_NLPlate::Solve2` takes no iteration count, and
+`IncrementalSolve`, which takes a number of increments, is a different solver rather than a bound on
+this one and is already exposed as
+`nlPlateDeformedIncremental(constraints:maxOrder:initConstraintOrder:nbIncrements:)`.
+
+`Surface.plateErrors(points:tolerance:maxDegree:maxSegments:)` is removed with no replacement. It
+returned `GeomPlate_BuildPlateSurface`'s `G0Error`/`G1Error`/`G2Error` for a point-only plate, and
+the kernel assigns those three members only when the plate has curve constraints, leaving them
+uninitialised otherwise. Every value it ever returned was uninitialised memory: repeated calls on
+one fixture gave `1.94e-313`, then `-3.11e+231`, then `-nan`, and none of `tolerance`, `maxDegree`
+or `maxSegments` changed any of them.
+
+
+
+### Seven more bridge parameters that did nothing (#999)
+
+Three were replaced with the parameter the OCCT call underneath actually takes, one entry point
+became the OCCT call it was named for, and three were removed outright.
+
+`Curve2D.toBSpline(tolerance:)` is now `toBSpline(_:)`, taking a `Curve2D.Parameterisation`.
+`Geom2dConvert::CurveToBSplineCurve` has no tolerance, the conversion being exact for every
+parameterisation but `.polynomial`, and the parameterisation is the knob it does have: on a circle
+of radius 5 the eight cases give degrees 2 through 7 and 6 to 12 poles, with `.polynomial` the only
+non-rational and the only approximate one.
+
+```swift
+let circle = Curve2D.circle(center: .zero, radius: 5)!
+circle.toBSpline()?.degree                 // 2
+circle.toBSpline(.quasiAngular)?.degree    // 6
+circle.toBSpline(.tangentHalfAngle1)       // nil, a full circle is past its documented limit
+```
+
+`SAWireAnalysis.checkOuterBound(face:precision:)` is now `checkOuterBound(wire:face:)`, and it
+performs the check. It used to run a `TopExp_Explorer` and report whether the face had any wire at
+all, which is true of every valid face, so both its precision and its name were unbacked. It now
+calls `ShapeAnalysis_Wire::CheckOuterBound` and returns `true` when a problem is found, matching
+every sibling. There is no precision, because that check consults none.
+
+`Curve2D.bisector(withPoint:origin:side:)` is now `bisector(withPoint:maxDistance:side:)`.
+`Bisector_BisecPC::Perform` takes no origin; the signature had been copied from the curve-to-curve
+sibling, where the origin is real. `maxDistance` trims the bisector, with OCCT's own default of 500.
+
+`MedialAxis.init?(of:tolerance:)` is now `init?(of:)`,
+`ExtremaElC.lineToEllipse(...tolerance:)` drops its `tolerance`, and
+`Curve3D.locateNearestPoint(_:initParam:tolerance:)` drops its `tolerance`. None of the three
+underlying OCCT calls accepts one.
+
+
 ### Every OCAF-family package now belongs to a pass of the refman-coverage epic (#973)
 
 Forty-eight packages and 459 headers of the pinned kernel were named by no sub-issue of #807, the
