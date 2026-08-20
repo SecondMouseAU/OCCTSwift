@@ -21,6 +21,10 @@ bounding-box accessors becoming Optional so a void shape stops fabricating `(0,0
 
 ## Unreleased
 
+### visionOS and tvOS are documented as untested rather than supported (#978)
+
+`Package.swift` declares both platforms and `Scripts/build-occt.sh` builds slices for both under `BUILD_ALL_PLATFORMS=1`, but nothing has been tested on either and the released `OCCT.xcframework` ships only the three core slices, so resolving the released binary does not link there. README's status table said "Supported"; both rows now say "Untested", with a note that a local kernel rebuild is what makes them buildable. Also corrects README's kernel version (8.0.0p1 → 8.0.1) and package version (v1.0.0 → v3.0.0), both stale in the same lines. Documentation only.
+
 ### Refman coverage audit, Pass 3: Document/XDE assembly (#810)
 
 `Scripts/repro/810-refman-document-xde/refman_census.py` enumerates every OCCT class under
