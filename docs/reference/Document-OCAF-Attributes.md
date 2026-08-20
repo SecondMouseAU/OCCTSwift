@@ -1539,7 +1539,9 @@ public func namingOriginalShape(on node: AssemblyNode) -> Shape?
 ```
 
 - **Returns:** The old shape, or `nil` if none recorded.
-- **OCCT:** `TNaming_NamedShape::Get` / `TNaming_Iterator`.
+- **OCCT:** `TNaming_Tool::OriginalShape` on the label's `TNaming_NamedShape`, found with
+  `TDF_Label::FindAttribute(TNaming_NamedShape::GetID())` (via `OCCTNamingOriginalShape`).
+  `TNaming_Iterator` walks old/new pairs and is not used here.
 
 ---
 
@@ -1588,7 +1590,8 @@ Count how many labels in the document contain the same topological shape.
 public func sameShapeCount(shape: Shape) -> Int
 ```
 
-- **OCCT:** `TNaming_Tool::SameShape` count variant.
+- **OCCT:** `TNaming_SameShapeIterator` over the document's main label, counted (via
+  `OCCTNamingSameShapeCount`). `TNaming_Tool` declares no `SameShape` member in OCCT 8.0.1.
 
 ---
 
@@ -1601,7 +1604,8 @@ public func sameShapeLabels(shape: Shape) -> [AssemblyNode]
 ```
 
 - **Returns:** Empty array if no labels carry the shape.
-- **OCCT:** `TNaming_Tool::SameShape`.
+- **OCCT:** `TNaming_SameShapeIterator` over the document's main label (via
+  `OCCTNamingSameShapeLabels`). `TNaming_Tool` declares no `SameShape` member in OCCT 8.0.1.
 
 ---
 
@@ -2381,7 +2385,7 @@ Clear all labels from the valid set.
 public func namingScopeClear()
 ```
 
-- **OCCT:** `TNaming_Scope::Clear`.
+- **OCCT:** `TNaming_Scope::ClearValid` (via `OCCTDocumentNamingScopeClear`).
 
 ---
 
@@ -2547,7 +2551,8 @@ public func presentationGetColor(labelId: Int64) -> Int32?
 ```
 
 - **Returns:** `Quantity_NameOfColor` index, or `nil` if no own color is set.
-- **OCCT:** `TDataXtd_Presentation::GetColor`.
+- **OCCT:** `TDataXtd_Presentation::Color`, guarded by `HasOwnColor` (via
+  `OCCTDocumentPresentationGetColor`).
 
 ---
 
@@ -2573,7 +2578,8 @@ public func presentationGetTransparency(labelId: Int64) -> Double?
 ```
 
 - **Returns:** Transparency value, or `nil` if not set.
-- **OCCT:** `TDataXtd_Presentation::GetTransparency`.
+- **OCCT:** `TDataXtd_Presentation::Transparency`, guarded by `HasOwnTransparency` (via
+  `OCCTDocumentPresentationGetTransparency`).
 
 ---
 
@@ -2599,7 +2605,8 @@ public func presentationGetWidth(labelId: Int64) -> Double?
 ```
 
 - **Returns:** Width, or `nil` if not set.
-- **OCCT:** `TDataXtd_Presentation::GetWidth`.
+- **OCCT:** `TDataXtd_Presentation::Width`, guarded by `HasOwnWidth` (via
+  `OCCTDocumentPresentationGetWidth`).
 
 ---
 
@@ -2625,7 +2632,8 @@ public func presentationGetMode(labelId: Int64) -> Int32?
 ```
 
 - **Returns:** Mode integer, or `nil` if not set.
-- **OCCT:** `TDataXtd_Presentation::GetMode`.
+- **OCCT:** `TDataXtd_Presentation::Mode`, guarded by `HasOwnMode` (via
+  `OCCTDocumentPresentationGetMode`).
 
 ---
 

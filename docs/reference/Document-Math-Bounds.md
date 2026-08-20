@@ -1037,7 +1037,9 @@ Check whether a label carries a pattern attribute.
 public func hasPattern(labelId: Int64) -> Bool
 ```
 
-- **OCCT:** `TDataXtd_PatternStd::Find` (via `OCCTDocumentHasPattern`).
+- **OCCT:** `TDF_Label::FindAttribute(TDataXtd_Pattern::GetID())` (via
+  `OCCTDocumentHasPattern`). `TDataXtd_PatternStd` declares no `Find`, and the lookup is by
+  the abstract base's GUID.
 
 ---
 
@@ -1050,7 +1052,8 @@ Set the pattern type.
 public func patternSetSignature(labelId: Int64, signature: PatternSignature) -> Bool
 ```
 
-- **OCCT:** `TDataXtd_PatternStd::SetSignature` (via `OCCTDocumentPatternSetSignature`).
+- **OCCT:** `TDataXtd_PatternStd::Signature` (via `OCCTDocumentPatternSetSignature`).
+  There is no `SetSignature`; the setter is the one-argument `Signature(int)` overload.
 
 ---
 
@@ -1742,7 +1745,9 @@ public func assemblyItemRefPath(labelId: Int64) -> String?
 ```
 
 - **Returns:** Path string, or `nil` if no attribute exists.
-- **OCCT:** `XCAFDoc_AssemblyItemRef::GetPath` (via `OCCTDocumentGetAssemblyItemRef`).
+- **OCCT:** `XCAFDoc_AssemblyItemRef::GetItem()` plus `XCAFDoc_AssemblyItemId::ToString()`
+  (via `OCCTDocumentGetAssemblyItemRef`). `XCAFDoc_AssemblyItemRef` declares no `GetPath`;
+  `GetPath` is `XCAFDoc_AssemblyItemId`'s, and returns a list rather than a string.
 
 ---
 
@@ -1793,7 +1798,8 @@ Remove the extra attribute reference from an assembly item ref.
 public func assemblyItemRefClearExtra(labelId: Int64) -> Bool
 ```
 
-- **OCCT:** `XCAFDoc_AssemblyItemRef::RemoveExtraRef` (via `OCCTDocumentAssemblyItemRefClearExtra`).
+- **OCCT:** `XCAFDoc_AssemblyItemRef::ClearExtraRef` (via
+  `OCCTDocumentAssemblyItemRefClearExtra`). There is no `RemoveExtraRef`.
 
 ---
 
