@@ -155,7 +155,10 @@ OCCT ships no "thread feature" primitive, so this package builds one two ways, t
    the turn at lead `= N * pitch`.
 2. **Boolean cut fallback.** For non-cylinder targets, internal threads (`threadedHole` always uses
    this path), rounded or tapered forms, or whenever the direct build above declines: a V-groove
-   cutter is swept along the helix and subtracted from the blank. The cutter itself has two
+   cutter is swept along the helix and subtracted from the blank. The groove is sized from the
+   profile's own flats, its bottom the root-flat width and its mouth the inter-crest span, read
+   through `ThreadProfile.flatWidthFraction(atDepth:)` rather than re-derived at the cutter (#991).
+   The cutter itself has two
    variants (see `screwSweptThreadCutter` below); a sound cut is verified geometrically (stays
    within the blank's optimal bounding box, removes some but not most of the volume) rather than by
    trusting `BRepCheck`, since a long faceted thread can trip a benign facet self-intersection while
@@ -538,6 +541,7 @@ Pointed-crest profiles (a single vertex at `depth = 0`) return `false` and canno
 
 - **Returns:** Boolean indicating the presence of a usable crest flat.
 - **OCCT:** Pure-Swift.
+- **Note:** "is this segment a flat at this depth" is one internal predicate (`Segment.isFlat(atDepth:)`), shared with the internal `flatWidthFraction(atDepth:)` the cut path sizes its groove from and with the crest lookup the direct rod build starts at (#991).
 
 ---
 
@@ -613,6 +617,10 @@ Square thread profile — 0° radial walls, equal land and groove (`cutDepth = P
 public static let square: ThreadProfile
 ```
 
+Crest flat = root flat = `P/2`, which is the limiting case of the same truncated-trapezoid
+construction `whitworth55`, `acme29` and `trapezoidalMetric30` use: the flanks are left no axial
+run at all, so they classify as `wall` rather than `flank` (#988).
+
 ---
 
 ### `ThreadProfile.buttress`
@@ -624,6 +632,10 @@ public static let buttress: ThreadProfile
 ```
 
 The near-radial (3°) load flank rises steeply to the crest; the 30° clearance flank falls back to the root. Verified against the DIN 513 table (e.g. S 10×2 → d3 = 6.528).
+
+Built by the same truncated-trapezoid construction as the symmetric forms, with the crest flat
+(`0.26 × P`) centred at `0.2722 × P` rather than at mid-pitch; the off-centre crest is what makes
+the two flanks differ. Root flat = `0.1936 × P` (#988).
 
 ---
 

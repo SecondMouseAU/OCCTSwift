@@ -98,6 +98,15 @@ public struct ThreadProfile: Sendable, Hashable, Codable {
     public enum SegmentKind: Sendable, Hashable { case flat, wall, flank }
     public struct Segment: Sendable, Hashable {
         public let a: Vertex, b: Vertex, kind: SegmentKind
+
+        /// Whether this segment is a flat lying at `depth` (0 = crest, 1 = root).
+        ///
+        /// The one place the crest/root classification is spelled out: the crest lookup the direct
+        /// rod build starts from, ``ThreadProfile/hasCrestFlat`` and
+        /// ``ThreadProfile/flatWidthFraction(atDepth:)`` all ask through here (#991).
+        func isFlat(atDepth depth: Double) -> Bool {
+            kind == .flat && abs(a.depth - depth) < 1e-6
+        }
     }
     /// One segment per consecutive vertex pair: `flat` (constant depth → an arc), `wall` (constant
     /// axial → a radial line, e.g. square threads), or `flank` (sloped → a sampled spline).
@@ -117,9 +126,16 @@ public struct ThreadProfile: Sendable, Hashable, Codable {
     }
     /// True if the crest (depth ≈ 0) is a real flat of non-zero axial width, not a single point.
     public var hasCrestFlat: Bool {
-        segments.contains {
-            $0.kind == .flat && $0.a.depth < 1e-6 && abs($0.b.axial - $0.a.axial) > 1e-9
-        }
+        segments.contains { $0.isFlat(atDepth: 0) && abs($0.b.axial - $0.a.axial) > 1e-9 }
+    }
+
+    /// Total axial width of the flats at `depth` (0 = crest, 1 = root), as a fraction of the pitch.
+    ///
+    /// Multiply by a spec's pitch for a width in mm. A pointed crest, or any depth the profile has
+    /// no flat at, answers 0.
+    func flatWidthFraction(atDepth depth: Double) -> Double {
+        segments.filter { $0.isFlat(atDepth: depth) }
+            .reduce(0) { $0 + ($1.b.axial - $1.a.axial) }
     }
 
     /// Whether this profile can be built by the smooth, boolean-free direct rod path
@@ -136,16 +152,21 @@ public struct ThreadProfile: Sendable, Hashable, Codable {
 
     // MARK: Built-in form profiles
 
-    /// Symmetric truncated trapezoid: root half-flats at the ends, crest flat in the middle,
-    /// straight flanks between. `cf`/`rf` are the crest/root flat widths as fractions of the pitch.
-    static func trapezoid(crestFlatFraction cf: Double, rootFlatFraction rf: Double)
-        -> ThreadProfile
-    {
+    /// Truncated trapezoid: root half-flats at the ends, a crest flat, straight flanks between.
+    ///
+    /// `cf`/`rf` are the crest/root flat widths as fractions of the pitch, and `centre` is where
+    /// the crest flat's midpoint sits along it. The default 0.5 makes the tooth symmetric; moving
+    /// it makes one flank steeper than the other, which is what an asymmetric form such as
+    /// buttress is. Every built-in piecewise-linear profile on this type comes from here (#988).
+    static func trapezoid(
+        crestFlatFraction cf: Double, rootFlatFraction rf: Double,
+        crestCentreFraction centre: Double = 0.5
+    ) -> ThreadProfile {
         ThreadProfile(trusted: [
             .init(axial: 0, depth: 1),
             .init(axial: rf / 2, depth: 1),
-            .init(axial: 0.5 - cf / 2, depth: 0),
-            .init(axial: 0.5 + cf / 2, depth: 0),
+            .init(axial: centre - cf / 2, depth: 0),
+            .init(axial: centre + cf / 2, depth: 0),
             .init(axial: 1 - rf / 2, depth: 1),
             .init(axial: 1, depth: 1),
         ])
@@ -205,22 +226,19 @@ public struct ThreadProfile: Sendable, Hashable, Codable {
     public static let trapezoidalMetric30 = trapezoid(
         crestFlatFraction: 0.366, rootFlatFraction: 0.366)
     /// Square — 0° radial walls, equal land and groove (`cutDepth = P/2`).
-    public static let square = ThreadProfile(trusted: [
-        .init(axial: 0, depth: 1), .init(axial: 0.25, depth: 1),
-        .init(axial: 0.25, depth: 0), .init(axial: 0.75, depth: 0),
-        .init(axial: 0.75, depth: 1), .init(axial: 1, depth: 1),
-    ])
+    ///
+    /// The limiting trapezoid: crest and root flats each half the pitch leave the flanks no axial
+    /// run at all, so they classify as `wall` rather than `flank`. The six vertices are bit-for-bit
+    /// the ones this constant used to spell out as a literal list.
+    public static let square = trapezoid(crestFlatFraction: 0.5, rootFlatFraction: 0.5)
     /// Buttress (DIN 513) — asymmetric 3° load flank / 30° clearance flank (33° total), `cutDepth = 0.86777·P`.
     ///
     /// (Bolt core d3 = d − 2·0.86777·P, verified against the DIN 513 table, e.g. S 10×2 → d3 = 6.528.)
     /// The near-radial load flank rises steeply to the crest; the 30° clearance flank falls back to the root.
-    public static let buttress = ThreadProfile(trusted: [
-        .init(axial: 0, depth: 1), .init(axial: 0.0968, depth: 1),  // root flat (half)
-        .init(axial: 0.1422, depth: 0),  // 3° load flank → crest
-        .init(axial: 0.4022, depth: 0),  // crest flat
-        .init(axial: 0.9032, depth: 1),  // 30° clearance flank → root
-        .init(axial: 1, depth: 1),  // root flat (half)
-    ])
+    /// The off-centre crest is what makes the two flanks differ: crest 0.1422…0.4022, root flat
+    /// 0…0.0968 and 0.9032…1, bit-for-bit the vertices this constant used to spell out.
+    public static let buttress = trapezoid(
+        crestFlatFraction: 0.26, rootFlatFraction: 0.1936, crestCentreFraction: 0.2722)
     /// Knuckle / round thread (DIN 405): 30°-included (15° per side) flanks with circular-arc rounded
     /// crest and root, at the standard depth `0.55·P` (bolt minor d3 = d − 1.1·P, verified against the
     /// DIN 405 dimension table).
@@ -818,7 +836,7 @@ extension Shape {
         // The single-loop shoulder needs a crest flat to attach the margin cylinder to. Crest-less
         // profiles (a pointed crest) fall back to the boolean cut path.
         let segs = profile.segments
-        guard let crestIndex = segs.firstIndex(where: { $0.kind == .flat && $0.a.depth < 1e-6 })
+        guard let crestIndex = segs.firstIndex(where: { $0.isFlat(atDepth: 0) })
         else { return nil }
         // Rounded profiles (knuckle/Whitworth-rounded) decompose into many small fillet chords. A
         // `ruled:false` loft of those over a helix balloons radially past the nominal crest (a thin
@@ -1161,15 +1179,11 @@ extension Shape {
         let depth = spec.cutDepth
         let bleed = max(depth * 0.05, 1e-3)
         let pitch = spec.pitch
-        // Flat widths (mm) from the profile: total axial width of segments at the crest / root.
-        func flatWidth(atDepth d0: Double) -> Double {
-            spec.profile.segments
-                .filter { $0.kind == .flat && abs($0.a.depth - d0) < 1e-6 }
-                .reduce(0) { $0 + ($1.b.axial - $1.a.axial) } * pitch
-        }
-        let apexHalf = flatWidth(atDepth: 1) / 2  // half the root flat (groove bottom)
-        // half the inter-crest mouth
-        let outerHalf = max(apexHalf + 1e-4, (pitch - flatWidth(atDepth: 0)) / 2)
+        // Flat widths (mm) from the profile, via the profile's own accessor (#991).
+        let rootFlat = spec.profile.flatWidthFraction(atDepth: 1) * pitch
+        let crestFlat = spec.profile.flatWidthFraction(atDepth: 0) * pitch
+        let apexHalf = rootFlat / 2  // half the root flat (groove bottom)
+        let outerHalf = max(apexHalf + 1e-4, (pitch - crestFlat) / 2)  // half the inter-crest mouth
         // Tapered pipe forms (NPT/BSPT): the thread surface lies on a 1:16 cone, so the local
         // radius shrinks by taperRatio/2 per unit of axial length. Parallel forms: taper = 0.
         let taper = spec.taperRatio / 2
