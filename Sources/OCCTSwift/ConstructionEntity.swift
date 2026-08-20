@@ -38,6 +38,14 @@ public struct Placement: Sendable, Hashable {
         let (x, y) = perpendicularBasis(to: z)
         self.init(origin: origin, xAxis: x, yAxis: y, zAxis: z)
     }
+
+    /// Map a 2D point in the placement's local (x, y) plane to 3D world space.
+    ///
+    /// - Parameter p: 2D coordinates where `x` scales `xAxis` and `y` scales `yAxis`.
+    /// - Returns: The corresponding 3D point: `origin + x * xAxis + y * yAxis`.
+    public func lift(_ p: SIMD2<Double>) -> SIMD3<Double> {
+        origin + p.x * xAxis + p.y * yAxis
+    }
 }
 
 /// Fusion 360-style recipe for a construction plane.

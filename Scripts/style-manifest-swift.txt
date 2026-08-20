@@ -55,7 +55,6 @@ Sources/OCCTSwift/EvolvedSectionInfo.swift
 Sources/OCCTSwift/EvolvingFilletEdge.swift
 Sources/OCCTSwift/Exporter.swift
 Sources/OCCTSwift/ExtremaTypes.swift
-Sources/OCCTSwift/FeatureReconstructor.swift
 Sources/OCCTSwift/FillConstraint.swift
 Sources/OCCTSwift/FilletBuilder.swift
 Sources/OCCTSwift/FillingPoleGrid.swift
@@ -157,8 +156,6 @@ Sources/OCCTSwift/ShapeRayIntersection.swift
 Sources/OCCTSwift/ShapeType.swift
 Sources/OCCTSwift/SharedLibrary.swift
 Sources/OCCTSwift/SheetLayout.swift
-Sources/OCCTSwift/SheetMetal.swift
-Sources/OCCTSwift/Sketch.swift
 Sources/OCCTSwift/StepHeader.swift
 Sources/OCCTSwift/STEPOptions.swift
 Sources/OCCTSwift/SurfaceIntersectionResult.swift
