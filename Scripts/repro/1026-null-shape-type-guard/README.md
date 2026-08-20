@@ -62,8 +62,11 @@ unguarded `myTShape->` dereferences: the eight flag accessors (`Free`, `Locked`,
 `EmptyCopy()`. `NbChildren()` is the one accessor OCCT guards itself
 (`myTShape.IsNull() ? 0 : myTShape->NbChildren()`).
 
-Nine bridge sites read or write those flags, all in `OCCTBridge_Topology.mm`, and all nine were
-measured crashing on the same input, one test process each:
+Nine bridge sites read or write those flags off an `OCCTShapeRef`, all in
+`OCCTBridge_Topology.mm`, and all nine were measured crashing on the same input, one test process
+each. A tenth, `OCCTWireAnalyze`, reads `Closed()` off an `OCCTWireRef` and is guarded with them;
+it has no reachable null producer today, since `Wire(_:)` refuses a null shape, so it is a contract
+pin rather than a measured crash.
 
 | Swift property | before | after |
 |---|---|---|
@@ -283,6 +286,11 @@ shared process hides every test after it.
 Ten of fifteen crash. The four that do not are the controls, and they are supposed to be
 unaffected: three of them never touch a null shape, and `isEmptyShape` is `TopoDS_Shape::IsNull()`
 itself, which is one of the two accessors that has always been safe.
+
+`gate_matrix.py` beside it is the removal matrix for `check-null-handle-guards.py`'s third walk,
+with the two rows that first came back full marks written up in its docstring: one was a real
+finding about the fixpoint, the other was a patch that had silently stopped applying, which is why
+that script asserts its own rows change something.
 
 `inject.sh` reproduces the table. It edits `OCCTBridge_Internal.h` in place and restores it, so do
 not run it against a tree with uncommitted changes to that file.

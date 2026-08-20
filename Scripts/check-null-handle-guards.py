@@ -917,9 +917,8 @@ def shape_events(body, param, field, shape_helpers):
         if not call or call[0] not in SHAPE_BUILDER_METHODS:
             return False
         before = body[:pos]
-        i = before.rfind(call[0])
-        return bool(re.search(r'(\w+)\s*\.\s*$', before[:i]) and
-                    re.search(r'(\w+)\s*\.\s*$', before[:i]).group(1) in builders)
+        receiver = re.search(r'(\w+)\s*\.\s*$', before[:before.rfind(call[0])])
+        return bool(receiver and receiver.group(1) in builders)
 
     ev = []
     for a, bound in ptr.items():
