@@ -442,6 +442,11 @@ public struct ThreadSpec: Sendable, Hashable, Codable {
         return nil
     }
 
+    /// Millimetres per inch.
+    ///
+    /// Every imperial designation and size table on this type converts through it.
+    private static let mmPerInch = 25.4
+
     private static func parseTrapezoidal(_ text: String) -> ThreadSpec? {
         guard text.uppercased().hasPrefix("TR") else { return nil }
         var body = String(text.dropFirst(2))
@@ -457,51 +462,42 @@ public struct ThreadSpec: Sendable, Hashable, Codable {
     private static func parseAcme(_ text: String) -> ThreadSpec? {
         let upper = text.uppercased()
         guard upper.hasSuffix("ACME") else { return nil }
-        let core = upper.dropLast(4).trimmingCharacters(in: .whitespaces)
-        let sep = core.split(separator: "-", maxSplits: 1)
-        guard sep.count == 2,
-            let d = parseFractionOrDecimal(sep[0].trimmingCharacters(in: .whitespaces)),
-            let tpi = Double(sep[1].trimmingCharacters(in: .whitespaces)), tpi > 0
-        else { return nil }
-        return ThreadSpec(form: .acme, nominalDiameter: d * 25.4, pitch: 25.4 / tpi)
+        return parseInchDesignation(
+            upper.dropLast(4).trimmingCharacters(in: .whitespaces), form: .acme)
     }
 
     // BSP (G parallel / R-Rc taper) and Whitworth/NPT share fraction → (OD mm, TPI) tables.
     private static func parsePipeOrWhitworth(_ text: String) -> ThreadSpec? {
-        let bsp: [String: (od: Double, tpi: Double)] = [  // BS 2779 / EN 10226
+        // Every one of these three is a size key to (outside diameter in mm, threads per inch).
+        typealias SizeTable = [String: (od: Double, tpi: Double)]
+        let bsp: SizeTable = [  // BS 2779 / EN 10226
             "1/8": (9.728, 28), "1/4": (13.157, 19), "3/8": (16.662, 19), "1/2": (20.955, 14),
             "5/8": (22.911, 14), "3/4": (26.441, 14), "1": (33.249, 11),
         ]
-        let bsw: [String: (od: Double, tpi: Double)] = [  // BS 84 Whitworth (OD = fraction·25.4)
+        let bsw: SizeTable = [  // BS 84 Whitworth (OD = fraction·25.4)
             "1/4": (6.35, 20), "5/16": (7.938, 18), "3/8": (9.525, 16), "1/2": (12.7, 12),
             "5/8": (15.875, 11), "3/4": (19.05, 10), "1": (25.4, 8),
         ]
-        let npt: [String: (od: Double, tpi: Double)] = [  // ANSI B1.20.1 (nominal OD at large end)
+        let npt: SizeTable = [  // ANSI B1.20.1 (nominal OD at large end)
             "1/8": (10.272, 27), "1/4": (13.716, 18), "3/8": (17.145, 18), "1/2": (21.336, 14),
             "3/4": (26.670, 14), "1": (33.401, 11.5),
         ]
-        func spec(_ tbl: [String: (od: Double, tpi: Double)], _ key: String, _ form: ThreadForm)
-            -> ThreadSpec?
-        {
+        func spec(_ tbl: SizeTable, _ key: String, _ form: ThreadForm) -> ThreadSpec? {
             guard let e = tbl[key] else { return nil }
-            return ThreadSpec(form: form, nominalDiameter: e.od, pitch: 25.4 / e.tpi)
+            return ThreadSpec(form: form, nominalDiameter: e.od, pitch: mmPerInch / e.tpi)
         }
         let u = text.uppercased()
-        if u.hasPrefix("G") {
+        // Order matters: "RC" has to be tried before "R", or an Rc designation reads as an R one
+        // with a size key of "c3/4" that no table has (#989).
+        let prefixed: [(prefix: String, table: SizeTable, form: ThreadForm)] = [
+            ("G", bsp, .bspParallel), ("RC", bsp, .bsptTapered), ("R", bsp, .bsptTapered),
+            ("W", bsw, .whitworth),
+        ]
+        for entry in prefixed where u.hasPrefix(entry.prefix) {
             return spec(
-                bsp, String(text.dropFirst(1)).trimmingCharacters(in: .whitespaces), .bspParallel)
-        }
-        if u.hasPrefix("RC") {
-            return spec(
-                bsp, String(text.dropFirst(2)).trimmingCharacters(in: .whitespaces), .bsptTapered)
-        }
-        if u.hasPrefix("R") {
-            return spec(
-                bsp, String(text.dropFirst(1)).trimmingCharacters(in: .whitespaces), .bsptTapered)
-        }
-        if u.hasPrefix("W") {
-            return spec(
-                bsw, String(text.dropFirst(1)).trimmingCharacters(in: .whitespaces), .whitworth)
+                entry.table,
+                String(text.dropFirst(entry.prefix.count)).trimmingCharacters(in: .whitespaces),
+                entry.form)
         }
         if u.hasSuffix("BSW") {
             return spec(bsw, u.dropLast(3).trimmingCharacters(in: .whitespaces), .whitworth)
@@ -533,19 +529,26 @@ public struct ThreadSpec: Sendable, Hashable, Codable {
     }
 
     private static func parseUnified(_ text: String) -> ThreadSpec? {
+        parseInchDesignation(text, form: .unified)
+    }
+
+    /// An imperial `"<diameter>-<threads per inch>"` designation, converted to millimetres.
+    ///
+    /// The Unified and ACME designations differ only in the suffix their own parse method has
+    /// already stripped, so both come through here (#989). The diameter may be a fraction
+    /// (`1/4`) or a decimal (`1.5`); the thread count runs to the first space, so a trailing
+    /// series name (`1/4-20 UNC`) is ignored rather than rejected.
+    private static func parseInchDesignation(_ text: String, form: ThreadForm) -> ThreadSpec? {
         let sep = text.split(separator: "-", maxSplits: 1)
         guard sep.count == 2 else { return nil }
-        let fractionPart = sep[0].trimmingCharacters(in: .whitespaces)
-        let tpiPart: String = {
-            let raw = String(sep[1])
-            let comp = raw.components(separatedBy: .whitespaces).first ?? raw
-            return comp.trimmingCharacters(in: .whitespaces)
-        }()
-        guard let tpi = Double(tpiPart), tpi > 0 else { return nil }
-        guard let d = parseFractionOrDecimal(fractionPart) else { return nil }
-        let pitchMM = 25.4 / tpi
-        let diameterMM = d * 25.4
-        return ThreadSpec(form: .unified, nominalDiameter: diameterMM, pitch: pitchMM)
+        let raw = String(sep[1])
+        let countPart = (raw.components(separatedBy: .whitespaces).first ?? raw)
+            .trimmingCharacters(in: .whitespaces)
+        guard let threadsPerInch = Double(countPart), threadsPerInch > 0,
+            let inches = parseFractionOrDecimal(sep[0].trimmingCharacters(in: .whitespaces))
+        else { return nil }
+        return ThreadSpec(
+            form: form, nominalDiameter: inches * mmPerInch, pitch: mmPerInch / threadsPerInch)
     }
 
     private static func parseFractionOrDecimal(_ text: String) -> Double? {

@@ -386,7 +386,9 @@ public var minorDiameter: Double { get }
 
 ### Designation Parsing Internals
 
-`ThreadSpec.parse(_:)` above dispatches to seven `private static` helpers, one per designation family. None of these is part of the public API: they exist only to keep `parse(_:)` itself short, but each is a real declaration in the source, documented here for completeness.
+`ThreadSpec.parse(_:)` above dispatches to eight `private static` helpers. None of these is part of the public API: they exist only to keep `parse(_:)` itself short, but each is a real declaration in the source, documented here for completeness.
+
+Five are per-family (`parseMetric`, `parseTrapezoidal`, `parseAcme`, `parseUnified`, `parsePipeOrWhitworth`) and three are shared: `parseFractionOrDecimal` reads `1/4` or `1.5`, `metricCoarsePitch(forDiameter:)` supplies the pitch an `M10` designation leaves out, and `parseInchDesignation(_:form:)` reads the `"<diameter>-<threads per inch>"` body that ACME and Unified spell identically (#989). ACME and Unified therefore differ only in the suffix each strips and the `ThreadForm` it stamps; the millimetre conversion, the fraction handling and the `TPI > 0` check happen once. The conversion factor itself is the `mmPerInch` property rather than a literal repeated per call site.
 
 ```swift
 ```
