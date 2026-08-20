@@ -10316,8 +10316,14 @@ int32_t OCCTDocumentPresentationGetMode(OCCTDocumentRef doc, int64_t labelId)
 
 #include <XCAFDoc_AssemblyIterator.hxx>
 
-int32_t OCCTDocumentAssemblyItemCount(OCCTDocumentRef doc, int32_t maxDepth)
+// #964: the walk's upper bound. Reaching it means the count is a floor, not a measurement,
+// which `outTruncated` reports so a caller can tell the two apart.
+static const int kAssemblyItemCountLimit = 100000;
+
+int32_t OCCTDocumentAssemblyItemCount(OCCTDocumentRef doc, int32_t maxDepth, bool* outTruncated)
 {
+  if (outTruncated)
+    *outTruncated = false;
   if (!doc || doc->doc.IsNull())
     return 0;
   try
@@ -10325,12 +10331,20 @@ int32_t OCCTDocumentAssemblyItemCount(OCCTDocumentRef doc, int32_t maxDepth)
     int                      level = (maxDepth <= 0) ? INT_MAX : maxDepth;
     XCAFDoc_AssemblyIterator iter(doc->doc, level);
     int                      count = 0;
+    // #964: the walk is bounded because XCAFDoc_AssemblyIterator keeps no visited set, so a
+    // malformed self-referencing assembly would iterate until myMaxLevel (INT_MAX by default).
+    // The bound stays; what changes is that hitting it is now reported instead of returned as
+    // though it were the answer.
     while (iter.More())
     {
       count++;
       iter.Next();
-      if (count > 100000)
-        break;
+      if (count >= kAssemblyItemCountLimit)
+      {
+        if (outTruncated)
+          *outTruncated = true;
+        return count;
+      }
     }
     return count;
   }

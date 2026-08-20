@@ -82,8 +82,9 @@ changed for a consumer, which for this pass is nothing.
   other ten, plus sixteen parameter lists in `Document.swift` written as `- Parameters: x:` on one
   line, a shape `swift-format` accepts and DocC does not render.
 - `OCCTBridge_Document.mm` is likewise clang-format clean and off `Scripts/style-manifest-bridge.txt`.
-- `Document.assemblyItemCount(maxDepth:)` gains a `- Warning:` recording that the bridge stops
-  counting at 100,001 and returns that as the total, filed as #964. Documented, not fixed.
+- `Document.assemblyItemCount(maxDepth:)` gained a `- Warning:` recording that the bridge stops
+  counting at 100,001 and returns that as the total, filed as #964. Superseded within this same
+  release by the fix below, which makes the truncation reportable.
 
 ---
 

@@ -2040,7 +2040,15 @@ int32_t OCCTDocumentPresentationGetMode(OCCTDocumentRef _Nonnull doc, int64_t la
 
 /// Count the number of assembly items in a document.
 /// @param maxDepth Maximum depth to traverse (0 = unlimited)
-int32_t OCCTDocumentAssemblyItemCount(OCCTDocumentRef _Nonnull doc, int32_t maxDepth);
+/// Count assembly items, depth-first, to `maxDepth` levels (0 = unlimited).
+///
+/// The walk is bounded at 100,000 items because `XCAFDoc_AssemblyIterator` keeps no visited
+/// set, so a malformed self-referencing assembly would otherwise iterate to `INT_MAX` depth.
+/// `outTruncated` is set true when that bound is reached, in which case the return value is a
+/// floor rather than a count (#964). Pass NULL if you do not care.
+int32_t OCCTDocumentAssemblyItemCount(OCCTDocumentRef _Nonnull doc,
+                                      int32_t                  maxDepth,
+                                      bool* _Nullable          outTruncated);
 
 // MARK: - XCAFDoc_DimTol (v0.90.0)
 
