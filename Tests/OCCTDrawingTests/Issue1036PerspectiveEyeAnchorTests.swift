@@ -4,7 +4,7 @@ import simd
 
 @testable import OCCTSwift
 
-// #1030: `.perspective(focus:)` anchors its projection frame at the WORLD origin, not at the shape.
+// #1036: `.perspective(focus:)` anchors its projection frame at the WORLD origin, not at the shape.
 // `OCCTDrawingCreate` builds `gp_Ax2(gp_Pnt(0, 0, 0), viewDir)` unconditionally, so the eye sits at
 // `focus * direction` and `HLRAlgo_Projector::Project` divides by `R = 1 - Z/focus` with `Z`
 // measured from that origin. A shape at or beyond the eye has `R <= 0` and used to come back
@@ -15,8 +15,8 @@ import simd
 // put the interesting extents half a depth away from where they are written. Assertions are on the
 // projected coordinates and their SIGN, because a mirrored drawing has the same edge count and the
 // same bounding-box width as a correct one, and only the sign separates them.
-@Suite("Perspective eye anchor and the regime beyond it (#1030)")
-struct Issue1030PerspectiveEyeAnchorTests {
+@Suite("Perspective eye anchor and the regime beyond it (#1036)")
+struct Issue1036PerspectiveEyeAnchorTests {
 
     /// The projected X range of a drawing's visible edges, sign included.
     private func visibleXRange(_ drawing: Drawing?) -> (min: Double, max: Double)? {

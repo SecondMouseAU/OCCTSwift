@@ -230,7 +230,7 @@
 // direction measured from the world origin. Taken from the axis-aligned bounding box's support
 // function, so it is an upper bound on the shape's own reach rather than the exact figure: a curved
 // or rotated shape can sit strictly inside the box. Returns false for a shape with no bounds at
-// all, which has nothing to project. Only OCCTDrawingCreate needs this (#1030).
+// all, which has nothing to project. Only OCCTDrawingCreate needs this (#1036).
 static bool occtDrawingReachAlongDirection(const TopoDS_Shape& shape,
                                            const gp_Dir&       viewDir,
                                            double&             outReach)
@@ -264,7 +264,7 @@ OCCTDrawingRef OCCTDrawingCreate(OCCTShapeRef       shape,
   // non-positive or NaN focus outright: it is a distance, and OCCT does not raise on one. Measured
   // on a 100x50x30 box viewed down +Z, a negative focus returns a real but differently-scaled
   // projection and focus 0 or 1e-12 returns a mirrored one, so neither reads as failure at the call
-  // site. (#1030 corrected this comment: focus 5 and 15 were cited here as also returning an empty
+  // site. (#1036 corrected this comment: focus 5 and 15 were cited here as also returning an empty
   // VCompound, but both are positive and both are accepted, so they were never evidence for a test
   // that only rejects focus <= 0. What they actually produce is the straddling case below.)
   if (projectionType == OCCTProjectionPerspective && !(focus > 0))
@@ -275,7 +275,7 @@ OCCTDrawingRef OCCTDrawingCreate(OCCTShapeRef       shape,
     // Normalize direction
     gp_Dir viewDir(dirX, dirY, dirZ);
 
-    // #1030: the projection frame below is anchored at the WORLD origin, so the eye sits at
+    // #1036: the projection frame below is anchored at the WORLD origin, so the eye sits at
     // focus * viewDir and the picture plane passes through the origin. HLRAlgo_Projector::Project
     // divides by R = 1 - Z/focus, with Z the point's coordinate in that frame, so a point at or
     // beyond the eye has R <= 0 and comes back mirrored through the origin instead of not at all.

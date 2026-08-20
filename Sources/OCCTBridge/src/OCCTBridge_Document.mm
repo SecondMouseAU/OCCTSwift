@@ -1550,7 +1550,7 @@ bool OCCTDocumentSetDimensionClassOfTolerance(OCCTDocumentRef doc,
                                               int32_t         formVariance,
                                               int32_t         grade)
 {
-  // #1031: an out-of-range formVariance is not merely stored and read back, it also makes
+  // #1037: an out-of-range formVariance is not merely stored and read back, it also makes
   // XCAFDimTolObjects_DimensionObject::IsDimWithClassOfTolerance() true, since that is a bare
   // test against _None. The reader then reports the class as present while the value decodes to
   // nothing.
@@ -1648,7 +1648,7 @@ bool OCCTDocumentSetDimensionDecimalPlaces(OCCTDocumentRef doc,
 
 // Every value in a modifier array has to name a real enumerator before any of the array is stored,
 // because an out-of-range one is appended, written through and read back verbatim. Checked up front
-// rather than inside the append loop, so a rejected array leaves the document untouched (#1031).
+// rather than inside the append loop, so a rejected array leaves the document untouched (#1037).
 static bool occtDocumentModifiersInRange(const int32_t* modifiers, int32_t count, int32_t maxValue)
 {
   for (int32_t i = 0; i < count; ++i)
@@ -1943,7 +1943,7 @@ bool OCCTDocumentSetDatumTargetPlacement(OCCTDocumentRef doc,
     if (!occtDocumentDatumObjectAt(doc, datumIndex, datumAttr, datumObj))
       return false;
 
-    // #1032: XCAFDoc_Datum::SetObject nests the whole axis/length/width block inside
+    // #1038: XCAFDoc_Datum::SetObject nests the whole axis/length/width block inside
     // if (IsDatumTarget()), and inside that takes an Area branch that writes no axis at all. On a
     // datum that is not a target, or whose target type is Area, everything below is set on the
     // object and then dropped on the floor, so reporting success would describe a call that

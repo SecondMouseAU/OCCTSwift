@@ -4,14 +4,14 @@ import simd
 
 @testable import OCCTSwift
 
-// #1032: `setDatumTargetPlacement` returned true for a call that persisted nothing.
+// #1038: `setDatumTargetPlacement` returned true for a call that persisted nothing.
 // `XCAFDoc_Datum::SetObject` nests its whole axis/length/width/number block inside
 // `if (theObject->IsDatumTarget())`, and inside that takes an `Area` branch that writes no
 // placement. So on a datum that has had no `setDatumTarget(at:type:number:)` applied, or whose type
 // is `.area`, every value handed to the call was set on the in-memory object and then dropped when
 // the attribute was written, while the call reported success.
-@Suite("Datum target placement states its precondition (#1032)")
-struct Issue1032DatumTargetPlacementTests {
+@Suite("Datum target placement states its precondition (#1038)")
+struct Issue1038DatumTargetPlacementTests {
 
     private func documentWithDatum() -> (Document, Int)? {
         guard let doc = Document.create() else { return nil }

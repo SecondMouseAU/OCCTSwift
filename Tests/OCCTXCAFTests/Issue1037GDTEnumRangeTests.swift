@@ -4,7 +4,7 @@ import Testing
 
 @testable import OCCTSwift
 
-// #1031: five casts in OCCTBridge_Document.mm turned a caller-supplied int32_t straight into an
+// #1037: five casts in OCCTBridge_Document.mm turned a caller-supplied int32_t straight into an
 // OCCT GD&T enum with no range check, so a value naming no enumerator was appended, stored and read
 // back verbatim. Every neighbouring setter added in the same commits already validated, so this was
 // an inconsistency inside one commit rather than a missing convention.
@@ -14,8 +14,8 @@ import Testing
 // no Swift caller can express an out-of-range value. The defect only exists at the C boundary, so
 // that is where it has to be tested. `handle` is the bridge document pointer, reached through
 // `@testable import`.
-@Suite("GD&T setters reject values that name no enumerator (#1031)")
-struct Issue1031GDTEnumRangeTests {
+@Suite("GD&T setters reject values that name no enumerator (#1037)")
+struct Issue1037GDTEnumRangeTests {
 
     private func documentWithDimension() -> (Document, Int)? {
         guard let doc = Document.create() else { return nil }

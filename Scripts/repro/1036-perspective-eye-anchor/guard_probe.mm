@@ -1,4 +1,4 @@
-// Second probe for OCCTSwift #1030: what a bounding-box guard would decide, and how much slack
+// Second probe for OCCTSwift #1036: what a bounding-box guard would decide, and how much slack
 // Bnd_Box's own gap adds. The guard under test rejects a perspective projection whose shape reaches
 // the eye plane, i.e. max over the shape of (P . viewDir) >= focus.
 

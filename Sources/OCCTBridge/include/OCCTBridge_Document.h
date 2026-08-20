@@ -341,7 +341,7 @@ bool OCCTDocumentSetDimensionBounds(OCCTDocumentRef _Nonnull doc,
 /// range or plus/minus dimension can carry one too. formVariance is
 /// XCAFDimTolObjects_DimensionFormVariance, grade is XCAFDimTolObjects_DimensionGrade. Returns
 /// false if either names no enumerator, since an out-of-range formVariance is stored verbatim and
-/// additionally makes IsDimWithClassOfTolerance() true. Returns true on success (#996, #1031).
+/// additionally makes IsDimWithClassOfTolerance() true. Returns true on success (#996, #1037).
 bool OCCTDocumentSetDimensionClassOfTolerance(OCCTDocumentRef _Nonnull doc,
                                               int32_t dimensionIndex,
                                               bool    isHole,
@@ -373,7 +373,7 @@ bool OCCTDocumentSetDimensionDecimalPlaces(OCCTDocumentRef _Nonnull doc,
 /// Replace the dimension's modifier sequence with the given XCAFDimTolObjects_DimensionModif
 /// values, via SetModifiers. Passing count 0 clears the sequence. Returns false if the index is out
 /// of range, if count is negative, if modifiers is NULL with a positive count, or if any value
-/// names no enumerator, in which case nothing at all is stored (#1004, #1031).
+/// names no enumerator, in which case nothing at all is stored (#1004, #1037).
 bool OCCTDocumentSetDimensionModifiers(OCCTDocumentRef _Nonnull doc,
                                        int32_t dimensionIndex,
                                        const int32_t* _Nullable modifiers,
@@ -410,7 +410,7 @@ bool OCCTDocumentSetGeomToleranceMaxValueModifier(OCCTDocumentRef _Nonnull doc,
 /// Replace the tolerance's modifier sequence with the given XCAFDimTolObjects_GeomToleranceModif
 /// values. Passing count 0 clears the sequence. Returns false if the index is out of range, if
 /// count is negative, if modifiers is NULL with a positive count, or if any value names no
-/// enumerator, in which case nothing at all is stored (#1004, #1031).
+/// enumerator, in which case nothing at all is stored (#1004, #1037).
 bool OCCTDocumentSetGeomToleranceModifiers(OCCTDocumentRef _Nonnull doc,
                                            int32_t toleranceIndex,
                                            const int32_t* _Nullable modifiers,
@@ -425,7 +425,7 @@ bool OCCTDocumentSetDatumPosition(OCCTDocumentRef _Nonnull doc,
 /// Replace the datum's modifier sequence with the given XCAFDimTolObjects_DatumSingleModif values.
 /// Passing count 0 clears the sequence. Returns false if the index is out of range, if count is
 /// negative, if modifiers is NULL with a positive count, or if any value names no enumerator, in
-/// which case nothing at all is stored (#1004, #1031).
+/// which case nothing at all is stored (#1004, #1037).
 bool OCCTDocumentSetDatumModifiers(OCCTDocumentRef _Nonnull doc,
                                    int32_t datumIndex,
                                    const int32_t* _Nullable modifiers,
@@ -458,7 +458,7 @@ bool OCCTDocumentSetDatumTarget(OCCTDocumentRef _Nonnull doc,
 /// of a type other than Area, because XCAFDoc_Datum::SetObject stores the axis only under
 /// IsDatumTarget() and only on its non-Area branch: call OCCTDocumentSetDatumTarget first, or this
 /// returns false rather than reporting success for a call that persisted nothing. Returns true on
-/// success (#1004, #1032).
+/// success (#1004, #1038).
 bool OCCTDocumentSetDatumTargetPlacement(OCCTDocumentRef _Nonnull doc,
                                          int32_t datumIndex,
                                          const double* _Nonnull location,

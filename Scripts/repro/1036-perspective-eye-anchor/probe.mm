@@ -1,4 +1,4 @@
-// Ground-truth probe for the .perspective(focus:) eye anchor (OCCTSwift #1030).
+// Ground-truth probe for the .perspective(focus:) eye anchor (OCCTSwift #1036).
 // Replicates OCCTDrawingCreate's projector construction exactly and reports the projected X range
 // of the visible compound, so the sign (mirroring) is visible rather than only the width.
 //
@@ -7,7 +7,7 @@
 //     -I"Libraries/OCCT.xcframework/macos-arm64/Headers" \
 //     -L"Libraries/OCCT.xcframework/macos-arm64" \
 //     -lOCCT-macos -framework Foundation -framework AppKit -lz -lc++ \
-//     Scripts/repro/1030-perspective-eye-anchor/probe.mm -o /tmp/probe_1030
+//     Scripts/repro/1036-perspective-eye-anchor/probe.mm -o /tmp/probe_1030
 
 #include <BRepBndLib.hxx>
 #include <BRepPrimAPI_MakeBox.hxx>
