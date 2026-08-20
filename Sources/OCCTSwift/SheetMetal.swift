@@ -46,7 +46,14 @@ public enum SheetMetal {
         public let uAxis: SIMD3<Double>
         public let vAxis: SIMD3<Double>
         public let normal: SIMD3<Double>
-        public let placement: Placement
+
+        /// Lifting frame for `profile`, shared with `Sketch` and `FeatureReconstructor` (#972).
+        ///
+        /// Deliberately not `public`. `Placement` documents an *orthonormal* basis, and this one
+        /// is not: `Flange` lets a caller supply any `uAxis`/`vAxis` (see the type's own doc
+        /// comment), and `lift` has to keep scaling by them to match the `worldPoint` it replaced.
+        /// Publishing it would hand callers a frame they are entitled to treat as unit.
+        let placement: Placement
 
         public init(
             id: String,
@@ -64,7 +71,7 @@ public enum SheetMetal {
             self.normal = n
             self.vAxis = vAxis ?? Vector3DMath.cross(n, uAxis)
             self.placement = Placement(
-                origin: origin, xAxis: uAxis, yAxis: self.vAxis, zAxis: normal)
+                origin: origin, xAxis: uAxis, yAxis: self.vAxis, zAxis: n)
         }
     }
 
@@ -480,7 +487,7 @@ public enum SheetMetal {
             // and the flange's outer wire bounds.
             //
             // Simpler approach: walk a's profile edges and find the one
-            // whose worldPoints are on the seam line (parallel to
+            // whose lifted points are on the seam line (parallel to
             // seamUnit).
             guard
                 let (kissStart, kissEnd) = seamSegment(
