@@ -2036,6 +2036,8 @@ int64_t OCCTDocumentGetMainLabel(OCCTDocumentRef doc)
 // and TDocStd_Document::Undo copies the name onto the redo delta, so it survives undo/redo.
 // CommitCommand returns false when nothing changed, in which case there is no delta to name;
 // the pending name is dropped either way, since the transaction it belonged to is over.
+// Both call sites have already checked doc and doc->doc, so neither is rechecked here.
+// The name is converted the same way OCCTDeltaSetName converts its own argument.
 static void occtApplyPendingTransactionName(OCCTDocumentRef doc, bool committed)
 {
   if (doc->pendingTransactionName.empty())
