@@ -85,6 +85,10 @@ run "check-borrowed-handles.py --self-test"   Scripts/check-borrowed-handles.py 
 run "check-borrowed-handles.py"               Scripts/check-borrowed-handles.py
 run "derive-bridge-header-split.py --self-test" Scripts/derive-bridge-header-split.py --self-test
 run "derive-bridge-header-split.py --verify"    Scripts/derive-bridge-header-split.py --verify
+# #996. Only --verify, matching CI: --reverify-headers needs Libraries/OCCT.xcframework and reports
+# SKIPPED without it, so putting it here would add a step that usually does nothing.
+run "derive-gdt-enums.py --self-test"         Scripts/derive-gdt-enums.py --self-test
+run "derive-gdt-enums.py --verify"            Scripts/derive-gdt-enums.py --verify
 run "count-operations.py"                     Scripts/count-operations.py
 
 # Not a Python gate, so it does not go through run(). merge.conflictStyle is diff3 in this repo, and
