@@ -2087,47 +2087,30 @@ extension Document {
 
 extension Document {
 
-    /// Open a transaction on the document.
+    /// Open a transaction whose name is recorded on the delta its commit produces.
     ///
-    /// - Warning: `name` is accepted and not recorded. `TDocStd_Document` has no
-    ///   named-transaction API in OCCT 8.0.1, and the one class that does,
-    ///   `TDocStd_MultiTransactionManager`, is not wrapped. See issue #970.
-    ///
-    /// ```swift
-    /// let doc = Document()
-    /// doc.openNamedTransaction("add part")
-    /// // ... make changes ...
-    /// _ = doc.commitWithDelta()
-    /// ```
-    ///
-    /// - Parameter name: Accepted for source compatibility and ignored.
-    /// - Returns: `1` when a transaction is open after the call, `0` on error. Not a
-    ///   transaction number.
+    /// - Parameter name: Name to record on the committed transaction, readable afterwards as
+    ///   `TransactionDelta.name`.
+    /// - Returns: The number of the transaction just opened, or 0 if none opened.
     @discardableResult
     public func openNamedTransaction(_ name: String) -> Int {
         Int(OCCTDocumentOpenNamedTransaction(handle, name))
     }
 
-    /// Whether a transaction is currently open, as `1` or `0`.
+    /// The number of the currently open transaction, or 0 when none is open.
     ///
-    /// - Warning: Despite the name this is not a transaction number and not a nesting depth:
-    ///   it reports `1` at any depth. It reads `TDocStd_Document::HasOpenCommand`, not
-    ///   `TDF_Data::Transaction()`. See issue #970.
-    ///
-    /// ```swift
-    /// let doc = Document()
-    /// doc.openNamedTransaction("edit")
-    /// print(doc.transactionNumber)  // 1
-    /// ```
+    /// A document holds at most one transaction, so this is never greater than 1; use
+    /// `hasOpenTransaction` when the open/closed state is all that is wanted.
     public var transactionNumber: Int {
         Int(OCCTDocumentGetTransactionNumber(handle))
     }
 
-    /// Commit the current transaction and return a delta for inspection.
+    /// Commit the current transaction and return the delta it recorded.
     ///
-    /// The delta must be released when no longer needed.
+    /// Undo is disabled until `setUndoLimit(_:)` is called, and a document with undo disabled
+    /// records no deltas.
     ///
-    /// - Returns: An opaque delta handle, or nil if no changes
+    /// - Returns: The committed delta, or nil if the commit recorded none.
     public func commitWithDelta() -> TransactionDelta? {
         guard let ptr = OCCTDocumentCommitWithDelta(handle) else { return nil }
         return TransactionDelta(handle: ptr)

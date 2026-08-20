@@ -21,6 +21,46 @@ bounding-box accessors becoming Optional so a void shape stops fabricating `(0,0
 
 ## Unreleased
 
+### Transactions: a named transaction keeps its name, and `commitWithDelta()` returns a delta (#970)
+
+`Document.openNamedTransaction(_:)` took a name and read it with nothing. The bridge called
+`OpenCommand()` and returned `HasOpenCommand() ? 1 : 0`; the argument was never touched.
+
+The name now reaches OCCT. `TDocStd_Document::OpenCommand` takes no name, and the document's own
+`TDF_Transaction` is constructed as `"UNDO"` with no setter, so an open transaction has nowhere to
+carry one. OCCT keeps a caller-supplied transaction name on the committed `TDF_Delta` instead,
+which is what `TDocStd_MultiTransactionManager::CommitCommand(theName)` does. The bridge holds the
+name until the transaction commits and writes it there:
+
+```swift
+doc.setUndoLimit(10)
+doc.openNamedTransaction("add part")
+// ... make changes ...
+doc.commitWithDelta()?.name        // "add part"
+```
+
+`abortTransaction()` discards it, an `openTransaction()` with no name of its own supersedes it, and
+a named open that OCCT refuses, because one is already running, reports 0 and leaves the running
+transaction's name alone.
+
+`Document.transactionNumber` returned that same synthesized flag. It now returns
+`TDF_Data::Transaction()` through `TDocStd_Document::GetData()`. The values agree, and that is the
+finding rather than an excuse: measured against the pinned kernel, a document holds at most one
+framework transaction, so the number is 0 or 1 in every state its command API can reach. Nested
+transaction mode does not change it, because `TDocStd_Document::OpenTransaction` commits and
+reopens the same transaction rather than pushing a second one, and the depth stays at 1 through
+three nested opens. `hasOpenTransaction` carries the same information with the right type.
+
+`Document.commitWithDelta()` could not return a delta at all, found while proving the first fix.
+Its first statement was `SetUndoLimit(100)`, and `TDocStd_Document::SetUndoLimit` commits the open
+transaction before it changes the limit, so the `CommitCommand()` that followed had nothing left to
+commit and the function returned `nil` for every transaction that had one open. The call is gone:
+the undo limit is the caller's to set with `setUndoLimit(_:)`, and with undo disabled, which is
+OCCT's default, there is no delta to hand back.
+
+`Scripts/repro/970-transaction-api/` carries the probe, its transcript, and the measurements
+`docs/reference/Document-OCAF-Attributes.md` now cites.
+
 ### Sub-shape enumerations are complete or empty, never short (#979)
 
 `Shape.faces()`, `Shape.edges()`, `Shape.subShapes(ofType:)` and `Shape.orientedFaces()` each

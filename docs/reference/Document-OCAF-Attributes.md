@@ -1846,35 +1846,51 @@ Named-transaction extensions on `Document` plus the `TransactionDelta` value typ
 
 ### `Document.openNamedTransaction(_:)`
 
-Open a new transaction. The name is accepted for source compatibility and is not stored anywhere:
-see the parameter note below and #970.
+Open a transaction whose name is recorded on the delta its commit produces.
 
 ```swift
 @discardableResult
 public func openNamedTransaction(_ name: String) -> Int
 ```
 
-- **Parameters:** `name`, accepted and **not recorded**. `TDocStd_Document` has no
-  named-transaction API in OCCT 8.0.1; the only one in the framework is
-  `TDocStd_MultiTransactionManager::CommitCommand(name)`, which is not wrapped. See #970.
-- **Returns:** `1` when a transaction is open after the call, `0` on error. Not a
-  transaction number, despite the name. See #970.
-- **OCCT:** `TDocStd_Document::OpenCommand` + `HasOpenCommand` (via
-  `OCCTDocumentOpenNamedTransaction`).
+- **Parameters:** `name`, recorded on the committed transaction and readable afterwards as
+  `TransactionDelta.name`.
+- **Returns:** The number of the transaction just opened, or 0 if none opened. Nothing opens while
+  the undo limit is 0, which is OCCT's default, so call `setUndoLimit(_:)` first.
+- **OCCT:** `TDocStd_Document::OpenCommand`. The name is not applied here; the commit applies it,
+  as described below.
+
+An open transaction has nowhere to carry a name of its own: `TDocStd_Document::OpenCommand` takes
+none, and the document's own `TDF_Transaction` is constructed as `"UNDO"` with no setter. OCCT puts
+a caller-supplied transaction name on the committed `TDF_Delta` instead, which is exactly what
+`TDocStd_MultiTransactionManager::CommitCommand(theName)` does. So the name given here is held
+until the transaction commits, then written there; `abortTransaction()` discards it, and an
+`openTransaction()` with no name of its own supersedes it. Before #970 the argument was read by
+nothing at all.
 
 ---
 
 ### `Document.transactionNumber`
 
-`1` when a transaction is currently open, `0` when none is. **Not a transaction number**,
-and not a nesting depth: it reports the same `1` at any depth. `TDF_Data::Transaction()` is
-the accessor that returns the real number, and this does not call it. See #970.
+The number of the currently open transaction, or 0 when none is open.
 
 ```swift
 public var transactionNumber: Int { get }
 ```
 
-- **OCCT:** `TDocStd_Document::HasOpenCommand` (via `OCCTDocumentGetTransactionNumber`).
+- **OCCT:** `TDF_Data::Transaction`, reached through `TDocStd_Document::GetData`.
+
+This is a depth, not a running count of transactions, and a document holds at most one, so it is
+never greater than 1. Measured against the pinned kernel across every state the document's command
+API can reach, nested transaction mode included: a nested `OpenCommand()` commits and reopens the
+same single `TDF_Transaction` rather than pushing a second one, so the depth stays at 1 through
+three nested opens. Only a raw `TDF_Transaction` opened directly on the data framework takes it to
+2 or 3, and no document API does that. `hasOpenTransaction` carries the same information with the
+right type; prefer it. See `Scripts/repro/970-transaction-api/` for the transcripts.
+
+Before #970 the bridge returned `HasOpenCommand() ? 1 : 0`, a flag synthesized locally rather than
+OCCT's own counter read. The values agree, and that is the finding rather than an excuse: what
+changed is where the number comes from, and what the documentation claims it means.
 
 ---
 
@@ -1886,17 +1902,24 @@ Commit the current transaction and return a `TransactionDelta` describing what c
 public func commitWithDelta() -> TransactionDelta?
 ```
 
-- **Returns:** A delta object, or `nil` if the transaction contained no changes.
-- **OCCT:** `TDocStd_Document::CommitCommand` plus `GetUndos().Last()` (via
-  `OCCTDocumentCommitWithDelta`). `TDF_Transaction` is not constructed.
+- **Returns:** A delta object, or `nil` if the commit recorded no new delta.
+- **OCCT:** `TDocStd_Document::CommitCommand`, then the newest entry of
+  `TDocStd_Document::GetUndos`.
 - **Example:**
   ```swift
+  doc.setUndoLimit(10)
   doc.openNamedTransaction("add part")
   // ... make changes ...
   if let delta = doc.commitWithDelta() {
-      print("changed attributes:", delta.attributeDeltaCount)
+      print(delta.name ?? "", "changed", delta.attributeDeltaCount, "attributes")
   }
   ```
+
+Undo is disabled until `setUndoLimit(_:)` is called, and a document with undo disabled records no
+deltas, so this returns `nil`. Until #970 it called `SetUndoLimit(100)` on the way in, which commits
+the open transaction before it changes the limit: the commit that followed had nothing left to
+commit, so the function returned `nil` for every transaction that had one open, and it moved the
+caller's undo limit while doing it.
 
 ---
 
@@ -1914,7 +1937,7 @@ public var isEmpty: Bool { get }
 
 ### `TransactionDelta.beginTime`
 
-The transaction number at which the delta begins.
+The data framework's tick at which the delta begins.
 
 ```swift
 public var beginTime: Int { get }
@@ -1922,11 +1945,14 @@ public var beginTime: Int { get }
 
 - **OCCT:** `TDF_Delta::BeginTime`.
 
+The unit is `TDF_Data::Time`, a per-document counter incremented by each committed transaction and
+stepped back by `undo()`, not `Document.transactionNumber`, which is the open-transaction depth.
+
 ---
 
 ### `TransactionDelta.endTime`
 
-The transaction number at which the delta ends.
+The data framework's tick at which the delta ends.
 
 ```swift
 public var endTime: Int { get }
@@ -1962,13 +1988,18 @@ public func setName(_ name: String)
 
 ### `TransactionDelta.name`
 
-The display name of this delta, if one was set.
+The name of this delta, empty when none was set.
 
 ```swift
 public var name: String? { get }
 ```
 
 - **OCCT:** `TDF_Delta::Name`.
+
+Set either by `Document.openNamedTransaction(_:)`, which records the name here when the transaction
+commits, or by `setName(_:)` on the delta afterwards. `TDF_Delta::Name` returns an empty string for
+an unnamed delta rather than nothing, so this is `""` in that case, not `nil`. OCCT copies the name
+onto the redo delta in `TDocStd_Document::Undo`, so it survives undo and redo.
 
 ---
 
