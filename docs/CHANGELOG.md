@@ -22,6 +22,46 @@ bounding-box accessors becoming Optional so a void shape stops fabricating `(0,0
 ## Unreleased
 
 
+### `Shape.wireFromEdges` and `Shape.shellFromFaces` no longer crash on a null or wrong-typed shape (#1008)
+
+Both entry points cast every element they are handed with `TopoDS::Edge` / `TopoDS::Face` and passed
+the result to a builder with no type test. `TopoDS::Edge`'s own guard passes a **null**
+`TopoDS_Shape` through deliberately (`theShape.IsNull() ? false : ...`), and
+`TopoDS_Shape::ShapeType()` dereferences its handle without a null test, so the builder crashed with
+a SIGSEGV that no `catch (...)` on the bridge side could absorb. `Shape.nullified` returns exactly
+such a shape, so `Shape.wireFromEdges([shape.nullified!])` was an uncatchable crash reachable from
+public API alone. Both now return `nil` for a null element, and for an element that is not an edge
+or a face respectively.
+
+A wrong-typed element was never the silent `reinterpret_cast` the issue described: two independent
+kernel guards refuse it, one of them (`TopoDS_Builder::Add`'s compatibility table) an unconditional
+`throw` rather than a macro, and `No_Exception` is defined only inside OCCT's own Release
+translation units, never in a bridge one. See
+[`Scripts/repro/1008-topods-cast-guard/`](https://github.com/SecondMouseAU/OCCTSwift/tree/main/Scripts/repro/1008-topods-cast-guard)
+for both compile modes' transcripts and the 345-site sibling sweep.
+
+
+
+### One shared GROUPED 12-double matrix reader, and a corrected reflection contract on `Document.addComponent(matrix:)` (#1009)
+
+`OCCTCurve3DParametricTransformation`, `OCCTDocumentAddComponentMatrix` and `OCCTShapeTransformed`
+each carried their own byte-identical copy of the permuted `gp_Trsf::SetValues` that reads
+`Matrix12Grouped`'s GROUPED layout. All three now share `occtTrsfFromMatrix12Grouped` in
+`OCCTBridge_Internal.h`, alongside `occtTrsfFromMatrix12Interleaved`. The two layouts deliberately
+do not share a reader: a GROUPED array read as INTERLEAVED yields translation `(0, 0, 7)` where
+`(5, 6, 7)` was meant, and is accepted silently.
+
+`Document.addComponent(assemblyLabelId:shapeLabelId:matrix:)` **does** accept a reflection and apply
+it. Its doc comment and `docs/reference/Document-Persistence-IO.md` said the opposite, on the
+strength of #174's assumption that `gp_Trsf::SetValues` rejects a non-rigid transform. Measured
+against the pinned kernel it rejects nothing at all: its only documented precondition is a null
+determinant, not orthonormality, and it is compiled inside OCCT's Release library where even that is
+removed. A box spanning `x ∈ [1, 11]` placed by a mirror in X spans `[-11, -1]`. No behaviour
+changed here, only the documentation of behaviour that was already there. See
+[`Scripts/repro/1009-matrix12-grouped/`](https://github.com/SecondMouseAU/OCCTSwift/tree/main/Scripts/repro/1009-matrix12-grouped).
+
+
+
 ### GD&T: a tolerance's zone semantics and a datum's frame position and target are now readable (#1004, #1021)
 
 `Document.GeomTolerance` gains `valueType`, `materialRequirement`, `zoneModifier`,
