@@ -21,6 +21,29 @@ bounding-box accessors becoming Optional so a void shape stops fabricating `(0,0
 
 ## Unreleased
 
+### Every OCAF-family package now belongs to a pass of the refman-coverage epic (#973)
+
+Forty-eight packages and 459 headers of the pinned kernel were named by no sub-issue of #807, the
+refman-coverage epic, and would have arrived unannounced at its final whole-surface pass. They are
+now partitioned, and the partition is a committed, re-runnable artifact:
+
+```bash
+python3 Scripts/repro/973-ocaf-package-partition/partition_census.py
+python3 Scripts/repro/973-ocaf-package-partition/partition_census.py --verify-lanes
+```
+
+Two new passes were filed for the bulk of it, #982 (the OCAF framework layer: `TFunction_`,
+`TPrsStd_`, `TObj_`, `AppStd_`, `AppStdL_`) and #983 (OCAF persistence and format drivers: `PCDM_`,
+`Storage_`, `FSD_`, `Plugin_`, `LDOM_` and every `Bin*`/`Xml*`/`Std*` driver package). Pass 4c
+(#813) gained `BinTools_` and `Resource_`, Pass 4d (#814) gained `StdPrs_` and `StdSelect_`, and
+Pass 3's (#810) lane text was corrected to name the six packages its own census already claims.
+`StdFail_` is recorded as belonging to no lane pass on purpose, with its reason.
+
+The census exits 1 on any family package with no owner, on a header count that has drifted from the
+pinned kernel, and, under `--verify-lanes`, on an owning issue whose `## Lane` no longer names what
+it owns. No `Sources/` or `docs/` change: this is ownership, not coverage, and each owning pass
+still runs its own per-class audit.
+
 ### `Document.assemblyItemCount(maxDepth:)` reports when it could not finish counting (#964)
 
 The bridge stops walking an assembly at 100,000 items, because `XCAFDoc_AssemblyIterator` keeps no visited set and a malformed self-referencing assembly would otherwise iterate to `INT_MAX` depth. It used to return the bound as though it were the total, so a document with more items was indistinguishable from one that genuinely had that many.
