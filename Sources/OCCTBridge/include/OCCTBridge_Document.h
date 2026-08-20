@@ -839,7 +839,7 @@ bool OCCTDocumentFunctionSetFailure(OCCTDocumentRef doc, int64_t labelId, int32_
 /// Deep copy a shape (creates independent copy with new topology).
 OCCTShapeRef OCCTShapeDeepCopy(OCCTShapeRef shape);
 
-// MARK: - OCAF Persistence — Format Registration (v0.57.0)
+// MARK: - OCAF Persistence, Format Registration (v0.57.0)
 
 /// Register binary OCAF format drivers (BinOcaf).
 void OCCTDocumentDefineFormatBin(OCCTDocumentRef doc);
@@ -859,7 +859,7 @@ void OCCTDocumentDefineFormatBinXCAF(OCCTDocumentRef doc);
 /// Register XML XCAF format drivers (XmlXCAF).
 void OCCTDocumentDefineFormatXmlXCAF(OCCTDocumentRef doc);
 
-// MARK: - OCAF Persistence — Save/Load (v0.57.0)
+// MARK: - OCAF Persistence, Save/Load (v0.57.0)
 
 /// Save OCAF document to file. Returns PCDM_StoreStatus (0=OK).
 /// Format is determined by the document's storage format.
@@ -968,7 +968,7 @@ int64_t OCCTDocumentAddComponent(OCCTDocumentRef doc,
 
 // Add a component with a FULL rigid placement from a 12-element row-major matrix
 // [r00 r01 r02 r10 r11 r12 r20 r21 r22 tx ty tz]. Returns -1 if the matrix is not a proper rigid
-// transform (e.g. a reflection — gp_Trsf can't represent it; the caller should bake a mirrored
+// transform (e.g. a reflection: gp_Trsf can't represent it; the caller should bake a mirrored
 // product instead). Issue #174.
 int64_t OCCTDocumentAddComponentMatrix(OCCTDocumentRef doc,
                                        int64_t         assemblyLabelId,
@@ -1104,7 +1104,7 @@ bool OCCTDocumentEditorRescaleGeometry(OCCTDocumentRef doc,
                                        double          scaleFactor,
                                        bool            forceIfNotRoot);
 
-// MARK: - v0.83.0: XDE Attributes — Location, GraphNode, Color, Material, Notes, Views, Styles
+// MARK: - v0.83.0: XDE Attributes: Location, GraphNode, Color, Material, Notes, Views, Styles
 
 // --- XCAFDoc_Location ---
 
