@@ -645,18 +645,9 @@ OCCTSurfaceRef OCCTSurfaceCreateBSpline(const double*  poles,
 
 // Operations
 
-// Shared gp_Trsf builder (defined below, near OCCTSurfaceTransform); forward-declared here so
-// the immutable translate/rotate/scale/mirror* family can reuse the same transform-construction
-// logic as the in-place OCCTSurfaceTransform dispatcher instead of duplicating it.
-static bool buildTrsf3D(gp_Trsf& trsf,
-                        int32_t  type,
-                        double   p1,
-                        double   p2,
-                        double   p3,
-                        double   p4,
-                        double   p5,
-                        double   p6,
-                        double   p7);
+// #995: the discriminated gp_Trsf builder both this file's transform families used to define for
+// themselves is occtBuildTrsf3D in OCCTBridge_Internal.h, shared with OCCTBridge_Curve3D.mm, which
+// carried a byte-identical copy.
 
 OCCTSurfaceRef OCCTSurfaceTrim(OCCTSurfaceRef s, double u1, double u2, double v1, double v2)
 {
@@ -697,7 +688,7 @@ OCCTSurfaceRef OCCTSurfaceTranslate(OCCTSurfaceRef s, double dx, double dy, doub
   {
     Handle(Geom_Surface) copy = Handle(Geom_Surface)::DownCast(s->surface->Copy());
     gp_Trsf              trsf;
-    if (!buildTrsf3D(trsf, 0, dx, dy, dz, 0, 0, 0, 0))
+    if (!occtBuildTrsf3D(trsf, 0, dx, dy, dz, 0, 0, 0, 0))
       return nullptr;
     copy->Transform(trsf);
     return new OCCTSurface(copy);
@@ -723,7 +714,7 @@ OCCTSurfaceRef OCCTSurfaceRotate(OCCTSurfaceRef s,
   {
     Handle(Geom_Surface) copy = Handle(Geom_Surface)::DownCast(s->surface->Copy());
     gp_Trsf              trsf;
-    if (!buildTrsf3D(trsf, 1, axOx, axOy, axOz, axDx, axDy, axDz, angle))
+    if (!occtBuildTrsf3D(trsf, 1, axOx, axOy, axOz, axDx, axDy, axDz, angle))
       return nullptr;
     copy->Transform(trsf);
     return new OCCTSurface(copy);
@@ -742,7 +733,7 @@ OCCTSurfaceRef OCCTSurfaceScale(OCCTSurfaceRef s, double cx, double cy, double c
   {
     Handle(Geom_Surface) copy = Handle(Geom_Surface)::DownCast(s->surface->Copy());
     gp_Trsf              trsf;
-    if (!buildTrsf3D(trsf, 2, cx, cy, cz, factor, 0, 0, 0))
+    if (!occtBuildTrsf3D(trsf, 2, cx, cy, cz, factor, 0, 0, 0))
       return nullptr;
     copy->Transform(trsf);
     return new OCCTSurface(copy);
@@ -767,7 +758,7 @@ OCCTSurfaceRef OCCTSurfaceMirrorPlane(OCCTSurfaceRef s,
   {
     Handle(Geom_Surface) copy = Handle(Geom_Surface)::DownCast(s->surface->Copy());
     gp_Trsf              trsf;
-    if (!buildTrsf3D(trsf, 5, px, py, pz, nx, ny, nz, 0))
+    if (!occtBuildTrsf3D(trsf, 5, px, py, pz, nx, ny, nz, 0))
       return nullptr;
     copy->Transform(trsf);
     return new OCCTSurface(copy);
@@ -786,7 +777,7 @@ OCCTSurfaceRef OCCTSurfaceMirrorPoint(OCCTSurfaceRef s, double px, double py, do
   {
     Handle(Geom_Surface) copy = Handle(Geom_Surface)::DownCast(s->surface->Copy());
     gp_Trsf              trsf;
-    if (!buildTrsf3D(trsf, 3, px, py, pz, 0, 0, 0, 0))
+    if (!occtBuildTrsf3D(trsf, 3, px, py, pz, 0, 0, 0, 0))
       return nullptr;
     copy->Transform(trsf);
     return new OCCTSurface(copy);
@@ -811,7 +802,7 @@ OCCTSurfaceRef OCCTSurfaceMirrorAxis(OCCTSurfaceRef s,
   {
     Handle(Geom_Surface) copy = Handle(Geom_Surface)::DownCast(s->surface->Copy());
     gp_Trsf              trsf;
-    if (!buildTrsf3D(trsf, 4, px, py, pz, dx, dy, dz, 0))
+    if (!occtBuildTrsf3D(trsf, 4, px, py, pz, dx, dy, dz, 0))
       return nullptr;
     copy->Transform(trsf);
     return new OCCTSurface(copy);
@@ -10290,43 +10281,6 @@ bool OCCTSurfaceBezierSetPoleRowWeights(OCCTSurfaceRef surface,
 
 // --- Geometry Transform (in-place) ---
 
-// Shared by the in-place dispatcher below and by the immutable
-// OCCTSurfaceTranslate/Rotate/Scale/Mirror* family (forward-declared near the top of this file).
-static bool buildTrsf3D(gp_Trsf& trsf,
-                        int32_t  type,
-                        double   p1,
-                        double   p2,
-                        double   p3,
-                        double   p4,
-                        double   p5,
-                        double   p6,
-                        double   p7)
-{
-  switch (type)
-  {
-    case 0: // translation (dx, dy, dz)
-      trsf.SetTranslation(gp_Vec(p1, p2, p3));
-      return true;
-    case 1: // rotation (ox, oy, oz, dx, dy, dz, angle)
-      trsf.SetRotation(gp_Ax1(gp_Pnt(p1, p2, p3), gp_Dir(p4, p5, p6)), p7);
-      return true;
-    case 2: // scale (cx, cy, cz, factor)
-      trsf.SetScale(gp_Pnt(p1, p2, p3), p4);
-      return true;
-    case 3: // mirror point (px, py, pz)
-      trsf.SetMirror(gp_Pnt(p1, p2, p3));
-      return true;
-    case 4: // mirror axis (ox, oy, oz, dx, dy, dz)
-      trsf.SetMirror(gp_Ax1(gp_Pnt(p1, p2, p3), gp_Dir(p4, p5, p6)));
-      return true;
-    case 5: // mirror plane (ox, oy, oz, nx, ny, nz)
-      trsf.SetMirror(gp_Ax2(gp_Pnt(p1, p2, p3), gp_Dir(p4, p5, p6)));
-      return true;
-    default:
-      return false;
-  }
-}
-
 bool OCCTSurfaceTransform(OCCTSurfaceRef surface,
                           int32_t        transformType,
                           double         p1,
@@ -10342,7 +10296,7 @@ bool OCCTSurfaceTransform(OCCTSurfaceRef surface,
   try
   {
     gp_Trsf trsf;
-    if (!buildTrsf3D(trsf, transformType, p1, p2, p3, p4, p5, p6, p7))
+    if (!occtBuildTrsf3D(trsf, transformType, p1, p2, p3, p4, p5, p6, p7))
       return false;
     surface->surface->Transform(trsf);
     return true;
