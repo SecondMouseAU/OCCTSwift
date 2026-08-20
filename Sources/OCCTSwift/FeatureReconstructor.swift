@@ -40,9 +40,9 @@ public enum FeatureSpec: Sendable, Hashable, Codable {
         switch self {
         case .revolve(let r): return r.id
         case .extrude(let e): return e.id
-        case .hole(let h):    return h.id
-        case .thread(let t):  return t.id
-        case .fillet(let f):  return f.id
+        case .hole(let h): return h.id
+        case .thread(let t): return t.id
+        case .fillet(let f): return f.id
         case .chamfer(let c): return c.id
         case .boolean(let b): return b.id
         }
@@ -55,11 +55,13 @@ public enum FeatureSpec: Sendable, Hashable, Codable {
         public var angleDeg: Double
         public var id: String?
 
-        public init(profilePoints2D: [SIMD2<Double>],
-                    axisOrigin: SIMD3<Double>,
-                    axisDirection: SIMD3<Double>,
-                    angleDeg: Double = 360,
-                    id: String? = nil) {
+        public init(
+            profilePoints2D: [SIMD2<Double>],
+            axisOrigin: SIMD3<Double>,
+            axisDirection: SIMD3<Double>,
+            angleDeg: Double = 360,
+            id: String? = nil
+        ) {
             self.profilePoints2D = profilePoints2D
             self.axisOrigin = axisOrigin
             self.axisDirection = axisDirection
@@ -75,11 +77,13 @@ public enum FeatureSpec: Sendable, Hashable, Codable {
         public var length: Double
         public var id: String?
 
-        public init(profilePoints2D: [SIMD2<Double>],
-                    planeOrigin: SIMD3<Double>,
-                    planeNormal: SIMD3<Double>,
-                    length: Double,
-                    id: String? = nil) {
+        public init(
+            profilePoints2D: [SIMD2<Double>],
+            planeOrigin: SIMD3<Double>,
+            planeNormal: SIMD3<Double>,
+            length: Double,
+            id: String? = nil
+        ) {
             self.profilePoints2D = profilePoints2D
             self.planeOrigin = planeOrigin
             self.planeNormal = planeNormal
@@ -95,11 +99,13 @@ public enum FeatureSpec: Sendable, Hashable, Codable {
         public var depth: Double?
         public var id: String?
 
-        public init(axisPoint: SIMD3<Double>,
-                    axisDirection: SIMD3<Double>,
-                    diameter: Double,
-                    depth: Double? = nil,
-                    id: String? = nil) {
+        public init(
+            axisPoint: SIMD3<Double>,
+            axisDirection: SIMD3<Double>,
+            diameter: Double,
+            depth: Double? = nil,
+            id: String? = nil
+        ) {
             self.axisPoint = axisPoint
             self.axisDirection = axisDirection
             self.diameter = diameter
@@ -110,7 +116,7 @@ public enum FeatureSpec: Sendable, Hashable, Codable {
 
     public struct Thread: Sendable, Hashable, Codable {
         public var holeRef: String
-        public var spec: String    // "M5x0.8", "1/4-20 UNC"
+        public var spec: String  // "M5x0.8", "1/4-20 UNC"
         public var length: Double?
         public var id: String?
 
@@ -125,7 +131,7 @@ public enum FeatureSpec: Sendable, Hashable, Codable {
     public enum EdgeSelector: Sendable, Hashable, Codable {
         case all
         case nearPoint(SIMD3<Double>, tolerance: Double)
-        case onFeature(String)                // feature id; maps to TopologyRef.createdBy
+        case onFeature(String)  // feature id; maps to TopologyRef.createdBy
     }
 
     public struct Fillet: Sendable, Hashable, Codable {
@@ -160,7 +166,10 @@ public enum FeatureSpec: Sendable, Hashable, Codable {
         public var id: String?
 
         public init(op: Op, leftID: String, rightID: String, id: String? = nil) {
-            self.op = op; self.leftID = leftID; self.rightID = rightID; self.id = id
+            self.op = op
+            self.leftID = leftID
+            self.rightID = rightID
+            self.id = id
         }
     }
 }
@@ -173,6 +182,7 @@ public struct FeatureReconstructor: Sendable {
         public let annotations: [Annotation]
         /// Per-feature `ShapeHistoryRef` retained from history-recording
         /// builders (booleans + the Tier-2 modification ops, when used).
+        ///
         /// Keyed by the feature id passed in `FeatureSpec.*.id`. Features
         /// without an id are not retained here — their history can't be
         /// remapped without a key.
@@ -207,8 +217,9 @@ public struct FeatureReconstructor: Sendable {
     // MARK: - Entry point
 
     /// Sentinel id under which a non-nil `inputBody` is registered in
-    /// `namedShapes`. Boolean operands, fillet/chamfer `.onFeature`
-    /// selectors, and any other feature spec that references a named shape
+    /// `namedShapes`.
+    ///
+    /// Boolean operands, fillet/chamfer `.onFeature` selectors, and any other feature spec that references a named shape
     /// can use this key to address the starting body. JSON envelopes can
     /// emit it as a literal string. The leading `@` keeps it disjoint from
     /// any feature id a caller is likely to supply; if a feature does
@@ -269,16 +280,18 @@ public struct FeatureReconstructor: Sendable {
         // Stage 4: annotation
         for spec in specs {
             if case .thread(let t) = spec {
-                ctx.annotations.append(Annotation(
-                    kind: .thread(spec: t.spec, holeRef: t.holeRef, length: t.length),
-                    featureID: t.id ?? "thread"))
+                ctx.annotations.append(
+                    Annotation(
+                        kind: .thread(spec: t.spec, holeRef: t.holeRef, length: t.length),
+                        featureID: t.id ?? "thread"))
                 if let id = t.id { ctx.fulfilled.append(id) }
             }
         }
 
-        return BuildResult(shape: ctx.current, fulfilled: ctx.fulfilled,
-                           skipped: ctx.skipped, annotations: ctx.annotations,
-                           histories: ctx.histories)
+        return BuildResult(
+            shape: ctx.current, fulfilled: ctx.fulfilled,
+            skipped: ctx.skipped, annotations: ctx.annotations,
+            histories: ctx.histories)
     }
 
     /// Internal state carried through the staged dispatch.
@@ -287,8 +300,9 @@ public struct FeatureReconstructor: Sendable {
         var fulfilled: [String] = []
         var skipped: [Skipped] = []
         var annotations: [Annotation] = []
-        /// Named-shape registry. Features with non-nil ids register their
-        /// produced shape here so downstream Boolean specs can reference them.
+        /// Named-shape registry.
+        ///
+        /// Features with non-nil ids register their produced shape here so downstream Boolean specs can reference them.
         var namedShapes: [String: Shape] = [:]
         /// Per-feature ShapeHistoryRef from history-recording builders.
         var histories: [String: ShapeHistoryRef] = [:]
@@ -298,26 +312,32 @@ public struct FeatureReconstructor: Sendable {
 
     private static func applyRevolve(_ r: FeatureSpec.Revolve, ctx: inout BuildContext) {
         guard r.profilePoints2D.count >= 3 else {
-            recordSkip(ctx: &ctx, id: r.id,
-                       reason: .underDetermined("revolve profile needs ≥3 points"),
-                       stage: .additive)
+            recordSkip(
+                ctx: &ctx, id: r.id,
+                reason: .underDetermined("revolve profile needs ≥3 points"),
+                stage: .additive)
             return
         }
         let pts3D = r.profilePoints2D.map { SIMD3<Double>($0.x, 0, $0.y) }
         guard let wire = Wire.polygon3D(pts3D, closed: true) else {
-            recordSkip(ctx: &ctx, id: r.id,
-                       reason: .occtFailure("wire construction failed"),
-                       stage: .additive)
+            recordSkip(
+                ctx: &ctx, id: r.id,
+                reason: .occtFailure("wire construction failed"),
+                stage: .additive)
             return
         }
         let angle = r.angleDeg * .pi / 180
-        guard let body = Shape.revolve(profile: wire,
-                                        axisOrigin: r.axisOrigin,
-                                        axisDirection: r.axisDirection,
-                                        angle: angle) else {
-            recordSkip(ctx: &ctx, id: r.id,
-                       reason: .occtFailure("revolve failed"),
-                       stage: .additive)
+        guard
+            let body = Shape.revolve(
+                profile: wire,
+                axisOrigin: r.axisOrigin,
+                axisDirection: r.axisDirection,
+                angle: angle)
+        else {
+            recordSkip(
+                ctx: &ctx, id: r.id,
+                reason: .occtFailure("revolve failed"),
+                stage: .additive)
             return
         }
         absorbAdditive(body, id: r.id, ctx: &ctx)
@@ -325,25 +345,31 @@ public struct FeatureReconstructor: Sendable {
 
     private static func applyExtrude(_ e: FeatureSpec.Extrude, ctx: inout BuildContext) {
         guard e.profilePoints2D.count >= 3 else {
-            recordSkip(ctx: &ctx, id: e.id,
-                       reason: .underDetermined("extrude profile needs ≥3 points"),
-                       stage: .additive)
+            recordSkip(
+                ctx: &ctx, id: e.id,
+                reason: .underDetermined("extrude profile needs ≥3 points"),
+                stage: .additive)
             return
         }
         let placement = Placement(origin: e.planeOrigin, normal: e.planeNormal)
         let pts3D = e.profilePoints2D.map { placement.lift($0) }
         guard let wire = Wire.polygon3D(pts3D, closed: true) else {
-            recordSkip(ctx: &ctx, id: e.id,
-                       reason: .occtFailure("wire construction failed"),
-                       stage: .additive)
+            recordSkip(
+                ctx: &ctx, id: e.id,
+                reason: .occtFailure("wire construction failed"),
+                stage: .additive)
             return
         }
-        guard let body = Shape.extrude(profile: wire,
-                                        direction: simd_normalize(e.planeNormal),
-                                        length: e.length) else {
-            recordSkip(ctx: &ctx, id: e.id,
-                       reason: .occtFailure("extrude failed"),
-                       stage: .additive)
+        guard
+            let body = Shape.extrude(
+                profile: wire,
+                direction: simd_normalize(e.planeNormal),
+                length: e.length)
+        else {
+            recordSkip(
+                ctx: &ctx, id: e.id,
+                reason: .occtFailure("extrude failed"),
+                stage: .additive)
             return
         }
         absorbAdditive(body, id: e.id, ctx: &ctx)
@@ -351,19 +377,24 @@ public struct FeatureReconstructor: Sendable {
 
     private static func applyHole(_ h: FeatureSpec.Hole, ctx: inout BuildContext) {
         guard let target = ctx.current else {
-            recordSkip(ctx: &ctx, id: h.id,
-                       reason: .underDetermined("no target shape"),
-                       stage: .subtractive)
+            recordSkip(
+                ctx: &ctx, id: h.id,
+                reason: .underDetermined("no target shape"),
+                stage: .subtractive)
             return
         }
         let depth = h.depth ?? 100.0
-        guard let drill = Shape.cylinder(at: h.axisPoint,
-                                          direction: h.axisDirection,
-                                          radius: h.diameter / 2,
-                                          height: depth) else {
-            recordSkip(ctx: &ctx, id: h.id,
-                       reason: .occtFailure("drill cylinder failed"),
-                       stage: .subtractive)
+        guard
+            let drill = Shape.cylinder(
+                at: h.axisPoint,
+                direction: h.axisDirection,
+                radius: h.diameter / 2,
+                height: depth)
+        else {
+            recordSkip(
+                ctx: &ctx, id: h.id,
+                reason: .occtFailure("drill cylinder failed"),
+                stage: .subtractive)
             return
         }
         // Use the history-recording variant so consumers (e.g. selection
@@ -377,26 +408,31 @@ public struct FeatureReconstructor: Sendable {
             // No id → no key to retain history under; skip the history capture.
             ctx.current = cut
         } else {
-            recordSkip(ctx: &ctx, id: h.id,
-                       reason: .occtFailure("boolean subtract failed"),
-                       stage: .subtractive)
+            recordSkip(
+                ctx: &ctx, id: h.id,
+                reason: .occtFailure("boolean subtract failed"),
+                stage: .subtractive)
             return
         }
     }
 
-    private static func applyBoolean(_ b: FeatureSpec.Boolean,
-                                     stage: Skipped.Stage,
-                                     ctx: inout BuildContext) {
+    private static func applyBoolean(
+        _ b: FeatureSpec.Boolean,
+        stage: Skipped.Stage,
+        ctx: inout BuildContext
+    ) {
         guard let left = ctx.namedShapes[b.leftID] else {
-            recordSkip(ctx: &ctx, id: b.id,
-                       reason: .unresolvedRef("left id '\(b.leftID)' not found in registry"),
-                       stage: stage)
+            recordSkip(
+                ctx: &ctx, id: b.id,
+                reason: .unresolvedRef("left id '\(b.leftID)' not found in registry"),
+                stage: stage)
             return
         }
         guard let right = ctx.namedShapes[b.rightID] else {
-            recordSkip(ctx: &ctx, id: b.id,
-                       reason: .unresolvedRef("right id '\(b.rightID)' not found in registry"),
-                       stage: stage)
+            recordSkip(
+                ctx: &ctx, id: b.id,
+                reason: .unresolvedRef("right id '\(b.rightID)' not found in registry"),
+                stage: stage)
             return
         }
         // Prefer the history-recording variant when the feature has an id so
@@ -405,14 +441,15 @@ public struct FeatureReconstructor: Sendable {
         if let id = b.id {
             let withHist: (result: Shape, history: ShapeHistoryRef)?
             switch b.op {
-            case .union:     withHist = left.unionWithFullHistory(right)
-            case .subtract:  withHist = left.subtractedWithFullHistory(right)
+            case .union: withHist = left.unionWithFullHistory(right)
+            case .subtract: withHist = left.subtractedWithFullHistory(right)
             case .intersect: withHist = left.intersectionWithFullHistory(right)
             }
             guard let r = withHist else {
-                recordSkip(ctx: &ctx, id: b.id,
-                           reason: .occtFailure("boolean \(b.op.rawValue) failed"),
-                           stage: stage)
+                recordSkip(
+                    ctx: &ctx, id: b.id,
+                    reason: .occtFailure("boolean \(b.op.rawValue) failed"),
+                    stage: stage)
                 return
             }
             ctx.fulfilled.append(id)
@@ -422,14 +459,15 @@ public struct FeatureReconstructor: Sendable {
         } else {
             let result: Shape?
             switch b.op {
-            case .union:     result = left.union(right)
-            case .subtract:  result = left.subtracting(right)
+            case .union: result = left.union(right)
+            case .subtract: result = left.subtracting(right)
             case .intersect: result = left.intersection(right)
             }
             guard let r = result else {
-                recordSkip(ctx: &ctx, id: b.id,
-                           reason: .occtFailure("boolean \(b.op.rawValue) failed"),
-                           stage: stage)
+                recordSkip(
+                    ctx: &ctx, id: b.id,
+                    reason: .occtFailure("boolean \(b.op.rawValue) failed"),
+                    stage: stage)
                 return
             }
             ctx.current = r
@@ -438,9 +476,10 @@ public struct FeatureReconstructor: Sendable {
 
     private static func applyFillet(_ f: FeatureSpec.Fillet, ctx: inout BuildContext) {
         guard let target = ctx.current else {
-            recordSkip(ctx: &ctx, id: f.id,
-                       reason: .underDetermined("no target shape"),
-                       stage: .finishing)
+            recordSkip(
+                ctx: &ctx, id: f.id,
+                reason: .underDetermined("no target shape"),
+                stage: .finishing)
             return
         }
         let edgeIndices: [Int]?
@@ -451,30 +490,34 @@ public struct FeatureReconstructor: Sendable {
         case .nearPoint(let point, let tolerance):
             edgeIndices = edgeIndicesNearPoint(target, point: point, tolerance: tolerance)
             guard edgeIndices != nil else {
-                recordSkip(ctx: &ctx, id: f.id,
-                           reason: .occtFailure("no edge found near point within tolerance"),
-                           stage: .finishing)
+                recordSkip(
+                    ctx: &ctx, id: f.id,
+                    reason: .occtFailure("no edge found near point within tolerance"),
+                    stage: .finishing)
                 return
             }
         case .onFeature(let featureID):
             guard let source = ctx.namedShapes[featureID] else {
-                recordSkip(ctx: &ctx, id: f.id,
-                           reason: .unresolvedRef("feature '\(featureID)' not registered"),
-                           stage: .finishing)
+                recordSkip(
+                    ctx: &ctx, id: f.id,
+                    reason: .unresolvedRef("feature '\(featureID)' not registered"),
+                    stage: .finishing)
                 return
             }
             edgeIndices = edgeIndicesContributedBy(target: target, source: source)
             guard edgeIndices != nil else {
-                recordSkip(ctx: &ctx, id: f.id,
-                           reason: .occtFailure("fillet onFeature failed"),
-                           stage: .finishing)
+                recordSkip(
+                    ctx: &ctx, id: f.id,
+                    reason: .occtFailure("fillet onFeature failed"),
+                    stage: .finishing)
                 return
             }
         }
         guard let indices = edgeIndices else {
-            recordSkip(ctx: &ctx, id: f.id,
-                       reason: .occtFailure("uniform fillet failed"),
-                       stage: .finishing)
+            recordSkip(
+                ctx: &ctx, id: f.id,
+                reason: .occtFailure("uniform fillet failed"),
+                stage: .finishing)
             return
         }
         // History-recording path; falls back to the non-history primitive on nil
@@ -501,7 +544,8 @@ public struct FeatureReconstructor: Sendable {
             let edgeObjects = indices.compactMap { i -> Edge? in
                 (i >= 0 && i < allTypedEdges.count) ? allTypedEdges[i] : nil
             }
-            fallback = edgeObjects.isEmpty ? nil : target.filleted(edges: edgeObjects, radius: f.radius)
+            fallback =
+                edgeObjects.isEmpty ? nil : target.filleted(edges: edgeObjects, radius: f.radius)
         }
         if let filleted = fallback {
             ctx.current = filleted
@@ -510,17 +554,19 @@ public struct FeatureReconstructor: Sendable {
                 ctx.namedShapes[id] = filleted
             }
         } else {
-            recordSkip(ctx: &ctx, id: f.id,
-                       reason: .occtFailure("uniform fillet failed"),
-                       stage: .finishing)
+            recordSkip(
+                ctx: &ctx, id: f.id,
+                reason: .occtFailure("uniform fillet failed"),
+                stage: .finishing)
         }
     }
 
     private static func applyChamfer(_ c: FeatureSpec.Chamfer, ctx: inout BuildContext) {
         guard let target = ctx.current else {
-            recordSkip(ctx: &ctx, id: c.id,
-                       reason: .underDetermined("no target shape"),
-                       stage: .finishing)
+            recordSkip(
+                ctx: &ctx, id: c.id,
+                reason: .underDetermined("no target shape"),
+                stage: .finishing)
             return
         }
         let edgeIndices: [Int]?
@@ -531,30 +577,34 @@ public struct FeatureReconstructor: Sendable {
         case .nearPoint(let point, let tolerance):
             edgeIndices = edgeIndicesNearPoint(target, point: point, tolerance: tolerance)
             guard edgeIndices != nil else {
-                recordSkip(ctx: &ctx, id: c.id,
-                           reason: .occtFailure("no edge found near point within tolerance"),
-                           stage: .finishing)
+                recordSkip(
+                    ctx: &ctx, id: c.id,
+                    reason: .occtFailure("no edge found near point within tolerance"),
+                    stage: .finishing)
                 return
             }
         case .onFeature(let featureID):
             guard let source = ctx.namedShapes[featureID] else {
-                recordSkip(ctx: &ctx, id: c.id,
-                           reason: .unresolvedRef("feature '\(featureID)' not registered"),
-                           stage: .finishing)
+                recordSkip(
+                    ctx: &ctx, id: c.id,
+                    reason: .unresolvedRef("feature '\(featureID)' not registered"),
+                    stage: .finishing)
                 return
             }
             edgeIndices = edgeIndicesContributedBy(target: target, source: source)
             guard edgeIndices != nil else {
-                recordSkip(ctx: &ctx, id: c.id,
-                           reason: .occtFailure("chamfer onFeature failed"),
-                           stage: .finishing)
+                recordSkip(
+                    ctx: &ctx, id: c.id,
+                    reason: .occtFailure("chamfer onFeature failed"),
+                    stage: .finishing)
                 return
             }
         }
         guard let indices = edgeIndices else {
-            recordSkip(ctx: &ctx, id: c.id,
-                       reason: .occtFailure("uniform chamfer failed"),
-                       stage: .finishing)
+            recordSkip(
+                ctx: &ctx, id: c.id,
+                reason: .occtFailure("uniform chamfer failed"),
+                stage: .finishing)
             return
         }
         if let r = target.chamferedWithFullHistory(distance: c.distance, edges: indices) {
@@ -577,24 +627,29 @@ public struct FeatureReconstructor: Sendable {
                 ctx.namedShapes[id] = chamfered
             }
         } else {
-            recordSkip(ctx: &ctx, id: c.id,
-                       reason: .occtFailure("uniform chamfer failed"),
-                       stage: .finishing)
+            recordSkip(
+                ctx: &ctx, id: c.id,
+                reason: .occtFailure("uniform chamfer failed"),
+                stage: .finishing)
         }
     }
 
     // MARK: - Edge-selector helpers
 
     /// Edge indices in `shape` whose midpoint lies within `tolerance` of `point`.
+    ///
     /// Index space matches `shape.subShapes(ofType: .edge)` / `shape.edges()` —
     /// both are TopExp_MapShapes traversals in canonical order.
-    private static func edgeIndicesNearPoint(_ shape: Shape,
-                                              point: SIMD3<Double>,
-                                              tolerance: Double) -> [Int]? {
+    private static func edgeIndicesNearPoint(
+        _ shape: Shape,
+        point: SIMD3<Double>,
+        tolerance: Double
+    ) -> [Int]? {
         var matching: [Int] = []
         for (i, edge) in shape.edges().enumerated() {
             guard let bounds = edge.parameterBounds,
-                  let mid = edge.point(at: (bounds.first + bounds.last) / 2) else { continue }
+                let mid = edge.point(at: (bounds.first + bounds.last) / 2)
+            else { continue }
             if simd_length(mid - point) <= tolerance {
                 matching.append(i)
             }
@@ -602,13 +657,16 @@ public struct FeatureReconstructor: Sendable {
         return matching.isEmpty ? nil : matching
     }
 
-    /// Edge indices of `target` that were "contributed by" `source` — heuristic:
+    /// Edge indices of `target` that were "contributed by" `source` — heuristic.
+    ///
     /// edges of target whose midpoint lies within a small tolerance of any edge
     /// midpoint of source. Useful for "fillet the edges the extrude created"
     /// without needing full BRepGraph history.
-    private static func edgeIndicesContributedBy(target: Shape,
-                                                  source: Shape,
-                                                  tolerance: Double = 1e-4) -> [Int]? {
+    private static func edgeIndicesContributedBy(
+        target: Shape,
+        source: Shape,
+        tolerance: Double = 1e-4
+    ) -> [Int]? {
         let sourceEdgeMidpoints = source.edges().compactMap { edge -> SIMD3<Double>? in
             guard let bounds = edge.parameterBounds else { return nil }
             return edge.point(at: (bounds.first + bounds.last) / 2)
@@ -616,7 +674,8 @@ public struct FeatureReconstructor: Sendable {
         var matching: [Int] = []
         for (i, edge) in target.edges().enumerated() {
             guard let bounds = edge.parameterBounds,
-                  let mid = edge.point(at: (bounds.first + bounds.last) / 2) else { continue }
+                let mid = edge.point(at: (bounds.first + bounds.last) / 2)
+            else { continue }
             if sourceEdgeMidpoints.contains(where: { simd_length($0 - mid) <= tolerance }) {
                 matching.append(i)
             }
@@ -626,10 +685,12 @@ public struct FeatureReconstructor: Sendable {
 
     // MARK: - Utilities
 
-    private static func recordSkip(ctx: inout BuildContext,
-                                    id: String?,
-                                    reason: Skipped.Reason,
-                                    stage: Skipped.Stage) {
+    private static func recordSkip(
+        ctx: inout BuildContext,
+        id: String?,
+        reason: Skipped.Reason,
+        stage: Skipped.Stage
+    ) {
         guard let id = id else { return }
         ctx.skipped.append(Skipped(featureID: id, reason: reason, stage: stage))
     }
@@ -651,7 +712,7 @@ public struct FeatureReconstructor: Sendable {
         }
         if let id = id {
             ctx.fulfilled.append(id)
-            ctx.namedShapes[id] = body    // register the feature's own body, not the fused
+            ctx.namedShapes[id] = body  // register the feature's own body, not the fused
         }
     }
 }
@@ -659,7 +720,8 @@ public struct FeatureReconstructor: Sendable {
 // MARK: - JSON front end
 
 extension FeatureReconstructor {
-    /// Minimal JSON front end: parses a top-level `{"features": [...]}` object
+    /// Minimal JSON front end: parses a top-level `{"features": [...]}` object.
+    ///
     /// with `kind`-discriminated entries. The full schema mirrors the OCCTDesignLoop
     /// part_graph.py contract; this is a starting surface for JSON-driven
     /// dispatch, to be extended as the schema stabilises.
@@ -682,10 +744,11 @@ extension FeatureReconstructor {
             guard let kind = entry.unknownKind, let id = entry.unknownID else {
                 continue
             }
-            augmentedSkipped.append(Skipped(
-                featureID: id,
-                reason: .unsupported("unknown JSON kind: \(kind)"),
-                stage: .additive))
+            augmentedSkipped.append(
+                Skipped(
+                    featureID: id,
+                    reason: .unsupported("unknown JSON kind: \(kind)"),
+                    stage: .additive))
         }
         return BuildResult(
             shape: result.shape,
@@ -737,34 +800,41 @@ private struct FeatureEntry: Decodable {
 
         switch kind {
         case "revolve":
-            let pts = try c.decode([[Double]].self, forKey: .profilePoints2D).map { SIMD2($0[0], $0[1]) }
+            let pts = try c.decode([[Double]].self, forKey: .profilePoints2D).map {
+                SIMD2($0[0], $0[1])
+            }
             let axisOrigin = try c.decode([Double].self, forKey: .axisOrigin)
             let axisDir = try c.decode([Double].self, forKey: .axisDirection)
             let angle = try c.decodeIfPresent(Double.self, forKey: .angleDeg) ?? 360
-            self.spec = .revolve(.init(
-                profilePoints2D: pts,
-                axisOrigin: SIMD3(axisOrigin[0], axisOrigin[1], axisOrigin[2]),
-                axisDirection: SIMD3(axisDir[0], axisDir[1], axisDir[2]),
-                angleDeg: angle, id: id))
+            self.spec = .revolve(
+                .init(
+                    profilePoints2D: pts,
+                    axisOrigin: SIMD3(axisOrigin[0], axisOrigin[1], axisOrigin[2]),
+                    axisDirection: SIMD3(axisDir[0], axisDir[1], axisDir[2]),
+                    angleDeg: angle, id: id))
         case "extrude":
-            let pts = try c.decode([[Double]].self, forKey: .profilePoints2D).map { SIMD2($0[0], $0[1]) }
+            let pts = try c.decode([[Double]].self, forKey: .profilePoints2D).map {
+                SIMD2($0[0], $0[1])
+            }
             let origin = try c.decode([Double].self, forKey: .planeOrigin)
             let normal = try c.decode([Double].self, forKey: .planeNormal)
             let length = try c.decode(Double.self, forKey: .length)
-            self.spec = .extrude(.init(
-                profilePoints2D: pts,
-                planeOrigin: SIMD3(origin[0], origin[1], origin[2]),
-                planeNormal: SIMD3(normal[0], normal[1], normal[2]),
-                length: length, id: id))
+            self.spec = .extrude(
+                .init(
+                    profilePoints2D: pts,
+                    planeOrigin: SIMD3(origin[0], origin[1], origin[2]),
+                    planeNormal: SIMD3(normal[0], normal[1], normal[2]),
+                    length: length, id: id))
         case "hole":
             let axisPoint = try c.decode([Double].self, forKey: .axisPoint)
             let axisDir = try c.decode([Double].self, forKey: .axisDirection)
             let d = try c.decode(Double.self, forKey: .diameter)
             let depth = try c.decodeIfPresent(Double.self, forKey: .depth)
-            self.spec = .hole(.init(
-                axisPoint: SIMD3(axisPoint[0], axisPoint[1], axisPoint[2]),
-                axisDirection: SIMD3(axisDir[0], axisDir[1], axisDir[2]),
-                diameter: d, depth: depth, id: id))
+            self.spec = .hole(
+                .init(
+                    axisPoint: SIMD3(axisPoint[0], axisPoint[1], axisPoint[2]),
+                    axisDirection: SIMD3(axisDir[0], axisDir[1], axisDir[2]),
+                    diameter: d, depth: depth, id: id))
         case "thread":
             let holeRef = try c.decode(String.self, forKey: .holeRef)
             let threadSpec = try c.decode(String.self, forKey: .spec)
@@ -786,8 +856,9 @@ private struct FeatureEntry: Decodable {
             }
             let leftID = try c.decode(String.self, forKey: .leftID)
             let rightID = try c.decode(String.self, forKey: .rightID)
-            self.spec = .boolean(.init(
-                op: op, leftID: leftID, rightID: rightID, id: id))
+            self.spec = .boolean(
+                .init(
+                    op: op, leftID: leftID, rightID: rightID, id: id))
         default:
             self.spec = nil
             self.unknownKind = kind
