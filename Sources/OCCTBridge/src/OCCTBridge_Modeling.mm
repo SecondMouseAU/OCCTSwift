@@ -262,11 +262,14 @@ OCCTDrawingRef OCCTDrawingCreate(OCCTShapeRef       shape,
   // orthographic projection silently. focus is what the perspective constructor needs and there is
   // no defensible default for it, so it is a parameter rather than a literal. Reject a
   // non-positive or NaN focus outright: it is a distance, and OCCT does not raise on one. Measured
-  // on a 100x50x30 box viewed down +Z, a negative focus returns a real but differently-scaled
-  // projection and focus 0 or 1e-12 returns a mirrored one, so neither reads as failure at the call
-  // site. (#1036 corrected this comment: focus 5 and 15 were cited here as also returning an empty
-  // VCompound, but both are positive and both are accepted, so they were never evidence for a test
-  // that only rejects focus <= 0. What they actually produce is the straddling case below.)
+  // on a 100x50x30 box viewed down +Z, focus 0 and 1e-12 return an empty VCompound and a negative
+  // focus returns a real but differently-scaled projection, so neither reads as failure at the call
+  // site. (#1036 trimmed this list rather than corrected it: focus 5 and 15 were cited here too,
+  // and they do return an empty VCompound on that fixture, but both are positive and both pass this
+  // test, so they were never evidence for it. That box spans z [-15, 15], so 5 and 15 put the eye
+  // inside it or on its face: they were measuring the straddling case, which this test never
+  // rejected and the reach guard below now does. Re-measured in
+  // Scripts/repro/1036-perspective-eye-anchor/guard_comment_probe.mm.)
   if (projectionType == OCCTProjectionPerspective && !(focus > 0))
     return nullptr;
 
