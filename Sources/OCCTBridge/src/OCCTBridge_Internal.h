@@ -1664,7 +1664,14 @@ inline TopoDS_Face occtFaceAt(const TopoDS_Shape& shape, int32_t index)
 
 /// The edge at 0-based `index` in `shape`'s edge enumeration, or a null edge when the index is
 /// negative, past the end, or names a sub-shape that is not an edge. `shape` is often a single
-/// face, whose edges are enumerated the same way.
+/// face, whose edges are enumerated the same way, or a bare edge, which enumerates as itself.
+///
+/// `occtEdgeAt(shape, 0)` is also the answer to "the first edge of this shape", which four entry
+/// points used to open-code as `ShapeType() == TopAbs_EDGE ? TopoDS::Edge(shape) : <first hit of a
+/// TopExp_Explorer>`, seven copies of it across two files (#975). Measured equivalent over eleven
+/// fixtures, including a bare edge, a reversed bare edge, a shape whose explorer walk repeats an
+/// edge, both orderings of an edge/wire compound, and two shapes with no edge at all: same edge by
+/// IsSame and the same orientation on every one, Scripts/repro/975-first-edge-idiom/.
 inline TopoDS_Edge occtEdgeAt(const TopoDS_Shape& shape, int32_t index)
 {
   TopoDS_Shape sub = occtSubShapeAt(shape, TopAbs_EDGE, index);

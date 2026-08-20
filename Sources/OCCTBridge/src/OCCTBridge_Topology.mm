@@ -1741,31 +1741,13 @@ OCCTEdgeEdgeExtremaResult OCCTBRepExtremaExtCCEdges(OCCTShapeRef edge1, OCCTShap
     return result;
   try
   {
-    TopoDS_Edge e1, e2;
-    if (edge1->shape.ShapeType() == TopAbs_EDGE)
-    {
-      e1 = TopoDS::Edge(edge1->shape);
-    }
-    else
-    {
-      for (TopExp_Explorer exp(edge1->shape, TopAbs_EDGE); exp.More(); exp.Next())
-      {
-        e1 = TopoDS::Edge(exp.Current());
-        break;
-      }
-    }
-    if (edge2->shape.ShapeType() == TopAbs_EDGE)
-    {
-      e2 = TopoDS::Edge(edge2->shape);
-    }
-    else
-    {
-      for (TopExp_Explorer exp(edge2->shape, TopAbs_EDGE); exp.More(); exp.Next())
-      {
-        e2 = TopoDS::Edge(exp.Current());
-        break;
-      }
-    }
+    // #975: occtEdgeAt(shape, 0) is this bridge's one spelling of "the first edge of this shape".
+    // OCCTBRepExtremaExtCC forty lines above, which takes an edge INDEX rather than a shape that
+    // holds one, was converted to the same enumeration by #613; the two ChFi2d entry points in
+    // OCCTBridge_Modeling.mm carried a byte-identical copy of the block this replaces. See
+    // OCCTBridge_Internal.h.
+    TopoDS_Edge e1 = occtEdgeAt(edge1->shape, 0);
+    TopoDS_Edge e2 = occtEdgeAt(edge2->shape, 0);
     if (e1.IsNull() || e2.IsNull())
       return result;
 
