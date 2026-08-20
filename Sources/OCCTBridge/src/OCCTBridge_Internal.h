@@ -2852,11 +2852,11 @@ inline int32_t occtBRepFeatCylindricalHole(OCCTShapeRef  shape,
 
 // === #994: one conversion between a 12-double INTERLEAVED matrix and a gp_Trsf ===
 //
-// OCCTBridge_Topology.mm had trsfFromMatrix12 and matrix12FromTrsf, a static pair; forty-eight
-// hundred lines away in OCCTBridge_BRepGraph.mm, locationFromMatrix did the identical SetValues
-// and wrapped the answer in a TopLoc_Location. Two files, so the helpers live here rather than
-// static in either (#943, #957): a static copy in another translation unit is one that can never
-// converge on this one.
+// OCCTBridge_Topology.mm had trsfFromMatrix12 and matrix12FromTrsf, a static pair serving three
+// call sites; OCCTBridge_BRepGraph.mm had locationFromMatrix, doing the identical SetValues and
+// wrapping the answer in a TopLoc_Location, serving four. Two files, so the helpers live here
+// rather than static in either (#943, #957): a static copy in another translation unit is one
+// that can never converge on this one.
 //
 // THE LAYOUT IS IN THE NAME ON PURPOSE. This bridge carries two 12-double conventions and they
 // are not interchangeable, which is what #835 fixed on the Swift side by giving each its own
