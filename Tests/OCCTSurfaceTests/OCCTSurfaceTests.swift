@@ -3633,19 +3633,6 @@ struct BSplineSurfaceKnotSplitTests {
     }
 }
 
-@Suite("DraftFaceInfo Surface Tests")
-struct DraftFaceInfoSurfaceTests {
-
-    @Test func faceInfoFromSurface() {
-        if let surf = Surface.plane(origin: .zero, normal: SIMD3(0, 0, 1)) {
-            // FaceInfo can be created from any surface
-            let result = DraftInfo.faceInfoFromSurface(surf)
-            // Result depends on whether surface was stored successfully
-            let _ = result
-        }
-    }
-}
-
 @Suite("BRepFill_PipeShell Extension Tests")
 struct PipeShellExtensionTests {
 

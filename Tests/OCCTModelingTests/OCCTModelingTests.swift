@@ -3775,40 +3775,6 @@ struct BRepOffsetAnalyseTests {
     }
 }
 
-@Suite("Draft Info Tests")
-struct DraftInfoTests {
-
-    @Test func edgeInfoNewGeometry() {
-        let ng = DraftInfo.edgeInfoNewGeometry
-        // Default EdgeInfo has no new geometry
-        #expect(!ng)
-    }
-
-    @Test func faceInfoNewGeometry() {
-        let ng = DraftInfo.faceInfoNewGeometry
-        #expect(!ng)
-    }
-
-    @Test func vertexInfoGeometry() {
-        let pt = DraftInfo.vertexInfoGeometry
-        // Default VertexInfo has origin geometry
-        #expect(abs(pt.x) < 1e-10)
-        #expect(abs(pt.y) < 1e-10)
-        #expect(abs(pt.z) < 1e-10)
-    }
-
-    @Test func edgeInfoSetTangent() {
-        let result = DraftInfo.edgeInfoSetTangent(direction: SIMD3(1, 0, 0))
-        // Should succeed
-        #expect(result)
-    }
-
-    @Test func vertexInfoAddParameter() {
-        let param = DraftInfo.vertexInfoAddParameter(3.14)
-        #expect(abs(param - 3.14) < 0.01)
-    }
-}
-
 @Suite("BRepAlgo_NormalProjection")
 struct BRepAlgoNormalProjectionTests {
     @Test func createProjection() {

@@ -9,7 +9,7 @@ This page covers geometry construction and analysis utilities added across v0.10
 
 ## Topics
 
-- [GC_MakeParabola2d](#gc_makeparabola2d) · [GCPnts_UniformAbscissa](#gcpnts_uniformabscissa) · [GeomConvert CompCurveToBSplineCurve](#geomconvert-compculvetobsplinecurve) · [Geom2dConvert CompCurveToBSplineCurve](#geom2dconvert-compcurvetobsplinecurve) · [Knot splitting, the deprecated v0.105.0 spellings](#geomconvert-bsplinesurfaceknotsplitting--geom2dconvert-bsplinecurveknotsplitting) · [BndLib extras](#bndlib-extras) · [GProp Torus](#gprop-torus) · [BRepTools_ReShape](#breptools_reshape) · [BRepTools_Substitution](#breptools_substitution) · [BRepLib_MakeVertex](#breplib_makevertex) · [BRepFill_PipeShell](#brepfill_pipeshell) · [OSD_Directory](#osd_directory) · [IntAna Cone-Sphere extensions](#intana-cone-sphere-extensions) · [XCAFPrs_DocumentExplorer extensions](#xcafprs_documentexplorer-extensions) · [Resource_Unicode](#resource_unicode) · [GProp weighted point sets](#gprop-weighted-point-sets) · [Draft info types](#draft-info-types) · [GeomLib_LogSample](#geomlib_logsample) · [GC_MakeConicalSurface](#gc_makeconicalsurface) · [GC_MakeCylindricalSurface](#gc_makecylindricalsurface) · [GC_MakeTrimmedCone](#gc_maketrimmedcone) · [GC_MakeTrimmedCylinder](#gc_maketrimmedcylinder) · [BRepLib_MakeEdge2d extensions](#breplib_makeedge2d-extensions) · [ShapeAnalysis_Wire](#shapeanalysis_wire) · [ShapeAnalysis_Edge](#shapeanalysis_edge) · [OSD_DirectoryIterator](#osd_directoryiterator) · [OSD_FileIterator](#osd_fileiterator) · [BRepFill_PipeShell extensions](#brepfill_pipeshell-extensions)
+- [GC_MakeParabola2d](#gc_makeparabola2d) · [GCPnts_UniformAbscissa](#gcpnts_uniformabscissa) · [GeomConvert CompCurveToBSplineCurve](#geomconvert-compculvetobsplinecurve) · [Geom2dConvert CompCurveToBSplineCurve](#geom2dconvert-compcurvetobsplinecurve) · [Knot splitting, the deprecated v0.105.0 spellings](#geomconvert-bsplinesurfaceknotsplitting--geom2dconvert-bsplinecurveknotsplitting) · [BndLib extras](#bndlib-extras) · [GProp Torus](#gprop-torus) · [BRepTools_ReShape](#breptools_reshape) · [BRepTools_Substitution](#breptools_substitution) · [BRepLib_MakeVertex](#breplib_makevertex) · [BRepFill_PipeShell](#brepfill_pipeshell) · [OSD_Directory](#osd_directory) · [IntAna Cone-Sphere extensions](#intana-cone-sphere-extensions) · [XCAFPrs_DocumentExplorer extensions](#xcafprs_documentexplorer-extensions) · [Resource_Unicode](#resource_unicode) · [GProp weighted point sets](#gprop-weighted-point-sets) · [GeomLib_LogSample](#geomlib_logsample) · [GC_MakeConicalSurface](#gc_makeconicalsurface) · [GC_MakeCylindricalSurface](#gc_makecylindricalsurface) · [GC_MakeTrimmedCone](#gc_maketrimmedcone) · [GC_MakeTrimmedCylinder](#gc_maketrimmedcylinder) · [BRepLib_MakeEdge2d extensions](#breplib_makeedge2d-extensions) · [ShapeAnalysis_Wire](#shapeanalysis_wire) · [ShapeAnalysis_Edge](#shapeanalysis_edge) · [OSD_DirectoryIterator](#osd_directoryiterator) · [OSD_FileIterator](#osd_fileiterator) · [BRepFill_PipeShell extensions](#brepfill_pipeshell-extensions)
 
 ---
 
@@ -1245,112 +1245,6 @@ public static func barycentre(_ points: [SIMD3<Double>]) -> SIMD3<Double>?
   let c = GeometryProperties.barycentre([SIMD3(0,0,0), SIMD3(4,0,0)])
   // c == SIMD3(2, 0, 0)
   GeometryProperties.barycentre([])   // nil
-  ```
-
----
-
-## Draft info types
-
-Diagnostic queries on the default-constructed internal OCCT `Draft` info objects (`Draft_EdgeInfo`, `Draft_FaceInfo`, `Draft_VertexInfo`). All members are on the `DraftInfo` enum.
-
-### `DraftInfo.edgeInfoNewGeometry`
-
-Default `Draft_EdgeInfo::NewGeometry` flag value.
-
-```swift
-public static var edgeInfoNewGeometry: Bool { get }
-```
-
-- **OCCT:** `Draft_EdgeInfo::NewGeometry`
-- **Example:**
-  ```swift
-  let flag = DraftInfo.edgeInfoNewGeometry
-  ```
-
----
-
-### `DraftInfo.faceInfoNewGeometry`
-
-Default `Draft_FaceInfo::NewGeometry` flag value.
-
-```swift
-public static var faceInfoNewGeometry: Bool { get }
-```
-
-- **OCCT:** `Draft_FaceInfo::NewGeometry`
-- **Example:**
-  ```swift
-  let flag = DraftInfo.faceInfoNewGeometry
-  ```
-
----
-
-### `DraftInfo.vertexInfoGeometry`
-
-Geometry point of a default `Draft_VertexInfo`.
-
-```swift
-public static var vertexInfoGeometry: SIMD3<Double> { get }
-```
-
-- **OCCT:** `Draft_VertexInfo::Geometry`
-- **Example:**
-  ```swift
-  let pt = DraftInfo.vertexInfoGeometry
-  ```
-
----
-
-### `DraftInfo.edgeInfoSetTangent(direction:)`
-
-Set the tangent on a default `Draft_EdgeInfo` and report success.
-
-```swift
-public static func edgeInfoSetTangent(direction: SIMD3<Double>) -> Bool
-```
-
-- **Parameters:** `direction` — tangent direction vector.
-- **Returns:** `true` if the tangent was accepted.
-- **OCCT:** `Draft_EdgeInfo::SetNewGeometry` / tangent setter
-- **Example:**
-  ```swift
-  _ = DraftInfo.edgeInfoSetTangent(direction: SIMD3(0, 0, 1))
-  ```
-
----
-
-### `DraftInfo.faceInfoFromSurface(_:)`
-
-Populate a `Draft_FaceInfo` from a `Surface` and check the root-face result.
-
-```swift
-public static func faceInfoFromSurface(_ surface: Surface) -> Bool
-```
-
-- **Parameters:** `surface` — the surface to probe.
-- **Returns:** `true` if the RootFace check passes.
-- **OCCT:** `Draft_FaceInfo` + `RootFace`
-- **Example:**
-  ```swift
-  if DraftInfo.faceInfoFromSurface(mySurface) { /* ... */ }
-  ```
-
----
-
-### `DraftInfo.vertexInfoAddParameter(_:)`
-
-Add a parameter to a default `Draft_VertexInfo` and retrieve it back.
-
-```swift
-public static func vertexInfoAddParameter(_ param: Double) -> Double
-```
-
-- **Parameters:** `param` — the parameter value to insert.
-- **Returns:** The parameter retrieved from the info object (round-trip check).
-- **OCCT:** `Draft_VertexInfo::AddParam` / `Parameter`
-- **Example:**
-  ```swift
-  let p = DraftInfo.vertexInfoAddParameter(0.5)
   ```
 
 ---

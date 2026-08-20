@@ -10807,7 +10807,7 @@ OCCTLawFunctionRef OCCTLawInterpolate(const double* values,
   }
 }
 
-// MARK: - v0.105: BRepFill_PipeShell + Draft info types
+// MARK: - v0.105: BRepFill_PipeShell
 // MARK: - BRepFill_PipeShell (v0.105.0)
 
 #include <BRepFill_PipeShell.hxx>
@@ -11035,101 +11035,6 @@ bool OCCTPipeShellIsReady(OCCTPipeShellRef ps)
   catch (...)
   {
     return false;
-  }
-}
-
-// MARK: - Draft info types (v0.105.0)
-
-#include <Draft_EdgeInfo.hxx>
-#include <Draft_FaceInfo.hxx>
-#include <Draft_VertexInfo.hxx>
-
-bool OCCTDraftEdgeInfoNewGeometry(void)
-{
-  try
-  {
-    Draft_EdgeInfo ei;
-    return ei.NewGeometry();
-  }
-  catch (...)
-  {
-    return false;
-  }
-}
-
-bool OCCTDraftFaceInfoNewGeometry(void)
-{
-  try
-  {
-    Draft_FaceInfo fi;
-    return fi.NewGeometry();
-  }
-  catch (...)
-  {
-    return false;
-  }
-}
-
-void OCCTDraftVertexInfoGeometry(double* x, double* y, double* z)
-{
-  *x = 0;
-  *y = 0;
-  *z = 0;
-  try
-  {
-    Draft_VertexInfo vi;
-    gp_Pnt           p = vi.Geometry();
-    *x                 = p.X();
-    *y                 = p.Y();
-    *z                 = p.Z();
-  }
-  catch (...)
-  {
-  }
-}
-
-bool OCCTDraftEdgeInfoSetTangent(double dx, double dy, double dz)
-{
-  try
-  {
-    Draft_EdgeInfo ei;
-    ei.SetNewGeometry(true);
-    return ei.NewGeometry();
-  }
-  catch (...)
-  {
-    return false;
-  }
-}
-
-bool OCCTDraftFaceInfoFromSurface(OCCTSurfaceRef surface)
-{
-  if (!surface || surface->surface.IsNull())
-    return false;
-  try
-  {
-    Draft_FaceInfo fi(surface->surface, false);
-    return true;
-  }
-  catch (...)
-  {
-    return false;
-  }
-}
-
-double OCCTDraftVertexInfoAddParameter(double param)
-{
-  try
-  {
-    Draft_VertexInfo vi;
-    // Draft_VertexInfo::Add takes an edge, Parameter takes an edge
-    // Instead, just verify default vertex info works and return the param
-    gp_Pnt p = vi.Geometry();
-    return param; // echo back, since VertexInfo is internal-use only
-  }
-  catch (...)
-  {
-    return 0;
   }
 }
 
