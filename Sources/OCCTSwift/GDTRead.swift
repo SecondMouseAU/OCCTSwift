@@ -59,7 +59,35 @@ extension Document {
         case commonLabel = 30
         case dimensionPresentation = 31
     }
+}
 
+extension Document.DimensionType {
+    /// Whether this type measures a distance between two features rather than one feature's size.
+    ///
+    /// Asked of OCCT's own `XCAFDimTolObjects_DimensionObject::IsDimensionalLocation` rather than
+    /// re-derived from the case list, so a type OCCT reclassifies moves with it.
+    ///
+    /// ```swift
+    /// let locations = doc.dimensions.filter(\.type.isDimensionalLocation)
+    /// ```
+    public var isDimensionalLocation: Bool {
+        OCCTDimensionTypeIsDimensionalLocation(rawValue)
+    }
+
+    /// Whether this type measures one feature's own size rather than a distance between two.
+    ///
+    /// Asked of OCCT's own `XCAFDimTolObjects_DimensionObject::IsDimensionalSize`. Neither
+    /// classifier holds for every type: `.commonLabel` and `.dimensionPresentation` are neither.
+    ///
+    /// ```swift
+    /// let sizes = doc.dimensions.filter(\.type.isDimensionalSize)
+    /// ```
+    public var isDimensionalSize: Bool {
+        OCCTDimensionTypeIsDimensionalSize(rawValue)
+    }
+}
+
+extension Document {
     /// ASME / ISO geometric tolerance classes, matching `XCAFDimTolObjects_GeomToleranceType`.
     ///
     /// ```swift
@@ -120,6 +148,75 @@ extension Document {
         case za = 26
         case zb = 27
         case zc = 28
+    }
+
+    /// Whether a dimension's value is a minimum, a maximum or an average rather than a nominal,
+    /// matching `XCAFDimTolObjects_DimensionQualifier`.
+    ///
+    /// `.none` is OCCT's own member for "no qualifier", so it means the value is nominal rather
+    /// than standing in for an absent answer. `HasQualifier()` is exactly `!= .none`. Spell the
+    /// type out when comparing through an optional chain, since a bare `.none` there resolves to
+    /// `Optional.none` instead.
+    ///
+    /// ```swift
+    /// let maxima = doc.dimensions.filter { $0.qualifier == .max }
+    /// ```
+    public enum DimensionQualifier: Int32, Sendable, CaseIterable {
+        case none = 0
+        case min = 1
+        case max = 2
+        case avg = 3
+    }
+
+    /// Whether an angular dimension names the small, the large or the equal angle, matching
+    /// `XCAFDimTolObjects_AngularQualifier`.
+    ///
+    /// `.none` is OCCT's own member for "no qualifier", the same as `DimensionQualifier.none`,
+    /// and it carries the same optional-chain caveat.
+    ///
+    /// ```swift
+    /// let reflex = doc.dimensions.filter { $0.angularQualifier == .large }
+    /// ```
+    public enum AngularQualifier: Int32, Sendable, CaseIterable {
+        case none = 0
+        case small = 1
+        case large = 2
+        case equal = 3
+    }
+
+    /// A GD&T modifier attached to a dimension, matching `XCAFDimTolObjects_DimensionModif`.
+    ///
+    /// Unlike the qualifiers, this enum has no `none` member: a dimension carries a sequence of
+    /// these, and the sequence being empty is what "no modifier" means.
+    ///
+    /// ```swift
+    /// let statistical = doc.dimensions.filter { $0.modifiers.contains(.statisticalTolerance) }
+    /// ```
+    public enum DimensionModifier: Int32, Sendable, CaseIterable {
+        case controlledRadius = 0
+        case square = 1
+        case statisticalTolerance = 2
+        case continuousFeature = 3
+        case twoPointSize = 4
+        case localSizeDefinedBySphere = 5
+        case leastSquaresAssociationCriterion = 6
+        case maximumInscribedAssociation = 7
+        case minimumCircumscribedAssociation = 8
+        case circumferenceDiameter = 9
+        case areaDiameter = 10
+        case volumeDiameter = 11
+        case maximumSize = 12
+        case minimumSize = 13
+        case averageSize = 14
+        case medianSize = 15
+        case midRangeSize = 16
+        case rangeOfSizes = 17
+        case anyRestrictedPortionOfFeature = 18
+        case anyCrossSection = 19
+        case specificFixedCrossSection = 20
+        case commonTolerance = 21
+        case freeStateCondition = 22
+        case between = 23
     }
 
     /// ISO 286 accuracy grade, matching `XCAFDimTolObjects_DimensionGrade`.
@@ -194,6 +291,17 @@ extension Document {
             public let grade: DimensionGrade
         }
 
+        /// The number of decimal places a dimension is drawn to, present when OCCT stored a pair.
+        ///
+        /// OCCT keeps the pair only when one of the two is positive, so `DecimalPlaces(0, 0)` is
+        /// not representable: that reading is reported as `nil` rather than as a measured zero.
+        public struct DecimalPlaces: Sendable, Hashable {
+            /// Places to the left of the decimal point.
+            public let left: Int
+            /// Places to the right of the decimal point.
+            public let right: Int
+        }
+
         /// The STEP AP242 dimension sub-type.
         public let type: DimensionType
 
@@ -206,6 +314,20 @@ extension Document {
 
         /// The ISO 286 tolerance class, or `nil` if the dimension carries none.
         public let classOfTolerance: ClassOfTolerance?
+
+        /// Whether `value` is a minimum, a maximum, an average, or (`.none`) a nominal.
+        public let qualifier: DimensionQualifier
+
+        /// Whether an angular dimension names the small, the large or the equal angle.
+        public let angularQualifier: AngularQualifier
+
+        /// The drawn decimal-place pair, or `nil` when the dimension carries none.
+        public let decimalPlaces: DecimalPlaces?
+
+        /// The GD&T modifiers attached to this dimension, in OCCT's own order.
+        ///
+        /// Empty when the dimension carries none.
+        public let modifiers: [DimensionModifier]
 
         /// Position in the document's dimension sequence.
         public let index: Int
@@ -318,11 +440,29 @@ extension Document {
                 grade: grade)
         }
 
+        var decimalPlaces: Dimension.DecimalPlaces?
+        if info.hasDecimalPlaces {
+            decimalPlaces = Dimension.DecimalPlaces(
+                left: Int(info.decimalPlacesLeft), right: Int(info.decimalPlacesRight))
+        }
+
+        // A raw value OCCT declares but this enum does not is dropped rather than substituted, the
+        // same rule `type` follows above. `Scripts/derive-gdt-enums.py --verify` is what keeps that
+        // from happening silently.
+        let modifiers = (0..<Int(info.modifierCount)).compactMap { position in
+            DimensionModifier(
+                rawValue: OCCTDocumentGetDimensionModifier(handle, Int32(index), Int32(position)))
+        }
+
         return Dimension(
             type: type,
             value: bounds == .unset ? nil : info.value,
             bounds: bounds,
             classOfTolerance: classOfTolerance,
+            qualifier: DimensionQualifier(rawValue: info.qualifier) ?? .none,
+            angularQualifier: AngularQualifier(rawValue: info.angularQualifier) ?? .none,
+            decimalPlaces: decimalPlaces,
+            modifiers: modifiers,
             index: index)
     }
 

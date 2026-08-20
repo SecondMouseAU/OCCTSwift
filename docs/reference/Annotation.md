@@ -646,12 +646,15 @@ public var colors: [SIMD3<Float>] { get }
 
 These types are declared as extensions on `Document` in `GDTRead.swift` and encode the STEP AP242 GD&T vocabulary.
 
-The four `Int32`-backed enums here are transcribed member for member from the pinned kernel's own
+The seven `Int32`-backed enums here are transcribed member for member from the pinned kernel's own
 `XCAFDimTolObjects_*` headers, and the bridge casts OCCT's enum straight across with no sentinel and
 no remap. `Scripts/derive-gdt-enums.py --verify` gates that transcription against
 `Scripts/occt-gdt-enums.txt` on every CI run, and `--reverify-headers` re-derives the manifest from
 the pinned headers after an OCCT bump. Without it, a member OCCT adds turns into a `nil` from
-`dimension(at:)` rather than an error (#996).
+`dimension(at:)` rather than an error (#996). `DimensionQualifier`, `AngularQualifier` and
+`DimensionModifier` joined the gate with the accessors that return them (#1004); the eight
+`XCAFDimTolObjects` enums still unbound are named by `--reverify-headers` and recorded in
+`docs/occtswift-wrapping-gaps.md`.
 
 ---
 
@@ -741,6 +744,41 @@ Each case is indexed below too, so a reference link can land on one directly; th
 the authoritative description.
 
 #### `Document.DimensionType.dimensionPresentation`
+
+#### `Document.DimensionType.isDimensionalLocation`
+
+Whether this type measures a distance between two features rather than one feature's own size.
+
+```swift
+public var isDimensionalLocation: Bool { get }
+```
+
+- **Returns:** `true` for the `location*` family.
+- **OCCT:** `XCAFDimTolObjects_DimensionObject::IsDimensionalLocation`, a static classifier that
+  needs no dimension object. Asked of OCCT rather than re-derived from the case list, so a type OCCT
+  reclassifies moves with it.
+- **Example:**
+  ```swift
+  let locations = doc.dimensions.filter(\.type.isDimensionalLocation)
+  ```
+
+#### `Document.DimensionType.isDimensionalSize`
+
+Whether this type measures one feature's own size rather than a distance between two.
+
+```swift
+public var isDimensionalSize: Bool { get }
+```
+
+- **Returns:** `true` for the `size*` family.
+- **OCCT:** `XCAFDimTolObjects_DimensionObject::IsDimensionalSize`.
+- **Example:**
+  ```swift
+  let sizes = doc.dimensions.filter(\.type.isDimensionalSize)
+  ```
+
+The two do not partition the enum: `.commonLabel` and `.dimensionPresentation` are neither, and no
+case is both.
 
 ---
 
@@ -878,6 +916,120 @@ Raw values run finest to coarsest, so `.it01` is 0 and `.it18` is 19. The raw va
 
 ---
 
+### `Document.DimensionQualifier`
+
+Maps OCCT's `XCAFDimTolObjects_DimensionQualifier`: whether a dimension's value is a minimum, a
+maximum or an average rather than a nominal.
+
+```swift
+public enum DimensionQualifier: Int32, Sendable, CaseIterable {
+    case none = 0
+    case min = 1
+    case max = 2
+    case avg = 3
+}
+```
+
+| Case | Meaning |
+|---|---|
+| `.none` | The value is nominal. OCCT's own member for "no qualifier", so this is absence, not a stand-in for it. |
+| `.min` | The value is the minimum the feature may take. |
+| `.max` | The value is the maximum the feature may take. |
+| `.avg` | The value is an average across the feature. |
+
+OCCT's `HasQualifier()` is exactly `!= .none`, so there is no separate predicate on the Swift side.
+
+**Spell the type out when comparing through an optional chain.** `doc.dimension(at: 0)?.qualifier
+== .none` resolves `.none` to `Optional.none`, so it is true for a missing dimension as well as an
+unqualified one. Write `== Document.DimensionQualifier.none`, or bind the dimension first.
+
+```swift
+if let dim = doc.dimension(at: 0), dim.qualifier == .max {
+    print("\(dim.value ?? 0) is a maximum, not a nominal")
+}
+```
+
+---
+
+### `Document.AngularQualifier`
+
+Maps OCCT's `XCAFDimTolObjects_AngularQualifier`: which of the two angles at a vertex an angular
+dimension names.
+
+```swift
+public enum AngularQualifier: Int32, Sendable, CaseIterable {
+    case none = 0
+    case small = 1
+    case large = 2
+    case equal = 3
+}
+```
+
+| Case | Meaning |
+|---|---|
+| `.none` | No angular qualifier. |
+| `.small` | The dimension names the smaller of the two angles. |
+| `.large` | The dimension names the larger of the two angles. |
+| `.equal` | The two angles are equal, so the distinction does not apply. |
+
+Independent of `DimensionQualifier`: OCCT stores them in two separate members, and a dimension can
+carry both.
+
+```swift
+if let dim = doc.dimension(at: 0), dim.angularQualifier == .large {
+    print("reflex angle")
+}
+```
+
+---
+
+### `Document.DimensionModifier`
+
+Maps OCCT's `XCAFDimTolObjects_DimensionModif`: the 24 GD&T modifiers a dimension can carry. Unlike
+the two qualifiers this enum has no `none` member: a dimension carries a *sequence* of modifiers, and
+an empty sequence is what "no modifier" means.
+
+```swift
+public enum DimensionModifier: Int32, Sendable, CaseIterable {
+    case controlledRadius = 0
+    case square = 1
+    case statisticalTolerance = 2
+    case continuousFeature = 3
+    case twoPointSize = 4
+    case localSizeDefinedBySphere = 5
+    case leastSquaresAssociationCriterion = 6
+    case maximumInscribedAssociation = 7
+    case minimumCircumscribedAssociation = 8
+    case circumferenceDiameter = 9
+    case areaDiameter = 10
+    case volumeDiameter = 11
+    case maximumSize = 12
+    case minimumSize = 13
+    case averageSize = 14
+    case medianSize = 15
+    case midRangeSize = 16
+    case rangeOfSizes = 17
+    case anyRestrictedPortionOfFeature = 18
+    case anyCrossSection = 19
+    case specificFixedCrossSection = 20
+    case commonTolerance = 21
+    case freeStateCondition = 22
+    case between = 23
+}
+```
+
+Raw values match `XCAFDimTolObjects_DimensionModif` integer codes. Names and meanings follow ISO 14405
+and ASME Y14.5; OCCT's enum is a direct transcription of those standards' modifier symbols. Order is
+preserved end to end: the sequence reads back in the order it was written, since it crosses the bridge
+as a count plus a positional index rather than as a set.
+
+```swift
+doc.setDimensionModifiers(at: 0, [.statisticalTolerance, .anyCrossSection])
+print(doc.dimension(at: 0)?.modifiers ?? [])   // [.statisticalTolerance, .anyCrossSection]
+```
+
+---
+
 ### `Document.Dimension`
 
 A dimension read from, or created on, a `Document`.
@@ -888,6 +1040,10 @@ public struct Dimension: Sendable, Hashable {
     public let value: Double?
     public let bounds: Bounds
     public let classOfTolerance: ClassOfTolerance?
+    public let qualifier: DimensionQualifier
+    public let angularQualifier: AngularQualifier
+    public let decimalPlaces: DecimalPlaces?
+    public let modifiers: [DimensionModifier]
     public let index: Int
 
     public var lowerBound: Double? { get }
@@ -901,7 +1057,16 @@ public struct Dimension: Sendable, Hashable {
 - `value` — the nominal value as OCCT's `GetValue()` reports it: a range's midpoint, the single value otherwise, `nil` when `bounds` is `.unset`.
 - `bounds` — which of OCCT's dimension kinds this is, and its data.
 - `classOfTolerance` — the ISO 286 class, or `nil` if the dimension carries none. Independent of `bounds`.
+- `qualifier`: whether `value` is a minimum, a maximum, an average, or (`.none`) a nominal.
+- `angularQualifier`: which of the two angles an angular dimension names.
+- `decimalPlaces`: the drawn decimal-place pair, or `nil` when the dimension carries none.
+- `modifiers`: the GD&T modifiers, in OCCT's own order. Empty when the dimension carries none.
 - `index` — position in the document's dimension sequence, for use with `setDimensionTolerance(at:lower:upper:)` and its siblings.
+
+`qualifier` and `angularQualifier` are not optional, unlike `classOfTolerance` and `decimalPlaces`.
+OCCT's own enums carry a `_None` member for those two, so absence is already in the vocabulary and
+wrapping them in an `Optional` would give two spellings of one state. The other two have no such
+member and their zero reading is a real value, so they are optional (#1004).
 
 The four computed accessors project out of `bounds` and answer `nil` where the kind does not carry that quantity. They exist so a caller that only wants one number does not have to `switch`; the enum is the model.
 
@@ -963,6 +1128,30 @@ public struct ClassOfTolerance: Sendable, Hashable {
 - `grade` — the accuracy grade, the number in `H7`.
 
 Independent of `bounds`: OCCT keeps the class outside the values array, so a `.range` or `.plusMinus` dimension can carry one too. Measured both ways in `Scripts/repro/996-gdt-read-surface/`.
+
+---
+
+#### `Document.Dimension.DecimalPlaces`
+
+The number of decimal places a dimension is drawn to.
+
+```swift
+public struct DecimalPlaces: Sendable, Hashable {
+    public let left: Int
+    public let right: Int
+}
+```
+
+- `left`: places to the left of the decimal point.
+- `right`: places to the right.
+
+`Dimension.decimalPlaces` is `nil` when the dimension carries no pair, and `DecimalPlaces(0, 0)` is
+not representable. That is not a Swift convention layered on top: `XCAFDoc_Dimension::SetObject`
+stores the pair on the label only when `theL > 0 || theR > 0`, so that expression *is* the presence
+test. `GetNbOfDecimalPlaces` has no predicate beside it and answers a flat `(0, 0)` for a dimension
+that never had one, which a caller could not tell from a real request for zero places (#1004).
+
+A zero on one side alone is a stored pair and reads back: `(0, 4)` survives the round trip.
 
 ---
 
@@ -1356,3 +1545,107 @@ public func setDimensionClassOfTolerance(at index: Int,
 
 A class of tolerance lives outside the values array, so setting one does not change `bounds`, and a
 `.range` or `.plusMinus` dimension can carry one.
+
+
+---
+
+### `setDimensionQualifier(at:_:)`
+
+Sets whether an existing dimension's value is a minimum, a maximum or an average.
+
+```swift
+@discardableResult
+public func setDimensionQualifier(at index: Int, _ qualifier: DimensionQualifier) -> Bool
+```
+
+- **Parameters:**
+  - `index`: zero-based dimension index.
+  - `qualifier`: pass `.none` to clear the qualifier, which is OCCT's own spelling for a nominal value.
+- **Returns:** `true` if the update succeeded; `false` if the index is out of range, the attribute is missing, or `qualifier` is outside the enum.
+- **OCCT:** `XCAFDimTolObjects_DimensionObject::SetQualifier` → `XCAFDoc_Dimension::SetObject`.
+- **Example:**
+  ```swift
+  let idx = doc.createDimension(on: shapeLabel, type: .sizeDiameter, value: 20.0)!
+  doc.setDimensionQualifier(at: idx, .max)
+  #expect(doc.dimension(at: idx)?.qualifier == .max)
+  ```
+
+The qualifier lives outside the values array, so setting one does not change `bounds` or `value`.
+
+---
+
+### `setDimensionAngularQualifier(at:_:)`
+
+Sets which of the two angles an existing angular dimension names.
+
+```swift
+@discardableResult
+public func setDimensionAngularQualifier(at index: Int, _ qualifier: AngularQualifier) -> Bool
+```
+
+- **Parameters:**
+  - `index`: zero-based dimension index.
+  - `qualifier`: pass `.none` to clear it.
+- **Returns:** `true` if the update succeeded; `false` if the index is out of range, the attribute is missing, or `qualifier` is outside the enum.
+- **OCCT:** `XCAFDimTolObjects_DimensionObject::SetAngularQualifier` → `XCAFDoc_Dimension::SetObject`.
+- **Example:**
+  ```swift
+  let idx = doc.createDimension(on: shapeLabel, type: .sizeAngular, value: 45.0)!
+  doc.setDimensionAngularQualifier(at: idx, .large)
+  #expect(doc.dimension(at: idx)?.angularQualifier == .large)
+  ```
+
+Independent of `setDimensionQualifier(at:_:)`: they write two separate OCCT members.
+
+---
+
+### `setDimensionDecimalPlaces(at:left:right:)`
+
+Sets the number of decimal places an existing dimension is drawn to.
+
+```swift
+@discardableResult
+public func setDimensionDecimalPlaces(at index: Int, left: Int, right: Int) -> Bool
+```
+
+- **Parameters:**
+  - `index`: zero-based dimension index.
+  - `left`: places to the left of the decimal point.
+  - `right`: places to the right.
+- **Returns:** `true` if the update succeeded; `false` if the index is out of range, the attribute is missing, or either count is negative.
+- **OCCT:** `XCAFDimTolObjects_DimensionObject::SetNbOfDecimalPlaces` → `XCAFDoc_Dimension::SetObject`.
+- **Example:**
+  ```swift
+  let idx = doc.createDimension(on: shapeLabel, type: .sizeDiameter, value: 20.0)!
+  doc.setDimensionDecimalPlaces(at: idx, left: 2, right: 3)
+  #expect(doc.dimension(at: idx)?.decimalPlaces?.right == 3)
+  ```
+
+Passing `0` for both clears the pair, so `dimension(at:)` reports `decimalPlaces` as `nil`. That
+matches the condition OCCT itself stores the pair under.
+
+---
+
+### `setDimensionModifiers(at:_:)`
+
+Replaces an existing dimension's GD&T modifier sequence.
+
+```swift
+@discardableResult
+public func setDimensionModifiers(at index: Int, _ modifiers: [DimensionModifier]) -> Bool
+```
+
+- **Parameters:**
+  - `index`: zero-based dimension index.
+  - `modifiers`: the new sequence, in the order OCCT should store it. An empty array clears the sequence.
+- **Returns:** `true` if the update succeeded; `false` if the index is out of range or the attribute is missing.
+- **OCCT:** `XCAFDimTolObjects_DimensionObject::SetModifiers` → `XCAFDoc_Dimension::SetObject`.
+- **Example:**
+  ```swift
+  let idx = doc.createDimension(on: shapeLabel, type: .sizeDiameter, value: 20.0)!
+  doc.setDimensionModifiers(at: idx, [.anyCrossSection, .square])
+  #expect(doc.dimension(at: idx)?.modifiers == [.anyCrossSection, .square])
+  ```
+
+This replaces rather than appends, which is what makes clearing expressible; OCCT's `AddModifier`
+appends and has no counterpart that empties the sequence.

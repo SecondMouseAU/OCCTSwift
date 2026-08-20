@@ -181,6 +181,11 @@ typedef enum
 /// hand, so a caller reading them unconditionally cannot tell an unset tolerance from a range
 /// dimension. Before #996 this struct had no discriminator and reported a 10..12 range as
 /// value=10 with both tolerances 0.
+///
+/// hasDecimalPlaces is the same shape one level down. GetNbOfDecimalPlaces() has no predicate
+/// beside it, and XCAFDoc_Dimension::SetObject stores the pair only when `theL > 0 || theR > 0`,
+/// so that expression IS the presence test rather than an approximation of one; anything else
+/// would report an unstored pair as a measured (0,0) (#1004).
 typedef struct
 {
   int32_t type;                // XCAFDimTolObjects_DimensionType enum
@@ -194,11 +199,31 @@ typedef struct
   bool    classOfToleranceIsHole; // GetClassOfTolerance()'s theHole out-parameter
   int32_t formVariance;           // XCAFDimTolObjects_DimensionFormVariance enum
   int32_t grade;                  // XCAFDimTolObjects_DimensionGrade enum
+  int32_t qualifier;              // XCAFDimTolObjects_DimensionQualifier enum, _None when absent
+  int32_t angularQualifier;       // XCAFDimTolObjects_AngularQualifier enum, _None when absent
+  bool    hasDecimalPlaces;       // see below; false leaves the two counts at 0
+  int32_t decimalPlacesLeft;      // GetNbOfDecimalPlaces()'s theL out-parameter
+  int32_t decimalPlacesRight;     // GetNbOfDecimalPlaces()'s theR out-parameter
+  int32_t modifierCount; // GetModifiers().Length(), index with OCCTDocumentGetDimensionModifier
   bool    isValid;
 } OCCTDimensionInfo;
 
 /// Get dimension info at index
 OCCTDimensionInfo OCCTDocumentGetDimensionInfo(OCCTDocumentRef doc, int32_t index);
+
+/// One modifier of the dimension at dimensionIndex, as an XCAFDimTolObjects_DimensionModif value.
+/// GetModifiers() returns a sequence rather than a scalar, so it crosses the bridge as this
+/// count-plus-index pair with OCCTDimensionInfo::modifierCount. modifierIndex is zero-based;
+/// returns -1 for either index out of range (#1004).
+int32_t OCCTDocumentGetDimensionModifier(OCCTDocumentRef _Nonnull doc,
+                                         int32_t dimensionIndex,
+                                         int32_t modifierIndex);
+
+/// XCAFDimTolObjects_DimensionObject::IsDimensionalLocation / IsDimensionalSize, which are static
+/// classifiers of the type code and need no dimension object. type is an
+/// XCAFDimTolObjects_DimensionType value; both return false for a value outside that enum.
+bool OCCTDimensionTypeIsDimensionalLocation(int32_t type);
+bool OCCTDimensionTypeIsDimensionalSize(int32_t type);
 
 /// Geometric tolerance info result
 typedef struct
@@ -272,6 +297,36 @@ bool OCCTDocumentSetDimensionClassOfTolerance(OCCTDocumentRef _Nonnull doc,
                                               bool    isHole,
                                               int32_t formVariance,
                                               int32_t grade);
+
+/// Set the dimension's qualifier (min / max / average), via
+/// XCAFDimTolObjects_DimensionObject::SetQualifier. qualifier is an
+/// XCAFDimTolObjects_DimensionQualifier value; _None clears it. Returns true on success (#1004).
+bool OCCTDocumentSetDimensionQualifier(OCCTDocumentRef _Nonnull doc,
+                                       int32_t dimensionIndex,
+                                       int32_t qualifier);
+
+/// Set the dimension's angular qualifier (small / large / equal), via
+/// XCAFDimTolObjects_DimensionObject::SetAngularQualifier. angularQualifier is an
+/// XCAFDimTolObjects_AngularQualifier value; _None clears it. Returns true on success (#1004).
+bool OCCTDocumentSetDimensionAngularQualifier(OCCTDocumentRef _Nonnull doc,
+                                              int32_t dimensionIndex,
+                                              int32_t angularQualifier);
+
+/// Set the number of decimal places left and right of the point, via
+/// XCAFDimTolObjects_DimensionObject::SetNbOfDecimalPlaces. Both zero clears the pair, matching the
+/// condition XCAFDoc_Dimension::SetObject stores it under. Returns true on success (#1004).
+bool OCCTDocumentSetDimensionDecimalPlaces(OCCTDocumentRef _Nonnull doc,
+                                           int32_t dimensionIndex,
+                                           int32_t left,
+                                           int32_t right);
+
+/// Replace the dimension's modifier sequence with the given XCAFDimTolObjects_DimensionModif
+/// values, via SetModifiers. Passing count 0 clears the sequence. Returns false if the index is out
+/// of range, if count is negative, or if modifiers is NULL with a positive count (#1004).
+bool OCCTDocumentSetDimensionModifiers(OCCTDocumentRef _Nonnull doc,
+                                       int32_t dimensionIndex,
+                                       const int32_t* _Nullable modifiers,
+                                       int32_t count);
 
 // MARK: - TNaming: Topological Naming History (v0.25.0)
 

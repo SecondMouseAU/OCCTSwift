@@ -8,9 +8,12 @@ import OCCTBridge
 // `GeomToleranceType`, `DimensionFormVariance` and `DimensionGrade` vocabulary these methods take,
 // lives in `GDTRead.swift` (#996).
 //
-// Current scope is deliberately narrow: create plus the three modifiers that reach OCCT's three
-// dimension kinds. The rest of `XCAFDimTolObjects_DimensionObject`'s surface (qualifier, modifier
-// sequences, path, direction, presentation) stays unwrapped; see #1004.
+// #1004 widened this to the dimension accessors that change what a dimension's number means: the
+// two qualifiers, the modifier sequence and the drawn decimal places. Each read accessor ships with
+// the mutator that authors it, because a read nothing in this package can write has no way to be
+// tested against a document of our own. The rest of `XCAFDimTolObjects_DimensionObject`'s surface
+// (path, direction, connections, descriptions, presentation, semantic name) stays unwrapped, and
+// `docs/occtswift-wrapping-gaps.md` records why per accessor.
 
 extension Document {
     /// Create a new dimension on the document, attached to the shape at `shapeLabel`.
@@ -116,5 +119,76 @@ extension Document {
     ) -> Bool {
         OCCTDocumentSetDimensionClassOfTolerance(
             handle, Int32(index), isHole, formVariance.rawValue, grade.rawValue)
+    }
+
+    /// Set whether an existing dimension's value is a minimum, a maximum or an average.
+    ///
+    /// ```swift
+    /// doc.setDimensionQualifier(at: 0, .max)
+    /// ```
+    ///
+    /// - Parameters:
+    ///   - index: Zero-based index into the document's dimension sequence.
+    ///   - qualifier: Pass `.none` to clear the qualifier, which is OCCT's own spelling for a
+    ///     nominal value.
+    /// - Returns: `false` if the index is out of range.
+    @discardableResult
+    public func setDimensionQualifier(at index: Int, _ qualifier: DimensionQualifier) -> Bool {
+        OCCTDocumentSetDimensionQualifier(handle, Int32(index), qualifier.rawValue)
+    }
+
+    /// Set whether an existing angular dimension names the small, the large or the equal angle.
+    ///
+    /// ```swift
+    /// doc.setDimensionAngularQualifier(at: 0, .large)
+    /// ```
+    ///
+    /// - Parameters:
+    ///   - index: Zero-based index into the document's dimension sequence.
+    ///   - qualifier: Pass `.none` to clear the qualifier.
+    /// - Returns: `false` if the index is out of range.
+    @discardableResult
+    public func setDimensionAngularQualifier(
+        at index: Int,
+        _ qualifier: AngularQualifier
+    ) -> Bool {
+        OCCTDocumentSetDimensionAngularQualifier(handle, Int32(index), qualifier.rawValue)
+    }
+
+    /// Set the number of decimal places an existing dimension is drawn to.
+    ///
+    /// ```swift
+    /// doc.setDimensionDecimalPlaces(at: 0, left: 2, right: 3)
+    /// ```
+    ///
+    /// - Parameters:
+    ///   - index: Zero-based index into the document's dimension sequence.
+    ///   - left: Places to the left of the decimal point.
+    ///   - right: Places to the right.
+    /// - Returns: `false` if the index is out of range or either count is negative. Passing `0`
+    ///   for both clears the pair, so `dimension(at:)` reports `decimalPlaces` as `nil`.
+    @discardableResult
+    public func setDimensionDecimalPlaces(at index: Int, left: Int, right: Int) -> Bool {
+        OCCTDocumentSetDimensionDecimalPlaces(handle, Int32(index), Int32(left), Int32(right))
+    }
+
+    /// Replace an existing dimension's GD&T modifier sequence.
+    ///
+    /// ```swift
+    /// doc.setDimensionModifiers(at: 0, [.statisticalTolerance, .anyCrossSection])
+    /// ```
+    ///
+    /// - Parameters:
+    ///   - index: Zero-based index into the document's dimension sequence.
+    ///   - modifiers: The new sequence, in the order OCCT should store it. An empty array clears
+    ///     the sequence.
+    /// - Returns: `false` if the index is out of range.
+    @discardableResult
+    public func setDimensionModifiers(at index: Int, _ modifiers: [DimensionModifier]) -> Bool {
+        let raw = modifiers.map(\.rawValue)
+        return raw.withUnsafeBufferPointer { buffer in
+            OCCTDocumentSetDimensionModifiers(
+                handle, Int32(index), buffer.baseAddress, Int32(buffer.count))
+        }
     }
 }

@@ -408,22 +408,23 @@ These require implementing C++ abstract classes, which the bridge architecture d
   `XCAFDoc_VisMaterial` (`IsDoubleSided`/`SetDoubleSided`, superseded by `FaceCulling`). Filing any
   of those as a deprecated alias would have been wrong in the most misleading direction, since each
   is something a caller uses today. (#810)
-- Nineteen enums nothing in the tree reads. Eleven are GD&T qualifiers and modifiers,
-  `XCAFDimTolObjects_AngularQualifier`, `XCAFDimTolObjects_DatumModifWithValue`,
-  `XCAFDimTolObjects_DatumSingleModif`, `XCAFDimTolObjects_DatumTargetType`,
-  `XCAFDimTolObjects_DimensionModif`, `XCAFDimTolObjects_DimensionQualifier`,
-  `XCAFDimTolObjects_GeomToleranceMatReqModif`, `XCAFDimTolObjects_GeomToleranceModif`,
-  `XCAFDimTolObjects_GeomToleranceTypeValue`, `XCAFDimTolObjects_GeomToleranceZoneModif` and
-  `XCAFDimTolObjects_ToleranceZoneAffectedPlane`: `Document.dimension(at:)`,
-  `geomTolerance(at:)` and `datum(at:)` read a dimension's type, magnitude and ISO 286 class off
-  the `XCAFDimTolObjects_*Object` and stop there, so a STEP file's material requirement, zone
-  modifier or datum modifiers survive a round trip but cannot be read. Widening
-  `Document.Dimension`/`GeomTolerance`/`Datum` is a public API change rather than a wrap, which is
-  why it is recorded here; #1004 enumerates the missing accessors per class. Two of the thirteen
-  this bullet used to name, `XCAFDimTolObjects_DimensionFormVariance` and
-  `XCAFDimTolObjects_DimensionGrade`, are now bound as `Document.DimensionFormVariance` and
-  `Document.DimensionGrade` and gated against the pinned headers by
-  `Scripts/derive-gdt-enums.py` (#996). Four more are `CDF_Store`'s own statuses,
+- Sixteen enums nothing in the tree reads. Eight are GD&T qualifiers and modifiers,
+  `XCAFDimTolObjects_DatumModifWithValue`, `XCAFDimTolObjects_DatumSingleModif`,
+  `XCAFDimTolObjects_DatumTargetType`, `XCAFDimTolObjects_GeomToleranceMatReqModif`,
+  `XCAFDimTolObjects_GeomToleranceModif`, `XCAFDimTolObjects_GeomToleranceTypeValue`,
+  `XCAFDimTolObjects_GeomToleranceZoneModif` and
+  `XCAFDimTolObjects_ToleranceZoneAffectedPlane`: `geomTolerance(at:)` and `datum(at:)` read a
+  tolerance's type and value and a datum's name off the `XCAFDimTolObjects_*Object` and stop
+  there, so a STEP file's material requirement, zone modifier or datum modifiers survive a round
+  trip but cannot be read. Widening `Document.GeomTolerance`/`Datum` is a public API change rather
+  than a wrap, which is why it is recorded here; #1004 enumerates the missing accessors per class.
+  Five of the thirteen this bullet used to name are now bound and gated against the pinned headers
+  by `Scripts/derive-gdt-enums.py`: `XCAFDimTolObjects_DimensionFormVariance` and
+  `XCAFDimTolObjects_DimensionGrade` as `Document.DimensionFormVariance` and
+  `Document.DimensionGrade` (#996), and `XCAFDimTolObjects_DimensionQualifier`,
+  `XCAFDimTolObjects_AngularQualifier` and `XCAFDimTolObjects_DimensionModif` as
+  `Document.DimensionQualifier`, `Document.AngularQualifier` and `Document.DimensionModifier`
+  (#1004). Four more are `CDF_Store`'s own statuses,
   `CDF_StoreSetNameStatus`, `CDF_SubComponentStatus`, `CDF_TryStoreStatus` and
   `CDF_TypeOfActivation`: the bridge saves through `TDocStd_Application::SaveAs`, which reports
   `PCDM_StoreStatus`, and that **is** wrapped as `StoreStatus`, so these are reachable only by
@@ -435,6 +436,42 @@ These require implementing C++ abstract classes, which the bridge architecture d
   `TDataStd_RealEnum` is the unit tag on a `TDataStd_Real`, which the attribute is wrapped without.
   `TNaming_NameType` is the naming resolver's rule kind: `TNaming_Naming` is wrapped as an opaque
   attribute, so which rule resolved a name is not surfaced. (#810)
+
+### GD&T dimension accessors left unwrapped (#1004)
+
+#1004 measured `XCAFDimTolObjects_DimensionObject`'s 42 public accessors against what
+`Document.Dimension` exposes. The first PR wrapped the five that change what a dimension's number
+means (`GetQualifier`/`HasQualifier`, `GetAngularQualifier`/`HasAngularQualifier`, `GetModifiers`,
+`GetNbOfDecimalPlaces`, plus the two static `IsDimensionalLocation`/`IsDimensionalSize`
+classifiers). The rest are listed here with the reason each was left, so the question is not
+re-asked from scratch.
+
+Every accessor below was measured against the pinned kernel in
+[`Scripts/repro/1004-gdt-accessors/`](https://github.com/SecondMouseAU/OCCTSwift/tree/main/Scripts/repro/1004-gdt-accessors),
+not read off a header comment.
+
+| Accessor | Why it is not wrapped |
+|---|---|
+| `GetSemanticName` / `SetSemanticName` | **Absence is not representable, and the value is a marker string.** The semantic name is stored in the dimension label's own `TDataStd_Name`, which `XCAFDoc_DimTolTool::AddDimension()` initialises to the literal `"DGT:Dimension"`. `GetObject` reads that attribute back, so a dimension that never had a semantic name reports `"DGT:Dimension"` rather than nothing. `SetObject`'s `setString` helper returns early on a null handle, so the name also cannot be cleared once set. Wrapping it would surface OCCT's own table marker as if it were the caller's text. The same applies to `XCAFDoc_GeomTolerance` (`"DGT:Tolerance"`) and `XCAFDoc_Datum` (`"DGT:Datum"`). |
+| `GetDirection` | **No presence predicate, and a fabricated vector.** `GetDirection(gp_Dir&)` returns `true` unconditionally (`XCAFDimTolObjects_DimensionObject.cxx:419-423`) and writes `myDir`, which the constructor never initialises; measured, an object that never had a direction reports `(1,0,0)`, the default-constructed `gp_Dir`. `XCAFDoc_Dimension::SetObject` stores the direction only for `DimensionType_Location_Oriented`, so even the round trip is type-conditional. Surfacing this would be exactly the fabricated-magnitude shape #609 exists to catch. |
+| `GetPath` / `SetPath` | Returns a `TopoDS_Edge`, so it needs an `OCCTEdgeRef` on the read side and an edge argument on the write side. Worth wrapping, and it is the one omission here with real interpretive value, since `.locationWithPath` and `.sizeWithPath` cannot be read without it. Deferred rather than declined: it is a handle-lifetime change to the read struct, not a field. |
+| `GetPlane` / `HasPlane`, `GetPointTextAttach` / `HasTextPoint` | The annotation plane and the text anchor are presentation placement, and both need `gp_Ax2` / `gp_Pnt` plumbing into a `Hashable` read struct. Both carry a real predicate, so they are wrappable correctly; deferred on proportion, not on correctness. |
+| `GetPoint` / `HasPoint` / `IsPointConnection` / `GetConnectionAxis` / `GetConnectionName` and the five `*2` siblings | Ten accessors describing where a location dimension's two ends attach. They only mean anything together (the `IsPointConnection` flag decides whether the stored `gp_Ax2` is a bare point or a frame), so they want one modelled `Connection` type rather than ten fields. Deferred as a unit. |
+| `GetPresentation` / `GetPresentationName` | The annotation's graphical presentation shape. Only STEP/XCAF readers populate it, and this package has no write path for one, so a wrapped read could only ever be tested against an imported fixture this repo does not carry. |
+| `HasDescriptions` / `NbDescriptions` / `GetDescription` / `GetDescriptionName` | A parallel pair of string arrays, zero-indexed (measured: `GetDescription(0)` is the first entry, and an out-of-range index answers an empty string rather than throwing). Needs a count-plus-index bridge pair per array plus an `AddDescription` write path. Deferred on proportion. |
+| `GetValues` / `SetValues` | The raw values array. `Dimension.Bounds` already mirrors it through OCCT's own predicates (#996), and exposing the array as well would give two spellings of one fact, which is the duplication #996 removed. |
+| `SetType`, `SetValue`, `SetUpperBound`, `SetLowerBound`, `SetUpperTolValue`, `SetLowerTolValue`, `SetClassOfTolerance`, `AddModifier`, `RemoveDescription`, `SetPoint`, `SetPoint2`, `SetConnectionAxis`, `SetConnectionAxis2`, `SetConnectionName`, `SetConnectionName2`, `SetPresentation`, `AddDescription`, `SetPointTextAttach`, `SetPlane`, `SetDirection` | Mutators for the reads above. Each ships with its own read accessor when that one lands, per the rule in `GDTWrite.swift`: a read this package cannot author has no way to be tested against a document of our own. |
+| `DumpJson` | OCCT's debug dump, not an API surface this wrapper exposes for any class. |
+
+`XCAFDimTolObjects_GeomToleranceObject` (22 accessors, 2 exposed) and
+`XCAFDimTolObjects_DatumObject` (21 accessors, 1 exposed) are #1004's second PR and are not
+adjudicated here yet.
+
+**One accessor is blocked by a kernel defect rather than by scope.** `XCAFDoc_Datum::GetObject`
+builds the datum's point from the annotation plane's location array, and dereferences a null handle
+when the datum has a point and no plane. That is an uncatchable SIGSEGV already reachable from
+`Document.datums` today, before any of this surface is wrapped; it is #1022, with a reproducer in
+the same directory.
 
 ### Constraint Solver Infrastructure (Complete)
 
