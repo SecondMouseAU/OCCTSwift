@@ -2139,9 +2139,10 @@ struct SAWireAnalysisTests {
     @Test func outerBound() {
         if let box = Shape.box(width: 10, height: 10, depth: 10) {
             let faces = box.subShapes(ofType: .face)
-            if let face = faces.first {
-                let hasOuter = SAWireAnalysis.checkOuterBound(face: face)
-                #expect(hasOuter)
+            if let face = faces.first, let wire = face.subShapes(ofType: .wire).first {
+                // True means "problem found", matching every sibling. A box face's own wire is
+                // its outer bound, so there is no problem to report (#999).
+                #expect(!SAWireAnalysis.checkOuterBound(wire: wire, face: face))
             }
         }
     }

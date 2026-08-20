@@ -1,55 +1,78 @@
 import Foundation
-import simd
 import OCCTBridge
+import simd
 
 /// Wire analysis utilities using ShapeAnalysis_Wire (v0.106.0).
 public enum SAWireAnalysis {
-    /// Check wire edge ordering. Returns true if problem found.
+    /// Check wire edge ordering.
+    ///
+    /// Returns true if a problem is found.
     public static func checkOrder(wire: Shape, face: Shape, precision: Double = 1e-6) -> Bool {
         OCCTWireCheckOrder(wire.handle, face.handle, precision)
     }
 
-    /// Check wire connectivity. Returns true if problem found.
+    /// Check wire connectivity.
+    ///
+    /// Returns true if a problem is found.
     public static func checkConnected(wire: Shape, face: Shape, precision: Double = 1e-6) -> Bool {
         OCCTWireCheckConnected(wire.handle, face.handle, precision)
     }
 
-    /// Check for small edges. Returns true if problem found.
+    /// Check for small edges.
+    ///
+    /// Returns true if a problem is found.
     public static func checkSmall(wire: Shape, face: Shape, precision: Double = 1e-6) -> Bool {
         OCCTWireCheckSmall(wire.handle, face.handle, precision)
     }
 
-    /// Check for degenerated edges. Returns true if problem found.
-    public static func checkDegenerated(wire: Shape, face: Shape, precision: Double = 1e-6) -> Bool {
+    /// Check for degenerated edges.
+    ///
+    /// Returns true if a problem is found.
+    public static func checkDegenerated(wire: Shape, face: Shape, precision: Double = 1e-6) -> Bool
+    {
         OCCTWireCheckDegenerated(wire.handle, face.handle, precision)
     }
 
-    /// Check wire closure. Returns true if problem found.
+    /// Check wire closure.
+    ///
+    /// Returns true if a problem is found.
     public static func checkClosed(wire: Shape, face: Shape, precision: Double = 1e-6) -> Bool {
         OCCTWireCheckClosed(wire.handle, face.handle, precision)
     }
 
-    /// Check for self-intersection. Returns true if problem found.
-    public static func checkSelfIntersection(wire: Shape, face: Shape, precision: Double = 1e-6) -> Bool {
+    /// Check for self-intersection.
+    ///
+    /// Returns true if a problem is found.
+    public static func checkSelfIntersection(wire: Shape, face: Shape, precision: Double = 1e-6)
+        -> Bool
+    {
         OCCTWireCheckSelfIntersection(wire.handle, face.handle, precision)
     }
 
-    /// Check for 3D gaps. Returns true if problem found.
+    /// Check for 3D gaps.
+    ///
+    /// Returns true if a problem is found.
     public static func checkGaps3d(wire: Shape, face: Shape, precision: Double = 1e-6) -> Bool {
         OCCTWireCheckGaps3d(wire.handle, face.handle, precision)
     }
 
-    /// Check for 2D gaps. Returns true if problem found.
+    /// Check for 2D gaps.
+    ///
+    /// Returns true if a problem is found.
     public static func checkGaps2d(wire: Shape, face: Shape, precision: Double = 1e-6) -> Bool {
         OCCTWireCheckGaps2d(wire.handle, face.handle, precision)
     }
 
-    /// Check edge curves consistency. Returns true if problem found.
+    /// Check edge curves consistency.
+    ///
+    /// Returns true if a problem is found.
     public static func checkEdgeCurves(wire: Shape, face: Shape, precision: Double = 1e-6) -> Bool {
         OCCTWireCheckEdgeCurves(wire.handle, face.handle, precision)
     }
 
-    /// Check for lacking edges. Returns true if problem found.
+    /// Check for lacking edges.
+    ///
+    /// Returns true if a problem is found.
     public static func checkLacking(wire: Shape, face: Shape, precision: Double = 1e-6) -> Bool {
         OCCTWireCheckLacking(wire.handle, face.handle, precision)
     }
@@ -80,31 +103,49 @@ public enum SAWireAnalysis {
     }
 
     /// Check connectivity of a specific edge by index (1-based).
-    public static func checkConnectedEdge(wire: Shape, face: Shape, precision: Double = 1e-6,
-                                           edgeIndex: Int) -> Bool {
+    public static func checkConnectedEdge(
+        wire: Shape, face: Shape, precision: Double = 1e-6,
+        edgeIndex: Int
+    ) -> Bool {
         OCCTWireCheckConnectedEdge(wire.handle, face.handle, precision, Int32(edgeIndex))
     }
 
     /// Check if a specific edge is small (1-based).
-    public static func checkSmallEdge(wire: Shape, face: Shape, precision: Double = 1e-6,
-                                       edgeIndex: Int) -> Bool {
+    public static func checkSmallEdge(
+        wire: Shape, face: Shape, precision: Double = 1e-6,
+        edgeIndex: Int
+    ) -> Bool {
         OCCTWireCheckSmallEdge(wire.handle, face.handle, precision, Int32(edgeIndex))
     }
 
     /// Check if a specific edge is degenerated (1-based).
-    public static func checkDegeneratedEdge(wire: Shape, face: Shape, precision: Double = 1e-6,
-                                              edgeIndex: Int) -> Bool {
+    public static func checkDegeneratedEdge(
+        wire: Shape, face: Shape, precision: Double = 1e-6,
+        edgeIndex: Int
+    ) -> Bool {
         OCCTWireCheckDegeneratedEdge(wire.handle, face.handle, precision, Int32(edgeIndex))
     }
 
     /// Check 3D gap at a specific edge (1-based).
-    public static func checkGap3dEdge(wire: Shape, face: Shape, precision: Double = 1e-6,
-                                       edgeIndex: Int) -> Bool {
+    public static func checkGap3dEdge(
+        wire: Shape, face: Shape, precision: Double = 1e-6,
+        edgeIndex: Int
+    ) -> Bool {
         OCCTWireCheckGap3dEdge(wire.handle, face.handle, precision, Int32(edgeIndex))
     }
 
-    /// Check if a face has an outer bound wire.
-    public static func checkOuterBound(face: Shape, precision: Double = 1e-6) -> Bool {
-        OCCTWireCheckOuterBound(face.handle, precision)
+    /// Check whether a wire fails to define an outer bound on a face.
+    ///
+    /// Returns true if a problem is found.
+    ///
+    /// Unlike every sibling above, this takes no precision, because
+    /// `ShapeAnalysis_Wire::CheckOuterBound` consults none.
+    ///
+    /// ```swift
+    /// let outer = SAWireAnalysis.checkOuterBound(wire: outerWire, face: face)   // false
+    /// let inner = SAWireAnalysis.checkOuterBound(wire: holeWire, face: face)    // true
+    /// ```
+    public static func checkOuterBound(wire: Shape, face: Shape) -> Bool {
+        OCCTWireCheckOuterBound(wire.handle, face.handle)
     }
 }

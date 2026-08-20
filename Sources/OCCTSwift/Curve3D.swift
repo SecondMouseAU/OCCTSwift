@@ -3710,14 +3710,17 @@ extension Curve3D {
     /// ```
     ///
     /// - Returns: `nil` only when the curve cannot be read.
+    ///
+    /// There is no tolerance: both the windowed search and the whole-curve fallback go through
+    /// `GeomAPI_ProjectPointOnCurve`, which takes none.
     public func locateNearestPoint(
-        _ point: SIMD3<Double>, initParam: Double, tolerance: Double = 1e-6
+        _ point: SIMD3<Double>, initParam: Double
     ) -> (parameter: Double, distance: Double)? {
         var param = 0.0
         var dist = 0.0
         let ok = OCCTExtremaLocateOnCurve(
             handle, point.x, point.y, point.z,
-            initParam, tolerance, &param, &dist)
+            initParam, &param, &dist)
         return ok ? (param, dist) : nil
     }
 

@@ -1,6 +1,6 @@
 import Foundation
-import simd
 import OCCTBridge
+import simd
 
 /// Result of an elementary extrema computation.
 public struct ExtremaResult: Sendable {
@@ -16,6 +16,7 @@ public struct ExtremaResult: Sendable {
 public enum ExtremaElC {
 
     /// Distance between two 3D lines.
+    ///
     /// Returns (isParallel, results) where results contains the extrema.
     public static func lineToLine(
         line1Point: SIMD3<Double>, line1Dir: SIMD3<Double>,
@@ -102,11 +103,13 @@ public enum ExtremaElC {
     ///                                   majorRadius: 5, minorRadius: 3)
     /// #expect(!ex.isEmpty)
     /// ```
+    ///
+    /// There is no tolerance: `Extrema_ExtElC(gp_Lin, gp_Elips)` takes none. Only its line/line and
+    /// line/circle siblings do.
     public static func lineToEllipse(
         linePoint: SIMD3<Double>, lineDir: SIMD3<Double>,
         center: SIMD3<Double>, normal: SIMD3<Double>, xDir: SIMD3<Double>,
-        majorRadius: Double, minorRadius: Double,
-        tolerance: Double = 1e-6
+        majorRadius: Double, minorRadius: Double
     ) -> [ExtremaResult] {
         var buf = [OCCTExtremaElResult](repeating: OCCTExtremaElResult(), count: 10)
         let n = OCCTExtremaElCLinElips(
@@ -115,7 +118,7 @@ public enum ExtremaElC {
             center.x, center.y, center.z,
             normal.x, normal.y, normal.z,
             xDir.x, xDir.y, xDir.z,
-            majorRadius, minorRadius, tolerance,
+            majorRadius, minorRadius,
             &buf, 10
         )
         guard n > 0 else { return [] }

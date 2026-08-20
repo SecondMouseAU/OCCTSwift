@@ -530,11 +530,16 @@ OCCTCurve2DRef OCCTCurve2DBisectorCC(OCCTCurve2DRef c1,
   }
 }
 
+// #999: this took an originX/originY copied from OCCTCurve2DBisectorCC above, where the origin is
+// real (Bisector_BisecCC::Perform takes one and this bridge passes it). Bisector_BisecPC::Perform
+// is (Cu, P, Side, DistMax) and has no origin. DistMax is the parameter it does have, and it is
+// live: measured on a point 4 above a line, DistMax 1 gives an empty bisector, and 10, 100, 500
+// and 5000 give parameter ranges [-8, 8], [-28, 28], [-63.12, 63.12] and [-199.96, 199.96].
+// See Scripts/repro/999-geom2d-curve3d-healing/parameterisation_and_bisector.mm.
 OCCTCurve2DRef OCCTCurve2DBisectorPC(double         px,
                                      double         py,
                                      OCCTCurve2DRef curve,
-                                     double         originX,
-                                     double         originY,
+                                     double         maxDistance,
                                      bool           side)
 {
   if (!curve || curve->curve.IsNull())
@@ -543,7 +548,7 @@ OCCTCurve2DRef OCCTCurve2DBisectorPC(double         px,
   {
     Handle(Bisector_BisecPC) bisector = new Bisector_BisecPC();
     gp_Pnt2d                 point(px, py);
-    bisector->Perform(curve->curve, point, side ? 1.0 : -1.0);
+    bisector->Perform(curve->curve, point, side ? 1.0 : -1.0, maxDistance);
     if (bisector->IsEmpty())
       return nullptr;
     Handle(Geom2d_Curve) result = bisector;
@@ -609,7 +614,10 @@ struct OCCTMedialAxis
 // holds one graph, so widening this would mean a different return shape; documented on
 // MedialAxis.init(of:) rather than changed. Measured: a two-face compound returns the same
 // arcs as its first face alone.
-OCCTMedialAxisRef OCCTMedialAxisCompute(OCCTShapeRef shape, double tolerance)
+// #999: this took a tolerance neither BRepMAT2d_Explorer::Perform nor
+// BRepMAT2d_BisectingLocus::Compute accepts. Compute's real knobs are LineIndex, aSide, aJoinType
+// and IsOpenResult, all left at the OCCT defaults spelled out in the call below.
+OCCTMedialAxisRef OCCTMedialAxisCompute(OCCTShapeRef shape)
 {
   if (!shape)
     return nullptr;
@@ -7695,13 +7703,14 @@ static bool buildTrsf2D(gp_Trsf2d& trsf, int32_t type, double p1, double p2, dou
   }
 }
 
+// #999: this declared a p5 that buildTrsf2D never reads and no gp_Trsf2d setter it reaches takes.
+// Every Swift call site passed a literal 0 for it.
 bool OCCTCurve2DTransform(OCCTCurve2DRef curve,
                           int32_t        transformType,
                           double         p1,
                           double         p2,
                           double         p3,
-                          double         p4,
-                          double         p5)
+                          double         p4)
 {
   // #478: the handle as well as the wrapper. Geom2d_Curve::Transform is a kernel virtual, so
   // its Standard_NullObject precondition is compiled out of this No_Exception build and a null
@@ -8925,13 +8934,21 @@ int32_t OCCTCurve2DAllExtrema(OCCTCurve2DRef      c1,
 
 // Conversion
 
-OCCTCurve2DRef OCCTCurve2DToBSpline(OCCTCurve2DRef c, double tolerance)
+// #999: this took a tolerance Geom2dConvert::CurveToBSplineCurve does not have. Its one parameter
+// is the Convert_ParameterisationType, and it is live: measured on a full circle of radius 5, the
+// eight types give degree 2/2/2/6/4/7 and 6/8/6/12/7 poles, and Polynomial is the only
+// non-rational and the only inexact one (6.5e-06 relative radial error against ~1e-16). Two of
+// them, TgtThetaOver2_1 and _2, throw for a full circle: their own documentation caps the opening
+// angle at 0.9999*pi and 1.9999*pi. Every type throws for an unbounded curve.
+// See Scripts/repro/999-geom2d-curve3d-healing/parameterisation_and_bisector.mm.
+OCCTCurve2DRef OCCTCurve2DToBSpline(OCCTCurve2DRef c, OCCTParameterisationType parameterisation)
 {
   if (!c || c->curve.IsNull())
     return nullptr;
   try
   {
-    Handle(Geom2d_BSplineCurve) bsp = Geom2dConvert::CurveToBSplineCurve(c->curve);
+    Handle(Geom2d_BSplineCurve) bsp =
+      Geom2dConvert::CurveToBSplineCurve(c->curve, (Convert_ParameterisationType)parameterisation);
     if (bsp.IsNull())
       return nullptr;
     return new OCCTCurve2D(bsp);

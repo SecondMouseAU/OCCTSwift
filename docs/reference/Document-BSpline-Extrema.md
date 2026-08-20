@@ -1761,7 +1761,7 @@ public static func circleToCircle(
 
 ---
 
-### `ExtremaElC.lineToEllipse(linePoint:lineDir:center:normal:xDir:majorRadius:minorRadius:tolerance:)`
+### `ExtremaElC.lineToEllipse(linePoint:lineDir:center:normal:xDir:majorRadius:minorRadius:)`
 
 Closed-form extrema between a 3D line and an ellipse.
 
@@ -1769,10 +1769,11 @@ Closed-form extrema between a 3D line and an ellipse.
 public static func lineToEllipse(
     linePoint: SIMD3<Double>, lineDir: SIMD3<Double>,
     center: SIMD3<Double>, normal: SIMD3<Double>, xDir: SIMD3<Double>,
-    majorRadius: Double, minorRadius: Double,
-    tolerance: Double = 1e-6
+    majorRadius: Double, minorRadius: Double
 ) -> [ExtremaResult]
 ```
+
+There is no tolerance. Of `Extrema_ExtElC`'s six constructors only the line/line and line/circle ones take one (`AngTol` and `Tol` respectively); `Extrema_ExtElC(gp_Lin, gp_Elips)` takes none.
 
 - **OCCT:** `Extrema_ExtElC` (line–ellipse).
 

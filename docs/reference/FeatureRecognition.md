@@ -628,17 +628,19 @@ public struct MedialAxisArc: Sendable {
 
 Medial axis (Voronoi skeleton) of a planar face. Computes the locus of centers of maximal inscribed circles within a 2D profile using `BRepMAT2d_BisectingLocus`.
 
-### `MedialAxis.init?(of:tolerance:)`
+### `MedialAxis.init?(of:)`
 
 Computes the medial axis of the first planar face found in `shape`.
 
 ```swift
-public init?(of shape: Shape, tolerance: Double = 1e-4)
+public init?(of shape: Shape)
 ```
 
-Extracts the first face via `TopExp_Explorer`, runs `BRepMAT2d_Explorer::Perform` on it, then calls `BRepMAT2d_BisectingLocus::Compute` with `MAT_Left` join type and `GeomAbs_Arc` bisector type. Returns `nil` if no face is found, the computation does not complete, or the resulting graph has no arcs.
+Extracts the first face via `TopExp_Explorer`, runs `BRepMAT2d_Explorer::Perform` on it, then calls `BRepMAT2d_BisectingLocus::Compute` with `MAT_Left` side and `GeomAbs_Arc` join type. Returns `nil` if no face is found, the computation does not complete, or the resulting graph has no arcs.
 
-- **Parameters:** `shape` — a shape containing at least one face; `tolerance` — computation tolerance (default 1e-4).
+There is no tolerance: neither `BRepMAT2d_Explorer::Perform` nor `BRepMAT2d_BisectingLocus::Compute` accepts one. `Compute`'s own knobs are `LineIndex`, `aSide`, `aJoinType` and `IsOpenResult`, all fixed here at OCCT's defaults; exposing any of them would be a new capability.
+
+- **Parameters:** `shape` — a shape containing at least one face.
 - **Returns:** `nil` if computation fails or the shape has no faces.
 - **OCCT:** `BRepMAT2d_Explorer::Perform` + `BRepMAT2d_BisectingLocus::Compute` + `MAT_Graph`.
 - **Example:**

@@ -6305,7 +6305,6 @@ int32_t OCCTExtremaElCLinElips(double               lpx,
                                double               xdz,
                                double               majorRadius,
                                double               minorRadius,
-                               double               tolerance,
                                OCCTExtremaElResult* out,
                                int32_t              max)
 {
@@ -7019,12 +7018,15 @@ bool OCCTCurve3DNearestParameter(OCCTCurve3DRef _Nonnull curve,
 // true nearest point; and on a segment trimmed to [3, 8] queried at (100, 0, 0) it answered nil for
 // every guess, because no window and no full-range search contains a perpendicular foot. Both now
 // answer through the shared helper: 0 at 7.81, and 8 at 92.
+// #999: the `tol` this used to take reached nothing. GeomAPI_ProjectPointOnCurve's windowed
+// constructor has no tolerance, and the fallback below fixes Precision::Confusion() for the same
+// reason its two converted siblings do. Extrema_LocateExtPC, which this function's name echoes,
+// does take a TolU, but #615 moved this off that path on purpose.
 bool OCCTExtremaLocateOnCurve(OCCTCurve3DRef curve,
                               double         px,
                               double         py,
                               double         pz,
                               double         initParam,
-                              double         tol,
                               double*        param,
                               double*        distance)
 {

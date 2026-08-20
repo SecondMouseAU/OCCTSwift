@@ -1906,20 +1906,28 @@ public static func checkGap3dEdge(wire: Shape, face: Shape, precision: Double = 
 
 ---
 
-### `SAWireAnalysis.checkOuterBound(face:precision:)`
+### `SAWireAnalysis.checkOuterBound(wire:face:)`
 
-Check whether the face has a correctly oriented outer-bound wire.
+Check whether a wire fails to define an outer bound on a face.
 
 ```swift
-public static func checkOuterBound(face: Shape, precision: Double = 1e-6) -> Bool
+public static func checkOuterBound(wire: Shape, face: Shape) -> Bool
 ```
 
-- **Parameters:** `face` — the face to check (wire argument is the face's outer wire).
-- **Returns:** `true` if the outer-bound check fails.
+Takes the wire, like every sibling above, and takes no precision, unlike any of them: `ShapeAnalysis_Wire::CheckOuterBound(APIMake)` rebuilds the wire onto an empty copy of the face and asks `ShapeAnalysis::IsOuterBound`, consulting neither `myPrecision` nor anything derived from it. Measured across precisions from 1e-12 to 100 on three fixtures, the verdict never moved.
+
+`APIMake` is likewise not exposed and stays at OCCT's own default of `true`. It selects `ShapeExtend_WireData::WireAPIMake` over `::Wire`, and gave the same verdict on all three fixtures, including one assembled with `BRep_Builder` from edges with unshared vertices, which is the case its own documentation distinguishes.
+
+- **Parameters:** `wire` — the wire to test; `face` — the face it should bound.
+- **Returns:** `true` if a problem is found, matching every sibling. A face's own outer wire returns `false`; a hole wire on the same face returns `true`.
 - **OCCT:** `ShapeAnalysis_Wire::CheckOuterBound`
 - **Example:**
   ```swift
-  if SAWireAnalysis.checkOuterBound(face: myFace) { print("outer bound problem") }
+  for wire in panel.subShapes(ofType: .wire) {
+      if SAWireAnalysis.checkOuterBound(wire: wire, face: panel) {
+          print("not the outer bound")
+      }
+  }
   ```
 
 ---
