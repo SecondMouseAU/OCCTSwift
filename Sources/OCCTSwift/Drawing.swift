@@ -23,9 +23,10 @@ public final class Drawing: @unchecked Sendable {
     public enum ProjectionType: Sendable, Equatable {
         /// Orthographic projection (parallel lines).
         case orthographic
-        /// Perspective projection (converging lines) from an eye point `focus` units back along
-        /// the view direction. Must be positive; a projection nearer than the shape's own extent
-        /// along the view direction produces an empty drawing.
+        /// Perspective projection (converging lines) from an eye point at `focus * direction`,
+        /// measured from the **world origin** rather than from the shape. Must be positive, and
+        /// must exceed how far the shape reaches along the view direction from that same origin,
+        /// or the projection returns `nil` rather than a drawing of the geometry behind the eye.
         case perspective(focus: Double)
     }
 

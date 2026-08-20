@@ -376,12 +376,19 @@ typedef enum
   OCCTEdgeTypeOutline = 2
 } OCCTEdgeType;
 
-/// Create 2D projection using Hidden Line Removal (HLR)
+/// Create 2D projection using Hidden Line Removal (HLR).
+/// The perspective projection frame is anchored at the WORLD origin, gp_Ax2(gp_Pnt(0,0,0),
+/// viewDir), so the eye sits at focus * viewDir and the picture plane passes through the origin.
+/// HLRAlgo_Projector::Project then divides by R = 1 - Z/focus with Z in that frame, so a shape
+/// reaching the eye plane would be drawn mirrored through the origin rather than not at all, and
+/// is refused instead (#1036).
 /// @param shape Shape to project
 /// @param dirX, dirY, dirZ View direction (will be normalized)
 /// @param projectionType Orthographic or perspective projection
 /// @param focus Eye-to-origin distance along the view direction, used only for
-///        OCCTProjectionPerspective, where it must be > 0. Ignored for the orthographic case.
+///        OCCTProjectionPerspective. Ignored for the orthographic case. Must be > 0 and must
+///        exceed the shape's own reach along the view direction, measured from the world origin
+///        and bounded above by its axis-aligned bounding box; NULL is returned otherwise.
 /// @return Drawing reference, or NULL on failure
 OCCTDrawingRef OCCTDrawingCreate(OCCTShapeRef       shape,
                                  double             dirX,

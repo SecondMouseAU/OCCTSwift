@@ -379,6 +379,7 @@ extension Document {
     /// Set an existing datum target's placement, length and width together.
     ///
     /// ```swift
+    /// doc.setDatumTarget(at: 0, type: .rectangle, number: 1)
     /// doc.setDatumTargetPlacement(
     ///     at: 0, location: SIMD3(1, 2, 3), normal: SIMD3(0, 0, 1), reference: SIMD3(1, 0, 0),
     ///     length: 30, width: 18)
@@ -387,7 +388,8 @@ extension Document {
     /// All three are one call because each of OCCT's three setters raises the same
     /// `HasDatumTargetParams()` flag, so writing one alone reports the other two as present while
     /// leaving them unassigned. Which of `length` and `width` survives depends on the target type;
-    /// see `Datum.Target`.
+    /// see `Datum.Target`. Requires `setDatumTarget(at:type:number:)` to have run first with a type
+    /// other than `.area`, since OCCT stores none of this otherwise; see `docs/reference/Annotation.md`.
     ///
     /// - Parameters:
     ///   - index: Zero-based index into the document's datum sequence.
@@ -396,7 +398,8 @@ extension Document {
     ///   - reference: The placement X axis, which `length` runs along.
     ///   - length: The target's length.
     ///   - width: The target's width.
-    /// - Returns: `false` if the index is out of range, or if `normal` or `reference` is degenerate.
+    /// - Returns: `false` if the index is out of range, if `normal` or `reference` is degenerate,
+    ///   or if the datum is not already a datum target of a type other than `.area`.
     @discardableResult
     public func setDatumTargetPlacement(
         at index: Int,

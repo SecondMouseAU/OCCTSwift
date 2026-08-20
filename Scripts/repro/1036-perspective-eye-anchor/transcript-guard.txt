@@ -1,0 +1,19 @@
+== a shape far BEHIND the picture plane (negative Z) is a correct, shrunken answer ==
+z=[-1010,-1000] offset             focus=50        support=-1000.00000 vertexMax=-1000.00000 gap=1.00e-07 guard=accept  built=yes x=[      0.9434,      1.4286]
+
+== the boundary: box top at z=10, focus straddling it ==
+z=[0,10] offset                    focus=9.9999    support=   10.00000 vertexMax=   10.00000 gap=1.00e-07 guard=REJECT  built=yes x=[-1999980.0000,     20.0000]
+z=[0,10] offset                    focus=10        support=   10.00000 vertexMax=   10.00000 gap=1.00e-07 guard=REJECT  built=yes x=[-112589990684262400.0000,     20.0000]
+z=[0,10] offset                    focus=10.0001   support=   10.00000 vertexMax=   10.00000 gap=1.00e-07 guard=accept  built=yes x=[     20.0000,3000030.0000]
+z=[0,10] offset                    focus=10.001    support=   10.00000 vertexMax=   10.00000 gap=1.00e-07 guard=accept  built=yes x=[     20.0000, 300030.0000]
+z=[0,10] offset                    focus=10.01     support=   10.00000 vertexMax=   10.00000 gap=1.00e-07 guard=accept  built=yes x=[     20.0000,  30030.0000]
+z=[0,10] offset                    focus=11        support=   10.00000 vertexMax=   10.00000 gap=1.00e-07 guard=accept  built=yes x=[     20.0000,    330.0000]
+
+== conservatism: a rotated box, where the AABB overshoots the true extent ==
+rotated 45deg about X              focus=12        support=   10.60660 vertexMax=   10.60660 gap=1.00e-07 guard=accept  built=yes x=[     15.4485,    258.3612]
+rotated 45deg about X              focus=20        support=   10.60660 vertexMax=   10.60660 gap=1.00e-07 guard=accept  built=yes x=[     16.9956,     63.8746]
+
+== a curved shape, where vertices under-report and the bbox does not ==
+sphere r=10 at origin              focus=9.5       support=   10.00000 vertexMax=   10.00000 gap=1.00e-07 guard=REJECT  built=no 
+sphere r=10 at origin              focus=10.5      support=   10.00000 vertexMax=   10.00000 gap=1.00e-07 guard=accept  built=no 
+sphere r=10 at origin              focus=30        support=   10.00000 vertexMax=   10.00000 gap=1.00e-07 guard=accept  built=no 

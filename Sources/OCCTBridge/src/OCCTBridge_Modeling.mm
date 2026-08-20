@@ -226,6 +226,28 @@
 
 // MARK: - 2D Drawing / HLR Projection
 
+// The largest value of (P . viewDir) over the shape, i.e. how far the shape reaches along the view
+// direction measured from the world origin. Taken from the axis-aligned bounding box's support
+// function, so it is an upper bound on the shape's own reach rather than the exact figure: a curved
+// or rotated shape can sit strictly inside the box. Returns false for a shape with no bounds at
+// all, which has nothing to project. Only OCCTDrawingCreate needs this (#1036).
+static bool occtDrawingReachAlongDirection(const TopoDS_Shape& shape,
+                                           const gp_Dir&       viewDir,
+                                           double&             outReach)
+{
+  Bnd_Box bounds;
+  BRepBndLib::Add(shape, bounds);
+  if (bounds.IsVoid())
+    return false;
+
+  double xmin, ymin, zmin, xmax, ymax, zmax;
+  bounds.Get(xmin, ymin, zmin, xmax, ymax, zmax);
+  outReach = (viewDir.X() > 0 ? xmax : xmin) * viewDir.X()
+             + (viewDir.Y() > 0 ? ymax : ymin) * viewDir.Y()
+             + (viewDir.Z() > 0 ? zmax : zmin) * viewDir.Z();
+  return true;
+}
+
 OCCTDrawingRef OCCTDrawingCreate(OCCTShapeRef       shape,
                                  double             dirX,
                                  double             dirY,
@@ -240,9 +262,14 @@ OCCTDrawingRef OCCTDrawingCreate(OCCTShapeRef       shape,
   // orthographic projection silently. focus is what the perspective constructor needs and there is
   // no defensible default for it, so it is a parameter rather than a literal. Reject a
   // non-positive or NaN focus outright: it is a distance, and OCCT does not raise on one. Measured
-  // on a 100x50x30 box viewed down +Z, focus 0/1e-12/5/15 all return an empty VCompound and a
-  // negative focus returns a real but differently-scaled projection, so neither reads as failure at
-  // the call site.
+  // on a 100x50x30 box viewed down +Z, focus 0 and 1e-12 return an empty VCompound and a negative
+  // focus returns a real but differently-scaled projection, so neither reads as failure at the call
+  // site. (#1036 trimmed this list rather than corrected it: focus 5 and 15 were cited here too,
+  // and they do return an empty VCompound on that fixture, but both are positive and both pass this
+  // test, so they were never evidence for it. That box spans z [-15, 15], so 5 and 15 put the eye
+  // inside it or on its face: they were measuring the straddling case, which this test never
+  // rejected and the reach guard below now does. Re-measured in
+  // Scripts/repro/1036-perspective-eye-anchor/guard_comment_probe.mm.)
   if (projectionType == OCCTProjectionPerspective && !(focus > 0))
     return nullptr;
 
@@ -250,6 +277,23 @@ OCCTDrawingRef OCCTDrawingCreate(OCCTShapeRef       shape,
   {
     // Normalize direction
     gp_Dir viewDir(dirX, dirY, dirZ);
+
+    // #1036: the projection frame below is anchored at the WORLD origin, so the eye sits at
+    // focus * viewDir and the picture plane passes through the origin. HLRAlgo_Projector::Project
+    // divides by R = 1 - Z/focus, with Z the point's coordinate in that frame, so a point at or
+    // beyond the eye has R <= 0 and comes back mirrored through the origin instead of not at all.
+    // Measured on a box spanning x [20,30], z [1000,1010] viewed down +Z: focus 50 returns seven
+    // edges spanning x [-1.579, -1.042] where the correct answer is [40, 60.606], focus landing
+    // exactly on a face returns coordinates of order 1e17, and an eye plane cutting the shape
+    // returns one half mirrored against the other (x [-24.444, 20] for a box at x [20,30]). All
+    // three report success, which is the same hazard the focus > 0 test above rejects. The bound is
+    // the shape's reach along the view direction from the origin, not its own extent.
+    if (projectionType == OCCTProjectionPerspective)
+    {
+      double reach = 0.0;
+      if (!occtDrawingReachAlongDirection(shape->shape, viewDir, reach) || reach >= focus)
+        return nullptr;
+    }
 
     gp_Ax2            projAxis(gp_Pnt(0, 0, 0), viewDir);
     HLRAlgo_Projector projector = projectionType == OCCTProjectionPerspective
