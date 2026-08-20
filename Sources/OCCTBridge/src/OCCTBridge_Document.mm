@@ -1272,11 +1272,18 @@ bool OCCTDocumentSetDimensionTolerance(OCCTDocumentRef doc,
 
     // Both setters return false, and change nothing, when the dimension is already a range.
     // Discarding that reported success for a call that did nothing (#996). Neither is
-    // short-circuited: OCCT rejects the pair together, so running both keeps the two arguments
-    // symmetric rather than leaving one applied and one not.
+    // short-circuited, so the two arguments stay symmetric rather than one being applied and one
+    // not. That is safe for the rejection this project has actually measured, a range dimension,
+    // where both refuse: see Scripts/repro/996-gdt-read-surface/. It is NOT a general guarantee
+    // that OCCT rejects the pair atomically on every path, and no such guarantee is documented
+    // upstream. The readback below is what makes the caller's answer correct either way.
     const bool lowerOk = dimObj->SetLowerTolValue(lowerTol);
     const bool upperOk = dimObj->SetUpperTolValue(upperTol);
-    if (!lowerOk || !upperOk)
+    // Verify rather than trust the return pair: a partial application would otherwise be reported
+    // as a clean failure, and the caller could not tell it from a no-op.
+    const bool applied = lowerOk && upperOk && dimObj->GetLowerTolValue() == lowerTol
+                         && dimObj->GetUpperTolValue() == upperTol;
+    if (!applied)
       return false;
 
     dimAttr->SetObject(dimObj);
