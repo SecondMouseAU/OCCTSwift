@@ -965,27 +965,40 @@ int32_t OCCTDocumentGetDatumCount(OCCTDocumentRef doc)
   }
 }
 
+// Resolve a dimension index to its attribute and its object. Every per-dimension accessor and
+// mutator below differs only in what it then reads or sets, so the lookup lives here rather than
+// once per entry point (#996, extended to the read path by #1004).
+static bool occtDocumentDimensionObjectAt(OCCTDocumentRef                            doc,
+                                          int32_t                                    dimensionIndex,
+                                          Handle(XCAFDoc_Dimension)&                 outAttr,
+                                          Handle(XCAFDimTolObjects_DimensionObject)& outObj)
+{
+  if (!doc || doc->doc.IsNull() || dimensionIndex < 0)
+    return false;
+
+  Handle(XCAFDoc_DimTolTool) dimTolTool = XCAFDoc_DimTolTool::Set(doc->doc->Main());
+  TDF_LabelSequence          labels;
+  dimTolTool->GetDimensionLabels(labels);
+  if (dimensionIndex >= (int32_t)labels.Length())
+    return false;
+
+  TDF_Label label = labels.Value(dimensionIndex + 1);
+  if (!label.FindAttribute(XCAFDoc_Dimension::GetID(), outAttr))
+    return false;
+
+  outObj = outAttr->GetObject();
+  return !outObj.IsNull();
+}
+
 OCCTDimensionInfo OCCTDocumentGetDimensionInfo(OCCTDocumentRef doc, int32_t index)
 {
   OCCTDimensionInfo info = {};
   info.isValid           = false;
-  if (!doc || doc->doc.IsNull())
-    return info;
   try
   {
-    Handle(XCAFDoc_DimTolTool) dimTolTool = XCAFDoc_DimTolTool::Set(doc->doc->Main());
-    TDF_LabelSequence          labels;
-    dimTolTool->GetDimensionLabels(labels);
-    if (index < 0 || index >= (int32_t)labels.Length())
-      return info;
-
-    TDF_Label                 label = labels.Value(index + 1);
-    Handle(XCAFDoc_Dimension) dimAttr;
-    if (!label.FindAttribute(XCAFDoc_Dimension::GetID(), dimAttr))
-      return info;
-
-    Handle(XCAFDimTolObjects_DimensionObject) dimObj = dimAttr->GetObject();
-    if (dimObj.IsNull())
+    Handle(XCAFDoc_Dimension)                 dimAttr;
+    Handle(XCAFDimTolObjects_DimensionObject) dimObj;
+    if (!occtDocumentDimensionObjectAt(doc, index, dimAttr, dimObj))
       return info;
 
     info.type = (int32_t)dimObj->GetType();
@@ -1037,6 +1050,25 @@ OCCTDimensionInfo OCCTDocumentGetDimensionInfo(OCCTDocumentRef doc, int32_t inde
       }
     }
 
+    // Both qualifiers carry their own absence: OCCT's _None member is ordinal 0 and HasQualifier()
+    // is exactly `!= _None`, so the enum value is reported as-is and the predicate is asked of OCCT
+    // rather than re-derived here, the same way boundsKind is above (#1004).
+    info.qualifier        = (int32_t)dimObj->GetQualifier();
+    info.angularQualifier = (int32_t)dimObj->GetAngularQualifier();
+
+    // GetNbOfDecimalPlaces has no predicate beside it, and its pair is stored on the label only
+    // when one of the two is positive, so that condition is the presence test.
+    int left = 0, right = 0;
+    dimObj->GetNbOfDecimalPlaces(left, right);
+    info.hasDecimalPlaces = (left > 0 || right > 0);
+    if (info.hasDecimalPlaces)
+    {
+      info.decimalPlacesLeft  = (int32_t)left;
+      info.decimalPlacesRight = (int32_t)right;
+    }
+
+    info.modifierCount = (int32_t)dimObj->GetModifiers().Length();
+
     info.isValid = true;
     return info;
   }
@@ -1044,6 +1076,48 @@ OCCTDimensionInfo OCCTDocumentGetDimensionInfo(OCCTDocumentRef doc, int32_t inde
   {
     return info;
   }
+}
+
+int32_t OCCTDocumentGetDimensionModifier(OCCTDocumentRef doc,
+                                         int32_t         dimensionIndex,
+                                         int32_t         modifierIndex)
+{
+  if (modifierIndex < 0)
+    return -1;
+  try
+  {
+    Handle(XCAFDoc_Dimension)                 dimAttr;
+    Handle(XCAFDimTolObjects_DimensionObject) dimObj;
+    if (!occtDocumentDimensionObjectAt(doc, dimensionIndex, dimAttr, dimObj))
+      return -1;
+
+    // NCollection_Sequence is 1-based; the bridge's own index is 0-based, matching every other
+    // count-plus-index pair here.
+    const NCollection_Sequence<XCAFDimTolObjects_DimensionModif> modifiers = dimObj->GetModifiers();
+    if (modifierIndex >= modifiers.Length())
+      return -1;
+    return (int32_t)modifiers.Value(modifierIndex + 1);
+  }
+  catch (...)
+  {
+    return -1;
+  }
+}
+
+bool OCCTDimensionTypeIsDimensionalLocation(int32_t type)
+{
+  if (type < 0 || type > (int32_t)XCAFDimTolObjects_DimensionType_DimensionPresentation)
+    return false;
+  return XCAFDimTolObjects_DimensionObject::IsDimensionalLocation(
+    (XCAFDimTolObjects_DimensionType)type);
+}
+
+bool OCCTDimensionTypeIsDimensionalSize(int32_t type)
+{
+  if (type < 0 || type > (int32_t)XCAFDimTolObjects_DimensionType_DimensionPresentation)
+    return false;
+  return XCAFDimTolObjects_DimensionObject::IsDimensionalSize(
+    (XCAFDimTolObjects_DimensionType)type);
 }
 
 OCCTGeomToleranceInfo OCCTDocumentGetGeomToleranceInfo(OCCTDocumentRef doc, int32_t index)
@@ -1151,6 +1225,18 @@ int32_t OCCTDocumentCreateDimension(OCCTDocumentRef doc,
       return -1;
 
     Handle(XCAFDimTolObjects_DimensionObject) dimObj = new XCAFDimTolObjects_DimensionObject();
+    // XCAFDimTolObjects_DimensionObject's constructor sets four booleans and nothing else, and
+    // XCAFDoc_Dimension::SetObject then reads the qualifier, the angular qualifier, the decimal
+    // places and the tolerance class off the object unconditionally to decide what to store. Left
+    // alone those are storage nobody wrote, so the neutral values are set here rather than relying
+    // on a fresh allocation reading as zero, which is what it happens to do today and is not a
+    // guarantee. Measured in Scripts/repro/1004-gdt-accessors/ (#1004).
+    dimObj->SetQualifier(XCAFDimTolObjects_DimensionQualifier_None);
+    dimObj->SetAngularQualifier(XCAFDimTolObjects_AngularQualifier_None);
+    dimObj->SetNbOfDecimalPlaces(0, 0);
+    dimObj->SetClassOfTolerance(false,
+                                XCAFDimTolObjects_DimensionFormVariance_None,
+                                XCAFDimTolObjects_DimensionGrade_IT01);
     dimObj->SetType((XCAFDimTolObjects_DimensionType)type);
     Handle(TColStd_HArray1OfReal) vals = new TColStd_HArray1OfReal(1, 1);
     vals->SetValue(1, value);
@@ -1234,30 +1320,6 @@ int32_t OCCTDocumentCreateDatum(OCCTDocumentRef doc, const char* name)
   }
 }
 
-// Resolve a dimension index to its attribute and its object. The three mutators below differ only
-// in what they then set, so the lookup lives here rather than three times over (#996).
-static bool occtDocumentDimensionObjectAt(OCCTDocumentRef                            doc,
-                                          int32_t                                    dimensionIndex,
-                                          Handle(XCAFDoc_Dimension)&                 outAttr,
-                                          Handle(XCAFDimTolObjects_DimensionObject)& outObj)
-{
-  if (!doc || doc->doc.IsNull() || dimensionIndex < 0)
-    return false;
-
-  Handle(XCAFDoc_DimTolTool) dimTolTool = XCAFDoc_DimTolTool::Set(doc->doc->Main());
-  TDF_LabelSequence          labels;
-  dimTolTool->GetDimensionLabels(labels);
-  if (dimensionIndex >= (int32_t)labels.Length())
-    return false;
-
-  TDF_Label label = labels.Value(dimensionIndex + 1);
-  if (!label.FindAttribute(XCAFDoc_Dimension::GetID(), outAttr))
-    return false;
-
-  outObj = outAttr->GetObject();
-  return !outObj.IsNull();
-}
-
 bool OCCTDocumentSetDimensionTolerance(OCCTDocumentRef doc,
                                        int32_t         dimensionIndex,
                                        double          lowerTol,
@@ -1337,6 +1399,105 @@ bool OCCTDocumentSetDimensionClassOfTolerance(OCCTDocumentRef doc,
     dimObj->SetClassOfTolerance(isHole,
                                 (XCAFDimTolObjects_DimensionFormVariance)formVariance,
                                 (XCAFDimTolObjects_DimensionGrade)grade);
+    dimAttr->SetObject(dimObj);
+    return true;
+  }
+  catch (...)
+  {
+    return false;
+  }
+}
+
+bool OCCTDocumentSetDimensionQualifier(OCCTDocumentRef doc,
+                                       int32_t         dimensionIndex,
+                                       int32_t         qualifier)
+{
+  if (qualifier < 0 || qualifier > (int32_t)XCAFDimTolObjects_DimensionQualifier_Avg)
+    return false;
+  try
+  {
+    Handle(XCAFDoc_Dimension)                 dimAttr;
+    Handle(XCAFDimTolObjects_DimensionObject) dimObj;
+    if (!occtDocumentDimensionObjectAt(doc, dimensionIndex, dimAttr, dimObj))
+      return false;
+
+    dimObj->SetQualifier((XCAFDimTolObjects_DimensionQualifier)qualifier);
+    dimAttr->SetObject(dimObj);
+    return true;
+  }
+  catch (...)
+  {
+    return false;
+  }
+}
+
+bool OCCTDocumentSetDimensionAngularQualifier(OCCTDocumentRef doc,
+                                              int32_t         dimensionIndex,
+                                              int32_t         angularQualifier)
+{
+  if (angularQualifier < 0 || angularQualifier > (int32_t)XCAFDimTolObjects_AngularQualifier_Equal)
+    return false;
+  try
+  {
+    Handle(XCAFDoc_Dimension)                 dimAttr;
+    Handle(XCAFDimTolObjects_DimensionObject) dimObj;
+    if (!occtDocumentDimensionObjectAt(doc, dimensionIndex, dimAttr, dimObj))
+      return false;
+
+    dimObj->SetAngularQualifier((XCAFDimTolObjects_AngularQualifier)angularQualifier);
+    dimAttr->SetObject(dimObj);
+    return true;
+  }
+  catch (...)
+  {
+    return false;
+  }
+}
+
+bool OCCTDocumentSetDimensionDecimalPlaces(OCCTDocumentRef doc,
+                                           int32_t         dimensionIndex,
+                                           int32_t         left,
+                                           int32_t         right)
+{
+  if (left < 0 || right < 0)
+    return false;
+  try
+  {
+    Handle(XCAFDoc_Dimension)                 dimAttr;
+    Handle(XCAFDimTolObjects_DimensionObject) dimObj;
+    if (!occtDocumentDimensionObjectAt(doc, dimensionIndex, dimAttr, dimObj))
+      return false;
+
+    dimObj->SetNbOfDecimalPlaces((int)left, (int)right);
+    dimAttr->SetObject(dimObj);
+    return true;
+  }
+  catch (...)
+  {
+    return false;
+  }
+}
+
+bool OCCTDocumentSetDimensionModifiers(OCCTDocumentRef doc,
+                                       int32_t         dimensionIndex,
+                                       const int32_t*  modifiers,
+                                       int32_t         count)
+{
+  if (count < 0 || (count > 0 && !modifiers))
+    return false;
+  try
+  {
+    Handle(XCAFDoc_Dimension)                 dimAttr;
+    Handle(XCAFDimTolObjects_DimensionObject) dimObj;
+    if (!occtDocumentDimensionObjectAt(doc, dimensionIndex, dimAttr, dimObj))
+      return false;
+
+    NCollection_Sequence<XCAFDimTolObjects_DimensionModif> sequence;
+    for (int32_t i = 0; i < count; ++i)
+      sequence.Append((XCAFDimTolObjects_DimensionModif)modifiers[i]);
+    // SetModifiers replaces the sequence outright, so an empty one clears it, which is what the
+    // header promises for count 0. AddModifier would append instead and could not express that.
+    dimObj->SetModifiers(sequence);
     dimAttr->SetObject(dimObj);
     return true;
   }

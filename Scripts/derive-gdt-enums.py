@@ -2,13 +2,16 @@
 """Derive the GD&T Swift enums from OCCT's own XCAFDimTolObjects headers, and gate the
 hand-transcription against them (#996).
 
-Four public enums in `Sources/OCCTSwift/GDTRead.swift` are hand-transcribed, member for member and
-ordinal for ordinal, from four headers in the pinned kernel:
+Seven public enums in `Sources/OCCTSwift/GDTRead.swift` are hand-transcribed, member for member and
+ordinal for ordinal, from seven headers in the pinned kernel:
 
     Document.DimensionType          <- XCAFDimTolObjects_DimensionType.hxx          (32)
     Document.GeomToleranceType      <- XCAFDimTolObjects_GeomToleranceType.hxx      (16)
     Document.DimensionFormVariance  <- XCAFDimTolObjects_DimensionFormVariance.hxx  (29)
     Document.DimensionGrade         <- XCAFDimTolObjects_DimensionGrade.hxx         (20)
+    Document.DimensionQualifier     <- XCAFDimTolObjects_DimensionQualifier.hxx     (4)
+    Document.AngularQualifier       <- XCAFDimTolObjects_AngularQualifier.hxx       (4)
+    Document.DimensionModifier      <- XCAFDimTolObjects_DimensionModif.hxx         (24)
 
 Nothing checked them. The bridge casts OCCT's enum straight to int32 with no sentinel and no remap,
 and `dimension(at:)` returns nil when `rawValue:` fails, so the moment OCCT adds a member the reader
@@ -30,13 +33,17 @@ is why the manifest is a derivation rather than a second hand-written list. Same
 reason, as `Scripts/occt-packages.txt` and `census-doc-occt-attribution.py`.
 
 WHICH ENUMS ARE GATED, AND WHICH ARE NOT. `XCAFDimTolObjects` ships more transcribable enums than
-these four: `DimensionQualifier` (4), `AngularQualifier` (4), `DimensionModif` (24),
-`GeomToleranceModif`, `GeomToleranceMatReqModif`, `GeomToleranceZoneModif`,
+these seven: `GeomToleranceModif`, `GeomToleranceMatReqModif`, `GeomToleranceZoneModif`,
 `GeomToleranceTypeValue`, `ToleranceZoneAffectedPlane`, `DatumSingleModif`, `DatumModifWithValue`,
 `DatumTargetType`. None of those is bound in Swift today, because the accessors that would return
-them are not wrapped (#1004 enumerates that surface). Gating an enum nothing returns would assert a
-correspondence that does not exist yet, so this gate covers exactly the four that are bound, and
+them are not wrapped (#1004 enumerates that surface, and the first three entries of the table above
+are the part of it #1004's dimension PR wrapped). Gating an enum nothing returns would assert a
+correspondence that does not exist yet, so this gate covers exactly the ones that are bound, and
 `--reverify-headers` reports the unbound ones so the list is visible rather than implied.
+
+The Swift enum's own name is free: `swift_case_name` strips the OCCT *type* prefix off each member,
+so `DimensionModifier` may be spelled out in Swift while its members come from
+`XCAFDimTolObjects_DimensionModif_*`. Only the member names and ordinals are gated.
 
 Exits 2 if run from anywhere but the repo root, matching the other gate scripts (#625). `--self-test`
 runs on synthetic fixtures and does not need the repo tree, so it is exempt.
@@ -57,6 +64,9 @@ BOUND = {
     "GeomToleranceType": "XCAFDimTolObjects_GeomToleranceType",
     "DimensionFormVariance": "XCAFDimTolObjects_DimensionFormVariance",
     "DimensionGrade": "XCAFDimTolObjects_DimensionGrade",
+    "DimensionQualifier": "XCAFDimTolObjects_DimensionQualifier",
+    "AngularQualifier": "XCAFDimTolObjects_AngularQualifier",
+    "DimensionModifier": "XCAFDimTolObjects_DimensionModif",
 }
 
 # Every XCAFDimTolObjects enum header, so --reverify-headers can name the unbound ones rather than
@@ -78,7 +88,7 @@ def parse_occt_enum(text):
 
     OCCT writes these without explicit ordinals, so the ordinal is the position unless a member
     states one. Reading positions rather than requiring `= n` is what lets this work at all: not one
-    of the four headers spells a single ordinal out.
+    of the bound headers spells a single ordinal out.
     """
     members = []
     depth = 0
@@ -124,7 +134,7 @@ def parse_swift_enums(text):
             enums[current].append((case.group(1), int(case.group(2))))
             continue
         # A `}` at the enum's own indentation closes it. Anything shallower than a case line and
-        # containing a brace ends the enum body; nested types are not used inside these four.
+        # containing a brace ends the enum body; nested types are not used inside the bound enums.
         if line.strip() == "}":
             current = None
     return enums
@@ -422,7 +432,7 @@ SELF_TEST = [
         lambda problems: not problems,
     ),
     (
-        # Not one of the four real headers spells an ordinal out, so position-counting is the only
+        # Not one of the bound headers spells an ordinal out, so position-counting is the only
         # path the gate ever takes against the tree. This is the case that proves the other branch,
         # explicit `= n`, works and continues from the stated value rather than from the position.
         "an explicit ordinal is honoured, and the next member continues from it",
@@ -435,7 +445,7 @@ SELF_TEST = [
         # suffix distinguishes camel case from a plain lowercase (`sizeDiameter`, not
         # `size_diameter`); the all-caps tokens are the ones a first-character-only rule gets wrong
         # (`zc` and `it01`, not `zC` and `iT01`); the mixed pair proves the tail is still capitalised.
-        "the OCCT-member to Swift-case rule handles each token shape the four headers use",
+        "the OCCT-member to Swift-case rule handles each token shape the bound headers use",
         lambda: (
             swift_case_name("XCAFDimTolObjects_Thing_Size_Diameter", "XCAFDimTolObjects_Thing"),
             swift_case_name("XCAFDimTolObjects_Thing_ZC", "XCAFDimTolObjects_Thing"),
