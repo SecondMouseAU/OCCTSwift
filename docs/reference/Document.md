@@ -1402,7 +1402,7 @@ Check if a label is marked as modified.
 public func isModified(_ node: AssemblyNode) -> Bool
 ```
 
-- **OCCT:** `TDocStd_Document::IsModified` (via `OCCTDocumentIsLabelModified`).
+- **OCCT:** `TDocStd_Document::GetModified` (via `OCCTDocumentIsLabelModified`).
 
 ---
 
