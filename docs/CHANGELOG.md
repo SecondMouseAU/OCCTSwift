@@ -21,6 +21,12 @@ bounding-box accessors becoming Optional so a void shape stops fabricating `(0,0
 
 ## Unreleased
 
+### `Document.assemblyItemCount(maxDepth:)` reports when it could not finish counting (#964)
+
+The bridge stops walking an assembly at 100,000 items, because `XCAFDoc_AssemblyIterator` keeps no visited set and a malformed self-referencing assembly would otherwise iterate to `INT_MAX` depth. It used to return the bound as though it were the total, so a document with more items was indistinguishable from one that genuinely had that many.
+
+The bound remains — removing it trades a wrong answer for a hang — but it is now reported. `assemblyItemCount(maxDepth:)` returns `Int?`, and `nil` means the walk was truncated and the number would be a floor rather than a count. Migration: unwrap, `if let n = doc.assemblyItemCount() { … }`.
+
 ### Transactions: a named transaction keeps its name, and `commitWithDelta()` returns a delta (#970)
 
 `Document.openNamedTransaction(_:)` took a name and read it with nothing. The bridge called
@@ -194,8 +200,9 @@ changed for a consumer, which for this pass is nothing.
   other ten, plus sixteen parameter lists in `Document.swift` written as `- Parameters: x:` on one
   line, a shape `swift-format` accepts and DocC does not render.
 - `OCCTBridge_Document.mm` is likewise clang-format clean and off `Scripts/style-manifest-bridge.txt`.
-- `Document.assemblyItemCount(maxDepth:)` gains a `- Warning:` recording that the bridge stops
-  counting at 100,001 and returns that as the total, filed as #964. Documented, not fixed.
+- `Document.assemblyItemCount(maxDepth:)` gained a `- Warning:` recording that the bridge stops
+  counting at 100,001 and returns that as the total, filed as #964. Superseded within this same
+  release by the fix below, which makes the truncation reportable.
 
 ---
 

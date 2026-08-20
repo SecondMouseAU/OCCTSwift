@@ -2644,14 +2644,20 @@ public func presentationGetMode(labelId: Int64) -> Int32?
 Count the total number of assembly items (component instances) in the document.
 
 ```swift
-public func assemblyItemCount(maxDepth: Int = 0) -> Int
+public func assemblyItemCount(maxDepth: Int = 0) -> Int?
 ```
 
 - **Parameters:** `maxDepth` — maximum traversal depth; `0` means unlimited.
+- **Returns:** the item count, or `nil` when the walk reached its 100,000-item bound and the number
+  would be a floor rather than a count (#964).
 - **OCCT:** `XCAFDoc_AssemblyIterator`.
 - **Example:**
   ```swift
-  let total = doc.assemblyItemCount()
+  if let total = doc.assemblyItemCount() {
+      print("assembly has \(total) items")
+  } else {
+      print("assembly is too large to count exactly")
+  }
   ```
 
 ---

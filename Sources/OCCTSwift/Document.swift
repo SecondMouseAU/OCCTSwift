@@ -2469,14 +2469,18 @@ extension Document {
     /// Count the number of assembly items in the document.
     ///
     /// - Parameter maxDepth: Maximum traversal depth (0 = unlimited).
-    /// - Returns: The number of items `XCAFDoc_AssemblyIterator` visits, or `0` if the
-    ///   document is null or OCCT raised.
-    /// - Warning: **The bridge stops counting at 100,001 and returns that as though it
-    ///   were the real total** (#964). A document with more assembly items is reported
-    ///   as 100001, indistinguishable from one that genuinely has that many. Do not
-    ///   treat a result of 100001 as a measurement.
-    public func assemblyItemCount(maxDepth: Int = 0) -> Int {
-        Int(OCCTDocumentAssemblyItemCount(handle, Int32(maxDepth)))
+    /// - Returns: The number of items `XCAFDoc_AssemblyIterator` visits, `0` if the document is
+    ///   null or OCCT raised, and `nil` when the walk hit its 100,000-item bound so the number
+    ///   would be a floor rather than a count (#964).
+    ///
+    /// The bound exists because `XCAFDoc_AssemblyIterator` keeps no visited set, so a malformed
+    /// self-referencing assembly would iterate to `INT_MAX` depth. It is reported rather than
+    /// returned silently: before #964 a document with more items answered `100001`,
+    /// indistinguishable from one that genuinely had that many.
+    public func assemblyItemCount(maxDepth: Int = 0) -> Int? {
+        var truncated = false
+        let count = Int(OCCTDocumentAssemblyItemCount(handle, Int32(maxDepth), &truncated))
+        return truncated ? nil : count
     }
 }
 
