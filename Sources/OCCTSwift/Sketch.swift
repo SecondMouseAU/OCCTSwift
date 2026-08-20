@@ -118,7 +118,7 @@ extension Sketch {
         for element in profileElements {
             let elementPoints = element.curve.tessellate2D(segmentsPerRadian: 16)
             for (i, pt) in elementPoints.enumerated() {
-                let p = lift(pt, with: placement)
+                let p = placement.lift(pt)
                 if i == 0 && !points3D.isEmpty && approxEqual(points3D.last!, p) { continue }
                 points3D.append(p)
             }
@@ -128,10 +128,6 @@ extension Sketch {
         // Close the wire if not already closed.
         let closed = approxEqual(points3D.first!, points3D.last!)
         return Wire.polygon3D(points3D, closed: closed)
-    }
-
-    private func lift(_ p2: SIMD2<Double>, with placement: Placement) -> SIMD3<Double> {
-        placement.origin + p2.x * placement.xAxis + p2.y * placement.yAxis
     }
 
     private func approxEqual(_ a: SIMD3<Double>, _ b: SIMD3<Double>, tolerance: Double = 1e-9) -> Bool {

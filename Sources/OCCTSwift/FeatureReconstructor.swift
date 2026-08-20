@@ -331,9 +331,7 @@ public struct FeatureReconstructor: Sendable {
             return
         }
         let placement = Placement(origin: e.planeOrigin, normal: e.planeNormal)
-        let pts3D = e.profilePoints2D.map {
-            placement.origin + $0.x * placement.xAxis + $0.y * placement.yAxis
-        }
+        let pts3D = e.profilePoints2D.map { placement.lift($0) }
         guard let wire = Wire.polygon3D(pts3D, closed: true) else {
             recordSkip(ctx: &ctx, id: e.id,
                        reason: .occtFailure("wire construction failed"),

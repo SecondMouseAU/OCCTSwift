@@ -46,6 +46,7 @@ public enum SheetMetal {
         public let uAxis: SIMD3<Double>
         public let vAxis: SIMD3<Double>
         public let normal: SIMD3<Double>
+        public let placement: Placement
 
         public init(
             id: String,
@@ -62,11 +63,7 @@ public enum SheetMetal {
             let n = Vector3DMath.normalize(normal) ?? normal
             self.normal = n
             self.vAxis = vAxis ?? Vector3DMath.cross(n, uAxis)
-        }
-
-        /// Map a 2D profile point to world space.
-        fileprivate func worldPoint(_ p: SIMD2<Double>) -> SIMD3<Double> {
-            origin + p.x * uAxis + p.y * vAxis
+            self.placement = Placement(origin: origin, xAxis: uAxis, yAxis: self.vAxis, zAxis: normal)
         }
     }
 
@@ -393,7 +390,7 @@ public enum SheetMetal {
         }
 
         private static func extrude(flange: Flange, thickness: Double) -> Shape? {
-            let points3D = flange.profile.map { flange.worldPoint($0) }
+            let points3D = flange.profile.map { flange.placement.lift($0) }
             guard let wire = Wire.polygon3D(points3D, closed: true) else { return nil }
             return Shape.extrude(profile: wire, direction: flange.normal, length: thickness)
         }
@@ -574,8 +571,8 @@ public enum SheetMetal {
             guard n >= 3 else { return nil }
             var candidates: [(start: SIMD3<Double>, end: SIMD3<Double>)] = []
             for i in 0..<n {
-                let p1 = a.worldPoint(a.profile[i])
-                let p2 = a.worldPoint(a.profile[(i + 1) % n])
+                let p1 = a.placement.lift(a.profile[i])
+                let p2 = a.placement.lift(a.profile[(i + 1) % n])
                 let dir = p2 - p1
                 guard let dirUnit = Vector3DMath.normalize(dir) else { continue }
                 if abs(abs(Vector3DMath.dot(dirUnit, seamUnit)) - 1.0) < tolerance {
@@ -639,7 +636,7 @@ public enum SheetMetal {
 
         private static func bodyMidpoint(of flange: Flange, thickness: Double) -> SIMD3<Double> {
             var sum = SIMD3<Double>(repeating: 0)
-            for p in flange.profile { sum += flange.worldPoint(p) }
+            for p in flange.profile { sum += flange.placement.lift(p) }
             let profileCenter = sum / Double(flange.profile.count)
             return profileCenter + 0.5 * thickness * flange.normal
         }
