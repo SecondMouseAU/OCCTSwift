@@ -3646,11 +3646,14 @@ OCCTShapeRef OCCTShapeComposed(OCCTShapeRef shape, int32_t orientation)
 // #1026: ShapeType() is not the only unguarded myTShape dereference on TopoDS_Shape. Its eight flag
 // accessors (Free, Locked, Modified, Checked, Orientable, Closed, Infinite, Convex), each with a
 // getter and a setter, read and write the same packed state word with no null test either
-// (TopoDS_Shape.hxx:143-188), so all nine sites below crashed on a nullified shape exactly as the
-// fifteen ShapeType() readers did, and are measured doing so in the repro directory. The flags a
-// real TShape is born with are Free, Modified and Orientable SET (TopoDS_TShape.hxx:169), so false
-// here is the refusal these functions already gave a null pointer, not the default a real shape
-// would have answered.
+// (TopoDS_Shape.hxx:143-188). Ten bridge sites reach them: the six here, OCCTShapeIsLocked and
+// OCCTShapeSetLocked, OCCTShapeIsClosed, and OCCTWireAnalyze. All ten were measured crashing on a
+// nullified shape, one test process each, in the repro directory.
+//
+// false is a refusal here, not the value a real shape would have answered anyway: measured on the
+// pinned kernel, a box answers Free and Modified true, its shell Orientable and Closed true, and
+// one of its faces Checked true. Infinite and Convex are false on every sub-shape of a box, so
+// those two have no positive control, and the test suite says so rather than implying one.
 bool OCCTShapeIsFree(OCCTShapeRef shape)
 {
   if (!occtShapeIsPresent(shape))

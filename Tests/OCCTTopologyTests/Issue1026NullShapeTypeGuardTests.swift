@@ -3,22 +3,23 @@ import Testing
 
 @testable import OCCTSwift
 
-/// #1026: `Shape.nullified` returns a `Shape` wrapping a null `TopoDS_Shape`, and fifteen bridge
-/// functions read `ShapeType()` off a caller-supplied shape with no `IsNull()` test.
+/// #1026: `Shape.nullified` returns a `Shape` wrapping a null `TopoDS_Shape`, and forty-two
+/// bridge functions read something off a caller-supplied shape with no `IsNull()` test on that
+/// shape.
 ///
 /// `TopoDS_Shape::ShapeType()` is a bare `myTShape->ShapeType()` (`TopoDS_Shape.hxx:140`), and
 /// `TopoDS_TShape::ShapeType()` is a plain member read of the packed state word
-/// (`TopoDS_TShape.hxx:144`), not a virtual call. So every one of the fifteen loaded from the
-/// offset of `myState` inside the zero page: a SIGSEGV at address 0x38, which the `catch (...)`
-/// most of them carry cannot absorb.
+/// (`TopoDS_TShape.hxx:144`), not a virtual call. So each one loaded from the offset of `myState`
+/// inside the zero page: a SIGSEGV at address 0x38, which the `catch (...)` most of them carry
+/// cannot absorb.
 ///
-/// Ten of the fifteen are reachable from public Swift with a nullified shape, and this suite
-/// covers all ten. The other five take an `Edge` or a `Face`, and no public producer of either
-/// hands back one wrapping a null topology; `edgeAndFaceRefuseANullifiedShape` measures that
-/// rather than asserting it, so a future producer that stops guarding shows up here.
+/// Ten of the `ShapeType()` readers are reachable from public Swift with a nullified shape, and
+/// this suite covers all ten. Five more take an `Edge` or a `Face`, and no public producer of
+/// either hands back one wrapping a null topology; `edgeAndFaceRefuseANullifiedShape` measures
+/// that rather than asserting it, so a future producer that stops guarding shows up here.
 ///
 /// `ShapeType()` is not the whole class. `TopoDS_Shape`'s eight flag accessors dereference
-/// `myTShape` the same way, and nine further bridge sites read or write them; all nine were
+/// `myTShape` the same way, and ten further bridge sites read or write them; all ten were
 /// measured crashing on the same input and are covered here too.
 ///
 /// `Scripts/repro/1026-null-shape-type-guard/` carries the pre-fix transcripts, including the
@@ -134,9 +135,10 @@ struct Issue1026NullShapeTypeGuard {
     /// The sites the taught gate found, which no hand-built census had listed.
     ///
     /// The issue named fifteen `ShapeType()` readers; `check-null-handle-guards.py`'s third walk
-    /// found nineteen more, across five files, and every one is the same unguarded `myTShape`
-    /// dereference. These are the ones with a public Swift face that takes a `Shape`, so a
-    /// nullified shape reaches them the same way.
+    /// found nineteen it did not, across five files, and every one is the same unguarded
+    /// `myTShape` dereference. Seven of the nineteen were hidden by an `IsNull()` on a different
+    /// subject, the rest by a local copy or a reference alias. These are the ones with a public
+    /// Swift face that takes a `Shape`, so a nullified shape reaches them the same way.
     @Test("The sites the taught gate found refuse a nullified shape rather than crashing")
     func theGateFoundSitesRefuseANullifiedShape() throws {
         let box = try makeBox()

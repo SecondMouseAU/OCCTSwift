@@ -260,9 +260,9 @@ one OCCT guards itself. Reach any of those and the guard is
 `if (!occtShapeIsType(x, TopAbs_T)) return <fallback>;`, both `inline` in `OCCTBridge_Internal.h`.
 The same `check-null-handle-guards.py` enforces it, as a third walk with its own `SHAPE_ALLOWED`
 table, and its fixtures are the `S*` ones. **Return the refusal the function already gives a
-wrong-typed input, never a value that reads as a measurement** (#726): all twenty-four original
-sites had one, so none needed inventing, and `Shape.isEmptyShape` is what a caller uses to tell a
-null shape from a real negative.
+wrong-typed input, never a value that reads as a measurement** (#726): all forty-two sites had one,
+so none needed inventing, and `Shape.isEmptyShape` is what a caller uses to tell a null shape from a
+real negative.
 
 **Four is a fact about this tree, not a closed set.** The checker is still blind to `(*cast).field`,
 a reference-to-wrapper alias, an `IsNull()` whose result is discarded or does not dominate the use,
