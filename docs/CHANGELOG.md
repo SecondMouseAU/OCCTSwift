@@ -21,6 +21,54 @@ bounding-box accessors becoming Optional so a void shape stops fabricating `(0,0
 
 ## Unreleased
 
+### Refman coverage audit, Pass 3: Document/XDE assembly (#810)
+
+`Scripts/repro/810-refman-document-xde/refman_census.py` enumerates every OCCT class under
+`TDocStd_*`, `TDF_*`, `TDataStd_*`, `TDataXtd_*`, `TNaming_*`, `XCAFDoc_*`, `XCAFApp_*`,
+`XCAFDimTolObjects_*`, `XCAFNoteObjects_*`, `XCAFView_*`, `XCAFPrs_*`, `CDF_*` and `CDM_*`
+(278 classes) and verdicts each against `Sources/OCCTBridge` and `docs/`.
+
+Fixed **36 doc attributions across 6 files** that named an OCCT class or member the implementation
+does not use. Seven attributed OCAF save, load, create and session queries to
+`XCAFApp_Application` or `CDF_Application`; all seven run on `TDocStd_Application`, and
+`XCAFApp_Application` is deliberately not constructed anywhere in the bridge since #371 replaced
+the process-wide singleton with a private application per document.
+`docs/reference/Document-Persistence-IO.md` gains a "Why not `XCAFApp_Application`" section
+recording that divergence, and `docs/thread-safety.md` no longer describes document creation, in
+the present tense, as going through a singleton retired three releases ago. Eighteen more named a
+member the pinned kernel does not declare: `TNaming_Tool::SameShape` and
+`XCAFDoc_AssemblyGraph::NbRoots` do not exist at all, and `TDataXtd_Presentation::GetColor`,
+`TDataStd_Expression::SetExpressionString`, `TDocStd_XLink::GetLabelEntry`,
+`TDataXtd_PatternStd::SetSignature`, `XCAFDoc_AssemblyItemRef::RemoveExtraRef` and
+`XCAFDoc_ShapeMapTool::Map` are near-miss spellings of `Color`, `SetExpression`, `LabelEntry`,
+`Signature`, `ClearExtraRef` and `GetMap`. The rest
+named a class nowhere in the call chain, several semantically different from the one that runs:
+`Document.selectShape` uses `TNaming_Selector::Select`, which computes a name that survives later
+modification, rather than `TNaming_Builder::Select`, which records a raw select pair.
+
+`Document.openNamedTransaction(_:)` and `Document.transactionNumber` now document what they do:
+the `name` argument is accepted and never recorded, and `transactionNumber` returns `1` or `0`
+rather than a transaction number. The underlying API defects are #970.
+
+Recorded 155 previously-unrecorded unwrapped classes in `docs/occtswift-wrapping-gaps.md`:
+deprecated `NCollection` typedefs, OCAF undo/redo delta records, abstract bases, framework storage
+records, internal helpers, GD&T qualifier enums nothing reads, and capability covered by a wrapped
+sibling. No public API change.
+
+### `OCCTDocumentIsLabelModified` is documented against the attribute it actually reads (#971)
+
+The bridge header comment on `OCCTDocumentIsLabelModified` contradicted itself, naming
+`TDocStd_Modified` on one line and denying it on the next. `TDocStd_Document::GetModified()` is a
+forwarder to `TDocStd_Modified::Get(Main())`, so the attribute on the root label is the mechanism
+and the denial was the wrong half; the comment now says so once. `docs/reference/Document.md`
+separately attributed `Document.isModified(_:)` to `TDocStd_Document::IsModified`, a method that
+does not exist in OCCT 8.0.1, and now names `TDocStd_Document::GetModified`.
+
+`Sources/OCCTBridge/include/OCCTBridge_Document.h` comes off
+`Scripts/style-manifest-bridge.txt` in the same change, per the code-style rollout's
+fix-what-you-touch rule. No behaviour change: the reformat was verified to leave the file's token
+sequence byte-identical.
+
 ### `*Properties` accessors no longer hand back a dangling handle (#965)
 
 Nineteen `*Properties` accessors on `Curve2D`, `Curve3D` and `Surface` returned a value that stored
