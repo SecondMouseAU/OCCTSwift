@@ -2978,19 +2978,6 @@ struct GeomPlateBuildAveragePlaneTests {
     }
 }
 
-@Suite("GeomPlate Errors")
-struct GeomPlateErrorsTests {
-    @Test func plateErrors() {
-        let result = Surface.plateErrors(
-            points: [SIMD3(0, 0, 0), SIMD3(1, 0, 0), SIMD3(0, 1, 0),
-                     SIMD3(1, 1, 0), SIMD3(0.5, 0.5, 0.5)])
-        #expect(result != nil)
-        if let r = result {
-            #expect(r.g0Error >= 0)
-        }
-    }
-}
-
 @Suite("GeomFill Generator")
 struct GeomFillGeneratorTests {
     @Test func twoCircles() {

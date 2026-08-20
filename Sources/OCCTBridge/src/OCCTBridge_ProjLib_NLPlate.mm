@@ -851,10 +851,19 @@ OCCTShapeRef _Nullable OCCTProjLibComputeApproxOnPolarSurface(OCCTShapeRef edgeS
 // MARK: - NLPlate G2/G3 / Incremental G0 (v0.69)
 // --- NLPlate G0+G2 ---
 
+// #999: this took a maxIter it never read, and there is no honest place to wire one.
+// NLPlate_NLPlate::Solve2(ord, InitialConsraintOrder) has no iteration count, and neither has
+// Solve(). IncrementalSolve(ord, InitialConsraintOrder, NbIncrements, UVSliding) does, but it is a
+// different solver rather than a bound on this one: measured on a 5-constraint G0G2 saddle with
+// +-40 out-of-plane displacement, Solve2 reports Continuity() 1 and IncrementalSolve 3, and their
+// evaluated grids differ by 2% of the checksum, while NbIncrements itself moves the answer only
+// between 1 and 2 and is inert from 2 upward. Wiring maxIter to it would silently change every
+// existing caller's surface and still not mean "maximum iterations". IncrementalSolve is already
+// wrapped separately, as OCCTSurfaceNLPlateIncrementalG0, with its own nbIncrements.
+// See Scripts/repro/999-dead-parameters/nlplate_solver.mm.
 OCCTSurfaceRef OCCTSurfaceNLPlateG2(OCCTSurfaceRef initialSurface,
                                     const double*  constraints,
                                     int32_t        constraintCount,
-                                    int32_t        maxIter,
                                     double         tolerance)
 {
   try
@@ -918,10 +927,10 @@ OCCTSurfaceRef OCCTSurfaceNLPlateG2(OCCTSurfaceRef initialSurface,
   }
 }
 
+// No iteration count, for the reason spelled out on OCCTSurfaceNLPlateG2 above (#999).
 OCCTSurfaceRef OCCTSurfaceNLPlateG3(OCCTSurfaceRef initialSurface,
                                     const double*  constraints,
                                     int32_t        constraintCount,
-                                    int32_t        maxIter,
                                     double         tolerance)
 {
   try
@@ -1306,40 +1315,8 @@ OCCTAveragePlaneResult OCCTGeomPlateBuildAveragePlane(const double* points,
   return result;
 }
 
-bool OCCTGeomPlateErrors(const double* points,
-                         int32_t       ptCount,
-                         double        tolerance,
-                         int32_t       maxDegree,
-                         int32_t       maxSegments,
-                         double*       g0Error,
-                         double*       g1Error,
-                         double*       g2Error)
-{
-  try
-  {
-    GeomPlate_BuildPlateSurface builder(3, 10, 5, tolerance);
-
-    for (int i = 0; i < ptCount; i++)
-    {
-      gp_Pnt                            pt(points[i * 3], points[i * 3 + 1], points[i * 3 + 2]);
-      Handle(GeomPlate_PointConstraint) pc = new GeomPlate_PointConstraint(pt, 0, tolerance);
-      builder.Add(pc);
-    }
-
-    builder.Perform(Message_ProgressRange());
-    if (!builder.IsDone())
-      return false;
-
-    *g0Error = builder.G0Error();
-    *g1Error = builder.G1Error();
-    *g2Error = builder.G2Error();
-    return true;
-  }
-  catch (...)
-  {
-    return false;
-  }
-}
+// OCCTGeomPlateErrors was here (#999). It is deleted rather than repaired: see the note where it
+// was declared, in OCCTBridge_ProjLib_NLPlate.h, for the kernel measurement.
 
 // MARK: - ShapeConstruct_ProjectCurveOnSurface (v0.75)
 // --- ShapeConstruct_ProjectCurveOnSurface ---
