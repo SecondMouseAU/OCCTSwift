@@ -558,10 +558,16 @@ public struct ThreadSpec: Sendable, Hashable, Codable {
 // helix tangent-normal plane, for a pipe-shell sweep) was removed in #187 because that sweep
 // bulged the section with the helix lead.
 
+/// The thread's angular datum: the unit vector perpendicular to the axis that the tooth's root
+/// sits on where the helix starts.
+///
+/// Delegates to the module-wide `perpendicularBasis(to:)` rather than constructing a second
+/// perpendicular of its own (#990). Kept as a named wrapper because *which* of that function's two
+/// elements is taken is a decision both call sites have to make the same way: the second one,
+/// which reproduces the clocking this file shipped for the +Z, +X and +Y axes, where the first is
+/// 90 degrees away. See `Scripts/repro/990-orthonormal-radial-basis/`.
 private func orthonormalRadial(axis: SIMD3<Double>) -> SIMD3<Double> {
-    let a = simd_normalize(axis)
-    let up = abs(a.z) < 0.9 ? SIMD3<Double>(0, 0, 1) : SIMD3<Double>(1, 0, 0)
-    return simd_normalize(simd_cross(a, up))
+    perpendicularBasis(to: axis).1
 }
 
 // MARK: - Shape.threadedHole / threadedShaft (V-form)

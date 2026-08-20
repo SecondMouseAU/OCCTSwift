@@ -3,13 +3,14 @@ import simd
 // Deterministic perpendicular-to-a-direction basis, matching OCCT's own `gp_Ax2(gp_Pnt, gp_Dir)`
 // canonical algorithm. Module-wide: shared by `Placement.init(origin:normal:)` and
 // `ConstructionPlane.throughAxis` (`ConstructionEntity.swift`), `Shape.sectionPlaneBasis`
-// (`Section2D.swift`), and `Drawing`'s axis/point projection helpers
-// (`DrawingAutoCenterlines.swift`) — three of those five call sites are not drawing code, which is
+// (`Section2D.swift`), `Drawing`'s axis/point projection helpers
+// (`DrawingAutoCenterlines.swift`), and the thread angular datum `orthonormalRadial(axis:)`
+// (`ThreadFeatures.swift`, #990). Four of those six call sites are not drawing code, which is
 // why this lives in its own file rather than the drawing-specific one it used to (#914 review,
 // second round, finding on `DrawingAutoCenterlines.swift`; the same misplacement finding 11
 // fixed for `unwrapAxisComponents`/`unwrapVectorComponents`/`unwrapVectorComponentsIfSuccessful`,
-// moved to `SIMD3Unpacking.swift` in that round — this one gets its own file rather than joining
-// them there, since it isn't a bridge-unpack helper).
+// moved to `SIMD3Unpacking.swift` in that round, and this one gets its own file rather than
+// joining them there, since it isn't a bridge-unpack helper).
 
 /// Deterministic perpendicular basis for `direction`, matching OCCT's own `gp_Ax2(gp_Pnt,
 /// gp_Dir)` algorithm: no magnitude threshold, no fallback branch (#881).
@@ -20,7 +21,7 @@ import simd
 /// stable basis perpendicular to one direction.
 ///
 /// - Returns: `(right, up)`, unit vectors with `direction` forming a right-handed
-///   basis: `up == cross(direction, right)`. Unlabeled — every call site already destructures
+///   basis: `up == cross(direction, right)`. Unlabeled, since every call site already destructures
 ///   positionally (`let (a, b) = perpendicularBasis(to:)`), and an internal function returning a
 ///   tuple with baked-in labels forces a call site whose own labels differ into a two-step
 ///   bind-then-relabel instead of a direct return (`okf/policies/code-style.md`; #914 review,
