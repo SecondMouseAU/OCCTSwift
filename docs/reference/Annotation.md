@@ -1827,7 +1827,8 @@ public func setDimensionBounds(at index: Int,
 This is the only way to author the kind `Bounds.range` reports. `createDimension` always writes a
 one-element values array, so a dimension starts `.simple` and becomes `.range` here or `.plusMinus`
 through `setDimensionTolerance(at:lower:upper:)`. Call order does not matter within this method:
-each OCCT setter resets a non-range dimension to a degenerate range holding its own argument twice,
+each OCCT setter builds the degenerate range from a SIMPLE dimension, but writes in place on a
+plus/minus one, so that case is refused before anything is written,
 so either sequence converges on `[lower, upper]` (measured both ways in
 `Scripts/repro/996-gdt-read-surface/`).
 

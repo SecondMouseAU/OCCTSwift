@@ -58,7 +58,7 @@ then hardcodes `GeomPlate_BuildPlateSurface builder(3, 10, 5, tolerance)`. Its S
 
 **Caveat.** The first run reported 36. Twenty-three were unnamed parameters in `OCCTBridge_BRepGraph.mm`'s
 deliberate ABI no-op stubs, which are documented as such at `:4872` and are not defects. The filter
-now skips parameters whose "name" is a bare type. Whether Swift honestly exposes those no-ops is a
+now skips parameters whose "name" is a bare type. Whether Swift exposes those no-ops is a
 separate question this detector does not answer.
 
 ## Why these are not gates

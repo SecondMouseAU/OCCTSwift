@@ -1516,11 +1516,25 @@ bool OCCTDocumentSetDimensionBounds(OCCTDocumentRef doc,
     if (!occtDocumentDimensionObjectAt(doc, dimensionIndex, dimAttr, dimObj))
       return false;
 
-    // Order does not matter: each setter resets a non-range dimension to a degenerate range
-    // holding its own argument twice, so either sequence converges on [lower, upper]. Measured,
-    // both ways round, in Scripts/repro/996-gdt-read-surface/.
+    // SetLowerBound/SetUpperBound branch on myVal->Length() > 1. From a SIMPLE dimension they
+    // build the degenerate range this call wants, either way round. From a PLUS/MINUS one they
+    // write IN PLACE into slots 1 and 2 of a length-3 array, so the requested upper bound lands
+    // in the lower TOLERANCE slot, the stale upper tolerance survives, and the dimension stays
+    // plus/minus. Measured: [20,-0.3,0.7] then bounds 10/12 gives GetValue=10, loTol=12,
+    // upTol=0.7, still plus/minus. So verify the readback rather than trusting the writes, the
+    // same way OCCTDocumentSetDimensionTolerance does for the opposite conversion.
+    // Refuse BEFORE writing, not after. GetObject hands back an object aliasing the document's
+    // live TDataStd_RealArray, so a rejected write has already corrupted the stored dimension by
+    // the time a readback could notice: measured, a refusal after the fact still left value=10.
+    if (dimObj->IsDimWithPlusMinusTolerance())
+      return false;
+
     dimObj->SetLowerBound(lowerBound);
     dimObj->SetUpperBound(upperBound);
+    if (!dimObj->IsDimWithRange() || dimObj->GetLowerBound() != lowerBound
+        || dimObj->GetUpperBound() != upperBound)
+      return false;
+
     dimAttr->SetObject(dimObj);
     return true;
   }
