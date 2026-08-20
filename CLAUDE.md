@@ -60,12 +60,12 @@ Scripts/tsan-stress.sh all           # ThreadSanitizer gate: REQUIRED for concur
 
 ### Static Gate Scripts
 
-Seven gates, two censuses and one merge-history audit, all pure Python over the repo's own text. No
+Eight gates, two censuses and one merge-history audit, all pure Python over the repo's own text. No
 OCCT, no build, no network, ~3s for the lot. **CI runs every gate, plus every `--self-test` including the census's, in `ci.yml`'s
 `gate-scripts` job** — a separate
 `ubuntu-latest` job, not a step inside the macOS build, so it reports in under a minute and keeps
 its own status check when `build-and-test` is red for an unrelated reason. Each exits 1 on a
-defect and 0 when clean; `check-bridge-index`, `check-null-handle-guards` and
+defect and 0 when clean; `check-bridge-index`, `check-null-handle-guards`, `derive-gdt-enums` and
 `derive-bridge-header-split` exit **2** if run from anywhere but the repo root (#625).
 
 **`gate-scripts` is a required status check on `main`** (#649), via a repository ruleset (id
@@ -117,6 +117,7 @@ python3 Scripts/check-docs-defaults.py           # every default docs/reference/
 python3 Scripts/check-docs-existence.py          # every symbol docs/ documents as current still exists in Sources (#802)
 python3 Scripts/check-borrowed-handles.py        # no struct/enum stores an OCCT*Ref it has no deinit to release (#965)
 python3 Scripts/derive-bridge-header-split.py --verify  # every declaration sits in the header its .mm owns (#673)
+python3 Scripts/derive-gdt-enums.py --verify      # the GD&T enums still match the pinned XCAFDimTolObjects headers (#996)
 python3 Scripts/count-operations.py              # README + API_REFERENCE totals match the derived count
 python3 Scripts/census-unmeasured-values.py      # CENSUS, not a gate: values returned as measurements that were never computed (#726)
 python3 Scripts/census-doc-occt-attribution.py   # CENSUS, not a gate: docs attributing a method to an OCCT class its bridge fn never reaches (#928)
@@ -141,7 +142,7 @@ hand-adjudicated sample** (`Scripts/repro/928-over-coverage-detector/`, re-scora
 `score_sample.py`). That rate is why it reports rather than gates; promoting it is a separate
 decision on a better number, and it comes with a rename to `check-` per the convention above.
 
-Six of the seven gates take `--self-test`, as do both censuses and the merge-history audit, each running a fixture battery proving the *detector* catches each
+Seven of the eight gates take `--self-test`, as do both censuses and the merge-history audit, each running a fixture battery proving the *detector* catches each
 failure mode. Run it whenever you change one of these scripts — three gate scripts on this branch
 were confidently wrong (#618, #624/#630, #626), and a detector that reports "all clear" because it
 is blind looks exactly like one reporting "all clear" because the tree is clean.
@@ -149,7 +150,7 @@ is blind looks exactly like one reporting "all clear" because the tree is clean.
 running the report, so writing `count-operations.py --self-test` to match its siblings fails loudly
 instead of passing forever.
 
-**Optional pre-commit hook** (`Scripts/git-hooks/pre-commit`) runs sixteen of CI's seventeen
+**Optional pre-commit hook** (`Scripts/git-hooks/pre-commit`) runs eighteen of CI's nineteen
 invocations, flag for flag. The one it omits is `check-changelog-transcription.py`'s real run, which
 audits the branch's merge history and so answers a question about the branch rather than about the
 commit you are making; its `--self-test` does run. That is the only deliberate divergence between
