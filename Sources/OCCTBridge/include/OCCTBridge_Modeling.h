@@ -3703,26 +3703,6 @@ double OCCTPipeShellError(OCCTPipeShellRef _Nonnull ps);
 /// Check if the pipe shell is ready to build.
 bool OCCTPipeShellIsReady(OCCTPipeShellRef _Nonnull ps);
 
-// MARK: - Draft info types (v0.105.0)
-
-/// Create a Draft_EdgeInfo and query NewGeometry status.
-bool OCCTDraftEdgeInfoNewGeometry(void);
-
-/// Create a Draft_FaceInfo and query NewGeometry status.
-bool OCCTDraftFaceInfoNewGeometry(void);
-
-/// Create a Draft_VertexInfo and query its geometry point.
-void OCCTDraftVertexInfoGeometry(double* _Nonnull x, double* _Nonnull y, double* _Nonnull z);
-
-/// Create a Draft_EdgeInfo with tangent direction.
-bool OCCTDraftEdgeInfoSetTangent(double dx, double dy, double dz);
-
-/// Create a Draft_FaceInfo from a surface and check RootFace.
-bool OCCTDraftFaceInfoFromSurface(OCCTSurfaceRef _Nonnull surface);
-
-/// Create a Draft_VertexInfo, add a parameter, and check ChangeParameter.
-double OCCTDraftVertexInfoAddParameter(double param);
-
 // MARK: - BRepFill_PipeShell extensions (v0.106.0)
 
 /// Set maximum degree for pipe shell approximation.
