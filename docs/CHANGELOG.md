@@ -22,6 +22,34 @@ bounding-box accessors becoming Optional so a void shape stops fabricating `(0,0
 ## Unreleased
 
 
+### A null `TopoDS_Shape` no longer crashes 46 bridge entry points (#1026)
+
+`Shape.nullified` returns a `Shape` wrapping a null `TopoDS_Shape`, and forty-six bridge functions
+hand a caller-supplied shape to something that dereferences it without a null test:
+`TopoDS_Shape::ShapeType()`, its eight flag accessors, four `TopoDS_Builder::Add`/`Remove` sites,
+and three that hand the shape to an OCCT constructor which dereferences it.
+`TopoDS_TShape::ShapeType()` is a plain member read, so each was a SIGSEGV at address `0x38` that no
+bridge-side `catch (...)` could absorb, reachable from public API alone:
+`box.nullified!.shapeType`, `.isSolid`, `.typeName`, `.shapeTypeString`, `.isValidSolid`, `.isFree`,
+`.isClosedShape`, `Shape.healed()`, `Shape.compound([shape.nullified!])`, `LengthDimension(edge:)`
+and more.
+
+Every one now answers instead of crashing, with the refusal that function already gave a
+wrong-typed or null-pointer input: `.unknown` for `shapeType`, `nil` for `typeName`, `"null"` for
+`shapeTypeString`, `false` for every predicate and flag, `0` intersections, `nil` for every
+`Shape`-returning operation. No signature changed. `Shape.isEmptyShape` is what separates a null
+shape from a real negative, and it already existed.
+
+`check-null-handle-guards.py` grows a third walk for this class, tied to the specific argument,
+covering the ten `TopoDS_Shape` members that dereference `myTShape` unguarded plus a shape handed to
+a `TopoDS_Builder`, which found twenty-three of the forty-six on its own. The census the issue was filed from
+(`Scripts/repro/1008-topods-cast-guard/shapetype_census.py`) accepted an `IsNull()` on any subject
+as a guard and reported fifteen; it is corrected and given a `--self-test`. See
+[`Scripts/repro/1026-null-shape-type-guard/`](https://github.com/SecondMouseAU/OCCTSwift/tree/main/Scripts/repro/1026-null-shape-type-guard)
+for the faulting address, the flag-accessor measurements and the guard-removal matrix.
+
+
+
 ### `setDimensionBounds` refuses a plus/minus dimension instead of corrupting it (#996)
 
 `Document.setDimensionBounds(at:lower:upper:)` returned `true` on a dimension that already carried plus/minus tolerances, while leaving it in a state matching neither the request nor the original: the requested upper bound was stored as the lower tolerance, the original upper tolerance survived, and `bounds` stayed `.plusMinus` rather than becoming the documented `.range`. It now returns `false` and leaves the dimension untouched. Converting a dimension that has no tolerances is unchanged.
