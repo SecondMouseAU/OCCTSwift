@@ -660,8 +660,15 @@ Returns all distinct sub-shapes of a given topological type as an array, in enum
 public func subShapes(ofType type: ShapeType) -> [Shape]
 ```
 
+The array position **is** the ordinal, so `subShapes(ofType: t)[k]` is `subShape(type: t, index: k)`.
+Unlike `Face` and `Edge`, a returned `Shape` carries no ordinal of its own, so the position is the
+only thing naming which sub-shape an element is; the array is therefore returned complete or empty
+and never short, since a sub-shape that could not be built would shift every later ordinal down one
+with no error and no diagnostic (#979).
+
 - **Parameters:** `type` — topological type.
-- **Returns:** Array of all distinct sub-shapes of that type (may be empty).
+- **Returns:** Every distinct sub-shape of that type in enumeration order; empty if the shape has
+  none, or if any could not be built.
 - **OCCT:** `TopExp::MapShapes` (via `OCCTShapeGetSubShapes`): one walk to size the buffer and one
   to fill it, rather than one per element as reading `subShape(type:index:)` in a loop would cost.
 - **Example:**

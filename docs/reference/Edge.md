@@ -575,7 +575,12 @@ print(box.contents.edges)   // 24: one per (face, edge) visit, ShapeAnalysis_Sha
 
 Unlike `Shape.faces()`, this collapse is **not** a defect (#638). #614 made `faces()`'s equivalent collapse a bug because `Face.normal(atU:v:)` reverses on `TopAbs_REVERSED`, so a face's stored orientation changes the answer it returns. `Edge` has no such consumer: it exposes no `.orientation` accessor at all, and every geometric query on it (`tangent(at:)`, `point(at:)`, `parameterBounds`, `curvature(at:)`) reads the edge's underlying `Geom_Curve` through `BRep_Tool::Curve`, which is defined independently of `TopAbs_Orientation`. A bridge-wide audit (`grep -rn "\.Orientation() =="` across `Sources/OCCTBridge/src/*.mm`) found 14 branching sites: 13 are face-normal logic `faces()`/`orientedFaces()` already cover, and the fourteenth (`occtSampleWirePoints`, `OCCTBridge_Modeling.mm`) reads orientation fresh off a `BRepTools_WireExplorer` walk of the wire it samples, not from an edge this method returns. So there is currently no `orientedEdges()` counterpart to `edges()`: nothing needs one. See `Scripts/repro/cluster-a-subshape-enumeration/` for the full census this rests on.
 
-- **Returns:** Array of all `Edge` objects; empty if the shape has no edges.
+The array position **is** the ordinal, so `edges()[k].index == k`. The array is returned complete or
+empty and never short: an edge that could not be built would shift every later ordinal down one, and
+each would then answer for its neighbour with no error and no diagnostic (#979).
+
+- **Returns:** Every distinct `Edge` in enumeration order; empty if the shape has no edges, or if
+  any edge could not be built.
 - **OCCT:** `TopExp::MapShapes(shape, TopAbs_EDGE)`, collects all edges via indexed map.
 - **Example:**
   ```swift

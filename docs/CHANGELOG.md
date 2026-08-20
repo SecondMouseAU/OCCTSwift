@@ -21,6 +21,26 @@ bounding-box accessors becoming Optional so a void shape stops fabricating `(0,0
 
 ## Unreleased
 
+### Sub-shape enumerations are complete or empty, never short (#979)
+
+`Shape.faces()`, `Shape.edges()`, `Shape.subShapes(ofType:)` and `Shape.orientedFaces()` each
+skipped an element whose bridge handle came back null. A position in these arrays is an ordinal,
+the same 0-based index `face(at:)`, `edge(at:)` and `subShape(type:index:)` take, so a skipped
+element shifted every later one down and each then answered for its neighbour with no error and no
+diagnostic. Downstream that is a pick resolving, highlighting and reporting confidently about the
+wrong face.
+
+All four now build every ordinal or return an empty array, so `faces()[k].index == k` and
+`subShapes(ofType: t)[k]` is `subShape(type: t, index: k)` hold by construction. Handles the
+refusal does not wrap are released rather than leaked, and `subShapes(ofType:)` additionally
+refuses a short bridge write instead of returning its prefix.
+
+Measured before choosing: the bridge cannot actually produce a hole. Each entry point fills every
+slot or fails the whole call, and across a hostile 13-shape battery no indexed map held a null
+entry, no enumeration was unstable between independently built maps, and no entry failed its
+per-element downcast (`Scripts/repro/979-subshape-index-identity/`). So no reachable input behaves
+differently; what changes is that the guarantee now holds by construction instead of by accident.
+
 ### visionOS and tvOS are documented as untested rather than supported (#978)
 
 `Package.swift` declares both platforms and `Scripts/build-occt.sh` builds slices for both under `BUILD_ALL_PLATFORMS=1`, but nothing has been tested on either and the released `OCCT.xcframework` ships only the three core slices, so resolving the released binary does not link there. README's status table said "Supported"; both rows now say "Untested", with a note that a local kernel rebuild is what makes them buildable. Also corrects README's kernel version (8.0.0p1 → 8.0.1) and package version (v1.0.0 → v3.0.0), both stale in the same lines. Documentation only.

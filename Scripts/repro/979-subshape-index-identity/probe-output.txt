@@ -1,0 +1,44 @@
+#979: can one element of a sub-shape enumeration be null?
+
+  nullShape / FACE: extent=0 nullEntries=0 extentStable=yes reorderedEntries=0 wrongType=0
+  nullShape / EDGE: extent=0 nullEntries=0 extentStable=yes reorderedEntries=0 wrongType=0
+  nullShape / VERTEX: extent=0 nullEntries=0 extentStable=yes reorderedEntries=0 wrongType=0
+  emptyCompound / FACE: extent=0 nullEntries=0 extentStable=yes reorderedEntries=0 wrongType=0
+  emptyCompound / EDGE: extent=0 nullEntries=0 extentStable=yes reorderedEntries=0 wrongType=0
+  emptyCompound / VERTEX: extent=0 nullEntries=0 extentStable=yes reorderedEntries=0 wrongType=0
+  box / FACE: extent=6 nullEntries=0 extentStable=yes reorderedEntries=0 wrongType=0
+  box / EDGE: extent=12 nullEntries=0 extentStable=yes reorderedEntries=0 wrongType=0
+  box / VERTEX: extent=8 nullEntries=0 extentStable=yes reorderedEntries=0 wrongType=0
+  boxWithItself / FACE: extent=6 nullEntries=0 extentStable=yes reorderedEntries=0 wrongType=0
+  boxWithItself / EDGE: extent=12 nullEntries=0 extentStable=yes reorderedEntries=0 wrongType=0
+  boxWithItself / VERTEX: extent=8 nullEntries=0 extentStable=yes reorderedEntries=0 wrongType=0
+  booleanCommon / FACE: extent=6 nullEntries=0 extentStable=yes reorderedEntries=0 wrongType=0
+  booleanCommon / EDGE: extent=12 nullEntries=0 extentStable=yes reorderedEntries=0 wrongType=0
+  booleanCommon / VERTEX: extent=8 nullEntries=0 extentStable=yes reorderedEntries=0 wrongType=0
+  twoOverlappingBoxes / FACE: extent=12 nullEntries=0 extentStable=yes reorderedEntries=0 wrongType=0
+  twoOverlappingBoxes / EDGE: extent=24 nullEntries=0 extentStable=yes reorderedEntries=0 wrongType=0
+  twoOverlappingBoxes / VERTEX: extent=16 nullEntries=0 extentStable=yes reorderedEntries=0 wrongType=0
+  openShellSolid / FACE: extent=1 nullEntries=0 extentStable=yes reorderedEntries=0 wrongType=0
+  openShellSolid / EDGE: extent=4 nullEntries=0 extentStable=yes reorderedEntries=0 wrongType=0
+  openShellSolid / VERTEX: extent=4 nullEntries=0 extentStable=yes reorderedEntries=0 wrongType=0
+  sphere / FACE: extent=1 nullEntries=0 extentStable=yes reorderedEntries=0 wrongType=0
+  sphere / EDGE: extent=3 nullEntries=0 extentStable=yes reorderedEntries=0 wrongType=0
+  sphere / VERTEX: extent=2 nullEntries=0 extentStable=yes reorderedEntries=0 wrongType=0
+  coneToApex / FACE: extent=2 nullEntries=0 extentStable=yes reorderedEntries=0 wrongType=0
+  coneToApex / EDGE: extent=3 nullEntries=0 extentStable=yes reorderedEntries=0 wrongType=0
+  coneToApex / VERTEX: extent=2 nullEntries=0 extentStable=yes reorderedEntries=0 wrongType=0
+  faceAndItsReverse / FACE: extent=1 nullEntries=0 extentStable=yes reorderedEntries=0 wrongType=0
+  faceAndItsReverse / EDGE: extent=4 nullEntries=0 extentStable=yes reorderedEntries=0 wrongType=0
+  faceAndItsReverse / VERTEX: extent=4 nullEntries=0 extentStable=yes reorderedEntries=0 wrongType=0
+  internalOrientationFace / FACE: extent=1 nullEntries=0 extentStable=yes reorderedEntries=0 wrongType=0
+  internalOrientationFace / EDGE: extent=4 nullEntries=0 extentStable=yes reorderedEntries=0 wrongType=0
+  internalOrientationFace / VERTEX: extent=4 nullEntries=0 extentStable=yes reorderedEntries=0 wrongType=0
+  vertexOnly / FACE: extent=0 nullEntries=0 extentStable=yes reorderedEntries=0 wrongType=0
+  vertexOnly / EDGE: extent=0 nullEntries=0 extentStable=yes reorderedEntries=0 wrongType=0
+  vertexOnly / VERTEX: extent=1 nullEntries=0 extentStable=yes reorderedEntries=0 wrongType=0
+  compound2000Boxes / FACE: extent=12000 nullEntries=0 extentStable=yes reorderedEntries=0 wrongType=0
+  compound2000Boxes / EDGE: extent=24000 nullEntries=0 extentStable=yes reorderedEntries=0 wrongType=0
+  compound2000Boxes / VERTEX: extent=16000 nullEntries=0 extentStable=yes reorderedEntries=0 wrongType=0
+
+TOTALS: nullEntries=0 unstableEnumerations=0 wrongTypeEntries=0
+exit=0
