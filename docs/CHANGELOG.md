@@ -22,6 +22,43 @@ bounding-box accessors becoming Optional so a void shape stops fabricating `(0,0
 ## Unreleased
 
 
+### GD&T: a tolerance's zone semantics and a datum's frame position and target are now readable (#1004, #1021)
+
+`Document.GeomTolerance` gains `valueType`, `materialRequirement`, `zoneModifier`,
+`zoneModifierValue`, `maxValueModifier` and `modifiers`. `Document.Datum` gains `position`,
+`modifiers`, `modifierWithValue` and `target`, the last a nested `Datum.Target` carrying the
+target's type, number, length and width. Each read accessor ships with the mutator that authors it:
+`setGeomToleranceValueType(at:_:)`, `setGeomToleranceMaterialRequirement(at:_:)`,
+`setGeomToleranceZoneModifier(at:_:value:)`, `setGeomToleranceMaxValueModifier(at:_:)`,
+`setGeomToleranceModifiers(at:_:)`, `setDatumPosition(at:_:)`, `setDatumModifiers(at:_:)`,
+`setDatumModifierWithValue(at:_:value:)`, `setDatumTarget(at:type:number:)`,
+`clearDatumTarget(at:)` and `setDatumTargetPlacement(at:location:normal:reference:length:width:)`.
+
+Seven new enums join `Scripts/derive-gdt-enums.py`'s gate, which now covers 14 enums and 188
+members and leaves exactly one `XCAFDimTolObjects` enum unbound.
+
+Absence is representable throughout, from measurement rather than convention.
+`Datum.position` is `nil` for a datum with no place in a reference frame, because positions are
+1-based. `zoneModifierValue` and `maxValueModifier` are `nil` rather than `0.0`, because OCCT stores
+each only when positive and an unstored one reads back as zero. A datum target's `length` and
+`width` follow the target type: `.point` keeps neither, `.rectangle` keeps both, `.line` and
+`.circle` keep the length, and `.area` keeps neither because OCCT stores its shape instead of a
+placement.
+
+`setDatumTargetPlacement` writes the axis, length and width in one call because each of OCCT's three
+setters raises the same presence flag, so writing one alone would report the other two as present
+while leaving them unassigned. `OCCTDocumentCreateGeomTolerance` and `OCCTDocumentCreateDatum` now
+assign the members `SetObject` reads unconditionally, for the same reason
+`OCCTDocumentCreateDimension` did in the previous entry.
+
+`docs/occtswift-wrapping-gaps.md` records the accessors deliberately left unwrapped on both classes,
+and adjudicates `XCAFDoc_DimTolTool`'s own coverage for #1021: the reverse lookups and the
+datum-to-tolerance association are a real gap and the largest one remaining in this surface, while
+the legacy `XCAFDoc_DimTol` API, the label classifiers, the editing lock and the plumbing are
+deliberate omissions.
+
+
+
 ### Plate and NLPlate parameters now mean what they are named (#1017, #1019, #1020)
 
 `Surface.nlPlateDeformed(constraints:maxIterations:tolerance:)` and
