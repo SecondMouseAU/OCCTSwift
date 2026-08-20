@@ -1,0 +1,22 @@
+== centred box, x in [-5,5], depth 10: reproduces the review's five rows ==
+z=[0,10] centred               focus=50        -> edges=4   x=[    -6.2500,      6.2500] halfwidth=    6.2500
+z=[1000,1010] centred          focus=50        -> edges=4   x=[    -0.2632,      0.2632] halfwidth=    0.2632
+z=[1000,1010] centred          focus=1005      -> VCompound NULL
+z=[1000,1010] centred          focus=1011      -> edges=4   x=[ -5055.0000,   5055.0000] halfwidth= 5055.0000
+z=[1000,1010] centred          focus=2000      -> edges=4   x=[   -10.1010,     10.1010] halfwidth=   10.1010
+
+== x-offset box, x in [20,30]: the sign of x exposes the mirroring ==
+z=[0,10] offset                focus=50        -> edges=7   x=[    20.0000,     37.5000] halfwidth=    8.7500
+z=[1000,1010] offset           focus=50        -> edges=7   x=[    -1.5789,     -1.0417] halfwidth=    0.2686
+z=[1000,1010] offset           focus=2000      -> edges=7   x=[    40.0000,     60.6061] halfwidth=   10.3030
+
+== eye plane cutting the shape, and sitting exactly on a face ==
+z=[0,10] offset                focus=5.5       -> edges=4   x=[   -24.4444,     20.0000] halfwidth=   22.2222
+z=[0,10] offset                focus=5         -> edges=4   x=[   -20.0000,     20.0000] halfwidth=   20.0000
+z=[0,10] offset                focus=10        -> edges=4   x=[-112589990684262400.0000,     20.0000] halfwidth=56294995342131208.0000
+z=[0,10] offset                focus=10.0001   -> edges=7   x=[    20.0000, 3000030.0000] halfwidth=1500005.0000
+z=[0,10] offset                focus=0.0001    -> edges=4   x=[    -0.0002,     20.0000] halfwidth=   10.0001
+
+== the magnification RATIO is translation invariant, the SCALE is not ==
+z=[0,10] centred               focus=50        -> edges=4   x=[    -6.2500,      6.2500] halfwidth=    6.2500
+z=[1000,1010] centred          focus=1050      -> edges=4   x=[  -131.2500,    131.2500] halfwidth=  131.2500

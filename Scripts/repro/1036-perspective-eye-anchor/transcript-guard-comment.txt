@@ -1,0 +1,12 @@
+100x50x30 centred box, x [-50,50] z [-15,15], viewed down +Z.
+Orthographic truth would be x [-50, 50].
+
+focus=0          -> VCompound NULL
+focus=1e-12      -> VCompound NULL
+focus=5          -> VCompound NULL
+focus=15         -> VCompound NULL
+focus=-100       -> edges=4   x=[     -58.82353,       58.82353] y=[   -29.41176,     29.41176]
+
+for contrast, values the guard accepts and that are correct:
+focus=50         -> edges=4   x=[     -71.42857,       71.42857] y=[   -35.71429,     35.71429]
+focus=1000       -> edges=4   x=[     -50.76142,       50.76142] y=[   -25.38071,     25.38071]
