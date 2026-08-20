@@ -3344,12 +3344,30 @@ bool OCCTShapeFixSplitEdge(OCCTEdgeRef edge,
     return false;
   try
   {
-    TopoDS_Vertex vert = BRepBuilderAPI_MakeVertex(gp_Pnt(vertexX, vertexY, vertexZ)).Vertex();
-    // Create a minimal planar face for the split context
+    TopoDS_Vertex      vert = BRepBuilderAPI_MakeVertex(gp_Pnt(vertexX, vertexY, vertexZ)).Vertex();
     double             f, l;
     Handle(Geom_Curve) curve = BRep_Tool::Curve(edge->edge, f, l);
     if (curve.IsNull())
       return false;
+
+    // Refuse a parameter outside the edge's own range. ShapeFix_SplitTool::SplitEdge checks only
+    // for a parameter AT either end, within tol2d, and has nothing to say about one beyond them:
+    // measured on a line trimmed to [-5, 5], param 6 returns halves of length 11 and 1, and param
+    // 100 returns 105 and 95, against an original length of 10. Those are extrapolations of the
+    // underlying unbounded line handed back as "the two halves of your edge". The bound has to
+    // come from the edge, and nothing else here supplies it (#1020).
+    if (param <= f + Precision::PConfusion() || param >= l - Precision::PConfusion())
+      return false;
+
+    // A minimal planar face, only to satisfy the signature. Its normal, position and trim are all
+    // inert: no pcurve for this edge exists on a face built for the occasion, so
+    // BRep_Tool::CurveOnSurface falls through to CurveOnPlane, which projects the edge onto the
+    // plane and returns the edge's own parameter range whatever plane it is. Measured across four
+    // deliberately incompatible faces (a +-0.001 trim, a (1,1,1) normal, a plane at
+    // (1e6, 1e6, 1e6)) on five edges including one 5000 units outside this trim and one whose
+    // natural plane is XZ: byte-identical halves in every row. So the +Z and the +-1000 are
+    // arbitrary and stay arbitrary; deriving them from the edge would buy nothing. See
+    // Scripts/repro/1020-fabricated-arguments.
     gp_Pnt      mid = curve->Value((f + l) / 2.0);
     gp_Pln      plane(mid, gp_Dir(0, 0, 1));
     TopoDS_Face face = BRepBuilderAPI_MakeFace(plane, -1000, 1000, -1000, 1000).Face();

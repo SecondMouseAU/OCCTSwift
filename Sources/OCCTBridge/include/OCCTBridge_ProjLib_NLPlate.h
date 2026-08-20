@@ -50,19 +50,22 @@ OCCTSurfaceRef OCCTSurfacePlateThrough(const double* points,
 
 /// Deform a surface to pass through constraint points (NLPlate G0).
 /// constraints: flat array of (u, v, targetX, targetY, targetZ) per point.
+/// resolutionOrder is NLPlate_NLPlate::Solve2's `ord`, the plate's resolution order, and must be
+/// in [2, 9]; anything else returns NULL (#1017).
 OCCTSurfaceRef OCCTSurfaceNLPlateG0(OCCTSurfaceRef initialSurface,
                                     const double*  constraints,
                                     int32_t        constraintCount,
-                                    int32_t        maxIter,
+                                    int32_t        resolutionOrder,
                                     double         tolerance);
 
 /// Deform a surface with position + tangent constraints (NLPlate G0+G1).
 /// constraints: flat (u, v, targetX, targetY, targetZ, d1uX, d1uY, d1uZ, d1vX, d1vY, d1vZ) per
 /// point.
+/// resolutionOrder is bounded the same way as OCCTSurfaceNLPlateG0's (#1017).
 OCCTSurfaceRef OCCTSurfaceNLPlateG1(OCCTSurfaceRef initialSurface,
                                     const double*  constraints,
                                     int32_t        constraintCount,
-                                    int32_t        maxIter,
+                                    int32_t        resolutionOrder,
                                     double         tolerance);
 
 // MARK: - ProjLib: Curve Projection onto Surfaces (v0.22.0)

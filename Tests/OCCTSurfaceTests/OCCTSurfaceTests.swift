@@ -1452,7 +1452,7 @@ struct ParametricPlateSurfaceTests {
     }
 }
 
-@Suite("NLPlate Deformation Tests", .disabled("NLPlate G0/G1 causes segfault in OCCT — pre-existing issue"))
+@Suite("NLPlate Deformation Tests")
 struct NLPlateDeformationTests {
 
     @Test("NLPlate G0 deformation of flat plane")
@@ -1463,7 +1463,7 @@ struct NLPlateDeformationTests {
 
         let deformed = surface.nlPlateDeformed(
             constraints: [(uv: SIMD2(0, 0), target: SIMD3(0, 0, 5))],
-            maxIterations: 4,
+            resolutionOrder: 4,
             tolerance: 0.1
         )
         #expect(deformed != nil)
@@ -1490,7 +1490,7 @@ struct NLPlateDeformationTests {
                 (uv: SIMD2(5, 5), target: SIMD3(5, 5, 2)),
                 (uv: SIMD2(0, 0), target: SIMD3(0, 0, 5))
             ],
-            maxIterations: 4,
+            resolutionOrder: 4,
             tolerance: 0.1
         )
         #expect(deformed != nil)
@@ -1503,7 +1503,7 @@ struct NLPlateDeformationTests {
 
         let deformed = surface.nlPlateDeformed(
             constraints: [(uv: SIMD2(0, 0), target: SIMD3(0, 0, 3))],
-            maxIterations: 4,
+            resolutionOrder: 4,
             tolerance: 0.1
         )
         #expect(deformed != nil)
@@ -1519,7 +1519,7 @@ struct NLPlateDeformationTests {
         guard let surface = plane else { return }
         let deformed = surface.nlPlateDeformed(
             constraints: [],
-            maxIterations: 4,
+            resolutionOrder: 4,
             tolerance: 0.1
         )
         #expect(deformed == nil)
@@ -1536,7 +1536,7 @@ struct NLPlateDeformationTests {
                 (uv: SIMD2(0, 0), target: SIMD3(0, 0, 5),
                  tangentU: SIMD3(1, 0, 0.5), tangentV: SIMD3(0, 1, 0.5))
             ],
-            maxIterations: 4,
+            resolutionOrder: 4,
             tolerance: 0.1
         )
         #expect(deformed != nil)
@@ -1559,7 +1559,7 @@ struct NLPlateDeformationTests {
                 (uv: SIMD2(2, 0), target: SIMD3(2, 0, 1),
                  tangentU: SIMD3(1, 0, -0.2), tangentV: SIMD3(0, 1, 0))
             ],
-            maxIterations: 8,
+            resolutionOrder: 8,
             tolerance: 1.0
         )
         // Multi-G1 may not converge for all inputs; verify no crash
@@ -1575,7 +1575,7 @@ struct NLPlateDeformationTests {
         guard let surface = plane else { return }
         let deformed = surface.nlPlateDeformedG1(
             constraints: [],
-            maxIterations: 4,
+            resolutionOrder: 4,
             tolerance: 0.1
         )
         #expect(deformed == nil)

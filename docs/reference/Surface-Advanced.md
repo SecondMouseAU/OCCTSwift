@@ -78,14 +78,14 @@ if let plate = Surface.plateThrough(points, degree: 3, tolerance: 0.01) {
 
 ---
 
-### `nlPlateDeformed(constraints:maxIterations:tolerance:)`
+### `nlPlateDeformed(constraints:resolutionOrder:tolerance:)`
 
 Deforms this surface to pass through target positions using the non-linear plate solver (NLPlate G0 — position-only constraints).
 
 ```swift
 public func nlPlateDeformed(
     constraints: [(uv: SIMD2<Double>, target: SIMD3<Double>)],
-    maxIterations: Int = 4,
+    resolutionOrder: Int = 4,
     tolerance: Double = 1e-3
 ) -> Surface?
 ```
@@ -94,15 +94,15 @@ Each constraint pins the surface at a (u, v) parameter to a desired 3D location.
 computes a displacement field on the existing surface; the result preserves the original shape
 except where pulled by the constraints.
 
-- **Parameters:** `constraints` — array of `(uv, target)` pairs (non-empty); `maxIterations` — solver iteration limit; `tolerance` — approximation tolerance.
-- **Returns:** New deformed surface, or `nil` if the array is empty or the solver fails.
+- **Parameters:** `constraints`, array of `(uv, target)` pairs (non-empty); `resolutionOrder`, the plate's resolution order, 2 through 9; `tolerance`, approximation tolerance.
+- **Returns:** New deformed surface, or `nil` if the array is empty, `resolutionOrder` is outside `2...9`, or the solver fails.
 - **OCCT:** `NLPlate_NLPlate` + `NLPlate_HPG0Constraint` + `GeomPlate_MakeApprox`.
 - **Example:**
   ```swift
   let plane = Surface.plane(origin: .zero, normal: SIMD3(0, 0, 1))!
   if let bumped = plane.nlPlateDeformed(
       constraints: [(uv: SIMD2(0, 0), target: SIMD3(0, 0, 5))],
-      maxIterations: 4, tolerance: 1e-3
+      resolutionOrder: 4, tolerance: 1e-3
   ) {
       let face = bumped.toFace()
   }
@@ -111,7 +111,7 @@ except where pulled by the constraints.
 
 ---
 
-### `nlPlateDeformedG1(constraints:maxIterations:tolerance:)`
+### `nlPlateDeformedG1(constraints:resolutionOrder:tolerance:)`
 
 Deforms this surface with position and tangent constraints (NLPlate G0+G1).
 
@@ -119,7 +119,7 @@ Deforms this surface with position and tangent constraints (NLPlate G0+G1).
 public func nlPlateDeformedG1(
     constraints: [(uv: SIMD2<Double>, target: SIMD3<Double>,
                    tangentU: SIMD3<Double>, tangentV: SIMD3<Double>)],
-    maxIterations: Int = 4,
+    resolutionOrder: Int = 4,
     tolerance: Double = 1e-3
 ) -> Surface?
 ```
@@ -128,8 +128,8 @@ Extends `nlPlateDeformed` by also constraining the partial derivatives (tangent 
 the U and V directions at each constraint point. Use to enforce tangency continuity at the
 constrained locations.
 
-- **Parameters:** `constraints` — array of `(uv, target, tangentU, tangentV)` tuples (non-empty); `maxIterations` — solver iteration limit; `tolerance` — approximation tolerance.
-- **Returns:** New deformed surface, or `nil` on failure.
+- **Parameters:** `constraints`, array of `(uv, target, tangentU, tangentV)` tuples (non-empty); `resolutionOrder`, the plate's resolution order, 2 through 9; `tolerance`, approximation tolerance.
+- **Returns:** New deformed surface, or `nil` if the array is empty, `resolutionOrder` is outside `2...9`, or the solver fails.
 - **OCCT:** `NLPlate_NLPlate` + `NLPlate_HPG1Constraint` + `GeomPlate_MakeApprox`.
 - **Example:**
   ```swift
@@ -140,7 +140,7 @@ constrained locations.
           tangentU: SIMD3(1, 0, 0),
           tangentV: SIMD3(0, 1, 0)
       )],
-      maxIterations: 4, tolerance: 1e-3
+      resolutionOrder: 4, tolerance: 1e-3
   ) {
       let face = shaped.toFace()
   }
