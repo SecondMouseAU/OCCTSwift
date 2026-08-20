@@ -13,7 +13,7 @@
 //  - BRepLib_FindSurface (planar surface from edge group)
 //  - BRepGProp helpers when not delegated to Properties
 //
-//  Public C surface unchanged. No symbol changes — pure file move.
+//  Public C surface unchanged. No symbol changes, a pure file move.
 //
 
 #import "../include/OCCTBridge.h"
@@ -326,13 +326,13 @@ bool OCCTEdgeIsSeam(OCCTShapeRef edge, OCCTShapeRef face)
 // Shared by every OCCTShapeFindSurface*/OCCTFindSurface* entry point below (#838): each used to
 // independently construct its own BRepLib_FindSurface, guard, try/catch and accessor reads for
 // what is logically one query. This runs the finder once; `want` selects which single accessor
-// this caller needs — Surface() for the three surface-returning entry points
+// this caller needs: Surface() for the three surface-returning entry points
 // (OCCTShapeFindSurface/Ex, OCCTFindSurface), ToleranceReached() for OCCTFindSurfaceTolerance, or
-// Existed() for OCCTFindSurfaceExisted — so a caller never invokes an accessor its own contract
+// Existed() for OCCTFindSurfaceExisted, so a caller never invokes an accessor its own contract
 // doesn't promise, matching the pre-consolidation code (each hand-written body called only the
 // one accessor it needed). PR #870 aggregate review: an earlier version of this consolidation
 // grouped ToleranceReached()+Existed() under one `wantSurface=false` branch and always computed
-// both, even though OCCTFindSurfaceTolerance/OCCTFindSurfaceExisted each only ever consume one —
+// both, even though OCCTFindSurfaceTolerance/OCCTFindSurfaceExisted each only ever consume one:
 // real, if cheap today, extra OCCT-object introspection neither pre-consolidation function
 // performed. Splitting `wantSurface` into this 3-way selector removes that: each of the three
 // `want` values computes exactly the one accessor its caller reads. (PR #866 review, still
@@ -419,7 +419,7 @@ static OCCTFindSurfaceResult occtRunFindSurface(OCCTShapeRef        shape,
 
 // Unwraps an OCCTFindSurfaceResult into the OCCTSurfaceRef each of the three surface-returning
 // callers (OCCTShapeFindSurface, OCCTShapeFindSurfaceEx, OCCTFindSurface) returns, or nullptr on
-// any failure — including allocation failure for the `new OCCTSurface(...)` wrapper itself, which
+// any failure, including allocation failure for the `new OCCTSurface(...)` wrapper itself, which
 // must be try/catch-guarded here rather than left to each caller: an exception escaping this
 // extern "C" bridge boundary into Swift-generated call frames is uncatchable and undefined
 // behavior, not the graceful nullptr every caller here otherwise guarantees (PR #866 review).
@@ -476,7 +476,7 @@ int32_t OCCTShapeFindContiguousEdges(OCCTShapeRef shape, double tolerance)
 #include <TopAbs_State.hxx>
 
 // The single solid a shape denotes: itself if it IS a solid, else the sole solid a
-// compound/compsolid wraps. False when the container holds two or more — a set of bodies has no
+// compound/compsolid wraps. False when the container holds two or more: a set of bodies has no
 // one outer shell, and answering with the first silently measures against the wrong solid. #439
 static bool occtSoleSolid(const TopoDS_Shape& shape, TopoDS_Solid& outSolid)
 {
@@ -493,12 +493,12 @@ static bool occtSoleSolid(const TopoDS_Shape& shape, TopoDS_Solid& outSolid)
   const TopoDS_Shape first = ex.Current();
   ex.Next();
   if (ex.More())
-    return false; // two or more solids — no single body to answer for
+    return false; // two or more solids, no single body to answer for
   outSolid = TopoDS::Solid(first);
   return true;
 }
 
-// Outer shell of a solid (BRepClass3d::OuterShell) — distinguishes the outer body from
+// Outer shell of a solid (BRepClass3d::OuterShell), which distinguishes the outer body from
 // internal void shells of a multi-shell solid. #211
 OCCTShapeRef OCCTShapeOuterShell(OCCTShapeRef shape)
 {
@@ -520,7 +520,7 @@ OCCTShapeRef OCCTShapeOuterShell(OCCTShapeRef shape)
   }
 }
 
-// Outer shell of every solid in a shape — the multi-solid counterpart of OCCTShapeOuterShell. #439
+// Outer shell of every solid in a shape: the multi-solid counterpart of OCCTShapeOuterShell. #439
 int32_t OCCTShapeOuterShells(OCCTShapeRef shape, OCCTShapeRef* outShells, int32_t maxCount)
 {
   if (!shape)
@@ -532,7 +532,7 @@ int32_t OCCTShapeOuterShells(OCCTShapeRef shape, OCCTShapeRef* outShells, int32_
     {
       // Sizing query: the solid count is an upper bound on the shells, and reaching it
       // costs one traversal. Classifying here instead would make a caller's count-then-fill
-      // pay BRepClass3d::OuterShell twice per solid — real work on a multi-shell body,
+      // pay BRepClass3d::OuterShell twice per solid, real work on a multi-shell body,
       // where it runs a solid classification per candidate shell.
       if (!outShells)
       {
@@ -1107,7 +1107,7 @@ int32_t OCCTShapeSymmetryAxes(OCCTShapeRef   shape,
     std::vector<OCCTShapeAxis> collected;
     if (pp.HasSymmetryPoint())
     {
-      // Spherical — add all three principal axes (all equal).
+      // Spherical: add all three principal axes (all equal).
       for (int i = 0; i < 3; i++)
       {
         OCCTShapeAxis a;
@@ -1129,7 +1129,7 @@ int32_t OCCTShapeSymmetryAxes(OCCTShapeRef   shape,
     }
     else if (pp.HasSymmetryAxis())
     {
-      // Rotational — the unique (different) moment's axis IS the symmetry axis.
+      // Rotational: the unique (different) moment's axis IS the symmetry axis.
       int uniqueIdx = 0;
       for (int i = 0; i < 3; i++)
       {
@@ -2047,7 +2047,7 @@ OCCTPolyDistanceResult OCCTShapePolyhedralDistance(OCCTShapeRef shape1, OCCTShap
 }
 
 // MARK: - IntCurvesFace Curve-Face Intersection (v0.61)
-// MARK: - IntCurvesFace — Curve-Face Intersection (v0.61.0)
+// MARK: - IntCurvesFace: Curve-Face Intersection (v0.61.0)
 
 int32_t OCCTIntersectLineFace(OCCTShapeRef face,
                               double       origX,
@@ -2702,9 +2702,9 @@ double OCCTOBBSquareExtent(OCCTOBBRef obb)
 
 // MARK: - BRepClass3d (v0.92.0)
 
-// #851: this used to hand-build BRepClass3d_SolidExplorer + BRepClass3d_SClassifier — the exact
+// #851: this used to hand-build BRepClass3d_SolidExplorer + BRepClass3d_SClassifier, the exact
 // pair BRepClass3d_SolidClassifier's own convenience constructor wraps internally (confirmed by
-// reading BRepClass3d_SolidClassifier.hxx) — duplicating OCCTClassifyPointInSolid's mechanism
+// reading BRepClass3d_SolidClassifier.hxx), duplicating OCCTClassifyPointInSolid's mechanism
 // under a different, more verbose spelling. Routed through the same classifier + the shared
 // mapTopAbsState() helper (declared above, ~line 387) so the two bridge functions can no longer
 // silently diverge on tolerance handling or IN/OUT/ON/UNKNOWN mapping. Zero behavior change:
@@ -4254,6 +4254,28 @@ OCCTShapeRef OCCTShapeEmpty(int32_t type)
 
 // --- Wire/Face construction ---
 
+// #1008: OCCTMakeWireFromEdges and OCCTMakeShell take an array of caller-supplied shapes and cast
+// every element with TopoDS::Edge / TopoDS::Face. Neither cast is enough on its own.
+//
+// A WRONG-TYPED element is already refused twice over, so it was never the defect here:
+// TopoDS::Edge raises Standard_TypeMismatch (its Standard_TypeMismatch_Raise_if is live in a bridge
+// TU, since No_Exception is defined only inside OCCT's own Release TUs, never in ours), and behind
+// that TopoDS_Builder::Add checks a compatibility table and throws unconditionally, with no macro
+// gating it at all. Both land in the catch below as nullptr.
+//
+// A NULL element is refused by neither. TopoDS::Edge's guard reads
+// `theShape.IsNull() ? false : theShape.ShapeType() != TopAbs_EDGE`, so a null shape is cast
+// without a test, and TopoDS_Shape::ShapeType() is a bare `myTShape->ShapeType()`, so the builder
+// dereferences a null handle: a SIGSEGV, which catch (...) cannot absorb. Shape.nullified is a
+// public Swift property returning exactly such a shape, so both entry points were one call apart
+// from an uncatchable crash. Measured in Scripts/repro/1008-topods-cast-guard/.
+//
+// The predicate below is this bridge's existing spelling for the same question (five sites in
+// OCCTBridge_Surface.mm, three in OCCTBridge_Healing.mm), inlined rather than shared because its
+// reach is this file. The extraction stays strict: unlike occtEdgeAt(shape, 0), which #975 gave
+// the entry points that accept a container and take its first edge, these two accept only a shape
+// that IS an edge or a face, and converging them would change what they accept.
+
 OCCTShapeRef OCCTMakeWireFromEdges(const OCCTShapeRef* edges, int32_t count)
 {
   try
@@ -4261,8 +4283,9 @@ OCCTShapeRef OCCTMakeWireFromEdges(const OCCTShapeRef* edges, int32_t count)
     BRepBuilderAPI_MakeWire mw;
     for (int32_t i = 0; i < count; i++)
     {
-      if (edges[i])
-        mw.Add(TopoDS::Edge(edges[i]->shape));
+      if (!edges[i] || edges[i]->shape.IsNull() || edges[i]->shape.ShapeType() != TopAbs_EDGE)
+        return nullptr;
+      mw.Add(TopoDS::Edge(edges[i]->shape));
     }
     if (!mw.IsDone())
       return nullptr;
@@ -4290,8 +4313,10 @@ OCCTShapeRef OCCTMakeShell(const OCCTShapeRef* faces, int32_t count)
     builder.MakeShell(shell);
     for (int32_t i = 0; i < count; i++)
     {
-      if (faces[i])
-        builder.Add(shell, TopoDS::Face(faces[i]->shape));
+      // #1008, the same guard as OCCTMakeWireFromEdges above: see the comment there.
+      if (!faces[i] || faces[i]->shape.IsNull() || faces[i]->shape.ShapeType() != TopAbs_FACE)
+        return nullptr;
+      builder.Add(shell, TopoDS::Face(faces[i]->shape));
     }
     OCCTShape* result = new OCCTShape();
     result->shape     = shell;
