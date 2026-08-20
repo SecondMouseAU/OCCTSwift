@@ -45,7 +45,7 @@ public enum ProjectionType: Sendable, Equatable {
 | Case | Meaning |
 |---|---|
 | `orthographic` | Parallel-line projection (engineering drawings) |
-| `perspective(focus:)` | Converging-line projection from an eye point `focus` units back along the view direction |
+| `perspective(focus:)` | Converging-line projection from an eye point at `focus * direction` from the world origin |
 
 ---
 
@@ -53,14 +53,30 @@ public enum ProjectionType: Sendable, Equatable {
 
 Converging-line projection.
 
-`focus` is the eye-to-origin distance measured along the view direction. Geometry at depth `d`
-towards the eye is scaled by `focus / (focus - d)`, so a longer focal distance converges on the
-orthographic projection and a focal distance shorter than the shape's own extent along the view
-direction produces an empty drawing. A focal distance that is not strictly positive returns `nil`
-rather than a projection.
+**The eye is anchored at the world origin, not at the shape.** `OCCTDrawingCreate` builds its
+projection frame as `gp_Ax2(gp_Pnt(0, 0, 0), viewDir)` unconditionally, so the eye sits at
+`focus * direction` and the picture plane passes through the origin perpendicular to `direction`.
+There is no parameter that moves it. A point whose coordinate along `direction` (again measured
+from the origin, call it `z`) is scaled by `focus / (focus - z)`, so a longer focal distance
+converges on the orthographic projection.
+
+Two consequences follow, and neither is what an eye anchored on the shape would give:
+
+- **The scale depends on where the shape sits in world space.** The same 10-unit-deep box viewed
+  with the eye 50 units from its near face projects at half-width 6.25 when it spans `z` 0 to 10,
+  and at 131.25 when it spans `z` 1000 to 1010 with `focus` 1050. The foreshortening *ratio* is
+  identical (1.25 in both cases), so no perspective information changes; only the uniform scale
+  does. Translate the shape to the origin first if you want the drawing's scale to be independent
+  of its modelled position.
+- **`focus` must exceed the shape's reach along `direction`,** measured from the origin. A shape at
+  or beyond the eye has `focus - z <= 0` and would be drawn mirrored through the origin, so
+  `Drawing.project` returns `nil` for it instead. The check uses the shape's axis-aligned bounding
+  box, which bounds the true reach from above, so a rotated or curved shape can be refused slightly
+  before it strictly needs to be. A focal distance that is not strictly positive returns `nil` too.
 
 - **OCCT:** `HLRAlgo_Projector(const gp_Ax2& CS, const double Focus)`, selected inside
-  `OCCTDrawingCreate` on the `OCCTProjectionType` value.
+  `OCCTDrawingCreate` on the `OCCTProjectionType` value. The divide is
+  `HLRAlgo_Projector::Project`'s `R = 1 - Z/focus`.
 
 ---
 

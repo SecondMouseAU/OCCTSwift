@@ -339,8 +339,9 @@ bool OCCTDocumentSetDimensionBounds(OCCTDocumentRef _Nonnull doc,
 /// Set the ISO 286 tolerance class of an existing dimension, via
 /// XCAFDimTolObjects_DimensionObject::SetClassOfTolerance. Independent of the values array, so a
 /// range or plus/minus dimension can carry one too. formVariance is
-/// XCAFDimTolObjects_DimensionFormVariance, grade is XCAFDimTolObjects_DimensionGrade. Returns true
-/// on success (#996).
+/// XCAFDimTolObjects_DimensionFormVariance, grade is XCAFDimTolObjects_DimensionGrade. Returns
+/// false if either names no enumerator, since an out-of-range formVariance is stored verbatim and
+/// additionally makes IsDimWithClassOfTolerance() true. Returns true on success (#996, #1031).
 bool OCCTDocumentSetDimensionClassOfTolerance(OCCTDocumentRef _Nonnull doc,
                                               int32_t dimensionIndex,
                                               bool    isHole,
@@ -371,7 +372,8 @@ bool OCCTDocumentSetDimensionDecimalPlaces(OCCTDocumentRef _Nonnull doc,
 
 /// Replace the dimension's modifier sequence with the given XCAFDimTolObjects_DimensionModif
 /// values, via SetModifiers. Passing count 0 clears the sequence. Returns false if the index is out
-/// of range, if count is negative, or if modifiers is NULL with a positive count (#1004).
+/// of range, if count is negative, if modifiers is NULL with a positive count, or if any value
+/// names no enumerator, in which case nothing at all is stored (#1004, #1031).
 bool OCCTDocumentSetDimensionModifiers(OCCTDocumentRef _Nonnull doc,
                                        int32_t dimensionIndex,
                                        const int32_t* _Nullable modifiers,
@@ -407,7 +409,8 @@ bool OCCTDocumentSetGeomToleranceMaxValueModifier(OCCTDocumentRef _Nonnull doc,
 
 /// Replace the tolerance's modifier sequence with the given XCAFDimTolObjects_GeomToleranceModif
 /// values. Passing count 0 clears the sequence. Returns false if the index is out of range, if
-/// count is negative, or if modifiers is NULL with a positive count (#1004).
+/// count is negative, if modifiers is NULL with a positive count, or if any value names no
+/// enumerator, in which case nothing at all is stored (#1004, #1031).
 bool OCCTDocumentSetGeomToleranceModifiers(OCCTDocumentRef _Nonnull doc,
                                            int32_t toleranceIndex,
                                            const int32_t* _Nullable modifiers,
@@ -421,7 +424,8 @@ bool OCCTDocumentSetDatumPosition(OCCTDocumentRef _Nonnull doc,
 
 /// Replace the datum's modifier sequence with the given XCAFDimTolObjects_DatumSingleModif values.
 /// Passing count 0 clears the sequence. Returns false if the index is out of range, if count is
-/// negative, or if modifiers is NULL with a positive count (#1004).
+/// negative, if modifiers is NULL with a positive count, or if any value names no enumerator, in
+/// which case nothing at all is stored (#1004, #1031).
 bool OCCTDocumentSetDatumModifiers(OCCTDocumentRef _Nonnull doc,
                                    int32_t datumIndex,
                                    const int32_t* _Nullable modifiers,
@@ -450,7 +454,11 @@ bool OCCTDocumentSetDatumTarget(OCCTDocumentRef _Nonnull doc,
 /// setters raises the same HasDatumTargetParams() flag, so writing one alone would report the other
 /// two as present while leaving them unassigned. The axis is a location plus a normal plus a
 /// reference direction, three doubles each. Which of length and width then survives a round trip
-/// depends on the target type; see OCCTDatumInfo. Returns true on success (#1004).
+/// depends on the target type; see OCCTDatumInfo. Requires the datum to already be a datum target
+/// of a type other than Area, because XCAFDoc_Datum::SetObject stores the axis only under
+/// IsDatumTarget() and only on its non-Area branch: call OCCTDocumentSetDatumTarget first, or this
+/// returns false rather than reporting success for a call that persisted nothing. Returns true on
+/// success (#1004, #1032).
 bool OCCTDocumentSetDatumTargetPlacement(OCCTDocumentRef _Nonnull doc,
                                          int32_t datumIndex,
                                          const double* _Nonnull location,

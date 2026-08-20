@@ -1536,6 +1536,13 @@ bool OCCTDocumentSetDimensionClassOfTolerance(OCCTDocumentRef doc,
                                               int32_t         formVariance,
                                               int32_t         grade)
 {
+  // #1031: an out-of-range formVariance is not merely stored and read back, it also makes
+  // XCAFDimTolObjects_DimensionObject::IsDimWithClassOfTolerance() true, since that is a bare
+  // test against _None. The reader then reports the class as present while the value decodes to
+  // nothing.
+  if (formVariance < 0 || formVariance > (int32_t)XCAFDimTolObjects_DimensionFormVariance_ZC
+      || grade < 0 || grade > (int32_t)XCAFDimTolObjects_DimensionGrade_IT18)
+    return false;
   try
   {
     Handle(XCAFDoc_Dimension)                 dimAttr;
@@ -1625,12 +1632,26 @@ bool OCCTDocumentSetDimensionDecimalPlaces(OCCTDocumentRef doc,
   }
 }
 
+// Every value in a modifier array has to name a real enumerator before any of the array is stored,
+// because an out-of-range one is appended, written through and read back verbatim. Checked up front
+// rather than inside the append loop, so a rejected array leaves the document untouched (#1031).
+static bool occtDocumentModifiersInRange(const int32_t* modifiers, int32_t count, int32_t maxValue)
+{
+  for (int32_t i = 0; i < count; ++i)
+    if (modifiers[i] < 0 || modifiers[i] > maxValue)
+      return false;
+  return true;
+}
+
 bool OCCTDocumentSetDimensionModifiers(OCCTDocumentRef doc,
                                        int32_t         dimensionIndex,
                                        const int32_t*  modifiers,
                                        int32_t         count)
 {
-  if (count < 0 || (count > 0 && !modifiers))
+  if (count < 0 || (count > 0 && !modifiers)
+      || !occtDocumentModifiersInRange(modifiers,
+                                       count,
+                                       (int32_t)XCAFDimTolObjects_DimensionModif_Between))
     return false;
   try
   {
@@ -1758,7 +1779,10 @@ bool OCCTDocumentSetGeomToleranceModifiers(OCCTDocumentRef doc,
                                            const int32_t*  modifiers,
                                            int32_t         count)
 {
-  if (count < 0 || (count > 0 && !modifiers))
+  if (count < 0 || (count > 0 && !modifiers)
+      || !occtDocumentModifiersInRange(modifiers,
+                                       count,
+                                       (int32_t)XCAFDimTolObjects_GeomToleranceModif_All_Over))
     return false;
   try
   {
@@ -1804,7 +1828,10 @@ bool OCCTDocumentSetDatumModifiers(OCCTDocumentRef doc,
                                    const int32_t*  modifiers,
                                    int32_t         count)
 {
-  if (count < 0 || (count > 0 && !modifiers))
+  if (count < 0 || (count > 0 && !modifiers)
+      || !occtDocumentModifiersInRange(modifiers,
+                                       count,
+                                       (int32_t)XCAFDimTolObjects_DatumSingleModif_Translation))
     return false;
   try
   {
@@ -1900,6 +1927,16 @@ bool OCCTDocumentSetDatumTargetPlacement(OCCTDocumentRef doc,
     Handle(XCAFDoc_Datum)                 datumAttr;
     Handle(XCAFDimTolObjects_DatumObject) datumObj;
     if (!occtDocumentDatumObjectAt(doc, datumIndex, datumAttr, datumObj))
+      return false;
+
+    // #1032: XCAFDoc_Datum::SetObject nests the whole axis/length/width block inside
+    // if (IsDatumTarget()), and inside that takes an Area branch that writes no axis at all. On a
+    // datum that is not a target, or whose target type is Area, everything below is set on the
+    // object and then dropped on the floor, so reporting success would describe a call that
+    // persisted nothing. Refuse instead, and leave it to the caller to run
+    // OCCTDocumentSetDatumTarget with a non-Area type first.
+    if (!datumObj->IsDatumTarget()
+        || datumObj->GetDatumTargetType() == XCAFDimTolObjects_DatumTargetType_Area)
       return false;
 
     // gp_Dir throws Standard_ConstructionError on a zero-length vector, which the surrounding

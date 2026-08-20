@@ -2234,7 +2234,7 @@ public func setDatumTargetPlacement(at index: Int,
   - `reference`: the placement X axis, which `length` runs along.
   - `length`: the target's length.
   - `width`: the target's width.
-- **Returns:** `true` if the update succeeded; `false` if the index is out of range, the attribute is missing, or `normal` or `reference` is degenerate.
+- **Returns:** `true` if the update succeeded; `false` if the index is out of range, the attribute is missing, `normal` or `reference` is degenerate, or the datum is not already a datum target of a type other than `.area` (see the precondition below).
 - **OCCT:** `XCAFDimTolObjects_DatumObject::SetDatumTargetAxis`, `SetDatumTargetLength` and `SetDatumTargetWidth` -> `XCAFDoc_Datum::SetObject`.
 - **Example:**
   ```swift
@@ -2252,3 +2252,11 @@ public func setDatumTargetPlacement(at index: Int,
 `HasDatumTargetParams()` flag as a side effect, so writing any one of them alone would report the
 other two as present while leaving them unassigned. Which of `length` and `width` then survives a
 round trip depends on the target type; see `Document.Datum.Target`.
+
+**The datum must already be a datum target, of a type other than `.area`.** `XCAFDoc_Datum::SetObject`
+nests its whole axis/length/width/number block inside `if (theObject->IsDatumTarget())`, and inside
+that takes an `Area` branch that stores the target's own shape rather than a placement. On a datum
+that has had no `setDatumTarget(at:type:number:)` applied, or whose type is `.area`, every value
+passed here is set on the object and then discarded when the attribute is written. The call returns
+`false` in both cases rather than reporting success for a call that persisted nothing, so order the
+two calls as the example above does.
