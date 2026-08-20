@@ -3,7 +3,7 @@
 Ground truth for which of `XCAFDimTolObjects_DimensionObject`'s 42 accessors (and its two siblings')
 can be wrapped correctly, and which cannot because absence is not representable through them.
 
-Two programs. Build both from the repo root:
+Three programs. Build them from the repo root:
 
 ```bash
 clang++ -std=c++17 -ObjC++ -w \
@@ -20,9 +20,17 @@ clang++ -std=c++17 -ObjC++ -w \
   Scripts/repro/1004-gdt-accessors/datum_point_without_plane.mm -o /tmp/datum_point_without_plane
 /tmp/datum_point_without_plane          # the wrong answer
 /tmp/datum_point_without_plane --crash  # the SIGSEGV
+
+clang++ -std=c++17 -ObjC++ -w \
+  -I"Libraries/OCCT.xcframework/macos-arm64/Headers" \
+  -L"Libraries/OCCT.xcframework/macos-arm64" \
+  -lOCCT-macos -framework Foundation -framework AppKit -lz -lc++ \
+  Scripts/repro/1004-gdt-accessors/gdt_tolerance_datum_gates.mm -o /tmp/gdt_gates
+/tmp/gdt_gates                          # transcript-gates.txt is this program's output
 ```
 
-`transcript.txt` is `gdt_accessor_defaults`'s output against the pinned kernel.
+`transcript.txt` is `gdt_accessor_defaults`'s output against the pinned kernel, and
+`transcript-gates.txt` is `gdt_tolerance_datum_gates`'s.
 
 ## What the first program settles
 
@@ -80,7 +88,36 @@ so this is a one-character divergence rather than a shared idiom. Confirmed live
 `master`. Filed as #1022; not fixed in #1004, because the fix is a kernel patch and an xcframework
 rebuild rather than a Swift read surface.
 
+## What the third program settles
+
+`gdt_accessor_defaults` reports what an unset tolerance or datum accessor answers.
+`gdt_tolerance_datum_gates` asks the next question, which is which condition separates that from a
+real value, by writing each boundary case and reading it back. Four answers, all of which shaped
+#1004's second PR.
+
+**A datum's position is 1-based, so 0 is absence.** `STEPCAFControl_Reader.cxx:3676` declares its
+reference-frame counter as `int aPositionCounter = 0` and `:3763` increments it *before* passing it
+at `:3774`, so the first datum of a frame is written as position 1 and an import never assigns 0.
+The round trip is faithful in both directions, so `nil` for `<= 0` reports a datum with no place in
+a frame rather than discarding a value OCCT could have meant.
+
+**A zero zone value and a zero max value are not representable.**
+`XCAFDoc_GeomTolerance::SetObject` writes each only under `> 0`, so neither child label exists for a
+zero and `GetObject` leaves both at the fresh object's unassigned member, which also reads 0. The
+transcript's second row shows zeroes coming back as zeroes, and that is **not** evidence they were
+stored: a stored 0 and an unstored one are the same reading, which is the whole reason `> 0` is the
+presence test. The third row keeps a zone value with no zone modifier at all, which is what shows
+the two conditions are independent rather than one implying the other.
+
+**Which datum target dimensions survive depends on the type, not on the write.** All five types were
+written with the same asymmetric `length = 30, width = 18`, so a length reported as a width would be
+visible. Measured: `.point` keeps neither, `.line` and `.circle` keep the length, `.rectangle` keeps
+both, and `.area` reports `HasDatumTargetParams() == false` because `SetObject` takes its shape
+branch and never writes the axis. Two rules cover it: a length under the params flag and a type that
+is not `.point`, a width under the params flag and a type that is `.rectangle`.
+
 ## What is not measured here
 
-`XCAFDimTolObjects_GeomToleranceObject` and `XCAFDimTolObjects_DatumObject` are dumped by both
-programs, but no decision has been taken on their accessors yet. That is #1004's second PR.
+The geometry and presentation accessors on all three classes, which #1004's two PRs deliberately
+left unwrapped. `docs/occtswift-wrapping-gaps.md` records the reason per accessor, and
+`XCAFDoc_DimTolTool`'s own unreached surface is adjudicated there too, for #1021.

@@ -8,11 +8,13 @@ import OCCTBridge
 // `GeomToleranceType`, `DimensionFormVariance` and `DimensionGrade` vocabulary these methods take,
 // lives in `GDTRead.swift` (#996).
 //
-// #1004 widened this to the dimension accessors that change what a dimension's number means: the
-// two qualifiers, the modifier sequence and the drawn decimal places. Each read accessor ships with
-// the mutator that authors it, because a read nothing in this package can write has no way to be
-// tested against a document of our own. The rest of `XCAFDimTolObjects_DimensionObject`'s surface
-// (path, direction, connections, descriptions, presentation, semantic name) stays unwrapped, and
+// #1004 widened this to the accessors that change what a GD&T value means: a dimension's two
+// qualifiers, modifier sequence and drawn decimal places; a tolerance's value type, material
+// requirement, zone modifier, maximum value and modifier sequence; a datum's frame position,
+// modifiers and datum target. Each read accessor ships with the mutator that authors it, because a
+// read nothing in this package can write has no way to be tested against a document of our own.
+// The geometry and presentation surface of all three classes (paths, directions, connections,
+// annotation planes, text anchors, presentation shapes, semantic names) stays unwrapped, and
 // `docs/occtswift-wrapping-gaps.md` records why per accessor.
 
 extension Document {
@@ -189,6 +191,234 @@ extension Document {
         return raw.withUnsafeBufferPointer { buffer in
             OCCTDocumentSetDimensionModifiers(
                 handle, Int32(index), buffer.baseAddress, Int32(buffer.count))
+        }
+    }
+
+    /// Set what an existing geometric tolerance's value measures.
+    ///
+    /// ```swift
+    /// doc.setGeomToleranceValueType(at: 0, .diameter)
+    /// ```
+    ///
+    /// - Parameters:
+    ///   - index: Zero-based index into the document's geometric tolerance sequence.
+    ///   - valueType: Pass `.none` for a linear zone width.
+    /// - Returns: `false` if the index is out of range.
+    @discardableResult
+    public func setGeomToleranceValueType(
+        at index: Int,
+        _ valueType: GeomToleranceValueType
+    ) -> Bool {
+        OCCTDocumentSetGeomToleranceTypeOfValue(handle, Int32(index), valueType.rawValue)
+    }
+
+    /// Set the material condition an existing geometric tolerance applies at.
+    ///
+    /// ```swift
+    /// doc.setGeomToleranceMaterialRequirement(at: 0, .m)
+    /// ```
+    ///
+    /// - Parameters:
+    ///   - index: Zero-based index into the document's geometric tolerance sequence.
+    ///   - requirement: Pass `.none` for regardless of feature size.
+    /// - Returns: `false` if the index is out of range.
+    @discardableResult
+    public func setGeomToleranceMaterialRequirement(
+        at index: Int,
+        _ requirement: MaterialRequirement
+    ) -> Bool {
+        OCCTDocumentSetGeomToleranceMaterialRequirement(
+            handle, Int32(index), requirement.rawValue)
+    }
+
+    /// Set an existing geometric tolerance's zone modifier and its associated value.
+    ///
+    /// ```swift
+    /// doc.setGeomToleranceZoneModifier(at: 0, .projected, value: 15.0)
+    /// ```
+    ///
+    /// - Parameters:
+    ///   - index: Zero-based index into the document's geometric tolerance sequence.
+    ///   - modifier: Pass `.none` to clear the modifier.
+    ///   - value: The associated value, for example a projected zone's length. Zero or less clears
+    ///     it, so `geomTolerance(at:)` reports `zoneModifierValue` as `nil`.
+    /// - Returns: `false` if the index is out of range.
+    @discardableResult
+    public func setGeomToleranceZoneModifier(
+        at index: Int,
+        _ modifier: GeomToleranceZoneModifier,
+        value: Double = 0
+    ) -> Bool {
+        OCCTDocumentSetGeomToleranceZoneModifier(
+            handle, Int32(index), modifier.rawValue, value)
+    }
+
+    /// Set the maximal upper tolerance of an existing geometric tolerance with modifiers.
+    ///
+    /// ```swift
+    /// doc.setGeomToleranceMaxValueModifier(at: 0, 0.25)
+    /// ```
+    ///
+    /// - Parameters:
+    ///   - index: Zero-based index into the document's geometric tolerance sequence.
+    ///   - value: Zero or less clears it, so `geomTolerance(at:)` reports `maxValueModifier` as
+    ///     `nil`.
+    /// - Returns: `false` if the index is out of range.
+    @discardableResult
+    public func setGeomToleranceMaxValueModifier(at index: Int, _ value: Double) -> Bool {
+        OCCTDocumentSetGeomToleranceMaxValueModifier(handle, Int32(index), value)
+    }
+
+    /// Replace an existing geometric tolerance's modifier sequence.
+    ///
+    /// ```swift
+    /// doc.setGeomToleranceModifiers(at: 0, [.allAround, .freeState])
+    /// ```
+    ///
+    /// - Parameters:
+    ///   - index: Zero-based index into the document's geometric tolerance sequence.
+    ///   - modifiers: The new sequence, in the order OCCT should store it. An empty array clears
+    ///     the sequence.
+    /// - Returns: `false` if the index is out of range.
+    @discardableResult
+    public func setGeomToleranceModifiers(
+        at index: Int,
+        _ modifiers: [GeomToleranceModifier]
+    ) -> Bool {
+        let raw = modifiers.map(\.rawValue)
+        return raw.withUnsafeBufferPointer { buffer in
+            OCCTDocumentSetGeomToleranceModifiers(
+                handle, Int32(index), buffer.baseAddress, Int32(buffer.count))
+        }
+    }
+
+    /// Set an existing datum's place in its geometric tolerance's reference frame.
+    ///
+    /// ```swift
+    /// doc.setDatumPosition(at: 0, 1)   // the primary datum of A|B|C
+    /// ```
+    ///
+    /// - Parameters:
+    ///   - index: Zero-based index into the document's datum sequence.
+    ///   - position: 1-based. Zero or less clears it, so `datum(at:)` reports `position` as `nil`.
+    /// - Returns: `false` if the index is out of range.
+    @discardableResult
+    public func setDatumPosition(at index: Int, _ position: Int) -> Bool {
+        OCCTDocumentSetDatumPosition(handle, Int32(index), Int32(position))
+    }
+
+    /// Replace an existing datum's modifier sequence.
+    ///
+    /// ```swift
+    /// doc.setDatumModifiers(at: 0, [.basic, .contactingFeature])
+    /// ```
+    ///
+    /// - Parameters:
+    ///   - index: Zero-based index into the document's datum sequence.
+    ///   - modifiers: The new sequence, in the order OCCT should store it. An empty array clears
+    ///     the sequence.
+    /// - Returns: `false` if the index is out of range.
+    @discardableResult
+    public func setDatumModifiers(at index: Int, _ modifiers: [DatumModifier]) -> Bool {
+        let raw = modifiers.map(\.rawValue)
+        return raw.withUnsafeBufferPointer { buffer in
+            OCCTDocumentSetDatumModifiers(
+                handle, Int32(index), buffer.baseAddress, Int32(buffer.count))
+        }
+    }
+
+    /// Set an existing datum's single valued modifier.
+    ///
+    /// ```swift
+    /// doc.setDatumModifierWithValue(at: 0, .projected, value: 12.5)
+    /// ```
+    ///
+    /// - Parameters:
+    ///   - index: Zero-based index into the document's datum sequence.
+    ///   - modifier: Pass `.none` to clear the pair, which also clears the value.
+    ///   - value: The number the modifier carries.
+    /// - Returns: `false` if the index is out of range.
+    @discardableResult
+    public func setDatumModifierWithValue(
+        at index: Int,
+        _ modifier: DatumModifierWithValue,
+        value: Double = 0
+    ) -> Bool {
+        OCCTDocumentSetDatumModifierWithValue(handle, Int32(index), modifier.rawValue, value)
+    }
+
+    /// Mark an existing datum as a datum target, or clear that mark.
+    ///
+    /// ```swift
+    /// doc.setDatumTarget(at: 0, type: .rectangle, number: 1)
+    /// ```
+    ///
+    /// - Parameters:
+    ///   - index: Zero-based index into the document's datum sequence.
+    ///   - type: The target's shape.
+    ///   - number: The target's number within its datum.
+    /// - Returns: `false` if the index is out of range or `number` is negative.
+    @discardableResult
+    public func setDatumTarget(at index: Int, type: DatumTargetType, number: Int) -> Bool {
+        OCCTDocumentSetDatumTarget(handle, Int32(index), true, type.rawValue, Int32(number))
+    }
+
+    /// Clear an existing datum's datum target mark, so `datum(at:)` reports `target` as `nil`.
+    ///
+    /// ```swift
+    /// doc.clearDatumTarget(at: 0)
+    /// ```
+    ///
+    /// - Parameter index: Zero-based index into the document's datum sequence.
+    /// - Returns: `false` if the index is out of range.
+    @discardableResult
+    public func clearDatumTarget(at index: Int) -> Bool {
+        OCCTDocumentSetDatumTarget(handle, Int32(index), false, 0, 0)
+    }
+
+    /// Set an existing datum target's placement, length and width together.
+    ///
+    /// ```swift
+    /// doc.setDatumTargetPlacement(
+    ///     at: 0, location: SIMD3(1, 2, 3), normal: SIMD3(0, 0, 1), reference: SIMD3(1, 0, 0),
+    ///     length: 30, width: 18)
+    /// ```
+    ///
+    /// All three are one call because each of OCCT's three setters raises the same
+    /// `HasDatumTargetParams()` flag, so writing one alone reports the other two as present while
+    /// leaving them unassigned. Which of `length` and `width` survives depends on the target type;
+    /// see `Datum.Target`.
+    ///
+    /// - Parameters:
+    ///   - index: Zero-based index into the document's datum sequence.
+    ///   - location: The placement origin.
+    ///   - normal: The placement Z axis, pointing away from the material.
+    ///   - reference: The placement X axis, which `length` runs along.
+    ///   - length: The target's length.
+    ///   - width: The target's width.
+    /// - Returns: `false` if the index is out of range, or if `normal` or `reference` is degenerate.
+    @discardableResult
+    public func setDatumTargetPlacement(
+        at index: Int,
+        location: SIMD3<Double>,
+        normal: SIMD3<Double>,
+        reference: SIMD3<Double>,
+        length: Double,
+        width: Double
+    ) -> Bool {
+        let loc = [location.x, location.y, location.z]
+        let nrm = [normal.x, normal.y, normal.z]
+        let ref = [reference.x, reference.y, reference.z]
+        return loc.withUnsafeBufferPointer { locBuf in
+            nrm.withUnsafeBufferPointer { nrmBuf in
+                ref.withUnsafeBufferPointer { refBuf in
+                    guard let l = locBuf.baseAddress, let n = nrmBuf.baseAddress,
+                        let r = refBuf.baseAddress
+                    else { return false }
+                    return OCCTDocumentSetDatumTargetPlacement(
+                        handle, Int32(index), l, n, r, length, width)
+                }
+            }
         }
     }
 }

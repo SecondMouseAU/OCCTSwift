@@ -408,23 +408,23 @@ These require implementing C++ abstract classes, which the bridge architecture d
   `XCAFDoc_VisMaterial` (`IsDoubleSided`/`SetDoubleSided`, superseded by `FaceCulling`). Filing any
   of those as a deprecated alias would have been wrong in the most misleading direction, since each
   is something a caller uses today. (#810)
-- Sixteen enums nothing in the tree reads. Eight are GD&T qualifiers and modifiers,
-  `XCAFDimTolObjects_DatumModifWithValue`, `XCAFDimTolObjects_DatumSingleModif`,
-  `XCAFDimTolObjects_DatumTargetType`, `XCAFDimTolObjects_GeomToleranceMatReqModif`,
-  `XCAFDimTolObjects_GeomToleranceModif`, `XCAFDimTolObjects_GeomToleranceTypeValue`,
-  `XCAFDimTolObjects_GeomToleranceZoneModif` and
-  `XCAFDimTolObjects_ToleranceZoneAffectedPlane`: `geomTolerance(at:)` and `datum(at:)` read a
-  tolerance's type and value and a datum's name off the `XCAFDimTolObjects_*Object` and stop
-  there, so a STEP file's material requirement, zone modifier or datum modifiers survive a round
-  trip but cannot be read. Widening `Document.GeomTolerance`/`Datum` is a public API change rather
-  than a wrap, which is why it is recorded here; #1004 enumerates the missing accessors per class.
-  Five of the thirteen this bullet used to name are now bound and gated against the pinned headers
-  by `Scripts/derive-gdt-enums.py`: `XCAFDimTolObjects_DimensionFormVariance` and
+- Nine enums nothing in the tree reads. Exactly one is a GD&T enum,
+  `XCAFDimTolObjects_ToleranceZoneAffectedPlane`, which is the type of a geometric tolerance's
+  affected plane; it stays unbound because `GetAffectedPlaneType` and `GetAffectedPlane` are not
+  wrapped, and the type on its own would be half an answer (see the two #1004 sections below).
+  Twelve of the thirteen this bullet used to name are now bound and gated against the pinned
+  headers by `Scripts/derive-gdt-enums.py`: `XCAFDimTolObjects_DimensionFormVariance` and
   `XCAFDimTolObjects_DimensionGrade` as `Document.DimensionFormVariance` and
-  `Document.DimensionGrade` (#996), and `XCAFDimTolObjects_DimensionQualifier`,
+  `Document.DimensionGrade` (#996); `XCAFDimTolObjects_DimensionQualifier`,
   `XCAFDimTolObjects_AngularQualifier` and `XCAFDimTolObjects_DimensionModif` as
-  `Document.DimensionQualifier`, `Document.AngularQualifier` and `Document.DimensionModifier`
-  (#1004). Four more are `CDF_Store`'s own statuses,
+  `Document.DimensionQualifier`, `Document.AngularQualifier` and `Document.DimensionModifier`;
+  and `XCAFDimTolObjects_GeomToleranceTypeValue`, `XCAFDimTolObjects_GeomToleranceMatReqModif`,
+  `XCAFDimTolObjects_GeomToleranceZoneModif`, `XCAFDimTolObjects_GeomToleranceModif`,
+  `XCAFDimTolObjects_DatumSingleModif`, `XCAFDimTolObjects_DatumModifWithValue` and
+  `XCAFDimTolObjects_DatumTargetType` as `Document.GeomToleranceValueType`,
+  `Document.MaterialRequirement`, `Document.GeomToleranceZoneModifier`,
+  `Document.GeomToleranceModifier`, `Document.DatumModifier`, `Document.DatumModifierWithValue`
+  and `Document.DatumTargetType` (#1004). Four more are `CDF_Store`'s own statuses,
   `CDF_StoreSetNameStatus`, `CDF_SubComponentStatus`, `CDF_TryStoreStatus` and
   `CDF_TypeOfActivation`: the bridge saves through `TDocStd_Application::SaveAs`, which reports
   `PCDM_StoreStatus`, and that **is** wrapped as `StoreStatus`, so these are reachable only by
@@ -472,6 +472,69 @@ builds the datum's point from the annotation plane's location array, and derefer
 when the datum has a point and no plane. That is an uncatchable SIGSEGV already reachable from
 `Document.datums` today, before any of this surface is wrapped; it is #1022, with a reproducer in
 the same directory.
+
+### GD&T tolerance and datum accessors left unwrapped (#1004)
+
+The sibling of the dimension section above, for `XCAFDimTolObjects_GeomToleranceObject` (22 public
+accessors, 2 exposed before #1004) and `XCAFDimTolObjects_DatumObject` (21, 1 exposed). #1004's
+second PR wrapped the semantics on both and left the geometry and presentation, each measured
+against the pinned kernel in
+[`Scripts/repro/1004-gdt-accessors/`](https://github.com/SecondMouseAU/OCCTSwift/tree/main/Scripts/repro/1004-gdt-accessors).
+
+**Wrapped on `GeomTolerance`:** `GetTypeOfValue`, `GetMaterialRequirementModifier`,
+`GetZoneModifier` with `GetValueOfZoneModifier`, `GetMaxValueModifier`, `GetModifiers`.
+**Wrapped on `Datum`:** `GetPosition`, `GetModifiers`, `GetModifierWithValue`, `IsDatumTarget`,
+`GetDatumTargetType`, `GetDatumTargetNumber`, `GetDatumTargetLength`, `GetDatumTargetWidth`,
+`HasDatumTargetParams`.
+
+| Accessor | Why it is not wrapped |
+|---|---|
+| `GetSemanticName` / `SetSemanticName` on both classes | Same defect as the dimension case above. `XCAFDoc_DimTolTool::AddGeomTolerance()` and `AddDatum()` initialise the new label's `TDataStd_Name` to `"DGT:Tolerance"` and `"DGT:Datum"`, and `GetObject` reads that same attribute back, so an unnamed entry reports the GD&T table's own marker string. Measured: `transcript.txt`'s part 2 rows. |
+| `GetAffectedPlane` / `GetAffectedPlaneType` / `HasAffectedPlane` | `HasAffectedPlane()` is a real predicate and the type enum has only three members, so this one is wrappable correctly. It needs `gp_Pln` plumbing into a `Hashable` read struct, and the type without the plane would say which kind of plane the zone is qualified against while withholding the plane. Deferred as a unit rather than half-wrapped; this is the one `XCAFDimTolObjects` enum still unbound. |
+| `GetAxis` / `HasAxis` on the tolerance, `GetDatumTargetAxis` on the datum | Both are `gp_Ax2` placements. The datum one has a write path here already (`setDatumTargetPlacement(at:location:normal:reference:length:width:)` sets it, because OCCT's three target setters share one presence flag and writing any of them alone reports the other two as present), but no read: reading it back wants the same `gp_Ax2` plumbing as the annotation planes, and is deferred with them. |
+| `GetPlane` / `HasPlane`, `GetPoint` / `HasPoint`, `GetPointTextAttach` / `HasPointText` on both classes | Annotation placement, six accessors per class. Each carries a real predicate, so all are wrappable correctly; deferred on proportion, alongside the dimension class's identical group. |
+| `GetPresentation` / `GetPresentationName` on both classes | The annotation's graphical presentation shape. Only STEP/XCAF readers populate it, and this package has no write path for one, so a wrapped read could only be tested against an imported fixture this repo does not carry. |
+| `GetDatumTarget` / `SetDatumTarget(TopoDS_Shape)` | The `.area` target's own shape. `XCAFDoc_Datum::SetObject` stores it only for `DatumTargetType_Area` and takes the placement branch otherwise, so a wrapped read would answer `nil` for four of the five target types. It needs an `OCCTShapeRef` on the read side, the same handle-lifetime change `GetPath` needs on the dimension. Deferred with it. |
+| `SetType`, `SetValue`, `SetName`, `AddModifier`, `SetAffectedPlane`, `SetAxis`, `SetPlane`, `SetPoint`, `SetPointTextAttach`, `SetPresentation`, `SetDatumTargetAxis` alone | Mutators for the reads above, or (for `AddModifier` and the lone axis setter) narrower spellings of a mutator that already ships. Each arrives with its own read accessor. |
+| `DumpJson` on both | OCCT's debug dump, not an API surface this wrapper exposes for any class. |
+
+### DimTolTool coverage: the linkage half is a real gap (#1021)
+
+[#1021](https://github.com/SecondMouseAU/OCCTSwift/issues/1021) measured `XCAFDoc_DimTolTool` at 9 of 39
+public methods reached, and asked for a decision rather than a wrap. Measured directly rather than
+inherited from the sample: the bridge calls `Set`, `AddDimension`, `AddGeomTolerance`, `AddDatum`,
+`SetDimension`, `SetGeomTolerance`, `GetDimensionLabels`, `GetGeomToleranceLabels` and
+`GetDatumLabels`, and nothing else. Split three ways.
+
+**A real gap: the reverse lookups and the datum-to-tolerance association.** `GetRefDimensionLabels`,
+`GetRefGeomToleranceLabels`, `GetRefDatumLabel`, `GetRefShapeLabel`, `GetDatumOfTolerLabels`,
+`GetDatumWithObjectOfTolerLabels`, `GetTolerOfDatumLabels`, `SetDatumToGeomTol`, the two `SetDatum`
+overloads and `FindDatum`. These are what answer "which dimensions apply to this face" and "which
+datums does this positional tolerance reference, in what order", and the second is what turns a
+tolerance plus three datums into an `A|B|C` frame. `Document.dimensions` / `geomTolerances` /
+`datums` are three flat sequences today with no edge between them and no edge to the geometry, so
+this is the largest missing piece of the GD&T surface, larger than anything #1004 wrapped. Not
+scheduled here.
+
+**A deliberate omission: the legacy `XCAFDoc_DimTol` API.** `IsDimTol`, `GetDimTolLabels`, the two
+`FindDimTol` overloads, the two `AddDimTol` overloads, `SetDimTol` and `GetDimTol` drive the
+pre-AP242 kind/values/name/description model. That model *is* wrapped, through `XCAFDoc_DimTol`
+directly (`OCCTDocumentSetDimTol`, `OCCTDocumentGetDimTolKind`, `OCCTDocumentGetDimTolName`,
+`OCCTDocumentGetDimTolDescription`, `OCCTDocumentGetDimTolValues`), so routing it through the tool
+as well would be a second spelling of one capability, which is what #377 exists to remove.
+
+**Not a gap at all: the classifiers, the lock and the plumbing.** `IsDimension`,
+`IsGeomTolerance` and `IsDatum` classify an arbitrary label; the bridge addresses entries by
+position in the tool's own label sequence and never holds a label whose kind it does not already
+know. `IsLocked` / `Lock` / `Unlock` are a GUI editing lock with no counterpart in a Swift value
+API. `GetGDTPresentations` / `SetGDTPresentations` are the bulk form of the per-object presentation
+shapes the table above already declines. `BaseLabel`, `ShapeTool`, `GetID`, `ID`, `DumpJson` and the
+constructor are plumbing every wrapped OCAF attribute has and none exposes.
+
+**On the metric itself.** #1021's own caveat holds here: the denominator counts `Set*` and
+`DumpJson`, and 8 of the 30 unreached methods are the legacy model plus the plumbing, which no
+coverage figure should have counted against this class. The row is worth acting on for the linkage
+methods and for nothing else, which is the answer #1021 asked for.
 
 ### Constraint Solver Infrastructure (Complete)
 
