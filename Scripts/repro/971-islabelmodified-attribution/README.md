@@ -91,6 +91,43 @@ is not a defect and no bridge change is needed. It is worth knowing before anyon
 catch away, and it is why the throw is not reachable from Swift: `Document.isModified(_:)` returns
 `false` for an untouched document rather than trapping.
 
+## Proving the clang-format sweep changed no code
+
+`OCCTBridge_Document.h` was grandfathered on `Scripts/style-manifest-bridge.txt`, so correcting two
+lines in it obliges the same PR to bring it fully `clang-format` clean and take it off the manifest
+(`okf/policies/code-style.md`). Measured with the pinned config, that is **1,714 lines of `diff -u`
+output**, matching #971's figure exactly: 322 lines removed, 610 added, 72 hunks, the file growing
+2,233 to 2,521 lines. The churn is 932 lines; 1,714 is the `diff -u` total, which includes three
+context lines per hunk.
+
+A mechanical sweep that size is where a real change hides, and this repo has twice paid for one
+(#942, #959). `tokens-unchanged.py` compares the file before and after by **token sequence** rather
+than by line, so formatting is invisible to it and a moved, added or deleted token is not:
+
+```bash
+cp Sources/OCCTBridge/include/OCCTBridge_Document.h /tmp/pre_reformat.h   # after the comment fix
+clang-format -i -style=file Sources/OCCTBridge/include/OCCTBridge_Document.h
+python3 Scripts/repro/971-islabelmodified-attribution/tokens-unchanged.py \
+  /tmp/pre_reformat.h Sources/OCCTBridge/include/OCCTBridge_Document.h
+```
+
+```
+CODE      identical: 51192 chars of normalized non-comment text
+COMMENTS  identical after whitespace collapse: 39591 chars
+```
+
+Comparing normalized *text* rather than tokens is not enough, and that is measured rather than
+assumed: the first run of this comparator collapsed whitespace runs to a single space and reported
+`CODE DIFFERS` at `double *_Nonnull` becoming `double* _Nonnull`, which is a star moving across a
+space, not a token changing. Tokenizing is what tells those apart.
+
+`--self-test` runs nine cases: four reformat-shaped edits that must read as unchanged (whitespace,
+pointer-star placement, re-indentation, comment reflow) and five content-shaped edits that must not
+(an identifier rename, a deleted declaration, an added `extern`, a changed comment word, and a `//`
+inside a string literal). Under a one-at-a-time removal matrix every feature earns its place:
+9/9 baseline, 8/9 without the tokenizer, 7/9 without comment stripping, 8/9 without string-literal
+awareness.
+
 ## Downstream of this correction
 
 `docs/reference/Document.md` attributed `isModified(_:)` to `TDocStd_Document::IsModified`, a
