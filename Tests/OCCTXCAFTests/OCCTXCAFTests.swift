@@ -4459,6 +4459,50 @@ struct ShapeToolCompletionsTests {
 
 @Suite("v0.140 Document GD&T write path")
 struct DocumentGDTTests {
+
+    /// Review finding: `setDimensionBounds` returned `true` on a plus/minus dimension.
+    ///
+    /// `SetLowerBound`/`SetUpperBound` branch on `myVal->Length() > 1`. From a length-3
+    /// plus/minus array they write in place, so the requested upper bound landed in the
+    /// lower tolerance slot, the stale upper tolerance survived, the dimension stayed
+    /// plus/minus, and the call reported success. The sibling `setDimensionTolerance`
+    /// had a readback check for the opposite conversion and this one did not.
+    @Test("setDimensionBounds refuses a plus/minus dimension instead of corrupting it")
+    func setDimensionBoundsRefusesPlusMinus() throws {
+        guard let doc = Document.create() else { Issue.record("doc nil"); return }
+        guard let box = Shape.box(width: 10, height: 10, depth: 10) else {
+            Issue.record("box nil"); return
+        }
+        let labelId = doc.addShape(box, makeAssembly: false)
+        guard let idx = doc.createDimension(on: labelId, type: .sizeDiameter, value: 20.0,
+                                           lowerTolerance: -0.3, upperTolerance: 0.7)
+        else {
+            Issue.record("createDimension nil"); return
+        }
+        #expect(doc.setDimensionBounds(at: idx, lower: 10.0, upper: 12.0) == false)
+        if let dim = doc.dimension(at: idx) {
+            #expect(dim.bounds == .plusMinus(lowerTolerance: -0.3, upperTolerance: 0.7))
+            #expect(dim.value == 20.0)
+        }
+    }
+
+    /// The simple-to-range conversion the mutator is for still works.
+    @Test("setDimensionBounds still converts a simple dimension to a range")
+    func setDimensionBoundsConvertsSimple() throws {
+        guard let doc = Document.create() else { Issue.record("doc nil"); return }
+        guard let box = Shape.box(width: 10, height: 10, depth: 10) else {
+            Issue.record("box nil"); return
+        }
+        let labelId = doc.addShape(box, makeAssembly: false)
+        guard let idx = doc.createDimension(on: labelId, type: .sizeDiameter, value: 20.0)
+        else {
+            Issue.record("createDimension nil"); return
+        }
+        #expect(doc.setDimensionBounds(at: idx, lower: 10.0, upper: 12.0) == true)
+        if let dim = doc.dimension(at: idx) {
+            #expect(dim.bounds == .range(lower: 10.0, upper: 12.0))
+        }
+    }
     @Test("Create dimension on a box shape and read it back")
     func createAndReadDimension() throws {
         guard let doc = Document.create() else { Issue.record("doc nil"); return }

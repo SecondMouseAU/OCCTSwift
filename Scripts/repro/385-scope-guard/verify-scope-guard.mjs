@@ -1,16 +1,19 @@
 import {readFileSync} from 'fs'
 const src = readFileSync('.claude/workflows/duplication-audit.js','utf8')
-// pull the two shipped expressions verbatim so the test exercises the real code
+// Build the subject FROM the shipped source. An earlier version of this file extracted these
+// three lines and then only printed them, while the logic under test was a hand-copy below, so
+// gutting the real guard to `filter(p => false)` still reported 10/10 green. Nothing bound the
+// test to the code it named. `new Function` over the extracted text is what binds it.
 const mapLine = src.match(/const existsByPath = .*/)[0]
 const filtLine = src.match(/const missingPaths = .*/)[0]
 const guardLine = src.match(/if \(!verifyReport \|\| !Array\.isArray\(verifyReport\.results\)\) \{/)[0]
-console.log('exercising:\n  ' + mapLine + '\n  ' + filtLine + '\n')
-const run = (ALL_FILES, verifyReport) => {
-  if (!verifyReport || !Array.isArray(verifyReport.results)) return 'REJECTED (no verdict)'
-  const existsByPath = new Map(verifyReport.results.map(r => [r.path, r.exists === true]))
-  const missingPaths = ALL_FILES.filter(p => existsByPath.get(p) !== true)
+console.log('exercising:\n  ' + guardLine + '\n  ' + mapLine + '\n  ' + filtLine + '\n')
+const run = new Function('ALL_FILES', 'verifyReport', `
+  ${guardLine} return 'REJECTED (no verdict)' }
+  ${mapLine}
+  ${filtLine}
   return missingPaths.length ? 'REJECTED (' + missingPaths.join(', ') + ')' : 'ACCEPTED'
-}
+`)
 const ok = (p) => ({path:p, exists:true})
 const cases = [
   ['all present, should ACCEPT', ['a.swift','b.swift'], {results:[ok('a.swift'),ok('b.swift')]}, 'ACCEPTED'],
