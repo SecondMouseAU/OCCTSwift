@@ -2087,25 +2087,30 @@ extension Document {
 
 extension Document {
 
-    /// Open a named transaction on the document.
+    /// Open a transaction whose name is recorded on the delta its commit produces.
     ///
-    /// - Parameter name: Transaction name for identification.
-    /// - Returns: Transaction number (>= 1 on success), or 0 on error
+    /// - Parameter name: Name to record on the committed transaction, readable afterwards as
+    ///   `TransactionDelta.name`.
+    /// - Returns: The number of the transaction just opened, or 0 if none opened.
     @discardableResult
     public func openNamedTransaction(_ name: String) -> Int {
         Int(OCCTDocumentOpenNamedTransaction(handle, name))
     }
 
-    /// Get the current transaction number.
+    /// The number of the currently open transaction, or 0 when none is open.
+    ///
+    /// A document holds at most one transaction, so this is never greater than 1; use
+    /// `hasOpenTransaction` when the open/closed state is all that is wanted.
     public var transactionNumber: Int {
         Int(OCCTDocumentGetTransactionNumber(handle))
     }
 
-    /// Commit the current transaction and return a delta for inspection.
+    /// Commit the current transaction and return the delta it recorded.
     ///
-    /// The delta must be released when no longer needed.
+    /// Undo is disabled until `setUndoLimit(_:)` is called, and a document with undo disabled
+    /// records no deltas.
     ///
-    /// - Returns: An opaque delta handle, or nil if no changes
+    /// - Returns: The committed delta, or nil if the commit recorded none.
     public func commitWithDelta() -> TransactionDelta? {
         guard let ptr = OCCTDocumentCommitWithDelta(handle) else { return nil }
         return TransactionDelta(handle: ptr)
@@ -2464,14 +2469,18 @@ extension Document {
     /// Count the number of assembly items in the document.
     ///
     /// - Parameter maxDepth: Maximum traversal depth (0 = unlimited).
-    /// - Returns: The number of items `XCAFDoc_AssemblyIterator` visits, or `0` if the
-    ///   document is null or OCCT raised.
-    /// - Warning: **The bridge stops counting at 100,001 and returns that as though it
-    ///   were the real total** (#964). A document with more assembly items is reported
-    ///   as 100001, indistinguishable from one that genuinely has that many. Do not
-    ///   treat a result of 100001 as a measurement.
-    public func assemblyItemCount(maxDepth: Int = 0) -> Int {
-        Int(OCCTDocumentAssemblyItemCount(handle, Int32(maxDepth)))
+    /// - Returns: The number of items `XCAFDoc_AssemblyIterator` visits, `0` if the document is
+    ///   null or OCCT raised, and `nil` when the walk hit its 100,000-item bound so the number
+    ///   would be a floor rather than a count (#964).
+    ///
+    /// The bound exists because `XCAFDoc_AssemblyIterator` keeps no visited set, so a malformed
+    /// self-referencing assembly would iterate to `INT_MAX` depth. It is reported rather than
+    /// returned silently: before #964 a document with more items answered `100001`,
+    /// indistinguishable from one that genuinely had that many.
+    public func assemblyItemCount(maxDepth: Int = 0) -> Int? {
+        var truncated = false
+        let count = Int(OCCTDocumentAssemblyItemCount(handle, Int32(maxDepth), &truncated))
+        return truncated ? nil : count
     }
 }
 

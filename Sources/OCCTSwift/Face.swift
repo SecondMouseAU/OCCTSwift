@@ -390,6 +390,9 @@ extension Shape {
     ///     print(compound.orientedFaces().count)  // 12 occurrences — the wall, twice
     /// }
     /// ```
+    ///
+    /// - Returns: Every distinct face, so `faces()[k].index == k`, or an empty array if any face
+    ///   could not be built. Never a short array, which would shift every later ordinal (#979).
     public func faces() -> [Face] {
         var count: Int32 = 0
         guard let faceArray = OCCTShapeGetFaces(handle, &count) else {
@@ -399,14 +402,10 @@ extension Shape {
         // and will release them in their deinit. We only need to free the array container.
         defer { OCCTFreeFaceArrayOnly(faceArray) }
 
-        var faces: [Face] = []
-        for i in 0..<Int(count) {
-            if let faceHandle = faceArray[i] {
-                faces.append(Face(handle: faceHandle, index: i))
-            }
-        }
-
-        return faces
+        return wrapSubShapeEnumeration(
+            Array(UnsafeBufferPointer(start: faceArray, count: Int(count))),
+            wrap: { ref, ordinal in Face(handle: ref, index: ordinal) },
+            release: OCCTFaceRelease)
     }
 
     /// Every face **occurrence** in this shape, each carrying the orientation it has in its
@@ -447,6 +446,9 @@ extension Shape {
     /// // The cut face appears twice under one index: once .forward, once .reversed,
     /// // with opposite normals — one outward per solid.
     /// ```
+    ///
+    /// - Returns: Every face occurrence, or an empty array if any could not be built. Never a
+    ///   short array, which would shift every later occurrence number (#979).
     public func orientedFaces() -> [Face] {
         let capacity = Int(OCCTShapeGetFaceOccurrenceCount(handle))
         guard capacity > 0 else { return [] }
@@ -461,14 +463,12 @@ extension Shape {
         // Swift Face objects take ownership of the handles; free only the array container.
         defer { OCCTFreeFaceArrayOnly(faceArray) }
 
-        var result: [Face] = []
-        for i in 0..<Int(count) {
-            if let faceHandle = faceArray[i] {
-                let index = i < indices.count ? Int(indices[i]) : -1
-                result.append(Face(handle: faceHandle, index: index))
-            }
-        }
-        return result
+        return wrapSubShapeEnumeration(
+            Array(UnsafeBufferPointer(start: faceArray, count: Int(count))),
+            wrap: { ref, position in
+                Face(handle: ref, index: position < indices.count ? Int(indices[position]) : -1)
+            },
+            release: OCCTFaceRelease)
     }
 
     /// Every horizontal face occurrence — normals pointing up or down.

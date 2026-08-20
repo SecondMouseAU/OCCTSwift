@@ -21,6 +21,124 @@ bounding-box accessors becoming Optional so a void shape stops fabricating `(0,0
 
 ## Unreleased
 
+### `Document.assemblyItemCount(maxDepth:)` reports when it could not finish counting (#964)
+
+The bridge stops walking an assembly at 100,000 items, because `XCAFDoc_AssemblyIterator` keeps no visited set and a malformed self-referencing assembly would otherwise iterate to `INT_MAX` depth. It used to return the bound as though it were the total, so a document with more items was indistinguishable from one that genuinely had that many.
+
+The bound remains — removing it trades a wrong answer for a hang — but it is now reported. `assemblyItemCount(maxDepth:)` returns `Int?`, and `nil` means the walk was truncated and the number would be a floor rather than a count. Migration: unwrap, `if let n = doc.assemblyItemCount() { … }`.
+
+### Transactions: a named transaction keeps its name, and `commitWithDelta()` returns a delta (#970)
+
+`Document.openNamedTransaction(_:)` took a name and read it with nothing. The bridge called
+`OpenCommand()` and returned `HasOpenCommand() ? 1 : 0`; the argument was never touched.
+
+The name now reaches OCCT. `TDocStd_Document::OpenCommand` takes no name, and the document's own
+`TDF_Transaction` is constructed as `"UNDO"` with no setter, so an open transaction has nowhere to
+carry one. OCCT keeps a caller-supplied transaction name on the committed `TDF_Delta` instead,
+which is what `TDocStd_MultiTransactionManager::CommitCommand(theName)` does. The bridge holds the
+name until the transaction commits and writes it there:
+
+```swift
+doc.setUndoLimit(10)
+doc.openNamedTransaction("add part")
+// ... make changes ...
+doc.commitWithDelta()?.name        // "add part"
+```
+
+`abortTransaction()` discards it, an `openTransaction()` with no name of its own supersedes it, and
+a named open that OCCT refuses, because one is already running, reports 0 and leaves the running
+transaction's name alone.
+
+`Document.transactionNumber` returned that same synthesized flag. It now returns
+`TDF_Data::Transaction()` through `TDocStd_Document::GetData()`. The values agree, and that is the
+finding rather than an excuse: measured against the pinned kernel, a document holds at most one
+framework transaction, so the number is 0 or 1 in every state its command API can reach. Nested
+transaction mode does not change it, because `TDocStd_Document::OpenTransaction` commits and
+reopens the same transaction rather than pushing a second one, and the depth stays at 1 through
+three nested opens. `hasOpenTransaction` carries the same information with the right type.
+
+`Document.commitWithDelta()` could not return a delta at all, found while proving the first fix.
+Its first statement was `SetUndoLimit(100)`, and `TDocStd_Document::SetUndoLimit` commits the open
+transaction before it changes the limit, so the `CommitCommand()` that followed had nothing left to
+commit and the function returned `nil` for every transaction that had one open. The call is gone:
+the undo limit is the caller's to set with `setUndoLimit(_:)`, and with undo disabled, which is
+OCCT's default, there is no delta to hand back.
+
+`Scripts/repro/970-transaction-api/` carries the probe, its transcript, and the measurements
+`docs/reference/Document-OCAF-Attributes.md` now cites.
+
+### Sub-shape enumerations are complete or empty, never short (#979)
+
+`Shape.faces()`, `Shape.edges()`, `Shape.subShapes(ofType:)` and `Shape.orientedFaces()` each
+skipped an element whose bridge handle came back null. A position in these arrays is an ordinal,
+the same 0-based index `face(at:)`, `edge(at:)` and `subShape(type:index:)` take, so a skipped
+element shifted every later one down and each then answered for its neighbour with no error and no
+diagnostic. Downstream that is a pick resolving, highlighting and reporting confidently about the
+wrong face.
+
+All four now build every ordinal or return an empty array, so `faces()[k].index == k` and
+`subShapes(ofType: t)[k]` is `subShape(type: t, index: k)` hold by construction. Handles the
+refusal does not wrap are released rather than leaked, and `subShapes(ofType:)` additionally
+refuses a short bridge write instead of returning its prefix.
+
+Measured before choosing: the bridge cannot actually produce a hole. Each entry point fills every
+slot or fails the whole call, and across a hostile 13-shape battery no indexed map held a null
+entry, no enumeration was unstable between independently built maps, and no entry failed its
+per-element downcast (`Scripts/repro/979-subshape-index-identity/`). So no reachable input behaves
+differently; what changes is that the guarantee now holds by construction instead of by accident.
+
+### visionOS and tvOS are documented as untested rather than supported (#978)
+
+`Package.swift` declares both platforms and `Scripts/build-occt.sh` builds slices for both under `BUILD_ALL_PLATFORMS=1`, but nothing has been tested on either and the released `OCCT.xcframework` ships only the three core slices, so resolving the released binary does not link there. README's status table said "Supported"; both rows now say "Untested", with a note that a local kernel rebuild is what makes them buildable. Also corrects README's kernel version (8.0.0p1 → 8.0.1) and package version (v1.0.0 → v3.0.0), both stale in the same lines. Documentation only.
+
+### Refman coverage audit, Pass 3: Document/XDE assembly (#810)
+
+`Scripts/repro/810-refman-document-xde/refman_census.py` enumerates every OCCT class under
+`TDocStd_*`, `TDF_*`, `TDataStd_*`, `TDataXtd_*`, `TNaming_*`, `XCAFDoc_*`, `XCAFApp_*`,
+`XCAFDimTolObjects_*`, `XCAFNoteObjects_*`, `XCAFView_*`, `XCAFPrs_*`, `CDF_*` and `CDM_*`
+(278 classes) and verdicts each against `Sources/OCCTBridge` and `docs/`.
+
+Fixed **36 doc attributions across 6 files** that named an OCCT class or member the implementation
+does not use. Seven attributed OCAF save, load, create and session queries to
+`XCAFApp_Application` or `CDF_Application`; all seven run on `TDocStd_Application`, and
+`XCAFApp_Application` is deliberately not constructed anywhere in the bridge since #371 replaced
+the process-wide singleton with a private application per document.
+`docs/reference/Document-Persistence-IO.md` gains a "Why not `XCAFApp_Application`" section
+recording that divergence, and `docs/thread-safety.md` no longer describes document creation, in
+the present tense, as going through a singleton retired three releases ago. Eighteen more named a
+member the pinned kernel does not declare: `TNaming_Tool::SameShape` and
+`XCAFDoc_AssemblyGraph::NbRoots` do not exist at all, and `TDataXtd_Presentation::GetColor`,
+`TDataStd_Expression::SetExpressionString`, `TDocStd_XLink::GetLabelEntry`,
+`TDataXtd_PatternStd::SetSignature`, `XCAFDoc_AssemblyItemRef::RemoveExtraRef` and
+`XCAFDoc_ShapeMapTool::Map` are near-miss spellings of `Color`, `SetExpression`, `LabelEntry`,
+`Signature`, `ClearExtraRef` and `GetMap`. The rest
+named a class nowhere in the call chain, several semantically different from the one that runs:
+`Document.selectShape` uses `TNaming_Selector::Select`, which computes a name that survives later
+modification, rather than `TNaming_Builder::Select`, which records a raw select pair.
+
+`Document.openNamedTransaction(_:)` and `Document.transactionNumber` now document what they do:
+the `name` argument is accepted and never recorded, and `transactionNumber` returns `1` or `0`
+rather than a transaction number. The underlying API defects are #970.
+
+Recorded 155 previously-unrecorded unwrapped classes in `docs/occtswift-wrapping-gaps.md`:
+deprecated `NCollection` typedefs, OCAF undo/redo delta records, abstract bases, framework storage
+records, internal helpers, GD&T qualifier enums nothing reads, and capability covered by a wrapped
+sibling. No public API change.
+
+### `OCCTDocumentIsLabelModified` is documented against the attribute it actually reads (#971)
+
+The bridge header comment on `OCCTDocumentIsLabelModified` contradicted itself, naming
+`TDocStd_Modified` on one line and denying it on the next. `TDocStd_Document::GetModified()` is a
+forwarder to `TDocStd_Modified::Get(Main())`, so the attribute on the root label is the mechanism
+and the denial was the wrong half; the comment now says so once. `docs/reference/Document.md`
+separately attributed `Document.isModified(_:)` to `TDocStd_Document::IsModified`, a method that
+does not exist in OCCT 8.0.1, and now names `TDocStd_Document::GetModified`.
+
+`Sources/OCCTBridge/include/OCCTBridge_Document.h` comes off
+`Scripts/style-manifest-bridge.txt` in the same change, per the code-style rollout's
+fix-what-you-touch rule. No behaviour change: the reformat was verified to leave the file's token
+sequence byte-identical.
+
 ### `*Properties` accessors no longer hand back a dangling handle (#965)
 
 Nineteen `*Properties` accessors on `Curve2D`, `Curve3D` and `Surface` returned a value that stored
@@ -82,8 +200,9 @@ changed for a consumer, which for this pass is nothing.
   other ten, plus sixteen parameter lists in `Document.swift` written as `- Parameters: x:` on one
   line, a shape `swift-format` accepts and DocC does not render.
 - `OCCTBridge_Document.mm` is likewise clang-format clean and off `Scripts/style-manifest-bridge.txt`.
-- `Document.assemblyItemCount(maxDepth:)` gains a `- Warning:` recording that the bridge stops
-  counting at 100,001 and returns that as the total, filed as #964. Documented, not fixed.
+- `Document.assemblyItemCount(maxDepth:)` gained a `- Warning:` recording that the bridge stops
+  counting at 100,001 and returns that as the total, filed as #964. Superseded within this same
+  release by the fix below, which makes the truncation reportable.
 
 ---
 
