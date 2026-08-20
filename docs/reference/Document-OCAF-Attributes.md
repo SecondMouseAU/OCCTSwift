@@ -1853,8 +1853,8 @@ public func openNamedTransaction(_ name: String) -> Int
   `TransactionDelta.name`.
 - **Returns:** The number of the transaction just opened, or 0 if none opened. Nothing opens while
   the undo limit is 0, which is OCCT's default, so call `setUndoLimit(_:)` first.
-- **OCCT:** `TDocStd_Document::OpenCommand`, then `TDF_Delta::SetName` on the delta the commit
-  appends to `TDocStd_Document::GetUndos`.
+- **OCCT:** `TDocStd_Document::OpenCommand`. The name is not applied here; the commit applies it,
+  as described below.
 
 An open transaction has nowhere to carry a name of its own: `TDocStd_Document::OpenCommand` takes
 none, and the document's own `TDF_Transaction` is constructed as `"UNDO"` with no setter. OCCT puts
@@ -1907,7 +1907,7 @@ public func commitWithDelta() -> TransactionDelta?
   doc.openNamedTransaction("add part")
   // ... make changes ...
   if let delta = doc.commitWithDelta() {
-      print(delta.name, "changed", delta.attributeDeltaCount, "attributes")
+      print(delta.name ?? "", "changed", delta.attributeDeltaCount, "attributes")
   }
   ```
 
