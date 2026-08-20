@@ -21,6 +21,20 @@ bounding-box accessors becoming Optional so a void shape stops fabricating `(0,0
 
 ## Unreleased
 
+### `OCCTDocumentIsLabelModified` is documented against the attribute it actually reads (#971)
+
+The bridge header comment on `OCCTDocumentIsLabelModified` contradicted itself, naming
+`TDocStd_Modified` on one line and denying it on the next. `TDocStd_Document::GetModified()` is a
+forwarder to `TDocStd_Modified::Get(Main())`, so the attribute on the root label is the mechanism
+and the denial was the wrong half; the comment now says so once. `docs/reference/Document.md`
+separately attributed `Document.isModified(_:)` to `TDocStd_Document::IsModified`, a method that
+does not exist in OCCT 8.0.1, and now names `TDocStd_Document::GetModified`.
+
+`Sources/OCCTBridge/include/OCCTBridge_Document.h` comes off
+`Scripts/style-manifest-bridge.txt` in the same change, per the code-style rollout's
+fix-what-you-touch rule. No behaviour change: the reformat was verified to leave the file's token
+sequence byte-identical.
+
 ### `*Properties` accessors no longer hand back a dangling handle (#965)
 
 Nineteen `*Properties` accessors on `Curve2D`, `Curve3D` and `Surface` returned a value that stored
