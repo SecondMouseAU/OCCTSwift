@@ -2376,9 +2376,13 @@ int32_t OCCTExtremaExtPElC2dLin(double               px,
 {
   try
   {
-    gp_Pnt2d          pt(px, py);
-    gp_Lin2d          line(gp_Pnt2d(lpx, lpy), gp_Dir2d(ldx, ldy));
-    Extrema_ExtPElC2d ext(pt, line, tolerance, -1e10, 1e10);
+    gp_Pnt2d pt(px, py);
+    gp_Lin2d line(gp_Pnt2d(lpx, lpy), gp_Dir2d(ldx, ldy));
+    // The 2D sibling of the Extrema_ExtPElC sites in OCCTBridge_Curve3D.mm (#1020). A line is
+    // unbounded and Uinf/Usup post-filter an answer Extrema has already computed, so a finite
+    // bound can only discard a correct result. RealFirst()/RealLast() admits every
+    // representable parameter, matching OCCT's own unbounded-conic call sites.
+    Extrema_ExtPElC2d ext(pt, line, tolerance, RealFirst(), RealLast());
     if (!ext.IsDone())
       return -1;
     int32_t nb = std::min((int32_t)ext.NbExt(), max);
