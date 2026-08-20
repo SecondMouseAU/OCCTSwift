@@ -473,12 +473,31 @@ OCCTSurfaceRef OCCTSurfacePlateThrough(const double* points,
   }
 }
 
+// #1017: OCCTSurfaceNLPlateG0/G1 used to call this argument maxIter and hand it to
+// NLPlate_NLPlate::Solve2, whose first parameter is `ord`, the plate's resolution order. It is
+// forwarded to Plate_Plate::SolveTI, which accepts only [2, 9] and otherwise returns with its own
+// OK false. NLPlate_NLPlate::Solve2 then sets OK true unconditionally after its loop, so an
+// out-of-range order came back IsDone() with an empty plate list and Evaluate() returning the
+// undeformed surface. Measured on the shipped fixtures: a G0 constraint 5 units off the plane was
+// missed by the full 5 at orders 0, 1, 10, 12 and 100, and met to 6.3e-6 at order 4. The refusal
+// below is what makes the parameter mean something; see
+// Scripts/repro/1017-nlplate-solve2-order.
+//
+// Reach: the two Solve2 call sites that take the order from the caller. The three that hardcode
+// it (G2, G3, EvaluateDerivative) pass 2 or 3 and cannot go out of range.
+static bool occtNLPlateResolutionOrderInRange(int32_t resolutionOrder)
+{
+  return resolutionOrder >= 2 && resolutionOrder <= 9;
+}
+
 OCCTSurfaceRef OCCTSurfaceNLPlateG0(OCCTSurfaceRef initialSurface,
                                     const double*  constraints,
                                     int32_t        constraintCount,
-                                    int32_t        maxIter,
+                                    int32_t        resolutionOrder,
                                     double         tolerance)
 {
+  if (!occtNLPlateResolutionOrderInRange(resolutionOrder))
+    return nullptr;
   if (!initialSurface || initialSurface->surface.IsNull())
     return nullptr;
   if (!constraints || constraintCount < 1)
@@ -533,7 +552,7 @@ OCCTSurfaceRef OCCTSurfaceNLPlateG0(OCCTSurfaceRef initialSurface,
       solver.Load(g0);
     }
 
-    solver.Solve2(maxIter);
+    solver.Solve2(resolutionOrder, 1);
     if (!solver.IsDone())
       return nullptr;
 
@@ -586,9 +605,11 @@ OCCTSurfaceRef OCCTSurfaceNLPlateG0(OCCTSurfaceRef initialSurface,
 OCCTSurfaceRef OCCTSurfaceNLPlateG1(OCCTSurfaceRef initialSurface,
                                     const double*  constraints,
                                     int32_t        constraintCount,
-                                    int32_t        maxIter,
+                                    int32_t        resolutionOrder,
                                     double         tolerance)
 {
+  if (!occtNLPlateResolutionOrderInRange(resolutionOrder))
+    return nullptr;
   if (!initialSurface || initialSurface->surface.IsNull())
     return nullptr;
   if (!constraints || constraintCount < 1)
@@ -651,7 +672,7 @@ OCCTSurfaceRef OCCTSurfaceNLPlateG1(OCCTSurfaceRef initialSurface,
       solver.Load(g0g1);
     }
 
-    solver.Solve2(maxIter);
+    solver.Solve2(resolutionOrder, 1);
     if (!solver.IsDone())
       return nullptr;
 
@@ -712,7 +733,24 @@ OCCTShapeRef OCCTGeomPlateSurface(const double* points,
     return nullptr;
   try
   {
-    GeomPlate_BuildPlateSurface builder(3, 10, 5, tolerance);
+    // #1019: this used to pass `tolerance` as the fourth argument, which is Tol2d, the 2D
+    // parametric tolerance, not Tol3d. Moving it to Tol3d is measurably a no-op rather than a
+    // fix, so the argument is dropped instead of relocated: this entry point loads only
+    // GeomPlate_PointConstraints, and GeomPlate_BuildPlateSurface reads myTol2d only inside its
+    // `for (i = 1; i <= NTLinCont; ...)` curve-intersection loop, while myTol3d's point-only
+    // readers are the average-plane planarity test and the projection resolutions, all exact on
+    // the planar initial surface that branch builds. Swept 1e-12 to 1e2 in both slots on two
+    // fixtures: the fitted surface is bit-identical in all 24 rows. `tolerance` keeps the two
+    // places it does govern, the approximation below and the face tolerance.
+    //
+    // #1020 asked whether maxDegree/maxSegments should also reach the builder. They should not.
+    // The builder's first argument is its own Degree, which it hands to Plate_Plate::SolveTI as
+    // a resolution order capped at 9, and the caller's maxDegree is the approximation's maximum
+    // BSpline degree, where 10 and above are ordinary requests. Forwarding it turns those into
+    // outright failures, and moves the shipped default's plate off OCCT's own documented optimum
+    // of 3. Surface.plateThrough already exposes the builder's Degree separately, as `degree`.
+    // See Scripts/repro/1019-1020-plate-builder-arguments.
+    GeomPlate_BuildPlateSurface builder(3, 10, 5);
 
     for (int32_t i = 0; i < ptCount; i++)
     {
@@ -851,7 +889,7 @@ OCCTShapeRef _Nullable OCCTProjLibComputeApproxOnPolarSurface(OCCTShapeRef edgeS
 // MARK: - NLPlate G2/G3 / Incremental G0 (v0.69)
 // --- NLPlate G0+G2 ---
 
-// #999: this took a maxIter it never read, and there is no honest place to wire one.
+// #999: this took a maxIter it never read, and there is no place to wire one that means it.
 // NLPlate_NLPlate::Solve2(ord, InitialConsraintOrder) has no iteration count, and neither has
 // Solve(). IncrementalSolve(ord, InitialConsraintOrder, NbIncrements, UVSliding) does, but it is a
 // different solver rather than a bound on this one: measured on a 5-constraint G0G2 saddle with

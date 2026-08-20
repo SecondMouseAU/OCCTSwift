@@ -6524,9 +6524,15 @@ int32_t OCCTExtremaExtPElCLin(double               px,
 {
   try
   {
-    gp_Pnt          p(px, py, pz);
-    gp_Lin          l(gp_Pnt(lx, ly, lz), gp_Dir(ldx, ldy, ldz));
-    Extrema_ExtPElC ext(p, l, tolerance, -1e10, 1e10);
+    gp_Pnt p(px, py, pz);
+    gp_Lin l(gp_Pnt(lx, ly, lz), gp_Dir(ldx, ldy, ldz));
+    // A gp_Lin is unbounded, and Extrema_ExtPElC's Uinf/Usup only range-check the foot of the
+    // perpendicular it has already computed, so the bound is a pure post-filter. The old -1e10
+    // refused a correct answer for any point projecting further than that from the line's own
+    // location. RealFirst()/RealLast() admits every representable parameter, and is what OCCT's
+    // own unbounded-conic call sites use (Extrema_ExtElC2d.cxx:422, :462). Matched by the
+    // parabola below, whose Uinf/Usup filter the cubic's roots the same way (#1020).
+    Extrema_ExtPElC ext(p, l, tolerance, RealFirst(), RealLast());
     if (!ext.IsDone())
       return -1;
     int n     = ext.NbExt();
@@ -6668,10 +6674,11 @@ int32_t OCCTExtremaExtPElCParab(double               px,
   {
     if (!occtValidParabolaFocal(focal))
       return -1;
-    gp_Pnt          p(px, py, pz);
-    gp_Ax2          ax(gp_Pnt(cx, cy, cz), gp_Dir(nx, ny, nz), gp_Dir(xdx, xdy, xdz));
-    gp_Parab        parab(ax, focal);
-    Extrema_ExtPElC ext(p, parab, tolerance, -1e6, 1e6);
+    gp_Pnt   p(px, py, pz);
+    gp_Ax2   ax(gp_Pnt(cx, cy, cz), gp_Dir(nx, ny, nz), gp_Dir(xdx, xdy, xdz));
+    gp_Parab parab(ax, focal);
+    // Unbounded, filtered after the fact, same as the line above (#1020).
+    Extrema_ExtPElC ext(p, parab, tolerance, RealFirst(), RealLast());
     if (!ext.IsDone())
       return -1;
     int n     = ext.NbExt();

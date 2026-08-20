@@ -1086,14 +1086,24 @@ public final class Surface: @unchecked Sendable {
     /// this surface, then samples and approximates as a BSpline. Each constraint
     /// specifies a (u, v) parameter and a target 3D position.
     ///
+    /// ```swift
+    /// let plane = Surface.plane(origin: .zero, normal: SIMD3(0, 0, 1))!
+    /// let bumped = plane.nlPlateDeformed(
+    ///     constraints: [(uv: SIMD2(0, 0), target: SIMD3(0, 0, 5))])
+    /// print(bumped != nil)                                        // true
+    /// print(plane.nlPlateDeformed(constraints: [(uv: SIMD2(0, 0), target: SIMD3(0, 0, 5))],
+    ///                             resolutionOrder: 12) == nil)    // true, out of range
+    /// ```
+    ///
     /// - Parameters:
     ///   - constraints: Array of (uv parameter, target 3D position) pairs
-    ///   - maxIterations: Maximum solver iterations (default 4)
+    ///   - resolutionOrder: The plate's resolution order, 2 through 9 (default 4). Outside that
+    ///     range the result is nil.
     ///   - tolerance: Approximation tolerance (default 1e-3)
     /// - Returns: A new deformed surface, or nil on failure
     public func nlPlateDeformed(
         constraints: [(uv: SIMD2<Double>, target: SIMD3<Double>)],
-        maxIterations: Int = 4,
+        resolutionOrder: Int = 4,
         tolerance: Double = 1e-3
     ) -> Surface? {
         guard !constraints.isEmpty else { return nil }
@@ -1111,7 +1121,7 @@ public final class Surface: @unchecked Sendable {
         guard
             let h = OCCTSurfaceNLPlateG0(
                 handle, &flat, Int32(constraints.count),
-                Int32(maxIterations), tolerance
+                Int32(resolutionOrder), tolerance
             )
         else { return nil }
         return Surface(handle: h)
@@ -1122,9 +1132,19 @@ public final class Surface: @unchecked Sendable {
     /// Each constraint specifies a (u, v) parameter, a target 3D position, and
     /// desired partial derivatives (tangent vectors) in the U and V directions.
     ///
+    /// ```swift
+    /// let plane = Surface.plane(origin: .zero, normal: SIMD3(0, 0, 1))!
+    /// let shaped = plane.nlPlateDeformedG1(constraints: [
+    ///     (uv: SIMD2(0, 0), target: SIMD3(0, 0, 5),
+    ///      tangentU: SIMD3(1, 0, 0.5), tangentV: SIMD3(0, 1, 0.5))
+    /// ])
+    /// print(shaped != nil)  // true
+    /// ```
+    ///
     /// - Parameters:
     ///   - constraints: Array of (uv, target, tangentU, tangentV) tuples
-    ///   - maxIterations: Maximum solver iterations (default 4)
+    ///   - resolutionOrder: The plate's resolution order, 2 through 9 (default 4). Outside that
+    ///     range the result is nil.
     ///   - tolerance: Approximation tolerance (default 1e-3)
     /// - Returns: A new deformed surface, or nil on failure
     public func nlPlateDeformedG1(
@@ -1132,7 +1152,7 @@ public final class Surface: @unchecked Sendable {
             uv: SIMD2<Double>, target: SIMD3<Double>, tangentU: SIMD3<Double>,
             tangentV: SIMD3<Double>
         )],
-        maxIterations: Int = 4,
+        resolutionOrder: Int = 4,
         tolerance: Double = 1e-3
     ) -> Surface? {
         guard !constraints.isEmpty else { return nil }
@@ -1156,7 +1176,7 @@ public final class Surface: @unchecked Sendable {
         guard
             let h = OCCTSurfaceNLPlateG1(
                 handle, &flat, Int32(constraints.count),
-                Int32(maxIterations), tolerance
+                Int32(resolutionOrder), tolerance
             )
         else { return nil }
         return Surface(handle: h)
