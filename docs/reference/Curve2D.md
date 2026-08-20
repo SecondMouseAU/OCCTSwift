@@ -1038,26 +1038,63 @@ Useful for CNC G-code generation where only arcs and lines are supported.
 
 ## Conversion
 
-### `toBSpline(tolerance:)`
+### `toBSpline(_:)`
 
 Converts this curve to an equivalent BSpline representation.
 
 ```swift
-public func toBSpline(tolerance: Double = 1e-6) -> Curve2D?
+public func toBSpline(_ parameterisation: Parameterisation = .tangentHalfAngle) -> Curve2D?
 ```
 
-Any analytic curve (line, circle, ellipse, arc) can be represented exactly as a rational BSpline. Required before using BSpline-specific query APIs.
+A bounded analytic curve (circle, ellipse, arc) can be represented exactly as a rational BSpline. Required before using BSpline-specific query APIs.
 
-- **Parameters:** `tolerance` — conversion precision.
-- **Returns:** BSpline curve, or `nil` if conversion fails.
-- **OCCT:** `Geom2dConvert::CurveToBSplineCurve(curve)`.
+There is no tolerance, and never was one that did anything: `Geom2dConvert::CurveToBSplineCurve` takes no tolerance, only a `Convert_ParameterisationType`, and every parameterisation but `.polynomial` is exact.
+
+- **Parameters:** `parameterisation` — how a conic's angular parameter is rewritten; see [`Curve2D.Parameterisation`](#curve2dparameterisation).
+- **Returns:** BSpline curve, or `nil` when OCCT rejects the pairing. That includes `.tangentHalfAngle1` and `.tangentHalfAngle2` on an arc wider than their documented limits, and every parameterisation on an unbounded curve such as a `Curve2D.line`.
+- **OCCT:** `Geom2dConvert::CurveToBSplineCurve(curve, parameterisation)`.
 - **Example:**
   ```swift
   let circle = Curve2D.circle(center: .zero, radius: 5)!
   if let bsp = circle.toBSpline() {
-      print(bsp.poleCount!)  // NURBS representation of the circle
+      print(bsp.degree!, bsp.poleCount!)     // 2, 6
+  }
+  if let bsp = circle.toBSpline(.quasiAngular) {
+      print(bsp.degree!, bsp.poleCount!)     // 6, 6
   }
   ```
+
+---
+
+### `Curve2D.Parameterisation`
+
+How a conic's angular parameter is rewritten when it becomes a B-spline.
+
+```swift
+public enum Parameterisation: UInt32, Sendable {
+    case tangentHalfAngle  = 0
+    case tangentHalfAngle1 = 1
+    case tangentHalfAngle2 = 2
+    case tangentHalfAngle3 = 3
+    case tangentHalfAngle4 = 4
+    case quasiAngular      = 5
+    case rationalC1        = 6
+    case polynomial        = 7
+}
+```
+
+| Case | Meaning | On a full circle of radius 5 |
+|---|---|---|
+| `tangentHalfAngle` | `t = tan(theta / 2)`, span count derived from the opening angle | degree 2, 6 poles, rational, exact |
+| `tangentHalfAngle1` | forced to one span, opening angle up to 0.9999 pi | rejected (`nil`) |
+| `tangentHalfAngle2` | forced to two spans, opening angle up to 1.9999 pi | rejected (`nil`) |
+| `tangentHalfAngle3` | forced to three spans | degree 2, 6 poles, rational, exact |
+| `tangentHalfAngle4` | forced to four spans | degree 2, 8 poles, rational, exact |
+| `quasiAngular` | parameter close to the conic's own angular parameter | degree 6, 6 poles, rational, exact |
+| `rationalC1` | C1-continuous denominator across spans | degree 4, 12 poles, rational, exact |
+| `polynomial` | non-rational, and the only approximate option | degree 7, 7 poles, 6.5e-06 relative radial error |
+
+- **OCCT:** `Convert_ParameterisationType`.
 
 ---
 

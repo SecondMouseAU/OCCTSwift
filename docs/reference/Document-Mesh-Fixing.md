@@ -904,22 +904,22 @@ Returns: `0` = Plane, `1` = Cylinder, `2` = Cone, `3` = Sphere, `4` = Torus, …
 
 ---
 
-### `Curve3D.locateNearestPoint(_:initParam:tolerance:)`
+### `Curve3D.locateNearestPoint(_:initParam:)`
 
 Local point-on-curve search from an initial parameter guess.
 
 ```swift
 public func locateNearestPoint(
     _ point: SIMD3<Double>,
-    initParam: Double,
-    tolerance: Double = 1e-6
+    initParam: Double
 ) -> (parameter: Double, distance: Double)?
 ```
+
+There is no tolerance. Both halves of this search reach OCCT through `GeomAPI_ProjectPointOnCurve`, whose windowed constructor takes none, and the fallback fixes `Precision::Confusion()` for the same reason its two converted siblings do. `Extrema_LocateExtPC`, which the name echoes, does take a `TolU`, but #615 deliberately moved this off that path so the local and global answers could not disagree. The surface sibling below keeps its `tolerance` because `Extrema_GenLocateExtPS` genuinely takes one.
 
 - **Parameters:**
   - `point` — the 3D query point.
   - `initParam` — starting parameter for the local search.
-  - `tolerance` — convergence tolerance.
 - **Returns:** `(parameter, distance)` tuple, or `nil` only if there is no curve to answer about.
 - **OCCT:** `GeomAPI_ProjectPointOnCurve` over a ±10% window around `initParam`, falling back to
   `occtNearestPointOnCurveRange` over the whole curve (via `OCCTExtremaLocateOnCurve`).

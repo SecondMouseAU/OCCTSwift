@@ -42,24 +42,26 @@ The bisector is the locus of points equidistant from both curves. `origin` steer
 
 ---
 
-### `bisector(withPoint:origin:side:)`
+### `bisector(withPoint:maxDistance:side:)`
 
 Computes the approximate bisector curve between a point and this curve.
 
 ```swift
-public func bisector(withPoint point: SIMD2<Double>, origin: SIMD2<Double>,
+public func bisector(withPoint point: SIMD2<Double>, maxDistance: Double = 500,
                      side: Bool = true) -> Curve2D?
 ```
 
-- **Parameters:** `point` — the fixed point; `origin` — point near the desired branch; `side` — orientation sense.
-- **Returns:** Bisector as a `Curve2D`, or `nil` on failure.
+There is no `origin`, unlike the curve-to-curve sibling above: `Bisector_BisecPC::Perform` takes `(Cu, P, Side, DistMax)` and no origin at all. The signature had been copied from `Bisector_BisecCC::Perform`, where the origin is real.
+
+- **Parameters:** `point` — the fixed point; `maxDistance` — trims the bisector so no point on it lies further than this from the curve, 500 being OCCT's own default; `side` — orientation sense.
+- **Returns:** Bisector as a `Curve2D`, or `nil` when nothing lies within `maxDistance`.
 - **OCCT:** `Bisector_BisecPC`.
 - **Example:**
   ```swift
-  let circle = Curve2D.circle(center: .zero, radius: 4)!
-  if let bis = circle.bisector(withPoint: SIMD2(8, 0), origin: SIMD2(4, 0)) {
-      let range = bis.parameterRange
-  }
+  let line = Curve2D.line(through: .zero, direction: SIMD2(1, 0))!
+  line.bisector(withPoint: SIMD2(0, 4), maxDistance: 10)    // parametrised over [-8, 8]
+  line.bisector(withPoint: SIMD2(0, 4), maxDistance: 100)   // parametrised over [-28, 28]
+  line.bisector(withPoint: SIMD2(0, 4), maxDistance: 1)     // nil, nothing lies that close
   ```
 
 ---
