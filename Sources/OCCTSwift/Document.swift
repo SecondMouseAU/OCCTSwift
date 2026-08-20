@@ -2105,11 +2105,12 @@ extension Document {
         Int(OCCTDocumentGetTransactionNumber(handle))
     }
 
-    /// Commit the current transaction and return a delta for inspection.
+    /// Commit the current transaction and return the delta it recorded.
     ///
-    /// The delta must be released when no longer needed.
+    /// Undo is disabled until `setUndoLimit(_:)` is called, and a document with undo disabled
+    /// records no deltas.
     ///
-    /// - Returns: An opaque delta handle, or nil if no changes
+    /// - Returns: The committed delta, or nil if the commit recorded none.
     public func commitWithDelta() -> TransactionDelta? {
         guard let ptr = OCCTDocumentCommitWithDelta(handle) else { return nil }
         return TransactionDelta(handle: ptr)
