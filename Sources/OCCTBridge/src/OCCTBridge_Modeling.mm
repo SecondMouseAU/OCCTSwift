@@ -1469,6 +1469,33 @@ OCCTShapeRef OCCTShapeMakeConnected(OCCTShapeRef* shapes, int32_t count)
 
 #include <BRepTools_Quilt.hxx>
 
+// #974: OCCTShapeQuilt and OCCTShapeQuiltWithHistory (further down this file) fed the same quilt
+// the same way and differed only in what they assembled afterwards, so the feeding loop and the
+// shell it takes live here once. The quilt is the caller's, not this helper's: the history variant
+// reads it again after this returns (IsCopied/Copy), so it is passed by reference rather than
+// created here.
+//
+// File-static rather than shared through OCCTBridge_Internal.h because BRepTools_Quilt has exactly
+// these two call sites, both in this file: measured by grep over Sources/OCCTBridge, the class
+// appears in no other .mm and in no header. Move it to OCCTBridge_Internal.h as `inline` the
+// moment a second file quilts, since a static copy in another translation unit is one that can
+// never converge on this one (#943, #957).
+//
+// Returns a null shape when an entry is null or the quilt produced nothing. Both callers turn
+// either into a null return, which is what they did as separate copies.
+static TopoDS_Shape occtQuiltShells(BRepTools_Quilt&    quilt,
+                                    const OCCTShapeRef* shapes,
+                                    int32_t             count)
+{
+  for (int32_t i = 0; i < count; i++)
+  {
+    if (!shapes[i])
+      return TopoDS_Shape();
+    quilt.Add(shapes[i]->shape);
+  }
+  return quilt.Shells();
+}
+
 OCCTShapeRef OCCTShapeQuilt(OCCTShapeRef* shapes, int32_t count)
 {
   if (!shapes || count <= 0)
@@ -1476,13 +1503,7 @@ OCCTShapeRef OCCTShapeQuilt(OCCTShapeRef* shapes, int32_t count)
   try
   {
     BRepTools_Quilt quilt;
-    for (int32_t i = 0; i < count; i++)
-    {
-      if (!shapes[i])
-        return nullptr;
-      quilt.Add(shapes[i]->shape);
-    }
-    TopoDS_Shape result = quilt.Shells();
+    TopoDS_Shape    result = occtQuiltShells(quilt, shapes, count);
     if (result.IsNull())
       return nullptr;
     return new OCCTShape(result);
@@ -4050,7 +4071,8 @@ OCCTBooleanHistoryRef OCCTShapeSewSingleWithHistory(OCCTShapeRef  shape,
 // per-input-subshape history. Uses BRepTools_Quilt (not BRepBuilderAPI_Sewing)
 // because it preserves the exact input face->output face mapping that
 // BRepTools_Quilt provides (IsCopied/Copy). The plain OCCTShapeQuilt shares
-// this same BRepTools_Quilt path for consistent behavior.
+// this same BRepTools_Quilt path through occtQuiltShells, defined next to it
+// near the top of this file (#974).
 OCCTBooleanHistoryRef OCCTShapeQuiltWithHistory(OCCTShapeRef* shapes,
                                                 int32_t       count,
                                                 OCCTShapeRef* outResult)
@@ -4062,13 +4084,7 @@ OCCTBooleanHistoryRef OCCTShapeQuiltWithHistory(OCCTShapeRef* shapes,
   try
   {
     BRepTools_Quilt quilt;
-    for (int32_t i = 0; i < count; i++)
-    {
-      if (!shapes[i])
-        return nullptr;
-      quilt.Add(shapes[i]->shape);
-    }
-    TopoDS_Shape result = quilt.Shells();
+    TopoDS_Shape    result = occtQuiltShells(quilt, shapes, count);
     if (result.IsNull())
       return nullptr;
 
@@ -6877,19 +6893,10 @@ OCCTWireRef _Nullable OCCTWireMakeWireFromEdges(const OCCTShapeRef _Nonnull* _No
     {
       if (!edges[i])
         return nullptr;
-      TopoDS_Edge edge;
-      if (edges[i]->shape.ShapeType() == TopAbs_EDGE)
-      {
-        edge = TopoDS::Edge(edges[i]->shape);
-      }
-      else
-      {
-        for (TopExp_Explorer exp(edges[i]->shape, TopAbs_EDGE); exp.More(); exp.Next())
-        {
-          edge = TopoDS::Edge(exp.Current());
-          break;
-        }
-      }
+      // #975: occtEdgeAt(shape, 0) is this bridge's one spelling of "the first edge of this
+      // shape", and takes a bare edge as readily as a wire, face, solid or compound holding one.
+      // See OCCTBridge_Internal.h.
+      TopoDS_Edge edge = occtEdgeAt(edges[i]->shape, 0);
       if (edge.IsNull())
         return nullptr;
       mw.Add(edge);
@@ -7275,31 +7282,11 @@ OCCTChFi2dFilletResult OCCTChFi2dFilletAlgo(OCCTShapeRef edge1,
     return result;
   try
   {
-    TopoDS_Edge e1, e2;
-    if (edge1->shape.ShapeType() == TopAbs_EDGE)
-    {
-      e1 = TopoDS::Edge(edge1->shape);
-    }
-    else
-    {
-      for (TopExp_Explorer exp(edge1->shape, TopAbs_EDGE); exp.More(); exp.Next())
-      {
-        e1 = TopoDS::Edge(exp.Current());
-        break;
-      }
-    }
-    if (edge2->shape.ShapeType() == TopAbs_EDGE)
-    {
-      e2 = TopoDS::Edge(edge2->shape);
-    }
-    else
-    {
-      for (TopExp_Explorer exp(edge2->shape, TopAbs_EDGE); exp.More(); exp.Next())
-      {
-        e2 = TopoDS::Edge(exp.Current());
-        break;
-      }
-    }
+    // #975: occtEdgeAt(shape, 0) is this bridge's one spelling of "the first edge of this shape",
+    // and takes a bare edge as readily as a wire, face, solid or compound holding one. See
+    // OCCTBridge_Internal.h.
+    TopoDS_Edge e1 = occtEdgeAt(edge1->shape, 0);
+    TopoDS_Edge e2 = occtEdgeAt(edge2->shape, 0);
     if (e1.IsNull() || e2.IsNull())
       return result;
 
@@ -7408,32 +7395,9 @@ OCCTAnaFilletResult OCCTChFi2dAnaFillet(OCCTShapeRef edge1,
     return result;
   try
   {
-    // Extract edges
-    TopoDS_Edge e1, e2;
-    if (edge1->shape.ShapeType() == TopAbs_EDGE)
-    {
-      e1 = TopoDS::Edge(edge1->shape);
-    }
-    else
-    {
-      for (TopExp_Explorer exp(edge1->shape, TopAbs_EDGE); exp.More(); exp.Next())
-      {
-        e1 = TopoDS::Edge(exp.Current());
-        break;
-      }
-    }
-    if (edge2->shape.ShapeType() == TopAbs_EDGE)
-    {
-      e2 = TopoDS::Edge(edge2->shape);
-    }
-    else
-    {
-      for (TopExp_Explorer exp(edge2->shape, TopAbs_EDGE); exp.More(); exp.Next())
-      {
-        e2 = TopoDS::Edge(exp.Current());
-        break;
-      }
-    }
+    // #975: the same edge extraction OCCTChFi2dFilletAlgo above uses. See OCCTBridge_Internal.h.
+    TopoDS_Edge e1 = occtEdgeAt(edge1->shape, 0);
+    TopoDS_Edge e2 = occtEdgeAt(edge2->shape, 0);
     if (e1.IsNull() || e2.IsNull())
       return result;
 
