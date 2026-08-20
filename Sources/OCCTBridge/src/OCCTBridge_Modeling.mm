@@ -230,9 +230,20 @@ OCCTDrawingRef OCCTDrawingCreate(OCCTShapeRef       shape,
                                  double             dirX,
                                  double             dirY,
                                  double             dirZ,
-                                 OCCTProjectionType projectionType)
+                                 OCCTProjectionType projectionType,
+                                 double             focus)
 {
   if (!shape)
+    return nullptr;
+
+  // #999: projectionType used to be read by nothing, so a caller asking for perspective got the
+  // orthographic projection silently. focus is what the perspective constructor needs and there is
+  // no defensible default for it, so it is a parameter rather than a literal. Reject a
+  // non-positive or NaN focus outright: it is a distance, and OCCT does not raise on one. Measured
+  // on a 100x50x30 box viewed down +Z, focus 0/1e-12/5/15 all return an empty VCompound and a
+  // negative focus returns a real but differently-scaled projection, so neither reads as failure at
+  // the call site.
+  if (projectionType == OCCTProjectionPerspective && !(focus > 0))
     return nullptr;
 
   try
@@ -240,11 +251,10 @@ OCCTDrawingRef OCCTDrawingCreate(OCCTShapeRef       shape,
     // Normalize direction
     gp_Dir viewDir(dirX, dirY, dirZ);
 
-    // Create projector
-    // For orthographic: simple direction projector
-    // For perspective: need a focal point
     gp_Ax2            projAxis(gp_Pnt(0, 0, 0), viewDir);
-    HLRAlgo_Projector projector(projAxis);
+    HLRAlgo_Projector projector = projectionType == OCCTProjectionPerspective
+                                    ? HLRAlgo_Projector(projAxis, focus)
+                                    : HLRAlgo_Projector(projAxis);
 
     // Create HLR algorithm
     Handle(HLRBRep_Algo) hlrAlgo = new HLRBRep_Algo();
@@ -3431,11 +3441,18 @@ OCCTShapeRef OCCTShapeOffsetPerFace(OCCTShapeRef   shape,
   }
 }
 
+// #999: this used to take a projectionType it never read. Unlike OCCTDrawingCreate, which now
+// honours it, there is nothing here to wire it to: HLRBRep_PolyAlgo ignores the projector's
+// perspective flag entirely. Measured on the pinned 8.0.1 kernel with a 100x50x30 box viewed
+// down +Z, reading the flag back off the algorithm to prove the setter kept it:
+// Projector().Perspective() is 1, and the visible compound's bounding box is identical to the
+// orthographic one at focus 20, 50, 200 and 1000, while HLRBRep_Algo on the same inputs scales
+// +-50 to +-200, +-71.43, +-54.05 and +-50.76. So the parameter is dropped rather than faked.
+// See Scripts/repro/999-dead-parameters/hlr_perspective.mm.
 OCCTDrawingRef OCCTDrawingCreatePoly(OCCTShapeRef shape,
                                      double       dirX,
                                      double       dirY,
                                      double       dirZ,
-                                     int32_t      projectionType,
                                      double       deflection)
 {
   if (!shape)

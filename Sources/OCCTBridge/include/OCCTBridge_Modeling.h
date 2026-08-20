@@ -380,12 +380,15 @@ typedef enum
 /// @param shape Shape to project
 /// @param dirX, dirY, dirZ View direction (will be normalized)
 /// @param projectionType Orthographic or perspective projection
+/// @param focus Eye-to-origin distance along the view direction, used only for
+///        OCCTProjectionPerspective, where it must be > 0. Ignored for the orthographic case.
 /// @return Drawing reference, or NULL on failure
 OCCTDrawingRef OCCTDrawingCreate(OCCTShapeRef       shape,
                                  double             dirX,
                                  double             dirY,
                                  double             dirZ,
-                                 OCCTProjectionType projectionType);
+                                 OCCTProjectionType projectionType,
+                                 double             focus);
 
 /// Release drawing resources
 void OCCTDrawingRelease(OCCTDrawingRef drawing);
@@ -1776,16 +1779,19 @@ OCCTShapeRef OCCTShapeOffsetPerFace(OCCTShapeRef   shape,
 /// Create a fast polygon-based HLR (hidden-line removal) drawing.
 /// Uses the triangulation mesh rather than exact geometry — much faster but approximate.
 /// The shape must have a triangulation (mesh); if not, it will be meshed at the given deflection.
+/// Orthographic only, and there is no projectionType parameter because HLRBRep_PolyAlgo ignores
+/// the projector's perspective flag: measured against the pinned 8.0.1 kernel, its output is
+/// identical for HLRAlgo_Projector(cs) and HLRAlgo_Projector(cs, focus) at every focus tried,
+/// including one short enough to make HLRBRep_Algo diverge 4x. See OCCTDrawingCreate for the
+/// exact algorithm, which does honour it.
 /// @param shape The shape to project
 /// @param dirX,dirY,dirZ View direction vector
-/// @param projectionType 0=orthographic (perspective not yet supported for poly)
 /// @param deflection Mesh deflection for triangulation (smaller = more accurate, default 0.01)
 /// @return Drawing reference, or NULL on failure
 OCCTDrawingRef OCCTDrawingCreatePoly(OCCTShapeRef shape,
                                      double       dirX,
                                      double       dirY,
                                      double       dirZ,
-                                     int32_t      projectionType,
                                      double       deflection);
 
 /// Create a pipe feature (protrusion or depression) by sweeping a profile along a spine.

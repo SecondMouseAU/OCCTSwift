@@ -30,27 +30,37 @@ Obtain a `Drawing` by calling one of the static factory methods (`project(_:dire
 
 ### `Drawing.ProjectionType`
 
-Projection algorithm applied during HLR computation.
+Projection algorithm applied during HLR computation. The perspective case carries the focal
+distance, because `HLRAlgo_Projector`'s perspective constructor requires one and there is no
+defensible default for it; an enum case with an associated value also means the focal distance
+cannot be supplied for, and silently ignored by, an orthographic projection.
 
 ```swift
-public enum ProjectionType: UInt32 {
-    case orthographic = 0
-    case perspective  = 1
+public enum ProjectionType: Sendable, Equatable {
+    case orthographic
+    case perspective(focus: Double)
 }
 ```
 
 | Case | Meaning |
 |---|---|
 | `orthographic` | Parallel-line projection (engineering drawings) |
-| `perspective` | Converging-line projection |
+| `perspective(focus:)` | Converging-line projection from an eye point `focus` units back along the view direction |
 
 ---
 
-#### `Drawing.ProjectionType.perspective`
+#### `Drawing.ProjectionType.perspective(focus:)`
 
 Converging-line projection.
 
-- **OCCT:** Passed as `OCCTProjectionType` to `HLRAlgo_Projector` construction inside `OCCTDrawingCreate`.
+`focus` is the eye-to-origin distance measured along the view direction. Geometry at depth `d`
+towards the eye is scaled by `focus / (focus - d)`, so a longer focal distance converges on the
+orthographic projection and a focal distance shorter than the shape's own extent along the view
+direction produces an empty drawing. A focal distance that is not strictly positive returns `nil`
+rather than a projection.
+
+- **OCCT:** `HLRAlgo_Projector(const gp_Ax2& CS, const double Focus)`, selected inside
+  `OCCTDrawingCreate` on the `OCCTProjectionType` value.
 
 ---
 
@@ -553,8 +563,9 @@ The underlying algorithm uses `HLRBRep_Algo` for exact edge-geometry HLR — slo
 - **Parameters:**
   - `shape` — the 3D shape to project.
   - `direction` — view direction vector (need not be normalised).
-  - `type` — projection type (default `.orthographic`).
-- **Returns:** `Drawing` containing the projected edge compounds, or `nil` if the shape is null or HLR fails.
+  - `type` — projection type (default `.orthographic`), carrying the focal distance in the
+    perspective case.
+- **Returns:** `Drawing` containing the projected edge compounds, or `nil` if the shape is null, HLR fails, or a perspective focal distance is not strictly positive.
 - **OCCT:** `HLRBRep_Algo` + `HLRAlgo_Projector` + `HLRBRep_HLRToShape`.
 - **Example:**
   ```swift
@@ -562,6 +573,9 @@ The underlying algorithm uses `HLRBRep_Algo` for exact edge-geometry HLR — slo
   if let view = Drawing.project(box, direction: SIMD3(0, 0, 1)) {
       let edges = view.visibleEdges
   }
+  // The same box seen from 50 units away: the near face, 15 units towards the eye,
+  // projects 50/(50-15) = 1.4286x larger than it does orthographically.
+  let near = Drawing.project(box, direction: SIMD3(0, 0, 1), type: .perspective(focus: 50))
   ```
 
 ---
@@ -653,6 +667,11 @@ public static func projectFast(
 ```
 
 Uses `BRepMesh_IncrementalMesh` + `HLRBRep_PolyAlgo` — significantly faster than exact HLR but the edges follow the tessellation facets rather than the true curves. Suitable for interactive previews.
+
+Orthographic only, and deliberately without a `type:` parameter: `HLRBRep_PolyAlgo` stores a
+projector's perspective flag but never acts on it, so its output is identical for
+`HLRAlgo_Projector(cs)` and `HLRAlgo_Projector(cs, focus)` at every focal distance. Use
+[`Drawing.project(_:direction:type:)`](#drawingproject_directiontype) for a perspective view.
 
 - **Parameters:**
   - `shape` — the 3D shape to project.
