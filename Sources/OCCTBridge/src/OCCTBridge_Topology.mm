@@ -4131,28 +4131,11 @@ void OCCTShapeSetLocked(OCCTShapeRef shape, bool locked)
   shape->shape.Locked(locked);
 }
 
-static gp_Trsf trsfFromMatrix12(const double* m)
-{
-  gp_Trsf t;
-  t.SetValues(m[0], m[1], m[2], m[3], m[4], m[5], m[6], m[7], m[8], m[9], m[10], m[11]);
-  return t;
-}
-
-static void matrix12FromTrsf(const gp_Trsf& t, double* m)
-{
-  m[0]  = t.Value(1, 1);
-  m[1]  = t.Value(1, 2);
-  m[2]  = t.Value(1, 3);
-  m[3]  = t.Value(1, 4);
-  m[4]  = t.Value(2, 1);
-  m[5]  = t.Value(2, 2);
-  m[6]  = t.Value(2, 3);
-  m[7]  = t.Value(2, 4);
-  m[8]  = t.Value(3, 1);
-  m[9]  = t.Value(3, 2);
-  m[10] = t.Value(3, 3);
-  m[11] = t.Value(3, 4);
-}
+// #994: the matrix/trsf pair this file used to define for itself is
+// occtTrsfFromMatrix12Interleaved / occtMatrix12InterleavedFromTrsf in
+// OCCTBridge_Internal.h, shared with OCCTBridge_BRepGraph.mm's placement setters, which
+// open-coded the same SetValues. The layout is in the name: see that header for why a
+// Matrix12Grouped array must not be handed to these.
 
 OCCTShapeRef OCCTShapeLocated(OCCTShapeRef shape, const double* matrix12)
 {
@@ -4160,8 +4143,7 @@ OCCTShapeRef OCCTShapeLocated(OCCTShapeRef shape, const double* matrix12)
     return nullptr;
   try
   {
-    gp_Trsf         t = trsfFromMatrix12(matrix12);
-    TopLoc_Location loc(t);
+    TopLoc_Location loc    = occtLocationFromMatrix12Interleaved(matrix12);
     OCCTShape*      result = new OCCTShape();
     result->shape          = shape->shape.Located(loc);
     return result;
@@ -4180,7 +4162,7 @@ void OCCTShapeGetLocation(OCCTShapeRef shape, double* matrix12)
   {
     gp_Trsf t =
       shape->shape.Location().IsIdentity() ? gp_Trsf() : shape->shape.Location().Transformation();
-    matrix12FromTrsf(t, matrix12);
+    occtMatrix12InterleavedFromTrsf(t, matrix12);
   }
   catch (...)
   {
@@ -4193,9 +4175,7 @@ void OCCTShapeSetLocation(OCCTShapeRef shape, const double* matrix12)
     return;
   try
   {
-    gp_Trsf         t = trsfFromMatrix12(matrix12);
-    TopLoc_Location loc(t);
-    shape->shape.Location(loc);
+    shape->shape.Location(occtLocationFromMatrix12Interleaved(matrix12));
   }
   catch (...)
   {

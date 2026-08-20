@@ -4627,13 +4627,11 @@ void OCCTBRepGraphCoEdgeAddPCurve(OCCTBRepGraphRef g,
 }
 
 // Location setters (12-double 3x4 matrix, gp_Trsf::SetValues convention)
-
-static TopLoc_Location locationFromMatrix(const double m[12])
-{
-  gp_Trsf trsf;
-  trsf.SetValues(m[0], m[1], m[2], m[3], m[4], m[5], m[6], m[7], m[8], m[9], m[10], m[11]);
-  return TopLoc_Location(trsf);
-}
+//
+// #994: the conversion is occtLocationFromMatrix12Interleaved in OCCTBridge_Internal.h, shared
+// with OCCTBridge_Topology.mm's shape-location entry points, which built the same transform from
+// the same twelve doubles. The layout is in the name: see that header for why a Matrix12Grouped
+// array must not be handed to it.
 
 // OCCT 8.0.0p1: only occurrence and child references carry a local location; the per-topology
 // references (vertex/coedge/wire/face/shell/solid) no longer store a location, so their editors
@@ -4661,7 +4659,7 @@ void OCCTBRepGraphSetOccurrenceRefLocalLocation(OCCTBRepGraphRef g,
   {
     g->graph.Editor().Occurrences().SetRefLocalLocation(
       BRepGraph_OccurrenceRefId(occurrenceRefIndex),
-      locationFromMatrix(matrix));
+      occtLocationFromMatrix12Interleaved(matrix));
   }
   catch (...)
   {
@@ -4677,7 +4675,7 @@ void OCCTBRepGraphSetChildRefLocalLocation(OCCTBRepGraphRef g,
   try
   {
     g->graph.Editor().Gen().SetChildRefLocalLocation(BRepGraph_ChildRefId(childRefIndex),
-                                                     locationFromMatrix(matrix));
+                                                     occtLocationFromMatrix12Interleaved(matrix));
   }
   catch (...)
   {
@@ -4695,7 +4693,8 @@ int32_t OCCTBRepGraphLinkProductToTopology(OCCTBRepGraphRef g,
     return -1;
   try
   {
-    TopLoc_Location loc = placementMatrix ? locationFromMatrix(placementMatrix) : TopLoc_Location();
+    TopLoc_Location loc =
+      placementMatrix ? occtLocationFromMatrix12Interleaved(placementMatrix) : TopLoc_Location();
     BRepGraph_NodeId root(kindFromInt(shapeRootKind), shapeRootIndex);
     // OCCT 8.0.0p1: LinkProductToTopology folded into ProductOps::Add(root, placement). Add() does
     // NOT register the product as a graph root, so call AppendDocumentRoot() to expose it via
@@ -4739,7 +4738,7 @@ int32_t OCCTBRepGraphLinkProducts(OCCTBRepGraphRef g,
     return -1;
   try
   {
-    TopLoc_Location           loc       = locationFromMatrix(placementMatrix);
+    TopLoc_Location           loc       = occtLocationFromMatrix12Interleaved(placementMatrix);
     BRepGraph_OccurrenceId    parentOcc = (parentOccurrenceIndex >= 0)
                                             ? BRepGraph_OccurrenceId(parentOccurrenceIndex)
                                             : BRepGraph_OccurrenceId();
