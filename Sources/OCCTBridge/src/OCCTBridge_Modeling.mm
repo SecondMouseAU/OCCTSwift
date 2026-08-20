@@ -16437,10 +16437,13 @@ OCCTShapeRef OCCTShapeCreateCompound(const OCCTShapeRef* shapes, int32_t count)
 
     for (int32_t i = 0; i < count; i++)
     {
-      if (shapes[i])
-      {
-        builder.Add(compound, shapes[i]->shape);
-      }
+      // #1026: TopoDS_Builder::Add dereferences the component's TShape in its first statement, so
+      // the pointer test alone was a SIGSEGV on Shape.compound([shape.nullified!]). Refusing the
+      // whole call rather than skipping the element matches OCCTMakeWireFromEdges (#1008); the
+      // twin of this function is OCCTShapeCompounded in OCCTBridge_Topology.mm.
+      if (!occtShapeIsPresent(shapes[i]))
+        return nullptr;
+      builder.Add(compound, shapes[i]->shape);
     }
 
     return new OCCTShape(compound);

@@ -276,12 +276,28 @@ Two supporting pieces, both mirroring what the handle walks already do:
     for one walk silently exempts the others. Sharing it here would let a handle exemption written
     years ago quietly cover a shape finding nobody looked at. It is empty today.
 
+A FOURTH SPELLING, TAUGHT AFTER THE FIRST THREE MISSED IT. `BRep_Builder::Add(compound,
+shapes[i]->shape)` crashes without the shape being touched at all: `TopoDS_Builder::Add`
+dereferences the component in its FIRST statement, `aComponent.TShape()->Free(false)`. No cast, no
+`ShapeType()`, no flag accessor, so #1008's `TopoDS::` sweep, #1026's `ShapeType()` census and this
+walk's own first version each reported clean on all four sites. `SHAPE_BUILDER_TYPES` closes it,
+keyed on the RECEIVER's declared type rather than the method name, because `Add` is one of OCCT's
+most overloaded names: `unwrap_sweep.py --by-callee` counts 39 sites whose callee is `Add` and only
+four are a builder, so a name-keyed rule reports the other 35 (fixture `SK`).
+
 WHAT THIS WALK CANNOT SEE, same standard as the two above: a hazard reached inside a helper this
 bridge writes (only a helper that GUARDS is recognised, not one that USES); a hazard on a
 `TopoDS_Shape` obtained from somewhere other than a wrapper argument, which is the #656 shape
-transposed to shapes and has no known instance; a guard that does not dominate its use; and the
-`OCCTShapeRef` spelled as a bare `OCCTShape*`, which no bridge signature uses today. Measure before
-assuming any of those stayed at zero.
+transposed to shapes and has no known instance; a guard that does not dominate its use; the
+`OCCTShapeRef` spelled as a bare `OCCTShape*`, which no bridge signature uses today; a builder
+reached other than as a local declaration (a member, a parameter, a reference), also none today; and
+**any other OCCT entry point that dereferences a null shape for its caller**. That last one is the
+open class, not a corner case: `Scripts/repro/1026-null-shape-type-guard/unwrap_sweep.py` counts
+1104 unguarded unwraps across 865 functions, of which this walk reports the subset reaching a
+measured-unsafe consumer. Three more were found by probing rather than by any census
+(`PrsDim_RadiusDimension`, `PrsDim_DiameterDimension`, `ShapeFix_Shape`). Enumerating the rest is
+the shape-side equivalent of #556's 57-entry-point sweep for handles. Measure before assuming any of
+these stayed at zero.
 
 Usage (from the repo root):
 
@@ -336,6 +352,23 @@ SHAPE_HAZARDS = ('ShapeType', 'Free', 'Locked', 'Modified', 'Checked', 'Orientab
 
 SHAPE_HAZARD_CALL = re.compile(r'\s*\.\s*(' + '|'.join(SHAPE_HAZARDS) + r')\s*\(')
 SHAPE_ISNULL = re.compile(r'\s*\.\s*IsNull\s*\(')
+
+# #1026 round 2: a hazard the shape never touches itself. TopoDS_Builder::Add dereferences the
+# component's TShape in its FIRST statement, `aComponent.TShape()->Free(false)`, and Remove walks
+# the parent's children the same way, so handing either one a caller's shape is the same crash by a
+# different route. Four sites reached it (`OCCTShapeCompounded`, `OCCTShapeCreateCompound`,
+# `OCCTBuilderAdd`, `OCCTBuilderRemove`), all measured, and none of the three earlier censuses could
+# see them: no cast, no ShapeType(), no flag accessor.
+#
+# Matched by the RECEIVER's declared type rather than by the method name alone, because `Add` is one
+# of the most overloaded names in OCCT: BRepBuilderAPI_Sewing::Add, BRepFilletAPI_MakeFillet::Add,
+# Bnd_Box::Add and thirty more take a shape perfectly safely. `builder.Add(...)` where `builder` is
+# a local `BRep_Builder`/`TopoDS_Builder` is the one that dereferences, and it is the only form this
+# bridge writes. A builder reached any other way (a member, a parameter, a reference) is invisible
+# here; there are none today.
+SHAPE_BUILDER_TYPES = ('BRep_Builder', 'TopoDS_Builder')
+SHAPE_BUILDER_METHODS = ('Add', 'Remove')
+BUILDER_DECL = re.compile(r'\b(?:' + '|'.join(SHAPE_BUILDER_TYPES) + r')\s+(\w+)\s*[;=]')
 
 # #1026 sites deliberately left unguarded, with the reason. Separate from ALLOWED above rather than
 # folded into it: ALLOWED is keyed (file, function) with no argument index, so sharing it would let
@@ -871,10 +904,23 @@ def shape_events(body, param, field, shape_helpers):
 
     A GUARD is `x->field.IsNull()`, `alias.IsNull()`, or handing `x` to a function
     shape_guarding_helpers() has already recognised. A USE is one of SHAPE_HAZARDS reached on the
-    shape. Everything else the bridge does with a TopoDS_Shape (copying it, comparing it, casting
-    it with TopoDS::Edge, walking it with TopExp) is neither, which is the whole difference between
-    this walk and the handle walks above."""
+    shape, or the shape handed to a local `BRep_Builder`/`TopoDS_Builder`'s Add/Remove, which
+    dereferences it for you (see SHAPE_BUILDER_TYPES). Everything else the bridge does with a
+    TopoDS_Shape (copying it, comparing it, casting it with TopoDS::Edge, walking it with TopExp)
+    is neither, which is the whole difference between this walk and the handle walks above."""
     ptr, alias, _ = aliases(body, param, field)
+    builders = set(BUILDER_DECL.findall(body))
+
+    def builder_use(pos):
+        """True if `pos` sits in the argument list of <builderLocal>.Add / .Remove."""
+        call = enclosing_call(body, pos)
+        if not call or call[0] not in SHAPE_BUILDER_METHODS:
+            return False
+        before = body[:pos]
+        i = before.rfind(call[0])
+        return bool(re.search(r'(\w+)\s*\.\s*$', before[:i]) and
+                    re.search(r'(\w+)\s*\.\s*$', before[:i]).group(1) in builders)
+
     ev = []
     for a, bound in ptr.items():
         for m in re.finditer(r'\b' + re.escape(a) + r'\b', body):
@@ -890,6 +936,8 @@ def shape_events(body, param, field, shape_helpers):
                 hm = SHAPE_HAZARD_CALL.match(rest)
                 if hm:
                     ev.append((m.start(), 'use', hm.group(1)))
+                elif builder_use(m.start()):
+                    ev.append((m.start(), 'use', 'TopoDS_Builder'))
                 continue
             call = enclosing_call(body, m.start())
             if call in shape_helpers:
@@ -905,6 +953,8 @@ def shape_events(body, param, field, shape_helpers):
             hm = SHAPE_HAZARD_CALL.match(rest)
             if hm:
                 ev.append((m.start(), 'use', hm.group(1)))
+            elif builder_use(m.start()):
+                ev.append((m.start(), 'use', 'TopoDS_Builder'))
     ev.sort()
     return ev
 
@@ -1135,6 +1185,20 @@ bool OCCTFixtureSD(OCCTWireRef wire) {
     if (!wire) return false;
     return wire->wire.Closed();
 }''', 'shape'),
+    # The shape touches no hazardous member of its own here. TopoDS_Builder::Add dereferences it.
+    ('handed to a local BRep_Builder\'s Add, which dereferences it for you', '''
+OCCTShapeRef OCCTFixtureSJ(const OCCTShapeRef* shapes, int32_t count) {
+    try {
+        BRep_Builder builder;
+        TopoDS_Compound compound;
+        builder.MakeCompound(compound);
+        for (int32_t i = 0; i < count; i++) {
+            if (shapes[i])
+                builder.Add(compound, shapes[i]->shape);
+        }
+        return new OCCTShape(compound);
+    } catch (...) { return nullptr; }
+}''', 'shape'),
 ]
 
 # The other failure mode, and the one #624/#630 was: a detector taught indirection can start
@@ -1306,6 +1370,20 @@ inline bool occtShapeIsPresentLate(OCCTShapeRef shape) {
 bool OCCTFixtureSI(OCCTShapeRef edge) {
     if (!occtShapeIsTypeEarly(edge, TopAbs_EDGE)) return false;
     return edge->shape.ShapeType() == TopAbs_EDGE;
+}''', 'shape'),
+    # The false-positive direction for the builder rule, and the one that decides whether it is a
+    # gate or noise: `Add` is one of OCCT's most overloaded names. The sweep counts 39 sites whose
+    # callee is `Add`, and only four of them are a TopoDS_Builder. A rule keyed on the method name
+    # alone reports the other 35.
+    ('handed to a BRepBuilderAPI_Sewing Add, a different class with the same method name', '''
+OCCTShapeRef OCCTFixtureSK(OCCTShapeRef shape) {
+    if (!shape) return nullptr;
+    try {
+        BRepBuilderAPI_Sewing sewing(1e-6);
+        sewing.Add(shape->shape);
+        sewing.Perform();
+        return new OCCTShape(sewing.SewedShape());
+    } catch (...) { return nullptr; }
 }''', 'shape'),
     ('unguarded, but every use is safe on a null shape: a cast, a compare and an explorer walk', '''
 int OCCTFixtureSH(OCCTShapeRef shape, OCCTShapeRef other) {

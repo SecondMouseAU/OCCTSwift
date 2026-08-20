@@ -4198,8 +4198,21 @@ OCCTShapeRef OCCTShapeOriented(OCCTShapeRef shape, int32_t orientation)
   }
 }
 
+// #1026, a THIRD spelling of the same defect, and the reason the guard belongs at the unwrap
+// rather than at each consumer. This function reaches no hazardous TopoDS_Shape member and casts
+// nothing, so neither #1008's TopoDS:: sweep nor #1026's ShapeType() census covers it; it hands the
+// shape to BRep_Builder::Add, and TopoDS_Builder::Add dereferences it in its FIRST statement,
+// `aComponent.TShape()->Free(false)` (TopoDS_Builder.cxx). Measured: Shape.compound with a
+// nullified shape is SIGSEGV, alone or alongside a real one.
+//
+// A null element refuses the whole call rather than being skipped, matching OCCTMakeWireFromEdges
+// and OCCTMakeShell (#1008/#1027): a silently dropped element is a member the caller asked for and
+// did not get. Swift cannot reach the null-POINTER case either way, since [Shape] maps through a
+// non-optional handle.
 OCCTShapeRef OCCTShapeCompounded(const OCCTShapeRef* shapes, int32_t count)
 {
+  if (count > 0 && !shapes)
+    return nullptr;
   try
   {
     BRep_Builder    builder;
@@ -4207,8 +4220,9 @@ OCCTShapeRef OCCTShapeCompounded(const OCCTShapeRef* shapes, int32_t count)
     builder.MakeCompound(compound);
     for (int32_t i = 0; i < count; i++)
     {
-      if (shapes[i])
-        builder.Add(compound, shapes[i]->shape);
+      if (!occtShapeIsPresent(shapes[i]))
+        return nullptr;
+      builder.Add(compound, shapes[i]->shape);
     }
     OCCTShape* result = new OCCTShape();
     result->shape     = compound;
@@ -4660,9 +4674,11 @@ OCCTShapeRef OCCTBuilderMakeCompSolid()
   }
 }
 
+// #1026: the same TopoDS_Builder::Add dereference the two compound builders reach. Measured, both
+// arguments crash on a nullified shape, so both are guarded.
 bool OCCTBuilderAdd(OCCTShapeRef parent, OCCTShapeRef child)
 {
-  if (!parent || !child)
+  if (!occtShapeIsPresent(parent) || !occtShapeIsPresent(child))
     return false;
   try
   {
@@ -4676,9 +4692,14 @@ bool OCCTBuilderAdd(OCCTShapeRef parent, OCCTShapeRef child)
   }
 }
 
+// #1026: the PARENT crashes here, measured. The child does not: TopoDS_Builder::Remove walks the
+// parent's children looking for it and never dereferences the one it is given, confirmed against
+// both an empty and a populated parent. It is guarded anyway, in the same expression, because
+// resting one argument of a two-argument builder call on an emptiness of OCCT's current internals
+// is not worth the one comparison it saves.
 bool OCCTBuilderRemove(OCCTShapeRef parent, OCCTShapeRef child)
 {
-  if (!parent || !child)
+  if (!occtShapeIsPresent(parent) || !occtShapeIsPresent(child))
     return false;
   try
   {

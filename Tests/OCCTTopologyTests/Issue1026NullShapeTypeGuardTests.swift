@@ -155,6 +155,46 @@ struct Issue1026NullShapeTypeGuard {
         #expect(box.splitByWireOnFace(nullShape, faceIndex: 0) == nil)
     }
 
+    // MARK: - A third spelling: the shape handed to a builder that dereferences it
+
+    /// `TopoDS_Builder::Add` dereferences the component in its first statement.
+    ///
+    /// `aComponent.TShape()->Free(false)`, so handing it a null shape crashes without the shape
+    /// itself being touched at all. No cast, no `ShapeType()`, no flag accessor, which is why
+    /// #1008's `TopoDS::` sweep, #1026's `ShapeType()` census and the gate's first version of the
+    /// third walk each missed all four sites. `Remove`'s child argument is the one measured
+    /// exception: it walks the parent's children rather than dereferencing the one it is handed,
+    /// on an empty and on a populated parent alike, and is guarded anyway.
+    @Test("A null shape handed to a TopoDS_Builder is refused, not dereferenced")
+    func builderSitesRefuseANullifiedShape() throws {
+        let box = try makeBox()
+        let nullShape = try makeNullShape()
+
+        #expect(Shape.compound([nullShape]) == nil)
+        #expect(Shape.compound([box, nullShape]) == nil)
+
+        let parent = try #require(Shape.builderMakeCompound())
+        #expect(parent.builderAdd(nullShape) == false)
+        #expect(nullShape.builderAdd(box) == false)
+        #expect(parent.builderRemove(nullShape) == false)
+        #expect(nullShape.builderRemove(box) == false)
+    }
+
+    @Test("A compound of real shapes still builds, and still holds them")
+    func compoundOfRealShapesStillBuilds() throws {
+        let box = try makeBox()
+        let other = try #require(Shape.box(width: 2, height: 2, depth: 2))
+        let compound = try #require(Shape.compound([box, other]))
+        #expect(compound.shapeType == .compound)
+        #expect(compound.subShapes(ofType: .solid).count == 2)
+
+        let parent = try #require(Shape.builderMakeCompound())
+        #expect(parent.builderAdd(box) == true)
+        #expect(parent.subShapes(ofType: .solid).count == 1)
+        #expect(parent.builderRemove(box) == true)
+        #expect(parent.subShapes(ofType: .solid).isEmpty)
+    }
+
     // MARK: - A second class, found by probing rather than by the gate
 
     /// Three sites where the kernel, not the bridge, does the dereferencing.

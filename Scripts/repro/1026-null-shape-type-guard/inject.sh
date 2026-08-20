@@ -37,6 +37,8 @@ TESTS=(
   edgeAndFaceRefuseANullifiedShape
   everyGuardedQueryStillAnswersForARealShape
   kernelSideDereferencesAreRefused
+  builderSitesRefuseANullifiedShape
+  compoundOfRealShapesStillBuilds
 )
 for t in "${TESTS[@]}"; do
   out=$(swift test --filter "Issue1026NullShapeTypeGuard/$t" 2>&1 || true)
