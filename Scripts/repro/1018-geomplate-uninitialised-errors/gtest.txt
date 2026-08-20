@@ -1,0 +1,128 @@
+########## GTests BEFORE: unpatched sources ##########
+Running main() from /private/tmp/googletest-20260810-2300-tbptpn/googletest-1.18.0/googletest/src/gtest_main.cc
+[==========] Running 10 tests from 1 test suite.
+[----------] Global test environment set-up.
+[----------] 10 tests from GeomPlate_BuildPlateSurface
+[ RUN      ] GeomPlate_BuildPlateSurface.OCC525_PerformWithoutConstraints
+[       OK ] GeomPlate_BuildPlateSurface.OCC525_PerformWithoutConstraints (0 ms)
+[ RUN      ] GeomPlate_BuildPlateSurface.Perform_ClearsStaleResult
+[       OK ] GeomPlate_BuildPlateSurface.Perform_ClearsStaleResult (0 ms)
+[ RUN      ] GeomPlate_BuildPlateSurface.Progress_A1_FourBezierEdgesWithPlane
+[       OK ] GeomPlate_BuildPlateSurface.Progress_A1_FourBezierEdgesWithPlane (1 ms)
+[ RUN      ] GeomPlate_BuildPlateSurface.Progress_A2_FourBezierEdgesWithoutPlane
+[       OK ] GeomPlate_BuildPlateSurface.Progress_A2_FourBezierEdgesWithoutPlane (3 ms)
+[ RUN      ] GeomPlate_BuildPlateSurface.Progress_A3_LargePointContour
+[       OK ] GeomPlate_BuildPlateSurface.Progress_A3_LargePointContour (486 ms)
+[ RUN      ] GeomPlate_BuildPlateSurface.Progress_A4_OneHundredPointContour
+[       OK ] GeomPlate_BuildPlateSurface.Progress_A4_OneHundredPointContour (0 ms)
+[ RUN      ] GeomPlate_BuildPlateSurface.PointOnlyConstraintsReportMeasuredErrors
+/Users/elb/Projects/occt-upstream/src/ModelingAlgorithms/TKGeomAlgo/GTests/GeomPlate_BuildPlateSurface_Test.cxx:289: Failure
+Expected equality of these values:
+  aBuilder.G0Error()
+    Which is: 9.669492925363123e-06
+  aMaxDist
+    Which is: 1.7421055384149805e-12
+
+/Users/elb/Projects/occt-upstream/src/ModelingAlgorithms/TKGeomAlgo/GTests/GeomPlate_BuildPlateSurface_Test.cxx:290: Failure
+Expected: (aBuilder.G0Error()) < (1.e-6), actual: 9.669492925363123e-06 vs 1e-06
+a plate interpolates its own point constraints
+
+[  FAILED  ] GeomPlate_BuildPlateSurface.PointOnlyConstraintsReportMeasuredErrors (0 ms)
+[ RUN      ] GeomPlate_BuildPlateSurface.PointOnlyErrorsAreMaximaNotTheLastConstraint
+/Users/elb/Projects/occt-upstream/src/ModelingAlgorithms/TKGeomAlgo/GTests/GeomPlate_BuildPlateSurface_Test.cxx:329: Failure
+Expected equality of these values:
+  aBuilder.G2Error()
+    Which is: 0
+  aMaxCurv
+    Which is: 0.24171642654737566
+
+[  FAILED  ] GeomPlate_BuildPlateSurface.PointOnlyErrorsAreMaximaNotTheLastConstraint (0 ms)
+[ RUN      ] GeomPlate_BuildPlateSurface.ErrorsAreZeroBeforePerform
+/Users/elb/Projects/occt-upstream/src/ModelingAlgorithms/TKGeomAlgo/GTests/GeomPlate_BuildPlateSurface_Test.cxx:341: Failure
+Expected equality of these values:
+  aBuilder->G0Error()
+    Which is: 1.7838867517321418e+127
+  0.
+    Which is: 0
+
+/Users/elb/Projects/occt-upstream/src/ModelingAlgorithms/TKGeomAlgo/GTests/GeomPlate_BuildPlateSurface_Test.cxx:342: Failure
+Expected equality of these values:
+  aBuilder->G1Error()
+    Which is: 1.7838867517321418e+127
+  0.
+    Which is: 0
+
+/Users/elb/Projects/occt-upstream/src/ModelingAlgorithms/TKGeomAlgo/GTests/GeomPlate_BuildPlateSurface_Test.cxx:343: Failure
+Expected equality of these values:
+  aBuilder->G2Error()
+    Which is: 1.7838867517321418e+127
+  0.
+    Which is: 0
+
+[  FAILED  ] GeomPlate_BuildPlateSurface.ErrorsAreZeroBeforePerform (0 ms)
+[ RUN      ] GeomPlate_BuildPlateSurface.CancelledRebuildDoesNotReportThePreviousErrors
+/Users/elb/Projects/occt-upstream/src/ModelingAlgorithms/TKGeomAlgo/GTests/GeomPlate_BuildPlateSurface_Test.cxx:372: Failure
+Expected equality of these values:
+  aBuilder.G0Error()
+    Which is: 1.7838867517321418e+127
+  0.
+    Which is: 0
+
+/Users/elb/Projects/occt-upstream/src/ModelingAlgorithms/TKGeomAlgo/GTests/GeomPlate_BuildPlateSurface_Test.cxx:373: Failure
+Expected equality of these values:
+  aBuilder.G1Error()
+    Which is: 1.7838867517321418e+127
+  0.
+    Which is: 0
+
+/Users/elb/Projects/occt-upstream/src/ModelingAlgorithms/TKGeomAlgo/GTests/GeomPlate_BuildPlateSurface_Test.cxx:374: Failure
+Expected equality of these values:
+  aBuilder.G2Error()
+    Which is: 1.7838867517321418e+127
+  0.
+    Which is: 0
+
+[  FAILED  ] GeomPlate_BuildPlateSurface.CancelledRebuildDoesNotReportThePreviousErrors (0 ms)
+[----------] 10 tests from GeomPlate_BuildPlateSurface (492 ms total)
+
+[----------] Global test environment tear-down
+[==========] 10 tests from 1 test suite ran. (492 ms total)
+[  PASSED  ] 6 tests.
+[  FAILED  ] 4 tests, listed below:
+[  FAILED  ] GeomPlate_BuildPlateSurface.PointOnlyConstraintsReportMeasuredErrors
+[  FAILED  ] GeomPlate_BuildPlateSurface.PointOnlyErrorsAreMaximaNotTheLastConstraint
+[  FAILED  ] GeomPlate_BuildPlateSurface.ErrorsAreZeroBeforePerform
+[  FAILED  ] GeomPlate_BuildPlateSurface.CancelledRebuildDoesNotReportThePreviousErrors
+
+ 4 FAILED TESTS
+
+########## GTests AFTER: patch 0028 applied ##########
+Running main() from /private/tmp/googletest-20260810-2300-tbptpn/googletest-1.18.0/googletest/src/gtest_main.cc
+[==========] Running 10 tests from 1 test suite.
+[----------] Global test environment set-up.
+[----------] 10 tests from GeomPlate_BuildPlateSurface
+[ RUN      ] GeomPlate_BuildPlateSurface.OCC525_PerformWithoutConstraints
+[       OK ] GeomPlate_BuildPlateSurface.OCC525_PerformWithoutConstraints (0 ms)
+[ RUN      ] GeomPlate_BuildPlateSurface.Perform_ClearsStaleResult
+[       OK ] GeomPlate_BuildPlateSurface.Perform_ClearsStaleResult (0 ms)
+[ RUN      ] GeomPlate_BuildPlateSurface.Progress_A1_FourBezierEdgesWithPlane
+[       OK ] GeomPlate_BuildPlateSurface.Progress_A1_FourBezierEdgesWithPlane (1 ms)
+[ RUN      ] GeomPlate_BuildPlateSurface.Progress_A2_FourBezierEdgesWithoutPlane
+[       OK ] GeomPlate_BuildPlateSurface.Progress_A2_FourBezierEdgesWithoutPlane (2 ms)
+[ RUN      ] GeomPlate_BuildPlateSurface.Progress_A3_LargePointContour
+[       OK ] GeomPlate_BuildPlateSurface.Progress_A3_LargePointContour (475 ms)
+[ RUN      ] GeomPlate_BuildPlateSurface.Progress_A4_OneHundredPointContour
+[       OK ] GeomPlate_BuildPlateSurface.Progress_A4_OneHundredPointContour (0 ms)
+[ RUN      ] GeomPlate_BuildPlateSurface.PointOnlyConstraintsReportMeasuredErrors
+[       OK ] GeomPlate_BuildPlateSurface.PointOnlyConstraintsReportMeasuredErrors (0 ms)
+[ RUN      ] GeomPlate_BuildPlateSurface.PointOnlyErrorsAreMaximaNotTheLastConstraint
+[       OK ] GeomPlate_BuildPlateSurface.PointOnlyErrorsAreMaximaNotTheLastConstraint (0 ms)
+[ RUN      ] GeomPlate_BuildPlateSurface.ErrorsAreZeroBeforePerform
+[       OK ] GeomPlate_BuildPlateSurface.ErrorsAreZeroBeforePerform (0 ms)
+[ RUN      ] GeomPlate_BuildPlateSurface.CancelledRebuildDoesNotReportThePreviousErrors
+[       OK ] GeomPlate_BuildPlateSurface.CancelledRebuildDoesNotReportThePreviousErrors (0 ms)
+[----------] 10 tests from GeomPlate_BuildPlateSurface (481 ms total)
+
+[----------] Global test environment tear-down
+[==========] 10 tests from 1 test suite ran. (481 ms total)
+[  PASSED  ] 10 tests.

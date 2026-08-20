@@ -1,0 +1,85 @@
+########## GTests BEFORE: unpatched sources ##########
+--- every case except GdtDatum_PointWithoutPlane ---
+Running main() from /private/tmp/googletest-20260810-2300-tbptpn/googletest-1.18.0/googletest/src/gtest_main.cc
+Note: Google Test filter = -XCAFDoc_GDT_Test.GdtDatum_PointWithoutPlane
+[==========] Running 10 tests from 1 test suite.
+[----------] Global test environment set-up.
+[----------] 10 tests from XCAFDoc_GDT_Test
+[ RUN      ] XCAFDoc_GDT_Test.GdtDimensions_A1_CurveLength
+[       OK ] XCAFDoc_GDT_Test.GdtDimensions_A1_CurveLength (0 ms)
+[ RUN      ] XCAFDoc_GDT_Test.GdtDimensions_A2_DiameterQualifier
+[       OK ] XCAFDoc_GDT_Test.GdtDimensions_A2_DiameterQualifier (0 ms)
+[ RUN      ] XCAFDoc_GDT_Test.GdtDimensions_A3_Range
+[       OK ] XCAFDoc_GDT_Test.GdtDimensions_A3_Range (0 ms)
+[ RUN      ] XCAFDoc_GDT_Test.GdtDimensions_A4_ClassAndModifiers
+[       OK ] XCAFDoc_GDT_Test.GdtDimensions_A4_ClassAndModifiers (0 ms)
+[ RUN      ] XCAFDoc_GDT_Test.GdtDimensions_A5_LinearDistance
+[       OK ] XCAFDoc_GDT_Test.GdtDimensions_A5_LinearDistance (0 ms)
+[ RUN      ] XCAFDoc_GDT_Test.GdtDimensions_A6_Oriented
+[       OK ] XCAFDoc_GDT_Test.GdtDimensions_A6_Oriented (0 ms)
+[ RUN      ] XCAFDoc_GDT_Test.GdtTolerances_A1_FullDefinition
+[       OK ] XCAFDoc_GDT_Test.GdtTolerances_A1_FullDefinition (0 ms)
+[ RUN      ] XCAFDoc_GDT_Test.GdtTolerances_A2_TwoDatums
+[       OK ] XCAFDoc_GDT_Test.GdtTolerances_A2_TwoDatums (0 ms)
+[ RUN      ] XCAFDoc_GDT_Test.GdtDatum_PointIsReadFromItsOwnArray
+/Users/elb/Projects/occt-upstream/src/DataExchange/TKXCAF/GTests/XCAFDoc_GDT_Test.cxx:397: Failure
+Expected equality of these values:
+  anObject->GetPoint().X()
+    Which is: 6
+  7.0
+    Which is: 7
+
+[  FAILED  ] XCAFDoc_GDT_Test.GdtDatum_PointIsReadFromItsOwnArray (0 ms)
+[ RUN      ] XCAFDoc_GDT_Test.GdtDatum_PlaneWithoutPoint
+[       OK ] XCAFDoc_GDT_Test.GdtDatum_PlaneWithoutPoint (0 ms)
+[----------] 10 tests from XCAFDoc_GDT_Test (1 ms total)
+
+[----------] Global test environment tear-down
+[==========] 10 tests from 1 test suite ran. (1 ms total)
+[  PASSED  ] 9 tests.
+[  FAILED  ] 1 test, listed below:
+[  FAILED  ] XCAFDoc_GDT_Test.GdtDatum_PointIsReadFromItsOwnArray
+
+ 1 FAILED TEST
+--- GdtDatum_PointWithoutPlane on its own ---
+Running main() from /private/tmp/googletest-20260810-2300-tbptpn/googletest-1.18.0/googletest/src/gtest_main.cc
+Note: Google Test filter = XCAFDoc_GDT_Test.GdtDatum_PointWithoutPlane
+[==========] Running 1 test from 1 test suite.
+[----------] Global test environment set-up.
+[----------] 1 test from XCAFDoc_GDT_Test
+[ RUN      ] XCAFDoc_GDT_Test.GdtDatum_PointWithoutPlane
+Scripts/repro/1022-datum-point-from-plane-array/run-gtest.sh: line 77:  8029 Segmentation fault: 11     "$OUT/gtest_pristine" --gtest_filter=XCAFDoc_GDT_Test.GdtDatum_PointWithoutPlane
+exit status 139 (139 is 128 + SIGSEGV)
+
+########## GTests AFTER: patch 0029 applied ##########
+Running main() from /private/tmp/googletest-20260810-2300-tbptpn/googletest-1.18.0/googletest/src/gtest_main.cc
+[==========] Running 11 tests from 1 test suite.
+[----------] Global test environment set-up.
+[----------] 11 tests from XCAFDoc_GDT_Test
+[ RUN      ] XCAFDoc_GDT_Test.GdtDimensions_A1_CurveLength
+[       OK ] XCAFDoc_GDT_Test.GdtDimensions_A1_CurveLength (0 ms)
+[ RUN      ] XCAFDoc_GDT_Test.GdtDimensions_A2_DiameterQualifier
+[       OK ] XCAFDoc_GDT_Test.GdtDimensions_A2_DiameterQualifier (0 ms)
+[ RUN      ] XCAFDoc_GDT_Test.GdtDimensions_A3_Range
+[       OK ] XCAFDoc_GDT_Test.GdtDimensions_A3_Range (0 ms)
+[ RUN      ] XCAFDoc_GDT_Test.GdtDimensions_A4_ClassAndModifiers
+[       OK ] XCAFDoc_GDT_Test.GdtDimensions_A4_ClassAndModifiers (0 ms)
+[ RUN      ] XCAFDoc_GDT_Test.GdtDimensions_A5_LinearDistance
+[       OK ] XCAFDoc_GDT_Test.GdtDimensions_A5_LinearDistance (0 ms)
+[ RUN      ] XCAFDoc_GDT_Test.GdtDimensions_A6_Oriented
+[       OK ] XCAFDoc_GDT_Test.GdtDimensions_A6_Oriented (0 ms)
+[ RUN      ] XCAFDoc_GDT_Test.GdtTolerances_A1_FullDefinition
+[       OK ] XCAFDoc_GDT_Test.GdtTolerances_A1_FullDefinition (0 ms)
+[ RUN      ] XCAFDoc_GDT_Test.GdtTolerances_A2_TwoDatums
+[       OK ] XCAFDoc_GDT_Test.GdtTolerances_A2_TwoDatums (0 ms)
+[ RUN      ] XCAFDoc_GDT_Test.GdtDatum_PointIsReadFromItsOwnArray
+[       OK ] XCAFDoc_GDT_Test.GdtDatum_PointIsReadFromItsOwnArray (0 ms)
+[ RUN      ] XCAFDoc_GDT_Test.GdtDatum_PointWithoutPlane
+[       OK ] XCAFDoc_GDT_Test.GdtDatum_PointWithoutPlane (0 ms)
+[ RUN      ] XCAFDoc_GDT_Test.GdtDatum_PlaneWithoutPoint
+[       OK ] XCAFDoc_GDT_Test.GdtDatum_PlaneWithoutPoint (0 ms)
+[----------] 11 tests from XCAFDoc_GDT_Test (1 ms total)
+
+[----------] Global test environment tear-down
+[==========] 11 tests from 1 test suite ran. (1 ms total)
+[  PASSED  ] 11 tests.

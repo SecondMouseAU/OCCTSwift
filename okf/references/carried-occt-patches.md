@@ -40,6 +40,14 @@ without silently closing it, see
 | `0019-AdvApp2Var-jacobi-max-wrong-workspace-slot-522` | `GeomConvert_ApproxSurface` at `GeomAbs_C0` returns a degree-1 collapse of a non-linear direction while reporting `IsDone()` and a `MaxError()` five orders of magnitude too small — `mma2ce1_` fills both Jacobi-maxima workspace slots from the V offset, leaving `XMAXJU` zero, which zeroes every interior truncation error the approximator computes ([#522](https://github.com/SecondMouseAU/OCCTSwift/issues/522)) | **[OCCT#1418](https://github.com/Open-Cascade-SAS/OCCT/pull/1418)** (our fix PR, open); filed under the PR-only rule, no companion issue | bundled OCCT includes the fix |
 | `0020-BRepFeat_MakeCylindricalHole-select-tool-parts-532` | `BRepFeat_MakeCylindricalHole`'s four part-selecting modes called `PartsOfTool()` after a `BOPAlgo_CUT` instead of a `BOPAlgo_COMMON`, so they selected pieces of the cut result and kept nothing that was actually a tool part — `BRepFeat_NoError` with **no material removed** whenever the drill crossed two bodies, or severed one ([#532](https://github.com/SecondMouseAU/OCCTSwift/issues/532)) | not yet filed; PR-only per the rule above, no companion issue | bundled OCCT includes the fix |
 | `0021-CPnts-adaptive-arc-length-integration-603` | `CPnts_AbscissaPoint::Length` and `CPnts_MyRootFunction::Value` integrate arc length with ONE fixed-order Gauss rule over the whole range, so a curve type with no spans to split is measured wrong: a whole ellipse up to 1.737% long, a parabola over `[-100,100]` 3.087% short ([#603](https://github.com/SecondMouseAU/OCCTSwift/issues/603)) | **[OCCT#1420](https://github.com/Open-Cascade-SAS/OCCT/pull/1420)** (our fix PR, open); filed under the PR-only rule, no companion issue | bundled OCCT includes the fix |
+| `0022-ChFi2d_Builder-AddChamfer-connexion-error-check-705` | `ChFi2d_Builder::AddChamfer` accepted a duplicate edge pair and produced a wrong 2d chamfer ([#705](https://github.com/SecondMouseAU/OCCTSwift/issues/705)) | [OCCT#1431](https://github.com/Open-Cascade-SAS/OCCT/issues/1431) (repro) → **[OCCT#1432](https://github.com/Open-Cascade-SAS/OCCT/pull/1432)** (our fix PR) | bundled OCCT includes the fix |
+| `0023-GeomTools_Curve2dSet-SurfaceSet-null-handle-643` | `GeomTools_Curve2dSet::Add`/`GeomTools_SurfaceSet::Add` bind a null handle and defer the crash to `Write()`, unlike the `GeomTools_CurveSet` sibling which guards ([#643](https://github.com/SecondMouseAU/OCCTSwift/issues/643)) | [OCCT#1434](https://github.com/Open-Cascade-SAS/OCCT/issues/1434) (repro) → **[OCCT#1435](https://github.com/Open-Cascade-SAS/OCCT/pull/1435)** (our fix PR) | bundled OCCT includes the fix |
+| `0024-Extrema_ExtCC-Points-bound-against-mypoints-636` | `Extrema_ExtCC::Points` read past its own point container on parallel curves, an uncatchable SIGSEGV ([#636](https://github.com/SecondMouseAU/OCCTSwift/issues/636)) | **[OCCT#1445](https://github.com/Open-Cascade-SAS/OCCT/pull/1445)** (our fix PR, no companion issue) | bundled OCCT includes the fix |
+| `0025-GeomFill_Sweep-report-achieved-conversion-error-597` | `GeomFill_Sweep::BuildAll` overwrites the measured C1-conversion error with the requested tolerance, so `ErrorOnSurface()` describes the request rather than the result ([#597](https://github.com/SecondMouseAU/OCCTSwift/issues/597)) | drafted, not sent (`Scripts/repro/597-geomfill-sweep-error-overwrite/draft-pr.md`) | bundled OCCT includes the fix |
+| `0026-BRepOffsetAPI_ThruSections-capping-guard-905` | `BRepOffsetAPI_ThruSections::MakeSolid` marks a loft `Closed(true)` even when `PerformPlan()` could not cap an end, so a non-planar closed section silently loses both caps ([#905](https://github.com/SecondMouseAU/OCCTSwift/issues/905)) | **[OCCT#1462](https://github.com/Open-Cascade-SAS/OCCT/pull/1462)** (our fix PR, CI green) | bundled OCCT includes the fix |
+| `0027-ThruSections-CreateSmoothed-section-edge-count-guard-913` | `CreateSmoothed()` overruns its fixed-stride `shapes` array, or silently misaligns it, when a section's edge count differs from section 1's under `checkCompatibility(false)` ([#913](https://github.com/SecondMouseAU/OCCTSwift/issues/913)) | **[OCCT#1466](https://github.com/Open-Cascade-SAS/OCCT/pull/1466)** (our fix PR, CI green) | bundled OCCT includes the fix |
+| `0028-GeomPlate_BuildPlateSurface-uninitialised-G0-G1-G2-errors-1018` | `GeomPlate_BuildPlateSurface::G0Error()`/`G1Error()`/`G2Error()` return uninitialised members after a `Perform()` whose constraints were all point constraints; the deviations are measured on that branch and discarded ([#1018](https://github.com/SecondMouseAU/OCCTSwift/issues/1018)) | **[OCCT#1481](https://github.com/Open-Cascade-SAS/OCCT/pull/1481)** (our fix PR, no companion issue) | bundled OCCT includes the fix |
+| `0029-XCAFDoc_Datum-point-read-from-plane-array-1022` | `XCAFDoc_Datum::GetObject` builds the datum point's X from the annotation plane's array, a wrong answer with both present and an uncatchable SIGSEGV with a point and no plane ([#1022](https://github.com/SecondMouseAU/OCCTSwift/issues/1022)) | **[OCCT#1483](https://github.com/Open-Cascade-SAS/OCCT/pull/1483)** (our fix PR, no companion issue) | bundled OCCT includes the fix |
 
 **Retired in OCCT 8.0.1** (re-pinned 2026-08-03): `0001`-`0009` and `0013`, shipped upstream as
 OCCT#1323, #1334, #1374, #1377, #1380, #1382, #1331, #1329, #1318 and #1392 respectively. Their
@@ -47,6 +55,23 @@ OCCT#1323, #1334, #1374, #1377, #1380, #1382, #1331, #1329, #1318 and #1392 resp
 what we carried, are kept in `Scripts/patches/README.md` under "Retired patches". Nine matched;
 `0001` did not: upstream's merged form also guards a *removed* face, which ours did not, so that
 retirement fixed a latent null dereference of our own.
+
+This table stopped at `0021` for six patches, and `0028` is what caught it. It is one of **five**
+in-repo statements of the same set, and they do not all answer the same question, which is why
+listing them matters more than listing the count:
+
+| Where | What it describes | Moves when |
+|---|---|---|
+| `Scripts/patches/README.md` | every carried patch, with its writeup | a patch is carried or retired |
+| this table | the same set, one row each | the same |
+| `Package.swift`'s manifest comment | what the **pinned asset** holds, plus the difference against the tree | the pin moves, or a patch lands untested |
+| `docs/occt-upgrades.md` | the carried number range | a patch is carried or retired |
+| `docs/CHANGELOG.md`'s released-version header | what the asset that shipped **with that version** held | never, once the version is released |
+
+`Scripts/patches/README.md` is canonical for the first four. The changelog's copy is a historical
+record of a shipped release and is correct as written even when the tree has moved past it; do not
+update it. If this table falls behind again, prefer deleting it for a pointer over letting a stale
+copy read as current.
 
 **Numbers are never reused**, so the carried sequence has gaps. That is deliberate: these numbers
 are cited across `CLAUDE.md`, `docs/`, closed issues and `Scripts/repro/`, and renumbering would

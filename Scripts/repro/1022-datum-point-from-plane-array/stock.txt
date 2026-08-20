@@ -1,0 +1,16 @@
+########## BEFORE: pinned kernel, no override ##########
+=== A. datum with BOTH a plane and a point ===
+    wrote planeLoc=(6,6,6) point=(7,7,7); a correct read gives point=(7,7,7)
+  read  name=A hasPlane=1 hasPoint=1 planeLoc=(6,6,6) point=(6,7,7)
+=== B. control: a plane and no point, which is what a STEP import produces ===
+  read  name=B hasPlane=1 hasPoint=0 planeLoc=(6,6,6)
+
+=== C. datum with a point and NO plane, read in the process that wrote it ===
+  about to call GetObject on a datum with a point and no plane
+  CRASHED (SIGSEGV) in section C, XCAFDoc_Datum::GetObject
+
+=== D. the same datum saved to OCAF and reloaded into a fresh application ===
+  saved to /tmp/occt_1022_point_only_datum.xbf (status 0)
+  reloaded (status 0)
+  about to read the reloaded datum the way OCCTDocumentGetDatumInfo does
+  CRASHED (SIGSEGV) in section D, GetObject after an OCAF round trip

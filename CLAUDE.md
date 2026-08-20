@@ -7,14 +7,16 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 OCCTSwift is a comprehensive Swift wrapper for OpenCASCADE Technology (OCCT) 8.0.1. It exposes B-Rep solid modeling capabilities to Swift for macOS (arm64, v12+) and iOS (arm64, v15+) via a three-layer architecture: Swift public API → Objective-C++ bridge (C functions) → OCCT C++ library. Uses Swift 6 language mode (strict concurrency).
 
 **One OCCT version is in play.** `Scripts/build-occt.sh` builds `V8_0_1` and `Package.swift` pins
-the **`v3.0.0` release asset**, which is that same `V8_0_1` plus the seventeen carried
-patches `0010`-`0012` and `0014`-`0027`. A clean checkout with no local `Libraries/` now gets the
-right kernel, and `ci.yml`'s macOS job is a real signal again.
+the **`v3.0.0` release asset**, which is that same `V8_0_1` plus seventeen patches, `0010`-`0012`
+and `0014`-`0027`. A clean checkout with no local `Libraries/` now gets the right kernel, and
+`ci.yml`'s macOS job is a real signal again. Seventeen is what the **asset** holds;
+`Scripts/patches/` holds nineteen, and the next paragraph is about the difference.
 
 **Check the count against `Scripts/patches/` before trusting it.** The pin holds whatever was in the
 tree when the asset was built, and patches land after. Any patch present in `Scripts/patches/` but
 absent from the pinned asset is exercised by **no CI job at all**, because `build-and-test` resolves
-the asset rather than building from source. That is #585's failure shape, so it is worth ten seconds:
+the asset rather than building from source. (Narrowed below, in the #1018/#1022 paragraph: the one
+PR that adds a patch does get it built by `kernel-integration.yml`. Every PR after it does not.) That is #585's failure shape, so it is worth ten seconds:
 `ls Scripts/patches/*.patch | wc -l` against the number in this paragraph. If they differ, the
 difference is the untested set, and any claim that a fix in it "is in the kernel" is unevidenced
 until a rebuild. `v2.0.0-kernel.1` held eleven against a tree of fourteen, and `kernel.2` fourteen against
@@ -22,6 +24,23 @@ fifteen within minutes of being published, both for exactly this reason (#512). 
 on 2026-08-17**, and inside a single session: the v2.0.0 asset held fifteen while `0026` (#905) and
 `0027` (#913) sat in `Scripts/patches/` untested by anything, and `0027` arrived on `main` partway
 through the very check that found `0026`. `v3.0.0-kernel.1` is the rebuild that closed it.
+
+**As of #1018 and #1022 the counts diverge again, deliberately and with the reason written down.**
+`Scripts/patches/` holds nineteen; the pinned asset holds seventeen. The two are `0028` (#1018) and
+`0029` (#1022), and `ci.yml`'s `build-and-test` never sees either, which is exactly what the
+paragraph above says a divergence means. One narrowing, measured on PR #1032 rather than assumed:
+`kernel-integration.yml` triggers on `Scripts/patches/**`, so the PR that **adds** a patch does get
+`V8_0_1` plus every carried patch built from source and the full suite run against it. That proves
+the patch applies, compiles and regresses nothing. It cannot prove either fix works, since neither
+has a Swift-reachable assertion, and it does not run on any later PR that leaves `Scripts/patches/`
+alone. None of that makes "read `kernel-integration.yml` instead of `ci.yml`" good advice; #585 is
+what discredited that. They are not equally urgent. `0028` is the one carried patch a
+rebuild would give no Swift-side coverage to at all: `OCCTGeomPlateErrors`, the only bridge reader
+of the three accessors it fixes, was deleted by #999 (PR #1015), so the upstream GTests are its only coverage
+anywhere. `0029` is the opposite, an uncatchable SIGSEGV on `Document.datums` for any OCAF document
+whose datum carries a point without an annotation plane, so until a rebuilt asset ships it nothing
+protects a consumer. Do not read this note as permission to skip the check; read it as the answer
+the check should produce today, so a twentieth patch appearing without a note is still a finding.
 
 **The count check is necessary and not sufficient.** At the v2.0.0 release check the count agreed
 (fifteen on disk, "fifteen" in the prose) while the enumeration immediately beside it in
@@ -363,6 +382,98 @@ suite into these targets (each `Tests/OCCT<Domain>Tests/`, declared in `Package.
   test-fixture arithmetic mistakes found en route (a degenerate 2-edge "digon" test that
   accidentally exercised an unrelated shortfall case instead of the reviewer's own carefully-chosen
   no-overrun example, and a zero-edge GTest that was removed rather than kept as unproven coverage).
+- `GeomPlate_BuildPlateSurface::G0Error()` / `G1Error()` / `G2Error()` return uninitialised members
+  after a `Perform()` whose constraints were all point constraints: **#1018**, the kernel side of
+  what made #1015 delete `Surface.plateErrors` rather than repair it. `myG0Error`/`myG1Error`/
+  `myG2Error` have no in-class initialiser and none of the three constructors assigns them;
+  `VerifSurface()` is the only writer and `Perform()` reaches it only on the branch with at least
+  one curve constraint. The point-only branch ends with `VerifPoints(di, an, cu)`, which measures
+  the same three deviations into locals and throws them away. **Proved by construction, not by
+  staring at odd numbers**: placement-new the class over a buffer filled with `0x5A` and the pattern
+  (`1.78388675173e+127` as a double) survives the constructor *and* a point-only `Perform()` in all
+  three members, which is only possible if nothing wrote them. On the stack the same fixture gives
+  three builds that agree with each other inside one process and disagree with the next process's
+  three, and the numbers change again on every run, which is the signature of an uninitialised read
+  rather than a wrong computation. `stock.txt` and `stock-second-run.txt` are one such pair, and
+  they are deliberately not quoted here: re-running the script produces different ones. **Fixed** (`Scripts/patches/0028-*`, override-link validated, not in a
+  rebuilt xcframework), four parts: in-class initialisers for the three members, `Perform()`
+  clearing them alongside the `myGeomPlateSurface.Nullify()` it already does on entry, the
+  point-only branch keeping what `VerifPoints()` measured (`1.74210553841e-12` on a 25-point wavy
+  grid, not `0`), and `VerifPoints()` accumulating a maximum instead of overwriting, which the third
+  part needs to be correct rather than being extra scope, since the accessors document a maximum and
+  the fixture separates the two (max `1.74210553841e-12` against last `1.57145571589e-12`).
+  **The entry reset was not in the first draft**, which argued the gap needed a decision about what
+  `IsDone()` should report after a cancel. It does not: the reset changes nothing on either
+  successful path, because `VerifSurface()` zeroes the three on the curve branch and the point-only
+  branch assigns them, and the PR's own pre-PR review is what caught the overreach. **The curve branch is
+  deliberately left unfixed**, and that is the interesting half: `BRepFill_Filling::Build()`
+  consumes `G0Error()` for `dmax` (a vertex tolerance) and `seuil` (the
+  `GeomPlate_PlateG0Criterion` threshold), so folding point deviations into a mixed build would move
+  real geometry, a separate question from the uninitialised read. The reproducer's control confirms
+  it does not move: `2.08788369733e-05` curve-only and `0.00104645741524` curve-plus-points,
+  identical before and after. **Nothing in this repo is exposed today, by accident rather than by
+  design**: `BRepFill_Filling` forwards all three accessors verbatim and `OCCTFillingG0Error` and
+  siblings read them, but `Build()` returns early on an empty boundary so its plate always has a
+  curve constraint, `myIsDone` follows `myPlate.IsDone()`, and the three bridge functions check
+  `IsDone()` first. Three independent facts in two classes, none of them written down as a contract.
+  The remaining hole is `Perform()`'s `UserBreak()` return, which leaves `myPlate.IsDone()` true with
+  the members never written; `BRepFill_Filling` passes no progress range so it cannot take it, but a
+  direct `GeomPlate_BuildPlateSurface` caller can. The in-class initialisers cover the read before
+  any `Perform()`, and the entry reset covers a cancelled rebuild that would otherwise hand back the
+  previous build's numbers with `IsDone()` still true. Four GTests added to the class's existing
+  `GeomPlate_BuildPlateSurface_Test.cxx`, run unfiltered so the file's six pre-existing cases are
+  exercised on both sides: 6 passed / 4 failed against unpatched sources, 10 passed patched, each new
+  case recomputing its expected value from the built surface rather than hard-coding a
+  platform-specific number. The entry reset was isolated on its own rather than trusted to the
+  all-or-nothing run: patch applied with only that line removed, exactly one case fails, reporting
+  the first build's own `1.7421055384149805e-12`. See
+  [`Scripts/repro/1018-geomplate-uninitialised-errors/`](https://github.com/SecondMouseAU/OCCTSwift/tree/main/Scripts/repro/1018-geomplate-uninitialised-errors)
+  for the reproducer and the reachability chain, and `Scripts/patches/README.md`'s `0028` entry for
+  the full writeup. Filed upstream as [OCCT#1481](https://github.com/Open-Cascade-SAS/OCCT/pull/1481).
+- `XCAFDoc_Datum::GetObject` builds the datum point's X from the **annotation plane's** array
+  instead of the point's own: **#1022**, a wrong answer and an uncatchable SIGSEGV from the same
+  one-character divergence. The `ChildLab_Pnt` block reads `aLoc->Value(aPnt->Lower())`, where
+  `aLoc` is the handle the `ChildLab_PlaneLoc` block above it fills;
+  `XCAFDoc_GeomTolerance::GetObject`'s otherwise identical block reads `aPnt->Value(aPnt->Lower())`,
+  so this is a divergence rather than a shared idiom. **Two faces, deliberately tested separately**:
+  a datum written with plane location `(6,6,6)` and point `(7,7,7)` reads back `(6,7,7)`, the stored
+  point unrecoverable; and a datum with a point and **no** plane dereferences a null handle, since
+  `aLoc` is only ever assigned by the plane block's `FindAttribute`. A guard that stopped only the
+  crash would leave the wrong value in place, which is why the value has its own test.
+  **Reachability was measured, not inherited from the report**, and it is wider than "read-side":
+  since #1004 (PR #1025) hoisted `occtDocumentDatumObjectAt`, **seven** bridge functions route through that one
+  helper and five of them are write paths (`OCCTDocumentSetDatumPosition`,
+  `OCCTDocumentSetDatumModifiers`, `OCCTDocumentSetDatumModifierWithValue`,
+  `OCCTDocumentSetDatumTarget`, `OCCTDocumentSetDatumTargetPlacement`, alongside
+  `OCCTDocumentGetDatumInfo` and `OCCTDocumentGetDatumModifier`); the helper calls `GetObject()`
+  before any caller can look at the result, so a write that never touches the point still takes the
+  crash. A STEP import alone cannot produce the crashing shape: `STEPCAFControl_Reader` sets a datum plane and never a datum point (its only
+  `SetPoint` calls are on an `XCAFDimTolObjects_DimensionObject`, a different class). An OCAF load
+  can, and the reproducer proves it rather than arguing it, by saving the point-only datum to
+  BinXCAF, reloading into a fresh `TDocStd_Application` and crashing on the reload;
+  `HasPlane()`/`HasPoint()` are independent flags and `SetObject` writes the two label blocks
+  independently, so this is what the public OCCT API produces. Nothing in this repo authors it
+  today, because `OCCTDocumentCreateDatum` sets a name, a position and a
+  `DatumModifWithValue_None` pair, and nothing that reaches either branch, which is a property of
+  the current write surface rather than of the read path. `STEPCAFControl_Writer` calls `GetObject()` on
+  every datum in three places, so exporting such a document takes the same crash as reading it.
+  **Fixed** (`Scripts/patches/0029-*`, override-link validated, not in a rebuilt xcframework): read
+  the point's own array, one character plus a one-line comment. Three GTests added to the existing
+  `XCAFDoc_GDT_Test.cxx`: unpatched the run has to be split, because `GdtDatum_PointWithoutPlane`
+  takes the whole process down with a SIGSEGV and gtest cannot catch one, so the value case fails in
+  a ten-case invocation while the plane-only control and all eight pre-existing cases pass, and the
+  crash case exits 139 alone; patched, all eleven pass in one unfiltered run.
+  **A bridge-side guard is possible and is tracked as #1030 rather than shipped here**, because
+  `OCCTBridge_Document.mm` was held by a concurrent agent when this landed, not because the guard is
+  wrong; the crash is uncatchable and `0029` is in no built kernel, so nothing protects a consumer
+  meanwhile: the check must precede `GetObject()`, `XCAFDoc_Datum`
+  exposes no `HasPlane()`, and `ChildLab_PlaneLoc`/`ChildLab_Pnt` are a file-local anonymous enum,
+  tags `14` and `17` at this pin, so any guard hard-codes two private tags upstream can renumber
+  with no compile-time signal here. `XCAFDoc_Datum::GetName()` is not a way around it: it returns
+  the legacy `myName` that `SetObject` never writes. See
+  [`Scripts/repro/1022-datum-point-from-plane-array/`](https://github.com/SecondMouseAU/OCCTSwift/tree/main/Scripts/repro/1022-datum-point-from-plane-array)
+  for the reproducer and the full reachability walk. Filed upstream as
+  [OCCT#1483](https://github.com/Open-Cascade-SAS/OCCT/pull/1483).
 
 ### Carrying OCCT source patches
 
