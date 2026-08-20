@@ -238,12 +238,15 @@ it does not.
 with no `IsNull()` dominating the use, whatever it then does with it:
 
 ```
-1104 unguarded unwrap(s) of a caller-supplied shape, across 865 function(s)
+pre-fix   1157 unguarded unwrap(s) of a caller-supplied shape, across 905 function(s)
+current   1098 unguarded unwrap(s) of a caller-supplied shape, across 861 function(s)
 ```
 
 **That is a population, not a list of defects**, and the difference matters more than the number.
-The top consumers are `TopoDS::Edge` (135) and `TopoDS::Face` (131), which PR #1027 measured across
-345 sites and found safe, then `TopExp::MapShapes`, `TopExp_Explorer` and the rest. Turning 1104
+It barely moves across this PR, which is the point: forty-six defects came out of it and the
+population fell by fifty-nine. The top consumers are `TopoDS::Edge` (135) and `TopoDS::Face` (131),
+which PR #1027 measured across 345 sites and found safe, then `TopExp::MapShapes`,
+`TopExp_Explorer` and the rest. Turning 1104
 into a defect count needs each consumer measured one at a time, which is the shape-side equivalent
 of #556's 57-entry-point sweep for handles and is deliberately not attempted here.
 

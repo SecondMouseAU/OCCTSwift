@@ -29,6 +29,7 @@ reaches only it.
 Usage:
     unwrap_sweep.py [<dir>]      # default Sources/OCCTBridge/src
     unwrap_sweep.py --by-callee  # group the same sites by what they hand the shape to
+    unwrap_sweep.py --self-test  # prove each case catches what it claims
 """
 import os
 import re
@@ -92,7 +93,61 @@ def sweep(src):
     return found
 
 
+# A census with no --self-test is what put the wrong number in #1026 in the first place, so this
+# one has fixtures even though it is thinner than the gate whose machinery it borrows.
+FIXTURES = [
+    ('unguarded, and the callee is reported', """
+int OCCTFixtureU1(OCCTShapeRef shape)
+{
+  if (!shape) return -1;
+  return Something(shape->shape);
+}""", [('OCCTFixtureU1', 'Something')]),
+    ('guarded, not reported', """
+int OCCTFixtureU2(OCCTShapeRef shape)
+{
+  if (!shape || shape->shape.IsNull()) return -1;
+  return Something(shape->shape);
+}""", []),
+    ('guarded through a shared bridge helper, not reported', """
+inline bool occtShapeIsPresent(OCCTShapeRef shape) { return shape && !shape->shape.IsNull(); }
+int OCCTFixtureU3(OCCTShapeRef shape)
+{
+  if (!occtShapeIsPresent(shape)) return -1;
+  return Something(shape->shape);
+}""", []),
+    ('an unwrap that is not a call argument is still an unwrap', """
+OCCTShapeRef OCCTFixtureU4(OCCTShapeRef shape)
+{
+  if (!shape) return nullptr;
+  TopoDS_Shape s = shape->shape;
+  return new OCCTShape(s);
+}""", [('OCCTFixtureU4', '(not a call argument)')]),
+    ('two arguments, only the unguarded one is reported', """
+int OCCTFixtureU5(OCCTShapeRef a, OCCTShapeRef b)
+{
+  if (!a || a->shape.IsNull() || !b) return -1;
+  return Something(a->shape) + Other(b->shape);
+}""", [('OCCTFixtureU5', 'Other')]),
+]
+
+
+def self_test():
+    import tempfile
+    failed = 0
+    for label, src, want in FIXTURES:
+        d = Path(tempfile.mkdtemp())
+        (d / 'fixture.mm').write_text(src)
+        got = [(h[2], h[4]) for h in sweep(d)]
+        ok = sorted(got) == sorted(want)
+        failed += not ok
+        print(f'  {"ok  " if ok else "FAIL"} {label}: {got or "not reported"}')
+    print(f'{len(FIXTURES) - failed}/{len(FIXTURES)} cases correct')
+    return 1 if failed else 0
+
+
 if __name__ == '__main__':
+    if '--self-test' in sys.argv:
+        sys.exit(self_test())
     args = [a for a in sys.argv[1:] if not a.startswith('--')]
     src = args[0] if args else 'Sources/OCCTBridge/src'
     if not os.path.isdir(src):
