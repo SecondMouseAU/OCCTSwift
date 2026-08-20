@@ -487,8 +487,7 @@ void OCCTDocumentSetModified(OCCTDocumentRef doc, int64_t labelId);
 /// Clear all modification marks.
 void OCCTDocumentClearModified(OCCTDocumentRef doc);
 
-/// Check if a label is marked as modified (via TDocStd_Modified on root).
-/// Note: This uses TDocStd_Document::GetModified(), not TDocStd_Modified attribute directly.
+/// Check if a label is marked as modified (via the TDocStd_Modified attribute on the root label).
 bool OCCTDocumentIsLabelModified(OCCTDocumentRef doc, int64_t labelId);
 
 // MARK: - TDataStd Scalar Attributes (v0.55.0)
