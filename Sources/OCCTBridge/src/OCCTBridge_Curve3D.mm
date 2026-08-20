@@ -8187,20 +8187,10 @@ double OCCTCurve3DParametricTransformation(OCCTCurve3DRef _Nonnull curve,
     auto c = *(occ::handle<Geom_Curve>*)curve;
     if (c.IsNull())
       return 1.0;
-    gp_Trsf t;
-    t.SetValues(trsf12[0],
-                trsf12[1],
-                trsf12[2],
-                trsf12[9],
-                trsf12[3],
-                trsf12[4],
-                trsf12[5],
-                trsf12[10],
-                trsf12[6],
-                trsf12[7],
-                trsf12[8],
-                trsf12[11]);
-    return c->ParametricTransformation(t);
+    // #1009: GROUPED layout, nine rotation values then three translations. The reader is shared
+    // with OCCTShapeTransformed and OCCTDocumentAddComponentMatrix; the layout is in its name
+    // because the INTERLEAVED sibling accepts the same array and builds a different transform.
+    return c->ParametricTransformation(occtTrsfFromMatrix12Grouped(trsf12));
   }
   catch (...)
   {

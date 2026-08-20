@@ -4674,22 +4674,24 @@ int64_t OCCTDocumentAddComponentMatrix(OCCTDocumentRef doc,
     TDF_Label shapeLabel    = doc->getLabel(shapeLabelId);
     if (assemblyLabel.IsNull() || shapeLabel.IsNull())
       return -1;
-    // Row-major 3x3 rotation + translation; gp_Trsf::SetValues throws if not a proper rigid
-    // (orthonormal, det +1) transform — reflections must be baked as a mirrored product (#174).
-    gp_Trsf trsf;
-    trsf.SetValues(matrix12[0],
-                   matrix12[1],
-                   matrix12[2],
-                   matrix12[9],
-                   matrix12[3],
-                   matrix12[4],
-                   matrix12[5],
-                   matrix12[10],
-                   matrix12[6],
-                   matrix12[7],
-                   matrix12[8],
-                   matrix12[11]);
-    TDF_Label comp = doc->shapeTool->AddComponent(assemblyLabel, shapeLabel, TopLoc_Location(trsf));
+    // #1009: GROUPED layout, nine rotation values then three translations. The reader is shared
+    // with OCCTShapeTransformed and OCCTCurve3DParametricTransformation; the layout is in its name
+    // because the INTERLEAVED sibling accepts the same array and builds a different transform.
+    //
+    // The comment that stood here said gp_Trsf::SetValues "throws if not a proper rigid
+    // (orthonormal, det +1) transform", so reflections had to be baked as a mirrored product
+    // (#174). Measured against the pinned kernel, it throws for none of them. Its own header names
+    // a null determinant as the single precondition, not orthonormality, and SetValues is
+    // Standard_EXPORT, compiled inside OCCT's Release TUs where No_Exception removes even that: a
+    // reflection (det -1), a singular matrix, an all-zero matrix and a shear are each accepted. A
+    // reflection also works rather than merely being tolerated, reporting ScaleFactor() -1 and
+    // moving a box's centre of mass from x = 6 to x = -6 with its volume unchanged. So a caller
+    // handing this function a mirrored placement gets the mirror, and #174's premise that gp_Trsf
+    // rejects reflections does not hold here. Scripts/repro/1009-matrix12-grouped/ has the run.
+    TDF_Label comp =
+      doc->shapeTool->AddComponent(assemblyLabel,
+                                   shapeLabel,
+                                   TopLoc_Location(occtTrsfFromMatrix12Grouped(matrix12)));
     if (comp.IsNull())
       return -1;
     return doc->registerLabel(comp);

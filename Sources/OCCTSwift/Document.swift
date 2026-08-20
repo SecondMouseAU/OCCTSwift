@@ -936,14 +936,36 @@ extension Document {
             translation.0, translation.1, translation.2)
     }
 
-    /// Add a component occurrence with a FULL rigid placement, from a 12-element row-major matrix.
+    /// Add a component occurrence with a FULL placement, from a 12-element GROUPED matrix.
     ///
-    /// `[r00 r01 r02 r10 r11 r12 r20 r21 r22 tx ty tz]`.
+    /// `[r00 r01 r02 r10 r11 r12 r20 r21 r22 tx ty tz]`: the nine rotation values, then the three
+    /// translations. This is ``Matrix12Grouped``'s layout, not ``TransformMatrix3D``'s.
     ///
-    /// Returns the component label id, or -1 if the.
-    /// matrix isn't a proper rigid transform (a reflection — bake a mirrored product instead).
+    /// A reflection is accepted and applied, which is the opposite of what this doc comment said
+    /// until #1009 measured it: `gp_Trsf::SetValues` names a null determinant as its only
+    /// precondition, not orthonormality, and it is compiled inside OCCT's Release library where
+    /// that precondition is removed outright. See #174 for the original request.
     ///
-    /// #174.
+    /// ```swift
+    /// // Mirror a part in X, then place the mirrored occurrence in an assembly.
+    /// let doc = Document.create()!
+    /// let part = doc.addShape(Shape.box(width: 10, height: 10, depth: 10)!, makeAssembly: false)
+    /// let assembly = doc.newShapeLabel()
+    /// doc.addComponent(assemblyLabelId: assembly, shapeLabelId: part, matrix: [
+    ///     -1, 0, 0,   // r00 r01 r02, negative determinant: a mirror in X
+    ///      0, 1, 0,   // r10 r11 r12
+    ///      0, 0, 1,   // r20 r21 r22
+    ///      0, 0, 0    // tx  ty  tz
+    /// ])
+    /// doc.updateAssemblies()
+    /// ```
+    ///
+    /// - Parameters:
+    ///   - assemblyLabelId: The parent assembly label.
+    ///   - shapeLabelId: The shape to instantiate.
+    ///   - matrix: Twelve doubles in GROUPED order.
+    /// - Returns: The component label id, or -1 if `matrix` does not hold exactly twelve values or
+    ///   the component could not be created.
     @discardableResult
     public func addComponent(assemblyLabelId: Int64, shapeLabelId: Int64, matrix: [Double]) -> Int64
     {

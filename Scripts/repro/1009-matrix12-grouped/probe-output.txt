@@ -1,0 +1,32 @@
+=== Part 1: the three readers against the shared helper ===
+
+  identity                                 identical
+  translate (5, 6, 7)                      identical
+  rotate 30 about Z, translate (5, 6, 7)   identical
+  uniform scale 2, translate (1, 2, 3)     identical
+
+  divergent entries: 0
+
+=== Part 1b: the same array read with the wrong layout ===
+
+  GROUPED array through the GROUPED reader:         translation (5, 6, 7)
+  INTERLEAVED array through the INTERLEAVED reader: translation (5, 6, 7)
+  GROUPED array through the INTERLEAVED reader:     translation (0, 0, 7)  accepted
+
+=== Part 2: what SetValues actually refuses ===
+
+  identity (det +1)                  ACCEPTED  scale=1  IsNegative=0  Form=7
+  reflection in X (det -1)           ACCEPTED  scale=-1  IsNegative=1  Form=7
+  singular (det 0)                   ACCEPTED  scale=-0  IsNegative=0  Form=7
+  all zeros (det 0)                  ACCEPTED  scale=-0  IsNegative=0  Form=7
+  uniform scale 2 (det +8)           ACCEPTED  scale=2  IsNegative=0  Form=7
+  shear (det +1, not orthonormal)    ACCEPTED  scale=1  IsNegative=0  Form=7
+
+  the reflection applied to a box at x in [1, 11]:
+    centre of mass x: 6 -> -6   volume: 1000 -> 1000
+
+=== Part 3: Geom_Curve::ParametricTransformation on a line ===
+
+  GROUPED uniform scale 2, translate (1,2,3): 2
+  the SAME array read INTERLEAVED:            0
+  GROUPED identity, translate (5,6,7):        1

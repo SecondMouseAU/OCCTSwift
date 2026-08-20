@@ -6,7 +6,7 @@
 //  struct definitions and helper declarations that any per-area .mm file in
 //  the bridge needs.
 //
-//  This header is NOT public — it's never imported from Swift. It exists so
+//  This header is NOT public: it's never imported from Swift. It exists so
 //  that splitting OCCTBridge.mm into multiple translation units (issue #99)
 //  doesn't require duplicating struct definitions in every file.
 //
@@ -338,22 +338,22 @@ struct OCCTHistoryStorage
 std::recursive_mutex& occtGlobalMutex();
 std::mutex&           igesMutex();
 // #298: the fillet/chamfer serialization lock (occtFilletMutex) was removed in
-// v1.12.3 — the underlying OCCT non-reentrancy (STATIC_SOLIDINDEX and the blend
+// v1.12.3. The underlying OCCT non-reentrancy (STATIC_SOLIDINDEX and the blend
 // scratch) is now fixed in the pinned kernel via Scripts/patches/0003, so 3D
 // fillet/chamfer builds are reentrant and no longer need serialising.
 // #341: XCAFDoc_ShapeTool::theAutoNaming raced across concurrent OBJ/glTF/PLY
-// bridge calls (confirmed via ThreadSanitizer against V8_0_0_p1) — fixed in the
+// bridge calls (confirmed via ThreadSanitizer against V8_0_0_p1), fixed in the
 // kernel via Scripts/patches/0011 (XCAFDoc_ShapeTool::AutoNamingScope). The
 // interim meshCafMutex() bridge-side lock this comment used to describe was
 // removed once the xcframework carried the patch.
 // #349: CDF_Application::WriterFromFormat/ReaderFromFormat cache one storage/
-// retrieval driver instance per format and reuse it for every Save/Load — the
+// retrieval driver instance per format and reuse it for every Save/Load: the
 // driver's own Write()/Read() isn't reentrant (e.g. BinLDrivers_
 // DocumentStorageDriver's instance-level myRelocTable/myTypesMap scratch state),
 // so two threads saving/loading the same format concurrently corrupt it
 // (SIGSEGV in BinLDrivers_DocumentStorageDriver::Write/WriteSubTree, observed via
 // OCCTDocumentSaveOCAF/OCCTDocumentSaveOCAFInPlace). Interim mitigation until a
-// kernel fix lands — matches the #298/#341 PR1→PR2 pattern.
+// kernel fix lands. Matches the #298/#341 PR1→PR2 pattern.
 std::mutex& ocafStoreMutex();
 // #361/#363: naming-scope state moved to a per-OCCTDocument TNaming_Scope field
 // instead of one shared process-wide instance -- no lock needed, see OCCTDocument's
@@ -378,7 +378,7 @@ void occtEnsureSignals();
 //
 // Returns true if `s` contains a wire that BRepCheck flags as SelfIntersectingWire
 // (and/or a face/shape flagged UnorientableShape). Such a profile extrudes into a
-// prism that crashes OCCT's ShapeFix_Shape with uncatchable heap corruption (#263) —
+// prism that crashes OCCT's ShapeFix_Shape with uncatchable heap corruption (#263),
 // and an OS signal raised inside OCCT cannot be caught here (OCC_CATCH_SIGNALS is inert
 // without OCC_CONVERT_SIGNALS in this build). So the prism/heal wrappers must DETECT and
 // refuse the input (return nil) rather than build/heal the crashing solid. Cheap: a pure
@@ -388,7 +388,7 @@ bool occtHasSelfIntersectingWire(const TopoDS_Shape& s);
 // === #446: ShapeUpgrade_UnifySameDomain consumes the shape it is given ===
 //
 // The algorithm rewrites sub-shapes of its INPUT, and those rewrites reach the TShapes the
-// caller's shape still shares — so a caller who discards the result still ends up with a
+// caller's shape still shares, so a caller who discards the result still ends up with a
 // different (measurably worse: reported self-intersecting, and here provably larger in BREP)
 // shape than the one they handed in. `SetSafeInputMode` does not cover it: even in safe mode,
 // TransformPCurves (ShapeUpgrade_UnifySameDomain.cxx) writes temporary pcurves onto the input's
@@ -427,7 +427,7 @@ TopoDS_Shape occtUnifySameDomain(const TopoDS_Shape& shape,
 // The shells that bound a body, in exploration order: every shell an even number of the
 // others in its group enclose, where a group is one solid's own shells, or all the shells
 // belonging to no solid at all (free shells go through the same parity pass as a solid's own
-// shells, not added unconditionally — #443). A cavity shell is left out, because a hole is not
+// shells, not added unconditionally, #443). A cavity shell is left out, because a hole is not
 // a body and turning one into a positive solid would give a compound whose volume
 // double-counts the part. Returns empty when `shape` holds no shell, which callers take as
 // "nothing to build".
@@ -440,8 +440,8 @@ TopoDS_Shape occtSolidBodiesToShape(const std::vector<TopoDS_Shape>& bodies);
 // === #490: the three int -> GeomAbs_Shape continuity decoders ===
 //
 // Every bridge function that takes a continuity as an integer decodes it here. There used to be
-// one decoder per call site instead — seven independently-named statics (fourteen copies) plus
-// six more switches written inline in the function that needed them — and they disagreed, which
+// one decoder per call site instead: seven independently-named statics (fourteen copies) plus
+// six more switches written inline in the function that needed them, and they disagreed, which
 // is not a hypothetical: #433 shipped a broken fill because one local copy mapped order 1 to
 // GeomAbs_C1 instead of GeomAbs_G1, and until #490 `bsplineRestriction` and
 // `bsplineRestrictionAdvanced` drove the identical OCCT operation off two different numberings.
@@ -466,10 +466,10 @@ TopoDS_Shape occtSolidBodiesToShape(const std::vector<TopoDS_Shape>& bodies);
 inline GeomAbs_Shape occtGeomAbsFromSurfaceContinuity(int32_t order)
 {
   if (order <= 0)
-    return GeomAbs_C0; // order 0 — position
+    return GeomAbs_C0; // order 0: position
   if (order == 1)
-    return GeomAbs_G1; // order 1 — position + tangency
-  return GeomAbs_C1;   // order 2 — position + tangency + curvature
+    return GeomAbs_G1; // order 1: position + tangency
+  return GeomAbs_C1;   // order 2: position + tangency + curvature
 }
 
 // `ParametricContinuity` (0=C0, 1=C1, 2=C2, 3=C3): "make every piece at least Cn". Saturates at
@@ -478,13 +478,13 @@ inline GeomAbs_Shape occtGeomAbsFromSurfaceContinuity(int32_t order)
 // documented for criterion 4.
 //
 // What each consumer does with the strict end differs, and the decoder deliberately does not
-// paper over it — measured against the pinned kernel (Scripts/repro is not needed for this one;
+// paper over it: measured against the pinned kernel (Scripts/repro is not needed for this one;
 // the probe is reproduced in the #490 tests):
 //   - ShapeUpgrade_Split{Curve3d,Curve2d,Surface}Continuity::SetCriterion recognises C0/C1/C2/C3
 //     and CN; anything else falls to its own C1 default.
 //   - The GeomConvert/Geom2dConvert Approx* family accepts C0/C1/C2 only. AdvApprox throws
 //     Standard_ConstructionError for C3 and CN (and for G1/G2), which the bridge's catch(...)
-//     turns into a nullptr — so asking for more than C2 there fails the call outright.
+//     turns into a nullptr, so asking for more than C2 there fails the call outright.
 //   - ShapeCustom_BSplineRestriction likewise yields a null shape above C2.
 //   - GeomAPI_PointsToBSpline/Geom2dAPI_PointsToBSpline/GeomAPI_PointsToBSplineSurface accept
 //     every value without throwing.
@@ -506,7 +506,7 @@ inline GeomAbs_Shape occtGeomAbsFromParametricContinuity(int32_t level)
 }
 
 // A GeomAbs_Shape class named by its own ordinal (0=C0, 1=G1, 2=C1, 3=G2, 4=C2), which is the
-// vocabulary the LocalAnalysis_* junction analysers speak in both directions — it is what they
+// vocabulary the LocalAnalysis_* junction analysers speak in both directions: it is what they
 // are asked to check and what they report back as `ContinuityAnalysis.status`.
 //
 // Saturates at GeomAbs_C2 on purpose: LocalAnalysis_CurveContinuity/SurfaceContinuity implement
@@ -560,7 +560,7 @@ inline int32_t occtAnalysisOrderFromGeomAbs(GeomAbs_Shape shape)
 /// Out-of-range saturates to FORWARD. For BRepGraph and the Topology `intToOrientation` this
 /// preserves their original behavior. For the three Topology orientation setters
 /// (OCCTShapeSetOrientation, OCCTShapeComposed, OCCTShapeOriented) this changes from
-/// raw cast (undefined behavior for invalid inputs) to defined saturation — a deliberate
+/// raw cast (undefined behavior for invalid inputs) to defined saturation, a deliberate
 /// safety improvement.
 inline TopAbs_Orientation occtOrientationFromInt(int32_t o)
 {
@@ -588,7 +588,7 @@ inline TopAbs_Orientation occtOrientationFromInt(int32_t o)
 // it against a tolerance, so its Is*() returns true whatever the geometry does: a sharp
 // 90-degree corner analysed at order C0 reports IsC2() == true, and C2Angle() answers 0.0 (a
 // perfect match) to go with it. The five branches are cumulative only along their own ladder,
-// and no order computes all five — not even the C2 default, which never touches G1 or G2.
+// and no order computes all five: not even the C2 default, which never touches G1 or G2.
 //
 // Callers mask against this so an unmeasured class is reported as "not asked" rather than as a
 // false positive. #495; OCCT's own header says as much ("the constructor computes the quantities
@@ -615,12 +615,12 @@ inline int32_t occtAnalysisMeasuredMask(GeomAbs_Shape order)
 
 // === #430/#432/#434: surface-filling helpers ===
 //
-// Shared by both filling entry points — OCCTShapeFill* (OCCTBridge_Healing.mm) and OCCTFilling*
+// Shared by both filling entry points: OCCTShapeFill* (OCCTBridge_Healing.mm) and OCCTFilling*
 // (OCCTBridge_Modeling.mm). Both now build on BRepOffsetAPI_MakeFilling (#434 converged
 // OCCTFilling* off its own separate BRepFill_Filling onto the same class). Definitions live in
 // OCCTBridge_Healing.mm.
 
-// Construct a BRepOffsetAPI_MakeFilling, binding every argument to the parameter it names — the
+// Construct a BRepOffsetAPI_MakeFilling, binding every argument to the parameter it names: the
 // pre-#431 code passed maxDegree/maxSegments/continuity into Degree/NbPtsOnCur/TolAng, which left
 // MaxDeg/MaxSegments at their defaults and made TolAng the continuity ordinal. Tol2d/Tol3d are a
 // parameter-space/model-space tolerance pair; a tenth reproduces OCCT's own default ratio
@@ -643,20 +643,20 @@ BRepOffsetAPI_MakeFilling occtFillingMakeBuilder(int32_t degree,
 // on the support surface: a bounded one throws a catchable Standard_Failure ("U parameters out
 // of range"), but an unbounded or periodic one accepts the garbage, the constraint cannot be
 // projected, and GeomPlate_BuildPlateSurface::Perform's recovery path then dereferences its own
-// still-null myGeomPlateSurface — an uncatchable SIGSEGV, not an exception. That planar/curved
+// still-null myGeomPlateSurface: an uncatchable SIGSEGV, not an exception. That planar/curved
 // split is why the defect stayed hidden. Routing through Add(edge, face, order) instead uses
 // BRepAdaptor_Curve2d, which trims correctly, and yields results identical to a real support
 // face. Upstream defect; see issue #430 and Scripts/repro/430-fill-untrimmed-pcurve/.
 //
 // Returns false when the edge has no pcurve at all, or when the synthesized face does not
-// resolve one — callers must then either skip the constraint or accept position-only continuity.
+// resolve one: callers must then either skip the constraint or accept position-only continuity.
 bool occtFillingSupportFaceFromPCurve(const TopoDS_Edge& edge, TopoDS_Face& outFace);
 
 // Where a support face came from, which decides what happens when it turns out to be unusable.
 enum class OCCTFillingSupport
 {
   // The caller named this exact face. If it cannot serve as the continuity reference, that is
-  // a failure, not something to paper over — substituting a different surface would answer a
+  // a failure, not something to paper over: substituting a different surface would answer a
   // question the caller did not ask.
   Nominated,
   // The bridge picked or derived this face on the caller's behalf (an ancestor lookup, or none
@@ -668,13 +668,13 @@ enum class OCCTFillingSupport
 // support face is available or derivable.
 //
 // No longer templated: before #434, the two callers held different (but Add-compatible) filler
-// types — BRepOffsetAPI_MakeFilling here, BRepFill_Filling directly in OCCTBridge_Modeling.mm —
+// types: BRepOffsetAPI_MakeFilling here, BRepFill_Filling directly in OCCTBridge_Modeling.mm,
 // with no common base to take a reference to. #434 moved OCCTFilling* onto
 // BRepOffsetAPI_MakeFilling too, so both callers now share the same concrete type.
 //
 // Returns false only when `kind` is Nominated and that face carries no pcurve for the edge; the
 // constraint is then NOT added and the caller should fail the whole fill. Every other path adds
-// a constraint and returns true — including the no-pcurve-anywhere case, which reaches the
+// a constraint and returns true, including the no-pcurve-anywhere case, which reaches the
 // face-less overload and surfaces as OCCT's documented Standard_Failure at Build() time.
 bool occtFillingAddConstraint(BRepOffsetAPI_MakeFilling& filling,
                               const TopoDS_Edge&         edge,
@@ -734,7 +734,7 @@ class GeomPlate_Surface;
 class Geom_BSplineSurface;
 //
 // GeomPlate_MakeApprox is the one consumer of AdvApp2Var_ApproxAFunc2Var that does not go through
-// GeomConvert_ApproxSurface — it drives the approximator directly — so it sat outside every census
+// GeomConvert_ApproxSurface: it drives the approximator directly, so it sat outside every census
 // built by grepping for GeomConvert_ApproxSurface, including the PrecisCode census in
 // OCCTBridge_Surface.mm. Six bridge functions construct it: OCCTShapePlatePoints and
 // OCCTShapePlateCurves (OCCTBridge_Healing.mm), OCCTShapePlatePointsAdvanced, OCCTShapePlateMixed,
@@ -748,17 +748,17 @@ class Geom_BSplineSurface;
 //   AdvApp2Var_ApproxAFunc2Var::ComputePatches derives its cut decision NumDec from myMaxPatches,
 //   and at 1 every branch leaves NumDec = 0; AdvApp2Var_Patch::CutSense then returns 0 whether or
 //   not the criterion is satisfied, so "the fit missed" and "the fit is fine" issue the same
-//   instruction — keep this patch. The criterion is still evaluated and still reported through
+//   instruction: keep this patch. The criterion is still evaluated and still reported through
 //   CriterionError(), it just cannot act. Measured on a 25-point wavy plate at tolerance 1e-2:
 //   Nbmax = 1 returns a 9x9 surface deviating 9.8e-2, i.e. 9.8x the tolerance it was given, with
 //   the criterion violated (critErr 9.8e-2 against a 1e-2 threshold) and ignored; Nbmax = 2 or
 //   more returns 16x16 deviating 4.4e-3, inside tolerance. Sweeping dmax across nine orders of
-//   magnitude at Nbmax = 1 yields bit-identical control nets — a dead argument in the sense of
+//   magnitude at Nbmax = 1 yields bit-identical control nets, a dead argument in the sense of
 //   #497's inert SetFuzzyValue.
 //
 //   dmax sets the criterion threshold, as seuil = max(Tol3d, 10 * dmax) (GeomPlate_MakeApprox.cxx).
 //   So `dmax = tolerance * 10` asks the G0 criterion to accept 100x the tolerance the caller
-//   requested — and it is not merely dead weight once Nbmax allows subdivision: at Nbmax = 20 that
+//   requested, and it is not merely dead weight once Nbmax allows subdivision: at Nbmax = 20 that
 //   value reproduces the bad 9x9 answer exactly, while tolerance * 0.1 gives the good 16x16 one.
 //   tolerance * 0.1 makes 10 * dmax == Tol3d, so seuil is the caller's own tolerance. It is the
 //   value the sixth site already used, and measurement picks it over the other five.
@@ -769,10 +769,10 @@ class Geom_BSplineSurface;
 // the Jacobi precision, myPrec 0 -> 1); CritOrder = 1 measures normals instead of positions.
 //
 // `continuity` is the continuity of the joins BETWEEN patches, a different axis from the
-// constraint order handed to GeomPlate_PointConstraint/GeomPlate_CurveConstraint — which is why
+// constraint order handed to GeomPlate_PointConstraint/GeomPlate_CurveConstraint, which is why
 // OCCTShapePlateCurves' caller-supplied order is NOT forwarded here. It was implicit at all six
 // sites (GeomPlate_MakeApprox.hxx defaults it to GeomAbs_C1); passing it explicitly keeps that
-// value while making it reviewable, and it is not cosmetic — C0/C1/C2 give 17x17, 16x16 and 21x21
+// value while making it reviewable, and it is not cosmetic: C0/C1/C2 give 17x17, 16x16 and 21x21
 // control nets on the fixture above. Only those three are accepted: G1, G2, C3 and CN all throw
 // Standard_Failure ("AdvApp2Var_ApproxAFunc2Var : UContinuity Error"), measured, so callers must
 // clamp into the parametric ladder rather than reach for occtGeomAbsFromSurfaceContinuity, whose
@@ -783,7 +783,7 @@ class Geom_BSplineSurface;
 // #597 investigated whether ApproxError() should also gate acceptance here (GeomPlate_MakeApprox's
 // own doc promises Tol3d only "if possible"). Measured and reverted: ApproxError() is "the
 // distance between the entire target BSpline surface and the entire original [GeomPlate_Surface]",
-// i.e. fidelity to an intermediate object the caller never sees — NOT fidelity to the caller's own
+// i.e. fidelity to an intermediate object the caller never sees, NOT fidelity to the caller's own
 // input points/curves, which is what every one of the six entry points' own contract (and their
 // existing tests) actually checks. On the #571 fixture ApproxError() exceeds `tolerance` by up to
 // 5.8x while the deviation from the caller's own constraint points stays inside it throughout;
@@ -833,14 +833,14 @@ inline int32_t occtPlateApproxDefaultMaxDegree()
 // OCCTShapeDefeature only by calling SetFuzzyValue, and that call does nothing:
 // BRepAlgoAPI_Defeaturing::Build forwards exactly myInputShape, myFacesToRemove, myFillHistory and
 // myRunParallel to the BOPAlgo_RemoveFeatures that does the work, so the fuzzy value inherited from
-// BOPAlgo_Options is stored and never read — as BRepAlgoAPI_Defeaturing.hxx says outright ("the
+// BOPAlgo_Options is stored and never read, as BRepAlgoAPI_Defeaturing.hxx says outright ("the
 // other options of the base class are not supported here and will have no effect"). Measured, not
 // assumed: identical BREP output for fuzzy values from 1e-7 to 100 on a 10mm box, against a
 // BRepAlgoAPI_Cut control that those same magnitudes visibly wreck. See
 // Scripts/repro/497-defeaturing-fuzzy-inert/.
 class BRepAlgoAPI_Defeaturing;
 
-// Resolve caller-supplied face indices — 0-based, into the shape's own TopExp face map — to the
+// Resolve caller-supplied face indices, 0-based, into the shape's own TopExp face map, to the
 // faces themselves. Returns false, adding nothing, when the request is empty or names an index the
 // shape does not have. Failing an out-of-range index is the contract the majority of the callers
 // already had: quietly dropping it (the pre-#497 OCCTShapeRemoveFeatures behaviour) hands back a
@@ -852,23 +852,23 @@ bool occtDefeaturingFacesByIndex(const TopoDS_Shape&   shape,
                                  TopTools_ListOfShape& outFaces);
 
 // The same resolution for faces addressed as shape handles. Returns false when the request is
-// empty, the array itself is null, or any element is null — a null element used to be dereferenced
+// empty, the array itself is null, or any element is null: a null element used to be dereferenced
 // unchecked by OCCTShapeDefeature, which no try/catch could have saved.
 //
 // #578: each element is a face *carrier*, not necessarily a face. AddFaceToRemove takes a
 // TopoDS_Shape and its own documentation calls it "the shape to extract the faces for removal", so
-// a compound, a shell or the whole input solid is a legal way to name faces — measured, and passing
+// a compound, a shell or the whole input solid is a legal way to name faces: measured, and passing
 // the faces a carrier explores to is the same request BREP for BREP. Every element is therefore
 // exploded for TopAbs_FACE and each face checked against the input's own face map. The rule, chosen
 // to match the index-addressed occtDefeaturingFacesByIndex above rather than the kernel's own:
 //
 //   every element must contribute at least one face, and every face it contributes must belong to
-//   `shape` — otherwise the whole request fails and nothing is removed.
+//   `shape`, otherwise the whole request fails and nothing is removed.
 //
 // Membership is TopTools_ShapeMapHasher, i.e. IsSame, so a reversed face still belongs (measured)
 // while a face off an identically-built shape does not. The kernel's own rule is to ignore what
 // does not belong ("those that do not belong will be ignored", BRepAlgoAPI_Defeaturing.hxx), which
-// succeeds while silently leaving the named feature in place — the failure mode #497 removed from
+// succeeds while silently leaving the named feature in place: the failure mode #497 removed from
 // the index-addressed spelling, on the entry point #536 made canonical. This changes only requests
 // that were being partly discarded: nothing whose carriers all belong behaves differently. See
 // Scripts/repro/578-defeature-face-membership/ for the whole matrix.
@@ -1080,7 +1080,7 @@ inline int32_t occtSurfaceGridIndex(int32_t iu, int32_t iv, int32_t vCount)
 /// which is the right spacing for two or more samples and a division by zero for one, and a
 /// single sample is a legitimate request: it means the low end of the range, the degenerate
 /// interval. Every sampling loop in this file needs that guard, and #620 is what happens when one
-/// of them is written without it — OCCTSurfaceDrawMesh divided by `count - 1` bare, so it had to
+/// of them is written without it: OCCTSurfaceDrawMesh divided by `count - 1` bare, so it had to
 /// reject `count == 1` to avoid handing NaN to Geom_Surface::D0, which does not throw on NaN but
 /// returns NaN coordinates. The bound that cost the caller was never OCCT's; it was this
 /// expression's. It is written once here so no future loop can re-derive the version without the
@@ -1088,7 +1088,7 @@ inline int32_t occtSurfaceGridIndex(int32_t iu, int32_t iv, int32_t vCount)
 /// introduced both of them.
 ///
 /// Not every `count > 1 ? ... : ...` in the bridge is this function. OCCTGeomFillCoonsPatchEval's
-/// pair reads `(evalU > 1) ? (double)i / (evalU - 1) : 0.5` — its single-sample answer is the
+/// pair reads `(evalU > 1) ? (double)i / (evalU - 1) : 0.5`, its single-sample answer is the
 /// patch MIDPOINT, not the low end, so it is a different contract that happens to share a shape.
 /// Check the else-branch before folding a site in here.
 inline double occtUniformParameter(double lo, double hi, int32_t index, int32_t count)
@@ -1901,7 +1901,7 @@ inline bool occtValidFilletRadii(const double* radii, int32_t count)
 // Radius validation is the caller's, since the shapes it takes (one scalar, two scalars, an array,
 // a (parameter, radius) point list) have nothing in common but occtValidFilletRadius above.
 //
-// #612: `addEdge` answers false for a request it cannot honour — in practice a malformed radius
+// #612: `addEdge` answers false for a request it cannot honour, in practice a malformed radius
 // law, which is a caller error rather than a property of the geometry. The rest of the batch is
 // then left unadded and the whole call fails, because every caller returns before Build() on false
 // and a fillet carrying a contour with no radius must never reach it (see the SIGSEGV #520
@@ -1933,8 +1933,8 @@ bool occtFilletAddEdges(BRepFilletAPI_MakeFillet& fillet,
 // by writing `SetRadius(law, NbContours(), 1)`.
 //
 // (1) Add(edge) does not always create a contour. An edge tangent-continuous with one already added
-// *extends* that contour instead, so NbContours() — "the contour that exists after the most recent
-// Add" — names the edge's own contour only when every Add happens to create one. Measured on a
+// *extends* that contour instead, so NbContours(), "the contour that exists after the most recent
+// Add", names the edge's own contour only when every Add happens to create one. Measured on a
 // rounded-slot prism (2 lines + 2 semicircular arcs, extruded), adding a top-rim edge, a bottom-rim
 // edge, then a second top-rim edge:
 //
@@ -1943,7 +1943,7 @@ bool occtFilletAddEdges(BRepFilletAPI_MakeFillet& fillet,
 //   add top    -> NbContours()=2  Contour(edge)=1   <<< the third law lands on the bottom rim
 //
 // Contour(E) returns the index of the contour holding E, or 0 for an edge in none, and is populated
-// by Add() rather than by Build() — the same property #505 relies on.
+// by Add() rather than by Build(), the same property #505 relies on.
 //
 // (2) SetRadius's third argument, IinC, is the index of the edge *within* that contour, and it
 // selects a distinct per-edge slot. The bridge hardcoded it to 1, which is what made two edges of
@@ -1962,17 +1962,17 @@ bool occtFilletAddEdges(BRepFilletAPI_MakeFillet& fillet,
 // at IinC 1/2/3/4.
 //
 // So there is no ambiguity to refuse and no law to discard: each edge's law goes to its own slot.
-// A single edge named twice in one call writes the same slot twice, and the later law wins — the
+// A single edge named twice in one call writes the same slot twice, and the later law wins: the
 // ordinary meaning of assigning the same thing twice, not a silent substitution of some *other*
 // edge's request.
 //
 // `indexInContour` is 0 when the edge is not in the named contour. Add() legitimately refuses an
-// edge it cannot fillet — a free-boundary edge of an open shell, 4 of 12 on a box missing a face —
+// edge it cannot fillet, a free-boundary edge of an open shell, 4 of 12 on a box missing a face,
 // and then Contour(E) is 0 and there is no slot to write. That is not an error here: Add(Radius, E)
 // silently declines the same edges, and skipping them makes the law paths agree with it to the
-// digit — surface area 465.09733552923257 both ways over all 12 edges of that shell. Measure such a
+// digit: surface area 465.09733552923257 both ways over all 12 edges of that shell. Measure such a
 // shell by AREA: it is not a solid, so BRepGProp::VolumeProperties fabricates a number for it (the
-// #605/#609 defect class), and that number is not even a property of the shape — it ranges 746.83
+// #605/#609 defect class), and that number is not even a property of the shape: it ranges 746.83
 // to 748.28 depending on which face is dropped, while the area is 465.097 for all six.
 //
 // A batch in which *every* edge is refused leaves zero contours and Build() throws, so an
@@ -1999,7 +1999,7 @@ inline bool occtFilletEdgeSlot(const BRepFilletAPI_MakeFillet& fillet,
 // === #520: the radius law, for the two entry points that take one ===
 //
 // A contour added by the law-taking Add(edge) overload carries no radius of its own, and
-// BRepFilletAPI_MakeFillet::Build() **SIGSEGVs** on a contour that never receives one — an OS
+// BRepFilletAPI_MakeFillet::Build() **SIGSEGVs** on a contour that never receives one: an OS
 // signal, so no catch(...) on this side of the bridge can turn it into nullptr. Every path that
 // calls Add(edge) therefore has to reach a successful SetRadius, or return before Build().
 // Measured in Scripts/repro/520-fillet-edge-index-contracts/ (`no-radius`, `radius-dropped`).
@@ -2029,7 +2029,7 @@ inline bool occtFilletEdgeSlot(const BRepFilletAPI_MakeFillet& fillet,
 // and neither is worth copying to share this.
 //
 // #612: this takes the *edge* rather than a contour index and resolves both the contour and the
-// edge's slot within it (occtFilletEdgeSlot above), so a caller can no longer name the wrong one —
+// edge's slot within it (occtFilletEdgeSlot above), so a caller can no longer name the wrong one,
 // which is exactly what `SetRadius(law, NbContours(), 1)` did here.
 //
 // False means the *profile* is malformed, which is a caller error and rejects the whole call. An
@@ -2704,11 +2704,11 @@ inline bool occtNearestPointOnCurve2dRange(const occ::handle<Geom2d_Curve>& curv
 //                           say why it failed.
 //   BRepFeat_MakeCylindricalHole  is OCCT's local-operation feature drill. Needs a solid, reports a
 //                           real BRepFeat_Status, and each of its five modes bounds the hole its
-//                           own way — none of which is "start at the origin and run for a length"
+//                           own way, none of which is "start at the origin and run for a length"
 //                           except PerformBlind, which then rejects a length that leaves the stock.
 //
 // So this section does not merge the two algorithms. It gives them the one thing they genuinely
-// should share — the preconditions on a drilling request — and collapses the feature family's five
+// should share, the preconditions on a drilling request, and collapses the feature family's five
 // modes and its status query onto one skeleton, since those really were five copies of one body.
 
 // Both families need a real axis. OCCTShapeDrillHole always checked this; the feature family
@@ -2725,7 +2725,7 @@ inline bool occtValidDrillDirection(double dirX, double dirY, double dirZ)
 // pinned xcframework is a Release build, so OCCT's own Raise_if preconditions are compiled out by
 // No_Exception (#487) and nothing below the bridge rejects a degenerate one.
 //
-// Measured on that kernel: a radius of 0 — or any radius below Precision::Confusion, e.g. 1e-14 —
+// Measured on that kernel: a radius of 0, or any radius below Precision::Confusion, e.g. 1e-14,
 // makes every BRepFeat_MakeCylindricalHole mode return BRepFeat_NoError and a shape identical to
 // the input: same volume, same six faces, no material removed. A drill that reports success and
 // removes nothing is the worst of the three possible answers. A negative radius throws, and both
@@ -2739,15 +2739,15 @@ inline bool occtValidDrillRadius(double radius)
 // CylindricalHoleExtent enum, the two bridge entry points and this skeleton all have to agree.
 enum OCCTCylindricalHoleExtent : int32_t
 {
-  OCCTCylindricalHoleThroughAll = 0, // Perform(R)                — an INFINITE cylinder, both
+  OCCTCylindricalHoleThroughAll = 0, // Perform(R): an INFINITE cylinder, both
                                      //   ways along the axis; the origin anchors it, and is not
                                      //   a starting point
-  OCCTCylindricalHoleUntilEnd = 1,   // PerformUntilEnd(R)        — bounded by the stock's own
+  OCCTCylindricalHoleUntilEnd = 1,   // PerformUntilEnd(R): bounded by the stock's own
                                      //   entry and exit faces
-  OCCTCylindricalHoleThruNext = 2,   // PerformThruNext(R)        — stops at the next face
-  OCCTCylindricalHoleBlind    = 3,   // PerformBlind(R, length)   — `p0` is the length, measured
+  OCCTCylindricalHoleThruNext = 2,   // PerformThruNext(R): stops at the next face
+  OCCTCylindricalHoleBlind    = 3,   // PerformBlind(R, length): `p0` is the length, measured
                                      //   from the origin; HoleTooLong if it leaves the stock
-  OCCTCylindricalHoleRange = 4,      // Perform(R, PFrom, PTo)    — `p0`/`p1` are parameters on
+  OCCTCylindricalHoleRange = 4,      // Perform(R, PFrom, PTo): `p0`/`p1` are parameters on
                                      //   the axis
 };
 
@@ -2776,15 +2776,15 @@ inline int32_t occtCylindricalHoleStatusCode(BRepFeat_Status status)
   }
 }
 
-// Init, run the requested mode, read Status(), and — only when `outShape` is given and the status
-// is clean — Build() and wrap the result. The whole body of what used to be four functions, three
+// Init, run the requested mode, read Status(), and, only when `outShape` is given and the status
+// is clean, Build() and wrap the result. The whole body of what used to be four functions, three
 // of which differed by a single Perform* line and the fourth of which was the third with the Build
 // deleted.
 //
 // The status is always returned, which is the point: reporting it was the feature family's one real
 // advantage over the boolean drill, and only the ThroughAll mode had an entry point that surfaced
 // it. BRepFeat_HoleTooLong is written in exactly two places in the kernel
-// (BRepFeat_MakeCylindricalHole.cxx:526 and :667), both inside PerformBlind — so the Swift enum
+// (BRepFeat_MakeCylindricalHole.cxx:526 and :667), both inside PerformBlind, so the Swift enum
 // carried a case that no public spelling could produce.
 //
 // A malformed request (no axis direction, a radius OCCT cannot build) is InvalidPlacement rather
@@ -2857,28 +2857,49 @@ inline int32_t occtBRepFeatCylindricalHole(OCCTShapeRef  shape,
   }
 }
 
-// === #994: one conversion between a 12-double INTERLEAVED matrix and a gp_Trsf ===
+// === #994 and #1009: one reader per 12-double matrix layout, and never one for both ===
 //
 // OCCTBridge_Topology.mm had trsfFromMatrix12 and matrix12FromTrsf, a static pair serving three
 // call sites; OCCTBridge_BRepGraph.mm had locationFromMatrix, doing the identical SetValues and
-// wrapping the answer in a TopLoc_Location, serving four. Two files, so the helpers live here
-// rather than static in either (#943, #957): a static copy in another translation unit is one
-// that can never converge on this one.
+// wrapping the answer in a TopLoc_Location, serving four (#994). The GROUPED reader was a fourth
+// copy of the same statement, byte-identical in OCCTBridge_Curve3D.mm, OCCTBridge_Document.mm and
+// OCCTBridge_Modeling.mm (#1009). Two files and three files respectively, so both live here rather
+// than static in any of them (#943, #957): a static copy in another translation unit is one that
+// can never converge on this one.
 //
-// THE LAYOUT IS IN THE NAME ON PURPOSE. This bridge carries two 12-double conventions and they
-// are not interchangeable, which is what #835 fixed on the Swift side by giving each its own
-// type. INTERLEAVED is the 3x4 row-major order gp_Trsf::SetValues itself takes,
+// THE LAYOUT IS IN THE NAME ON PURPOSE, and the two readers must never be merged into one. This
+// bridge carries two 12-double conventions and they are not interchangeable, which is what #835
+// fixed on the Swift side by giving each its own type. INTERLEAVED is the 3x4 row-major order
+// gp_Trsf::SetValues itself takes,
 //
 //     m[0..3]  = row 1: r00 r01 r02 tx
 //     m[4..7]  = row 2: r10 r11 r12 ty
 //     m[8..11] = row 3: r20 r21 r22 tz
 //
 // which is what Swift's TransformMatrix3D holds and what Shape.located/locationMatrix/setLocation
-// and every BRepGraph placement pass. GROUPED, Swift's Matrix12Grouped, is nine rotation values
-// followed by three translations, and its three bridge sites (OCCTShapeTransformed,
-// OCCTCurve3DParametricTransformation, OCCTDocumentAddComponentMatrix) permute the arguments on
-// the way into the same SetValues. Passing a GROUPED array to these helpers silently builds a
-// different transform, so those three sites deliberately do NOT call them.
+// and every BRepGraph placement pass. GROUPED, Swift's Matrix12Grouped, is the nine rotation values
+// followed by the three translations,
+//
+//     m[0..8]  = r00 r01 r02 r10 r11 r12 r20 r21 r22
+//     m[9..11] = tx ty tz
+//
+// which OCCTShapeTransformed, OCCTCurve3DParametricTransformation and
+// OCCTDocumentAddComponentMatrix take.
+//
+// Reading one layout with the other reader is a silent wrong answer, not a refusal. Both arrays
+// below mean "translate by (5, 6, 7)":
+//
+//     INTERLEAVED array through the INTERLEAVED reader: translation (5, 6, 7)
+//     GROUPED array through the GROUPED reader:         translation (5, 6, 7)
+//     GROUPED array through the INTERLEAVED reader:     translation (0, 0, 7)  accepted
+//
+// gp_Trsf::SetValues refuses nothing at all here, which is stronger than "its precondition is
+// compiled out": its own header names ONE precondition, a null determinant, not orthonormality,
+// and SetValues is Standard_EXPORT, compiled inside OCCT's Release TUs where No_Exception removes
+// even that. Measured against the pinned kernel, a reflection (det -1), a singular matrix (det 0),
+// an all-zero matrix and a shear are each ACCEPTED, and the reflection then reflects correctly
+// (a box's centre of mass moves x = 6 to x = -6, volume unchanged).
+// Scripts/repro/1009-matrix12-grouped/ carries both measurements.
 //
 // Nothing here guards a null `m`: every caller's bridge declaration is `const double* _Nonnull`
 // or, in OCCTBRepGraphLinkProductToTopology's one `_Nullable` case, tests the pointer before
@@ -2916,6 +2937,16 @@ inline void occtMatrix12InterleavedFromTrsf(const gp_Trsf& t, double* m)
 inline TopLoc_Location occtLocationFromMatrix12Interleaved(const double* m)
 {
   return TopLoc_Location(occtTrsfFromMatrix12Interleaved(m));
+}
+
+/// The transform described by the twelve GROUPED doubles at `m`: nine rotation values, then three
+/// translations. NOT interchangeable with occtTrsfFromMatrix12Interleaved above, which reads the
+/// same twelve doubles as three rows of `r r r t`; see the block comment there.
+inline gp_Trsf occtTrsfFromMatrix12Grouped(const double* m)
+{
+  gp_Trsf t;
+  t.SetValues(m[0], m[1], m[2], m[9], m[3], m[4], m[5], m[10], m[6], m[7], m[8], m[11]);
+  return t;
 }
 
 // === #995: one discriminated gp_Trsf builder for the 3D transform families ===

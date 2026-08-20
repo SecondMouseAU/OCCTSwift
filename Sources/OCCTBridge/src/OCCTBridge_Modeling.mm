@@ -12392,20 +12392,12 @@ OCCTShapeRef OCCTShapeTransformed(OCCTShapeRef shape, const double* matrix12)
   try
   {
     OCC_CATCH_SIGNALS
-    gp_Trsf trsf;
-    trsf.SetValues(matrix12[0],
-                   matrix12[1],
-                   matrix12[2],
-                   matrix12[9],
-                   matrix12[3],
-                   matrix12[4],
-                   matrix12[5],
-                   matrix12[10],
-                   matrix12[6],
-                   matrix12[7],
-                   matrix12[8],
-                   matrix12[11]);
-    BRepBuilderAPI_Transform xform(shape->shape, trsf, Standard_True);
+    // #1009: GROUPED layout, nine rotation values then three translations. OCCTShapeGTransformed
+    // below reads the same twelve doubles INTERLEAVED, which is why the reader carries its layout
+    // in its name; see OCCTBridge_Internal.h.
+    BRepBuilderAPI_Transform xform(shape->shape,
+                                   occtTrsfFromMatrix12Grouped(matrix12),
+                                   Standard_True);
     if (xform.IsDone())
     {
       return new OCCTShape{xform.Shape()};
