@@ -2,7 +2,7 @@
 //  OCCTBridge_Curve3D.mm
 //  OCCTSwift
 //
-//  Extracted from OCCTBridge.mm — issue #99.
+//  Extracted from OCCTBridge.mm, issue #99.
 //
 //  3D parametric curve cluster (v0.19):
 //
@@ -19,7 +19,7 @@
 //  Defines `struct OCCTCurve3D` locally; the matching definition in
 //  OCCTBridge.mm has identical layout (ODR-safe across TUs).
 //
-//  Public C surface unchanged. No symbol changes — pure file move.
+//  Public C surface unchanged. No symbol changes: a pure file move.
 //
 
 #import "../include/OCCTBridge.h"
@@ -69,8 +69,8 @@
 #include <GeomEval_AHTBezierCurve.hxx>
 #include <GeomAdaptor_TransformedCurve.hxx>
 // Approx_BSplineApproxInterp was removed in OCCT 8.0.0p1 (it backed the old Gordon
-// prototype). The wrapper below is reimplemented on GeomAPI_PointsToBSpline — the
-// documented replacement — keeping the same C ABI; see that section's comment for the
+// prototype). The wrapper below is reimplemented on GeomAPI_PointsToBSpline, the
+// documented replacement, keeping the same C ABI; see that section's comment for the
 // resulting semantic changes (nbControlPoints/interpolation kinks become advisory).
 #include <GeomAPI_PointsToBSpline.hxx>
 #include <GeomAPI_ProjectPointOnCurve.hxx>
@@ -1034,15 +1034,15 @@ OCCTCurve3DRef OCCTCurve3DJoinToBSpline(const OCCTCurve3DRef* curves,
 // OCCTCurve3DApproximate (Curve3D.approximated) and OCCTGeomConvertApproxCurve
 // (Curve3D.approxWithDetails) are two views of the same approximation: the first returns the
 // fitted BSpline, the second returns it alongside the diagnostics OCCT already computed for it.
-// They were written independently and drifted on which completion accessor decides success —
-// IsDone() here, HasResult() there — so they run through this one helper instead.
+// They were written independently and drifted on which completion accessor decides success
+// (IsDone() here, HasResult() there), so they run through this one helper instead.
 //
 // The shared gate is HasResult(). The header documents the two as different questions: IsDone() is
 // "the approximation has been done within required tolerance", HasResult() is "did come out with a
 // result that is not NECESSARILY within the required tolerance". In this kernel they cannot
 // actually disagree: GeomConvert_ApproxCurve copies both flags off AdvApprox_ApproxAFunction, whose
 // only HasResult-without-IsDone path is the ErrorCode = -1 assignment at
-// AdvApprox_ApproxAFunction.cxx:550 — commented out upstream ("// for now ErrorCode=-1;"). With
+// AdvApprox_ApproxAFunction.cxx:550, commented out upstream ("// for now ErrorCode=-1;"). With
 // that line dead, ErrorCode is only ever 0 (both flags set) or 1 (neither), which is why gating on
 // IsDone() never actually rejected an over-tolerance fit: a circle fitted with one segment at
 // degree 3 against a 1e-9 tolerance reports maxError 5.1 and still reports IsDone.
@@ -1050,7 +1050,7 @@ OCCTCurve3DRef OCCTCurve3DJoinToBSpline(const OCCTCurve3DRef* curves,
 // HasResult() is the right one to standardise on regardless. It is what OCCT's own curve conversion
 // entry points use (GeomConvert.cxx:345/441, GeomToIGES_GeomCurve.cxx:632,
 // GeomFill_Profiler.cxx:136), it is what both surface entry points already used, and it is the only
-// gate under which approxWithDetails' isDone/maxError diagnostics mean anything — reporting
+// gate under which approxWithDetails' isDone/maxError diagnostics mean anything: reporting
 // isDone: false is the point of that API, so it cannot also be the reason to return nothing.
 //
 // Continuity decodes through the #490 shared occtGeomAbsFromParametricContinuity rather than a
@@ -2118,14 +2118,13 @@ OCCTShapeRef OCCTApproxCurveOnSurface(OCCTShapeRef edge,
                                       int32_t      maxSegments,
                                       int32_t      maxDegree)
 {
-  if (!edge || !face)
+  // #1026: occtShapeIsType (OCCTBridge_Internal.h) folds the pointer test into the null-shape test
+  // TopoDS_Shape::ShapeType() needs; without the second this refused a wrong-typed shape and
+  // crashed on a null one.
+  if (!occtShapeIsType(edge, TopAbs_EDGE) || !occtShapeIsType(face, TopAbs_FACE))
     return nullptr;
   try
   {
-    if (edge->shape.ShapeType() != TopAbs_EDGE)
-      return nullptr;
-    if (face->shape.ShapeType() != TopAbs_FACE)
-      return nullptr;
     TopoDS_Edge e = TopoDS::Edge(edge->shape);
     TopoDS_Face f = TopoDS::Face(face->shape);
 
@@ -2328,7 +2327,7 @@ OCCTShapeRef _Nullable OCCTApproxCurvilinearParameter(OCCTShapeRef edgeShape,
 // pair in OCCTBridge_Surface.mm.
 //
 // Only the requested order's own branch is computed, so every output is gated on
-// occtAnalysisMeasuredMask as well as on the predicate itself — an unmeasured predicate answers
+// occtAnalysisMeasuredMask as well as on the predicate itself: an unmeasured predicate answers
 // true from a zero-initialised member, and its angle/ratio answers 0.0 to match. #495.
 
 bool OCCTLocalAnalysisCurveContinuity(OCCTCurve3DRef _Nonnull curve1,
@@ -2360,7 +2359,7 @@ bool OCCTLocalAnalysisCurveContinuity(OCCTCurve3DRef _Nonnull curve1,
     if (!cc.IsDone())
       return false;
 
-    // ContinuityStatus() returns the order the analyser was constructed with, verbatim — it
+    // ContinuityStatus() returns the order the analyser was constructed with, verbatim: it
     // is the request echoed back, not a measurement. Reported as the *effective* order so a
     // caller can see where a saturated request landed.
     *outEffectiveOrder       = occtAnalysisOrderFromGeomAbs(cc.ContinuityStatus());
@@ -2426,7 +2425,7 @@ int32_t OCCTLocalAnalysisCurveContinuityFlags(OCCTCurve3DRef _Nonnull curve1,
 // --- GeomConvert_ApproxCurve ---
 
 // Both curve approximation entry points share occtApproxCurve, declared next to
-// OCCTCurve3DApproximate above — see the #491 note there for why the gate is HasResult().
+// OCCTCurve3DApproximate above; see the #491 note there for why the gate is HasResult().
 OCCTApproxCurveResult OCCTGeomConvertApproxCurve(OCCTCurve3DRef _Nonnull curve,
                                                  double  tolerance,
                                                  int32_t continuity,
@@ -4802,7 +4801,7 @@ OCCTCurve3DRef OCCTConcatenateCurves3D(OCCTCurve3DRef* curves, int32_t count, do
     return nullptr;
   try
   {
-    // First curve must be bounded — try to cast
+    // First curve must be bounded, so try to cast
     if (!curves[0] || curves[0]->curve.IsNull())
       return nullptr;
     Handle(Geom_BoundedCurve) first = Handle(Geom_BoundedCurve)::DownCast(curves[0]->curve);
@@ -7716,7 +7715,7 @@ int32_t OCCTCurve3DSplitAtContinuity(OCCTCurve3DRef  curve,
   }
 }
 
-// TColGeom/TColGeom2d deprecated — use NCollection_HArray1 directly
+// TColGeom/TColGeom2d deprecated: use NCollection_HArray1 directly
 
 OCCTCurve3DRef OCCTCurve3DConcatenateG1(const OCCTCurve3DRef* curves, int32_t count, double tol)
 {
@@ -9228,7 +9227,7 @@ double OCCTExtremaPCMinDistance(OCCTCurve3DRef curve, double px, double py, doub
 // fit is now produced by GeomAPI_PointsToBSpline (least-squares B-spline approximation),
 // the migration target named in the p1 release notes. Semantic differences vs the old
 // solver, kept so callers compile & run unchanged:
-//   * nbControlPoints is ADVISORY — PointsToBSpline picks the pole count needed to meet
+//   * nbControlPoints is ADVISORY: PointsToBSpline picks the pole count needed to meet
 //     the tolerance within [DegMin, DegMax]; it is no longer an exact constraint.
 //   * InterpolatePoint()/kink markers are no-ops (PointsToBSpline has no per-point exact
 //     interpolation or C0-break control). The approximation still passes near the points.
@@ -9289,7 +9288,7 @@ OCCTBSplineApproxInterpRef OCCTBSplineApproxInterpCreate(const double* points,
   if (!points || count < 2)
     return nullptr;
   (void)nbControlPts;
-  (void)continuousIfClosed; // advisory only — see section comment
+  (void)continuousIfClosed; // advisory only, see section comment
   try
   {
     auto ref = new OCCTBSplineApproxInterp(count);
@@ -9319,7 +9318,7 @@ void OCCTBSplineApproxInterpInterpolatePoint(OCCTBSplineApproxInterpRef ref,
 {
   (void)ref;
   (void)pointIndex;
-  (void)withKink; // no-op — PointsToBSpline has no exact-point control
+  (void)withKink; // no-op: PointsToBSpline has no exact-point control
 }
 
 void OCCTBSplineApproxInterpPerform(OCCTBSplineApproxInterpRef ref)
@@ -9523,7 +9522,7 @@ OCCTCurve3DRef OCCTGeomEvalAHTBezierCurveCreateRational(const double* poles,
 // BRepAdaptor_CompCurve (multi-edge wire) and BRepAdaptor_Curve (single edge) both derive from
 // Adaptor3d_Curve, so the entire arc-length API (length, native-parameter access, arc-length
 // lookup, uniform sampling) can be written once here and reused by both OCCTCompCurve* and
-// OCCTEdgeCurve* below — mirroring the pre-existing sampleAdaptorUniform() precedent, which this
+// OCCTEdgeCurve* below, mirroring the pre-existing sampleAdaptorUniform() precedent, which this
 // unifies the other 5 operations to match. Callers keep their own try/catch + null-ref check
 // (matching sampleAdaptorUniform's own call sites) so a thrown Standard_Failure/StdFail_NotDone
 // can never cross the extern "C" boundary.

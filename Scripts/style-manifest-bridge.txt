@@ -11,6 +11,5 @@ Sources/OCCTBridge/include/OCCTBridge_Spatial.h
 Sources/OCCTBridge/include/OCCTBridge_Surface.h
 Sources/OCCTBridge/include/OCCTBridge_Visualization.h
 Sources/OCCTBridge/include/OCCTBridge.h
-Sources/OCCTBridge/src/OCCTBridge_AIS.mm
 Sources/OCCTBridge/src/OCCTBridge_Visualization.mm
 Sources/OCCTBridge/src/OCCTBridge.mm

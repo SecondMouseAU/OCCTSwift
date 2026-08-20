@@ -207,6 +207,12 @@ public var isEmptyShape: Bool
 ```
 
 - **OCCT:** `TopoDS_Shape::IsNull`.
+- **Note:** this is the test for a shape produced by `Shape.nullified`, and the only query that
+  separates "this shape is null" from a real negative: every type and flag query answers `false`,
+  `.unknown` or `nil` for a null shape, the same way it answers for a real shape of another type
+  (#1026). The name reads as "has no sub-shapes" and does not mean that: `Shape.emptied`
+  (`TopoDS_Shape::EmptyCopied`) drops the sub-shapes while keeping the type, and `isEmptyShape` is
+  `false` for its result.
 
 ---
 

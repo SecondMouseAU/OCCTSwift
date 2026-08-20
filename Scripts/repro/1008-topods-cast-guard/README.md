@@ -75,10 +75,18 @@ unfixed bridge dies with `exited with unexpected signal code 11` before any of i
 reports.
 
 The same null shape crashes a much wider family that reads `ShapeType()` directly, with no cast
-involved: fifteen bridge functions behind `Shape.shapeType`, `Shape.isSolid`, `Shape.typeName` and
-six more. That is filed separately as
-[#1026](https://github.com/SecondMouseAU/OCCTSwift/issues/1026), with the census, because the fix
-spans four files. `shapetype_census.py` here is the script that produced it.
+involved, behind `Shape.shapeType`, `Shape.isSolid`, `Shape.typeName` and six more. That is filed
+separately as [#1026](https://github.com/SecondMouseAU/OCCTSwift/issues/1026), and
+`shapetype_census.py` here is the script that produced its count.
+
+**That count was wrong, and the script is the reason.** It was filed as fifteen bridge functions
+across four files. Its guard test was `'IsNull()' not in body`, which accepts an `IsNull()` on any
+subject at all, and it had no `--self-test` to catch that; it was additionally blind to a function
+declared `extern "C"` on its own line and to a shape read through a local copy or a reference
+binding. Corrected and given a fixture battery under #1026, the same criterion reports **29
+functions across seven files**, and the whole class #1026 closes is 42. The script's own docstring
+carries the correction, the three blindnesses and the removal matrix; `census_matrix.py` beside it
+reproduces the matrix.
 
 ## The sibling sweep
 

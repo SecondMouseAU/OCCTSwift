@@ -1501,6 +1501,42 @@ inline double occtAdaptorLengthBetween(const TheAdaptor& adaptor, double u1, dou
   return occtAdaptorArcLength(adaptor, lo, hi);
 }
 
+// === #1026: a caller-supplied shape may carry a null TopoDS_Shape ===
+//
+// TopoDS_Shape::ShapeType() is a bare `myTShape->ShapeType()` (TopoDS_Shape.hxx:140) with no null
+// test, and TopoDS_TShape::ShapeType() is a plain member read of the packed state word
+// (`myState & Bits_ShapeType_Mask`, TopoDS_TShape.hxx:144), not a virtual call. So reading the type
+// off a null shape loads from the offset of myState inside the zero page: a SIGSEGV at address
+// 0x38, which the enclosing catch (...) cannot absorb, exactly as an OS signal never can (#345).
+// Measured in Scripts/repro/1026-null-shape-type-guard/, which prints the faulting address.
+//
+// The input is reachable from public Swift alone: Shape.nullified copies a shape, calls
+// TopoDS_Shape::Nullify() on the copy and wraps the result, so `box.nullified!.shapeType` was a
+// crash from one public property to another. #1008 fixed the two builder entry points that reach
+// the same read through TopoDS::Edge / TopoDS::Face; these two predicates are for the fifteen that
+// read ShapeType() directly, with no cast involved at all.
+//
+// They live here rather than as a file-static because their reach is three .mm files
+// (OCCTBridge_Geom2d.mm, OCCTBridge_IO.mm, OCCTBridge_Topology.mm), and a static helper in one .mm
+// cannot be shared with another. The predicate they replace is this bridge's own existing
+// spelling, `if (!x || x->shape.IsNull() || x->shape.ShapeType() != TopAbs_T)`, already written out
+// at eight sites in OCCTBridge_Surface.mm and OCCTBridge_Healing.mm.
+
+/// Whether `shape` is a usable wrapper: a non-null pointer carrying a non-null TopoDS_Shape.
+/// Checking the pointer alone says nothing about the shape it carries, which is the whole of
+/// #1026.
+inline bool occtShapeIsPresent(OCCTShapeRef shape)
+{
+  return shape && !shape->shape.IsNull();
+}
+
+/// Whether `shape` is present (above) and of exactly `type`. A null shape has no type at all, so
+/// it answers false for every `type`, including TopAbs_SHAPE.
+inline bool occtShapeIsType(OCCTShapeRef shape, TopAbs_ShapeEnum type)
+{
+  return occtShapeIsPresent(shape) && shape->shape.ShapeType() == type;
+}
+
 // === #502: one sub-shape enumeration ===
 //
 // "Give me this shape's sub-shapes of type T" was implemented twice, on two different OCCT

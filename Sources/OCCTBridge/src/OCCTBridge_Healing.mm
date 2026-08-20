@@ -1725,7 +1725,7 @@ OCCTShapeRef OCCTShapeSewSingle(OCCTShapeRef shape, double tolerance)
 
 OCCTShapeRef OCCTShapeUpgrade(OCCTShapeRef shape, double tolerance)
 {
-  if (!shape)
+  if (!occtShapeIsPresent(shape))
     return nullptr;
 
   try
@@ -1735,6 +1735,9 @@ OCCTShapeRef OCCTShapeUpgrade(OCCTShapeRef shape, double tolerance)
     sewing.Add(shape->shape);
     sewing.Perform();
     TopoDS_Shape sewedShape = sewing.SewedShape();
+    // #1026: this IsNull() test is a fallback, not a guard. When sewing produced nothing it
+    // reinstates the caller's own shape, so a null input arrives back here still null and the
+    // ShapeType() read below dereferences it. The opener now rejects that input instead.
     if (sewedShape.IsNull())
       sewedShape = shape->shape;
 
@@ -2919,9 +2922,11 @@ OCCTShapeRef OCCTShapeFixSplitCommonVertex(OCCTShapeRef shape)
 // so a multi-shell input has to be driven one shell at a time; the results are reassembled with
 // the shared helper, so a single-shell input still returns a bare shell and multi-shell input
 // returns a compound.
+// #1026: the ShapeType() read below is an unguarded myTShape dereference; the pointer test alone
+// said nothing about the shape, and Shape.nullified reaches this through Shape.fixedFaceConnect.
 OCCTShapeRef OCCTShapeFixFaceConnect(OCCTShapeRef shape, double tolerance)
 {
-  if (!shape)
+  if (!occtShapeIsPresent(shape))
     return nullptr;
   try
   {
@@ -7342,9 +7347,12 @@ bool OCCTShapeIsValid(OCCTShapeRef shape)
   }
 }
 
+// #1026, second class: this function touches no hazardous TopoDS_Shape member itself, so the gate's
+// third walk cannot see it; ShapeFix_Shape's constructor dereferences the shape inside the kernel.
+// Measured a SIGSEGV on Shape.nullified through Shape.healed().
 OCCTShapeRef OCCTShapeHeal(OCCTShapeRef shape)
 {
-  if (!shape)
+  if (!occtShapeIsPresent(shape))
     return nullptr;
   try
   {
