@@ -22,6 +22,79 @@ bounding-box accessors becoming Optional so a void shape stops fabricating `(0,0
 ## Unreleased
 
 
+### `.perspective(focus:)` refuses a shape at or beyond the eye, and the docs name the real anchor (#1036)
+
+`Drawing.project(_:direction:type:)` used to return a real, mirrored `Drawing` for a shape sitting
+past the perspective eye point, and the documentation described an anchor and a threshold that were
+both wrong.
+
+`OCCTDrawingCreate` builds its projection frame as `gp_Ax2(gp_Pnt(0, 0, 0), viewDir)`
+unconditionally, so the eye is at `focus * direction` measured from the **world origin**, the picture
+plane passes through the origin, and `HLRAlgo_Projector::Project` divides by `R = 1 - Z/focus` with
+`Z` in that frame. Any point with `Z >= focus` therefore has `R <= 0` and was drawn mirrored through
+the origin instead of not at all. Measured on a 10-unit cube spanning x `[20, 30]`, z `[1000, 1010]`
+viewed down +Z: focus 50 returned seven edges spanning x `[-1.579, -1.042]` where the correct answer
+is `[40, 60.606]`. Two further regimes behaved the same way: an eye plane cutting the shape returned
+one half mirrored against the other (x `[-24.444, 20]`), and an eye landing exactly on a face
+returned coordinates of order 1e17. All three reported success with a plausible edge count.
+
+`.perspective` now returns `nil` whenever the shape reaches the eye plane, matching the refusal the
+non-positive-focus guard beside it already made for the same stated reason. Correct regimes are
+unchanged, including the extreme ones: a focal distance just clear of the shape still projects, and
+so does a shape far behind the picture plane.
+
+```swift
+let far = Shape.box(origin: SIMD3(-5, -5, 1000), width: 10, height: 10, depth: 10)!
+
+// Was a mirrored, 19x under-scaled Drawing. Now nil.
+Drawing.project(far, direction: SIMD3(0, 0, 1), type: .perspective(focus: 50))
+
+// The eye has to clear the shape's reach from the ORIGIN, not from the shape.
+Drawing.project(far, direction: SIMD3(0, 0, 1), type: .perspective(focus: 2000))
+```
+
+`Drawing.ProjectionType.perspective(focus:)` and `docs/reference/Drawing.md` now state where the eye
+actually sits, that the drawing's scale follows the shape's world position while its foreshortening
+ratio does not, and that translating the shape to the origin is how to make the scale independent of
+where the part was modelled.
+
+### Five GD&T setters reject values that name no enumerator (#1037)
+
+`OCCTDocumentSetDimensionClassOfTolerance` (two casts),
+`OCCTDocumentSetDimensionModifiers`, `OCCTDocumentSetGeomToleranceModifiers` and
+`OCCTDocumentSetDatumModifiers` cast a caller-supplied `int32_t` straight into an OCCT GD&T enum, so
+`OCCTDocumentSetDimensionModifiers(doc, 0, (int32_t[]){9999}, 1)` wrote 9999 into the document and
+read it back. An out-of-range `formVariance` was worse than storage: it also made
+`IsDimWithClassOfTolerance()` true, since that predicate is a bare `!= _None` test, so the reader
+reported `hasClassOfTolerance == true` alongside `classOfTolerance == nil`.
+
+All five now range-check, matching the six neighbouring setters added in the same commits that
+already did. For the three array setters the whole array is validated before any of it is stored, so
+a rejected call leaves the previous sequence intact rather than half-written. Not reachable from
+Swift, whose GD&T enums are complete and typed; this closes the C boundary.
+
+### `setDatumTargetPlacement` refuses a call that would persist nothing (#1038)
+
+`XCAFDoc_Datum::SetObject` nests its whole axis/length/width/number block inside
+`if (theObject->IsDatumTarget())`, and inside that takes an `Area` branch that stores the target's
+own shape rather than a placement. So calling
+`setDatumTargetPlacement(at:location:normal:reference:length:width:)` on a datum that has had no
+`setDatumTarget(at:type:number:)` applied, or whose target type is `.area`, set every value on the
+in-memory object and then discarded all of them, while returning `true`.
+
+Both cases now return `false`. The precondition is recorded on the bridge declaration, the Swift doc
+comment and `docs/reference/Annotation.md`, and the Swift doc's example now shows the required
+ordering explicitly.
+
+```swift
+doc.setDatumTarget(at: idx, type: .rectangle, number: 1)   // required first
+doc.setDatumTargetPlacement(
+    at: idx, location: SIMD3(1, 2, 3), normal: SIMD3(0, 0, 1), reference: SIMD3(1, 0, 0),
+    length: 30, width: 18)
+```
+
+
+
 ### A null `TopoDS_Shape` no longer crashes 46 bridge entry points (#1026)
 
 `Shape.nullified` returns a `Shape` wrapping a null `TopoDS_Shape`, and forty-six bridge functions
