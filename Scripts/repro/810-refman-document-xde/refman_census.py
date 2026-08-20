@@ -403,9 +403,13 @@ INTERNAL_HELPERS = {
     "TDocStd_Context": "an internal transaction-nesting context with no class documentation and no "
         "consumer in any other pinned header.",
     "TDocStd_Modified": "the root-label attribute registering modified labels. #include'd in "
-        "OCCTBridge_Document.mm and never constructed; OCCTDocumentIsLabelModified reads "
-        "TDocStd_Document::GetModified() instead, which is a different mechanism. The bridge "
-        "header comment that says otherwise is #971.",
+        "OCCTBridge_Document.mm and never constructed, but reached all the same: "
+        "TDocStd_Document::GetModified() is literally `return TDocStd_Modified::Get(Main());` "
+        "(TDocStd_Document.cxx:172), so OCCTDocumentIsLabelModified reads this very attribute "
+        "through the document. The kernel constructs it inside TDocStd_Modified::Add on the "
+        "bridge's behalf. An earlier draft of this entry, and #971 as originally filed, had "
+        "this reversed and called GetModified() a different mechanism; #984 measured it and "
+        "corrected the header comment in the other direction.",
     "TDocStd_XLinkIterator": "iterates a document's external references. TDocStd_XLink and "
         "TDocStd_XLinkTool are both wrapped; the iterator is not, so a caller enumerates links by "
         "walking labels rather than by asking the document.",
@@ -907,19 +911,22 @@ KNOWN_OVER_FINDINGS = [
 # so it exits 1 and says which entry to move.
 # ---------------------------------------------------------------------------------------------
 
-DEFERRED_OVER_FINDINGS = [
-    {
-        "subject": "OCCTDocumentIsLabelModified",
-        "doc_file": "Sources/OCCTBridge/include/OCCTBridge_Document.h",
-        "bad_phrase": "/// Check if a label is marked as modified (via TDocStd_Modified on root).",
-        "correct": "The function reads TDocStd_Document::GetModified(); TDocStd_Modified is never "
-            "constructed in the bridge. The next line of the same comment already says so.",
-        "issue": "#971",
-        "why_deferred": "the file is grandfathered on Scripts/style-manifest-bridge.txt, so "
-            "touching it requires bringing it fully clang-format clean in the same PR: 1,714 diff "
-            "lines, measured, against a documentation-audit PR whose remaining diff is one-line "
-            "corrections. Same trade #917 tracks for OCCTBridge_Modeling.mm and PR #923 deferred.",
-    },
+DEFERRED_OVER_FINDINGS: list[dict] = [
+    # Emptied by #984, which fixed the one entry that lived here (OCCTDocumentIsLabelModified,
+    # #971) rather than deferring it. Two things are worth recording so the next reader does
+    # not restore it from this PR's history:
+    #
+    #   1. The finding's premise was REVERSED. It claimed the header named TDocStd_Modified
+    #      wrongly. In fact TDocStd_Document::GetModified() is `TDocStd_Modified::Get(Main())`
+    #      (TDocStd_Document.cxx:172), so the line naming the attribute was the correct one and
+    #      the `Note:` denying it was the defect. The census asserted the reversed version in
+    #      its curated reason for TDocStd_Modified too; that is corrected above.
+    #   2. Its bad_phrase pinned the line #984 KEPT, not the line it deleted, so this check
+    #      would have fired on a correct tree the moment #984 landed.
+    #
+    # The mechanism stays because it is sound: a deferred finding quietly fixed without moving
+    # to KNOWN_OVER_FINDINGS is a census that has stopped describing the tree. It just has
+    # nothing to hold today.
 ]
 
 # ---------------------------------------------------------------------------------------------
