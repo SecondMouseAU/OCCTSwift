@@ -161,6 +161,17 @@ OCCT ships no "thread feature" primitive, so this package builds one two ways, t
    trusting `BRepCheck`, since a long faceted thread can trip a benign facet self-intersection while
    still being dimensionally correct and STEP-exportable (#193).
 
+Both paths clock the thread from the same angular datum: the perpendicular to `axisDirection` that
+OCCT's own `gp_Ax2(gp_Pnt, gp_Dir)` picks as its Y direction, obtained from the module-wide
+`perpendicularBasis(to:)` that `Placement`, `ConstructionPlane` and `Drawing` already share (#990).
+The clocking is a function of `axisDirection` alone, so the same axis always yields the same start
+angle, but two axes that differ only in sign do not: `+Z` and `-Z` are half a turn apart. No API
+here specifies a start angle, since a thread rotated about its own axis is the same thread; what
+this does guarantee is that a shaft and the hole it screws into, built on the same axis, are clocked
+alike. Before #990 the datum came from a separate `cross(axis, worldUp)` construction local to
+`ThreadFeatures.swift`; it agreed with the shared one on `+Z`, `+X` and `+Y`, so threads on those
+axes are unchanged, and was half a turn away on `-Z`, `-X` and `-Y`.
+
 ```swift
 ```
 
