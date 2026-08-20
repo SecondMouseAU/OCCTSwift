@@ -136,9 +136,13 @@ separate analytic `ChFi2d` toolkit with no such statics.
 document-producing API are **safe to call concurrently** as of v1.15.6 — no lock
 needed on your side.
 
-Every one of these calls goes through a single process-wide `XCAFApp_Application`
-singleton (`XCAFApp_Application::GetApplication()`), so two kernel fixes were needed,
-both in OCCT itself, not the bridge:
+Until v1.15.17 every one of these calls went through a single process-wide
+`XCAFApp_Application` singleton (`XCAFApp_Application::GetApplication()`), which is why the
+two kernel fixes below were needed, both in OCCT itself rather than the bridge. **It no
+longer does**: each `OCCTDocument` now constructs its own private `TDocStd_Application`, and
+`XCAFApp_Application` is not constructed anywhere in `Sources/OCCTBridge`. See "Private
+`TDocStd_Application` per document, not a shared singleton (issue #371)" below for what
+that changed and what it did not.
 
 - **v1.15.5** (`Scripts/patches/0011`, issue #341): `XCAFDoc_ShapeTool::theAutoNaming`,
   a process-global flag mutated by every document-tree build, raced across concurrent
