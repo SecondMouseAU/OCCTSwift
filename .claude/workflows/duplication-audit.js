@@ -61,6 +61,18 @@ const ISSUE_SCOPE_SCHEMA = {
     notes: { type: 'string', description: 'any listed file that turned out not to exist, or other discrepancies' },
   },
 }
+const SCOPE_VERIFY_SCHEMA = {
+  type: 'object', required: ['results'],
+  properties: {
+    results: { type: 'array', description: 'one entry per path handed to you, in the same order', items: {
+      type: 'object', required: ['path', 'exists'],
+      properties: {
+        path: { type: 'string', description: 'the path exactly as given, not corrected or normalised' },
+        exists: { type: 'boolean', description: 'true only if `test -f` on that exact path succeeded' },
+      },
+    }},
+  },
+}
 const CANDIDATES_SCHEMA = {
   type: 'object', required: ['candidates'],
   properties: {
@@ -147,6 +159,40 @@ if (DIRECT_FILES) {
 const ALL_FILES = files.map(f => f.path)
 const totalLoc = files.reduce((s, f) => s + (f.loc || 0), 0)
 log('Scope: ' + ALL_FILES.length + ' files' + (totalLoc > 0 ? ', ' + totalLoc + ' LOC' : '') + (issueTitle ? ' — ' + issueTitle : ''))
+
+// ─── Scope guard ───
+// Every resolved path must exist before any finder runs. This cannot be a plain
+// existsSync: workflow scripts have no filesystem access, so it is an independent
+// agent, and deliberately not the one that produced the list. #385 shipped an audit
+// whose recorded scope named four files that do not exist in the repo; the scope
+// resolver is *told* to drop those, which is a soft instruction to a model, so a
+// fabricated scope ran to completion and its closing summary read as coverage.
+// A path is treated as missing unless it is affirmatively reported as existing,
+// so an incomplete verdict fails the same way a false one does.
+const verifyReport = await agent(
+  'Verify these repo-relative paths exist. For each one, run `test -f "<path>"` from the repo root ' +
+  'and report the result.\n\n' +
+  'Report exactly what the shell returns. Do not correct spellings, do not substitute a similar or ' +
+  'nearby path, do not infer that a file "should" be there, and do not omit any path from your ' +
+  'answer. Return one entry per path below, in the same order.\n\n' +
+  ALL_FILES.map(f => '  - ' + f).join('\n') + '\n\nStructured output only.',
+  { label: 'scope:verify', schema: SCOPE_VERIFY_SCHEMA }
+)
+if (!verifyReport || !Array.isArray(verifyReport.results)) {
+  return { error: 'Scope verification did not return a verdict; refusing to audit an unverified file scope.' }
+}
+const existsByPath = new Map(verifyReport.results.map(r => [r.path, r.exists === true]))
+const missingPaths = ALL_FILES.filter(p => existsByPath.get(p) !== true)
+if (missingPaths.length > 0) {
+  return {
+    error: 'Scope verification failed: ' + missingPaths.length + ' of ' + ALL_FILES.length +
+      ' path(s) do not exist in the repo (or were not verified): ' + missingPaths.join(', ') +
+      '. Fix the source of the scope before re-running. If it came from an issue, its "## Files" ' +
+      'section needs one backtick-wrapped repo-relative path per line; a bare filename resolves ' +
+      'nowhere from the repo root.',
+  }
+}
+log('Scope verified: ' + ALL_FILES.length + ' path(s) exist')
 
 // ─── Group files into finder-sized clusters. A "Name+Suffix.swift" file
 // (this repo's extension-file naming convention) stays paired with its
