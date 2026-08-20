@@ -153,6 +153,122 @@ These require implementing C++ abstract classes, which the bridge architecture d
   `TopoDS_Shape`, and OCCTSwift's own `Shape` is already a reference-counted wrapper over the same
   value, so a second handle type adds a lifetime to manage and no capability. (#808)
 
+- `XCAFApp_Application`: **not used on purpose, and the pinned refman says the opposite.** This is
+  the clearest divergence between what OCCT documents and what this project does, so it is recorded
+  in full rather than as a line. `XCAFApp_Application.hxx`'s own comment on `GetApplication()` reads
+  "This is the only valid method to get `XCAFApp_Application` object, and it should be called at
+  least once before any actions with documents", and the class's constructor is protected, so that
+  static really is the only route to one. Since v1.15.17 (#371) `OCCTDocument`'s constructor does
+  `app = new TDocStd_Application()` instead, and `XCAFApp_Application` is constructed nowhere in
+  `Sources/OCCTBridge`; the only mention left is one comment recording the change. The reason is
+  measured rather than stylistic: `GetApplication()` hands every caller the same process-wide
+  instance, and that sharing is what made the #341 / #344 / #349 / #353 race cluster reachable at
+  all, four separate crashes in state the headers declare per-instance
+  (`CDF_Directory::myDocuments`, `CDF_Application::myReaders`/`myWriters`,
+  `CDM_Application::myMetaDataLookUpTable`) and which a private application per document makes
+  exclusive to one document by construction. Upstream maintainer gkv311's review of
+  [OCCT#1396](https://github.com/Open-Cascade-SAS/OCCT/issues/1396) reaches the same conclusion from
+  the other side: `GetApplication()` "exists solely for compatibility reasons", and OCCT's own
+  guidance since 7.1 is a private `TDocStd_Application` per caller. Nothing is lost by the swap:
+  `XCAFApp_Application` adds only `ResourcesName()` and `InitDocument()` over its base, the bridge
+  registers the XDE drivers and attaches `XCAFDoc_DocumentTool` itself, and a ground-truth C++ test
+  confirmed the two routes behave identically for this surface before the change landed. Nothing
+  became lock-free either: `ocafStoreMutex()` still serialises save/load/format registration,
+  because a private instance per document is what first makes `Resource_Manager`'s and
+  `Storage_Schema`'s process-wide state concurrent (#374). The four
+  `docs/reference/Document-Persistence-IO.md` entries that still named `XCAFApp_Application` as the
+  backing class were corrected in #810, and that page now carries a "Why not `XCAFApp_Application`"
+  section with this reasoning. The upstream kernel PRs for #344/#349/#353 stand: they fix real bugs
+  in the pattern OCCT's own header still recommends, and every other consumer following that
+  recommendation is still exposed. (#371, #810)
+- `TDF_Attribute`, `TDF_AttributeDelta`, `TDataStd_GenericEmpty`, `TDataStd_GenericExtString`,
+  `CDF_Application`, `CDF_MetaDataDriver`, `CDF_MetaDataDriverFactory`, `CDM_Application`,
+  `CDM_Document`, `XCAFPrs_Driver`: abstract bases, each with a pure virtual or a constructor
+  declared only after `protected:` in the pinned header, matching the "Abstract base classes" row in
+  the summary table above. Every concrete subclass a caller would want is wrapped:
+  `TDocStd_Application` under `CDF_Application`/`CDM_Application`, `TDocStd_Document` under
+  `CDM_Document`, the whole per-attribute `Document` API under `TDF_Attribute`, and
+  `XCAFDoc_ShapeTool`/`ColorTool`/`LayerTool` and the rest of the XDE tool set under
+  `TDataStd_GenericEmpty`. `TDataStd_GenericExtString` is the ancestor of `TDataStd_Name`,
+  `TDataStd_Comment` and `TDataStd_AsciiString`, all three wrapped. `CDF_MetaDataDriver` is, per its
+  own header, "the method that must be available for a specific DBMS", and OCCT selects its own
+  `CDF_FWOSDriver` implementation without any caller naming either. `XCAFPrs_Driver` exists solely
+  to return an `XCAFPrs_AISObject`, which is display and therefore Pass 4d's lane (#814). (#810)
+- `TDocStd_ApplicationDelta`, `TDocStd_CompoundDelta`, `TDF_DefaultDeltaOnModification`,
+  `TDF_DefaultDeltaOnRemoval`, `TDF_DeltaOnAddition`, `TDF_DeltaOnForget`,
+  `TDF_DeltaOnModification`, `TDF_DeltaOnRemoval`, `TDF_DeltaOnResume`,
+  `TDataStd_DeltaOnModificationOfByteArray`, `TDataStd_DeltaOnModificationOfExtStringArray`,
+  `TDataStd_DeltaOnModificationOfIntArray`, `TDataStd_DeltaOnModificationOfIntPackedMap`,
+  `TDataStd_DeltaOnModificationOfRealArray`, `TNaming_DeltaOnModification`,
+  `TNaming_DeltaOnRemoval`: the undo/redo record hierarchy. OCAF produces one of these per changed
+  attribute during a commit and files them under a `TDF_Delta`, which **is** wrapped:
+  `OCCTDocumentCommitWithDelta` returns one and `TransactionDelta` reads its attribute count and
+  label list. Nothing constructs an individual record, and a caller who wants per-record detail is
+  asking for the delta's contents to be enumerated by kind, which is a new API rather than a wrap of
+  these classes. (#810)
+- `TDF_LabelNode`, `TDF_LabelNodePtr`, `TDF_HAllocator`, `TDocStd_XLinkPtr`,
+  `TDataStd_PtrTreeNode`, `TNaming_PtrAttribute`, `TNaming_PtrNode`, `TNaming_PtrRefShape`,
+  `CDM_DocumentPointer`, `TNaming_RefShape`, `TNaming_ShapesSet`, `TNaming_IteratorOnShapesSet`,
+  `TNaming_UsedShapes`, `TDocStd_Owner`, `TDocStd_XLinkRoot`, `XCAFDoc_PartId`, `CDM_MetaData`:
+  the framework's own storage records and the raw-pointer typedefs onto them. A `TDF_Label` is a
+  handle onto a `TDF_LabelNode`, whose whole surface is friend-only; the six `*Ptr`/`*Pointer`
+  entries are one-line `typedef X* Y;` aliases (`TNaming_PtrNode`'s target, `TNaming_Node`, ships no
+  header at all). `TNaming_UsedShapes` and `TDocStd_XLinkRoot` are single per-document root-label
+  attributes, both described as such by their own headers, written by the wrapped `TNaming_Builder`
+  and `TDocStd_XLink`; `TDocStd_Owner` is a back reference to the document the bridge already holds.
+  `CDM_MetaData` is the per-file metadata record whose race is #353 and patch `0015`. (#810)
+- `TDocStd`, `TDF`, `TDataStd`, `TDataXtd`, `TNaming`, `XCAFDoc`, `XCAFPrs`: the seven package
+  classes, each a bag of statics (GUID accessors, `Print`/`Dump` helpers) over attributes that are
+  themselves separately wrapped. Same treatment `BRepCheck` gets above. (#810)
+- `TDF_Data`, `TDF_Transaction`, `TDF_TagSource`, `TDF_CopyTool`, `TDF_RelocationTable`,
+  `TDF_ClosureTool`, `TDF_ClosureMode`, `TDF_Tool`, `TDF_DerivedAttribute`, `TDocStd_Context`,
+  `TDocStd_Modified`, `TDocStd_XLinkIterator`, `TNaming_Identifier`, `TNaming_Localizer`,
+  `TNaming_Name`, `TNaming_NamingTool`, `TNaming_TranslateTool`, `XCAFDoc_AssemblyTool`,
+  `XCAFPrs_DocumentIdIterator`, `CDF_Directory`, `CDF_DirectoryIterator`, `CDF_FWOSDriver`,
+  `CDF_Store`, `CDF_StoreList`, `CDM_Reference`, `CDM_ReferenceIterator`: internal plumbing of an
+  already-wrapped entry point. Six of these have their header `#include`d in
+  `OCCTBridge_Document.mm` and the class never named in code, the same dead-include shape as
+  `Geom2d_Direction` below: `TDF_Data`, `TDF_Transaction`, `TDF_TagSource`, `TDF_CopyTool`,
+  `TDF_RelocationTable` and `TDocStd_Modified`. Three of those six are worth spelling out because
+  the capability **is** reached, just not by naming the class. `TDF_Label::NewChild()`, which the
+  bridge calls, is literally `TDF_TagSource::NewChild(*this)`. `TDF_Data`'s services (root label,
+  transaction open/commit, delta generation) are all reached through `TDocStd_Document`.
+  `TDF_CopyTool` is the engine behind `TDF_CopyLabel`, which is wrapped as
+  `OCCTDocumentCopyLabel` and owns its own relocation table. Of the rest, `TDocStd_Modified` is the
+  root-label attribute registering modified labels and is **not** what
+  `OCCTDocumentIsLabelModified` reads (it reads `TDocStd_Document::GetModified()`, a different
+  mechanism); the bridge header comment that says otherwise is #971. `TDocStd_XLinkIterator` is the
+  one real enumeration gap in this group: `TDocStd_XLink` and `TDocStd_XLinkTool` are both wrapped,
+  so a caller can read and write an external link on a label but must walk labels to find them
+  rather than ask the document. `CDM_ReferenceIterator` marks the larger one: cross-document
+  reference **resolution** is not exposed at all, only the `TDocStd_XLink` attribute that records a
+  link. (#810)
+- `TDataStd_HDataMapOfStringByte`, `TDataStd_HDataMapOfStringHArray1OfInteger`,
+  `TDataStd_HDataMapOfStringHArray1OfReal`, `TDataStd_HDataMapOfStringInteger`,
+  `TDataStd_HDataMapOfStringReal`, `TDataStd_HDataMapOfStringString`: handle wrappers for one
+  `NCollection_DataMap` instantiation each, per their own headers. They are the storage inside
+  `TDataStd_NamedData`, which is wrapped, and a caller reaches every entry through that attribute's
+  own typed accessors rather than through the map. (#810)
+- `TDocStd_PathParser`: **deliberately removed, not merely unwrapped.** #499 unified the bridge's
+  four path parsers onto `OSD_Path`, and `OCCTBridge_IO.h` records the reason in place:
+  `TDocStd_PathParser::Parse()` is wrong outright for extension-less paths. The header is
+  `#include`d nowhere and only the two comments explaining the removal name it. (#499, #810)
+- `TDocStd_MultiTransactionManager`: synchronises one transaction across several documents. The
+  bridge drives transactions per document through `TDocStd_Document`, which covers the
+  single-document behaviour; the one thing the manager has that the document API does not is
+  `CommitCommand(name)`, the only named-transaction API in the framework, and that gap is what makes
+  `Document.openNamedTransaction(_:)` drop its argument (#970). (#810)
+- `XCAFDoc_View`, `XCAFDoc_ViewTool`: the per-view attribute and the document-level view table.
+  `XCAFView_Object`, the value type the attribute stores, **is** wrapped (`ViewObject`), and the
+  bridge reads and writes views through it by label; neither the attribute wrapper nor the tool is
+  constructed. The capability a caller wants (enumerate a document's views) is therefore reachable
+  only by walking labels, which is the same shape as the `TDocStd_XLinkIterator` gap above. (#810)
+- `XCAFPrs_AISObject`, `XCAFPrs_Texture`: in this lane's package but belonging to Pass 4d's
+  subject matter (#814). `XCAFPrs_AISObject` is an `AIS_ColoredShape` presenting a whole XDE
+  document, and OCCTSwift's display surface renders a `Shape` rather than a document;
+  `XCAFPrs_Texture` is a `Graphic3d_Texture2D`, and the bridge reads `XCAFDoc_VisMaterial`'s texture
+  paths as strings instead. Recorded here rather than left between two lanes. (#810)
+
 ### Classes Not Wrapped At All
 
 - `Geom2d_Direction`, `Geom2d_VectorWithMagnitude` — the headers are `#include`d but never used.
@@ -258,6 +374,64 @@ These require implementing C++ abstract classes, which the bridge architecture d
   public API change rather than a wrap, so it is recorded here rather than done.
   `BRepBuilderAPI_ShapeModification` is different again: **no** header in the pinned xcframework
   names it, so OCCT 8.0.1 has no entry point returning it and there is nothing to wrap. (#808)
+
+- Fifty deprecated collection typedefs in the OCAF/XDE lane: `TDocStd_LabelIDMapDataMap`,
+  `TDocStd_SequenceOfApplicationDelta`, `TDocStd_SequenceOfDocument`, `TDF_AttributeArray1`,
+  `TDF_AttributeDataMap`, `TDF_AttributeDeltaList`, `TDF_AttributeDoubleMap`, `TDF_AttributeList`,
+  `TDF_AttributeMap`, `TDF_AttributeSequence`, `TDF_DeltaList`, `TDF_GUIDProgIDMap`,
+  `TDF_HAttributeArray1`, `TDF_IDList`, `TDF_IDMap`, `TDF_LabelDataMap`, `TDF_LabelDoubleMap`,
+  `TDF_LabelIndexedMap`, `TDF_LabelIntegerMap`, `TDF_LabelList`, `TDataStd_DataMapOfStringByte`,
+  `TDataStd_DataMapOfStringHArray1OfInteger`, `TDataStd_DataMapOfStringHArray1OfReal`,
+  `TDataStd_DataMapOfStringReal`, `TDataStd_DataMapOfStringString`, `TDataStd_HLabelArray1`,
+  `TDataStd_LabelArray1`, `TDataStd_ListOfByte`, `TDataStd_ListOfExtendedString`,
+  `TDataXtd_Array1OfTrsf`, `TDataXtd_HArray1OfTrsf`, `TNaming_DataMapOfShapePtrRefShape`,
+  `TNaming_DataMapOfShapeShapesSet`, `TNaming_ListOfIndexedDataMapOfShapeListOfShape`,
+  `TNaming_ListOfMapOfShape`, `TNaming_ListOfNamedShape`, `TNaming_MapOfNamedShape`,
+  `TNaming_NCollections`, `XCAFDoc_DataMapOfShapeLabel`,
+  `XCAFDimTolObjects_DataMapOfToleranceDatum`, `XCAFDimTolObjects_DatumModifiersSequence`,
+  `XCAFDimTolObjects_DimensionModifiersSequence`,
+  `XCAFDimTolObjects_GeomToleranceModifiersSequence`, `XCAFPrs_DataMapOfStyleShape`,
+  `XCAFPrs_DataMapOfStyleTransient`, `XCAFPrs_IndexedDataMapOfShapeStyle`, `CDM_ListOfDocument`,
+  `CDM_ListOfReferences`, `CDM_MapOfDocument`, `CDM_NamesDirectory`. Each header carries
+  `Standard_HEADER_DEPRECATED` at file scope, all "deprecated since OCCT 8.0.0", and each is a
+  `typedef` for an `NCollection_*` instantiation rather than a distinct class, so the "NCollection
+  containers" row in the summary table above already covers them. **Two more headers in the same
+  deprecated family are still called by the bridge** and so are not listed here: `TDF_LabelSequence`
+  (five bridge functions build one, including every GD&T count) and `TDF_LabelMap`. Neither is a
+  wrapping gap, only an outstanding spelling migration, the same one the five `TopTools_*` entries
+  below carry.
+
+  **The file-scope test is what separates this list from a wrong one.** Grepping the lane's headers
+  for `Standard_DEPRECATED` returns fifty-six, and five of those six extras are live, current,
+  wrapped classes carrying a per-method deprecation on one accessor: `TDocStd_Application`
+  (`GetDocument` by reference), `TDF_LabelSequence`, `TDataStd_Real`, `TDataStd_Variable` and
+  `XCAFDoc_VisMaterial` (`IsDoubleSided`/`SetDoubleSided`, superseded by `FaceCulling`). Filing any
+  of those as a deprecated alias would have been wrong in the most misleading direction, since each
+  is something a caller uses today. (#810)
+- Twenty-one enums nothing in the tree reads. Thirteen are GD&T qualifiers and modifiers,
+  `XCAFDimTolObjects_AngularQualifier`, `XCAFDimTolObjects_DatumModifWithValue`,
+  `XCAFDimTolObjects_DatumSingleModif`, `XCAFDimTolObjects_DatumTargetType`,
+  `XCAFDimTolObjects_DimensionFormVariance`, `XCAFDimTolObjects_DimensionGrade`,
+  `XCAFDimTolObjects_DimensionModif`, `XCAFDimTolObjects_DimensionQualifier`,
+  `XCAFDimTolObjects_GeomToleranceMatReqModif`, `XCAFDimTolObjects_GeomToleranceModif`,
+  `XCAFDimTolObjects_GeomToleranceTypeValue`, `XCAFDimTolObjects_GeomToleranceZoneModif` and
+  `XCAFDimTolObjects_ToleranceZoneAffectedPlane`: `Document.dimension(at:)`,
+  `geomTolerance(at:)` and `datum(at:)` read a dimension's type, primary value and tolerance
+  bounds off the `XCAFDimTolObjects_*Object` and stop there, so a STEP file's ISO 286 grade,
+  material requirement or datum modifiers survive a round trip but cannot be read. Widening
+  `DimensionInfo`/`GeomToleranceInfo`/`DatumInfo` is a public API change rather than a wrap, which
+  is why it is recorded here. Four more are `CDF_Store`'s own statuses,
+  `CDF_StoreSetNameStatus`, `CDF_SubComponentStatus`, `CDF_TryStoreStatus` and
+  `CDF_TypeOfActivation`: the bridge saves through `TDocStd_Application::SaveAs`, which reports
+  `PCDM_StoreStatus`, and that **is** wrapped as `StoreStatus`, so these are reachable only by
+  driving `CDF_Store` directly. `CDM_CanCloseStatus` is `TDocStd_Document::CanClose`'s verdict, and
+  the bridge closes documents unconditionally and drops the reason. `TDocStd_FormatVersion` is the
+  OCAF document format version: a storage format is selected by name (`BinOcaf`, `XmlOcaf`,
+  `BinXCAF` and the rest) and never by version, so writing an **older** document version is not
+  exposed, exactly the `TopTools_FormatVersion` case above and deliberate for the same reason.
+  `TDataStd_RealEnum` is the unit tag on a `TDataStd_Real`, which the attribute is wrapped without.
+  `TNaming_NameType` is the naming resolver's rule kind: `TNaming_Naming` is wrapped as an opaque
+  attribute, so which rule resolved a name is not surfaced. (#810)
 
 ### Constraint Solver Infrastructure (Complete)
 

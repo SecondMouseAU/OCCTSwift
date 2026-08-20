@@ -2087,16 +2087,38 @@ extension Document {
 
 extension Document {
 
-    /// Open a named transaction on the document.
+    /// Open a transaction on the document.
     ///
-    /// - Parameter name: Transaction name for identification.
-    /// - Returns: Transaction number (>= 1 on success), or 0 on error
+    /// - Warning: `name` is accepted and not recorded. `TDocStd_Document` has no
+    ///   named-transaction API in OCCT 8.0.1, and the one class that does,
+    ///   `TDocStd_MultiTransactionManager`, is not wrapped. See issue #970.
+    ///
+    /// ```swift
+    /// let doc = Document()
+    /// doc.openNamedTransaction("add part")
+    /// // ... make changes ...
+    /// _ = doc.commitWithDelta()
+    /// ```
+    ///
+    /// - Parameter name: Accepted for source compatibility and ignored.
+    /// - Returns: `1` when a transaction is open after the call, `0` on error. Not a
+    ///   transaction number.
     @discardableResult
     public func openNamedTransaction(_ name: String) -> Int {
         Int(OCCTDocumentOpenNamedTransaction(handle, name))
     }
 
-    /// Get the current transaction number.
+    /// Whether a transaction is currently open, as `1` or `0`.
+    ///
+    /// - Warning: Despite the name this is not a transaction number and not a nesting depth:
+    ///   it reports `1` at any depth. It reads `TDocStd_Document::HasOpenCommand`, not
+    ///   `TDF_Data::Transaction()`. See issue #970.
+    ///
+    /// ```swift
+    /// let doc = Document()
+    /// doc.openNamedTransaction("edit")
+    /// print(doc.transactionNumber)  // 1
+    /// ```
     public var transactionNumber: Int {
         Int(OCCTDocumentGetTransactionNumber(handle))
     }
