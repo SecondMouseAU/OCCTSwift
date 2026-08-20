@@ -56,18 +56,18 @@ Converging-line projection.
 **The eye is anchored at the world origin, not at the shape.** `OCCTDrawingCreate` builds its
 projection frame as `gp_Ax2(gp_Pnt(0, 0, 0), viewDir)` unconditionally, so the eye sits at
 `focus * direction` and the picture plane passes through the origin perpendicular to `direction`.
-There is no parameter that moves it. A point whose coordinate along `direction` (again measured
-from the origin, call it `z`) is scaled by `focus / (focus - z)`, so a longer focal distance
-converges on the orthographic projection.
+There is no parameter that moves it. A point sitting at coordinate `z` along `direction`, again
+measured from the origin, is scaled by `focus / (focus - z)`, so a longer focal distance converges
+on the orthographic projection.
 
 Two consequences follow, and neither is what an eye anchored on the shape would give:
 
-- **The scale depends on where the shape sits in world space.** The same 10-unit-deep box viewed
-  with the eye 50 units from its near face projects at half-width 6.25 when it spans `z` 0 to 10,
-  and at 131.25 when it spans `z` 1000 to 1010 with `focus` 1050. The foreshortening *ratio* is
-  identical (1.25 in both cases), so no perspective information changes; only the uniform scale
-  does. Translate the shape to the origin first if you want the drawing's scale to be independent
-  of its modelled position.
+- **The scale depends on where the shape sits in world space.** Take a 10-unit cube and put the eye
+  40 units from its near face in both cases. Spanning `z` 0 to 10 with `focus` 50, it projects at
+  half-width 6.25; spanning `z` 1000 to 1010 with `focus` 1050, at 131.25. The foreshortening
+  *ratio* is identical (1.25 in both cases), so no perspective information changes; only the
+  uniform scale does, by the same factor of 21 as the two focal distances. Translate the shape to
+  the origin first if you want the drawing's scale to be independent of its modelled position.
 - **`focus` must exceed the shape's reach along `direction`,** measured from the origin. A shape at
   or beyond the eye has `focus - z <= 0` and would be drawn mirrored through the origin, so
   `Drawing.project` returns `nil` for it instead. The check uses the shape's axis-aligned bounding
