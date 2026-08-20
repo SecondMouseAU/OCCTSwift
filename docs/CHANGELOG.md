@@ -22,6 +22,18 @@ bounding-box accessors becoming Optional so a void shape stops fabricating `(0,0
 ## Unreleased
 
 
+### `GeomPlate_BuildPlateSurface` and `XCAFDoc_Datum` kernel patches carried (#1018, #1022)
+
+Two upstream OCCT defects are now carried as `Scripts/patches/0028` and `0029`, and filed upstream as [OCCT#1481](https://github.com/Open-Cascade-SAS/OCCT/pull/1481) and [OCCT#1483](https://github.com/Open-Cascade-SAS/OCCT/pull/1483). Neither is in the pinned kernel asset, so `Scripts/patches/` holds nineteen against the asset's seventeen until a rebuild; `Package.swift` and `CLAUDE.md` name both and say what each costs.
+
+`0028` (#1018): `GeomPlate_BuildPlateSurface::G0Error()`/`G1Error()`/`G2Error()` return uninitialised members after a `Perform()` whose constraints were all point constraints, because `VerifSurface()` is their only writer and the point-only branch measures the same deviations and discards them. The patch initialises the three, clears them when `Perform()` starts, keeps what the point-only branch measured, and makes `VerifPoints()` accumulate a maximum rather than overwrite, matching what the accessors document. This is the defect that made [#1015](https://github.com/SecondMouseAU/OCCTSwift/pull/1015) delete `Surface.plateErrors` rather than repair it; nothing in the Swift API reads those accessors today.
+
+`0029` (#1022): `XCAFDoc_Datum::GetObject` builds the datum point's X from the annotation plane's array instead of the point's own, a wrong answer when a datum has both and an uncatchable SIGSEGV when it has a point and no plane. Seven bridge functions reach it, five of them write paths, for any OCAF document whose datum carries a point without an annotation plane. A STEP import cannot produce that shape; an OCAF load can. A bridge-side guard, needed until a rebuilt kernel ships, is tracked as [#1030](https://github.com/SecondMouseAU/OCCTSwift/issues/1030).
+
+`docs/API_REFERENCE.md` drops `Surface.plateErrors` from the `Surfaces` row, deleted by #999 (PR #1015) and missed there because the gate does not read bare table text.
+
+
+
 ### `.perspective(focus:)` refuses a shape at or beyond the eye, and the docs name the real anchor (#1036)
 
 `Drawing.project(_:direction:type:)` used to return a real, mirrored `Drawing` for a shape sitting
