@@ -1,0 +1,12 @@
+identity                           agree=yes  roundTrip max|back-m|=0
+translate (5, 6, 7)                agree=yes  roundTrip max|back-m|=0
+rotate 30 about Z + translate      agree=yes  roundTrip max|back-m|=0
+kernel-built rotation about (1,1,1) agree=yes  roundTrip max|back-m|=0
+uniform scale 2 + translate        agree=yes  roundTrip max|back-m|=0
+
+layout hazard, both arrays meaning translate (5, 6, 7):
+  INTERLEAVED array through the INTERLEAVED reader: translation (5, 6, 7)
+  GROUPED array through the GROUPED reader:         translation (5, 6, 7)
+  GROUPED array through the INTERLEAVED reader:     translation (0, 0, 7)  accepted=yes (No_Exception: SetValues' orthonormality precondition is compiled out)
+
+AGREE: 0 divergence(s)

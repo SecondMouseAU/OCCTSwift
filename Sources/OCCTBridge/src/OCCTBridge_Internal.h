@@ -2857,4 +2857,65 @@ inline int32_t occtBRepFeatCylindricalHole(OCCTShapeRef  shape,
   }
 }
 
+// === #994: one conversion between a 12-double INTERLEAVED matrix and a gp_Trsf ===
+//
+// OCCTBridge_Topology.mm had trsfFromMatrix12 and matrix12FromTrsf, a static pair serving three
+// call sites; OCCTBridge_BRepGraph.mm had locationFromMatrix, doing the identical SetValues and
+// wrapping the answer in a TopLoc_Location, serving four. Two files, so the helpers live here
+// rather than static in either (#943, #957): a static copy in another translation unit is one
+// that can never converge on this one.
+//
+// THE LAYOUT IS IN THE NAME ON PURPOSE. This bridge carries two 12-double conventions and they
+// are not interchangeable, which is what #835 fixed on the Swift side by giving each its own
+// type. INTERLEAVED is the 3x4 row-major order gp_Trsf::SetValues itself takes,
+//
+//     m[0..3]  = row 1: r00 r01 r02 tx
+//     m[4..7]  = row 2: r10 r11 r12 ty
+//     m[8..11] = row 3: r20 r21 r22 tz
+//
+// which is what Swift's TransformMatrix3D holds and what Shape.located/locationMatrix/setLocation
+// and every BRepGraph placement pass. GROUPED, Swift's Matrix12Grouped, is nine rotation values
+// followed by three translations, and its three bridge sites (OCCTShapeTransformed,
+// OCCTCurve3DParametricTransformation, OCCTDocumentAddComponentMatrix) permute the arguments on
+// the way into the same SetValues. Passing a GROUPED array to these helpers silently builds a
+// different transform, so those three sites deliberately do NOT call them.
+//
+// Nothing here guards a null `m`: every caller's bridge declaration is `const double* _Nonnull`
+// or, in OCCTBRepGraphLinkProductToTopology's one `_Nullable` case, tests the pointer before
+// reaching the helper.
+#include <TopLoc_Location.hxx>
+#include <gp_Trsf.hxx>
+
+/// The transform described by the twelve INTERLEAVED doubles at `m`.
+inline gp_Trsf occtTrsfFromMatrix12Interleaved(const double* m)
+{
+  gp_Trsf t;
+  t.SetValues(m[0], m[1], m[2], m[3], m[4], m[5], m[6], m[7], m[8], m[9], m[10], m[11]);
+  return t;
+}
+
+/// The inverse of occtTrsfFromMatrix12Interleaved: writes `t`'s twelve INTERLEAVED doubles to `m`.
+inline void occtMatrix12InterleavedFromTrsf(const gp_Trsf& t, double* m)
+{
+  m[0]  = t.Value(1, 1);
+  m[1]  = t.Value(1, 2);
+  m[2]  = t.Value(1, 3);
+  m[3]  = t.Value(1, 4);
+  m[4]  = t.Value(2, 1);
+  m[5]  = t.Value(2, 2);
+  m[6]  = t.Value(2, 3);
+  m[7]  = t.Value(2, 4);
+  m[8]  = t.Value(3, 1);
+  m[9]  = t.Value(3, 2);
+  m[10] = t.Value(3, 3);
+  m[11] = t.Value(3, 4);
+}
+
+/// The location described by the twelve INTERLEAVED doubles at `m`. The composite both callers
+/// wanted: a gp_Trsf built as above and wrapped, which is what a placement or a shape location is.
+inline TopLoc_Location occtLocationFromMatrix12Interleaved(const double* m)
+{
+  return TopLoc_Location(occtTrsfFromMatrix12Interleaved(m));
+}
+
 #endif /* OCCTBridge_Internal_h */
