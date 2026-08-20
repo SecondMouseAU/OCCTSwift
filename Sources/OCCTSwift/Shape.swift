@@ -2421,14 +2421,30 @@ public final class Shape: @unchecked Sendable {
     /// print(box.subShapes(ofType: .edge).count)   // 12
     /// ```
     ///
+    /// Unlike ``Face`` and ``Edge``, a returned ``Shape`` carries no ordinal of its own, so the
+    /// array position is the only thing naming which sub-shape an element is.
+    ///
     /// - Parameter type: The topological type (e.g., `.face`, `.edge`, `.vertex`)
-    /// - Returns: Array of sub-shapes
+    /// - Returns: Every distinct sub-shape, so `subShapes(ofType: t)[k]` is
+    ///   `subShape(type: t, index: k)`, or an empty array if any could not be built. Never a short
+    ///   array, which would shift every later ordinal (#979).
     public func subShapes(ofType type: ShapeType) -> [Shape] {
         let count = Int32(subShapeCount(ofType: type))
         guard count > 0 else { return [] }
         var handles = [OCCTShapeRef?](repeating: nil, count: Int(count))
         let written = OCCTShapeGetSubShapes(handle, Int32(type.rawValue), &handles, count)
-        return handles.prefix(Int(written)).compactMap { h in h.map { Shape(handle: $0) } }
+        guard written == count else {
+            // A short write means the walk failed part-way, and the bridge can have written
+            // handles it no longer reports, so scan the whole buffer rather than the prefix.
+            for stray in handles {
+                if let stray { OCCTShapeRelease(stray) }
+            }
+            return []
+        }
+        return wrapSubShapeEnumeration(
+            handles,
+            wrap: { ref, _ in Shape(handle: ref) },
+            release: OCCTShapeRelease)
     }
 
     // MARK: - Bounds

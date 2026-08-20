@@ -676,6 +676,10 @@ Each returned `Face` carries its position as ``Face.index``. This is the same en
 `TopExp_Explorer` order. A face reachable from two parents — the wall shared by both halves of a
 split solid, say — appears once. Returns an empty array if the shape has no faces.
 
+The array position **is** the ordinal, so `faces()[k].index == k`. The array is returned complete or
+empty and never short: a face that could not be built would shift every later ordinal down one, and
+each would then answer for its neighbour with no error and no diagnostic (#979).
+
 This is the **indexing** enumeration. Faces are distinguished the way OCCT distinguishes them for
 an index: by `TopoDS_Shape::IsSame`, which compares surface and placement and **ignores
 orientation**. A face occurring in the shape with both orientations therefore collapses to one
@@ -724,7 +728,8 @@ An entry's array position is an **occurrence number, not a face index** — two 
 the same face. Each returned `Face` still carries the correct ``Face.index`` into `faces()`, so an
 occurrence remains addressable by every face-index-taking method on `Shape`; entries sharing an
 `index` are the several sides of one shared face. On a shape whose faces are not shared this
-returns exactly `faces()`, same order, same indices.
+returns exactly `faces()`, same order, same indices. Like `faces()`, this array is returned complete
+or empty and never short, so an occurrence number stays a whole occurrence number (#979).
 
 - **OCCT:** `TopExp_Explorer(shape, TopAbs_FACE)`, with each entry's index resolved through the
   same `TopExp::MapShapes` map `faces()` is built from. This mirrors the kernel's own split:

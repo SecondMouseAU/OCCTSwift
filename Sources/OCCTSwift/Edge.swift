@@ -320,18 +320,16 @@ extension Shape {
     /// wire it samples, not from an edge this method returns. If a future `Edge.orientation`
     /// accessor or an orientation-sensitive consumer is added, re-run that audit before assuming
     /// the collapse is still safe. See `Scripts/repro/cluster-a-subshape-enumeration/`.
+    ///
+    /// - Returns: Every distinct edge, so `edges()[k].index == k`, or an empty array if any edge
+    ///   could not be built. Never a short array, which would shift every later ordinal (#979).
     public func edges() -> [Edge] {
-        let count = edgeCount
-        var edges = [Edge]()
-        edges.reserveCapacity(count)
-
-        for i in 0..<count {
-            if let edge = edge(at: i) {
-                edges.append(edge)
-            }
-        }
-
-        return edges
+        // Each element is already an owning Edge, so discarding one releases its handle and the
+        // enumeration helper has nothing of its own to release.
+        wrapSubShapeEnumeration(
+            (0..<edgeCount).map { edge(at: $0) },
+            wrap: { element, _ in element },
+            release: { _ in })
     }
 }
 

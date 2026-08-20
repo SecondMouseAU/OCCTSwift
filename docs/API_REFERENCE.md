@@ -945,6 +945,14 @@ One enumeration behind all of these: `TopExp::MapShapes` into a `TopTools_Indexe
 geometry *and* placement, orientation ignored). A sub-shape reachable from two parents appears
 once; two placements of one body appear twice. (#502)
 
+**A position in one of these arrays is an ordinal, not just a place in a list.** `faces()[k]` is the
+face `face(at: k)` names, `edges()[k]` is `edge(at: k)`, and `subShapes(ofType: t)[k]` is
+`subShape(type: t, index: k)`. Each array is therefore returned complete or empty, never short: an
+element that could not be built would shift every later ordinal down one, and each would then answer
+for its neighbour with no error and no diagnostic. `Face.index` and `Edge.index` carry the same
+ordinal in-band, so `faces()[k].index == k` holds by construction; a `Shape` from
+`subShapes(ofType:)` carries none, so there the array position is the only thing naming it. (#979)
+
 | Swift API | OCCT Class |
 |-----------|------------|
 | `shape.subShapeCount(ofType:)` / `shape.uniqueSubShapeCount(ofType:)` | `TopExp::MapShapes` |
