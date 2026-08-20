@@ -1101,8 +1101,13 @@ public static func compound(_ shapes: [Shape]) -> Shape?
 ```
 
 - **Parameters:** `shapes` — array of shapes to group.
-- **Returns:** A `TopoDS_Compound` holding all shapes, or `nil` if the array is empty or creation fails.
+- **Returns:** A `TopoDS_Compound` holding all shapes, or `nil` if the array is empty, if any
+  element is null, or if creation fails.
 - **OCCT:** `BRep_Builder::MakeCompound` / `BRep_Builder::Add` (via `OCCTShapeCreateCompound`).
+  `TopoDS_Builder::Add` dereferences the component's `TShape` in its first statement, so a null
+  element (from `Shape.nullified`) used to crash the process here. It is refused now, and the whole
+  call is refused rather than the element skipped: a silently dropped member is one the caller asked
+  for and did not get (#1026).
 - **Example:**
   ```swift
   guard let box = Shape.box(width: 10, height: 5, depth: 3),

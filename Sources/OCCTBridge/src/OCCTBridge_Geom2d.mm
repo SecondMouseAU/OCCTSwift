@@ -13,7 +13,7 @@
 //  - Geom2dGridEval (vectorized 2D curve sampling)
 //  - gp_*2d primitives
 //
-//  Public C surface unchanged. No symbol changes — pure file move.
+//  Public C surface unchanged. No symbol changes: a pure file move.
 //
 
 #import "../include/OCCTBridge.h"
@@ -2557,16 +2557,17 @@ OCCTCurve2DRef _Nullable OCCTBisectorBisecAnaPointPoint(double pt1x,
 // MARK: - BRepAdaptor_Curve2d Edge PCurves (v0.61)
 // MARK: - BRepAdaptor_Curve2d (v0.61.0)
 
+// #1026: both refuse a null shape the way they already refused a wrong-typed one, leaving the out
+// parameters untouched. occtShapeIsType (OCCTBridge_Internal.h) is the pointer test and the
+// null-shape test in one, and TopoDS_Shape::ShapeType() needs the second: it is an unguarded
+// myTShape dereference, so a null shape was a SIGSEGV rather than a refusal.
 bool OCCTEdgePCurveParams(OCCTShapeRef edge, OCCTShapeRef face, double* outFirst, double* outLast)
 {
-  if (!edge || !face || !outFirst || !outLast)
+  if (!occtShapeIsType(edge, TopAbs_EDGE) || !occtShapeIsType(face, TopAbs_FACE) || !outFirst
+      || !outLast)
     return false;
   try
   {
-    if (edge->shape.ShapeType() != TopAbs_EDGE)
-      return false;
-    if (face->shape.ShapeType() != TopAbs_FACE)
-      return false;
     TopoDS_Edge         e = TopoDS::Edge(edge->shape);
     TopoDS_Face         f = TopoDS::Face(face->shape);
     BRepAdaptor_Curve2d adaptor(e, f);
@@ -2582,14 +2583,10 @@ bool OCCTEdgePCurveParams(OCCTShapeRef edge, OCCTShapeRef face, double* outFirst
 
 bool OCCTEdgePCurveValue(OCCTShapeRef edge, OCCTShapeRef face, double t, double* outU, double* outV)
 {
-  if (!edge || !face || !outU || !outV)
+  if (!occtShapeIsType(edge, TopAbs_EDGE) || !occtShapeIsType(face, TopAbs_FACE) || !outU || !outV)
     return false;
   try
   {
-    if (edge->shape.ShapeType() != TopAbs_EDGE)
-      return false;
-    if (face->shape.ShapeType() != TopAbs_FACE)
-      return false;
     TopoDS_Edge         e = TopoDS::Edge(edge->shape);
     TopoDS_Face         f = TopoDS::Face(face->shape);
     BRepAdaptor_Curve2d adaptor(e, f);
@@ -3321,7 +3318,7 @@ OCCTCurve2DRef _Nullable OCCTCurve2DSegmentFromPoints(OCCTPoint2DRef _Nonnull p1
 }
 
 // Failure contract: *outDistance < 0, and NaN returned. The parameter cannot carry the failure
-// signal — 0 is a legitimate result (projecting a segment's own start point onto it returns
+// signal: 0 is a legitimate result (projecting a segment's own start point onto it returns
 // exactly 0), which is what the old "returns 0 on failure" contract conflated (#413).
 double OCCTCurve2DProjectPoint2D(OCCTCurve2DRef _Nonnull curve,
                                  OCCTPoint2DRef _Nonnull point,
@@ -3845,7 +3842,7 @@ int OCCTBisectorInterPointPoint(double                         ax,
     if (b2.Value().IsNull())
       return 0;
 
-    // Set up domains — use large parameter range
+    // Set up domains, using a large parameter range
     IntRes2d_Domain d1(gp_Pnt2d(b1.Value()->Value(-100)),
                        -100.0,
                        1e-6,
@@ -7912,7 +7909,7 @@ OCCTCurve2DRef OCCTGeom2dEvalAHTBezierCurveCreate(const double* poles,
 }
 
 // end of v0.131.0 implementations
-// MARK: - 2D Curve (Geom2d) — v0.16.0
+// MARK: - 2D Curve (Geom2d), v0.16.0
 
 #include <Geom2d_Curve.hxx>
 #include <Geom2d_Line.hxx>
@@ -9058,7 +9055,7 @@ bool OCCTCurve2DGetCurvature(OCCTCurve2DRef c, double u, double* curvature)
   {
     GeomLProp_CLProps2d props = occtCurve2dLocalProps(c->curve, u, 2);
     // Curvature() is only meaningful once the tangent is established. It does raise otherwise,
-    // but through LProp_NotDefined_Raise_if, which compiles out under No_Exception — defined
+    // but through LProp_NotDefined_Raise_if, which compiles out under No_Exception, defined
     // for the OCCT build, not for this one. Matches OCCTCurve3DGetCurvature (#494).
     if (!props.IsTangentDefined())
       return false;

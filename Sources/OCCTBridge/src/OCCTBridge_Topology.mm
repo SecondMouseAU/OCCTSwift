@@ -266,14 +266,16 @@ OCCTShapeContents OCCTShapeGetContents(OCCTShapeRef shape)
 
 #include <ShapeAnalysis_Edge.hxx>
 
+// #1026: occtShapeIsType (OCCTBridge_Internal.h) folds the pointer test together with the
+// null-shape test the type read needs, so these three answer false for a null shape the way
+// they already answered false for a shape of the wrong type, instead of dereferencing a null
+// TShape.
 bool OCCTEdgeHasCurve3D(OCCTShapeRef edge)
 {
-  if (!edge)
+  if (!occtShapeIsType(edge, TopAbs_EDGE))
     return false;
   try
   {
-    if (edge->shape.ShapeType() != TopAbs_EDGE)
-      return false;
     ShapeAnalysis_Edge analyzer;
     return analyzer.HasCurve3d(TopoDS::Edge(edge->shape));
   }
@@ -285,12 +287,10 @@ bool OCCTEdgeHasCurve3D(OCCTShapeRef edge)
 
 bool OCCTEdgeIsClosed3D(OCCTShapeRef edge)
 {
-  if (!edge)
+  if (!occtShapeIsType(edge, TopAbs_EDGE))
     return false;
   try
   {
-    if (edge->shape.ShapeType() != TopAbs_EDGE)
-      return false;
     ShapeAnalysis_Edge analyzer;
     return analyzer.IsClosed3d(TopoDS::Edge(edge->shape));
   }
@@ -302,14 +302,10 @@ bool OCCTEdgeIsClosed3D(OCCTShapeRef edge)
 
 bool OCCTEdgeIsSeam(OCCTShapeRef edge, OCCTShapeRef face)
 {
-  if (!edge || !face)
+  if (!occtShapeIsType(edge, TopAbs_EDGE) || !occtShapeIsType(face, TopAbs_FACE))
     return false;
   try
   {
-    if (edge->shape.ShapeType() != TopAbs_EDGE)
-      return false;
-    if (face->shape.ShapeType() != TopAbs_FACE)
-      return false;
     ShapeAnalysis_Edge analyzer;
     return analyzer.IsSeam(TopoDS::Edge(edge->shape), TopoDS::Face(face->shape));
   }
@@ -671,9 +667,13 @@ OCCTTopAbsState OCCTClassifyPointOnFaceUV(OCCTFaceRef face, double u, double v, 
 #include <ShapeAnalysis_Wire.hxx>
 #include <ShapeExtend_WireData.hxx>
 
+// #1026: TopoDS_Wire::Closed() is TopoDS_Shape::Closed(), one of the eight flag accessors that
+// dereference myTShape with no null test, so the wrapper's wire needs testing as well as the
+// pointer. No public Swift producer hands back a null Wire today (Wire(_:) refuses one, since
+// OCCTWireFromShape tests IsNull first), so this is a contract pin rather than a reachable crash.
 bool OCCTWireAnalyze(OCCTWireRef wire, double tolerance, OCCTWireAnalysisResult* result)
 {
-  if (!wire || !result)
+  if (!wire || wire->wire.IsNull() || !result)
     return false;
   try
   {
@@ -2062,12 +2062,12 @@ int32_t OCCTIntersectLineFace(OCCTShapeRef face,
                               double*      outParams,
                               int32_t      maxPts)
 {
-  if (!face || !outPoints || !outParams || maxPts <= 0)
+  // #1026: a null shape is not a face, so it meets no line at all and the count is 0, which is
+  // already what this returns for every other input it cannot intersect.
+  if (!occtShapeIsType(face, TopAbs_FACE) || !outPoints || !outParams || maxPts <= 0)
     return 0;
   try
   {
-    if (face->shape.ShapeType() != TopAbs_FACE)
-      return 0;
     TopoDS_Face               f = TopoDS::Face(face->shape);
     IntCurvesFace_Intersector intersector(f, 1e-6);
     gp_Lin                    line(gp_Pnt(origX, origY, origZ), gp_Dir(dirX, dirY, dirZ));
@@ -3643,44 +3643,55 @@ OCCTShapeRef OCCTShapeComposed(OCCTShapeRef shape, int32_t orientation)
   }
 }
 
+// #1026: ShapeType() is not the only unguarded myTShape dereference on TopoDS_Shape. Its eight flag
+// accessors (Free, Locked, Modified, Checked, Orientable, Closed, Infinite, Convex), each with a
+// getter and a setter, read and write the same packed state word with no null test either
+// (TopoDS_Shape.hxx:143-188). Ten bridge sites reach them: the six here, OCCTShapeIsLocked and
+// OCCTShapeSetLocked, OCCTShapeIsClosed, and OCCTWireAnalyze. All ten were measured crashing on a
+// nullified shape, one test process each, in the repro directory.
+//
+// false is a refusal here, not the value a real shape would have answered anyway: measured on the
+// pinned kernel, a box answers Free and Modified true, its shell Orientable and Closed true, and
+// one of its faces Checked true. Infinite and Convex are false on every sub-shape of a box, so
+// those two have no positive control, and the test suite says so rather than implying one.
 bool OCCTShapeIsFree(OCCTShapeRef shape)
 {
-  if (!shape)
+  if (!occtShapeIsPresent(shape))
     return false;
   return shape->shape.Free();
 }
 
 bool OCCTShapeIsModified(OCCTShapeRef shape)
 {
-  if (!shape)
+  if (!occtShapeIsPresent(shape))
     return false;
   return shape->shape.Modified();
 }
 
 bool OCCTShapeIsChecked(OCCTShapeRef shape)
 {
-  if (!shape)
+  if (!occtShapeIsPresent(shape))
     return false;
   return shape->shape.Checked();
 }
 
 bool OCCTShapeIsOrientable(OCCTShapeRef shape)
 {
-  if (!shape)
+  if (!occtShapeIsPresent(shape))
     return false;
   return shape->shape.Orientable();
 }
 
 bool OCCTShapeIsInfinite(OCCTShapeRef shape)
 {
-  if (!shape)
+  if (!occtShapeIsPresent(shape))
     return false;
   return shape->shape.Infinite();
 }
 
 bool OCCTShapeIsConvex(OCCTShapeRef shape)
 {
-  if (!shape)
+  if (!occtShapeIsPresent(shape))
     return false;
   return shape->shape.Convex();
 }
@@ -4040,9 +4051,13 @@ int32_t OCCTShapeCountEdges(OCCTShapeRef shape)
   }
 }
 
+// #1026: "null" was already this function's word for an absent shape, so a wrapper carrying a null
+// TopoDS_Shape gets the same word rather than a type name it does not have. It is distinct from the
+// catch's "unknown" and from the default branch's "shape", so a caller can still tell the three
+// apart.
 char* OCCTShapeTypeString(OCCTShapeRef shape)
 {
-  if (!shape)
+  if (!occtShapeIsPresent(shape))
     return strdup("null");
   try
   {
@@ -4099,16 +4114,19 @@ OCCTShapeRef OCCTShapeChild(OCCTShapeRef shape, int32_t index)
   }
 }
 
+// #1026: the same unguarded myTShape dereference as the six flag getters above, plus the one setter
+// this bridge exposes. Writing a flag to a null shape has nothing to write it to, so the setter
+// returns without writing, which is what it already did for a null pointer.
 bool OCCTShapeIsLocked(OCCTShapeRef shape)
 {
-  if (!shape)
+  if (!occtShapeIsPresent(shape))
     return false;
   return shape->shape.Locked();
 }
 
 void OCCTShapeSetLocked(OCCTShapeRef shape, bool locked)
 {
-  if (!shape)
+  if (!occtShapeIsPresent(shape))
     return;
   shape->shape.Locked(locked);
 }
@@ -4180,8 +4198,21 @@ OCCTShapeRef OCCTShapeOriented(OCCTShapeRef shape, int32_t orientation)
   }
 }
 
+// #1026, a THIRD spelling of the same defect, and the reason the guard belongs at the unwrap
+// rather than at each consumer. This function reaches no hazardous TopoDS_Shape member and casts
+// nothing, so neither #1008's TopoDS:: sweep nor #1026's ShapeType() census covers it; it hands the
+// shape to BRep_Builder::Add, and TopoDS_Builder::Add dereferences it in its FIRST statement,
+// `aComponent.TShape()->Free(false)` (TopoDS_Builder.cxx). Measured: Shape.compound with a
+// nullified shape is SIGSEGV, alone or alongside a real one.
+//
+// A null element refuses the whole call rather than being skipped, matching OCCTMakeWireFromEdges
+// and OCCTMakeShell (#1008/#1027): a silently dropped element is a member the caller asked for and
+// did not get. Swift cannot reach the null-POINTER case either way, since [Shape] maps through a
+// non-optional handle.
 OCCTShapeRef OCCTShapeCompounded(const OCCTShapeRef* shapes, int32_t count)
 {
+  if (count > 0 && !shapes)
+    return nullptr;
   try
   {
     BRep_Builder    builder;
@@ -4189,8 +4220,9 @@ OCCTShapeRef OCCTShapeCompounded(const OCCTShapeRef* shapes, int32_t count)
     builder.MakeCompound(compound);
     for (int32_t i = 0; i < count; i++)
     {
-      if (shapes[i])
-        builder.Add(compound, shapes[i]->shape);
+      if (!occtShapeIsPresent(shapes[i]))
+        return nullptr;
+      builder.Add(compound, shapes[i]->shape);
     }
     OCCTShape* result = new OCCTShape();
     result->shape     = compound;
@@ -4328,39 +4360,32 @@ OCCTShapeRef OCCTMakeShell(const OCCTShapeRef* faces, int32_t count)
   }
 }
 
+// #1026: each of these five asks "is this shape a T", and a null shape is not a T, so false is the
+// answer rather than a stand-in for one. occtShapeIsType (OCCTBridge_Internal.h) is that question
+// with the null shape rejected alongside the null pointer.
 bool OCCTShapeIsCompound(OCCTShapeRef shape)
 {
-  if (!shape)
-    return false;
-  return shape->shape.ShapeType() == TopAbs_COMPOUND;
+  return occtShapeIsType(shape, TopAbs_COMPOUND);
 }
 
 bool OCCTShapeIsSolid(OCCTShapeRef shape)
 {
-  if (!shape)
-    return false;
-  return shape->shape.ShapeType() == TopAbs_SOLID;
+  return occtShapeIsType(shape, TopAbs_SOLID);
 }
 
 bool OCCTShapeIsShell(OCCTShapeRef shape)
 {
-  if (!shape)
-    return false;
-  return shape->shape.ShapeType() == TopAbs_SHELL;
+  return occtShapeIsType(shape, TopAbs_SHELL);
 }
 
 bool OCCTShapeIsFace(OCCTShapeRef shape)
 {
-  if (!shape)
-    return false;
-  return shape->shape.ShapeType() == TopAbs_FACE;
+  return occtShapeIsType(shape, TopAbs_FACE);
 }
 
 bool OCCTShapeIsEdge(OCCTShapeRef shape)
 {
-  if (!shape)
-    return false;
-  return shape->shape.ShapeType() == TopAbs_EDGE;
+  return occtShapeIsType(shape, TopAbs_EDGE);
 }
 
 // MARK: - v0.113: BRepExtrema_DistShapeShape (full results)
@@ -4649,9 +4674,11 @@ OCCTShapeRef OCCTBuilderMakeCompSolid()
   }
 }
 
+// #1026: the same TopoDS_Builder::Add dereference the two compound builders reach. Measured, both
+// arguments crash on a nullified shape, so both are guarded.
 bool OCCTBuilderAdd(OCCTShapeRef parent, OCCTShapeRef child)
 {
-  if (!parent || !child)
+  if (!occtShapeIsPresent(parent) || !occtShapeIsPresent(child))
     return false;
   try
   {
@@ -4665,9 +4692,14 @@ bool OCCTBuilderAdd(OCCTShapeRef parent, OCCTShapeRef child)
   }
 }
 
+// #1026: the PARENT crashes here, measured. The child does not: TopoDS_Builder::Remove walks the
+// parent's children looking for it and never dereferences the one it is given, confirmed against
+// both an empty and a populated parent. It is guarded anyway, in the same expression, because
+// resting one argument of a two-argument builder call on an emptiness of OCCT's current internals
+// is not worth the one comparison it saves.
 bool OCCTBuilderRemove(OCCTShapeRef parent, OCCTShapeRef child)
 {
-  if (!parent || !child)
+  if (!occtShapeIsPresent(parent) || !occtShapeIsPresent(child))
     return false;
   try
   {
@@ -4877,9 +4909,10 @@ OCCTSurfaceRef OCCTShapeFaceSurface(OCCTShapeRef shape)
   }
 }
 
+// #1026: the ninth flag site, same unguarded myTShape dereference.
 bool OCCTShapeIsClosed(OCCTShapeRef shape)
 {
-  if (!shape)
+  if (!occtShapeIsPresent(shape))
     return false;
   return shape->shape.Closed();
 }
@@ -5862,9 +5895,13 @@ OCCTShapeRef OCCTShapeNullified(OCCTShapeRef shape)
   }
 }
 
+// #1026: nullptr, which Swift reads as nil, is already this function's answer for a shape it has no
+// name for, and its Swift doc comment already promised "nil if the shape is null". Before this
+// guard that promise held only for a null POINTER, which Swift cannot produce; a wrapper carrying a
+// null TopoDS_Shape, which Shape.nullified hands out, crashed instead of keeping it.
 const char* OCCTShapeTypeName(OCCTShapeRef shape)
 {
-  if (!shape)
+  if (!occtShapeIsPresent(shape))
     return nullptr;
   switch (shape->shape.ShapeType())
   {

@@ -3253,6 +3253,19 @@ extension Shape {
 
 extension Shape {
     /// Get a nullified copy of the shape.
+    ///
+    /// The result has **no topological type**: `TopoDS_Shape::Nullify()` clears the `TShape`
+    /// handle outright rather than emptying a shape of a kept type. Every type query answers the
+    /// absence rather than a type, and ``isEmptyShape`` is the query that reports it directly.
+    /// For a copy that keeps its type and loses only its sub-shapes, use ``emptied``.
+    ///
+    /// ```swift
+    /// let box = Shape.box(width: 10, height: 10, depth: 10)!
+    /// let nulled = box.nullified!
+    /// print(nulled.isEmptyShape)  // true
+    /// print(nulled.shapeType)     // Unknown, not Solid
+    /// print(nulled.typeName)      // nil
+    /// ```
     public var nullified: Shape? {
         guard let h = OCCTShapeNullified(handle) else { return nil }
         return Shape(handle: h)

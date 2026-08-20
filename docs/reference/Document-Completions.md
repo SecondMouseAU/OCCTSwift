@@ -1314,7 +1314,7 @@ Extensions on `Shape` added in v0.123.0.
 
 ### `Shape.nullified`
 
-Return a null copy of this shape (a shape with the same type but no sub-shapes or geometry).
+Return a copy of this shape with its `TShape` handle cleared.
 
 ```swift
 public var nullified: Shape?
@@ -1322,9 +1322,18 @@ public var nullified: Shape?
 
 - **Returns:** A nullified shape, or `nil` on failure.
 - **OCCT:** `TopoDS_Shape::Nullify`.
+- **Note:** `Nullify()` clears the handle outright, so the result has **no topological type at
+  all**, not "the same type with no sub-shapes". Every type query answers the absence:
+  `shapeType` is `.unknown`, `typeName` is `nil`, and `isSolid` and its siblings are `false`. Use
+  `emptied` for a copy that keeps its type and loses only its sub-shapes. Reading a type off this
+  shape used to crash the process with a SIGSEGV that no bridge-side `catch` could absorb (#1026).
 - **Example:**
   ```swift
-  if let empty = shape.nullified { print(empty.isNull) }
+  let box = Shape.box(width: 10, height: 10, depth: 10)!
+  let nulled = box.nullified!
+  print(nulled.isEmptyShape)  // true
+  print(nulled.shapeType)     // Unknown
+  print(nulled.typeName as Any)  // nil
   ```
 
 ---

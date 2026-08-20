@@ -247,6 +247,23 @@ through a `reinterpret_cast`/`static_cast`/C-style cast, a pointer alias, a hand
 shared bridge helper. The checker handles those four, which are the four this tree currently uses
 (#618); a hand-audit that greps for `->curve` handles none of them.
 
+**A `TopoDS_Shape` needs a guard too, but only on some members (#1026).** If the new function takes
+an `OCCTShapeRef`/`OCCTWireRef`/`OCCTEdgeRef`/`OCCTFaceRef`, the pointer test is again not enough,
+because `Shape.nullified` is a public property returning a wrapper around a null `TopoDS_Shape`.
+The rule is narrower than the handle one: a null `TopoDS_Shape` is safe to copy, compare, cast with
+`TopoDS::Edge` and walk with `TopExp` (PR #1027 measured 345 cast sites and found none defective),
+and unsafe on the ten members that dereference `myTShape` with no null test of their own:
+`ShapeType()`, the eight flag accessors (`Free`, `Locked`, `Modified`, `Checked`, `Orientable`,
+`Closed`, `Infinite`, `Convex`, getter and setter alike) and `EmptyCopy()`. `NbChildren()` is the
+one OCCT guards itself. Reach any of those and the guard is
+`if (!occtShapeIsPresent(x)) return <fallback>;` or, where a type test follows,
+`if (!occtShapeIsType(x, TopAbs_T)) return <fallback>;`, both `inline` in `OCCTBridge_Internal.h`.
+The same `check-null-handle-guards.py` enforces it, as a third walk with its own `SHAPE_ALLOWED`
+table, and its fixtures are the `S*` ones. **Return the refusal the function already gives a
+wrong-typed input, never a value that reads as a measurement** (#726): all forty-two sites had one,
+so none needed inventing, and `Shape.isEmptyShape` is what a caller uses to tell a null shape from a
+real negative.
+
 **Four is a fact about this tree, not a closed set.** The checker is still blind to `(*cast).field`,
 a reference-to-wrapper alias, an `IsNull()` whose result is discarded or does not dominate the use,
 a negated guard, `extern "C"` on the definition line (which hides the whole function from its

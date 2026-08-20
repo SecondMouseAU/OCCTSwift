@@ -2453,8 +2453,10 @@ Add a child shape into this shape using `TopoDS_Builder`.
 public func builderAdd(_ child: Shape) -> Bool
 ```
 
-- **Returns:** `true` if the child was added.
-- **OCCT:** `TopoDS_Builder::Add`.
+- **Returns:** `true` if the child was added, `false` if either shape is null.
+- **OCCT:** `TopoDS_Builder::Add`, which dereferences the component's `TShape` in its first
+  statement. A null shape (from `Shape.nullified`) used to crash the process here rather than
+  returning `false` (#1026).
 - **Example:**
   ```swift
   let compound = Shape.builderMakeCompound()!
@@ -2474,8 +2476,10 @@ Remove a child shape from this shape using `TopoDS_Builder`.
 public func builderRemove(_ child: Shape) -> Bool
 ```
 
-- **Returns:** `true` if the child was removed.
-- **OCCT:** `TopoDS_Builder::Remove`.
+- **Returns:** `true` if the child was removed, `false` if either shape is null.
+- **OCCT:** `TopoDS_Builder::Remove`. A null *parent* used to crash here; a null child did not,
+  because `Remove` walks the parent's children rather than dereferencing the one it is handed.
+  Both are refused now (#1026).
 
 ---
 

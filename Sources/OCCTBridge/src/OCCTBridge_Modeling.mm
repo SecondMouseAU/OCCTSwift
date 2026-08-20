@@ -6323,7 +6323,9 @@ OCCTShapeRef OCCTLocOpeDPrismSingleHeight(OCCTFaceRef spineFace, double height, 
 // MARK: - LocOpe Form/Split/Find/Intersect (v0.48)
 OCCTShapeRef OCCTLocOpePipe(OCCTShapeRef shape, OCCTShapeRef spineWire)
 {
-  if (!shape || !spineWire)
+  // #1026: the ShapeType() reads below are unguarded myTShape dereferences, so the shape needs
+  // testing as well as the pointer. occtShapeIsPresent is in OCCTBridge_Internal.h.
+  if (!occtShapeIsPresent(shape) || !occtShapeIsPresent(spineWire))
     return nullptr;
   try
   {
@@ -6421,7 +6423,8 @@ OCCTShapeRef OCCTLocOpeRevolutionForm(OCCTShapeRef shape,
 
 OCCTShapeRef OCCTLocOpeSplitShapeByWire(OCCTShapeRef shape, int32_t faceIndex, OCCTShapeRef wire)
 {
-  if (!shape || !wire)
+  // #1026: the wire's ShapeType() read below is an unguarded myTShape dereference.
+  if (!occtShapeIsPresent(shape) || !occtShapeIsPresent(wire))
     return nullptr;
   try
   {
@@ -6559,7 +6562,8 @@ OCCTShapeRef OCCTLocOpeSplitDrafts(OCCTShapeRef shape,
                                    double       planeNormalZ,
                                    double       angle)
 {
-  if (!shape || !wire)
+  // #1026: the wire's ShapeType() read below is an unguarded myTShape dereference.
+  if (!occtShapeIsPresent(shape) || !occtShapeIsPresent(wire))
     return nullptr;
   try
   {
@@ -6961,7 +6965,8 @@ OCCTWireRef _Nullable OCCTWireMakeWireFromEdgeRefs(const OCCTEdgeRef _Nonnull* _
 
 OCCTShapeRef _Nullable OCCTShapeMakeSolidFromShell(OCCTShapeRef shell)
 {
-  if (!shell)
+  // #1026: the ShapeType() read below is an unguarded myTShape dereference.
+  if (!occtShapeIsPresent(shell))
     return nullptr;
   try
   {
@@ -8013,7 +8018,8 @@ OCCTShapeRef _Nullable OCCTLocOpeSplitByWireOnFace(OCCTShapeRef shape,
                                                    OCCTShapeRef wire,
                                                    int32_t      faceIndex)
 {
-  if (!shape || !wire)
+  // #1026: the wire's ShapeType() read below is an unguarded myTShape dereference.
+  if (!occtShapeIsPresent(shape) || !occtShapeIsPresent(wire))
     return nullptr;
   try
   {
@@ -9008,6 +9014,11 @@ OCCTShapeRef _Nullable OCCTBRepFeatSplitShapeWithSides(
     BRepFeat_SplitShape splitter(shape->shape);
     for (int32_t i = 0; i < pairCount; i++)
     {
+      // #1026: per element, since a guard on one array slot says nothing about the next. The
+      // whole call is refused rather than the pair skipped, matching OCCTMakeWireFromEdges (#1008):
+      // a silently dropped pair is a split the caller asked for and did not get.
+      if (!occtShapeIsPresent(edgesOnFaces[i * 2]) || !occtShapeIsPresent(edgesOnFaces[i * 2 + 1]))
+        return nullptr;
       TopoDS_Shape edgeOrWire = edgesOnFaces[i * 2]->shape;
       TopoDS_Face  face       = TopoDS::Face(edgesOnFaces[i * 2 + 1]->shape);
       if (edgeOrWire.ShapeType() == TopAbs_WIRE)
@@ -9170,6 +9181,9 @@ OCCTShapeRef _Nullable OCCTLocOpeSplitByWires(
     Handle(LocOpe_WiresOnShape) wos = new LocOpe_WiresOnShape(shape->shape);
     for (int32_t i = 0; i < pairCount; i++)
     {
+      // #1026: per element, same reasoning as OCCTBRepFeatSplitShapeWithSides above.
+      if (!occtShapeIsPresent(wiresOnFaces[i * 2]) || !occtShapeIsPresent(wiresOnFaces[i * 2 + 1]))
+        return nullptr;
       TopoDS_Wire         w;
       const TopoDS_Shape& ws = wiresOnFaces[i * 2]->shape;
       if (ws.ShapeType() == TopAbs_WIRE)
@@ -16423,10 +16437,13 @@ OCCTShapeRef OCCTShapeCreateCompound(const OCCTShapeRef* shapes, int32_t count)
 
     for (int32_t i = 0; i < count; i++)
     {
-      if (shapes[i])
-      {
-        builder.Add(compound, shapes[i]->shape);
-      }
+      // #1026: TopoDS_Builder::Add dereferences the component's TShape in its first statement, so
+      // the pointer test alone was a SIGSEGV on Shape.compound([shape.nullified!]). Refusing the
+      // whole call rather than skipping the element matches OCCTMakeWireFromEdges (#1008); the
+      // twin of this function is OCCTShapeCompounded in OCCTBridge_Topology.mm.
+      if (!occtShapeIsPresent(shapes[i]))
+        return nullptr;
+      builder.Add(compound, shapes[i]->shape);
     }
 
     return new OCCTShape(compound);
