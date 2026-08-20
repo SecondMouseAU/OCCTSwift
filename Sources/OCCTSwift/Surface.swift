@@ -2334,16 +2334,18 @@ extension Surface {
     ///
     /// - Parameters:
     ///   - constraints: Array of constraint tuples
-    ///   - maxIterations: Maximum solver iterations (default 4)
     ///   - tolerance: Approximation tolerance (default 1e-3)
     /// - Returns: A new deformed surface, or nil on failure
+    ///
+    /// There is no iteration count: `NLPlate_NLPlate::Solve2` takes none. For the incremental
+    /// solver strategy, which does take a number of increments, use
+    /// ``nlPlateDeformedIncremental(constraints:maxOrder:initConstraintOrder:nbIncrements:)``.
     public func nlPlateDeformedG2(
         constraints: [(
             uv: SIMD2<Double>, target: SIMD3<Double>,
             tangentU: SIMD3<Double>, tangentV: SIMD3<Double>,
             curvatureUU: SIMD3<Double>, curvatureUV: SIMD3<Double>, curvatureVV: SIMD3<Double>
         )],
-        maxIterations: Int = 4,
         tolerance: Double = 1e-3
     ) -> Surface? {
         guard !constraints.isEmpty else { return nil }
@@ -2375,10 +2377,7 @@ extension Surface {
         }
 
         guard
-            let h = OCCTSurfaceNLPlateG2(
-                handle, &flat, Int32(constraints.count),
-                Int32(maxIterations), tolerance
-            )
+            let h = OCCTSurfaceNLPlateG2(handle, &flat, Int32(constraints.count), tolerance)
         else { return nil }
         return Surface(handle: h)
     }
@@ -2390,9 +2389,11 @@ extension Surface {
     ///
     /// - Parameters:
     ///   - constraints: Array of constraint tuples
-    ///   - maxIterations: Maximum solver iterations (default 4)
     ///   - tolerance: Approximation tolerance (default 1e-3)
     /// - Returns: A new deformed surface, or nil on failure
+    ///
+    /// There is no iteration count, for the same reason as
+    /// ``nlPlateDeformedG2(constraints:tolerance:)``.
     public func nlPlateDeformedG3(
         constraints: [(
             uv: SIMD2<Double>, target: SIMD3<Double>,
@@ -2400,7 +2401,6 @@ extension Surface {
             curvatureUU: SIMD3<Double>, curvatureUV: SIMD3<Double>, curvatureVV: SIMD3<Double>,
             d3UUU: SIMD3<Double>, d3UUV: SIMD3<Double>, d3UVV: SIMD3<Double>, d3VVV: SIMD3<Double>
         )],
-        maxIterations: Int = 4,
         tolerance: Double = 1e-3
     ) -> Surface? {
         guard !constraints.isEmpty else { return nil }
@@ -2444,10 +2444,7 @@ extension Surface {
         }
 
         guard
-            let h = OCCTSurfaceNLPlateG3(
-                handle, &flat, Int32(constraints.count),
-                Int32(maxIterations), tolerance
-            )
+            let h = OCCTSurfaceNLPlateG3(handle, &flat, Int32(constraints.count), tolerance)
         else { return nil }
         return Surface(handle: h)
     }
@@ -2656,42 +2653,6 @@ extension Surface {
         public let lineOrigin: SIMD3<Double>
         /// Line direction (meaningful when isLine is true).
         public let lineDirection: SIMD3<Double>
-    }
-
-    /// Get G0/G1/G2 errors from a plate surface construction.
-    ///
-    /// Builds a plate surface through the given points and reports the
-    /// positional (G0), tangential (G1), and curvature (G2) errors.
-    ///
-    /// - Parameters:
-    ///   - points: Array of 3D points
-    ///   - tolerance: Approximation tolerance
-    ///   - maxDegree: Maximum BSpline degree (default 8)
-    ///   - maxSegments: Maximum BSpline segments (default 9)
-    /// - Returns: Tuple of (g0Error, g1Error, g2Error), or nil on failure
-    public static func plateErrors(
-        points: [SIMD3<Double>],
-        tolerance: Double = 1e-3,
-        maxDegree: Int = 8,
-        maxSegments: Int = 9
-    ) -> (g0Error: Double, g1Error: Double, g2Error: Double)? {
-        guard points.count >= 3 else { return nil }
-        var flat: [Double] = []
-        flat.reserveCapacity(points.count * 3)
-        for p in points {
-            flat.append(p.x)
-            flat.append(p.y)
-            flat.append(p.z)
-        }
-        var g0: Double = 0
-        var g1: Double = 0
-        var g2: Double = 0
-        let ok = OCCTGeomPlateErrors(
-            &flat, Int32(points.count),
-            tolerance, Int32(maxDegree), Int32(maxSegments),
-            &g0, &g1, &g2)
-        guard ok else { return nil }
-        return (g0, g1, g2)
     }
 
     // MARK: - v0.80.0: Extrema, gce factories, GeomTools persistence

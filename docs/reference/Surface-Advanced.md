@@ -911,7 +911,7 @@ public static func nSectionsInfo(
 
 ## NLPlate G2/G3, IncrementalSolve, GeomFill_Generator (v0.69.0)
 
-### `nlPlateDeformedG2(constraints:maxIterations:tolerance:)`
+### `nlPlateDeformedG2(constraints:tolerance:)`
 
 Deforms this surface with position, tangent, and curvature constraints (NLPlate G0+G2).
 
@@ -920,7 +920,6 @@ public func nlPlateDeformedG2(
     constraints: [(uv: SIMD2<Double>, target: SIMD3<Double>,
                    tangentU: SIMD3<Double>, tangentV: SIMD3<Double>,
                    curvatureUU: SIMD3<Double>, curvatureUV: SIMD3<Double>, curvatureVV: SIMD3<Double>)],
-    maxIterations: Int = 4,
     tolerance: Double = 1e-3
 ) -> Surface?
 ```
@@ -928,7 +927,12 @@ public func nlPlateDeformedG2(
 Extends `nlPlateDeformedG1` by also constraining the second derivatives (curvature tensors) at
 each point. Produces curvature-continuous deformations. Each constraint carries 20 doubles.
 
-- **Parameters:** `constraints` — array of constraint tuples (non-empty); `maxIterations` — solver iteration limit; `tolerance` — approximation tolerance.
+There is no iteration count. `NLPlate_NLPlate::Solve2(ord, InitialConsraintOrder)` takes none, and
+neither does `Solve()`. `IncrementalSolve` does, but it is a different solver rather than a bound
+on this one, and it is wrapped separately as
+[`nlPlateDeformedIncremental(constraints:maxOrder:initConstraintOrder:nbIncrements:)`](#nlplatedeformedincrementalconstraintsmaxorderinitconstraintordernbincrements).
+
+- **Parameters:** `constraints` — array of constraint tuples (non-empty); `tolerance` — approximation tolerance.
 - **Returns:** New deformed surface, or `nil` on failure.
 - **OCCT:** `NLPlate_NLPlate` + `NLPlate_HPG2Constraint` + `GeomPlate_MakeApprox`.
 - **Example:**
@@ -944,7 +948,7 @@ each point. Produces curvature-continuous deformations. Each constraint carries 
 
 ---
 
-### `nlPlateDeformedG3(constraints:maxIterations:tolerance:)`
+### `nlPlateDeformedG3(constraints:tolerance:)`
 
 Deforms this surface with G0+G1+G2+G3 constraints (position, tangent, curvature, and third-order derivatives).
 
@@ -954,7 +958,6 @@ public func nlPlateDeformedG3(
                    tangentU: SIMD3<Double>, tangentV: SIMD3<Double>,
                    curvatureUU: SIMD3<Double>, curvatureUV: SIMD3<Double>, curvatureVV: SIMD3<Double>,
                    d3UUU: SIMD3<Double>, d3UUV: SIMD3<Double>, d3UVV: SIMD3<Double>, d3VVV: SIMD3<Double>)],
-    maxIterations: Int = 4,
     tolerance: Double = 1e-3
 ) -> Surface?
 ```
@@ -962,7 +965,9 @@ public func nlPlateDeformedG3(
 The highest-order NLPlate constraint set: 32 doubles per constraint (uv + target + 3 first
 derivatives + 3 second derivatives + 4 third derivatives). Achieves G3-continuous deformations.
 
-- **Parameters:** `constraints` — G0+G1+G2+G3 constraint tuples (non-empty); `maxIterations` — solver iteration limit; `tolerance` — approximation tolerance.
+There is no iteration count, for the same reason as `nlPlateDeformedG2(constraints:tolerance:)`.
+
+- **Parameters:** `constraints` — G0+G1+G2+G3 constraint tuples (non-empty); `tolerance` — approximation tolerance.
 - **Returns:** New deformed surface, or `nil` on failure.
 - **OCCT:** `NLPlate_NLPlate` + `NLPlate_HPG3Constraint` + `GeomPlate_MakeApprox`.
 - **Example:**
@@ -1188,31 +1193,6 @@ Unit direction of the fitted line; meaningful only when `isLine` is `true`.
   let pts: [SIMD3<Double>] = [.zero, SIMD3(10,0,0), SIMD3(0,10,0), SIMD3(10,10,0.1)]
   if let result = Surface.averagePlane(points: pts) {
       if result.isPlane { print("normal:", result.normal) }
-  }
-  ```
-
----
-
-### `Surface.plateErrors(points:tolerance:maxDegree:maxSegments:)`
-
-Builds a plate surface through points and reports G0, G1, and G2 approximation errors.
-
-```swift
-public static func plateErrors(
-    points: [SIMD3<Double>],
-    tolerance: Double = 1e-3,
-    maxDegree: Int = 8,
-    maxSegments: Int = 9
-) -> (g0Error: Double, g1Error: Double, g2Error: Double)?
-```
-
-- **Parameters:** `points` — 3D points (minimum 3); `tolerance` — approximation tolerance; `maxDegree` — maximum BSpline degree; `maxSegments` — maximum BSpline segments.
-- **Returns:** Tuple of positional (`g0Error`), tangential (`g1Error`), and curvature (`g2Error`) errors, or `nil` on failure.
-- **OCCT:** `GeomPlate_BuildPlateSurface` + `GeomPlate_MakeApprox` (error query).
-- **Example:**
-  ```swift
-  if let err = Surface.plateErrors(points: pts) {
-      print("G0:", err.g0Error, "G1:", err.g1Error, "G2:", err.g2Error)
   }
   ```
 

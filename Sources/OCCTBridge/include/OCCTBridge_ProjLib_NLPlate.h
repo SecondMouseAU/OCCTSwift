@@ -150,20 +150,21 @@ OCCTShapeRef _Nullable OCCTProjLibComputeApproxOnPolarSurface(OCCTShapeRef edgeS
 /// constraints: flat array per point of (u, v, targetX, targetY, targetZ,
 ///   d1uX,d1uY,d1uZ, d1vX,d1vY,d1vZ,
 ///   d2uuX,d2uuY,d2uuZ, d2uvX,d2uvY,d2uvZ, d2vvX,d2vvY,d2vvZ) = 20 doubles each.
+/// No iteration count: NLPlate_NLPlate::Solve2(ord, InitialConsraintOrder) takes none. See the
+/// note on the implementation for why IncrementalSolve is not the answer either (#999).
 OCCTSurfaceRef _Nullable OCCTSurfaceNLPlateG2(OCCTSurfaceRef _Nonnull initialSurface,
                                               const double* _Nonnull constraints,
                                               int32_t constraintCount,
-                                              int32_t maxIter,
                                               double  tolerance);
 
 /// Deform a surface with G0+G1+G2+G3 constraints.
 /// constraints: flat array per point of 32 doubles each:
 ///   (u, v, targetX,Y,Z, d1uX,Y,Z, d1vX,Y,Z, d2uuX,Y,Z, d2uvX,Y,Z, d2vvX,Y,Z,
 ///    d3uuuX,Y,Z, d3uuvX,Y,Z, d3uvvX,Y,Z, d3vvvX,Y,Z)
+/// No iteration count, for the same reason as OCCTSurfaceNLPlateG2 (#999).
 OCCTSurfaceRef _Nullable OCCTSurfaceNLPlateG3(OCCTSurfaceRef _Nonnull initialSurface,
                                               const double* _Nonnull constraints,
                                               int32_t constraintCount,
-                                              int32_t maxIter,
                                               double  tolerance);
 
 /// NLPlate with IncrementalSolve strategy (for challenging constraint sets).
@@ -276,17 +277,15 @@ OCCTAveragePlaneResult OCCTGeomPlateBuildAveragePlane(const double* _Nonnull poi
                                                       int32_t nbBoundPoints,
                                                       double  tolerance);
 
-/// Get G0/G1/G2 errors from a GeomPlate build.
-/// Uses same point-based plate surface construction as OCCTGeomPlateSurface.
-/// @return false if construction fails
-bool OCCTGeomPlateErrors(const double* _Nonnull points,
-                         int32_t ptCount,
-                         double  tolerance,
-                         int32_t maxDegree,
-                         int32_t maxSegments,
-                         double* _Nonnull g0Error,
-                         double* _Nonnull g1Error,
-                         double* _Nonnull g2Error);
+// OCCTGeomPlateErrors is deliberately gone (#999). It reported
+// GeomPlate_BuildPlateSurface::G0Error/G1Error/G2Error for a point-only plate, and the kernel never
+// assigns myG0Error/myG1Error/myG2Error on that path: VerifSurface() is the only writer and it runs
+// only when there are curve constraints, while the point branch computes its deviations into three
+// locals and discards them. The members have no initialiser, so the three doubles were
+// uninitialised memory. Measured through the real bridge: repeated calls on one fixture
+// returned 1.94e-313, -3.11e+231 and then -nan, and no value moved with tolerance, maxDegree or
+// maxSegments. A curve-constraint entry point would be a real one; that is new API, not a repair of
+// this.
 
 // MARK: - ShapeConstruct_ProjectCurveOnSurface
 
