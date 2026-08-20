@@ -10,7 +10,6 @@
 #ifndef OCCTBridge_Document_h
 #define OCCTBridge_Document_h
 
-
 /// Create a new empty XDE document
 OCCTDocumentRef OCCTDocumentCreate(void);
 
@@ -90,16 +89,18 @@ void OCCTDocumentGetLocation(OCCTDocumentRef doc, int64_t labelId, float* outMat
 // MARK: - XDE Colors
 
 /// Color type (matches XCAFDoc_ColorType)
-typedef enum {
-    OCCTColorTypeGeneric = 0,   // Generic color
-    OCCTColorTypeSurface = 1,   // Surface color (overrides generic)
-    OCCTColorTypeCurve = 2      // Curve color (overrides generic)
+typedef enum
+{
+  OCCTColorTypeGeneric = 0, // Generic color
+  OCCTColorTypeSurface = 1, // Surface color (overrides generic)
+  OCCTColorTypeCurve   = 2  // Curve color (overrides generic)
 } OCCTColorType;
 
 /// RGBA color with set flag
-typedef struct {
-    double r, g, b, a;
-    bool isSet;
+typedef struct
+{
+  double r, g, b, a;
+  bool   isSet;
 } OCCTColor;
 
 /// Get color for a label
@@ -114,18 +115,24 @@ OCCTColor OCCTDocumentGetLabelColor(OCCTDocumentRef doc, int64_t labelId, OCCTCo
 /// @param labelId Label identifier
 /// @param colorType Type of color to set
 /// @param r, g, b RGB values (0.0-1.0)
-void OCCTDocumentSetLabelColor(OCCTDocumentRef doc, int64_t labelId, OCCTColorType colorType, double r, double g, double b);
+void OCCTDocumentSetLabelColor(OCCTDocumentRef doc,
+                               int64_t         labelId,
+                               OCCTColorType   colorType,
+                               double          r,
+                               double          g,
+                               double          b);
 
 // MARK: - XDE Materials (PBR)
 
 /// PBR Material properties
-typedef struct {
-    OCCTColor baseColor;
-    double metallic;        // 0.0-1.0
-    double roughness;       // 0.0-1.0
-    OCCTColor emissive;
-    double transparency;    // 0.0-1.0
-    bool isSet;
+typedef struct
+{
+  OCCTColor baseColor;
+  double    metallic;  // 0.0-1.0
+  double    roughness; // 0.0-1.0
+  OCCTColor emissive;
+  double    transparency; // 0.0-1.0
+  bool      isSet;
 } OCCTMaterial;
 
 /// Get PBR material for a label
@@ -157,31 +164,34 @@ int32_t OCCTDocumentGetGeomToleranceCount(OCCTDocumentRef doc);
 int32_t OCCTDocumentGetDatumCount(OCCTDocumentRef doc);
 
 /// Dimension info result
-typedef struct {
-    int32_t type;         // XCAFDimTolObjects_DimensionType enum
-    double value;         // primary value
-    double lowerTol;      // lower tolerance
-    double upperTol;      // upper tolerance
-    bool isValid;
+typedef struct
+{
+  int32_t type;     // XCAFDimTolObjects_DimensionType enum
+  double  value;    // primary value
+  double  lowerTol; // lower tolerance
+  double  upperTol; // upper tolerance
+  bool    isValid;
 } OCCTDimensionInfo;
 
 /// Get dimension info at index
 OCCTDimensionInfo OCCTDocumentGetDimensionInfo(OCCTDocumentRef doc, int32_t index);
 
 /// Geometric tolerance info result
-typedef struct {
-    int32_t type;         // XCAFDimTolObjects_GeomToleranceType enum
-    double value;         // tolerance value
-    bool isValid;
+typedef struct
+{
+  int32_t type;  // XCAFDimTolObjects_GeomToleranceType enum
+  double  value; // tolerance value
+  bool    isValid;
 } OCCTGeomToleranceInfo;
 
 /// Get geometric tolerance info at index
 OCCTGeomToleranceInfo OCCTDocumentGetGeomToleranceInfo(OCCTDocumentRef doc, int32_t index);
 
 /// Datum info result
-typedef struct {
-    char name[64];        // datum identifier (A, B, C, etc.)
-    bool isValid;
+typedef struct
+{
+  char name[64]; // datum identifier (A, B, C, etc.)
+  bool isValid;
 } OCCTDatumInfo;
 
 /// Get datum info at index
@@ -195,46 +205,48 @@ OCCTDatumInfo OCCTDocumentGetDatumInfo(OCCTDocumentRef doc, int32_t index);
 /// Returns -1 on failure, else the index of the new dimension (usable with
 /// OCCTDocumentGetDimensionInfo).
 int32_t OCCTDocumentCreateDimension(OCCTDocumentRef _Nonnull doc,
-                                     int64_t shapeLabelId,
-                                     int32_t type,
-                                     double value);
+                                    int64_t shapeLabelId,
+                                    int32_t type,
+                                    double  value);
 
 /// Create a geometric tolerance attribute on the document and attach it to a shape.
 /// type: XCAFDimTolObjects_GeomToleranceType enum
 /// Returns -1 on failure, else the index of the new tolerance.
 int32_t OCCTDocumentCreateGeomTolerance(OCCTDocumentRef _Nonnull doc,
-                                         int64_t shapeLabelId,
-                                         int32_t type,
-                                         double value);
+                                        int64_t shapeLabelId,
+                                        int32_t type,
+                                        double  value);
 
 /// Create a datum attribute on the document with the given identifier.
 /// Returns -1 on failure, else the index of the new datum.
-int32_t OCCTDocumentCreateDatum(OCCTDocumentRef _Nonnull doc,
-                                 const char* _Nonnull name);
+int32_t OCCTDocumentCreateDatum(OCCTDocumentRef _Nonnull doc, const char* _Nonnull name);
 
 /// Set tolerance bounds (lower + upper, relative to the primary value) on an
 /// existing dimension. Returns true on success.
 bool OCCTDocumentSetDimensionTolerance(OCCTDocumentRef _Nonnull doc,
-                                        int32_t dimensionIndex,
-                                        double lowerTol, double upperTol);
+                                       int32_t dimensionIndex,
+                                       double  lowerTol,
+                                       double  upperTol);
 
 // MARK: - TNaming: Topological Naming History (v0.25.0)
 
 /// Evolution type for TNaming history records.
-typedef enum {
-    OCCTNamingPrimitive  = 0,  ///< New entity created (old=NULL, new=shape)
-    OCCTNamingGenerated  = 1,  ///< Entity generated from another (old=generator, new=result)
-    OCCTNamingModify     = 2,  ///< Entity modified (old=before, new=after)
-    OCCTNamingDelete     = 3,  ///< Entity deleted (old=shape, new=NULL)
-    OCCTNamingSelected   = 4   ///< Named selection (old=context, new=selected)
+typedef enum
+{
+  OCCTNamingPrimitive = 0, ///< New entity created (old=NULL, new=shape)
+  OCCTNamingGenerated = 1, ///< Entity generated from another (old=generator, new=result)
+  OCCTNamingModify    = 2, ///< Entity modified (old=before, new=after)
+  OCCTNamingDelete    = 3, ///< Entity deleted (old=shape, new=NULL)
+  OCCTNamingSelected  = 4  ///< Named selection (old=context, new=selected)
 } OCCTNamingEvolution;
 
 /// A single entry in the naming history of a label.
-typedef struct {
-    OCCTNamingEvolution evolution;
-    bool hasOldShape;
-    bool hasNewShape;
-    bool isModification;
+typedef struct
+{
+  OCCTNamingEvolution evolution;
+  bool                hasOldShape;
+  bool                hasNewShape;
+  bool                isModification;
 } OCCTNamingHistoryEntry;
 
 /// Create a new child label under the given parent label.
@@ -249,9 +261,11 @@ int64_t OCCTDocumentCreateLabel(OCCTDocumentRef doc, int64_t parentLabelId);
 /// For DELETE: oldShape=deleted shape, newShape=NULL.
 /// For SELECTED: oldShape=context, newShape=selected shape.
 /// Returns true on success.
-bool OCCTDocumentNamingRecord(OCCTDocumentRef doc, int64_t labelId,
-                               OCCTNamingEvolution evolution,
-                               OCCTShapeRef oldShape, OCCTShapeRef newShape);
+bool OCCTDocumentNamingRecord(OCCTDocumentRef     doc,
+                              int64_t             labelId,
+                              OCCTNamingEvolution evolution,
+                              OCCTShapeRef        oldShape,
+                              OCCTShapeRef        newShape);
 
 /// Get the current (most recent) shape stored on a label via TNaming.
 /// Uses TNaming_Tool::CurrentShape. Returns NULL if no naming exists.
@@ -266,8 +280,10 @@ int32_t OCCTDocumentNamingHistoryCount(OCCTDocumentRef doc, int64_t labelId);
 
 /// Get a specific history entry by index (0-based).
 /// Returns true on success.
-bool OCCTDocumentNamingGetHistoryEntry(OCCTDocumentRef doc, int64_t labelId,
-                                        int32_t index, OCCTNamingHistoryEntry* outEntry);
+bool OCCTDocumentNamingGetHistoryEntry(OCCTDocumentRef         doc,
+                                       int64_t                 labelId,
+                                       int32_t                 index,
+                                       OCCTNamingHistoryEntry* outEntry);
 
 /// Get the old shape from a specific history entry (0-based index).
 /// Returns NULL if the entry has no old shape.
@@ -281,23 +297,29 @@ OCCTShapeRef OCCTDocumentNamingGetNewShape(OCCTDocumentRef doc, int64_t labelId,
 /// Uses TNaming_NewShapeIterator. accessLabelId provides the label scope.
 /// Returns the number of shapes written to outShapes (up to maxCount).
 /// Caller must release each returned shape.
-int32_t OCCTDocumentNamingTraceForward(OCCTDocumentRef doc, int64_t accessLabelId,
-                                        OCCTShapeRef shape,
-                                        OCCTShapeRef* outShapes, int32_t maxCount);
+int32_t OCCTDocumentNamingTraceForward(OCCTDocumentRef doc,
+                                       int64_t         accessLabelId,
+                                       OCCTShapeRef    shape,
+                                       OCCTShapeRef*   outShapes,
+                                       int32_t         maxCount);
 
 /// Trace backward: find all shapes that generated/preceded the given shape.
 /// Uses TNaming_OldShapeIterator. accessLabelId provides the label scope.
 /// Returns the number of shapes written to outShapes (up to maxCount).
 /// Caller must release each returned shape.
-int32_t OCCTDocumentNamingTraceBackward(OCCTDocumentRef doc, int64_t accessLabelId,
-                                         OCCTShapeRef shape,
-                                         OCCTShapeRef* outShapes, int32_t maxCount);
+int32_t OCCTDocumentNamingTraceBackward(OCCTDocumentRef doc,
+                                        int64_t         accessLabelId,
+                                        OCCTShapeRef    shape,
+                                        OCCTShapeRef*   outShapes,
+                                        int32_t         maxCount);
 
 /// Select a shape for persistent naming.
 /// Creates a TNaming_Selector on the label and selects the shape within context.
 /// Returns true on success.
-bool OCCTDocumentNamingSelect(OCCTDocumentRef doc, int64_t labelId,
-                               OCCTShapeRef selection, OCCTShapeRef context);
+bool OCCTDocumentNamingSelect(OCCTDocumentRef doc,
+                              int64_t         labelId,
+                              OCCTShapeRef    selection,
+                              OCCTShapeRef    context);
 
 /// Resolve a previously selected shape after modifications.
 /// Uses TNaming_Selector::Solve to update the selection.
@@ -316,7 +338,10 @@ int32_t OCCTDocumentNamingGetEvolution(OCCTDocumentRef doc, int64_t labelId);
 /// @param unitName Output: buffer for unit name string
 /// @param maxNameLen Maximum length of the unitName buffer
 /// @return true if length unit information was found
-bool OCCTDocumentGetLengthUnit(OCCTDocumentRef doc, double* unitScale, char* unitName, int32_t maxNameLen);
+bool OCCTDocumentGetLengthUnit(OCCTDocumentRef doc,
+                               double*         unitScale,
+                               char*           unitName,
+                               int32_t         maxNameLen);
 
 // MARK: - Document Layers (v0.31.0)
 
@@ -336,10 +361,11 @@ bool OCCTDocumentGetLayerName(OCCTDocumentRef doc, int32_t index, char* outName,
 // MARK: - Document Materials (v0.31.0)
 
 /// Material info structure returned by OCCTDocumentGetMaterialInfo.
-typedef struct {
-    char name[128];
-    char description[256];
-    double density;
+typedef struct
+{
+  char   name[128];
+  char   description[256];
+  double density;
 } OCCTMaterialInfo;
 
 /// Get the number of materials in a document.
@@ -405,9 +431,11 @@ void OCCTDocumentLabelForgetAllAttributes(OCCTDocumentRef doc, int64_t labelId, 
 /// @param outLabelIds Output array of labelIds
 /// @param maxCount Maximum number of labels to return
 /// @return Number of labels found
-int32_t OCCTDocumentGetDescendantLabels(OCCTDocumentRef doc, int64_t labelId,
-                                         bool allLevels,
-                                         int64_t* outLabelIds, int32_t maxCount);
+int32_t OCCTDocumentGetDescendantLabels(OCCTDocumentRef doc,
+                                        int64_t         labelId,
+                                        bool            allLevels,
+                                        int64_t*        outLabelIds,
+                                        int32_t         maxCount);
 
 // MARK: - TDF Label Name (v0.54.0)
 
@@ -487,8 +515,7 @@ void OCCTDocumentSetModified(OCCTDocumentRef doc, int64_t labelId);
 /// Clear all modification marks.
 void OCCTDocumentClearModified(OCCTDocumentRef doc);
 
-/// Check if a label is marked as modified (via TDocStd_Modified on root).
-/// Note: This uses TDocStd_Document::GetModified(), not TDocStd_Modified attribute directly.
+/// Check if a label is marked as modified (via the TDocStd_Modified attribute on the root label).
 bool OCCTDocumentIsLabelModified(OCCTDocumentRef doc, int64_t labelId);
 
 // MARK: - TDataStd Scalar Attributes (v0.55.0)
@@ -520,16 +547,28 @@ const char* OCCTDocumentGetCommentAttr(OCCTDocumentRef doc, int64_t labelId);
 // MARK: - TDataStd Integer Array (v0.55.0)
 
 /// Initialize an integer array attribute on a label.
-bool OCCTDocumentInitIntegerArray(OCCTDocumentRef doc, int64_t labelId, int32_t lower, int32_t upper);
+bool OCCTDocumentInitIntegerArray(OCCTDocumentRef doc,
+                                  int64_t         labelId,
+                                  int32_t         lower,
+                                  int32_t         upper);
 
 /// Set a value in an integer array attribute.
-bool OCCTDocumentSetIntegerArrayValue(OCCTDocumentRef doc, int64_t labelId, int32_t index, int32_t value);
+bool OCCTDocumentSetIntegerArrayValue(OCCTDocumentRef doc,
+                                      int64_t         labelId,
+                                      int32_t         index,
+                                      int32_t         value);
 
 /// Get a value from an integer array attribute.
-bool OCCTDocumentGetIntegerArrayValue(OCCTDocumentRef doc, int64_t labelId, int32_t index, int32_t* outValue);
+bool OCCTDocumentGetIntegerArrayValue(OCCTDocumentRef doc,
+                                      int64_t         labelId,
+                                      int32_t         index,
+                                      int32_t*        outValue);
 
 /// Get the bounds of an integer array attribute.
-bool OCCTDocumentGetIntegerArrayBounds(OCCTDocumentRef doc, int64_t labelId, int32_t* outLower, int32_t* outUpper);
+bool OCCTDocumentGetIntegerArrayBounds(OCCTDocumentRef doc,
+                                       int64_t         labelId,
+                                       int32_t*        outLower,
+                                       int32_t*        outUpper);
 
 // MARK: - TDataStd Real Array (v0.55.0)
 
@@ -537,13 +576,22 @@ bool OCCTDocumentGetIntegerArrayBounds(OCCTDocumentRef doc, int64_t labelId, int
 bool OCCTDocumentInitRealArray(OCCTDocumentRef doc, int64_t labelId, int32_t lower, int32_t upper);
 
 /// Set a value in a real array attribute.
-bool OCCTDocumentSetRealArrayValue(OCCTDocumentRef doc, int64_t labelId, int32_t index, double value);
+bool OCCTDocumentSetRealArrayValue(OCCTDocumentRef doc,
+                                   int64_t         labelId,
+                                   int32_t         index,
+                                   double          value);
 
 /// Get a value from a real array attribute.
-bool OCCTDocumentGetRealArrayValue(OCCTDocumentRef doc, int64_t labelId, int32_t index, double* outValue);
+bool OCCTDocumentGetRealArrayValue(OCCTDocumentRef doc,
+                                   int64_t         labelId,
+                                   int32_t         index,
+                                   double*         outValue);
 
 /// Get the bounds of a real array attribute.
-bool OCCTDocumentGetRealArrayBounds(OCCTDocumentRef doc, int64_t labelId, int32_t* outLower, int32_t* outUpper);
+bool OCCTDocumentGetRealArrayBounds(OCCTDocumentRef doc,
+                                    int64_t         labelId,
+                                    int32_t*        outLower,
+                                    int32_t*        outUpper);
 
 // MARK: - TDataStd TreeNode (v0.55.0)
 
@@ -574,25 +622,40 @@ int32_t OCCTDocumentTreeNodeNbChildren(OCCTDocumentRef doc, int64_t labelId);
 // MARK: - TDataStd NamedData (v0.55.0)
 
 /// Set an integer value in a NamedData attribute.
-bool OCCTDocumentNamedDataSetInteger(OCCTDocumentRef doc, int64_t labelId, const char* name, int32_t value);
+bool OCCTDocumentNamedDataSetInteger(OCCTDocumentRef doc,
+                                     int64_t         labelId,
+                                     const char*     name,
+                                     int32_t         value);
 
 /// Get an integer value from a NamedData attribute.
-bool OCCTDocumentNamedDataGetInteger(OCCTDocumentRef doc, int64_t labelId, const char* name, int32_t* outValue);
+bool OCCTDocumentNamedDataGetInteger(OCCTDocumentRef doc,
+                                     int64_t         labelId,
+                                     const char*     name,
+                                     int32_t*        outValue);
 
 /// Check if a named integer exists in a NamedData attribute.
 bool OCCTDocumentNamedDataHasInteger(OCCTDocumentRef doc, int64_t labelId, const char* name);
 
 /// Set a real value in a NamedData attribute.
-bool OCCTDocumentNamedDataSetReal(OCCTDocumentRef doc, int64_t labelId, const char* name, double value);
+bool OCCTDocumentNamedDataSetReal(OCCTDocumentRef doc,
+                                  int64_t         labelId,
+                                  const char*     name,
+                                  double          value);
 
 /// Get a real value from a NamedData attribute.
-bool OCCTDocumentNamedDataGetReal(OCCTDocumentRef doc, int64_t labelId, const char* name, double* outValue);
+bool OCCTDocumentNamedDataGetReal(OCCTDocumentRef doc,
+                                  int64_t         labelId,
+                                  const char*     name,
+                                  double*         outValue);
 
 /// Check if a named real exists in a NamedData attribute.
 bool OCCTDocumentNamedDataHasReal(OCCTDocumentRef doc, int64_t labelId, const char* name);
 
 /// Set a string value in a NamedData attribute.
-bool OCCTDocumentNamedDataSetString(OCCTDocumentRef doc, int64_t labelId, const char* name, const char* value);
+bool OCCTDocumentNamedDataSetString(OCCTDocumentRef doc,
+                                    int64_t         labelId,
+                                    const char*     name,
+                                    const char*     value);
 
 /// Get a string value from a NamedData attribute. Caller must free with OCCTStringFree.
 const char* OCCTDocumentNamedDataGetString(OCCTDocumentRef doc, int64_t labelId, const char* name);
@@ -614,10 +677,18 @@ bool OCCTDocumentHasShapeAttr(OCCTDocumentRef doc, int64_t labelId);
 // MARK: - TDataXtd Position Attribute (v0.56.0)
 
 /// Set a position (3D point) attribute on a label.
-bool OCCTDocumentSetPositionAttr(OCCTDocumentRef doc, int64_t labelId, double x, double y, double z);
+bool OCCTDocumentSetPositionAttr(OCCTDocumentRef doc,
+                                 int64_t         labelId,
+                                 double          x,
+                                 double          y,
+                                 double          z);
 
 /// Get the position attribute from a label.
-bool OCCTDocumentGetPositionAttr(OCCTDocumentRef doc, int64_t labelId, double* outX, double* outY, double* outZ);
+bool OCCTDocumentGetPositionAttr(OCCTDocumentRef doc,
+                                 int64_t         labelId,
+                                 double*         outX,
+                                 double*         outY,
+                                 double*         outZ);
 
 /// Check if a label has a TDataXtd_Position attribute.
 bool OCCTDocumentHasPositionAttr(OCCTDocumentRef doc, int64_t labelId);
@@ -639,7 +710,10 @@ bool OCCTDocumentHasGeometryAttr(OCCTDocumentRef doc, int64_t labelId);
 /// Set a triangulation attribute on a label by meshing a shape. Stores EVERY face's
 /// triangulation merged into one Poly_Triangulation, not just the first face's (#443).
 /// Returns false if the shape has no face, or if nothing in it meshed.
-bool OCCTDocumentSetTriangulationFromShape(OCCTDocumentRef doc, int64_t labelId, OCCTShapeRef shape, double deflection);
+bool OCCTDocumentSetTriangulationFromShape(OCCTDocumentRef doc,
+                                           int64_t         labelId,
+                                           OCCTShapeRef    shape,
+                                           double          deflection);
 
 /// Get the number of nodes in a triangulation attribute.
 int32_t OCCTDocumentTriangulationNbNodes(OCCTDocumentRef doc, int64_t labelId);
@@ -654,8 +728,10 @@ double OCCTDocumentTriangulationDeflection(OCCTDocumentRef doc, int64_t labelId)
 /// @param index 1-based node index, as Poly_Triangulation numbers them.
 /// @param outXYZ receives x, y, z. Untouched when the call returns false.
 /// @return false if the label has no triangulation attribute or the index is out of range.
-bool OCCTDocumentTriangulationNode(OCCTDocumentRef doc, int64_t labelId, int32_t index,
-                                   double* outXYZ);
+bool OCCTDocumentTriangulationNode(OCCTDocumentRef doc,
+                                   int64_t         labelId,
+                                   int32_t         index,
+                                   double*         outXYZ);
 
 /// Read one node normal of a triangulation attribute, in the frame it was stored in.
 /// Node normals exist only when the meshed faces carried them; BRepMesh_IncrementalMesh does
@@ -664,8 +740,10 @@ bool OCCTDocumentTriangulationNode(OCCTDocumentRef doc, int64_t labelId, int32_t
 /// @param index 1-based node index.
 /// @param outXYZ receives the normal. Untouched when the call returns false.
 /// @return false if there is no attribute, no node normals, or the index is out of range.
-bool OCCTDocumentTriangulationNormal(OCCTDocumentRef doc, int64_t labelId, int32_t index,
-                                     double* outXYZ);
+bool OCCTDocumentTriangulationNormal(OCCTDocumentRef doc,
+                                     int64_t         labelId,
+                                     int32_t         index,
+                                     double*         outXYZ);
 
 // MARK: - TDataXtd Point/Axis/Plane Attributes (v0.56.0)
 
@@ -673,10 +751,24 @@ bool OCCTDocumentTriangulationNormal(OCCTDocumentRef doc, int64_t labelId, int32
 bool OCCTDocumentSetPointAttr(OCCTDocumentRef doc, int64_t labelId, double x, double y, double z);
 
 /// Set an axis attribute on a label (origin + direction).
-bool OCCTDocumentSetAxisAttr(OCCTDocumentRef doc, int64_t labelId, double ox, double oy, double oz, double dx, double dy, double dz);
+bool OCCTDocumentSetAxisAttr(OCCTDocumentRef doc,
+                             int64_t         labelId,
+                             double          ox,
+                             double          oy,
+                             double          oz,
+                             double          dx,
+                             double          dy,
+                             double          dz);
 
 /// Set a plane attribute on a label (origin + normal).
-bool OCCTDocumentSetPlaneAttr(OCCTDocumentRef doc, int64_t labelId, double ox, double oy, double oz, double nx, double ny, double nz);
+bool OCCTDocumentSetPlaneAttr(OCCTDocumentRef doc,
+                              int64_t         labelId,
+                              double          ox,
+                              double          oy,
+                              double          oz,
+                              double          nx,
+                              double          ny,
+                              double          nz);
 
 // MARK: - TFunction Logbook (v0.56.0)
 
@@ -684,13 +776,19 @@ bool OCCTDocumentSetPlaneAttr(OCCTDocumentRef doc, int64_t labelId, double ox, d
 bool OCCTDocumentSetLogbook(OCCTDocumentRef doc, int64_t labelId);
 
 /// Mark a label as touched in the logbook.
-bool OCCTDocumentLogbookSetTouched(OCCTDocumentRef doc, int64_t logbookLabelId, int64_t targetLabelId);
+bool OCCTDocumentLogbookSetTouched(OCCTDocumentRef doc,
+                                   int64_t         logbookLabelId,
+                                   int64_t         targetLabelId);
 
 /// Mark a label as impacted in the logbook.
-bool OCCTDocumentLogbookSetImpacted(OCCTDocumentRef doc, int64_t logbookLabelId, int64_t targetLabelId);
+bool OCCTDocumentLogbookSetImpacted(OCCTDocumentRef doc,
+                                    int64_t         logbookLabelId,
+                                    int64_t         targetLabelId);
 
 /// Check if a label is modified (touched) in the logbook.
-bool OCCTDocumentLogbookIsModified(OCCTDocumentRef doc, int64_t logbookLabelId, int64_t targetLabelId);
+bool OCCTDocumentLogbookIsModified(OCCTDocumentRef doc,
+                                   int64_t         logbookLabelId,
+                                   int64_t         targetLabelId);
 
 /// Clear the logbook.
 bool OCCTDocumentLogbookClear(OCCTDocumentRef doc, int64_t logbookLabelId);
@@ -741,7 +839,7 @@ bool OCCTDocumentFunctionSetFailure(OCCTDocumentRef doc, int64_t labelId, int32_
 /// Deep copy a shape (creates independent copy with new topology).
 OCCTShapeRef OCCTShapeDeepCopy(OCCTShapeRef shape);
 
-// MARK: - OCAF Persistence — Format Registration (v0.57.0)
+// MARK: - OCAF Persistence, Format Registration (v0.57.0)
 
 /// Register binary OCAF format drivers (BinOcaf).
 void OCCTDocumentDefineFormatBin(OCCTDocumentRef doc);
@@ -761,7 +859,7 @@ void OCCTDocumentDefineFormatBinXCAF(OCCTDocumentRef doc);
 /// Register XML XCAF format drivers (XmlXCAF).
 void OCCTDocumentDefineFormatXmlXCAF(OCCTDocumentRef doc);
 
-// MARK: - OCAF Persistence — Save/Load (v0.57.0)
+// MARK: - OCAF Persistence, Save/Load (v0.57.0)
 
 /// Save OCAF document to file. Returns PCDM_StoreStatus (0=OK).
 /// Format is determined by the document's storage format.
@@ -790,11 +888,16 @@ bool OCCTDocumentSetStorageFormat(OCCTDocumentRef doc, const char* format);
 int32_t OCCTDocumentNbDocuments(OCCTDocumentRef doc);
 
 /// Get the list of available reading formats. Returns count.
-/// Each format string is written to outFormats (up to maxFormats). Caller must free strings with OCCTStringFree.
-int32_t OCCTDocumentReadingFormats(OCCTDocumentRef doc, const char** outFormats, int32_t maxFormats);
+/// Each format string is written to outFormats (up to maxFormats). Caller must free strings with
+/// OCCTStringFree.
+int32_t OCCTDocumentReadingFormats(OCCTDocumentRef doc,
+                                   const char**    outFormats,
+                                   int32_t         maxFormats);
 
 /// Get the list of available writing formats. Returns count.
-int32_t OCCTDocumentWritingFormats(OCCTDocumentRef doc, const char** outFormats, int32_t maxFormats);
+int32_t OCCTDocumentWritingFormats(OCCTDocumentRef doc,
+                                   const char**    outFormats,
+                                   int32_t         maxFormats);
 
 /// Create a new OCAF document with a specific format. Returns a new document ref.
 /// Supported formats: "BinOcaf", "XmlOcaf", "BinLOcaf", "XmlLOcaf", "BinXCAF", "XmlXCAF".
@@ -856,15 +959,21 @@ bool OCCTDocumentRemoveShape(OCCTDocumentRef doc, int64_t labelId);
 /// @param shapeLabelId Shape to add as component
 /// @param tx, ty, tz Translation
 /// @return Label ID of the new component, or -1 on failure
-int64_t OCCTDocumentAddComponent(OCCTDocumentRef doc, int64_t assemblyLabelId,
-    int64_t shapeLabelId, double tx, double ty, double tz);
+int64_t OCCTDocumentAddComponent(OCCTDocumentRef doc,
+                                 int64_t         assemblyLabelId,
+                                 int64_t         shapeLabelId,
+                                 double          tx,
+                                 double          ty,
+                                 double          tz);
 
 // Add a component with a FULL rigid placement from a 12-element row-major matrix
 // [r00 r01 r02 r10 r11 r12 r20 r21 r22 tx ty tz]. Returns -1 if the matrix is not a proper rigid
-// transform (e.g. a reflection — gp_Trsf can't represent it; the caller should bake a mirrored
+// transform (e.g. a reflection: gp_Trsf can't represent it; the caller should bake a mirrored
 // product instead). Issue #174.
-int64_t OCCTDocumentAddComponentMatrix(OCCTDocumentRef doc, int64_t assemblyLabelId,
-    int64_t shapeLabelId, const double* _Nonnull matrix12);
+int64_t OCCTDocumentAddComponentMatrix(OCCTDocumentRef doc,
+                                       int64_t         assemblyLabelId,
+                                       int64_t         shapeLabelId,
+                                       const double* _Nonnull matrix12);
 
 /// Remove a component from an assembly.
 void OCCTDocumentRemoveComponent(OCCTDocumentRef doc, int64_t componentLabelId);
@@ -873,7 +982,9 @@ void OCCTDocumentRemoveComponent(OCCTDocumentRef doc, int64_t componentLabelId);
 int32_t OCCTDocumentGetComponentCount(OCCTDocumentRef doc, int64_t assemblyLabelId);
 
 /// Get component label ID at index.
-int64_t OCCTDocumentGetComponentLabelId(OCCTDocumentRef doc, int64_t assemblyLabelId, int32_t index);
+int64_t OCCTDocumentGetComponentLabelId(OCCTDocumentRef doc,
+                                        int64_t         assemblyLabelId,
+                                        int32_t         index);
 
 /// Get the referred (original) shape label for a component.
 /// @return Referred label ID, or -1 if not a reference
@@ -892,16 +1003,25 @@ bool OCCTDocumentExpandShape(OCCTDocumentRef doc, int64_t labelId);
 
 /// Set color on a shape (not by label).
 /// @param colorType 0=generic, 1=surface, 2=curve
-void OCCTDocumentSetShapeColor(OCCTDocumentRef doc, OCCTShapeRef shape,
-    int32_t colorType, double r, double g, double b);
+void OCCTDocumentSetShapeColor(OCCTDocumentRef doc,
+                               OCCTShapeRef    shape,
+                               int32_t         colorType,
+                               double          r,
+                               double          g,
+                               double          b);
 
 /// Set RGBA color on a shape (not by label), preserving alpha (#763).
 /// `OCCTDocumentSetShapeColor` above stores through the RGB-only
 /// `XCAFDoc_ColorTool::SetColor` overload, so alpha is unrecoverable afterwards; this uses the
 /// RGBA overload so a subsequent `OCCTDocumentGetShapeColor` reports the real value.
 /// @param colorType 0=generic, 1=surface, 2=curve
-void OCCTDocumentSetShapeColorRGBA(OCCTDocumentRef doc, OCCTShapeRef shape,
-    int32_t colorType, double r, double g, double b, float alpha);
+void OCCTDocumentSetShapeColorRGBA(OCCTDocumentRef doc,
+                                   OCCTShapeRef    shape,
+                                   int32_t         colorType,
+                                   double          r,
+                                   double          g,
+                                   double          b,
+                                   float           alpha);
 
 /// Get color for a shape (not by label).
 /// @return OCCTColor with isSet=true if color was found. `a` is the color's real alpha (#763):
@@ -936,7 +1056,11 @@ double OCCTDocumentGetVolume(OCCTDocumentRef doc, int64_t labelId);
 void OCCTDocumentSetCentroid(OCCTDocumentRef doc, int64_t labelId, double x, double y, double z);
 
 /// Get centroid attribute from a label. Returns false if not set.
-bool OCCTDocumentGetCentroid(OCCTDocumentRef doc, int64_t labelId, double* outX, double* outY, double* outZ);
+bool OCCTDocumentGetCentroid(OCCTDocumentRef doc,
+                             int64_t         labelId,
+                             double*         outX,
+                             double*         outY,
+                             double*         outZ);
 
 // MARK: - XDE LayerTool Expansion (v0.60.0)
 
@@ -948,8 +1072,11 @@ bool OCCTDocumentIsLayerSet(OCCTDocumentRef doc, int64_t labelId, const char* la
 
 /// Get layers on a label. Returns count. Fills outNames (caller-allocated array of buffers).
 /// Each buffer must be at least maxLen chars.
-int32_t OCCTDocumentGetLabelLayers(OCCTDocumentRef doc, int64_t labelId,
-    char** outNames, int32_t maxNames, int32_t maxLen);
+int32_t OCCTDocumentGetLabelLayers(OCCTDocumentRef doc,
+                                   int64_t         labelId,
+                                   char**          outNames,
+                                   int32_t         maxNames,
+                                   int32_t         maxLen);
 
 /// Find a layer label by name. Returns label ID or -1 if not found.
 int64_t OCCTDocumentFindLayer(OCCTDocumentRef doc, const char* layerName);
@@ -972,20 +1099,24 @@ bool OCCTDocumentEditorExpand(OCCTDocumentRef doc, int64_t labelId, bool recursi
 /// @param scaleFactor Scale factor
 /// @param forceIfNotRoot Force rescale even if label is not root
 /// @return true on success
-bool OCCTDocumentEditorRescaleGeometry(OCCTDocumentRef doc, int64_t labelId,
-    double scaleFactor, bool forceIfNotRoot);
+bool OCCTDocumentEditorRescaleGeometry(OCCTDocumentRef doc,
+                                       int64_t         labelId,
+                                       double          scaleFactor,
+                                       bool            forceIfNotRoot);
 
-// MARK: - v0.83.0: XDE Attributes — Location, GraphNode, Color, Material, Notes, Views, Styles
+// MARK: - v0.83.0: XDE Attributes: Location, GraphNode, Color, Material, Notes, Views, Styles
 
 // --- XCAFDoc_Location ---
 
 /// Set a TopLoc_Location (translation) on a label
-bool OCCTDocumentSetLocation(OCCTDocumentRef doc, int64_t labelId,
-                              double tx, double ty, double tz);
+bool OCCTDocumentSetLocation(OCCTDocumentRef doc, int64_t labelId, double tx, double ty, double tz);
 
 /// Get the TopLoc_Location translation from a label
-bool OCCTDocumentGetLocationTranslation(OCCTDocumentRef doc, int64_t labelId,
-                                         double *_Nonnull outX, double *_Nonnull outY, double *_Nonnull outZ);
+bool OCCTDocumentGetLocationTranslation(OCCTDocumentRef doc,
+                                        int64_t         labelId,
+                                        double* _Nonnull outX,
+                                        double* _Nonnull outY,
+                                        double* _Nonnull outZ);
 
 /// Check if a label has an XCAFDoc_Location attribute
 bool OCCTDocumentHasLocation(OCCTDocumentRef doc, int64_t labelId);
@@ -996,16 +1127,24 @@ bool OCCTDocumentHasLocation(OCCTDocumentRef doc, int64_t labelId);
 bool OCCTDocumentSetGraphNodeAttr(OCCTDocumentRef doc, int64_t labelId);
 
 /// Set a child relationship: parent's graph node gets child's graph node
-bool OCCTDocumentGraphNodeSetChild(OCCTDocumentRef doc, int64_t parentLabelId, int64_t childLabelId);
+bool OCCTDocumentGraphNodeSetChild(OCCTDocumentRef doc,
+                                   int64_t         parentLabelId,
+                                   int64_t         childLabelId);
 
 /// Set a father relationship: child's graph node gets parent's graph node
-bool OCCTDocumentGraphNodeSetFather(OCCTDocumentRef doc, int64_t childLabelId, int64_t parentLabelId);
+bool OCCTDocumentGraphNodeSetFather(OCCTDocumentRef doc,
+                                    int64_t         childLabelId,
+                                    int64_t         parentLabelId);
 
 /// Unset a child relationship
-bool OCCTDocumentGraphNodeUnSetChild(OCCTDocumentRef doc, int64_t parentLabelId, int64_t childLabelId);
+bool OCCTDocumentGraphNodeUnSetChild(OCCTDocumentRef doc,
+                                     int64_t         parentLabelId,
+                                     int64_t         childLabelId);
 
 /// Unset a father relationship
-bool OCCTDocumentGraphNodeUnSetFather(OCCTDocumentRef doc, int64_t childLabelId, int64_t parentLabelId);
+bool OCCTDocumentGraphNodeUnSetFather(OCCTDocumentRef doc,
+                                      int64_t         childLabelId,
+                                      int64_t         parentLabelId);
 
 /// Get number of children of a graph node
 int32_t OCCTDocumentGraphNodeNbChildren(OCCTDocumentRef doc, int64_t labelId);
@@ -1022,24 +1161,33 @@ bool OCCTDocumentGraphNodeIsChild(OCCTDocumentRef doc, int64_t labelId, int64_t 
 // --- XCAFDoc_Color ---
 
 /// Set color attribute from RGB on a label
-bool OCCTDocumentSetColorAttr(OCCTDocumentRef doc, int64_t labelId,
-                               double r, double g, double b);
+bool OCCTDocumentSetColorAttr(OCCTDocumentRef doc, int64_t labelId, double r, double g, double b);
 
 /// Set color attribute from RGBA on a label
-bool OCCTDocumentSetColorRGBAAttr(OCCTDocumentRef doc, int64_t labelId,
-                                    double r, double g, double b, float alpha);
+bool OCCTDocumentSetColorRGBAAttr(OCCTDocumentRef doc,
+                                  int64_t         labelId,
+                                  double          r,
+                                  double          g,
+                                  double          b,
+                                  float           alpha);
 
 /// Set color attribute from named color on a label
 bool OCCTDocumentSetColorNOCAttr(OCCTDocumentRef doc, int64_t labelId, int32_t noc);
 
 /// Get color from XCAFDoc_Color attribute on a label
-bool OCCTDocumentGetColorAttr(OCCTDocumentRef doc, int64_t labelId,
-                               double *_Nonnull outR, double *_Nonnull outG, double *_Nonnull outB);
+bool OCCTDocumentGetColorAttr(OCCTDocumentRef doc,
+                              int64_t         labelId,
+                              double* _Nonnull outR,
+                              double* _Nonnull outG,
+                              double* _Nonnull outB);
 
 /// Get RGBA from XCAFDoc_Color attribute on a label
-bool OCCTDocumentGetColorRGBAAttr(OCCTDocumentRef doc, int64_t labelId,
-                                    double *_Nonnull outR, double *_Nonnull outG, double *_Nonnull outB,
-                                    float *_Nonnull outAlpha);
+bool OCCTDocumentGetColorRGBAAttr(OCCTDocumentRef doc,
+                                  int64_t         labelId,
+                                  double* _Nonnull outR,
+                                  double* _Nonnull outG,
+                                  double* _Nonnull outB,
+                                  float* _Nonnull outAlpha);
 
 /// Get alpha from XCAFDoc_Color attribute
 float OCCTDocumentGetColorAlphaAttr(OCCTDocumentRef doc, int64_t labelId);
@@ -1050,22 +1198,24 @@ int32_t OCCTDocumentGetColorNOCAttr(OCCTDocumentRef doc, int64_t labelId);
 // --- XCAFDoc_Material ---
 
 /// Set material attribute on a label
-bool OCCTDocumentSetMaterialAttr(OCCTDocumentRef doc, int64_t labelId,
-                                  const char *_Nonnull name,
-                                  const char *_Nonnull description,
-                                  double density,
-                                  const char *_Nonnull densName,
-                                  const char *_Nonnull densValType);
+bool OCCTDocumentSetMaterialAttr(OCCTDocumentRef doc,
+                                 int64_t         labelId,
+                                 const char* _Nonnull name,
+                                 const char* _Nonnull description,
+                                 double density,
+                                 const char* _Nonnull densName,
+                                 const char* _Nonnull densValType);
 
 /// Get material name from attribute. Caller must free with OCCTStringFree.
-const char *_Nullable OCCTDocumentGetMaterialAttrName(OCCTDocumentRef doc, int64_t labelId);
+const char* _Nullable OCCTDocumentGetMaterialAttrName(OCCTDocumentRef doc, int64_t labelId);
 
 /// Get material description. Caller must free with OCCTStringFree.
-const char *_Nullable OCCTDocumentGetMaterialAttrDescription(OCCTDocumentRef doc, int64_t labelId);
+const char* _Nullable OCCTDocumentGetMaterialAttrDescription(OCCTDocumentRef doc, int64_t labelId);
 
 /// Get material density from attribute
-bool OCCTDocumentGetMaterialAttrDensity(OCCTDocumentRef doc, int64_t labelId,
-                                          double *_Nonnull outDensity);
+bool OCCTDocumentGetMaterialAttrDensity(OCCTDocumentRef doc,
+                                        int64_t         labelId,
+                                        double* _Nonnull outDensity);
 
 /// Check if label has XCAFDoc_Material attribute
 bool OCCTDocumentHasMaterialAttr(OCCTDocumentRef doc, int64_t labelId);
@@ -1073,35 +1223,38 @@ bool OCCTDocumentHasMaterialAttr(OCCTDocumentRef doc, int64_t labelId);
 // --- XCAFDoc_NoteComment ---
 
 /// Set a NoteComment attribute on a label
-bool OCCTDocumentSetNoteComment(OCCTDocumentRef doc, int64_t labelId,
-                                 const char *_Nonnull userName,
-                                 const char *_Nonnull timeStamp,
-                                 const char *_Nonnull comment);
+bool OCCTDocumentSetNoteComment(OCCTDocumentRef doc,
+                                int64_t         labelId,
+                                const char* _Nonnull userName,
+                                const char* _Nonnull timeStamp,
+                                const char* _Nonnull comment);
 
 /// Get comment text from NoteComment. Caller must free with OCCTStringFree.
-const char *_Nullable OCCTDocumentGetNoteCommentText(OCCTDocumentRef doc, int64_t labelId);
+const char* _Nullable OCCTDocumentGetNoteCommentText(OCCTDocumentRef doc, int64_t labelId);
 
 /// Get note user name. Caller must free with OCCTStringFree.
-const char *_Nullable OCCTDocumentGetNoteUserName(OCCTDocumentRef doc, int64_t labelId);
+const char* _Nullable OCCTDocumentGetNoteUserName(OCCTDocumentRef doc, int64_t labelId);
 
 // --- XCAFDoc_NoteBalloon ---
 
 /// Set a NoteBalloon attribute on a label
-bool OCCTDocumentSetNoteBalloon(OCCTDocumentRef doc, int64_t labelId,
-                                 const char *_Nonnull userName,
-                                 const char *_Nonnull timeStamp,
-                                 const char *_Nonnull comment);
+bool OCCTDocumentSetNoteBalloon(OCCTDocumentRef doc,
+                                int64_t         labelId,
+                                const char* _Nonnull userName,
+                                const char* _Nonnull timeStamp,
+                                const char* _Nonnull comment);
 
 // --- XCAFDoc_NoteBinData ---
 
 /// Set a NoteBinData attribute on a label (binary data from byte array)
-bool OCCTDocumentSetNoteBinData(OCCTDocumentRef doc, int64_t labelId,
-                                 const char *_Nonnull userName,
-                                 const char *_Nonnull timeStamp,
-                                 const char *_Nonnull title,
-                                 const char *_Nonnull mimeType,
-                                 const uint8_t *_Nonnull data,
-                                 int32_t dataSize);
+bool OCCTDocumentSetNoteBinData(OCCTDocumentRef doc,
+                                int64_t         labelId,
+                                const char* _Nonnull userName,
+                                const char* _Nonnull timeStamp,
+                                const char* _Nonnull title,
+                                const char* _Nonnull mimeType,
+                                const uint8_t* _Nonnull data,
+                                int32_t dataSize);
 
 /// Get binary data size from NoteBinData
 int32_t OCCTDocumentGetNoteBinDataSize(OCCTDocumentRef doc, int64_t labelId);
@@ -1113,24 +1266,24 @@ int32_t OCCTDocumentNotesToolNbNotes(OCCTDocumentRef doc);
 
 /// Create a comment note via NotesTool. Returns label ID of created note.
 int64_t OCCTDocumentNotesToolCreateComment(OCCTDocumentRef doc,
-                                             const char *_Nonnull userName,
-                                             const char *_Nonnull timeStamp,
-                                             const char *_Nonnull comment);
+                                           const char* _Nonnull userName,
+                                           const char* _Nonnull timeStamp,
+                                           const char* _Nonnull comment);
 
 /// Create a balloon note via NotesTool. Returns label ID of created note.
 int64_t OCCTDocumentNotesToolCreateBalloon(OCCTDocumentRef doc,
-                                             const char *_Nonnull userName,
-                                             const char *_Nonnull timeStamp,
-                                             const char *_Nonnull comment);
+                                           const char* _Nonnull userName,
+                                           const char* _Nonnull timeStamp,
+                                           const char* _Nonnull comment);
 
 /// Create a binary data note via NotesTool. Returns label ID of created note.
 int64_t OCCTDocumentNotesToolCreateBinData(OCCTDocumentRef doc,
-                                             const char *_Nonnull userName,
-                                             const char *_Nonnull timeStamp,
-                                             const char *_Nonnull title,
-                                             const char *_Nonnull mimeType,
-                                             const uint8_t *_Nonnull data,
-                                             int32_t dataSize);
+                                           const char* _Nonnull userName,
+                                           const char* _Nonnull timeStamp,
+                                           const char* _Nonnull title,
+                                           const char* _Nonnull mimeType,
+                                           const uint8_t* _Nonnull data,
+                                           int32_t dataSize);
 
 /// Delete a note by label ID. Returns true on success.
 bool OCCTDocumentNotesToolDeleteNote(OCCTDocumentRef doc, int64_t noteLabelId);
@@ -1148,15 +1301,25 @@ int32_t OCCTDocumentNotesToolDeleteOrphanNotes(OCCTDocumentRef doc);
 
 /// Add a clipping plane. Returns label ID of created plane or -1 on error.
 int64_t OCCTDocumentClipPlaneToolAdd(OCCTDocumentRef doc,
-                                       double planeOrigX, double planeOrigY, double planeOrigZ,
-                                       double planeNormX, double planeNormY, double planeNormZ,
-                                       const char *_Nonnull name, bool capping);
+                                     double          planeOrigX,
+                                     double          planeOrigY,
+                                     double          planeOrigZ,
+                                     double          planeNormX,
+                                     double          planeNormY,
+                                     double          planeNormZ,
+                                     const char* _Nonnull name,
+                                     bool capping);
 
 /// Get clipping plane from label.
-bool OCCTDocumentClipPlaneToolGet(OCCTDocumentRef doc, int64_t labelId,
-                                    double *_Nonnull origX, double *_Nonnull origY, double *_Nonnull origZ,
-                                    double *_Nonnull normX, double *_Nonnull normY, double *_Nonnull normZ,
-                                    bool *_Nonnull capping);
+bool OCCTDocumentClipPlaneToolGet(OCCTDocumentRef doc,
+                                  int64_t         labelId,
+                                  double* _Nonnull origX,
+                                  double* _Nonnull origY,
+                                  double* _Nonnull origZ,
+                                  double* _Nonnull normX,
+                                  double* _Nonnull normY,
+                                  double* _Nonnull normZ,
+                                  bool* _Nonnull capping);
 
 /// Check if label is a clipping plane
 bool OCCTDocumentClipPlaneToolIsClipPlane(OCCTDocumentRef doc, int64_t labelId);
@@ -1199,13 +1362,13 @@ int32_t OCCTAssemblyGraphGetNodeType(OCCTAssemblyGraphRef ref, int32_t nodeIndex
 // --- XCAFDoc_AssemblyItemId ---
 
 /// Create an AssemblyItemId from string, check if valid. Returns true if valid.
-bool OCCTAssemblyItemIdIsValid(const char *_Nonnull str);
+bool OCCTAssemblyItemIdIsValid(const char* _Nonnull str);
 
 /// Get path count from an AssemblyItemId string
-int32_t OCCTAssemblyItemIdPathCount(const char *_Nonnull str);
+int32_t OCCTAssemblyItemIdPathCount(const char* _Nonnull str);
 
 /// Check equality of two AssemblyItemId strings
-bool OCCTAssemblyItemIdIsEqual(const char *_Nonnull str1, const char *_Nonnull str2);
+bool OCCTAssemblyItemIdIsEqual(const char* _Nonnull str1, const char* _Nonnull str2);
 
 /// Create a new XCAFView_Object
 OCCTViewObjectRef OCCTViewObjectCreate(void);
@@ -1224,14 +1387,18 @@ void OCCTViewObjectSetViewDirection(OCCTViewObjectRef ref, double x, double y, d
 
 /// Get view direction
 void OCCTViewObjectGetViewDirection(OCCTViewObjectRef ref,
-                                      double *_Nonnull x, double *_Nonnull y, double *_Nonnull z);
+                                    double* _Nonnull x,
+                                    double* _Nonnull y,
+                                    double* _Nonnull z);
 
 /// Set up direction
 void OCCTViewObjectSetUpDirection(OCCTViewObjectRef ref, double x, double y, double z);
 
 /// Get up direction
 void OCCTViewObjectGetUpDirection(OCCTViewObjectRef ref,
-                                    double *_Nonnull x, double *_Nonnull y, double *_Nonnull z);
+                                  double* _Nonnull x,
+                                  double* _Nonnull y,
+                                  double* _Nonnull z);
 
 /// Set window horizontal size
 void OCCTViewObjectSetWindowHSize(OCCTViewObjectRef ref, double size);
@@ -1270,10 +1437,10 @@ bool OCCTViewObjectHasBackPlaneClipping(OCCTViewObjectRef ref);
 void OCCTViewObjectUnsetBackPlaneClipping(OCCTViewObjectRef ref);
 
 /// Set name. Pass empty string for no name.
-void OCCTViewObjectSetName(OCCTViewObjectRef ref, const char *_Nonnull name);
+void OCCTViewObjectSetName(OCCTViewObjectRef ref, const char* _Nonnull name);
 
 /// Get name. Caller must free with OCCTStringFree.
-const char *_Nullable OCCTViewObjectGetName(OCCTViewObjectRef ref);
+const char* _Nullable OCCTViewObjectGetName(OCCTViewObjectRef ref);
 
 /// Create a new NoteObject
 OCCTNoteObjectRef OCCTNoteObjectCreate(void);
@@ -1292,19 +1459,27 @@ bool OCCTNoteObjectHasPointText(OCCTNoteObjectRef ref);
 
 /// Set plane (origin + normal)
 void OCCTNoteObjectSetPlane(OCCTNoteObjectRef ref,
-                              double origX, double origY, double origZ,
-                              double normX, double normY, double normZ);
+                            double            origX,
+                            double            origY,
+                            double            origZ,
+                            double            normX,
+                            double            normY,
+                            double            normZ);
 
 /// Get plane origin
 void OCCTNoteObjectGetPlane(OCCTNoteObjectRef ref,
-                              double *_Nonnull origX, double *_Nonnull origY, double *_Nonnull origZ);
+                            double* _Nonnull origX,
+                            double* _Nonnull origY,
+                            double* _Nonnull origZ);
 
 /// Set point
 void OCCTNoteObjectSetPoint(OCCTNoteObjectRef ref, double x, double y, double z);
 
 /// Get point
 void OCCTNoteObjectGetPoint(OCCTNoteObjectRef ref,
-                              double *_Nonnull x, double *_Nonnull y, double *_Nonnull z);
+                            double* _Nonnull x,
+                            double* _Nonnull y,
+                            double* _Nonnull z);
 
 /// Set presentation shape
 void OCCTNoteObjectSetPresentation(OCCTNoteObjectRef ref, OCCTShapeRef shape);
@@ -1318,14 +1493,15 @@ void OCCTNoteObjectReset(OCCTNoteObjectRef ref);
 // --- XCAFPrs_Style ---
 
 /// XCAFPrs_Style data as a struct
-typedef struct {
-    double surfR, surfG, surfB;
-    float surfAlpha;
-    bool hasSurfColor;
-    double curvR, curvG, curvB;
-    bool hasCurvColor;
-    bool isVisible;
-    bool isEmpty;
+typedef struct
+{
+  double surfR, surfG, surfB;
+  float  surfAlpha;
+  bool   hasSurfColor;
+  double curvR, curvG, curvB;
+  bool   hasCurvColor;
+  bool   isVisible;
+  bool   isEmpty;
 } OCCTXCAFPrsStyle;
 
 /// Create a default (empty) style
@@ -1335,52 +1511,60 @@ OCCTXCAFPrsStyle OCCTXCAFPrsStyleCreate(void);
 OCCTXCAFPrsStyle OCCTXCAFPrsStyleCreateWithSurfColor(double r, double g, double b, float alpha);
 
 /// Create a style with surface and curve colors
-OCCTXCAFPrsStyle OCCTXCAFPrsStyleCreateFull(double surfR, double surfG, double surfB, float surfAlpha,
-                                              double curvR, double curvG, double curvB,
-                                              bool visible);
+OCCTXCAFPrsStyle OCCTXCAFPrsStyleCreateFull(double surfR,
+                                            double surfG,
+                                            double surfB,
+                                            float  surfAlpha,
+                                            double curvR,
+                                            double curvG,
+                                            double curvB,
+                                            bool   visible);
 
 /// Check if two styles are equal
-bool OCCTXCAFPrsStyleIsEqual(const OCCTXCAFPrsStyle *_Nonnull s1, const OCCTXCAFPrsStyle *_Nonnull s2);
+bool OCCTXCAFPrsStyleIsEqual(const OCCTXCAFPrsStyle* _Nonnull s1,
+                             const OCCTXCAFPrsStyle* _Nonnull s2);
 
 // --- XCAFDoc_VisMaterialCommon ---
 
 /// Phong material data struct
-typedef struct {
-    double diffuseR, diffuseG, diffuseB;
-    double ambientR, ambientG, ambientB;
-    double specularR, specularG, specularB;
-    double emissiveR, emissiveG, emissiveB;
-    float shininess;
-    float transparency;
-    bool isDefined;
+typedef struct
+{
+  double diffuseR, diffuseG, diffuseB;
+  double ambientR, ambientG, ambientB;
+  double specularR, specularG, specularB;
+  double emissiveR, emissiveG, emissiveB;
+  float  shininess;
+  float  transparency;
+  bool   isDefined;
 } OCCTVisMaterialCommon;
 
 /// Get default VisMaterialCommon values
 OCCTVisMaterialCommon OCCTVisMaterialCommonDefault(void);
 
 /// Check equality of two VisMaterialCommon
-bool OCCTVisMaterialCommonIsEqual(const OCCTVisMaterialCommon *_Nonnull a,
-                                    const OCCTVisMaterialCommon *_Nonnull b);
+bool OCCTVisMaterialCommonIsEqual(const OCCTVisMaterialCommon* _Nonnull a,
+                                  const OCCTVisMaterialCommon* _Nonnull b);
 
 // --- XCAFDoc_VisMaterialPBR ---
 
 /// PBR material data struct
-typedef struct {
-    double baseColorR, baseColorG, baseColorB;
-    float baseColorAlpha;
-    float metallic;
-    float roughness;
-    float refractionIndex;
-    double emissionR, emissionG, emissionB;
-    bool isDefined;
+typedef struct
+{
+  double baseColorR, baseColorG, baseColorB;
+  float  baseColorAlpha;
+  float  metallic;
+  float  roughness;
+  float  refractionIndex;
+  double emissionR, emissionG, emissionB;
+  bool   isDefined;
 } OCCTVisMaterialPBR;
 
 /// Get default VisMaterialPBR values
 OCCTVisMaterialPBR OCCTVisMaterialPBRDefault(void);
 
 /// Check equality of two VisMaterialPBR
-bool OCCTVisMaterialPBRIsEqual(const OCCTVisMaterialPBR *_Nonnull a,
-                                 const OCCTVisMaterialPBR *_Nonnull b);
+bool OCCTVisMaterialPBRIsEqual(const OCCTVisMaterialPBR* _Nonnull a,
+                               const OCCTVisMaterialPBR* _Nonnull b);
 
 // --- TDataStd_Directory ---
 
@@ -1403,8 +1587,9 @@ int OCCTDocumentDirectoryMakeObjectLabel(OCCTDocumentRef _Nonnull document, int 
 bool OCCTDocumentVariableSet(OCCTDocumentRef _Nonnull document, int labelTag);
 
 /// Set variable name
-bool OCCTDocumentVariableSetName(OCCTDocumentRef _Nonnull document, int labelTag,
-                                  const char* _Nonnull name);
+bool OCCTDocumentVariableSetName(OCCTDocumentRef _Nonnull document,
+                                 int labelTag,
+                                 const char* _Nonnull name);
 
 /// Get variable name (caller must free with OCCTGeomToolsFreeString)
 const char* _Nullable OCCTDocumentVariableGetName(OCCTDocumentRef _Nonnull document, int labelTag);
@@ -1419,14 +1604,17 @@ double OCCTDocumentVariableGetValue(OCCTDocumentRef _Nonnull document, int label
 bool OCCTDocumentVariableIsValued(OCCTDocumentRef _Nonnull document, int labelTag);
 
 /// Set variable unit
-bool OCCTDocumentVariableSetUnit(OCCTDocumentRef _Nonnull document, int labelTag,
-                                  const char* _Nonnull unit);
+bool OCCTDocumentVariableSetUnit(OCCTDocumentRef _Nonnull document,
+                                 int labelTag,
+                                 const char* _Nonnull unit);
 
 /// Get variable unit (caller must free with OCCTGeomToolsFreeString)
 const char* _Nullable OCCTDocumentVariableGetUnit(OCCTDocumentRef _Nonnull document, int labelTag);
 
 /// Set variable constant flag
-bool OCCTDocumentVariableSetConstant(OCCTDocumentRef _Nonnull document, int labelTag, bool isConstant);
+bool OCCTDocumentVariableSetConstant(OCCTDocumentRef _Nonnull document,
+                                     int  labelTag,
+                                     bool isConstant);
 
 /// Get variable constant flag
 bool OCCTDocumentVariableIsConstant(OCCTDocumentRef _Nonnull document, int labelTag);
@@ -1437,14 +1625,17 @@ bool OCCTDocumentVariableIsConstant(OCCTDocumentRef _Nonnull document, int label
 bool OCCTDocumentExpressionSet(OCCTDocumentRef _Nonnull document, int labelTag);
 
 /// Set expression string
-bool OCCTDocumentExpressionSetString(OCCTDocumentRef _Nonnull document, int labelTag,
-                                      const char* _Nonnull expression);
+bool OCCTDocumentExpressionSetString(OCCTDocumentRef _Nonnull document,
+                                     int labelTag,
+                                     const char* _Nonnull expression);
 
 /// Get expression string (caller must free with OCCTGeomToolsFreeString)
-const char* _Nullable OCCTDocumentExpressionGetString(OCCTDocumentRef _Nonnull document, int labelTag);
+const char* _Nullable OCCTDocumentExpressionGetString(OCCTDocumentRef _Nonnull document,
+                                                      int labelTag);
 
 /// Get expression name (caller must free with OCCTGeomToolsFreeString)
-const char* _Nullable OCCTDocumentExpressionGetName(OCCTDocumentRef _Nonnull document, int labelTag);
+const char* _Nullable OCCTDocumentExpressionGetName(OCCTDocumentRef _Nonnull document,
+                                                    int labelTag);
 
 /// Assign expression to variable on same label (creates expression if needed)
 bool OCCTDocumentVariableAssignExpression(OCCTDocumentRef _Nonnull document, int labelTag);
@@ -1461,18 +1652,22 @@ bool OCCTDocumentVariableIsAssigned(OCCTDocumentRef _Nonnull document, int label
 bool OCCTDocumentXLinkSet(OCCTDocumentRef _Nonnull document, int labelTag);
 
 /// Set XLink document entry path
-bool OCCTDocumentXLinkSetDocumentEntry(OCCTDocumentRef _Nonnull document, int labelTag,
-                                        const char* _Nonnull entry);
+bool OCCTDocumentXLinkSetDocumentEntry(OCCTDocumentRef _Nonnull document,
+                                       int labelTag,
+                                       const char* _Nonnull entry);
 
 /// Get XLink document entry path (caller must free with OCCTGeomToolsFreeString)
-const char* _Nullable OCCTDocumentXLinkGetDocumentEntry(OCCTDocumentRef _Nonnull document, int labelTag);
+const char* _Nullable OCCTDocumentXLinkGetDocumentEntry(OCCTDocumentRef _Nonnull document,
+                                                        int labelTag);
 
 /// Set XLink label entry string
-bool OCCTDocumentXLinkSetLabelEntry(OCCTDocumentRef _Nonnull document, int labelTag,
-                                     const char* _Nonnull entry);
+bool OCCTDocumentXLinkSetLabelEntry(OCCTDocumentRef _Nonnull document,
+                                    int labelTag,
+                                    const char* _Nonnull entry);
 
 /// Get XLink label entry string (caller must free with OCCTGeomToolsFreeString)
-const char* _Nullable OCCTDocumentXLinkGetLabelEntry(OCCTDocumentRef _Nonnull document, int labelTag);
+const char* _Nullable OCCTDocumentXLinkGetLabelEntry(OCCTDocumentRef _Nonnull document,
+                                                     int labelTag);
 
 // --- XCAFDimTolObjects_Tool ---
 
@@ -1532,13 +1727,18 @@ bool OCCTIDFilterIsIgnored(OCCTIDFilterRef _Nonnull filter, const char* _Nonnull
 // MARK: - TDataStd_BooleanArray
 
 /// Set a boolean array attribute on a label (1-based indices)
-bool OCCTDocumentSetBooleanArray(OCCTDocumentRef _Nonnull document, int tag,
-                                  int lower, int upper,
-                                  const bool* _Nonnull values, int count);
+bool OCCTDocumentSetBooleanArray(OCCTDocumentRef _Nonnull document,
+                                 int tag,
+                                 int lower,
+                                 int upper,
+                                 const bool* _Nonnull values,
+                                 int count);
 
 /// Get a boolean array attribute from a label. Returns count, fills values buffer.
-int OCCTDocumentGetBooleanArray(OCCTDocumentRef _Nonnull document, int tag,
-                                 bool* _Nullable values, int maxCount);
+int OCCTDocumentGetBooleanArray(OCCTDocumentRef _Nonnull document,
+                                int tag,
+                                bool* _Nullable values,
+                                int maxCount);
 
 /// Check if a label has a boolean array attribute
 bool OCCTDocumentHasBooleanArray(OCCTDocumentRef _Nonnull document, int tag);
@@ -1546,12 +1746,16 @@ bool OCCTDocumentHasBooleanArray(OCCTDocumentRef _Nonnull document, int tag);
 // MARK: - TDataStd_BooleanList
 
 /// Set a boolean list attribute on a label
-bool OCCTDocumentSetBooleanList(OCCTDocumentRef _Nonnull document, int tag,
-                                 const bool* _Nonnull values, int count);
+bool OCCTDocumentSetBooleanList(OCCTDocumentRef _Nonnull document,
+                                int tag,
+                                const bool* _Nonnull values,
+                                int count);
 
 /// Get a boolean list attribute from a label. Returns count, fills values buffer.
-int OCCTDocumentGetBooleanList(OCCTDocumentRef _Nonnull document, int tag,
-                                bool* _Nullable values, int maxCount);
+int OCCTDocumentGetBooleanList(OCCTDocumentRef _Nonnull document,
+                               int tag,
+                               bool* _Nullable values,
+                               int maxCount);
 
 /// Append a value to a boolean list attribute
 bool OCCTDocumentBooleanListAppend(OCCTDocumentRef _Nonnull document, int tag, bool value);
@@ -1565,13 +1769,18 @@ bool OCCTDocumentHasBooleanList(OCCTDocumentRef _Nonnull document, int tag);
 // MARK: - TDataStd_ByteArray
 
 /// Set a byte array attribute on a label (0-based indices)
-bool OCCTDocumentSetByteArray(OCCTDocumentRef _Nonnull document, int tag,
-                               int lower, int upper,
-                               const uint8_t* _Nonnull values, int count);
+bool OCCTDocumentSetByteArray(OCCTDocumentRef _Nonnull document,
+                              int tag,
+                              int lower,
+                              int upper,
+                              const uint8_t* _Nonnull values,
+                              int count);
 
 /// Get a byte array attribute from a label. Returns count, fills values buffer.
-int OCCTDocumentGetByteArray(OCCTDocumentRef _Nonnull document, int tag,
-                              uint8_t* _Nullable values, int maxCount);
+int OCCTDocumentGetByteArray(OCCTDocumentRef _Nonnull document,
+                             int tag,
+                             uint8_t* _Nullable values,
+                             int maxCount);
 
 /// Check if a label has a byte array attribute
 bool OCCTDocumentHasByteArray(OCCTDocumentRef _Nonnull document, int tag);
@@ -1579,12 +1788,16 @@ bool OCCTDocumentHasByteArray(OCCTDocumentRef _Nonnull document, int tag);
 // MARK: - TDataStd_IntegerList
 
 /// Set an integer list attribute on a label
-bool OCCTDocumentSetIntegerList(OCCTDocumentRef _Nonnull document, int tag,
-                                 const int* _Nonnull values, int count);
+bool OCCTDocumentSetIntegerList(OCCTDocumentRef _Nonnull document,
+                                int tag,
+                                const int* _Nonnull values,
+                                int count);
 
 /// Get an integer list attribute from a label. Returns count, fills values buffer.
-int OCCTDocumentGetIntegerList(OCCTDocumentRef _Nonnull document, int tag,
-                                int* _Nullable values, int maxCount);
+int OCCTDocumentGetIntegerList(OCCTDocumentRef _Nonnull document,
+                               int tag,
+                               int* _Nullable values,
+                               int maxCount);
 
 /// Append a value to an integer list attribute
 bool OCCTDocumentIntegerListAppend(OCCTDocumentRef _Nonnull document, int tag, int value);
@@ -1598,12 +1811,16 @@ bool OCCTDocumentHasIntegerList(OCCTDocumentRef _Nonnull document, int tag);
 // MARK: - TDataStd_RealList
 
 /// Set a real list attribute on a label
-bool OCCTDocumentSetRealList(OCCTDocumentRef _Nonnull document, int tag,
-                              const double* _Nonnull values, int count);
+bool OCCTDocumentSetRealList(OCCTDocumentRef _Nonnull document,
+                             int tag,
+                             const double* _Nonnull values,
+                             int count);
 
 /// Get a real list attribute from a label. Returns count, fills values buffer.
-int OCCTDocumentGetRealList(OCCTDocumentRef _Nonnull document, int tag,
-                             double* _Nullable values, int maxCount);
+int OCCTDocumentGetRealList(OCCTDocumentRef _Nonnull document,
+                            int tag,
+                            double* _Nullable values,
+                            int maxCount);
 
 /// Append a value to a real list attribute
 bool OCCTDocumentRealListAppend(OCCTDocumentRef _Nonnull document, int tag, double value);
@@ -1617,12 +1834,17 @@ bool OCCTDocumentHasRealList(OCCTDocumentRef _Nonnull document, int tag);
 // MARK: - TDataStd_ExtStringArray
 
 /// Set an extended string array attribute on a label (1-based indices)
-bool OCCTDocumentSetExtStringArray(OCCTDocumentRef _Nonnull document, int tag,
-                                    int lower, int upper,
-                                    const char* _Nonnull const* _Nonnull values, int count);
+bool OCCTDocumentSetExtStringArray(OCCTDocumentRef _Nonnull document,
+                                   int tag,
+                                   int lower,
+                                   int upper,
+                                   const char* _Nonnull const* _Nonnull values,
+                                   int count);
 
 /// Get an extended string array element by index (1-based). Caller must free() the result.
-char* _Nullable OCCTDocumentGetExtStringArrayValue(OCCTDocumentRef _Nonnull document, int tag, int index);
+char* _Nullable OCCTDocumentGetExtStringArrayValue(OCCTDocumentRef _Nonnull document,
+                                                   int tag,
+                                                   int index);
 
 /// Get the bounds of an extended string array. Returns length, or -1 if not found.
 int OCCTDocumentGetExtStringArrayLength(OCCTDocumentRef _Nonnull document, int tag);
@@ -1633,18 +1855,23 @@ bool OCCTDocumentHasExtStringArray(OCCTDocumentRef _Nonnull document, int tag);
 // MARK: - TDataStd_ExtStringList
 
 /// Set an extended string list attribute on a label
-bool OCCTDocumentSetExtStringList(OCCTDocumentRef _Nonnull document, int tag,
-                                   const char* _Nonnull const* _Nonnull values, int count);
+bool OCCTDocumentSetExtStringList(OCCTDocumentRef _Nonnull document,
+                                  int tag,
+                                  const char* _Nonnull const* _Nonnull values,
+                                  int count);
 
 /// Get extended string list count from a label. Returns count, or -1 if not found.
 int OCCTDocumentGetExtStringListCount(OCCTDocumentRef _Nonnull document, int tag);
 
 /// Get extended string list element by index (0-based). Caller must free() the result.
-char* _Nullable OCCTDocumentGetExtStringListValue(OCCTDocumentRef _Nonnull document, int tag, int index);
+char* _Nullable OCCTDocumentGetExtStringListValue(OCCTDocumentRef _Nonnull document,
+                                                  int tag,
+                                                  int index);
 
 /// Append a string to an extended string list attribute
-bool OCCTDocumentExtStringListAppend(OCCTDocumentRef _Nonnull document, int tag,
-                                      const char* _Nonnull value);
+bool OCCTDocumentExtStringListAppend(OCCTDocumentRef _Nonnull document,
+                                     int tag,
+                                     const char* _Nonnull value);
 
 /// Clear an extended string list attribute
 bool OCCTDocumentExtStringListClear(OCCTDocumentRef _Nonnull document, int tag);
@@ -1655,13 +1882,18 @@ bool OCCTDocumentHasExtStringList(OCCTDocumentRef _Nonnull document, int tag);
 // MARK: - TDataStd_ReferenceArray
 
 /// Set a reference array attribute on a label (array of label tags)
-bool OCCTDocumentSetReferenceArray(OCCTDocumentRef _Nonnull document, int tag,
-                                    int lower, int upper,
-                                    const int* _Nonnull refTags, int count);
+bool OCCTDocumentSetReferenceArray(OCCTDocumentRef _Nonnull document,
+                                   int tag,
+                                   int lower,
+                                   int upper,
+                                   const int* _Nonnull refTags,
+                                   int count);
 
 /// Get a reference array from a label. Returns count, fills refTags buffer with tags.
-int OCCTDocumentGetReferenceArray(OCCTDocumentRef _Nonnull document, int tag,
-                                   int* _Nullable refTags, int maxCount);
+int OCCTDocumentGetReferenceArray(OCCTDocumentRef _Nonnull document,
+                                  int tag,
+                                  int* _Nullable refTags,
+                                  int maxCount);
 
 /// Check if a label has a reference array attribute
 bool OCCTDocumentHasReferenceArray(OCCTDocumentRef _Nonnull document, int tag);
@@ -1669,12 +1901,16 @@ bool OCCTDocumentHasReferenceArray(OCCTDocumentRef _Nonnull document, int tag);
 // MARK: - TDataStd_ReferenceList
 
 /// Set a reference list attribute on a label (list of label tags)
-bool OCCTDocumentSetReferenceList(OCCTDocumentRef _Nonnull document, int tag,
-                                   const int* _Nonnull refTags, int count);
+bool OCCTDocumentSetReferenceList(OCCTDocumentRef _Nonnull document,
+                                  int tag,
+                                  const int* _Nonnull refTags,
+                                  int count);
 
 /// Get a reference list from a label. Returns count, fills refTags buffer with tags.
-int OCCTDocumentGetReferenceList(OCCTDocumentRef _Nonnull document, int tag,
-                                  int* _Nullable refTags, int maxCount);
+int OCCTDocumentGetReferenceList(OCCTDocumentRef _Nonnull document,
+                                 int tag,
+                                 int* _Nullable refTags,
+                                 int maxCount);
 
 /// Append a reference to a reference list attribute
 bool OCCTDocumentReferenceListAppend(OCCTDocumentRef _Nonnull document, int tag, int refTag);
@@ -1688,8 +1924,9 @@ bool OCCTDocumentHasReferenceList(OCCTDocumentRef _Nonnull document, int tag);
 // MARK: - TDataStd_Relation
 
 /// Set a relation string on a label
-bool OCCTDocumentSetRelation(OCCTDocumentRef _Nonnull document, int tag,
-                              const char* _Nonnull relation);
+bool OCCTDocumentSetRelation(OCCTDocumentRef _Nonnull document,
+                             int tag,
+                             const char* _Nonnull relation);
 
 /// Get a relation string from a label. Caller must free() the result.
 char* _Nullable OCCTDocumentGetRelation(OCCTDocumentRef _Nonnull document, int tag);
@@ -1749,8 +1986,10 @@ int32_t OCCTNamingSameShapeCount(OCCTDocumentRef _Nonnull doc, OCCTShapeRef _Non
 
 /// Get label IDs that contain the same shape (up to maxCount)
 /// Returns actual count written to outLabelIds. Caller provides pre-allocated buffer.
-int32_t OCCTNamingSameShapeLabels(OCCTDocumentRef _Nonnull doc, OCCTShapeRef _Nonnull shape,
-                                   int64_t* _Nonnull outLabelIds, int32_t maxCount);
+int32_t OCCTNamingSameShapeLabels(OCCTDocumentRef _Nonnull doc,
+                                  OCCTShapeRef _Nonnull shape,
+                                  int64_t* _Nonnull outLabelIds,
+                                  int32_t maxCount);
 
 // MARK: - TDataStd_IntPackedMap
 
@@ -1777,15 +2016,18 @@ bool OCCTIntPackedMapIsEmpty(OCCTDocumentRef _Nonnull doc, int tag);
 
 /// Get all values from the IntPackedMap
 /// Returns count; caller must free the values array
-int OCCTIntPackedMapGetValues(OCCTDocumentRef _Nonnull doc, int tag,
-                               int* _Nullable* _Nonnull values);
+int OCCTIntPackedMapGetValues(OCCTDocumentRef _Nonnull doc,
+                              int tag,
+                              int* _Nullable* _Nonnull values);
 
 /// Free values array from OCCTIntPackedMapGetValues
 void OCCTIntPackedMapFreeValues(int* _Nullable values);
 
 /// Replace all values in the IntPackedMap
-bool OCCTIntPackedMapChangeValues(OCCTDocumentRef _Nonnull doc, int tag,
-                                    const int* _Nonnull values, int count);
+bool OCCTIntPackedMapChangeValues(OCCTDocumentRef _Nonnull doc,
+                                  int tag,
+                                  const int* _Nonnull values,
+                                  int count);
 
 // MARK: - TDataStd_NoteBook
 
@@ -1810,8 +2052,9 @@ bool OCCTUAttributeSet(OCCTDocumentRef _Nonnull doc, int tag, const char* _Nonnu
 bool OCCTUAttributeHas(OCCTDocumentRef _Nonnull doc, int tag, const char* _Nonnull guidString);
 
 /// Get the GUID string of a UAttribute on a label (caller must free the string)
-const char* _Nullable OCCTUAttributeGetID(OCCTDocumentRef _Nonnull doc, int tag,
-                                            const char* _Nonnull guidString);
+const char* _Nullable OCCTUAttributeGetID(OCCTDocumentRef _Nonnull doc,
+                                          int tag,
+                                          const char* _Nonnull guidString);
 
 /// Free a GUID string returned by OCCTUAttributeGetID
 void OCCTUAttributeFreeGUID(const char* _Nullable guidString);
@@ -1829,7 +2072,8 @@ int32_t OCCTDocumentOpenNamedTransaction(OCCTDocumentRef _Nonnull doc, const cha
 
 /// Commit the current transaction and return a delta for undo.
 /// The returned delta can be queried with OCCTDelta* functions.
-/// @return Opaque delta pointer (NULL if no changes or error). Caller must free with OCCTDeltaRelease.
+/// @return Opaque delta pointer (NULL if no changes or error). Caller must free with
+/// OCCTDeltaRelease.
 void* _Nullable OCCTDocumentCommitWithDelta(OCCTDocumentRef _Nonnull doc);
 
 /// Get the transaction number of the current open transaction.
@@ -1876,14 +2120,18 @@ bool OCCTDocumentXLinkCopy(OCCTDocumentRef _Nonnull doc, int64_t tgtLabelId, int
 
 /// Copy a label to another label with an XLink attribute for cross-document references.
 /// @return true on success
-bool OCCTDocumentXLinkCopyWithLink(OCCTDocumentRef _Nonnull doc, int64_t tgtLabelId, int64_t srcLabelId);
+bool OCCTDocumentXLinkCopyWithLink(OCCTDocumentRef _Nonnull doc,
+                                   int64_t tgtLabelId,
+                                   int64_t srcLabelId);
 
 // MARK: - TFunction_IFunction (v0.89.0)
 
 /// Create a new function at a label with a given GUID.
 /// Requires TFunction_Scope to be set on the document root.
 /// @return true on success
-bool OCCTDocumentNewFunction(OCCTDocumentRef _Nonnull doc, int64_t labelId, const char* _Nonnull guidString);
+bool OCCTDocumentNewFunction(OCCTDocumentRef _Nonnull doc,
+                             int64_t labelId,
+                             const char* _Nonnull guidString);
 
 /// Delete a function from a label.
 /// @return true on success
@@ -1896,7 +2144,9 @@ int32_t OCCTDocumentFunctionGetExecStatus(OCCTDocumentRef _Nonnull doc, int64_t 
 
 /// Set the execution status of a function via IFunction.
 /// @return true on success
-bool OCCTDocumentFunctionSetExecStatus(OCCTDocumentRef _Nonnull doc, int64_t labelId, int32_t status);
+bool OCCTDocumentFunctionSetExecStatus(OCCTDocumentRef _Nonnull doc,
+                                       int64_t labelId,
+                                       int32_t status);
 
 // MARK: - TFunction_Scope (v0.89.0)
 
@@ -1929,7 +2179,9 @@ int32_t OCCTDocumentFunctionScopeGetFreeID(OCCTDocumentRef _Nonnull doc);
 
 /// Count the number of attributes on a label.
 /// @param withoutForgotten If true, skip forgotten (deleted) attributes
-int32_t OCCTDocumentAttributeCount(OCCTDocumentRef _Nonnull doc, int64_t labelId, bool withoutForgotten);
+int32_t OCCTDocumentAttributeCount(OCCTDocumentRef _Nonnull doc,
+                                   int64_t labelId,
+                                   bool    withoutForgotten);
 
 // MARK: - TDF_DataSet (v0.89.0)
 
@@ -1941,8 +2193,10 @@ bool OCCTDocumentDataSetIsEmpty(OCCTDocumentRef _Nonnull doc, int64_t labelId);
 
 /// Count child labels that have an attribute with the given GUID string.
 /// @param allLevels If true, recurse into all descendants
-int32_t OCCTDocumentChildIDCount(OCCTDocumentRef _Nonnull doc, int64_t labelId,
-                                  const char* _Nonnull guidString, bool allLevels);
+int32_t OCCTDocumentChildIDCount(OCCTDocumentRef _Nonnull doc,
+                                 int64_t labelId,
+                                 const char* _Nonnull guidString,
+                                 bool allLevels);
 
 // MARK: - TFunction_DriverTable (v0.90.0)
 
@@ -1960,7 +2214,9 @@ bool OCCTDocumentNamingScopeValid(OCCTDocumentRef _Nonnull doc, int64_t labelId)
 
 /// Mark a label and its children as valid.
 /// @return true on success
-bool OCCTDocumentNamingScopeValidChildren(OCCTDocumentRef _Nonnull doc, int64_t labelId, bool withRoot);
+bool OCCTDocumentNamingScopeValidChildren(OCCTDocumentRef _Nonnull doc,
+                                          int64_t labelId,
+                                          bool    withRoot);
 
 /// Check if a label is valid in the naming scope.
 bool OCCTDocumentNamingScopeIsValid(OCCTDocumentRef _Nonnull doc, int64_t labelId);
@@ -1997,8 +2253,9 @@ bool OCCTDocumentHasPlacement(OCCTDocumentRef _Nonnull doc, int64_t labelId);
 
 /// Set a TDataXtd_Presentation attribute on a label with a driver GUID.
 /// @return true on success
-bool OCCTDocumentSetPresentation(OCCTDocumentRef _Nonnull doc, int64_t labelId,
-                                  const char* _Nonnull driverGUID);
+bool OCCTDocumentSetPresentation(OCCTDocumentRef _Nonnull doc,
+                                 int64_t labelId,
+                                 const char* _Nonnull driverGUID);
 
 /// Remove a TDataXtd_Presentation attribute from a label.
 void OCCTDocumentUnsetPresentation(OCCTDocumentRef _Nonnull doc, int64_t labelId);
@@ -2007,19 +2264,25 @@ void OCCTDocumentUnsetPresentation(OCCTDocumentRef _Nonnull doc, int64_t labelId
 bool OCCTDocumentHasPresentation(OCCTDocumentRef _Nonnull doc, int64_t labelId);
 
 /// Set the display state of a presentation.
-bool OCCTDocumentPresentationSetDisplayed(OCCTDocumentRef _Nonnull doc, int64_t labelId, bool displayed);
+bool OCCTDocumentPresentationSetDisplayed(OCCTDocumentRef _Nonnull doc,
+                                          int64_t labelId,
+                                          bool    displayed);
 
 /// Get the display state of a presentation.
 bool OCCTDocumentPresentationIsDisplayed(OCCTDocumentRef _Nonnull doc, int64_t labelId);
 
 /// Set the color of a presentation (Quantity_NameOfColor as int).
-bool OCCTDocumentPresentationSetColor(OCCTDocumentRef _Nonnull doc, int64_t labelId, int32_t colorIndex);
+bool OCCTDocumentPresentationSetColor(OCCTDocumentRef _Nonnull doc,
+                                      int64_t labelId,
+                                      int32_t colorIndex);
 
 /// Get the color of a presentation. Returns -1 if no own color.
 int32_t OCCTDocumentPresentationGetColor(OCCTDocumentRef _Nonnull doc, int64_t labelId);
 
 /// Set the transparency of a presentation [0.0, 1.0].
-bool OCCTDocumentPresentationSetTransparency(OCCTDocumentRef _Nonnull doc, int64_t labelId, double value);
+bool OCCTDocumentPresentationSetTransparency(OCCTDocumentRef _Nonnull doc,
+                                             int64_t labelId,
+                                             double  value);
 
 /// Get the transparency. Returns -1.0 if no own transparency.
 double OCCTDocumentPresentationGetTransparency(OCCTDocumentRef _Nonnull doc, int64_t labelId);
@@ -2059,11 +2322,13 @@ int32_t OCCTDocumentAssemblyItemCount(OCCTDocumentRef _Nonnull doc,
 /// @param name Name string
 /// @param description Description string
 /// @return true on success
-bool OCCTDocumentSetDimTol(OCCTDocumentRef _Nonnull doc, int64_t labelId,
-                            int32_t kind,
-                            const double* _Nonnull values, int32_t valueCount,
-                            const char* _Nonnull name,
-                            const char* _Nonnull description);
+bool OCCTDocumentSetDimTol(OCCTDocumentRef _Nonnull doc,
+                           int64_t labelId,
+                           int32_t kind,
+                           const double* _Nonnull values,
+                           int32_t valueCount,
+                           const char* _Nonnull name,
+                           const char* _Nonnull description);
 
 /// Get the kind of a DimTol attribute. Returns -1 if not found.
 int32_t OCCTDocumentGetDimTolKind(OCCTDocumentRef _Nonnull doc, int64_t labelId);
@@ -2072,14 +2337,17 @@ int32_t OCCTDocumentGetDimTolKind(OCCTDocumentRef _Nonnull doc, int64_t labelId)
 const char* _Nullable OCCTDocumentGetDimTolName(OCCTDocumentRef _Nonnull doc, int64_t labelId);
 
 /// Get the description of a DimTol attribute. Caller must free.
-const char* _Nullable OCCTDocumentGetDimTolDescription(OCCTDocumentRef _Nonnull doc, int64_t labelId);
+const char* _Nullable OCCTDocumentGetDimTolDescription(OCCTDocumentRef _Nonnull doc,
+                                                       int64_t labelId);
 
 /// Get the values of a DimTol attribute.
 /// @param outValues Output buffer for values
 /// @param maxCount Maximum values to return
 /// @return Number of values written
-int32_t OCCTDocumentGetDimTolValues(OCCTDocumentRef _Nonnull doc, int64_t labelId,
-                                     double* _Nonnull outValues, int32_t maxCount);
+int32_t OCCTDocumentGetDimTolValues(OCCTDocumentRef _Nonnull doc,
+                                    int64_t labelId,
+                                    double* _Nonnull outValues,
+                                    int32_t maxCount);
 
 /// Free a DimTol string (name or description).
 void OCCTDocumentFreeDimTolString(const char* _Nullable str);
@@ -2105,7 +2373,9 @@ bool OCCTDocumentConstraintIsPlanar(OCCTDocumentRef _Nonnull doc, int64_t labelI
 bool OCCTDocumentConstraintIsDimension(OCCTDocumentRef _Nonnull doc, int64_t labelId);
 
 /// Set the verified flag on a constraint.
-bool OCCTDocumentConstraintSetVerified(OCCTDocumentRef _Nonnull doc, int64_t labelId, bool verified);
+bool OCCTDocumentConstraintSetVerified(OCCTDocumentRef _Nonnull doc,
+                                       int64_t labelId,
+                                       bool    verified);
 
 /// Get the verified flag.
 bool OCCTDocumentConstraintGetVerified(OCCTDocumentRef _Nonnull doc, int64_t labelId);
@@ -2119,7 +2389,9 @@ bool OCCTDocumentConstraintClearGeometries(OCCTDocumentRef _Nonnull doc, int64_t
 bool OCCTDocumentSetPatternStd(OCCTDocumentRef _Nonnull doc, int64_t labelId);
 
 /// Set pattern signature (1=linear, 2=circular, 3=rectangular, 4=radial, 5=mirror).
-bool OCCTDocumentPatternSetSignature(OCCTDocumentRef _Nonnull doc, int64_t labelId, int32_t signature);
+bool OCCTDocumentPatternSetSignature(OCCTDocumentRef _Nonnull doc,
+                                     int64_t labelId,
+                                     int32_t signature);
 
 /// Get pattern signature. Returns -1 if not found.
 int32_t OCCTDocumentPatternGetSignature(OCCTDocumentRef _Nonnull doc, int64_t labelId);
@@ -2133,14 +2405,17 @@ bool OCCTDocumentHasPattern(OCCTDocumentRef _Nonnull doc, int64_t labelId);
 // MARK: - XCAFDoc_AssemblyItemRef (v0.96.0)
 
 /// Set an assembly item reference on a label.
-bool OCCTDocumentSetAssemblyItemRef(OCCTDocumentRef _Nonnull doc, int64_t labelId,
-                                     const char* _Nonnull itemPath);
+bool OCCTDocumentSetAssemblyItemRef(OCCTDocumentRef _Nonnull doc,
+                                    int64_t labelId,
+                                    const char* _Nonnull itemPath);
 
 /// Get the assembly item path string. Caller must free.
 const char* _Nullable OCCTDocumentGetAssemblyItemRef(OCCTDocumentRef _Nonnull doc, int64_t labelId);
 
 /// Set subshape index on an assembly item ref.
-bool OCCTDocumentAssemblyItemRefSetSubshape(OCCTDocumentRef _Nonnull doc, int64_t labelId, int32_t index);
+bool OCCTDocumentAssemblyItemRefSetSubshape(OCCTDocumentRef _Nonnull doc,
+                                            int64_t labelId,
+                                            int32_t index);
 
 /// Get subshape index. Returns -1 if not set.
 int32_t OCCTDocumentAssemblyItemRefGetSubshape(OCCTDocumentRef _Nonnull doc, int64_t labelId);
@@ -2177,7 +2452,8 @@ OCCTShapeRef _Nullable OCCTDocumentExplorerShape(OCCTDocumentRef _Nonnull doc, i
 char* _Nullable OCCTDocumentExplorerPathId(OCCTDocumentRef _Nonnull doc, int32_t index);
 
 /// Find shape from path ID string.
-OCCTShapeRef _Nullable OCCTDocumentExplorerFindShape(OCCTDocumentRef _Nonnull doc, const char* _Nonnull pathId);
+OCCTShapeRef _Nullable OCCTDocumentExplorerFindShape(OCCTDocumentRef _Nonnull doc,
+                                                     const char* _Nonnull pathId);
 
 // MARK: - XCAFPrs_DocumentExplorer extensions (v0.105.0)
 
@@ -2188,8 +2464,9 @@ int32_t OCCTDocumentExplorerDepth(OCCTDocumentRef _Nonnull doc, int32_t index);
 bool OCCTDocumentExplorerIsAssembly(OCCTDocumentRef _Nonnull doc, int32_t index);
 
 /// Get the location matrix (12 doubles, row-major 3x4) for a document explorer node.
-void OCCTDocumentExplorerLocation(OCCTDocumentRef _Nonnull doc, int32_t index,
-                                   double* _Nonnull matrix12);
+void OCCTDocumentExplorerLocation(OCCTDocumentRef _Nonnull doc,
+                                  int32_t index,
+                                  double* _Nonnull matrix12);
 
 // --- XCAFDoc_ColorTool completions ---
 
@@ -2203,39 +2480,49 @@ bool OCCTDocumentColorToolRemoveColor(OCCTDocumentRef _Nonnull doc, int64_t labe
 int32_t OCCTDocumentColorToolGetColorCount(OCCTDocumentRef _Nonnull doc);
 
 /// Unset color of a specific type from a label.
-bool OCCTDocumentColorToolUnSetColor(OCCTDocumentRef _Nonnull doc, int64_t labelId, int32_t colorType);
+bool OCCTDocumentColorToolUnSetColor(OCCTDocumentRef _Nonnull doc,
+                                     int64_t labelId,
+                                     int32_t colorType);
 
 /// Check if a label is visible.
 bool OCCTDocumentColorToolIsVisible(OCCTDocumentRef _Nonnull doc, int64_t labelId);
 
 /// Set visibility of a label.
-bool OCCTDocumentColorToolSetVisibility(OCCTDocumentRef _Nonnull doc, int64_t labelId, bool visible);
+bool OCCTDocumentColorToolSetVisibility(OCCTDocumentRef _Nonnull doc,
+                                        int64_t labelId,
+                                        bool    visible);
 
 /// Check if color is defined by layer.
 bool OCCTDocumentColorToolIsColorByLayer(OCCTDocumentRef _Nonnull doc, int64_t labelId);
 
 /// Set color-by-layer flag on a label.
-bool OCCTDocumentColorToolSetColorByLayer(OCCTDocumentRef _Nonnull doc, int64_t labelId, bool isByLayer);
+bool OCCTDocumentColorToolSetColorByLayer(OCCTDocumentRef _Nonnull doc,
+                                          int64_t labelId,
+                                          bool    isByLayer);
 
 /// Find a color in the color table. Returns label id or -1 if not found.
 int64_t OCCTDocumentColorToolFindColor(OCCTDocumentRef _Nonnull doc, double r, double g, double b);
 
 /// Set instance color on a shape component. Returns false if shape not found.
 bool OCCTDocumentColorToolSetInstanceColor(OCCTDocumentRef _Nonnull doc,
-                                            OCCTShapeRef _Nonnull shape,
-                                            int32_t colorType,
-                                            double r, double g, double b);
+                                           OCCTShapeRef _Nonnull shape,
+                                           int32_t colorType,
+                                           double  r,
+                                           double  g,
+                                           double  b);
 
 /// Get instance color of a shape component. Returns false if not set.
 bool OCCTDocumentColorToolGetInstanceColor(OCCTDocumentRef _Nonnull doc,
-                                            OCCTShapeRef _Nonnull shape,
-                                            int32_t colorType,
-                                            double* _Nonnull r, double* _Nonnull g, double* _Nonnull b);
+                                           OCCTShapeRef _Nonnull shape,
+                                           int32_t colorType,
+                                           double* _Nonnull r,
+                                           double* _Nonnull g,
+                                           double* _Nonnull b);
 
 // --- XCAFDoc_ColorTool completions ---
 
 /// Get all color labels in the document. Returns array of label IDs. Caller must free with free().
 int32_t OCCTDocumentColorToolGetAllColors(OCCTDocumentRef _Nonnull doc,
-                                           int64_t* _Nullable * _Nonnull outLabelIds);
+                                          int64_t* _Nullable* _Nonnull outLabelIds);
 
 #endif /* OCCTBridge_Document_h */

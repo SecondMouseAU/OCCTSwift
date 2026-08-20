@@ -747,7 +747,8 @@ public func tracedForward(from shape: Shape, scope: AssemblyNode) -> [Shape]
 
 - **Parameters:** `shape` — the source shape; `scope` — label providing document scope.
 - **Returns:** Shapes that were generated or modified from `shape` (up to 64).
-- **OCCT:** `TNaming_Tool::GeneratedShape` / forward-tracing (via `OCCTDocumentNamingTraceForward`).
+- **OCCT:** `TNaming_NewShapeIterator` (via `OCCTDocumentNamingTraceForward`).
+  `TNaming_Tool::GeneratedShape` exists but is not what runs.
 
 ---
 
@@ -761,7 +762,8 @@ public func tracedBackward(from shape: Shape, scope: AssemblyNode) -> [Shape]
 
 - **Parameters:** `shape` — the shape to trace back from; `scope` — label scope.
 - **Returns:** Predecessor shapes (up to 64).
-- **OCCT:** `TNaming_Tool` backward-tracing (via `OCCTDocumentNamingTraceBackward`).
+- **OCCT:** `TNaming_OldShapeIterator` (via `OCCTDocumentNamingTraceBackward`).
+  No `TNaming_Tool` static is called.
 
 ---
 
@@ -775,7 +777,10 @@ public func selectShape(_ selection: Shape, context: Shape, on node: AssemblyNod
 ```
 
 - **Parameters:** `selection` — sub-shape to select; `context` — containing shape; `node` — label to store on.
-- **OCCT:** `TNaming_Builder::Select` (via `OCCTDocumentNamingSelect`).
+- **OCCT:** `TNaming_Selector::Select` (via `OCCTDocumentNamingSelect`).
+  `TNaming_Builder::Select` exists and is a different operation: it records a raw
+  select-evolution pair, where `TNaming_Selector` computes a name that survives later
+  modification, which is what this method promises.
 
 ---
 
@@ -1130,7 +1135,8 @@ public func descendants(allLevels: Bool = false) -> [AssemblyNode]
 
 - **Parameters:** `allLevels` — if `true`, recurse all descendants; if `false`, direct children only.
 - **Returns:** Array of descendant nodes (up to 1,024).
-- **OCCT:** `TDF_LabelSequence` recursive traversal (via `OCCTDocumentGetDescendantLabels`).
+- **OCCT:** `TDF_ChildIterator(label, allLevels)` (via `OCCTDocumentGetDescendantLabels`).
+  No `TDF_LabelSequence` is built.
 
 ---
 
@@ -1396,7 +1402,7 @@ Check if a label is marked as modified.
 public func isModified(_ node: AssemblyNode) -> Bool
 ```
 
-- **OCCT:** `TDocStd_Document::IsModified` (via `OCCTDocumentIsLabelModified`).
+- **OCCT:** `TDocStd_Document::GetModified` (via `OCCTDocumentIsLabelModified`).
 
 ---
 

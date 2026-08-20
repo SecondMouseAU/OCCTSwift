@@ -7,9 +7,9 @@
 
 📖 **Documentation & cookbook:** <https://secondmouseau.github.io/OCCTSwift/>
 
-A comprehensive Swift wrapper for [OpenCASCADE Technology (OCCT)](https://www.opencascade.com/) 8.0.0p1, providing B-Rep solid modeling for macOS and iOS. **v1.0.0 — SemVer-stable as of 2026-05-07.**
+A comprehensive Swift wrapper for [OpenCASCADE Technology (OCCT)](https://www.opencascade.com/) 8.0.1, providing B-Rep solid modeling for macOS and iOS. **v3.0.0 — SemVer-stable; see [SEMVER.md](docs/SEMVER.md#v300) before upgrading from v2.x.**
 
-**4,339 wrapped operations** | macOS 12+ / iOS 15+ / visionOS 1+ / tvOS 15+ (arm64) | OCCT 8.0.0p1
+**4,339 wrapped operations** | macOS 12+ / iOS 15+ (arm64), visionOS and tvOS untested | OCCT 8.0.1
 
 ## Quick Start
 
@@ -163,11 +163,22 @@ Each OCCT object is managed via opaque handle types with release-on-deinit. See 
 | macOS 12+ | arm64 (Apple Silicon) | Supported |
 | iOS 15+ device | arm64 | Supported |
 | iOS 15+ Simulator | arm64 (Apple Silicon host) | Supported |
-| visionOS 1+ | arm64 device + simulator | Supported (v0.167.0+) |
-| tvOS 15+ | arm64 device + simulator | Supported (v0.167.0+) |
+| visionOS 1+ | arm64 device + simulator | **Untested** — declared and buildable, never exercised (see below) |
+| tvOS 15+ | arm64 device + simulator | **Untested** — declared and buildable, never exercised (see below) |
 | watchOS | — | Out of scope (OCCT static lib too large for watch memory) |
 | macOS x86_64 (Intel) | — | Out of scope (Apple is winding down Intel macOS support) |
 | Linux / Windows / Android | — | Under review — see [docs/platform-expansion.md](docs/platform-expansion.md) |
+
+**On visionOS and tvOS.** `Package.swift` declares both and `Scripts/build-occt.sh` builds slices for
+both under `BUILD_ALL_PLATFORMS=1`, so they are expected to work. But **nothing has been tested on
+either**, and the released `OCCT.xcframework` carries only the three core slices — `macos-arm64`,
+`ios-arm64`, `ios-arm64-simulator` — because the full seven-slice artifact is roughly twice the size
+and nobody has shipped against the other four.
+
+So a consumer targeting visionOS or tvOS has to rebuild the kernel locally with
+`BUILD_ALL_PLATFORMS=1` (see [docs/guides/building-occt.md](docs/guides/building-occt.md)); resolving
+the released binary will not link. Treat these two rows as "no known reason it would not work" rather
+than as a support claim, and please report what you find (#978).
 
 ## Building OCCT from Source
 

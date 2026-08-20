@@ -40,6 +40,8 @@
 #include <XCAFDimTolObjects_DimensionType.hxx>
 #include <XCAFDimTolObjects_GeomToleranceObject.hxx>
 #include <XCAFDimTolObjects_GeomToleranceType.hxx>
+#include <TDF_Data.hxx>
+#include <TDF_Delta.hxx>
 #include <TDF_Tool.hxx>
 #include <TCollection_HAsciiString.hxx>
 #include <TColStd_HArray1OfReal.hxx>
@@ -2028,12 +2030,38 @@ int64_t OCCTDocumentGetMainLabel(OCCTDocumentRef doc)
 
 // MARK: - Document Transactions (v0.54.0)
 
+// #970: move a pending named-transaction name onto the delta the commit just produced.
+// TDF_Delta is the only thing in OCCT that carries a caller-supplied transaction name:
+// TDocStd_MultiTransactionManager::CommitCommand(theName) is myUndos.First()->SetName(theName),
+// and TDocStd_Document::Undo copies the name onto the redo delta, so it survives undo/redo.
+// CommitCommand returns false when nothing changed, in which case there is no delta to name;
+// the pending name is dropped either way, since the transaction it belonged to is over.
+// Both call sites have already checked doc and doc->doc, so neither is rechecked here.
+// The name is converted the same way OCCTDeltaSetName converts its own argument.
+static void occtApplyPendingTransactionName(OCCTDocumentRef doc, bool committed)
+{
+  if (doc->pendingTransactionName.empty())
+    return;
+  if (committed)
+  {
+    auto& undos = doc->doc->GetUndos();
+    if (!undos.IsEmpty())
+    {
+      Handle(TDF_Delta) delta = undos.Last();
+      delta->SetName(TCollection_ExtendedString(doc->pendingTransactionName.c_str()));
+    }
+  }
+  doc->pendingTransactionName.clear();
+}
+
 void OCCTDocumentOpenTransaction(OCCTDocumentRef doc)
 {
   if (!doc || doc->doc.IsNull())
     return;
   try
   {
+    // An unnamed open supersedes any name left pending by an earlier one (#970).
+    doc->pendingTransactionName.clear();
     doc->doc->OpenCommand();
   }
   catch (...)
@@ -2047,7 +2075,9 @@ bool OCCTDocumentCommitTransaction(OCCTDocumentRef doc)
     return false;
   try
   {
-    return doc->doc->CommitCommand();
+    const bool committed = doc->doc->CommitCommand();
+    occtApplyPendingTransactionName(doc, committed);
+    return committed;
   }
   catch (...)
   {
@@ -2062,6 +2092,7 @@ void OCCTDocumentAbortTransaction(OCCTDocumentRef doc)
   try
   {
     doc->doc->AbortCommand();
+    doc->pendingTransactionName.clear();
   }
   catch (...)
   {
@@ -9327,8 +9358,21 @@ int32_t OCCTDocumentOpenNamedTransaction(OCCTDocumentRef doc, const char* name)
     return 0;
   try
   {
+    // OpenCommand throws Standard_DomainError when one is already open, and the catch below
+    // returns 0 without having touched the pending name, so a refused open leaves the running
+    // transaction's own name alone.
     doc->doc->OpenCommand();
-    return doc->doc->HasOpenCommand() ? 1 : 0;
+    const Handle(TDF_Data)& data = doc->doc->GetData();
+    if (data.IsNull())
+      return 0;
+    // Nothing opens when the undo limit is 0 (TDocStd_Document::OpenTransaction opens its
+    // TDF_Transaction only when myUndoLimit != 0), and a name held across that would land on
+    // whatever commits next. Store it only once a transaction is genuinely open.
+    if (name && doc->doc->HasOpenCommand())
+      doc->pendingTransactionName = name;
+    else
+      doc->pendingTransactionName.clear();
+    return static_cast<int32_t>(data->Transaction());
   }
   catch (...)
   {
@@ -9342,8 +9386,13 @@ void* OCCTDocumentCommitWithDelta(OCCTDocumentRef doc)
     return nullptr;
   try
   {
-    doc->doc->SetUndoLimit(100);
+    // #970: no SetUndoLimit(100) here. TDocStd_Document::SetUndoLimit commits the open
+    // transaction before it changes the limit, so the CommitCommand below had nothing left to
+    // commit and this function returned nullptr for every transaction that had one open. The
+    // undo limit is the caller's to set (OCCTDocumentSetUndoLimit); with undo disabled, which
+    // is OCCT's default, there is no delta to hand back.
     bool ok = doc->doc->CommitCommand();
+    occtApplyPendingTransactionName(doc, ok);
     if (!ok)
       return nullptr;
     auto& undos = doc->doc->GetUndos();
@@ -9364,7 +9413,13 @@ int32_t OCCTDocumentGetTransactionNumber(OCCTDocumentRef doc)
     return 0;
   try
   {
-    return doc->doc->HasOpenCommand() ? 1 : 0;
+    // #970: read OCCT's own counter rather than encoding HasOpenCommand() as 1 or 0. A document
+    // holds at most one TDF transaction, so this is 0 or 1 in every state its command API can
+    // reach, nested transaction mode included; see Scripts/repro/970-transaction-api.
+    const Handle(TDF_Data)& data = doc->doc->GetData();
+    if (data.IsNull())
+      return 0;
+    return static_cast<int32_t>(data->Transaction());
   }
   catch (...)
   {
