@@ -1,0 +1,46 @@
+== 1: is a datum position 1-based, so 0 means no position? ==
+
+  wrote position=0    read position=0
+  wrote position=1    read position=1
+  wrote position=3    read position=3
+
+  STEPCAFControl_Reader.cxx:3676 declares its frame counter as `int aPositionCounter = 0`
+  and :3763 increments it BEFORE passing it at :3774, so the first datum of a reference
+  frame is written as position 1 and 0 is never assigned by an import. The round trip is
+  faithful in both directions, so 0 is a usable "no position" reading rather than a
+  value OCCT could have meant.
+
+== 2 and 3: do a zero zone value and a zero max value survive? ==
+
+  zone=Projected value=15 max=0.25   wrote zoneModifier=1 zoneValue=15 maxValue=0.25
+                                     read  zoneModifier=1 zoneValue=15 maxValue=0.25
+  zone=Projected value=0  max=0      wrote zoneModifier=1 zoneValue=0 maxValue=0
+                                     read  zoneModifier=1 zoneValue=0 maxValue=0
+  zone=None      value=15 max=0.25   wrote zoneModifier=0 zoneValue=15 maxValue=0.25
+                                     read  zoneModifier=0 zoneValue=15 maxValue=0.25
+
+  Read the second row carefully: the zeroes come back as zeroes, and that is NOT evidence
+  they were stored. XCAFDoc_GeomTolerance::SetObject writes the zone value only under
+  `> 0` and the max value only under `> 0`, so neither child label exists for that row;
+  GetObject then leaves both at the fresh object's own unassigned member, which reads 0.
+  A stored 0 and an unstored one are the same reading, which is exactly why `> 0` is the
+  presence test rather than an approximation of one, and why the Swift side reports nil
+  rather than 0. The zone MODIFIER is gated separately on `!= _None`: the third row keeps
+  its zone value with no modifier at all, which is what shows the two are independent.
+
+== 4: which datum target types keep a length and a width? ==
+
+  Point      wrote length=30 width=18  ->  read isTarget=1 hasParams=1 type=Point number=4 length=0 width=0
+  Line       wrote length=30 width=18  ->  read isTarget=1 hasParams=1 type=Line number=4 length=30 width=0
+  Rectangle  wrote length=30 width=18  ->  read isTarget=1 hasParams=1 type=Rectangle number=4 length=30 width=18
+  Circle     wrote length=30 width=18  ->  read isTarget=1 hasParams=1 type=Circle number=4 length=30 width=0
+  Area       wrote length=30 width=18  ->  read isTarget=1 hasParams=0 type=Area number=4 length=0 width=0
+
+  One rule each, and both fall out of SetObject's own nesting. LENGTH is present when
+  HasDatumTargetParams() holds and the type is not Point. WIDTH is present when
+  HasDatumTargetParams() holds and the type is Rectangle. Area needs no separate clause:
+  SetObject takes the shape branch for it and never writes the axis, so GetObject never
+  calls SetDatumTargetAxis and HasDatumTargetParams() is false, as the row shows. Point
+  does have params (the axis is written) and simply has no length, which is why the type
+  test is needed on top of the predicate. A length or width read outside those two
+  combinations is the fresh object's unassigned member, not a measurement.

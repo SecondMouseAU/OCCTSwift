@@ -646,15 +646,15 @@ public var colors: [SIMD3<Float>] { get }
 
 These types are declared as extensions on `Document` in `GDTRead.swift` and encode the STEP AP242 GD&T vocabulary.
 
-The seven `Int32`-backed enums here are transcribed member for member from the pinned kernel's own
+The fourteen `Int32`-backed enums here are transcribed member for member from the pinned kernel's own
 `XCAFDimTolObjects_*` headers, and the bridge casts OCCT's enum straight across with no sentinel and
 no remap. `Scripts/derive-gdt-enums.py --verify` gates that transcription against
 `Scripts/occt-gdt-enums.txt` on every CI run, and `--reverify-headers` re-derives the manifest from
 the pinned headers after an OCCT bump. Without it, a member OCCT adds turns into a `nil` from
-`dimension(at:)` rather than an error (#996). `DimensionQualifier`, `AngularQualifier` and
-`DimensionModifier` joined the gate with the accessors that return them (#1004); the eight
-`XCAFDimTolObjects` enums still unbound are named by `--reverify-headers` and recorded in
-`docs/occtswift-wrapping-gaps.md`.
+`dimension(at:)` rather than an error (#996). Ten more joined the gate with the accessors that
+return them (#1004), leaving exactly one `XCAFDimTolObjects` enum unbound,
+`ToleranceZoneAffectedPlane`; `--reverify-headers` names it, and
+`docs/occtswift-wrapping-gaps.md` records why.
 
 ---
 
@@ -1173,6 +1173,222 @@ The upper bound, or `nil` unless `bounds` is `.range`.
 
 ---
 
+### `Document.GeomToleranceValueType`
+
+Maps OCCT's `XCAFDimTolObjects_GeomToleranceTypeValue`: what a tolerance's zone value measures.
+
+```swift
+public enum GeomToleranceValueType: Int32, Sendable, CaseIterable {
+    case none = 0
+    case diameter = 1
+    case sphericalDiameter = 2
+}
+```
+
+| Case | Meaning |
+|---|---|
+| `.none` | The value is a linear zone width. |
+| `.diameter` | The value is a cylindrical zone's diameter. |
+| `.sphericalDiameter` | The value is a spherical zone's diameter. |
+
+Reading `value` without this reads it at half or twice its meaning, which is why it is wrapped
+first among the tolerance accessors.
+
+```swift
+let diametral = doc.geomTolerances.filter { $0.valueType == .diameter }
+```
+
+---
+
+### `Document.MaterialRequirement`
+
+Maps OCCT's `XCAFDimTolObjects_GeomToleranceMatReqModif`: the ISO 2692 material condition a
+tolerance applies at.
+
+```swift
+public enum MaterialRequirement: Int32, Sendable, CaseIterable {
+    case none = 0
+    case m = 1
+    case l = 2
+}
+```
+
+| Case | Symbol | Meaning |
+|---|---|---|
+| `.none` | (none) | Regardless of feature size (RFS). |
+| `.m` | circle-M | Maximum material condition (MMC). |
+| `.l` | circle-L | Least material condition (LMC). |
+
+The two single-letter case names are the drawing symbols themselves, not abbreviations. They come
+from OCCT's own member names, which `Scripts/derive-gdt-enums.py` re-derives rather than storing a
+pairing, so renaming either to `maximumMaterial` would be a gate failure rather than a silently
+accepted alias.
+
+```swift
+let mmc = doc.geomTolerances.filter { $0.materialRequirement == .m }
+```
+
+---
+
+### `Document.GeomToleranceZoneModifier`
+
+Maps OCCT's `XCAFDimTolObjects_GeomToleranceZoneModif`: how a tolerance zone is qualified.
+
+```swift
+public enum GeomToleranceZoneModifier: Int32, Sendable, CaseIterable {
+    case none = 0
+    case projected = 1
+    case runout = 2
+    case nonUniform = 3
+}
+```
+
+| Case | Meaning |
+|---|---|
+| `.none` | The zone is not qualified. |
+| `.projected` | A projected tolerance zone, extending outside the feature by `zoneModifierValue`. |
+| `.runout` | A runout zone. |
+| `.nonUniform` | A non-uniform zone. |
+
+```swift
+if let tol = doc.geomTolerance(at: 0), tol.zoneModifier == .projected {
+    print("projected by \(tol.zoneModifierValue ?? 0)")
+}
+```
+
+---
+
+### `Document.GeomToleranceModifier`
+
+Maps OCCT's `XCAFDimTolObjects_GeomToleranceModif`: the 17 GD&T modifiers a tolerance can carry.
+Like `DimensionModifier`, no `none` member: a tolerance carries a sequence, and an empty sequence is
+what "no modifier" means.
+
+```swift
+public enum GeomToleranceModifier: Int32, Sendable, CaseIterable {
+    case anyCrossSection = 0
+    case commonZone = 1
+    case eachRadialElement = 2
+    case freeState = 3
+    case leastMaterialRequirement = 4
+    case lineElement = 5
+    case majorDiameter = 6
+    case maximumMaterialRequirement = 7
+    case minorDiameter = 8
+    case notConvex = 9
+    case pitchDiameter = 10
+    case reciprocityRequirement = 11
+    case separateRequirement = 12
+    case statisticalTolerance = 13
+    case tangentPlane = 14
+    case allAround = 15
+    case allOver = 16
+}
+```
+
+Order is preserved end to end: the sequence crosses the bridge as a count plus a positional index,
+not as a set.
+
+```swift
+doc.setGeomToleranceModifiers(at: 0, [.allAround, .freeState])
+print(doc.geomTolerance(at: 0)?.modifiers ?? [])   // [.allAround, .freeState]
+```
+
+---
+
+### `Document.DatumModifier`
+
+Maps OCCT's `XCAFDimTolObjects_DatumSingleModif`: the 22 modifiers a datum can carry. No `none`
+member, for the same reason as `GeomToleranceModifier`.
+
+```swift
+public enum DatumModifier: Int32, Sendable, CaseIterable {
+    case anyCrossSection = 0
+    case anyLongitudinalSection = 1
+    case basic = 2
+    case contactingFeature = 3
+    case degreeOfFreedomConstraintU = 4
+    case degreeOfFreedomConstraintV = 5
+    case degreeOfFreedomConstraintW = 6
+    case degreeOfFreedomConstraintX = 7
+    case degreeOfFreedomConstraintY = 8
+    case degreeOfFreedomConstraintZ = 9
+    case distanceVariable = 10
+    case freeState = 11
+    case leastMaterialRequirement = 12
+    case line = 13
+    case majorDiameter = 14
+    case maximumMaterialRequirement = 15
+    case minorDiameter = 16
+    case orientation = 17
+    case pitchDiameter = 18
+    case plane = 19
+    case point = 20
+    case translation = 21
+}
+```
+
+The six `degreeOfFreedomConstraint*` cases are the ISO 5459 constrained degrees of freedom: `U`,
+`V` and `W` are the rotational ones and `X`, `Y` and `Z` the translational.
+
+```swift
+let basic = doc.datums.filter { $0.modifiers.contains(.basic) }
+```
+
+---
+
+### `Document.DatumModifierWithValue`
+
+Maps OCCT's `XCAFDimTolObjects_DatumModifWithValue`: the one datum modifier that carries a number.
+
+```swift
+public enum DatumModifierWithValue: Int32, Sendable, CaseIterable {
+    case none = 0
+    case circularOrCylindrical = 1
+    case distance = 2
+    case projected = 3
+    case spherical = 4
+}
+```
+
+OCCT stores at most one of these per datum, alongside its value, which is why it is separate from
+the `DatumModifier` sequence rather than a member of it. `Datum.modifierWithValue` pairs the two.
+
+```swift
+if let m = doc.datum(at: 0)?.modifierWithValue, m.modifier == .projected {
+    print("projected by \(m.value)")
+}
+```
+
+---
+
+### `Document.DatumTargetType`
+
+Maps OCCT's `XCAFDimTolObjects_DatumTargetType`: the shape of a datum target.
+
+```swift
+public enum DatumTargetType: Int32, Sendable, CaseIterable {
+    case point = 0
+    case line = 1
+    case rectangle = 2
+    case circle = 3
+    case area = 4
+}
+```
+
+Alone among the GD&T enums this one has **no `none` member** and starts at `.point`, so it means
+nothing for a datum that is not a target at all. `Datum.target` carries it inside an optional for
+exactly that reason, rather than exposing it as a field that would read `.point` for every ordinary
+datum.
+
+The type also decides which of a target's dimensions OCCT keeps; see `Document.Datum.Target`.
+
+```swift
+let areas = doc.datums.filter { $0.target?.type == .area }
+```
+
+---
+
 ### `Document.GeomTolerance`
 
 A geometric tolerance read from, or created on, a `Document`.
@@ -1181,9 +1397,32 @@ A geometric tolerance read from, or created on, a `Document`.
 public struct GeomTolerance: Sendable, Hashable {
     public let type: GeomToleranceType
     public let value: Double
+    public let valueType: GeomToleranceValueType
+    public let materialRequirement: MaterialRequirement
+    public let zoneModifier: GeomToleranceZoneModifier
+    public let zoneModifierValue: Double?
+    public let maxValueModifier: Double?
+    public let modifiers: [GeomToleranceModifier]
     public let index: Int
 }
 ```
+
+- `type`: the ASME / ISO tolerance class.
+- `value`: the tolerance zone value, in model units.
+- `valueType`: what `value` measures, a linear width or a diameter.
+- `materialRequirement`: the material condition the tolerance applies at.
+- `zoneModifier`: how the zone is qualified.
+- `zoneModifierValue`: the value associated with `zoneModifier`, or `nil`.
+- `maxValueModifier`: the maximal upper tolerance for a tolerance carrying modifiers, or `nil`.
+- `modifiers`: the GD&T modifiers, in OCCT's own order. Empty when the tolerance carries none.
+- `index`: position in the document's geometric tolerance sequence.
+
+The three enums are not optional and the two doubles are, and the split is OCCT's rather than a
+convention chosen here. Each enum carries its own `_None` member, so absence is already in its
+vocabulary. Neither double has one, and `XCAFDoc_GeomTolerance::SetObject` stores each only when it
+is positive, so a stored zero is not representable and an unstored one reads back as the fresh
+object's unassigned member, which is also zero. Reporting either as `0.0` would be the defect #996
+existed to fix; measured in `Scripts/repro/1004-gdt-accessors/transcript-gates.txt` (#1004).
 
 - `type` — ASME / ISO tolerance class.
 - `value` — tolerance zone value in model units.
@@ -1200,9 +1439,86 @@ A datum reference read from, or created on, a `Document`.
 ```swift
 public struct Datum: Sendable, Hashable {
     public let name: String
+    public let position: Int?
+    public let modifiers: [DatumModifier]
+    public let modifierWithValue: ModifierWithValue?
+    public let target: Target?
     public let index: Int
 }
 ```
+
+- `name`: the datum identifier, for example `"A"`.
+- `position`: the datum's place in its geometric tolerance's reference frame, 1-based, or `nil`.
+- `modifiers`: the modifiers on this datum, in OCCT's own order. Empty when it carries none.
+- `modifierWithValue`: the single valued modifier, or `nil`.
+- `target`: the datum target, or `nil` when this datum is not a target.
+- `index`: position in the document's datum sequence.
+
+`position` is what makes `A|B|C` an ordered reference frame rather than a set. It is 1-based, so `0`
+is absence rather than a first place: `STEPCAFControl_Reader`'s frame counter starts at 0 and is
+incremented before each datum is written, so an import never assigns 0. `nil` for `<= 0` follows
+from that rather than from a convention chosen here (#1004).
+
+**Reading the frame itself is not possible yet.** `Datum.position` gives the order, but nothing in
+this package answers which geometric tolerance a datum belongs to: `XCAFDoc_DimTolTool`'s
+`GetDatumOfTolerLabels` and `GetTolerOfDatumLabels` are unwrapped, and
+`docs/occtswift-wrapping-gaps.md` records that as the largest remaining gap in this surface (#1021).
+
+---
+
+#### `Document.Datum.ModifierWithValue`
+
+The one datum modifier that carries a number, present when OCCT stored one.
+
+```swift
+public struct ModifierWithValue: Sendable, Hashable {
+    public let modifier: DatumModifierWithValue
+    public let value: Double
+}
+```
+
+- `modifier`: which modifier. Never `.none`, because absence is the enclosing optional.
+- `value`: the number it carries, for example a projected datum's distance.
+
+---
+
+#### `Document.Datum.Target`
+
+A datum target, present when OCCT's `IsDatumTarget()` holds.
+
+```swift
+public struct Target: Sendable, Hashable {
+    public let type: DatumTargetType
+    public let number: Int
+    public let length: Double?
+    public let width: Double?
+}
+```
+
+- `type`: the target's shape.
+- `number`: the target's number within its datum.
+- `length`: the target's length along its placement X axis, or `nil`.
+- `width`: the target's width along its placement Y axis, or `nil`.
+
+`length` and `width` follow OCCT's own storage conditions rather than being reported
+unconditionally, which is what keeps an unassigned member from reading as a measurement. Measured
+per type against the pinned kernel:
+
+| `type` | `HasDatumTargetParams()` | `length` | `width` |
+|---|---|---|---|
+| `.point` | true | `nil` | `nil` |
+| `.line` | true | kept | `nil` |
+| `.rectangle` | true | kept | kept |
+| `.circle` | true | kept | `nil` |
+| `.area` | **false** | `nil` | `nil` |
+
+`.area` is the odd row: `XCAFDoc_Datum::SetObject` stores that target's own shape instead of a
+placement, so it never writes the axis, `GetObject` never calls `SetDatumTargetAxis`, and the
+params flag stays false. The shape itself is not wrapped; see
+`docs/occtswift-wrapping-gaps.md`. The transcript is
+`Scripts/repro/1004-gdt-accessors/transcript-gates.txt` (#1004).
+
+---
 
 - `name` — datum label string (e.g. `"A"`, `"B"`).
 - `index` — position in the document's datum sequence.
@@ -1649,3 +1965,290 @@ public func setDimensionModifiers(at index: Int, _ modifiers: [DimensionModifier
 
 This replaces rather than appends, which is what makes clearing expressible; OCCT's `AddModifier`
 appends and has no counterpart that empties the sequence.
+
+---
+
+### `setGeomToleranceValueType(at:_:)`
+
+Sets what an existing geometric tolerance's value measures.
+
+```swift
+@discardableResult
+public func setGeomToleranceValueType(at index: Int, _ valueType: GeomToleranceValueType) -> Bool
+```
+
+- **Parameters:**
+  - `index`: zero-based geometric tolerance index.
+  - `valueType`: pass `.none` for a linear zone width.
+- **Returns:** `true` if the update succeeded; `false` if the index is out of range, the attribute is missing, or `valueType` is outside the enum.
+- **OCCT:** `XCAFDimTolObjects_GeomToleranceObject::SetTypeOfValue` -> `XCAFDoc_GeomTolerance::SetObject`.
+- **Example:**
+  ```swift
+  let idx = doc.createGeomTolerance(on: shapeLabel, type: .position, value: 0.1)!
+  doc.setGeomToleranceValueType(at: idx, .diameter)
+  #expect(doc.geomTolerance(at: idx)?.valueType == .diameter)
+  ```
+
+---
+
+### `setGeomToleranceMaterialRequirement(at:_:)`
+
+Sets the material condition an existing geometric tolerance applies at.
+
+```swift
+@discardableResult
+public func setGeomToleranceMaterialRequirement(at index: Int, _ requirement: MaterialRequirement) -> Bool
+```
+
+- **Parameters:**
+  - `index`: zero-based geometric tolerance index.
+  - `requirement`: pass `.none` for regardless of feature size.
+- **Returns:** `true` if the update succeeded; `false` if the index is out of range, the attribute is missing, or `requirement` is outside the enum.
+- **OCCT:** `XCAFDimTolObjects_GeomToleranceObject::SetMaterialRequirementModifier` -> `XCAFDoc_GeomTolerance::SetObject`.
+- **Example:**
+  ```swift
+  let idx = doc.createGeomTolerance(on: shapeLabel, type: .position, value: 0.1)!
+  doc.setGeomToleranceMaterialRequirement(at: idx, .m)
+  #expect(doc.geomTolerance(at: idx)?.materialRequirement == .m)
+  ```
+
+---
+
+### `setGeomToleranceZoneModifier(at:_:value:)`
+
+Sets an existing geometric tolerance's zone modifier and its associated value.
+
+```swift
+@discardableResult
+public func setGeomToleranceZoneModifier(at index: Int,
+                                         _ modifier: GeomToleranceZoneModifier,
+                                         value: Double = 0) -> Bool
+```
+
+- **Parameters:**
+  - `index`: zero-based geometric tolerance index.
+  - `modifier`: pass `.none` to clear the modifier.
+  - `value`: the associated value, for example a projected zone's length. Zero or less clears it.
+- **Returns:** `true` if the update succeeded; `false` if the index is out of range, the attribute is missing, or `modifier` is outside the enum.
+- **OCCT:** `XCAFDimTolObjects_GeomToleranceObject::SetZoneModifier` and `SetValueOfZoneModifier` -> `XCAFDoc_GeomTolerance::SetObject`.
+- **Example:**
+  ```swift
+  let idx = doc.createGeomTolerance(on: shapeLabel, type: .position, value: 0.1)!
+  doc.setGeomToleranceZoneModifier(at: idx, .projected, value: 15.0)
+  #expect(doc.geomTolerance(at: idx)?.zoneModifierValue == 15.0)
+  ```
+
+The two are one call because the value only means something under a modifier. They remain
+independently gated on the way out: the modifier on its own `.none` member, the value on `> 0`, so
+clearing the value leaves the modifier standing.
+
+---
+
+### `setGeomToleranceMaxValueModifier(at:_:)`
+
+Sets the maximal upper tolerance of an existing geometric tolerance with modifiers.
+
+```swift
+@discardableResult
+public func setGeomToleranceMaxValueModifier(at index: Int, _ value: Double) -> Bool
+```
+
+- **Parameters:**
+  - `index`: zero-based geometric tolerance index.
+  - `value`: zero or less clears it, so `geomTolerance(at:)` reports `maxValueModifier` as `nil`.
+- **Returns:** `true` if the update succeeded; `false` if the index is out of range or the attribute is missing.
+- **OCCT:** `XCAFDimTolObjects_GeomToleranceObject::SetMaxValueModifier` -> `XCAFDoc_GeomTolerance::SetObject`.
+- **Example:**
+  ```swift
+  let idx = doc.createGeomTolerance(on: shapeLabel, type: .position, value: 0.1)!
+  doc.setGeomToleranceMaxValueModifier(at: idx, 0.25)
+  #expect(doc.geomTolerance(at: idx)?.maxValueModifier == 0.25)
+  ```
+
+---
+
+### `setGeomToleranceModifiers(at:_:)`
+
+Replaces an existing geometric tolerance's modifier sequence.
+
+```swift
+@discardableResult
+public func setGeomToleranceModifiers(at index: Int, _ modifiers: [GeomToleranceModifier]) -> Bool
+```
+
+- **Parameters:**
+  - `index`: zero-based geometric tolerance index.
+  - `modifiers`: the new sequence, in the order OCCT should store it. An empty array clears it.
+- **Returns:** `true` if the update succeeded; `false` if the index is out of range or the attribute is missing.
+- **OCCT:** `XCAFDimTolObjects_GeomToleranceObject::SetModifiers` -> `XCAFDoc_GeomTolerance::SetObject`.
+- **Example:**
+  ```swift
+  let idx = doc.createGeomTolerance(on: shapeLabel, type: .position, value: 0.1)!
+  doc.setGeomToleranceModifiers(at: idx, [.allAround, .freeState])
+  #expect(doc.geomTolerance(at: idx)?.modifiers == [.allAround, .freeState])
+  ```
+
+---
+
+### `setDatumPosition(at:_:)`
+
+Sets an existing datum's place in its geometric tolerance's reference frame.
+
+```swift
+@discardableResult
+public func setDatumPosition(at index: Int, _ position: Int) -> Bool
+```
+
+- **Parameters:**
+  - `index`: zero-based datum index.
+  - `position`: 1-based. Zero or less clears it, so `datum(at:)` reports `position` as `nil`.
+- **Returns:** `true` if the update succeeded; `false` if the index is out of range or the attribute is missing.
+- **OCCT:** `XCAFDimTolObjects_DatumObject::SetPosition` -> `XCAFDoc_Datum::SetObject`.
+- **Example:**
+  ```swift
+  let idx = doc.createDatum(name: "A")!
+  doc.setDatumPosition(at: idx, 1)
+  #expect(doc.datum(at: idx)?.position == 1)
+  ```
+
+---
+
+### `setDatumModifiers(at:_:)`
+
+Replaces an existing datum's modifier sequence.
+
+```swift
+@discardableResult
+public func setDatumModifiers(at index: Int, _ modifiers: [DatumModifier]) -> Bool
+```
+
+- **Parameters:**
+  - `index`: zero-based datum index.
+  - `modifiers`: the new sequence, in the order OCCT should store it. An empty array clears it.
+- **Returns:** `true` if the update succeeded; `false` if the index is out of range or the attribute is missing.
+- **OCCT:** `XCAFDimTolObjects_DatumObject::SetModifiers` -> `XCAFDoc_Datum::SetObject`.
+- **Example:**
+  ```swift
+  let idx = doc.createDatum(name: "A")!
+  doc.setDatumModifiers(at: idx, [.basic, .contactingFeature])
+  #expect(doc.datum(at: idx)?.modifiers == [.basic, .contactingFeature])
+  ```
+
+---
+
+### `setDatumModifierWithValue(at:_:value:)`
+
+Sets an existing datum's single valued modifier.
+
+```swift
+@discardableResult
+public func setDatumModifierWithValue(at index: Int,
+                                      _ modifier: DatumModifierWithValue,
+                                      value: Double = 0) -> Bool
+```
+
+- **Parameters:**
+  - `index`: zero-based datum index.
+  - `modifier`: pass `.none` to clear the pair, which also clears the value.
+  - `value`: the number the modifier carries.
+- **Returns:** `true` if the update succeeded; `false` if the index is out of range, the attribute is missing, or `modifier` is outside the enum.
+- **OCCT:** `XCAFDimTolObjects_DatumObject::SetModifierWithValue` -> `XCAFDoc_Datum::SetObject`.
+- **Example:**
+  ```swift
+  let idx = doc.createDatum(name: "A")!
+  doc.setDatumModifierWithValue(at: idx, .projected, value: 12.5)
+  #expect(doc.datum(at: idx)?.modifierWithValue?.value == 12.5)
+  ```
+
+Separate from `setDatumModifiers(at:_:)`: OCCT keeps one valued modifier and a sequence of unvalued
+ones, in two different members, so clearing one leaves the other standing.
+
+---
+
+### `setDatumTarget(at:type:number:)`
+
+Marks an existing datum as a datum target.
+
+```swift
+@discardableResult
+public func setDatumTarget(at index: Int, type: DatumTargetType, number: Int) -> Bool
+```
+
+- **Parameters:**
+  - `index`: zero-based datum index.
+  - `type`: the target's shape.
+  - `number`: the target's number within its datum.
+- **Returns:** `true` if the update succeeded; `false` if the index is out of range, the attribute is missing, or `number` is negative.
+- **OCCT:** `XCAFDimTolObjects_DatumObject::IsDatumTarget(bool)`, `SetDatumTargetType` and `SetDatumTargetNumber` -> `XCAFDoc_Datum::SetObject`.
+- **Example:**
+  ```swift
+  let idx = doc.createDatum(name: "B")!
+  doc.setDatumTarget(at: idx, type: .rectangle, number: 1)
+  #expect(doc.datum(at: idx)?.target?.type == .rectangle)
+  ```
+
+---
+
+### `clearDatumTarget(at:)`
+
+Clears an existing datum's datum target mark.
+
+```swift
+@discardableResult
+public func clearDatumTarget(at index: Int) -> Bool
+```
+
+- **Parameters:**
+  - `index`: zero-based datum index.
+- **Returns:** `true` if the update succeeded; `false` if the index is out of range or the attribute is missing.
+- **OCCT:** `XCAFDimTolObjects_DatumObject::IsDatumTarget(false)` -> `XCAFDoc_Datum::SetObject`.
+- **Example:**
+  ```swift
+  doc.clearDatumTarget(at: 0)
+  #expect(doc.datum(at: 0)?.target == nil)
+  ```
+
+A separate spelling rather than a `nil` argument on `setDatumTarget(at:type:number:)`, because the
+type and number are not readable once the mark is cleared and passing them would suggest otherwise.
+
+---
+
+### `setDatumTargetPlacement(at:location:normal:reference:length:width:)`
+
+Sets an existing datum target's placement axis, length and width together.
+
+```swift
+@discardableResult
+public func setDatumTargetPlacement(at index: Int,
+                                    location: SIMD3<Double>,
+                                    normal: SIMD3<Double>,
+                                    reference: SIMD3<Double>,
+                                    length: Double,
+                                    width: Double) -> Bool
+```
+
+- **Parameters:**
+  - `index`: zero-based datum index.
+  - `location`: the placement origin.
+  - `normal`: the placement Z axis, pointing away from the material.
+  - `reference`: the placement X axis, which `length` runs along.
+  - `length`: the target's length.
+  - `width`: the target's width.
+- **Returns:** `true` if the update succeeded; `false` if the index is out of range, the attribute is missing, or `normal` or `reference` is degenerate.
+- **OCCT:** `XCAFDimTolObjects_DatumObject::SetDatumTargetAxis`, `SetDatumTargetLength` and `SetDatumTargetWidth` -> `XCAFDoc_Datum::SetObject`.
+- **Example:**
+  ```swift
+  let idx = doc.createDatum(name: "B")!
+  doc.setDatumTarget(at: idx, type: .rectangle, number: 1)
+  doc.setDatumTargetPlacement(at: idx,
+                              location: SIMD3(1, 2, 3),
+                              normal: SIMD3(0, 0, 1),
+                              reference: SIMD3(1, 0, 0),
+                              length: 30, width: 18)
+  #expect(doc.datum(at: idx)?.target?.width == 18)
+  ```
+
+**One call rather than three on purpose.** Each of OCCT's three setters raises the same
+`HasDatumTargetParams()` flag as a side effect, so writing any one of them alone would report the
+other two as present while leaving them unassigned. Which of `length` and `width` then survives a
+round trip depends on the target type; see `Document.Datum.Target`.

@@ -2,16 +2,23 @@
 """Derive the GD&T Swift enums from OCCT's own XCAFDimTolObjects headers, and gate the
 hand-transcription against them (#996).
 
-Seven public enums in `Sources/OCCTSwift/GDTRead.swift` are hand-transcribed, member for member and
-ordinal for ordinal, from seven headers in the pinned kernel:
+Fourteen public enums in `Sources/OCCTSwift/GDTRead.swift` are hand-transcribed, member for member
+and ordinal for ordinal, from fourteen headers in the pinned kernel:
 
-    Document.DimensionType          <- XCAFDimTolObjects_DimensionType.hxx          (32)
-    Document.GeomToleranceType      <- XCAFDimTolObjects_GeomToleranceType.hxx      (16)
-    Document.DimensionFormVariance  <- XCAFDimTolObjects_DimensionFormVariance.hxx  (29)
-    Document.DimensionGrade         <- XCAFDimTolObjects_DimensionGrade.hxx         (20)
-    Document.DimensionQualifier     <- XCAFDimTolObjects_DimensionQualifier.hxx     (4)
-    Document.AngularQualifier       <- XCAFDimTolObjects_AngularQualifier.hxx       (4)
-    Document.DimensionModifier      <- XCAFDimTolObjects_DimensionModif.hxx         (24)
+    Document.DimensionType             <- XCAFDimTolObjects_DimensionType.hxx             (32)
+    Document.GeomToleranceType         <- XCAFDimTolObjects_GeomToleranceType.hxx         (16)
+    Document.DimensionFormVariance     <- XCAFDimTolObjects_DimensionFormVariance.hxx     (29)
+    Document.DimensionGrade            <- XCAFDimTolObjects_DimensionGrade.hxx            (20)
+    Document.DimensionQualifier        <- XCAFDimTolObjects_DimensionQualifier.hxx        (4)
+    Document.AngularQualifier          <- XCAFDimTolObjects_AngularQualifier.hxx          (4)
+    Document.DimensionModifier         <- XCAFDimTolObjects_DimensionModif.hxx            (24)
+    Document.GeomToleranceValueType    <- XCAFDimTolObjects_GeomToleranceTypeValue.hxx    (3)
+    Document.MaterialRequirement       <- XCAFDimTolObjects_GeomToleranceMatReqModif.hxx  (3)
+    Document.GeomToleranceZoneModifier <- XCAFDimTolObjects_GeomToleranceZoneModif.hxx    (4)
+    Document.GeomToleranceModifier     <- XCAFDimTolObjects_GeomToleranceModif.hxx        (17)
+    Document.DatumModifier             <- XCAFDimTolObjects_DatumSingleModif.hxx          (22)
+    Document.DatumModifierWithValue    <- XCAFDimTolObjects_DatumModifWithValue.hxx       (5)
+    Document.DatumTargetType           <- XCAFDimTolObjects_DatumTargetType.hxx           (5)
 
 Nothing checked them. The bridge casts OCCT's enum straight to int32 with no sentinel and no remap,
 and `dimension(at:)` returns nil when `rawValue:` fails, so the moment OCCT adds a member the reader
@@ -32,18 +39,19 @@ holds the derivation, checked in, and `--verify` compares Swift against it with 
 is why the manifest is a derivation rather than a second hand-written list. Same split, and the same
 reason, as `Scripts/occt-packages.txt` and `census-doc-occt-attribution.py`.
 
-WHICH ENUMS ARE GATED, AND WHICH ARE NOT. `XCAFDimTolObjects` ships more transcribable enums than
-these seven: `GeomToleranceModif`, `GeomToleranceMatReqModif`, `GeomToleranceZoneModif`,
-`GeomToleranceTypeValue`, `ToleranceZoneAffectedPlane`, `DatumSingleModif`, `DatumModifWithValue`,
-`DatumTargetType`. None of those is bound in Swift today, because the accessors that would return
-them are not wrapped (#1004 enumerates that surface, and the first three entries of the table above
-are the part of it #1004's dimension PR wrapped). Gating an enum nothing returns would assert a
-correspondence that does not exist yet, so this gate covers exactly the ones that are bound, and
-`--reverify-headers` reports the unbound ones so the list is visible rather than implied.
+WHICH ENUMS ARE GATED, AND WHICH ARE NOT. `XCAFDimTolObjects` ships exactly one more transcribable
+enum than these fourteen: `ToleranceZoneAffectedPlane`. It is not bound in Swift, because
+`GetAffectedPlaneType` and `GetAffectedPlane` are not wrapped (`docs/occtswift-wrapping-gaps.md`
+records why). Gating an enum nothing returns would assert a correspondence that does not exist, so
+this gate covers exactly the ones that are bound, and `--reverify-headers` reports the unbound one
+so the list stays visible rather than implied.
 
 The Swift enum's own name is free: `swift_case_name` strips the OCCT *type* prefix off each member,
 so `DimensionModifier` may be spelled out in Swift while its members come from
-`XCAFDimTolObjects_DimensionModif_*`. Only the member names and ordinals are gated.
+`XCAFDimTolObjects_DimensionModif_*`, and `MaterialRequirement` may be named for what it means while
+its members come from `XCAFDimTolObjects_GeomToleranceMatReqModif_*`. Only the member names and
+ordinals are gated, which is the point: a Swift name chosen for readability stays checkable, and a
+Swift *case* renamed away from its OCCT member does not.
 
 Exits 2 if run from anywhere but the repo root, matching the other gate scripts (#625). `--self-test`
 runs on synthetic fixtures and does not need the repo tree, so it is exempt.
@@ -67,6 +75,13 @@ BOUND = {
     "DimensionQualifier": "XCAFDimTolObjects_DimensionQualifier",
     "AngularQualifier": "XCAFDimTolObjects_AngularQualifier",
     "DimensionModifier": "XCAFDimTolObjects_DimensionModif",
+    "GeomToleranceValueType": "XCAFDimTolObjects_GeomToleranceTypeValue",
+    "MaterialRequirement": "XCAFDimTolObjects_GeomToleranceMatReqModif",
+    "GeomToleranceZoneModifier": "XCAFDimTolObjects_GeomToleranceZoneModif",
+    "GeomToleranceModifier": "XCAFDimTolObjects_GeomToleranceModif",
+    "DatumModifier": "XCAFDimTolObjects_DatumSingleModif",
+    "DatumModifierWithValue": "XCAFDimTolObjects_DatumModifWithValue",
+    "DatumTargetType": "XCAFDimTolObjects_DatumTargetType",
 }
 
 # Every XCAFDimTolObjects enum header, so --reverify-headers can name the unbound ones rather than

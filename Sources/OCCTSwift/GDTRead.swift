@@ -219,6 +219,146 @@ extension Document {
         case between = 23
     }
 
+    /// What a geometric tolerance's zone value measures, matching
+    /// `XCAFDimTolObjects_GeomToleranceTypeValue`.
+    ///
+    /// `.none` is a linear zone width. The other two make the same number a diameter, so reading
+    /// the value without this is reading it at half or twice its meaning.
+    ///
+    /// ```swift
+    /// let diametral = doc.geomTolerances.filter { $0.valueType == .diameter }
+    /// ```
+    public enum GeomToleranceValueType: Int32, Sendable, CaseIterable {
+        case none = 0
+        case diameter = 1
+        case sphericalDiameter = 2
+    }
+
+    /// The ISO 2692 material condition a geometric tolerance applies at, matching
+    /// `XCAFDimTolObjects_GeomToleranceMatReqModif`.
+    ///
+    /// The case names are the drawing symbols: `.m` is maximum material condition, circle-M, and
+    /// `.l` is least material condition, circle-L. `.none` is regardless of feature size.
+    ///
+    /// ```swift
+    /// let mmc = doc.geomTolerances.filter { $0.materialRequirement == .m }
+    /// ```
+    public enum MaterialRequirement: Int32, Sendable, CaseIterable {
+        case none = 0
+        case m = 1
+        case l = 2
+    }
+
+    /// How a geometric tolerance's zone is qualified, matching
+    /// `XCAFDimTolObjects_GeomToleranceZoneModif`.
+    ///
+    /// ```swift
+    /// let projected = doc.geomTolerances.filter { $0.zoneModifier == .projected }
+    /// ```
+    public enum GeomToleranceZoneModifier: Int32, Sendable, CaseIterable {
+        case none = 0
+        case projected = 1
+        case runout = 2
+        case nonUniform = 3
+    }
+
+    /// A GD&T modifier attached to a geometric tolerance, matching
+    /// `XCAFDimTolObjects_GeomToleranceModif`.
+    ///
+    /// No `none` member: a tolerance carries a sequence of these, and the sequence being empty is
+    /// what "no modifier" means.
+    ///
+    /// ```swift
+    /// let allAround = doc.geomTolerances.filter { $0.modifiers.contains(.allAround) }
+    /// ```
+    public enum GeomToleranceModifier: Int32, Sendable, CaseIterable {
+        case anyCrossSection = 0
+        case commonZone = 1
+        case eachRadialElement = 2
+        case freeState = 3
+        case leastMaterialRequirement = 4
+        case lineElement = 5
+        case majorDiameter = 6
+        case maximumMaterialRequirement = 7
+        case minorDiameter = 8
+        case notConvex = 9
+        case pitchDiameter = 10
+        case reciprocityRequirement = 11
+        case separateRequirement = 12
+        case statisticalTolerance = 13
+        case tangentPlane = 14
+        case allAround = 15
+        case allOver = 16
+    }
+
+    /// A modifier attached to a datum, matching `XCAFDimTolObjects_DatumSingleModif`.
+    ///
+    /// No `none` member, for the same reason as `GeomToleranceModifier`.
+    ///
+    /// ```swift
+    /// let basic = doc.datums.filter { $0.modifiers.contains(.basic) }
+    /// ```
+    public enum DatumModifier: Int32, Sendable, CaseIterable {
+        case anyCrossSection = 0
+        case anyLongitudinalSection = 1
+        case basic = 2
+        case contactingFeature = 3
+        case degreeOfFreedomConstraintU = 4
+        case degreeOfFreedomConstraintV = 5
+        case degreeOfFreedomConstraintW = 6
+        case degreeOfFreedomConstraintX = 7
+        case degreeOfFreedomConstraintY = 8
+        case degreeOfFreedomConstraintZ = 9
+        case distanceVariable = 10
+        case freeState = 11
+        case leastMaterialRequirement = 12
+        case line = 13
+        case majorDiameter = 14
+        case maximumMaterialRequirement = 15
+        case minorDiameter = 16
+        case orientation = 17
+        case pitchDiameter = 18
+        case plane = 19
+        case point = 20
+        case translation = 21
+    }
+
+    /// The one datum modifier that carries a number with it, matching
+    /// `XCAFDimTolObjects_DatumModifWithValue`.
+    ///
+    /// OCCT stores at most one of these per datum, alongside its value, which is why it is separate
+    /// from the `DatumModifier` sequence rather than a member of it.
+    ///
+    /// ```swift
+    /// if let m = doc.datum(at: 0)?.modifierWithValue, m.modifier == .projected {
+    ///     print("projected by \(m.value)")
+    /// }
+    /// ```
+    public enum DatumModifierWithValue: Int32, Sendable, CaseIterable {
+        case none = 0
+        case circularOrCylindrical = 1
+        case distance = 2
+        case projected = 3
+        case spherical = 4
+    }
+
+    /// The shape of a datum target, matching `XCAFDimTolObjects_DatumTargetType`.
+    ///
+    /// Unlike the other GD&T enums this one has no `none` member and starts at `.point`, so it
+    /// means nothing unless the datum is a target at all. `Datum.target` carries it for exactly
+    /// that reason.
+    ///
+    /// ```swift
+    /// let areas = doc.datums.filter { $0.target?.type == .area }
+    /// ```
+    public enum DatumTargetType: Int32, Sendable, CaseIterable {
+        case point = 0
+        case line = 1
+        case rectangle = 2
+        case circle = 3
+        case area = 4
+    }
+
     /// ISO 286 accuracy grade, matching `XCAFDimTolObjects_DimensionGrade`.
     ///
     /// Raw values run finest to coarsest, so `it01` is 0 and `it18` is 19.
@@ -367,6 +507,25 @@ extension Document {
         public let type: GeomToleranceType
         /// Tolerance zone value, in model units.
         public let value: Double
+        /// What `value` measures: a linear width, or (`.diameter`) a diameter.
+        public let valueType: GeomToleranceValueType
+        /// The material condition the tolerance applies at.
+        public let materialRequirement: MaterialRequirement
+        /// How the zone is qualified.
+        public let zoneModifier: GeomToleranceZoneModifier
+        /// The value associated with `zoneModifier`, for example a projected zone's length.
+        ///
+        /// `nil` when OCCT stored none. It stores this only when positive, so a zero is not
+        /// representable and would be indistinguishable from an unstored value.
+        public let zoneModifierValue: Double?
+        /// The maximal upper tolerance for a tolerance carrying modifiers.
+        ///
+        /// `nil` when OCCT stored none, gated the same way as `zoneModifierValue`.
+        public let maxValueModifier: Double?
+        /// The GD&T modifiers on this tolerance, in OCCT's own order.
+        ///
+        /// Empty when the tolerance carries none.
+        public let modifiers: [GeomToleranceModifier]
         /// Position in the document's geometric tolerance sequence.
         public let index: Int
     }
@@ -377,8 +536,53 @@ extension Document {
     /// let names = doc.datums.map(\.name).sorted()
     /// ```
     public struct Datum: Sendable, Hashable {
+        /// The one datum modifier that carries a number, present when OCCT stored one.
+        public struct ModifierWithValue: Sendable, Hashable {
+            /// Which modifier.
+            ///
+            /// Never `.none`: absence is the enclosing optional.
+            public let modifier: DatumModifierWithValue
+            /// The number it carries, for example a projected datum's distance.
+            public let value: Double
+        }
+
+        /// A datum target, present when `IsDatumTarget()` holds.
+        ///
+        /// `length` and `width` follow OCCT's own storage conditions rather than being reported
+        /// unconditionally: a length is kept for every type but `.point`, and a width only for
+        /// `.rectangle`. An `.area` target keeps neither, because OCCT stores its own shape
+        /// instead of a placement. Measured per type in `Scripts/repro/1004-gdt-accessors/`.
+        public struct Target: Sendable, Hashable {
+            /// The target's shape.
+            public let type: DatumTargetType
+            /// The target's number within its datum.
+            public let number: Int
+            /// The target's length along its placement X axis, or `nil` where OCCT keeps none.
+            public let length: Double?
+            /// The target's width along its placement Y axis, or `nil` where OCCT keeps none.
+            public let width: Double?
+        }
+
         /// Datum identifier, for example `"A"`.
         public let name: String
+
+        /// The datum's place in its geometric tolerance's reference frame, 1-based.
+        ///
+        /// This is what makes `A|B|C` an ordered frame rather than a set. `nil` when the datum has
+        /// no place in one: positions are 1-based, so 0 is absence rather than a first place.
+        public let position: Int?
+
+        /// The modifiers on this datum, in OCCT's own order.
+        ///
+        /// Empty when the datum carries none.
+        public let modifiers: [DatumModifier]
+
+        /// The single valued modifier, or `nil` when the datum carries none.
+        public let modifierWithValue: ModifierWithValue?
+
+        /// The datum target, or `nil` when this datum is not a target.
+        public let target: Target?
+
         /// Position in the document's datum sequence.
         public let index: Int
     }
@@ -480,7 +684,26 @@ extension Document {
     public func geomTolerance(at index: Int) -> GeomTolerance? {
         let info = OCCTDocumentGetGeomToleranceInfo(handle, Int32(index))
         guard info.isValid, let type = GeomToleranceType(rawValue: info.type) else { return nil }
-        return GeomTolerance(type: type, value: info.value, index: index)
+
+        // A raw value OCCT declares but these enums do not is dropped rather than substituted, the
+        // same rule `type` follows. `Scripts/derive-gdt-enums.py --verify` keeps that from
+        // happening silently.
+        let modifiers = (0..<Int(info.modifierCount)).compactMap { position in
+            GeomToleranceModifier(
+                rawValue: OCCTDocumentGetGeomToleranceModifier(
+                    handle, Int32(index), Int32(position)))
+        }
+
+        return GeomTolerance(
+            type: type,
+            value: info.value,
+            valueType: GeomToleranceValueType(rawValue: info.typeOfValue) ?? .none,
+            materialRequirement: MaterialRequirement(rawValue: info.materialRequirement) ?? .none,
+            zoneModifier: GeomToleranceZoneModifier(rawValue: info.zoneModifier) ?? .none,
+            zoneModifierValue: info.hasZoneModifierValue ? info.zoneModifierValue : nil,
+            maxValueModifier: info.hasMaxValueModifier ? info.maxValueModifier : nil,
+            modifiers: modifiers,
+            index: index)
     }
 
     /// The datum at the given index.
@@ -501,7 +724,35 @@ extension Document {
             let charPtr = baseAddress.assumingMemoryBound(to: CChar.self)
             return String(cString: charPtr)
         }
-        return Datum(name: name, index: index)
+        var modifierWithValue: Datum.ModifierWithValue?
+        if let modifier = DatumModifierWithValue(rawValue: info.modifierWithValue),
+            modifier != .none
+        {
+            modifierWithValue = Datum.ModifierWithValue(
+                modifier: modifier, value: info.modifierValue)
+        }
+
+        var target: Datum.Target?
+        if info.isDatumTarget, let type = DatumTargetType(rawValue: info.targetType) {
+            target = Datum.Target(
+                type: type,
+                number: Int(info.targetNumber),
+                length: info.hasTargetLength ? info.targetLength : nil,
+                width: info.hasTargetWidth ? info.targetWidth : nil)
+        }
+
+        let modifiers = (0..<Int(info.modifierCount)).compactMap { position in
+            DatumModifier(
+                rawValue: OCCTDocumentGetDatumModifier(handle, Int32(index), Int32(position)))
+        }
+
+        return Datum(
+            name: name,
+            position: info.hasPosition ? Int(info.position) : nil,
+            modifiers: modifiers,
+            modifierWithValue: modifierWithValue,
+            target: target,
+            index: index)
     }
 
     /// All dimensions in this document.

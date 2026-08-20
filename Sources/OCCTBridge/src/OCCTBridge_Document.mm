@@ -1120,31 +1120,61 @@ bool OCCTDimensionTypeIsDimensionalSize(int32_t type)
     (XCAFDimTolObjects_DimensionType)type);
 }
 
+// The tolerance counterpart of occtDocumentDimensionObjectAt, for the same reason (#1004).
+static bool occtDocumentGeomToleranceObjectAt(OCCTDocumentRef                doc,
+                                              int32_t                        toleranceIndex,
+                                              Handle(XCAFDoc_GeomTolerance)& outAttr,
+                                              Handle(XCAFDimTolObjects_GeomToleranceObject)& outObj)
+{
+  if (!doc || doc->doc.IsNull() || toleranceIndex < 0)
+    return false;
+
+  Handle(XCAFDoc_DimTolTool) dimTolTool = XCAFDoc_DimTolTool::Set(doc->doc->Main());
+  TDF_LabelSequence          labels;
+  dimTolTool->GetGeomToleranceLabels(labels);
+  if (toleranceIndex >= (int32_t)labels.Length())
+    return false;
+
+  TDF_Label label = labels.Value(toleranceIndex + 1);
+  if (!label.FindAttribute(XCAFDoc_GeomTolerance::GetID(), outAttr))
+    return false;
+
+  outObj = outAttr->GetObject();
+  return !outObj.IsNull();
+}
+
 OCCTGeomToleranceInfo OCCTDocumentGetGeomToleranceInfo(OCCTDocumentRef doc, int32_t index)
 {
   OCCTGeomToleranceInfo info = {};
   info.isValid               = false;
-  if (!doc || doc->doc.IsNull())
-    return info;
   try
   {
-    Handle(XCAFDoc_DimTolTool) dimTolTool = XCAFDoc_DimTolTool::Set(doc->doc->Main());
-    TDF_LabelSequence          labels;
-    dimTolTool->GetGeomToleranceLabels(labels);
-    if (index < 0 || index >= (int32_t)labels.Length())
+    Handle(XCAFDoc_GeomTolerance)                 tolAttr;
+    Handle(XCAFDimTolObjects_GeomToleranceObject) tolObj;
+    if (!occtDocumentGeomToleranceObjectAt(doc, index, tolAttr, tolObj))
       return info;
 
-    TDF_Label                     label = labels.Value(index + 1);
-    Handle(XCAFDoc_GeomTolerance) tolAttr;
-    if (!label.FindAttribute(XCAFDoc_GeomTolerance::GetID(), tolAttr))
-      return info;
+    info.type  = (int32_t)tolObj->GetType();
+    info.value = tolObj->GetValue();
 
-    Handle(XCAFDimTolObjects_GeomToleranceObject) tolObj = tolAttr->GetObject();
-    if (tolObj.IsNull())
-      return info;
+    // Three enums whose _None member is their own absence, reported as-is, the same way the
+    // dimension qualifiers are above (#1004).
+    info.typeOfValue         = (int32_t)tolObj->GetTypeOfValue();
+    info.materialRequirement = (int32_t)tolObj->GetMaterialRequirementModifier();
+    info.zoneModifier        = (int32_t)tolObj->GetZoneModifier();
 
-    info.type    = (int32_t)tolObj->GetType();
-    info.value   = tolObj->GetValue();
+    // Two doubles with no _None member and no predicate. XCAFDoc_GeomTolerance::SetObject stores
+    // each only when it is positive, so that condition is the presence test; a zero is what an
+    // unstored one reads back as, and the two are not distinguishable any other way.
+    const double zoneValue    = tolObj->GetValueOfZoneModifier();
+    info.hasZoneModifierValue = (zoneValue > 0.0);
+    info.zoneModifierValue    = info.hasZoneModifierValue ? zoneValue : 0.0;
+    const double maxValue     = tolObj->GetMaxValueModifier();
+    info.hasMaxValueModifier  = (maxValue > 0.0);
+    info.maxValueModifier     = info.hasMaxValueModifier ? maxValue : 0.0;
+
+    info.modifierCount = (int32_t)tolObj->GetModifiers().Length();
+
     info.isValid = true;
     return info;
   }
@@ -1154,28 +1184,64 @@ OCCTGeomToleranceInfo OCCTDocumentGetGeomToleranceInfo(OCCTDocumentRef doc, int3
   }
 }
 
+int32_t OCCTDocumentGetGeomToleranceModifier(OCCTDocumentRef doc,
+                                             int32_t         toleranceIndex,
+                                             int32_t         modifierIndex)
+{
+  if (modifierIndex < 0)
+    return -1;
+  try
+  {
+    Handle(XCAFDoc_GeomTolerance)                 tolAttr;
+    Handle(XCAFDimTolObjects_GeomToleranceObject) tolObj;
+    if (!occtDocumentGeomToleranceObjectAt(doc, toleranceIndex, tolAttr, tolObj))
+      return -1;
+
+    const NCollection_Sequence<XCAFDimTolObjects_GeomToleranceModif> modifiers =
+      tolObj->GetModifiers();
+    if (modifierIndex >= modifiers.Length())
+      return -1;
+    return (int32_t)modifiers.Value(modifierIndex + 1);
+  }
+  catch (...)
+  {
+    return -1;
+  }
+}
+
+// The datum counterpart of occtDocumentDimensionObjectAt, for the same reason (#1004).
+static bool occtDocumentDatumObjectAt(OCCTDocumentRef                        doc,
+                                      int32_t                                datumIndex,
+                                      Handle(XCAFDoc_Datum)&                 outAttr,
+                                      Handle(XCAFDimTolObjects_DatumObject)& outObj)
+{
+  if (!doc || doc->doc.IsNull() || datumIndex < 0)
+    return false;
+
+  Handle(XCAFDoc_DimTolTool) dimTolTool = XCAFDoc_DimTolTool::Set(doc->doc->Main());
+  TDF_LabelSequence          labels;
+  dimTolTool->GetDatumLabels(labels);
+  if (datumIndex >= (int32_t)labels.Length())
+    return false;
+
+  TDF_Label label = labels.Value(datumIndex + 1);
+  if (!label.FindAttribute(XCAFDoc_Datum::GetID(), outAttr))
+    return false;
+
+  outObj = outAttr->GetObject();
+  return !outObj.IsNull();
+}
+
 OCCTDatumInfo OCCTDocumentGetDatumInfo(OCCTDocumentRef doc, int32_t index)
 {
   OCCTDatumInfo info = {};
   info.isValid       = false;
   memset(info.name, 0, sizeof(info.name));
-  if (!doc || doc->doc.IsNull())
-    return info;
   try
   {
-    Handle(XCAFDoc_DimTolTool) dimTolTool = XCAFDoc_DimTolTool::Set(doc->doc->Main());
-    TDF_LabelSequence          labels;
-    dimTolTool->GetDatumLabels(labels);
-    if (index < 0 || index >= (int32_t)labels.Length())
-      return info;
-
-    TDF_Label             label = labels.Value(index + 1);
-    Handle(XCAFDoc_Datum) datumAttr;
-    if (!label.FindAttribute(XCAFDoc_Datum::GetID(), datumAttr))
-      return info;
-
-    Handle(XCAFDimTolObjects_DatumObject) datumObj = datumAttr->GetObject();
-    if (datumObj.IsNull())
+    Handle(XCAFDoc_Datum)                 datumAttr;
+    Handle(XCAFDimTolObjects_DatumObject) datumObj;
+    if (!occtDocumentDatumObjectAt(doc, index, datumAttr, datumObj))
       return info;
 
     Handle(TCollection_HAsciiString) hName = datumObj->GetName();
@@ -1185,12 +1251,77 @@ OCCTDatumInfo OCCTDocumentGetDatumInfo(OCCTDocumentRef doc, int32_t index)
               hName->String().ToCString(),
               std::min((int)sizeof(info.name) - 1, hName->Length()));
     }
+
+    // Positions in a reference frame are 1-based, so 0 is the reading for a datum that has no
+    // place in one rather than a first place. See the struct's own comment for the derivation.
+    const int position = datumObj->GetPosition();
+    info.hasPosition   = (position > 0);
+    info.position      = info.hasPosition ? (int32_t)position : 0;
+
+    XCAFDimTolObjects_DatumModifWithValue modifier = XCAFDimTolObjects_DatumModifWithValue_None;
+    double                                modifierValue = 0.0;
+    datumObj->GetModifierWithValue(modifier, modifierValue);
+    info.modifierWithValue = (int32_t)modifier;
+    // The value is only ever read under its own modifier, so it is left at 0 rather than reported
+    // when there is none: GetModifierWithValue writes both out-parameters unconditionally, and the
+    // second is the fresh object's unassigned member when no modifier was ever set.
+    info.modifierValue =
+      (modifier != XCAFDimTolObjects_DatumModifWithValue_None) ? modifierValue : 0.0;
+
+    info.modifierCount = (int32_t)datumObj->GetModifiers().Length();
+
+    info.isDatumTarget = datumObj->IsDatumTarget();
+    if (info.isDatumTarget)
+    {
+      const XCAFDimTolObjects_DatumTargetType targetType = datumObj->GetDatumTargetType();
+      info.targetType                                    = (int32_t)targetType;
+      info.targetNumber = (int32_t)datumObj->GetDatumTargetNumber();
+
+      // XCAFDoc_Datum::SetObject nests the length inside HasDatumTargetParams() and a
+      // `type != _Point` test, and the width inside that plus `type == _Rectangle`. Anything
+      // outside those two combinations is the object's own unassigned member; measured per type in
+      // Scripts/repro/1004-gdt-accessors/.
+      info.hasTargetParams = datumObj->HasDatumTargetParams();
+      if (info.hasTargetParams)
+      {
+        info.hasTargetLength = (targetType != XCAFDimTolObjects_DatumTargetType_Point);
+        if (info.hasTargetLength)
+          info.targetLength = datumObj->GetDatumTargetLength();
+        info.hasTargetWidth = (targetType == XCAFDimTolObjects_DatumTargetType_Rectangle);
+        if (info.hasTargetWidth)
+          info.targetWidth = datumObj->GetDatumTargetWidth();
+      }
+    }
+
     info.isValid = true;
     return info;
   }
   catch (...)
   {
     return info;
+  }
+}
+
+int32_t OCCTDocumentGetDatumModifier(OCCTDocumentRef doc, int32_t datumIndex, int32_t modifierIndex)
+{
+  if (modifierIndex < 0)
+    return -1;
+  try
+  {
+    Handle(XCAFDoc_Datum)                 datumAttr;
+    Handle(XCAFDimTolObjects_DatumObject) datumObj;
+    if (!occtDocumentDatumObjectAt(doc, datumIndex, datumAttr, datumObj))
+      return -1;
+
+    const NCollection_Sequence<XCAFDimTolObjects_DatumSingleModif> modifiers =
+      datumObj->GetModifiers();
+    if (modifierIndex >= modifiers.Length())
+      return -1;
+    return (int32_t)modifiers.Value(modifierIndex + 1);
+  }
+  catch (...)
+  {
+    return -1;
   }
 }
 
@@ -1279,6 +1410,14 @@ int32_t OCCTDocumentCreateGeomTolerance(OCCTDocumentRef doc,
 
     Handle(XCAFDimTolObjects_GeomToleranceObject) tolObj =
       new XCAFDimTolObjects_GeomToleranceObject();
+    // The constructor sets four booleans and the affected-plane type, and nothing else;
+    // XCAFDoc_GeomTolerance::SetObject then reads these five off the object unconditionally to
+    // decide what to store. Left alone they are storage nobody wrote (#1004).
+    tolObj->SetTypeOfValue(XCAFDimTolObjects_GeomToleranceTypeValue_None);
+    tolObj->SetMaterialRequirementModifier(XCAFDimTolObjects_GeomToleranceMatReqModif_None);
+    tolObj->SetZoneModifier(XCAFDimTolObjects_GeomToleranceZoneModif_None);
+    tolObj->SetValueOfZoneModifier(0.0);
+    tolObj->SetMaxValueModifier(0.0);
     tolObj->SetType((XCAFDimTolObjects_GeomToleranceType)type);
     tolObj->SetValue(value);
     tolAttr->SetObject(tolObj);
@@ -1307,6 +1446,14 @@ int32_t OCCTDocumentCreateDatum(OCCTDocumentRef doc, const char* name)
       return -1;
 
     Handle(XCAFDimTolObjects_DatumObject) datObj = new XCAFDimTolObjects_DatumObject();
+    // XCAFDoc_Datum::SetObject reads exactly two things off the object before it knows whether the
+    // datum is a target: the position and the modifier-with-value pair. Both are storage the
+    // constructor never wrote, so they are assigned here. The target type, number, length and width
+    // are deliberately NOT assigned: each sits behind myIsDTarget or myIsValidDT, which the
+    // constructor does set to false, and SetDatumTargetLength/Width/Axis would raise myIsValidDT
+    // as a side effect and report a datum target where there is none (#1004).
+    datObj->SetPosition(0);
+    datObj->SetModifierWithValue(XCAFDimTolObjects_DatumModifWithValue_None, 0.0);
     datObj->SetName(new TCollection_HAsciiString(name));
     datAttr->SetObject(datObj);
 
@@ -1499,6 +1646,271 @@ bool OCCTDocumentSetDimensionModifiers(OCCTDocumentRef doc,
     // header promises for count 0. AddModifier would append instead and could not express that.
     dimObj->SetModifiers(sequence);
     dimAttr->SetObject(dimObj);
+    return true;
+  }
+  catch (...)
+  {
+    return false;
+  }
+}
+
+bool OCCTDocumentSetGeomToleranceTypeOfValue(OCCTDocumentRef doc,
+                                             int32_t         toleranceIndex,
+                                             int32_t         typeOfValue)
+{
+  if (typeOfValue < 0
+      || typeOfValue > (int32_t)XCAFDimTolObjects_GeomToleranceTypeValue_SphericalDiameter)
+    return false;
+  try
+  {
+    Handle(XCAFDoc_GeomTolerance)                 tolAttr;
+    Handle(XCAFDimTolObjects_GeomToleranceObject) tolObj;
+    if (!occtDocumentGeomToleranceObjectAt(doc, toleranceIndex, tolAttr, tolObj))
+      return false;
+
+    tolObj->SetTypeOfValue((XCAFDimTolObjects_GeomToleranceTypeValue)typeOfValue);
+    tolAttr->SetObject(tolObj);
+    return true;
+  }
+  catch (...)
+  {
+    return false;
+  }
+}
+
+bool OCCTDocumentSetGeomToleranceMaterialRequirement(OCCTDocumentRef doc,
+                                                     int32_t         toleranceIndex,
+                                                     int32_t         materialRequirement)
+{
+  if (materialRequirement < 0
+      || materialRequirement > (int32_t)XCAFDimTolObjects_GeomToleranceMatReqModif_L)
+    return false;
+  try
+  {
+    Handle(XCAFDoc_GeomTolerance)                 tolAttr;
+    Handle(XCAFDimTolObjects_GeomToleranceObject) tolObj;
+    if (!occtDocumentGeomToleranceObjectAt(doc, toleranceIndex, tolAttr, tolObj))
+      return false;
+
+    tolObj->SetMaterialRequirementModifier(
+      (XCAFDimTolObjects_GeomToleranceMatReqModif)materialRequirement);
+    tolAttr->SetObject(tolObj);
+    return true;
+  }
+  catch (...)
+  {
+    return false;
+  }
+}
+
+bool OCCTDocumentSetGeomToleranceZoneModifier(OCCTDocumentRef doc,
+                                              int32_t         toleranceIndex,
+                                              int32_t         zoneModifier,
+                                              double          value)
+{
+  if (zoneModifier < 0
+      || zoneModifier > (int32_t)XCAFDimTolObjects_GeomToleranceZoneModif_NonUniform)
+    return false;
+  try
+  {
+    Handle(XCAFDoc_GeomTolerance)                 tolAttr;
+    Handle(XCAFDimTolObjects_GeomToleranceObject) tolObj;
+    if (!occtDocumentGeomToleranceObjectAt(doc, toleranceIndex, tolAttr, tolObj))
+      return false;
+
+    tolObj->SetZoneModifier((XCAFDimTolObjects_GeomToleranceZoneModif)zoneModifier);
+    // A non-positive value is normalised to 0 rather than passed through, so the stored state
+    // matches what the reader can report: SetObject writes the value only under `> 0`, and a
+    // negative one would be silently dropped on the way out.
+    tolObj->SetValueOfZoneModifier(value > 0.0 ? value : 0.0);
+    tolAttr->SetObject(tolObj);
+    return true;
+  }
+  catch (...)
+  {
+    return false;
+  }
+}
+
+bool OCCTDocumentSetGeomToleranceMaxValueModifier(OCCTDocumentRef doc,
+                                                  int32_t         toleranceIndex,
+                                                  double          value)
+{
+  try
+  {
+    Handle(XCAFDoc_GeomTolerance)                 tolAttr;
+    Handle(XCAFDimTolObjects_GeomToleranceObject) tolObj;
+    if (!occtDocumentGeomToleranceObjectAt(doc, toleranceIndex, tolAttr, tolObj))
+      return false;
+
+    tolObj->SetMaxValueModifier(value > 0.0 ? value : 0.0);
+    tolAttr->SetObject(tolObj);
+    return true;
+  }
+  catch (...)
+  {
+    return false;
+  }
+}
+
+bool OCCTDocumentSetGeomToleranceModifiers(OCCTDocumentRef doc,
+                                           int32_t         toleranceIndex,
+                                           const int32_t*  modifiers,
+                                           int32_t         count)
+{
+  if (count < 0 || (count > 0 && !modifiers))
+    return false;
+  try
+  {
+    Handle(XCAFDoc_GeomTolerance)                 tolAttr;
+    Handle(XCAFDimTolObjects_GeomToleranceObject) tolObj;
+    if (!occtDocumentGeomToleranceObjectAt(doc, toleranceIndex, tolAttr, tolObj))
+      return false;
+
+    NCollection_Sequence<XCAFDimTolObjects_GeomToleranceModif> sequence;
+    for (int32_t i = 0; i < count; ++i)
+      sequence.Append((XCAFDimTolObjects_GeomToleranceModif)modifiers[i]);
+    tolObj->SetModifiers(sequence);
+    tolAttr->SetObject(tolObj);
+    return true;
+  }
+  catch (...)
+  {
+    return false;
+  }
+}
+
+bool OCCTDocumentSetDatumPosition(OCCTDocumentRef doc, int32_t datumIndex, int32_t position)
+{
+  try
+  {
+    Handle(XCAFDoc_Datum)                 datumAttr;
+    Handle(XCAFDimTolObjects_DatumObject) datumObj;
+    if (!occtDocumentDatumObjectAt(doc, datumIndex, datumAttr, datumObj))
+      return false;
+
+    datumObj->SetPosition(position > 0 ? (int)position : 0);
+    datumAttr->SetObject(datumObj);
+    return true;
+  }
+  catch (...)
+  {
+    return false;
+  }
+}
+
+bool OCCTDocumentSetDatumModifiers(OCCTDocumentRef doc,
+                                   int32_t         datumIndex,
+                                   const int32_t*  modifiers,
+                                   int32_t         count)
+{
+  if (count < 0 || (count > 0 && !modifiers))
+    return false;
+  try
+  {
+    Handle(XCAFDoc_Datum)                 datumAttr;
+    Handle(XCAFDimTolObjects_DatumObject) datumObj;
+    if (!occtDocumentDatumObjectAt(doc, datumIndex, datumAttr, datumObj))
+      return false;
+
+    NCollection_Sequence<XCAFDimTolObjects_DatumSingleModif> sequence;
+    for (int32_t i = 0; i < count; ++i)
+      sequence.Append((XCAFDimTolObjects_DatumSingleModif)modifiers[i]);
+    datumObj->SetModifiers(sequence);
+    datumAttr->SetObject(datumObj);
+    return true;
+  }
+  catch (...)
+  {
+    return false;
+  }
+}
+
+bool OCCTDocumentSetDatumModifierWithValue(OCCTDocumentRef doc,
+                                           int32_t         datumIndex,
+                                           int32_t         modifier,
+                                           double          value)
+{
+  if (modifier < 0 || modifier > (int32_t)XCAFDimTolObjects_DatumModifWithValue_Spherical)
+    return false;
+  try
+  {
+    Handle(XCAFDoc_Datum)                 datumAttr;
+    Handle(XCAFDimTolObjects_DatumObject) datumObj;
+    if (!occtDocumentDatumObjectAt(doc, datumIndex, datumAttr, datumObj))
+      return false;
+
+    // The value is cleared alongside the modifier, so a later _None never leaves a stale number
+    // behind for a reader that stops gating on the modifier.
+    const bool none = (modifier == (int32_t)XCAFDimTolObjects_DatumModifWithValue_None);
+    datumObj->SetModifierWithValue((XCAFDimTolObjects_DatumModifWithValue)modifier,
+                                   none ? 0.0 : value);
+    datumAttr->SetObject(datumObj);
+    return true;
+  }
+  catch (...)
+  {
+    return false;
+  }
+}
+
+bool OCCTDocumentSetDatumTarget(OCCTDocumentRef doc,
+                                int32_t         datumIndex,
+                                bool            isTarget,
+                                int32_t         type,
+                                int32_t         number)
+{
+  if (isTarget
+      && (type < 0 || type > (int32_t)XCAFDimTolObjects_DatumTargetType_Area || number < 0))
+    return false;
+  try
+  {
+    Handle(XCAFDoc_Datum)                 datumAttr;
+    Handle(XCAFDimTolObjects_DatumObject) datumObj;
+    if (!occtDocumentDatumObjectAt(doc, datumIndex, datumAttr, datumObj))
+      return false;
+
+    datumObj->IsDatumTarget(isTarget);
+    if (isTarget)
+    {
+      datumObj->SetDatumTargetType((XCAFDimTolObjects_DatumTargetType)type);
+      datumObj->SetDatumTargetNumber((int)number);
+    }
+    datumAttr->SetObject(datumObj);
+    return true;
+  }
+  catch (...)
+  {
+    return false;
+  }
+}
+
+bool OCCTDocumentSetDatumTargetPlacement(OCCTDocumentRef doc,
+                                         int32_t         datumIndex,
+                                         const double*   location,
+                                         const double*   normal,
+                                         const double*   reference,
+                                         double          length,
+                                         double          width)
+{
+  if (!location || !normal || !reference)
+    return false;
+  try
+  {
+    Handle(XCAFDoc_Datum)                 datumAttr;
+    Handle(XCAFDimTolObjects_DatumObject) datumObj;
+    if (!occtDocumentDatumObjectAt(doc, datumIndex, datumAttr, datumObj))
+      return false;
+
+    // gp_Dir throws Standard_ConstructionError on a zero-length vector, which the surrounding
+    // catch turns into false rather than letting it cross into Swift frames (#345).
+    const gp_Ax2 axis(gp_Pnt(location[0], location[1], location[2]),
+                      gp_Dir(normal[0], normal[1], normal[2]),
+                      gp_Dir(reference[0], reference[1], reference[2]));
+    datumObj->SetDatumTargetAxis(axis);
+    datumObj->SetDatumTargetLength(length);
+    datumObj->SetDatumTargetWidth(width);
+    datumAttr->SetObject(datumObj);
     return true;
   }
   catch (...)
