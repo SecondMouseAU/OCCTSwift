@@ -21,6 +21,67 @@ bounding-box accessors becoming Optional so a void shape stops fabricating `(0,0
 
 ## Unreleased
 
+
+### Plate and NLPlate parameters now mean what they are named (#1017, #1019, #1020)
+
+`Surface.nlPlateDeformed(constraints:maxIterations:tolerance:)` and
+`nlPlateDeformedG1(constraints:maxIterations:tolerance:)` are renamed to
+`resolutionOrder:`. The parameter was never an iteration count:
+`NLPlate_NLPlate::Solve2(ord, InitialConsraintOrder)` has none, and the value landed on the plate's
+resolution order, which `Plate_Plate::SolveTI` accepts only in `[2, 9]`. Outside that range
+`Solve2` reported success anyway and the call returned an **undeformed** surface: measured, a
+constraint 5 units off the plane was missed by the full 5 at orders 0, 1, 10, 12 and 100. Those
+orders now return `nil`. The default stays at 4, which meets the same constraint to 6.3e-6, where
+OCCT's own default of 2 misses it by 4.375.
+
+`NLPlateDeformationTests` is re-enabled. It had been disabled since v0.51-era for a segfault that
+does not reproduce against the pinned kernel: 7 tests, 20 consecutive clean runs.
+
+`Edge.split(at:vertex:)` now refuses a parameter outside the edge's own range. It previously
+extrapolated: on a line trimmed to `[-5, 5]`, splitting at 100 returned halves of length 105 and 95
+against an original length of 10.
+
+`ExtremaPointCurve.pointToLine` and `.pointToParabola` no longer clip the search to a fabricated
+parameter range (`±1e10` and `±1e6` respectively, four orders of magnitude apart in sibling calls).
+Both curves are unbounded and `Extrema_ExtPElC` uses the range only to filter an answer it has
+already computed, so a point projecting past the old bound returned no extremum at all. Both now use
+the full representable range, matching OCCT's own unbounded-conic call sites.
+
+`Shape.plateSurface(points:)` stops passing its 3D tolerance into `GeomPlate_BuildPlateSurface`'s
+2D `Tol2d` slot. No behaviour change: neither builder tolerance is read for a point-constraint-only
+plate, measured across fourteen orders of magnitude in both slots on two fixtures.
+
+
+
+### GD&T: a dimension's qualifiers, modifiers and decimal places are now readable (#1004)
+
+`Document.Dimension` gains `qualifier`, `angularQualifier`, `decimalPlaces` and `modifiers`, and
+`Document.DimensionType` gains `isDimensionalLocation` and `isDimensionalSize`. Each read accessor
+ships with the mutator that authors it: `setDimensionQualifier(at:_:)`,
+`setDimensionAngularQualifier(at:_:)`, `setDimensionDecimalPlaces(at:left:right:)` and
+`setDimensionModifiers(at:_:)`.
+
+Three new enums, `Document.DimensionQualifier`, `Document.AngularQualifier` and
+`Document.DimensionModifier`, are transcribed from the pinned kernel's own headers and join
+`Scripts/derive-gdt-enums.py`'s gate, which now covers 7 enums and 129 members.
+
+Absence is representable everywhere it needed to be. `decimalPlaces` is `nil` rather than a
+fabricated `(0, 0)`, gated on the same `theL > 0 || theR > 0` condition OCCT itself stores the pair
+under. The two qualifiers are not optional, because OCCT's own enums carry a `_None` member and
+wrapping that in an `Optional` would give two spellings of one state.
+
+`OCCTDocumentCreateDimension` now assigns the qualifier, angular qualifier, decimal places and
+tolerance class explicitly. `XCAFDimTolObjects_DimensionObject`'s constructor leaves all four
+unassigned and `XCAFDoc_Dimension::SetObject` reads them unconditionally, so the create path was
+handing OCCT storage nobody wrote. Measured against the pinned kernel it reads back as zero, so no
+behaviour changes today.
+
+Twenty-six accessors are deliberately not wrapped, each with its reason in
+`docs/occtswift-wrapping-gaps.md`. `GetSemanticName` is the one worth knowing: it reads the GD&T
+table label's own `TDataStd_Name`, which OCCT initialises to `"DGT:Dimension"`, so an unnamed
+dimension reports that marker string and a name cannot be cleared once set.
+
+
 ### One 2D-to-3D lifting formula instead of three (#972)
 
 `Placement.lift(_:)` is the single implementation of "map a 2D point through this placement's basis".
