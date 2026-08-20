@@ -163,13 +163,37 @@ int32_t OCCTDocumentGetGeomToleranceCount(OCCTDocumentRef doc);
 /// Get count of datum labels in document
 int32_t OCCTDocumentGetDatumCount(OCCTDocumentRef doc);
 
-/// Dimension info result
+/// How a dimension's values array encodes its magnitude, taken from OCCT's own predicates
+/// (XCAFDimTolObjects_DimensionObject::IsDimWithRange / IsDimWithPlusMinusTolerance). The array is
+/// 0, 1, 2 or 3 long, and which accessors mean anything follows from that (#996).
+typedef enum
+{
+  OCCTDimensionBoundsUnset     = 0, ///< No values array at all
+  OCCTDimensionBoundsSimple    = 1, ///< One element: a nominal value, no tolerance
+  OCCTDimensionBoundsRange     = 2, ///< Two elements: lower and upper bound
+  OCCTDimensionBoundsPlusMinus = 3  ///< Three elements: value, lower tol, upper tol
+} OCCTDimensionBoundsKind;
+
+/// Dimension info result.
+///
+/// boundsKind decides which of value/lowerBound/upperBound/lowerTol/upperTol carry an answer, and
+/// nothing else does: OCCT returns a flat 0 from every accessor that does not apply to the kind at
+/// hand, so a caller reading them unconditionally cannot tell an unset tolerance from a range
+/// dimension. Before #996 this struct had no discriminator and reported a 10..12 range as
+/// value=10 with both tolerances 0.
 typedef struct
 {
-  int32_t type;     // XCAFDimTolObjects_DimensionType enum
-  double  value;    // primary value
-  double  lowerTol; // lower tolerance
-  double  upperTol; // upper tolerance
+  int32_t type;                // XCAFDimTolObjects_DimensionType enum
+  int32_t boundsKind;          // OCCTDimensionBoundsKind
+  double  value;               // GetValue(): the nominal value, or a range's midpoint; 0 when Unset
+  double  lowerBound;          // GetLowerBound(), Range only
+  double  upperBound;          // GetUpperBound(), Range only
+  double  lowerTol;            // GetLowerTolValue(), PlusMinus only
+  double  upperTol;            // GetUpperTolValue(), PlusMinus only
+  bool    hasClassOfTolerance; // IsDimWithClassOfTolerance(), independent of boundsKind
+  bool    classOfToleranceIsHole; // GetClassOfTolerance()'s theHole out-parameter
+  int32_t formVariance;           // XCAFDimTolObjects_DimensionFormVariance enum
+  int32_t grade;                  // XCAFDimTolObjects_DimensionGrade enum
   bool    isValid;
 } OCCTDimensionInfo;
 
@@ -221,12 +245,33 @@ int32_t OCCTDocumentCreateGeomTolerance(OCCTDocumentRef _Nonnull doc,
 /// Returns -1 on failure, else the index of the new datum.
 int32_t OCCTDocumentCreateDatum(OCCTDocumentRef _Nonnull doc, const char* _Nonnull name);
 
-/// Set tolerance bounds (lower + upper, relative to the primary value) on an
-/// existing dimension. Returns true on success.
+/// Set tolerance bounds (lower + upper, relative to the primary value) on an existing dimension,
+/// making it OCCTDimensionBoundsPlusMinus. Returns the conjunction of OCCT's two setter results,
+/// both of which are false for a dimension that is already a range and is therefore left unchanged
+/// (#996; before that this returned true regardless).
 bool OCCTDocumentSetDimensionTolerance(OCCTDocumentRef _Nonnull doc,
                                        int32_t dimensionIndex,
                                        double  lowerTol,
                                        double  upperTol);
+
+/// Turn an existing dimension into a range dimension with the given bounds, via
+/// XCAFDimTolObjects_DimensionObject::SetLowerBound / SetUpperBound. Returns true on success. This
+/// is the only way to author the kind OCCTDimensionBoundsRange reports (#996).
+bool OCCTDocumentSetDimensionBounds(OCCTDocumentRef _Nonnull doc,
+                                    int32_t dimensionIndex,
+                                    double  lowerBound,
+                                    double  upperBound);
+
+/// Set the ISO 286 tolerance class of an existing dimension, via
+/// XCAFDimTolObjects_DimensionObject::SetClassOfTolerance. Independent of the values array, so a
+/// range or plus/minus dimension can carry one too. formVariance is
+/// XCAFDimTolObjects_DimensionFormVariance, grade is XCAFDimTolObjects_DimensionGrade. Returns true
+/// on success (#996).
+bool OCCTDocumentSetDimensionClassOfTolerance(OCCTDocumentRef _Nonnull doc,
+                                              int32_t dimensionIndex,
+                                              bool    isHole,
+                                              int32_t formVariance,
+                                              int32_t grade);
 
 // MARK: - TNaming: Topological Naming History (v0.25.0)
 

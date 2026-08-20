@@ -187,69 +187,6 @@ public final class Document: @unchecked Sendable {
     }
 }
 
-// MARK: - GD&T / Dimensions and Tolerances (v0.21.0)
-
-extension Document {
-    /// Number of dimensions defined in this document.
-    public var dimensionCount: Int {
-        Int(OCCTDocumentGetDimensionCount(handle))
-    }
-
-    /// Number of geometric tolerances defined in this document.
-    public var geomToleranceCount: Int {
-        Int(OCCTDocumentGetGeomToleranceCount(handle))
-    }
-
-    /// Number of datums defined in this document.
-    public var datumCount: Int {
-        Int(OCCTDocumentGetDatumCount(handle))
-    }
-
-    /// Get dimension info at the given index.
-    public func dimension(at index: Int) -> DimensionInfo? {
-        let info = OCCTDocumentGetDimensionInfo(handle, Int32(index))
-        guard info.isValid else { return nil }
-        return DimensionInfo(
-            type: info.type, value: info.value,
-            lowerTolerance: info.lowerTol,
-            upperTolerance: info.upperTol)
-    }
-
-    /// Get geometric tolerance info at the given index.
-    public func geomTolerance(at index: Int) -> GeomToleranceInfo? {
-        let info = OCCTDocumentGetGeomToleranceInfo(handle, Int32(index))
-        guard info.isValid else { return nil }
-        return GeomToleranceInfo(type: info.type, value: info.value)
-    }
-
-    /// Get datum info at the given index.
-    public func datum(at index: Int) -> DatumInfo? {
-        var info = OCCTDocumentGetDatumInfo(handle, Int32(index))
-        guard info.isValid else { return nil }
-        let name = withUnsafeBytes(of: &info.name) { rawBuffer in
-            guard let baseAddress = rawBuffer.baseAddress else { return "" }
-            let charPtr = baseAddress.assumingMemoryBound(to: CChar.self)
-            return String(cString: charPtr)
-        }
-        return DatumInfo(name: name)
-    }
-
-    /// All dimensions in this document.
-    public var dimensions: [DimensionInfo] {
-        (0..<dimensionCount).compactMap { dimension(at: $0) }
-    }
-
-    /// All geometric tolerances in this document.
-    public var geomTolerances: [GeomToleranceInfo] {
-        (0..<geomToleranceCount).compactMap { geomTolerance(at: $0) }
-    }
-
-    /// All datums in this document.
-    public var datums: [DatumInfo] {
-        (0..<datumCount).compactMap { datum(at: $0) }
-    }
-}
-
 // MARK: - TNaming: Topological Naming (v0.25.0)
 
 extension Document {

@@ -408,19 +408,22 @@ These require implementing C++ abstract classes, which the bridge architecture d
   `XCAFDoc_VisMaterial` (`IsDoubleSided`/`SetDoubleSided`, superseded by `FaceCulling`). Filing any
   of those as a deprecated alias would have been wrong in the most misleading direction, since each
   is something a caller uses today. (#810)
-- Twenty-one enums nothing in the tree reads. Thirteen are GD&T qualifiers and modifiers,
+- Nineteen enums nothing in the tree reads. Eleven are GD&T qualifiers and modifiers,
   `XCAFDimTolObjects_AngularQualifier`, `XCAFDimTolObjects_DatumModifWithValue`,
   `XCAFDimTolObjects_DatumSingleModif`, `XCAFDimTolObjects_DatumTargetType`,
-  `XCAFDimTolObjects_DimensionFormVariance`, `XCAFDimTolObjects_DimensionGrade`,
   `XCAFDimTolObjects_DimensionModif`, `XCAFDimTolObjects_DimensionQualifier`,
   `XCAFDimTolObjects_GeomToleranceMatReqModif`, `XCAFDimTolObjects_GeomToleranceModif`,
   `XCAFDimTolObjects_GeomToleranceTypeValue`, `XCAFDimTolObjects_GeomToleranceZoneModif` and
   `XCAFDimTolObjects_ToleranceZoneAffectedPlane`: `Document.dimension(at:)`,
-  `geomTolerance(at:)` and `datum(at:)` read a dimension's type, primary value and tolerance
-  bounds off the `XCAFDimTolObjects_*Object` and stop there, so a STEP file's ISO 286 grade,
-  material requirement or datum modifiers survive a round trip but cannot be read. Widening
-  `DimensionInfo`/`GeomToleranceInfo`/`DatumInfo` is a public API change rather than a wrap, which
-  is why it is recorded here. Four more are `CDF_Store`'s own statuses,
+  `geomTolerance(at:)` and `datum(at:)` read a dimension's type, magnitude and ISO 286 class off
+  the `XCAFDimTolObjects_*Object` and stop there, so a STEP file's material requirement, zone
+  modifier or datum modifiers survive a round trip but cannot be read. Widening
+  `Document.Dimension`/`GeomTolerance`/`Datum` is a public API change rather than a wrap, which is
+  why it is recorded here; #1004 enumerates the missing accessors per class. Two of the thirteen
+  this bullet used to name, `XCAFDimTolObjects_DimensionFormVariance` and
+  `XCAFDimTolObjects_DimensionGrade`, are now bound as `Document.DimensionFormVariance` and
+  `Document.DimensionGrade` and gated against the pinned headers by
+  `Scripts/derive-gdt-enums.py` (#996). Four more are `CDF_Store`'s own statuses,
   `CDF_StoreSetNameStatus`, `CDF_SubComponentStatus`, `CDF_TryStoreStatus` and
   `CDF_TypeOfActivation`: the bridge saves through `TDocStd_Application::SaveAs`, which reports
   `PCDM_StoreStatus`, and that **is** wrapped as `StoreStatus`, so these are reachable only by

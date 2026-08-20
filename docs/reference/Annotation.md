@@ -5,11 +5,13 @@ parent: API Reference
 
 # Annotation & GD&T
 
-OCCTSwift provides 3D annotation types for attaching measurement dimensions and positioned text to geometry (`Annotation.swift`), plus a typed GD&T authoring layer that creates STEP AP242-compatible dimensions, geometric tolerances, and datums on a `Document` (`GDTWrite.swift`).
+OCCTSwift provides 3D annotation types for attaching measurement dimensions and positioned text to geometry (`Annotation.swift`), plus a typed GD&T layer that reads STEP AP242 dimensions, geometric tolerances and datums off a `Document` (`GDTRead.swift`) and authors them on one (`GDTWrite.swift`).
+
+This page is the single reference for the whole GD&T surface. `docs/reference/Document.md` points here rather than repeating it: until #996 the read side existed twice, an untyped family on `Document` and a typed one behind `typed*` spellings, and both were documented separately. There is now one family, under the untyped names.
 
 ## Topics
 
-- [DimensionGeometry](#dimensiongeometry) · [LengthDimension](#lengthdimension) · [RadiusDimension](#radiusdimension) · [AngleDimension](#angledimension) · [DiameterDimension](#diameterdimension) · [TextLabel](#textlabel) · [PointCloud](#pointcloud) · [Document Extensions — GD&T Enums & Structs](#document-extensions--gdt-enums--structs) · [Document Extensions — Typed Read Path](#document-extensions--typed-read-path) · [Document Extensions — Write Path](#document-extensions--write-path)
+- [DimensionGeometry](#dimensiongeometry) · [LengthDimension](#lengthdimension) · [RadiusDimension](#radiusdimension) · [AngleDimension](#angledimension) · [DiameterDimension](#diameterdimension) · [TextLabel](#textlabel) · [PointCloud](#pointcloud) · [Document Extensions — GD&T Enums & Structs](#document-extensions--gdt-enums--structs) · [Document Extensions — Read Path](#document-extensions--read-path) · [Document Extensions — Write Path](#document-extensions--write-path)
 
 ---
 
@@ -642,7 +644,14 @@ public var colors: [SIMD3<Float>] { get }
 
 ## Document Extensions — GD&T Enums & Structs
 
-These types are declared as extensions on `Document` in `GDTWrite.swift` and encode the STEP AP242 GD&T vocabulary.
+These types are declared as extensions on `Document` in `GDTRead.swift` and encode the STEP AP242 GD&T vocabulary.
+
+The four `Int32`-backed enums here are transcribed member for member from the pinned kernel's own
+`XCAFDimTolObjects_*` headers, and the bridge casts OCCT's enum straight across with no sentinel and
+no remap. `Scripts/derive-gdt-enums.py --verify` gates that transcription against
+`Scripts/occt-gdt-enums.txt` on every CI run, and `--reverify-headers` re-derives the manifest from
+the pinned headers after an OCCT bump. Without it, a member OCCT adds turns into a `nil` from
+`dimension(at:)` rather than an error (#996).
 
 ---
 
@@ -788,41 +797,196 @@ location, and runout controls.
 
 ---
 
+### `Document.DimensionFormVariance`
+
+Maps OCCT's `XCAFDimTolObjects_DimensionFormVariance` — the 29 ISO 286 fundamental deviations, the "position letter" half of a tolerance class such as `H7`.
+
+```swift
+public enum DimensionFormVariance: Int32, Sendable, CaseIterable {
+    case none = 0
+    case a = 1
+    case b = 2
+    case c = 3
+    case cd = 4
+    case d = 5
+    case e = 6
+    case ef = 7
+    case f = 8
+    case fg = 9
+    case g = 10
+    case h = 11
+    case js = 12
+    case j = 13
+    case k = 14
+    case m = 15
+    case n = 16
+    case p = 17
+    case r = 18
+    case s = 19
+    case t = 20
+    case u = 21
+    case v = 22
+    case x = 23
+    case y = 24
+    case z = 25
+    case za = 26
+    case zb = 27
+    case zc = 28
+}
+```
+
+Case names are the ISO 286 letters lowercased. The letter selects where the tolerance zone sits relative to the nominal size: `.h` puts the zone entirely below it for a shaft and entirely above it for a hole (the basis of a clearance fit), `.js` centres it, and the letters run from the largest clearance (`.a`) through interference (`.p` onward). OCCT stores the letter and the grade separately, and `.none` is what `IsDimWithClassOfTolerance()` tests against: a dimension whose form variance is `.none` carries no class at all.
+
+Note the declaration order: `.js` (12) precedes `.j` (13), matching OCCT's own header rather than alphabetical order. Raw values cross the bridge unremapped, so that order is load-bearing and `Scripts/derive-gdt-enums.py` gates it.
+
+#### `Document.DimensionFormVariance.zc`
+
+---
+
+### `Document.DimensionGrade`
+
+Maps OCCT's `XCAFDimTolObjects_DimensionGrade` — the 20 ISO 286 accuracy grades, the numeric half of a tolerance class such as `H7`.
+
+```swift
+public enum DimensionGrade: Int32, Sendable, CaseIterable {
+    case it01 = 0
+    case it0 = 1
+    case it1 = 2
+    case it2 = 3
+    case it3 = 4
+    case it4 = 5
+    case it5 = 6
+    case it6 = 7
+    case it7 = 8
+    case it8 = 9
+    case it9 = 10
+    case it10 = 11
+    case it11 = 12
+    case it12 = 13
+    case it13 = 14
+    case it14 = 15
+    case it15 = 16
+    case it16 = 17
+    case it17 = 18
+    case it18 = 19
+}
+```
+
+Raw values run finest to coarsest, so `.it01` is 0 and `.it18` is 19. The raw value is **not** the IT number: `.it7` is raw value 8, because the sequence begins at IT01 and IT0 before IT1. Compare grades by `rawValue`, never by parsing the case name.
+
+#### `Document.DimensionGrade.it18`
+
+---
+
 ### `Document.Dimension`
 
-Typed snapshot of a dimension read from or created on a `Document`.
+A dimension read from, or created on, a `Document`.
 
 ```swift
 public struct Dimension: Sendable, Hashable {
     public let type: DimensionType
-    public let value: Double
-    public let lowerTolerance: Double
-    public let upperTolerance: Double
+    public let value: Double?
+    public let bounds: Bounds
+    public let classOfTolerance: ClassOfTolerance?
     public let index: Int
+
+    public var lowerBound: Double? { get }
+    public var upperBound: Double? { get }
+    public var lowerTolerance: Double? { get }
+    public var upperTolerance: Double? { get }
 }
 ```
 
 - `type` — the STEP AP242 dimension sub-type.
-- `value` — nominal value (model units).
-- `lowerTolerance` — lower tolerance bound (may be 0 if not set).
-- `upperTolerance` — upper tolerance bound (may be 0 if not set).
-- `index` — position in the document's dimension sequence (for use with `setDimensionTolerance(at:lower:upper:)`).
+- `value` — the nominal value as OCCT's `GetValue()` reports it: a range's midpoint, the single value otherwise, `nil` when `bounds` is `.unset`.
+- `bounds` — which of OCCT's dimension kinds this is, and its data.
+- `classOfTolerance` — the ISO 286 class, or `nil` if the dimension carries none. Independent of `bounds`.
+- `index` — position in the document's dimension sequence, for use with `setDimensionTolerance(at:lower:upper:)` and its siblings.
+
+The four computed accessors project out of `bounds` and answer `nil` where the kind does not carry that quantity. They exist so a caller that only wants one number does not have to `switch`; the enum is the model.
+
+```swift
+if let dim = doc.dimension(at: 0) {
+    switch dim.bounds {
+    case .range(let lower, let upper): print("ranges \(lower) to \(upper)")
+    case .plusMinus(let lo, let hi): print("\(dim.value ?? 0) \(lo)/\(hi)")
+    case .simple: print("\(dim.value ?? 0)")
+    case .unset: print("no value")
+    }
+}
+```
+
+---
+
+#### `Document.Dimension.Bounds`
+
+How a dimension's magnitude is encoded, mirroring `XCAFDimTolObjects_DimensionObject`'s own predicates.
+
+```swift
+public enum Bounds: Sendable, Hashable {
+    case unset
+    case simple
+    case range(lower: Double, upper: Double)
+    case plusMinus(lowerTolerance: Double, upperTolerance: Double)
+}
+```
+
+OCCT stores a dimension's magnitude in one values array whose **length** is the discriminator, and its predicates are the length test:
+
+| Case | Array length | OCCT predicate | Slots |
+|---|---|---|---|
+| `.unset` | 0 (null array) | neither | nothing |
+| `.simple` | 1 | neither | the nominal value |
+| `.range` | 2 | `IsDimWithRange()` | lower bound, upper bound |
+| `.plusMinus` | 3 | `IsDimWithPlusMinusTolerance()` | value, lower tol, upper tol |
+
+Every accessor that does not apply to the kind at hand answers a flat `0` in OCCT, so this is an enum rather than five always-present fields: before #996 a 10..12 range read back as `value = 10, lowerTolerance = 0, upperTolerance = 0`, which is exactly what a plain 10mm dimension with zero tolerance reads back as. `Scripts/repro/996-gdt-read-surface/` has the measurement.
+
+`.unset` is reachable only from imported data. Every dimension this package authors goes through `createDimension`, which always writes a one-element values array.
+
+---
+
+#### `Document.Dimension.ClassOfTolerance`
+
+An ISO 286 tolerance class, present when OCCT's `IsDimWithClassOfTolerance()` holds.
+
+```swift
+public struct ClassOfTolerance: Sendable, Hashable {
+    public let isHole: Bool
+    public let formVariance: DimensionFormVariance
+    public let grade: DimensionGrade
+}
+```
+
+- `isHole` — `true` when the class applies to an internal feature.
+- `formVariance` — the fundamental deviation, the letter in `H7`.
+- `grade` — the accuracy grade, the number in `H7`.
+
+Independent of `bounds`: OCCT keeps the class outside the values array, so a `.range` or `.plusMinus` dimension can carry one too. Measured both ways in `Scripts/repro/996-gdt-read-surface/`.
 
 ---
 
 #### `Document.Dimension.lowerTolerance`
 
-Lower tolerance bound (may be `0` if not set).
+The lower tolerance, or `nil` unless `bounds` is `.plusMinus`.
 
 #### `Document.Dimension.upperTolerance`
 
-Upper tolerance bound (may be `0` if not set).
+The upper tolerance, or `nil` unless `bounds` is `.plusMinus`.
+
+#### `Document.Dimension.lowerBound`
+
+The lower bound, or `nil` unless `bounds` is `.range`.
+
+#### `Document.Dimension.upperBound`
+
+The upper bound, or `nil` unless `bounds` is `.range`.
 
 ---
 
 ### `Document.GeomTolerance`
 
-Typed snapshot of a geometric tolerance entry.
+A geometric tolerance read from, or created on, a `Document`.
 
 ```swift
 public struct GeomTolerance: Sendable, Hashable {
@@ -836,11 +1000,13 @@ public struct GeomTolerance: Sendable, Hashable {
 - `value` — tolerance zone value in model units.
 - `index` — position in the document's geom-tolerance sequence.
 
+`XCAFDimTolObjects_GeomToleranceObject` has no kind predicate of `Bounds`'s sort: `GetValue()` is a single stored number with nothing to discriminate. Its other 20 accessors (material requirement, zone modifier, modifier sequence, affected plane) are not wrapped; see #1004.
+
 ---
 
 ### `Document.Datum`
 
-Typed snapshot of a datum reference.
+A datum reference read from, or created on, a `Document`.
 
 ```swift
 public struct Datum: Sendable, Hashable {
@@ -852,42 +1018,85 @@ public struct Datum: Sendable, Hashable {
 - `name` — datum label string (e.g. `"A"`, `"B"`).
 - `index` — position in the document's datum sequence.
 
----
-
-## Document Extensions — Typed Read Path
-
-These methods provide type-safe access to GD&T objects stored in a `Document`, complementing the raw `Int32`-returning read path in `Document.swift`.
+`XCAFDimTolObjects_DatumObject`'s other 20 accessors (datum target shape, type, axis, length, width, number, modifiers, position) are not wrapped; see #1004.
 
 ---
 
-### `typedDimension(at:)`
+## Document Extensions — Read Path
 
-Returns the typed dimension at a given index.
+These methods read GD&T objects off a `Document`. There is one family: until #996 the same three
+bridge calls were read twice, by an untyped family on `Document` returning raw `Int32` type codes
+and by a typed family behind `typedDimension(at:)` and friends. The typed structs survive under the
+untyped family's names, and the `typed*` spellings are gone.
+
+---
+
+### `dimensionCount`
+
+Number of dimensions defined in this document.
 
 ```swift
-public func typedDimension(at index: Int) -> Dimension?
+public var dimensionCount: Int { get }
+```
+
+- **OCCT:** `XCAFDoc_DimTolTool::GetDimensionLabels` (via `OCCTDocumentGetDimensionCount`).
+
+---
+
+### `geomToleranceCount`
+
+Number of geometric tolerances defined in this document.
+
+```swift
+public var geomToleranceCount: Int { get }
+```
+
+- **OCCT:** `XCAFDoc_DimTolTool::GetGeomToleranceLabels` (via `OCCTDocumentGetGeomToleranceCount`).
+
+---
+
+### `datumCount`
+
+Number of datums defined in this document.
+
+```swift
+public var datumCount: Int { get }
+```
+
+- **OCCT:** `XCAFDoc_DimTolTool::GetDatumLabels` (via `OCCTDocumentGetDatumCount`).
+
+---
+
+### `dimension(at:)`
+
+The dimension at a given index.
+
+```swift
+public func dimension(at index: Int) -> Dimension?
 ```
 
 - **Parameters:** `index` — zero-based index within the document's dimension label sequence.
 - **Returns:** `Dimension` if the label exists and its `XCAFDimTolObjects_DimensionType` maps to a known `DimensionType` case; `nil` otherwise.
-- **OCCT:** `XCAFDoc_DimTolTool::GetDimensionLabels` → `XCAFDoc_Dimension::GetObject()` → `XCAFDimTolObjects_DimensionObject::GetType()` / `GetValues()` / `GetLowerTolValue()` / `GetUpperTolValue()`.
+- **OCCT:** `XCAFDoc_DimTolTool::GetDimensionLabels` → `XCAFDoc_Dimension::GetObject()` → `XCAFDimTolObjects_DimensionObject::GetType()` / `GetValue()` / `GetValues()` / `IsDimWithRange()` / `GetLowerBound()` / `GetUpperBound()` / `IsDimWithPlusMinusTolerance()` / `GetLowerTolValue()` / `GetUpperTolValue()` / `IsDimWithClassOfTolerance()` / `GetClassOfTolerance()`.
 - **Example:**
   ```swift
   for i in 0..<doc.dimensionCount {
-      if let dim = doc.typedDimension(at: i) {
-          print(dim.type, dim.value)
+      if let dim = doc.dimension(at: i) {
+          print(dim.type, dim.value ?? 0, dim.bounds)
       }
   }
   ```
 
+The pinned header's doc comments on `GetUpperTolValue` and `GetLowerTolValue` are swapped upstream, and the 8.0.1 refman renders the same swap. The functions are not swapped, measured two independent ways in `Scripts/repro/996-gdt-read-surface/`, and the bridge carries a comment saying so.
+
 ---
 
-### `typedGeomTolerance(at:)`
+### `geomTolerance(at:)`
 
-Returns the typed geometric tolerance at a given index.
+The geometric tolerance at a given index.
 
 ```swift
-public func typedGeomTolerance(at index: Int) -> GeomTolerance?
+public func geomTolerance(at index: Int) -> GeomTolerance?
 ```
 
 - **Parameters:** `index` — zero-based index within the document's geom-tolerance label sequence.
@@ -896,7 +1105,7 @@ public func typedGeomTolerance(at index: Int) -> GeomTolerance?
 - **Example:**
   ```swift
   for i in 0..<doc.geomToleranceCount {
-      if let tol = doc.typedGeomTolerance(at: i) {
+      if let tol = doc.geomTolerance(at: i) {
           print(tol.type, tol.value)
       }
   }
@@ -904,58 +1113,64 @@ public func typedGeomTolerance(at index: Int) -> GeomTolerance?
 
 ---
 
-### `typedDatum(at:)`
+### `datum(at:)`
 
-Returns the typed datum at a given index.
+The datum at a given index.
 
 ```swift
-public func typedDatum(at index: Int) -> Datum?
+public func datum(at index: Int) -> Datum?
 ```
 
 - **Parameters:** `index` — zero-based index within the document's datum label sequence.
 - **Returns:** `Datum` wrapping the datum name and index; `nil` if the label does not exist.
-- **OCCT:** Delegates to `Document.datum(at:)` → `XCAFDoc_DimTolTool::GetDatumLabels` → `XCAFDoc_Datum::GetObject()` → `XCAFDimTolObjects_DatumObject::GetName()`.
+- **OCCT:** `XCAFDoc_DimTolTool::GetDatumLabels` → `XCAFDoc_Datum::GetObject()` → `XCAFDimTolObjects_DatumObject::GetName()`.
 
 ---
 
-### `typedDimensions`
+### `dimensions`
 
-All typed dimensions in the document.
+All dimensions in the document.
 
 ```swift
-public var typedDimensions: [Dimension] { get }
+public var dimensions: [Dimension] { get }
 ```
 
-- **Returns:** Array of all `Dimension` values for which `typedDimension(at:)` succeeds.
+- **Returns:** Array of all `Dimension` values for which `dimension(at:)` succeeds.
 - **Example:**
   ```swift
-  let dims = doc.typedDimensions
-  let diameters = dims.filter { $0.type == .sizeDiameter }
+  let diameters = doc.dimensions.filter { $0.type == .sizeDiameter }
   ```
 
 ---
 
-### `typedGeomTolerances`
+### `geomTolerances`
 
-All typed geometric tolerances in the document.
+All geometric tolerances in the document.
 
 ```swift
-public var typedGeomTolerances: [GeomTolerance] { get }
+public var geomTolerances: [GeomTolerance] { get }
 ```
 
-- **Returns:** Array of all `GeomTolerance` values for which `typedGeomTolerance(at:)` succeeds.
+- **Returns:** Array of all `GeomTolerance` values for which `geomTolerance(at:)` succeeds.
 
 ---
 
-### `typedDatums`
+### `datums`
 
-All typed datums in the document.
+All datums in the document.
 
 ```swift
-public var typedDatums: [Datum] { get }
+public var datums: [Datum] { get }
 ```
 
-- **Returns:** Array of all `Datum` values for which `typedDatum(at:)` succeeds.
+- **Returns:** Array of all `Datum` values for which `datum(at:)` succeeds.
+- **Example:**
+  ```swift
+  let doc = try Document.load(from: gdtStepURL)
+  print("Dimensions:", doc.dimensions.count)
+  print("Tolerances:", doc.geomTolerances.count)
+  for datum in doc.datums { print("Datum:", datum.name) }
+  ```
 
 ---
 
@@ -1062,10 +1277,10 @@ public func setDimensionTolerance(at index: Int,
 ```
 
 - **Parameters:**
-  - `index` — zero-based dimension index (as returned by `createDimension` or used in `typedDimension(at:)`).
+  - `index` — zero-based dimension index (as returned by `createDimension` or used in `dimension(at:)`).
   - `lower` — lower tolerance value in model units.
   - `upper` — upper tolerance value in model units.
-- **Returns:** `true` if the update succeeded; `false` if the index is out of range or the attribute is missing.
+- **Returns:** `true` if the update succeeded; `false` if the index is out of range, the attribute is missing, or the dimension is already `.range`.
 - **OCCT:** `XCAFDoc_DimTolTool::GetDimensionLabels` → `XCAFDoc_Dimension::GetObject()` → `XCAFDimTolObjects_DimensionObject::SetLowerTolValue` / `SetUpperTolValue` → `XCAFDoc_Dimension::SetObject`.
 - **Example:**
   ```swift
@@ -1073,3 +1288,71 @@ public func setDimensionTolerance(at index: Int,
   let ok = doc.setDimensionTolerance(at: idx, lower: -0.05, upper: 0.05)
   #expect(ok)
   ```
+
+Both OCCT setters return `false`, and change nothing, for a dimension that is already a range;
+this method now returns their conjunction rather than discarding them, so a refused call reports
+`false` instead of reporting success for a call that did nothing (#996).
+
+---
+
+### `setDimensionBounds(at:lower:upper:)`
+
+Turns an existing dimension into a range dimension, making its `bounds` `.range`.
+
+```swift
+@discardableResult
+public func setDimensionBounds(at index: Int,
+                               lower: Double,
+                               upper: Double) -> Bool
+```
+
+- **Parameters:**
+  - `index` — zero-based dimension index.
+  - `lower` — lower bound in model units.
+  - `upper` — upper bound in model units.
+- **Returns:** `true` if the update succeeded; `false` if the index is out of range or the attribute is missing.
+- **OCCT:** `XCAFDimTolObjects_DimensionObject::SetLowerBound` / `SetUpperBound` → `XCAFDoc_Dimension::SetObject`.
+- **Example:**
+  ```swift
+  let idx = doc.createDimension(on: shapeLabel, type: .sizeDiameter, value: 10.0)!
+  doc.setDimensionBounds(at: idx, lower: 10.0, upper: 12.0)
+  #expect(doc.dimension(at: idx)?.bounds == .range(lower: 10.0, upper: 12.0))
+  ```
+
+This is the only way to author the kind `Bounds.range` reports. `createDimension` always writes a
+one-element values array, so a dimension starts `.simple` and becomes `.range` here or `.plusMinus`
+through `setDimensionTolerance(at:lower:upper:)`. Call order does not matter within this method:
+each OCCT setter resets a non-range dimension to a degenerate range holding its own argument twice,
+so either sequence converges on `[lower, upper]` (measured both ways in
+`Scripts/repro/996-gdt-read-surface/`).
+
+---
+
+### `setDimensionClassOfTolerance(at:isHole:formVariance:grade:)`
+
+Sets the ISO 286 tolerance class of an existing dimension, leaving its `bounds` alone.
+
+```swift
+@discardableResult
+public func setDimensionClassOfTolerance(at index: Int,
+                                         isHole: Bool,
+                                         formVariance: DimensionFormVariance,
+                                         grade: DimensionGrade) -> Bool
+```
+
+- **Parameters:**
+  - `index` — zero-based dimension index.
+  - `isHole` — `true` when the class applies to an internal feature.
+  - `formVariance` — the fundamental deviation, the letter in `H7`.
+  - `grade` — the accuracy grade, the number in `H7`.
+- **Returns:** `true` if the update succeeded; `false` if the index is out of range or the attribute is missing.
+- **OCCT:** `XCAFDimTolObjects_DimensionObject::SetClassOfTolerance` → `XCAFDoc_Dimension::SetObject`.
+- **Example:**
+  ```swift
+  let idx = doc.createDimension(on: shapeLabel, type: .sizeDiameter, value: 20.0)!
+  doc.setDimensionClassOfTolerance(at: idx, isHole: true, formVariance: .h, grade: .it7)
+  #expect(doc.dimension(at: idx)?.classOfTolerance?.grade == .it7)
+  ```
+
+A class of tolerance lives outside the values array, so setting one does not change `bounds`, and a
+`.range` or `.plusMinus` dimension can carry one.

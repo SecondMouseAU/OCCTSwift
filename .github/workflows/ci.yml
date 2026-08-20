@@ -144,6 +144,20 @@ jobs:
         if: '!cancelled()'
         run: python3 Scripts/derive-bridge-header-split.py --verify
 
+      # #996: GDTRead.swift's four GD&T enums are transcribed member for member from OCCT's own
+      # XCAFDimTolObjects headers, and the bridge casts OCCT's enum straight to int32 with no
+      # sentinel, so a member OCCT adds turns into a silently dropped dimension rather than an
+      # error. --verify compares Swift against the committed Scripts/occt-gdt-enums.txt and needs
+      # no kernel, which is why it is the half that gates here. --reverify-headers is the other
+      # half and needs Libraries/, absent on this runner; run it locally after an OCCT bump.
+      - name: derive-gdt-enums.py --self-test
+        if: '!cancelled()'
+        run: python3 Scripts/derive-gdt-enums.py --self-test
+
+      - name: derive-gdt-enums.py --verify
+        if: '!cancelled()'
+        run: python3 Scripts/derive-gdt-enums.py --verify
+
       # No --self-test of its own. It takes no options other than --fix/--audit and rejects an
       # unrecognised one (exit 2), so it is invoked bare; `--self-test` would otherwise be the
       # natural thing to write when extending this list, and read as a passing self-test that

@@ -36,6 +36,8 @@
 #include <XCAFDoc_GeomTolerance.hxx>
 #include <XCAFDoc_ShapeTool.hxx>
 #include <XCAFDimTolObjects_DatumObject.hxx>
+#include <XCAFDimTolObjects_DimensionFormVariance.hxx>
+#include <XCAFDimTolObjects_DimensionGrade.hxx>
 #include <XCAFDimTolObjects_DimensionObject.hxx>
 #include <XCAFDimTolObjects_DimensionType.hxx>
 #include <XCAFDimTolObjects_GeomToleranceObject.hxx>
@@ -986,15 +988,56 @@ OCCTDimensionInfo OCCTDocumentGetDimensionInfo(OCCTDocumentRef doc, int32_t inde
     if (dimObj.IsNull())
       return info;
 
-    info.type                          = (int32_t)dimObj->GetType();
+    info.type = (int32_t)dimObj->GetType();
+
+    // Ask OCCT which kind this is rather than re-deriving it from the array length: the two
+    // predicates ARE the length test, so asking them keeps the rule in one place (#996).
     Handle(TColStd_HArray1OfReal) vals = dimObj->GetValues();
-    if (!vals.IsNull() && vals->Length() > 0)
-    {
-      info.value = vals->Value(vals->Lower());
-    }
+    if (dimObj->IsDimWithRange())
+      info.boundsKind = OCCTDimensionBoundsRange;
+    else if (dimObj->IsDimWithPlusMinusTolerance())
+      info.boundsKind = OCCTDimensionBoundsPlusMinus;
+    else if (!vals.IsNull() && vals->Length() > 0)
+      info.boundsKind = OCCTDimensionBoundsSimple;
+    else
+      info.boundsKind = OCCTDimensionBoundsUnset;
+
+    // GetValue(), not vals->Value(vals->Lower()). For a range those differ: GetValue() returns the
+    // midpoint, the first slot is the lower bound, and reporting the latter as "the value" is what
+    // made a 10..12 range read back as a plain 10 with no tolerance (#996).
+    info.value      = dimObj->GetValue();
+    info.lowerBound = dimObj->GetLowerBound();
+    info.upperBound = dimObj->GetUpperBound();
+    // The pinned header's doc comments on this pair are swapped upstream ("Returns the lower value"
+    // sits above GetUpperTolValue, and vice versa), and the 8.0.1 refman renders the same swap. The
+    // functions are not swapped: measured on a raw [100,200,300] values array, GetLowerTolValue()
+    // returns slot 2 (200) and GetUpperTolValue() slot 3 (300), which is what
+    // SetLowerTolValue/SetUpperTolValue write. Do not "fix" these two to match the comments. See
+    // Scripts/repro/996-gdt-read-surface/.
     info.lowerTol = dimObj->GetLowerTolValue();
     info.upperTol = dimObj->GetUpperTolValue();
-    info.isValid  = true;
+
+    // Independent of boundsKind: a range dimension can carry an ISO 286 class too, since
+    // IsDimWithClassOfTolerance() reads the form variance rather than the array length.
+    info.hasClassOfTolerance = dimObj->IsDimWithClassOfTolerance();
+    if (info.hasClassOfTolerance)
+    {
+      bool                                    isHole = false;
+      XCAFDimTolObjects_DimensionFormVariance fmVar  = XCAFDimTolObjects_DimensionFormVariance_None;
+      XCAFDimTolObjects_DimensionGrade        grade  = XCAFDimTolObjects_DimensionGrade_IT01;
+      if (dimObj->GetClassOfTolerance(isHole, fmVar, grade))
+      {
+        info.classOfToleranceIsHole = isHole;
+        info.formVariance           = (int32_t)fmVar;
+        info.grade                  = (int32_t)grade;
+      }
+      else
+      {
+        info.hasClassOfTolerance = false;
+      }
+    }
+
+    info.isValid = true;
     return info;
   }
   catch (...)
@@ -1191,32 +1234,109 @@ int32_t OCCTDocumentCreateDatum(OCCTDocumentRef doc, const char* name)
   }
 }
 
+// Resolve a dimension index to its attribute and its object. The three mutators below differ only
+// in what they then set, so the lookup lives here rather than three times over (#996).
+static bool occtDocumentDimensionObjectAt(OCCTDocumentRef                            doc,
+                                          int32_t                                    dimensionIndex,
+                                          Handle(XCAFDoc_Dimension)&                 outAttr,
+                                          Handle(XCAFDimTolObjects_DimensionObject)& outObj)
+{
+  if (!doc || doc->doc.IsNull() || dimensionIndex < 0)
+    return false;
+
+  Handle(XCAFDoc_DimTolTool) dimTolTool = XCAFDoc_DimTolTool::Set(doc->doc->Main());
+  TDF_LabelSequence          labels;
+  dimTolTool->GetDimensionLabels(labels);
+  if (dimensionIndex >= (int32_t)labels.Length())
+    return false;
+
+  TDF_Label label = labels.Value(dimensionIndex + 1);
+  if (!label.FindAttribute(XCAFDoc_Dimension::GetID(), outAttr))
+    return false;
+
+  outObj = outAttr->GetObject();
+  return !outObj.IsNull();
+}
+
 bool OCCTDocumentSetDimensionTolerance(OCCTDocumentRef doc,
                                        int32_t         dimensionIndex,
                                        double          lowerTol,
                                        double          upperTol)
 {
-  if (!doc || doc->doc.IsNull() || dimensionIndex < 0)
-    return false;
   try
   {
-    Handle(XCAFDoc_DimTolTool) dimTolTool = XCAFDoc_DimTolTool::Set(doc->doc->Main());
-    TDF_LabelSequence          labels;
-    dimTolTool->GetDimensionLabels(labels);
-    if (dimensionIndex >= (int32_t)labels.Length())
+    Handle(XCAFDoc_Dimension)                 dimAttr;
+    Handle(XCAFDimTolObjects_DimensionObject) dimObj;
+    if (!occtDocumentDimensionObjectAt(doc, dimensionIndex, dimAttr, dimObj))
       return false;
 
-    TDF_Label                 label = labels.Value(dimensionIndex + 1);
-    Handle(XCAFDoc_Dimension) dimAttr;
-    if (!label.FindAttribute(XCAFDoc_Dimension::GetID(), dimAttr))
+    // Both setters return false, and change nothing, when the dimension is already a range.
+    // Discarding that reported success for a call that did nothing (#996). Neither is
+    // short-circuited, so the two arguments stay symmetric rather than one being applied and one
+    // not. That is safe for the rejection this project has actually measured, a range dimension,
+    // where both refuse: see Scripts/repro/996-gdt-read-surface/. It is NOT a general guarantee
+    // that OCCT rejects the pair atomically on every path, and no such guarantee is documented
+    // upstream. The readback below is what makes the caller's answer correct either way.
+    const bool lowerOk = dimObj->SetLowerTolValue(lowerTol);
+    const bool upperOk = dimObj->SetUpperTolValue(upperTol);
+    // Verify rather than trust the return pair: a partial application would otherwise be reported
+    // as a clean failure, and the caller could not tell it from a no-op.
+    const bool applied = lowerOk && upperOk && dimObj->GetLowerTolValue() == lowerTol
+                         && dimObj->GetUpperTolValue() == upperTol;
+    if (!applied)
       return false;
 
-    Handle(XCAFDimTolObjects_DimensionObject) dimObj = dimAttr->GetObject();
-    if (dimObj.IsNull())
+    dimAttr->SetObject(dimObj);
+    return true;
+  }
+  catch (...)
+  {
+    return false;
+  }
+}
+
+bool OCCTDocumentSetDimensionBounds(OCCTDocumentRef doc,
+                                    int32_t         dimensionIndex,
+                                    double          lowerBound,
+                                    double          upperBound)
+{
+  try
+  {
+    Handle(XCAFDoc_Dimension)                 dimAttr;
+    Handle(XCAFDimTolObjects_DimensionObject) dimObj;
+    if (!occtDocumentDimensionObjectAt(doc, dimensionIndex, dimAttr, dimObj))
       return false;
 
-    dimObj->SetLowerTolValue(lowerTol);
-    dimObj->SetUpperTolValue(upperTol);
+    // Order does not matter: each setter resets a non-range dimension to a degenerate range
+    // holding its own argument twice, so either sequence converges on [lower, upper]. Measured,
+    // both ways round, in Scripts/repro/996-gdt-read-surface/.
+    dimObj->SetLowerBound(lowerBound);
+    dimObj->SetUpperBound(upperBound);
+    dimAttr->SetObject(dimObj);
+    return true;
+  }
+  catch (...)
+  {
+    return false;
+  }
+}
+
+bool OCCTDocumentSetDimensionClassOfTolerance(OCCTDocumentRef doc,
+                                              int32_t         dimensionIndex,
+                                              bool            isHole,
+                                              int32_t         formVariance,
+                                              int32_t         grade)
+{
+  try
+  {
+    Handle(XCAFDoc_Dimension)                 dimAttr;
+    Handle(XCAFDimTolObjects_DimensionObject) dimObj;
+    if (!occtDocumentDimensionObjectAt(doc, dimensionIndex, dimAttr, dimObj))
+      return false;
+
+    dimObj->SetClassOfTolerance(isHole,
+                                (XCAFDimTolObjects_DimensionFormVariance)formVariance,
+                                (XCAFDimTolObjects_DimensionGrade)grade);
     dimAttr->SetObject(dimObj);
     return true;
   }
