@@ -1,0 +1,11 @@
+fixture                                                  shipped +-100          bound from the input  
+meeting point at parameter 50, inside the shipped bound  (-50, 5)               (-50, 5)              
+meeting point at parameter 90, inside the shipped bound  (-90, 5)               (-90, 5)              
+meeting point at parameter 150, outside the shipped bound no intersection        (-150, 5)             
+
+expected circumcentres, solved in closed form:
+  meeting point at parameter 50, inside the shipped bound  (-50, 5)
+  meeting point at parameter 90, inside the shipped bound  (-90, 5)
+  meeting point at parameter 150, outside the shipped bound (-150, 5)
+
+1 fixture(s) the shipped bound drops and a bound from the input finds

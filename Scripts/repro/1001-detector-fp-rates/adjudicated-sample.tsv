@@ -1,0 +1,159 @@
+# Hand-adjudicated samples for the four detectors #1001 names as its precondition.
+#
+# TRUE  = the finding is a real defect of the kind the detector claims to find.
+# FALSE = it is not, for the reason given.
+#
+# Re-score any later version of a detector against these rows with score_sample.py. Line
+# numbers belong to the tree named in each batch header, so score against that tree or the
+# matching is nonsense; the script says so rather than reporting a small number quietly.
+#
+# Batches are never pooled. Each answers a question about one detector on one tree.
+
+# [batch: hardcoded-main-23 | detector: detect-hardcoded-arguments.py | tree: working]
+# A CENSUS, not a sample: every finding on the branch point of #1001, all 23 adjudicated.
+OCCTBridge_Curve3D.mm:3310	Extrema_ExtCS	FALSE	TolU/TolV are iteration stop conditions (Extrema_ExtPS.hxx:52-55), not domain bounds; bit-identical across the measured plateau 1e-8 to 1e-5
+OCCTBridge_Curve3D.mm:3338	Extrema_ExtCS	FALSE	TolU/TolV are iteration stop conditions (Extrema_ExtPS.hxx:52-55), not domain bounds; bit-identical across the measured plateau 1e-8 to 1e-5
+OCCTBridge_Geom2d.mm:3846	IntRes2d_Domain	TRUE	the hardcoded +-100 parameter domain drops a real bisector intersection at parameter 150; a bound derived from the input finds it, occt_1001_bisector_domain.mm
+OCCTBridge_Geom2d.mm:3852	IntRes2d_Domain	TRUE	the hardcoded +-100 parameter domain drops a real bisector intersection at parameter 150; a bound derived from the input finds it, occt_1001_bisector_domain.mm
+OCCTBridge_Healing.mm:3378	BRepBuilderAPI_MakeFace	FALSE	measured inert in #1024 across four incompatible faces and five edges, byte-identical; the comment in the source records the measurement
+OCCTBridge_ProjLib_NLPlate.mm:753	GeomPlate_BuildPlateSurface	FALSE	Degree/NbPtsOnCur/NbIter are the plate's own resolution parameters, distinct from the caller's maxDegree (GeomPlate_BuildPlateSurface.hxx:108-121); #1020 corrected itself on exactly this point
+OCCTBridge_Surface.mm:2180	GeomFill_SimpleBound	FALSE	no caller-supplied parameter for it to displace, and the enclosing bridge function exposes no tolerance
+OCCTBridge_Surface.mm:2182	GeomFill_SimpleBound	FALSE	no caller-supplied parameter for it to displace, and the enclosing bridge function exposes no tolerance
+OCCTBridge_Surface.mm:2184	GeomFill_SimpleBound	FALSE	no caller-supplied parameter for it to displace, and the enclosing bridge function exposes no tolerance
+OCCTBridge_Surface.mm:2194	GeomFill_SimpleBound	FALSE	no caller-supplied parameter for it to displace, and the enclosing bridge function exposes no tolerance
+OCCTBridge_Surface.mm:3379	GeomFill_SimpleBound	FALSE	inert on this call path: measured byte-identical across a 1e-6 to 1.0 sweep, occt_1001_inert_literals.mm
+OCCTBridge_Surface.mm:3380	GeomFill_SimpleBound	FALSE	inert on this call path: measured byte-identical across a 1e-6 to 1.0 sweep, occt_1001_inert_literals.mm
+OCCTBridge_Surface.mm:3381	GeomFill_SimpleBound	FALSE	inert on this call path: measured byte-identical across a 1e-6 to 1.0 sweep, occt_1001_inert_literals.mm
+OCCTBridge_Surface.mm:3382	GeomFill_SimpleBound	FALSE	inert on this call path: measured byte-identical across a 1e-6 to 1.0 sweep, occt_1001_inert_literals.mm
+OCCTBridge_Surface.mm:3952	GeomFill_DegeneratedBound	FALSE	inert on this call path: measured byte-identical across a 1e-6 to 1.0 sweep, occt_1001_inert_literals.mm
+OCCTBridge_Surface.mm:3973	GeomFill_DegeneratedBound	FALSE	inert on this call path: measured byte-identical across a 1e-6 to 1.0 sweep, occt_1001_inert_literals.mm
+OCCTBridge_Surface.mm:4008	GeomFill_BoundWithSurf	FALSE	inert on this call path: measured byte-identical across a 1e-6 to 1.0 sweep, occt_1001_inert_literals.mm
+OCCTBridge_Surface.mm:4843	Extrema_ExtPS	FALSE	TolU/TolV are iteration stop conditions (Extrema_ExtPS.hxx:52-55), not domain bounds; bit-identical across the measured plateau 1e-8 to 1e-5
+OCCTBridge_Surface.mm:4865	Extrema_ExtPS	FALSE	TolU/TolV are iteration stop conditions (Extrema_ExtPS.hxx:52-55), not domain bounds; bit-identical across the measured plateau 1e-8 to 1e-5
+OCCTBridge_Surface.mm:4893	Extrema_ExtSS	FALSE	TolU/TolV are iteration stop conditions (Extrema_ExtPS.hxx:52-55), not domain bounds; bit-identical across the measured plateau 1e-8 to 1e-5
+OCCTBridge_Surface.mm:4919	Extrema_ExtSS	FALSE	TolU/TolV are iteration stop conditions (Extrema_ExtPS.hxx:52-55), not domain bounds; bit-identical across the measured plateau 1e-8 to 1e-5
+OCCTBridge_Topology.mm:145	GCPnts_TangentialDeflection	FALSE	load-bearing but not displaced: the two deflections set a point count and the bridge function exposes no deflection parameter, so nothing of the caller's is overridden
+OCCTBridge_Topology.mm:180	GCPnts_TangentialDeflection	FALSE	load-bearing but not displaced: the two deflections set a point count and the bridge function exposes no deflection parameter, so nothing of the caller's is overridden
+
+# [batch: hardcoded-pre4a-27 | detector: detect-hardcoded-arguments.py | tree: 90917a70]
+# The same census one tree earlier, before Pass 4a fixed three of the findings. This is the
+# population that has NOT been pre-cleaned by fixing, so it is the fairer rate of the two.
+OCCTBridge_Curve3D.mm:3320	Extrema_ExtCS	FALSE	TolU/TolV are iteration stop conditions (Extrema_ExtPS.hxx:52-55), not domain bounds; bit-identical across the measured plateau 1e-8 to 1e-5
+OCCTBridge_Curve3D.mm:3348	Extrema_ExtCS	FALSE	TolU/TolV are iteration stop conditions (Extrema_ExtPS.hxx:52-55), not domain bounds; bit-identical across the measured plateau 1e-8 to 1e-5
+OCCTBridge_Curve3D.mm:6539	Extrema_ExtPElC	TRUE	fixed in #1024: the hardcoded parameter bound clipped the caller's own geometry, proven by a point whose foot of perpendicular sits outside it
+OCCTBridge_Curve3D.mm:6684	Extrema_ExtPElC	TRUE	fixed in #1024: the hardcoded parameter bound clipped the caller's own geometry, proven by a point whose foot of perpendicular sits outside it
+OCCTBridge_Geom2d.mm:2373	Extrema_ExtPElC2d	TRUE	fixed in #1024: the hardcoded parameter bound clipped the caller's own geometry, proven by a point whose foot of perpendicular sits outside it
+OCCTBridge_Geom2d.mm:3837	IntRes2d_Domain	TRUE	the hardcoded +-100 parameter domain drops a real bisector intersection at parameter 150; a bound derived from the input finds it, occt_1001_bisector_domain.mm
+OCCTBridge_Geom2d.mm:3843	IntRes2d_Domain	TRUE	the hardcoded +-100 parameter domain drops a real bisector intersection at parameter 150; a bound derived from the input finds it, occt_1001_bisector_domain.mm
+OCCTBridge_Healing.mm:2559	BRepBuilderAPI_MakeFace	FALSE	measured inert in #1024 across four incompatible faces and five edges, byte-identical; the comment in the source records the measurement
+OCCTBridge_ProjLib_NLPlate.mm:563	GeomPlate_BuildPlateSurface	FALSE	Degree/NbPtsOnCur/NbIter are the plate's own resolution parameters, distinct from the caller's maxDegree (GeomPlate_BuildPlateSurface.hxx:108-121); #1020 corrected itself on exactly this point
+OCCTBridge_ProjLib_NLPlate.mm:1023	GeomPlate_BuildPlateSurface	FALSE	Degree/NbPtsOnCur/NbIter are the plate's own resolution parameters, distinct from the caller's maxDegree (GeomPlate_BuildPlateSurface.hxx:108-121); #1020 corrected itself on exactly this point
+OCCTBridge_Surface.mm:2189	GeomFill_SimpleBound	FALSE	no caller-supplied parameter for it to displace, and the enclosing bridge function exposes no tolerance
+OCCTBridge_Surface.mm:2191	GeomFill_SimpleBound	FALSE	no caller-supplied parameter for it to displace, and the enclosing bridge function exposes no tolerance
+OCCTBridge_Surface.mm:2193	GeomFill_SimpleBound	FALSE	no caller-supplied parameter for it to displace, and the enclosing bridge function exposes no tolerance
+OCCTBridge_Surface.mm:2203	GeomFill_SimpleBound	FALSE	no caller-supplied parameter for it to displace, and the enclosing bridge function exposes no tolerance
+OCCTBridge_Surface.mm:3388	GeomFill_SimpleBound	FALSE	inert on this call path: measured byte-identical across a 1e-6 to 1.0 sweep, occt_1001_inert_literals.mm
+OCCTBridge_Surface.mm:3389	GeomFill_SimpleBound	FALSE	inert on this call path: measured byte-identical across a 1e-6 to 1.0 sweep, occt_1001_inert_literals.mm
+OCCTBridge_Surface.mm:3390	GeomFill_SimpleBound	FALSE	inert on this call path: measured byte-identical across a 1e-6 to 1.0 sweep, occt_1001_inert_literals.mm
+OCCTBridge_Surface.mm:3391	GeomFill_SimpleBound	FALSE	inert on this call path: measured byte-identical across a 1e-6 to 1.0 sweep, occt_1001_inert_literals.mm
+OCCTBridge_Surface.mm:3961	GeomFill_DegeneratedBound	FALSE	inert on this call path: measured byte-identical across a 1e-6 to 1.0 sweep, occt_1001_inert_literals.mm
+OCCTBridge_Surface.mm:3982	GeomFill_DegeneratedBound	FALSE	inert on this call path: measured byte-identical across a 1e-6 to 1.0 sweep, occt_1001_inert_literals.mm
+OCCTBridge_Surface.mm:4017	GeomFill_BoundWithSurf	FALSE	inert on this call path: measured byte-identical across a 1e-6 to 1.0 sweep, occt_1001_inert_literals.mm
+OCCTBridge_Surface.mm:4852	Extrema_ExtPS	FALSE	TolU/TolV are iteration stop conditions (Extrema_ExtPS.hxx:52-55), not domain bounds; bit-identical across the measured plateau 1e-8 to 1e-5
+OCCTBridge_Surface.mm:4874	Extrema_ExtPS	FALSE	TolU/TolV are iteration stop conditions (Extrema_ExtPS.hxx:52-55), not domain bounds; bit-identical across the measured plateau 1e-8 to 1e-5
+OCCTBridge_Surface.mm:4902	Extrema_ExtSS	FALSE	TolU/TolV are iteration stop conditions (Extrema_ExtPS.hxx:52-55), not domain bounds; bit-identical across the measured plateau 1e-8 to 1e-5
+OCCTBridge_Surface.mm:4928	Extrema_ExtSS	FALSE	TolU/TolV are iteration stop conditions (Extrema_ExtPS.hxx:52-55), not domain bounds; bit-identical across the measured plateau 1e-8 to 1e-5
+OCCTBridge_Topology.mm:145	GCPnts_TangentialDeflection	FALSE	load-bearing but not displaced: the two deflections set a point count and the bridge function exposes no deflection parameter, so nothing of the caller's is overridden
+OCCTBridge_Topology.mm:180	GCPnts_TangentialDeflection	FALSE	load-bearing but not displaced: the two deflections set a point count and the bridge function exposes no deflection parameter, so nothing of the caller's is overridden
+
+# [batch: deadparams-pre4a-13 | detector: detect-dead-parameters.py | tree: 90917a70]
+# A CENSUS, all 13. Today's tree reports zero, because Pass 4a fixed every one.
+# Claim (a), 'never read', was checked against clang -Wunused-parameter, a construction
+# sharing no code with the detector: 14 distinct (file, parameter) pairs each way, and zero
+# disagreement in either direction. See verify_dead_parameters.py.
+OCCTBridge_Curve3D.mm:6300	OCCTExtremaElCLinElips (tolerance)	TRUE	Extrema_ExtElC(gp_Lin, gp_Elips) takes no tolerance. Removed.
+OCCTBridge_Curve3D.mm:7031	OCCTExtremaLocateOnCurve (tol)	TRUE	both halves reach OCCT through GeomAPI_ProjectPointOnCurve, whose windowed constructor takes no tolerance. Removed.
+OCCTBridge_Geom2d.mm:533	OCCTCurve2DBisectorPC (originX, originY)	TRUE	Bisector_BisecPC::Perform is (Cu, P, Side, DistMax) and has no origin; the signature was copied from the CC sibling. Replaced with DistMax, which is live.
+OCCTBridge_Geom2d.mm:612	OCCTMedialAxisCompute (tolerance)	TRUE	neither BRepMAT2d_Explorer::Perform nor BisectingLocus::Compute takes a tolerance. Removed.
+OCCTBridge_Geom2d.mm:7698	OCCTCurve2DTransform (p5)	TRUE	buildTrsf2D reads p1-p4 and no gp_Trsf2d setter it reaches takes a fifth. Every Swift call site passed a literal 0. Removed.
+OCCTBridge_Geom2d.mm:8928	OCCTCurve2DToBSpline (tolerance)	TRUE	Geom2dConvert::CurveToBSplineCurve takes no tolerance; the conversion is exact, while Swift documented tolerance: Double = 1e-6.
+OCCTBridge_Healing.mm:3966	OCCTWireCheckOuterBound (prec)	TRUE	ShapeAnalysis_Wire::CheckOuterBound takes a bool, not a precision, and the bridge never called it at all.
+OCCTBridge_Modeling.mm:229	OCCTDrawingCreate (projectionType)	TRUE	requesting .perspective silently returned orthographic; HLRAlgo_Projector's focal-point overload was never reached.
+OCCTBridge_Modeling.mm:3434	OCCTDrawingCreatePoly (projectionType)	TRUE	same defect on the polyhedral HLR path.
+OCCTBridge_Modeling.mm:11110	OCCTDraftEdgeInfoSetTangent (dx, dy, dz)	TRUE	Draft_EdgeInfo::SetTangent is never called; the direction is discarded and NewGeometry() is trivially true. Deleted by #1000.
+OCCTBridge_ProjLib_NLPlate.mm:661	OCCTSurfaceNLPlateG2 (maxIter)	TRUE	the body calls solver.Solve2(2, 1); NLPlate_NLPlate::Solve2 has no iteration parameter.
+OCCTBridge_ProjLib_NLPlate.mm:716	OCCTSurfaceNLPlateG3 (maxIter)	TRUE	same.
+OCCTBridge_ProjLib_NLPlate.mm:1018	OCCTGeomPlateErrors (maxDegree, maxSegments)	TRUE	the builder's degree and segment settings were hardcoded past. Function deleted by #1015.
+
+# [batch: classcoverage-40 | detector: occt-class-coverage.py | tree: working]
+# A uniform random sample, seed 1001, of the 253 (class, unreached method) rows over the
+# sixteen classes Pass 4a reported. Redraw it with sample_class_coverage.py.
+# Adjudicated against the version of the detector BEFORE #1001's four parser fixes; score_sample.py
+# re-scores the same rows against the fixed one, which is how the before and after compare.
+BRepFeat_Gluer	Message_ProgressRange	FALSE	a DEFAULT ARGUMENT, not a member: BRepFeat_Gluer.hxx:92 `= Message_ProgressRange()`
+BRepFeat_Gluer	OpeType	TRUE	a public member function of the class, and no bridge call reaches it
+BRepFeat_MakeDPrism	BossEdges	TRUE	a public member function of the class, and no bridge call reaches it
+BRepFeat_MakeDPrism	Curves	TRUE	a public member function of the class, and no bridge call reaches it
+BRepFeat_MakeDPrism	PerformFromEnd	TRUE	a public member function of the class, and no bridge call reaches it
+BRepFeat_MakeDPrism	PerformUntilEnd	TRUE	a public member function this bridge does not call on this class; called on a BRepFeat_MakeCylindricalHole (OCCTBridge_Internal.h:2886), not on this class
+BRepFeat_MakeDPrism	TopEdges	TRUE	a public member function of the class, and no bridge call reaches it
+BRepFeat_SplitShape	IsDeleted	TRUE	a public member function of the class, and no bridge call reaches it
+BRepFeat_SplitShape	Message_ProgressRange	FALSE	a DEFAULT ARGUMENT, not a member: BRepFeat_SplitShape.hxx:107
+BRepOffsetAPI_ThruSections	CriteriumWeight	TRUE	a public member function of the class, and no bridge call reaches it
+BRepOffsetAPI_ThruSections	Message_ProgressRange	FALSE	a DEFAULT ARGUMENT, not a member: BRepOffsetAPI_ThruSections.hxx:137
+BRepOffsetAPI_ThruSections	UseSmoothing	TRUE	a public member function of the class, and no bridge call reaches it
+Draft_FaceInfo	ChangeGeometry	TRUE	a public member function of the class, and no bridge call reaches it
+Draft_FaceInfo	Curve	TRUE	a public member function of the class, and no bridge call reaches it
+Draft_VertexInfo	Add	TRUE	a public member function of the class, and no bridge call reaches it
+Draft_VertexInfo	ChangeParameter	TRUE	a public member function of the class, and no bridge call reaches it
+GeomPlate_BuildPlateSurface	ComputeAnisotropie	FALSE	PRIVATE: declared at :244, after `private:` at :207
+GeomPlate_BuildPlateSurface	G0Error	TRUE	a public member function this bridge does not call on this class; called on a BRepOffsetAPI_MakeFilling (OCCTBridge_Modeling.mm:6194), not on this class
+GeomPlate_BuildPlateSurface	G1Error	TRUE	a public member function this bridge does not call on this class; same, called on a BRepOffsetAPI_MakeFilling
+GeomPlate_BuildPlateSurface	PointConstraint	TRUE	a public member function of the class, and no bridge call reaches it
+GeomPlate_BuildPlateSurface	ProjectCurve	FALSE	PRIVATE: declared at :218, after `private:` at :207
+Plate_Plate	CoefPol	TRUE	a public member function of the class, and no bridge call reaches it
+Plate_Plate	Copy	TRUE	a public member function of the class, and no bridge call reaches it
+Plate_Plate	Standard_DEPRECATED	FALSE	a MACRO: Plate_Plate.hxx:105 `Standard_DEPRECATED("Use CoefPol()...")`
+Plate_Plate	UVConstraints	TRUE	a public member function of the class, and no bridge call reaches it
+ShapeFix_Face	FixSplitFace	TRUE	a public member function of the class, and no bridge call reaches it
+ShapeFix_Face	Message_ProgressRange	FALSE	a DEFAULT ARGUMENT, not a member: ShapeFix_Face.hxx:166
+XCAFDimTolObjects_DatumObject	GetPresentation	TRUE	a public member function this bridge does not call on this class; called on an XCAFNoteObjects_NoteObject
+XCAFDimTolObjects_DatumObject	HasPointText	TRUE	a public member function this bridge does not call on this class; called on an XCAFNoteObjects_NoteObject
+XCAFDimTolObjects_DatumObject	SetPoint	TRUE	a public member function this bridge does not call on this class; called on an XCAFNoteObjects_NoteObject
+XCAFDimTolObjects_DimensionObject	GetConnectionAxis	TRUE	a public member function of the class, and no bridge call reaches it
+XCAFDimTolObjects_DimensionObject	HasPoint	TRUE	a public member function of the class, and no bridge call reaches it
+XCAFDimTolObjects_DimensionObject	Location	FALSE	a CALL INSIDE AN INLINE BODY, on a gp_Ax2 member: `myConnection1.Location()` at :264, inside GetPoint. Not a member of this class at all.
+XCAFDimTolObjects_DimensionObject	NbDescriptions	TRUE	a public member function of the class, and no bridge call reaches it
+XCAFDoc_DimTolTool	DumpJson	TRUE	a public member function of the class, and no bridge call reaches it
+XCAFDoc_DimTolTool	GetDatumOfTolerLabels	TRUE	a public member function of the class, and no bridge call reaches it
+XCAFDoc_DimTolTool	GetDatumWithObjectOfTolerLabels	TRUE	a public member function of the class, and no bridge call reaches it
+XCAFDoc_DimTolTool	GetDimTolLabels	TRUE	a public member function of the class, and no bridge call reaches it
+XCAFDoc_DimTolTool	GetID	TRUE	a public member function this bridge does not call on this class; called as another class's static
+XCAFDoc_DimTolTool	ShapeTool	TRUE	a public member function this bridge does not call on this class; called as another class's static
+
+# [batch: shapetype-pre4a-20 | detector: shapetype_census.py | tree: 90917a70]
+# A uniform random sample, seed 1001, of the 43 reported argument rows at Pass 4a's branch
+# point. Today's tree reports zero, because #1026 guarded every site.
+# The claim adjudicated is the census's own STATIC one: the argument's shape is read for its
+# type with no guard on that same argument dominating the read. Reachability from Swift is a
+# different question and is not what these rows say.
+OCCTBridge_AIS.mm:139	OCCTDimensionCreateLengthFromFaces(face1)	TRUE	the argument's ShapeType() is read with no IsNull(), occtShapeIsPresent or occtShapeIsType on that same argument before it
+OCCTBridge_AIS.mm:173	OCCTDimensionCreateAngleFromEdges(edge1)	TRUE	the argument's ShapeType() is read with no IsNull(), occtShapeIsPresent or occtShapeIsType on that same argument before it
+OCCTBridge_AIS.mm:214	OCCTDimensionCreateAngleFromFaces(face1)	TRUE	the argument's ShapeType() is read with no IsNull(), occtShapeIsPresent or occtShapeIsType on that same argument before it
+OCCTBridge_Geom2d.mm:2548	OCCTEdgePCurveParams(face)	TRUE	the argument's ShapeType() is read with no IsNull(), occtShapeIsPresent or occtShapeIsType on that same argument before it
+OCCTBridge_Geom2d.mm:2571	OCCTEdgePCurveValue(face)	TRUE	the argument's ShapeType() is read with no IsNull(), occtShapeIsPresent or occtShapeIsType on that same argument before it
+OCCTBridge_IO.mm:992	OCCTShapeGetType(shape)	TRUE	the argument's ShapeType() is read with no IsNull(), occtShapeIsPresent or occtShapeIsType on that same argument before it
+OCCTBridge_Modeling.mm:6515	OCCTLocOpeSplitDrafts(wire)	TRUE	the argument's ShapeType() is read with no IsNull(), occtShapeIsPresent or occtShapeIsType on that same argument before it
+OCCTBridge_Modeling.mm:6868	OCCTWireMakeWireFromEdges(edges)	TRUE	the argument's ShapeType() is read with no IsNull(), occtShapeIsPresent or occtShapeIsType on that same argument before it
+OCCTBridge_Modeling.mm:7263	OCCTChFi2dFilletAlgo(edge1)	TRUE	the argument's ShapeType() is read with no IsNull(), occtShapeIsPresent or occtShapeIsType on that same argument before it
+OCCTBridge_Modeling.mm:7263	OCCTChFi2dFilletAlgo(edge2)	TRUE	the argument's ShapeType() is read with no IsNull(), occtShapeIsPresent or occtShapeIsType on that same argument before it
+OCCTBridge_Modeling.mm:7396	OCCTChFi2dAnaFillet(edge1)	TRUE	the argument's ShapeType() is read with no IsNull(), occtShapeIsPresent or occtShapeIsType on that same argument before it
+OCCTBridge_Modeling.mm:7396	OCCTChFi2dAnaFillet(edge2)	TRUE	the argument's ShapeType() is read with no IsNull(), occtShapeIsPresent or occtShapeIsType on that same argument before it
+OCCTBridge_Modeling.mm:8031	OCCTLocOpeSplitByWireOnFace(wire)	TRUE	the argument's ShapeType() is read with no IsNull(), occtShapeIsPresent or occtShapeIsType on that same argument before it
+OCCTBridge_Topology.mm:2070	OCCTIntersectLineFace(face)	TRUE	the argument's ShapeType() is read with no IsNull(), occtShapeIsPresent or occtShapeIsType on that same argument before it
+OCCTBridge_Topology.mm:269	OCCTEdgeHasCurve3D(edge)	TRUE	the argument's ShapeType() is read with no IsNull(), occtShapeIsPresent or occtShapeIsType on that same argument before it
+OCCTBridge_Topology.mm:286	OCCTEdgeIsClosed3D(edge)	TRUE	the argument's ShapeType() is read with no IsNull(), occtShapeIsPresent or occtShapeIsType on that same argument before it
+OCCTBridge_Topology.mm:4061	OCCTShapeTypeString(shape)	TRUE	the argument's ShapeType() is read with no IsNull(), occtShapeIsPresent or occtShapeIsType on that same argument before it
+OCCTBridge_Topology.mm:4358	OCCTShapeIsShell(shape)	TRUE	the argument's ShapeType() is read with no IsNull(), occtShapeIsPresent or occtShapeIsType on that same argument before it
+OCCTBridge_Topology.mm:4372	OCCTShapeIsEdge(shape)	TRUE	the argument's ShapeType() is read with no IsNull(), occtShapeIsPresent or occtShapeIsType on that same argument before it
+OCCTBridge_Topology.mm:5878	OCCTShapeTypeName(shape)	TRUE	the argument's ShapeType() is read with no IsNull(), occtShapeIsPresent or occtShapeIsType on that same argument before it

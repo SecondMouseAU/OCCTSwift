@@ -1,0 +1,57 @@
+== GeomFill_SimpleBound -> CoonsAlgPatch   (Surface.mm:3379-3382)
+   1e-06    (0.57093742478753184, 4.876354388470336, 0.055878793605321067) (1.2424159125196079, 4.6720984654757327, 0.1259999524867563)
+   0.0001   (0.57093742478753184, 4.876354388470336, 0.055878793605321067) (1.2424159125196079, 4.6720984654757327, 0.1259999524867563)
+   0.01     (0.57093742478753184, 4.876354388470336, 0.055878793605321067) (1.2424159125196079, 4.6720984654757327, 0.1259999524867563)
+   1        (0.57093742478753184, 4.876354388470336, 0.055878793605321067) (1.2424159125196079, 4.6720984654757327, 0.1259999524867563)
+   -> INERT across the sweep
+      establishes: the patch never reads its bounds' tolerance, so the literal cannot be displacing anything
+
+== GeomFill_BoundWithSurf   (Surface.mm:4008)
+   1e-06    value (2.4414803544958752, 4.3633901588799846, 1.0606601717798212) normals 1 norm (0.48829607089917504, 0.8726780317759969, -0)
+   0.0001   value (2.4414803544958752, 4.3633901588799846, 1.0606601717798212) normals 1 norm (0.48829607089917504, 0.8726780317759969, -0)
+   0.01     value (2.4414803544958752, 4.3633901588799846, 1.0606601717798212) normals 1 norm (0.48829607089917504, 0.8726780317759969, -0)
+   1        value (2.4414803544958752, 4.3633901588799846, 1.0606601717798212) normals 1 norm (0.48829607089917504, 0.8726780317759969, -0)
+   -> INERT across the sweep
+      establishes: Value/HasNormals/Norm never read Tol3d or Tolang
+
+== GeomFill_DegeneratedBound   (Surface.mm:3952,3973)
+   1e-06    value (1, 2, 3) degenerated 1
+   0.0001   value (1, 2, 3) degenerated 1
+   0.01     value (1, 2, 3) degenerated 1
+   1        value (1, 2, 3) degenerated 1
+   -> INERT across the sweep
+      establishes: Value/IsDegenerated never read Tol3d or Tolang
+
+== Extrema_ExtCS / ExtPS / ExtSS TolU,TolV, wide   (Curve3D.mm:3310,3338 Surface.mm:4843-4919)
+   1e-06    CS done 1 n 1 d 36.713066047401135 | PS done 1 n 1 d 81 | SS done 1 n 1 d 121
+   0.0001   CS done 1 n 1 d 36.713066047401135 | PS done 1 n 1 d 81 | SS done 1 n 1 d 121.00000000000033
+   0.01     CS done 1 n 1 d 36.713066047401135 | PS done 1 n 1 d 81 | SS done 1 n 1 d 121.00000000000033
+   1        CS done 1 n 1 d 37.12867743989348 | PS done 1 n 1 d 81 | SS done 1 n 2 d 49
+   -> MOVES across the sweep
+      establishes: the literal IS load-bearing at 1.0, so this row's FALSE verdict cannot rest on inertness
+
+== Extrema_ExtCS / ExtPS / ExtSS TolU,TolV, narrow   (Curve3D.mm:3310,3338 Surface.mm:4843-4919)
+   1e-08    CS done 1 n 1 d 36.713066047401135 | PS done 1 n 1 d 81 | SS done 1 n 1 d 121
+   1e-07    CS done 1 n 1 d 36.713066047401135 | PS done 1 n 1 d 81 | SS done 1 n 1 d 121
+   1e-06    CS done 1 n 1 d 36.713066047401135 | PS done 1 n 1 d 81 | SS done 1 n 1 d 121
+   1e-05    CS done 1 n 1 d 36.713066047401135 | PS done 1 n 1 d 81 | SS done 1 n 1 d 121
+   -> INERT across the sweep
+      establishes: the shipped 1e-6 is bit-identical across the measured plateau 1e-8 to 1e-5, one order inside each edge, so it is a defensible default rather than a displaced parameter
+
+== CONTROL GCPnts_TangentialDeflection   (Topology.mm:145,180)
+   1e-06    points 7091000
+   0.0001   points 58157
+   0.01     points 728
+   1        points 7
+   -> MOVES across the sweep
+      establishes: the harness can detect movement, coarsely
+
+== CONTROL GeomFill_SimpleBound -> ConstrainedFilling   (Surface.mm:2180-2194)
+   1e-06    poles 107x107 degree 8x8 mid (4.7408409836559251, 5.4939706487501905, 0.74999999999999478)
+   0.0001   poles 32x37 degree 7x8 mid (4.7408409836559251, 5.4939706487501878, 0.74999999999999678)
+   0.01     poles 8x8 degree 7x7 mid (4.7432713154111195, 5.4929913207486152, 0.7504388639508015)
+   1        poles 4x4 degree 3x3 mid (4.883302575021796, 5.3189303468003404, 0.77333537760301185)
+   -> MOVES across the sweep
+      establishes: the harness can detect movement in the GeomFill_SimpleBound family specifically
+
+0 family/families did not behave as the census verdict assumes
