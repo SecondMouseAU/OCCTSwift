@@ -494,6 +494,8 @@ Creates a solid that extends infinitely in one direction from the profile. Usefu
   `BRepBuilderAPI_MakeSolid`, which this entry used to name and neither of which the bridge calls
   here; for a true half-space see
   [`halfSpace(face:referencePoint:)`](Shape-Healing.md#shapehalfspacefacereferencepoint). (#808)
+  A null profile (from `Shape.nullified`) used to crash the process inside
+  `BRepPrimAPI_MakePrism`; it answers `nil` now (#1035).
 
 ---
 

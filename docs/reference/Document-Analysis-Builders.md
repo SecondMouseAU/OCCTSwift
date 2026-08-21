@@ -1333,6 +1333,10 @@ public static func torus(center: SIMD3<Double>, axis: SIMD3<Double>,
 
 Bounding box of a 3D edge curve.
 
+A null shape (from `Shape.nullified`) used to crash the process in the `BRepAdaptor_Curve`
+constructor this builds. It is refused now and the bounds come back all zeroes, which is what
+the existing failure path already wrote (#1035, measured in `Scripts/repro/1035-unwrap-guard/`).
+
 ```swift
 public static func edge(_ edge: Shape, tolerance: Double = 0) -> AnalyticBounds
 ```

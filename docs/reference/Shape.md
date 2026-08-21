@@ -609,6 +609,10 @@ public func extruded(by vector: SIMD3<Double>) -> Shape?
   if let solid = face.extruded(by: SIMD3(0, 0, 5)) { }
   ```
 
+`BRepPrimAPI_MakePrism` dereferences the profile shape, so a null shape (from
+`Shape.nullified`) used to crash the process here. It is refused now and answers `nil`
+(#1035, measured in `Scripts/repro/1035-unwrap-guard/`).
+
 ---
 
 ### `extrudedInfinite(direction:infinite:)`
@@ -631,6 +635,9 @@ Useful for half-space cutters in booleans (e.g. slice a solid).
         let halfSpace = plane.extrudedInfinite(direction: SIMD3(0, 0, 1)),
         let trimmed = solid.subtracting(halfSpace) else { return }
   ```
+
+A null shape (from `Shape.nullified`) used to crash the process inside
+`BRepPrimAPI_MakePrism`. It is refused now and answers `nil` (#1035).
 
 ---
 

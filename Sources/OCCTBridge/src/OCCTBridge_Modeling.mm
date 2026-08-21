@@ -3640,7 +3640,7 @@ OCCTShapeRef OCCTShapeExtrudeSemiInfinite(OCCTShapeRef profile,
                                           double       dirZ,
                                           bool         semiInfinite)
 {
-  if (!profile)
+  if (!occtShapeIsPresent(profile))
     return nullptr;
   try
   {
@@ -5504,7 +5504,15 @@ OCCTWireRef OCCTWireJoin(const OCCTWireRef* wires, int32_t count)
 
     for (int32_t i = 0; i < count; i++)
     {
-      if (wires[i])
+      // #1035: the array pointer above says nothing about the element, and
+      // BRepBuilderAPI_MakeWire::Add dereferences a null TopoDS_Wire.
+      //
+      // This SKIPS a null element, where #1026 made OCCTShapeCreateCompound refuse the whole
+      // call for one. The skip is this function's own pre-existing contract for a null pointer
+      // and is left alone rather than changed under cover of a crash fix; no public Swift
+      // producer of a null-carrying Wire exists today, so nothing observes the divergence. If
+      // one ever does, the two need reconciling.
+      if (occtShapeIsPresent(wires[i]))
       {
         wireMaker.Add(wires[i]->wire);
       }
@@ -15931,7 +15939,7 @@ OCCTShapeRef OCCTShapeCreateExtrusionInfinite(OCCTShapeRef shape,
                                               double       dirZ,
                                               bool         infinite)
 {
-  if (!shape)
+  if (!occtShapeIsPresent(shape))
     return nullptr;
   try
   {
@@ -15950,7 +15958,7 @@ OCCTShapeRef OCCTShapeCreateExtrusionInfinite(OCCTShapeRef shape,
 
 OCCTShapeRef OCCTShapeCreateExtrusionShape(OCCTShapeRef shape, double dx, double dy, double dz)
 {
-  if (!shape)
+  if (!occtShapeIsPresent(shape))
     return nullptr;
   occtEnsureSignals();
   try

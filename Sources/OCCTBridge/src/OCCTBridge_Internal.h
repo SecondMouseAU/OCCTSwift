@@ -1536,6 +1536,26 @@ inline bool occtShapeIsPresent(OCCTShapeRef shape)
   return shape && !shape->shape.IsNull();
 }
 
+/// Whether `wire` is a usable wrapper: a non-null pointer carrying a non-null TopoDS_Wire.
+/// Overloaded on the wrapper type rather than given its own name, so a call site reads the same
+/// whichever of the four topology wrappers it is guarding (#1035).
+inline bool occtShapeIsPresent(OCCTWireRef wire)
+{
+  return wire && !wire->wire.IsNull();
+}
+
+/// Whether `edge` is a usable wrapper: a non-null pointer carrying a non-null TopoDS_Edge.
+inline bool occtShapeIsPresent(OCCTEdgeRef edge)
+{
+  return edge && !edge->edge.IsNull();
+}
+
+/// Whether `face` is a usable wrapper: a non-null pointer carrying a non-null TopoDS_Face.
+inline bool occtShapeIsPresent(OCCTFaceRef face)
+{
+  return face && !face->face.IsNull();
+}
+
 /// Whether `shape` is present (above) and of exactly `type`. A null shape has no type at all, so
 /// it answers false for every `type`, including TopAbs_SHAPE.
 inline bool occtShapeIsType(OCCTShapeRef shape, TopAbs_ShapeEnum type)

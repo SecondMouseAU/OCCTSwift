@@ -176,7 +176,7 @@ void OCCTCurve3DRelease(OCCTCurve3DRef c)
 
 OCCTCurve3DRef OCCTEdgeGetCurve3D(OCCTEdgeRef edge)
 {
-  if (!edge)
+  if (!occtShapeIsPresent(edge))
     return nullptr;
   try
   {
@@ -1661,7 +1661,7 @@ OCCTCurve3DRef OCCTEdgeApproxCurve(OCCTEdgeRef edge,
                                    int32_t     maxSegments,
                                    int32_t     maxDegree)
 {
-  if (!edge)
+  if (!occtShapeIsPresent(edge))
     return nullptr;
   try
   {
@@ -1692,7 +1692,7 @@ bool OCCTEdgeApproxCurveInfo(OCCTEdgeRef edge,
                              int32_t*    outDegree,
                              int32_t*    outNbPoles)
 {
-  if (!edge || !outMaxError || !outDegree || !outNbPoles)
+  if (!occtShapeIsPresent(edge) || !outMaxError || !outDegree || !outNbPoles)
     return false;
   try
   {
@@ -2443,7 +2443,7 @@ int32_t OCCTGCPntsQuasiUniform(OCCTEdgeRef _Nonnull edge,
                                double* _Nonnull params,
                                int32_t maxParams)
 {
-  if (!edge || !occtValidSampleCount(nbPoints))
+  if (!occtShapeIsPresent(edge) || !occtValidSampleCount(nbPoints))
     return 0;
   try
   {
@@ -2483,7 +2483,7 @@ int32_t OCCTGCPntsTangentialDeflection(OCCTEdgeRef _Nonnull edge,
                                        double* _Nullable coords,
                                        int32_t maxPoints)
 {
-  if (!edge)
+  if (!occtShapeIsPresent(edge))
     return 0;
   try
   {
@@ -4679,7 +4679,7 @@ OCCTCurve3DRef OCCTGCMakeHyperbola3Points(double x1,
 // here: without them nbPoints == 0 reported IsDone() with five parameters (#501).
 int32_t OCCTUniformAbscissaByCount(OCCTShapeRef edge, int32_t nbPoints, double* params)
 {
-  if (!edge || !occtValidSampleCount(nbPoints))
+  if (!occtShapeIsPresent(edge) || !occtValidSampleCount(nbPoints))
     return 0;
   try
   {
@@ -4705,7 +4705,7 @@ int32_t OCCTUniformAbscissaByCount(OCCTShapeRef edge, int32_t nbPoints, double* 
 
 int32_t OCCTUniformAbscissaByDistance(OCCTShapeRef edge, double abscissa, double* params)
 {
-  if (!edge)
+  if (!occtShapeIsPresent(edge))
     return 0;
   try
   {
@@ -4735,7 +4735,7 @@ int32_t OCCTUniformAbscissaByCountRange(OCCTShapeRef edge,
                                         double       u2,
                                         double*      params)
 {
-  if (!edge || !occtValidSampleCount(nbPoints))
+  if (!occtShapeIsPresent(edge) || !occtValidSampleCount(nbPoints))
     return 0;
   try
   {
@@ -4765,7 +4765,7 @@ int32_t OCCTUniformAbscissaByDistanceRange(OCCTShapeRef edge,
                                            double       u2,
                                            double*      params)
 {
-  if (!edge)
+  if (!occtShapeIsPresent(edge))
     return 0;
   try
   {
