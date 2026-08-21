@@ -105,6 +105,14 @@ into the same subject. That is the detector working, on two functions three line
 
 Nothing here is worth an issue, so none was filed.
 
+## Sub-kinds 1 and 4 do not report each other's fixtures
+
+Measured, not assumed, since two detectors over one corpus can quietly become one detector twice.
+Running sub-kind 1 over all 18 sub-kind 4 fixtures and sub-kind 4 over all 13 sub-kind 1 fixtures:
+neither reports a single row of the other's, in either direction. They ask different questions of
+the same bridge (what shape is the value, versus where did the value come from), and the fixtures
+show it rather than the docstrings claiming it.
+
 ## Removal matrix
 
 Per `okf/policies/prove-the-test-fails.md`. Each guard was removed from a copy of the script, one
