@@ -3,7 +3,7 @@
 # consumer-.m-reaches-the-C-bridge measurement (#967 f1, f5).
 set -u
 SDK=$(xcrun --show-sdk-path)
-R=/Users/elb/Projects/OCCTSwift/.claude/worktrees/agent-a0bcfe4cb957c2dd4
+R="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
 H="$R/Libraries/OCCT.xcframework/macos-arm64/Headers"
 W=$(mktemp -d)
 OUT="$R/Scripts/repro/967-consumer-compile/warnings-and-stdlib.txt"
@@ -59,8 +59,10 @@ cat > "$W/stdlib.mm" <<'EOF'
 #include <STEPControl_Reader.hxx>
 int probe(void) { return 0; }
 EOF
-clang++ -std=c++17 -ObjC++ -fsyntax-only -stdlib=libstdc++ -isysroot "$SDK" -I "$H" "$W/stdlib.mm" 2>&1 | head -3 | sed "s|$H/||"
-echo "exit: $?"
+out=$(clang++ -std=c++17 -ObjC++ -fsyntax-only -stdlib=libstdc++ -isysroot "$SDK" -I "$H" "$W/stdlib.mm" 2>&1)
+rc=$?
+echo "$out" | sed "s|$H/||" | grep -E "error:|warning: include path" | head -3
+echo "clang exit: $rc"
 } > "$OUT"
 
 /usr/bin/sed -i '' "s|$R|<repo>|g" "$OUT"

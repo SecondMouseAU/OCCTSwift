@@ -304,15 +304,20 @@ let package = Package(
         // path is switched off above and CI never takes it, which is what makes the guarantee hold
         // where it counts, and is a second reason not to restore it casually.
         //
-        // It protects consumers, and by a route worth stating precisely. No consumer can write
-        // `import OCCTBridge` in Swift, because the package vends one product and OCCTBridge is not
-        // it. That is NOT the same as saying the bridge is unreachable: a consumer's own .m can
-        // `#import "OCCTBridge.h"` and call these C functions, measured in #967 by compiling,
-        // linking and running one. Either way SwiftPM recompiles THIS target from source in every
+        // It protects consumers, and NOT because the bridge is unreachable to them. OCCTBridge is
+        // a target rather than a product, which reads like a wall and is not one: #967 measured a
+        // consumer Swift target writing `import OCCTBridge` and a consumer .m writing
+        // `#import "OCCTBridge.h"`, and both compile, link and run
+        // (Scripts/repro/967-consumer-compile/bridge-reach.txt). Two earlier drafts of this comment
+        // asserted the opposite, each time narrower and each time still wrong, which is the reason
+        // it is spelled out here rather than summarised.
+        //
+        // What actually does the work is that SwiftPM recompiles THIS target from source in every
         // consumer, so the module is built there too, on their toolchain, in Objective-C mode. A
         // C++ include reaching Sources/OCCTBridge/include/ therefore breaks their build as well as
         // ours, and #967 is what that looks like from the outside: `'type_traits' file not found`
-        // inside OCCT's own headers.
+        // inside OCCT's own headers. Note the reach cuts both ways: a consumer that turns on C++
+        // interop and imports OCCTBridge is a second route into these headers as C++.
         //
         // Measured, not asserted: adding `#include <Standard_Std.hxx>` to OCCTBridge.h fails
         // `swift build` here with "could not build Objective-C module 'OCCTBridge'". Turning

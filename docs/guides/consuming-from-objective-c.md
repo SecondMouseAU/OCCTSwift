@@ -11,10 +11,12 @@ A target that does `import OCCTSwift` needs no `cxxLanguageStandard`, no
 `.interoperabilityMode(.Cxx)` and no extra build settings. The C++ is sealed inside this package's
 own Objective-C++ bridge, and the module you import is a plain Swift one.
 
-Eleven Swift-only consumer shapes, all green. One of them, the by-URL row, resolves the released
-v3.0.0 tag; the other ten resolve the working checkout by path against its local
-`Libraries/OCCT.xcframework`, which is what `run.sh` does so that it needs no network. That
-distinction matters to anyone reading this because they are on the tag:
+Eleven Swift-only consumer shapes, all green, and the reader on v3.0.0 deserves to know how close
+each is to their situation. One row resolves the released tag by URL. Five resolve the working
+checkout by path against its local `Libraries/OCCT.xcframework`, which is what `run.sh` does so
+that it needs no network. The five `xcodebuild` rows resolve by URL too and take the downloaded
+artifact. So the package source under test is the branch rather than the tag on ten of the eleven,
+and the kernel is the released one on six:
 
 - Under `swift build`, a consumer package resolving OCCTSwift by URL and by local path; a library
   target that only does `import OCCTSwift`, one that calls the API, one with
@@ -98,16 +100,17 @@ colours and names rather than one merged shape. See
 [`docs/API_REFERENCE.md`](../API_REFERENCE.md) for the full surface.
 
 **That route is Swift only.** `Sources/OCCTSwift` carries no `@objc` declarations, so an
-Objective-C file cannot call `Shape` or `Document`. An Objective-C app has three options, and the
-one people reach for first is the worst of them:
+Objective-C file cannot call `Shape` or `Document`. An Objective-C app has three options. They are
+listed best first, and the third is the one people reach for first:
 
 1. **A small Swift file of your own** that does the OCCT work and exposes an `@objc` facade to the
    rest of your app. This is the only route on the supported Swift API.
 2. **A plain `.m` calling this package's own C bridge.** `#import "OCCTBridge.h"` resolves in a
    consumer target by the same transitive-header mechanism that makes OCCT's headers visible, and
-   the bridge is C, so no `.mm` and no C++17 are needed. Measured: a `.m` in a consumer target
-   calling `OCCTShapeCreateBox`, `OCCTShapeGetVolume` and `OCCTShapeRelease` compiles, links and
-   runs, printing `23.999999999999996` for a 2x3x4 box. Understand what you are taking on first:
+   the bridge is C, so no `.mm` and no C++17 are needed. Measured, alongside a Swift target writing
+   `import OCCTBridge`, which also works: both compile, link and run, printing
+   `23.999999999999996` for a 2x3x4 box, in
+   `Scripts/repro/967-consumer-compile/bridge-reach.txt`. Understand what you are taking on first:
    `OCCTBridge` is not a product of this package, it is an implementation detail, and its C surface
    carries no source-compatibility promise across releases the way the Swift API does.
 3. **The `.mm` route above**, talking to OCCT's C++ directly. Most code and it puts you on OCCT's

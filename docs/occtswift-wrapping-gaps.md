@@ -12,8 +12,9 @@ across **1,166 OCCT headers the bridge includes** (of 6,774 shipped in the xcfra
 
 Both numbers are derived, not maintained by hand: the first is
 `python3 Scripts/count-operations.py`'s `DERIVED` row, which the `count-operations` gate holds
-README.md and `docs/API_REFERENCE.md` to. It does **not** yet hold this file, which is how the
-figure here sat at 3,333 from 2026-04-13 until v2.0.0 while the real count grew past 4,200.
+README.md, `docs/API_REFERENCE.md` and, since #967, `docs/index.md` to. It still does **not** hold
+this file, which is how the figure here sat at 3,333 from 2026-04-13 until v2.0.0 while the real
+count grew past 4,200, and is why the figure above reads 4,256 against a derived 4,355 today.
 
 ### What's Wrapped
 

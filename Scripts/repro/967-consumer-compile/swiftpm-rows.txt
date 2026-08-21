@@ -1,7 +1,8 @@
 Output of run.sh with no argument, on a checkout with a local Libraries/OCCT.xcframework.
 
 Paths are normalised: the checkout prefix reads <repo> and the throwaway consumer
-package directory reads <work>. Nothing else is altered.
+package directory reads <work>. The only other additions are this header and the capture
+harness's own trailing EXIT line; no build output is altered.
 
 
 ########## row 1: Swift target, import only, no settings ##########

@@ -32,9 +32,10 @@ Usage:
     ./Scripts/count-operations.py --fix     # rewrite README + API_REFERENCE Total + docs/index.md
     ./Scripts/count-operations.py --audit   # list counted entry points with no reference doc
 
-Exit status is 1 when README's headline, API_REFERENCE's Total or docs/index.md's
-headline disagrees with the derived count, so this can gate a commit: it always could; it was the one gate script whose docstring
-never said so, which is why it read as a release-time reporting tool. Exit status is 2 for an
+Exit status is 1 when README's headline, API_REFERENCE's Total or
+docs/index.md's headline disagrees with the derived count, so this can gate a commit:
+it always could; it was the one gate script whose docstring never said so, which is
+why it read as a release-time reporting tool. Exit status is 2 for an
 unrecognised option: this script has no `--self-test`, its three sibling gates do, and CI pairs
 each of theirs with its real run, so `count-operations.py --self-test` is the natural thing to
 write when extending that list: it used to be accepted silently and run the ordinary report,
@@ -425,7 +426,8 @@ def fix(derived):
     new_s, n = re.subn(r'\*\*[\d,]+( wrapped operations\.?\*\*)',
                        rf'**{derived:,}\g<1>', s, count=1)
     if n != 1:
-        sys.exit("docs/index.md: could not find the 'N wrapped operations' headline: refusing to guess")
+        sys.exit("docs/index.md: could not find the 'N wrapped operations' headline: "
+                 "refusing to guess")
     open(index, "w", encoding="utf-8").write(new_s)
 
     print(f"  rewrote README + API_REFERENCE Total + docs/index.md -> {derived:,}")

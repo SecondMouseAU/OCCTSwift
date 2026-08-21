@@ -1,7 +1,8 @@
 Captured xcodebuild output for the Xcode rows of README.md's grid.
 
 Paths are normalised: the agent worktree prefix reads <repo> and the throwaway project and
-derived-data directories read <work>. Nothing else is altered.
+derived-data directories read <work>. The only other additions are this header and the per-row
+########## section markers the capture harness writes; no build output is altered.
 
 ########## the consumer package, macOS ##########
 ** BUILD SUCCEEDED **

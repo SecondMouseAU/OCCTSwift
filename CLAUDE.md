@@ -649,7 +649,9 @@ docs/
 ├── naming-conventions.md     # Bridge and Swift naming patterns
 ├── occt-upgrades.md          # Breaking changes per OCCT version (rc3→rc4→rc5→8.0.0 GA)
 ├── occtswift-wrapping-gaps.md # What's wrapped, what's not, and why
-└── thread-safety.md          # OCCTSerial mutex, parallel execution
+├── thread-safety.md          # OCCTSerial mutex, parallel execution
+└── (also platform-expansion.md, v2.0.0-plan.md, visualization-research.md and
+     wasm-feasibility.md: this is a map, not an inventory)
 ```
 
 ### Rules

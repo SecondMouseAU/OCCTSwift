@@ -4,7 +4,8 @@ with a plain Swift library target whose only OCCT content is `import OCCTSwift` 
 to Shape.box. run.sh resolves by path so that it needs no network; this row downloads the
 1.3 GB pinned release asset, which is why it is captured rather than scripted.
 
-Head and tail of the build. Paths are normalised to <work>; nothing else is altered.
+Head and tail of the build, elided in the middle at the [...] marker. Paths are normalised to
+<work>; no build output is otherwise altered.
 
 [188/244] Compiling OCCTSwift BRepGraph.swift
 [189/244] Compiling OCCTSwift BSplineApproxInterp.swift

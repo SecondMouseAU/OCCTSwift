@@ -19,6 +19,5 @@ TColStd_Array1OfReal.hxx:25:1: warning: TColStd_Array1OfReal.hxx is deprecated s
 
 ########## -stdlib=libstdc++ cannot reach the bridge: it fails <type_traits> outright ##########
 clang++: warning: include path for libstdc++ headers not found; pass '-stdlib=libc++' on the command line to use the libc++ standard library instead [-Wstdlibcxx-not-found]
-In file included from /var/folders/qg/vl7hjxld1dj2z8lvcrjp_klm0000gn/T/tmp.Am14oJkPQV/stdlib.mm:2:
-In file included from STEPControl_Reader.hxx:20:
-exit: 0
+Standard_Std.hxx:19:10: fatal error: 'type_traits' file not found
+clang exit: 1
