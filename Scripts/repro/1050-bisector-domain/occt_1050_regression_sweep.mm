@@ -190,6 +190,7 @@ int main()
 
   const double SCALES[] = {1e-3, 1.0, 1e3, 1e6};
   int    totalLost = 0, totalMoved = 0, totalGained = 0, totalCases = 0, totalBogus = 0;
+  int    totalBoth = 0;
   double worstOverall = 0;
 
   for (double scale : SCALES)
@@ -250,11 +251,18 @@ int main()
     totalMoved += moved;
     totalGained += gained;
     totalBogus += bogus;
+    totalBoth += both;
     worstOverall = std::max(worstOverall, worstRel);
   }
 
   printf("\n  %d cases across 4 scales: %d gained, %d lost, %d moved, %d bogus\n",
          totalCases, totalGained, totalLost, totalMoved, totalBogus);
+  // `lost` and `moved` can only fire where the SHIPPED body found a crossing, so their denominator
+  // is not the case count. Printed rather than left to a README footnote, because the headline
+  // above reads as though all four figures rest on the same 16000 and they do not.
+  printf("  gained and bogus are over all %d; lost and moved can only fire where the shipped body\n"
+         "  found a crossing, which is %d of them\n",
+         totalCases, totalBoth + totalLost);
   printf("  worst relative equidistance error over every gained crossing: %.3g\n", worstOverall);
   printf("\n  lost, moved and bogus must all be 0. gained is the fix doing its job: every one is a\n");
   printf("  crossing the shipped window discarded and returned as an empty array, and each has been\n");
