@@ -95,8 +95,10 @@ Every median sits between 0.48 and 0.62. The **within**-bound run-to-run spread 
 (`2 * input span + 1`, 0.47 to 2.56) and dwarfs every **between**-bound difference, so the
 between-bound numbers are scheduler noise and not a cost signal. In this sample the widest bound is
 not the slowest, which is the point: if width cost anything the ordering would be stable, and it is
-not. A later run on a quieter machine put every bound between 0.32 and 0.39, below this table's
-lowest per-bound minimum, and reordered them.
+not. Re-running the committed probe on a quieter machine reorders them and puts every bound below
+this table's lowest per-bound minimum, which makes the same point from the other side. No figures
+from that run are quoted: its transcript is not committed, and this file has already deleted one
+number for exactly that reason. Re-run `occt_1050_bisector_domain.mm` and read PART 2 for your own.
 
 A draft of this paragraph read the sample the other way, as "the fix has the lowest median of the
 six, and the shipped narrow window the highest". That is true of these nine runs and is exactly the
@@ -175,10 +177,13 @@ removed, so the specific pair is gone and only the axis-aligned figure, which
 
 Two fixtures in PART 3 have a closed-form crossing that no bound finds, both `near-parallel` rows.
 (Drafts of this line said three, and the probe's own header and body said "three" and "One row", so
-the same count was stated three times with three values. Counted off PART 3's ten rows: three rows
-are found by five bounds, the 10.9-degree row by three, the two `near-parallel` rows by none, and
-the remaining four have no closed-form crossing to miss at all, being one parallel pair, two
-coincident pairs and one collinear set. A draft of this parenthesis said "the two parallel rows and
+the same count was stated three times with three values. Counted off PART 3's ten rows: the
+parameter-50 and parameter-90 rows are found by five bounds, the parameter-150 row by **four**, the
+10.9-degree row by three, the two `near-parallel` rows by none, and the remaining four have no
+closed-form crossing to miss at all, being one parallel pair, two coincident pairs and one collinear
+set. The parameter-150 row is four rather than five because the shipped `+-100` column misses it,
+which is this issue's headline defect, so folding it into the fives erases the row the fix exists
+for. A draft of this parenthesis said "the two parallel rows and
 the two collinear/coincident pairs", which totals four correctly while naming them wrong, in the
 sentence that claims to have counted them.) PART 4 walks the crossing
 out along the same half-line while holding the four points inside a box about 41 across, and reports
@@ -352,9 +357,10 @@ What each row establishes, given the sets overlap:
 - **C** fails a control that A and B both pass, which is the `Standard_DomainError` reaching
   `catch (...)` and turning every input into an empty result. That extra failure is what separates
   "too narrow" from "refuses everything".
-- **D** is the only row that moves the ray tests, and it moves them in both directions: the
-  as-written ordering starts finding `(5, 5)` where it must find nothing, and the reversed ordering
-  stops finding it.
+- **D** is the only row that moves the ray tests in **both** directions: the as-written ordering
+  starts finding `(5, 5)` where it must find nothing, and the reversed ordering stops finding it.
+  C reaches two of the three as well, but only by refusing every input, which is a different thing
+  from flipping a ray and is why D is the row that isolates the ray.
 - **E** and **F** have identical failure sets, so the second adds no discrimination over the first.
   It is kept and labelled as adding none, because the question it answers ("is this input inert?")
   was answered wrongly once already and the answer is worth being able to re-derive.
@@ -377,9 +383,11 @@ issue is why every count in this file now names what was measured and over what.
 the suite rather than counted as coverage. `parallelBisectorsReportNothing`,
 `crossingOnDeadSideReportsNothing` and `coincidentPointsReturnNothing` are provably insensitive to
 the bound: `Bisector_Inter::Perform` re-clips any domain to `max(IntervalFirst, MinDomain)`, so no
-domain choice can produce a point where the half-lines do not meet (a symmetric
-`[-LastParameter, LastParameter]` domain still yields zero on both), and the coincident-points case
-throws in `gp_Vec2d::Normalize()` before a domain is built. They keep "reported nothing" meaningful,
+domain choice can produce a point where the half-lines do not meet, and the coincident-points case
+throws before a domain is built. The re-clipping is read from the kernel source rather than
+measured; a symmetric `[-LastParameter, LastParameter]` domain was checked in review and does still
+yield zero on both, but no committed probe here builds one, so that figure is corroboration from
+outside this directory rather than evidence in it. They keep "reported nothing" meaningful,
 which is the distinction the whole issue turns on, so they are worth having. Labelling them is the
 point: an unlabelled test that cannot fail looks exactly like coverage.
 
@@ -428,9 +436,12 @@ and the real thrower.
 
 One thing this probe found that is **not** fixed and is pre-existing: at a pair separation of `1e-6`
 the crossing comes back as `(-50, 0)` where the true value is `(-50, 5e-7)`, a 100% relative error in
-`y`, from the two hardcoded `1e-6` tolerances the domain constructor still carries. The shipped
-`[-100, 100]` body returns the same, so it is neither caused nor worsened here, and it is a
-different literal from the one #1050 is about. Recorded rather than folded in.
+`y`, from the two hardcoded `1e-6` tolerances the domain constructor still carries, which are a
+different literal from the one #1050 is about. `occt_1050_limits.mm` builds only the fixed body, so
+it measures the symptom and not the comparison: the claim that the shipped `[-100, 100]` body
+returns the same was checked in review with a two-column probe and holds, but nothing in this
+directory reproduces it. Treat it as pre-existing on that basis, and rebuild the two-column probe
+before relying on it. Recorded rather than folded in.
 
 ## Sibling sites
 

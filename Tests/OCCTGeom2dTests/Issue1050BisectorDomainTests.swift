@@ -64,7 +64,9 @@ struct Issue1050BisectorDomainTests {
         }
     }
 
-    /// Regression guard. Two parallel bisectors have no solution at all, and must report none.
+    /// Regression guard.
+    ///
+    /// Two parallel bisectors have no solution at all, and must report none.
     ///
     /// Both pairs are vertical, so both bisectors are horizontal lines, y=5 and y=50, and the
     /// closed-form solve is singular. Insensitive to the bound by measurement: all six injections
@@ -78,7 +80,9 @@ struct Issue1050BisectorDomainTests {
         #expect(hits.isEmpty)
     }
 
-    /// Regression guard. The two bisector lines cross, but not on the half-lines OCCT keeps.
+    /// Regression guard.
+    ///
+    /// The two bisector lines cross, but not on the half-lines OCCT keeps.
     ///
     /// A stronger miss than the parallel one: the closed form has a solution here, at about
     /// (10000, 5), and it is still correct to report nothing, because the first bisector's
@@ -135,12 +139,17 @@ struct Issue1050BisectorDomainTests {
         #expect(bisectorIntersections(a: (4, 0), b: (0, 0), c: (2, 3), d: (4, 0)).isEmpty)
     }
 
-    /// Regression guard. A pair of coincident points has no bisector, and the bridge refuses
-    /// rather than crashing.
+    /// Regression guard.
+    ///
+    /// A pair of coincident points has no bisector, and the bridge refuses rather than crashing.
     ///
     /// `gp_Vec2d::Normalize()` raises `Standard_ConstructionError` on the zero-length perpendicular
     /// before any domain is built, so the bound is never reached and this cannot fail under any
     /// injection. It is here to record that the refusal survives the change.
+    ///
+    /// Exactly coincident is the extreme of a range, and the mechanism differs across it: a merely
+    /// close pair is refused by `GccAna_NoSolution` from about `1e-10`, long before the
+    /// normalisation notices anything. See `docs/reference/Shape-Recognition.md`, cause 1.
     @Test("Coincident points return no intersection rather than crashing")
     func coincidentPointsReturnNothing() {
         #expect(bisectorIntersections(a: (5, 5), b: (5, 5), c: (-55, 0), d: (-45, 0)).isEmpty)
