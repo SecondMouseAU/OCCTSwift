@@ -32,7 +32,7 @@ question about the metric rather than a defect in it. It screens, it does not ad
 Usage:
     occt-class-coverage.py <Class> [<Class> ...]
 """
-import re, os, sys, collections
+import re, os, sys
 H="Libraries/OCCT.xcframework/macos-arm64/Headers"
 BR="Sources/OCCTBridge/src"
 
