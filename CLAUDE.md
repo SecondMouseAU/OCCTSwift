@@ -589,7 +589,10 @@ not chosen: `python3 Scripts/count-operations.py`.
    `docs/API_REFERENCE.md` and `docs/index.md`. It is a gate; never hand-edit a total to match.
    `docs/index.md` was added to it by #967, after sitting at 4,339 against a derived 4,355 for
    want of anything reading it, which is the same failure the gate exists to prevent in the other
-   two files.
+   two files. **A fourth headline is still outside the gate**, in
+   `docs/occtswift-wrapping-gaps.md`, which carried 4,256 against the same 4,355 and says so about
+   itself. Three of four is not the class closed, and that file is the place to look first when
+   this paragraph next reads as though it were.
 7. `git tag vX.Y.Z`, `gh release create`.
 
 ### Adding a wrapped operation
@@ -627,8 +630,12 @@ OCCT class first with `/ground-truth`, and put the probe under `Scripts/repro/<i
 
 ```
 docs/
+├── index.md                  # Docs-site home; carries an operation count the gate checks (#967)
 ├── API_REFERENCE.md          # Full operation-by-OCCT-class mapping (generated from README)
 ├── CHANGELOG.md              # Release history (every version, concise)
+├── SEMVER.md                 # Version-impact ledger, assembled at release
+├── ecosystem.md              # Package family map and layering
+├── reference/                # Per-type API reference pages
 ├── architecture/overview.md  # Three-layer design, memory model, file layout
 ├── guides/
 │   ├── adding-features.md    # Step-by-step: bridge header → impl → Swift → test

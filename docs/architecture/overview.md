@@ -153,10 +153,18 @@ Future consideration: Swift `throws` for explicit error handling.
 ### 6. The Bridge Is Internal: No Frozen C ABI
 
 `OCCTBridge` is a *target*, not a product. `Package.swift` declares exactly one product,
-`.library(name: "OCCTSwift")`, so no external package can `import OCCTBridge` or link its symbols
-through SwiftPM. The C surface in `OCCTBridge.h` therefore carries no compatibility promise of its
-own: renaming, merging, or deleting a bridge function is an internal refactor, and the only
-stability contract is the Swift API's, governed by [`SEMVER.md`](../SEMVER.md).
+`.library(name: "OCCTSwift")`, so no external package can write `import OCCTBridge` in Swift.
+
+**It can still reach the symbols, and the second half of that sentence used to deny it.** Measured
+in #967: a consumer's own `.m` can `#import "OCCTBridge.h"` and call `OCCTShapeCreateBox`,
+`OCCTShapeGetVolume` and `OCCTShapeRelease`, and it compiles, links and runs. The public headers
+travel to a consumer's include path along with the target, and the symbols are in what they link.
+
+Nothing about the contract changes, and this is why it is worth being exact rather than
+reassuring. The C surface in `OCCTBridge.h` carries no compatibility promise of its own: renaming,
+merging, or deleting a bridge function is an internal refactor, and the only stability contract is
+the Swift API's, governed by [`SEMVER.md`](../SEMVER.md). A consumer taking the C route is opting
+out of that, deliberately, rather than being prevented from it by the package.
 
 Two practical consequences:
 

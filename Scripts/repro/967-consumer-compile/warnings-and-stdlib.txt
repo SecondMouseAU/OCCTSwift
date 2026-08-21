@@ -1,0 +1,24 @@
+Figures the guide quotes that run.sh's rows do not cover. Regenerate with
+  bash Scripts/repro/967-consumer-compile/measure-warnings.sh
+Paths are normalised to <repo>; nothing else is altered.
+
+########## -Wdeprecated-declarations: warnings follow what YOU write ##########
+include_only.mm: 0
+uses_legacy.mm: 5
+uses_legacy.mm -DOCCT_NO_DEPRECATED: 0
+
+########## -W#pragma-messages: some OCCT headers warn on the include alone ##########
+include <STEPControl_Reader.hxx> and nothing else: 0 warning(s)
+  with -DOCCT_NO_DEPRECATED: 0
+include <TopTools_ListOfShape.hxx> and nothing else: 1 warning(s)
+TopTools_ListOfShape.hxx:26:1: warning: TopTools_ListOfShape.hxx is deprecated since OCCT 8.0.0. Use NCollection types directly. [-W#pragma-messages]
+  with -DOCCT_NO_DEPRECATED: 0
+include <TColStd_Array1OfReal.hxx> and nothing else: 1 warning(s)
+TColStd_Array1OfReal.hxx:25:1: warning: TColStd_Array1OfReal.hxx is deprecated since OCCT 8.0.0. Use NCollection_Array1<double> directly. [-W#pragma-messages]
+  with -DOCCT_NO_DEPRECATED: 0
+
+########## -stdlib=libstdc++ cannot reach the bridge: it fails <type_traits> outright ##########
+clang++: warning: include path for libstdc++ headers not found; pass '-stdlib=libc++' on the command line to use the libc++ standard library instead [-Wstdlibcxx-not-found]
+In file included from /var/folders/qg/vl7hjxld1dj2z8lvcrjp_klm0000gn/T/tmp.Am14oJkPQV/stdlib.mm:2:
+In file included from STEPControl_Reader.hxx:20:
+exit: 0

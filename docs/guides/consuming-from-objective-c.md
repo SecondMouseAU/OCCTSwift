@@ -11,11 +11,15 @@ A target that does `import OCCTSwift` needs no `cxxLanguageStandard`, no
 `.interoperabilityMode(.Cxx)` and no extra build settings. The C++ is sealed inside this package's
 own Objective-C++ bridge, and the module you import is a plain Swift one.
 
-Measured on v3.0.0, ten Swift-only consumer shapes, all green:
+Eleven Swift-only consumer shapes, all green. One of them, the by-URL row, resolves the released
+v3.0.0 tag; the other ten resolve the working checkout by path against its local
+`Libraries/OCCT.xcframework`, which is what `run.sh` does so that it needs no network. That
+distinction matters to anyone reading this because they are on the tag:
 
 - Under `swift build`, a consumer package resolving OCCTSwift by URL and by local path; a library
-  target, a library target with `.interoperabilityMode(.Cxx)`, a library target touching `Mesh`,
-  `Surface`, `Curve3D` and `Document`, and an executable target.
+  target that only does `import OCCTSwift`, one that calls the API, one with
+  `.interoperabilityMode(.Cxx)`, one touching `Mesh`, `Surface`, `Curve3D` and `Document`, and an
+  executable target.
 - Under `xcodebuild`, that consumer package on macOS, generic iOS and iOS Simulator.
 - Under `xcodebuild`, a real Xcode macOS app project with the package as a dependency, both with
   Xcode's default `CLANG_CXX_LIBRARY` and forced to `libstdc++`. Both are green. That the override
@@ -93,20 +97,34 @@ try shape.writeSTL(to: stlURL, deflection: 0.05)
 colours and names rather than one merged shape. See
 [`docs/API_REFERENCE.md`](../API_REFERENCE.md) for the full surface.
 
-**That route is Swift only, and this page would otherwise imply otherwise.** `Sources/OCCTSwift`
-carries no `@objc` declarations, and the package vends exactly one library product, `OCCTSwift`, so
-`OCCTBridge` is not something a consumer can import either. An Objective-C file cannot call `Shape`
-or `Document`. If your app is Objective-C, the two options are a small Swift file of your own that
-does the OCCT work and exposes an `@objc` facade to the rest of your app, or the `.mm` route above
-talking to OCCT's C++ directly. The `.mm` route is more code and puts you on OCCT's own API rather
-than this one, which is the trade this page exists to make visible rather than to decide for you.
+**That route is Swift only.** `Sources/OCCTSwift` carries no `@objc` declarations, so an
+Objective-C file cannot call `Shape` or `Document`. An Objective-C app has three options, and the
+one people reach for first is the worst of them:
+
+1. **A small Swift file of your own** that does the OCCT work and exposes an `@objc` facade to the
+   rest of your app. This is the only route on the supported Swift API.
+2. **A plain `.m` calling this package's own C bridge.** `#import "OCCTBridge.h"` resolves in a
+   consumer target by the same transitive-header mechanism that makes OCCT's headers visible, and
+   the bridge is C, so no `.mm` and no C++17 are needed. Measured: a `.m` in a consumer target
+   calling `OCCTShapeCreateBox`, `OCCTShapeGetVolume` and `OCCTShapeRelease` compiles, links and
+   runs, printing `23.999999999999996` for a 2x3x4 box. Understand what you are taking on first:
+   `OCCTBridge` is not a product of this package, it is an implementation detail, and its C surface
+   carries no source-compatibility promise across releases the way the Swift API does.
+3. **The `.mm` route above**, talking to OCCT's C++ directly. Most code and it puts you on OCCT's
+   own API rather than this one.
+
+The page lists all three rather than the first because option 2 is what the `.m` file in #967 was
+one `#import` away from, and "you cannot do this from Objective-C" would have been wrong.
 
 ## Mac Catalyst
 
 There is no Mac Catalyst slice in `OCCT.xcframework`, so a Catalyst destination fails at build
-planning with `no library for this platform was found in OCCT.xcframework`. Unlike visionOS and
-tvOS, which the same message describes and which `Scripts/build-occt.sh` can produce under
-`BUILD_ALL_PLATFORMS=1`, there is no local-rebuild route: that script has no Catalyst target at all.
+planning with `no library for this platform was found in OCCT.xcframework`. visionOS and tvOS are
+also absent from the shipped xcframework, but they differ in the one way that matters:
+`Scripts/build-occt.sh` can produce slices for them under `BUILD_ALL_PLATFORMS=1`, and it has no
+Catalyst target at all, so Catalyst has no local-rebuild route. Neither was measured here; the
+reproducer's own transcript shows those two destinations failing earlier still, for want of the
+platform being installed on the measuring machine.
 Plain macOS and iOS are unaffected. See the platform table in
 [README](https://github.com/SecondMouseAU/OCCTSwift#supported-platforms).
 

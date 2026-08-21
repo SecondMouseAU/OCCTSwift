@@ -32,8 +32,8 @@ Usage:
     ./Scripts/count-operations.py --fix     # rewrite README + API_REFERENCE Total + docs/index.md
     ./Scripts/count-operations.py --audit   # list counted entry points with no reference doc
 
-Exit status is 1 when README's headline, API_REFERENCE's Total or docs/index.md's headline
-disagrees with the derived count, so this can gate a commit: it always could; it was the one gate script whose docstring
+Exit status is 1 when README's headline, API_REFERENCE's Total or docs/index.md's
+headline disagrees with the derived count, so this can gate a commit: it always could; it was the one gate script whose docstring
 never said so, which is why it read as a release-time reporting tool. Exit status is 2 for an
 unrecognised option: this script has no `--self-test`, its three sibling gates do, and CI pairs
 each of theirs with its real run, so `count-operations.py --self-test` is the natural thing to
@@ -360,7 +360,7 @@ def read_stated():
     readme = os.path.join(ROOT, "README.md")
     apiref = os.path.join(ROOT, "docs/API_REFERENCE.md")
     index = os.path.join(ROOT, "docs/index.md")
-    r = re.search(r'\*\*([\d,]+) wrapped operations\*\*', open(readme, encoding="utf-8").read())
+    r = re.search(r'\*\*([\d,]+) wrapped operations\.?\*\*', open(readme, encoding="utf-8").read())
     a = re.search(r'^\|\s*\*\*Total\*\*\s*\|\s*\*\*([\d,]+)\*\*\s*\|', open(apiref, encoding="utf-8").read(), re.M)
     # The period is optional deliberately: docs/index.md writes it inside the bold and README
     # outside, and a regex that insisted on one spelling would turn a punctuation edit into a
@@ -475,9 +475,22 @@ def main():
 
     readme_n, apiref_n, index_n = read_stated()
     rowsum, rowcount = category_row_sum()
-    print(f"  README headline        {readme_n:>5}" + ("  ✓" if readme_n == derived else f"  ✗ (should be {derived})"))
-    print(f"  API_REFERENCE Total    {apiref_n:>5}" + ("  ✓" if apiref_n == derived else f"  ✗ (should be {derived})"))
-    print(f"  docs/index.md headline {index_n:>5}" + ("  ✓" if index_n == derived else f"  ✗ (should be {derived})"))
+    def stated(label, n):
+        # A reworded headline makes the regex miss, and `n` is then None. Formatting None raises
+        # TypeError, which reports a crash where the script has in fact found something worth
+        # saying, so say it.
+        shown = "  n/a" if n is None else f"{n:>5}"
+        if n is None:
+            verdict = f"  ✗ (headline not found: refusing to guess, expected {derived})"
+        elif n == derived:
+            verdict = "  ✓"
+        else:
+            verdict = f"  ✗ (should be {derived})"
+        print(f"  {label:<22}{shown}{verdict}")
+
+    stated("README headline", readme_n)
+    stated("API_REFERENCE Total", apiref_n)
+    stated("docs/index.md headline", index_n)
     print(f"  sum of {rowcount} category rows  {rowsum:>5}   (illustrative categorisation; see the note in API_REFERENCE)")
 
     if mode == "--fix":

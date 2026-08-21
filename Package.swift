@@ -304,8 +304,11 @@ let package = Package(
         // path is switched off above and CI never takes it, which is what makes the guarantee hold
         // where it counts, and is a second reason not to restore it casually.
         //
-        // It protects consumers even though no consumer can import OCCTBridge: the package vends
-        // one product and OCCTBridge is not it. SwiftPM recompiles THIS target from source in every
+        // It protects consumers, and by a route worth stating precisely. No consumer can write
+        // `import OCCTBridge` in Swift, because the package vends one product and OCCTBridge is not
+        // it. That is NOT the same as saying the bridge is unreachable: a consumer's own .m can
+        // `#import "OCCTBridge.h"` and call these C functions, measured in #967 by compiling,
+        // linking and running one. Either way SwiftPM recompiles THIS target from source in every
         // consumer, so the module is built there too, on their toolchain, in Objective-C mode. A
         // C++ include reaching Sources/OCCTBridge/include/ therefore breaks their build as well as
         // ours, and #967 is what that looks like from the outside: `'type_traits' file not found`

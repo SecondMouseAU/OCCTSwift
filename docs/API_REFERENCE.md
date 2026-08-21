@@ -20,7 +20,7 @@ are data, not entry points, and are not counted; nor are types or enum cases, wh
 but not called.
 
 **The `Total` below is derived, not hand-maintained.** Run `Scripts/count-operations.py` (`--fix`
-rewrites both this Total and the README headline; exit 1 if they disagree). Hand-maintained totals in
+rewrites this Total, the README headline and `docs/index.md`'s; exit 1 if any disagree). Hand-maintained totals in
 two files desynced by 882 across 11 releases before this rule existed, see
 [#289](https://github.com/SecondMouseAU/OCCTSwift/issues/289).
 
