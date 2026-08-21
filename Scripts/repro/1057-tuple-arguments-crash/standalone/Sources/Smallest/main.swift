@@ -366,6 +366,111 @@ func v46(_ a: (String, SIMD16<Float>)) async throws {
 // them (cells D and P) but under a different shape, and a table that mixes the two is a table
 // nobody can check.
 
+// V53 to V56 probe the edge of "an aggregate holding a 32-byte vector". A pre-PR review measured
+// `(String, simd_double3x3)` clean, which the rule as first written says should crash. These are
+// the same shapes without importing `simd`, so `Smallest` stays dependency-free.
+
+struct Vec1: Sendable { var a: SIMD3<Double> }
+struct Vec2: Sendable { var a: SIMD3<Double>; var b: SIMD3<Double> }
+struct Vec3: Sendable { var a: SIMD3<Double>; var b: SIMD3<Double>; var c: SIMD3<Double> }
+
+func v53(_ a: (String, Vec1)) async throws {
+    @Sendable func local(_ a: (String, Vec1), _: isolated (any Actor)? = Iso.shared) async throws {
+        precondition(!a.0.isEmpty)
+    }
+    try await local(a)
+}
+
+func v54(_ a: (String, Vec2)) async throws {
+    @Sendable func local(_ a: (String, Vec2), _: isolated (any Actor)? = Iso.shared) async throws {
+        precondition(!a.0.isEmpty)
+    }
+    try await local(a)
+}
+
+func v55(_ a: (String, Vec3)) async throws {
+    @Sendable func local(_ a: (String, Vec3), _: isolated (any Actor)? = Iso.shared) async throws {
+        precondition(!a.0.isEmpty)
+    }
+    try await local(a)
+}
+
+func v56(_ a: (String, (SIMD3<Double>, SIMD3<Double>))) async throws {
+    @Sendable func local(
+        _ a: (String, (SIMD3<Double>, SIMD3<Double>)), _: isolated (any Actor)? = Iso.shared
+    ) async throws { precondition(!a.0.isEmpty) }
+    try await local(a)
+}
+
+// V57: an integer vector. The census script's first regex only knew about Double and Float
+// element types, and the same pre-PR review measured this crashing.
+func v57(_ a: (String, SIMD4<Int64>)) async throws {
+    @Sendable func local(
+        _ a: (String, SIMD4<Int64>), _: isolated (any Actor)? = Iso.shared
+    ) async throws { precondition(!a.0.isEmpty) }
+    try await local(a)
+}
+
+// V55 being clean while V53 and V54 crash says the aggregate's total size decides it, not just
+// "contains a 32-byte vector". V58 to V62 walk the parameter size up in 8-byte steps to find where
+// it flips, and each prints its own `MemoryLayout` so the table labels itself.
+
+struct Pad1: Sendable { var a: SIMD3<Double>; var b: SIMD3<Double>; var p0: Double }
+struct Pad2: Sendable { var a: SIMD3<Double>; var b: SIMD3<Double>; var p0, p1: Double }
+struct Pad3: Sendable { var a: SIMD3<Double>; var b: SIMD3<Double>; var p0, p1, p2: Double }
+struct Pad4: Sendable { var a: SIMD3<Double>; var b: SIMD3<Double>; var p0, p1, p2, p3: Double }
+
+func v58(_ a: (String, Pad1)) async throws {
+    @Sendable func local(_ a: (String, Pad1), _: isolated (any Actor)? = Iso.shared) async throws {
+        precondition(!a.0.isEmpty)
+    }
+    try await local(a)
+}
+
+func v59(_ a: (String, Pad2)) async throws {
+    @Sendable func local(_ a: (String, Pad2), _: isolated (any Actor)? = Iso.shared) async throws {
+        precondition(!a.0.isEmpty)
+    }
+    try await local(a)
+}
+
+func v60(_ a: (String, Pad3)) async throws {
+    @Sendable func local(_ a: (String, Pad3), _: isolated (any Actor)? = Iso.shared) async throws {
+        precondition(!a.0.isEmpty)
+    }
+    try await local(a)
+}
+
+func v61(_ a: (String, Pad4)) async throws {
+    @Sendable func local(_ a: (String, Pad4), _: isolated (any Actor)? = Iso.shared) async throws {
+        precondition(!a.0.isEmpty)
+    }
+    try await local(a)
+}
+
+// V58 to V61 are clean at 88 bytes and up while V54 and V47 crash at 80, so the aggregate's total
+// size looks like the second half of the rule. V63 and V64 test that against vector *count*: one
+// vector at 80 bytes, and one vector at 96.
+
+struct One80: Sendable { var a: SIMD3<Double>; var p0, p1, p2, p3: Double }
+struct One96: Sendable { var a: SIMD3<Double>; var p0, p1, p2, p3, p4: Double }
+
+func v63(_ a: (String, One80)) async throws {
+    @Sendable func local(_ a: (String, One80), _: isolated (any Actor)? = Iso.shared) async throws {
+        precondition(!a.0.isEmpty)
+    }
+    try await local(a)
+}
+
+func v64(_ a: (String, One96)) async throws {
+    @Sendable func local(_ a: (String, One96), _: isolated (any Actor)? = Iso.shared) async throws {
+        precondition(!a.0.isEmpty)
+    }
+    try await local(a)
+}
+
+func size<T>(_ t: T.Type) -> String { "size=\(MemoryLayout<T>.size) stride=\(MemoryLayout<T>.stride)" }
+
 func v51(_ a: (String, Int)) async throws {
     @Sendable func local(_ a: (String, Int), _: isolated (any Actor)? = Iso.shared) async throws {
         precondition(!a.0.isEmpty)
@@ -485,5 +590,52 @@ await variant(50, "V26 with a literal nil isolation passed explicitly") { try aw
 
 await variant(51, "V26 with (String, Int)") { try await v51(("+X", 1)) }
 await variant(52, "V26 with (String, Double)") { try await v52(("+X", 1.0)) }
+await variant(53, "V26 with a struct of ONE SIMD3<Double>") {
+    try await v53(("+X", Vec1(a: SIMD3(1, 0, 0))))
+}
+await variant(54, "V26 with a struct of TWO SIMD3<Double>") {
+    try await v54(("+X", Vec2(a: SIMD3(1, 0, 0), b: SIMD3(0, 1, 0))))
+}
+await variant(55, "V26 with a struct of THREE SIMD3<Double>, the simd_double3x3 shape") {
+    try await v55(("+X", Vec3(a: SIMD3(1, 0, 0), b: SIMD3(0, 1, 0), c: SIMD3(0, 0, 1))))
+}
+await variant(56, "V26 with a nested tuple of two SIMD3<Double>") {
+    try await v56(("+X", (SIMD3(1, 0, 0), SIMD3(0, 1, 0))))
+}
+await variant(57, "V26 with SIMD4<Int64>, 32 bytes of integers") {
+    try await v57(("+X", SIMD4(1, 0, 0, 0)))
+}
+await variant(58, "V26, two vectors + 1 Double, \(size((String, Pad1).self))") {
+    try await v58(("+X", Pad1(a: SIMD3(1, 0, 0), b: SIMD3(0, 1, 0), p0: 0)))
+}
+await variant(59, "V26, two vectors + 2 Doubles, \(size((String, Pad2).self))") {
+    try await v59(("+X", Pad2(a: SIMD3(1, 0, 0), b: SIMD3(0, 1, 0), p0: 0, p1: 0)))
+}
+await variant(60, "V26, two vectors + 3 Doubles, \(size((String, Pad3).self))") {
+    try await v60(("+X", Pad3(a: SIMD3(1, 0, 0), b: SIMD3(0, 1, 0), p0: 0, p1: 0, p2: 0)))
+}
+await variant(61, "V26, two vectors + 4 Doubles, \(size((String, Pad4).self))") {
+    try await v61(("+X", Pad4(a: SIMD3(1, 0, 0), b: SIMD3(0, 1, 0), p0: 0, p1: 0, p2: 0, p3: 0)))
+}
+await variant(63, "V26, ONE vector padded to \(size((String, One80).self))") {
+    try await v63(("+X", One80(a: SIMD3(1, 0, 0), p0: 0, p1: 0, p2: 0, p3: 0)))
+}
+await variant(64, "V26, ONE vector padded to \(size((String, One96).self))") {
+    try await v64(("+X", One96(a: SIMD3(1, 0, 0), p0: 0, p1: 0, p2: 0, p3: 0, p4: 0)))
+}
+await variant(62, "layouts of every crashing and clean parameter type") {
+    print("")
+    print("  (String, SIMD3<Double>)                  \(size((String, SIMD3<Double>).self))  crash")
+    print("  (String, SIMD4<Int64>)                   \(size((String, SIMD4<Int64>).self))  crash")
+    print("  (String, SIMD16<Float>)                  \(size((String, SIMD16<Float>).self))  crash")
+    print("  (String, SIMD3<Double>, SIMD3<Double>)   \(size((String, SIMD3<Double>, SIMD3<Double>).self))  crash")
+    print("  (String, Vec1)                           \(size((String, Vec1).self))  crash")
+    print("  (String, Vec2)                           \(size((String, Vec2).self))  crash")
+    print("  (String, Vec3)                           \(size((String, Vec3).self))  clean")
+    print("  (String, SIMD2<Double>)                  \(size((String, SIMD2<Double>).self))  clean")
+    print("  (String, Size32Align16)                  \(size((String, Size32Align16).self))  clean")
+    print("  (SIMD3<Double>, SIMD3<Double>)           \(size((SIMD3<Double>, SIMD3<Double>).self))  clean")
+    print("  ", terminator: "")
+}
 
 print("all requested variants finished")

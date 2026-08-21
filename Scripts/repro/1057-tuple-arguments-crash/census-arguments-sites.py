@@ -2,15 +2,22 @@
 """#1057: enumerate every `@Test(..., arguments:)` site under Tests/ and flag the ones whose
 element type could hit the toolchain defect.
 
-A `@Test(arguments:)` crashes when its element type is one aggregate (tuple or struct) holding
-both a reference-counted member and a builtin vector of 32 bytes or more. Measured grid and
-narrowing: Scripts/repro/1057-tuple-arguments-crash/README.md.
+A `@Test(arguments:)` can crash when its element type is one aggregate (tuple or struct) holding
+both a reference-counted member and a builtin vector of 32 bytes or more. Both are necessary:
+removing either gives a clean run, measured 3/3 per case. Neither pair is *sufficient*, and this
+script deliberately does not pretend otherwise: `(String, Vec3)` (three `SIMD3<Double>`, 112 bytes)
+and `(String, One80)` (one `SIMD3<Double>` plus four `Double`s, 80 bytes) both satisfy the pair and
+both run clean. Where exactly the cut falls is not characterised. See
+Scripts/repro/1057-tuple-arguments-crash/README.md for the measured table.
 
-This is a CENSUS, not a gate. It exits 0 whether or not it finds anything, because deciding
-whether a named type is reference-counted or carries a wide vector needs a human to open the type,
-which is exactly what the one interesting row here needed (`ThreadProfile` stores an `[Vertex]`
-and nothing wider than a word, so it is clean). Its job is to make the site list re-derivable
-instead of re-grepped.
+So AT RISK here means "worth opening", not "will crash", and the over-prediction is the direction a
+census should err in.
+
+This is a CENSUS, not a gate. It exits 0 whether or not it finds anything, because deciding whether
+a *named* type is reference-counted or carries a wide vector needs somebody to open the type, which
+is what the one interesting row in this tree needed (`ThreadProfile` stores an `[Vertex]` and
+nothing wider than a word, so it is clean). Its job is to make the site list re-derivable instead of
+re-grepped.
 
     python3 Scripts/repro/1057-tuple-arguments-crash/census-arguments-sites.py
     python3 Scripts/repro/1057-tuple-arguments-crash/census-arguments-sites.py --self-test
@@ -22,12 +29,25 @@ import os
 import re
 import sys
 
-# A 32-byte-or-wider builtin vector. SIMD2<Double>, SIMD4<Float> and everything narrower are
-# measured clean (grid cells J and L, variants V31 and V42), so they are deliberately not here.
-WIDE_VECTOR = re.compile(
-    r"\bSIMD(?:3|4)\s*<\s*Double\s*>|\bSIMD(?:8|16|32|64)\s*<\s*Float\s*>"
-    r"|\bSIMD(?:4|8|16|32|64)\s*<\s*Double\s*>|\bsimd_double(?:3|4)\b"
-)
+# Bytes per SIMD element type. A `SIMDn<T>` occupies `roundUpToPowerOfTwo(n) * width(T)`, which is
+# why `SIMD3<Double>` is 32 bytes and not 24.
+ELEMENT_WIDTH = {
+    "Int8": 1, "UInt8": 1,
+    "Int16": 2, "UInt16": 2, "Float16": 2,
+    "Int32": 4, "UInt32": 4, "Float": 4,
+    "Int64": 8, "UInt64": 8, "Double": 8, "Int": 8, "UInt": 8,
+}
+
+# The `simd_*` typealias spellings, which name the element type in the identifier itself.
+SIMD_ALIAS_WIDTH = {
+    "char": 1, "uchar": 1,
+    "short": 2, "ushort": 2, "half": 2,
+    "int": 4, "uint": 4, "float": 4,
+    "long": 8, "ulong": 8, "double": 8,
+}
+
+GENERIC_SIMD = re.compile(r"\bSIMD(\d+)\s*<\s*([A-Za-z0-9_]+)\s*>")
+ALIAS_SIMD = re.compile(r"\bsimd_([a-z]+)(\d+)\b")
 
 # Spellings of a reference-counted member that appear in argument literals in this tree. A named
 # type is not decidable from the literal, which is why this reports rather than gates.
@@ -37,12 +57,65 @@ WIDE_VECTOR = re.compile(
 # what caught that, having been written against an earlier clause that only matched an empty `[]`.
 REFCOUNTED = re.compile(r"\bString\b|\"|[(,]\s*\[|\bArray\s*<")
 
+# An `arguments:` whose value is a bare identifier carries no type at all, so no verdict can be
+# read off the source. Reporting those as "clean (neither)" alongside sites that were actually
+# inspected is what a pre-PR review caught: `arguments: ThreadFormsTests.smoothForms` had the right
+# answer for a reason this script could not see.
+BARE_IDENTIFIER = re.compile(r"arguments:\s*[A-Za-z_][A-Za-z0-9_.]*\s*\)?\s*$")
+
+
+def round_up_pow2(n):
+    p = 1
+    while p < n:
+        p *= 2
+    return p
+
+
+def widest_vector(text):
+    """Bytes in the widest builtin SIMD vector named in `text`, or 0 if none is."""
+    widest = 0
+    for count, element in GENERIC_SIMD.findall(text):
+        width = ELEMENT_WIDTH.get(element)
+        if width:
+            widest = max(widest, round_up_pow2(int(count)) * width)
+    for element, count in ALIAS_SIMD.findall(text):
+        width = SIMD_ALIAS_WIDTH.get(element)
+        if width:
+            widest = max(widest, round_up_pow2(int(count)) * width)
+    return widest
+
+
+def strip_string_literals(line):
+    """`line` with the contents of every double-quoted run replaced by spaces.
+
+    A `@Test("... arguments: ...")` display name is prose, not a call. A pre-PR review demonstrated
+    a synthetic suite whose display name contained `arguments:` producing two census rows.
+    """
+    out, in_string, escaped = [], False, False
+    for ch in line:
+        if escaped:
+            out.append(" " if in_string else ch)
+            escaped = False
+            continue
+        if ch == "\\":
+            out.append(" " if in_string else ch)
+            escaped = True
+            continue
+        if ch == '"':
+            in_string = not in_string
+            out.append('"')
+            continue
+        out.append(" " if in_string else ch)
+    return "".join(out)
+
 
 def sites(root):
-    """Every `arguments:` occurrence under `root`, as (path, line number, the literal's text).
+    """Every `arguments:` call site under `root`, as (path, line number, the argument text).
 
-    The literal's text is the argument list from `arguments:` to the balanced close of the `@Test`
-    call, which is what carries the element type when it is written out.
+    The argument text runs from `arguments:` to the close of the enclosing `@Test(` call. The scan
+    starts at depth 1 rather than 0, because reaching `arguments:` means already being inside that
+    call: five real sites today put `arguments:` on a line with no open paren of its own, and a
+    scan starting at 0 ran to its 40-line cap on every one of them.
     """
     out = []
     for dirpath, _dirs, files in os.walk(root):
@@ -53,76 +126,132 @@ def sites(root):
             with open(path, encoding="utf-8") as f:
                 lines = f.readlines()
             for i, line in enumerate(lines):
-                if "arguments:" not in line:
-                    continue
                 # A doc comment or a `//` comment mentioning `arguments:` is prose, not a site.
                 # Issue990ThreadAxisBasisTests' own explanation is exactly this case, and counting
-                # it was the difference between 33 and 35.
+                # it was the difference between 33 and 38.
                 stripped = line.lstrip()
                 if stripped.startswith("///") or stripped.startswith("//"):
                     continue
-                text, depth, started = [], 0, False
-                for j in range(i, min(i + 40, len(lines))):
+                masked = strip_string_literals(line)
+                if "arguments:" not in masked:
+                    continue
+                start = masked.index("arguments:")
+                text, depth = [line[start:]], 1
+                for ch in masked[start:]:
+                    if ch == "(":
+                        depth += 1
+                    elif ch == ")":
+                        depth -= 1
+                j = i
+                while depth > 0 and j + 1 < len(lines) and j - i < 40:
+                    j += 1
                     text.append(lines[j])
-                    for ch in lines[j]:
+                    for ch in strip_string_literals(lines[j]):
                         if ch == "(":
                             depth += 1
-                            started = True
                         elif ch == ")":
                             depth -= 1
-                    if started and depth <= 0:
-                        break
-                # Slice from `arguments:` so the `@Test("display name", ...)` string on the same
-                # line is not read as a reference-counted member. The verdict never changed, but
-                # the printed reason did, and a reason that says "a reference-counted member" for
-                # a site whose only string is its own title is worse than no reason.
-                joined = "".join(text)
-                out.append((path, i + 1, joined[joined.index("arguments:"):]))
+                out.append((path, i + 1, "".join(text)))
     return out
 
 
 def classify(text):
-    """('at risk' | 'clean', reason) for one site's literal text."""
-    wide = WIDE_VECTOR.search(text)
+    """('AT RISK' | 'clean' | 'unknown', reason) for one site's argument text."""
+    if BARE_IDENTIFIER.search(text.strip().splitlines()[0] if text.strip() else ""):
+        return "unknown", "the arguments are a named collection, so no type is written here"
+    wide = widest_vector(text)
     ref = REFCOUNTED.search(text)
-    if wide and ref:
-        return "AT RISK", "a wide vector and a reference-counted member in the same literal"
+    if wide >= 32 and ref:
+        return "AT RISK", f"a {wide}-byte vector and a reference-counted member in one literal"
+    if wide >= 32:
+        return "clean", f"a {wide}-byte vector, no reference-counted member"
     if wide:
-        return "clean", "a wide vector, no reference-counted member"
+        return "clean", f"a {wide}-byte vector, under the 32-byte threshold"
     if ref:
-        return "clean", "a reference-counted member, no wide vector"
+        return "clean", "a reference-counted member, no vector"
     return "clean", "neither"
 
 
-def self_test():
-    """Each case proves the detector catches one failure mode, and each control proves it does not
-    fire on the shape next door. Removing any one line below must drop the count."""
-    cases = [
-        ("AT RISK", 'arguments: [("+X", SIMD3<Double>(1, 0, 0))])'),
-        ("AT RISK", 'arguments: [("+X", SIMD4<Double>(1, 0, 0, 0))])'),
-        ("AT RISK", 'arguments: [("+X", SIMD8<Float>(repeating: 1))])'),
-        ("AT RISK", 'arguments: [(SIMD3<Double>(1, 0, 0), "+X")])'),
-        ("AT RISK", 'arguments: [([1], SIMD3<Double>(1, 0, 0))])'),
-        ("clean", 'arguments: [(SIMD3<Double>(1, 0, 0), SIMD3<Double>(0, 1, 0))])'),
-        ("clean", 'arguments: [("+X", 1)])'),
-        ("clean", 'arguments: [("+X", SIMD2<Double>(1, 0))])'),
-        ("clean", 'arguments: [("+X", SIMD4<Float>(1, 0, 0, 0))])'),
-        ("clean", "arguments: [1.0, 2.0])"),
-        ("clean", "arguments: 0...2)"),
-    ]
+CLASSIFY_CASES = [
+    ("AT RISK", 'arguments: [("+X", SIMD3<Double>(1, 0, 0))])'),
+    ("AT RISK", 'arguments: [("+X", SIMD4<Double>(1, 0, 0, 0))])'),
+    ("AT RISK", 'arguments: [("+X", SIMD8<Float>(repeating: 1))])'),
+    ("AT RISK", 'arguments: [("+X", SIMD4<Int64>(1, 0, 0, 0))])'),
+    ("AT RISK", 'arguments: [("+X", SIMD16<Int16>(repeating: 1))])'),
+    ("AT RISK", 'arguments: [("+X", simd_double3(1, 0, 0))])'),
+    ("AT RISK", 'arguments: [(SIMD3<Double>(1, 0, 0), "+X")])'),
+    ("AT RISK", "arguments: [([1], SIMD3<Double>(1, 0, 0))])"),
+    ("clean", 'arguments: [(SIMD3<Double>(1, 0, 0), SIMD3<Double>(0, 1, 0))])'),
+    ("clean", 'arguments: [("+X", 1)])'),
+    ("clean", 'arguments: [("+X", SIMD2<Double>(1, 0))])'),
+    ("clean", 'arguments: [("+X", SIMD4<Float>(1, 0, 0, 0))])'),
+    ("clean", 'arguments: [("+X", simd_float4(1, 0, 0, 0))])'),
+    ("clean", "arguments: [1.0, 2.0])"),
+    ("clean", "arguments: 0...2)"),
+    ("unknown", "arguments: ThreadFormsTests.smoothForms)"),
+]
+
+# (label, file body, expected (line, verdict) rows). These exercise `sites()`, which `classify()`'s
+# own cases cannot reach: the skip, the string-literal mask and the paren scan are all in there.
+SITE_CASES = [
+    (
+        "a doc comment naming arguments: is not a site",
+        '/// six `arguments:` cases, not one\n'
+        '@Test("t", arguments: [1, 2])\nfunc f(_ n: Int) {}\n',
+        [(2, "clean")],
+    ),
+    (
+        "a `//` comment naming arguments: is not a site",
+        '// arguments: was the old spelling\n'
+        '@Test("t", arguments: [1, 2])\nfunc f(_ n: Int) {}\n',
+        [(2, "clean")],
+    ),
+    (
+        "a display name is the only arguments: on the line, so the line is not a site",
+        '@Test("what arguments: does")\nfunc f() {}\n',
+        [],
+    ),
+    (
+        "a display name's arguments: does not become the start of the captured type",
+        '@Test("arguments: takes a SIMD3<Double> and a String", arguments: [1, 2])\n'
+        "func f(_ n: Int) {}\n",
+        [(1, "clean")],
+    ),
+    (
+        "arguments: on its own line still reaches the element type",
+        '@Test("t",\n      arguments: [\n        ("+X", SIMD3<Double>(1, 0, 0)),\n      ])\n'
+        "func f(_ a: (String, SIMD3<Double>)) {}\n",
+        [(2, "AT RISK")],
+    ),
+    (
+        "a named collection reports unknown rather than a verdict it cannot support",
+        "@Test(arguments: Fixtures.forms)\nfunc f(_ a: Form) {}\n",
+        [(1, "unknown")],
+    ),
+]
+
+
+def self_test(tmp_root):
     failures = 0
-    for expected, text in cases:
+    for expected, text in CLASSIFY_CASES:
         got, why = classify(text)
         if got != expected:
             print(f"self-test FAIL: expected {expected}, got {got} ({why}) for {text}")
             failures += 1
-    # The comment-line skip is the other half of the detector and needs its own case, since a
-    # miscount there changes the total without changing any verdict.
-    doc = "    /// The six axes are one test walking a list rather than six `arguments:` cases.\n"
-    if not (doc.lstrip().startswith("///")):
-        print("self-test FAIL: doc-comment skip is not exercised")
-        failures += 1
-    print(f"self-test: {len(cases) + 1} cases, {failures} failures")
+
+    os.makedirs(tmp_root, exist_ok=True)
+    for n, (label, body, expected) in enumerate(SITE_CASES):
+        path = os.path.join(tmp_root, f"case{n}.swift")
+        with open(path, "w", encoding="utf-8") as f:
+            f.write(body)
+        got = [(line, classify(text)[0]) for _p, line, text in sites(tmp_root)]
+        os.remove(path)
+        if got != expected:
+            print(f"self-test FAIL: {label}: expected {expected}, got {got}")
+            failures += 1
+
+    total = len(CLASSIFY_CASES) + len(SITE_CASES)
+    print(f"self-test: {total} cases, {failures} failures")
     return 1 if failures else 0
 
 
@@ -133,20 +262,28 @@ def main():
     args = parser.parse_args()
 
     if args.self_test:
-        return self_test()
+        import tempfile
+
+        with tempfile.TemporaryDirectory() as tmp:
+            return self_test(os.path.join(tmp, "fixtures"))
 
     if not os.path.isdir(args.root):
         print(f"no {args.root}/ here; run from the repo root", file=sys.stderr)
         return 2
 
     found = sites(args.root)
-    at_risk = 0
+    at_risk = unknown = 0
     for path, line, text in found:
         verdict, why = classify(text)
         if verdict == "AT RISK":
             at_risk += 1
+        elif verdict == "unknown":
+            unknown += 1
         print(f"{verdict:8} {path}:{line}  ({why})")
-    print(f"\n{len(found)} `arguments:` sites under {args.root}/, {at_risk} at risk")
+    print(
+        f"\n{len(found)} `arguments:` sites under {args.root}/, "
+        f"{at_risk} at risk, {unknown} needing a human to open the named type"
+    )
     return 0
 
 

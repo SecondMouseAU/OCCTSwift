@@ -20,21 +20,24 @@ final class Ref: Sendable, CustomStringConvertible {
     var description: String { "Ref(\(n))" }
 }
 
-/// Size 32, alignment 16. Same size as `SIMD3<Double>` but not over-aligned, which separates
-/// "large" from "over-aligned".
+/// Size 32, alignment 16, built from two 16-byte vectors. Byte-for-byte the same layout as
+/// `SIMD3<Double>`, which is how the grid separates "carries a 32-byte vector" from "is 32 bytes".
+/// The name predates the layout being measured; `SIMD3<Double>` turns out to be alignment 16 too,
+/// so nothing in this file is over-aligned and the interesting axis is the vector's own width.
 struct Size32Align16: Sendable {
     var a: SIMD2<Double>
     var b: SIMD2<Double>
     init(_ x: Double) { a = SIMD2(x, x); b = SIMD2(x, x) }
 }
 
-/// A nominal struct whose only member is a `SIMD3<Double>`, so it inherits alignment 32 without
-/// itself being one of the stdlib SIMD types. Separates "over-aligned" from "is a SIMD type".
+/// A nominal struct whose only member is a `SIMD3<Double>`, so it carries a 32-byte builtin vector
+/// without itself being one of the stdlib SIMD types. Separates "carries a wide vector" from "is a
+/// SIMD type".
 ///
-/// Reaching 32 any other way is not possible in Swift source: `@_alignment(32)` is rejected with
-/// "cannot increase alignment above maximum alignment of 16", and 16 is exactly the runtime's
-/// `MaxAlignment`. A builtin vector type is the only way a Swift value gets past it.
-struct Align32Wrapper: Sendable {
+/// Over-alignment is not the axis, though it is what #1057 first proposed: `@_alignment(32)` is
+/// rejected with "cannot increase alignment above maximum alignment of 16", and the `layout` cell
+/// measures `SIMD3<Double>` at alignment 16, the runtime's maximum. Nothing here is over-aligned.
+struct Vector32Wrapper: Sendable {
     var v: SIMD3<Double>
     init(_ x: Double) { v = SIMD3(x, x, x) }
 }
@@ -69,7 +72,7 @@ struct NamedPair: Sendable {
         row("SIMD4<Float>", SIMD4<Float>.self)
         row("SIMD8<Float>", SIMD8<Float>.self)
         row("Size32Align16", Size32Align16.self)
-        row("Align32Wrapper", Align32Wrapper.self)
+        row("Vector32Wrapper", Vector32Wrapper.self)
         row("NamedPair", NamedPair.self)
         row("(String, SIMD3<Double>)", (String, SIMD3<Double>).self)
         row("(SIMD3<Double>, SIMD3<Double>)", (SIMD3<Double>, SIMD3<Double>).self)
@@ -171,9 +174,9 @@ struct NamedPair: Sendable {
     func run(_ f: ([Int], SIMD3<Double>)) { #expect(!f.0.isEmpty) }
 }
 
-// MARK: - Alignment against size
+// MARK: - Vector width against aggregate size
 
-@Suite("J: (String, SIMD2<Double>), align 16") struct J1StringSIMD2 {
+@Suite("J: (String, SIMD2<Double>), a 16-byte vector") struct J1StringSIMD2 {
     static let cases: [(String, SIMD2<Double>)] = [
         ("+X", SIMD2(1, 0)), ("-X", SIMD2(-1, 0)), ("+Y", SIMD2(0, 1)),
         ("-Y", SIMD2(0, -1)), ("+Z", SIMD2(1, 1)), ("-Z", SIMD2(-1, -1)),
@@ -182,7 +185,7 @@ struct NamedPair: Sendable {
     func run(_ f: (String, SIMD2<Double>)) { #expect(!f.0.isEmpty) }
 }
 
-@Suite("K: (String, SIMD4<Double>), align 32") struct K1StringSIMD4D {
+@Suite("K: (String, SIMD4<Double>), a 32-byte vector") struct K1StringSIMD4D {
     static let cases: [(String, SIMD4<Double>)] = [
         ("+X", SIMD4(1, 0, 0, 0)), ("-X", SIMD4(-1, 0, 0, 0)), ("+Y", SIMD4(0, 1, 0, 0)),
         ("-Y", SIMD4(0, -1, 0, 0)), ("+Z", SIMD4(0, 0, 1, 0)), ("-Z", SIMD4(0, 0, -1, 0)),
@@ -191,7 +194,7 @@ struct NamedPair: Sendable {
     func run(_ f: (String, SIMD4<Double>)) { #expect(!f.0.isEmpty) }
 }
 
-@Suite("L: (String, SIMD4<Float>), align 16") struct L1StringSIMD4F {
+@Suite("L: (String, SIMD4<Float>), a 16-byte vector") struct L1StringSIMD4F {
     static let cases: [(String, SIMD4<Float>)] = [
         ("+X", SIMD4(1, 0, 0, 0)), ("-X", SIMD4(-1, 0, 0, 0)), ("+Y", SIMD4(0, 1, 0, 0)),
         ("-Y", SIMD4(0, -1, 0, 0)), ("+Z", SIMD4(0, 0, 1, 0)), ("-Z", SIMD4(0, 0, -1, 0)),
@@ -200,7 +203,7 @@ struct NamedPair: Sendable {
     func run(_ f: (String, SIMD4<Float>)) { #expect(!f.0.isEmpty) }
 }
 
-@Suite("M: (String, SIMD8<Float>), align 32") struct M1StringSIMD8F {
+@Suite("M: (String, SIMD8<Float>), a 32-byte vector") struct M1StringSIMD8F {
     static let cases: [(String, SIMD8<Float>)] = [
         ("+X", SIMD8(repeating: 1)), ("-X", SIMD8(repeating: -1)), ("+Y", SIMD8(repeating: 2)),
         ("-Y", SIMD8(repeating: -2)), ("+Z", SIMD8(repeating: 3)), ("-Z", SIMD8(repeating: -3)),
@@ -209,7 +212,7 @@ struct NamedPair: Sendable {
     func run(_ f: (String, SIMD8<Float>)) { #expect(!f.0.isEmpty) }
 }
 
-@Suite("N: (String, Size32Align16), 32 bytes but not over-aligned") struct N1StringSize32 {
+@Suite("N: (String, Size32Align16), 32 bytes of 16-byte vectors") struct N1StringSize32 {
     static let cases: [(String, Size32Align16)] = [
         ("+X", Size32Align16(1)), ("-X", Size32Align16(2)), ("+Y", Size32Align16(3)),
         ("-Y", Size32Align16(4)), ("+Z", Size32Align16(5)), ("-Z", Size32Align16(6)),
@@ -218,13 +221,13 @@ struct NamedPair: Sendable {
     func run(_ f: (String, Size32Align16)) { #expect(!f.0.isEmpty) }
 }
 
-@Suite("O: (String, Align32Wrapper), over-aligned but not a SIMD type") struct O1StringAlign32 {
-    static let cases: [(String, Align32Wrapper)] = [
-        ("+X", Align32Wrapper(1)), ("-X", Align32Wrapper(2)), ("+Y", Align32Wrapper(3)),
-        ("-Y", Align32Wrapper(4)), ("+Z", Align32Wrapper(5)), ("-Z", Align32Wrapper(6)),
+@Suite("O: (String, Vector32Wrapper), a 32-byte vector inside a struct") struct O1StringVector32 {
+    static let cases: [(String, Vector32Wrapper)] = [
+        ("+X", Vector32Wrapper(1)), ("-X", Vector32Wrapper(2)), ("+Y", Vector32Wrapper(3)),
+        ("-Y", Vector32Wrapper(4)), ("+Z", Vector32Wrapper(5)), ("-Z", Vector32Wrapper(6)),
     ]
     @Test("trivial body", arguments: cases)
-    func run(_ f: (String, Align32Wrapper)) { #expect(!f.0.isEmpty) }
+    func run(_ f: (String, Vector32Wrapper)) { #expect(!f.0.isEmpty) }
 }
 
 @Suite("P: (String, Double), the word-sized POD control") struct P1StringDouble {

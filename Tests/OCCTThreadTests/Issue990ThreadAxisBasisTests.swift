@@ -110,11 +110,14 @@ struct Issue990ThreadAxisBasisTests {
     /// the `@Test` macro expands to, and reported upstream as swiftlang/swift#91639. Swift 6.3.3,
     /// Xcode 26.6, macOS 26.6.1, arm64; `-O` is clean, and `swift test` builds debug.
     ///
-    /// The constraint that leaves, until the toolchain is fixed: no `@Test(arguments:)` here may
-    /// take an element pairing a `String`, class or `Array` with a `SIMD3<Double>`,
-    /// `SIMD4<Double>` or wider vector, in a tuple or in a struct. Walking the list in one test,
-    /// as below, is the workaround. `census-arguments-sites.py` in that directory enumerates all
-    /// 33 `arguments:` sites under `Tests/`; none is at risk today.
+    /// The constraint that leaves, until the toolchain is fixed: treat any `@Test(arguments:)`
+    /// element that pairs a reference-counted member (`String`, a class, an `Array`) with a
+    /// builtin vector of 32 bytes or more as suspect, in a tuple or in a struct. Both halves are
+    /// necessary and neither pair is sufficient, since `(String, simd_double3x3)` satisfies it and
+    /// runs clean; where the cut falls is measured but not explained, so the rule over-predicts on
+    /// purpose. Walking the list in one test, as below, is the workaround.
+    /// `census-arguments-sites.py` in that directory enumerates all 33 `arguments:` sites under
+    /// `Tests/`; none is at risk today.
     @Test("the groove sits on gp_Ax2's own perpendicular for every world axis")
     func grooveSitsOnTheCanonicalDatum() {
         for (name, axis, datum) in Self.axes {

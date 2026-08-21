@@ -50,8 +50,8 @@ would report only the first one to die.
 | K | `(String, SIMD4<Double>)`, 32 bytes | **CRASH** |
 | L | `(String, SIMD4<Float>)`, 16 bytes | clean |
 | M | `(String, SIMD8<Float>)`, 32 bytes | **CRASH** |
-| N | `(String, Size32Align16)`, 32 bytes, no vector member | clean |
-| O | `(String, Align32Wrapper)`, a struct wrapping `SIMD3<Double>` | **CRASH** |
+| N | `(String, Size32Align16)`, 32 bytes of 16-byte vectors | clean |
+| O | `(String, Vector32Wrapper)`, a struct wrapping `SIMD3<Double>` | **CRASH** |
 | P | `(String, Double)` | clean |
 | Q | `NamedPair`, a struct with the same two members as A | **CRASH** |
 | R | A's type with exactly one case | **CRASH** |
@@ -100,8 +100,13 @@ frame 8, the caller.
 The runs that reach OCCT's installed signal handler print `*** Abort *** ... SIGSEGV 'segmentation
 violation' detected. Address 5928` instead, which is what led the original investigation to read it
 as an OCCT fault: OCCT installs its handler process-wide and reports any SIGSEGV, whoever raised
-it. Cells H and I here exit 139 with no message at all, which is the same corruption landing
-somewhere the allocator check does not see first.
+it.
+
+Both messages are the same corruption. Which one a run produces depends on the program, not on the
+element type: cells H and I print `freed pointer was not the last allocation` like every other
+crashing cell, while the same two element types in `Smallest` (V43, V44) take a bare SIGSEGV and
+exit 139 with nothing printed. A draft of this paragraph attributed the 139 to cells H and I, which
+is the wrong half of the measurement and was caught in review.
 
 ## What the macro hands the compiler
 
@@ -188,19 +193,55 @@ An earlier draft of this file said a non-nil actor was required, on the strength
 `nil` being clean. That was the wrong reading of the same measurement.
 
 **One parameter is an aggregate holding both a reference-counted member and a builtin vector of 32
-bytes or more.** V27 with an all-POD tuple is clean; V35 with the vector alone is clean; V34 with
-the two members as separate parameters is clean; V31 (`SIMD2<Double>`, 16 bytes) and V42
-(`SIMD4<Float>`, 16 bytes) are clean; V32 (a 32-byte, 16-aligned struct with no vector member) is
-clean; V51 (`(String, Int)`) and V52 (`(String, Double)`) are clean. V33 (a nominal struct), V40
-(`SIMD4<Double>`), V41 (`SIMD8<Float>`), V45 (members swapped), V46 (`SIMD16<Float>`, 64 bytes) and
-V47 (a three-element tuple) all crash. V43 (a class) and V44 (an `Array`) crash as a bare SIGSEGV
-rather than reaching the allocator's check.
+bytes or more.** Both halves are necessary. V27 with an all-POD tuple is clean; V35 with the vector
+alone is clean; V34 with the two members as separate parameters is clean; V31 (`SIMD2<Double>`, 16
+bytes) and V42 (`SIMD4<Float>`, 16 bytes) are clean; V32 (a 32-byte struct built from two 16-byte
+vectors) is clean; V51 (`(String, Int)`) and V52 (`(String, Double)`) are clean. V33 (a nominal
+struct), V40 (`SIMD4<Double>`), V41 (`SIMD8<Float>`), V45 (members swapped), V46 (`SIMD16<Float>`,
+64 bytes), V47 (a three-element tuple), V56 (a nested tuple of two vectors) and V57
+(`SIMD4<Int64>`, an integer vector) all crash. V43 (a class) and V44 (an `Array`) crash as a bare
+SIGSEGV rather than reaching the allocator's check.
 
 V51 and V52 exist because the grid's own `(String, Int)` and `(String, Double)` cells were measured
 under the swift-testing shape rather than this one, and a table that silently mixes two shapes is
-a table nobody can check.
+a table nobody can check. V57 exists because the census script's first regex only knew `Double` and
+`Float` element types, and a pre-PR review measured an integer vector crashing.
 
 `@Sendable` on the local function is not part of it: V37 without it crashes.
+
+### The pair is necessary and not sufficient, and the rest is not characterised
+
+The same review measured `(String, simd_double3x3)` clean, which the rule as first written says
+should crash. Reproduced here without importing `simd`, and pushed further:
+
+| parameter type | `MemoryLayout.size` | 32-byte vectors in it | verdict |
+|---|---|---|---|
+| `(String, SIMD3<Double>)` | 48 | 1 | **crash** |
+| `(String, SIMD4<Int64>)` | 48 | 1 | **crash** |
+| `(String, Vec1)`, a struct of one vector | 48 | 1 | **crash** |
+| `(String, Size32Align16)` | 48 | 0 | clean |
+| `(String, SIMD2<Double>)` | 32 | 0 | clean |
+| `(String, SIMD16<Float>)` | 80 | 1 (64-byte) | **crash** |
+| `(String, SIMD3<Double>, SIMD3<Double>)` | 80 | 2 | **crash** |
+| `(String, Vec2)`, a struct of two vectors | 80 | 2 | **crash** |
+| `(String, One80)`, one vector plus four `Double`s | 80 | 1 | clean |
+| `(String, Pad1)`, two vectors plus one `Double` | 88 | 2 | clean |
+| `(String, One96)`, one vector plus five `Double`s | 88 | 1 | clean |
+| `(String, Vec3)`, a struct of three vectors, the `simd_double3x3` shape | 112 | 3 | clean |
+| `(SIMD3<Double>, SIMD3<Double>)` | 64 | 2 | clean |
+
+Size alone does not explain it: 80 bytes crashes with two vectors (`Vec2`) and is clean with one
+plus padding (`One80`). Vector count alone does not explain it: one vector crashes at 48 and is
+clean at 80. A compound rule can be fitted to these thirteen rows, and fitting one is exactly what
+[`measure-dont-assume`](../../../okf/policies/measure-dont-assume.md)'s "an argument that explains
+everything may be describing a defect" section says not to do. So this file states the table and
+stops: **the pair is necessary, the exact cut is unknown, and somebody with the IR should be the
+one to explain it.** `census-arguments-sites.py` flags on the pair alone and therefore
+over-predicts, which is the direction a census should err in.
+
+`ShapeProperties.momentOfInertia` returns a `simd_double3x3`, so this edge is reachable from real
+public API here rather than being a curiosity: a parameterised test over
+`(String, simd_double3x3)` is clean today.
 
 ## Debug only
 
@@ -238,19 +279,53 @@ A `@Test(arguments:)` here cannot take an element type that pairs a reference-co
 inside one test, which is what `Issue990ThreadAxisBasisTests` does, is the workaround, and cell U
 confirms it is clean.
 
-Census by `census-arguments-sites.py`, over all of `Tests/` at `cb482250`: **33** `@Test(...,
-arguments:)` sites, **0 at risk**. It is a census and not a gate, because deciding whether a named
-type carries a wide vector needs somebody to open the type, which is what the one interesting row
-below needed. Its `--self-test` covers the two classification clauses and the doc-comment skip;
-neutering the wide-vector clause fails 5 of 12 cases, neutering the reference-counted clause fails
-the same 5, and neutering the skip takes the total from 33 to 35, because
-`Issue990ThreadAxisBasisTests`' own prose says `arguments:` twice.
+Census by `census-arguments-sites.py`, over all of `Tests/`: **33** `@Test(..., arguments:)` sites,
+**0 at risk**, 1 needing a human to open the named type. It is a census and not a gate, for two
+reasons: an `arguments:` value that is a named collection carries no type at all, and the flagging
+rule over-predicts (see the table above).
 
-One of the 33,
-`Tests/OCCTBRepGraphTests/Issue881PerpendicularBasisTests.swift:76`, has a SIMD tuple element
-(`(SIMD3<Double>, SIMD3<Double>, SIMD3<Double>)`) and no reference-counted member, matching clean
-cell C. The nearest miss is
-`Tests/OCCTThreadTests/Issue991ThreadProfileFlatWidthTests.swift:20`, whose element is
-`(String, ThreadProfile, Double, Double)`: it does pair a `String` with a struct, but
-`ThreadProfile`'s only stored property is `[Vertex]`, so the aggregate has no vector member and no
-member wider than a word. **At-risk sites: 0.** Nothing was changed for its own sake.
+Its `--self-test` is 22 cases, 16 over `classify()` and 6 building real fixture files and running
+`sites()` over them. Removal matrix, on throwaway copies, each clause neutered on its own:
+
+| clause removed | self-test result |
+|---|---|
+| the wide-vector test | 9 of 22 fail |
+| the reference-counted test | 9 of 22 fail |
+| the SIMD element-width table | 8 of 22 fail |
+| the doc-comment skip | 2 of 22 fail |
+| the string-literal mask | 2 of 22 fail |
+| the bare-identifier verdict | 2 of 22 fail |
+| the paren scan starting inside the `@Test(` call | 1 of 22 fails |
+
+The mask's first fixture proved nothing: it put `arguments:` in a display name on a line that also
+had a real `arguments:`, so the row count was 1 either way. Replaced with a line whose only
+`arguments:` is inside the string, plus one where the display name's `arguments:` comes first and
+would otherwise become the start of the captured type. Neutering the doc-comment skip takes the
+total from 33 to 38 at HEAD, because the corrected comment in `Issue990ThreadAxisBasisTests` names
+`arguments:` five times, and one of those five phantom rows reads **AT RISK**, since the same
+paragraph names `SIMD3<Double>`, `String` and `Array` while explaining the rule.
+
+Three of the 33 rows needed a human:
+
+- `Tests/OCCTBRepGraphTests/Issue881PerpendicularBasisTests.swift:76` is the only SIMD-tuple site,
+  element `(SIMD3<Double>, SIMD3<Double>, SIMD3<Double>)`, no reference-counted member, matching
+  clean cell C.
+- `Tests/OCCTThreadTests/Issue991ThreadProfileFlatWidthTests.swift:20` has element
+  `(String, ThreadProfile, Double, Double)`, so it does pair a `String` with a struct.
+  `ThreadProfile`'s only stored property is `[Vertex]`, so the aggregate holds no vector and
+  nothing wider than a word.
+- `Tests/OCCTThreadTests/ThreadFormsTests.swift:17` is the `unknown` row: `arguments:
+  ThreadFormsTests.smoothForms` names a collection rather than writing a type, so the script
+  reports that it cannot decide instead of printing `clean` in the same column as the rows it
+  actually inspected. `ThreadForm` is an enum with a `String` raw value and no payload, which is a
+  tag byte, so the row is clean.
+
+**At-risk sites: 0.** Nothing was changed for its own sake.
+
+## Deliberately not answered here
+
+#1057 closes with an unverified note: #345 was closed on a bare `exited with unexpected signal code
+6` with no test name and no backtrace, and signal 6 is what this defect produces. Nothing in this
+directory tests that connection, and the tree at #345's time is not the tree measured here. Tracked
+as #1072 rather than left in a closed issue's last paragraph; `census-arguments-sites.py --root` is
+what that check would use.

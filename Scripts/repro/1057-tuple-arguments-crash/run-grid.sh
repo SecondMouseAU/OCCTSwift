@@ -28,7 +28,7 @@ CELLS=(
   L1StringSIMD4F
   M1StringSIMD8F
   N1StringSize32
-  O1StringAlign32
+  O1StringVector32
   P1StringDouble
   Q1NamedPair
   R1SingleCase
