@@ -23,6 +23,8 @@ wrong.
 | `probe-output-regression-sweep.txt` | its transcript |
 | `matrix.sh` | generates the removal matrix below, injection by injection |
 | `probe-output-matrix.txt` | its transcript, which is where the matrix table comes from |
+| `occt_1050_limits.mm` | the two limits the reference doc asserted without measuring |
+| `probe-output-limits.txt` | its transcript |
 
 Build and run:
 
@@ -91,8 +93,15 @@ say this: the first draft of this section quoted a single run in which the fix's
 
 Every median sits between 0.48 and 0.62. The **within**-bound run-to-run spread reaches 5.4x
 (`2 * input span + 1`, 0.47 to 2.56) and dwarfs every **between**-bound difference, so the
-between-bound numbers are scheduler noise and not a cost signal. The widest bound is not the slowest
-one: the fix has the lowest median of the six, and the shipped narrow window the highest.
+between-bound numbers are scheduler noise and not a cost signal. In this sample the widest bound is
+not the slowest, which is the point: if width cost anything the ordering would be stable, and it is
+not. A later run on a quieter machine put every bound between 0.32 and 0.39, below this table's
+lowest per-bound minimum, and reordered them.
+
+A draft of this paragraph read the sample the other way, as "the fix has the lowest median of the
+six, and the shipped narrow window the highest". That is true of these nine runs and is exactly the
+kind of claim the preceding two sentences say the data cannot support: a fresh run reverses it. The
+table establishes that width is not a cost, not that the fix is faster.
 
 So being an input rather than a filter changes the *reasoning* (an unbounded domain is a real hazard
 here and it throws, where for `Extrema_ExtPElC` it would have been free) without changing the
@@ -151,18 +160,27 @@ covers, and nothing has to be justified.
 
 An earlier draft justified it differently and was wrong. It claimed `RealLast()` "means evaluating
 the curve at 1.8e308 and overflowing to infinite coordinates". Measured against the pinned kernel,
-it does not: the direction is a unit vector, so `Value(RealLast())` is `(-1.7976931348623157e+308, 5)`
-for the axis-aligned bisector and `(1.51664e+308, -9.65137e+307)` for an oblique one, both finite.
-The choice between the three wide bounds is genuinely free, PART 3 shows them answering identically,
+it does not: the direction is a unit vector, so `Value(RealLast())` is
+`(-1.7976931348623157e+308, 5)` for the axis-aligned bisector, and finite for oblique ones too. The
+choice between the three wide bounds is genuinely free, PART 3 shows them answering identically,
 and the reason to take the curve's own is that it needs no argument, not that the alternatives break.
+
+(A draft of that correction quoted a specific oblique pair. It was measured, but from a throwaway
+probe that was never committed, so nobody could reproduce it from this directory. Quoting a figure
+whose provenance is a deleted file is the same failure as quoting one nobody measured, one step
+removed, so the specific pair is gone and only the axis-aligned figure, which
+`occt_1050_limits.mm` prints, is kept.)
 
 ## PART 4, the rows every bound misses, and why they are not the bound's fault
 
 Two fixtures in PART 3 have a closed-form crossing that no bound finds, both `near-parallel` rows.
 (Drafts of this line said three, and the probe's own header and body said "three" and "One row", so
-the same count was stated three times with three values. Counted off PART 3's ten rows: the two
-parallel rows and the two collinear/coincident pairs have no closed-form crossing to miss, and the
-10.9-degree row is found by three of the six bounds.) PART 4 walks the crossing
+the same count was stated three times with three values. Counted off PART 3's ten rows: three rows
+are found by five bounds, the 10.9-degree row by three, the two `near-parallel` rows by none, and
+the remaining four have no closed-form crossing to miss at all, being one parallel pair, two
+coincident pairs and one collinear set. A draft of this parenthesis said "the two parallel rows and
+the two collinear/coincident pairs", which totals four correctly while naming them wrong, in the
+sentence that claims to have counted them.) PART 4 walks the crossing
 out along the same half-line while holding the four points inside a box about 41 across, and reports
 the crossing's parameter on each bisector **measured from the built curve** rather than derived from
 the construction:
@@ -298,6 +316,22 @@ over from a six-test suite with its denominator edited to nine and its counts le
 its rows were wrong; a hand-maintained matrix is the same kind of artifact as the hand-maintained
 cause list two sections up, and it failed the same way.
 
+**The generator had the same silent-pass shape it was written to remove, and now does not.** Its
+first version checked no exit status, lost `swift test`'s status in a pipe, and asserted nothing
+about how many tests ran, so a row that failed to build or whose python anchor missed would write an
+**empty** row, byte-identical to the control row's "nothing failed". It now requires
+`Test run with N tests` to appear and N to equal `EXPECTED_TESTS`, reports `ROW FAILED` with the
+reason otherwise, runs the control through the same path as every other row, and exits 1 if any row
+produced no result. Both guards were proved to fire rather than assumed:
+
+| injected fault | result |
+|---|---|
+| a python anchor that cannot match | `ROW FAILED: the injection did not apply`, exit 1 |
+| `EXPECTED_TESTS` set to 11 | `ROW FAILED: 10 tests ran, expected 11`, exit 1 |
+
+Each row now also prints `(10 tests ran)`, so the transcript carries its own evidence that the run
+happened rather than leaving an empty block to be read as a pass.
+
 | injection | fails (of 10) | which |
 |---|---|---|
 | **A** the shipped `[-100, 100]` | 2 | past-old-window, past-input-extent |
@@ -348,6 +382,55 @@ domain choice can produce a point where the half-lines do not meet (a symmetric
 throws in `gp_Vec2d::Normalize()` before a domain is built. They keep "reported nothing" meaningful,
 which is the distinction the whole issue turns on, so they are worth having. Labelling them is the
 point: an unlabelled test that cannot fail looks exactly like coverage.
+
+## The two limits the reference doc asserted without measuring
+
+Both were written into `docs/reference/Shape-Recognition.md` by this fix, both were wrong, and both
+were raised by an independent pre-PR review rather than found here. `occt_1050_limits.mm` is the
+measurement that settled them.
+
+**"A crossing is found however far from the midpoints it falls" is false.** The bisector is trimmed
+to `[0, Precision::Infinite()]`, and `Precision::Infinite()` is `2e100`, so the search ends. Past it
+the caller gets the same silent empty array this whole issue is about:
+
+| target parameter | past 2e100? | result |
+|---|---|---|
+| 1e99 | no | found |
+| 2e100 | no | found |
+| 5e100 | yes | **no intersection** |
+| 1e150 | yes | **no intersection** |
+
+The threshold moved from 100 to 2e100. It did not go away. Nothing at CAD scale approaches it, which
+is why the doc now notes it rather than treating it as an open defect, but "however far" was a claim
+the fix did not earn.
+
+That row also cost a fixture. The probe's first version held the second pair's half-width at a fixed
+5 while walking the target out to 1e150, and at 1e50 that half-width is below the ulp of `-1e50`, so
+the pair collapsed to a single point and the probe reported a `Standard_ConstructionError` at 1e50
+that had nothing to do with the domain. Both the separation and the half-width now scale with the
+target, which is what makes the table above about the bound.
+
+**The first cause of an empty result was documented with the wrong mechanism and the wrong
+magnitude.** It said the pair is "too close to have a direction", citing `1e-300` and implying
+`gp_Vec2d::Normalize()` refuses. Measured:
+
+| pair separation | result |
+|---|---|
+| 1e-9 | `(-50, 5e-10)`, found |
+| **1e-10** | **THREW `GccAna_NoSolution`** |
+| 1e-100 | THREW `GccAna_NoSolution` |
+| 1e-300 | THREW `Standard_ConstructionError` |
+
+Refusal starts at `1e-10`, from `GccAna_NoSolution` inside `Bisector_Bisec::Perform`.
+`Normalize()` copes all the way down to `1e-300`, where the square underflows, which is 290 orders
+of magnitude later and is not the mechanism a caller meets. The doc now gives the measured threshold
+and the real thrower.
+
+One thing this probe found that is **not** fixed and is pre-existing: at a pair separation of `1e-6`
+the crossing comes back as `(-50, 0)` where the true value is `(-50, 5e-7)`, a 100% relative error in
+`y`, from the two hardcoded `1e-6` tolerances the domain constructor still carries. The shipped
+`[-100, 100]` body returns the same, so it is neither caused nor worsened here, and it is a
+different literal from the one #1050 is about. Recorded rather than folded in.
 
 ## Sibling sites
 

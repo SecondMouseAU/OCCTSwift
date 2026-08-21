@@ -2535,7 +2535,7 @@ struct BisectorIntersectionTests {
     }
 
     @Test("point bisectors at a smaller scale, both orderings")
-    func collinearBisectors() {
+    func smallerScaleBisectorsBothOrderings() {
         // Same shape at scale 4, so the outcome is a property of the ray choice and not of the
         // magnitudes: as written the second ray points away, reversed it reaches (2,2).
         #expect(bisectorIntersections(a: (0, 0), b: (4, 0), c: (0, 0), d: (0, 4)).isEmpty)

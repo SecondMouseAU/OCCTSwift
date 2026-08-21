@@ -1,0 +1,43 @@
+PART 1  is a crossing found HOWEVER FAR? LastParameter() is 2e100, so it is not.
+
+  target u       past 2e100?  result                                  
+  1e+06          no           (-1e+06, 5000)                            want y=5e+03
+  1e+50          no           (-1e+50, 5e+47)                           want y=5e+47
+  1e+99          no           (-1e+99, 5e+96)                           want y=5e+96
+  5e+99          no           (-5e+99, 2.5e+97)                         want y=2.5e+97
+  1e+100         no           (-1e+100, 5e+97)                          want y=5e+97
+  2e+100         no           (-2e+100, 1e+98)                          want y=1e+98
+  5e+100         yes          no intersection                           want y=2.5e+98
+  1e+101         yes          no intersection                           want y=5e+98
+  1e+150         yes          no intersection                           want y=5e+147
+
+
+PART 2  where does a near-coincident FIRST pair start being refused, and by what?
+
+  The doc says "too close to have a direction" with 1e-300 as the example. Bracketed:
+
+  |b - a|        result                                       closed-form crossing y  
+  1              (-50, 0.5)                                   0.5                     
+  1e-06          (-50, 0)                                     5e-07                   
+  1e-08          (-50, 5e-09)                                 5e-09                   
+  1e-09          (-50, 5e-10)                                 5e-10                   
+  1e-10          THREW GccAna_NoSolution                      5e-11                   
+  1e-11          THREW GccAna_NoSolution                      5e-12                   
+  1e-20          THREW GccAna_NoSolution                      5e-21                   
+  1e-100         THREW GccAna_NoSolution                      5e-101                  
+  1e-154         THREW GccAna_NoSolution                      5e-155                  
+  1e-160         THREW GccAna_NoSolution                      5e-161                  
+  1e-300         THREW Standard_ConstructionError             5e-301                  
+
+  Does gp_Vec2d::Normalize() itself refuse at these separations?
+    Normalize(perp of |b-a| = 1         ) ok
+    Normalize(perp of |b-a| = 1e-06     ) ok
+    Normalize(perp of |b-a| = 1e-08     ) ok
+    Normalize(perp of |b-a| = 1e-09     ) ok
+    Normalize(perp of |b-a| = 1e-10     ) ok
+    Normalize(perp of |b-a| = 1e-11     ) ok
+    Normalize(perp of |b-a| = 1e-20     ) ok
+    Normalize(perp of |b-a| = 1e-100    ) ok
+    Normalize(perp of |b-a| = 1e-154    ) ok
+    Normalize(perp of |b-a| = 1e-160    ) ok
+    Normalize(perp of |b-a| = 1e-300    ) THREW

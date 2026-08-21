@@ -30,21 +30,66 @@ fi
 
 cp "$MM" "$GOOD"
 : > "$OUT"
+FAILED_ROWS=0
 trap 'cp "$GOOD" "$MM"; rm -rf "$TMP"' EXIT
+
+# EXPECTED_TESTS is how many tests must actually run. A row that fails to build, or whose python
+# anchor does not match, or that runs zero tests because the filter stopped matching, would
+# otherwise write an EMPTY row, and an empty row is byte-identical to the control row's "nothing
+# failed". That is the silent-pass shape this file exists to replace, and its first version had
+# exactly that defect: no exit status checked, swift test's status swallowed by a pipe, and nothing
+# asserted about how many tests ran.
+EXPECTED_TESTS=10
 
 row () {
   local label="$1"; local script="$2"
   cp "$GOOD" "$MM"
-  python3 - "$MM" <<PYEOF
+
+  if ! python3 - "$MM" <<PYEOF
 import sys
 p = sys.argv[1]
 s = open(p).read()
 $script
 open(p, 'w').write(s)
 PYEOF
+  then
+    echo "=== $label ===" >> "$OUT"
+    echo "ROW FAILED: the injection did not apply (anchor missed, or python error)" >> "$OUT"
+    echo "" >> "$OUT"
+    cp "$GOOD" "$MM"
+    FAILED_ROWS=$((FAILED_ROWS + 1))
+    return
+  fi
+
+  local log="$TMP/row.log"
+  swift test --filter "BisectorIntersectionTests|Issue1050BisectorDomainTests" > "$log" 2>&1
+  local status=$?
+
   echo "=== $label ===" >> "$OUT"
-  swift test --filter "BisectorIntersectionTests|Issue1050BisectorDomainTests" 2>&1 \
-    | grep -E '^✘ Test "' | sed 's/ recorded an issue.*//; s/ failed after.*//' | sort -u >> "$OUT"
+
+  # "Test run with N tests" is swift-testing's own tally. Absent, the run never reached the tests,
+  # which is a build failure however green the (empty) failure list looks.
+  local ran
+  ran=$(sed -n 's/.*Test run with \([0-9][0-9]*\) tests.*/\1/p' "$log" | tail -1)
+  if [ -z "$ran" ]; then
+    echo "ROW FAILED: no test run happened (exit $status), almost certainly a build error:" >> "$OUT"
+    grep -E "error:" "$log" | head -3 >> "$OUT"
+    echo "" >> "$OUT"
+    cp "$GOOD" "$MM"
+    FAILED_ROWS=$((FAILED_ROWS + 1))
+    return
+  fi
+  if [ "$ran" -ne "$EXPECTED_TESTS" ]; then
+    echo "ROW FAILED: $ran tests ran, expected $EXPECTED_TESTS (the filter drifted, or a test was" >> "$OUT"
+    echo "            added or removed without updating EXPECTED_TESTS in this script)" >> "$OUT"
+    echo "" >> "$OUT"
+    cp "$GOOD" "$MM"
+    FAILED_ROWS=$((FAILED_ROWS + 1))
+    return
+  fi
+
+  grep -E '^✘ Test "' "$log" | sed 's/ recorded an issue.*//; s/ failed after.*//' | sort -u >> "$OUT"
+  echo "  ($ran tests ran)" >> "$OUT"
   echo "" >> "$OUT"
   cp "$GOOD" "$MM"
 }
@@ -117,14 +162,23 @@ assert s.count(old) == 1
 s = s.replace(old, new)
 '
 
-echo "=== control: no injection ===" >> "$OUT"
-swift test --filter "BisectorIntersectionTests|Issue1050BisectorDomainTests" 2>&1 \
-  | grep -E '^✘ Test "' | sed 's/ recorded an issue.*//; s/ failed after.*//' | sort -u >> "$OUT"
-echo "" >> "$OUT"
+# The control goes through the same row(), with an injection that asserts rather than substitutes,
+# so it is held to the same "did ten tests actually run" check as every other row. Run through a
+# separate path it would be the one row that could pass while proving nothing.
+row "control: no injection" '
+assert s.count("IntRes2d_Domain d1(") == 1
+'
 
 if diff -q "$GOOD" "$MM" >/dev/null; then
   echo "RESTORE VERIFIED: the bridge file is byte-identical to the pre-matrix state" >> "$OUT"
 else
   echo "RESTORE FAILED" >> "$OUT"
+  FAILED_ROWS=$((FAILED_ROWS + 1))
+fi
+
+if [ "$FAILED_ROWS" -ne 0 ]; then
+  echo "" >> "$OUT"
+  echo "$FAILED_ROWS ROW(S) DID NOT PRODUCE A RESULT. The table above is incomplete." >> "$OUT"
 fi
 cat "$OUT"
+if [ "$FAILED_ROWS" -ne 0 ]; then exit 1; fi
