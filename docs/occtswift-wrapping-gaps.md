@@ -539,6 +539,46 @@ constructor are plumbing every wrapped OCAF attribute has and none exposes.
 coverage figure should have counted against this class. The row is worth acting on for the linkage
 methods and for nothing else, which is the answer #1021 asked for.
 
+### NLPlate deformation returns a refit BSpline (#1046)
+
+`Surface.nlPlateDeformed` and its four siblings (`nlPlateDeformedG1`, `nlPlateDeformedG2`,
+`nlPlateDeformedG3`, `nlPlateDeformedIncremental`) do not hand back the deformed surface itself.
+`NLPlate_NLPlate` has no surface to hand back: it is an evaluator, and the only way out of it is
+`Evaluate(uv)` a point at a time. The bridge samples that on a grid and fits the samples with
+`GeomAPI_PointsToBSplineSurface`, so the result is a fresh approximation of the deformation, not
+the input surface with a displacement applied to it.
+
+Three consequences, all measured in
+[`Scripts/repro/1049-nlplate-double-base/`](https://github.com/SecondMouseAU/OCCTSwift/tree/main/Scripts/repro/1049-nlplate-double-base)
+rather than reasoned about. The first is fixed; the second and third are not, and are recorded here
+so the question is not re-asked from scratch.
+
+- **The parametrisation is restored, by a linear knot map.** The fit lands on `[0, 1] x [0, 1]`,
+  and the returned surface's knots are then mapped linearly onto the working domain the samples
+  were taken over. Poles are untouched, so this changes the parametrisation and nothing about the
+  geometry, and the `(u, v)` a constraint was written at addresses the same place on the result as
+  it did on the input. Before this, a cylinder deformed at `u = pi/2` came back with that same
+  `u = pi/2` outside the returned surface's own domain.
+- **Periodicity is not restored.** A deformed cylinder comes back as a plain BSpline that does not
+  close on itself. Restoring it would mean fitting a periodic surface, which
+  `GeomAPI_PointsToBSplineSurface` does not offer, or building a `GeomPlate_Surface` and going
+  through `GeomPlate_MakeApprox` instead. That second route is what the documentation used to
+  claim already happened, and it was never implementable as written: `GeomPlate_MakeApprox` takes
+  a `Handle(GeomPlate_Surface)`, which comes from `GeomPlate_BuildPlateSurface`, not from
+  `NLPlate_NLPlate`.
+- **The 20x20 sample grid is fixed, so `tolerance` describes a fit the caller cannot resolve.**
+  Same family as #479 and #558. It shows on a cylinder: the solver hits the constraint target
+  exactly and the fitted surface lands 52.3 away from it, because 20 samples across a full turn of
+  a radius-10 cylinder cannot carry the plate. Exposing the grid size is a public API addition, so
+  it waits for its own issue rather than riding this fix.
+
+**The working domain itself is derived, not the input's own domain, whenever the input is
+unbounded.** Each direction is taken from the input surface where the input bounds it, and from
+the span of the constraint parameters padded by 10 where it does not. A plane bounds neither, so a
+single constraint gives a 20-by-20 patch around it; a cylinder bounds `u` at `[0, 2pi]` and leaves
+only `v` derived. The pad of 10 is a fixed number with no basis in the input's scale, which is a
+real limitation for a model whose features are much larger or much smaller than that.
+
 ### Constraint Solver Infrastructure (Complete)
 
 All priority items from the original gap analysis are now wrapped:

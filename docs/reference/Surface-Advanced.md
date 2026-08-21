@@ -96,7 +96,7 @@ except where pulled by the constraints.
 
 - **Parameters:** `constraints`, array of `(uv, target)` pairs (non-empty); `resolutionOrder`, the plate's resolution order, 2 through 9; `tolerance`, approximation tolerance.
 - **Returns:** New deformed surface, or `nil` if the array is empty, `resolutionOrder` is outside `2...9`, or the solver fails.
-- **OCCT:** `NLPlate_NLPlate` + `NLPlate_HPG0Constraint` + `GeomPlate_MakeApprox`.
+- **OCCT:** `NLPlate_NLPlate` + `NLPlate_HPG0Constraint` + `Geom_RectangularTrimmedSurface` + `GeomAPI_PointsToBSplineSurface`.
 - **Example:**
   ```swift
   let plane = Surface.plane(origin: .zero, normal: SIMD3(0, 0, 1))!
@@ -107,7 +107,14 @@ except where pulled by the constraints.
       let face = bumped.toFace()
   }
   ```
-- **Note:** Distinct from fitting a fresh surface to a point set, the existing parametrisation is preserved.
+- **Note:** The result is a fresh BSpline fitted to a 20x20 sample grid of the solved plate. It
+  carries the parametrisation of the working domain the samples were taken over, so the `(u, v)` a
+  constraint was written at addresses the same place on the result as it did on the input. For a
+  direction the input surface already bounds, the working domain is the input's own range; for one
+  it leaves unbounded, it is the span of the constraint parameters padded by 10 in each direction.
+  A periodic input still comes back non-periodic, and the sample grid is not caller-adjustable: see
+  [`occtswift-wrapping-gaps.md`](../occtswift-wrapping-gaps.md#nlplate-deformation-returns-a-refit-bspline-1046)
+  for both. (#1046)
 
 ---
 
@@ -130,7 +137,9 @@ constrained locations.
 
 - **Parameters:** `constraints`, array of `(uv, target, tangentU, tangentV)` tuples (non-empty); `resolutionOrder`, the plate's resolution order, 2 through 9; `tolerance`, approximation tolerance.
 - **Returns:** New deformed surface, or `nil` if the array is empty, `resolutionOrder` is outside `2...9`, or the solver fails.
-- **OCCT:** `NLPlate_NLPlate` + `NLPlate_HPG1Constraint` + `GeomPlate_MakeApprox`.
+- **OCCT:** `NLPlate_NLPlate` + `NLPlate_HPG0G1Constraint` + `Plate_D1` + `Geom_RectangularTrimmedSurface` + `GeomAPI_PointsToBSplineSurface`.
+- **Note:** The returned parametrisation and working domain are as described for
+  [`nlPlateDeformed(constraints:resolutionOrder:tolerance:)`](#nlplatedeformedconstraintsresolutionordertolerance).
 - **Example:**
   ```swift
   if let shaped = plane.nlPlateDeformedG1(
@@ -934,7 +943,9 @@ on this one, and it is wrapped separately as
 
 - **Parameters:** `constraints`, array of constraint tuples (non-empty); `tolerance`, approximation tolerance.
 - **Returns:** New deformed surface, or `nil` on failure.
-- **OCCT:** `NLPlate_NLPlate` + `NLPlate_HPG2Constraint` + `GeomPlate_MakeApprox`.
+- **OCCT:** `NLPlate_NLPlate` + `NLPlate_HPG0G2Constraint` + `Plate_D1` + `Plate_D2` + `Geom_RectangularTrimmedSurface` + `GeomAPI_PointsToBSplineSurface`.
+- **Note:** The returned parametrisation and working domain are as described for
+  [`nlPlateDeformed(constraints:resolutionOrder:tolerance:)`](#nlplatedeformedconstraintsresolutionordertolerance).
 - **Example:**
   ```swift
   if let deformed = surf.nlPlateDeformedG2(constraints: [(
@@ -969,7 +980,9 @@ There is no iteration count, for the same reason as `nlPlateDeformedG2(constrain
 
 - **Parameters:** `constraints`, G0+G1+G2+G3 constraint tuples (non-empty); `tolerance`, approximation tolerance.
 - **Returns:** New deformed surface, or `nil` on failure.
-- **OCCT:** `NLPlate_NLPlate` + `NLPlate_HPG3Constraint` + `GeomPlate_MakeApprox`.
+- **OCCT:** `NLPlate_NLPlate` + `NLPlate_HPG0G3Constraint` + `Plate_D1` + `Plate_D2` + `Plate_D3` + `Geom_RectangularTrimmedSurface` + `GeomAPI_PointsToBSplineSurface`.
+- **Note:** The returned parametrisation and working domain are as described for
+  [`nlPlateDeformed(constraints:resolutionOrder:tolerance:)`](#nlplatedeformedconstraintsresolutionordertolerance).
 - **Example:**
   ```swift
   if let deformed = surf.nlPlateDeformedG3(constraints: [(
@@ -1003,7 +1016,9 @@ standard `nlPlateDeformed` may not converge well.
 
 - **Parameters:** `constraints`, G0 constraint pairs (non-empty); `maxOrder`, maximum polynomial order; `initConstraintOrder`, initial constraint order; `nbIncrements`, number of increments.
 - **Returns:** New deformed surface, or `nil` on failure.
-- **OCCT:** `NLPlate_NLPlate::IncrementalSolve` + `GeomPlate_MakeApprox`.
+- **OCCT:** `NLPlate_NLPlate::IncrementalSolve` + `NLPlate_HPG0Constraint` + `Geom_RectangularTrimmedSurface` + `GeomAPI_PointsToBSplineSurface`.
+- **Note:** The returned parametrisation and working domain are as described for
+  [`nlPlateDeformed(constraints:resolutionOrder:tolerance:)`](#nlplatedeformedconstraintsresolutionordertolerance).
 - **Example:**
   ```swift
   if let deformed = surf.nlPlateDeformedIncremental(
@@ -1031,16 +1046,20 @@ public func nlPlateDerivative(
 Solves the NLPlate problem with the given G0 constraints and returns the (iu, iv)-th partial
 derivative at (u, v) without approximating the surface.
 
+`NLPlate_NLPlate::EvaluateDerivative` seeds its accumulator with the input surface's own value or
+derivative before summing the plates, so this is a derivative of the deformed surface, not of a
+displacement away from the input. At `iu == 0, iv == 0` it is the deformed point itself. (#1049)
+
 - **Parameters:** `constraints`, G0 constraint pairs; `u`, `v`, evaluation parameters; `iu`, `iv`, derivative orders in U and V.
 - **Returns:** Derivative vector, or `nil` on failure.
-- **OCCT:** `NLPlate_NLPlate::Evaluate`.
+- **OCCT:** `NLPlate_NLPlate::EvaluateDerivative` + `NLPlate_HPG0Constraint`.
 - **Example:**
   ```swift
   if let d = surf.nlPlateDerivative(
       constraints: [(uv: SIMD2(0.5, 0.5), target: SIMD3(5, 5, 2))],
       u: 0.5, v: 0.5, iu: 1, iv: 0
   ) {
-      print("dU displacement at (0.5, 0.5):", d)
+      print("dU of the deformed surface at (0.5, 0.5):", d)
   }
   ```
 

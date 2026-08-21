@@ -1082,16 +1082,18 @@ public final class Surface: @unchecked Sendable {
 
     /// Deform this surface to pass through target positions (NLPlate G0).
     ///
-    /// Uses the non-linear plate solver to compute a displacement field on
-    /// this surface, then samples and approximates as a BSpline. Each constraint
-    /// specifies a (u, v) parameter and a target 3D position.
+    /// Each constraint pins a (u, v) parameter of this surface to a target 3D position. The result
+    /// is a BSpline fitted to a sample grid of the solved plate, carrying the parametrisation of
+    /// the working domain the samples were taken over, so a constrained (u, v) addresses the same
+    /// place on the result. See `docs/reference/Surface-Advanced.md` for what that domain is and
+    /// `docs/occtswift-wrapping-gaps.md` for what the refit does not preserve.
     ///
     /// ```swift
-    /// let plane = Surface.plane(origin: .zero, normal: SIMD3(0, 0, 1))!
+    /// let plane = Surface.plane(origin: SIMD3(100, 0, 0), normal: SIMD3(0, 0, 1))!
     /// let bumped = plane.nlPlateDeformed(
-    ///     constraints: [(uv: SIMD2(0, 0), target: SIMD3(0, 0, 5))])
-    /// print(bumped != nil)                                        // true
-    /// print(plane.nlPlateDeformed(constraints: [(uv: SIMD2(0, 0), target: SIMD3(0, 0, 5))],
+    ///     constraints: [(uv: SIMD2(0, 0), target: SIMD3(100, 0, 5))])!
+    /// print(bumped.point(atU: 0, v: 0))                           // (100.0, 0.0, 5.0)
+    /// print(plane.nlPlateDeformed(constraints: [(uv: SIMD2(0, 0), target: SIMD3(100, 0, 5))],
     ///                             resolutionOrder: 12) == nil)    // true, out of range
     /// ```
     ///
@@ -1131,6 +1133,8 @@ public final class Surface: @unchecked Sendable {
     ///
     /// Each constraint specifies a (u, v) parameter, a target 3D position, and
     /// desired partial derivatives (tangent vectors) in the U and V directions.
+    /// The result is parametrised as ``nlPlateDeformed(constraints:resolutionOrder:tolerance:)``'s
+    /// is.
     ///
     /// ```swift
     /// let plane = Surface.plane(origin: .zero, normal: SIMD3(0, 0, 1))!
@@ -2351,6 +2355,8 @@ extension Surface {
     ///
     /// Each constraint specifies a (u,v) parameter, a target 3D position,
     /// tangent vectors (dU, dV), and second derivatives (dUU, dUV, dVV).
+    /// The result is parametrised as ``nlPlateDeformed(constraints:resolutionOrder:tolerance:)``'s
+    /// is.
     ///
     /// - Parameters:
     ///   - constraints: Array of constraint tuples
@@ -2406,6 +2412,8 @@ extension Surface {
     ///
     /// Each constraint has 32 doubles: uv(2) + target(3) + d1u(3) + d1v(3) +
     /// d2uu(3) + d2uv(3) + d2vv(3) + d3uuu(3) + d3uuv(3) + d3uvv(3) + d3vvv(3).
+    /// The result is parametrised as ``nlPlateDeformed(constraints:resolutionOrder:tolerance:)``'s
+    /// is.
     ///
     /// - Parameters:
     ///   - constraints: Array of constraint tuples
@@ -2473,6 +2481,8 @@ extension Surface {
     ///
     /// Uses NLPlate IncrementalSolve which progressively adds constraints for
     /// better convergence on challenging constraint sets.
+    /// The result is parametrised as ``nlPlateDeformed(constraints:resolutionOrder:tolerance:)``'s
+    /// is.
     ///
     /// - Parameters:
     ///   - constraints: Array of (uv parameter, target 3D position) pairs
@@ -2507,9 +2517,13 @@ extension Surface {
         return Surface(handle: h)
     }
 
-    /// Evaluate derivative of NLPlate solution at a UV point.
+    /// Evaluate a derivative of the NLPlate-deformed surface at a UV point.
     ///
     /// Solves the NLPlate problem with G0 constraints and returns the derivative at (u,v).
+    /// `NLPlate_NLPlate::EvaluateDerivative` seeds its accumulator with this surface's own value
+    /// or derivative before summing the plates, so this is a derivative of the deformed surface
+    /// rather than of a displacement away from it, and at `iu == 0, iv == 0` it is the deformed
+    /// point itself.
     ///
     /// - Parameters:
     ///   - constraints: Array of G0 constraint (uv, target) pairs

@@ -473,6 +473,153 @@ OCCTSurfaceRef OCCTSurfacePlateThrough(const double* points,
   }
 }
 
+// MARK: - NLPlate shared tail (#1049, #1046)
+
+// The parameter rectangle every OCCTSurfaceNLPlate* entry point samples its solved plate over,
+// with the surface the solver is built on.
+//
+// A direction the input already bounds is kept, so a cylinder comes back spanning its own
+// [0, 2pi] rather than an interval derived from wherever its constraints happen to sit. A
+// direction the input leaves unbounded has no range to sample, so it is replaced by the span of
+// the constraint parameters padded outward. Only the unbounded directions are replaced, and the
+// whole surface is trimmed to the result before it is refit, per CLAUDE.md's rule that an
+// infinite surface is trimmed before converting to BSpline (#1046).
+struct OCCTNLPlateWorkingDomain
+{
+  Handle(Geom_Surface) surface;
+  double               u1 = 0.0;
+  double               u2 = 0.0;
+  double               v1 = 0.0;
+  double               v2 = 0.0;
+};
+
+static bool occtNLPlateWorkingDomain(const Handle(Geom_Surface)& initialSurface,
+                                     const double*               constraints,
+                                     int32_t                     constraintCount,
+                                     int32_t                     stride,
+                                     OCCTNLPlateWorkingDomain&   domain)
+{
+  Standard_Real u1, u2, v1, v2;
+  initialSurface->Bounds(u1, u2, v1, v2);
+
+  const bool uInfinite = Precision::IsNegativeInfinite(u1) || Precision::IsPositiveInfinite(u2);
+  const bool vInfinite = Precision::IsNegativeInfinite(v1) || Precision::IsPositiveInfinite(v2);
+
+  if (uInfinite || vInfinite)
+  {
+    double minU = 1e30, maxU = -1e30, minV = 1e30, maxV = -1e30;
+    for (int32_t i = 0; i < constraintCount; i++)
+    {
+      const double cu = constraints[i * stride + 0];
+      const double cv = constraints[i * stride + 1];
+      minU            = std::min(minU, cu);
+      maxU            = std::max(maxU, cu);
+      minV            = std::min(minV, cv);
+      maxV            = std::max(maxV, cv);
+    }
+    if (uInfinite)
+    {
+      const double padU = std::max(10.0, (maxU - minU) * 0.5);
+      u1                = minU - padU;
+      u2                = maxU + padU;
+    }
+    if (vInfinite)
+    {
+      const double padV = std::max(10.0, (maxV - minV) * 0.5);
+      v1                = minV - padV;
+      v2                = maxV + padV;
+    }
+  }
+
+  // Checked before the trim is built, because Geom_RectangularTrimmedSurface throws on a
+  // degenerate range and a refusal is the answer either way.
+  if (!(u2 > u1) || !(v2 > v1))
+    return false;
+
+  domain.surface =
+    (uInfinite || vInfinite)
+      ? Handle(Geom_Surface)(new Geom_RectangularTrimmedSurface(initialSurface, u1, u2, v1, v2))
+      : initialSurface;
+  domain.u1 = u1;
+  domain.u2 = u2;
+  domain.v1 = v1;
+  domain.v2 = v2;
+  return true;
+}
+
+// Map a fitted surface's knots linearly onto the working domain. The poles are untouched, so the
+// geometry is unchanged and only the parametrisation moves: the caller's own (u, v), the one the
+// constraints were written in, addresses the same place on the output as it did on the input.
+// The fit itself always lands on [0, 1] x [0, 1] (#1046).
+//
+// Periodicity is not restored by this. A periodic input still comes back as a plain BSpline that
+// does not close on itself; see docs/occtswift-wrapping-gaps.md.
+static void occtNLPlateReparametrise(const Handle(Geom_BSplineSurface)& surface,
+                                     const OCCTNLPlateWorkingDomain&    domain)
+{
+  Standard_Real fu1, fu2, fv1, fv2;
+  surface->Bounds(fu1, fu2, fv1, fv2);
+
+  if (fu2 > fu1)
+  {
+    const double                      scale = (domain.u2 - domain.u1) / (fu2 - fu1);
+    const NCollection_Array1<double>& src   = surface->UKnots();
+    NCollection_Array1<double>        knots(src.Lower(), src.Upper());
+    for (int i = src.Lower(); i <= src.Upper(); i++)
+      knots(i) = domain.u1 + (src(i) - fu1) * scale;
+    surface->SetUKnots(knots);
+  }
+
+  if (fv2 > fv1)
+  {
+    const double                      scale = (domain.v2 - domain.v1) / (fv2 - fv1);
+    const NCollection_Array1<double>& src   = surface->VKnots();
+    NCollection_Array1<double>        knots(src.Lower(), src.Upper());
+    for (int i = src.Lower(); i <= src.Upper(); i++)
+      knots(i) = domain.v1 + (src(i) - fv1) * scale;
+    surface->SetVKnots(knots);
+  }
+}
+
+// Sample the solved plate over the working domain and refit it as a BSpline.
+//
+// NLPlate_NLPlate::Evaluate returns the absolute deformed point, not a displacement.
+// EvaluateDerivative seeds its accumulator with myInitialSurface->Value(uv) before summing the
+// plates, and Iterate corroborates it by loading G0Target() - Evaluate(UV) as the pinpoint
+// constraint, a subtraction that only makes sense if Evaluate is a point in the same space as the
+// target. Adding the base surface to it a second time put every result at twice its distance from
+// the origin, invisible only because every shipped fixture was a plane through the origin (#1049).
+// See Scripts/repro/1049-nlplate-double-base.
+static OCCTSurfaceRef occtNLPlateFitSolved(const NLPlate_NLPlate&          solver,
+                                           const OCCTNLPlateWorkingDomain& domain,
+                                           double                          tolerance)
+{
+  const int          nuPts = 20, nvPts = 20;
+  TColgp_Array2OfPnt poles(1, nuPts, 1, nvPts);
+  for (int iu = 1; iu <= nuPts; iu++)
+  {
+    const double pu = domain.u1 + (domain.u2 - domain.u1) * (iu - 1) / (nuPts - 1);
+    for (int iv = 1; iv <= nvPts; iv++)
+    {
+      const double pv  = domain.v1 + (domain.v2 - domain.v1) * (iv - 1) / (nvPts - 1);
+      const gp_XYZ val = solver.Evaluate(gp_XY(pu, pv));
+      poles(iu, iv)    = gp_Pnt(val.X(), val.Y(), val.Z());
+    }
+  }
+
+  GeomAPI_PointsToBSplineSurface approx;
+  approx.Init(poles, 3, 8, GeomAbs_C2, tolerance);
+  if (!approx.IsDone())
+    return nullptr;
+
+  Handle(Geom_BSplineSurface) result = approx.Surface();
+  if (result.IsNull())
+    return nullptr;
+
+  occtNLPlateReparametrise(result, domain);
+  return new OCCTSurface(result);
+}
+
 // #1017: OCCTSurfaceNLPlateG0/G1 used to call this argument maxIter and hand it to
 // NLPlate_NLPlate::Solve2, whose first parameter is `ord`, the plate's resolution order. It is
 // forwarded to Plate_Plate::SolveTI, which accepts only [2, 9] and otherwise returns with its own
@@ -504,50 +651,18 @@ OCCTSurfaceRef OCCTSurfaceNLPlateG0(OCCTSurfaceRef initialSurface,
     return nullptr;
   try
   {
-    // NLPlate needs a bounded surface; if infinite, create a trimmed version
-    Standard_Real u1, u2, v1, v2;
-    initialSurface->surface->Bounds(u1, u2, v1, v2);
+    OCCTNLPlateWorkingDomain domain;
+    if (!occtNLPlateWorkingDomain(initialSurface->surface, constraints, constraintCount, 5, domain))
+      return nullptr;
 
-    Handle(Geom_Surface) workSurface = initialSurface->surface;
-    bool needsTrim = Precision::IsNegativeInfinite(u1) || Precision::IsPositiveInfinite(u2)
-                     || Precision::IsNegativeInfinite(v1) || Precision::IsPositiveInfinite(v2);
-
-    if (needsTrim)
-    {
-      // Find bounds from constraint points
-      double minU = 1e30, maxU = -1e30, minV = 1e30, maxV = -1e30;
-      for (int32_t i = 0; i < constraintCount; i++)
-      {
-        double cu = constraints[i * 5 + 0];
-        double cv = constraints[i * 5 + 1];
-        minU      = std::min(minU, cu);
-        maxU      = std::max(maxU, cu);
-        minV      = std::min(minV, cv);
-        maxV      = std::max(maxV, cv);
-      }
-      // Extend domain beyond constraints
-      double padU = std::max(10.0, (maxU - minU) * 0.5);
-      double padV = std::max(10.0, (maxV - minV) * 0.5);
-      u1          = minU - padU;
-      u2          = maxU + padU;
-      v1          = minV - padV;
-      v2          = maxV + padV;
-
-      workSurface = new Geom_RectangularTrimmedSurface(initialSurface->surface, u1, u2, v1, v2);
-    }
-
-    NLPlate_NLPlate solver(workSurface);
+    NLPlate_NLPlate solver(domain.surface);
 
     for (int32_t i = 0; i < constraintCount; i++)
     {
-      double u  = constraints[i * 5 + 0];
-      double v  = constraints[i * 5 + 1];
-      double tx = constraints[i * 5 + 2];
-      double ty = constraints[i * 5 + 3];
-      double tz = constraints[i * 5 + 4];
+      const double* c = constraints + i * 5;
+      gp_XY         uv(c[0], c[1]);
+      gp_XYZ        target(c[2], c[3], c[4]);
 
-      gp_XY                          uv(u, v);
-      gp_XYZ                         target(tx, ty, tz);
       Handle(NLPlate_HPG0Constraint) g0 = new NLPlate_HPG0Constraint(uv, target);
       solver.Load(g0);
     }
@@ -556,45 +671,7 @@ OCCTSurfaceRef OCCTSurfaceNLPlateG0(OCCTSurfaceRef initialSurface,
     if (!solver.IsDone())
       return nullptr;
 
-    // Get working domain
-    if (!needsTrim)
-    {
-      workSurface->Bounds(u1, u2, v1, v2);
-      if (Precision::IsNegativeInfinite(u1))
-        u1 = -100.0;
-      if (Precision::IsPositiveInfinite(u2))
-        u2 = 100.0;
-      if (Precision::IsNegativeInfinite(v1))
-        v1 = -100.0;
-      if (Precision::IsPositiveInfinite(v2))
-        v2 = 100.0;
-    }
-
-    // Sample the deformed surface and create BSpline approximation
-    int                nuPts = 20, nvPts = 20;
-    TColgp_Array2OfPnt poles(1, nuPts, 1, nvPts);
-    for (int iu = 1; iu <= nuPts; iu++)
-    {
-      double pu = u1 + (u2 - u1) * (iu - 1) / (nuPts - 1);
-      for (int iv = 1; iv <= nvPts; iv++)
-      {
-        double pv = v1 + (v2 - v1) * (iv - 1) / (nvPts - 1);
-        gp_XY  uv(pu, pv);
-        gp_XYZ disp = solver.Evaluate(uv);
-        gp_Pnt origPt;
-        workSurface->D0(pu, pv, origPt);
-        gp_Pnt newPt(origPt.X() + disp.X(), origPt.Y() + disp.Y(), origPt.Z() + disp.Z());
-        poles(iu, iv) = newPt;
-      }
-    }
-
-    GeomAPI_PointsToBSplineSurface approx;
-    approx.Init(poles, 3, 8, GeomAbs_C2, tolerance);
-    Handle(Geom_BSplineSurface) result = approx.Surface();
-    if (result.IsNull())
-      return nullptr;
-
-    return new OCCTSurface(result);
+    return occtNLPlateFitSolved(solver, domain, tolerance);
   }
   catch (...)
   {
@@ -616,58 +693,24 @@ OCCTSurfaceRef OCCTSurfaceNLPlateG1(OCCTSurfaceRef initialSurface,
     return nullptr;
   try
   {
-    // NLPlate needs bounded surface
-    Standard_Real u1, u2, v1, v2;
-    initialSurface->surface->Bounds(u1, u2, v1, v2);
+    OCCTNLPlateWorkingDomain domain;
+    if (!occtNLPlateWorkingDomain(initialSurface->surface,
+                                  constraints,
+                                  constraintCount,
+                                  11,
+                                  domain))
+      return nullptr;
 
-    Handle(Geom_Surface) workSurface = initialSurface->surface;
-    bool needsTrim = Precision::IsNegativeInfinite(u1) || Precision::IsPositiveInfinite(u2)
-                     || Precision::IsNegativeInfinite(v1) || Precision::IsPositiveInfinite(v2);
-
-    if (needsTrim)
-    {
-      double minU = 1e30, maxU = -1e30, minV = 1e30, maxV = -1e30;
-      for (int32_t i = 0; i < constraintCount; i++)
-      {
-        double cu = constraints[i * 11 + 0];
-        double cv = constraints[i * 11 + 1];
-        minU      = std::min(minU, cu);
-        maxU      = std::max(maxU, cu);
-        minV      = std::min(minV, cv);
-        maxV      = std::max(maxV, cv);
-      }
-      double padU = std::max(10.0, (maxU - minU) * 0.5);
-      double padV = std::max(10.0, (maxV - minV) * 0.5);
-      u1          = minU - padU;
-      u2          = maxU + padU;
-      v1          = minV - padV;
-      v2          = maxV + padV;
-
-      workSurface = new Geom_RectangularTrimmedSurface(initialSurface->surface, u1, u2, v1, v2);
-    }
-
-    NLPlate_NLPlate solver(workSurface);
+    NLPlate_NLPlate solver(domain.surface);
 
     // constraints: flat (u, v, targetX, targetY, targetZ, d1uX, d1uY, d1uZ, d1vX, d1vY, d1vZ)
     for (int32_t i = 0; i < constraintCount; i++)
     {
-      double u    = constraints[i * 11 + 0];
-      double v    = constraints[i * 11 + 1];
-      double tx   = constraints[i * 11 + 2];
-      double ty   = constraints[i * 11 + 3];
-      double tz   = constraints[i * 11 + 4];
-      double d1ux = constraints[i * 11 + 5];
-      double d1uy = constraints[i * 11 + 6];
-      double d1uz = constraints[i * 11 + 7];
-      double d1vx = constraints[i * 11 + 8];
-      double d1vy = constraints[i * 11 + 9];
-      double d1vz = constraints[i * 11 + 10];
+      const double* c = constraints + i * 11;
+      gp_XY         uv(c[0], c[1]);
+      gp_XYZ        target(c[2], c[3], c[4]);
+      Plate_D1      d1(gp_XYZ(c[5], c[6], c[7]), gp_XYZ(c[8], c[9], c[10]));
 
-      gp_XY                            uv(u, v);
-      gp_XYZ                           target(tx, ty, tz);
-      gp_XYZ                           du(d1ux, d1uy, d1uz);
-      gp_XYZ                           dv(d1vx, d1vy, d1vz);
-      Plate_D1                         d1(du, dv);
       Handle(NLPlate_HPG0G1Constraint) g0g1 = new NLPlate_HPG0G1Constraint(uv, target, d1);
       solver.Load(g0g1);
     }
@@ -676,43 +719,7 @@ OCCTSurfaceRef OCCTSurfaceNLPlateG1(OCCTSurfaceRef initialSurface,
     if (!solver.IsDone())
       return nullptr;
 
-    if (!needsTrim)
-    {
-      workSurface->Bounds(u1, u2, v1, v2);
-      if (Precision::IsNegativeInfinite(u1))
-        u1 = -100.0;
-      if (Precision::IsPositiveInfinite(u2))
-        u2 = 100.0;
-      if (Precision::IsNegativeInfinite(v1))
-        v1 = -100.0;
-      if (Precision::IsPositiveInfinite(v2))
-        v2 = 100.0;
-    }
-
-    int                nuPts = 20, nvPts = 20;
-    TColgp_Array2OfPnt poles(1, nuPts, 1, nvPts);
-    for (int iu = 1; iu <= nuPts; iu++)
-    {
-      double pu = u1 + (u2 - u1) * (iu - 1) / (nuPts - 1);
-      for (int iv = 1; iv <= nvPts; iv++)
-      {
-        double pv = v1 + (v2 - v1) * (iv - 1) / (nvPts - 1);
-        gp_XY  uv(pu, pv);
-        gp_XYZ disp = solver.Evaluate(uv);
-        gp_Pnt origPt;
-        workSurface->D0(pu, pv, origPt);
-        gp_Pnt newPt(origPt.X() + disp.X(), origPt.Y() + disp.Y(), origPt.Z() + disp.Z());
-        poles(iu, iv) = newPt;
-      }
-    }
-
-    GeomAPI_PointsToBSplineSurface approx;
-    approx.Init(poles, 3, 8, GeomAbs_C2, tolerance);
-    Handle(Geom_BSplineSurface) result = approx.Surface();
-    if (result.IsNull())
-      return nullptr;
-
-    return new OCCTSurface(result);
+    return occtNLPlateFitSolved(solver, domain, tolerance);
   }
   catch (...)
   {
@@ -904,14 +911,21 @@ OCCTSurfaceRef OCCTSurfaceNLPlateG2(OCCTSurfaceRef initialSurface,
                                     int32_t        constraintCount,
                                     double         tolerance)
 {
+  if (!initialSurface || initialSurface->surface.IsNull())
+    return nullptr;
+  if (!constraints || constraintCount < 1)
+    return nullptr;
   try
   {
-    auto                 wrapper     = (OCCTSurface*)initialSurface;
-    Handle(Geom_Surface) workSurface = wrapper->surface;
-    if (workSurface.IsNull())
+    OCCTNLPlateWorkingDomain domain;
+    if (!occtNLPlateWorkingDomain(initialSurface->surface,
+                                  constraints,
+                                  constraintCount,
+                                  20,
+                                  domain))
       return nullptr;
 
-    NLPlate_NLPlate solver(workSurface);
+    NLPlate_NLPlate solver(domain.surface);
 
     // Each constraint: 20 doubles (u, v, x,y,z, d1u(3), d1v(3), d2uu(3), d2uv(3), d2vv(3))
     for (int i = 0; i < constraintCount; i++)
@@ -932,32 +946,7 @@ OCCTSurfaceRef OCCTSurfaceNLPlateG2(OCCTSurfaceRef initialSurface,
     if (!solver.IsDone())
       return nullptr;
 
-    // Evaluate on a grid and create a BSpline surface
-    int                nu = 20, nv = 20;
-    TColgp_Array2OfPnt poles(1, nu, 1, nv);
-    for (int i = 1; i <= nu; i++)
-    {
-      for (int j = 1; j <= nv; j++)
-      {
-        double u    = (double)(i - 1) / (nu - 1);
-        double v    = (double)(j - 1) / (nv - 1);
-        gp_XYZ val  = solver.Evaluate(gp_XY(u, v));
-        poles(i, j) = gp_Pnt(val.X(), val.Y(), val.Z());
-      }
-    }
-
-    GeomAPI_PointsToBSplineSurface fitter;
-    fitter.Init(poles, 3, 8, GeomAbs_C2, tolerance > 0 ? tolerance : 1e-3);
-    if (!fitter.IsDone())
-      return nullptr;
-
-    Handle(Geom_BSplineSurface) result = fitter.Surface();
-    if (result.IsNull())
-      return nullptr;
-
-    auto* out    = new OCCTSurface();
-    out->surface = result;
-    return (OCCTSurfaceRef)out;
+    return occtNLPlateFitSolved(solver, domain, tolerance > 0 ? tolerance : 1e-3);
   }
   catch (...)
   {
@@ -971,14 +960,21 @@ OCCTSurfaceRef OCCTSurfaceNLPlateG3(OCCTSurfaceRef initialSurface,
                                     int32_t        constraintCount,
                                     double         tolerance)
 {
+  if (!initialSurface || initialSurface->surface.IsNull())
+    return nullptr;
+  if (!constraints || constraintCount < 1)
+    return nullptr;
   try
   {
-    auto                 wrapper     = (OCCTSurface*)initialSurface;
-    Handle(Geom_Surface) workSurface = wrapper->surface;
-    if (workSurface.IsNull())
+    OCCTNLPlateWorkingDomain domain;
+    if (!occtNLPlateWorkingDomain(initialSurface->surface,
+                                  constraints,
+                                  constraintCount,
+                                  32,
+                                  domain))
       return nullptr;
 
-    NLPlate_NLPlate solver(workSurface);
+    NLPlate_NLPlate solver(domain.surface);
 
     // Each constraint: 32 doubles
     for (int i = 0; i < constraintCount; i++)
@@ -1003,31 +999,7 @@ OCCTSurfaceRef OCCTSurfaceNLPlateG3(OCCTSurfaceRef initialSurface,
     if (!solver.IsDone())
       return nullptr;
 
-    int                nu = 20, nv = 20;
-    TColgp_Array2OfPnt poles(1, nu, 1, nv);
-    for (int i = 1; i <= nu; i++)
-    {
-      for (int j = 1; j <= nv; j++)
-      {
-        double u    = (double)(i - 1) / (nu - 1);
-        double v    = (double)(j - 1) / (nv - 1);
-        gp_XYZ val  = solver.Evaluate(gp_XY(u, v));
-        poles(i, j) = gp_Pnt(val.X(), val.Y(), val.Z());
-      }
-    }
-
-    GeomAPI_PointsToBSplineSurface fitter;
-    fitter.Init(poles, 3, 8, GeomAbs_C2, tolerance > 0 ? tolerance : 1e-3);
-    if (!fitter.IsDone())
-      return nullptr;
-
-    Handle(Geom_BSplineSurface) result = fitter.Surface();
-    if (result.IsNull())
-      return nullptr;
-
-    auto* out    = new OCCTSurface();
-    out->surface = result;
-    return (OCCTSurfaceRef)out;
+    return occtNLPlateFitSolved(solver, domain, tolerance > 0 ? tolerance : 1e-3);
   }
   catch (...)
   {
@@ -1042,14 +1014,17 @@ OCCTSurfaceRef OCCTSurfaceNLPlateIncrementalG0(OCCTSurfaceRef initialSurface,
                                                int32_t        initConstraintOrder,
                                                int32_t        nbIncrements)
 {
+  if (!initialSurface || initialSurface->surface.IsNull())
+    return nullptr;
+  if (!constraints || constraintCount < 1)
+    return nullptr;
   try
   {
-    auto                 wrapper     = (OCCTSurface*)initialSurface;
-    Handle(Geom_Surface) workSurface = wrapper->surface;
-    if (workSurface.IsNull())
+    OCCTNLPlateWorkingDomain domain;
+    if (!occtNLPlateWorkingDomain(initialSurface->surface, constraints, constraintCount, 5, domain))
       return nullptr;
 
-    NLPlate_NLPlate solver(workSurface);
+    NLPlate_NLPlate solver(domain.surface);
 
     for (int i = 0; i < constraintCount; i++)
     {
@@ -1064,31 +1039,7 @@ OCCTSurfaceRef OCCTSurfaceNLPlateIncrementalG0(OCCTSurfaceRef initialSurface,
     if (!solver.IsDone())
       return nullptr;
 
-    int                nu = 20, nv = 20;
-    TColgp_Array2OfPnt poles(1, nu, 1, nv);
-    for (int i = 1; i <= nu; i++)
-    {
-      for (int j = 1; j <= nv; j++)
-      {
-        double u    = (double)(i - 1) / (nu - 1);
-        double v    = (double)(j - 1) / (nv - 1);
-        gp_XYZ val  = solver.Evaluate(gp_XY(u, v));
-        poles(i, j) = gp_Pnt(val.X(), val.Y(), val.Z());
-      }
-    }
-
-    GeomAPI_PointsToBSplineSurface fitter;
-    fitter.Init(poles, 3, 8, GeomAbs_C2, 1e-3);
-    if (!fitter.IsDone())
-      return nullptr;
-
-    Handle(Geom_BSplineSurface) result = fitter.Surface();
-    if (result.IsNull())
-      return nullptr;
-
-    auto* out    = new OCCTSurface();
-    out->surface = result;
-    return (OCCTSurfaceRef)out;
+    return occtNLPlateFitSolved(solver, domain, 1e-3);
   }
   catch (...)
   {
@@ -1107,14 +1058,13 @@ bool OCCTSurfaceNLPlateEvaluateDerivative(OCCTSurfaceRef initialSurface,
                                           double*        outY,
                                           double*        outZ)
 {
+  if (!initialSurface || initialSurface->surface.IsNull())
+    return false;
+  if (!constraints || constraintCount < 1)
+    return false;
   try
   {
-    auto                 wrapper     = (OCCTSurface*)initialSurface;
-    Handle(Geom_Surface) workSurface = wrapper->surface;
-    if (workSurface.IsNull())
-      return false;
-
-    NLPlate_NLPlate solver(workSurface);
+    NLPlate_NLPlate solver(initialSurface->surface);
 
     for (int i = 0; i < constraintCount; i++)
     {
