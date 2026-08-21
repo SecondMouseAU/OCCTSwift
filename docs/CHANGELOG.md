@@ -22,6 +22,24 @@ bounding-box accessors becoming Optional so a void shape stops fabricating `(0,0
 ## Unreleased
 
 
+None. No shipped API, behaviour or output changes; the only string literals touched are display text no test reads.
+
+
+
+### `Shape.isEmptyShape` is renamed to `isNull`, and `Shape.nullified` is deprecated (#1034)
+
+`isEmptyShape` was `TopoDS_Shape::IsNull()` under a name that reads as "has no sub-shapes". Those are different questions, and `Shape.emptied` answers yes to the second while `isEmptyShape` answered no: an emptied box has zero faces and is not null. The predicate is now `Shape.isNull`, with `isEmptyShape` kept as a deprecated alias.
+
+`Shape.nullified` is deprecated in favour of `Shape.emptied`. `Nullify()` clears the type as well as the content, and the result answers no type query meaningfully; `emptied` keeps the type and drops the sub-shapes, which is what callers of "give me an empty copy" want.
+
+```swift
+let box = Shape.box(width: 10, height: 10, depth: 10)!
+print(box.emptied!.isNull)    // false, it is still a Solid with no faces
+print(box.nullified!.isNull)  // true
+```
+
+
+
 ### `GeomPlate_BuildPlateSurface` and `XCAFDoc_Datum` kernel patches carried (#1018, #1022)
 
 Two upstream OCCT defects are now carried as `Scripts/patches/0028` and `0029`, and filed upstream as [OCCT#1481](https://github.com/Open-Cascade-SAS/OCCT/pull/1481) and [OCCT#1483](https://github.com/Open-Cascade-SAS/OCCT/pull/1483). Neither is in the pinned kernel asset, so `Scripts/patches/` holds nineteen against the asset's seventeen until a rebuild; `Package.swift` and `CLAUDE.md` name both and say what each costs.
