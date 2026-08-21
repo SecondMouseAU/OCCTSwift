@@ -106,8 +106,9 @@ listed best first, and the third is the one people reach for first:
 1. **A small Swift file of your own** that does the OCCT work and exposes an `@objc` facade to the
    rest of your app. This is the only route on the supported Swift API.
 2. **A plain `.m` calling this package's own C bridge.** `#import "OCCTBridge.h"` resolves in a
-   consumer target by the same transitive-header mechanism that makes OCCT's headers visible, and
-   the bridge is C, so no `.mm` and no C++17 are needed. Measured, alongside a Swift target writing
+   consumer target by the same transitive-header mechanism that makes OCCT's headers visible. The
+   declarations are C and the umbrella imports Foundation, so it compiles as Objective-C: no `.mm`
+   and no C++17 are needed. Measured, alongside a Swift target writing
    `import OCCTBridge`, which also works: both compile, link and run, printing
    `23.999999999999996` for a 2x3x4 box, in
    `Scripts/repro/967-consumer-compile/bridge-reach.txt`. Understand what you are taking on first:

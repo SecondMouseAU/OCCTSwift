@@ -175,8 +175,9 @@ that, deliberately, rather than being prevented from it by the package.
 Two practical consequences:
 
 - **A bridge function with no Swift caller is deleted, not retained.** "Keep it exported for C
-  consumers" is not a reason this repo recognises, because the packaging gives it no C consumers to
-  keep it for. Retaining one instead preserves whatever contract it had at the moment it was
+  consumers" is not a reason this repo recognises. Not because there can be none, which the section
+  above measures to be false, but because a consumer on that surface is on an implementation detail
+  with no compatibility promise and knew it. Retaining one instead preserves whatever contract it had at the moment it was
   orphaned, which is how #506 came to hold three arc-length functions that still returned `0` on
   failure years after the Swift layer moved to a `-1.0` sentinel, and still extrapolated past a
   curve's knots after #477 fixed that everywhere reachable.

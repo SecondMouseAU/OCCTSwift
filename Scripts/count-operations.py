@@ -103,13 +103,13 @@ TYPEISH = re.compile(r'^[A-Z][A-Za-z0-9_]*(?:\.[A-Za-z_][A-Za-z0-9_]*)*$')
 
 def _strip_trailing_comment(line):
     '''Strip a `//...` line comment, but only a `//` that starts outside any double-quoted
-    string literal on this line -- a `//` inside a string (a URL in an @available message is
+    string literal on this line, a `//` inside a string (a URL in an @available message is
     the obvious case) is string content, not a comment marker.
 
     The blind regex this replaces truncated a message containing a URL at the first `//`,
-    losing the string's own closing quote and the attribute's closing paren -- which then pins
+    losing the string's own closing quote and the attribute's closing paren, which then pins
     the @available scanner's paren depth above zero and silently stops counting the rest of the
-    *file* (#914 review, third pass -- the same "gate that cannot fail" failure mode finding 7
+    *file* (#914 review, third pass, the same "gate that cannot fail" failure mode finding 7
     fixed, reached through a different door finding 7's fix didn't close). Naive about a
     triple-quoted string opening mid-line (three double-quote characters in a row toggle
     in_string an odd number of times, ending up "in a string" rather than genuinely closed) --
@@ -392,7 +392,9 @@ def category_row_sum():
 def fix(derived):
     readme = os.path.join(ROOT, "README.md")
     s = open(readme, encoding="utf-8").read()
-    new_s, n = re.subn(r'\*\*[\d,]+ wrapped operations\*\*', f'**{derived:,} wrapped operations**', s, count=1)
+    # Optional period, matching read_stated(): the two must accept the same spellings or --fix
+    # refuses where the plain run reports, which is the shape of the under-repair #967 already had.
+    new_s, n = re.subn(r'\*\*[\d,]+( wrapped operations)\.?\*\*', rf'**{derived:,}\g<1>**', s, count=1)
     if n != 1:
         sys.exit("README: could not find the 'N wrapped operations' headline: refusing to guess")
     open(readme, "w", encoding="utf-8").write(new_s)

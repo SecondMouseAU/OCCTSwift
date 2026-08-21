@@ -589,10 +589,11 @@ not chosen: `python3 Scripts/count-operations.py`.
    `docs/API_REFERENCE.md` and `docs/index.md`. It is a gate; never hand-edit a total to match.
    `docs/index.md` was added to it by #967, after sitting at 4,339 against a derived 4,355 for
    want of anything reading it, which is the same failure the gate exists to prevent in the other
-   two files. **A fourth headline is still outside the gate**, in
-   `docs/occtswift-wrapping-gaps.md`, which carried 4,256 against the same 4,355 and says so about
-   itself. Three of four is not the class closed, and that file is the place to look first when
-   this paragraph next reads as though it were.
+   two files. **Two headlines are still outside the gate**, both at 4,256 against the same
+   4,355: `docs/occtswift-wrapping-gaps.md`, which says so about itself, and
+   `docs/integration-tests.md`, which does not. Three of five is not the class closed, and the
+   count in this sentence is exactly the kind of figure that goes stale, so re-derive it with
+   `grep -rn 'operations' docs/ README.md` rather than trusting it.
 7. `git tag vX.Y.Z`, `gh release create`.
 
 ### Adding a wrapped operation
