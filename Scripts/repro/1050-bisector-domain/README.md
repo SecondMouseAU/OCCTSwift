@@ -255,10 +255,13 @@ The crossing point itself stays closed-form.
 
 ## Test coverage and the removal matrix
 
-`Tests/OCCTGeom2dTests/Issue1050BisectorDomainTests.swift`, six tests, plus the three in the
-pre-existing `BisectorIntersectionTests` this PR gave real assertions to. Four injections, each
-compiled and run against the real bridge, with disjoint failure sets so each isolates a different
-mechanism:
+`Tests/OCCTGeom2dTests/Issue1050BisectorDomainTests.swift`, seven tests, plus the three in the
+pre-existing `BisectorIntersectionTests` this PR gave real assertions to. Ten in total, against six
+injections, each compiled and run against the real bridge.
+
+The failure sets are **not** disjoint, and an earlier draft of this paragraph claimed they were.
+B's set is a strict subset of A's, and E and F are identical to each other. What each row buys is
+therefore worth stating one at a time rather than asserting as a property of the table:
 
 Every row below is measured by `matrix.sh`, which applies each injection, runs the ten tests,
 captures the failing test **names** rather than a count, restores the file and verifies the restore
@@ -277,11 +280,22 @@ cause list two sections up, and it failed the same way.
 | **F** `perpCD` negated | 2 | past-input-extent, documented-example |
 | the fix, curve's own range | 0 | |
 
-Row B is the one that matters for the choice of bound: it is wider than 100 and passes the issue's
-own fixture, so only the discriminating test separates it from the fix. Row C fails a control rows A
-and B pass, which is the throw reaching `catch (...)` and turning every input into an empty result.
-Row D is the only row that touches the ray tests in both directions: the as-written ordering starts
-finding `(5, 5)` where it must find nothing, and the reversed ordering stops finding it.
+What each row establishes, given the sets overlap:
+
+- **A** is the defect as shipped, and it is the baseline the others are read against.
+- **B** is the row that decides the *choice* of bound. Its single failure is a strict subset of A's
+  two, which is exactly the point: B is wider than 100 and passes the issue's own fixture, so
+  nothing except the discriminating test can tell it apart from the fix. A subset relation is what
+  makes B informative here, not a flaw in it.
+- **C** fails a control that A and B both pass, which is the `Standard_DomainError` reaching
+  `catch (...)` and turning every input into an empty result. That extra failure is what separates
+  "too narrow" from "refuses everything".
+- **D** is the only row that moves the ray tests, and it moves them in both directions: the
+  as-written ordering starts finding `(5, 5)` where it must find nothing, and the reversed ordering
+  stops finding it.
+- **E** and **F** have identical failure sets, so the second adds no discrimination over the first.
+  It is kept and labelled as adding none, because the question it answers ("is this input inert?")
+  was answered wrongly once already and the answer is worth being able to re-derive.
 
 **Rows E and F were published as "inert" and are not.** Reaching row D took three attempts, and the
 first two, flipping `Sense` and negating `perpCD`, left the three ray tests green. That was read as
@@ -290,14 +304,14 @@ first two, flipping `Sense` and negating `perpCD`, left the three ray tests gree
 `GccAna_Pnt2dBisec(afirstpoint, asecondpoint)`, whose line follows the point order, and the bridge
 passes `v3` and `v4` as exact opposites, which makes the sector test in `Distance()` degenerate. The
 mechanism is right about the ray tests and the conclusion drawn from it was too broad: measured
-against the whole suite, E and F each fail one test. They are inert for the fixtures that were being
-watched, not inert.
+against the whole suite, E and F each fail two. They are inert for the fixtures that were being
+watched, not inert, and `matrix.sh` no longer labels them with the retracted word.
 
 That is the same mistake as the accuracy claim above and as the matrix denominator: a measurement
 taken of part of the subject, published as a measurement of the subject. Three instances on one
 issue is why every count in this file now names what was measured and over what.
 
-**Three of the six tests fail under no injection at all**, and they are labelled regression guards in
+**Three of the ten tests fail under no injection at all**, and they are labelled regression guards in
 the suite rather than counted as coverage. `parallelBisectorsReportNothing`,
 `crossingOnDeadSideReportsNothing` and `coincidentPointsReturnNothing` are provably insensitive to
 the bound: `Bisector_Inter::Perform` re-clips any domain to `max(IntervalFirst, MinDomain)`, so no

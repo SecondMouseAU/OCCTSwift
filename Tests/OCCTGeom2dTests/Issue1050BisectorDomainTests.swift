@@ -107,7 +107,11 @@ struct Issue1050BisectorDomainTests {
             c: (-19.0558, 25.0900), d: (-20.9442, 34.9100))
         #expect(!hits.isEmpty)
         if let h = hits.first {
-            #expect(abs(h.x - (-150.004_236_390_595_37)) < 1e-4)
+            // The expected value is the closed-form solve of the ROUNDED C and D actually
+            // passed, not of the construction's intended target, and OCCT agrees with it to
+            // 3e-14. 1e-9 matches the rest of this file; a looser 1e-4 would not notice a
+            // change that moved the crossing by 1e-5.
+            #expect(abs(h.x - (-150.004_236_390_595_37)) < 1e-9)
             #expect(abs(h.y - 5) < 1e-6)
             #expect(h.paramOnFirst > 82.42)
         }

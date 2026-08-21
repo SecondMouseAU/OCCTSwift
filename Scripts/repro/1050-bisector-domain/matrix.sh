@@ -8,19 +8,29 @@
 # maintained by hand once: the table was carried from a six-test suite to a nine-test one by editing
 # the denominator, and two of its rows were then wrong.
 #
-# Needs a source-built bridge, so it unsets OCCTSWIFT_BRIDGE_PREBUILT via run.sh and sets
-# OCCTSWIFT_LOCAL=1. Paths are absolute to the worktree it was written in; edit W and S to re-run
-# elsewhere.
+# Run it from the repo root. It needs a source-built bridge and a local kernel, which it arranges
+# itself rather than depending on an ambient environment: OCCTSWIFT_BRIDGE_PREBUILT is exported to 1
+# by some shell profiles in this project, and with it set the .mm edits below are not compiled at
+# all and every row comes back green for the wrong reason.
 set -u
-W=/Users/elb/Projects/OCCTSwift/.claude/worktrees/agent-adb2ada8e9c638ce3
+W="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
 MM="$W/Sources/OCCTBridge/src/OCCTBridge_Geom2d.mm"
-S=/private/tmp/claude-501/-Users-elb-Projects-OCCTSwift/78bd6be9-ea7e-4eb6-915d-15d59201c18e/scratchpad
-GOOD="$S/Geom2d-matrix-baseline-adb2ada8.mm"
-RUN="$S/run-adb2ada8.sh"
-OUT="$S/matrix-result-adb2ada8.txt"
+TMP="$(mktemp -d)"
+GOOD="$TMP/Geom2d-baseline.mm"
+OUT="${MATRIX_OUT:-$W/Scripts/repro/1050-bisector-domain/probe-output-matrix.txt}"
+
+unset OCCTSWIFT_BRIDGE_PREBUILT BRIDGE_PREBUILT REIFY_FORCE_URL_DEPS
+export OCCTSWIFT_LOCAL=1
+cd "$W" || exit 1
+
+if [ ! -d "$W/Libraries/OCCT.xcframework" ]; then
+  echo "no Libraries/OCCT.xcframework: symlink or build one first, see CLAUDE.md" >&2
+  exit 2
+fi
 
 cp "$MM" "$GOOD"
 : > "$OUT"
+trap 'cp "$GOOD" "$MM"; rm -rf "$TMP"' EXIT
 
 row () {
   local label="$1"; local script="$2"
@@ -33,7 +43,7 @@ $script
 open(p, 'w').write(s)
 PYEOF
   echo "=== $label ===" >> "$OUT"
-  "$RUN" swift test --filter "BisectorIntersectionTests|Issue1050BisectorDomainTests" 2>&1 \
+  swift test --filter "BisectorIntersectionTests|Issue1050BisectorDomainTests" 2>&1 \
     | grep -E '^✘ Test "' | sed 's/ recorded an issue.*//; s/ failed after.*//' | sort -u >> "$OUT"
   echo "" >> "$OUT"
   cp "$GOOD" "$MM"
@@ -93,14 +103,14 @@ assert s.count(old) == 1
 s = s.replace(old, new)
 '
 
-row "E  Sense flipped to -1.0 (reported inert)" '
+row "E  Sense flipped to -1.0" '
 old = "    b2.Perform(pC, pD, midCD, v3, v4, 1.0, 1e-6);"
 new = "    b2.Perform(pC, pD, midCD, v3, v4, -1.0, 1e-6);"
 assert s.count(old) == 1
 s = s.replace(old, new)
 '
 
-row "F  perpCD negated (reported inert)" '
+row "F  perpCD negated" '
 old = """    gp_Vec2d                      vCD(dx - cx, dy - cy);"""
 new = """    gp_Vec2d                      vCD(cx - dx, cy - dy);"""
 assert s.count(old) == 1
@@ -108,8 +118,8 @@ s = s.replace(old, new)
 '
 
 echo "=== control: no injection ===" >> "$OUT"
-"$RUN" swift test --filter "BisectorIntersectionTests|Issue1050BisectorDomainTests" 2>&1 \
-  | grep -E '^✘ Test "' | sed 's/ recorded an issue.*//' | sort -u >> "$OUT"
+swift test --filter "BisectorIntersectionTests|Issue1050BisectorDomainTests" 2>&1 \
+  | grep -E '^✘ Test "' | sed 's/ recorded an issue.*//; s/ failed after.*//' | sort -u >> "$OUT"
 echo "" >> "$OUT"
 
 if diff -q "$GOOD" "$MM" >/dev/null; then

@@ -54,12 +54,20 @@ is itself a call was invisible. Measured, the two together hid **10 of 23** call
 tree, 43% of the population. Both were found by review rather than by the tool, which is the point.
 
 Fixing them was worth doing on its own: one of the ten hidden sites is a real defect.
-`OCCTBisectorInterPointPoint` (`OCCTBridge_Geom2d.mm`, behind `bisectorIntersections`) clamps both
+`OCCTBisectorInterPointPoint` (`OCCTBridge_Geom2d.mm`, behind `bisectorIntersections`) clamped both
 `IntRes2d_Domain` parameter ranges to a hardcoded `[-100, 100]` while accepting four arbitrary
 caller-supplied points. `occt_1001_bisector_domain.mm` rebuilds the function twice, identical except
 for that bound, and a meeting point at parameter 150 is **dropped by the shipped bound and found by
-a bound derived from the input**. Two fixtures inside the bound are the control. That defect is
+a bound derived from the input**. Two fixtures inside the bound are the control. That defect was
 reported here and deliberately not filed, per the brief.
+
+**It was filed afterwards, as #1050, and is fixed.** Both `IntRes2d_Domain` rows below are now
+historical, and this file describes the tree as it stood, not as it stands. One correction worth
+carrying back: the "bound derived from the input" this probe used to demonstrate the defect is
+**not** the bound that shipped. `2 * span + 1` passes every fixture here and still drops a crossing
+at a 10.9 degree angle, because a crossing sits about `d / sin(angle)` from a midpoint and nothing
+bounds `sin(angle)` below. The fix reads each bisector's own parameter range instead. See
+[`Scripts/repro/1050-bisector-domain/`](../1050-bisector-domain/README.md).
 
 **Then the rate.** All 27 pre-4a findings and all 23 current ones were adjudicated, by hand, one at
 a time. TRUE means the literal displaces something the caller supplied or something that should

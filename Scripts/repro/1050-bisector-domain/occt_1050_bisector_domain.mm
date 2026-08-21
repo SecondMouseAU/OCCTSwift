@@ -1,5 +1,5 @@
 // #1050. OCCTBisectorInterPointPoint clamps both IntRes2d_Domain parameter ranges to a hardcoded
-// [-100, 100]. This probe answers the three questions the fix turns on, by measurement rather than
+// [-100, 100]. This probe answers four questions the fix turns on, by measurement rather than
 // by reading the call:
 //
 //   PART 1  What is a point-point bisector, and what parameter range does it actually carry?
@@ -8,6 +8,8 @@
 //   PART 3  Which candidate bound answers correctly on every fixture, including the degenerate
 //           inputs (coincident points, parallel bisectors, a meeting point far outside the four
 //           points' own extent).
+//   PART 4  Why three of PART 3's rows are missed by every bound, unbounded ones included, which
+//           turns out to be the ray Bisector_Bisec keeps rather than anything about the domain.
 //
 //   clang++ -std=c++17 -ObjC++ -w \
 //     -I"Libraries/OCCT.xcframework/macos-arm64/Headers" \
@@ -435,11 +437,16 @@ int main()
 
   // ---------------------------------------------------------------- PART 4
   // One row of PART 3 is missed by EVERY bound, including the unbounded ones, so something other
-  // than the domain drops it. This sweep separates the two causes: it walks the meeting point out
-  // along the same half-line while holding the four points inside a small box, so the crossing
-  // angle falls as the distance rises. A bound that is wide enough stops mattering, and what is
-  // left is the kernel's own limit.
-  printf("\n\nPART 4  where the kernel itself stops, with the bound taken out of the question\n\n");
+  // than the domain drops it. This sweep walks the meeting point out along the same half-line while
+  // holding the four points inside a small box, and the answer is the u2 column: every miss has the
+  // kept ray pointing away, which is a choice Bisector_Bisec makes and not a limit of anything.
+  //
+  // This part was titled "where the kernel itself stops" and cited for there being no kernel
+  // accuracy limit. It cannot support that either way: five of its eight rows have the ray pointing
+  // away, so it never produces a live crossing past u=300. The accuracy question is answered in
+  // occt_1050_review_findings.mm, which keeps every row live and finds no meaningful kernel error.
+  printf("\n\nPART 4  why some rows are missed by every bound, which is the ray and not the "
+         "domain\n\n");
   printf("  Same construction as build-discriminating-fixture.py, m2 fixed at (-20, 30) so the\n");
   printf("  four points stay inside a box about 41 across while the meeting point walks out.\n\n");
   printf("  u1 and u2 are the target's parameter on each bisector, MEASURED from the built curve\n");
