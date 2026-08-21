@@ -139,16 +139,21 @@ parameter-domain bound on a caller-supplied geometry**. That shape is worth a ta
 
 1. Every parameter whose name ended in `Ref` was exempt. The exemption existed to drop the
    twenty-three UNNAMED parameters in `OCCTBridge_BRepGraph.mm`'s deliberate ABI no-op stubs, and it
-   did, but it also covered `curveRef`, `curve2dRef`, `curve3dRef` and `surfRef`, declared at more
-   than a hundred sites. Replaced with the rule the exemption was reaching for: a parameter is
-   unnamed when it reduces to a SINGLE token.
+   did, but it also covered ordinary named parameters. **Counted rather than estimated**, with the
+   detector's own extractor: **58 declared parameters across 17 distinct spellings**, the same at
+   both trees, and wider than the handle family alone (`docRef`, `shape1Ref`, `spineFaceRef` and
+   `profileWireRef` are in it too). A first draft of this README said "more than a hundred sites",
+   which counted textual occurrences of four spellings rather than declared parameters, and is the
+   adjacent-number mistake `measure-dont-assume.md` describes. Replaced with the rule the exemption
+   was reaching for: a parameter is unnamed when it reduces to a SINGLE token.
 2. `extern "C"` on the definition line hid the whole function.
 3. A parameter appearing only inside a string literal read as used.
 
 Measured: both versions report **the same 13**, name for name, at `90917a70`, and both report zero
-today. Every handle parameter is read, which is what a handle parameter almost always is; `extern
-"C"` appears in `Sources/OCCTBridge/src/*.mm` only inside comments; and no parameter is mentioned
-solely in a string. The corrections are proved by the fixture battery and by nothing in the tree.
+today. All 58 exempted parameters are read, which is what a handle parameter almost always is;
+`extern "C"` appears in `Sources/OCCTBridge/src/*.mm` only inside comments; and no parameter is
+mentioned solely in a string. The corrections are proved by the fixture battery and by nothing in
+the tree.
 
 **The claim was checked against a second construction.** `verify_dead_parameters.py` puts the
 detector's "never read" verdict beside `clang -Wunused-parameter`, which decides the same question

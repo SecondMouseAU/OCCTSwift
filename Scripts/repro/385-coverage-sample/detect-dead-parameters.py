@@ -12,12 +12,16 @@ THREE BLIND SPOTS, CLOSED HERE (#1001)
 1. **Every parameter whose name ends in `Ref` was exempt**, which is the whole handle family. The
    exemption existed to drop the twenty-three UNNAMED parameters in `OCCTBridge_BRepGraph.mm`'s
    deliberate ABI no-op stubs, where the "name" the extractor sees is really the type
-   (`OCCTShapeRef` with nothing after it). It did that, and it also silently exempted
-   `curveRef`, `curve2dRef`, `curve3dRef` and `surfRef`, which are ordinary named parameters:
-   `Sources/OCCTBridge/src/*.mm` declares those spellings at more than a hundred sites.
-   Replaced with the rule the exemption was reaching for: a parameter is unnamed when, after
-   qualifiers are removed, it is a SINGLE token. `OCCTShapeRef` is unnamed; `OCCTCurve3DRef
-   curveRef` is not. The `startswith("OCCT")` half of the old exemption goes for the same reason.
+   (`OCCTShapeRef` with nothing after it). It did that, and it also silently exempted ordinary
+   named parameters. **Counted rather than estimated**, with this file's own extractor: the old
+   rule skipped **58 declared parameters across 17 distinct spellings**, the same figure at both
+   trees. The spellings are `curveRef`, `curve2dRef`, `curve3dRef`, `docRef`, `edgeRef`, `faceRef`,
+   `guideCurveRef`, `pathCurveRef`, `profileWireRef`, `sectionCurveRef`, `shape1Ref`, `shape2Ref`,
+   `shapeRef`, `spineFaceRef`, `surfRef`, `surfaceRef` and `wireRef`, which is wider than the
+   handle family alone. Replaced with the rule the exemption was reaching for: a parameter is
+   unnamed when, after qualifiers are removed, it is a SINGLE token. `OCCTShapeRef` is unnamed;
+   `OCCTCurve3DRef curveRef` is not. The `startswith("OCCT")` half of the old exemption goes for
+   the same reason, and is counted in the 58.
 
 2. **`extern "C"` on the definition line hid the whole function**, guarded or not, because `"` is
    outside the return-type character class. Fixed by blanking string literals before the signature
@@ -30,9 +34,9 @@ THREE BLIND SPOTS, CLOSED HERE (#1001)
 `Sources/OCCTBridge/src` at #1001's branch point the count is 0 before and 0 after, because Pass 4a
 fixed every site the old spelling could see. Against Pass 4a's own branch point (`90917a70`), where
 the population is non-empty, both versions report **the same 13**, name for name. The `Ref`
-exemption really did cover more than a hundred declarations of `curveRef`, `curve2dRef`,
-`curve3dRef` and `surfRef`, and every one of them is read, which is what a handle parameter almost
-always is; `extern "C"` appears in `Sources/OCCTBridge/src/*.mm` only inside comments; and no
+exemption really did cover 58 declared parameters, and every one of them is read, which is what a
+handle parameter almost always is; `extern "C"` appears in `Sources/OCCTBridge/src/*.mm` only
+inside comments; and no
 parameter is mentioned solely in a string literal. So the corrections are proved by the fixture
 battery below and by nothing in the tree, which is the useful thing to know about them.
 
