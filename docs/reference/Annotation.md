@@ -1627,8 +1627,21 @@ public func datum(at index: Int) -> Datum?
 ```
 
 - **Parameters:** `index`, zero-based index within the document's datum label sequence.
-- **Returns:** `Datum` wrapping the datum name and index; `nil` if the label does not exist.
+- **Returns:** `Datum` wrapping the datum name and index; `nil` if the label does not exist, or if the datum carries an annotation point with no annotation plane (see below).
 - **OCCT:** `XCAFDoc_DimTolTool::GetDatumLabels` → `XCAFDoc_Datum::GetObject()` → `XCAFDimTolObjects_DatumObject::GetName()`.
+
+**A datum with a point and no plane is refused, not read (#1030).** `XCAFDoc_Datum::GetObject`
+builds the datum point's X out of the annotation plane's array instead of the point's own, so on a
+datum that has a point and no plane it dereferences a null handle and takes the process down. The
+bridge refuses that one shape before calling `GetObject`, so this accessor returns `nil` and
+`datums` omits the datum. Every datum write method below shares the same lookup and returns `false`
+on the same shape, because the lookup runs before any of them reads what it returned.
+
+Nothing this package writes takes that branch: `createDatum(name:)` sets a name, a position and a
+modifier pair, never a point. The shape reaches you through `loadOCAF(from:)` on a document another
+application authored. A datum carrying both a point and a plane is unaffected and reads normally.
+`Scripts/patches/0029-*` fixes the kernel and is not in the pinned OCCT asset, so the refusal stands
+until a rebuilt kernel ships.
 
 ---
 

@@ -48,6 +48,7 @@
 #include <TCollection_HAsciiString.hxx>
 #include <TColStd_HArray1OfReal.hxx>
 #include <TDataStd_Name.hxx>
+#include <TDataStd_RealArray.hxx>
 #include <TCollection_AsciiString.hxx>
 #include <TCollection_ExtendedString.hxx>
 #include <Quantity_Color.hxx>
@@ -1227,6 +1228,30 @@ static bool occtDocumentDatumObjectAt(OCCTDocumentRef                        doc
   TDF_Label label = labels.Value(datumIndex + 1);
   if (!label.FindAttribute(XCAFDoc_Datum::GetID(), outAttr))
     return false;
+
+  // #1030: XCAFDoc_Datum::GetObject builds the datum point's X out of the annotation plane's array
+  // rather than the point's own, so a datum carrying a point with no plane location dereferences a
+  // null handle. That is an OS signal, which no caller's catch can absorb (#1022). Patch 0029 fixes
+  // it in the kernel and is in no built kernel, so refuse that one shape instead of calling
+  // GetObject on it. ChildLab_PlaneLoc and ChildLab_Pnt are a file-local anonymous enum in
+  // XCAFDoc_Datum.cxx, invisible from the header, hence the literal tags. The condition is the
+  // array attribute and never the child label: SetObject opens every child from ChildLab_Begin to
+  // ChildLab_End and only forgets its attributes, so all nineteen exist on any datum it wrote.
+  const int                  datumChildPlaneLoc = 14;
+  const int                  datumChildPnt      = 17;
+  const TDF_Label            pntLabel           = label.FindChild(datumChildPnt, false);
+  Handle(TDataStd_RealArray) pnt;
+  if (!pntLabel.IsNull() && pntLabel.FindAttribute(TDataStd_RealArray::GetID(), pnt)
+      && pnt->Length() == 3)
+  {
+    // Only ChildLab_PlaneLoc, matching the kernel's own && chain, which assigns aLoc from this
+    // attribute before it goes on to test ChildLab_PlaneN and ChildLab_PlaneRef.
+    const TDF_Label            planeLocLabel = label.FindChild(datumChildPlaneLoc, false);
+    Handle(TDataStd_RealArray) planeLoc;
+    if (planeLocLabel.IsNull()
+        || !planeLocLabel.FindAttribute(TDataStd_RealArray::GetID(), planeLoc))
+      return false;
+  }
 
   outObj = outAttr->GetObject();
   return !outObj.IsNull();

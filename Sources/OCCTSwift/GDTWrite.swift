@@ -302,6 +302,8 @@ extension Document {
     ///   - index: Zero-based index into the document's datum sequence.
     ///   - position: 1-based. Zero or less clears it, so `datum(at:)` reports `position` as `nil`.
     /// - Returns: `false` if the index is out of range.
+    ///   A datum carrying an annotation point with no annotation plane is refused too, since
+    ///   the shared lookup cannot read it without crashing OCCT (#1030).
     @discardableResult
     public func setDatumPosition(at index: Int, _ position: Int) -> Bool {
         OCCTDocumentSetDatumPosition(handle, Int32(index), Int32(position))
@@ -318,6 +320,8 @@ extension Document {
     ///   - modifiers: The new sequence, in the order OCCT should store it. An empty array clears
     ///     the sequence.
     /// - Returns: `false` if the index is out of range.
+    ///   A datum carrying an annotation point with no annotation plane is refused too, since
+    ///   the shared lookup cannot read it without crashing OCCT (#1030).
     @discardableResult
     public func setDatumModifiers(at index: Int, _ modifiers: [DatumModifier]) -> Bool {
         let raw = modifiers.map(\.rawValue)
@@ -338,6 +342,8 @@ extension Document {
     ///   - modifier: Pass `.none` to clear the pair, which also clears the value.
     ///   - value: The number the modifier carries.
     /// - Returns: `false` if the index is out of range.
+    ///   A datum carrying an annotation point with no annotation plane is refused too, since
+    ///   the shared lookup cannot read it without crashing OCCT (#1030).
     @discardableResult
     public func setDatumModifierWithValue(
         at index: Int,
@@ -358,6 +364,8 @@ extension Document {
     ///   - type: The target's shape.
     ///   - number: The target's number within its datum.
     /// - Returns: `false` if the index is out of range or `number` is negative.
+    ///   A datum carrying an annotation point with no annotation plane is refused too, since
+    ///   the shared lookup cannot read it without crashing OCCT (#1030).
     @discardableResult
     public func setDatumTarget(at index: Int, type: DatumTargetType, number: Int) -> Bool {
         OCCTDocumentSetDatumTarget(handle, Int32(index), true, type.rawValue, Int32(number))
@@ -371,6 +379,8 @@ extension Document {
     ///
     /// - Parameter index: Zero-based index into the document's datum sequence.
     /// - Returns: `false` if the index is out of range.
+    ///   A datum carrying an annotation point with no annotation plane is refused too, since
+    ///   the shared lookup cannot read it without crashing OCCT (#1030).
     @discardableResult
     public func clearDatumTarget(at index: Int) -> Bool {
         OCCTDocumentSetDatumTarget(handle, Int32(index), false, 0, 0)
@@ -400,6 +410,8 @@ extension Document {
     ///   - width: The target's width.
     /// - Returns: `false` if the index is out of range, if `normal` or `reference` is degenerate,
     ///   or if the datum is not already a datum target of a type other than `.area`.
+    ///   A datum carrying an annotation point with no annotation plane is refused too, since
+    ///   the shared lookup cannot read it without crashing OCCT (#1030).
     @discardableResult
     public func setDatumTargetPlacement(
         at index: Int,
