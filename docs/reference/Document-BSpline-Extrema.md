@@ -1570,7 +1570,11 @@ public func extractEdgeCurve3D() -> (curve: Curve3D, first: Double, last: Double
 ```
 
 - **Returns:** A tuple of the curve handle and parameter bounds, or `nil` if the edge has no 3D curve.
-- **OCCT:** `BRep_Tool::Curve`.
+- **OCCT:** `BRep_Tool::Curve`. `TopoDS::Edge` deliberately passes a null shape through rather
+  than rejecting it (`TopoDS.hxx:94`), and `BRep_Tool::Curve` dereferences what it hands back,
+  so a null shape (from `Shape.nullified`) used to crash the process here. It is refused now and
+  answers `nil`, the same answer an edge with no 3D curve already gave (#1035, measured in
+  `Scripts/repro/1035-unwrap-guard/`).
 - **Example:**
   ```swift
   for edge in shape.edges() {
@@ -1594,6 +1598,11 @@ public func extractEdgePCurve(onFace face: Shape) -> (curve: Curve2D, first: Dou
 - **Returns:** 2D curve and parameter bounds, or `nil` if none exists.
 - **OCCT:** `BRep_Tool::CurveOnSurface`.
 
+A null shape (from `Shape.nullified`) in either argument used to crash the process here: the
+`TopoDS::Edge` and `TopoDS::Face` casts pass a null through and `BRep_Tool::CurveOnSurface`
+dereferences it, so a real edge with a nullified `face` was enough on its own. Both arguments
+are guarded now and the call answers `nil` (#1035).
+
 ---
 
 ### `Shape.edgeTolerance`
@@ -1604,7 +1613,9 @@ Geometric tolerance stored on an edge shape.
 public var edgeTolerance: Double
 ```
 
-- **OCCT:** `BRep_Tool::Tolerance` (edge overload).
+- **OCCT:** `BRep_Tool::Tolerance` (edge overload). A null shape (from `Shape.nullified`) used
+  to crash the process here; it answers `0` now, which is what a null pointer already answered
+  (#1035).
 
 ---
 
@@ -1616,7 +1627,8 @@ Whether the edge is degenerated (collapsed to a single point).
 public var isEdgeDegenerated: Bool
 ```
 
-- **OCCT:** `BRep_Tool::Degenerated`.
+- **OCCT:** `BRep_Tool::Degenerated`. A null shape (from `Shape.nullified`) used to crash the
+  process here; it answers `false` now (#1035).
 
 ---
 
@@ -1629,7 +1641,9 @@ public func extractFaceSurface() -> Surface?
 ```
 
 - **Returns:** The face's `Geom_Surface`, or `nil` if the shape is not a face.
-- **OCCT:** `BRep_Tool::Surface`.
+- **OCCT:** `BRep_Tool::Surface`. A null shape (from `Shape.nullified`) survives the
+  `TopoDS::Face` cast and used to crash the process inside `BRep_Tool::Surface`; it answers
+  `nil` now (#1035).
 
 ---
 
@@ -1641,7 +1655,8 @@ Geometric tolerance stored on a face shape.
 public var faceTolerance: Double
 ```
 
-- **OCCT:** `BRep_Tool::Tolerance` (face overload).
+- **OCCT:** `BRep_Tool::Tolerance` (face overload). A null shape (from `Shape.nullified`) used
+  to crash the process here; it answers `0` now (#1035).
 
 ---
 
@@ -1667,7 +1682,8 @@ Geometric tolerance stored on a vertex shape.
 public var vertexTolerance: Double
 ```
 
-- **OCCT:** `BRep_Tool::Tolerance` (vertex overload).
+- **OCCT:** `BRep_Tool::Tolerance` (vertex overload). A null shape (from `Shape.nullified`)
+  used to crash the process here; it answers `0` now (#1035).
 
 ---
 

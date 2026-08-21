@@ -1085,6 +1085,10 @@ resolution (`Precision::Confusion()`), so the two spellings agree about definedn
 parameter of every edge. The values themselves can still differ in the last bits, because the
 adaptor evaluates a Bezier or B-spline through a cache the raw handle does not use.
 
+All six read the edge through a `BRepAdaptor_Curve` whose constructor dereferences a null
+shape, so a null shape (from `Shape.nullified`) used to crash the process rather than answer.
+Each answers `nil` now (#1035, measured in `Scripts/repro/1035-unwrap-guard/`).
+
 ### `Shape.edgeLPropValue(at:)`
 
 Evaluate the 3D point on an edge at the given parameter.

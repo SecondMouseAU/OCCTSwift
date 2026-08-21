@@ -1200,7 +1200,9 @@ public func edgeParameterAtArcLength(_ arcLength: Double, from startParam: Doubl
 ```
 
 - **OCCT:** the accumulated `GeomAbs_CN` sub-piece lengths, with the final narrow piece handed to
-  `GCPnts_AbscissaPoint`.
+  `GCPnts_AbscissaPoint`. The edge is read through a `BRepAdaptor_Curve`, whose constructor
+  dereferences a null shape, so a null shape (from `Shape.nullified`) used to crash the process
+  here; it answers `0` now (#1035).
 - **Note:** Shares the subdivided measurement with `edgeArcLength`, so the two agree on the same
   edge. OCCT's own root finder inverts one Gauss quadrature over `[startParam, u]`, which on an
   elliptical edge disagreed with an accurate length by up to 1% in arc (#603).
@@ -1214,6 +1216,10 @@ The total arc length of this edge.
 ```swift
 public var edgeArcLength: Double { get }
 ```
+
+A null shape (from `Shape.nullified`) used to crash the process in the `BRepAdaptor_Curve`
+constructor behind this measurement; it answers the `-1.0` failure sentinel now (#1035,
+measured in `Scripts/repro/1035-unwrap-guard/`).
 
 - **Returns:** Arc length in model units, or `-1.0` on failure. Arc length is otherwise always
   non-negative, so this is an unambiguous sentinel; it used to be `0`, which a genuinely
@@ -1246,6 +1252,8 @@ public func edgeArcLength(from u1: Double, to u2: Double) -> Double
   on the edge (a range wholly outside measures `0`); a closed periodic edge covers a whole period
   and so measures the whole range, winding. Shared with the `Curve3D`/`Curve2D` spellings, so an
   edge and the curve it was built from answer identically (#600).
+- **Note:** A null shape (from `Shape.nullified`) used to crash the process in the
+  `BRepAdaptor_Curve` constructor behind the measurement; it answers `-1.0` now (#1035).
 - **Example:**
   ```swift
   let edge = Shape.edgeFromPoints(SIMD3(0, 0, 0), SIMD3(10, 0, 0))!
@@ -1265,6 +1273,8 @@ public func edgeParameterAtFraction(_ fraction: Double) -> Double
 ```
 
 - **OCCT:** `edgeArcLength`'s subdivided total, then the same walk `edgeParameterAtArcLength` makes.
+  A null shape (from `Shape.nullified`) used to crash the process in the `BRepAdaptor_Curve`
+  constructor behind both halves; it answers `0` now (#1035).
 - **Note:** Both halves were biased by the same single quadrature before #603, and the two errors
   cancelled; both are accurate now, so `edgeParameterAtFraction(1.0)` still lands on the edge's last
   parameter and `0.5` genuinely halves the arc (it split an elliptical edge 0.74% off centre).
@@ -1279,7 +1289,9 @@ The parameter domain `[first, last]` of the edge curve via `BRepAdaptor_Curve`.
 public var edgeAdaptorDomain: ClosedRange<Double> { get }
 ```
 
-- **OCCT:** `BRepAdaptor_Curve::FirstParameter`, `LastParameter`.
+- **OCCT:** `BRepAdaptor_Curve::FirstParameter`, `LastParameter`. A null shape (from
+  `Shape.nullified`) used to crash the process in that constructor; it answers `0...0` now
+  (#1035).
 
 ---
 
@@ -1291,7 +1303,8 @@ Evaluates the edge curve at a parameter, returning the 3D point.
 public func edgeAdaptorValue(at param: Double) -> SIMD3<Double>
 ```
 
-- **OCCT:** `BRepAdaptor_Curve::Value`.
+- **OCCT:** `BRepAdaptor_Curve::Value`. A null shape (from `Shape.nullified`) used to crash the
+  process in the `BRepAdaptor_Curve` constructor; it answers `SIMD3(0, 0, 0)` now (#1035).
 
 ---
 
@@ -1303,7 +1316,9 @@ The curve type of the edge as a `GeomAbs_CurveType` integer (`0`=Line, `1`=Circl
 public var edgeAdaptorCurveType: Int32 { get }
 ```
 
-- **OCCT:** `BRepAdaptor_Curve::GetType`.
+- **OCCT:** `BRepAdaptor_Curve::GetType`. A null shape (from `Shape.nullified`) used to crash
+  the process in the `BRepAdaptor_Curve` constructor; it answers `-1` now, the value this
+  already returned when the type could not be read (#1035).
 
 ---
 
@@ -1613,7 +1628,12 @@ Creates a fixer for the given shape.
 public init(shape: Shape)
 ```
 
-- **OCCT:** `ShapeFix_Shape`.
+- **OCCT:** `ShapeFix_Shape`. The `ShapeFix_Shape` constructor accepts a null shape and
+  returns; `Perform()` is the half that dereferences it, so a fixer built on a null shape (from
+  `Shape.nullified`) used to crash the process on the later `perform()` call. The fixer is now
+  built empty for a null shape: the three setters become no-ops, `perform()` answers `false`,
+  `shape` answers `nil`, and both `status` overloads answer `false` (#1035, measured in
+  `Scripts/repro/1035-unwrap-guard/`).
 
 ---
 
@@ -1663,7 +1683,8 @@ public func perform() -> Bool
 ```
 
 - **Returns:** `true` if any fix was applied.
-- **OCCT:** `ShapeFix_Shape::Perform`.
+- **OCCT:** `ShapeFix_Shape::Perform`. Answers `false` without calling OCCT when the fixer was
+  built on a null shape, which used to crash the process here (#1035).
 
 ---
 
@@ -1676,7 +1697,8 @@ public var shape: Shape? { get }
 ```
 
 - **Returns:** The fixed `Shape`, or `nil` if `perform()` has not been called or produced nothing.
-- **OCCT:** `ShapeFix_Shape::Shape`.
+- **OCCT:** `ShapeFix_Shape::Shape`. Answers `nil` when the fixer was built on a null shape
+  (#1035).
 
 ---
 

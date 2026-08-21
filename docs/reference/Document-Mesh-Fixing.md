@@ -3439,7 +3439,9 @@ public func edgeCurveWithParams() -> (curve: Curve3D, first: Double, last: Doubl
 ```
 
 - **Returns:** A tuple `(curve, first, last)`, or `nil` if this shape is not an edge or has no 3D curve.
-- **OCCT:** `BRep_Tool::Curve` (via `OCCTShapeEdgeCurve`).
+- **OCCT:** `BRep_Tool::Curve` (via `OCCTShapeEdgeCurve`). A null shape (from
+  `Shape.nullified`) survives the `TopoDS::Edge` cast and used to crash the process inside
+  `BRep_Tool::Curve`; it answers `nil` now, with `first` and `last` left at `0` (#1035).
 - **Example:**
   ```swift
   for edge in box.edges() {
@@ -3461,7 +3463,8 @@ public func faceSurfaceGeom() -> Surface?
 ```
 
 - **Returns:** The `Surface`, or `nil` if this shape is not a face.
-- **OCCT:** `BRep_Tool::Surface` (via `OCCTShapeFaceSurface`).
+- **OCCT:** `BRep_Tool::Surface` (via `OCCTShapeFaceSurface`). A null shape (from
+  `Shape.nullified`) used to crash the process here; it answers `nil` now (#1035).
 
 ---
 

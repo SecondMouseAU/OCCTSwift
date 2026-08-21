@@ -75,7 +75,10 @@ public func uniformAbscissa(pointCount: Int) -> [Double]?
 
 - **Parameters:** `pointCount`, the number of sample points. Must be at least 2, else `nil`. OCCT documents that precondition but enforces it with a `Raise_if`, which the pinned Release kernel compiles out, so a request for zero used to come back with five parameters (#501).
 - **Returns:** Array of curve parameter values, or `nil` if the edge is invalid or sampling fails.
-- **OCCT:** `GCPnts_UniformAbscissa` (by number of points)
+- **OCCT:** `GCPnts_UniformAbscissa` (by number of points). The edge is read through a
+  `BRepAdaptor_Curve`, whose constructor dereferences a null shape, so a null shape (from
+  `Shape.nullified`) used to crash the process here; it answers `nil` now (#1035, measured in
+  `Scripts/repro/1035-unwrap-guard/`).
 - **Example:**
   ```swift
   if let edge = Shape.makeVertex(at: .zero),
@@ -104,6 +107,9 @@ public func uniformAbscissa(distance: Double) -> [Double]?
   }
   ```
 
+A null shape (from `Shape.nullified`) used to crash the process in the `BRepAdaptor_Curve`
+constructor behind this sampler; it answers `nil` now (#1035).
+
 ---
 
 ### `Shape.uniformAbscissa(pointCount:u1:u2:)`
@@ -116,7 +122,9 @@ public func uniformAbscissa(pointCount: Int, u1: Double, u2: Double) -> [Double]
 
 - **Parameters:** `pointCount`, the number of points, at least 2 (else `nil`, see above); `u1`, `u2`, the parameter range on the underlying curve.
 - **Returns:** Array of parameter values, or `nil` on failure.
-- **OCCT:** `GCPnts_UniformAbscissa` (range variant, by count)
+- **OCCT:** `GCPnts_UniformAbscissa` (range variant, by count). A null shape (from
+  `Shape.nullified`) used to crash the process in the `BRepAdaptor_Curve` constructor; it
+  answers `nil` now (#1035).
 - **Example:**
   ```swift
   if let params = edge.uniformAbscissa(pointCount: 5, u1: 0.0, u2: .pi) {
@@ -143,6 +151,9 @@ public func uniformAbscissa(distance: Double, u1: Double, u2: Double) -> [Double
       // sampling at 0.5-unit intervals from u=0 to u=2
   }
   ```
+
+A null shape (from `Shape.nullified`) used to crash the process in the `BRepAdaptor_Curve`
+constructor behind this sampler; it answers `nil` now (#1035).
 
 ---
 
