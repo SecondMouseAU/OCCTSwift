@@ -11,22 +11,11 @@ import simd
 @Suite("SAWireAnalysis.checkOuterBound performs the check it is named for (#999)")
 struct Issue999OuterBoundTests {
 
-    /// A 10x10 planar panel with a 4x4 centred window, so the face carries two wires: one that is
-    /// its outer bound and one that is not.
-    private func panelWithWindow() -> Shape? {
-        guard
-            let plane = Surface.plane(origin: .zero, normal: SIMD3(0, 0, 1)),
-            let outer = Wire.polygon3D(
-                [SIMD3(0, 0, 0), SIMD3(10, 0, 0), SIMD3(10, 10, 0), SIMD3(0, 10, 0)], closed: true),
-            let hole = Wire.polygon3D(
-                [SIMD3(3, 3, 0), SIMD3(7, 3, 0), SIMD3(7, 7, 0), SIMD3(3, 7, 0)], closed: true)
-        else { return nil }
-        return Shape.face(from: plane, outer: outer, innerWires: [hole])
-    }
-
     @Test("The verdict follows the wire, not the face")
     func verdictVariesWithTheWire() {
-        guard let face = panelWithWindow() else {
+        // `panelWithCentredWindow()` lives in ShapeHealingTestFixtures.swift, this target's own
+        // shared-fixture file: one fixture, since both suites want exactly the same panel (#1058).
+        guard let face = panelWithCentredWindow() else {
             Issue.record("panel fixture failed")
             return
         }
@@ -39,9 +28,10 @@ struct Issue999OuterBoundTests {
         let verdicts = wires.map { SAWireAnalysis.checkOuterBound(wire: $0, face: face) }
         // Exactly one of the two is the outer bound. Asserting the partition rather than indexing
         // avoids depending on the order the explorer returns wires in, which is not part of any
-        // contract this repo relies on.
-        #expect(verdicts.filter { $0 }.count == 1, "verdicts were \(verdicts)")
-        #expect(verdicts.filter { !$0 }.count == 1, "verdicts were \(verdicts)")
+        // contract this repo relies on. Both wires belong to the face, so neither verdict is nil
+        // (#1058).
+        #expect(verdicts.filter { $0 == true }.count == 1, "verdicts were \(verdicts)")
+        #expect(verdicts.filter { $0 == false }.count == 1, "verdicts were \(verdicts)")
     }
 
     @Test("A face's own single wire is its outer bound, so nothing is reported")
@@ -56,6 +46,6 @@ struct Issue999OuterBoundTests {
             Issue.record("plain face fixture failed")
             return
         }
-        #expect(!SAWireAnalysis.checkOuterBound(wire: wire, face: face))
+        #expect(SAWireAnalysis.checkOuterBound(wire: wire, face: face) == false)
     }
 }

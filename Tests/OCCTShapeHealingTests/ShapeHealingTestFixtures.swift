@@ -24,3 +24,18 @@ func sewnBoxMissingOneFace(_ box: Shape, tolerance: Double = 1e-6) -> Shape? {
     else { return nil }
     return compound.sewn(tolerance: tolerance)
 }
+
+/// A 10x10 planar panel with a 4x4 centred window, so the face carries two wires: one that is its
+/// outer bound and one that is not. Shared by `Issue999OuterBoundTests` and
+/// `Issue1058OuterBoundRefusalTests`, which built it independently before the #1058 review pointed
+/// out the duplication, the same way #717 did for `sewnBoxMissingOneFace` above.
+func panelWithCentredWindow() -> Shape? {
+    guard
+        let plane = Surface.plane(origin: .zero, normal: SIMD3(0, 0, 1)),
+        let outer = Wire.polygon3D(
+            [SIMD3(0, 0, 0), SIMD3(10, 0, 0), SIMD3(10, 10, 0), SIMD3(0, 10, 0)], closed: true),
+        let hole = Wire.polygon3D(
+            [SIMD3(3, 3, 0), SIMD3(7, 3, 0), SIMD3(7, 7, 0), SIMD3(3, 7, 0)], closed: true)
+    else { return nil }
+    return Shape.face(from: plane, outer: outer, innerWires: [hole])
+}

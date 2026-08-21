@@ -687,8 +687,8 @@ circle.toBSpline(.tangentHalfAngle1)       // nil, a full circle is past its doc
 `SAWireAnalysis.checkOuterBound(face:precision:)` is now `checkOuterBound(wire:face:)`, and it
 performs the check. It used to run a `TopExp_Explorer` and report whether the face had any wire at
 all, which is true of every valid face, so both its precision and its name were unbacked. It now
-calls `ShapeAnalysis_Wire::CheckOuterBound` and returns `true` when a problem is found, matching
-every sibling. There is no precision, because that check consults none.
+calls `ShapeAnalysis_Wire::CheckOuterBound`. There is no precision, because that check consults
+none.
 
 `Curve2D.bisector(withPoint:origin:side:)` is now `bisector(withPoint:maxDistance:side:)`.
 `Bisector_BisecPC::Perform` takes no origin; the signature had been copied from the curve-to-curve

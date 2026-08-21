@@ -1670,7 +1670,7 @@ public static func edge2dFromCurve(_ curve: Curve2D, u1: Double, u2: Double) -> 
 
 ## ShapeAnalysis_Wire
 
-Wire quality checks using `ShapeAnalysis_Wire`. All members are static on the `SAWireAnalysis` enum. Each check returns `true` when a problem is detected.
+Wire quality checks using `ShapeAnalysis_Wire`. All members are static on the `SAWireAnalysis` enum. Each check returns `true` when a problem is detected. `checkOuterBound(wire:face:)` returns `Bool?` rather than `Bool`, so its refusal is not the same value as its clean verdict; see its own entry for what `nil` covers and why the other fourteen check members do not have it (#1058, tracked as [#1074](https://github.com/SecondMouseAU/OCCTSwift/issues/1074)).
 
 ### `SAWireAnalysis.checkOrder(wire:face:precision:)`
 
@@ -1919,24 +1919,39 @@ public static func checkGap3dEdge(wire: Shape, face: Shape, precision: Double = 
 
 ### `SAWireAnalysis.checkOuterBound(wire:face:)`
 
-Check whether a wire fails to define an outer bound on a face.
+Check whether a wire fails to define an outer bound on a face, or report that the check could not be run.
 
 ```swift
-public static func checkOuterBound(wire: Shape, face: Shape) -> Bool
+public static func checkOuterBound(wire: Shape, face: Shape) -> Bool?
 ```
 
 Takes the wire, like every sibling above, and takes no precision, unlike any of them: `ShapeAnalysis_Wire::CheckOuterBound(APIMake)` rebuilds the wire onto an empty copy of the face and asks `ShapeAnalysis::IsOuterBound`, consulting neither `myPrecision` nor anything derived from it. Measured across precisions from 1e-12 to 100 on three fixtures, the verdict never moved.
 
 `APIMake` is likewise not exposed and stays at OCCT's own default of `true`. It selects `ShapeExtend_WireData::WireAPIMake` over `::Wire`, and gave the same verdict on all three fixtures, including one assembled with `BRep_Builder` from edges with unshared vertices, which is the case its own documentation distinguishes.
 
+**This is the only member of the family that returns an optional (#1058).** The other **fourteen** check members, the ten whole-wire ones above and the four per-edge ones, answer a plain `Bool`, so a refused call and a clean verdict are the same value for them; here they are not. `nil` covers four inputs:
+
+| Input | Why it cannot be answered |
+|---|---|
+| A `Shape` that is not a wire, or not a face, **including a null shape** | The Swift signature takes two plain `Shape` values with no type constraint, so both are reachable. The bridge tests the type explicitly rather than letting the cast raise: `TopoDS::Wire` is written `IsNull() ? false : ...`, so it deliberately does **not** raise for a null shape and would pass one through to `EmptyCopied()`, which is CLAUDE.md's #1035 note |
+| A wire with no edges | `ShapeAnalysis_Wire::IsReady()` is false, so OCCT never runs the check |
+| A wire whose edges do not assemble | `ShapeExtend_WireData::WireAPIMake()` returns a **null** wire whenever `BRepBuilderAPI_MakeWire` cannot join the loaded edges, two edges sharing no vertex being enough, and `BRep_Builder::Add` dereferences its component with no null test. That was an uncatchable SIGSEGV rather than a wrong answer, and `ShapeAnalysis_Wire::CheckOuterBound` builds the same wire, so it crashed before this fix too |
+| A wire with no pcurve on the face | `ShapeAnalysis::TotCross2D` skips every edge whose pcurve on the face is null, so with none left its accumulator is never written and the `+0.0` it starts from signs as a positive area, reporting a foreign wire as the outer bound |
+
+The last one is OCCT's, not the bridge's, and it never announces itself: `CheckOuterBound` sets `ShapeExtend_OK` on entry and only raises it to `ShapeExtend_DONE1` for the `true` verdict. It needs a non-planar support face to show, because `BRep_Tool::CurveOnSurface` projects a 3D curve onto a plane when no pcurve is stored, so a foreign wire on a planar face is answered from the projection rather than refused.
+
+**The guard is "nothing was consulted", not "the area means something", and two cases sit in the gap (#1073).** A wire where only some edges carry a pcurve on the face passes the guard, and `TotCross2D` then sums that subset. And a wire where every edge carries one but the contributions cancel gets its verdict from the sign of the rounding: a cylinder's seam wire projected onto a plane measures `-1.7802599672211983e-15`, against `+100` and `+125.66` for the answerable fixtures, and `checkOuterBound` reports `true` off it. Neither is fixed, because the fix is a magnitude threshold against the face's own UV scale and nobody has measured what it should be, which is the trap #726 exists to catch. The cancellation case is measured, and is the `cylinder's wire on the panel` row in [`Scripts/repro/1058-outer-bound-refusal/`](https://github.com/SecondMouseAU/OCCTSwift/tree/main/Scripts/repro/1058-outer-bound-refusal). The partial-pcurve case is **not**: no fixture there produces a wire with some edges carrying a pcurve and some not, so it is read off `TotCross2D`'s own skip condition rather than observed, and #1073's first task is to build that fixture.
+
 - **Parameters:** `wire`, the wire to test; `face`, the face it should bound.
-- **Returns:** `true` if a problem is found, matching every sibling. A face's own outer wire returns `false`; a hole wire on the same face returns `true`.
+- **Returns:** `true` if a problem is found, `false` if none is, `nil` if the check could not be run. A face's own outer wire returns `false`; a hole wire on the same face returns `true`.
 - **OCCT:** `ShapeAnalysis_Wire::CheckOuterBound`
 - **Example:**
   ```swift
   for wire in panel.subShapes(ofType: .wire) {
-      if SAWireAnalysis.checkOuterBound(wire: wire, face: panel) {
-          print("not the outer bound")
+      switch SAWireAnalysis.checkOuterBound(wire: wire, face: panel) {
+      case true?: print("not the outer bound")
+      case false?: print("the outer bound")
+      case nil: print("not checkable against this face")
       }
   }
   ```
