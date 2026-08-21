@@ -5495,7 +5495,7 @@ OCCTWireRef OCCTWireCreateCubicBSpline(const double* poles, int32_t poleCount)
 
 OCCTWireRef OCCTWireJoin(const OCCTWireRef* wires, int32_t count)
 {
-  if (!occtShapeIsPresent(wires) || count < 1)
+  if (!wires || count < 1)
     return nullptr;
 
   try
@@ -5504,7 +5504,9 @@ OCCTWireRef OCCTWireJoin(const OCCTWireRef* wires, int32_t count)
 
     for (int32_t i = 0; i < count; i++)
     {
-      if (wires[i])
+      // #1035: the array pointer above says nothing about the element, and
+      // BRepBuilderAPI_MakeWire::Add dereferences a null TopoDS_Wire.
+      if (occtShapeIsPresent(wires[i]))
       {
         wireMaker.Add(wires[i]->wire);
       }
