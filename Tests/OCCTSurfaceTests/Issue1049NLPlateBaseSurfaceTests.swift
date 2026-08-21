@@ -71,11 +71,20 @@ struct Issue1049NLPlateBaseSurfaceTests {
     // The closed-form case. A G0 constraint asks for `target`, and NLPlate_NLPlate::Iterate loads
     // `G0Target() - Evaluate(uv)` as the plate's pinpoint load, so a target that is already the
     // base surface's own point there gives a zero load, a plate that is identically zero, and a
-    // deformed surface equal to the input. Measured deviation is 2.85e-14 for all five entry
-    // points; against origin/main it is 110.4536101718726 for G0 and G1, which is exactly
-    // |base(10, 10)| = sqrt(110^2 + 10^2), the base surface counted a second time at the far
-    // corner of the working domain, and 14.1421356237 for the other three, which is the
-    // [0, 1]-versus-[-10, 10] parametrisation gap rather than a doubling.
+    // deformed surface equal to the input.
+    //
+    // `deviationFromInput` compares the two at the same numeric (u, v), which is the property a
+    // caller has. Measured 2.85e-14 for all five after the fix. Against origin/main G0 and G1
+    // report 110.4536101718726, exactly |base(10, 10)| = sqrt(110^2 + 10^2), the base surface
+    // counted a second time at a corner of the working domain. G2, G3 and the incremental solver
+    // report only 7.83e-06 on this same metric, because their hardcoded [0, 1] sampling happened to
+    // put the fit's own parameter and the working parameter on the same numbers over [0, 1] and a
+    // plane extrapolates linearly outside them. `theOutputCarriesTheWorkingDomain` is what pins
+    // those three; this test is not carrying them on 7.83e-06.
+    //
+    // The repro's own table reports 14.1421356237 for those three instead. That is a different
+    // metric, walking both domains end to end in step rather than at the same (u, v), and the two
+    // are deliberately not mixed.
     @Test("An identity constraint returns the input surface, G0")
     func identityConstraintIsANoOpG0() {
         guard let plane = offOriginPlane() else {
@@ -214,7 +223,7 @@ struct Issue1049NLPlateBaseSurfaceTests {
 
     // #1046. The constraint is written in the input surface's (u, v), so that same (u, v) has to
     // address the same place on the result. Against origin/main the output was on [0, 1] x [0, 1]
-    // and this evaluated to (180, -20, 5), the far corner of the doubled patch.
+    // and this evaluated to (180, -20, 5), a corner of the doubled patch.
     @Test("The constrained point is where the caller asked for it")
     func theConstrainedPointIsAtTheCallersOwnUV() {
         guard let plane = offOriginPlane() else {
