@@ -1108,7 +1108,8 @@ extension Document {
     /// - forceIfNotRoot: Force rescale even if label is not root.
     ///
     /// - Parameters:
-    /// - Returns: true on success
+    /// - Returns: true on success; false if the document holds a datum OCCT cannot read without
+    ///   crashing (#1030), in which case nothing is rescaled.
     @discardableResult
     public func rescaleGeometry(labelId: Int64, scaleFactor: Double, forceIfNotRoot: Bool = false)
         -> Bool
@@ -1463,6 +1464,10 @@ extension Document {
     }
 
     /// Count of geometric tolerance objects via XCAFDimTolObjects_Tool.
+    ///
+    /// `0` when any datum attached to a tolerance is one OCCT cannot read without crashing
+    /// (#1030), which is indistinguishable from a document with no tolerances; see
+    /// `docs/reference/Annotation.md`.
     public var dimTolToolToleranceCount: Int {
         Int(OCCTDocumentDimTolToleranceCount(handle))
     }

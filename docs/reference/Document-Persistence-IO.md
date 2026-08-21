@@ -1736,7 +1736,8 @@ public func rescaleGeometry(labelId: Int64, scaleFactor: Double, forceIfNotRoot:
   - `labelId`: label whose geometry to rescale.
   - `scaleFactor`: uniform scale factor (e.g. `0.001` to convert mm → m).
   - `forceIfNotRoot`: if `true`, rescale even when the label is not the document root (default `false`).
-- **Returns:** `true` on success.
+- **Returns:** `true` on success; `false` if the document holds a datum carrying an annotation point with no annotation plane, which the bridge refuses rather than crash OCCT (#1030), in which case nothing is rescaled. See the note under [`datum(at:)`](Annotation.md).
+- **Note:** for a datum that carries **both** a point and a plane, this call persists #1022's wrong answer. `XCAFDoc_Editor::RescaleGeometry` reads each datum object, rescales it and writes it back with `SetObject`, and the read returns the plane's X as the point's X, so the stored point is overwritten with it. The refusal above only covers the datums that would crash; this one is a silent, permanent corruption that only a kernel carrying `Scripts/patches/0029-*` fixes.
 - **OCCT:** `XCAFDoc_Editor::RescaleGeometry`.
 
 ---

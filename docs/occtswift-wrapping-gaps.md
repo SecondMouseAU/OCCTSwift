@@ -469,9 +469,12 @@ adjudicated here yet.
 
 **One accessor is blocked by a kernel defect rather than by scope.** `XCAFDoc_Datum::GetObject`
 builds the datum's point from the annotation plane's location array, and dereferences a null handle
-when the datum has a point and no plane. That is an uncatchable SIGSEGV already reachable from
-`Document.datums` today, before any of this surface is wrapped; it is #1022, with a reproducer in
-the same directory.
+when the datum has a point and no plane. That was an uncatchable SIGSEGV reachable from
+`Document.datums`; it is #1022, with a reproducer in the same directory. The bridge now refuses
+that datum instead of reading it (#1030), on both GD&T tables, so `Document.datums` omits it and
+every datum mutator returns `false` for it. Wrapping the point accessor still waits on a kernel
+carrying `Scripts/patches/0029-*`, because the guard prevents the crash and cannot recover the
+stored point: the kernel returns the plane's X for any datum that has both.
 
 ### GD&T tolerance and datum accessors left unwrapped (#1004)
 

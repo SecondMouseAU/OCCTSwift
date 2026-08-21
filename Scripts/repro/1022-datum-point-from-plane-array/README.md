@@ -76,45 +76,47 @@ object. Section D shows the shape survives a BinXCAF save and reload, so a docum
 other OCCT-based application reaches it through `Document.loadOCAF` plus any of the seven entry
 points above.
 
-**Nothing in this repo can author it today.** `OCCTDocumentCreateDatum` builds a
+**Nothing on the GD&T write path can author it.** `OCCTDocumentCreateDatum` builds a
 `XCAFDimTolObjects_DatumObject` with a name, a position and a `DatumModifWithValue_None` pair, and
 nothing that reaches either branch. (#1004's own comment beside those two explains why they are
 required by `SetObject` and why the datum-target setters are deliberately left alone.) So the datums
-this package writes take neither branch. That is the only reason the existing suite does not crash,
-and it is a property of the current write surface rather than of the read path.
+this package writes take neither branch, which is the only reason the existing suite did not crash.
+**The label API can author it, which #1030 established and this sentence originally denied**:
+`AssemblyNode.findChild(tag:create:)` plus `initRealArray(lower:upper:)` puts a `TDataStd_RealArray`
+straight on the datum label's own point child, and `Tests/OCCTXCAFTests/Issue1030DatumLookupGuardTests.swift`
+builds the crashing shape that way with no file and no importer involved.
 
-**The STEP writer is a second reader of the same accessor.** `STEPCAFControl_Writer` calls
-`GetObject()` on every datum in three places, so exporting a document that holds such a datum takes
-the same crash as reading it.
+**The STEP writer is a second reader of the same accessor, on a branch nothing here can take.**
+`STEPCAFControl_Writer` calls `GetObject()` on every datum in three places, so exporting a document
+that holds such a datum would take the same crash. All three sit on the AP242 branch, which is
+taken only when `write.step.schema` is AP242; no bridge site that constructs a `STEPCAFControl_Writer`
+sets it, and OCCT's own default is `AP214IS`, so the branch is never taken. Unguarded and
+unreachable, rather than guarded.
 
-## Whether the bridge should guard as well
+## The bridge guard, shipped as #1030
 
-Reported, not implemented. The reason is an ownership boundary rather than a judgement that the
-guard is wrong: `OCCTBridge_Document.mm` is held by a concurrent agent in this lane, so a guard
-written here would race their edits in the file the guard belongs in. #1030 carries the decision, so
-it is tracked rather than deferred into prose.
+Implemented. When this directory was written the guard was reported rather than written, because
+`OCCTBridge_Document.mm` was held by a concurrent agent; #1030 carried the decision and closed it.
+`occtDatumLabelIsReadable` (`OCCTBridge_Document.mm`) refuses a datum whose `ChildLab_Pnt` child
+holds a `TDataStd_RealArray` of length 3 while `ChildLab_PlaneLoc` holds none, or holds one that
+cannot supply `aPnt->Lower()`, which is the index the kernel actually reads. It runs before
+`GetObject()` at all three bridge sites that reach it, and it costs two private tag numbers, `14`
+and `17` at this pin, that upstream can renumber with no compile-time signal here.
 
-The crash is uncatchable and patch `0029` is in no built kernel, so no released consumer is
-protected by it today. Tracked as #1030. A bridge-side guard is possible but not free: the check
-has to happen **before** `GetObject()` is called, and `XCAFDoc_Datum` exposes no `HasPlane()`, so
-the only way to ask is to look at the label's children directly. It would go in
-`occtDocumentDatumObjectAt`, the one place all seven entry points share. `ChildLab_PlaneLoc` and
-`ChildLab_Pnt` are values of a **file-local anonymous enum** in `XCAFDoc_Datum.cxx`, not visible
-from the header, and they are tags `14` and `17` at this pin. The guard would be: if `FindChild(17, false)` holds a
-`TDataStd_RealArray` of length 3 and `FindChild(14, false)` holds no `TDataStd_RealArray`, skip the
-datum rather than call `GetObject()`. Note the plane condition is only about `ChildLab_PlaneLoc`:
-the kernel's `&&` chain assigns `aLoc` before it tests `ChildLab_PlaneN`, so a datum with a plane
-location and nothing else already has a non-null `aLoc`.
+Two things this directory got wrong, both corrected by measurement in
+[`Scripts/repro/1030-datum-lookup-guard/`](../1030-datum-lookup-guard/):
 
-That is precise and cheap, and it hard-codes two private tag numbers that upstream can renumber
-without any compile-time signal here. The trade is a real one either way, and it is the caller's
-call rather than this change's.
+- **`occtDocumentDatumObjectAt` is not the only site.** `OCCTDocumentDimTolToleranceCount` and
+  `OCCTDocumentEditorRescaleGeometry` reach `GetObject` through
+  `XCAFDimTolObjects_Tool::GetGeomTolerances` and `XCAFDoc_Editor::RescaleGeometry`, outside the
+  shared helper, and both crashed. They are guarded too.
+- **They read a different table.** The shared helper reads the tool this bridge attaches to
+  `Main()`; those two read the `XCAFDoc_DocumentTool` table at `0:1:4`, which is the one every
+  importer writes. A datum in one is invisible to the other, so the sentence below about an OCAF
+  load reaching the crash holds only for a document whose table sits where this bridge puts it.
 
-`XCAFDoc_Datum::GetName()` is not a way out of it: it returns the attribute's own legacy `myName`,
-set by `XCAFDoc_Datum::Set(...)`, while `SetObject` writes the object's name to the `ChildLab_Name`
-child instead. Substituting it for `GetObject()->GetName()` in `OCCTDocumentGetDatumInfo` would
-return an empty name for every datum this package or the STEP reader creates, and it would do
-nothing for the other six entry points, which need the object itself.
+The guard prevents the crash and does not recover the stored point: a datum with both a point and a
+plane still reads back the plane's X, so patch `0029` is still what fixes the value.
 
 ## Relationship to `Scripts/repro/1004-gdt-accessors/`
 

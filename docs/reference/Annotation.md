@@ -1562,12 +1562,13 @@ public var geomToleranceCount: Int { get }
 
 ### `datumCount`
 
-Number of datums defined in this document.
+Number of datum labels in this document, which can exceed `datums.count`.
 
 ```swift
 public var datumCount: Int { get }
 ```
 
+- **Returns:** the number of datum *labels*. `datums` counts the ones `datum(at:)` can read, and a datum OCCT cannot read without crashing (#1030) is counted here and omitted there, so iterate `datums` rather than indexing `0..<datumCount`.
 - **OCCT:** `XCAFDoc_DimTolTool::GetDatumLabels` (via `OCCTDocumentGetDatumCount`).
 
 ---
@@ -1627,8 +1628,40 @@ public func datum(at index: Int) -> Datum?
 ```
 
 - **Parameters:** `index`, zero-based index within the document's datum label sequence.
-- **Returns:** `Datum` wrapping the datum name and index; `nil` if the label does not exist.
+- **Returns:** `Datum` wrapping the datum name and index; `nil` if the label does not exist, or if the datum carries an annotation point with no annotation plane (see below).
 - **OCCT:** `XCAFDoc_DimTolTool::GetDatumLabels` → `XCAFDoc_Datum::GetObject()` → `XCAFDimTolObjects_DatumObject::GetName()`.
+
+**A datum with a point and no plane is refused, not read (#1030).** `XCAFDoc_Datum::GetObject`
+builds the datum point's X out of the annotation plane's array instead of the point's own, so on a
+datum that has a point and no plane it dereferences a null handle and takes the process down. The
+bridge refuses that one shape before calling `GetObject`, so this accessor returns `nil` and
+`datums` omits the datum. Every datum write method below shares the same lookup and returns `false`
+on the same shape, because the lookup runs before any of them reads what it returned. A plane whose
+location array cannot supply the point array's own lower index is refused for the same reason: that
+index is what the kernel reads.
+
+**Two GD&T tables are in play, and the refusal covers both.** The datum accessors and mutators on
+this page read the tool this package attaches to the document's main label. `dimTolToolToleranceCount`
+and `rescaleGeometry(labelId:scaleFactor:forceIfNotRoot:)` reach `GetObject` by a different route,
+on the `XCAFDoc_DocumentTool` table that every importer writes, so they are guarded separately and
+refuse with `0` and `false` respectively. Measured in
+`Scripts/repro/1030-datum-lookup-guard/`: both took the process down before that guard, and a datum
+in one table is invisible to the other, so `datumCount` reports `0` for a datum an importer wrote.
+That divergence is a separate defect from this crash and is tracked as #1051.
+
+One reader is still unguarded and is unreachable rather than fixed: `STEPCAFControl_Writer` calls
+`GetObject()` on every datum on its AP242 branch. None of the three bridge sites that construct one
+sets `write.step.schema`, and OCCT's own default for it is `AP214IS`, so the AP242 branch is never
+taken and nothing here can reach those calls.
+
+Two ways to hold such a datum. The label API authors it directly, by putting a `TDataStd_RealArray`
+on the datum label's own point child, and that is the route this behaviour is tested through.
+`loadOCAF(from:)` carries one in a document that already had it, whether this package wrote it or
+another application did. Nothing on the GD&T write path above produces one: `createDatum(name:)`
+sets a name, a position and a modifier pair, never a point. A datum carrying both a point and a
+plane is unaffected and reads normally, though the point OCCT builds for it has the wrong X until
+the kernel fix ships. `Scripts/patches/0029-*` is that fix and is not in the pinned OCCT asset, so
+the refusal stands until a rebuilt kernel is pinned.
 
 ---
 
@@ -1668,14 +1701,14 @@ All datums in the document.
 public var datums: [Datum] { get }
 ```
 
-- **Returns:** Array of all `Datum` values for which `datum(at:)` succeeds.
+- **Returns:** Array of all `Datum` values for which `datum(at:)` succeeds, so a datum OCCT cannot read (#1030) is omitted rather than crashing the enumeration.
 - **Example:**
   ```swift
-  let doc = try Document.load(from: gdtStepURL)
-  print("Dimensions:", doc.dimensions.count)
-  print("Tolerances:", doc.geomTolerances.count)
+  let doc = Document.create()!
+  doc.createDatum(name: "A")
   for datum in doc.datums { print("Datum:", datum.name) }
   ```
+- **Note:** this reads the GD&T table this package writes, not the `XCAFDoc_DocumentTool` one an importer fills, so datums that arrived with a STEP file are not listed here. See the two-table note under [`datum(at:)`](#datumat).
 
 ---
 
@@ -2103,7 +2136,7 @@ public func setDatumPosition(at index: Int, _ position: Int) -> Bool
 - **Parameters:**
   - `index`: zero-based datum index.
   - `position`: 1-based. Zero or less clears it, so `datum(at:)` reports `position` as `nil`.
-- **Returns:** `true` if the update succeeded; `false` if the index is out of range or the attribute is missing.
+- **Returns:** `true` if the update succeeded; `false` if the index is out of range or the attribute is missing. Also `false` for a datum carrying an annotation point with no annotation plane, which the shared lookup refuses rather than crash OCCT (#1030); see the note under `datum(at:)`.
 - **OCCT:** `XCAFDimTolObjects_DatumObject::SetPosition` -> `XCAFDoc_Datum::SetObject`.
 - **Example:**
   ```swift
@@ -2126,7 +2159,7 @@ public func setDatumModifiers(at index: Int, _ modifiers: [DatumModifier]) -> Bo
 - **Parameters:**
   - `index`: zero-based datum index.
   - `modifiers`: the new sequence, in the order OCCT should store it. An empty array clears it.
-- **Returns:** `true` if the update succeeded; `false` if the index is out of range or the attribute is missing.
+- **Returns:** `true` if the update succeeded; `false` if the index is out of range or the attribute is missing. Also `false` for a datum carrying an annotation point with no annotation plane, which the shared lookup refuses rather than crash OCCT (#1030); see the note under `datum(at:)`.
 - **OCCT:** `XCAFDimTolObjects_DatumObject::SetModifiers` -> `XCAFDoc_Datum::SetObject`.
 - **Example:**
   ```swift
@@ -2152,7 +2185,7 @@ public func setDatumModifierWithValue(at index: Int,
   - `index`: zero-based datum index.
   - `modifier`: pass `.none` to clear the pair, which also clears the value.
   - `value`: the number the modifier carries.
-- **Returns:** `true` if the update succeeded; `false` if the index is out of range, the attribute is missing, or `modifier` is outside the enum.
+- **Returns:** `true` if the update succeeded; `false` if the index is out of range, the attribute is missing, or `modifier` is outside the enum. Also `false` for a datum carrying an annotation point with no annotation plane, which the shared lookup refuses rather than crash OCCT (#1030); see the note under `datum(at:)`.
 - **OCCT:** `XCAFDimTolObjects_DatumObject::SetModifierWithValue` -> `XCAFDoc_Datum::SetObject`.
 - **Example:**
   ```swift
@@ -2179,7 +2212,7 @@ public func setDatumTarget(at index: Int, type: DatumTargetType, number: Int) ->
   - `index`: zero-based datum index.
   - `type`: the target's shape.
   - `number`: the target's number within its datum.
-- **Returns:** `true` if the update succeeded; `false` if the index is out of range, the attribute is missing, or `number` is negative.
+- **Returns:** `true` if the update succeeded; `false` if the index is out of range, the attribute is missing, or `number` is negative. Also `false` for a datum carrying an annotation point with no annotation plane, which the shared lookup refuses rather than crash OCCT (#1030); see the note under `datum(at:)`.
 - **OCCT:** `XCAFDimTolObjects_DatumObject::IsDatumTarget(bool)`, `SetDatumTargetType` and `SetDatumTargetNumber` -> `XCAFDoc_Datum::SetObject`.
 - **Example:**
   ```swift
@@ -2201,7 +2234,7 @@ public func clearDatumTarget(at index: Int) -> Bool
 
 - **Parameters:**
   - `index`: zero-based datum index.
-- **Returns:** `true` if the update succeeded; `false` if the index is out of range or the attribute is missing.
+- **Returns:** `true` if the update succeeded; `false` if the index is out of range or the attribute is missing. Also `false` for a datum carrying an annotation point with no annotation plane, which the shared lookup refuses rather than crash OCCT (#1030); see the note under `datum(at:)`.
 - **OCCT:** `XCAFDimTolObjects_DatumObject::IsDatumTarget(false)` -> `XCAFDoc_Datum::SetObject`.
 - **Example:**
   ```swift
@@ -2235,7 +2268,7 @@ public func setDatumTargetPlacement(at index: Int,
   - `reference`: the placement X axis, which `length` runs along.
   - `length`: the target's length.
   - `width`: the target's width.
-- **Returns:** `true` if the update succeeded; `false` if the index is out of range, the attribute is missing, `normal` or `reference` is degenerate, or the datum is not already a datum target of a type other than `.area` (see the precondition below).
+- **Returns:** `true` if the update succeeded; `false` if the index is out of range, the attribute is missing, `normal` or `reference` is degenerate, or the datum is not already a datum target of a type other than `.area` (see the precondition below). Also `false` for a datum carrying an annotation point with no annotation plane, which the shared lookup refuses rather than crash OCCT (#1030); see the note under `datum(at:)`.
 - **OCCT:** `XCAFDimTolObjects_DatumObject::SetDatumTargetAxis`, `SetDatumTargetLength` and `SetDatumTargetWidth` -> `XCAFDoc_Datum::SetObject`.
 - **Example:**
   ```swift
