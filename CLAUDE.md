@@ -271,17 +271,29 @@ an `OCCTShapeRef`/`OCCTWireRef`/`OCCTEdgeRef`/`OCCTFaceRef`, the pointer test is
 because `Shape.nullified` is a public property returning a wrapper around a null `TopoDS_Shape`.
 The rule is narrower than the handle one: a null `TopoDS_Shape` is safe to copy, compare, cast with
 `TopoDS::Edge` and walk with `TopExp` (PR #1027 measured 345 cast sites and found none defective),
-and unsafe on the ten members that dereference `myTShape` with no null test of their own:
+and unsafe on two things. First, the ten members that dereference `myTShape` with no null test of
+their own:
 `ShapeType()`, the eight flag accessors (`Free`, `Locked`, `Modified`, `Checked`, `Orientable`,
 `Closed`, `Infinite`, `Convex`, getter and setter alike) and `EmptyCopy()`. `NbChildren()` is the
 one OCCT guards itself. Reach any of those and the guard is
 `if (!occtShapeIsPresent(x)) return <fallback>;` or, where a type test follows,
 `if (!occtShapeIsType(x, TopAbs_T)) return <fallback>;`, both `inline` in `OCCTBridge_Internal.h`.
-The same `check-null-handle-guards.py` enforces it, as a third walk with its own `SHAPE_ALLOWED`
+Second, and this is the half #1026 could not see, **an OCCT entry point that dereferences the shape
+for you** (#1035). `Scripts/repro/1035-unwrap-guard/repro_1035.mm` measured 61 of them and 17 crash
+uncatchably, including all of `BRep_Tool::Curve`/`Surface`/`Tolerance`/`CurveOnSurface`, the
+`BRepAdaptor_Curve` constructors and `ShapeFix_Shape::Perform`, while `TopExp`, the four
+`BRepAlgoAPI` booleans, `BRepBndLib::Add`, `BRepMesh_IncrementalMesh` and 36 more cope. **The cast
+is not the end of the chain**: `TopoDS::Edge` is written `theShape.IsNull() ? false : ...`, so it
+deliberately passes a null through and the crash lands one frame further out, which is exactly why
+a census of cast sites came back clean while the operations built on them still died. The gate's
+`SHAPE_DEREF_RECEIVERS`/`SHAPE_DEREF_QUALIFIED`/`SHAPE_DEREF_CTORS` are that measured list and it
+walks outward through the `TopoDS::` casts to reach them; an entry is a probe from that sweep, never
+a guess, and the sweep covers 61 of roughly 200 distinct entry points, so the tail is real.
+The same `check-null-handle-guards.py` enforces both, as a third walk with its own `SHAPE_ALLOWED`
 table, and its fixtures are the `S*` ones. **Return the refusal the function already gives a
-wrong-typed input, never a value that reads as a measurement** (#726): all forty-two sites had one,
-so none needed inventing, and `Shape.isEmptyShape` is what a caller uses to tell a null shape from a
-real negative.
+wrong-typed input, never a value that reads as a measurement** (#726): all forty-two of #1026's
+sites and all seventy-two of #1035's had one, so none needed inventing, and `Shape.isEmptyShape` is
+what a caller uses to tell a null shape from a real negative.
 
 **Four is a fact about this tree, not a closed set.** The checker is still blind to `(*cast).field`,
 a reference-to-wrapper alias, an `IsNull()` whose result is discarded or does not dominate the use,
