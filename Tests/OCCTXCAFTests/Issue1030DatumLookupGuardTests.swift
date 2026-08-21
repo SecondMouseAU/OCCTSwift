@@ -72,7 +72,10 @@ struct Issue1030DatumLookupGuardTests {
         // Child existence proves nothing here: XCAFDoc_Datum::SetObject opens every child from
         // ChildLab_Begin to ChildLab_End and only forgets their attributes, so createDatum leaves
         // all nineteen present and empty. The array attribute is what both the kernel and the
-        // guard actually test, so that is what this asserts.
+        // guard actually test, so that is what this asserts. Both halves are asserted separately,
+        // because `findChild(...)?.realArrayBounds == nil` alone is nil on a missing child too,
+        // which is the very fact being established.
+        #expect(label.findChild(tag: Self.pointTag) != nil)
         #expect(label.findChild(tag: Self.pointTag)?.realArrayBounds == nil)
         #expect(writeTriple(label, tag: Self.pointTag, 7))
         // The point child now holds (7, 7, 7) and no plane location array exists, which is the
@@ -81,6 +84,7 @@ struct Issue1030DatumLookupGuardTests {
         #expect(point?.realArrayBounds?.upper == 3)
         #expect(point?.realArrayValue(at: 1) == 7)
         #expect(point?.realArrayValue(at: 3) == 7)
+        #expect(label.findChild(tag: Self.planeLocationTag) != nil)
         #expect(label.findChild(tag: Self.planeLocationTag)?.realArrayBounds == nil)
     }
 
@@ -94,6 +98,10 @@ struct Issue1030DatumLookupGuardTests {
         // here and no assertion below reports.
         #expect(doc.datum(at: index) == nil)
         #expect(doc.datums.isEmpty)
+        // datumCount counts labels, datums counts the readable ones, so the refusal makes the two
+        // disagree. Asserting it here keeps the emptiness above from being read as "no datum was
+        // ever created".
+        #expect(doc.datumCount == 1)
     }
 
     @Test("A write path takes the same refusal, since the shared lookup runs before it")

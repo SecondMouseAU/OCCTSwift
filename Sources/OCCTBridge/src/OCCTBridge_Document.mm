@@ -1210,6 +1210,62 @@ int32_t OCCTDocumentGetGeomToleranceModifier(OCCTDocumentRef doc,
   }
 }
 
+// #1030: XCAFDoc_Datum::GetObject builds the datum point's X out of the annotation plane's array
+// rather than the point's own, so a datum carrying a point with no plane location dereferences a
+// null handle. That is an OS signal, which no caller's catch can absorb (#1022). Patch 0029 fixes
+// it in the kernel and is in no built kernel, so every bridge path that reaches GetObject asks this
+// first. ChildLab_PlaneLoc and ChildLab_Pnt are a file-local anonymous enum in XCAFDoc_Datum.cxx,
+// invisible from the header, hence the literal tags. The condition is the array attribute and never
+// the child label: SetObject opens every child from ChildLab_Begin to ChildLab_End and only forgets
+// their attributes, so all nineteen exist on any datum it wrote and a child-existence test would
+// refuse every datum.
+static bool occtDatumLabelIsReadable(const TDF_Label& datumLabel)
+{
+  if (datumLabel.IsNull())
+    return false;
+
+  const int                  datumChildPlaneLoc = 14;
+  const int                  datumChildPnt      = 17;
+  const TDF_Label            pntLabel           = datumLabel.FindChild(datumChildPnt, false);
+  Handle(TDataStd_RealArray) pnt;
+  if (pntLabel.IsNull() || !pntLabel.FindAttribute(TDataStd_RealArray::GetID(), pnt)
+      || pnt->Length() != 3)
+    return true;
+
+  // Only ChildLab_PlaneLoc, matching the kernel's own && chain, which assigns aLoc from this
+  // attribute before it goes on to test ChildLab_PlaneN and ChildLab_PlaneRef. The index test is
+  // the rest of the same read: the kernel spells it aLoc->Value(aPnt->Lower()), so the plane array
+  // existing is not enough, it has to hold that one index. Nothing OCCT writes uses a lower bound
+  // other than 1, but the arrays are caller data and this is the read being guarded.
+  const TDF_Label            planeLocLabel = datumLabel.FindChild(datumChildPlaneLoc, false);
+  Handle(TDataStd_RealArray) planeLoc;
+  if (planeLocLabel.IsNull() || !planeLocLabel.FindAttribute(TDataStd_RealArray::GetID(), planeLoc))
+    return false;
+  return pnt->Lower() >= planeLoc->Lower() && pnt->Lower() <= planeLoc->Upper();
+}
+
+// The same refusal for the OTHER GD&T table. occtDocumentDatumObjectAt reads the tool this bridge
+// attaches to Main() itself, while XCAFDimTolObjects_Tool and XCAFDoc_Editor::RescaleGeometry both
+// go through XCAFDoc_DocumentTool::DimTolTool, which is the table every importer writes, and both
+// call GetObject on every datum they find with nothing between them and the crash. CheckDimTolTool
+// rather than DimTolTool, so asking the question never creates the table (#1030).
+static bool occtDocumentToolDatumsAreReadable(const TDF_Label& access)
+{
+  if (access.IsNull() || !XCAFDoc_DocumentTool::CheckDimTolTool(access))
+    return true;
+  Handle(XCAFDoc_DimTolTool) dimTolTool = XCAFDoc_DocumentTool::DimTolTool(access);
+  if (dimTolTool.IsNull())
+    return true;
+  TDF_LabelSequence datums;
+  dimTolTool->GetDatumLabels(datums);
+  for (int i = 1; i <= datums.Length(); ++i)
+  {
+    if (!occtDatumLabelIsReadable(datums.Value(i)))
+      return false;
+  }
+  return true;
+}
+
 // The datum counterpart of occtDocumentDimensionObjectAt, for the same reason (#1004).
 static bool occtDocumentDatumObjectAt(OCCTDocumentRef                        doc,
                                       int32_t                                datumIndex,
@@ -1229,33 +1285,8 @@ static bool occtDocumentDatumObjectAt(OCCTDocumentRef                        doc
   if (!label.FindAttribute(XCAFDoc_Datum::GetID(), outAttr))
     return false;
 
-  // #1030: XCAFDoc_Datum::GetObject builds the datum point's X out of the annotation plane's array
-  // rather than the point's own, so a datum carrying a point with no plane location dereferences a
-  // null handle. That is an OS signal, which no caller's catch can absorb (#1022). Patch 0029 fixes
-  // it in the kernel and is in no built kernel, so refuse that one shape instead of calling
-  // GetObject on it. ChildLab_PlaneLoc and ChildLab_Pnt are a file-local anonymous enum in
-  // XCAFDoc_Datum.cxx, invisible from the header, hence the literal tags. The condition is the
-  // array attribute and never the child label: SetObject opens every child from ChildLab_Begin to
-  // ChildLab_End and only forgets its attributes, so all nineteen exist on any datum it wrote.
-  const int                  datumChildPlaneLoc = 14;
-  const int                  datumChildPnt      = 17;
-  const TDF_Label            pntLabel           = label.FindChild(datumChildPnt, false);
-  Handle(TDataStd_RealArray) pnt;
-  if (!pntLabel.IsNull() && pntLabel.FindAttribute(TDataStd_RealArray::GetID(), pnt)
-      && pnt->Length() == 3)
-  {
-    // Only ChildLab_PlaneLoc, matching the kernel's own && chain, which assigns aLoc from this
-    // attribute before it goes on to test ChildLab_PlaneN and ChildLab_PlaneRef. The index test is
-    // the rest of the same read: the kernel spells it aLoc->Value(aPnt->Lower()), so the plane
-    // array existing is not enough, it has to hold that one index. Nothing OCCT writes uses a
-    // lower bound other than 1, but the arrays are caller data and this is the read being guarded.
-    const TDF_Label            planeLocLabel = label.FindChild(datumChildPlaneLoc, false);
-    Handle(TDataStd_RealArray) planeLoc;
-    if (planeLocLabel.IsNull()
-        || !planeLocLabel.FindAttribute(TDataStd_RealArray::GetID(), planeLoc)
-        || pnt->Lower() < planeLoc->Lower() || pnt->Lower() > planeLoc->Upper())
-      return false;
-  }
+  if (!occtDatumLabelIsReadable(label))
+    return false;
 
   outObj = outAttr->GetObject();
   return !outObj.IsNull();
@@ -5865,6 +5896,10 @@ bool OCCTDocumentEditorRescaleGeometry(OCCTDocumentRef doc,
     TDF_Label label = doc->getLabel(labelId);
     if (label.IsNull())
       return false;
+    // RescaleGeometry walks the document tool's datum labels and calls GetObject on each, so one
+    // unreadable datum takes the whole process down before any geometry is scaled (#1030).
+    if (!occtDocumentToolDatumsAreReadable(label))
+      return false;
     return XCAFDoc_Editor::RescaleGeometry(label, scaleFactor, forceIfNotRoot);
   }
   catch (...)
@@ -8407,8 +8442,14 @@ int OCCTDocumentDimTolDimensionCount(OCCTDocumentRef document)
 
 int OCCTDocumentDimTolToleranceCount(OCCTDocumentRef document)
 {
+  if (!document || document->doc.IsNull())
+    return 0;
   try
   {
+    // GetGeomTolerances calls GetObject on every datum linked to a tolerance, outside
+    // occtDocumentDatumObjectAt and on the document tool's own table (#1030).
+    if (!occtDocumentToolDatumsAreReadable(document->doc->Main()))
+      return 0;
     XCAFDimTolObjects_Tool                                              tool(document->doc);
     NCollection_Sequence<Handle(XCAFDimTolObjects_GeomToleranceObject)> tols;
     NCollection_Sequence<Handle(XCAFDimTolObjects_DatumObject)>         datums;

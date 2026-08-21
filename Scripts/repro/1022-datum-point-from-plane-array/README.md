@@ -87,34 +87,30 @@ and it is a property of the current write surface rather than of the read path.
 `GetObject()` on every datum in three places, so exporting a document that holds such a datum takes
 the same crash as reading it.
 
-## Whether the bridge should guard as well
+## The bridge guard, shipped as #1030
 
-Reported, not implemented. The reason is an ownership boundary rather than a judgement that the
-guard is wrong: `OCCTBridge_Document.mm` is held by a concurrent agent in this lane, so a guard
-written here would race their edits in the file the guard belongs in. #1030 carries the decision, so
-it is tracked rather than deferred into prose.
+Implemented. When this directory was written the guard was reported rather than written, because
+`OCCTBridge_Document.mm` was held by a concurrent agent; #1030 carried the decision and closed it.
+`occtDatumLabelIsReadable` (`OCCTBridge_Document.mm`) refuses a datum whose `ChildLab_Pnt` child
+holds a `TDataStd_RealArray` of length 3 while `ChildLab_PlaneLoc` holds none, or holds one that
+cannot supply `aPnt->Lower()`, which is the index the kernel actually reads. It runs before
+`GetObject()` at all three bridge sites that reach it, and it costs two private tag numbers, `14`
+and `17` at this pin, that upstream can renumber with no compile-time signal here.
 
-The crash is uncatchable and patch `0029` is in no built kernel, so no released consumer is
-protected by it today. Tracked as #1030. A bridge-side guard is possible but not free: the check
-has to happen **before** `GetObject()` is called, and `XCAFDoc_Datum` exposes no `HasPlane()`, so
-the only way to ask is to look at the label's children directly. It would go in
-`occtDocumentDatumObjectAt`, the one place all seven entry points share. `ChildLab_PlaneLoc` and
-`ChildLab_Pnt` are values of a **file-local anonymous enum** in `XCAFDoc_Datum.cxx`, not visible
-from the header, and they are tags `14` and `17` at this pin. The guard would be: if `FindChild(17, false)` holds a
-`TDataStd_RealArray` of length 3 and `FindChild(14, false)` holds no `TDataStd_RealArray`, skip the
-datum rather than call `GetObject()`. Note the plane condition is only about `ChildLab_PlaneLoc`:
-the kernel's `&&` chain assigns `aLoc` before it tests `ChildLab_PlaneN`, so a datum with a plane
-location and nothing else already has a non-null `aLoc`.
+Two things this directory got wrong, both corrected by measurement in
+[`Scripts/repro/1030-datum-lookup-guard/`](../1030-datum-lookup-guard/):
 
-That is precise and cheap, and it hard-codes two private tag numbers that upstream can renumber
-without any compile-time signal here. The trade is a real one either way, and it is the caller's
-call rather than this change's.
+- **`occtDocumentDatumObjectAt` is not the only site.** `OCCTDocumentDimTolToleranceCount` and
+  `OCCTDocumentEditorRescaleGeometry` reach `GetObject` through
+  `XCAFDimTolObjects_Tool::GetGeomTolerances` and `XCAFDoc_Editor::RescaleGeometry`, outside the
+  shared helper, and both crashed. They are guarded too.
+- **They read a different table.** The shared helper reads the tool this bridge attaches to
+  `Main()`; those two read the `XCAFDoc_DocumentTool` table at `0:1:4`, which is the one every
+  importer writes. A datum in one is invisible to the other, so the sentence below about an OCAF
+  load reaching the crash holds only for a document whose table sits where this bridge puts it.
 
-`XCAFDoc_Datum::GetName()` is not a way out of it: it returns the attribute's own legacy `myName`,
-set by `XCAFDoc_Datum::Set(...)`, while `SetObject` writes the object's name to the `ChildLab_Name`
-child instead. Substituting it for `GetObject()->GetName()` in `OCCTDocumentGetDatumInfo` would
-return an empty name for every datum this package or the STEP reader creates, and it would do
-nothing for the other six entry points, which need the object itself.
+The guard prevents the crash and does not recover the stored point: a datum with both a point and a
+plane still reads back the plane's X, so patch `0029` is still what fixes the value.
 
 ## Relationship to `Scripts/repro/1004-gdt-accessors/`
 

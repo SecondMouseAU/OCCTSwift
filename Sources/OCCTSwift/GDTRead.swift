@@ -599,7 +599,11 @@ extension Document {
         Int(OCCTDocumentGetGeomToleranceCount(handle))
     }
 
-    /// Number of datums defined in this document.
+    /// Number of datum labels in this document, which can exceed `datums.count`.
+    ///
+    /// This counts labels; `datums` counts the ones `datum(at:)` can read. A datum OCCT cannot
+    /// read without crashing (#1030) is counted here and omitted there, so iterate `datums` rather
+    /// than indexing `0..<datumCount` and force-unwrapping.
     public var datumCount: Int {
         Int(OCCTDocumentGetDatumCount(handle))
     }

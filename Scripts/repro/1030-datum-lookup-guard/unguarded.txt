@@ -1,0 +1,23 @@
+== compiling against 16 bridge objects
+-- section A
+A: OCCTDocumentDimTolToleranceCount, datum with a point and no plane
+  datum label 0:1:4:2, plane no
+  OCCTDocumentGetDatumCount (the Main() table) = 0
+  calling OCCTDocumentDimTolToleranceCount...
+Scripts/repro/1030-datum-lookup-guard/run.sh: line 35:   774 Segmentation fault: 11     "$BIN" "$1"
+   exit 139 (signal 11)
+-- section B
+B: OCCTDocumentEditorRescaleGeometry, datum with a point and no plane
+  datum label 0:1:4:2, plane no
+  OCCTDocumentGetDatumCount (the Main() table) = 0
+  calling OCCTDocumentEditorRescaleGeometry...
+Scripts/repro/1030-datum-lookup-guard/run.sh: line 35:   821 Segmentation fault: 11     "$BIN" "$1"
+   exit 139 (signal 11)
+-- section C
+C: control, datum with a plane AND a point, both entry points
+  datum label 0:1:4:2, plane yes
+  OCCTDocumentGetDatumCount (the Main() table) = 0
+  OCCTDocumentDimTolToleranceCount returned 1
+  OCCTDocumentEditorRescaleGeometry returned 1
+  section C completed without crashing
+   exit 0

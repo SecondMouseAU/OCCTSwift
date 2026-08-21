@@ -1639,19 +1639,27 @@ on the same shape, because the lookup runs before any of them reads what it retu
 location array cannot supply the point array's own lower index is refused for the same reason: that
 index is what the kernel reads.
 
-The refusal covers the seven bridge entry points that share the lookup, which is every datum
-accessor and mutator on this page. It is not a kernel-wide fix: `STEPCAFControl_Writer` calls
-`GetObject()` on every datum on its AP242 branch, outside the guarded helper, and is unreachable
-from here only because `writeSTEP` pins AP214 and exposes no schema setter.
+**Two GD&T tables are in play, and the refusal covers both.** The datum accessors and mutators on
+this page read the tool this package attaches to the document's main label. `dimTolToolToleranceCount`
+and `rescaleGeometry(labelId:scaleFactor:forceIfNotRoot:)` reach `GetObject` by a different route,
+on the `XCAFDoc_DocumentTool` table that every importer writes, so they are guarded separately and
+refuse with `0` and `false` respectively. Measured in
+`Scripts/repro/1030-datum-lookup-guard/`: both took the process down before that guard, and a datum
+in one table is invisible to the other, so `datumCount` reports `0` for a datum an importer wrote.
+That divergence is a separate defect from this crash and is tracked on its own.
 
-Two ways to hold such a datum. `loadOCAF(from:)` on a document another application authored is the
-one that matters in practice, since `createDatum(name:)` sets a name, a position and a modifier
-pair, never a point, so nothing on the GD&T write path above produces one. The label API can also
-author it directly, by putting a `TDataStd_RealArray` on the datum label's own point child, which is
-how this behaviour is tested. A datum carrying both a point and a plane is unaffected and reads
-normally, though the point OCCT builds for it has the wrong X until the kernel fix ships.
-`Scripts/patches/0029-*` is that fix and is not in the pinned OCCT asset, so the refusal stands
-until a rebuilt kernel is pinned.
+One reader is still unguarded and is unreachable rather than fixed: `STEPCAFControl_Writer` calls
+`GetObject()` on every datum on its AP242 branch, and `writeSTEP` pins AP214 and exposes no schema
+setter, so nothing here can take it.
+
+Two ways to hold such a datum. The label API authors it directly, by putting a `TDataStd_RealArray`
+on the datum label's own point child, and that is the route this behaviour is tested through.
+`loadOCAF(from:)` carries one in a document that already had it, whether this package wrote it or
+another application did. Nothing on the GD&T write path above produces one: `createDatum(name:)`
+sets a name, a position and a modifier pair, never a point. A datum carrying both a point and a
+plane is unaffected and reads normally, though the point OCCT builds for it has the wrong X until
+the kernel fix ships. `Scripts/patches/0029-*` is that fix and is not in the pinned OCCT asset, so
+the refusal stands until a rebuilt kernel is pinned.
 
 ---
 
