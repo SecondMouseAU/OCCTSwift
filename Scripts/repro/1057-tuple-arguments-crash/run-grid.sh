@@ -35,6 +35,7 @@ CELLS=(
   S1TwoSequence
   T1Serialized
   U1SerialLoop
+  V1EmptyBody
 )
 
 swift build --build-tests >/dev/null 2>&1 || { echo "build failed"; exit 2; }
@@ -49,7 +50,18 @@ for cell in "${CELLS[@]}"; do
     if [ "$rc" -ne 0 ]; then
       crashes=$((crashes + 1))
       if [ -z "$detail" ]; then
-        detail=$(printf '%s' "$out" | grep -m1 -E "freed pointer|Fatal error|Signal|signal|Crashed|error: Exited" | head -1 | sed 's/^[[:space:]]*//')
+        # The runtime's own message first, SwiftPM's signal line only as a fallback. Taking them
+        # in file order instead put SwiftPM's "exited with unexpected signal code 6" ahead of
+        # "freed pointer was not the last allocation" on every row, so this table could never
+        # show the allocator message, and a review round went by with the README claiming two
+        # cells produced a bare 139 when they produce the message like everything else.
+        # The message carries no trailing newline, so it runs together with whatever the test
+        # harness printed next; report the phrase itself rather than the line it landed in.
+        if printf '%s' "$out" | grep -q "freed pointer was not the last allocation"; then
+          detail="freed pointer was not the last allocation"
+        else
+          detail=$(printf '%s' "$out" | grep -m1 -E "Fatal error|signal code|Crashed" | sed 's/^[[:space:]]*//' | cut -c1-70)
+        fi
         [ -z "$detail" ] && detail="rc=$rc"
       fi
     fi

@@ -11,9 +11,9 @@ available on this machine, so nothing below is a claim about any other one.
 ## What to run
 
 ```bash
-./run-grid.sh 3        # the swift-testing grid, 22 cells, 3 processes each
+./run-grid.sh 3        # the swift-testing grid, 23 cells, 3 processes each
 ./run-stages.sh        # the same crash reached with no swift-testing, 22 stages
-./run-variants.sh      # the narrowing, 52 one-change-at-a-time variants
+./run-variants.sh      # the narrowing, 64 one-change-at-a-time variants
 ./backtrace.sh A1StringSIMD3   # the crash frame
 ./dump-expansion.sh    # the @Test macro expansions the compiler is handed
 
@@ -58,6 +58,7 @@ would report only the first one to die.
 | S | two-sequence `arguments: [String], [SIMD3<Double>]` | clean |
 | T | A's type with `.serialized` | **CRASH** |
 | U | one test walking the list, no `arguments:` | clean |
+| V | A's type with a body that is `{}`, argument never read | **CRASH** |
 
 Four things this settles that the issue's own table did not.
 
@@ -78,6 +79,11 @@ one aggregate containing both, whether it is spelled as a tuple or as a struct.
 
 **It is not concurrency between cases.** Cell R is a single case and cell T is `.serialized`, and
 both crash.
+
+**It is not the body.** Cell V's body is `{}` and never reads the argument. This directory asserted
+"whatever the body does" for a round while every cell still carried a `precondition` or an
+`#expect`, which a pre-PR review flagged as an unevidenced claim made in the place it mattered
+most. Cell V is that evidence.
 
 ## Stage 2: the crash frame
 
@@ -321,6 +327,21 @@ Three of the 33 rows needed a human:
   tag byte, so the row is clean.
 
 **At-risk sites: 0.** Nothing was changed for its own sake.
+
+### Nothing runs this census
+
+`ci.yml`'s `gate-scripts` job invokes `Scripts/*.py`, and `Scripts/git-hooks/pre-commit` mirrors it,
+so a script under `Scripts/repro/` is run by nobody. The repo's precedent for a non-gating census is
+that CI still runs its `--self-test`, because a bare run of a census can never fail and so can never
+signal. Promoting this one means four coordinated edits: move it to
+`Scripts/census-arguments-tuple-shapes.py`, add its `--self-test` to `ci.yml`, add the same
+invocation to the pre-commit hook, and extend `CLAUDE.md`'s "Static Gate Scripts" list and its
+"two censuses" count to three.
+
+It is deliberately not done in the PR that created this directory, because the fourth edit is to
+`CLAUDE.md` and the agent that wrote this is not permitted to change that file. Left as one
+follow-on decision rather than three-quarters of a change, so the list and the reality do not
+disagree silently, which is the failure `CLAUDE.md`'s own release section spends a paragraph on.
 
 ## Deliberately not answered here
 

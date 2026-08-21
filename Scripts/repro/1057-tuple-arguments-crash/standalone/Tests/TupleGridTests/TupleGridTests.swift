@@ -77,9 +77,12 @@ struct NamedPair: Sendable {
         row("(String, SIMD3<Double>)", (String, SIMD3<Double>).self)
         row("(SIMD3<Double>, SIMD3<Double>)", (SIMD3<Double>, SIMD3<Double>).self)
         // The `@Test` macro gives its local function `_: isolated (any Actor)? =
-        // Testing.__defaultSynchronousIsolationContext`. The standalone narrowing (Smallest, V39)
-        // shows a `nil` isolation does not crash, so print what this actually is rather than
-        // inferring it from the fact that the crash happens.
+        // Testing.__defaultSynchronousIsolationContext`. This reads `nil`, and a `nil` isolation
+        // does not by itself prevent the crash: the standalone narrowing (Smallest) has V50, a
+        // *literal* `nil`, clean and V49, an opaque `nil` from an `@inline(never)` function,
+        // crashing. So what matters is whether the compiler can fold the argument, and this
+        // property is not inlinable. Printed rather than assumed, which is how the difference
+        // between V39 and V49 was found in the first place.
         print("__defaultSynchronousIsolationContext: \(String(describing: __defaultSynchronousIsolationContext))")
         #expect(MemoryLayout<SIMD3<Double>>.alignment > 0)
     }
@@ -274,6 +277,20 @@ struct NamedPair: Sendable {
 }
 
 // MARK: - The workaround the repo uses
+
+/// The claim "it crashes whatever the body does" was made throughout this directory while every
+/// cell and variant still had a `precondition` or an `#expect` in it. This cell has neither: the
+/// body is empty and the argument is never read. A pre-PR review is what noticed the claim was
+/// unevidenced where it was made.
+@Suite("V: (String, SIMD3<Double>) with a completely empty body") struct V1EmptyBody {
+    static let cases: [(String, SIMD3<Double>)] = [
+        ("+X", SIMD3(1, 0, 0)), ("-X", SIMD3(-1, 0, 0)),
+        ("+Y", SIMD3(0, 1, 0)), ("-Y", SIMD3(0, -1, 0)),
+        ("+Z", SIMD3(0, 0, 1)), ("-Z", SIMD3(0, 0, -1)),
+    ]
+    @Test("no body at all", arguments: cases)
+    func run(_ f: (String, SIMD3<Double>)) {}
+}
 
 @Suite("U: one test walking the list, no arguments: at all") struct U1SerialLoop {
     static let cases: [(String, SIMD3<Double>)] = [

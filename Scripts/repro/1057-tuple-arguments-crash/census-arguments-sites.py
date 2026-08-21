@@ -114,8 +114,16 @@ def sites(root):
 
     The argument text runs from `arguments:` to the close of the enclosing `@Test(` call. The scan
     starts at depth 1 rather than 0, because reaching `arguments:` means already being inside that
-    call: five real sites today put `arguments:` on a line with no open paren of its own, and a
-    scan starting at 0 ran to its 40-line cap on every one of them.
+    call. Measured against a depth-0 copy over this tree: 32 of the 33 sites put `arguments:` on a
+    line with no open paren of its own, depth-0 captures a different text on 9 of them, and on all
+    9 it truncates to that single line rather than running to the 40-line cap. **No verdict changes
+    today**, so this is correctness for the multi-line array literal whose element types sit on a
+    later line, and the `arguments: on its own line still reaches the element type` self-test case
+    is what holds it: that one flips AT RISK to clean under depth 0.
+
+    An earlier version of this paragraph said "five real sites" and "ran to its 40-line cap on
+    every one of them". Both numbers were invented rather than measured, in a directory whose own
+    README cites `measure-dont-assume`, and a pre-PR review caught it.
     """
     out = []
     for dirpath, _dirs, files in os.walk(root):
