@@ -14,10 +14,12 @@ So AT RISK here means "worth opening", not "will crash", and the over-prediction
 census should err in.
 
 This is a CENSUS, not a gate. It exits 0 whether or not it finds anything, because deciding whether
-a *named* type is reference-counted or carries a wide vector needs somebody to open the type, which
-is what the one interesting row in this tree needed (`ThreadProfile` stores an `[Vertex]` and
-nothing wider than a word, so it is clean). Its job is to make the site list re-derivable instead of
-re-grepped.
+a *named* type is reference-counted or carries a wide vector needs somebody to open the type, and
+9 of this tree's 33 rows name one. It says `unknown` for those rather than `clean`, since a census
+whose "all clear" and "I could not tell" print the same string is the failure this repo's
+prove-the-test-fails policy exists to catch. The README adjudicates all 9.
+
+Its job is to make the site list re-derivable instead of re-grepped.
 
     python3 Scripts/repro/1057-tuple-arguments-crash/census-arguments-sites.py
     python3 Scripts/repro/1057-tuple-arguments-crash/census-arguments-sites.py --self-test
