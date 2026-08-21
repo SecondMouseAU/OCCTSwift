@@ -1,5 +1,8 @@
 #!/usr/bin/env python3
-"""#1026 guard-removal matrix for check-null-handle-guards.py's third walk.
+"""#1026 and #1035 guard-removal matrix for check-null-handle-guards.py's third walk.
+
+One walk, so one matrix: #1035 generalised #1026's builder rule into the SHAPE_DEREF_* table
+and added the outward walk through transparent casts, and rows R8-R13 cover both.
 
 Each row removes one mechanism from a COPY of the script, runs --self-test, and reports how many
 cases still come back correct. A row that drops nothing is a decorative guard, or a fixture that
@@ -81,19 +84,51 @@ def shape_hazard_sites"""))
                         """                if first is None:
                     continue"""))
 
-    # R8: the builder rule stops counting as a use.
-    yield ('R8 TopoDS_Builder Add/Remove no longer counts as a use',
-           BASE.replace("""                elif builder_use(m.start()):
-                    ev.append((m.start(), 'use', 'TopoDS_Builder'))
-""", "").replace("""            elif builder_use(m.start()):
-                ev.append((m.start(), 'use', 'TopoDS_Builder'))
-""", ""))
+    # R8: the measured-dereferencer table stops counting as a use at all. #1035 generalised
+    # #1026's builder rule into this, so this row now covers the builder too.
+    yield ('R8 SHAPE_DEREF_* no longer counts as a use',
+           BASE.replace("""                    deref = deref_call(body, m.start(), decls)""",
+                        """                    deref = None""").replace(
+               """                deref = deref_call(body, m.start(), decls)""",
+               """                deref = None"""))
 
-    # R9: the builder rule keyed on the METHOD NAME alone, ignoring the receiver's declared type.
-    yield ('R9 builder rule keyed on the method name, not the receiver type',
-           BASE.replace("""        receiver = re.search(r'(\\w+)\\s*\\.\\s*$', before[:before.rfind(call[0])])
-        return bool(receiver and receiver.group(1) in builders)""",
-                        """        return True"""))
+    # R9: keyed on the method name alone, ignoring the receiver's declared type. `Add` is one of
+    # OCCT's most overloaded names and fixture SK is the BRepBuilderAPI_Sewing::Add that proves it.
+    yield ('R9 receiver rule keyed on the method name, not the receiver type',
+           BASE.replace(
+               """        if recv and name in SHAPE_DEREF_RECEIVERS.get(decls.get(recv.group(1), ''), ()):
+            return f'{decls[recv.group(1)]}::{name}'""",
+               """        if recv and any(name in ms for ms in SHAPE_DEREF_RECEIVERS.values()):
+            return name"""))
+
+    # R10 (#1035): no outward walk. Stopping at the innermost call is what every census before
+    # #1035 did, and it is why thirty `Type local(TopoDS::Edge(x->shape))` sites were invisible.
+    yield ('R10 enclosing_calls stops at the innermost call',
+           BASE.replace('def enclosing_calls(body, pos, limit=4):',
+                        'def enclosing_calls(body, pos, limit=1):'))
+
+    # R11 (#1035): the TopoDS:: casts are treated as opaque, so the walk stops at the cast.
+    yield ('R11 TopoDS:: casts no longer transparent',
+           BASE.replace("""        if qualifier == 'TopoDS' and name in SHAPE_TRANSPARENT_CASTS:
+            continue                          # transparent: keep looking outward""",
+                        """        if False:
+            continue"""))
+
+    # R12 (#1035): the qualifier is ignored, so any `Curve(...)`/`Surface(...)` counts. This is
+    # the false-positive direction: BRepAdaptor_Curve::Curve and a dozen others share the names.
+    yield ('R12 qualified rule ignores the qualifier',
+           BASE.replace("""        if qualifier and name in SHAPE_DEREF_QUALIFIED.get(qualifier, ()):
+            return f'{qualifier}::{name}'""",
+                        """        if any(name in ns for ns in SHAPE_DEREF_QUALIFIED.values()):
+            return f'{qualifier}::{name}'"""))
+
+    # R13 (#1035): the `Type local(...)` constructor spelling is dropped, leaving only the bare
+    # temporary `Type(...)`. Every real site in this tree uses the named-local form.
+    yield ('R13 named-local constructor spelling dropped',
+           BASE.replace("""        before = re.search(r'(\\w+)\\s+$', body[:namestart])
+        if before and before.group(1) in SHAPE_DEREF_CTORS:
+            return before.group(1)""",
+                        """        pass"""))
 
     # R7: the whole third walk is unplugged from all_sites and direct_walk.
     s = BASE.replace("""            + shape_hazard_sites(parsed, shape_helpers))""",
