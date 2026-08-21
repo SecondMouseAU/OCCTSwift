@@ -112,6 +112,10 @@ run "check-changelog-transcription.py --self-test" Scripts/check-changelog-trans
 # exits 0 either way. Its bare run also needs Libraries/OCCT.xcframework for the class-existence
 # half, which a fresh clone does not have.
 run "census-doc-occt-attribution.py --self-test" Scripts/census-doc-occt-attribution.py --self-test
+# #1057's census. Self-test only, like the two above and for the same reason: it exits 0 either
+# way, since a bare run lists `@Test(arguments:)` element types for a human to judge rather than
+# reaching a verdict.
+run "census-arguments-tuple-shapes.py --self-test" Scripts/census-arguments-tuple-shapes.py --self-test
 
 if [ ${#failed[@]} -ne 0 ]; then
     echo ""

@@ -215,6 +215,17 @@ jobs:
         if: '!cancelled()'
         run: python3 Scripts/census-doc-occt-attribution.py --self-test
 
+      # A census, not a gate, for the same reason as the two above: a bare run lists
+      # `@Test(arguments:)` sites whose element type a human has to open and judge, and it exits 0
+      # either way, so only the `--self-test` can signal here. The shape it looks for is #1057's:
+      # an element pairing a reference-counted member with a builtin vector of 32 bytes or more,
+      # which corrupts the Swift task allocator regardless of what the test body does
+      # (swiftlang/swift#91639). The pair is necessary and not sufficient, so the census reports
+      # `unknown` where it cannot resolve a named type rather than guessing.
+      - name: census-arguments-tuple-shapes.py --self-test
+        if: '!cancelled()'
+        run: python3 Scripts/census-arguments-tuple-shapes.py --self-test
+
   build-and-test:
     name: swift build + test (macOS)
     runs-on: macos-15
