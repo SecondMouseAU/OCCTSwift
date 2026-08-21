@@ -116,10 +116,12 @@ struct Issue990ThreadAxisBasisTests {
     /// necessary and the pair is not sufficient, since `(String, simd_double3x3)` satisfies it and
     /// runs clean; where the cut falls is measured but not explained, so the rule over-predicts on
     /// purpose. Walking the list in one test, as below, is the workaround.
-    /// `census-arguments-sites.py` in that directory enumerates every `arguments:` site under
-    /// `Tests/` and says which are at risk. It is run by no CI job, so run it yourself when you
-    /// add one; the count is deliberately not quoted here, because a number in test source that
-    /// nothing checks goes stale on the next parameterised test anybody writes.
+    /// `Scripts/census-arguments-tuple-shapes.py` enumerates every `arguments:` site under
+    /// `Tests/` and says which are at risk. CI and the pre-commit hook run its `--self-test`, which
+    /// proves the detector still catches each shape, but neither runs the census itself, because a
+    /// bare run exits 0 whether or not it finds anything and so could never signal. Run it yourself
+    /// when you add a parameterised test. The count is deliberately not quoted here, because a
+    /// number in test source that nothing checks goes stale on the next one anybody writes.
     @Test("the groove sits on gp_Ax2's own perpendicular for every world axis")
     func grooveSitsOnTheCanonicalDatum() {
         for (name, axis, datum) in Self.axes {

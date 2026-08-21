@@ -256,7 +256,7 @@ fitted to these sixteen rows, and fitting one is exactly what
 [`measure-dont-assume`](../../../okf/policies/measure-dont-assume.md)'s "an argument that explains
 everything may be describing a defect" section says not to do. So this file states the table and
 stops: **the pair is necessary, the exact cut is unknown, and somebody with the IR should be the
-one to explain it.** `census-arguments-sites.py` flags on the pair alone and therefore
+one to explain it.** `census-arguments-tuple-shapes.py` flags on the pair alone and therefore
 over-predicts, which is the direction a census should err in.
 
 `ShapeProperties.momentOfInertia` returns a `simd_double3x3`, so this edge is reachable from real
@@ -300,7 +300,7 @@ a hard prohibition, since the table above has such element types on both sides, 
 description that covers every crashing case measured here. Walking the list inside one test, which
 is what `Issue990ThreadAxisBasisTests` does, is the workaround, and cell U confirms it is clean.
 
-Census by `census-arguments-sites.py`, over all of `Tests/`: **33** `@Test(..., arguments:)` sites,
+Census by `census-arguments-tuple-shapes.py`, over all of `Tests/`: **33** `@Test(..., arguments:)` sites,
 **0 at risk**, **9 unknown**. It is a census and not a gate for three reasons: the flagging rule
 over-predicts (see the table above), an `arguments:` value can be a named collection with no type
 written anywhere, and an element can name a nominal type the script would have to open.
@@ -399,13 +399,13 @@ failure, which makes a silent pass and a blind pass identical from outside:
 
 ### Why it was four edits and not one
 
-`ci.yml`'s `gate-scripts` job invokes `Scripts/*.py`, and `Scripts/git-hooks/pre-commit` mirrors it,
-so a script under `Scripts/repro/` is run by nobody. The repo's precedent for a non-gating census is
-that CI still runs its `--self-test`, because a bare run of a census can never fail and so can never
-signal. Promoting this one means four coordinated edits: move it to
-`Scripts/census-arguments-tuple-shapes.py`, add its `--self-test` to `ci.yml`, add the same
-invocation to the pre-commit hook, and extend `CLAUDE.md`'s "Static Gate Scripts" list and its
-"two censuses" count to three.
+`ci.yml`'s `gate-scripts` job invokes `Scripts/*.py` by explicit name, and
+`Scripts/git-hooks/pre-commit` mirrors it, so a script under `Scripts/repro/` was run by nobody.
+The repo's precedent for a non-gating census is that CI still runs its `--self-test`, because a
+bare run of a census can never fail and so can never signal. Promoting this one took four
+coordinated edits: move it to `Scripts/census-arguments-tuple-shapes.py`, add its `--self-test` to
+`ci.yml`, add the same invocation to the pre-commit hook, and extend `CLAUDE.md`'s "Static Gate
+Scripts" list, its "two censuses" count and its "eighteen of CI's nineteen" hook figure.
 
 It was deliberately not done in the PR that created this directory, because the fourth edit is to
 `CLAUDE.md` and the agent that wrote this is not permitted to change that file. Left as one
@@ -419,5 +419,5 @@ one invocation and still the same one, `check-changelog-transcription.py`'s real
 #1057 closes with an unverified note: #345 was closed on a bare `exited with unexpected signal code
 6` with no test name and no backtrace, and signal 6 is what this defect produces. Nothing in this
 directory tests that connection, and the tree at #345's time is not the tree measured here. Tracked
-as #1072 rather than left in a closed issue's last paragraph; `census-arguments-sites.py --root` is
+as #1072 rather than left in a closed issue's last paragraph; `census-arguments-tuple-shapes.py --root` is
 what that check would use.
