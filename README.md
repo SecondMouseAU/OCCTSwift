@@ -25,6 +25,39 @@ dependencies: [
 
 The package ships a pre-built `OCCT.xcframework` as a release asset, so no source build of OCCT is required for end users.
 
+### What your own target has to set
+
+Nothing, as long as it is Swift. A target that does `import OCCTSwift` needs no
+`cxxLanguageStandard`, no `.interoperabilityMode(.Cxx)` and no extra build settings, because the C++
+is sealed inside this package's own Objective-C++ bridge and the module you import is a plain Swift
+one.
+
+OCCT's header tree is not sealed, and that is the part worth knowing. `OCCT.xcframework` carries
+roughly 7,000 C++ headers, and both SwiftPM and Xcode put them on the include path of anything that
+links it, so `#include <STEPControl_Reader.hxx>` resolves from a file in your own project. Such a
+file has two requirements, and missing either one fails inside OCCT rather than at your own line:
+
+- **It must be Objective-C++ (`.mm`) or C++ (`.cpp`), never Objective-C (`.m`) or C (`.c`).** The
+  C++ standard library is not on the include path of an Objective-C translation unit, and OCCT's
+  headers reach `<type_traits>` almost immediately, so a `.m` file stops at
+  `Standard_Std.hxx:19:10: error: 'type_traits' file not found` (#967).
+- **Its C++ standard must be C++17 or later.** The `cxxLanguageStandard: .cxx17` in this manifest
+  applies to this package's own targets, not to yours. Xcode's app template already sets
+  `CLANG_CXX_LANGUAGE_STANDARD = gnu++20`; a target left below C++17, or a consumer manifest that
+  declares no standard at all, gets past `<type_traits>` and then fails on
+  `std::is_trivially_copyable_v` in `NCollection_LinearVector.hxx`.
+
+Before writing that file at all, check whether the Swift API already covers what you need, because
+it wraps OCCT's user-facing classes directly:
+
+```swift
+import OCCTSwift
+
+let shape = try Shape.loadSTEP(from: stepURL)
+print(shape.faces().count, shape.volume ?? 0)
+try shape.writeSTL(to: stlURL, deflection: 0.05)
+```
+
 ### Usage
 
 ```swift

@@ -1,0 +1,18 @@
+
+########## row 1: Objective-C (.m), the reported failure ##########
+/Users/elb/Projects/OCCTSwift/.claude/worktrees/agent-a0bcfe4cb957c2dd4/Libraries/OCCT.xcframework/macos-arm64/Headers/Standard_Std.hxx:19:10: fatal error: 'type_traits' file not found
+[244/245] Compiling ConsumerObjC Repro967.m
+
+########## row 2: Objective-C++ (.mm), consumer manifest declares no C++ standard ##########
+/Users/elb/Projects/OCCTSwift/.claude/worktrees/agent-a0bcfe4cb957c2dd4/Libraries/OCCT.xcframework/macos-arm64/Headers/NCollection_LinearVector.hxx:95:26: error: no template named 'is_trivially_copyable_v' in namespace 'std'; did you mean 'is_trivially_copyable'?
+/Users/elb/Projects/OCCTSwift/.claude/worktrees/agent-a0bcfe4cb957c2dd4/Libraries/OCCT.xcframework/macos-arm64/Headers/NCollection_LinearVector.hxx:95:62: error: expected unqualified-id
+/Users/elb/Projects/OCCTSwift/.claude/worktrees/agent-a0bcfe4cb957c2dd4/Libraries/OCCT.xcframework/macos-arm64/Headers/NCollection_LinearVector.hxx:135:26: error: no template named 'is_trivially_copyable_v' in namespace 'std'; did you mean 'is_trivially_copyable'?
+/Users/elb/Projects/OCCTSwift/.claude/worktrees/agent-a0bcfe4cb957c2dd4/Libraries/OCCT.xcframework/macos-arm64/Headers/NCollection_LinearVector.hxx:135:62: error: expected unqualified-id
+/Users/elb/Projects/OCCTSwift/.claude/worktrees/agent-a0bcfe4cb957c2dd4/Libraries/OCCT.xcframework/macos-arm64/Headers/NCollection_LinearVector.hxx:531:24: error: no template named 'is_trivially_copyable_v' in namespace 'std'; did you mean 'is_trivially_copyable'?
+/Users/elb/Projects/OCCTSwift/.claude/worktrees/agent-a0bcfe4cb957c2dd4/Libraries/OCCT.xcframework/macos-arm64/Headers/NCollection_LinearVector.hxx:531:60: error: expected unqualified-id
+
+########## row 3: Objective-C++ (.mm), consumer manifest declares cxxLanguageStandard: .cxx17 ##########
+[1/2] Compiling ConsumerObjC Repro967.mm
+Build of target: 'ConsumerObjC' complete! (7.43s)
+
+Workdir kept at /private/tmp/claude-501/-Users-elb-Projects-OCCTSwift/78bd6be9-ea7e-4eb6-915d-15d59201c18e/scratchpad/runsh-work-a0bcfe4cb957c2dd4
