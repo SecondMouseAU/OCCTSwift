@@ -260,6 +260,42 @@ abort does not always leave a fault behind, and which bound you pick decides whe
 defect. That is not a good property to leave a caller holding, and it is why the break-point sweep
 exists: it answers the question without a clock in it.
 
+## The same flag, read the other way round, forty lines up
+
+`runBooleanEx` reads `OCCTBoolTimeoutBreaker::tripped()` **last**, only once
+`BRepAlgoAPI_BooleanOperation::IsDone()` has already declined (#1067, PR #1079). This function
+reads it **first**. That is one rule, not two: ask the watchdog only where the operation cannot
+say for itself whether it finished.
+
+A boolean can say, through `IsDone()`, so a completed build is kept even if a late poll happened
+to trip. `BOPAlgo_ArgumentAnalyzer` cannot. It exposes no done flag; its result list is populated
+identically whether it ran to the end or not; and the progress position is not a substitute,
+because every `Message_ProgressScope` advances to its own end when destroyed. The verbose trace
+of an aborted run shows exactly that:
+
+```
+$ PROBE_VERBOSE=1 probe_fault_kinds Scripts/repro/319-selfintersection/dualskin_lateral.15.brep 1 1
+    [poll 1 at 0.000s]
+    [poll 2 at 0.000s]
+    [close Performing intersection of shapes    pos=0.032 at 0.001s]
+    [poll 3 at 10.952s]
+    [close (unnamed)                            pos=0.407 at 10.952s]
+    [close Performing intersection of shapes    pos=0.640 at 10.952s]
+    [poll 4 at 10.952s]
+    [close Checking shape on self-intersection  pos=0.800 at 10.952s]
+    [poll 5 at 10.952s]
+    [close Analyze shapes                       pos=1.000 at 10.952s]
+```
+
+`pos=1.000` on a run that was cut short at 10.952 s of a 1 s budget. So `tripped()` is the only
+completion signal available here, it is read first, and a late trip on an analysis that did in
+fact complete costs a real answer. That is the smaller cost: the sweep above shows a clean box
+interrupted anywhere in the last fifth of its analysis reporting up to three self-interferences.
+
+That trace is also where the two long checkpoint-free stretches show up: nothing polls between
+0.001 s and 10.952 s, which is `BOPAlgo_PaveFiller` running with no reachable checkpoint on this
+artifact, and it is the same shape of gap #319 was about.
+
 ## Not fixed here
 
 `Shape.selfIntersects` (`Sources/OCCTSwift/Shape+Topology.swift`, via `OCCTShapeSelfIntersects`

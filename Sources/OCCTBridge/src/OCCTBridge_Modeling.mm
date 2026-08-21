@@ -16302,6 +16302,19 @@ OCCTShapeRef OCCTShapeIntersectEx(OCCTShapeRef shape1,
 // than through HasFaulty(), both because HasFaulty() answers a wider question than the
 // one asked here; the measurements are in Scripts/repro/1054-selfintersect-fault-kinds/
 // and summarised in docs/reference/Shape-Features.md (#1054).
+//
+// runBooleanEx above reads the same OCCTBoolTimeoutBreaker::tripped() flag in the
+// opposite order, deliberately (#1067/#1079). The rule both follow is the same one: ask
+// the watchdog only where the operation cannot say for itself whether it finished. A
+// BRepAlgoAPI_BooleanOperation can, through IsDone(), so a completed build is kept even
+// if a late poll happened to trip. BOPAlgo_ArgumentAnalyzer cannot: it exposes no
+// done flag, its result list is populated the same way whether it ran to the end or not,
+// and Message_ProgressIndicator::GetPosition() is no help either, since every scope
+// advances to its own end when it is destroyed (measured: an aborted run still closes
+// "Analyze shapes" at pos=1.000). tripped() is the only completion signal there is here,
+// so it is read first and a late trip costs a real answer. That cost is the smaller one:
+// a clean box interrupted anywhere in the last fifth of its analysis reports up to three
+// self-interferences of its own.
 int32_t OCCTShapeSelfIntersectsBounded(OCCTShapeRef shape, double timeoutSeconds)
 {
   if (!shape)
