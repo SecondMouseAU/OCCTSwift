@@ -173,9 +173,11 @@ static void runOne(const TopoDS_Shape& theShape, double theTimeout, bool theArgu
   // What the bridge returned before #1054: HasFaulty() first, watchdog second.
   const int aBefore =
     aThrew ? -1 : (anAnalyzer.HasFaulty() ? 1 : (aTripped ? -1 : 0));
-  // What it returns after: watchdog first, then the statuses by kind.
+  // What it returns after: watchdog first, then the statuses by kind, with any non
+  // BOPAlgo_SelfIntersect status winning, since BOPAlgo_OperationAborted is appended
+  // after whatever the aborted pass had already recorded.
   const int anAfter =
-    aThrew ? -1 : (aTripped ? -1 : (aSelfIntersect ? 1 : (anOtherFault ? -1 : 0)));
+    aThrew ? -1 : (aTripped ? -1 : (anOtherFault ? -1 : (aSelfIntersect ? 1 : 0)));
 
   std::printf("timeout=%-8.4f elapsed=%-8.3f firstTrip=%-8.3f polls=%-8ld trips=%-8ld threw=%d "
               "HasFaulty=%d statuses=[%s] before=%d after=%d\n",

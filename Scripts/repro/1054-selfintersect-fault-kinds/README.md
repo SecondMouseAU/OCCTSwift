@@ -91,11 +91,31 @@ at any of break points 312 to 380 it records up to three `BOPAlgo_SelfIntersect`
 at 379 to 380 an `BOPAlgo_OperationAborted` as well. **69 of the 401 break points answered
 "this shape self-intersects" before the fix.**
 
-The mechanism is `BOPAlgo_CheckerSI::PostTreat`. `BOPAlgo_ArgumentAnalyzer::TestSelfInterferences`
-walks `BOPDS_DS::Interferences()` and skips any pair whose shapes are *new*, which is how the
-adjacency interferences every valid solid has get discarded. Those new shapes are created last.
-Cut the analysis between the face-face pass and `PostTreat` and the raw pairs are all that is
-there, indistinguishable from a real finding.
+### Why a clean box has self-interferences to report at all
+
+`BOPAlgo_CheckerSI::PostTreat` fills `BOPDS_DS::Interferences()` from the pave filler's raw
+interference lists, skipping any pair that involves a shape the filler itself created
+(`BOPDS_DS::IsNewShape`). Every adjacency interference of a valid solid does involve one, because
+the filler splits at each intersection, so on a complete run the map comes out **empty**.
+`BOPAlgo_ArgumentAnalyzer::TestSelfInterferences` then applies the same filter again on the way
+out. Measured directly, running `BOPAlgo_CheckerSI` on the same box and breaking at the same
+points:
+
+```
+breakAt=0    polls=378 tripped=0 HasErrors=0 sourceShapes=34 newShapes=13 interferences=0 surviving=0
+breakAt=300  polls=308 tripped=1 HasErrors=0 sourceShapes=34 newShapes=0  interferences=0 surviving=0
+breakAt=311  polls=312 tripped=1 HasErrors=0 sourceShapes=34 newShapes=0  interferences=1 surviving=1
+breakAt=312  polls=313 tripped=1 HasErrors=0 sourceShapes=34 newShapes=0  interferences=2 surviving=2
+breakAt=340  polls=345 tripped=1 HasErrors=0 sourceShapes=34 newShapes=4  interferences=3 surviving=3
+```
+
+The complete run creates 13 new shapes and ends with zero interferences. A run cut short creates
+none, or too few, and the same adjacency pairs sail through the filter: one at break point 311,
+two at 312, three by 340, which is exactly the one to three `BOPAlgo_SelfIntersect` results the
+sweep above reports. Nothing is wrong with the box; the filter simply has nothing to match yet.
+
+So the loss is not "PostTreat had not run". PostTreat *had* run in every row above (`HasErrors=0`,
+so `BOPAlgo_CheckerSI::Perform` reached it). What was missing is the new shapes it filters on.
 
 ### A genuinely self-intersecting shape
 
@@ -144,6 +164,19 @@ Two changes, and the measurements above show neither is sufficient alone:
 1. Read the watchdog **before** the results. Catches the 69 clean-box break points.
 2. Read the results **by status** rather than through `HasFaulty()`. Catches `BOPAlgo_BadType`
    and `BOPAlgo_OperationAborted`, neither of which involves the watchdog at all.
+
+Within (2), a status other than `BOPAlgo_SelfIntersect` wins over one, which is not obvious and
+is deliberate. `BOPAlgo_OperationAborted` is appended *after* whatever the aborted pass had
+already recorded, so a mixed `[SelfIntersect, SelfIntersect, SelfIntersect, OperationAborted]`
+list is a real outcome: the box sweep produces exactly that at break point 379. The watchdog test
+happens to cover it in both sweeps here, which is why the two "after the fix" counts are the same
+either way. It does not cover it in general, for two reasons. `isSelfIntersecting(hardTimeout:)`
+passes `0` to this function, so there is no breaker to test at all. And
+`BOPAlgo_ArgumentAnalyzer::TestSelfInterferences` appends `BOPAlgo_OperationAborted` whenever
+`BOPAlgo_CheckerSI::HasErrors()` is true, which includes a `Standard_Failure` inside the pave
+filler (`BOPAlgo_AlertIntersectionFailed`) with no user break anywhere in it. On that path the
+interference map is whatever the failed run left behind, which is the same untrustworthy thing an
+interrupted run leaves.
 
 `Tests/OCCTModelingTests/Issue1054SelfIntersectFaultKindTests.swift` covers both, one test each,
 and the injection matrix in the PR shows each test failing for exactly one of them.
@@ -234,3 +267,8 @@ in `OCCTBridge_Properties.mm`) is a different, older function that returns
 `BOPAlgo_CheckerSI::HasErrors()` directly. That is "the checker failed", not "the shape
 self-intersects", and it never looks at `BOPDS_DS::Interferences()` at all. It is a separate
 defect in a file this change does not own and wants its own issue.
+
+`OCCTBOPAlgoAnalyzeArguments` (`OCCTBridge_Modeling.mm`) also reads `HasFaulty()`, and that is
+**correct** there and deliberately untouched: it is asked "are these arguments usable for a
+Boolean Operation", which is exactly the union `HasFaulty()` reports. It is the nearest sibling to
+this fix and the one most likely to be mistaken for the same defect.

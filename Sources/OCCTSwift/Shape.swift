@@ -2411,14 +2411,16 @@ public final class Shape: @unchecked Sendable {
     ///   is process-level isolation (run this in a subprocess/worker you can kill on your own
     ///   deadline if a true wall-clock guarantee matters).
     ///
-    /// - Important: `true` is reported **only** for a completed analysis that recorded a
-    ///   `BOPAlgo_SelfIntersect` result (#1054). Two other outcomes used to read as `true` and
+    /// - Important: `true` is reported **only** for a completed analysis whose every recorded
+    ///   result is `BOPAlgo_SelfIntersect` (#1054). Two other outcomes used to read as `true` and
     ///   are now `nil`. An analysis the `timeout` aborted is `nil` even when it recorded results
-    ///   first, because the pass that discards the adjacency interferences every valid solid has
-    ///   runs last: a clean box interrupted just before it reports up to three self-interferences
-    ///   of its own. Separately, a shape `BOPAlgo_ArgumentAnalyzer` rejects outright, such as
-    ///   `emptied`'s result, records `BOPAlgo_BadType`, which says nothing about
-    ///   self-intersection and involves no timeout at all.
+    ///   first: the filter that discards the adjacency interferences every valid solid has works
+    ///   by skipping pairs that involve a shape the intersection pass itself created, so
+    ///   interrupting that pass before it creates them lets ordinary adjacency through, and a
+    ///   clean box reports up to three self-interferences of its own. Separately, a shape
+    ///   `BOPAlgo_ArgumentAnalyzer` rejects outright, such as ``emptied``'s result, records
+    ///   `BOPAlgo_BadType`, which says nothing about self-intersection and involves no timeout
+    ///   at all.
     ///
     /// - Parameter timeout: Seconds before the check *asks* OCCT to give up (default 30), the
     ///   actual return can be much later if an un-polled phase is reached. `0`/negative = unbounded.
@@ -2476,7 +2478,10 @@ public final class Shape: @unchecked Sendable {
     /// - Parameter hardTimeout: Seconds to wait before giving up and returning `nil`.
     /// - Returns: `true`/`false` if the check completed in time, `nil` if the deadline passed
     ///   first (indeterminate, the background check may still be running) or if the analysis
-    ///   could not answer the question, per ``isSelfIntersecting(timeout:)``.
+    ///   could not answer the question, per ``isSelfIntersecting(timeout:)``. The inner call
+    ///   passes `0`, so no watchdog can abort it, but `BOPAlgo_OperationAborted` is recorded for
+    ///   any `BOPAlgo_CheckerSI` error and not only a watchdog break, so that case reaches this
+    ///   entry point too.
     ///
     /// ```swift
     /// // Bound total wall-clock time even on a pathological B-spline solid with no

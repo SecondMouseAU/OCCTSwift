@@ -174,7 +174,7 @@ int main(int argc, char** argv)
     const bool aTripped = aBreaker->tripped();
     const int  aBefore  = aThrew ? -1 : (anAnalyzer.HasFaulty() ? 1 : (aTripped ? -1 : 0));
     const int  anAfter =
-      aThrew ? -1 : (aTripped ? -1 : (aSelfIntersect ? 1 : (anOtherFault ? -1 : 0)));
+      aThrew ? -1 : (aTripped ? -1 : (anOtherFault ? -1 : (aSelfIntersect ? 1 : 0)));
     if (aBefore == 1)
       ++aWrongBefore;
     if (anAfter == 1)

@@ -28,7 +28,6 @@ struct Issue1054SelfIntersectFaultKind {
             return
         }
         // Unbounded, so no watchdog can be blamed for the answer.
-        #expect(empty.isSelfIntersecting(timeout: 0) != true)
         #expect(empty.isSelfIntersecting(timeout: 0) == nil)
     }
 
@@ -73,15 +72,18 @@ struct Issue1054SelfIntersectFaultKind {
 
     /// A clean solid never comes back `true`, whatever the watchdog does to the analysis.
     ///
-    /// `BOPAlgo_CheckerSI::PostTreat` is what discards the adjacency interferences a valid
-    /// solid has and it runs last, so an analysis cut short between the face-face pass and
-    /// `PostTreat` has real `BOPAlgo_SelfIntersect` results recorded and no reason yet to
-    /// drop them.
+    /// `BOPAlgo_CheckerSI::PostTreat` fills `BOPDS_DS::Interferences()` from the pave filler's
+    /// raw lists, skipping every pair that involves a shape the filler itself created, and on a
+    /// complete run that filter empties the map for a valid solid. Interrupt the filler before
+    /// it creates those shapes and the same adjacency pairs survive it, so a clean box has real
+    /// `BOPAlgo_SelfIntersect` results recorded against it.
     ///
     /// The sweep is scaled to the machine (the box's own uninterrupted runtime), because the
-    /// window it is hunting for is the tail of that runtime. The assertion is one-sided: with
-    /// the watchdog read first, a clean box can only answer `false` or `nil`, so this can
-    /// never fail on timing alone.
+    /// window it is hunting for is the tail of that runtime. The `wrong` assertion is one-sided:
+    /// with the watchdog read first, a clean box can only answer `false` or `nil`, so timing
+    /// alone can never fail it. The `interrupted` assertion is the witness that the sweep
+    /// actually reached the regime it is testing, without which a sweep whose every step
+    /// completed would pass while proving nothing.
     @Test("a clean solid never reports self-intersection at any timeout")
     func cleanSolidNeverReportsSelfIntersection() {
         guard let box = Shape.box(width: 10, height: 10, depth: 10) else {
@@ -94,13 +96,22 @@ struct Issue1054SelfIntersectFaultKind {
 
         let steps = 200
         var wrong = 0
+        var interrupted = 0
         for step in 1...steps {
             let timeout = uninterrupted * 1.2 * Double(step) / Double(steps)
-            if box.isSelfIntersecting(timeout: timeout) == true { wrong += 1 }
+            switch box.isSelfIntersecting(timeout: timeout) {
+            case .some(true): wrong += 1
+            case .none: interrupted += 1
+            case .some(false): break
+            }
         }
         #expect(
             wrong == 0,
             "a clean box reported self-intersection at \(wrong) of \(steps) timeouts spanning its own \(uninterrupted)s runtime"
+        )
+        #expect(
+            interrupted > 0,
+            "no step of the \(steps)-timeout sweep was interrupted, so it never reached the regime this test exists for (box runtime \(uninterrupted)s)"
         )
     }
 }

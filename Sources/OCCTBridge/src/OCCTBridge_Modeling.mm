@@ -16328,16 +16328,18 @@ int32_t OCCTShapeSelfIntersectsBounded(OCCTShapeRef shape, double timeoutSeconds
       aa.Perform();
     }
     // An aborted analysis answers nothing, whatever it recorded on the way out.
-    // BOPAlgo_CheckerSI::PostTreat is what discards the adjacency interferences every
-    // valid solid has, so a clean box interrupted after the face-face pass but before
-    // PostTreat reports up to three BOPAlgo_SelfIntersect results of its own.
+    // BOPAlgo_CheckerSI::PostTreat fills BOPDS_DS::Interferences() from the pave filler's
+    // raw lists, skipping every pair that involves a shape the filler itself created, and
+    // on a complete run that filter empties the map for a valid solid. Interrupt the
+    // filler before it creates those shapes and the same adjacency pairs survive it, so a
+    // clean box reports up to three BOPAlgo_SelfIntersect results of its own.
     if (!breaker.IsNull() && breaker->tripped())
       return -1;
     // HasFaulty() is "did any enabled mode record something", and ArgumentTypeMode is
     // enabled too, so read the statuses instead. BOPAlgo_BadType (an argument BOP cannot
-    // use, e.g. an empty compound) and BOPAlgo_OperationAborted (the self-interference
-    // pass gave up) are recorded the same way a real interference is, and neither is an
-    // answer to "does this shape self-intersect".
+    // use, e.g. an emptied solid) and BOPAlgo_OperationAborted (the self-interference pass
+    // gave up) are recorded the same way a real interference is, and neither is an answer
+    // to "does this shape self-intersect".
     bool selfIntersects = false;
     bool otherFault     = false;
     for (NCollection_List<BOPAlgo_CheckResult>::Iterator it(aa.GetCheckResult()); it.More();
@@ -16348,11 +16350,18 @@ int32_t OCCTShapeSelfIntersectsBounded(OCCTShapeRef shape, double timeoutSeconds
       else
         otherFault = true;
     }
-    if (selfIntersects)
-      return 1; // conclusive
+    // otherFault wins over selfIntersects, deliberately. BOPAlgo_OperationAborted is
+    // appended after whatever the aborted pass had already recorded, and it is appended
+    // for any BOPAlgo_CheckerSI error, not only a watchdog break, so the tripped() test
+    // above does not cover it: the unbounded entry point never has a breaker at all. The
+    // ordering costs no real answer, since the only other status this configuration can
+    // produce is BOPAlgo_BadType, and TestTypes records that only for a shape with no
+    // geometry, which cannot also self-intersect.
     if (otherFault)
       return -1; // analysed something, but not the question asked
-    return 0;    // completed clean
+    if (selfIntersects)
+      return 1; // conclusive
+    return 0;   // completed clean
   }
   catch (...)
   {

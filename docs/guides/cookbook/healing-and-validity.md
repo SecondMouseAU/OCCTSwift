@@ -29,9 +29,14 @@ checkpoint (#293). It returns `nil` if it can't decide in time, don't treat `nil
 switch box.isSelfIntersecting(timeout: 30) {
 case .some(true):  print("self-intersects")
 case .some(false): print("clean")
-case .none:        print("indeterminate (timed out)")
+case .none:        print("indeterminate")
 }
 ```
+
+`nil` is not only the timeout. The analyzer also refuses a shape it cannot use as a Boolean
+Operations argument, and an aborted analysis is `nil` even when it recorded results first, since
+those results cannot be told from the ordinary face adjacency the completed pass would have
+filtered out (#1054). All of it means "unknown", never "clean".
 
 For a defect inventory rather than a yes/no, `analyze(tolerance:)` returns counts:
 
