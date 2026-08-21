@@ -112,7 +112,7 @@ def _strip_trailing_comment(line):
     *file* (#914 review, third pass, the same "gate that cannot fail" failure mode finding 7
     fixed, reached through a different door finding 7's fix didn't close). Naive about a
     triple-quoted string opening mid-line (three double-quote characters in a row toggle
-    in_string an odd number of times, ending up "in a string" rather than genuinely closed) --
+    in_string an odd number of times, ending up "in a string" rather than genuinely closed),
     harmless here: the only caller that reads text past where a triple-quote begins on this same
     line discards everything from that point on regardless of what this function decided about
     text after it.
@@ -394,7 +394,7 @@ def fix(derived):
     s = open(readme, encoding="utf-8").read()
     # Optional period, matching read_stated(): the two must accept the same spellings or --fix
     # refuses where the plain run reports, which is the shape of the under-repair #967 already had.
-    new_s, n = re.subn(r'\*\*[\d,]+( wrapped operations)\.?\*\*', rf'**{derived:,}\g<1>**', s, count=1)
+    new_s, n = re.subn(r'\*\*[\d,]+( wrapped operations\.?)\*\*', rf'**{derived:,}\g<1>**', s, count=1)
     if n != 1:
         sys.exit("README: could not find the 'N wrapped operations' headline: refusing to guess")
     open(readme, "w", encoding="utf-8").write(new_s)
@@ -481,7 +481,7 @@ def main():
     rowsum, rowcount = category_row_sum()
     def stated(label, n):
         # A reworded headline makes the regex miss, and `n` is then None. Formatting None raises
-        # TypeError, which reports a crash where the script has in fact found something worth
+        # TypeError, which reports a crash where the script has found something worth
         # saying, so say it.
         shown = "  n/a" if n is None else f"{n:>5}"
         if n is None:

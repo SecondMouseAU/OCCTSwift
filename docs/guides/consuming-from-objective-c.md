@@ -14,9 +14,10 @@ own Objective-C++ bridge, and the module you import is a plain Swift one.
 Eleven Swift-only consumer shapes, all green, and the reader on v3.0.0 deserves to know how close
 each is to their situation. One row resolves the released tag by URL. Five resolve the working
 checkout by path against its local `Libraries/OCCT.xcframework`, which is what `run.sh` does so
-that it needs no network. The five `xcodebuild` rows resolve by URL too and take the downloaded
-artifact. So the package source under test is the branch rather than the tag on ten of the eleven,
-and the kernel is the released one on six:
+that it needs no network. The five `xcodebuild` rows also take the package from the working
+checkout, but resolve the *kernel* by URL and so run against the released artifact. So the package
+source under test is the branch rather than the tag on ten of the eleven, and the kernel is the
+released one on six:
 
 - Under `swift build`, a consumer package resolving OCCTSwift by URL and by local path; a library
   target that only does `import OCCTSwift`, one that calls the API, one with

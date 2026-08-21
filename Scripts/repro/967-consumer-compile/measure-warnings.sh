@@ -1,6 +1,6 @@
 #!/bin/bash
-# Committed transcript for the guide's four deprecation figures, the libstdc++ claim, and the
-# consumer-.m-reaches-the-C-bridge measurement (#967 f1, f5).
+# Regenerates warnings-and-stdlib.txt: the guide's deprecation figures and the -stdlib=libstdc++
+# result. What a consumer can reach is a different question and lives in measure-bridge-reach.sh.
 set -u
 SDK=$(xcrun --show-sdk-path)
 R="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
