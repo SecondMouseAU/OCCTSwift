@@ -1245,11 +1245,15 @@ static bool occtDocumentDatumObjectAt(OCCTDocumentRef                        doc
       && pnt->Length() == 3)
   {
     // Only ChildLab_PlaneLoc, matching the kernel's own && chain, which assigns aLoc from this
-    // attribute before it goes on to test ChildLab_PlaneN and ChildLab_PlaneRef.
+    // attribute before it goes on to test ChildLab_PlaneN and ChildLab_PlaneRef. The index test is
+    // the rest of the same read: the kernel spells it aLoc->Value(aPnt->Lower()), so the plane
+    // array existing is not enough, it has to hold that one index. Nothing OCCT writes uses a
+    // lower bound other than 1, but the arrays are caller data and this is the read being guarded.
     const TDF_Label            planeLocLabel = label.FindChild(datumChildPlaneLoc, false);
     Handle(TDataStd_RealArray) planeLoc;
     if (planeLocLabel.IsNull()
-        || !planeLocLabel.FindAttribute(TDataStd_RealArray::GetID(), planeLoc))
+        || !planeLocLabel.FindAttribute(TDataStd_RealArray::GetID(), planeLoc)
+        || pnt->Lower() < planeLoc->Lower() || pnt->Lower() > planeLoc->Upper())
       return false;
   }
 

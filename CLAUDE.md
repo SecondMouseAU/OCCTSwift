@@ -493,14 +493,25 @@ suite into these targets (each `Tests/OCCT<Domain>Tests/`, declared in `Package.
   takes the whole process down with a SIGSEGV and gtest cannot catch one, so the value case fails in
   a ten-case invocation while the plane-only control and all eight pre-existing cases pass, and the
   crash case exits 139 alone; patched, all eleven pass in one unfiltered run.
-  **A bridge-side guard is possible and is tracked as #1030 rather than shipped here**, because
-  `OCCTBridge_Document.mm` was held by a concurrent agent when this landed, not because the guard is
-  wrong; the crash is uncatchable and `0029` is in no built kernel, so nothing protects a consumer
-  meanwhile: the check must precede `GetObject()`, `XCAFDoc_Datum`
-  exposes no `HasPlane()`, and `ChildLab_PlaneLoc`/`ChildLab_Pnt` are a file-local anonymous enum,
-  tags `14` and `17` at this pin, so any guard hard-codes two private tags upstream can renumber
-  with no compile-time signal here. `XCAFDoc_Datum::GetName()` is not a way around it: it returns
-  the legacy `myName` that `SetObject` never writes. See
+  **The bridge-side guard shipped as #1030**, in `occtDocumentDatumObjectAt`, the one place all
+  seven entry points share. It refuses a datum whose `ChildLab_Pnt` child holds a
+  `TDataStd_RealArray` of length 3 while `ChildLab_PlaneLoc` holds none, or holds one that cannot
+  supply `aPnt->Lower()`, which is the index the kernel actually reads. The condition is the array
+  attribute and never the child label: `SetObject` opens every child from `ChildLab_Begin` to
+  `ChildLab_End` and only forgets their attributes, so all nineteen exist on any datum it wrote, and
+  a guard keyed on child existence would refuse every datum. The cost is two private tag numbers,
+  `14` and `17` at this pin, that upstream can renumber with no compile-time signal here.
+  `XCAFDoc_Datum::GetName()` was not a way around it: it returns the legacy `myName` that
+  `SetObject` never writes. **Retire the guard in the release commit that bumps `Package.swift`'s
+  `url:`/`checksum:` past a kernel carrying `0029`**, the same obligation #603's bridge-side
+  subdivision carries, and for the same reason: once the kernel reads the right array the guard
+  turns a readable datum into `nil` on all seven entry points, and none of `Issue1030DatumLookupGuardTests`'s
+  six cases can signal it, because they assert the refusal and so pass either way.
+  **`check-null-handle-guards.py` cannot catch this shape**, measured rather than assumed: all three
+  of its walks key on a parameter's declared type and `OCCTDocumentRef` is in neither `WRAPPERS` nor
+  `SHAPE_WRAPPERS`, its one non-parameter walk requires a `Geom_Curve`/`Geom2d_Curve`/`Geom_Surface`
+  handle initialised from `BRep_Tool::`, and every guard path it recognises bottoms out in a literal
+  `IsNull()` where the correct guard here is a structural test on a `TDF_Label`. See
   [`Scripts/repro/1022-datum-point-from-plane-array/`](https://github.com/SecondMouseAU/OCCTSwift/tree/main/Scripts/repro/1022-datum-point-from-plane-array)
   for the reproducer and the full reachability walk. Filed upstream as
   [OCCT#1483](https://github.com/Open-Cascade-SAS/OCCT/pull/1483).

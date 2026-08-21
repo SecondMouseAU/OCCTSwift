@@ -1,5 +1,6 @@
 import Foundation
 import Testing
+import simd
 
 @testable import OCCTSwift
 
@@ -103,9 +104,50 @@ struct Issue1030DatumLookupGuardTests {
         }
         // Five of the seven callers of the shared lookup are writes, and the lookup calls
         // GetObject before any of them can look at what it returned, so a write that never
-        // touches the point still took the crash.
+        // touches the point still took the crash. All five are listed rather than sampled,
+        // because they share the helper only as long as nobody re-inlines one of them.
         #expect(!doc.setDatumPosition(at: index, 2))
+        #expect(!doc.setDatumModifiers(at: index, [.basic]))
+        #expect(!doc.setDatumModifierWithValue(at: index, .circularOrCylindrical, value: 1.5))
         #expect(!doc.setDatumTarget(at: index, type: .point, number: 1))
+        #expect(
+            !doc.setDatumTargetPlacement(
+                at: index,
+                location: SIMD3(1, 2, 3),
+                normal: SIMD3(0, 0, 1),
+                reference: SIMD3(1, 0, 0),
+                length: 30,
+                width: 18))
+        // clearDatumTarget reaches the same bridge function as setDatumTarget, so it is refused
+        // for the same reason.
+        #expect(!doc.clearDatumTarget(at: index))
+    }
+
+    @Test("A plane location array that cannot supply the point's own index is refused")
+    func planeLocationTooShortForThePointIndexIsRefused() {
+        guard let doc = Document.create() else {
+            Issue.record("document nil")
+            return
+        }
+        let name = "Datum1030"
+        guard let index = doc.createDatum(name: name), let label = datumLabel(doc, named: name)
+        else {
+            Issue.record("fixture nil")
+            return
+        }
+        // The kernel reads aLoc->Value(aPnt->Lower()), so a plane location array that exists is
+        // not sufficient: it has to hold the point array's own lower index. Here both arrays have
+        // Length() == 3, so both of the kernel's own conditions pass, and the read lands far past
+        // a three-double allocation. Existence alone let this through, silently, without faulting.
+        #expect(writeTriple(label, tag: Self.planeLocationTag, 6))
+        guard let point = label.findChild(tag: Self.pointTag, create: true) else {
+            Issue.record("point child nil")
+            return
+        }
+        #expect(point.initRealArray(lower: 1_000_000, upper: 1_000_002))
+        #expect(point.realArrayBounds?.lower == 1_000_000)
+        #expect(label.findChild(tag: Self.planeLocationTag)?.realArrayBounds?.upper == 3)
+        #expect(doc.datum(at: index) == nil)
     }
 
     @Test("A datum with both a point and a plane location still reads")
