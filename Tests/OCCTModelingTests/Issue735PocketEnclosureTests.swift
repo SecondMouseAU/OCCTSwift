@@ -38,7 +38,7 @@ struct Issue735PocketEnclosureTests {
     // MARK: - The headline: one wall, fully enclosed
 
     /// The issue's own construction, byte for byte. A cylindrical bore has exactly one wall
-    /// (the cylinder's lateral face) and is fully enclosed -- the floor's entire boundary (a
+    /// (the cylinder's lateral face) and is fully enclosed: the floor's entire boundary (a
     /// single circular edge) is shared with that one wall. `wallIndices.count < 3` reported
     /// this as open; it is not.
     @Test("a blind cylindrical pocket (one wall) is fully enclosed")
@@ -75,8 +75,8 @@ struct Issue735PocketEnclosureTests {
     // MARK: - The threshold's other blind spot: three walls, genuinely open
 
     /// A slot cut so it opens through the box's own side face: two side walls and one end
-    /// wall (3 walls total), but the floor's fourth boundary edge -- where the slot exits
-    /// the part -- borders no wall at all. `wallIndices.count < 3` reported this as closed
+    /// wall (3 walls total), but the floor's fourth boundary edge, where the slot exits
+    /// the part, borders no wall at all. `wallIndices.count < 3` reported this as closed
     /// (3 is not < 3); it is open. Measured: floor has 4 boundary edges, the 3 walls cover
     /// only 3 of them.
     @Test("a three-walled slot that opens through the parent's side is NOT enclosed")
@@ -97,7 +97,7 @@ struct Issue735PocketEnclosureTests {
     /// The threshold's counterexample in the other direction: three walls that DO close the
     /// loop. A triangular pocket's three walls each cover exactly one of the floor's three
     /// boundary edges. Paired with the previous test, this is the pair the old formula could
-    /// not tell apart -- both have `wallIndices.count == 3`, one open and one closed.
+    /// not tell apart: both have `wallIndices.count == 3`, one open and one closed.
     @Test("a three-walled triangular pocket IS fully enclosed")
     func closedThreeWalledTriangularPocketIsEnclosed() throws {
         let box = try #require(Shape.box(width: 20, height: 20, depth: 20))
@@ -146,10 +146,11 @@ struct Issue735PocketEnclosureTests {
 // remained in the outer loop: #735's own bug re-entering through the wire-scope mismatch.
 //
 // Fixed by testing membership per edge instead of comparing sums: for each edge of the floor's
-// own outer wire, ask which faces border it in the shape (`Edge.adjacentFaces(in:)`) and check
-// whether one of them is a member of `wallFaceIndices`, by structural identity
+// own outer wire, ask whether it is one of the covering faces' own edges, by structural identity
 // (`TopoDS_Shape::IsSame`) rather than by count. A boss's wall can never contribute to this test
-// at all, since the loop only ever visits the outer wire's own edges.
+// at all, since the loop only ever visits the outer wire's own edges. (#753 asked that question
+// the other way round, via `Edge.adjacentFaces(in:)` per edge; #777 turned it around for cost
+// without changing what it asks. Neither the wire scope nor the identity rule moved.)
 @Suite("PocketFeature.isOpen is scoped to the outer wire even with a floor boss (#753)")
 struct Issue753PocketBossWireScopeTests {
 
@@ -209,27 +210,37 @@ struct Issue753PocketBossWireScopeTests {
     }
 }
 
-// #753's fix asks, per outer-wire edge, "which faces border this edge in the shape" via
-// `Edge.adjacentFaces(in:)`, and checks BOTH of the two faces it returns against `wallFaceIndices`.
-// The floor is always one of the two (trivially not a member of its own walls), and the
-// documented contract of `adjacentFaces(in:)` makes no promise about which of its two return
-// values that will be. Measured directly (a diagnostic build temporarily printed, per edge,
-// which of face1/face2 matched the floor itself, across every fixture in this file): most
-// fully-enclosed fixtures happen to return the wall as face1 in this build's BOP output, but an
-// off-center pocket in a centered box does not: one of its four boundary edges returns the
-// FLOOR as face1 and the wall as face2. That fixture is used here specifically because it is the
-// one found, of several tried, where checking face1 alone would silently misjudge a real wall as
-// absent.
-@Suite("PocketFeature.isOpen does not depend on Edge.adjacentFaces(in:)'s face order (#753)")
-struct Issue753EdgeFaceOrderIndependenceTests {
-    /// An off-center pocket, fully enclosed by 4 walls. Chosen because at least one of its
-    /// floor's boundary edges returns the floor itself as `adjacentFaces(in:)`'s FIRST face and
-    /// the real wall as the second, unlike the centered square/triangular/cylindrical fixtures
-    /// above, where the wall always comes first. A fix that only checked the first face would
-    /// report this specific pocket as open (that edge looks uncovered) even though every
-    /// boundary edge genuinely borders a wall.
-    @Test("an off-center enclosed pocket is enclosed regardless of which adjacent face comes first")
-    func offCenterPocketIsEnclosedRegardlessOfFaceOrder() throws {
+// #753's fix asked, per outer-wire edge, "which faces border this edge in the shape" via
+// `Edge.adjacentFaces(in:)`, and checked BOTH of the two faces it returned against
+// `wallFaceIndices`. The floor is always one of the two (trivially not a member of its own walls),
+// and the documented contract of `adjacentFaces(in:)` makes no promise about which of its two
+// return values that will be. Measured directly at the time (a diagnostic build temporarily
+// printed, per edge, which of face1/face2 matched the floor itself, across every fixture in this
+// file): most fully-enclosed fixtures happened to return the wall as face1 in that build's BOP
+// output, but an off-center pocket in a centered box did not, one of its four boundary edges
+// returned the FLOOR as face1 and the wall as face2. That fixture was used here specifically
+// because it was the one found, of several tried, where checking face1 alone would silently
+// misjudge a real wall as absent.
+//
+// #777 replaced `adjacentFaces(in:)` with a membership test over the covering faces' own edges,
+// so there is no longer a face1 and a face2 for a fix to check only one of. **This suite can no
+// longer fail for the reason it was written**, and is retitled to say what it proves today rather
+// than left reading as coverage it does not provide, the same treatment
+// `Issue753FilletedJunctionDetectedTests` below got when #762 changed its subject. What it still
+// pins is the off-center fixture's verdict, and #777's own direct successor to the face-order
+// property (the identity test must ignore orientation, since the floor and the wall present the
+// shared edge with opposite orientations) is asserted in
+// `Issue777PocketEnclosureCoveringEdgesTests`.
+@Suite("An off-center enclosed pocket is enclosed (#753's face-order fixture, retained by #777)")
+struct Issue753OffCenterPocketEnclosureTests {
+    /// An off-center pocket, fully enclosed by 4 walls. Chosen, under #753's own mechanism,
+    /// because at least one of its floor's boundary edges returned the floor itself as
+    /// `adjacentFaces(in:)`'s FIRST face and the real wall as the second, unlike the centered
+    /// square/triangular/cylindrical fixtures above, where the wall always came first. Under
+    /// #777's mechanism that distinction no longer exists; the fixture is kept as an ordinary
+    /// enclosure case.
+    @Test("an off-center enclosed pocket is enclosed")
+    func offCenterPocketIsEnclosed() throws {
         let box = try #require(Shape.box(width: 20, height: 20, depth: 20))
         let tool = try #require(Shape.box(origin: SIMD3(-8, -8, 0), width: 6, height: 6, depth: 5))
         let cut = try #require(box.subtracting(tool))

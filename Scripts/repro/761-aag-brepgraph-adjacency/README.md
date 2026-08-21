@@ -26,14 +26,14 @@ rule `Shape.faces()` uses, and the one #642's own fix moved `AAG`'s node set awa
 information for whichever occurrence didn't survive the dedup.
 
 Measured directly (Part 1 of the census): on both two-solid split fixtures, `AAG.nodes.count` is
-12 (one per occurrence) while `BRepGraph.faceCount` is 11 (deduplicated) -- the same 12-vs-11 gap
+12 (one per occurrence) while `BRepGraph.faceCount` is 11 (deduplicated), the same 12-vs-11 gap
 `Shape.orientedFaces().count` vs `Shape.faces().count` shows for the identical fixture. Mapping
 every occurrence to its `BRepGraph` node via `findNode(for:)` confirms why: the shared wall's two
 occurrences (opposite orientation, same `TShape`) always resolve to the **same** `BRepGraph` node
 index (Part 2: "shared-face occurrence pairs... of which BRepGraph collapses to ONE node: 1", on
 both split fixtures).
 
-That collapse is not just a different index space -- it changes what `adjacentFaces(of:)` can
+That collapse is not just a different index space: it changes what `adjacentFaces(of:)` can
 answer. Part 3 queries that single collapsed wall node's neighbors directly:
 
 ```
@@ -50,7 +50,7 @@ loop to same-solid pairs, a fix that is only *expressible* because `AAG` keeps t
 as separate nodes. Part 2's pairwise comparison confirms the practical consequence: on each split
 fixture, 12 of the 35 cross-solid pairs are pairs `BRepGraph.sharedEdges` reports as genuinely
 sharing an edge (real, structural topology), while `AAG`, correctly per its own #699 contract,
-refuses to ever call them adjacent. Neither number is "wrong" -- they are answers to different
+refuses to ever call them adjacent. Neither number is "wrong": they are answers to different
 questions (compound-wide topological incidence vs. per-solid boundary adjacency), and #699 is the
 reason `AAG` needs the *latter*.
 
@@ -64,7 +64,7 @@ underlying edge-sharing computation itself, which both sides compute correctly a
 
 `AAG.buildGraph()` called `OCCTFaceGetSharedEdges(shape, face1, face2, &buffer, 10)` with a
 hardcoded `maxEdges` of 10, so `AAGEdge.sharedEdgeCount` silently truncated on any face pair
-sharing more than 10 edges -- #753's own doc comment predicted this ("plausible after healing
+sharing more than 10 edges. #753's own doc comment predicted this ("plausible after healing
 splits a boundary into segments") but it had never been measured. `BRepGraph.sharedEdges(between:and:)`
 has no such cap (`bgSharedEdges` in `OCCTBridge_BRepGraph.mm` appends to an unbounded
 `std::vector`), which is exactly the second, independent construction
@@ -85,7 +85,7 @@ between the top and front faces:
   FIXED: AAG's sharedEdgeCount (12) now agrees with BRepGraph past the old 10-cap threshold
 ```
 
-(Before the fix below, the first line read `Optional(10)` -- confirmed by reverting the fix locally
+(Before the fix below, the first line read `Optional(10)`, confirmed by reverting the fix locally
 and re-running.) This is a real, narrow, independent bug: nothing about it depends on cross-solid
 identity, shared faces, or compounds. It reproduces on a single ordinary solid.
 
@@ -109,7 +109,7 @@ the same shape of fixture #703's own performance measurement used):
 2.4x slower at 22 occurrences, 8x slower (and climbing) at 70. This is not a constant-factor
 regression: `OCCTFaceGetSharedEdges` is O(e1 * e2), each face's own small (typically 4-6) edge set,
 independent of the shape's total size. `bgSharedEdges` (`OCCTBridge_BRepGraph.mm`) is O(E), a linear
-scan of every edge in the whole graph, per call -- OCCT 8.0.0p1 dropped `TopoView::FaceOps`'s direct
+scan of every edge in the whole graph, per call: OCCT 8.0.0p1 dropped `TopoView::FaceOps`'s direct
 face-face helpers, so there is no indexed face-to-face incidence to query instead, only this
 derived, unindexed one. Swapping the inner call while keeping `AAG.buildGraph()`'s O(n^2) outer
 loop turns O(n^2 * small-constant) into O(n^2 * E), and E grows with n for a bounded-degree face
@@ -140,7 +140,7 @@ BRepGraph a win.
 Neither consolidation path pays for itself. The bug is real and worth fixing at its root instead:
 a new bridge function, `OCCTFaceGetSharedEdgeCount(shape, face1, face2)` (`OCCTBridge_BRepGraph.h`/
 `.mm`), returns the true, uncapped count. `AAG.buildGraph()` now calls it first to size its buffer
-exactly, then calls `OCCTFaceGetSharedEdges` with that exact size -- no cap, no BRepGraph involved,
+exactly, then calls `OCCTFaceGetSharedEdges` with that exact size: no cap, no BRepGraph involved,
 same asymptotic cost as before (the O(e1 * e2) comparison over each face's own small edge set,
 never the whole shape, now runs twice per pair instead of once). Measured after the fix:
 `AAG.buildGraph()` alone on the 8x8 grid fixture is 10.8-10.9ms, statistically indistinguishable
@@ -148,7 +148,7 @@ from the 9.5-11.0ms range measured before this change.
 
 **Review round (PR #776): the two functions must not carry two independent copies of that
 comparison.** The first version of this fix gave `OCCTFaceGetSharedEdgeCount` its own copy of the
-nested `IsSame` loop, alongside the existing one in `OCCTFaceGetSharedEdges` -- which is precisely
+nested `IsSame` loop, alongside the existing one in `OCCTFaceGetSharedEdges`, which is precisely
 the shape of bug this whole issue is about: one implementation silently drifting from another that
 answers the same question. Two independent copies of the same face-pair edge comparison is exactly
 what let the original 10-cap bug go unnoticed, since nothing forced the two functions to agree.
@@ -197,15 +197,26 @@ That indexing shows up as a real, measured **performance difference in BRepGraph
     per-edge cost, BRepGraph.faces(of:) (mapped):  0.7 / 0.7 / 0.7 us/edge
 ```
 
-Consolidating this specific piece onto `BRepGraph` looks like a genuine win, not a regression --
-the opposite conclusion from the face-to-face case above, and worth remembering as a reason "not
-the same question" cannot be generalized from one half of this issue to the other. **Not
-implemented in this PR**: it touches the public `detectPockets()` code path for a performance gain
-rather than a correctness fix (the two constructions already agree on every case measured), and
-building it out (constructing a `BRepGraph` for this specific call path, handling the case where a
-floor face itself doesn't map cleanly, re-verifying `#753`'s own removal-matrix tests still pass
-against a different code path) is a separable piece of work. Left as a well-evidenced follow-up
-rather than folded into this issue's scope.
+Consolidating this specific piece onto `BRepGraph` looks like a genuine win, not a regression, the
+opposite conclusion from the face-to-face case above, and it was left as a well-evidenced follow-up
+rather than folded into this issue's scope: it touches the public `detectPockets()` code path for a
+performance gain rather than a correctness fix, and building it out is a separable piece of work.
+
+> **Corrected by #777, which is that follow-up.** The per-edge figures above are reproducible and
+> the conclusion drawn from them is wrong, in the way
+> [`measure-dont-assume.md`](../../../okf/policies/measure-dont-assume.md) calls "the adjacent number
+> reads as the one you need". A per-edge lookup cost is not what a caller of `detectPockets()` pays:
+> it has no graph in hand, and **standing one up costs more than the whole test it would
+> accelerate on five of seven fixtures**. Worse, `BRepGraph` answers a different question here for
+> the same reason it does for face-to-face adjacency: on two solids sharing a cut face it reports 3
+> bounding faces where the true count is 4, because `ShapesView::FindNode` collapses the shared
+> face's two occurrences into one node. So "not the same question" **does** generalize from one half
+> of this issue to the other, and this paragraph's claim that it does not is the thing #777
+> disproved. What #777 shipped instead reads the covering faces' own edges once per pocket, with no
+> graph at all. See [`Scripts/repro/777-pocket-isopen/`](../777-pocket-isopen/).
+>
+> The `isEdgeCoveredByAWall` and `facesAreSame` helpers named above no longer exist; #777 replaced
+> them with `CoveringEdges` (`Sources/OCCTSwift/CoveringEdges.swift`).
 
 ## Reproduce
 

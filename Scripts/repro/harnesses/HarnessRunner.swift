@@ -22,6 +22,9 @@ enum HarnessRunner {
         RunnableEntry(name: "965-properties-lifetime",
                       summary: "do the *Properties views keep their parent alive? (#965)",
                       run: PropertiesLifetime.run),
+        RunnableEntry(name: "777-pocket-isopen",
+                      summary: "PocketFeature.isOpen's enclosure test, four ways (#777)",
+                      run: PocketEnclosureTiming.run),
     ]
 
     static func main() {

@@ -1,0 +1,131 @@
+=== #777: PocketFeature.isOpen's enclosure test, measured ===
+
+--- Part 1: what each fixture presents to the enclosure test ---
+  blind rectangular pocket (4 walls, 4 floor edges)
+    pockets 1, floor boundary edges 4, covering faces 4, shape edges 24
+  blind cylindrical pocket (1 wall, 1 floor edge)
+    pockets 1, floor boundary edges 1, covering faces 1, shape edges 15
+  24-sided polygonal pocket (24 walls, 24 floor edges)
+    pockets 1, floor boundary edges 24, covering faces 24, shape edges 84
+  48-sided polygonal pocket (48 walls, 48 floor edges)
+    pockets 1, floor boundary edges 48, covering faces 48, shape edges 156
+  plate with 8 OPEN slots (the short-circuit case, see the README)
+    pockets 8, floor boundary edges 32, covering faces 16, shape edges 108
+  plate, 3x3 grid of pockets (51 face occurrences)
+    pockets 9, floor boundary edges 36, covering faces 36, shape edges 120
+  plate, 5x5 grid of pockets (131 face occurrences)
+    pockets 25, floor boundary edges 100, covering faces 100, shape edges 312
+
+--- Part 2: the enclosure test alone, four ways, interleaved, 25 runs ---
+    (each row covers the whole shape's pockets, not one pocket)
+  blind rectangular pocket (4 walls, 4 floor edges)
+    adjacentFaces(in:), per edge:         39.5 us  (39.0 .. 55.1)
+    covering edges, linear scan:          23.3 us  (23.0 .. 29.2)
+    covering edges, hash-bucketed:        24.9 us  (24.7 .. 27.7)
+    BRepGraph, one graph per shape:      278.2 us  (272.3 .. 321.2)
+    speedup over adjacentFaces, linear scan: 1.7x median / 1.7x min
+    speedup over adjacentFaces, hash-bucketed: 1.6x median / 1.6x min
+  blind cylindrical pocket (1 wall, 1 floor edge)
+    adjacentFaces(in:), per edge:          7.2 us  (6.9 .. 11.1)
+    covering edges, linear scan:           5.7 us  (5.6 .. 8.7)
+    covering edges, hash-bucketed:         6.4 us  (6.3 .. 8.6)
+    BRepGraph, one graph per shape:      176.9 us  (175.4 .. 239.1)
+    speedup over adjacentFaces, linear scan: 1.3x median / 1.2x min
+    speedup over adjacentFaces, hash-bucketed: 1.1x median / 1.1x min
+  24-sided polygonal pocket (24 walls, 24 floor edges)
+    adjacentFaces(in:), per edge:        921.3 us  (835.1 .. 1015.5)
+    covering edges, linear scan:         209.2 us  (199.0 .. 264.1)
+    covering edges, hash-bucketed:       157.2 us  (150.0 .. 187.0)
+    BRepGraph, one graph per shape:     1134.8 us  (1055.5 .. 1415.8)
+    speedup over adjacentFaces, linear scan: 4.4x median / 4.2x min
+    speedup over adjacentFaces, hash-bucketed: 5.9x median / 5.6x min
+  48-sided polygonal pocket (48 walls, 48 floor edges)
+    adjacentFaces(in:), per edge:       3247.8 us  (3114.3 .. 4060.3)
+    covering edges, linear scan:         568.8 us  (542.9 .. 902.4)
+    covering edges, hash-bucketed:       305.4 us  (296.1 .. 409.4)
+    BRepGraph, one graph per shape:     2154.9 us  (1999.9 .. 2351.4)
+    speedup over adjacentFaces, linear scan: 5.7x median / 5.7x min
+    speedup over adjacentFaces, hash-bucketed: 10.6x median / 10.5x min
+  plate with 8 OPEN slots (the short-circuit case, see the README)
+    adjacentFaces(in:), per edge:        569.5 us  (518.1 .. 930.1)
+    covering edges, linear scan:          92.5 us  (84.8 .. 138.9)
+    covering edges, hash-bucketed:       107.6 us  (101.5 .. 122.6)
+    BRepGraph, one graph per shape:     1271.0 us  (1152.6 .. 2197.2)
+    speedup over adjacentFaces, linear scan: 6.2x median / 6.1x min
+    speedup over adjacentFaces, hash-bucketed: 5.3x median / 5.1x min
+  plate, 3x3 grid of pockets (51 face occurrences)
+    adjacentFaces(in:), per edge:       1464.5 us  (1413.3 .. 2097.7)
+    covering edges, linear scan:         214.8 us  (211.2 .. 342.7)
+    covering edges, hash-bucketed:       239.5 us  (234.2 .. 447.7)
+    BRepGraph, one graph per shape:     1639.0 us  (1552.6 .. 2726.2)
+    speedup over adjacentFaces, linear scan: 6.8x median / 6.7x min
+    speedup over adjacentFaces, hash-bucketed: 6.1x median / 6.0x min
+  plate, 5x5 grid of pockets (131 face occurrences)
+    adjacentFaces(in:), per edge:      11832.2 us  (9614.2 .. 29330.5)
+    covering edges, linear scan:         603.5 us  (539.8 .. 5861.5)
+    covering edges, hash-bucketed:       651.0 us  (591.0 .. 2155.5)
+    BRepGraph, one graph per shape:     4478.0 us  (3844.0 .. 16163.1)
+    speedup over adjacentFaces, linear scan: 19.6x median / 17.8x min
+    speedup over adjacentFaces, hash-bucketed: 18.2x median / 16.3x min
+
+--- Part 3: the whole detectPocketsAAG() call, 25 runs ---
+    (Part 2's first row is the share of this that the issue is about)
+  blind rectangular pocket (4 walls, 4 floor edges)
+    detectPocketsAAG():                  387.1 us  (382.5 .. 565.8)
+  blind cylindrical pocket (1 wall, 1 floor edge)
+    detectPocketsAAG():                  214.0 us  (211.9 .. 359.7)
+  24-sided polygonal pocket (24 walls, 24 floor edges)
+    detectPocketsAAG():                 2862.9 us  (2572.8 .. 4430.8)
+  48-sided polygonal pocket (48 walls, 48 floor edges)
+    detectPocketsAAG():                 9130.3 us  (7719.0 .. 11634.0)
+  plate with 8 OPEN slots (the short-circuit case, see the README)
+    detectPocketsAAG():                 4195.7 us  (3237.7 .. 5377.3)
+  plate, 3x3 grid of pockets (51 face occurrences)
+    detectPocketsAAG():                 6258.9 us  (4900.8 .. 11092.4)
+  plate, 5x5 grid of pockets (131 face occurrences)
+    detectPocketsAAG():                30476.2 us  (28643.3 .. 35189.0)
+
+--- Part 4: edge-to-face incidence, every edge, three constructions ---
+    A = the face OCCURRENCES Edge.adjacentFaces(in:)'s <=2 faces match by IsSame
+    B = the face occurrences whose own edge list contains the edge
+    C = BRepGraph.faces(of:), reported as a count only (its own node space)
+    The predicate asks 'is a covering index in this set', so A vs B as SETS is what
+    decides whether the replacement can change a verdict, and in which direction.
+  plain box (every edge bounds exactly 2 faces): 12 distinct edges, 6 face occurrences
+    |A| histogram: 2 faces x12
+    |B| histogram: 2 faces x12
+    |C| histogram: 2 faces x12
+    edges where A is a STRICT subset of B (B sees a face A cannot): 0; edges where A is NOT a subset of B (B loses a face A had): 0
+  cylinder (seam edge on a periodic surface): 3 distinct edges, 3 face occurrences
+    |A| histogram: 1 faces x1, 2 faces x2
+    |B| histogram: 1 faces x1, 2 faces x2
+    |C| histogram: 1 faces x1, 2 faces x2
+    edges where A is a STRICT subset of B (B sees a face A cannot): 0; edges where A is NOT a subset of B (B loses a face A had): 0
+  cone (apex is a degenerate, zero-length edge): 3 distinct edges, 2 face occurrences
+    |A| histogram: 1 faces x2, 2 faces x1
+    |B| histogram: 1 faces x2, 2 faces x1
+    |C| histogram: 1 faces x2, 2 faces x1
+    edges where A is a STRICT subset of B (B sees a face A cannot): 0; edges where A is NOT a subset of B (B loses a face A had): 0
+  sphere (a seam and two degenerate pole edges): 3 distinct edges, 1 face occurrences
+    |A| histogram: 1 faces x3
+    |B| histogram: 1 faces x3
+    |C| histogram: 1 faces x3
+    edges where A is a STRICT subset of B (B sees a face A cannot): 0; edges where A is NOT a subset of B (B loses a face A had): 0
+  two solids sharing one cut face (edges bound 4 faces): 20 distinct edges, 12 face occurrences
+    |A| histogram: 2 faces x16, 3 faces x4
+    |B| histogram: 2 faces x16, 4 faces x4
+    |C| histogram: 2 faces x16, 3 faces x4
+    edges where A is a STRICT subset of B (B sees a face A cannot): 4; edges where A is NOT a subset of B (B loses a face A had): 0
+
+--- Part 5: pocket verdicts on the boundary fixtures ---
+  seam edge: blind cylindrical pocket, radius 6
+    pocket 0: 1 floor boundary edges (bounded by >2 faces: 0), 1 covering faces
+      enclosed? adjacentFaces=true covering-edges=true BRepGraph=true -> AGREE
+  degenerate edge: conical pocket, apex on the axis
+    no pocket detected, so the enclosure test never runs here
+  >2 faces: a pocketed box split down the middle, compounded
+    pocket 0: 4 floor boundary edges (bounded by >2 faces: 1), 3 covering faces
+      enclosed? adjacentFaces=false covering-edges=false BRepGraph=false -> AGREE
+    pocket 1: 4 floor boundary edges (bounded by >2 faces: 1), 3 covering faces
+      enclosed? adjacentFaces=false covering-edges=false BRepGraph=false -> AGREE
+

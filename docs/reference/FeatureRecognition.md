@@ -372,13 +372,15 @@ public let bounds: (min: SIMD3<Double>, max: SIMD3<Double>)
 
 ### `isOpen`
 
-Whether the pocket is considered open (fewer than 3 walls).
+Whether the pocket's wall loop leaves a gap in the floor's own boundary.
 
 ```swift
 public let isOpen: Bool
 ```
 
-A pocket with fewer than 3 wall faces does not form a closed loop and is treated as open (e.g. a slot that opens at the side of a part).
+Tested per edge, not by counting walls: the pocket is enclosed exactly when every edge of the floor's **outer** wire is an edge of one of the covering faces (the walls, plus any fillet or chamfer absorbed at a junction), matched by structural identity (`TopoDS_Shape::IsSame`). A slot that opens at the side of a part has a floor boundary edge that borders no covering face, so it reports `true`.
+
+The wall count is not the test and never was a sufficient one (#735): a blind cylindrical bore has exactly one wall and is fully enclosed, while an open three-sided slot and a closed triangular pocket both have three. An inner wire (an island on the floor, e.g. a boss) never enters the test, so a boss's own wall cannot mask a gap in the outer boundary (#753). #777 changed only how membership is looked up, reading the covering faces' own edges once per pocket instead of asking the whole shape which faces bound each boundary edge. The verdict is unchanged wherever solid membership can be established, which is every ordinary solid and every compound `AAG.solidGroups` can partition; see `Scripts/repro/777-pocket-isopen/` for the one compound shape where it could differ and why that difference lands on the better answer.
 
 ---
 

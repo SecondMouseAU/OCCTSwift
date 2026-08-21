@@ -361,6 +361,19 @@ extension Edge {
     ///
     /// Most interior edges have exactly 2 adjacent faces. Boundary edges have 1.
     ///
+    /// **Reports at most two, even where more bound the edge** (#777). An edge can bound three or
+    /// more faces in a compound whose solids share a face, and this returns whichever two the
+    /// underlying `TopExp::MapShapesAndAncestors` list holds first, with no signal that it
+    /// truncated. Measured on two solids sharing one cut face: each of the four shared edges is
+    /// bounded by four face occurrences, three distinct under `IsSame`, and this hands back two
+    /// `Face` values.
+    ///
+    /// ``Shape/adjacentFaces(forEdge:)`` sees more of them, and is not a complete answer either:
+    /// it walks `MapShapesAndUniqueAncestors` through an `IsSame`-keyed map, so it reports the
+    /// three DISTINCT faces rather than the four occurrences, and it caps at 64 with no signal
+    /// when it truncates. Neither entry point can currently report an occurrence set. Tracked as
+    /// #1087.
+    ///
     /// - Parameter shape: The shape containing this edge
     /// - Returns: Tuple of (face1, face2) where face2 may be nil for boundary edges,
     ///   or nil if the edge has no adjacent faces
