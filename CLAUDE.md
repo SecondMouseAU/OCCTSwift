@@ -139,7 +139,7 @@ python3 Scripts/check-docs-existence.py          # every symbol docs/ documents 
 python3 Scripts/check-borrowed-handles.py        # no struct/enum stores an OCCT*Ref it has no deinit to release (#965)
 python3 Scripts/derive-bridge-header-split.py --verify  # every declaration sits in the header its .mm owns (#673)
 python3 Scripts/derive-gdt-enums.py --verify      # the GD&T enums still match the pinned XCAFDimTolObjects headers (#996)
-python3 Scripts/count-operations.py              # README + API_REFERENCE totals match the derived count
+python3 Scripts/count-operations.py              # README + API_REFERENCE + docs/index.md totals match the derived count
 python3 Scripts/census-unmeasured-values.py      # CENSUS, not a gate: values returned as measurements that were never computed (#726)
 python3 Scripts/census-doc-occt-attribution.py   # CENSUS, not a gate: docs attributing a method to an OCCT class its bridge fn never reaches (#928)
 python3 Scripts/census-arguments-tuple-shapes.py # CENSUS, not a gate: @Test(arguments:) elements whose layout trips the toolchain defect (#1057)
@@ -585,8 +585,11 @@ not chosen: `python3 Scripts/count-operations.py`.
    ever exercised.
 5. **Verify.** Full `swift test`, the five gate scripts with their `--self-test`s, and
    `Scripts/tsan-stress.sh all` if anything touched concurrency.
-6. **Counts.** `python3 Scripts/count-operations.py` must agree with README.md and
-   `docs/API_REFERENCE.md`. It is a gate; never hand-edit a total to match.
+6. **Counts.** `python3 Scripts/count-operations.py` must agree with README.md,
+   `docs/API_REFERENCE.md` and `docs/index.md`. It is a gate; never hand-edit a total to match.
+   `docs/index.md` was added to it by #967, after sitting at 4,339 against a derived 4,355 for
+   want of anything reading it, which is the same failure the gate exists to prevent in the other
+   two files.
 7. `git tag vX.Y.Z`, `gh release create`.
 
 ### Adding a wrapped operation

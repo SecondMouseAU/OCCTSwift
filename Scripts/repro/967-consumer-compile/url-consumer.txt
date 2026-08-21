@@ -1,0 +1,27 @@
+The one row run.sh cannot cover: a consumer package resolving OCCTSwift BY URL AND TAG,
+  .package(url: "https://github.com/SecondMouseAU/OCCTSwift.git", exact: "3.0.0")
+with a plain Swift library target whose only OCCT content is `import OCCTSwift` and a call
+to Shape.box. run.sh resolves by path so that it needs no network; this row downloads the
+1.3 GB pinned release asset, which is why it is captured rather than scripted.
+
+Head and tail of the build. Paths are normalised to <work>; nothing else is altered.
+
+[188/244] Compiling OCCTSwift BRepGraph.swift
+[189/244] Compiling OCCTSwift BSplineApproxInterp.swift
+[190/244] Compiling OCCTSwift BiTgteCurveOnEdge.swift
+[191/244] Compiling OCCTSwift BillOfMaterials.swift
+[192/244] Compiling OCCTSwift BisectorResult.swift
+[193/244] Compiling OCCTSwift BndLib.swift
+[194/244] Compiling OCCTSwift BooleanResult.swift
+[195/244] Compiling OCCTSwift BoundSortBox.swift
+[196/244] Compiling OCCTSwift BoundingSphere.swift
+[197/244] Compiling OCCTSwift CPUTime.swift
+[198/244] Compiling OCCTSwift Camera.swift
+[199/244] Compiling OCCTSwift CanonicalForm.swift
+  [...]
+[244/244] Compiling OCCTSwift ShapeContents.swift
+[245/246] Compiling ConsumerLib ConsumerLib.swift
+[246/246] Emitting module ConsumerLib
+Build complete! (178.03s)
+
+[exited with code 0]

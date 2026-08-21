@@ -4,29 +4,45 @@ Paths are normalised: the checkout prefix reads <repo> and the throwaway consume
 package directory reads <work>. Nothing else is altered.
 
 
-########## row 1: Objective-C (.m), the reported failure ##########
+########## row 1: Swift target, import only, no settings ##########
+Build of target: 'ConsumerSwift' complete! (162.78s)
+  -> expected pass, got pass: OK
+
+########## row 2: Swift target calling the API ##########
+Build of target: 'ConsumerSwift' complete! (1.28s)
+  -> expected pass, got pass: OK
+
+########## row 3: Swift target with .interoperabilityMode(.Cxx) ##########
+Build of target: 'ConsumerSwift' complete! (32.06s)
+  -> expected pass, got pass: OK
+
+########## row 4: Swift target touching Mesh, Surface, Curve3D and Document ##########
+Build of target: 'ConsumerSwift' complete! (1.18s)
+  -> expected pass, got pass: OK
+
+########## row 5: Objective-C (.m), the reported failure ##########
 <repo>/Libraries/OCCT.xcframework/macos-arm64/Headers/Standard_Std.hxx:19:10: fatal error: 'type_traits' file not found
   -> expected type_traits, got type_traits: OK
 
-########## row 2: C (.c), the same missing C++ standard library ##########
+########## row 6: C (.c), the same missing C++ standard library ##########
 <repo>/Libraries/OCCT.xcframework/macos-arm64/Headers/Standard_Std.hxx:19:10: fatal error: 'type_traits' file not found
   -> expected type_traits, got type_traits: OK
 
-########## row 3: Objective-C++ (.mm), manifest declares no C++ standard ##########
+########## row 7: Objective-C++ (.mm), manifest declares no C++ standard ##########
 <repo>/Libraries/OCCT.xcframework/macos-arm64/Headers/NCollection_LinearVector.hxx:95:26: error: no template named 'is_trivially_copyable_v' in namespace 'std'; did you mean 'is_trivially_copyable'?
 <repo>/Libraries/OCCT.xcframework/macos-arm64/Headers/NCollection_LinearVector.hxx:95:62: error: expected unqualified-id
 <repo>/Libraries/OCCT.xcframework/macos-arm64/Headers/NCollection_LinearVector.hxx:135:26: error: no template named 'is_trivially_copyable_v' in namespace 'std'; did you mean 'is_trivially_copyable'?
 <repo>/Libraries/OCCT.xcframework/macos-arm64/Headers/NCollection_LinearVector.hxx:135:62: error: expected unqualified-id
   -> expected cxx17, got cxx17: OK
 
-########## row 4: Objective-C++ (.mm), manifest declares cxxLanguageStandard ##########
-Build of target: 'ConsumerLang' complete! (1.05s)
+########## row 8: Objective-C++ (.mm), manifest declares cxxLanguageStandard ##########
+Build of target: 'ConsumerLang' complete! (4.93s)
   -> expected pass, got pass: OK
 
-########## row 5: C++ (.cpp), manifest declares cxxLanguageStandard ##########
-Build of target: 'ConsumerLang' complete! (0.84s)
+########## row 9: C++ (.cpp), manifest declares cxxLanguageStandard ##########
+Build of target: 'ConsumerLang' complete! (2.82s)
   -> expected pass, got pass: OK
 
-all 5 rows matched their expected outcome
+all 9 rows matched their expected outcome
 Workdir kept at <work>/occtswift-967-consumer
-RUNSH EXIT=0
+EXIT=0

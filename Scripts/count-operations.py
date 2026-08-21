@@ -351,13 +351,21 @@ def documented_index():
 
 
 def read_stated():
-    """The two headline figures currently in the docs."""
+    """The three headline figures currently in the docs.
+
+    docs/index.md is the third because it drifted while nothing was reading it: it sat at 4,339
+    against a derived 4,355 until #967 noticed by hand. A figure this script does not read is a
+    figure that goes stale, which is the whole argument for deriving the other two.
+    """
     readme = os.path.join(ROOT, "README.md")
     apiref = os.path.join(ROOT, "docs/API_REFERENCE.md")
+    index = os.path.join(ROOT, "docs/index.md")
     r = re.search(r'\*\*([\d,]+) wrapped operations\*\*', open(readme, encoding="utf-8").read())
     a = re.search(r'^\|\s*\*\*Total\*\*\s*\|\s*\*\*([\d,]+)\*\*\s*\|', open(apiref, encoding="utf-8").read(), re.M)
+    i = re.search(r'\*\*([\d,]+) wrapped operations\.\*\*', open(index, encoding="utf-8").read())
     return (int(r.group(1).replace(',', '')) if r else None,
-            int(a.group(1).replace(',', '')) if a else None)
+            int(a.group(1).replace(',', '')) if a else None,
+            int(i.group(1).replace(',', '')) if i else None)
 
 
 def category_row_sum_text(s):
@@ -448,16 +456,17 @@ def main():
         print(f"  {k:<15} {v:>5}")
     print(f"  {'DERIVED':<15} {derived:>5}\n")
 
-    readme_n, apiref_n = read_stated()
+    readme_n, apiref_n, index_n = read_stated()
     rowsum, rowcount = category_row_sum()
     print(f"  README headline        {readme_n:>5}" + ("  ✓" if readme_n == derived else f"  ✗ (should be {derived})"))
     print(f"  API_REFERENCE Total    {apiref_n:>5}" + ("  ✓" if apiref_n == derived else f"  ✗ (should be {derived})"))
+    print(f"  docs/index.md headline {index_n:>5}" + ("  ✓" if index_n == derived else f"  ✗ (should be {derived})"))
     print(f"  sum of {rowcount} category rows  {rowsum:>5}   (illustrative categorisation; see the note in API_REFERENCE)")
 
     if mode == "--fix":
         fix(derived)
         return 0
-    return 0 if (readme_n == derived and apiref_n == derived) else 1
+    return 0 if (readme_n == derived and apiref_n == derived and index_n == derived) else 1
 
 
 if __name__ == "__main__":

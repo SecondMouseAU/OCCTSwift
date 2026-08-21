@@ -302,14 +302,19 @@ let package = Package(
         // not every build: under OCCTSWIFT_BRIDGE_PREBUILT=1 the bridge is a binaryTarget and
         // include/ is not compiled at all, so an edited public header goes unchecked there. That
         // path is switched off above and CI never takes it, which is what makes the guarantee hold
-        // where it counts, and is also a second reason not to restore it casually. A consumer's plain
-        // Swift target imports the same module the same way, so a C++ include reaching
-        // Sources/OCCTBridge/include/ breaks every one of them, and #967 is what that looks like
-        // from the outside: `'type_traits' file not found` inside OCCT's own headers. Measured, not
-        // asserted: adding `#include <Standard_Std.hxx>` to OCCTBridge.h fails `swift build` here
-        // with "could not build Objective-C module 'OCCTBridge'". Turning interop on compiles those
-        // headers as C++ instead, so the failure would move from our build to theirs. Transcript
-        // and the reasoning in Scripts/repro/967-consumer-compile/.
+        // where it counts, and is a second reason not to restore it casually.
+        //
+        // It protects consumers even though no consumer can import OCCTBridge: the package vends
+        // one product and OCCTBridge is not it. SwiftPM recompiles THIS target from source in every
+        // consumer, so the module is built there too, on their toolchain, in Objective-C mode. A
+        // C++ include reaching Sources/OCCTBridge/include/ therefore breaks their build as well as
+        // ours, and #967 is what that looks like from the outside: `'type_traits' file not found`
+        // inside OCCT's own headers.
+        //
+        // Measured, not asserted: adding `#include <Standard_Std.hxx>` to OCCTBridge.h fails
+        // `swift build` here with "could not build Objective-C module 'OCCTBridge'". Turning
+        // interop on compiles those headers as C++ instead, so the failure would move out of our
+        // build and into theirs. Transcript and reasoning in Scripts/repro/967-consumer-compile/.
         .target(
             name: "OCCTSwift",
             dependencies: ["OCCTBridge", "OCCT"],
