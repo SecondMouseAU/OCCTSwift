@@ -294,10 +294,11 @@ the test module's own compiler-generated code, with `Testing` as the caller.
 
 ## What it means for this repo
 
-A `@Test(arguments:)` here cannot take an element type that pairs a reference-counted member with a
-`SIMD3<Double>`, `SIMD4<Double>` or any wider vector, in a tuple or in a struct. Walking the list
-inside one test, which is what `Issue990ThreadAxisBasisTests` does, is the workaround, and cell U
-confirms it is clean.
+Treat a `@Test(arguments:)` whose element pairs a reference-counted member with a builtin vector of
+32 bytes or more, in a tuple or in a struct, as suspect and measure it before relying on it. Not as
+a hard prohibition, since the table above has such element types on both sides, but as the smallest
+description that covers every crashing case measured here. Walking the list inside one test, which
+is what `Issue990ThreadAxisBasisTests` does, is the workaround, and cell U confirms it is clean.
 
 Census by `census-arguments-sites.py`, over all of `Tests/`: **33** `@Test(..., arguments:)` sites,
 **0 at risk**, **9 unknown**. It is a census and not a gate for three reasons: the flagging rule
