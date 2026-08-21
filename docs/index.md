@@ -61,4 +61,4 @@ figure (interactive 3D where it helps). The **[Cookbook index](guides/cookbook/)
 ## Project
 
 - Source & issues: [github.com/gsdali/OCCTSwift](https://github.com/gsdali/OCCTSwift)
-- Install via Swift Package Manager, pin `from: "1.0.0"` (SemVer-stable since v1.0.0).
+- Install via Swift Package Manager, pin `from: "3.0.0"` (SemVer-stable since v1.0.0; `from: "1.0.0"` resolves to the 1.x line and never reaches 3.x).
