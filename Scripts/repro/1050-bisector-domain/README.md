@@ -21,6 +21,7 @@ wrong.
 | `probe-output-review-findings.txt` | its transcript |
 | `occt_1050_regression_sweep.mm` | 16000 randomised configurations, shipped bound against the fix |
 | `probe-output-regression-sweep.txt` | its transcript |
+| `matrix.sh` | generates the removal matrix below, injection by injection |
 
 Build and run:
 
@@ -216,21 +217,34 @@ parallel-distinct, identical, or cross at one point that is on both kept rays or
 ## The no-regression sweep
 
 Ten hand-picked fixtures can show the fix finds something the old window dropped. They cannot show
-it never **loses** one, never **moves** one, and never invents one, because those are claims about
-the whole input space. `occt_1050_regression_sweep.mm` runs both bodies over randomised four-point
-configurations at four scales, fixed seed so the numbers are re-derivable rather than a fresh sample
-each time:
+it never **loses** one, never **moves** one, and never **invents** one, because those are claims
+about the whole input space. `occt_1050_regression_sweep.mm` runs both bodies over randomised
+four-point configurations at four scales, fixed seed so the numbers are re-derivable rather than a
+fresh sample each time:
 
-| scale | cases | both found | neither | gained | lost | moved |
-|---|---|---|---|---|---|---|
-| 1e-3 | 4000 | 1006 | 2994 | 0 | 0 | 0 |
-| 1 | 4000 | 985 | 3011 | 4 | 0 | 0 |
-| 1e3 | 4000 | 14 | 3006 | 980 | 0 | 0 |
-| 1e6 | 4000 | 0 | 3031 | 969 | 0 | 0 |
+| scale | cases | both found | neither | gained | lost | moved | bogus | worst equidistance |
+|---|---|---|---|---|---|---|---|---|
+| 1e-3 | 4000 | 1006 | 2994 | 0 | 0 | 0 | 0 | 0 |
+| 1 | 4000 | 985 | 3011 | 4 | 0 | 0 | 0 | 2.18e-16 |
+| 1e3 | 4000 | 14 | 3006 | 980 | 0 | 0 | 0 | 2.29e-15 |
+| 1e6 | 4000 | 0 | 3031 | 969 | 0 | 0 | 0 | 3.69e-15 |
 
-**16000 cases: 1953 gained, 0 lost, 0 moved.** It exits non-zero if either of the last two is not 0,
-so it is a check rather than a printout. The scale column is why the shipped window looked adequate
-for so long: at scale 1 it drops 4 crossings in 4000, and at 1e3 it drops 980.
+**16000 cases: 1953 gained, 0 lost, 0 moved, 0 bogus.** It exits non-zero if any of the last three
+is not 0, so it is a check rather than a printout. The scale column is why the shipped window looked
+adequate for so long: at scale 1 it drops 4 crossings in 4000, and at 1e3 it drops 980.
+
+`bogus` is the "never invents one" half, and the first draft of this probe claimed that while
+counting only lost/moved/gained, which checks no gained crossing at all. Every gained crossing is
+now validated on its own terms, with no reference to what either body computed: equidistant from
+both point pairs, and at non-negative parameter on both kept rays. Worst relative equidistance error
+over all 1953: **3.69e-15**.
+
+The check was proved to fire rather than trusted: nudging each gained crossing by `1e-3 * scale`
+before validating flags **1951 of 1953** and exits 1, per scale 0/0, 4/4, 980/980, 967/969. The two
+it still passes are both in the 1e6 row, and the reason is not established here; at that scale a
+crossing can sit far enough away that a nudge of 1000 stays inside the relative equidistance
+tolerance. Two unexplained passes out of 1953 do not weaken the check enough to chase further, and
+the number is recorded rather than rounded to "all of them".
 
 This also corrected the probe itself. An earlier draft computed reachability from the four input
 points, assuming the ray ran along `perp(B - A)` normalised because that is what the bridge passes
@@ -246,29 +260,42 @@ pre-existing `BisectorIntersectionTests` this PR gave real assertions to. Four i
 compiled and run against the real bridge, with disjoint failure sets so each isolates a different
 mechanism:
 
-| injection | tests failing (of 9) | which |
+Every row below is measured by `matrix.sh`, which applies each injection, runs the ten tests,
+captures the failing test **names** rather than a count, restores the file and verifies the restore
+is byte-identical. That mechanism is not decoration. The first version of this table was carried
+over from a six-test suite with its denominator edited to nine and its counts left alone, and two of
+its rows were wrong; a hand-maintained matrix is the same kind of artifact as the hand-maintained
+cause list two sections up, and it failed the same way.
+
+| injection | fails (of 10) | which |
 |---|---|---|
-| the shipped `[-100, 100]` | 2 | past-old-window, past-input-extent |
-| `2 * span + 1` | 1 | past-input-extent |
-| unbounded `IntRes2d_Domain()` | 3 | past-old-window, **inside**-old-window, past-input-extent |
-| swap `pC`/`pD` into `b2.Perform` | 5 | all three ray tests, both directions, plus two window tests |
+| **A** the shipped `[-100, 100]` | 2 | past-old-window, past-input-extent |
+| **B** `2 * span + 1` | 1 | past-input-extent |
+| **C** unbounded `IntRes2d_Domain()` | 6 | every test that expects to find something |
+| **D** swap `pC`/`pD` into `b2.Perform` | 5 | all three ray tests, plus past- and inside-old-window |
+| **E** `Sense` flipped to `-1.0` | 2 | past-input-extent, documented-example |
+| **F** `perpCD` negated | 2 | past-input-extent, documented-example |
 | the fix, curve's own range | 0 | |
 
-Row 2 is the one that matters for the choice of bound: it is wider than 100 and passes the issue's
-own fixture, so only the discriminating test separates it from the fix. Row 3 fails a control rows 1
-and 2 pass, which is the throw reaching `catch (...)`. Row 4 covers the three ray tests, which the
-first three rows cannot touch, and it fails them in **both** directions: the as-written ordering
-starts finding `(5, 5)` where it must find nothing, and the reversed ordering stops finding it.
+Row B is the one that matters for the choice of bound: it is wider than 100 and passes the issue's
+own fixture, so only the discriminating test separates it from the fix. Row C fails a control rows A
+and B pass, which is the throw reaching `catch (...)` and turning every input into an empty result.
+Row D is the only row that touches the ray tests in both directions: the as-written ordering starts
+finding `(5, 5)` where it must find nothing, and the reversed ordering stops finding it.
 
-**Row 4 took three attempts, and the two failures are the useful part.** Flipping `Sense` from `1.0`
-to `-1.0`, and negating `perpCD`, both left every test green. Neither is a load-bearing input on
-this path: `Bisector_BisecAna::Perform`'s point-point overload takes the ray's direction from
-`GccAna_Pnt2dBisec(afirstpoint, asecondpoint)`, whose line follows the **point** order, and the
-bridge passes `v3` and `v4` as exact opposites, which makes the sector test `Distance()` performs
-degenerate so `adirection` cannot discriminate. So the bridge hands OCCT a `Sense` and a vector pair
-that do not affect the result, and only the order of `pC` and `pD` does. An injection that leaves
-the suite green is not proof the tests are weak; here it was proof the injected value was inert, and
-the difference is only visible by reading why.
+**Rows E and F were published as "inert" and are not.** Reaching row D took three attempts, and the
+first two, flipping `Sense` and negating `perpCD`, left the three ray tests green. That was read as
+"neither is load-bearing", with a mechanism written to explain it:
+`Bisector_BisecAna::Perform`'s point-point overload takes the ray from
+`GccAna_Pnt2dBisec(afirstpoint, asecondpoint)`, whose line follows the point order, and the bridge
+passes `v3` and `v4` as exact opposites, which makes the sector test in `Distance()` degenerate. The
+mechanism is right about the ray tests and the conclusion drawn from it was too broad: measured
+against the whole suite, E and F each fail one test. They are inert for the fixtures that were being
+watched, not inert.
+
+That is the same mistake as the accuracy claim above and as the matrix denominator: a measurement
+taken of part of the subject, published as a measurement of the subject. Three instances on one
+issue is why every count in this file now names what was measured and over what.
 
 **Three of the six tests fail under no injection at all**, and they are labelled regression guards in
 the suite rather than counted as coverage. `parallelBisectorsReportNothing`,

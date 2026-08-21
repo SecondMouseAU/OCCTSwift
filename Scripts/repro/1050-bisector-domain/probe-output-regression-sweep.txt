@@ -1,12 +1,14 @@
 no-regression sweep, shipped [-100, 100] against the curve's own range
 
-  scale      cases     both      neither   gained    lost      moved         
-  1e-03      4000      1006      2994      0         0         0             
-  1e+00      4000      985       3011      4         0         0             
-  1e+03      4000      14        3006      980       0         0             
-  1e+06      4000      0         3031      969       0         0             
+  scale      cases    both     neither  gained   lost    moved   bogus   worst equid.
+  1e-03      4000     1006     2994     0        0       0       0       0           
+  1e+00      4000     985      3011     4        0       0       0       2.18e-16    
+  1e+03      4000     14       3006     980      0       0       0       2.29e-15    
+  1e+06      4000     0        3031     969      0       0       0       3.69e-15    
 
-  16000 cases across 4 scales: 1953 gained, 0 lost, 0 moved
+  16000 cases across 4 scales: 1953 gained, 0 lost, 0 moved, 0 bogus
+  worst relative equidistance error over every gained crossing: 3.69e-15
 
-  lost and moved must both be 0. gained is the fix doing its job: every one of those is
-  a crossing the shipped window discarded and returned as an empty array.
+  lost, moved and bogus must all be 0. gained is the fix doing its job: every one is a
+  crossing the shipped window discarded and returned as an empty array, and each has been
+  checked to be equidistant from both pairs and on the live side of both rays.

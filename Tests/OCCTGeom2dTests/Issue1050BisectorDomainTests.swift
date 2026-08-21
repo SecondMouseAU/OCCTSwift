@@ -19,8 +19,8 @@ import simd
 /// form from the perpendicular-bisector equations, independent of OCCT. Measurements and the
 /// candidate-bound comparison are in `Scripts/repro/1050-bisector-domain/`.
 ///
-/// Three of the six are labelled **regression guards** rather than coverage, because they were
-/// measured to be insensitive to the thing under test and none of the three injections in the
+/// Three of the seven are labelled **regression guards** rather than coverage, because they were
+/// measured to be insensitive to the thing under test and none of the six injections in the
 /// removal matrix turns any of them red. `Bisector_Inter::Perform` re-clips whatever domain it is
 /// given to `max(IntervalFirst, MinDomain)`, so no domain choice can conjure a point where the
 /// half-lines do not meet, and the coincident-points case throws before a domain is built at all.
@@ -67,7 +67,7 @@ struct Issue1050BisectorDomainTests {
     /// Regression guard. Two parallel bisectors have no solution at all, and must report none.
     ///
     /// Both pairs are vertical, so both bisectors are horizontal lines, y=5 and y=50, and the
-    /// closed-form solve is singular. Insensitive to the bound by measurement: all three injections
+    /// closed-form solve is singular. Insensitive to the bound by measurement: all six injections
     /// leave it green, and a symmetric `[-LastParameter, LastParameter]` domain still yields zero
     /// points. It keeps "found nothing" meaningful, which is what the issue turns on.
     @Test("Parallel bisectors still report no intersection")
@@ -111,6 +111,24 @@ struct Issue1050BisectorDomainTests {
             #expect(abs(h.y - 5) < 1e-6)
             #expect(h.paramOnFirst > 82.42)
         }
+    }
+
+    /// The circumcentre example in `docs/reference/Shape-Recognition.md`, all four orderings.
+    ///
+    /// The doc claims one of the four returns the circumcentre and three return nothing. A
+    /// documented claim nobody executes drifts, and this one is the whole reason the half-line
+    /// paragraph exists, so it is pinned here rather than left as prose.
+    @Test("The documented circumcentre example holds, and its three reorderings do not")
+    func documentedCircumcentreExample() {
+        let hits = bisectorIntersections(a: (0, 0), b: (4, 0), c: (4, 0), d: (2, 3))
+        #expect(hits.count == 1)
+        if let h = hits.first {
+            #expect(abs(h.x - 2) < 1e-9)
+            #expect(abs(h.y - 5.0 / 6.0) < 1e-9)
+        }
+        #expect(bisectorIntersections(a: (4, 0), b: (0, 0), c: (4, 0), d: (2, 3)).isEmpty)
+        #expect(bisectorIntersections(a: (0, 0), b: (4, 0), c: (2, 3), d: (4, 0)).isEmpty)
+        #expect(bisectorIntersections(a: (4, 0), b: (0, 0), c: (2, 3), d: (4, 0)).isEmpty)
     }
 
     /// Regression guard. A pair of coincident points has no bisector, and the bridge refuses

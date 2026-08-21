@@ -246,7 +246,7 @@ public func bisectorIntersections(
 ) -> [BisectorIntersection]
 ```
 
-The bisector of `(a, b)` is intersected with the bisector of `(c, d)`. The result is the circumcenter when the two pairs form a triangle.
+The bisector of `(a, b)` is intersected with the bisector of `(c, d)`. Where the two pairs span a triangle **and each pair is ordered so that its half-line points at the circumcentre**, that crossing is the circumcentre. The ordering is a real condition rather than a formality: of the four ways to order the two pairs in the example below, one returns the circumcentre and three return an empty array, for the half-line reason set out next.
 
 Each bisector is a **half-line**, not a full line: it starts at its pair's midpoint and runs along one of the two perpendicular directions, the one OCCT selects from the sector the bridge supplies. So reversing a pair, passing `b, a` where you passed `a, b`, flips which way that half-line points, and a crossing that was found becomes an empty result.
 
@@ -264,13 +264,18 @@ Each bisector is searched over **its own full parameter range**, so a crossing i
 A distant crossing is computed accurately but is **ill-conditioned in the input**, and the difference matters. Against a closed-form solve of the same four points, the returned crossing is correct to about 1e-16 relative at every distance measured, out to parameter 1e10. What is fragile is the input: a crossing that far away means two nearly parallel bisectors, so perturbing a coordinate by one part in 1e16 moves the crossing by hundreds of units. Feed such a case exact inputs, or treat the answer as a direction rather than a position; re-deriving the points from rounded values will not give you the same crossing back.
 
 - **Parameters:** `a`, `b`, first point pair; `c`, `d`, second point pair, all as `(x, y)`.
-- **Returns:** Array of intersection points. Two distinct half-lines meet at most once, so this is empty or holds a single point; see the three causes above for what empty means.
+- **Returns:** Array of intersection points. Two distinct half-lines meet at most once, so this is empty or holds a single point; see the four causes above for what empty means.
 - **OCCT:** `Bisector_Bisec` (its point-point `Perform`) / `Bisector_Inter` via `OCCTBisectorInterPointPoint`.
-- **Example:**
+- **Example:** the circumcentre of the triangle `(0,0) (4,0) (2,3)`, and the three orderings of the same two pairs that return nothing.
   ```swift
   let hits = bisectorIntersections(a: (0, 0), b: (4, 0),
                                     c: (4, 0), d: (2, 3))
-  // hits[0] is the circumcenter of the triangle, (2, 0.8333...)
+  // hits[0] is the circumcentre, (2, 0.8333333333)
+
+  // The same two pairs, reordered. Each reversal flips a half-line away from the crossing.
+  bisectorIntersections(a: (4, 0), b: (0, 0), c: (4, 0), d: (2, 3))  // []
+  bisectorIntersections(a: (0, 0), b: (4, 0), c: (2, 3), d: (4, 0))  // []
+  bisectorIntersections(a: (4, 0), b: (0, 0), c: (2, 3), d: (4, 0))  // []
   ```
 - **Example:** a crossing far from the four points, which the pre-#1050 window discarded.
   ```swift

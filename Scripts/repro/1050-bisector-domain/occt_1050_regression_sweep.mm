@@ -8,12 +8,20 @@
 // This runs the shipped [-100, 100] body and the fixed curve's-own-range body over randomised
 // four-point configurations at four scales, and classifies every disagreement:
 //
-//   lost    the shipped window found a crossing and the fix does not      (must be 0)
-//   moved   both found one and they differ by more than a tolerance       (must be 0)
-//   gained  the fix found one the shipped window dropped                  (the point of the fix)
+//   lost     the shipped window found a crossing and the fix does not     (must be 0)
+//   moved    both found one and they differ by more than a tolerance      (must be 0)
+//   gained   the fix found one the shipped window dropped                 (the point of the fix)
+//   bogus    a gained crossing that is not actually a crossing            (must be 0)
 //
 // A non-zero `lost` or `moved` would mean the fix is not a strict widening, which is the one thing
 // the hand-picked fixtures cannot rule out.
+//
+// `bogus` is the other half, and a first draft of this probe claimed to rule out "inventing one"
+// while only counting the three classes above, which does not check a single gained crossing. Every
+// gained crossing is now validated on its own terms: equidistant from both point pairs to a
+// relative tolerance, and at non-negative parameter on both half-lines. Counting a disagreement is
+// not the same as checking the answer, and the count alone cannot tell a recovered crossing from a
+// fabricated one.
 //
 //   clang++ -std=c++17 -ObjC++ -w \
 //     -I"Libraries/OCCT.xcframework/macos-arm64/Headers" \
@@ -115,6 +123,36 @@ Hit run(const Inputs& p, bool shipped)
   return h;
 }
 
+// Is `h` actually a crossing of the two bisector half-lines of `p`? Checked on its own terms, with
+// no reference to what either body computed: equidistance from each pair, and non-negative
+// parameter on each kept ray, whose origin and direction are read off the built curves.
+// `worstRel` accumulates the largest relative equidistance error seen.
+bool validate(const Inputs& p, const Hit& h, double& worstRel)
+{
+  const double d1a = std::hypot(h.x - p.ax, h.y - p.ay);
+  const double d1b = std::hypot(h.x - p.bx, h.y - p.by);
+  const double d2c = std::hypot(h.x - p.cx, h.y - p.cy);
+  const double d2d = std::hypot(h.x - p.dx, h.y - p.dy);
+
+  const double r1 = std::fabs(d1a - d1b) / std::max(1e-300, std::max(d1a, d1b));
+  const double r2 = std::fabs(d2c - d2d) / std::max(1e-300, std::max(d2c, d2d));
+  worstRel        = std::max(worstRel, std::max(r1, r2));
+  if (r1 > 1e-9 || r2 > 1e-9)
+    return false;
+
+  Bisector_Bisec b1, b2;
+  if (!buildBisectors(p, b1, b2))
+    return false;
+  const gp_Pnt2d o1 = b1.Value()->Value(0), e1 = b1.Value()->Value(1);
+  const gp_Pnt2d o2 = b2.Value()->Value(0), e2 = b2.Value()->Value(1);
+  const double   t1 = (h.x - o1.X()) * (e1.X() - o1.X()) + (h.y - o1.Y()) * (e1.Y() - o1.Y());
+  const double   t2 = (h.x - o2.X()) * (e2.X() - o2.X()) + (h.y - o2.Y()) * (e2.Y() - o2.Y());
+  // A crossing exactly at a midpoint is parameter 0, so the bound is a small negative slack
+  // scaled to the coordinates rather than a bare >= 0.
+  const double slack = -1e-6 * std::max(1.0, std::max(std::fabs(t1), std::fabs(t2)));
+  return t1 >= slack && t2 >= slack;
+}
+
 } // namespace
 
 int main()
@@ -124,23 +162,27 @@ int main()
   std::mt19937_64 rng(20260821);
 
   printf("no-regression sweep, shipped [-100, 100] against the curve's own range\n\n");
-  printf("  %-10s %-9s %-9s %-9s %-9s %-9s %-14s\n",
+  printf("  %-10s %-8s %-8s %-8s %-8s %-7s %-7s %-7s %-12s\n",
          "scale",
          "cases",
          "both",
          "neither",
          "gained",
          "lost",
-         "moved");
+         "moved",
+         "bogus",
+         "worst equid.");
 
   const double SCALES[] = {1e-3, 1.0, 1e3, 1e6};
-  int          totalLost = 0, totalMoved = 0, totalGained = 0, totalCases = 0;
+  int    totalLost = 0, totalMoved = 0, totalGained = 0, totalCases = 0, totalBogus = 0;
+  double worstOverall = 0;
 
   for (double scale : SCALES)
   {
     std::uniform_real_distribution<double> u(-scale, scale);
     const int                              N = 4000;
-    int both = 0, neither = 0, gained = 0, lost = 0, moved = 0;
+    int    both = 0, neither = 0, gained = 0, lost = 0, moved = 0, bogus = 0;
+    double worstRel = 0;
 
     for (int i = 0; i < N; ++i)
     {
@@ -155,6 +197,13 @@ int main()
       else if (!s.found && f.found)
       {
         ++gained;
+        if (!validate(p, f, worstRel))
+        {
+          ++bogus;
+          printf("    BOGUS at scale %g: (%.17g, %.17g) from A(%.17g,%.17g) B(%.17g,%.17g) "
+                 "C(%.17g,%.17g) D(%.17g,%.17g)\n",
+                 scale, f.x, f.y, p.ax, p.ay, p.bx, p.by, p.cx, p.cy, p.dx, p.dy);
+        }
       }
       else if (s.found && !f.found)
       {
@@ -177,17 +226,21 @@ int main()
       }
     }
 
-    printf("  %-10.0e %-9d %-9d %-9d %-9d %-9d %-14d\n",
-           scale, N, both, neither, gained, lost, moved);
+    printf("  %-10.0e %-8d %-8d %-8d %-8d %-7d %-7d %-7d %-12.3g\n",
+           scale, N, both, neither, gained, lost, moved, bogus, worstRel);
     totalCases += N;
     totalLost += lost;
     totalMoved += moved;
     totalGained += gained;
+    totalBogus += bogus;
+    worstOverall = std::max(worstOverall, worstRel);
   }
 
-  printf("\n  %d cases across 4 scales: %d gained, %d lost, %d moved\n",
-         totalCases, totalGained, totalLost, totalMoved);
-  printf("\n  lost and moved must both be 0. gained is the fix doing its job: every one of those is\n");
-  printf("  a crossing the shipped window discarded and returned as an empty array.\n");
-  return (totalLost == 0 && totalMoved == 0) ? 0 : 1;
+  printf("\n  %d cases across 4 scales: %d gained, %d lost, %d moved, %d bogus\n",
+         totalCases, totalGained, totalLost, totalMoved, totalBogus);
+  printf("  worst relative equidistance error over every gained crossing: %.3g\n", worstOverall);
+  printf("\n  lost, moved and bogus must all be 0. gained is the fix doing its job: every one is a\n");
+  printf("  crossing the shipped window discarded and returned as an empty array, and each has been\n");
+  printf("  checked to be equidistant from both pairs and on the live side of both rays.\n");
+  return (totalLost == 0 && totalMoved == 0 && totalBogus == 0) ? 0 : 1;
 }

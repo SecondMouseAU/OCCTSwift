@@ -5,17 +5,21 @@
 //   f1  Coincident bisectors. The two bisectors overlap along their whole length, and
 //       Bisector_Inter reports that as a SEGMENT rather than a point. The bridge reads only
 //       NbPoints(), so the caller gets an empty array for two bisectors that meet everywhere.
-//       That makes the reference doc's "an empty result has two causes" an undercount: there are
-//       three. Tracked separately, this probe only establishes the behaviour.
+//       That makes the reference doc's "an empty result has two causes" an undercount. Part f3
+//       below derives the real number, which is four; a draft of this header said three, having
+//       added this one item to the old list rather than re-deriving the set, which is the same
+//       mistake one layer up. Tracked as #1070, this probe only establishes the behaviour.
 //
 //   f2  Accuracy at large parameter. PART 4 of the main probe is titled "where the kernel itself
 //       stops" but five of its eight rows have the kept ray pointing away, so it never produced a
 //       live crossing past u=300 and could not support the "no kernel accuracy limit" it was cited
-//       for. Here C and D are swapped when the ray points the wrong way, so every row is live, and
-//       the error is real and grows: 1e-13 at u=100, 0.073 at 1e8, 614 at 1e10. The error is taken
-//       against a closed-form solve of the C and D ACTUALLY passed, not against the construction's
-//       intended target, which is the adjacent quantity and differs from it by the fixture's own
-//       representation error.
+//       for. Here C and D are swapped when the ray points the wrong way, so every row is live.
+//       The result is that there is NO meaningful kernel error: against a closed-form solve of the
+//       C and D actually passed, the crossing is right to about 1e-16 relative at every u out to
+//       1e10. A draft of this header reported 0.073 at u=1e8 and 614 at 1e10 as a kernel accuracy
+//       limit; those are the distance from the construction's INTENDED target, which the rounded
+//       C and D do not represent exactly, so they measure the fixture and not the kernel. The
+//       table below prints both columns so the gap is visible rather than asserted.
 //
 //   f3  The complete set of ways an empty result arises. Twice now the reference doc has enumerated
 //       these by hand and undercounted, first at two and then at three. This part derives the set
