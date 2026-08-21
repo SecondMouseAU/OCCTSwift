@@ -2221,10 +2221,34 @@ extension Shape {
         OCCTShapeIsConvex(handle)
     }
 
-    /// Check if the shape is empty (null underlying shape).
-    public var isEmptyShape: Bool {
+    /// Whether the underlying `TopoDS_Shape` is null.
+    ///
+    /// This is `TopoDS_Shape::IsNull()`, nothing more: it answers "is there a shape here at all",
+    /// not "does this shape have any content". The two differ, and the difference is a trap that
+    /// the old name (`isEmptyShape`) invited:
+    ///
+    /// ```swift
+    /// let box = Shape.box(width: 10, height: 10, depth: 10)!
+    /// print(box.emptied!.faces().count)   // 0, no content
+    /// print(box.emptied!.isNull)          // false, it is still a Solid
+    /// print(box.nullified!.isNull)        // true
+    /// ```
+    ///
+    /// `emptied` keeps the type and drops the sub-shapes, so it is empty in the ordinary sense and
+    /// not null. Only a nullified shape is null.
+    public var isNull: Bool {
         OCCTShapeIsEmpty(handle)
     }
+
+    /// Whether the underlying `TopoDS_Shape` is null.
+    @available(
+        *, deprecated, renamed: "isNull",
+        message: """
+            Renamed to isNull. It is TopoDS_Shape::IsNull(), and 'empty' collided with `emptied`, \
+            which produces a shape with no content that this predicate reports as NOT empty. #1034
+            """
+    )
+    public var isEmptyShape: Bool { isNull }
 
     /// Check if two shapes are partners (same TShape).
     public func isPartner(with other: Shape) -> Bool {
@@ -3262,10 +3286,18 @@ extension Shape {
     /// ```swift
     /// let box = Shape.box(width: 10, height: 10, depth: 10)!
     /// let nulled = box.nullified!
-    /// print(nulled.isEmptyShape)  // true
+    /// print(nulled.isNull)  // true
     /// print(nulled.shapeType)     // Unknown, not Solid
     /// print(nulled.typeName)      // nil
     /// ```
+    @available(
+        *, deprecated,
+        message: """
+            Use `emptied` for a copy with its content dropped. `Nullify()` is how OCCT clears a \
+            local variable, not a value to hand around: the result has no topological type, and \
+            until #1026 it crashed nine other public properties. No ecosystem repo calls it. #1034
+            """
+    )
     public var nullified: Shape? {
         guard let h = OCCTShapeNullified(handle) else { return nil }
         return Shape(handle: h)
@@ -3282,7 +3314,11 @@ extension Shape {
         OCCTShapeIsNotEqual(handle, other.handle)
     }
 
-    /// Get an emptied copy of the shape (no sub-shapes).
+    /// A copy of the shape with its sub-shapes dropped, keeping its type.
+    ///
+    /// `TopoDS_Shape::EmptyCopied()`. The result has no content but is **not** null, so `isNull`
+    /// reports `false` for it and `shapeType` still answers the original type. That is the
+    /// distinction `isEmptyShape` used to blur, which is why it was renamed (#1034).
     public var emptied: Shape? {
         guard let h = OCCTShapeEmptied(handle) else { return nil }
         return Shape(handle: h)

@@ -1331,7 +1331,7 @@ public var nullified: Shape?
   ```swift
   let box = Shape.box(width: 10, height: 10, depth: 10)!
   let nulled = box.nullified!
-  print(nulled.isEmptyShape)  // true
+  print(nulled.isNull)  // true
   print(nulled.shapeType)     // Unknown
   print(nulled.typeName as Any)  // nil
   ```

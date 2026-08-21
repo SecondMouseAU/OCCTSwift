@@ -226,12 +226,12 @@ struct Issue1026NullShapeTypeGuard {
     @Test("isEmptyShape separates a nullified shape from a real one and from an emptied one")
     func isEmptyShapeSeparatesANullifiedShapeFromARealOne() throws {
         let box = try makeBox()
-        #expect(box.isEmptyShape == false)
-        #expect(try #require(box.nullified).isEmptyShape == true)
+        #expect(box.isNull == false)
+        #expect(try #require(box.nullified).isNull == true)
         // emptied() is TopoDS_Shape::EmptyCopied(), which keeps the type and drops the
         // sub-shapes, so it is NOT null and the property named for emptiness reads false on it.
         let emptied = try #require(box.emptied)
-        #expect(emptied.isEmptyShape == false)
+        #expect(emptied.isNull == false)
         #expect(emptied.shapeType == .solid)
     }
 

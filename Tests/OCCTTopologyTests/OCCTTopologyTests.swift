@@ -3011,7 +3011,7 @@ struct ShapeTopologyExtensionTests {
             let _ = box.isChecked
             let _ = box.isOrientable
             #expect(!box.isInfinite)
-            #expect(!box.isEmptyShape)
+            #expect(!box.isNull)
         }
     }
 
