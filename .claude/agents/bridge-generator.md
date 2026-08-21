@@ -17,8 +17,8 @@ Read the existing code files to match current patterns exactly:
   nullability annotations. Pick the domain header matching the `.mm` the implementation goes in.
 - `Sources/OCCTBridge/src/OCCTBridge_<Domain>.mm` for implementation patterns, try/catch,
   TopExp_Explorer usage
-- `Sources/OCCTSwift/Shape.swift` (and other Swift files in that directory) — for Swift wrapper patterns
-- `Tests/OCCTSwiftTests/ShapeTests.swift` — for test patterns
+- `Sources/OCCTSwift/Shape.swift` (and other Swift files in that directory), for Swift wrapper patterns
+- `Tests/OCCTSwiftTests/ShapeTests.swift`: for test patterns
 
 Then generate four code blocks, each clearly labeled.
 
@@ -149,7 +149,7 @@ Add to `Tests/OCCTSwiftTests/ShapeTests.swift`.
 - Use safe optional unwrapping: `if let r = result { #expect(r.distance > 0) }`
 - For `#require`, use: `let shape = try #require(Shape.box(width: 10, height: 10, depth: 10))`
 - Test actual values where possible with tolerance: `#expect(abs(r.distance - 5.0) < 1e-6)`
-- Edge indices may vary — iterate when needed
+- Edge indices may vary, iterate when needed
 - Use descriptive test names that explain what's being verified
 
 **Example test:**

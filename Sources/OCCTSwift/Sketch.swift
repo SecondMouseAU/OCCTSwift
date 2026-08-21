@@ -90,7 +90,7 @@ public struct Sketch: Sendable, Hashable {
         elements.append(element)
     }
 
-    /// Number of elements excluding construction geometry — i.e. the profile size.
+    /// Number of elements excluding construction geometry, i.e. the profile size.
     public var profileElementCount: Int {
         elements.lazy.filter { !$0.isConstruction }.count
     }
@@ -100,7 +100,7 @@ extension Sketch {
     /// Build a 3D closed profile wire from the sketch's non-construction elements,
     /// placed on the host construction plane.
     ///
-    /// Construction elements are filtered out at this single site — upstream uses
+    /// Construction elements are filtered out at this single site, upstream uses
     /// of the sketch (solver, constraint editor, agent-facing accessors) see the
     /// full element set including construction.
     ///

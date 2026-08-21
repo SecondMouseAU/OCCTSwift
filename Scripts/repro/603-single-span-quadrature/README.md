@@ -1,4 +1,4 @@
-# #603 — one Gauss quadrature is not enough to measure an arc
+# #603, one Gauss quadrature is not enough to measure an arc
 
 `Curve3D.length` on a full ellipse was up to 1.7% wrong, and a parabola over a wide range 3.1%
 wrong in the other direction. Same mechanism as [#477](https://github.com/SecondMouseAU/OCCTSwift/issues/477),
@@ -16,7 +16,7 @@ clang++ -std=c++17 -ObjC++ -w -O2 \
 ## The mechanism
 
 `CPnts_AbscissaPoint::Length` integrates `|C'(u)|` with **one** fixed-order Gauss rule over the
-whole range it is handed — `CPnts_AbscissaPoint.cxx`'s `order()` picks 10 for a conic, 5 for a
+whole range it is handed, `CPnts_AbscissaPoint.cxx`'s `order()` picks 10 for a conic, 5 for a
 parabola, `2 * Degree` for a Bezier, `2 * NbPoles - 1` for a BSpline. `GCPnts_AbscissaPoint::Length`
 splits at the `GeomAbs_CN` interval boundaries and applies that rule per interval, which is the
 whole of what #477 bought. A conic has exactly **one** interval, so the rule still has to cover the
@@ -24,7 +24,7 @@ entire domain in one go.
 
 It is therefore not a conic defect and not a "single span" defect: the error is set by how much
 `|C'|` varies across one integration interval. The 8 × 3 ellipse is 0.337% out over `[0, 2π]`,
-0.0001% over `[0, π]` and exact over `[0, π/2]` — same curve, same rule, three interval widths. A
+0.0001% over `[0, π]` and exact over `[0, π/2]`, same curve, same rule, three interval widths. A
 5-point interpolated BSpline (four intervals) is 6.0e-5 out; a 200-point one 3.1e-8.
 
 A circle and a line are exempt for a different reason: `computeType` classifies them
@@ -54,7 +54,7 @@ through the adaptor's own `D1`.
 | line, trimmed [0, 25] | 1 | 25.000000000 | 25.000000000 | exact | exact |
 
 The **parabola is the worst case anywhere in the family**, and the only one whose error has the
-opposite sign — it gets an order-5 rule, the lowest `order()` hands out to anything curved. The
+opposite sign, it gets an order-5 rule, the lowest `order()` hands out to anything curved. The
 issue named it as worth measuring and did not measure it.
 
 The 2D spelling, an elliptical edge and a wire containing one all reproduce their 3D curve's number
@@ -62,7 +62,7 @@ exactly, before and after: `GCPnts_AbscissaPoint::length` is one template shared
 `Adaptor3d_Curve` and `Adaptor2d_Curve2d`, and `BRepAdaptor_Curve` / `BRepAdaptor_CompCurve` are
 just more `Adaptor3d_Curve`s.
 
-## Trap 1 — deciding which number is wrong
+## Trap 1, deciding which number is wrong
 
 On the 5-point interpolation, GCPnts and the Gauss-Legendre reference disagreed by 6.0e-5 relative,
 which is far too small to eyeball and far too large to be rounding. A single reference cannot settle
@@ -75,7 +75,7 @@ chord sum, Richardson      110.970568311825   <- agrees with the first to 12 dig
 subdivided (the fix)       110.970568311824
 ```
 
-## Trap 2 — where the subdivision has to happen
+## Trap 2, where the subdivision has to happen
 
 The obvious design is to halve the whole requested range and stop when two levels agree. It does not
 work, and it fails silently. On the same 5-point interpolation:
@@ -88,7 +88,7 @@ whole range in  8: 110.970627372779  rel err 5.322e-07
 whole range in 16: 110.970568370265  rel err 5.267e-10
 ```
 
-The domain midpoint of a uniformly-knotted curve **is** a knot, and GCPnts already splits there — so
+The domain midpoint of a uniformly-knotted curve **is** a knot, and GCPnts already splits there, so
 the level-2 sum repeats the level-1 sum exactly and any "have two levels agreed?" test reports
 convergence on an answer that never moved.
 
@@ -98,7 +98,7 @@ no boundary of GCPnts' own left inside one for the split points to land on. That
 
 ## The inverse had to move with it
 
-OCCT's root finder inverts the very quadrature this replaces — `CPnts_MyRootFunction::Value(X)` is
+OCCT's root finder inverts the very quadrature this replaces, `CPnts_MyRootFunction::Value(X)` is
 one Gauss rule over `[u0, X]` minus the target. So before this fix, the length and its inverse were
 wrong by the *same* amount and `parameterAtLength(length)` still landed on the curve's last
 parameter. Fixing only the length breaks that:
@@ -122,11 +122,11 @@ rather than turning a reported answer into a failure.
 
 The issue lists three things as inheriting the defect. Measured:
 
-* **`parameterAtLength` / `edgeParameterAtFraction` — yes**, and both are fixed here.
-* **`GCPnts_UniformAbscissa` (uniform sampling by arc length) — no.** On the worst ellipse
+* **`parameterAtLength` / `edgeParameterAtFraction`, yes**, and both are fixed here.
+* **`GCPnts_UniformAbscissa` (uniform sampling by arc length), no.** On the worst ellipse
   (1 × 0.05), at 7 and at 9 points, the *true* arc between consecutive samples is uniform to
   1.6e-10 and 1.9e-10. The sampler was already accurate and is untouched.
-* **`BRepGProp::LinearProperties` — yes, and it is NOT fixed here.** It runs its own integrator
+* **`BRepGProp::LinearProperties`, yes, and it is NOT fixed here.** It runs its own integrator
   and returns 41.243157870 for the 10 × 1 elliptical edge against a truth of 40.639741801
   (+1.485%, the identical figure). It is reached from `Shape.linearProperties()`, whose `length`
   therefore now **disagrees** with `Shape.edgeArcLength` on the same edge, where before both were
@@ -152,14 +152,14 @@ as [OCCT#1420](https://github.com/Open-Cascade-SAS/OCCT/pull/1420). A new header
 `CPnts_AdaptiveIntegration.hxx` does the same doubling, used by all four
 `CPnts_AbscissaPoint::Length` overloads and by `CPnts_MyRootFunction::Value`/`Values`.
 
-**Both, or neither.** `CPnts_MyRootFunction::Value(X)` is the same integral — one Gauss rule over
-`[myX0, X]` minus the target — so it currently inverts exactly the bias `Length` has. That is why
+**Both, or neither.** `CPnts_MyRootFunction::Value(X)` is the same integral, one Gauss rule over
+`[myX0, X]` minus the target, so it currently inverts exactly the bias `Length` has. That is why
 `GCPnts_UniformAbscissa` spaces its points uniformly in *true* arc (2.90e-14 on an 8 × 3 ellipse)
 while computing a total that is 0.337% wrong. Fixing `Length` alone would have broken the sampler.
 Measured both ways: changed together, the sampler's spacing is unchanged to the digit
 (2.90e-14 → 2.90e-14, 1.59e-10 → 1.59e-10 on a 1 × 0.05 ellipse at 7 and 9 points).
 
-Called directly, `CPnts_AbscissaPoint::Length` is far worse than through `GCPnts` — nothing splits
+Called directly, `CPnts_AbscissaPoint::Length` is far worse than through `GCPnts`, nothing splits
 at all, and the `min(24, 2 × NbPoles − 1)` cap puts one order-24 rule across the whole domain:
 
 | curve | `CPnts::Length` | error, before → after |
@@ -175,13 +175,13 @@ never reaches the integrator.
 **The bridge subdivision above is now redundant, and is deliberately still there.** `ci.yml`
 resolves the pinned *released* kernel, which does not carry patch `0021` until a release ships the
 rebuilt binary, so removing it would fail this issue's own regression tests there. Layered on the
-fixed kernel it costs almost exactly 2× (8 × 3 ellipse 3.3 µs → 6.6 µs) and changes no answer —
+fixed kernel it costs almost exactly 2× (8 × 3 ellipse 3.3 µs → 6.6 µs) and changes no answer,
 retire it in the release commit that bumps `Package.swift`'s `url:`/`checksum:`.
 
 ## Re-running this probe
 
 The `today` column is the **pre-patch** kernel. Once `Libraries/OCCT.xcframework` has been rebuilt
 with patch `0021`, `today` and `fixed` both report the accurate number and the probe stops
-demonstrating anything — build it against a kernel without the patch (`OCCTSWIFT_REMOTE=1`'s
+demonstrating anything, build it against a kernel without the patch (`OCCTSWIFT_REMOTE=1`'s
 released binary, or `git -C Libraries/occt-src apply --reverse` the patch and rebuild) to reproduce
 the tables above.

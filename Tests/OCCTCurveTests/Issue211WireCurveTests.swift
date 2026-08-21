@@ -3,8 +3,8 @@ import Foundation
 import simd
 @testable import OCCTSwift
 
-// #211: WireCurve — treat a multi-edge wire as one arc-length-parameterized curve.
-@Suite("Issue #211 — WireCurve arc-length adaptor")
+// #211: WireCurve, treat a multi-edge wire as one arc-length-parameterized curve.
+@Suite("Issue #211, WireCurve arc-length adaptor")
 struct Issue211WireCurve {
 
     // An L-shaped open wire: (0,0,0)→(10,0,0)→(10,10,0). Two edges, total length 20.
@@ -95,8 +95,8 @@ struct Issue211WireCurve {
     }
 }
 
-// #211/#212: EdgeCurve — single-edge arc-length adaptor.
-@Suite("Issue #211/#212 — EdgeCurve arc-length adaptor")
+// #211/#212: EdgeCurve, single-edge arc-length adaptor.
+@Suite("Issue #211/#212, EdgeCurve arc-length adaptor")
 struct Issue211EdgeCurve {
     private func anEdge() -> Edge? {
         Shape.box(width: 10, height: 10, depth: 10)?.edges(where: { _ in true }).first

@@ -5,9 +5,9 @@ parent: API Reference
 
 # Document
 
-`Document` is OCCTSwift's XCAF/OCAF document type, wrapping OCCT's `TDocStd_Document` and the XDE layer (`XCAFDoc_DocumentTool`, `STEPCAFControl_Reader/Writer`). It preserves the full assembly hierarchy, names, colors, PBR materials, GD&T annotations, layer assignments, and OCAF attribute trees from STEP files — and lets you build or edit those structures programmatically. Obtain one via `Document.load(from:)` (STEP import), `Document.create()` (blank), or `Document.loadOCAF(from:)` (native OCAF/binary format).
+`Document` is OCCTSwift's XCAF/OCAF document type, wrapping OCCT's `TDocStd_Document` and the XDE layer (`XCAFDoc_DocumentTool`, `STEPCAFControl_Reader/Writer`). It preserves the full assembly hierarchy, names, colors, PBR materials, GD&T annotations, layer assignments, and OCAF attribute trees from STEP files, and lets you build or edit those structures programmatically. Obtain one via `Document.load(from:)` (STEP import), `Document.create()` (blank), or `Document.loadOCAF(from:)` (native OCAF/binary format).
 
-> **Document is very large — documented across many pages.** This is the core (load/save, assembly structure, AssemblyNode, colors/materials, GD&T, core OCAF attributes); see the other **Document — …** pages for persistence/IO, XCAF tools, the OCAF attribute zoo, and the many low-level OCCT geometry/math wrappers exposed here.
+> **Document is very large, documented across many pages.** This is the core (load/save, assembly structure, AssemblyNode, colors/materials, GD&T, core OCAF attributes); see the other **Document, …** pages for persistence/IO, XCAF tools, the OCAF attribute zoo, and the many low-level OCCT geometry/math wrappers exposed here.
 
 ## Topics
 
@@ -25,7 +25,7 @@ Load a STEP file with full XDE support (assembly structure, names, colors, mater
 public static func load(from url: URL, progress: ImportProgress? = nil) throws -> Document
 ```
 
-- **Parameters:** `url` — URL to the STEP file; `progress` — optional progress/cancellation channel.
+- **Parameters:** `url`, URL to the STEP file; `progress`, optional progress/cancellation channel.
 - **Returns:** `Document` containing the assembly structure.
 - **Throws:** `DocumentError.loadFailed` if loading fails; `ImportError.cancelled` if cancelled cooperatively.
 - **OCCT:** `STEPCAFControl_Reader` with color, name, layer, props, and material modes enabled; `XCAFDoc_DocumentTool::ShapeTool/ColorTool/VisMaterialTool`.
@@ -103,7 +103,7 @@ public func node(at labelId: Int64) -> AssemblyNode?
 
 `labelId` values are stable within a single `Document` instance; round-trip via `AssemblyNode.labelId`.
 
-- **Parameters:** `labelId` — the identifier previously obtained from `rootNodes` traversal or a `shapeLabelId(at:)` call.
+- **Parameters:** `labelId`, the identifier previously obtained from `rootNodes` traversal or a `shapeLabelId(at:)` call.
 - **Returns:** The matching node, or `nil` if the `labelId` does not refer to a label in this document.
 - **OCCT:** `TDF_Label` look-up in the document's label registry (`OCCTDocumentLabelIsNull`).
 - **Example:**
@@ -175,7 +175,7 @@ Write the document to a STEP file, preserving assembly structure, colors, and ma
 public func write(to url: URL) throws
 ```
 
-- **Parameters:** `url` — output file URL.
+- **Parameters:** `url`, output file URL.
 - **Throws:** `DocumentError.writeFailed` if writing fails.
 - **OCCT:** `STEPCAFControl_Writer` with color, name, layer, props, and material modes.
 - **Example:**
@@ -194,7 +194,7 @@ Write the document to a STEP file with optional progress and cancellation.
 public func writeSTEP(to url: URL, progress: ImportProgress?) throws
 ```
 
-- **Parameters:** `url` — output URL; `progress` — optional progress/cancellation channel.
+- **Parameters:** `url`, output URL; `progress`, optional progress/cancellation channel.
 - **Throws:** `ImportError.cancelled` if cancelled; `ImportError.importFailed` on other failure.
 - **OCCT:** `STEPCAFControl_Writer` (via `OCCTDocumentWriteSTEPProgress`).
 
@@ -202,7 +202,7 @@ public func writeSTEP(to url: URL, progress: ImportProgress?) throws
 
 ## AssemblyNode
 
-`AssemblyNode` represents a node in an XDE assembly tree — a part or sub-assembly in a STEP file with name, transform, color, PBR material, child nodes, and shape geometry.
+`AssemblyNode` represents a node in an XDE assembly tree, a part or sub-assembly in a STEP file with name, transform, color, PBR material, child nodes, and shape geometry.
 
 ```swift
 public final class AssemblyNode: @unchecked Sendable
@@ -295,7 +295,7 @@ Set the surface color on this node.
 public func setColor(_ color: Color)
 ```
 
-- **Parameters:** `color` — the color to assign.
+- **Parameters:** `color`, the color to assign.
 - **OCCT:** `XCAFDoc_ColorTool::SetColor` with `XCAFDoc_ColorSurf` (via `OCCTDocumentSetLabelColor`).
 - **Example:**
   ```swift
@@ -312,7 +312,7 @@ Set the color on this node with a specific color type.
 public func setColor(_ color: Color, type: OCCTColorType)
 ```
 
-- **Parameters:** `color` — the color to assign; `type` — `OCCTColorTypeGeneric` (0), `OCCTColorTypeSurface` (1), or `OCCTColorTypeCurve` (2).
+- **Parameters:** `color`, the color to assign; `type`, `OCCTColorTypeGeneric` (0), `OCCTColorTypeSurface` (1), or `OCCTColorTypeCurve` (2).
 - **OCCT:** `XCAFDoc_ColorTool::SetColor` (via `OCCTDocumentSetLabelColor`).
 
 ---
@@ -325,7 +325,7 @@ Set the PBR material on this node.
 public func setMaterial(_ material: Material)
 ```
 
-- **Parameters:** `material` — `Material` struct with base color, metallic, roughness, emissive, and transparency.
+- **Parameters:** `material`, `Material` struct with base color, metallic, roughness, emissive, and transparency.
 - **OCCT:** `XCAFDoc_VisMaterialTool::SetShapeMaterial` (via `OCCTDocumentSetLabelMaterial`).
 
 ---
@@ -481,7 +481,7 @@ Create a new TDF label for naming history tracking.
 public func createLabel(parent: AssemblyNode? = nil) -> AssemblyNode?
 ```
 
-- **Parameters:** `parent` — parent node; pass `nil` to create under the document main label.
+- **Parameters:** `parent`, parent node; pass `nil` to create under the document main label.
 - **Returns:** `AssemblyNode` representing the new label, or `nil` on failure.
 - **OCCT:** `TDF_Label::NewChild` (via `OCCTDocumentCreateLabel`).
 
@@ -498,10 +498,10 @@ public func recordNaming(on node: AssemblyNode, evolution: NamingEvolution,
 ```
 
 - **Parameters:**
-  - `node` — the label to record on.
-  - `evolution` — type of topological evolution.
-  - `oldShape` — predecessor shape (`nil` for `.primitive`).
-  - `newShape` — result shape (`nil` for `.delete`).
+  - `node`: the label to record on.
+  - `evolution`: type of topological evolution.
+  - `oldShape`: predecessor shape (`nil` for `.primitive`).
+  - `newShape`: result shape (`nil` for `.delete`).
 - **Returns:** `true` if recording succeeded.
 - **OCCT:** `TNaming_Builder::Generated/Modify/Delete/Select` (via `OCCTDocumentNamingRecord`).
 
@@ -565,7 +565,7 @@ Get the old (input) shape from a history entry.
 public func oldShape(on node: AssemblyNode, at index: Int) -> Shape?
 ```
 
-- **Parameters:** `index` — zero-based history index.
+- **Parameters:** `index`, zero-based history index.
 - **OCCT:** `TNaming_Iterator` (via `OCCTDocumentNamingGetOldShape`).
 
 ---
@@ -590,7 +590,7 @@ Trace forward: find shapes generated/modified from the given shape.
 public func tracedForward(from shape: Shape, scope: AssemblyNode) -> [Shape]
 ```
 
-- **Parameters:** `shape` — the source shape; `scope` — label providing document scope.
+- **Parameters:** `shape`, the source shape; `scope`, label providing document scope.
 - **Returns:** Shapes that were generated or modified from `shape` (up to 64).
 - **OCCT:** `TNaming_NewShapeIterator` (via `OCCTDocumentNamingTraceForward`).
   `TNaming_Tool::GeneratedShape` exists but is not what runs.
@@ -605,7 +605,7 @@ Trace backward: find shapes that generated/preceded the given shape.
 public func tracedBackward(from shape: Shape, scope: AssemblyNode) -> [Shape]
 ```
 
-- **Parameters:** `shape` — the shape to trace back from; `scope` — label scope.
+- **Parameters:** `shape`, the shape to trace back from; `scope`, label scope.
 - **Returns:** Predecessor shapes (up to 64).
 - **OCCT:** `TNaming_OldShapeIterator` (via `OCCTDocumentNamingTraceBackward`).
   No `TNaming_Tool` static is called.
@@ -621,7 +621,7 @@ Create a persistent named selection.
 public func selectShape(_ selection: Shape, context: Shape, on node: AssemblyNode) -> Bool
 ```
 
-- **Parameters:** `selection` — sub-shape to select; `context` — containing shape; `node` — label to store on.
+- **Parameters:** `selection`, sub-shape to select; `context`, containing shape; `node`, label to store on.
 - **OCCT:** `TNaming_Selector::Select` (via `OCCTDocumentNamingSelect`).
   `TNaming_Builder::Select` exists and is a different operation: it records a raw
   select-evolution pair, where `TNaming_Selector` computes a name that survives later
@@ -728,7 +728,7 @@ Get the name of a layer by index.
 public func layerName(at index: Int) -> String?
 ```
 
-- **Parameters:** `index` — zero-based layer index.
+- **Parameters:** `index`, zero-based layer index.
 - **Returns:** Layer name, or `nil` if out of range.
 - **OCCT:** `XCAFDoc_LayerTool` (via `OCCTDocumentGetLayerName`).
 
@@ -795,7 +795,7 @@ Get material info by index.
 public func materialInfo(at index: Int) -> MaterialInfo?
 ```
 
-- **Parameters:** `index` — zero-based material index.
+- **Parameters:** `index`, zero-based material index.
 - **Returns:** `MaterialInfo`, or `nil` if out of range.
 - **OCCT:** `XCAFDoc_MaterialTool::GetMaterial` (via `OCCTDocumentGetMaterialInfo`).
 
@@ -951,7 +951,7 @@ Find or create a child label by tag.
 public func findChild(tag: Int32, create: Bool = false) -> AssemblyNode?
 ```
 
-- **Parameters:** `tag` — tag to search for; `create` — if `true`, create the child if it doesn't exist.
+- **Parameters:** `tag`, tag to search for; `create`, if `true`, create the child if it doesn't exist.
 - **Returns:** The child node, or `nil` if not found and `create` is `false`.
 - **OCCT:** `TDF_Label::FindChild`.
 
@@ -965,7 +965,7 @@ Remove all attributes from this label.
 public func forgetAllAttributes(clearChildren: Bool = true)
 ```
 
-- **Parameters:** `clearChildren` — if `true`, also clears attributes on child labels.
+- **Parameters:** `clearChildren`, if `true`, also clears attributes on child labels.
 - **OCCT:** `TDF_Label::ForgetAllAttributes`.
 
 ---
@@ -978,7 +978,7 @@ Get all descendant labels.
 public func descendants(allLevels: Bool = false) -> [AssemblyNode]
 ```
 
-- **Parameters:** `allLevels` — if `true`, recurse all descendants; if `false`, direct children only.
+- **Parameters:** `allLevels`, if `true`, recurse all descendants; if `false`, direct children only.
 - **Returns:** Array of descendant nodes (up to 1,024).
 - **OCCT:** `TDF_ChildIterator(label, allLevels)` (via `OCCTDocumentGetDescendantLabels`).
   No `TDF_LabelSequence` is built.
@@ -1038,7 +1038,7 @@ Copy a label and all its attributes to a destination label.
 public func copyLabel(from source: AssemblyNode, to destination: AssemblyNode) -> Bool
 ```
 
-- **Parameters:** `source` — label to copy from; `destination` — label to copy to.
+- **Parameters:** `source`, label to copy from; `destination`, label to copy to.
 - **Returns:** `true` if the copy succeeded.
 - **OCCT:** `TDF_CopyLabel` (via `OCCTDocumentCopyLabel`).
 
@@ -1048,7 +1048,7 @@ public func copyLabel(from source: AssemblyNode, to destination: AssemblyNode) -
 
 ### `mainLabel`
 
-The main label (`0:1`) of the document — the root of the user data tree.
+The main label (`0:1`) of the document, the root of the user data tree.
 
 ```swift
 public var mainLabel: AssemblyNode? { get }
@@ -1374,7 +1374,7 @@ Initialize an integer array attribute on this label.
 public func initIntegerArray(lower: Int32, upper: Int32) -> Bool
 ```
 
-- **Parameters:** `lower`, `upper` — inclusive bounds of the array.
+- **Parameters:** `lower`, `upper`, inclusive bounds of the array.
 - **OCCT:** `TDataStd_IntegerArray::Init` (via `OCCTDocumentInitIntegerArray`).
 
 ---

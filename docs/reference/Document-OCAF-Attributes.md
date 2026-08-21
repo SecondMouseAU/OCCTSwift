@@ -1,9 +1,9 @@
 ---
-title: Document — OCAF Attributes, Naming & Elementary Geometry
+title: Document. OCAF Attributes, Naming & Elementary Geometry
 parent: API Reference
 ---
 
-# Document — OCAF Attributes, Naming & Elementary Geometry
+# Document. OCAF Attributes, Naming & Elementary Geometry
 
 This page covers the OCAF attribute types, shape-naming extensions, geometry helpers, and elementary curve/surface utilities declared in `Document.swift`. See the main `Document` page for lifecycle, I/O, label management, and the core XCAF operations.
 
@@ -72,7 +72,7 @@ Remove alerts of a specific gravity.
 public func clear(gravity: Messenger.Gravity)
 ```
 
-- **Parameters:** `gravity` — the severity level whose alerts should be removed.
+- **Parameters:** `gravity`, the severity level whose alerts should be removed.
 - **OCCT:** `Message_Report::Clear(Message_Gravity)`.
 
 ---
@@ -104,7 +104,7 @@ Serialise only alerts at the given gravity level.
 public func dump(gravity: Messenger.Gravity) -> String
 ```
 
-- **Parameters:** `gravity` — the severity level to include.
+- **Parameters:** `gravity`, the severity level to include.
 - **Returns:** Filtered dump string; empty if no matching alerts.
 - **OCCT:** `Message_Report::Dump(Message_Gravity, …)`.
 
@@ -149,11 +149,11 @@ public func convertCoordinateSystem(
 ```
 
 - **Parameters:**
-  - `x`, `y`, `z` — point in the input system.
-  - `inputSystem` — `.zUp` or `.yUp`.
-  - `inputUnit` — scale factor of the input unit (e.g. `0.001` for mm→m).
-  - `outputSystem` — target coordinate system.
-  - `outputUnit` — scale factor of the output unit.
+  - `x`, `y`, `z`, point in the input system.
+  - `inputSystem`: `.zUp` or `.yUp`.
+  - `inputUnit`: scale factor of the input unit (e.g. `0.001` for mm→m).
+  - `outputSystem`: target coordinate system.
+  - `outputUnit`: scale factor of the output unit.
 - **Returns:** Point expressed in the output system.
 - **OCCT:** `RWMesh_CoordinateSystemConverter::TransformPoint`.
 - **Example:**
@@ -174,7 +174,7 @@ Return the up-axis direction vector for a coordinate system.
 public func coordinateSystemUpDirection(_ system: CoordinateSystem) -> SIMD3<Double>
 ```
 
-- **Parameters:** `system` — `.zUp` or `.yUp`.
+- **Parameters:** `system`, `.zUp` or `.yUp`.
 - **Returns:** Unit vector for the up axis (`(0,0,1)` for `.zUp`, `(0,1,0)` for `.yUp`).
 - **OCCT:** `RWMesh_CoordinateSystemConverter` axis query.
 
@@ -190,7 +190,7 @@ Create an attribute-ID filter governing which GUID-keyed attributes are included
 public init?(ignoreAll: Bool = true)
 ```
 
-- **Parameters:** `ignoreAll` — when `true` the filter starts in deny-all mode and only GUIDs explicitly `keep`-ed pass through; when `false` it starts in allow-all mode and only `ignore`-ed GUIDs are excluded.
+- **Parameters:** `ignoreAll`, when `true` the filter starts in deny-all mode and only GUIDs explicitly `keep`-ed pass through; when `false` it starts in allow-all mode and only `ignore`-ed GUIDs are excluded.
 - **Returns:** A configured filter, or `nil` on allocation failure.
 - **OCCT:** `TDF_IDFilter` constructor.
 - **Example:**
@@ -222,7 +222,7 @@ Mark a GUID as kept (active in ignore-all mode).
 public func keep(_ guidString: String)
 ```
 
-- **Parameters:** `guidString` — GUID in standard hyphenated form.
+- **Parameters:** `guidString`, GUID in standard hyphenated form.
 - **OCCT:** `TDF_IDFilter::Keep`.
 
 ---
@@ -235,7 +235,7 @@ Mark a GUID as ignored (active in keep-all mode).
 public func ignore(_ guidString: String)
 ```
 
-- **Parameters:** `guidString` — GUID in standard hyphenated form.
+- **Parameters:** `guidString`, GUID in standard hyphenated form.
 - **OCCT:** `TDF_IDFilter::Ignore`.
 
 ---
@@ -276,7 +276,7 @@ Store a `Bool` array on a label.
 func setBooleanArray(tag: Int, values: [Bool]) -> Bool
 ```
 
-- **Parameters:** `tag` — label tag; `values` — array to store.
+- **Parameters:** `tag`, label tag; `values`, array to store.
 - **Returns:** `true` on success.
 - **OCCT:** `TDataStd_BooleanArray::Set`.
 - **Example:**
@@ -563,7 +563,7 @@ Retrieve one element from the string array by 1-based index.
 func extStringArrayValue(tag: Int, index: Int) -> String?
 ```
 
-- **Parameters:** `index` — 1-based position.
+- **Parameters:** `index`, 1-based position.
 - **Returns:** The string at that position, or `nil` if out of range or attribute missing.
 - **OCCT:** `TDataStd_ExtStringArray::Value`.
 
@@ -629,7 +629,7 @@ Retrieve one element from the string list by 0-based index.
 func extStringListValue(tag: Int, index: Int) -> String?
 ```
 
-- **Parameters:** `index` — 0-based position.
+- **Parameters:** `index`, 0-based position.
 - **Returns:** The string, or `nil` if out of range or attribute missing.
 - **OCCT:** `TDataStd_ExtStringList` iteration.
 
@@ -826,7 +826,7 @@ public func fixSolid() -> Shape?
 
 **Every** solid in the receiver is healed, not just the first (#442): a single-body input comes back
 as a solid, a multi-body one as a compound of one result per input body, in exploration order. A
-compound result is not new to this call — `ShapeFix_Solid` already returns one when a single solid's
+compound result is not new to this call, `ShapeFix_Solid` already returns one when a single solid's
 shells resolve into several bodies.
 
 Only the receiver's **solids** are visited. Loose shells, faces or wires sitting alongside them in a
@@ -834,14 +834,14 @@ compound are not carried over, and an input holding no solid at all returns `nil
 shape of mixed content instead, use [`fixed(tolerance:fixSolid:fixShell:fixFace:fixWire:)`](Shape-Features.md#fixedtolerancefixsolidfixshellfixfacefixwire),
 which wraps `ShapeFix_Shape` and preserves everything it is given.
 
-> **A result body is usually a healed solid, but not always** — and no body is ever dropped to make
+> **A result body is usually a healed solid, but not always**: and no body is ever dropped to make
 > that true. `ShapeFix_Solid` hands back a **shell** when it cannot close one into a solid, and a
 > solid it fails to heal outright is returned **unhealed** rather than discarded. So
 > `result.solids.count` can be lower than the number of input bodies even though nothing was lost.
 
 To spot an unclosed body, walk the result's **direct children**. Do not use
 `subShapes(ofType: .shell)`: it maps at every depth, so it reports one shell for every *healthy*
-solid too — a compound of two healed solids has two shells, and a single healed solid has one.
+solid too, a compound of two healed solids has two shells, and a single healed solid has one.
 
 ```swift
 let healed = part.fixSolid()!
@@ -850,7 +850,7 @@ let unclosed = bodies.filter { $0.shapeType == .shell }
 ```
 
 When a single body came back, the result is that body rather than a compound, so
-`healed.shapeType == .shell` answers it directly. A body that came back *unhealed* is still a solid —
+`healed.shapeType == .shell` answers it directly. A body that came back *unhealed* is still a solid,
 use `isValid` for that.
 
 - **Returns:** The repaired body, a compound of one result per input body for multi-body input, or
@@ -903,7 +903,7 @@ with the outer shell first.
 - **OCCT:** `ShapeFix_Solid::SolidFromShell`.
 - **Example:**
   ```swift
-  // Two sewn bodies in one compound — one solid per shell.
+  // Two sewn bodies in one compound, one solid per shell.
   let quilt = Shape.compound([shellA, shellB])!
   let solids = quilt.solidFromShellFixed()!
   print(solids.solids.count)   // 2
@@ -958,7 +958,7 @@ Find contiguous (sewable) edge pairs in a shape within the given tolerance.
 public func findContigousEdges(tolerance: Double = 1.0e-6) -> ContigousEdgeResult
 ```
 
-- **Parameters:** `tolerance` — maximum gap between edge endpoints to be considered contiguous.
+- **Parameters:** `tolerance`, maximum gap between edge endpoints to be considered contiguous.
 - **Returns:** A `ContigousEdgeResult` with counts; always succeeds (returns zero counts if none found).
 - **OCCT:** `BRepOffsetAPI_FindContigousEdges::Perform`.
 - **Example:**
@@ -971,7 +971,7 @@ public func findContigousEdges(tolerance: Double = 1.0e-6) -> ContigousEdgeResul
 
 ## TDataStd_Tick
 
-A presence-only boolean flag attribute (no value — its existence on a label is the signal).
+A presence-only boolean flag attribute (no value, its existence on a label is the signal).
 
 ### `setTick(tag:)`
 
@@ -1012,7 +1012,7 @@ func removeTick(tag: Int) -> Bool
 
 ## TDataStd_Current
 
-Marks one label in the document as the "current" label — a document-wide cursor concept used by some interactive tools.
+Marks one label in the document as the "current" label, a document-wide cursor concept used by some interactive tools.
 
 ### `setCurrentLabel(tag:)`
 
@@ -1096,7 +1096,7 @@ public func analyzeShell() -> ShellAnalysisResult
   ```swift
   let info = shell.analyzeShell()
   if info.hasFreeEdges {
-      print("open shell — \(info.freeEdgeCount) free edges")
+      print("open shell, \(info.freeEdgeCount) free edges")
   }
   ```
 
@@ -1155,9 +1155,9 @@ public struct CanonicalRecognitionResult: Sendable {
 }
 ```
 
-- `gap` — deviation from the ideal canonical shape.
-- `origin` / `direction` — position and axis of the canonical geometry.
-- `param1` / `param2` — primary and secondary size parameters (e.g. radius, semi-angle).
+- `gap`: deviation from the ideal canonical shape.
+- `origin` / `direction`, position and axis of the canonical geometry.
+- `param1` / `param2`, primary and secondary size parameters (e.g. radius, semi-angle).
 
 ---
 
@@ -1175,7 +1175,7 @@ Attempt to recognise the underlying surface geometry of a face as a canonical ty
 public func recognizeCanonicalSurface(tolerance: Double = 0.01) -> CanonicalRecognitionResult
 ```
 
-- **Parameters:** `tolerance` — maximum allowed deviation for a positive recognition.
+- **Parameters:** `tolerance`, maximum allowed deviation for a positive recognition.
 - **Returns:** Result with `.type == .none` if no match within tolerance.
 - **OCCT:** `ShapeAnalysis_CanonicalRecognition::IsCanonicalSurface`.
 - **Example:**
@@ -1196,7 +1196,7 @@ Attempt to recognise the underlying curve of an edge as a canonical type.
 public func recognizeCanonicalCurve(tolerance: Double = 0.01) -> CanonicalRecognitionResult
 ```
 
-- **Parameters:** `tolerance` — maximum allowed deviation.
+- **Parameters:** `tolerance`, maximum allowed deviation.
 - **Returns:** Result with `.type == .none` if no match.
 - **OCCT:** `ShapeAnalysis_CanonicalRecognition::IsCanonicalCurve`.
 
@@ -1243,7 +1243,7 @@ public func setRotation(
 )
 ```
 
-- **Parameters:** `originX/Y/Z` — axis origin; `dirX/Y/Z` — axis direction (need not be normalised); `angle` — rotation angle in radians.
+- **Parameters:** `originX/Y/Z`, axis origin; `dirX/Y/Z`, axis direction (need not be normalised); `angle`, rotation angle in radians.
 - **OCCT:** `Geom_Transformation::SetRotation`.
 - **Example:**
   ```swift
@@ -1346,7 +1346,7 @@ Read one element of the 3×4 transformation matrix.
 public func value(row: Int, col: Int) -> Double
 ```
 
-- **Parameters:** `row` — 1 to 3; `col` — 1 to 4.
+- **Parameters:** `row`, 1 to 3; `col`, 1 to 4.
 - **OCCT:** `Geom_Transformation::Value`.
 
 ---
@@ -1393,7 +1393,7 @@ public static func offset(
 ) -> Curve3D?
 ```
 
-- **Parameters:** `basis` — the underlying curve; `offset` — lateral distance; `dirX/Y/Z` — the offset direction (perpendicular to the curve tangent).
+- **Parameters:** `basis`, the underlying curve; `offset`, lateral distance; `dirX/Y/Z`, the offset direction (perpendicular to the curve tangent).
 - **Returns:** The offset curve, or `nil` on failure.
 - **OCCT:** `Geom_OffsetCurve` constructor.
 - **Example:**
@@ -1448,10 +1448,10 @@ public static func rectangularTrimmed(
 ) -> Surface?
 ```
 
-- **Parameters:** `basis` — the underlying (possibly infinite) surface; `u1`/`u2` — parameter bounds in U; `v1`/`v2` — bounds in V.
+- **Parameters:** `basis`, the underlying (possibly infinite) surface; `u1`/`u2`, parameter bounds in U; `v1`/`v2`, bounds in V.
 - **Returns:** The trimmed surface, or `nil` on failure.
 - **OCCT:** `Geom_RectangularTrimmedSurface` constructor.
-- **Note:** Infinite OCCT surfaces (planes, cylinders, cones) must be trimmed before converting to BSpline — this is the standard approach.
+- **Note:** Infinite OCCT surfaces (planes, cylinders, cones) must be trimmed before converting to BSpline, this is the standard approach.
 - **Example:**
   ```swift
   if let plane = Surface.plane(originX: 0, originY: 0, originZ: 0,
@@ -1622,7 +1622,7 @@ Create (or reset) an `IntPackedMap` attribute on a label.
 public func setIntPackedMap(tag: Int, isDelta: Bool = false) -> Bool
 ```
 
-- **Parameters:** `isDelta` — when `true` the map records incremental changes for undo/redo; `false` stores the absolute set.
+- **Parameters:** `isDelta`, when `true` the map records incremental changes for undo/redo; `false` stores the absolute set.
 - **OCCT:** `TDataStd_IntPackedMap::Set`.
 
 ---
@@ -1835,7 +1835,7 @@ Count the tree-node children on a label.
 public func childNodeCount(tag: Int, allLevels: Bool = false) -> Int
 ```
 
-- **Parameters:** `allLevels` — when `true`, count descendants at all depths; `false` counts direct children only.
+- **Parameters:** `allLevels`, when `true`, count descendants at all depths; `false` counts direct children only.
 - **OCCT:** `TDataStd_ChildNodeIterator`.
 
 ---
@@ -2013,7 +2013,7 @@ Check that all references from a label's sub-tree stay within that sub-tree (no 
 public func isSelfContained(labelId: Int64) -> Bool
 ```
 
-- **Parameters:** `labelId` — root label to inspect.
+- **Parameters:** `labelId`, root label to inspect.
 - **Returns:** `true` if no reference leaves the sub-tree.
 - **OCCT:** `TDF_ComparisonTool::IsSelfContained`.
 
@@ -2095,7 +2095,7 @@ Attach a function definition to a label. Creates a `TFunction_Scope` at the docu
 public func newFunction(labelId: Int64, guid: String) -> Bool
 ```
 
-- **Parameters:** `labelId` — label to attach to; `guid` — identifies the driver.
+- **Parameters:** `labelId`, label to attach to; `guid`, identifies the driver.
 - **Returns:** `true` on success.
 - **OCCT:** `TFunction_IFunction::NewFunction`.
 
@@ -2242,7 +2242,7 @@ Count the attributes on a label.
 public func attributeCount(labelId: Int64, withoutForgotten: Bool = true) -> Int
 ```
 
-- **Parameters:** `withoutForgotten` — when `true` (default) skips attributes that have been "forgotten" (logically deleted in the current transaction).
+- **Parameters:** `withoutForgotten`, when `true` (default) skips attributes that have been "forgotten" (logically deleted in the current transaction).
 - **OCCT:** `TDF_AttributeIterator`.
 
 ---
@@ -2270,7 +2270,7 @@ Count child labels that carry an attribute with the given GUID.
 public func childIDCount(labelId: Int64, guid: String, allLevels: Bool = false) -> Int
 ```
 
-- **Parameters:** `labelId` — parent label; `guid` — attribute type GUID; `allLevels` — if `true`, recurse into all descendants.
+- **Parameters:** `labelId`, parent label; `guid`, attribute type GUID; `allLevels`, if `true`, recurse into all descendants.
 - **OCCT:** `TDF_ChildIDIterator`.
 
 ---
@@ -2347,7 +2347,7 @@ Mark a label and its descendants as valid.
 public func namingScopeValidChildren(labelId: Int64, withRoot: Bool = true) -> Bool
 ```
 
-- **Parameters:** `withRoot` — include the label itself when `true`.
+- **Parameters:** `withRoot`, include the label itself when `true`.
 - **OCCT:** `TNaming_Scope::ValidChildren`.
 
 ---
@@ -2647,7 +2647,7 @@ Count the total number of assembly items (component instances) in the document.
 public func assemblyItemCount(maxDepth: Int = 0) -> Int?
 ```
 
-- **Parameters:** `maxDepth` — maximum traversal depth; `0` means unlimited.
+- **Parameters:** `maxDepth`, maximum traversal depth; `0` means unlimited.
 - **Returns:** the item count, or `nil` when the walk reached its 100,000-item bound and the number
   would be a floor rather than a count (#964).
 - **OCCT:** `XCAFDoc_AssemblyIterator`.
@@ -2681,7 +2681,7 @@ public func setDimTol(
 ) -> Bool
 ```
 
-- **Parameters:** `kind` — tolerance type code (see XDE docs); `values` — numeric parameters; `name`, `description` — textual annotation strings.
+- **Parameters:** `kind`, tolerance type code (see XDE docs); `values`, numeric parameters; `name`, `description`, textual annotation strings.
 - **OCCT:** `XCAFDoc_DimTol::Set`.
 
 ---
@@ -3076,7 +3076,7 @@ public static func d1OnSphere(
 ) -> (point: SIMD3<Double>, dU: SIMD3<Double>, dV: SIMD3<Double>)
 ```
 
-- **Returns:** `point` — position; `dU` — partial derivative with respect to U; `dV` — partial with respect to V.
+- **Returns:** `point`, position; `dU`, partial derivative with respect to U; `dV`, partial with respect to V.
 - **OCCT:** `ElSLib::SphereD1`.
 - **Example:**
   ```swift

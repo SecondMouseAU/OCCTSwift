@@ -15,7 +15,7 @@ jobs:
         # v9, not the v7 that actions/checkout and actions/setup-python use elsewhere in this repo:
         # github-script's v7 is `using: node20` and it is v8 that first moves to node24, so matching
         # the version number rather than the runtime would have left this job deprecated (#648).
-        # v9's two breaking changes do not apply to the script below — it never calls
+        # v9's two breaking changes do not apply to the script below, it never calls
         # require('@actions/github') and never declares a `getOctokit` binding, using only the
         # injected `context` and `github.rest.*`.
         uses: actions/github-script@v9
@@ -39,7 +39,7 @@ jobs:
                   owner: context.repo.owner,
                   repo: context.repo.repo,
                   comment_id: existing.id,
-                  body: `${marker}\nLabeled — thanks!`,
+                  body: `${marker}\nLabeled, thanks!`,
                 });
               }
               return;

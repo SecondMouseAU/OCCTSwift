@@ -1,9 +1,9 @@
 ---
-title: Shape — Features, Sweeps & Surface Building
+title: Shape. Features, Sweeps & Surface Building
 parent: API Reference
 ---
 
-# Shape — Features, Sweeps & Surface Building
+# Shape. Features, Sweeps & Surface Building
 
 This page documents the Shape API from **Geometry Construction** through **Plate Surfaces** in `Shape.swift`. It covers face and solid assembly, feature-based modeling (bosses, pockets, holes, patterns), shape inspection, slicing, measurement, advanced pipe sweeps, surface building, and healing. For the primitive factories, boolean operations, and transforms that precede this range, see the main **Shape** index page (not yet written; use `Surface.md` as an exemplar for style).
 
@@ -23,7 +23,7 @@ Creates a planar face from a closed wire.
 public static func face(from wire: Wire, planar: Bool = true) -> Shape?
 ```
 
-- **Parameters:** `wire` — a closed wire defining the face boundary; `planar` — if `true` (default), requires the wire to be planar.
+- **Parameters:** `wire`, a closed wire defining the face boundary; `planar`, if `true` (default), requires the wire to be planar.
 - **Returns:** A face shape, or `nil` if the wire is not closed, not planar (when `planar: true`), or construction fails.
 - **OCCT:** `BRepBuilderAPI_MakeFace(wire, planar)`.
 - **Example:**
@@ -43,7 +43,7 @@ Creates a face with one or more through-holes.
 public static func face(outer: Wire, holes: [Wire]) -> Shape?
 ```
 
-- **Parameters:** `outer` — the outer boundary wire (closed); `holes` — array of inner boundary wires, each defining a hole. **Any hole winding is accepted** (see below).
+- **Parameters:** `outer`, the outer boundary wire (closed); `holes`, array of inner boundary wires, each defining a hole. **Any hole winding is accepted** (see below).
 - **Returns:** A face with holes, or `nil` on failure.
 - **Winding contract:** For a valid planar face, each hole must wind **opposite** to the outer boundary (measured in the face plane). You do not have to pre-orient your holes: the function measures each hole's signed area against the outer's and reverses a hole **only when its winding currently matches the outer's**. A hole passed already wound opposite (the geometrically correct sense) is kept as-is; a hole wound the same way as the outer is reversed for you. Either input yields the same valid face with the hole correctly subtracted. (Before [#274](https://github.com/SecondMouseAU/OCCTSwift/issues/274) every hole was reversed unconditionally, which broke callers that already passed the correct opposite winding.)
 - **OCCT:** `BRepBuilderAPI_MakeFace(outer, planar)` + `BRepBuilderAPI_MakeFace::Add` for each inner wire, with the wire's relative winding decided by `BRepBuilderAPI_FindPlane` + a signed-area projection onto the face plane.
@@ -73,7 +73,7 @@ One solid is built per **body-bounding** shell, not just the first shell found: 
 
 *Cavity* shells are skipped: a hole is not a body, and building one as a positive solid would return a compound whose volume double-counts the part. A body nested inside another body's cavity is enclosed twice, so it is still read as a body. To rebuild a solid that keeps its cavities, use `Shape.solidFromShells(_:)` with the outer shell first.
 
-- **Parameters:** `shell` — a shell shape (from sewing or face assembly).
+- **Parameters:** `shell`, a shell shape (from sewing or face assembly).
 - **Returns:** A solid, a compound of solids for multi-body input, or `nil` if the shape holds no shell at all.
 - **OCCT:** `BRepBuilderAPI_MakeSolid(shell)` + `ShapeFix_Solid` (orientation).
 - **Example:**
@@ -98,7 +98,7 @@ public static func sew(shapes: [Shape], tolerance: Double = 1e-6) -> Shape?
 
 Connects faces that share edges within `tolerance`. Useful for repairing imported geometry or joining separately created faces. If the result is closed, OCCT promotes it to a solid.
 
-- **Parameters:** `shapes` — array of shapes (faces, shells) to sew; `tolerance` — maximum gap size to close (default 1e-6).
+- **Parameters:** `shapes`, array of shapes (faces, shells) to sew; `tolerance`, maximum gap size to close (default 1e-6).
 - **Returns:** Sewn shape (shell or solid if closed), or `nil` on failure.
 - **OCCT:** `BRepBuilderAPI_Sewing`.
 - **Example:**
@@ -116,7 +116,7 @@ Sews exactly two shapes together.
 public static func sew(_ shape: Shape, with other: Shape, tolerance: Double = 1e-6) -> Shape?
 ```
 
-- **Parameters:** `shape` — first shape; `other` — second shape; `tolerance` — gap tolerance.
+- **Parameters:** `shape`, first shape; `other`, second shape; `tolerance`, gap tolerance.
 - **Returns:** Sewn shape, or `nil` on failure.
 - **OCCT:** `BRepBuilderAPI_Sewing` (two-argument convenience).
 
@@ -132,7 +132,7 @@ public func sewn(with other: Shape, tolerance: Double = 1e-6) -> Shape?
 
 Calls `Shape.sew(self, with: other, tolerance:)`.
 
-- **Parameters:** `other` — shape to sew with; `tolerance` — gap tolerance.
+- **Parameters:** `other`, shape to sew with; `tolerance`, gap tolerance.
 - **Returns:** Sewn shape, or `nil` on failure.
 - **OCCT:** `BRepBuilderAPI_Sewing`.
 
@@ -150,7 +150,7 @@ public func withPrism(profile: Wire, direction: SIMD3<Double>, height: Double, f
 
 When `fuse` is `true`, material is added (boss); when `false`, material is removed (pocket). The profile should already be positioned on a face of the receiver.
 
-- **Parameters:** `profile` — wire profile to extrude; `direction` — extrusion direction; `height` — feature height; `fuse` — `true` = add material, `false` = remove material.
+- **Parameters:** `profile`, wire profile to extrude; `direction`, extrusion direction; `height`, feature height; `fuse`, `true` = add material, `false` = remove material.
 - **Returns:** Modified shape, or `nil` on failure.
 - **OCCT:** `BRepFeat_MakePrism` + `BRepAlgoAPI_Fuse` or `BRepAlgoAPI_Cut`.
 - **Example:**
@@ -170,7 +170,7 @@ Adds a raised feature (boss) to the shape. Convenience wrapper for `withPrism(..
 public func withBoss(profile: Wire, direction: SIMD3<Double>, height: Double) -> Shape?
 ```
 
-- **Parameters:** `profile` — profile wire; `direction` — extrusion direction; `height` — boss height.
+- **Parameters:** `profile`, profile wire; `direction`, extrusion direction; `height`, boss height.
 - **Returns:** Shape with added boss, or `nil` on failure.
 - **OCCT:** `BRepFeat_MakePrism` (fuse mode).
 
@@ -184,7 +184,7 @@ Creates a depression (pocket) in the shape. Convenience wrapper for `withPrism(.
 public func withPocket(profile: Wire, direction: SIMD3<Double>, depth: Double) -> Shape?
 ```
 
-- **Parameters:** `profile` — profile wire defining the pocket boundary; `direction` — pocket direction (into the shape); `depth` — pocket depth.
+- **Parameters:** `profile`, profile wire defining the pocket boundary; `direction`, pocket direction (into the shape); `depth`, pocket depth.
 - **Returns:** Shape with pocket, or `nil` on failure.
 - **OCCT:** `BRepFeat_MakePrism` (cut mode).
 
@@ -201,7 +201,7 @@ public func drilled(at position: SIMD3<Double>, direction: SIMD3<Double>,
 
 `depth: 0` creates a through-hole (the cylinder is made large enough to penetrate the shape entirely).
 
-The bore is cut **along `direction`** — any axis, not just Z. `direction` is normalized internally; a zero/degenerate direction returns `nil`.
+The bore is cut **along `direction`**, any axis, not just Z. `direction` is normalized internally; a zero/degenerate direction returns `nil`.
 
 The cutting cylinder **starts at `position`** and runs `depth` along `direction`. So an entry point inside the shape drills only forward from there, a `depth` that overshoots the far face costs nothing, and the input can be a shell or a face as readily as a solid.
 
@@ -209,14 +209,14 @@ The cutting cylinder **starts at `position`** and runs `depth` along `direction`
 
 #### Or the feature drill
 
-[`cylindricalHole(axisOrigin:axisDirection:radius:extent:)`](Shape-Builders-2.md#cylindricalholeaxisoriginaxisdirectionradiusextent) wraps `BRepFeat_MakeCylindricalHole`, OCCT's dedicated feature-drilling operator. It is **not a better version of this method** — #496 measured six requests where the two disagree, and neither subsumes the other:
+[`cylindricalHole(axisOrigin:axisDirection:radius:extent:)`](Shape-Builders-2.md#cylindricalholeaxisoriginaxisdirectionradiusextent) wraps `BRepFeat_MakeCylindricalHole`, OCCT's dedicated feature-drilling operator. It is **not a better version of this method**, #496 measured six requests where the two disagree, and neither subsumes the other:
 
 | reach for | when |
 |---|---|
 | `drilled(at:…)` | the hole starts where you say it starts; the input is not a solid; an over-long `depth` should simply drill through |
 | `cylindricalHole(…extent:)` | the **solid's own faces** should bound the hole (`.untilEnd`, `.thruNext`); you need a diagnosis of *why* a drill is impossible |
 
-- **Parameters:** `position` — hole-centre point on the entry face; `direction` — drill direction (into the shape), any non-zero axis; `radius` — hole radius, above `Precision::Confusion`; `depth` — hole depth, or `0` for through-hole.
+- **Parameters:** `position`, hole-centre point on the entry face; `direction`, drill direction (into the shape), any non-zero axis; `radius`, hole radius, above `Precision::Confusion`; `depth`, hole depth, or `0` for through-hole.
 - **Returns:** Shape with drilled hole, or `nil` on failure (including a zero-length `direction` or a degenerate `radius`).
 - **OCCT:** `BRepPrimAPI_MakeCylinder` (oriented via `gp_Ax2(position, direction)`) + `BRepAlgoAPI_Cut` (internal cylinder cutter).
 - **Example:**
@@ -243,7 +243,7 @@ Splits the shape using a cutting tool shape.
 public func split(by tool: Shape) -> [Shape]?
 ```
 
-- **Parameters:** `tool` — shape to use as cutting tool (typically a face or solid).
+- **Parameters:** `tool`, shape to use as cutting tool (typically a face or solid).
 - **Returns:** Array of result shapes after the split, or `nil` on failure. The array will have at least two elements when the cut produces distinct pieces.
 - **OCCT:** `BRepAlgoAPI_BuilderAlgo` (multi-split general cutter).
 - **Example:**
@@ -266,7 +266,7 @@ Splits the shape by an infinite plane.
 public func split(atPlane point: SIMD3<Double>, normal: SIMD3<Double>) -> [Shape]?
 ```
 
-- **Parameters:** `point` — a point on the cutting plane; `normal` — plane normal direction.
+- **Parameters:** `point`, a point on the cutting plane; `normal`, plane normal direction.
 - **Returns:** Array of result shapes, or `nil` on failure.
 - **OCCT:** `BRepBuilderAPI_MakeFace` (build cutting plane) + `BRepAlgoAPI_BuilderAlgo`.
 - **Example:**
@@ -287,7 +287,7 @@ public static func glue(_ shape1: Shape, _ shape2: Shape, tolerance: Double = 1e
 
 More efficient than boolean union when the shapes have perfectly coincident faces. Uses OCCT's glue option (`BRepAlgoAPI_Fuse` with `GlueFull`) to avoid full topology re-computation.
 
-- **Parameters:** `shape1` — first shape; `shape2` — second shape with coincident faces; `tolerance` — face-matching tolerance.
+- **Parameters:** `shape1`, first shape; `shape2`, second shape with coincident faces; `tolerance`, face-matching tolerance.
 - **Returns:** Glued shape, or `nil` on failure.
 - **OCCT:** `BRepAlgoAPI_Fuse` with glue option.
 
@@ -303,7 +303,7 @@ public static func evolved(spine: Wire, profile: Wire) -> Shape?
 
 The profile is swept along the spine and its orientation evolves to remain perpendicular to the spine tangent.
 
-- **Parameters:** `spine` — path wire; `profile` — profile wire to sweep.
+- **Parameters:** `spine`, path wire; `profile`, profile wire to sweep.
 - **Returns:** Evolved shape, or `nil` on failure.
 - **OCCT:** `BRepOffsetAPI_MakeEvolved`.
 
@@ -323,13 +323,13 @@ public static func evolvedAdvanced(spine: Shape, profile: Wire,
 ```
 
 - **Parameters:**
-  - `spine` — spine shape (any topology accepted).
-  - `profile` — profile wire.
-  - `joinType` — how to join offset edges at corners (default `.arc`).
-  - `axeProf` — if `true`, profile is in global coordinates; if `false`, local to the spine.
-  - `solid` — produce a solid result when `true`.
-  - `volume` — use volume mode (removes self-intersections) when `true`.
-  - `tolerance` — construction tolerance.
+  - `spine`: spine shape (any topology accepted).
+  - `profile`: profile wire.
+  - `joinType`: how to join offset edges at corners (default `.arc`).
+  - `axeProf`: if `true`, profile is in global coordinates; if `false`, local to the spine.
+  - `solid`: produce a solid result when `true`.
+  - `volume`: use volume mode (removes self-intersections) when `true`.
+  - `tolerance`: construction tolerance.
 - **Returns:** Evolved shape, or `nil` on failure.
 - **OCCT:** `BRepOffsetAPI_MakeEvolved`.
 
@@ -345,7 +345,7 @@ public func linearPattern(direction: SIMD3<Double>, spacing: Double, count: Int)
 
 Returns a compound containing `count` copies of the shape, spaced `spacing` apart along `direction`.
 
-- **Parameters:** `direction` — pattern direction vector; `spacing` — distance between copies; `count` — number of copies (including the original).
+- **Parameters:** `direction`, pattern direction vector; `spacing`, distance between copies; `count`, number of copies (including the original).
 - **Returns:** Compound of all copies, or `nil` on failure.
 - **OCCT:** `BRepBuilderAPI_Transform` applied iteratively, collected into a `TopoDS_Compound`.
 - **Example:**
@@ -365,9 +365,9 @@ public func circularPattern(axisPoint: SIMD3<Double>, axisDirection: SIMD3<Doubl
                              count: Int, angle: Double = 0) -> Shape?
 ```
 
-Duplicates the **entire body** `count` times around `axisPoint`/`axisDirection` and returns a compound. It does **not** pattern features — to replicate a cut feature, see `circularPatternCut(tool:...)`.
+Duplicates the **entire body** `count` times around `axisPoint`/`axisDirection` and returns a compound. It does **not** pattern features, to replicate a cut feature, see `circularPatternCut(tool:...)`.
 
-- **Parameters:** `axisPoint` — point on the rotation axis; `axisDirection` — axis direction; `count` — number of copies (including original); `angle` — total arc to span in radians (`0` = full circle).
+- **Parameters:** `axisPoint`, point on the rotation axis; `axisDirection`, axis direction; `count`, number of copies (including original); `angle`, total arc to span in radians (`0` = full circle).
 - **Returns:** Compound of all copies, or `nil` on failure.
 - **OCCT:** `gp_Trsf::SetRotation` applied iteratively.
 - **Example:**
@@ -391,7 +391,7 @@ public func circularPatternCut(tool: Shape, axisPoint: SIMD3<Double>,
 
 Combines `circularPattern` of `tool` with `subtracting` in a single call. The natural primitive for bolt circles.
 
-- **Parameters:** `tool` — the cutting feature (e.g. a cylinder at the first hole position); `axisPoint` — rotation axis point; `axisDirection` — axis direction; `count` — number of tool copies (including original); `angle` — arc span in radians (`0` = full circle).
+- **Parameters:** `tool`, the cutting feature (e.g. a cylinder at the first hole position); `axisPoint`, rotation axis point; `axisDirection`, axis direction; `count`, number of tool copies (including original); `angle`, arc span in radians (`0` = full circle).
 - **Returns:** This body with all `count` features cut out, or `nil` on failure.
 - **OCCT:** `circularPattern` + `BRepAlgoAPI_Cut`.
 - **Example:**
@@ -486,9 +486,9 @@ public func isSelfIntersecting(timeout: Double = 30) -> Bool?
 
 Backed by `BOPAlgo_ArgumentAnalyzer`'s self-interference test. Expensive (seconds on B-spline solids).
 
-- **Important:** `timeout` is **cooperative, not a hard deadline** (#293) — it's checked only when OCCT polls its progress indicator, and the self-interference phase has at least one long checkpoint-free stretch that can overrun `timeout` arbitrarily (observed 20+ minutes past a 30s bound on pathological B-spline solids). The calling thread blocks inside the call the whole time. For a true wall-clock guarantee, run it in a subprocess/worker you can kill yourself.
-- **Parameters:** `timeout` — seconds before the check *asks* OCCT to give up (default 30); the actual return can be later. `0` or negative = unbounded.
-- **Returns:** `true` = self-interference found; `false` = shape is clean; `nil` = indeterminate (timed out / errored — treat as "unknown", not "clean").
+- **Important:** `timeout` is **cooperative, not a hard deadline** (#293), it's checked only when OCCT polls its progress indicator, and the self-interference phase has at least one long checkpoint-free stretch that can overrun `timeout` arbitrarily (observed 20+ minutes past a 30s bound on pathological B-spline solids). The calling thread blocks inside the call the whole time. For a true wall-clock guarantee, run it in a subprocess/worker you can kill yourself.
+- **Parameters:** `timeout`, seconds before the check *asks* OCCT to give up (default 30); the actual return can be later. `0` or negative = unbounded.
+- **Returns:** `true` = self-interference found; `false` = shape is clean; `nil` = indeterminate (timed out / errored, treat as "unknown", not "clean").
 - **OCCT:** `BOPAlgo_ArgumentAnalyzer` (via `OCCTShapeSelfIntersectsBounded`).
 - **Example:**
   ```swift
@@ -533,8 +533,8 @@ public enum ImportError: Error, LocalizedError {
 }
 ```
 
-- `importFailed` — carries a human-readable message describing why the import failed.
-- `cancelled` — the import was cancelled via `ImportProgress.shouldCancel()`.
+- `importFailed`: carries a human-readable message describing why the import failed.
+- `cancelled`: the import was cancelled via `ImportProgress.shouldCancel()`.
 
 | Case / Property | Meaning |
 |---|---|
@@ -618,7 +618,7 @@ Returns the number of distinct sub-shapes of a given topological type.
 public func subShapeCount(ofType type: ShapeType) -> Int
 ```
 
-- **Parameters:** `type` — the topological type to count (e.g. `.face`, `.edge`, `.vertex`).
+- **Parameters:** `type`, the topological type to count (e.g. `.face`, `.edge`, `.vertex`).
 - **Returns:** Count of distinct sub-shapes of that type; `0` for `.unknown`.
 - **OCCT:** `TopExp::MapShapes` (via `OCCTShapeGetSubShapeCount`).
 - **Note:** A sub-shape reachable from more than one parent counts once: a box has 12 edges, not
@@ -645,7 +645,7 @@ public func subShape(type: ShapeType, index: Int) -> Shape?
 
 Uses `TopExp::MapShapes` to enumerate sub-shapes of the given type.
 
-- **Parameters:** `type` — topological type; `index` — zero-based index.
+- **Parameters:** `type`, topological type; `index`, zero-based index.
 - **Returns:** The sub-shape as a `Shape`, or `nil` if `index` is out of range.
 - **OCCT:** `TopExp::MapShapes` + index lookup (via `OCCTShapeGetSubShapeByTypeIndex`).
 - **Note:** Edge indices are not guaranteed to be stable across calls or OCCT versions. Iterate to find a working index for edge-specific operations.
@@ -666,7 +666,7 @@ only thing naming which sub-shape an element is; the array is therefore returned
 and never short, since a sub-shape that could not be built would shift every later ordinal down one
 with no error and no diagnostic (#979).
 
-- **Parameters:** `type` — topological type.
+- **Parameters:** `type`, topological type.
 - **Returns:** Every distinct sub-shape of that type in enumeration order; empty if the shape has
   none, or if any could not be built.
 - **OCCT:** `TopExp::MapShapes` (via `OCCTShapeGetSubShapes`): one walk to size the buffer and one
@@ -737,7 +737,7 @@ Slices the shape at a given Z height, returning the cross-section as loose edges
 public func sliceAtZ(_ z: Double) -> Shape?
 ```
 
-- **Parameters:** `z` — the Z-plane height at which to section.
+- **Parameters:** `z`, the Z-plane height at which to section.
 - **Returns:** A shape containing the cross-section edges, or `nil` if no intersection exists at that Z.
 - **OCCT:** `BRepAlgoAPI_Section`.
 
@@ -754,7 +754,7 @@ public func sectionWiresAtZ(_ z: Double, tolerance: Double = 1e-6) -> [Wire]
 Unlike `sliceAtZ`, this chains the section edges into wires (closed where the section forms a loop, open otherwise) suitable for offset or CAM operations. Use a larger `tolerance` (e.g. `1e-4`) for imprecise geometry.
 
 - **Note:** Edges whose orientation is `.internal` or `.external` are silently excluded from the result wires (OCCT 8.0.1, upstream OCCT#1408). This only matters if the input `Shape` was assembled with such edges via `Shape.setOrientation(_:)` and one happens to lie exactly in the cutting plane; in every case measured, an ordinary transverse section does not produce `.internal`/`.external` edges on its own. See [#655](https://github.com/SecondMouseAU/OCCTSwift/issues/655).
-- **Parameters:** `z` — Z level to section at; `tolerance` — tolerance for connecting edges into wires.
+- **Parameters:** `z`, Z level to section at; `tolerance`, tolerance for connecting edges into wires.
 - **Returns:** Array of `Wire` objects, closed where the section forms a loop and open otherwise; empty if no contours exist at that level.
 - **OCCT:** `BRepAlgoAPI_Section` + `ShapeAnalysis_FreeBounds::ConnectEdgesToWires` (via `OCCTShapeSectionWiresAtZ`).
 - **Example:**
@@ -778,7 +778,7 @@ public func edgePoints(at index: Int, maxPoints: Int = 20) -> [SIMD3<Double>]
 
 Points are uniformly sampled from start to end of the edge curve.
 
-- **Parameters:** `index` — edge index (0 to `subShapeCount(ofType: .edge) − 1`); `maxPoints` — output *capacity* (capped at 20 internally), clamped into `0...Sampling.maximumSampleCount` (10,000,000), so an unservable capacity returns the same points rather than a coarser sampling; 0 or less returns empty (#558).
+- **Parameters:** `index`, edge index (0 to `subShapeCount(ofType: .edge) − 1`); `maxPoints`, output *capacity* (capped at 20 internally), clamped into `0...Sampling.maximumSampleCount` (10,000,000), so an unservable capacity returns the same points rather than a coarser sampling; 0 or less returns empty (#558).
 - **Returns:** Array of 3D points along the edge curve.
 - **OCCT:** `BRep_Tool::Curve` + `GCPnts_UniformParameter` (via `OCCTShapeGetEdgePoints`).
 
@@ -794,7 +794,7 @@ public func contourPoints(maxPoints: Int = 1000) -> [SIMD3<Double>]
 
 Returns edge **start** vertices only, not intermediate curve samples. For curved edges use `edgePoints(at:maxPoints:)` instead. Suitable for simple polygon contours from Z-plane slices.
 
-- **Parameters:** `maxPoints` — output *capacity*, clamped into `0...Sampling.maximumSampleCount` (10,000,000), so an unservable capacity returns the same points rather than a coarser sampling; 0 or less returns empty (#558).
+- **Parameters:** `maxPoints`, output *capacity*, clamped into `0...Sampling.maximumSampleCount` (10,000,000), so an unservable capacity returns the same points rather than a coarser sampling; 0 or less returns empty (#558).
 - **Returns:** Array of 3D points (one per edge start vertex).
 - **OCCT:** `TopExp_Explorer` over `TopAbs_EDGE` (via `OCCTShapeGetContourPoints`).
 
@@ -886,7 +886,7 @@ Returns full mass properties of the shape.
 public func properties(density: Double = 1.0) -> ShapeProperties?
 ```
 
-- **Parameters:** `density` — material density for mass calculation (default 1.0).
+- **Parameters:** `density`, material density for mass calculation (default 1.0).
 - **Returns:** `ShapeProperties` including volume, surface area, centre of mass, and inertia tensor;
   or `nil` when the shape encloses no volume (a face, wire, edge, vertex or **open shell**) or the
   calculation fails. These are volume mass properties, so without a volume there is no mass, no
@@ -988,11 +988,11 @@ public var surfaceArea: Double? { get }
 - **Returns:** Non-negative area, or `nil` on failure. Unlike `volume` this answers for a face or an
   open shell, since an area integral is well defined over any set of faces.
 - **OCCT:** `BRepGProp::SurfaceProperties` (via `OCCTShapeGetSurfaceArea`).
-- **Not the same computation as `ShapeMeasurements.totalFaceArea` (#885) — canonical explanation:**
+- **Not the same computation as `ShapeMeasurements.totalFaceArea` (#885), canonical explanation:**
   this is one untunable `BRepGProp::SurfaceProperties(shape, props)` integration over the whole
   shape, bit-identical to `surfaceInertiaProperties().mass` and `surfaceInertia.area`.
-  `ShapeMeasurements.totalFaceArea` is a different computation — a tolerance-controlled sum of
-  per-face integrals — see [`Measurement.md`](Measurement.md#shapemeasurementstotalfacearea) for
+  `ShapeMeasurements.totalFaceArea` is a different computation, a tolerance-controlled sum of
+  per-face integrals, see [`Measurement.md`](Measurement.md#shapemeasurementstotalfacearea) for
   the measured gap between the two and which to reach for. `surfaceInertiaProperties()` and
   `surfaceInertia` (`Shape-Measurement.md`) point back to this entry rather than restate it.
 - **Example:**
@@ -1043,7 +1043,7 @@ Computes the minimum distance between this shape and another.
 public func distance(to other: Shape, deflection: Double = 1e-6) -> DistanceResult?
 ```
 
-- **Parameters:** `other` — the target shape; `deflection` — tolerance for curved geometry.
+- **Parameters:** `other`, the target shape; `deflection`, tolerance for curved geometry.
 - **Returns:** `DistanceResult` with the distance and closest points, or `nil` on failure.
 - **OCCT:** `BRepExtrema_DistShapeShape`.
 - **Example:**
@@ -1076,7 +1076,7 @@ Tests whether this shape intersects another within a tolerance.
 public func intersects(_ other: Shape, tolerance: Double = 1e-6) -> Bool
 ```
 
-- **Parameters:** `other` — shape to test against; `tolerance` — distance threshold.
+- **Parameters:** `other`, shape to test against; `tolerance`, distance threshold.
 - **Returns:** `true` if the shapes overlap or touch within `tolerance`.
 - **OCCT:** `BRepExtrema_DistShapeShape` (distance ≤ tolerance).
 
@@ -1086,7 +1086,7 @@ public func intersects(_ other: Shape, tolerance: Double = 1e-6) -> Bool
 
 The following overloads lift `Wire`, `Edge`, and `Face` into `Shape` before dispatching. They have the same semantics as their `Shape`-typed counterparts.
 
-### `distance(to:deflection:)` — Wire, Edge, Face
+### `distance(to:deflection:)`, Wire, Edge, Face
 
 ```swift
 public func distance(to wire: Wire, deflection: Double = 1e-6) -> DistanceResult?
@@ -1096,7 +1096,7 @@ public func distance(to face: Face, deflection: Double = 1e-6) -> DistanceResult
 
 ---
 
-### `intersects(_:tolerance:)` — Wire, Edge, Face
+### `intersects(_:tolerance:)`, Wire, Edge, Face
 
 ```swift
 public func intersects(_ wire: Wire, tolerance: Double = 1e-6) -> Bool
@@ -1143,7 +1143,7 @@ Returns the vertex at a specific zero-based index.
 public func vertex(at index: Int) -> SIMD3<Double>?
 ```
 
-- **Parameters:** `index` — zero-based vertex index.
+- **Parameters:** `index`, zero-based vertex index.
 - **Returns:** Vertex position, or `nil` if index is out of bounds.
 - **OCCT:** `TopExp::MapShapes` + `BRep_Tool::Pnt` (via `OCCTShapeGetVertexAt`).
 
@@ -1164,10 +1164,10 @@ public enum PipeSweepMode: Sendable {
 }
 ```
 
-- `.frenet` — standard Frenet trihedron; profile tracks spine curvature.
-- `.correctedFrenet` — avoids twist at inflection points.
-- `.fixed(binormal:)` — fixed binormal direction; profile keeps constant orientation.
-- `.auxiliary(spine:)` — twist controlled by a secondary curve.
+- `.frenet`: standard Frenet trihedron; profile tracks spine curvature.
+- `.correctedFrenet`: avoids twist at inflection points.
+- `.fixed(binormal:)`: fixed binormal direction; profile keeps constant orientation.
+- `.auxiliary(spine:)`: twist controlled by a secondary curve.
 
 ---
 
@@ -1209,7 +1209,7 @@ Fillets specific edges with a uniform radius.
 public func filleted(edges: [Edge], radius: Double) -> Shape?
 ```
 
-- **Parameters:** `edges` — edges to fillet (must have valid `index` values from this shape); `radius` — fillet radius (must be > 0).
+- **Parameters:** `edges`, edges to fillet (must have valid `index` values from this shape); `radius`, fillet radius (must be > 0).
 - **Returns:** Filleted shape, or `nil` on failure, which includes a non-positive or NaN radius and
   an edge whose `index` names no edge of this shape.
 - **OCCT:** `BRepFilletAPI_MakeFillet` (via `OCCTShapeFilletEdges`).
@@ -1308,20 +1308,20 @@ public func filleted(edges: [Edge], startRadius: Double, endRadius: Double) -> S
 ```
 
 Each named edge is given a law running from `startRadius` to `endRadius`, placed in that edge's own
-slot within its contour. A contour is not always one edge — OCCT groups tangent-continuous edges
-into a single contour — and the radius over the whole contour is the interpolation of its edges'
+slot within its contour. A contour is not always one edge. OCCT groups tangent-continuous edges
+into a single contour, and the radius over the whole contour is the interpolation of its edges'
 slots, so naming two edges of one tangent chain is not the same as naming one of them. Measured on
 a rounded slot's rim at 1 → 4: the straight side alone gives 10273.238348, the side plus its tangent
 arc 10297.711861 (#612).
 
-- **Parameters:** `edges` — edges to fillet; `startRadius` — radius at the start of each named edge's law (> 0); `endRadius` — radius at its end (> 0).
+- **Parameters:** `edges`, edges to fillet; `startRadius`, radius at the start of each named edge's law (> 0); `endRadius`, radius at its end (> 0).
 - **Returns:** Filleted shape, or `nil` on failure, which includes a non-positive or NaN radius at
   either end.
 - **OCCT:** `BRepFilletAPI_MakeFillet::Add(R1, R2, E)` (via `OCCTShapeFilletEdgesLinear`), which
   places each law in that edge's own slot within its contour (#612).
 - **Notes:** shares one bridge implementation with [`filleted(edges:radius:)`](#filletededgesradius)
   and [`blendedEdges(_:)`](#blendededges_) (#489), including their all-or-nothing index contract
-  (#520). An edge OCCT declines to fillet outright — a free-boundary edge of an open shell — is
+  (#520). An edge OCCT declines to fillet outright, a free-boundary edge of an open shell, is
   skipped by all five edge-list fillet entry points alike; a batch in which every edge is declined
   returns `nil` (#612).
 
@@ -1358,10 +1358,10 @@ public func drafted(
 ```
 
 - **Parameters:**
-  - `faces` — faces to add draft to (must have valid `index` values).
-  - `direction` — pull direction (typically the mold-open direction).
-  - `angle` — draft angle in radians (typically 1–5°).
-  - `neutralPlane` — point and normal of the plane where draft angle is zero.
+  - `faces`: faces to add draft to (must have valid `index` values).
+  - `direction`: pull direction (typically the mold-open direction).
+  - `angle`: draft angle in radians (typically 1–5°).
+  - `neutralPlane`: point and normal of the plane where draft angle is zero.
 - **Returns:** Drafted shape, or `nil` on failure.
 - **OCCT:** `OCCTShapeDraft` (internal `Draft_MakeDraft`-based implementation).
 - **Note:** every face must be one of *this* shape's, by index. A `Face` whose `index` names no face
@@ -1382,8 +1382,8 @@ public func withoutFeatures(faces: [Face]) -> Shape?
 
 Useful for simplifying imported geometry or removing small features before analysis.
 
-- **Parameters:** `faces` — faces to remove (must have valid `index` values from this shape).
-- **Returns:** Shape with features removed, or `nil` on failure — including when a face's index does
+- **Parameters:** `faces`, faces to remove (must have valid `index` values from this shape).
+- **Returns:** Shape with features removed, or `nil` on failure, including when a face's index does
   not belong to this shape. Such an index used to be skipped, which returned a shape that still
   carried the feature and looked no different from a successful removal (#497).
 - **OCCT:** `BRepAlgoAPI_Defeaturing` (via `OCCTShapeRemoveFeatures`). Corrected here: this row
@@ -1418,16 +1418,16 @@ and runs the same code, so it reaches the corner-transition and profile-placemen
 used to be split across three other spellings.
 
 - **Parameters:**
-  - `spine` — path wire.
-  - `profile` — profile wire to sweep.
-  - `mode` — sweep orientation mode (`.frenet`, `.correctedFrenet`, `.fixed(binormal:)`, `.auxiliary(spine:)`).
+  - `spine`: path wire.
+  - `profile`: profile wire to sweep.
+  - `mode`: sweep orientation mode (`.frenet`, `.correctedFrenet`, `.fixed(binormal:)`, `.auxiliary(spine:)`).
     A mode whose own argument is unusable (a zero-length binormal, or an auxiliary spine OCCT
     rejects) returns `nil`. It is never swapped for a different mode, which is what the
     pre-#503 bridge did.
   - `transition`: corner transition style at spine discontinuities.
   - `withContact`: if `true`, the profile is moved to touch the spine before sweeping.
   - `withCorrection`: if `true`, the profile is rotated to stay orthogonal to the spine.
-  - `solid` — `true` = solid result; `false` = shell.
+  - `solid`: `true` = solid result; `false` = shell.
 - **Returns:** Swept shape, or `nil` on failure.
 - **OCCT:** `BRepOffsetAPI_MakePipeShell` (via `OCCTShapeCreatePipeShellMultiSection`).
 - **Example:**
@@ -1463,7 +1463,7 @@ public static func pipeShellWithLaw(
 
 The law value defines how the profile scales along the spine: 1.0 = no scaling, 2.0 = double size.
 
-- **Parameters:** `spine` — path wire; `profile` — profile wire; `law` — a `LawFunction` defining the scale along the spine; `solid` — produce a solid.
+- **Parameters:** `spine`, path wire; `profile`, profile wire; `law`, a `LawFunction` defining the scale along the spine; `solid`, produce a solid.
 - **Returns:** Swept shape, or `nil` on failure.
 - **OCCT:** `BRepOffsetAPI_MakePipeShell` with law function (via `OCCTShapeCreatePipeShellWithLaw`).
 
@@ -1488,15 +1488,15 @@ public static func pipeShellMultiSection(
 Each profile is positioned in 3D at its station along the spine, and OCCT interpolates a smooth solid that passes through every section. Supports all `PipeSweepMode` cases, including `.auxiliary(spine:)` for twist control. Every `MakePipeShell` sweep in OCCTSwift is this call; `pipeShell` is this function with one profile (#503).
 
 - **Parameters:**
-  - `spine` — path wire.
-  - `profiles` — section wires, each pre-positioned at its station (at least one required).
+  - `spine`: path wire.
+  - `profiles`: section wires, each pre-positioned at its station (at least one required).
   - `mode`: orientation mode. A mode whose own argument is unusable returns `nil` rather than
     being swapped for another mode.
   - `transition`: corner transition style at spine discontinuities. Reaches a multi-section
     sweep since #503; before that only the single-profile spelling could set it.
-  - `withContact` — if `true`, each profile is moved to touch the spine.
-  - `withCorrection` — if `true`, each profile is rotated to stay orthogonal to the spine.
-  - `solid` — produce a solid when `true`.
+  - `withContact`: if `true`, each profile is moved to touch the spine.
+  - `withCorrection`: if `true`, each profile is rotated to stay orthogonal to the spine.
+  - `solid`: produce a solid when `true`.
 - **Returns:** Swept shape, or `nil` on failure.
 - **OCCT:** `BRepOffsetAPI_MakePipeShell` (via `OCCTShapeCreatePipeShellMultiSection`).
 
@@ -1520,17 +1520,17 @@ public static func helicalSweep(profiles: [Wire],
 Builds the helix spine and an auxiliary spine that spans the full axial extent internally, then delegates to `pipeShellMultiSection(mode: .auxiliary(...))`. One profile gives a uniform rib; two or more give a varying section.
 
 - **Parameters:**
-  - `profiles` — rib profile wires positioned in the (radial, axis) plane (at least one).
-  - `axisOrigin` — a point on the worm axis.
-  - `axisDirection` — worm axis direction.
-  - `radius` — helix pitch radius (must be > 0).
-  - `pitch` — axial advance per turn (must be > 0).
-  - `turns` — number of turns (must be > 0).
-  - `clockwise` — helix handedness.
-  - `solid` — produce a solid when `true`.
+  - `profiles`: rib profile wires positioned in the (radial, axis) plane (at least one).
+  - `axisOrigin`: a point on the worm axis.
+  - `axisDirection`: worm axis direction.
+  - `radius`: helix pitch radius (must be > 0).
+  - `pitch`: axial advance per turn (must be > 0).
+  - `turns`: number of turns (must be > 0).
+  - `clockwise`: helix handedness.
+  - `solid`: produce a solid when `true`.
 - **Returns:** The swept helicoid, or `nil` on failure.
 - **OCCT:** `Wire.helix` + `BRepOffsetAPI_MakePipeShell` auxiliary-spine mode.
-- **Note:** The auxiliary-spine framing is approximately radial, not exactly — results bulge ~10–15% beyond the nominal radius for moderate profiles, and balloon severely for fine-pitch V-forms. Use `threadedShaft` / `threadedHole` for precise fastener threads. Do **not** boolean this helicoid with a coaxial cylinder — coincident faces cause BOP to fail (see OCCTSwift #225, #213, #181). Use `threadedRod(customProfile:...)` instead.
+- **Note:** The auxiliary-spine framing is approximately radial, not exactly, results bulge ~10–15% beyond the nominal radius for moderate profiles, and balloon severely for fine-pitch V-forms. Use `threadedShaft` / `threadedHole` for precise fastener threads. Do **not** boolean this helicoid with a coaxial cylinder, coincident faces cause BOP to fail (see OCCTSwift #225, #213, #181). Use `threadedRod(customProfile:...)` instead.
 - **Example:**
   ```swift
   let profile = Wire.rectangle(width: 3, height: 2)!  // rib cross-section
@@ -1578,9 +1578,9 @@ public static func surface(
 `poles` is indexed `[uIndex][vIndex]`. Requires at least `uDegree + 1` rows and `vDegree + 1` columns.
 
 - **Parameters:**
-  - `poles` — 2D array of control points.
-  - `uDegree` — degree in U (default 3, cubic).
-  - `vDegree` — degree in V (default 3, cubic).
+  - `poles`: 2D array of control points.
+  - `uDegree`: degree in U (default 3, cubic).
+  - `vDegree`: degree in V (default 3, cubic).
 - **Returns:** A face shape backed by the B-spline surface, or `nil` on failure.
 - **OCCT:** `Geom_BSplineSurface` + `BRepBuilderAPI_MakeFace` (via `OCCTShapeCreateBSplineSurface`).
 - **Example:**
@@ -1606,7 +1606,7 @@ public static func ruled(profile1: Wire, profile2: Wire) -> Shape?
 
 Connects corresponding points on the two boundary wires with straight lines. Returns a shell.
 
-- **Parameters:** `profile1` — first boundary wire; `profile2` — second boundary wire.
+- **Parameters:** `profile1`, first boundary wire; `profile2`, second boundary wire.
 - **Returns:** A shell shape containing the ruled surface, or `nil` on failure.
 - **OCCT:** `BRepFill::Shell(wire1, wire2)` (via `OCCTShapeCreateRuled`).
 - **Example:**
@@ -1626,7 +1626,7 @@ Creates a hollow solid with specific faces left open.
 public func shelled(thickness: Double, openFaces: [Face]) -> Shape?
 ```
 
-- **Parameters:** `thickness` — wall thickness (positive = inward, negative = outward); `openFaces` — faces to leave open (must have valid `index` values).
+- **Parameters:** `thickness`, wall thickness (positive = inward, negative = outward); `openFaces`, faces to leave open (must have valid `index` values).
 - **Returns:** Shelled shape with specified faces open, or `nil` on failure.
 - **OCCT:** `BRepOffsetAPI_MakeThickSolid::MakeThickSolidByJoin` (via `OCCTShapeShellWithOpenFaces`).
 - **Note:** every face must be one of *this* shape's, by index. A `Face` whose `index` names no face
@@ -1795,20 +1795,20 @@ public func fixed(tolerance: Double = 1e-6,
 ```
 
 - **Parameters:**
-  - `tolerance` — tolerance for fixing operations.
-  - `fixSolid` — whether to fix solid orientation (`ShapeFix_Shape::FixSolidMode`).
-  - `fixShell` — whether to fix **free** shells — shells that aren't part of a solid
+  - `tolerance`: tolerance for fixing operations.
+  - `fixSolid`: whether to fix solid orientation (`ShapeFix_Shape::FixSolidMode`).
+  - `fixShell`: whether to fix **free** shells, shells that aren't part of a solid
     (`ShapeFix_Shape::FixFreeShellMode`).
-  - `fixFace` — whether to fix **free** faces — faces that aren't part of a shell
+  - `fixFace`: whether to fix **free** faces, faces that aren't part of a shell
     (`ShapeFix_Shape::FixFreeFaceMode`).
-  - `fixWire` — whether to fix **free** wires — wires that aren't part of a face
+  - `fixWire`: whether to fix **free** wires, wires that aren't part of a face
     (`ShapeFix_Shape::FixFreeWireMode`).
 
   `fixShell`/`fixFace`/`fixWire` govern **free** (standalone) content specifically, not
   shell/face/wire fixing in general: content that *is* attached (a shell inside a solid, a face
   inside a shell, a wire inside a face) is always fixed by `Perform()` regardless of these three
-  flags. Before #837 these three were accepted but never passed to `ShapeFix_Shape` at all — only
-  `fixSolid` had any effect — so setting any of them to `false` silently did nothing; they are now
+  flags. Before #837 these three were accepted but never passed to `ShapeFix_Shape` at all, only
+  `fixSolid` had any effect, so setting any of them to `false` silently did nothing; they are now
   live (#865).
 - **Returns:** Fixed shape, or `nil` on failure.
 - **OCCT:** `ShapeFix_Shape` (via `OCCTShapeFixDetailed`).
@@ -1831,12 +1831,12 @@ public func unified(unifyEdges: Bool = true,
 ```
 
 - **Parameters:**
-  - `unifyEdges` — merge edges on the same curve.
-  - `unifyFaces` — merge faces on the same surface.
-  - `concatBSplines` — concatenate adjacent B-spline edges / faces.
+  - `unifyEdges`: merge edges on the same curve.
+  - `unifyFaces`: merge faces on the same surface.
+  - `concatBSplines`: concatenate adjacent B-spline edges / faces.
 - **Returns:** Unified shape, or `nil` on failure.
 - **OCCT:** `ShapeUpgrade_UnifySameDomain` (via `OCCTShapeUnifySameDomain`).
-- **The receiver is not modified.** The merge runs on a private copy. `ShapeUpgrade_UnifySameDomain` rewrites sub-shapes of the shape it is given, and those rewrites reached the caller's own shape — so discarding the result was not enough to keep it (#446).
+- **The receiver is not modified.** The merge runs on a private copy. `ShapeUpgrade_UnifySameDomain` rewrites sub-shapes of the shape it is given, and those rewrites reached the caller's own shape, so discarding the result was not enough to keep it (#446).
 - **The result shares no sub-shapes with the receiver**, even where nothing was merged: that is the price of the copy, and it means `isSame(as:)`/`isPartner(with:)`/`isEqual(to:)` answer `false` for faces that came through untouched. Map selections and attributes by geometry, not by sub-shape identity.
 - **Example:**
   ```swift
@@ -1854,9 +1854,9 @@ Removes faces smaller than the given area threshold.
 public func withoutSmallFaces(minArea: Double) -> Shape?
 ```
 
-- **Parameters:** `minArea` — minimum face area; faces below this are removed.
+- **Parameters:** `minArea`, minimum face area; faces below this are removed.
 - **Returns:** Cleaned shape, or `nil` on failure.
-- **OCCT:** `BRepAlgoAPI_Defeaturing` (via `OCCTShapeRemoveSmallFaces`) — the small faces are collected by area and removed by defeaturing. (Corrected here: this row previously credited `ShapeAnalysis_CheckSmallFace` + `ShapeUpgrade_UnifySameDomain`, neither of which the implementation uses.)
+- **OCCT:** `BRepAlgoAPI_Defeaturing` (via `OCCTShapeRemoveSmallFaces`), the small faces are collected by area and removed by defeaturing. (Corrected here: this row previously credited `ShapeAnalysis_CheckSmallFace` + `ShapeUpgrade_UnifySameDomain`, neither of which the implementation uses.)
 
 ---
 
@@ -1868,10 +1868,10 @@ Convenience method combining `unified()` and `healed()`.
 public func simplified(tolerance: Double = 1e-6) -> Shape?
 ```
 
-- **Parameters:** `tolerance` — tolerance for simplification.
+- **Parameters:** `tolerance`, tolerance for simplification.
 - **Returns:** Simplified shape, or `nil` on failure.
 - **OCCT:** `ShapeUpgrade_UnifySameDomain` + `ShapeFix_Shape` (via `OCCTShapeSimplify`).
-- **The receiver is not modified**, and the result shares no sub-shapes with it — see `unified(...)` above (#446).
+- **The receiver is not modified**, and the result shares no sub-shapes with it, see `unified(...)` above (#446).
 
 ---
 
@@ -1883,7 +1883,7 @@ Fixes wire problems such as gaps, degenerate edges, and incorrect ordering.
 public func fixed(tolerance: Double = 1e-6) -> Wire?
 ```
 
-- **Parameters:** `tolerance` — tolerance for fixing.
+- **Parameters:** `tolerance`, tolerance for fixing.
 - **Returns:** Fixed wire, or `nil` on failure.
 - **OCCT:** `ShapeFix_Wire` (via `OCCTWireFix`).
 - **Example:**
@@ -1903,7 +1903,7 @@ public func fixed(tolerance: Double = 1e-6) -> Shape?
 
 Returns the fixed result as a `Shape` (not `Face`) because the repair can restructure topology.
 
-- **Parameters:** `tolerance` — tolerance for fixing.
+- **Parameters:** `tolerance`, tolerance for fixing.
 - **Returns:** Fixed face as a `Shape`, or `nil` on failure.
 - **OCCT:** `ShapeFix_Face` (via `OCCTFaceFix`).
 
@@ -2000,8 +2000,8 @@ public func filletedVariable(
 
 Parameters are normalised from 0.0 (start) to 1.0 (end). At least two profile points are required.
 
-- **Parameters:** `edgeIndex` — 0-based index of the edge to fillet, as reported by `Edge.index`;
-  `radiusProfile` — array of `(parameter, radius)` pairs (minimum 2).
+- **Parameters:** `edgeIndex`, 0-based index of the edge to fillet, as reported by `Edge.index`;
+  `radiusProfile`: array of `(parameter, radius)` pairs (minimum 2).
 - **Returns:** Filleted shape, or `nil` on failure, which includes an `edgeIndex` naming no edge of
   this shape, a non-positive or NaN radius anywhere in the profile, a parameter outside `0...1`,
   and a non-increasing parameter sequence (#520).
@@ -2044,7 +2044,7 @@ Applies fillets to multiple edges, each with its own radius.
 public func blendedEdges(_ edgeRadii: [(edgeIndex: Int, radius: Double)]) -> Shape?
 ```
 
-- **Parameters:** `edgeRadii` — array of `(0-based edgeIndex, radius)` pairs. Every radius must be > 0.
+- **Parameters:** `edgeRadii`, array of `(0-based edgeIndex, radius)` pairs. Every radius must be > 0.
 - **Returns:** Filleted shape with per-edge radii applied, or `nil` on failure, which includes an
   empty array, a non-positive or NaN radius anywhere in it, and an index that names no edge of this
   shape.
@@ -2111,7 +2111,7 @@ public func blendedEdgesWithReport(_ edgeRadii: [(edgeIndex: Int, radius: Double
 
 ### Choosing a continuity reference
 
-Tangency (`.g1`) and curvature (`.g2`) are relative — the filled surface has to be continuous
+Tangency (`.g1`) and curvature (`.g2`) are relative, the filled surface has to be continuous
 *with* something. That reference is a **support face**, and which overload you use is really the
 question of where that face comes from:
 
@@ -2122,11 +2122,11 @@ question of where that face comes from:
 | `fill(constraints:parameters:)` | named per edge | different edges need different references, orders, or internal (non-bounding) constraints |
 
 A boundary built from free-standing wires has no reference surface at all, so any continuity above
-`.c0` returns `nil` for every one of these. `.c0` always works — it constrains position only.
+`.c0` returns `nil` for every one of these. `.c0` always works, it constrains position only.
 
 `FillingSurface` (`docs/reference/GeometrySolvers.md#fillingsurface`) shares this exact
-`BRepOffsetAPI_MakeFilling` implementation as of #434 — same continuity mapping, same support-face
-rules — as the incremental, stateful alternative to these one-shot array-based overloads. Its
+`BRepOffsetAPI_MakeFilling` implementation as of #434, same continuity mapping, same support-face
+rules, as the incremental, stateful alternative to these one-shot array-based overloads. Its
 `add(edge:support:continuity:)` mirrors `FillConstraint`'s support-face semantics below.
 
 ### `Shape.fill(boundaries:parameters:)`
@@ -2144,7 +2144,7 @@ Creates a face that passes through the given boundary wires with the specified c
 wire's edges are added as edge constraints to the filler, each taking its continuity reference from
 its own underlying surface.
 
-- **Parameters:** `boundaries` — wires defining the boundary (at least one); `parameters` — filling parameters (continuity, tolerance, degree, segments).
+- **Parameters:** `boundaries`, wires defining the boundary (at least one); `parameters`, filling parameters (continuity, tolerance, degree, segments).
 - **Returns:** Face shape covering the boundary, or `nil` on failure.
 - **OCCT:** `BRepOffsetAPI_MakeFilling` (via `OCCTShapeFill`).
 - **Example:**
@@ -2174,7 +2174,7 @@ Each boundary edge takes its continuity reference from that edge's own ancestor 
 An edge that isn't part of `support` falls back to its own underlying surface, and failing that is
 constrained positionally.
 
-- **Parameters:** `boundaries` — wires defining the boundary; `support` — shape whose faces supply the continuity reference; `parameters` — filling parameters.
+- **Parameters:** `boundaries`, wires defining the boundary; `support`, shape whose faces supply the continuity reference; `parameters`, filling parameters.
 - **Returns:** Face shape covering the boundary, or `nil` on failure.
 - **OCCT:** `BRepOffsetAPI_MakeFilling::Add(edge, face, order)` (via `OCCTShapeFillWithSupport`).
 - **Example:**
@@ -2204,10 +2204,10 @@ public static func fill(
 ```
 
 Every edge names its own support face and continuity order, and may bound the resulting face or act
-as an internal constraint the surface must also satisfy. `parameters.continuity` is ignored — each
+as an internal constraint the surface must also satisfy. `parameters.continuity` is ignored, each
 constraint carries its own.
 
-- **Parameters:** `constraints` — edge constraints; `parameters` — filling parameters (continuity field unused).
+- **Parameters:** `constraints`, edge constraints; `parameters`, filling parameters (continuity field unused).
 - **Returns:** Face shape satisfying the constraints, or `nil` on failure.
 - **OCCT:** `BRepOffsetAPI_MakeFilling::Add(edge, face, order, isBound)` (via `OCCTShapeFillConstraints`).
 - **Example:**
@@ -2227,18 +2227,18 @@ constraint carries its own.
 ```swift
 public struct FillConstraint {
     public var edge: Edge
-    public var support: Face?              // nil — derive from the edge itself
+    public var support: Face?              // nil, derive from the edge itself
     public var continuity: SurfaceContinuity   // default .g1
     public var isBoundary: Bool            // default true
 }
 ```
 
-- **`support`** — the face to be continuous with, used or the fill fails. If the named face carries no pcurve for `edge` it cannot serve as the reference, and the whole fill returns `nil` rather than quietly substituting a different surface. `nil` instead accepts whichever surface the edge itself resolves. (A *planar* face works even with no pcurve stored: `BRep_Tool::CurveOnSurface` projects onto a plane on the fly.)
-- **`isBoundary`** — `true` bounds the resulting face; `false` makes it an internal constraint the surface passes through without being edged by it.
+- **`support`**: the face to be continuous with, used or the fill fails. If the named face carries no pcurve for `edge` it cannot serve as the reference, and the whole fill returns `nil` rather than quietly substituting a different surface. `nil` instead accepts whichever surface the edge itself resolves. (A *planar* face works even with no pcurve stored: `BRep_Tool::CurveOnSurface` projects onto a plane on the fly.)
+- **`isBoundary`**: `true` bounds the resulting face; `false` makes it an internal constraint the surface passes through without being edged by it.
 
 > **Continuity mapping.** `BRepFill_Filling` forwards the `GeomAbs_Shape` value to
 > `GeomPlate_CurveConstraint` as an integer *plate order* and rejects anything outside `[-1, 2]`.
-> So `.g2` maps to `GeomAbs_C1` (ordinal 2), not `GeomAbs_G2` (ordinal 3) — the latter always
+> So `.g2` maps to `GeomAbs_C1` (ordinal 2), not `GeomAbs_G2` (ordinal 3), the latter always
 > throws, despite OCCT's own header docs naming it as the curvature-continuity value.
 
 ---
@@ -2247,7 +2247,7 @@ public struct FillConstraint {
 
 > **Continuity mapping.** `BRepFill_Filling` forwards the `GeomAbs_Shape` value to
 > `GeomPlate_CurveConstraint` as an integer *plate order* and rejects anything outside `[-1, 2]`.
-> So `.g2` maps to `GeomAbs_C1` (ordinal 2), not `GeomAbs_G2` (ordinal 3) — the latter always
+> So `.g2` maps to `GeomAbs_C1` (ordinal 2), not `GeomAbs_G2` (ordinal 3), the latter always
 > throws, despite OCCT's own header docs naming it as the curvature-continuity value.
 
 ---
@@ -2267,7 +2267,7 @@ public static func plateSurface(
 
 Requires at least 3 points.
 
-- **Parameters:** `points` — 3D points the surface must pass through (minimum 3); `tolerance` — approximation tolerance.
+- **Parameters:** `points`, 3D points the surface must pass through (minimum 3); `tolerance`, approximation tolerance.
 - **Returns:** A face backed by a `GeomPlate_Surface`, or `nil` on failure.
 - **OCCT:** `GeomPlate_BuildPlateSurface` + `GeomPlate_MakeApprox` + `BRepBuilderAPI_MakeFace` (via `OCCTShapePlatePoints`).
 - **Example:**
@@ -2292,7 +2292,7 @@ public static func plateSurface(
 ) -> Shape?
 ```
 
-- **Parameters:** `curves` — wires defining the boundary constraints (at least one); `continuity` — continuity requirement at boundaries; `tolerance` — approximation tolerance.
+- **Parameters:** `curves`, wires defining the boundary constraints (at least one); `continuity`, continuity requirement at boundaries; `tolerance`, approximation tolerance.
 - **Returns:** Face shape, or `nil` on failure.
 - **OCCT:** `GeomPlate_BuildPlateSurface` with curve constraints (via `OCCTShapePlateCurves`).
 
@@ -2319,12 +2319,12 @@ point (#437), and this is checked in Swift, via `SurfaceContinuity.isUnsupported
 before any constraint is built, rather than relying on OCCT's own throw.
 
 - **Parameters:**
-  - `points` — 3D points (minimum 3); must match `orders.count`.
-  - `orders` — per-point constraint orders (`.g0` or `.g1`; `.g2` is rejected, see above).
-  - `degree` — maximum polynomial degree (default 3).
-  - `pointsOnCurves` — sample points on internal curves (default 15).
-  - `iterations` — solver iterations (default 2).
-  - `tolerance` — approximation tolerance.
+  - `points`: 3D points (minimum 3); must match `orders.count`.
+  - `orders`: per-point constraint orders (`.g0` or `.g1`; `.g2` is rejected, see above).
+  - `degree`: maximum polynomial degree (default 3).
+  - `pointsOnCurves`: sample points on internal curves (default 15).
+  - `iterations`: solver iterations (default 2).
+  - `tolerance`: approximation tolerance.
 - **Returns:** Face shape, or `nil` on failure.
 - **OCCT:** `GeomPlate_BuildPlateSurface` + `NLPlate_NLPlate` + `GeomPlate_MakeApprox` (via `OCCTShapePlatePointsAdvanced`).
 
@@ -2349,11 +2349,11 @@ constraint (`GeomPlate_PointConstraint` rejects order 2 outright, #437) but is f
 orders are checked.
 
 - **Parameters:**
-  - `points` — point constraints, each with a position and a `SurfaceContinuity` (`.g2` always
+  - `points`: point constraints, each with a position and a `SurfaceContinuity` (`.g2` always
     rejected, see above).
-  - `curves` — curve constraints, each with a `Wire` and a `SurfaceContinuity`.
-  - `degree` — maximum polynomial degree (default 3).
-  - `tolerance` — approximation tolerance.
+  - `curves`: curve constraints, each with a `Wire` and a `SurfaceContinuity`.
+  - `degree`: maximum polynomial degree (default 3).
+  - `tolerance`: approximation tolerance.
 - **Returns:** Face shape, or `nil` on failure.
 - **OCCT:** `GeomPlate_BuildPlateSurface` with `GeomPlate_PointConstraint` + `GeomPlate_CurveConstraint` (via `OCCTShapePlateMixed`).
 - **Example:**

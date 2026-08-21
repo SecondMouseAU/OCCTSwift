@@ -1,9 +1,9 @@
 ---
-title: Document — XCAF Notes, Views & Materials
+title: Document. XCAF Notes, Views & Materials
 parent: API Reference
 ---
 
-# Document — XCAF Notes, Views & Materials
+# Document. XCAF Notes, Views & Materials
 
 This page covers the XCAF annotation, view, material, and utility subsystems exposed on `Document`, `AssemblyNode`, and several standalone types in `Document.swift`. For the core document lifecycle, shape tools, and STEP/IGES I/O see the main [Document](Document.md) page.
 
@@ -41,7 +41,7 @@ Create a plain-text comment note and attach it to the notes tool.
 public func notesToolCreateComment(userName: String, timeStamp: String, comment: String) -> AssemblyNode?
 ```
 
-- **Parameters:** `userName` — author identifier; `timeStamp` — ISO-8601 string; `comment` — note text.
+- **Parameters:** `userName`, author identifier; `timeStamp`, ISO-8601 string; `comment`, note text.
 - **Returns:** The label node for the new note, or `nil` if the notes tool could not be found.
 - **OCCT:** `XCAFDoc_NotesTool::CreateComment`
 - **Example:**
@@ -62,7 +62,7 @@ Create a balloon (callout) note.
 public func notesToolCreateBalloon(userName: String, timeStamp: String, comment: String) -> AssemblyNode?
 ```
 
-- **Parameters:** `userName` — author identifier; `timeStamp` — ISO-8601 string; `comment` — balloon text.
+- **Parameters:** `userName`, author identifier; `timeStamp`, ISO-8601 string; `comment`, balloon text.
 - **Returns:** The label node for the new note, or `nil` on failure.
 - **OCCT:** `XCAFDoc_NotesTool::CreateBalloon`
 - **Example:**
@@ -87,7 +87,7 @@ public func notesToolCreateBinData(
 ) -> AssemblyNode?
 ```
 
-- **Parameters:** `userName` — author; `timeStamp` — ISO-8601 string; `title` — display name; `mimeType` — MIME type string (e.g. `"image/png"`); `data` — raw byte payload.
+- **Parameters:** `userName`, author; `timeStamp`, ISO-8601 string; `title`, display name; `mimeType`, MIME type string (e.g. `"image/png"`); `data`, raw byte payload.
 - **Returns:** The label node, or `nil` on failure.
 - **OCCT:** `XCAFDoc_NotesTool::CreateBinData`
 - **Example:**
@@ -109,7 +109,7 @@ Delete a single note identified by its label node.
 public func notesToolDeleteNote(_ node: AssemblyNode) -> Bool
 ```
 
-- **Parameters:** `node` — the label node previously returned by a `notesToolCreate*` call.
+- **Parameters:** `node`, the label node previously returned by a `notesToolCreate*` call.
 - **Returns:** `true` if the note was found and deleted.
 - **OCCT:** `XCAFDoc_NotesTool::DeleteNote`
 - **Example:**
@@ -192,7 +192,7 @@ public func clippingPlaneToolAdd(
 ) -> AssemblyNode?
 ```
 
-- **Parameters:** `originX/Y/Z` — plane origin; `normalX/Y/Z` — plane normal (need not be unit-length); `name` — display name; `capping` — whether the open cross-section is capped.
+- **Parameters:** `originX/Y/Z`, plane origin; `normalX/Y/Z`, plane normal (need not be unit-length); `name`, display name; `capping`, whether the open cross-section is capped.
 - **Returns:** Label node for the new clipping plane entry, or `nil` on failure.
 - **OCCT:** `XCAFDoc_ClippingPlaneTool::AddClippingPlane`
 - **Example:**
@@ -216,7 +216,7 @@ public func clippingPlaneToolGet(_ node: AssemblyNode)
         capping: Bool)?
 ```
 
-- **Parameters:** `node` — label node returned by `clippingPlaneToolAdd`.
+- **Parameters:** `node`, label node returned by `clippingPlaneToolAdd`.
 - **Returns:** A named tuple with origin, normal, and capping flag; `nil` if the label is not a clipping plane.
 - **OCCT:** `XCAFDoc_ClippingPlaneTool::GetClippingPlane`
 - **Example:**
@@ -240,7 +240,7 @@ Test whether a label holds a clipping plane attribute.
 public func clippingPlaneToolIsClipPlane(_ node: AssemblyNode) -> Bool
 ```
 
-- **Parameters:** `node` — any assembly label node.
+- **Parameters:** `node`, any assembly label node.
 - **Returns:** `true` if the label carries a `XCAFDoc_ClippingPlane` attribute.
 - **OCCT:** `XCAFDoc_ClippingPlaneTool::IsClippingPlane`
 - **Example:**
@@ -259,7 +259,7 @@ Remove a clipping plane from the document.
 public func clippingPlaneToolRemove(_ node: AssemblyNode) -> Bool
 ```
 
-- **Parameters:** `node` — label node of the clipping plane to remove.
+- **Parameters:** `node`, label node of the clipping plane to remove.
 - **Returns:** `true` if the removal succeeded.
 - **OCCT:** `XCAFDoc_ClippingPlaneTool::RemoveClippingPlane`
 - **Example:**
@@ -305,7 +305,7 @@ Register a shape in the tool's map, enabling sub-shape lookup.
 public func shapeMapToolSetShape(_ shape: Shape) -> Bool
 ```
 
-- **Parameters:** `shape` — the shape whose sub-shapes should be indexed.
+- **Parameters:** `shape`, the shape whose sub-shapes should be indexed.
 - **Returns:** `true` on success.
 - **OCCT:** `XCAFDoc_ShapeMapTool::SetShape`
 - **Example:**
@@ -325,7 +325,7 @@ Test whether a given shape is a sub-shape of the indexed shape.
 public func shapeMapToolIsSubShape(_ shape: Shape) -> Bool
 ```
 
-- **Parameters:** `shape` — shape to test for membership.
+- **Parameters:** `shape`, shape to test for membership.
 - **Returns:** `true` if `shape` is a sub-shape of the shape registered via `shapeMapToolSetShape`.
 - **OCCT:** `XCAFDoc_ShapeMapTool::IsSubShape`
 - **Example:**
@@ -355,7 +355,7 @@ public var shapeMapToolExtent: Int32 { get }
 
 ## XCAFDoc_AssemblyGraph
 
-`AssemblyGraph` — a read-only snapshot of the assembly hierarchy as a directed graph. Instantiate once per document and query counts or per-node type.
+`AssemblyGraph`: a read-only snapshot of the assembly hierarchy as a directed graph. Instantiate once per document and query counts or per-node type.
 
 ### `AssemblyGraph.init?(document:)`
 
@@ -365,7 +365,7 @@ Build a graph from a document.
 public init?(document: Document)
 ```
 
-- **Parameters:** `document` — the document whose assembly structure to traverse.
+- **Parameters:** `document`, the document whose assembly structure to traverse.
 - **Returns:** A populated graph, or `nil` if the document contains no assembly hierarchy.
 - **OCCT:** `XCAFDoc_AssemblyGraph` constructor
 - **Example:**
@@ -472,7 +472,7 @@ Return the type of a node by 1-based index.
 public func nodeType(at index: Int32) -> NodeType?
 ```
 
-- **Parameters:** `index` — 1-based node index (1 … `nodeCount`).
+- **Parameters:** `index`, 1-based node index (1 … `nodeCount`).
 - **Returns:** The node type, or `nil` if `index` is out of range.
 - **OCCT:** `XCAFDoc_AssemblyGraph::GetNodeType`
 - **Example:**
@@ -490,7 +490,7 @@ public func nodeType(at index: Int32) -> NodeType?
 
 ## XCAFDoc_AssemblyItemId
 
-`AssemblyItemId` — a lightweight value type representing an assembly path as a `/`-separated string of label entries (e.g. `"0:1:1:1/0:1:1:2"`).
+`AssemblyItemId`: a lightweight value type representing an assembly path as a `/`-separated string of label entries (e.g. `"0:1:1:1/0:1:1:2"`).
 
 ### `AssemblyItemId.init(_:)`
 
@@ -500,7 +500,7 @@ Create an assembly item ID from a path string.
 public init(_ path: String)
 ```
 
-- **Parameters:** `path` — colon-and-slash separated label path.
+- **Parameters:** `path`, colon-and-slash separated label path.
 - **OCCT:** `XCAFDoc_AssemblyItemId` constructor
 - **Example:**
   ```swift
@@ -562,7 +562,7 @@ Test equality with another item ID.
 public func isEqual(to other: AssemblyItemId) -> Bool
 ```
 
-- **Parameters:** `other` — the ID to compare.
+- **Parameters:** `other`, the ID to compare.
 - **Returns:** `true` if both paths are identical.
 - **OCCT:** `XCAFDoc_AssemblyItemId::IsEqual`
 - **Example:**
@@ -576,7 +576,7 @@ public func isEqual(to other: AssemblyItemId) -> Bool
 
 ## XCAFView_Object
 
-`ViewObject` — a standalone view definition (camera parameters) that can be stored in an XDE document's view tool.
+`ViewObject`: a standalone view definition (camera parameters) that can be stored in an XDE document's view tool.
 
 ### `ViewObject.init?()`
 
@@ -626,7 +626,7 @@ Set the projection type (central or parallel).
 public func setType(_ type: ProjectionType)
 ```
 
-- **Parameters:** `type` — `.central` (perspective) or `.parallel` (orthographic).
+- **Parameters:** `type`, `.central` (perspective) or `.parallel` (orthographic).
 - **OCCT:** `XCAFView_Object::SetType`
 
 ---
@@ -875,7 +875,7 @@ public var name: String? { get }
 
 ## XCAFNoteObjects_NoteObject
 
-`NoteObject` — annotation geometry data (plane, point, presentation shape) associated with a note.
+`NoteObject`: annotation geometry data (plane, point, presentation shape) associated with a note.
 
 ### `NoteObject.init?()`
 
@@ -986,7 +986,7 @@ Attach a shape as the visual presentation for the note callout.
 public func setPresentation(_ shape: Shape)
 ```
 
-- **Parameters:** `shape` — any `Shape` to use as the note's geometry.
+- **Parameters:** `shape`, any `Shape` to use as the note's geometry.
 - **OCCT:** `XCAFNoteObjects_NoteObject::SetPresentation`
 
 ---
@@ -1025,7 +1025,7 @@ public func reset()
 
 ## XCAFPrs_Style
 
-`PresentationStyle` — a value type capturing surface color, curve color, alpha, and visibility for a shape in an XDE scene.
+`PresentationStyle`: a value type capturing surface color, curve color, alpha, and visibility for a shape in an XDE scene.
 
 ### `PresentationStyle.init()`
 
@@ -1052,7 +1052,7 @@ public init(
 )
 ```
 
-- **Parameters:** `surfaceRed/Green/Blue` — RGB in [0, 1]; `surfaceAlpha` — opacity in [0, 1], default `1.0`.
+- **Parameters:** `surfaceRed/Green/Blue`, RGB in [0, 1]; `surfaceAlpha`, opacity in [0, 1], default `1.0`.
 - **OCCT:** `XCAFPrs_Style::SetColorSurf`
 - **Example:**
   ```swift
@@ -1136,7 +1136,7 @@ public func isEqual(to other: PresentationStyle) -> Bool
 ---
 ## XCAFDoc_VisMaterialCommon
 
-`VisMaterialCommon` — Phong shading parameters (diffuse, ambient, specular, emissive, shininess, transparency).
+`VisMaterialCommon`: Phong shading parameters (diffuse, ambient, specular, emissive, shininess, transparency).
 
 ### `VisMaterialCommon.init()`
 
@@ -1243,7 +1243,7 @@ public func isEqual(to other: VisMaterialCommon) -> Bool
 
 ## XCAFDoc_VisMaterialPBR
 
-`VisMaterialPBR` — PBR (physically-based rendering) material parameters.
+`VisMaterialPBR`: PBR (physically-based rendering) material parameters.
 
 ### `VisMaterialPBR.init()`
 
@@ -1393,7 +1393,7 @@ public func writeVRML(
 ) -> Bool
 ```
 
-- **Parameters:** `url` — destination file URL (`.wrl`); `version` — VRML version (1 or 2); `deflection` — triangulation chord deviation; `representation` — shading mode.
+- **Parameters:** `url`, destination file URL (`.wrl`); `version`, VRML version (1 or 2); `deflection`, triangulation chord deviation; `representation`, shading mode.
 - **Returns:** `true` on success.
 - **OCCT:** `VrmlAPI_Writer::Write`
 - **Example:**
@@ -1414,7 +1414,7 @@ Write an XDE document to a VRML file, applying a uniform scale.
 public func writeVRML(to url: URL, scale: Double = 1.0) -> Bool
 ```
 
-- **Parameters:** `url` — destination file URL (`.wrl`); `scale` — uniform scale factor applied before export.
+- **Parameters:** `url`, destination file URL (`.wrl`); `scale`, uniform scale factor applied before export.
 - **Returns:** `true` on success.
 - **OCCT:** `VrmlAPI_Writer::WriteDoc`
 - **Example:**
@@ -1437,7 +1437,7 @@ Create a `TDataStd_Directory` attribute on a label.
 public func createDirectory(at labelTag: Int = 0) -> Bool
 ```
 
-- **Parameters:** `labelTag` — child tag of the main label to target (0 = main label).
+- **Parameters:** `labelTag`, child tag of the main label to target (0 = main label).
 - **Returns:** `true` if the attribute was created.
 - **OCCT:** `TDataStd_Directory::New`
 - **Example:**
@@ -1471,7 +1471,7 @@ Create a child directory label under an existing directory.
 public func addSubDirectory(under parentLabelTag: Int = 0) -> Int?
 ```
 
-- **Parameters:** `parentLabelTag` — label tag of the parent directory.
+- **Parameters:** `parentLabelTag`, label tag of the parent directory.
 - **Returns:** The child label tag, or `nil` on failure.
 - **OCCT:** `TDataStd_Directory::AddDirectory`
 - **Example:**
@@ -1491,7 +1491,7 @@ Create an object (leaf) label under a directory.
 public func makeObjectLabel(under parentLabelTag: Int = 0) -> Int?
 ```
 
-- **Parameters:** `parentLabelTag` — label tag of the parent directory.
+- **Parameters:** `parentLabelTag`, label tag of the parent directory.
 - **Returns:** The new label tag, or `nil` on failure.
 - **OCCT:** `TDataStd_Directory::MakeObjectLabel`
 
@@ -1698,7 +1698,7 @@ Set the expression string on a label.
 public func setExpressionString(_ expression: String, at labelTag: Int) -> Bool
 ```
 
-- **Parameters:** `expression` — formula string (e.g. `"Width * 2"`).
+- **Parameters:** `expression`, formula string (e.g. `"Width * 2"`).
 - **OCCT:** `TDataStd_Expression::SetExpression` (via `OCCTDocumentExpressionSetString`).
 
 ---
@@ -1849,7 +1849,7 @@ public var dimTolToolToleranceCount: Int { get }
 
 ## TPrsStd_DriverTable
 
-`DriverTable` — a caseless enum namespace for managing the global singleton table of OCAF presentation drivers.
+`DriverTable`: a caseless enum namespace for managing the global singleton table of OCAF presentation drivers.
 
 ### `DriverTable.initStandard()`
 
@@ -1899,7 +1899,7 @@ public static func clear()
 
 ## TObj_Application
 
-`TObjApplication` — Swift wrapper for the `TObj_Application` singleton, the OCAF application context for TObj-based documents.
+`TObjApplication`: Swift wrapper for the `TObj_Application` singleton, the OCAF application context for TObj-based documents.
 
 ### `TObjApplication.shared`
 
@@ -1953,7 +1953,7 @@ public func createDocument() -> Document?
 
 ## UnitsAPI
 
-`Units` — a caseless enum namespace for unit conversion via OCCT's `UnitsAPI`.
+`Units`: a caseless enum namespace for unit conversion via OCCT's `UnitsAPI`.
 
 ### `Units.convert(_:from:to:)`
 
@@ -1963,7 +1963,7 @@ Convert a value from one named unit to another.
 public static func convert(_ value: Double, from fromUnit: String, to toUnit: String) -> Double
 ```
 
-- **Parameters:** `value` — numeric quantity; `fromUnit` — source unit name (e.g. `"mm"`); `toUnit` — target unit name (e.g. `"m"`).
+- **Parameters:** `value`, numeric quantity; `fromUnit`, source unit name (e.g. `"mm"`); `toUnit`, target unit name (e.g. `"m"`).
 - **Returns:** Converted value.
 - **OCCT:** `UnitsAPI::AnyToAny`
 - **Example:**
@@ -2117,7 +2117,7 @@ Deserialise a shape from a binary blob produced by `toBinaryData()`.
 public static func fromBinaryData(_ data: Data) -> Shape?
 ```
 
-- **Parameters:** `data` — binary data previously produced by `toBinaryData()`.
+- **Parameters:** `data`, binary data previously produced by `toBinaryData()`.
 - **Returns:** The restored `Shape`, or `nil` if the data is invalid.
 - **OCCT:** `BinTools::Read`
 
@@ -2132,7 +2132,7 @@ Write this shape to a binary file.
 public func writeBinary(to url: URL) -> Bool
 ```
 
-- **Parameters:** `url` — destination file URL.
+- **Parameters:** `url`, destination file URL.
 - **Returns:** `true` on success.
 - **OCCT:** `BinTools::Write` (file overload)
 - **Example:**
@@ -2152,7 +2152,7 @@ Read a shape from a binary file written by `writeBinary(to:)`.
 public static func loadBinary(from url: URL) -> Shape?
 ```
 
-- **Parameters:** `url` — source file URL.
+- **Parameters:** `url`, source file URL.
 - **Returns:** The restored `Shape`, or `nil` if the file is missing or invalid.
 - **OCCT:** `BinTools::Read` (file overload)
 - **Example:**
@@ -2166,7 +2166,7 @@ public static func loadBinary(from url: URL) -> Shape?
 
 ## Message_Messenger
 
-`Messenger` — a thin wrapper around OCCT's `Message_Messenger`, allowing messages to be dispatched to one or more attached printers (stdout, file, custom).
+`Messenger`: a thin wrapper around OCCT's `Message_Messenger`, allowing messages to be dispatched to one or more attached printers (stdout, file, custom).
 
 ### `Messenger.Gravity`
 
@@ -2245,7 +2245,7 @@ Dispatch a message to all attached printers at the given severity.
 public func send(_ message: String, gravity: Gravity = .info)
 ```
 
-- **Parameters:** `message` — message text; `gravity` — severity level (default `.info`).
+- **Parameters:** `message`, message text; `gravity`, severity level (default `.info`).
 - **OCCT:** `Message_Messenger::Send`
 - **Example:**
   ```swift
@@ -2265,7 +2265,7 @@ Attach a file printer that writes messages at or above the given gravity to a lo
 public func addFilePrinter(path: String, gravity: Gravity = .info) -> Bool
 ```
 
-- **Parameters:** `path` — filesystem path for the log file; `gravity` — minimum severity to log.
+- **Parameters:** `path`, filesystem path for the log file; `gravity`, minimum severity to log.
 - **Returns:** `true` if the printer was attached successfully.
 - **OCCT:** `Message_PrinterOStream` / `Message_Messenger::AddPrinter`
 - **Example:**

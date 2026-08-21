@@ -148,7 +148,7 @@ jobs:
             ${{ runner.os }}-spm-kernel-
 
       # OCCTSWIFT_LOCAL=1, not Package.swift's auto-detect. The step above restores
-      # ~/Library/Caches/org.swift.swiftpm, which caches the manifest *evaluation* — including the
+      # ~/Library/Caches/org.swift.swiftpm, which caches the manifest *evaluation*, including the
       # `useLocalBinary` filesystem probe that ran before Libraries/OCCT.xcframework existed. A
       # restored cache therefore makes SwiftPM keep resolving the pinned released kernel, and this
       # job silently validates the wrong binary while reporting green. Measured locally on #532:

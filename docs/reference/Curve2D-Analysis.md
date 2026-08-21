@@ -1,9 +1,9 @@
 ---
-title: Curve2D — Analysis
+title: Curve2D. Analysis
 parent: API Reference
 ---
 
-# Curve2D — Analysis
+# Curve2D. Analysis
 
 This page covers the analysis and query members of `Curve2D`: differential geometry (curvature, normal, inflection), bounding box, general-purpose intersection/projection/extrema, batch evaluation, analytical intersection primitives, 2D extrema solvers, detailed curvature-inflection classification via `Geom2dLProp`, approximation/simplification via `ShapeCustom_Curve2d` and `Approx_Curve2d`, interpolation, arc-length and trim, local extrema and gce factory construction, serialization/persistence, energy-minimal fair curves, and `Point2D` integration. For primitive construction, B-spline/Bezier operations, and transforms see the main `Curve2D` page.
 
@@ -27,9 +27,9 @@ Returns the signed curvature (1 / radius of curvature) at parameter `u`.
 public func curvature(at u: Double) -> Double?
 ```
 
-Returns `0` for straight segments — a real answer — and `nil` where `GeomLProp_CLProps2d::IsTangentDefined()` is false. Those two used to be the same `0` (#595).
+Returns `0` for straight segments, a real answer, and `nil` where `GeomLProp_CLProps2d::IsTangentDefined()` is false. Those two used to be the same `0` (#595).
 
-- **Parameters:** `u` — curve parameter.
+- **Parameters:** `u`, curve parameter.
 - **Returns:** Curvature value, `0` for a straight segment, or `nil` where the curve has no tangent there (a Bezier whose control points all coincide) or the parameter cannot be evaluated. A **cusp** still reports `Double.greatestFiniteMagnitude` (OCCT's `RealLast()`, meaning infinite curvature): an answer, not an absence.
 - **OCCT:** `Geom2dLProp_CLProps2d::Curvature`.
 - **Example:**
@@ -38,7 +38,7 @@ Returns `0` for straight segments — a real answer — and `nil` where `GeomLPr
       let k = circle.curvature(at: 0)  // ≈ 0.2 (1/R)
   }
   if let seg = Curve2D.segment(from: SIMD2(0, 0), to: SIMD2(10, 0)) {
-      seg.curvature(at: 5)             // 0 — straight, and that is the answer
+      seg.curvature(at: 5)             // 0, straight, and that is the answer
   }
   ```
 
@@ -52,7 +52,7 @@ Returns the unit inward normal vector at parameter `u`.
 public func normal(at u: Double) -> SIMD2<Double>?
 ```
 
-- **Parameters:** `u` — curve parameter.
+- **Parameters:** `u`, curve parameter.
 - **Returns:** Unit normal, or `nil` if undefined (e.g. curvature is zero on a straight line).
 - **OCCT:** `Geom2dLProp_CLProps2d::Normal`.
 - **Example:**
@@ -73,7 +73,7 @@ Returns the unit tangent direction at parameter `u`.
 public func tangentDirection(at u: Double) -> SIMD2<Double>?
 ```
 
-- **Parameters:** `u` — curve parameter.
+- **Parameters:** `u`, curve parameter.
 - **Returns:** Unit tangent, or `nil` if undefined.
 - **OCCT:** `Geom2dLProp_CLProps2d::Tangent`.
 - **Example:**
@@ -94,14 +94,14 @@ Returns the center of the osculating circle at parameter `u`.
 public func centerOfCurvature(at u: Double) -> SIMD2<Double>?
 ```
 
-- **Parameters:** `u` — curve parameter.
+- **Parameters:** `u`, curve parameter.
 - **Returns:** Center of curvature, or `nil` if curvature is zero (straight segment).
 - **OCCT:** `Geom2dLProp_CLProps2d::CentreOfCurvature`.
 - **Example:**
   ```swift
   if let circle = Curve2D.circle(center: .zero, radius: 5),
      let coc = circle.centerOfCurvature(at: 0) {
-      print(coc)  // ≈ (0, 0) — the center of the circle itself
+      print(coc)  // ≈ (0, 0), the center of the circle itself
   }
   ```
 
@@ -153,7 +153,7 @@ Returns `Curve2DSpecialPoint` values with `.minCurvature` or `.maxCurvature` typ
 
 ### `allSpecialPoints()`
 
-Returns all special points — both inflection points and curvature extrema — in a single pass.
+Returns all special points, both inflection points and curvature extrema, in a single pass.
 
 ```swift
 public func allSpecialPoints() -> [Curve2DSpecialPoint]
@@ -207,8 +207,8 @@ public struct Curve2DSpecialPoint: Sendable {
 }
 ```
 
-- `parameter` — curve parameter at the special point.
-- `type` — inflection, minimum curvature, or maximum curvature.
+- `parameter`: curve parameter at the special point.
+- `type`: inflection, minimum curvature, or maximum curvature.
 
 ---
 
@@ -254,8 +254,8 @@ public struct Curve2DIntersection: Sendable {
 }
 ```
 
-- `point` — 2D intersection coordinate.
-- `parameter1` / `parameter2` — parameters on the first and second curves at the intersection.
+- `point`: 2D intersection coordinate.
+- `parameter1` / `parameter2`, parameters on the first and second curves at the intersection.
 
 *(Per-field anchors below, for cross-reference; the list above has the actual meaning of each.)*
 
@@ -275,9 +275,9 @@ public struct Curve2DProjection: Sendable {
 }
 ```
 
-- `point` — nearest point on the curve.
-- `parameter` — curve parameter at that point.
-- `distance` — distance from the queried point to the curve.
+- `point`: nearest point on the curve.
+- `parameter`: curve parameter at that point.
+- `distance`: distance from the queried point to the curve.
 
 ---
 
@@ -325,7 +325,7 @@ public func intersections(with other: Curve2D, tolerance: Double = 1e-6) -> [Cur
 
 Capped at 128 results.
 
-- **Parameters:** `other` — the curve to intersect with; `tolerance` — intersection tolerance (default `1e-6`).
+- **Parameters:** `other`, the curve to intersect with; `tolerance`, intersection tolerance (default `1e-6`).
 - **Returns:** Array of `Curve2DIntersection` values (may be empty).
 - **OCCT:** `Geom2dAPI_InterCurveCurve`.
 - **Example:**
@@ -349,7 +349,7 @@ public func selfIntersections(tolerance: Double = 1e-6) -> [Curve2DIntersection]
 
 Capped at 128 results.
 
-- **Parameters:** `tolerance` — intersection tolerance (default `1e-6`).
+- **Parameters:** `tolerance`, intersection tolerance (default `1e-6`).
 - **Returns:** Array of `Curve2DIntersection` values (may be empty).
 - **OCCT:** `Geom2dAPI_InterCurveCurve` self-intersection mode.
 - **Example:**
@@ -369,10 +369,10 @@ Projects a point onto this curve, returning the single nearest projection.
 public func project(point p: SIMD2<Double>) -> Curve2DProjection?
 ```
 
-- **Parameters:** `p` — 2D point to project.
+- **Parameters:** `p`, 2D point to project.
 - **Returns:** Nearest `Curve2DProjection`, always inside the curve's own domain, or `nil` when there is no curve to answer about.
-- **OCCT:** `occtNearestPointOnCurve2dRange` — the minimum over every `Geom2dAPI_ProjectPointOnCurve` extremum in range and both curve ends. There is no third source: `ShapeAnalysis_Curve` has no 2D projection (#615).
-- **Note:** `project(_:)` (the `Point2D` overload), [`Point2D.distance(to:)`](Geometry2D.md) and `nearestParameter(to:)` compute the same nearest solution through the same shared bridge path and agree with it exactly (#413, #615). The answer is the true nearest point rather than the nearest *perpendicular foot*: a point past the end of a bounded curve is nearest to that end, and a half arc queried from below answers with its near end. Until #615 all of these reported an extremum instead — the far side of that arc, `11` away where the truth is `7.81` — or `nil` where there was none. [`allProjections(of:)`](#allprojectionsof) is deliberately **not** in the agreement; it asks for the extrema, and still reports none for those points.
+- **OCCT:** `occtNearestPointOnCurve2dRange`, the minimum over every `Geom2dAPI_ProjectPointOnCurve` extremum in range and both curve ends. There is no third source: `ShapeAnalysis_Curve` has no 2D projection (#615).
+- **Note:** `project(_:)` (the `Point2D` overload), [`Point2D.distance(to:)`](Geometry2D.md) and `nearestParameter(to:)` compute the same nearest solution through the same shared bridge path and agree with it exactly (#413, #615). The answer is the true nearest point rather than the nearest *perpendicular foot*: a point past the end of a bounded curve is nearest to that end, and a half arc queried from below answers with its near end. Until #615 all of these reported an extremum instead, the far side of that arc, `11` away where the truth is `7.81`, or `nil` where there was none. [`allProjections(of:)`](#allprojectionsof) is deliberately **not** in the agreement; it asks for the extrema, and still reports none for those points.
 - **Example:**
   ```swift
   if let circle = Curve2D.circle(center: .zero, radius: 5),
@@ -391,12 +391,12 @@ Projects a point onto this curve, returning all projection solutions.
 public func allProjections(of p: SIMD2<Double>) -> [Curve2DProjection]
 ```
 
-Capped at 64 results. Useful when a point has several local-minimum projections — e.g. a point outside a circle projects to both the near and the far side.
+Capped at 64 results. Useful when a point has several local-minimum projections, e.g. a point outside a circle projects to both the near and the far side.
 
-- **Parameters:** `p` — 2D point to project.
+- **Parameters:** `p`, 2D point to project.
 - **Returns:** Array of `Curve2DProjection` values, empty when there is no extremum at all.
 - **OCCT:** `Geom2dAPI_ProjectPointOnCurve` (all solutions).
-- **Note:** This asks for the **extrema** — the perpendicular feet — which since #615 is visibly a different question from "the nearest point". A bounded curve queried from beyond its end has no foot, so this returns empty where [`project(point:)`](#projectpoint) answers with the end. An extremum may also be a local *maximum*: on a half arc queried from the far side, the only element here is the point furthest away.
+- **Note:** This asks for the **extrema**, the perpendicular feet, which since #615 is visibly a different question from "the nearest point". A bounded curve queried from beyond its end has no foot, so this returns empty where [`project(point:)`](#projectpoint) answers with the end. An extremum may also be a local *maximum*: on a half arc queried from the far side, the only element here is the point furthest away.
 - **Example:**
   ```swift
   if let circle = Curve2D.circle(center: .zero, radius: 5) {
@@ -404,7 +404,7 @@ Capped at 64 results. Useful when a point has several local-minimum projections 
       // 2 solutions: the near side and the far side
 
       let none = circle.allProjections(of: .zero)
-      // empty — the centre is equidistant from every point, so there is no local minimum
+      // empty, the centre is equidistant from every point, so there is no local minimum
   }
   ```
 
@@ -418,7 +418,7 @@ Finds the minimum distance between this curve and another.
 public func minDistance(to other: Curve2D) -> Curve2DExtremaResult?
 ```
 
-- **Parameters:** `other` — the curve to measure distance to.
+- **Parameters:** `other`, the curve to measure distance to.
 - **Returns:** `Curve2DExtremaResult` for the closest pair of points, or `nil` on failure.
 - **OCCT:** `Geom2dAPI_ExtremaCurveCurve` (minimum solution).
 - **Example:**
@@ -442,7 +442,7 @@ public func allExtrema(with other: Curve2D) -> [Curve2DExtremaResult]
 
 Capped at 64 results.
 
-- **Parameters:** `other` — the curve to compute extrema against.
+- **Parameters:** `other`, the curve to compute extrema against.
 - **Returns:** Array of `Curve2DExtremaResult` values (may be empty).
 - **OCCT:** `Geom2dAPI_ExtremaCurveCurve` (all solutions).
 - **Example:**
@@ -473,7 +473,7 @@ sampling. This is the canonical batch spelling; `evalBatchD0(params:)` and `grid
 forwarded here as deprecated aliases ([#486](https://github.com/SecondMouseAU/OCCTSwift/issues/486))
 and were removed at v2.0.0 ([#784](https://github.com/SecondMouseAU/OCCTSwift/issues/784)).
 
-- **Parameters:** `parameters` — array of parameter values.
+- **Parameters:** `parameters`, array of parameter values.
 - **Returns:** Array of 2D points corresponding to each parameter; empty if `parameters` is empty.
 - **OCCT:** `Geom2dGridEval_Curve::EvaluateGrid` via `OCCTCurve2DEvaluateGrid`.
 - **Example:**
@@ -494,7 +494,7 @@ Evaluates the curve and its first derivative at multiple parameter values in a s
 public func evaluateGridD1(_ parameters: [Double]) -> [(point: SIMD2<Double>, tangent: SIMD2<Double>)]
 ```
 
-- **Parameters:** `parameters` — array of parameter values.
+- **Parameters:** `parameters`, array of parameter values.
 - **Returns:** Array of `(point, tangent)` tuples; empty if `parameters` is empty.
 - **OCCT:** `Geom2dGridEval_Curve::EvaluateGridD1` via `OCCTCurve2DEvaluateGridD1`.
 - **Example:**
@@ -529,10 +529,10 @@ public struct Extrema2DResult: Sendable {
 }
 ```
 
-- `squareDistance` — squared distance (avoids sqrt cost).
-- `distance` — computed square root of `squareDistance`.
-- `param1` / `param2` — parameters on the first and second elements.
-- `point1` / `point2` — closest points on each element.
+- `squareDistance`: squared distance (avoids sqrt cost).
+- `distance`: computed square root of `squareDistance`.
+- `param1` / `param2`, parameters on the first and second elements.
+- `point1` / `point2`, closest points on each element.
 
 *(Per-field anchors below, for cross-reference; the list above has the actual meaning of each.)*
 
@@ -554,7 +554,7 @@ public static func distanceBetweenLines(
 
 When lines are parallel, `isParallel` is `true` and one result with the perpendicular distance is returned.
 
-- **Returns:** `(isParallel, results)` — when parallel: one result with distance; when intersecting: one result with distance zero.
+- **Returns:** `(isParallel, results)`, when parallel: one result with distance; when intersecting: one result with distance zero.
 - **OCCT:** `Extrema_ExtElC2d` (line–line).
 - **Example:**
   ```swift
@@ -655,7 +655,7 @@ public static func distanceBetweenCurves(
 
 Capped at 32 results.
 
-- **Parameters:** `c1`/`c2` — the two curves; `first1`/`last1` — parameter range on `c1`; `first2`/`last2` — parameter range on `c2`.
+- **Parameters:** `c1`/`c2`, the two curves; `first1`/`last1`, parameter range on `c1`; `first2`/`last2`, parameter range on `c2`.
 - **Returns:** Array of `Extrema2DResult` values for all local extrema (may be empty).
 - **OCCT:** `Extrema_ExtCC2d`.
 - **Example:**
@@ -672,7 +672,7 @@ Capped at 32 results.
 ## Geom2dLProp: Curvature Inflection/Extrema
 
 `CurInfPoint`/`CurInfType` are an alternate vocabulary for the same `curvatureExtrema()`/
-`inflectionPoints()` results above — same `GeomLProp_CurAndInf2d` computation, no second
+`inflectionPoints()` results above, same `GeomLProp_CurAndInf2d` computation, no second
 solver run. `curvatureExtremaDetailed()`/`inflectionPointsDetailed()` delegate to those two
 functions and translate each `Curve2DSpecialPoint` into a `CurInfPoint` via `CurInfType.init(_:)`.
 
@@ -726,7 +726,7 @@ public func curvatureExtremaDetailed() -> [CurInfPoint]
 ```
 
 Unlike `curvatureExtrema()` (which returns `Curve2DSpecialPoint`), this returns `CurInfPoint`
-values using the `CurInfType` enum — the two share one underlying `GeomLProp_CurAndInf2d` call,
+values using the `CurInfType` enum, the two share one underlying `GeomLProp_CurAndInf2d` call,
 so their parameter/count results always agree. Capped at 256 results (the shared function's cap).
 
 - **Returns:** Array of `CurInfPoint` with `.curvatureMinimum` or `.curvatureMaximum` type.
@@ -751,7 +751,7 @@ public func inflectionPointsDetailed() -> [CurInfPoint]
 ```
 
 Like `inflectionPoints()` but returns `CurInfPoint` values (all with `.inflection` type) rather
-than bare `Double` parameters — delegates directly to it, so results always match. Capped at
+than bare `Double` parameters, delegates directly to it, so results always match. Capped at
 256 results (the shared function's cap).
 
 - **Returns:** Array of `CurInfPoint` (all `.inflection`).
@@ -783,8 +783,8 @@ public struct Intersection2DPoint: Sendable {
 }
 ```
 
-- `point` — 2D coordinates of the intersection.
-- `param1` / `param2` — parameters on each input element at the intersection.
+- `point`: 2D coordinates of the intersection.
+- `param1` / `param2`, parameters on each input element at the intersection.
 
 ---
 
@@ -882,7 +882,7 @@ Checks whether this 2D BSpline curve has nearly collinear control points.
 public func isLinear(tolerance: Double = 1e-6) -> (isLinear: Bool, deviation: Double)?
 ```
 
-- **Parameters:** `tolerance` — maximum allowed deviation from a straight line.
+- **Parameters:** `tolerance`, maximum allowed deviation from a straight line.
 - **Returns:** Tuple `(isLinear, deviation)` where `deviation` is the actual maximum deviation, or `nil` if the curve is not a BSpline.
 - **OCCT:** `ShapeCustom_Curve2d::IsLinear`.
 - **Example:**
@@ -908,7 +908,7 @@ public func convertToLine(
 
 Returns the equivalent line curve along with reparametrized bounds, or `nil` if the curve is not within tolerance of a line.
 
-- **Parameters:** `first`/`last` — parameter range to check; `tolerance` — deviation tolerance.
+- **Parameters:** `first`/`last`, parameter range to check; `tolerance`, deviation tolerance.
 - **Returns:** Tuple `(line, newFirst, newLast, deviation)`, or `nil` if not linear within tolerance.
 - **OCCT:** `ShapeCustom_Curve2d::ConvertToLine`.
 - **Example:**
@@ -932,7 +932,7 @@ public func simplifyBSpline(tolerance: Double = 1e-6) -> Bool
 
 Mutates the receiver. Returns `true` if any knots were removed.
 
-- **Parameters:** `tolerance` — maximum allowed shape deviation after removal.
+- **Parameters:** `tolerance`, maximum allowed shape deviation after removal.
 - **Returns:** `true` if simplification occurred.
 - **OCCT:** `ShapeCustom_Curve2d::SimplifyBSpline`.
 - **Example:**
@@ -958,18 +958,18 @@ public func approximatedInRange(
 ```
 
 **Not a ranged overload of** [`approximated(tolerance:continuity:maxSegments:maxDegree:)`](Curve2D.md#approximatedtolerancecontinuitymaxsegmentsmaxdegree)
-— the two wrap different OCCT algorithms (`Approx_Curve2d` here vs. `Geom2dConvert_ApproxCurve`
+,  the two wrap different OCCT algorithms (`Approx_Curve2d` here vs. `Geom2dConvert_ApproxCurve`
 there) with different tolerance semantics, so their default tolerances (`1e-6` here, `1e-3`
-there — a 1000x gap) are not directly comparable: this one bounds independent per-axis error on
+there, a 1000x gap) are not directly comparable: this one bounds independent per-axis error on
 a restricted range, the other bounds a single whole-curve error. Continuity is fixed at C2 here
 and is not caller-configurable; use the other overload if you need a different continuity order.
 See #407.
 
 **Renamed from `approximated(first:last:toleranceU:toleranceV:maxDegree:maxSegments:)`.** The old
-spelling still compiles — it's kept as an `@available(*, deprecated, renamed:)` shim forwarding
+spelling still compiles, it's kept as an `@available(*, deprecated, renamed:)` shim forwarding
 directly to this method, so existing call sites get a migration warning rather than a hard break.
 
-- **Parameters:** `first`/`last` — parameter sub-range to approximate; `toleranceU`/`toleranceV` — per-axis approximation tolerances; `maxDegree` — maximum polynomial degree (default 8); `maxSegments` — maximum number of segments (default 100).
+- **Parameters:** `first`/`last`, parameter sub-range to approximate; `toleranceU`/`toleranceV`, per-axis approximation tolerances; `maxDegree`, maximum polynomial degree (default 8); `maxSegments`, maximum number of segments (default 100).
 - **Returns:** Approximated BSpline `Curve2D`, or `nil` on failure.
 - **OCCT:** `Approx_Curve2d`.
 - **Example:**
@@ -999,11 +999,11 @@ public static func interpolate(
 ```
 
 A spelling of [`interpolate(through:startTangent:endTangent:tolerance:)`](Curve2D.md) with the
-`points:` argument label, and it delegates to it — the two cannot produce different curves for
+`points:` argument label, and it delegates to it, the two cannot produce different curves for
 the same input. Before #410 it was a second, independent `Geom2dAPI_Interpolate` call site with
 the tolerance hardcoded at `1e-6` and no parameter to change it.
 
-- **Parameters:** `points` — interpolation points; `startTangent`/`endTangent` — tangent directions at the first and last point; `tolerance` — interpolation tolerance (default `1e-6`, matching the value this method used to hardcode).
+- **Parameters:** `points`, interpolation points; `startTangent`/`endTangent`, tangent directions at the first and last point; `tolerance`, interpolation tolerance (default `1e-6`, matching the value this method used to hardcode).
 - **Returns:** Interpolated BSpline, or `nil` on failure.
 - **OCCT:** `Geom2dAPI_Interpolate` (with tangent constraints).
 - **Example:**
@@ -1028,9 +1028,9 @@ public static func interpolatePeriodic(points: [SIMD2<Double>],
                                        tolerance: Double = 1e-6) -> Curve2D?
 ```
 
-A spelling of [`interpolate(through:closed:tolerance:)`](Curve2D.md) with `closed: true`, and it delegates to it — the two cannot produce different curves for the same input. Before #412 it was a second, independent `Geom2dAPI_Interpolate` call site with the tolerance pinned at `1e-6` and unreachable, and with a stricter minimum point count (3, against the general entry point's 2) that the two had drifted into.
+A spelling of [`interpolate(through:closed:tolerance:)`](Curve2D.md) with `closed: true`, and it delegates to it, the two cannot produce different curves for the same input. Before #412 it was a second, independent `Geom2dAPI_Interpolate` call site with the tolerance pinned at `1e-6` and unreachable, and with a stricter minimum point count (3, against the general entry point's 2) that the two had drifted into.
 
-- **Parameters:** `points` — interpolation points, minimum 2 (do not repeat the first point at the end; the curve closes automatically); `tolerance` — point coincidence tolerance.
+- **Parameters:** `points`, interpolation points, minimum 2 (do not repeat the first point at the end; the curve closes automatically); `tolerance`, point coincidence tolerance.
 - **Returns:** Periodic BSpline, or `nil` on failure.
 - **OCCT:** `Geom2dAPI_Interpolate` (periodic).
 - **Example:**
@@ -1055,7 +1055,7 @@ public static func approximate(
 ) -> Curve2D?
 ```
 
-- **Parameters:** `points` — sample points to approximate; `degMin`/`degMax` — degree range; `continuity` — desired continuity (0=C0, 1=C1, 2=C2); `tolerance` — maximum fitting error.
+- **Parameters:** `points`, sample points to approximate; `degMin`/`degMax`, degree range; `continuity`, desired continuity (0=C0, 1=C1, 2=C2); `tolerance`, maximum fitting error.
 - **Returns:** Approximated BSpline, or `nil` on failure.
 - **OCCT:** `Geom2dAPI_PointsToBSpline`.
 - **Example:**
@@ -1120,8 +1120,8 @@ public func splitAtContinuity(
 ) -> [Curve2D]
 ```
 
-- **Parameters:** `continuity` — 0=C0, 1=C1, 2=C2; `tolerance` — detection tolerance;
-  `maxSegments` — output *capacity* (default 32), clamped into `0...Sampling.maximumSampleCount` (10,000,000); 0 or less returns empty (#622).
+- **Parameters:** `continuity`, 0=C0, 1=C1, 2=C2; `tolerance`, detection tolerance;
+  `maxSegments`: output *capacity* (default 32), clamped into `0...Sampling.maximumSampleCount` (10,000,000); 0 or less returns empty (#622).
 - **Returns:** Array of sub-curves (one per continuous segment); may be empty if the curve has no discontinuities or the split fails.
 - **OCCT:** `Geom2dConvert::C0BSplineToArrayOfC1BSplineCurve` and related splitting utilities.
 - **Example:**
@@ -1154,10 +1154,10 @@ public struct LocalExtrema2dResult: Sendable {
 }
 ```
 
-- `isDone` — `true` if a local extremum was found near the seed parameters.
-- `squareDistance` — squared distance at the local extremum.
-- `point1`/`point2` — closest points on each curve.
-- `param1`/`param2` — parameters at those points.
+- `isDone`: `true` if a local extremum was found near the seed parameters.
+- `squareDistance`: squared distance at the local extremum.
+- `point1`/`point2`, closest points on each curve.
+- `param1`/`param2`, parameters at those points.
 
 | Field | Meaning |
 |---|---|
@@ -1189,7 +1189,7 @@ public func locateExtremaCC(
 
 When `range1`/`range2` are `nil`, the curve's full `domain` is used. Useful for finding a specific local minimum when the approximate location is known.
 
-- **Parameters:** `range1`/`range2` — optional parameter ranges on `self` and `other`; `seedU`/`seedV` — initial parameter guesses on `self` and `other`.
+- **Parameters:** `range1`/`range2`, optional parameter ranges on `self` and `other`; `seedU`/`seedV`, initial parameter guesses on `self` and `other`.
 - **Returns:** `LocalExtrema2dResult` (check `isDone` before using distance/point fields).
 - **OCCT:** `Extrema_LocateExtCC2d`.
 - **Example:**
@@ -1211,10 +1211,10 @@ Creates a 2D circle from a center point and radius using `gce_MakeCirc2d`.
 public static func circleFromCenterRadius(center: SIMD2<Double>, radius: Double) -> Curve2D?
 ```
 
-- **Parameters:** `center` — center point; `radius` — radius (must be > 0).
+- **Parameters:** `center`, center point; `radius`, radius (must be > 0).
 - **Returns:** `Curve2D` (circle), or `nil` if `radius ≤ 0`.
 - **OCCT:** `gce_MakeCirc2d` (center + radius constructor).
-- **Note:** Geometrically identical to [`circle(center:radius:)`](Curve2D.md), and enforces the same radius precondition. `gce_MakeCirc2d` itself accepts `Radius >= 0`, so the bridge adds the zero check to keep the two factories in agreement — before #411 this page documented the `radius ≤ 0` rejection that only the direct factory actually performed.
+- **Note:** Geometrically identical to [`circle(center:radius:)`](Curve2D.md), and enforces the same radius precondition. `gce_MakeCirc2d` itself accepts `Radius >= 0`, so the bridge adds the zero check to keep the two factories in agreement, before #411 this page documented the `radius ≤ 0` rejection that only the direct factory actually performed.
 - **Example:**
   ```swift
   if let c = Curve2D.circleFromCenterRadius(center: SIMD2(1, 2), radius: 4) {
@@ -1234,7 +1234,7 @@ public static func circleThrough3Points(
 ) -> Curve2D?
 ```
 
-- **Parameters:** `p1`, `p2`, `p3` — three non-collinear points.
+- **Parameters:** `p1`, `p2`, `p3`, three non-collinear points.
 - **Returns:** `Curve2D` (circle), or `nil` if points are collinear or coincident.
 - **OCCT:** `gce_MakeCirc2d` (3-point constructor).
 - **Example:**
@@ -1254,7 +1254,7 @@ Creates a 2D line through two points using `gce_MakeLin2d`.
 public static func lineFrom2Points(_ p1: SIMD2<Double>, _ p2: SIMD2<Double>) -> Curve2D?
 ```
 
-- **Parameters:** `p1`, `p2` — two distinct points.
+- **Parameters:** `p1`, `p2`, two distinct points.
 - **Returns:** `Curve2D` (infinite line), or `nil` if points coincide.
 - **OCCT:** `gce_MakeLin2d` (2-point constructor).
 - **Example:**
@@ -1274,7 +1274,7 @@ Creates a 2D line from the equation `Ax + By + C = 0` using `gce_MakeLin2d`.
 public static func lineFromEquation(a: Double, b: Double, c: Double) -> Curve2D?
 ```
 
-- **Parameters:** `a`, `b`, `c` — line equation coefficients.
+- **Parameters:** `a`, `b`, `c`, line equation coefficients.
 - **Returns:** `Curve2D` (infinite line), or `nil` on failure (e.g. `a == 0 && b == 0`).
 - **OCCT:** `gce_MakeLin2d` (equation constructor).
 - **Example:**
@@ -1298,7 +1298,7 @@ public static func ellipseFromCenterDir(
 ) -> Curve2D?
 ```
 
-- **Parameters:** `center` — center point; `direction` — unit direction of the major axis; `majorRadius`/`minorRadius` — semi-axes (both must be > 0, and `minorRadius` no larger than `majorRadius`).
+- **Parameters:** `center`, center point; `direction`, unit direction of the major axis; `majorRadius`/`minorRadius`, semi-axes (both must be > 0, and `minorRadius` no larger than `majorRadius`).
 - **Returns:** `Curve2D` (ellipse), or `nil` if either radius is non-positive or `minorRadius` exceeds `majorRadius`.
 - **OCCT:** `gce_MakeElips2d`.
 - **Note:** Geometrically identical to [`ellipse(center:majorRadius:minorRadius:rotation:)`](Curve2D.md), which takes the major-axis direction as a rotation angle, and since #487 enforces the same radius precondition. This page documented the rejection before #487, but only the direct factory performed it: `gce_MakeElips2d` accepted zero radii and, for `majorRadius: 5, minorRadius: -3`, returned an ellipse reporting a minor radius of -3. Equal radii remain valid.
@@ -1327,7 +1327,7 @@ public static func hyperbolaFromCenterDir(
 ) -> Curve2D?
 ```
 
-- **Parameters:** `center` — center; `direction` — unit direction of the real axis; `majorRadius`/`minorRadius` — real and imaginary semi-axes (both must be > 0, in either order).
+- **Parameters:** `center`, center; `direction`, unit direction of the real axis; `majorRadius`/`minorRadius`, real and imaginary semi-axes (both must be > 0, in either order).
 - **Returns:** `Curve2D` (hyperbola), or `nil` if either radius is non-positive.
 - **OCCT:** `gce_MakeHypr2d`.
 - **Note:** Geometrically identical to [`hyperbola(center:majorRadius:minorRadius:rotation:)`](Curve2D.md), which takes the real-axis direction as a rotation angle, and since #487 enforces the same radius precondition. OCCT itself accepts zero radii through both routes, so the rejection is the bridge's contract, not OCCT's. Unlike an ellipse, a hyperbola puts no ordering on its radii: a minor radius larger than the major is an ordinary hyperbola and is accepted.
@@ -1356,7 +1356,7 @@ public static func parabolaFromCenterDir(
 ) -> Curve2D?
 ```
 
-- **Parameters:** `center` — vertex of the parabola; `direction` — axis direction; `focal` — focal distance (must be > 0).
+- **Parameters:** `center`, vertex of the parabola; `direction`, axis direction; `focal`, focal distance (must be > 0).
 - **Returns:** `Curve2D` (parabola), or `nil` if `focal ≤ 0`.
 - **OCCT:** `gce_MakeParab2d`.
 - **Note:** Places the same curve as [`parabola(focus:direction:focalLength:)`](Curve2D.md) once that factory's `focus` is set to `center + direction * focal`, and since #487 enforces the same focal-length precondition. OCCT itself accepts `focal == 0` through both routes (`gp_Parab2d` documents the result as a line parallel to the axis of symmetry), so the rejection is the bridge's contract, not OCCT's.
@@ -1382,7 +1382,7 @@ public static func serializeCurves(_ curves: [Curve2D]) -> String?
 
 The resulting string can be stored to disk or passed across process boundaries, then deserialized with `deserializeCurves(_:)`.
 
-- **Parameters:** `curves` — array of curves to serialize.
+- **Parameters:** `curves`, array of curves to serialize.
 - **Returns:** Serialized string, or `nil` on failure.
 - **OCCT:** `GeomTools_Curve2dSet::Write`.
 - **Example:**
@@ -1403,7 +1403,7 @@ Deserializes an array of 2D curves from a string produced by `serializeCurves(_:
 public static func deserializeCurves(_ data: String) -> [Curve2D]?
 ```
 
-- **Parameters:** `data` — serialized curve string.
+- **Parameters:** `data`, serialized curve string.
 - **Returns:** Array of restored `Curve2D` values, or `nil` if the string is invalid or empty.
 - **OCCT:** `GeomTools_Curve2dSet::Read`.
 - **Example:**
@@ -1467,7 +1467,7 @@ public static func fairCurveBatten(
 
 `constraintOrder` controls what is constrained at each endpoint: 0 = position only, 1 = position + tangent, 2 = position + tangent + curvature.
 
-- **Parameters:** `p1`/`p2` — endpoints; `height` — cross-section height; `slope` — slope parameter; `angle1`/`angle2` — tangent angle constraints (radians); `constraintOrder1`/`constraintOrder2` — constraint orders; `freeSliding` — whether the batten can slide freely.
+- **Parameters:** `p1`/`p2`, endpoints; `height`, cross-section height; `slope`, slope parameter; `angle1`/`angle2`, tangent angle constraints (radians); `constraintOrder1`/`constraintOrder2`, constraint orders; `freeSliding`, whether the batten can slide freely.
 - **Returns:** `(curve, code)` tuple, or `nil` on internal failure. Check `code == .ok` before trusting the curve.
 - **OCCT:** `FairCurve_Batten::Compute`.
 - **Example:**
@@ -1502,7 +1502,7 @@ public static func fairCurveMinimalVariation(
 
 `physicalRatio` blends between pure batten (0) and minimal-variation (1) behaviour. Curvature constraints are active only when `constraintOrder >= 2`.
 
-- **Parameters:** `p1`/`p2` — endpoints; `height`/`slope` — physical parameters; `angle1`/`angle2` — tangent angles; `constraintOrder1`/`constraintOrder2` — constraint orders; `freeSliding`; `physicalRatio` — 0–1 blend; `curvature1`/`curvature2` — endpoint curvatures (used when order ≥ 2).
+- **Parameters:** `p1`/`p2`, endpoints; `height`/`slope`, physical parameters; `angle1`/`angle2`, tangent angles; `constraintOrder1`/`constraintOrder2`, constraint orders; `freeSliding`; `physicalRatio`, 0–1 blend; `curvature1`/`curvature2`, endpoint curvatures (used when order ≥ 2).
 - **Returns:** `(curve, code)` tuple, or `nil` on internal failure.
 - **OCCT:** `FairCurve_MinimalVariation::Compute`.
 - **Example:**
@@ -1532,7 +1532,7 @@ Evaluates the curve at parameter `t`, returning a `Point2D`.
 public func pointAt(_ t: Double) -> Point2D?
 ```
 
-- **Parameters:** `t` — curve parameter.
+- **Parameters:** `t`, curve parameter.
 - **Returns:** `Point2D` at parameter `t`, or `nil` on failure.
 - **OCCT:** `Geom2d_Curve::Value` via `Point2D` bridge.
 - **Example:**
@@ -1555,9 +1555,9 @@ public static func segment(from p1: Point2D, to p2: Point2D) -> Curve2D?
 
 Distinct from `segment(from:to:)` taking `SIMD2<Double>` parameters.
 
-- **Parameters:** `p1`/`p2` — `Point2D` endpoints.
+- **Parameters:** `p1`/`p2`, `Point2D` endpoints.
 - **Returns:** `Curve2D` (trimmed line segment), or `nil` on failure.
-- **OCCT:** `Geom2d_Line` + `Geom2d_TrimmedCurve` (direct construction — no `GC_`/`GCE2d_` `Make`
+- **OCCT:** `Geom2d_Line` + `Geom2d_TrimmedCurve` (direct construction, no `GC_`/`GCE2d_` `Make`
   helper is used; corrected from a stale `GCE2d_MakeSegment` attribution by #809).
 - **Example:**
   ```swift
@@ -1578,10 +1578,10 @@ Projects a `Point2D` onto this curve.
 public func project(_ point: Point2D) -> (parameter: Double, distance: Double)?
 ```
 
-- **Parameters:** `point` — the `Point2D` to project.
+- **Parameters:** `point`, the `Point2D` to project.
 - **Returns:** `(parameter, distance)` tuple, or `nil` when there is no curve to answer about.
-- **OCCT:** `occtNearestPointOnCurve2dRange`, shared with [`project(point:)`](#projectpoint), so it reports the true nearest point over the curve's own domain — a point past the end answers with that end (#615).
-- **Note:** A `parameter` of `0` is an ordinary success — projecting a segment's own start point onto it returns exactly that — so `nil` is the only failure signal. The underlying bridge function used to return `0` on failure too, conflating the two (#413).
+- **OCCT:** `occtNearestPointOnCurve2dRange`, shared with [`project(point:)`](#projectpoint), so it reports the true nearest point over the curve's own domain, a point past the end answers with that end (#615).
+- **Note:** A `parameter` of `0` is an ordinary success, projecting a segment's own start point onto it returns exactly that, so `nil` is the only failure signal. The underlying bridge function used to return `0` on failure too, conflating the two (#413).
 - **Example:**
   ```swift
   if let circle = Curve2D.circle(center: .zero, radius: 5),

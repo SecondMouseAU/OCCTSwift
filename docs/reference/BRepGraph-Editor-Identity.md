@@ -1,11 +1,11 @@
 ---
-title: BRepGraph — Editor Geometry, Sampling & Durable Identity
+title: BRepGraph. Editor Geometry, Sampling & Durable Identity
 parent: API Reference
 ---
 
-# BRepGraph — Editor Geometry, Sampling & Durable Identity
+# BRepGraph. Editor Geometry, Sampling & Durable Identity
 
-This page covers the final sections of `BRepGraph`: geometric setters for the EditorView, assembly-building ProductOps, in-place RepOps swaps, MeshView cache inspection, UV-grid and edge-curve sampling, and the durable-identity UID/RefUID/ItemUID API. See the other **BRepGraph — …** pages for the core read API, write helpers, and I/O.
+This page covers the final sections of `BRepGraph`: geometric setters for the EditorView, assembly-building ProductOps, in-place RepOps swaps, MeshView cache inspection, UV-grid and edge-curve sampling, and the durable-identity UID/RefUID/ItemUID API. See the other **BRepGraph, …** pages for the core read API, write helpers, and I/O.
 
 ## Topics
 
@@ -15,7 +15,7 @@ This page covers the final sections of `BRepGraph`: geometric setters for the Ed
 
 ## EditorView Geometric Setters & PCurve API
 
-*(v0.162.0)* Low-level geometric mutation of coedge, edge, face, and reference-entry nodes — used when reconstructing or repairing a `BRepGraph` from external data.
+*(v0.162.0)* Low-level geometric mutation of coedge, edge, face, and reference-entry nodes, used when reconstructing or repairing a `BRepGraph` from external data.
 
 ---
 
@@ -27,7 +27,7 @@ Set the UV bounding box (UV1 at `ParamFirst`, UV2 at `ParamLast`) of a coedge de
 public func setCoEdgeUVBox(_ coedgeIndex: Int, u1: Double, v1: Double, u2: Double, v2: Double)
 ```
 
-- **Parameters:** `coedgeIndex` — per-kind coedge index; `u1/v1` — UV at the first parameter; `u2/v2` — UV at the last parameter.
+- **Parameters:** `coedgeIndex`, per-kind coedge index; `u1/v1`, UV at the first parameter; `u2/v2`, UV at the last parameter.
 - **OCCT:** `BRepGraph_CoEdgeDef` UV-box field (via `OCCTBRepGraphSetCoEdgeUVBox`).
 - **Example:**
   ```swift
@@ -48,14 +48,14 @@ public func setEdgeRegularity(_ edgeIndex: Int, face1: Int, face2: Int, continui
 Pass the same index for `face1` and `face2` to set the seam continuity across a closed-surface seam line. In OCCT 8.0.0 GA the continuity model lives on the `(edge, face1, face2)` triple in `BRepGraph_LayerRegularity`; the earlier per-coedge setters were removed.
 
 - **Parameters:**
-  - `edgeIndex` — per-kind edge index.
-  - `face1`, `face2` — adjacent face indices (equal for seam).
-  - `continuity` — ignored; see the note below.
+  - `edgeIndex`: per-kind edge index.
+  - `face1`, `face2`, adjacent face indices (equal for seam).
+  - `continuity`: ignored; see the note below.
 - **Returns:** Always `false` on OCCT 8.0.0p1.
 - **OCCT:** `BRepGraph_LayerRegularity` (via `OCCTBRepGraphSetEdgeRegularity`).
 
-> **This setter does not work on the pinned kernel.** `BRepGraph_LayerRegularity` — the only write
-> path in the GA continuity model — does not compile in 8.0.0p1 and is absent from `libOCCT`, so the
+> **This setter does not work on the pinned kernel.** `BRepGraph_LayerRegularity`, the only write
+> path in the GA continuity model, does not compile in 8.0.0p1 and is absent from `libOCCT`, so the
 > bridge function is a stub that reports failure without reading `continuity` at all. It had shipped
 > that way silently since the GA upgrade: the one test covering it discarded the return value and
 > asserted nothing (fixed in #490, tracked for resolution in #513). To *read* continuity, use
@@ -79,7 +79,7 @@ public func setFaceTriangulationRep(_ faceIndex: Int, triRepId: Int)
 
 Also see `appendCachedTriangulation` for cache-tier writes.
 
-- **Parameters:** `faceIndex` — per-kind face index; `triRepId` — rep-store triangulation id.
+- **Parameters:** `faceIndex`, per-kind face index; `triRepId`, rep-store triangulation id.
 - **OCCT:** `BRepGraph_FaceDef` triangulation-rep field (via `OCCTBRepGraphSetFaceTriangulationRep`).
 
 ---
@@ -92,7 +92,7 @@ Create a new `Curve2DRep` from a `Curve2D` and return its rep id.
 public func coEdgeCreateCurve2DRep(_ curve2D: Curve2D) -> Int?
 ```
 
-- **Parameters:** `curve2D` — the 2D curve to wrap in a new rep entry.
+- **Parameters:** `curve2D`, the 2D curve to wrap in a new rep entry.
 - **Returns:** Non-negative rep id on success, or `nil` on failure.
 - **OCCT:** `BRepGraph_RepStore` curve-2D entry (via `OCCTBRepGraphCoEdgeCreateCurve2DRep`).
 - **Example:**
@@ -112,7 +112,7 @@ Assign or clear the PCurve bound to an existing coedge.
 public func coEdgeSetPCurve(_ coedgeIndex: Int, curve2D: Curve2D?)
 ```
 
-- **Parameters:** `coedgeIndex` — per-kind coedge index; `curve2D` — the curve to assign, or `nil` to clear the binding.
+- **Parameters:** `coedgeIndex`, per-kind coedge index; `curve2D`, the curve to assign, or `nil` to clear the binding.
 - **OCCT:** `BRepGraph_CoEdgeDef` curve-2D field (via `OCCTBRepGraphCoEdgeSetPCurve`).
 
 ---
@@ -127,11 +127,11 @@ public func coEdgeAddPCurve(edgeIndex: Int, faceIndex: Int, curve2D: Curve2D,
 ```
 
 - **Parameters:**
-  - `edgeIndex` — the edge to attach the PCurve to.
-  - `faceIndex` — the face context.
-  - `curve2D` — the parametric curve.
-  - `first`, `last` — parameter range on the curve.
-  - `orientation` — 0 = forward, 1 = reversed (default `0`).
+  - `edgeIndex`: the edge to attach the PCurve to.
+  - `faceIndex`: the face context.
+  - `curve2D`: the parametric curve.
+  - `first`, `last`, parameter range on the curve.
+  - `orientation`: 0 = forward, 1 = reversed (default `0`).
 - **OCCT:** `BRepGraph` coedge construction (via `OCCTBRepGraphCoEdgeAddPCurve`).
 - **Example:**
   ```swift
@@ -149,9 +149,9 @@ Set the local `TopLoc_Location` of a vertex reference entry.
 public func setVertexRefLocalLocation(_ vertexRefIndex: Int, matrix: [Double])
 ```
 
-`matrix` is a row-major 3×4 array (12 doubles) following the `gp_Trsf::SetValues` convention — rows are `[r00 r01 r02 tx | r10 r11 r12 ty | r20 r21 r22 tz]`. Use `BRepGraph.identityLocationMatrix` for a no-op placement.
+`matrix` is a row-major 3×4 array (12 doubles) following the `gp_Trsf::SetValues` convention, rows are `[r00 r01 r02 tx | r10 r11 r12 ty | r20 r21 r22 tz]`. Use `BRepGraph.identityLocationMatrix` for a no-op placement.
 
-- **Parameters:** `vertexRefIndex` — per-kind vertex-ref index; `matrix` — 12-element row-major 3×4 transform.
+- **Parameters:** `vertexRefIndex`, per-kind vertex-ref index; `matrix`, 12-element row-major 3×4 transform.
 - **OCCT:** `TopLoc_Location` via `gp_Trsf::SetValues` (via `OCCTBRepGraphSetVertexRefLocalLocation`).
 - **Note:** Precondition: `matrix.count == 12`.
 
@@ -165,7 +165,7 @@ Set the local `TopLoc_Location` of a coedge reference entry.
 public func setCoEdgeRefLocalLocation(_ coedgeRefIndex: Int, matrix: [Double])
 ```
 
-- **Parameters:** `coedgeRefIndex` — per-kind coedge-ref index; `matrix` — 12-element 3×4 row-major transform.
+- **Parameters:** `coedgeRefIndex`, per-kind coedge-ref index; `matrix`, 12-element 3×4 row-major transform.
 - **OCCT:** `TopLoc_Location` (via `OCCTBRepGraphSetCoEdgeRefLocalLocation`).
 
 ---
@@ -250,7 +250,7 @@ Identity matrix (3×4) suitable for all `set*LocalLocation` calls.
 public static var identityLocationMatrix: [Double] { get }
 ```
 
-Returns `[1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0]` — a row-major identity with zero translation.
+Returns `[1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0]`, a row-major identity with zero translation.
 
 - **Example:**
   ```swift
@@ -275,9 +275,9 @@ public func linkProductToTopology(shapeRootKind: Int, shapeRootIndex: Int,
 ```
 
 - **Parameters:**
-  - `shapeRootKind` — `BRepGraph_NodeId::Kind` ordinal of the topology root (e.g. 0 = Solid).
-  - `shapeRootIndex` — per-kind node index of the root.
-  - `placement` — optional 12-element 3×4 row-major placement matrix; pass `nil` for identity.
+  - `shapeRootKind`: `BRepGraph_NodeId::Kind` ordinal of the topology root (e.g. 0 = Solid).
+  - `shapeRootIndex`: per-kind node index of the root.
+  - `placement`: optional 12-element 3×4 row-major placement matrix; pass `nil` for identity.
 - **Returns:** New product id on success, or `nil` on failure.
 - **OCCT:** `BRepGraph` product-layer creation (via `OCCTBRepGraphLinkProductToTopology`).
 - **Note:** Precondition: `placement.count == 12` if non-nil.
@@ -318,10 +318,10 @@ public func linkProducts(parentProductIndex: Int, referencedProductIndex: Int,
 ```
 
 - **Parameters:**
-  - `parentProductIndex` — product that will own the new occurrence.
-  - `referencedProductIndex` — product being instanced.
-  - `placement` — 12-element 3×4 row-major transform for the instance.
-  - `parentOccurrenceIndex` — pass `nil` for an unparented occurrence.
+  - `parentProductIndex`: product that will own the new occurrence.
+  - `referencedProductIndex`: product being instanced.
+  - `placement`: 12-element 3×4 row-major transform for the instance.
+  - `parentOccurrenceIndex`: pass `nil` for an unparented occurrence.
 - **Returns:** Tuple of `(occurrenceIndex, occurrenceRefIndex)`, or `nil` on failure.
 - **OCCT:** `BRepGraph` occurrence construction (via `OCCTBRepGraphLinkProducts`).
 - **Note:** Precondition: `placement.count == 12`.
@@ -346,7 +346,7 @@ Detach an occurrence ref from a product.
 public func productRemoveOccurrence(_ productIndex: Int, occurrenceRefIndex: Int) -> Bool
 ```
 
-- **Parameters:** `productIndex` — the owning product; `occurrenceRefIndex` — the occurrence-ref to remove.
+- **Parameters:** `productIndex`, the owning product; `occurrenceRefIndex`, the occurrence-ref to remove.
 - **Returns:** `true` if the active usage was removed.
 - **OCCT:** `BRepGraph` product-layer (via `OCCTBRepGraphProductRemoveOccurrence`).
 
@@ -367,7 +367,7 @@ public func productRemoveShapeRoot(_ productIndex: Int) -> Bool
 
 ## EditorView RepOps Non-Guard Setters
 
-*(v0.164.0)* In-place swaps of the geometry object bound to an existing rep-store entry. These do not recreate the rep — they update the pointer in-place, allowing dependent coedges/edges/faces to pick up new geometry without structural graph changes.
+*(v0.164.0)* In-place swaps of the geometry object bound to an existing rep-store entry. These do not recreate the rep, they update the pointer in-place, allowing dependent coedges/edges/faces to pick up new geometry without structural graph changes.
 
 ---
 
@@ -379,7 +379,7 @@ Swap the surface bound to an existing surface rep id.
 public func repSetSurface(_ surfaceRepId: Int, surface: Surface)
 ```
 
-- **Parameters:** `surfaceRepId` — rep-store surface rep id; `surface` — the replacement `Surface`.
+- **Parameters:** `surfaceRepId`, rep-store surface rep id; `surface`, the replacement `Surface`.
 - **OCCT:** `BRepGraph_RepStore` surface entry (via `OCCTBRepGraphRepSetSurface`).
 
 ---
@@ -464,7 +464,7 @@ Update the triangulation id referenced by an existing polygon-on-triangulation r
 public func repSetPolygonOnTriTriangulationId(_ polyOnTriRepId: Int, triRepId: Int)
 ```
 
-- **Parameters:** `polyOnTriRepId` — the polygon-on-tri rep to update; `triRepId` — the new triangulation rep id.
+- **Parameters:** `polyOnTriRepId`, the polygon-on-tri rep to update; `triRepId`, the new triangulation rep id.
 - **OCCT:** `BRepGraph_RepStore` polygon-on-tri triangulation-id field (via `OCCTBRepGraphRepSetPolygonOnTriTriangulationId`).
 - **Example:**
   ```swift
@@ -525,7 +525,7 @@ The stored generation counter from when the cached face mesh was last committed.
 public func cachedFaceMeshStoredOwnGen(_ faceIndex: Int) -> UInt32
 ```
 
-This is the entry's own field (`FaceMeshEntry::MeshGeneration`), maintained by OCCT's mesh cache. It is **not** comparable to the graph's `generation` counter, and this page previously said to compare them — it never worked (#295).
+This is the entry's own field (`FaceMeshEntry::MeshGeneration`), maintained by OCCT's mesh cache. It is **not** comparable to the graph's `generation` counter, and this page previously said to compare them, it never worked (#295).
 
 - **OCCT:** `OCCTBRepGraphCachedFaceMeshStoredOwnGen`.
 
@@ -762,9 +762,9 @@ public func sampleFaceUVGrid(faceIndex: Int, uSamples: Int, vSamples: Int) -> Fa
 ```
 
 - **Parameters:**
-  - `faceIndex` — face definition index.
-  - `uSamples` — number of samples in U direction (must be ≥ 1).
-  - `vSamples` — number of samples in V direction (must be ≥ 1).
+  - `faceIndex`: face definition index.
+  - `uSamples`: number of samples in U direction (must be ≥ 1).
+  - `vSamples`: number of samples in V direction (must be ≥ 1).
 
   The bound is on the **product**: `uSamples * vSamples` must not exceed `Sampling.maximumSampleCount` (10,000,000), and each factor is checked on its own, since two negatives multiply to a plausible positive total (#558). This sampler fills four buffers per point (position, normal, Gaussian and mean curvature), so it reaches the ceiling's memory cost sooner than the point-only samplers do.
 - **Returns:** `FaceGridSample` with `uSamples × vSamples` entries laid out **U-major** (`u * vSamples + v`, see `FaceGridSample` above), or `nil` if the face has no surface, sampling fails, or the grid cannot be served.
@@ -803,8 +803,8 @@ public func sampleEdgeCurve(edgeIndex: Int, count: Int) -> [SIMD3<Double>]
 ```
 
 - **Parameters:**
-  - `edgeIndex` — edge definition index.
-  - `count` — number of points to sample, a *request* honoured within `1...Sampling.maximumSampleCount` (10,000,000); outside that range the result is empty (#558).
+  - `edgeIndex`: edge definition index.
+  - `count`: number of points to sample, a *request* honoured within `1...Sampling.maximumSampleCount` (10,000,000); outside that range the result is empty (#558).
 - **Returns:** Array of 3D points along the edge curve, in parameter order; empty if the edge has no curve or sampling fails.
 - **OCCT:** `GeomAdaptor_Curve` (via `OCCTBRepGraphSampleEdgeCurve`).
 - **Example:**
@@ -819,11 +819,11 @@ public func sampleEdgeCurve(edgeIndex: Int, count: Int) -> [SIMD3<Double>]
 
 ## Durable Identity (UID / RefUID / ItemUID)
 
-*(OCCT 8.0.0p1)* The UID system provides counter-based identifiers that remain stable across mutations of **the one graph instance that minted them** — compaction, node removal. Unlike `(kind, index)` pairs, counters never repeat within a kind and survive vector-index shifts. A counter of `0` is always the invalid sentinel.
+*(OCCT 8.0.0p1)* The UID system provides counter-based identifiers that remain stable across mutations of **the one graph instance that minted them**, compaction, node removal. Unlike `(kind, index)` pairs, counters never repeat within a kind and survive vector-index shifts. A counter of `0` is always the invalid sentinel.
 
 ### Scope: one graph instance
 
-A UID is meaningful only inside the graph that minted it. Every graph allocates counters from 1 independently, so the same `(kind, counter)` names some unrelated node in every other graph. Each UID therefore carries a `graphID` — the `instanceID` of the graph that minted it — and the resolvers reject a UID from anywhere else:
+A UID is meaningful only inside the graph that minted it. Every graph allocates counters from 1 independently, so the same `(kind, counter)` names some unrelated node in every other graph. Each UID therefore carries a `graphID`, the `instanceID` of the graph that minted it, and the resolvers reject a UID from anywhere else:
 
 ```swift
 let boxGraph = BRepGraph(shape: box)!
@@ -831,22 +831,22 @@ let cylGraph = BRepGraph(shape: cylinder)!
 
 let faceUID = boxGraph.uid(ofNodeKind: 2, index: 2)!   // a face of the BOX
 boxGraph.node(forUID: faceUID)      // Optional((kind: 2, index: 2))
-cylGraph.node(forUID: faceUID)      // nil  — not this graph's UID
+cylGraph.node(forUID: faceUID)      // nil, not this graph's UID
 cylGraph.contains(uid: faceUID)     // false
 ```
 
 The scope is the graph *instance*, not the shape: two graphs built from the same shape are two instances, and a UID from one does not resolve in the other. A rebuild is likewise a new instance.
 
-Which operations carry identity across follows the kernel's own rule — whether it transplants the UID counter space into the target:
+Which operations carry identity across follows the kernel's own rule, whether it transplants the UID counter space into the target:
 
 | Operation | Identity | UIDs |
 |---|---|---|
 | `compact()`, node removal, `add(_:absorbing:…)` | same instance, mutated in place | keep resolving |
-| `copy()`, `translated()` | **inherited** — `BRepGraph_Copy`/`_Transform::Perform` transplant the counter space, Generation and GraphGUID | keep resolving, naming the same nodes |
-| `copyFace()` | **fresh** — `CopyNode` lifts one face without the counter space | source UIDs return `nil` |
+| `copy()`, `translated()` | **inherited**, `BRepGraph_Copy`/`_Transform::Perform` transplant the counter space, Generation and GraphGUID | keep resolving, naming the same nodes |
+| `copyFace()` | **fresh**, `CopyNode` lifts one face without the counter space | source UIDs return `nil` |
 | a new graph over any shape (incl. a rebuild of the same one) | fresh | source UIDs return `nil` |
 
-To carry a selection across a *modelling operation* rather than across mutations of one graph, absorb the operation's history — see [`add(_:absorbing:inputRoots:operationName:)`](BRepGraph-Detail-History.md#add_absorbinginputrootsoperationname). To carry one across a save/load, store `(kind, index)` with the shape and re-mint after rebuilding — see [BRep Graph § UIDs and persistence](../guides/cookbook/brep-graph.md#uids-and-persistence).
+To carry a selection across a *modelling operation* rather than across mutations of one graph, absorb the operation's history, see [`add(_:absorbing:inputRoots:operationName:)`](BRepGraph-Detail-History.md#add_absorbinginputrootsoperationname). To carry one across a save/load, store `(kind, index)` with the shape and re-mint after rebuilding, see [BRep Graph § UIDs and persistence](../guides/cookbook/brep-graph.md#uids-and-persistence).
 
 > Before v1.12.0 UIDs carried no provenance, so a UID from an unrelated graph resolved to a plausible but wrong node instead of returning `nil`. `copyFace()` was affected the same way. ([#295](https://github.com/SecondMouseAU/OCCTSwift/issues/295))
 
@@ -863,7 +863,7 @@ public struct GraphUID: Sendable, Hashable, Codable {
 }
 ```
 
-`graphID` is the `instanceID` of the minting graph. `0` means unstamped — built by hand, or decoded from a payload written before v1.12.0 — and resolves in no graph. Mint UIDs with `uid(ofNodeKind:index:)` rather than constructing them.
+`graphID` is the `instanceID` of the minting graph. `0` means unstamped, built by hand, or decoded from a payload written before v1.12.0, and resolves in no graph. Mint UIDs with `uid(ofNodeKind:index:)` rather than constructing them.
 
 `kind` is the raw `BRepGraph_NodeId::Kind` ordinal:
 
@@ -980,7 +980,7 @@ Return the durable `GraphUID` for a node.
 public func uid(ofNodeKind kind: Int, index: Int) -> GraphUID?
 ```
 
-- **Parameters:** `kind` — raw `BRepGraph_NodeId::Kind` ordinal; `index` — per-kind node index.
+- **Parameters:** `kind`, raw `BRepGraph_NodeId::Kind` ordinal; `index`, per-kind node index.
 - **Returns:** `GraphUID` with a non-zero counter, or `nil` if the node is invalid, removed, or out of bounds.
 - **OCCT:** `BRepGraph_NodeId` UID query (via `OCCTBRepGraphNodeUID`).
 - **Example:**
@@ -1000,8 +1000,8 @@ Resolve a `GraphUID` back to its `(kind, index)` in this graph.
 public func node(forUID uid: GraphUID) -> (kind: Int, index: Int)?
 ```
 
-- **Parameters:** `uid` — a `GraphUID` previously obtained from this graph's `uid(ofNodeKind:index:)`.
-- **Returns:** `(kind, index)` tuple if the UID resolves, or `nil` if this graph did not mint it or the node no longer exists. A UID minted by another graph returns `nil` even when its counter is in range here — which it usually is, since counters restart per graph.
+- **Parameters:** `uid`, a `GraphUID` previously obtained from this graph's `uid(ofNodeKind:index:)`.
+- **Returns:** `(kind, index)` tuple if the UID resolves, or `nil` if this graph did not mint it or the node no longer exists. A UID minted by another graph returns `nil` even when its counter is in range here, which it usually is, since counters restart per graph.
 - **OCCT:** `BRepGraph_NodeId` reverse lookup (via `OCCTBRepGraphNodeFromUID`).
 - **Example:**
   ```swift
@@ -1014,7 +1014,7 @@ public func node(forUID uid: GraphUID) -> (kind: Int, index: Int)?
 
 ---
 
-### `contains(uid:) — GraphUID`
+### `contains(uid:), GraphUID`
 
 Return `true` if this graph minted the `GraphUID` and the node it names still exists here.
 
@@ -1034,7 +1034,7 @@ Return the durable `GraphRefUID` for a reference entry.
 public func uid(ofRefKind kind: Int, index: Int) -> GraphRefUID?
 ```
 
-- **Parameters:** `kind` — raw `BRepGraph_RefId::Kind` ordinal; `index` — per-kind reference index.
+- **Parameters:** `kind`, raw `BRepGraph_RefId::Kind` ordinal; `index`, per-kind reference index.
 - **Returns:** `GraphRefUID`, or `nil` if invalid or removed.
 - **OCCT:** `BRepGraph_RefId` UID query (via `OCCTBRepGraphRefUID`).
 
@@ -1053,7 +1053,7 @@ public func ref(forUID uid: GraphRefUID) -> (kind: Int, index: Int)?
 
 ---
 
-### `contains(uid:) — GraphRefUID`
+### `contains(uid:), GraphRefUID`
 
 Return `true` if this graph minted the `GraphRefUID` and the reference it names still exists here.
 
@@ -1105,16 +1105,16 @@ Identifies this graph instance for as long as it lives.
 public var instanceID: UInt64 { get }
 ```
 
-Unique among every graph this process builds, and — because the sequence starts at a random point — distinct from any other process's ids with overwhelming probability. Every UID this graph mints carries it as `graphID`, which is how `node(forUID:)` tells one of its own nodes from a node of some other graph.
+Unique among every graph this process builds, and, because the sequence starts at a random point, distinct from any other process's ids with overwhelming probability. Every UID this graph mints carries it as `graphID`, which is how `node(forUID:)` tells one of its own nodes from a node of some other graph.
 
 Identity here is the graph object, not the geometry: two graphs built from the same shape have different ids.
 
-- **OCCT:** none — assigned by the bridge per `OCCTBRepGraph` (via `OCCTBRepGraphInstanceID`).
+- **OCCT:** none, assigned by the bridge per `OCCTBRepGraph` (via `OCCTBRepGraphInstanceID`).
 - **Example:**
   ```swift
   let graph = BRepGraph(shape: box)!
   let uid = graph.uid(ofNodeKind: 2, index: 0)!
-  print(uid.graphID == graph.instanceID)   // true — this graph minted it
+  print(uid.graphID == graph.instanceID)   // true, this graph minted it
 
   let rebuilt = BRepGraph(shape: box)!  // same shape, new instance
   print(rebuilt.instanceID == graph.instanceID)   // false

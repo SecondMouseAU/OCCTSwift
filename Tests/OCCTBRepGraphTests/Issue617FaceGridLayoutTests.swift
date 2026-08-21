@@ -10,7 +10,7 @@ import simd
 /// documented no layout and offered no accessor, so the only guidance a caller had was the
 /// convention that was wrong for this one type.
 ///
-/// #617's own report crosses two different mistakes here, so state the model carefully — getting
+/// #617's own report crosses two different mistakes here, so state the model carefully, getting
 /// this arithmetic wrong is the exact failure the fix exists to prevent, and `handRolledIndexArithmetic`
 /// below asserts every claim in this paragraph:
 ///
@@ -36,7 +36,7 @@ struct Issue617FaceGridLayoutTests {
 
     /// A Bezier patch on an asymmetric 4x3 pole grid: non-periodic (so no parameter wraps onto
     /// another sample), curved in both directions (so normals and curvatures vary too), and
-    /// deliberately *not* symmetric under swapping u and v — the point (u, v) and the point
+    /// deliberately *not* symmetric under swapping u and v, the point (u, v) and the point
     /// (v, u) must be far apart or a transposed read could pass by accident.
     private func asymmetricPatch() -> Surface? {
         Surface.bezier(poles: [
@@ -161,7 +161,7 @@ struct Issue617FaceGridLayoutTests {
     }
 
     /// `.at(u:v:)` is the accessor #486 gave `SurfaceGrid`, so it must agree with the flat arrays
-    /// on the documented index — not just with the geometry. Also pins normals and curvatures to
+    /// on the documented index, not just with the geometry. Also pins normals and curvatures to
     /// the same slot as positions, since all four buffers share one layout.
     @Test("at(u:v:) reads the documented U-major slot of all four buffers")
     func accessorAgreesWithDocumentedIndex() {
@@ -215,7 +215,7 @@ struct Issue617FaceGridLayoutTests {
     /// is pinned here. The layout-conforming stride (`u * vSamples + v`) is *always* inside a
     /// `uSamples * vSamples` buffer, at either aspect ratio, so on its own it can only ever be
     /// silently transposed. The out-of-range trap needs the other plausible slip, using the wrong
-    /// count as the stride (`u * uSamples + v`) — and that one splits exactly the way the issue
+    /// count as the stride (`u * uSamples + v`), and that one splits exactly the way the issue
     /// describes: in range and quietly wrong at 3x10, past the end at 10x3.
     ///
     /// `at(u:v:)` retires both by owning the index, which is why this test asserts on the
@@ -249,7 +249,7 @@ struct Issue617FaceGridLayoutTests {
         }
     }
 
-    /// A 1x1 grid and a square grid still work — the fix changes an index, not the sample set.
+    /// A 1x1 grid and a square grid still work, the fix changes an index, not the sample set.
     @Test("Degenerate and square grids are unaffected")
     func squareAndSingleGridsStillWork() {
         guard let f = fixture() else { return }

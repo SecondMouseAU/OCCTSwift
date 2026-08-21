@@ -5,14 +5,14 @@ parent: API Reference
 
 # DrawingAnnotation
 
-`DrawingAnnotation.swift` defines the complete set of pure-Swift value types used to describe 2D technical-drawing annotations and dimensions. These types carry no OCCT handles — they are data models consumed by `Drawing`'s DXF/PDF/SVG writers and the viewport renderer. All types are `Sendable`, `Hashable`, and (where sensible) `Codable`.
+`DrawingAnnotation.swift` defines the complete set of pure-Swift value types used to describe 2D technical-drawing annotations and dimensions. These types carry no OCCT handles, they are data models consumed by `Drawing`'s DXF/PDF/SVG writers and the viewport renderer. All types are `Sendable`, `Hashable`, and (where sensible) `Codable`.
 
 The file contains four public types at the top level and their associated nested types:
 
-- `DrawingLineStyle` — linetype selector
-- `DrawingTolerance` — structured tolerance values
-- `DrawingDimension` — dimensioning elements (linear, radial, diameter, angular, ordinate)
-- `DrawingAnnotation` — non-dimensional annotation elements (centreline, centermark, text, hatch, cutting-plane, balloon)
+- `DrawingLineStyle`: linetype selector
+- `DrawingTolerance`: structured tolerance values
+- `DrawingDimension`: dimensioning elements (linear, radial, diameter, angular, ordinate)
+- `DrawingAnnotation`: non-dimensional annotation elements (centreline, centermark, text, hatch, cutting-plane, balloon)
 
 `DrawingAnnotationStore` is `internal` and is not documented here.
 
@@ -40,11 +40,11 @@ public enum DrawingLineStyle: String, Sendable, Hashable, Codable {
 }
 ```
 
-- `solid` — continuous line; default for dimensions.
-- `dashed` — hidden-line (dash) pattern; use for hidden edges.
-- `phantom` — long-dash + two short-dashes; ISO designation "phantom".
-- `chain` — long-dash + one short-dash (also called "chain-dot"); ISO designation for centrelines.
-- `dotted` — equally-spaced dots.
+- `solid`: continuous line; default for dimensions.
+- `dashed`: hidden-line (dash) pattern; use for hidden edges.
+- `phantom`: long-dash + two short-dashes; ISO designation "phantom".
+- `chain`: long-dash + one short-dash (also called "chain-dot"); ISO designation for centrelines.
+- `dotted`: equally-spaced dots.
 
 Pure-Swift; no OCCT mapping.
 
@@ -216,13 +216,13 @@ public struct Linear: Sendable, Hashable {
 }
 ```
 
-- `from` — start point of the measured segment (drawing-unit coordinates).
-- `to` — end point of the measured segment.
-- `offset` — perpendicular distance of the dimension line from the segment (drawing units).
-- `label` — optional user text; `nil` means auto-format from `value`.
-- `style` — linestyle for the dimension lines and extension lines.
-- `id` — optional identifier for round-tripping through DXF entity handles.
-- `tolerance` — structured tolerance; see `DrawingTolerance`.
+- `from`: start point of the measured segment (drawing-unit coordinates).
+- `to`: end point of the measured segment.
+- `offset`: perpendicular distance of the dimension line from the segment (drawing units).
+- `label`: optional user text; `nil` means auto-format from `value`.
+- `style`: linestyle for the dimension lines and extension lines.
+- `id`: optional identifier for round-tripping through DXF entity handles.
+- `tolerance`: structured tolerance; see `DrawingTolerance`.
 
 *(Per-field anchors below, for cross-reference; the list above has the actual meaning of each.)*
 
@@ -242,13 +242,13 @@ public init(from: SIMD2<Double>, to: SIMD2<Double>,
 ```
 
 - **Parameters:**
-  - `from` — start point.
-  - `to` — end point.
-  - `offset` — perpendicular offset of the dimension line (default `10` drawing units).
-  - `label` — override text; `nil` auto-formats `value`.
-  - `style` — linestyle (default `.solid`).
-  - `id` — optional string identifier.
-  - `tolerance` — tolerance annotation (default `.none`).
+  - `from`: start point.
+  - `to`: end point.
+  - `offset`: perpendicular offset of the dimension line (default `10` drawing units).
+  - `label`: override text; `nil` auto-formats `value`.
+  - `style`: linestyle (default `.solid`).
+  - `id`: optional string identifier.
+  - `tolerance`: tolerance annotation (default `.none`).
 - **Example:**
   ```swift
   let lin = DrawingDimension.Linear(
@@ -298,10 +298,10 @@ public struct Radial: Sendable, Hashable {
 }
 ```
 
-- `centre` — centre of the circle or arc.
-- `radius` — radius of the circle or arc (drawing units).
-- `leaderAngle` — angle in radians at which the leader line exits the circle (measured from positive X axis).
-- `label` — optional override text (writers typically prefix with `R`).
+- `centre`: centre of the circle or arc.
+- `radius`: radius of the circle or arc (drawing units).
+- `leaderAngle`: angle in radians at which the leader line exits the circle (measured from positive X axis).
+- `label`: optional override text (writers typically prefix with `R`).
 - `id`: same semantics as `Linear`.
 
 ---
@@ -337,11 +337,11 @@ public init(centre: SIMD2<Double>, radius: Double,
 ```
 
 - **Parameters:**
-  - `centre` — centre of the circle.
-  - `radius` — radius value.
-  - `leaderAngle` — leader exit angle in radians (default `π/4` = 45°).
-  - `label` — override text; `nil` means auto-format as `R<value>`.
-  - `style`, `id`, `tolerance` — standard dimension fields.
+  - `centre`: centre of the circle.
+  - `radius`: radius value.
+  - `leaderAngle`: leader exit angle in radians (default `π/4` = 45°).
+  - `label`: override text; `nil` means auto-format as `R<value>`.
+  - `style`, `id`, `tolerance`, standard dimension fields.
 - **Example:**
   ```swift
   let rad = DrawingDimension.Radial(
@@ -421,11 +421,11 @@ public init(centre: SIMD2<Double>, radius: Double,
 ```
 
 - **Parameters:**
-  - `centre` — centre of the circle.
-  - `radius` — actual radius (stored; `value` = `2 * radius`).
-  - `leaderAngle` — leader exit angle in radians (default `π/4`).
-  - `label` — override text; `nil` means auto-format as `⌀<2*radius>`.
-  - `style`, `id`, `tolerance` — standard dimension fields.
+  - `centre`: centre of the circle.
+  - `radius`: actual radius (stored; `value` = `2 * radius`).
+  - `leaderAngle`: leader exit angle in radians (default `π/4`).
+  - `label`: override text; `nil` means auto-format as `⌀<2*radius>`.
+  - `style`, `id`, `tolerance`, standard dimension fields.
 - **Example:**
   ```swift
   let diam = DrawingDimension.Diameter(
@@ -476,7 +476,7 @@ public struct Angular: Sendable, Hashable {
 }
 ```
 
-- `vertex` — the point where the two rays originate.
+- `vertex`: the point where the two rays originate.
 - `label`: standard dimension field.
 
 ---
@@ -516,11 +516,11 @@ public init(vertex: SIMD2<Double>, ray1: SIMD2<Double>, ray2: SIMD2<Double>,
 ```
 
 - **Parameters:**
-  - `vertex` — common origin of the two rays.
-  - `ray1`, `ray2` — points on each bounding ray.
-  - `arcRadius` — radius of the dimension arc in drawing units (default `20`).
-  - `label` — override text; `nil` auto-formats the angle in degrees.
-  - `style`, `id`, `tolerance` — standard dimension fields.
+  - `vertex`: common origin of the two rays.
+  - `ray1`, `ray2`, points on each bounding ray.
+  - `arcRadius`: radius of the dimension arc in drawing units (default `20`).
+  - `label`: override text; `nil` auto-formats the angle in degrees.
+  - `style`, `id`, `tolerance`, standard dimension fields.
 - **Example:**
   ```swift
   let ang = DrawingDimension.Angular(
@@ -570,10 +570,10 @@ public struct Ordinate: Sendable, Hashable, Codable {
 }
 ```
 
-- `origin` — datum origin from which all feature offsets are measured.
-- `features` — ordered list of `Feature` values, each with a position and optional label.
-- `id` — optional identifier.
-- `tolerance` — common tolerance applied to all feature values (individual tolerances are expressed via feature labels).
+- `origin`: datum origin from which all feature offsets are measured.
+- `features`: ordered list of `Feature` values, each with a position and optional label.
+- `id`: optional identifier.
+- `tolerance`: common tolerance applied to all feature values (individual tolerances are expressed via feature labels).
 
 *(Per-field anchors below, for cross-reference; the list above has the actual meaning of each.)*
 
@@ -591,10 +591,10 @@ public init(origin: SIMD2<Double>, features: [Feature],
 ```
 
 - **Parameters:**
-  - `origin` — datum origin point.
-  - `features` — array of `Feature` values (positions relative to origin).
-  - `tolerance` — common tolerance (default `.none`).
-  - `id` — optional identifier.
+  - `origin`: datum origin point.
+  - `features`: array of `Feature` values (positions relative to origin).
+  - `tolerance`: common tolerance (default `.none`).
+  - `id`: optional identifier.
 - **Example:**
   ```swift
   let ord = DrawingDimension.Ordinate(
@@ -623,9 +623,9 @@ public struct Feature: Sendable, Hashable, Codable {
 }
 ```
 
-- `position` — 2D location of the feature in drawing coordinates.
-- `label` — optional override text; `nil` means auto-format the (x, y) offset from the parent `Ordinate.origin`.
-- `id` — optional identifier.
+- `position`: 2D location of the feature in drawing coordinates.
+- `label`: optional override text; `nil` means auto-format the (x, y) offset from the parent `Ordinate.origin`.
+- `id`: optional identifier.
 
 ---
 
@@ -638,9 +638,9 @@ public init(position: SIMD2<Double>, label: String? = nil, id: String? = nil)
 ```
 
 - **Parameters:**
-  - `position` — 2D location of the feature.
-  - `label` — optional override text.
-  - `id` — optional identifier.
+  - `position`: 2D location of the feature.
+  - `label`: optional override text.
+  - `id`: optional identifier.
 - **Example:**
   ```swift
   let f = DrawingDimension.Ordinate.Feature(position: SIMD2(35, 0))
@@ -681,7 +681,7 @@ The user-supplied label of the wrapped dimension case.
 public var label: String? { get }
 ```
 
-Pure-Swift switch over all cases returning the nested struct's `label`. Returns `nil` for `.ordinate` — ordinate features carry per-feature labels; there is no single dimension-level label.
+Pure-Swift switch over all cases returning the nested struct's `label`. Returns `nil` for `.ordinate`, ordinate features carry per-feature labels; there is no single dimension-level label.
 
 - **Returns:** The `label` string, or `nil` if none was set or the case is `.ordinate`.
 - **Example:**
@@ -702,7 +702,7 @@ The scalar measured value of the wrapped dimension case.
 public var value: Double { get }
 ```
 
-Pure-Swift dispatch: returns `Linear.value` (distance), `Radial.value` (radius), `Diameter.value` (2 × radius), `Angular.value` (radians), or `0` for `.ordinate` (which has no single scalar measurement — read `.ordinate` features directly).
+Pure-Swift dispatch: returns `Linear.value` (distance), `Radial.value` (radius), `Diameter.value` (2 × radius), `Angular.value` (radians), or `0` for `.ordinate` (which has no single scalar measurement, read `.ordinate` features directly).
 
 - **Returns:** The measurement value in drawing units (or radians for angular); `0` for ordinate.
 - **Example:**
@@ -720,7 +720,7 @@ Pure-Swift dispatch: returns `Linear.value` (distance), `Radial.value` (radius),
 ---
 ## DrawingAnnotation
 
-Non-dimensional 2D annotations attached to a `Drawing` — centrelines, centremarks, construction points, free-form text, hatch fills, cutting-plane indicators, and assembly balloons.
+Non-dimensional 2D annotations attached to a `Drawing`, centrelines, centremarks, construction points, free-form text, hatch fills, cutting-plane indicators, and assembly balloons.
 
 ### `DrawingAnnotation`
 
@@ -735,12 +735,12 @@ public enum DrawingAnnotation: Sendable, Hashable {
 }
 ```
 
-- `centreline` — a chain-style line segment marking a symmetry or rotation axis.
-- `centermark` — a cross mark at the centre of a circle or arc.
-- `textLabel` — free-form text at a 2D position with optional rotation.
-- `hatch` — ISO 128-50 section-view hatching fill within a polygon boundary.
-- `cuttingPlaneLine` — ISO 128-40 section mark indicating where a section view was cut.
-- `balloon` — assembly-drawing numbered callout balloon, optionally with a leader line.
+- `centreline`: a chain-style line segment marking a symmetry or rotation axis.
+- `centermark`: a cross mark at the centre of a circle or arc.
+- `textLabel`: free-form text at a 2D position with optional rotation.
+- `hatch`: ISO 128-50 section-view hatching fill within a polygon boundary.
+- `cuttingPlaneLine`: ISO 128-40 section mark indicating where a section view was cut.
+- `balloon`: assembly-drawing numbered callout balloon, optionally with a leader line.
 
 Pure-Swift; no OCCT mapping.
 
@@ -766,9 +766,9 @@ public struct Centreline: Sendable, Hashable {
 }
 ```
 
-- `from`, `to` — endpoints of the centreline segment.
-- `style` — linestyle (default `.chain` to produce the long-dash + short-dash pattern).
-- `id` — optional identifier.
+- `from`, `to`, endpoints of the centreline segment.
+- `style`: linestyle (default `.chain` to produce the long-dash + short-dash pattern).
+- `id`: optional identifier.
 
 | Field | Meaning |
 |---|---|
@@ -794,10 +794,10 @@ public init(from: SIMD2<Double>, to: SIMD2<Double>,
 ```
 
 - **Parameters:**
-  - `from` — start endpoint.
-  - `to` — end endpoint.
-  - `style` — linestyle (default `.chain`).
-  - `id` — optional identifier.
+  - `from`: start endpoint.
+  - `to`: end endpoint.
+  - `style`: linestyle (default `.chain`).
+  - `id`: optional identifier.
 - **Example:**
   ```swift
   let cl = DrawingAnnotation.centreline(
@@ -825,10 +825,10 @@ public struct Centermark: Sendable, Hashable {
 }
 ```
 
-- `centre` — position of the cross centre.
-- `extent` — full length of each crossing segment (drawing units); the cross arm extends `extent/2` on each side.
-- `style` — linestyle (default `.chain`).
-- `id` — optional identifier.
+- `centre`: position of the cross centre.
+- `extent`: full length of each crossing segment (drawing units); the cross arm extends `extent/2` on each side.
+- `style`: linestyle (default `.chain`).
+- `id`: optional identifier.
 
 ---
 
@@ -853,10 +853,10 @@ public init(centre: SIMD2<Double>, extent: Double = 8,
 ```
 
 - **Parameters:**
-  - `centre` — cross centre position.
-  - `extent` — total arm length for each crossing segment (default `8` drawing units).
-  - `style` — linestyle (default `.chain`).
-  - `id` — optional identifier.
+  - `centre`: cross centre position.
+  - `extent`: total arm length for each crossing segment (default `8` drawing units).
+  - `style`: linestyle (default `.chain`).
+  - `id`: optional identifier.
 - **Example:**
   ```swift
   let cm = DrawingAnnotation.centermark(
@@ -882,11 +882,11 @@ public struct TextLabel: Sendable, Hashable {
 }
 ```
 
-- `position` — insertion point of the text (bottom-left of the text baseline).
-- `text` — the string content to render.
-- `height` — character height in drawing units.
-- `rotation` — counter-clockwise rotation angle in radians.
-- `id` — optional identifier.
+- `position`: insertion point of the text (bottom-left of the text baseline).
+- `text`: the string content to render.
+- `height`: character height in drawing units.
+- `rotation`: counter-clockwise rotation angle in radians.
+- `id`: optional identifier.
 
 ---
 
@@ -901,11 +901,11 @@ public init(position: SIMD2<Double>, text: String,
 ```
 
 - **Parameters:**
-  - `position` — text insertion point.
-  - `text` — content string.
-  - `height` — character height (default `3.5` drawing units, corresponding to ISO standard 3.5 mm text).
-  - `rotation` — rotation in radians (default `0`, i.e. horizontal).
-  - `id` — optional identifier.
+  - `position`: text insertion point.
+  - `text`: content string.
+  - `height`: character height (default `3.5` drawing units, corresponding to ISO standard 3.5 mm text).
+  - `rotation`: rotation in radians (default `0`, i.e. horizontal).
+  - `id`: optional identifier.
 - **Example:**
   ```swift
   let note = DrawingAnnotation.textLabel(
@@ -930,7 +930,7 @@ Not to be confused with `DrawingAnnotation.TextLabel` above, a pure-Swift 2D ann
 
 ### `DrawingAnnotation.CuttingPlaneLine`
 
-ISO 128-40 cutting-plane line — the section mark on a parent view indicating where a section view is cut.
+ISO 128-40 cutting-plane line, the section mark on a parent view indicating where a section view is cut.
 
 ```swift
 public struct CuttingPlaneLine: Sendable, Hashable {
@@ -944,10 +944,10 @@ public struct CuttingPlaneLine: Sendable, Hashable {
 
 Rendered as heavy-chain segments at each endpoint (~10 mm), a thin-chain segment joining them, perpendicular arrows at each end pointing in the section's view direction, and a label letter (typically a capital letter such as "A") at each arrow.
 
-- `label` — the callout letter(s) placed at each arrow end (e.g. `"A"`, `"B"`).
-- `traceStart`, `traceEnd` — endpoints of the cutting-plane trace across the view.
-- `arrowDirection` — unit vector perpendicular to the trace pointing in the section look direction; stored normalised.
-- `id` — optional identifier.
+- `label`: the callout letter(s) placed at each arrow end (e.g. `"A"`, `"B"`).
+- `traceStart`, `traceEnd`, endpoints of the cutting-plane trace across the view.
+- `arrowDirection`: unit vector perpendicular to the trace pointing in the section look direction; stored normalised.
+- `id`: optional identifier.
 
 *(Per-field anchors below, for cross-reference; the list above has the actual meaning of each.)*
 
@@ -968,11 +968,11 @@ public init(label: String,
 ```
 
 - **Parameters:**
-  - `label` — callout letter(s) placed at each arrow (e.g. `"A"`).
-  - `traceStart` — start of the cutting-plane trace.
-  - `traceEnd` — end of the cutting-plane trace.
-  - `arrowDirection` — view direction for the section (need not be unit length; stored as `simd_normalize(arrowDirection)`).
-  - `id` — optional identifier.
+  - `label`: callout letter(s) placed at each arrow (e.g. `"A"`).
+  - `traceStart`: start of the cutting-plane trace.
+  - `traceEnd`: end of the cutting-plane trace.
+  - `arrowDirection`: view direction for the section (need not be unit length; stored as `simd_normalize(arrowDirection)`).
+  - `id`: optional identifier.
 - **Example:**
   ```swift
   let cpl = DrawingAnnotation.cuttingPlaneLine(
@@ -991,7 +991,7 @@ public init(label: String,
 
 ### `DrawingAnnotation.Hatch`
 
-ISO 128-50 section-view hatching — a closed polygon filled with evenly-spaced parallel lines.
+ISO 128-50 section-view hatching, a closed polygon filled with evenly-spaced parallel lines.
 
 ```swift
 public struct Hatch: Sendable, Hashable {
@@ -1004,12 +1004,12 @@ public struct Hatch: Sendable, Hashable {
 }
 ```
 
-- `boundary` — vertices of the outer polygon (closed; first and last vertices must differ).
-- `angle` — hatch line angle in radians (ISO default `π/4` = 45°).
-- `spacing` — distance between hatch lines in drawing units (ISO typical 2–4 mm).
-- `islands` — inner boundaries (holes) each as a closed polygon subtracted from the hatched region.
-- `layer` — DXF layer name for the hatch entity (default `"HATCH"`).
-- `id` — optional identifier.
+- `boundary`: vertices of the outer polygon (closed; first and last vertices must differ).
+- `angle`: hatch line angle in radians (ISO default `π/4` = 45°).
+- `spacing`: distance between hatch lines in drawing units (ISO typical 2–4 mm).
+- `islands`: inner boundaries (holes) each as a closed polygon subtracted from the hatched region.
+- `layer`: DXF layer name for the hatch entity (default `"HATCH"`).
+- `id`: optional identifier.
 
 *(Per-field anchors below, for cross-reference; the list above has the actual meaning of each.)*
 
@@ -1031,12 +1031,12 @@ public init(boundary: [SIMD2<Double>],
 ```
 
 - **Parameters:**
-  - `boundary` — outer polygon vertices (closed, first ≠ last).
-  - `angle` — hatch angle in radians (default `π/4`).
-  - `spacing` — line spacing in drawing units (default `3.0`).
-  - `islands` — inner hole polygons (default `[]`).
-  - `layer` — DXF layer name (default `"HATCH"`).
-  - `id` — optional identifier.
+  - `boundary`: outer polygon vertices (closed, first ≠ last).
+  - `angle`: hatch angle in radians (default `π/4`).
+  - `spacing`: line spacing in drawing units (default `3.0`).
+  - `islands`: inner hole polygons (default `[]`).
+  - `layer`: DXF layer name (default `"HATCH"`).
+  - `id`: optional identifier.
 - **Example:**
   ```swift
   let hatch = DrawingAnnotation.hatch(
@@ -1069,11 +1069,11 @@ public struct Balloon: Sendable, Hashable {
 }
 ```
 
-- `itemNumber` — BOM row number shown inside the balloon circle.
-- `centre` — centre of the balloon circle.
-- `radius` — radius of the balloon circle (drawing units).
-- `leaderTo` — optional target point for the leader line pointing from the balloon to the referenced part.
-- `id` — optional identifier.
+- `itemNumber`: BOM row number shown inside the balloon circle.
+- `centre`: centre of the balloon circle.
+- `radius`: radius of the balloon circle (drawing units).
+- `leaderTo`: optional target point for the leader line pointing from the balloon to the referenced part.
+- `id`: optional identifier.
 
 ---
 
@@ -1104,11 +1104,11 @@ public init(itemNumber: Int,
 ```
 
 - **Parameters:**
-  - `itemNumber` — BOM item number (rendered as text inside the circle).
-  - `centre` — balloon centre position.
-  - `radius` — balloon circle radius (default `5` drawing units).
-  - `leaderTo` — optional point the leader line points to; `nil` = no leader.
-  - `id` — optional identifier.
+  - `itemNumber`: BOM item number (rendered as text inside the circle).
+  - `centre`: balloon centre position.
+  - `radius`: balloon circle radius (default `5` drawing units).
+  - `leaderTo`: optional point the leader line points to; `nil` = no leader.
+  - `id`: optional identifier.
 - **Example:**
   ```swift
   let balloon = DrawingAnnotation.balloon(

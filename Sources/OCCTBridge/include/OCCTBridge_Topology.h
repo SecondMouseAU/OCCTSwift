@@ -452,20 +452,20 @@ OCCTShapeRef OCCTShapeCopy(OCCTShapeRef shape, bool copyGeom, bool copyMesh);
 // sub-shape is reachable from two parents. Use the generic family with type 2/3/5. #502
 
 /// Outer shell of a solid (BRepClass3d::OuterShell); NULL if not a solid / no shell.
-/// A container (compound/compsolid) is accepted only when it holds exactly ONE solid — with two
+/// A container (compound/compsolid) is accepted only when it holds exactly ONE solid, with two
 /// or more there is no single outer shell to name, so this returns NULL rather than answering
 /// for an arbitrary member. Use OCCTShapeOuterShells for a multi-solid shape. #211, #439
 OCCTShapeRef OCCTShapeOuterShell(OCCTShapeRef shape);
 
 /// Outer shell of EVERY solid in a shape, in explorer order (one per solid). Count-then-fill:
 /// outShells=NULL returns a sizing UPPER BOUND (the solid count) rather than an exact count, so
-/// the query stays one traversal — classifying there would make every caller pay
+/// the query stays one traversal, classifying there would make every caller pay
 /// BRepClass3d::OuterShell twice per solid. The fill call returns the exact number written, which
 /// may be smaller (a solid with no usable outer shell is skipped). 0 for a shape with no solids.
 /// #439
 int32_t OCCTShapeOuterShells(OCCTShapeRef shape, OCCTShapeRef* outShells, int32_t maxCount);
 
-/// Inner (void/cavity) shells of a solid — all shells except the outer one. Count-then-fill
+/// Inner (void/cavity) shells of a solid, all shells except the outer one. Count-then-fill
 /// (pass outShells=NULL to query the count). Same single-solid rule as OCCTShapeOuterShell:
 /// 0 for a container holding two or more solids. #212, #439
 int32_t OCCTShapeInnerShells(OCCTShapeRef shape, OCCTShapeRef* outShells, int32_t maxCount);
@@ -495,7 +495,7 @@ int32_t OCCTShapeRevolutionAxes(OCCTShapeRef _Nonnull shape,
                                 OCCTShapeAxis* _Nonnull outAxes,
                                 int32_t maxAxes);
 
-/// Detect symmetry axes from principal moments of inertia — when two moments are nearly
+/// Detect symmetry axes from principal moments of inertia, when two moments are nearly
 /// equal (within fractionalTolerance of the larger), the third is a symmetry axis.
 /// Returns count (0 for none, 1 for rotational symmetry, 3 for spherical symmetry).
 int32_t OCCTShapeSymmetryAxes(OCCTShapeRef _Nonnull shape,
@@ -862,7 +862,7 @@ typedef struct
 /// Shapes must be meshed beforehand (BRepMesh_IncrementalMesh).
 OCCTPolyDistanceResult OCCTShapePolyhedralDistance(OCCTShapeRef shape1, OCCTShapeRef shape2);
 
-// MARK: - IntCurvesFace — Curve-Face Intersection (v0.61.0)
+// MARK: - IntCurvesFace. Curve-Face Intersection (v0.61.0)
 
 /// Intersect a line with a face. Returns number of intersection points.
 /// outPoints must have space for maxPts * 3 doubles (x,y,z triples).
@@ -886,8 +886,8 @@ int32_t OCCTIntersectLineFace(OCCTShapeRef face,
 /// @param shape The shape to intersect
 /// @param ox,oy,oz Ray origin
 /// @param dx,dy,dz Ray direction
-/// @param outPoints Output array of (x,y,z) triples — caller must free with free()
-/// @param outParams Output array of parameter values along ray — caller must free with free()
+/// @param outPoints Output array of (x,y,z) triples, caller must free with free()
+/// @param outParams Output array of parameter values along ray, caller must free with free()
 /// @param outCount Number of intersection points
 /// @return true if intersections found
 bool OCCTIntCurvesFaceShapeIntersect(OCCTShapeRef shape,
@@ -973,7 +973,7 @@ void OCCTTopTransSurfaceTransitionCurvature(double  tgtX,
                                             int32_t* _Nonnull outStateBefore,
                                             int32_t* _Nonnull outStateAfter);
 
-// MARK: - v0.68.0: TKGeomAlgo Part 2 — CurveTransition, Trihedrons, NSections, Law, GccAna, Intf
+// MARK: - v0.68.0: TKGeomAlgo Part 2. CurveTransition, Trihedrons, NSections, Law, GccAna, Intf
 
 // --- TopTrans_CurveTransition ---
 /// Compute curve transition states at a boundary crossing (simple, no curvature).
@@ -1160,7 +1160,7 @@ void OCCTOBBEnlarge(OCCTOBBRef _Nonnull obb, double gap);
 /// Get square extent (diagonal squared).
 double OCCTOBBSquareExtent(OCCTOBBRef _Nonnull obb);
 
-// MARK: - BRepClass3d — Point Classification (v0.92.0)
+// MARK: - BRepClass3d. Point Classification (v0.92.0)
 
 /// Classify a 3D point relative to a solid shape.
 /// @return 0=IN, 1=OUT, 2=ON, 3=UNKNOWN
@@ -1653,7 +1653,7 @@ bool OCCTBuilderRemove(OCCTShapeRef _Nonnull parent, OCCTShapeRef _Nonnull child
 bool OCCTBRepLibOrientClosedSolid(OCCTShapeRef _Nonnull solid);
 
 /// Build a 3D curve for every edge of a shape that has only pcurves. The one entry point for
-/// BRepLib::BuildCurves3d — both of its overloads, since the no-tolerance one is just
+/// BRepLib:BuildCurves3d, both of its overloads, since the no-tolerance one is just
 /// `BuildCurves3d(S, 1.0e-5)`, and OCCT's own default for the parameter is that same 1e-5.
 ///
 /// Returns false if any single edge could not be given a 3D curve (a degenerate edge with no
@@ -1662,7 +1662,7 @@ bool OCCTBRepLibOrientClosedSolid(OCCTShapeRef _Nonnull solid);
 ///
 /// `tolerance` is not only the approximation tolerance: BRepLib::BuildCurve3d also makes it the
 /// rebuilt edge's tolerance floor, so it is readable off the result afterwards. It has no effect
-/// at all when the pcurve lies on a plane — that branch is analytic (GeomLib::To3d) and hard-codes
+/// at all when the pcurve lies on a plane, that branch is analytic (GeomLib:To3d) and hard-codes
 /// the new edge tolerance to 0. See Scripts/repro/498-buildcurves3d-triplication/. #498.
 bool OCCTBRepLibBuildCurves3dForShape(OCCTShapeRef _Nonnull shape, double tolerance);
 
@@ -1824,7 +1824,7 @@ double OCCTShapeTotalEdgeLength(OCCTShapeRef _Nonnull shape);
 // MARK: - BRepBndLib (v0.118.0)
 
 /// Compute axis-aligned bounding box for a shape.
-/// @return false when the box is void (e.g. an empty shape) — distinguishes that case from a
+/// @return false when the box is void (e.g. an empty shape), distinguishes that case from a
 ///         genuinely degenerate/point shape at the world origin, which legitimately computes to
 ///         all-zero coordinates (#900).
 bool OCCTShapeBoundingBox(OCCTShapeRef _Nonnull shape,
@@ -1836,7 +1836,7 @@ bool OCCTShapeBoundingBox(OCCTShapeRef _Nonnull shape,
                           double* _Nonnull zmax);
 
 /// Compute optimal (tight) axis-aligned bounding box for a shape.
-/// @return false when the box is void (e.g. an empty shape) — see ``OCCTShapeBoundingBox`` (#900).
+/// @return false when the box is void (e.g. an empty shape), see ``OCCTShapeBoundingBox`` (#900).
 bool OCCTShapeBoundingBoxOptimal(OCCTShapeRef _Nonnull shape,
                                  bool useShapeTolerance,
                                  double* _Nonnull xmin,
@@ -1848,7 +1848,7 @@ bool OCCTShapeBoundingBoxOptimal(OCCTShapeRef _Nonnull shape,
 
 /// Compute oriented bounding box (OBB) for a shape with detailed axes output.
 ///
-/// Delegates to ``OCCTShapeOrientedBoundingBox`` for the actual `Bnd_OBB` computation (#847) —
+/// Delegates to ``OCCTShapeOrientedBoundingBox`` for the actual `Bnd_OBB` computation (#847),
 /// this is the same box, unpacked into separate scalar out-parameters instead of one packed
 /// struct, with failure reported through `isVoid` instead of a `bool` return.
 void OCCTShapeOrientedBoundingBoxDetailed(OCCTShapeRef _Nonnull shape,
@@ -1964,9 +1964,9 @@ bool OCCTBRepLibEnsureNormalConsistency(OCCTShapeRef _Nonnull shape, double maxA
 void OCCTBRepLibUpdateDeflection(OCCTShapeRef _Nonnull shape);
 
 /// Get the continuity of the surface across an edge between two faces.
-/// Returns a raw GeomAbs_Shape ordinal — the measured-class vocabulary, so 0=C0, 1=G1, 2=C1,
+/// Returns a raw GeomAbs_Shape ordinal, the measured-class vocabulary, so 0=C0, 1=G1, 2=C1,
 /// 3=G2, 4=C2, 6=CN, and -1 for a null argument or a throw. Six of the seven ordinals are
-/// reachable: `BRepLib::ContinuityOfFaces` never returns C3 (5), and CN is 6, not 5 — a seam
+/// reachable: `BRepLib::ContinuityOfFaces` never returns C3 (5), and CN is 6, not 5, a seam
 /// edge on an elementary surface takes an early `return GeomAbs_CN`, and so does any elementary
 /// pair that measures C2. (This comment used to say "5=CN", which is neither the ordinal of CN
 /// nor a value this function can return; the implementation casts the enum straight through, so

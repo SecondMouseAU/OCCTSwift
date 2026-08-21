@@ -22,7 +22,7 @@ struct Issue438DivideContinuityUnificationTests {
 
     // Same recipe as Scripts/repro/censuses/ClusterD.swift's own `knotVector`/`kinkedSurfaceShape`:
     // a cubic BSpline surface with a mult-3 interior knot in both U and V, genuinely C0 (not C1)
-    // at that knot in both parametric directions. Neither a plain box nor a cylinder works here —
+    // at that knot in both parametric directions. Neither a plain box nor a cylinder works here,
     // both this suite's own `AdvancedHealingTests.divideCylinder` and
     // `ShapeUpgradeDivideContinuityTests.divideBoxContinuity` tolerate nil, and measured, a planar
     // box has no interior surface knots to divide at, and a cylinder's single lateral face is one
@@ -59,7 +59,7 @@ struct Issue438DivideContinuityUnificationTests {
             (Shape.ContinuityLevel.c0, nil as Int?),
             (.c1, 4), (.c2, 4), (.c3, 25), (.cn, 25),
             // G1/G2 are not recognised by ShapeUpgrade_Split*Continuity::SetCriterion, which
-            // falls through to its own C1 default for them (read from Libraries/occt-src) — so
+            // falls through to its own C1 default for them (read from Libraries/occt-src), so
             // they are expected to agree with .c1, not to add new behaviour of their own.
             (.g1, 4), (.g2, 4),
           ])

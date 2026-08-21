@@ -4,7 +4,7 @@ import simd
 @testable import OCCTSwift
 
 // #881: `Shape.sectionPlaneBasis(normal:explicitU:)`'s auto-derive branch (no `explicitU`
-// supplied) used a third, independently-inconsistent convention — Convention B's z-threshold
+// supplied) used a third, independently-inconsistent convention. Convention B's z-threshold
 // `worldUp` switch, combined with Convention A's magnitude-based fallback and cross-product
 // operand order, but a different fallback vector again ((1,0,0) instead of (0,1,0)). It now
 // shares `perpendicularBasis(to:)`, matching `gp_Ax2` exactly, same as `Placement.init` and
@@ -32,7 +32,7 @@ struct Issue881SectionPerpendicularBasisTests {
 
     @Test("sectionPlaneBasis with an explicitU is unaffected by the unification")
     func explicitUBasisUnchanged() {
-        // explicitU sidesteps perpendicularBasis(to:) entirely — the Gram-Schmidt
+        // explicitU sidesteps perpendicularBasis(to:) entirely, the Gram-Schmidt
         // orthogonalisation against the supplied vector is untouched by #881.
         let explicit = SIMD3<Double>(1, 1, 0)
         let (u, v) = Shape.sectionPlaneBasis(normal: Self.nearDegenerate, explicitU: explicit)

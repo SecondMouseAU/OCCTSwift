@@ -10,8 +10,8 @@ import simd
 /// convention and called the other with the same `Int` silently measured the wrong sub-shape kind.
 ///
 /// Fix: additive `ShapeType`-typed overloads on the `type:`-based trio, which pass the caller's
-/// `ShapeType` straight through as the real `TopAbs_ShapeEnum` ordinal — the same convention
-/// `maxTolerance(subShapeType:)` already used — so both typed, unambiguous entry points agree.
+/// `ShapeType` straight through as the real `TopAbs_ShapeEnum` ordinal, the same convention
+/// `maxTolerance(subShapeType:)` already used, so both typed, unambiguous entry points agree.
 @Suite("Issue #833: maxTolerance/minTolerance/avgTolerance encoding")
 struct Issue833MaxToleranceEncodingTests {
 

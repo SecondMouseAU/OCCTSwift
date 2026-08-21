@@ -1,9 +1,9 @@
 ---
-title: BRepGraph — Topology Detail, History & Mesh
+title: BRepGraph. Topology Detail, History & Mesh
 parent: API Reference
 ---
 
-# BRepGraph — Topology Detail, History & Mesh
+# BRepGraph. Topology Detail, History & Mesh
 
 This page covers the detail-query, history, mesh-storage, assembly, and structural reference members of `BRepGraph`. For the core construction, counts, adjacency, geometry, and serialization API see [BRepGraph](BRepGraph.md).
 
@@ -23,7 +23,7 @@ Returns the index of the underlying edge for a coedge.
 public func coedgeEdge(_ coedgeIndex: Int) -> Int
 ```
 
-- **Parameters:** `coedgeIndex` — 0-based coedge index.
+- **Parameters:** `coedgeIndex`, 0-based coedge index.
 - **Returns:** Edge index.
 - **OCCT:** `BRepGraph_CoEdge::Edge` via `OCCTBRepGraphCoEdgeEdge`.
 - **Example:**
@@ -41,7 +41,7 @@ Returns the index of the face that owns a coedge.
 public func coedgeFace(_ coedgeIndex: Int) -> Int
 ```
 
-- **Parameters:** `coedgeIndex` — 0-based coedge index.
+- **Parameters:** `coedgeIndex`, 0-based coedge index.
 - **Returns:** Face index.
 - **OCCT:** `BRepGraph_CoEdge::Face` via `OCCTBRepGraphCoEdgeFace`.
 - **Example:**
@@ -59,7 +59,7 @@ Returns the index of the paired seam coedge, or `nil` if this coedge is not part
 public func coedgeSeamPair(_ coedgeIndex: Int) -> Int?
 ```
 
-- **Parameters:** `coedgeIndex` — 0-based coedge index.
+- **Parameters:** `coedgeIndex`, 0-based coedge index.
 - **Returns:** Paired coedge index, or `nil` when none.
 - **OCCT:** `BRepGraph_CoEdge::SeamPair` via `OCCTBRepGraphCoEdgeSeamPair`.
 - **Example:**
@@ -79,7 +79,7 @@ Returns whether a coedge has a parametric curve (PCurve) on its face.
 public func coedgeHasPCurve(_ coedgeIndex: Int) -> Bool
 ```
 
-- **Parameters:** `coedgeIndex` — 0-based coedge index.
+- **Parameters:** `coedgeIndex`, 0-based coedge index.
 - **OCCT:** `BRepGraph_CoEdge::HasPCurve` via `OCCTBRepGraphCoEdgeHasPCurve`.
 - **Example:**
   ```swift
@@ -98,7 +98,7 @@ Returns the parameter range of a coedge's PCurve.
 public func coedgeRange(_ coedgeIndex: Int) -> (first: Double, last: Double)
 ```
 
-- **Parameters:** `coedgeIndex` — 0-based coedge index.
+- **Parameters:** `coedgeIndex`, 0-based coedge index.
 - **Returns:** Tuple of `(first, last)` parameter values.
 - **OCCT:** `BRepGraph_CoEdge::Range` via `OCCTBRepGraphCoEdgeRange`.
 - **Example:**
@@ -118,7 +118,7 @@ Returns the number of solids that contain a given shell.
 public func shellSolidCount(_ shellIndex: Int) -> Int
 ```
 
-- **Parameters:** `shellIndex` — 0-based shell index.
+- **Parameters:** `shellIndex`, 0-based shell index.
 - **OCCT:** `BRepGraph_Shell` upward links via `OCCTBRepGraphShellSolidCount`.
 - **Example:**
   ```swift
@@ -135,7 +135,7 @@ Returns the indices of solids that contain a given shell.
 public func shellSolids(_ shellIndex: Int) -> [Int]
 ```
 
-- **Parameters:** `shellIndex` — 0-based shell index.
+- **Parameters:** `shellIndex`, 0-based shell index.
 - **Returns:** Array of solid indices (may be empty for free shells).
 - **OCCT:** `BRepGraph_Shell` upward links via `OCCTBRepGraphShellSolidIndices`.
 - **Example:**
@@ -155,7 +155,7 @@ Returns the number of comp-solids that contain a given solid.
 public func solidCompSolidCount(_ solidIndex: Int) -> Int
 ```
 
-- **Parameters:** `solidIndex` — 0-based solid index.
+- **Parameters:** `solidIndex`, 0-based solid index.
 - **OCCT:** `BRepGraph_Solid` upward links via `OCCTBRepGraphSolidCompSolidCount`.
 - **Example:**
   ```swift
@@ -233,7 +233,7 @@ public struct NodeRef: Sendable, Hashable, Codable {
 
 Swift mirror of OCCT's `BRepGraph_NodeId`. Two `NodeRef` values with equal `kind` and `index` refer to the same node **within a given graph instance**. Cross-graph translation requires walking history records.
 
-- **`isValid`** — `true` when `index >= 0`.
+- **`isValid`**: `true` when `index >= 0`.
 
 ---
 
@@ -251,9 +251,9 @@ public struct HistoryRecord: Sendable {
 
 The `mapping` encodes the fate of each affected node:
 
-- `original → [one replacement]` — modified in place
-- `original → [multiple replacements]` — split (e.g. edge split by fillet)
-- `original → []` — deleted
+- `original → [one replacement]`: modified in place
+- `original → [multiple replacements]`: split (e.g. edge split by fillet)
+- `original → []`: deleted
 
 ---
 
@@ -273,7 +273,7 @@ Returns a single history record by 0-based index, or `nil` if the index is out o
 public func historyRecord(at index: Int) -> HistoryRecord?
 ```
 
-- **Parameters:** `index` — 0-based index into the history log.
+- **Parameters:** `index`, 0-based index into the history log.
 - **Returns:** The decoded `HistoryRecord`, or `nil` if `index ≥ historyRecordCount`.
 - **OCCT:** `OCCTBRepGraphHistoryGetRecordInfo`, `OCCTBRepGraphHistoryGetRecordOriginals`, `OCCTBRepGraphHistoryGetRecordMapping`.
 - **Example:**
@@ -311,7 +311,7 @@ Walks backwards from a derived node to its root original via the reverse history
 public func findOriginal(of derived: NodeRef) -> NodeRef
 ```
 
-- **Parameters:** `derived` — node to trace back.
+- **Parameters:** `derived`, node to trace back.
 - **Returns:** The root original `NodeRef`, or `derived` itself if no history exists for it.
 - **OCCT:** `OCCTBRepGraphHistoryFindOriginal`.
 - **Example:**
@@ -331,7 +331,7 @@ public func hasHistoryRecord(for original: NodeRef) -> Bool
 
 Use alongside `findDerived(of:)` to distinguish "explicitly deleted" (record present, empty replacements) from "untouched" (no record at all).
 
-- **Parameters:** `original` — node to check.
+- **Parameters:** `original`, node to check.
 - **Example:**
   ```swift
   let ref = NodeRef(kind: .face, index: 0)
@@ -356,7 +356,7 @@ This is the preferred single-entry-point for "where did this node end up?" queri
 - Empty result + history record present → `[]` (explicitly deleted).
 - Empty result + no history record → `[original]` (untouched, same index).
 
-- **Parameters:** `original` — node to trace forward.
+- **Parameters:** `original`, node to trace forward.
 - **Returns:** Array of current `NodeRef` values (never `nil`).
 - **Example:**
   ```swift
@@ -378,7 +378,7 @@ public func findDerived(of original: NodeRef) -> [NodeRef]
 
 Returns an empty array for both untouched and explicitly deleted nodes. Use `findDerivedOrSelf(of:)` or pair with `hasHistoryRecord(for:)` to disambiguate.
 
-- **Parameters:** `original` — node to trace forward.
+- **Parameters:** `original`, node to trace forward.
 - **Returns:** Array of derived `NodeRef` values; empty if no recorded descendants.
 - **OCCT:** `OCCTBRepGraphHistoryFindDerived`.
 - **Example:**
@@ -401,9 +401,9 @@ public func recordHistory(operationName: String,
 Use this when mutating the graph outside BRepGraph's own builder API so the change participates in history queries.
 
 - **Parameters:**
-  - `operationName` — human-readable label for the event.
-  - `original` — the node that was modified.
-  - `replacements` — replacement node(s). Pass `[]` to record a deletion.
+  - `operationName`: human-readable label for the event.
+  - `original`: the node that was modified.
+  - `replacements`: replacement node(s). Pass `[]` to record a deletion.
 - **OCCT:** `OCCTBRepGraphHistoryRecord`.
 - **Example:**
   ```swift
@@ -419,7 +419,7 @@ Use this when mutating the graph outside BRepGraph's own builder API so the chan
 ## Absorbing an Operation's History
 
 Hand-written `recordHistory` calls are for graph mutations you perform yourself. When the mutation is
-an OCCT operation that *rebuilds the shape* — a boolean, a fillet, a chamfer — use
+an OCCT operation that *rebuilds the shape*, a boolean, a fillet, a chamfer, use
 `add(_:absorbing:inputRoots:operationName:)` instead: it imports the operation's own history, so you
 do not have to correlate result sub-shapes back to nodes by hand.
 
@@ -438,22 +438,22 @@ public func add(_ result: Shape,
 
 **The input and the result share one graph.** Build the graph from the operation's *input* shape, then
 hand it the result. History is NodeId-keyed, so the `NodeRef`s and `GraphUID`s you already hold stay
-valid — there is no second graph to look them up in, and a UID only ever means something in the graph
+valid, there is no second graph to look them up in, and a UID only ever means something in the graph
 that minted it ([#295](https://github.com/SecondMouseAU/OCCTSwift/issues/295)).
 
 - **Parameters:**
-  - `result` — the operation's result shape.
-  - `history` — the handle returned alongside it by any `*WithFullHistory` operation.
-  - `inputRoots` — nodes in *this* graph whose subshapes to track; normally the input shape's root.
-    Get it with `findNode(for: inputShape)` — **not** `rootNodes`, which is Products and is empty for
+  - `result`: the operation's result shape.
+  - `history`: the handle returned alongside it by any `*WithFullHistory` operation.
+  - `inputRoots`: nodes in *this* graph whose subshapes to track; normally the input shape's root.
+    Get it with `findNode(for: inputShape)`, **not** `rootNodes`, which is Products and is empty for
     a shape-built graph (`CreateAutoProduct = false`).
-  - `operationName` — the label recorded on every emitted record, and the string
+  - `operationName`: the label recorded on every emitted record, and the string
     `TopologyRef.createdBy(operationName:)` matches on.
 - **Returns:** the added result's topology-root node, or `nil` if the add or the absorb failed.
 - **OCCT:** `BRepGraph::ShapesView::AddWithHistory` → `BRepGraph_LayerHistory::Absorb`, via
   `OCCTBRepGraphAddWithHistory`. The `BRepTools_History` is synthesized from the retained builder by
   `OCCTBooleanHistoryAsBRepToolsHistory`.
-- **Only vertices, edges, faces and solids are carried** — `BRepTools_History::IsSupportedType` tracks
+- **Only vertices, edges, faces and solids are carried**: `BRepTools_History::IsSupportedType` tracks
   nothing else, so nothing is recorded for wires, shells or compounds.
 - **Example:** cut a channel across a box's top face and keep hold of the face.
   ```swift
@@ -486,7 +486,7 @@ that minted it ([#295](https://github.com/SecondMouseAU/OCCTSwift/issues/295)).
 
 #### Chaining multiple operations
 
-`inputRoots` is not limited to the graph's own top-level root — pass any `NodeRef` already in the
+`inputRoots` is not limited to the graph's own top-level root, pass any `NodeRef` already in the
 graph, including one you just got back from a prior `add(_:absorbing:...)` call, to chain a second
 `*WithFullHistory` op onto the first op's live output ([#336](https://github.com/SecondMouseAU/OCCTSwift/issues/336)):
 
@@ -494,7 +494,7 @@ graph, including one you just got back from a prior `add(_:absorbing:...)` call,
 let (out1, hist1) = base.subtractedWithFullHistory(tool1)!
 graph.add(out1, absorbing: hist1, inputRoots: [root], operationName: "hop1")
 
-// Drill down to a trackable (solid) root for the next hop — a boolean result
+// Drill down to a trackable (solid) root for the next hop, a boolean result
 // is always a Compound wrapping its solid(s).
 let out1Solid = out1.subShapes(ofType: .solid).first!
 let root1Raw = graph.findNode(for: out1Solid)!
@@ -504,11 +504,11 @@ let (out2, hist2) = out1.subtractedWithFullHistory(tool2)!
 graph.add(out2, absorbing: hist2, inputRoots: [root1], operationName: "hop2")
 ```
 
-> **Zero absorbed records means the tool didn't touch anything — check the geometry, not the API.**
+> **Zero absorbed records means the tool didn't touch anything, check the geometry, not the API.**
 > `add(_:absorbing:...)` absorbs whatever the operation's own `BRepTools_History` reports; if a tool's
 > bounding box doesn't overlap the shape it's cutting, that history is legitimately empty. This is the
 > whole story behind #336: `Shape.box(width:height:depth:)` is centered at the origin (see its doc
-> comment), not corner-anchored like raw OCCT's `BRepPrimAPI_MakeBox(w,h,d)` — a tool built from it and
+> comment), not corner-anchored like raw OCCT's `BRepPrimAPI_MakeBox(w,h,d)`, a tool built from it and
 > translated as if the box's corner were at the origin can end up nowhere near the shape you meant to
 > cut. Compare `out1.volume` / `out2.volume` (or bounding boxes) before suspecting the absorb path.
 
@@ -662,7 +662,7 @@ Returns the active triangulation rep id for a face, checking the algorithm-deriv
 public func meshFaceActiveTriangulationRepId(_ faceIndex: Int) -> Int?
 ```
 
-- **Parameters:** `faceIndex` — 0-based face index.
+- **Parameters:** `faceIndex`, 0-based face index.
 - **Returns:** Rep id, or `nil` if neither tier has mesh data for the face.
 - **OCCT:** `OCCTBRepGraphMeshFaceActiveTriangulationRepId`.
 - **Example:**
@@ -682,7 +682,7 @@ Returns the active polygon-3D rep id for an edge (cache-first, persistent fallba
 public func meshEdgePolygon3DRepId(_ edgeIndex: Int) -> Int?
 ```
 
-- **Parameters:** `edgeIndex` — 0-based edge index.
+- **Parameters:** `edgeIndex`, 0-based edge index.
 - **Returns:** Rep id, or `nil` if neither tier has polygon-3D mesh data for the edge.
 - **OCCT:** `OCCTBRepGraphMeshEdgePolygon3DRepId`.
 - **Example:**
@@ -696,13 +696,13 @@ public func meshEdgePolygon3DRepId(_ edgeIndex: Int) -> Int?
 
 ### `meshCoEdgeHasMesh(_:)`
 
-Returns whether a coedge has cached mesh data (polygon-on-tri or polygon-2D). Cache-only check — does not consult the persistent tier.
+Returns whether a coedge has cached mesh data (polygon-on-tri or polygon-2D). Cache-only check, does not consult the persistent tier.
 
 ```swift
 public func meshCoEdgeHasMesh(_ coedgeIndex: Int) -> Bool
 ```
 
-- **Parameters:** `coedgeIndex` — 0-based coedge index.
+- **Parameters:** `coedgeIndex`, 0-based coedge index.
 - **OCCT:** `OCCTBRepGraphMeshCoEdgeHasMesh`.
 - **Example:**
   ```swift
@@ -725,7 +725,7 @@ Creates a triangulation rep in the graph's mesh storage.
 public func createTriangulationRep(_ triangulation: Triangulation) -> Int?
 ```
 
-- **Parameters:** `triangulation` — the `Triangulation` to store.
+- **Parameters:** `triangulation`, the `Triangulation` to store.
 - **Returns:** Rep id, or `nil` on failure.
 - **OCCT:** `OCCTBRepGraphMeshCreateTriangulationRep`.
 - **Example:**
@@ -744,7 +744,7 @@ Creates a polygon-3D rep in the graph's mesh storage.
 public func createPolygon3DRep(_ polygon: Polygon3D) -> Int?
 ```
 
-- **Parameters:** `polygon` — the `Polygon3D` to store.
+- **Parameters:** `polygon`, the `Polygon3D` to store.
 - **Returns:** Rep id, or `nil` on failure.
 - **OCCT:** `OCCTBRepGraphMeshCreatePolygon3DRep`.
 - **Example:**
@@ -765,8 +765,8 @@ public func createPolygonOnTriRep(_ polygon: PolygonOnTriangulation, triRepId: I
 ```
 
 - **Parameters:**
-  - `polygon` — the `PolygonOnTriangulation` to store.
-  - `triRepId` — id of the parent triangulation rep.
+  - `polygon`: the `PolygonOnTriangulation` to store.
+  - `triRepId`: id of the parent triangulation rep.
 - **Returns:** Rep id, or `nil` on failure.
 - **OCCT:** `OCCTBRepGraphMeshCreatePolygonOnTriRep`.
 - **Example:**
@@ -787,8 +787,8 @@ public func appendCachedTriangulation(faceIndex: Int, triRepId: Int)
 ```
 
 - **Parameters:**
-  - `faceIndex` — 0-based face index.
-  - `triRepId` — rep id returned by `createTriangulationRep(_:)`.
+  - `faceIndex`: 0-based face index.
+  - `triRepId`: rep id returned by `createTriangulationRep(_:)`.
 - **OCCT:** `OCCTBRepGraphMeshAppendCachedTriangulation`.
 
 ---
@@ -802,8 +802,8 @@ public func setCachedActiveIndex(faceIndex: Int, activeIndex: Int)
 ```
 
 - **Parameters:**
-  - `faceIndex` — 0-based face index.
-  - `activeIndex` — index into the face's cached triangulation list to activate.
+  - `faceIndex`: 0-based face index.
+  - `activeIndex`: index into the face's cached triangulation list to activate.
 - **OCCT:** `OCCTBRepGraphMeshSetCachedActiveIndex`.
 
 ---
@@ -817,8 +817,8 @@ public func setCachedPolygon3D(edgeIndex: Int, polyRepId: Int)
 ```
 
 - **Parameters:**
-  - `edgeIndex` — 0-based edge index.
-  - `polyRepId` — rep id returned by `createPolygon3DRep(_:)`.
+  - `edgeIndex`: 0-based edge index.
+  - `polyRepId`: rep id returned by `createPolygon3DRep(_:)`.
 - **OCCT:** `OCCTBRepGraphMeshSetCachedPolygon3D`.
 
 ---
@@ -832,8 +832,8 @@ public func appendCachedPolygonOnTri(coedgeIndex: Int, polyRepId: Int)
 ```
 
 - **Parameters:**
-  - `coedgeIndex` — 0-based coedge index.
-  - `polyRepId` — rep id returned by `createPolygonOnTriRep(_:triRepId:)`.
+  - `coedgeIndex`: 0-based coedge index.
+  - `polyRepId`: rep id returned by `createPolygonOnTriRep(_:triRepId:)`.
 - **OCCT:** `OCCTBRepGraphMeshAppendCachedPolygonOnTri`.
 
 ---
@@ -847,8 +847,8 @@ public func setCachedPolygon2D(coedgeIndex: Int, poly2DRepId: Int)
 ```
 
 - **Parameters:**
-  - `coedgeIndex` — 0-based coedge index.
-  - `poly2DRepId` — rep id of the polygon-2D entry.
+  - `coedgeIndex`: 0-based coedge index.
+  - `poly2DRepId`: rep id of the polygon-2D entry.
 - **OCCT:** `OCCTBRepGraphMeshSetCachedPolygon2D`.
 
 ---
@@ -901,7 +901,7 @@ Returns the indices of same-domain faces for a given face (faces sharing the sam
 public func sameDomainFaces(of faceIndex: Int) -> [Int]
 ```
 
-- **Parameters:** `faceIndex` — 0-based face index.
+- **Parameters:** `faceIndex`, 0-based face index.
 - **Returns:** Array of co-domain face indices (empty if none).
 - **OCCT:** `BRepGraph_Face::SameDomain` via `OCCTBRepGraphFaceSameDomainIndices`.
 - **Example:**
@@ -921,7 +921,7 @@ Creates a deep copy of the graph.
 public func copy(copyGeometry: Bool = true) -> BRepGraph?
 ```
 
-- **Parameters:** `copyGeometry` — when `true` (default), geometry handles are also copied; when `false`, the new graph shares geometry with the original.
+- **Parameters:** `copyGeometry`, when `true` (default), geometry handles are also copied; when `false`, the new graph shares geometry with the original.
 - **Returns:** New `BRepGraph`, or `nil` on failure.
 - **OCCT:** `OCCTBRepGraphCopy`.
 - **Example:**
@@ -942,8 +942,8 @@ public func copyFace(_ faceIndex: Int, copyGeometry: Bool = true) -> BRepGraph?
 ```
 
 - **Parameters:**
-  - `faceIndex` — 0-based index of the face to extract.
-  - `copyGeometry` — whether to copy geometry handles (default: `true`).
+  - `faceIndex`: 0-based index of the face to extract.
+  - `copyGeometry`: whether to copy geometry handles (default: `true`).
 - **Returns:** New `BRepGraph` for the face sub-graph, or `nil` on failure.
 - **OCCT:** `OCCTBRepGraphCopyFace`.
 - **Example:**
@@ -964,8 +964,8 @@ public func translated(dx: Double, dy: Double, dz: Double, copyGeometry: Bool = 
 ```
 
 - **Parameters:**
-  - `dx`, `dy`, `dz` — translation components in model units.
-  - `copyGeometry` — whether to copy geometry handles (default: `true`).
+  - `dx`, `dy`, `dz`, translation components in model units.
+  - `copyGeometry`: whether to copy geometry handles (default: `true`).
 - **Returns:** Translated `BRepGraph`, or `nil` on failure.
 - **OCCT:** `OCCTBRepGraphTransformTranslation`.
 - **Example:**
@@ -1013,7 +1013,7 @@ Returns whether a product at the given index is an assembly (has child occurrenc
 public func productIsAssembly(_ productIndex: Int) -> Bool
 ```
 
-- **Parameters:** `productIndex` — 0-based product index.
+- **Parameters:** `productIndex`, 0-based product index.
 - **OCCT:** `OCCTBRepGraphProductIsAssembly`.
 - **Example:**
   ```swift
@@ -1030,7 +1030,7 @@ Returns whether a product at the given index is a leaf part (no child occurrence
 public func productIsPart(_ productIndex: Int) -> Bool
 ```
 
-- **Parameters:** `productIndex` — 0-based product index.
+- **Parameters:** `productIndex`, 0-based product index.
 - **OCCT:** `OCCTBRepGraphProductIsPart`.
 
 ---
@@ -1043,7 +1043,7 @@ Returns the number of active child occurrences of a product.
 public func productComponentCount(_ productIndex: Int) -> Int
 ```
 
-- **Parameters:** `productIndex` — 0-based product index.
+- **Parameters:** `productIndex`, 0-based product index.
 - **OCCT:** `OCCTBRepGraphProductNbComponents`.
 
 ---
@@ -1056,7 +1056,7 @@ Returns the shape root node `(kind, index)` of a product, or `nil` if the produc
 public func productShapeRoot(_ productIndex: Int) -> (kind: NodeKind, index: Int)?
 ```
 
-- **Parameters:** `productIndex` — 0-based product index.
+- **Parameters:** `productIndex`, 0-based product index.
 - **Returns:** Tuple of `(kind, index)`, or `nil`.
 - **OCCT:** `OCCTBRepGraphProductShapeRootKind` / `OCCTBRepGraphProductShapeRootIndex`.
 - **Example:**
@@ -1076,7 +1076,7 @@ Returns the product index referenced by an occurrence.
 public func occurrenceProduct(_ occIndex: Int) -> Int
 ```
 
-- **Parameters:** `occIndex` — 0-based occurrence index.
+- **Parameters:** `occIndex`, 0-based occurrence index.
 - **OCCT:** `OCCTBRepGraphOccurrenceProduct`.
 
 ---
@@ -1089,7 +1089,7 @@ Returns the parent product index of an occurrence.
 public func occurrenceParentProduct(_ occIndex: Int) -> Int
 ```
 
-- **Parameters:** `occIndex` — 0-based occurrence index.
+- **Parameters:** `occIndex`, 0-based occurrence index.
 - **OCCT:** `OCCTBRepGraphOccurrenceParentProduct`.
 
 ---
@@ -1268,8 +1268,8 @@ public func refChildNodeKind(_ refKind: RefKind, refIndex: Int) -> NodeKind?
 ```
 
 - **Parameters:**
-  - `refKind` — the reference table to query.
-  - `refIndex` — 0-based index into that table.
+  - `refKind`: the reference table to query.
+  - `refIndex`: 0-based index into that table.
 - **Returns:** `NodeKind` of the child, or `nil`.
 - **OCCT:** `OCCTBRepGraphRefChildNodeKind`.
 - **Example:**
@@ -1290,8 +1290,8 @@ public func refChildNodeIndex(_ refKind: RefKind, refIndex: Int) -> Int
 ```
 
 - **Parameters:**
-  - `refKind` — the reference table to query.
-  - `refIndex` — 0-based index into that table.
+  - `refKind`: the reference table to query.
+  - `refIndex`: 0-based index into that table.
 - **OCCT:** `OCCTBRepGraphRefChildNodeIndex`.
 
 ---
@@ -1305,8 +1305,8 @@ public func isRefRemoved(_ refKind: RefKind, refIndex: Int) -> Bool
 ```
 
 - **Parameters:**
-  - `refKind` — the reference table to query.
-  - `refIndex` — 0-based index into that table.
+  - `refKind`: the reference table to query.
+  - `refIndex`: 0-based index into that table.
 - **OCCT:** `OCCTBRepGraphRefIsRemoved`.
 
 ---
@@ -1320,8 +1320,8 @@ public func refOrientation(_ refKind: RefKind, refIndex: Int) -> Int
 ```
 
 - **Parameters:**
-  - `refKind` — the reference table to query.
-  - `refIndex` — 0-based index into that table.
+  - `refKind`: the reference table to query.
+  - `refIndex`: 0-based index into that table.
 - **Returns:** `TopAbs_Orientation` value: `0` = Forward, `1` = Reversed, `2` = Internal, `3` = External.
 - **OCCT:** `OCCTBRepGraphRefOrientation`.
 - **Example:**
@@ -1342,7 +1342,7 @@ Returns the number of wire refs on a face (outer wire + any hole wires).
 public func faceWireCount(_ faceIndex: Int) -> Int
 ```
 
-- **Parameters:** `faceIndex` — 0-based face index.
+- **Parameters:** `faceIndex`, 0-based face index.
 - **OCCT:** `OCCTBRepGraphFaceNbWires`.
 - **Example:**
   ```swift
@@ -1360,7 +1360,7 @@ Returns the number of isolated vertex refs on a face.
 public func faceVertexRefCount(_ faceIndex: Int) -> Int
 ```
 
-- **Parameters:** `faceIndex` — 0-based face index.
+- **Parameters:** `faceIndex`, 0-based face index.
 - **OCCT:** `OCCTBRepGraphFaceNbVertexRefs`.
 
 ---
@@ -1375,7 +1375,7 @@ Returns the start vertex definition index of an edge, or `nil` if invalid.
 public func edgeStartVertex(_ edgeIndex: Int) -> Int?
 ```
 
-- **Parameters:** `edgeIndex` — 0-based edge index.
+- **Parameters:** `edgeIndex`, 0-based edge index.
 - **Returns:** Vertex index, or `nil` if the edge has no recorded start vertex.
 - **OCCT:** `OCCTBRepGraphEdgeStartVertex`.
 - **Example:**
@@ -1395,7 +1395,7 @@ Returns the end vertex definition index of an edge, or `nil` if invalid.
 public func edgeEndVertex(_ edgeIndex: Int) -> Int?
 ```
 
-- **Parameters:** `edgeIndex` — 0-based edge index.
+- **Parameters:** `edgeIndex`, 0-based edge index.
 - **Returns:** Vertex index, or `nil` if the edge has no recorded end vertex.
 - **OCCT:** `OCCTBRepGraphEdgeEndVertex`.
 
@@ -1409,9 +1409,9 @@ Returns whether an edge is topologically closed (start vertex equals end vertex)
 public func isEdgeClosed(_ edgeIndex: Int) -> Bool
 ```
 
-- **Parameters:** `edgeIndex` — 0-based edge index.
+- **Parameters:** `edgeIndex`, 0-based edge index.
 - **OCCT:** `OCCTBRepGraphEdgeIsClosed`.
-- **Note:** Distinct from `isEdgeDegenerated` — a closed edge forms a loop; a degenerate edge collapses to a point.
+- **Note:** Distinct from `isEdgeDegenerated`, a closed edge forms a loop; a degenerate edge collapses to a point.
 - **Example:**
   ```swift
   if graph.isEdgeClosed(0) {
@@ -1431,7 +1431,7 @@ Returns the number of parent compounds of a compound.
 public func compoundParentCount(_ compoundIndex: Int) -> Int
 ```
 
-- **Parameters:** `compoundIndex` — 0-based compound index.
+- **Parameters:** `compoundIndex`, 0-based compound index.
 - **OCCT:** `OCCTBRepGraphCompoundParentCount`.
 
 ---
@@ -1444,7 +1444,7 @@ Returns the number of child refs of a compound.
 public func compoundChildCount(_ compoundIndex: Int) -> Int
 ```
 
-- **Parameters:** `compoundIndex` — 0-based compound index.
+- **Parameters:** `compoundIndex`, 0-based compound index.
 - **OCCT:** `OCCTBRepGraphCompoundChildCount`.
 - **Example:**
   ```swift
@@ -1462,7 +1462,7 @@ Returns the number of solid refs in a comp-solid.
 public func compSolidSolidCount(_ compSolidIndex: Int) -> Int
 ```
 
-- **Parameters:** `compSolidIndex` — 0-based comp-solid index.
+- **Parameters:** `compSolidIndex`, 0-based comp-solid index.
 - **OCCT:** `OCCTBRepGraphCompSolidSolidCount`.
 
 ---
@@ -1475,5 +1475,5 @@ Returns the number of parent compounds of a comp-solid.
 public func compSolidCompoundCount(_ compSolidIndex: Int) -> Int
 ```
 
-- **Parameters:** `compSolidIndex` — 0-based comp-solid index.
+- **Parameters:** `compSolidIndex`, 0-based comp-solid index.
 - **OCCT:** `OCCTBRepGraphCompSolidCompoundCount`.

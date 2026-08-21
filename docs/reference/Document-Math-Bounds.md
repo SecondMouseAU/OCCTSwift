@@ -1,9 +1,9 @@
 ---
-title: Document — Math, Bounds, OSD & Conversions
+title: Document. Math, Bounds, OSD & Conversions
 parent: API Reference
 ---
 
-# Document — Math, Bounds, OSD & Conversions
+# Document. Math, Bounds, OSD & Conversions
 
 This page covers the math solvers, bounding-box types, quaternion/timer utilities, point classification, curve/surface conversion helpers, and OSD utilities found in `Document.swift`. For the core document lifecycle, shape tools, and XCAF I/O see the main [Document](Document.md) page.
 
@@ -15,7 +15,7 @@ This page covers the math solvers, bounding-box types, quaternion/timer utilitie
 
 ## gp_Quaternion
 
-Wraps `gp_Quaternion` — OCCT's unit-quaternion for representing 3D rotations. Obtain one via `init(x:y:z:w:)`, `fromAxisAngle`, or `fromVectors`.
+Wraps `gp_Quaternion`, OCCT's unit-quaternion for representing 3D rotations. Obtain one via `init(x:y:z:w:)`, `fromAxisAngle`, or `fromVectors`.
 
 ### `Quaternion.init(x:y:z:w:)`
 
@@ -25,7 +25,7 @@ Create a quaternion from its four components.
 public convenience init(x: Double = 0, y: Double = 0, z: Double = 0, w: Double = 1)
 ```
 
-- **Parameters:** `x`, `y`, `z` — vector part; `w` — scalar part. Defaults to the identity quaternion (0, 0, 0, 1).
+- **Parameters:** `x`, `y`, `z`, vector part; `w`, scalar part. Defaults to the identity quaternion (0, 0, 0, 1).
 - **OCCT:** `gp_Quaternion(x, y, z, w)` (via `OCCTQuaternionCreate`).
 - **Example:**
   ```swift
@@ -43,7 +43,7 @@ Create a quaternion from an axis-angle rotation.
 public static func fromAxisAngle(axis: SIMD3<Double>, angle: Double) -> Quaternion
 ```
 
-- **Parameters:** `axis` — rotation axis (need not be normalized); `angle` — rotation angle in radians.
+- **Parameters:** `axis`, rotation axis (need not be normalized); `angle`, rotation angle in radians.
 - **OCCT:** `gp_Quaternion::SetVectorAndAngle` (via `OCCTQuaternionCreateFromAxisAngle`).
 - **Example:**
   ```swift
@@ -60,7 +60,7 @@ Create a quaternion representing the shortest-arc rotation from one vector to an
 public static func fromVectors(from: SIMD3<Double>, to: SIMD3<Double>) -> Quaternion
 ```
 
-- **Parameters:** `from` — source direction; `to` — target direction.
+- **Parameters:** `from`, source direction; `to`, target direction.
 - **OCCT:** `gp_Quaternion::SetRotation` (via `OCCTQuaternionCreateFromVectors`).
 - **Example:**
   ```swift
@@ -94,7 +94,7 @@ Set the quaternion from Euler angles.
 public func setEulerAngles(order: Int32, alpha: Double, beta: Double, gamma: Double)
 ```
 
-- **Parameters:** `order` — Euler convention index (0 = Intrinsic_XYZ, see `gp_EulerSequence`); `alpha`, `beta`, `gamma` — angles in radians.
+- **Parameters:** `order`, Euler convention index (0 = Intrinsic_XYZ, see `gp_EulerSequence`); `alpha`, `beta`, `gamma`, angles in radians.
 - **OCCT:** `gp_Quaternion::SetEulerAngles` (via `OCCTQuaternionSetEulerAngles`).
 - **Example:**
   ```swift
@@ -111,7 +111,7 @@ Get the Euler angle decomposition of this quaternion.
 public func getEulerAngles(order: Int32) -> (alpha: Double, beta: Double, gamma: Double)
 ```
 
-- **Parameters:** `order` — Euler convention index (same encoding as `setEulerAngles`).
+- **Parameters:** `order`, Euler convention index (same encoding as `setEulerAngles`).
 - **Returns:** Tuple of three angles in radians.
 - **OCCT:** `gp_Quaternion::GetEulerAngles` (via `OCCTQuaternionGetEulerAngles`).
 - **Example:**
@@ -149,7 +149,7 @@ Rotate a 3D vector by this quaternion.
 public func rotate(_ vector: SIMD3<Double>) -> SIMD3<Double>
 ```
 
-- **Parameters:** `vector` — the vector to rotate.
+- **Parameters:** `vector`, the vector to rotate.
 - **Returns:** The rotated vector.
 - **OCCT:** `gp_Quaternion::Multiply` with `gp_Vec` (via `OCCTQuaternionMultiplyVec`).
 - **Example:**
@@ -167,7 +167,7 @@ Hamilton product of two quaternions.
 public func multiplied(by other: Quaternion) -> Quaternion
 ```
 
-- **Parameters:** `other` — the right-hand quaternion.
+- **Parameters:** `other`, the right-hand quaternion.
 - **Returns:** A new `Quaternion` representing the composed rotation.
 - **OCCT:** `gp_Quaternion::Multiplied` (via `OCCTQuaternionMultiply`).
 - **Example:**
@@ -230,7 +230,7 @@ public func normalize()
 ---
 ## OSD_Timer
 
-Wraps `OSD_Timer` — a high-resolution wall-clock timer suitable for profiling.
+Wraps `OSD_Timer`, a high-resolution wall-clock timer suitable for profiling.
 
 ### `Timer.init()`
 
@@ -334,7 +334,7 @@ public static var wallClockTime: Double { get }
 ---
 ## Bnd_OBB
 
-Wraps `Bnd_OBB` — an oriented bounding box in 3D space defined by center, local axes, and half-sizes.
+Wraps `Bnd_OBB`, an oriented bounding box in 3D space defined by center, local axes, and half-sizes.
 
 ### `OBB.init(center:xDir:yDir:zDir:hx:hy:hz:)`
 
@@ -345,7 +345,7 @@ public init(center: SIMD3<Double>, xDir: SIMD3<Double>, yDir: SIMD3<Double>, zDi
             hx: Double, hy: Double, hz: Double)
 ```
 
-- **Parameters:** `center` — center point; `xDir`/`yDir`/`zDir` — local orthonormal axes; `hx`/`hy`/`hz` — half-sizes along each axis.
+- **Parameters:** `center`, center point; `xDir`/`yDir`/`zDir`, local orthonormal axes; `hx`/`hy`/`hz`, half-sizes along each axis.
 - **OCCT:** `Bnd_OBB(center, xDir, yDir, zDir, hx, hy, hz)` (via `OCCTOBBCreate`).
 - **Example:**
   ```swift
@@ -364,7 +364,7 @@ Compute the tightest OBB enclosing a shape.
 public static func fromShape(_ shape: Shape) -> OBB?
 ```
 
-- **Parameters:** `shape` — the source shape.
+- **Parameters:** `shape`, the source shape.
 - **Returns:** The OBB, or `nil` if the shape has no computable bounds.
 - **OCCT:** `BRepBndLib::AddOBB` (via `OCCTOBBCreateFromShape`).
 - **Example:**
@@ -424,7 +424,7 @@ Check if a point lies outside the OBB.
 public func isOut(point: SIMD3<Double>) -> Bool
 ```
 
-- **Parameters:** `point` — the 3D point to test.
+- **Parameters:** `point`, the 3D point to test.
 - **Returns:** `true` if the point is strictly outside.
 - **OCCT:** `Bnd_OBB::IsOut(gp_Pnt)` (via `OCCTOBBIsOutPoint`).
 - **Example:**
@@ -442,7 +442,7 @@ Check if another OBB has no overlap with this one.
 public func isOut(_ other: OBB) -> Bool
 ```
 
-- **Parameters:** `other` — OBB to test.
+- **Parameters:** `other`, OBB to test.
 - **Returns:** `true` if the two OBBs are disjoint.
 - **OCCT:** `Bnd_OBB::IsOut(Bnd_OBB)` (via `OCCTOBBIsOutOBB`).
 
@@ -456,7 +456,7 @@ Expand all half-extents by a gap value.
 public func enlarge(by gap: Double)
 ```
 
-- **Parameters:** `gap` — expansion amount on each side.
+- **Parameters:** `gap`, expansion amount on each side.
 - **OCCT:** `Bnd_OBB::Enlarge` (via `OCCTOBBEnlarge`).
 
 ---
@@ -475,7 +475,7 @@ public var squareExtent: Double { get }
 
 ## Bnd_Range
 
-Wraps `Bnd_Range` — a 1D interval [min, max] that also carries a "void" (empty) state.
+Wraps `Bnd_Range`, a 1D interval [min, max] that also carries a "void" (empty) state.
 
 ### `Range.init(min:max:)`
 
@@ -670,7 +670,7 @@ Classify a 3D point relative to this solid shape.
 public func classifyPoint(_ point: SIMD3<Double>, tolerance: Double = 1e-6) -> PointState
 ```
 
-- **Parameters:** `point` — 3D point; `tolerance` — classification tolerance.
+- **Parameters:** `point`, 3D point; `tolerance`, classification tolerance.
 - **Returns:** `.inside`, `.outside`, `.on`, or `.unknown`.
 - **OCCT:** `BRepClass3d_SolidClassifier::Perform` (via `OCCTShapeClassifyPoint`).
 - **Example:**
@@ -684,7 +684,7 @@ public func classifyPoint(_ point: SIMD3<Double>, tolerance: Double = 1e-6) -> P
 
 ## TDataXtd_Constraint
 
-Extension on `Document` wrapping `TDataXtd_Constraint` — dimensional and geometric constraints stored as OCAF attributes.
+Extension on `Document` wrapping `TDataXtd_Constraint`, dimensional and geometric constraints stored as OCAF attributes.
 
 ### `Document.ConstraintType`
 
@@ -738,7 +738,7 @@ Attach a `TDataXtd_Constraint` attribute to a label.
 public func setConstraint(labelId: Int64) -> Bool
 ```
 
-- **Parameters:** `labelId` — target label identifier.
+- **Parameters:** `labelId`, target label identifier.
 - **Returns:** `true` on success.
 - **OCCT:** `TDataXtd_Constraint::Set` (via `OCCTDocumentSetConstraint`).
 - **Example:**
@@ -850,7 +850,7 @@ public func constraintClearGeometries(labelId: Int64) -> Bool
 
 ## OSD_MemInfo
 
-Namespace wrapping `OSD_MemInfo` — process memory statistics.
+Namespace wrapping `OSD_MemInfo`, process memory statistics.
 
 ### `MemInfo.heapUsage`
 
@@ -909,7 +909,7 @@ public static var infoString: String? { get }
 
 ## ShapeFix_EdgeProjAux
 
-Extension on `Shape` wrapping `ShapeFix_EdgeProjAux` — projects edge endpoints back onto the 2D pcurve on a face.
+Extension on `Shape` wrapping `ShapeFix_EdgeProjAux`, projects edge endpoints back onto the 2D pcurve on a face.
 
 ### `edgeProjAux(faceIndex:edgeIndex:precision:)`
 
@@ -919,7 +919,7 @@ Project edge endpoints onto a face's 2D parameter space.
 public func edgeProjAux(faceIndex: Int, edgeIndex: Int, precision: Double = 1e-6) -> (first: Double, last: Double)?
 ```
 
-- **Parameters:** `faceIndex` — 0-based face index; `edgeIndex` — 0-based edge index within that face; `precision` — projection precision.
+- **Parameters:** `faceIndex`, 0-based face index; `edgeIndex`, 0-based edge index within that face; `precision`, projection precision.
 - **Returns:** `(firstParam, lastParam)` on the pcurve, or `nil` if projection fails.
 - **OCCT:** `ShapeFix_EdgeProjAux::Compute` (via `OCCTShapeFixEdgeProjAux`).
 - **Example:**
@@ -933,7 +933,7 @@ public func edgeProjAux(faceIndex: Int, edgeIndex: Int, precision: Double = 1e-6
 
 ## Geom2dAPI_Interpolate
 
-Extension on `Curve2D` wrapping `Geom2dAPI_Interpolate` — exact interpolation through 2D points.
+Extension on `Curve2D` wrapping `Geom2dAPI_Interpolate`, exact interpolation through 2D points.
 
 ### `Curve2D.interpolate2D(points:periodic:tolerance:)`
 
@@ -943,7 +943,7 @@ Interpolate a 2D BSpline curve exactly through the given points.
 public static func interpolate2D(points: [(Double, Double)], periodic: Bool = false, tolerance: Double = 1e-6) -> Curve2D?
 ```
 
-- **Parameters:** `points` — ordered (x, y) pairs to pass through; `periodic` — if `true`, produce a closed periodic curve; `tolerance` — interpolation tolerance.
+- **Parameters:** `points`, ordered (x, y) pairs to pass through; `periodic`, if `true`, produce a closed periodic curve; `tolerance`, interpolation tolerance.
 - **Returns:** The interpolated `Curve2D`, or `nil` on failure.
 - **OCCT:** `Geom2dAPI_Interpolate::Perform` (via `OCCTCurve2DInterpolate2D`).
 - **Example:**
@@ -958,7 +958,7 @@ public static func interpolate2D(points: [(Double, Double)], periodic: Bool = fa
 
 ## Geom2dAPI_PointsToBSpline
 
-Extension on `Curve2D` wrapping `Geom2dAPI_PointsToBSpline` — least-squares approximation through 2D points.
+Extension on `Curve2D` wrapping `Geom2dAPI_PointsToBSpline`, least-squares approximation through 2D points.
 
 ### `Curve2D.approximate2D(points:)`
 
@@ -968,7 +968,7 @@ Approximate a 2D BSpline curve through a set of points (least-squares fit).
 public static func approximate2D(points: [(Double, Double)]) -> Curve2D?
 ```
 
-- **Parameters:** `points` — ordered (x, y) pairs to approximate.
+- **Parameters:** `points`, ordered (x, y) pairs to approximate.
 - **Returns:** The approximating `Curve2D`, or `nil` on failure.
 - **OCCT:** `Geom2dAPI_PointsToBSpline::Curve` (via `OCCTCurve2DApproximate2D`).
 - **Note:** Unlike `interpolate2D`, the curve does not pass exactly through all points; it minimises squared deviation.
@@ -984,7 +984,7 @@ public static func approximate2D(points: [(Double, Double)]) -> Curve2D?
 
 ## TDataXtd_PatternStd
 
-Extension on `Document` wrapping `TDataXtd_PatternStd` — pattern replication attributes stored in the OCAF document tree.
+Extension on `Document` wrapping `TDataXtd_PatternStd`, pattern replication attributes stored in the OCAF document tree.
 
 ### `Document.PatternSignature`
 
@@ -1084,7 +1084,7 @@ public func patternNbTrsfs(labelId: Int64) -> Int
 
 ## BRepAlgo_FaceRestrictor
 
-Extension on `Shape` wrapping `BRepAlgo_FaceRestrictor` — rebuilds a face bounded by its wires.
+Extension on `Shape` wrapping `BRepAlgo_FaceRestrictor`, rebuilds a face bounded by its wires.
 
 ### `faceRestrictAlgo(faceIndex:)`
 
@@ -1094,7 +1094,7 @@ Restrict a face to its wire boundaries and return the resulting face count.
 public func faceRestrictAlgo(faceIndex: Int) -> Int
 ```
 
-- **Parameters:** `faceIndex` — 0-based index of the face to restrict.
+- **Parameters:** `faceIndex`, 0-based index of the face to restrict.
 - **Returns:** Number of result faces produced by the restrictor.
 - **OCCT:** `BRepAlgo_FaceRestrictor::Perform / NbFaces` (via `OCCTShapeFaceRestrictAlgo`).
 - **Example:**
@@ -1138,7 +1138,7 @@ public func faceRestrictAlgo(faceIndex: Int) -> Int
 ---
 ## math_Matrix
 
-Wraps `math_Matrix` — a dense general matrix with **1-based** row and column indexing.
+Wraps `math_Matrix`, a dense general matrix with **1-based** row and column indexing.
 
 ### `MathMatrix.init(rows:cols:initialValue:)`
 
@@ -1176,7 +1176,7 @@ public var cols: Int { get }
 ---
 ### `value(row:col:)`
 
-Read the element at (row, col) — **1-based**.
+Read the element at (row, col), **1-based**.
 
 ```swift
 public func value(row: Int, col: Int) -> Double
@@ -1192,7 +1192,7 @@ public func value(row: Int, col: Int) -> Double
 
 ### `setValue(row:col:value:)`
 
-Write the element at (row, col) — **1-based**.
+Write the element at (row, col), **1-based**.
 
 ```swift
 public func setValue(row: Int, col: Int, value: Double)
@@ -1254,7 +1254,7 @@ public func transpose()
 
 ## OSD_Environment
 
-Namespace wrapping `OSD_Environment` — read, set, and remove process environment variables
+Namespace wrapping `OSD_Environment`, read, set, and remove process environment variables
 through OCCT's platform-neutral OSD layer (rather than POSIX `getenv`/`setenv` directly). Useful
 for toggling OCCT's own environment switches (e.g. `CSF_*` resource paths) from Swift.
 
@@ -1266,7 +1266,7 @@ Get the value of an environment variable.
 public static func get(_ name: String) -> String?
 ```
 
-- **Parameters:** `name` — the variable name.
+- **Parameters:** `name`, the variable name.
 - **Returns:** The value, or `nil` if the variable is unset.
 - **OCCT:** `OSD_Environment(name).Value()` (via `OCCTEnvironmentGet`).
 - **Example:**
@@ -1285,7 +1285,7 @@ Set (create or overwrite) an environment variable in the current process.
 public static func set(_ name: String, value: String) -> Bool
 ```
 
-- **Parameters:** `name` — the variable name; `value` — the value to store.
+- **Parameters:** `name`, the variable name; `value`, the value to store.
 - **Returns:** `true` on success. The result is discardable.
 - **OCCT:** `OSD_Environment(name, value).Build()` (via `OCCTEnvironmentSet`).
 - **Example:**
@@ -1303,14 +1303,14 @@ Remove an environment variable from the current process.
 public static func remove(_ name: String)
 ```
 
-- **Parameters:** `name` — the variable name to unset.
+- **Parameters:** `name`, the variable name to unset.
 - **OCCT:** `OSD_Environment(name).Remove()` (via `OCCTEnvironmentRemove`).
 
 ---
 
 ## math_Gauss
 
-Namespace wrapping `math_Gauss` — direct Gaussian elimination for square linear systems.
+Namespace wrapping `math_Gauss`, direct Gaussian elimination for square linear systems.
 
 ### `MathGauss.solve(matrix:rhs:)`
 
@@ -1320,7 +1320,7 @@ Solve `Ax = b` using Gaussian elimination.
 public static func solve(matrix: [Double], rhs: [Double]) -> [Double]?
 ```
 
-- **Parameters:** `matrix` — row-major N×N coefficient matrix (N² elements); `rhs` — right-hand side vector (N elements).
+- **Parameters:** `matrix`, row-major N×N coefficient matrix (N² elements); `rhs`, right-hand side vector (N elements).
 - **Returns:** Solution vector of length N, or `nil` on failure (singular matrix).
 - **OCCT:** `math_Gauss::Solve` (via `OCCTMathGaussSolve`).
 - **Example:**
@@ -1343,7 +1343,7 @@ Compute the determinant of an N×N matrix using Gaussian elimination.
 public static func determinant(matrix: [Double], n: Int) -> Double?
 ```
 
-- **Parameters:** `matrix` — row-major N×N matrix; `n` — dimension.
+- **Parameters:** `matrix`, row-major N×N matrix; `n`, dimension.
 - **Returns:** The determinant, or `nil` if `n`/`matrix` are invalid.
 - **Bounds:** `n` must be positive and `matrix.count` must equal `n * n` exactly, or this returns
   `nil` (#640, revised by #716's review finding 7). Before this bound, a mismatched positive `n`
@@ -1357,7 +1357,7 @@ public static func determinant(matrix: [Double], n: Int) -> Double?
 
 ## math_SVD
 
-Namespace wrapping `math_SVD` — Singular Value Decomposition for least-squares problems.
+Namespace wrapping `math_SVD`, Singular Value Decomposition for least-squares problems.
 
 ### `MathSVD.solve(matrix:rows:cols:rhs:)`
 
@@ -1367,7 +1367,7 @@ Solve the overdetermined or exactly determined system `Ax ≈ b` in the least-sq
 public static func solve(matrix: [Double], rows: Int, cols: Int, rhs: [Double]) -> [Double]?
 ```
 
-- **Parameters:** `matrix` — row-major M×N matrix; `rows` — M; `cols` — N; `rhs` — right-hand side (length M).
+- **Parameters:** `matrix`, row-major M×N matrix; `rows`, M; `cols`, N; `rhs`, right-hand side (length M).
 - **Returns:** Solution vector of length N, or `nil` on failure.
 - **Bounds:** `rows` and `cols` must both be positive, and `matrix.count == rows * cols` /
   `rhs.count == rows` must hold, or this returns `nil` (#640). A consistency check alone is not
@@ -1390,7 +1390,7 @@ public static func solve(matrix: [Double], rows: Int, cols: Int, rhs: [Double]) 
 
 ## math_DirectPolynomialRoots
 
-Namespace wrapping `math_DirectPolynomialRoots` — closed-form real root finding for polynomials of degree 1–4.
+Namespace wrapping `math_DirectPolynomialRoots`, closed-form real root finding for polynomials of degree 1–4.
 
 ### `MathPolynomialRoots.solve(coefficients:)`
 
@@ -1400,7 +1400,7 @@ Find real roots of a polynomial `a·xⁿ + b·xⁿ⁻¹ + … = 0`.
 public static func solve(coefficients: [Double]) -> [Double]?
 ```
 
-- **Parameters:** `coefficients` — `[a, b, c, …]` with the leading coefficient first; must have 2–5 elements (degree 1–4).
+- **Parameters:** `coefficients`, `[a, b, c, …]` with the leading coefficient first; must have 2–5 elements (degree 1–4).
 - **Returns:** Array of real roots (possibly empty), or `nil` on error.
 - **OCCT:** `math_DirectPolynomialRoots` (via `OCCTMathPolynomialRoots`).
 - **Example:**
@@ -1415,7 +1415,7 @@ public static func solve(coefficients: [Double]) -> [Double]?
 
 ## math_Jacobi
 
-Namespace wrapping `math_Jacobi` — Jacobi iterative eigenvalue decomposition for symmetric matrices.
+Namespace wrapping `math_Jacobi`, Jacobi iterative eigenvalue decomposition for symmetric matrices.
 
 ### `MathJacobi.eigenvalues(matrix:n:)`
 
@@ -1425,7 +1425,7 @@ Compute eigenvalues of an N×N symmetric matrix.
 public static func eigenvalues(matrix: [Double], n: Int) -> [Double]?
 ```
 
-- **Parameters:** `matrix` — row-major N×N symmetric matrix; `n` — dimension.
+- **Parameters:** `matrix`, row-major N×N symmetric matrix; `n`, dimension.
 - **Returns:** Eigenvalue array of length N, or `nil` on failure.
 - **Bounds:** `n` must be positive and `matrix.count` must equal `n * n` exactly, or this returns
   `nil` (#640). `eigenvalues(matrix: [1.0], n: -1)` satisfies the consistency check alone
@@ -1481,7 +1481,7 @@ Convert a sphere to a BSpline surface.
 public static func fromSphere(origin: SIMD3<Double>, axis: SIMD3<Double>, radius: Double) -> Surface?
 ```
 
-- **Parameters:** `origin` — sphere centre; `axis` — sphere axis direction; `radius` — radius.
+- **Parameters:** `origin`, sphere centre; `axis`, sphere axis direction; `radius`, radius.
 - **Returns:** The BSpline surface, or `nil` on failure.
 - **OCCT:** `Convert_SphereToBSplineSurface` (via `OCCTConvertSphereToBSplineSurface`).
 - **Example:**
@@ -1578,7 +1578,7 @@ public static func fromCylinder(origin: SIMD3<Double>, axis: SIMD3<Double>, radi
                                  u1: Double, u2: Double, v1: Double, v2: Double) -> Surface?
 ```
 
-- **Parameters:** `origin`, `axis` — cylinder position and orientation; `radius` — cylinder radius; `u1`/`u2` — angular range (radians); `v1`/`v2` — axial parameter range.
+- **Parameters:** `origin`, `axis`, cylinder position and orientation; `radius`, cylinder radius; `u1`/`u2`, angular range (radians); `v1`/`v2`, axial parameter range.
 - **OCCT:** `Convert_CylinderToBSplineSurface` (via `OCCTConvertCylinderToBSplineSurface`).
 - **Example:**
   ```swift
@@ -1599,7 +1599,7 @@ public static func fromCone(origin: SIMD3<Double>, axis: SIMD3<Double>,
                              u1: Double, u2: Double, v1: Double, v2: Double) -> Surface?
 ```
 
-- **Parameters:** `semiAngle` — half-angle in radians; `refRadius` — reference radius at the base.
+- **Parameters:** `semiAngle`, half-angle in radians; `refRadius`, reference radius at the base.
 - **OCCT:** `Convert_ConeToBSplineSurface` (via `OCCTConvertConeToBSplineSurface`).
 
 ---
@@ -1624,7 +1624,7 @@ public static func fromTorus(origin: SIMD3<Double>, axis: SIMD3<Double>,
 
 ## math_Householder
 
-Namespace wrapping `math_Householder` — QR decomposition via Householder reflections for overdetermined systems.
+Namespace wrapping `math_Householder`, QR decomposition via Householder reflections for overdetermined systems.
 
 ### `MathHouseholder.solve(matrix:rows:cols:rhs:)`
 
@@ -1634,7 +1634,7 @@ Solve `Ax ≈ b` (M ≥ N) using Householder QR.
 public static func solve(matrix: [Double], rows: Int, cols: Int, rhs: [Double]) -> [Double]?
 ```
 
-- **Parameters:** `matrix` — row-major M×N matrix; `rows` — M (must be ≥ `cols`); `cols` — N; `rhs` — right-hand side (length M).
+- **Parameters:** `matrix`, row-major M×N matrix; `rows`, M (must be ≥ `cols`); `cols`, N; `rhs`, right-hand side (length M).
 - **Returns:** Solution vector of length N, or `nil` on failure or under-determined input.
 - **Bounds:** `rows` and `cols` must both be positive, in addition to `rows >= cols` and the
   existing `matrix`/`rhs` length checks, or this returns `nil` (#640): `rows >= cols` alone does
@@ -1654,7 +1654,7 @@ public static func solve(matrix: [Double], rows: Int, cols: Int, rhs: [Double]) 
 
 ## math_Crout
 
-Namespace wrapping `math_Crout` — LDLᵀ Crout decomposition for symmetric positive-definite systems.
+Namespace wrapping `math_Crout`, LDLᵀ Crout decomposition for symmetric positive-definite systems.
 
 ### `MathCrout.solve(matrix:rhs:)`
 
@@ -1664,7 +1664,7 @@ Solve symmetric `Ax = b` using Crout decomposition.
 public static func solve(matrix: [Double], rhs: [Double]) -> [Double]?
 ```
 
-- **Parameters:** `matrix` — row-major N×N symmetric matrix; `rhs` — right-hand side (length N).
+- **Parameters:** `matrix`, row-major N×N symmetric matrix; `rhs`, right-hand side (length N).
 - **Returns:** Solution vector of length N, or `nil` on failure.
 - **OCCT:** `math_Crout::Solve` (via `OCCTMathCroutSolve`).
 - **Example:**
@@ -1697,7 +1697,7 @@ public static func determinant(matrix: [Double], n: Int) -> Double?
 
 ## ShapeFix_IntersectionTool
 
-Extension on `Shape` wrapping `ShapeFix_IntersectionTool` — repairs self-intersecting wires on a face.
+Extension on `Shape` wrapping `ShapeFix_IntersectionTool`, repairs self-intersecting wires on a face.
 
 ### `fixIntersectingWires(faceIndex:precision:)`
 
@@ -1708,7 +1708,7 @@ Fix intersecting wires on a face of this shape.
 public func fixIntersectingWires(faceIndex: Int, precision: Double = 1e-6) -> Bool
 ```
 
-- **Parameters:** `faceIndex` — 0-based face index; `precision` — fix tolerance.
+- **Parameters:** `faceIndex`, 0-based face index; `precision`, fix tolerance.
 - **Returns:** `true` if any fixes were applied.
 - **OCCT:** `ShapeFix_IntersectionTool::FixSelfIntersectWire` (via `OCCTShapeFixIntersectingWires`).
 - **Example:**
@@ -1720,7 +1720,7 @@ public func fixIntersectingWires(faceIndex: Int, precision: Double = 1e-6) -> Bo
 
 ## XCAFDoc_AssemblyItemRef
 
-Extension on `Document` wrapping `XCAFDoc_AssemblyItemRef` — a persistent reference to a specific item (and optionally a subshape) within an assembly hierarchy.
+Extension on `Document` wrapping `XCAFDoc_AssemblyItemRef`, a persistent reference to a specific item (and optionally a subshape) within an assembly hierarchy.
 
 ### `setAssemblyItemRef(labelId:itemPath:)`
 
@@ -1731,7 +1731,7 @@ Attach an assembly item reference attribute to a label.
 public func setAssemblyItemRef(labelId: Int64, itemPath: String) -> Bool
 ```
 
-- **Parameters:** `labelId` — target label; `itemPath` — colon-separated label-entry path string.
+- **Parameters:** `labelId`, target label; `itemPath`, colon-separated label-entry path string.
 - **OCCT:** `XCAFDoc_AssemblyItemRef::Set` (via `OCCTDocumentSetAssemblyItemRef`).
 
 ---
@@ -1817,7 +1817,7 @@ public func assemblyItemRefIsOrphan(labelId: Int64) -> Bool
 
 ## BRepAlgo_Image
 
-Wraps `BRepAlgo_Image` — a bidirectional mapping that tracks how shapes evolve through Boolean or healing operations (shape history).
+Wraps `BRepAlgo_Image`, a bidirectional mapping that tracks how shapes evolve through Boolean or healing operations (shape history).
 
 ### `ShapeImage.init()`
 
@@ -1894,7 +1894,7 @@ public func clear()
 ---
 ## OSD_Path
 
-Namespace wrapping `OSD_Path` — platform-independent file path parsing.
+Namespace wrapping `OSD_Path`, platform-independent file path parsing.
 
 ### `OSDPath.name(_:)`
 
@@ -2050,7 +2050,7 @@ Classify a UV parameter-space point on a face.
 public func classifyPoint2D(faceIndex: Int, u: Double, v: Double, tolerance: Double = 1e-6) -> PointState
 ```
 
-- **Parameters:** `faceIndex` — 0-based face index; `u`, `v` — UV parameters on the face; `tolerance` — classification tolerance (default 1e-6).
+- **Parameters:** `faceIndex`, 0-based face index; `u`, `v`, UV parameters on the face; `tolerance`, classification tolerance (default 1e-6).
 - **Returns:** `.inside`, `.outside`, `.on`, or `.unknown` (same `PointState` enum as `classifyPoint`).
 - **OCCT:** `BRepClass_FClassifier::Perform` (via `OCCTShapeClassifyPoint2D`).
 - **Note:** Answers the same question as `Face.classify(u:v:tolerance:)` (see "Shape-Healing") and
@@ -2071,7 +2071,7 @@ Build edge loops (wires) from the free edges on a face.
 public func buildLoops(faceIndex: Int) -> Int
 ```
 
-- **Parameters:** `faceIndex` — 0-based face index.
+- **Parameters:** `faceIndex`, 0-based face index.
 - **Returns:** Number of loops built, or -1 on error.
 - **OCCT:** `BRepAlgo_Loop` (via `OCCTShapeBuildLoops`).
 
@@ -2091,7 +2091,7 @@ public func faceDomainEdgeCount(faceIndex: Int) -> Int
 
 ## Bnd_BoundSortBox
 
-Wraps `Bnd_BoundSortBox` — a spatial index for fast AABB-vs-AABB intersection queries.
+Wraps `Bnd_BoundSortBox`, a spatial index for fast AABB-vs-AABB intersection queries.
 
 ### `BoundSortBox.init(boxes:)`
 
@@ -2101,7 +2101,7 @@ Create a sort box from an array of axis-aligned bounding boxes.
 public init(boxes: [[Double]])
 ```
 
-- **Parameters:** `boxes` — each element is `[xmin, ymin, zmin, xmax, ymax, zmax]`.
+- **Parameters:** `boxes`, each element is `[xmin, ymin, zmin, xmax, ymax, zmax]`.
 - **OCCT:** `Bnd_BoundSortBox::Initialize` (via `OCCTBoundSortBoxCreate`).
 - **Example:**
   ```swift
@@ -2136,7 +2136,7 @@ public func compare(xmin: Double, ymin: Double, zmin: Double,
 ---
 ## TNaming_Naming
 
-Extension on `Document` wrapping `TNaming_Naming` — persistent topological naming that survives shape modifications.
+Extension on `Document` wrapping `TNaming_Naming`, persistent topological naming that survives shape modifications.
 
 ### `insertNaming(labelId:)`
 
@@ -2262,7 +2262,7 @@ public static func isInfinite(_ value: Double) -> Bool
 
 ## IntAna Analytic Intersections
 
-Namespace of static methods wrapping OCCT's `IntAna` package — closed-form intersections between lines, planes, spheres, and tori.
+Namespace of static methods wrapping OCCT's `IntAna` package, closed-form intersections between lines, planes, spheres, and tori.
 
 ### `IntAna.ConicQuadResult`
 
@@ -2349,7 +2349,7 @@ public struct QuadQuadResult {
 
 ### `IntAna.planePlane(p1Origin:p1Normal:p2Origin:p2Normal:)`
 
-Intersect two planes — result is typically a line.
+Intersect two planes, result is typically a line.
 
 ```swift
 public static func planePlane(p1Origin: SIMD3<Double>, p1Normal: SIMD3<Double>,
@@ -2368,7 +2368,7 @@ public static func planePlane(p1Origin: SIMD3<Double>, p1Normal: SIMD3<Double>,
 
 ### `IntAna.planeSphere(planeOrigin:planeNormal:sphereCenter:sphereAxis:radius:)`
 
-Intersect a plane with a sphere — result is typically a circle.
+Intersect a plane with a sphere, result is typically a circle.
 
 ```swift
 public static func planeSphere(planeOrigin: SIMD3<Double>, planeNormal: SIMD3<Double>,
@@ -2415,7 +2415,7 @@ public static func lineTorus(lineOrigin: SIMD3<Double>, lineDir: SIMD3<Double>,
 
 ## OSD_Chronometer
 
-Namespace wrapping `OSD_Chronometer` — per-process and per-thread CPU time measurement.
+Namespace wrapping `OSD_Chronometer`, per-process and per-thread CPU time measurement.
 
 ### `CPUTime.processCPU()`
 
@@ -2447,7 +2447,7 @@ public static func threadCPU() -> (user: Double, system: Double)
 
 ## OSD_Process
 
-Namespace wrapping `OSD_Process` — process identification and path utilities.
+Namespace wrapping `OSD_Process`, process identification and path utilities.
 
 ### `ProcessInfo.processId`
 
@@ -2499,7 +2499,7 @@ public static var executableFolder: String? { get }
 
 ## Draft_Modification
 
-Extension on `Shape` wrapping `Draft_Modification` — applies a draft angle to a face, tapering it toward a neutral plane.
+Extension on `Shape` wrapping `Draft_Modification`, applies a draft angle to a face, tapering it toward a neutral plane.
 
 ### `draftModification(faceIndex:direction:angle:neutralPlaneOrigin:neutralPlaneNormal:)`
 
@@ -2511,7 +2511,7 @@ public func draftModification(faceIndex: Int, direction: SIMD3<Double>, angle: D
                                neutralPlaneNormal: SIMD3<Double>) -> Shape?
 ```
 
-- **Parameters:** `faceIndex` — 0-based index of the face to draft; `direction` — pull direction for demoulding; `angle` — draft angle in radians; `neutralPlaneOrigin` / `neutralPlaneNormal` — the plane that stays fixed during drafting.
+- **Parameters:** `faceIndex`, 0-based index of the face to draft; `direction`, pull direction for demoulding; `angle`, draft angle in radians; `neutralPlaneOrigin` / `neutralPlaneNormal`, the plane that stays fixed during drafting.
 - **Returns:** The modified shape, or `nil` on failure (incompatible geometry).
 - **OCCT:** `Draft_Modification::Add / Perform` (via `OCCTShapeDraftModification`).
 - **Example:**
@@ -2569,7 +2569,7 @@ Convert a sequence of connected 3D Bezier segments to a single BSpline curve.
 public static func toBSpline(segments: [[SIMD3<Double>]]) -> BezierToBSplineResult?
 ```
 
-- **Parameters:** `segments` — each element is the ordered control points of one Bezier segment; all segments must have the same number of control points.
+- **Parameters:** `segments`, each element is the ordered control points of one Bezier segment; all segments must have the same number of control points.
 - **Returns:** The merged BSpline data, or `nil` on failure.
 - **OCCT:** `Convert_CompBezierCurvesToBSplineCurve` (via `OCCTConvertCompBezierToBSpline`).
 - **Example:**
@@ -2591,7 +2591,7 @@ Convert a sequence of connected 2D Bezier segments to a single BSpline curve.
 public static func toBSpline2d(segments: [[SIMD2<Double>]]) -> BezierToBSpline2dResult?
 ```
 
-- **Parameters:** `segments` — each element is the ordered 2D control points of one Bezier segment; all segments must have the same number of control points.
+- **Parameters:** `segments`, each element is the ordered 2D control points of one Bezier segment; all segments must have the same number of control points.
 - **Returns:** The merged 2D BSpline data, or `nil` on failure.
 - **OCCT:** `Convert_CompPolynomialToPoles` / `Convert_CompBezierCurves2dToBSplineCurve2d` (via `OCCTConvertCompBezier2dToBSpline2d`).
 

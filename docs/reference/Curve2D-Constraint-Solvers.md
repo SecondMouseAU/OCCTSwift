@@ -1,15 +1,15 @@
 ---
-title: Curve2D — Constraint Solvers
+title: Curve2D. Constraint Solvers
 parent: API Reference
 ---
 
-# Curve2D — Constraint Solvers
+# Curve2D. Constraint Solvers
 
 These APIs implement 2D geometric-constraint solving: qualifier-based circle and line construction (the GCC/Geom2dGcc tangency families), analytical and approximate bisector curves, and parallel hatch generation. For the core `Curve2D` type (primitive curves, BSpline/Bezier, evaluation, local properties), see the main `Curve2D` pages.
 
 ## Topics
 
-- [Bisector (Geom2d)](#bisector-geom2d) · [Result Types](#result-types) · [Gcc Constraint Solver — Enums and Solution Types](#gcc-constraint-solver--enums-and-solution-types) · [Circle Construction (Geom2dGcc)](#circle-construction-geom2dgcc) · [Line Construction (Geom2dGcc)](#line-construction-geom2dgcc) · [Hatching](#hatching) · [GccAna Bisectors](#gccana-bisectors) · [GccAna Line Solvers](#gccana-line-solvers) · [GccAna Circle On-Constraint Solvers](#gccana-circle-on-constraint-solvers) · [Geom2dGcc Circle On-Constraint Solvers](#geom2dgcc-circle-on-constraint-solvers) · [Bisector_BisecAna](#bisector_bisecana)
+- [Bisector (Geom2d)](#bisector-geom2d) · [Result Types](#result-types) · [Gcc Constraint Solver, Enums and Solution Types](#gcc-constraint-solver--enums-and-solution-types) · [Circle Construction (Geom2dGcc)](#circle-construction-geom2dgcc) · [Line Construction (Geom2dGcc)](#line-construction-geom2dgcc) · [Hatching](#hatching) · [GccAna Bisectors](#gccana-bisectors) · [GccAna Line Solvers](#gccana-line-solvers) · [GccAna Circle On-Constraint Solvers](#gccana-circle-on-constraint-solvers) · [Geom2dGcc Circle On-Constraint Solvers](#geom2dgcc-circle-on-constraint-solvers) · [Bisector_BisecAna](#bisector_bisecana)
 
 ---
 
@@ -28,7 +28,7 @@ public func bisector(with other: Curve2D, origin: SIMD2<Double>,
 
 The bisector is the locus of points equidistant from both curves. `origin` steers which branch is returned; `side` controls orientation sense.
 
-- **Parameters:** `other` — the second curve; `origin` — point near the desired branch; `side` — orientation sense.
+- **Parameters:** `other`, the second curve; `origin`, point near the desired branch; `side`, orientation sense.
 - **Returns:** Bisector as a `Curve2D`, or `nil` on failure.
 - **OCCT:** `Bisector_BisecCC`.
 - **Example:**
@@ -53,7 +53,7 @@ public func bisector(withPoint point: SIMD2<Double>, maxDistance: Double = 500,
 
 There is no `origin`, unlike the curve-to-curve sibling above: `Bisector_BisecPC::Perform` takes `(Cu, P, Side, DistMax)` and no origin at all. The signature had been copied from `Bisector_BisecCC::Perform`, where the origin is real.
 
-- **Parameters:** `point` — the fixed point; `maxDistance` — trims the bisector so no point on it lies further than this from the curve, 500 being OCCT's own default; `side` — orientation sense.
+- **Parameters:** `point`, the fixed point; `maxDistance`, trims the bisector so no point on it lies further than this from the curve, 500 being OCCT's own default; `side`, orientation sense.
 - **Returns:** Bisector as a `Curve2D`, or `nil` when nothing lies within `maxDistance`.
 - **OCCT:** `Bisector_BisecPC`.
 - **Example:**
@@ -82,9 +82,9 @@ public struct Curve2DIntersection: Sendable {
 }
 ```
 
-- `point` — the 2D intersection point.
-- `parameter1` — curve parameter on the first curve.
-- `parameter2` — curve parameter on the second curve.
+- `point`: the 2D intersection point.
+- `parameter1`: curve parameter on the first curve.
+- `parameter2`: curve parameter on the second curve.
 
 ---
 
@@ -100,9 +100,9 @@ public struct Curve2DProjection: Sendable {
 }
 ```
 
-- `point` — projected point on the curve.
-- `parameter` — curve parameter at the projected point.
-- `distance` — distance from the original point to the curve.
+- `point`: projected point on the curve.
+- `parameter`: curve parameter at the projected point.
+- `distance`: distance from the original point to the curve.
 
 ---
 
@@ -149,7 +149,7 @@ public struct Curve2DSpecialPoint: Sendable {
 
 ---
 
-## Gcc Constraint Solver — Enums and Solution Types
+## Gcc Constraint Solver. Enums and Solution Types
 
 Types used throughout both the `Geom2dGcc` and `GccAna` solver families.
 
@@ -166,10 +166,10 @@ public enum Curve2DQualifier: Int32, Sendable {
 }
 ```
 
-- `unqualified` — solution position relative to the curve is unconstrained.
-- `enclosing` — the solution circle encloses the qualified curve.
-- `enclosed` — the solution circle is enclosed by the qualified curve.
-- `outside` — the solution circle is outside the qualified curve.
+- `unqualified`: solution position relative to the curve is unconstrained.
+- `enclosing`: the solution circle encloses the qualified curve.
+- `enclosed`: the solution circle is enclosed by the qualified curve.
+- `outside`: the solution circle is outside the qualified curve.
 
 Pass these alongside curves in every `Curve2DGcc` solver call.
 
@@ -205,8 +205,8 @@ public struct Curve2DLineSolution: Sendable {
 }
 ```
 
-- `point` — a point on the line.
-- `direction` — unit direction vector of the line.
+- `point`: a point on the line.
+- `direction`: unit direction vector of the line.
 
 ---
 
@@ -265,7 +265,7 @@ public static func circlesTangentTo(
 
 Up to 8 solutions (Apollonius problem for general curves).
 
-- **Parameters:** `c1`–`c3` — three curves; `q1`–`q3` — qualifiers for each; `tolerance` — solver tolerance.
+- **Parameters:** `c1`–`c3`, three curves; `q1`–`q3`, qualifiers for each; `tolerance`, solver tolerance.
 - **Returns:** Array of circle solutions.
 - **OCCT:** `Geom2dGcc_Circ2d3Tan`.
 - **Example:**
@@ -292,7 +292,7 @@ public static func circlesTangentToTwoCurvesAndPoint(
 ) -> [Curve2DCircleSolution]
 ```
 
-- **Parameters:** `c1`, `c2` — curves; `q1`, `q2` — qualifiers; `point` — pass-through point; `tolerance` — tolerance.
+- **Parameters:** `c1`, `c2`, curves; `q1`, `q2`, qualifiers; `point`, pass-through point; `tolerance`, tolerance.
 - **Returns:** Array of circle solutions.
 - **OCCT:** `Geom2dGcc_Circ2d3Tan` (two-curve + point variant).
 - **Example:**
@@ -317,7 +317,7 @@ public static func circlesTangentWithCenter(
 
 The center is fixed; the radius is determined by the tangency condition.
 
-- **Parameters:** `curve` — the curve; `qualifier` — qualifier; `center` — fixed center; `tolerance` — tolerance.
+- **Parameters:** `curve`, the curve; `qualifier`, qualifier; `center`, fixed center; `tolerance`, tolerance.
 - **Returns:** Array of circle solutions.
 - **OCCT:** `Geom2dGcc_Circ2dTanCen`.
 - **Example:**
@@ -341,7 +341,7 @@ public static func circlesTangentToTwoCurves(
 ) -> [Curve2DCircleSolution]
 ```
 
-- **Parameters:** `c1`, `c2` — curves; `q1`, `q2` — qualifiers; `radius` — fixed radius; `tolerance` — tolerance.
+- **Parameters:** `c1`, `c2`, curves; `q1`, `q2`, qualifiers; `radius`, fixed radius; `tolerance`, tolerance.
 - **Returns:** Array of circle solutions.
 - **OCCT:** `Geom2dGcc_Circ2d2TanRad`.
 - **Example:**
@@ -367,7 +367,7 @@ public static func circlesTangentToPointWithRadius(
 ) -> [Curve2DCircleSolution]
 ```
 
-- **Parameters:** `curve` — tangent curve; `qualifier` — qualifier; `point` — pass-through point; `radius` — fixed radius; `tolerance` — tolerance.
+- **Parameters:** `curve`, tangent curve; `qualifier`, qualifier; `point`, pass-through point; `radius`, fixed radius; `tolerance`, tolerance.
 - **Returns:** Array of circle solutions.
 - **OCCT:** `Geom2dGcc_Circ2d2TanRad` (curve + point variant).
 - **Example:**
@@ -390,7 +390,7 @@ public static func circlesThroughTwoPoints(
 ) -> [Curve2DCircleSolution]
 ```
 
-- **Parameters:** `p1`, `p2` — two pass-through points; `radius` — fixed radius; `tolerance` — tolerance.
+- **Parameters:** `p1`, `p2`, two pass-through points; `radius`, fixed radius; `tolerance`, tolerance.
 - **Returns:** Array of circle solutions (0, 1, or 2).
 - **OCCT:** `Geom2dGcc_Circ2d2TanRad` (point + point variant).
 - **Example:**
@@ -414,7 +414,7 @@ public static func circleThroughThreePoints(
 
 Returns at most one solution (the circumscribed circle of the three points).
 
-- **Parameters:** `p1`, `p2`, `p3` — three non-collinear points; `tolerance` — tolerance.
+- **Parameters:** `p1`, `p2`, `p3`, three non-collinear points; `tolerance`, tolerance.
 - **Returns:** Array with 0 or 1 solution.
 - **OCCT:** `Geom2dGcc_Circ2d3Tan` (three-point variant).
 - **Example:**
@@ -442,7 +442,7 @@ public static func linesTangentTo(
 ) -> [Curve2DLineSolution]
 ```
 
-- **Parameters:** `c1`, `c2` — curves; `q1`, `q2` — qualifiers; `tolerance` — tolerance.
+- **Parameters:** `c1`, `c2`, curves; `q1`, `q2`, qualifiers; `tolerance`, tolerance.
 - **Returns:** Array of line solutions.
 - **OCCT:** `Geom2dGcc_Lin2d2Tan`.
 - **Example:**
@@ -467,7 +467,7 @@ public static func linesTangentToPoint(
 ) -> [Curve2DLineSolution]
 ```
 
-- **Parameters:** `curve` — the curve; `qualifier` — qualifier; `point` — pass-through point; `tolerance` — tolerance.
+- **Parameters:** `curve`, the curve; `qualifier`, qualifier; `point`, pass-through point; `tolerance`, tolerance.
 - **Returns:** Array of line solutions (typically 0 or 2 for a circle).
 - **OCCT:** `Geom2dGcc_Lin2d2Tan` (curve + point variant).
 - **Example:**
@@ -494,7 +494,7 @@ public static func hatch(boundaries: [Curve2D],
 
 Each `Curve2DHatchSegment` is a line segment clipped to lie inside the boundary region. The boundary curves must form a closed region; the algorithm uses `Geom2dHatch_Hatcher` internally.
 
-- **Parameters:** `boundaries` — closed boundary curves defining the hatch region; `origin` — origin point of the hatch pattern; `direction` — hatch line direction (unit vector); `spacing` — distance between hatch lines; `tolerance` — intersection tolerance.
+- **Parameters:** `boundaries`, closed boundary curves defining the hatch region; `origin`, origin point of the hatch pattern; `direction`, hatch line direction (unit vector); `spacing`, distance between hatch lines; `tolerance`, intersection tolerance.
 - **Returns:** Array of hatch segments inside the boundary.
 - **OCCT:** `Geom2dHatch_Hatcher` + `Geom2dHatch_Intersector`.
 - **Example:**
@@ -551,10 +551,10 @@ public struct BisecSolution: Sendable {
 }
 ```
 
-- `type` — geometric type of the bisector curve.
-- `position` — primary position: center for circles, a point on the line for lines, focus for conics.
-- `secondary` — secondary values: direction for lines, semi-axes for conics.
-- `radius` — radius for circle-type bisectors; 0 otherwise.
+- `type`: geometric type of the bisector curve.
+- `position`: primary position: center for circles, a point on the line for lines, focus for conics.
+- `secondary`: secondary values: direction for lines, semi-axes for conics.
+- `radius`: radius for circle-type bisectors; 0 otherwise.
 
 *(Per-field anchor below, for cross-reference; the list above has the actual meaning of each.)*
 
@@ -574,7 +574,7 @@ public static func ofPoints(
 
 Returns the line equidistant from both points.
 
-- **Parameters:** `p1`, `p2` — the two points.
+- **Parameters:** `p1`, `p2`, the two points.
 - **Returns:** A `Curve2DLineSolution` for the perpendicular bisector line, or `nil` on failure.
 - **OCCT:** `GccAna_Pnt2dBisec`.
 - **Example:**
@@ -599,7 +599,7 @@ public static func ofLines(
 
 Two intersecting lines have two angle bisectors (interior and exterior). Returns up to 2 solutions.
 
-- **Parameters:** `line1Point`, `line1Dir` — point and direction of line 1; `line2Point`, `line2Dir` — point and direction of line 2.
+- **Parameters:** `line1Point`, `line1Dir`, point and direction of line 1; `line2Point`, `line2Dir`, point and direction of line 2.
 - **Returns:** Array of up to 2 bisector lines.
 - **OCCT:** `GccAna_Lin2dBisec`.
 - **Example:**
@@ -625,7 +625,7 @@ public static func ofLineAndPoint(
 
 The bisector is typically a parabola with the point as focus and the line as directrix.
 
-- **Parameters:** `linePoint`, `lineDir` — point and direction of the line; `point` — the fixed point.
+- **Parameters:** `linePoint`, `lineDir`, point and direction of the line; `point`, the fixed point.
 - **Returns:** A `BisecSolution` (usually `type == .parabola`), or `nil` on failure.
 - **OCCT:** `GccAna_LinPnt2dBisec`.
 - **Example:**
@@ -651,7 +651,7 @@ public static func ofCircles(
 ) -> [BisecSolution]
 ```
 
-- **Parameters:** `center1`, `radius1` — first circle; `center2`, `radius2` — second circle.
+- **Parameters:** `center1`, `radius1`, first circle; `center2`, `radius2`, second circle.
 - **Returns:** Array of up to 4 bisector curves.
 - **OCCT:** `GccAna_Circ2dBisec`.
 - **Note:** both radii must be positive (#553). A radius of zero describes a point, and this solver
@@ -681,7 +681,7 @@ public static func ofCircleAndLine(
 ) -> [BisecSolution]
 ```
 
-- **Parameters:** `center`, `radius` — the circle; `linePoint`, `lineDir` — point and direction of the line.
+- **Parameters:** `center`, `radius`, the circle; `linePoint`, `lineDir`, point and direction of the line.
 - **Returns:** Array of bisector curve solutions.
 - **OCCT:** `GccAna_CircLin2dBisec`.
 - **Note:** the radius must be positive (#553). With a radius of zero the solver returns the
@@ -707,7 +707,7 @@ public static func ofCircleAndPoint(
 ) -> [BisecSolution]
 ```
 
-- **Parameters:** `center`, `radius` — the circle; `point` — the fixed point.
+- **Parameters:** `center`, `radius`, the circle; `point`, the fixed point.
 - **Returns:** Array of bisector curve solutions.
 - **OCCT:** `GccAna_CircPnt2dBisec`.
 - **Note:** the radius must be positive (#553). This is the family where a zero radius is furthest
@@ -737,7 +737,7 @@ public static func lineParallelThrough(
 ) -> [Curve2DLineSolution]
 ```
 
-- **Parameters:** `point` — the pass-through point; `linePoint`, `lineDir` — reference line.
+- **Parameters:** `point`, the pass-through point; `linePoint`, `lineDir`, reference line.
 - **Returns:** Array with one solution (the unique parallel line through the point).
 - **OCCT:** `GccAna_Lin2dTanPar`.
 - **Example:**
@@ -761,7 +761,7 @@ public static func linesTangentParallel(
 ) -> [Curve2DLineSolution]
 ```
 
-- **Parameters:** `circleCenter`, `circleRadius` — the circle; `qualifier` — qualifier; `linePoint`, `lineDir` — reference line direction.
+- **Parameters:** `circleCenter`, `circleRadius`, the circle; `qualifier`, qualifier; `linePoint`, `lineDir`, reference line direction.
 - **Returns:** Array of parallel tangent lines (0 or 2 solutions).
 - **OCCT:** `GccAna_Lin2dTanPar`.
 - **Note:** `circleRadius` must be positive (#553). With a radius of zero the solver returns the
@@ -787,7 +787,7 @@ public static func linePerpendicularThrough(
 ) -> [Curve2DLineSolution]
 ```
 
-- **Parameters:** `point` — the pass-through point; `linePoint`, `lineDir` — reference line.
+- **Parameters:** `point`, the pass-through point; `linePoint`, `lineDir`, reference line.
 - **Returns:** Array with one solution.
 - **OCCT:** `GccAna_Lin2dTanPer`.
 - **Example:**
@@ -811,7 +811,7 @@ public static func linesTangentPerpendicular(
 ) -> [Curve2DLineSolution]
 ```
 
-- **Parameters:** `circleCenter`, `circleRadius` — the circle; `qualifier` — qualifier; `linePoint`, `lineDir` — reference line direction.
+- **Parameters:** `circleCenter`, `circleRadius`, the circle; `qualifier`, qualifier; `linePoint`, `lineDir`, reference line direction.
 - **Returns:** Array of perpendicular tangent lines.
 - **OCCT:** `GccAna_Lin2dTanPer`.
 - **Note:** `circleRadius` must be positive (#553). With a radius of zero the solver returns the
@@ -839,7 +839,7 @@ public static func lineAtAngleThrough(
 ) -> [Curve2DLineSolution]
 ```
 
-- **Parameters:** `point` — pass-through point; `linePoint`, `lineDir` — reference line; `angle` — angle in radians from the reference line.
+- **Parameters:** `point`, pass-through point; `linePoint`, `lineDir`, reference line; `angle`, angle in radians from the reference line.
 - **Returns:** Array of line solutions.
 - **OCCT:** `GccAna_Lin2dTanObl`.
 - **Example:**
@@ -866,7 +866,7 @@ public static func linesTangentAtAngle(
 
 Unlike `lineAtAngleThrough`, this accepts an arbitrary `Curve2D` (not just a point) and uses the iterative `Geom2dGcc` solver.
 
-- **Parameters:** `curve` — the tangent curve; `qualifier` — qualifier; `linePoint`, `lineDir` — reference line; `angle` — angle in radians; `tolerance` — solver tolerance.
+- **Parameters:** `curve`, the tangent curve; `qualifier`, qualifier; `linePoint`, `lineDir`, reference line; `angle`, angle in radians; `tolerance`, solver tolerance.
 - **Returns:** Array of line solutions.
 - **OCCT:** `Geom2dGcc_Lin2dTanObl`.
 - **Example:**
@@ -897,7 +897,7 @@ public static func circlesTangentToTwoLinesOnLine(
 ) -> [Curve2DCircleSolution]
 ```
 
-- **Parameters:** `line1Point`, `line1Dir`, `q1` — first tangent line and qualifier; `line2Point`, `line2Dir`, `q2` — second tangent line and qualifier; `centerOnPoint`, `centerOnDir` — center-constraint line; `tolerance` — tolerance.
+- **Parameters:** `line1Point`, `line1Dir`, `q1`, first tangent line and qualifier; `line2Point`, `line2Dir`, `q2`, second tangent line and qualifier; `centerOnPoint`, `centerOnDir`, center-constraint line; `tolerance`, tolerance.
 - **Returns:** Array of circle solutions with center on the specified line.
 - **OCCT:** `GccAna_Circ2d2TanOn`.
 - **Example:**
@@ -923,7 +923,7 @@ public static func circlesTangentToLineOnLineWithRadius(
 ) -> [Curve2DCircleSolution]
 ```
 
-- **Parameters:** `linePoint`, `lineDir` — tangent line; `qualifier` — qualifier; `centerOnPoint`, `centerOnDir` — center-constraint line; `radius` — fixed radius; `tolerance` — tolerance.
+- **Parameters:** `linePoint`, `lineDir`, tangent line; `qualifier`, qualifier; `centerOnPoint`, `centerOnDir`, center-constraint line; `radius`, fixed radius; `tolerance`, tolerance.
 - **Returns:** Array of circle solutions.
 - **OCCT:** `GccAna_Circ2dTanOnRad`.
 - **Note:** `radius` is the radius of the circles to find, and it must be positive (#553). Asked
@@ -959,7 +959,7 @@ public static func circlesTangentToTwoCurvesOnCurve(
 
 The iterative solver uses starting parameters `initParam1`, `initParam2`, `initParamOn` for convergence near a desired solution.
 
-- **Parameters:** `c1`, `c2` — tangent curves; `q1`, `q2` — qualifiers; `centerOn` — center-constraint curve; `tolerance` — solver tolerance; `initParam1`, `initParam2`, `initParamOn` — initial parameter guesses.
+- **Parameters:** `c1`, `c2`, tangent curves; `q1`, `q2`, qualifiers; `centerOn`, center-constraint curve; `tolerance`, solver tolerance; `initParam1`, `initParam2`, `initParamOn`, initial parameter guesses.
 - **Returns:** Array of circle solutions.
 - **OCCT:** `Geom2dGcc_Circ2d2TanOn`.
 - **Example:**
@@ -984,7 +984,7 @@ public static func circlesTangentOnCurveWithRadius(
 ) -> [Curve2DCircleSolution]
 ```
 
-- **Parameters:** `curve` — tangent curve; `qualifier` — qualifier; `centerOn` — center-constraint curve; `radius` — fixed radius; `tolerance` — tolerance.
+- **Parameters:** `curve`, tangent curve; `qualifier`, qualifier; `centerOn`, center-constraint curve; `radius`, fixed radius; `tolerance`, tolerance.
 - **Returns:** Array of circle solutions.
 - **OCCT:** `Geom2dGcc_Circ2dTanOnRad`.
 - **Note:** `radius` is the radius of the circles to find, and it must be positive; zero would ask
@@ -1018,7 +1018,7 @@ public func bisector(
 
 The bisector is the locus of points equidistant from both curves. `referencePoint` steers the solver toward a specific branch; `direction1` and `direction2` are tangent directions of each curve at the reference.
 
-- **Parameters:** `other` — second curve; `referencePoint` — point near the desired branch; `direction1` — tangent of this curve at reference; `direction2` — tangent of `other` at reference; `sense` — orientation sense (1.0 or -1.0); `tolerance` — geometric tolerance.
+- **Parameters:** `other`, second curve; `referencePoint`, point near the desired branch; `direction1`, tangent of this curve at reference; `direction2`, tangent of `other` at reference; `sense`, orientation sense (1.0 or -1.0); `tolerance`, geometric tolerance.
 - **Returns:** Bisector as a `Curve2D` (analytical conic), or `nil` on failure.
 - **OCCT:** `Bisector_BisecAna` (curve–curve constructor).
 - **Example:**
@@ -1050,7 +1050,7 @@ public func bisector(
 ) -> Curve2D?
 ```
 
-- **Parameters:** `point` — the fixed point; `referencePoint` — steering point; `direction1` — curve tangent at reference; `direction2` — direction from `point` at reference; `sense` — orientation sense; `tolerance` — tolerance.
+- **Parameters:** `point`, the fixed point; `referencePoint`, steering point; `direction1`, curve tangent at reference; `direction2`, direction from `point` at reference; `sense`, orientation sense; `tolerance`, tolerance.
 - **Returns:** Bisector as a `Curve2D`, or `nil` on failure.
 - **OCCT:** `Bisector_BisecAna` (curve–point constructor).
 - **Example:**
@@ -1080,7 +1080,7 @@ public static func bisectorBetweenPoints(
 ) -> Curve2D?
 ```
 
-- **Parameters:** `p1`, `p2` — the two points; `referencePoint` — steering point; `direction1` — direction from `p1` at reference; `direction2` — direction from `p2` at reference; `sense` — orientation sense; `tolerance` — tolerance.
+- **Parameters:** `p1`, `p2`, the two points; `referencePoint`, steering point; `direction1`, direction from `p1` at reference; `direction2`, direction from `p2` at reference; `sense`, orientation sense; `tolerance`, tolerance.
 - **Returns:** Bisector (line) as a `Curve2D`, or `nil` on failure.
 - **OCCT:** `Bisector_BisecAna` (point–point constructor).
 - **Example:**

@@ -13,7 +13,7 @@ page covers both.
 ## Tessellating a shape
 
 `mesh(linearDeflection:angularDeflection:)` triangulates the shape. **Linear deflection** is the max
-chord deviation (mm) — smaller = finer; **angular deflection** caps the angle between adjacent facet
+chord deviation (mm), smaller = finer; **angular deflection** caps the angle between adjacent facet
 normals (radians):
 
 ```swift
@@ -24,12 +24,12 @@ mesh.vertexCount          // Int
 mesh.triangleCount        // Int
 mesh.vertices             // [SIMD3<Float>]
 mesh.normals              // [SIMD3<Float>] (per-vertex)
-mesh.indices              // [UInt32] — every 3 = one triangle
+mesh.indices              // [UInt32], every 3 = one triangle
 // indices.count == triangleCount * 3
 ```
 
 The `Mesh` also exposes `boundingBox`, `size`, `center`, raw interleaved `vertexData`/`normalData`
-(ready for a GPU buffer), and `trianglesWithFaces()` — per-triangle access that carries the **source
+(ready for a GPU buffer), and `trianglesWithFaces()`, per-triangle access that carries the **source
 B-Rep face index** and a per-triangle normal, so you can map a picked triangle back to its face.
 
 For fine-grained control, mesh from a `MeshParameters`:
@@ -53,19 +53,19 @@ Deflection is a quality/size trade-off:
 ## Mesh → shape
 
 A triangle mesh can be lifted back to a B-Rep (a shell of planar faces). The **weld tolerance** must
-scale with the model size — too tight leaves the mesh unwelded:
+scale with the model size, too tight leaves the mesh unwelded:
 
 ```swift
 let shape = mesh.toShape(weldTolerance: 1e-6)   // raise for large-coordinate meshes
 ```
 
-The result is a shell/compound of planar facets — not necessarily a valid solid; run
+The result is a shell/compound of planar facets, not necessarily a valid solid; run
 [healing](healing-and-validity.md) if you need one.
 
 ## Exporting
 
-Two families: **tessellated** formats (STL/OBJ/PLY — triangles, take a deflection) and **exact** B-Rep
-formats (STEP/IGES/BREP — full analytic geometry). All `Exporter.write…` calls throw.
+Two families: **tessellated** formats (STL/OBJ/PLY, triangles, take a deflection) and **exact** B-Rep
+formats (STEP/IGES/BREP, full analytic geometry). All `Exporter.write…` calls throw.
 
 ```swift
 // tessellated (deflection controls facet density)
@@ -96,7 +96,7 @@ let brep = try Shape.loadBREP(from: brepURL)        // exact + triangulation if 
 let stl  = try Shape.loadSTLRobust(from: stlURL, sewingTolerance: 1e-6)   // auto sew + heal; compound if multibody
 ```
 
-For mesh formats prefer the **robust** loaders (`loadSTLRobust`) — they sew and heal the seams a raw
+For mesh formats prefer the **robust** loaders (`loadSTLRobust`), they sew and heal the seams a raw
 triangle soup carries. Loaders throw `ImportError` on failure.
 
 ## STEP round-trip
@@ -107,12 +107,12 @@ let reimported = try Shape.load(from: stepURL)
 // reimported.isValid == true
 ```
 
-For multi-part assemblies with structure/colors, export the **document**, not a flattened shape — see
+For multi-part assemblies with structure/colors, export the **document**, not a flattened shape, see
 [XCAF Assemblies](xcaf-assemblies.md) and `Exporter.writeSTEPAssembly(_:to:)`. To shrink a STEP with
 shared geometry, `Exporter.optimizeSTEP(input:output:)` deduplicates it.
 
 ## See also
 
-- [XCAF Assemblies](xcaf-assemblies.md) — structured STEP with parts, colors, instances.
-- [Healing & Validity](healing-and-validity.md) — clean up after `mesh.toShape` or an STL import.
+- [XCAF Assemblies](xcaf-assemblies.md), structured STEP with parts, colors, instances.
+- [Healing & Validity](healing-and-validity.md), clean up after `mesh.toShape` or an STL import.
 - API mapping: [`../../API_REFERENCE.md`](../../API_REFERENCE.md)

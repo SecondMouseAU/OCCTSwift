@@ -4,12 +4,12 @@ import simd
 @testable import OCCTSwift
 
 // Robustness fixes for issue #181 (kept in their own file so edits here don't
-// trigger a full recompile of the monolithic ShapeTests.swift — see #183).
-@Suite("Issue #181 robustness — threaded shaft envelope + STEP writer")
+// trigger a full recompile of the monolithic ShapeTests.swift, see #183).
+@Suite("Issue #181 robustness, threaded shaft envelope + STEP writer")
 struct Issue181RobustnessTests {
 
     // C: the core invariant. A thread cut only removes material, so whatever
-    // `threadedShaft` returns must be a subset of the blank — never material outside
+    // `threadedShaft` returns must be a subset of the blank, never material outside
     // it. Before the guard, the helical-cutter boolean could (non-deterministically)
     // return a BRepCheck-"valid" solid extending well past the blank (e.g. ~Ø22 on a
     // Ø12 blank), which then crashed STEP export. The guard returns nil for those,
@@ -26,7 +26,7 @@ struct Issue181RobustnessTests {
         // nil is acceptable (failed/garbage cut); a returned solid must be in-envelope.
         // Measure the *optimal* (tight) box: the smooth analytic helicoid (v1.4.1) has a
         // BSpline convex-hull default Bnd_Box that overshoots the real surface by ~0.1–0.35 mm
-        // — a control-pole artifact, not escaped material (AddOptimal returns the exact extent).
+        //, a control-pole artifact, not escaped material (AddOptimal returns the exact extent).
         // A strict tolerance on the optimal box still catches the real >1 mm balloon this
         // guards against (the old ~Ø22 result on a Ø12 blank).
         if let result {

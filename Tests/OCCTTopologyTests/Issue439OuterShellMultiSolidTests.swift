@@ -4,8 +4,8 @@ import simd
 @testable import OCCTSwift
 
 // #439: Shape.outerShell returned the FIRST solid's shell on a multi-solid compound, where its
-// doc comment specifies nil — a plausible-looking Shape answering for the wrong body.
-@Suite("Issue #439 — outerShell on a multi-solid compound")
+// doc comment specifies nil, a plausible-looking Shape answering for the wrong body.
+@Suite("Issue #439, outerShell on a multi-solid compound")
 struct Issue439OuterShellMultiSolid {
 
     /// Two disjoint 10 mm boxes, spanning x 0..10 and x 20..30, in one compound.
@@ -45,7 +45,7 @@ struct Issue439OuterShellMultiSolid {
 
     // A compsolid is a connected set of solids rather than a loose bag, so it is the input where
     // "no single outer shell" is most arguable. It follows the same rule: two bodies, no one answer.
-    // The halves come from splitting one block so they genuinely share the cut face — two boxes
+    // The halves come from splitting one block so they genuinely share the cut face, two boxes
     // merely abutting would be a bag with the compsolid type stamped on it.
     @Test("a compsolid of two solids follows the same rule as a compound")
     func compSolidOfTwoSolidsIsNil() {
@@ -101,7 +101,7 @@ struct Issue439OuterShellMultiSolid {
 
     // The documented caveat, and the trap for anyone migrating off outerShell: an OUTER shell
     // drops internal void walls by design, so outerShells is not a boundary-complete substitute.
-    @Test("outerShells drops cavity walls, as documented — the faces-compound keeps them")
+    @Test("outerShells drops cavity walls, as documented, the faces-compound keeps them")
     func outerShellsDropInternalVoids() {
         guard let hollow = hollowSolid(),
               let plain = Shape.box(origin: SIMD3(40, 0, 0), width: 10, height: 10, depth: 10),

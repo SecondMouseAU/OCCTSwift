@@ -3,7 +3,7 @@ import simd
 @testable import OCCTSwift
 
 /// #485: `Curve3D.continuity` and `Curve3D.continuityOrder` wrapped the same
-/// `Geom_Curve::Continuity()` call through two incompatible numeric encodings — the real
+/// `Geom_Curve::Continuity()` call through two incompatible numeric encodings, the real
 /// `GeomAbs_Shape` ordinal, and a hand-written switch producing `{C0=0, C1=1, C2=2, C3=3,
 /// CN=99, G1=-2, G2=-3}`. C0 was the only class the two agreed on.
 ///
@@ -28,7 +28,7 @@ struct Issue485Curve3DContinuityTests {
                                degree: 3)
     }
 
-    /// A curve that genuinely measures G1 — the class the issue noted was untested anywhere.
+    /// A curve that genuinely measures G1, the class the issue noted was untested anywhere.
     ///
     /// Recipe: a cubic BSpline with its interior knot at full multiplicity is only C0, but if
     /// the three poles around that knot are collinear with unequal spacing, the tangent
@@ -101,7 +101,7 @@ struct Issue485Curve3DContinuityTests {
     // MARK: - The divergence itself
 
     // These two originally compared `continuity` against `continuityOrder`, silencing the
-    // deprecation warning with `@available(*, deprecated)` on the test function — which is
+    // deprecation warning with `@available(*, deprecated)` on the test function, which is
     // exactly what a real caller does, and exactly why a warning was not enough of a signal.
     // `continuityOrder` is unavailable as of #619, so the substance moved onto the two
     // properties that survive.

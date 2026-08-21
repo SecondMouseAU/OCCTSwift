@@ -1,9 +1,9 @@
 ---
-title: Document — Builders, Fillet/Chamfer & glTF
+title: Document. Builders, Fillet/Chamfer & glTF
 parent: API Reference
 ---
 
-# Document — Builders, Fillet/Chamfer & glTF
+# Document. Builders, Fillet/Chamfer & glTF
 
 This page covers the v0.120–v0.126 additions to `Document.swift`: continuity/parameter extras on
 `Curve3D`, `Curve2D`, and `Surface`; `gp_Vec` static helpers on `Shape`; BSpline mutation
@@ -14,7 +14,7 @@ glTF/GLB import and export on `Shape`, `Exporter`, and `Document`. See the main
 
 ## Topics
 
-- [Final cleanup — IsCN, ReversedParameter, ParametricTransformation](#final-cleanup--iscn-reversedparameter-parametrictransformation)
+- [Final cleanup, IsCN, ReversedParameter, ParametricTransformation](#final-cleanup--iscn-reversedparameter-parametrictransformation)
 - [BSpline completions](#bspline-completions)
 - [FilletBuilder](#filletbuilder)
 - [ChamferBuilder](#chamferbuilder)
@@ -26,14 +26,14 @@ glTF/GLB import and export on `Shape`, `Exporter`, and `Document`. See the main
 
 ---
 
-## Final cleanup — IsCN, ReversedParameter, ParametricTransformation
+## Final cleanup. IsCN, ReversedParameter, ParametricTransformation
 
 Extensions on `Curve3D`, `Curve2D`, and `Surface` exposing continuity checks, reversed-parameter
 mappings, parametric-transformation scale factors, and Bezier/BSpline static limits.
 
 ### `Curve3D.continuityOrder`
 
-**Unavailable** (#619) — use `continuityClass`, or `continuity` for a raw ordinal. Any use is a
+**Unavailable** (#619), use `continuityClass`, or `continuity` for a raw ordinal. Any use is a
 compile error.
 
 ```swift
@@ -42,21 +42,21 @@ public var continuityOrder: Int { get }
 ```
 
 The values this reported changed in #485, from a hand-invented `C0=0, C1=1, C2=2, C3=3, CN=99,
-G1=-2, G2=-3` — matching neither `GeomAbs_Shape` nor its own documentation, and disagreeing with
-`continuity` on the same curve for every class except C0 — to the real ordinal `0=C0, 1=G1, 2=C1,
+G1=-2, G2=-3`, matching neither `GeomAbs_Shape` nor its own documentation, and disagreeing with
+`continuity` on the same curve for every class except C0, to the real ordinal `0=C0, 1=G1, 2=C1,
 3=G2, 4=C2, 5=C3, 6=CN`. The type and name were unchanged, so `continuityOrder >= 2` kept compiling
 and went from meaning "at least C2" to meaning "at least C1", and `continuityOrder == 99` (the
 analytic fast path) became unreachable. #619 retires the spelling so both become errors.
 
 ```swift
-// A continuity floor — takes the request vocabulary by type, so the wrong
+// A continuity floor, takes the request vocabulary by type, so the wrong
 // constant cannot be written at all.
 if curve.continuityClass.satisfies(.c2) { useAsC2Spline() }
 
 // The analytic fast path that `== 99` used to express.
 if curve.continuityClass == .cN { useAnalyticFastPath() }
 
-// A raw ordinal, if that is what you want — re-check the constant you compare against.
+// A raw ordinal, if that is what you want, re-check the constant you compare against.
 let ordinal = curve.continuity
 ```
 
@@ -73,7 +73,7 @@ Check if this curve has at least Cn continuity.
 public func isCN(_ n: Int) -> Bool
 ```
 
-- **Parameters:** `n` — minimum continuity order required.
+- **Parameters:** `n`, minimum continuity order required.
 - **Returns:** `true` if the curve is at least Cn continuous.
 - **OCCT:** `Geom_Curve::IsCN` (via `OCCTCurve3DIsCN`).
 - **Example:**
@@ -92,7 +92,7 @@ Get the parameter on the reversed curve corresponding to parameter `u` on this c
 public func reversedParameter(_ u: Double) -> Double
 ```
 
-- **Parameters:** `u` — parameter on the original curve.
+- **Parameters:** `u`, parameter on the original curve.
 - **Returns:** Corresponding parameter on the reversed curve.
 - **OCCT:** `Geom_Curve::ReversedParameter` (via `OCCTCurve3DReversedParameter`).
 
@@ -107,8 +107,8 @@ public func parametricTransformation(rotation: [Double], translation: SIMD3<Doub
 ```
 
 - **Parameters:**
-  - `rotation` — 3×3 rotation matrix in row-major order (9 elements).
-  - `translation` — translation vector.
+  - `rotation`: 3×3 rotation matrix in row-major order (9 elements).
+  - `translation`: translation vector.
 - **Returns:** Scale factor for parameter intervals under the transform; returns `1.0` if `rotation.count != 9`.
 - **OCCT:** `Geom_Curve::ParametricTransformation` (via `OCCTCurve3DParametricTransformation`).
 
@@ -122,7 +122,7 @@ Resolution for 3D Bezier curves: the parameter step corresponding to `tolerance3
 public func bezierResolution(tolerance3d: Double) -> Double
 ```
 
-- **Parameters:** `tolerance3d` — desired 3D tolerance.
+- **Parameters:** `tolerance3d`, desired 3D tolerance.
 - **OCCT:** `Geom_BezierCurve::Resolution` (via `OCCTCurve3DBezierResolution`).
 
 ---
@@ -141,7 +141,7 @@ public static var bezierMaxDegree: Int { get }
 
 ### `Curve2D.continuityOrder`
 
-**Unavailable** (#619) — use `continuityClass`, or `continuity` for a raw ordinal. Any use is a
+**Unavailable** (#619), use `continuityClass`, or `continuity` for a raw ordinal. Any use is a
 compile error.
 
 ```swift
@@ -153,7 +153,7 @@ public var continuityOrder: Int { get }
 if pcurve.continuityClass.satisfies(.c2) { treatAsC2() }
 ```
 
-- **Warning:** the raw values changed in #485 and the spelling was retired in #619 — see the
+- **Warning:** the raw values changed in #485 and the spelling was retired in #619, see the
   `Curve3D.continuityOrder` note above for the before/after encoding.
 - **OCCT:** `Geom2d_Curve::Continuity` (via `OCCTCurve2DGetContinuity`).
 
@@ -167,7 +167,7 @@ Check if this 2D curve has at least Cn continuity.
 public func isCN(_ n: Int) -> Bool
 ```
 
-- **Parameters:** `n` — minimum continuity order required.
+- **Parameters:** `n`, minimum continuity order required.
 - **OCCT:** `Geom2d_Curve::IsCN` (via `OCCTCurve2DIsCN`).
 
 ---
@@ -216,7 +216,7 @@ Check if this surface has at least Cn continuity in the U direction.
 public func isCNu(_ n: Int) -> Bool
 ```
 
-- **Parameters:** `n` — minimum continuity order required.
+- **Parameters:** `n`, minimum continuity order required.
 - **OCCT:** `Geom_Surface::IsCNu` (via `OCCTSurfaceIsCNu`).
 
 ---
@@ -292,7 +292,7 @@ Remove a V knot from a BSpline surface, reducing its multiplicity to `mult`.
 public func bsplineRemoveVKnot(index: Int, mult: Int, tolerance: Double) -> Bool
 ```
 
-- **Parameters:** `index` — 1-based V knot index; `mult` — target multiplicity; `tolerance` — geometric tolerance.
+- **Parameters:** `index`, 1-based V knot index; `mult`, target multiplicity; `tolerance`, geometric tolerance.
 - **Returns:** `true` if the knot was successfully removed.
 - **OCCT:** `Geom_BSplineSurface::RemoveVKnot` (via `OCCTSurfaceBSplineRemoveVKnot`).
 
@@ -372,7 +372,7 @@ public static func dirIsOpposite(_ d1: SIMD3<Double>, _ d2: SIMD3<Double>,
                                  tolerance: Double = 1e-10) -> Bool
 ```
 
-- **Parameters:** `d1`, `d2` — unit direction vectors; `tolerance` — angular tolerance in radians.
+- **Parameters:** `d1`, `d2`, unit direction vectors; `tolerance`, angular tolerance in radians.
 - **Returns:** `true` if the angle between `d1` and `d2` is within `tolerance` of π.
 - **OCCT:** `gp_Dir::IsOpposite` (via `OCCTDirIsOpposite`).
 
@@ -387,7 +387,7 @@ public static func dirIsNormal(_ d1: SIMD3<Double>, _ d2: SIMD3<Double>,
                                tolerance: Double = 1e-10) -> Bool
 ```
 
-- **Parameters:** `tolerance` — angular tolerance in radians.
+- **Parameters:** `tolerance`, angular tolerance in radians.
 - **Returns:** `true` if the angle between the two directions is within `tolerance` of π/2.
 - **OCCT:** `gp_Dir::IsNormal` (via `OCCTDirIsNormal`).
 
@@ -484,7 +484,7 @@ Batch insert U knots with their multiplicities.
 public func bsplineInsertUKnots(_ knots: [Double], multiplicities: [Int], tolerance: Double = 1e-10) -> Bool
 ```
 
-- **Parameters:** `knots` — sorted knot values to insert; `multiplicities` — corresponding multiplicities; `tolerance` — knot merging tolerance.
+- **Parameters:** `knots`, sorted knot values to insert; `multiplicities`, corresponding multiplicities; `tolerance`, knot merging tolerance.
 - **Returns:** `false` if either array is empty.
 - **OCCT:** `Geom_BSplineSurface::InsertUKnots` (via `OCCTSurfaceBSplineInsertUKnots`).
 
@@ -514,9 +514,9 @@ public func bsplineMovePoint(u: Double, v: Double, to point: SIMD3<Double>,
 ```
 
 - **Parameters:**
-  - `u`, `v` — parameter at which the surface should pass through `point`.
-  - `point` — target 3D point.
-  - `uPoleRange`, `vPoleRange` — 1-based ranges of poles allowed to move.
+  - `u`, `v`, parameter at which the surface should pass through `point`.
+  - `point`: target 3D point.
+  - `uPoleRange`, `vPoleRange`, 1-based ranges of poles allowed to move.
 - **OCCT:** `Geom_BSplineSurface::MovePoint` (via `OCCTSurfaceBSplineMovePoint`).
 
 ---
@@ -530,7 +530,7 @@ Set an entire column of poles (all U poles at `vIndex`, 1-based).
 public func bsplineSetPoleCol(vIndex: Int, poles: [SIMD3<Double>]) -> Bool
 ```
 
-- **Parameters:** `vIndex` — 1-based V index; `poles` — array of `NbUPoles` points.
+- **Parameters:** `vIndex`, 1-based V index; `poles`, array of `NbUPoles` points.
 - **OCCT:** `Geom_BSplineSurface::SetPoleCol` (via `OCCTSurfaceBSplineSetPoleCol`).
 
 ---
@@ -544,7 +544,7 @@ Set an entire row of poles (all V poles at `uIndex`, 1-based).
 public func bsplineSetPoleRow(uIndex: Int, poles: [SIMD3<Double>]) -> Bool
 ```
 
-- **Parameters:** `uIndex` — 1-based U index; `poles` — array of `NbVPoles` points.
+- **Parameters:** `uIndex`, 1-based U index; `poles`, array of `NbVPoles` points.
 - **OCCT:** `Geom_BSplineSurface::SetPoleRow` (via `OCCTSurfaceBSplineSetPoleRow`).
 
 ---
@@ -752,11 +752,11 @@ public func bsplineMovePointAndTangent(u: Double, point: SIMD3<Double>, tangent:
 ```
 
 - **Parameters:**
-  - `u` — parameter value.
-  - `point` — desired 3D position at `u`.
-  - `tangent` — desired tangent direction at `u`.
-  - `tolerance` — geometric tolerance.
-  - `poleRange` — 1-based range of poles allowed to move.
+  - `u`: parameter value.
+  - `point`: desired 3D position at `u`.
+  - `tangent`: desired tangent direction at `u`.
+  - `tolerance`: geometric tolerance.
+  - `poleRange`: 1-based range of poles allowed to move.
 - **OCCT:** `Geom_BSplineCurve::MovePointAndTangent` (via `OCCTCurve3DBSplineMovePointAndTangent`).
 
 ---
@@ -868,7 +868,7 @@ Create a fillet builder on the given shape.
 public init?(shape: Shape)
 ```
 
-- **Parameters:** `shape` — the solid or shell to fillet.
+- **Parameters:** `shape`, the solid or shell to fillet.
 - **Returns:** `nil` if the bridge cannot initialise the builder for this shape.
 - **OCCT:** `BRepFilletAPI_MakeFillet` (via `OCCTFilletBuilderCreate`).
 - **Example:**
@@ -894,7 +894,7 @@ Add an edge with a constant fillet radius.
 public func addEdge(_ edge: Edge, radius: Double) -> Bool
 ```
 
-- **Parameters:** `edge` — the edge to fillet; `radius` — constant fillet radius (> 0).
+- **Parameters:** `edge`, the edge to fillet; `radius`, constant fillet radius (> 0).
 - **OCCT:** `BRepFilletAPI_MakeFillet::Add` (via `OCCTFilletBuilderAddEdge`).
 
 ---
@@ -952,7 +952,7 @@ public func edgeCount(contour: Int) -> Int
 
 ### `FilletBuilder.hasResult`
 
-Whether the builder has a result — may be a partial result even if some contours failed.
+Whether the builder has a result, may be a partial result even if some contours failed.
 
 ```swift
 public var hasResult: Bool { get }
@@ -1109,7 +1109,7 @@ Add an edge with two distances (requires a face for orientation).
 public func addEdge(_ edge: Edge, face: Face, distance1: Double, distance2: Double) -> Bool
 ```
 
-- **Parameters:** `face` — adjacent face that determines which side gets `distance1`.
+- **Parameters:** `face`, adjacent face that determines which side gets `distance1`.
 - **OCCT:** `BRepFilletAPI_MakeChamfer::Add` with two distances (via `OCCTChamferBuilderAddEdgeTwoDists`).
 
 ---
@@ -1123,7 +1123,7 @@ Add an edge with a distance and angle (requires a face for orientation).
 public func addEdge(_ edge: Edge, face: Face, distance: Double, angle: Double) -> Bool
 ```
 
-- **Parameters:** `angle` — chamfer angle in radians.
+- **Parameters:** `angle`, chamfer angle in radians.
 - **OCCT:** `BRepFilletAPI_MakeChamfer::AddDA` (via `OCCTChamferBuilderAddEdgeDistAngle`).
 
 ---
@@ -1630,9 +1630,9 @@ public init?(wire: Wire, face: Shape, precision: Double = 1e-7)
 ```
 
 - **Parameters:**
-  - `wire` — the wire to analyse.
-  - `face` — the face context (used for 2D checks).
-  - `precision` — geometric precision (default `1e-7`).
+  - `wire`: the wire to analyse.
+  - `face`: the face context (used for 2D checks).
+  - `precision`: geometric precision (default `1e-7`).
 - **Returns:** `nil` if initialisation fails.
 - **OCCT:** `ShapeAnalysis_Wire` (via `OCCTWireAnalyzerCreate`).
 - **Example:**
@@ -1853,7 +1853,7 @@ public func setParams(tang: Double, tesp: Double, t2d: Double,
                       tApp3d: Double, tApp2d: Double, fleche: Double)
 ```
 
-- **Parameters:** `tang` — tangency tolerance; `tesp` — surface tolerance; `t2d` — 2D tolerance; `tApp3d` — 3D approximation tolerance; `tApp2d` — 2D approximation tolerance; `fleche` — sag for approximation.
+- **Parameters:** `tang`, tangency tolerance; `tesp`, surface tolerance; `t2d`, 2D tolerance; `tApp3d`, 3D approximation tolerance; `tApp2d`, 2D approximation tolerance; `fleche`, sag for approximation.
 - **OCCT:** `BRepFilletAPI_MakeFillet::SetParams` (via `OCCTFilletBuilderSetParams`).
 
 ---
@@ -1866,7 +1866,7 @@ Set the fillet surface continuity: `0`=C0, `1`=C1, `2`=C2.
 public func setContinuity(_ internalContinuity: Int, angularTolerance: Double)
 ```
 
-- **Parameters:** `internalContinuity` — target continuity class; `angularTolerance` — angular tolerance for the join.
+- **Parameters:** `internalContinuity`, target continuity class; `angularTolerance`, angular tolerance for the join.
 - **OCCT:** `BRepFilletAPI_MakeFillet::SetContinuity` (via `OCCTFilletBuilderSetContinuity`).
 
 ---
@@ -1909,13 +1909,13 @@ public func resetContour(_ contourIndex: Int)
 
 ### `FilletBuilder.simulate(contour:)`
 
-Simulate filleting on a contour — computes cross-sections without building the final shape.
+Simulate filleting on a contour, computes cross-sections without building the final shape.
 
 ```swift
 public func simulate(contour: Int)
 ```
 
-- **Parameters:** `contour` — 1-based contour index.
+- **Parameters:** `contour`, 1-based contour index.
 - **OCCT:** `BRepFilletAPI_MakeFillet::Simulate` (via `OCCTFilletBuilderSimulate`).
 
 ---
@@ -1953,7 +1953,7 @@ Load a shape from a glTF or GLB file path.
 public static func loadGLTF(fromPath path: String) -> Shape?
 ```
 
-- **Parameters:** `path` — file system path to a `.gltf` or `.glb` file.
+- **Parameters:** `path`, file system path to a `.gltf` or `.glb` file.
 - **Returns:** The imported shape, or `nil` on failure.
 - **OCCT:** `RWGltf_CafReader` (via `OCCTImportGLTF`).
 - **Note:** Colors and materials are not preserved; use `Document.loadGLTF(fromPath:)` to retain those.
@@ -1988,10 +1988,10 @@ public static func writeGLTF(shape: Shape, to url: URL, binary: Bool = true, def
 ```
 
 - **Parameters:**
-  - `shape` — shape to export (meshed internally by the bridge).
-  - `url` — output file URL (`.gltf` or `.glb`).
-  - `binary` — `true` writes binary GLB; `false` writes text glTF.
-  - `deflection` — mesh linear deflection tolerance.
+  - `shape`: shape to export (meshed internally by the bridge).
+  - `url`: output file URL (`.gltf` or `.glb`).
+  - `binary`: `true` writes binary GLB; `false` writes text glTF.
+  - `deflection`: mesh linear deflection tolerance.
 - **Throws:** `Exporter.ExportError.exportFailed` if writing fails.
 - **OCCT:** `RWGltf_CafWriter` (via `OCCTExportGLTF`).
 - **Example:**
@@ -2011,7 +2011,7 @@ Load a glTF or GLB file into an XDE document, preserving names, materials, and c
 public static func loadGLTF(fromPath path: String) -> Document?
 ```
 
-- **Parameters:** `path` — file system path to a `.gltf` or `.glb` file.
+- **Parameters:** `path`, file system path to a `.gltf` or `.glb` file.
 - **Returns:** A `Document` with the assembly hierarchy, or `nil` on failure.
 - **OCCT:** `RWGltf_CafReader` into `TDocStd_Document` (via `OCCTDocumentLoadGLTF`).
 
@@ -2047,8 +2047,8 @@ public func writeGLTF(to url: URL, binary: Bool = true) -> Bool
 ```
 
 - **Parameters:**
-  - `url` — output file URL (`.gltf` or `.glb`).
-  - `binary` — `true` writes binary GLB; `false` writes text glTF.
+  - `url`: output file URL (`.gltf` or `.glb`).
+  - `binary`: `true` writes binary GLB; `false` writes text glTF.
 - **Returns:** `true` if the file was written successfully.
 - **OCCT:** `RWGltf_CafWriter` (via `OCCTDocumentWriteGLTF`).
 - **Example:**

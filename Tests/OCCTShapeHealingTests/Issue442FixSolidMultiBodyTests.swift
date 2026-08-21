@@ -3,7 +3,7 @@ import Foundation
 import simd
 @testable import OCCTSwift
 
-/// #442 — `Shape.fixSolid()` and `Shape.solidFromShellFixed()` healed only the FIRST
+/// #442, `Shape.fixSolid()` and `Shape.solidFromShellFixed()` healed only the FIRST
 /// body a `TopExp_Explorer` yielded and discarded the rest, returning a well-formed
 /// `Shape` that nothing downstream could tell was missing most of the part.
 ///
@@ -11,7 +11,7 @@ import simd
 /// multi-body ones, because the fix must not change what a one-solid input returns.
 ///
 /// Every assertion here is written so it cannot be *skipped*: `Shape.volume` is
-/// `v >= 0 ? v : nil`, so it returns `nil` precisely when a solid comes back inverted —
+/// `v >= 0 ? v : nil`, so it returns `nil` precisely when a solid comes back inverted,
 /// and orientation is the whole job of `SolidFromShell`. An `if let volume` with no
 /// `else` would let that regression pass silently, which is the failure mode this issue
 /// is about.
@@ -23,7 +23,7 @@ struct Issue442FixSolidMultiBody {
     private func expectVolume(_ shape: Shape, _ expected: Double,
                               _ what: String, sourceLocation: SourceLocation = #_sourceLocation) {
         guard let volume = shape.volume else {
-            Issue.record("\(what): volume is nil — the solid came back inverted",
+            Issue.record("\(what): volume is nil, the solid came back inverted",
                          sourceLocation: sourceLocation)
             return
         }
@@ -31,7 +31,7 @@ struct Issue442FixSolidMultiBody {
                 sourceLocation: sourceLocation)
     }
 
-    /// Two disjoint 10mm boxes, 2000mm³ total — the issue's own reproducer.
+    /// Two disjoint 10mm boxes, 2000mm³ total, the issue's own reproducer.
     private func twoBoxes() -> Shape? {
         guard let a = Shape.box(origin: SIMD3(0, 0, 0), width: 10, height: 10, depth: 10),
               let b = Shape.box(origin: SIMD3(20, 0, 0), width: 10, height: 10, depth: 10)
@@ -48,7 +48,7 @@ struct Issue442FixSolidMultiBody {
     }
 
     /// One solid holding two disjoint closed shells. Pathological but real, and the case
-    /// that rules out the naive "outer shell per solid" selection rule — so it is the one
+    /// that rules out the naive "outer shell per solid" selection rule, so it is the one
     /// most likely to regress unnoticed.
     private func multiconnexSolid() -> Shape? {
         guard let a = Shape.box(origin: SIMD3(0, 0, 0), width: 10, height: 10, depth: 10),
@@ -73,7 +73,7 @@ struct Issue442FixSolidMultiBody {
             Issue.record("fixSolid returned nil for a two-solid compound")
             return
         }
-        // Was 1 solid / 6 faces / 1000.0 before the fix — box B silently dropped.
+        // Was 1 solid / 6 faces / 1000.0 before the fix, box B silently dropped.
         #expect(healed.solids.count == 2)
         #expect(healed.subShapeCount(ofType: .face) == 12)
         expectVolume(healed, 2000.0, "fixSolid(two-box compound)")
@@ -246,7 +246,7 @@ struct Issue442FixSolidMultiBody {
         expectVolume(bodies, 35000.0, "solidFromShellFixed(cavity + wider sibling)")
     }
 
-    /// Free shells belong to no solid — the usual shape of sewing output.
+    /// Free shells belong to no solid, the usual shape of sewing output.
     @Test("solidFromShellFixed builds one solid per free shell")
     func solidFromShellFreeShells() {
         guard let a = Shape.box(origin: SIMD3(0, 0, 0), width: 10, height: 10, depth: 10),

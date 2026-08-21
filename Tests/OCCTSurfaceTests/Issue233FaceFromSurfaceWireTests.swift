@@ -2,9 +2,9 @@ import Testing
 import simd
 @testable import OCCTSwift
 
-/// Issue #233: build a face from a surface trimmed to a non-rectangular region — a UV-space
+/// Issue #233: build a face from a surface trimmed to a non-rectangular region, a UV-space
 /// boundary polygon (`Surface.toFace(uvBoundary:)`) or a 3D boundary wire (`Shape.face(from:boundary:)`).
-@Suite("Issue #233 — face from surface bounded by a wire")
+@Suite("Issue #233, face from surface bounded by a wire")
 struct Issue233FaceFromSurfaceWireTests {
 
     @Test("UV-polygon trims a cylinder to a non-rectangular footprint")
@@ -18,7 +18,7 @@ struct Issue233FaceFromSurfaceWireTests {
         #expect(trimmedArea > 0)
 
         // The rectangular UV patch over the polygon's bounding box (u 0…2, v 0…6) is strictly larger
-        // — confirming the face follows the polygon, not the box.
+        //, confirming the face follows the polygon, not the box.
         if let rect = cyl.toFace(uRange: 0...2, vRange: 0...6), let rectArea = rect.surfaceArea {
             #expect(trimmedArea < rectArea)          // non-rectangular trim removed area
             #expect(trimmedArea > rectArea * 0.4)    // …but it's a real region, not collapsed
@@ -39,7 +39,7 @@ struct Issue233FaceFromSurfaceWireTests {
             SIMD3(5 * cos(a), 5 * sin(a), h)
         }
         guard let wire = Wire.polygon3D(pts, closed: true) else { Issue.record("wire"); return }
-        // The straight chords don't lie on the cylinder, so the exact path declines — but the
+        // The straight chords don't lie on the cylinder, so the exact path declines, but the
         // projection fallback (project ordered points → UV → trim) builds a valid trimmed face.
         guard let face = Shape.face(from: cyl, boundary: wire) else {
             Issue.record("face(from:boundary:) returned nil"); return

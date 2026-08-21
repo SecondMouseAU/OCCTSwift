@@ -1,11 +1,11 @@
 ---
-title: Shape — Builders & Boolean Internals I
+title: Shape. Builders & Boolean Internals I
 parent: API Reference
 ---
 
-# Shape — Builders & Boolean Internals I
+# Shape. Builders & Boolean Internals I
 
-These members are low-level OCCT builder and algorithm wrappers — polyhedral geometry, history tracking, 2D fillet engines, shell/solid builders, Boolean splitters, ray/contour intersection, mesh utilities, and surface-fill algorithms — exposed directly on `Shape`. See the main [Shape](#) page for the core topology, transform, and measurement API (free-boundary analysis is on the **Shape — Measurement** page).
+These members are low-level OCCT builder and algorithm wrappers, polyhedral geometry, history tracking, 2D fillet engines, shell/solid builders, Boolean splitters, ray/contour intersection, mesh utilities, and surface-fill algorithms, exposed directly on `Shape`. See the main [Shape](#) page for the core topology, transform, and measurement API (free-boundary analysis is on the **Shape, Measurement** page).
 
 ## Topics
 
@@ -27,7 +27,7 @@ public struct PolyhedralDistance {
 }
 ```
 
-- **Fields:** `distance` — approximate distance; `point1` — closest point on the first shape; `point2` — closest point on the second shape.
+- **Fields:** `distance`, approximate distance; `point1`, closest point on the first shape; `point2`, closest point on the second shape.
 
 ---
 
@@ -45,7 +45,7 @@ public func polyhedralDistance(to other: Shape) -> PolyhedralDistance?
 
 Both shapes must be meshed (have triangulation). Faster than exact distance but less precise.
 
-- **Parameters:** `other` — the shape to measure against.
+- **Parameters:** `other`, the shape to measure against.
 - **Returns:** `PolyhedralDistance`, or `nil` if either shape has no triangulation or computation fails.
 - **OCCT:** `BRepExtrema_Poly` via `OCCTShapePolyhedralDistance`.
 - **Example:**
@@ -220,7 +220,7 @@ Analyze wire vertex connections for gaps, overlaps, and intersections.
 public func wireVertexAnalysis(precision: Double = 0.01) -> WireVertexAnalysis
 ```
 
-- **Parameters:** `precision` — tolerance for vertex comparison.
+- **Parameters:** `precision`, tolerance for vertex comparison.
 - **Returns:** `WireVertexAnalysis` with edge count and a completion flag.
 - **OCCT:** `ShapeAnalysis_WireVertex` via `OCCTShapeWireVertexAnalysis`.
 - **Example:**
@@ -239,7 +239,7 @@ Get the status of a specific vertex in a wire.
 public func wireVertexStatus(precision: Double = 0.01, index: Int) -> WireVertexStatus
 ```
 
-- **Parameters:** `precision` — analysis tolerance; `index` — 0-based vertex index.
+- **Parameters:** `precision`, analysis tolerance; `index`, 0-based vertex index.
 - **Returns:** `WireVertexStatus` case, or `.unknown` for unrecognised codes.
 - **OCCT:** `OCCTShapeWireVertexStatus`.
 
@@ -257,7 +257,7 @@ public struct NearestPlane {
 }
 ```
 
-- **Fields:** `normal` — fitted plane normal; `origin` — a point on the plane; `maxDeviation` — maximum distance from any input point to the fitted plane.
+- **Fields:** `normal`, fitted plane normal; `origin`, a point on the plane; `maxDeviation`, maximum distance from any input point to the fitted plane.
 
 ---
 
@@ -273,7 +273,7 @@ Fit the nearest plane to a set of 3D points using least-squares.
 public static func nearestPlane(to points: [SIMD3<Double>]) -> NearestPlane?
 ```
 
-- **Parameters:** `points` — array of at least 3 points.
+- **Parameters:** `points`, array of at least 3 points.
 - **Returns:** `NearestPlane`, or `nil` if fewer than 3 points are provided or fitting fails.
 - **OCCT:** `gp_Pln` / `OCCTShapeNearestPlane`.
 - **Example:**
@@ -296,7 +296,7 @@ Create a solid from a shell shape using `BRepLib_MakeSolid`.
 public static func solidFromShell(_ shell: Shape) -> Shape?
 ```
 
-- **Parameters:** `shell` — a shape containing a closed shell (e.g. from `shellFromSurface`).
+- **Parameters:** `shell`, a shape containing a closed shell (e.g. from `shellFromSurface`).
 - **Returns:** Solid shape, or `nil` on failure.
 - **OCCT:** `BRepLib_MakeSolid` via `OCCTShapeMakeSolidFromShell`.
 - **Example:**
@@ -316,7 +316,7 @@ Mirror this shape about a point (point symmetry / inversion).
 public func mirroredAboutPoint(_ point: SIMD3<Double>) -> Shape?
 ```
 
-- **Parameters:** `point` — centre of the point mirror.
+- **Parameters:** `point`, centre of the point mirror.
 - **Returns:** Mirrored shape, or `nil` on failure.
 - **OCCT:** `gp_Trsf` point mirror via `OCCTShapeMirrorAboutPoint`.
 - **Example:**
@@ -334,7 +334,7 @@ Mirror this shape about an axis line.
 public func mirroredAboutAxis(origin: SIMD3<Double>, direction: SIMD3<Double>) -> Shape?
 ```
 
-- **Parameters:** `origin` — a point on the axis; `direction` — axis direction.
+- **Parameters:** `origin`, a point on the axis; `direction`, axis direction.
 - **Returns:** Mirrored shape, or `nil` on failure.
 - **OCCT:** `gp_Trsf` axis mirror via `OCCTShapeMirrorAboutAxis`.
 
@@ -350,7 +350,7 @@ public func scaledAboutPoint(_ center: SIMD3<Double>, factor: Double) -> Shape?
 
 Unlike `scaled(by:)` which scales about the origin, this scales about the given point.
 
-- **Parameters:** `center` — centre of scaling; `factor` — scale factor.
+- **Parameters:** `center`, centre of scaling; `factor`, scale factor.
 - **Returns:** Scaled shape, or `nil` on failure.
 - **OCCT:** `gp_Trsf` scale via `OCCTShapeScaleAboutPoint`.
 
@@ -364,7 +364,7 @@ Translate this shape by the vector from one point to another.
 public func translated(from: SIMD3<Double>, to: SIMD3<Double>) -> Shape?
 ```
 
-- **Parameters:** `from` — start of the translation vector; `to` — end of the translation vector.
+- **Parameters:** `from`, start of the translation vector; `to`, end of the translation vector.
 - **Returns:** Translated shape, or `nil` on failure.
 - **OCCT:** `GC_MakeTranslation(gp_Pnt, gp_Pnt)` → `gp_Trsf` + `BRepBuilderAPI_Transform`, via `OCCTShapeTranslateByPoints`.
 
@@ -382,7 +382,7 @@ public struct AnaFilletResult {
 }
 ```
 
-- **Fields:** `fillet` — the arc edge; `edge1`, `edge2` — trimmed input edges.
+- **Fields:** `fillet`, the arc edge; `edge1`, `edge2`, trimmed input edges.
 
 ---
 
@@ -406,7 +406,7 @@ public static func anaFillet(
 
 Uses `ChFi2d_AnaFilletAlgo` for fast exact fillet computation in a plane. Supports only line and arc-of-circle edges.
 
-- **Parameters:** `edge1`, `edge2` — edge shapes; `planeOrigin` — a point on the working plane; `planeNormal` — plane normal; `radius` — fillet radius.
+- **Parameters:** `edge1`, `edge2`, edge shapes; `planeOrigin`, a point on the working plane; `planeNormal`, plane normal; `radius`, fillet radius.
 - **Returns:** `AnaFilletResult`, or `nil` if computation fails.
 - **OCCT:** `ChFi2d_AnaFilletAlgo` via `OCCTChFi2dAnaFillet`.
 - **Example:**
@@ -450,7 +450,7 @@ public static func anaFillet(
 
 Edge indices are 0-based; the fillet is computed between `edges[edgeIndex]` and `edges[edgeIndex + 1]`.
 
-- **Parameters:** `wire` — source wire; `edgeIndex` — index of the first edge; remaining parameters as above.
+- **Parameters:** `wire`, source wire; `edgeIndex`, index of the first edge; remaining parameters as above.
 - **Returns:** `AnaFilletResult`, or `nil` if indices are out of range or fillet fails.
 - **OCCT:** `ChFi2d_AnaFilletAlgo`.
 
@@ -468,7 +468,7 @@ public static func ruledShell(from wires: [Wire]) -> Shape?
 
 Each pair of adjacent wires generates a ruled surface between them. Wires should have the same number of edges for best results.
 
-- **Parameters:** `wires` — at least 2 wires.
+- **Parameters:** `wires`, at least 2 wires.
 - **Returns:** Shell shape, or `nil` on failure.
 - **OCCT:** `BRepFill_Generator` via `OCCTBRepFillGenerator`.
 - **Example:**
@@ -493,7 +493,7 @@ public static func advancedEvolved(
 
 The profile is oriented perpendicular to the spine at each point and swept along it.
 
-- **Parameters:** `spine` — sweep path; `profile` — cross-section; `tolerance` — geometric tolerance; `solid` — produce a solid when `true`.
+- **Parameters:** `spine`, sweep path; `profile`, cross-section; `tolerance`, geometric tolerance; `solid`, produce a solid when `true`.
 - **Returns:** Evolved shape, or `nil` on failure.
 - **OCCT:** `BRepFill_AdvancedEvolved` via `OCCTBRepFillAdvancedEvolved`.
 
@@ -509,7 +509,7 @@ public static func offsetWire(face: Face, offset: Double) -> Shape?
 
 Positive offset expands outward; negative shrinks inward.
 
-- **Parameters:** `face` — face containing the wire to offset; `offset` — signed offset distance.
+- **Parameters:** `face`, face containing the wire to offset; `offset`, signed offset distance.
 - **Returns:** Offset wire shape, or `nil` on failure.
 - **OCCT:** `BRepFill_OffsetWire` via `OCCTBRepFillOffsetWire`.
 
@@ -528,7 +528,7 @@ public static func draft(
 
 The wire is projected along `direction` for `length`, with faces tapered at `angle` from the direction.
 
-- **Parameters:** `wire` — base profile; `direction` — draft direction; `angle` — taper angle in radians; `length` — draft length.
+- **Parameters:** `wire`, base profile; `direction`, draft direction; `angle`, taper angle in radians; `length`, draft length.
 - **Returns:** Draft shape, or `nil` on failure.
 - **OCCT:** `BRepFill_Draft` via `OCCTBRepFillDraft`.
 
@@ -545,7 +545,7 @@ public struct PipeSweepResult {
 }
 ```
 
-- **Fields:** `shape` — the swept pipe; `errorOnSurface` — surface approximation error.
+- **Fields:** `shape`, the swept pipe; `errorOnSurface`, surface approximation error.
 
 ---
 
@@ -559,7 +559,7 @@ public static func pipeSweep(spine: Wire, profile: Wire) -> PipeSweepResult?
 
 Sweeps the profile wire along the spine wire using a corrected Frenet trihedron.
 
-- **Parameters:** `spine` — sweep path; `profile` — cross-section wire.
+- **Parameters:** `spine`, sweep path; `profile`, cross-section wire.
 - **Returns:** `PipeSweepResult`, or `nil` on failure.
 - **OCCT:** `BRepFill_Pipe` via `OCCTBRepFillPipe`.
 - **Example:**
@@ -581,7 +581,7 @@ public static func compatibleWires(_ wires: [Wire]) -> [Wire]?
 
 Resamples wires so they have the same edge count and orientation, which improves lofting quality.
 
-- **Parameters:** `wires` — at least 2 wires to normalize.
+- **Parameters:** `wires`, at least 2 wires to normalize.
 - **Returns:** Array of compatible `Wire` objects, or `nil` on failure.
 - **OCCT:** `BRepFill_CompatibleWires` via `OCCTBRepFillCompatibleWires`.
 
@@ -602,7 +602,7 @@ public struct FilletAlgoResult {
 }
 ```
 
-- **Fields:** `fillet` — the arc edge; `edge1`, `edge2` — trimmed edges; `resultCount` — number of fillet solutions found.
+- **Fields:** `fillet`, the arc edge; `edge1`, `edge2`, trimmed edges; `resultCount`, number of fillet solutions found.
 
 ---
 
@@ -625,7 +625,7 @@ public static func filletAlgo(
 
 Uses `ChFi2d_FilletAlgo` which supports general edge types, unlike `anaFillet` which is limited to lines and arcs.
 
-- **Parameters:** `edge1`, `edge2` — edge shapes; `planeOrigin`, `planeNormal` — working plane; `radius` — fillet radius.
+- **Parameters:** `edge1`, `edge2`, edge shapes; `planeOrigin`, `planeNormal`, working plane; `radius`, fillet radius.
 - **Returns:** `FilletAlgoResult`, or `nil` on failure.
 - **OCCT:** `ChFi2d_FilletAlgo` via `OCCTChFi2dFilletAlgo`.
 
@@ -661,7 +661,7 @@ public static func filletAlgo(
 ) -> FilletAlgoResult?
 ```
 
-- **Parameters:** `wire` — source wire; `edgeIndex` — 0-based index of the first edge.
+- **Parameters:** `wire`, source wire; `edgeIndex`, 0-based index of the first edge.
 - **Returns:** `FilletAlgoResult`, or `nil` if indices are out of range or fillet fails.
 - **OCCT:** `ChFi2d_FilletAlgo`.
 
@@ -679,7 +679,7 @@ public func substituted(replacing oldSubShape: Shape, with newSubShape: Shape) -
 
 Replaces a vertex, edge, or face with another sub-shape and rebuilds the containing topology.
 
-- **Parameters:** `oldSubShape` — the sub-shape to replace; `newSubShape` — the replacement.
+- **Parameters:** `oldSubShape`, the sub-shape to replace; `newSubShape`, the replacement.
 - **Returns:** Modified shape, or `nil` on failure.
 - **OCCT:** `BRepTools_Substitution` via `OCCTBRepToolsSubstitute`.
 
@@ -697,7 +697,7 @@ public func shellSewing(tolerance: Double = 1e-6) -> Shape?
 
 Connects shells that share edges within the given tolerance.
 
-- **Parameters:** `tolerance` — sewing tolerance (default `1e-6`).
+- **Parameters:** `tolerance`, sewing tolerance (default `1e-6`).
 - **Returns:** Sewn shape, or `nil` on failure.
 - **OCCT:** `ShapeUpgrade_ShellSewing` via `OCCTShapeUpgradeShellSewing`.
 
@@ -732,7 +732,7 @@ public static func split(objects: [Shape], by tools: [Shape]) -> Shape?
 
 Partitions the object shapes using the tool shapes as cutting geometry. All fragments are returned in a single compound.
 
-- **Parameters:** `objects` — shapes to be split; `tools` — cutting tools.
+- **Parameters:** `objects`, shapes to be split; `tools`, cutting tools.
 - **Returns:** Compound of all split fragments, or `nil` on failure.
 - **OCCT:** `BOPAlgo_Splitter` via `OCCTBOPAlgoSplit`.
 - **Example:**
@@ -821,7 +821,7 @@ public static func analyzeBoolean(_ shape1: Shape, _ shape2: Shape,
 
 Checks for self-intersection, small edges, and argument type compatibility.
 
-- **Parameters:** `shape1` — object shape; `shape2` — tool shape; `operation` — the operation to validate.
+- **Parameters:** `shape1`, object shape; `shape2`, tool shape; `operation`, the operation to validate.
 - **Returns:** `true` if the shapes pass validation for the given operation.
 - **OCCT:** `BOPAlgo_ArgumentAnalyzer` via `OCCTBOPAlgoAnalyzeArguments`.
 
@@ -840,7 +840,7 @@ public struct LineFaceIntersection {
 }
 ```
 
-- **Fields:** `point` — 3D intersection point; `parameter` — line parameter at intersection.
+- **Fields:** `point`, 3D intersection point; `parameter`, line parameter at intersection.
 
 ---
 
@@ -853,7 +853,7 @@ public func intersectLine(origin: SIMD3<Double>, direction: SIMD3<Double>,
                           paramRange: ClosedRange<Double> = -1000...1000) -> [LineFaceIntersection]
 ```
 
-- **Parameters:** `origin` — line origin; `direction` — line direction; `paramRange` — parameter bounds on the line.
+- **Parameters:** `origin`, line origin; `direction`, line direction; `paramRange`, parameter bounds on the line.
 - **Returns:** Array of intersection results (may be empty).
 - **OCCT:** `IntCurvesFace_Intersector` via `OCCTIntersectLineFace`.
 - **Example:**
@@ -897,7 +897,7 @@ public struct ContourResult {
 }
 ```
 
-- **Fields:** `type` — contour geometry kind; `count` — number of contours; `data` — raw parameters (for circles: centre and radius; for lines: location and direction).
+- **Fields:** `type`, contour geometry kind; `count`, number of contours; `data`, raw parameters (for circles: centre and radius; for lines: location and direction).
 
 ---
 
@@ -914,7 +914,7 @@ public static func contourSphereDir(center: SIMD3<Double>, radius: Double,
                                      direction: SIMD3<Double>) -> ContourResult?
 ```
 
-- **Parameters:** `center` — sphere centre; `radius` — sphere radius; `direction` — orthographic view direction.
+- **Parameters:** `center`, sphere centre; `radius`, sphere radius; `direction`, orthographic view direction.
 - **Returns:** `ContourResult`, or `nil` on failure.
 - **OCCT:** `Contap_ContAna` via `OCCTContapSphereDir`.
 
@@ -929,7 +929,7 @@ public static func contourCylinderDir(origin: SIMD3<Double>, axis: SIMD3<Double>
                                        radius: Double, direction: SIMD3<Double>) -> ContourResult?
 ```
 
-- **Parameters:** `origin` — cylinder axis origin; `axis` — axis direction; `radius` — radius; `direction` — view direction.
+- **Parameters:** `origin`, cylinder axis origin; `axis`, axis direction; `radius`, radius; `direction`, view direction.
 - **Returns:** `ContourResult`, or `nil` on failure.
 - **OCCT:** `Contap_ContAna` via `OCCTContapCylinderDir`.
 
@@ -944,7 +944,7 @@ public static func contourSphereEye(center: SIMD3<Double>, radius: Double,
                                      eye: SIMD3<Double>) -> ContourResult?
 ```
 
-- **Parameters:** `center` — sphere centre; `radius` — sphere radius; `eye` — perspective eye point.
+- **Parameters:** `center`, sphere centre; `radius`, sphere radius; `eye`, perspective eye point.
 - **Returns:** `ContourResult`, or `nil` on failure.
 - **OCCT:** `Contap_ContAna` via `OCCTContapSphereEye`.
 
@@ -960,7 +960,7 @@ Convert a relative deflection value to an absolute deflection for meshing.
 public func computeAbsoluteDeflection(relativeDeflection: Double, maxShapeSize: Double) -> Double?
 ```
 
-- **Parameters:** `relativeDeflection` — relative deflection; `maxShapeSize` — maximum dimension of the shape.
+- **Parameters:** `relativeDeflection`, relative deflection; `maxShapeSize`, maximum dimension of the shape.
 - **Returns:** Absolute deflection, or `nil` if computation fails (negative result from bridge).
 - **OCCT:** `BRepMesh_Deflection` via `OCCTComputeAbsoluteDeflection`.
 
@@ -976,7 +976,7 @@ public static func deflectionIsConsistent(current: Double, required: Double,
                                            ratio: Double = 0.1) -> Bool
 ```
 
-- **Parameters:** `current` — current deflection; `required` — required deflection; `allowDecrease` — permit finer mesh than required; `ratio` — comparison ratio (0–1).
+- **Parameters:** `current`, current deflection; `required`, required deflection; `allowDecrease`, permit finer mesh than required; `ratio`, comparison ratio (0–1).
 - **Returns:** `true` if the current deflection is acceptable.
 - **OCCT:** `BRepMesh_Deflection::IsConsistent` via `OCCTDeflectionIsConsistent`.
 
@@ -992,7 +992,7 @@ Build a topological shape from a triangulated mesh.
 public static func fromMesh(points: [SIMD3<Double>], triangles: [(Int32, Int32, Int32)]) -> Shape?
 ```
 
-- **Parameters:** `points` — mesh vertices; `triangles` — index triples using 1-based indices into `points`.
+- **Parameters:** `points`, mesh vertices; `triangles`, index triples using 1-based indices into `points`.
 - **Returns:** Shape from the mesh, or `nil` on failure.
 - **OCCT:** `BRepBuilderAPI_MakeShapeOnMesh` via `OCCTShapeFromMesh`.
 - **Example:**
@@ -1017,7 +1017,7 @@ public static func plateSurface(points: [SIMD3<Double>], tolerance: Double = 1e-
 
 Creates a smooth BSpline surface that passes through or near the given points. Useful for surfaces from scattered point data.
 
-- **Parameters:** `points` — 3D points to fit; `tolerance` — approximation tolerance; `maxDegree` — max BSpline degree; `maxSegments` — max BSpline segments.
+- **Parameters:** `points`, 3D points to fit; `tolerance`, approximation tolerance; `maxDegree`, max BSpline degree; `maxSegments`, max BSpline segments.
 - **Returns:** Face with plate surface, or `nil` on failure.
 - **OCCT:** `GeomPlate_BuildPlateSurface` + `GeomPlate_MakeApprox` via `OCCTGeomPlateSurface`.
 
@@ -1035,7 +1035,7 @@ Create a `CellsBuilder` by partitioning a set of input shapes into cells.
 public init?(shapes: [Shape])
 ```
 
-- **Parameters:** `shapes` — input shapes to partition.
+- **Parameters:** `shapes`, input shapes to partition.
 - **Returns:** `CellsBuilder`, or `nil` if partitioning fails.
 - **OCCT:** `BOPAlgo_CellsBuilder` via `OCCTCellsBuilderCreate`.
 
@@ -1049,7 +1049,7 @@ Add all split cells to the result with a given material ID.
 public func addAllToResult(material: Int32 = 0)
 ```
 
-- **Parameters:** `material` — material ID to assign (default `0`).
+- **Parameters:** `material`, material ID to assign (default `0`).
 - **OCCT:** `OCCTCellsBuilderAddAllToResult`.
 
 ---
@@ -1114,7 +1114,7 @@ public static func edgeFromLine(
 ) -> Shape?
 ```
 
-- **Parameters:** `origin` — line origin point; `direction` — line direction; `p1`, `p2` — parameter bounds.
+- **Parameters:** `origin`, line origin point; `direction`, line direction; `p1`, `p2`, parameter bounds.
 - **Returns:** Edge shape, or `nil` on failure.
 - **OCCT:** `BRepLib_MakeEdge(gp_Lin, p1, p2)` via `OCCTBRepLibMakeEdgeFromLine`.
 
@@ -1128,7 +1128,7 @@ Create an edge from two 3D points.
 public static func edgeFromPoints(_ p1: SIMD3<Double>, _ p2: SIMD3<Double>) -> Shape?
 ```
 
-- **Parameters:** `p1`, `p2` — start and end points.
+- **Parameters:** `p1`, `p2`, start and end points.
 - **Returns:** Edge shape, or `nil` on failure.
 - **OCCT:** `BRepLib_MakeEdge(gp_Pnt, gp_Pnt)` via `OCCTBRepLibMakeEdgeFromPoints`.
 
@@ -1148,7 +1148,7 @@ public static func edgeFromCircle(
 ) -> Shape?
 ```
 
-- **Parameters:** `center` — circle centre; `axis` — normal axis; `radius` — radius; `p1`, `p2` — angular bounds in radians.
+- **Parameters:** `center`, circle centre; `axis`, normal axis; `radius`, radius; `p1`, `p2`, angular bounds in radians.
 - **Returns:** Edge shape, or `nil` on failure.
 - **OCCT:** `BRepLib_MakeEdge(gp_Circ, p1, p2)` via `OCCTBRepLibMakeEdgeFromCircle`.
 
@@ -1168,11 +1168,11 @@ public static func faceFromPlane(
 ) -> Shape?
 ```
 
-- **Parameters:** `origin` — point on the plane; `normal` — plane normal; `uRange`, `vRange` — parameter bounds; `tolerance` — vertex tolerance.
+- **Parameters:** `origin`, point on the plane; `normal`, plane normal; `uRange`, `vRange`, parameter bounds; `tolerance`, vertex tolerance.
 - **Returns:** Face shape, or `nil` on failure.
 - **OCCT:** `BRepLib_MakeFace(gp_Pln, ...)` via `OCCTBRepLibMakeFaceFromPlane`.
 - **Note:** `Shape.faceFromPlane(origin:normal:uBounds:vBounds:tolerance:)` (see
-  "Document-Mesh-Fixing") now delegates to this overload (#841) — the two were added independently
+  "Document-Mesh-Fixing") now delegates to this overload (#841), the two were added independently
   and always drove the same `BRepLib_MakeFace` engine.
 
 ---
@@ -1192,11 +1192,11 @@ public static func faceFromCylinder(
 ) -> Shape?
 ```
 
-- **Parameters:** `origin` — axis origin; `axis` — axis direction; `radius` — cylinder radius; `uRange` — angular bounds (radians); `vRange` — axial bounds; `tolerance` — vertex tolerance.
+- **Parameters:** `origin`, axis origin; `axis`, axis direction; `radius`, cylinder radius; `uRange`, angular bounds (radians); `vRange`, axial bounds; `tolerance`, vertex tolerance.
 - **Returns:** Face shape, or `nil` on failure.
 - **OCCT:** `BRepLib_MakeFace(Geom_CylindricalSurface, ...)` via `OCCTBRepLibMakeFaceFromCylinder` (builds `Geom_CylindricalSurface(gp_Ax2, radius)`; not `gp_Cylinder`).
 - **Note:** `Shape.faceFromCylinder(origin:axis:radius:uBounds:vBounds:tolerance:)` (see
-  "Document-Mesh-Fixing") now delegates to this overload (#841) — see the sibling
+  "Document-Mesh-Fixing") now delegates to this overload (#841), see the sibling
   `faceFromPlane` note above.
 
 ---
@@ -1214,7 +1214,7 @@ public static func shellFromPlane(
 ) -> Shape?
 ```
 
-- **Parameters:** `origin` — point on the plane; `normal` — plane normal; `uRange`, `vRange` — parameter bounds.
+- **Parameters:** `origin`, point on the plane; `normal`, plane normal; `uRange`, `vRange`, parameter bounds.
 - **Returns:** Shell shape, or `nil` on failure.
 - **OCCT:** `BRepLib_MakeShell(gp_Pln, ...)` via `OCCTBRepLibMakeShellFromPlane`.
 
@@ -1273,7 +1273,7 @@ public func pointCloudByDensity(_ density: Double) -> PointCloudResult?
 
 The shape must be meshed first.
 
-- **Parameters:** `density` — target number of points per unit area.
+- **Parameters:** `density`, target number of points per unit area.
 - **Returns:** `PointCloudResult`, or `nil` on failure.
 - **OCCT:** `BRepLib_PointCloudShape::GetPointsByDensity` via `OCCTBRepLibPointCloudByDensity`.
 
@@ -1289,7 +1289,7 @@ Create a 2D edge from two 2D points.
 public static func edge2d(from p1: SIMD2<Double>, to p2: SIMD2<Double>) -> Shape?
 ```
 
-- **Parameters:** `p1`, `p2` — start and end points in 2D.
+- **Parameters:** `p1`, `p2`, start and end points in 2D.
 - **Returns:** 2D edge shape, or `nil` on failure.
 - **OCCT:** `BRepBuilderAPI_MakeEdge2d(gp_Pnt2d, gp_Pnt2d)` via `OCCTMakeEdge2dFromPoints`.
 
@@ -1309,7 +1309,7 @@ public static func edge2dFromCircle(
 ) -> Shape?
 ```
 
-- **Parameters:** `center` — 2D circle centre; `direction` — orientation; `radius` — radius; `p1`, `p2` — angular bounds.
+- **Parameters:** `center`, 2D circle centre; `direction`, orientation; `radius`, radius; `p1`, `p2`, angular bounds.
 - **Returns:** 2D edge shape, or `nil` on failure.
 - **OCCT:** `BRepBuilderAPI_MakeEdge2d(gp_Circ2d, p1, p2)` via `OCCTMakeEdge2dFromCircle`.
 - **Note:** `radius` must be positive (#553). `BRepBuilderAPI_MakeEdge2d` reports success for a
@@ -1331,7 +1331,7 @@ public static func edge2dFromLine(
 ) -> Shape?
 ```
 
-- **Parameters:** `origin` — 2D line origin; `direction` — line direction; `p1`, `p2` — parameter bounds.
+- **Parameters:** `origin`, 2D line origin; `direction`, line direction; `p1`, `p2`, parameter bounds.
 - **Returns:** 2D edge shape, or `nil` on failure.
 - **OCCT:** `BRepBuilderAPI_MakeEdge2d(gp_Lin2d, p1, p2)` via `OCCTMakeEdge2dFromLine`.
 
@@ -1347,7 +1347,7 @@ Convert this shape to NURBS using `BRepTools_Modifier` with `BRepTools_NurbsConv
 public func nurbsConvertViaModifier() -> Shape?
 ```
 
-This drives the exact same `BRepTools_Modifier` + `BRepTools_NurbsConvertModification` pair `Shape.convertedToNURBS()` (`BRepBuilderAPI_NurbsConvert`) uses internally — it is that method's own implementation minus its final `CorrectVertexTol()` step, not an independent conversion mechanism. `CorrectVertexTol()` raises a vertex's tolerance to cover any edge meeting it that the NURBS conversion enlarged, so this method's result can carry a vertex whose tolerance is smaller than an edge meeting it — a real, silent conversion-fidelity gap `.isValid` will not catch (#836).
+This drives the exact same `BRepTools_Modifier` + `BRepTools_NurbsConvertModification` pair `Shape.convertedToNURBS()` (`BRepBuilderAPI_NurbsConvert`) uses internally, it is that method's own implementation minus its final `CorrectVertexTol()` step, not an independent conversion mechanism. `CorrectVertexTol()` raises a vertex's tolerance to cover any edge meeting it that the NURBS conversion enlarged, so this method's result can carry a vertex whose tolerance is smaller than an edge meeting it, a real, silent conversion-fidelity gap `.isValid` will not catch (#836).
 
 - **Returns:** NURBS-converted shape, or `nil` on failure.
 - **OCCT:** `BRepTools_Modifier` + `BRepTools_NurbsConvertModification` via `OCCTBRepToolsModifierNurbsConvert`.
@@ -1380,7 +1380,7 @@ public func trsfModificationScale(_ scaleFactor: Double) -> Shape?
 
 Unlike the basic `scaled(by:)` transform, this propagates tolerance updates correctly through the topology.
 
-- **Parameters:** `scaleFactor` — uniform scale factor.
+- **Parameters:** `scaleFactor`, uniform scale factor.
 - **Returns:** Scaled shape, or `nil` on failure.
 - **OCCT:** `ShapeCustom_TrsfModification` via `OCCTShapeCustomTrsfModificationScale`.
 
@@ -1396,7 +1396,7 @@ Build wires from the edges of one face, or of the whole shape.
 public func buildWires(faceIndex: Int32 = -1) -> [Shape]?
 ```
 
-- **Parameters:** `faceIndex` — 0-based face index, as `Face.index` and `face(at:)` use. Any
+- **Parameters:** `faceIndex`, 0-based face index, as `Face.index` and `face(at:)` use. Any
   negative value means every edge of the shape.
 - **Returns:** Array of wire shapes, or `nil` on failure.
 - **Example:**
@@ -1419,7 +1419,7 @@ Split a face of this shape by projecting a wire onto it.
 public func splitByWireOnFace(_ wire: Shape, faceIndex: Int32) -> Shape?
 ```
 
-- **Parameters:** `wire` — the splitting wire shape; `faceIndex` — 0-based index of the face to
+- **Parameters:** `wire`, the splitting wire shape; `faceIndex`, 0-based index of the face to
   split, as `Face.index` and `face(at:)` use. It was 1-based until #541, so face 0 could not be
   named at all and the accepted domain was `1...faceCount` rather than `0..<faceCount`.
 - **Returns:** Modified shape with the face split, or `nil` on failure.
@@ -1440,10 +1440,10 @@ public func curveShapeIntersect(
 ) -> [Double]?
 ```
 
-- **Parameters:** `origin` — line origin; `direction` — line direction.
+- **Parameters:** `origin`, line origin; `direction`, line direction.
 - **Returns:** Array of parameter values where the line intersects the shape, or `nil` on failure.
 - **OCCT:** `LocOpe_CurveShapeIntersector` via `OCCTLocOpeCurveShapeIntersectLine`.
-- **Note:** Parameters only — the point/face each hit's `LocOpe_PntFace` also carries is never
+- **Note:** Parameters only, the point/face each hit's `LocOpe_PntFace` also carries is never
   read. For the 3D point, the face struck, or curve input, see `ShapeRayIntersection`
   (`BRepIntCurveSurface_Inter`), a separate, richer intersector added independently and not a
   drop-in replacement (#852).
@@ -1473,13 +1473,13 @@ Discretize an edge by uniform deflection over its full parameter range.
 public func uniformDeflection(_ deflection: Double) -> DeflectionResult?
 ```
 
-- **Parameters:** `deflection` — maximum chord deflection.
+- **Parameters:** `deflection`, maximum chord deflection.
 - **Returns:** `DeflectionResult`, or `nil` on failure.
 - **OCCT:** `GCPnts_UniformDeflection` via `OCCTCPntsUniformDeflection`.
 - **Example:**
   ```swift
   if let d = edge.uniformDeflection(0.1) {
-      // d.points — evenly deflection-spaced 3D samples
+      // d.points, evenly deflection-spaced 3D samples
   }
   ```
 
@@ -1493,7 +1493,7 @@ Discretize an edge by uniform deflection within a parameter range.
 public func uniformDeflection(_ deflection: Double, range: ClosedRange<Double>) -> DeflectionResult?
 ```
 
-- **Parameters:** `deflection` — maximum chord deflection; `range` — parameter range to sample.
+- **Parameters:** `deflection`, maximum chord deflection; `range`, parameter range to sample.
 - **Returns:** `DeflectionResult`, or `nil` on failure.
 - **OCCT:** `GCPnts_UniformDeflection` with range via `OCCTCPntsUniformDeflectionRange`.
 
@@ -1512,7 +1512,7 @@ public struct RayIntersection: Sendable {
 }
 ```
 
-- **Fields:** `point` — 3D hit point; `parameter` — parameter on the ray.
+- **Fields:** `point`, 3D hit point; `parameter`, parameter on the ray.
 
 ---
 
@@ -1527,7 +1527,7 @@ public func rayIntersect(
 ) -> [RayIntersection]?
 ```
 
-- **Parameters:** `origin` — ray origin; `direction` — ray direction.
+- **Parameters:** `origin`, ray origin; `direction`, ray direction.
 - **Returns:** Array of intersections sorted by parameter, or `nil` on failure (empty shape, no triangulation, etc.).
 - **OCCT:** `IntCurvesFace_ShapeIntersector` via `OCCTIntCurvesFaceShapeIntersect`.
 - **Example:**
@@ -1550,7 +1550,7 @@ public func rayIntersectNearest(
 ) -> RayIntersection?
 ```
 
-- **Parameters:** `origin` — ray origin; `direction` — ray direction.
+- **Parameters:** `origin`, ray origin; `direction`, ray direction.
 - **Returns:** Nearest `RayIntersection`, or `nil` if no intersection is found.
 - **OCCT:** `IntCurvesFace_ShapeIntersector` (nearest) via `OCCTIntCurvesFaceShapeIntersectNearest`.
 
@@ -1651,7 +1651,7 @@ Compute curve local properties at a parameter on an edge shape.
 public func curveLocalProps(at param: Double) -> CurveLocalProperties
 ```
 
-- **Parameters:** `param` — curve parameter.
+- **Parameters:** `param`, curve parameter.
 - **Returns:** `CurveLocalProperties` at the given parameter.
 - **OCCT:** `GeomLProp_CLProps` via `OCCTGeomLPropCLProps`.
 - **Example:**
@@ -1670,7 +1670,7 @@ Compute surface local properties at (U,V) on a face shape.
 public func surfaceLocalProps(u: Double, v: Double) -> SurfaceLocalProperties
 ```
 
-- **Parameters:** `u`, `v` — surface parameters.
+- **Parameters:** `u`, `v`, surface parameters.
 - **Returns:** `SurfaceLocalProperties` at the given parameter point.
 - **OCCT:** `GeomLProp_SLProps` via `OCCTGeomLPropSLProps`.
 - **Example:**
@@ -1691,7 +1691,7 @@ Create a simple surface offset of this shape.
 public func simpleOffsetShape(distance: Double, tolerance: Double = 1e-3) -> Shape?
 ```
 
-- **Parameters:** `distance` — offset distance; `tolerance` — geometric tolerance.
+- **Parameters:** `distance`, offset distance; `tolerance`, geometric tolerance.
 - **Returns:** Offset shape, or `nil` on failure.
 - **OCCT:** `BRepOffset_SimpleOffset` via `OCCTBRepOffsetSimpleOffset`.
 
@@ -1707,7 +1707,7 @@ Reparameterize an edge curve by arc length, returning a BSpline edge.
 public func curvilinearParameter(tolerance: Double = 1e-3, maxDegree: Int = 8, maxSegments: Int = 50) -> Shape?
 ```
 
-- **Parameters:** `tolerance` — approximation tolerance; `maxDegree` — max BSpline degree; `maxSegments` — max segment count.
+- **Parameters:** `tolerance`, approximation tolerance; `maxDegree`, max BSpline degree; `maxSegments`, max segment count.
 - **Returns:** Edge with arc-length parameterization, or `nil` on failure.
 - **OCCT:** `Approx_CurvilinearParameter` via `OCCTApproxCurvilinearParameter`.
 
@@ -1728,7 +1728,7 @@ public class SurfaceIntersectionResult {
 }
 ```
 
-- **Members:** `curveCount` — number of intersection curves; `curve(_:)` — 1-based curve retrieval as an edge shape; `pointCount` — number of isolated points; `point(_:)` — 1-based point retrieval.
+- **Members:** `curveCount`, number of intersection curves; `curve(_:)`, 1-based curve retrieval as an edge shape; `pointCount`, number of isolated points; `point(_:)`, 1-based point retrieval.
 - **OCCT:** `GeomInt_IntSS` via `OCCTGeomIntSS*`.
 
 ---
@@ -1745,7 +1745,7 @@ Compute the surface-surface intersection between two face shapes.
 public static func surfaceSurfaceIntersection(face1: Shape, face2: Shape, tolerance: Double = 1e-6) -> SurfaceIntersectionResult?
 ```
 
-- **Parameters:** `face1`, `face2` — face shapes; `tolerance` — intersection tolerance.
+- **Parameters:** `face1`, `face2`, face shapes; `tolerance`, intersection tolerance.
 - **Returns:** `SurfaceIntersectionResult`, or `nil` if no intersection or construction fails.
 - **OCCT:** `GeomInt_IntSS` via `OCCTGeomIntSSCreate`.
 - **Example:**
@@ -1840,7 +1840,7 @@ Compute contour lines on a face with an orthographic projection direction.
 public func contapContourDirection(_ direction: SIMD3<Double>) -> ContapContourResult?
 ```
 
-- **Parameters:** `direction` — orthographic view direction.
+- **Parameters:** `direction`, orthographic view direction.
 - **Returns:** `ContapContourResult` if contours are found, or `nil` otherwise.
 - **OCCT:** `Contap_Contour(dir)` via `OCCTContapContourDirection`.
 
@@ -1854,7 +1854,7 @@ Compute contour lines on a face with a perspective eye point.
 public func contapContourEye(_ eye: SIMD3<Double>) -> ContapContourResult?
 ```
 
-- **Parameters:** `eye` — perspective eye point.
+- **Parameters:** `eye`, perspective eye point.
 - **Returns:** `ContapContourResult` if contours are found, or `nil` otherwise.
 - **OCCT:** `Contap_Contour(eye)` via `OCCTContapContourEye`.
 
@@ -1870,7 +1870,7 @@ Feature-based fuse (union with part selection).
 public func featFuse(with tool: Shape) -> Shape?
 ```
 
-- **Parameters:** `tool` — the tool shape to fuse.
+- **Parameters:** `tool`, the tool shape to fuse.
 - **Returns:** Fused shape, or `nil` on failure.
 - **OCCT:** `BRepFeat_Builder` (fuse mode) via `OCCTBRepFeatBuilderFuse`.
 
@@ -1884,7 +1884,7 @@ Feature-based cut (subtraction with part selection).
 public func featCut(with tool: Shape) -> Shape?
 ```
 
-- **Parameters:** `tool` — the tool shape to subtract.
+- **Parameters:** `tool`, the tool shape to subtract.
 - **Returns:** Cut shape, or `nil` on failure.
 - **OCCT:** `BRepFeat_Builder` (cut mode) via `OCCTBRepFeatBuilderCut`.
 
@@ -1918,7 +1918,7 @@ Evaluate a draft trihedron frame on an edge at a parameter.
 public func draftTrihedron(at param: Double, biNormal: SIMD3<Double>, angle: Double) -> TrihedronFrame?
 ```
 
-- **Parameters:** `param` — curve parameter; `biNormal` — fixed bi-normal direction; `angle` — draft angle in radians.
+- **Parameters:** `param`, curve parameter; `biNormal`, fixed bi-normal direction; `angle`, draft angle in radians.
 - **Returns:** `TrihedronFrame`, or `nil` if the tangent is degenerate.
 - **OCCT:** `GeomFill_DraftTrihedron` via `OCCTGeomFillDraftTrihedron`.
 
@@ -1932,7 +1932,7 @@ Evaluate a discrete trihedron frame on an edge at a parameter.
 public func discreteTrihedron(at param: Double) -> TrihedronFrame?
 ```
 
-- **Parameters:** `param` — curve parameter.
+- **Parameters:** `param`, curve parameter.
 - **Returns:** `TrihedronFrame`, or `nil` if the tangent is degenerate.
 - **OCCT:** `GeomFill_DiscreteTrihedron` via `OCCTGeomFillDiscreteTrihedron`.
 
@@ -1946,7 +1946,7 @@ Evaluate a corrected Frenet frame on an edge at a parameter.
 public func correctedFrenet(at param: Double) -> TrihedronFrame?
 ```
 
-- **Parameters:** `param` — curve parameter.
+- **Parameters:** `param`, curve parameter.
 - **Returns:** `TrihedronFrame`, or `nil` if the tangent is degenerate.
 - **OCCT:** `GeomFill_CorrectedFrenet` via `OCCTGeomFillCorrectedFrenet`.
 
@@ -1964,7 +1964,7 @@ public struct FillingPoleGrid: Sendable {
 }
 ```
 
-- **Fields:** `poles` — control points in row-major (U-major) order; `nbU`, `nbV` — grid dimensions.
+- **Fields:** `poles`, control points in row-major (U-major) order; `nbU`, `nbV`, grid dimensions.
 
 ---
 
@@ -2005,9 +2005,9 @@ public static func coonsFilling(
 ) -> FillingPoleGrid?
 ```
 
-All four boundary arrays must have the same length (≥ 2). The result is a BSpline control-point grid, not a `Shape` — use `Surface.bspline(...)` to construct a surface from it.
+All four boundary arrays must have the same length (≥ 2). The result is a BSpline control-point grid, not a `Shape`, use `Surface.bspline(...)` to construct a surface from it.
 
-- **Parameters:** `boundary1`–`boundary4` — point arrays for the four boundaries of the patch.
+- **Parameters:** `boundary1`–`boundary4`, point arrays for the four boundaries of the patch.
 - **Returns:** `FillingPoleGrid`, or `nil` if sizes are mismatched or computation fails.
 - **OCCT:** `GeomFill_Coons` via `OCCTGeomFillCoonsPoles`.
 
@@ -2026,7 +2026,7 @@ public static func curvedFilling(
 
 Similar to `coonsFilling` but uses `GeomFill_Curved` which preserves surface curvature better for curved boundaries.
 
-- **Parameters:** `boundary1`–`boundary4` — point arrays for the four boundaries.
+- **Parameters:** `boundary1`–`boundary4`, point arrays for the four boundaries.
 - **Returns:** `FillingPoleGrid`, or `nil` on failure.
 - **OCCT:** `GeomFill_Curved` via `OCCTGeomFillCurvedPoles`.
 
@@ -2045,7 +2045,7 @@ public static func coonsAlgPatch(
 
 Returns evaluated 3D points over a `evalU × evalV` parameter grid. Indices in the result are in row-major order (U-major).
 
-- **Parameters:** `edge1`–`edge4` — boundary edge shapes; `evalU`, `evalV` — sampling count in each direction.
+- **Parameters:** `edge1`–`edge4`, boundary edge shapes; `evalU`, `evalV`, sampling count in each direction.
 - **Returns:** Flat array of `evalU × evalV` 3D points, or `nil` if all points are degenerate.
 - **OCCT:** `GeomFill_CoonsAlgPatch` via `OCCTGeomFillCoonsAlgPatchEval`.
 - **Example:**

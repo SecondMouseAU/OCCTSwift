@@ -535,7 +535,7 @@ void OCCTBRepGraphHistoryRecord(OCCTBRepGraphRef _Nonnull graph,
                                 int32_t replCount);
 
 /// True if a recorded operation consumed this node, leaving no image in the result.
-/// Distinct from "has no modified record" — absence of a record is not deletion.
+/// Distinct from "has no modified record", absence of a record is not deletion.
 bool OCCTBRepGraphHistoryIsDeleted(OCCTBRepGraphRef _Nonnull graph, int32_t kind, int32_t index);
 
 /// The graph's full deleted set. Returns the total count; writes up to maxCount pairs.
@@ -550,7 +550,7 @@ int32_t OCCTBRepGraphHistoryDeletedNodes(OCCTBRepGraphRef _Nonnull graph,
 /// This is the supported way to keep referring to an entity across an operation
 /// that rebuilds the shape (booleans, fillets, ...). The input and the result live
 /// in the SAME graph, so history is NodeId-keyed and the input's existing NodeRefs
-/// and UIDs stay valid — there is no generation boundary and no cross-graph UID
+/// and UIDs stay valid, there is no generation boundary and no cross-graph UID
 /// lookup involved. After this call, currentForms(of:) on an input node returns
 /// its successors, and the TopologyRef recipes (.splitOf / .createdBy) resolve
 /// against the emitted records.
@@ -636,7 +636,7 @@ int32_t OCCTBRepGraphMeshCreatePolygonOnTriRep(OCCTBRepGraphRef _Nonnull graph,
                                                OCCTPolyPolygonOnTriRef _Nonnull polygon,
                                                int32_t triRepId);
 
-/// Set the triangulation rep on a face's cached mesh (replaces any existing — OCCT 8.0.0p1 holds
+/// Set the triangulation rep on a face's cached mesh (replaces any existing, OCCT 8.0.0p1 holds
 /// exactly one triangulation per face; no multi-LOD). Alias kept for the v0.160 name; forwards to
 /// OCCTBRepGraphSetFaceTriangulationRep.
 void OCCTBRepGraphMeshAppendCachedTriangulation(OCCTBRepGraphRef _Nonnull graph,
@@ -1066,7 +1066,7 @@ void OCCTBRepGraphSetShellIsClosed(OCCTBRepGraphRef _Nonnull graph,
 
 // Add operations (Ref-typed return)
 // NOTE: EdgeAddInternalVertex / FaceAddVertex return an int64_t supplement-attachment uid (-1 on
-// failure) in OCCT 8.0.0p1 — these are runtime BRepGraph_LayerTopoSupplement attachments, not core
+// failure) in OCCT 8.0.0p1, these are runtime BRepGraph_LayerTopoSupplement attachments, not core
 // ref ids. The `orientation` param is accepted for source-compat but ignored by the supplement
 // layer.
 int64_t OCCTBRepGraphEdgeAddInternalVertex(OCCTBRepGraphRef _Nonnull graph,
@@ -1219,7 +1219,7 @@ void OCCTBRepGraphSetChildRefChildDefId(OCCTBRepGraphRef _Nonnull graph,
                                         int32_t childKind,
                                         int32_t childIndex);
 
-// MARK: - BRepGraph EditorView v0.162.0 — geometric setters, location setters, PCurve API
+// MARK: - BRepGraph EditorView v0.162.0, geometric setters, location setters, PCurve API
 
 // CoEdge geometric setters
 void OCCTBRepGraphSetCoEdgeUVBox(OCCTBRepGraphRef _Nonnull graph,
@@ -1233,7 +1233,7 @@ void OCCTBRepGraphSetCoEdgeUVBox(OCCTBRepGraphRef _Nonnull graph,
 /// Continuity uses GeomAbs_Shape: 0=C0, 1=C1, 2=C2, 3=C3, 4=CN.
 /// Returns 1 if written, 0 if the LayerRegularity layer is not registered.
 /// (OCCT 8.0.0 GA replaced per-coedge SetContinuity / SetSeamContinuity / SetSeamPairId
-///  with this per-(edge, face1, face2) layer model. Seam-pair-id is structural in GA —
+///  with this per-(edge, face1, face2) layer model. Seam-pair-id is structural in GA,
 ///  no setter exists; query via BRepGraph_Tool::CoEdge::SeamPair.)
 int32_t OCCTBRepGraphSetEdgeRegularity(OCCTBRepGraphRef _Nonnull graph,
                                        int32_t edgeIndex,
@@ -1242,7 +1242,7 @@ int32_t OCCTBRepGraphSetEdgeRegularity(OCCTBRepGraphRef _Nonnull graph,
                                        int32_t continuity);
 
 // Face triangulation rep binding
-/// Set the triangulation rep on a face's cached mesh (replaces any existing — OCCT 8.0.0p1 holds
+/// Set the triangulation rep on a face's cached mesh (replaces any existing, OCCT 8.0.0p1 holds
 /// exactly one triangulation per face; no multi-LOD). Canonical implementation;
 /// OCCTBRepGraphMeshAppendCachedTriangulation forwards here.
 void OCCTBRepGraphSetFaceTriangulationRep(OCCTBRepGraphRef _Nonnull graph,
@@ -1290,7 +1290,7 @@ void OCCTBRepGraphSetChildRefLocalLocation(OCCTBRepGraphRef _Nonnull graph,
                                            int32_t childRefIndex,
                                            const double* _Nonnull matrix);
 
-// MARK: - BRepGraph EditorView v0.163.0 — ProductOps assembly building
+// MARK: - BRepGraph EditorView v0.163.0. ProductOps assembly building
 
 /// Wrap an existing topology root in a Product. Returns the new product id or -1.
 int32_t OCCTBRepGraphLinkProductToTopology(OCCTBRepGraphRef _Nonnull graph,
@@ -1322,7 +1322,7 @@ bool OCCTBRepGraphProductRemoveShapeRoot(OCCTBRepGraphRef _Nonnull graph, int32_
 // MARK: - BRepGraph EditorView RepOps non-guard setters (v0.164.0)
 //
 // Swap the geometry / mesh content bound to an existing rep id without recreating
-// the rep. Pass a valid handle to bind, or skip — the bridge no-ops on null.
+// the rep. Pass a valid handle to bind, or skip, the bridge no-ops on null.
 
 void OCCTBRepGraphRepSetSurface(OCCTBRepGraphRef _Nonnull graph,
                                 int32_t surfaceRepId,
@@ -1387,7 +1387,7 @@ uint32_t OCCTBRepGraphCachedCoEdgeMeshStoredOwnGen(OCCTBRepGraphRef _Nonnull gra
 /// normals (count*3 doubles), gaussianCurvatures (count doubles), meanCurvatures (count doubles).
 ///
 /// All four buffers share one layout: **U-major**, u varying slowest and v fastest, i.e. sample
-/// (iu, iv) sits at `occtSurfaceGridIndex(iu, iv, vSamples)` == `iu * vSamples + iv` — the same
+/// (iu, iv) sits at `occtSurfaceGridIndex(iu, iv, vSamples)` == `iu * vSamples + iv`, the same
 /// index every other surface grid in this bridge uses (#404/#486). Scalar buffers are indexed by
 /// that value directly; the xyz buffers by `idx * 3 + {0,1,2}`.
 ///
@@ -1395,7 +1395,7 @@ uint32_t OCCTBRepGraphCachedCoEdgeMeshStoredOwnGen(OCCTBRepGraphRef _Nonnull gra
 /// not do: a transpose is a bijection onto the same `0..<uSamples * vSamples` range, so it is in
 /// bounds at every aspect ratio and every reader of it got a silent wrong answer, never a trap.
 /// (The out-of-range failure in this family needs a different slip, a caller striding by the
-/// wrong count.) Do not re-spell the formula here — use the shared helper.
+/// wrong count.) Do not re-spell the formula here, use the shared helper.
 int32_t OCCTBRepGraphSampleFaceUVGrid(OCCTBRepGraphRef _Nonnull graph,
                                       int32_t faceIndex,
                                       int32_t uSamples,
@@ -1413,7 +1413,7 @@ int32_t OCCTBRepGraphSampleEdgeCurve(OCCTBRepGraphRef _Nonnull graph,
                                      int32_t count,
                                      double* _Nonnull outPoints);
 
-// MARK: - Durable identity (BRepGraph::UIDsView) — OCCT 8.0.0p1
+// MARK: - Durable identity (BRepGraph:UIDsView), OCCT 8.0.0p1
 
 /// Return the durable node UID for the node identified by (nodeKind, nodeIndex).
 /// On success, writes the UID kind to *outUIDKind and the monotonic counter to
@@ -1485,7 +1485,7 @@ bool OCCTBRepGraphHasItemUID(OCCTBRepGraphRef _Nonnull graph,
                              int32_t  kind,
                              uint32_t counter);
 
-/// Return this graph's instance id — unique among every graph this process creates, and
+/// Return this graph's instance id, unique among every graph this process creates, and
 /// distinct (with overwhelming probability) from ids minted by any other process.
 ///
 /// A BRepGraph_UID is only meaningful inside the graph that minted it: counters restart

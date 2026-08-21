@@ -16,7 +16,7 @@
 // relying on OS scheduling luck (same technique as occt_344_barrier.cpp/occt_349_barrier.cpp).
 //
 // Must be run against a build that already has the #349 kernel fix (Scripts/patches/0014)
-// applied — #353 is the race #349's own fix unmasked, not reproducible cleanly underneath it.
+// applied, #353 is the race #349's own fix unmasked, not reproducible cleanly underneath it.
 //
 // Usage: occt_353_barrier <threads> <rounds> <scratchDir>
 

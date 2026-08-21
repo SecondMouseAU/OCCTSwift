@@ -1,4 +1,4 @@
-// OCCTSwift#529 — the one BRepLProp site that does not hardcode a resolution, and what it takes
+// OCCTSwift#529, the one BRepLProp site that does not hardcode a resolution, and what it takes
 // instead.
 //
 // OCCTShapeRaycast (Sources/OCCTBridge/src/OCCTBridge_Spatial.mm) forwards its `tolerance`

@@ -19,8 +19,8 @@ extension Shape {
     /// Return a copy of this solid whose faces are oriented outward (positive
     /// volume).
     ///
-    /// Some constructors — notably ``sweep(profile:along:)``
-    /// (`BRepOffsetAPI_MakePipe`) — can produce a geometrically correct solid whose
+    /// Some constructors, notably ``sweep(profile:along:)``
+    /// (`BRepOffsetAPI_MakePipe`), can produce a geometrically correct solid whose
     /// faces point inward, so ``signedVolume`` comes back negative. That is a latent
     /// hazard for booleans and any `volume > 0` validation. This reverses the
     /// orientation when, and only when, the signed volume is negative; a solid that
@@ -339,7 +339,7 @@ extension Shape {
     ///
     /// `defeature(faces:)` is the same operation addressing its faces as shapes rather than by
     /// index; both run one shared `BRepAlgoAPI_Defeaturing` path in the bridge, and since #578 both
-    /// apply the same rule to a face this shape does not have — the whole call fails.
+    /// apply the same rule to a face this shape does not have, the whole call fails.
     ///
     /// ```swift
     /// let box = Shape.box(width: 20, height: 20, depth: 20)!
@@ -353,7 +353,7 @@ extension Shape {
     /// ```
     ///
     /// - Parameter faces: Faces to remove (must have valid indices from this shape)
-    /// - Returns: Shape with features removed, or nil on failure — including when a face's index
+    /// - Returns: Shape with features removed, or nil on failure, including when a face's index
     ///   does not belong to this shape. Such an index used to be skipped, which returned a shape
     ///   that still carried the feature and looked no different from a successful removal (#497).
     public func withoutFeatures(faces: [Face]) -> Shape? {
@@ -527,24 +527,24 @@ extension Shape {
     /// This is the turnkey form of the #180 sweep for the common helical case. It builds
     /// the helix spine and a correctly-spanning axis auxiliary spine internally, with the
     /// orientation flags (`CurvilinearEquivalence = false`, no contact) that keep the swept
-    /// section roughly radial — avoiding the two footguns that make a hand-rolled
+    /// section roughly radial, avoiding the two footguns that make a hand-rolled
     /// `pipeShell(mode: .auxiliary(...))` return nil:
     /// 1. `Wire.helix(clockwise:)` runs the helix toward +axis or −axis depending on
     ///    handedness, so a guessed axis range can miss it entirely; and
     /// 2. the auxiliary spine must span the helix's **full** axial extent or the section
     ///    planes never intersect it.
     ///
-    /// - Important: The auxiliary-spine framing is **not exactly radial** — the result bulges
+    /// - Important: The auxiliary-spine framing is **not exactly radial**, the result bulges
     ///   ~10–15% beyond the nominal radius for moderate profiles, and for **narrow / fine-pitch
     ///   profiles (e.g. ISO thread V-forms) it balloons severely (≈2× radius) and is unusable**.
     ///   Use this for coarse worm/auger-style ribs, not precise fastener threads. A future
-    ///   analytic-helicoid path will give an exact thread flank — see the thread-helicoid
+    ///   analytic-helicoid path will give an exact thread flank, see the thread-helicoid
     ///   tracking issue. (This is why `threadedShaft`/`threadedHole` do **not** use it.)
     ///
     /// - Warning: This builds a **standalone** helicoid. Do **not** try to make a thread by
     ///   booleaning the result with a coaxial cylinder whose surface is coincident with the
     ///   helicoid's inner/outer edge: `union` comes out BRepCheck-invalid and `subtracting`
-    ///   collapses to zero volume — OCCT's BOP cannot resolve the tangent/coincident faces, and
+    ///   collapses to zero volume. OCCT's BOP cannot resolve the tangent/coincident faces, and
     ///   no fuzzy value or heal pass recovers it (OCCTSwift #225, #213, #181). To build a smooth,
     ///   valid worm/screw from a custom radial cross-section, use
     ///   ``threadedRod(customProfile:nominalDiameter:pitch:cutDepth:length:axisOrigin:axisDirection:leftHanded:)``,
@@ -552,7 +552,7 @@ extension Shape {
     ///
     /// Profiles are positioned at their stations on the helix, in the (radial, axis) plane.
     /// One profile gives a uniform thread; two or more give a varying section (e.g. a
-    /// runout that ramps from full crest to a small rib — the original #180 motivation).
+    /// runout that ramps from full crest to a small rib, the original #180 motivation).
     ///
     /// - Parameters:
     ///   - profiles: Rib profile wires positioned along the helix (at least one).
@@ -1406,7 +1406,7 @@ extension Shape {
     ///
     /// Where two coincident inputs merge into one shared output (the common
     /// case for sewing), both inputs show up as `modified` into that same
-    /// output sub-shape — there is no ambiguity between which side "won".
+    /// output sub-shape, there is no ambiguity between which side "won".
     ///
     /// - Returns: `(result, history)` on success; nil on failure.
     ///
@@ -1566,7 +1566,7 @@ extension Shape {
     /// The pattern is N:1 (deterministic): each instance's sub-shapes
     /// correspond to the source's by construction, so a source sub-shape's
     /// `history.record(of:).modified` reports all `count` corresponding
-    /// instance sub-shapes — one per copy, including the original at index 0.
+    /// instance sub-shapes, one per copy, including the original at index 0.
     ///
     /// - Returns: `(result, history)` where `result` is a compound of all
     ///   copies, same as ``linearPattern(direction:spacing:count:)``.
@@ -1595,7 +1595,7 @@ extension Shape {
     /// Create a circular pattern of the shape, with full history.
     ///
     /// Same N:1 semantics as ``linearPatternWithFullHistory(direction:spacing:count:)``
-    /// — see ``circularPattern(axisPoint:axisDirection:count:angle:)`` for what
+    ///, see ``circularPattern(axisPoint:axisDirection:count:angle:)`` for what
     /// "duplicates the whole body" means for feature-cut use cases.
     ///
     /// - Returns: `(result, history)` where `result` is a compound of all copies.
@@ -1685,7 +1685,7 @@ extension Shape {
     /// parameter sequence, and an empty `radiusPoints`.
     ///
     /// Each edge's law is applied to that edge's own position within its own contour, so
-    /// tangent-continuous edges — the sides and ends of a rounded slot's rim, say — can each carry a
+    /// tangent-continuous edges, the sides and ends of a rounded slot's rim, say, can each carry a
     /// different law even though OCCT groups them into a single contour.
     ///
     /// Separately from a malformed request, OCCT itself declines to fillet some edges outright (a
@@ -1790,8 +1790,8 @@ extension Shape {
     ///
     /// - Parameters:
     ///   - defaultOffset: Default offset distance for all faces.
-    ///   - faceOffsets: Dictionary mapping 0-based face indices — as ``face(at:)`` and
-    ///     ``Face/index`` use — to custom offset distances. An index outside `0..<faceCount`
+    ///   - faceOffsets: Dictionary mapping 0-based face indices, as ``face(at:)`` and
+    ///     ``Face/index`` use, to custom offset distances. An index outside `0..<faceCount`
     ///     fails the call; it used to be skipped, which returned a shape offset by the default
     ///     everywhere and looked exactly like success (#541).
     ///   - tolerance: Offset tolerance (default: 1e-3).
@@ -2649,7 +2649,7 @@ extension Shape {
     ///
     /// `BRepFeat_MakeCylindricalHole` offers five ways to say where the hole stops, and they are
     /// not interchangeable. In particular ``throughAll`` does not start at the axis origin, and
-    /// ``blind(depth:)`` will not drill past the far face — see each case.
+    /// ``blind(depth:)`` will not drill past the far face, see each case.
     ///
     /// ```swift
     /// let plate = Shape.box(width: 50, height: 50, depth: 20)!
@@ -2660,39 +2660,39 @@ extension Shape {
     /// let through = plate.cylindricalHole(axisOrigin: origin, axisDirection: axis,
     ///                                     radius: 5, extent: .untilEnd)
     ///
-    /// // A 6mm-deep blind hole, measured from the origin — so 1mm into the plate:
+    /// // A 6mm-deep blind hole, measured from the origin, so 1mm into the plate:
     /// let blind = plate.cylindricalHole(axisOrigin: origin, axisDirection: axis,
     ///                                   radius: 5, extent: .blind(depth: 6))
     /// ```
     public enum CylindricalHoleExtent: Sendable, Equatable {
-        /// `Perform(R)` — an **infinite** cylinder, extending both ways along the axis.
+        /// `Perform(R)`, an **infinite** cylinder, extending both ways along the axis.
         ///
         /// The axis origin anchors the axis; it is not where the hole starts. Drilling "down" from
         /// a point inside a solid removes the material above it too. This is the one extent that
         /// tolerates a non-solid input.
         case throughAll
-        /// `PerformUntilEnd(R)` — bounded by the stock's own first and last faces along the axis.
+        /// `PerformUntilEnd(R)`, bounded by the stock's own first and last faces along the axis.
         ///
         /// The forward-bounded through hole most callers reach for ``throughAll`` expecting. Every
         /// body the axis crosses beyond the entry face is drilled, so a stack of plates is bored
         /// all the way through.
         case untilEnd
-        /// `PerformThruNext(R)` — stops at the next face after the origin.
+        /// `PerformThruNext(R)`, stops at the next face after the origin.
         case thruNext
-        /// `PerformBlind(R, depth)` — a partial-depth hole, `depth` measured from the axis origin.
+        /// `PerformBlind(R, depth)`, a partial-depth hole, `depth` measured from the axis origin.
         ///
         /// The only extent that can report ``CylindricalHoleStatus/holeTooLong``: a depth that
         /// would leave the far side of the stock is refused rather than drilled through. Use
         /// ``untilEnd`` or ``Shape/drilled(at:direction:radius:depth:)`` if overshooting should
         /// simply drill through.
         case blind(depth: Double)
-        /// `Perform(R, PFrom, PTo)` — the hole bounded by the entry/exit face pair that the
+        /// `Perform(R, PFrom, PTo)`, the hole bounded by the entry/exit face pair that the
         /// parameter window `from...to` selects. Parameters are measured from the axis origin, in
         /// units of the (normalized) direction.
         ///
         /// The window **chooses a face pair; it does not trim the cut**. A window lying strictly
         /// inside one body still drills all the way through that body, and a window that names no
-        /// face pair — the gap between two plates, say — is ``CylindricalHoleStatus/invalidPlacement``.
+        /// face pair, the gap between two plates, say, is ``CylindricalHoleStatus/invalidPlacement``.
         /// Its use is picking *which* body to drill in a stack: a window over one plate drills that
         /// plate, and a window spanning several drills all of them.
         case range(from: Double, to: Double)
@@ -2713,7 +2713,7 @@ extension Shape {
     public enum CylindricalHoleStatus: Int32, Sendable {
         /// The request is drillable.
         case noError = 0
-        /// The axis does not meet the shape in a way this extent can use — including a request with
+        /// The axis does not meet the shape in a way this extent can use, including a request with
         /// no direction, or a radius at or below `Precision::Confusion`.
         case invalidPlacement = 1
         /// A ``CylindricalHoleExtent/blind(depth:)`` depth that would leave the stock. Only that
@@ -2728,8 +2728,8 @@ extension Shape {
     ///
     /// Wants a solid: every extent but ``CylindricalHoleExtent/throughAll`` reports
     /// ``CylindricalHoleStatus/invalidPlacement`` for a shell or a face. For the
-    /// boolean-subtraction drill — which starts exactly where you tell it to, accepts any shape,
-    /// and treats an over-long depth as a through hole — see
+    /// boolean-subtraction drill, which starts exactly where you tell it to, accepts any shape,
+    /// and treats an over-long depth as a through hole, see
     /// ``drilled(at:direction:radius:depth:)``. Neither subsumes the other (#496).
     ///
     /// Ask ``cylindricalHoleStatus(axisOrigin:axisDirection:radius:extent:)`` first when you want to
@@ -2821,7 +2821,7 @@ extension Shape {
     ///
     /// Uses `BRepFeat_MakeCylindricalHole::PerformBlind` for a partial-depth hole, `depth` measured
     /// from the axis origin. A depth that would leave the far side of the stock is refused, not
-    /// drilled through — see ``CylindricalHoleStatus/holeTooLong``.
+    /// drilled through, see ``CylindricalHoleStatus/holeTooLong``.
     ///
     /// - Parameters:
     ///   - axisOrigin: Origin point of the hole axis.
@@ -2856,7 +2856,7 @@ extension Shape {
     /// Check the status of a through-all cylindrical hole operation without modifying the shape.
     ///
     /// Answers for ``CylindricalHoleExtent/throughAll`` only. Pass the extent you are actually about
-    /// to drill to ``cylindricalHoleStatus(axisOrigin:axisDirection:radius:extent:)`` — this
+    /// to drill to ``cylindricalHoleStatus(axisOrigin:axisDirection:radius:extent:)``, this
     /// spelling reports `.noError` for requests that ``cylindricalHoleThruNext(axisOrigin:axisDirection:radius:)``
     /// and ``cylindricalHoleBlind(axisOrigin:axisDirection:radius:depth:)`` then refuse.
     ///
@@ -2880,7 +2880,7 @@ extension Shape {
     /// Uses BRepFeat_Gluer to merge shapes along coincident faces.
     /// - Parameters:
     ///   - gluedShape: Shape to glue onto this shape.
-    ///   - facePairs: Matching face pairs — (base face from this shape, glued face from gluedShape).
+    ///   - facePairs: Matching face pairs, (base face from this shape, glued face from gluedShape).
     /// - Returns: Result glued shape, or nil on failure.
     public func glue(_ gluedShape: Shape, facePairs: [(base: Shape, glued: Shape)]) -> Shape? {
         let baseFaces = facePairs.map { $0.base.handle as OCCTShapeRef }
@@ -3081,7 +3081,7 @@ extension Shape {
     }
     /// Create a rolling-ball blend on specified edges.
     ///
-    /// `edgeIndices` are indices into ``edges()`` — the same enumeration ``edge(at:)`` and
+    /// `edgeIndices` are indices into ``edges()``, the same enumeration ``edge(at:)`` and
     /// ``Edge/index`` use, so a geometrically selected edge feeds straight in:
     ///
     /// ```swift
@@ -3090,7 +3090,7 @@ extension Shape {
     /// ```
     ///
     /// The whole request is refused (`nil`) if any index names no edge, rather than blending the
-    /// rest — a partial blend is not distinguishable from a complete one (#568).
+    /// rest, a partial blend is not distinguishable from a complete one (#568).
     public func biTgteBlend(
         edgeIndices: [Int], radius: Double, tolerance: Double = 1e-3, nubs: Bool = false
     ) -> Shape? {
@@ -3271,22 +3271,22 @@ extension Shape {
     ///
     /// - Note: Delegates to ``union(_:fuzzyValue:glue:timeout:)`` (#832), so this now carries the
     ///   same ``defaultBooleanTimeout`` (120s) watchdog and the same "negative tolerance is
-    ///   ignored" contract as the canonical boolean family — neither of which this narrower,
+    ///   ignored" contract as the canonical boolean family, neither of which this narrower,
     ///   pre-#202/#206 entry point had on its own. Same signature, same return type by default;
     ///   a caller whose fuzzy-tolerance boolean legitimately needs longer than 120s can pass
-    ///   `timeout:` explicitly (`0`/negative = unbounded, matching the pre-#832 behavior) — added
+    ///   `timeout:` explicitly (`0`/negative = unbounded, matching the pre-#832 behavior), added
     ///   as an additional parameter with a default value, so this remains source-compatible
     ///   (review finding on PR #867).
     ///
     /// - Warning: This is a **behavior change for existing callers who don't pass `timeout:`**,
-    ///   not just an addition. Before #832 this method had no time bound at all — a legitimately
+    ///   not just an addition. Before #832 this method had no time bound at all, a legitimately
     ///   slow fuse on a large/complex assembly would run to completion, however long that took.
     ///   Existing production code calling `shape.fused(with: other, tolerance: t)` with no
     ///   `timeout:` argument still compiles unchanged, but now silently gets `nil` after 120s
-    ///   instead of the result it previously always returned — with no compiler warning and no
+    ///   instead of the result it previously always returned, with no compiler warning and no
     ///   error thrown to distinguish "timed out" from any other failure. This is deliberate,
     ///   matching ``union(_:fuzzyValue:glue:timeout:)``'s own established default and closing the
-    ///   #206 hang-risk class this narrower entry point lacked protection from — but a caller
+    ///   #206 hang-risk class this narrower entry point lacked protection from, but a caller
     ///   upgrading past this change who relies on an operation that legitimately takes longer than
     ///   120s must now pass `timeout:` explicitly (`0`/negative = unbounded) to keep the old
     ///   behavior (PR #870 aggregate review).
@@ -3299,7 +3299,7 @@ extension Shape {
 
     /// Cut another shape from this shape with fuzzy tolerance.
     ///
-    /// - Note: Delegates to ``subtracting(_:fuzzyValue:glue:timeout:)`` (#832) — see
+    /// - Note: Delegates to ``subtracting(_:fuzzyValue:glue:timeout:)`` (#832), see
     ///   ``fused(with:tolerance:timeout:)``'s doc comment for what changed underneath, including
     ///   the **Warning** there: an existing caller not passing `timeout:` now silently gets `nil`
     ///   after 120s instead of running unbounded, exactly as before.
@@ -3312,7 +3312,7 @@ extension Shape {
 
     /// Common of two shapes with fuzzy tolerance.
     ///
-    /// - Note: Delegates to ``intersection(_:fuzzyValue:glue:timeout:)`` (#832) — see
+    /// - Note: Delegates to ``intersection(_:fuzzyValue:glue:timeout:)`` (#832), see
     ///   ``fused(with:tolerance:timeout:)``'s doc comment for what changed underneath, including
     ///   the **Warning** there: an existing caller not passing `timeout:` now silently gets `nil`
     ///   after 120s instead of running unbounded, exactly as before.
@@ -3327,7 +3327,7 @@ extension Shape {
     ///
     /// - Warning: This encodes the same `BOPAlgo_GlueEnum` choice as ``BooleanGlue``
     ///   (`Shape.swift`) but with **different raw values** (`shift=0, full=1, off=2` here vs.
-    ///   `off=0, shift=1, full=2` there) — a legacy artifact from before #202 introduced
+    ///   `off=0, shift=1, full=2` there), a legacy artifact from before #202 introduced
     ///   `BooleanGlue`, not corrected since to avoid changing this type's `RawRepresentable`
     ///   contract. Kept as a separate declaration rather than a typealias for exactly that reason
     ///   (#832): the case *names* match, so unlike the differing-raw-value pair a typealias would
@@ -3359,9 +3359,9 @@ extension Shape {
     /// Fuse two shapes with glue mode.
     ///
     /// - Note: Delegates to ``union(_:fuzzyValue:glue:timeout:)`` (#832), mapping ``GlueMode`` to
-    ///   ``BooleanGlue`` by case name — see ``GlueMode``'s doc comment about the raw-value
+    ///   ``BooleanGlue`` by case name, see ``GlueMode``'s doc comment about the raw-value
     ///   mismatch between the two enums. Also carries ``defaultBooleanTimeout`` by default;
-    ///   pass `timeout:` explicitly to override (`0`/negative = unbounded) — see
+    ///   pass `timeout:` explicitly to override (`0`/negative = unbounded), see
     ///   ``fused(with:tolerance:timeout:)``'s doc comment, including the **Warning** there: an
     ///   existing caller not passing `timeout:` now silently gets `nil` after 120s instead of
     ///   running unbounded, exactly as before.
@@ -3374,7 +3374,7 @@ extension Shape {
 
     /// Cut another shape with glue mode.
     ///
-    /// - Note: Delegates to ``subtracting(_:fuzzyValue:glue:timeout:)`` (#832) — see
+    /// - Note: Delegates to ``subtracting(_:fuzzyValue:glue:timeout:)`` (#832), see
     ///   ``fused(with:glue:timeout:)``'s doc comment, including the **Warning** on
     ///   ``fused(with:tolerance:timeout:)``: an existing caller not passing `timeout:` now
     ///   silently gets `nil` after 120s instead of running unbounded, exactly as before.
@@ -3387,7 +3387,7 @@ extension Shape {
 
     /// Common of two shapes with glue mode.
     ///
-    /// - Note: Delegates to ``intersection(_:fuzzyValue:glue:timeout:)`` (#832) — see
+    /// - Note: Delegates to ``intersection(_:fuzzyValue:glue:timeout:)`` (#832), see
     ///   ``fused(with:glue:timeout:)``'s doc comment, including the **Warning** on
     ///   ``fused(with:tolerance:timeout:)``: an existing caller not passing `timeout:` now
     ///   silently gets `nil` after 120s instead of running unbounded, exactly as before.
@@ -3454,7 +3454,7 @@ extension Shape {
     /// of this call, reaching the same algorithm one OCCT layer down, and is deprecated in favour
     /// of this one (#536).
     ///
-    /// Returns `nil` when `faces` is empty, and when the operation itself fails — defeaturing
+    /// Returns `nil` when `faces` is empty, and when the operation itself fails, defeaturing
     /// cannot always reconnect the surrounding topology, so a `nil` here is an ordinary outcome,
     /// not necessarily a caller error.
     ///
@@ -3470,11 +3470,11 @@ extension Shape {
     /// So a request that mixes this shape's faces with another shape's fails, as does one carrying
     /// an edge or a vertex, which name no face at all. Membership is by identity, not by geometry:
     /// the same face measured off an identically-built shape is foreign, while the same face
-    /// reversed is not — orientation is not identity.
+    /// reversed is not, orientation is not identity.
     ///
     /// Until #578 a foreign face was dropped from the request and the rest proceeded, which is
     /// OCCT's own documented rule ("those that do not belong will be ignored"). That answered a
-    /// success, with no warning, on a shape still carrying the feature the caller asked to remove —
+    /// success, with no warning, on a shape still carrying the feature the caller asked to remove,
     /// indistinguishable from a real removal. The index-addressed ``Shape/withoutFeatures(faces:)``
     /// has failed the whole call on one bad index since #497; both spellings now agree.
     ///
@@ -3493,7 +3493,7 @@ extension Shape {
     /// print(filleted.defeature(faces: filletFaces + [elsewhere]) == nil)   // true
     /// ```
     ///
-    /// - Parameter faces: The faces to remove — each element either a face of this shape, or a
+    /// - Parameter faces: The faces to remove, each element either a face of this shape, or a
     ///   shape whose faces all belong to this shape.
     /// - Returns: The defeatured shape, or `nil` on failure, including when the request names a
     ///   face this shape does not have.

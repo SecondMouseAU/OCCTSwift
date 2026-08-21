@@ -7,7 +7,7 @@ import simd
 // The guard now tolerates up to one thread depth of bounding-box overrun, so ordinary
 // bolts build again while the coarse-worm garbage (overrun ~ radius) is still rejected.
 // Separate file, cf. #183.
-@Suite("Issue #189 — thread guard regression (fastener threads)")
+@Suite("Issue #189, thread guard regression (fastener threads)")
 struct Issue189ThreadGuardTests {
 
     // (nominalDiameter, pitch, shankRadius) for common ISO fastener shanks.
@@ -26,11 +26,11 @@ struct Issue189ThreadGuardTests {
         let spec = ThreadSpec(form: .iso68, nominalDiameter: nominal, pitch: pitch)
         let threaded = shank.threadedShaft(axisOrigin: .zero, axisDirection: SIMD3(0, 0, 1),
                                            spec: spec, length: 18, runout: .none)
-        // Was a valid thread in 1.3.3, nil in 1.3.4/1.3.5 — must build again.
+        // Was a valid thread in 1.3.3, nil in 1.3.4/1.3.5, must build again.
         #expect(threaded != nil)
         guard let threaded else { return }
         #expect(threaded.isValid)
-        // A real thread removes a shallow helical groove — not nothing, not most.
+        // A real thread removes a shallow helical groove, not nothing, not most.
         if let vBlank = shank.volume, let vThread = threaded.volume {
             #expect(vThread < vBlank)
             #expect(vThread > vBlank * 0.7)

@@ -15,7 +15,7 @@ OCCTSwift provides two complementary concurrency utilities: `OCCTSerial`, a glob
 
 ## OCCTSerial
 
-`OCCTSerial` is a caseless `enum` namespace exposing a global recursive mutex backed by `std::recursive_mutex` in the C bridge. Use it to serialize any multi-step OCCT workflow that must be atomic — individual bridge calls are **not** auto-locked.
+`OCCTSerial` is a caseless `enum` namespace exposing a global recursive mutex backed by `std::recursive_mutex` in the C bridge. Use it to serialize any multi-step OCCT workflow that must be atomic, individual bridge calls are **not** auto-locked.
 
 ### `OCCTSerial.withLock(_:)`
 
@@ -26,11 +26,11 @@ Executes a block while holding the OCCT global lock, then releases it.
 public static func withLock<T>(_ work: () throws -> T) rethrows -> T
 ```
 
-The lock is recursive: nested `withLock` calls on the same thread will not deadlock. Prefer this over manual `lock()`/`unlock()` pairs — the `defer`-based release is guaranteed even when `work` throws.
+The lock is recursive: nested `withLock` calls on the same thread will not deadlock. Prefer this over manual `lock()`/`unlock()` pairs, the `defer`-based release is guaranteed even when `work` throws.
 
-- **Parameters:** `work` — the closure to execute under the lock.
+- **Parameters:** `work`, the closure to execute under the lock.
 - **Returns:** The value returned by `work`.
-- **OCCT:** `std::recursive_mutex::lock` / `unlock` — exposed via `OCCTSerialLockAcquire()` / `OCCTSerialLockRelease()` in the bridge.
+- **OCCT:** `std::recursive_mutex::lock` / `unlock`, exposed via `OCCTSerialLockAcquire()` / `OCCTSerialLockRelease()` in the bridge.
 - **Example:**
   ```swift
   let drilled = OCCTSerial.withLock {
@@ -51,7 +51,7 @@ Acquires the OCCT global lock manually.
 public static func lock()
 ```
 
-You **must** call `unlock()` when done. Prefer `withLock {}` in almost all cases — it guarantees release even on early return or throw.
+You **must** call `unlock()` when done. Prefer `withLock {}` in almost all cases, it guarantees release even on early return or throw.
 
 - **OCCT:** `OCCTSerialLockAcquire()` → `std::recursive_mutex::lock`.
 - **Example:**
@@ -99,12 +99,12 @@ Called as the importer advances through its transfer phase.
 func progress(fraction: Double, step: String)
 ```
 
-`fraction` advances from `0.0` to `1.0` as entities are transferred. `step` is a human-readable name for the current sub-task (may be empty). Callbacks arrive on whatever thread the import runs on — hop to `@MainActor` for UI updates.
+`fraction` advances from `0.0` to `1.0` as entities are transferred. `step` is a human-readable name for the current sub-task (may be empty). Callbacks arrive on whatever thread the import runs on, hop to `@MainActor` for UI updates.
 
 - **Parameters:**
-  - `fraction` — progress in the range `0.0...1.0`.
-  - `step` — name of the current sub-task; empty string if OCCT does not supply one.
-- **OCCT:** `Message_ProgressIndicator::Show(theScope, isForce)` — called by `Message_ProgressScope` at each checkpoint during `STEPControl_Reader::TransferRoots` or `IGESControl_Reader::TransferRoots`.
+  - `fraction`: progress in the range `0.0...1.0`.
+  - `step`: name of the current sub-task; empty string if OCCT does not supply one.
+- **OCCT:** `Message_ProgressIndicator::Show(theScope, isForce)`, called by `Message_ProgressScope` at each checkpoint during `STEPControl_Reader::TransferRoots` or `IGESControl_Reader::TransferRoots`.
 - **Example:**
   ```swift
   final class MyProgress: ImportProgress {
@@ -135,7 +135,7 @@ func shouldCancel() -> Bool
 A default no-op implementation returning `false` is provided via a protocol extension, so conformers only need to override this when cancellation is required. When this returns `true`, the loader throws `ImportError.cancelled` on the next checkpoint boundary.
 
 - **Returns:** `true` to request cancellation; `false` to continue (default).
-- **OCCT:** `Message_ProgressIndicator::UserBreak()` — checked by the bridge's `BridgeProgressIndicator` subclass at each `Message_ProgressScope` step.
+- **OCCT:** `Message_ProgressIndicator::UserBreak()`, checked by the bridge's `BridgeProgressIndicator` subclass at each `Message_ProgressScope` step.
 - **Example:**
   ```swift
   final class CancellableProgress: ImportProgress {
@@ -158,6 +158,6 @@ A default no-op implementation returning `false` is provided via a protocol exte
       print("Import was cancelled")
   }
   ```
-- **Note:** `shouldCancel()` is polled once per transferred entity in STEP/IGES — typically many times per second for large files. Keep the implementation cheap (e.g. read an atomic flag, not a lock).
+- **Note:** `shouldCancel()` is polled once per transferred entity in STEP/IGES, typically many times per second for large files. Keep the implementation cheap (e.g. read an atomic flag, not a lock).
 - **One `true` is enough.** The bridge latches the first `true` it sees, so a one-shot flag or an already-consumed `Task.isCancelled` is a valid canceller: the polls that follow cannot re-answer the call into a successful result. Before [#525](https://github.com/SecondMouseAU/OCCTSwift/issues/525) they could, and a caller that cancelled once got the partially-repaired shape back as a success.
-- **A cancelled call always throws `.cancelled`.** Which phase the cancellation lands in no longer decides which error you see. A break during a transfer leaves OCCT reporting zero transferred roots, which the bridge used to pass on as `ImportError.importFailed` — so an early deadline reported "failed to import" for a file that was perfectly readable (#525).
+- **A cancelled call always throws `.cancelled`.** Which phase the cancellation lands in no longer decides which error you see. A break during a transfer leaves OCCT reporting zero transferred roots, which the bridge used to pass on as `ImportError.importFailed`, so an early deadline reported "failed to import" for a file that was perfectly readable (#525).

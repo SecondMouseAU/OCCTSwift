@@ -8,7 +8,7 @@ import simd
 // BRepFilletAPI_MakeFillet's constant/evolutive-radius blend solvers keep their
 // geometric work variables in function-local `static`s, so two threads filleting
 // at once corrupt each other's intermediate surfaces. The result is not a crash
-// and not an empty shape — it is a wrong-but-plausible solid (one solid, positive
+// and not an empty shape, it is a wrong-but-plausible solid (one solid, positive
 // volume) that fails BRepCheck. Reproduced in pure OCCT with no wrapper (#298).
 //
 // SheetMetal.Builder.build chains extrude → fuse → fillet, so a multi-flange part
@@ -20,7 +20,7 @@ import simd
 //
 // This suite is deliberately concurrency-heavy; if the lock regresses it fails
 // loudly rather than flaking, because the corruption rate at this width is high.
-@Suite("Issue #298 — fillet-of-boolean is thread-safe (SheetMetal build)")
+@Suite("Issue #298, fillet-of-boolean is thread-safe (SheetMetal build)")
 struct Issue298FilletThreadSafetyTests {
 
     private static func uChannel() -> (flanges: [SheetMetal.Flange], bends: [SheetMetal.Bend]) {
@@ -111,6 +111,6 @@ struct Issue298FilletThreadSafetyTests {
         #expect(agg.wrongSolidCount == 0,
                 "concurrent builds returned != 1 solid (expected 0 of 200)")
         #expect(agg.wrongVolume == 0,
-                "concurrent builds diverged from reference volume \(reference); sample corrupted volumes \(agg.sampleVolumes) — the #298 race")
+                "concurrent builds diverged from reference volume \(reference); sample corrupted volumes \(agg.sampleVolumes), the #298 race")
     }
 }

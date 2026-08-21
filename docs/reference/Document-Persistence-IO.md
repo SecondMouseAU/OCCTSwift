@@ -1,9 +1,9 @@
 ---
-title: Document — Persistence, I/O & XDE Tools
+title: Document. Persistence, I/O & XDE Tools
 parent: API Reference
 ---
 
-# Document — Persistence, I/O & XDE Tools
+# Document. Persistence, I/O & XDE Tools
 
 This page covers the `Document` type's persistence (OCAF save/load), STEP/OBJ/PLY import-export, and XDE tooling (ShapeTool assembly management, ColorTool, LayerTool, XDE Editor, and the low-level `XCAFDoc_*` attribute types). For the core `Document` type, lifecycle, undo/redo, and attribute primitives see the main **Document** page (forthcoming).
 
@@ -15,7 +15,7 @@ This page covers the `Document` type's persistence (OCAF save/load), STEP/OBJ/PL
 
 ## TFunction Logbook
 
-Methods on `AssemblyNode` that wrap `TFunction_Logbook` — OCCT's dependency-tracking attribute that records which labels were touched or impacted by a parametric function execution.
+Methods on `AssemblyNode` that wrap `TFunction_Logbook`, OCCT's dependency-tracking attribute that records which labels were touched or impacted by a parametric function execution.
 
 ### `setLogbook()`
 
@@ -40,7 +40,7 @@ Mark a target label as *touched* (directly modified) in this label's logbook.
 public func logbookSetTouched(_ target: AssemblyNode) -> Bool
 ```
 
-- **Parameters:** `target` — the label to mark as touched.
+- **Parameters:** `target`, the label to mark as touched.
 - **Returns:** `true` on success.
 - **OCCT:** `TFunction_Logbook::SetTouched`.
 
@@ -55,7 +55,7 @@ Mark a target label as *impacted* (indirectly affected) in this label's logbook.
 public func logbookSetImpacted(_ target: AssemblyNode) -> Bool
 ```
 
-- **Parameters:** `target` — the label to mark as impacted.
+- **Parameters:** `target`, the label to mark as impacted.
 - **Returns:** `true` on success.
 - **OCCT:** `TFunction_Logbook::SetImpacted`.
 
@@ -69,7 +69,7 @@ Check whether a target label is modified (touched) in this label's logbook.
 public func logbookIsModified(_ target: AssemblyNode) -> Bool
 ```
 
-- **Parameters:** `target` — the label to query.
+- **Parameters:** `target`, the label to query.
 - **Returns:** `true` if the label is touched.
 - **OCCT:** `TFunction_Logbook::IsModified`.
 
@@ -85,7 +85,7 @@ public func logbookClear() -> Bool
 ```
 
 - **Returns:** `true` on success.
-- **OCCT:** `TFunction_Logbook` — clears the attribute.
+- **OCCT:** `TFunction_Logbook`, clears the attribute.
 
 ---
 
@@ -109,7 +109,7 @@ public var logbookIsEmpty: Bool
 
 ## TFunction GraphNode
 
-Methods on `AssemblyNode` that wrap `TFunction_GraphNode` — a directed-graph attribute recording execution-order dependencies between parametric functions.
+Methods on `AssemblyNode` that wrap `TFunction_GraphNode`, a directed-graph attribute recording execution-order dependencies between parametric functions.
 
 ### `setGraphNode()`
 
@@ -134,7 +134,7 @@ Add a *previous* (upstream) dependency to this graph node by tag ID.
 public func graphNodeAddPrevious(tag: Int32) -> Bool
 ```
 
-- **Parameters:** `tag` — tag integer identifying the upstream label.
+- **Parameters:** `tag`, tag integer identifying the upstream label.
 - **Returns:** `true` on success.
 - **OCCT:** `TFunction_GraphNode::AddPrevious`.
 
@@ -149,7 +149,7 @@ Add a *next* (downstream) dependency to this graph node by tag ID.
 public func graphNodeAddNext(tag: Int32) -> Bool
 ```
 
-- **Parameters:** `tag` — tag integer identifying the downstream label.
+- **Parameters:** `tag`, tag integer identifying the downstream label.
 - **Returns:** `true` on success.
 - **OCCT:** `TFunction_GraphNode::AddNext`.
 
@@ -164,7 +164,7 @@ Set the execution status of this graph node.
 public func setGraphNodeStatus(_ status: ExecutionStatus) -> Bool
 ```
 
-- **Parameters:** `status` — one of `.wrongDefinition`, `.notExecuted`, `.executing`, `.succeeded`, `.failed`.
+- **Parameters:** `status`, one of `.wrongDefinition`, `.notExecuted`, `.executing`, `.succeeded`, `.failed`.
 - **Returns:** `true` on success.
 - **OCCT:** `TFunction_GraphNode::SetStatus`.
 
@@ -219,7 +219,7 @@ public func graphNodeRemoveAllNext() -> Bool
 
 ## TFunction Function Attribute
 
-Methods on `AssemblyNode` that wrap `TFunction_Function` — the attribute that stores a driver GUID and failure mode on a parametric-function label.
+Methods on `AssemblyNode` that wrap `TFunction_Function`, the attribute that stores a driver GUID and failure mode on a parametric-function label.
 
 ### `setFunctionAttribute()`
 
@@ -269,7 +269,7 @@ Set the failure mode code of the function attribute on this label.
 public func setFunctionFailure(_ mode: Int32) -> Bool
 ```
 
-- **Parameters:** `mode` — application-defined failure code.
+- **Parameters:** `mode`, application-defined failure code.
 - **Returns:** `true` on success.
 - **OCCT:** `TFunction_Function::SetFailure`.
 
@@ -281,7 +281,7 @@ An extension on `Shape` that wraps `TNaming_CopyShape` to produce a topology-ind
 
 ### `deepCopy()`
 
-Create a deep copy of this shape with independent topology — no shared sub-shapes with the original.
+Create a deep copy of this shape with independent topology, no shared sub-shapes with the original.
 
 ```swift
 public func deepCopy() -> Shape?
@@ -525,7 +525,7 @@ public func defineFormatXmlXCAF()
 
 ### `defineAllFormats()`
 
-Register all six available persistence format drivers in one call — the simplest way to ensure save/load works regardless of format.
+Register all six available persistence format drivers in one call, the simplest way to ensure save/load works regardless of format.
 
 ```swift
 public func defineAllFormats()
@@ -541,13 +541,13 @@ Methods on `Document` for OCAF native persistence (`.cbf`, `.xml`, or XCAF varia
 
 ### `saveOCAF(to:)`
 
-Save the document to a file path. The on-disk format is determined by the document's storage format — call `defineAllFormats()` first.
+Save the document to a file path. The on-disk format is determined by the document's storage format, call `defineAllFormats()` first.
 
 ```swift
 public func saveOCAF(to path: String) -> StoreStatus
 ```
 
-- **Parameters:** `path` — absolute file path.
+- **Parameters:** `path`, absolute file path.
 - **Returns:** `StoreStatus.ok` on success; a failure case otherwise.
 - **OCCT:** `TDocStd_Application::SaveAs` -> `PCDM_StoreStatus` (via `OCCTDocumentSaveOCAF`).
   Not `XCAFApp_Application`: #371 retired that singleton bridge-side and `OCCTDocument`
@@ -583,7 +583,7 @@ Load an OCAF document from a file. Automatically registers all format drivers be
 public static func loadOCAF(from path: String) -> (document: Document?, status: ReaderStatus)
 ```
 
-- **Parameters:** `path` — absolute file path.
+- **Parameters:** `path`, absolute file path.
 - **Returns:** A tuple `(document, status)`. `document` is non-nil only when `status == .ok`.
 - **OCCT:** `TDocStd_Application::Open` (with `BinDrivers`, `XmlDrivers`, `BinXCAFDrivers`,
   `XmlXCAFDrivers` registered on the document's own private application instance).
@@ -605,7 +605,7 @@ Create a new empty document bound to a specific OCAF storage format.
 public static func create(format: String) -> Document?
 ```
 
-- **Parameters:** `format` — one of `"BinOcaf"`, `"XmlOcaf"`, `"BinLOcaf"`, `"XmlLOcaf"`, `"BinXCAF"`, `"XmlXCAF"`.
+- **Parameters:** `format`, one of `"BinOcaf"`, `"XmlOcaf"`, `"BinLOcaf"`, `"XmlLOcaf"`, `"BinXCAF"`, `"XmlXCAF"`.
 - **Returns:** A new empty `Document`, or `nil` if the format string is unrecognised.
 - **OCCT:** `TDocStd_Application::NewDocument` (via `OCCTDocumentCreateWithFormat`).
 - **Example:**
@@ -687,7 +687,7 @@ Change the storage format of the document.
 public func setStorageFormat(_ format: String) -> Bool
 ```
 
-- **Parameters:** `format` — new format string.
+- **Parameters:** `format`, new format string.
 - **Returns:** `true` on success.
 - **OCCT:** `TDocStd_Document::ChangeStorageFormat`.
 
@@ -745,8 +745,8 @@ public static func loadSTEP(from url: URL, modes: STEPReaderModes) -> Document?
 ```
 
 - **Parameters:**
-  - `url` — file URL.
-  - `modes` — `STEPReaderModes` controlling color, name, layer, props, GD&T, material import.
+  - `url`: file URL.
+  - `modes`: `STEPReaderModes` controlling color, name, layer, props, GD&T, material import.
 - **Returns:** A new `Document`, or `nil` on failure.
 - **OCCT:** `STEPCAFControl_Reader`.
 - **Example:**
@@ -768,7 +768,7 @@ Load a STEP file by path with mode control.
 public static func loadSTEP(fromPath path: String, modes: STEPReaderModes) -> Document?
 ```
 
-- **Parameters:** `path` — absolute file path; `modes` — mode flags.
+- **Parameters:** `path`, absolute file path; `modes`, mode flags.
 - **Returns:** A new `Document`, or `nil` on failure.
 - **OCCT:** `STEPCAFControl_Reader`.
 
@@ -783,9 +783,9 @@ public static func loadSTEP(from url: URL, modes: STEPReaderModes, progress: Imp
 ```
 
 - **Parameters:**
-  - `url` — file URL.
-  - `modes` — mode flags.
-  - `progress` — optional `ImportProgress` closure for progress updates and cancellation.
+  - `url`: file URL.
+  - `modes`: mode flags.
+  - `progress`: optional `ImportProgress` closure for progress updates and cancellation.
 - **Returns:** A `Document` on success.
 - **Throws:** `ImportError.cancelled` if the user cancelled; `ImportError.importFailed` on other failure.
 - **OCCT:** `STEPCAFControl_Reader` with `Message_ProgressRange`.
@@ -802,9 +802,9 @@ public func writeSTEP(to url: URL, modelType: StepModelType = .asIs, modes: STEP
 ```
 
 - **Parameters:**
-  - `url` — output file URL.
-  - `modelType` — STEP representation type (default `.asIs`).
-  - `modes` — `STEPWriterModes` controlling color, name, layer, dim/tol, material export.
+  - `url`: output file URL.
+  - `modelType`: STEP representation type (default `.asIs`).
+  - `modes`: `STEPWriterModes` controlling color, name, layer, dim/tol, material export.
 - **Returns:** `true` on success.
 - **OCCT:** `STEPCAFControl_Writer`.
 
@@ -819,7 +819,7 @@ Write the document to a STEP file by path.
 public func writeSTEP(toPath path: String, modelType: StepModelType = .asIs, modes: STEPWriterModes = STEPWriterModes()) -> Bool
 ```
 
-- **Parameters:** `path` — absolute output file path; other parameters as above.
+- **Parameters:** `path`, absolute output file path; other parameters as above.
 - **Returns:** `true` on success.
 - **OCCT:** `STEPCAFControl_Writer`.
 
@@ -955,7 +955,7 @@ Load an OBJ file into a new XDE document.
 public static func loadOBJ(from url: URL) -> Document?
 ```
 
-- **Parameters:** `url` — file URL.
+- **Parameters:** `url`, file URL.
 - **Returns:** A new `Document` containing the mesh, or `nil` on failure.
 - **OCCT:** `RWObj_CafReader`.
 - **Example:**
@@ -975,7 +975,7 @@ Load an OBJ file by path into a new XDE document.
 public static func loadOBJ(fromPath path: String) -> Document?
 ```
 
-- **Parameters:** `path` — absolute file path.
+- **Parameters:** `path`, absolute file path.
 - **Returns:** A new `Document`, or `nil` on failure.
 - **OCCT:** `RWObj_CafReader`.
 
@@ -990,9 +990,9 @@ public static func loadOBJ(from url: URL, singlePrecision: Bool, systemLengthUni
 ```
 
 - **Parameters:**
-  - `url` — file URL.
-  - `singlePrecision` — use single-precision vertex data (reduces memory; trades off accuracy).
-  - `systemLengthUnit` — system length unit in metres (e.g. `0.001` for mm); `0` = use OBJ file default.
+  - `url`: file URL.
+  - `singlePrecision`: use single-precision vertex data (reduces memory; trades off accuracy).
+  - `systemLengthUnit`: system length unit in metres (e.g. `0.001` for mm); `0` = use OBJ file default.
 - **Returns:** A new `Document`, or `nil` on failure.
 - **OCCT:** `RWObj_CafReader` with `SetSinglePrecision` / `SetSystemLengthUnit`.
 
@@ -1013,10 +1013,10 @@ public static func loadOBJ(
 ```
 
 - **Parameters:**
-  - `url` — file URL.
-  - `inputCS` — coordinate system of the OBJ file (e.g. `.zUp` for Blender exports).
-  - `outputCS` — desired coordinate system in the resulting document (e.g. `.yUp` for glTF).
-  - `inputLengthUnit` / `outputLengthUnit` — length units in metres; `0` = default.
+  - `url`: file URL.
+  - `inputCS`: coordinate system of the OBJ file (e.g. `.zUp` for Blender exports).
+  - `outputCS`: desired coordinate system in the resulting document (e.g. `.yUp` for glTF).
+  - `inputLengthUnit` / `outputLengthUnit`, length units in metres; `0` = default.
 - **Returns:** A new `Document`, or `nil` on failure.
 - **OCCT:** `RWObj_CafReader` with `SetFileCoordinateSystem` / `SetSystemCoordinateSystem` via `RWMesh_CoordinateSystemConverter`.
 
@@ -1032,8 +1032,8 @@ public func writeOBJ(to url: URL, deflection: Double = 1.0) -> Bool
 ```
 
 - **Parameters:**
-  - `url` — output file URL.
-  - `deflection` — mesh chord deflection for tessellation; pass `0` to skip re-meshing and use existing facets.
+  - `url`: output file URL.
+  - `deflection`: mesh chord deflection for tessellation; pass `0` to skip re-meshing and use existing facets.
 - **Returns:** `true` on success.
 - **OCCT:** `RWObj_CafWriter`.
 
@@ -1055,11 +1055,11 @@ public func writePLY(
 ```
 
 - **Parameters:**
-  - `url` — output file URL.
-  - `deflection` — chord deflection for tessellation; `0` skips re-meshing.
-  - `normals` — include per-vertex normals (default `true`).
-  - `colors` — include per-vertex colors (default `false`).
-  - `texCoords` — include texture coordinates (default `false`).
+  - `url`: output file URL.
+  - `deflection`: chord deflection for tessellation; `0` skips re-meshing.
+  - `normals`: include per-vertex normals (default `true`).
+  - `colors`: include per-vertex colors (default `false`).
+  - `texCoords`: include texture coordinates (default `false`).
 - **Returns:** `true` on success.
 - **OCCT:** `RWPly_CafWriter`.
 
@@ -1103,7 +1103,7 @@ Readable alias for `.yUp`.
 
 ## XDE ShapeTool Expansion
 
-Methods on `Document` that wrap `XCAFDoc_ShapeTool` for managing the shape hierarchy — adding, removing, finding, and assembling shapes.
+Methods on `Document` that wrap `XCAFDoc_ShapeTool` for managing the shape hierarchy, adding, removing, finding, and assembling shapes.
 
 ### `shapeCount`
 
@@ -1125,14 +1125,14 @@ Get the label ID for a shape at the given index in the flat list of all shapes.
 public func shapeLabelId(at index: Int32) -> Int64
 ```
 
-- **Parameters:** `index` — zero-based index (valid range: `0 ..< shapeCount`).
+- **Parameters:** `index`, zero-based index (valid range: `0 ..< shapeCount`).
 - **OCCT:** `XCAFDoc_ShapeTool::GetShapes`.
 
 ---
 
 ### `freeShapeCount`
 
-Number of top-level (free) shapes — shapes that are not components of any assembly.
+Number of top-level (free) shapes, shapes that are not components of any assembly.
 
 ```swift
 public var freeShapeCount: Int32
@@ -1150,7 +1150,7 @@ Get the label ID for the free shape at the given index.
 public func freeShapeLabelId(at index: Int32) -> Int64
 ```
 
-- **Parameters:** `index` — zero-based index (valid range: `0 ..< freeShapeCount`).
+- **Parameters:** `index`, zero-based index (valid range: `0 ..< freeShapeCount`).
 - **OCCT:** `XCAFDoc_ShapeTool::GetFreeShapes`.
 
 ---
@@ -1165,8 +1165,8 @@ public func addShape(_ shape: Shape, makeAssembly: Bool = true) -> Int64
 ```
 
 - **Parameters:**
-  - `shape` — the shape to add.
-  - `makeAssembly` — if `true`, compound shapes are registered as assemblies (default `true`).
+  - `shape`: the shape to add.
+  - `makeAssembly`: if `true`, compound shapes are registered as assemblies (default `true`).
 - **Returns:** Label ID of the added shape, or `-1` on failure.
 - **OCCT:** `XCAFDoc_ShapeTool::AddShape`.
 
@@ -1194,7 +1194,7 @@ Remove a shape from the document by its label ID.
 public func removeShape(labelId: Int64) -> Bool
 ```
 
-- **Parameters:** `labelId` — label ID of the shape to remove.
+- **Parameters:** `labelId`, label ID of the shape to remove.
 - **Returns:** `true` if removed successfully.
 - **OCCT:** `XCAFDoc_ShapeTool::RemoveShape`.
 
@@ -1208,7 +1208,7 @@ Find the label ID for an exact shape match.
 public func findShape(_ shape: Shape) -> Int64
 ```
 
-- **Parameters:** `shape` — shape to locate.
+- **Parameters:** `shape`, shape to locate.
 - **Returns:** Label ID, or `-1` if not found.
 - **OCCT:** `XCAFDoc_ShapeTool::FindShape`.
 
@@ -1222,7 +1222,7 @@ Search for a shape in the document including sub-shapes.
 public func searchShape(_ shape: Shape) -> Int64
 ```
 
-- **Parameters:** `shape` — shape to search for.
+- **Parameters:** `shape`, shape to search for.
 - **Returns:** Label ID, or `-1` if not found.
 - **OCCT:** `XCAFDoc_ShapeTool::SearchUsingMap` or equivalent search.
 
@@ -1242,9 +1242,9 @@ public func addComponent(
 ```
 
 - **Parameters:**
-  - `assemblyLabelId` — label ID of the parent assembly.
-  - `shapeLabelId` — label ID of the shape to instantiate.
-  - `translation` — `(tx, ty, tz)` offset in model units.
+  - `assemblyLabelId`: label ID of the parent assembly.
+  - `shapeLabelId`: label ID of the shape to instantiate.
+  - `translation`: `(tx, ty, tz)` offset in model units.
 - **Returns:** Component label ID, or `-1` on failure.
 - **OCCT:** `XCAFDoc_ShapeTool::AddComponent`.
 
@@ -1260,9 +1260,9 @@ public func addComponent(assemblyLabelId: Int64, shapeLabelId: Int64, matrix: [D
 ```
 
 - **Parameters:**
-  - `assemblyLabelId` — parent assembly label ID.
-  - `shapeLabelId` — shape to instantiate.
-  - `matrix` — 12 `Double` values `[r00 r01 r02 r10 r11 r12 r20 r21 r22 tx ty tz]`: the nine rotation values, then the three translations. This is `Matrix12Grouped`'s GROUPED layout, not `TransformMatrix3D`'s INTERLEAVED one.
+  - `assemblyLabelId`: parent assembly label ID.
+  - `shapeLabelId`: shape to instantiate.
+  - `matrix`: 12 `Double` values `[r00 r01 r02 r10 r11 r12 r20 r21 r22 tx ty tz]`: the nine rotation values, then the three translations. This is `Matrix12Grouped`'s GROUPED layout, not `TransformMatrix3D`'s INTERLEAVED one.
 - **Returns:** Component label ID, or `-1` if `matrix` does not hold exactly twelve values, or on failure.
 - **OCCT:** `XCAFDoc_ShapeTool::AddComponent` with `TopLoc_Location`.
 - **Note:** A reflection is accepted and applied. This entry said the opposite until #1009 measured it: `gp_Trsf::SetValues` names a null determinant as its only precondition, not orthonormality, and it is compiled inside OCCT's Release library where that precondition is removed outright. Measured against the pinned kernel, a box spanning `x ∈ [1, 11]` placed by a mirror in X spans `[-11, -1]`.
@@ -1286,7 +1286,7 @@ Remove a component instance from an assembly.
 public func removeComponent(labelId: Int64)
 ```
 
-- **Parameters:** `labelId` — the component label to remove.
+- **Parameters:** `labelId`, the component label to remove.
 - **OCCT:** `XCAFDoc_ShapeTool::RemoveComponent`.
 
 ---
@@ -1311,7 +1311,7 @@ Get the label ID of a component at a given index within an assembly.
 public func componentLabelId(assemblyLabelId: Int64, at index: Int32) -> Int64
 ```
 
-- **Parameters:** `assemblyLabelId` — assembly label; `index` — zero-based component index.
+- **Parameters:** `assemblyLabelId`, assembly label; `index`, zero-based component index.
 - **OCCT:** `XCAFDoc_ShapeTool::GetComponents`.
 
 ---
@@ -1324,7 +1324,7 @@ Get the label of the shape that a component label references (i.e., the prototyp
 public func componentReferredLabelId(_ componentLabelId: Int64) -> Int64
 ```
 
-- **Parameters:** `componentLabelId` — a component (instance) label.
+- **Parameters:** `componentLabelId`, a component (instance) label.
 - **Returns:** Referred shape label ID, or `-1` if the label is not a reference.
 - **OCCT:** `XCAFDoc_ShapeTool::GetReferredShape`.
 
@@ -1364,7 +1364,7 @@ Expand a compound shape label into an assembly using `XCAFDoc_ShapeTool::Expand`
 public func expandShape(labelId: Int64) -> Bool
 ```
 
-- **Parameters:** `labelId` — label of the compound to expand.
+- **Parameters:** `labelId`, label of the compound to expand.
 - **Returns:** `true` if the expansion succeeded.
 - **OCCT:** `XCAFDoc_ShapeTool::Expand`.
 
@@ -1442,7 +1442,7 @@ Get the `AssemblyNode` for a sub-shape at the given index.
 public func subShapeNode(at index: Int32) -> AssemblyNode?
 ```
 
-- **Parameters:** `index` — zero-based sub-shape index.
+- **Parameters:** `index`, zero-based sub-shape index.
 - **Returns:** `AssemblyNode`, or `nil` if index is out of range.
 - **OCCT:** `XCAFDoc_ShapeTool::GetSubShapes`.
 
@@ -1462,7 +1462,7 @@ public var userCount: Int32
 
 ### `isVisible`
 
-Visibility flag for this label — gets and sets XDE display visibility.
+Visibility flag for this label, gets and sets XDE display visibility.
 
 ```swift
 public var isVisible: Bool { get set }
@@ -1489,9 +1489,9 @@ public func setShapeColor(_ shape: Shape, color: Color, type: OCCTColorType = OC
 ```
 
 - **Parameters:**
-  - `shape` — the shape to color.
-  - `color` — RGBA color value. `color.alpha` is stored, not just RGB.
-  - `type` — `OCCTColorTypeGeneric` (0), `OCCTColorTypeSurface` (1), or `OCCTColorTypeCurve` (2). Default is surface color.
+  - `shape`: the shape to color.
+  - `color`: RGBA color value. `color.alpha` is stored, not just RGB.
+  - `type`: `OCCTColorTypeGeneric` (0), `OCCTColorTypeSurface` (1), or `OCCTColorTypeCurve` (2). Default is surface color.
 - **OCCT:** `XCAFDoc_ColorTool::SetColor` (the `Quantity_ColorRGBA` overload).
 - Before #763, `color.alpha` was silently dropped on write (stored through the RGB-only
   `SetColor` overload), so a subsequent `shapeColor(_:type:)` always read back `alpha == 1.0`
@@ -1516,7 +1516,7 @@ Get the color assigned to a shape, with its real alpha (#763).
 public func shapeColor(_ shape: Shape, type: OCCTColorType = OCCTColorTypeSurface) -> Color?
 ```
 
-- **Parameters:** `shape` — shape to query; `type` — color type.
+- **Parameters:** `shape`, shape to query; `type`, color type.
 - **Returns:** `Color` if a color of the given type is set, `nil` otherwise. `alpha` is the real
   stored value: before #763 it was hardcoded to `1.0` regardless of what was actually set (the
   bridge read through `XCAFDoc_ColorTool`'s RGB-only `GetColor` overload, which fetches the real
@@ -1551,7 +1551,7 @@ Set an area attribute on this label.
 public func setArea(_ area: Double)
 ```
 
-- **Parameters:** `area` — area value in document units².
+- **Parameters:** `area`, area value in document units².
 - **OCCT:** `XCAFDoc_Area::Set`.
 
 ---
@@ -1577,7 +1577,7 @@ Set a volume attribute on this label.
 public func setVolume(_ volume: Double)
 ```
 
-- **Parameters:** `volume` — volume in document units³.
+- **Parameters:** `volume`, volume in document units³.
 - **OCCT:** `XCAFDoc_Volume::Set`.
 
 ---
@@ -1603,7 +1603,7 @@ Set a centroid attribute on this label.
 public func setCentroid(x: Double, y: Double, z: Double)
 ```
 
-- **Parameters:** `x`, `y`, `z` — centroid coordinates in document units.
+- **Parameters:** `x`, `y`, `z`, centroid coordinates in document units.
 - **OCCT:** `XCAFDoc_Centroid::Set`.
 
 ---
@@ -1633,7 +1633,7 @@ Assign a named layer to this label.
 public func setLayer(_ name: String)
 ```
 
-- **Parameters:** `name` — layer name string.
+- **Parameters:** `name`, layer name string.
 - **OCCT:** `XCAFDoc_LayerTool::SetLayer`.
 
 ---
@@ -1646,7 +1646,7 @@ Check whether a specific named layer is assigned to this label.
 public func isLayerSet(_ name: String) -> Bool
 ```
 
-- **Parameters:** `name` — layer name to check.
+- **Parameters:** `name`, layer name to check.
 - **OCCT:** `XCAFDoc_LayerTool::IsSet`.
 
 ---
@@ -1672,7 +1672,7 @@ Find the label ID of a layer by name.
 public func findLayer(_ name: String) -> Int64
 ```
 
-- **Parameters:** `name` — layer name.
+- **Parameters:** `name`, layer name.
 - **Returns:** Label ID, or `-1` if no such layer exists.
 - **OCCT:** `XCAFDoc_LayerTool::FindLayer`.
 
@@ -1716,8 +1716,8 @@ public func editorExpand(labelId: Int64, recursively: Bool = true) -> Bool
 ```
 
 - **Parameters:**
-  - `labelId` — label of the compound to expand.
-  - `recursively` — if `true` (default), expand all nested compounds too.
+  - `labelId`: label of the compound to expand.
+  - `recursively`: if `true` (default), expand all nested compounds too.
 - **Returns:** `true` if expansion succeeded.
 - **OCCT:** `XCAFDoc_Editor::Expand`.
 
@@ -1733,9 +1733,9 @@ public func rescaleGeometry(labelId: Int64, scaleFactor: Double, forceIfNotRoot:
 ```
 
 - **Parameters:**
-  - `labelId` — label whose geometry to rescale.
-  - `scaleFactor` — uniform scale factor (e.g. `0.001` to convert mm → m).
-  - `forceIfNotRoot` — if `true`, rescale even when the label is not the document root (default `false`).
+  - `labelId`: label whose geometry to rescale.
+  - `scaleFactor`: uniform scale factor (e.g. `0.001` to convert mm → m).
+  - `forceIfNotRoot`: if `true`, rescale even when the label is not the document root (default `false`).
 - **Returns:** `true` on success.
 - **OCCT:** `XCAFDoc_Editor::RescaleGeometry`.
 
@@ -1743,7 +1743,7 @@ public func rescaleGeometry(labelId: Int64, scaleFactor: Double, forceIfNotRoot:
 
 ## XCAFDoc_Location
 
-Properties on `AssemblyNode` wrapping the `XCAFDoc_Location` attribute — a `TopLoc_Location` stored directly on a label (distinct from the placement location on a component reference).
+Properties on `AssemblyNode` wrapping the `XCAFDoc_Location` attribute, a `TopLoc_Location` stored directly on a label (distinct from the placement location on a component reference).
 
 ### `setLocationTranslation(x:y:z:)`
 
@@ -1754,7 +1754,7 @@ Set a translation-only `TopLoc_Location` on this label.
 public func setLocationTranslation(x: Double, y: Double, z: Double) -> Bool
 ```
 
-- **Parameters:** `x`, `y`, `z` — translation in model units.
+- **Parameters:** `x`, `y`, `z`, translation in model units.
 - **Returns:** `true` on success.
 - **OCCT:** `XCAFDoc_Location::Set`.
 
@@ -1787,7 +1787,7 @@ public var hasLocationAttribute: Bool
 
 ## XCAFDoc_GraphNode
 
-Properties on `AssemblyNode` wrapping `XCAFDoc_GraphNode` — XCAF's own directed-graph attribute for shape DAG relationships (distinct from `TFunction_GraphNode`).
+Properties on `AssemblyNode` wrapping `XCAFDoc_GraphNode`, XCAF's own directed-graph attribute for shape DAG relationships (distinct from `TFunction_GraphNode`).
 
 ### `setXCAFGraphNode()`
 
@@ -1904,7 +1904,7 @@ public func xcafGraphNodeIsChild(of other: AssemblyNode) -> Bool
 
 ## XCAFDoc_Color
 
-Properties on `AssemblyNode` wrapping `XCAFDoc_Color` — a direct color attribute stored on a label (as opposed to the `XCAFDoc_ColorTool` mapping).
+Properties on `AssemblyNode` wrapping `XCAFDoc_Color`, a direct color attribute stored on a label (as opposed to the `XCAFDoc_ColorTool` mapping).
 
 ### `setColorAttribute(red:green:blue:)`
 
@@ -1915,7 +1915,7 @@ Set an `XCAFDoc_Color` attribute from RGB components.
 public func setColorAttribute(red: Double, green: Double, blue: Double) -> Bool
 ```
 
-- **Parameters:** `red`, `green`, `blue` — colour components in [0, 1].
+- **Parameters:** `red`, `green`, `blue`, colour components in [0, 1].
 - **Returns:** `true` on success.
 - **OCCT:** `XCAFDoc_Color::Set`.
 
@@ -1945,7 +1945,7 @@ Set an `XCAFDoc_Color` attribute from a `Quantity_NameOfColor` integer constant.
 public func setColorAttribute(namedColor noc: Int32) -> Bool
 ```
 
-- **Parameters:** `noc` — `Quantity_NameOfColor` raw value (e.g. `1` = `Quantity_NOC_BLACK`).
+- **Parameters:** `noc`, `Quantity_NameOfColor` raw value (e.g. `1` = `Quantity_NOC_BLACK`).
 - **Returns:** `true` on success.
 - **OCCT:** `XCAFDoc_Color::Set` with `Quantity_NameOfColor`.
 
@@ -1986,7 +1986,7 @@ public var colorAlphaAttribute: Float
 ```
 
 - **Returns:** Alpha in [0, 1]; returns `1.0` if no colour attribute is present.
-- **OCCT:** `XCAFDoc_Color::GetColor` — `.Alpha()`.
+- **OCCT:** `XCAFDoc_Color::GetColor`, `.Alpha()`.
 
 ---
 
@@ -2005,7 +2005,7 @@ public var colorNOCAttribute: Int32
 
 ## XCAFDoc_Material
 
-Properties on `AssemblyNode` wrapping `XCAFDoc_Material` — stores material name, description, and density directly on a label.
+Properties on `AssemblyNode` wrapping `XCAFDoc_Material`, stores material name, description, and density directly on a label.
 
 ### `setMaterialAttribute(name:description:density:densityName:densityValueType:)`
 
@@ -2023,11 +2023,11 @@ public func setMaterialAttribute(
 ```
 
 - **Parameters:**
-  - `name` — material name (e.g. `"Steel"`).
-  - `description` — free-text description.
-  - `density` — density value.
-  - `densityName` — name of the density measure (e.g. `"MASS DENSITY"`).
-  - `densityValueType` — value type string (e.g. `"POSITIVE_RATIO_MEASURE"`).
+  - `name`: material name (e.g. `"Steel"`).
+  - `description`: free-text description.
+  - `density`: density value.
+  - `densityName`: name of the density measure (e.g. `"MASS DENSITY"`).
+  - `densityValueType`: value type string (e.g. `"POSITIVE_RATIO_MEASURE"`).
 - **Returns:** `true` on success.
 - **OCCT:** `XCAFDoc_Material::Set`.
 
@@ -2090,7 +2090,7 @@ Properties on `AssemblyNode` for attaching XCAF annotation notes (`XCAFDoc_NoteC
 
 ### `setNoteComment(userName:timeStamp:comment:)`
 
-Set an `XCAFDoc_NoteComment` attribute — a text annotation with author and timestamp.
+Set an `XCAFDoc_NoteComment` attribute, a text annotation with author and timestamp.
 
 ```swift
 @discardableResult
@@ -2098,9 +2098,9 @@ public func setNoteComment(userName: String, timeStamp: String, comment: String)
 ```
 
 - **Parameters:**
-  - `userName` — author identifier.
-  - `timeStamp` — ISO 8601 timestamp string.
-  - `comment` — free-text comment body.
+  - `userName`: author identifier.
+  - `timeStamp`: ISO 8601 timestamp string.
+  - `comment`: free-text comment body.
 - **Returns:** `true` on success.
 - **OCCT:** `XCAFDoc_NoteComment::Set`.
 
@@ -2134,7 +2134,7 @@ public var noteUserName: String?
 
 ### `setNoteBalloon(userName:timeStamp:comment:)`
 
-Set an `XCAFDoc_NoteBalloon` attribute — a balloon-style annotation displayed attached to a shape.
+Set an `XCAFDoc_NoteBalloon` attribute, a balloon-style annotation displayed attached to a shape.
 
 ```swift
 @discardableResult
@@ -2149,7 +2149,7 @@ public func setNoteBalloon(userName: String, timeStamp: String, comment: String)
 
 ### `setNoteBinData(userName:timeStamp:title:mimeType:data:)`
 
-Set an `XCAFDoc_NoteBinData` attribute — an arbitrary binary payload attached to a label (e.g. an embedded image or custom data blob).
+Set an `XCAFDoc_NoteBinData` attribute, an arbitrary binary payload attached to a label (e.g. an embedded image or custom data blob).
 
 ```swift
 @discardableResult
@@ -2163,11 +2163,11 @@ public func setNoteBinData(
 ```
 
 - **Parameters:**
-  - `userName` — author identifier.
-  - `timeStamp` — ISO 8601 timestamp.
-  - `title` — human-readable title for the blob.
-  - `mimeType` — MIME type string (e.g. `"image/png"`).
-  - `data` — raw byte payload.
+  - `userName`: author identifier.
+  - `timeStamp`: ISO 8601 timestamp.
+  - `title`: human-readable title for the blob.
+  - `mimeType`: MIME type string (e.g. `"image/png"`).
+  - `data`: raw byte payload.
 - **Returns:** `true` on success.
 - **OCCT:** `XCAFDoc_NoteBinData::Set`.
 

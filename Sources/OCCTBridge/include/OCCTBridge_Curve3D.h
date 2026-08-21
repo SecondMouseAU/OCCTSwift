@@ -203,7 +203,7 @@ OCCTCurve3DRef OCCTCurve3DJoinToBSpline(const OCCTCurve3DRef* curves,
                                         int32_t               count,
                                         double                tolerance);
 /// Approximate a curve as a BSpline. Returns the fit whenever GeomConvert_ApproxCurve produced one
-/// (HasResult), which per OCCT includes a best-effort fit outside `tolerance` — use
+/// (HasResult), which per OCCT includes a best-effort fit outside `tolerance`, use
 /// OCCTGeomConvertApproxCurve for the same fit plus its maxError/isDone. Both share one
 /// implementation (#491).
 OCCTCurve3DRef OCCTCurve3DApproximate(OCCTCurve3DRef curve,
@@ -641,8 +641,8 @@ OCCTShapeRef OCCTApproxCurveOnSurface(OCCTShapeRef edge,
 /// Discretize an edge curve by uniform deflection.
 /// @param shape Edge shape to discretize
 /// @param deflection Maximum chordal deflection
-/// @param outParams Output array of parameter values — caller must free with free()
-/// @param outPoints Output array of (x,y,z) triples — caller must free with free()
+/// @param outParams Output array of parameter values, caller must free with free()
+/// @param outPoints Output array of (x,y,z) triples, caller must free with free()
 /// @param outCount Number of points generated
 /// @return true on success
 bool OCCTCPntsUniformDeflection(OCCTShapeRef shape,
@@ -675,12 +675,12 @@ OCCTShapeRef _Nullable OCCTApproxCurvilinearParameter(OCCTShapeRef edgeShape,
 /// @param u1 Parameter on first curve
 /// @param curve2 Second curve
 /// @param u2 Parameter on second curve
-/// @param order Analysis order — see "Continuity vocabularies" at the top of this header.
+/// @param order Analysis order, see "Continuity vocabularies" at the top of this header.
 ///   Selects which predicates get computed, so it is not merely a strictness ceiling: an order
 ///   the caller does not ask for is never measured (#495).
 /// @param outStatus Output: the *effective* analysis order, i.e. `order` after saturation.
 ///   `LocalAnalysis_*::ContinuityStatus()` returns the order it was constructed with verbatim,
-///   so this is the request echoed back and never a measurement — the measurement is the flags
+///   so this is the request echoed back and never a measurement, the measurement is the flags
 ///   bitmask below.
 /// @param outC0Value Output: C0 distance
 /// @param outG1Angle Output: G1 angle (radians), or -1 if not measured at this order or not met
@@ -1219,7 +1219,7 @@ bool OCCTCurve3DOffsetDirection(OCCTCurve3DRef _Nonnull curve,
                                 double* _Nonnull dirY,
                                 double* _Nonnull dirZ);
 
-// MARK: - ElCLib — Elementary Curve Library (v0.91.0)
+// MARK: - ElCLib. Elementary Curve Library (v0.91.0)
 
 /// Evaluate point on a line at parameter u. Line defined by origin + direction.
 void OCCTElCLibValueOnLine(double u,
@@ -2404,7 +2404,7 @@ OCCTCurve3DRef _Nullable OCCTInterpolatePeriodic(const double* _Nonnull points, 
 //   GeomAPI_PointsToBSplineSurface   (surface)    OCCTPointsToSurfaceBSpline
 
 /// Approximate 3D BSpline through points with degree and continuity control.
-/// continuity: parametric continuity — see "Continuity vocabularies" at the top of this header.
+/// continuity: parametric continuity, see "Continuity vocabularies" at the top of this header.
 OCCTCurve3DRef _Nullable OCCTPointsToBSplineWithParams(const double* _Nonnull points,
                                                        int32_t count,
                                                        int32_t degMin,
@@ -2561,7 +2561,7 @@ void OCCTCurve3DLocalCentreOfCurvature(OCCTCurve3DRef _Nonnull curve,
                                        double* _Nonnull cz,
                                        bool* _Nonnull isDefined);
 
-// MARK: - v0.120.0: Final cleanup — IsCN, ReversedParameter, ParametricTransformation,
+// MARK: - v0.120.0: Final cleanup. IsCN, ReversedParameter, ParametricTransformation,
 //                    gp extras, surface reversed copies, BSpline/Bezier MaxDegree/Resolution
 
 // --- Curve3D continuity queries ---
@@ -2887,7 +2887,7 @@ int32_t OCCTExtremaPCCurveBounded(OCCTCurve3DRef _Nonnull curve,
                                   double* _Nonnull outPz,
                                   int32_t maxResults);
 
-/// Find minimum distance from point to curve (convenience — returns distance, -1 on error).
+/// Find minimum distance from point to curve (convenience, returns distance, -1 on error).
 double OCCTExtremaPCMinDistance(OCCTCurve3DRef _Nonnull curve, double px, double py, double pz);
 
 /// Create a least-squares B-spline approximation solver.

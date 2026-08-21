@@ -110,7 +110,7 @@ extension Shape {
 
     /// Surface area of the shape in square units.
     ///
-    /// One `BRepGProp::SurfaceProperties` integration over the whole shape at once — the same
+    /// One `BRepGProp::SurfaceProperties` integration over the whole shape at once, the same
     /// call ``surfaceInertiaProperties()`` `.mass` and ``surfaceInertia`` `.area` share, so all
     /// three agree with each other exactly. Unlike ``ShapeMeasurements/totalFaceArea`` (N
     /// separately-toleranced per-face integrals, summed) this one takes no tolerance parameter:
@@ -123,7 +123,7 @@ extension Shape {
     /// box.surfaceArea                        // 2200, one whole-shape integral
     /// box.surfaceInertiaProperties()?.mass   // 2200, the identical call in disguise
     /// box.surfaceInertia?.area               // 2200, likewise
-    /// box.measure().totalFaceArea            // a *different*, tolerance-controlled sum —
+    /// box.measure().totalFaceArea            // a *different*, tolerance-controlled sum,
     ///                                         // usually agrees closely, not guaranteed to (#885)
     /// ```
     public var surfaceArea: Double? {
@@ -486,7 +486,7 @@ extension Shape {
     /// well defined over any set of faces. It is nil for a shape with no faces at all (a wire,
     /// edge or vertex), where the reported centroid would be the shape's location origin (#609).
     ///
-    /// `.mass` here is ``Shape/surfaceArea`` in disguise — the identical call, down to the same
+    /// `.mass` here is ``Shape/surfaceArea`` in disguise, the identical call, down to the same
     /// #885 divergence from ``ShapeMeasurements/totalFaceArea``; see ``Shape/surfaceArea`` for the
     /// explanation.
     ///
@@ -541,7 +541,7 @@ extension Shape {
     ///   - other: The other shape
     ///   - maxSolutions: Output *capacity* (default 32), clamped into `0...`
     ///     ``Sampling/maximumSampleCount``; 0 or less returns an empty array (**not** `nil`, as
-    ///     it did before #622 — the bridge answers -1 for a non-positive capacity and that was
+    ///     it did before #622, the bridge answers -1 for a non-positive capacity and that was
     ///     being reported as a failed measurement rather than as no room offered).
     /// - Returns: Array of distance solutions, or `nil` on failure. No capacity is not a
     ///   failure: it returns `[]`.
@@ -644,9 +644,9 @@ extension Shape {
     public enum PointCloudGeometry {
         /// All points are coincident (within tolerance)
         case point(SIMD3<Double>)
-        /// Points are collinear — fit a line
+        /// Points are collinear, fit a line
         case linear(origin: SIMD3<Double>, direction: SIMD3<Double>)
-        /// Points are coplanar — fit a plane
+        /// Points are coplanar, fit a plane
         case planar(origin: SIMD3<Double>, normal: SIMD3<Double>)
         /// Points are dispersed in 3D space
         case space
@@ -743,7 +743,7 @@ extension Shape {
         /// Radii of gyration about principal axes.
         public let gyrationRadii: SIMD3<Double>
         /// Whether the shape has a symmetry axis (#848: added to match ``InertiaProperties``,
-        /// which has always had this field — both read it off the same `GProp_PrincipalProps`).
+        /// which has always had this field, both read it off the same `GProp_PrincipalProps`).
         public let hasSymmetryAxis: Bool
         /// Whether the shape has a symmetry point.
         public let hasSymmetryPoint: Bool
@@ -753,7 +753,7 @@ extension Shape {
     ///
     /// Returns volume, center of mass, inertia tensor, principal moments and axes of inertia,
     /// radii of gyration, and (#848) the two symmetry flags ``inertiaProperties()`` has always
-    /// had — all read off the same `GProp_PrincipalProps` computation, so there is no extra cost
+    /// had, all read off the same `GProp_PrincipalProps` computation, so there is no extra cost
     /// to having both here.
     ///
     /// Nil for any shape with no closed volume: a face, wire, edge, vertex or open shell. See
@@ -807,7 +807,7 @@ extension Shape {
         /// Principal moments of inertia.
         public let principalMoments: SIMD3<Double>
         /// Whether the shape has a symmetry axis (#848: added to match the result of
-        /// ``surfaceInertiaProperties()``, which has always had this field — both read
+        /// ``surfaceInertiaProperties()``, which has always had this field, both read
         /// it off the same `GProp_PrincipalProps`).
         public let hasSymmetryAxis: Bool
         /// Whether the shape has a symmetry point.
@@ -822,7 +822,7 @@ extension Shape {
     /// (#848), read off the same `GProp_PrincipalProps` as ``principalMoments``.
     ///
     /// `.area` is the same call as ``Shape/surfaceArea`` and ``surfaceInertiaProperties()`` `.mass`
-    /// — see ``Shape/surfaceArea`` for the #885 divergence from
+    ///, see ``Shape/surfaceArea`` for the #885 divergence from
     /// ``ShapeMeasurements/totalFaceArea``.
     ///
     /// ```swift
@@ -1020,7 +1020,7 @@ extension Shape {
         ///
         /// Zero is an ordinary, informative answer rather than a failure: it means the nearest
         /// point is one of the edge's two ends. A non-zero count does *not* mean the nearest point
-        /// is one of those feet — an extremum can be a maximum — so read `distance`, `parameter`
+        /// is one of those feet, an extremum can be a maximum, so read `distance`, `parameter`
         /// and `pointOnEdge` for the answer and this only for the count.
         public let solutionCount: Int
     }
@@ -1028,23 +1028,23 @@ extension Shape {
     /// Compute the minimum distance from a point to an edge of this shape.
     ///
     /// The answer is the nearest point over the whole edge, its two ends included, and matches
-    /// ``Edge/project(point:)`` on the same edge and the same point — both take a minimum over
+    /// ``Edge/project(point:)`` on the same edge and the same point, both take a minimum over
     /// `ShapeAnalysis_Curve`, `GeomAPI_ProjectPointOnCurve` and the edge's ends.
     ///
     /// ```swift
     /// let arc = Shape.fromWire(Wire.arc(
     ///     center: SIMD3(0, 0, 0), radius: 5, startAngle: 0, endAngle: .pi)!)!
     ///
-    /// // Below the arc, the nearest point is an end — the only extremum is the far side of it.
+    /// // Below the arc, the nearest point is an end, the only extremum is the far side of it.
     /// if let hit = arc.pointEdgeExtrema(point: SIMD3(0, -6, 0), edgeIndex: 0) {
     ///     print(hit.distance)       // 7.81, to the end at (5, 0, 0). Was 11, the far side.
-    ///     print(hit.solutionCount)  // 1 — and that one extremum is a maximum
+    ///     print(hit.solutionCount)  // 1, and that one extremum is a maximum
     /// }
     ///
     /// let segment = Shape.fromWire(Wire.line(from: SIMD3(3, 0, 0), to: SIMD3(8, 0, 0))!)!
     /// if let hit = segment.pointEdgeExtrema(point: SIMD3(100, 0, 0), edgeIndex: 0) {
     ///     print(hit.distance)       // 92. Was nil: no extremum exists past the end.
-    ///     print(hit.solutionCount)  // 0 — no perpendicular foot, not a failure
+    ///     print(hit.solutionCount)  // 0, no perpendicular foot, not a failure
     /// }
     /// ```
     ///
@@ -1945,7 +1945,7 @@ extension Shape {
     ///   skip them.
     ///
     /// `Double.greatestFiniteMagnitude` (OCCT's `RealLast()`, meaning infinite curvature) is still
-    /// reported at a cusp — an answer, not an absence — matching ``Curve3D/curvature(at:)`` on the
+    /// reported at a cusp, an answer, not an absence, matching ``Curve3D/curvature(at:)`` on the
     /// curve underneath.
     ///
     /// ```swift
@@ -1978,7 +1978,7 @@ extension Shape {
         return ok ? SIMD3(dx, dy, dz) : nil
     }
 
-    /// Centre of curvature on an edge at `param` — the centre of the circle that osculates the edge
+    /// Centre of curvature on an edge at `param`, the centre of the circle that osculates the edge
     /// there.
     ///
     /// Returns nil wherever there is no such circle, on the same terms as ``edgeNormalLP(at:)``.
@@ -2138,7 +2138,7 @@ extension Shape {
     /// the shape's location origin, not a recognisable zero (#609).
     ///
     /// - Warning: `length` here comes from `BRepGProp::LinearProperties`, which runs its own
-    ///   integrator — one fixed-order Gauss rule per span, the defect #603 fixed everywhere else.
+    ///   integrator, one fixed-order Gauss rule per span, the defect #603 fixed everywhere else.
     ///   On an elliptical edge it reports 41.243158 against a true 40.639742 (+1.485%) and so
     ///   **disagrees with ``Shape/edgeArcLength``**, which measures 40.639742. Before #603 both
     ///   were wrong together. Use ``Shape/edgeArcLength`` or ``Wire/length`` when you want the
@@ -2246,7 +2246,7 @@ extension Shape {
 extension Shape {
     /// Axis-aligned bounding box of the shape.
     ///
-    /// Returns `nil` only when the box is void (e.g. an empty shape) — a genuinely
+    /// Returns `nil` only when the box is void (e.g. an empty shape), a genuinely
     /// degenerate/point shape at the world origin legitimately returns `(min: .zero, max: .zero)`
     /// rather than `nil` (#900).
     public var boundingBox: (min: SIMD3<Double>, max: SIMD3<Double>)? {
@@ -2255,7 +2255,7 @@ extension Shape {
 
     /// Optimal (tight) axis-aligned bounding box using precise geometry.
     ///
-    /// Returns `nil` only when the box is void (e.g. an empty shape) — see ``boundingBox`` (#900).
+    /// Returns `nil` only when the box is void (e.g. an empty shape), see ``boundingBox`` (#900).
     public func boundingBoxOptimal(useShapeTolerance: Bool = false) -> (
         min: SIMD3<Double>, max: SIMD3<Double>
     )? {
@@ -2266,7 +2266,7 @@ extension Shape {
 
     /// Oriented bounding box with axes and half-sizes as three separate scalars.
     ///
-    /// Same underlying `Bnd_OBB` as ``OrientedBoundingBox`` (#847) — prefer
+    /// Same underlying `Bnd_OBB` as ``OrientedBoundingBox`` (#847), prefer
     /// ``orientedBoundingBox(optimal:)`` for the packed ``SIMD3<Double>`` half-sizes and the
     /// computed ``OrientedBoundingBox/volume``/``OrientedBoundingBox/dimensions`` it offers; this
     /// type exists for callers that specifically want the half-sizes as individual `Double`s.
@@ -2289,8 +2289,8 @@ extension Shape {
 
     /// Compute oriented bounding box with detailed axis information.
     ///
-    /// Computes the identical `Bnd_OBB` as ``orientedBoundingBox(optimal:)`` (#847) — the two
-    /// never disagree for the same shape and `optimal` value — but returns the half-sizes as
+    /// Computes the identical `Bnd_OBB` as ``orientedBoundingBox(optimal:)`` (#847), the two
+    /// never disagree for the same shape and `optimal` value, but returns the half-sizes as
     /// three separate `Double`s instead of one packed `SIMD3<Double>`, and has no `volume`,
     /// `dimensions` or corners equivalent. Use ``orientedBoundingBox(optimal:)`` unless you
     /// specifically need the half-sizes unpacked this way.

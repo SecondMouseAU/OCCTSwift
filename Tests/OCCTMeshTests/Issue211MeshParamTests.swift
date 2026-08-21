@@ -3,7 +3,7 @@ import Foundation
 @testable import OCCTSwift
 
 // #211: MeshParameters.allowQualityDecrease (IMeshTools_Parameters::AllowQualityDecrease).
-@Suite("Issue #211 — allowQualityDecrease mesh parameter")
+@Suite("Issue #211, allowQualityDecrease mesh parameter")
 struct Issue211MeshParam {
 
     @Test("default is false")

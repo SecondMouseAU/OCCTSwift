@@ -9,11 +9,11 @@ parent: API Reference
 
 ## Topics
 
-- [Color — Initializers](#color--initializers) · [Color — Predefined Colors](#color--predefined-colors) · [Color — OCCT Color Operations](#color--occt-color-operations) · [Material — Initializer & Properties](#material--initializer--properties) · [Material — Common Materials](#material--common-materials) · [Material — OCCT Material Operations](#material--occt-material-operations)
+- [Color, Initializers](#color--initializers) · [Color, Predefined Colors](#color--predefined-colors) · [Color, OCCT Color Operations](#color--occt-color-operations) · [Material, Initializer & Properties](#material--initializer--properties) · [Material, Common Materials](#material--common-materials) · [Material, OCCT Material Operations](#material--occt-material-operations)
 
 ---
 
-## Color — Initializers
+## Color. Initializers
 
 ### `Color.init(red:green:blue:alpha:)`
 
@@ -25,7 +25,7 @@ public init(red: Double, green: Double, blue: Double, alpha: Double = 1.0)
 
 Components are stored as-is (linear RGB, 0.0–1.0). No clamping is performed in this initializer.
 
-- **Parameters:** `red`, `green`, `blue` — linear RGB channels in \[0, 1\]; `alpha` — opacity in \[0, 1\] (default `1.0` = fully opaque).
+- **Parameters:** `red`, `green`, `blue`, linear RGB channels in \[0, 1\]; `alpha`, opacity in \[0, 1\] (default `1.0` = fully opaque).
 - **Example:**
   ```swift
   let coral = Color(red: 1.0, green: 0.4, blue: 0.3)
@@ -44,7 +44,7 @@ public init(red255: Int, green255: Int, blue255: Int, alpha255: Int = 255)
 
 Each channel is divided by 255.0 to produce the internal `Double` representation.
 
-- **Parameters:** `red255`, `green255`, `blue255` — integer channel values 0–255; `alpha255` — integer alpha 0–255 (default `255`).
+- **Parameters:** `red255`, `green255`, `blue255`, integer channel values 0–255; `alpha255`, integer alpha 0–255 (default `255`).
 - **Example:**
   ```swift
   let steelBlue = Color(red255: 70, green255: 130, blue255: 180)
@@ -62,7 +62,7 @@ public init?(_ cgColor: CGColor)
 
 Available only when `CoreGraphics` is importable. Reads the first three components as R, G, B and the fourth (if present) as alpha.
 
-- **Parameters:** `cgColor` — a `CGColor` with at least three components.
+- **Parameters:** `cgColor`, a `CGColor` with at least three components.
 - **Returns:** `nil` if `cgColor.components` is nil or has fewer than three elements.
 - **Example:**
   ```swift
@@ -75,7 +75,7 @@ Available only when `CoreGraphics` is importable. Reads the first three componen
 
 ---
 
-## Color — Properties
+## Color. Properties
 
 ### `red`
 
@@ -136,7 +136,7 @@ Available only when `CoreGraphics` is importable. Pure-Swift; no bridge call.
 
 ---
 
-## Color — Predefined Colors
+## Color. Predefined Colors
 
 Static constants covering the most common colors. All use `alpha = 1.0` except `clear`.
 
@@ -200,7 +200,7 @@ public static let clear = Color(red: 0, green: 0, blue: 0, alpha: 0)
 
 ---
 
-## Color — OCCT Color Operations
+## Color. OCCT Color Operations
 
 ### `HLS`
 
@@ -262,7 +262,7 @@ Creates a `Color` from an OCCT named color string (e.g. `"RED"`, `"GOLD"`, `"BLU
 public static func fromName(_ name: String) -> Color?
 ```
 
-- **Parameters:** `name` — uppercase OCCT color name as recognized by `Quantity_Color::ColorFromName`.
+- **Parameters:** `name`, uppercase OCCT color name as recognized by `Quantity_Color::ColorFromName`.
 - **Returns:** `Color` with `alpha = 1.0`, or `nil` if the name is not recognized.
 - **OCCT:** `Quantity_Color::ColorFromName`.
 - **Example:**
@@ -282,7 +282,7 @@ Creates a `Color` from a 6-digit hex string (e.g. `"#FF0000"`).
 public static func fromHex(_ hex: String) -> Color?
 ```
 
-- **Parameters:** `hex` — hex color string with optional `#` prefix; parses RGB only (alpha defaults to `1.0`).
+- **Parameters:** `hex`, hex color string with optional `#` prefix; parses RGB only (alpha defaults to `1.0`).
 - **Returns:** `Color` with `alpha = 1.0`, or `nil` if parsing fails.
 - **OCCT:** `Quantity_Color::ColorFromHex`.
 - **Example:**
@@ -302,7 +302,7 @@ Creates a `Color` from an 8-digit hex string that includes alpha (e.g. `"#FF0000
 public static func fromHexRGBA(_ hex: String) -> Color?
 ```
 
-- **Parameters:** `hex` — 8-digit RGBA hex string with optional `#` prefix.
+- **Parameters:** `hex`, 8-digit RGBA hex string with optional `#` prefix.
 - **Returns:** `Color` with all four components, or `nil` if parsing fails.
 - **OCCT:** `Quantity_ColorRGBA::ColorFromHex`.
 - **Example:**
@@ -322,7 +322,7 @@ Converts this color to a 6-digit hex string.
 public func toHex(sRGB: Bool = false) -> String?
 ```
 
-- **Parameters:** `sRGB` — when `true`, converts to sRGB before formatting; when `false` (default), formats linear RGB directly.
+- **Parameters:** `sRGB`, when `true`, converts to sRGB before formatting; when `false` (default), formats linear RGB directly.
 - **Returns:** Hex string (e.g. `"FF0000"`), or `nil` on error.
 - **OCCT:** `Quantity_Color::ColorToHex`.
 - **Example:**
@@ -341,7 +341,7 @@ Converts this color to an 8-digit RGBA hex string.
 public func toHexRGBA(sRGB: Bool = false) -> String?
 ```
 
-- **Parameters:** `sRGB` — when `true`, converts to sRGB before formatting.
+- **Parameters:** `sRGB`, when `true`, converts to sRGB before formatting.
 - **Returns:** 8-digit hex string (RRGGBBAA), or `nil` on error.
 - **OCCT:** `Quantity_ColorRGBA::ColorToHex`.
 - **Example:**
@@ -362,7 +362,7 @@ public func distance(to other: Color) -> Double
 
 Computes `sqrt((r1-r2)² + (g1-g2)² + (b1-b2)²)`.
 
-- **Parameters:** `other` — the color to measure against.
+- **Parameters:** `other`, the color to measure against.
 - **Returns:** Euclidean distance in linear RGB (range 0–√3 ≈ 1.732).
 - **OCCT:** `Quantity_Color::Distance`.
 - **Example:**
@@ -382,7 +382,7 @@ public func squareDistance(to other: Color) -> Double
 
 Cheaper than `distance(to:)` when you only need to compare distances.
 
-- **Parameters:** `other` — the color to compare against.
+- **Parameters:** `other`, the color to compare against.
 - **Returns:** Squared Euclidean distance (range 0–3.0).
 - **OCCT:** `Quantity_Color::SquareDistance`.
 - **Example:**
@@ -402,7 +402,7 @@ public func deltaE2000(to other: Color) -> Double
 
 DeltaE 2000 is a perceptually uniform metric: values below ~1.0 are imperceptible to most observers, values above ~3.0 are clearly distinct.
 
-- **Parameters:** `other` — the color to compare against.
+- **Parameters:** `other`, the color to compare against.
 - **Returns:** DeltaE 2000 value (non-negative).
 - **OCCT:** `Quantity_Color::DeltaE2000`.
 - **Example:**
@@ -438,7 +438,7 @@ Creates a `Color` from HLS values.
 public static func fromHLS(hue: Double, lightness: Double, saturation: Double) -> Color
 ```
 
-- **Parameters:** `hue` — hue in degrees (0–360); `lightness` — 0.0–1.0; `saturation` — 0.0–1.0.
+- **Parameters:** `hue`, hue in degrees (0–360); `lightness`, 0.0–1.0; `saturation`, 0.0–1.0.
 - **Returns:** `Color` with `alpha = 1.0`.
 - **OCCT:** `Quantity_Color` constructor with `Quantity_TOC_HLS`.
 - **Example:**
@@ -458,7 +458,7 @@ public func withIntensityChanged(by delta: Double) -> Color
 
 Adds `delta` to the HLS lightness, then converts back to RGB. The alpha is preserved.
 
-- **Parameters:** `delta` — lightness delta (positive = brighter, negative = darker).
+- **Parameters:** `delta`, lightness delta (positive = brighter, negative = darker).
 - **Returns:** A new `Color` with adjusted intensity and the same `alpha`.
 - **OCCT:** `Quantity_Color::ChangeIntensity`.
 - **Example:**
@@ -478,7 +478,7 @@ public func withContrastChanged(by delta: Double) -> Color
 
 Adds `delta` to the HLS saturation percentage, then converts back to RGB. The alpha is preserved.
 
-- **Parameters:** `delta` — saturation percentage delta.
+- **Parameters:** `delta`, saturation percentage delta.
 - **Returns:** A new `Color` with adjusted contrast and the same `alpha`.
 - **OCCT:** `Quantity_Color::ChangeContrast`.
 - **Example:**
@@ -556,7 +556,7 @@ public static func namedColorName(at index: Int) -> String?
 
 Iterating from `0` upward (returning `nil` once out of range) enumerates all `Quantity_NameOfColor` entries.
 
-- **Parameters:** `index` — 0-based index into `Quantity_NameOfColor`.
+- **Parameters:** `index`, 0-based index into `Quantity_NameOfColor`.
 - **Returns:** String name (e.g. `"RED"`, `"GOLD"`), or `nil` if index is out of range.
 - **OCCT:** `Quantity_Color::StringName`.
 - **Example:**
@@ -587,7 +587,7 @@ public static var epsilon: Double { get }
 
 ---
 
-## Material — Initializer & Properties
+## Material. Initializer & Properties
 
 ### `Material.init(baseColor:metallic:roughness:emissive:transparency:)`
 
@@ -606,11 +606,11 @@ public init(
 `metallic`, `roughness`, and `transparency` are clamped to \[0, 1\] by the initializer.
 
 - **Parameters:**
-  - `baseColor` — albedo color (the primary reflective color).
-  - `metallic` — 0.0 = dielectric (plastic/paint), 1.0 = metal (default `0.0`).
-  - `roughness` — 0.0 = mirror-smooth, 1.0 = fully matte (default `0.5`).
-  - `emissive` — optional self-emission color for glowing materials.
-  - `transparency` — 0.0 = opaque, 1.0 = fully transparent (default `0.0`).
+  - `baseColor`: albedo color (the primary reflective color).
+  - `metallic`: 0.0 = dielectric (plastic/paint), 1.0 = metal (default `0.0`).
+  - `roughness`: 0.0 = mirror-smooth, 1.0 = fully matte (default `0.5`).
+  - `emissive`: optional self-emission color for glowing materials.
+  - `transparency`: 0.0 = opaque, 1.0 = fully transparent (default `0.0`).
 - **Example:**
   ```swift
   let mat = Material(
@@ -674,7 +674,7 @@ public var transparency: Double
 
 ---
 
-## Material — Common Materials
+## Material. Common Materials
 
 Predefined static constants for common real-world materials.
 
@@ -759,7 +759,7 @@ public static let glass = Material(
 
 ---
 
-## Material — OCCT Material Operations
+## Material. OCCT Material Operations
 
 ### `PredefinedMaterial`
 
@@ -852,7 +852,7 @@ Gets the name of a predefined OCCT material by 1-based index.
 public static func predefinedMaterialName(at index: Int) -> String?
 ```
 
-- **Parameters:** `index` — 1-based index (1 … `predefinedMaterialCount`).
+- **Parameters:** `index`, 1-based index (1 … `predefinedMaterialCount`).
 - **Returns:** Material name string (e.g. `"Brass"`, `"Gold"`), or `nil` if index is out of range.
 - **OCCT:** `Graphic3d_MaterialAspect::MaterialName`.
 - **Example:**
@@ -874,7 +874,7 @@ Gets full Phong + PBR properties of a predefined OCCT material by name.
 public static func predefinedMaterial(named name: String) -> PredefinedMaterial?
 ```
 
-- **Parameters:** `name` — material name string (e.g. `"Brass"`, `"Gold"`, `"Copper"`); case-sensitive as per OCCT.
+- **Parameters:** `name`, material name string (e.g. `"Brass"`, `"Gold"`, `"Copper"`); case-sensitive as per OCCT.
 - **Returns:** `PredefinedMaterial` struct with all properties, or `nil` if the name is not recognized.
 - **OCCT:** `Graphic3d_MaterialAspect::MaterialFromName` → `Graphic3d_MaterialAspect` constructor.
 - **Example:**
@@ -894,7 +894,7 @@ Gets full Phong + PBR properties of a predefined OCCT material by 1-based index.
 public static func predefinedMaterial(at index: Int) -> PredefinedMaterial?
 ```
 
-- **Parameters:** `index` — 1-based index (1 … `predefinedMaterialCount`).
+- **Parameters:** `index`, 1-based index (1 … `predefinedMaterialCount`).
 - **Returns:** `PredefinedMaterial` struct, or `nil` if index is out of range.
 - **OCCT:** `Graphic3d_MaterialAspect` constructor from `Graphic3d_NameOfMaterial`.
 - **Example:**
@@ -938,7 +938,7 @@ public static func roughnessFromSpecular(color: Color, shininess: Double) -> Flo
 
 Useful for converting legacy Phong materials (e.g. from STEP files) into PBR parameters.
 
-- **Parameters:** `color` — Phong specular color; `shininess` — Phong shininess exponent.
+- **Parameters:** `color`, Phong specular color; `shininess`, Phong shininess exponent.
 - **Returns:** PBR roughness in \[0, 1\].
 - **OCCT:** `Graphic3d_PBRMaterial::RoughnessFromSpecular`.
 - **Example:**
@@ -958,7 +958,7 @@ public static func metallicFromSpecular(color: Color) -> Float
 
 Bright/achromatic specular colors produce higher metallic values; colored specular indicates metal.
 
-- **Parameters:** `color` — Phong specular color.
+- **Parameters:** `color`, Phong specular color.
 - **Returns:** PBR metallic factor in \[0, 1\].
 - **OCCT:** `Graphic3d_PBRMaterial::MetallicFromSpecular`.
 - **Example:**

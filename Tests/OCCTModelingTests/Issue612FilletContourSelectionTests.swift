@@ -6,7 +6,7 @@ import Foundation
 /// coordinates were wrong.
 ///
 /// `NbContours()` is "the contour that exists after the most recent `Add`", which is the edge's own
-/// contour only when every `Add` creates one — a tangent-continuous edge *extends* an existing
+/// contour only when every `Add` creates one, a tangent-continuous edge *extends* an existing
 /// contour instead. And the third argument is the edge's index **within** the contour, selecting a
 /// distinct per-edge slot; hardcoding it to `1` sent every edge of a tangent chain to the same slot,
 /// so only the last survived.
@@ -132,7 +132,7 @@ struct Issue612FilletContourSelection {
         #expect(abs(evolvingVolume - 9974.608333) > 1.0)
     }
 
-    @Test("The issue's own request — a taper on one edge, a constant on its tangent neighbour")
+    @Test("The issue's own request, a taper on one edge, a constant on its tangent neighbour")
     func taperAndConstantOnOneContourBuild() {
         guard let slot = Self.roundedSlot(), let pair = Self.tangentPair(of: slot) else {
             Issue.record("rounded slot fixture failed to build")
@@ -178,7 +178,7 @@ struct Issue612FilletContourSelection {
         let bottomLine = edges[bottomIndex]
         let topRadius = 2.0, bottomRadius = 5.0
 
-        // Reference: top rim at 2, bottom rim at 5, one edge per contour — needs no shared-contour
+        // Reference: top rim at 2, bottom rim at 5, one edge per contour, needs no shared-contour
         // resolution, so it was already correct before this fix.
         let intended = slot.filletEvolving([
             EvolvingFilletEdge(edge: pair.line, radiusPoints: Self.constant(topRadius)),
@@ -224,7 +224,7 @@ struct Issue612FilletContourSelection {
         }
 
         // A NON-constant law is what makes the slot visible. With startRadius == endRadius every
-        // slot carries the same number and the defect hides — which is why this site was first,
+        // slot carries the same number and the defect hides, which is why this site was first,
         // wrongly, called "never observably wrong".
         let pairResult = slot.filleted(edges: [pair.line, pair.arc], startRadius: 1, endRadius: 4)
         let lineOnly = slot.filleted(edges: [pair.line], startRadius: 1, endRadius: 4)
@@ -264,7 +264,7 @@ struct Issue612FilletContourSelection {
         let withHistory = shell.filletedWithFullHistory(radius: 1, edges: allIndices)?.result
 
         // Measured by surface AREA, not volume: an open shell is not a solid, so `volume` is nil
-        // for every one of these results whether the fillet succeeded or not — and asking OCCT
+        // for every one of these results whether the fillet succeeded or not, and asking OCCT
         // directly gets a fabricated number that is not even a property of the shape (#605/#609).
         // Reported per entry point, so a failure names the one that regressed rather than the batch.
         let measured: [(String, Double?)] = [
@@ -289,7 +289,7 @@ struct Issue612FilletContourSelection {
         }
         // The agreed answer, measured against the kernel directly.
         #expect(abs(constantArea - 465.09733552923257) < 1e-6)
-        // And the fillet did happen — rounding the accepted edges changed the surface.
+        // And the fillet did happen, rounding the accepted edges changed the surface.
         #expect(abs(constantArea - plainArea) > 1.0)
     }
 
@@ -302,7 +302,7 @@ struct Issue612FilletContourSelection {
 
         // Reaching the end of this loop at all is the assertion: SetRadius(law, 0, 1) on a refused
         // edge is the unchecked low side of OCCT's contour index, and it used to take the whole
-        // test process down with SIGSEGV — uncatchable, so no catch(...) on the bridge side helps.
+        // test process down with SIGSEGV, uncatchable, so no catch(...) on the bridge side helps.
         var refusedCount = 0
         for index in shell.edges().indices {
             if shell.filletedVariable(edgeIndex: index,

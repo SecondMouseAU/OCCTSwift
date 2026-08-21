@@ -571,7 +571,7 @@ extension AAG {
     ///
     /// `PocketFeature.isOpen` used to be `wallIndices.count < 3`. A wall count is not enclosure: a
     /// blind cylindrical pocket has exactly **one** wall (the cylinder) and is fully enclosed, so
-    /// it reported `isOpen == true`. Three walls is also the wrong threshold on its own terms — a
+    /// it reported `isOpen == true`. Three walls is also the wrong threshold on its own terms, a
     /// genuinely open three-sided slot and a closed three-walled (e.g. triangular) pocket both have
     /// `wallIndices.count == 3` and are indistinguishable by counting alone. Measured directly: a
     /// slot cut through a box's own side face has one floor edge that borders no wall in the set
@@ -609,7 +609,7 @@ extension AAG {
     /// A second candidate was considered and rejected: whether the pocket's bounding box sits
     /// strictly inside the parent solid's, in the horizontal axes. It is cheaper, but wrong for a
     /// pocket that legitimately reaches an outer wall of the part while still being fully enclosed
-    /// on every side that matters (e.g. a pocket machined flush with one face of a plate) — that is
+    /// on every side that matters (e.g. a pocket machined flush with one face of a plate), that is
     /// a statement about *where* the pocket sits, not about whether it is closed, and the two are
     /// independent. Enclosure is a property of the wall loop, not of the pocket's position in space.
     ///

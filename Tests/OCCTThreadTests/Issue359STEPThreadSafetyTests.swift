@@ -22,7 +22,7 @@ import Foundation
 // least confirms the fix doesn't deadlock (all 18 sites lock a single
 // non-recursive std::mutex with no nested acquisition) and doesn't regress
 // ordinary round-trip correctness.
-@Suite("Issue #359 — concurrent STEP import/export is thread-safe (igesMutex)")
+@Suite("Issue #359, concurrent STEP import/export is thread-safe (igesMutex)")
 struct Issue359STEPThreadSafetyTests {
 
     @Test("Concurrent STEP import + export round-trips all succeed with a non-empty shape")

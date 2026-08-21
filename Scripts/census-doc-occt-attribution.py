@@ -430,7 +430,7 @@ def _member_of(heading_text: str) -> str | None:
     if not m:
         return None
     body = m.group(1).split("(")[0].strip()
-    body = body.split("—")[0].split("–")[0].strip()
+    body = body.split(", ")[0].split("–")[0].strip()
     if not body:
         return None
     tail = body.rsplit(".", 1)[-1]

@@ -2,16 +2,16 @@ import Testing
 import Foundation
 @testable import OCCTSwift
 
-/// #532 — `BRepFeat_MakeCylindricalHole` selected parts of the **cut result**, not parts of the tool.
+/// #532, `BRepFeat_MakeCylindricalHole` selected parts of the **cut result**, not parts of the tool.
 ///
-/// Every mode that chooses which piece of the drilling tool to keep — `PerformThruNext`,
-/// `PerformUntilEnd`, the ranged `Perform(Radius, PFrom, PTo)` and `PerformBlind` — drove
+/// Every mode that chooses which piece of the drilling tool to keep, `PerformThruNext`,
+/// `PerformUntilEnd`, the ranged `Perform(Radius, PFrom, PTo)` and `PerformBlind`, drove
 /// `BRepFeat_Builder` with `SetOperation(Fuse)`, i.e. `BOPAlgo_CUT`, before calling `PartsOfTool()`.
 /// That method collects the solids of the builder's shape, which only holds the tool split by the
 /// object after the **COMMON** pass; after a CUT it is the finished workpiece. So the selection loops
 /// compared barycentres of bored plates and then registered those plates as "kept parts of the
 /// tool". `PerformResult()` took the kept-parts path with a keep set containing no tool part at all,
-/// and the caller got the input back with the cylinder's faces imprinted on it — reported as
+/// and the caller got the input back with the cylinder's faces imprinted on it, reported as
 /// `BRepFeat_NoError` throughout.
 ///
 /// `BRepFeat_Form` and `BRepFeat_RibSlot`, the kernel's other two users of the same builder, both
@@ -46,7 +46,7 @@ struct Issue532CylindricalHolePartSelectionTests {
     // MARK: - The defect
 
     /// The two extents #532 named. Both bound the hole by the stock's own faces, so both must drill
-    /// every body between the entry and exit face — which is what the boolean drill and
+    /// every body between the entry and exit face, which is what the boolean drill and
     /// `.throughAll` always did.
     @Test("untilEnd and a stack-spanning range drill every body on the axis")
     func untilEndAndRangeDrillEveryBody() {
@@ -66,7 +66,7 @@ struct Issue532CylindricalHolePartSelectionTests {
         }
     }
 
-    /// `PerformBlind` shares the same broken selection and was not named in #532 — it was reported
+    /// `PerformBlind` shares the same broken selection and was not named in #532, it was reported
     /// against the two extents #496 had newly wrapped. On the stack it removed nothing; a blind
     /// depth of 20 from the origin reaches 15mm into the first plate (which starts at parameter 5).
     @Test("blind drills its depth into the first body of a stack")
@@ -105,7 +105,7 @@ struct Issue532CylindricalHolePartSelectionTests {
         #expect(abs((v0 - vt) - 2 * Self.bore) < 1.0)
     }
 
-    /// #532 read as a multi-body defect, but the trigger is "the cut result has two solids" — and a
+    /// #532 read as a multi-body defect, but the trigger is "the cut result has two solids", and a
     /// **single** solid reaches it. An 8mm-wide bar drilled at r=5 is severed by its own bore, so
     /// the cut result is two pieces of one workpiece, no compound in sight.
     ///
@@ -133,7 +133,7 @@ struct Issue532CylindricalHolePartSelectionTests {
 
     // MARK: - The cases the fix must not disturb
 
-    /// A single plate never reached the selection branch — the cut result was one solid — so every
+    /// A single plate never reached the selection branch, the cut result was one solid, so every
     /// extent must answer exactly as it did before.
     @Test("A single plate is unaffected by the part-selection fix")
     func singlePlateUnchanged() {
@@ -186,7 +186,7 @@ struct Issue532CylindricalHolePartSelectionTests {
     }
 
     /// A range window still selects a face pair rather than trimming, and one that names no pair is
-    /// still refused — the fix changes which tool parts are kept, not which parameters are legal.
+    /// still refused, the fix changes which tool parts are kept, not which parameters are legal.
     @Test("A range naming no face pair is still invalidPlacement")
     func rangeOverTheGapIsStillRefused() {
         guard let stack = stack(2) else { #expect(Bool(false), "stack"); return }

@@ -2,7 +2,7 @@ import Testing
 import simd
 @testable import OCCTSwift
 
-/// Issue #272: `Shape.drilled(at:direction:radius:depth:)` ignored its `direction` argument — the
+/// Issue #272: `Shape.drilled(at:direction:radius:depth:)` ignored its `direction` argument, the
 /// C++ bridge (`OCCTShapeDrillHole`) built the cutting cylinder via `OCCTShapeCreateCylinderAt`,
 /// which hardcodes the cylinder axis to +Z (`gp_Dir(0, 0, 1)`). So drilling along any non-Z
 /// direction repositioned the cylinder's base along the requested direction but still bored up +Z,
@@ -15,8 +15,8 @@ import simd
 /// much wider in X than in Z along +X, and assert the removed material actually runs the full X
 /// extent (and that a point on the +X bore axis is now outside the solid). Under the old bug the +X
 /// bore cylinder landed entirely outside the block, so ~zero volume was removed and the axis point
-/// stayed inside — both assertions below would fail.
-@Suite("Issue #272 — drilled honours a non-Z direction")
+/// stayed inside, both assertions below would fail.
+@Suite("Issue #272, drilled honours a non-Z direction")
 struct Issue272DrilledDirectionTests {
 
     // Block centered at origin: X[-30,30] (60 wide), Y[-10,10] (20), Z[-6,6] (12 thick).
@@ -24,7 +24,7 @@ struct Issue272DrilledDirectionTests {
     private func makeBlock() -> Shape { Shape.box(width: 60, height: 20, depth: 12)! }
     private let radius = 3.0
 
-    /// Drilling +X through the wide axis removes material along X — proving the bore follows the
+    /// Drilling +X through the wide axis removes material along X, proving the bore follows the
     /// requested direction rather than +Z. Under the old bug this removed ~nothing.
     @Test("Drilling +X bores along X (not Z): removes the full X-extent of material")
     func drillsAlongXNotZ() {
@@ -48,7 +48,7 @@ struct Issue272DrilledDirectionTests {
         // The block centre lies on the +X bore axis (Y=0, Z=0): after an X through-hole it must be
         // OUTSIDE the solid. Under the old +Z bore it stayed inside.
         #expect(drilledX.classify(point: SIMD3(0, 0, 0)) == .outside)
-        // A point off the bore axis but still in the block (Y=8) stays inside — the solid survived.
+        // A point off the bore axis but still in the block (Y=8) stays inside, the solid survived.
         #expect(drilledX.classify(point: SIMD3(0, 8, 0)) == .inside)
     }
 

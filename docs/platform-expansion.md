@@ -26,7 +26,7 @@ The Swift Package Manager `binaryTarget` mechanism is **Apple-only**. There is n
 - Renamed `.cpp` and audited for Objective-C-isms (NSString, `@try/@catch`, `NSObject`, etc.), or
 - Conditionally compiled with `#ifdef __APPLE__` / `__OBJC__` guards.
 
-A spot check (grep for `NSString`, `NSObject`, `@try`, `@selector`) suggests the file is mostly pure C++ that just happens to live in a `.mm` — promising but not free. Estimated effort: 3–5 days of audit + targeted edits.
+A spot check (grep for `NSString`, `NSObject`, `@try`, `@selector`) suggests the file is mostly pure C++ that just happens to live in a `.mm`, promising but not free. Estimated effort: 3–5 days of audit + targeted edits.
 
 ### 2. Build pipeline is macOS-only
 
@@ -38,7 +38,7 @@ A spot check (grep for `NSString`, `NSObject`, `@try`, `@selector`) suggests the
 
 ### 3. SPM doesn't `binaryTarget` non-Apple binaries
 
-A working OCCTSwift on Linux needs the Linux `.a` and headers exposed to the Swift compiler. SPM offers `systemLibrary` (uses pkg-config) and source-built C/C++ targets — neither matches our "ship a pre-built binary as a release asset" pattern for Apple. Options per platform:
+A working OCCTSwift on Linux needs the Linux `.a` and headers exposed to the Swift compiler. SPM offers `systemLibrary` (uses pkg-config) and source-built C/C++ targets, neither matches our "ship a pre-built binary as a release asset" pattern for Apple. Options per platform:
 
 - **Linux**: vendored sources OR pre-built `.a` checked into a release asset that downstream consumers download via a build-time script. Not idiomatic; downstream friction.
 - **Windows**: same as Linux; expect more friction because Swift Windows tooling is younger.
@@ -60,7 +60,7 @@ Today's 1,176 test suites run only on macOS. Each new platform needs:
 
 - Swift on Linux is officially supported, mature.
 - OCCT itself is most-tested on Linux.
-- `swift-corelibs-foundation` covers most of what we need; gaps are in date formatting, regex, and rare URL APIs — none of which OCCTSwift uses heavily.
+- `swift-corelibs-foundation` covers most of what we need; gaps are in date formatting, regex, and rare URL APIs, none of which OCCTSwift uses heavily.
 - Use cases: headless server-side CAD processing (STEP/IGES conversion pipelines, GLTF exports for web), CI for downstream apps that target Linux servers.
 - Effort: ~1–2 weeks for first green CI run, mostly bridge audit + Linux build script + GitHub Actions wiring.
 
@@ -80,7 +80,7 @@ Today's 1,176 test suites run only on macOS. Each new platform needs:
 
 - Swift on Android is in active development with Apple's official Android Working Group push (2025+), but as of writing it's still preview-class. Tooling, packaging conventions, and the standard library surface on Android are all in flux.
 - OCCT on Android is unofficial but works with NDK r21+ patches.
-- Distribution is the hardest piece: Android consumers expect AAR/JAR-style packaging, which doesn't map naturally to SwiftPM. A practical answer is a Gradle wrapper that pulls in Swift via a custom toolchain — that's its own engineering project.
+- Distribution is the hardest piece: Android consumers expect AAR/JAR-style packaging, which doesn't map naturally to SwiftPM. A practical answer is a Gradle wrapper that pulls in Swift via a custom toolchain, that's its own engineering project.
 - Use cases: mobile CAD/AR apps. Niche but growing.
 - Effort: ~4+ weeks of speculative work, plus ongoing churn while Swift-on-Android stabilizes.
 
@@ -89,11 +89,11 @@ Today's 1,176 test suites run only on macOS. Each new platform needs:
 For OCCTSwift v1.0.0–v1.x:
 
 1. **Ship Apple-only.** macOS arm64 + iOS device + iOS sim + visionOS device + visionOS sim is a clean v1.0.0 surface.
-2. **Linux is the strongest non-Apple candidate.** If we add any non-Apple platform, do Linux first — server-side CAD processing has real demand and Linux is the lowest-risk port. Target a v1.1 or v1.2.
+2. **Linux is the strongest non-Apple candidate.** If we add any non-Apple platform, do Linux first, server-side CAD processing has real demand and Linux is the lowest-risk port. Target a v1.1 or v1.2.
 3. **Windows is a v1.x candidate** if a downstream user (or one of the gsdali sibling repos) actually needs it. Don't speculatively port.
 4. **Android: revisit in 12 months.** Wait for Swift-on-Android packaging to settle before committing engineering time.
 
-The realistic blast radius of a Linux port alone (build script, bridge audit, CI matrix entry, distribution shim) is ~2 weeks of focused work that delivers genuine value. Windows and Android are 2–4× that with much higher uncertainty — better deferred until a concrete consumer materializes.
+The realistic blast radius of a Linux port alone (build script, bridge audit, CI matrix entry, distribution shim) is ~2 weeks of focused work that delivers genuine value. Windows and Android are 2–4× that with much higher uncertainty, better deferred until a concrete consumer materializes.
 
 ## Prerequisite that lands first
 

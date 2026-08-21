@@ -2,7 +2,7 @@
 //  OCCTBridge_Mesh.mm
 //  OCCTSwift
 //
-//  Extracted from OCCTBridge.mm — issue #99.
+//  Extracted from OCCTBridge.mm, issue #99.
 //
 //  Mesh / Wire / Curve cluster: triangulation generation, mesh parameter
 //  tuning, edge discretization, direct triangle access, mesh-to-shape
@@ -12,7 +12,7 @@
 //  several entry points, and splitting them would force header duplication
 //  for marginal benefit.
 //
-//  Public C surface unchanged. No symbol changes — pure file move.
+//  Public C surface unchanged. No symbol changes, pure file move.
 //
 
 #import "../include/OCCTBridge.h"
@@ -374,7 +374,7 @@ int32_t DiscretizeEdgeInto(const TopoDS_Edge&                                   
   }
   catch (...)
   {
-    // BRepAdaptor_Curve failed — fall through to pcurve fallback
+    // BRepAdaptor_Curve failed, fall through to pcurve fallback
   }
 
   // Fallback: evaluate pcurve on parent surface
@@ -435,7 +435,7 @@ int32_t OCCTShapeGetEdgePolyline(OCCTShapeRef shape,
   try
   {
     // Use IndexedMap to match OCCTShapeGetTotalEdgeCount ordering.
-    // NOTE: this rebuilds the map on every call — O(edges²) across a whole shape. Use
+    // NOTE: this rebuilds the map on every call. O(edges²) across a whole shape. Use
     // OCCTShapeComputeAllEdgePolylines for iterate-all-edges consumers (issue #275).
     TopTools_IndexedMapOfShape edgeMap;
     TopExp::MapShapes(shape->shape, TopAbs_EDGE, edgeMap);
@@ -803,7 +803,7 @@ OCCTMeshRef OCCTMeshCreateFromArrays(const float*    vertices,
 
     const uint32_t triangleCount = indexCount / 3;
 
-    // Per-triangle normals (always computed — match the existing internal contract).
+    // Per-triangle normals (always computed, match the existing internal contract).
     mesh->triangleNormals.resize((size_t)triangleCount * 3, 0.0f);
     for (uint32_t t = 0; t < triangleCount; ++t)
     {
@@ -1521,7 +1521,7 @@ void OCCTPolyPolygonOnTriRelease(OCCTPolyPolygonOnTriRef _Nonnull ref)
   delete reinterpret_cast<Poly_PolygonOnTriangulationOpaque*>(ref);
 }
 
-// MARK: - Poly copy / mutators — OCCT 8.0.0p1
+// MARK: - Poly copy / mutators. OCCT 8.0.0p1
 
 OCCTPolyPolygon2DRef _Nullable OCCTPolyPolygon2DCopy(OCCTPolyPolygon2DRef _Nonnull ref)
 {

@@ -6,7 +6,7 @@ import Foundation
 ///
 /// The scenario throughout is the reporter's: a 10×10×10 box with a bar cut
 /// across its top (Y ∈ [4, 6], full X width), splitting the single 10×10 top
-/// face into two 10×4 strips. Assertions are geometric rather than count-only —
+/// face into two 10×4 strips. Assertions are geometric rather than count-only,
 /// "two nodes came back" is not evidence they are the right two.
 @Suite("Graph history absorb (#290)")
 struct GraphHistoryAbsorbTests {
@@ -134,7 +134,7 @@ struct GraphHistoryAbsorbTests {
         }
     }
 
-    /// Without the absorb, none of the above works — this is what #290 reported.
+    /// Without the absorb, none of the above works, this is what #290 reported.
     @Test("without absorbing, the graph log stays empty and recipes do not resolve")
     func withoutAbsorbNothingResolves() {
         guard let c = Self.makeCut() else { Issue.record("setup failed"); return }

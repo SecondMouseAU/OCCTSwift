@@ -1,4 +1,4 @@
-# #605 — `centerOfMass` returned the bounding-box centre
+# #605, `centerOfMass` returned the bounding-box centre
 
 Ground truth for [#605](https://github.com/SecondMouseAU/OCCTSwift/issues/605). `BRepGProp` only,
 no bridge and no Swift, so the answers here are OCCT's rather than ours.

@@ -2,7 +2,7 @@
 //  OCCTBridge_Healing.mm
 //  OCCTSwift
 //
-//  Extracted from OCCTBridge.mm — issue #99.
+//  Extracted from OCCTBridge.mm, issue #99.
 //
 //  Shape healing & analysis (v0.13) + Advanced blends & surface filling
 //  (v0.14):
@@ -13,7 +13,7 @@
 //  - Advanced blends: filling surfaces with point + curve constraints
 //    (GeomPlate_*), filleting with sigil controls, surface filling
 //
-//  Public C surface unchanged. No symbol changes — pure file move.
+//  Public C surface unchanged. No symbol changes, pure file move.
 //
 
 #import "../include/OCCTBridge.h"
@@ -259,7 +259,7 @@ OCCTShapeAnalysisResult OCCTShapeAnalyze(OCCTShapeRef shape, double tolerance)
       // edge" defect to flag) and BRepGProp::LinearProperties can crash on one whose
       // sole representation is a Bezier/BSpline curve-on-surface pcurve (kernel patch
       // 0006 fixes the underlying BRepGProp_EdgeTool::IntegrationOrder bug, but this
-      // bridge also skips degenerate edges outright — no xcframework rebuild needed).
+      // bridge also skips degenerate edges outright, no xcframework rebuild needed).
       if (BRep_Tool::Degenerated(edge))
       {
         continue;
@@ -475,7 +475,7 @@ OCCTShapeRef OCCTShapeFixDetailed(OCCTShapeRef shape,
   }
 }
 
-// #446: the three shared helpers declared in OCCTBridge_Internal.h — see the block comment there
+// #446: the three shared helpers declared in OCCTBridge_Internal.h, see the block comment there
 // for why every unify entry point works on a copy.
 TopoDS_Shape occtUnifySameDomainInput(const TopoDS_Shape& shape, BRepBuilderAPI_Copy& copier)
 {
@@ -600,7 +600,7 @@ OCCTShapeRef OCCTShapeSimplify(OCCTShapeRef shape, double tolerance)
 
   try
   {
-    // First unify same domain (#446: on a private copy — the caller's shape is not an input
+    // First unify same domain (#446: on a private copy, the caller's shape is not an input
     // this algorithm may consume)
     TopoDS_Shape unified = occtUnifySameDomain(shape->shape, true, true, true);
     if (unified.IsNull())
@@ -632,7 +632,7 @@ OCCTShapeRef OCCTShapeSimplify(OCCTShapeRef shape, double tolerance)
 // result to SetRadius(radii[i], param, 1). BRepFilletAPI_MakeFillet has no (Real, Real, Integer)
 // overload: `param` was truncated to an int and taken as the *contour* index, so the profile was
 // never applied. What the caller got was a constant radius, whichever profile point happened to
-// truncate to a live contour index — and, for any edge whose parameter range does not start at 0,
+// truncate to a live contour index, and, for any edge whose parameter range does not start at 0,
 // no radius at all, which SIGSEGVs in Build(). Both measured in
 // Scripts/repro/520-fillet-edge-index-contracts/. #520
 OCCTShapeRef OCCTShapeFilletVariable(OCCTShapeRef  shape,
@@ -661,7 +661,7 @@ OCCTShapeRef OCCTShapeFilletVariable(OCCTShapeRef  shape,
       return nullptr;
 
     // #612: the profile goes to this edge's own slot in this edge's own contour. One edge is
-    // added, so the contour index agreed with NbContours() whenever there was one at all — but
+    // added, so the contour index agreed with NbContours() whenever there was one at all, but
     // when OCCT *declines* the edge (a free-boundary edge of an open shell) NbContours() is 0,
     // and SetRadius(law, 0, 1) is the unchecked low side #505 measured: it used to SIGSEGV,
     // uncatchably, rather than fail. Resolving the slot returns no slot instead, and the empty
@@ -965,7 +965,7 @@ OCCTShapeRef OCCTShapeBlendEdges(OCCTShapeRef   shape,
 // MARK: - Surface filling (#430/#434)
 //
 // occtFillingSupportFaceFromPCurve / occtFillingAddConstraint / occtFillingMakeBuilder are
-// shared with OCCTBridge_Modeling.mm's OCCTFilling* family — declared, and documented at length,
+// shared with OCCTBridge_Modeling.mm's OCCTFilling* family, declared, and documented at length,
 // in OCCTBridge_Internal.h, alongside occtGeomAbsFromSurfaceContinuity, the continuity decoder
 // this family uses (#490 renamed it from occtFillingContinuityToGeomAbs and moved it next to its
 // two siblings). The OCCTShapeFill* helpers below are local to this file.
@@ -1025,7 +1025,7 @@ bool occtFillingAddConstraint(BRepOffsetAPI_MakeFilling& filling,
   return true;
 }
 
-// Binds every argument to the parameter it names — the pre-#431 code passed
+// Binds every argument to the parameter it names, the pre-#431 code passed
 // maxDegree/maxSegments/continuity into Degree/NbPtsOnCur/TolAng, which left MaxDeg/MaxSegments
 // at their defaults and made TolAng the continuity ordinal. Measured effect on a cylinder-rim
 // fill: G0Error 0.615 vs 0.00040.
@@ -1080,13 +1080,13 @@ static void OCCTShapeFillCollectEdges(const OCCTWireRef*        boundaries,
 // #597 investigated gating this on G0Error() > Tol3d (the same "read the error" shape #741 fixed
 // for OCCTGeomFillSweep in OCCTBridge_Surface.mm). Measured and reverted: unlike that site's fixed
 // 1e-4, `Shape.fill`'s effective Tol3d is ALWAYS 1e-4 too (FillingParameters' own Swift default,
-// not a fallback for an unset value), and G0Error() — BRepFill_Filling's own header: "the maximum
-// distance between the result and the constraints" — routinely and legitimately exceeds it for
+// not a fallback for an unset value), and G0Error(). BRepFill_Filling's own header: "the maximum
+// distance between the result and the constraints", routinely and legitimately exceeds it for
 // exactly the demanding fills this API exists for: FillingSupportFaceTests' own curvature-vs-
 // tangency and interior-pull cases build correct, already-tested surfaces whose G0Error() is
 // several times 1e-4. Gating on it breaks two existing, passing tests without those surfaces being
 // wrong. Unlike the plate case, G0Error() is a meaningful distance-to-constraints figure here, not
-// the wrong metric — the problem is 1e-4 was never a real, enforced promise for this family, and
+// the wrong metric, the problem is 1e-4 was never a real, enforced promise for this family, and
 // nothing establishes what the right one would be without inventing a number (#726). See
 // Scripts/repro/597-bridge-modeling-healing-approx-error. FillingSurface's manual builder API
 // already exposes G0Error()/G1Error()/G2Error() for a caller who wants to check it themselves.
@@ -1511,7 +1511,7 @@ OCCTShapeRef OCCTShapeRemoveLocations(OCCTShapeRef shape)
 // a second, narrower bridge function (OCCTShapeUpgradeDivideContinuity) behind the now-deprecated
 // Shape.dividedByContinuity(criterion:tolerance:). That second function set ONLY
 // SetBoundaryCriterion, leaving SetPCurveCriterion/SetSurfaceCriterion pinned at the class's own
-// GeomAbs_C1 constructor default regardless of the requested continuity — measured
+// GeomAbs_C1 constructor default regardless of the requested continuity, measured
 // (Scripts/repro/cluster-d-continuity) as a flat result across every criterion 0..6 on a fixture
 // where this function's own three-criteria version varies (nil/4/4/25 faces at C0/C1/C2/C3). Per
 // the OCCT shape-healing guide's own worked example, all three criteria are meant to be set
@@ -1526,7 +1526,7 @@ OCCTShapeRef OCCTShapeDivide(OCCTShapeRef shape, int32_t continuity, double tole
     // Shape.ContinuityLevel is ParametricContinuity's ladder (0=C0 .. 3=C3, 4=CN, which is
     // where occtGeomAbsFromParametricContinuity saturates anyway) with the two geometric
     // classes tacked on at 5 and 6. Those two are the only values here that are not the
-    // shared parametric decoding — and they are also the two ShapeUpgrade_Split*Continuity::
+    // shared parametric decoding, and they are also the two ShapeUpgrade_Split*Continuity:
     // SetCriterion does not recognise at all, so OCCT quietly substitutes its own C1 default
     // for them. Kept because the public enum has always advertised them. #490, moved here
     // from the now-removed OCCTShapeUpgradeDivideContinuity by #438.
@@ -1757,8 +1757,8 @@ OCCTShapeRef OCCTShapeUpgrade(OCCTShapeRef shape, double tolerance)
       for (const TopoDS_Shell& shell : occtBodyBoundingShells(sewedShape))
       {
         BRepBuilderAPI_MakeSolid makeSolid(shell);
-        // IsDone() false is dead code today — BRepLib_MakeSolid's single-shell
-        // constructor always Done()s, same finding as OCCTShapeCreateSolidFromShell —
+        // IsDone() false is dead code today. BRepLib_MakeSolid's single-shell
+        // constructor always Done()s, same finding as OCCTShapeCreateSolidFromShell,
         // but kept push-not-drop for defense in depth rather than silently reducing
         // the body count, matching every sibling per-body solid-construction loop
         // this diff touches (#443 review).
@@ -3880,7 +3880,7 @@ OCCTShapeRef _Nullable OCCTShapeUpgradeWireDivideOnFace(OCCTShapeRef wireShape,
     TopoDS_Wire wire = TopoDS::Wire(wireShape->shape);
     TopoDS_Face face = TopoDS::Face(faceShape->shape);
     // OCCT 8.0.0p1: ShapeUpgrade_WireDivide::Perform() null-derefs (SIGSEGV, Address 0) when a wire
-    // edge has no pcurve on the target face (e.g. a wire that doesn't lie on the face) — an OS
+    // edge has no pcurve on the target face (e.g. a wire that doesn't lie on the face), an OS
     // signal catch(...) cannot trap. Guard by requiring every edge to carry a pcurve on the face.
     for (TopExp_Explorer ex(wire, TopAbs_EDGE); ex.More(); ex.Next())
     {
@@ -4152,12 +4152,12 @@ OCCTValidateEdgeResult OCCTValidateEdge(OCCTEdgeRef _Nonnull edge,
 // GeomAbs_Shape ordinal (a local continuityFromInt78 helper: 0=C0, 1=G1, 2=C1, 3=G2, 4=C2, 5=C3,
 // 6=CN) while the sibling entry point for the very same OCCT operation read it as a required
 // parametric continuity. OCCTShapeCustomBSplineRestriction drives ShapeCustom::BSplineRestriction,
-// which is itself just a ShapeCustom_BSplineRestriction run through BRepTools_Modifier — exactly
-// what OCCTShapeBSplineRestrictionAdvanced constructs by hand — and OCCTSurfaceSplitByContinuity
+// which is itself just a ShapeCustom_BSplineRestriction run through BRepTools_Modifier, exactly
+// what OCCTShapeBSplineRestrictionAdvanced constructs by hand, and OCCTSurfaceSplitByContinuity
 // wraps the same ShapeUpgrade_SplitSurfaceContinuity as OCCTSplitSurfaceContinuity. So the same
 // integer meant two different continuities in each pair. Both now decode as
 // ParametricContinuity, and the ordinal reading is gone: of the seven values it advertised, only
-// 0/2/4 ever worked here anyway (measured — ShapeCustom_BSplineRestriction returns a null shape
+// 0/2/4 ever worked here anyway (measured, ShapeCustom_BSplineRestriction returns a null shape
 // for G1, G2, C3 and CN).
 
 OCCTShapeRef _Nullable OCCTShapeBSplineRestrictionAdvanced(OCCTShapeRef _Nonnull shapeRef,
@@ -4402,8 +4402,8 @@ TopoDS_Shape occtSolidBodiesToShape(const std::vector<TopoDS_Shape>& bodies)
 }
 
 // Heal EVERY solid, not just the first one an explorer yields (#442). ShapeFix_Solid
-// cannot take a compound — Init/the constructor want a TopoDS_Solid, and TopoDS::Solid
-// throws on anything else — so multi-body input has to be driven one solid at a time.
+// cannot take a compound. Init/the constructor want a TopoDS_Solid, and TopoDS:Solid
+// throws on anything else, so multi-body input has to be driven one solid at a time.
 OCCTShapeRef OCCTShapeFixSolid(OCCTShapeRef shape)
 {
   if (!shape)
@@ -4428,7 +4428,7 @@ OCCTShapeRef OCCTShapeFixSolid(OCCTShapeRef shape)
 
       // Flatten one level: Shape() hands back a compound when one solid's shells
       // resolve into several bodies, and nesting it would hide them a level down.
-      // Its children are taken as they are — usually solids, but Perform() also
+      // Its children are taken as they are, usually solids, but Perform() also
       // puts back a shell it could not close, and exploring for TopAbs_SOLID here
       // would drop exactly that. COMPSOLID is not a case: Shape() only ever
       // returns the input solid, one fixed solid, or a compound.
@@ -5943,7 +5943,7 @@ static bool occtShapeToleranceOfTypeGuard(int32_t shapeType)
 // Shared by OCCTShapeMaxToleranceOfType/MinToleranceOfType/AvgToleranceOfType below (PR #870
 // aggregate review): the three differed only in the hardcoded `mode` literal (1/-1/0) passed to
 // ShapeAnalysis_ShapeTolerance::Tolerance, otherwise triplicating the identical
-// construct/guard/try-catch/call body — mirrors the `occtShapeToleranceOfTypeGuard` extraction
+// construct/guard/try-catch/call body, mirrors the `occtShapeToleranceOfTypeGuard` extraction
 // just above for the same reason: a future change to this shared logic (tightening the exception
 // handling, migrating off ShapeAnalysis_ShapeTolerance) now has one body to update instead of
 // three near-identical copies that can silently drift apart.
@@ -7362,7 +7362,7 @@ OCCTShapeRef OCCTShapeHeal(OCCTShapeRef shape)
   try
   {
     // #263: ShapeFix_Shape heap-corrupts (uncatchable OS signal) when healing a solid built
-    // from a self-intersecting wire — e.g. a prism extruded from a degenerate mesh-derived
+    // from a self-intersecting wire, e.g. a prism extruded from a degenerate mesh-derived
     // outline. ShapeFix cannot repair a self-intersection anyway, so refuse such input.
     if (occtHasSelfIntersectingWire(shape->shape))
       return nullptr;

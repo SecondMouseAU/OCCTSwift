@@ -263,8 +263,8 @@ public func loadPinpoint(u: Double, v: Double, position: SIMD3<Double>)
 ```
 
 - **Parameters:**
-  - `u`, `v` — UV parameter coordinates.
-  - `position` — target 3D position the surface must pass through.
+  - `u`, `v`, UV parameter coordinates.
+  - `position`: target 3D position the surface must pass through.
 - **OCCT:** `Plate_Plate::Load` with `Plate_PinpointConstraint`.
 
 ---
@@ -279,10 +279,10 @@ public func loadDerivativeConstraint(u: Double, v: Double, value: SIMD3<Double>,
 ```
 
 - **Parameters:**
-  - `u`, `v` — UV parameter coordinates.
-  - `value` — target derivative value.
-  - `derivativeOrderU` — U derivative order (`0` for position, `1+` for derivatives).
-  - `derivativeOrderV` — V derivative order.
+  - `u`, `v`, UV parameter coordinates.
+  - `value`: target derivative value.
+  - `derivativeOrderU`: U derivative order (`0` for position, `1+` for derivatives).
+  - `derivativeOrderV`: V derivative order.
 - **OCCT:** `Plate_Plate::Load` with `Plate_PinpointConstraint` at higher derivative order.
 
 ---
@@ -300,9 +300,9 @@ public func loadGtoC(u: Double, v: Double,
 Constrains the surface derivatives to transition from one tangent frame to another at a given UV point.
 
 - **Parameters:**
-  - `u`, `v` — UV parameter coordinates.
-  - `sourceD1` — source surface first derivatives (tangentU, tangentV).
-  - `targetD1` — target surface first derivatives.
+  - `u`, `v`, UV parameter coordinates.
+  - `sourceD1`: source surface first derivatives (tangentU, tangentV).
+  - `targetD1`: target surface first derivatives.
 - **OCCT:** `Plate_Plate::Load` with `Plate_GtoCConstraint`.
 
 ---
@@ -319,8 +319,8 @@ public func solve(order: Int = 4, anisotropy: Double = 1.0) -> Bool
 ```
 
 - **Parameters:**
-  - `order` — solution polynomial order (default `4`).
-  - `anisotropy` — anisotropy parameter (default `1.0`).
+  - `order`: solution polynomial order (default `4`).
+  - `anisotropy`: anisotropy parameter (default `1.0`).
 - **Returns:** `true` if the solve succeeded.
 - **OCCT:** `Plate_Plate::SolveTI`.
 - **Example:**
@@ -358,7 +358,7 @@ public func evaluate(u: Double, v: Double) -> SIMD3<Double>
 
 Returns the 3D displacement/position computed by the solver. Must call `solve()` first.
 
-- **Parameters:** `u`, `v` — UV parameter coordinates.
+- **Parameters:** `u`, `v`, UV parameter coordinates.
 - **Returns:** The 3D point on the solved plate surface.
 - **OCCT:** `Plate_Plate::Evaluate`.
 
@@ -374,9 +374,9 @@ public func evaluateDerivative(u: Double, v: Double,
 ```
 
 - **Parameters:**
-  - `u`, `v` — UV parameter coordinates.
-  - `derivativeOrderU` — U derivative order.
-  - `derivativeOrderV` — V derivative order.
+  - `u`, `v`, UV parameter coordinates.
+  - `derivativeOrderU`: U derivative order.
+  - `derivativeOrderV`: V derivative order.
 - **Returns:** The requested partial derivative vector.
 - **OCCT:** `Plate_Plate::EvaluateDerivative`.
 
@@ -414,7 +414,7 @@ Builder for N-sided surface filling using `BRepOffsetAPI_MakeFilling`. Creates a
 
 As of #434, `FillingSurface` shares its bridge implementation with
 [`Shape.fill(boundaries:parameters:)`](Shape-Features.md#surface-filling) and
-`Shape.fill(constraints:parameters:)` — same `BRepOffsetAPI_MakeFilling` builder, same
+`Shape.fill(constraints:parameters:)`: same `BRepOffsetAPI_MakeFilling` builder, same
 continuity mapping, same untrimmed-pcurve guard (#430). `FillingSurface` is the incremental,
 stateful form (build up constraints one call at a time, inspect per-build error introspection);
 the `Shape.fill` overloads are one-shot convenience calls over an array of boundaries or
@@ -462,11 +462,11 @@ public init(degree: Int = 3, pointsOnCurve: Int = 15, maxDegree: Int = 8,
 ```
 
 - **Parameters:**
-  - `degree` — target polynomial degree (default `3`).
-  - `pointsOnCurve` — number of discretisation points on each constraint curve (default `15`).
-  - `maxDegree` — maximum polynomial degree (default `8`).
-  - `maxSegments` — maximum number of segments (default `9`).
-  - `tolerance` — 3D tolerance (default `1e-4`).
+  - `degree`: target polynomial degree (default `3`).
+  - `pointsOnCurve`: number of discretisation points on each constraint curve (default `15`).
+  - `maxDegree`: maximum polynomial degree (default `8`).
+  - `maxSegments`: maximum number of segments (default `9`).
+  - `tolerance`: 3D tolerance (default `1e-4`).
 - **OCCT:** `BRepOffsetAPI_MakeFilling` constructor.
 - **Example:**
   ```swift
@@ -485,14 +485,14 @@ public func add(edge: Edge, continuity: SurfaceContinuity = .g0) -> Bool
 ```
 
 - **Parameters:**
-  - `edge` — edge to add as a boundary constraint.
-  - `continuity` — continuity order at this edge (default `.g0`).
+  - `edge`: edge to add as a boundary constraint.
+  - `continuity`: continuity order at this edge (default `.g0`).
 - **Returns:** `true` if the edge was added successfully. This says nothing about whether the
   order is usable: `Add` only appends, so a bad order surfaces later as a `nil` `build()` that
   takes every other constraint with it. With no support face to validate, this overload only
   refuses a constraint OCCT itself throws on; see [Refused constraints](#refused-constraints).
 - **OCCT:** `BRepOffsetAPI_MakeFilling::Add` (boundary edge variant), via the same
-  `occtFillingContinuityToGeomAbs` order mapping `Shape.fill` uses — see
+  `occtFillingContinuityToGeomAbs` order mapping `Shape.fill` uses, see
   [Shape-Features](Shape-Features.md#surface-filling) for why `.g1` is not `GeomAbs_G1` and `.g2`
   is not `GeomAbs_G2`.
 - **Example:**
@@ -523,15 +523,15 @@ The failure is not confined to this call. A refusal here poisons `build()`, whic
 whatever else succeeded: the same answer `Shape.fill(constraints:parameters:)` gives for the same
 input (#482). See [Refused constraints](#refused-constraints).
 
-`support` is only meaningful above `.g0` — a positional constraint has nothing to be tangent or
+`support` is only meaningful above `.g0`, a positional constraint has nothing to be tangent or
 curvature-continuous *with*, so at `.g0` it is never read. `continuity` defaults to `.g1` rather
 than `.g0` for this reason, matching `FillConstraint`'s own default.
 
 - **Parameters:**
-  - `edge` — edge to add as a boundary constraint.
-  - `support` — face to be continuous with. Used or the constraint fails: if it carries no
+  - `edge`: edge to add as a boundary constraint.
+  - `support`: face to be continuous with. Used or the constraint fails: if it carries no
     pcurve for `edge` it cannot serve as the continuity reference.
-  - `continuity` — continuity order at this edge (default `.g1`).
+  - `continuity`: continuity order at this edge (default `.g1`).
 - **Returns:** `true` if the edge was added successfully. `false` means the constraint is not in
   the builder and `build()` will return nil.
 - **OCCT:** `BRepOffsetAPI_MakeFilling::Add` (edge + support face variant).
@@ -556,8 +556,8 @@ public func add(freeEdge edge: Edge, continuity: SurfaceContinuity = .g0) -> Boo
 Free edges are not required to be topologically connected to other boundary edges.
 
 - **Parameters:**
-  - `freeEdge` — edge to add as a free constraint.
-  - `continuity` — continuity order (default `.g0`).
+  - `freeEdge`: edge to add as a free constraint.
+  - `continuity`: continuity order (default `.g0`).
 - **Returns:** `true` if the edge was added successfully.
 - **OCCT:** `BRepOffsetAPI_MakeFilling::Add` (free edge variant).
 
@@ -572,7 +572,7 @@ Add a point constraint that the filling surface must pass through.
 public func add(point: SIMD3<Double>) -> Bool
 ```
 
-- **Parameters:** `point` — 3D point the surface must interpolate.
+- **Parameters:** `point`, 3D point the surface must interpolate.
 - **Returns:** `true` if the point was added successfully.
 - **OCCT:** `BRepOffsetAPI_MakeFilling::Add` (point variant).
 
@@ -725,7 +725,7 @@ Evaluate the law function at a given parameter.
 public func value(at parameter: Double) -> Double
 ```
 
-- **Parameters:** `parameter` — parameter value within `bounds`.
+- **Parameters:** `parameter`, parameter value within `bounds`.
 - **Returns:** The scalar value of the law at the given parameter.
 - **OCCT:** `Law_Function::Value`.
 - **Example:**
@@ -762,8 +762,8 @@ public static func constant(_ value: Double, from first: Double = 0,
 ```
 
 - **Parameters:**
-  - `value` — the constant scalar output.
-  - `first`, `last` — parameter range (default `0...1`).
+  - `value`: the constant scalar output.
+  - `first`, `last`, parameter range (default `0...1`).
 - **Returns:** A `LawFunction`, or `nil` on failure.
 - **OCCT:** `Law_Constant`.
 
@@ -779,9 +779,9 @@ public static func linear(from startValue: Double, to endValue: Double,
 ```
 
 - **Parameters:**
-  - `startValue` — value at `parameterRange.lowerBound`.
-  - `endValue` — value at `parameterRange.upperBound`.
-  - `parameterRange` — parametric domain (default `0...1`).
+  - `startValue`: value at `parameterRange.lowerBound`.
+  - `endValue`: value at `parameterRange.upperBound`.
+  - `parameterRange`: parametric domain (default `0...1`).
 - **Returns:** A `LawFunction`, or `nil` on failure.
 - **OCCT:** `Law_Linear`.
 - **Example:**
@@ -804,9 +804,9 @@ public static func sCurve(from startValue: Double, to endValue: Double,
 ```
 
 - **Parameters:**
-  - `startValue` — value at the start of the range.
-  - `endValue` — value at the end of the range.
-  - `parameterRange` — parametric domain (default `0...1`).
+  - `startValue`: value at the start of the range.
+  - `endValue`: value at the end of the range.
+  - `parameterRange`: parametric domain (default `0...1`).
 - **Returns:** A `LawFunction`, or `nil` on failure.
 - **OCCT:** `Law_S`.
 
@@ -822,8 +822,8 @@ public static func interpolate(points: [(parameter: Double, value: Double)],
 ```
 
 - **Parameters:**
-  - `points` — array of `(parameter, value)` tuples in ascending parameter order; must have at least 2 elements.
-  - `periodic` — whether the law is periodic (default `false`).
+  - `points`: array of `(parameter, value)` tuples in ascending parameter order; must have at least 2 elements.
+  - `periodic`: whether the law is periodic (default `false`).
 - **Returns:** A `LawFunction`, or `nil` on failure.
 - **OCCT:** `Law_Interpol`.
 
@@ -840,10 +840,10 @@ public static func bspline(poles: [Double], knots: [Double],
 ```
 
 - **Parameters:**
-  - `poles` — control point values (1D); at least 2 required.
-  - `knots` — knot values; at least 2 required.
-  - `multiplicities` — knot multiplicities matching `knots`.
-  - `degree` — polynomial degree.
+  - `poles`: control point values (1D); at least 2 required.
+  - `knots`: knot values; at least 2 required.
+  - `multiplicities`: knot multiplicities matching `knots`.
+  - `degree`: polynomial degree.
 - **Returns:** A `LawFunction`, or `nil` on failure.
 - **OCCT:** `Law_BSpline`.
 
@@ -861,8 +861,8 @@ public static func composite(laws: [LawFunction],
 ```
 
 - **Parameters:**
-  - `laws` — array of sub-law functions in parameter order; at least 1 required.
-  - `range` — overall parametric range (default `0...1`).
+  - `laws`: array of sub-law functions in parameter order; at least 1 required.
+  - `range`: overall parametric range (default `0...1`).
 - **Returns:** A composite `LawFunction`, or `nil` on failure.
 - **OCCT:** `Law_Composite`.
 
@@ -904,7 +904,7 @@ about how many splits the law has.
 
 #### `knotSplitParameters(continuityOrder:)`
 
-Find parameter values (not raw knot indices) where a BSpline law drops below given continuity —
+Find parameter values (not raw knot indices) where a BSpline law drops below given continuity,
 the law-function analogue of `Curve3D.continuityBreaks`.
 
 ```swift
@@ -967,7 +967,7 @@ Solve a quadratic equation: `ax² + bx + c = 0`.
 public static func quadratic(a: Double, b: Double, c: Double) -> PolynomialRoots
 ```
 
-- **Parameters:** `a`, `b`, `c` — coefficients (highest degree first).
+- **Parameters:** `a`, `b`, `c`, coefficients (highest degree first).
 - **Returns:** `PolynomialRoots` containing 0, 1, or 2 real roots sorted ascending.
 - **OCCT:** `math_DirectPolynomialRoots` (degree-2 constructor).
 - **Example:**
@@ -987,7 +987,7 @@ Solve a cubic equation: `ax³ + bx² + cx + d = 0`.
 public static func cubic(a: Double, b: Double, c: Double, d: Double) -> PolynomialRoots
 ```
 
-- **Parameters:** `a`, `b`, `c`, `d` — coefficients (highest degree first).
+- **Parameters:** `a`, `b`, `c`, `d`, coefficients (highest degree first).
 - **Returns:** `PolynomialRoots` containing 1, 2, or 3 real roots sorted ascending.
 - **OCCT:** `math_DirectPolynomialRoots` (degree-3 constructor).
 - **Example:**
@@ -1007,7 +1007,7 @@ Solve a quartic equation: `ax⁴ + bx³ + cx² + dx + e = 0`.
 public static func quartic(a: Double, b: Double, c: Double, d: Double, e: Double) -> PolynomialRoots
 ```
 
-- **Parameters:** `a`, `b`, `c`, `d`, `e` — coefficients (highest degree first).
+- **Parameters:** `a`, `b`, `c`, `d`, `e`, coefficients (highest degree first).
 - **Returns:** `PolynomialRoots` containing 0–4 real roots sorted ascending.
 - **OCCT:** `math_DirectPolynomialRoots` (degree-4 constructor).
 - **Example:**
@@ -1031,7 +1031,7 @@ Build a KD-tree from an array of 3D points.
 public init?(points: [SIMD3<Double>])
 ```
 
-- **Parameters:** `points` — the points to index; must be non-empty.
+- **Parameters:** `points`, the points to index; must be non-empty.
 - **Returns:** A KD-tree, or `nil` if the input is empty or construction fails.
 - **OCCT:** `NCollection_KDTree<gp_Pnt, 3>`.
 - **Example:**
@@ -1056,7 +1056,7 @@ Find the nearest point to a query location.
 public func nearest(to point: SIMD3<Double>) -> (index: Int, distance: Double)?
 ```
 
-- **Parameters:** `point` — the query point.
+- **Parameters:** `point`, the query point.
 - **Returns:** A `(index, distance)` tuple where `index` is the 0-based index into the original `points` array and `distance` is the Euclidean distance, or `nil` on error.
 - **OCCT:** `NCollection_KDTree::FindNearest`.
 - **Example:**
@@ -1077,8 +1077,8 @@ public func kNearest(to point: SIMD3<Double>, k: Int) -> [(index: Int, squaredDi
 ```
 
 - **Parameters:**
-  - `point` — the query point.
-  - `k` — output *capacity*, clamped into `0...Sampling.maximumSampleCount` (10,000,000); 0 or less returns empty (#622). Fewer than `k` come back when the tree
+  - `point`: the query point.
+  - `k`: output *capacity*, clamped into `0...Sampling.maximumSampleCount` (10,000,000); 0 or less returns empty (#622). Fewer than `k` come back when the tree
     holds fewer points.
 - **Returns:** Array of `(index, squaredDistance)` tuples sorted by distance. Note: distances are **squared**.
 - **OCCT:** `NCollection_KDTree` k-nearest query.
@@ -1101,9 +1101,9 @@ public func rangeSearch(center: SIMD3<Double>, radius: Double, maxResults: Int =
 ```
 
 - **Parameters:**
-  - `center` — center of the search sphere.
-  - `radius` — radius of the search sphere.
-  - `maxResults` — output *capacity* (default `1000`), clamped into `0...Sampling.maximumSampleCount` (10,000,000); 0 or less returns empty (#622).
+  - `center`: center of the search sphere.
+  - `radius`: radius of the search sphere.
+  - `maxResults`: output *capacity* (default `1000`), clamped into `0...Sampling.maximumSampleCount` (10,000,000); 0 or less returns empty (#622).
 - **Returns:** Array of 0-based indices of points within the sphere.
 - **OCCT:** `NCollection_KDTree` range query.
 - **Example:**
@@ -1123,9 +1123,9 @@ public func boxSearch(min: SIMD3<Double>, max: SIMD3<Double>, maxResults: Int = 
 ```
 
 - **Parameters:**
-  - `min` — minimum corner of the box.
-  - `max` — maximum corner of the box.
-  - `maxResults` — output *capacity* (default `1000`), clamped into `0...Sampling.maximumSampleCount` (10,000,000); 0 or less returns empty (#622).
+  - `min`: minimum corner of the box.
+  - `max`: maximum corner of the box.
+  - `maxResults`: output *capacity* (default `1000`), clamped into `0...Sampling.maximumSampleCount` (10,000,000); 0 or less returns empty (#622).
 - **Returns:** Array of 0-based indices of points within the box.
 - **OCCT:** `NCollection_KDTree` box query.
 - **Example:**

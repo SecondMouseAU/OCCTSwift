@@ -4,7 +4,7 @@ import simd
 // MARK: - Ad-hoc measurement helpers (v0.143 M3, M4)
 //
 // Small ergonomic layer on top of OCCTSwift's existing measurement coverage.
-// These aren't new capabilities — the underlying geometry is already wrapped —
+// These aren't new capabilities, the underlying geometry is already wrapped,
 // they're the one-liner accessors users reach for in agent / viewport workflows
 // where clicking two entities and reading an angle or a radius is the core UX.
 
@@ -12,7 +12,7 @@ import simd
 
 extension Edge {
     /// This edge's curve parameter at a normalized `[0, 1]` fraction of its parameter
-    /// bounds, via naive linear interpolation over the raw parameter domain — NOT arc
+    /// bounds, via naive linear interpolation over the raw parameter domain, NOT arc
     /// length. `Shape.edgeParameterAtFraction(_:)` is the arc-length-accurate variant
     /// (#603); the two disagree on non-uniformly-parameterized curves (ellipses,
     /// BSplines). `fraction` is clamped to `[0, 1]` first.
@@ -32,7 +32,7 @@ extension Edge {
     /// their respective mid-parameters.
     ///
     /// Returns radians in [0, π]. For straight edges the result is the line-line
-    /// angle. For curved edges it's the angle between the mid-curve tangents —
+    /// angle. For curved edges it's the angle between the mid-curve tangents,
     /// useful as an approximation but note the angle varies along a curve; pass
     /// `atParameter:` for a specific point.
     public func angle(to other: Edge, atParameter t: Double = 0.5) -> Double? {
@@ -66,7 +66,7 @@ extension Face {
     /// This face's UV-domain midpoint, shared by `uvMidpointPoint()`, `uvMidpointNormal()`,
     /// and `uvMidpointSample()` below.
     ///
-    /// - Returns: `(u, v)`, unlabeled — an internal function returning a tuple with baked-in
+    /// - Returns: `(u, v)`, unlabeled, an internal function returning a tuple with baked-in
     ///   labels forces every call site whose own labels differ into a two-step bind-then-relabel
     ///   instead of a direct return (`okf/policies/code-style.md`; #914 review, second round).
     private var uvMidpoint: (Double, Double)? {
@@ -93,7 +93,7 @@ extension Face {
         return normal(atU: u, v: v)
     }
 
-    /// This face's point + normal sampled at its UV-domain midpoint — a cheap,
+    /// This face's point + normal sampled at its UV-domain midpoint, a cheap,
     /// always-available representative sample, not the area centroid (see
     /// `surfaceInertia.centerOfMass` for that).
     ///
@@ -104,10 +104,10 @@ extension Face {
     ///
     /// Computes `uvMidpoint` once and evaluates both `point(atU:v:)`/`normal(atU:v:)`
     /// against it directly, rather than delegating to `uvMidpointPoint()`/
-    /// `uvMidpointNormal()` — those each independently re-derive `uvMidpoint`, which
+    /// `uvMidpointNormal()`, those each independently re-derive `uvMidpoint`, which
     /// would fetch `uvBounds` twice per call here (PR #897 review, 2nd pass).
     ///
-    /// - Returns: `(point, normal)`, unlabeled — an internal function returning a tuple with
+    /// - Returns: `(point, normal)`, unlabeled, an internal function returning a tuple with
     ///   baked-in labels forces every call site whose own labels differ into a two-step
     ///   bind-then-relabel instead of a direct return (`okf/policies/code-style.md`; #914
     ///   review, second round). Every call site destructures into named locals immediately, so
@@ -150,19 +150,19 @@ extension Face {
         return abs(a - .pi / 2) < toleranceRadians
     }
 
-    /// Whether this face is coplanar with another — normals parallel AND origin
+    /// Whether this face is coplanar with another, normals parallel AND origin
     /// lies on the other face's plane. `nil` (not `false`) when either face's
     /// UV-midpoint normal/point is unavailable, or when the two faces aren't parallel.
     ///
     /// Checks the (cheaper) normals first and only evaluates each face's UV-midpoint
-    /// *point* once the normals are confirmed parallel — an all-pairs coplanarity sweep
+    /// *point* once the normals are confirmed parallel, an all-pairs coplanarity sweep
     /// (feature recognition, symmetry detection) spends most of its calls on non-parallel
     /// pairs, so short-circuiting there matters. Computes each face's `uvMidpoint` tuple
     /// exactly once (`mid`/`otherMid`), reusing it for both the normal and (if reached)
-    /// point evaluation directly — NOT via `uvMidpointNormal()` then `uvMidpointPoint()`,
+    /// point evaluation directly, NOT via `uvMidpointNormal()` then `uvMidpointPoint()`,
     /// which would each independently re-derive `uvMidpoint` (a real `uvBounds` bridge
     /// call, no caching), fetching it twice per face on a parallel pair instead of once
-    /// (PR #897 review, third pass, finding 3 — a regression the second xhigh pass's own
+    /// (PR #897 review, third pass, finding 3, a regression the second xhigh pass's own
     /// finding-7 fix introduced while fixing a different, real problem: this file's
     /// `uvMidpointSample()` doc already warns delegating to the split accessors "would
     /// fetch `uvBounds` twice per call").
@@ -211,7 +211,7 @@ extension ConstructionPlane {
 
 /// Unsigned angle in [0, π] between two 3D vectors.
 ///
-/// Returns nil for degenerate (near-zero-length) input — this doc already claimed
+/// Returns nil for degenerate (near-zero-length) input, this doc already claimed
 /// nil for that case while the implementation unconditionally returned `0`, silently
 /// reporting a degenerate/near-singular normal as "parallel" to anything through
 /// `normalsAreParallel` below (PR #897 review, finding 5).
@@ -224,12 +224,12 @@ public func unsignedAngle(between a: SIMD3<Double>, and b: SIMD3<Double>) -> Dou
 }
 
 /// Whether `angle` (already computed, radians in `[0, π]`) is within `toleranceRadians` of `0`
-/// or `π` — i.e. whether the two directions it was measured between are parallel or
+/// or `π`, i.e. whether the two directions it was measured between are parallel or
 /// anti-parallel.
 ///
 /// Shared by `Edge.isParallel(to:)` above and `normalsAreParallel(_:_:toleranceRadians:)` below,
 /// which used to each inline this identical comparison independently (PR #897 review, second
-/// xhigh pass, finding 6/11) — a future correction to the boundary behavior (e.g. exactly at
+/// xhigh pass, finding 6/11), a future correction to the boundary behavior (e.g. exactly at
 /// `angle == toleranceRadians`) now only has one implementation to fix.
 internal func angleIsParallel(_ angle: Double, toleranceRadians: Double) -> Bool {
     angle < toleranceRadians || (.pi - angle) < toleranceRadians
@@ -237,7 +237,7 @@ internal func angleIsParallel(_ angle: Double, toleranceRadians: Double) -> Bool
 
 /// Whether two already-sampled face normals are parallel (or anti-parallel) within
 /// `toleranceRadians`. `nil` (not `false`) when either normal is degenerate
-/// (near-zero-length) — propagated from `unsignedAngle`, rather than reporting a
+/// (near-zero-length), propagated from `unsignedAngle`, rather than reporting a
 /// degenerate normal as parallel to everything (PR #897 review, finding 5).
 ///
 /// Shared by `Face.isParallel(to:)` and `Face.isCoplanar(with:)` so callers that
@@ -278,7 +278,7 @@ extension Edge {
         // The point at parameter 0 is on the +X axis of the circle's local frame;
         // we recover centre and radius from three sampled points. A full circle
         // is periodic, so point(at: bounds.last) coincides with point(at: bounds.first)
-        // to floating-point precision — sample interior thirds instead so all
+        // to floating-point precision, sample interior thirds instead so all
         // three points are distinct.
         let sample1Param = bounds.first
         let sample2Param = bounds.first + range * (full ? 1.0 / 3.0 : 0.5)
@@ -310,19 +310,19 @@ extension Face {
         // Switches on `primary.kind` (`ShapeAxis.Kind`), not `surfaceType` (`Face.SurfaceType`):
         // two different enums encoding the identical "does this surface kind have a genuine
         // axis" predicate independently used to drift out of sync with each other (#897 review,
-        // second xhigh pass finding 3) — `resolveFaceAxisDirection`
+        // second xhigh pass finding 3), `resolveFaceAxisDirection`
         // (`ConstructionEntity.swift`) already switches on `ShapeAxis.Kind` for the same
         // question, so this makes the two agree by construction instead of by manual upkeep
         // across two case-lists in two files.
         switch primary.kind {
         case .sphere:
-            // A sphere has no genuine rotation axis (`ShapeAxis.direction`'s doc) — `primary`
+            // A sphere has no genuine rotation axis (`ShapeAxis.direction`'s doc), `primary`
             // here is only the arbitrary construction-frame pole, the same exclusion
             // `resolveFaceAxisDirection` applies for the identical reason. But unlike
             // cone/torus/surfaceOfRevolution, a sphere's radius IS well-defined and constant:
             // every surface point sits exactly R from the center regardless of which
             // (arbitrary) pole direction is reported, so this doesn't need the axis-relative
-            // radial component below at all — just the distance to the center (PR #897
+            // radial component below at all, just the distance to the center (PR #897
             // review, finding 1). Using the radial component instead (as this case used to,
             // sharing the branch below) is only correct by coincidence, for an untrimmed
             // sphere sampled exactly on its equator, and is arbitrarily wrong for a trimmed

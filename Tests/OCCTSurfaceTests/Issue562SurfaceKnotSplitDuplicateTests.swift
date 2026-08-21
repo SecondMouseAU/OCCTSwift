@@ -6,7 +6,7 @@ import simd
 /// and by the v0.105.0 `bsplineKnotSplitsU`/`bsplineKnotSplitsV`/`bsplineKnotSplitValues` trio.
 /// The trio carried one thing the canonical call did not: the raw knot-table indices, where the
 /// canonical call reported only the parameters it had converted them into. So the canonical result
-/// now carries the indices too, and the trio forwards to it — one analyzer construction per query
+/// now carries the indices too, and the trio forwards to it, one analyzer construction per query
 /// instead of the three `bsplineKnotSplitValues` needed.
 @Suite("Surface knot-splitting duplicates (#562)")
 struct Issue562SurfaceKnotSplitDuplicateTests {

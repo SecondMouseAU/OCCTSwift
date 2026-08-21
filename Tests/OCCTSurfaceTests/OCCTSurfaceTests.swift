@@ -101,7 +101,7 @@ struct SurfaceFillingTests {
 /// process with an uncatchable SIGSEGV rather than returning nil.
 ///
 /// Every test here therefore doubles as a crash regression: *reaching* its assertions at all
-/// is half the point. The other half is that tangency is really delivered, not just survived —
+/// is half the point. The other half is that tangency is really delivered, not just survived,
 /// checked geometrically, since a fill that silently degrades to `.c0` also returns non-nil.
 @Suite("Filling Continuity And Support Faces (#430)")
 struct FillingSupportFaceTests {
@@ -234,7 +234,7 @@ struct FillingSupportFaceTests {
 
         // maxDegree binds to BRepOffsetAPI_MakeFilling's MaxDeg. Under the pre-#431 binding it
         // went to Degree (the energy criterion) and MaxDeg stayed at its default 8, so the
-        // result overshot the requested cap — measured vDegree 6 for this same call.
+        // result overshot the requested cap, measured vDegree 6 for this same call.
         #expect(surface.uDegree <= 3)
         #expect(surface.vDegree <= 3)
     }
@@ -251,7 +251,7 @@ struct FillingSupportFaceTests {
         }
 
         // The rim has no ancestor face in `unrelated`, so each edge falls back to its own
-        // underlying surface — the documented degradation. It must still fill, and still be
+        // underlying surface, the documented degradation. It must still fill, and still be
         // tangent, rather than nil the whole operation.
         let capped = Shape.fill(boundaries: [rim], supportedBy: unrelated,
                                 parameters: FillingParameters(continuity: .g1))
@@ -339,7 +339,7 @@ struct FillingSupportFaceTests {
         }
 
         // The rim resolves no pcurve on that face, so it cannot be the continuity reference.
-        // The edge does resolve its own spherical surface, so a fallback would succeed — and
+        // The edge does resolve its own spherical surface, so a fallback would succeed, and
         // would silently answer with a reference the caller never asked for. Naming a face
         // means that face or nothing.
         let substituted = Shape.fill(constraints: [
@@ -366,7 +366,7 @@ struct FillingSupportFaceTests {
         }
 
         // maxDegree used to be passed as SetResolParam's NbIter, leaving MaxDeg at its default 8
-        // because SetApproxParam was never called — so the cap did nothing and the result came
+        // because SetApproxParam was never called, so the cap did nothing and the result came
         // back degree 8. Second site of #431.
         let filling = FillingSurface(maxDegree: 3)
         #expect(filling.add(edge: rim, continuity: .g1))
@@ -410,7 +410,7 @@ struct FillingSupportFaceTests {
 
         // Before #433, .g1 hand-mapped to GeomAbs_C1 (curvature, ordinal 2) instead of
         // GeomAbs_G1 (tangency, ordinal 1), and .g2 mapped to GeomAbs_C2 (ordinal 4), which
-        // every constraint class rejects — failing the whole build() rather than just that one
+        // every constraint class rejects, failing the whole build() rather than just that one
         // constraint. Mirrors Shape.fill's own "Curvature continuity is accepted and differs
         // from tangency" test above, which guards the same mapping on the other entry point.
         let tangentFilling = FillingSurface()
@@ -1115,7 +1115,7 @@ struct SurfaceDrawTests {
         // Recompute the same clamped domain the bridge samples (OCCTSurfaceDrawMesh), and cross
         // check every grid point against the independent single-point evaluator. Before #404,
         // drawMesh's own test used a symmetric 10x10 grid, which cannot distinguish [u][v] from
-        // [v][u] ordering — this asymmetric grid can.
+        // [v][u] ordering, this asymmetric grid can.
         var (uMin, uMax, vMin, vMax) = sphere.domain
         if uMin < -1e6 { uMin = -100 }
         if uMax > 1e6 { uMax = 100 }
@@ -1254,7 +1254,7 @@ struct SurfaceCurveProjectionTests {
 
     @Test("Composite projection returns multiple segments when needed")
     func compositeProjectionBasic() {
-        // Project onto a simple surface — even single-segment results should work
+        // Project onto a simple surface, even single-segment results should work
         let plane = Surface.plane(origin: SIMD3(0, 0, 0), normal: SIMD3(0, 0, 1))!
         let seg = Curve3D.segment(from: SIMD3(0, 0, 5), to: SIMD3(10, 0, 5))!
 
@@ -1621,7 +1621,7 @@ struct BatchSurfaceTests {
     @Test("evaluateGrid indexes each (u, v) at its own parameter, not transposed")
     func evalGridAsymmetricMatchesDirectEvaluation() {
         // #404: evaluateGrid used to return [vIndex][uIndex] while drawMesh returned
-        // [uIndex][vIndex] — a symmetric grid can't tell the two conventions apart, so use an
+        // [uIndex][vIndex], a symmetric grid can't tell the two conventions apart, so use an
         // asymmetric one and cross-check every sample against the independent point(atU:v:)
         // evaluator.
         let sphere = Surface.sphere(center: .zero, radius: 5)!
@@ -1643,7 +1643,7 @@ struct BatchSurfaceTests {
     @Test("drawMesh and evaluateGrid agree at matching parameters")
     func drawMeshAndEvaluateGridAgree() {
         // #404: the two methods used opposite index conventions internally, but nothing at the
-        // type level distinguished them — a caller mixing them up would silently read transposed
+        // type level distinguished them, a caller mixing them up would silently read transposed
         // data. Now both return SurfaceGrid, sampled here at the same asymmetric (u, v) grid, so
         // they must agree point-for-point under the same .at(u:v:) indexing.
         let sphere = Surface.sphere(center: .zero, radius: 5)!
@@ -2021,7 +2021,7 @@ struct PipeFeatureTests {
         let circle = Wire.circle(radius: 2)!
         let profile = Shape.face(from: circle)!
         let spine = Wire.line(from: SIMD3(0, 0, 10), to: SIMD3(0, 0, -10))!
-        // Pipe feature on top face (5) — may not work on all geometry
+        // Pipe feature on top face (5), may not work on all geometry
         let result = box.pipeFeature(
             profile: profile, sketchFaceIndex: 5,
             spine: spine, fuse: false
@@ -2340,7 +2340,7 @@ struct LocalRevolutionTests {
 struct LocOpePipeTests {
     @Test("Pipe sweep along wire spine")
     func pipeSweep() throws {
-        // LocOpe_Pipe needs a face profile — create a planar face from a wire
+        // LocOpe_Pipe needs a face profile, create a planar face from a wire
         let profileWire = Wire.rectangle(width: 2, height: 2)!
         let profileFace = Shape.face(from: profileWire)!
         let spine = Wire.line(from: SIMD3(0, 0, 0), to: SIMD3(10, 0, 0))!
@@ -2464,7 +2464,7 @@ struct ApproxCurveOnSurfaceTests {
                     return
                 }
             }
-            // If no edge succeeded, that's ok — no crash is success
+            // If no edge succeeded, that's ok, no crash is success
             #expect(Bool(true))
         }
     }
@@ -2683,7 +2683,7 @@ struct LocalAnalysisSurfaceContinuityTests {
         guard let s1 = Surface.plane(origin: .zero, normal: SIMD3(0, 0, 1)),
               let s2 = Surface.plane(origin: .zero, normal: SIMD3(0, 0, 1)) else { return }
         // Planes have no second derivative, so the `.c2` default is NullSecondDerivative and
-        // answers nil — these three suites used to assert nothing at all (#495). `.c1` is the
+        // answers nil, these three suites used to assert nothing at all (#495). `.c1` is the
         // strictest order a plane can be analysed at.
         let analysis = s1.continuityWith(s2, u1: 0, v1: 0, u2: 0, v2: 0, order: .c1)
         #expect(analysis?.isC0 == true)
@@ -2973,7 +2973,7 @@ struct GeomPlateBuildAveragePlaneTests {
     @Test func collinearPoints() {
         let result = Surface.averagePlane(
             points: [SIMD3(0, 0, 0), SIMD3(1, 1, 1), SIMD3(2, 2, 2)])
-        // May or may not detect as line/plane — just test it doesn't crash
+        // May or may not detect as line/plane, just test it doesn't crash
         #expect(result != nil || result == nil) // always true
     }
 }
@@ -3561,7 +3561,7 @@ struct PlateConstraintExtTests {
         #expect(ok)
     }
 
-    // freeG1Constraint test disabled — Plate_FreeGtoCConstraint causes SEGV in OCCT 8.0.0-rc4
+    // freeG1Constraint test disabled. Plate_FreeGtoCConstraint causes SEGV in OCCT 8.0.0-rc4
     // when loading generated LSCs into solver. The bridge function works but is unsafe to test.
 }
 
@@ -4310,7 +4310,7 @@ struct BSplineSurfaceRemoveVKnotTests {
 
     @Test func removeVKnot() {
         if let s = makeBSplineSurface() {
-            // Attempt removal — may fail due to tolerance, that's OK
+            // Attempt removal, may fail due to tolerance, that's OK
             let _ = s.bsplineRemoveVKnot(index: 1, mult: 0, tolerance: 1.0)
             #expect(true)  // no crash
         }
@@ -4322,8 +4322,8 @@ struct BezierSurfaceResolutionTests {
 
     @Test func resolution() {
         // Create a Bezier surface via Shape then extract surface
-        // Use a simple box face — it's a plane, not a Bezier. Let's use Surface.bezier if available.
-        // Actually, let's just test with what we have — if not Bezier it returns 0.
+        // Use a simple box face, it's a plane, not a Bezier. Let's use Surface.bezier if available.
+        // Actually, let's just test with what we have, if not Bezier it returns 0.
         let md = Surface.bezierMaxDegree
         #expect(md >= 25)
     }
@@ -4402,7 +4402,7 @@ struct BSplineSurfaceCompletionsV121Tests {
     @Test("SetUNotPeriodic / SetVNotPeriodic")
     func setNotPeriodic() {
         if let surf = makeBSplineSurface() {
-            // Non-periodic surface — calling SetNotPeriodic is a no-op but should succeed
+            // Non-periodic surface, calling SetNotPeriodic is a no-op but should succeed
             let r1 = surf.bsplineSetUNotPeriodic()
             let r2 = surf.bsplineSetVNotPeriodic()
             #expect(r1)
@@ -4444,7 +4444,7 @@ struct BSplineSurfaceCompletionsV121Tests {
             let r = surf.bsplineMovePoint(u: 0.5, v: 0.5, to: target,
                                            uPoleRange: 1...4, vPoleRange: 1...4)
             #expect(r)
-            // Evaluate at (0.5, 0.5) — should be close to target
+            // Evaluate at (0.5, 0.5), should be close to target
             let p = surf.point(atU: 0.5, v: 0.5)
             #expect(abs(p.x - target.x) < 1.0)
             #expect(abs(p.y - target.y) < 1.0)
@@ -4454,14 +4454,14 @@ struct BSplineSurfaceCompletionsV121Tests {
     @Test("SetPoleCol and SetPoleRow")
     func setPoleColRow() {
         if let surf = makeBSplineSurface() {
-            // Set column 1 (vIndex=1) to new values — 4 poles for NbUPoles=4
+            // Set column 1 (vIndex=1) to new values, 4 poles for NbUPoles=4
             let newCol: [SIMD3<Double>] = [
                 SIMD3(0, 0, 5), SIMD3(0, 3, 5), SIMD3(0, 7, 5), SIMD3(0, 10, 5)
             ]
             let r1 = surf.bsplineSetPoleCol(vIndex: 1, poles: newCol)
             #expect(r1)
 
-            // Set row 1 (uIndex=1) to new values — 4 poles for NbVPoles=4
+            // Set row 1 (uIndex=1) to new values, 4 poles for NbVPoles=4
             let newRow: [SIMD3<Double>] = [
                 SIMD3(0, 0, 3), SIMD3(3, 0, 3), SIMD3(7, 0, 3), SIMD3(10, 0, 3)
             ]
@@ -4473,7 +4473,7 @@ struct BSplineSurfaceCompletionsV121Tests {
     @Test("SetUOrigin / SetVOrigin fail on non-periodic")
     func setOriginNonPeriodic() {
         if let surf = makeBSplineSurface() {
-            // SetOrigin only works on periodic surfaces — should fail gracefully
+            // SetOrigin only works on periodic surfaces, should fail gracefully
             let r1 = surf.bsplineSetUOrigin(index: 1)
             #expect(!r1)
             let r2 = surf.bsplineSetVOrigin(index: 1)
@@ -4482,7 +4482,7 @@ struct BSplineSurfaceCompletionsV121Tests {
     }
 }
 
-@Suite("v0.123.0 — PipeShell extensions")
+@Suite("v0.123.0, PipeShell extensions")
 struct PipeShellExtensionsTests {
 
     @Test("GetStatus")
@@ -4518,7 +4518,7 @@ struct PipeShellExtensionsTests {
     }
 }
 
-@Suite("v0.123.0 — Surface queries")
+@Suite("v0.123.0, Surface queries")
 struct SurfaceQueriesV123Tests {
 
     @Test("Cylinder U period")
@@ -4907,7 +4907,7 @@ struct BezierSurfaceCompletionTests {
     }
 }
 
-@Suite("v0.126.0 — BSpline Surface completions")
+@Suite("v0.126.0, BSpline Surface completions")
 struct BSplineSurfaceCompletionsTests {
     @Test("U and V multiplicities")
     func multiplicities() {
@@ -4951,7 +4951,7 @@ struct BSplineSurfaceCompletionsTests {
     }
 }
 
-@Suite("v0.126.0 — Bezier Surface completions")
+@Suite("v0.126.0, Bezier Surface completions")
 struct BezierSurfaceCompletionsTests {
     @Test("InsertPoleColAfter and RemovePoleCol")
     func insertRemoveCol() {
@@ -4962,7 +4962,7 @@ struct BezierSurfaceCompletionsTests {
         let s = Surface.bezier(poles: poles)
         if let s = s {
             let origVPoles = s.bezierNbVPoles
-            // Insert column after col 1 — need NbUPoles (2) points
+            // Insert column after col 1, need NbUPoles (2) points
             let newCol = [SIMD3<Double>(0, 0.5, 0.5), SIMD3(1, 0.5, 0.5)]
             let ok = s.bezierInsertPoleColAfter(1, poles: newCol)
             #expect(ok)
@@ -4984,7 +4984,7 @@ struct BezierSurfaceCompletionsTests {
         let s = Surface.bezier(poles: poles)
         if let s = s {
             let origUPoles = s.bezierNbUPoles
-            // Insert row after row 1 — need NbVPoles (2) points
+            // Insert row after row 1, need NbVPoles (2) points
             let newRow = [SIMD3<Double>(0.5, 0, 0.5), SIMD3(0.5, 1, 0.5)]
             let ok = s.bezierInsertPoleRowAfter(1, poles: newRow)
             #expect(ok)
@@ -5029,7 +5029,7 @@ struct BezierSurfaceCompletionsTests {
 
 // MARK: - v0.127.0: Section ops, BSpline/Bezier completions, BRep_Tool, ColorTool, FilletBuilder history
 
-@Suite("v0.127.0 — Section with Plane/Surface")
+@Suite("v0.127.0, Section with Plane/Surface")
 struct SectionPlaneTests {
 
     @Test("Section shape with plane produces edges")
@@ -5053,7 +5053,7 @@ struct SectionPlaneTests {
     }
 }
 
-@Suite("v0.127.0 — Bezier Surface Pole Col/Row with Weights")
+@Suite("v0.127.0, Bezier Surface Pole Col/Row with Weights")
 struct BezierSurfaceWeightTests {
 
     @Test("SetPoleCol with weights modifies surface")
@@ -5276,7 +5276,7 @@ struct PipeShellClosedGeometryTests {
 
 // MARK: - v0.130.0 Tests
 
-@Suite("GeomEval — Circular Helix Curve")
+@Suite("GeomEval, Circular Helix Curve")
 struct GeomEvalCircularHelixTests {
 
     @Test func helixD0AtZero() {
@@ -5322,7 +5322,7 @@ struct GeomEvalCircularHelixTests {
     }
 }
 
-@Suite("GeomEval — 3D Sine Wave Curve")
+@Suite("GeomEval, 3D Sine Wave Curve")
 struct GeomEvalSineWaveTests {
 
     @Test func sineWaveD0AtZero() {
@@ -5358,7 +5358,7 @@ struct GeomEvalSineWaveTests {
     }
 }
 
-@Suite("GeomEval — Ellipsoid Surface")
+@Suite("GeomEval, Ellipsoid Surface")
 struct GeomEvalEllipsoidTests {
 
     @Test func ellipsoidD0AtZeroZero() {
@@ -5382,7 +5382,7 @@ struct GeomEvalEllipsoidTests {
     }
 }
 
-@Suite("GeomEval — Hyperboloid Surface")
+@Suite("GeomEval, Hyperboloid Surface")
 struct GeomEvalHyperboloidTests {
 
     @Test func hyperboloidOneSheetD0() {
@@ -5410,7 +5410,7 @@ struct GeomEvalHyperboloidTests {
     }
 }
 
-@Suite("GeomEval — Paraboloid Surface")
+@Suite("GeomEval, Paraboloid Surface")
 struct GeomEvalParaboloidTests {
 
     @Test func paraboloidD0() {
@@ -5426,7 +5426,7 @@ struct GeomEvalParaboloidTests {
     }
 }
 
-@Suite("GeomEval — Circular Helicoid Surface")
+@Suite("GeomEval, Circular Helicoid Surface")
 struct GeomEvalCircularHelicoidTests {
 
     @Test func circularHelicoidD0() {
@@ -5443,7 +5443,7 @@ struct GeomEvalCircularHelicoidTests {
     }
 }
 
-@Suite("GeomEval — Hyperbolic Paraboloid Surface")
+@Suite("GeomEval, Hyperbolic Paraboloid Surface")
 struct GeomEvalHypParaboloidTests {
 
     @Test func hypParaboloidD0AtOrigin() {
@@ -5522,7 +5522,7 @@ private func assertMatchesQuarterCylinder(_ surface: Surface, tolerance: Double 
     }
 }
 
-@Suite("GeomFill — Gordon Surface")
+@Suite("GeomFill, Gordon Surface")
 struct GeomFillGordonTests {
 
     @Test func gordonFromLineNetwork() {
@@ -5932,9 +5932,9 @@ struct DrawingSymbolsTests {
     }
 }
 
-// MARK: - GeomFill Gordon report + NetworkSurface — OCCT 8.0.0p1
+// MARK: - GeomFill Gordon report + NetworkSurface. OCCT 8.0.0p1
 
-@Suite("GeomFill — Gordon Report & Network Surface")
+@Suite("GeomFill, Gordon Report & Network Surface")
 struct GeomFillGordonReportTests {
 
     @Test func gordonReportDoneForGoodNetwork() {
@@ -6195,7 +6195,7 @@ struct SurfaceNormalParityTests {
 
     /// Regression for the divergence window the hand-rolled epsilon created. Arbitrarily close to
     /// (but not at) the apex the cross product `d1u × d1v` underflows the old literal `1e-15`
-    /// magnitude test, so `normal(u:v:)` returned a spurious zero vector — while OCCT's own
+    /// magnitude test, so `normal(u:v:)` returned a spurious zero vector, while OCCT's own
     /// `IsNormalDefined()` resolves a perfectly good normal there, the same one every other point
     /// on that generatrix has.
     @Test("Near-apex: a defined normal is no longer reported as a zero vector")
@@ -6236,7 +6236,7 @@ struct SurfaceNormalParityTests {
 // MARK: - #405: the curvature entry points share one tolerance
 
 /// `curvatures(u:v:)` computes exactly what `gaussianCurvature(atU:v:)` and
-/// `meanCurvature(atU:v:)` compute, from the same `GeomLProp_SLProps` — but it used to construct
+/// `meanCurvature(atU:v:)` compute, from the same `GeomLProp_SLProps`, but it used to construct
 /// that with a hardcoded `1e-6` resolution while the other two used `Precision::Confusion()`
 /// (`1e-7`). Since that argument is what `IsCurvatureDefined()` tests tangent vectors against for
 /// nullity, the two APIs could disagree about whether curvature is defined at all for the same
@@ -6278,7 +6278,7 @@ struct SurfaceCurvatureParityTests {
 
     /// The regression proper. On this cone the two resolutions put the "curvature is defined"
     /// threshold a decade apart: `Precision::Confusion()` gives up below v ≈ 2e-7, the old
-    /// hardcoded `1e-6` gave up below v ≈ 2e-6. At v = 1e-6 — inside that window —
+    /// hardcoded `1e-6` gave up below v ≈ 2e-6. At v = 1e-6, inside that window,
     /// `curvatures(u:v:)` returned (0, 0) for a point where `meanCurvature(atU:v:)` returned
     /// -866025.4.
     @Test("Inside the old tolerance window the two entry points no longer disagree")
@@ -6329,7 +6329,7 @@ struct SurfaceCurvatureParityTests {
 /// diverged from `Curve3D.approximated`/`Curve2D.approximated` (`tolerance: 1e-3`, `maxDegree: 8`)
 /// with no documented rationale. Manual measurement against analytic primitives and a 40x40-point
 /// BSpline fit found no case where the tighter shared values fail or cost meaningfully more, so
-/// the divergence was drift rather than a deliberate accuracy/cost tradeoff — `Surface.approximated`
+/// the divergence was drift rather than a deliberate accuracy/cost tradeoff, `Surface.approximated`
 /// now shares the same defaults.
 @Suite("Surface.approximated defaults match Curve3D/Curve2D (#406)")
 struct SurfaceApproximateDefaultsParityTests {
@@ -6379,7 +6379,7 @@ struct SurfaceApproximateDefaultsParityTests {
     }
 
     /// Review follow-up on #406/PR #460: the suite above only exercises primitives (sphere,
-    /// torus, trimmed cylinder/cone) that have an *exact* BSpline conversion — easy cases for
+    /// torus, trimmed cylinder/cone) that have an *exact* BSpline conversion, easy cases for
     /// `GeomConvert_ApproxSurface`. This test targets a genuinely non-analytic surface instead:
     /// the offset of a free-form (point-grid-fit) BSpline surface, which has no closed-form
     /// equivalent.
@@ -6387,16 +6387,16 @@ struct SurfaceApproximateDefaultsParityTests {
     /// Verified directly against the OCCT source before writing this (do not trust "offset
     /// surfaces are hard" as a assumption): `Geom_OffsetSurface::Surface()` only computes an
     /// exact equivalent for Plane/Cylindrical/Conical/Spherical/Toroidal bases
-    /// (`Geom_OffsetSurface.cxx:867-990`) — for those, `toBSpline()` succeeds exactly, so
+    /// (`Geom_OffsetSurface.cxx:867-990`), for those, `toBSpline()` succeeds exactly, so
     /// offsetting a *primitive* (e.g. `sphere.offset(distance:)`) is actually still an easy case,
     /// not a hard one, despite the doc comment's example suggesting otherwise. For an offset of a
     /// BSpline base (this test), `Geom_OffsetSurface::Surface()` returns null, and
-    /// `GeomConvert::SurfaceToBSplineSurface` falls through to its own internal fallback — a
+    /// `GeomConvert::SurfaceToBSplineSurface` falls through to its own internal fallback, a
     /// `GeomConvert_ApproxSurface` with hardcoded `Tol3d: 1e-4, MaxDegree: 14`
-    /// (`GeomConvert_1.cxx:934-961`) — so `toBSpline()` does *not* return `nil` here either; OCCT
+    /// (`GeomConvert_1.cxx:934-961`), so `toBSpline()` does *not* return `nil` here either; OCCT
     /// silently approximates it for you, just with different, fixed parameters we don't control.
     /// "Does `toBSpline()` return `nil`" therefore isn't a reliable signal of hardness for a
-    /// *bounded* composite surface in this OCCT version — what makes this surface genuinely
+    /// *bounded* composite surface in this OCCT version, what makes this surface genuinely
     /// non-analytic is structural (no elementary-surface equivalent exists for its basis), not
     /// that `toBSpline()` fails outright.
     @Test("Non-analytic surface (offset of a BSpline base) still approximates at the new default")
@@ -6433,7 +6433,7 @@ struct SurfaceApproximateDefaultsParityTests {
             #expect(approx.vDegree <= 8)
 
             // Loose fidelity sanity check (not a tight tolerance bound: GeomConvert_ApproxSurface's
-            // HasResult() — what the bridge checks — is documented as true even when the result is
+            // HasResult(), what the bridge checks, is documented as true even when the result is
             // "not NECESSARILY within the required tolerance", so asserting a bound near 1e-3 itself
             // would assert something OCCT's own contract doesn't promise). This only needs to catch
             // a gross regression (e.g. silently returning the un-offset base surface instead).

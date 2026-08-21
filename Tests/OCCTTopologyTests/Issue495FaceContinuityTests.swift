@@ -6,7 +6,7 @@ import Testing
 // The comment on both the bridge declaration and the Swift wrapper read
 // "0=C0, 1=G1, 2=C1, 3=G2, 4=C2, 5=CN, -1=error". Two things are wrong with it: CN is ordinal 6,
 // not 5, and 5 (C3) is a value `BRepLib::ContinuityOfFaces` cannot return at all. The function
-// itself was always right — it casts the GeomAbs_Shape straight through with no lookup table — so
+// itself was always right, it casts the GeomAbs_Shape straight through with no lookup table, so
 // the comment was describing a mapping that did not exist. A caller matching 5 for "smooth" never
 // matched anything; one receiving 6 had no documented meaning for it.
 //
@@ -43,7 +43,7 @@ struct Issue495FaceContinuityTests {
         }
     }
 
-    @Test("a fillet's tangent join is G1 — ordinal 1, and a real measurement")
+    @Test("a fillet's tangent join is G1, ordinal 1, and a real measurement")
     func filletedEdgeIsG1() throws {
         let box = try #require(Shape.box(width: 20, height: 20, depth: 20))
         let filleted = try #require(box.filleted(radius: 3))
@@ -55,12 +55,12 @@ struct Issue495FaceContinuityTests {
                 "a filleted box should have tangent joins where the blend meets a wall")
     }
 
-    @Test("a seam on an elementary surface is CN — ordinal 6, which the old comment called 5")
+    @Test("a seam on an elementary surface is CN, ordinal 6, which the old comment called 5")
     func seamOnElementarySurfaceIsCN() throws {
         // BRepLib::ContinuityOfFaces short-circuits to GeomAbs_CN when the two faces are the same
         // face and the surface is elementary, which is the seam case. This is the return value the
         // docs mislabelled, and the only way to reach an ordinal above 4 here.
-        #expect(ContinuityClass.cN.rawValue == 6, "CN is ordinal 6 — the old comment said 5")
+        #expect(ContinuityClass.cN.rawValue == 6, "CN is ordinal 6, the old comment said 5")
 
         let cylinder = try #require(Shape.cylinder(radius: 5, height: 10))
         var sawCN = false

@@ -1,4 +1,4 @@
-# OCCTSwift#529 probes — the `BRepLProp_*` `Resolution` argument
+# OCCTSwift#529 probes, the `BRepLProp_*` `Resolution` argument
 
 Standalone, deterministic probes for the tolerance divergence #529 fixed, the curvature-inversion
 defect it widened, and the two decisions the change does *not* move. Everything but the last probe
@@ -42,12 +42,12 @@ clang++ -std=c++17 -ObjC++ -w -I"$L/Headers" -L"$L" \
 /tmp/occt_529_sweep
 ```
 
-Same command for the other three. In a git worktree `Libraries/` does not exist — point `L` at the
+Same command for the other three. In a git worktree `Libraries/` does not exist, point `L` at the
 main checkout's copy, or symlink it (see `docs/guides/building-occt.md`).
 
 ## The four probes
 
-### `occt_529_adaptor_sweep.cpp` — where `1e-6` and `Precision::Confusion()` disagree
+### `occt_529_adaptor_sweep.cpp`, where `1e-6` and `Precision::Confusion()` disagree
 
 Sweeps both values over a cone face approaching its apex, a sphere face approaching its pole, and a
 family of cubic Bezier edges whose first two poles sit a controlled distance apart, and prints the
@@ -76,9 +76,9 @@ Two things this probe also settles:
   `0.6746192368677314` through the handle. Parity assertions have to compare definedness exactly and
   values relatively.
 - **A cusped edge answers `RealLast()` at both resolutions**, so the sentinel is not something the
-  resolution change removes. It needs its own gate — the next probe.
+  resolution change removes. It needs its own gate, the next probe.
 
-### `occt_529_edge_inversion.cpp` — the `(nan, inf, nan)` centre of curvature
+### `occt_529_edge_inversion.cpp`, the `(nan, inf, nan)` centre of curvature
 
 `LProp_CurveUtils::Curvature()` returns `RealLast()` when the first significant derivative has order
 > 1, on a path that never assigns the `myCurvature` field. `Normal()` rejects the sentinel by name;
@@ -100,7 +100,7 @@ So tightening the resolution closes one decade of it and `occtCurveCurvatureIsIn
 rest. Only the exactly-coincident case was ever safe, and only by accident: the throw is absorbed by
 the bridge's `catch (...)` into `(0, 0, 0)`.
 
-### `occt_529_face_normal_decisions.cpp` — the change that is inert, measured rather than assumed
+### `occt_529_face_normal_decisions.cpp`, the change that is inert, measured rather than assumed
 
 `OCCTFaceGetNormal` evaluates the normal at the parametric midpoint of a face and reports it
 (`Face.normal`), and `isHorizontal` / `isUpwardFacing` / `isDownwardFacing` / `isVertical` are all
@@ -128,8 +128,8 @@ if (aSin2 < theSinTol * theSinTol)                               theStatus = CSL
 
 The nullity tests use `gp::Resolution()`, a fixed ~1e-300 epsilon, **not** the caller's value. The
 caller's value is a *sine* tolerance on the angle between the two parametric directions, and that
-test is scale-invariant. So a surface whose derivatives merely shrink — a cone at its apex, a sphere
-at its pole — keeps a defined normal all the way down, and the resolution never enters. Only a
+test is scale-invariant. So a surface whose derivatives merely shrink, a cone at its apex, a sphere
+at its pole, keeps a defined normal all the way down, and the resolution never enters. Only a
 nearly *singular parameterisation* is affected, which is what the skewed extrusion constructs: a
 line extruded along a direction 5e-7 radians off its own.
 
@@ -140,10 +140,10 @@ through `IsTangentUDefined()` / `IsTangentVDefined()`, which are absolute
 **Probe artefact worth recording**: an earlier version compared directions with
 `gp_Dir::IsEqual(other, 0.0)` and reported 384 of the 662 fixture faces as changed. `gp_Dir::Angle`
 returns ~1.5e-17 rather than 0 for two *bit-identical* directions whenever the dot product rounds
-just below 1 and it takes the `asin(CrossMagnitude)` branch — comparing two props objects built at
+just below 1 and it takes the `asin(CrossMagnitude)` branch, comparing two props objects built at
 the same resolution shows the same 1.5e-17. The probe now compares components exactly.
 
-### `occt_529_raycast_tolerance.cpp` — the one site that took its resolution from the caller
+### `occt_529_raycast_tolerance.cpp`, the one site that took its resolution from the caller
 
 `OCCTShapeRaycast` passed its `tolerance` parameter to `IntCurvesFace_ShapeIntersector::Load`, where
 it is an intersection distance, *and* to `BRepLProp_SLProps`, where it is the sine tolerance above.

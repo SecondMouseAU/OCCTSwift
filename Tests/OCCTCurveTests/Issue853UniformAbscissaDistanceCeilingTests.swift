@@ -7,12 +7,12 @@ import simd
 /// ceiling at all. Their `pointCount:` siblings reject an unservable request through
 /// `Sampling.requested` before the bridge ever runs; the two `distance:` overloads had no
 /// caller-supplied count to check and sized their Swift allocation directly off whatever count
-/// the bridge's own sizing call reported — no bound of any kind.
+/// the bridge's own sizing call reported, no bound of any kind.
 ///
 /// The fix derives the *implied* count (curve length / distance) in Swift and rejects it before
 /// calling into OCCT at all, mirroring `ArcLengthCurveAdaptor.points(spacing:)` (#479). That keeps
 /// this test cheap: on the shipped (unfixed) code, `uniformAbscissa(distance:)` with a spacing
-/// implying millions of points actually asks `GCPnts_UniformAbscissa` to discretize that many —
+/// implying millions of points actually asks `GCPnts_UniformAbscissa` to discretize that many,
 /// the same 4.5µs/point, ~24-byte/point cost `Sampling.maximumSampleCount`'s own doc quotes for
 /// the ceiling itself (multiple seconds, hundreds of MB), which is why the chosen spacing below
 /// implies only modestly past the ceiling rather than the 1e10+ points a truly pathological

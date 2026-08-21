@@ -9,7 +9,7 @@ parent: API Reference
 
 ## Topics
 
-- [BillOfMaterials](#billofmaterials) · [BillOfMaterials.Item](#billofmaterialsitem) · [BillOfMaterials.Column](#billofmaterialscolumn) · [Sheet Extension — BOM Rendering](#sheet-extension--bom-rendering) · [RayHit](#rayhit) · [Shape Extension — Ray Casting](#shape-extension--ray-casting) · [Shape Extension — Face Index Access](#shape-extension--face-index-access) · [Selector](#selector) · [Selector.SelectionMode](#selectorselectonmode) · [Selector.SubShapeType](#selectorsubshapetype) · [Selector.PickResult](#selectorpickresult)
+- [BillOfMaterials](#billofmaterials) · [BillOfMaterials.Item](#billofmaterialsitem) · [BillOfMaterials.Column](#billofmaterialscolumn) · [Sheet Extension, BOM Rendering](#sheet-extension--bom-rendering) · [RayHit](#rayhit) · [Shape Extension, Ray Casting](#shape-extension--ray-casting) · [Shape Extension, Face Index Access](#shape-extension--face-index-access) · [Selector](#selector) · [Selector.SelectionMode](#selectorselectonmode) · [Selector.SubShapeType](#selectorsubshapetype) · [Selector.PickResult](#selectorpickresult)
 
 ---
 
@@ -28,8 +28,8 @@ public init(items: [Item], title: String? = nil)
 ```
 
 - **Parameters:**
-  - `items` — ordered array of `Item` rows; rendered top-down from the header.
-  - `title` — optional label for the table (not rendered by `render(into:at:)` itself; reserved for caller use).
+  - `items`: ordered array of `Item` rows; rendered top-down from the header.
+  - `title`: optional label for the table (not rendered by `render(into:at:)` itself; reserved for caller use).
 - **Example:**
   ```swift
   let bom = BillOfMaterials(
@@ -84,10 +84,10 @@ public func render(into writer: DXFWriter,
 The `origin` is the **bottom-right** corner of the table; the table expands upward and to the left, placing it naturally above a title block. All cells are written on the `"TEXT"` layer; border lines on the `"BORDER"` layer.
 
 - **Parameters:**
-  - `into writer` — the `DXFWriter` receiving the geometry.
-  - `at origin` — bottom-right anchor point of the table in model coordinates.
-  - `rowHeight` — height of each row in model units (default 6).
-  - `columnWidths` — per-column widths in model units, one per `Column.allCases`; if `nil` uses `Column.defaultWidth` for each column.
+  - `into writer`: the `DXFWriter` receiving the geometry.
+  - `at origin`: bottom-right anchor point of the table in model coordinates.
+  - `rowHeight`: height of each row in model units (default 6).
+  - `columnWidths`: per-column widths in model units, one per `Column.allCases`; if `nil` uses `Column.defaultWidth` for each column.
 - **Returns:** The top-right corner of the rendered table (useful for chaining further annotations above the BOM). Returns `origin` if `columnWidths.count != Column.allCases.count`.
 - **Note:** Pure-Swift; no OCCT bridge involved.
 - **Example:**
@@ -121,13 +121,13 @@ public init(number: Int,
 ```
 
 - **Parameters:**
-  - `number` — balloon/callout number (ITEM column).
-  - `partNumber` — drawing part number (PART NO column); `nil` renders as empty.
-  - `description` — human-readable description (DESCRIPTION column).
-  - `quantity` — part count (QTY column); default 1.
-  - `material` — material specification (MAT column); `nil` renders as empty.
-  - `mass` — mass in model units (MASS column); formatted `"%.2f"`; `nil` renders as empty.
-  - `notes` — freeform notes (NOTES column); `nil` renders as empty.
+  - `number`: balloon/callout number (ITEM column).
+  - `partNumber`: drawing part number (PART NO column); `nil` renders as empty.
+  - `description`: human-readable description (DESCRIPTION column).
+  - `quantity`: part count (QTY column); default 1.
+  - `material`: material specification (MAT column); `nil` renders as empty.
+  - `mass`: mass in model units (MASS column); formatted `"%.2f"`; `nil` renders as empty.
+  - `notes`: freeform notes (NOTES column); `nil` renders as empty.
 - **Example:**
   ```swift
   let row = BillOfMaterials.Item(
@@ -255,7 +255,7 @@ Values: `.item` → 12, `.partNumber` → 25, `.description` → 60, `.quantity`
 
 ---
 
-## Sheet Extension — BOM Rendering
+## Sheet Extension. BOM Rendering
 
 ### `Sheet.renderBOM(_:into:at:rowHeight:columnWidths:)`
 
@@ -273,11 +273,11 @@ public func renderBOM(_ bom: BillOfMaterials,
 When `origin` is `nil`, the anchor is computed as `(frame.max.x, frame.max.y − totalTableHeight)`, placing the table flush with the inner frame's right edge and dropping it so the bottom lands at the top of the title block area.
 
 - **Parameters:**
-  - `bom` — the `BillOfMaterials` to render.
-  - `into writer` — the `DXFWriter` receiving the geometry.
-  - `at origin` — explicit bottom-right anchor; `nil` uses the automatic frame-relative placement.
-  - `rowHeight` — height of each row in model units (default 6).
-  - `columnWidths` — per-column widths; `nil` uses `Column.defaultWidth`.
+  - `bom`: the `BillOfMaterials` to render.
+  - `into writer`: the `DXFWriter` receiving the geometry.
+  - `at origin`: explicit bottom-right anchor; `nil` uses the automatic frame-relative placement.
+  - `rowHeight`: height of each row in model units (default 6).
+  - `columnWidths`: per-column widths; `nil` uses `Column.defaultWidth`.
 - **Returns:** Top-right corner of the rendered table (forwarded from `BillOfMaterials.render`).
 - **Note:** Pure-Swift; no OCCT bridge involved.
 - **Example:**
@@ -322,7 +322,7 @@ Whether `normal` is the surface's own normal, or the `(0, 0, 1)` fallback.
 
 ---
 
-## Shape Extension — Ray Casting
+## Shape Extension. Ray Casting
 
 ### `Shape.raycast(origin:direction:tolerance:maxHits:)`
 
@@ -340,14 +340,14 @@ public func raycast(
 The direction vector is automatically normalised by `gp_Dir`. Intersections beyond `maxHits` are discarded. Returns an empty array if the ray does not intersect the shape or an error occurs.
 
 - **Parameters:**
-  - `origin` — ray start point in world space.
-  - `direction` — ray direction (normalised internally).
-  - `tolerance` — intersection tolerance (default 0.001). Bounds the intersection only. Until #529
+  - `origin`: ray start point in world space.
+  - `direction`: ray direction (normalised internally).
+  - `tolerance`: intersection tolerance (default 0.001). Bounds the intersection only. Until #529
     it was also passed to `BRepLProp_SLProps` as the local-property resolution, where it is a
     dimensionless *sine* tolerance: any value at or above 1 rejected every hit normal, so
     `raycast(tolerance: 1.0)` on a sphere reported `(0, 0, 1)` for both hits, and at 5.0 a box's
     downward face came back pointing up.
-  - `maxHits` — output *capacity* (default 100), clamped into `0...Sampling.maximumSampleCount`
+  - `maxHits`: output *capacity* (default 100), clamped into `0...Sampling.maximumSampleCount`
     (10,000,000); 0 or less returns empty (#622). The ray decides how many surfaces it crosses,
     so the capacity only truncates: clamping an unservable one returns the same hits.
 - **Returns:** Array of `RayHit` sorted by ascending `distance`; empty if no intersection.
@@ -381,9 +381,9 @@ public func raycastNearest(
 Equivalent to `raycast(origin:direction:tolerance:maxHits:100).first`.
 
 - **Parameters:**
-  - `origin` — ray start point.
-  - `direction` — ray direction (normalised internally).
-  - `tolerance` — intersection tolerance (default 0.001).
+  - `origin`: ray start point.
+  - `direction`: ray direction (normalised internally).
+  - `tolerance`: intersection tolerance (default 0.001).
 - **Returns:** The nearest `RayHit`, or `nil` if the ray does not intersect the shape.
 - **OCCT:** `IntCurvesFace_ShapeIntersector` (via `raycast`).
 - **Example:**
@@ -399,7 +399,7 @@ Equivalent to `raycast(origin:direction:tolerance:maxHits:100).first`.
 
 ---
 
-## Shape Extension — Face Index Access
+## Shape Extension. Face Index Access
 
 ### `Shape.faceCount`
 
@@ -410,7 +410,7 @@ public var faceCount: Int { get }
 ```
 
 This is the same enumeration `Shape.faces()` walks and `Shape.face(at:)` indexes: one entry per
-**distinct** face (`TopoDS_Shape::IsSame` — same TShape and location, orientation ignored), in
+**distinct** face (`TopoDS_Shape::IsSame`, same TShape and location, orientation ignored), in
 `TopExp_Explorer` order, addressed from 0. A face reachable from two parents counts once.
 
 - **Returns:** Count of distinct `TopoDS_Face` sub-shapes; 0 on error or if the shape has none.
@@ -425,7 +425,7 @@ This is the same enumeration `Shape.faces()` walks and `Shape.face(at:)` indexes
   print(box.faces().count)                 // 6, the same enumeration
   print(box.subShapeCount(ofType: .face))  // 6, the generic spelling
   ```
-- **Note:** `contents.faces` is a different number — it counts *occurrences* and is not an index
+- **Note:** `contents.faces` is a different number, it counts *occurrences* and is not an index
   bound. See `Shape.contents`. (#541)
 
 ---
@@ -443,7 +443,7 @@ every face-index-taking method on `Shape` expects. It is meaningful only against
 from: an index taken from one shape and used on another names an unrelated face, or nothing at all.
 (#541)
 
-- **Parameters:** `index` — 0-based face index, in `0..<faceCount`.
+- **Parameters:** `index`, 0-based face index, in `0..<faceCount`.
 - **Returns:** `Face` at the given index, or `nil` if `index` is out of bounds or the shape is null.
 - **OCCT:** `TopExp::MapShapes` + `TopoDS::Face(faceMap(index + 1))` (OCCT maps are 1-based internally).
 - **Example:**
@@ -465,7 +465,7 @@ BVH-accelerated headless hit-testing for point, rectangle, and lasso picking aga
 public final class Selector: @unchecked Sendable
 ```
 
-Internally wraps an `OCCTHeadlessSelector` — a subclass of OCCT's `SelectMgr_ViewerSelector` — paired with a `SelectMgr_SelectionManager`. Shapes are decomposed into `SelectMgr_Selection` sensitive primitives by `StdSelect_BRepSelectionTool`.
+Internally wraps an `OCCTHeadlessSelector`, a subclass of OCCT's `SelectMgr_ViewerSelector`, paired with a `SelectMgr_SelectionManager`. Shapes are decomposed into `SelectMgr_Selection` sensitive primitives by `StdSelect_BRepSelectionTool`.
 
 *(Internal, not public API: `Selector.handle` is an `internal let handle: OCCTSelectorRef` wrapping the underlying bridge object, released in `deinit`. See [Memory Management](../architecture/overview.md#occt-handles).)*
 
@@ -523,11 +523,11 @@ public enum SubShapeType: Int32, Sendable {
 ```
 
 Maps directly to OCCT's `TopAbs_ShapeEnum` integer values. Cases 0...7 mirror `ShapeType`'s
-ordinals and casing exactly (`compSolid` — renamed from `compsolid` in #844, which found this,
+ordinals and casing exactly (`compSolid`, renamed from `compsolid` in #844, which found this,
 `Shape.ShapeFilterType`, and a local `Shape.TopAbs_ShapeEnum` had all drifted from `ShapeType`'s
 spelling independently). `.shape` (`TopAbs_SHAPE` = 8, "the whole shape was selected") has no
-`ShapeType` counterpart — `ShapeType` only ever names a concrete sub-shape kind a shape's own root
-topology can be — so this stays its own type rather than becoming a `ShapeType` typealias.
+`ShapeType` counterpart, `ShapeType` only ever names a concrete sub-shape kind a shape's own root
+topology can be, so this stays its own type rather than becoming a `ShapeType` typealias.
 
 ---
 
@@ -545,11 +545,11 @@ public struct PickResult: Sendable {
 }
 ```
 
-- `shapeId` — the integer ID assigned when the shape was added via `add(shape:id:)`.
-- `depth` — distance from the camera to the hit.
-- `point` — 3D world-space point where the pick ray intersected the sensitive primitive.
-- `subShapeType` — topology type of the sub-shape hit (e.g. `.face`, `.edge`).
-- `subShapeIndex` — 0-based index of the hit sub-shape within its parent shape, addressable with
+- `shapeId`: the integer ID assigned when the shape was added via `add(shape:id:)`.
+- `depth`: distance from the camera to the hit.
+- `point`: 3D world-space point where the pick ray intersected the sensitive primitive.
+- `subShapeType`: topology type of the sub-shape hit (e.g. `.face`, `.edge`).
+- `subShapeIndex`: 0-based index of the hit sub-shape within its parent shape, addressable with
   `face(at:)` or `subShape(type:index:)`; `-1` when the whole shape is selected (mode 0). This was
   1-based with `0` as that sentinel until #541, which named the sub-shape before the one hit and
   made the sentinel indistinguishable from a hit on sub-shape 0.
@@ -574,8 +574,8 @@ public func add(shape: Shape, id: Int32) -> Bool
 If a shape with the same `id` is already registered, it is replaced. Use `activateMode(_:for:)` after adding to enable sub-shape picking modes.
 
 - **Parameters:**
-  - `shape` — the `Shape` to register.
-  - `id` — unique integer identifier; used to correlate `PickResult.shapeId` back to the shape.
+  - `shape`: the `Shape` to register.
+  - `id`: unique integer identifier; used to correlate `PickResult.shapeId` back to the shape.
 - **Returns:** `true` if the shape was added successfully.
 - **OCCT:** `SelectMgr_SelectionManager::Load` + `StdSelect_BRepSelectionTool::Load`.
 - **Example:**
@@ -595,7 +595,7 @@ Removes the shape registered under the given ID.
 public func remove(id: Int32) -> Bool
 ```
 
-- **Parameters:** `id` — the shape ID to remove.
+- **Parameters:** `id`, the shape ID to remove.
 - **Returns:** `true` if the shape was found and removed; `false` if no shape with that ID exists.
 - **OCCT:** `SelectMgr_SelectionManager::Remove`.
 - **Example:**
@@ -634,8 +634,8 @@ public func activateMode(_ mode: SelectionMode, for shapeId: Int32)
 Multiple modes can be active simultaneously. Calling this with `.face` enables face picking without disabling the whole-shape mode already active.
 
 - **Parameters:**
-  - `mode` — the `SelectionMode` to activate.
-  - `shapeId` — the ID of the shape to configure.
+  - `mode`: the `SelectionMode` to activate.
+  - `shapeId`: the ID of the shape to configure.
 - **OCCT:** `SelectMgr_SelectionManager::Activate(selectable, mode.rawValue)` + `StdSelect_BRepSelectionTool::Load`.
 - **Example:**
   ```swift
@@ -655,8 +655,8 @@ public func deactivateMode(_ mode: SelectionMode, for shapeId: Int32)
 ```
 
 - **Parameters:**
-  - `mode` — the `SelectionMode` to deactivate.
-  - `shapeId` — the ID of the shape to configure.
+  - `mode`: the `SelectionMode` to deactivate.
+  - `shapeId`: the ID of the shape to configure.
 - **OCCT:** `SelectMgr_SelectionManager::Deactivate(selectable, mode.rawValue)`.
 - **Example:**
   ```swift
@@ -674,8 +674,8 @@ public func isModeActive(_ mode: SelectionMode, for shapeId: Int32) -> Bool
 ```
 
 - **Parameters:**
-  - `mode` — the mode to query.
-  - `shapeId` — the shape ID.
+  - `mode`: the mode to query.
+  - `shapeId`: the shape ID.
 - **Returns:** `true` if the mode is active.
 - **OCCT:** Queries `SelectMgr_Selection` activation state via `SelectMgr_SelectionManager`.
 - **Example:**
@@ -723,10 +723,10 @@ public func pick(at pixel: SIMD2<Double>,
 Results are sorted by depth (nearest first). Only shapes and sub-shape modes that have been activated are returned.
 
 - **Parameters:**
-  - `pixel` — pixel coordinate in the viewport (origin at top-left).
-  - `camera` — camera providing the projection and view transforms.
-  - `viewSize` — viewport dimensions in pixels `(width, height)`.
-  - `maxResults` — output *capacity* (default 32), clamped into `0...Sampling.maximumSampleCount` (10,000,000); 0 or less returns empty (#622).
+  - `pixel`: pixel coordinate in the viewport (origin at top-left).
+  - `camera`: camera providing the projection and view transforms.
+  - `viewSize`: viewport dimensions in pixels `(width, height)`.
+  - `maxResults`: output *capacity* (default 32), clamped into `0...Sampling.maximumSampleCount` (10,000,000); 0 or less returns empty (#622).
 - **Returns:** Array of `PickResult` sorted by ascending depth; empty if nothing was hit.
 - **OCCT:** `OCCTHeadlessSelector::PickPoint` → `SelectMgr_ViewerSelector::Pick` (point volume) + `SelectMgr_SortCriterion` for depth ordering.
 - **Example:**
@@ -753,10 +753,10 @@ public func pick(rect: (min: SIMD2<Double>, max: SIMD2<Double>),
 ```
 
 - **Parameters:**
-  - `rect` — rectangle defined by `(min, max)` pixel corners.
-  - `camera` — camera providing the projection and view transforms.
-  - `viewSize` — viewport dimensions in pixels.
-  - `maxResults` — output *capacity* (default 32), clamped into `0...Sampling.maximumSampleCount` (10,000,000); 0 or less returns empty (#622).
+  - `rect`: rectangle defined by `(min, max)` pixel corners.
+  - `camera`: camera providing the projection and view transforms.
+  - `viewSize`: viewport dimensions in pixels.
+  - `maxResults`: output *capacity* (default 32), clamped into `0...Sampling.maximumSampleCount` (10,000,000); 0 or less returns empty (#622).
 - **Returns:** Array of `PickResult` for all shapes intersecting the rectangle.
 - **OCCT:** `OCCTHeadlessSelector::PickRect` → `SelectMgr_ViewerSelector::Pick` (box volume).
 - **Example:**
@@ -785,10 +785,10 @@ public func pick(polygon: [SIMD2<Double>],
 The polygon must have at least 3 points. The last point is automatically connected back to the first. Returns an empty array immediately if `polygon.count < 3`.
 
 - **Parameters:**
-  - `polygon` — array of pixel coordinates defining the polygon vertices (minimum 3 points).
-  - `camera` — camera providing the projection and view transforms.
-  - `viewSize` — viewport dimensions in pixels.
-  - `maxResults` — output *capacity* (default 32), clamped into `0...Sampling.maximumSampleCount` (10,000,000); 0 or less returns empty (#622).
+  - `polygon`: array of pixel coordinates defining the polygon vertices (minimum 3 points).
+  - `camera`: camera providing the projection and view transforms.
+  - `viewSize`: viewport dimensions in pixels.
+  - `maxResults`: output *capacity* (default 32), clamped into `0...Sampling.maximumSampleCount` (10,000,000); 0 or less returns empty (#622).
 - **Returns:** Array of `PickResult` for all shapes whose sensitive primitives fall inside the polygon.
 - **OCCT:** `OCCTHeadlessSelector::PickPoly` → `SelectMgr_ViewerSelector::Pick` (polyline volume); pixel XY pairs passed as interleaved `double` array.
 - **Example:**

@@ -1,10 +1,10 @@
-# OCCTSwift#571 reproducer — `Nbmax = 1` makes `GeomPlate_MakeApprox` ignore its own error criterion
+# OCCTSwift#571 reproducer, `Nbmax = 1` makes `GeomPlate_MakeApprox` ignore its own error criterion
 
 Standalone, deterministic probes for the two `GeomPlate_MakeApprox` arguments that decided whether
 the `tolerance` parameter of the six plate entry points meant anything. No fixture file is needed;
 both programs build their own plates from point constraints.
 
-**Fixed bridge-side** — no kernel patch, no `OCCT.xcframework` rebuild. All six sites now share
+**Fixed bridge-side**: no kernel patch, no `OCCT.xcframework` rebuild. All six sites now share
 `occtPlateApproxSurface` (`Sources/OCCTBridge/src/OCCTBridge_ProjLib_NLPlate.mm`, contract
 documented in `OCCTBridge_Internal.h`).
 
@@ -22,7 +22,7 @@ clang++ -std=c++17 -ObjC++ -w \
 ## The census the issue asked for
 
 `GeomPlate_MakeApprox` is the one consumer of `AdvApp2Var_ApproxAFunc2Var` that does not go through
-`GeomConvert_ApproxSurface` — it drives the approximator directly — so it sat outside every census
+`GeomConvert_ApproxSurface`: it drives the approximator directly, so it sat outside every census
 built by grepping for `GeomConvert_ApproxSurface`. **#571 named three bridge call sites; there are
 six**, and the two that the issue's list missed are the ones that diverge most:
 
@@ -35,8 +35,8 @@ six**, and the two that the issue's list missed are the ones that diverge most:
 | 5 | `OCCTSurfacePlateThrough` (`OCCTBridge_ProjLib_NLPlate.mm`) | 1 | `tolerance * 10` |
 | 6 | `OCCTGeomPlateSurface` (`OCCTBridge_ProjLib_NLPlate.mm`) | caller's `maxSegments` (default 20) | `tolerance * 0.1` |
 
-Sites 1 and 6 are reachable from **overloads of one Swift name** — `Shape.plateSurface(through:)`
-and `Shape.plateSurface(points:)` — doing the same job with contracts 22x apart on accuracy.
+Sites 1 and 6 are reachable from **overloads of one Swift name**, `Shape.plateSurface(through:)`
+and `Shape.plateSurface(points:)`, doing the same job with contracts 22x apart on accuracy.
 
 ## Root cause
 
@@ -55,7 +55,7 @@ returns 0 whether or not the criterion is satisfied:
 if (Crit.IsSatisfied(*this)) { return 0; } else { return NumDec; }   // NumDec is 0 too
 ```
 
-so "the fit missed" and "the fit is fine" issue the same instruction — keep this patch. The
+so "the fit missed" and "the fit is fine" issue the same instruction, keep this patch. The
 criterion is still computed and still reported through `CriterionError()`; it just cannot act.
 
 `dmax` sets that criterion's threshold, as `seuil = max(Tol3d, 10 * dmax)`
@@ -75,7 +75,7 @@ criterion is still computed and still reported through `CriterionError()`; it ju
 
 `Nbmax = 2` is enough; everything from 2 to 100 produces the identical surface on this fixture. And
 at `Nbmax = 1`, sweeping `dmax` across nine orders of magnitude (`1e-5` to `1e4`) yields
-**bit-identical control nets** — a dead argument in the sense of #497's inert `SetFuzzyValue`.
+**bit-identical control nets**: a dead argument in the sense of #497's inert `SetFuzzyValue`.
 
 The same probe pins the continuity contract: `GeomPlate_MakeApprox` accepts `C0`, `C1` and `C2`
 only. `G1`, `G2`, `C3` and `CN` each throw `AdvApp2Var_ApproxAFunc2Var : UContinuity Error`, which
@@ -97,12 +97,12 @@ clang++ -std=c++17 -c -w -O2 -DNo_Exception \
 ```
 
 Every one of the 54 pole fingerprints is identical, as are all degrees and pole counts. Only the
-reported `ApproxError()` changed, rising 1.03x to 5.37x (median 1.15x) — the interior contribution
+reported `ApproxError()` changed, rising 1.03x to 5.37x (median 1.15x), the interior contribution
 being counted for the first time, exactly the effect #522 documented. At the implicit `C1` default
 the `NDMINU` degree floor is already 8, so #522's collapse could not reach these sites, which is
 what #571 predicted. Nothing in the plate family needed re-baselining because of `0019`.
 
-Verify the override-link is actually taking effect before trusting a "stock" run — link it into
+Verify the override-link is actually taking effect before trusting a "stock" run, link it into
 `Scripts/repro/522-approx-c0-collapse/occt_522_c0_minimal.mm` and check the `cont=C0` row reports
 `uDeg=1 uPoles=2` (the collapse) rather than `uDeg=7 uPoles=15` (patched).
 
@@ -111,6 +111,6 @@ Verify the override-link is actually taking effect before trusting a "stock" run
 `GeomPlate_MakeApprox` scales each of the plate's real bounds by `EnlargeCoeff` (default 1.1) rather
 than expanding the interval about its centre, so the fit domain is only genuinely enlarged when the
 bounds straddle zero. Plate UV domains from `GeomPlate_BuildPlateSurface` are centred near the
-origin, so in practice they do — the sweep prints both domains and the count of constraint points
+origin, so in practice they do, the sweep prints both domains and the count of constraint points
 falling strictly inside the enlarged one, since `GeomPlate_PlateG0Criterion::Value` skips any point
 on or outside the patch boundary and would silently measure nothing if they all fell outside.

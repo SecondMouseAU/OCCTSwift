@@ -88,7 +88,7 @@ void Extrema_ExtCC::Points(const int N, Extrema_POnCurv& P1, Extrema_POnCurv& P2
 
 `NbExt()` is left unchanged: it is also used by `SquareDistance()`, and legitimate callers
 (`GeomAPI_ExtremaCurveCurve::LowerDistance()`) rely on getting a real distance back in exactly the
-parallel-distance-only case this fix's `Points()` now refuses — the perpendicular distance between
+parallel-distance-only case this fix's `Points()` now refuses, the perpendicular distance between
 two parallel lines is a well-defined number even though there is no unique closest point pair.
 Redefining `NbExt()` to track `mypoints` instead would have broken that caller; this was verified by
 tracing `LowerDistance()`'s call path (`SquareDistance(myIndex)`, which bounds against `NbExt()`
@@ -112,16 +112,16 @@ bool IsParallel() const { return myExtCC.IsParallel(); }
 Four fixtures, run through both `GeomAPI_ExtremaCurveCurve` (the typical entry point) and
 `Extrema_ExtCC` directly:
 
-1. Two finite, parallel line segments whose projected ranges **overlap** over a genuine interval —
+1. Two finite, parallel line segments whose projected ranges **overlap** over a genuine interval,
    crashes.
-2. Two finite, parallel line segments whose projected ranges are **disjoint** — does not crash, has
+2. Two finite, parallel line segments whose projected ranges are **disjoint**, does not crash, has
    a real unique nearest-point answer, unaffected by this fix.
-3. Two **unbounded**, parallel `Geom_Line`s — crashes.
-4. Two finite, parallel line segments whose projected ranges **touch at exactly one point** — does
+3. Two **unbounded**, parallel `Geom_Line`s, crashes.
+4. Two finite, parallel line segments whose projected ranges **touch at exactly one point**, does
    not crash, has a real unique answer, unaffected by this fix. (Included because a first read of
    the source suggested this might be a case where `IsParallel()` is true but a point pair still
    exists; measuring it showed the source resets `IsParallel()` to false here, so it is not such a
-   case — reported since the reasoning is useful even though it turned out not to be a
+   case, reported since the reasoning is useful even though it turned out not to be a
    counterexample.)
 
 ```cpp

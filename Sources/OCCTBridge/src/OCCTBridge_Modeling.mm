@@ -2,7 +2,7 @@
 //  OCCTBridge_Modeling.mm
 //  OCCTSwift
 //
-//  Extracted from OCCTBridge.mm — issue #99.
+//  Extracted from OCCTBridge.mm, issue #99.
 //
 //  Drawing + Advanced Modeling + Surfaces & Curves cluster:
 //
@@ -19,7 +19,7 @@
 //  splitting them three ways would force near-duplicate header includes
 //  in each file.
 //
-//  Public C surface unchanged. No symbol changes — pure file move.
+//  Public C surface unchanged. No symbol changes, pure file move.
 //
 
 #import "../include/OCCTBridge.h"
@@ -453,7 +453,7 @@ OCCTShapeRef OCCTShapeFilletEdgesLinear(OCCTShapeRef   shape,
     edgeCount,
     [startRadius, endRadius](BRepFilletAPI_MakeFillet& fillet, const TopoDS_Edge& edge, int32_t) {
       // #612: this used to be Add(edge) followed by SetRadius(R1, R2, NbContours(), 1). Both
-      // coordinates were wrong — a tangent-continuous edge extends an existing contour rather
+      // coordinates were wrong, a tangent-continuous edge extends an existing contour rather
       // than creating one, and the third argument is the edge's index *within* the contour, not
       // a constant 1, so every edge of a tangent chain landed on one slot and only the last
       // survived (measured 10273.238348 for two edges of a slot rim at 1 -> 4, exactly what
@@ -461,9 +461,9 @@ OCCTShapeRef OCCTShapeFilletEdgesLinear(OCCTShapeRef   shape,
       //
       // OCCT ships the whole thing as one call: Add(R1, R2, E) is Add(E) plus the same
       // Contains(E, IinC) slot resolution plus SetRadius(R1, R2, IC, IinC). Verified equivalent
-      // to resolving the slot by hand — identical to the digit on that rim for the pair
+      // to resolving the slot by hand, identical to the digit on that rim for the pair
       // (10297.711860842), the straight side alone (10273.238347801) and the arc alone
-      // (10276.405613964) — and it declines an unfilletable edge by construction, which is the
+      // (10276.405613964), and it declines an unfilletable edge by construction, which is the
       // skip the sibling entry points get from Add(Radius, E).
       fillet.Add(startRadius, endRadius, edge);
       return true;
@@ -1569,7 +1569,7 @@ OCCTShapeRef OCCTShapeQuilt(OCCTShapeRef* shapes, int32_t count)
 }
 
 // OCCTShapeQuiltWithHistory lives further down (MARK: - Sewing / quilting /
-// healing with full history, issue #327) — it constructs OCCTBooleanHistory,
+// healing with full history, issue #327), it constructs OCCTBooleanHistory,
 // whose definition comes later in this file.
 
 // MARK: - Revolution from Curve (v0.31.0)
@@ -2315,7 +2315,7 @@ struct OCCTBooleanHistory
   // BRepBuilderAPI_MakeShape carries large internal state and is not
   // safely copyable. Upcast from concrete Fuse / Cut / Common / Splitter.
   // Null when `prebuilt` is used instead (sewing / quilting / healing,
-  // issue #327 — those algorithms don't derive from BRepBuilderAPI_MakeShape).
+  // issue #327, those algorithms don't derive from BRepBuilderAPI_MakeShape).
   std::unique_ptr<BRepBuilderAPI_MakeShape> op;
 
   // The shapes the builder ran on. Retained because BRepTools_History's
@@ -2499,9 +2499,9 @@ int32_t OCCTBooleanHistoryGenerated(OCCTBooleanHistoryRef h,
     return -1;
   try
   {
-    // Sewing/quilting/healing (prebuilt) never populate Generated — they
+    // Sewing/quilting/healing (prebuilt) never populate Generated, they
     // only replace or remove, never create lower/higher-dimension topology
-    // — but BRepTools_History::Generated still returns a valid empty list.
+    //, but BRepTools_History:Generated still returns a valid empty list.
     const TopTools_ListOfShape& list =
       h->op ? h->op->Generated(inputSubShape->shape) : h->prebuilt->Generated(inputSubShape->shape);
     int32_t count = 0;
@@ -2546,7 +2546,7 @@ bool OCCTBooleanHistoryIsDeleted(OCCTBooleanHistoryRef h, OCCTShapeRef inputSubS
 // thick-solid do not, and this path covers all of them uniformly.
 //
 // Note BRepTools_History only tracks VERTEX / EDGE / FACE / SOLID
-// (BRepTools_History::IsSupportedType) — wires, shells and compounds are not
+// (BRepTools_History:IsSupportedType), wires, shells and compounds are not
 // carried, so absorbing this into a graph records nothing for those kinds.
 OCCTHistoryRef OCCTBooleanHistoryAsBRepToolsHistory(OCCTBooleanHistoryRef h)
 {
@@ -2561,7 +2561,7 @@ OCCTHistoryRef OCCTBooleanHistoryAsBRepToolsHistory(OCCTBooleanHistoryRef h)
     }
     else if (!h->prebuilt.IsNull())
     {
-      // Shared Handle (ref-counted) — cheap, and keeps `h` independently
+      // Shared Handle (ref-counted), cheap, and keeps `h` independently
       // queryable via OCCTBooleanHistoryModified/Generated/IsDeleted after
       // this call, same as the synthesized-from-op case.
       ref->history = h->prebuilt;
@@ -2691,7 +2691,7 @@ OCCTBooleanHistoryRef OCCTShapeHistoryFromFilletEdgeVariable(OCCTShapeRef  shape
     std::unique_ptr<BRepFilletAPI_MakeFillet> op(new BRepFilletAPI_MakeFillet(shape->shape));
     // #612: the same one-call overload OCCTShapeFilletEdgesLinear uses, replacing Add(edge)
     // plus a two-point array written to SetRadius(radii, 1, 1). That literal 1 was in fact
-    // safe here — a single added edge always lands at index 1 of its contour's spine, measured
+    // safe here, a single added edge always lands at index 1 of its contour's spine, measured
     // on all four edges of a tangent rim, and a *literal* 1 is bounds-checked upstream even
     // when the edge was declined and there are no contours (unlike the 0 that NbContours()
     // yields there, which is the unchecked low side that used to SIGSEGV). Converted anyway so
@@ -2819,7 +2819,7 @@ OCCTBooleanHistoryRef OCCTShapeHistoryFromDefeature(OCCTShapeRef   shape,
     {
       return nullptr;
     }
-    // The builder outlives this call — OCCTBooleanHistory reads its history — so it is held by
+    // The builder outlives this call, OCCTBooleanHistory reads its history, so it is held by
     // pointer here rather than on the stack, but it is the same skeleton. #497
     std::unique_ptr<BRepAlgoAPI_Defeaturing> op(new BRepAlgoAPI_Defeaturing());
     TopoDS_Shape                             result;
@@ -3065,11 +3065,11 @@ OCCTShapeRef OCCTShapeCreateFaceFromSurfaceWire(OCCTSurfaceRef surface, OCCTWire
     if (!faceMaker.IsDone())
       return nullptr;
     TopoDS_Face face = faceMaker.Face();
-    // The 3D wire's edges likely have no pcurves on this surface — project to add them.
+    // The 3D wire's edges likely have no pcurves on this surface, project to add them.
     // #317: ShapeFix_Face::FixPeriodicDegenerated() (hit when the wire is a full periodic
     // loop on a conical surface) unconditionally dereferences Context() at its last line
     // with no IsNull() guard (every other Context()->Replace call site in that OCCT source
-    // file guards it) — SIGSEGVs unless a context is set first. Give it one.
+    // file guards it). SIGSEGVs unless a context is set first. Give it one.
     ShapeFix_Face fixer(face);
     fixer.SetContext(new ShapeBuild_ReShape);
     fixer.Perform();
@@ -3105,7 +3105,7 @@ OCCTShapeRef OCCTShapeCreateFaceFromSurfaceWireWithHoles(OCCTSurfaceRef     surf
       const bool              reverseHoles = (attempt == 0);
       BRepBuilderAPI_MakeFace faceMaker(surf, outer->wire, Standard_True);
       if (!faceMaker.IsDone())
-        return nullptr; // outer alone failed — no point retrying
+        return nullptr; // outer alone failed, no point retrying
       bool ok = true;
       for (int32_t i = 0; i < innerCount; i++)
       {
@@ -3123,8 +3123,8 @@ OCCTShapeRef OCCTShapeCreateFaceFromSurfaceWireWithHoles(OCCTSurfaceRef     surf
       if (!ok)
         continue;
       TopoDS_Face face = faceMaker.Face();
-      // The 3D wires likely have no pcurves on this surface — project them.
-      // #317: see OCCTShapeCreateFaceFromSurfaceWire — ShapeFix_Face needs a context or
+      // The 3D wires likely have no pcurves on this surface, project them.
+      // #317: see OCCTShapeCreateFaceFromSurfaceWire. ShapeFix_Face needs a context or
       // FixPeriodicDegenerated() SIGSEGVs on a periodic conical single-wire boundary.
       ShapeFix_Face fixer(face);
       fixer.SetContext(new ShapeBuild_ReShape);
@@ -3289,7 +3289,7 @@ OCCTShapeRef OCCTShapeFuseAndBlend(OCCTShapeRef shape1, OCCTShapeRef shape2, dou
 
     if (fillet.NbContours() == 0)
     {
-      // No edges to fillet — just return the fuse result
+      // No edges to fillet, just return the fuse result
       return new OCCTShape(fuseResult);
     }
 
@@ -3416,7 +3416,7 @@ OCCTShapeRef OCCTShapeFilletEvolving(OCCTShapeRef                 shape,
         const OCCTFilletRadiusPoint* points = radiusPoints + offset;
         // Both the contour and the edge's slot within it are resolved from `edge` inside the
         // helper, not from (NbContours(), 1). Two tangent-continuous edges share a contour but
-        // not a slot, so both laws are honoured — measured 10139.793468, byte-identical to the
+        // not a slot, so both laws are honoured, measured 10139.793468, byte-identical to the
         // blendedEdges request that always could. #612
         bool profileOk =
           occtFilletSetRadiusProfile(f, edge, pointCounts[entry], [points](int32_t j) {
@@ -3739,7 +3739,7 @@ OCCTShapeRef OCCTShapeCreateFaceFromWire(OCCTWireRef wire, bool planar)
 // 3D points sampled along a wire in traversal order, `samplesPerEdge + 1` per edge (both
 // endpoints included, so consecutive edges repeat their shared point). Arc-aware: sampling the
 // parametric range is what lets a curved edge contribute its true bulge rather than just its two
-// vertices — the distinction #397 turned on. Degenerate edges, and edges carrying no 3D curve, are
+// vertices, the distinction #397 turned on. Degenerate edges, and edges carrying no 3D curve, are
 // skipped rather than throwing.
 static std::vector<gp_Pnt> occtSampleWirePoints(const TopoDS_Wire& wire, int samplesPerEdge)
 {
@@ -3765,14 +3765,14 @@ static std::vector<gp_Pnt> occtSampleWirePoints(const TopoDS_Wire& wire, int sam
     catch (...)
     {
       continue;
-    } // no 3D curve on this edge — nothing to sample
+    } // no 3D curve on this edge, nothing to sample
   }
   return pts;
 }
 
 // Signed area of a (nominally planar) wire measured in the plane spanned by pln's
 // X/Y directions, as a shoelace sum over the sampled polyline. The magnitude is only an
-// approximation, but the SIGN — all we use it for — is robust for simple loops.
+// approximation, but the SIGN, all we use it for, is robust for simple loops.
 // A positive result means the wire winds counter-clockwise about pln's normal.
 static double occtSignedWireAreaInPlane(const TopoDS_Wire& wire, const gp_Pln& pln)
 {
@@ -3855,7 +3855,7 @@ OCCTShapeRef OCCTShapeCreateFaceWithHoles(OCCTWireRef        outer,
     // wound either way, so we CONDITIONALLY reverse: only flip a hole whose winding
     // currently MATCHES the outer's. A hole already wound opposite is left as-is.
     // (The previous implementation reversed every hole unconditionally, which broke
-    // callers that already passed the geometrically-correct opposite winding — #274.)
+    // callers that already passed the geometrically-correct opposite winding, #274.)
     //
     // Winding is decided by the sign of each wire's signed area projected onto the
     // outer face plane. If the plane can't be determined we fall back to the old
@@ -3921,13 +3921,13 @@ OCCTShapeRef OCCTShapeCreateFaceWithHoles(OCCTWireRef        outer,
 // layer down: a MakeSolid failure used to fail the whole call, and per-shell it just skips that
 // body. Checked against occt-src rather than assumed: BRepLib_MakeSolid's single-shell
 // constructor (BRepLib_MakeSolid.cxx) unconditionally calls Done() after B.Add(myShape, S), with
-// no closure or coherence check anywhere in the path — its own header says as much ("a solid
+// no closure or coherence check anywhere in the path, its own header says as much ("a solid
 // under construction is always valid"). Confirmed with a probe (BRepBuilderAPI_MakeSolid on a
 // 5-of-6-face open shell, and on a bare empty shell): IsDone() true and Solid() non-null in both
 // cases, just a geometrically invalid solid (BRepCheck_Analyzer.IsValid() false) rather than a
 // null one. So neither branch below can fire for a real shell today. They stay as push-not-drop
 // rather than being deleted, matching OCCTShapeSolidFromShell's identical belt-and-braces
-// comment ("keeps a body rather than dropping it if that changes") — same defensive contract,
+// comment ("keeps a body rather than dropping it if that changes"), same defensive contract,
 // zero behaviour change either way.
 OCCTShapeRef OCCTShapeCreateSolidFromShell(OCCTShapeRef shell)
 {
@@ -3945,7 +3945,7 @@ OCCTShapeRef OCCTShapeCreateSolidFromShell(OCCTShapeRef shell)
         solid = makeSolid.Solid();
       if (solid.IsNull())
       {
-        made.push_back(topoShell); // Kept, not dropped — see comment above.
+        made.push_back(topoShell); // Kept, not dropped, see comment above.
         continue;
       }
 
@@ -4031,10 +4031,10 @@ OCCTShapeRef OCCTShapeSewTwo(OCCTShapeRef shape1, OCCTShapeRef shape2, double to
 // context (confirmed in occt-src BRepBuilderAPI_Sewing.cxx) and records every
 // vertex/edge merge and small-face removal into it via Replace()/Remove() during
 // Perform(). So GetContext()->History() gives a complete, native BRepTools_History
-// — no manual per-subshape walk needed. When two inputs merge into one shared
+//, no manual per-subshape walk needed. When two inputs merge into one shared
 // output (the common case for sewing), BOTH inputs are recorded as Modified into
 // that output (BRepTools_ReShape::Replace is called for each), not one Modified +
-// one Removed — verified by reading the vertex-merge code path directly.
+// one Removed, verified by reading the vertex-merge code path directly.
 
 OCCTBooleanHistoryRef OCCTShapeSewWithHistory(const OCCTShapeRef* shapes,
                                               int32_t             count,
@@ -4084,7 +4084,7 @@ OCCTBooleanHistoryRef OCCTShapeSewWithHistory(const OCCTShapeRef* shapes,
 
 // Self-sew (mirrors OCCTShapeSewSingle in OCCTBridge_Healing.mm) with full
 // history. Lives here, not next to its plain counterpart, because
-// OCCTBooleanHistory is private to this translation unit — every function that
+// OCCTBooleanHistory is private to this translation unit, every function that
 // constructs one has to live in this file (same constraint the Tier 2
 // fillet/chamfer/shell/defeature *WithHistory functions above are already under).
 OCCTBooleanHistoryRef OCCTShapeSewSingleWithHistory(OCCTShapeRef  shape,
@@ -4184,7 +4184,7 @@ OCCTBooleanHistoryRef OCCTShapeQuiltWithHistory(OCCTShapeRef* shapes,
 // occt-src) and every internal sub-fixer (Solid/Shell/Face/Wire/Edge) shares it,
 // so Context()->History() after Perform() is complete and safe without an
 // explicit SetContext() call. (ShapeFix_Solid, used below for solid(from:), does
-// NOT auto-create one — see OCCTShapeCreateSolidFromShellWithHistory.)
+// NOT auto-create one, see OCCTShapeCreateSolidFromShellWithHistory.)
 
 #include <ShapeFix_Shape.hxx>
 
@@ -4222,7 +4222,7 @@ OCCTBooleanHistoryRef OCCTShapeHealWithHistory(OCCTShapeRef shape, OCCTShapeRef*
 // Unlike sewing/healing, BRepBuilderAPI_MakeSolid genuinely derives from
 // BRepBuilderAPI_MakeShape (fits the existing template-synthesis path), but a
 // solid built from an already-closed shell doesn't modify/generate any of the
-// shell's sub-shapes — it only wraps it — so the templated ctor would report
+// shell's sub-shapes, it only wraps it, so the templated ctor would report
 // nothing. The one stage that can actually touch sub-shape identity is the
 // ShapeFix_Solid orientation-fix pass, so that's the history source here.
 // ShapeFix_Solid::Init does NOT auto-create a context (verified in occt-src,
@@ -4255,14 +4255,14 @@ OCCTBooleanHistoryRef OCCTShapeCreateSolidFromShellWithHistory(OCCTShapeRef  she
       // and the same finding applies: verified dead code (BRepLib_MakeSolid's single-shell
       // constructor always Done()s, never a null Solid()), kept push-not-drop for the same
       // belt-and-braces reason. A body that took this branch never reaches ShapeFix_Solid,
-      // so it contributes nothing to `context` — same as any body the loop never visits.
+      // so it contributes nothing to `context`, same as any body the loop never visits.
       BRepBuilderAPI_MakeSolid makeSolid(topoShell);
       TopoDS_Solid             solid;
       if (makeSolid.IsDone())
         solid = makeSolid.Solid();
       if (solid.IsNull())
       {
-        made.push_back(topoShell); // Kept, not dropped — see comment above.
+        made.push_back(topoShell); // Kept, not dropped, see comment above.
         continue;
       }
 
@@ -4297,7 +4297,7 @@ OCCTBooleanHistoryRef OCCTShapeCreateSolidFromShellWithHistory(OCCTShapeRef  she
 // MARK: - Transform / pattern with full history (issue #331)
 //
 // translate/rotate/scale/mirror use BRepBuilderAPI_Transform, which (unlike
-// sewing/healing above) genuinely derives from BRepBuilderAPI_MakeShape — same
+// sewing/healing above) genuinely derives from BRepBuilderAPI_MakeShape, same
 // op/args synthesis path as fillet/chamfer/defeature. theCopyGeom=true (the
 // existing plain OCCTShapeTranslate/Rotate/Scale/Mirror already pass this) makes
 // BRepBuilderAPI_Transform::Perform take the myUseModif=true branch unconditionally
@@ -4310,7 +4310,7 @@ OCCTBooleanHistoryRef OCCTShapeCreateSolidFromShellWithHistory(OCCTShapeRef  she
 // use the single-op synthesis path. Instead each instance's Modified/Generated
 // results are added onto one shared BRepTools_History keyed by the ORIGINAL
 // source sub-shape (AddModified/AddGenerated append per call, they don't
-// replace — confirmed in BRepTools_History.hxx), so a source sub-shape maps to
+// replace, confirmed in BRepTools_History.hxx), so a source sub-shape maps to
 // all N corresponding pattern-instance sub-shapes.
 
 OCCTBooleanHistoryRef OCCTShapeHistoryFromTranslate(OCCTShapeRef  shape,
@@ -4514,7 +4514,7 @@ OCCTBooleanHistoryRef OCCTShapeHistoryFromLinearPattern(OCCTShapeRef  shape,
     *outResult = nullptr;
   try
   {
-    // gp_Vec::Normalize throws on a zero-length vector — guard it here (the
+    // gp_Vec:Normalize throws on a zero-length vector, guard it here (the
     // plain OCCTShapeLinearPattern does the same inside its own try/catch);
     // occtPatternHistory's try/catch only covers what happens after this call.
     gp_Vec direction(dirX, dirY, dirZ);
@@ -4550,7 +4550,7 @@ OCCTBooleanHistoryRef OCCTShapeHistoryFromCircularPattern(OCCTShapeRef  shape,
     *outResult = nullptr;
   try
   {
-    // gp_Dir's constructor throws on a zero-length vector — same guarding
+    // gp_Dir's constructor throws on a zero-length vector, same guarding
     // rationale as OCCTShapeHistoryFromLinearPattern above.
     gp_Ax1 axis(gp_Pnt(axisX, axisY, axisZ), gp_Dir(axisDirX, axisDirY, axisDirZ));
     double totalAngle = (angle == 0) ? (2.0 * M_PI) : angle;
@@ -5975,7 +5975,7 @@ OCCTShapeRef OCCTFace2DChamfer(OCCTShapeRef   shape,
 // This used to hold a BRepFill_Filling directly. #430/#432 already routed every Add() here
 // through occtFillingAddConstraint to dodge BRepFill_Filling's untrimmed-pcurve SIGSEGV, and
 // #431 already reimplemented BRepOffsetAPI_MakeFilling's own correctly-bound construction
-// (OCCTShapeFillMakeBuilder in OCCTBridge_Healing.mm) once for OCCTShapeFill* — so the two
+// (OCCTShapeFillMakeBuilder in OCCTBridge_Healing.mm) once for OCCTShapeFill*, so the two
 // entry points were independently reaching for the same fix. #434 converges them: this struct
 // now holds the same BRepOffsetAPI_MakeFilling that OCCTShapeFill* does, built through the same
 // occtFillingMakeBuilder, and every Add() below shares occtFillingAddConstraint outright rather
@@ -6030,10 +6030,10 @@ void OCCTFillingRelease(OCCTFillingRef filling)
 // BRepOffsetAPI_MakeFilling::Add(edge, order) overload directly, which SIGSEGVs on any curved
 // boundary edge for continuity above C0 (see OCCTBridge_Internal.h and issue #430 for the
 // mechanism); and use occtGeomAbsFromSurfaceContinuity for the order mapping rather than a local
-// copy — the local one that used to be here mapped order 1 to GeomAbs_C1 (curvature) instead of
+// copy, the local one that used to be here mapped order 1 to GeomAbs_C1 (curvature) instead of
 // GeomAbs_G1 (tangency) and order 2 to GeomAbs_C2 (ordinal 4, rejected outright), failing the
 // whole fill (#433). Note Add() only appends and never validates the order itself, so returning
-// true here says nothing about the constraint's validity — a bad order still only surfaces as a
+// true here says nothing about the constraint's validity, a bad order still only surfaces as a
 // nil Build() later.
 bool OCCTFillingAddEdge(OCCTFillingRef filling, OCCTEdgeRef edge, int32_t continuity)
 {
@@ -6789,7 +6789,7 @@ int32_t OCCTLocOpeCSIntersectLine(OCCTShapeRef             shape,
 }
 
 // MARK: - BRepTools_History (v0.50)
-// OCCTHistoryStorage now lives in OCCTBridge_Internal.h — the BRepGraph area
+// OCCTHistoryStorage now lives in OCCTBridge_Internal.h, the BRepGraph area
 // needs it to absorb a synthesized history into a graph's history layer.
 
 OCCTHistoryRef OCCTHistoryCreate(void)
@@ -7507,7 +7507,7 @@ OCCTAnaFilletResult OCCTChFi2dAnaFillet(OCCTShapeRef edge1,
 }
 
 // MARK: - BOPAlgo Splitter (v0.61)
-// MARK: - BOPAlgo — Splitter (v0.61.0)
+// MARK: - BOPAlgo. Splitter (v0.61.0)
 
 OCCTShapeRef OCCTBOPAlgoSplit(const OCCTShapeRef* objects,
                               int32_t             objCount,
@@ -7544,7 +7544,7 @@ OCCTShapeRef OCCTBOPAlgoSplit(const OCCTShapeRef* objects,
 }
 
 // MARK: - BOPAlgo CellsBuilder (v0.61)
-// MARK: - BOPAlgo — CellsBuilder (v0.61.0)
+// MARK: - BOPAlgo. CellsBuilder (v0.61.0)
 
 struct OCCTCellsBuilder
 {
@@ -7649,7 +7649,7 @@ OCCTShapeRef OCCTCellsBuilderGetResult(OCCTCellsBuilderRef builder)
 }
 
 // MARK: - BOPAlgo ArgumentAnalyzer (v0.61)
-// MARK: - BOPAlgo — ArgumentAnalyzer (v0.61.0)
+// MARK: - BOPAlgo. ArgumentAnalyzer (v0.61.0)
 
 bool OCCTBOPAlgoAnalyzeArguments(OCCTShapeRef shape1, OCCTShapeRef shape2, int32_t operation)
 {
@@ -8264,7 +8264,7 @@ OCCTShapeRef _Nullable OCCTBRepOffsetOffsetFace(OCCTShapeRef faceShape, double o
 // BRepAlgoAPI_Defeaturing::Build forwards its shape, its faces, its history flag and its parallel
 // flag to a BOPAlgo_RemoveFeatures member and returns that member's result, and both paths took the
 // same defaults for the two forwarded flags. Measured identical, BREP byte for byte, on every case
-// including the refusals — see Scripts/repro/536-defeature-removefeatures-unify/. Both Swift
+// including the refusals, see Scripts/repro/536-defeature-removefeatures-unify/. Both Swift
 // spellings now reach OCCTShapeDefeature. #536
 
 // MARK: - BOPAlgo Section (v0.64)
@@ -11382,7 +11382,7 @@ OCCTShapeRef OCCTMakeFaceAddHole(OCCTShapeRef face, OCCTShapeRef wire)
 
     // #234: reject a DEGENERATE hole wire (one enclosing no area). Adding such a wire yields a
     // non-nil-but-invalid face; extruding it gives an invalid prism that SIGSEGVs OCCT's
-    // ShapeFix (`healed()`) downstream — an OS signal the bridge's catch(...) cannot recover.
+    // ShapeFix (`healed()`) downstream, an OS signal the bridge's catch(...) cannot recover.
     // Failing here (return nil) breaks the chain.
     //
     // #397: the wire is sampled ALONG ITS CURVES, not at its vertices. A circular hole wire has
@@ -11478,7 +11478,7 @@ OCCTShapeRef OCCTMakeFaceAddHole(OCCTShapeRef face, OCCTShapeRef wire)
       // Non-planar host, or a winding test that couldn't decide: take the other orientation
       // when it is the one that yields a valid face. If NEITHER does, the wire is not a usable
       // hole for this face at all (it crosses the boundary, say) and no winding will make it
-      // one — decline it, rather than hand back a face that is invalid for a reason this
+      // one, decline it, rather than hand back a face that is invalid for a reason this
       // function cannot fix. That is the same call the degenerate guard above makes, and what
       // #234 established: a non-nil invalid face is exactly what breaks the caller later.
       TopoDS_Face alt = build(!reverse);
@@ -12613,18 +12613,18 @@ struct OCCTThruSections
   BRepOffsetAPI_ThruSections* builder;
   int                         sectionCount = 0;
   // #910: neither IsDone() nor GetStatus() alone is a reliable "did the last Build() succeed"
-  // signal on a REUSED builder — Build()'s two punctual-section WrongUsage returns skip
+  // signal on a REUSED builder. Build()'s two punctual-section WrongUsage returns skip
   // NotDone(), so IsDone() can stay stale-true past a failed rebuild; the AND-form here is what
   // Shape()/GeneratedFace() gate on instead of re-deriving it from OCCT state per call. Every
   // mutator (AddWire/AddVertex/the six Set*/CheckCompatibility calls) resets this to false, and
   // GeneratedFace() separately confirms the face it finds is still part of the current Shape()
-  // — see each of those functions' own comments for why. OCCTSectionBuilder (below in this same
-  // file) has the identical unfixed bug as of this writing (#916) — not a working precedent to
+  //, see each of those functions' own comments for why. OCCTSectionBuilder (below in this same
+  // file) has the identical unfixed bug as of this writing (#916), not a working precedent to
   // copy, a sibling still waiting on this same fix.
   //
   // Bridge-side, not a kernel patch: the WrongUsage-skips-NotDone() gap IS a real upstream OCCT
   // defect (unlike #905/#913's memory corruption, nothing here is unsafe to leave as-is), but
-  // fixing it in Build() wouldn't remove the need for this pattern — GetStatus()/IsDone() only
+  // fixing it in Build() wouldn't remove the need for this pattern. GetStatus()/IsDone() only
   // answer "what did the last Build() call decide", and this bridge's own contract is "did the
   // last build() call on THIS Swift-visible instance succeed", which needs bridge-owned state
   // regardless of how precise OCCT's own bookkeeping is.
@@ -12658,7 +12658,7 @@ void OCCTThruSectionsAddWire(OCCTThruSectionsRef ref, OCCTShapeRef wire)
     ts->builder->AddWire(TopoDS::Wire(wire->shape));
     ts->sectionCount++;
     // #910: a section added after a successful build belongs to a build that hasn't happened
-    // yet — see the struct's `built` comment.
+    // yet, see the struct's `built` comment.
     ts->built = false;
   }
   catch (...)
@@ -12688,7 +12688,7 @@ void OCCTThruSectionsSetSmoothing(OCCTThruSectionsRef ref, bool smoothing)
   if (!ts)
     return;
   ts->builder->SetSmoothing(smoothing);
-  ts->built = false; // #910 review round 2 finding 2: see OCCTThruSectionsAddWire's comment —
+  ts->built = false; // #910 review round 2 finding 2: see OCCTThruSectionsAddWire's comment,
   // every setter that changes what the NEXT Build() will produce needs the same invalidation
   // AddWire/AddVertex already got, or a caller reading .shape/.generatedFace after changing a
   // setting on a previously-built instance gets stale geometry that predates the change.
@@ -12718,7 +12718,7 @@ bool OCCTThruSectionsBuild(OCCTThruSectionsRef ref)
   auto ts = (OCCTThruSections*)ref;
   if (!ts)
     return false;
-  // ThruSections requires at least 2 sections — OCCT segfaults otherwise
+  // ThruSections requires at least 2 sections. OCCT segfaults otherwise
   if (ts->sectionCount < 2)
   {
     ts->built = false;
@@ -12837,12 +12837,12 @@ OCCTShapeRef OCCTThruSectionsGeneratedFace(OCCTThruSectionsRef ref, OCCTShapeRef
     return nullptr;
   try
   {
-    // #910: GeneratedFace() is a bare lookup into myEdgeFace, which Build() never clears —
+    // #910: GeneratedFace() is a bare lookup into myEdgeFace, which Build() never clears,
     // see the struct's `built` comment. `built` alone isn't sufficient here, though: a THIRD
     // build succeeding after an intervening failure (build ok -> add a mismatched section,
     // build fails -> CheckCompatibility(true) reconciles it, build ok again) can rebuild every
     // section's edges, not just the new one's, stranding `edge`'s ORIGINAL binding in the map
-    // without ever overwriting it — measured empirically, `built` is true and GeneratedFace()
+    // without ever overwriting it, measured empirically, `built` is true and GeneratedFace()
     // answers non-null with a face that provably isn't part of the new build's own Shape().
     // myEdgeFace is a private OCCT member with no public clear(), so confirm membership in the
     // current Shape() directly instead of trusting the map (#910 review round 2 finding 1).
@@ -12872,8 +12872,8 @@ OCCTShapeRef OCCTThruSectionsGeneratedFace(OCCTThruSectionsRef ref, OCCTShapeRef
 struct OCCTUnifySameDomain
 {
   ShapeUpgrade_UnifySameDomain* usd = nullptr;
-  // #446: the algorithm rewrites its input, so it is given a private copy. The copier — and with
-  // it the copy and the modifier's sub-shape map — is held for the builder's whole lifetime, not
+  // #446: the algorithm rewrites its input, so it is given a private copy. The copier, and with
+  // it the copy and the modifier's sub-shape map, is held for the builder's whole lifetime, not
   // just the copy call: that is what KeepShape needs to map the caller's own sub-shapes onto
   // their counterparts inside the copy. Costs one duplicated shape per live builder.
   BRepBuilderAPI_Copy copier;
@@ -12935,7 +12935,7 @@ void OCCTUnifySameDomainKeepShape(OCCTUnifySameDomainRef ref, OCCTShapeRef shape
   if (!usd || !shape)
     return;
   // #446: the algorithm holds a copy, so the caller's sub-shape has to be mapped onto its
-  // counterpart there — handing over the caller's own would keep nothing at all.
+  // counterpart there, handing over the caller's own would keep nothing at all.
   try
   {
     usd->usd->KeepShape(occtUnifySameDomainMapped(shape->shape, usd->copier));
@@ -14063,7 +14063,7 @@ void OCCTFilletBuilderSetParams(OCCTFilletBuilderRef builder,
   }
 }
 
-// #490: this was the one request-side site that decoded nothing at all — a raw cast, which made the
+// #490: this was the one request-side site that decoded nothing at all, a raw cast, which made the
 // argument a GeomAbs_Shape ordinal (1 = G1, 2 = C1) while the Swift entry point documented the
 // parametric ladder (0=C0, 1=C1, 2=C2), so every value from 1 up asked for one class less than the
 // caller read. BRepFilletAPI_MakeFillet.hxx agrees the domain is "an continuity Ci (i=0,1 or 2)".
@@ -15029,7 +15029,7 @@ OCCTShapeRef OCCTShapeSectionWithSurface(OCCTShapeRef shape, OCCTSurfaceRef surf
 struct OCCTSectionBuilder
 {
   BRepAlgoAPI_Section section;
-  // #916, the same class of bug #910/PR #912 fixed for OCCTThruSections (predates it, though —
+  // #916, the same class of bug #910/PR #912 fixed for OCCTThruSections (predates it, though,
   // this struct's `built` field is the older of the two). Section() is a BOPAlgo-backed op:
   // AncestorFaceOn1/2 read intersection data (myDSFiller) that Build() never clears on a failed
   // rebuild, so `built` has to be tracked and reset explicitly rather than re-derived from
@@ -15224,9 +15224,9 @@ OCCTShapeRef OCCTSectionBuilderBuild(OCCTSectionBuilderRef builder)
   try
   {
     builder->section.Build();
-    // #916: a failed rebuild must clear `built`, not just skip setting it — see the struct's
+    // #916: a failed rebuild must clear `built`, not just skip setting it, see the struct's
     // own comment. Without this, a builder that already built successfully once keeps
-    // AncestorFaceOn1/2 answering (or, worse, uncatchably SIGSEGVing — measured, not assumed:
+    // AncestorFaceOn1/2 answering (or, worse, uncatchably SIGSEGVing, measured, not assumed:
     // see Scripts/repro/916-sectionbuilder-built-flag-stale/) past a build that failed.
     if (!builder->section.IsDone())
     {
@@ -16132,7 +16132,7 @@ OCCTShapeRef OCCTShapeIntersect(OCCTShapeRef shape1, OCCTShapeRef shape2)
 
 // Wall-clock watchdog: asks the BOP to stop once a deadline passes. OCCT's
 // BRepAlgoAPI_*::Build(range) polls UserBreak() at scope boundaries and leaves
-// IsDone() == false when it trips — so a pathological operand that would
+// IsDone() == false when it trips, so a pathological operand that would
 // otherwise spin forever (#206: self-intersecting B-spline loft) returns
 // promptly instead of hanging. Verified to interrupt the real #206 operands.
 class OCCTBoolTimeoutBreaker : public Message_ProgressIndicator
@@ -16214,7 +16214,7 @@ static OCCTShapeRef runBooleanEx(OCCTShapeRef shape1,
       op.Build();
     }
     // IsDone() is false both on genuine failure and when the watchdog
-    // interrupted the build — either way there is no usable result.
+    // interrupted the build, either way there is no usable result.
     if (!op.IsDone())
       return nullptr;
     return new OCCTShape(op.Shape());

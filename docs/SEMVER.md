@@ -3,9 +3,9 @@ title: Versioning (SemVer)
 nav_order: 11
 ---
 
-# SemVer Policy — OCCTSwift Ecosystem
+# SemVer Policy. OCCTSwift Ecosystem
 
-This document defines how every package in the [OCCTSwift ecosystem](ecosystem.md) versions its releases. It applies to OCCTSwift itself, OCCTSwiftIO, OCCTSwiftMesh, OCCTSwiftViewport, OCCTSwiftTools, OCCTSwiftAIS, OCCTSwiftScripts, and OCCTMCP — and to any future sibling that joins the cohort.
+This document defines how every package in the [OCCTSwift ecosystem](ecosystem.md) versions its releases. It applies to OCCTSwift itself, OCCTSwiftIO, OCCTSwiftMesh, OCCTSwiftViewport, OCCTSwiftTools, OCCTSwiftAIS, OCCTSwiftScripts, and OCCTMCP, and to any future sibling that joins the cohort.
 
 The policy is calibrated to the [SemVer 2.0.0](https://semver.org/) spec with one extension: because OCCTSwift is a wrapper, the bundled OCCT version is part of the consumer-visible contract. An OCCT major version bump is treated as a major event for the wrapper, even if the public Swift API technically didn't break.
 
@@ -15,7 +15,7 @@ The policy is calibrated to the [SemVer 2.0.0](https://semver.org/) spec with on
 |------|---------|----------|
 | **MAJOR** (`x.0.0`) | Upstream OCCT major version bump (e.g. 8.x → 9.x) | OCCTSwift v1.0.0 (pinned to OCCT 8.0 GA, after the v0.x line tracked OCCT 7.8 → 8.0 RCs) |
 | **MINOR** (`x.y.0`) | xcframework rebuild against a new OCCT release **OR** additive new public Swift API | A new wrapped operation, a new type, a new bridge function exposed to Swift |
-| **PATCH** (`x.y.z`) | Bug fix, internal refactor, doc-only — **no public API surface change** | A `nil`-returning regression repaired, a wrong sort-order fixed, a dependency floor bump |
+| **PATCH** (`x.y.z`) | Bug fix, internal refactor, doc-only, **no public API surface change** | A `nil`-returning regression repaired, a wrong sort-order fixed, a dependency floor bump |
 
 The load-bearing guarantee is the SemVer guarantee: **no breaking change without a major bump**.
 Within a major line, all minor and patch updates are safe to take blindly, with **one** recorded
@@ -36,13 +36,13 @@ compile error or a silent value change, each linked to its measurement and migra
 
 ## Rules
 
-### MAJOR — `x.0.0`
+### MAJOR, `x.0.0`
 
 A major bump is reserved for two events, either of which alone is sufficient:
 
-1. **OCCT major version bump.** A new OCCT major (e.g. 9.0) almost always reshapes the C++ API surface enough to force breaking changes in our Swift wrappers (renamed types, deleted classes, redesigned enums). Even when an OCCT major release coincidentally leaves our wrappers unchanged, we still bump major because the bundled binary is part of the contract — consumers are entitled to know the OCCT version changed. The whole cohort majors together.
+1. **OCCT major version bump.** A new OCCT major (e.g. 9.0) almost always reshapes the C++ API surface enough to force breaking changes in our Swift wrappers (renamed types, deleted classes, redesigned enums). Even when an OCCT major release coincidentally leaves our wrappers unchanged, we still bump major because the bundled binary is part of the contract, consumers are entitled to know the OCCT version changed. The whole cohort majors together.
 
-2. **Breaking change to the public Swift API.** A removed type, a renamed method, a changed return type, a tightened parameter type, a raised platform floor — anything a consumer might have to fix on their side after pinning forward. This is rare within a major line because we promise stability there; if it happens, it triggers a major bump of the affected package (and possibly the cohort, if the change ripples downstream).
+2. **Breaking change to the public Swift API.** A removed type, a renamed method, a changed return type, a tightened parameter type, a raised platform floor, anything a consumer might have to fix on their side after pinning forward. This is rare within a major line because we promise stability there; if it happens, it triggers a major bump of the affected package (and possibly the cohort, if the change ripples downstream).
 
 The cohort moved to v1.0.0 on 2026-05-07 alongside [OCCT 8.0.0 GA](https://github.com/Open-Cascade-SAS/OCCT/releases/tag/V8_0_0),
 and to v2.0.0 under Rule 2, on the accumulated breaks recorded below. v3.0.0 is a further
@@ -239,7 +239,7 @@ whole finding.
 
 It is a compile error at every call site, never silent. The exception was taken because:
 
-- It cannot be shimmed. Swift does not overload a property on its type, so the old `Bool` spelling cannot coexist with the new one under the same name — the alternative was leaving five public properties that report `true` for a class nothing measured (a sharp 90° corner reported `isC2 == true`), which is a silent wrong answer, exactly what a SemVer promise is not meant to protect.
+- It cannot be shimmed. Swift does not overload a property on its type, so the old `Bool` spelling cannot coexist with the new one under the same name, the alternative was leaving five public properties that report `true` for a class nothing measured (a sharp 90° corner reported `isC2 == true`), which is a silent wrong answer, exactly what a SemVer promise is not meant to protect.
 - The compile error is the migration prompt. A caller reading `isG1` at the default `.c2` order was reading an uninitialised member; being made to write `== true` is the moment they find out the order has to ask for G1.
 - The major version stays reserved for OCCT 9.0.
 - Named in [`CHANGELOG.md`](CHANGELOG.md) with before/after code, and to be named in the release notes.
@@ -277,16 +277,16 @@ Both spellings still compile and still return a value; the deprecation attribute
 
 | Break | What a caller does |
 |---|---|
-| `Shape.faces()` returns one entry per *distinct* face, not per occurrence | Nothing on any shape that shares no face. On one that does — the result of a split, an imprint, a compound of a shape with itself — the array is shorter and the surplus `Face.index` values are gone. They named faces `face(at:)` could not address, and past the duplicate they named the *wrong* face |
+| `Shape.faces()` returns one entry per *distinct* face, not per occurrence | Nothing on any shape that shares no face. On one that does, the result of a split, an imprint, a compound of a shape with itself, the array is shorter and the surplus `Face.index` values are gone. They named faces `face(at:)` could not address, and past the duplicate they named the *wrong* face |
 | `adjacentFaces(forEdge:)` / `adjacentEdges(forVertex:)` return 0-based indices | Drop the caller's own `- 1`. A caller who never subtracted was reading the neighbouring sub-shape |
 | `splitByWireOnFace(_:faceIndex:)` takes 0-based, so its domain is `0..<faceCount` not `1...faceCount` | Subtract 1 from a hand-written index |
-| `buildWires(faceIndex:)` takes 0-based; the "every edge" sentinel is any negative value, was `0` | Nothing if the default is used — it changed from `0` to `-1` and still means every edge. A caller passing `0` explicitly now gets face 0's edges |
+| `buildWires(faceIndex:)` takes 0-based; the "every edge" sentinel is any negative value, was `0` | Nothing if the default is used, it changed from `0` to `-1` and still means every edge. A caller passing `0` explicitly now gets face 0's edges |
 | `offsetPerFace(defaultOffset:faceOffsets:)` keys are 0-based, and an out-of-range key fails the call instead of being skipped | Subtract 1 from hand-written keys. A call that silently ignored a bad key now returns `nil` |
 | `EvolvingFilletEdge.edgeIndex` is 0-based; `Selector.PickResult.subShapeIndex` is 0-based with `-1`, not `0`, for the whole shape; `meshTriangleAdjacency`/`meshNodeTriangle`/`meshNodeTriangleCount` take a 0-based `faceIndex` (their triangle and node indices stay `Poly_Triangulation`-native 1-based, as do the triangle indices they return) | Subtract 1 from hand-written indices; compare `subShapeIndex` against `-1` rather than `0` |
 
 The exception was taken because:
 
-- **The disagreement is the bug, and it was not only cosmetic.** Measured on the pinned kernel (`Scripts/repro/541-face-index-contract/`): one `BRepAlgoAPI_Splitter` run cutting a box with a plane leaves 12 face occurrences over 11 distinct faces, and because the duplicate is not last, `faces()` and `face(at:)` named **different faces** from index 10 onwards. A caller selecting a face from `faces()` and passing it to `drafted(faces:)`, `shelled(openFaces:)` or `withoutFeatures(faces:)` — all map-backed — operated on a face it had not selected, with no error. Preserving any of the old conventions would have preserved that.
+- **The disagreement is the bug, and it was not only cosmetic.** Measured on the pinned kernel (`Scripts/repro/541-face-index-contract/`): one `BRepAlgoAPI_Splitter` run cutting a box with a plane leaves 12 face occurrences over 11 distinct faces, and because the duplicate is not last, `faces()` and `face(at:)` named **different faces** from index 10 onwards. A caller selecting a face from `faces()` and passing it to `drafted(faces:)`, `shelled(openFaces:)` or `withoutFeatures(faces:)`, all map-backed, operated on a face it had not selected, with no error. Preserving any of the old conventions would have preserved that.
 - **There is no spelling in which both survive.** These are index *values*, not types or names, so Swift cannot overload on them and a deprecation attribute has nothing to attach to. The alternative to changing them is documenting that five different meanings of "face index" coexist and leaving callers to track which is which per method.
 - **On every shape that shares no sub-shape, nothing moves.** The probe checks the enumeration order face-by-face rather than by count across ten such fixtures: identical at every index. The `faces()` change is invisible to a caller whose shapes are primitives, booleans, sewn sheets or compsolids.
 - Named in [`CHANGELOG.md`](CHANGELOG.md) with the measurement, and to be named in the release notes.
@@ -322,16 +322,16 @@ The exception was taken because:
 | `edgeEdgeExtrema(edgeIndex1:other:edgeIndex2:)` indexes `edges()` | Nothing on indices `0..<edgeCount` up to the first repeat; past it the answer now describes the edge the caller named. Indices `edgeCount..<24` return `nil` instead of an answer about some other edge |
 | `checkEdge(at:)`, `checkWire(at:)`, `checkShell(at:)`, `checkVertex(at:)` | Same domain as `edge(at:)` / `subShapeCount(ofType:)` now. `checkEdge(at: 12)` on a box reported a valid edge and now reports invalid, matching `isSubShapeValid(type:at:)`, which has been map-backed since #541 |
 | `splitEdge(at:parameter:)` splits the edge `edges()` names | Indices `0..<9` on a box are unchanged; 9, 10 and 11 now split the edge asked for rather than a different one, and 12…23 return `nil` |
-| `edgesInFace(at:)` and `commonEdges(with:)` return a real `Edge.index` | The `index` on every returned `Edge` changes value. It was the position in the result array, so it addressed a different edge — or none. `edgesInFace(at: 3)` on a box handed back 0, 1, 2, 3 for edges whose indices are 2, 6, 10 and 11, so all four named a different edge. A caller that used the old value as an array subscript into its *own* parallel array must switch to enumerating the result |
+| `edgesInFace(at:)` and `commonEdges(with:)` return a real `Edge.index` | The `index` on every returned `Edge` changes value. It was the position in the result array, so it addressed a different edge, or none. `edgesInFace(at: 3)` on a box handed back 0, 1, 2, 3 for edges whose indices are 2, 6, 10 and 11, so all four named a different edge. A caller that used the old value as an array subscript into its *own* parallel array must switch to enumerating the result |
 | `biTgteBlend(edgeIndices:radius:tolerance:nubs:)` indexes `edges()`, and refuses an unresolvable index | Both a #541-class and a #568-class change in one site. Measured on an L-bracket: no index blended the concave edge at all, and index 27 now does. An index naming no edge used to be dropped and the rest blended; the batch is refused (`nil`) now |
 | `Mesh.Triangle.faceIndex` is an index into `faces()` | Nothing on a shape that shares no face. On one that does, the value changes: on a two-solid split compound the indices ran 0…11 over an 11-face shape, and both sides of the shared wall now carry the one index that names it |
 
 The exception was taken because:
 
-- **Every one of them is paired with a consumer on the other enumeration**, which is what makes the disagreement a wrong answer rather than a second convention. The sharpest case is `OCCTBRepExtremaExtCC`, which sits in the same file as `ExtPC`, `ExtCF` and `ClassifyPoint2D` — all converted by #541 — so `edgeIndex` meant one thing in one function and another in its neighbour. `checkEdge(at:)` disagreed with `isSubShapeValid(type: .edge, at:)`, and `splitEdge(at:)` with `splitFace(at:with:)` driving the same `LocOpe_SplitShape`.
-- **The end-to-end failure is the one the API's own documentation recommends.** `Shape.filleted(edges:radius:)`'s doc snippet is `bracket.filleted(edges: bracket.concaveEdges(), radius: 3)`. With the concavity labels desynchronised `concaveEdges()` returned `[]`, so the snippet filleted an empty list and returned **`nil`** — measured, not inferred. It reported *failure*, not success; the harm is that a `nil` from a fillet is indistinguishable from an ordinary fillet failure, so nothing pointed at the selection as the cause. It now returns a shape (28034.3 mm³ against the bracket's 28000.0).
+- **Every one of them is paired with a consumer on the other enumeration**, which is what makes the disagreement a wrong answer rather than a second convention. The sharpest case is `OCCTBRepExtremaExtCC`, which sits in the same file as `ExtPC`, `ExtCF` and `ClassifyPoint2D`, all converted by #541, so `edgeIndex` meant one thing in one function and another in its neighbour. `checkEdge(at:)` disagreed with `isSubShapeValid(type: .edge, at:)`, and `splitEdge(at:)` with `splitFace(at:with:)` driving the same `LocOpe_SplitShape`.
+- **The end-to-end failure is the one the API's own documentation recommends.** `Shape.filleted(edges:radius:)`'s doc snippet is `bracket.filleted(edges: bracket.concaveEdges(), radius: 3)`. With the concavity labels desynchronised `concaveEdges()` returned `[]`, so the snippet filleted an empty list and returned **`nil`**, measured, not inferred. It reported *failure*, not success; the harm is that a `nil` from a fillet is indistinguishable from an ordinary fillet failure, so nothing pointed at the selection as the cause. It now returns a shape (28034.3 mm³ against the bracket's 28000.0).
 - **There is no spelling in which both survive**, for the same reason as #541 and #568: these are index *values*, so Swift cannot overload on them and a deprecation attribute has nothing to attach to.
-- **On every shape that shares no sub-shape, nothing moves** for the face-indexed and mesh entry points. The edge- and vertex-indexed ones do move on ordinary solids, because every edge of every solid is shared between two faces — that is exactly the gap #613 closes, and it is why these are recorded rather than treated as internal.
+- **On every shape that shares no sub-shape, nothing moves** for the face-indexed and mesh entry points. The edge- and vertex-indexed ones do move on ordinary solids, because every edge of every solid is shared between two faces, that is exactly the gap #613 closes, and it is why these are recorded rather than treated as internal.
 - **One site was deliberately NOT converted.** `OCCTPolyMergeNodes` walks face occurrences to set per-face triangle winding; deduplicating it would drop a shared wall's second side. It is unchanged, documented as such, and pinned by a test that fails if a later sweep converts it.
 - **This did not finish the idiom on its own.** `Shape.nbEdges` / `nbVertices` / `nbFaces` still returned per-occurrence counts (**24** and **48** on a box against `edgeCount` 12 and `vertexCount` 8) and were filed as **#651**. That gap is closed below.
 - Named in [`CHANGELOG.md`](CHANGELOG.md) with the measurements, and to be named in the release notes.
@@ -390,18 +390,18 @@ no existing correctly-named sibling to forward to). The alternative considered a
 
 #### v2.0.0: `continuityOrder` is retired rather than reinterpreted (#619)
 
-**Three compile errors, deliberately — this exception is taken to *convert* a silent behaviour change into a break.** Recorded here before the tag is cut:
+**Three compile errors, deliberately, this exception is taken to *convert* a silent behaviour change into a break.** Recorded here before the tag is cut:
 
 | Break | What a caller does |
 |---|---|
-| `Curve3D.continuityOrder` is `@available(*, unavailable)` | Replace with `continuityClass.satisfies(_:)` for a floor, `continuityClass == .cN` for the analytic fast path, or `continuity` for a raw ordinal — re-checking the constant compared against |
+| `Curve3D.continuityOrder` is `@available(*, unavailable)` | Replace with `continuityClass.satisfies(_:)` for a floor, `continuityClass == .cN` for the analytic fast path, or `continuity` for a raw ordinal, re-checking the constant compared against |
 | `Curve2D.continuityOrder` likewise | Same |
 | `Surface.surfaceContinuityOrder` likewise | Same |
 
 The values these three reported already changed, in #485, from a hand-invented `C0=0, C1=1, C2=2, C3=3, CN=99, G1=-2, G2=-3` to the real `GeomAbs_Shape` ordinal `C0=0, G1=1, C1=2, G2=3, C2=4, C3=5, CN=6`. That change was correct and is not reverted. The exception was taken because:
 
-- **A warning was not enough, because a warning does not stop compilation.** #485 shipped the encoding change with a deprecation attribute carrying the exact before/after in its `message:`, and `if curve.continuityOrder >= 2 { useAsC2Spline() }` still built and still ran. `2` went from meaning C2 to meaning C1, so a merely tangent-continuous curve reached a path that assumes curvature continuity — a wrong geometric answer, produced silently, in a build that succeeded. Symmetrically `continuityOrder == 99`, the analytic-geometry fast path, became unreachable: dead code rather than a wrong answer. Neither outcome is one a warning prevents.
-- **There is no spelling in which both survive.** As with #541 and #568 this is a *value* contract, and Swift cannot overload on return value. But unlike those two, a name is available to attach a diagnostic to, so the break can be made loud instead of silent — which is the whole point of taking it.
+- **A warning was not enough, because a warning does not stop compilation.** #485 shipped the encoding change with a deprecation attribute carrying the exact before/after in its `message:`, and `if curve.continuityOrder >= 2 { useAsC2Spline() }` still built and still ran. `2` went from meaning C2 to meaning C1, so a merely tangent-continuous curve reached a path that assumes curvature continuity, a wrong geometric answer, produced silently, in a build that succeeded. Symmetrically `continuityOrder == 99`, the analytic-geometry fast path, became unreachable: dead code rather than a wrong answer. Neither outcome is one a warning prevents.
+- **There is no spelling in which both survive.** As with #541 and #568 this is a *value* contract, and Swift cannot overload on return value. But unlike those two, a name is available to attach a diagnostic to, so the break can be made loud instead of silent, which is the whole point of taking it.
 - **Both replacements already exist and neither is new API.** `continuity` (raw ordinal, unchanged in value since before the refactor) and `continuityClass` (named cases, `Comparable`, with `satisfies(_:)`) both predate this change. Nothing was added; the operation count drops by 3, which is `Scripts/count-operations.py` correctly declining to count a retired spelling as a wrapped operation.
 - **`unavailable` rather than deletion**, following `EvolvingFilletEdge.init(edgeIndex:)` (#520): deleting gives `value of type 'Curve3D' has no member 'continuityOrder'`, which says nothing about the encoding. The retained declaration puts the whole migration in the compiler's own error text.
 - Named in [`CHANGELOG.md`](CHANGELOG.md) with the before/after table, and to be named in the release notes.
@@ -412,7 +412,7 @@ The values these three reported already changed, in #485, from a hand-invented `
 
 | Break | What a caller does |
 |---|---|
-| `Shape.solids` / `solidCount` count *distinct* solids, not occurrences | Nothing on a shape that shares no sub-shape. On one that does, the count is lower and the array shorter — `Shape.compound([box, box]).solidCount` is `1`, and was `2` |
+| `Shape.solids` / `solidCount` count *distinct* solids, not occurrences | Nothing on a shape that shares no sub-shape. On one that does, the count is lower and the array shorter, `Shape.compound([box, box]).solidCount` is `1`, and was `2` |
 | `Shape.shells` / `shellCount` likewise | A shell reused by two solids (what `solidFromShells` produces when handed the same shell twice) is now one shell |
 | `Shape.wires` / `wireCount` likewise | A wire used to build two faces counts once, being one wire seen from two parents |
 
@@ -422,7 +422,7 @@ The exception was taken because:
 
 - **The disagreement is the bug.** These six and `subShapeCount(ofType:)` answered the same question about the same shape with different numbers, neither cross-checked against the other. That is the #502 finding, and it is the same defect class as #541's face indices.
 - **There is no spelling in which both survive.** As with #541 and #568 these are *values*, so Swift cannot overload on them and a deprecation attribute has nothing to attach to.
-- **On every shape that shares no sub-shape, nothing moves** — primitives, booleans, sewn sheets and compsolids are unaffected.
+- **On every shape that shares no sub-shape, nothing moves**: primitives, booleans, sewn sheets and compsolids are unaffected.
 - Documented in each property's `///` comment; recorded here so the guarantee paragraph above is complete.
 
 #### v2.0.0: `buildCurves3d`'s default tolerance loosens (#498)
@@ -431,13 +431,13 @@ The exception was taken because:
 
 | Break | What a caller does |
 |---|---|
-| `Shape.buildCurves3d(tolerance:)`'s default moves from `1e-7` to `1e-5`, a 100× loosening | Nothing, unless the tighter curve was being relied on — then pass `tolerance: 1e-7` explicitly. The value is also written onto the rebuilt edge as its tolerance, so a caller who cared about edge tolerance downstream should re-check it |
+| `Shape.buildCurves3d(tolerance:)`'s default moves from `1e-7` to `1e-5`, a 100× loosening | Nothing, unless the tighter curve was being relied on, then pass `tolerance: 1e-7` explicitly. The value is also written onto the rebuilt edge as its tolerance, so a caller who cared about edge tolerance downstream should re-check it |
 
 **Decision: keep `1e-5`.** The alternatives considered were reverting to `1e-7`, and removing the default outright so every caller must choose (the response #541 took for `defeature(faces:tolerance:)`). Both were rejected:
 
 - **`1e-5` is OCCT's own default, and `1e-7` was OCCTSwift's invention.** `BRepLib::BuildCurves3d(const TopoDS_Shape&)` is literally `return BRepLib::BuildCurves3d(S, 1.0e-5);` (`BRepLib.cxx:463`), and `BRepLib::BuildCurve3d`'s header declares `Tolerance = 1.0e-5`. Reverting would restore a number no upstream API asks for.
-- **The old default over-claimed.** OCCT writes this tolerance onto the edge as a floor rather than the deviation actually achieved, so `1e-7` had every rebuilt edge asserting a tightness the approximation may not hold on hard geometry. Measured on a helix, `1e-5` deviates 2.6e-6 and `1e-7` deviates 9.0e-8 — the tighter fit is real, but it costs a pole or two and it is a claim the caller should make deliberately.
-- **Removing the default is disproportionate here.** Unlike the index rebases of #541/#568, the two values do not mean *different things* — both are tolerances, in the same units, ordered the obvious way. A caller reading `1e-5` is not misled about what it is; a caller reading a 0-based index as 1-based is. The break is a precision change, not a semantic one, so a recorded decision plus the doc note is the proportionate response.
+- **The old default over-claimed.** OCCT writes this tolerance onto the edge as a floor rather than the deviation actually achieved, so `1e-7` had every rebuilt edge asserting a tightness the approximation may not hold on hard geometry. Measured on a helix, `1e-5` deviates 2.6e-6 and `1e-7` deviates 9.0e-8, the tighter fit is real, but it costs a pole or two and it is a claim the caller should make deliberately.
+- **Removing the default is disproportionate here.** Unlike the index rebases of #541/#568, the two values do not mean *different things*, both are tolerances, in the same units, ordered the obvious way. A caller reading `1e-5` is not misled about what it is; a caller reading a 0-based index as 1-based is. The break is a precision change, not a semantic one, so a recorded decision plus the doc note is the proportionate response.
 - Named in [`CHANGELOG.md`](CHANGELOG.md) with the measurement, and to be named in the release notes.
 
 #### v2.0.0: AAG builds nodes from face occurrences (#642)
@@ -559,7 +559,7 @@ The exception was taken because:
 
 #### v2.0.0: six curvature getters return `Double?` instead of `Double` (#595)
 
-**Six compile errors.** The following curvature getters used to return `Double`, with `0` meaning "undefined" (cusp, degenerate, etc.). They now return `Double?`, where `nil` means undefined and a value means defined. This is a compile error for any caller — the migration is to unwrap or provide a default:
+**Six compile errors.** The following curvature getters used to return `Double`, with `0` meaning "undefined" (cusp, degenerate, etc.). They now return `Double?`, where `nil` means undefined and a value means defined. This is a compile error for any caller, the migration is to unwrap or provide a default:
 
 | Break | Issue | What a caller does |
 |---|---|---|
@@ -572,7 +572,7 @@ The exception was taken because:
 
 The exception was taken because:
 
-- **This is a correctness fix, not a cosmetic change.** The old API spelled "undefined" as `0`, which is a valid curvature (straight line, flat surface). A caller checking `k == 0` could not distinguish "flat" from "undefined at a cusp" — the two are geometrically opposite. Returning `nil` for undefined makes the distinction observable at compile time.
+- **This is a correctness fix, not a cosmetic change.** The old API spelled "undefined" as `0`, which is a valid curvature (straight line, flat surface). A caller checking `k == 0` could not distinguish "flat" from "undefined at a cusp", the two are geometrically opposite. Returning `nil` for undefined makes the distinction observable at compile time.
 - **There is no spelling in which both survive.** Swift cannot overload on return type alone (`Double` vs `Double?`); a deprecation attribute has nothing to attach to. The break is unavoidable and loud, which is the intended outcome.
 - **The default fallback `?? 0` preserves the old numeric behaviour exactly** for callers who want it. A caller who knows their geometry never produces undefined curvature (e.g. circles, ellipses, cylinders) can coalesce `nil` to `0` without semantic change.
 - **This completed a family sweep.** #495, #490, #520 and #639 already moved related geometry queries to optionals; #595 was the last batch. The milestone `v2.0.0` on the issue confirms it was intended for this release.
@@ -657,25 +657,25 @@ signal). See
 [`CHANGELOG.md`](CHANGELOG.md#blendededges-reports-which-duplicate-entries-were-overwritten-633)
 for the full measurement and the injection matrix proving the new report.
 
-### MINOR — `x.y.0`
+### MINOR, `x.y.0`
 
 A minor bump is for additive change. Two routes:
 
-1. **xcframework rebuild against a new OCCT minor / patch / RC.** OCCT ships a stability patch, a bug-fix release, an RC, or a beta — we rebuild the xcframework, the binary URL+checksum in `Package.swift` updates, consumers re-download. This is treated as MINOR because the binary swap is a meaningful "new functionality" event even when the Swift API surface is identical.
+1. **xcframework rebuild against a new OCCT minor / patch / RC.** OCCT ships a stability patch, a bug-fix release, an RC, or a beta, we rebuild the xcframework, the binary URL+checksum in `Package.swift` updates, consumers re-download. This is treated as MINOR because the binary swap is a meaningful "new functionality" event even when the Swift API surface is identical.
 
-2. **Additive new public Swift API.** A new `Shape.foo()` method, a new `Wire.bar` static factory, a new `BRepGraph.baz` field, a new `FeatureSpec` case — anything that adds to the surface without removing or changing what's there. Existing callers are unaffected; new callers can opt in.
+2. **Additive new public Swift API.** A new `Shape.foo()` method, a new `Wire.bar` static factory, a new `BRepGraph.baz` field, a new `FeatureSpec` case, anything that adds to the surface without removing or changing what's there. Existing callers are unaffected; new callers can opt in.
 
 Either case bumps minor. A release that does both (e.g. rebuilds against new OCCT *and* adds a new wrapped operation that the rebuild made available) is one minor bump, not two.
 
-### PATCH — `x.y.z`
+### PATCH, `x.y.z`
 
 A patch bump is for fix-only change with **no public API surface change**:
 
 - A method that returned `nil` when it shouldn't, now returns the right value
 - A constant whose value was wrong, now correct
-- A switch case that was missing (`NodeKind.product` was missing the raw value 10 — this was OCCTSwift v1.0.1)
+- A switch case that was missing (`NodeKind.product` was missing the raw value 10, this was OCCTSwift v1.0.1)
 - An internal refactor that doesn't change any public behavior
-- A dependency floor bump in `Package.swift` (e.g. raising `OCCTSwiftViewport from: "0.55.2"` to `from: "1.0.1"`) — even when the bump unblocks new features downstream, the bump itself is a fix, not new functionality
+- A dependency floor bump in `Package.swift` (e.g. raising `OCCTSwiftViewport from: "0.55.2"` to `from: "1.0.1"`), even when the bump unblocks new features downstream, the bump itself is a fix, not new functionality
 - Documentation-only releases (CHANGELOG entries, README updates, doc-comment tightening)
 
 The shape of the public Swift API is unchanged before and after a patch.
@@ -692,7 +692,7 @@ The mechanism: a single tracker issue on OCCTSwift (e.g. [#96](https://github.co
 
 ### Independent within a major
 
-Within a major line, each package versions on its own cadence. OCCTSwiftTools can ship v1.0.5 the same day OCCTSwift ships v1.4.2 — there's no rule that minor / patch numbers align across packages. They share a major; that's it.
+Within a major line, each package versions on its own cadence. OCCTSwiftTools can ship v1.0.5 the same day OCCTSwift ships v1.4.2, there's no rule that minor / patch numbers align across packages. They share a major; that's it.
 
 In practice this means:
 - Sibling features (e.g. `PointConverter` in Tools) bump that sibling's minor without touching OCCTSwift's version.
@@ -702,7 +702,7 @@ In practice this means:
 
 When a sibling ships a feature a downstream consumer needs, bump the declared dep floor in `Package.swift` of the consumer **even if SPM would resolve forward automatically under SemVer**. The bumped floor signals intent: "the consumer needs at least this version."
 
-Same for the [compatibility matrix in `ecosystem.md`](ecosystem.md#compatibility-matrix-v100-cohort-may-2026) — keep the floors there at the latest patch each consumer should be using. A floor bump is a PATCH-level change in the consuming package (it doesn't change *its* public API).
+Same for the [compatibility matrix in `ecosystem.md`](ecosystem.md#compatibility-matrix-v100-cohort-may-2026), keep the floors there at the latest patch each consumer should be using. A floor bump is a PATCH-level change in the consuming package (it doesn't change *its* public API).
 
 ## Examples
 
@@ -712,17 +712,17 @@ Drawn from the v1.0 cohort's actual history:
 |---------|------|-----|
 | OCCTSwift v2.0.0 | MAJOR | Rule 2: the accumulated public-API breaks listed under [v2.0.0](#v200). The OCCT 8.0.0p1 to 8.0.1 re-pin rode along and would have been MINOR on its own |
 | OCCTSwift v1.0.0 | MAJOR | OCCT 8.0.0 GA pin (cohort bump from v0.x) |
-| OCCTSwift v1.0.1 | PATCH | `NodeKind.product` raw-value fix — `rootNodes` had been silently returning `[]` for assembly graphs. No API change. |
-| OCCTSwift v1.0.2 | (would have been MINOR going forward) | Added `unionWithFullHistory` / `subtractedWithFullHistory` / `intersectionWithFullHistory` / `splitWithFullHistory` + `ShapeHistoryRef` class + `ShapeHistoryRecord` struct. **Additive — should have bumped minor under this policy.** Tagged as patch before this policy was formalized. |
-| OCCTSwift v1.0.3 | (would have been MINOR going forward) | Tier 2 modification ops + `BuildResult.histories` field. **Additive — should have bumped minor.** |
-| OCCTSwift v1.0.4 | (borderline; PATCH was acceptable) | Wired `applyFillet` / `applyChamfer` through `*WithFullHistory`; `BuildResult.histories[id]` now populates for fillet / chamfer specs. The public surface didn't change — only the *behavior* of an existing field changed (more ids show up in the map than before). PATCH was defensible; under a strict reading, MINOR would have been more honest. |
-| OCCTSwiftTools v1.0.1 | (would have been MINOR going forward) | Added `PointConverter.pointsToBody` — a new public type and method. Tagged as patch. |
+| OCCTSwift v1.0.1 | PATCH | `NodeKind.product` raw-value fix, `rootNodes` had been silently returning `[]` for assembly graphs. No API change. |
+| OCCTSwift v1.0.2 | (would have been MINOR going forward) | Added `unionWithFullHistory` / `subtractedWithFullHistory` / `intersectionWithFullHistory` / `splitWithFullHistory` + `ShapeHistoryRef` class + `ShapeHistoryRecord` struct. **Additive, should have bumped minor under this policy.** Tagged as patch before this policy was formalized. |
+| OCCTSwift v1.0.3 | (would have been MINOR going forward) | Tier 2 modification ops + `BuildResult.histories` field. **Additive, should have bumped minor.** |
+| OCCTSwift v1.0.4 | (borderline; PATCH was acceptable) | Wired `applyFillet` / `applyChamfer` through `*WithFullHistory`; `BuildResult.histories[id]` now populates for fillet / chamfer specs. The public surface didn't change, only the *behavior* of an existing field changed (more ids show up in the map than before). PATCH was defensible; under a strict reading, MINOR would have been more honest. |
+| OCCTSwiftTools v1.0.1 | (would have been MINOR going forward) | Added `PointConverter.pointsToBody`, a new public type and method. Tagged as patch. |
 | OCCTSwiftTools v1.0.2 | PATCH | Bumped `OCCTSwiftViewport` floor `0.55.0` → `1.0.1` and `OCCTSwift` floor `1.0.1` → `1.0.3`. Pure dep-floor bump. |
 | OCCTMCP v1.1.1 | PATCH | Fixed a hard-stale Viewport pin (`from: "0.55.2"` couldn't resolve to 1.0.x). |
 
 ### Retroactive note
 
-Releases prior to this policy (v1.0.2, v1.0.3, OCCTSwiftTools v1.0.1) under-counted minor bumps for additive Swift APIs — they shipped as patches. We don't renumber history. **Effective from this document's commit, additive public-Swift-API releases bump minor.** The next OCCTSwift release that adds new wrapped operations will be **v1.1.0**, not v1.0.5.
+Releases prior to this policy (v1.0.2, v1.0.3, OCCTSwiftTools v1.0.1) under-counted minor bumps for additive Swift APIs, they shipped as patches. We don't renumber history. **Effective from this document's commit, additive public-Swift-API releases bump minor.** The next OCCTSwift release that adds new wrapped operations will be **v1.1.0**, not v1.0.5.
 
 ## Decision flow
 
@@ -743,20 +743,20 @@ Releases prior to this policy (v1.0.2, v1.0.3, OCCTSwiftTools v1.0.1) under-coun
        (cohort)
 ```
 
-If a release combines several categories (e.g. an OCCT rebuild *and* new Swift API), pick the highest applicable bump — one release, one version increment.
+If a release combines several categories (e.g. an OCCT rebuild *and* new Swift API), pick the highest applicable bump, one release, one version increment.
 
-If a release is ambiguous (the v1.0.4 case — behavior change with no surface change), default to PATCH and call out the behavioral delta in the changelog. If consumers might miss it without reading carefully, MINOR is more defensible.
+If a release is ambiguous (the v1.0.4 case, behavior change with no surface change), default to PATCH and call out the behavioral delta in the changelog. If consumers might miss it without reading carefully, MINOR is more defensible.
 
 ## Tooling expectations
 
 - `Package.swift` `from: "1.0.0"` resolves to the range `[1.0.0, 2.0.0)`. Take any minor / patch update blindly within a major line; pin `exact:` only if you have a specific reason.
 - Swift Package Index updates per-package pages from each repo's tags; the policy above keeps badges accurate without manual intervention.
-- The xcframework asset is attached to OCCTSwift releases that include a binary rebuild (every MAJOR and most MINORs). PATCHes typically reuse the previous binary URL — no asset attached, `Package.swift` URL/checksum unchanged.
+- The xcframework asset is attached to OCCTSwift releases that include a binary rebuild (every MAJOR and most MINORs). PATCHes typically reuse the previous binary URL, no asset attached, `Package.swift` URL/checksum unchanged.
 
 ## When in doubt
 
-- "Will this break a consumer's build if they take it blindly?" — yes → MAJOR.
-- "Is there new functionality consumers can opt into?" — yes → MINOR.
-- "Is this purely a fix or floor bump?" — yes → PATCH.
+- "Will this break a consumer's build if they take it blindly?", yes → MAJOR.
+- "Is there new functionality consumers can opt into?", yes → MINOR.
+- "Is this purely a fix or floor bump?", yes → PATCH.
 
-Document the choice in the changelog. The point of SemVer is communication — the version number is a contract with consumers about what they'll have to do (or not do) when they update.
+Document the choice in the changelog. The point of SemVer is communication, the version number is a contract with consumers about what they'll have to do (or not do) when they update.

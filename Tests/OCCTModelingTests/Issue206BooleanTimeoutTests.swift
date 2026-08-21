@@ -13,7 +13,7 @@ import simd
 // *mechanism* deterministically: a deadline already in the past interrupts the build at
 // its first progress checkpoint, even for an otherwise-fast valid boolean. The real
 // operands were verified separately to return nil within the timeout (was an infinite hang).
-@Suite("Issue #206 — boolean timeout watchdog")
+@Suite("Issue #206, boolean timeout watchdog")
 struct Issue206BooleanTimeout {
 
     private func overlappingBoxes() -> (Shape, Shape)? {

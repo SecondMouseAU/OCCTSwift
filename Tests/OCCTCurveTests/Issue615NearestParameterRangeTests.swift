@@ -6,7 +6,7 @@ import Foundation
 
 /// #539 established that `GeomAPI_ProjectPointOnCurve::LowerDistance()` reports an extremum, which
 /// on a bounded curve is neither necessarily the nearest point nor necessarily present at all, and
-/// introduced `occtNearestPointOnCurveRange` — the minimum over `ShapeAnalysis_Curve`, every
+/// introduced `occtNearestPointOnCurveRange`, the minimum over `ShapeAnalysis_Curve`, every
 /// extremum in range, and both ends. Three entry points were converted. The shared helper behind
 /// `Curve3D.nearestParameter(to:)` and `Curve3D.locateNearestPoint`'s full-range fallback was not.
 ///
@@ -57,7 +57,7 @@ struct Issue615NearestParameterRangeTests {
         #expect(abs(parameter - 0) < 1e-9)
         #expect(abs(Self.distance(arc.point(at: parameter), query) - truth) < 1e-9)
 
-        // Before #615 this was π/2, whose point is 11 away — further from the query than the far
+        // Before #615 this was π/2, whose point is 11 away, further from the query than the far
         // end of the arc is, and on the opposite side of it.
         #expect(Self.distance(arc.point(at: parameter), query) < 11)
     }
@@ -75,7 +75,7 @@ struct Issue615NearestParameterRangeTests {
 
     /// Defect 2: `nil` where the converted sibling answers.
     ///
-    /// A point past the end of a bounded curve has no perpendicular foot, so no extremum — but it
+    /// A point past the end of a bounded curve has no perpendicular foot, so no extremum, but it
     /// does have a nearest point, and `projectPoint` has reported it since #539.
     @Test("A point past the end is answered, not refused")
     func pastTheEndIsAnswered() throws {
@@ -123,7 +123,7 @@ struct Issue615NearestParameterRangeTests {
 
     /// `Curve3D.locateNearestPoint(_:initParam:tolerance:)` shares the helper, and its full-range
     /// fallback inherited both defects. The fallback fires when the ±10% window around the guess
-    /// holds no extremum — which is exactly the situation the guess was closest to being right in.
+    /// holds no extremum, which is exactly the situation the guess was closest to being right in.
     ///
     /// Before #615, a guess sitting *on* the true nearest point returned the point diametrically
     /// opposite it.
@@ -153,7 +153,7 @@ struct Issue615NearestParameterRangeTests {
     /// is deliberately still windowed, and a windowed minimum can be a global maximum.
     ///
     /// It reports the lowest-distance extremum *inside* the ±10% window, not the extremum nearest
-    /// the guess — `initParam` bounds the window, it does not rank what is found in it. With a guess
+    /// the guess, `initParam` bounds the window, it does not rank what is found in it. With a guess
     /// of π/2 the window holds the far side of the arc, and that is what comes back: 11, not the
     /// global nearest 7.8102.
     ///

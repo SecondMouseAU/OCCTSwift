@@ -93,8 +93,8 @@ struct PathParsingContractTests {
 // a trailing slash, thousands of slashes, embedded NUL, control characters, non-ASCII, a 100k
 // character string) and none returned `nil`; `nonASCIIPathSurvivesParsing` above already pins one
 // of those non-nil results. `OSD_Path`'s own header documents a `ConstructionError` "when the path
-// is either null" — unreachable from this API, since Swift's `String`-to-C-string bridging never
-// produces a null pointer — "or contains characters not in range of ' '...'~'", which the measured
+// is either null", unreachable from this API, since Swift's `String`-to-C-string bridging never
+// produces a null pointer, "or contains characters not in range of ' '...'~'", which the measured
 // behavior does not honour for this constructor overload on this platform. With no input found
 // that reaches the bridge's `catch` block, the assertion could not be shown to test anything, so
 // it is removed rather than left as an unproven claim (okf/policies/prove-the-test-fails.md).

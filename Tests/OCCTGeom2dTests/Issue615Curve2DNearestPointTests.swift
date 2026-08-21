@@ -8,8 +8,8 @@ import Foundation
 /// on a bounded curve is neither necessarily the nearest point nor necessarily present at all, and
 /// converted the 3D entry points onto a helper that takes the minimum over `ShapeAnalysis_Curve`,
 /// every extremum in range, and both ends. The 2D twin was never touched at all, so every 2D
-/// spelling — `Curve2D.project(point:)`, `Curve2D.project(_ point: Point2D)`,
-/// `Point2D.distance(to:)` and `Curve2D.nearestParameter(to:)` — was wrong in both of the ways the
+/// spelling, `Curve2D.project(point:)`, `Curve2D.project(_ point: Point2D)`,
+/// `Point2D.distance(to:)` and `Curve2D.nearestParameter(to:)`, was wrong in both of the ways the
 /// 3D side used to be. They agreed with each other, and with nothing else.
 ///
 /// Measured on the 2D twin of #539's own repro geometry, a half circle of radius 5 queried from
@@ -22,7 +22,7 @@ import Foundation
 /// | `Point2D.distance(to:)`, past the end | **`.infinity`** | the true distance |
 ///
 /// There is no `ShapeAnalysis_Curve` in the 2D candidate set because OCCT has no 2D projection in
-/// that class — its `Project` overloads take `Geom_Curve` or `Adaptor3d_Curve` only. So the 2D
+/// that class, its `Project` overloads take `Geom_Curve` or `Adaptor3d_Curve` only. So the 2D
 /// helper is the extrema plus both ends, which is the row #580 measured at 188/189 rather than the
 /// 189/189 the third source buys.
 @Suite("Curve2D reports the nearest point over the range (#615)")
@@ -81,7 +81,7 @@ struct Issue615Curve2DNearestPointTests {
 
     /// Defect 2: `nil` and `.infinity` where there is a perfectly good answer.
     ///
-    /// A point past the end of a bounded curve has no perpendicular foot, so no extremum — but the
+    /// A point past the end of a bounded curve has no perpendicular foot, so no extremum, but the
     /// end is right there, 92 away.
     @Test("A point past the end is answered, not refused")
     func pastTheEndIsAnswered() throws {
@@ -140,7 +140,7 @@ struct Issue615Curve2DNearestPointTests {
             // The reported distance is the distance to the reported point, and the reported point is
             // where the reported parameter says it is. This is the sweep's only ground-truth anchor:
             // the four spellings above share one bridge path, so they would agree with each other
-            // even if all four were wrong. It needs abs() for that reason — without it the
+            // even if all four were wrong. It needs abs() for that reason, without it the
             // comparison is one-sided and passes for any reported distance LARGER than the truth,
             // which is the exact direction every defect in this issue erred in.
             #expect(abs(Self.distance(projected.point, query) - projected.distance) < 1e-9, "\(label)")

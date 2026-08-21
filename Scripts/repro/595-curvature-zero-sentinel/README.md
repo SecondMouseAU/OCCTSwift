@@ -95,7 +95,7 @@ other: it returns the "undefined" sentinel for whole surfaces at a time, exactly
 
 The cusp row is why the curve half looks better covered than it is. OCCT gives a cusp its own
 sentinel, `RealLast()`, so a bare double *does* distinguish that one case. It is a real answer
-("infinite here"), not an absence, and it survives the change unaltered — `Double?` has no room for
+("infinite here"), not an absence, and it survives the change unaltered, `Double?` has no room for
 it, and `nil` would be the wrong thing to say.
 
 ### `curvature(at:)` and `localCurvature(at:)` are now the same call
@@ -104,8 +104,8 @@ Since #494 converged their resolutions the two build the same `GeomLProp_CLProps
 `occtLocalPropsResolution()` and gate on the same `IsTangentDefined()`. The probe runs both columns
 over the same four curves: **0 rows disagree**, including the two sentinel rows, where a divergence
 would be easiest to hide. The only axis on which they were ever different is a null `OCCTCurve3DRef`
-— `OCCTCurve3DGetCurvature` tests it, `OCCTCurve3DLocalCurvature` is declared `_Nonnull` and does
-not — which no Swift caller can reach, since both wrappers pass a live `handle`.
+,  `OCCTCurve3DGetCurvature` tests it, `OCCTCurve3DLocalCurvature` is declared `_Nonnull` and does
+not, which no Swift caller can reach, since both wrappers pass a live `handle`.
 
 Per [#562](https://github.com/SecondMouseAU/OCCTSwift/pull/589)'s rule, the axis to check before
 collapsing A onto B is the one the issue did not list. Here that is buffer sizing and tolerance, and
@@ -124,7 +124,7 @@ same defect:
   curvature rows and is just as common: a circle's real `0` against a straight line's absence of an
   answer. It sits four lines below `curvature(at:)` on the same type, so leaving it would break
   `Curve3D`'s source compatibility twice for one defect.
-- **`Wire.curvature(at:)`** already returns `Double?` — but only the `-1.0` error path becomes
+- **`Wire.curvature(at:)`** already returns `Double?`, but only the `-1.0` error path becomes
   `nil`. The degenerate-tangent branch returns `0.0`, which reaches the caller as a straight wire's
   genuine answer. Measured: a wire on the cusp Bezier has `|d1|` exactly `0` at its start, and today
   reports curvature `0` there. No signature changes; the branch just stops lying.
@@ -136,8 +136,8 @@ to reach the sentinel.
 
 ### Deliberately excluded
 
-- **`Edge.dihedralAngle(between:and:at:)`** (`OCCTEdgeGetDihedralAngle`) has the same shape — a
-  hand-rolled `< 1e-10` gate on the two face normals — but returns `-1`, which is outside the
+- **`Edge.dihedralAngle(between:and:at:)`** (`OCCTEdgeGetDihedralAngle`) has the same shape, a
+  hand-rolled `< 1e-10` gate on the two face normals, but returns `-1`, which is outside the
   documented `0...2π` range and which the Swift wrapper already maps to `nil`. The sentinel is
   distinguishable and it already reaches the caller as an absence, so there is nothing to fix.
 - **`OCCTCurve3DLocalTangent`, `OCCTCurve3DLocalNormal`, `OCCTCurve3DLocalCentreOfCurvature`,
