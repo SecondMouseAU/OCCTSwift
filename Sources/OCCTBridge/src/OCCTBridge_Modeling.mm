@@ -16169,16 +16169,25 @@ DEFINE_STANDARD_HANDLE(OCCTBoolTimeoutBreaker, Message_ProgressIndicator)
 // Shared driver: BRepAlgoAPI_Fuse/Cut/Common all derive from
 // BRepAlgoAPI_BooleanOperation, so the option setters are identical across ops.
 // timeoutSeconds <= 0 means no time bound (run to completion).
+//
+// outTimedOut, when not NULL, separates the two reasons a caller gets NULL: 1 for the
+// watchdog interrupting the build, 0 for every other failure (#1067). The breaker is
+// declared outside the try so the catch can read it too, since an abort that unwinds as
+// an exception is still an abort.
 template <typename BoolOpT>
 static OCCTShapeRef runBooleanEx(OCCTShapeRef shape1,
                                  OCCTShapeRef shape2,
                                  double       fuzzyValue,
                                  int32_t      glue,
-                                 double       timeoutSeconds)
+                                 double       timeoutSeconds,
+                                 int32_t* _Nullable outTimedOut)
 {
+  if (outTimedOut)
+    *outTimedOut = 0;
   if (!shape1 || !shape2)
     return nullptr;
   occtEnsureSignals();
+  Handle(OCCTBoolTimeoutBreaker) breaker;
   try
   {
     OCC_CATCH_SIGNALS
@@ -16205,22 +16214,30 @@ static OCCTShapeRef runBooleanEx(OCCTShapeRef shape1,
     }
     if (timeoutSeconds > 0.0)
     {
-      Handle(OCCTBoolTimeoutBreaker) breaker = new OCCTBoolTimeoutBreaker(timeoutSeconds);
-      Message_ProgressRange          range   = breaker->Start();
+      breaker                     = new OCCTBoolTimeoutBreaker(timeoutSeconds);
+      Message_ProgressRange range = breaker->Start();
       op.Build(range);
     }
     else
     {
       op.Build();
     }
-    // IsDone() is false both on genuine failure and when the watchdog
-    // interrupted the build, either way there is no usable result.
+    // IsDone() is false both on genuine failure and when the watchdog interrupted the
+    // build, either way there is no usable result. The breaker is what tells the two
+    // apart, and it is only asked once the op has already declined: a completed build
+    // is a completed build even if a late poll happened to trip.
     if (!op.IsDone())
+    {
+      if (outTimedOut && !breaker.IsNull() && breaker->tripped())
+        *outTimedOut = 1;
       return nullptr;
+    }
     return new OCCTShape(op.Shape());
   }
   catch (...)
   {
+    if (outTimedOut && !breaker.IsNull() && breaker->tripped())
+      *outTimedOut = 1;
     return nullptr;
   }
 }
@@ -16229,27 +16246,45 @@ OCCTShapeRef OCCTShapeUnionEx(OCCTShapeRef shape1,
                               OCCTShapeRef shape2,
                               double       fuzzyValue,
                               int32_t      glue,
-                              double       timeoutSeconds)
+                              double       timeoutSeconds,
+                              int32_t* _Nullable outTimedOut)
 {
-  return runBooleanEx<BRepAlgoAPI_Fuse>(shape1, shape2, fuzzyValue, glue, timeoutSeconds);
+  return runBooleanEx<BRepAlgoAPI_Fuse>(shape1,
+                                        shape2,
+                                        fuzzyValue,
+                                        glue,
+                                        timeoutSeconds,
+                                        outTimedOut);
 }
 
 OCCTShapeRef OCCTShapeSubtractEx(OCCTShapeRef shape1,
                                  OCCTShapeRef shape2,
                                  double       fuzzyValue,
                                  int32_t      glue,
-                                 double       timeoutSeconds)
+                                 double       timeoutSeconds,
+                                 int32_t* _Nullable outTimedOut)
 {
-  return runBooleanEx<BRepAlgoAPI_Cut>(shape1, shape2, fuzzyValue, glue, timeoutSeconds);
+  return runBooleanEx<BRepAlgoAPI_Cut>(shape1,
+                                       shape2,
+                                       fuzzyValue,
+                                       glue,
+                                       timeoutSeconds,
+                                       outTimedOut);
 }
 
 OCCTShapeRef OCCTShapeIntersectEx(OCCTShapeRef shape1,
                                   OCCTShapeRef shape2,
                                   double       fuzzyValue,
                                   int32_t      glue,
-                                  double       timeoutSeconds)
+                                  double       timeoutSeconds,
+                                  int32_t* _Nullable outTimedOut)
 {
-  return runBooleanEx<BRepAlgoAPI_Common>(shape1, shape2, fuzzyValue, glue, timeoutSeconds);
+  return runBooleanEx<BRepAlgoAPI_Common>(shape1,
+                                          shape2,
+                                          fuzzyValue,
+                                          glue,
+                                          timeoutSeconds,
+                                          outTimedOut);
 }
 
 // --- Self-intersection check (#208) ---
