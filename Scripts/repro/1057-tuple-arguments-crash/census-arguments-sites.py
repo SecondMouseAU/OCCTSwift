@@ -4,7 +4,7 @@ element type could hit the toolchain defect.
 
 A `@Test(arguments:)` can crash when its element type is one aggregate (tuple or struct) holding
 both a reference-counted member and a builtin vector of 32 bytes or more. Both are necessary:
-removing either gives a clean run, measured 3/3 per case. Neither pair is *sufficient*, and this
+removing either gives a clean run, measured 3/3 per case. The pair is not *sufficient*, and this
 script deliberately does not pretend otherwise: `(String, Vec3)` (three `SIMD3<Double>`, 112 bytes)
 and `(String, One80)` (one `SIMD3<Double>` plus four `Double`s, 80 bytes) both satisfy the pair and
 both run clean. Where exactly the cut falls is not characterised. See
@@ -47,7 +47,32 @@ SIMD_ALIAS_WIDTH = {
 }
 
 GENERIC_SIMD = re.compile(r"\bSIMD(\d+)\s*<\s*([A-Za-z0-9_]+)\s*>")
-ALIAS_SIMD = re.compile(r"\bsimd_([a-z]+)(\d+)\b")
+ALIAS_SIMD = re.compile(r"\bsimd_([a-z]+)(\d+)(?![x\d])\b")
+
+# `SIMD3(1, 0, 0)` with the element type inferred, which is how this tree writes almost every SIMD
+# literal: 3,266 occurrences under `Tests/` against a handful of the explicit form. The width
+# cannot be computed from it, so a site whose only vector is spelled this way and whose test
+# function signature does not name the type reports `unknown` rather than `clean`. Reporting it
+# clean is what a pre-PR review measured: a fixture holding the exact literal from
+# `Issue990ThreadAxisBasisTests.axes` came back "no vector" while grid cell B says that element
+# type crashes.
+INFERRED_SIMD = re.compile(r"\bSIMD\d+\s*(?!<)\s*\(")
+
+# `simd_double3x3` and friends. Measured clean in the `simd_double3x3` shape (Smallest V55), but
+# only that one shape, and this file does not have a rule for matrices. Reported rather than
+# guessed. The old `\bsimd_([a-z]+)(\d+)\b` could not match one at all, since the trailing `\b`
+# fails against the `x`.
+SIMD_MATRIX = re.compile(r"\bsimd_[a-z]+\d+x\d+\b")
+
+# Type names this script can reason about. Anything else capitalised in the captured text is a
+# nominal type it would have to open to answer, and it says so instead of guessing. Six rows in
+# this tree name one (`ThreadProfile`, `ParametricContinuity` x3, `ThreadForm` x2) and were
+# getting a verdict the docstring already said needed a human.
+KNOWN_TYPES = set(ELEMENT_WIDTH) | {
+    "String", "Array", "Bool", "Character", "Substring", "Optional", "Never", "Void",
+    "Set", "Dictionary", "Range", "ClosedRange", "Self", "Test", "Suite",
+}
+NOMINAL = re.compile(r"\b([A-Z][A-Za-z0-9_]*)\b")
 
 # Spellings of a reference-counted member that appear in argument literals in this tree. A named
 # type is not decidable from the literal, which is why this reports rather than gates.
@@ -83,6 +108,34 @@ def widest_vector(text):
         if width:
             widest = max(widest, round_up_pow2(int(count)) * width)
     return widest
+
+
+def unresolved(text):
+    """The reasons this script cannot finish reading `text`, as a list of phrases.
+
+    Three shapes, all of them measured rather than imagined: a SIMD literal whose element type is
+    inferred and named nowhere in the captured text, a `simd_*` matrix, and a nominal type this
+    script would have to open.
+    """
+    reasons = []
+    if INFERRED_SIMD.search(text) and not GENERIC_SIMD.search(text):
+        reasons.append("a SIMD literal whose element type is inferred and named nowhere here")
+    if SIMD_MATRIX.search(text):
+        reasons.append("a simd_* matrix, which this script has no width rule for")
+    # Mask string literals first, or every `("+X", ...)` label reads as a nominal type named `X`.
+    # `REFCOUNTED` deliberately still sees the unmasked text, since a string literal *is* one of
+    # the reference-counted spellings it looks for. Trailing `//` comments go too: several of this
+    # tree's multi-line literals annotate each row (`// M6 (ISO 4762 SHCS)`), and reading those as
+    # types produced `M6`, `ISO`, `Knuckle` and six more before this line existed.
+    masked = "".join(
+        strip_string_literals(line).split("//")[0] + "\n" for line in text.splitlines()
+    )
+    names = sorted(
+        {n for n in NOMINAL.findall(masked) if n not in KNOWN_TYPES and not n.startswith("SIMD")}
+    )
+    if names:
+        reasons.append("named type(s) to open: " + ", ".join(names[:4]))
+    return reasons
 
 
 def strip_string_literals(line):
@@ -159,18 +212,50 @@ def sites(root):
                             depth += 1
                         elif ch == ")":
                             depth -= 1
+                # Keep reading through the test function's own signature. Swift writes the element
+                # type there in full (`func run(_ f: (String, SIMD3<Double>))`), while the literal
+                # above it almost always writes `SIMD3(1, 0, 0)` with the element type inferred.
+                # Without this the census is blind to the tree's usual spelling, which is what a
+                # pre-PR review measured against `Issue990ThreadAxisBasisTests.axes`' own literal.
+                k, depth = j, 0
+                while k + 1 < len(lines) and k - j < 10:
+                    k += 1
+                    signature = strip_string_literals(lines[k])
+                    if "func " not in signature and not depth:
+                        if signature.strip():
+                            break
+                        continue
+                    text.append(lines[k])
+                    for ch in signature:
+                        if ch == "(":
+                            depth += 1
+                        elif ch == ")":
+                            depth -= 1
+                    if depth <= 0 and "(" in signature:
+                        break
                 out.append((path, i + 1, "".join(text)))
     return out
 
 
 def classify(text):
-    """('AT RISK' | 'clean' | 'unknown', reason) for one site's argument text."""
-    if BARE_IDENTIFIER.search(text.strip().splitlines()[0] if text.strip() else ""):
-        return "unknown", "the arguments are a named collection, so no type is written here"
+    """('AT RISK' | 'clean' | 'unknown', reason) for one site's captured text.
+
+    AT RISK wins over unknown: a site can name a type this script cannot open and still show the
+    pair outright, and the pair is the thing worth reporting. Everything else it cannot finish
+    reading is `unknown`, not `clean`, because a census whose "all clear" and "I could not tell"
+    print the same string is the failure this repo's prove-the-test-fails policy exists to catch.
+    """
     wide = widest_vector(text)
     ref = REFCOUNTED.search(text)
     if wide >= 32 and ref:
         return "AT RISK", f"a {wide}-byte vector and a reference-counted member in one literal"
+
+    if BARE_IDENTIFIER.search(text.strip().splitlines()[0] if text.strip() else ""):
+        return "unknown", "the arguments are a named collection, so no type is written here"
+    reasons = unresolved(text)
+    if reasons:
+        return "unknown", "; ".join(reasons)
+
     if wide >= 32:
         return "clean", f"a {wide}-byte vector, no reference-counted member"
     if wide:
@@ -197,6 +282,18 @@ CLASSIFY_CASES = [
     ("clean", "arguments: [1.0, 2.0])"),
     ("clean", "arguments: 0...2)"),
     ("unknown", "arguments: ThreadFormsTests.smoothForms)"),
+    # The tree's usual spelling: element type inferred at the literal, written in full in the
+    # signature. Both halves get a case, because reading only the literal is what made the
+    # detector blind.
+    (
+        "AT RISK",
+        'arguments: [("+X", SIMD3(1, 0, 0))])\n'
+        "func f(_ c: (String, SIMD3<Double>)) {}\n",
+    ),
+    ("unknown", 'arguments: [("+X", SIMD3(1, 0, 0))])'),
+    ("unknown", 'arguments: [("+X", simd_double3x3(1))])'),
+    ("unknown", "arguments: [(ParametricContinuity.c0, ParametricContinuity.c1)])"),
+    ("unknown", 'arguments: [("iso60V", ThreadProfile.iso60V(), 1.0)])'),
 ]
 
 # (label, file body, expected (line, verdict) rows). These exercise `sites()`, which `classify()`'s
@@ -234,6 +331,23 @@ SITE_CASES = [
     (
         "a named collection reports unknown rather than a verdict it cannot support",
         "@Test(arguments: Fixtures.forms)\nfunc f(_ a: Form) {}\n",
+        [(1, "unknown")],
+    ),
+    (
+        "a lowercase named collection is the case only the bare-identifier clause catches",
+        "@Test(arguments: fixtures)\nfunc f(_ a: Int) {}\n",
+        [(1, "unknown")],
+    ),
+    (
+        "the signature is read, so an inferred SIMD literal still resolves",
+        '@Test("t", arguments: [\n  ("+X", SIMD3(1, 0, 0), SIMD3(0, -1, 0)),\n])\n'
+        "func f(_ c: (String, SIMD3<Double>, SIMD3<Double>)) {}\n",
+        [(1, "AT RISK")],
+    ),
+    (
+        "a signature the scan cannot reach leaves the site unknown, not clean",
+        '@Test("t", arguments: [("+X", SIMD3(1, 0, 0))])\n\n\n\n\n\n\n\n\n\n\n\n'
+        "func f(_ c: (String, SIMD3<Double>)) {}\n",
         [(1, "unknown")],
     ),
 ]

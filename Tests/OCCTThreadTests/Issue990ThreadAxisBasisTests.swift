@@ -113,7 +113,7 @@ struct Issue990ThreadAxisBasisTests {
     /// The constraint that leaves, until the toolchain is fixed: treat any `@Test(arguments:)`
     /// element that pairs a reference-counted member (`String`, a class, an `Array`) with a
     /// builtin vector of 32 bytes or more as suspect, in a tuple or in a struct. Both halves are
-    /// necessary and neither pair is sufficient, since `(String, simd_double3x3)` satisfies it and
+    /// necessary and the pair is not sufficient, since `(String, simd_double3x3)` satisfies it and
     /// runs clean; where the cut falls is measured but not explained, so the rule over-predicts on
     /// purpose. Walking the list in one test, as below, is the workaround.
     /// `census-arguments-sites.py` in that directory enumerates every `arguments:` site under

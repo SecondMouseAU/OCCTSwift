@@ -11,7 +11,7 @@ available on this machine, so nothing below is a claim about any other one.
 ## What to run
 
 ```bash
-./run-grid.sh 3        # the swift-testing grid, 23 cells, 3 processes each
+./run-grid.sh 3        # the swift-testing grid, 22 cells plus a layout dump, 3 processes each
 ./run-stages.sh        # the same crash reached with no swift-testing, 22 stages
 ./run-variants.sh      # the narrowing, 64 one-change-at-a-time variants
 ./backtrace.sh A1StringSIMD3   # the crash frame
@@ -168,20 +168,27 @@ writes, not the *signature* it calls.
 `standalone/Sources/Smallest`, run by `./run-variants.sh`. It imports nothing at all: no Testing,
 no Foundation, no `simd` module. `SIMD3<Double>` is a standard-library type.
 
-The smallest crashing program:
+The smallest crashing program is `upstream-repro.swift`, quoted here rather than paraphrased, since
+a README and a committed file that both claim to be the minimal form and are not the same program
+is one more thing for a reader to reconcile:
 
 ```swift
-@globalActor actor Iso { static let shared = Iso() }
+actor Iso {}
+let iso = Iso()
 
 func outer(_ a: (String, SIMD3<Double>)) async throws {
-    func local(_ a: (String, SIMD3<Double>), _: isolated (any Actor)? = Iso.shared) async throws {
+    func local(_ a: (String, SIMD3<Double>), _: isolated (any Actor)? = iso) async throws {
         precondition(!a.0.isEmpty)
     }
     try await local(a)
 }
 
 try await outer(("+X", SIMD3(1, 0, 0)))
+print("clean")
 ```
+
+`Smallest`'s own variants use `@globalActor actor Iso { static let shared = Iso() }` instead, which
+makes no difference: V38 passes a plain actor instance explicitly and crashes the same way.
 
 Three conditions, each proved necessary by a variant that removes exactly one of them.
 
@@ -232,13 +239,18 @@ should crash. Reproduced here without importing `simd`, and pushed further:
 | `(String, Vec2)`, a struct of two vectors | 80 | 2 | **crash** |
 | `(String, One80)`, one vector plus four `Double`s | 80 | 1 | clean |
 | `(String, Pad1)`, two vectors plus one `Double` | 88 | 2 | clean |
-| `(String, One96)`, one vector plus five `Double`s | 88 | 1 | clean |
+| `(String, One88)`, one vector plus five `Double`s | 88 | 1 | clean |
+| `(String, Pad2)`, two vectors plus two `Double`s | 96 | 2 | clean |
+| `(String, Pad3)`, two vectors plus three `Double`s | 104 | 2 | clean |
+| `(String, Pad4)`, two vectors plus four `Double`s | 112 | 2 | clean |
 | `(String, Vec3)`, a struct of three vectors, the `simd_double3x3` shape | 112 | 3 | clean |
 | `(SIMD3<Double>, SIMD3<Double>)` | 64 | 2 | clean |
 
 Size alone does not explain it: 80 bytes crashes with two vectors (`Vec2`) and is clean with one
 plus padding (`One80`). Vector count alone does not explain it: one vector crashes at 48 and is
-clean at 80. A compound rule can be fitted to these thirteen rows, and fitting one is exactly what
+clean at 80. For two vectors the cut is bracketed, `Vec2` crashing at 80 and `Pad1` through `Pad4`
+clean from 88 to 112, and that bracket is the most anyone here can say. A compound rule can be
+fitted to these sixteen rows, and fitting one is exactly what
 [`measure-dont-assume`](../../../okf/policies/measure-dont-assume.md)'s "an argument that explains
 everything may be describing a defect" section says not to do. So this file states the table and
 stops: **the pair is necessary, the exact cut is unknown, and somebody with the IR should be the
@@ -286,45 +298,72 @@ inside one test, which is what `Issue990ThreadAxisBasisTests` does, is the worka
 confirms it is clean.
 
 Census by `census-arguments-sites.py`, over all of `Tests/`: **33** `@Test(..., arguments:)` sites,
-**0 at risk**, 1 needing a human to open the named type. It is a census and not a gate, for two
-reasons: an `arguments:` value that is a named collection carries no type at all, and the flagging
-rule over-predicts (see the table above).
+**0 at risk**, **9 unknown**. It is a census and not a gate for three reasons: the flagging rule
+over-predicts (see the table above), an `arguments:` value can be a named collection with no type
+written anywhere, and an element can name a nominal type the script would have to open.
 
-Its `--self-test` is 22 cases, 16 over `classify()` and 6 building real fixture files and running
+`unknown` exists because a census whose "all clear" and "I could not tell" print the same string is
+the failure this repo's [prove-the-test-fails](../../../okf/policies/prove-the-test-fails.md)
+policy is about. Three shapes produce it, each measured rather than imagined: a SIMD literal whose
+element type is inferred (`SIMD3(1, 0, 0)`, which is how this tree writes almost all of them), a
+`simd_*` matrix, and a named type.
+
+The inferred-literal case was found by a pre-PR review and is worth spelling out, because it is
+exactly the blindness the rest of this directory exists to argue against: a fixture holding the
+literal already in `Issue990ThreadAxisBasisTests.axes`, `("+X", SIMD3(1, 0, 0), SIMD3(0, -1, 0))`,
+came back `clean (a reference-counted member, no vector)` while grid cell B says that element type
+crashes. The fix reads the test function's own signature too, since that is where Swift writes the
+type out (`func run(_ f: (String, SIMD3<Double>, SIMD3<Double>))`), and reports `unknown` when the
+signature is out of reach.
+
+Its `--self-test` is 30 cases, 22 over `classify()` and 8 building real fixture files and running
 `sites()` over them. Removal matrix, on throwaway copies, each clause neutered on its own:
 
 | clause removed | self-test result |
 |---|---|
-| the wide-vector test | 9 of 22 fail |
-| the reference-counted test | 9 of 22 fail |
-| the SIMD element-width table | 8 of 22 fail |
-| the doc-comment skip | 2 of 22 fail |
-| the string-literal mask | 2 of 22 fail |
-| the bare-identifier verdict | 2 of 22 fail |
-| the paren scan starting inside the `@Test(` call | 1 of 22 fails |
+| the wide-vector test | 11 of 30 fail |
+| the reference-counted test | 11 of 30 fail |
+| the SIMD element-width table | 10 of 30 fail |
+| string and comment masking in the nominal scan | 4 of 30 fail |
+| the doc-comment skip | 2 of 30 fail |
+| the string-literal mask | 2 of 30 fail |
+| the paren scan starting inside the `@Test(` call | 2 of 30 fail |
+| the inferred-SIMD unresolved marker | 2 of 30 fail |
+| the nominal-type unresolved marker | 2 of 30 fail |
+| reading the test function's signature | 1 of 30 fails |
+| the `simd_*` matrix unresolved marker | 1 of 30 fails |
+| the bare-identifier verdict | 1 of 30 fails |
 
-The mask's first fixture proved nothing: it put `arguments:` in a display name on a line that also
-had a real `arguments:`, so the row count was 1 either way. Replaced with a line whose only
-`arguments:` is inside the string, plus one where the display name's `arguments:` comes first and
-would otherwise become the start of the captured type. Neutering the doc-comment skip takes the
-total from 33 to 38 at HEAD, because the corrected comment in `Issue990ThreadAxisBasisTests` names
-`arguments:` five times, and one of those five phantom rows reads **AT RISK**, since the same
-paragraph names `SIMD3<Double>`, `String` and `Array` while explaining the rule.
+Two clauses had to earn their entry twice. The mask's first fixture proved nothing: it put
+`arguments:` in a display name on a line that also had a real `arguments:`, so the row count was 1
+either way. And the bare-identifier clause went blind once the nominal-type marker landed, because
+`arguments: Fixtures.forms` trips both; it holds a case of its own now, a lowercase collection name
+that only it catches. Neutering the doc-comment skip takes the total from 33 to 38 at HEAD, because
+the corrected comment in `Issue990ThreadAxisBasisTests` names `arguments:` five times, and one of
+those five phantom rows reads **AT RISK**, since the same paragraph names `SIMD3<Double>`, `String`
+and `Array` while explaining the rule.
 
-Three of the 33 rows needed a human:
+One row the script answers on its own is worth naming:
+`Tests/OCCTBRepGraphTests/Issue881PerpendicularBasisTests.swift:76`, the only site writing SIMD
+types out in full, element `(SIMD3<Double>, SIMD3<Double>, SIMD3<Double>)`, no reference-counted
+member, matching clean cell C.
 
-- `Tests/OCCTBRepGraphTests/Issue881PerpendicularBasisTests.swift:76` is the only SIMD-tuple site,
-  element `(SIMD3<Double>, SIMD3<Double>, SIMD3<Double>)`, no reference-counted member, matching
-  clean cell C.
-- `Tests/OCCTThreadTests/Issue991ThreadProfileFlatWidthTests.swift:20` has element
-  `(String, ThreadProfile, Double, Double)`, so it does pair a `String` with a struct.
-  `ThreadProfile`'s only stored property is `[Vertex]`, so the aggregate holds no vector and
-  nothing wider than a word.
-- `Tests/OCCTThreadTests/ThreadFormsTests.swift:17` is the `unknown` row: `arguments:
-  ThreadFormsTests.smoothForms` names a collection rather than writing a type, so the script
-  reports that it cannot decide instead of printing `clean` in the same column as the rows it
-  actually inspected. `ThreadForm` is an enum with a `String` raw value and no payload, which is a
-  tag byte, so the row is clean.
+The 9 `unknown` rows, adjudicated by opening each type:
+
+| site | named type | why it is clean |
+|---|---|---|
+| `Issue522ApproxC0CollapseTests.swift:80` | `ParametricContinuity` | `enum ...: Int32`, no payload |
+| `Issue490ContinuityDecoderTests.swift:37` | `ParametricContinuity` | same |
+| `Issue570HealingApproxTests.swift:121` | `ParametricContinuity` | same |
+| `Issue438DivideContinuityUnificationTests.swift:58` | `Shape.ContinuityLevel` | `enum ...: Int32`, no payload |
+| `OCCTShapeHealingTests.swift:640` | `Shape.Orientation` | `enum ...: Int32`, no payload |
+| `ThreadFormsTests.swift:66` | `ThreadForm` | `enum ...: String`, no payload, a tag byte |
+| `ThreadFormsTests.swift:84` | `ThreadForm` | same |
+| `ThreadFormsTests.swift:17` | `ThreadFormsTests.smoothForms` | a `[ThreadForm]`, same as above |
+| `Issue991ThreadProfileFlatWidthTests.swift:20` | `ThreadProfile` | one stored property, `[Vertex]`: reference-counted, but no vector and nothing wider than a word |
+
+`Issue991ThreadProfileFlatWidthTests` is the nearest miss in the tree, since it genuinely pairs a
+`String` with a struct. The struct is what saves it.
 
 **At-risk sites: 0.** Nothing was changed for its own sake.
 

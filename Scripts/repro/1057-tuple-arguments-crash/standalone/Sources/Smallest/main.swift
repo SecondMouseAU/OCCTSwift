@@ -453,7 +453,7 @@ func v61(_ a: (String, Pad4)) async throws {
 // vector at 80 bytes, and one vector at 96.
 
 struct One80: Sendable { var a: SIMD3<Double>; var p0, p1, p2, p3: Double }
-struct One96: Sendable { var a: SIMD3<Double>; var p0, p1, p2, p3, p4: Double }
+struct One88: Sendable { var a: SIMD3<Double>; var p0, p1, p2, p3, p4: Double }
 
 func v63(_ a: (String, One80)) async throws {
     @Sendable func local(_ a: (String, One80), _: isolated (any Actor)? = Iso.shared) async throws {
@@ -462,8 +462,8 @@ func v63(_ a: (String, One80)) async throws {
     try await local(a)
 }
 
-func v64(_ a: (String, One96)) async throws {
-    @Sendable func local(_ a: (String, One96), _: isolated (any Actor)? = Iso.shared) async throws {
+func v64(_ a: (String, One88)) async throws {
+    @Sendable func local(_ a: (String, One88), _: isolated (any Actor)? = Iso.shared) async throws {
         precondition(!a.0.isEmpty)
     }
     try await local(a)
@@ -620,8 +620,8 @@ await variant(61, "V26, two vectors + 4 Doubles, \(size((String, Pad4).self))") 
 await variant(63, "V26, ONE vector padded to \(size((String, One80).self))") {
     try await v63(("+X", One80(a: SIMD3(1, 0, 0), p0: 0, p1: 0, p2: 0, p3: 0)))
 }
-await variant(64, "V26, ONE vector padded to \(size((String, One96).self))") {
-    try await v64(("+X", One96(a: SIMD3(1, 0, 0), p0: 0, p1: 0, p2: 0, p3: 0, p4: 0)))
+await variant(64, "V26, ONE vector padded to \(size((String, One88).self))") {
+    try await v64(("+X", One88(a: SIMD3(1, 0, 0), p0: 0, p1: 0, p2: 0, p3: 0, p4: 0)))
 }
 await variant(62, "layouts of every crashing and clean parameter type") {
     print("")

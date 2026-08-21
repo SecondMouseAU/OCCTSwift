@@ -44,11 +44,15 @@ printf '%-22s %-8s %s\n' CELL VERDICT DETAIL
 for cell in "${CELLS[@]}"; do
   crashes=0
   detail=""
+  crashed_hard=""
   for _ in $(seq 1 "$REPS"); do
     out=$(swift test --filter "$cell" 2>&1)
     rc=$?
     if [ "$rc" -ne 0 ]; then
       crashes=$((crashes + 1))
+      if printf '%s' "$out" | grep -qE "freed pointer was not the last allocation|unexpected signal code|Crashed"; then
+        crashed_hard=yes
+      fi
       if [ -z "$detail" ]; then
         # The runtime's own message first, SwiftPM's signal line only as a fallback. Taking them
         # in file order instead put SwiftPM's "exited with unexpected signal code 6" ahead of
@@ -66,7 +70,11 @@ for cell in "${CELLS[@]}"; do
       fi
     fi
   done
-  if [ "$crashes" -eq 0 ]; then
+  # A failing `#expect` also exits non-zero, and reporting that as CRASH would put a plain test
+  # failure into the table this directory's argument rests on. Kept separate.
+  if [ "$crashes" -ne 0 ] && [ -z "$crashed_hard" ]; then
+    printf '%-22s %-8s %s\n' "$cell" "FAILED" "$crashes/$REPS  a test failure, not a crash"
+  elif [ "$crashes" -eq 0 ]; then
     printf '%-22s %-8s %s\n' "$cell" "clean" "$REPS/$REPS"
   else
     printf '%-22s %-8s %s\n' "$cell" "CRASH" "$crashes/$REPS  $detail"
