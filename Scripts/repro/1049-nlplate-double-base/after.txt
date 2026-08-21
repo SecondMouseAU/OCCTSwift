@@ -1,0 +1,72 @@
+=== the kernel's own contract ===
+base plane Value(0,0)                : (100.000000, 0.000000, 0.000000)
+base plane Value(3,4)                : (103.000000, 4.000000, 0.000000)
+solver.IsDone                        : yes
+solver.Evaluate((0,0))               : (100.000000, 0.000000, 5.000000)
+  the constraint target was          : (100.000000, 0.000000, 5.000000)
+solver.Evaluate((3,4))               : (103.000000, 4.000000, 5.000000)
+  which is the base point plus 5 in z, so Evaluate is a point, not a displacement
+
+=== fixture 1: off-origin plane, zero-displacement G0 constraint ===
+Plane through (100, 0, 0), normal +Z. The constraint pins uv (0,0) to its own base
+point (100, 0, 0), so the plate load is the zero vector, the plate solution is
+identically zero, and the correct answer is the input surface itself over the
+working domain [-10, 10] x [-10, 10]. The doubled answer is 2 * base, whose worst
+deviation is |base(10, 10)| = sqrt(110^2 + 10^2) = 110.4536101718726.
+G0 identity output                   : Geom_BSplineSurface  u [-10, 10]  v [-10, 10]  periodic u=no v=no
+deviation from the input surface     : 0.000000000
+
+=== fixture 2: off-origin plane, +5 in Z at uv (0,0), G0 ===
+G0 output                            : Geom_BSplineSurface  u [-10, 10]  v [-10, 10]  periodic u=no v=no
+G0 at the caller's own uv (0,0)      : (100.000000, 0.000000, 5.000000)   uv inside output domain: yes
+  the constraint target was          : (100.000000, 0.000000, 5.000000)
+G0 grid                              : max |solver.Evaluate| 110.567,  max |base + Evaluate| 220.964
+G0 output vs solver                  : 2.84910139e-14
+
+=== fixture 3: same plane, G1 ===
+G1 output                            : Geom_BSplineSurface  u [-10, 10]  v [-10, 10]  periodic u=no v=no
+G1 at the caller's own uv (0,0)      : (99.585561, -0.414427, 5.828825)   uv inside output domain: yes
+G1 grid                              : max |solver.Evaluate| 6.53201e+12,  max |base + Evaluate| 6.53201e+12
+G1 output vs solver                  : 2.62760673e+12
+
+=== fixture 4: same plane, G2 / G3 / Incremental ===
+G2 output                            : Geom_BSplineSurface  u [-10, 10]  v [-10, 10]  periodic u=no v=no
+G2 at the caller's own uv (0,0)      : (100.000000, 0.000000, 4.858978)   uv inside output domain: yes
+G3 output                            : Geom_BSplineSurface  u [-10, 10]  v [-10, 10]  periodic u=no v=no
+G3 at the caller's own uv (0,0)      : (100.000000, 0.000000, 5.000000)   uv inside output domain: yes
+Incremental output                   : Geom_BSplineSurface  u [-10, 10]  v [-10, 10]  periodic u=no v=no
+Incremental at the caller's (0,0)    : (100.000000, 0.000000, 3.455075)   uv inside output domain: yes
+
+=== fixture 4b: the identity constraint on all five entry points ===
+Same plane through (100, 0, 0). Every constraint asks for exactly what the base
+surface already has at uv (0,0), including its derivatives, so the plate load is
+zero and the correct answer is the input surface over [-10, 10] x [-10, 10].
+G0 identity deviation                : 2.84771664771e-14
+G1 identity deviation                : 2.84771664771e-14
+G2 identity deviation                : 2.84771664771e-14
+G3 identity deviation                : 2.84771664771e-14
+Incremental identity deviation       : 2.84771664771e-14
+
+=== fixture 4c: a pure-Z G0 constraint leaves x and y alone ===
+The pinpoint load a G0 constraint contributes is target - Evaluate(uv), so a target
+differing from the base only in z gives a plate with no x or y component at all,
+and the deformed surface keeps the base's own x = 100 + u and y = v everywhere.
+worst |x - (100 + u)|, |y - v|       : 2.84217094304e-14
+max |z| over the domain              : 5
+
+=== fixture 5: cylinder radius 10 at the origin, G0 ===
+The u of a cylinder is an angle and its own bound is [0, 2pi]; only v is unbounded.
+cylinder G0 output                   : Geom_BSplineSurface  u [0, 6.28319]  v [-10, 10]  periodic u=no v=no
+cylinder G0 at the caller's u=pi/2   : (-7.438394, 23.302247, 0.000000)   uv inside output domain: yes
+  the constraint target was          : (0.000000, 12.000000, 0.000000)
+  solver.Evaluate there              : (-0.000000, 12.000000, 0.000000)
+cylinder G0 grid                     : max |solver.Evaluate| 128.779,  max |base + Evaluate| 131.088
+cylinder output vs solver            : 52.3241404
+
+=== fixture 6: origin plane, the shape every shipped test uses ===
+The base is (u, v, 0), zero only at uv (0,0), so doubling stretches the patch by
+two in u and v everywhere else. No shipped test asserted a coordinate.
+origin plane G0 output               : Geom_BSplineSurface  u [-10, 10]  v [-10, 10]  periodic u=no v=no
+at the caller's uv (0,0)             : (0.000000, 0.000000, 5.000000)   uv inside output domain: yes
+at the caller's uv (5,5)             : (5.000000, 5.000000, 5.000000)   uv inside output domain: yes
+  base there is                      : (5.000000, 5.000000, ...)

@@ -83,14 +83,25 @@ If you already have a surface and want to **pull it through** specific positions
 solver deforms it to meet `(u, v) → target` constraints:
 
 ```swift
-let plane = Surface.plane(origin: .zero, normal: SIMD3(0, 0, 1))!
+let plane = Surface.plane(origin: SIMD3(100, 0, 0), normal: SIMD3(0, 0, 1))!
 let bumped = plane.nlPlateDeformed(
-    constraints: [(uv: SIMD2(0, 0), target: SIMD3(0, 0, 5))],   // lift the centre to z = 5
-    maxIterations: 4, tolerance: 1e-3)
+    constraints: [(uv: SIMD2(0, 0), target: SIMD3(100, 0, 5))],  // lift that point to z = 5
+    resolutionOrder: 4, tolerance: 1e-3)!
+let atTheConstraint = bumped.point(atU: 0, v: 0)   // the constraint target, (100, 0, 5)
+let (uMin, uMax, vMin, vMax) = bumped.domain      // -10, 10, -10, 10: the working domain
 ```
 
-This keeps the surface's existing shape and only displaces it to satisfy the constraints, distinct
-from fitting a fresh surface to a point set. (A `G0+G1` variant also takes tangent constraints.)
+The constraint is written in **this surface's** own `(u, v)`, and the result answers to the same
+`(u, v)`, so a parameter you constrained is a parameter you can go back and evaluate. The result is
+still a fresh B-spline fitted to a sample grid of the deformation rather than the input surface
+with a displacement applied to it: see
+[`occtswift-wrapping-gaps.md`](../../occtswift-wrapping-gaps.md#nlplate-deformation-returns-a-refit-bspline-1046)
+for what that refit does not preserve, notably periodicity. (A `G0+G1` variant also takes tangent
+constraints, and `G2`, `G3` and incremental variants take higher derivatives.)
+
+The parameter rectangle the result spans is the input's own range in a direction the input bounds,
+and the constraint span padded by 10 in a direction it leaves unbounded. A plane bounds neither, so
+one constraint gives the 20-wide square above; a cylinder bounds `u` at `[0, 2pi]` and keeps it.
 
 ## Which to use
 
