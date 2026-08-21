@@ -105,6 +105,21 @@ into the same subject. That is the detector working, on two functions three line
 
 Nothing here is worth an issue, so none was filed.
 
+## The bare run was proven to fire, not only the fixtures
+
+A fixture goes through the same detector functions but not through the corpus path: file globbing,
+comment stripping and line numbering. So one of #1000's members was put back into the real bridge
+(`OCCTBridge_Topology.mm`) under a probe name and the bare run was re-run:
+
+```
+  OCCTBridge_Topology.mm:6964  OCCTInjectedProbeNewGeometry(): return <- ei (Draft_EdgeInfo), which no caller input reaches
+      ei.NewGeometry()
+```
+
+Reverting the injection returns the run to `46 candidate(s) in 18 function(s), 0 echoed input(s)`.
+On a clean tree this detector reports nothing new, and that is now known to mean the tree is clean
+rather than that the detector cannot fire.
+
 ## Sub-kinds 1 and 4 do not report each other's fixtures
 
 Measured, not assumed, since two detectors over one corpus can quietly become one detector twice.
