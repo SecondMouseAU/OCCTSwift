@@ -1342,21 +1342,12 @@ OCCTDatumInfo OCCTDocumentGetDatumInfo(OCCTDocumentRef doc, int32_t index)
 {
   OCCTDatumInfo info = {};
   info.isValid       = false;
-  memset(info.name, 0, sizeof(info.name));
   try
   {
     Handle(XCAFDoc_Datum)                 datumAttr;
     Handle(XCAFDimTolObjects_DatumObject) datumObj;
     if (!occtDocumentDatumObjectAt(doc, index, datumAttr, datumObj))
       return info;
-
-    Handle(TCollection_HAsciiString) hName = datumObj->GetName();
-    if (!hName.IsNull() && hName->Length() > 0)
-    {
-      strncpy(info.name,
-              hName->String().ToCString(),
-              std::min((int)sizeof(info.name) - 1, hName->Length()));
-    }
 
     // Positions in a reference frame are 1-based, so 0 is the reading for a datum that has no
     // place in one rather than a first place. See the struct's own comment for the derivation.
@@ -1408,6 +1399,40 @@ OCCTDatumInfo OCCTDocumentGetDatumInfo(OCCTDocumentRef doc, int32_t index)
   }
 }
 
+int32_t OCCTDocumentGetDatumName(OCCTDocumentRef doc, int32_t index, char* outName, int32_t maxLen)
+{
+  if (maxLen < 0 || (maxLen > 0 && !outName))
+    return -1;
+  if (maxLen > 0)
+    outName[0] = '\0';
+  try
+  {
+    Handle(XCAFDoc_Datum)                 datumAttr;
+    Handle(XCAFDimTolObjects_DatumObject) datumObj;
+    if (!occtDocumentDatumObjectAt(doc, index, datumAttr, datumObj))
+      return -1;
+
+    Handle(TCollection_HAsciiString) hName = datumObj->GetName();
+    // A datum with no name reads as the empty string rather than as a failure: absence of a name is
+    // not absence of a datum, and -1 is reserved for a datum that cannot be read at all.
+    const int32_t length = hName.IsNull() ? 0 : (int32_t)hName->Length();
+    if (length > 0 && maxLen > 0)
+    {
+      const int32_t copied = std::min(length, maxLen - 1);
+      memcpy(outName, hName->String().ToCString(), (size_t)copied);
+      outName[copied] = '\0';
+    }
+    // The whole length, never the copied length: a caller compares it against its own maxLen to
+    // learn that what it holds is a prefix, which is the report the fixed 64-byte buffer could not
+    // make (#1055).
+    return length;
+  }
+  catch (...)
+  {
+    return -1;
+  }
+}
+
 int32_t OCCTDocumentGetDatumModifier(OCCTDocumentRef doc, int32_t datumIndex, int32_t modifierIndex)
 {
   if (modifierIndex < 0)
@@ -1438,10 +1463,51 @@ int32_t OCCTDocumentGetDatumModifier(OCCTDocumentRef doc, int32_t datumIndex, in
 #include <TDF_Tool.hxx>
 #include <TCollection_AsciiString.hxx>
 
-int32_t OCCTDocumentCreateDimension(OCCTDocumentRef doc,
-                                    int64_t         shapeLabelId,
-                                    int32_t         type,
-                                    double          value)
+/// Apply a plus/minus tolerance pair to a dimension object, and report whether the object kept it.
+///
+/// Both setters return false, and change nothing, when the dimension is already a range.
+/// Discarding that reported success for a call that did nothing (#996). Neither is
+/// short-circuited, so the two arguments stay symmetric rather than one being applied and one
+/// not. That is safe for the rejection this project has actually measured, a range dimension,
+/// where both refuse: see Scripts/repro/996-gdt-read-surface/. It is NOT a general guarantee
+/// that OCCT rejects the pair atomically on every path, and no such guarantee is documented
+/// upstream. The readback is what makes the caller's answer correct either way: verify rather than
+/// trust the return pair, since a partial application would otherwise be reported as a clean
+/// failure and the caller could not tell it from a no-op.
+///
+/// One copy, two callers: OCCTDocumentSetDimensionTolerance and the create path this file's
+/// occtDocumentCreateDimensionImpl runs. Both are in this file and nothing outside it applies a
+/// tolerance, so file-static is the right reach. The two spellings of the operation disagreeing
+/// about what counts as applied is the defect #1056 is about, so they share the test rather than
+/// each carrying their own.
+static bool occtDimensionApplyTolerance(const Handle(XCAFDimTolObjects_DimensionObject)& dimObj,
+                                        double                                           lowerTol,
+                                        double                                           upperTol)
+{
+  const bool lowerOk = dimObj->SetLowerTolValue(lowerTol);
+  const bool upperOk = dimObj->SetUpperTolValue(upperTol);
+  return lowerOk && upperOk && dimObj->GetLowerTolValue() == lowerTol
+         && dimObj->GetUpperTolValue() == upperTol;
+}
+
+/// Shared by OCCTDocumentCreateDimension and OCCTDocumentCreateDimensionWithTolerance.
+///
+/// The whole object, tolerance pair included, is built and checked before AddDimension() is called,
+/// so no refusal leaves a dimension behind. Doing it the other way round is what #1056 reported:
+/// the label existed, the caller got its index, and the tolerance it asked for had been dropped.
+/// Nothing here can undo an AddDimension(), so the only way to make -1 mean "no dimension was
+/// created" is to decide before creating.
+///
+/// It is NOT "the document is untouched": XCAFDoc_DimTolTool::Set runs above both refusals and
+/// attaches the DimTol and Shape tools to Main() when they are absent, so the first GD&T call on a
+/// fresh document leaves those behind whatever it returns. That was true before this change too.
+static int32_t occtDocumentCreateDimensionImpl(OCCTDocumentRef doc,
+                                               int64_t         shapeLabelId,
+                                               int32_t         type,
+                                               double          value,
+                                               bool            withTolerance,
+                                               double          lowerTol,
+                                               double          upperTol)
 {
   if (!doc || doc->doc.IsNull())
     return -1;
@@ -1450,15 +1516,6 @@ int32_t OCCTDocumentCreateDimension(OCCTDocumentRef doc,
     Handle(XCAFDoc_DimTolTool) dimTolTool = XCAFDoc_DimTolTool::Set(doc->doc->Main());
     TDF_Label                  shapeLabel = doc->getLabel(shapeLabelId);
     if (shapeLabel.IsNull())
-      return -1;
-
-    TDF_Label         dimLabel = dimTolTool->AddDimension();
-    TDF_LabelSequence shapeSeq;
-    shapeSeq.Append(shapeLabel);
-    dimTolTool->SetDimension(shapeSeq, shapeSeq, dimLabel);
-
-    Handle(XCAFDoc_Dimension) dimAttr;
-    if (!dimLabel.FindAttribute(XCAFDoc_Dimension::GetID(), dimAttr))
       return -1;
 
     Handle(XCAFDimTolObjects_DimensionObject) dimObj = new XCAFDimTolObjects_DimensionObject();
@@ -1478,6 +1535,19 @@ int32_t OCCTDocumentCreateDimension(OCCTDocumentRef doc,
     Handle(TColStd_HArray1OfReal) vals = new TColStd_HArray1OfReal(1, 1);
     vals->SetValue(1, value);
     dimObj->SetValues(vals);
+
+    if (withTolerance && !occtDimensionApplyTolerance(dimObj, lowerTol, upperTol))
+      return -1;
+
+    TDF_Label         dimLabel = dimTolTool->AddDimension();
+    TDF_LabelSequence shapeSeq;
+    shapeSeq.Append(shapeLabel);
+    dimTolTool->SetDimension(shapeSeq, shapeSeq, dimLabel);
+
+    Handle(XCAFDoc_Dimension) dimAttr;
+    if (!dimLabel.FindAttribute(XCAFDoc_Dimension::GetID(), dimAttr))
+      return -1;
+
     dimAttr->SetObject(dimObj);
 
     // Return the index of the new dimension.
@@ -1489,6 +1559,24 @@ int32_t OCCTDocumentCreateDimension(OCCTDocumentRef doc,
   {
     return -1;
   }
+}
+
+int32_t OCCTDocumentCreateDimension(OCCTDocumentRef doc,
+                                    int64_t         shapeLabelId,
+                                    int32_t         type,
+                                    double          value)
+{
+  return occtDocumentCreateDimensionImpl(doc, shapeLabelId, type, value, false, 0.0, 0.0);
+}
+
+int32_t OCCTDocumentCreateDimensionWithTolerance(OCCTDocumentRef doc,
+                                                 int64_t         shapeLabelId,
+                                                 int32_t         type,
+                                                 double          value,
+                                                 double          lowerTol,
+                                                 double          upperTol)
+{
+  return occtDocumentCreateDimensionImpl(doc, shapeLabelId, type, value, true, lowerTol, upperTol);
 }
 
 int32_t OCCTDocumentCreateGeomTolerance(OCCTDocumentRef doc,
@@ -1585,20 +1673,7 @@ bool OCCTDocumentSetDimensionTolerance(OCCTDocumentRef doc,
     if (!occtDocumentDimensionObjectAt(doc, dimensionIndex, dimAttr, dimObj))
       return false;
 
-    // Both setters return false, and change nothing, when the dimension is already a range.
-    // Discarding that reported success for a call that did nothing (#996). Neither is
-    // short-circuited, so the two arguments stay symmetric rather than one being applied and one
-    // not. That is safe for the rejection this project has actually measured, a range dimension,
-    // where both refuse: see Scripts/repro/996-gdt-read-surface/. It is NOT a general guarantee
-    // that OCCT rejects the pair atomically on every path, and no such guarantee is documented
-    // upstream. The readback below is what makes the caller's answer correct either way.
-    const bool lowerOk = dimObj->SetLowerTolValue(lowerTol);
-    const bool upperOk = dimObj->SetUpperTolValue(upperTol);
-    // Verify rather than trust the return pair: a partial application would otherwise be reported
-    // as a clean failure, and the caller could not tell it from a no-op.
-    const bool applied = lowerOk && upperOk && dimObj->GetLowerTolValue() == lowerTol
-                         && dimObj->GetUpperTolValue() == upperTol;
-    if (!applied)
+    if (!occtDimensionApplyTolerance(dimObj, lowerTol, upperTol))
       return false;
 
     dimAttr->SetObject(dimObj);
@@ -1859,11 +1934,15 @@ bool OCCTDocumentSetGeomToleranceZoneModifier(OCCTDocumentRef doc,
     if (!occtDocumentGeomToleranceObjectAt(doc, toleranceIndex, tolAttr, tolObj))
       return false;
 
+    const bool none = (zoneModifier == (int32_t)XCAFDimTolObjects_GeomToleranceZoneModif_None);
     tolObj->SetZoneModifier((XCAFDimTolObjects_GeomToleranceZoneModif)zoneModifier);
     // A non-positive value is normalised to 0 rather than passed through, so the stored state
     // matches what the reader can report: SetObject writes the value only under `> 0`, and a
-    // negative one would be silently dropped on the way out.
-    tolObj->SetValueOfZoneModifier(value > 0.0 ? value : 0.0);
+    // negative one would be silently dropped on the way out. A _None modifier clears the value for
+    // the same reason it is cleared in OCCTDocumentSetDatumModifierWithValue: the reader gates the
+    // value on `> 0` and never on the modifier, so a number surviving a cleared modifier reads
+    // back as a projected-zone length on a tolerance that has no projected zone (#1056).
+    tolObj->SetValueOfZoneModifier((!none && value > 0.0) ? value : 0.0);
     tolAttr->SetObject(tolObj);
     return true;
   }

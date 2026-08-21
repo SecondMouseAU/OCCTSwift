@@ -267,9 +267,14 @@ int32_t OCCTDocumentGetGeomToleranceModifier(OCCTDocumentRef _Nonnull doc,
 /// targetType and targetNumber mean something only when isDatumTarget holds; targetLength only when
 /// hasTargetParams holds AND the type is not Point; targetWidth only when hasTargetParams holds AND
 /// the type is Rectangle. Measured per type in Scripts/repro/1004-gdt-accessors/.
+///
+/// The name is NOT here. It used to be a `char name[64]` this struct copied into with strncpy,
+/// which silently returned 63 bytes of a longer identifier while OCCTDocumentCreateDatum wrote the
+/// whole string, so a name a caller had just written did not compare equal to the one it read back
+/// and nothing in the chain said why (#1055). Read it with OCCTDocumentGetDatumName below, which
+/// reports the length it needs and so cannot truncate without saying so.
 typedef struct
 {
-  char    name[64];          // datum identifier (A, B, C, etc.)
   bool    hasPosition;       // GetPosition() > 0
   int32_t position;          // place in the related tolerance's reference frame, 1-based
   int32_t modifierWithValue; // XCAFDimTolObjects_DatumModifWithValue, _None when absent
@@ -289,6 +294,18 @@ typedef struct
 /// Get datum info at index
 OCCTDatumInfo OCCTDocumentGetDatumInfo(OCCTDocumentRef doc, int32_t index);
 
+/// Copy the datum's identifier into a caller-sized buffer, NUL-terminated.
+///
+/// Returns the length of the whole identifier in bytes, not counting the terminator, or -1 for a
+/// datum that cannot be read (index out of range, no attribute, or the #1030 refusal). A return of
+/// maxLen or more means outName holds a truncated copy: allocate that many bytes plus one and call
+/// again. outName may be NULL with maxLen 0, which asks for the length alone and writes nothing,
+/// so a caller with no fixed bound sizes its buffer in one extra call rather than guessing (#1055).
+int32_t OCCTDocumentGetDatumName(OCCTDocumentRef _Nonnull doc,
+                                 int32_t index,
+                                 char* _Nullable outName,
+                                 int32_t maxLen);
+
 /// One modifier of the datum at datumIndex, as an XCAFDimTolObjects_DatumSingleModif value.
 /// modifierIndex is zero-based; returns -1 for either index out of range (#1004).
 int32_t OCCTDocumentGetDatumModifier(OCCTDocumentRef _Nonnull doc,
@@ -306,6 +323,22 @@ int32_t OCCTDocumentCreateDimension(OCCTDocumentRef _Nonnull doc,
                                     int64_t shapeLabelId,
                                     int32_t type,
                                     double  value);
+
+/// Create a dimension carrying a plus/minus tolerance pair, in one step.
+///
+/// Same as OCCTDocumentCreateDimension plus SetLowerTolValue / SetUpperTolValue, with one
+/// difference that is the whole point of the entry point: the tolerance is applied to the object
+/// BEFORE any label is created, so a pair the object will not take (a NaN, say, which the readback
+/// rejects) returns -1 having created nothing. Applying it afterwards leaves a dimension the caller
+/// was handed an index for whose tolerance was dropped, which is what a discarded
+/// OCCTDocumentSetDimensionTolerance result produced (#1056).
+/// Returns -1 on failure, else the index of the new dimension.
+int32_t OCCTDocumentCreateDimensionWithTolerance(OCCTDocumentRef _Nonnull doc,
+                                                 int64_t shapeLabelId,
+                                                 int32_t type,
+                                                 double  value,
+                                                 double  lowerTol,
+                                                 double  upperTol);
 
 /// Create a geometric tolerance attribute on the document and attach it to a shape.
 /// type: XCAFDimTolObjects_GeomToleranceType enum
@@ -394,7 +427,10 @@ bool OCCTDocumentSetGeomToleranceMaterialRequirement(OCCTDocumentRef _Nonnull do
 
 /// Set the tolerance zone modifier and its associated value together, via SetZoneModifier and
 /// SetValueOfZoneModifier. They are one call because the value only means something under a
-/// modifier, and OCCT stores the value only when it is positive. Returns true on success (#1004).
+/// modifier, and OCCT stores the value only when it is positive. A _None modifier stores no value
+/// either, so clearing the modifier clears the number with it rather than leaving a projected-zone
+/// length on a tolerance that has no projected zone (#1056); this matches
+/// OCCTDocumentSetDatumModifierWithValue. Returns true on success (#1004).
 bool OCCTDocumentSetGeomToleranceZoneModifier(OCCTDocumentRef _Nonnull doc,
                                               int32_t toleranceIndex,
                                               int32_t zoneModifier,

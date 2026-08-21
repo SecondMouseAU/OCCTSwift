@@ -22,6 +22,32 @@ bounding-box accessors becoming Optional so a void shape stops fabricating `(0,0
 ## Unreleased
 
 
+### `Datum.name` no longer truncates, and two GD&T write paths no longer report success for a request the document did not take (#1055, #1056)
+
+`Datum.name` came back cut at 63 characters while `createDatum(name:)` stored the whole string, with
+nothing in the chain reporting the loss. The bridge's `OCCTDatumInfo.name[64]` is replaced by
+`OCCTDocumentGetDatumName`, which fills a buffer the caller sizes and returns the length of the whole
+identifier, so a C caller can size exactly and truncation is never silent. `Datum.name` now reads
+back whatever was written, at any length.
+
+`createDimension(on:type:value:lowerTolerance:upperTolerance:)` discarded the tolerance setter's
+result, so a pair the document refused still returned an index for a dimension whose tolerance had
+been dropped:
+
+```swift
+// before: idx == 0, and doc.dimension(at: 0)?.bounds == .simple
+// now:    nil, and nothing is created
+let idx = doc.createDimension(on: label, type: .sizeDiameter, value: 20.0,
+                              lowerTolerance: .nan, upperTolerance: 0.5)
+```
+
+`setGeomToleranceZoneModifier(at:_:value:)` stored the value even under `.none`, so
+`geomTolerance(at:)` reported a projected-zone length on a tolerance with no projected zone.
+Clearing the modifier now clears the value with it, matching `setDatumModifierWithValue(at:_:value:)`.
+
+Six further bridge string returns share the fixed-buffer shape and are filed as #1078, not changed
+here.
+
 ### Features lane audited against the pinned refman, in both directions (#811)
 
 Pass 4a of #807. Ten OCCT packages, 129 classes, compared against `occt-refman@8.0.1` and the pinned headers.

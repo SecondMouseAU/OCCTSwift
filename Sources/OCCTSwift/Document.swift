@@ -337,6 +337,24 @@ extension Document {
     }
 }
 
+// MARK: - C string buffers
+
+extension Document {
+    /// Decode a NUL-terminated buffer a bridge accessor filled.
+    ///
+    /// Shared by every `Document` accessor that reads a string through a `char` buffer, so the
+    /// decode is written once rather than once per call site. It lives in its own section rather
+    /// than beside any one of them, because a helper filed under a domain is a helper the next
+    /// domain's author does not find.
+    static func string(fromCString buffer: [CChar]) -> String {
+        buffer.withUnsafeBufferPointer { ptr in
+            String(
+                decoding: ptr.prefix(while: { $0 != 0 }).map { UInt8(bitPattern: $0) },
+                as: UTF8.self)
+        }
+    }
+}
+
 // MARK: - Length Unit (v0.30.0)
 
 extension Document {
@@ -348,12 +366,7 @@ extension Document {
         var scale: Double = 0
         var nameBuf = [CChar](repeating: 0, count: 64)
         guard OCCTDocumentGetLengthUnit(handle, &scale, &nameBuf, 64) else { return nil }
-        let name = nameBuf.withUnsafeBufferPointer { buf in
-            String(
-                decoding: buf.prefix(while: { $0 != 0 }).map { UInt8(bitPattern: $0) },
-                as: UTF8.self)
-        }
-        return LengthUnit(scale: scale, name: name)
+        return LengthUnit(scale: scale, name: Self.string(fromCString: nameBuf))
     }
 }
 
@@ -372,11 +385,7 @@ extension Document {
     public func layerName(at index: Int) -> String? {
         var buf = [CChar](repeating: 0, count: 256)
         guard OCCTDocumentGetLayerName(handle, Int32(index), &buf, 256) else { return nil }
-        return buf.withUnsafeBufferPointer { ptr in
-            String(
-                decoding: ptr.prefix(while: { $0 != 0 }).map { UInt8(bitPattern: $0) },
-                as: UTF8.self)
-        }
+        return Self.string(fromCString: buf)
     }
 
     /// All layer names in this document.
