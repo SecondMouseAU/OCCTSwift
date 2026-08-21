@@ -44,7 +44,7 @@ struct Issue603SingleSpanQuadratureTests {
         return fine + (fine - coarse) / 3
     }
 
-    /// `∫√(a²sin²t + b²cos²t) dt` by composite Simpson — the ellipse's arc length from first
+    /// `∫√(a²sin²t + b²cos²t) dt` by composite Simpson, the ellipse's arc length from first
     /// principles, with no curve object involved.
     private func ellipseArc(a: Double, b: Double, from t0: Double, to t1: Double,
                             panels n: Int = 200_000) -> Double {
@@ -86,7 +86,7 @@ struct Issue603SingleSpanQuadratureTests {
 
     /// The worst case measured anywhere in this family, and the one the issue guessed at but did
     /// not probe: a parabola gets an order-5 Gauss rule (`CPnts_AbscissaPoint`'s `order()` special
-    /// -cases it), so over a wide range it was 3.09% SHORT — the only fixture whose error had the
+    /// -cases it), so over a wide range it was 3.09% SHORT, the only fixture whose error had the
     /// opposite sign.
     @Test("A parabola over a wide range measures its arc, not 3% less")
     func wideParabolaLength() {
@@ -209,7 +209,7 @@ struct Issue603SingleSpanQuadratureTests {
     /// no longer uses (`CPnts_MyRootFunction::Value` is one Gauss rule over `[u0, X]`), so before
     /// this both sides were wrong by the same 0.337% and `parameterAtLength(length)` still landed
     /// on the last parameter. Making only the length accurate would have moved that answer to
-    /// 6.2438 on an 8 x 3 ellipse whose domain ends at 6.2832 — 0.33% short in arc.
+    /// 6.2438 on an 8 x 3 ellipse whose domain ends at 6.2832, 0.33% short in arc.
     @Test("parameterAtLength(length) still lands on the end of the curve")
     func inverseAgreesWithTheLengthItInverts() {
         for (a, b) in [(8.0, 3.0), (10.0, 1.0), (1.0, 0.05)] {

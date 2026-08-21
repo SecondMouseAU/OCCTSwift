@@ -5,22 +5,22 @@
 //  Shared helper for the flat, tightly-packed (x0,y0,z0, x1,y1,z1, ...) buffer
 //  layout the bridge uses for every batch position/normal/pole/point query.
 //
-//  Driver: issue #419 (the #377/#380 duplication audit) — the 3-stride unpack
+//  Driver: issue #419 (the #377/#380 duplication audit), the 3-stride unpack
 //  expression `SIMD3(buf[i*3], buf[i*3+1], buf[i*3+2])` was reimplemented at
 //  dozens of call sites with no shared conversion point, and two of those
 //  copies (BRepGraph's `sampleFaceUVGrid`/`sampleEdgeCurve`) had already
-//  drifted on which count bounds the loop — one trusted the *requested*
+//  drifted on which count bounds the loop, one trusted the *requested*
 //  sample count, the other the *actual* count the bridge reported writing.
 //
 
 /// Unpacks a flat, tightly-packed `(x0,y0,z0, x1,y1,z1, ...)` buffer into `[SIMD3<Scalar>]`.
 ///
-/// `count` is the number of `SIMD3` elements to read — always the *actual* number of valid
+/// `count` is the number of `SIMD3` elements to read, always the *actual* number of valid
 /// entries in `buffer` (typically a bridge call's own returned/written count), never a
 /// requested or upper-bound count. Passing a requested count for a buffer a bridge call only
 /// partially filled would read stale or uninitialized entries past the true written range.
 ///
-/// Works for any random-access, `Int`-indexed buffer of a SIMD-compatible scalar — a plain
+/// Works for any random-access, `Int`-indexed buffer of a SIMD-compatible scalar, a plain
 /// `[Double]`/`[Float]` array, or an `UnsafeBufferPointer`/`UnsafeMutableBufferPointer` obtained
 /// from `withUnsafe(Mutable)BufferPointer`.
 ///
@@ -43,7 +43,7 @@ internal func unpackSIMD3<Buffer: RandomAccessCollection, Scalar>(
 }
 
 // MARK: - Single-vector/axis out-param unwrap (#899/#902, moved here from ShapeAxis.swift by
-// the #914 review, finding 11 — module-wide, not ShapeAxis-specific, and this is this project's
+// the #914 review, finding 11, module-wide, not ShapeAxis-specific, and this is this project's
 // designated home for exactly this duplication class, #419)
 
 /// Reads an origin/direction pair from a six-`Double`-out-param `OCCT*Axis`-shaped bridge call,
@@ -81,7 +81,7 @@ func unwrapVectorComponents(
 }
 
 /// The `unwrapVectorComponents(_:)` sibling for a three-`Double`-out-param bridge call that
-/// reports success/failure through its own `Bool` return, rather than always writing a value —
+/// reports success/failure through its own `Bool` return, rather than always writing a value,
 /// `nil` on failure, matching every call site's existing `guard ... else { return nil }` idiom
 /// (#899 covered the always-succeeds shape; this one was still hand-rolled at 8 call sites across
 /// `Curve3D`/`Surface`, found in the #914 review, finding 10).

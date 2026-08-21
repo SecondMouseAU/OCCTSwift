@@ -1,7 +1,7 @@
 import Testing
 @testable import OCCTSwift
 
-// #495, surface side. Same defect and same fix as the curve analyser — see
+// #495, surface side. Same defect and same fix as the curve analyser, see
 // Tests/OCCTCurveTests/Issue495AnalysisOrderTests.swift for the mechanism.
 //
 // Two wrinkles specific to LocalAnalysis_SurfaceContinuity, both measured against the pinned
@@ -9,7 +9,7 @@ import Testing
 //
 //   * Its predicates all gate on IsC0(), so when C0 itself fails the spurious trues were masked
 //     by accident. They were not masked when C0 held, which is the ordinary case for two patches
-//     that meet — which is when a caller is actually asking.
+//     that meet, which is when a caller is actually asking.
 //   * The `.c2` branch needs a non-zero *second* derivative in both U and V on both surfaces, or
 //     it reports NullSecondDerivative and the whole analysis is not done. A plane has none in
 //     either direction and a cylinder has none along its axis, so the `.c2` default answers nil
@@ -107,7 +107,7 @@ struct Issue495SurfaceAnalysisOrderTests {
 
     @Test("the .c2 default cannot analyse a surface with no second derivative")
     func c2NeedsCurvatureInBothDirections() throws {
-        // Not a regression — an OCCT precondition (LocalAnalysis_NullSecondDerivative) that the
+        // Not a regression, an OCCT precondition (LocalAnalysis_NullSecondDerivative) that the
         // default order walks straight into for the two most common elementary surfaces. Ask for
         // .c1 or .g1 on planar or ruled geometry.
         let planes = try #require(perpendicularPlanes())

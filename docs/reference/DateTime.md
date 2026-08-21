@@ -9,11 +9,11 @@ parent: API Reference
 
 ## Topics
 
-- [OCCTDate — Initializers](#occtdate--initializers) · [OCCTDate — Properties](#occtdate--properties) · [OCCTDate — Arithmetic](#occtdate--arithmetic) · [OCCTDate — Operators](#occtdate--operators) · [OCCTDate — Static Validation](#occtdate--static-validation) · [OCCTDate — Equatable & Comparable](#occtdate--equatable--comparable) · [Period — Initializers](#period--initializers) · [Period — Properties](#period--properties) · [Period — Operators](#period--operators) · [Period — Static Validation](#period--static-validation) · [Period — Equatable & Comparable](#period--equatable--comparable)
+- [OCCTDate, Initializers](#occtdate--initializers) · [OCCTDate, Properties](#occtdate--properties) · [OCCTDate, Arithmetic](#occtdate--arithmetic) · [OCCTDate, Operators](#occtdate--operators) · [OCCTDate, Static Validation](#occtdate--static-validation) · [OCCTDate, Equatable & Comparable](#occtdate--equatable--comparable) · [Period, Initializers](#period--initializers) · [Period, Properties](#period--properties) · [Period, Operators](#period--operators) · [Period, Static Validation](#period--static-validation) · [Period, Equatable & Comparable](#period--equatable--comparable)
 
 ---
 
-## OCCTDate — Initializers
+## OCCTDate. Initializers
 
 ### `OCCTDate.init?(month:day:year:hour:minute:second:millisecond:microsecond:)`
 
@@ -24,17 +24,17 @@ public init?(month: Int, day: Int, year: Int, hour: Int = 0, minute: Int = 0,
              second: Int = 0, millisecond: Int = 0, microsecond: Int = 0)
 ```
 
-All time-of-day components default to zero so you can create a date with only month/day/year. Validation is delegated to OCCT — the call returns `nil` whenever `Quantity_Date::IsValid` would return `false`.
+All time-of-day components default to zero so you can create a date with only month/day/year. Validation is delegated to OCCT, the call returns `nil` whenever `Quantity_Date::IsValid` would return `false`.
 
 - **Parameters:**
-  - `month` — calendar month (1–12).
-  - `day` — calendar day (1–31, validated against the month/year).
-  - `year` — four-digit year; must be ≥ 1979.
-  - `hour` — hour of day (0–23, default 0).
-  - `minute` — minute (0–59, default 0).
-  - `second` — second (0–59, default 0).
-  - `millisecond` — millisecond sub-second component (0–999, default 0).
-  - `microsecond` — microsecond sub-second component (0–999, default 0).
+  - `month`: calendar month (1–12).
+  - `day`: calendar day (1–31, validated against the month/year).
+  - `year`: four-digit year; must be ≥ 1979.
+  - `hour`: hour of day (0–23, default 0).
+  - `minute`: minute (0–59, default 0).
+  - `second`: second (0–59, default 0).
+  - `millisecond`: millisecond sub-second component (0–999, default 0).
+  - `microsecond`: microsecond sub-second component (0–999, default 0).
 - **Returns:** An `OCCTDate`, or `nil` if any component is out of range or the year is before 1979.
 - **OCCT:** `Quantity_Date::IsValid` (guard) → `Quantity_Date(mm, dd, yyyy, hh, mn, ss, mis, mics)`.
 - **Example:**
@@ -56,7 +56,7 @@ public static var epoch: OCCTDate { get }
 
 This is the zero-reference point for all internal `Quantity_Date` representations. All other dates are stored as a `Quantity_Period` offset from this value.
 
-- **OCCT:** `Quantity_Date()` — default constructor returns January 1, 1979 00:00:00.
+- **OCCT:** `Quantity_Date()`, default constructor returns January 1, 1979 00:00:00.
 - **Example:**
   ```swift
   let e = OCCTDate.epoch
@@ -65,7 +65,7 @@ This is the zero-reference point for all internal `Quantity_Date` representation
 
 ---
 
-## OCCTDate — Properties
+## OCCTDate. Properties
 
 ### `components`
 
@@ -98,7 +98,7 @@ Calendar month of the date (1–12).
 public var month: Int { get }
 ```
 
-- **OCCT:** `Quantity_Date::Values` — extracts the month component.
+- **OCCT:** `Quantity_Date::Values`, extracts the month component.
 - **Example:**
   ```swift
   let d = OCCTDate(month: 11, day: 5, year: 2023)!
@@ -115,7 +115,7 @@ Calendar day of the month (1–31).
 public var day: Int { get }
 ```
 
-- **OCCT:** `Quantity_Date::Values` — extracts the day component.
+- **OCCT:** `Quantity_Date::Values`, extracts the day component.
 - **Example:**
   ```swift
   let d = OCCTDate(month: 11, day: 5, year: 2023)!
@@ -132,7 +132,7 @@ Four-digit calendar year (≥ 1979).
 public var year: Int { get }
 ```
 
-- **OCCT:** `Quantity_Date::Values` — extracts the year component.
+- **OCCT:** `Quantity_Date::Values`, extracts the year component.
 - **Example:**
   ```swift
   let d = OCCTDate(month: 1, day: 1, year: 2000)!
@@ -149,7 +149,7 @@ Hour of day (0–23).
 public var hour: Int { get }
 ```
 
-- **OCCT:** `Quantity_Date::Values` — extracts the hour component.
+- **OCCT:** `Quantity_Date::Values`, extracts the hour component.
 - **Example:**
   ```swift
   let d = OCCTDate(month: 1, day: 1, year: 2000, hour: 14, minute: 30)!
@@ -166,7 +166,7 @@ Minute of hour (0–59).
 public var minute: Int { get }
 ```
 
-- **OCCT:** `Quantity_Date::Values` — extracts the minute component.
+- **OCCT:** `Quantity_Date::Values`, extracts the minute component.
 - **Example:**
   ```swift
   let d = OCCTDate(month: 1, day: 1, year: 2000, hour: 14, minute: 30)!
@@ -183,7 +183,7 @@ Second of minute (0–59).
 public var second: Int { get }
 ```
 
-- **OCCT:** `Quantity_Date::Values` — extracts the second component.
+- **OCCT:** `Quantity_Date::Values`, extracts the second component.
 - **Example:**
   ```swift
   let d = OCCTDate(month: 1, day: 1, year: 2000, second: 45)!
@@ -200,7 +200,7 @@ Millisecond sub-second component (0–999).
 public var millisecond: Int { get }
 ```
 
-- **OCCT:** `Quantity_Date::Values` — extracts the millisecond component.
+- **OCCT:** `Quantity_Date::Values`, extracts the millisecond component.
 - **Example:**
   ```swift
   let d = OCCTDate(month: 1, day: 1, year: 2000, millisecond: 500)!
@@ -217,7 +217,7 @@ Microsecond sub-second component (0–999).
 public var microsecond: Int { get }
 ```
 
-- **OCCT:** `Quantity_Date::Values` — extracts the microsecond component.
+- **OCCT:** `Quantity_Date::Values`, extracts the microsecond component.
 - **Example:**
   ```swift
   let d = OCCTDate(month: 1, day: 1, year: 2000, microsecond: 250)!
@@ -235,7 +235,7 @@ public var microsecond: Int { get }
 ```swift
 ```
 ---
-## OCCTDate — Arithmetic
+## OCCTDate. Arithmetic
 
 ### `adding(_:)`
 
@@ -247,9 +247,9 @@ public func adding(_ period: Period) -> OCCTDate
 
 Equivalent to the `+` operator. Always succeeds because adding a period to a valid date cannot underflow the epoch.
 
-- **Parameters:** `period` — duration to add.
+- **Parameters:** `period`, duration to add.
 - **Returns:** A new `OCCTDate` advanced by `period`.
-- **OCCT:** `Quantity_Date operator+` — computes `d + p` via OCCT, then re-encodes as a `Quantity_Period` offset from the epoch.
+- **OCCT:** `Quantity_Date operator+`, computes `d + p` via OCCT, then re-encodes as a `Quantity_Period` offset from the epoch.
 - **Example:**
   ```swift
   let start = OCCTDate(month: 1, day: 1, year: 2024)!
@@ -271,9 +271,9 @@ public func subtracting(_ period: Period) -> OCCTDate?
 
 Returns `nil` if OCCT's subtraction would produce a date before January 1, 1979.
 
-- **Parameters:** `period` — duration to subtract.
+- **Parameters:** `period`, duration to subtract.
 - **Returns:** New `OCCTDate` moved backward, or `nil` if the result predates the epoch.
-- **OCCT:** `Quantity_Date operator-` — computes `d - p` via OCCT.
+- **OCCT:** `Quantity_Date operator-`, computes `d - p` via OCCT.
 - **Example:**
   ```swift
   let d = OCCTDate(month: 3, day: 1, year: 2024)!
@@ -293,11 +293,11 @@ Computes the absolute duration between this date and another.
 public func difference(to other: OCCTDate) -> Period
 ```
 
-The result is always non-negative — it is the absolute value of the difference regardless of which date is earlier.
+The result is always non-negative, it is the absolute value of the difference regardless of which date is earlier.
 
-- **Parameters:** `other` — date to compare against.
+- **Parameters:** `other`, date to compare against.
 - **Returns:** A `Period` representing the absolute duration between the two dates.
-- **OCCT:** `Quantity_Date::Difference` — returns `|d1 − d2|` as a `Quantity_Period`.
+- **OCCT:** `Quantity_Date::Difference`, returns `|d1 − d2|` as a `Quantity_Period`.
 - **Example:**
   ```swift
   let a = OCCTDate(month: 1, day: 1, year: 2024)!
@@ -308,7 +308,7 @@ The result is always non-negative — it is the absolute value of the difference
 
 ---
 
-## OCCTDate — Operators
+## OCCTDate. Operators
 
 ### `OCCTDate.+(_:_:)`
 
@@ -360,7 +360,7 @@ Not a discoverable Swift API. `Scripts/check-docs-existence.py`'s source scanner
 
 ---
 
-## OCCTDate — Static Validation
+## OCCTDate. Static Validation
 
 ### `OCCTDate.isValid(month:day:year:hour:minute:second:millisecond:microsecond:)`
 
@@ -393,7 +393,7 @@ Returns whether the given year is a leap year according to the Gregorian calenda
 public static func isLeap(year: Int) -> Bool
 ```
 
-- **Parameters:** `year` — four-digit year.
+- **Parameters:** `year`, four-digit year.
 - **Returns:** `true` if the year has 366 days.
 - **OCCT:** `Quantity_Date::IsLeap(year)`.
 - **Example:**
@@ -405,7 +405,7 @@ public static func isLeap(year: Int) -> Bool
 
 ---
 
-## OCCTDate — Equatable & Comparable
+## OCCTDate. Equatable & Comparable
 
 ### `OCCTDate.==(_:_:)`
 
@@ -447,7 +447,7 @@ Provides `Comparable` conformance, enabling sorting and range operations on `OCC
 
 ---
 
-## Period — Initializers
+## Period. Initializers
 
 ### `Period.init?(days:hours:minutes:seconds:milliseconds:microseconds:)`
 
@@ -461,12 +461,12 @@ public init?(days: Int = 0, hours: Int = 0, minutes: Int = 0, seconds: Int = 0,
 All parameters default to zero, so you can create a period with only the components you need (e.g. `Period(days: 1)`). Validation is delegated to `Quantity_Period::IsValid`.
 
 - **Parameters:**
-  - `days` — number of days (default 0).
-  - `hours` — hours component (default 0).
-  - `minutes` — minutes component (default 0).
-  - `seconds` — seconds component (default 0).
-  - `milliseconds` — milliseconds component (default 0).
-  - `microseconds` — microseconds component (default 0).
+  - `days`: number of days (default 0).
+  - `hours`: hours component (default 0).
+  - `minutes`: minutes component (default 0).
+  - `seconds`: seconds component (default 0).
+  - `milliseconds`: milliseconds component (default 0).
+  - `microseconds`: microseconds component (default 0).
 - **Returns:** A `Period`, or `nil` if any component is out of range.
 - **OCCT:** `Quantity_Period::IsValid(dd, hh, mn, ss, mis, mics)` (guard) → `Quantity_Period(dd, hh, mn, ss, mis, mics)`.
 - **Example:**
@@ -489,8 +489,8 @@ public init?(totalSeconds: Int, microseconds: Int = 0)
 Useful when the duration comes from a raw elapsed-time measurement rather than calendar decomposition.
 
 - **Parameters:**
-  - `totalSeconds` — total number of seconds.
-  - `microseconds` — additional microseconds (default 0).
+  - `totalSeconds`: total number of seconds.
+  - `microseconds`: additional microseconds (default 0).
 - **Returns:** A `Period`, or `nil` if the values are invalid.
 - **OCCT:** `Quantity_Period::IsValid(ss, mics)` (guard) → `Quantity_Period(ss, mics)` (two-argument constructor).
 - **Example:**
@@ -503,7 +503,7 @@ Useful when the duration comes from a raw elapsed-time measurement rather than c
 
 ---
 
-## Period — Properties
+## Period. Properties
 
 ### `components`
 
@@ -536,7 +536,7 @@ public var totalSeconds: Int { get }
 
 Pair with `totalMicroseconds` to get the full sub-second precision. Together they satisfy: `duration ≈ totalSeconds + totalMicroseconds * 1e-6`.
 
-- **OCCT:** `Quantity_Period::GetWhole(ss, mics)` — the seconds output.
+- **OCCT:** `Quantity_Period::GetWhole(ss, mics)`, the seconds output.
 - **Example:**
   ```swift
   if let p = Period(days: 1) {
@@ -556,7 +556,7 @@ public var totalMicroseconds: Int { get }
 
 Returns the sub-second microsecond part only (0–999999). For example, a period of 1.0005 seconds has `totalSeconds == 1` and `totalMicroseconds == 500`.
 
-- **OCCT:** `Quantity_Period::GetWhole(ss, mics)` — the microseconds output.
+- **OCCT:** `Quantity_Period::GetWhole(ss, mics)`, the microseconds output.
 - **Example:**
   ```swift
   if let p = Period(seconds: 1, milliseconds: 500) {
@@ -567,7 +567,7 @@ Returns the sub-second microsecond part only (0–999999). For example, a period
 ---
 
 ---
-## Period — Operators
+## Period. Operators
 
 > `Period` overloads `+`, `-`, `==`, and `<` (below). The doc-existence checker's declaration scanner
 > cannot capture an operator symbol as a member name (its regex requires an identifier), so it
@@ -619,7 +619,7 @@ public static func - (lhs: Period, rhs: Period) -> Period
 
 ---
 
-## Period — Static Validation
+## Period. Static Validation
 
 ### `Period.isValid(days:hours:minutes:seconds:milliseconds:microseconds:)`
 
@@ -651,8 +651,8 @@ public static func isValid(totalSeconds: Int, microseconds: Int = 0) -> Bool
 ```
 
 - **Parameters:**
-  - `totalSeconds` — proposed total seconds count.
-  - `microseconds` — proposed sub-second microseconds (default 0).
+  - `totalSeconds`: proposed total seconds count.
+  - `microseconds`: proposed sub-second microseconds (default 0).
 - **Returns:** `true` if these values can represent a valid `Quantity_Period`.
 - **OCCT:** `Quantity_Period::IsValid(ss, mics)` (two-argument overload).
 - **Example:**
@@ -663,7 +663,7 @@ public static func isValid(totalSeconds: Int, microseconds: Int = 0) -> Bool
 
 ---
 
-## Period — Equatable & Comparable
+## Period. Equatable & Comparable
 
 ### `Period.==(_:_:)`
 

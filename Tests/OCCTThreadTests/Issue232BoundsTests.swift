@@ -3,14 +3,14 @@ import simd
 @testable import OCCTSwift
 
 /// Issue #232: `threadedShaft` / `threadedHole` were reported to run ~one lead past `length`/`depth`.
-/// Investigation found the threaded **solid is bounded exactly to the requested span** — the overshoot
+/// Investigation found the threaded **solid is bounded exactly to the requested span**, the overshoot
 /// is `Shape.bounds` (OCCT's default `Bnd_Box`) over-reporting for the B-spline/faceted thread surfaces
 /// (the control-hull artifact, cf. #213), not real geometry. (Originally exercised via the now-deprecated
 /// `.boolean` cut path; uses `.direct` since #254 routes single-start builds there.)
 ///
 /// These tests lock that in using the **mesh-vertex extent** (the unambiguous ground truth: mesh
 /// vertices lie on the actual faces), not `bounds`.
-@Suite("Issue #232 — threaded solids are bounded exactly to length/depth")
+@Suite("Issue #232, threaded solids are bounded exactly to length/depth")
 struct Issue232BoundsTests {
 
     /// min/max along +Z of a shape's actual triangulated geometry.

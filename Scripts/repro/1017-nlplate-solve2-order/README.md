@@ -104,7 +104,7 @@ accident. The bridge now passes 1 explicitly, matching OCCT's default and the `S
 ## The segfault the tests were disabled for does not reproduce
 
 `NLPlateDeformationTests` carried
-`.disabled("NLPlate G0/G1 causes segfault in OCCT — pre-existing issue")`. Against the pinned
+`.disabled("NLPlate G0/G1 causes segfault in OCCT, pre-existing issue")`. Against the pinned
 kernel all seven tests pass, 20 consecutive runs, zero crashes. The suite is re-enabled.
 
 The order is ruled out as the cause rather than confirmed: every value in the sweep above returns or

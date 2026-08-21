@@ -23,7 +23,7 @@ clang++ -std=c++17 -ObjC++ -w \
 
 No fixture files: every case is built from primitives. To measure the *stock* kernel against a
 patched one, compile `BRepFeat_MakeCylindricalHole.cxx` as its own TU and link it **before** the
-archive (the flags need `-DNo_Exception`, matching the Release kernel — see
+archive (the flags need `-DNo_Exception`, matching the Release kernel, see
 [#487](https://github.com/SecondMouseAU/OCCTSwift/issues/487)):
 
 ```bash
@@ -44,7 +44,7 @@ PartsOfTool(parts);        // explores myShape for SOLIDs
 ... KeepPart(chosen) ...
 ```
 
-`BRepFeat_Builder::PartsOfTool()` (`BRepFeat_Builder.cxx:107`) collects the solids of `myShape` —
+`BRepFeat_Builder::PartsOfTool()` (`BRepFeat_Builder.cxx:107`) collects the solids of `myShape`,
 which holds the tool split by the object only after the **COMMON** pass. After a CUT, `myShape` is
 the finished workpiece. So the selection loops compare barycentres of *bored plates* and then
 register those plates as "kept parts of the tool". `PerformResult()` sees a non-empty `myShapes` and
@@ -67,7 +67,7 @@ and after:
       part 1: vol=  1570.7963  baryParam=  55.0000  faces=3      <- the bore in plate B
 ```
 
-`Perform(Radius)` — the infinite-cylinder through-all — selects no parts, never calls
+`Perform(Radius)`: the infinite-cylinder through-all, selects no parts, never calls
 `PartsOfTool()`, and was never affected. That is why it is the one mode that already drilled a stack
 correctly, and the reason the defect reads as "multi-body" rather than "part selection".
 
@@ -75,7 +75,7 @@ correctly, and the reason the defect reads as "multi-body" rather than "part sel
 
 `BRepFeat_Form` (`BRepFeat_Form.cxx:806`) and `BRepFeat_RibSlot` (`BRepFeat_RibSlot.cxx:224`) drive
 the same builder and both call the **two-argument** overload,
-`SetOperation(myFuse, bFlag)` with `bFlag` true, before `Perform()` — which selects
+`SetOperation(myFuse, bFlag)` with `bFlag` true, before `Perform()`, which selects
 `BOPAlgo_COMMON` instead of `BOPAlgo_CUT` and makes `PartsOfTool()` mean what its name says.
 `PerformResult()` re-derives `myOperation` from `myFuse`, so the operation finally built is the CUT
 either way. `BRepFeat_MakeCylindricalHole` calls the one-argument overload at all five sites.
@@ -89,7 +89,7 @@ Stock is `OCCT 8.0.0p1` + this project's carried patches. Drill `r = 5` from `(0
 unless noted. One 20mm bore removes `1570.7963`. "boolean" is `BRepPrimAPI_MakeCylinder` +
 `BRepAlgoAPI_Cut`, the recipe behind `Shape.drilled`.
 
-### Compound of two 50×50×20 plates (A at axis 5…25, B at 45…65) — boolean removes 3141.5927
+### Compound of two 50×50×20 plates (A at axis 5…25, B at 45…65), boolean removes 3141.5927
 
 | call | status | before | after |
 |---|---|---|---|
@@ -100,21 +100,21 @@ unless noted. One 20mm bore removes `1570.7963`. "boolean" is `BRepPrimAPI_MakeC
 | `Perform(R, 0, 70)` | `NoError` | **0.0000** | 3141.5927 |
 | `Perform(R, 0, 30)` | `NoError` | 1570.7963 | 1570.7963 |
 | `Perform(R, 30, 70)` | `NoError` | 1570.7963 | 1570.7963 |
-| `Perform(R, 26, 44)` | `InvalidPlacement` | — | — |
+| `Perform(R, 26, 44)` | `InvalidPlacement` |, |, |
 
 `PerformBlind` is affected too; #532 named only `PerformUntilEnd` and the ranged `Perform` because
 those were the two extents #496 had newly wrapped.
 
-### Compound of three plates (5…25, 45…65, 85…105) — boolean removes 4712.3890
+### Compound of three plates (5…25, 45…65, 85…105), boolean removes 4712.3890
 
 | call | status | before | after |
 |---|---|---|---|
 | `PerformUntilEnd` | `NoError` | **0.0000** | 4712.3890 |
 | `PerformBlind(20)` | `NoError` | **0.0000** | 1178.0972 |
 | `Perform(R, 0, 110)` | `NoError` | **0.0000** | 4712.3890 |
-| `Perform(R, 0, 70)` | `NoError` | **0.0000** | 3141.5927 (plates A and B — the pair the window names) |
+| `Perform(R, 0, 70)` | `NoError` | **0.0000** | 3141.5927 (plates A and B, the pair the window names) |
 
-### ONE solid an `r = 5` bore severs (an 8mm-wide bar) — boolean removes 1407.2952
+### ONE solid an `r = 5` bore severs (an 8mm-wide bar), boolean removes 1407.2952
 
 The trigger is "the CUT result has two solids", and a single body reaches it. No compound involved:
 
@@ -126,7 +126,7 @@ The trigger is "the CUT result has two solids", and a single body reaches it. No
 
 ### Unaffected geometries (the selection machinery now runs, and agrees)
 
-A single 50×50×20 plate is byte-identical before and after — the CUT result is one solid, so
+A single 50×50×20 plate is byte-identical before and after, the CUT result is one solid, so
 `nbparts` is 1 and the branch never ran. Two cases where the branch's *inputs* change but its answer
 does not, which is the non-regression evidence that matters:
 
@@ -151,7 +151,7 @@ A radius so large the bore swallows the whole workpiece (`r = 100` on a 50mm pla
 Under CUT, "the tool ate everything" emptied `myShape`, so `nbparts` was 0 and the
 `if (nbparts == 0)` guard reported `InvalidPlacement`. Under COMMON the tool meets the whole
 workpiece, `nbparts` is 1, and the two modes return the same empty result `Perform(Radius)` and a
-plain boolean cut already returned. `nbparts == 0` now means what the guard reads as — the tool meets
+plain boolean cut already returned. `nbparts == 0` now means what the guard reads as, the tool meets
 nothing. All five extents and the boolean drill now agree on this request; #496's tests were updated
 to the converged answer rather than the old accident.
 
@@ -160,7 +160,7 @@ to the converged answer rather than the old accident.
 `PerformThruNext`'s closest-interval fallback (`BRepFeat_MakeCylindricalHole.cxx:217-242`) has a
 misplaced brace: the `// parbar > Last` branch is nested *inside* `if (parbar < First)`, as the
 `else` of the distance comparison, so the "beyond `Last`" case is unreachable as written.
-`PerformBlind`'s equivalent fallback (`:602-616`) has no such structure — it compares
+`PerformBlind`'s equivalent fallback (`:602-616`) has no such structure, it compares
 `std::abs(First - parbar)` uniformly. The fallback only runs when no tool part's barycentre lies in
 `[First, Last]`, which none of the geometries here produce, so this is reported rather than fixed:
 changing it without a case that reaches it would be a guess.

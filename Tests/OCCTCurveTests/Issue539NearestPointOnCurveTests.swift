@@ -11,13 +11,13 @@ import simd
 ///
 /// - `ShapeAnalysis_Curve::Project`, behind the `Curve3D` side, solves on the *basis* curve for an
 ///   analytic type and reports a parameter outside the domain as though it were on the curve. A
-///   segment trimmed to `[3, 8]` called `(100, 0, 0)` distance **0** — 92 units off the curve — and
+///   segment trimmed to `[3, 8]` called `(100, 0, 0)` distance **0**, 92 units off the curve, and
 ///   a point on the full circle but off an arc read as distance 0 too. Passing the range explicitly
 ///   changed nothing: the 7-argument overload documents itself as *extending* the range.
 ///
 /// - `GeomAPI_ProjectPointOnCurve`, behind the `Edge` side, honours the range but returns extrema
 ///   rather than minima. On a half circle the only extremum in range can be the far side, reported
-///   as `LowerDistance`, and it finds nothing at all whenever the nearest point is an end — so a
+///   as `LowerDistance`, and it finds nothing at all whenever the nearest point is an end, so a
 ///   point beyond the end of a straight edge came back `nil`.
 ///
 /// Both now take the minimum over three candidate sources: whatever `ShapeAnalysis_Curve` found if
@@ -99,7 +99,7 @@ struct Issue539NearestPointOnCurveTests {
 
     /// On a parabola or hyperbola the one extremum inside the domain can be a *maximum*, so both
     /// old implementations answered with the worst point in range rather than the best. Nothing
-    /// about the parameter is out of range here — this is why the fix takes a minimum over
+    /// about the parameter is out of range here, this is why the fix takes a minimum over
     /// candidates rather than clamping the parameter into the domain.
     @Test("An in-range extremum that is a maximum does not win")
     func inRangeMaximumDoesNotWin() throws {
@@ -188,7 +188,7 @@ struct Issue539NearestPointOnCurveTests {
         return try #require(wire.edges().first)
     }
 
-    /// `Edge.project(point:)` used to return `nil` here — `isValid` false — because there is no
+    /// `Edge.project(point:)` used to return `nil` here, `isValid` false, because there is no
     /// perpendicular foot. Its own documentation reserves `nil` for an edge with no 3D curve.
     @Test("A point past the end of an edge gets the end, not nil")
     func edgePastTheEndIsNotNil() throws {

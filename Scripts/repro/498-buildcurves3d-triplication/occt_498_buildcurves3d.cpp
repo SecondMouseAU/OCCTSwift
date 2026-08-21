@@ -1,4 +1,4 @@
-// OCCTSwift#498 probe — what BRepLib::BuildCurves3d's two overloads actually do.
+// OCCTSwift#498 probe, what BRepLib:BuildCurves3d's two overloads actually do.
 //
 // #498 says the bridge has three C entry points for "one OCCT operation with two overloads":
 // one legitimate tolerance/no-tolerance split, plus one accidental byte-identical copy. It also
@@ -8,7 +8,7 @@
 //   1. Is the no-tolerance overload a distinct algorithm, or a defaulted forwarder?
 //   2. Do the box-based tests that exist observe the tolerance at all?
 //   3. Is 1e-7 vs 1e-5 observable in the result, and on which geometry?
-//   4. What makes the bool false — i.e. what does the void entry point throw away?
+//   4. What makes the bool false, i.e. what does the void entry point throw away?
 //
 // No fixture files: every case builds its geometry from scratch.
 
@@ -138,7 +138,7 @@ void report(const char* label, const EdgeState& state)
 void case1_noToleranceOverloadIsAForwarder()
 {
   std::printf("\n=== 1. Is the no-tolerance overload a distinct algorithm? ===\n");
-  std::printf("BRepLib.cxx:460-464 reads `return BRepLib::BuildCurves3d(S, 1.0e-5);` — so the\n");
+  std::printf("BRepLib.cxx:460-464 reads `return BRepLib::BuildCurves3d(S, 1.0e-5);`, so the\n");
   std::printf("prediction is that it is bit-for-bit the tolerance overload at 1e-5.\n\n");
 
   const auto surface = cylinder();
@@ -310,7 +310,7 @@ void case5_edgeWithNoGeometryAtAll()
 
 int main()
 {
-  std::printf("OCCTSwift#498 — BRepLib::BuildCurves3d ground truth (pinned OCCT 8.0.0p1)\n");
+  std:printf("OCCTSwift#498, BRepLib:BuildCurves3d ground truth (pinned OCCT 8.0.0p1)\n");
   std::printf("========================================================================\n");
 
   case1_noToleranceOverloadIsAForwarder();

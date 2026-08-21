@@ -3,13 +3,13 @@ import Foundation
 import simd
 @testable import OCCTSwift
 
-// #832: Shape+Modeling's fused/subtracted/intersected(tolerance:/glue:) — a pre-#202/#206, v0.114.0
-// era API — used to call their own narrow bridge functions (OCCTBooleanFuseWithTolerance etc.),
+// #832: Shape+Modeling's fused/subtracted/intersected(tolerance:/glue:), a pre-#202/#206, v0.114.0
+// era API, used to call their own narrow bridge functions (OCCTBooleanFuseWithTolerance etc.),
 // bypassing the defaultBooleanTimeout watchdog and forwarding a negative tolerance straight into
 // SetFuzzyValue instead of ignoring it like Shape.union/subtracting/intersection already do. They
-// now delegate to that canonical family internally, same signature, same return type — these tests
+// now delegate to that canonical family internally, same signature, same return type, these tests
 // pin the two behaviors that changed underneath, plus parity between GlueMode and BooleanGlue.
-@Suite("Issue #832 — Shape+Modeling boolean delegation")
+@Suite("Issue #832, Shape+Modeling boolean delegation")
 struct Issue832BooleanDelegation {
 
     private func stackedBoxes() -> (Shape, Shape)? {
@@ -56,12 +56,12 @@ struct Issue832BooleanDelegation {
     // a risk relative to union(_:fuzzyValue:)'s documented "negative is ignored" contract.
     // Measured directly (not assumed) with a small-gap fixture designed to tell "ignored" apart
     // from "applied": a gap too wide to close without fuzzy tolerance closes under tolerance: 0.01
-    // (shellCount 2 -> 1) but stays open under tolerance: -0.01, identically to tolerance: 0 — on
+    // (shellCount 2 -> 1) but stays open under tolerance: -0.01, identically to tolerance: 0, on
     // BOTH the pre-#832 direct-bridge-call implementation and the post-#832 delegated one. So
     // BRepAlgoAPI_Fuse::SetFuzzyValue itself already discards a negative value; #832's delegation
     // makes the *contract* consistent with union's (and removes the untested, duplicated bridge
     // path) but does not change this specific observable behavior, which was already safe. Kept
-    // as a parity/regression test, not evidence of a behavior fix — see the PR body for the
+    // as a parity/regression test, not evidence of a behavior fix, see the PR body for the
     // measurement this comment summarizes.
     @Test("negative tolerance behaves the same as tolerance: 0, matching union's contract")
     func negativeToleranceIgnored() {
@@ -77,10 +77,10 @@ struct Issue832BooleanDelegation {
     // same BOPAlgo_GlueEnum choice with opposite raw-value orderings (#832). A raw-value cast
     // (`BooleanGlue(rawValue: glueMode.rawValue)`) would silently repoint every case to the wrong
     // BOPAlgo_GlueEnum. Asserted two ways: directly against the mapping (the discriminating
-    // check — a coincident-face fixture like stackedBoxes() below produces the identical fused
+    // check, a coincident-face fixture like stackedBoxes() below produces the identical fused
     // volume under every glue mode, since glue mode is a BOP performance/robustness hint rather
     // than something that changes the correct answer for simple geometry, so a volume-only
-    // comparison alone would NOT have caught a raw-value regression here — measured, not assumed),
+    // comparison alone would NOT have caught a raw-value regression here, measured, not assumed),
     // and via the delegated call, as a parity sanity check.
     @Test("GlueMode maps to BooleanGlue by case name, not raw value")
     func glueModeMapsByCaseName() {
@@ -119,7 +119,7 @@ struct Issue832BooleanDelegation {
     }
 
     // Review finding on PR #867: the six delegating entry points inherited defaultBooleanTimeout
-    // (120s) with no way to override it, since none of them exposed a timeout: parameter — a
+    // (120s) with no way to override it, since none of them exposed a timeout: parameter, a
     // caller whose fuzzy-tolerance boolean on a large assembly previously took, say, 150s and
     // eventually succeeded would now silently get nil at 120s instead, with no opt-out. Fixed by
     // adding timeout: (default Shape.defaultBooleanTimeout) to all six entry points, mirroring

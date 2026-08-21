@@ -2,7 +2,7 @@
 //  OCCTBridge_Surface.mm
 //  OCCTSwift
 //
-//  Extracted from OCCTBridge.mm — issue #99.
+//  Extracted from OCCTBridge.mm, issue #99.
 //
 //  3D parametric surface cluster (v0.20):
 //
@@ -16,10 +16,10 @@
 //    UV bounds, periodic flags, degrees, knot/pole counts
 //
 //  OCCTSurface struct definition kept in BOTH this TU and OCCTBridge.mm
-//  (identical layout, ODR-safe across TUs) — main still uses
+//  (identical layout, ODR-safe across TUs), main still uses
 //  surface->surface field access in projection / surface-grid eval / etc.
 //
-//  Public C surface unchanged. No symbol changes — pure file move.
+//  Public C surface unchanged. No symbol changes, pure file move.
 //
 
 #import "../include/OCCTBridge.h"
@@ -1108,12 +1108,12 @@ int32_t OCCTSurfaceDrawGrid(OCCTSurfaceRef s,
 // (measured: a 1 x 20 iso-row off a sphere is 20 finite points). The old `uCount < 2` guard was
 // not OCCT's constraint but this function's own divisor: `i / (uCount - 1)` divides by zero at
 // count 1, and the NaN parameter that produces is worse than a throw, because D0 does not throw
-// on NaN — it returns NaN coordinates silently. OCCTSurfaceDrawGrid, forty lines above, samples
+// on NaN, it returns NaN coordinates silently. OCCTSurfaceDrawGrid, forty lines above, samples
 // the same bounds and had spelled the divisor defensively since the commit that introduced both
 // functions; that expression is now occtUniformParameter, so neither loop states it in its own
 // words and a single iso-row is served rather than rejected (#620). Every other member of this
-// U-major grid family already accepted 1 — DrawGrid guards no count at all, EvaluateGrid and
-// EvaluateGridD1 guard `<= 0` — so the 2 here was the family's sole outlier.
+// U-major grid family already accepted 1. DrawGrid guards no count at all, EvaluateGrid and
+// EvaluateGridD1 guard `<= 0`, so the 2 here was the family's sole outlier.
 //
 // Note the infinite-bounds clamp below happens BEFORE the sampling, so on an unbounded surface
 // the row a single sample lands on is the clamped -100, not the surface's own -2e100 uMin.
@@ -1162,8 +1162,8 @@ int32_t OCCTSurfaceDrawMesh(OCCTSurfaceRef s, int32_t uCount, int32_t vCount, do
 // Local Properties
 
 // Every curvature entry point goes through this one GeomLProp_SLProps construction, so the
-// resolution argument — the linear tolerance IsCurvatureDefined() tests tangent vectors against
-// for nullity — is stated once. OCCTSurfaceCurvatures used to construct its own with a hardcoded
+// resolution argument, the linear tolerance IsCurvatureDefined() tests tangent vectors against
+// for nullity, is stated once. OCCTSurfaceCurvatures used to construct its own with a hardcoded
 // 1e-6, 10x looser than Precision::Confusion(), so the two APIs could disagree about whether
 // curvature is defined at all for the same surface and the same (u, v) (#405). The resolution
 // itself now comes from occtLocalPropsResolution(), shared with the Local* family that #405 left
@@ -2720,7 +2720,7 @@ OCCTSurfaceContinuitySplitResult OCCTSurfaceSplitByContinuity(OCCTSurfaceRef sur
 }
 
 // MARK: - Contap Contour Analysis (v0.61)
-// MARK: - Contap — Contour Analysis (v0.61.0)
+// MARK: - Contap. Contour Analysis (v0.61.0)
 
 int32_t OCCTContapSphereDir(double   cx,
                             double   cy,
@@ -3596,7 +3596,7 @@ OCCTShapeRef _Nullable OCCTAdaptor3dIsoCurveEdge(OCCTShapeRef faceShape,
 }
 
 // MARK: - LocalAnalysis_SurfaceContinuity (v0.67)
-// Order in / effective order out are GeomAbs_Shape ordinals — the same shared pair the curve
+// Order in / effective order out are GeomAbs_Shape ordinals, the same shared pair the curve
 // analyser in OCCTBridge_Curve3D.mm uses; see occtGeomAbsFromAnalysisOrder in
 // OCCTBridge_Internal.h (#490). Outputs are gated on occtAnalysisMeasuredMask for the same
 // reason they are there: only the requested order's branch is ever computed (#495).
@@ -3630,7 +3630,7 @@ bool OCCTLocalAnalysisSurfaceContinuity(OCCTSurfaceRef _Nonnull surface1,
     if (!sc.IsDone())
       return false;
 
-    // The request echoed back, same as the curve analyser — see the note there.
+    // The request echoed back, same as the curve analyser, see the note there.
     *outEffectiveOrder = occtAnalysisOrderFromGeomAbs(sc.ContinuityStatus());
     *outC0Value        = sc.C0Value();
     *outG1Angle        = ((measured & 0x02) && sc.IsG1()) ? sc.G1Angle() : -1.0;
@@ -3704,7 +3704,7 @@ OCCTTrihedronFrame OCCTGeomFillDarbouxTrihedron(OCCTShapeRef edgeShape,
     TopoDS_Face face        = TopoDS::Face(faceWrapper->shape);
 
     Handle(GeomFill_Darboux) darboux = new GeomFill_Darboux();
-    // Darboux needs a curve on surface — use BRepAdaptor_Curve with face context
+    // Darboux needs a curve on surface, use BRepAdaptor_Curve with face context
     Handle(BRepAdaptor_Curve) adaptor = new BRepAdaptor_Curve(edge);
     darboux->SetCurve(adaptor);
 
@@ -4075,7 +4075,7 @@ double OCCTSurfaceConversionGap(OCCTSurfaceRef _Nonnull surface)
 // --- GeomConvert_ApproxSurface ---
 
 // Both surface approximation entry points share occtApproxSurface, declared next to
-// OCCTSurfaceApproximate above — see the #491 note there for the PrecisCode rationale. Note this
+// OCCTSurfaceApproximate above, see the #491 note there for the PrecisCode rationale. Note this
 // entry point takes maxDegree BEFORE maxSegments, the reverse of OCCTSurfaceApproximate's order.
 OCCTApproxSurfaceResult OCCTGeomConvertApproxSurface(OCCTSurfaceRef _Nonnull surface,
                                                      double  tolerance,
@@ -5703,7 +5703,7 @@ bool OCCTSurfaceProjectDegenerated(OCCTSurfaceRef surface,
 }
 
 /// Like OCCTSurfaceProjectPointUV but restricts the search to the [u1,u2]×[v1,v2] domain
-/// (ShapeAnalysis_Surface::SetDomain) — disambiguates projection on periodic / self-overlapping
+/// (ShapeAnalysis_Surface:SetDomain), disambiguates projection on periodic / self-overlapping
 /// surfaces. Returns the 3D gap (Gap()), or -1 on failure.
 double OCCTSurfaceProjectPointUVInDomain(OCCTSurfaceRef surface,
                                          double         px,
@@ -5746,7 +5746,7 @@ double OCCTSurfaceProjectPointUVInDomain(OCCTSurfaceRef surface,
   }
 }
 
-/// BRepGProp_Face Gauss-integration orders (number of integration points) in U and V — non-zero
+/// BRepGProp_Face Gauss-integration orders (number of integration points) in U and V, non-zero
 /// only for BSpline faces. Returns false if `face` is not a face.
 bool OCCTBRepGPropFaceIntegrationOrders(OCCTShapeRef face, int32_t* uOrder, int32_t* vOrder)
 {
@@ -8215,9 +8215,9 @@ const char* OCCTSurfaceTypeName(OCCTSurfaceRef surface)
 // MARK: - v0.115: Surface additional (Normal + Curvatures)
 // --- Surface additional (new in v0.115.0) ---
 
-// Non-optional-return counterpart of OCCTSurfaceGetNormal. It keeps its own contract — a
+// Non-optional-return counterpart of OCCTSurfaceGetNormal. It keeps its own contract, a
 // zero vector where the normal is undefined, since the Swift wrapper returns a plain
-// SIMD3 — but delegates the computation so the two entry points cannot disagree about
+// SIMD3, but delegates the computation so the two entry points cannot disagree about
 // *where* the normal is undefined. It used to hand-roll D1 + gp_Vec::Crossed against a
 // literal 1e-15 magnitude epsilon, which classified degeneracy differently from
 // GeomLProp_SLProps::IsNormalDefined() near a singularity (#401).
@@ -8300,7 +8300,7 @@ OCCTSurfaceRef OCCTPointsToSurfaceBSpline(const double* points,
 // above, differing only in returning all four curvature scalars (or both directions) in one call.
 // They used to construct their props with a hardcoded 1e-10 rather than the shared resolution, so
 // they disagreed with every one of those siblings about whether curvature exists at all near a
-// degeneracy — reporting a defined mean curvature of -8.66e7 at a point on a cone the canonical
+// degeneracy, reporting a defined mean curvature of -8.66e7 at a point on a cone the canonical
 // entry points called undefined. Both now build props through occtSurfaceLocalProps (#494).
 void OCCTSurfaceLocalCurvatures(OCCTSurfaceRef _Nonnull surface,
                                 double u,
@@ -10967,7 +10967,7 @@ OCCTSurfaceRef OCCTGeomEvalAHTBezierSurfaceCreate(const double* poles,
   }
 }
 
-// MARK: - GeomFill_Gordon report + GeomFill_NetworkSurface — OCCT 8.0.0p1
+// MARK: - GeomFill_Gordon report + GeomFill_NetworkSurface. OCCT 8.0.0p1
 
 #include <GeomFill_NetworkSurface.hxx>
 #include <GeomAPI_ExtremaCurveCurve.hxx>

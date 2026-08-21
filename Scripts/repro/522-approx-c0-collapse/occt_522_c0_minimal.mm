@@ -1,4 +1,4 @@
-// OCCTSwift#522 — minimal case: GeomConvert_ApproxSurface at GeomAbs_C0 returns a degree-1
+// OCCTSwift#522, minimal case: GeomConvert_ApproxSurface at GeomAbs_C0 returns a degree-1
 // collapse of a sphere (2 poles across its full longitude, deviating by the sphere's own diameter)
 // while reporting IsDone and a maxError of 1e-4. C1 and C2 on the same surface are correct.
 // See this directory's README.md.

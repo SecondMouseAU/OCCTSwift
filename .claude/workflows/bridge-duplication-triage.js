@@ -1,7 +1,7 @@
 export const meta = {
   name: 'bridge-duplication-triage',
   description: 'Investigate confirmed bridge duplication-audit findings (Pass 1b / #381) and draft one GitHub sub-issue body per finding (site, divergence, Swift call sites, tests, underlying OCCT functions)',
-  whenToUse: 'After a bridge-duplication-audit workflow run (issue #381). Pass args as {parentIssue: <number>, findings: [{file, line, summary, failure_scenario}, ...]} — parentIssue defaults to 381 if omitted. Drafts only — does NOT create GitHub issues; the caller files the returned drafts (and links them as sub-issues) itself so each creation stays auditable. Drafted issue bodies target branch refactor/381-pass1b (a dedicated Pass 1b branch, separate from Pass 1a\'s refactor/377-segmented-audit while that one is under code review).',
+  whenToUse: 'After a bridge-duplication-audit workflow run (issue #381). Pass args as {parentIssue: <number>, findings: [{file, line, summary, failure_scenario}, ...]}, parentIssue defaults to 381 if omitted. Drafts only, does NOT create GitHub issues; the caller files the returned drafts (and links them as sub-issues) itself so each creation stays auditable. Drafted issue bodies target branch refactor/381-pass1b (a dedicated Pass 1b branch, separate from Pass 1a\'s refactor/377-segmented-audit while that one is under code review).',
   phases: [{ title: 'Triage' }],
 }
 
@@ -10,15 +10,15 @@ export const meta = {
 // means: duplication-triage.js's findings are Swift application code, so its
 // interesting one-hop-DOWN question is "which OCCT C++ class does this call?".
 // A bridge-header finding already IS that layer, so the interesting question
-// runs one hop UP instead — "which Swift call sites in Sources/OCCTSwift reach
-// this bridge function, and are they covered by any test?" — plus, for an
+// runs one hop UP instead, "which Swift call sites in Sources/OCCTSwift reach
+// this bridge function, and are they covered by any test?", plus, for an
 // Angle-4 (Pass-1a-mirror-gap) finding, a direct cross-check against the Pass 1a
 // PR diff the finding claims should have been mirrored.
 //
 // Branch note: drafted issues target refactor/381-pass1b, NOT Pass 1a's
 // refactor/377-segmented-audit. #377's own convention is one shared audit branch
 // for every child pass, but Pass 1a is still under code review as of this
-// writing — a dedicated Pass 1b branch keeps its own child PRs from landing on
+// writing, a dedicated Pass 1b branch keeps its own child PRs from landing on
 // top of 1a work that hasn't been reviewed yet. Where refactor/381-pass1b itself
 // eventually merges (onto refactor/377-segmented-audit once 1a's review lands,
 // or straight to main) is a later decision, not this script's concern.
@@ -79,7 +79,7 @@ if (args && typeof args === 'object' && Array.isArray(args.findings) && args.fin
 }
 
 if (!FINDINGS || FINDINGS.length === 0) {
-  return { error: 'bridge-duplication-triage needs {parentIssue, findings: [...]} via args, or a JSON file path string as args — findings is empty or missing.' }
+  return { error: 'bridge-duplication-triage needs {parentIssue, findings: [...]} via args, or a JSON file path string as args, findings is empty or missing.' }
 }
 log('Triaging ' + FINDINGS.length + ' finding(s) for sub-issues of #' + PARENT_ISSUE)
 
@@ -92,30 +92,30 @@ const drafts = await parallel(FINDINGS.map((f, i) => async () => {
     'Cost/divergence noted by the auditor: ' + f.failure_scenario + '\n\n' +
     'Your job: investigate this finding thoroughly enough to write a complete, actionable GitHub issue\n' +
     'about the OCCT C++ bridge header pair (OCCTBridge.h / OCCTBridge_Internal.h), NOT Swift application\n' +
-    'code — the finding IS in the bridge layer.\n\n' +
+    'code, the finding IS in the bridge layer.\n\n' +
     '1. Read the primary file at the given location, and every OTHER file:line location this finding\'s\n' +
-    '   summary/failure_scenario mentions (parse its file:line references out of the text above) — this\n' +
+    '   summary/failure_scenario mentions (parse its file:line references out of the text above), this\n' +
     '   commonly includes the corresponding OCCTBridge_<Domain>.mm implementation file(s).\n' +
     '2. Grep Sources/OCCTSwift/*.swift for the specific C function name(s) involved at EACH location to\n' +
     '   find every Swift call site that invokes them. If a function has none, say so explicitly (an\n' +
     '   orphaned bridge declaration nothing calls is itself worth noting, not something to guess past).\n' +
     '3. For each Swift call site found in step 2, grep Tests/ (per-domain Swift Testing targets) for\n' +
     '   tests referencing that Swift symbol. List what you find (file + suite/test name); if none, say\n' +
-    '   so explicitly per call site — do not guess or assume coverage exists.\n' +
+    '   so explicitly per call site, do not guess or assume coverage exists.\n' +
     '4. For each location, identify the underlying OCCT bridge function\'s C++ implementation: read the\n' +
     '   matching OCCTBridge_<Domain>.mm body and name the actual OCCT C++ class(es)/method(s) invoked\n' +
-    '   (e.g. GC_MakePlane, gce_MakePln, GeomLProp_SLProps) — not just the C bridge function name.\n' +
-    '5. If — and only if — the finding\'s summary references a Pass 1a issue/PR number (an "Angle 4"\n' +
+    '   (e.g. GC_MakePlane, gce_MakePln, GeomLProp_SLProps), not just the C bridge function name.\n' +
+    '5. If, and only if, the finding\'s summary references a Pass 1a issue/PR number (an "Angle 4"\n' +
     '   finding, i.e. a bridge-side gap a Pass 1a Swift-side fix should have mirrored): run\n' +
     '   `gh pr diff <pr> --repo ' + REPO + '` on that PR and confirm, from the actual diff, what the\n' +
     '   Swift side changed to. State exactly what bridge-side change would mirror it. If the finding does\n' +
-    '   NOT reference a Pass 1a issue/PR, omit pass1aCrossCheck entirely — do not invent a cross-check.\n\n' +
+    '   NOT reference a Pass 1a issue/PR, omit pass1aCrossCheck entirely, do not invent a cross-check.\n\n' +
     'Return:\n' +
     '- title: a concise, specific, standalone issue title for this finding\n' +
     '- duplicationSite: markdown listing every file:line location involved, with the specific\n' +
     '  declaration/symbol name at each\n' +
     '- divergence: markdown describing what has actually drifted/gone stale between the copies (a\n' +
-    '  concrete difference you verified by reading both sides), or — if currently consistent — the\n' +
+    '  concrete difference you verified by reading both sides), or, if currently consistent, the\n' +
     '  concrete maintenance-cost rationale for why it should still be unified\n' +
     '- swiftCallSites: markdown listing every Swift call site per implicated function, or "orphaned"\n' +
     '- tests: markdown listing test coverage found per call site, or an explicit no-coverage statement\n' +
@@ -128,9 +128,9 @@ const drafts = await parallel(FINDINGS.map((f, i) => async () => {
   log('triage[' + i + '] (' + loc + '): drafted "' + r.title + '"')
 
   const body =
-    'Part of the bridge duplication audit in #' + PARENT_ISSUE + ' (Pass 1b, itself a sub-issue of #377 — ' +
+    'Part of the bridge duplication audit in #' + PARENT_ISSUE + ' (Pass 1b, itself a sub-issue of #377, ' +
     'parallel to Pass 1a / #' + PASS_1A_ISSUE + '). Per #377\'s ordering rule, triage or fix this before ' +
-    'starting #395 (the OCCTBridge.h breakout, which depends on #381). Branch: `' + PASS_1B_BRANCH + '` — ' +
+    'starting #395 (the OCCTBridge.h breakout, which depends on #381). Branch: `' + PASS_1B_BRANCH + '`, ' +
     'a dedicated branch for Pass 1b, separate from Pass 1a\'s `' + PASS_1A_BRANCH + '` while that branch is ' +
     'still under code review. PRs from this issue target `' + PASS_1B_BRANCH + '`, not `main`.\n\n' +
     '## Duplication site\n' + r.duplicationSite + '\n\n' +

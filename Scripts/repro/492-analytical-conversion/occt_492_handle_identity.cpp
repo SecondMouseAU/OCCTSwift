@@ -5,7 +5,7 @@
 //  1. Can ConvertToAnalytical ever hand back the SAME handle it was given?
 //     (the `result == surface->surface` guard in OCCTSurfaceToAnalytical assumes it can)
 //  2. What comes back for an already-analytical input?
-//  3. What comes back for an unconvertible input — null, or the input?
+//  3. What comes back for an unconvertible input, null, or the input?
 //  4. Gap()/newFirst/newLast on each path.
 
 #include <Geom_Plane.hxx>

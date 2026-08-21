@@ -2,7 +2,7 @@ import Foundation
 import OCCTBridge
 import simd
 
-/// Wrapper for XCAFDoc_AssemblyGraph — read-only graph of assembly structure.
+/// Wrapper for XCAFDoc_AssemblyGraph, read-only graph of assembly structure.
 public final class AssemblyGraph: @unchecked Sendable {
     private let handle: OCCTAssemblyGraphRef
 

@@ -5,7 +5,7 @@ import simd
 /// Builder for lofted shapes through multiple wire sections.
 ///
 /// A builder can be reused across multiple `build()` calls, but every accessor answers `nil`
-/// unless `build()` has succeeded *since* the most recent section or setting change — see
+/// unless `build()` has succeeded *since* the most recent section or setting change, see
 /// ``shape``'s doc comment for the full list of what invalidates it:
 ///
 /// ```swift
@@ -17,12 +17,12 @@ import simd
 /// }
 ///
 /// loft.addWire(anotherProfile) // invalidates the successful build above
-/// print(loft.shape) // nil — build() hasn't run since the new section was added
+/// print(loft.shape) // nil, build() hasn't run since the new section was added
 /// _ = loft.build() // re-arms shape/generatedFace(from:) for the new section set
 /// ```
 ///
 /// `@unchecked Sendable` reflects that a single instance's `ref` is a plain bridge handle, not
-/// that concurrent use of one instance from multiple threads is safe — it isn't (no internal
+/// that concurrent use of one instance from multiple threads is safe, it isn't (no internal
 /// synchronization, same as every other builder wrapper in this package). Serialize access to a
 /// shared instance with `OCCTSerial.withLock { }`; see `docs/thread-safety.md`.
 public final class ThruSectionsBuilder: @unchecked Sendable {
@@ -52,13 +52,13 @@ public final class ThruSectionsBuilder: @unchecked Sendable {
     }
 
     /// Enable/disable smoothing. Invalidates ``shape``/``generatedFace(from:)`` until the next
-    /// successful ``build()`` — see ``shape``'s doc comment.
+    /// successful ``build()``, see ``shape``'s doc comment.
     public func setSmoothing(_ smoothing: Bool) {
         OCCTThruSectionsSetSmoothing(ref, smoothing)
     }
 
     /// Set the maximum BSpline degree. Invalidates ``shape``/``generatedFace(from:)`` until the
-    /// next successful ``build()`` — see ``shape``'s doc comment.
+    /// next successful ``build()``, see ``shape``'s doc comment.
     public func setMaxDegree(_ maxDeg: Int) {
         OCCTThruSectionsSetMaxDegree(ref, Int32(maxDeg))
     }
@@ -68,7 +68,7 @@ public final class ThruSectionsBuilder: @unchecked Sendable {
     /// A ``ParametricContinuity`` raw value (0=C0, 1=C1, 2=C2, 3=C3; anything above asks for CN).
     /// `BRepOffsetAPI_ThruSections` accepts every value without failing. This used to read only
     /// 0 and 1, mapping everything else to C2 (#490). Invalidates ``shape``/``generatedFace(from:)``
-    /// until the next successful ``build()`` — see ``shape``'s doc comment.
+    /// until the next successful ``build()``, see ``shape``'s doc comment.
     public func setContinuity(_ continuity: Int) {
         OCCTThruSectionsSetContinuity(ref, Int32(continuity))
     }
@@ -86,7 +86,7 @@ public final class ThruSectionsBuilder: @unchecked Sendable {
     /// ``setMaxDegree(_:)``, ``setContinuity(_:)``, ``checkCompatibility(_:)``,
     /// ``setParType(_:)``, ``setCriteriumWeight(w1:w2:w3:)``). Every one of those calls
     /// invalidates the previous build's result the same way, so this never answers with geometry
-    /// that predates a change the caller has since made — including on a builder reused across
+    /// that predates a change the caller has since made, including on a builder reused across
     /// multiple `build()` calls, where OCCT's own internal state does not reset itself between
     /// builds.
     public var shape: Shape? {
@@ -97,21 +97,21 @@ public final class ThruSectionsBuilder: @unchecked Sendable {
 
 extension ThruSectionsBuilder {
     /// Enable/disable wire compatibility checking (reorders wires to avoid twists). Invalidates
-    /// ``shape``/``generatedFace(from:)`` until the next successful ``build()`` — see ``shape``'s
+    /// ``shape``/``generatedFace(from:)`` until the next successful ``build()``, see ``shape``'s
     /// doc comment.
     public func checkCompatibility(_ check: Bool = true) {
         OCCTThruSectionsCheckCompatibility(ref, check)
     }
 
     /// Set parameterization type. Invalidates ``shape``/``generatedFace(from:)`` until the next
-    /// successful ``build()`` — see ``shape``'s doc comment.
+    /// successful ``build()``, see ``shape``'s doc comment.
     /// - Parameter type: 0=ChordLength, 1=Centripetal, 2=IsoParametric
     public func setParType(_ type: Int) {
         OCCTThruSectionsSetParType(ref, Int32(type))
     }
 
     /// Set criterium weights for the approximation algorithm. Invalidates
-    /// ``shape``/``generatedFace(from:)`` until the next successful ``build()`` — see ``shape``'s
+    /// ``shape``/``generatedFace(from:)`` until the next successful ``build()``, see ``shape``'s
     /// doc comment. Returns `true` if all weights are non-negative; returns `false` and does not
     /// update the builder if any weight is negative (OCCT silently ignores negative weights and
     /// `Build()` erases the failure status, making the rejection unobservable otherwise).
@@ -125,8 +125,8 @@ extension ThruSectionsBuilder {
     /// - Parameter edge: A profile edge from one of the input wires.
     /// - Returns: The generated face, or `nil` if `edge` isn't a profile edge of the current
     ///   build, if ``shape`` itself would be `nil` right now (see its doc comment for the full
-    ///   invalidation list), or — on a builder reused across a success → failure → success
-    ///   sequence — if `edge`'s bound face is a leftover from an *earlier* successful build that
+    ///   invalidation list), or, on a builder reused across a success → failure → success
+    ///   sequence, if `edge`'s bound face is a leftover from an *earlier* successful build that
     ///   the current one never overwrote. OCCT's `myEdgeFace` map is never cleared between
     ///   builds, so a reconciliation (``checkCompatibility(_:)``) can rebuild every section's
     ///   edges and leave a stale edge → face binding queryable through an edge the caller
@@ -143,7 +143,7 @@ extension ThruSectionsBuilder {
     ///
     /// loft.addWire(mismatchedSection)
     /// _ = loft.build()                    // false
-    /// loft.generatedFace(from: edge)      // nil — not the previous build's face
+    /// loft.generatedFace(from: edge)      // nil, not the previous build's face
     /// ```
     public func generatedFace(from edge: Shape) -> Shape? {
         guard let h = OCCTThruSectionsGeneratedFace(ref, edge.handle) else { return nil }

@@ -1,9 +1,9 @@
 ---
-title: Shape — Measurement, Sub-Shapes & Local Operations
+title: Shape. Measurement, Sub-Shapes & Local Operations
 parent: API Reference
 ---
 
-# Shape — Measurement, Sub-Shapes & Local Operations
+# Shape. Measurement, Sub-Shapes & Local Operations
 
 This page covers the measurement, decomposition, healing, and local-operation APIs on `Shape`, declared in `Shape.swift`. For the core primitives, Boolean operations, and transforms, see the main **[Shape](Shape.md)** page.
 
@@ -88,7 +88,7 @@ public var outerShell: Shape? { get }
 
 For a solid with internal voids (multiple shells), returns the shell bounding the outer body, distinguishing it from inner void shells.
 
-Answers only for a shape that denotes exactly **one** solid: a solid, or a compound/compsolid wrapping a single solid. A container holding two or more solids has no single outer shell to name, so it returns `nil` rather than one arbitrary member's shell — use [`outerShells`](#outershells) there.
+Answers only for a shape that denotes exactly **one** solid: a solid, or a compound/compsolid wrapping a single solid. A container holding two or more solids has no single outer shell to name, so it returns `nil` rather than one arbitrary member's shell, use [`outerShells`](#outershells) there.
 
 - **Returns:** The outer shell, or `nil` if the shape does not denote exactly one solid, or has no shell.
 - **OCCT:** `BRepClass3d::OuterShell`.
@@ -116,7 +116,7 @@ public var outerShells: [Shape] { get }
 
 The multi-body counterpart of [`outerShell`](#outershell): one shell per solid. Empty for a shape with no solids. Equivalent to `solids.compactMap(\.outerShell)`, in a single traversal.
 
-These shells drop internal void walls by design. To measure against the complete boundary of a multi-body part — cavities included — use `Shape.compound(subShapes(ofType: .face))`.
+These shells drop internal void walls by design. To measure against the complete boundary of a multi-body part, cavities included, use `Shape.compound(subShapes(ofType: .face))`.
 
 - **Returns:** One outer shell per solid; empty if the shape has no solids.
 - **OCCT:** `BRepClass3d::OuterShell` per solid.
@@ -133,7 +133,7 @@ These shells drop internal void walls by design. To measure against the complete
 
 ### `innerShells`
 
-Inner (void / cavity) shells of this solid — every shell except `outerShell`.
+Inner (void / cavity) shells of this solid, every shell except `outerShell`.
 
 ```swift
 public var innerShells: [Shape] { get }
@@ -211,8 +211,8 @@ public func fusedAndBlended(with other: Shape, radius: Double) -> Shape?
 ```
 
 - **Parameters:**
-  - `other` — Shape to fuse with.
-  - `radius` — Fillet radius applied to intersection edges after fusion.
+  - `other`: Shape to fuse with.
+  - `radius`: Fillet radius applied to intersection edges after fusion.
 - **Returns:** Fused and filleted shape, or `nil` on failure.
 - **OCCT:** `BRepAlgoAPI_Fuse` + `BRepFilletAPI_MakeFillet`.
 - **Example:**
@@ -233,8 +233,8 @@ public func cutAndBlended(with other: Shape, radius: Double) -> Shape?
 ```
 
 - **Parameters:**
-  - `other` — Shape to cut from this shape.
-  - `radius` — Fillet radius applied to intersection edges after cutting.
+  - `other`: Shape to cut from this shape.
+  - `radius`: Fillet radius applied to intersection edges after cutting.
 - **Returns:** Cut and filleted shape, or `nil` on failure.
 - **OCCT:** `BRepAlgoAPI_Cut` + `BRepFilletAPI_MakeFillet`.
 
@@ -254,12 +254,12 @@ public struct EvolvingFilletEdge: Sendable {
 }
 ```
 
-- `edgeIndex` — 0-based edge index, as reported by `Edge.index`. **This was 1-based until #520**,
+- `edgeIndex`: 0-based edge index, as reported by `Edge.index`. **This was 1-based until #520**,
   the one edge index in the fillet family that was; `init(edgeIndex:radiusPoints:)` is now
   `unavailable` rather than silently reinterpreted, so an old call site fails to build with an
   explanation instead of quietly filleting the neighbouring edge. Build the spec from the `Edge`
   itself, or assign `edgeIndex` after re-checking the index you pass.
-- `radiusPoints` — Array of `(parameter, radius)` pairs defining the radius evolution along the
+- `radiusPoints`: Array of `(parameter, radius)` pairs defining the radius evolution along the
   edge. Parameters are relative: `0.0` is the start of the edge, `1.0` its end. Every radius must
   be positive, and the parameters must lie in `0...1` and strictly increase.
 
@@ -287,7 +287,7 @@ Apply evolving-radius fillets to multiple edges simultaneously.
 public func filletEvolving(_ edges: [EvolvingFilletEdge]) -> Shape?
 ```
 
-- **Parameters:** `edges` — Array of edge specifications with radius evolution; must not be empty.
+- **Parameters:** `edges`, Array of edge specifications with radius evolution; must not be empty.
 - **Returns:** Filleted shape, or `nil` on failure. Every edge is filleted or none is: an
   `edgeIndex` naming no edge of this shape returns `nil` rather than filleting the rest, and so
   does a non-positive radius, a parameter outside `0...1`, a non-increasing parameter sequence, or
@@ -307,7 +307,7 @@ public func filletEvolving(_ edges: [EvolvingFilletEdge]) -> Shape?
       print(filled.isValid)
   }
 
-  // A rounded slot — two straight sides joined by two semicircular ends, extruded. Its whole
+  // A rounded slot, two straight sides joined by two semicircular ends, extruded. Its whole
   // top rim is one tangent-continuous contour, and each edge of it still carries its own law.
   let profile = Wire.join([
       Wire.line(from: SIMD3(-10, -8, 0), to: SIMD3(10, -8, 0))!,
@@ -368,11 +368,11 @@ public func offsetPerFace(defaultOffset: Double,
 ```
 
 - **Parameters:**
-  - `defaultOffset` — Default offset distance applied to all faces not listed in `faceOffsets`.
-  - `faceOffsets` — Dictionary mapping 0-based face indices — as `Face.index` and `face(at:)` use —
+  - `defaultOffset`: Default offset distance applied to all faces not listed in `faceOffsets`.
+  - `faceOffsets`: Dictionary mapping 0-based face indices, as `Face.index` and `face(at:)` use,
     to custom offset distances. A key outside `0..<faceCount` fails the call.
-  - `tolerance` — Offset tolerance.
-  - `joinType` — Join strategy for offset gaps (`.arc` or `.intersection`).
+  - `tolerance`: Offset tolerance.
+  - `joinType`: Join strategy for offset gaps (`.arc` or `.intersection`).
 - **Returns:** Offset shape, or `nil` on failure.
 - **OCCT:** `BRepOffsetAPI_MakeThickSolid` (via `OCCTShapeOffsetPerFace`).
 - **Example:**
@@ -384,7 +384,7 @@ public func offsetPerFace(defaultOffset: Double,
   ```
 - **Note:** #541 moved the keys off 1-based, and made an out-of-range key fail the call. It used to
   be skipped, which returned a shape offset by the default everywhere and looked exactly like a
-  successful run — the same silent success #497 fixed for defeaturing.
+  successful run, the same silent success #497 fixed for defeaturing.
 
 ---
 
@@ -402,9 +402,9 @@ public struct FreeBoundsResult: Sendable {
 }
 ```
 
-- `wires` — Compound shape containing all free boundary wires.
-- `closedCount` — Number of closed free boundary wires.
-- `openCount` — Number of open free boundary wires.
+- `wires`: Compound shape containing all free boundary wires.
+- `closedCount`: Number of closed free boundary wires.
+- `openCount`: Number of open free boundary wires.
 
 ---
 
@@ -423,7 +423,7 @@ Free boundaries indicate gaps in a shell. A watertight shell has no free boundar
   `freeBoundsClosedCount(tolerance:)`, `freeBoundsClosedWires(tolerance:)` and `freeBoundsOpenWires(tolerance:)` share this reasoning unconditionally: each always builds `ShapeAnalysis_FreeBounds` with the `(shape, tolerance, ...)` sewing constructor no matter what value is passed, so there is no other branch to consider for them.
 
   `freeBoundsAnalysis(tolerance:)`, [`FreeBoundsProperties`](Document-Mesh-Fixing.md#freeboundsproperties) and the four accessors built on it (`closedFreeBoundInfo(tolerance:index:)`, `openFreeBoundInfo(tolerance:index:)`, `closedFreeBoundWire(tolerance:index:)`, `openFreeBoundWire(tolerance:index:)`) are different: `ShapeAnalysis_FreeBoundsProperties::DispatchBounds()` picks the sewing constructor only when its tolerance is greater than 0; at 0 or below it picks `ShapeAnalysis_FreeBounds(shape, splitClosed, splitOpen)` instead, a constructor with no sewing stage at all, which takes its edges from `ShapeAnalysis_Shell::CheckOrientedShells`/`FreeEdges()` and reaches the same `ConnectEdgesToWires` skip by a different route. This is measured directly, not assumed from the sewing case above: the `.internal` exclusion holds on this branch too, and a FORWARD control on the same fixture confirms the two branches are not just trivially agreeing on everything. The sewing branch chains a FORWARD loop entirely inside one face into one closed wire together with that face's outer boundary (3 closed, 0 open); the shared-topology branch returns the same loop's four edges unchained (2 closed, 4 open). What is not measured, and not claimed, is *why* the INTERNAL loop is absent on the shared-topology branch: that constructor defaults `checkinternaledges` to `false`, so the internal edges may never reach `FreeEdges()` as candidates at all, rather than being collected and then dropped by the same skip the sewing branch's chainage step hits. Both would produce the same observable result, which is the only thing measured here. See `Issue655FreeBoundsInternalOrientationTests` (`OCCTShapeHealingTests`) for both fixtures. See [#655](https://github.com/SecondMouseAU/OCCTSwift/issues/655).
-- **Parameters:** `sewingTolerance` — Tolerance for grouping free edges into wires.
+- **Parameters:** `sewingTolerance`, Tolerance for grouping free edges into wires.
 - **Returns:** Free bounds result, or `nil` if no free boundaries are found.
 - **OCCT:** `ShapeAnalysis_FreeBounds`.
 - **Example:**
@@ -445,8 +445,8 @@ public func fixedFreeBounds(sewingTolerance: Double = 1e-6,
 ```
 
 - **Parameters:**
-  - `sewingTolerance` — Tolerance for sewing free edges.
-  - `closingTolerance` — Maximum distance to close a gap.
+  - `sewingTolerance`: Tolerance for sewing free edges.
+  - `closingTolerance`: Maximum distance to close a gap.
 - **Returns:** Tuple of `(fixed shape, number of wires fixed)`, or `nil` on failure.
 - **OCCT:** `ShapeFix_Shape` / `ShapeAnalysis_FreeBounds` (via `OCCTShapeFixFreeBounds`).
 
@@ -464,10 +464,10 @@ public func pipeFeature(profile: Shape, sketchFaceIndex: Int,
 ```
 
 - **Parameters:**
-  - `profile` — Profile shape (face) to sweep along the spine.
-  - `sketchFaceIndex` — 0-based index of the face on this shape where the profile sits.
-  - `spine` — Wire defining the sweep path.
-  - `fuse` — If `true`, adds material; if `false`, removes material.
+  - `profile`: Profile shape (face) to sweep along the spine.
+  - `sketchFaceIndex`: 0-based index of the face on this shape where the profile sits.
+  - `spine`: Wire defining the sweep path.
+  - `fuse`: If `true`, adds material; if `false`, removes material.
 - **Returns:** Modified shape, or `nil` on failure.
 - **OCCT:** `BRepFeat_MakePipe` (via `OCCTShapePipeFeatureFromProfile`).
 
@@ -486,8 +486,8 @@ public func extrudedSemiInfinite(direction: SIMD3<Double>, infinite: Bool = fals
 Creates a solid that extends infinitely in one direction from the profile. Useful for half-spaces and trimming operations.
 
 - **Parameters:**
-  - `direction` — Direction of extrusion.
-  - `infinite` — If `true`, extrude in both directions (fully infinite); if `false`, extrude in one direction (semi-infinite).
+  - `direction`: Direction of extrusion.
+  - `infinite`: If `true`, extrude in both directions (fully infinite); if `false`, extrude in one direction (semi-infinite).
 - **Returns:** Extruded shape, or `nil` on failure.
 - **OCCT:** `BRepPrimAPI_MakePrism(profile, dir, Copy = !infinite)` (via
   `OCCTShapeExtrudeSemiInfinite`). Neither `BRepPrimAPI_MakeHalfSpace` nor
@@ -512,11 +512,11 @@ public func prismUntilFace(profile: Shape, sketchFaceIndex: Int,
 Uses `BRepFeat_MakePrism` which handles the until-face computation more robustly than a simple extrusion + Boolean.
 
 - **Parameters:**
-  - `profile` — Profile face to extrude.
-  - `sketchFaceIndex` — 0-based face index on this shape where the profile sits.
-  - `direction` — Extrusion direction.
-  - `fuse` — If `true`, adds material; if `false`, removes material.
-  - `untilFaceIndex` — 0-based face index on this shape where extrusion stops. Pass `nil` for thru-all.
+  - `profile`: Profile face to extrude.
+  - `sketchFaceIndex`: 0-based face index on this shape where the profile sits.
+  - `direction`: Extrusion direction.
+  - `fuse`: If `true`, adds material; if `false`, removes material.
+  - `untilFaceIndex`: 0-based face index on this shape where extrusion stops. Pass `nil` for thru-all.
 - **Returns:** Modified shape, or `nil` on failure.
 - **OCCT:** `BRepFeat_MakePrism` (via `OCCTShapePrismUntilFace`).
 
@@ -540,9 +540,9 @@ public struct InertiaProperties {
 }
 ```
 
-- `mass` — Volume (for `inertiaProperties()`) or surface area (for `surfaceInertiaProperties()`).
-- `inertiaMatrix` — 9-element row-major 3×3 inertia tensor `[Ixx, Ixy, Ixz, Iyx, Iyy, Iyz, Izx, Izy, Izz]`.
-- `principalAxes` — Three unit vectors for the principal axes of inertia.
+- `mass`: Volume (for `inertiaProperties()`) or surface area (for `surfaceInertiaProperties()`).
+- `inertiaMatrix`: 9-element row-major 3×3 inertia tensor `[Ixx, Ixy, Ixz, Iyx, Iyy, Iyz, Izx, Izy, Izz]`.
+- `principalAxes`: Three unit vectors for the principal axes of inertia.
 
 ---
 
@@ -648,9 +648,9 @@ public func allDistanceSolutions(to other: Shape, maxSolutions: Int = 32) -> [Di
 Returns all extremal point pairs (not just the minimum). Useful for finding multiple closest/farthest point pairs.
 
 - **Parameters:**
-  - `other` — The other shape.
-  - `maxSolutions` — Output *capacity*, clamped into `0...Sampling.maximumSampleCount`
-    (10,000,000); 0 or less returns an empty array — **not** `nil`, as it did before #622 (#622).
+  - `other`: The other shape.
+  - `maxSolutions`: Output *capacity*, clamped into `0...Sampling.maximumSampleCount`
+    (10,000,000); 0 or less returns an empty array, **not** `nil`, as it did before #622 (#622).
 - **Returns:** Array of distance solutions, or `nil` on failure.
 - **OCCT:** `BRepExtrema_DistShapeShape` (via `OCCTShapeAllDistanceSolutions`).
 - **Example:**
@@ -671,7 +671,7 @@ Check if this shape is fully contained inside another shape.
 public func isInside(_ container: Shape) -> Bool?
 ```
 
-- **Parameters:** `container` — The potential container shape.
+- **Parameters:** `container`, The potential container shape.
 - **Returns:** `true` if this shape is inside the container; `nil` on failure.
 - **OCCT:** `BRepExtrema_DistShapeShape` inner solution detection (via `OCCTShapeIsInnerDistance`).
 
@@ -738,8 +738,8 @@ public func distanceSolutionDetail(to other: Shape, solutionIndex: Int) -> Dista
 Returns the support type (vertex/edge/face) and parametric location for each closest point. Use in conjunction with `allDistanceSolutions(to:)` to obtain the solution index.
 
 - **Parameters:**
-  - `other` — The other shape.
-  - `solutionIndex` — 0-based index into the solutions returned by `allDistanceSolutions(to:)`.
+  - `other`: The other shape.
+  - `solutionIndex`: 0-based index into the solutions returned by `allDistanceSolutions(to:)`.
 - **Returns:** Detail struct, or `nil` on failure.
 - **OCCT:** `BRepExtrema_DistShapeShape` (via `OCCTShapeDistanceSolutionDetail`).
 
@@ -758,8 +758,8 @@ public func findSurfaceEx(tolerance: Double = 1e-6, onlyPlane: Bool = false) -> 
 Analyzes the edges of a shape to determine if they lie on a common geometric surface.
 
 - **Parameters:**
-  - `tolerance` — Tolerance for surface detection.
-  - `onlyPlane` — If `true`, only look for planar surfaces.
+  - `tolerance`: Tolerance for surface detection.
+  - `onlyPlane`: If `true`, only look for planar surfaces.
 - **Returns:** The underlying surface, or `nil` if none found.
 - **OCCT:** `BRepLib_FindSurface` (via `OCCTShapeFindSurfaceEx`).
 - **Example:**
@@ -783,7 +783,7 @@ public func removingSubShapes(_ subShapes: [Shape]) -> Shape?
 
 Uses `BRepTools_ReShape` to remove faces, edges, or vertices while preserving the remaining topology.
 
-- **Parameters:** `subShapes` — Sub-shapes to remove.
+- **Parameters:** `subShapes`, Sub-shapes to remove.
 - **Returns:** Shape with sub-shapes removed, or `nil` on failure.
 - **OCCT:** `BRepTools_ReShape` (via `OCCTShapeRemoveSubShapes`).
 
@@ -797,7 +797,7 @@ Replace sub-shapes within this shape.
 public func replacingSubShapes(_ replacements: [(old: Shape, new: Shape)]) -> Shape?
 ```
 
-- **Parameters:** `replacements` — Array of `(old, new)` shape pairs.
+- **Parameters:** `replacements`, Array of `(old, new)` shape pairs.
 - **Returns:** Shape with replacements applied, or `nil` on failure.
 - **OCCT:** `BRepTools_ReShape` (via `OCCTShapeReplaceSubShapes`).
 
@@ -826,7 +826,7 @@ Find if this shape's edges lie in a plane.
 public func findPlane(tolerance: Double = 1e-6) -> DetectedPlane?
 ```
 
-- **Parameters:** `tolerance` — Tolerance for planarity check.
+- **Parameters:** `tolerance`, Tolerance for planarity check.
 - **Returns:** Detected plane, or `nil` if the shape is not planar.
 - **OCCT:** `BRepBuilderAPI_FindPlane` (via `OCCTShapeFindPlane`).
 - **Example:**
@@ -850,7 +850,7 @@ public func dividedClosedEdges(splitPoints: Int = 1) -> Shape?
 
 Periodic edges (like circles) can cause issues in some algorithms. This splits each closed edge into segments.
 
-- **Parameters:** `splitPoints` — Number of split points per closed edge (default `1`, which doubles the edge count).
+- **Parameters:** `splitPoints`, Number of split points per closed edge (default `1`, which doubles the edge count).
 - **Returns:** Shape with closed edges split, or `nil` on failure.
 - **OCCT:** `ShapeUpgrade_ShapeDivideClosedEdges::SetNbSplitPoints` then `Perform()` (via
   `OCCTShapeDivideClosedEdges`). Neither `ShapeUpgrade_ShapeDivideAngle`, a different sibling of the
@@ -871,10 +871,10 @@ public func withSurfacesAsBSpline(extrusion: Bool = true, revolution: Bool = tru
 ```
 
 - **Parameters:**
-  - `extrusion` — Convert extrusion surfaces (default `true`).
-  - `revolution` — Convert revolution surfaces (default `true`).
-  - `offset` — Convert offset surfaces (default `true`).
-  - `plane` — Convert planar surfaces (default `false`).
+  - `extrusion`: Convert extrusion surfaces (default `true`).
+  - `revolution`: Convert revolution surfaces (default `true`).
+  - `offset`: Convert offset surfaces (default `true`).
+  - `plane`: Convert planar surfaces (default `false`).
 - **Returns:** Shape with converted surfaces, or `nil` on failure.
 - **OCCT:** `ShapeCustom::ConvertToBSpline` (via `OCCTShapeCustomConvertToBSpline`).
 
@@ -905,7 +905,7 @@ public func faceRestricted(by boundaries: [Wire]) -> [Shape]?
 
 Uses `BRepAlgo_FaceRestrictor` to build faces on the underlying surface of this shape's first face, bounded by the given wires.
 
-- **Parameters:** `boundaries` — Wire boundaries that define the restricted regions.
+- **Parameters:** `boundaries`, Wire boundaries that define the restricted regions.
 - **Returns:** Array of restricted face shapes (up to 64), or `nil` on failure.
 - **OCCT:** `BRepAlgo_FaceRestrictor` (via `OCCTShapeFaceRestrict`).
 
@@ -923,7 +923,7 @@ public static func solidFromShells(_ shells: [Shape]) -> Shape?
 
 The first shape provides the outer shell; additional shapes provide cavity (inner) shells.
 
-- **Parameters:** `shells` — Array of shapes containing shells; must not be empty.
+- **Parameters:** `shells`, Array of shapes containing shells; must not be empty.
 - **Returns:** Solid shape, or `nil` on failure.
 - **OCCT:** `BRepBuilderAPI_MakeSolid` (via `OCCTSolidFromShells`).
 - **Note:** Each element contributes only the **first** shell found in it, so pass one shape per
@@ -947,8 +947,8 @@ public func fillet2D(vertexIndices: [Int], radii: [Double]) -> Shape?
 ```
 
 - **Parameters:**
-  - `vertexIndices` — 0-based indices of vertices to fillet.
-  - `radii` — Fillet radius for each vertex; must match `vertexIndices` count.
+  - `vertexIndices`: 0-based indices of vertices to fillet.
+  - `radii`: Fillet radius for each vertex; must match `vertexIndices` count.
 - **Returns:** Modified shape with fillets, or `nil` on failure.
 - **OCCT:** `BRepFilletAPI_MakeFillet2d` (via `OCCTFace2DFillet`).
 - **Note:** `vertexIndices` and `radii` must have equal length; mismatch returns `nil`.
@@ -970,8 +970,8 @@ public func chamfer2D(edgePairs: [(Int, Int)], distances: [Double]) -> Shape?
 ```
 
 - **Parameters:**
-  - `edgePairs` — Array of `(edge1Index, edge2Index)` pairs (0-based) identifying adjacent edges.
-  - `distances` — Chamfer distance for each edge pair.
+  - `edgePairs`: Array of `(edge1Index, edge2Index)` pairs (0-based) identifying adjacent edges.
+  - `distances`: Chamfer distance for each edge pair.
 - **Returns:** Modified shape with chamfers, or `nil` on failure.
 - **OCCT:** `BRepFilletAPI_MakeFillet2d` (via `OCCTFace2DChamfer`).
 - **Note:** Only the **first** face of the receiver is chamfered, and the result is that face
@@ -1003,10 +1003,10 @@ public enum PointCloudGeometry {
 }
 ```
 
-- `.point` — All points are coincident.
-- `.linear` — Points are collinear.
-- `.planar` — Points are coplanar.
-- `.space` — Points are dispersed in 3D space.
+- `.point`: All points are coincident.
+- `.linear`: Points are collinear.
+- `.planar`: Points are coplanar.
+- `.space`: Points are dispersed in 3D space.
 
 ---
 
@@ -1023,8 +1023,8 @@ public static func analyzePointCloud(_ points: [SIMD3<Double>], tolerance: Doubl
 ```
 
 - **Parameters:**
-  - `points` — Array of 3D points (minimum 1).
-  - `tolerance` — Tolerance for classification.
+  - `points`: Array of 3D points (minimum 1).
+  - `tolerance`: Tolerance for classification.
 - **Returns:** Classification result, or `nil` on failure.
 - **OCCT:** `GProp_PEquation` (via `OCCTAnalyzePointCloud`).
 - **Example:**
@@ -1047,7 +1047,7 @@ Subdivide faces whose area exceeds a maximum threshold.
 public func dividedByArea(maxArea: Double) -> Shape?
 ```
 
-- **Parameters:** `maxArea` — Maximum face area; faces larger than this are split.
+- **Parameters:** `maxArea`, Maximum face area; faces larger than this are split.
 - **Returns:** Shape with subdivided faces, or `nil` on failure.
 - **OCCT:** `ShapeUpgrade_ShapeDivideArea` (via `OCCTShapeDivideByArea`).
 
@@ -1061,7 +1061,7 @@ Subdivide faces into a target number of parts.
 public func dividedByParts(_ parts: Int) -> Shape?
 ```
 
-- **Parameters:** `parts` — Target number of parts per face.
+- **Parameters:** `parts`, Target number of parts per face.
 - **Returns:** Shape with subdivided faces, or `nil` on failure.
 - **OCCT:** `ShapeUpgrade_ShapeDivideArea` in splitting-by-number mode (via `OCCTShapeDivideByParts`).
 
@@ -1080,10 +1080,10 @@ public struct SmallFaceInfo: Sendable {
 }
 ```
 
-- `isSpotFace` — Face collapsed to a point.
-- `isStripFace` — Face with negligible width.
-- `isTwisted` — Face with twisted geometry.
-- `spotLocation` — Location of a spot face (only set when `isSpotFace` is `true`).
+- `isSpotFace`: Face collapsed to a point.
+- `isStripFace`: Face with negligible width.
+- `isTwisted`: Face with twisted geometry.
+- `spotLocation`: Location of a spot face (only set when `isSpotFace` is `true`).
 
 ---
 
@@ -1115,7 +1115,7 @@ public func checkSmallFaces(tolerance: Double = 1e-6) -> [SmallFaceInfo]
 
 Returns only faces that have at least one degenerate condition.
 
-- **Parameters:** `tolerance` — Analysis tolerance.
+- **Parameters:** `tolerance`, Analysis tolerance.
 - **Returns:** Array of degenerate face descriptions; empty if none found.
 - **OCCT:** `ShapeAnalysis_CheckSmallFace` (via `OCCTShapeCheckSmallFaces`).
 
@@ -1226,8 +1226,8 @@ public func selfIntersection(tolerance: Double = 0.001,
 Meshes the shape and detects overlapping triangle pairs.
 
 - **Parameters:**
-  - `tolerance` — Tolerance for detecting intersections.
-  - `meshDeflection` — Mesh deflection for triangulation.
+  - `tolerance`: Tolerance for detecting intersections.
+  - `meshDeflection`: Mesh deflection for triangulation.
 - **Returns:** Self-intersection result, or `nil` if the check failed.
 - **OCCT:** `BRepExtrema_SelfIntersection` (via `OCCTShapeSelfIntersection`).
 - **Example:**
@@ -1301,7 +1301,7 @@ for (edge, kind) in bracket.edgeConcavities() ?? [] where kind == .concave {
 }
 ```
 
-- **Parameters:** `angle` — Threshold angle (radians) for tangent classification.
+- **Parameters:** `angle`, Threshold angle (radians) for tangent classification.
 - **Returns:** Array of `(edge, concavity)` pairs in `edges()` order, or `nil` on error.
 - **OCCT:** `BRepOffset_Analyse` (via `OCCTShapeAnalyzeEdgeConcavity`).
 - **Changed in #613:** the bridge enumerated topology *occurrences* (24 on a 12-edge box) while
@@ -1327,8 +1327,8 @@ box.edgeConcavityCount(.convex)   // 12, matching box.edgeCount
 ```
 
 - **Parameters:**
-  - `type` — Concavity type to count.
-  - `angle` — Threshold angle (radians) for tangent classification.
+  - `type`: Concavity type to count.
+  - `angle`: Threshold angle (radians) for tangent classification.
 - **Returns:** Count of matching edges, or `nil` on error.
 - **OCCT:** `BRepOffset_Analyse` (via `OCCTShapeCountEdgeConcavity`).
 - **Changed in #613:** counted topology occurrences, so a 12-edge box reported **24** convex edges.
@@ -1345,9 +1345,9 @@ Select edges of this shape that satisfy a geometric predicate.
 public func edges(where predicate: (Edge) -> Bool) -> [Edge]
 ```
 
-A robust alternative to picking edges by raw index from `edges()` — the index shifts when model parameters change, whereas a geometric predicate keeps selecting the right edge.
+A robust alternative to picking edges by raw index from `edges()`, the index shifts when model parameters change, whereas a geometric predicate keeps selecting the right edge.
 
-- **Parameters:** `predicate` — Returns `true` for edges to keep.
+- **Parameters:** `predicate`, Returns `true` for edges to keep.
 - **Returns:** The matching edges (possibly empty), each with a valid index.
 - **Example:**
   ```swift
@@ -1368,7 +1368,7 @@ public func concaveEdges(angle: Double = 0.01) -> [Edge]
 
 Concave edges are typically the ones you want to fillet to add material to an inside corner.
 
-- **Parameters:** `angle` — Threshold (radians) below which an edge counts as tangent rather than concave.
+- **Parameters:** `angle`, Threshold (radians) below which an edge counts as tangent rather than concave.
 - **Returns:** The concave edges, or an empty array if none or on error.
 - **Example:**
   ```swift
@@ -1387,7 +1387,7 @@ public func convexEdges(angle: Double = 0.01) -> [Edge]
 
 Convex edges are the outer corners of a part, typically the ones you want to chamfer or round.
 
-- **Parameters:** `angle` — Threshold (radians) below which an edge counts as tangent rather than convex.
+- **Parameters:** `angle`, Threshold (radians) below which an edge counts as tangent rather than convex.
 - **Returns:** The convex edges, or an empty array if none or on error.
 
 ---
@@ -1403,8 +1403,8 @@ public func edges(parallelTo axis: SIMD3<Double>, tolerance: Double = 1e-4) -> [
 Only line edges are considered (curved edges have no single direction). The test is sign-agnostic: edges pointing along `+axis` or `-axis` both match.
 
 - **Parameters:**
-  - `axis` — The reference direction (need not be unit length).
-  - `tolerance` — Maximum sine of the angle between edge and axis.
+  - `axis`: The reference direction (need not be unit length).
+  - `tolerance`: Maximum sine of the angle between edge and axis.
 - **Returns:** The matching straight edges, each with a valid index.
 - **Example:**
   ```swift
@@ -1426,8 +1426,8 @@ public func edges(inBounds min: SIMD3<Double>, _ max: SIMD3<Double>) -> [Edge]
 An edge matches when its entire bounding box lies inside the box spanned by `min...max` (inclusive).
 
 - **Parameters:**
-  - `min` — Lower corner of the region.
-  - `max` — Upper corner of the region.
+  - `min`: Lower corner of the region.
+  - `max`: Upper corner of the region.
 - **Returns:** The contained edges, each with a valid index.
 
 ---
@@ -1444,7 +1444,7 @@ public func localPrism(direction: SIMD3<Double>) -> Shape?
 
 Uses `LocOpe_Prism` which tracks generated shapes for each input sub-shape.
 
-- **Parameters:** `direction` — Direction and distance of extrusion.
+- **Parameters:** `direction`, Direction and distance of extrusion.
 - **Returns:** Extruded shape, or `nil` on failure.
 - **OCCT:** `LocOpe_Prism` (via `OCCTLocOpePrism`).
 
@@ -1459,8 +1459,8 @@ public func localPrism(direction: SIMD3<Double>, translation: SIMD3<Double>) -> 
 ```
 
 - **Parameters:**
-  - `direction` — Primary direction and distance of extrusion.
-  - `translation` — Secondary translation vector.
+  - `direction`: Primary direction and distance of extrusion.
+  - `translation`: Secondary translation vector.
 - **Returns:** Extruded shape, or `nil` on failure.
 - **OCCT:** `LocOpe_Prism` (via `OCCTLocOpePrismWithTranslation`).
 
@@ -1483,9 +1483,9 @@ public struct VolumeInertia: Sendable {
 }
 ```
 
-- `inertiaTensor` — 9-element row-major 3×3 inertia tensor.
-- `gyrationRadii` — Radii of gyration about the three principal axes.
-- `hasSymmetryAxis`/`hasSymmetryPoint` — Added in #848 to match `InertiaProperties`, which has
+- `inertiaTensor`: 9-element row-major 3×3 inertia tensor.
+- `gyrationRadii`: Radii of gyration about the three principal axes.
+- `hasSymmetryAxis`/`hasSymmetryPoint`, Added in #848 to match `InertiaProperties`, which has
   always had these; both read them off the same `GProp_PrincipalProps` computation.
 
 ---
@@ -1596,9 +1596,9 @@ public func localRevolution(axisOrigin: SIMD3<Double>,
 Uses `LocOpe_Revol` for local revolution operations with shape tracking.
 
 - **Parameters:**
-  - `axisOrigin` — Origin point of the rotation axis.
-  - `axisDirection` — Direction of the rotation axis.
-  - `angle` — Rotation angle in radians.
+  - `axisOrigin`: Origin point of the rotation axis.
+  - `axisDirection`: Direction of the rotation axis.
+  - `angle`: Rotation angle in radians.
 - **Returns:** Revolved shape, or `nil` on failure.
 - **OCCT:** `LocOpe_Revol` (via `OCCTLocOpeRevol`).
 
@@ -1616,10 +1616,10 @@ public func localRevolution(axisOrigin: SIMD3<Double>,
 ```
 
 - **Parameters:**
-  - `axisOrigin` — Origin point of the rotation axis.
-  - `axisDirection` — Direction of the rotation axis.
-  - `angle` — Rotation angle in radians.
-  - `angularOffset` — Angular offset for positioning in radians.
+  - `axisOrigin`: Origin point of the rotation axis.
+  - `axisDirection`: Direction of the rotation axis.
+  - `angle`: Rotation angle in radians.
+  - `angularOffset`: Angular offset for positioning in radians.
 - **Returns:** Revolved shape, or `nil` on failure.
 - **OCCT:** `LocOpe_Revol` (via `OCCTLocOpeRevolWithOffset`).
 
@@ -1638,9 +1638,9 @@ public func draftPrism(height1: Double, height2: Double, angle: Double) -> Shape
 ```
 
 - **Parameters:**
-  - `height1` — First height.
-  - `height2` — Second height.
-  - `angle` — Draft angle in radians.
+  - `height1`: First height.
+  - `height2`: Second height.
+  - `angle`: Draft angle in radians.
 - **Returns:** Draft prism shape, or `nil` on failure.
 - **OCCT:** `LocOpe_DPrism` (via `OCCTLocOpeDPrism`).
 
@@ -1655,8 +1655,8 @@ public func draftPrism(height: Double, angle: Double) -> Shape?
 ```
 
 - **Parameters:**
-  - `height` — Extrusion height.
-  - `angle` — Draft angle in radians.
+  - `height`: Extrusion height.
+  - `angle`: Draft angle in radians.
 - **Returns:** Draft prism shape, or `nil` on failure.
 - **OCCT:** `LocOpe_DPrism` (via `OCCTLocOpeDPrismSingleHeight`).
 
@@ -1702,10 +1702,10 @@ public static func constrainedFill(edge1: Edge, edge2: Edge, edge3: Edge,
 ```
 
 - **Parameters:**
-  - `edge1`, `edge2`, `edge3` — Required boundary edges.
-  - `edge4` — Optional fourth boundary edge; pass `nil` for a 3-sided fill.
-  - `maxDegree` — Maximum BSpline degree.
-  - `maxSegments` — Maximum number of segments.
+  - `edge1`, `edge2`, `edge3`, Required boundary edges.
+  - `edge4`: Optional fourth boundary edge; pass `nil` for a 3-sided fill.
+  - `maxDegree`: Maximum BSpline degree.
+  - `maxSegments`: Maximum number of segments.
 - **Returns:** Face shape built on the filled BSpline surface, or `nil` on failure.
 - **OCCT:** `GeomFill_ConstrainedFilling` (via `OCCTGeomFillConstrained`).
 
@@ -1991,7 +1991,7 @@ Check the validity of this face using `BRepCheck_Face`.
 public var faceCheckResult: Shape.CheckResult { get }
 ```
 
-More targeted than `Shape.checkResult` — includes wire intersection checks and face-specific validation.
+More targeted than `Shape.checkResult`, includes wire intersection checks and face-specific validation.
 
 - **Returns:** Check result.
 - **OCCT:** `BRepCheck_Face` (via `OCCTCheckFace`).
@@ -2008,7 +2008,7 @@ Perform a pipe sweep of this shape along a wire spine with shape tracking.
 public func localPipe(along spine: Wire) -> Shape?
 ```
 
-- **Parameters:** `spine` — Wire spine to sweep along.
+- **Parameters:** `spine`, Wire spine to sweep along.
 - **Returns:** Swept shape, or `nil` on failure.
 - **OCCT:** `LocOpe_Pipe` (via `OCCTLocOpePipe`).
 
@@ -2025,9 +2025,9 @@ public func localLinearForm(direction: SIMD3<Double>,
 ```
 
 - **Parameters:**
-  - `direction` — Direction vector of the sweep.
-  - `start` — Start point of the sweep.
-  - `end` — End point of the sweep.
+  - `direction`: Direction vector of the sweep.
+  - `start`: Start point of the sweep.
+  - `end`: End point of the sweep.
 - **Returns:** Swept shape, or `nil` on failure.
 - **OCCT:** `LocOpe_LinearForm` (via `OCCTLocOpeLinearForm`).
 
@@ -2044,9 +2044,9 @@ public func localRevolutionForm(axisOrigin: SIMD3<Double>,
 ```
 
 - **Parameters:**
-  - `axisOrigin` — Origin point of the rotation axis.
-  - `axisDirection` — Direction of the rotation axis.
-  - `angle` — Rotation angle in radians.
+  - `axisOrigin`: Origin point of the rotation axis.
+  - `axisDirection`: Direction of the rotation axis.
+  - `angle`: Rotation angle in radians.
 - **Returns:** Revolved shape, or `nil` on failure.
 - **OCCT:** `LocOpe_RevolutionForm` (via `OCCTLocOpeRevolutionForm`).
 
@@ -2061,8 +2061,8 @@ public func splitFace(at faceIndex: Int, with wire: Wire) -> Shape?
 ```
 
 - **Parameters:**
-  - `faceIndex` — 0-based index of the face to split.
-  - `wire` — Wire lying on the face that defines the split.
+  - `faceIndex`: 0-based index of the face to split.
+  - `wire`: Wire lying on the face that defines the split.
 - **Returns:** Modified shape with the face split, or `nil` on failure.
 - **OCCT:** `LocOpe_SplitShape` (via `OCCTLocOpeSplitShapeByWire`).
 
@@ -2077,8 +2077,8 @@ public func splitEdge(at edgeIndex: Int, parameter: Double) -> Shape?
 ```
 
 - **Parameters:**
-  - `edgeIndex` — 0-based index of the edge to split.
-  - `parameter` — Parameter along the edge (0.0–1.0) where the split occurs.
+  - `edgeIndex`: 0-based index of the edge to split.
+  - `parameter`: Parameter along the edge (0.0–1.0) where the split occurs.
 - **Returns:** The split edge parts as a compound, or `nil` on failure.
 - **OCCT:** `LocOpe_SplitShape` (via `OCCTLocOpeSplitShapeByVertex`).
 
@@ -2097,12 +2097,12 @@ public func splitDrafts(faceIndex: Int, wire: Wire,
 ```
 
 - **Parameters:**
-  - `faceIndex` — 0-based index of the face to split.
-  - `wire` — Wire defining the split line.
-  - `direction` — Extraction direction.
-  - `planeOrigin` — Origin of the neutral plane.
-  - `planeNormal` — Normal of the neutral plane.
-  - `angle` — Draft angle in radians.
+  - `faceIndex`: 0-based index of the face to split.
+  - `wire`: Wire defining the split line.
+  - `direction`: Extraction direction.
+  - `planeOrigin`: Origin of the neutral plane.
+  - `planeNormal`: Normal of the neutral plane.
+  - `angle`: Draft angle in radians.
 - **Returns:** Modified shape with draft, or `nil` on failure.
 - **OCCT:** `LocOpe_SplitDrafts` (via `OCCTLocOpeSplitDrafts`).
 - **Note:** `LocOpe_SplitDrafts::Perform()` can throw on incompatible geometry; the bridge wraps it in a try-catch.
@@ -2128,11 +2128,11 @@ let rounded = lower.filleted(edges: seam, radius: 1)
 `LocOpe_FindEdges` reports one entry per matched *pair*, so one edge of this shape can appear more
 than once. Dedupe on `Edge.index` if you need one entry per distinct edge.
 
-- **Parameters:** `other` — Shape to compare with.
+- **Parameters:** `other`, Shape to compare with.
 - **Returns:** Array of common edges (up to 100), each with a valid index into `edges()`.
 - **OCCT:** `LocOpe_FindEdges` (via `OCCTLocOpeFindEdges`).
 - **Changed in #613:** `Edge.index` was the position in the result array, not an index into
-  `edges()`, so it addressed a different edge — or none.
+  `edges()`, so it addressed a different edge, or none.
 
 ---
 
@@ -2154,11 +2154,11 @@ let e = onTop[0]
 block.edge(at: e.index)   // the very same edge
 ```
 
-- **Parameters:** `faceIndex` — 0-based index of the face to check, in the `faces()` enumeration.
+- **Parameters:** `faceIndex`, 0-based index of the face to check, in the `faces()` enumeration.
 - **Returns:** Array of edges found in the face (up to 100), each with a valid index into `edges()`.
 - **OCCT:** `LocOpe_FindEdgesInFace` (via `OCCTLocOpeFindEdgesInFace`).
 - **Changed in #613:** as for `commonEdges(with:)`. Measured on a 10 mm box, `edgesInFace(at: 3)`
-  handed back 0, 1, 2, 3 for edges whose real indices are 2, 6, 10 and 11 — all four naming a
+  handed back 0, 1, 2, 3 for edges whose real indices are 2, 6, 10 and 11, all four naming a
   different edge, 10.00, 12.25, 7.07 and 12.25 mm away.
 
 ---
@@ -2196,8 +2196,8 @@ public func intersectLine(origin: SIMD3<Double>, direction: SIMD3<Double>) -> [C
 ```
 
 - **Parameters:**
-  - `origin` — Line origin.
-  - `direction` — Line direction.
+  - `origin`: Line origin.
+  - `direction`: Line direction.
 - **Returns:** Array of intersection points with curve parameters and face UV coordinates.
 - **OCCT:** `LocOpe_CSIntersector` (via `OCCTLocOpeCSIntersectLine`).
 - **Note:** This overload returns `[CSIntersection]` with face UV. A separate `IntCurvesFace`-backed overload in v0.61.0 returns `[LineFaceIntersection]`.
@@ -2212,7 +2212,7 @@ Perform comprehensive validity analysis on this shape.
 public func analyzeValidity(geometryChecks: Bool = true) -> Bool
 ```
 
-- **Parameters:** `geometryChecks` — Whether to include geometry-level checks.
+- **Parameters:** `geometryChecks`, Whether to include geometry-level checks.
 - **Returns:** `true` if the shape is valid.
 - **OCCT:** `BRepCheck_Analyzer` (via `OCCTBRepCheckAnalyzerIsValid`).
 
@@ -2226,14 +2226,14 @@ Check if a specific sub-shape is valid within this shape's context.
 public func isSubShapeValid(type: ShapeType, at index: Int) -> Bool
 ```
 
-Used to take a local `Shape.TopAbs_ShapeEnum` enum — a third independent mirror of the canonical
+Used to take a local `Shape.TopAbs_ShapeEnum` enum, a third independent mirror of the canonical
 `ShapeType` (see "Shape-Features"), used only by this one method. Switched to `ShapeType` directly
 and the local enum removed (#844); `ShapeType`'s raw values already match the real
 `TopAbs_ShapeEnum` ordinals this method's bridge call expects.
 
 - **Parameters:**
-  - `type` — Type of sub-shape to check.
-  - `index` — 0-based index of the sub-shape.
+  - `type`: Type of sub-shape to check.
+  - `index`: 0-based index of the sub-shape.
 - **Returns:** `true` if the sub-shape is valid.
 - **OCCT:** `BRepCheck_Analyzer` (via `OCCTBRepCheckSubShapeValid`).
 
@@ -2247,7 +2247,7 @@ Check validity of an edge by index.
 public func checkEdge(at index: Int) -> CheckResult
 ```
 
-- **Parameters:** `index` — 0-based edge index.
+- **Parameters:** `index`, 0-based edge index.
 - **Returns:** Check result for the specified edge.
 - **OCCT:** `BRepCheck_Edge` (via `OCCTCheckEdge`).
 
@@ -2299,8 +2299,8 @@ public func limitTolerance(min: Double, max: Double) -> Bool
 ```
 
 - **Parameters:**
-  - `min` — Minimum tolerance.
-  - `max` — Maximum tolerance.
+  - `min`: Minimum tolerance.
+  - `max`: Maximum tolerance.
 - **Returns:** `true` if any tolerance was changed.
 - **OCCT:** `ShapeFix_ShapeTolerance::LimitTolerance` (via `OCCTShapeFixLimitTolerance`).
 
@@ -2314,7 +2314,7 @@ Set all tolerances in this shape to a specific value.
 public func setTolerance(_ tolerance: Double)
 ```
 
-- **Parameters:** `tolerance` — Tolerance value to set on all sub-shapes.
+- **Parameters:** `tolerance`, Tolerance value to set on all sub-shapes.
 - **OCCT:** `ShapeFix_ShapeTolerance::SetTolerance` (via `OCCTShapeFixSetTolerance`).
 
 ---
@@ -2340,7 +2340,7 @@ Connect adjacent faces in this shape's shell.
 public func connectedFaces(tolerance: Double = 1e-4) -> Shape?
 ```
 
-- **Parameters:** `tolerance` — Connection tolerance.
+- **Parameters:** `tolerance`, Connection tolerance.
 - **Returns:** Fixed shape with connected faces, or `nil` on failure.
 - **OCCT:** `ShapeFix_FaceConnect` (via `OCCTShapeFixFaceConnect`).
 
@@ -2355,7 +2355,7 @@ Fix same-parameter inconsistencies on all edges.
 public func fixEdgeSameParameter(tolerance: Double = 0) -> Int
 ```
 
-- **Parameters:** `tolerance` — Fixing tolerance (0 = default).
+- **Parameters:** `tolerance`, Fixing tolerance (0 = default).
 - **Returns:** Number of edges fixed.
 - **OCCT:** `ShapeFix_Edge::FixSameParameter` (via `OCCTShapeFixEdgeSameParameter`).
 
@@ -2384,7 +2384,7 @@ Fix vertex issues in all wires of this shape.
 public func fixWireVertices(precision: Double = 1e-4) -> Int
 ```
 
-- **Parameters:** `precision` — Precision for fixing.
+- **Parameters:** `precision`, Precision for fixing.
 - **Returns:** Number of fixes applied.
 - **OCCT:** `ShapeFix_WireVertex` (via `OCCTShapeFixWireVertex`).
 
@@ -2426,9 +2426,9 @@ public func edgeEdgeExtrema(edgeIndex1: Int, other: Shape, edgeIndex2: Int) -> E
 ```
 
 - **Parameters:**
-  - `edgeIndex1` — 0-based index of the first edge in this shape.
-  - `other` — Shape containing the second edge.
-  - `edgeIndex2` — 0-based index of the second edge in `other`.
+  - `edgeIndex1`: 0-based index of the first edge in this shape.
+  - `other`: Shape containing the second edge.
+  - `edgeIndex2`: 0-based index of the second edge in `other`.
 - **Returns:** Extrema result, or `nil` if no solutions or if edges are parallel.
 - **OCCT:** `BRepExtrema_ExtCC` (via `OCCTBRepExtremaExtCC`).
 - **Note:** Returns `nil` when edges are parallel (`isParallel == true`). Check `solutionCount > 0` guards this in the bridge.
@@ -2469,8 +2469,8 @@ public func pointFaceExtrema(point: SIMD3<Double>, faceIndex: Int) -> PointFaceE
 ```
 
 - **Parameters:**
-  - `point` — 3D point.
-  - `faceIndex` — 0-based face index in this shape.
+  - `point`: 3D point.
+  - `faceIndex`: 0-based face index in this shape.
 - **Returns:** Extrema result, or `nil` on failure.
 - **OCCT:** `BRepExtrema_ExtPF` (via `OCCTBRepExtremaExtPF`).
 
@@ -2515,9 +2515,9 @@ public func faceFaceExtrema(faceIndex1: Int, other: Shape, faceIndex2: Int) -> F
 ```
 
 - **Parameters:**
-  - `faceIndex1` — 0-based index of the first face in this shape.
-  - `other` — Shape containing the second face.
-  - `faceIndex2` — 0-based index of the second face in `other`.
+  - `faceIndex1`: 0-based index of the first face in this shape.
+  - `other`: Shape containing the second face.
+  - `faceIndex2`: 0-based index of the second face in `other`.
 - **Returns:** Extrema result, or `nil` on failure.
 - **OCCT:** `BRepExtrema_ExtFF` (via `OCCTBRepExtremaExtFF`).
 
@@ -2533,7 +2533,7 @@ public func dividedClosedFaces(splitPoints: Int = 1) -> Shape?
 
 Uses `ShapeUpgrade_ShapeDivideClosed` to split faces that wrap completely around (e.g., the lateral face of a cylinder).
 
-- **Parameters:** `splitPoints` — Number of split points per closed face.
+- **Parameters:** `splitPoints`, Number of split points per closed face.
 - **Returns:** Shape with divided faces, or `nil` on failure.
 - **OCCT:** `ShapeUpgrade_ShapeDivideClosed` (via `OCCTShapeUpgradeDivideClosed`).
 
@@ -2608,7 +2608,7 @@ public struct PointEdgeExtrema: Sendable {
 }
 ```
 
-`solutionCount` is how many perpendicular feet the point has on the edge — `BRepExtrema_ExtPC`'s
+`solutionCount` is how many perpendicular feet the point has on the edge, `BRepExtrema_ExtPC`'s
 extrema count, reported for its own sake. Zero means the nearest point is one of the edge's two
 ends. A non-zero count does **not** mean the nearest point is one of those feet: an extremum can be
 a maximum. Read `distance` / `parameter` / `pointOnEdge` for the answer (#580).
@@ -2633,10 +2633,10 @@ public func pointEdgeExtrema(point: SIMD3<Double>, edgeIndex: Int) -> PointEdgeE
 let arc = Shape.fromWire(Wire.arc(
     center: SIMD3(0, 0, 0), radius: 5, startAngle: 0, endAngle: .pi)!)!
 
-// Below the arc, the nearest point is an end — the only extremum is the far side of it.
+// Below the arc, the nearest point is an end, the only extremum is the far side of it.
 if let hit = arc.pointEdgeExtrema(point: SIMD3(0, -6, 0), edgeIndex: 0) {
     print(hit.distance)       // 7.81, to the end at (5, 0, 0). Was 11, the far side.
-    print(hit.solutionCount)  // 1 — and that one extremum is a maximum
+    print(hit.solutionCount)  // 1, and that one extremum is a maximum
 }
 
 let segment = Shape.fromWire(Wire.line(from: SIMD3(3, 0, 0), to: SIMD3(8, 0, 0))!)!
@@ -2646,8 +2646,8 @@ if let hit = segment.pointEdgeExtrema(point: SIMD3(100, 0, 0), edgeIndex: 0) {
 ```
 
 - **Parameters:**
-  - `point` — 3D point.
-  - `edgeIndex` — 0-based edge index, in the enumeration `edges()` reads.
+  - `point`: 3D point.
+  - `edgeIndex`: 0-based edge index, in the enumeration `edges()` reads.
 - **Returns:** The nearest-point result, or `nil` if there is no such edge index or that edge has no
   3D curve.
 - **OCCT:** `ShapeAnalysis_Curve` + `GeomAPI_ProjectPointOnCurve` + the edge's ends, via
@@ -2655,7 +2655,7 @@ if let hit = segment.pointEdgeExtrema(point: SIMD3(100, 0, 0), edgeIndex: 0) {
   `BRepExtrema_ExtPC` supplies `solutionCount` only.
 - **Changed in #580:** this used to report the minimum over `BRepExtrema_ExtPC`'s extrema, which
   excludes the edge's ends, and to answer `nil` whenever no extremum existed. It also indexed edges
-  by a bare `TopExp_Explorer` walk, which counts one entry per occurrence — from index 9 a box's
+  by a bare `TopExp_Explorer` walk, which counts one entry per occurrence, from index 9 a box's
   edges disagreed with `edges()`.
 
 ---
@@ -2705,9 +2705,9 @@ public func edgeFaceExtrema(edgeIndex: Int, other: Shape, faceIndex: Int) -> Edg
 ```
 
 - **Parameters:**
-  - `edgeIndex` — 0-based edge index in this shape.
-  - `other` — Shape containing the face.
-  - `faceIndex` — 0-based face index in `other`.
+  - `edgeIndex`: 0-based edge index in this shape.
+  - `other`: Shape containing the face.
+  - `faceIndex`: 0-based face index in `other`.
 - **Returns:** Extrema result, or `nil` if parallel or computation fails.
 - **OCCT:** `BRepExtrema_ExtCF` (via `OCCTBRepExtremaExtCF`).
 - **Note:** When `isParallel` is `true`, the returned struct has zero distance and `solutionCount == 0`.
@@ -2722,7 +2722,7 @@ Remove small solids from this shape based on volume threshold.
 public func removeSmallSolids(volumeThreshold: Double) -> Shape?
 ```
 
-- **Parameters:** `volumeThreshold` — Solids with volume below this threshold are removed.
+- **Parameters:** `volumeThreshold`, Solids with volume below this threshold are removed.
 - **Returns:** Shape with small solids removed, or `nil` on failure.
 - **OCCT:** `ShapeFix_FixSmallSolid` (via `OCCTShapeFixRemoveSmallSolids`).
 
@@ -2738,7 +2738,7 @@ public func mergeSmallSolids(widthFactorThreshold: Double) -> Shape?
 
 Small solids are merged into their neighbors rather than removed.
 
-- **Parameters:** `widthFactorThreshold` — Width factor below which solids are merged.
+- **Parameters:** `widthFactorThreshold`, Width factor below which solids are merged.
 - **Returns:** Shape with small solids merged, or `nil` on failure.
 - **OCCT:** `ShapeFix_FixSmallSolid` (via `OCCTShapeFixMergeSmallSolids`).
 
@@ -2767,18 +2767,18 @@ public func bsplineRestriction(
 ```
 
 - **Parameters:**
-  - `tol3d` — 3D approximation tolerance.
-  - `tol2d` — 2D approximation tolerance.
-  - `maxDegree` — Maximum BSpline degree.
-  - `maxSegments` — Maximum number of segments.
-  - `continuity3d` — 3D continuity **ceiling**, not a guarantee. `.c3` is rejected outright and
+  - `tol3d`: 3D approximation tolerance.
+  - `tol2d`: 2D approximation tolerance.
+  - `maxDegree`: Maximum BSpline degree.
+  - `maxSegments`: Maximum number of segments.
+  - `continuity3d`: 3D continuity **ceiling**, not a guarantee. `.c3` is rejected outright and
     fails the whole call, so `.c2` is the practical maximum; below that, OCCT reduces the continuity
     it delivers with no diagnostic whenever the requested one cannot meet `tol3d` within `maxDegree`,
     and with `degreePriority` it degrades all the way to C0. Measured in #570, a face on an offset
     sphere returns the identical C0 result for `.c0`, `.c1` and `.c2`.
-  - `continuity2d` — 2D continuity requirement, same ceiling and same `.c3` limit.
-  - `degreePriority` — If `true`, prioritize degree reduction over segment reduction.
-  - `rational` — Allow rational BSplines.
+  - `continuity2d`: 2D continuity requirement, same ceiling and same `.c3` limit.
+  - `degreePriority`: If `true`, prioritize degree reduction over segment reduction.
+  - `rational`: Allow rational BSplines.
 - **Returns:** Simplified shape, or `nil` on failure.
 - **OCCT:** `ShapeCustom::BSplineRestriction` (via `OCCTShapeCustomBSplineRestriction`).
 
@@ -2881,8 +2881,8 @@ public func closedFreeBoundInfo(tolerance: Double, index: Int) -> FreeBoundInfo?
 
 - **Note:** Unaffected by OCCT 8.0.1's `ConnectEdgesToWires` INTERNAL/EXTERNAL skip (OCCT#1408), at any tolerance; see [`freeBounds(sewingTolerance:)`](#freeboundssewingtolerance) for why, on both branches. See [#655](https://github.com/SecondMouseAU/OCCTSwift/issues/655).
 - **Parameters:**
-  - `tolerance` — Same tolerance used for `freeBoundsAnalysis(tolerance:)`.
-  - `index` — 0-based index of the closed free bound.
+  - `tolerance`: Same tolerance used for `freeBoundsAnalysis(tolerance:)`.
+  - `index`: 0-based index of the closed free bound.
 - **Returns:** Properties, or `nil` if the index is out of range.
 - **OCCT:** `ShapeAnalysis_FreeBoundsProperties` (via `OCCTFreeBoundsPropsInfo`).
 
@@ -2898,8 +2898,8 @@ public func openFreeBoundInfo(tolerance: Double, index: Int) -> FreeBoundInfo?
 
 - **Note:** Unaffected by OCCT 8.0.1's `ConnectEdgesToWires` INTERNAL/EXTERNAL skip (OCCT#1408), at any tolerance; see [`freeBounds(sewingTolerance:)`](#freeboundssewingtolerance) for why, on both branches. See [#655](https://github.com/SecondMouseAU/OCCTSwift/issues/655).
 - **Parameters:**
-  - `tolerance` — Same tolerance used for `freeBoundsAnalysis(tolerance:)`.
-  - `index` — 0-based index of the open free bound.
+  - `tolerance`: Same tolerance used for `freeBoundsAnalysis(tolerance:)`.
+  - `index`: 0-based index of the open free bound.
 - **Returns:** Properties, or `nil` if the index is out of range.
 - **OCCT:** `ShapeAnalysis_FreeBoundsProperties` (via `OCCTFreeBoundsPropsInfo`).
 
@@ -2915,8 +2915,8 @@ public func closedFreeBoundWire(tolerance: Double, index: Int) -> Shape?
 
 - **Note:** Unaffected by OCCT 8.0.1's `ConnectEdgesToWires` INTERNAL/EXTERNAL skip (OCCT#1408), at any tolerance; see [`freeBounds(sewingTolerance:)`](#freeboundssewingtolerance) for why, on both branches. See [#655](https://github.com/SecondMouseAU/OCCTSwift/issues/655).
 - **Parameters:**
-  - `tolerance` — Same tolerance used for `freeBoundsAnalysis(tolerance:)`.
-  - `index` — 0-based index of the closed free bound.
+  - `tolerance`: Same tolerance used for `freeBoundsAnalysis(tolerance:)`.
+  - `index`: 0-based index of the closed free bound.
 - **Returns:** Wire as a `Shape`, or `nil` if the index is out of range.
 - **OCCT:** `ShapeAnalysis_FreeBoundsProperties` (via `OCCTFreeBoundsPropsWire`).
 
@@ -2932,8 +2932,8 @@ public func openFreeBoundWire(tolerance: Double, index: Int) -> Shape?
 
 - **Note:** Unaffected by OCCT 8.0.1's `ConnectEdgesToWires` INTERNAL/EXTERNAL skip (OCCT#1408), at any tolerance; see [`freeBounds(sewingTolerance:)`](#freeboundssewingtolerance) for why, on both branches. See [#655](https://github.com/SecondMouseAU/OCCTSwift/issues/655).
 - **Parameters:**
-  - `tolerance` — Same tolerance used for `freeBoundsAnalysis(tolerance:)`.
-  - `index` — 0-based index of the open free bound.
+  - `tolerance`: Same tolerance used for `freeBoundsAnalysis(tolerance:)`.
+  - `index`: 0-based index of the open free bound.
 - **Returns:** Wire as a `Shape`, or `nil` if the index is out of range.
 - **OCCT:** `ShapeAnalysis_FreeBoundsProperties` (via `OCCTFreeBoundsPropsWire`).
 

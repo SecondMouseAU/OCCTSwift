@@ -7,7 +7,7 @@
 
 📖 **Documentation & cookbook:** <https://secondmouseau.github.io/OCCTSwift/>
 
-A comprehensive Swift wrapper for [OpenCASCADE Technology (OCCT)](https://www.opencascade.com/) 8.0.1, providing B-Rep solid modeling for macOS and iOS. **v3.0.0 — SemVer-stable; see [SEMVER.md](docs/SEMVER.md#v300) before upgrading from v2.x.**
+A comprehensive Swift wrapper for [OpenCASCADE Technology (OCCT)](https://www.opencascade.com/) 8.0.1, providing B-Rep solid modeling for macOS and iOS. **v3.0.0. SemVer-stable; see [SEMVER.md](docs/SEMVER.md#v300) before upgrading from v2.x.**
 
 **4,350 wrapped operations** | macOS 12+ / iOS 15+ (arm64), visionOS and tvOS untested | OCCT 8.0.1
 
@@ -54,15 +54,15 @@ OCCTSwift is the kernel of a layered family of packages, all SemVer-stable from 
 
 | Package | Role |
 |---------|------|
-| **OCCTSwift** (this repo) | Core Swift wrapper — shapes, curves, surfaces, OCAF, BRepGraph, drawing/projection, ML samplers. Bundles the OCCT 8.0.0p1 xcframework. |
-| [OCCTSwiftIO](https://github.com/SecondMouseAU/OCCTSwiftIO) | Headless CAD file I/O — STEP / IGES / STL / OBJ / BREP loaders + glTF / GLB / OBJ / PLY / STEP / BREP exporters. No Viewport dep. |
-| [OCCTSwiftMesh](https://github.com/SecondMouseAU/OCCTSwiftMesh) | Mesh-domain algorithms — decimation, smoothing, repair (vendors `meshoptimizer`). |
+| **OCCTSwift** (this repo) | Core Swift wrapper, shapes, curves, surfaces, OCAF, BRepGraph, drawing/projection, ML samplers. Bundles the OCCT 8.0.0p1 xcframework. |
+| [OCCTSwiftIO](https://github.com/SecondMouseAU/OCCTSwiftIO) | Headless CAD file I/O. STEP / IGES / STL / OBJ / BREP loaders + glTF / GLB / OBJ / PLY / STEP / BREP exporters. No Viewport dep. |
+| [OCCTSwiftMesh](https://github.com/SecondMouseAU/OCCTSwiftMesh) | Mesh-domain algorithms, decimation, smoothing, repair (vendors `meshoptimizer`). |
 | [OCCTSwiftViewport](https://github.com/SecondMouseAU/OCCTSwiftViewport) | Metal-based 3D viewport component (UIKit / AppKit / SwiftUI). |
 | [OCCTSwiftTools](https://github.com/SecondMouseAU/OCCTSwiftTools) | Bridge layer: converts kernel `Shape` to `ViewportBody` with picking metadata. |
-| [OCCTSwiftAIS](https://github.com/SecondMouseAU/OCCTSwiftAIS) | High-level interactive services — selection, manipulator widgets, dimension annotations, scene objects. |
-| [OCCTSwiftScripts](https://github.com/SecondMouseAU/OCCTSwiftScripts) | `occtkit` CLI + ScriptHarness — JSON-driven verbs for compose / reconstruct / drawing-export / metrics / mesh / render-preview / XCAF. |
+| [OCCTSwiftAIS](https://github.com/SecondMouseAU/OCCTSwiftAIS) | High-level interactive services, selection, manipulator widgets, dimension annotations, scene objects. |
+| [OCCTSwiftScripts](https://github.com/SecondMouseAU/OCCTSwiftScripts) | `occtkit` CLI + ScriptHarness. JSON-driven verbs for compose / reconstruct / drawing-export / metrics / mesh / render-preview / XCAF. |
 | [OCCTMCP](https://github.com/SecondMouseAU/OCCTMCP) | MCP server exposing CAD modeling to AI tools via Model Context Protocol. |
-| [simpleOCCTVP](https://github.com/SecondMouseAU/simpleOCCTVP) | Pure C API over OCCT for non-Swift consumers — shape I/O, healing, mesh extraction, offscreen rendering. |
+| [simpleOCCTVP](https://github.com/SecondMouseAU/simpleOCCTVP) | Pure C API over OCCT for non-Swift consumers, shape I/O, healing, mesh extraction, offscreen rendering. |
 
 ## What's Wrapped
 
@@ -74,8 +74,8 @@ OCCTSwift provides method-level coverage of all user-facing OCCT classes. Key ar
 | Booleans | 13 | union, subtract, intersect, section, split, cells builder, defeaturing |
 | Modifications | 33 | fillet (uniform/variable/evolving), chamfer, shell, offset, draft |
 | Wires & Edges | 56 | rectangle, circle, polygon, arc, BSpline, NURBS, helix, fillet2D, chamfer2D |
-| 2D Curves | 97 | full Geom2d — lines, conics, BSplines, Bezier, Gcc constraint solver, hatching |
-| 3D Curves | 84 | full Geom — lines, conics, BSplines, Bezier, interpolation, projection, evaluation |
+| 2D Curves | 97 | full Geom2d, lines, conics, BSplines, Bezier, Gcc constraint solver, hatching |
+| 3D Curves | 84 | full Geom, lines, conics, BSplines, Bezier, interpolation, projection, evaluation |
 | Surfaces | 88 | analytic, swept, freeform, plate, NLPlate, curvature, projection, trimming (rectangular UV, UV-polygon, or 3D-wire bounded) |
 | Face / Edge Analysis | 54 | UV queries, normals, curvature, projection, classification, primary axis, surface type predicates |
 | Feature-Based | 36 | boss, pocket, drill, split, pattern, rib, revolution, draft prism |
@@ -88,7 +88,7 @@ OCCTSwift provides method-level coverage of all user-facing OCCT classes. Key ar
 | Geometry Factories | 90+ | GC/GCE2d/gce factories, convert to BSpline, analytical recognition |
 | Drawings & Dimensions | 32 | HLR projection, visible/hidden/outline edges, linear/radial/diameter/angular dimensions, centrelines, auto-centreline from revolution axes, DXF R12 writer |
 | Thread Features | 23 | ThreadForm (ISO-68/Unified), ThreadSpec parser (M5x0.8, 1/4-20 UNC), truncated 60° V-profile, multi-start, runout styles, Shape.threadedHole, Shape.threadedShaft (smooth direct build, single- & multi-start #213/#257; ThreadBuild `.auto`/`.direct`, `.boolean` deprecated #254), Shape.threadedRod (smooth worm/screw from a custom ThreadProfile, boolean-free) |
-| Sheet Metal | 3 | `SheetMetal.Flange` + `Bend` + `Builder.build` — declarative flange-and-bend composition via extrude + union + fillet |
+| Sheet Metal | 3 | `SheetMetal.Flange` + `Bend` + `Builder.build`, declarative flange-and-bend composition via extrude + union + fillet |
 
 For the full operation-by-operation mapping to OCCT classes, see [docs/API_REFERENCE.md](docs/API_REFERENCE.md).
 
@@ -163,16 +163,16 @@ Each OCCT object is managed via opaque handle types with release-on-deinit. See 
 | macOS 12+ | arm64 (Apple Silicon) | Supported |
 | iOS 15+ device | arm64 | Supported |
 | iOS 15+ Simulator | arm64 (Apple Silicon host) | Supported |
-| visionOS 1+ | arm64 device + simulator | **Untested** — declared and buildable, never exercised (see below) |
-| tvOS 15+ | arm64 device + simulator | **Untested** — declared and buildable, never exercised (see below) |
-| watchOS | — | Out of scope (OCCT static lib too large for watch memory) |
-| macOS x86_64 (Intel) | — | Out of scope (Apple is winding down Intel macOS support) |
-| Linux / Windows / Android | — | Under review — see [docs/platform-expansion.md](docs/platform-expansion.md) |
+| visionOS 1+ | arm64 device + simulator | **Untested**, declared and buildable, never exercised (see below) |
+| tvOS 15+ | arm64 device + simulator | **Untested**, declared and buildable, never exercised (see below) |
+| watchOS |, | Out of scope (OCCT static lib too large for watch memory) |
+| macOS x86_64 (Intel) |, | Out of scope (Apple is winding down Intel macOS support) |
+| Linux / Windows / Android |, | Under review, see [docs/platform-expansion.md](docs/platform-expansion.md) |
 
 **On visionOS and tvOS.** `Package.swift` declares both and `Scripts/build-occt.sh` builds slices for
 both under `BUILD_ALL_PLATFORMS=1`, so they are expected to work. But **nothing has been tested on
-either**, and the released `OCCT.xcframework` carries only the three core slices — `macos-arm64`,
-`ios-arm64`, `ios-arm64-simulator` — because the full seven-slice artifact is roughly twice the size
+either**, and the released `OCCT.xcframework` carries only the three core slices, `macos-arm64`,
+`ios-arm64`, `ios-arm64-simulator`, because the full seven-slice artifact is roughly twice the size
 and nobody has shipped against the other four.
 
 So a consumer targeting visionOS or tvOS has to rebuild the kernel locally with
@@ -202,14 +202,14 @@ See [docs/guides/prebuilt-bridge.md](docs/guides/prebuilt-bridge.md).
 | Document | Description |
 |----------|-------------|
 | [Ecosystem](docs/ecosystem.md) | Map of the package family, dependency layering, when to use which |
-| [SemVer Policy](docs/SEMVER.md) | Versioning rules for the cohort — what triggers MAJOR / MINOR / PATCH |
+| [SemVer Policy](docs/SEMVER.md) | Versioning rules for the cohort, what triggers MAJOR / MINOR / PATCH |
 | [Architecture Overview](docs/architecture/overview.md) | Three-layer design, memory management, conventions |
 | [Adding Features](docs/guides/adding-features.md) | How to wrap new OCCT operations |
 | [OCCT Concepts](docs/guides/occt-concepts.md) | B-Rep topology, handles, shapes primer |
 | [Sharing the xcframework](docs/guides/sharing-the-xcframework.md) | Share one local copy across ecosystem repos + the `Package.resolved` pin footgun (#260) |
-| [Prebuilt OCCTBridge](docs/guides/prebuilt-bridge.md) | Opt-in prebuilt bridge binary (`OCCTSWIFT_BRIDGE_PREBUILT=1`) — skip compiling 62K lines of Obj-C++ per consumer rebuild (#339) |
+| [Prebuilt OCCTBridge](docs/guides/prebuilt-bridge.md) | Opt-in prebuilt bridge binary (`OCCTSWIFT_BRIDGE_PREBUILT=1`), skip compiling 62K lines of Obj-C++ per consumer rebuild (#339) |
 | [API Reference (mapping)](docs/API_REFERENCE.md) | Full operation-by-operation mapping to OCCT classes |
-| [API Reference (detailed)](docs/reference/) | Per-type function reference — signatures, OCCT mapping, examples (built progressively) |
+| [API Reference (detailed)](docs/reference/) | Per-type function reference, signatures, OCCT mapping, examples (built progressively) |
 | [Thread Safety](docs/thread-safety.md) | OCCTSerial mutex, parallel execution notes |
 | [Naming Conventions](docs/naming-conventions.md) | Bridge and Swift naming patterns |
 | [OCCT Upgrades](docs/occt-upgrades.md) | Breaking changes and migration for each OCCT version |

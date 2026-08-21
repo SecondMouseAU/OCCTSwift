@@ -267,7 +267,7 @@ OCCTCurve2DRef OCCTCurve2DApproximate(OCCTCurve2DRef curve,
 // `continuity` is a ContinuityRange (a literal derivative order, splitting where
 // `degree - multiplicity < continuity`), not a GeomAbs_Shape. See the #480 note in
 // OCCTBridge_Internal.h. Returns the TRUE split count even when writing was truncated by `max`, so
-// a caller that came up short can retry at the size it was just told — the #481 contract the rest
+// a caller that came up short can retry at the size it was just told, the #481 contract the rest
 // of this family already shares. It used to return the count it had written, which is
 // indistinguishable from a curve with exactly `max` splits (#562).
 int32_t OCCTCurve2DSplitAtDiscontinuities(OCCTCurve2DRef curve,
@@ -280,13 +280,13 @@ int32_t OCCTCurve2DToArcsAndSegments(OCCTCurve2DRef  curve,
                                      OCCTCurve2DRef* out,
                                      int32_t         max);
 
-// Issue #37 — parameter at arc length
+// Issue #37, parameter at arc length
 /// Returns the curve parameter at the given arc-length distance from fromParam.
 /// Pass the curve's FirstParameter() as fromParam to measure from the start.
 /// Returns -DBL_MAX on failure.
 double OCCTCurve2DParameterAtLength(OCCTCurve2DRef curve, double arcLength, double fromParam);
 
-// Issue #38 — interpolate with interior tangent constraints
+// Issue #38, interpolate with interior tangent constraints
 /// Interpolate through points with per-point tangent constraints.
 /// tangents: flat array of (tx, ty) pairs, one per point.
 /// tangentFlags: one bool per point; true means the tangent at that index is constrained.
@@ -298,7 +298,7 @@ OCCTCurve2DRef OCCTCurve2DInterpolateWithInteriorTangents(const double* points,
                                                           bool          closed,
                                                           double        tolerance);
 
-// Gcc Constraint Solver — Qualifier enum
+// Gcc Constraint Solver. Qualifier enum
 typedef enum
 {
   OCCTGccQualUnqualified = 0,
@@ -1226,7 +1226,7 @@ OCCTCurve2DRef _Nullable OCCTCurve2DSegmentFromPoints(OCCTPoint2DRef _Nonnull p1
                                                       OCCTPoint2DRef _Nonnull p2);
 
 /// Project a Point2D onto a Curve2D, returns parameter at closest point
-/// @param outDistance Output: minimum distance, or -1 on failure — this is the failure signal.
+/// @param outDistance Output: minimum distance, or -1 on failure, this is the failure signal.
 ///         Since #615 failure means only "no curve": the nearest point is taken over the curve's
 ///         own range, ends included, so a point with no perpendicular foot is answered.
 /// @return parameter on curve, or NaN on failure. Do NOT test the return value against 0: 0 is a
@@ -1236,7 +1236,7 @@ double OCCTCurve2DProjectPoint2D(OCCTCurve2DRef _Nonnull curve,
                                  OCCTPoint2DRef _Nonnull point,
                                  double* _Nonnull outDistance);
 
-// MARK: - v0.67.0: TKGeomAlgo Part 1 — FairCurve, LocalAnalysis, TopTrans
+// MARK: - v0.67.0: TKGeomAlgo Part 1. FairCurve, LocalAnalysis, TopTrans
 
 // --- FairCurve_Batten ---
 

@@ -687,7 +687,7 @@ extension Wire {
     /// Get the total length of the wire.
     ///
     /// A `BRepAdaptor_CompCurve` reports one `GeomAbs_CN` interval per edge span, so a wire of
-    /// lines and circles was always exact — but each span was integrated with a single Gauss
+    /// lines and circles was always exact, but each span was integrated with a single Gauss
     /// rule, so one elliptical edge in the wire measured 1.485% long. Each interval is now
     /// subdivided until two successive levels agree to 1e-9 relative (#603).
     ///
@@ -747,7 +747,7 @@ extension Wire {
     /// A straight line has curvature 0. A circle with radius R has curvature 1/R.
     ///
     /// `nil` means the wire cannot be evaluated at that parameter, or that its first derivative is
-    /// null there — a cusp, where the curvature formula divides by zero. That second case used to
+    /// null there, a cusp, where the curvature formula divides by zero. That second case used to
     /// come back as `0`, a straight wire's real answer, because only the error path reached this
     /// optional (#595). Unlike ``Curve3D/curvature(at:)`` a wire has no infinity sentinel to report
     /// at a cusp: `BRepAdaptor_CompCurve` computes the formula directly rather than through

@@ -16,14 +16,14 @@ The cheapest check is topological validity:
 
 ```swift
 let box = Shape.box(width: 10, height: 10, depth: 10)!
-box.isValid          // Bool — topology well-formed?
-box.isValidSolid     // Bool — a closed, properly-oriented solid? (topology only)
+box.isValid          // Bool, topology well-formed?
+box.isValidSolid     // Bool, a closed, properly-oriented solid? (topology only)
 ```
 
-`isValidSolid` is a **topology** check — it doesn't catch self-intersections. For that, run the
-geometry-level check. `timeout` is a *cooperative* bound, not a hard deadline — OCCT only checks it
+`isValidSolid` is a **topology** check, it doesn't catch self-intersections. For that, run the
+geometry-level check. `timeout` is a *cooperative* bound, not a hard deadline. OCCT only checks it
 at its own internal checkpoints, and one phase can run well past `timeout` before the next
-checkpoint (#293). It returns `nil` if it can't decide in time — don't treat `nil` as "clean":
+checkpoint (#293). It returns `nil` if it can't decide in time, don't treat `nil` as "clean":
 
 ```swift
 switch box.isSelfIntersecting(timeout: 30) {
@@ -47,13 +47,13 @@ if let report = box.analyze(tolerance: 1e-3) {
 ## Orientation: forward-facing solids
 
 A solid built by `sweep`/`loft`/`revolve` can come out **inward-oriented** (its faces point the
-wrong way), which breaks downstream booleans and `volume`. `signedVolume` reveals it — negative means
-reversed — and `orientedForward()` fixes it:
+wrong way), which breaks downstream booleans and `volume`. `signedVolume` reveals it, negative means
+reversed, and `orientedForward()` fixes it:
 
 ```swift
 let solid = Shape.sweep(profile: section, along: path)!
 if solid.signedVolume < 0 {
-    // faces point inward — flip them
+    // faces point inward, flip them
 }
 let forward = solid.orientedForward()!   // outward-oriented; positive volume
 ```
@@ -108,16 +108,16 @@ if let merged = body.unified(), merged.isValidSolid, merged.volume == body.volum
 ```
 
 `unified()`, `simplified()` and `UnifySameDomainBuilder` all work on a private copy, so that `else`
-branch is sound — the input survives a declined merge untouched. It did not before #446: the OCCT
+branch is sound, the input survives a declined merge untouched. It did not before #446: the OCCT
 algorithm rewrites sub-shapes of the shape it is handed, and those rewrites reached the caller's own
 shape, so a solid could come out of a *rejected* merge self-intersecting. The copy costs one shape
-duplication per call, and the result shares no sub-shapes with the input even where nothing merged —
+duplication per call, and the result shares no sub-shapes with the input even where nothing merged,
 so map selections and attributes across by geometry, not by `isSame(as:)`.
 
 ## Sewing faces into a shell
 
 Disconnected faces (e.g. from a surface model or a mesh conversion) become a watertight shell by
-**sewing** — matching up coincident edges within a tolerance:
+**sewing**: matching up coincident edges within a tolerance:
 
 ```swift
 // sew a list of faces into one shell
@@ -135,12 +135,12 @@ edges get merged. Match it to the data's precision.
 
 ## Finding and closing gaps
 
-`freeBounds` reports the open edges of a shell — a watertight solid has none (returns `nil`):
+`freeBounds` reports the open edges of a shell, a watertight solid has none (returns `nil`):
 
 ```swift
 if let bounds = shape.freeBounds(sewingTolerance: 1e-6) {
     print("open loops:", bounds.openCount, "closed loops:", bounds.closedCount)
-    // there are gaps — try to close them:
+    // there are gaps, try to close them:
     if let (closed, fixedCount) = shape.fixedFreeBounds(sewingTolerance: 1e-6,
                                                         closingTolerance: 1e-4) {
         print("closed \(fixedCount) gap(s)")
@@ -163,7 +163,7 @@ guard raw.isValid else {
 
 ## See also
 
-- [Meshing & Export](meshing-and-export.md) — robust STL import sews/heals automatically.
-- [Booleans](booleans.md) — `unified()` is the standard post-boolean cleanup.
+- [Meshing & Export](meshing-and-export.md), robust STL import sews/heals automatically.
+- [Booleans](booleans.md), `unified()` is the standard post-boolean cleanup.
 - API mapping: [`../../API_REFERENCE.md`](../../API_REFERENCE.md)
 - Concepts: [`occt-concepts.md`](../occt-concepts.md)

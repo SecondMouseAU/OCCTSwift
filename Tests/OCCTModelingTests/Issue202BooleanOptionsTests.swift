@@ -4,7 +4,7 @@ import simd
 @testable import OCCTSwift
 
 // #202: BRepAlgoAPI boolean fuzzy value + glue options exposed on the boolean ops.
-@Suite("Issue #202 — boolean fuzzy value + glue options")
+@Suite("Issue #202, boolean fuzzy value + glue options")
 struct Issue202BooleanOptions {
 
     /// Two unit cubes stacked along Z, sharing the coincident face at z = 10.

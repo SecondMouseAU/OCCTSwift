@@ -2,7 +2,7 @@ Precision::Approximation() = 1e-06   Precision::Confusion() = 1e-07
 
 =========================================================================
  1. ShapeConstruct::ConvertSurfaceToBSpline (tol=Precision::Approximation(),
-    MaxSegments=10000, MaxDegree=15 — exactly what ShapeCustom_ConvertToBSpline passes)
+    MaxSegments=10000, MaxDegree=15, exactly what ShapeCustom_ConvertToBSpline passes)
 =========================================================================
   offset(sphere r=10, +2) full   domain U[0 6.28319] V[-1.5708 1.5708]
     req=C0         type=BSplineSurface               deg=1x10  poles=2x11  knots=2x2  dev=24

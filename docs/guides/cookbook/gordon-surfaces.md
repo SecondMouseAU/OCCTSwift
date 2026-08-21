@@ -6,10 +6,10 @@ nav_order: 10
 
 # Gordon Surfaces
 
-A **Gordon surface** is built to pass through a *network* of curves — two families that cross to form
+A **Gordon surface** is built to pass through a *network* of curves, two families that cross to form
 a grid: **profiles** (running one way, the U direction) and **guides** (running across them, V). Where
 a [loft](lofting-and-sweeps.md) interpolates a single family of sections and a Coons patch fills four
-boundary curves, a Gordon surface honours the **whole interior network** — every profile *and* every
+boundary curves, a Gordon surface honours the **whole interior network**, every profile *and* every
 guide lies on the result. It's the tool for skinning a hull, a turbine blade, or any panel defined by
 a wireframe of feature curves.
 
@@ -18,7 +18,7 @@ OCCTSwift wraps OCCT's `GeomFill_Gordon` (and the lower-level `GeomFill_NetworkS
 ## Build from a curve network
 
 Give it ≥ 2 profiles and ≥ 2 guides. The catch is the **grid must close**: each profile must meet
-each guide, and shared corners must coincide (within `tolerance`). Here a domed 2×2 network — two
+each guide, and shared corners must coincide (within `tolerance`). Here a domed 2×2 network, two
 profiles bowed up in X, two guides bowed up in Y, meeting at four coplanar corners:
 
 ```swift
@@ -33,7 +33,7 @@ else { return }
 guard let surface = Surface.gordon(profiles: [p1, p2], guides: [g1, g2], tolerance: 1e-3) else { return }
 ```
 
-The four corners are shared between a profile and a guide — `p1` starts at `(0,0,0)` where `g1`
+The four corners are shared between a profile and a guide, `p1` starts at `(0,0,0)` where `g1`
 starts, and so on. The interior bows (`z = 3` on the profiles, `z = 2` on the guides) need *not* match;
 the Gordon construction blends the two families into one B-spline.
 
@@ -67,7 +67,7 @@ default:           print("build failed:", report.status)
 }
 ```
 
-By default the build is **exact-only** — it returns no surface if it can't interpolate the network
+By default the build is **exact-only**, it returns no surface if it can't interpolate the network
 exactly. Set `allowApproximateFallback: true` to accept a sampled B-spline approximation when the exact
 construction fails (the result is then flagged `isApproximate`):
 
@@ -92,7 +92,7 @@ if status != .done { print("network builder declined:", status) }
 
 **Known limitation ([#748](https://github.com/SecondMouseAU/OCCTSwift/issues/748)):** on every
 network tried so far, including a plain bilinear rectangle with nothing to approximate,
-`networkSurface`'s result is correct at the two corners on one diagonal and wrong at the other two —
+`networkSurface`'s result is correct at the two corners on one diagonal and wrong at the other two,
 `gordon`/`gordonReport` on the identical curves are not affected. Prefer `gordon`/`gordonReport` for
 anything where the built surface's shape matters, not just whether a status came back `.done`.
 
@@ -115,6 +115,6 @@ behaviour, or already have a network in the shape it expects.
 
 ## See also
 
-- [Lofting & Sweeps](lofting-and-sweeps.md) — single-family skinning.
-- [Healing & Validity](healing-and-validity.md) — clean up a sewn surface model.
+- [Lofting & Sweeps](lofting-and-sweeps.md), single-family skinning.
+- [Healing & Validity](healing-and-validity.md), clean up a sewn surface model.
 - API mapping: [`../../API_REFERENCE.md`](../../API_REFERENCE.md)

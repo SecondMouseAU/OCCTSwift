@@ -7,7 +7,7 @@ import simd
 /// returns the fitted BSpline, and ``Curve3D/approxWithDetails(tolerance:continuity:maxSegments:maxDegree:)``
 /// returns the same fit alongside the diagnostics OCCT already computed for it. Both go through
 /// one shared bridge helper as of #491, so for identical inputs they must agree on whether the
-/// approximation succeeded and hand back the same curve — the second differing from the first
+/// approximation succeeded and hand back the same curve, the second differing from the first
 /// only by carrying `maxError`/`isDone`/`hasResult`.
 ///
 /// Before #491 the two bridge functions gated their result on different accessors:
@@ -18,7 +18,7 @@ import simd
 ///
 /// Measured against the pinned kernel, they cannot: `GeomConvert_ApproxCurve` copies both flags
 /// straight off `AdvApprox_ApproxAFunction`, whose only `HasResult && !IsDone` path is the
-/// `ErrorCode = -1` assignment at `AdvApprox_ApproxAFunction.cxx:550` — commented out upstream
+/// `ErrorCode = -1` assignment at `AdvApprox_ApproxAFunction.cxx:550`, commented out upstream
 /// ("// for now ErrorCode=-1;"). With that line dead, `ErrorCode` is only ever 0 (both flags set)
 /// or 1 (neither set), so the two accessors are equal for every input. The starved-fit cases
 /// below confirm it empirically: a circle fitted with one segment at degree 3 against a 1e-9
@@ -76,12 +76,12 @@ struct Issue491Curve3DApproxParityTests {
 
     /// `maxSegments` and `maxDegree` are two adjacent `int32_t` both entry points forward to the one
     /// shared helper. Unlike the surface pair they are declared in the same order on both sides, so
-    /// no re-ordering happens here — but a request whose two values are interchangeable could not
+    /// no re-ordering happens here, but a request whose two values are interchangeable could not
     /// catch a swap either way, so this pins that they are order-sensitive and that both entry points
     /// read them the same way.
     ///
     /// It deliberately does not assert `degree <= maxDegree`: OCCT does not treat `MaxDegree` as a
-    /// hard cap (`maxDegree: 4` on this ellipse comes back degree 5 — `lesparam` keeps "a reserve
+    /// hard cap (`maxDegree: 4` on this ellipse comes back degree 5, `lesparam` keeps "a reserve
     /// coefficient"), and it does so identically through both entry points.
     @Test("maxSegments and maxDegree are order-sensitive, and both entry points agree on the order")
     func maxDegreeIsNotSwappedWithMaxSegments() {
@@ -122,7 +122,7 @@ struct Issue491Curve3DApproxParityTests {
     @Test("Both entry points succeed, or neither does, on the same request")
     func successAgrees() {
         let all = requests()
-        #expect(!all.isEmpty, "no request could be constructed — the fixtures themselves failed")
+        #expect(!all.isEmpty, "no request could be constructed, the fixtures themselves failed")
 
         for request in all {
             let plain = request.curve.approximated(tolerance: request.tolerance,

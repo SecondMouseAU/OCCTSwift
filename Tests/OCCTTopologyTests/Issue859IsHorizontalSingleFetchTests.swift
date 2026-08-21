@@ -3,7 +3,7 @@ import Foundation
 @testable import OCCTSwift
 
 // #859 (review of #843): `isHorizontal(tolerance:)` was rewritten as
-// `isUpwardFacing(tolerance:) || isDownwardFacing(tolerance:)` — a real algebraic identity, but
+// `isUpwardFacing(tolerance:) || isDownwardFacing(tolerance:)`, a real algebraic identity, but
 // `||` only short-circuits its second operand when the first is true, so every non-upward-facing
 // face paid for a SECOND `Face.normal` fetch (a fresh `BRepLProp_SLProps` construction/solve
 // through the bridge, not a cached read) to evaluate `isDownwardFacing`. Hot per-face loops
@@ -13,8 +13,8 @@ import Foundation
 // The fix inlines the same "fetch once, test the value" shape `normalZTest` already gives
 // `isUpwardFacing`/`isDownwardFacing`/`isVertical`, comparing `abs(n.z)` against `cos(tolerance)`
 // in one fetch instead of delegating to the two public predicates. A Swift-level call-count
-// assertion isn't practical here — the bridge call is opaque C, not something a Swift test can
-// instrument without its own hook — so this instead pins that the algebraic identity the
+// assertion isn't practical here, the bridge call is opaque C, not something a Swift test can
+// instrument without its own hook, so this instead pins that the algebraic identity the
 // single-fetch rewrite depends on still holds, value for value, across the same fixtures #843's
 // own investigation already covered (Issue614FaceOrientationTests' degenerate-tolerance case
 // included), by comparing `isHorizontal(tolerance:)` directly against

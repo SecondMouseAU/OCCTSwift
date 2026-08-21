@@ -6,12 +6,12 @@ import simd
 ///
 /// `satisfies(_:)` short-circuited on the `nil` `derivativeOrder` that `.g1`/`.g2` carry with an
 /// unconditional `false`, before ever reading the requested floor. So `.g1.satisfies(.c0)` was
-/// `false` while `.g1 >= .c0` was `true` — a caller gating on "is this at least positionally
+/// `false` while `.g1 >= .c0` was `true`, a caller gating on "is this at least positionally
 /// continuous?" rejected every result *smoother* than the C0 ones it accepted.
 ///
 /// The reasoning the fix rests on: G1 entails G0 entails positional continuity, which is exactly
-/// what C0 is. There is no parametrisation subtlety at order zero — a curve is either connected
-/// or it is not — so the old justification ("a g1/g2 result is not a parametric guarantee at any
+/// what C0 is. There is no parametrisation subtlety at order zero, a curve is either connected
+/// or it is not, so the old justification ("a g1/g2 result is not a parametric guarantee at any
 /// order") is right for C1 and above and wrong for C0.
 ///
 /// The single-cell assertions below are the reported bug; the matrix is what would have caught
@@ -54,7 +54,7 @@ struct Issue623ContinuityFloorTests {
 
     @Test("Every measured class clears the positional floor")
     func everyClassClearsTheC0Floor() {
-        // C0 is the bottom of `GeomAbs_Shape`'s ladder — no class sits below it — so a caller
+        // C0 is the bottom of `GeomAbs_Shape`'s ladder, no class sits below it, so a caller
         // gating on "is this at least positionally continuous?" must never be told no.
         for measured in ContinuityClass.allCases {
             #expect(measured.satisfies(.c0), "\(measured) failed the C0 floor")
@@ -85,7 +85,7 @@ struct Issue623ContinuityFloorTests {
         // Exactly one cell may differ, and it is the one the two APIs are *documented* to answer
         // differently. `GeomAbs_Shape` ranks G2 (3) above C1 (2), but curvature continuity does
         // not entail first-derivative continuity, so the parametric floor correctly refuses what
-        // the ladder allows. Every other cell must match — including (.g1, .c0) and (.g2, .c0),
+        // the ladder allows. Every other cell must match, including (.g1, .c0) and (.g2, .c0),
         // which is where #623 lived.
         #expect(disagreements.count == 1)
         if let only = disagreements.first {
@@ -99,13 +99,13 @@ struct Issue623ContinuityFloorTests {
     @Test("A floor check never claims more than the ordering allows")
     func satisfiesNeverOutrunsTheOrdering() {
         // NOTE: this does *not* guard #623, and is not meant to. #623 made `satisfies` too
-        // strict, and a too-strict implementation passes this vacuously — every `false` skips
+        // strict, and a too-strict implementation passes this vacuously, every `false` skips
         // the body. Verified: it survives the injected bug.
         //
         // It guards the opposite failure mode, which the #623 fix is the natural way to
         // introduce: an over-correction that makes a geometric class satisfy a floor the ladder
         // itself does not reach (say, floor `?? Int.max`, or dropping the `nil` case entirely).
-        // `satisfies` may be stricter than the ladder — that is the documented G2/C1 cell —
+        // `satisfies` may be stricter than the ladder, that is the documented G2/C1 cell,
         // never looser, because that direction would have a floor check vouch for smoothness
         // the measurement never reported.
         for measured in ContinuityClass.allCases {
@@ -124,7 +124,7 @@ struct Issue623ContinuityFloorTests {
         // Two directions, and only the second one guards #623.
         //
         // Direction 1, the requested order: whatever a class satisfies, it satisfies everything
-        // weaker. This is what makes `satisfies` usable as a gate at all — but it holds for any
+        // weaker. This is what makes `satisfies` usable as a gate at all, but it holds for any
         // implementation shaped `f(measured) >= required.rawValue`, including the #623 one, so
         // it catches nothing here. It guards a future rewrite that special-cases individual
         // floors (a lookup table, say) and loses downward closure.
@@ -138,8 +138,8 @@ struct Issue623ContinuityFloorTests {
         }
 
         // Direction 2, the measured class: if a weaker measurement clears a floor, a stronger
-        // one should too. THIS is the invariant #623 broke — `.c0` cleared `.c0` while the
-        // strictly-higher-ranked `.g1` did not — and unlike direction 1 it fails under the
+        // one should too, THIS is the invariant #623 broke, `.c0` cleared `.c0` while the
+        // strictly-higher-ranked `.g1` did not, and unlike direction 1 it fails under the
         // injected bug (4 violations rather than 1).
         //
         // It cannot be asserted outright, because the documented G2/C1 cell violates it too:
@@ -167,7 +167,7 @@ struct Issue623ContinuityFloorTests {
     @Test("The junction-analysis bitmask contract is independent of the floor check")
     func analysisBitmaskContractIsUnaffected() {
         // `ContinuityAnalysis.holds(_:)` asks a third question again: "did `LocalAnalysis_*`
-        // report this *exact* class?" — set membership on a `GeomAbs_Shape`-ordinal bitmask,
+        // report this *exact* class?", set membership on a `GeomAbs_Shape`-ordinal bitmask,
         // neither a floor nor a ranking. #623 changes only the `nil`-`derivativeOrder` fallback
         // inside `satisfies`, so every bit must still sit at its own raw value.
         for measured in ContinuityClass.allCases {
@@ -197,7 +197,7 @@ struct Issue623ContinuityFloorTests {
             #expect(plane.continuityClass.satisfies(.c3))
         }
         // A cubic BSpline surface whose interior U knot repeats to full degree measures C0, the
-        // weakest class OCCT reports — and must still clear the positional floor.
+        // weakest class OCCT reports, and must still clear the positional floor.
         let poles: [[SIMD3<Double>]] = (1...7).map { i in
             (1...4).map { j in SIMD3<Double>(Double(i), Double(j), Double((i + j) % 2)) }
         }

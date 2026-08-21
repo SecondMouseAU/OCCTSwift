@@ -5,7 +5,7 @@ parent: API Reference
 
 # Edge
 
-An `Edge` is a bounded curve in 3D space — the Swift analog of OCCT's `TopoDS_Edge`. Edges are the one-dimensional elements of B-Rep topology: each edge carries a `Geom_Curve` trimmed to a parameter range, and connects two vertices. Obtain edges by calling `shape.edges()`, `shape.edge(at:)`, or by constructing a `Wire` and extracting via `wire.edges()`.
+An `Edge` is a bounded curve in 3D space, the Swift analog of OCCT's `TopoDS_Edge`. Edges are the one-dimensional elements of B-Rep topology: each edge carries a `Geom_Curve` trimmed to a parameter range, and connects two vertices. Obtain edges by calling `shape.edges()`, `shape.edge(at:)`, or by constructing a `Wire` and extracting via `wire.edges()`.
 
 ## Topics
 
@@ -25,9 +25,9 @@ public convenience init?(_ shape: Shape)
 
 Use when you have an edge-typed `Shape` (e.g. from sub-shape iteration) and need the typed `Edge` object.
 
-- **Parameters:** `shape` — a `Shape` wrapping a `TopoDS_Edge`.
+- **Parameters:** `shape`, a `Shape` wrapping a `TopoDS_Edge`.
 - **Returns:** `nil` if `shape` is null or its topology type is not `TopAbs_EDGE`.
-- **OCCT:** `TopoDS::Edge` — casts the underlying `TopoDS_Shape` after checking `ShapeType() == TopAbs_EDGE`.
+- **OCCT:** `TopoDS::Edge`, casts the underlying `TopoDS_Shape` after checking `ShapeType() == TopAbs_EDGE`.
 - **Example:**
   ```swift
   let shapes = box.subShapes(ofType: .edge)
@@ -67,7 +67,7 @@ public var length: Double { get }
 ```
 
 - **Returns:** Length in model units. Returns `0` for degenerate or null edges.
-- **OCCT:** `BRepGProp::LinearProperties` — computes linear mass (= arc length) of the edge.
+- **OCCT:** `BRepGProp::LinearProperties`, computes linear mass (= arc length) of the edge.
 - **Example:**
   ```swift
   let box = Shape.box(width: 10, height: 10, depth: 10)!
@@ -199,9 +199,9 @@ public struct CurveProjection: Sendable {
 }
 ```
 
-- `point` — closest point on the curve.
-- `parameter` — native curve parameter at the closest point.
-- `distance` — Euclidean distance from the query point to `point`.
+- `point`: closest point on the curve.
+- `parameter`: native curve parameter at the closest point.
+- `distance`: Euclidean distance from the query point to `point`.
 
 ---
 
@@ -213,10 +213,10 @@ The native OCCT parameter range `[first, last]` for this edge's underlying curve
 public var parameterBounds: (first: Double, last: Double)? { get }
 ```
 
-Required before calling any `at parameter:` method — OCCT parameters are not normalised. For a line of length 10 starting at the origin, `first ≈ 0` and `last ≈ 10`.
+Required before calling any `at parameter:` method. OCCT parameters are not normalised. For a line of length 10 starting at the origin, `first ≈ 0` and `last ≈ 10`.
 
 - **Returns:** `(first, last)` parameter tuple, or `nil` if the edge has no 3D curve.
-- **OCCT:** `BRep_Tool::Curve` — returns the handle and its parameter range.
+- **OCCT:** `BRep_Tool::Curve`, returns the handle and its parameter range.
 - **Example:**
   ```swift
   let box = Shape.box(width: 10, height: 10, depth: 10)!
@@ -258,7 +258,7 @@ Returns the 3D position on the edge's curve at a native OCCT parameter.
 public func point(at parameter: Double) -> SIMD3<Double>?
 ```
 
-- **Parameters:** `parameter` — a value in `[parameterBounds.first, parameterBounds.last]`.
+- **Parameters:** `parameter`, a value in `[parameterBounds.first, parameterBounds.last]`.
 - **Returns:** 3D point, or `nil` if the edge has no curve or the parameter is out of domain.
 - **OCCT:** `BRep_Tool::Curve` → `Geom_Curve::D0`.
 - **Example:**
@@ -282,7 +282,7 @@ public func curvature(at parameter: Double) -> Double?
 
 A straight line has curvature `0`; a circle of radius R has curvature `1/R`.
 
-- **Parameters:** `parameter` — native curve parameter.
+- **Parameters:** `parameter`, native curve parameter.
 - **Returns:** Curvature ≥ 0, or `nil` if the tangent is undefined or the edge has no curve.
 - **OCCT:** `BRep_Tool::Curve` → `GeomLProp_CLProps::Curvature`.
 - **Example:**
@@ -306,7 +306,7 @@ Returns the unit tangent vector at a native curve parameter.
 public func tangent(at parameter: Double) -> SIMD3<Double>?
 ```
 
-- **Parameters:** `parameter` — native curve parameter.
+- **Parameters:** `parameter`, native curve parameter.
 - **Returns:** Unit tangent vector in the direction of increasing parameter, or `nil` if undefined.
 - **OCCT:** `BRep_Tool::Curve` → `GeomLProp_CLProps::Tangent`.
 - **Example:**
@@ -330,7 +330,7 @@ public func normal(at parameter: Double) -> SIMD3<Double>?
 
 The principal normal points toward the centre of curvature. For straight edges, curvature is zero and the normal is undefined.
 
-- **Parameters:** `parameter` — native curve parameter.
+- **Parameters:** `parameter`, native curve parameter.
 - **Returns:** Unit normal vector, or `nil` if the curvature is zero or the tangent is undefined.
 - **OCCT:** `BRep_Tool::Curve` → `GeomLProp_CLProps::Normal`.
 - **Example:**
@@ -353,7 +353,7 @@ public func centerOfCurvature(at parameter: Double) -> SIMD3<Double>?
 
 The centre of curvature lies on the principal normal at distance 1/κ from the curve point. Undefined (returns `nil`) for zero-curvature (straight) segments.
 
-- **Parameters:** `parameter` — native curve parameter.
+- **Parameters:** `parameter`, native curve parameter.
 - **Returns:** 3D centre of curvature, or `nil` if curvature is zero or computation fails.
 - **OCCT:** `BRep_Tool::Curve` → `GeomLProp_CLProps::CentreOfCurvature`.
 - **Example:**
@@ -377,9 +377,9 @@ public func torsion(at parameter: Double) -> Double?
 
 Torsion measures the rate at which the osculating plane twists. Zero for planar curves (lines, circles, arcs). Non-zero for space curves (helices, general B-splines).
 
-- **Parameters:** `parameter` — native curve parameter.
+- **Parameters:** `parameter`, native curve parameter.
 - **Returns:** Torsion value (can be negative), or `nil` if computation fails. Returns `0.0` for degenerate (zero-curvature cross-product) configurations.
-- **OCCT:** `Geom_Curve::D3` — uses the formula τ = (d1 × d2) · d3 / |d1 × d2|².
+- **OCCT:** `Geom_Curve::D3`, uses the formula τ = (d1 × d2) · d3 / |d1 × d2|².
 - **Example:**
   ```swift
   // A helix has non-zero torsion
@@ -405,9 +405,9 @@ public func project(point: SIMD3<Double>) -> CurveProjection?
 
 The answer is always inside the edge's own parameter range (`parameterBounds`), and always the true nearest point. Where the query point has no perpendicular foot on the edge, the nearest point is one of its ends, and that is what comes back.
 
-- **Parameters:** `point` — query point in 3D space.
+- **Parameters:** `point`, query point in 3D space.
 - **Returns:** `CurveProjection` with the closest point, its parameter, and the distance; or `nil` only for an edge with no 3D curve to project onto.
-- **OCCT:** `BRep_Tool::Curve`, then `ShapeAnalysis_Curve::Project` and `GeomAPI_ProjectPointOnCurve` minimised together with the range's ends — no one of the three is correct alone (#539). Shares `Curve3D.projectPoint(_:precision:)`'s implementation.
+- **OCCT:** `BRep_Tool::Curve`, then `ShapeAnalysis_Curve::Project` and `GeomAPI_ProjectPointOnCurve` minimised together with the range's ends, no one of the three is correct alone (#539). Shares `Curve3D.projectPoint(_:precision:)`'s implementation.
 - **Example:**
   ```swift
   let box = Shape.box(width: 10, height: 10, depth: 10)!
@@ -430,7 +430,7 @@ The answer is always inside the edge's own parameter range (`parameterBounds`), 
 > **Before #539** the bare `GeomAPI_ProjectPointOnCurve` behind this returned extrema
 > rather than minima, which cost it two ways: it returned `nil` whenever the nearest point was an
 > end rather than a perpendicular foot (the case above), and on an arc it could report the *far*
-> side as the nearest point — 11 for a query whose nearest point on a half circle is 7.81 away.
+> side as the nearest point, 11 for a query whose nearest point on a half circle is 7.81 away.
 
 ---
 
@@ -442,9 +442,9 @@ The shortest distance from a 3D point to this edge.
 public func distance(to point: SIMD3<Double>) -> Double?
 ```
 
-Pure-Swift convenience — delegates to `project(point:)?.distance`, so it measures to the same nearest point: over the edge's own parameter range, ends included.
+Pure-Swift convenience, delegates to `project(point:)?.distance`, so it measures to the same nearest point: over the edge's own parameter range, ends included.
 
-- **Parameters:** `point` — query point.
+- **Parameters:** `point`, query point.
 - **Returns:** Distance to the nearest point on the edge, or `nil` only for an edge with no 3D curve.
 - **OCCT:** Delegates to `project(point:)`, and inherits its #539 fix.
 - **Example:**
@@ -464,7 +464,7 @@ The 3D curve underlying this edge as a standalone `Curve3D`.
 public var curve3D: Curve3D? { get }
 ```
 
-Returns a `Geom_TrimmedCurve` wrapping the edge's geometry, trimmed to the edge's parameter range. Returns `nil` for edges with no 3D curve representation (rare — typically pcurve-only edges before `BuildCurves3d`).
+Returns a `Geom_TrimmedCurve` wrapping the edge's geometry, trimmed to the edge's parameter range. Returns `nil` for edges with no 3D curve representation (rare, typically pcurve-only edges before `BuildCurves3d`).
 
 Use cases include extracting `CircleProperties` from a circular edge, emitting native DXF entities, or feeding edge geometry into parametric analysis pipelines.
 
@@ -492,9 +492,9 @@ public func points(count: Int? = nil) -> [SIMD3<Double>]
 
 When `count` is `nil`, automatically computes a point count at approximately 0.5 model-unit spacing (`max(2, Int(length / 0.5) + 1)`). Points are evenly spaced in the OCCT parameter domain (not arc-length).
 
-- **Parameters:** `count` — number of points to generate; `nil` = automatic (~0.5 mm spacing). A *request*: honoured within `2...Sampling.maximumSampleCount` (10,000,000); outside that range the result is empty (#558). The automatic default is bounded the same way, since a long enough edge implies more points at 0.5 mm than the ceiling can serve.
+- **Parameters:** `count`, number of points to generate; `nil` = automatic (~0.5 mm spacing). A *request*: honoured within `2...Sampling.maximumSampleCount` (10,000,000); outside that range the result is empty (#558). The automatic default is bounded the same way, since a long enough edge implies more points at 0.5 mm than the ceiling can serve.
 - **Returns:** Array of 3D points; empty on failure or for degenerate edges.
-- **OCCT:** `BRepAdaptor_Curve::Value` — samples at uniformly-spaced parameter values.
+- **OCCT:** `BRepAdaptor_Curve::Value`, samples at uniformly-spaced parameter values.
 - **Example:**
   ```swift
   let cyl = Shape.cylinder(radius: 5, height: 10)!
@@ -542,9 +542,9 @@ Returns the edge at a given 0-based index.
 public func edge(at index: Int) -> Edge? 
 ```
 
-- **Parameters:** `index` — 0-based edge index.
+- **Parameters:** `index`, 0-based edge index.
 - **Returns:** `Edge` at the given index, or `nil` if the index is out of range.
-- **OCCT:** `TopExp::MapShapes` + `TopoDS::Edge` — extracts from `TopTools_IndexedMapOfShape` (1-based internally; index is adjusted).
+- **OCCT:** `TopExp::MapShapes` + `TopoDS::Edge`, extracts from `TopTools_IndexedMapOfShape` (1-based internally; index is adjusted).
 - **Example:**
   ```swift
   let box = Shape.box(width: 10, height: 10, depth: 10)!
@@ -591,7 +591,7 @@ each would then answer for its neighbour with no error and no diagnostic (#979).
       if edge.isLine { print(edge.length) }
   }
   ```
-- **Note:** Edge indices may vary across runs — iterate edges to find a specific one rather than relying on a fixed index.
+- **Note:** Edge indices may vary across runs, iterate edges to find a specific one rather than relying on a fixed index.
 
 ---
 
@@ -619,7 +619,7 @@ public var hasCurve3D: Bool { get }
 
 ### `isClosed3D`
 
-Whether this edge is closed — i.e., its start and end vertices coincide.
+Whether this edge is closed, i.e. its start and end vertices coincide.
 
 ```swift
 public var isClosed3D: Bool { get }
@@ -645,9 +645,9 @@ Whether this edge is a seam edge on the given face.
 public func isSeam(on face: Face) -> Bool
 ```
 
-A seam edge appears twice on a face with different orientations — e.g., the seam line on a cylindrical face where the surface wraps around. Relevant for surface parameterisation and UV-space computations.
+A seam edge appears twice on a face with different orientations, e.g. the seam line on a cylindrical face where the surface wraps around. Relevant for surface parameterisation and UV-space computations.
 
-- **Parameters:** `face` — the face to test against.
+- **Parameters:** `face`, the face to test against.
 - **Returns:** `true` if the edge is a seam on `face`.
 - **OCCT:** `ShapeAnalysis_Edge::IsSeam`.
 - **Example:**
@@ -673,7 +673,7 @@ public func adjacentFaces(in shape: Shape) -> (Face, Face?)?
 
 Most interior edges have exactly two adjacent faces (manifold solid). Boundary edges (on open shells) have only one. The shape must be the same solid from which this edge was extracted.
 
-- **Parameters:** `shape` — the parent shape containing this edge.
+- **Parameters:** `shape`, the parent shape containing this edge.
 - **Returns:** Tuple `(face1, face2)` where `face2` is `nil` for boundary edges; or `nil` if the edge has no adjacent faces in `shape`.
 - **OCCT:** `TopExp::MapShapesAndAncestors(shape, TopAbs_EDGE, TopAbs_FACE, map)`.
 - **Example:**
@@ -698,11 +698,11 @@ public func dihedralAngle(between face1: Face, and face2: Face, at parameter: Do
 The dihedral angle is measured between the face normals evaluated at a point along the edge. A value of `π` (180°) indicates tangent (smooth) faces; less than `π` is convex; greater than `π` is concave.
 
 - **Parameters:**
-  - `face1` — first adjacent face.
-  - `face2` — second adjacent face.
-  - `parameter` — normalised position along the edge in `[0.0, 1.0]` where to measure (default: midpoint).
+  - `face1`: first adjacent face.
+  - `face2`: second adjacent face.
+  - `parameter`: normalised position along the edge in `[0.0, 1.0]` where to measure (default: midpoint).
 - **Returns:** Dihedral angle in radians `[0, 2π]`, or `nil` on error (e.g. degenerate normals or missing PCurves).
-- **OCCT:** `BRepAdaptor_Curve` + `BRep_Tool::CurveOnSurface` + `BRepAdaptor_Surface::D1` — computes face normals from first derivatives at the UV parameter.
+- **OCCT:** `BRepAdaptor_Curve` + `BRep_Tool::CurveOnSurface` + `BRepAdaptor_Surface::D1`, computes face normals from first derivatives at the UV parameter.
 - **Example:**
   ```swift
   let box = Shape.box(width: 10, height: 10, depth: 10)!
@@ -732,9 +732,9 @@ public struct CurveApproximation: Sendable {
 }
 ```
 
-- `maxError` — maximum deviation between the original curve and the B-spline approximation.
-- `degree` — B-spline degree of the result.
-- `poleCount` — number of B-spline control points (poles) in the result.
+- `maxError`: maximum deviation between the original curve and the B-spline approximation.
+- `degree`: B-spline degree of the result.
+- `poleCount`: number of B-spline control points (poles) in the result.
 
 ---
 
@@ -751,9 +751,9 @@ public func approximatedCurve(tolerance: Double = 1e-3,
 Uses `Approx_Curve3d` with C² continuity to convert any curve type (line, circle, ellipse, etc.) into a B-spline representation. Useful for normalising geometry before export or downstream processing.
 
 - **Parameters:**
-  - `tolerance` — maximum allowed approximation error (default `1e-3`).
-  - `maxSegments` — maximum number of B-spline segments (default `100`).
-  - `maxDegree` — maximum B-spline degree (default `8`).
+  - `tolerance`: maximum allowed approximation error (default `1e-3`).
+  - `maxSegments`: maximum number of B-spline segments (default `100`).
+  - `maxDegree`: maximum B-spline degree (default `8`).
 - **Returns:** Approximated B-spline as a `Curve3D`, or `nil` on failure.
 - **OCCT:** `BRepAdaptor_Curve` + `Approx_Curve3d` (GeomAbs_C2).
 - **Example:**
@@ -777,14 +777,14 @@ public func curveApproximationInfo(tolerance: Double = 1e-3,
                                     maxDegree: Int = 8) -> CurveApproximation?
 ```
 
-Runs the same `Approx_Curve3d` computation as `approximatedCurve(tolerance:maxSegments:maxDegree:)` but returns only the metadata — error, degree, and pole count — without allocating a full `Curve3D`.
+Runs the same `Approx_Curve3d` computation as `approximatedCurve(tolerance:maxSegments:maxDegree:)` but returns only the metadata, error, degree, and pole count, without allocating a full `Curve3D`.
 
 - **Parameters:**
-  - `tolerance` — maximum allowed approximation error (default `1e-3`).
-  - `maxSegments` — maximum number of B-spline segments (default `100`).
-  - `maxDegree` — maximum B-spline degree (default `8`).
+  - `tolerance`: maximum allowed approximation error (default `1e-3`).
+  - `maxSegments`: maximum number of B-spline segments (default `100`).
+  - `maxDegree`: maximum B-spline degree (default `8`).
 - **Returns:** `CurveApproximation` struct, or `nil` on failure.
-- **OCCT:** `BRepAdaptor_Curve` + `Approx_Curve3d` (GeomAbs_C2) — reads `MaxError()`, `Degree()`, `NbPoles()`.
+- **OCCT:** `BRepAdaptor_Curve` + `Approx_Curve3d` (GeomAbs_C2), reads `MaxError()`, `Degree()`, `NbPoles()`.
 - **Example:**
   ```swift
   let cyl = Shape.cylinder(radius: 5, height: 10)!
@@ -809,8 +809,8 @@ public func split(at parameter: Double, vertex: SIMD3<Double>) -> (Edge, Edge)?
 Divides the edge at `parameter`, placing a new vertex at `vertex`. The two result edges share the new vertex. The original edge is not modified.
 
 - **Parameters:**
-  - `parameter` — native OCCT curve parameter at which to split (must be within `parameterBounds`).
-  - `vertex` — 3D position for the split vertex (should lie on the curve at `parameter`).
+  - `parameter`: native OCCT curve parameter at which to split (must be within `parameterBounds`).
+  - `vertex`: 3D position for the split vertex (should lie on the curve at `parameter`).
 - **Returns:** Tuple `(edge1, edge2)` representing the two halves, or `nil` if splitting fails.
 - **OCCT:** `ShapeFix_SplitTool::SplitEdge` with a synthetic planar face context.
 - **Example:**
@@ -833,7 +833,7 @@ Divides the edge at `parameter`, placing a new vertex at `vertex`. The two resul
 
 ## PCurve / BRepAdaptor\_Curve2d
 
-Members in this section access the 2D parametric curve (PCurve) of an edge on a specific face — the `Geom2d_Curve` that maps the edge into the face's UV parameter space.
+Members in this section access the 2D parametric curve (PCurve) of an edge on a specific face, the `Geom2d_Curve` that maps the edge into the face's UV parameter space.
 
 ---
 
@@ -845,9 +845,9 @@ Returns the 2D parametric curve parameter range for this edge on a face.
 public func pcurveParams(on face: Face) -> (first: Double, last: Double)?
 ```
 
-- **Parameters:** `face` — the face on which this edge lies.
+- **Parameters:** `face`, the face on which this edge lies.
 - **Returns:** `(first, last)` parameter range for the PCurve, or `nil` if no PCurve exists for this edge on `face`.
-- **OCCT:** `BRepAdaptor_Curve2d` — adaptor over the edge's PCurve on the face's surface.
+- **OCCT:** `BRepAdaptor_Curve2d`, adaptor over the edge's PCurve on the face's surface.
 - **Example:**
   ```swift
   let box = Shape.box(width: 10, height: 20, depth: 30)!
@@ -874,8 +874,8 @@ public func pcurveValue(at parameter: Double, on face: Face) -> SIMD2<Double>?
 Returns the UV coordinate on the face's surface corresponding to the given curve parameter.
 
 - **Parameters:**
-  - `parameter` — curve parameter (within the range from `pcurveParams(on:)`).
-  - `face` — the face on which the edge lies.
+  - `parameter`: curve parameter (within the range from `pcurveParams(on:)`).
+  - `face`: the face on which the edge lies.
 - **Returns:** UV point on the face surface, or `nil` on failure.
 - **OCCT:** `BRepAdaptor_Curve2d::Value`.
 - **Example:**
@@ -907,10 +907,10 @@ public func approxCurveOnSurface(face: Face, tolerance: Double = 1e-4,
 Uses `Approx_CurveOnSurface` to compute a 3D B-spline from the edge's 2D parametric curve on the given face's surface. Returns the result as a `Shape` wrapping a new `TopoDS_Edge` with the approximated 3D curve.
 
 - **Parameters:**
-  - `face` — the face whose surface defines the PCurve-to-3D mapping.
-  - `tolerance` — approximation tolerance (default `1e-4`).
-  - `maxSegments` — maximum B-spline segments (default `10`).
-  - `maxDegree` — maximum B-spline degree (default `8`).
+  - `face`: the face whose surface defines the PCurve-to-3D mapping.
+  - `tolerance`: approximation tolerance (default `1e-4`).
+  - `maxSegments`: maximum B-spline segments (default `10`).
+  - `maxDegree`: maximum B-spline degree (default `8`).
 - **Returns:** `Shape` wrapping the new edge with approximated 3D curve, or `nil` on failure (e.g. no PCurve found).
 - **OCCT:** `BRep_Tool::CurveOnSurface` + `Approx_CurveOnSurface` (GeomAbs_C2) + `BRepBuilderAPI_MakeEdge`.
 - **Example:**

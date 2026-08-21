@@ -1,4 +1,4 @@
-// OCCTSwift#491 — are the two documented wrapper divergences observable? See this directory's
+// OCCTSwift#491, are the two documented wrapper divergences observable? See this directory's
 // README.md for the conclusions.
 //
 //  (1) GeomConvert_ApproxCurve: is there an input where HasResult() is true but IsDone() is

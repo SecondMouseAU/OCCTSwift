@@ -8,7 +8,7 @@
 //  - math_DirectPolynomialRoots (quadratic / cubic / quartic solvers)
 //  - Bnd_OBB oriented bounding box helpers (when Topology delegates)
 //
-//  Public C surface unchanged. No symbol changes — pure file move.
+//  Public C surface unchanged. No symbol changes, pure file move.
 //
 
 #import "../include/OCCTBridge.h"

@@ -5,12 +5,12 @@ import simd
 
 /// Cover for #600: a finite parameter range reaching outside the curve's domain.
 ///
-/// The documented contract — "parameters outside the curve's domain are clamped to it, so a range
-/// wholly outside measures `0`" — came out of #477, which measured it on an interpolated BSpline.
+/// The documented contract, "parameters outside the curve's domain are clamped to it, so a range
+/// wholly outside measures `0`", came out of #477, which measured it on an interpolated BSpline.
 /// It held only for curves with more than one `GeomAbs_CN` interval, because that is the only
 /// GCPnts branch which intersects the requested range with the curve's own knots. Everything else
 /// measured the range as given: a 10-long segment reported 20 over `[0, 20]`, and a Bezier 122.14
-/// long reported 1002.29 one domain width past its end — the polynomial extrapolation #477 removed
+/// long reported 1002.29 one domain width past its end, the polynomial extrapolation #477 removed
 /// from the other spelling.
 ///
 /// The rule is now applied in the bridge rather than left to whichever branch a curve's type takes:
@@ -47,7 +47,7 @@ struct Issue600OutOfDomainRangeTests {
         ])
     }
 
-    /// Chord sum over the range *as the curve evaluates it* — so it winds on a periodic curve and
+    /// Chord sum over the range *as the curve evaluates it*, so it winds on a periodic curve and
     /// extrapolates on a polynomial one. Used only where the two should agree.
     private func tracedLength(_ c: Curve3D, from u1: Double, to u2: Double,
                               segments: Int = 20_000) -> Double {
@@ -75,7 +75,7 @@ struct Issue600OutOfDomainRangeTests {
         // Was 20: |u2 - u1| * 1.0, with nothing confining it to the trim.
         #expect(seg.length(from: d.lowerBound, to: d.upperBound + span) == whole)
         #expect(seg.length(from: d.lowerBound - span, to: d.upperBound + span) == whole)
-        // Was 10 — the whole length, for a range the curve does not occupy at all.
+        // Was 10, the whole length, for a range the curve does not occupy at all.
         #expect(seg.length(from: d.upperBound + span, to: d.upperBound + 2 * span) == 0)
         #expect(seg.length(from: d.lowerBound - 2 * span, to: d.lowerBound - span) == 0)
         // The sentinel spellings follow.
@@ -103,8 +103,8 @@ struct Issue600OutOfDomainRangeTests {
               let arc = circle.trimmed(from: 0, to: .pi),
               let whole = arc.length else { return }
 
-        // The adaptor reports IsPeriodic() == true here — a Geom_TrimmedCurve inherits its basis
-        // curve's periodicity — so periodicity alone cannot be the test. Its domain covers half a
+        // The adaptor reports IsPeriodic() == true here, a Geom_TrimmedCurve inherits its basis
+        // curve's periodicity, so periodicity alone cannot be the test. Its domain covers half a
         // period, and the half the caller trimmed away is not part of this curve.
         #expect(abs(whole - 5 * Double.pi) < 1e-6)
         #expect(arc.length(from: 0, to: 2 * .pi) == whole)          // was 31.42, the full circle
@@ -173,7 +173,7 @@ struct Issue600OutOfDomainRangeTests {
         let period = d.upperBound - d.lowerBound
 
         // Was `whole`: the curve is periodic *and* composite, so GCPnts confined the range to the
-        // knots and returned one period for a request of two — less than was asked for, with no
+        // knots and returned one period for a request of two, less than was asked for, with no
         // failure reported.
         guard let two = c.length(from: d.lowerBound, to: d.lowerBound + 2 * period) else {
             Issue.record("a periodic curve must measure a two-period range")

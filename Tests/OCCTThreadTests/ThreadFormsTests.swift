@@ -4,11 +4,11 @@ import simd
 @testable import OCCTSwift
 
 // Thread forms beyond ISO/Unified + custom profiles (the v1.6 thread-forms feature).
-@Suite("Thread forms — Whitworth/BSP, ACME, trapezoidal, square, buttress, knuckle, taper, custom")
+@Suite("Thread forms, Whitworth/BSP, ACME, trapezoidal, square, buttress, knuckle, taper, custom")
 struct ThreadFormsTests {
 
     // Piecewise-linear parallel forms that take the smooth direct external build (≤2 straight flanks,
-    // flat crest). Rounded forms (knuckle) route to the faceted cut path instead — see roundedExternalForm.
+    // flat crest). Rounded forms (knuckle) route to the faceted cut path instead, see roundedExternalForm.
     static let smoothForms: [ThreadForm] = [
         .iso68, .unified, .whitworth, .bspParallel, .acme, .trapezoidal, .square, .buttress,
     ]

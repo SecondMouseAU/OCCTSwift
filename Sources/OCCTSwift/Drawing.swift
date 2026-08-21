@@ -230,7 +230,7 @@ public final class Drawing: @unchecked Sendable {
     ) -> DrawingAnnotation? {
         // Trace direction in 3D = cross(cuttingPlaneNormal, viewDirection). If
         // the cutting plane is parallel to the view plane, the trace is a
-        // single point — return nil.
+        // single point, return nil.
         let traceDir3D = simd_cross(
             simd_normalize(cuttingPlaneNormal),
             simd_normalize(viewDirection))
@@ -246,7 +246,7 @@ public final class Drawing: @unchecked Sendable {
         let half = traceLength / 2
         let start = originInView - half * traceDir2Dn
         let end = originInView + half * traceDir2Dn
-        // Arrow direction in the view 2D — project section view direction.
+        // Arrow direction in the view 2D, project section view direction.
         let arrowDir3D = simd_normalize(sectionViewDirection)
         let arrowDir2D =
             projectPointToPlane(arrowDir3D, viewDirection: viewDirection)
@@ -300,7 +300,7 @@ public final class Drawing: @unchecked Sendable {
     /// This dispatcher covers every `DrawingAnnotation` case (centreline,
     /// centermark, textLabel, hatch, cuttingPlaneLine). When new cases are
     /// added to the enum, the compiler will flag this method and consumers
-    /// pick them up automatically — no per-case switch in consumer code.
+    /// pick them up automatically, no per-case switch in consumer code.
     public func append(_ annotation: DrawingAnnotation) {
         annotationStore.appendAnnotation(annotation)
     }

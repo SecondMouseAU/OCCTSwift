@@ -24,7 +24,7 @@ struct Issue619SurfaceContinuityEncodingTests {
                                degreeU: 3, degreeV: 3)
     }
 
-    @Test("An analytic surface reports CN as ordinal 6 — the old encoding's 99 is unreachable")
+    @Test("An analytic surface reports CN as ordinal 6, the old encoding's 99 is unreachable")
     func analyticSurfaceReportsCN() {
         var checked = 0
         for surface in [Surface.plane(origin: .zero, normal: SIMD3(0, 0, 1)),
@@ -53,7 +53,7 @@ struct Issue619SurfaceContinuityEncodingTests {
     @Test("The sibling bezierContinuity accessor uses the same encoding, so CN is 6 there too")
     func bezierContinuityUsesTheSameOrdinal() {
         // A separate `(int32_t)Continuity()` cast on `Geom_BezierSurface`, documented as
-        // `4 = CN` on its reference page — the same wrong table this issue is about.
+        // `4 = CN` on its reference page, the same wrong table this issue is about.
         let poles: [[SIMD3<Double>]] = (0..<3).map { i in
             (0..<3).map { j in SIMD3<Double>(Double(i), Double(j), Double((i + j) % 2)) }
         }

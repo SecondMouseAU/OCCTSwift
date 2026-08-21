@@ -242,14 +242,14 @@ struct StressDegenerateOperationTests {
         // 10×10×10 box → edge length 10, half = 5
         let box = standardBox()
         let result = box.filleted(radius: 5.0)
-        // At the exact boundary — may succeed or fail
+        // At the exact boundary, may succeed or fail
         if let r = result { _ = r.isValid }
     }
 
     @Test func filletRadiusExceedsEdge() {
         let box = standardBox()
         let result = box.filleted(radius: 6.0)
-        // OCCT may return a shape even for oversized radius — just verify no crash
+        // OCCT may return a shape even for oversized radius, just verify no crash
         if let r = result { _ = r.isValid }
     }
 
@@ -269,7 +269,7 @@ struct StressDegenerateOperationTests {
         let box = standardBox()
         let faces = box.faces()
         if let face = faces.first {
-            // Some offset operations take a face — try the general approach
+            // Some offset operations take a face, try the general approach
             let translated = box.translated(by: SIMD3(0, 0, 0))
             if let t = translated { #expect(t.isValid) }
         }
@@ -316,7 +316,7 @@ struct StressDegenerateOperationTests {
         let box = standardBox()
         let result = box.drilled(at: SIMD3(100, 100, 5), direction: SIMD3(0, 0, -1), radius: 1, depth: 5)
         if let r = result {
-            // Drill missed entirely — volume should be unchanged
+            // Drill missed entirely, volume should be unchanged
             if let vol = r.volume, let origVol = box.volume {
                 #expect(abs(vol - origVol) < 1.0)
             }
@@ -358,7 +358,7 @@ struct StressNearDegenerateTests {
 
     @Test func nearlyCoincidentSubtract() {
         let b1 = Shape.box(width: 10, height: 10, depth: 10)!
-        // Offset by 1e-8 — nearly identical
+        // Offset by 1e-8, nearly identical
         let b2 = Shape.box(origin: SIMD3(1e-8, 1e-8, 1e-8), width: 10, height: 10, depth: 10)!
         let result = b1.subtracting(b2)
         if let r = result { _ = r.isValid }

@@ -5,7 +5,7 @@ parent: API Reference
 
 # Wire
 
-A `Wire` is a connected sequence of edges (curves) — the Swift analog of OCCT's `TopoDS_Wire`. Wires serve two distinct roles: **2D profiles** (closed planar cross-sections for extrusion, lofting, or sweeping) and **3D paths** (open or closed spine curves along which profiles are swept). Obtain a wire by calling one of the static factory methods or by extracting wire sub-shapes from a `Shape`.
+A `Wire` is a connected sequence of edges (curves), the Swift analog of OCCT's `TopoDS_Wire`. Wires serve two distinct roles: **2D profiles** (closed planar cross-sections for extrusion, lofting, or sweeping) and **3D paths** (open or closed spine curves along which profiles are swept). Obtain a wire by calling one of the static factory methods or by extracting wire sub-shapes from a `Shape`.
 
 ## Topics
 
@@ -25,9 +25,9 @@ public convenience init?(_ shape: Shape)
 
 Inverse of `Shape.fromWire(_:)`. Use when you have a wire-typed `Shape` (e.g. from `Shape.wires` or `Shape.subShapes(ofType: .wire)`) and need the typed `Wire` object. Round-trips cleanly with `Shape.fromWire(_:)`.
 
-- **Parameters:** `shape` — a `Shape` wrapping a `TopoDS_Wire`.
+- **Parameters:** `shape`, a `Shape` wrapping a `TopoDS_Wire`.
 - **Returns:** `nil` if `shape` is null or not wire-typed.
-- **OCCT:** `TopoDS::Wire` — casts the underlying `TopoDS_Shape` to `TopoDS_Wire` after checking `ShapeType() == TopAbs_WIRE`.
+- **OCCT:** `TopoDS::Wire`, casts the underlying `TopoDS_Shape` to `TopoDS_Wire` after checking `ShapeType() == TopAbs_WIRE`.
 - **Example:**
   ```swift
   if let wire = Wire(someShape) {
@@ -50,9 +50,9 @@ public static func rectangle(width: Double, height: Double) -> Wire?
 
 Corners are at `(±width/2, ±height/2, 0)`. Both dimensions must exceed `Precision::Confusion()` (~1e-7).
 
-- **Parameters:** `width` — X dimension; `height` — Y dimension.
+- **Parameters:** `width`, X dimension; `height`, Y dimension.
 - **Returns:** Closed 4-edge rectangular wire, or `nil` if either dimension ≤ 0 or construction fails.
-- **OCCT:** `BRepBuilderAPI_MakeEdge` + `BRepBuilderAPI_MakeWire` — four straight edges assembled into a wire.
+- **OCCT:** `BRepBuilderAPI_MakeEdge` + `BRepBuilderAPI_MakeWire`, four straight edges assembled into a wire.
 - **Example:**
   ```swift
   if let rect = Wire.rectangle(width: 10, height: 5) {
@@ -76,7 +76,7 @@ public static func circle(
 
 The circle lies in the plane perpendicular to `normal` passing through `origin`. The default produces a unit circle in the XY plane at the origin.
 
-- **Parameters:** `origin` — centre point; `normal` — plane normal; `radius` — circle radius (must be > 0).
+- **Parameters:** `origin`, centre point; `normal`, plane normal; `radius`, circle radius (must be > 0).
 - **Returns:** Closed single-edge circular wire, or `nil` on failure.
 - **OCCT:** `gp_Circ` + `BRepBuilderAPI_MakeEdge` + `BRepBuilderAPI_MakeWire`.
 - **Example:**
@@ -98,9 +98,9 @@ public static func polygon(_ points: [SIMD2<Double>], closed: Bool = true) -> Wi
 
 Points are connected in order with straight-line edges. Pass `closed: true` (the default) to add a closing edge from the last point back to the first, producing a profile suitable for extrusion.
 
-- **Parameters:** `points` — 2D vertex positions (minimum 2); `closed` — whether to close the polygon.
+- **Parameters:** `points`, 2D vertex positions (minimum 2); `closed`, whether to close the polygon.
 - **Returns:** Polygonal wire, or `nil` if fewer than 2 points or OCCT construction fails (e.g. degenerate/coincident points).
-- **OCCT:** `BRepBuilderAPI_MakeEdge` + `BRepBuilderAPI_MakeWire` — one linear edge per consecutive pair of points.
+- **OCCT:** `BRepBuilderAPI_MakeEdge` + `BRepBuilderAPI_MakeWire`, one linear edge per consecutive pair of points.
 - **Example:**
   ```swift
   let railProfile = Wire.polygon([
@@ -128,9 +128,9 @@ public static func polygon3D(_ points: [SIMD3<Double>], closed: Bool = true) -> 
 
 Uses `BRepBuilderAPI_MakePolygon` for fast construction of rectilinear wires in 3D space. Prefer `polygon(_:closed:)` for 2D planar profiles.
 
-- **Parameters:** `points` — 3D vertex positions (minimum 2); `closed` — whether to close the polygon.
+- **Parameters:** `points`, 3D vertex positions (minimum 2); `closed`, whether to close the polygon.
 - **Returns:** Wire shape, or `nil` if fewer than 2 points or construction fails.
-- **OCCT:** `BRepBuilderAPI_MakePolygon` — optimised builder for rectilinear polygon wires.
+- **OCCT:** `BRepBuilderAPI_MakePolygon`, optimised builder for rectilinear polygon wires.
 - **Example:**
   ```swift
   let square = Wire.polygon3D([
@@ -153,7 +153,7 @@ public static func line(from start: SIMD3<Double>, to end: SIMD3<Double>) -> Wir
 
 Returns `nil` if `start` and `end` are within 1e-10 of each other (degenerate edge).
 
-- **Parameters:** `from` — start point; `to` — end point.
+- **Parameters:** `from`, start point; `to`, end point.
 - **Returns:** Single-edge wire, or `nil` if degenerate.
 - **OCCT:** `BRepBuilderAPI_MakeEdge(p1, p2)` + `BRepBuilderAPI_MakeWire`.
 - **Example:**
@@ -181,7 +181,7 @@ public static func arc(
 
 Angles are in radians, measured from the X direction rotated into the plane defined by `normal`. The arc sweeps from `startAngle` to `endAngle` in the direction implied by `normal` (right-hand rule).
 
-- **Parameters:** `center` — arc centre; `radius` — arc radius (must be > 0); `startAngle`/`endAngle` — angular bounds in radians; `normal` — plane normal (default Z-up).
+- **Parameters:** `center`, arc centre; `radius`, arc radius (must be > 0); `startAngle`/`endAngle`, angular bounds in radians; `normal`, plane normal (default Z-up).
 - **Returns:** Single-arc-edge wire, or `nil` if `radius ≤ 0` or angles are coincident.
 - **OCCT:** `Geom_Circle` + `Geom_TrimmedCurve` + `BRepBuilderAPI_MakeEdge` + `BRepBuilderAPI_MakeWire`.
 - **Example:**
@@ -212,7 +212,7 @@ public static func arc(
 
 Uses OCCT's `GC_MakeArcOfCircle` to derive the centre and radius from the three points. The `midpoint` resolves the curvature direction. This avoids the X-direction ambiguity of the angle-based `arc(center:radius:startAngle:endAngle:normal:)` constructor.
 
-- **Parameters:** `start` — first endpoint; `midpoint` — a point on the arc; `end` — second endpoint.
+- **Parameters:** `start`, first endpoint; `midpoint`, a point on the arc; `end`, second endpoint.
 - **Returns:** Single-arc-edge wire, or `nil` if the three points are collinear or coincident.
 - **OCCT:** `GC_MakeArcOfCircle` + `BRepBuilderAPI_MakeEdge` + `BRepBuilderAPI_MakeWire`.
 - **Example:**
@@ -238,9 +238,9 @@ public static func path(_ points: [SIMD3<Double>], closed: Bool = false) -> Wire
 
 For a smooth interpolated path, use `interpolate(through:)` or `bspline(_:)` instead.
 
-- **Parameters:** `points` — 3D waypoints (minimum 2); `closed` — if `true`, adds an edge from last to first point.
+- **Parameters:** `points`, 3D waypoints (minimum 2); `closed`, if `true`, adds an edge from last to first point.
 - **Returns:** Straight-segment wire, or `nil` if fewer than 2 points or construction fails.
-- **OCCT:** `BRepBuilderAPI_MakeEdge` + `BRepBuilderAPI_MakeWire` — one linear edge per consecutive pair.
+- **OCCT:** `BRepBuilderAPI_MakeEdge` + `BRepBuilderAPI_MakeWire`, one linear edge per consecutive pair.
 - **Example:**
   ```swift
   if let path = Wire.path([
@@ -262,7 +262,7 @@ public static func bspline(_ controlPoints: [SIMD3<Double>]) -> Wire?
 
 The resulting curve passes *near* the control points (it is an approximation, not an interpolation). For a curve that passes exactly through every point, use `interpolate(through:)`.
 
-- **Parameters:** `controlPoints` — 3D control points (minimum 2).
+- **Parameters:** `controlPoints`, 3D control points (minimum 2).
 - **Returns:** Smooth B-spline wire, or `nil` if fewer than 2 points or `GeomAPI_PointsToBSpline` fails.
 - **OCCT:** `GeomAPI_PointsToBSpline` → `Geom_BSplineCurve` + `BRepBuilderAPI_MakeEdge` + `BRepBuilderAPI_MakeWire`.
 - **Example:**
@@ -297,16 +297,16 @@ public static func nurbs(
 Passes directly to `Geom_BSplineCurve`. Provides exact representation of conic sections (circles, ellipses) and is the standard for CAD data exchange. When `weights` is `nil`, all weights default to 1.0 (non-rational B-spline). When `multiplicities` is `nil`, all knot multiplicities default to 1.
 
 - **Parameters:**
-  - `poles` — control points (minimum 2).
-  - `weights` — per-pole weights (`nil` = uniform 1.0).
-  - `knots` — distinct knot values (minimum 2).
-  - `multiplicities` — per-knot multiplicity (`nil` = all 1).
-  - `degree` — curve degree (1 = linear, 2 = quadratic, 3 = cubic; must be ≥ 1).
+  - `poles`: control points (minimum 2).
+  - `weights`: per-pole weights (`nil` = uniform 1.0).
+  - `knots`: distinct knot values (minimum 2).
+  - `multiplicities`: per-knot multiplicity (`nil` = all 1).
+  - `degree`: curve degree (1 = linear, 2 = quadratic, 3 = cubic; must be ≥ 1).
 - **Returns:** NURBS wire, or `nil` if parameters are invalid.
 - **OCCT:** `Geom_BSplineCurve` constructor + `BRepBuilderAPI_MakeEdge` + `BRepBuilderAPI_MakeWire`.
 - **Example:**
   ```swift
-  // Rational quadratic B-spline — can represent exact quarter-circle arcs
+  // Rational quadratic B-spline, can represent exact quarter-circle arcs
   let poles = [SIMD3(0, 0, 0), SIMD3(1, 1, 0), SIMD3(2, 0, 0)]
   let weights = [1.0, 0.707, 1.0]
   let knots = [0.0, 1.0]
@@ -333,7 +333,7 @@ public static func nurbsUniform(
 
 Simplified NURBS creation: the bridge computes the clamped uniform knot vector automatically. The curve starts at the first control point and ends at the last. Requires at least `degree + 1` control points.
 
-- **Parameters:** `poles` — control points (minimum `degree + 1`); `weights` — per-pole weights (`nil` = 1.0); `degree` — curve degree (≥ 1).
+- **Parameters:** `poles`, control points (minimum `degree + 1`); `weights`, per-pole weights (`nil` = 1.0); `degree`, curve degree (≥ 1).
 - **Returns:** NURBS wire, or `nil` if `poles.count < degree + 1` or construction fails.
 - **OCCT:** `Geom_BSplineCurve` + `BRepBuilderAPI_MakeEdge` + `BRepBuilderAPI_MakeWire` (knot/multiplicity arrays computed internally).
 - **Example:**
@@ -359,7 +359,7 @@ public static func cubicBSpline(poles: [SIMD3<Double>]) -> Wire?
 
 Shorthand for `nurbsUniform(poles:weights:degree:)` with `degree = 3` and uniform weights. Cubic B-splines offer C² continuity (smooth curvature) and good local control. Requires at least 4 control points.
 
-- **Parameters:** `poles` — control points (minimum 4).
+- **Parameters:** `poles`, control points (minimum 4).
 - **Returns:** Cubic B-spline wire, or `nil` if fewer than 4 poles or construction fails.
 - **OCCT:** Delegates to `OCCTWireCreateNURBSUniform` → `Geom_BSplineCurve` (degree 3, uniform weights).
 - **Example:**
@@ -388,9 +388,9 @@ public static func wireFromEdges(_ edges: [Edge]) -> Wire?
 
 Edges should be geometrically connectable (shared vertices or within tolerance). OCCT connects them during construction.
 
-- **Parameters:** `edges` — array of `Edge` objects (minimum 1).
+- **Parameters:** `edges`, array of `Edge` objects (minimum 1).
 - **Returns:** Connected wire, or `nil` if the array is empty or `BRepLib_MakeWire` fails.
-- **OCCT:** `BRepLib_MakeWire` — adds each `TopoDS_Edge` in order and connects within tolerance.
+- **OCCT:** `BRepLib_MakeWire`, adds each `TopoDS_Edge` in order and connects within tolerance.
 - **Example:**
   ```swift
   let edges = shape.edges()
@@ -417,10 +417,10 @@ public static func fromCurve2D(_ curve: Curve2D,
 Lifts the exact parametric representation of a `Curve2D` into 3D space, preserving the original curve geometry. The 2D U axis maps to `xAxis`; the 2D V axis maps to `normal × xAxis`. The resulting wire is suitable for sweep/extrude/loft operations.
 
 - **Parameters:**
-  - `curve` — any `Curve2D` (segment, arc, B-spline, etc.).
-  - `origin` — where the 2D origin maps in 3D.
-  - `normal` — outward normal of the plane (default: Z axis = XY plane).
-  - `xAxis` — 3D direction the 2D X axis maps to (default: X axis).
+  - `curve`: any `Curve2D` (segment, arc, B-spline, etc.).
+  - `origin`: where the 2D origin maps in 3D.
+  - `normal`: outward normal of the plane (default: Z axis = XY plane).
+  - `xAxis`: 3D direction the 2D X axis maps to (default: X axis).
 - **Returns:** 3D wire on the specified plane, or `nil` on failure.
 - **OCCT:** `BRepBuilderAPI_MakeEdge(Geom2d_Curve, Geom_Plane)` + `BRepLib::BuildCurves3d` + `BRepBuilderAPI_MakeWire`.
 - **Example:**
@@ -449,9 +449,9 @@ public static func join(_ wires: [Wire]) -> Wire?
 
 Wires should be geometrically connected (end of one near the start of the next). OCCT attempts to connect them within tolerance. The result contains all edges from all input wires.
 
-- **Parameters:** `wires` — array of wires to join (minimum 1).
+- **Parameters:** `wires`, array of wires to join (minimum 1).
 - **Returns:** Combined wire, or `nil` if the array is empty or `BRepBuilderAPI_MakeWire` fails.
-- **OCCT:** `BRepBuilderAPI_MakeWire::Add(TopoDS_Wire)` — adds each wire to the builder in order.
+- **OCCT:** `BRepBuilderAPI_MakeWire::Add(TopoDS_Wire)`, adds each wire to the builder in order.
 - **Example:**
   ```swift
   let s1 = Wire.line(from: .zero, to: SIMD3(100, 0, 0))!
@@ -483,7 +483,7 @@ Encapsulates length, closure/periodicity status, and the start/end 3D points. Mo
 
 - **Returns:** `CurveInfo` struct, or `nil` if the wire is degenerate or OCCT fails.
 - **OCCT:** `BRepAdaptor_CompCurve` + `GCPnts_AbscissaPoint::Length` per `GeomAbs_CN` interval,
-  subdivided to convergence — the same measurement `length` makes, so the two cannot disagree
+  subdivided to convergence, the same measurement `length` makes, so the two cannot disagree
   (#603).
 - **Example:**
   ```swift
@@ -506,7 +506,7 @@ public var length: Double? { get }
 - **OCCT:** `BRepAdaptor_CompCurve` + `GCPnts_AbscissaPoint::Length` per `GeomAbs_CN` interval,
   subdivided until two successive levels agree to 1e-9 relative (#603).
 - **Note:** A `BRepAdaptor_CompCurve` reports one interval per edge span, so a wire of lines and
-  circles was always exact — but one elliptical edge in it measured 1.485% long before #603.
+  circles was always exact, but one elliptical edge in it measured 1.485% long before #603.
 - **Example:**
   ```swift
   let len = Wire.line(from: .zero, to: SIMD3(10, 0, 0))?.length  // 10.0
@@ -522,7 +522,7 @@ Returns the 3D position on the wire at a normalised parameter.
 public func point(at parameter: Double) -> SIMD3<Double>?
 ```
 
-- **Parameters:** `parameter` — value in `[0, 1]` (0 = start, 1 = end).
+- **Parameters:** `parameter`, value in `[0, 1]` (0 = start, 1 = end).
 - **Returns:** 3D position, or `nil` on failure.
 - **OCCT:** `BRepAdaptor_CompCurve::Value(actualParam)`.
 - **Example:**
@@ -542,9 +542,9 @@ Returns the unit tangent vector at a normalised parameter.
 public func tangent(at parameter: Double) -> SIMD3<Double>?
 ```
 
-- **Parameters:** `parameter` — value in `[0, 1]`.
+- **Parameters:** `parameter`, value in `[0, 1]`.
 - **Returns:** Normalised tangent vector in the direction of travel, or `nil` on failure.
-- **OCCT:** `BRepAdaptor_CompCurve::D1` — first derivative, then normalised.
+- **OCCT:** `BRepAdaptor_CompCurve::D1`, first derivative, then normalised.
 - **Example:**
   ```swift
   let line = Wire.line(from: .zero, to: SIMD3(10, 0, 0))
@@ -563,14 +563,14 @@ public func curvature(at parameter: Double) -> Double?
 
 A straight line has curvature 0; a circle of radius R has curvature 1/R.
 
-- **Parameters:** `parameter` — value in `[0, 1]`.
+- **Parameters:** `parameter`, value in `[0, 1]`.
 - **Returns:** Curvature value ≥ 0, or `nil` where the wire has none there: a parameter it cannot be
   evaluated at, or a point whose first derivative is null (a cusp), where the formula divides by
-  zero. That second case returned `0` until #595 — a straight wire's real answer — because only the
+  zero. That second case returned `0` until #595, a straight wire's real answer, because only the
   error path reached this optional. Unlike `Curve3D.curvature(at:)` there is no infinity sentinel to
   report at a cusp: `BRepAdaptor_CompCurve` computes the formula directly rather than through
   `GeomLProp_CLProps`.
-- **OCCT:** `BRepAdaptor_CompCurve::D2` — uses the formula κ = |d1 × d2| / |d1|³.
+- **OCCT:** `BRepAdaptor_CompCurve::D2`, uses the formula κ = |d1 × d2| / |d1|³.
 - **Example:**
   ```swift
   let circle = Wire.circle(radius: 10)
@@ -589,9 +589,9 @@ public func curvePoint(at parameter: Double) -> CurvePoint?
 
 More efficient than calling `point(at:)`, `tangent(at:)`, and `curvature(at:)` separately when multiple values are needed. The `normal` field is `nil` when curvature is 0 (straight segment).
 
-- **Parameters:** `parameter` — value in `[0, 1]`.
+- **Parameters:** `parameter`, value in `[0, 1]`.
 - **Returns:** `CurvePoint` struct (position, tangent, curvature, optional normal), or `nil` on failure.
-- **OCCT:** `BRepAdaptor_CompCurve::D2` — position and both derivatives in one call.
+- **OCCT:** `BRepAdaptor_CompCurve::D2`, position and both derivatives in one call.
 - **Example:**
   ```swift
   if let cp = Wire.circle(radius: 5)?.curvePoint(at: 0.25) {
@@ -611,7 +611,7 @@ public func offset3D(distance: Double, direction: SIMD3<Double>) -> Wire?
 
 This is a rigid translation (not a parallel-curve offset). Use `offset(by:joinType:)` for planar parallel-curve offsetting.
 
-- **Parameters:** `distance` — translation magnitude; `direction` — direction vector (normalised internally).
+- **Parameters:** `distance`, translation magnitude; `direction`, direction vector (normalised internally).
 - **Returns:** Translated wire, or `nil` on failure.
 - **OCCT:** `BRepBuilderAPI_Transform` with a `gp_Trsf` translation.
 - **Example:**
@@ -641,7 +641,7 @@ public static func interpolate(
 
 Unlike `bspline(_:)` (which approximates), the interpolated curve passes through every point. Produces a `Geom_BSplineCurve` via `GeomAPI_Interpolate`.
 
-- **Parameters:** `points` — points the curve must pass through (minimum 2); `closed` — periodic (closed) curve; `tolerance` — interpolation precision.
+- **Parameters:** `points`, points the curve must pass through (minimum 2); `closed`, periodic (closed) curve; `tolerance`, interpolation precision.
 - **Returns:** Interpolated B-spline wire, or `nil` on failure.
 - **OCCT:** `GeomAPI_Interpolate` + `BRepBuilderAPI_MakeEdge` + `BRepBuilderAPI_MakeWire`.
 - **Example:**
@@ -670,9 +670,9 @@ public static func interpolate(
 ) -> Wire?
 ```
 
-Useful for ensuring smooth connections with adjacent curves — the wire enters at `startTangent` and exits at `endTangent`. The result is always open (not closed), since tangent constraints are applied at both endpoints.
+Useful for ensuring smooth connections with adjacent curves, the wire enters at `startTangent` and exits at `endTangent`. The result is always open (not closed), since tangent constraints are applied at both endpoints.
 
-- **Parameters:** `points` — points the curve must pass through (minimum 2); `startTangent` — desired tangent direction at `points[0]`; `endTangent` — desired tangent direction at `points.last`; `tolerance` — interpolation precision.
+- **Parameters:** `points`, points the curve must pass through (minimum 2); `startTangent`, desired tangent direction at `points[0]`; `endTangent`, desired tangent direction at `points.last`; `tolerance`, interpolation precision.
 - **Returns:** Interpolated B-spline wire, or `nil` on failure.
 - **OCCT:** `GeomAPI_Interpolate::Load(startTangent, endTangent)` + `Perform()` + `BRepBuilderAPI_MakeEdge`.
 - **Example:**
@@ -702,8 +702,8 @@ public enum JoinType: Int32 {
 }
 ```
 
-- `arc` — corners are rounded with arcs.
-- `intersection` — edges are extended to their intersection (sharp corners).
+- `arc`: corners are rounded with arcs.
+- `intersection`: edges are extended to their intersection (sharp corners).
 
 ---
 
@@ -717,7 +717,7 @@ public func offset(by distance: Double, joinType: JoinType = .arc) -> Wire?
 
 Positive distance expands outward; negative contracts inward. The wire must be planar. Internally creates a `BRepBuilderAPI_MakeFace` from the wire, then calls `BRepOffsetAPI_MakeOffset`. Only the outermost contour of the result is returned; inner contours (holes) are discarded.
 
-- **Parameters:** `distance` — offset magnitude (positive = outward, negative = inward); `joinType` — corner handling style.
+- **Parameters:** `distance`, offset magnitude (positive = outward, negative = inward); `joinType`, corner handling style.
 - **Returns:** Offset wire, or `nil` if the wire is non-planar, the offset degenerates, or `BRepOffsetAPI_MakeOffset` fails.
 - **OCCT:** `BRepOffsetAPI_MakeOffset` with `GeomAbs_Arc` or `GeomAbs_Intersection`.
 - **Example:**
@@ -754,7 +754,7 @@ public static func railProfile(
 
 Builds a closed 12-vertex polygon representing a symmetric I-rail cross section (base foot, vertical web, head). Delegates to `polygon(_:closed:)`. For precise profiles matching published standards, use `polygon(_:closed:)` with exact dimensions.
 
-- **Parameters:** `headWidth` — width of the head (running surface); `headHeight` — height of the head; `webThickness` — web vertical thickness; `baseWidth` — base foot width; `baseHeight` — base foot height; `totalHeight` — total height from base bottom to head top.
+- **Parameters:** `headWidth`, width of the head (running surface); `headHeight`, height of the head; `webThickness`, web vertical thickness; `baseWidth`, base foot width; `baseHeight`, base foot height; `totalHeight`, total height from base bottom to head top.
 - **Returns:** Closed wire, or `nil` if `polygon` construction fails.
 - **OCCT:** Delegates to `BRepBuilderAPI_MakeEdge` + `BRepBuilderAPI_MakeWire` via `polygon(_:closed:)`.
 - **Example:**
@@ -782,7 +782,7 @@ public func filleted2D(vertexIndex: Int, radius: Double) -> Wire?
 
 Creates a face from the wire, applies `ChFi2d_Builder::AddFillet` at the indexed vertex, and returns the outer wire of the resulting face. Vertex indices are 0-based in traversal order.
 
-- **Parameters:** `vertexIndex` — 0-based vertex index; `radius` — fillet radius (must be > 0).
+- **Parameters:** `vertexIndex`, 0-based vertex index; `radius`, fillet radius (must be > 0).
 - **Returns:** Wire with the corner replaced by an arc, or `nil` on failure.
 - **OCCT:** `ChFi2d_Builder::AddFillet` + `BRepTools::OuterWire`.
 - **Example:**
@@ -805,7 +805,7 @@ public func filletedAll2D(radius: Double) -> Wire?
 
 Attempts to fillet every vertex with the given radius. If some vertices cannot be filleted (radius too large for adjacent edge lengths), `ChFi2d_Builder` may return the partially-filleted or original wire rather than `nil`.
 
-- **Parameters:** `radius` — fillet radius for all corners.
+- **Parameters:** `radius`, fillet radius for all corners.
 - **Returns:** Wire with rounded corners, or `nil` on failure.
 - **OCCT:** `ChFi2d_Builder::AddFillet` applied to each vertex in the `TopTools_IndexedMapOfShape`.
 - **Example:**
@@ -829,7 +829,7 @@ public func chamfered2D(vertexIndex: Int, distance1: Double, distance2: Double) 
 
 Creates a straight line that cuts across the corner, set back `distance1` along one adjacent edge and `distance2` along the other. Uses `ChFi2d_Builder::AddChamfer`.
 
-- **Parameters:** `vertexIndex` — 0-based vertex index; `distance1` — setback along the first edge; `distance2` — setback along the second edge.
+- **Parameters:** `vertexIndex`, 0-based vertex index; `distance1`, setback along the first edge; `distance2`, setback along the second edge.
 - **Returns:** Wire with the corner replaced by a chamfer edge, or `nil` on failure.
 - **OCCT:** `ChFi2d_Builder::AddChamfer` + `BRepTools::OuterWire`.
 - **Example:**
@@ -852,7 +852,7 @@ public func chamferedAll2D(distance: Double) -> Wire?
 
 Applies equal `distance1 == distance2 == distance` chamfers to each adjacent-edge pair. If some corners cannot be chamfered, the builder may return a partially-chamfered result.
 
-- **Parameters:** `distance` — chamfer setback on both edges at each corner.
+- **Parameters:** `distance`, chamfer setback on both edges at each corner.
 - **Returns:** Wire with chamfered corners, or `nil` on failure.
 - **OCCT:** `ChFi2d_Builder::AddChamfer` applied to each adjacent edge pair.
 - **Example:**
@@ -883,7 +883,7 @@ public static func helix(
 
 All of `radius`, `pitch`, and `turns` must be > 0. The default winding is counter-clockwise when viewed from the positive axis direction.
 
-- **Parameters:** `origin` — axis base point; `axis` — helix axis direction; `radius` — helix radius; `pitch` — axial distance per turn; `turns` — number of full turns; `clockwise` — winding direction.
+- **Parameters:** `origin`, axis base point; `axis`, helix axis direction; `radius`, helix radius; `pitch`, axial distance per turn; `turns`, number of full turns; `clockwise`, winding direction.
 - **Returns:** Helical wire, or `nil` if any of radius/pitch/turns ≤ 0 or construction fails.
 - **OCCT:** `HelixBRep_BuilderHelix::SetParameters` + `Perform`.
 - **Example:**
@@ -913,7 +913,7 @@ public static func helixTapered(
 
 All of `startRadius`, `endRadius`, `pitch`, and `turns` must be > 0.
 
-- **Parameters:** `origin` — axis base point; `axis` — helix axis direction; `startRadius` — radius at the start; `endRadius` — radius at the end; `pitch` — axial distance per turn; `turns` — number of turns; `clockwise` — winding direction.
+- **Parameters:** `origin`, axis base point; `axis`, helix axis direction; `startRadius`, radius at the start; `endRadius`, radius at the end; `pitch`, axial distance per turn; `turns`, number of turns; `clockwise`, winding direction.
 - **Returns:** Tapered helical wire, or `nil` if any required value ≤ 0 or construction fails.
 - **OCCT:** `HelixBRep_BuilderHelix::SetParameters` (overload with start/end diameter) + `Perform`.
 - **Example:**
@@ -939,7 +939,7 @@ The number of edges in this wire in ordered traversal sequence.
 public var orderedEdgeCount: Int { get }
 ```
 
-- **OCCT:** `BRepTools_WireExplorer` — counts edges by iterating the explorer.
+- **OCCT:** `BRepTools_WireExplorer`, counts edges by iterating the explorer.
 - **Example:**
   ```swift
   let rect = Wire.rectangle(width: 10, height: 5)!
@@ -956,7 +956,7 @@ Returns the number of discretised points for an edge at a given ordered index.
 public func orderedEdgePointCount(at index: Int) -> Int
 ```
 
-- **Parameters:** `index` — 0-based edge index in traversal order.
+- **Parameters:** `index`, 0-based edge index in traversal order.
 - **Returns:** Point count, or 0 if the index is out of range.
 - **OCCT:** `BRepTools_WireExplorer` + `GCPnts_TangentialDeflection` with 0.01 rad angular and 0.1 chord deflection.
 - **Example:**
@@ -976,7 +976,7 @@ public func orderedEdgePoints(at index: Int, maxPoints: Int? = nil) -> [SIMD3<Do
 
 When `maxPoints` is `nil`, allocates a buffer sized to all discretised points (no truncation). When provided, limits the returned array to `maxPoints` elements.
 
-- **Parameters:** `index` — 0-based edge index; `maxPoints` — optional output capacity, honoured within `1...Sampling.maximumSampleCount` (10,000,000); outside that range the result is `nil` (#558).
+- **Parameters:** `index`, 0-based edge index; `maxPoints`, optional output capacity, honoured within `1...Sampling.maximumSampleCount` (10,000,000); outside that range the result is `nil` (#558).
 - **Returns:** Array of 3D points along the edge, or `nil` if the index is out of range or the edge is degenerate.
 - **OCCT:** `BRepTools_WireExplorer` + `BRepAdaptor_Curve` + `GCPnts_TangentialDeflection`.
 - **Example:**
@@ -1027,7 +1027,7 @@ public func allEdgePolylines(
 
 Convenience wrapper: converts to `Shape`, then calls `shape.allEdgePolylines(deflection:maxPointsPerEdge:)`.
 
-- **Parameters:** `deflection` — maximum chord deviation; `maxPointsPerEdge` — per-edge capacity, honoured within `2...Sampling.maximumSampleCount` (10,000,000); outside that range the result is `[]` (#558).
+- **Parameters:** `deflection`, maximum chord deviation; `maxPointsPerEdge`, per-edge capacity, honoured within `2...Sampling.maximumSampleCount` (10,000,000); outside that range the result is `[]` (#558).
 - **Returns:** Array of polylines (one per edge), or `[]` on failure.
 - **OCCT:** Delegates to `Shape.allEdgePolylines`.
 - **Example:**
@@ -1051,7 +1051,7 @@ public func edgePolyline(
 
 Convenience wrapper: converts to `Shape`, then calls `shape.edgePolyline(at:deflection:maxPoints:)`.
 
-- **Parameters:** `index` — 0-based edge index; `deflection` — chord deviation; `maxPoints` — output *capacity*, clamped into `0...Sampling.maximumSampleCount` (10,000,000), so an unservable capacity returns the same points rather than a coarser sampling; 0 or less returns `nil` (#558).
+- **Parameters:** `index`, 0-based edge index; `deflection`, chord deviation; `maxPoints`, output *capacity*, clamped into `0...Sampling.maximumSampleCount` (10,000,000), so an unservable capacity returns the same points rather than a coarser sampling; 0 or less returns `nil` (#558).
 - **Returns:** Polyline for the edge, or `nil` if index is out of range.
 - **OCCT:** Delegates to `Shape.edgePolyline`.
 - **Example:**
@@ -1129,9 +1129,9 @@ public func analyze(tolerance: Double = 1e-6) -> WireAnalysis?
 
 Wraps `ShapeAnalysis_Wire` to detect: whether the wire is closed, whether small or degenerate edges exist, 3D gaps between consecutive edges, self-intersections, and whether edges are in connected order.
 
-- **Parameters:** `tolerance` — analysis precision (default 1e-6).
+- **Parameters:** `tolerance`, analysis precision (default 1e-6).
 - **Returns:** `WireAnalysis` struct, or `nil` if analysis fails.
-- **OCCT:** `ShapeAnalysis_Wire` — `CheckClosed`, `CheckSmall`, `CheckGaps3d`, `CheckSelfIntersection`, `CheckOrder`, `MinDistance3d`, `MaxDistance3d`.
+- **OCCT:** `ShapeAnalysis_Wire`, `CheckClosed`, `CheckSmall`, `CheckGaps3d`, `CheckSelfIntersection`, `CheckOrder`, `MinDistance3d`, `MaxDistance3d`.
 - **Example:**
   ```swift
   let rect = Wire.rectangle(width: 10, height: 5)!

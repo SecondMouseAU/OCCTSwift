@@ -2,7 +2,7 @@ name: Release verification
 
 # Confirms the binary pins in Package.swift (OCCT.xcframework + OCCTBridge.xcframework,
 # each a url:/checksum: pair) actually resolve and checksum-match a real release asset.
-# `swift build` on a clean checkout (no local Libraries/) is what does the real work here —
+# `swift build` on a clean checkout (no local Libraries/) is what does the real work here,
 # SwiftPM downloads each binaryTarget from its pinned URL and fails loudly on a checksum
 # mismatch or a 404, which is exactly the "forgot to bump both url and checksum" class of
 # mistake the comments in Package.swift already warn about by hand. `swift test` on top
@@ -12,7 +12,7 @@ name: Release verification
 # Triggered by the GitHub Release publish event rather than a raw tag push, since assets are
 # expected to be attached by the time a release is published. If an xcframework gets
 # rebuilt/republished as a follow-up fix after the release already published (this repo has
-# done that — see the v1.16.1 "Republish prebuilt OCCTBridge.xcframework" commit), re-run
+# done that, see the v1.16.1 "Republish prebuilt OCCTBridge.xcframework" commit), re-run
 # this workflow manually via workflow_dispatch, selecting the tag as the ref, once the
 # replacement asset is uploaded.
 

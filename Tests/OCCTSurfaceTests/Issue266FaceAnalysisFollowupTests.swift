@@ -4,7 +4,7 @@ import simd
 
 /// #266 follow-up: ShapeAnalysis_Surface extras (UVFromIso / Singularity-detail / ProjectDegenerated
 /// / domain-restricted projection) and BRepGProp_Face integration introspection.
-@Suite("Issue #266 follow-up — surface analysis extras")
+@Suite("Issue #266 follow-up, surface analysis extras")
 struct Issue266FaceAnalysisFollowupTests {
 
     @Test("UVFromIso refines (u,v) for a point on a cylinder")
@@ -79,7 +79,7 @@ struct Issue266FaceAnalysisFollowupTests {
               let tv = face.faceLPropTangentV(u: 5, v: 5) else {
             Issue.record("tangent nil"); return
         }
-        // On a plane the two tangents span the plane — not parallel.
+        // On a plane the two tangents span the plane, not parallel.
         let cross = simd_cross(tu, tv)
         #expect(simd_length(cross) > 0.5)   // ~unit (orthonormal axes) ⇒ well clear of parallel
     }

@@ -3,7 +3,7 @@
 Patches in this directory are upstream-bound OCCT bug fixes we carry until they ship in an OCCT
 release. `Scripts/build-occt.sh` applies each one (idempotently, `-p1`, `a/`,`b/` prefixes) to
 `Libraries/occt-src` before every cmake build. A patch takes effect only when the xcframework is
-**rebuilt** from source — the binary shipped in `Libraries/OCCT.xcframework` does not yet include it
+**rebuilt** from source, the binary shipped in `Libraries/OCCT.xcframework` does not yet include it
 until a rebuild + release. See ["Shipping a rebuild"](../../docs/guides/building-occt.md#shipping-a-rebuild)
 for what that takes.
 
@@ -16,51 +16,51 @@ justified deleting the file.
 
 ## 0010-Intf_Interference-O1-tangent-zone-checkpoint-breaker-319.patch
 
-**Fixes the upstream OCCT hang behind [#319](https://github.com/SecondMouseAU/OCCTSwift/issues/319)** — `isSelfIntersecting`'s `hardTimeout:` bound could not actually interrupt the self-interference search on a pathological artifact, running 619s+ of CPU (and observed to run far longer, uninterrupted) against a 30s deadline. Reported upstream as [Open-Cascade-SAS/OCCT#1385](https://github.com/Open-Cascade-SAS/OCCT/issues/1385) (reproducer at
+**Fixes the upstream OCCT hang behind [#319](https://github.com/SecondMouseAU/OCCTSwift/issues/319)**: `isSelfIntersecting`'s `hardTimeout:` bound could not actually interrupt the self-interference search on a pathological artifact, running 619s+ of CPU (and observed to run far longer, uninterrupted) against a 30s deadline. Reported upstream as [Open-Cascade-SAS/OCCT#1385](https://github.com/Open-Cascade-SAS/OCCT/issues/1385) (reproducer at
 [`Scripts/repro/319-selfintersection`](https://github.com/SecondMouseAU/OCCTSwift/tree/main/Scripts/repro/319-selfintersection)), fix as [OCCT#1386](https://github.com/Open-Cascade-SAS/OCCT/pull/1386) (CI green on all 3 platforms, ready for review).
 
 Two independent, compounding defects in `BOPAlgo_ArgumentAnalyzer`'s self-interference phase (`BOPAlgo_CheckerSI::CheckFaceSelfIntersection` → `IntTools_FaceFace::Perform` → `Intf_Interference::Insert`):
 
-1. **O(n)-per-call point access.** `Intf_Interference::Insert` compares points between the new tangent zone and every existing zone via `Intf_TangentZone::GetPoint(Index)`, called inside a doubly-nested loop. `GetPoint` indexes the zone's backing `NCollection_Sequence` — a linked list with no O(1) random access — so each call walks from the nearest end. Profiling the pathological artifact (both independently and cross-checked against a second session's report) attributed ~80% of leaf samples to `NCollection_BaseSequence::Find`. The artifact's geometry produces an unboundedly growing *number* of distinct tangent zones, not one giant merging zone, so this alone is an O(1)-per-lookup fix to an inherently expensive matching structure — it helps, but does not bound wall-clock time.
-2. **No checkpoint below `CheckFaceSelfIntersection`.** The self-interference phase never polled its cooperative progress indicator (OCCT's usual `Message_ProgressRange`/`UserBreak()` idiom) anywhere inside a single face's check — only *between* whole-face checks. A caller's timeout could therefore only fire in the gaps between faces, not while stuck inside one, which is exactly where the artifact spends its time.
+1. **O(n)-per-call point access.** `Intf_Interference::Insert` compares points between the new tangent zone and every existing zone via `Intf_TangentZone::GetPoint(Index)`, called inside a doubly-nested loop. `GetPoint` indexes the zone's backing `NCollection_Sequence`, a linked list with no O(1) random access, so each call walks from the nearest end. Profiling the pathological artifact (both independently and cross-checked against a second session's report) attributed ~80% of leaf samples to `NCollection_BaseSequence::Find`. The artifact's geometry produces an unboundedly growing *number* of distinct tangent zones, not one giant merging zone, so this alone is an O(1)-per-lookup fix to an inherently expensive matching structure, it helps, but does not bound wall-clock time.
+2. **No checkpoint below `CheckFaceSelfIntersection`.** The self-interference phase never polled its cooperative progress indicator (OCCT's usual `Message_ProgressRange`/`UserBreak()` idiom) anywhere inside a single face's check, only *between* whole-face checks. A caller's timeout could therefore only fire in the gaps between faces, not while stuck inside one, which is exactly where the artifact spends its time.
 
-**Fix:** (1) `Intf_TangentZone::Points()` builds and caches a true `NCollection_Array1` per zone in one linear pass on first use, invalidated by any mutation (`Append`/`InsertAfter`/`InsertBefore`); `Insert()` now indexes through the cached array instead of calling `GetPoint` in the nested loop — same comparisons, same result, O(1) lookup. (2) `Intf_Interference::SetBreaker` (a thread-local, RAII-scoped via `Intf_InterferenceBreakerScope`) lets `Insert()` poll a `Message_ProgressScope` every 256 calls (not every call, to avoid taxing the common case) and abort by throwing `Standard_Failure`, unwinding the deep `IntTools_FaceFace`/`Intf_Interference` call stack safely. `BOPAlgo_CheckerSI`'s self-intersect functor wires this up around `IntTools_FaceFace::Perform`, gated on `!myRunParallel` — an exception thrown from a worker thread of `OSD_Parallel::For`'s parallel path would be unsafe (risks `std::terminate()`), so the checkpoint is only active on the single-threaded path.
+**Fix:** (1) `Intf_TangentZone::Points()` builds and caches a true `NCollection_Array1` per zone in one linear pass on first use, invalidated by any mutation (`Append`/`InsertAfter`/`InsertBefore`); `Insert()` now indexes through the cached array instead of calling `GetPoint` in the nested loop, same comparisons, same result, O(1) lookup. (2) `Intf_Interference::SetBreaker` (a thread-local, RAII-scoped via `Intf_InterferenceBreakerScope`) lets `Insert()` poll a `Message_ProgressScope` every 256 calls (not every call, to avoid taxing the common case) and abort by throwing `Standard_Failure`, unwinding the deep `IntTools_FaceFace`/`Intf_Interference` call stack safely. `BOPAlgo_CheckerSI`'s self-intersect functor wires this up around `IntTools_FaceFace::Perform`, gated on `!myRunParallel`, an exception thrown from a worker thread of `OSD_Parallel::For`'s parallel path would be unsafe (risks `std::terminate()`), so the checkpoint is only active on the single-threaded path.
 
-**Validation:** verified on the linked artifact — with both fixes, a 0.5s deadline returns in 0.547s and a 30s deadline returns in 30.1s (vs. 619s+ CPU / never returning on stock p1), with correct `HasFaulty()` results at every deadline tested (0.5s/1s/2s/3s/5s/30s), clean across a 10x repeated-run stress test. Zero regression on clean, overlapping, and grid self-intersection sanity cases (byte-identical `HasFaulty()`/point output). An empty-zone edge case (`Intf_TangentZone::Points()` on a zone with zero points) is guarded explicitly — `NCollection_Array1::Resize(1, 0, false)` throws `Standard_RangeError` for an empty range, caught by a dedicated GTest before it could reach a real caller. New upstream GTests `Intf_TangentZone_Test.cxx` (`Points()` correctness and cache invalidation, including the empty-zone case) and `Intf_Interference_Test.cxx` (breaker aborts `Insert()` promptly; a non-tripping or absent breaker leaves behavior unchanged) pass on Linux/Windows/macOS in OCCT's own CI, alongside the full regression/GTest/build matrix — all green on the first PR submission.
+**Validation:** verified on the linked artifact, with both fixes, a 0.5s deadline returns in 0.547s and a 30s deadline returns in 30.1s (vs. 619s+ CPU / never returning on stock p1), with correct `HasFaulty()` results at every deadline tested (0.5s/1s/2s/3s/5s/30s), clean across a 10x repeated-run stress test. Zero regression on clean, overlapping, and grid self-intersection sanity cases (byte-identical `HasFaulty()`/point output). An empty-zone edge case (`Intf_TangentZone::Points()` on a zone with zero points) is guarded explicitly, `NCollection_Array1::Resize(1, 0, false)` throws `Standard_RangeError` for an empty range, caught by a dedicated GTest before it could reach a real caller. New upstream GTests `Intf_TangentZone_Test.cxx` (`Points()` correctness and cache invalidation, including the empty-zone case) and `Intf_Interference_Test.cxx` (breaker aborts `Insert()` promptly; a non-tripping or absent breaker leaves behavior unchanged) pass on Linux/Windows/macOS in OCCT's own CI, alongside the full regression/GTest/build matrix, all green on the first PR submission.
 
 **Retire** once the bundled OCCT includes this fix.
 
 ## 0011-XCAFDoc_ShapeTool-AutoNamingScope-341.patch
 
-**Fixes the upstream OCCT thread-safety defect behind [#341](https://github.com/SecondMouseAU/OCCTSwift/issues/341)** — concurrent OBJ/glTF import or PLY/OBJ/glTF export races on `XCAFDoc_ShapeTool`'s global auto-naming mode.
+**Fixes the upstream OCCT thread-safety defect behind [#341](https://github.com/SecondMouseAU/OCCTSwift/issues/341)**: concurrent OBJ/glTF import or PLY/OBJ/glTF export races on `XCAFDoc_ShapeTool`'s global auto-naming mode.
 
-`XCAFDoc_ShapeTool::theAutoNaming` is a file-scope `static bool` — a single process-wide setting, by design (the header says so explicitly: "This setting is global; it cannot be made a member function"). Three independent call sites do the same unsynchronized save/modify/restore dance around it: `RWMesh_CafReader::fillDocument()` (shared base of `RWObj_CafReader` and `RWGltf_CafReader` — OBJ **and** glTF import both hit this), `RWGltf_CafReader::fillDocument()` (a *separate*, near-duplicate override — not a call into the base class's version), and `XCAFDoc_Editor::Expand()` (which additionally recurses into itself while the dance is still in flight). `XCAFDoc_ShapeTool::AddShape`/`addShape` reads the same flag internally to decide whether to auto-generate a name.
+`XCAFDoc_ShapeTool::theAutoNaming` is a file-scope `static bool`, a single process-wide setting, by design (the header says so explicitly: "This setting is global; it cannot be made a member function"). Three independent call sites do the same unsynchronized save/modify/restore dance around it: `RWMesh_CafReader::fillDocument()` (shared base of `RWObj_CafReader` and `RWGltf_CafReader`, OBJ **and** glTF import both hit this), `RWGltf_CafReader::fillDocument()` (a *separate*, near-duplicate override, not a call into the base class's version), and `XCAFDoc_Editor::Expand()` (which additionally recurses into itself while the dance is still in flight). `XCAFDoc_ShapeTool::AddShape`/`addShape` reads the same flag internally to decide whether to auto-generate a name.
 
-ThreadSanitizer on an 8-10 thread concurrent-OBJ-round-trip stress (each thread its own uniquely-named file, V8_0_0_p1 + patches `0001`–`0010`) reports 9-17 races per run — `SetAutoNaming`/`AutoNaming`/`addShape`'s internal read, all on `theAutoNaming` — confirming two distinct problems: (1) two threads' save/modify/restore critical sections can interleave, so one thread's restore stomps another's still-in-progress override (a *logical* bug: the wrong auto-naming mode is active for part of a build, independent of memory safety); (2) `theAutoNaming` itself is a plain `bool` read and written with no synchronization from *any* caller, including ordinary `AddShape` calls made outside any of the three save/restore call sites above — a genuine data race (undefined behavior) on every access, not just inside the three call sites.
+ThreadSanitizer on an 8-10 thread concurrent-OBJ-round-trip stress (each thread its own uniquely-named file, V8_0_0_p1 + patches `0001`–`0010`) reports 9-17 races per run, `SetAutoNaming`/`AutoNaming`/`addShape`'s internal read, all on `theAutoNaming`, confirming two distinct problems: (1) two threads' save/modify/restore critical sections can interleave, so one thread's restore stomps another's still-in-progress override (a *logical* bug: the wrong auto-naming mode is active for part of a build, independent of memory safety); (2) `theAutoNaming` itself is a plain `bool` read and written with no synchronization from *any* caller, including ordinary `AddShape` calls made outside any of the three save/restore call sites above, a genuine data race (undefined behavior) on every access, not just inside the three call sites.
 
-**Fix, both layers.** `XCAFDoc_ShapeTool::AutoNamingScope` is a new RAII helper (`AutoNamingScope(bool)` constructor / destructor) that holds a `std::recursive_mutex` for its *entire* lifetime — not just around the individual get/set calls — so two threads' save-modify-restore sequences serialize against each other instead of interleaving (recursive because `XCAFDoc_Editor::Expand()` needs to reenter it on the same thread). All three call sites now use it instead of a bare `AutoNaming()`/`SetAutoNaming()` pair, collapsing `XCAFDoc_Editor::Expand()`'s two duplicate manual-restore-before-return sites into one destructor-driven restore that fires on every exit path. Separately, `theAutoNaming` itself is now `std::atomic<bool>` instead of a plain `bool`, so *every* access anywhere in the file — including `AddShape`'s internal read, which participates in none of the three scoped sections — is well-defined and TSan-clean, closing the residual gap the mutex alone doesn't reach (an unscoped `AddShape` call has no scope to be excluded by; it was never going to get a *stable* value while another thread's scope is active, since the flag is deliberately global, but it must at least get a *real*, non-torn one).
+**Fix, both layers.** `XCAFDoc_ShapeTool::AutoNamingScope` is a new RAII helper (`AutoNamingScope(bool)` constructor / destructor) that holds a `std::recursive_mutex` for its *entire* lifetime, not just around the individual get/set calls, so two threads' save-modify-restore sequences serialize against each other instead of interleaving (recursive because `XCAFDoc_Editor::Expand()` needs to reenter it on the same thread). All three call sites now use it instead of a bare `AutoNaming()`/`SetAutoNaming()` pair, collapsing `XCAFDoc_Editor::Expand()`'s two duplicate manual-restore-before-return sites into one destructor-driven restore that fires on every exit path. Separately, `theAutoNaming` itself is now `std::atomic<bool>` instead of a plain `bool`, so *every* access anywhere in the file, including `AddShape`'s internal read, which participates in none of the three scoped sections, is well-defined and TSan-clean, closing the residual gap the mutex alone doesn't reach (an unscoped `AddShape` call has no scope to be excluded by; it was never going to get a *stable* value while another thread's scope is active, since the flag is deliberately global, but it must at least get a *real*, non-torn one).
 
-**Validation:** the same TSan stress (10 threads × 200 iterations, 2000 concurrent OBJ round-trips) reports **zero** `XCAFDoc_ShapeTool` races after the patch, across 4 separate runs — only the already-known, unrelated `Message_PrinterOStream`/`std::cout` console-write race remains (OCCT's default messenger has no internal locking; cosmetic, not fixed here). Regression-clean on the `create_fillet_boolean` (#298) and `mesh_independent` scenarios — only the already-known benign `BOPAlgo_InitMessages` lazy-init race, unchanged. `RWGltf_CafReader`'s copy of the fix could not be exercised under TSan directly (this repo's minimal-module TSan build excludes `TKDEGLTF` — it requires RapidJSON, disabled for the faster build) but compiles cleanly and is mechanically identical to the `RWMesh_CafReader`/`RWObj_CafReader` path that *was* verified.
+**Validation:** the same TSan stress (10 threads × 200 iterations, 2000 concurrent OBJ round-trips) reports **zero** `XCAFDoc_ShapeTool` races after the patch, across 4 separate runs, only the already-known, unrelated `Message_PrinterOStream`/`std::cout` console-write race remains (OCCT's default messenger has no internal locking; cosmetic, not fixed here). Regression-clean on the `create_fillet_boolean` (#298) and `mesh_independent` scenarios, only the already-known benign `BOPAlgo_InitMessages` lazy-init race, unchanged. `RWGltf_CafReader`'s copy of the fix could not be exercised under TSan directly (this repo's minimal-module TSan build excludes `TKDEGLTF`, it requires RapidJSON, disabled for the faster build) but compiles cleanly and is mechanically identical to the `RWMesh_CafReader`/`RWObj_CafReader` path that *was* verified.
 
-Superseded the interim bridge-side mitigation (`meshCafMutex()` in `OCCTBridge_IO.mm`, shipped v1.15.4) — removed once this kernel patch made the underlying OCCT calls safe on their own.
+Superseded the interim bridge-side mitigation (`meshCafMutex()` in `OCCTBridge_IO.mm`, shipped v1.15.4), removed once this kernel patch made the underlying OCCT calls safe on their own.
 
 Reported and isolated at SecondMouseAU/OCCTSwift#341; filed upstream as [Open-Cascade-SAS/OCCT#1387](https://github.com/Open-Cascade-SAS/OCCT/issues/1387) (repro), fix as [OCCT#1388](https://github.com/Open-Cascade-SAS/OCCT/pull/1388).
 
-**Revised (SecondMouseAU/OCCTSwift#363), patch content above updated in place — not a new patch
+**Revised (SecondMouseAU/OCCTSwift#363), patch content above updated in place, not a new patch
 number.** Upstream reviewer gkv311 caught something this writeup's own "closing the residual gap"
 framing above got wrong: the mutex only serialized the three known override call sites against each
 other, not the many *other* reads of `theAutoNaming` scattered through `XCAFDoc_ShapeTool.cxx`
-(`AddShape`, `MakeReference`, `SetSHUO`) — those stayed outside any scope, so an unrelated unscoped
+(`AddShape`, `MakeReference`, `SetSHUO`), those stayed outside any scope, so an unrelated unscoped
 caller on another thread could still observe another thread's temporary override. The atomic
 conversion made that access memory-safe; it did not make the override *behavior* correct for callers
 outside the three scoped sites. The "the flag is deliberately global" framing above was itself the
-mistake: `theAutoNaming` was never meant to express per-document intent — the three overriding call
+mistake: `theAutoNaming` was never meant to express per-document intent, the three overriding call
 sites each want to suppress naming for their own document's build, not change a process-wide
 setting, and `XCAFDoc_ShapeTool` is already one instance per document. The override belongs there.
 
 **Fixed properly this time.** `XCAFDoc_ShapeTool::OwnAutoNamingScope` replaces `AutoNamingScope`,
 saving/restoring a per-instance `myOwnAutonaming` field (`-1` inherits the process-wide default,
-`0`/`1` is a local override) instead of the shared flag. No locking needed at all — two threads
+`0`/`1` is a local override) instead of the shared flag. No locking needed at all, two threads
 working on two different documents (two different `ShapeTool` instances) never touch each other's
 state. `AddShape`/`MakeReference`/`SetSHUO` now read a new `OwnAutoNaming()` accessor instead of
 `theAutoNaming` directly; `MakeReference` is no longer `static`, since it now reads instance state.
@@ -69,8 +69,8 @@ recurses into itself on the same document, so a bare `SetOwnAutoNaming()`/`Unset
 pair at entry/exit would clobber an outer call's still-active override mid-recursion (the inner
 call's unconditional "reset to inherit global" would win). `OwnAutoNamingScope` does a proper
 save/restore of whatever override state the instance had on entry, so nested scopes on the same
-instance compose correctly — same reentrancy guarantee the old `recursive_mutex` gave, achieved here
-by symmetric save/restore instead of a lock. `theAutoNaming` itself stays `std::atomic<bool>` —
+instance compose correctly, same reentrancy guarantee the old `recursive_mutex` gave, achieved here
+by symmetric save/restore instead of a lock. `theAutoNaming` itself stays `std::atomic<bool>`,
 `SetAutoNaming()`/`AutoNaming()` remain callable concurrently from any thread at any time,
 independent of any instance's own override.
 
@@ -79,7 +79,7 @@ zero `theAutoNaming` races, matching the prior result. New scenario
 (`Scripts/repro/363-own-autonaming/occt_363_isolation.cpp`, `isolation` mode) directly checks the
 property the mutex fix couldn't guarantee: half the threads locally override via
 `OwnAutoNamingScope` on their own document while the other half do plain unscoped `AddShape()` on
-independent documents relying on the process-wide default, concurrently — 3000 operations, zero
+independent documents relying on the process-wide default, concurrently, 3000 operations, zero
 instances of the unscoped threads observing another thread's override.
 
 Upstream PR #1388 updated to the new design; CI green on all 3 platforms (build/GTest/regression/
@@ -89,33 +89,33 @@ test), all originally-green checks stayed green.
 
 ## 0012-CDF_Directory-XCAFApp_Application-thread-safety-344.patch
 
-**Fixes the upstream OCCT crash behind [#344](https://github.com/SecondMouseAU/OCCTSwift/issues/344)** — an uncatchable SIGSEGV seen in ~1-in-10 parallel `swift test` runs right after two concurrent OBJ mesh imports, confirmed to survive the #341 kernel fix (theAutoNaming) in v1.15.5.
+**Fixes the upstream OCCT crash behind [#344](https://github.com/SecondMouseAU/OCCTSwift/issues/344)**: an uncatchable SIGSEGV seen in ~1-in-10 parallel `swift test` runs right after two concurrent OBJ mesh imports, confirmed to survive the #341 kernel fix (theAutoNaming) in v1.15.5.
 
-Two independent, previously-undetected races, both in code the #341 TSan stress never reached — that harness (`Scripts/repro/341-meshcaf/occt_341_stress.cpp`) builds its `TDocStd_Document` directly (`new TDocStd_Document("BinXCAF")`), bypassing `XCAFApp_Application`/`CDF_Application` entirely. The real bridge path (`OCCTDocumentLoadOBJ` and every other document-producing bridge call) does not: all of them go through `XCAFApp_Application::GetApplication()->NewDocument(...)`.
+Two independent, previously-undetected races, both in code the #341 TSan stress never reached, that harness (`Scripts/repro/341-meshcaf/occt_341_stress.cpp`) builds its `TDocStd_Document` directly (`new TDocStd_Document("BinXCAF")`), bypassing `XCAFApp_Application`/`CDF_Application` entirely. The real bridge path (`OCCTDocumentLoadOBJ` and every other document-producing bridge call) does not: all of them go through `XCAFApp_Application::GetApplication()->NewDocument(...)`.
 
-1. **`XCAFApp_Application::GetApplication()`** — a textbook double-checked-locking-without-locking bug: `static Handle(XCAFApp_Application) locApp; if (locApp.IsNull()) { locApp = new XCAFApp_Application; }`. Two threads' first concurrent call can both observe `IsNull()` and both construct a new instance, racing to assign the shared `locApp` handle. This is the dominant defect: TSan shows it produces **multiple concurrently constructed `XCAFApp_Application` instances**, whose "losing" copies are then torn down while other threads are still constructing/using a same-generation object — cascading into races across dozens of unrelated destructors (`TDF_LabelNode::Destroy`, `TCollection_ExtendedString::~`, `CDM_Document::~CDM_Document`, `NCollection_BaseList::PClear`, ...) and several ctor/dtor-vs-virtual-call ("vptr") reports, not just a leaked handle.
-2. **`CDF_Directory::Add`/`Remove`/`Contains`** — every `XCAFApp_Application`/`CDF_Application` instance is normally shared process-wide (the entire point of `GetApplication()`), so its one `CDF_Directory` receives `Add()` from every document-creating call on every thread. `myDocuments` is a plain `NCollection_List` with zero synchronization: `NCollection_BaseList::PAppend` mutates `myFirst`/`myLast`/`myLength` with no locking at all. Confirmed independently by TSan (`CDF_Directory.cxx:30`, `NCollection_BaseList.cxx:45/52/53`) even setting aside race #1.
+1. **`XCAFApp_Application::GetApplication()`**: a textbook double-checked-locking-without-locking bug: `static Handle(XCAFApp_Application) locApp; if (locApp.IsNull()) { locApp = new XCAFApp_Application; }`. Two threads' first concurrent call can both observe `IsNull()` and both construct a new instance, racing to assign the shared `locApp` handle. This is the dominant defect: TSan shows it produces **multiple concurrently constructed `XCAFApp_Application` instances**, whose "losing" copies are then torn down while other threads are still constructing/using a same-generation object, cascading into races across dozens of unrelated destructors (`TDF_LabelNode::Destroy`, `TCollection_ExtendedString::~`, `CDM_Document::~CDM_Document`, `NCollection_BaseList::PClear`, ...) and several ctor/dtor-vs-virtual-call ("vptr") reports, not just a leaked handle.
+2. **`CDF_Directory::Add`/`Remove`/`Contains`**: every `XCAFApp_Application`/`CDF_Application` instance is normally shared process-wide (the entire point of `GetApplication()`), so its one `CDF_Directory` receives `Add()` from every document-creating call on every thread. `myDocuments` is a plain `NCollection_List` with zero synchronization: `NCollection_BaseList::PAppend` mutates `myFirst`/`myLast`/`myLength` with no locking at all. Confirmed independently by TSan (`CDF_Directory.cxx:30`, `NCollection_BaseList.cxx:45/52/53`) even setting aside race #1.
 
-The bridge never calls `Application->Close()` on a document (no call site in `Sources/OCCTBridge`), so `CDF_Directory::Remove` is never reached from OCCTSwift — every document ever created via the bridge accumulates in `myDocuments` for the life of the process. That's a separate, pre-existing leak, not fixed here (out of scope for #344).
+The bridge never calls `Application->Close()` on a document (no call site in `Sources/OCCTBridge`), so `CDF_Directory::Remove` is never reached from OCCTSwift, every document ever created via the bridge accumulates in `myDocuments` for the life of the process. That's a separate, pre-existing leak, not fixed here (out of scope for #344).
 
 **Fix, both layers:**
 
-1. `XCAFApp_Application::GetApplication()`: fold construction into the static local's initializer — a C++11 "magic static" is thread-safe exactly once, unlike the previous separate `IsNull()`-guarded assignment.
-2. `CDF_Directory`: a private `mutable std::mutex myMutex` guards `Add`/`Remove`/`Contains`/`Length`/`IsEmpty`/`Last`. `Add()` inlines the containment scan instead of calling the public `Contains()`, to avoid a self-deadlock on the (non-recursive) mutex. `List()` — used only by the friend `CDF_DirectoryIterator`, which nothing in OCCTSwift's bridge uses — is intentionally left unguarded; closing that gap would need a bigger API change (a snapshot copy) out of proportion to the two confirmed, reachable races this patch fixes.
+1. `XCAFApp_Application::GetApplication()`: fold construction into the static local's initializer, a C++11 "magic static" is thread-safe exactly once, unlike the previous separate `IsNull()`-guarded assignment.
+2. `CDF_Directory`: a private `mutable std::mutex myMutex` guards `Add`/`Remove`/`Contains`/`Length`/`IsEmpty`/`Last`. `Add()` inlines the containment scan instead of calling the public `Contains()`, to avoid a self-deadlock on the (non-recursive) mutex. `List()`, used only by the friend `CDF_DirectoryIterator`, which nothing in OCCTSwift's bridge uses, is intentionally left unguarded; closing that gap would need a bigger API change (a snapshot copy) out of proportion to the two confirmed, reachable races this patch fixes.
 
-**Validation:** a debug (`-O0 -g`) build with a temporary `SIGSEGV`/`SIGBUS` signal handler (`backtrace_symbols_fd`, per the `feedback-lldb-blocked-use-signal-handler` technique) crashes ~50% of runs at 10 threads × 3000 barrier-synchronized rounds on stock p1, resolving to `TDocStd_Application::NewDocument -> CDF_Application::Open` both times — matching the `CDF_Directory::Add`/`PAppend` corruption mechanism. TSan (minimal-module build, same protocol as #298/#319/#341): stock p1 reports 234 races at 8 threads × 200 free-running iterations; the patch reduces this to 9, all directly in `CDF_Directory::Add`/`PAppend` and all showing the *same* mutex held on both sides of the reported conflict (`mutexes: write M0` on both the read and the write) — a pattern consistent with a TSan/allocator-recycling artifact rather than a genuine unaddressed race (a control program with a trivially-correct `std::lock_guard` pattern under the identical TSan flags reports no such warning). The entire `GetApplication()`-driven destructor cascade — dozens of unique signatures pre-fix — is gone entirely.
+**Validation:** a debug (`-O0 -g`) build with a temporary `SIGSEGV`/`SIGBUS` signal handler (`backtrace_symbols_fd`, per the `feedback-lldb-blocked-use-signal-handler` technique) crashes ~50% of runs at 10 threads × 3000 barrier-synchronized rounds on stock p1, resolving to `TDocStd_Application::NewDocument -> CDF_Application::Open` both times, matching the `CDF_Directory::Add`/`PAppend` corruption mechanism. TSan (minimal-module build, same protocol as #298/#319/#341): stock p1 reports 234 races at 8 threads × 200 free-running iterations; the patch reduces this to 9, all directly in `CDF_Directory::Add`/`PAppend` and all showing the *same* mutex held on both sides of the reported conflict (`mutexes: write M0` on both the read and the write), a pattern consistent with a TSan/allocator-recycling artifact rather than a genuine unaddressed race (a control program with a trivially-correct `std::lock_guard` pattern under the identical TSan flags reports no such warning). The entire `GetApplication()`-driven destructor cascade, dozens of unique signatures pre-fix, is gone entirely.
 
-**Second part, found during validation.** Fixing `GetApplication()`'s race means every caller now genuinely shares ONE `TDocStd_Application` instance (as intended) — which surfaced further races on that *same* instance's other unsynchronized state, previously masked by threads sometimes getting different (uncontended) instances of their own. Repeated `swift test` runs (validating the fix above) hit two more crashes in `Tests/OCCTXCAFTests`, both resolving to state on the same shared singleton:
+**Second part, found during validation.** Fixing `GetApplication()`'s race means every caller now genuinely shares ONE `TDocStd_Application` instance (as intended), which surfaced further races on that *same* instance's other unsynchronized state, previously masked by threads sometimes getting different (uncontended) instances of their own. Repeated `swift test` runs (validating the fix above) hit two more crashes in `Tests/OCCTXCAFTests`, both resolving to state on the same shared singleton:
 
-3. **`TDocStd_Application::Resources()`** — the identical lazy-init race pattern as `GetApplication()`: `if (myResources.IsNull()) { myResources = new Resource_Manager(...); }`, no locking.
-4. **`Resource_Manager`'s own maps** (`myRefMap`/`myUserMap`/`myExtStrMap`) — no synchronization at all. Caught live: a SIGTRAP inside `Resource_Manager::SetResource`, called from `TDocStd_Application::DefineFormat` (itself called by `Document.defineAllFormats()`, a common per-test setup call many parallel XCAF tests invoke concurrently).
-5. **`CDF_Application::myReaders`/`myWriters`** (format-name → driver maps) — read/written from `DefineFormat`, `ReaderFromFormat`/`WriterFromFormat`, and `ReadingFormats`/`WritingFormats` with no locking. Caught live: a SIGSEGV inside `TDocStd_Application::ReadingFormats` iterating `myReaders` while another thread's `DefineFormat` mutated it concurrently.
+3. **`TDocStd_Application::Resources()`**: the identical lazy-init race pattern as `GetApplication()`: `if (myResources.IsNull()) { myResources = new Resource_Manager(...); }`, no locking.
+4. **`Resource_Manager`'s own maps** (`myRefMap`/`myUserMap`/`myExtStrMap`), no synchronization at all. Caught live: a SIGTRAP inside `Resource_Manager::SetResource`, called from `TDocStd_Application::DefineFormat` (itself called by `Document.defineAllFormats()`, a common per-test setup call many parallel XCAF tests invoke concurrently).
+5. **`CDF_Application::myReaders`/`myWriters`** (format-name → driver maps), read/written from `DefineFormat`, `ReaderFromFormat`/`WriterFromFormat`, and `ReadingFormats`/`WritingFormats` with no locking. Caught live: a SIGSEGV inside `TDocStd_Application::ReadingFormats` iterating `myReaders` while another thread's `DefineFormat` mutated it concurrently.
 
-**Fix, continued:** a mutex guards `Resources()`'s lazy-init (same pattern as fix 1); a `std::recursive_mutex` guards `Resource_Manager`'s public accessors (recursive because `Integer()`/`Real()`/`ExtValue()` call `Value()` internally, and the `int`/`double` `SetResource()` overloads call the `char*` one) — `GetMap()`, a raw-reference escape hatch with no callers in this area, is left unguarded, same rationale as `CDF_Directory::List()`; a mutex guards `CDF_Application::myReaders`/`myWriters` across every access point. The new `Resource_Manager` mutex member makes the class non-copyable by default, breaking `ShapeProcess_Context.cxx`'s existing (pre-existing, unrelated) `new Resource_Manager(*sRC)` thread-safety workaround (its own comment: *"Creating copy of sRC for thread safety of Resource_Manager variables... calling of SetResource() for one object in multiple threads causes race condition"* — OCCT's own prior acknowledgement of this exact defect, worked around locally rather than fixed at the source) — added an explicit copy constructor that copies the maps under the source's lock and default-constructs a fresh mutex for the new instance.
+**Fix, continued:** a mutex guards `Resources()`'s lazy-init (same pattern as fix 1); a `std::recursive_mutex` guards `Resource_Manager`'s public accessors (recursive because `Integer()`/`Real()`/`ExtValue()` call `Value()` internally, and the `int`/`double` `SetResource()` overloads call the `char*` one), `GetMap()`, a raw-reference escape hatch with no callers in this area, is left unguarded, same rationale as `CDF_Directory::List()`; a mutex guards `CDF_Application::myReaders`/`myWriters` across every access point. The new `Resource_Manager` mutex member makes the class non-copyable by default, breaking `ShapeProcess_Context.cxx`'s existing (pre-existing, unrelated) `new Resource_Manager(*sRC)` thread-safety workaround (its own comment: *"Creating copy of sRC for thread safety of Resource_Manager variables... calling of SetResource() for one object in multiple threads causes race condition"*, OCCT's own prior acknowledgement of this exact defect, worked around locally rather than fixed at the source), added an explicit copy constructor that copies the maps under the source's lock and default-constructs a fresh mutex for the new instance.
 
 **Validation, continued:** SIGTRAP (`Resource_Manager::SetResource`) and SIGSEGV (`TDocStd_Application::ReadingFormats`) both reproducible before this part of the patch; 0/12 further `swift test` runs of `OCCTXCAFTests` reproduce either after it.
 
-A third, separate crash surfaced during this same validation (`BinLDrivers_DocumentStorageDriver::Write`/`WriteSubTree` corrupting a *shared, cached, non-reentrant storage-driver instance* under concurrent `Save`/`SaveAs` of the same format) — architecturally different (a shared worker object, not a container needing a lock) and **not fixed here**; filed separately as SecondMouseAU/OCCTSwift#349 for its own dedicated investigation.
+A third, separate crash surfaced during this same validation (`BinLDrivers_DocumentStorageDriver::Write`/`WriteSubTree` corrupting a *shared, cached, non-reentrant storage-driver instance* under concurrent `Save`/`SaveAs` of the same format), architecturally different (a shared worker object, not a container needing a lock) and **not fixed here**; filed separately as SecondMouseAU/OCCTSwift#349 for its own dedicated investigation.
 
 See [`Scripts/repro/344-cdf-directory/`](https://github.com/SecondMouseAU/OCCTSwift/tree/main/Scripts/repro/344-cdf-directory) for the reproducers and full writeup. Filed upstream as [Open-Cascade-SAS/OCCT#1389](https://github.com/Open-Cascade-SAS/OCCT/issues/1389) (repro) / [OCCT#1390](https://github.com/Open-Cascade-SAS/OCCT/pull/1390) (fix, two commits).
 
@@ -123,19 +123,19 @@ See [`Scripts/repro/344-cdf-directory/`](https://github.com/SecondMouseAU/OCCTSw
 
 ## 0014-CDF-driver-reentrancy-mutex-349.patch
 
-**Fixes the upstream OCCT crash behind [#349](https://github.com/SecondMouseAU/OCCTSwift/issues/349)** — an uncatchable SIGSEGV under concurrent `Save`/`SaveAs` of the same document format, surfaced during validation of the #344 fix (the third, architecturally distinct crash found in that pass, deliberately not folded into patch 0012).
+**Fixes the upstream OCCT crash behind [#349](https://github.com/SecondMouseAU/OCCTSwift/issues/349)**: an uncatchable SIGSEGV under concurrent `Save`/`SaveAs` of the same document format, surfaced during validation of the #344 fix (the third, architecturally distinct crash found in that pass, deliberately not folded into patch 0012).
 
-`CDF_Application::WriterFromFormat`/`ReaderFromFormat` cache one storage/retrieval driver instance per format (`myWriters`/`myReaders`, the map itself already made safe by #344) and hand the *same* cached instance back to every subsequent `Store()`/`Retrieve()` call for that format — including from different threads, different documents, concurrently. But `PCDM_StorageDriver`/`PCDM_Reader` subclasses (`BinLDrivers_DocumentStorageDriver` et al.) are not reentrant: `Write()`/`Read()` mutate instance-level scratch state — for `BinLDrivers_DocumentStorageDriver` alone: `myRelocTable`, `myTypesMap`, `myPAtt`, `myEmptyLabels`, `myMapUnsupported`, `mySizesToWrite`, `myFileName`, `myMsgDriver`, the lazily-initialized `myDrivers` table, plus the base class's `myIsError`/`myStoreStatus` — that gets clobbered when two threads call `Write()` on the same shared instance concurrently. `CDF_StoreList::Store`'s own comment already shows awareness the driver is shared across threads ("It has sense in multi-threaded access to the storage driver..."), but only the store-status was ever made safe; every other member raced freely. Structural, not BinLDrivers-specific: `XmlLDrivers`, `BinXCAFDrivers`/`XmlXCAFDrivers`, and `TObj` drivers all extend the same base classes and follow the identical per-instance-scratch-state pattern.
+`CDF_Application::WriterFromFormat`/`ReaderFromFormat` cache one storage/retrieval driver instance per format (`myWriters`/`myReaders`, the map itself already made safe by #344) and hand the *same* cached instance back to every subsequent `Store()`/`Retrieve()` call for that format, including from different threads, different documents, concurrently. But `PCDM_StorageDriver`/`PCDM_Reader` subclasses (`BinLDrivers_DocumentStorageDriver` et al.) are not reentrant: `Write()`/`Read()` mutate instance-level scratch state, for `BinLDrivers_DocumentStorageDriver` alone: `myRelocTable`, `myTypesMap`, `myPAtt`, `myEmptyLabels`, `myMapUnsupported`, `mySizesToWrite`, `myFileName`, `myMsgDriver`, the lazily-initialized `myDrivers` table, plus the base class's `myIsError`/`myStoreStatus`, that gets clobbered when two threads call `Write()` on the same shared instance concurrently. `CDF_StoreList::Store`'s own comment already shows awareness the driver is shared across threads ("It has sense in multi-threaded access to the storage driver..."), but only the store-status was ever made safe; every other member raced freely. Structural, not BinLDrivers-specific: `XmlLDrivers`, `BinXCAFDrivers`/`XmlXCAFDrivers`, and `TObj` drivers all extend the same base classes and follow the identical per-instance-scratch-state pattern.
 
-Confirmed via a debug (`-O0 -g`) build with a temporary SIGSEGV/SIGBUS signal handler: two threads racing `TDocStd_Application::SaveAs()` on a shared application crash reliably (within a few hundred rounds at just 2 threads), resolving to `BinMDF_ADriverTable::AssignIds(myTypesMap) <- NCollection_BaseMap::Destroy`, reached via `BinLDrivers_DocumentStorageDriver::Write -> FirstPass -> CDF_StoreList::Store -> CDF_Store::Realize -> TDocStd_Application::SaveAs` — two concurrent `Write()` calls both clearing/rebuilding `myTypesMap` out from under each other. TSan (minimal-module build, same protocol as #298/#319/#341/#344) confirms it directly: 136 distinct race warnings in one run (8 threads × 25 rounds), process itself still SIGSEGVs (exit 139) partway through — every non-unrelated report resolves into `BinLDrivers_DocumentStorageDriver::Write`/`FirstPass`/`FirstPassSubTree`/`WriteSubTree`/`WriteInfoSection`, `PCDM_StorageDriver::SetIsError`/`SetStoreStatus`, `BinMDF_ADriverTable::GetDriver`/`AssignIds`/`AddDerivedDriver`, and their `NCollection_BaseMap`/`NCollection_IndexedMap`/`NCollection_BaseList` internals — consistent with the whole per-call scratch surface racing, not just one field.
+Confirmed via a debug (`-O0 -g`) build with a temporary SIGSEGV/SIGBUS signal handler: two threads racing `TDocStd_Application::SaveAs()` on a shared application crash reliably (within a few hundred rounds at just 2 threads), resolving to `BinMDF_ADriverTable::AssignIds(myTypesMap) <- NCollection_BaseMap::Destroy`, reached via `BinLDrivers_DocumentStorageDriver::Write -> FirstPass -> CDF_StoreList::Store -> CDF_Store::Realize -> TDocStd_Application::SaveAs`, two concurrent `Write()` calls both clearing/rebuilding `myTypesMap` out from under each other. TSan (minimal-module build, same protocol as #298/#319/#341/#344) confirms it directly: 136 distinct race warnings in one run (8 threads × 25 rounds), process itself still SIGSEGVs (exit 139) partway through, every non-unrelated report resolves into `BinLDrivers_DocumentStorageDriver::Write`/`FirstPass`/`FirstPassSubTree`/`WriteSubTree`/`WriteInfoSection`, `PCDM_StorageDriver::SetIsError`/`SetStoreStatus`, `BinMDF_ADriverTable::GetDriver`/`AssignIds`/`AddDerivedDriver`, and their `NCollection_BaseMap`/`NCollection_IndexedMap`/`NCollection_BaseList` internals, consistent with the whole per-call scratch surface racing, not just one field.
 
-**Fix:** considered the issue's own two options — (a) a coarser mutex serializing driver dispatch, or (b) making the driver's `Write()`/`Read()` genuinely reentrant by eliminating shared scratch state. (b) was investigated and rejected as impractical here (unlike #298/#319/#341/#344, which each had one small, well-bounded piece of shared state): TSan shows essentially the *entire* driver object is scratch state for the duration of one `Write()` call, plus a nested shared object (`BinMDF_ADriverTable`) with its own internal mutation — eliminating it would mean threading new parameters through half a dozen private helpers, a sweeping signature change every format driver subclass would also need, for a change with high regression risk and far outside "minimal, surgical" for an upstream PR. Went with (a), placed on the shared resource itself rather than as one big lock around unrelated code: `PCDM_StorageDriver`/`PCDM_Reader` each get a `mutable std::mutex` + `Mutex()` accessor (every concrete format driver inherits it for free, zero subclass changes needed), held by the three places `CDF_Application`/`CDF_StoreList` actually invoke a cached, possibly-shared driver's `Write()`/`Read()`: `CDF_StoreList::Store`, `CDF_Application::Retrieve`, `CDF_Application::Read`. Doesn't serialize unrelated formats against each other — a `"BinOcaf"` save and an unrelated `"Xml"` save use different cached driver instances and different mutexes.
+**Fix:** considered the issue's own two options, (a) a coarser mutex serializing driver dispatch, or (b) making the driver's `Write()`/`Read()` genuinely reentrant by eliminating shared scratch state. (b) was investigated and rejected as impractical here (unlike #298/#319/#341/#344, which each had one small, well-bounded piece of shared state): TSan shows essentially the *entire* driver object is scratch state for the duration of one `Write()` call, plus a nested shared object (`BinMDF_ADriverTable`) with its own internal mutation, eliminating it would mean threading new parameters through half a dozen private helpers, a sweeping signature change every format driver subclass would also need, for a change with high regression risk and far outside "minimal, surgical" for an upstream PR. Went with (a), placed on the shared resource itself rather than as one big lock around unrelated code: `PCDM_StorageDriver`/`PCDM_Reader` each get a `mutable std::mutex` + `Mutex()` accessor (every concrete format driver inherits it for free, zero subclass changes needed), held by the three places `CDF_Application`/`CDF_StoreList` actually invoke a cached, possibly-shared driver's `Write()`/`Read()`: `CDF_StoreList::Store`, `CDF_Application::Retrieve`, `CDF_Application::Read`. Doesn't serialize unrelated formats against each other, a `"BinOcaf"` save and an unrelated `"Xml"` save use different cached driver instances and different mutexes.
 
 **Validation:** rebuilt the minimal-module TSan install with the patch applied and re-ran the same stress: race warnings 136 → **0** (confirmed again at a larger 10×200 stress), crash (SIGSEGV, exit 139) → **clean exit** across repeated runs. Full production xcframework rebuilt via `Scripts/build-occt.sh` (all 3 core slices, clean); `swift test --filter OCAFSaveLoadBinaryTests` and `swift test --filter OCCTXCAFTests` (339 tests) both clean, plus **3× full `swift test`** (4423 tests / 1282 suites each) clean, zero failures.
 
-**New finding surfaced by this fix, not fixed here:** post-patch TSan runs consistently surface one different, previously-masked race — same "fixing one race exposes the next" pattern as #344's own history. `CDM_Application::myMetaDataLookUpTable` is a plain `NCollection_DataMap`, one instance per `CDM_Application`/`CDF_Application`, with zero synchronization; every `CDF_StoreList::Store()`/`CDF_FWOSDriver::CreateMetaData()`/`CDM_MetaData::LookUp()` call across every thread sharing that one `TDocStd_Application` reads/writes the same map and the `CDM_MetaData` objects it hands out — same failure class as `CDF_Directory::myDocuments` (#344) and `theAutoNaming` (#341). Out of scope for #349 (specifically the driver reentrancy this patch fixes); filed separately as [SecondMouseAU/OCCTSwift#353](https://github.com/SecondMouseAU/OCCTSwift/issues/353).
+**New finding surfaced by this fix, not fixed here:** post-patch TSan runs consistently surface one different, previously-masked race, same "fixing one race exposes the next" pattern as #344's own history. `CDM_Application::myMetaDataLookUpTable` is a plain `NCollection_DataMap`, one instance per `CDM_Application`/`CDF_Application`, with zero synchronization; every `CDF_StoreList::Store()`/`CDF_FWOSDriver::CreateMetaData()`/`CDM_MetaData::LookUp()` call across every thread sharing that one `TDocStd_Application` reads/writes the same map and the `CDM_MetaData` objects it hands out, same failure class as `CDF_Directory::myDocuments` (#344) and `theAutoNaming` (#341). Out of scope for #349 (specifically the driver reentrancy this patch fixes); filed separately as [SecondMouseAU/OCCTSwift#353](https://github.com/SecondMouseAU/OCCTSwift/issues/353).
 
-**Bridge mitigation:** `Sources/OCCTBridge/src/OCCTBridge_Document.mm`'s `ocafStoreMutex()` (serializing `OCCTDocumentSaveOCAF`/`OCCTDocumentSaveOCAFInPlace`/`OCCTDocumentLoadOCAF`, shipped v1.15.6) **stays** regardless of this kernel fix — same PR1→PR2 pattern as #298/#341/#344. It's coarser than necessary now, but removing it is a separate, lower-priority follow-up once this kernel fix has shipped in a released xcframework for a while.
+**Bridge mitigation:** `Sources/OCCTBridge/src/OCCTBridge_Document.mm`'s `ocafStoreMutex()` (serializing `OCCTDocumentSaveOCAF`/`OCCTDocumentSaveOCAFInPlace`/`OCCTDocumentLoadOCAF`, shipped v1.15.6) **stays** regardless of this kernel fix, same PR1→PR2 pattern as #298/#341/#344. It's coarser than necessary now, but removing it is a separate, lower-priority follow-up once this kernel fix has shipped in a released xcframework for a while.
 
 See [`Scripts/repro/349-ocaf-driver-reentrancy/`](https://github.com/SecondMouseAU/OCCTSwift/tree/main/Scripts/repro/349-ocaf-driver-reentrancy) for the reproducer and full writeup. Filed upstream as [Open-Cascade-SAS/OCCT#1393](https://github.com/Open-Cascade-SAS/OCCT/issues/1393) (repro) / [OCCT#1394](https://github.com/Open-Cascade-SAS/OCCT/pull/1394) (fix, CI green on all platforms).
 
@@ -143,17 +143,17 @@ See [`Scripts/repro/349-ocaf-driver-reentrancy/`](https://github.com/SecondMouse
 
 ## 0015-CDM_Application-metadata-lookup-table-mutex-353.patch
 
-**Fixes the upstream OCCT crash behind [#353](https://github.com/SecondMouseAU/OCCTSwift/issues/353)** — a race surfaced while validating the #349 fix (patch 0014, shipped v1.15.9): post-#349-fix TSan runs consistently produced exactly one different, previously-masked warning, matching the "fixing one race exposes the next" pattern from #341→#344→#349.
+**Fixes the upstream OCCT crash behind [#353](https://github.com/SecondMouseAU/OCCTSwift/issues/353)**: a race surfaced while validating the #349 fix (patch 0014, shipped v1.15.9): post-#349-fix TSan runs consistently produced exactly one different, previously-masked warning, matching the "fixing one race exposes the next" pattern from #341→#344→#349.
 
-`CDM_Application::myMetaDataLookUpTable` is a plain `NCollection_DataMap`, one instance per `CDM_Application` (in practice the one process-wide singleton, since #344's `GetApplication()` fix), with zero synchronization anywhere in the class. Three independent things race: (1) **map mutation** — `CDM_MetaData::LookUp()`'s unguarded `IsBound`+`Bind`/`Find`, called from `CDF_FWOSDriver::MetaData`/`CreateMetaData` (every `Store()`/`SaveAs()`), `XmlLDrivers_DocumentRetrievalDriver::Read`, and `PCDM_ReferenceIterator::MetaData`; (2) **map iteration** — `CDM_Document::SetMetaData()` walks the *entire* table on every save, reading every other document's `CDM_MetaData` state; (3) **per-object state** — each `CDM_MetaData`'s `myIsRetrieved`/`myDocument` fields, mutated by `SetDocument()`/`UnsetDocument()` and read by `IsRetrieved()`/`Document()` with no guard at all. TSan confirmed the exact trace quoted in the issue: `CDM_Document::SetMetaData()`'s map-iteration loop (reading `IsRetrieved()`, still inside #349's own per-driver lock — but that lock has no relationship to a *different* thread's document destructor) racing `~CDM_Document() -> CDM_MetaData::UnsetDocument()` tearing down an unrelated document's metadata entry on another thread. 1 confirmed race + SIGABRT (exit 134) on stock #349-fixed kernel, matching the issue's reported symptom exactly.
+`CDM_Application::myMetaDataLookUpTable` is a plain `NCollection_DataMap`, one instance per `CDM_Application` (in practice the one process-wide singleton, since #344's `GetApplication()` fix), with zero synchronization anywhere in the class. Three independent things race: (1) **map mutation**, `CDM_MetaData::LookUp()`'s unguarded `IsBound`+`Bind`/`Find`, called from `CDF_FWOSDriver::MetaData`/`CreateMetaData` (every `Store()`/`SaveAs()`), `XmlLDrivers_DocumentRetrievalDriver::Read`, and `PCDM_ReferenceIterator::MetaData`; (2) **map iteration**, `CDM_Document::SetMetaData()` walks the *entire* table on every save, reading every other document's `CDM_MetaData` state; (3) **per-object state**, each `CDM_MetaData`'s `myIsRetrieved`/`myDocument` fields, mutated by `SetDocument()`/`UnsetDocument()` and read by `IsRetrieved()`/`Document()` with no guard at all. TSan confirmed the exact trace quoted in the issue: `CDM_Document::SetMetaData()`'s map-iteration loop (reading `IsRetrieved()`, still inside #349's own per-driver lock, but that lock has no relationship to a *different* thread's document destructor) racing `~CDM_Document() -> CDM_MetaData::UnsetDocument()` tearing down an unrelated document's metadata entry on another thread. 1 confirmed race + SIGABRT (exit 134) on stock #349-fixed kernel, matching the issue's reported symptom exactly.
 
-**Fix:** follows the established "lock the shared resource, don't restructure the subsystem" precedent (#341's atomic bool, #344's `CDF_Directory` mutex, #349's per-driver mutex) — the map's "bind once, reuse forever, share across all documents" caching design is load-bearing (how OCCT recognizes "this file is already open" across separate calls), not incidental scratch state. Two independent locks, matching the two distinct race shapes: (1) `CDM_Application` gets a `mutable std::mutex myMetaDataLookUpTableMutex` + accessor, threaded through `CDM_MetaData::LookUp()`'s two overloads (now take the mutex as an explicit parameter) and `CDM_Document::SetMetaData()`'s iteration — `CDF_FWOSDriver`'s constructor also now takes the mutex alongside the table reference it already stored; (2) `CDM_MetaData` gets its own private `mutable std::mutex myDocumentMutex` guarding `myIsRetrieved`/`myDocument`, since two already-bound `CDM_MetaData` objects can race on `SetDocument()`/`UnsetDocument()` vs. `IsRetrieved()`/`Document()` independent of the table lock. No changes to any format-specific driver subclass.
+**Fix:** follows the established "lock the shared resource, don't restructure the subsystem" precedent (#341's atomic bool, #344's `CDF_Directory` mutex, #349's per-driver mutex), the map's "bind once, reuse forever, share across all documents" caching design is load-bearing (how OCCT recognizes "this file is already open" across separate calls), not incidental scratch state. Two independent locks, matching the two distinct race shapes: (1) `CDM_Application` gets a `mutable std::mutex myMetaDataLookUpTableMutex` + accessor, threaded through `CDM_MetaData::LookUp()`'s two overloads (now take the mutex as an explicit parameter) and `CDM_Document::SetMetaData()`'s iteration, `CDF_FWOSDriver`'s constructor also now takes the mutex alongside the table reference it already stored; (2) `CDM_MetaData` gets its own private `mutable std::mutex myDocumentMutex` guarding `myIsRetrieved`/`myDocument`, since two already-bound `CDM_MetaData` objects can race on `SetDocument()`/`UnsetDocument()` vs. `IsRetrieved()`/`Document()` independent of the table lock. No changes to any format-specific driver subclass.
 
 **Validation:** rebuilt the minimal-module TSan install (reused `occt-build-tsan349`/`occt-install-tsan349` from the #349 investigation, which already had patch 0014 baked in) with 0015 applied: race count 1 (+SIGABRT) → **0**, clean exit, across 5 runs (8×25, 10×60, 3×8×40). Full production xcframework rebuilt via `Scripts/build-occt.sh`; `swift test --filter OCAFSaveLoadBinaryTests`/`OCCTXCAFTests` and 3× full `swift test` (4423 tests) all clean.
 
-**Not changed**: `CDM_MetaData::myDocumentVersion` (reached via `CDM_Reference.cxx` and `CDM_Application::SetDocumentVersion`) has the identical unguarded-mutable-field shape as the fixed `myIsRetrieved`/`myDocument`, but on the document-*reference* resolution path rather than save/close — not TSan-observed in any run (the repro doesn't exercise cross-document references), flagged as a plausible sibling for a future pass, not fixed here.
+**Not changed**: `CDM_MetaData::myDocumentVersion` (reached via `CDM_Reference.cxx` and `CDM_Application::SetDocumentVersion`) has the identical unguarded-mutable-field shape as the fixed `myIsRetrieved`/`myDocument`, but on the document-*reference* resolution path rather than save/close, not TSan-observed in any run (the repro doesn't exercise cross-document references), flagged as a plausible sibling for a future pass, not fixed here.
 
-**Upstream formatting note:** OCCT's CI `clang-format` (invoked via their format-check workflow) disagreed with a locally-run `clang-format` (v22.1.8) on two spots — both formatter-alignment artifacts (`AlignConsecutiveAssignments`/declaration alignment shifting due to nearby edits), not intentional changes. Applied CI's own `format.patch` artifact to resolve; the version skew is a tooling quirk, not a real formatting defect. Worth checking CI's format-check output (not just a local dry-run) before every future upstream OCCT PR.
+**Upstream formatting note:** OCCT's CI `clang-format` (invoked via their format-check workflow) disagreed with a locally-run `clang-format` (v22.1.8) on two spots, both formatter-alignment artifacts (`AlignConsecutiveAssignments`/declaration alignment shifting due to nearby edits), not intentional changes. Applied CI's own `format.patch` artifact to resolve; the version skew is a tooling quirk, not a real formatting defect. Worth checking CI's format-check output (not just a local dry-run) before every future upstream OCCT PR.
 
 See [`Scripts/repro/353-cdm-metadata-lookup-table/`](https://github.com/SecondMouseAU/OCCTSwift/tree/main/Scripts/repro/353-cdm-metadata-lookup-table) for the reproducer and full writeup. Filed upstream as [Open-Cascade-SAS/OCCT#1396](https://github.com/Open-Cascade-SAS/OCCT/issues/1396) (repro) / [OCCT#1397](https://github.com/Open-Cascade-SAS/OCCT/pull/1397) (fix, CI green on all platforms).
 
@@ -186,15 +186,15 @@ See [`Scripts/repro/374-resource-manager-storage-schema-race/`](https://github.c
 
 ## 0017-null-reshape-context-ComposeShell-WireDivide-484.patch
 
-**Fixes two upstream OCCT crashes found while auditing the `ShapeFix_Face` call sites in [#484](https://github.com/SecondMouseAU/OCCTSwift/issues/484)** — the same defect class as `0005`/#317 (an unguarded null `ShapeBuild_ReShape` context dereference), in two classes that were never patched or filed.
+**Fixes two upstream OCCT crashes found while auditing the `ShapeFix_Face` call sites in [#484](https://github.com/SecondMouseAU/OCCTSwift/issues/484)**: the same defect class as `0005`/#317 (an unguarded null `ShapeBuild_ReShape` context dereference), in two classes that were never patched or filed.
 
-`ShapeFix_ComposeShell::Perform()`, `ShapeFix_ComposeShell::SplitEdges()` and `ShapeUpgrade_WireDivide::Perform()` dereference `Context()` unconditionally. `Context()` returns `ShapeFix_Root::myContext`, which the base constructor leaves **null** and only an explicit `SetContext()` ever fills — so the ordinary `Init(...)` + `Perform()` pair those classes' public API invites is an immediate null-handle dereference, an uncatchable SIGSEGV at Address 0. No exotic geometry needed: a plain 4-edge planar square face crashes both classes 100% of the time.
+`ShapeFix_ComposeShell::Perform()`, `ShapeFix_ComposeShell::SplitEdges()` and `ShapeUpgrade_WireDivide::Perform()` dereference `Context()` unconditionally. `Context()` returns `ShapeFix_Root::myContext`, which the base constructor leaves **null** and only an explicit `SetContext()` ever fills, so the ordinary `Init(...)` + `Perform()` pair those classes' public API invites is an immediate null-handle dereference, an uncatchable SIGSEGV at Address 0. No exotic geometry needed: a plain 4-edge planar square face crashes both classes 100% of the time.
 
-Both are the odd ones out in their own package. `ShapeUpgrade_FaceDivide::Perform()` — the in-kernel driver of *both* classes, and the reason neither crash shows up in OCCT's own test suite — opens with exactly the guard this patch adds, then hands its context down to the compose shell (`ShapeUpgrade_FaceDivide.cxx:185`) and the wire divide (`:238`). Reached that way, neither class ever sees a null context. Reached directly, both crash. `ShapeFix_Shape::Init`, `ShapeFix_Shell::Perform`, `ShapeFix_Solid::Perform`, `ShapeFix_FixSmallFace::Init`, `ShapeFix_SplitCommonVertex::Init`, `ShapeFix_Wireframe` (both entry points), `ShapeFix_Wire::FixGap3d`/`FixGap2d`, `ShapeFix_Face::FixMissingSeam` and `ShapeUpgrade_ShapeDivide::Perform` all carry the same self-creating guard already.
+Both are the odd ones out in their own package. `ShapeUpgrade_FaceDivide::Perform()`, the in-kernel driver of *both* classes, and the reason neither crash shows up in OCCT's own test suite, opens with exactly the guard this patch adds, then hands its context down to the compose shell (`ShapeUpgrade_FaceDivide.cxx:185`) and the wire divide (`:238`). Reached that way, neither class ever sees a null context. Reached directly, both crash. `ShapeFix_Shape::Init`, `ShapeFix_Shell::Perform`, `ShapeFix_Solid::Perform`, `ShapeFix_FixSmallFace::Init`, `ShapeFix_SplitCommonVertex::Init`, `ShapeFix_Wireframe` (both entry points), `ShapeFix_Wire::FixGap3d`/`FixGap2d`, `ShapeFix_Face::FixMissingSeam` and `ShapeUpgrade_ShapeDivide::Perform` all carry the same self-creating guard already.
 
-**Fix:** the guard OCCT itself uses in those ten places — `if (Context().IsNull()) { SetContext(new ShapeBuild_ReShape); }` — at the three public entry points missing it. `ShapeFix_ComposeShell`'s other context-dereferencing methods (`LoadWires`, `SplitWire`, `SplitByLine`, `MakeFacesOnPatch`, `DispatchWires`) are all reached through `Perform()` or `SplitEdges()`, so guarding those two covers them; they are also `const`, so they could not create a context themselves.
+**Fix:** the guard OCCT itself uses in those ten places, `if (Context().IsNull()) { SetContext(new ShapeBuild_ReShape); }`, at the three public entry points missing it. `ShapeFix_ComposeShell`'s other context-dereferencing methods (`LoadWires`, `SplitWire`, `SplitByLine`, `MakeFacesOnPatch`, `DispatchWires`) are all reached through `Perform()` or `SplitEdges()`, so guarding those two covers them; they are also `const`, so they could not create a context themselves.
 
-**Validation** (fast path, no full rebuild — see the `#0001` entry above for the override-link technique): a 4-edge planar square face and an unbounded-cylinder face, run through both classes with no `SetContext()` call, SIGSEGV 100% of the time on stock `V8_0_0_p1` + patches `0001`–`0016` and complete normally after this patch. On the *with-context* path — the only one that worked before — the result is **byte-identical** before and after (BREP dump hash plus face/wire/edge/vertex counts compared for both surfaces and both classes), and the no-context path now produces that same result instead of crashing.
+**Validation** (fast path, no full rebuild, see the `#0001` entry above for the override-link technique): a 4-edge planar square face and an unbounded-cylinder face, run through both classes with no `SetContext()` call, SIGSEGV 100% of the time on stock `V8_0_0_p1` + patches `0001`–`0016` and complete normally after this patch. On the *with-context* path, the only one that worked before, the result is **byte-identical** before and after (BREP dump hash plus face/wire/edge/vertex counts compared for both surfaces and both classes), and the no-context path now produces that same result instead of crashing.
 
 **Confirmed against the real binary** ([#512](https://github.com/SecondMouseAU/OCCTSwift/issues/512)): `Libraries/OCCT.xcframework` has since been rebuilt from source with all 17 patches, and both reproducers were re-run against it with **no** override-linked TUs: the two `ctx=NO` cases that were `KILLED BY SIGNAL 11` now complete, and all four `ctx=yes` fingerprints are identical to the values recorded pre-rebuild in the reproducer's README. Full `swift test` (4842 tests / 1346 suites) clean.
 
@@ -271,15 +271,15 @@ AdvApp2Var_ApproxF2var::mma2jmx_(ndjacu, iordru, &wrkar_off[ipt5]);   /* -> shou
 AdvApp2Var_ApproxF2var::mma2jmx_(ndjacv, iordrv, &wrkar_off[ipt5]);
 ```
 
-So `XMAXJU` is never written. `mma2ce2_` still reads it at `ipt4`, where the allocation left whatever was there — in practice zeros — and passes it to `mma2er1_`/`mma2er2_`, whose entire error model is `|PATJAC(i,j)| * XMAXJU(i - 2*(IORDRU+1)) * XMAXJV(j - 2*(IORDRV+1))`. A zero `XMAXJU` zeroes every term, with two silent consequences: (1) the interior approximation error of a patch is reported as exactly 0 whatever the discarded coefficients are, so `mma2ce2_`'s tolerance test can never fire on it and `MaxError()` only ever reflects the boundary-iso errors `AdvApp2Var_Patch::AddErrors` adds afterwards; (2) `mma2er2_`, asked for the lowest degree whose truncation error still fits the tolerance, always answers `NDMINU`, the floor derived from the constraint order and the neighbouring isos, because every candidate scores 0.
+So `XMAXJU` is never written. `mma2ce2_` still reads it at `ipt4`, where the allocation left whatever was there, in practice zeros, and passes it to `mma2er1_`/`mma2er2_`, whose entire error model is `|PATJAC(i,j)| * XMAXJU(i - 2*(IORDRU+1)) * XMAXJV(j - 2*(IORDRV+1))`. A zero `XMAXJU` zeroes every term, with two silent consequences: (1) the interior approximation error of a patch is reported as exactly 0 whatever the discarded coefficients are, so `mma2ce2_`'s tolerance test can never fire on it and `MaxError()` only ever reflects the boundary-iso errors `AdvApp2Var_Patch::AddErrors` adds afterwards; (2) `mma2er2_`, asked for the lowest degree whose truncation error still fits the tolerance, always answers `NDMINU`, the floor derived from the constraint order and the neighbouring isos, because every candidate scores 0.
 
-Where that floor is low the fit collapses onto it. C0 gives `IORDRU = 0`, and a full sphere's V-boundary isos degenerate to its two poles, one coefficient each, so `NDMINU` is 1: a radius-10 sphere at tolerance 1e-3 came back as a degree-1, 2-pole-in-U B-spline — a straight line across the full `2*pi` of longitude, deviating by the sphere's own diameter of 20 — reporting `MaxError()` 1.07e-4. A bicubic Bezier at C0/C0 collapsed to a 2x2 bilinear patch reporting 4.08e-15, unchanged from tolerance 1e-1 down to 1e-7, because the requested tolerance was compared against a number that was always zero. C1 and C2 hid the collapse (their floor is already high) but not the misreported error.
+Where that floor is low the fit collapses onto it. C0 gives `IORDRU = 0`, and a full sphere's V-boundary isos degenerate to its two poles, one coefficient each, so `NDMINU` is 1: a radius-10 sphere at tolerance 1e-3 came back as a degree-1, 2-pole-in-U B-spline, a straight line across the full `2*pi` of longitude, deviating by the sphere's own diameter of 20, reporting `MaxError()` 1.07e-4. A bicubic Bezier at C0/C0 collapsed to a 2x2 bilinear patch reporting 4.08e-15, unchanged from tolerance 1e-1 down to 1e-7, because the requested tolerance was compared against a number that was always zero. C1 and C2 hid the collapse (their floor is already high) but not the misreported error.
 
-The write also overruns: `mma2jmx_` writes `ndjacu + 1 - 2*(IORDRU+1)` doubles and the `ipt5` slot is sized for the `ndjacv` equivalent, so a request with `MaxDegU` well above `MaxDegV` runs past `XMAXJV` into the `VECERR` slot behind it. Benign in practice — `VECERR` is re-zeroed on entry to `mma2ce2_` and the run stays inside the single allocation — but out of bounds for the buffer it was given.
+The write also overruns: `mma2jmx_` writes `ndjacu + 1 - 2*(IORDRU+1)` doubles and the `ipt5` slot is sized for the `ndjacv` equivalent, so a request with `MaxDegU` well above `MaxDegV` runs past `XMAXJV` into the `VECERR` slot behind it. Benign in practice, `VECERR` is re-zeroed on entry to `mma2ce2_` and the run stays inside the single allocation, but out of bounds for the buffer it was given.
 
 **Fix:** target `ipt4` from the U call. One character; the two lines then read symmetrically. `AdvApp2Var_Context`'s own two `mma2jmx_` calls (the only others in the tree) already write to separate per-direction arrays and were correct.
 
-**Validation** (fast path first, then the real binary — see the `#0001` entry above for the override-link technique, compiled with `-DNDEBUG -DNo_Exception` to match the production build): dumping `&wrkar_off[ipt4]` shows `xmaxju[8] = 0 0 0 0 0 0 0 0` on stock and `0.9682 0.986 1.078 1.173 1.265 1.352 1.434 1.513` after. Across a 98-case sweep (7 surface families x all 9 `(uCont, vCont)` combinations of C0/C1/C2, plus C0/C0 at five tolerances) the results whose real deviation exceeds the reported `MaxError` by more than 10x go from **12 to 0**, and those that exceed it at all from 17 to 1 — the survivor being a Bezier reproduced exactly, reporting 9.95221e-15 against a measured 9.96978e-15. Reported errors rise slightly everywhere, which is the interior contribution being counted for the first time. Confirmed against the rebuilt xcframework with no override-linked TUs, matching the override-linked prediction line for line. Full `swift test` (4842 tests / 1346 suites) clean.
+**Validation** (fast path first, then the real binary, see the `#0001` entry above for the override-link technique, compiled with `-DNDEBUG -DNo_Exception` to match the production build): dumping `&wrkar_off[ipt4]` shows `xmaxju[8] = 0 0 0 0 0 0 0 0` on stock and `0.9682 0.986 1.078 1.173 1.265 1.352 1.434 1.513` after. Across a 98-case sweep (7 surface families x all 9 `(uCont, vCont)` combinations of C0/C1/C2, plus C0/C0 at five tolerances) the results whose real deviation exceeds the reported `MaxError` by more than 10x go from **12 to 0**, and those that exceed it at all from 17 to 1, the survivor being a Bezier reproduced exactly, reporting 9.95221e-15 against a measured 9.96978e-15. Reported errors rise slightly everywhere, which is the interior contribution being counted for the first time. Confirmed against the rebuilt xcframework with no override-linked TUs, matching the override-linked prediction line for line. Full `swift test` (4842 tests / 1346 suites) clean.
 
 `GeomConvert_ApproxSurface` is not a leaf. `GeomFill_Sweep`, `BRepOffset_Offset`, `GeomLib`, `ShapeCustom_BSplineRestriction`, `ShapeConstruct`, `ShapeUpgrade_UnifySameDomain` and `GeomConvert_1` (twice) all construct it, `ShapeCustom_ConvertToBSpline` reaches it through `ShapeConstruct`, and `GeomPlate_MakeApprox` drives `AdvApp2Var_ApproxAFunc2Var` directly. Most pass C1 or C2, where the collapse cannot happen, but the always-zero interior error affected all of them; and the healing paths reach C0 deliberately: `ShapeConstruct::ConvertSurfaceToBSpline` and `ShapeCustom_BSplineRestriction` both loop the requested continuity down to 0 on failure and then accept the result on `MaxError() <= tol`, and `ShapeCustom_ConvertToBSpline` *starts* at C0 for any offset surface (`ShapeCustom_ConvertToBSpline.cxx:148`) before handing off to the first of those. (`BRepFill_Sweep.cxx:1162` and `BRepFill_Filling.cxx:712` also name the class but are both inside comment blocks, so neither is a live caller; see #573.)
 
@@ -291,17 +291,17 @@ See [`Scripts/repro/522-approx-c0-collapse/`](https://github.com/SecondMouseAU/O
 
 ## 0020-BRepFeat_MakeCylindricalHole-select-tool-parts-532.patch
 
-**Fixes the upstream OCCT wrong-answer behind [#532](https://github.com/SecondMouseAU/OCCTSwift/issues/532)** — a silent one: `BRepFeat_NoError` and the input handed back with the drill's faces imprinted on it, no material removed.
+**Fixes the upstream OCCT wrong-answer behind [#532](https://github.com/SecondMouseAU/OCCTSwift/issues/532)**: a silent one: `BRepFeat_NoError` and the input handed back with the drill's faces imprinted on it, no material removed.
 
-The four `BRepFeat_MakeCylindricalHole` modes that choose which piece of the drilling tool to keep — `PerformThruNext`, `PerformUntilEnd`, the ranged `Perform(Radius, PFrom, PTo)` and `PerformBlind` — drive `BRepFeat_Builder` with the one-argument `SetOperation(Fuse)`, i.e. `BOPAlgo_CUT`, and then call `PartsOfTool()`. That method (`BRepFeat_Builder.cxx:107`) collects the solids of the builder's `myShape`, which holds the tool split by the object only after the **COMMON** pass; after a CUT it is the finished workpiece. So each mode's `nbparts >= 2` selection loop compares barycentres of *bored plates* and then registers those plates as "kept parts of the tool" via `KeepPart`. `PerformResult()` sees a non-empty `myShapes`, takes the kept-parts path with a keep set that contains no tool part at all, and subtracts nothing.
+The four `BRepFeat_MakeCylindricalHole` modes that choose which piece of the drilling tool to keep, `PerformThruNext`, `PerformUntilEnd`, the ranged `Perform(Radius, PFrom, PTo)` and `PerformBlind`, drive `BRepFeat_Builder` with the one-argument `SetOperation(Fuse)`, i.e. `BOPAlgo_CUT`, and then call `PartsOfTool()`. That method (`BRepFeat_Builder.cxx:107`) collects the solids of the builder's `myShape`, which holds the tool split by the object only after the **COMMON** pass; after a CUT it is the finished workpiece. So each mode's `nbparts >= 2` selection loop compares barycentres of *bored plates* and then registers those plates as "kept parts of the tool" via `KeepPart`. `PerformResult()` sees a non-empty `myShapes`, takes the kept-parts path with a keep set that contains no tool part at all, and subtracts nothing.
 
 The kernel's other two users of the same builder already do this correctly: `BRepFeat_Form` (`BRepFeat_Form.cxx:806`) and `BRepFeat_RibSlot` (`BRepFeat_RibSlot.cxx:224`) both call the two-argument `SetOperation(myFuse, bFlag)` with `bFlag` true before `Perform()`, selecting `BOPAlgo_COMMON`. `PerformResult()` re-derives `myOperation` from `myFuse`, so the operation finally built is the CUT either way.
 
-**Fix:** that two-argument call at the four part-selecting sites. `Perform(Radius)` — the infinite-cylinder through-all — selects no parts, never calls `PartsOfTool()`, and keeps the one-argument overload; that is why it was the one mode that already drilled a stack correctly, and why the defect reads as "multi-body" rather than "part selection".
+**Fix:** that two-argument call at the four part-selecting sites. `Perform(Radius)`, the infinite-cylinder through-all, selects no parts, never calls `PartsOfTool()`, and keeps the one-argument overload; that is why it was the one mode that already drilled a stack correctly, and why the defect reads as "multi-body" rather than "part selection".
 
-The defect is invisible whenever the cut result happens to have one solid, which is the single-plate case every existing test used. It appears as soon as it has two — a drill axis crossing two bodies of a compound, or, with no compound involved, a single bar the bore severs in half.
+The defect is invisible whenever the cut result happens to have one solid, which is the single-plate case every existing test used. It appears as soon as it has two, a drill axis crossing two bodies of a compound, or, with no compound involved, a single bar the bore severs in half.
 
-**Validation:** [`Scripts/repro/532-cylindrical-hole-part-selection/`](https://github.com/SecondMouseAU/OCCTSwift/tree/main/Scripts/repro/532-cylindrical-hole-part-selection) measures every mode across six geometries, before and after. On a compound of two 50×50×20 plates on the drill axis (one bore removes 1570.7963): `PerformUntilEnd` 0.0000 → 3141.5927, ranged `Perform(R, 0, 70)` 0.0000 → 3141.5927, `PerformBlind(20)` 0.0000 → 1178.0972; three plates, `PerformUntilEnd` 0.0000 → 4712.3890; the severed single bar, `PerformUntilEnd`/`PerformThruNext`/ranged `Perform` 0.0000 → 1407.2952 each. A single plate is byte-identical before and after. A channel and a hollow box — both one solid with two spans on the axis — give the same answer before and after while the selection loop goes from one part to two real tool parts, which is the non-regression evidence that matters. The full #496 contract matrix (`Scripts/repro/496-drill-hole-contracts/`) is unchanged apart from the rows this patch fixes and the oversized-radius row below. `swift test` clean.
+**Validation:** [`Scripts/repro/532-cylindrical-hole-part-selection/`](https://github.com/SecondMouseAU/OCCTSwift/tree/main/Scripts/repro/532-cylindrical-hole-part-selection) measures every mode across six geometries, before and after. On a compound of two 50×50×20 plates on the drill axis (one bore removes 1570.7963): `PerformUntilEnd` 0.0000 → 3141.5927, ranged `Perform(R, 0, 70)` 0.0000 → 3141.5927, `PerformBlind(20)` 0.0000 → 1178.0972; three plates, `PerformUntilEnd` 0.0000 → 4712.3890; the severed single bar, `PerformUntilEnd`/`PerformThruNext`/ranged `Perform` 0.0000 → 1407.2952 each. A single plate is byte-identical before and after. A channel and a hollow box, both one solid with two spans on the axis, give the same answer before and after while the selection loop goes from one part to two real tool parts, which is the non-regression evidence that matters. The full #496 contract matrix (`Scripts/repro/496-drill-hole-contracts/`) is unchanged apart from the rows this patch fixes and the oversized-radius row below. `swift test` clean.
 
 **One behaviour change beyond the bug.** A radius so large the bore swallows the whole workpiece used to return `BRepFeat_InvalidPlacement` from `PerformUntilEnd`/`PerformThruNext`: under CUT the oversized tool emptied `myShape`, so `nbparts` was 0 and the "the tool meets nothing" guard fired. Under COMMON the tool meets the whole workpiece, `nbparts` is 1, and those modes now return the same empty result `Perform(Radius)` and a plain `BRepAlgoAPI_Cut` against the same cylinder always returned. `nbparts == 0` now means what the guard reads as.
 
@@ -315,7 +315,7 @@ Filed upstream as [Open-Cascade-SAS/OCCT#1447](https://github.com/Open-Cascade-S
 
 ## 0021-CPnts-adaptive-arc-length-integration-603.patch
 
-**Fixes the upstream OCCT defect behind [#603](https://github.com/SecondMouseAU/OCCTSwift/issues/603)**, which OCCTSwift already works around bridge-side: `CPnts_AbscissaPoint::Length` integrates `|C'(u)|` with **one** fixed-order Gauss rule over the whole range it is handed — `order()` gives 10 to a conic, 5 to a parabola, `2 * Degree` to a Bezier, `min(24, 2 * NbPoles - 1)` to a B-spline.
+**Fixes the upstream OCCT defect behind [#603](https://github.com/SecondMouseAU/OCCTSwift/issues/603)**, which OCCTSwift already works around bridge-side: `CPnts_AbscissaPoint::Length` integrates `|C'(u)|` with **one** fixed-order Gauss rule over the whole range it is handed, `order()` gives 10 to a conic, 5 to a parabola, `2 * Degree` to a Bezier, `min(24, 2 * NbPoles - 1)` to a B-spline.
 
 `GCPnts_AbscissaPoint::Length` splits at the `GeomAbs_CN` interval boundaries and applies that rule per interval, so a multi-span B-spline is mostly saved by the split. A conic has exactly one interval, so nothing is split and the rule has to cover the whole domain in one go. Measured against a 16-point composite Gauss-Legendre quadrature of `|C'(u)|` over 40,000 panels, cross-checked against a Richardson-extrapolated chord sum:
 
@@ -330,7 +330,7 @@ Filed upstream as [Open-Cascade-SAS/OCCT#1447](https://github.com/Open-Cascade-S
 | interpolated B-spline, 5 points | 110.963893077 | 110.970568312 | −0.0060% |
 | circle, line | exact | exact | length-parametrized, no quadrature |
 
-The error is set by how much `|C'|` varies across **one** integration interval, not by the curve's type: the same 8 × 3 ellipse is 0.337% out over `[0, 2π]`, 0.0001% over `[0, π]` and exact over `[0, π/2]`. So the per-span split is not a fix either, just a mitigation that happens to work when spans are narrow — a 5-point interpolation is 100× worse than a 40-point one.
+The error is set by how much `|C'|` varies across **one** integration interval, not by the curve's type: the same 8 × 3 ellipse is 0.337% out over `[0, 2π]`, 0.0001% over `[0, π]` and exact over `[0, π/2]`. So the per-span split is not a fix either, just a mitigation that happens to work when spans are narrow, a 5-point interpolation is 100× worse than a 40-point one.
 
 `CPnts_AbscissaPoint::Length` **called directly** is far worse than through `GCPnts`, because nothing splits at all: 3.6e-2 on the 5-point interpolation, 7.4e-2 at 40 points and **1.0e-1 at 200 points**, where the `min(24, ...)` cap means one order-24 rule covers the entire domain.
 
@@ -338,13 +338,13 @@ The error is set by how much `|C'|` varies across **one** integration interval, 
 
 **`CPnts_MyRootFunction` has to move with `Length`, not after it.** That class is the function `math_FunctionRoot` drives to answer "which parameter is this far along?", and its `Value(X)` is *the same integral*: one Gauss rule over `[myX0, X]` minus the target. Today both are wrong by the same amount, which is why `GCPnts_AbscissaPoint(C, GCPnts_AbscissaPoint::Length(C), first)` still lands on the last parameter and why `GCPnts_UniformAbscissa` spaces its points uniformly in *true* arc (measured: 2.9e-14 on an 8 × 3 ellipse) despite computing a total that is 0.337% wrong. Fixing `Length` alone would break both of those. Fixing them together keeps the sampler's spacing bit-for-bit (2.9e-14 → 2.9e-14, 1.59e-10 → 1.59e-10 on a 1 × 0.05 ellipse) and makes every fraction of the way accurate: `GCPnts_AbscissaPoint(ellipse 8×3, total/2, first)` moves from `u = 3.162016203` to `u = 3.141592654`.
 
-**Validation** (override-link first, then the rebuilt binary — see the `#0001` entry for the technique, compiled with `-DNDEBUG -DNo_Exception` to match the production build): every relative error in the table above goes to ≤ 2.6e-13, `CPnts_AbscissaPoint::Length`'s own direct errors from 1.0e-1 to 2.8e-8, and the inverse from 3.4e-3/1.5e-2/1.7e-2 at the full length to ≤ 1.8e-13 at every fraction. The rebuilt xcframework reproduces the override-linked prediction line for line with no override TUs. Full `swift test` (5096 tests / 1371 suites): no change, the same 3 pre-existing `Issue496CylindricalHoleTests` failures as before the rebuild.
+**Validation** (override-link first, then the rebuilt binary, see the `#0001` entry for the technique, compiled with `-DNDEBUG -DNo_Exception` to match the production build): every relative error in the table above goes to ≤ 2.6e-13, `CPnts_AbscissaPoint::Length`'s own direct errors from 1.0e-1 to 2.8e-8, and the inverse from 3.4e-3/1.5e-2/1.7e-2 at the full length to ≤ 1.8e-13 at every fraction. The rebuilt xcframework reproduces the override-linked prediction line for line with no override TUs. Full `swift test` (5096 tests / 1371 suites): no change, the same 3 pre-existing `Issue496CylindricalHoleTests` failures as before the rebuild.
 
 **Cost:** the floor is three quadratures where there was one, and a curve whose closed form is exact (`GeomAbs_Line`, `GeomAbs_Circle`, a 2-pole Bezier/B-spline) never reaches the integrator at all. `GCPnts_AbscissaPoint::Length` on an 8 × 3 ellipse goes 0.24 µs → 7.2 µs; on a 200-span B-spline 87 µs → 444 µs; `GCPnts_UniformAbscissa` at 500 points on an ellipse 2.71 ms → 6.20 ms.
 
 **Not reached by this patch:** `BRepGProp::LinearProperties` runs its own integrator and still reports 41.243157870 for a 10 × 1 elliptical edge against a true 40.639741801 (confirmed unchanged against the rebuilt binary). Same defect class, different code, its own fix.
 
-**OCCTSwift's own bridge-side subdivision (#603, `occtAdaptorArcLength`) is now redundant but not removed.** `ci.yml` resolves the pinned *released* kernel, which does not carry this patch, so removing it would fail the #603 regression tests there until a release ships this binary. Layered on the fixed kernel it costs almost exactly 2× (an 8 × 3 ellipse 3.3 µs → 6.6 µs) and changes no answer — retire it in the release commit that bumps `Package.swift`'s `url:`/`checksum:`.
+**OCCTSwift's own bridge-side subdivision (#603, `occtAdaptorArcLength`) is now redundant but not removed.** `ci.yml` resolves the pinned *released* kernel, which does not carry this patch, so removing it would fail the #603 regression tests there until a release ships this binary. Layered on the fixed kernel it costs almost exactly 2× (an 8 × 3 ellipse 3.3 µs → 6.6 µs) and changes no answer, retire it in the release commit that bumps `Package.swift`'s `url:`/`checksum:`.
 
 See [`Scripts/repro/603-single-span-quadrature/`](https://github.com/SecondMouseAU/OCCTSwift/tree/main/Scripts/repro/603-single-span-quadrature) for the reproducers and full writeup. Filed upstream as [Open-Cascade-SAS/OCCT#1420](https://github.com/Open-Cascade-SAS/OCCT/pull/1420), a fix PR with no companion repro issue, per upstream's own guidance on [OCCT#1409](https://github.com/Open-Cascade-SAS/OCCT/issues/1409#issuecomment-5124395058). The three touched files are byte-identical between upstream `master` and our `V8_0_0_p1` pin, so the patch is the same change on both.
 
@@ -487,16 +487,16 @@ projected ranges overlap.
 `mypoints`, but bounds-checks the request against `NbExt()`. Several branches of
 `PrepareParallelResult` append a distance to `mySqDist` with no matching pair in `mypoints`, because
 in those branches the curves are parallel over a continuous range and there genuinely is no unique
-closest point to report — only a distance. `NbExt()` reports `1` in exactly those cases, so
+closest point to report, only a distance. `NbExt()` reports `1` in exactly those cases, so
 `Points(1)` indexes an empty `NCollection_Sequence`. `Points()`'s own bounds check is a raw `throw`,
 not compiled out under `No_Exception` (this project's Release kernel is built with
-`BUILD_RELEASE_DISABLE_EXCEPTIONS=ON`) — but it checks the wrong bound, so it never fires. The check
+`BUILD_RELEASE_DISABLE_EXCEPTIONS=ON`), but it checks the wrong bound, so it never fires. The check
 that would catch the real problem, `NCollection_Sequence::Value()`'s own `Standard_OutOfRange_Raise_if`,
 *is* built from that macro and *is* compiled to nothing under `No_Exception`; with no guard left,
 indexing an empty sequence walks a null node. Confirmed with a standalone binary linked directly
 against `libOCCT-macos.a`: a genuine SIGSEGV, not a C++ exception a `catch (...)` could absorb.
 `GeomAPI_ExtremaCurveCurve::Points()` (what `OCCTCurve3DExtrema` calls) has the identical shape one
-layer up — its own bounds check is also a `Raise_if` no-op under `No_Exception` — so nothing between
+layer up, its own bounds check is also a `Raise_if` no-op under `No_Exception`, so nothing between
 the bridge and the null-node dereference does anything until this patch.
 
 **Caller survey before choosing a fix shape** (the issue asked for one; two alternatives were
@@ -506,16 +506,16 @@ considered and rejected):
   `GeomAPI_ExtremaCurveCurve::LowerDistance()` reaches `SquareDistance(myIndex)`, which
   bounds-checks against `NbExt()` too. Redefining it would make the parallel-distance-only case
   (which has a perfectly well-defined distance, just no unique point) start refusing
-  `LowerDistance()` as well — measured that this caller currently gets a correct answer in exactly
+  `LowerDistance()` as well, measured that this caller currently gets a correct answer in exactly
   the branches this patch touches, and unifying the counts would have broken it.
 - *Gate `Points()` on `IsParallel()`* (what the bridge does, one layer up, for its own purpose).
   Traced every branch of `PrepareParallelResult` by hand: `IsParallel()` is true in precisely the
   branches that leave `mypoints` empty and false in precisely the branches that populate it, no
-  exceptions found — so this is equivalent to the fix actually made, *today*. Chose the
+  exceptions found, so this is equivalent to the fix actually made, *today*. Chose the
   container-bound version instead because it is self-defending against the shape of the bug (an
   index into a container with fewer entries than claimed) rather than relying on a correspondence
   between two fields that nothing enforces, and because `SquareDistance()` already bounds against
-  the container it reads (`mySqDist`) — `Points()` doing the same against `mypoints` matches an
+  the container it reads (`mySqDist`), `Points()` doing the same against `mypoints` matches an
   existing pattern in the same file rather than adding a new one.
 
 **Fix:** bounds `Points()` against `mypoints.Length()` instead of `NbExt()`:
@@ -539,16 +539,16 @@ reachable via the existing `Extrema()` accessor, so this closes an ergonomic gap
 one). The 2D curve-curve class was measured, not assumed, to be already safe: its own `NbExtrema()`
 correctly reports `0` in every fixture this patch's 3D counterpart makes crash, so `Points()` is
 genuinely unreachable there today, in both bridge call sites that use it
-(`OCCTCurve2DMinDistance`, `OCCTCurve2DAllExtrema` — the latter is the "very likely a 2D sibling"
+(`OCCTCurve2DMinDistance`, `OCCTCurve2DAllExtrema`, the latter is the "very likely a 2D sibling"
 follow-up PR #730 flagged but didn't confirm; this patch's repro confirms it is not).
 
 **Validation** (override-link, no full rebuild, see the `#0001` entry above for the technique,
-compiled with `-DNDEBUG -DNo_Exception` to match the production build): four fixtures — finite
+compiled with `-DNDEBUG -DNo_Exception` to match the production build): four fixtures, finite
 parallel segments with overlapping projected ranges, the same with disjoint ranges, two infinite
 parallel `Geom_Line`s, and finite parallel segments whose projected ranges touch at exactly one
 point. The first two are the issue's own ground truth; the third is PR #730's own regression
 fixture shape; the fourth was added after tracing `PrepareParallelResult`'s line-line branch by
-hand suggested it might be a counter-example to the `IsParallel()`/`mypoints` correspondence above —
+hand suggested it might be a counter-example to the `IsParallel()`/`mypoints` correspondence above,
 measuring it disproved that (see the repro README's "four fixtures" table). Before the patch, the
 overlapping and infinite cases SIGSEGV (exit 139) through both `GeomAPI_ExtremaCurveCurve::Points()`
 and `Extrema_ExtCC::Points()` directly; after, both throw a catchable `Standard_OutOfRange`. The
@@ -571,7 +571,7 @@ reporting ahead of a fix; `draft-pr.md` is what was sent.
 **Retire** once the bundled OCCT includes this fix.
 
 **Pin consequence**: this is the third patch (after `0022`, `0023`) carried in the tree but outside
-the pinned `v2.0.0-kernel.1` binary asset — see `docs/v2.0.0-plan.md`'s release watch-out. The next
+the pinned `v2.0.0-kernel.1` binary asset, see `docs/v2.0.0-plan.md`'s release watch-out. The next
 kernel rebuild needs to carry all three, and confirm all three actually reached the binary rather
 than assuming the rebuild picked them up, per `docs/guides/building-occt.md`'s shipping-a-rebuild
 steps.
@@ -664,7 +664,7 @@ the next re-pin, same as `0022`-`0024`.
 ## 0026-BRepOffsetAPI_ThruSections-capping-guard-905.patch
 
 **Fixes the upstream OCCT defect behind [#905](https://github.com/SecondMouseAU/OCCTSwift/issues/905)**
-— `ThruSectionsBuilder(isSolid: true)` silently omits both end-cap faces for a closed section wire
+,  `ThruSectionsBuilder(isSolid: true)` silently omits both end-cap faces for a closed section wire
 with two or more periods of out-of-plane variation around the loop (a genuinely non-planar closed
 curve). `build()` returns `true`, `checkResult.isValid` is `false`, and `checkResult.errorCount`/
 `detailedCheckStatuses` localize nothing.
@@ -672,16 +672,16 @@ curve). `build()` returns `true`, `checkResult.isValid` is `false`, and `checkRe
 `MakeSolid()` (the static helper `CreateRuled()`/`CreateSmoothed()` both call to close a loft's two
 open ends) caps each end via `PerformPlan()`, which only fits a plane (`BRepBuilderAPI_FindPlane`)
 or reuses a surface already attached to the wire's edges (`BRepLib_FindSurface`-backed
-`MakeFace(wire)`). A wire with `k >= 2` out-of-plane periods has neither, so `PerformPlan()` fails —
+`MakeFace(wire)`). A wire with `k >= 2` out-of-plane periods has neither, so `PerformPlan()` fails,
 but `MakeSolid()` already tracks this in its own local `B` (threaded through both `PerformPlan()`
 calls) and discards it: it unconditionally marks the shell/solid `Closed(true)` and returns
 regardless of whether capping actually succeeded. `k == 1` (e.g. `z = amp * cos(theta)` at constant
-radius) caps fine, because that curve is secretly planar — the intersection of the cylinder
-`r = const` with a tilted plane — so `BRepBuilderAPI_FindPlane` finds it; `k >= 2` has no such plane.
+radius) caps fine, because that curve is secretly planar, the intersection of the cylinder
+`r = const` with a tilted plane, so `BRepBuilderAPI_FindPlane` finds it; `k >= 2` has no such plane.
 
 **A first attempt at this fix, checked and rejected before landing here.** Guarding the two call
 sites on `myFirst.IsNull() || myLast.IsNull()` looks right and is not: `PerformPlan()` also leaves
-the output face null, and returns `true` (no failure), when every edge of the wire is degenerate — a
+the output face null, and returns `true` (no failure), when every edge of the wire is degenerate, a
 single-vertex "point" section built via `AddVertex()`, e.g. a cone's apex, which needs no cap face
 at all. A null-face check cannot tell that case apart from a genuine capping failure. CI on the
 fork PR caught this directly: `BOPAlgo_PaveFillerTest.FuseConeLoftWithBox_DegeneratedEdge` (a
@@ -689,8 +689,8 @@ circle-to-vertex loft) regressed, `IsDone()` reading `false` for input that has 
 succeeded. Reproduced locally byte-for-byte against that exact GTest before writing the real fix
 (same failure line, same message).
 
-**Fix:** after the capping block, if `B` is still `false` — capping was needed and failed, not
-skipped because it wasn't needed — nullify both output faces and throw `StdFail_NotDone`, matching
+**Fix:** after the capping block, if `B` is still `false`, capping was needed and failed, not
+skipped because it wasn't needed, nullify both output faces and throw `StdFail_NotDone`, matching
 the exception this same function already throws for a null shell two lines above:
 
 ```cpp
@@ -715,16 +715,16 @@ No signature change and no call-site change: both call sites already run inside 
 there and `IsDone()` correctly reads `false`.
 
 **`GetStatus()` is deliberately left unfixed, not merely unfixed by omission.** It stays
-`BRepFill_ThruSectionErrorStatus_Done` on this path, because `Build()`'s catch is generic — it
+`BRepFill_ThruSectionErrorStatus_Done` on this path, because `Build()`'s catch is generic, it
 doesn't set `myStatus` for *any* exception source, not one this patch introduces. `MakeSolid()` is
 a free function with no access to `myStatus` (a private member), so making `GetStatus()` correct
 here would mean either a new out-parameter threaded through both call sites, or wrapping both
-`MakeSolid()` calls in their own local `try`/`catch` to set `myStatus` before rethrowing — the
+`MakeSolid()` calls in their own local `try`/`catch` to set `myStatus` before rethrowing, the
 same multi-site-touch shape the rejected null-face guard had, for a return value nothing in this
 tree reads (`IsDone()` is what every caller, including OCCTSwift's own bridge, actually checks).
-Sibling patch `0022` (#705, `ChFi2d_Builder::AddChamfer`) took the other side of this trade-off —
+Sibling patch `0022` (#705, `ChFi2d_Builder::AddChamfer`) took the other side of this trade-off,
 it populates its class's own status enum for the identical "silently proceeds with a bad result"
-bug class — but that fix had no `Build()`-style shared catch to route around; here, the throw
+bug class, but that fix had no `Build()`-style shared catch to route around; here, the throw
 already reaches the one place (`Build()`'s catch) every caller of `IsDone()` already depends on, so
 adding a second signaling path for a value nothing reads was judged not worth the doubled diff.
 **Why a throw, not surfacing a number** (contrast with sibling `0025` / #597, same TKOffset/loft
@@ -732,17 +732,17 @@ family, which fixed its bug by surfacing a discarded `MaxError()` through an exi
 accessor at zero control-flow change): `0025`'s bug was a wrong *diagnostic* value on an operation
 that had already succeeded; this bug is a wrong *pass/fail* answer, and `IsDone()`/exceptions are
 how this exact function already reports pass/fail for every other failure mode in it (the null-shell
-throw two lines above, `Georges.GetStatus()` failures, `BRepFill_CompatibleWires` failures) — no
+throw two lines above, `Georges.GetStatus()` failures, `BRepFill_CompatibleWires` failures), no
 existing accessor plays `MaxError()`'s role for capping success.
 
-**Validation** (override-link, no full rebuild — see `#0001`'s retired entry for the technique):
+**Validation** (override-link, no full rebuild, see `#0001`'s retired entry for the technique):
 compiled and linked both the unpatched and patched `.cxx` ahead of the pinned `libOCCT-macos.a`.
 Against the unpatched override, a new GTest (`BRepOffsetAPI_ThruSections_Test.cxx`,
 `NonPlanarClosedWireCappingFails`) fails exactly as the issue describes (`IsDone()` reads `true`
 for a `k=2` two-wire loft); against the patched override it passes, along with a second new test
 (`DegenerateVertexEndStillSucceeds`, the cone/apex shape) and all three pre-existing tests in the
 file. The actual upstream `BOPAlgo_PaveFillerTest.FuseConeLoftWithBox_DegeneratedEdge` (compiled
-unmodified from `Libraries/occt-src`) passes against the patched override — direct confirmation the
+unmodified from `Libraries/occt-src`) passes against the patched override, direct confirmation the
 fix does not reintroduce the first attempt's regression, not just an equivalent local test standing
 in for it. `clang-format --dry-run --Werror` against OCCT's own `.clang-format` reports zero
 violations on both changed files. All three checks re-run and re-confirmed after adding the
@@ -752,7 +752,7 @@ pass.
 Filed upstream as [OCCT#1462](https://github.com/Open-Cascade-SAS/OCCT/pull/1462). **Note on
 process, not on the fix**: an earlier session had opened a same-repo
 staging PR on the `gsdali/OCCT` fork itself ([gsdali/OCCT#1](https://github.com/gsdali/OCCT/pull/1),
-that fork's first and, now, only PR) to CI-validate a first attempt before submitting upstream —
+that fork's first and, now, only PR) to CI-validate a first attempt before submitting upstream,
 that attempt's null-face guard is what regressed `FuseConeLoftWithBox_DegeneratedEdge` (see above).
 Staging a PR on our own fork isn't how any other carried patch in this file was validated; every one
 went straight from local override-link testing to the real upstream PR. gsdali/OCCT#1 is closed as
@@ -762,17 +762,17 @@ erroneous; OCCT#1462 above is the only submission.
 
 **Pin consequence**: the pinned `v2.0.0` release asset has all fifteen patches through `0025`
 baked in (`Package.swift`'s own census: "ALL FIFTEEN ARE VERIFIED PRESENT IN THE PINNED ASSET").
-`0026` is carried on disk only — the first patch since `0022`-`0025` themselves were folded into
+`0026` is carried on disk only, the first patch since `0022`-`0025` themselves were folded into
 that release to sit outside the pin. Watch for it at the next kernel re-pin.
 
 ## 0027-BRepOffsetAPI_ThruSections-CreateSmoothed-section-edge-count-guard-913.patch
 
 **Fixes the upstream OCCT defect behind [#913](https://github.com/SecondMouseAU/OCCTSwift/issues/913)**
-— found incidentally while investigating #910 (a different, bridge-side #905-review finding):
+,  found incidentally while investigating #910 (a different, bridge-side #905-review finding):
 `ThruSectionsBuilder`, given `checkCompatibility(false)` and a section whose edge count differs
 from the first section, SIGSEGVs instead of failing cleanly.
 
-`CreateSmoothed()` derives `nbEdges` — the edge count it assumes every section has — from section 1
+`CreateSmoothed()` derives `nbEdges`, the edge count it assumes every section has, from section 1
 alone (or section 2, if section 1 is a punctual/degenerate vertex section). It allocates `shapes`,
 an `NCollection_Array1<TopoDS_Shape>` sized exactly `nbSects * nbEdges`, then fills it by walking
 each section's wire with a `BRepTools_WireExplorer`, incrementing a running index with **no bounds
@@ -781,19 +781,19 @@ check**. Nothing enforces that every section actually has `nbEdges` edges: `BRep
 sections before `CreateSmoothed()` ever runs, but `checkCompatibility(false)` skips that entirely.
 A section with a **different** edge count than section 1 goes one of two ways:
 
-- **More edges**: the fill loop walks the array straight past the end of `shapes` — an
+- **More edges**: the fill loop walks the array straight past the end of `shapes`, an
   out-of-bounds write, corrupting adjacent heap memory rather than raising a catchable failure.
 - **Fewer edges**: no overrun (the total write count can still land inside `shapes`' bounds), so
-  `Build()` reports success today — but with per-section strides silently misaligned to different
+  `Build()` reports success today, but with per-section strides silently misaligned to different
   geometry than intended. Confirmed directly: a 2/1/3-edge three-section input under
   `checkCompatibility(false)` reports `Build() == true` and `Shape().IsValid() == false` against
-  the stock library, deterministically, no process-state dependency (PR #915 review finding 3 —
+  the stock library, deterministically, no process-state dependency (PR #915 review finding 3,
   the first version of this patch's own SemVer note undersold this, describing only the crashing
   direction).
 
 **Reached only with 3+ sections.** With exactly 2 sections, `Build()` always takes the
 `CreateRuled()` path instead (`if (myWires.Length() == 2 || myIsRuled) CreateRuled(); else
-CreateSmoothed();`), which builds its shell via `BRepFill_Generator` — a different mechanism that
+CreateSmoothed();`), which builds its shell via `BRepFill_Generator`, a different mechanism that
 doesn't share this fixed-stride allocation. A single `Build()` call with all mismatched (more-edges)
 sections present from the start does **not** reliably crash even though the identical out-of-bounds
 write still occurs; what actually varies is process/allocator state at the time of the overrun
@@ -801,40 +801,40 @@ write still occurs; what actually varies is process/allocator state at the time 
 `shapes.Upper()` either way, but a from-scratch process quietly lands the write in
 unmapped-but-harmless heap slack where a process that already ran one successful `Build()` call does
 not). Symptom, not cause: this made the defect look like it needed a *reused* builder when it
-doesn't — any 3+-section `checkCompatibility(false)` call with mismatched edge counts carries the
+doesn't, any 3+-section `checkCompatibility(false)` call with mismatched edge counts carries the
 same latent corruption (or, in the fewer-edges direction, the same silent misalignment,
 deterministically regardless of process state).
 
 **Fix:** before allocating `shapes`, walk every non-punctual section and count its edges; on a
-mismatch (an inequality test, not a "too many" test — deliberately symmetric, since both directions
+mismatch (an inequality test, not a "too many" test, deliberately symmetric, since both directions
 are the same underlying contract violation and only one of them used to crash), set `myStatus` to
 `BRepFill_ThruSectionErrorStatus_ProfilesInconsistent` and return, matching the early-return idiom
 this function already uses two lines below (`TS.IsNull()` -> `myStatus = Failed; return;`). Punctual
 end sections (`AddVertex()`, e.g. a cone's apex) are exempt, matching the existing
-`w1Point`/`w2Point` handling throughout the rest of the function — a point section legitimately has
+`w1Point`/`w2Point` handling throughout the rest of the function, a point section legitimately has
 a different edge count and the fill loop's punctual branch doesn't walk it the same way: that branch
 repeats the section's own edge `nbEdges` times to fill its slots, so it needs at least one edge to
-exist, not zero (PR #915 review finding 11 — an earlier draft of this entry, and the patch's own
+exist, not zero (PR #915 review finding 11, an earlier draft of this entry, and the patch's own
 first-draft comment, said "(zero) edge count"; `AddVertex()` creates a wire with exactly **one**
 degenerate edge). `w1Point`/`w2Point` themselves are computed by a pre-existing loop that is
-vacuously `true` for a wire with no edges at all — not reachable through any wrapper this project
+vacuously `true` for a wire with no edges at all, not reachable through any wrapper this project
 ships (a `Wire` needs at least one edge to exist), but the guard checks for at least one edge before
 exempting a section as punctual rather than trusting that classification unconditionally (PR #915
 review finding 4; attempted to reproduce a live crash for this specific case via both a fresh and a
-reused builder and could not — OCCT's own pipeline handles a genuinely empty wire more gracefully
-than the code reading alone suggested — but the added check is correct and cheap regardless of
+reused builder and could not. OCCT's own pipeline handles a genuinely empty wire more gracefully
+than the code reading alone suggested, but the added check is correct and cheap regardless of
 whether today's fill loop actually reaches the unguarded path it describes).
 
 The guard shares its punctual-section test (`isPunctualSection`, a local lambda) with the
 pre-existing fill loop 15 lines below, which used to duplicate the same two-clause boolean
-expression separately (PR #915 review finding 9) — hoisted so the two cannot silently drift apart on
+expression separately (PR #915 review finding 9), hoisted so the two cannot silently drift apart on
 which sections take the punctual branch.
 
-**Validation** (override-link, no full rebuild for this patch's own writeup — see `#0001`'s retired
+**Validation** (override-link, no full rebuild for this patch's own writeup, see `#0001`'s retired
 entry for the technique; the OCCTSwift-side PR carrying this one also rebuilds the local
 xcframework, since #913 asked for that explicitly rather than deferring it like `0026`): compiled
 and linked both the unpatched and patched `.cxx` ahead of the pinned `libOCCT-macos.a`, across six
-scenarios — the three that legitimately succeed today (matching edge counts under
+scenarios, the three that legitimately succeed today (matching edge counts under
 `checkCompatibility(false)`; a punctual section at either end mixed with matching wire sections;
 `checkCompatibility(true)` with mismatched sections, reconciled by `BRepFill_CompatibleWires` as
 before) are all byte-for-byte unaffected; the original more-edges scenario now fails cleanly
@@ -851,23 +851,23 @@ both changed files.
 Committed only the fewer-edges GTest, not a zero-edge one: the fewer-edges scenario genuinely fails
 `EXPECT_FALSE(IsDone())` against the pristine, unpatched source (proved first, per this project's
 own "prove the test fails" convention, before writing the fix), but a from-scratch equivalent for a
-genuinely empty wire at the punctual position passes *even against pristine, unpatched code* —
+genuinely empty wire at the punctual position passes *even against pristine, unpatched code*,
 something else downstream (most likely `TotalSurf()`'s own null-surface guard, a few lines below,
 reacting to whatever a degenerate empty-wire input produces) already reports `IsDone() == false`
 for it today, by a different and unconfirmed mechanism, independent of this patch. The explicit
 `hasAnyEdge` check is kept anyway (it is correct regardless, and cheap), but no committed test
 claims to be proof it closes a live gap, because the one written could not be made to fail without
-it — see finding 4 in the PR #915 review thread for the full attempt, including a reused-builder
+it, see finding 4 in the PR #915 review thread for the full attempt, including a reused-builder
 variant that also did not reproduce a crash.
 
 **SIGSEGV vs. SIGBUS** (PR #915 review finding 12): both signals were genuinely observed for the
 more-edges overrun, in different binaries, and that is not a contradiction to reconcile down to one
-— it's exactly what heap corruption looks like. The standalone from-scratch C++ reproducer (its own
+,  it's exactly what heap corruption looks like. The standalone from-scratch C++ reproducer (its own
 `backtrace_symbols_fd`-based signal handler installed) reported signal 11 (SIGSEGV) consistently.
 The upstream GTest (`MismatchedSectionEdgeCountFailsCleanlyWithoutCheck`, linked against the stock
 archive with no custom handler, OS default handling) reported signal 10 (SIGBUS). Same defect, same
 out-of-bounds write, two different binaries with different allocator/memory layout at the moment of
-the overrun — which of the two manifests is exactly the kind of detail this defect's own root-cause
+the overrun, which of the two manifests is exactly the kind of detail this defect's own root-cause
 section says depends on process/allocator state, not something either transcript got wrong.
 
 Filed upstream as [OCCT#1466](https://github.com/Open-Cascade-SAS/OCCT/pull/1466).
@@ -1160,19 +1160,19 @@ Exchange - initialize STEP writer healing parameters", merged 2026-07-10), which
 
 `STEPCAFControl_Controller`'s constructor replaces the actor its base `STEPControl_Controller`
 constructor had just configured, without re-applying `SetShapeProcessFlags`, and then `AutoRecord()`s
-itself under the same `"STEP"`/`"step"` names the plain writer resolves by —
+itself under the same `"STEP"`/`"step"` names the plain writer resolves by,
 `STEPControl_Writer::SetWS()` unconditionally re-runs `SelectNorm("STEP")`. So after **any** XDE STEP
-read (merely *constructing* a `STEPCAFControl_Reader` is enough — no `ReadFile`, no `Transfer`, no
+read (merely *constructing* a `STEPCAFControl_Reader` is enough, no `ReadFile`, no `Transfer`, no
 document), every shape-level STEP write ran with **empty** `OperationsFlags`: `DirectFaces` never ran,
 and faces built on indirect (left-handed) surfaces were silently dropped.
 
 A cone frustum (r1=5, r2=2, h=10) wrote as a 2-face solid with its lateral `CONICAL_SURFACE` and seam
-`LINE`s missing and 63% of its volume gone (408.407 → 151.844) — while still reporting
+`LINE`s missing and 63% of its volume gone (408.407 → 151.844), while still reporting
 `isValid == true`. Only cones were affected: box/cylinder/sphere/torus have no indirect surfaces.
 
 p1 already *defines* `STEPControl_Writer::InitializeMissingParameters()` (which restores the default
 ShapeFix parameters **and** the `SplitCommonVertex`/`DirectFaces` flags when absent) but never calls
-it — dead code there, and `private`, so a consumer cannot invoke it either. The patch is upstream's
+it, dead code there, and `private`, so a consumer cannot invoke it either. The patch is upstream's
 one-line fix: call it at the point of transfer.
 
 **Validation:** `STEPWriterCAFCorruptionTests` in `Tests/OCCTIOTests` does the XDE read itself and
@@ -1190,20 +1190,20 @@ every full run because `OCCTIOTests` reads a STEP first.
 **Equivalence check.** Identical symbol for symbol: all five files, the same declarations become `thread_local`. Only the comment wording differs (upstream prefers one-liners).
 
 
-**Fixes the upstream OCCT thread-safety defect behind [#298](https://github.com/SecondMouseAU/OCCTSwift/issues/298)** — concurrent `BRepFilletAPI_MakeFillet` builds on independent shapes corrupt each other.
+**Fixes the upstream OCCT thread-safety defect behind [#298](https://github.com/SecondMouseAU/OCCTSwift/issues/298)**: concurrent `BRepFilletAPI_MakeFillet` builds on independent shapes corrupt each other.
 
-`BRepFilletAPI_MakeFillet` reconstructs its result solid through the legacy `TopOpeBRepBuild` boolean engine (`ChFi3d_Builder::Compute` → `TopOpeBRepBuild_HBuilder::MergeSolid` → `TopOpeBRepBuild_Builder::SplitSolid`), which passes state between methods through **file-scope `static` variables**. That makes it non-reentrant: two fillet builds on separate threads produce a wrong-but-plausible solid that fails `BRepCheck` — silent bad geometry, no crash, no thrown error.
+`BRepFilletAPI_MakeFillet` reconstructs its result solid through the legacy `TopOpeBRepBuild` boolean engine (`ChFi3d_Builder::Compute` → `TopOpeBRepBuild_HBuilder::MergeSolid` → `TopOpeBRepBuild_Builder::SplitSolid`), which passes state between methods through **file-scope `static` variables**. That makes it non-reentrant: two fillet builds on separate threads produce a wrong-but-plausible solid that fails `BRepCheck`, silent bad geometry, no crash, no thrown error.
 
 ThreadSanitizer on an 8-thread fuse+fillet stress (V8_0_0_p1) pinpoints the **functional** culprit as `STATIC_SOLIDINDEX` in `TopOpeBRepBuild_Builder.cxx`: `SplitSolid` sets it to 1/2 to tell `FillSolid` which operand it is splitting, and `FillSolid` reads it back to pick the operand shape. Concurrent reconstructions interleave the writes, so `FillSolid` mis-classifies faces and drops material (the ~260-unit volume loss in the repro). Fixing that one variable makes a stress of 1600 concurrent fillet builds return correct geometry every time (was ~15–20% corrupt).
 
 The patch converts the fillet-path shared statics to `static thread_local` (each thread keeps its own copy of the cross-call state; single-thread behaviour is unchanged):
 
 - **Functional** (cause the corruption): `STATIC_SOLIDINDEX` (`TopOpeBRepBuild_Builder.cxx`) and `STATIC_lastVPind` (`TopOpeBRep_kpart.cxx`, same cross-call-cache pattern, converted for the same reason).
-- **Benign data races** on the same path (no geometry corruption observed — `STATIC_SOLIDINDEX` alone already gives correct geometry — but still UB; converted so concurrent fillet is TSan-clean): the constant/evolutive-radius blend solvers' scratch cache (`BlendFunc_ConstRad.cxx`, `BlendFunc_EvolRad.cxx`) and the ChFi3d curve checker's reused adaptor (`ChFi3d_Builder_6.cxx`).
+- **Benign data races** on the same path (no geometry corruption observed, `STATIC_SOLIDINDEX` alone already gives correct geometry, but still UB; converted so concurrent fillet is TSan-clean): the constant/evolutive-radius blend solvers' scratch cache (`BlendFunc_ConstRad.cxx`, `BlendFunc_EvolRad.cxx`) and the ChFi3d curve checker's reused adaptor (`ChFi3d_Builder_6.cxx`).
 
 This is the same class of fix, in the same engine, as [Open-Cascade-SAS/OCCT#1180](https://github.com/Open-Cascade-SAS/OCCT/pull/1180) (19 TKBool globals → `thread_local` across 8 files); `STATIC_SOLIDINDEX` and these were not covered by it.
 
-**Validation:** the isolated pure-C++ repro (`fuse` two/three prisms → fillet the seam, 8 threads) returns BRepCheck-invalid solids across several wrong volumes on stock p1, and 0/1600 invalid with a single correct volume after the patch. ThreadSanitizer reports the `STATIC_SOLIDINDEX` and `BlendFunc` scratch races on stock p1 and is clean on the fillet path after the patch (only an unrelated benign `BOPAlgo_InitMessages` lazy-init race remains, in the boolean path — orthogonal). The in-wrapper `occtFilletMutex` that v1.12.1 shipped as the interim guard was **already removed in v1.12.3** once this kernel patch made fillet reentrant — the patch is now the sole protection.
+**Validation:** the isolated pure-C++ repro (`fuse` two/three prisms → fillet the seam, 8 threads) returns BRepCheck-invalid solids across several wrong volumes on stock p1, and 0/1600 invalid with a single correct volume after the patch. ThreadSanitizer reports the `STATIC_SOLIDINDEX` and `BlendFunc` scratch races on stock p1 and is clean on the fillet path after the patch (only an unrelated benign `BOPAlgo_InitMessages` lazy-init race remains, in the boolean path, orthogonal). The in-wrapper `occtFilletMutex` that v1.12.1 shipped as the interim guard was **already removed in v1.12.3** once this kernel patch made fillet reentrant, the patch is now the sole protection.
 
 **Submitted upstream** as [Open-Cascade-SAS/OCCT#1374](https://github.com/Open-Cascade-SAS/OCCT/pull/1374) (open). **Retire** once an upstream OCCT release includes these `thread_local` conversions and we re-pin to it.
 
@@ -1224,9 +1224,9 @@ index table. Any of that can move what `Shape.freeBounds*` reports; it is measur
 in the 8.0.1 absorb.
 
 
-**Fixes the upstream OCCT crash behind [#310](https://github.com/SecondMouseAU/OCCTSwift/issues/310)** — `ShapeAnalysis_FreeBounds` (backing `Shape.freeBoundsClosedWires`/`freeBoundsClosedCount`/`freeBoundsOpenWires`) SIGSEGVs on certain shapes with multiple free-boundary components.
+**Fixes the upstream OCCT crash behind [#310](https://github.com/SecondMouseAU/OCCTSwift/issues/310)**: `ShapeAnalysis_FreeBounds` (backing `Shape.freeBoundsClosedWires`/`freeBoundsClosedCount`/`freeBoundsOpenWires`) SIGSEGVs on certain shapes with multiple free-boundary components.
 
-`ShapeAnalysis_FreeBounds::SplitWire` (its per-wire helper) finds each wire's closed sub-loops, then hands whatever edges weren't consumed to `ConnectEdgesToWires` to build the "open" result. When a wire's edges are **entirely** consumed by closed-loop detection — leaving zero leftover edges — that hand-off is an empty (but non-null) sequence. The call chain `ConnectEdgesToWires` → `ConnectWiresToWires` → `connectWiresToWiresImpl` starts with:
+`ShapeAnalysis_FreeBounds::SplitWire` (its per-wire helper) finds each wire's closed sub-loops, then hands whatever edges weren't consumed to `ConnectEdgesToWires` to build the "open" result. When a wire's edges are **entirely** consumed by closed-loop detection, leaving zero leftover edges, that hand-off is an empty (but non-null) sequence. The call chain `ConnectEdgesToWires` → `ConnectWiresToWires` → `connectWiresToWiresImpl` starts with:
 
 ```cpp
 if (iwires.IsNull() || !iwires->Length())
@@ -1235,11 +1235,11 @@ if (iwires.IsNull() || !iwires->Length())
 }
 ```
 
-For empty input this returns **without ever assigning `owires`** — every caller in the file starts from a freshly-defaulted (null) handle, so the null propagates all the way back to `SplitWire`'s `open` output parameter, then to `ShapeAnalysis_FreeBounds::SplitWires`'s `open->Append(tmpopen)` — dereferencing the null handle, an uncatchable SIGSEGV. Not a data-volume threshold: it depends only on whether *any* single free-boundary component happens to close with nothing left over, so a shape with 150+ loops can be fine while a 2-loop shape crashes (and vice versa).
+For empty input this returns **without ever assigning `owires`**, every caller in the file starts from a freshly-defaulted (null) handle, so the null propagates all the way back to `SplitWire`'s `open` output parameter, then to `ShapeAnalysis_FreeBounds::SplitWires`'s `open->Append(tmpopen)`, dereferencing the null handle, an uncatchable SIGSEGV. Not a data-volume threshold: it depends only on whether *any* single free-boundary component happens to close with nothing left over, so a shape with 150+ loops can be fine while a 2-loop shape crashes (and vice versa).
 
-**Fix:** the one-line contract restoration `connectWiresToWiresImpl`'s own non-empty path already follows a few lines down (`owires = new NCollection_HSequence<TopoDS_Shape>;` before populating it) — "nothing to connect" should produce a valid **empty** result, not an untouched out-parameter.
+**Fix:** the one-line contract restoration `connectWiresToWiresImpl`'s own non-empty path already follows a few lines down (`owires = new NCollection_HSequence<TopoDS_Shape>;` before populating it), "nothing to connect" should produce a valid **empty** result, not an untouched out-parameter.
 
-**Validation** (AddressSanitizer, extending the #0001 override-link technique — see the patch's own commit message for the full command sequence): an ASan-instrumented macOS-arm64 build (`ModelingAlgorithms`+`ModelingData`+`FoundationClasses`, `RelWithDebInfo`, `MMGT_OPT=0` at runtime) crashes 100% of the time on two disjoint planar faces in one compound — same function, same `NCollection_Sequence::Append` call, same `0xfffffffffffffff8` fault address at both `-O2` and `-O0` — and returns the correct `2 closed, 0 open` after the patch. On the real 150-face fixture from #310: `tol=0.05` gives `152 closed/0 open` byte-identical before and after (no behavior change on the working path); `tol=0.10` crashes on stock p1 and returns `144 closed/0 open` after.
+**Validation** (AddressSanitizer, extending the #0001 override-link technique, see the patch's own commit message for the full command sequence): an ASan-instrumented macOS-arm64 build (`ModelingAlgorithms`+`ModelingData`+`FoundationClasses`, `RelWithDebInfo`, `MMGT_OPT=0` at runtime) crashes 100% of the time on two disjoint planar faces in one compound, same function, same `NCollection_Sequence::Append` call, same `0xfffffffffffffff8` fault address at both `-O2` and `-O0`, and returns the correct `2 closed, 0 open` after the patch. On the real 150-face fixture from #310: `tol=0.05` gives `152 closed/0 open` byte-identical before and after (no behavior change on the working path); `tol=0.10` crashes on stock p1 and returns `144 closed/0 open` after.
 
 Reported and isolated at SecondMouseAU/OCCTSwift#310; a repro-only report was filed upstream as [Open-Cascade-SAS/OCCT#1376](https://github.com/Open-Cascade-SAS/OCCT/issues/1376) before the root cause was pinned down, followed up with the fix as [OCCT#1377](https://github.com/Open-Cascade-SAS/OCCT/pull/1377).
 
@@ -1252,7 +1252,7 @@ Reported and isolated at SecondMouseAU/OCCTSwift#310; a repro-only report was fi
 **Equivalence check.** Identical: the same `if (!Context().IsNull())` guard around the same `Replace()`, differing only by our `// #317:` comment line.
 
 
-**Fixes the upstream OCCT crash behind [#317](https://github.com/SecondMouseAU/OCCTSwift/issues/317)** — `ShapeFix_Face::Perform` SIGSEGVs healing a face whose sole boundary wire is a single closed edge belting the full period of a `Geom_ConicalSurface` (the shape produced by fitting a rivet/boss-rim seam as one periodic curve — `Wire.wireFromEdges` itself was the original suspect, per the issue's title, until a real in-process backtrace pinpointed the actual site).
+**Fixes the upstream OCCT crash behind [#317](https://github.com/SecondMouseAU/OCCTSwift/issues/317)**: `ShapeFix_Face::Perform` SIGSEGVs healing a face whose sole boundary wire is a single closed edge belting the full period of a `Geom_ConicalSurface` (the shape produced by fitting a rivet/boss-rim seam as one periodic curve, `Wire.wireFromEdges` itself was the original suspect, per the issue's title, until a real in-process backtrace pinpointed the actual site).
 
 `ShapeFix_Face::FixPeriodicDegenerated()` (added to patch in a degenerate apex edge for exactly this "lone wire belts a cone" case) builds the apex edge/wire, assembles a new face, and finalizes:
 
@@ -1261,11 +1261,11 @@ myResult = aNewFace;
 Context()->Replace(myFace, myResult);
 ```
 
-Every *other* `Context()->Replace` call site in this same file — eleven of them — guards against a null `Context()` first (either a plain `if (!Context().IsNull())`, or a lazy `SetContext(new ShapeBuild_ReShape)` when null). `FixPeriodicDegenerated` even checks `Context().IsNull()` at the *top* of the function before calling `Context()->Apply()` — but the check is missing at the *bottom*. `Context()` returns `ShapeFix_Root::myContext`, which the base constructor leaves null; it's only set by an explicit `SetContext()` call, which the ordinary, most common usage (`ShapeFix_Face fixer(face); fixer.Perform();` — including our own bridge, before this patch) never makes. Any caller healing a lone periodic-conical wire without a context null-derefs.
+Every *other* `Context()->Replace` call site in this same file, eleven of them, guards against a null `Context()` first (either a plain `if (!Context().IsNull())`, or a lazy `SetContext(new ShapeBuild_ReShape)` when null). `FixPeriodicDegenerated` even checks `Context().IsNull()` at the *top* of the function before calling `Context()->Apply()`, but the check is missing at the *bottom*. `Context()` returns `ShapeFix_Root::myContext`, which the base constructor leaves null; it's only set by an explicit `SetContext()` call, which the ordinary, most common usage (`ShapeFix_Face fixer(face); fixer.Perform();`, including our own bridge, before this patch) never makes. Any caller healing a lone periodic-conical wire without a context null-derefs.
 
-**Fix:** the same guard used at every other call site in the file — only replace in the context if there is one.
+**Fix:** the same guard used at every other call site in the file, only replace in the context if there is one.
 
-**Validation** (fast path, no full rebuild — see the `#0001` entry above for the override-link technique): a synthetic single closed edge (`GeomAPI_Interpolate`, `closed=true`, 10 real points from a rivet rim on `railsim_581_lead.stl`) trimmed to a `Geom_ConicalSurface` via `BRepBuilderAPI_MakeFace(surf, wire, true)`, then healed with a bare `ShapeFix_Face fixer(face); fixer.Perform();`, SIGSEGVs 100% of the time on stock `V8_0_0_p1`. Diagnosed with a custom `backtrace_symbols_fd` `SIGSEGV` handler (`lldb`/core dumps unavailable in the diagnosing sandbox — see the `feedback-lldb-blocked-use-signal-handler` note): the backtrace pins the crash to `ShapeFix_Face::FixPeriodicDegenerated`; `-O0` single-TU override-link tracing confirms every prior statement in the function completes and the crash is specifically the unguarded `Context()->Replace` call. After the patch the same input returns `IsDone()==true` and a valid healed face. Also applied as a defensive `fixer.SetContext(new ShapeBuild_ReShape)` in the three OCCTSwift bridge call sites that construct a bare `ShapeFix_Face` (`OCCTShapeCreateFaceFromSurfaceWire[WithHoles]`, `OCCTFaceFixerCreate`), so the crash is closed immediately without waiting on an xcframework rebuild.
+**Validation** (fast path, no full rebuild, see the `#0001` entry above for the override-link technique): a synthetic single closed edge (`GeomAPI_Interpolate`, `closed=true`, 10 real points from a rivet rim on `railsim_581_lead.stl`) trimmed to a `Geom_ConicalSurface` via `BRepBuilderAPI_MakeFace(surf, wire, true)`, then healed with a bare `ShapeFix_Face fixer(face); fixer.Perform();`, SIGSEGVs 100% of the time on stock `V8_0_0_p1`. Diagnosed with a custom `backtrace_symbols_fd` `SIGSEGV` handler (`lldb`/core dumps unavailable in the diagnosing sandbox, see the `feedback-lldb-blocked-use-signal-handler` note): the backtrace pins the crash to `ShapeFix_Face::FixPeriodicDegenerated`; `-O0` single-TU override-link tracing confirms every prior statement in the function completes and the crash is specifically the unguarded `Context()->Replace` call. After the patch the same input returns `IsDone()==true` and a valid healed face. Also applied as a defensive `fixer.SetContext(new ShapeBuild_ReShape)` in the three OCCTSwift bridge call sites that construct a bare `ShapeFix_Face` (`OCCTShapeCreateFaceFromSurfaceWire[WithHoles]`, `OCCTFaceFixerCreate`), so the crash is closed immediately without waiting on an xcframework rebuild.
 
 Reported and isolated at SecondMouseAU/OCCTSwift#317; filed upstream as [Open-Cascade-SAS/OCCT#1378](https://github.com/Open-Cascade-SAS/OCCT/issues/1378), fix as [OCCT#1380](https://github.com/Open-Cascade-SAS/OCCT/pull/1380).
 
@@ -1278,13 +1278,13 @@ Reported and isolated at SecondMouseAU/OCCTSwift#317; filed upstream as [Open-Ca
 **Equivalence check.** Identical: the carried patch reverse-applies cleanly against `V8_0_1`.
 
 
-**Fixes the upstream OCCT crash behind [#318](https://github.com/SecondMouseAU/OCCTSwift/issues/318)** — `BRepGProp::LinearProperties` (backing `Shape.analyze(tolerance:)`'s small-edge scan, and anything else built on `BRepGProp_Cinert`) SIGSEGVs computing the integration order for an edge whose sole geometry is a Bezier/BSpline-type curve-on-surface pcurve (no 3D curve) — the common case for a degenerate edge `BRepBuilderAPI_Sewing` produces reconciling near-coincident vertices between two faces that don't share an edge outright.
+**Fixes the upstream OCCT crash behind [#318](https://github.com/SecondMouseAU/OCCTSwift/issues/318)**: `BRepGProp::LinearProperties` (backing `Shape.analyze(tolerance:)`'s small-edge scan, and anything else built on `BRepGProp_Cinert`) SIGSEGVs computing the integration order for an edge whose sole geometry is a Bezier/BSpline-type curve-on-surface pcurve (no 3D curve), the common case for a degenerate edge `BRepBuilderAPI_Sewing` produces reconciling near-coincident vertices between two faces that don't share an edge outright.
 
-`BRepGProp_EdgeTool::IntegrationOrder` branches on `BAC.GetType()` (a `BRepAdaptor_Curve`), which correctly reports the curve-on-surface pcurve's type via `GeomAdaptor_TransformedCurve::GetType()`'s override (`myConSurf.IsNull() ? myCurve.GetType() : myConSurf->GetType()`), but then reads the pole count via a completely different, non-virtual path: `BAC.Curve().Curve()`, down-cast to `Geom_BezierCurve`/`Geom_BSplineCurve`. `BAC.Curve()` returns the base `GeomAdaptor_Curve` sub-object (`myCurve`), which holds the 3D-curve representation only — it is never `Load()`ed when the edge has no 3D curve (only `myConSurf` gets set), so the handle is null, the down-cast returns null, and `->NbPoles()` dereferences it.
+`BRepGProp_EdgeTool::IntegrationOrder` branches on `BAC.GetType()` (a `BRepAdaptor_Curve`), which correctly reports the curve-on-surface pcurve's type via `GeomAdaptor_TransformedCurve::GetType()`'s override (`myConSurf.IsNull() ? myCurve.GetType() : myConSurf->GetType()`), but then reads the pole count via a completely different, non-virtual path: `BAC.Curve().Curve()`, down-cast to `Geom_BezierCurve`/`Geom_BSplineCurve`. `BAC.Curve()` returns the base `GeomAdaptor_Curve` sub-object (`myCurve`), which holds the 3D-curve representation only, it is never `Load()`ed when the edge has no 3D curve (only `myConSurf` gets set), so the handle is null, the down-cast returns null, and `->NbPoles()` dereferences it.
 
-**Fix:** `GeomAdaptor_TransformedCurve` already has a correctly-dispatching `NbPoles()` override right next to `GetType()` in the same header (`myConSurf.IsNull() ? myCurve.NbPoles() : myConSurf->NbPoles()`). Calling `BAC.NbPoles()` instead of manually re-deriving the pole count fixes the crash and matches the accessor `GetType()` already uses one line above it — no cast, no null check needed, no behaviour change for an edge that does have a 3D curve.
+**Fix:** `GeomAdaptor_TransformedCurve` already has a correctly-dispatching `NbPoles()` override right next to `GetType()` in the same header (`myConSurf.IsNull() ? myCurve.NbPoles() : myConSurf->NbPoles()`). Calling `BAC.NbPoles()` instead of manually re-deriving the pole count fixes the crash and matches the accessor `GetType()` already uses one line above it, no cast, no null check needed, no behaviour change for an edge that does have a 3D curve.
 
-**Validation:** sewing two real mesh-derived planar candidate faces from OCCTReconstruct's plane-select spike (`kof_ii_engine_cover.stl`, regions 10 + 64) with `BRepBuilderAPI_Sewing` produces a compound containing a degenerate edge whose only representation is a BSpline-type pcurve; running `BRepGProp::LinearProperties(edge, props)` on it (the same call `Shape.analyze(tolerance:)` makes per edge) SIGSEGVs 100% of the time on stock p1 — diagnosed with a custom `SIGSEGV` handler (`lldb`/core dumps unavailable in the diagnosing sandbox), backtrace pins the crash to `BRepGProp_EdgeTool::IntegrationOrder`. A from-scratch synthetic degenerate edge (`BRep_Builder` + a hand-built `Geom2d_BSplineCurve` pcurve on a plane, no 3D curve) reproduces the identical crash trace, confirming the mechanism doesn't depend on the specific fixture. After the patch both the real fixture and the synthetic edge complete and return a sane length. Also applied as a defensive guard in the bridge (`OCCTShapeAnalyze`'s small-edge scan skips degenerate edges outright — a degenerate edge's zero 3D extent isn't a "small edge" defect to flag, and this closes the crash immediately without waiting on an xcframework rebuild).
+**Validation:** sewing two real mesh-derived planar candidate faces from OCCTReconstruct's plane-select spike (`kof_ii_engine_cover.stl`, regions 10 + 64) with `BRepBuilderAPI_Sewing` produces a compound containing a degenerate edge whose only representation is a BSpline-type pcurve; running `BRepGProp::LinearProperties(edge, props)` on it (the same call `Shape.analyze(tolerance:)` makes per edge) SIGSEGVs 100% of the time on stock p1, diagnosed with a custom `SIGSEGV` handler (`lldb`/core dumps unavailable in the diagnosing sandbox), backtrace pins the crash to `BRepGProp_EdgeTool::IntegrationOrder`. A from-scratch synthetic degenerate edge (`BRep_Builder` + a hand-built `Geom2d_BSplineCurve` pcurve on a plane, no 3D curve) reproduces the identical crash trace, confirming the mechanism doesn't depend on the specific fixture. After the patch both the real fixture and the synthetic edge complete and return a sane length. Also applied as a defensive guard in the bridge (`OCCTShapeAnalyze`'s small-edge scan skips degenerate edges outright, a degenerate edge's zero 3D extent isn't a "small edge" defect to flag, and this closes the crash immediately without waiting on an xcframework rebuild).
 
 Reported and isolated at SecondMouseAU/OCCTSwift#318; filed upstream as [Open-Cascade-SAS/OCCT#1381](https://github.com/Open-Cascade-SAS/OCCT/issues/1381), fix as [OCCT#1382](https://github.com/Open-Cascade-SAS/OCCT/pull/1382).
 
@@ -1297,9 +1297,9 @@ Reported and isolated at SecondMouseAU/OCCTSwift#318; filed upstream as [Open-Ca
 **Equivalence check.** Identical: the carried patch reverse-applies cleanly against `V8_0_1`.
 
 
-**Backports** [Open-Cascade-SAS/OCCT#1331](https://github.com/Open-Cascade-SAS/OCCT/pull/1331) (open, third-party author, pinned to commit `7557161a3dbe7e1ba18a3e63e1e104830d8c24c5`), fixing [OCCT#1330](https://github.com/Open-Cascade-SAS/OCCT/issues/1330). Audited and queued in [#323](https://github.com/SecondMouseAU/OCCTSwift/issues/323) alongside `0008`/`0009`; unlike `0001`–`0006`, this batch wasn't discovered via an OCCTSwift crash report — it's a proactive audit of upstream OCCT PRs filed since our `V8_0_0_p1` baseline that fix crashes/hangs in code paths we exercise.
+**Backports** [Open-Cascade-SAS/OCCT#1331](https://github.com/Open-Cascade-SAS/OCCT/pull/1331) (open, third-party author, pinned to commit `7557161a3dbe7e1ba18a3e63e1e104830d8c24c5`), fixing [OCCT#1330](https://github.com/Open-Cascade-SAS/OCCT/issues/1330). Audited and queued in [#323](https://github.com/SecondMouseAU/OCCTSwift/issues/323) alongside `0008`/`0009`; unlike `0001`–`0006`, this batch wasn't discovered via an OCCTSwift crash report, it's a proactive audit of upstream OCCT PRs filed since our `V8_0_0_p1` baseline that fix crashes/hangs in code paths we exercise.
 
-`ShapeAnalysis_FreeBounds::connectWiresToWiresImpl` — the same static helper patch `0004` already touches for a different bug (#310) — has a "find the next unconsumed wire" loop that sets `lwire = i` **before** checking whether the candidate wire it just loaded actually has any edges:
+`ShapeAnalysis_FreeBounds::connectWiresToWiresImpl`: the same static helper patch `0004` already touches for a different bug (#310), has a "find the next unconsumed wire" loop that sets `lwire = i` **before** checking whether the candidate wire it just loaded actually has any edges:
 
 ```cpp
 lwire = i;
@@ -1309,13 +1309,13 @@ if (sewd->NbEdges() > 0) { break; }
 sewd->Clear();
 ```
 
-If the wire is skipped (zero edges — e.g. a "wire" wrapping a single **internal-orientation** edge, which contributes no real boundary edges), `lwire` is left stale instead of reset. If every remaining candidate is likewise skipped, the loop exits with `lwire` still holding that stale index rather than `-1`, so the caller's `if (lwire == -1) { done = true; }` never fires — the outer loop's next iteration reads invalid memory through the stale `sewd`.
+If the wire is skipped (zero edges, e.g. a "wire" wrapping a single **internal-orientation** edge, which contributes no real boundary edges), `lwire` is left stale instead of reset. If every remaining candidate is likewise skipped, the loop exits with `lwire` still holding that stale index rather than `-1`, so the caller's `if (lwire == -1) { done = true; }` never fires, the outer loop's next iteration reads invalid memory through the stale `sewd`.
 
 **Fix:** only assign `lwire = i` once the wire is actually accepted (`sewd->NbEdges() > 0`), matching upstream's exact reordering.
 
-**Validation** (fast path, no full rebuild — see the `#0001` entry above for the override-link technique): the upstream TCL test (`tests/bugs/heal/bug1330`) translated to C++ — a valid closed triangle wire plus a single internal-orientation edge, fed to `ShapeAnalysis_FreeBounds::ConnectEdgesToWires` — SIGSEGVs 100% of the time on stock p1 + patches `0001`–`0006` (`ShapeExtend_WireData::Edge` reading invalid data) and returns a valid 1-wire result after this patch.
+**Validation** (fast path, no full rebuild, see the `#0001` entry above for the override-link technique): the upstream TCL test (`tests/bugs/heal/bug1330`) translated to C++, a valid closed triangle wire plus a single internal-orientation edge, fed to `ShapeAnalysis_FreeBounds::ConnectEdgesToWires`, SIGSEGVs 100% of the time on stock p1 + patches `0001`–`0006` (`ShapeExtend_WireData::Edge` reading invalid data) and returns a valid 1-wire result after this patch.
 
-Reported upstream as [OCCT#1330](https://github.com/Open-Cascade-SAS/OCCT/issues/1330) / [OCCT#1331](https://github.com/Open-Cascade-SAS/OCCT/pull/1331) (third party, open — pin to the SHA above and re-verify if it changes in review).
+Reported upstream as [OCCT#1330](https://github.com/Open-Cascade-SAS/OCCT/issues/1330) / [OCCT#1331](https://github.com/Open-Cascade-SAS/OCCT/pull/1331) (third party, open, pin to the SHA above and re-verify if it changes in review).
 
 **Retire** once the bundled OCCT includes this fix.
 
@@ -1328,11 +1328,11 @@ Reported upstream as [OCCT#1330](https://github.com/Open-Cascade-SAS/OCCT/issues
 
 **Backports** [Open-Cascade-SAS/OCCT#1329](https://github.com/Open-Cascade-SAS/OCCT/pull/1329) (merged 2026-07-05, upstream commit `37c9279f446894c5d123cb1fdda0ac848959361f`), fixing [OCCT#1288](https://github.com/Open-Cascade-SAS/OCCT/issues/1288) ("Boolean operation 'section' hangs-up for a pair of cylindrical shapes"). Audited and queued in [#323](https://github.com/SecondMouseAU/OCCTSwift/issues/323).
 
-`Geom_BSplineCurve::PeriodicNormalization` brought an out-of-range parameter back into a periodic curve's valid range by repeatedly adding/subtracting one period at a time in a `while` loop — O(N) in the distance from the valid range, and a genuine infinite loop once the parameter's magnitude is many orders larger than the period: `Parameter -= Period` becomes a floating-point no-op at that magnitude, so the loop never terminates. `BRepAlgoAPI_Section` hung indefinitely reaching this path on cylindrical shapes with self-intersecting geometry.
+`Geom_BSplineCurve::PeriodicNormalization` brought an out-of-range parameter back into a periodic curve's valid range by repeatedly adding/subtracting one period at a time in a `while` loop. O(N) in the distance from the valid range, and a genuine infinite loop once the parameter's magnitude is many orders larger than the period: `Parameter -= Period` becomes a floating-point no-op at that magnitude, so the loop never terminates. `BRepAlgoAPI_Section` hung indefinitely reaching this path on cylindrical shapes with self-intersecting geometry.
 
-**Fix:** rewritten to O(1) — one division (`std::floor`) computes the whole number of periods to shift, applied in a single step, with at most one single-period correction for floating-point residual overshoot (using `std::nextafter` to guarantee forward progress if the correction is itself a no-op). An early return when the parameter is already in range skips even that division in the common case.
+**Fix:** rewritten to O(1), one division (`std::floor`) computes the whole number of periods to shift, applied in a single step, with at most one single-period correction for floating-point residual overshoot (using `std::nextafter` to guarantee forward progress if the correction is itself a no-op). An early return when the parameter is already in range skips even that division in the common case.
 
-**Validation** (fast path, no full rebuild): a normal closed periodic curve (`GeomAPI_Interpolate`, 8 points on a unit circle, period ≈ 6.12) with `PeriodicNormalization(1e17)` hangs indefinitely on stock p1 (confirmed by wall-clock timeout) and returns instantly with a valid in-range parameter (`1.0364`) after the patch. A sanity sweep of nine in-range/near-boundary/several-periods-off parameters produces **byte-identical** output before and after — no behavior change for values this function is normally called with.
+**Validation** (fast path, no full rebuild): a normal closed periodic curve (`GeomAPI_Interpolate`, 8 points on a unit circle, period ≈ 6.12) with `PeriodicNormalization(1e17)` hangs indefinitely on stock p1 (confirmed by wall-clock timeout) and returns instantly with a valid in-range parameter (`1.0364`) after the patch. A sanity sweep of nine in-range/near-boundary/several-periods-off parameters produces **byte-identical** output before and after, no behavior change for values this function is normally called with.
 
 Filed upstream by OCCT as [OCCT#1329](https://github.com/Open-Cascade-SAS/OCCT/pull/1329) (merged, stable).
 
@@ -1347,13 +1347,13 @@ Filed upstream by OCCT as [OCCT#1329](https://github.com/Open-Cascade-SAS/OCCT/p
 
 **Backports** [Open-Cascade-SAS/OCCT#1318](https://github.com/Open-Cascade-SAS/OCCT/pull/1318) (open, by an OCCT maintainer, pinned to commit `72bc2368372d93d6f84717f2327131d4c000d7c1`). No linked upstream issue. Audited and queued in [#323](https://github.com/SecondMouseAU/OCCTSwift/issues/323). Same subsystem as `0002`.
 
-`StepData_StepWriter::AddString` writes a raw token into the writer's current-line buffer (fixed at 72 characters, `StepLong`), flushing and resetting the line whenever the pending text won't fit — assuming the token itself is never longer than one full line. When a single unbroken string value (e.g. a long name/label field with no natural break point) is longer than 72 characters, the flush-check can never become true no matter how many times the line is reset: the loop runs forever.
+`StepData_StepWriter::AddString` writes a raw token into the writer's current-line buffer (fixed at 72 characters, `StepLong`), flushing and resetting the line whenever the pending text won't fit, assuming the token itself is never longer than one full line. When a single unbroken string value (e.g. a long name/label field with no natural break point) is longer than 72 characters, the flush-check can never become true no matter how many times the line is reset: the loop runs forever.
 
-**Fix:** when the token fits within `StepLong`, behavior is unchanged. When it doesn't, the new code splits the token across as many lines as needed, filling each with as much as fits before flushing and continuing with the remainder — continuation lines also drop their indentation when the indented prefix would leave no room for the pending text.
+**Fix:** when the token fits within `StepLong`, behavior is unchanged. When it doesn't, the new code splits the token across as many lines as needed, filling each with as much as fits before flushing and continuing with the remainder, continuation lines also drop their indentation when the indented prefix would leave no room for the pending text.
 
-**Validation** (fast path, no full rebuild): `StepData_StepWriter::StartEntity` + `SendString` (the public entry point — `AddString` itself is private) with a 200-character unbroken string hangs indefinitely on stock p1 (confirmed by wall-clock timeout) and returns instantly after the patch, correctly split across three continuation lines with the original text intact end-to-end. A sanity check with only normal-length fields produces **byte-identical** `Print()` output before and after. New OCCTSwift-level regression test `STEPWriterOversizedNameTests` (`OCCTIOTests`) exercises the same path through `Shape.writeSTEP(to:name:)`.
+**Validation** (fast path, no full rebuild): `StepData_StepWriter::StartEntity` + `SendString` (the public entry point, `AddString` itself is private) with a 200-character unbroken string hangs indefinitely on stock p1 (confirmed by wall-clock timeout) and returns instantly after the patch, correctly split across three continuation lines with the original text intact end-to-end. A sanity check with only normal-length fields produces **byte-identical** `Print()` output before and after. New OCCTSwift-level regression test `STEPWriterOversizedNameTests` (`OCCTIOTests`) exercises the same path through `Shape.writeSTEP(to:name:)`.
 
-**Retire** once the bundled OCCT includes this fix (open PR — pin to the SHA above and re-verify if it changes in review).
+**Retire** once the bundled OCCT includes this fix (open PR, pin to the SHA above and re-verify if it changes in review).
 
 ## 0013-ShapeUpgrade_UnifySameDomain-guard-null-pcurve-348.patch
 
@@ -1368,13 +1368,13 @@ declined and its partial result discarded rather than carried on with. That is a
 to `UnifySameDomainBuilder.build()`, not just a crash guard; it is measured in the 8.0.1 absorb.
 
 
-**Fixes the upstream OCCT crash behind [#348](https://github.com/SecondMouseAU/OCCTSwift/issues/348)** — an uncatchable SIGSEGV in `UnifySameDomainBuilder.build()` on a real mesh-sewn solid, minimized to a standalone OCCTSwift-only reproducer (no mesh handling, no OCCTReconstruct code involved).
+**Fixes the upstream OCCT crash behind [#348](https://github.com/SecondMouseAU/OCCTSwift/issues/348)**: an uncatchable SIGSEGV in `UnifySameDomainBuilder.build()` on a real mesh-sewn solid, minimized to a standalone OCCTSwift-only reproducer (no mesh handling, no OCCTReconstruct code involved).
 
-`ShapeUpgrade_UnifySameDomain::IntUnifyFaces` (and its file-local `SplitWire` helper) disambiguate between multiple candidate next-edges at a branching vertex by comparing each candidate's pcurve tangent direction on the current reference face. Three call sites in `IntUnifyFaces` (`ShapeUpgrade_UnifySameDomain.cxx:3989`, `:4003`, `:4027`) and a structurally identical pair in `SplitWire` (`:4643`, `:4659`) fetch that pcurve via `BRep_Tool::CurveOnSurface(edge, refFace, first, last)` and dereference it immediately (`->D1(...)`/`->Value(...)`) with no `IsNull()` check — unlike every other `CurveOnSurface` call site in the same file (e.g. `:426`, `:1838`), which do check. `CurveOnSurface` legitimately returns a null handle when an edge has no pcurve on the given face — routine for a raw per-triangle mesh-sewn solid (`BRepBuilderAPI_Sewing` output from an STL/mesh import) at a vertex shared by more than two edges. The dereference is a null-pointer virtual call: Address 0, uncatchable in-process (same signature as the #263/#310/#317/#318 crash family).
+`ShapeUpgrade_UnifySameDomain::IntUnifyFaces` (and its file-local `SplitWire` helper) disambiguate between multiple candidate next-edges at a branching vertex by comparing each candidate's pcurve tangent direction on the current reference face. Three call sites in `IntUnifyFaces` (`ShapeUpgrade_UnifySameDomain.cxx:3989`, `:4003`, `:4027`) and a structurally identical pair in `SplitWire` (`:4643`, `:4659`) fetch that pcurve via `BRep_Tool::CurveOnSurface(edge, refFace, first, last)` and dereference it immediately (`->D1(...)`/`->Value(...)`) with no `IsNull()` check, unlike every other `CurveOnSurface` call site in the same file (e.g. `:426`, `:1838`), which do check. `CurveOnSurface` legitimately returns a null handle when an edge has no pcurve on the given face, routine for a raw per-triangle mesh-sewn solid (`BRepBuilderAPI_Sewing` output from an STL/mesh import) at a vertex shared by more than two edges. The dereference is a null-pointer virtual call: Address 0, uncatchable in-process (same signature as the #263/#310/#317/#318 crash family).
 
 Confirmed via a debug (`-g -O0`) single-TU override-link (compile the patched `.cxx` standalone and link it *before* `libOCCT-macos.a`, so the linker never pulls the stock archive member for these symbols) + `lldb bt`: the crash resolves precisely to `ShapeUpgrade_UnifySameDomain.cxx:4003` (`aPCurve->D1(...)`), reached via `IntUnifyFaces` → `UnifyFaces` → `Build`.
 
-**Fix:** guard all five call sites with `IsNull()` checks, following the file's own established pattern. A missing pcurve on a *candidate* edge means "skip it, not a rankable direction" (`continue`); a missing pcurve on the *current* edge (nothing to compare candidates against) falls back to treating all candidates as equally likely — the same fallback the surrounding code already takes for the "only one candidate" case (`TmpElist.Extent() <= 1`/`aElist.Extent() == 1`).
+**Fix:** guard all five call sites with `IsNull()` checks, following the file's own established pattern. A missing pcurve on a *candidate* edge means "skip it, not a rankable direction" (`continue`); a missing pcurve on the *current* edge (nothing to compare candidates against) falls back to treating all candidates as equally likely, the same fallback the surrounding code already takes for the "only one candidate" case (`TmpElist.Extent() <= 1`/`aElist.Extent() == 1`).
 
 **Validation:** the attached fixture SIGSEGVs 3/3 on stock p1 + patches 0001-0012 (v1.15.7) and survives repeated runs (3+) with the patch applied.
 

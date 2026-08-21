@@ -1,15 +1,15 @@
 ---
-title: Curve3D — Analysis
+title: Curve3D. Analysis
 parent: API Reference
 ---
 
-# Curve3D — Analysis
+# Curve3D. Analysis
 
 This page covers the analysis and query members of `Curve3D`: curvature and local differential geometry, projection onto planes and surfaces, curve-to-curve and curve-to-surface distance and intersection, quasi-uniform sampling, `ShapeAnalysis_Curve` utilities, continuity analysis, extrema (curve–curve, curve–surface, point–curve), `ProjLib` surface projection, and `gce` analytic-curve factories. For factory methods, B-spline/Bezier construction, and geometric operations see the main [`Curve3D`](Curve3D.md) page.
 
 ## Topics
 
-- [Local Properties](#local-properties) · [LocalAnalysis](#localanalysis) · [Projection (v0.22.0)](#projection-v0220) · [Batch Evaluation (v0.29.0)](#batch-evaluation-v0290) · [Curve Distance & Intersection (v0.30.0)](#curve-distance--intersection-v0300) · [Quasi-Uniform Sampling (v0.31.0)](#quasi-uniform-sampling-v0310) · [ShapeAnalysis\_Curve Expansion (v0.49.0)](#shapeanalysis_curve-expansion-v0490) · [v0.80.0: Extrema, ProjLib, gce Factories](#v0800-extrema-projlib-gce-factories) · [ExtremaPC — Point-Curve Distance (v0.130.0)](#extremapc--point-curve-distance-v01300)
+- [Local Properties](#local-properties) · [LocalAnalysis](#localanalysis) · [Projection (v0.22.0)](#projection-v0220) · [Batch Evaluation (v0.29.0)](#batch-evaluation-v0290) · [Curve Distance & Intersection (v0.30.0)](#curve-distance--intersection-v0300) · [Quasi-Uniform Sampling (v0.31.0)](#quasi-uniform-sampling-v0310) · [ShapeAnalysis\_Curve Expansion (v0.49.0)](#shapeanalysis_curve-expansion-v0490) · [v0.80.0: Extrema, ProjLib, gce Factories](#v0800-extrema-projlib-gce-factories) · [ExtremaPC, Point-Curve Distance (v0.130.0)](#extremapc--point-curve-distance-v01300)
 
 ---
 
@@ -29,8 +29,8 @@ public func curvature(at u: Double) -> Double?
 
 The curvature is the reciprocal of the radius of the osculating circle at `u`. Zero on a straight line; larger values indicate tighter bends.
 
-- **Parameters:** `u` — curve parameter.
-- **Returns:** Curvature value; `nil` when `GeomLProp_CLProps::IsTangentDefined()` is false there — a point with no significant derivative of any order, e.g. a Bezier whose control points all coincide. This was `0` until #595, which is also every straight curve's real curvature. A **cusp** is not an absence: OCCT calls the curvature infinite there and returns `Double.greatestFiniteMagnitude` (`RealLast()`), which is still reported as a value.
+- **Parameters:** `u`, curve parameter.
+- **Returns:** Curvature value; `nil` when `GeomLProp_CLProps::IsTangentDefined()` is false there, a point with no significant derivative of any order, e.g. a Bezier whose control points all coincide. This was `0` until #595, which is also every straight curve's real curvature. A **cusp** is not an absence: OCCT calls the curvature infinite there and returns `Double.greatestFiniteMagnitude` (`RealLast()`), which is still reported as a value.
 - **OCCT:** `GeomLProp_CLProps::Curvature`.
 - **Example:**
   ```swift
@@ -38,7 +38,7 @@ The curvature is the reciprocal of the radius of the osculating circle at `u`. Z
       let k = arc.curvature(at: 0)  // ≈ 0.2 (1/R)
   }
   if let line = Curve3D.line(through: .zero, direction: SIMD3(1, 0, 0)) {
-      line.curvature(at: 3)         // 0 — straight, and that is the answer, not a failure
+      line.curvature(at: 3)         // 0, straight, and that is the answer, not a failure
   }
   ```
 
@@ -52,7 +52,7 @@ Returns the unit tangent direction at parameter `u`.
 public func tangentDirection(at u: Double) -> SIMD3<Double>?
 ```
 
-- **Parameters:** `u` — curve parameter.
+- **Parameters:** `u`, curve parameter.
 - **Returns:** Unit tangent vector, or `nil` when the tangent cannot be computed (e.g. at a cusp).
 - **OCCT:** `GeomLProp_CLProps::Tangent`.
 - **Example:**
@@ -75,7 +75,7 @@ public func normal(at u: Double) -> SIMD3<Double>?
 
 The principal normal points toward the center of curvature.
 
-- **Parameters:** `u` — curve parameter.
+- **Parameters:** `u`, curve parameter.
 - **Returns:** Unit principal normal vector, or `nil` on a straight segment (curvature is zero, normal is undefined).
 - **OCCT:** `GeomLProp_CLProps::Normal`.
 - **Example:**
@@ -96,14 +96,14 @@ Returns the center of the osculating circle at parameter `u`.
 public func centerOfCurvature(at u: Double) -> SIMD3<Double>?
 ```
 
-- **Parameters:** `u` — curve parameter.
+- **Parameters:** `u`, curve parameter.
 - **Returns:** 3D center of curvature, or `nil` when curvature is zero (straight segment).
 - **OCCT:** `GeomLProp_CLProps::CentreOfCurvature`.
 - **Example:**
   ```swift
   if let arc = Curve3D.arc(center: .zero, radius: 5, startAngle: 0, endAngle: .pi),
      let c = arc.centerOfCurvature(at: 0) {
-      // c ≈ SIMD3(0, 0, 0) — center of the arc
+      // c ≈ SIMD3(0, 0, 0), center of the arc
   }
   ```
 
@@ -119,8 +119,8 @@ public func torsion(at u: Double) -> Double?
 
 Torsion is zero for planar curves. Non-zero values indicate the curve is twisting out of its local plane.
 
-- **Parameters:** `u` — curve parameter.
-- **Returns:** Torsion value (signed); `0` for planar curves, which is a real answer, and `nil` where there is no osculating plane to twist out of — a straight stretch, where the first two derivatives are parallel. Those two were the same `0` until #595 (every circle and ellipse is planar, so the collision was as ordinary as `curvature(at:)`'s).
+- **Parameters:** `u`, curve parameter.
+- **Returns:** Torsion value (signed); `0` for planar curves, which is a real answer, and `nil` where there is no osculating plane to twist out of, a straight stretch, where the first two derivatives are parallel. Those two were the same `0` until #595 (every circle and ellipse is planar, so the collision was as ordinary as `curvature(at:)`'s).
 - **OCCT:** `GeomLProp_CLProps::Torsion`.
 - **Example:**
   ```swift
@@ -128,7 +128,7 @@ Torsion is zero for planar curves. Non-zero values indicate the curve is twistin
       let tau = helix.torsion(at: 0)  // non-zero for a helix
   }
   if let circle = Curve3D.circle(center: .zero, normal: SIMD3(0, 0, 1), radius: 4) {
-      circle.torsion(at: 1)           // 0 — planar, and that is the answer
+      circle.torsion(at: 1)           // 0, planar, and that is the answer
   }
   ```
 
@@ -166,18 +166,18 @@ public struct ContinuityAnalysis: Sendable {
 }
 ```
 
-- `order` — the class the junction was analysed at, i.e. the request after saturation. `LocalAnalysis_CurveContinuity::ContinuityStatus()` echoes its constructor argument, so this is never a finding; it exists to tell you where a saturated request landed.
-- `measured` — the classes this `order` actually evaluated. Each order runs one branch: `.c0` measures C0; `.g1` measures C0 and G1; `.c1` measures C0 and C1; `.g2` measures C0, G1 and G2; `.c2` measures C0, C1 and C2. **No order measures all five.**
-- `c0Value` — positional gap distance at the junction.
-- `g1Angle` — angle between tangent directions (radians), or `-1` if G1 was not measured or does not hold.
-- `c1Angle` / `c1Ratio` — angle and magnitude ratio between first derivatives, or `-1`.
-- `c2Angle` / `c2Ratio` — angle and magnitude ratio between second derivatives, or `-1`.
-- `g2Angle` — angle between osculating planes, or `-1`.
-- `g2CurvatureVariation` — curvature variation at the junction, or `-1`.
-- `flags` — bitmask (bit 0 = C0 … bit 4 = C2), masked to `measured`.
+- `order`: the class the junction was analysed at, i.e. the request after saturation. `LocalAnalysis_CurveContinuity::ContinuityStatus()` echoes its constructor argument, so this is never a finding; it exists to tell you where a saturated request landed.
+- `measured`: the classes this `order` actually evaluated. Each order runs one branch: `.c0` measures C0; `.g1` measures C0 and G1; `.c1` measures C0 and C1; `.g2` measures C0, G1 and G2; `.c2` measures C0, C1 and C2. **No order measures all five.**
+- `c0Value`: positional gap distance at the junction.
+- `g1Angle`: angle between tangent directions (radians), or `-1` if G1 was not measured or does not hold.
+- `c1Angle` / `c1Ratio`, angle and magnitude ratio between first derivatives, or `-1`.
+- `c2Angle` / `c2Ratio`, angle and magnitude ratio between second derivatives, or `-1`.
+- `g2Angle`: angle between osculating planes, or `-1`.
+- `g2CurvatureVariation`: curvature variation at the junction, or `-1`.
+- `flags`: bitmask (bit 0 = C0 … bit 4 = C2), masked to `measured`.
 - `holds(_:)` returns `nil` for a class outside `measured`, which is what separates "does not hold" from "never asked". Prefer it to `flags`.
 
-> Before #495 the `is*` helpers were non-optional and read straight off the bitmask, so a class the order never computed answered `true` from an uninitialised member — a 90° corner analysed at `.c0` reported `isC2 == true`, with `c2Angle == 0.0` alongside it.
+> Before #495 the `is*` helpers were non-optional and read straight off the bitmask, so a class the order never computed answered `true` from an uninitialised member, a 90° corner analysed at `.c0` reported `isC2 == true`, with `c2Angle == 0.0` alongside it.
 
 ---
 
@@ -260,7 +260,7 @@ Whether `continuity` holds at the junction, or `nil` if `order` never measured i
 
 `holds(.c2)`. `nil` unless `order` is `.c2`.
 
-> Before #495 the `is*` helpers were non-optional and read straight off the bitmask, so a class the order never computed answered `true` from an uninitialised member — a 90° corner analysed at `.c0` reported `isC2 == true`, with `c2Angle == 0.0` alongside it.
+> Before #495 the `is*` helpers were non-optional and read straight off the bitmask, so a class the order never computed answered `true` from an uninitialised member, a 90° corner analysed at `.c0` reported `isC2 == true`, with `c2Angle == 0.0` alongside it.
 
 ---
 
@@ -273,9 +273,9 @@ public func continuityWith(_ other: Curve3D, u1: Double, u2: Double,
                            order: ContinuityClass = .c2) -> ContinuityAnalysis?
 ```
 
-`order` **selects** the analysis rather than capping it — see `measured` above. `.c2` is the strictest class `LocalAnalysis_CurveContinuity` implements, so `.c3` and `.cN` saturate to it.
+`order` **selects** the analysis rather than capping it, see `measured` above. `.c2` is the strictest class `LocalAnalysis_CurveContinuity` implements, so `.c3` and `.cN` saturate to it.
 
-- **Parameters:** `other` — the second curve; `u1` — parameter on this curve; `u2` — parameter on `other`; `order` — the class to measure (default `.c2`).
+- **Parameters:** `other`, the second curve; `u1`, parameter on this curve; `u2`, parameter on `other`; `order`, the class to measure (default `.c2`).
 - **Returns:** `ContinuityAnalysis`, or `nil` if `LocalAnalysis_CurveContinuity` fails.
 - **OCCT:** `LocalAnalysis_CurveContinuity`.
 - **Note:** the `.c2` and `.g2` branches need a non-zero second derivative on both curves, so a straight line cannot be analysed above `.c1`/`.g1`.
@@ -285,7 +285,7 @@ public func continuityWith(_ other: Curve3D, u1: Double, u2: Double,
   if let ca = c1.continuityWith(c2, u1: c1.domain.upperBound,
                                 u2: c2.domain.lowerBound, order: .g1) {
       print(ca.holds(.g1), ca.g1Angle)
-      print(ca.holds(.c1))            // nil — .g1 does not measure C1
+      print(ca.holds(.c1))            // nil, .g1 does not measure C1
   }
   ```
 
@@ -311,7 +311,7 @@ public func projectedOnPlane(
 
 Uses `GeomProjLib::ProjectOnPlane`. The result is a 3D curve lying in the target plane. The projection direction must not be parallel to the plane normal.
 
-- **Parameters:** `origin` — a point on the target plane; `normal` — the plane normal; `direction` — projection direction (must not be parallel to `normal`).
+- **Parameters:** `origin`, a point on the target plane; `normal`, the plane normal; `direction`, projection direction (must not be parallel to `normal`).
 - **Returns:** Projected 3D curve lying in the plane, or `nil` if projection fails.
 - **OCCT:** `GeomProjLib::ProjectOnPlane`.
 - **Example:**
@@ -347,7 +347,7 @@ public func evaluateGrid(_ parameters: [Double]) -> [SIMD3<Double>]
 
 Significantly faster than calling `point(at:)` in a loop for large parameter arrays. Returns an empty array when `parameters` is empty or the bridge call fails.
 
-- **Parameters:** `parameters` — array of curve parameter values.
+- **Parameters:** `parameters`, array of curve parameter values.
 - **Returns:** Array of 3D points in the same order as `parameters`. Length equals `parameters.count` on success; may be shorter if the bridge returns fewer valid results.
 - **OCCT:** `GeomGridEval_Curve::EvaluateGrid` via `OCCTCurve3DEvaluateGrid`.
 - **Example:**
@@ -372,8 +372,8 @@ public func evaluateGridD1(_ parameters: [Double]) -> [(point: SIMD3<Double>, ta
 
 Returns point and (unnormalized) tangent vector at each parameter. Suitable for building polylines with tangent information for rendering or downstream processing.
 
-- **Parameters:** `parameters` — array of curve parameter values.
-- **Returns:** Array of `(point, tangent)` tuples. The tangent is the first derivative, not the unit tangent — normalize if needed.
+- **Parameters:** `parameters`, array of curve parameter values.
+- **Returns:** Array of `(point, tangent)` tuples. The tangent is the first derivative, not the unit tangent, normalize if needed.
 - **OCCT:** `GeomGridEval_Curve::EvaluateGridD1` via `OCCTCurve3DEvaluateGridD1`.
 - **Example:**
   ```swift
@@ -398,7 +398,7 @@ public func planeNormal(tolerance: Double = 0) -> SIMD3<Double>?
 
 Uses `ShapeAnalysis_Curve::IsPlanar` to test whether the curve lies in a plane within `tolerance`. A returned normal is not unit-normalized; normalize it before use.
 
-- **Parameters:** `tolerance` — planarity tolerance (default `0` uses OCCT internal precision).
+- **Parameters:** `tolerance`, planarity tolerance (default `0` uses OCCT internal precision).
 - **Returns:** The plane normal direction if the curve is planar within tolerance, or `nil` if not planar.
 - **OCCT:** `ShapeAnalysis_Curve::IsPlanar`.
 - **Example:**
@@ -431,9 +431,9 @@ public struct CurveExtremaResult: Sendable {
 }
 ```
 
-- `distance` — distance between the two extremal points.
-- `point1` / `point2` — closest (or farthest) points on the first and second curve respectively.
-- `parameter1` / `parameter2` — parameter values on each curve at the extremal points.
+- `distance`: distance between the two extremal points.
+- `point1` / `point2`, closest (or farthest) points on the first and second curve respectively.
+- `parameter1` / `parameter2`, parameter values on each curve at the extremal points.
 
 ---
 
@@ -450,9 +450,9 @@ public struct CurveSurfaceHit: Sendable {
 }
 ```
 
-- `point` — 3D intersection coordinates.
-- `curveParameter` — parameter along the curve at the intersection.
-- `surfaceU` / `surfaceV` — surface UV parameters at the intersection.
+- `point`: 3D intersection coordinates.
+- `curveParameter`: parameter along the curve at the intersection.
+- `surfaceU` / `surfaceV`, surface UV parameters at the intersection.
 
 ---
 
@@ -478,7 +478,7 @@ Returns the minimum distance from this curve to another curve.
 public func minDistance(to other: Curve3D) -> Double?
 ```
 
-- **Parameters:** `other` — the curve to measure against.
+- **Parameters:** `other`, the curve to measure against.
 - **Returns:** Minimum distance, or `nil` when `GeomAPI_ExtremaCurveCurve` finds no extrema.
 - **OCCT:** `GeomAPI_ExtremaCurveCurve::LowerDistance`.
 - **Example:**
@@ -502,7 +502,7 @@ public func extrema(with other: Curve3D, maxCount: Int = 20) -> [CurveExtremaRes
 
 Returns up to `maxCount` results. For simple queries where only the minimum distance matters, prefer `minDistance(to:)`.
 
-- **Parameters:** `other` — the second curve; `maxCount` — output *capacity* (default 20), clamped
+- **Parameters:** `other`, the second curve; `maxCount`, output *capacity* (default 20), clamped
   into `0...Sampling.maximumSampleCount` (10,000,000); 0 or less returns empty (#622).
 - **Returns:** Array of `CurveExtremaResult` values. Empty when the curves are parallel: OCCT
   represents that case as a single unbounded family of equidistant solutions rather than a finite
@@ -532,7 +532,7 @@ public func intersections(with surface: Surface, maxHits: Int = 100) -> [CurveSu
 
 Returns an empty array when the curve does not pierce the surface. Both transverse and tangent intersections are returned.
 
-- **Parameters:** `surface` — the surface to intersect with; `maxHits` — output *capacity*
+- **Parameters:** `surface`, the surface to intersect with; `maxHits`, output *capacity*
   (default 100), clamped into `0...Sampling.maximumSampleCount` (10,000,000); 0 or less
   returns empty (#622).
 - **Returns:** Array of `CurveSurfaceHit` values (may be empty).
@@ -556,7 +556,7 @@ Returns the minimum distance from this curve to a surface.
 public func minDistance(to surface: Surface) -> Double?
 ```
 
-- **Parameters:** `surface` — the surface to measure against.
+- **Parameters:** `surface`, the surface to measure against.
 - **Returns:** Minimum distance, or `nil` when `GeomAPI_ExtremaCurveSurface` finds no solution.
 - **OCCT:** `GeomAPI_ExtremaCurveSurface::LowerDistance`.
 - **Example:**
@@ -580,7 +580,7 @@ public func toAnalytical(tolerance: Double = 1e-4) -> Curve3D?
 
 Recognises lines, circles, and ellipses within the given tolerance. Useful after fitting operations that produce a B-spline approximation of a canonical shape.
 
-- **Parameters:** `tolerance` — recognition tolerance (default `1e-4`).
+- **Parameters:** `tolerance`, recognition tolerance (default `1e-4`).
 - **Returns:** Analytic `Curve3D` (a `Geom_Line`, `Geom_Circle`, or `Geom_Ellipse`), or `nil` if the curve is not recognisable as a standard type.
 - **OCCT:** `GeomConvert_CurveToAnaCurve`.
 - **Example:**
@@ -608,7 +608,7 @@ public func quasiUniformParameters(count: Int) -> [Double]
 
 Uses `GCPnts_QuasiUniformAbscissa` to space `count` parameters approximately evenly along the arc length of the curve. The result is suitable for passing to `evaluateGrid(_:)`. The first parameter is always the start of the curve's domain and the last is always its end.
 
-- **Parameters:** `count`, the desired number of sample parameters — a *request*, honoured within `2...Sampling.maximumSampleCount` (10,000,000); outside that range the result is empty. OCCT documents the lower bound but enforces it with a `Raise_if`, which the pinned Release kernel compiles out, so this layer applies it (#501); the upper bound is this layer's too, since `count` sizes a Swift allocation and is cast to the bridge's `int32_t`, and both ends used to abort the process (#558).
+- **Parameters:** `count`, the desired number of sample parameters, a *request*, honoured within `2...Sampling.maximumSampleCount` (10,000,000); outside that range the result is empty. OCCT documents the lower bound but enforces it with a `Raise_if`, which the pinned Release kernel compiles out, so this layer applies it (#501); the upper bound is this layer's too, since `count` sizes a Swift allocation and is cast to the bridge's `int32_t`, and both ends used to abort the process (#558).
 - **Returns:** Array of parameter values of length up to `count`, never more; empty on failure.
 - **OCCT:** `GCPnts_QuasiUniformAbscissa`. It can compute one point beyond the request on a poorly-conditioned curve (measured on a 1e6 x 1e-3 ellipse); the surplus is dropped, but the curve's end parameter is kept in the last slot rather than truncated away.
 - **Example:**
@@ -631,7 +631,7 @@ public func quasiUniformDeflectionPoints(deflection: Double, maxPoints: Int = 50
 
 Uses `GCPnts_QuasiUniformDeflection`. Tighter curves produce more points; straighter segments produce fewer. The result is suitable for polygon rendering.
 
-- **Parameters:** `deflection` — maximum allowed chord deviation from the curve; `maxPoints` — output *capacity* (default 500), clamped into `0...Sampling.maximumSampleCount` (10,000,000), so an unservable capacity returns the same points rather than a coarser sampling; 0 or less returns empty (#558). The deflection decides the actual point count.
+- **Parameters:** `deflection`, maximum allowed chord deviation from the curve; `maxPoints`, output *capacity* (default 500), clamped into `0...Sampling.maximumSampleCount` (10,000,000), so an unservable capacity returns the same points rather than a coarser sampling; 0 or less returns empty (#558). The deflection decides the actual point count.
 - **Returns:** Array of 3D points (may be empty on failure).
 - **OCCT:** `GCPnts_QuasiUniformDeflection`.
 - **Example:**
@@ -662,9 +662,9 @@ public struct PointProjection: Sendable {
 }
 ```
 
-- `distance` — 3D distance from the query point to the projected point on the curve.
-- `parameter` — parameter on the curve at the closest point.
-- `point` — 3D coordinates of the closest point on the curve.
+- `distance`: 3D distance from the query point to the projected point on the curve.
+- `parameter`: parameter on the curve at the closest point.
+- `point`: 3D coordinates of the closest point on the curve.
 
 ---
 
@@ -678,11 +678,11 @@ public func projectPoint(_ point: SIMD3<Double>, precision: Double = 1e-6) -> Po
 
 Always returns a result (never `nil`); a non-zero `distance` indicates the query point was not on the curve.
 
-The answer is always inside the curve's own `domain`, and always the true nearest point. Where the query point has no perpendicular foot on the curve — anything past the end of a trimmed curve, or off to one side of an arc — the nearest point is an end, and that is what comes back. [`nearestParameter(to:)`](Curve3D-Construction.md#nearestparameterto) is the scalar spelling of this and agrees with it exactly; it reported `nil` for exactly those points until #615 routed it through the same helper.
+The answer is always inside the curve's own `domain`, and always the true nearest point. Where the query point has no perpendicular foot on the curve, anything past the end of a trimmed curve, or off to one side of an arc, the nearest point is an end, and that is what comes back. [`nearestParameter(to:)`](Curve3D-Construction.md#nearestparameterto) is the scalar spelling of this and agrees with it exactly; it reported `nil` for exactly those points until #615 routed it through the same helper.
 
-- **Parameters:** `point` — 3D point to project; `precision` — projection precision (default `1e-6`).
+- **Parameters:** `point`, 3D point to project; `precision`, projection precision (default `1e-6`).
 - **Returns:** `PointProjection` with distance, parameter, and closest curve point.
-- **OCCT:** `ShapeAnalysis_Curve::Project` and `GeomAPI_ProjectPointOnCurve`, minimised together with the domain's ends — no one of the three is correct alone (#539).
+- **OCCT:** `ShapeAnalysis_Curve::Project` and `GeomAPI_ProjectPointOnCurve`, minimised together with the domain's ends, no one of the three is correct alone (#539).
 - **Example:**
   ```swift
   if let c = Curve3D.line(from: .zero, to: SIMD3(10, 0, 0)) {
@@ -700,7 +700,7 @@ The answer is always inside the curve's own `domain`, and always the true neares
   ```
 
 > **Before #539** this projected onto the curve's *underlying basis* curve, so
-> the trimmed-segment case above reported parameter `100`, distance `0` — a `distance < tolerance`
+> the trimmed-segment case above reported parameter `100`, distance `0`, a `distance < tolerance`
 > proximity test read a point 92 units away as lying on the curve. A point on a full circle but
 > outside an arc's own span read as distance 0 for the same reason.
 
@@ -716,7 +716,7 @@ public func distance(to point: SIMD3<Double>, precision: Double = 1e-6) -> Doubl
 
 Convenience wrapper over `projectPoint(_:precision:)` when only the scalar distance is needed, so it measures to the same nearest point: over the curve's own `domain`, ends included.
 
-- **Parameters:** `point` — query point; `precision` — projection precision (default `1e-6`).
+- **Parameters:** `point`, query point; `precision`, projection precision (default `1e-6`).
 - **Returns:** Shortest distance from `point` to the curve.
 - **OCCT:** Delegates to `projectPoint(_:precision:)`, and inherits its #539 fix.
 - **Example:**
@@ -740,8 +740,8 @@ public struct ValidatedRange: Sendable {
 }
 ```
 
-- `first` / `last` — validated (and possibly clamped) parameter bounds.
-- `wasAdjusted` — `true` if the input range was outside the curve's parametric domain and was adjusted.
+- `first` / `last`, validated (and possibly clamped) parameter bounds.
+- `wasAdjusted`: `true` if the input range was outside the curve's parametric domain and was adjusted.
 
 | Field | Meaning |
 |---|---|
@@ -765,7 +765,7 @@ public func validateRange(first: Double, last: Double, precision: Double = 1e-6)
 
 Uses `ShapeAnalysis_Curve::ValidateRange`. Useful before trimming or sampling a curve when the input parameters may be slightly outside the domain.
 
-- **Parameters:** `first` — desired start parameter; `last` — desired end parameter; `precision` — tolerance for domain comparison (default `1e-6`).
+- **Parameters:** `first`, desired start parameter; `last`, desired end parameter; `precision`, tolerance for domain comparison (default `1e-6`).
 - **Returns:** `ValidatedRange` with adjusted `first`/`last` and a flag indicating whether adjustment occurred.
 - **OCCT:** `ShapeAnalysis_Curve::ValidateRange`.
 - **Example:**
@@ -788,7 +788,7 @@ public func samplePoints(first: Double, last: Double, maxPoints: Int = 1000) -> 
 
 Uses `ShapeAnalysis_Curve::GetSamplePoints`. The distribution is chosen internally by OCCT for good geometric coverage, not strict arc-length uniformity. For uniform spacing see `quasiUniformParameters(count:)`.
 
-- **Parameters:** `first` — start parameter; `last` — end parameter; `maxPoints` — output *capacity* (default 1000), clamped into `0...Sampling.maximumSampleCount` (10,000,000), so an unservable capacity returns the same points rather than a coarser sampling; 0 or less returns empty (#558).
+- **Parameters:** `first`, start parameter; `last`, end parameter; `maxPoints`, output *capacity* (default 1000), clamped into `0...Sampling.maximumSampleCount` (10,000,000), so an unservable capacity returns the same points rather than a coarser sampling; 0 or less returns empty (#558).
 - **Returns:** Array of 3D sample points (may be empty on failure).
 - **OCCT:** `ShapeAnalysis_Curve::GetSamplePoints`.
 - **Example:**
@@ -820,9 +820,9 @@ public struct CurveCurveExtrema: Sendable {
 }
 ```
 
-- `isDone` — `true` when the algorithm completed successfully.
-- `isParallel` — `true` when the two curves are parallel (distance is constant along the range).
-- `count` — number of extremal point pairs found.
+- `isDone`: `true` when the algorithm completed successfully.
+- `isParallel`: `true` when the two curves are parallel (distance is constant along the range).
+- `count`: number of extremal point pairs found.
 
 ---
 
@@ -840,9 +840,9 @@ public struct ExtremaPointPair: Sendable {
 }
 ```
 
-- `squareDistance` — squared distance between the two extremal points (take `sqrt` for actual distance).
-- `point1` / `param1` — point and parameter on the first curve (or query curve for curve-surface).
-- `point2` / `param2` — point and parameter on the second curve, or UV parameters packed as `(u, v, 0)` for curve-surface.
+- `squareDistance`: squared distance between the two extremal points (take `sqrt` for actual distance).
+- `point1` / `param1`, point and parameter on the first curve (or query curve for curve-surface).
+- `point2` / `param2`, point and parameter on the second curve, or UV parameters packed as `(u, v, 0)` for curve-surface.
 
 ---
 
@@ -876,9 +876,9 @@ public func extremaCC(
 ) -> CurveCurveExtrema
 ```
 
-When `range1` or `range2` is `nil`, the curve's full `domain` is used. Check `isParallel` before accessing individual point pairs — the `Known OCCT Bugs` section notes that `BRepExtrema_ExtCC` can crash on parallel edges (guarded in the bridge).
+When `range1` or `range2` is `nil`, the curve's full `domain` is used. Check `isParallel` before accessing individual point pairs, the `Known OCCT Bugs` section notes that `BRepExtrema_ExtCC` can crash on parallel edges (guarded in the bridge).
 
-- **Parameters:** `range1` — optional parameter range restricting the search on this curve; `other` — the second curve; `range2` — optional parameter range on `other`.
+- **Parameters:** `range1`, optional parameter range restricting the search on this curve; `other`, the second curve; `range2`, optional parameter range on `other`.
 - **Returns:** `CurveCurveExtrema` summary; use `extremaCCPoint(...)` to retrieve individual pairs.
 - **OCCT:** `Extrema_ExtCC`.
 - **Example:**
@@ -912,7 +912,7 @@ public func extremaCCPoint(
 
 Re-runs `Extrema_ExtCC` internally; call only after `extremaCC(...)` confirms `isDone` and `count >= index`.
 
-- **Parameters:** `range1` — optional range on this curve; `other` — the second curve; `range2` — optional range on `other`; `index` — 1-based extremum index.
+- **Parameters:** `range1`, optional range on this curve; `other`, the second curve; `range2`, optional range on `other`; `index`, 1-based extremum index.
 - **Returns:** `ExtremaPointPair` for the Nth extremum.
 - **OCCT:** `Extrema_ExtCC`.
 
@@ -933,7 +933,7 @@ public struct LocalExtremaResult: Sendable {
 }
 ```
 
-- `isDone` — `true` when the local solver converged.
+- `isDone`: `true` when the local solver converged.
 - Other fields are the same as `ExtremaPointPair`.
 
 | Field | Meaning |
@@ -965,7 +965,7 @@ public func locateExtremaCC(
 
 Uses `Extrema_LocateExtCC` for a fast local search around `(seedU, seedV)`. Useful when you already have a good initial guess (e.g. from a prior `extremaCC` call) and want to refine it.
 
-- **Parameters:** `range1` — optional range on this curve; `other` — the second curve; `range2` — optional range on `other`; `seedU` — initial parameter guess on this curve; `seedV` — initial parameter guess on `other`.
+- **Parameters:** `range1`, optional range on this curve; `other`, the second curve; `range2`, optional range on `other`; `seedU`, initial parameter guess on this curve; `seedV`, initial parameter guess on `other`.
 - **Returns:** `LocalExtremaResult` with convergence flag and result.
 - **OCCT:** `Extrema_LocateExtCC`.
 - **Example:**
@@ -1008,7 +1008,7 @@ public func extremaCS(
 ) -> CurveSurfaceExtrema
 ```
 
-- **Parameters:** `range` — optional parameter range on this curve; `surface` — the target surface.
+- **Parameters:** `range`, optional parameter range on this curve; `surface`, the target surface.
 - **Returns:** `CurveSurfaceExtrema` summary; use `extremaCSPoint(...)` for individual results.
 - **OCCT:** `Extrema_ExtCS`.
 - **Example:**
@@ -1037,7 +1037,7 @@ public func extremaCSPoint(
 ) -> ExtremaPointPair
 ```
 
-- **Parameters:** `range` — optional parameter range on this curve; `surface` — the target surface; `index` — 1-based extremum index.
+- **Parameters:** `range`, optional parameter range on this curve; `surface`, the target surface; `index`, 1-based extremum index.
 - **Returns:** `ExtremaPointPair`; `param2` encodes the surface U parameter, and `point2.z` encodes V.
 - **OCCT:** `Extrema_ExtCS`.
 
@@ -1057,7 +1057,7 @@ public func projectOnSurface(
 
 Uses `ProjLib_ProjectOnSurface` / `ProjLib_ComputeApprox` to produce a B-spline approximation of the 3D curve lying on the surface.
 
-- **Parameters:** `surface` — the surface to project onto; `range` — optional parameter range on this curve (defaults to full domain); `tolerance` — approximation tolerance (default `1e-3`).
+- **Parameters:** `surface`, the surface to project onto; `range`, optional parameter range on this curve (defaults to full domain); `tolerance`, approximation tolerance (default `1e-3`).
 - **Returns:** A new `Curve3D` (B-spline) lying on the surface, or `nil` on failure.
 - **OCCT:** `OCCTProjLibProjectOnSurface` → `ProjLib_ProjectOnSurface`.
 - **Example:**
@@ -1083,7 +1083,7 @@ public static func circleThrough3Points(
 ) -> Curve3D?
 ```
 
-- **Parameters:** `p1`, `p2`, `p3` — three non-collinear points.
+- **Parameters:** `p1`, `p2`, `p3`, three non-collinear points.
 - **Returns:** A `Geom_Circle` passing through all three points, or `nil` if the points are collinear.
 - **OCCT:** `gce_MakeCirc` (3-point constructor).
 - **Example:**
@@ -1108,10 +1108,10 @@ public static func circleFromCenterNormal(
 ) -> Curve3D?
 ```
 
-- **Parameters:** `center` — center of the circle; `normal` — plane normal; `radius` — circle radius.
+- **Parameters:** `center`, center of the circle; `normal`, plane normal; `radius`, circle radius.
 - **Returns:** A `Geom_Circle`, or `nil` on failure (zero normal, or `radius <= 0`).
 - **OCCT:** `gce_MakeCirc` (center + normal + radius constructor).
-- **Note:** Geometrically identical to [`circle(center:normal:radius:)`](Curve3D.md), which builds the same `gp_Ax2(center, normal)` frame directly. Both enforce the same `radius > 0` precondition — `gce_MakeCirc` itself only rejects a strictly-negative radius, so the bridge adds the zero check to keep the two factories in agreement (#399).
+- **Note:** Geometrically identical to [`circle(center:normal:radius:)`](Curve3D.md), which builds the same `gp_Ax2(center, normal)` frame directly. Both enforce the same `radius > 0` precondition, `gce_MakeCirc` itself only rejects a strictly-negative radius, so the bridge adds the zero check to keep the two factories in agreement (#399).
 - **Example:**
   ```swift
   if let c = Curve3D.circleFromCenterNormal(
@@ -1130,7 +1130,7 @@ Creates a line (infinite) through two 3D points.
 public static func lineFrom2Points(_ p1: SIMD3<Double>, _ p2: SIMD3<Double>) -> Curve3D?
 ```
 
-- **Parameters:** `p1`, `p2` — two distinct points on the line.
+- **Parameters:** `p1`, `p2`, two distinct points on the line.
 - **Returns:** A `Geom_Line`, or `nil` if the points are coincident.
 - **OCCT:** `gce_MakeLin`.
 - **Example:**
@@ -1155,7 +1155,7 @@ public static func directionFrom2Points(
 
 A pure-math utility; does not create a curve. Returns `nil` when the points are coincident.
 
-- **Parameters:** `p1` — origin point; `p2` — destination point.
+- **Parameters:** `p1`, origin point; `p2`, destination point.
 - **Returns:** Unit direction vector from `p1` toward `p2`, or `nil` if `p1 == p2`.
 - **OCCT:** `gce_MakeDir`.
 - **Example:**
@@ -1180,10 +1180,10 @@ public static func ellipseFromCenterNormal(
 ) -> Curve3D?
 ```
 
-- **Parameters:** `center` — center of the ellipse; `normal` — plane normal; `majorRadius` — semi-major axis length; `minorRadius` — semi-minor axis length (must be ≤ `majorRadius`).
+- **Parameters:** `center`, center of the ellipse; `normal`, plane normal; `majorRadius`, semi-major axis length; `minorRadius`, semi-minor axis length (must be ≤ `majorRadius`).
 - **Returns:** A `Geom_Ellipse`, or `nil` on failure (either radius `<= 0`, or `minorRadius > majorRadius`).
 - **OCCT:** `gce_MakeElips`.
-- **Note:** Geometrically identical to [`ellipse(center:normal:majorRadius:minorRadius:)`](Curve3D.md), and enforces the same radius preconditions — `gce_MakeElips` itself accepts a zero minor radius, so the bridge adds the zero check to keep the two factories in agreement (#399).
+- **Note:** Geometrically identical to [`ellipse(center:normal:majorRadius:minorRadius:)`](Curve3D.md), and enforces the same radius preconditions, `gce_MakeElips` itself accepts a zero minor radius, so the bridge adds the zero check to keep the two factories in agreement (#399).
 - **Example:**
   ```swift
   if let e = Curve3D.ellipseFromCenterNormal(
@@ -1208,10 +1208,10 @@ public static func hyperbolaFromCenterNormal(
 ) -> Curve3D?
 ```
 
-- **Parameters:** `center` — center; `normal` — plane normal; `majorRadius` — semi-transverse axis; `minorRadius` — semi-conjugate axis.
+- **Parameters:** `center`, center; `normal`, plane normal; `majorRadius`, semi-transverse axis; `minorRadius`, semi-conjugate axis.
 - **Returns:** A `Geom_Hyperbola`, or `nil` on failure (either radius `<= 0`).
 - **OCCT:** `gce_MakeHypr`.
-- **Note:** Geometrically identical to [`hyperbola(center:normal:majorRadius:minorRadius:)`](Curve3D.md), and enforces the same radius preconditions — `gce_MakeHypr` itself accepts a zero radius, so the bridge adds the zero check to keep the two factories in agreement (#399).
+- **Note:** Geometrically identical to [`hyperbola(center:normal:majorRadius:minorRadius:)`](Curve3D.md), and enforces the same radius preconditions, `gce_MakeHypr` itself accepts a zero radius, so the bridge adds the zero check to keep the two factories in agreement (#399).
 - **Example:**
   ```swift
   if let h = Curve3D.hyperbolaFromCenterNormal(
@@ -1233,10 +1233,10 @@ public static func parabolaFromCenterNormal(
 ) -> Curve3D?
 ```
 
-- **Parameters:** `center` — vertex (apex) of the parabola; `normal` — plane normal; `focal` — focal distance (distance from vertex to focus).
+- **Parameters:** `center`, vertex (apex) of the parabola; `normal`, plane normal; `focal`, focal distance (distance from vertex to focus).
 - **Returns:** A `Geom_Parabola`, or `nil` on failure (`focal <= 0`).
 - **OCCT:** `gce_MakeParab`.
-- **Note:** Geometrically identical to [`parabola(center:normal:focal:)`](Curve3D.md), and enforces the same focal-length precondition — `gce_MakeParab` itself accepts a zero focal length, so the bridge adds the zero check to keep the two factories in agreement (#399).
+- **Note:** Geometrically identical to [`parabola(center:normal:focal:)`](Curve3D.md), and enforces the same focal-length precondition, `gce_MakeParab` itself accepts a zero focal length, so the bridge adds the zero check to keep the two factories in agreement (#399).
 - **Example:**
   ```swift
   if let p = Curve3D.parabolaFromCenterNormal(
@@ -1255,7 +1255,7 @@ public static func serializeCurves(_ curves: [Curve3D]) -> String?
 
 The format is OCCT's internal text stream format, suitable for persistence or interprocess transfer. Round-trip with `deserializeCurves(_:)`.
 
-- **Parameters:** `curves` — curves to serialize.
+- **Parameters:** `curves`, curves to serialize.
 - **Returns:** Serialized string, or `nil` on failure.
 - **OCCT:** `GeomTools_CurveSet::Write`.
 - **Example:**
@@ -1277,7 +1277,7 @@ Deserializes curves from a string produced by `serializeCurves(_:)`.
 public static func deserializeCurves(_ data: String) -> [Curve3D]?
 ```
 
-- **Parameters:** `data` — string produced by `serializeCurves(_:)`.
+- **Parameters:** `data`, string produced by `serializeCurves(_:)`.
 - **Returns:** Array of reconstructed `Curve3D` values, or `nil` if parsing fails or yields no curves.
 - **OCCT:** `GeomTools_CurveSet::Read`.
 - **Example:**
@@ -1289,7 +1289,7 @@ public static func deserializeCurves(_ data: String) -> [Curve3D]?
 
 ---
 
-## ExtremaPC — Point-Curve Distance (v0.130.0)
+## ExtremaPC. Point-Curve Distance (v0.130.0)
 
 All-extrema and minimum-distance computation from a point to a curve, backed by `Extrema_ExtPC`.
 
@@ -1307,9 +1307,9 @@ public struct ExtremumResult: Sendable {
 }
 ```
 
-- `parameter` — curve parameter at the extremal point.
-- `distance` — distance from the query point to the extremal curve point.
-- `point` — 3D coordinates of the extremal point on the curve.
+- `parameter`: curve parameter at the extremal point.
+- `distance`: distance from the query point to the extremal curve point.
+- `point`: 3D coordinates of the extremal point on the curve.
 
 ---
 
@@ -1323,7 +1323,7 @@ public func extrema(from point: SIMD3<Double>) -> [ExtremumResult]
 
 Uses `Extrema_ExtPC` over the full curve domain. Returns up to 64 results. The minimum-distance result is the `ExtremumResult` with the smallest `distance`.
 
-- **Parameters:** `point` — the query point.
+- **Parameters:** `point`, the query point.
 - **Returns:** Array of `ExtremumResult` values (empty on failure or no extrema found).
 - **OCCT:** `Extrema_ExtPC`.
 - **Example:**
@@ -1348,7 +1348,7 @@ public func extrema(from point: SIMD3<Double>, uMin: Double, uMax: Double) -> [E
 
 Restricts the search to `[uMin, uMax]` using `Extrema_ExtPC` with bounded adaptor. Returns up to 64 results.
 
-- **Parameters:** `point` — query point; `uMin` — lower parameter bound; `uMax` — upper parameter bound.
+- **Parameters:** `point`, query point; `uMin`, lower parameter bound; `uMax`, upper parameter bound.
 - **Returns:** Array of `ExtremumResult` values within the specified range (empty on failure).
 - **OCCT:** `Extrema_ExtPC` with bounded `GeomAdaptor_Curve`.
 - **Example:**
@@ -1372,7 +1372,7 @@ public func minimumDistance(from point: SIMD3<Double>) -> Double?
 
 Convenience method backed by `Extrema_ExtPC`. Returns `nil` when the algorithm fails to find any extremum.
 
-- **Parameters:** `point` — the query point.
+- **Parameters:** `point`, the query point.
 - **Returns:** Minimum distance, or `nil` on failure.
 - **OCCT:** `Extrema_ExtPC` via `OCCTExtremaPCMinDistance`.
 - **Example:**

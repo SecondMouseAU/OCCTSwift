@@ -1,4 +1,4 @@
-# OCCTSwift#348 reproducer — `ShapeUpgrade_UnifySameDomain` null-pcurve SIGSEGV
+# OCCTSwift#348 reproducer, `ShapeUpgrade_UnifySameDomain` null-pcurve SIGSEGV
 
 Standalone, deterministic reproducer for the uncatchable SIGSEGV reported against
 `UnifySameDomainBuilder.build()` on a mesh-sewn solid (originally found in OCCTReconstruct#194).
@@ -9,12 +9,12 @@ Standalone, deterministic reproducer for the uncatchable SIGSEGV reported agains
 between multiple candidate next-edges at a branching vertex by comparing each candidate's pcurve
 tangent direction on the current reference face. Three call sites fetch that pcurve via
 `BRep_Tool::CurveOnSurface(edge, refFace, first, last)` and immediately dereference it
-(`->D1(...)`/`->Value(...)`) without checking `IsNull()` — unlike every other `CurveOnSurface` call
+(`->D1(...)`/`->Value(...)`) without checking `IsNull()`, unlike every other `CurveOnSurface` call
 site in the same file, all of which do check. `CurveOnSurface` legitimately returns a null handle
 when an edge has no pcurve on the given face, which is the common case for a raw per-triangle
 mesh-sewn solid (`BRepBuilderAPI_Sewing` from an STL/mesh import) at a vertex shared by more than
 two edges. Dereferencing the null handle is an unguarded null-pointer call through the `Geom2d_Curve`
-vtable — Address 0, `EXC_BAD_ACCESS`, uncatchable in-process (same signature as the #263/#310/#317/
+vtable. Address 0, `EXC_BAD_ACCESS`, uncatchable in-process (same signature as the #263/#310/#317/
 #318 crash family).
 
 Confirmed via a debug (`-g -O0`) single-TU override-link (the patched `.cxx` compiled standalone and
@@ -36,8 +36,8 @@ unranked candidate" instead of crashing.
 
 ## Reproducer
 
-[`unify-crash-mmd-kiha10-body5.brep`](./unify-crash-mmd-kiha10-body5.brep) (606 KB) — one solid, 662
-faces, `BRepCheck`-invalid (not a distinguishing factor — other equally-invalid mesh-sewn solids from
+[`unify-crash-mmd-kiha10-body5.brep`](./unify-crash-mmd-kiha10-body5.brep) (606 KB), one solid, 662
+faces, `BRepCheck`-invalid (not a distinguishing factor, other equally-invalid mesh-sewn solids from
 the same source file unify cleanly). Sewn from one connected component (662 triangles) of a real
 MMD-converted train skin STL (`mmd_kiha10_skin_open.stl`); originally surfaced by OCCTReconstruct's
 `--assembly-from-bundle` on a kiha40 reference model.

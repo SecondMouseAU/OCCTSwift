@@ -8,17 +8,17 @@ import Foundation
 // The two enumerations disagree from the first repeat. Measured on the pinned kernel, a plain 10 mm
 // box has **24 edge occurrences over 12 distinct edges** and **48 vertex occurrences over 8
 // vertices**, because each edge is reached once per adjacent face. So an explorer-indexed entry
-// point answers for indices `edge(at:)` refuses outright, and — past the first repeat — names a
+// point answers for indices `edge(at:)` refuses outright, and, past the first repeat, names a
 // DIFFERENT sub-shape for an index both accept.
 //
 // Sites covered here (site 5, meshing, is in Tests/OCCTMeshTests/Issue613MeshIndexContractTests):
 //
-//   1. `OCCTShapeAnalyzeEdgeConcavity`  — the result array's ORDER, zipped against `edges()`
+//   1. `OCCTShapeAnalyzeEdgeConcavity`, the result array's ORDER, zipped against `edges()`
 //      (+ its unlisted sibling `OCCTShapeCountEdgeConcavity`, which counted occurrences)
-//   2. `OCCTBRepExtremaExtCC`           — the `edgeIndex` argument
-//   3. `checkSubShape` (Healing)        — the sub-shape index behind checkEdge/Wire/Shell/Vertex
-//   4. `OCCTLocOpeSplitShapeByVertex`   — the edge-splitting index
-//   6. `edgesInFace(at:)`               — the `Edge.index` it hands back
+//   2. `OCCTBRepExtremaExtCC`, the `edgeIndex` argument
+//   3. `checkSubShape` (Healing), the sub-shape index behind checkEdge/Wire/Shell/Vertex
+//   4. `OCCTLocOpeSplitShapeByVertex`, the edge-splitting index
+//   6. `edgesInFace(at:)`, the `Edge.index` it hands back
 //      (+ its unlisted sibling `commonEdges(with:)`, identical defect)
 //
 // Sites 1-4 are safe to read off the map rather than the traversal, and that is measured rather
@@ -26,10 +26,10 @@ import Foundation
 // (8 pairs) and gave an identical answer, 0 differing: `BRepOffset_Analyse::Type`'s interval list,
 // `BRepExtrema_ExtCC`'s IsParallel/NbExt/SquareDistance/ParameterOnE1/PointOnE1, the full
 // `BRepCheck_*` status list, and `BRep_Tool::Range` + `LocOpe_SplitShape::DescendantShapes`. That is
-// what the headers predict — `BRepOffset_Analyse::myMapEdgeType` (BRepOffset_Analyse.hxx:173) and
+// what the headers predict, `BRepOffset_Analyse::myMapEdgeType` (BRepOffset_Analyse.hxx:173) and
 // `LocOpe_SplitShape::myMap`/`myDblE` (LocOpe_SplitShape.hxx:89-90) are all keyed by
 // `TopTools_ShapeMapHasher`, whose equality operator IS `TopoDS_Shape::IsSame`
-// (TopTools_ShapeMapHasher.hxx:35-38) — but the headers are the reason to check, not the check.
+// (TopTools_ShapeMapHasher.hxx:35-38), but the headers are the reason to check, not the check.
 //
 // Site 5 is the exception and is NOT converted this way: triangle winding is set by the
 // occurrence's orientation, so it keeps the oriented walk and stamps the map index onto it.
@@ -44,7 +44,7 @@ struct Issue613IndexContractTests {
         Shape.box(origin: .zero, width: 10, height: 10, depth: 10)
     }
 
-    /// An L-bracket with exactly one genuinely concave edge — the inner corner at x = 10, z = 10,
+    /// An L-bracket with exactly one genuinely concave edge, the inner corner at x = 10, z = 10,
     /// running the full 40 mm in y. Two fused boxes, the plainest construction that has one.
     static func lBracket() -> Shape? {
         guard let a = Shape.box(origin: .zero, width: 40, height: 40, depth: 10),
@@ -74,7 +74,7 @@ struct Issue613IndexContractTests {
 
     // MARK: - The premise
 
-    /// The whole issue rests on the two enumerations differing, so pin that first — if a future
+    /// The whole issue rests on the two enumerations differing, so pin that first, if a future
     /// kernel stopped repeating occurrences every test below would pass vacuously.
     @Test("a box has more edge and vertex occurrences than it has distinct edges and vertices")
     func theTwoEnumerationsDiffer() throws {
@@ -84,7 +84,7 @@ struct Issue613IndexContractTests {
         // The occurrence counts the old walks saw. faceOccurrenceCount (#614) is the only
         // occurrence counter the bridge exposes, and a box shares no face, so count edges the way
         // the old sites did: through an entry point that still answers per occurrence would be
-        // circular, so assert the consequence instead — indices past the map end must be refused.
+        // circular, so assert the consequence instead, indices past the map end must be refused.
         #expect(box.edge(at: 12) == nil)
         #expect(box.edge(at: 23) == nil)
     }
@@ -95,7 +95,7 @@ struct Issue613IndexContractTests {
     ///
     /// `edgeConcavities()` zips the bridge's result array against `edges()`. The bridge filled it
     /// per occurrence, so from the first repeat every classification landed on the wrong edge.
-    /// Before the fix this bracket's one concave edge — map index 27 — was reported convex and
+    /// Before the fix this bracket's one concave edge, map index 27, was reported convex and
     /// `concaveEdges()` returned an EMPTY array, which is what made
     /// `bracket.filleted(edges: bracket.concaveEdges(), radius: 3)` round nothing and report success.
     @Test("an L-bracket's inner corner is reported concave, and it is the edge that is concave")
@@ -115,12 +115,12 @@ struct Issue613IndexContractTests {
 
     /// The classification array is positionally the `edges()` array: entry n describes edges()[n].
     ///
-    /// Note that `pair.0.index == n` is **not** the assertion to make — Swift builds each pair from
+    /// Note that `pair.0.index == n` is **not** the assertion to make. Swift builds each pair from
     /// `edges()[n]`, so that holds by construction whatever the bridge returns, and a test asserting
     /// it passes with the defect present. What actually broke is the *alignment*, so this checks it
     /// the only way that is falsifiable from outside: the classifier and the per-type counter are
     /// two independent bridge computations over the same enumeration, and they must agree. With the
-    /// classifier desynchronised they do not — measured on this bracket, the counter says 2 concave
+    /// classifier desynchronised they do not, measured on this bracket, the counter says 2 concave
     /// while the classifier labels 0, and 42 convex against the classifier's 19.
     @Test("the classification array and the per-type counts describe the same edges")
     func concavityEntriesAlignWithCounts() throws {
@@ -170,14 +170,14 @@ struct Issue613IndexContractTests {
         // A far, skew reference edge so extrema exist for every box edge rather than only the
         // non-parallel ones (BRepExtrema_ExtCC reports 0 solutions for parallel edges).
         // A wide disc floating above the box. Its circular rim is skew to every box edge and curves
-        // past all of them, so each box edge has a genuine INTERIOR extremum against it —
+        // past all of them, so each box edge has a genuine INTERIOR extremum against it,
         // BRepExtrema_ExtCC reports nothing for a parallel pair, and nothing when the closest
         // approach falls at an endpoint, which is why a far-off straight reference covers only a
         // third of the edges.
         let disc = try #require(Shape.cylinder(radius: 30, height: 1))
         let reference = try #require(disc.translated(by: SIMD3(5, 5, 20)))
 
-        /// Exact distance from `p` to edge `e`, which every edge of a box is a straight segment of —
+        /// Exact distance from `p` to edge `e`, which every edge of a box is a straight segment of,
         /// so this is point-to-segment, not a sampled approximation whose own resolution
         /// (0.039 mm at 128 samples over a 10 mm edge) would swamp the assertion.
         func distanceToEdge(_ p: SIMD3<Double>, _ e: Edge) -> Double {
@@ -212,7 +212,7 @@ struct Issue613IndexContractTests {
             #expect(offBy < 1e-6,
                     "index \(i): closest point \(found.pointOnEdge1) is \(offBy) from edges()[\(i)]")
         }
-        #expect(compared == 12, "only \(compared) of 12 edges compared — fixture too degenerate")
+        #expect(compared == 12, "only \(compared) of 12 edges compared, fixture too degenerate")
     }
 
     /// An index past the enumeration must be refused, not answered from a surplus occurrence.
@@ -346,9 +346,9 @@ struct Issue613IndexContractTests {
     // MARK: - Site 6: the index the finders hand back
 
     /// The `faceIndex` argument was already map-backed (#541). What was not is the `Edge.index` on
-    /// the way out: it was the position in the RESULT array, so it named a different edge — or no
-    /// edge — through `edges()`. Measured before the fix: `edgesInFace(at: 3)` handed back
-    /// 0, 1, 2, 3 for edges whose real indices are 2, 6, 10 and 11 — all four naming a different
+    /// the way out: it was the position in the RESULT array, so it named a different edge, or no
+    /// edge, through `edges()`. Measured before the fix: `edgesInFace(at: 3)` handed back
+    /// 0, 1, 2, 3 for edges whose real indices are 2, 6, 10 and 11, all four naming a different
     /// edge, their arc-length midpoints 10.00, 12.25, 7.07 and 12.25 mm from the edges those slot
     /// numbers address.
     @Test("edgesInFace hands back indices that address the same edge through edges()")
@@ -372,14 +372,14 @@ struct Issue613IndexContractTests {
         #expect(checkedFaces == 6, "expected all 6 box faces to report edges, got \(checkedFaces)")
     }
 
-    /// The indices must not merely resolve — they must be the ones that actually name those edges.
+    /// The indices must not merely resolve, they must be the ones that actually name those edges.
     /// A result-array position happens to be right for face 0 of a box by coincidence, which is why
     /// the test above is not enough on its own.
     @Test("edgesInFace on a face whose edges are not the first four reports their real indices")
     func edgesInFaceIndicesAreNotArrayPositions() throws {
         let box = try #require(Self.box())
 
-        // Find a face whose edge indices are NOT 0,1,2,3 — otherwise the old behaviour passes too.
+        // Find a face whose edge indices are NOT 0,1,2,3, otherwise the old behaviour passes too.
         var proved = false
         for faceIndex in 0..<box.faceCount {
             let found = box.edgesInFace(at: faceIndex)
@@ -395,11 +395,11 @@ struct Issue613IndexContractTests {
                         "face \(faceIndex): reported \(e.index) for the edge at \(m), truth is \(truth)")
             }
         }
-        #expect(proved, "no box face reported a non-trivial index set — fixture cannot prove this")
+        #expect(proved, "no box face reported a non-trivial index set, fixture cannot prove this")
     }
 
     /// The unlisted sibling twenty lines above `edgesInFace` in the same file, identical defect.
-    /// `LocOpe_FindEdges` reports one entry per matched PAIR, so indices legitimately repeat — the
+    /// `LocOpe_FindEdges` reports one entry per matched PAIR, so indices legitimately repeat, the
     /// contract is that each is a real index into this shape's `edges()`, not that they are unique.
     @Test("commonEdges hands back indices that address the same edge through edges()")
     func commonEdgesIndicesAddressTheSameEdge() throws {
@@ -437,7 +437,7 @@ struct Issue613IndexContractTests {
 
     /// Found by sweeping for the same idiom rather than from the issue's list. Both
     /// `OCCTBiTgteBlend` and `OCCTBiTgteBlendInfo_` filled a `std::vector<TopoDS_Edge>` from a bare
-    /// explorer and subscripted it with the caller's indices — which come from `edges()` /
+    /// explorer and subscripted it with the caller's indices, which come from `edges()` /
     /// `Edge.index`.
     ///
     /// This bracket discriminates: `BiTgte_Blend` is a rolling-ball blend, so it changes only the
@@ -447,7 +447,7 @@ struct Issue613IndexContractTests {
     @Test("biTgteBlend blends the edge edges() calls by that index")
     func biTgteBlendTargetsTheEnumeratedEdge() throws {
         let bracket = try #require(Self.lBracket())
-        // Located geometrically, NOT via concaveEdges() — otherwise this test would also fail when
+        // Located geometrically, NOT via concaveEdges(), otherwise this test would also fail when
         // site 1 regresses, and could not attribute a failure to this site.
         let target = try #require(Self.indexOfEdge(matching: SIMD3(10, 20, 10), in: bracket),
                                   "fixture has no inner-corner edge at (10, y, 10)")

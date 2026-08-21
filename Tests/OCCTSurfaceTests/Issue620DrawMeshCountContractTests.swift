@@ -6,14 +6,14 @@ import simd
 ///
 /// The doc comment and the `Sampling.gridTotal` guard both said 1; the bridge said 2 and returned
 /// 0 for anything less, which the wrapper's `guard n == total` turned into `SurfaceGrid.empty`.
-/// So `drawMesh(uCount: 1, vCount: 20)` — in range by its own documentation — came back empty,
+/// So `drawMesh(uCount: 1, vCount: 20)`, in range by its own documentation, came back empty,
 /// indistinguishable from a surface that genuinely failed to sample.
 ///
 /// Measured before choosing a side, because the doc was written asserting 1 works and somebody
 /// believed it. `OCCTSurfaceDrawMesh` is not a mesher: no `BRepMesh`, no triangulation, no quad,
 /// just a uniform walk of the sampled range calling `Geom_Surface::D0`, and a single `(u, v)` is
-/// a valid OCCT evaluation. The 2 was the function's own divisor — `i / (uCount - 1)` divides by
-/// zero at count 1 — and the resulting NaN parameter is worse than a throw, since `D0` does not
+/// a valid OCCT evaluation. The 2 was the function's own divisor, `i / (uCount - 1)` divides by
+/// zero at count 1, and the resulting NaN parameter is worse than a throw, since `D0` does not
 /// throw on NaN, it returns NaN coordinates. Every other member of the same U-major grid family
 /// already accepted 1 (`OCCTSurfaceDrawGrid` guards no count at all, `EvaluateGrid` and
 /// `EvaluateGridD1` guard `<= 0`), so `drawMesh` was the sole outlier. The bridge was the wrong
@@ -169,7 +169,7 @@ struct Issue620DrawMeshCountContractTests {
         let grid = s.drawMesh(uCount: 1, vCount: 1)
         #expect(!grid.isEmpty)
         // `.at` is a precondition, not an optional: reading it on an empty grid traps the whole
-        // test target with a signal and no run summary. Never subscript before this guard — the
+        // test target with a signal and no run summary. Never subscript before this guard, the
         // first version of this test did, and the regression it exists to catch killed the target
         // instead of reporting a failure.
         guard grid.uCount == 1, grid.vCount == 1 else {
@@ -183,7 +183,7 @@ struct Issue620DrawMeshCountContractTests {
     // MARK: - The bound moved to 1, it did not disappear
 
     /// #558's bounds are still in force. Lowering the minimum to 1 must not readmit 0, a negative,
-    /// or a product past the ceiling — those stay rejected at the Swift boundary, before any
+    /// or a product past the ceiling, those stay rejected at the Swift boundary, before any
     /// allocation, and rejection is still the documented empty grid.
     @Test("Counts below 1 and products past the ceiling are still rejected")
     func belowOneAndPastTheCeilingStillRejected() {
@@ -211,7 +211,7 @@ struct Issue620DrawMeshCountContractTests {
     ///
     /// **Scope, stated exactly:** this pins the *public* contract, not the bridge guard. Relaxing
     /// the bridge's `< 2` on its own leaves this test passing, because `Surface.bezier` guards
-    /// `>= 2` in Swift and never reaches the bridge — and even if it did, OCCT would throw and
+    /// `>= 2` in Swift and never reaches the bridge, and even if it did, OCCT would throw and
     /// `catch (...)` would return `nullptr`, so the observable answer is `nil` either way. What
     /// holds the bridge guard in place is the comment at that site plus the kernel's own
     /// precondition; no black-box test can separate the two layers here. Said plainly because the

@@ -8,11 +8,11 @@ search_exclude: true
 Comprehensive test plan for validating the full OCCTSwift wrapper (4,256 operations; run
 `python3 Scripts/count-operations.py` for the current figure).
 
-These tests go beyond unit tests — they exercise realistic multi-step workflows, stress edge cases, and verify end-to-end fidelity. They are implemented across the OCCTSwift ecosystem:
+These tests go beyond unit tests, they exercise realistic multi-step workflows, stress edge cases, and verify end-to-end fidelity. They are implemented across the OCCTSwift ecosystem:
 
-- **OCCTSwift** (`Tests/OCCTIntegrationTests/`) — Swift Testing framework
-- **OCCTSwiftScripts** — standalone script variants for longer-running stress tests
-- **OCCTSwiftViewport** — visual demos that exercise the same workflows with rendering
+- **OCCTSwift** (`Tests/OCCTIntegrationTests/`), Swift Testing framework
+- **OCCTSwiftScripts**: standalone script variants for longer-running stress tests
+- **OCCTSwiftViewport**: visual demos that exercise the same workflows with rendering
 
 ## 1. Design Workflows
 
@@ -66,7 +66,7 @@ shaft + housing → translate → intersects?(clearance) → distance → interf
 
 ### 1.5 Fluent Chain Composition
 
-Tests that operations compose correctly — one operation's output is valid input for the next.
+Tests that operations compose correctly, one operation's output is valid input for the next.
 
 ```
 box → fillet → drill → boss → chamfer → shell → isValid at every step
@@ -239,7 +239,7 @@ complex part → measure (volume, area, CoM, edges, faces)
 ```
 
 **Checks:** All 8 results identical, no crashes (the "NCollection SEGV" this used to cite was never
-characterized and didn't hold up under TSan — see CLAUDE.md's Known OCCT Bugs, #341)
+characterized and didn't hold up under TSan, see CLAUDE.md's Known OCCT Bugs, #341)
 
 ## 5. Regression Tests
 

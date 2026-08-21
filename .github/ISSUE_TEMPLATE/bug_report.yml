@@ -46,7 +46,7 @@ body:
       render: swift
       placeholder: |
         let box = Shape.box(width: 10, height: 10, depth: 10)
-        let filleted = box.filleted(radius: 6) // returns nil — radius too large?
+        let filleted = box.filleted(radius: 6) // returns nil, radius too large?
     validations:
       required: true
 

@@ -1,9 +1,9 @@
 ---
-title: Shape — Healing, Recognition & Feature Ops
+title: Shape. Healing, Recognition & Feature Ops
 parent: API Reference
 ---
 
-# Shape — Healing, Recognition & Feature Ops
+# Shape. Healing, Recognition & Feature Ops
 
 This page covers geometry repair, shape upgrade, point classification, proximity, wedge and half-space primitives, sub-shape manipulation, periodic shapes, draft, non-uniform scale, shell/vertex creation, offset, edge fusion, volume building, canonical recognition, wireframe fixing, boolean validation, splits, multi-tool booleans, feature operations, and per-input boolean history for [`Shape`](Shape.md). For core creation, transforms, and mesh operations see the main `Shape` page (todo).
 
@@ -27,7 +27,7 @@ knot-splitting family: `Curve3D.continuityBreaks(minContinuity:)`,
 and `LawFunction.knotSplitParameters(continuityOrder:)`.
 
 `Shape.divided(at:)` used to be one of these too, but #438 widened it to the strict superset
-[`Shape.ContinuityLevel`](Shape-Measurement.md#continuitylevel) — see
+[`Shape.ContinuityLevel`](Shape-Measurement.md#continuitylevel), see
 [`divided(at:tolerance:)`](#dividedattolerance) below.
 
 What the value becomes depends on the consumer. Most decode it to a `GeomAbs_Shape` (`GeomAbs_C0`
@@ -72,21 +72,21 @@ public func divided(at continuity: Shape.ContinuityLevel, tolerance: Double = 1e
 ```
 
 Sets `ShapeUpgrade_ShapeDivideContinuity`'s boundary, pcurve AND surface criteria together to
-`continuity`, plus `SetSurfaceSegmentMode(true)` — the usage OCCT's own shape-healing guide
+`continuity`, plus `SetSurfaceSegmentMode(true)`, the usage OCCT's own shape-healing guide
 demonstrates. Until #438 this was one of two public entry points over that same OCCT class:
 [`dividedByContinuity(criterion:tolerance:)`](Shape-Measurement.md#dividedbycontinuitycriteriontolerance)
 (now deprecated, forwarding here) set only the boundary criterion, leaving pcurve/surface pinned
-at the class's own C1 constructor default regardless of the requested continuity — measured
+at the class's own C1 constructor default regardless of the requested continuity, measured
 (`Scripts/repro/cluster-d-continuity`) as a flat result across every criterion on a fixture where
 this method's own three-criteria behaviour varies (nil/4/4/25 faces at C0/C1/C2/C3).
 
 - **Parameters:**
-  - `continuity` — target minimum continuity; the shape is split at any face/edge boundary that
+  - `continuity`: target minimum continuity; the shape is split at any face/edge boundary that
     does not meet this standard. `.cn`, `.g1` and `.g2` are accepted in addition to `.c0`...`.c3`
     (#438 widened this from `ParametricContinuity`); OCCT's own criterion setters have no case for
     G1/G2 and would otherwise silently substitute their own C1 default, so those two are decoded
     ahead of the call instead.
-  - `tolerance` — tolerance for the continuity check. Defaults to `1e-7`
+  - `tolerance`: tolerance for the continuity check. Defaults to `1e-7`
     (`Precision::Confusion()`), OCCT's own default and this method's behavior before #438 added
     the parameter.
 - **Returns:** Divided shape, or nil on failure.
@@ -131,7 +131,7 @@ public func scaledGeometry(factor: Double) -> Shape?
 
 Unlike `scaled(by:)` which applies a topological `gp_Trsf`, this modifies the underlying curve and surface pole coordinates directly.
 
-- **Parameters:** `factor` — uniform scale factor applied to all geometry definitions.
+- **Parameters:** `factor`, uniform scale factor applied to all geometry definitions.
 - **Returns:** Scaled shape, or nil on failure.
 - **OCCT:** `ShapeCustom_TrsfModification` (via `OCCTShapeScaleGeometry`).
 - **Example:**
@@ -154,15 +154,15 @@ public func bsplineRestriction(surfaceTolerance: Double = 0.01,
                                maxSegments: Int = 10000) -> Shape?
 ```
 
-This does **not** recognise analytic forms — nothing here converts a BSpline back to a plane, cylinder, cone, sphere or torus; [`sweptToElementary()`](#swepttoelementary) and [`revolutionToElementary()`](#revolutiontoelementary) are the operations that do. Each geometry is approximated as a BSpline no worse than the supplied tolerances, capped at `maxDegree` and `maxSegments`.
+This does **not** recognise analytic forms, nothing here converts a BSpline back to a plane, cylinder, cone, sphere or torus; [`sweptToElementary()`](#swepttoelementary) and [`revolutionToElementary()`](#revolutiontoelementary) are the operations that do. Each geometry is approximated as a BSpline no worse than the supplied tolerances, capped at `maxDegree` and `maxSegments`.
 
 Continuity is fixed at C1 here; [`bsplineRestriction(tol3d:tol2d:maxDegree:maxSegments:continuity3d:continuity2d:degreePriority:rational:)`](Shape-Measurement.md#bsplinerestrictiontol3dtol2dmaxdegreemaxsegmentscontinuity3dcontinuity2ddegreepriorityrational) lets you choose it. Either way the continuity is a **ceiling, not a guarantee**: OCCT reduces what it delivers, with no diagnostic, whenever the requested continuity cannot meet the tolerance within `maxDegree`. Measured in #570, a face on an offset sphere comes back at C0 whichever of C0/C1/C2 was asked for.
 
 - **Parameters:**
-  - `surfaceTolerance` — maximum allowable deviation for surface approximation (default 0.01).
-  - `curveTolerance` — maximum allowable deviation for curve approximation (default 0.01).
-  - `maxDegree` — maximum BSpline degree to allow (default 9).
-  - `maxSegments` — maximum number of BSpline segments (default 10000).
+  - `surfaceTolerance`: maximum allowable deviation for surface approximation (default 0.01).
+  - `curveTolerance`: maximum allowable deviation for curve approximation (default 0.01).
+  - `maxDegree`: maximum BSpline degree to allow (default 9).
+  - `maxSegments`: maximum number of BSpline segments (default 10000).
 - **Returns:** Shape with restricted BSplines, or nil on failure.
 - **OCCT:** `ShapeCustom_BSplineRestriction` (via `OCCTShapeBSplineRestriction`).
 - **Example:**
@@ -251,7 +251,7 @@ public func sewn(tolerance: Double = 1e-6) -> Shape?
 
 Applies `BRepBuilderAPI_Sewing` to merge near-coincident edges and produce a closed shell or solid.
 
-- **Parameters:** `tolerance` — sewing tolerance; edges closer than this distance are merged (default 1e-6).
+- **Parameters:** `tolerance`, sewing tolerance; edges closer than this distance are merged (default 1e-6).
 - **Returns:** Sewn shape, or nil on failure.
 - **OCCT:** `BRepBuilderAPI_Sewing` (via `OCCTShapeSewSingle`).
 - **Example:**
@@ -271,14 +271,14 @@ public func upgraded(tolerance: Double = 1e-6) -> Shape?
 
 Applies a complete upgrade pipeline: sewing of disconnected faces, an attempt to build a solid from the resulting shells, and a final `ShapeFix_Shape` healing pass.
 
-The solid step builds one solid per **body-bounding** shell the sewing produced, so a multi-body part stays a multi-body part: it comes back as a compound of solids, and a single body as a bare solid. Body selection is the same rule as `Shape.solid(from:)`: every shell that an **even** number of the other shells in its group enclose, where a group is one solid's own shells, or all the shells belonging to no solid — so a free shell that is itself an even-enclosed cavity is skipped, not turned into a body.
+The solid step builds one solid per **body-bounding** shell the sewing produced, so a multi-body part stays a multi-body part: it comes back as a compound of solids, and a single body as a bare solid. Body selection is the same rule as `Shape.solid(from:)`: every shell that an **even** number of the other shells in its group enclose, where a group is one solid's own shells, or all the shells belonging to no solid, so a free shell that is itself an even-enclosed cavity is skipped, not turned into a body.
 
 Two things this pipeline does not preserve, both inherent to sewing first:
 
 - Sewing dissolves the input's solids, so a hollow body reaches the solid step as two free shells and comes back as one body with its **cavity filled** (8000 mm³ for a 7000 mm³ hollow cube). A body nested inside another body's cavity is still read as a body. To heal a hollow part without losing its cavities, use `fixed(tolerance:)`, which does not sew.
 - The solid step *replaces* the sewn shape rather than merging into it, so content sewing could not attach to a shell (a stray face, a loose edge) is not carried into the result.
 
-- **Parameters:** `tolerance` — tolerance used for sewing and healing (default 1e-6).
+- **Parameters:** `tolerance`, tolerance used for sewing and healing (default 1e-6).
 - **Returns:** Upgraded shape, or nil on failure.
 - **OCCT:** `BRepBuilderAPI_Sewing` + `BRepBuilderAPI_MakeSolid` + `ShapeFix_Shape` (via `OCCTShapeUpgrade`).
 - **Example:**
@@ -331,8 +331,8 @@ public func classify(point: SIMD3<Double>, tolerance: Double = 1e-6) -> PointCla
 Determines whether a 3D point is inside, outside, or on the boundary of this shape. The shape should be a closed solid for reliable results.
 
 - **Parameters:**
-  - `point` — the 3D world-space point to classify.
-  - `tolerance` — boundary-detection tolerance (default 1e-6).
+  - `point`: the 3D world-space point to classify.
+  - `tolerance`: boundary-detection tolerance (default 1e-6).
 - **Returns:** `.inside`, `.outside`, `.onBoundary`, or `.unknown`.
 - **OCCT:** `BRepClass3d_SolidClassifier` (via `OCCTClassifyPointInSolid`).
 - **Example:**
@@ -355,8 +355,8 @@ public func classify(point: SIMD3<Double>, tolerance: Double = 1e-6) -> PointCla
 Projects the 3D point to the face's surface and tests whether the resulting UV coordinate lies inside the face boundary.
 
 - **Parameters:**
-  - `point` — 3D point to classify.
-  - `tolerance` — boundary-detection tolerance (default 1e-6).
+  - `point`: 3D point to classify.
+  - `tolerance`: boundary-detection tolerance (default 1e-6).
 - **Returns:** `.inside`, `.outside`, `.onBoundary`, or `.unknown`.
 - **OCCT:** `BRepClass_FaceClassifier` (via `OCCTClassifyPointOnFace`).
 - **Example:**
@@ -375,18 +375,18 @@ Classify a point relative to this face using UV parameters.
 public func classify(u: Double, v: Double, tolerance: Double = 1e-6) -> PointClassification
 ```
 
-Tests the given parametric UV coordinate directly against the face boundary — faster than the 3D overload when UV is already known.
+Tests the given parametric UV coordinate directly against the face boundary, faster than the 3D overload when UV is already known.
 
 - **Parameters:**
-  - `u` — U parameter on the face's surface.
-  - `v` — V parameter on the face's surface.
-  - `tolerance` — boundary-detection tolerance (default 1e-6).
+  - `u`: U parameter on the face's surface.
+  - `v`: V parameter on the face's surface.
+  - `tolerance`: boundary-detection tolerance (default 1e-6).
 - **Returns:** `.inside`, `.outside`, `.onBoundary`, or `.unknown`.
 - **OCCT:** `BRepClass_FaceClassifier` (via `OCCTClassifyPointOnFaceUV`).
 - **Note:** Answers the same "in/on/out of the face boundary" question as
   `Shape.classifyPoint2d(u:v:tolerance:)` (see "Shape-Builders-2") and
   `Shape.classifyPoint2D(faceIndex:u:v:tolerance:)` (see "Document-Math-Bounds"), and now shares
-  their `1e-6` default — `classifyPoint2d` used to default to `1e-7` for the identical question,
+  their `1e-6` default, `classifyPoint2d` used to default to `1e-7` for the identical question,
   aligned in #840.
 - **Example:**
   ```swift
@@ -418,7 +418,7 @@ public struct FaceProximityPair: Sendable {
 
 #### `Shape.FaceProximityPair.face2Index`
 
-Each instance identifies one pair of faces — one from `self`, one from `other` — that lie within the supplied tolerance. Indices refer to the face-iteration order of the respective shape.
+Each instance identifies one pair of faces, one from `self`, one from `other`, that lie within the supplied tolerance. Indices refer to the face-iteration order of the respective shape.
 
 ---
 
@@ -433,9 +433,9 @@ public func proximityFaces(with other: Shape, tolerance: Double, deflection: Dou
 Triangulates both shapes and tests proximity using `BRepExtrema_ShapeProximity`.
 
 - **Parameters:**
-  - `other` — the second shape to test against.
-  - `tolerance` — maximum gap distance for a pair to be reported.
-  - `deflection` — linear mesh deflection for proximity triangulation (default 0.1 mm).
+  - `other`: the second shape to test against.
+  - `tolerance`: maximum gap distance for a pair to be reported.
+  - `deflection`: linear mesh deflection for proximity triangulation (default 0.1 mm).
 - **Returns:** Array of `FaceProximityPair`; may be empty.
 - **OCCT:** `BRepExtrema_ShapeProximity` (via `OCCTShapeProximity`).
 - **Example:**
@@ -480,10 +480,10 @@ public static func wedge(dx: Double, dy: Double, dz: Double, ltx: Double) -> Sha
 A wedge is a box whose top face is narrowed in the X direction. When `ltx == dx` the result is a regular box; when `ltx == 0` the result is a pyramid.
 
 - **Parameters:**
-  - `dx` — width in X.
-  - `dy` — height in Y.
-  - `dz` — depth in Z.
-  - `ltx` — width of the top face in X (0 to dx).
+  - `dx`: width in X.
+  - `dy`: height in Y.
+  - `dz`: depth in Z.
+  - `ltx`: width of the top face in X (0 to dx).
 - **Returns:** Wedge solid, or nil if parameters are invalid (any dimension ≤ 0 or `ltx` < 0).
 - **OCCT:** `BRepPrimAPI_MakeWedge` (via `OCCTShapeCreateWedge`).
 - **Example:**
@@ -504,8 +504,8 @@ public static func wedge(dx: Double, dy: Double, dz: Double,
 ```
 
 - **Parameters:**
-  - `dx`, `dy`, `dz` — box dimensions.
-  - `xmin`, `zmin`, `xmax`, `zmax` — top face bounds within the XZ plane of the box.
+  - `dx`, `dy`, `dz`, box dimensions.
+  - `xmin`, `zmin`, `xmax`, `zmax`, top face bounds within the XZ plane of the box.
 - **Returns:** Wedge solid, or nil on failure.
 - **OCCT:** `BRepPrimAPI_MakeWedge` (via `OCCTShapeCreateWedgeAdvanced`).
 - **Example:**
@@ -529,10 +529,10 @@ public static func wedge(
 ```
 
 - **Parameters:**
-  - `origin` — corner point of the wedge.
-  - `direction` — axis direction for the wedge height (normalised internally).
-  - `dx`, `dy`, `dz` — dimensions in the local frame.
-  - `ltx` — width of top face in X (0 to dx).
+  - `origin`: corner point of the wedge.
+  - `direction`: axis direction for the wedge height (normalised internally).
+  - `dx`, `dy`, `dz`, dimensions in the local frame.
+  - `ltx`: width of top face in X (0 to dx).
 - **Returns:** Wedge solid, or nil on failure.
 - **OCCT:** `BRepPrimAPI_MakeWedge` (via `OCCTShapeCreateWedgeOriented`).
 - **Example:**
@@ -580,7 +580,7 @@ public func fastSewn(tolerance: Double = 1e-6) -> Shape?
 
 Faster than `sewn(tolerance:)` for large models with many faces, but handles fewer edge cases (non-manifold topology, very irregular gaps).
 
-- **Parameters:** `tolerance` — sewing tolerance (default 1e-6).
+- **Parameters:** `tolerance`, sewing tolerance (default 1e-6).
 - **Returns:** Sewn shape, or nil on failure.
 - **OCCT:** `BRepBuilderAPI_FastSewing` (via `OCCTShapeFastSewn`).
 - **Example:**
@@ -607,11 +607,11 @@ public func normalProjection(of wireOrEdge: Shape,
 Projects `wireOrEdge` onto `self` along the normal of the nearest surface face, producing a wire that lies exactly on the surface. The result is approximated as BSplines within the given tolerances.
 
 - **Parameters:**
-  - `wireOrEdge` — the wire or edge `Shape` to project.
-  - `tolerance3D` — 3D approximation tolerance (default 1e-4).
-  - `tolerance2D` — 2D (parametric) approximation tolerance (default 1e-5).
-  - `maxDegree` — maximum BSpline degree for the result (default 14).
-  - `maxSegments` — maximum BSpline segments (default 16).
+  - `wireOrEdge`: the wire or edge `Shape` to project.
+  - `tolerance3D`: 3D approximation tolerance (default 1e-4).
+  - `tolerance2D`: 2D (parametric) approximation tolerance (default 1e-5).
+  - `maxDegree`: maximum BSpline degree for the result (default 14).
+  - `maxSegments`: maximum BSpline segments (default 16).
 - **Returns:** Projected shape (compound of wires), or nil on failure.
 - **OCCT:** `BRepOffsetAPI_NormalProjection` (via `OCCTShapeNormalProjection`).
 - **Example:**
@@ -635,8 +635,8 @@ public static func halfSpace(face: Shape, referencePoint: SIMD3<Double>) -> Shap
 A half-space is an infinite solid bounded by the dividing face. The reference point indicates which side of the face is considered "solid."
 
 - **Parameters:**
-  - `face` — a `Shape` containing the dividing face.
-  - `referencePoint` — a point on the desired solid side of the face.
+  - `face`: a `Shape` containing the dividing face.
+  - `referencePoint`: a point on the desired solid side of the face.
 - **Returns:** Half-space solid, or nil on failure.
 - **OCCT:** `BRepPrimAPI_MakeHalfSpace` (via `OCCTShapeCreateHalfSpace`).
 - **Example:**
@@ -659,8 +659,8 @@ public func replacingSubShape(_ oldSubShape: Shape, with newSubShape: Shape) -> 
 ```
 
 - **Parameters:**
-  - `oldSubShape` — the sub-shape to replace (face, edge, vertex, etc.).
-  - `newSubShape` — the replacement sub-shape of the same type.
+  - `oldSubShape`: the sub-shape to replace (face, edge, vertex, etc.).
+  - `newSubShape`: the replacement sub-shape of the same type.
 - **Returns:** Modified shape, or nil on failure.
 - **OCCT:** `BRepTools_ReShape` (via `OCCTShapeReplaceSubShape`).
 - **Example:**
@@ -678,7 +678,7 @@ Remove a sub-shape from this shape.
 public func removingSubShape(_ subShape: Shape) -> Shape?
 ```
 
-- **Parameters:** `subShape` — the sub-shape to remove.
+- **Parameters:** `subShape`, the sub-shape to remove.
 - **Returns:** Modified shape, or nil on failure.
 - **OCCT:** `BRepTools_ReShape` (via `OCCTShapeRemoveSubShape`).
 - **Example:**
@@ -701,9 +701,9 @@ public func makePeriodic(xPeriod: Double? = nil,
 ```
 
 - **Parameters:**
-  - `xPeriod` — period in X, or nil for no periodicity in X.
-  - `yPeriod` — period in Y, or nil for no periodicity in Y.
-  - `zPeriod` — period in Z, or nil for no periodicity in Z.
+  - `xPeriod`: period in X, or nil for no periodicity in X.
+  - `yPeriod`: period in Y, or nil for no periodicity in Y.
+  - `zPeriod`: period in Z, or nil for no periodicity in Z.
 - **Returns:** Periodic shape, or nil on failure.
 - **OCCT:** `BOPAlgo_MakePeriodic` (via `OCCTShapeMakePeriodic`).
 - **Example:**
@@ -724,10 +724,10 @@ public func repeated(xPeriod: Double? = nil, xCount: Int = 0,
 ```
 
 - **Parameters:**
-  - `xPeriod` — period in X (nil = no repetition in X).
-  - `xCount` — number of repetitions along X.
-  - `yPeriod`, `yCount` — period and count in Y.
-  - `zPeriod`, `zCount` — period and count in Z.
+  - `xPeriod`: period in X (nil = no repetition in X).
+  - `xCount`: number of repetitions along X.
+  - `yPeriod`, `yCount`, period and count in Y.
+  - `zPeriod`, `zCount`, period and count in Z.
 - **Returns:** Repeated shape, or nil on failure.
 - **OCCT:** `BOPAlgo_MakePeriodic` (via `OCCTShapeRepeat`).
 - **Example:**
@@ -748,9 +748,9 @@ public func draft(direction: SIMD3<Double>, angle: Double, length: Double) -> Sh
 ```
 
 - **Parameters:**
-  - `direction` — draft direction vector.
-  - `angle` — taper angle in radians.
-  - `length` — maximum draft length.
+  - `direction`: draft direction vector.
+  - `angle`: taper angle in radians.
+  - `length`: maximum draft length.
 - **Returns:** Draft shell shape, or nil on failure.
 - **OCCT:** `BRepOffsetAPI_MakeDraft` (via `OCCTShapeMakeDraft`).
 - **Example:**
@@ -773,9 +773,9 @@ public func nonUniformScaled(sx: Double, sy: Double, sz: Double) -> Shape?
 Unlike `scaled(by:)` (uniform), this applies independent scale factors per axis using a general affine transform.
 
 - **Parameters:**
-  - `sx` — scale factor along X.
-  - `sy` — scale factor along Y.
-  - `sz` — scale factor along Z.
+  - `sx`: scale factor along X.
+  - `sy`: scale factor along Y.
+  - `sz`: scale factor along Z.
 - **Returns:** Scaled shape, or nil on failure.
 - **OCCT:** `BRepBuilderAPI_GTransform` (via `OCCTShapeNonUniformScale`).
 - **Example:**
@@ -797,7 +797,7 @@ public static func shell(from surface: Surface) -> Shape?
 
 Converts a `Surface` to a topological shell shape (a single face inside a shell, no trimming).
 
-- **Parameters:** `surface` — the parametric surface to convert.
+- **Parameters:** `surface`, the parametric surface to convert.
 - **Returns:** Shell shape, or nil on failure.
 - **OCCT:** `BRepBuilderAPI_MakeShell` (via `OCCTShapeCreateShellFromSurface`).
 - **Example:**
@@ -816,7 +816,7 @@ Create a vertex shape at a point.
 public static func vertex(at point: SIMD3<Double>) -> Shape?
 ```
 
-- **Parameters:** `point` — the 3D position of the vertex.
+- **Parameters:** `point`, the 3D position of the vertex.
 - **Returns:** Vertex-type `Shape`, or nil on failure.
 - **OCCT:** `BRepBuilderAPI_MakeVertex` (via `OCCTShapeCreateVertex`).
 - **Example:**
@@ -838,7 +838,7 @@ public func simpleOffset(by distance: Double) -> Shape?
 
 Moves each face by a constant distance without filleting intersections. Faster than `offset(by:)` for thin-wall shell operations where sharp offset corners are acceptable.
 
-- **Parameters:** `distance` — offset distance; positive moves outward.
+- **Parameters:** `distance`, offset distance; positive moves outward.
 - **Returns:** Offset shape, or nil on failure.
 - **OCCT:** `BRepOffset_SimpleOffset` (via `OCCTShapeSimpleOffset`).
 - **Example:**
@@ -861,8 +861,8 @@ public func middlePath(start startShape: Shape, end endShape: Shape) -> Shape?
 Given the two end faces or wires of a pipe-like solid, computes the medial spine wire running through the centre. Useful for reverse-engineering sweep parameters from imported geometry.
 
 - **Parameters:**
-  - `startShape` — one end of the pipe (face or wire shape).
-  - `endShape` — the other end of the pipe (face or wire shape).
+  - `startShape`: one end of the pipe (face or wire shape).
+  - `endShape`: the other end of the pipe (face or wire shape).
 - **Returns:** Middle path wire, or nil on failure.
 - **OCCT:** `BRepOffsetAPI_MiddlePath` (via `OCCTShapeMiddlePath`).
 - **Example:**
@@ -905,7 +905,7 @@ public static func makeVolume(from shapes: [Shape]) -> Shape?
 
 Closes open geometry or creates solids from imported face soups by computing the volume enclosed by the input faces.
 
-- **Parameters:** `shapes` — array of face or shell shapes.
+- **Parameters:** `shapes`, array of face or shell shapes.
 - **Returns:** Solid shape, or nil on failure.
 - **OCCT:** `BOPAlgo_MakerVolume` (via `OCCTShapeMakeVolume`).
 - **Example:**
@@ -925,7 +925,7 @@ public static func makeConnected(_ shapes: [Shape]) -> Shape?
 
 Makes shapes share geometry at coincident boundaries. Particularly useful for finite element mesh preparation where shapes must be conformally connected.
 
-- **Parameters:** `shapes` — array of shapes to connect.
+- **Parameters:** `shapes`, array of shapes to connect.
 - **Returns:** Connected compound shape, or nil on failure.
 - **OCCT:** `BOPAlgo_MakeConnected` (via `OCCTShapeMakeConnected`).
 - **Example:**
@@ -989,15 +989,15 @@ box is counted once per adjacent face.
 - **Example:**
   ```swift
   let box = Shape.box(width: 10, height: 10, depth: 10)!
-  print(box.edgeCount)        // 12 — the distinct edges, and the addressable ones
-  print(box.contents.edges)   // 24 — one per (face, edge) visit
+  print(box.edgeCount)        // 12, the distinct edges, and the addressable ones
+  print(box.contents.edges)   // 24, one per (face, edge) visit
   print(box.faceCount)        // 6
-  print(box.contents.faces)   // 6 — a box shares no face, so these agree
+  print(box.contents.faces)   // 6, a box shares no face, so these agree
   ```
 - **Note:** **None of these numbers is an index bound.** `0..<contents.faces` overruns `face(at:)`
   on any shape with a shared face; use `faceCount`. There is a third count again in
   `contentsExtended()`: its `nbSharedFaces` deduplicates with the location *discarded*, so unlike
-  `faceCount` — which follows `TopoDS_Shape::IsSame` and keeps placements apart — it also collapses
+  `faceCount`: which follows `TopoDS_Shape::IsSame` and keeps placements apart, it also collapses
   two instances of one body. Measured on a compound of a box with a `moved(dx:dy:dz:)` copy of
   itself: `faceCount` 12, `contents.faces` 12, `nbSharedFaces` 6. (#541)
 
@@ -1048,7 +1048,7 @@ public func recognizeCanonical(tolerance: Double = 1e-4) -> CanonicalForm?
 
 Identifies whether the shape's geometry matches a canonical form (plane, cylinder, cone, sphere, line, circle, ellipse) within the supplied tolerance.
 
-- **Parameters:** `tolerance` — recognition tolerance (default 1e-4).
+- **Parameters:** `tolerance`, recognition tolerance (default 1e-4).
 - **Returns:** A `CanonicalForm` describing the recognised form, or nil if none is found.
 - **OCCT:** `ShapeAnalysis_Curve` / `BRepGProp` recognition (via `OCCTShapeRecognizeCanonical`).
 - **Example:**
@@ -1075,7 +1075,7 @@ public func findSurface(tolerance: Double = -1) -> Surface?
 
 Determines the best-fit surface for a set of edges or a wire. Useful for reconstructing faces from imported wireframes.
 
-- **Parameters:** `tolerance` — surface-fitting tolerance; pass -1 to use an automatic value (default).
+- **Parameters:** `tolerance`, surface-fitting tolerance; pass -1 to use an automatic value (default).
 - **Returns:** The best-fit `Surface`, or nil if none could be determined.
 - **OCCT:** `BRepLib_FindSurface(shape, tolerance, onlyPlane = false)` (via
   `OCCTShapeFindSurface`). Neither `BRepBuilderAPI_FindPlane` nor `GeomPlate`, which this entry used
@@ -1103,7 +1103,7 @@ public func fixedWireframe(tolerance: Double = 1e-4) -> Shape?
 
 Applies `ShapeFix_Wireframe` to close small gaps and remove degenerate edges in the shape's wires.
 
-- **Parameters:** `tolerance` — fixing tolerance (default 1e-4).
+- **Parameters:** `tolerance`, fixing tolerance (default 1e-4).
 - **Returns:** Shape with fixed wireframe, or nil on failure.
 - **OCCT:** `ShapeFix_Wireframe` (via `OCCTShapeFixWireframe`).
 - **Example:**
@@ -1125,7 +1125,7 @@ public func removingInternalWires(minArea: Double) -> Shape?
 
 Drops holes in faces whose area is below `minArea`. Useful for cleaning up small artefact holes from boolean or import operations.
 
-- **Parameters:** `minArea` — minimum area threshold; holes smaller than this are removed.
+- **Parameters:** `minArea`, minimum area threshold; holes smaller than this are removed.
 - **Returns:** Shape with small holes removed, or nil on failure.
 - **OCCT:** `ShapeFix_Shape` / hole-removal pass (via `OCCTShapeRemoveInternalWires`).
 - **Example:**
@@ -1147,7 +1147,7 @@ public func contiguousEdgeCount(tolerance: Double = 1e-6) -> Int
 
 Returns the count of edge pairs that are geometrically coincident (within `tolerance`) but not yet sewn. Useful as a pre-sewing diagnostic.
 
-- **Parameters:** `tolerance` — contiguity tolerance (default 1e-6).
+- **Parameters:** `tolerance`, contiguity tolerance (default 1e-6).
 - **Returns:** Number of contiguous (but unsewn) edge pairs found.
 - **OCCT:** `BRepBuilderAPI_Sewing` probe (via `OCCTShapeFindContiguousEdges`).
 - **Example:**
@@ -1170,7 +1170,7 @@ public static func quilt(_ shapes: [Shape]) -> Shape?
 
 Joins faces that share common edges into a connected shell by identifying and merging coincident edge pairs.
 
-- **Parameters:** `shapes` — array of face or shell shapes to quilt.
+- **Parameters:** `shapes`, array of face or shell shapes to quilt.
 - **Returns:** Quilted shell, or nil on failure.
 - **OCCT:** `BRepTools_Quilt::Add` then `Shells()` (via `OCCTShapeQuilt`). Not
   `BRepBuilderAPI_Sewing`, which this entry used to name: quilting joins faces that **already**
@@ -1195,7 +1195,7 @@ public func fixingSmallFaces(tolerance: Double = 1e-4) -> Shape?
 
 Applies `ShapeFix_FixSmallFace` to identify and remove degenerate or very small faces that can cause issues in boolean and meshing operations.
 
-- **Parameters:** `tolerance` — precision tolerance for identifying small faces (default 1e-4).
+- **Parameters:** `tolerance`, precision tolerance for identifying small faces (default 1e-4).
 - **Returns:** Shape with small faces removed, or nil on failure.
 - **OCCT:** `ShapeFix_FixSmallFace` (via `OCCTShapeFixSmallFaces`).
 - **Example:**
@@ -1247,10 +1247,10 @@ public static func revolution(meridian: Curve3D,
 Unlike `Shape.revolution(profile:...)` which takes a wire, this revolves a `Geom_Curve` (e.g. a BSpline or arc) directly around the specified axis.
 
 - **Parameters:**
-  - `meridian` — the curve to revolve.
-  - `axisOrigin` — origin of the revolution axis (default `.zero`).
-  - `axisDirection` — direction of the revolution axis (default Z+).
-  - `angle` — revolution angle in radians (default full revolution, 2π).
+  - `meridian`: the curve to revolve.
+  - `axisOrigin`: origin of the revolution axis (default `.zero`).
+  - `axisDirection`: direction of the revolution axis (default Z+).
+  - `angle`: revolution angle in radians (default full revolution, 2π).
 - **Returns:** Revolved shape, or nil on failure.
 - **OCCT:** `BRepPrimAPI_MakeRevolution(gp_Ax2, meridian, angle)` (via
   `OCCTShapeCreateRevolutionFromCurve`). Not `BRepPrimAPI_MakeRevol`, which this entry used to name:
@@ -1281,10 +1281,10 @@ public func addingLinearRib(profile: Wire,
 Creates a rib (reinforcement) or slot by extruding a wire profile in a given direction against the base shape.
 
 - **Parameters:**
-  - `profile` — wire profile of the rib.
-  - `direction` — extrusion direction of the rib.
-  - `draftDirection` — secondary direction controlling draft angle.
-  - `fuse` — `true` to add material (rib); `false` to remove material (slot).
+  - `profile`: wire profile of the rib.
+  - `direction`: extrusion direction of the rib.
+  - `draftDirection`: secondary direction controlling draft angle.
+  - `fuse`: `true` to add material (rib); `false` to remove material (slot).
 - **Returns:** Shape with rib/slot added, or nil on failure.
 - **OCCT:** `BRepFeat_MakeLinearForm` (via `OCCTShapeAddLinearRib`).
 - **Example:**
@@ -1310,15 +1310,15 @@ public func addingRevolutionForm(profile: Wire,
                                  fuse: Bool = true) -> Shape?
 ```
 
-Similar to `addingLinearRib`, but the rib profile follows a rotational path around the given axis — useful for knurling and annular ribs.
+Similar to `addingLinearRib`, but the rib profile follows a rotational path around the given axis, useful for knurling and annular ribs.
 
 - **Parameters:**
-  - `profile` — wire profile of the rib.
-  - `axisOrigin` — origin of the revolution axis.
-  - `axisDirection` — direction of the revolution axis.
-  - `height1` — height on one side of the profile.
-  - `height2` — height on the other side.
-  - `fuse` — `true` for rib (add material); `false` for groove (remove material).
+  - `profile`: wire profile of the rib.
+  - `axisOrigin`: origin of the revolution axis.
+  - `axisDirection`: direction of the revolution axis.
+  - `height1`: height on one side of the profile.
+  - `height2`: height on the other side.
+  - `fuse`: `true` for rib (add material); `false` for groove (remove material).
 - **Returns:** Shape with revolution form, or nil on failure.
 - **OCCT:** `BRepFeat_MakeRevolutionForm` (via `OCCTShapeAddRevolutionForm`).
 - **Example:**
@@ -1346,11 +1346,11 @@ public func addingDraftPrism(profile: Wire, sketchFaceIndex: Int,
 Creates a boss or pocket with draft angle (taper), commonly used in injection mould design.
 
 - **Parameters:**
-  - `profile` — wire profile to extrude.
-  - `sketchFaceIndex` — 0-based index of the face on which the profile sits.
-  - `draftAngle` — draft angle in degrees.
-  - `height` — extrusion height.
-  - `fuse` — `true` to add material (boss); `false` to cut (pocket).
+  - `profile`: wire profile to extrude.
+  - `sketchFaceIndex`: 0-based index of the face on which the profile sits.
+  - `draftAngle`: draft angle in degrees.
+  - `height`: extrusion height.
+  - `fuse`: `true` to add material (boss); `false` to cut (pocket).
 - **Returns:** Shape with draft prism, or nil on failure.
 - **OCCT:** `BRepFeat_MakeDPrism` (via `OCCTShapeDraftPrism`).
 - **Example:**
@@ -1374,10 +1374,10 @@ public func addingDraftPrismThruAll(profile: Wire, sketchFaceIndex: Int,
 Like `addingDraftPrism` but the extrusion continues until it exits the opposite side of the shape.
 
 - **Parameters:**
-  - `profile` — wire profile to extrude.
-  - `sketchFaceIndex` — 0-based index of the sketch face.
-  - `draftAngle` — draft angle in degrees.
-  - `fuse` — `true` to add material; `false` to cut.
+  - `profile`: wire profile to extrude.
+  - `sketchFaceIndex`: 0-based index of the sketch face.
+  - `draftAngle`: draft angle in degrees.
+  - `fuse`: `true` to add material; `false` to cut.
 - **Returns:** Shape with through-all draft prism, or nil on failure.
 - **OCCT:** `BRepFeat_MakeDPrism` (via `OCCTShapeDraftPrismThruAll`).
 - **Example:**
@@ -1403,15 +1403,15 @@ public func addingRevolvedFeature(profile: Wire, sketchFaceIndex: Int,
                                   fuse: Bool = true) -> Shape?
 ```
 
-Revolves a profile around an axis to add or remove material — the parametric solid modelling equivalent of a lathe operation.
+Revolves a profile around an axis to add or remove material, the parametric solid modelling equivalent of a lathe operation.
 
 - **Parameters:**
-  - `profile` — wire profile to revolve.
-  - `sketchFaceIndex` — 0-based index of the face on which the profile sits.
-  - `axisOrigin` — origin of the revolution axis.
-  - `axisDirection` — direction of the revolution axis.
-  - `angle` — revolution angle in degrees (default 360).
-  - `fuse` — `true` to add material (boss); `false` to cut (pocket).
+  - `profile`: wire profile to revolve.
+  - `sketchFaceIndex`: 0-based index of the face on which the profile sits.
+  - `axisOrigin`: origin of the revolution axis.
+  - `axisDirection`: direction of the revolution axis.
+  - `angle`: revolution angle in degrees (default 360).
+  - `fuse`: `true` to add material (boss); `false` to cut (pocket).
 - **Returns:** Shape with revolved feature, or nil on failure.
 - **OCCT:** `BRepFeat_MakeRevol` (via `OCCTShapeRevolFeature`).
 - **Example:**
@@ -1438,8 +1438,8 @@ public func addingRevolvedFeatureThruAll(profile: Wire, sketchFaceIndex: Int,
 Convenience overload that always performs a full 360° revolution.
 
 - **Parameters:**
-  - `profile`, `sketchFaceIndex`, `axisOrigin`, `axisDirection` — same as above.
-  - `fuse` — `true` to add; `false` to cut.
+  - `profile`, `sketchFaceIndex`, `axisOrigin`, `axisDirection`, same as above.
+  - `fuse`: `true` to add; `false` to cut.
 - **Returns:** Shape with through-all revolved feature, or nil on failure.
 - **OCCT:** `BRepFeat_MakeRevol` (via `OCCTShapeRevolFeatureThruAll`).
 - **Example:**
@@ -1467,10 +1467,10 @@ public static func face(from surface: Surface,
 ```
 
 - **Parameters:**
-  - `surface` — the parametric surface.
-  - `uRange` — U parameter range (uMin...uMax).
-  - `vRange` — V parameter range (vMin...vMax).
-  - `tolerance` — tolerance for face creation (default 1e-6).
+  - `surface`: the parametric surface.
+  - `uRange`: U parameter range (uMin...uMax).
+  - `vRange`: V parameter range (vMin...vMax).
+  - `tolerance`: tolerance for face creation (default 1e-6).
 - **Returns:** Face shape, or nil on failure.
 - **OCCT:** `BRepBuilderAPI_MakeFace` (via `OCCTShapeCreateFaceFromSurface`).
 - **Example:**
@@ -1491,13 +1491,13 @@ public static func face(from surface: Surface, boundary: Wire) -> Shape?
 
 Tries two strategies in order:
 1. **Exact:** if the wire genuinely lies on the surface (edges have or admit pcurves), builds the face directly with `ShapeFix_Face` to project pcurves.
-2. **Fallback:** projects the wire's ordered points onto the surface UV and trims by that polygon — same path as `Surface.toFace(uvBoundary:)`.
+2. **Fallback:** projects the wire's ordered points onto the surface UV and trims by that polygon, same path as `Surface.toFace(uvBoundary:)`.
 
 If you already have the boundary in UV space, call `Surface.toFace(uvBoundary:)` directly for efficiency.
 
 - **Parameters:**
-  - `surface` — the parametric surface to trim.
-  - `boundary` — a closed wire on (or near) the surface.
+  - `surface`: the parametric surface to trim.
+  - `boundary`: a closed wire on (or near) the surface.
 - **Returns:** Trimmed face shape, or nil on failure. A boundary crossing a periodic seam (e.g. the u = 0/2π seam of a cylinder) is not handled by the projection fallback.
 - **OCCT:** `BRepBuilderAPI_MakeFace` + `ShapeFix_Face` (via `OCCTShapeCreateFaceFromSurfaceWire`).
 - **Example:**
@@ -1511,7 +1511,7 @@ If you already have the boundary in UV space, call `Surface.toFace(uvBoundary:)`
 
 ### `Shape.face(from:outer:innerWires:)` (#266)
 
-Trim a surface by an **outer** boundary **with interior hole wires** (windows / cutouts) — a single
+Trim a surface by an **outer** boundary **with interior hole wires** (windows / cutouts), a single
 face with real openings. Wraps `BRepBuilderAPI_MakeFace(surface, outer)` + `.Add(hole)` per hole +
 `ShapeFix_Face`; hole winding is normalized automatically.
 
@@ -1599,7 +1599,7 @@ public func checkFaceWireOrientation(geometricControls: Bool = true) -> CheckSta
 
 ### `Shape.faceIntegrationOrders` / `faceIntegrationKnotsU()` / `faceIntegrationKnotsV()` / `faceSurfaceIntegration(precision:)` / `faceBoundaryIntegration(edgeIndex:precision:)`
 
-`BRepGProp_Face` Gauss-integration introspection — the quadrature a face needs for exact surface
+`BRepGProp_Face` Gauss-integration introspection, the quadrature a face needs for exact surface
 integrals (non-trivial only for BSpline faces), and per-boundary-edge integration.
 
 ```swift
@@ -1647,8 +1647,8 @@ public static func facesFromEdges(_ compound: Shape, onlyPlanar: Bool = true) ->
 Takes a shape containing edges, builds closed wires from them, and creates faces from those wires.
 
 - **Parameters:**
-  - `compound` — shape containing the edges to assemble.
-  - `onlyPlanar` — if `true`, only creates planar faces (default `true`).
+  - `compound`: shape containing the edges to assemble.
+  - `onlyPlanar`: if `true`, only creates planar faces (default `true`).
 - **Returns:** Compound of faces, or nil on failure.
 - **OCCT:** `BRepBuilderAPI_MakeFace` + wire recovery (via `OCCTShapeEdgesToFaces`).
 - **Example:**
@@ -1670,7 +1670,7 @@ public func section(_ other: Shape) -> Shape?
 
 Returns the intersection geometry (edges/wires) where the two shapes meet. Useful for contact curves, trim boundaries, and interference analysis.
 
-- **Parameters:** `other` — the second shape to intersect with.
+- **Parameters:** `other`, the second shape to intersect with.
 - **Returns:** Shape containing intersection edges, or nil on failure.
 - **OCCT:** `BRepAlgoAPI_Section` (via `OCCTShapeSection`).
 - **Example:**
@@ -1712,7 +1712,7 @@ Check whether two shapes are valid for boolean operations with each other.
 public func isValidForBoolean(with other: Shape) -> Bool
 ```
 
-- **Parameters:** `other` — the second shape to check compatibility with.
+- **Parameters:** `other`, the second shape to check compatibility with.
 - **Returns:** `true` if both shapes are suitable for boolean operations together.
 - **OCCT:** `BRepAlgoAPI_Check` (via `OCCTShapeBooleanCheck`).
 - **Example:**
@@ -1735,8 +1735,8 @@ public func splittingFace(with wire: Wire, faceIndex: Int) -> Shape?
 The wire is projected/imprinted onto the specified face, dividing it into multiple faces. Useful for mesh preparation and feature line imprinting.
 
 - **Parameters:**
-  - `wire` — wire to imprint onto the face.
-  - `faceIndex` — 0-based index of the face to split.
+  - `wire`: wire to imprint onto the face.
+  - `faceIndex`: 0-based index of the face to split.
 - **Returns:** Shape with the face split by the wire, or nil on failure.
 - **OCCT:** `BRepFeat_SplitShape::Add(wire, face)` then `Build()` (via `OCCTShapeSplitByWire`),
   with the face resolved through `TopExp::MapShapes(TopAbs_FACE)`. Not `BRepAlgoAPI_Splitter`, which
@@ -1761,7 +1761,7 @@ public func splitByAngle(_ maxAngleDegrees: Double) -> Shape?
 
 Useful for export to systems that cannot handle full 360° surfaces (e.g. splitting a full cylinder into quarter-cylinders).
 
-- **Parameters:** `maxAngleDegrees` — maximum surface angular span in degrees (e.g. 90 for quarter-turns).
+- **Parameters:** `maxAngleDegrees`, maximum surface angular span in degrees (e.g. 90 for quarter-turns).
 - **Returns:** Shape with surfaces split at angle boundaries, or nil on failure.
 - **OCCT:** `ShapeUpgrade_ShapeSplitAngle` (via `OCCTShapeSplitByAngle`).
 - **Example:**
@@ -1785,12 +1785,12 @@ public func droppingSmallEdges(tolerance: Double = 1e-7) -> Shape?
 
 Useful for cleaning up imported geometry with tolerance issues where very short edges prevent boolean or meshing operations.
 
-Equivalent to `fixSmallEdges(tolerance:dropSmall: true)` (see "Document-Analysis-Builders") — both
+Equivalent to `fixSmallEdges(tolerance:dropSmall: true)` (see "Document-Analysis-Builders"), both
 build a `ShapeFix_Wireframe` with the same precision/drop-mode/perform sequence. The default used
 to be `1e-6` here against `1e-7` there for the identical underlying call; aligned to `1e-7` (#839),
 matching `fixSmallEdges` and its sibling `fixWireGaps`.
 
-- **Parameters:** `tolerance` — tolerance below which edges are considered small and removed (default 1e-7).
+- **Parameters:** `tolerance`, tolerance below which edges are considered small and removed (default 1e-7).
 - **Returns:** Shape with small edges removed, or nil on failure.
 - **OCCT:** `ShapeFix_Wireframe` small-edge removal (via `OCCTShapeDropSmallEdges`).
 - **Example:**
@@ -1810,9 +1810,9 @@ Fuse multiple shapes simultaneously.
 public static func fuseAll(_ shapes: [Shape]) -> Shape?
 ```
 
-More robust than sequential pairwise `union(with:)` calls — processes all intersections at once, avoiding intermediate tolerance accumulation. Requires at least two shapes.
+More robust than sequential pairwise `union(with:)` calls, processes all intersections at once, avoiding intermediate tolerance accumulation. Requires at least two shapes.
 
-- **Parameters:** `shapes` — array of shapes to fuse (must have ≥ 2 elements).
+- **Parameters:** `shapes`, array of shapes to fuse (must have ≥ 2 elements).
 - **Returns:** Fused shape, or nil on failure.
 - **OCCT:** `BRepAlgoAPI_BuilderAlgo::SetArguments` then `Build()` (via `OCCTShapeFuseMulti`). Not
   `BRepAlgoAPI_Fuse`, which this entry used to name and which is never constructed here:
@@ -1827,7 +1827,7 @@ More robust than sequential pairwise `union(with:)` calls — processes all inte
 
 ### `Shape.commonAll(_:)`
 
-Intersect multiple shapes simultaneously — the intersection counterpart to `fuseAll(_:)`.
+Intersect multiple shapes simultaneously, the intersection counterpart to `fuseAll(_:)`.
 
 ```swift
 public static func commonAll(_ shapes: [Shape]) -> Shape?
@@ -1835,7 +1835,7 @@ public static func commonAll(_ shapes: [Shape]) -> Shape?
 
 Computes the common volume of all inputs at once. Same rationale as `fuseAll(_:)`: multi-tool mode avoids the intermediate tolerance accumulation of chained pairwise `intersection(_:)` calls. Requires at least two shapes.
 
-- **Parameters:** `shapes` — array of shapes to intersect (must have ≥ 2 elements).
+- **Parameters:** `shapes`, array of shapes to intersect (must have ≥ 2 elements).
 - **Returns:** Common shape (intersection of all), or nil on failure.
 - **OCCT:** `BRepAlgoAPI_Common` multi-tool mode (via `OCCTShapeCommonMulti`).
 - **Example:**
@@ -1859,8 +1859,8 @@ public func multiOffsetWires(offsets: [Double],
 More efficient than calling `Wire.offset` multiple times, and produces consistent results for CNC toolpath generation.
 
 - **Parameters:**
-  - `offsets` — array of offset distances (positive = outward, negative = inward).
-  - `joinType` — how to join offset segments (default `.arc`).
+  - `offsets`: array of offset distances (positive = outward, negative = inward).
+  - `joinType`: how to join offset segments (default `.arc`).
 - **Returns:** Array of offset `Wire`s (may be empty on failure or empty input).
 - **OCCT:** `BRepOffsetAPI_MakeOffset` (via `OCCTWireMultiOffset`).
 - **Example:**
@@ -1894,12 +1894,12 @@ public static func projectWire(_ wire: Shape, onto target: Shape,
                                direction: SIMD3<Double>) -> Shape?
 ```
 
-Parallel-ray projection (like an orthographic shadow) — each point on `wire` is projected along `direction` until it hits `target`.
+Parallel-ray projection (like an orthographic shadow), each point on `wire` is projected along `direction` until it hits `target`.
 
 - **Parameters:**
-  - `wire` — wire or edge `Shape` to project.
-  - `target` — target shape to project onto.
-  - `direction` — projection direction (rays are parallel).
+  - `wire`: wire or edge `Shape` to project.
+  - `target`: target shape to project onto.
+  - `direction`: projection direction (rays are parallel).
 - **Returns:** Compound of projected wires, or nil on failure.
 - **OCCT:** `BRepOffsetAPI_NormalProjection` with direction (via `OCCTShapeProjectWire`).
 - **Example:**
@@ -1943,7 +1943,7 @@ public func sameParameter(tolerance: Double = 1e-6) -> Shape?
 
 Ensures 3D and 2D (pcurve) representations of edges are consistent in their parametrisation. Important after importing geometry or performing complex operations that may desynchronise 3D/2D curves.
 
-- **Parameters:** `tolerance` — tolerance for the same-parameter check (default 1e-6).
+- **Parameters:** `tolerance`, tolerance for the same-parameter check (default 1e-6).
 - **Returns:** Fixed shape, or nil on failure.
 - **OCCT:** `BRepLib::SameParameter` (via `OCCTShapeSameParameter`).
 - **Example:**
@@ -1964,12 +1964,12 @@ public static func projectWireConical(_ wire: Shape, onto target: Shape,
                                       eye: SIMD3<Double>) -> Shape?
 ```
 
-Unlike cylindrical projection (parallel rays), conical projection fans rays out from a point source — like a spotlight or perspective camera.
+Unlike cylindrical projection (parallel rays), conical projection fans rays out from a point source, like a spotlight or perspective camera.
 
 - **Parameters:**
-  - `wire` — wire or edge `Shape` to project.
-  - `target` — target shape to project onto.
-  - `eye` — point source of the projection rays.
+  - `wire`: wire or edge `Shape` to project.
+  - `target`: target shape to project onto.
+  - `eye`: point source of the projection rays.
 - **Returns:** Compound of projected wires, or nil on failure.
 - **OCCT:** `BRepOffsetAPI_NormalProjection` with point source (via `OCCTShapeProjectWireConical`).
 - **Example:**
@@ -2013,7 +2013,7 @@ public func encodingRegularity(toleranceDegrees: Double = 1e-10) -> Shape?
 
 Downstream algorithms (e.g. offset, draft) can skip regular edges for better performance. The angular tolerance controls what counts as smooth.
 
-- **Parameters:** `toleranceDegrees` — angular tolerance in degrees; edges whose dihedral angle deviates less than this from 180° are marked regular (default 1e-10, effectively exact smoothness).
+- **Parameters:** `toleranceDegrees`, angular tolerance in degrees; edges whose dihedral angle deviates less than this from 180° are marked regular (default 1e-10, effectively exact smoothness).
 - **Returns:** Shape with regularity encoded, or nil on failure.
 - **OCCT:** `BRepLib::EncodeRegularity` (via `OCCTShapeEncodeRegularity`).
 - **Example:**
@@ -2033,7 +2033,7 @@ Recalculate and update geometric tolerances on the shape.
 public func updatingTolerances(verifyFaces: Bool = true) -> Shape?
 ```
 
-- **Parameters:** `verifyFaces` — whether to verify and correct face tolerances (default `true`).
+- **Parameters:** `verifyFaces`, whether to verify and correct face tolerances (default `true`).
 - **Returns:** Shape with updated tolerances, or nil on failure.
 - **OCCT:** `BRepLib::UpdateTolerances` (via `OCCTShapeUpdateTolerances`).
 - **Example:**
@@ -2055,7 +2055,7 @@ public func dividedByNumber(_ parts: Int) -> Shape?
 
 Subdivides each face into approximately `parts` parametric patches. Useful for mesh preparation and parametric surface subdivision. Requires `parts > 1`.
 
-- **Parameters:** `parts` — approximate number of patches per face.
+- **Parameters:** `parts`, approximate number of patches per face.
 - **Returns:** Shape with divided faces, or nil if `parts ≤ 1` or on failure.
 - **OCCT:** `ShapeUpgrade_ShapeDivideArea` (via `OCCTShapeDivideByNumber`).
 - **Example:**
@@ -2078,8 +2078,8 @@ public struct BooleanResult: Sendable {
 }
 ```
 
-- `shape` — the result of the boolean operation.
-- `modifiedFaces` — faces in the result that are modifications of faces from the first operand.
+- `shape`: the result of the boolean operation.
+- `modifiedFaces`: faces in the result that are modifications of faces from the first operand.
 
 ---
 
@@ -2095,7 +2095,7 @@ Fuse this shape with another and track which faces were modified.
 public func fuseWithHistory(_ other: Shape) -> BooleanResult?
 ```
 
-- **Parameters:** `other` — shape to fuse with.
+- **Parameters:** `other`, shape to fuse with.
 - **Returns:** `BooleanResult` with result shape and modified-face tracking, or nil on failure.
 - **OCCT:** `BRepAlgoAPI_Fuse` with history (via `OCCTShapeFuseWithHistory`).
 - **Example:**
@@ -2119,9 +2119,9 @@ public struct ShapeHistoryRecord: Sendable {
 }
 ```
 
-- `modified` — output sub-shapes that are modifications of the tracked input (one face may split into several).
-- `generated` — output sub-shapes generated from the input but not replacing it (e.g. fillet faces generated from an edge).
-- `isDeleted` — `true` if the input was deleted with no replacement.
+- `modified`: output sub-shapes that are modifications of the tracked input (one face may split into several).
+- `generated`: output sub-shapes generated from the input but not replacing it (e.g. fillet faces generated from an edge).
+- `isDeleted`: `true` if the input was deleted with no replacement.
 
 ---
 
@@ -2143,7 +2143,7 @@ Look up the post-mutation history of one input sub-shape.
 public func record(of inputSubShape: Shape) -> ShapeHistoryRecord
 ```
 
-- **Parameters:** `inputSubShape` — any face, edge, or vertex from an original input shape.
+- **Parameters:** `inputSubShape`, any face, edge, or vertex from an original input shape.
 - **Returns:** `ShapeHistoryRecord` describing what happened to that sub-shape.
 - **OCCT:** `BRepAlgoAPI_BuilderAlgo::Modified` / `Generated` / `IsDeleted` (via `OCCTBooleanHistoryModified`, `OCCTBooleanHistoryGenerated`, `OCCTBooleanHistoryIsDeleted`).
 - **Example:**
@@ -2165,7 +2165,7 @@ Boolean union with full per-input-subshape history.
 public func unionWithFullHistory(_ other: Shape) -> (result: Shape, history: ShapeHistoryRef)?
 ```
 
-- **Parameters:** `other` — shape to union with.
+- **Parameters:** `other`, shape to union with.
 - **Returns:** Tuple of result shape and queryable `ShapeHistoryRef`, or nil on failure.
 - **OCCT:** `BRepAlgoAPI_Fuse` (via `OCCTBooleanUnionWithHistory`).
 - **Example:**
@@ -2185,7 +2185,7 @@ Boolean subtract with full per-input-subshape history.
 public func subtractedWithFullHistory(_ tool: Shape) -> (result: Shape, history: ShapeHistoryRef)?
 ```
 
-- **Parameters:** `tool` — shape to subtract from `self`.
+- **Parameters:** `tool`, shape to subtract from `self`.
 - **Returns:** Tuple of result shape and history, or nil on failure.
 - **OCCT:** `BRepAlgoAPI_Cut` (via `OCCTBooleanSubtractWithHistory`).
 - **Example:**
@@ -2203,7 +2203,7 @@ Boolean intersect with full per-input-subshape history.
 public func intersectionWithFullHistory(_ other: Shape) -> (result: Shape, history: ShapeHistoryRef)?
 ```
 
-- **Parameters:** `other` — shape to intersect with.
+- **Parameters:** `other`, shape to intersect with.
 - **Returns:** Tuple of result shape and history, or nil on failure.
 - **OCCT:** `BRepAlgoAPI_Common` (via `OCCTBooleanIntersectWithHistory`).
 - **Example:**
@@ -2223,7 +2223,7 @@ public func splitWithFullHistory(by tool: Shape) -> (pieces: [Shape], history: S
 
 The top-level children of the compound result are returned as individual pieces. Query history per input sub-shape via `history.record(of:)`.
 
-- **Parameters:** `tool` — shape to split with (acts as a cutting tool).
+- **Parameters:** `tool`, shape to split with (acts as a cutting tool).
 - **Returns:** Tuple of pieces array and history, or nil on failure.
 - **OCCT:** `BRepAlgoAPI_Splitter` (via `OCCTBooleanSplitWithHistory`).
 - **Example:**
@@ -2245,8 +2245,8 @@ public func filletedWithFullHistory(radius: Double, edges: [Int])
 ```
 
 - **Parameters:**
-  - `radius` — fillet radius. Must be > 0.
-  - `edges` — 0-based edge indices to fillet. An index that does not resolve on this shape is skipped.
+  - `radius`: fillet radius. Must be > 0.
+  - `edges`: 0-based edge indices to fillet. An index that does not resolve on this shape is skipped.
 - **Returns:** Result shape and history, or nil on failure, an empty edge list, or a non-positive
   radius (#489).
 - **OCCT:** `BRepFilletAPI_MakeFillet` (via `OCCTShapeHistoryFromFilletEdges`).
@@ -2275,9 +2275,9 @@ public func filletedWithFullHistory(edge: Int, startRadius: Double, endRadius: D
 Radius varies linearly from `startRadius` (at the edge's first parameter) to `endRadius` (at last).
 
 - **Parameters:**
-  - `edge` — 0-based edge index.
-  - `startRadius` — radius at the start of the edge. Must be > 0.
-  - `endRadius` — radius at the end of the edge. Must be > 0.
+  - `edge`: 0-based edge index.
+  - `startRadius`: radius at the start of the edge. Must be > 0.
+  - `endRadius`: radius at the end of the edge. Must be > 0.
 - **Returns:** Result shape and history, or nil on failure, or a non-positive radius at either
   end (#489).
 - **OCCT:** `BRepFilletAPI_MakeFillet` variable-radius (via `OCCTShapeHistoryFromFilletEdgeVariable`).
@@ -2298,8 +2298,8 @@ public func chamferedWithFullHistory(distance: Double, edges: [Int])
 ```
 
 - **Parameters:**
-  - `distance` — chamfer distance.
-  - `edges` — 0-based edge indices to chamfer.
+  - `distance`: chamfer distance.
+  - `edges`: 0-based edge indices to chamfer.
 - **Returns:** Result shape and history, or nil on failure or empty edge list.
 - **OCCT:** `BRepFilletAPI_MakeChamfer` (via `OCCTShapeHistoryFromChamferEdges`).
 - **Note:** an index naming no edge of this shape fails the whole call rather than being skipped
@@ -2323,9 +2323,9 @@ public func shelledWithFullHistory(facesToRemove: [Int], thickness: Double, tole
 Removes the listed faces and offsets the remaining shell inward by `thickness` (negative = outward). Returns per-face history.
 
 - **Parameters:**
-  - `facesToRemove` — 0-based indices of faces to remove (become openings).
-  - `thickness` — wall thickness; positive = inward offset.
-  - `tolerance` — offset tolerance (default 1e-3).
+  - `facesToRemove`: 0-based indices of faces to remove (become openings).
+  - `thickness`: wall thickness; positive = inward offset.
+  - `tolerance`: offset tolerance (default 1e-3).
 - **Returns:** Result shape and history, or nil on failure or empty face list.
 - **OCCT:** `BRepOffsetAPI_MakeThickSolid` (via `OCCTShapeHistoryFromShell`).
 - **Example:**
@@ -2346,7 +2346,7 @@ public func defeaturedWithFullHistory(faces: [Int])
 
 History reports each removed face as deleted and surrounding faces as modified.
 
-- **Parameters:** `faces` — 0-based indices of faces to remove.
+- **Parameters:** `faces`, 0-based indices of faces to remove.
 - **Returns:** Result shape and history, or nil on failure or empty face list.
 - **OCCT:** `BRepAlgoAPI_Defeaturing` (via `OCCTShapeHistoryFromDefeature`).
 - **Example:**
@@ -2365,7 +2365,7 @@ public func translatedWithFullHistory(by offset: SIMD3<Double>)
     -> (result: Shape, history: ShapeHistoryRef)?
 ```
 
-- **Parameters:** `offset` — translation vector.
+- **Parameters:** `offset`, translation vector.
 - **Returns:** Result shape and history, or nil on failure.
 - **OCCT:** `BRepBuilderAPI_Transform` (via `OCCTShapeHistoryFromTranslate`).
 - **Example:**
@@ -2387,8 +2387,8 @@ public func rotatedWithFullHistory(axis: SIMD3<Double>, angle: Double)
 ```
 
 - **Parameters:**
-  - `axis` — rotation axis direction (through the origin).
-  - `angle` — rotation angle in radians.
+  - `axis`: rotation axis direction (through the origin).
+  - `angle`: rotation angle in radians.
 - **Returns:** Result shape and history, or nil on failure.
 - **OCCT:** `BRepBuilderAPI_Transform` (via `OCCTShapeHistoryFromRotate`).
 - **Example:**
@@ -2407,7 +2407,7 @@ public func scaledWithFullHistory(by factor: Double)
     -> (result: Shape, history: ShapeHistoryRef)?
 ```
 
-- **Parameters:** `factor` — uniform scale factor.
+- **Parameters:** `factor`, uniform scale factor.
 - **Returns:** Result shape and history, or nil on failure.
 - **OCCT:** `BRepBuilderAPI_Transform` (via `OCCTShapeHistoryFromScale`).
 - **Example:**
@@ -2427,8 +2427,8 @@ public func mirroredWithFullHistory(planeNormal: SIMD3<Double>, planeOrigin: SIM
 ```
 
 - **Parameters:**
-  - `planeNormal` — normal of the mirror plane.
-  - `planeOrigin` — a point on the mirror plane (default origin).
+  - `planeNormal`: normal of the mirror plane.
+  - `planeOrigin`: a point on the mirror plane (default origin).
 - **Returns:** Result shape and history, or nil on failure.
 - **OCCT:** `BRepBuilderAPI_Transform` (via `OCCTShapeHistoryFromMirror`).
 - **Example:**
@@ -2449,12 +2449,12 @@ public func linearPatternWithFullHistory(direction: SIMD3<Double>, spacing: Doub
 
 The pattern is N:1 (deterministic): each instance's sub-shapes correspond to the source's by
 construction. `history.record(of:)` on a source sub-shape reports all `count` corresponding instance
-sub-shapes as `modified` — one per copy, including the identity-transformed original at index 0.
+sub-shapes as `modified`, one per copy, including the identity-transformed original at index 0.
 
 - **Parameters:**
-  - `direction` — pattern direction (normalized internally).
-  - `spacing` — distance between copies.
-  - `count` — number of copies, including the original.
+  - `direction`: pattern direction (normalized internally).
+  - `spacing`: distance between copies.
+  - `count`: number of copies, including the original.
 - **Returns:** Compound of all copies and history, or nil on failure.
 - **OCCT:** `BRepBuilderAPI_Transform` × `count`, folded into one `BRepTools_History` (via
   `OCCTShapeHistoryFromLinearPattern`).
@@ -2478,15 +2478,15 @@ public func circularPatternWithFullHistory(axisPoint: SIMD3<Double>, axisDirecti
     -> (result: Shape, history: ShapeHistoryRef)?
 ```
 
-Same N:1 semantics as `linearPatternWithFullHistory(direction:spacing:count:)` — see
+Same N:1 semantics as `linearPatternWithFullHistory(direction:spacing:count:)`, see
 `circularPattern(axisPoint:axisDirection:count:angle:)` for what "duplicates the whole body" means for
 feature-cut use cases (drill one hole, pattern the tool, subtract).
 
 - **Parameters:**
-  - `axisPoint` — point on the rotation axis.
-  - `axisDirection` — direction of the rotation axis.
-  - `count` — number of copies, including the original.
-  - `angle` — total angle to span in radians (0 = full circle).
+  - `axisPoint`: point on the rotation axis.
+  - `axisDirection`: direction of the rotation axis.
+  - `count`: number of copies, including the original.
+  - `angle`: total angle to span in radians (0 = full circle).
 - **Returns:** Compound of all copies and history, or nil on failure.
 - **OCCT:** `BRepBuilderAPI_Transform` × `count`, folded into one `BRepTools_History` (via
   `OCCTShapeHistoryFromCircularPattern`).

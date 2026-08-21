@@ -9,11 +9,11 @@ OCCTSwift's measurement layer adds ergonomic, one-liner accessors for the most c
 
 ## Topics
 
-- [Angles — Edge](#angles--edge) · [Angles — Face](#angles--face) · [Angles — ConstructionAxis](#angles--constructionaxis) · [Angles — ConstructionPlane](#angles--constructionplane) · [Utility — unsignedAngle](#utility--unsignedangle) · [Circle Properties — Edge](#circle-properties--edge) · [Revolution Properties — Face](#revolution-properties--face) · [ShapeMeasurements](#shapemeasurements) · [Shape Extension — measure](#shape-extension--measure)
+- [Angles, Edge](#angles--edge) · [Angles, Face](#angles--face) · [Angles, ConstructionAxis](#angles--constructionaxis) · [Angles, ConstructionPlane](#angles--constructionplane) · [Utility, unsignedAngle](#utility--unsignedangle) · [Circle Properties, Edge](#circle-properties--edge) · [Revolution Properties, Face](#revolution-properties--face) · [ShapeMeasurements](#shapemeasurements) · [Shape Extension, measure](#shape-extension--measure)
 
 ---
 
-## Angles — Edge
+## Angles. Edge
 
 Extension on `Edge` (defined in `MeasurementHelpers.swift`).
 
@@ -30,8 +30,8 @@ public func angle(to other: Edge, atParameter t: Double = 0.5) -> Double?
 Samples each edge's tangent at the normalised parameter `t` (0 = start, 1 = end, default 0.5 = mid). For straight edges the result is the line-line angle. For curved edges it is a point estimate; the angle varies along the curve.
 
 - **Parameters:**
-  - `other` — the edge to measure against.
-  - `atParameter` — normalised parameter in `[0, 1]` specifying where to sample the tangent on each edge (default `0.5`, i.e. mid-curve). Clamped to `[0, 1]`.
+  - `other`: the edge to measure against.
+  - `atParameter`: normalised parameter in `[0, 1]` specifying where to sample the tangent on each edge (default `0.5`, i.e. mid-curve). Clamped to `[0, 1]`.
 - **Returns:** Angle in radians in `[0, π]`, or `nil` if either edge has no `parameterBounds` or the tangent cannot be evaluated.
 - **OCCT:** Pure-Swift over `Edge.tangent(at:)` + `Edge.parameterBounds`. Tangent evaluation delegates to `BRepAdaptor_Curve::DN`.
 - **Example:**
@@ -56,8 +56,8 @@ public func isParallel(to other: Edge, toleranceRadians: Double = 1e-4) -> Bool?
 Convenience wrapper over `angle(to:)`. Returns `true` when the angle is within `toleranceRadians` of 0 or π (anti-parallel counts as parallel).
 
 - **Parameters:**
-  - `other` — edge to compare.
-  - `toleranceRadians` — angular tolerance (default `1e-4` rad ≈ 0.006°).
+  - `other`: edge to compare.
+  - `toleranceRadians`: angular tolerance (default `1e-4` rad ≈ 0.006°).
 - **Returns:** `true` if parallel, `false` if not, `nil` if the angle cannot be computed.
 - **Example:**
   ```swift
@@ -80,8 +80,8 @@ public func isPerpendicular(to other: Edge, toleranceRadians: Double = 1e-4) -> 
 Returns `true` when `|angle - π/2| < toleranceRadians`.
 
 - **Parameters:**
-  - `other` — edge to compare.
-  - `toleranceRadians` — angular tolerance (default `1e-4` rad).
+  - `other`: edge to compare.
+  - `toleranceRadians`: angular tolerance (default `1e-4` rad).
 - **Returns:** `true` if perpendicular, `false` if not, `nil` if the angle cannot be computed.
 - **Example:**
   ```swift
@@ -93,7 +93,7 @@ Returns `true` when `|angle - π/2| < toleranceRadians`.
 
 ---
 
-## Angles — Face
+## Angles. Face
 
 Extension on `Face` (defined in `MeasurementHelpers.swift`).
 
@@ -109,7 +109,7 @@ public func angle(to other: Face) -> Double?
 
 For two planar faces this equals the dihedral angle between the planes (after the normal-space mapping). For curved faces it is a point estimate at each face centre.
 
-- **Parameters:** `other` — the face to measure against.
+- **Parameters:** `other`, the face to measure against.
 - **Returns:** Angle between the normals in radians in `[0, π]`, or `nil` if either face has no `uvBounds` or the normal cannot be evaluated.
 - **OCCT:** Pure-Swift over `Face.normal(atU:v:)` + `Face.uvBounds`. Normal evaluation delegates to `GeomLProp_SLProps::Normal`.
 - **Example:**
@@ -134,8 +134,8 @@ public func isParallel(to other: Face, toleranceRadians: Double = 1e-4) -> Bool?
 Returns `true` when the normal-to-normal angle is within `toleranceRadians` of 0 or π.
 
 - **Parameters:**
-  - `other` — face to compare.
-  - `toleranceRadians` — angular tolerance (default `1e-4` rad).
+  - `other`: face to compare.
+  - `toleranceRadians`: angular tolerance (default `1e-4` rad).
 - **Returns:** `true` if parallel, `false` if not, `nil` if the angle cannot be computed.
 - **Example:**
   ```swift
@@ -159,8 +159,8 @@ public func isPerpendicular(to other: Face, toleranceRadians: Double = 1e-4) -> 
 Returns `true` when `|angle - π/2| < toleranceRadians`.
 
 - **Parameters:**
-  - `other` — face to compare.
-  - `toleranceRadians` — angular tolerance (default `1e-4` rad).
+  - `other`: face to compare.
+  - `toleranceRadians`: angular tolerance (default `1e-4` rad).
 - **Returns:** `true` if perpendicular, `false` if not, `nil` if the angle cannot be computed.
 - **Example:**
   ```swift
@@ -174,7 +174,7 @@ Returns `true` when `|angle - π/2| < toleranceRadians`.
 
 ### `Face.isCoplanar(with:tolerance:)`
 
-Whether this face is coplanar with another — normals are parallel AND their centre points lie on the same plane.
+Whether this face is coplanar with another, normals are parallel AND their centre points lie on the same plane.
 
 ```swift
 public func isCoplanar(with other: Face, tolerance: Double = 1e-6) -> Bool?
@@ -183,10 +183,10 @@ public func isCoplanar(with other: Face, tolerance: Double = 1e-6) -> Bool?
 Two conditions must both hold: (1) normals are parallel within `1e-4` radians, (2) the signed distance from this face's UV-midpoint to the other face's plane is less than `tolerance`.
 
 - **Parameters:**
-  - `other` — face to compare.
-  - `tolerance` — point-to-plane distance tolerance (default `1e-6`).
+  - `other`: face to compare.
+  - `tolerance`: point-to-plane distance tolerance (default `1e-6`).
 - **Returns:** `true` if coplanar, `false` if not, `nil` if normals or points cannot be evaluated.
-- **Note:** Returns `nil` (not `false`) if the faces are not parallel — callers can distinguish "non-parallel" from "parallel but offset".
+- **Note:** Returns `nil` (not `false`) if the faces are not parallel, callers can distinguish "non-parallel" from "parallel but offset".
 - **Example:**
   ```swift
   let faces = Shape.box(width: 10, height: 10, depth: 5)!.faces()
@@ -198,7 +198,7 @@ Two conditions must both hold: (1) normals are parallel within `1e-4` radians, (
 
 ---
 
-## Angles — ConstructionAxis
+## Angles. ConstructionAxis
 
 Extension on `ConstructionAxis` (defined in `MeasurementHelpers.swift`).
 
@@ -215,8 +215,8 @@ public func angle(to other: ConstructionAxis, in graph: BRepGraph) -> Double?
 Resolves each axis via `BRepGraph.resolve(_:)` to obtain its `direction` vector, then computes the unsigned angle between the directions.
 
 - **Parameters:**
-  - `other` — the axis to compare.
-  - `graph` — the `BRepGraph` used to resolve both axis handles.
+  - `other`: the axis to compare.
+  - `graph`: the `BRepGraph` used to resolve both axis handles.
 - **Returns:** Angle in radians in `[0, π]`, or `nil` if either axis fails to resolve.
 - **OCCT:** Pure-Swift over `BRepGraph.resolve` + `unsignedAngle(between:and:)`.
 - **Example:**
@@ -231,7 +231,7 @@ Resolves each axis via `BRepGraph.resolve(_:)` to obtain its `direction` vector,
 
 ---
 
-## Angles — ConstructionPlane
+## Angles. ConstructionPlane
 
 Extension on `ConstructionPlane` (defined in `MeasurementHelpers.swift`).
 
@@ -248,8 +248,8 @@ public func angle(to other: ConstructionPlane, in graph: BRepGraph) -> Double?
 Resolves each plane via `BRepGraph.resolve(_:)` to obtain its `zAxis` vector, then computes the unsigned angle between them.
 
 - **Parameters:**
-  - `other` — the plane to compare.
-  - `graph` — the `BRepGraph` used to resolve both plane handles.
+  - `other`: the plane to compare.
+  - `graph`: the `BRepGraph` used to resolve both plane handles.
 - **Returns:** Angle in radians in `[0, π]`, or `nil` if either plane fails to resolve.
 - **OCCT:** Pure-Swift over `BRepGraph.resolve` + `unsignedAngle(between:and:)`.
 - **Example:**
@@ -264,7 +264,7 @@ Resolves each plane via `BRepGraph.resolve(_:)` to obtain its `zAxis` vector, th
 
 ---
 
-## Utility — unsignedAngle
+## Utility, unsignedAngle
 
 Free function (defined in `MeasurementHelpers.swift`).
 
@@ -283,8 +283,8 @@ Uses the clamped dot-product formula `acos(dot(a,b) / (|a| * |b|))`. Returns `ni
 `0`) to everything (PR #897 review, finding 5).
 
 - **Parameters:**
-  - `a` — first vector (need not be unit length).
-  - `b` — second vector (need not be unit length).
+  - `a`: first vector (need not be unit length).
+  - `b`: second vector (need not be unit length).
 - **Returns:** Angle in radians in `[0, π]`, or `nil` if either vector has length ≤ `1e-12`.
 - **Example:**
   ```swift
@@ -297,7 +297,7 @@ Uses the clamped dot-product formula `acos(dot(a,b) / (|a| * |b|))`. Returns `ni
 
 ---
 
-## Circle Properties — Edge
+## Circle Properties. Edge
 
 Extension on `Edge`, plus the nested `CircleProperties` struct (defined in `MeasurementHelpers.swift`).
 
@@ -318,11 +318,11 @@ public struct CircleProperties: Sendable, Hashable {
 }
 ```
 
-- `center` — 3D centre of the circle.
-- `radius` — circle radius in model units.
-- `axis` — unit normal to the circle's plane (right-hand rule relative to the curve's direction).
-- `isFullCircle` — `true` when `endAngle - startAngle ≈ 2π`.
-- `startAngle` / `endAngle` — parameter range in radians (equal to `parameterBounds` for a `Geom_Circle`).
+- `center`: 3D centre of the circle.
+- `radius`: circle radius in model units.
+- `axis`: unit normal to the circle's plane (right-hand rule relative to the curve's direction).
+- `isFullCircle`: `true` when `endAngle - startAngle ≈ 2π`.
+- `startAngle` / `endAngle`, parameter range in radians (equal to `parameterBounds` for a `Geom_Circle`).
 
 ---
 
@@ -356,7 +356,7 @@ Checks `curveType == .circle`, then samples three points along the parameter ran
 
 ---
 
-## Revolution Properties — Face
+## Revolution Properties. Face
 
 Extension on `Face`, plus the nested `RevolutionProperties` struct (defined in `MeasurementHelpers.swift`).
 
@@ -373,8 +373,8 @@ public struct RevolutionProperties: Sendable, Hashable {
 }
 ```
 
-- `axis` — the primary revolution axis (a `ShapeAxis` carrying `origin` and `direction`).
-- `radius` — distance to a representative surface point, in model units. For cylindrical faces this is the exact cylinder radius. For spherical faces it is the exact, constant sphere radius — every surface point is equidistant from the center regardless of the (arbitrary) pole `primaryAxis` reports for a sphere, so this doesn't depend on `axis` the way the other kinds below do (PR #897 review, finding 1). For cones, tori, and surfaces of revolution it is a representative radial distance from the axis at the UV midpoint, genuinely ambiguous since the true radius varies by position; use `Surface` dedicated properties for major/minor radii.
+- `axis`: the primary revolution axis (a `ShapeAxis` carrying `origin` and `direction`).
+- `radius`: distance to a representative surface point, in model units. For cylindrical faces this is the exact cylinder radius. For spherical faces it is the exact, constant sphere radius, every surface point is equidistant from the center regardless of the (arbitrary) pole `primaryAxis` reports for a sphere, so this doesn't depend on `axis` the way the other kinds below do (PR #897 review, finding 1). For cones, tori, and surfaces of revolution it is a representative radial distance from the axis at the UV midpoint, genuinely ambiguous since the true radius varies by position; use `Surface` dedicated properties for major/minor radii.
 
 ---
 
@@ -386,9 +386,9 @@ Axis and representative radius if this face's underlying surface is cylindrical,
 public var revolutionProperties: RevolutionProperties? { get }
 ```
 
-Returns `nil` for planar faces or free-form (B-spline) surfaces. For spherical faces the radius is the exact distance from the UV-midpoint sample to the axis origin (the sphere's center) — not an axis-relative radial component, since a sphere's `primaryAxis` is only an arbitrary construction-frame pole, not a real axis (PR #897 review, finding 1). For every other supported type the radius is computed as the distance from the axis line to the UV-midpoint of the face.
+Returns `nil` for planar faces or free-form (B-spline) surfaces. For spherical faces the radius is the exact distance from the UV-midpoint sample to the axis origin (the sphere's center), not an axis-relative radial component, since a sphere's `primaryAxis` is only an arbitrary construction-frame pole, not a real axis (PR #897 review, finding 1). For every other supported type the radius is computed as the distance from the axis line to the UV-midpoint of the face.
 
-- **Returns:** `RevolutionProperties`, or `nil` if `primaryAxis` is unavailable or its `kind` is not one of `.cylinder`, `.cone`, `.sphere`, `.torus`, `.revolution` (`ShapeAxis.Kind` — not `Face.surfaceType`, switched from the latter to the former in the #914 review, third pass, so this predicate and `resolveFaceAxisDirection`'s identical one in `ConstructionEntity.swift` can't drift apart across two separately-maintained enums).
+- **Returns:** `RevolutionProperties`, or `nil` if `primaryAxis` is unavailable or its `kind` is not one of `.cylinder`, `.cone`, `.sphere`, `.torus`, `.revolution` (`ShapeAxis.Kind`, not `Face.surfaceType`, switched from the latter to the former in the #914 review, third pass, so this predicate and `resolveFaceAxisDirection`'s identical one in `ConstructionEntity.swift` can't drift apart across two separately-maintained enums).
 - **OCCT:** Pure-Swift over `Face.primaryAxis` + `Face.uvBounds` + `Face.point(atU:v:)`. `primaryAxis` delegates to `BRepAdaptor_Surface` axis extraction.
 - **Note:** For surfaces where "radius" is ambiguous (e.g. a torus has major and minor radius), this returns only a single representative value. Use `Surface` for full parametric detail.
 - **Example:**
@@ -450,7 +450,7 @@ public let edgeLengths: [Double]
 
 `edgeLengths[i]` is the arc length of `shape.edge(at: i)`. A missing edge (nil from `Shape.edge(at:)`) contributes `0.0`.
 
-- **OCCT:** `Edge.length` — delegates to `BRepGProp::LinearProperties` + `GProp_GProps::Mass`.
+- **OCCT:** `Edge.length`, delegates to `BRepGProp::LinearProperties` + `GProp_GProps::Mass`.
 - **Example:**
   ```swift
   let m = Shape.box(width: 10, height: 10, depth: 5)!.measure()
@@ -520,10 +520,10 @@ public init(
 Useful when building measurement snapshots programmatically (e.g. from cached data). `faceCentroids` and `facePerimeters` default to empty arrays for back-compat with callers that only need areas and lengths.
 
 - **Parameters:**
-  - `faceAreas` — per-face areas parallel to `shape.faces()`.
-  - `edgeLengths` — per-edge lengths parallel to `0..<shape.edgeCount`.
-  - `faceCentroids` — per-face centroids; defaults to `[]`.
-  - `facePerimeters` — per-face outer-wire lengths; defaults to `[]`.
+  - `faceAreas`: per-face areas parallel to `shape.faces()`.
+  - `edgeLengths`: per-edge lengths parallel to `0..<shape.edgeCount`.
+  - `faceCentroids`: per-face centroids; defaults to `[]`.
+  - `facePerimeters`: per-face outer-wire lengths; defaults to `[]`.
 - **Example:**
   ```swift
   let m = ShapeMeasurements(faceAreas: [50, 50, 100, 100, 50, 50],
@@ -594,7 +594,7 @@ Convenience over `facePerimeters.reduce(0) { acc, p in acc + (p ?? 0) }`.
 
 ---
 
-## Shape Extension — measure
+## Shape Extension, measure
 
 ---
 
@@ -618,7 +618,7 @@ non-adaptive mode (documented on the OCCT call itself), and the gap can become r
 sphere measured `1216.31...` at `linearTolerance: 0.5` against the other three's fixed `1256.64...`,
 a ~3.2% difference, not floating-point noise.
 
-- **Parameters:** `linearTolerance` — numerical integration tolerance forwarded to `Face.area(tolerance:)` (default `1e-6`). Tighten only if you observe precision issues — this does not converge `totalFaceArea` toward `surfaceArea` past a point, see above.
+- **Parameters:** `linearTolerance`, numerical integration tolerance forwarded to `Face.area(tolerance:)` (default `1e-6`). Tighten only if you observe precision issues, this does not converge `totalFaceArea` toward `surfaceArea` past a point, see above.
 - **Returns:** A `ShapeMeasurements` snapshot with all four arrays populated and indexed parallel to the shape's face/edge enumeration.
 - **OCCT:** `BRepGProp::SurfaceProperties` (face areas), `BRepGProp_Sinert` (centroids), `BRepGProp::LinearProperties` (edge lengths + outer-wire lengths), `BRepTools::OuterWire` (outer wire lookup).
 - **Example:**

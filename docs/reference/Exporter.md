@@ -8,9 +8,9 @@ parent: API Reference
 `Exporter` is a caseless `enum` namespace that collects all write-to-file operations for
 OCCTSwift shapes. It covers two families of format:
 
-- **Tessellated** (STL, OBJ, PLY, GLTF/GLB) — the shape is meshed internally; a `deflection`
+- **Tessellated** (STL, OBJ, PLY, GLTF/GLB), the shape is meshed internally; a `deflection`
   parameter controls triangle density.
-- **Exact B-Rep** (STEP, IGES, BREP) — the full analytic geometry is written without
+- **Exact B-Rep** (STEP, IGES, BREP), the full analytic geometry is written without
   approximation; these are round-trippable via the corresponding `Shape.load*` importers.
 
 All write methods throw `Exporter.ExportError` on failure. Convenience instance methods are
@@ -74,7 +74,7 @@ public static func writeSTL(
 ) throws
 ```
 
-`deflection` is the maximum chord deviation in model units — smaller values produce finer meshes
+`deflection` is the maximum chord deviation in model units, smaller values produce finer meshes
 and larger files. Binary mode (`ascii: false`) is the default and produces smaller files.
 
 | Use case | deflection |
@@ -84,8 +84,8 @@ and larger files. Binary mode (`ascii: false`) is the default and produces small
 | Fine FDM (0.1 mm) | 0.05 |
 | SLA / display-quality | 0.02 |
 
-- **Parameters:** `shape` — shape to tessellate; `url` — output URL (conventionally `.stl`);
-  `deflection` — max chord deviation (default 0.1); `ascii` — `true` for ASCII STL (default `false`).
+- **Parameters:** `shape`, shape to tessellate; `url`, output URL (conventionally `.stl`);
+  `deflection`: max chord deviation (default 0.1); `ascii`, `true` for ASCII STL (default `false`).
 - **Returns:** `Void`.
 - **Throws:** `ExportError.invalidShape` if `shape.isValid` is false;
   `ExportError.invalidPath` if `url.path` is empty;
@@ -114,7 +114,7 @@ public static func stlData(
 Internally writes to a UUID-named temporary file, reads it back, and removes it. Useful for
 sharing via AirDrop, email attachments, or uploading over the network.
 
-- **Parameters:** `shape` — shape to export; `deflection` — tessellation quality (default 0.1).
+- **Parameters:** `shape`, shape to export; `deflection`, tessellation quality (default 0.1).
 - **Returns:** Binary STL `Data`.
 - **Throws:** Same as `writeSTL`; also rethrows `Data(contentsOf:)` errors if the temp file cannot be read.
 - **OCCT:** `StlAPI_Writer` (via `writeSTL`).
@@ -143,8 +143,8 @@ public static func writeSTEP(
 STEP is the standard CAD interchange format and is importable by Fusion 360, SolidWorks, FreeCAD,
 and most CAM tools. When `name` is supplied it is embedded as the product name in the STEP file.
 
-- **Parameters:** `shape` — shape to export; `url` — output URL (conventionally `.step` or `.stp`);
-  `name` — optional product name.
+- **Parameters:** `shape`, shape to export; `url`, output URL (conventionally `.step` or `.stp`);
+  `name`: optional product name.
 - **Returns:** `Void`.
 - **Throws:** `ExportError.invalidShape`; `ExportError.invalidPath`;
   `ExportError.exportFailed` if `STEPControl_Writer` transfer or write fails.
@@ -174,7 +174,7 @@ public static func writeSTEP(
 Pass `nil` for `progress` to disable cancellation; otherwise the export polls
 `progress.shouldCancel()` cooperatively via the OCCT message range mechanism.
 
-- **Parameters:** `shape` — shape to export; `url` — output URL; `progress` — optional
+- **Parameters:** `shape`, shape to export; `url`, output URL; `progress`, optional
   cancellation/progress token.
 - **Returns:** `Void`.
 - **Throws:** `ExportError.cancelled` if `progress.shouldCancel()` fires;
@@ -200,7 +200,7 @@ public static func stepData(
 ) throws -> Data
 ```
 
-- **Parameters:** `shape` — shape to export; `name` — optional product name.
+- **Parameters:** `shape`, shape to export; `name`, optional product name.
 - **Returns:** STEP file as `Data`.
 - **Throws:** Same as `writeSTEP(shape:to:name:)`.
 - **OCCT:** `STEPControl_Writer` (via `writeSTEP`).
@@ -222,7 +222,7 @@ public static func writeSTEP(shape: Shape, to url: URL, modelType: StepModelType
 Use `modelType` to control how geometry is encoded in the STEP file. See
 [StepModelType](#stepmodeltype) for available values.
 
-- **Parameters:** `shape` — shape; `url` — output URL; `modelType` — STEP representation type.
+- **Parameters:** `shape`, shape; `url`, output URL; `modelType`, STEP representation type.
 - **Returns:** `Void`.
 - **Throws:** `ExportError.invalidPath`; `ExportError.exportFailed`.
 - **OCCT:** `STEPControl_Writer::Transfer` with the given `STEPControl_StepModelType`.
@@ -241,8 +241,8 @@ Writes a shape to STEP with an explicit model type and geometric tolerance.
 public static func writeSTEP(shape: Shape, to url: URL, modelType: StepModelType, tolerance: Double) throws
 ```
 
-- **Parameters:** `shape` — shape; `url` — output URL; `modelType` — representation type;
-  `tolerance` — geometric tolerance written into the STEP file header.
+- **Parameters:** `shape`, shape; `url`, output URL; `modelType`, representation type;
+  `tolerance`: geometric tolerance written into the STEP file header.
 - **Returns:** `Void`.
 - **Throws:** `ExportError.invalidPath`; `ExportError.exportFailed`.
 - **OCCT:** `STEPControl_Writer::Transfer` with explicit tolerance.
@@ -265,7 +265,7 @@ public static func writeSTEPCleanDuplicates(shape: Shape, to url: URL, modelType
 Merges identical surfaces, curves, and vertices during the transfer. Most effective for
 assemblies or swept shapes where many faces share the same underlying geometry.
 
-- **Parameters:** `shape` — shape; `url` — output URL; `modelType` — representation type (default `.asIs`).
+- **Parameters:** `shape`, shape; `url`, output URL; `modelType`, representation type (default `.asIs`).
 - **Returns:** `Void`.
 - **Throws:** `ExportError.invalidPath`; `ExportError.exportFailed`.
 - **OCCT:** `STEPControl_Writer` with a pre-transfer deduplication pass.
@@ -292,7 +292,7 @@ preserves the document's assembly tree: each unique part label is written once a
 also written. Build the assembly tree with `Document.addShape` and `Document.addComponent`
 before calling this. Output uses AP214 schema.
 
-- **Parameters:** `document` — XCAF document holding the assembly tree; `url` — output URL.
+- **Parameters:** `document`, XCAF document holding the assembly tree; `url`, output URL.
 - **Returns:** `Void`.
 - **Throws:** `ExportError.invalidPath` if `url.path` is empty;
   `ExportError.exportFailed` if the `STEPCAFControl_Writer` transfer or write fails.
@@ -327,7 +327,7 @@ IGES (Initial Graphics Exchange Specification) is a legacy format still commonly
 CNC machines and older CAD tools. Uses Faces mode with MM units by default. Validates the shape
 with `BRepCheck_Analyzer` before writing; returns `exportFailed` for invalid geometry.
 
-- **Parameters:** `shape` — shape to export; `url` — output URL (conventionally `.igs` or `.iges`).
+- **Parameters:** `shape`, shape to export; `url`, output URL (conventionally `.igs` or `.iges`).
 - **Returns:** `Void`.
 - **Throws:** `ExportError.invalidShape`; `ExportError.invalidPath`;
   `ExportError.exportFailed` if `IGESControl_Writer` fails.
@@ -353,7 +353,7 @@ public static func writeIGES(
 ) throws
 ```
 
-- **Parameters:** `shape` — shape; `url` — output URL; `progress` — optional cancellation token.
+- **Parameters:** `shape`, shape; `url`, output URL; `progress`, optional cancellation token.
 - **Returns:** `Void`.
 - **Throws:** `ExportError.cancelled`; `ExportError.invalidShape`; `ExportError.invalidPath`;
   `ExportError.exportFailed`.
@@ -373,11 +373,11 @@ Writes a shape to IGES with an explicit unit string.
 public static func writeIGES(shape: Shape, to url: URL, unit: String) throws
 ```
 
-- **Parameters:** `shape` — shape; `url` — output URL; `unit` — unit identifier, e.g. `"MM"`,
+- **Parameters:** `shape`, shape; `url`, output URL; `unit`, unit identifier, e.g. `"MM"`,
   `"IN"`, `"M"`, `"FT"`.
 - **Returns:** `Void`.
 - **Throws:** `ExportError.invalidPath`; `ExportError.exportFailed`.
-- **OCCT:** `IGESControl_Writer(unit, 0)` — Faces mode with the specified unit.
+- **OCCT:** `IGESControl_Writer(unit, 0)`, Faces mode with the specified unit.
 - **Example:**
   ```swift
   try Exporter.writeIGES(shape: part, to: igesURL, unit: "IN")
@@ -396,10 +396,10 @@ public static func writeIGESBRep(shape: Shape, to url: URL) throws
 Passes `mode = 1` to `IGESControl_Writer`, causing it to write B-Rep entities rather than
 tessellated face entities.
 
-- **Parameters:** `shape` — shape; `url` — output URL.
+- **Parameters:** `shape`, shape; `url`, output URL.
 - **Returns:** `Void`.
 - **Throws:** `ExportError.invalidPath`; `ExportError.exportFailed`.
-- **OCCT:** `IGESControl_Writer("MM", 1)` — BRep mode.
+- **OCCT:** `IGESControl_Writer("MM", 1)`, BRep mode.
 - **Example:**
   ```swift
   try Exporter.writeIGESBRep(shape: solid, to: igesURL)
@@ -419,7 +419,7 @@ Iterates `shapes`, validates each with `BRepCheck_Analyzer`, and adds valid shap
 `IGESControl_Writer`. Shapes that fail validation are silently skipped. Throws
 `ExportError.exportFailed` if no shapes were successfully added.
 
-- **Parameters:** `shapes` — array of shapes; `url` — output URL.
+- **Parameters:** `shapes`, array of shapes; `url`, output URL.
 - **Returns:** `Void`.
 - **Throws:** `ExportError.invalidPath`; `ExportError.exportFailed`.
 - **OCCT:** `IGESControl_Writer::AddShape` called per valid shape.
@@ -438,7 +438,7 @@ Writes a shape to IGES and returns the file contents as `Data`.
 public static func igesData(shape: Shape) throws -> Data
 ```
 
-- **Parameters:** `shape` — shape to export.
+- **Parameters:** `shape`, shape to export.
 - **Returns:** IGES file as `Data`.
 - **Throws:** Same as `writeIGES(shape:to:)`.
 - **OCCT:** `IGESControl_Writer` (via `writeIGES`).
@@ -479,10 +479,10 @@ BREP is OCCT's own serialisation format. It preserves full B-Rep precision (curv
 topology) with no conversion loss, and is the fastest format to write and read back. Optionally
 embeds existing triangulation data so that re-meshing on import is not required.
 
-- **Parameters:** `shape` — shape to export; `url` — output URL (conventionally `.brep`);
-  `withTriangles` — embed triangulation (default `true`);
-  `withNormals` — embed per-vertex normals with the triangulation (default `false`);
-  `allowInvalid` — skip the `isValid` pre-check and serialise as-is (default `false`).
+- **Parameters:** `shape`, shape to export; `url`, output URL (conventionally `.brep`);
+  `withTriangles`: embed triangulation (default `true`);
+  `withNormals`: embed per-vertex normals with the triangulation (default `false`);
+  `allowInvalid`: skip the `isValid` pre-check and serialise as-is (default `false`).
 - **Returns:** `Void`.
 - **Throws:** `ExportError.invalidShape`; `ExportError.invalidPath`;
   `ExportError.exportFailed` if `BRepTools::Write` fails.
@@ -510,7 +510,7 @@ public static func brepData(
 ) throws -> Data
 ```
 
-- **Parameters:** `shape` — shape; `withTriangles` — embed triangulation; `withNormals` — embed normals.
+- **Parameters:** `shape`, shape; `withTriangles`, embed triangulation; `withNormals`, embed normals.
 - **Returns:** BREP file as `Data`.
 - **Throws:** Same as `writeBREP`.
 - **OCCT:** `BRepTools::Write` (via `writeBREP`).
@@ -538,7 +538,7 @@ public static func writeOBJ(
 OBJ is widely supported for 3D visualisation and modelling. The bridge meshes the shape into
 an XCAF document and writes it via `RWObj_CafWriter`.
 
-- **Parameters:** `shape` — shape; `url` — output URL (conventionally `.obj`); `deflection` — tessellation quality (default 0.1).
+- **Parameters:** `shape`, shape; `url`, output URL (conventionally `.obj`); `deflection`, tessellation quality (default 0.1).
 - **Returns:** `Void`.
 - **Throws:** `ExportError.invalidShape`; `ExportError.invalidPath`;
   `ExportError.exportFailed` if `RWObj_CafWriter` fails.
@@ -566,7 +566,7 @@ public static func writePLY(
 
 PLY is common in 3D scanning and point-cloud pipelines.
 
-- **Parameters:** `shape` — shape; `url` — output URL (conventionally `.ply`); `deflection` — tessellation quality (default 0.1).
+- **Parameters:** `shape`, shape; `url`, output URL (conventionally `.ply`); `deflection`, tessellation quality (default 0.1).
 - **Returns:** `Void`.
 - **Throws:** `ExportError.invalidShape`; `ExportError.invalidPath`;
   `ExportError.exportFailed` if `RWPly_CafWriter` fails.
@@ -587,10 +587,10 @@ public static func writePLY(shape: Shape, to url: URL, deflection: Double,
                               normals: Bool = true, colors: Bool = false, texCoords: Bool = false) throws
 ```
 
-- **Parameters:** `shape` — shape; `url` — output URL; `deflection` — tessellation quality;
-  `normals` — include per-vertex normals (default `true`);
-  `colors` — include per-vertex colour (default `false`);
-  `texCoords` — include UV texture coordinates (default `false`).
+- **Parameters:** `shape`, shape; `url`, output URL; `deflection`, tessellation quality;
+  `normals`: include per-vertex normals (default `true`);
+  `colors`: include per-vertex colour (default `false`);
+  `texCoords`: include UV texture coordinates (default `false`).
 - **Returns:** `Void`.
 - **Throws:** `ExportError.invalidPath`; `ExportError.exportFailed`.
 - **OCCT:** `RWPly_CafWriter` with attribute flags.
@@ -619,21 +619,21 @@ produces a text `.gltf` file. The shape is meshed inside the bridge with the giv
 To write GLTF with full materials/names from an XCAF document, use `Document.writeGLTF(to:binary:)`
 instead.
 
-- **Parameters:** `shape` — shape to tessellate and export; `url` — output URL (`.glb` or `.gltf`);
-  `binary` — `true` for GLB, `false` for text GLTF (default `true`);
-  `deflection` — tessellation quality (default 0.1).
+- **Parameters:** `shape`, shape to tessellate and export; `url`, output URL (`.glb` or `.gltf`);
+  `binary`: `true` for GLB, `false` for text GLTF (default `true`);
+  `deflection`: tessellation quality (default 0.1).
 - **Returns:** `Void`.
 - **Throws:** `ExportError.exportFailed` if `RWGltf_CafWriter` fails.
 - **OCCT:** `RWGltf_CafWriter(path, isBinary)`.
 - **Example:**
   ```swift
-  // GLB (binary) — single self-contained file
+  // GLB (binary), single self-contained file
   try Exporter.writeGLTF(shape: box, to: URL(fileURLWithPath: "/tmp/box.glb"))
 
   // text GLTF
   try Exporter.writeGLTF(shape: box, to: URL(fileURLWithPath: "/tmp/box.gltf"), binary: false)
   ```
-- **Note:** There is no separate `writeGLB` method — GLB is `writeGLTF(shape:to:binary:)` with
+- **Note:** There is no separate `writeGLB` method. GLB is `writeGLTF(shape:to:binary:)` with
   `binary: true`.
 
 ---
@@ -649,9 +649,9 @@ public static func optimizeSTEP(input: URL, output: URL) throws
 ```
 
 Can significantly reduce file size for STEP files with repeated geometry (assemblies, patterned
-features). The input file is read fresh — no in-memory shape is required.
+features). The input file is read fresh, no in-memory shape is required.
 
-- **Parameters:** `input` — URL of the source STEP file; `output` — URL for the deduplicated output.
+- **Parameters:** `input`, URL of the source STEP file; `output`, URL for the deduplicated output.
 - **Returns:** `Void`.
 - **Throws:** `ExportError.invalidPath` if either path is empty;
   `ExportError.exportFailed` if the read-deduplicate-write cycle fails.
@@ -686,7 +686,7 @@ Maps to `STEPControl_StepModelType` in OCCT:
 
 | Case | OCCT value | When to use |
 |---|---|---|
-| `.asIs` | `STEPControl_AsIs` | Automatic — OCCT picks the most appropriate representation. Default for most exports. |
+| `.asIs` | `STEPControl_AsIs` | Automatic. OCCT picks the most appropriate representation. Default for most exports. |
 | `.manifoldSolidBrep` | `STEPControl_ManifoldSolidBrep` | Solid bodies only; most interoperable with CAD tools. |
 | `.brepWithVoids` | `STEPControl_BrepWithVoids` | Solids with interior voids. |
 | `.facetedBrep` | `STEPControl_FacetedBrep` | Polyhedral shapes only. |

@@ -188,10 +188,10 @@ extension Shape {
     ///
     /// ```swift
     /// let box = Shape.box(width: 10, height: 10, depth: 10)!
-    /// print(box.edgeCount)          // 12 — the distinct edges, and the addressable ones
-    /// print(box.contents.edges)     // 24 — one per (face, edge) visit
+    /// print(box.edgeCount)          // 12, the distinct edges, and the addressable ones
+    /// print(box.contents.edges)     // 24, one per (face, edge) visit
     /// print(box.faceCount)          // 6
-    /// print(box.contents.faces)     // 6 — a box shares no face, so these agree
+    /// print(box.contents.faces)     // 6, a box shares no face, so these agree
     /// ```
     ///
     /// **None of these numbers is an index bound.** `0..<contents.faces` overruns
@@ -199,11 +199,11 @@ extension Shape {
     ///
     /// There is a third count in play, and it is a third rule again:
     /// ``contentsExtended()``'s `nbSharedFaces` and friends deduplicate with the location
-    /// *discarded*, so unlike ``faceCount`` — which follows `TopoDS_Shape::IsSame` and keeps
-    /// placements apart — they also collapse two instances of one body. Measured on the pinned
+    /// *discarded*, so unlike ``faceCount``, which follows `TopoDS_Shape::IsSame` and keeps
+    /// placements apart, they also collapse two instances of one body. Measured on the pinned
     /// kernel (`Scripts/repro/541-face-index-contract/`), on a compound of a box with a
     /// ``moved(dx:dy:dz:)`` copy of itself: `faceCount` 12, `contents.faces` 12,
-    /// `nbSharedFaces` 6. (``translated(by:)`` does not make an instance — it rebuilds through
+    /// `nbSharedFaces` 6. (``translated(by:)`` does not make an instance, it rebuilds through
     /// `BRepBuilderAPI_Transform`, so the copy shares nothing and all three read 12.)
     ///
     /// - Returns: Counts of solids, shells, faces, wires, edges, vertices, and free
@@ -287,10 +287,10 @@ extension Shape {
     ///
     /// Two strategies, tried in order:
     /// 1. If the wire genuinely lies on the surface (its edges have, or admit, pcurves), build the
-    ///    face directly (`BRepBuilderAPI_MakeFace` + `ShapeFix_Face` to project pcurves) — exact.
+    ///    face directly (`BRepBuilderAPI_MakeFace` + `ShapeFix_Face` to project pcurves), exact.
     /// 2. Otherwise (e.g. a sampled boundary polyline whose straight chords don't lie on the
     ///    surface), project the wire's ordered points onto the surface's UV and trim by that
-    ///    polygon — robust, the same path as ``Surface/toFace(uvBoundary:)``.
+    ///    polygon, robust, the same path as ``Surface/toFace(uvBoundary:)``.
     ///
     /// If you already have the boundary in UV space, call ``Surface/toFace(uvBoundary:)`` directly.
     ///
@@ -322,15 +322,15 @@ extension Shape {
     }
 
     /// Create a face from a surface trimmed by an **outer** wire with **interior hole** wires
-    /// (windows / cutouts) — a single trimmed face with real openings.
+    /// (windows / cutouts), a single trimmed face with real openings.
     ///
     /// Wraps `BRepBuilderAPI_MakeFace(surface, outer)` then `.Add(hole)` per inner wire, then
     /// `ShapeFix_Face` to project pcurves onto the surface and orient the holes. Unlike the
-    /// single-loop ``face(from:boundary:)``, this represents a panel whose surface has cutouts —
+    /// single-loop ``face(from:boundary:)``, this represents a panel whose surface has cutouts,
     /// e.g. a fitted B-spline carbody side panel with window/door openings, so the surface doesn't
     /// span (balloon over) the windows.
     ///
-    /// All wires must lie on (or near) the surface — typically a fitted analytic / B-spline surface
+    /// All wires must lie on (or near) the surface, typically a fitted analytic / B-spline surface
     /// and the region's real boundary loops. The inner wires are interior loops fully inside `outer`.
     ///
     /// ```swift
@@ -372,7 +372,7 @@ extension Shape {
     ///
     /// Useful for cleaning up imported geometry with tolerance issues.
     ///
-    /// Equivalent to `fixSmallEdges(tolerance:dropSmall: true)` — both build a
+    /// Equivalent to `fixSmallEdges(tolerance:dropSmall: true)`, both build a
     /// `ShapeFix_Wireframe` with the same precision/drop-mode/perform sequence. The two used to
     /// default to different tolerances (`1e-6` here vs `1e-7` there) for the identical underlying
     /// call; aligned to `1e-7` (#839), matching `fixSmallEdges` and its sibling `fixWireGaps`, so
@@ -380,10 +380,10 @@ extension Shape {
     /// only on which of the two near-identical entry points was called.
     ///
     /// - Warning: This is a **silent runtime behavior change** for any caller relying on the
-    ///   implicit default, not just an internal-consistency fix — a 10x tightening, the opposite
+    ///   implicit default, not just an internal-consistency fix, a 10x tightening, the opposite
     ///   direction from ``Shape/classifyPoint2d(u:v:tolerance:)``'s #840 change on this same PR.
     ///   An edge sized in the `1e-7..1e-6` range that used to be silently dropped under the old
-    ///   `1e-6` default now survives under the new `1e-7` default, with no compile-time signal —
+    ///   `1e-6` default now survives under the new `1e-7` default, with no compile-time signal,
     ///   e.g. imported CAD geometry containing such a sliver edge that a subsequent boolean or
     ///   meshing call depended on being pre-removed can now fail, or produce a different result,
     ///   with no error at this call site itself. Pass `tolerance:` explicitly to pin a specific
@@ -418,7 +418,7 @@ extension Shape {
     /// Create a deep, independent copy of this shape.
     ///
     /// Backed by `BRepBuilderAPI_Copy`. When `copyGeometry`/`copyMesh` are `true`, this clones the
-    /// actual `Geom_Surface`/`Geom_Curve`/`Poly_Triangulation` objects, not just topology — unlike
+    /// actual `Geom_Surface`/`Geom_Curve`/`Poly_Triangulation` objects, not just topology, unlike
     /// the no-argument instance ``deepCopy()``, which never clones geometry regardless of these
     /// flags. See `docs/thread-safety.md` for why that distinction matters for concurrent use.
     ///
@@ -470,11 +470,11 @@ extension Shape {
 
     /// The **outer shell** of this solid (`BRepClass3d::OuterShell`).
     ///
-    /// For a solid with internal voids (multiple shells — e.g. a body with a cavity), this
+    /// For a solid with internal voids (multiple shells, e.g. a body with a cavity), this
     /// returns the shell that bounds the outer body, distinguishing it from the inner void
     /// shells. Useful for decomposing a part into outer-body + cavities.
     ///
-    /// Returns `nil` unless this shape denotes exactly **one** solid — i.e. it is a solid, or a
+    /// Returns `nil` unless this shape denotes exactly **one** solid, i.e. it is a solid, or a
     /// compound/compsolid wrapping a single solid. A container holding two or more solids has no
     /// single outer shell to name, so it gets `nil` rather than one arbitrary member's shell;
     /// use ``outerShells`` for those. (#211, #439)
@@ -482,8 +482,8 @@ extension Shape {
     /// ```swift
     /// let hollow = Shape.box(width: 20, height: 20, depth: 20)!
     ///     .subtracting(Shape.box(origin: SIMD3(6, 6, 6), width: 8, height: 8, depth: 8)!)!
-    /// print(hollow.outerShell?.faceCount ?? -1)     // 6 — the 20-cube's boundary
-    /// print(hollow.innerShells.count)               // 1 — the cavity
+    /// print(hollow.outerShell?.faceCount ?? -1)     // 6, the 20-cube's boundary
+    /// print(hollow.innerShells.count)               // 1, the cavity
     ///
     /// // Two bodies in one compound: nil, not the first body's shell.
     /// let a = Shape.box(origin: .zero, width: 10, height: 10, depth: 10)!
@@ -501,7 +501,7 @@ extension Shape {
     /// `solids.compactMap(\.outerShell)`, in a single traversal.
     ///
     /// Note that these shells drop internal void walls by design (that is what an *outer* shell
-    /// is). To measure against the complete boundary of a multi-body part — cavities included —
+    /// is). To measure against the complete boundary of a multi-body part, cavities included,
     /// use `Shape.compound(subShapes(ofType: .face))` instead. (#439)
     ///
     /// ```swift
@@ -519,10 +519,10 @@ extension Shape {
         return handles.prefix(Int(actual)).compactMap { h in h.map { Shape(handle: $0) } }
     }
 
-    /// The **inner** (void / cavity) shells of this solid — every shell except ``outerShell``.
+    /// The **inner** (void / cavity) shells of this solid, every shell except ``outerShell``.
     ///
-    /// Empty for a solid with no internal voids, and — following the same single-solid rule as
-    /// ``outerShell`` — for a non-solid or a container holding two or more solids. Pairs with
+    /// Empty for a solid with no internal voids, and, following the same single-solid rule as
+    /// ``outerShell``, for a non-solid or a container holding two or more solids. Pairs with
     /// ``outerShell`` to decompose a part into outer body + cavities; for a multi-body part,
     /// take each solid separately (`solids.flatMap(\.innerShells)`). (#212, #439)
     ///
@@ -668,7 +668,7 @@ extension Shape {
     /// Uses ShapeUpgrade_ShapeDivideArea to split faces larger than the specified area.
     /// Useful for mesh quality control and FEA preprocessing.
     ///
-    /// - Parameter maxArea: Maximum face area — faces larger than this are split
+    /// - Parameter maxArea: Maximum face area, faces larger than this are split
     /// - Returns: Shape with subdivided faces, or nil on failure
     public func dividedByArea(maxArea: Double) -> Shape? {
         guard let ref = OCCTShapeDivideByArea(handle, maxArea) else { return nil }
@@ -754,7 +754,7 @@ extension Shape {
     /// Analyzes the angles between adjacent faces at each edge to determine
     /// whether each edge is convex, concave, or tangent.
     ///
-    /// One entry per distinct edge, in ``edges()`` order — so `result[n].0.index == n`, and the
+    /// One entry per distinct edge, in ``edges()`` order, so `result[n].0.index == n`, and the
     /// classification at position `n` describes `edges()[n]`:
     ///
     /// ```swift
@@ -794,7 +794,7 @@ extension Shape {
 
     /// Count edges of a specific concavity type.
     ///
-    /// Counts distinct edges, so the three type counts sum to at most ``edgeCount`` — before #613
+    /// Counts distinct edges, so the three type counts sum to at most ``edgeCount``, before #613
     /// this counted topology *occurrences* and a 12-edge box reported 24 convex edges.
     ///
     /// ```swift
@@ -822,7 +822,7 @@ extension Shape {
     /// Select edges of this shape that satisfy a geometric predicate.
     ///
     /// This is the robust alternative to picking edges by raw index from
-    /// ``edges()`` — the index shifts as soon as the model parameters change,
+    /// ``edges()``, the index shifts as soon as the model parameters change,
     /// whereas a geometric predicate keeps selecting the right edge. The returned
     /// edges carry their parent index, so they feed straight into
     /// ``filleted(edges:radius:)`` / ``chamferedTwoDistances(_:)`` etc.
@@ -841,7 +841,7 @@ extension Shape {
     /// The concave edges of this solid (interior angle > 180°, e.g. the inside
     /// corner of an L-bracket or the bottom of a groove).
     ///
-    /// These are the edges you usually want to *fillet* — a concave fillet adds
+    /// These are the edges you usually want to *fillet*, a concave fillet adds
     /// material to soften an inside corner. Selecting them geometrically avoids the
     /// fragile "iterate `edges()` and guess the index" workaround.
     ///
@@ -1004,7 +1004,7 @@ extension Shape {
     /// Find edges in common between this shape and another.
     ///
     /// Uses `LocOpe_FindEdges` to identify shared edges. The returned edges belong to **this**
-    /// shape, and each carries its ``Edge/index`` into ``edges()`` — so a found edge feeds straight
+    /// shape, and each carries its ``Edge/index`` into ``edges()``, so a found edge feeds straight
     /// into ``filleted(edges:radius:)`` and every other index-taking method.
     ///
     /// ```swift
@@ -1059,7 +1059,7 @@ extension Shape {
     /// - Returns: Array of edges found in the face, each with a valid index into ``edges()``.
     public func edgesInFace(at faceIndex: Int) -> [Edge] {
         var buffer = [OCCTShapeRef?](repeating: nil, count: 100)
-        // #613: as for commonEdges(with:) — the index comes from the shape's own enumeration, not
+        // #613: as for commonEdges(with:), the index comes from the shape's own enumeration, not
         // from this result array's ordering.
         var indices = [Int32](repeating: -1, count: 100)
         let count = OCCTLocOpeFindEdgesInFace(handle, Int32(faceIndex), &buffer, &indices, 100)
@@ -1092,8 +1092,8 @@ extension Shape {
     /// ``isSubShapeValid(type:at:)`` above, before #844 consolidated the four independent Swift
     /// mirrors of `TopAbs_ShapeEnum` in this package into one. Kept as a deprecated alias (rather
     /// than deleted outright) for source compatibility with external code that spells
-    /// `Shape.TopAbs_ShapeEnum` explicitly — a stored variable's type annotation, or a function
-    /// parameter type — matching this same PR's own migration pattern for every other type it
+    /// `Shape.TopAbs_ShapeEnum` explicitly, a stored variable's type annotation, or a function
+    /// parameter type, matching this same PR's own migration pattern for every other type it
     /// consolidated (``ShapeFilterType``, and the deprecated `[Double]`-taking overloads on the
     /// transform-matrix methods). Case names differ slightly from the old enum's own casing
     /// (`ShapeType.compSolid` vs. the old `.compsolid`), since this is now literally `ShapeType`,
@@ -1330,7 +1330,7 @@ extension Shape {
     /// Unpacks the bridge's raw `points`/`normals` double arrays (3 doubles per sample, `count`
     /// samples) into a `PointCloudResult`, freeing both buffers.
     ///
-    /// Shared by ``pointCloudByTriangulation()``/``pointCloudByDensity(_:)`` (#796) — the two
+    /// Shared by ``pointCloudByTriangulation()``/``pointCloudByDensity(_:)`` (#796), the two
     /// differ only in which bridge call produces the raw arrays, not in how the result is
     /// unpacked.
     private static func unpackPointCloud(
@@ -1386,7 +1386,7 @@ extension Shape {
         OCCTBOPToolsIsEmptyShape(handle)
     }
 
-    // MARK: - v0.73.0: TKHlr — Extended HLR, ReflectLines, TopCnx, Intrv
+    // MARK: - v0.73.0: TKHlr. Extended HLR, ReflectLines, TopCnx, Intrv
 
     /// Fine-grained HLR edge categories for exact and polygon-based hidden line removal.
     public enum HLREdgeCategory: Int32, Sendable {
@@ -1438,7 +1438,7 @@ extension Shape {
     /// Get edges by fine-grained category using fast polygon-based HLR.
     ///
     /// Polyhedral HLR projects the shape's *triangulation*, so it is dramatically faster than
-    /// exact `hlrEdges` on curved surfaces — e.g. ~48× on an analytic helicoid thread (#196).
+    /// exact `hlrEdges` on curved surfaces, e.g. ~48× on an analytic helicoid thread (#196).
     /// Prefer this for 2D drawings of threaded / curved solids.
     ///
     /// - Parameters:
@@ -1556,7 +1556,7 @@ extension Shape {
     /// Deep copy a shape via BRepTools_CopyModification.
     ///
     /// Same underlying mechanism as ``copy(copyGeometry:copyMesh:)`` (`BRepBuilderAPI_Copy` is a
-    /// thin wrapper around this same class), reached directly instead — note the different
+    /// thin wrapper around this same class), reached directly instead, note the different
     /// `copyMesh` default (`true` here vs. `false` on `copy()`). Clones geometry/mesh when the
     /// respective flag is `true`, unlike the no-argument instance ``deepCopy()``, which never does.
     public static func deepCopy(_ shape: Shape, copyGeometry: Bool = true, copyMesh: Bool = true)
@@ -1732,7 +1732,7 @@ extension Shape {
     ///
     /// This is the real `TopAbs_ShapeEnum` ordinal, the same convention ``ShapeType``'s raw
     /// values use and the same one the `ShapeType`-typed `maxTolerance(type:)` overload passes
-    /// through unchanged — but NOT the same as the compressed `Int` `maxTolerance(type: Int)`
+    /// through unchanged, but NOT the same as the compressed `Int` `maxTolerance(type: Int)`
     /// overload uses (#833): the two `Int`-based overloads disagree on what `2` means.
     public func maxTolerance(subShapeType: Int) -> Double {
         OCCTBRepToolMaxTolerance(handle, Int32(subShapeType))
@@ -1844,8 +1844,8 @@ extension Shape {
     ///
     /// - Note: **Topology only** (#831). Backed by `TNaming_CopyShape::CopyTool`, which builds new
     ///   `TopoDS_TShape`s but assigns the *same* `Handle(Geom_Surface)`/`Handle(Geom_Curve)`/
-    ///   `Handle(Poly_Triangulation)` to the copy — no geometry or mesh cloning. For a copy whose
-    ///   geometry is also independent (e.g. for concurrent use on separate threads — see
+    ///   `Handle(Poly_Triangulation)` to the copy, no geometry or mesh cloning. For a copy whose
+    ///   geometry is also independent (e.g. for concurrent use on separate threads, see
     ///   `docs/thread-safety.md`), use ``copy(copyGeometry:copyMesh:)`` or the static
     ///   ``deepCopy(_:copyGeometry:copyMesh:)`` instead, both backed by `BRepTools_CopyModification`
     ///   / `BRepBuilderAPI_Copy`, which do clone the geometry when `copyGeometry` is `true`.
@@ -1925,12 +1925,12 @@ extension Shape {
     /// Classification state for a point relative to a solid.
     ///
     /// - Note: ``classify(point:tolerance:)`` (`Shape+Analysis.swift`) answers the identical
-    ///   question — same `BRepClass3d_SolidClassifier` mechanism (#851), same tolerance
-    ///   semantics, same underlying `TopAbs_State` values — but returns the separately-declared
+    ///   question, same `BRepClass3d_SolidClassifier` mechanism (#851), same tolerance
+    ///   semantics, same underlying `TopAbs_State` values, but returns the separately-declared
     ///   ``PointClassification`` instead. The two enums share raw values case-for-case (`inside=0,
     ///   outside=1, on/onBoundary=2, unknown=3`) but **not** case names (`.on` here vs.
     ///   `.onBoundary` there), so they are intentionally kept as two declarations rather than a
-    ///   typealias — unlike ``Face/SurfaceType`` (#850), whose case names matched exactly, a
+    ///   typealias, unlike ``Face/SurfaceType`` (#850), whose case names matched exactly, a
     ///   typealias here would silently rename one side's cases and break source compatibility for
     ///   whichever spelling was renamed away. Do not conflate the two by raw value across API
     ///   boundaries you don't control.
@@ -1943,8 +1943,8 @@ extension Shape {
 
     /// Classify a 3D point relative to this solid shape.
     ///
-    /// Equivalent to ``classify(point:tolerance:)`` — both route through
-    /// `BRepClass3d_SolidClassifier` (#851) — but returns ``PointState`` instead of
+    /// Equivalent to ``classify(point:tolerance:)``, both route through
+    /// `BRepClass3d_SolidClassifier` (#851), but returns ``PointState`` instead of
     /// ``PointClassification``. Prefer whichever result enum your call site already uses; the two
     /// never disagree since they share one bridge mechanism and a common `TopAbs_State` mapping.
     ///
@@ -2373,7 +2373,7 @@ extension Shape {
     /// ```
     ///
     /// - Returns: The face with the hole added, or nil if the wire cannot serve as a hole for this
-    ///   face — it encloses no area (see #234), or it does not lie inside the face's boundary, so
+    ///   face, it encloses no area (see #234), or it does not lie inside the face's boundary, so
     ///   neither winding yields a valid face. A degenerate or unusable hole is declined rather than
     ///   returned as an invalid face, which is what breaks callers downstream.
     public static func faceAddHole(face: Shape, wire: Shape) -> Shape? {
@@ -2572,7 +2572,7 @@ extension Shape {
     ///
     /// Additive, ``ShapeType``-typed sibling of the legacy `maxTolerance(type: Int)` overload
     /// below (#833): that overload and ``maxTolerance(subShapeType:)`` each accept a raw `Int`
-    /// with a DIFFERENT encoding for the same concept — `maxTolerance(type: 2)` means FACE there,
+    /// with a DIFFERENT encoding for the same concept, `maxTolerance(type: 2)` means FACE there,
     /// while `maxTolerance(subShapeType: 2)` means `TopAbs_SOLID` (and silently returns 0, since
     /// `BRep_Tool::MaxTolerance` only handles VERTEX/EDGE/FACE). This overload uses ``ShapeType``,
     /// whose raw values already match the real `TopAbs_ShapeEnum` ordinals `maxTolerance
@@ -2609,7 +2609,7 @@ extension Shape {
 
     /// Max tolerance of sub-shapes of given type (0=vertex, 1=edge, 2=face).
     ///
-    /// - Warning: **Legacy.** This `Int` encoding is compressed and specific to this method —
+    /// - Warning: **Legacy.** This `Int` encoding is compressed and specific to this method,
     ///   `0`/`1`/`2` mean vertex/edge/face here, but `maxTolerance(subShapeType:)` below uses a
     ///   DIFFERENT `Int` convention (real `TopAbs_ShapeEnum` ordinals) for the same idea, so the
     ///   same integer passed to the wrong one silently measures the wrong sub-shape kind (#833).
@@ -2826,7 +2826,7 @@ extension Shape {
     ///
     /// Delegates to ``faceFromPlane(origin:normal:uRange:vRange:tolerance:)`` above. The two were
     /// added independently, ~51 releases apart, and always drove the same underlying
-    /// `BRepLib_MakeFace` engine — this overload only differed by omitting the `tolerance`
+    /// `BRepLib_MakeFace` engine, this overload only differed by omitting the `tolerance`
     /// parameter, silently pinning it to whatever `BRepBuilderAPI_MakeFace`'s tolerance-less
     /// constructor hardcodes internally (`Precision::Confusion()`, `1e-7`), which is now this
     /// overload's own default so existing callers see byte-identical geometry (#841).
@@ -2851,7 +2851,7 @@ extension Shape {
 
     /// Create a face from a gp_Cylinder with UV bounds.
     ///
-    /// Delegates to ``faceFromCylinder(origin:axis:radius:uRange:vRange:tolerance:)`` above — see
+    /// Delegates to ``faceFromCylinder(origin:axis:radius:uRange:vRange:tolerance:)`` above, see
     /// that overload's sibling doc comment on ``faceFromPlane(origin:normal:uBounds:vBounds:tolerance:)``
     /// for why (#841).
     ///
@@ -2979,8 +2979,8 @@ extension Shape {
     /// Build a 3D curve for every edge of this shape that has only pcurves.
     ///
     /// Edges from a loft, a sweep, or a surface-based face can carry a 2D curve on their support
-    /// surface and no 3D curve at all. Anything that walks edge geometry — discretisation, length,
-    /// export — needs the 3D curve, so this fills them in. Edges that already have one are left
+    /// surface and no 3D curve at all. Anything that walks edge geometry, discretisation, length,
+    /// export, needs the 3D curve, so this fills them in. Edges that already have one are left
     /// exactly as they are, so calling it twice costs nothing the second time.
     ///
     /// ```swift
@@ -2991,15 +2991,15 @@ extension Shape {
     ///
     /// print(edge.extractEdgeCurve3D() == nil)   // true
     /// print(edge.buildCurves3d())               // true
-    /// print(edge.extractEdgeCurve3D() != nil)   // true — a BSpline approximating the helix
-    /// print(edge.edgeTolerance)                 // 1e-05 — the tolerance lands on the edge
+    /// print(edge.extractEdgeCurve3D() != nil)   // true, a BSpline approximating the helix
+    /// print(edge.edgeTolerance)                 // 1e-05, the tolerance lands on the edge
     /// ```
     ///
     /// - Parameter tolerance: Approximation tolerance, and also the rebuilt edge's tolerance floor
     ///   (OCCT sets the edge tolerance to this value, not to the deviation it actually achieved).
     ///   The default is OCCT's own default for the operation. A tighter value buys a closer curve
-    ///   for a pole or two more — measured on a helix, `1e-5` deviates from the exact curve by
-    ///   2.6e-6 and `1e-7` by 9.0e-8 — but it also claims an edge tolerance the approximation may
+    ///   for a pole or two more, measured on a helix, `1e-5` deviates from the exact curve by
+    ///   2.6e-6 and `1e-7` by 9.0e-8, but it also claims an edge tolerance the approximation may
     ///   not be able to keep on hard geometry. Ignored when the pcurve lies on a plane: that case
     ///   is analytic and exact.
     /// - Returns: `false` if any single edge could not be given a 3D curve (a degenerate edge with
@@ -3224,7 +3224,7 @@ extension Shape {
     ///
     /// A sharp join reports ``ContinuityClass/c0``, a fillet's tangent join
     /// ``ContinuityClass/g1``, and a seam edge on an elementary surface (a cylinder's or
-    /// sphere's) ``ContinuityClass/cN`` — `BRepLib::ContinuityOfFaces` short-circuits to CN for
+    /// sphere's) ``ContinuityClass/cN``, `BRepLib::ContinuityOfFaces` short-circuits to CN for
     /// those, and promotes any elementary pair that measures C2 to CN as well. ``ContinuityClass/c3``
     /// is the one class it never returns.
     ///

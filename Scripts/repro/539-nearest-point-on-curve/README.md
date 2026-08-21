@@ -15,7 +15,7 @@ the returned parameter into the domain is the fix. These probes ask what the hea
 2. **Which curve types does it bite?** The defect is invisible on the BSplines the existing tests
    used, so "which types take the range-ignoring path" decides how wide the blast radius is.
 3. **Is a parameter clamp safe on a periodic basis?** A clamp is only correct if a parameter outside
-   `[first, last]` is genuinely outside the curve — not merely the wrong periodic representative of
+   `[first, last]` is genuinely outside the curve, not merely the wrong periodic representative of
    a point that is on it.
 4. **Is the sibling entry point exposed the same way?** #539 says `OCCTEdgeProjectPoint` "is exposed
    to the same extension behaviour. Not separately measured yet."
@@ -26,7 +26,7 @@ the returned parameter into the domain is the fix. These probes ask what the hea
 |---|---|
 | `periodic-and-types.mm` | (2), (3), and whether the `Edge` path reports a maximum as the nearest point |
 | `sweep.mm` | the 51-case matrix: both current implementations and the proposed one against a dense brute-force reference |
-| `extpc-sibling.mm` | whether `BRepExtrema_ExtPC` (`Shape.pointEdgeExtrema`) shares the defect — it does, filed as #580 |
+| `extpc-sibling.mm` | whether `BRepExtrema_ExtPC` (`Shape.pointEdgeExtrema`) shares the defect, it does, filed as #580 |
 | `580-repair-options.mm` | scores #580's repair options over 189 edge/point combinations, so that issue ships with its own answer rather than an open question |
 
 ## Build and run
@@ -53,20 +53,20 @@ parabola or hyperbola it solves on the basis curve and reports a parameter outsi
 pre-#539 tests used lines and full circles queried from in-range points, where the two agree.
 
 **(3) A clamp is safe on a periodic basis, and the reason is not obvious.** `Geom_TrimmedCurve`
-normalises its own domain — trimming a circle to `[-1, 1]` reports `[5.283, 7.283]` — and `Project`
+normalises its own domain, trimming a circle to `[-1, 1]` reports `[5.283, 7.283]`, and `Project`
 returns the periodic representative nearest that domain, not an arbitrary one. Over ten
 seam-crossing and beyond-one-period queries, the plain clamp matched brute force exactly every time.
 So no period-aware normalisation is needed, and none was written.
 
 **(4) The sibling has a different defect, not the same one.** `GeomAPI_ProjectPointOnCurve` honours
-the edge's range — it never extends it — but it returns *extrema*, not minima. On a half circle the
+the edge's range, it never extends it, but it returns *extrema*, not minima. On a half circle the
 only extremum in range can be the far side, reported as `LowerDistance` (11, where the nearest point
 is 7.81 away), and it finds nothing at all when the nearest point is an end, so every point past the
 end of a straight edge came back as no answer.
 
 **And the finding that changed the fix.** On a parabola over `[0, 2]` queried from `(20, 0, 0)`, and
 a hyperbola over `[0, 1]` from `(30, 0, 0)`, the one extremum inside the domain is a *maximum*. Both
-implementations answered with it — 20 and 27, where the truth is 19.60 and 25.48 — with a parameter
+implementations answered with it, 20 and 27, where the truth is 19.60 and 25.48, with a parameter
 that is not out of range at all. The clamp #539 proposed would not have touched either.
 
 ## The matrix
@@ -94,7 +94,7 @@ combinations:
 > distance, parameter and point with `occtNearestPointOnCurveRange` and keeps `BRepExtrema_ExtPC`
 > solely for `solutionCount`, which stops doubling as a success flag. Fixing it also turned up a
 > second, unrelated defect the probes here do not cover: `edgeIndex` walked a bare `TopExp_Explorer`
-> (one entry per *occurrence* — a box's 12 edges are 24), so from index 9 it named a different edge
+> (one entry per *occurrence*, a box's 12 edges are 24), so from index 9 it named a different edge
 > than `Shape.edges()`. It now uses `occtEdgeAt`, #541's enumeration.
 
 | candidate set | correct distances |
@@ -114,6 +114,6 @@ rather than repair in place.
 ## What shipped
 
 `occtNearestPointOnCurveRange` (`Sources/OCCTBridge/src/OCCTBridge_Internal.h`), behind both entry
-points. It takes the minimum over three candidate sources — `ShapeAnalysis_Curve`'s answer where it
-landed inside the range, every in-range `GeomAPI` extremum, and the range's own ends — because no
+points. It takes the minimum over three candidate sources, `ShapeAnalysis_Curve`'s answer where it
+landed inside the range, every in-range `GeomAPI` extremum, and the range's own ends, because no
 one of the three is correct alone. Bridge-only: no kernel patch, no `OCCT.xcframework` rebuild.

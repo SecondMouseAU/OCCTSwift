@@ -12,12 +12,12 @@ section along a straight line (extrude), spin it around an axis (revolve), drag 
 factory on `Shape`; underneath they map to OCCT's `BRepPrimAPI_MakePrism` / `MakeRevol`,
 `BRepOffsetAPI_MakePipe` / `MakePipeShell`, and `BRepOffsetAPI_ThruSections`.
 
-All of these are **fallible** — a self-intersecting path or a degenerate section returns `nil` — so
+All of these are **fallible**, a self-intersecting path or a degenerate section returns `nil`, so
 every example unwraps with `guard`.
 
 <script type="module" src="https://cdn.jsdelivr.net/npm/@google/model-viewer/dist/model-viewer.min.js"></script>
 
-## Extrude — push a profile along a direction
+## Extrude, push a profile along a direction
 
 The simplest sweep: a closed profile pushed a fixed distance. The profile is a `Wire`; the result is
 a solid prism.
@@ -33,7 +33,7 @@ guard let profile = Wire.rectangle(width: 20, height: 12),
 vector instead, use the instance form `shape.extruded(by: SIMD3(0, 0, 8))`, or
 `shape.extrudedInfinite(direction:)` for a half-space cutter.
 
-## Revolve — spin a profile around an axis
+## Revolve, spin a profile around an axis
 
 Sweep a profile through an angle about an axis. Here a rectangular meridian in the XY plane, revolved
 around the **Y axis**, makes a cylindrical drum (a full turn by default):
@@ -52,9 +52,9 @@ Pass a smaller `angle` (e.g. `.pi`) for a half-revolution. To revolve an existin
 wire, use `shape.revolved(axisOrigin:axisDirection:)`. For a profile given as a `Curve3D` (e.g. a
 lathe meridian), `Shape.revolution(meridian:axisOrigin:axisDirection:angle:)` is the curve-based form.
 
-## Sweep — drag a section along a path
+## Sweep, drag a section along a path
 
-`Shape.sweep(profile:along:)` sweeps a section wire down an arbitrary path wire — OCCT's
+`Shape.sweep(profile:along:)` sweeps a section wire down an arbitrary path wire. OCCT's
 `BRepOffsetAPI_MakePipe`. Place the section **at the path's start point with its plane square to the
 path tangent there** (otherwise an edge-on section sweeps into a degenerate, zero-thickness tube). A
 circular section along a quarter-circle path gives a pipe elbow:
@@ -72,12 +72,12 @@ guard let section = Wire.circle(origin: SIMD3(16, 0, 0),
 
 You don't, however, need to worry about the section's *sense* relative to the tangent: `sweep`
 re-orients the result so the volume is always positive (OCCTSwift
-[#170](https://github.com/gsdali/OCCTSwift/issues/170)) — no "point the normal against the tangent"
+[#170](https://github.com/gsdali/OCCTSwift/issues/170)), no "point the normal against the tangent"
 trick required.
 
 <table>
 <tr>
-<td align="center"><model-viewer src="models/sweep-pipe.glb" poster="images/sweep-pipe.png" camera-controls auto-rotate environment-image="neutral" exposure="1.1" shadow-intensity="1" style="width:320px;height:320px;background:#eef1f5;border-radius:6px"></model-viewer><br><code>sweep</code> — circle along an arc (elbow)</td>
+<td align="center"><model-viewer src="models/sweep-pipe.glb" poster="images/sweep-pipe.png" camera-controls auto-rotate environment-image="neutral" exposure="1.1" shadow-intensity="1" style="width:320px;height:320px;background:#eef1f5;border-radius:6px"></model-viewer><br><code>sweep</code>, circle along an arc (elbow)</td>
 </tr>
 </table>
 
@@ -85,10 +85,10 @@ For sweeping along a **helix** (springs, coils) and for full orientation control
 (`.frenet` / `.correctedFrenet` / fixed binormal / auxiliary spine), see
 [Helices & Springs](helices.md), which covers `Shape.pipeShell` in depth.
 
-## Loft — skin a surface across sections
+## Loft, skin a surface across sections
 
 Lofting (a.k.a. *thru-sections*, `BRepOffsetAPI_ThruSections`) builds a solid by **skinning across two
-or more profile wires you place in space** — there is no path; the surface interpolates the sections
+or more profile wires you place in space**, there is no path; the surface interpolates the sections
 directly. Position each profile in its own plane (here a square base at `z = 0` and a circle at
 `z = 12`):
 
@@ -103,7 +103,7 @@ guard let base = Wire.polygon3D([
 
 <table>
 <tr>
-<td align="center"><model-viewer src="models/loft-frustum.glb" poster="images/loft-frustum.png" camera-controls auto-rotate environment-image="neutral" exposure="1.1" shadow-intensity="1" style="width:320px;height:320px;background:#eef1f5;border-radius:6px"></model-viewer><br><code>loft</code> — square base → round top</td>
+<td align="center"><model-viewer src="models/loft-frustum.glb" poster="images/loft-frustum.png" camera-controls auto-rotate environment-image="neutral" exposure="1.1" shadow-intensity="1" style="width:320px;height:320px;background:#eef1f5;border-radius:6px"></model-viewer><br><code>loft</code>, square base → round top</td>
 </tr>
 </table>
 
@@ -124,9 +124,9 @@ let ruled  = Shape.loft(profiles: [bottom, upper], solid: true, ruled: true)   /
 let smooth = Shape.loft(profiles: [bottom, upper], solid: true, ruled: false)  // curved, blended sides
 ```
 
-### Loft to a point — cones and tips
+### Loft to a point, cones and tips
 
-Pass `firstVertex` / `lastVertex` to cap a loft at a single point instead of a wire — the classic way
+Pass `firstVertex` / `lastVertex` to cap a loft at a single point instead of a wire, the classic way
 to taper to a tip. A single circle lofted to a point is a cone:
 
 ```swift
@@ -138,14 +138,14 @@ guard let circle = Wire.circle(radius: 5),
 
 <table>
 <tr>
-<td align="center"><model-viewer src="models/loft-cone.glb" poster="images/loft-cone.png" camera-controls auto-rotate environment-image="neutral" exposure="1.1" shadow-intensity="1" style="width:320px;height:320px;background:#eef1f5;border-radius:6px"></model-viewer><br><code>loft</code> — circle to a vertex tip (cone)</td>
+<td align="center"><model-viewer src="models/loft-cone.glb" poster="images/loft-cone.png" camera-controls auto-rotate environment-image="neutral" exposure="1.1" shadow-intensity="1" style="width:320px;height:320px;background:#eef1f5;border-radius:6px"></model-viewer><br><code>loft</code>, circle to a vertex tip (cone)</td>
 </tr>
 </table>
 
-## Multi-section sweep — varying section along a spine
+## Multi-section sweep, varying section along a spine
 
 When sections **should ride a defining path** rather than float free, use
-`Shape.pipeShellMultiSection(spine:profiles:...)` — OCCT's `BRepOffsetAPI_MakePipeShell` with several
+`Shape.pipeShellMultiSection(spine:profiles:...)`: OCCT's `BRepOffsetAPI_MakePipeShell` with several
 profiles. Three coaxial circles of different radius along a straight spine make a vase:
 
 ```swift
@@ -169,28 +169,28 @@ spine instead of supplying many, use `Shape.pipeShellWithLaw(spine:profile:law:)
 
 <table>
 <tr>
-<td align="center"><model-viewer src="models/sweep-vase.glb" poster="images/sweep-vase.png" camera-controls auto-rotate environment-image="neutral" exposure="1.1" shadow-intensity="1" style="width:320px;height:320px;background:#eef1f5;border-radius:6px"></model-viewer><br><code>pipeShellMultiSection</code> — varying circles along a spine</td>
+<td align="center"><model-viewer src="models/sweep-vase.glb" poster="images/sweep-vase.png" camera-controls auto-rotate environment-image="neutral" exposure="1.1" shadow-intensity="1" style="width:320px;height:320px;background:#eef1f5;border-radius:6px"></model-viewer><br><code>pipeShellMultiSection</code>, varying circles along a spine</td>
 </tr>
 </table>
 
 <sub>🖱️ Drag to orbit · scroll to zoom · auto-rotating. The static render shows until the 3D model
 loads. (Models exported straight from the snippets above via `Exporter.writeGLTF`.)</sub>
 
-## Loft or multi-section sweep — which?
+## Loft or multi-section sweep, which?
 
 Both skin a surface across several closed sections, but they answer different questions:
 
-- **Loft (`Shape.loft`, `ThruSections`)** — you **place each profile in space yourself** and OCCT
+- **Loft (`Shape.loft`, `ThruSections`)**: you **place each profile in space yourself** and OCCT
   interpolates between them. There is no path. Reach for it when the sections are arbitrary and you
   want the surface to pass through them directly (transition ducts, blended bodies, point-capped
   tapers).
-- **Multi-section sweep (`pipeShellMultiSection`, `MakePipeShell`)** — the sections **ride an explicit
+- **Multi-section sweep (`pipeShellMultiSection`, `MakePipeShell`)**: the sections **ride an explicit
   spine**, and the framing modes control their orientation as they travel. Reach for it when a path
   defines the shape (pipes with varying bore, swept channels, coils).
 
 ## See also
 
-- [Helices & Springs](helices.md) — sweeping along a helix, `pipeShell` orientation modes, section laws.
-- [Booleans](booleans.md) — combine swept/lofted bodies.
+- [Helices & Springs](helices.md), sweeping along a helix, `pipeShell` orientation modes, section laws.
+- [Booleans](booleans.md), combine swept/lofted bodies.
 - API mapping: [`../../API_REFERENCE.md`](../../API_REFERENCE.md)
 - Concepts (B-Rep topology, handles): [`occt-concepts.md`](../occt-concepts.md)

@@ -7,9 +7,9 @@ nav_order: 11
 # Surfaces from Points
 
 Given a set of 3D points, OCCTSwift can fit a smooth B-spline `Surface` through them. There are two
-cases — and they take different functions:
+cases, and they take different functions:
 
-- **A regular grid** of samples (rows × columns — a height field, a scan) → `Surface.fromPointGrid`
+- **A regular grid** of samples (rows × columns, a height field, a scan) → `Surface.fromPointGrid`
   (`GeomAPI_PointsToBSplineSurface`).
 - **A scattered cloud** with no grid structure → `Surface.plateThrough` (`GeomPlate`).
 
@@ -43,14 +43,14 @@ samples, raise `degMax` for more flexibility. `points.count` must equal `uCount 
 
 <table>
 <tr>
-<td align="center"><model-viewer src="models/points-grid.glb" poster="images/points-grid.png" camera-controls auto-rotate environment-image="neutral" exposure="1.1" shadow-intensity="1" style="width:340px;height:300px;background:#eef1f5;border-radius:6px"></model-viewer><br><code>fromPointGrid</code> — a B-spline through a 6×6 height field</td>
+<td align="center"><model-viewer src="models/points-grid.glb" poster="images/points-grid.png" camera-controls auto-rotate environment-image="neutral" exposure="1.1" shadow-intensity="1" style="width:340px;height:300px;background:#eef1f5;border-radius:6px"></model-viewer><br><code>fromPointGrid</code>, a B-spline through a 6×6 height field</td>
 </tr>
 </table>
 
 ## A scattered cloud → `plateThrough`
 
 When the points have no grid order, the **plate** surface (`GeomPlate_BuildPlateSurface`) builds a
-smooth, energy-minimizing B-spline through them — minimum 3 points:
+smooth, energy-minimizing B-spline through them, minimum 3 points:
 
 ```swift
 let points: [SIMD3<Double>] = [
@@ -60,11 +60,11 @@ let points: [SIMD3<Double>] = [
 guard let plate = Surface.plateThrough(points, degree: 3, tolerance: 0.01) else { return }
 ```
 
-`plateThrough` doesn't need any ordering or counts — it's the right tool for an irregular set of
+`plateThrough` doesn't need any ordering or counts, it's the right tool for an irregular set of
 constraint points (probe data, feature points). The trade-off is less direct control over the
 parametrization than the grid fit gives you.
 
-Like the grid fit, it **approximates** — so check the result against `tolerance` rather than
+Like the grid fit, it **approximates**, so check the result against `tolerance` rather than
 assuming it, especially on a cloud with real curvature in it:
 
 ```swift
@@ -89,7 +89,7 @@ let bumped = plane.nlPlateDeformed(
     maxIterations: 4, tolerance: 1e-3)
 ```
 
-This keeps the surface's existing shape and only displaces it to satisfy the constraints — distinct
+This keeps the surface's existing shape and only displaces it to satisfy the constraints, distinct
 from fitting a fresh surface to a point set. (A `G0+G1` variant also takes tangent constraints.)
 
 ## Which to use
@@ -103,6 +103,6 @@ from fitting a fresh surface to a point set. (A `G0+G1` variant also takes tange
 
 ## See also
 
-- [Gordon Surfaces](gordon-surfaces.md) — fit through a network of *curves* rather than points.
-- [Meshing & Export](meshing-and-export.md) — `mesh.toShape` lifts a triangle mesh to a B-Rep.
+- [Gordon Surfaces](gordon-surfaces.md), fit through a network of *curves* rather than points.
+- [Meshing & Export](meshing-and-export.md), `mesh.toShape` lifts a triangle mesh to a B-Rep.
 - API mapping: [`../../API_REFERENCE.md`](../../API_REFERENCE.md)

@@ -1,21 +1,21 @@
 ---
-title: BRepGraph — Attributes, Snapshots & References
+title: BRepGraph. Attributes, Snapshots & References
 parent: API Reference
 ---
 
-# BRepGraph — Attributes, Snapshots & References
+# BRepGraph. Attributes, Snapshots & References
 
-These are the pure-Swift value types that sit alongside `BRepGraph`: a typed attribute store (`NodeAttributeStore`) that attaches arbitrary metadata to graph nodes, a `GraphSnapshot` that serializes attributes and the source shape for round-trip persistence, and `TopologyRef` — a recipe-based identity scheme that survives graph mutations. No C++ bridge code is involved in these types. See the main **BRepGraph** page (coming) for the graph structure, node counts, adjacency queries, and history primitives (`NodeRef`, `HistoryRecord`, `NodeKind`) that these types build on.
+These are the pure-Swift value types that sit alongside `BRepGraph`: a typed attribute store (`NodeAttributeStore`) that attaches arbitrary metadata to graph nodes, a `GraphSnapshot` that serializes attributes and the source shape for round-trip persistence, and `TopologyRef`, a recipe-based identity scheme that survives graph mutations. No C++ bridge code is involved in these types. See the main **BRepGraph** page (coming) for the graph structure, node counts, adjacency queries, and history primitives (`NodeRef`, `HistoryRecord`, `NodeKind`) that these types build on.
 
 ## Topics
 
-- [AttrValue](#attrvalue) · [NodeAttributeStore](#nodeattributestore) · [NodeAttributeStore — Codable](#nodeattributestore--codable) · [GraphSnapshot](#graphsnapshot) · [GraphSnapshotError](#graphsnapshoterror) · [Snapshot / Restore on BRepGraph](#snapshot--restore-on-brepgraph) · [TopologyRef](#topologyref) · [NodeRef.sentinel](#noderefsentinel) · [TopologyResolutionError](#topologyresolutionerror) · [resolve on BRepGraph](#resolve-on-brepgraph) · [currentForms on BRepGraph](#currentforms-on-brepgraph)
+- [AttrValue](#attrvalue) · [NodeAttributeStore](#nodeattributestore) · [NodeAttributeStore, Codable](#nodeattributestore--codable) · [GraphSnapshot](#graphsnapshot) · [GraphSnapshotError](#graphsnapshoterror) · [Snapshot / Restore on BRepGraph](#snapshot--restore-on-brepgraph) · [TopologyRef](#topologyref) · [NodeRef.sentinel](#noderefsentinel) · [TopologyResolutionError](#topologyresolutionerror) · [resolve on BRepGraph](#resolve-on-brepgraph) · [currentForms on BRepGraph](#currentforms-on-brepgraph)
 
 ---
 
 ## AttrValue
 
-`BRepGraph.AttrValue` is a closed, `Codable` union of the scalar and array types you can attach to a node. The closed set keeps snapshot round-trips lossless — no open extension point means no unknown cases when deserializing.
+`BRepGraph.AttrValue` is a closed, `Codable` union of the scalar and array types you can attach to a node. The closed set keeps snapshot round-trips lossless, no open extension point means no unknown cases when deserializing.
 
 ```swift
 public enum AttrValue: Codable, Hashable, Sendable {
@@ -52,7 +52,7 @@ Wraps a `[Double]` attribute value, e.g. fitted-surface parameters.
 
 ### `AttrValue.boolValue`
 
-Convenience unwrap — returns the wrapped `Bool`, or `nil` on type mismatch.
+Convenience unwrap, returns the wrapped `Bool`, or `nil` on type mismatch.
 
 ```swift
 public var boolValue: Bool? { get }
@@ -62,7 +62,7 @@ public var boolValue: Bool? { get }
 
 ### `AttrValue.intValue`
 
-Convenience unwrap — returns the wrapped `Int`, or `nil` on type mismatch.
+Convenience unwrap, returns the wrapped `Int`, or `nil` on type mismatch.
 
 ```swift
 public var intValue: Int? { get }
@@ -72,7 +72,7 @@ public var intValue: Int? { get }
 
 ### `AttrValue.doubleValue`
 
-Convenience unwrap — returns the wrapped `Double`, or `nil` on type mismatch.
+Convenience unwrap, returns the wrapped `Double`, or `nil` on type mismatch.
 
 ```swift
 public var doubleValue: Double? { get }
@@ -82,7 +82,7 @@ public var doubleValue: Double? { get }
 
 ### `AttrValue.stringValue`
 
-Convenience unwrap — returns the wrapped `String`, or `nil` on type mismatch.
+Convenience unwrap, returns the wrapped `String`, or `nil` on type mismatch.
 
 ```swift
 public var stringValue: String? { get }
@@ -92,7 +92,7 @@ public var stringValue: String? { get }
 
 ### `AttrValue.intsValue`
 
-Convenience unwrap — returns the wrapped `[Int]`, or `nil` on type mismatch.
+Convenience unwrap, returns the wrapped `[Int]`, or `nil` on type mismatch.
 
 ```swift
 public var intsValue: [Int]? { get }
@@ -102,7 +102,7 @@ public var intsValue: [Int]? { get }
 
 ### `AttrValue.doublesValue`
 
-Convenience unwrap — returns the wrapped `[Double]`, or `nil` on type mismatch.
+Convenience unwrap, returns the wrapped `[Double]`, or `nil` on type mismatch.
 
 ```swift
 public var doublesValue: [Double]? { get }
@@ -120,7 +120,7 @@ public var doublesValue: [Double]? { get }
 
 ## NodeAttributeStore
 
-`NodeAttributeStore` is a per-node attribute bag keyed by `BRepGraph.NodeRef`. Keys are caller-namespaced strings (e.g. `"reconstruct.residualRMS"`). The store is `Codable`, `Sendable`, and `Equatable`; its Codable encoding is a sorted array of entries — see [NodeAttributeStore — Codable](#nodeattributestore--codable).
+`NodeAttributeStore` is a per-node attribute bag keyed by `BRepGraph.NodeRef`. Keys are caller-namespaced strings (e.g. `"reconstruct.residualRMS"`). The store is `Codable`, `Sendable`, and `Equatable`; its Codable encoding is a sorted array of entries, see [NodeAttributeStore, Codable](#nodeattributestore--codable).
 
 ```swift
 public struct NodeAttributeStore: Codable, Sendable, Equatable
@@ -134,7 +134,7 @@ Create a store, optionally pre-populated.
 public init(storage: [BRepGraph.NodeRef: [String: BRepGraph.AttrValue]] = [:])
 ```
 
-- **Parameters:** `storage` — initial contents; defaults to empty.
+- **Parameters:** `storage`, initial contents; defaults to empty.
 - **Example:**
   ```swift
   var store = NodeAttributeStore()
@@ -156,13 +156,13 @@ Direct mutation is not exposed; use the subscript and the mutating helpers below
 
 ### `NodeAttributeStore.subscript(_:)`
 
-All attributes on a node — get returns an empty dictionary when no attributes are set; set with an empty dictionary removes the node entry entirely.
+All attributes on a node, get returns an empty dictionary when no attributes are set; set with an empty dictionary removes the node entry entirely.
 
 ```swift
 public subscript(node: BRepGraph.NodeRef) -> [String: BRepGraph.AttrValue] { get set }
 ```
 
-- **Parameters:** `node` — the node whose attribute dictionary to read or replace.
+- **Parameters:** `node`, the node whose attribute dictionary to read or replace.
 - **Example:**
   ```swift
   var store = NodeAttributeStore()
@@ -181,7 +181,7 @@ Read one attribute by key, or `nil` if unset.
 public func value(_ key: String, for node: BRepGraph.NodeRef) -> BRepGraph.AttrValue?
 ```
 
-- **Parameters:** `key` — attribute name; `node` — the node to query.
+- **Parameters:** `key`, attribute name; `node`, the node to query.
 - **Returns:** The stored value, or `nil` if the key is absent.
 
 ---
@@ -194,7 +194,7 @@ Set one attribute on a node.
 public mutating func set(_ key: String, _ value: BRepGraph.AttrValue, for node: BRepGraph.NodeRef)
 ```
 
-- **Parameters:** `key` — attribute name; `value` — value to store; `node` — the target node.
+- **Parameters:** `key`, attribute name; `value`, value to store; `node`, the target node.
 
 ---
 
@@ -206,7 +206,7 @@ Remove one attribute. Drops the node entry entirely once its last attribute is c
 public mutating func clear(_ key: String, for node: BRepGraph.NodeRef)
 ```
 
-- **Parameters:** `key` — attribute name to remove; `node` — the target node.
+- **Parameters:** `key`, attribute name to remove; `node`, the target node.
 
 ---
 
@@ -218,7 +218,7 @@ Remove every attribute on a node.
 public mutating func removeAll(for node: BRepGraph.NodeRef)
 ```
 
-- **Parameters:** `node` — the node whose entire attribute dictionary should be dropped.
+- **Parameters:** `node`, the node whose entire attribute dictionary should be dropped.
 
 ---
 
@@ -242,9 +242,9 @@ public var annotatedNodeCount: Int { get }
 
 ---
 
-## NodeAttributeStore — Codable
+## NodeAttributeStore. Codable
 
-The store uses a custom Codable implementation so that JSON output is deterministic and diffable. Attributes are serialized as a sorted array of `{node, attrs}` entries — attributes within each entry sorted by key; entries sorted by `(kind.rawValue, index)`. Pairing this with `GraphSnapshot.canonicalEncoder()` (which adds `.sortedKeys`) makes the whole JSON byte-stable across runs.
+The store uses a custom Codable implementation so that JSON output is deterministic and diffable. Attributes are serialized as a sorted array of `{node, attrs}` entries, attributes within each entry sorted by key; entries sorted by `(kind.rawValue, index)`. Pairing this with `GraphSnapshot.canonicalEncoder()` (which adds `.sortedKeys`) makes the whole JSON byte-stable across runs.
 
 ### `NodeAttributeStore.init(from:)`
 
@@ -269,7 +269,7 @@ public func encode(to encoder: Encoder) throws
 
 ## GraphSnapshot
 
-`GraphSnapshot` bundles everything needed to persist a `BRepGraph` session: the source shape as a BREP string (which is sufficient to re-derive the graph structure), plus the attribute store. The graph topology is NOT stored — it is reconstructed from `brep` on `BRepGraph.init(snapshot:)`, relying on the fact that `BRepGraph.init(shape:)` produces identical node indexing for the same BREP.
+`GraphSnapshot` bundles everything needed to persist a `BRepGraph` session: the source shape as a BREP string (which is sufficient to re-derive the graph structure), plus the attribute store. The graph topology is NOT stored, it is reconstructed from `brep` on `BRepGraph.init(snapshot:)`, relying on the fact that `BRepGraph.init(shape:)` produces identical node indexing for the same BREP.
 
 ```swift
 public struct GraphSnapshot: Codable, Sendable, Equatable
@@ -324,9 +324,9 @@ public init(brep: String, attributes: NodeAttributeStore, formatVersion: Int = G
 ```
 
 - **Parameters:**
-  - `brep` — BREP string of the source shape.
-  - `attributes` — the attribute store.
-  - `formatVersion` — defaults to `currentFormatVersion`.
+  - `brep`: BREP string of the source shape.
+  - `attributes`: the attribute store.
+  - `formatVersion`: defaults to `currentFormatVersion`.
 
 ---
 
@@ -338,7 +338,7 @@ Returns a `JSONEncoder` configured for byte-stable, diffable output.
 public static func canonicalEncoder() -> JSONEncoder
 ```
 
-Sets `outputFormatting` to `[.sortedKeys]`. Combined with `NodeAttributeStore`'s sorted-array encoding, the full snapshot JSON is reproducible byte-for-byte across runs — suitable for versioned sessions and golden-file tests.
+Sets `outputFormatting` to `[.sortedKeys]`. Combined with `NodeAttributeStore`'s sorted-array encoding, the full snapshot JSON is reproducible byte-for-byte across runs, suitable for versioned sessions and golden-file tests.
 
 - **Returns:** A configured `JSONEncoder`.
 - **Example:**
@@ -411,9 +411,9 @@ Read one attribute on a node, or `nil` if unset.
 public func attribute(_ key: String, for node: NodeRef) -> AttrValue?
 ```
 
-- **Parameters:** `key` — attribute name; `node` — the node to query.
+- **Parameters:** `key`, attribute name; `node`, the node to query.
 - **Returns:** The stored value, or `nil`.
-- **Note:** Pure Swift — no bridge call.
+- **Note:** Pure Swift, no bridge call.
 - **Example:**
   ```swift
   if let rms = graph.attribute("fit.residualRMS", for: faceRef) {
@@ -431,7 +431,7 @@ Set one attribute on a node.
 public func setAttribute(_ key: String, _ value: AttrValue, for node: NodeRef)
 ```
 
-- **Parameters:** `key` — attribute name; `value` — value to store; `node` — the target node.
+- **Parameters:** `key`, attribute name; `value`, value to store; `node`, the target node.
 - **Note:** Mutates `self.attributes` in-place. Despite `self` being a class, callers don't need `mutating`.
 - **Example:**
   ```swift
@@ -450,7 +450,7 @@ public func snapshot() throws -> GraphSnapshot
 
 - **Returns:** A `GraphSnapshot` containing the BREP string and the attribute store.
 - **Throws:** `GraphSnapshotError.noSourceShape` if the graph was not built from a `Shape` (e.g. constructed from a raw handle).
-- **Note:** Pure Swift — no bridge call.
+- **Note:** Pure Swift, no bridge call.
 
 ---
 
@@ -462,13 +462,13 @@ Rebuild a graph from a snapshot: deserialize the BREP, rebuild the graph (non-pa
 public convenience init(snapshot: GraphSnapshot) throws
 ```
 
-- **Parameters:** `snapshot` — the previously saved snapshot.
+- **Parameters:** `snapshot`, the previously saved snapshot.
 - **Throws:**
   - `GraphSnapshotError.unsupportedFormatVersion` if `snapshot.formatVersion > currentFormatVersion`.
   - `GraphSnapshotError.invalidBREP` if the BREP string cannot be parsed.
   - `GraphSnapshotError.graphBuildFailed` if graph construction fails.
 - **OCCT:** `Shape.fromBREPString` + `OCCTBRepGraphCreate` with `parallel: false`.
-- **Note:** Attribute keys are `NodeRef` (`kind` + `index`). The non-parallel rebuild ensures identical node indexing for the same BREP across runs — this is the contract that makes the round-trip safe.
+- **Note:** Attribute keys are `NodeRef` (`kind` + `index`). The non-parallel rebuild ensures identical node indexing for the same BREP across runs, this is the contract that makes the round-trip safe.
 - **Example:**
   ```swift
   // Round-trip
@@ -488,7 +488,7 @@ public convenience init(snapshot: GraphSnapshot) throws
 
 ## TopologyRef
 
-`TopologyRef` is a recipe-based topology identity (OCCTSwift #72, Phase 1). OCCT node indices (`BRepGraph NodeId`) are unstable across mutations — after a fillet, split, or Boolean operation, the same index may point to a different entity or nothing at all. `TopologyRef` encodes *how to find* an entity rather than *where it is now*, and `BRepGraph.resolve(_:)` evaluates the recipe against the current graph state on demand.
+`TopologyRef` is a recipe-based topology identity (OCCTSwift #72, Phase 1). OCCT node indices (`BRepGraph NodeId`) are unstable across mutations, after a fillet, split, or Boolean operation, the same index may point to a different entity or nothing at all. `TopologyRef` encodes *how to find* an entity rather than *where it is now*, and `BRepGraph.resolve(_:)` evaluates the recipe against the current graph state on demand.
 
 The design follows Onshape's FeatureScript query system (`qCreatedBy`, `qContainedIn`, etc.) and the Shapr3D / Onshape consensus: when a recipe can't resolve, return an error rather than silently guessing.
 
@@ -500,7 +500,7 @@ public indirect enum TopologyRef: Sendable, Hashable
 
 ### `TopologyRef.literal(_:)`
 
-Direct reference by current `(kind, index)` — an escape hatch that bypasses recipe resolution.
+Direct reference by current `(kind, index)`, an escape hatch that bypasses recipe resolution.
 
 ```swift
 case literal(BRepGraph.NodeRef)
@@ -522,10 +522,10 @@ case createdBy(operationName: String,
 ```
 
 - **Parameters:**
-  - `operationName` — the tag recorded in the history log by the creating operation.
-  - `kind` — the `NodeKind` to look for in the replacement set.
-  - `occurrence` — which candidate to pick when the operation produced multiple nodes of `kind` (default `0` = first, in deterministic sort order: `sequenceNumber`, then `(kind.rawValue, index)`, then position in replacements vector).
-  - `leafOccurrence` — after the seed node is found, walk history forward to its current live form and pick the Nth leaf. `nil` disables the forward-walk and returns the node exactly as created (useful for history inspection). Default `0`.
+  - `operationName`: the tag recorded in the history log by the creating operation.
+  - `kind`: the `NodeKind` to look for in the replacement set.
+  - `occurrence`: which candidate to pick when the operation produced multiple nodes of `kind` (default `0` = first, in deterministic sort order: `sequenceNumber`, then `(kind.rawValue, index)`, then position in replacements vector).
+  - `leafOccurrence`: after the seed node is found, walk history forward to its current live form and pick the Nth leaf. `nil` disables the forward-walk and returns the node exactly as created (useful for history inspection). Default `0`.
 - **Example:**
   ```swift
   // Pick the first face created by an extrude operation
@@ -549,9 +549,9 @@ case containedIn(parent: TopologyRef,
 ```
 
 - **Parameters:**
-  - `parent` — a recipe resolving to the containing node (e.g. a solid or shell).
-  - `kind` — the `NodeKind` to collect from the parent's children in the graph.
-  - `occurrence` — zero-based index into the children of that kind (order is stable across mutations for unmodified parents).
+  - `parent`: a recipe resolving to the containing node (e.g. a solid or shell).
+  - `kind`: the `NodeKind` to collect from the parent's children in the graph.
+  - `occurrence`: zero-based index into the children of that kind (order is stable across mutations for unmodified parents).
 - **Example:**
   ```swift
   // The second face of a solid created by a named operation
@@ -575,8 +575,8 @@ case splitOf(original: TopologyRef, occurrence: Int)
 Typical use: picking one of two halves after an edge or face split.
 
 - **Parameters:**
-  - `original` — recipe for the node before the split.
-  - `occurrence` — index into the replacement list produced by the split.
+  - `original`: recipe for the node before the split.
+  - `occurrence`: index into the replacement list produced by the split.
 - **Example:**
   ```swift
   // Second half of an edge that was split
@@ -692,11 +692,11 @@ Resolve a `TopologyRef` recipe against the graph's current state.
 public func resolve(_ ref: TopologyRef) -> Result<NodeRef, TopologyResolutionError>
 ```
 
-Recipes are evaluated lazily — `resolve` performs the full lookup on every call, walking history records as needed. For hot paths, cache the resolved `NodeRef` and invalidate on any mutation.
+Recipes are evaluated lazily, `resolve` performs the full lookup on every call, walking history records as needed. For hot paths, cache the resolved `NodeRef` and invalidate on any mutation.
 
-- **Parameters:** `ref` — the recipe to evaluate.
+- **Parameters:** `ref`, the recipe to evaluate.
 - **Returns:** `.success(NodeRef)` when the entity can be found; `.failure(TopologyResolutionError)` when it cannot.
-- **Note:** Pure Swift — no bridge call. The evaluation walks `historyRecords` and `childIndices` (a public helper on `BRepGraph` defined in `ConstructionEntity.swift`).
+- **Note:** Pure Swift, no bridge call. The evaluation walks `historyRecords` and `childIndices` (a public helper on `BRepGraph` defined in `ConstructionEntity.swift`).
 - **Example:**
   ```swift
   guard let graph = BRepGraph(shape: myShape) else { return }
@@ -739,9 +739,9 @@ All current (live-leaf) descendants of `node`, in deterministic order.
 public func currentForms(of node: NodeRef) -> [NodeRef]
 ```
 
-A descendant is "live" when it does not appear as an original in any subsequent history record — i.e. it is the final form of that branch. Returns an empty array when `node` has no derived descendants at all (it may itself still be live; use `findDerivedOrSelf` from the main graph API for that case).
+A descendant is "live" when it does not appear as an original in any subsequent history record, i.e. it is the final form of that branch. Returns an empty array when `node` has no derived descendants at all (it may itself still be live; use `findDerivedOrSelf` from the main graph API for that case).
 
-- **Parameters:** `node` — the node to walk forward from.
+- **Parameters:** `node`, the node to walk forward from.
 - **Returns:** Live leaf descendants sorted by `(kind.rawValue, index)`, or `[]` if there are none.
 - **Note:** Used internally by `.createdBy` resolution when `leafOccurrence` is non-nil. Callers can use it directly to enumerate all current forms of a node that may have been split by subsequent operations.
 - **Example:**

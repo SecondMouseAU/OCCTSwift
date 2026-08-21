@@ -67,7 +67,7 @@ along −Z. A full bore removes 1570.7963.
 4. **The feature drill wants a solid.** Cases I and J: a shell or a face is `InvalidPlacement` for
    every mode but `Perform`.
 5. **Case H is an outright wrong answer.** On a compound of two stacked solids, `PerformUntilEnd`
-   reports `BRepFeat_NoError`, leaves the volume at 100000.0000 — *no material removed* — and adds 8
+   reports `BRepFeat_NoError`, leaves the volume at 100000.0000, *no material removed*, and adds 8
    faces, having imprinted the cylinder without cutting. See below.
 
 ## The ranged `Perform(Radius, PFrom, PTo)`
@@ -90,20 +90,20 @@ Against a stack of two plates (A at axis parameters 5…25, B at 45…65) the ac
 |---|---|---|
 | [0, 30] | 1570.7963 | plate A only |
 | [30, 70] | 1570.7963 | plate B only |
-| [10, 20] | 1570.7963 | all of plate A — a window strictly *inside* a body still drills through it |
+| [10, 20] | 1570.7963 | all of plate A, a window strictly *inside* a body still drills through it |
 | [26, 44] | `InvalidPlacement` | the gap names no face pair |
 | [0, 70] | **0.0000** | spans both bodies: `NoError`, nothing removed |
 
 So the window **selects which entry/exit face pair bounds the hole**; it does not trim the cut. That
 makes it the only spelling that can pick *which* body in a stack to drill, which is why it is worth
-wrapping — but the docs have to say so.
+wrapping, but the docs have to say so.
 
 ## The multi-body defect (cases H and [0, 70])
 
 `PerformUntilEnd` (`:315`) and the ranged `Perform` (`:421`) both end in an `nbparts >= 2` branch
 that keeps exactly **one** part of the cutting tool. When the axis crosses more than one body, the
 part it keeps can be one that intersects nothing, and the operation then reports `BRepFeat_NoError`
-while removing no material — the input with the cylinder's faces imprinted on it. A silent wrong
+while removing no material, the input with the cylinder's faces imprinted on it. A silent wrong
 answer, not a failure.
 
 Neither `Perform` nor the boolean drill has that branch, and both cut every body on the axis.
@@ -120,8 +120,8 @@ by `No_Exception` (#487) and nothing below the bridge rejects a degenerate radiu
 
 | radius | boolean | every `BRepFeat` mode |
 |---|---|---|
-| 0 | returns a shape | `NoError`, volume 50000.0000, 6 faces — **no material removed** |
-| 1e-14 | returns a shape | `NoError`, volume 50000.0000, 6 faces — **no material removed** |
+| 0 | returns a shape | `NoError`, volume 50000.0000, 6 faces, **no material removed** |
+| 1e-14 | returns a shape | `NoError`, volume 50000.0000, 6 faces, **no material removed** |
 | −5 | throws | throws |
 
 A drill that reports success and hands back the undrilled input is the worst of the three possible

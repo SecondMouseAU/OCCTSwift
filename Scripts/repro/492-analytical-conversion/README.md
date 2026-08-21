@@ -1,8 +1,8 @@
-# OCCTSwift#492 probe — what `GeomConvert_*ToAna*` actually hands back
+# OCCTSwift#492 probe, what `GeomConvert_*ToAna*` actually hands back
 
 Ground truth for the two analytical-conversion converter classes, against the pinned OCCT 8.0.0p1
-kernel. It exists because #492's central claim — that a wrapper's "already analytical" guard
-compares the result handle against the input handle — could only be settled by measuring which
+kernel. It exists because #492's central claim, that a wrapper's "already analytical" guard
+compares the result handle against the input handle, could only be settled by measuring which
 converter, if either, ever returns the input handle.
 
 The answer is that both do something, and they do opposite things.
@@ -34,7 +34,7 @@ Same for `Geom_Line`, and for both a full range and a sub-range. This is not inc
 `ComputeLine` (`GeomConvert_CurveToAnaCurve.cxx:186`) and `ComputeCircle` (`:296`) each down-cast
 the input and return it unchanged, with `Deviation = 0`.
 
-`Geom_TrimmedCurve` is a quieter version of the same thing — `ConvertToAnalytical` unwraps it to its
+`Geom_TrimmedCurve` is a quieter version of the same thing, `ConvertToAnalytical` unwraps it to its
 basis curve before recognition, so the returned `Geom_Line` is the object the trim still holds.
 
 **Consequence in the bridge, before #492:** both curve wrappers handed that shared curve to Swift as
@@ -58,14 +58,14 @@ BSpline fitted to a flat grid. Every branch allocates: the already-analytical br
 `new Geom_Plane(aGAS.Plane())` and friends (`GeomConvert_SurfToAnaSurf.cxx:791-807`), and every
 other path assigns `newSurf[isurf]` from a freshly-built elementary surface.
 
-So `OCCTSurfaceToAnalytical`'s guard —
+So `OCCTSurfaceToAnalytical`'s guard,
 
 ```cpp
 // If the result is the same handle, it was already analytical or couldn't convert
 if (result == surface->surface) return nullptr;
 ```
 
-— was dead code, and its comment was wrong twice over: an already-analytical surface converts (to a
+,  was dead code, and its comment was wrong twice over: an already-analytical surface converts (to a
 fresh, equal surface, gap 0), and a surface that "couldn't convert" comes back as a **null** handle,
 which the line above already caught.
 
@@ -76,7 +76,7 @@ which the line above already caught.
 | Freeform BSpline surface | null handle, `Gap()` = -1 |
 | Freeform BSpline curve | `ok` = false, null handle, `Gap()` = -1 |
 | Bounded overload, inverted UV (`uMin > uMax`) | throws `Geom_BSplineSurface::Segment` |
-| BSpline circle, sub-range `[π/2, 3π/2]` | succeeds, reports `[0, 3.06]` — the *recognized* circle's parameterisation, not the input's |
+| BSpline circle, sub-range `[π/2, 3π/2]` | succeeds, reports `[0, 3.06]`, the *recognized* circle's parameterisation, not the input's |
 
 The inverted-UV throw is the only exception any of these paths raises, and it is a catchable
 `Standard_Failure`, not a signal.

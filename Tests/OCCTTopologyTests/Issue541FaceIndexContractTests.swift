@@ -6,14 +6,14 @@ import Foundation
 //
 //   A. `Shape.faces()` walked a bare `TopExp_Explorer`, one entry per *occurrence* in the
 //      topology tree, and wrote the array position into `Face.index`.
-//   B. `Shape.faceCount` / `Shape.face(at:)` — and most of the ~30 entry points that take a face
-//      index — read `TopExp::MapShapes`, one entry per *distinct* face (`TopoDS_Shape::IsSame`).
+//   B. `Shape.faceCount` / `Shape.face(at:)`, and most of the ~30 entry points that take a face
+//      index, read `TopExp::MapShapes`, one entry per *distinct* face (`TopoDS_Shape::IsSame`).
 //   C. A handful read the same map 1-based, so a 0-based `Face.index` addressed the face before
 //      the one it named and could never name the last face at all.
 //
 // Measured on the pinned kernel (`Scripts/repro/541-face-index-contract/`): the A/B divergence is
 // not a hand-built curiosity. One `BRepAlgoAPI_Splitter` run cutting a box with a plane leaves two
-// solids sharing the single cut face — 12 occurrences over 11 distinct faces — and the duplicate
+// solids sharing the single cut face, 12 occurrences over 11 distinct faces, and the duplicate
 // is not last, so from index 10 onwards the two schemes name *different* faces. A caller holding
 // `Face.index` from `faces()` drafted, deleted or opened a face it had not selected.
 //
@@ -110,8 +110,8 @@ struct Issue541FaceIndexContractTests {
         }
     }
 
-    /// The control: on shapes that share no face — which is every shape the rest of the suite
-    /// builds — converging the enumerations moves nothing.
+    /// The control: on shapes that share no face, which is every shape the rest of the suite
+    /// builds, converging the enumerations moves nothing.
     @Test("Ordinary shapes are unaffected")
     func ordinaryShapesUnaffected() {
         let fixtures: [(String, Shape)] = [
@@ -185,7 +185,7 @@ struct Issue541FaceIndexContractTests {
 
     /// `splitByWireOnFace` took a 1-based index, so its accepted domain was `1...faceCount`
     /// rather than `0..<faceCount`: `Face.index == 0` was rejected outright, and an index equal
-    /// to `faceCount` — past the end of every other spelling — was accepted.
+    /// to `faceCount`, past the end of every other spelling, was accepted.
     ///
     /// The domain is the discriminator here rather than the resulting geometry: `LocOpe_Spliter`
     /// binds the wire across the whole shape, so the split itself succeeds at any index it
@@ -222,7 +222,7 @@ struct Issue541FaceIndexContractTests {
             return
         }
         guard let faceZero = box.buildWires(faceIndex: 0) else {
-            Issue.record("buildWires(0) failed — face 0 is not addressable")
+            Issue.record("buildWires(0) failed, face 0 is not addressable")
             return
         }
         // One face's edges cannot be the whole box's edges.
@@ -239,8 +239,8 @@ struct Issue541FaceIndexContractTests {
     /// A sample of the entry points that walked their own explorer. Each is asked about the same
     /// index and must answer about the face `face(at:)` names.
     ///
-    /// Edge *counts* cannot discriminate here — every face of a split box is a four-edged planar
-    /// quad — so the check is edge *identity*: the edges `edgesInFace(at:)` reports must be the
+    /// Edge *counts* cannot discriminate here, every face of a split box is a four-edged planar
+    /// quad, so the check is edge *identity*: the edges `edgesInFace(at:)` reports must be the
     /// very edges of the face at that index.
     @Test("Index consumers answer about the face face(at:) names")
     func indexConsumersAgreeWithFaceAt() {
@@ -269,8 +269,8 @@ struct Issue541FaceIndexContractTests {
 
     // MARK: - Shape.contents is a different question, and stays one
 
-    /// `Shape.contents` is the third census, and #541 leaves it counting what it counts —
-    /// occurrences — rather than converging it. These pin the contract its docs now state, so
+    /// `Shape.contents` is the third census, and #541 leaves it counting what it counts,
+    /// occurrences, rather than converging it. These pin the contract its docs now state, so
     /// "a complexity metric, not an index bound" does not quietly become untrue.
     @Test("Shape.contents counts occurrences, not addressable sub-shapes")
     func contentsCountsOccurrences() {
@@ -285,11 +285,11 @@ struct Issue541FaceIndexContractTests {
     }
 
     /// The third dedup rule: `nbSharedFaces` discards the location, so it collapses instances
-    /// that `faceCount` — which follows `IsSame` — keeps apart.
+    /// that `faceCount`, which follows `IsSame`, keeps apart.
     ///
     /// The fixture has to be `moved(dx:dy:dz:)`, which only sets a `TopLoc_Location` and so
     /// yields a true instance. `translated(by:)` rebuilds the shape through
-    /// `BRepBuilderAPI_Transform`, whose result shares no `TShape` with its input — all three
+    /// `BRepBuilderAPI_Transform`, whose result shares no `TShape` with its input, all three
     /// counts then read 12 and the distinction under test disappears.
     @Test("contentsExtended's shared counts collapse instances that faceCount keeps")
     func sharedCountsDiscardLocation() {

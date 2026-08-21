@@ -1,9 +1,9 @@
 ---
-title: BRepGraph — Builders & Editor Mutation
+title: BRepGraph. Builders & Editor Mutation
 parent: API Reference
 ---
 
-# BRepGraph — Builders & Editor Mutation
+# BRepGraph. Builders & Editor Mutation
 
 This page covers the **mutation surface** of `BRepGraph`: every query and builder method from
 the `// MARK: Edge/Face/Shell/Solid Additional Queries`, `CompSolid Count`, `Builder:` and
@@ -26,9 +26,9 @@ Returns the indices of all wires that contain a given edge.
 public func edgeWires(_ edgeIndex: Int) -> [Int]
 ```
 
-- **Parameters:** `edgeIndex` — edge definition index.
+- **Parameters:** `edgeIndex`, edge definition index.
 - **Returns:** array of wire definition indices; empty if the edge belongs to no wires.
-- **OCCT:** `BRepGraph_EditorView` (graph topo layer — wire-membership reverse lookup).
+- **OCCT:** `BRepGraph_EditorView` (graph topo layer, wire-membership reverse lookup).
 - **Example:**
   ```swift
   let graph = BRepGraph(shape: solid)
@@ -46,7 +46,7 @@ Returns the indices of all coedge definitions associated with an edge.
 public func edgeCoEdges(_ edgeIndex: Int) -> [Int]
 ```
 
-- **Parameters:** `edgeIndex` — edge definition index.
+- **Parameters:** `edgeIndex`, edge definition index.
 - **Returns:** array of coedge definition indices; empty if none.
 - **OCCT:** `BRepGraph_EditorView` (coedge reverse lookup via edge topo layer).
 - **Example:**
@@ -65,7 +65,7 @@ Finds the coedge index for a given (edge, face) pair.
 public func edgeFindCoEdge(edgeIndex: Int, faceIndex: Int) -> Int?
 ```
 
-- **Parameters:** `edgeIndex` — edge definition index; `faceIndex` — face definition index.
+- **Parameters:** `edgeIndex`, edge definition index; `faceIndex`, face definition index.
 - **Returns:** coedge definition index, or `nil` if no coedge links this edge to this face.
 - **OCCT:** `BRepGraph_Tool::Edge::FindCoEdgeId`.
 - **Example:**
@@ -87,7 +87,7 @@ Returns the number of shells that contain a given face.
 public func faceShellCount(_ faceIndex: Int) -> Int
 ```
 
-- **Parameters:** `faceIndex` — face definition index.
+- **Parameters:** `faceIndex`, face definition index.
 - **OCCT:** `BRepGraph_EditorView` (face-shell parent reverse lookup).
 
 ---
@@ -100,7 +100,7 @@ Returns the indices of all shells that contain a given face.
 public func faceShells(_ faceIndex: Int) -> [Int]
 ```
 
-- **Parameters:** `faceIndex` — face definition index.
+- **Parameters:** `faceIndex`, face definition index.
 - **Returns:** array of shell definition indices; empty if the face belongs to no shells.
 - **OCCT:** `BRepGraph_EditorView` (face-shell reverse lookup).
 - **Example:**
@@ -119,7 +119,7 @@ Returns the number of compounds that directly contain a given face.
 public func faceCompoundCount(_ faceIndex: Int) -> Int
 ```
 
-- **Parameters:** `faceIndex` — face definition index.
+- **Parameters:** `faceIndex`, face definition index.
 - **OCCT:** `BRepGraph_EditorView` (face-compound parent reverse lookup).
 
 ---
@@ -134,7 +134,7 @@ Returns the number of compounds that directly contain a given shell.
 public func shellCompoundCount(_ shellIndex: Int) -> Int
 ```
 
-- **Parameters:** `shellIndex` — shell definition index.
+- **Parameters:** `shellIndex`, shell definition index.
 - **OCCT:** `BRepGraph_EditorView` (shell-compound parent reverse lookup).
 
 ---
@@ -147,7 +147,7 @@ Returns whether a shell is topologically closed (every edge is shared by exactly
 public func isShellClosed(_ shellIndex: Int) -> Bool
 ```
 
-- **Parameters:** `shellIndex` — shell definition index.
+- **Parameters:** `shellIndex`, shell definition index.
 - **OCCT:** `BRepGraph_EditorView` (shell closure derived from face-boundary edge incidence).
 - **Note:** In OCCT 8.0.0p1 this is a derived property, not a stored flag.
 - **Example:**
@@ -167,7 +167,7 @@ Returns the number of compounds that directly contain a given solid.
 public func solidCompoundCount(_ solidIndex: Int) -> Int
 ```
 
-- **Parameters:** `solidIndex` — solid definition index.
+- **Parameters:** `solidIndex`, solid definition index.
 - **OCCT:** `BRepGraph_EditorView` (solid-compound parent reverse lookup).
 
 ---
@@ -200,7 +200,7 @@ Adds a new vertex definition to the graph.
 public func addVertex(x: Double, y: Double, z: Double, tolerance: Double) -> Int?
 ```
 
-- **Parameters:** `x`, `y`, `z` — 3D position; `tolerance` — vertex tolerance.
+- **Parameters:** `x`, `y`, `z`, 3D position; `tolerance`, vertex tolerance.
 - **Returns:** vertex definition index, or `nil` on failure.
 - **OCCT:** `BRepGraph_EditorView::Vertices().Add(gp_Pnt, tolerance)`.
 - **Example:**
@@ -252,7 +252,7 @@ Links a face into a shell by creating a face reference entry.
 public func addFaceToShell(shellIndex: Int, faceIndex: Int, orientation: Int = 0) -> Int?
 ```
 
-- **Parameters:** `shellIndex` — shell definition index; `faceIndex` — face definition index; `orientation` — `TopAbs_Orientation` integer (0=FORWARD, 1=REVERSED, 2=INTERNAL, 3=EXTERNAL).
+- **Parameters:** `shellIndex`, shell definition index; `faceIndex`, face definition index; `orientation`, `TopAbs_Orientation` integer (0=FORWARD, 1=REVERSED, 2=INTERNAL, 3=EXTERNAL).
 - **Returns:** face reference index, or `nil` on failure.
 - **OCCT:** `BRepGraph_EditorView::Shells().Append(BRepGraph_ShellId, BRepGraph_FaceId, TopAbs_Orientation)`.
 - **Example:**
@@ -272,7 +272,7 @@ Links a shell into a solid by creating a shell reference entry.
 public func addShellToSolid(solidIndex: Int, shellIndex: Int, orientation: Int = 0) -> Int?
 ```
 
-- **Parameters:** `solidIndex` — solid definition index; `shellIndex` — shell definition index; `orientation` — `TopAbs_Orientation` integer.
+- **Parameters:** `solidIndex`, solid definition index; `shellIndex`, shell definition index; `orientation`, `TopAbs_Orientation` integer.
 - **Returns:** shell reference index, or `nil` on failure.
 - **OCCT:** `BRepGraph_EditorView::Solids().Append(BRepGraph_SolidId, BRepGraph_ShellId, TopAbs_Orientation)`.
 
@@ -286,7 +286,7 @@ Creates a new compound definition with the specified child nodes.
 public func addCompound(children: [(kind: NodeKind, index: Int)]) -> Int?
 ```
 
-- **Parameters:** `children` — array of `(kind, index)` pairs identifying each child node.
+- **Parameters:** `children`, array of `(kind, index)` pairs identifying each child node.
 - **Returns:** compound definition index, or `nil` if `children` is empty or on failure.
 - **OCCT:** `BRepGraph_EditorView::Compounds().Add(NCollection_Array1<BRepGraph_NodeId>)`.
 - **Example:**
@@ -306,7 +306,7 @@ Creates a new comp-solid definition from an array of solid indices.
 public func addCompSolid(solidIndices: [Int]) -> Int?
 ```
 
-- **Parameters:** `solidIndices` — solid definition indices to collect into the comp-solid.
+- **Parameters:** `solidIndices`, solid definition indices to collect into the comp-solid.
 - **Returns:** comp-solid definition index, or `nil` if `solidIndices` is empty or on failure.
 - **OCCT:** `BRepGraph_EditorView::CompSolids().Add(NCollection_Array1<BRepGraph_SolidId>)`.
 
@@ -316,13 +316,13 @@ public func addCompSolid(solidIndices: [Int]) -> Int?
 
 ### `removeNode(nodeKind:nodeIndex:)`
 
-Marks a single node as removed (soft deletion — the graph entry persists but is flagged inactive).
+Marks a single node as removed (soft deletion, the graph entry persists but is flagged inactive).
 
 ```swift
 public func removeNode(nodeKind: NodeKind, nodeIndex: Int)
 ```
 
-- **Parameters:** `nodeKind` — node kind; `nodeIndex` — definition index.
+- **Parameters:** `nodeKind`, node kind; `nodeIndex`, definition index.
 - **OCCT:** `BRepGraph_EditorView::Gen().RemoveNode(BRepGraph_NodeId)`.
 - **Example:**
   ```swift
@@ -339,7 +339,7 @@ Marks a node and all its topological descendants as removed (cascading soft dele
 public func removeSubgraph(nodeKind: NodeKind, nodeIndex: Int)
 ```
 
-- **Parameters:** `nodeKind` — root node kind; `nodeIndex` — root definition index.
+- **Parameters:** `nodeKind`, root node kind; `nodeIndex`, root definition index.
 - **OCCT:** `BRepGraph_EditorView::Gen().RemoveSubgraph(BRepGraph_NodeId)`.
 - **Note:** Use this instead of iterating descendants manually when pruning a subtree.
 - **Example:**
@@ -353,14 +353,14 @@ public func removeSubgraph(nodeKind: NodeKind, nodeIndex: Int)
 
 ### `appendFlattenedShape(_:parallel:)`
 
-Appends a `Shape` to the graph in flattened mode — container nodes are removed and faces are
+Appends a `Shape` to the graph in flattened mode, container nodes are removed and faces are
 registered directly as graph roots.
 
 ```swift
 public func appendFlattenedShape(_ shape: Shape, parallel: Bool = false)
 ```
 
-- **Parameters:** `shape` — shape to ingest; `parallel` — whether to use multi-threaded ingestion.
+- **Parameters:** `shape`, shape to ingest; `parallel`, whether to use multi-threaded ingestion.
 - **OCCT:** `BRepGraph::ShapesView::Add(TopoDS_Shape, Options{Flatten=true})`.
 - **Example:**
   ```swift
@@ -377,7 +377,7 @@ Appends a `Shape` to the graph preserving the full B-Rep topology hierarchy.
 public func appendFullShape(_ shape: Shape, parallel: Bool = false)
 ```
 
-- **Parameters:** `shape` — shape to ingest; `parallel` — whether to use multi-threaded ingestion.
+- **Parameters:** `shape`, shape to ingest; `parallel`, whether to use multi-threaded ingestion.
 - **OCCT:** `BRepGraph::ShapesView::Add(TopoDS_Shape, Options{Flatten=false})`.
 - **Example:**
   ```swift
@@ -454,7 +454,7 @@ Splits an edge at a given vertex and curve parameter, producing two sub-edges.
 public func splitEdge(edgeIndex: Int, vertexIndex: Int, param: Double) -> (subA: Int, subB: Int)?
 ```
 
-- **Parameters:** `edgeIndex` — edge definition index to split; `vertexIndex` — vertex definition index at the split point; `param` — parameter on the 3D curve at the split point.
+- **Parameters:** `edgeIndex`, edge definition index to split; `vertexIndex`, vertex definition index at the split point; `param`, parameter on the 3D curve at the split point.
 - **Returns:** `(subA, subB)` edge definition indices, or `nil` if the split fails.
 - **OCCT:** `BRepGraph_EditorView::Edges().Split(BRepGraph_EdgeId, BRepGraph_VertexId, double, subA, subB)`.
 - **Example:**
@@ -476,7 +476,7 @@ Substitutes one edge for another in a wire definition.
 public func replaceEdgeInWire(wireIndex: Int, oldEdgeIndex: Int, newEdgeIndex: Int, reversed: Bool = false)
 ```
 
-- **Parameters:** `wireIndex` — wire definition index; `oldEdgeIndex` — edge to replace; `newEdgeIndex` — replacement edge; `reversed` — whether to reverse the orientation of the replacement edge.
+- **Parameters:** `wireIndex`, wire definition index; `oldEdgeIndex`, edge to replace; `newEdgeIndex`, replacement edge; `reversed`, whether to reverse the orientation of the replacement edge.
 - **OCCT:** `BRepGraph_EditorView::Wires().ReplaceEdge(BRepGraph_WireId, BRepGraph_EdgeId, BRepGraph_EdgeId, bool)`.
 - **Example:**
   ```swift
@@ -496,7 +496,7 @@ Marks a reference entry as removed.
 public func removeRef(refKind: RefKind, refIndex: Int) -> Bool
 ```
 
-- **Parameters:** `refKind` — reference kind (see `RefKind` enum); `refIndex` — reference index.
+- **Parameters:** `refKind`, reference kind (see `RefKind` enum); `refIndex`, reference index.
 - **Returns:** `true` if the reference transitioned from active to removed.
 - **OCCT:** `BRepGraph_EditorView::Gen().RemoveRef(BRepGraph_RefId)`.
 - **Example:**
@@ -516,7 +516,7 @@ Clears all mesh representations (triangulation and coedge polygon-on-triangulati
 public func clearFaceMesh(faceIndex: Int)
 ```
 
-- **Parameters:** `faceIndex` — face definition index.
+- **Parameters:** `faceIndex`, face definition index.
 - **OCCT:** `BRepGraph_EditorView::Mesh::Editor::Faces().Clear(BRepGraph_FaceId)`.
 
 ---
@@ -529,7 +529,7 @@ Clears the Polygon3D mesh representation from an edge.
 public func clearEdgePolygon3D(edgeIndex: Int)
 ```
 
-- **Parameters:** `edgeIndex` — edge definition index.
+- **Parameters:** `edgeIndex`, edge definition index.
 - **OCCT:** `BRepGraph_EditorView::Mesh::Editor::Edges().Clear(BRepGraph_EdgeId)`.
 - **Example:**
   ```swift
@@ -572,7 +572,7 @@ Set the 3D point of a vertex definition.
 public func setVertexPoint(_ vertexIndex: Int, x: Double, y: Double, z: Double)
 ```
 
-- **Parameters:** `vertexIndex` — vertex definition index; `x`, `y`, `z` — new position.
+- **Parameters:** `vertexIndex`, vertex definition index; `x`, `y`, `z`, new position.
 - **OCCT:** `BRepGraph_EditorView::Vertices().SetPoint(BRepGraph_VertexId, gp_Pnt)`.
 
 ---
@@ -585,7 +585,7 @@ Set the tolerance of a vertex definition.
 public func setVertexTolerance(_ vertexIndex: Int, tolerance: Double)
 ```
 
-- **Parameters:** `vertexIndex` — vertex definition index; `tolerance` — new tolerance value.
+- **Parameters:** `vertexIndex`, vertex definition index; `tolerance`, new tolerance value.
 - **OCCT:** `BRepGraph_EditorView::Vertices().SetTolerance(BRepGraph_VertexId, double)`.
 
 ---
@@ -598,7 +598,7 @@ Set the tolerance of an edge definition.
 public func setEdgeTolerance(_ edgeIndex: Int, tolerance: Double)
 ```
 
-- **Parameters:** `edgeIndex` — edge definition index; `tolerance` — new tolerance value.
+- **Parameters:** `edgeIndex`, edge definition index; `tolerance`, new tolerance value.
 - **OCCT:** `BRepGraph_EditorView::Edges().SetTolerance(BRepGraph_EdgeId, double)`.
 
 ---
@@ -611,7 +611,7 @@ Set the parametric range of an edge definition.
 public func setEdgeParamRange(_ edgeIndex: Int, first: Double, last: Double)
 ```
 
-- **Parameters:** `edgeIndex` — edge definition index; `first`, `last` — parametric bounds.
+- **Parameters:** `edgeIndex`, edge definition index; `first`, `last`, parametric bounds.
 - **OCCT:** `BRepGraph_EditorView::Edges().SetParamRange(BRepGraph_EdgeId, double, double)`.
 
 ---
@@ -624,7 +624,7 @@ Set the `SameParameter` flag of an edge definition.
 public func setEdgeSameParameter(_ edgeIndex: Int, sameParameter: Bool)
 ```
 
-- **Parameters:** `edgeIndex` — edge definition index; `sameParameter` — flag value.
+- **Parameters:** `edgeIndex`, edge definition index; `sameParameter`, flag value.
 - **Note:** **No-op in OCCT 8.0.0p1.** `SameParameter` is now a derived per-coedge property computed from the pcurve vs 3D curve; there is no longer a settable edge flag. Kept for ABI compatibility.
 
 ---
@@ -637,7 +637,7 @@ Set the `SameRange` flag of an edge definition.
 public func setEdgeSameRange(_ edgeIndex: Int, sameRange: Bool)
 ```
 
-- **Parameters:** `edgeIndex` — edge definition index; `sameRange` — flag value.
+- **Parameters:** `edgeIndex`, edge definition index; `sameRange`, flag value.
 - **Note:** **No-op in OCCT 8.0.0p1.** Same reason as `setEdgeSameParameter`.
 
 ---
@@ -650,7 +650,7 @@ Set the `IsDegenerate` flag of an edge definition.
 public func setEdgeDegenerate(_ edgeIndex: Int, degenerate: Bool)
 ```
 
-- **Parameters:** `edgeIndex` — edge definition index; `degenerate` — flag value.
+- **Parameters:** `edgeIndex`, edge definition index; `degenerate`, flag value.
 - **Note:** **No-op in OCCT 8.0.0p1.** Degeneracy is derived from geometry/topology; there is no longer a settable flag.
 
 ---
@@ -663,7 +663,7 @@ Set the `IsClosed` flag of an edge definition.
 public func setEdgeIsClosed(_ edgeIndex: Int, isClosed: Bool)
 ```
 
-- **Parameters:** `edgeIndex` — edge definition index; `isClosed` — flag value.
+- **Parameters:** `edgeIndex`, edge definition index; `isClosed`, flag value.
 - **Note:** **No-op in OCCT 8.0.0p1.** Closure is derived from whether start-vertex == end-vertex; there is no longer a settable flag.
 
 ---
@@ -676,7 +676,7 @@ Set the parametric range of a coedge definition.
 public func setCoEdgeParamRange(_ coedgeIndex: Int, first: Double, last: Double)
 ```
 
-- **Parameters:** `coedgeIndex` — coedge definition index; `first`, `last` — parametric bounds on the pcurve.
+- **Parameters:** `coedgeIndex`, coedge definition index; `first`, `last`, parametric bounds on the pcurve.
 - **OCCT:** `BRepGraph_EditorView::CoEdges().SetParamRange(BRepGraph_CoEdgeId, double, double)`.
 
 ---
@@ -689,7 +689,7 @@ Set the orientation of a coedge in its owning face.
 public func setCoEdgeOrientation(_ coedgeIndex: Int, orientation: Int)
 ```
 
-- **Parameters:** `coedgeIndex` — coedge definition index; `orientation` — `TopAbs_Orientation` integer (0=Forward, 1=Reversed, 2=Internal, 3=External).
+- **Parameters:** `coedgeIndex`, coedge definition index; `orientation`, `TopAbs_Orientation` integer (0=Forward, 1=Reversed, 2=Internal, 3=External).
 - **OCCT:** `BRepGraph_EditorView::CoEdges().SetOrientation(BRepGraph_CoEdgeId, TopAbs_Orientation)`.
 
 ---
@@ -702,7 +702,7 @@ Set the `IsClosed` flag of a wire definition.
 public func setWireIsClosed(_ wireIndex: Int, isClosed: Bool)
 ```
 
-- **Parameters:** `wireIndex` — wire definition index; `isClosed` — flag value.
+- **Parameters:** `wireIndex`, wire definition index; `isClosed`, flag value.
 - **Note:** **No-op in OCCT 8.0.0p1.** Wire closure is derived from the ordered coedge chain; there is no longer a settable flag.
 
 ---
@@ -715,7 +715,7 @@ Set the tolerance of a face definition.
 public func setFaceTolerance(_ faceIndex: Int, tolerance: Double)
 ```
 
-- **Parameters:** `faceIndex` — face definition index; `tolerance` — new tolerance value.
+- **Parameters:** `faceIndex`, face definition index; `tolerance`, new tolerance value.
 - **OCCT:** `BRepGraph_EditorView::Faces().SetTolerance(BRepGraph_FaceId, double)`.
 
 ---
@@ -728,7 +728,7 @@ Set the natural-restriction flag of a face definition.
 public func setFaceNaturalRestriction(_ faceIndex: Int, naturalRestriction: Bool)
 ```
 
-- **Parameters:** `faceIndex` — face definition index; `naturalRestriction` — flag value.
+- **Parameters:** `faceIndex`, face definition index; `naturalRestriction`, flag value.
 - **Note:** **No-op in OCCT 8.0.0p1.** The natural-restriction flag is no longer stored or settable.
 
 ---
@@ -741,7 +741,7 @@ Set the `IsClosed` flag of a shell definition.
 public func setShellIsClosed(_ shellIndex: Int, isClosed: Bool)
 ```
 
-- **Parameters:** `shellIndex` — shell definition index; `isClosed` — flag value.
+- **Parameters:** `shellIndex`, shell definition index; `isClosed`, flag value.
 - **Note:** **No-op in OCCT 8.0.0p1.** Shell closure is derived from face-boundary edge incidence; there is no longer a settable flag.
 
 ---
@@ -756,10 +756,10 @@ Attaches an internal vertex to an edge as a runtime supplement attachment (OCCT 
 public func edgeAddInternalVertex(_ edgeIndex: Int, vertexIndex: Int, orientation: Int = 2) -> Int?
 ```
 
-- **Parameters:** `edgeIndex` — edge definition index; `vertexIndex` — vertex definition index; `orientation` — accepted for source compatibility but **ignored** by the supplement layer.
+- **Parameters:** `edgeIndex`, edge definition index; `vertexIndex`, vertex definition index; `orientation`, accepted for source compatibility but **ignored** by the supplement layer.
 - **Returns:** layer-local attachment UID, or `nil` on failure. Store this to remove the attachment later via `faceRemoveVertex(_:attachmentUID:)`.
 - **OCCT:** `BRepGraph_EditorView::Supplement().AttachToEdge(BRepGraph_EdgeId, TopoDS_Vertex, AttachmentKind::EdgeInternalVertex)` via `BRepGraph_LayerTopoSupplement`.
-- **Note:** Internal-edge vertices are a supplemental, runtime concept in OCCT 8.0.0p1 — a clean shape has none until one is added here.
+- **Note:** Internal-edge vertices are a supplemental, runtime concept in OCCT 8.0.0p1, a clean shape has none until one is added here.
 - **Example:**
   ```swift
   if let uid = graph.edgeAddInternalVertex(0, vertexIndex: 3) {
@@ -777,7 +777,7 @@ Attaches a direct vertex to a face as a runtime supplement attachment (OCCT 8.0.
 public func faceAddVertex(_ faceIndex: Int, vertexIndex: Int, orientation: Int = 0) -> Int?
 ```
 
-- **Parameters:** `faceIndex` — face definition index; `vertexIndex` — vertex definition index; `orientation` — accepted for source compatibility but **ignored** by the supplement layer.
+- **Parameters:** `faceIndex`, face definition index; `vertexIndex`, vertex definition index; `orientation`, accepted for source compatibility but **ignored** by the supplement layer.
 - **Returns:** layer-local attachment UID, or `nil` on failure. Store this UID to pass to `faceRemoveVertex(_:attachmentUID:)`.
 - **OCCT:** `BRepGraph_EditorView::Supplement().AttachToFace(BRepGraph_FaceId, TopoDS_Vertex, AttachmentKind::FaceDirectVertex)` via `BRepGraph_LayerTopoSupplement`.
 
@@ -791,10 +791,10 @@ Links an auxiliary non-face child (Wire or Edge) to a shell.
 public func shellAddChild(_ shellIndex: Int, childKind: Int, childIndex: Int, orientation: Int = 0) -> Int?
 ```
 
-- **Parameters:** `shellIndex` — shell definition index; `childKind` — raw `NodeKind` integer; `childIndex` — child definition index; `orientation` — `TopAbs_Orientation` integer.
+- **Parameters:** `shellIndex`, shell definition index; `childKind`, raw `NodeKind` integer; `childIndex`, child definition index; `orientation`, `TopAbs_Orientation` integer.
 - **Returns:** child-ref id, or `nil` on failure.
 - **OCCT:** `BRepGraph_EditorView::Shells().Append(BRepGraph_ShellId, BRepGraph_FaceId, TopAbs_Orientation)` (OCCT 8.0.0p1: shells own only faces; non-face kinds return `nil`).
-- **Note:** In OCCT 8.0.0p1 shells own only face children — passing a non-face kind returns `nil`.
+- **Note:** In OCCT 8.0.0p1 shells own only face children, passing a non-face kind returns `nil`.
 
 ---
 
@@ -806,7 +806,7 @@ Links an auxiliary non-shell child (Edge or Vertex) to a solid.
 public func solidAddChild(_ solidIndex: Int, childKind: Int, childIndex: Int, orientation: Int = 0) -> Int?
 ```
 
-- **Parameters:** `solidIndex` — solid definition index; `childKind` — raw `NodeKind` integer; `childIndex` — child definition index; `orientation` — `TopAbs_Orientation` integer.
+- **Parameters:** `solidIndex`, solid definition index; `childKind`, raw `NodeKind` integer; `childIndex`, child definition index; `orientation`, `TopAbs_Orientation` integer.
 - **Returns:** child-ref id, or `nil` on failure.
 - **OCCT:** `BRepGraph_EditorView::Solids().Append(BRepGraph_SolidId, BRepGraph_ShellId, TopAbs_Orientation)` (OCCT 8.0.0p1: solids own only shells; non-shell kinds return `nil`).
 
@@ -820,7 +820,7 @@ Appends a single child node to an existing compound definition.
 public func compoundAddChild(_ compoundIndex: Int, childKind: Int, childIndex: Int, orientation: Int = 0) -> Int?
 ```
 
-- **Parameters:** `compoundIndex` — compound definition index; `childKind` — raw `NodeKind` integer; `childIndex` — child definition index; `orientation` — `TopAbs_Orientation` integer.
+- **Parameters:** `compoundIndex`, compound definition index; `childKind`, raw `NodeKind` integer; `childIndex`, child definition index; `orientation`, `TopAbs_Orientation` integer.
 - **Returns:** child-ref id, or `nil` on failure.
 - **OCCT:** `BRepGraph_EditorView::Compounds().Append(BRepGraph_CompoundId, BRepGraph_NodeId, TopAbs_Orientation)`.
 - **Example:**
@@ -840,7 +840,7 @@ Appends a single solid to an existing comp-solid definition.
 public func compSolidAddSolid(_ compSolidIndex: Int, solidIndex: Int, orientation: Int = 0) -> Int?
 ```
 
-- **Parameters:** `compSolidIndex` — comp-solid definition index; `solidIndex` — solid definition index; `orientation` — `TopAbs_Orientation` integer.
+- **Parameters:** `compSolidIndex`, comp-solid definition index; `solidIndex`, solid definition index; `orientation`, `TopAbs_Orientation` integer.
 - **Returns:** solid-ref id, or `nil` on failure.
 - **OCCT:** `BRepGraph_EditorView::CompSolids().Append(BRepGraph_CompSolidId, BRepGraph_SolidId, TopAbs_Orientation)`.
 
@@ -856,7 +856,7 @@ Detaches a vertex reference from an edge definition.
 public func edgeRemoveVertex(_ edgeIndex: Int, vertexRefIndex: Int) -> Bool
 ```
 
-- **Parameters:** `edgeIndex` — edge definition index; `vertexRefIndex` — vertex reference index.
+- **Parameters:** `edgeIndex`, edge definition index; `vertexRefIndex`, vertex reference index.
 - **Returns:** `true` if the active usage was removed.
 - **OCCT:** `BRepGraph_EditorView::Edges().RemoveVertex(BRepGraph_EdgeId, BRepGraph_VertexRefId)`.
 
@@ -870,7 +870,7 @@ Remaps an edge-owned vertex reference to a different vertex definition.
 public func edgeReplaceVertex(_ edgeIndex: Int, oldVertexRefIndex: Int, newVertexIndex: Int) -> Int?
 ```
 
-- **Parameters:** `edgeIndex` — edge definition index; `oldVertexRefIndex` — existing vertex reference index; `newVertexIndex` — new vertex definition index.
+- **Parameters:** `edgeIndex`, edge definition index; `oldVertexRefIndex`, existing vertex reference index; `newVertexIndex`, new vertex definition index.
 - **Returns:** new vertex-ref id, or `nil` on failure.
 - **OCCT:** `BRepGraph_EditorView::Edges().ReplaceVertex(BRepGraph_EdgeId, BRepGraph_VertexRefId, BRepGraph_VertexId)`.
 
@@ -884,7 +884,7 @@ Detaches a coedge reference from a wire definition.
 public func wireRemoveCoEdge(_ wireIndex: Int, coedgeRefIndex: Int) -> Bool
 ```
 
-- **Parameters:** `wireIndex` — wire definition index; `coedgeRefIndex` — coedge reference index.
+- **Parameters:** `wireIndex`, wire definition index; `coedgeRefIndex`, coedge reference index.
 - **Returns:** `true` if the active usage was removed.
 - **OCCT:** `BRepGraph_EditorView::Wires().RemoveCoEdge(BRepGraph_WireId, BRepGraph_CoEdgeId)`.
 - **Note:** In OCCT 8.0.0p1 coedges are not ref-counted; `coedgeRefIndex` is a direct `BRepGraph_CoEdgeId`.
@@ -899,7 +899,7 @@ Detaches a face-direct vertex supplement attachment by its UID.
 public func faceRemoveVertex(_ faceIndex: Int, attachmentUID: Int) -> Bool
 ```
 
-- **Parameters:** `faceIndex` — face definition index (unused in OCCT 8.0.0p1; the UID is globally unique within the supplement layer); `attachmentUID` — the UID returned by `faceAddVertex`.
+- **Parameters:** `faceIndex`, face definition index (unused in OCCT 8.0.0p1; the UID is globally unique within the supplement layer); `attachmentUID`, the UID returned by `faceAddVertex`.
 - **Returns:** `true` if the attachment existed and was removed.
 - **OCCT:** `BRepGraph_EditorView::Supplement().RemoveAttachment(uint64_t uid)` via `BRepGraph_LayerTopoSupplement`.
 
@@ -913,7 +913,7 @@ Detaches a wire reference from a face definition.
 public func faceRemoveWire(_ faceIndex: Int, wireRefIndex: Int) -> Bool
 ```
 
-- **Parameters:** `faceIndex` — face definition index; `wireRefIndex` — wire reference index.
+- **Parameters:** `faceIndex`, face definition index; `wireRefIndex`, wire reference index.
 - **Returns:** `true` if the active usage was removed.
 - **OCCT:** `BRepGraph_EditorView::Faces().RemoveWire(BRepGraph_FaceId, BRepGraph_WireRefId)`.
 
@@ -927,7 +927,7 @@ Detaches a face reference from a shell definition.
 public func shellRemoveFace(_ shellIndex: Int, faceRefIndex: Int) -> Bool
 ```
 
-- **Parameters:** `shellIndex` — shell definition index; `faceRefIndex` — face reference index.
+- **Parameters:** `shellIndex`, shell definition index; `faceRefIndex`, face reference index.
 - **Returns:** `true` if the active usage was removed.
 - **OCCT:** `BRepGraph_EditorView::Shells().RemoveFace(BRepGraph_ShellId, BRepGraph_FaceRefId)`.
 
@@ -941,7 +941,7 @@ Detaches an auxiliary child reference from a shell.
 public func shellRemoveChild(_ shellIndex: Int, childRefIndex: Int) -> Bool
 ```
 
-- **Parameters:** `shellIndex` — shell definition index; `childRefIndex` — child reference index.
+- **Parameters:** `shellIndex`, shell definition index; `childRefIndex`, child reference index.
 - **Returns:** `true` if the active usage was removed.
 - **OCCT:** `BRepGraph_EditorView::Shells().RemoveFace(BRepGraph_ShellId, BRepGraph_FaceRefId)` (OCCT 8.0.0p1: shells own only faces; the child-ref is treated as a face-ref).
 
@@ -955,7 +955,7 @@ Detaches a shell reference from a solid definition.
 public func solidRemoveShell(_ solidIndex: Int, shellRefIndex: Int) -> Bool
 ```
 
-- **Parameters:** `solidIndex` — solid definition index; `shellRefIndex` — shell reference index.
+- **Parameters:** `solidIndex`, solid definition index; `shellRefIndex`, shell reference index.
 - **Returns:** `true` if the active usage was removed.
 - **OCCT:** `BRepGraph_EditorView::Solids().RemoveShell(BRepGraph_SolidId, BRepGraph_ShellRefId)`.
 
@@ -969,7 +969,7 @@ Detaches an auxiliary child reference from a solid.
 public func solidRemoveChild(_ solidIndex: Int, childRefIndex: Int) -> Bool
 ```
 
-- **Parameters:** `solidIndex` — solid definition index; `childRefIndex` — child reference index.
+- **Parameters:** `solidIndex`, solid definition index; `childRefIndex`, child reference index.
 - **Returns:** `true` if the active usage was removed.
 - **OCCT:** `BRepGraph_EditorView::Solids().RemoveShell(BRepGraph_SolidId, BRepGraph_ShellRefId)` (OCCT 8.0.0p1: solids own only shells; the child-ref is treated as a shell-ref).
 
@@ -983,7 +983,7 @@ Detaches a child reference from a compound definition.
 public func compoundRemoveChild(_ compoundIndex: Int, childRefIndex: Int) -> Bool
 ```
 
-- **Parameters:** `compoundIndex` — compound definition index; `childRefIndex` — child reference index.
+- **Parameters:** `compoundIndex`, compound definition index; `childRefIndex`, child reference index.
 - **Returns:** `true` if the active usage was removed.
 - **OCCT:** `BRepGraph_EditorView::Compounds().RemoveChild(BRepGraph_CompoundId, BRepGraph_ChildRefId)`.
 
@@ -997,7 +997,7 @@ Detaches a solid reference from a comp-solid definition.
 public func compSolidRemoveSolid(_ compSolidIndex: Int, solidRefIndex: Int) -> Bool
 ```
 
-- **Parameters:** `compSolidIndex` — comp-solid definition index; `solidRefIndex` — solid reference index.
+- **Parameters:** `compSolidIndex`, comp-solid definition index; `solidRefIndex`, solid reference index.
 - **Returns:** `true` if the active usage was removed.
 - **OCCT:** `BRepGraph_EditorView::CompSolids().RemoveSolid(BRepGraph_CompSolidId, BRepGraph_SolidRefId)`.
 
@@ -1011,8 +1011,8 @@ Removes a representation (surface, curve, triangulation, polygon) from its side-
 public func removeRep(repKind: Int, repIndex: Int)
 ```
 
-- **Parameters:** `repKind` — representation kind integer (0=FaceSurface, 1=FaceTriangulation, 2=EdgeCurve3D, 3=EdgePolygon3D, 4=CoEdgeCurve2D, 5=CoEdgePolygon2D, 6=CoEdgePolygonOnTri); `repIndex` — index returned when the rep was added.
-- **OCCT:** Pure-Swift side-registry nullification; does not call a single OCCT C++ method — the slot is nullified so that a subsequent `Set*RepId()` call resolving the same index becomes a safe no-op.
+- **Parameters:** `repKind`, representation kind integer (0=FaceSurface, 1=FaceTriangulation, 2=EdgeCurve3D, 3=EdgePolygon3D, 4=CoEdgeCurve2D, 5=CoEdgePolygon2D, 6=CoEdgePolygonOnTri); `repIndex`, index returned when the rep was added.
+- **OCCT:** Pure-Swift side-registry nullification; does not call a single OCCT C++ method, the slot is nullified so that a subsequent `Set*RepId()` call resolving the same index becomes a safe no-op.
 - **Note:** In OCCT 8.0.0p1 representations are owned by their topology definitions and cleared through per-kind editors. This method nullifies the OCCTSwift side-registry slot only.
 
 ---

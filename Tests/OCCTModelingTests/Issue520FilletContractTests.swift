@@ -12,7 +12,7 @@ import Foundation
 ///    `OCCTShapeFilletVariable` computed was truncated to an `int` and used as the *contour* index.
 ///    A 20mm box filleted with `[(0, 1.0), (1, 3.0)]` measured 7995.707963, which is exactly the
 ///    constant-1.0 result; the profile OCCT was asked for gives 7981.047467.
-/// 2. A contour added by `Add(edge)` that never receives a radius makes `Build()` SIGSEGV — not a
+/// 2. A contour added by `Add(edge)` that never receives a radius makes `Build()` SIGSEGV, not a
 ///    `Standard_Failure`, so no `catch (...)` in the bridge can turn it into `nil`.
 /// 3. A negative radius inside a `UandR` profile does *not* fail `IsDone()` the way
 ///    `Add(radius, edge)` does (#489). It reports success and hands back a shape

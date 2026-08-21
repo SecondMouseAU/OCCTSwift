@@ -6,14 +6,14 @@ has_children: true
 
 # OCCTSwift API Reference
 
-A **detailed, per-type function reference** for the OCCTSwift Swift API — modelled on OCCT's own
+A **detailed, per-type function reference** for the OCCTSwift Swift API, modelled on OCCT's own
 Doxygen class reference (`dev.opencascade.org`, indexed on context7 as `/open-cascade-sas/occt`).
 One page per public Swift type, every public method documented: signature, behaviour, parameters,
 return, the **OCCT class/method it wraps**, a runnable example, and gotchas.
 
-This complements the other docs — it's the *exhaustive* surface, vs:
-- [`API_REFERENCE.md`](../API_REFERENCE.md) — the compact Swift→OCCT **mapping table**.
-- [`guides/cookbook/`](../guides/cookbook/) — *task-oriented* example pages.
+This complements the other docs, it's the *exhaustive* surface, vs:
+- [`API_REFERENCE.md`](../API_REFERENCE.md), the compact Swift→OCCT **mapping table**.
+- [`guides/cookbook/`](../guides/cookbook/), *task-oriented* example pages.
 
 > **Generation.** These pages are produced by subagents (see `/document-api`), one per source file,
 > each reading the Swift source + the `OCCTBridge` mapping + the upstream OCCT docs. Built over time;
@@ -46,7 +46,7 @@ parent: API Reference
 
 ### `Type.method(label:)`     ← `###` per public member, in source order
 
-<one-line summary — what it does.>
+<one-line summary, what it does.>
 
 ​```swift
 public func method(label: Type) -> ReturnType
@@ -54,9 +54,9 @@ public func method(label: Type) -> ReturnType
 
 <optional 1–2 sentences of detail / when to use.>
 
-- **Parameters:** `label` — meaning. *(omit if none)*
+- **Parameters:** `label`, meaning. *(omit if none)*
 - **Returns:** what comes back; **state nil/throws conditions** for optionals/throwing calls.
-- **OCCT:** `Upstream_Class::Method` — the wrapped C++ API. *(omit only if pure-Swift)*
+- **OCCT:** `Upstream_Class::Method`, the wrapped C++ API. *(omit only if pure-Swift)*
 - **Example:**
   ​```swift
   let r = Type.method(label: …)
@@ -66,18 +66,18 @@ public func method(label: Type) -> ReturnType
 
 ## Entry rules (the template contract)
 
-1. **Signature is verbatim** from the source — copy the full public declaration, including defaults.
+1. **Signature is verbatim** from the source, copy the full public declaration, including defaults.
 2. **Every public `func` / `var` / `static func` / `init`** of the type gets a `###` entry, in source
    order, grouped under its `// MARK:` section.
-3. **OCCT mapping is required** wherever the method calls a bridge function — name the upstream class
+3. **OCCT mapping is required** wherever the method calls a bridge function, name the upstream class
    (`BRepBuilderAPI_MakeWire`, `Geom_BSplineCurve`, …). Find it from the bridge `.mm` implementation
    or the cross-reference index in `OCCTBridge.h`. Omit only for pure-Swift helpers.
 4. **Examples must be signature-faithful and runnable.** Reuse a snippet from a cookbook page or a
    test where one exists (these are compile-checked); otherwise write a minimal, type-correct one.
    Fallible APIs unwrap with `guard`/`if let`, never force-unwrap.
-5. **No invention.** Behaviour comes from the source doc comment, the bridge, and the OCCT docs — not
+5. **No invention.** Behaviour comes from the source doc comment, the bridge, and the OCCT docs, not
    guessed. If a method's purpose is unclear, say so briefly rather than fabricate.
-6. **Concise.** Reference, not prose — one tight summary line, parameters/returns as bullets.
+6. **Concise.** Reference, not prose, one tight summary line, parameters/returns as bullets.
 
 ## Rollout
 
@@ -90,7 +90,7 @@ public func method(label: Type) -> ReturnType
 
 ## Status
 
-Coverage tracker — update as pages land. (Counts = public decls in the source file.)
+Coverage tracker, update as pages land. (Counts = public decls in the source file.)
 
 | Type | decls | page | status |
 |------|------:|------|--------|

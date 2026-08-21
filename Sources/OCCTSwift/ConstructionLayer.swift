@@ -5,12 +5,12 @@ import simd
 // MARK: - XCAF CONSTRUCTION layer persistence (#72 D1, v0.143)
 //
 // OCCT has no typed "construction geometry" attribute, but the XCAF Layer system
-// provides a standard way to tag shapes as belonging to a named layer — and
+// provides a standard way to tag shapes as belonging to a named layer, and
 // both STEP and IGES round-trip layer assignments.
 //
 // Strategy here matches FreeCAD's best-effort approach:
 // 1. Recipes (ConstructionPlane, ConstructionAxis, ConstructionPoint) remain
-//    in-memory — their structure is not preserved through STEP.
+//    in-memory, their structure is not preserved through STEP.
 // 2. On `materialize(in:graph:)`, each recipe is resolved against a graph and
 //    a representative `TopoDS_Shape` is created: a finite-but-large face for a
 //    plane, an edge segment for an axis, a vertex for a point.
@@ -76,10 +76,10 @@ extension ConstructionContext {
     ///
     /// Reads every plane/axis/point as one atomic cross-store snapshot up front
     /// (`allEntitiesSnapshot`, PR #898 review finding 1), so a concurrent `removeAll()`/
-    /// `remove()` can't be observed mid-flight — some kinds already cleared, others not, the same
+    /// `remove()` can't be observed mid-flight, some kinds already cleared, others not, the same
     /// torn-cross-store-read bug class `count()` was fixed for. The per-entity resolve/build/add
     /// work below runs entirely against that local snapshot, outside any `ConstructionContext`
-    /// lock — see the doc comment on `allEntitiesSnapshot` for why that's safe.
+    /// lock, see the doc comment on `allEntitiesSnapshot` for why that's safe.
     @discardableResult
     public func materialize(
         in document: Document,
@@ -161,11 +161,11 @@ extension ConstructionContext {
     ///
     /// `addShape` is injected rather than calling `document.addConstructionShape` directly so
     /// this can be unit-tested against a controllable failure without needing a real OCCT-level
-    /// failure to trigger it (`internal`, not `private`, for exactly that reason — PR #898 review,
+    /// failure to trigger it (`internal`, not `private`, for exactly that reason, PR #898 review,
     /// finding 4).
     ///
     /// `document.addConstructionShape` (`ConstructionLayer.swift:39` at the time of the review)
-    /// returns a negative `Int64` on failure — this used to skip straight to
+    /// returns a negative `Int64` on failure, this used to skip straight to
     /// `.success((id: id, labelId: labelId))` without checking, so a failed add was still counted
     /// as materialized with a garbage negative `labelId` and no actual CONSTRUCTION-layer shape in
     /// the document.
@@ -192,7 +192,7 @@ extension ConstructionContext {
     /// Outcome of `materializeOne(...)`.
     ///
     /// Either the new construction-layer shape's ID/label pair, or the `MaterializationFailure`
-    /// that explains why there isn't one. Not `Result<_, _>` — `MaterializationFailure` is a
+    /// that explains why there isn't one. Not `Result<_, _>`, `MaterializationFailure` is a
     /// plain `Sendable` value, not an `Error`, by design (see its own declaration).
     internal enum MaterializeOutcome<ID> {
         case success((id: ID, labelId: Int64))
@@ -218,7 +218,7 @@ extension ConstructionContext {
         case axisShapeFailed(AxisID)
         case pointShapeFailed(PointID)
         /// The representative shape built fine, but `Document.addConstructionShape` failed to add
-        /// it (returned a negative label ID) — distinct from `planeShapeFailed`/etc. above, which
+        /// it (returned a negative label ID), distinct from `planeShapeFailed`/etc. above, which
         /// mean no shape was ever built at all (PR #898 review, finding 4).
         case planeAddFailed(PlaneID)
         case axisAddFailed(AxisID)
@@ -227,7 +227,7 @@ extension ConstructionContext {
 
     // MARK: - Representative-shape builders
     //
-    // #880: `axisShape` has a bare-wire fallback and `planeShape` doesn't — deliberate, not an
+    // #880: `axisShape` has a bare-wire fallback and `planeShape` doesn't, deliberate, not an
     // oversight. `Placement`'s only public constructors derive an orthonormal x/y basis from a
     // single normal, so every reachable non-degenerate plane already produces a closed, planar,
     // non-self-intersecting quad, and `Shape.face(from:)` builds it: measured across a halfSize
@@ -236,11 +236,11 @@ extension ConstructionContext {
     // reach "wire built, face failed" is a placement corrupted by a zero-length normal (`.absolute`
     // called with `normal: .zero`): `simd_normalize` turns that into NaN, and `MakePolygon` builds
     // a "done" wire from NaN points anyway. Measured directly: adding `?? Shape.shape(from: wire)`
-    // there does make that case "succeed" — by silently adding a NaN-vertexed shape to the document
+    // there does make that case "succeed", by silently adding a NaN-vertexed shape to the document
     // instead of reporting `.planeShapeFailed`. That's a worse outcome than the failure it would
     // replace, so the fallback stays off. `axisShape`'s fallback doesn't have this problem: its
     // wire always comes from `Wire.line`, which already rejects a degenerate (incl. NaN-length)
-    // direction before returning one — see below.
+    // direction before returning one, see below.
 
     private func planeShape(placement: Placement, halfSize: Double) -> Shape? {
         let o = placement.origin
@@ -255,7 +255,7 @@ extension ConstructionContext {
     }
 
     // An axis's wire is a single open edge (`Wire.line`), so `Shape.face(from:)` can never close
-    // it into a face — unlike `planeShape` above, the bare-wire fallback here is the *only* shape
+    // it into a face, unlike `planeShape` above, the bare-wire fallback here is the *only* shape
     // an axis ever materializes as, not a rare degenerate-input path. `Wire.line` itself already
     // guards against a degenerate (zero-length or NaN) direction, returning `nil` before this
     // function would otherwise see it, so the fallback only ever wraps a genuinely valid line.

@@ -9,13 +9,13 @@ The construction & sketching types implement Fusion 360-style parametric referen
 
 ## Topics
 
-- [Placement](#placement) · [ConstructionPlane](#constructionplane) · [ConstructionAxis](#constructionaxis) · [ConstructionPoint](#constructionpoint) · [ConstructionResolutionError](#constructionresolutionerror) · [BRepGraph resolve extensions](#brepgraph-resolve-extensions) · [BRepGraph.childIndices](#brepgraphchildindices) · [ConstructionContext](#constructioncontext) · [Document.constructionContext](#documentconstructioncontext) · [ConstructionLayer — Document extension](#constructionlayer--document-extension) · [ConstructionContext.materialize](#constructioncontextmaterialize) · [SketchElement](#sketchelement) · [Sketch](#sketch) · [Shape.section2D](#shapesection2d) · [Shape.SectionView](#shapesectionview)
+- [Placement](#placement) · [ConstructionPlane](#constructionplane) · [ConstructionAxis](#constructionaxis) · [ConstructionPoint](#constructionpoint) · [ConstructionResolutionError](#constructionresolutionerror) · [BRepGraph resolve extensions](#brepgraph-resolve-extensions) · [BRepGraph.childIndices](#brepgraphchildindices) · [ConstructionContext](#constructioncontext) · [Document.constructionContext](#documentconstructioncontext) · [ConstructionLayer, Document extension](#constructionlayer--document-extension) · [ConstructionContext.materialize](#constructioncontextmaterialize) · [SketchElement](#sketchelement) · [Sketch](#sketch) · [Shape.section2D](#shapesection2d) · [Shape.SectionView](#shapesectionview)
 
 ---
 
 ## Placement
 
-A rigid-body placement in 3D space — an origin plus an orthonormal basis. Used as the resolved output of `ConstructionPlane` queries and as the coordinate frame for sketch hosting.
+A rigid-body placement in 3D space, an origin plus an orthonormal basis. Used as the resolved output of `ConstructionPlane` queries and as the coordinate frame for sketch hosting.
 
 ### `Placement.init(origin:xAxis:yAxis:zAxis:)`
 
@@ -28,10 +28,10 @@ public init(origin: SIMD3<Double>, xAxis: SIMD3<Double>, yAxis: SIMD3<Double>, z
 All four vectors must be provided by the caller; no normalisation is performed. `zAxis` is the plane normal when the placement describes a construction plane.
 
 - **Parameters:**
-  - `origin` — the origin point of the frame.
-  - `xAxis` — unit vector along the local X axis.
-  - `yAxis` — unit vector along the local Y axis.
-  - `zAxis` — unit vector along the local Z axis (plane normal).
+  - `origin`: the origin point of the frame.
+  - `xAxis`: unit vector along the local X axis.
+  - `yAxis`: unit vector along the local Y axis.
+  - `zAxis`: unit vector along the local Z axis (plane normal).
 - **Example:**
   ```swift
   let placement = Placement(
@@ -67,8 +67,8 @@ public init(origin: SIMD3<Double>, normal: SIMD3<Double>)
 Picks a stable X axis using `worldUp × normal`; falls back to `worldY × normal` when the normal is near-parallel to `worldUp`. Use this convenience form when you only know the plane origin and normal and don't care about a specific X orientation.
 
 - **Parameters:**
-  - `origin` — the origin point of the plane.
-  - `normal` — plane normal; will be normalised.
+  - `origin`: the origin point of the plane.
+  - `normal`: plane normal; will be normalised.
 - **Example:**
   ```swift
   let xzPlacement = Placement(origin: .zero, normal: SIMD3(0, 1, 0))
@@ -89,7 +89,7 @@ A fixed plane defined by a world-space point and normal.
 case absolute(origin: SIMD3<Double>, normal: SIMD3<Double>)
 ```
 
-Resolves immediately without consulting the topology graph — always succeeds.
+Resolves immediately without consulting the topology graph, always succeeds.
 
 - **Example:**
   ```swift
@@ -107,11 +107,11 @@ case offsetFromFace(face: TopologyRef, distance: Double)
 ```
 
 - **Parameters:**
-  - `face` — topology reference resolving to a face node.
-  - `distance` — signed offset along the outward face normal (positive = outward).
+  - `face`: topology reference resolving to a face node.
+  - `distance`: signed offset along the outward face normal (positive = outward).
 
 The face's own point/normal come from its UV-domain midpoint (`Face.uvMidpointSample()`), a
-face-representative sample — appropriate here, since this case wants a plane parallel to the whole
+face-representative sample, appropriate here, since this case wants a plane parallel to the whole
 face rather than tangent at a specific point (contrast `tangentToFace` below, #879).
 
 ---
@@ -127,21 +127,21 @@ case throughAxis(axis: TopologyRef, angleDeg: Double)
 `axis` resolves through the same `resolveEdgeDirection` helper `alongEdge` uses (see that entry
 above), not a bare endpoint-to-endpoint chord: for a non-linear edge next to a cylindrical or
 conical face whose axis the edge is a genuine circular cross-section of, this resolves to that
-face's true rotation axis, not the edge's own chord — e.g. `axis` naming a hole rim's edge
+face's true rotation axis, not the edge's own chord, e.g. `axis` naming a hole rim's edge
 resolves to the hole's own axis, anchored where that edge sits along it (#894). A linear edge, or
 a curved one with no qualifying adjacent face, still resolves to its chord as before.
 
-The reference perpendicular is `perpendicularBasis(to: dir)` — the same canonical, `gp_Ax2`-
+The reference perpendicular is `perpendicularBasis(to: dir)`, the same canonical, `gp_Ax2`-
 matching basis every other perpendicular-to-a-direction site in this module now shares (#881), not
 the previous per-call-site `worldUp × axis`. **Behavior change**, same scope as #881's own: the
 zero-degree reference plane moved for every axis direction except world ±Z (see #881's own
-CHANGELOG entry for the full explanation and a worked example) — a `throughAxis` plane built
+CHANGELOG entry for the full explanation and a worked example), a `throughAxis` plane built
 against a world ±X- or ±Y-direction axis at a given `angleDeg` is not the same plane a prior
 release would have built at that angle. Rotation is about the axis direction.
 
 - **Parameters:**
-  - `axis` — topology reference to an edge; need not be linear (see above).
-  - `angleDeg` — rotation angle in degrees around the axis, from the `perpendicularBasis(to:)`
+  - `axis`: topology reference to an edge; need not be linear (see above).
+  - `angleDeg`: rotation angle in degrees around the axis, from the `perpendicularBasis(to:)`
     reference.
 
 ---
@@ -155,26 +155,26 @@ case tangentToFace(face: TopologyRef, at: TopologyRef)
 ```
 
 - **Parameters:**
-  - `face` — topology reference resolving to the face.
-  - `at` — topology reference resolving to a vertex on that face.
+  - `face`: topology reference resolving to the face.
+  - `at`: topology reference resolving to a vertex on that face.
 
 The normal is evaluated at `at`'s own projected UV location on `face` (via `Face.project(point:)` +
-`Face.normal(atU:v:)`), not the face's UV-domain midpoint — so on a curved face (cylinder, cone,
+`Face.normal(atU:v:)`), not the face's UV-domain midpoint, so on a curved face (cylinder, cone,
 sphere, torus, freeform) the plane is genuinely tangent at the requested point, not just
 coincidentally correct the way a planar face makes any point's normal agree with any other's (#879).
-The `Placement`'s origin is the actual projected point, not the raw `at` point verbatim — they can
+The `Placement`'s origin is the actual projected point, not the raw `at` point verbatim, they can
 differ when `at` doesn't genuinely lie on `face` (PR #897 review, finding 2). The projection is
 bounded to `face`'s UV bounds (a rectangular box in parameter space), not the exact trimmed
 boundary, so for a non-convex or holed face the origin can land inside that box but outside the
 real trimmed region (#914 review, finding 3). If either
 `face.project(point:)` itself fails to converge, or the projected point is a genuine parametric
-singularity (e.g. a cone apex, where the two tangent directions coincide rather than merely shrink —
+singularity (e.g. a cone apex, where the two tangent directions coincide rather than merely shrink,
 a sphere's pole is *not* such a point, OCCT still resolves a normal there), the exact local normal
 is undefined, and this falls back to the face's UV-midpoint sample instead of failing, so
 `tangentToFace` still succeeds for any face with valid `uvBounds` (PR #897 review, 3rd + xhigh pass).
 
 ```swift
-// Tangent to a cylindrical face at a specific vertex — the plane's normal
+// Tangent to a cylindrical face at a specific vertex, the plane's normal
 // follows the vertex's own local surface normal, not the face's midpoint.
 let plane = ConstructionPlane.tangentToFace(face: cylindricalFaceRef, at: vertexRef)
 if case .success(let p) = graph.resolve(plane) {
@@ -193,7 +193,7 @@ case midPlane(TopologyRef, TopologyRef)
 ```
 
 The normal is the average (or either half-normal for antiparallel faces) of the two face normals,
-each taken from `Face.uvMidpointSample()` — a face-representative sample, appropriate here since
+each taken from `Face.uvMidpointSample()`, a face-representative sample, appropriate here since
 both faces contribute as wholes rather than at a specific point.
 
 ---
@@ -219,8 +219,8 @@ case normalToEdge(edge: TopologyRef, t: Double)
 ```
 
 - **Parameters:**
-  - `edge` — topology reference to the edge.
-  - `t` — parameter in `[0, 1]` along the edge; clamped automatically.
+  - `edge`: topology reference to the edge.
+  - `t`: parameter in `[0, 1]` along the edge; clamped automatically.
 
 ---
 
@@ -248,7 +248,7 @@ case alongEdge(TopologyRef)
 
 For a non-linear edge, every adjacent face whose `Face.primaryAxis` is a cylinder or cone is
 gathered as a candidate; the axis redirect is taken only when all candidates agree
-(`axesAgree`, within tolerance) and the edge itself passes a coaxial-cross-section check —
+(`axesAgree`, within tolerance) and the edge itself passes a coaxial-cross-section check,
 constant radius and height along the candidate axis at several sampled points along the edge.
 That check is what rejects an elliptical rim (an oblique-plane cut of a cylinder, whose height
 along the axis varies around the curve) or a helical edge: both fall through to the
@@ -259,18 +259,18 @@ the zero vector. A zero-length fallback result fails with `.degenerate("zero-len
 
 Once a qualifying axis is found, its sign is re-derived from the edge's own start→end
 parameterization (`Face.primaryAxis`'s stored sign is the adjacent surface's convention, unrelated
-to which end of the edge is "first") — this needs `Edge.tangent(at:)` at the edge's own start
+to which end of the edge is "first"), this needs `Edge.tangent(at:)` at the edge's own start
 point, which can fail even where `Edge.point(at:)` already succeeded (a first-derivative
 singularity on a reparameterized curve). Where that happens, this fails with
 `.degenerate("edge tangent unavailable at start; cannot determine axis sign")` rather than falling
-back to `Face.primaryAxis`'s unflipped, possibly-wrong-signed direction — a plausible-looking wrong
+back to `Face.primaryAxis`'s unflipped, possibly-wrong-signed direction, a plausible-looking wrong
 sign is worse than an explicit failure (#914 review, second round).
 
 ---
 
 ### `ConstructionAxis.normalToFace(face:at:)`
 
-An axis perpendicular to a face at a reference vertex — anchored on the face's true rotation axis
+An axis perpendicular to a face at a reference vertex, anchored on the face's true rotation axis
 line (projected from `at`) for cylindrical/conical/toroidal/revolved faces, or at `at`'s own
 projected on-face location otherwise. See below for the full per-kind breakdown.
 
@@ -279,31 +279,31 @@ case normalToFace(face: TopologyRef, at: TopologyRef)
 ```
 
 The direction comes from `Face.primaryAxis` when the face has one and is genuinely a rotation
-axis — cylindrical, conical, toroidal, and surface-of-revolution faces (an allow-list, so a future
+axis, cylindrical, conical, toroidal, and surface-of-revolution faces (an allow-list, so a future
 `ShapeAxis.Kind` this code doesn't yet know about defaults to the normal-based fallback below rather
-than being treated as a genuine axis, PR #897 review, finding 8) — so it is the surface's own
+than being treated as a genuine axis, PR #897 review, finding 8), so it is the surface's own
 constant axis of revolution, not a per-point sample (#882). For planar and free-form faces, which
 have no `primaryAxis` at all, it falls back to the local surface normal at `at`'s own projected
-location on the face — the same point-aware projection `tangentToFace` uses above, so this varies
-with `at` instead of always answering the fixed UV-midpoint normal (PR #897 review, finding 4) —
+location on the face, the same point-aware projection `tangentToFace` uses above, so this varies
+with `at` instead of always answering the fixed UV-midpoint normal (PR #897 review, finding 4),
 falling back further to the UV-midpoint normal if that projection or normal lookup fails.
 
 Surface-of-extrusion faces also have a `primaryAxis`, but its `direction` is the *sweep* direction
 of `Geom_SurfaceOfLinearExtrusion` (tangent to the surface, not perpendicular to it), so they're
 deliberately excluded from the axis branch. Spherical faces are excluded too, for a different
 reason: a sphere has no intrinsic rotation axis at all (it's symmetric about every axis through its
-center), so `Face.primaryAxis` reports the arbitrary construction-frame pole — the same fixed
-direction regardless of which point on the sphere `at` names — rather than a property of the
+center), so `Face.primaryAxis` reports the arbitrary construction-frame pole, the same fixed
+direction regardless of which point on the sphere `at` names, rather than a property of the
 surface (PR #897 review, 3rd pass). Both fall back to the face's UNconditional UV-midpoint normal,
 not the point-aware projection above: a sphere's *true* local normal at its own pole is parallel to
-this very (excluded) axis — the radial direction from center — so a point-aware fallback there would
+this very (excluded) axis, the radial direction from center, so a point-aware fallback there would
 silently reproduce the excluded axis by another route at exactly the vertex the exclusion exists to
 guard (PR #897 review, xhigh pass).
 
 The returned axis's **origin** is never the raw `at` point verbatim, for the same reason
 `tangentToFace`'s origin isn't (finding 2 above). For cylindrical/conical/toroidal/revolved faces
-it's `at`'s own position projected onto the face's true rotation axis LINE — `axis.origin +
-((at − axis.origin) · direction) * direction` — kept edge-local (nearest to `at` along the axis)
+it's `at`'s own position projected onto the face's true rotation axis LINE, `axis.origin +
+((at − axis.origin) · direction) * direction`, kept edge-local (nearest to `at` along the axis)
 rather than snapped to the surface's own placement origin, which can be far away (#914 review,
 finding 1 corollary; #897 review, third pass). Pairing the correct direction with the raw,
 generally off-axis `at` point (a vertex on the surface sits offset from the true centerline by the
@@ -371,7 +371,7 @@ The 3D coordinate of a topology vertex.
 case atVertex(TopologyRef)
 ```
 
-- **OCCT:** `OCCTShapeVertexPoint` — reads the `gp_Pnt` from a `TopoDS_Vertex`.
+- **OCCT:** `OCCTShapeVertexPoint`, reads the `gp_Pnt` from a `TopoDS_Vertex`.
 
 ---
 
@@ -393,20 +393,20 @@ The face's real area centroid.
 case centroidOfFace(TopologyRef)
 ```
 
-Computed via `Face.surfaceInertia.centerOfMass` — the same moment-based integration
-`Shape.measure().faceCentroids` uses — not a UV-parameter midpoint (#884). For a non-uniformly
+Computed via `Face.surfaceInertia.centerOfMass`, the same moment-based integration
+`Shape.measure().faceCentroids` uses, not a UV-parameter midpoint (#884). For a non-uniformly
 parameterized surface (a sphere, cone, or general NURBS face) this can differ substantially from a
 UV-midpoint sample, and for a closed or symmetric face the true centroid can lie off the surface
 entirely (e.g. at a full sphere's center). Fails with
 `.degenerate("face area is zero, or its inertia could not be computed")` rather than reporting a
-fabricated point — the message doesn't commit to "zero area" alone because `centerOfMass` is also
+fabricated point, the message doesn't commit to "zero area" alone because `centerOfMass` is also
 nil when the underlying `BRepGProp_Sinert` computation itself fails (e.g. a self-intersecting
 face), a distinct cause the Swift API can't currently tell apart from genuine zero area (#897
 review, third pass).
 
 ```swift
 // A cylinder's lateral face has its true area centroid on the cylinder's own axis
-// (radial distance 0) — a UV-midpoint sample instead sits a full radius off-axis.
+// (radial distance 0), a UV-midpoint sample instead sits a full radius off-axis.
 let point = ConstructionPoint.centroidOfFace(cylindricalFaceRef)
 switch graph.resolve(point) {
 case .success(let p):
@@ -428,7 +428,7 @@ The 3D point at a fractional parameter along an edge.
 case atEdgeParameter(edge: TopologyRef, t: Double)
 ```
 
-- **Parameters:** `t` — in `[0, 1]`; clamped before use.
+- **Parameters:** `t`, in `[0, 1]`; clamped before use.
 
 ---
 
@@ -457,10 +457,10 @@ public enum ConstructionResolutionError: Error, Sendable {
 }
 ```
 
-- `.topology` — the underlying `TopologyRef` could not be resolved (e.g. the node was deleted).
-- `.notApplicable` — the referenced node is the wrong kind (e.g. an edge where a face was expected).
-- `.degenerate` — the geometry is valid but produces a degenerate result (e.g. collinear points, parallel planes).
-- `.missingGeometry` — the node exists in the graph but carries no shape geometry.
+- `.topology`: the underlying `TopologyRef` could not be resolved (e.g. the node was deleted).
+- `.notApplicable`: the referenced node is the wrong kind (e.g. an edge where a face was expected).
+- `.degenerate`: the geometry is valid but produces a degenerate result (e.g. collinear points, parallel planes).
+- `.missingGeometry`: the node exists in the graph but carries no shape geometry.
 
 ---
 
@@ -573,11 +573,11 @@ public func childIndices(rootKind: NodeKind, rootIndex: Int, targetKind: NodeKin
 Complements `childCount(rootKind:rootIndex:targetKind:)` by giving the actual index values rather than just the count. Used internally by construction-entity resolvers when enumerating sub-topology.
 
 - **Parameters:**
-  - `rootKind` — the `NodeKind` of the root node.
-  - `rootIndex` — the ordinal index of the root node in the graph.
-  - `targetKind` — the `NodeKind` to collect descendants of.
+  - `rootKind`: the `NodeKind` of the root node.
+  - `rootIndex`: the ordinal index of the root node in the graph.
+  - `targetKind`: the `NodeKind` to collect descendants of.
 - **Returns:** An array of graph indices; empty if there are none.
-- **OCCT:** `OCCTBRepGraphChildIndices` — queries the pre-built BRep-graph adjacency tables.
+- **OCCT:** `OCCTBRepGraphChildIndices`, queries the pre-built BRep-graph adjacency tables.
 - **Example:**
   ```swift
   let faceIndices = graph.childIndices(rootKind: .solid, rootIndex: 0, targetKind: .face)
@@ -589,7 +589,7 @@ Complements `childCount(rootKind:rootIndex:targetKind:)` by giving the actual in
 
 A document-level, thread-safe registry of named construction entities. Entities are stored by value under opaque typed IDs; they are resolved on demand against a `BRepGraph`. Insertion order is preserved. Thread-safe via an internal `NSLock`.
 
-> **Persistence note:** Construction entity _recipes_ live in Swift value storage only — they are not serialised into the XCAF/XDE shape tree. STEP round-trip preserves layer tags (see `ConstructionLayer`) but loses recipe structure. Serialise the `ConstructionContext` separately (e.g. as JSON via `Codable`) if recipe round-trip is required.
+> **Persistence note:** Construction entity _recipes_ live in Swift value storage only, they are not serialised into the XCAF/XDE shape tree. STEP round-trip preserves layer tags (see `ConstructionLayer`) but loses recipe structure. Serialise the `ConstructionContext` separately (e.g. as JSON via `Codable`) if recipe round-trip is required.
 
 ### `ConstructionContext.PlaneID`
 
@@ -679,8 +679,8 @@ public func add(_ plane: ConstructionPlane, name: String? = nil) -> PlaneID
 ```
 
 - **Parameters:**
-  - `plane` — the plane recipe to register.
-  - `name` — optional human-readable label (e.g. `"Top"`, `"XZ"`) for display purposes.
+  - `plane`: the plane recipe to register.
+  - `name`: optional human-readable label (e.g. `"Top"`, `"XZ"`) for display purposes.
 - **Returns:** A new `PlaneID`; discard if you don't need to look up the entity later.
 - **Example:**
   ```swift
@@ -700,8 +700,8 @@ public func add(_ axis: ConstructionAxis, name: String? = nil) -> AxisID
 ```
 
 - **Parameters:**
-  - `axis` — the axis recipe.
-  - `name` — optional label.
+  - `axis`: the axis recipe.
+  - `name`: optional label.
 - **Returns:** A new `AxisID`.
 
 ---
@@ -716,8 +716,8 @@ public func add(_ point: ConstructionPoint, name: String? = nil) -> PointID
 ```
 
 - **Parameters:**
-  - `point` — the point recipe.
-  - `name` — optional label.
+  - `point`: the point recipe.
+  - `name`: optional label.
 - **Returns:** A new `PointID`.
 
 ---
@@ -873,8 +873,8 @@ public func resolve(_ id: PlaneID, in graph: BRepGraph) -> Result<Placement, Con
 Delegates to `BRepGraph.resolve(_:)`. Returns `.failure(.notApplicable(...))` if `id` is not registered.
 
 - **Parameters:**
-  - `id` — the `PlaneID` to resolve.
-  - `graph` — the topology graph to evaluate the recipe against.
+  - `id`: the `PlaneID` to resolve.
+  - `graph`: the topology graph to evaluate the recipe against.
 - **Returns:** `Result<Placement, ConstructionResolutionError>`.
 - **Example:**
   ```swift
@@ -921,8 +921,8 @@ public struct BrokenEntities: Sendable {
 }
 ```
 
-- `isEmpty` — `true` when all three lists are empty (no broken entities).
-- `totalCount` — total count of broken entities across all three types.
+- `isEmpty`: `true` when all three lists are empty (no broken entities).
+- `totalCount`: total count of broken entities across all three types.
 
 ---
 
@@ -958,7 +958,7 @@ public func allBroken(in graph: BRepGraph) -> BrokenEntities
 
 Useful in agent workflows after model edits to detect stale construction references before attempting a sketch build or section.
 
-- **Parameters:** `graph` — the topology graph to evaluate against.
+- **Parameters:** `graph`, the topology graph to evaluate against.
 - **Returns:** A `BrokenEntities` value listing planes, axes, and points that returned `.failure`.
 - **Example:**
   ```swift
@@ -998,7 +998,7 @@ public var constructionContext: ConstructionContext { get }
 
 Construction entities live alongside the document's shapes but are not part of the XDE shape tree. Each `Document` instance gets exactly one `ConstructionContext`; repeated access returns the same object.
 
-- **Lifetime:** the context is tied to the `Document` instance and is released with it. A newly created `Document` always starts with an empty context, and its entities are never visible to any other document. (Before v1.9.1 this did not hold — see [#277](https://github.com/SecondMouseAU/OCCTSwift/issues/277).)
+- **Lifetime:** the context is tied to the `Document` instance and is released with it. A newly created `Document` always starts with an empty context, and its entities are never visible to any other document. (Before v1.9.1 this did not hold, see [#277](https://github.com/SecondMouseAU/OCCTSwift/issues/277).)
 - **Example:**
   ```swift
   let doc = Document()
@@ -1008,7 +1008,7 @@ Construction entities live alongside the document's shapes but are not part of t
 
 ---
 
-## ConstructionLayer — Document extension
+## ConstructionLayer. Document extension
 
 Declared in `ConstructionLayer.swift`. Provides XCAF layer tagging for construction shapes so that layer membership survives STEP/IGES round-trip.
 
@@ -1033,7 +1033,7 @@ Adds a shape to the document and immediately tags it with the `CONSTRUCTION` XCA
 public func addConstructionShape(_ shape: Shape) -> Int64
 ```
 
-- **Parameters:** `shape` — the shape to add (typically a face, edge, or vertex materialised from a recipe).
+- **Parameters:** `shape`, the shape to add (typically a face, edge, or vertex materialised from a recipe).
 - **Returns:** The new label ID (≥ 0 on success, negative on failure).
 - **OCCT:** `XCAFDoc_LayerTool::SetLayer` via `AssemblyNode.setLayer(_:)`.
 - **Example:**
@@ -1078,8 +1078,8 @@ public struct MaterializeOptions: Sendable {
 }
 ```
 
-- `planeHalfSize` — half-side of the square face representing each plane (default 100 mm).
-- `axisHalfLength` — half-length of the edge representing each axis (default 100 mm).
+- `planeHalfSize`: half-side of the square face representing each plane (default 100 mm).
+- `axisHalfLength`: half-length of the edge representing each axis (default 100 mm).
 
 ---
 
@@ -1103,7 +1103,7 @@ public struct MaterializationResult: Sendable {
 }
 ```
 
-- `totalMaterialized` — combined count of successfully materialised planes, axes, and points.
+- `totalMaterialized`: combined count of successfully materialised planes, axes, and points.
 
 | Field | Meaning |
 |---|---|
@@ -1194,9 +1194,9 @@ Each resolved entity becomes a finite representative shape:
 Shapes are added to `document` via `addConstructionShape(_:)`, which tags them with the `CONSTRUCTION` XCAF layer.
 
 - **Parameters:**
-  - `document` — the document to add shapes to.
-  - `graph` — the topology graph for resolving entity recipes.
-  - `options` — size parameters for the representative shapes.
+  - `document`: the document to add shapes to.
+  - `graph`: the topology graph for resolving entity recipes.
+  - `options`: size parameters for the representative shapes.
 - **Returns:** A `MaterializationResult` describing what succeeded and what failed.
 - **Example:**
   ```swift
@@ -1251,7 +1251,7 @@ public func tessellate2D(segmentsPerRadian: Int = 16) -> [SIMD2<Double>]
 
 Lines and polylines return their defining points exactly. Arcs and circles are tessellated at the given density.
 
-- **Parameters:** `segmentsPerRadian` — number of line segments per radian of arc; default 16.
+- **Parameters:** `segmentsPerRadian`, number of line segments per radian of arc; default 16.
 - **Returns:** Array of 2D points in order along the curve. Circles include a repeated closing point.
 - **Example:**
   ```swift
@@ -1273,7 +1273,7 @@ public var curve: CurveKind
 
 ### `SketchElement.isConstruction`
 
-Whether this element is construction geometry — excluded from `Sketch.buildProfile`.
+Whether this element is construction geometry, excluded from `Sketch.buildProfile`.
 
 ```swift
 public var isConstruction: Bool
@@ -1302,9 +1302,9 @@ public init(curve: CurveKind, isConstruction: Bool = false, id: UUID = UUID())
 ```
 
 - **Parameters:**
-  - `curve` — the 2D curve geometry.
-  - `isConstruction` — `true` to mark as construction (default `false`).
-  - `id` — stable UUID (default-generated if not provided).
+  - `curve`: the 2D curve geometry.
+  - `isConstruction`: `true` to mark as construction (default `false`).
+  - `id`: stable UUID (default-generated if not provided).
 - **Example:**
   ```swift
   let line = SketchElement(curve: .line(from: .zero, to: SIMD2(10, 0)))
@@ -1316,7 +1316,7 @@ public init(curve: CurveKind, isConstruction: Bool = false, id: UUID = UUID())
 
 ## Sketch
 
-A collection of 2D curve elements hosted on a `ConstructionPlane`, with a `buildProfile` step that filters construction elements and lifts the result to a 3D `Wire`. Constraint solving is out of scope — elements carry coordinates directly.
+A collection of 2D curve elements hosted on a `ConstructionPlane`, with a `buildProfile` step that filters construction elements and lifts the result to a 3D `Wire`. Constraint solving is out of scope, elements carry coordinates directly.
 
 ### `Sketch.hostPlane`
 
@@ -1359,9 +1359,9 @@ public init(hostPlane: ConstructionContext.PlaneID,
 ```
 
 - **Parameters:**
-  - `hostPlane` — the `PlaneID` registered in a `ConstructionContext`.
-  - `elements` — initial element set (default empty).
-  - `name` — optional display name.
+  - `hostPlane`: the `PlaneID` registered in a `ConstructionContext`.
+  - `elements`: initial element set (default empty).
+  - `name`: optional display name.
 - **Example:**
   ```swift
   let ctx = ConstructionContext()
@@ -1379,7 +1379,7 @@ Appends an element to the sketch.
 public mutating func add(_ element: SketchElement)
 ```
 
-- **Parameters:** `element` — the element to append.
+- **Parameters:** `element`, the element to append.
 - **Example:**
   ```swift
   sketch.add(SketchElement(curve: .circle(center: .zero, radius: 5)))
@@ -1389,7 +1389,7 @@ public mutating func add(_ element: SketchElement)
 
 ### `Sketch.profileElementCount`
 
-Number of non-construction elements — the profile size.
+Number of non-construction elements, the profile size.
 
 ```swift
 public var profileElementCount: Int { get }
@@ -1412,13 +1412,13 @@ public func buildProfile(in context: ConstructionContext,
                          graph: BRepGraph) -> Wire?
 ```
 
-Construction elements are filtered at this single site — upstream views (solver, editor) see the full element set. Each 2D point is lifted into 3D via `placement.origin + pt.x * placement.xAxis + pt.y * placement.yAxis`. The resulting polyline is closed automatically if the first and last 3D points are within 1e-9 of each other.
+Construction elements are filtered at this single site, upstream views (solver, editor) see the full element set. Each 2D point is lifted into 3D via `placement.origin + pt.x * placement.xAxis + pt.y * placement.yAxis`. The resulting polyline is closed automatically if the first and last 3D points are within 1e-9 of each other.
 
 - **Parameters:**
-  - `context` — the `ConstructionContext` that registered `hostPlane`.
-  - `graph` — a `BRepGraph` to resolve the host plane's recipe.
+  - `context`: the `ConstructionContext` that registered `hostPlane`.
+  - `graph`: a `BRepGraph` to resolve the host plane's recipe.
 - **Returns:** A closed `Wire` on the resolved plane, or `nil` if the host plane fails to resolve, no profile elements exist, or fewer than 2 distinct 3D points result.
-- **OCCT:** Delegates to `Wire.polygon3D(_:closed:)` — `BRepBuilderAPI_MakePolygon`.
+- **OCCT:** Delegates to `Wire.polygon3D(_:closed:)`, `BRepBuilderAPI_MakePolygon`.
 - **Example:**
   ```swift
   let ctx = ConstructionContext()
@@ -1449,10 +1449,10 @@ public func section2D(planeOrigin: SIMD3<Double>,
 Computes the 3D section edges via `sectionWithPlane`, then projects each sample point into the plane's `(u, v)` frame. The result is a `Drawing` whose `visibleEdges` contain the section contour polylines, ready for annotation, hatching, and export.
 
 - **Parameters:**
-  - `planeOrigin` — any point on the cutting plane, in world coordinates.
-  - `planeNormal` — plane normal; will be normalised internally.
-  - `planeU` — explicit X axis for the resulting 2D frame; must be perpendicular to `planeNormal`. When `nil` (default), a deterministic perpendicular is derived from world-up or world-Y.
-  - `deflection` — tessellation tolerance for edge sampling (default 0.1 mm; use 0.01 for finer detail).
+  - `planeOrigin`: any point on the cutting plane, in world coordinates.
+  - `planeNormal`: plane normal; will be normalised internally.
+  - `planeU`: explicit X axis for the resulting 2D frame; must be perpendicular to `planeNormal`. When `nil` (default), a deterministic perpendicular is derived from world-up or world-Y.
+  - `deflection`: tessellation tolerance for edge sampling (default 0.1 mm; use 0.01 for finer detail).
 - **Returns:** A `Drawing` with the 2D contour in `visibleEdges`, or `nil` if the plane does not intersect the shape or projection fails.
 - **OCCT:** `OCCTShapeSectionWithPlane` → `BRepAlgoAPI_Section`; then `Drawing.project` for the 2D assembly.
 - **Example:**
@@ -1482,9 +1482,9 @@ public struct SectionView: Sendable {
 }
 ```
 
-- `drawing` — the `Drawing` containing the contour and any added hatching and label.
-- `label` — optional string label (e.g. `"A-A"`), added as a text annotation above the drawing bounds.
-- `cuttingPlaneOrigin` / `cuttingPlaneNormal` — the cutting plane that produced this view.
+- `drawing`: the `Drawing` containing the contour and any added hatching and label.
+- `label`: optional string label (e.g. `"A-A"`), added as a text annotation above the drawing bounds.
+- `cuttingPlaneOrigin` / `cuttingPlaneNormal`, the cutting plane that produced this view.
 
 ---
 
@@ -1538,12 +1538,12 @@ public func section2DView(planeOrigin: SIMD3<Double>,
 Calls `section2D` then adds cross-hatch lines (at angle/spacing) over the bounding box of the section contour, and optionally places a text label 5 mm above the top-left corner.
 
 - **Parameters:**
-  - `planeOrigin` — any point on the cutting plane, in world coordinates.
-  - `planeNormal` — plane normal; will be normalised.
-  - `label` — optional annotation string (default `nil`); placed above the contour bounds.
-  - `hatchAngle` — hatch line angle in radians (default π/4 = 45°).
-  - `hatchSpacing` — spacing between hatch lines in model units (default 3 mm).
-  - `deflection` — tessellation tolerance for edge sampling (default 0.1 mm).
+  - `planeOrigin`: any point on the cutting plane, in world coordinates.
+  - `planeNormal`: plane normal; will be normalised.
+  - `label`: optional annotation string (default `nil`); placed above the contour bounds.
+  - `hatchAngle`: hatch line angle in radians (default π/4 = 45°).
+  - `hatchSpacing`: spacing between hatch lines in model units (default 3 mm).
+  - `deflection`: tessellation tolerance for edge sampling (default 0.1 mm).
 - **Returns:** A `SectionView`, or `nil` if `section2D` fails (no intersection or projection error).
 - **Note:** Hatching uses the bounding box of the contour as the fill boundary; full contour-interior polygon hatching is planned for a future release.
 - **Example:**

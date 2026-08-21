@@ -20,7 +20,7 @@ public final class Document: @unchecked Sendable {
     }
 
     deinit {
-        // Must happen before this instance's memory can be recycled — the construction-context
+        // Must happen before this instance's memory can be recycled, the construction-context
         // association is keyed on the instance pointer (#277).
         releaseConstructionContext()
         OCCTDocumentRelease(handle)
@@ -58,7 +58,7 @@ public final class Document: @unchecked Sendable {
     /// Write the document to a STEP file with progress + cancellation.
     ///
     /// `ImportError.importFailed` on other failure (the case name reuses.
-    /// `ImportError` because we share the cancellation channel — see #98).
+    /// `ImportError` because we share the cancellation channel, see #98).
     ///
     /// - Throws: `ImportError.cancelled` if cancelled cooperatively,
     public func writeSTEP(to url: URL, progress: ImportProgress?) throws {
@@ -101,12 +101,12 @@ public final class Document: @unchecked Sendable {
     /// Look up an `AssemblyNode` by its XCAF labelId.
     ///
     /// Returns `nil` if `labelId` does not refer to a label in this document.
-    /// LabelIds are stable within a single `Document` instance — a labelId.
+    /// LabelIds are stable within a single `Document` instance, a labelId.
     /// obtained from `rootNodes` traversal can be passed back here later in.
     /// the same session to recover the corresponding node.
     public func node(at labelId: Int64) -> AssemblyNode? {
         // Warm up the labelId registry. On a freshly-loaded document the
-        // table is empty until something walks the assembly — iterating the
+        // table is empty until something walks the assembly, iterating the
         // roots here registers the top-level labels so callers don't have
         // to know to touch `rootNodes` first. Deep child labelIds are
         // expected to have been registered earlier by an explicit traversal
@@ -438,7 +438,7 @@ extension Document {
 // MARK: - Document Main Label (v0.54.0)
 
 extension Document {
-    /// The main label (0:1) of the document — the root of the user data tree.
+    /// The main label (0:1) of the document, the root of the user data tree.
     public var mainLabel: AssemblyNode? {
         let labelId = OCCTDocumentGetMainLabel(handle)
         guard labelId >= 0 else { return nil }
@@ -1019,11 +1019,11 @@ extension Document {
 extension Document {
     /// Set color on a shape directly (not by label).
     ///
-    /// `color.alpha` is preserved (#763) — previously it was silently dropped, so a subsequent.
+    /// `color.alpha` is preserved (#763), previously it was silently dropped, so a subsequent.
     /// ``shapeColor(_:type:)`` always reported fully opaque regardless of what was set here.
     /// - shape: The shape to color.
     /// - color: The color to set.
-    /// - type: Color type — generic (0), surface (1), or curve (2).
+    /// - type: Color type, generic (0), surface (1), or curve (2).
     /// ```swift.
     /// let doc = Document.create()!.
     /// let box = Shape.box(width: 10, height: 10, depth: 10)!.
@@ -1044,11 +1044,11 @@ extension Document {
 
     /// Get color for a shape (not by label).
     ///
-    /// `alpha` reflects the real stored value (#763) — a shape colored via.
+    /// `alpha` reflects the real stored value (#763), a shape colored via.
     /// ``setShapeColor(_:color:type:)`` or imported from a file with a transparent surface style.
     /// reports its actual alpha, rather than always 1.0.
     /// - shape: The shape to query.
-    /// - type: Color type — generic (0), surface (1), or curve (2).
+    /// - type: Color type, generic (0), surface (1), or curve (2).
     ///
     /// - Parameters:
     /// - Returns: Color if set, nil otherwise

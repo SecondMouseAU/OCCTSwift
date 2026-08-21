@@ -3,7 +3,7 @@ import simd
 @testable import OCCTSwift
 
 /// Issue #484: `Shape.connectedFaces(tolerance:)` (`ShapeFix_FaceConnect`, via
-/// `OCCTShapeFixFaceConnect`) had **zero** test coverage anywhere in `Tests/` — grepping
+/// `OCCTShapeFixFaceConnect`) had **zero** test coverage anywhere in `Tests/`, grepping
 /// `connectedFaces` repo-wide returned only its own declaration. The stale cross-reference index
 /// entry (`ShapeFix_FaceConnect → OCCTShapeFixConnect*`, a symbol family that does not exist) would
 /// not have led anyone to it either.
@@ -14,11 +14,11 @@ import simd
 ///
 /// Review round (PR #511) found the box/cylinder cases above never exercise an actual connection:
 /// `BRepPrimAPI_MakeBox`/`MakeCylinder` already share edges between faces, so `ShapeFix_FaceConnect`
-/// has nothing to do on either input — the tests confirm no data is lost, not that connecting works.
+/// has nothing to do on either input, the tests confirm no data is lost, not that connecting works.
 /// `genuinelyDisconnectedFacesGetConnected` below closes that gap with a shell assembled from two
 /// independently-built faces that share a geometric edge but not a topological one (`Shape.shellFromFaces`
 /// wraps `BRep_Builder::Add`, no sewing), so there is real work for `connectedFaces` to do.
-@Suite("Issue #484 — Shape.connectedFaces coverage")
+@Suite("Issue #484, Shape.connectedFaces coverage")
 struct Issue484ConnectedFacesTests {
 
     @Test("connectedFaces on a box shell returns a shape with the same face count")
@@ -76,13 +76,13 @@ struct Issue484ConnectedFacesTests {
         #expect(face.connectedFaces() == nil)
     }
 
-    /// Two abutting unit squares, each built from its own independent `Wire.polygon3D` — same
+    /// Two abutting unit squares, each built from its own independent `Wire.polygon3D`, same
     /// endpoints where they meet, but no shared `TopoDS_Edge`/`TopoDS_Vertex` between them.
     /// `Shape.shellFromFaces` (`BRep_Builder::Add`, no sewing) wires them into one shell exactly as
     /// found: 8 topologically-independent boundary edges, none shared. Ground-truthed directly
     /// against `ShapeFix_FaceConnect::Add`/`Build` (matching the bridge's own call sequence) before
     /// writing this: the shared boundary sews into one edge and the shell's total unique edge count
-    /// drops from 8 to 7 — `Shape.edgeCount`'s own method (`TopExp::MapShapes`, deduped).
+    /// drops from 8 to 7, `Shape.edgeCount`'s own method (`TopExp::MapShapes`, deduped).
     @Test("connectedFaces sews a genuinely disconnected shared edge, not just preserves face count")
     func genuinelyDisconnectedFacesGetConnected() {
         let squareA: [SIMD3<Double>] = [

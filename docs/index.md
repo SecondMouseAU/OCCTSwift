@@ -5,7 +5,7 @@ nav_order: 1
 
 # OCCTSwift documentation
 
-A comprehensive Swift wrapper for [OpenCASCADE Technology](https://dev.opencascade.org) (OCCT 8.0.1) —
+A comprehensive Swift wrapper for [OpenCASCADE Technology](https://dev.opencascade.org) (OCCT 8.0.1),
 B-Rep solid modeling, CAD data exchange, meshing and geometry for **macOS and iOS**. visionOS and tvOS are declared and buildable but untested, and need a local kernel rebuild (#978).
 Three-layer architecture: Swift public API → Objective-C++ bridge → OCCT C++. **4,339 wrapped operations.**
 
@@ -21,7 +21,7 @@ try drilled?.writeSTEP(to: outputURL)       // exact B-Rep, ready for CAD/CAM
 
 ## Cookbook
 
-Task-oriented, example-rich guides — each a short bit of prose plus runnable Swift and a rendered
+Task-oriented, example-rich guides, each a short bit of prose plus runnable Swift and a rendered
 figure (interactive 3D where it helps). The **[Cookbook index](guides/cookbook/)** lists all areas:
 
 [Booleans](guides/cookbook/booleans.md) ·
@@ -39,25 +39,25 @@ figure (interactive 3D where it helps). The **[Cookbook index](guides/cookbook/)
 
 ## Reference
 
-- **[API Reference](reference/)** — the detailed, per-type function reference: signatures, parameters,
+- **[API Reference](reference/)**: the detailed, per-type function reference: signatures, parameters,
   the OCCT class each method wraps, and runnable examples. Built progressively (Wire, Edge, Face, Mesh,
   Exporter, ThreadFeatures so far).
-- [API Map (Swift ↔ OCCT)](API_REFERENCE.md) — the compact operation-to-OCCT-class mapping table.
-- [Changelog](CHANGELOG.md) — release-by-release history.
+- [API Map (Swift ↔ OCCT)](API_REFERENCE.md), the compact operation-to-OCCT-class mapping table.
+- [Changelog](CHANGELOG.md), release-by-release history.
 
 ## Guides & concepts
 
-- [OCCT Concepts](guides/occt-concepts.md) — B-Rep topology, handles, shapes primer.
-- [Architecture](architecture/overview.md) — the three-layer design and memory model.
-- [Adding Features](guides/adding-features.md) — bridge header → impl → Swift → test.
-- [Building OCCT](guides/building-occt.md) — rebuild the `OCCT.xcframework` from source.
-- [Sharing the xcframework](guides/sharing-the-xcframework.md) — one shared local copy across repos + the `Package.resolved` pin footgun (#260).
+- [OCCT Concepts](guides/occt-concepts.md), B-Rep topology, handles, shapes primer.
+- [Architecture](architecture/overview.md), the three-layer design and memory model.
+- [Adding Features](guides/adding-features.md), bridge header → impl → Swift → test.
+- [Building OCCT](guides/building-occt.md), rebuild the `OCCT.xcframework` from source.
+- [Sharing the xcframework](guides/sharing-the-xcframework.md), one shared local copy across repos + the `Package.resolved` pin footgun (#260).
 - [Thread Safety](thread-safety.md) · [Naming Conventions](naming-conventions.md) ·
   [Versioning (SemVer)](SEMVER.md) · [Ecosystem](ecosystem.md)
-- [v2.0.0 Release Plan](v2.0.0-plan.md) — scope, clusters, and the census-once rule for the
+- [v2.0.0 Release Plan](v2.0.0-plan.md), scope, clusters, and the census-once rule for the
   in-flight major.
 
 ## Project
 
 - Source & issues: [github.com/gsdali/OCCTSwift](https://github.com/gsdali/OCCTSwift)
-- Install via Swift Package Manager — pin `from: "1.0.0"` (SemVer-stable since v1.0.0).
+- Install via Swift Package Manager, pin `from: "1.0.0"` (SemVer-stable since v1.0.0).

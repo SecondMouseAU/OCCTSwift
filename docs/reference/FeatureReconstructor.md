@@ -5,13 +5,13 @@ parent: API Reference
 
 # FeatureReconstructor
 
-`FeatureReconstructor` is a declarative feature-spec dispatcher: it consumes a sequence of typed `FeatureSpec` entries and produces a `Shape` via staged evaluation — additive (revolve, extrude, boolean union) → subtractive (hole, boolean subtract/intersect) → finishing (fillet, chamfer) → annotation (thread). Features are accumulated into a single evolving body; failures accumulate in `BuildResult.skipped` rather than aborting the build. Thread specs are emitted as metadata annotations rather than geometry.
+`FeatureReconstructor` is a declarative feature-spec dispatcher: it consumes a sequence of typed `FeatureSpec` entries and produces a `Shape` via staged evaluation, additive (revolve, extrude, boolean union) → subtractive (hole, boolean subtract/intersect) → finishing (fillet, chamfer) → annotation (thread). Features are accumulated into a single evolving body; failures accumulate in `BuildResult.skipped` rather than aborting the build. Thread specs are emitted as metadata annotations rather than geometry.
 
 Obtain a result by calling `FeatureReconstructor.build(from:inputBody:)` or the JSON variant `buildJSON(_:inputBody:)`. The returned `BuildResult` carries the final shape, fulfilled/skipped lists, thread annotations, and per-feature `ShapeHistoryRef` handles for downstream selection remapping.
 
 ## Topics
 
-- [FeatureSpec](#featurespec) · [FeatureSpec.Revolve](#featurespecrevolve) · [FeatureSpec.Extrude](#featurespecextrude) · [FeatureSpec.Hole](#featurespechole) · [FeatureSpec.Thread](#featurespecthread) · [FeatureSpec.EdgeSelector](#featurespecedgeselector) · [FeatureSpec.Fillet](#featurespecfillet) · [FeatureSpec.Chamfer](#featurespecchamfer) · [FeatureSpec.Boolean](#featurespecboolean) · [FeatureReconstructor — Entry point](#featurereconstructor--entry-point) · [FeatureReconstructor.BuildContext](#featurereconstructorbuildcontext) · [BuildResult](#buildresult) · [Skipped](#skipped) · [Annotation](#annotation) · [JSON front end](#json-front-end)
+- [FeatureSpec](#featurespec) · [FeatureSpec.Revolve](#featurespecrevolve) · [FeatureSpec.Extrude](#featurespecextrude) · [FeatureSpec.Hole](#featurespechole) · [FeatureSpec.Thread](#featurespecthread) · [FeatureSpec.EdgeSelector](#featurespecedgeselector) · [FeatureSpec.Fillet](#featurespecfillet) · [FeatureSpec.Chamfer](#featurespecchamfer) · [FeatureSpec.Boolean](#featurespecboolean) · [FeatureReconstructor, Entry point](#featurereconstructor--entry-point) · [FeatureReconstructor.BuildContext](#featurereconstructorbuildcontext) · [BuildResult](#buildresult) · [Skipped](#skipped) · [Annotation](#annotation) · [JSON front end](#json-front-end)
 
 ---
 
@@ -134,11 +134,11 @@ public init(profilePoints2D: [SIMD2<Double>],
 ```
 
 - **Parameters:**
-  - `profilePoints2D` — profile polygon in the XZ half-plane (minimum 3 points).
-  - `axisOrigin` — a point on the revolution axis.
-  - `axisDirection` — unit vector defining the revolution axis direction.
-  - `angleDeg` — sweep angle in degrees (default `360` for a full revolution).
-  - `id` — optional feature identifier; used to track the feature in `BuildResult`.
+  - `profilePoints2D`: profile polygon in the XZ half-plane (minimum 3 points).
+  - `axisOrigin`: a point on the revolution axis.
+  - `axisDirection`: unit vector defining the revolution axis direction.
+  - `angleDeg`: sweep angle in degrees (default `360` for a full revolution).
+  - `id`: optional feature identifier; used to track the feature in `BuildResult`.
 - **OCCT:** Dispatched to `Shape.revolve(profile:axisOrigin:axisDirection:angle:)` → `BRepPrimAPI_MakeRevol`.
 - **Example:**
   ```swift
@@ -192,11 +192,11 @@ public init(profilePoints2D: [SIMD2<Double>],
 ```
 
 - **Parameters:**
-  - `profilePoints2D` — profile polygon in the plane's local 2D coordinate system (minimum 3 points).
-  - `planeOrigin` — origin of the sketch plane in 3D.
-  - `planeNormal` — unit normal of the sketch plane; also the extrusion direction.
-  - `length` — extrusion distance in model units.
-  - `id` — optional feature identifier.
+  - `profilePoints2D`: profile polygon in the plane's local 2D coordinate system (minimum 3 points).
+  - `planeOrigin`: origin of the sketch plane in 3D.
+  - `planeNormal`: unit normal of the sketch plane; also the extrusion direction.
+  - `length`: extrusion distance in model units.
+  - `id`: optional feature identifier.
 - **OCCT:** Dispatched to `Shape.extrude(profile:direction:length:)` → `BRepPrimAPI_MakePrism`.
 - **Example:**
   ```swift
@@ -250,11 +250,11 @@ public init(axisPoint: SIMD3<Double>,
 ```
 
 - **Parameters:**
-  - `axisPoint` — a point on the hole axis (typically the centre of the entry face).
-  - `axisDirection` — unit vector pointing into the material along the hole axis.
-  - `diameter` — hole diameter in model units; the cutter radius is `diameter / 2`.
-  - `depth` — axial depth of the cutter (default: `100.0` — effectively a through-hole).
-  - `id` — optional feature identifier; when set, the result's `ShapeHistoryRef` is stored in `BuildResult.histories` for selection remapping.
+  - `axisPoint`: a point on the hole axis (typically the centre of the entry face).
+  - `axisDirection`: unit vector pointing into the material along the hole axis.
+  - `diameter`: hole diameter in model units; the cutter radius is `diameter / 2`.
+  - `depth`: axial depth of the cutter (default: `100.0`, effectively a through-hole).
+  - `id`: optional feature identifier; when set, the result's `ShapeHistoryRef` is stored in `BuildResult.histories` for selection remapping.
 - **OCCT:** `Shape.cylinder(at:direction:radius:height:)` → `BRepPrimAPI_MakeCylinder`, then `Shape.subtractedWithFullHistory(_:)` → `BRepAlgoAPI_Cut` with history recording.
 - **Example:**
   ```swift
@@ -302,10 +302,10 @@ public init(holeRef: String, spec: String, length: Double? = nil, id: String? = 
 ```
 
 - **Parameters:**
-  - `holeRef` — the `id` of the `FeatureSpec.Hole` this thread annotates; must match a feature id in the same spec array.
-  - `spec` — thread designation string such as `"M5x0.8"` or `"1/4-20 UNC"`. Not parsed — stored verbatim in the annotation.
-  - `length` — threaded engagement length; `nil` means unspecified.
-  - `id` — optional feature identifier for the annotation itself.
+  - `holeRef`: the `id` of the `FeatureSpec.Hole` this thread annotates; must match a feature id in the same spec array.
+  - `spec`: thread designation string such as `"M5x0.8"` or `"1/4-20 UNC"`. Not parsed, stored verbatim in the annotation.
+  - `length`: threaded engagement length; `nil` means unspecified.
+  - `id`: optional feature identifier for the annotation itself.
 - **Example:**
   ```swift
   let thread = FeatureSpec.Thread(
@@ -331,9 +331,9 @@ public enum EdgeSelector: Sendable, Hashable, Codable {
 }
 ```
 
-- `.all` — selects every edge of the current body via `Shape.subShapes(ofType: .edge)`.
-- `.nearPoint(point, tolerance:)` — selects edges whose midpoint lies within `tolerance` of the given 3D point.
-- `.onFeature(id)` — selects edges of the current body whose midpoints coincide (within 1e-4) with edge midpoints of the named feature's output shape. Requires the referenced feature id to be registered in the named-shape registry.
+- `.all`: selects every edge of the current body via `Shape.subShapes(ofType: .edge)`.
+- `.nearPoint(point, tolerance:)`: selects edges whose midpoint lies within `tolerance` of the given 3D point.
+- `.onFeature(id)`: selects edges of the current body whose midpoints coincide (within 1e-4) with edge midpoints of the named feature's output shape. Requires the referenced feature id to be registered in the named-shape registry.
 
 ---
 
@@ -372,9 +372,9 @@ public init(edgeSelector: EdgeSelector, radius: Double, id: String? = nil)
 ```
 
 - **Parameters:**
-  - `edgeSelector` — which edges to fillet (see `EdgeSelector`).
-  - `radius` — fillet radius in model units.
-  - `id` — optional feature identifier; the `ShapeHistoryRef` is stored in `BuildResult.histories` when set.
+  - `edgeSelector`: which edges to fillet (see `EdgeSelector`).
+  - `radius`: fillet radius in model units.
+  - `id`: optional feature identifier; the `ShapeHistoryRef` is stored in `BuildResult.histories` when set.
 - **OCCT:** `Shape.filletedWithFullHistory(radius:edges:)` → `BRepFilletAPI_MakeFillet` with history recording; falls back to `Shape.filleted(radius:)` or `Shape.filleted(edges:radius:)`.
 - **Example:**
   ```swift
@@ -419,9 +419,9 @@ public init(edgeSelector: EdgeSelector, distance: Double, id: String? = nil)
 ```
 
 - **Parameters:**
-  - `edgeSelector` — which edges to chamfer (see `EdgeSelector`).
-  - `distance` — chamfer distance in model units.
-  - `id` — optional feature identifier; the `ShapeHistoryRef` is stored in `BuildResult.histories` when set.
+  - `edgeSelector`: which edges to chamfer (see `EdgeSelector`).
+  - `distance`: chamfer distance in model units.
+  - `id`: optional feature identifier; the `ShapeHistoryRef` is stored in `BuildResult.histories` when set.
 - **OCCT:** `Shape.chamferedWithFullHistory(distance:edges:)` → `BRepFilletAPI_MakeChamfer` with history recording; falls back to `Shape.chamfered(distance:)` for the `.all` case.
 - **Example:**
   ```swift
@@ -476,10 +476,10 @@ public init(op: Op, leftID: String, rightID: String, id: String? = nil)
 ```
 
 - **Parameters:**
-  - `op` — the boolean operation: `.union`, `.subtract`, or `.intersect`.
-  - `leftID` — feature id of the left (base) operand.
-  - `rightID` — feature id of the right (tool) operand.
-  - `id` — optional feature identifier for the result.
+  - `op`: the boolean operation: `.union`, `.subtract`, or `.intersect`.
+  - `leftID`: feature id of the left (base) operand.
+  - `rightID`: feature id of the right (tool) operand.
+  - `id`: optional feature identifier for the result.
 - **OCCT:** `Shape.unionWithFullHistory(_:)` → `BRepAlgoAPI_Fuse`; `Shape.subtractedWithFullHistory(_:)` → `BRepAlgoAPI_Cut`; `Shape.intersectionWithFullHistory(_:)` → `BRepAlgoAPI_Common`. All with history recording when `id` is set.
 - **Example:**
   ```swift
@@ -492,7 +492,7 @@ public init(op: Op, leftID: String, rightID: String, id: String? = nil)
 
 ---
 
-## FeatureReconstructor — Entry point
+## FeatureReconstructor. Entry point
 
 ### `FeatureReconstructor.inputBodySentinel`
 
@@ -518,16 +518,16 @@ public static func build(
 ```
 
 Processes `specs` in four fixed stages, iterating the full array once per stage:
-1. **Additive** — revolve, extrude, boolean union.
-2. **Subtractive** — hole, boolean subtract/intersect.
-3. **Finishing** — fillet, chamfer.
-4. **Annotation** — thread (metadata only, no geometry).
+1. **Additive**: revolve, extrude, boolean union.
+2. **Subtractive**: hole, boolean subtract/intersect.
+3. **Finishing**: fillet, chamfer.
+4. **Annotation**: thread (metadata only, no geometry).
 
 Within each stage, features are processed in array order. Failures append to `BuildResult.skipped` rather than aborting remaining specs. The first additive feature seeds `current`; subsequent additive features are unioned into it via `Shape.unionWithFullHistory` or `Shape.union`.
 
 - **Parameters:**
-  - `specs` — ordered array of `FeatureSpec` values to dispatch.
-  - `inputBody` — optional starting body; registered under `inputBodySentinel` and used as `current` before any additive features run.
+  - `specs`: ordered array of `FeatureSpec` values to dispatch.
+  - `inputBody`: optional starting body; registered under `inputBodySentinel` and used as `current` before any additive features run.
 - **Returns:** `BuildResult` with the final shape, fulfilled/skipped lists, annotations, and per-feature history refs.
 - **Example:**
   ```swift
@@ -569,11 +569,11 @@ public struct BuildResult: Sendable {
 }
 ```
 
-- `shape` — the assembled body, or `nil` if no additive or subtractive feature succeeded (e.g. every spec failed or the input was empty).
-- `fulfilled` — ids of features that completed successfully, in dispatch order.
-- `skipped` — diagnostics for features that failed (see `Skipped`).
-- `annotations` — thread callout metadata from `.thread` specs.
-- `histories` — per-feature `ShapeHistoryRef` keyed by feature id. Only features with a non-nil id that used a history-recording builder are present. Use `histories["id"]?.record(of: face)` to walk selection ids across chained operations.
+- `shape`: the assembled body, or `nil` if no additive or subtractive feature succeeded (e.g. every spec failed or the input was empty).
+- `fulfilled`: ids of features that completed successfully, in dispatch order.
+- `skipped`: diagnostics for features that failed (see `Skipped`).
+- `annotations`: thread callout metadata from `.thread` specs.
+- `histories`: per-feature `ShapeHistoryRef` keyed by feature id. Only features with a non-nil id that used a history-recording builder are present. Use `histories["id"]?.record(of: face)` to walk selection ids across chained operations.
 
 ---
 
@@ -622,10 +622,10 @@ public enum Reason: Sendable {
 }
 ```
 
-- `.underDetermined(message)` — the spec is geometrically incomplete (e.g. fewer than 3 profile points, or no current body exists for a subtractive or finishing op).
-- `.occtFailure(message)` — the OCCT builder returned `nil` or failed (wire construction, revolve, extrude, boolean, fillet, chamfer).
-- `.unresolvedRef(message)` — a `leftID`, `rightID`, or `EdgeSelector.onFeature` id was not found in the named-shape registry.
-- `.unsupported(message)` — the JSON front end encountered an unknown `kind` string or unrecognised boolean op.
+- `.underDetermined(message)`: the spec is geometrically incomplete (e.g. fewer than 3 profile points, or no current body exists for a subtractive or finishing op).
+- `.occtFailure(message)`: the OCCT builder returned `nil` or failed (wire construction, revolve, extrude, boolean, fillet, chamfer).
+- `.unresolvedRef(message)`: a `leftID`, `rightID`, or `EdgeSelector.onFeature` id was not found in the named-shape registry.
+- `.unsupported(message)`: the JSON front end encountered an unknown `kind` string or unrecognised boolean op.
 
 ---
 
@@ -669,7 +669,7 @@ public struct Annotation: Sendable {
 }
 ```
 
-Annotations carry no geometry — they describe intent (e.g. "this hole has an M6×1 thread"). Generate actual thread geometry by calling `Shape.threadedHole` or `Shape.threadedShaft` separately.
+Annotations carry no geometry, they describe intent (e.g. "this hole has an M6×1 thread"). Generate actual thread geometry by calling `Shape.threadedHole` or `Shape.threadedShaft` separately.
 
 ---
 
@@ -690,9 +690,9 @@ public enum Kind: Sendable {
 ```
 
 Currently the only case is `.thread`:
-- `spec` — verbatim thread designation string (`"M6x1"`, `"1/4-20 UNC"`, etc.).
-- `holeRef` — the feature id of the associated hole.
-- `length` — engagement length, if specified.
+- `spec`: verbatim thread designation string (`"M6x1"`, `"1/4-20 UNC"`, etc.).
+- `holeRef`: the feature id of the associated hole.
+- `length`: engagement length, if specified.
 
 ---
 
@@ -713,13 +713,13 @@ public static func buildJSON(
 ) throws -> BuildResult
 ```
 
-Expects a top-level JSON object with a `"features"` array of `kind`-discriminated objects. Recognised kinds: `"revolve"`, `"extrude"`, `"hole"`, `"thread"`, `"fillet"`, `"chamfer"`, `"boolean"`. Unknown `kind` values are surfaced as `Skipped` entries with reason `.unsupported("unknown JSON kind: <kind>")` rather than silently dropped — callers can detect typos and schema drift.
+Expects a top-level JSON object with a `"features"` array of `kind`-discriminated objects. Recognised kinds: `"revolve"`, `"extrude"`, `"hole"`, `"thread"`, `"fillet"`, `"chamfer"`, `"boolean"`. Unknown `kind` values are surfaced as `Skipped` entries with reason `.unsupported("unknown JSON kind: <kind>")` rather than silently dropped, callers can detect typos and schema drift.
 
 JSON field names use snake_case: `profile_points_2d`, `axis_origin`, `axis_direction`, `plane_origin`, `plane_normal`, `angle_deg`, `axis_point`, `hole_ref`, `thread_spec` (for the thread spec string), `left`, `right`.
 
 - **Parameters:**
-  - `data` — UTF-8 JSON data conforming to the `{"features": [...]}` envelope.
-  - `inputBody` — optional starting body (same semantics as `build(from:inputBody:)`).
+  - `data`: UTF-8 JSON data conforming to the `{"features": [...]}` envelope.
+  - `inputBody`: optional starting body (same semantics as `build(from:inputBody:)`).
 - **Returns:** `BuildResult` with augmented skipped list for unknown kinds.
 - **Throws:** `DecodingError` if the JSON envelope is malformed or a recognised kind is missing required fields.
 - **Example:**
@@ -750,7 +750,7 @@ JSON field names use snake_case: `profile_points_2d`, `axis_origin`, `axis_direc
       print(shape.isValid)
   }
   ```
-- **Note:** The JSON `fillet` and `chamfer` entries decoded by this front end always use `EdgeSelector.all` — there is no JSON syntax for `.nearPoint` or `.onFeature` in the current schema.
+- **Note:** The JSON `fillet` and `chamfer` entries decoded by this front end always use `EdgeSelector.all`, there is no JSON syntax for `.nearPoint` or `.onFeature` in the current schema.
 
 ---
 

@@ -1,4 +1,4 @@
-# OCCTSwift#578 probe — what may a "face to remove" be, and what belongs to the shape?
+# OCCTSwift#578 probe, what may a "face to remove" be, and what belongs to the shape?
 
 Ground truth for giving `Shape.defeature(faces:)` a membership rule, against the pinned OCCT 8.0.0p1
 kernel.
@@ -9,7 +9,7 @@ passing the caller's shapes straight through:
 
 > The faces should belong to the initial shape, and those that do not belong will be ignored.
 
-So a foreign face was dropped in silence and the rest of the request proceeded — a success, with no
+So a foreign face was dropped in silence and the rest of the request proceeded, a success, with no
 warning, on a shape still carrying the feature the caller named. The index-addressed spelling
 (`Shape.withoutFeatures(faces:)`) has failed the whole call on one bad index since #497. Closing that
 gap needs more than a `Contains` check, because the argument need not be a face at all: this probe
@@ -35,7 +35,7 @@ Exit status is 1 if any claim the fix rests on fails.
 
 A 20mm box with one 2mm fillet: seven faces, volume 7982.831853072. Removing the fillet face restores
 the plain box (8000.0, six faces), and that removal is the control every case below is compared
-against. The fillet face is found by its cylindrical surface, not by its position — it lands at index
+against. The fillet face is found by its cylindrical surface, not by its position, it lands at index
 3 of 7, not last.
 
 ## Result
@@ -80,7 +80,7 @@ carrier                                     kernel                        member
 
 **A carrier is not a face.** A compound, a shell and the whole input solid are all accepted, and each
 means the faces it contains. So a rule cannot simply demand that each element *be* a face of the
-input — it has to explore first.
+input, it has to explore first.
 
 **Exploding is free.** Replacing a carrier with the faces it explores to produces a byte-identical
 BREP in every case, including the reversed face. That is what makes a membership check implementable
@@ -88,7 +88,7 @@ in the bridge: it can hand the kernel the faces it checked rather than the carri
 the kernel cannot tell.
 
 **The face map answers the membership question directly.** `TopExp::MapShapes(input, TopAbs_FACE)`
-hashes on `TopTools_ShapeMapHasher`, i.e. `IsSame` — so the reversed fillet face is `Contains`, and an
+hashes on `TopTools_ShapeMapHasher`, i.e. `IsSame`, so the reversed fillet face is `Contains`, and an
 identically-built twin's face is not. Both asserted by the probe, not eyeballed.
 
 **Silence is the whole defect, and it is wider than a foreign face.** A request mixing the fillet face
@@ -101,8 +101,8 @@ nothing is left to remove, which is why a probe testing one foreign face alone c
 > Every element of the request must name at least one face, and every face it names must be a face of
 > the input. Otherwise the whole request fails and nothing is removed.
 
-The alternative the issue posed — accept a carrier that yields *some* belonging faces and quietly keep
-those — was rejected: it preserves the exact failure mode being removed (a success that silently drops
+The alternative the issue posed, accept a carrier that yields *some* belonging faces and quietly keep
+those, was rejected: it preserves the exact failure mode being removed (a success that silently drops
 part of what the caller named), one level further down where it is harder to see. Failing is loud and
 recoverable; a caller who wants "remove whichever of these belong" can filter, which is something they
 cannot do today because the operation gives them no way to tell.
@@ -130,7 +130,7 @@ request                                     today       chosen rule
 ```
 
 Four rows change, and all four are requests that were being partly discarded. Nothing whose elements
-all belong behaves differently, including the whole-solid and shell carriers — which stay accepted,
+all belong behaves differently, including the whole-solid and shell carriers, which stay accepted,
 and stay a no-op, because "remove every face" is a question about the algorithm rather than about
 membership and the kernel's answer to it is to hand the input back.
 

@@ -31,7 +31,7 @@ Creates a 2D point at the given coordinates.
 public init?(x: Double, y: Double)
 ```
 
-- **Parameters:** `x` — X coordinate; `y` — Y coordinate.
+- **Parameters:** `x`, X coordinate; `y`, Y coordinate.
 - **Returns:** `nil` if the underlying OCCT allocation fails.
 - **OCCT:** `Geom2d_CartesianPoint(x, y)`.
 - **Example:**
@@ -53,7 +53,7 @@ public convenience init?(position: SIMD2<Double>)
 
 Delegates to `init(x:y:)` using the vector's components.
 
-- **Parameters:** `position` — 2D coordinate vector.
+- **Parameters:** `position`, 2D coordinate vector.
 - **Returns:** `nil` if allocation fails.
 - **OCCT:** `Geom2d_CartesianPoint(position.x, position.y)`.
 - **Example:**
@@ -73,7 +73,7 @@ public convenience init?(_ coords: SIMD2<Double>)
 
 Equivalent to `init(position:)`.
 
-- **Parameters:** `coords` — 2D coordinate vector.
+- **Parameters:** `coords`, 2D coordinate vector.
 - **Returns:** `nil` if allocation fails.
 - **Example:**
   ```swift
@@ -171,7 +171,7 @@ public func setCoords(x: Double, y: Double)
 
 Mutates this point's underlying `Geom2d_CartesianPoint`.
 
-- **Parameters:** `x` — new X coordinate; `y` — new Y coordinate.
+- **Parameters:** `x`, new X coordinate; `y`, new Y coordinate.
 - **OCCT:** `Geom2d_CartesianPoint::SetCoord(x, y)`.
 - **Example:**
   ```swift
@@ -186,7 +186,7 @@ Mutates this point's underlying `Geom2d_CartesianPoint`.
 
 ---
 
-#### `distance(to:)` — point overload
+#### `distance(to:)`, point overload
 
 Euclidean distance to another `Point2D`.
 
@@ -194,7 +194,7 @@ Euclidean distance to another `Point2D`.
 public func distance(to other: Point2D) -> Double
 ```
 
-- **Parameters:** `other` — the other 2D point.
+- **Parameters:** `other`, the other 2D point.
 - **Returns:** Euclidean distance.
 - **OCCT:** `Geom2d_CartesianPoint::Distance(other->point)`.
 - **Example:**
@@ -214,7 +214,7 @@ Squared Euclidean distance to another `Point2D` (avoids `sqrt`).
 public func squareDistance(to other: Point2D) -> Double
 ```
 
-- **Parameters:** `other` — the other 2D point.
+- **Parameters:** `other`, the other 2D point.
 - **Returns:** Squared Euclidean distance.
 - **OCCT:** `Geom2d_CartesianPoint::SquareDistance(other->point)`.
 - **Example:**
@@ -226,7 +226,7 @@ public func squareDistance(to other: Point2D) -> Double
 
 ---
 
-#### `distance(to:)` — curve overload
+#### `distance(to:)`, curve overload
 
 Minimum distance from this point to a 2D curve.
 
@@ -236,11 +236,11 @@ public func distance(to curve: Curve2D) -> Double
 
 Measured over the curve's own domain, ends included, so it is the true minimum rather than the distance to the nearest *perpendicular foot*. A point beyond the end of a bounded curve is measured to that end, and a circle's centre to the radius.
 
-Two sentinels have been retired from this one method. It first returned the bridge's raw `-1.0` for a point with no perpendicular foot, which any threshold test (`distance < tolerance`) read as "touching" — the opposite of the truth (#413). `.infinity` replaced it, which was safe but still discarded a real, finite distance: a point 92 units from a segment measured as infinitely far from it. #615 measures it instead.
+Two sentinels have been retired from this one method. It first returned the bridge's raw `-1.0` for a point with no perpendicular foot, which any threshold test (`distance < tolerance`) read as "touching", the opposite of the truth (#413). `.infinity` replaced it, which was safe but still discarded a real, finite distance: a point 92 units from a segment measured as infinitely far from it. #615 measures it instead.
 
-- **Parameters:** `curve` — the 2D curve to measure against.
+- **Parameters:** `curve`, the 2D curve to measure against.
 - **Returns:** Minimum distance, or `.infinity` only if there is no curve to measure to.
-- **OCCT:** `occtNearestPointOnCurve2dRange` — the minimum over every `Geom2dAPI_ProjectPointOnCurve` extremum in range and both curve ends.
+- **OCCT:** `occtNearestPointOnCurve2dRange`, the minimum over every `Geom2dAPI_ProjectPointOnCurve` extremum in range and both curve ends.
 - **Note:** Shares one bridge path with [`Curve2D.project(point:)`](Curve2D-Analysis.md), `Curve2D.project(_:)` and `Curve2D.nearestParameter(to:)`, so all four agree exactly (#413, #615).
 - **Example:**
   ```swift
@@ -266,7 +266,7 @@ Translates by `(dx, dy)`, returning a new point.
 public func translated(dx: Double, dy: Double) -> Point2D?
 ```
 
-- **Parameters:** `dx` — X offset; `dy` — Y offset.
+- **Parameters:** `dx`, X offset; `dy`, Y offset.
 - **Returns:** Translated copy, or `nil` on failure.
 - **OCCT:** `gp_Trsf2d::SetTranslation` + `Geom2d_Geometry::Transformed`.
 - **Example:**
@@ -287,7 +287,7 @@ Rotates around a centre point by an angle in radians, returning a new point.
 public func rotated(center: SIMD2<Double>, angle: Double) -> Point2D?
 ```
 
-- **Parameters:** `center` — centre of rotation; `angle` — rotation angle in radians (counter-clockwise positive).
+- **Parameters:** `center`, centre of rotation; `angle`, rotation angle in radians (counter-clockwise positive).
 - **Returns:** Rotated copy, or `nil` on failure.
 - **OCCT:** `gp_Trsf2d::SetRotation` + `Geom2d_Geometry::Transformed`.
 - **Example:**
@@ -308,7 +308,7 @@ Scales from a centre point by a factor, returning a new point.
 public func scaled(center: SIMD2<Double>, factor: Double) -> Point2D?
 ```
 
-- **Parameters:** `center` — centre of scaling; `factor` — uniform scale factor.
+- **Parameters:** `center`, centre of scaling; `factor`, uniform scale factor.
 - **Returns:** Scaled copy, or `nil` on failure.
 - **OCCT:** `gp_Trsf2d::SetScale` + `Geom2d_Geometry::Transformed`.
 - **Example:**
@@ -329,7 +329,7 @@ Mirrors across a point, returning a new point.
 public func mirrored(point: SIMD2<Double>) -> Point2D?
 ```
 
-- **Parameters:** `point` — the mirror point (centre of symmetry).
+- **Parameters:** `point`, the mirror point (centre of symmetry).
 - **Returns:** Mirrored copy, or `nil` on failure.
 - **OCCT:** `gp_Trsf2d::SetMirror(gp_Pnt2d)` + `Geom2d_Geometry::Transformed`.
 - **Example:**
@@ -350,7 +350,7 @@ Mirrors across an axis defined by origin and direction, returning a new point.
 public func mirrored(axisOrigin: SIMD2<Double>, axisDirection: SIMD2<Double>) -> Point2D?
 ```
 
-- **Parameters:** `axisOrigin` — a point on the mirror axis; `axisDirection` — the direction of the axis (need not be normalised).
+- **Parameters:** `axisOrigin`, a point on the mirror axis; `axisDirection`, the direction of the axis (need not be normalised).
 - **Returns:** Mirrored copy, or `nil` on failure.
 - **OCCT:** `gp_Trsf2d::SetMirror(gp_Ax2d)` + `Geom2d_Geometry::Transformed`.
 - **Example:**
@@ -374,7 +374,7 @@ public func translated(by delta: SIMD2<Double>) -> Point2D?
 
 Pure-Swift convenience: delegates to `translated(dx:dy:)`.
 
-- **Parameters:** `delta` — 2D translation vector.
+- **Parameters:** `delta`, 2D translation vector.
 - **Returns:** Translated copy, or `nil` on failure.
 - **Example:**
   ```swift
@@ -394,7 +394,7 @@ Applies a `Transform2D` to this point, returning a new point.
 public func transformed(by transform: Transform2D) -> Point2D?
 ```
 
-- **Parameters:** `transform` — the 2D transformation to apply.
+- **Parameters:** `transform`, the 2D transformation to apply.
 - **Returns:** Transformed copy, or `nil` on failure.
 - **OCCT:** `Geom2d_Geometry::Transformed(trsf->Trsf2d())` → downcast to `Geom2d_CartesianPoint`.
 - **Example:**
@@ -449,7 +449,7 @@ Creates a translation by `(dx, dy)`.
 public static func translation(dx: Double, dy: Double) -> Transform2D?
 ```
 
-- **Parameters:** `dx` — X displacement; `dy` — Y displacement.
+- **Parameters:** `dx`, X displacement; `dy`, Y displacement.
 - **Returns:** Translation transform, or `nil` on failure.
 - **OCCT:** `gp_Trsf2d::SetTranslation(gp_Vec2d(dx, dy))` → `Geom2d_Transformation`.
 - **Example:**
@@ -469,7 +469,7 @@ Creates a rotation around a centre point by an angle in radians.
 public static func rotation(center: SIMD2<Double>, angle: Double) -> Transform2D?
 ```
 
-- **Parameters:** `center` — centre of rotation; `angle` — angle in radians (counter-clockwise positive).
+- **Parameters:** `center`, centre of rotation; `angle`, angle in radians (counter-clockwise positive).
 - **Returns:** Rotation transform, or `nil` on failure.
 - **OCCT:** `gp_Trsf2d::SetRotation(gp_Pnt2d, angle)` → `Geom2d_Transformation`.
 - **Example:**
@@ -490,7 +490,7 @@ Creates a uniform scale from a centre point.
 public static func scale(center: SIMD2<Double>, factor: Double) -> Transform2D?
 ```
 
-- **Parameters:** `center` — fixed point of the scaling; `factor` — uniform scale factor.
+- **Parameters:** `center`, fixed point of the scaling; `factor`, uniform scale factor.
 - **Returns:** Scale transform, or `nil` on failure.
 - **OCCT:** `gp_Trsf2d::SetScale(gp_Pnt2d, factor)` → `Geom2d_Transformation`.
 - **Example:**
@@ -510,7 +510,7 @@ Creates a mirror about a point (central symmetry).
 public static func mirrorPoint(_ point: SIMD2<Double>) -> Transform2D?
 ```
 
-- **Parameters:** `point` — the centre of symmetry.
+- **Parameters:** `point`, the centre of symmetry.
 - **Returns:** Point-mirror transform, or `nil` on failure.
 - **OCCT:** `gp_Trsf2d::SetMirror(gp_Pnt2d)` → `Geom2d_Transformation`.
 - **Example:**
@@ -530,7 +530,7 @@ Creates a mirror about an axis defined by origin and direction.
 public static func mirrorAxis(origin: SIMD2<Double>, direction: SIMD2<Double>) -> Transform2D?
 ```
 
-- **Parameters:** `origin` — a point on the mirror axis; `direction` — the axis direction.
+- **Parameters:** `origin`, a point on the mirror axis; `direction`, the axis direction.
 - **Returns:** Axis-mirror transform, or `nil` on failure.
 - **OCCT:** `gp_Trsf2d::SetMirror(gp_Ax2d)` → `Geom2d_Transformation`.
 - **Example:**
@@ -640,7 +640,7 @@ public func composed(with other: Transform2D) -> Transform2D?
 
 Applies `other` first, then `self`.
 
-- **Parameters:** `other` — the second transformation.
+- **Parameters:** `other`, the second transformation.
 - **Returns:** Composed transform, or `nil` on failure.
 - **OCCT:** `Geom2d_Transformation::Multiplied(other)`.
 - **Example:**
@@ -665,7 +665,7 @@ public func powered(_ n: Int32) -> Transform2D?
 
 `n = 0` gives identity; negative `n` gives the inverse raised to `|n|`.
 
-- **Parameters:** `n` — integer exponent.
+- **Parameters:** `n`, integer exponent.
 - **Returns:** Composed transform, or `nil` on failure.
 - **OCCT:** `Geom2d_Transformation::Powered(n)`.
 - **Example:**
@@ -683,7 +683,7 @@ public func powered(_ n: Int32) -> Transform2D?
 
 ---
 
-#### `apply(to:)` — point overload
+#### `apply(to:)`, point overload
 
 Applies this transformation to a `SIMD2<Double>` coordinate, returning the result.
 
@@ -691,7 +691,7 @@ Applies this transformation to a `SIMD2<Double>` coordinate, returning the resul
 public func apply(to point: SIMD2<Double>) -> SIMD2<Double>
 ```
 
-- **Parameters:** `point` — 2D coordinate to transform.
+- **Parameters:** `point`, 2D coordinate to transform.
 - **Returns:** Transformed coordinate.
 - **OCCT:** `gp_Trsf2d::Transforms(x, y)` (in-place on copies of the components).
 - **Example:**
@@ -702,7 +702,7 @@ public func apply(to point: SIMD2<Double>) -> SIMD2<Double>
 
 ---
 
-#### `apply(to:)` — curve overload
+#### `apply(to:)`, curve overload
 
 Applies this transformation to a `Curve2D`, returning a new transformed curve.
 
@@ -710,7 +710,7 @@ Applies this transformation to a `Curve2D`, returning a new transformed curve.
 public func apply(to curve: Curve2D) -> Curve2D?
 ```
 
-- **Parameters:** `curve` — the 2D curve to transform.
+- **Parameters:** `curve`, the 2D curve to transform.
 - **Returns:** A new `Curve2D` with the transformation applied, or `nil` if copying or transformation fails.
 - **OCCT:** `Geom2d_Curve::Copy()` then `Geom2d_Curve::Transform(trsf->Trsf2d())`.
 - **Example:**
@@ -726,7 +726,7 @@ public func apply(to curve: Curve2D) -> Curve2D?
 
 ## ShapeAxis
 
-A value type representing an axis extracted from a face or solid — an origin/direction pair with an optional extent range and a surface-kind tag. Produced by `Face.primaryAxis`, `Shape.revolutionAxes`, and `Shape.symmetryAxes`. Also extended onto `Surface` as `torusAxis` and `revolutionAxis`.
+A value type representing an axis extracted from a face or solid, an origin/direction pair with an optional extent range and a surface-kind tag. Produced by `Face.primaryAxis`, `Shape.revolutionAxes`, and `Shape.symmetryAxes`. Also extended onto `Surface` as `torusAxis` and `revolutionAxis`.
 
 ---
 
@@ -778,7 +778,7 @@ The optional extent along the axis, measured in real 3D units (not the surface's
 public let extent: ClosedRange<Double>?
 ```
 
-`nil` for `Face.primaryAxis` (never computed there) and for a shape with no boundable geometry at all. For `Shape.revolutionAxes(tolerance:)` and `Shape.symmetryAxes(fractionalTolerance:)`, `extent` is the geometric bounding box of the axis's own shape (the face, for a revolution axis; the whole shape, for a symmetry axis) projected onto the axis direction from `origin` — exact when the box is tight along that direction (a bounded cylindrical/conical face along its own axis, a box along a principal axis), a safe enclosing interval otherwise. An untrimmed/unbounded shape reports `-Double.greatestFiniteMagnitude...Double.greatestFiniteMagnitude` rather than `nil` — `hasExtent` (bridge-side) distinguishes "unbounded but known" from "couldn't measure at all". Before #763 this field was `nil` unconditionally: `hasExtent` was hardcoded `false` on every call.
+`nil` for `Face.primaryAxis` (never computed there) and for a shape with no boundable geometry at all. For `Shape.revolutionAxes(tolerance:)` and `Shape.symmetryAxes(fractionalTolerance:)`, `extent` is the geometric bounding box of the axis's own shape (the face, for a revolution axis; the whole shape, for a symmetry axis) projected onto the axis direction from `origin`, exact when the box is tight along that direction (a bounded cylindrical/conical face along its own axis, a box along a principal axis), a safe enclosing interval otherwise. An untrimmed/unbounded shape reports `-Double.greatestFiniteMagnitude...Double.greatestFiniteMagnitude` rather than `nil`, `hasExtent` (bridge-side) distinguishes "unbounded but known" from "couldn't measure at all". Before #763 this field was `nil` unconditionally: `hasExtent` was hardcoded `false` on every call.
 
 - **Example:**
   ```swift
@@ -823,13 +823,13 @@ public enum Kind: Int32, Sendable, Hashable {
 }
 ```
 
-- `.cylinder` — extracted from `GeomAbs_Cylinder` via `BRepAdaptor_Surface::Cylinder().Axis()`.
-- `.cone` — extracted from `GeomAbs_Cone` via `BRepAdaptor_Surface::Cone().Axis()`.
-- `.sphere` — extracted from `GeomAbs_Sphere` via `gp_Sphere::Location()` + `Position().Direction()`.
-- `.torus` — extracted from `GeomAbs_Torus` via `BRepAdaptor_Surface::Torus().Axis()`.
-- `.revolution` — extracted from `Geom_SurfaceOfRevolution::Axis()`.
-- `.extrusion` — extracted from `Geom_SurfaceOfLinearExtrusion::Direction()`.
-- `.symmetry` — derived from principal moments of inertia via `GProp_PrincipalProps`.
+- `.cylinder`: extracted from `GeomAbs_Cylinder` via `BRepAdaptor_Surface::Cylinder().Axis()`.
+- `.cone`: extracted from `GeomAbs_Cone` via `BRepAdaptor_Surface::Cone().Axis()`.
+- `.sphere`: extracted from `GeomAbs_Sphere` via `gp_Sphere::Location()` + `Position().Direction()`.
+- `.torus`: extracted from `GeomAbs_Torus` via `BRepAdaptor_Surface::Torus().Axis()`.
+- `.revolution`: extracted from `Geom_SurfaceOfRevolution::Axis()`.
+- `.extrusion`: extracted from `Geom_SurfaceOfLinearExtrusion::Direction()`.
+- `.symmetry`: derived from principal moments of inertia via `GProp_PrincipalProps`.
 
 ---
 
@@ -852,7 +852,7 @@ public init(origin: SIMD3<Double>, direction: SIMD3<Double>,
 
 Typically you receive `ShapeAxis` values from bridge queries rather than constructing them directly.
 
-- **Parameters:** `origin` — axis origin; `direction` — axis direction; `extent` — optional parametric range (default `nil`); `kind` — surface kind tag.
+- **Parameters:** `origin`, axis origin; `direction`, axis direction; `extent`, optional parametric range (default `nil`); `kind`, surface kind tag.
 - **Example:**
   ```swift
   let ax = ShapeAxis(origin: .zero, direction: SIMD3(0, 0, 1),
@@ -903,7 +903,7 @@ public func revolutionAxes(tolerance: Double = 1e-6) -> [ShapeAxis]
 
 Explores all `TopoDS_Face` sub-shapes; collects axes from cylindrical, conical, spherical, toroidal, and surface-of-revolution faces. Deduplicates axes that coincide within `tolerance`.
 
-- **Parameters:** `tolerance` — spatial tolerance for deduplication (default 1e-6).
+- **Parameters:** `tolerance`, spatial tolerance for deduplication (default 1e-6).
 - **Returns:** Array of deduplicated `ShapeAxis` values (kinds `.cylinder`, `.cone`, `.sphere`, `.torus`, `.revolution`), or empty on error.
 - **OCCT:** `TopExp_Explorer(shape, TopAbs_FACE)` + per-type `BRepAdaptor_Surface` extraction.
 - **Example:**
@@ -925,7 +925,7 @@ public func symmetryAxes(fractionalTolerance: Double = 1e-4) -> [ShapeAxis]
 
 Returns one axis for a body with rotational symmetry (two equal principal moments), three axes for spherical symmetry (all three equal), and an empty array otherwise.
 
-- **Parameters:** `fractionalTolerance` — two moments are considered equal when their absolute difference is below this fraction of the largest moment.
+- **Parameters:** `fractionalTolerance`, two moments are considered equal when their absolute difference is below this fraction of the largest moment.
 - **Returns:** Array of `ShapeAxis` values with `.kind == .symmetry`, or empty if no symmetry is detected.
 - **Empty for any shape with no closed volume** (a face, wire, edge, vertex or open shell), since
   these are the volume-based moments. Those used to report **spherical** symmetry: a zero-mass
@@ -961,7 +961,7 @@ public var torusAxis: (origin: SIMD3<Double>, direction: SIMD3<Double>)? { get }
 Returns `nil` if the surface is not a torus.
 
 - **Returns:** Tuple with axis origin and direction, or `nil` if `surfaceKind != .torus`.
-- **OCCT:** `OCCTSurfaceTorusAxis` — reads `Geom_ToroidalSurface::Axis()` (inherited from `Geom_ElementarySurface`, returns `gp_Ax1` from `gp_Ax3`); no `gp_Torus` is constructed.
+- **OCCT:** `OCCTSurfaceTorusAxis`, reads `Geom_ToroidalSurface::Axis()` (inherited from `Geom_ElementarySurface`, returns `gp_Ax1` from `gp_Ax3`); no `gp_Torus` is constructed.
 - **Example:**
   ```swift
   let torus = Surface.torus(majorRadius: 10, minorRadius: 2)!
@@ -983,7 +983,7 @@ public var revolutionAxis: (origin: SIMD3<Double>, direction: SIMD3<Double>)? { 
 Returns `nil` if the surface is not a surface of revolution.
 
 - **Returns:** Tuple with axis origin and direction, or `nil` if `surfaceKind != .surfaceOfRevolution`.
-- **OCCT:** `OCCTSurfaceRevolutionAxis` — reads `Geom_SurfaceOfRevolution::Axis()`.
+- **OCCT:** `OCCTSurfaceRevolutionAxis`, reads `Geom_SurfaceOfRevolution::Axis()`.
 - **Example:**
   ```swift
   // Assuming revSurface is a Geom_SurfaceOfRevolution-backed Surface
@@ -1012,7 +1012,7 @@ Creates a 2D axis placement from origin and direction.
 public init?(origin: SIMD2<Double>, direction: SIMD2<Double>)
 ```
 
-- **Parameters:** `origin` — the origin of the axis; `direction` — the direction of the axis (normalised internally to `gp_Dir2d`).
+- **Parameters:** `origin`, the origin of the axis; `direction`, the direction of the axis (normalised internally to `gp_Dir2d`).
 - **Returns:** `nil` if the direction vector is zero or allocation fails.
 - **OCCT:** `Geom2d_AxisPlacement(gp_Pnt2d, gp_Dir2d)`.
 - **Example:**
@@ -1100,7 +1100,7 @@ public func angle(to other: AxisPlacement2D) -> Double
 
 Returns the angle in the range [0, π].
 
-- **Parameters:** `other` — the second axis placement.
+- **Parameters:** `other`, the second axis placement.
 - **Returns:** Angle in radians between the two direction vectors.
 - **OCCT:** `Geom2d_AxisPlacement::Angle(other->axis)`.
 - **Example:**

@@ -319,7 +319,7 @@ struct EdgeDiscretizationTests {
 
     // MARK: - Bulk edge discretisation (#275)
 
-    /// The bulk path must agree point-for-point with the per-index accessor it replaced —
+    /// The bulk path must agree point-for-point with the per-index accessor it replaced,
     /// same edge ordering, same discretisation, same skip behaviour.
     @Test("Bulk allEdgePolylines matches the per-index accessor exactly")
     func bulkEdgePolylinesMatchPerIndex() {
@@ -355,7 +355,7 @@ struct EdgeDiscretizationTests {
     /// 0.11 s → 3,136 edges 1.29 s → 12,033 edges 20.3 s). We compare per-edge cost between
     /// a small and a ~10x larger shape: linear keeps the ratio ~flat, quadratic makes it grow
     /// with the edge count. The bound is deliberately loose (8x) so this asserts the
-    /// complexity class, not wall-clock — it should not go red on a slow or busy machine.
+    /// complexity class, not wall-clock, it should not go red on a slow or busy machine.
     @Test("allEdgePolylines scales linearly, not quadratically, in edge count")
     func allEdgePolylinesScalesLinearly() {
         func perEdgeCost(gridSide: Int) -> (cost: Double, edges: Int) {
@@ -387,7 +387,7 @@ struct EdgeDiscretizationTests {
 
         // Linear → per-edge cost stays roughly constant. Quadratic → it grows ~11x here.
         #expect(large.cost < small.cost * 8,
-                "per-edge cost grew \(large.cost / small.cost)x from \(small.edges) to \(large.edges) edges — allEdgePolylines looks quadratic again (#275)")
+                "per-edge cost grew \(large.cost / small.cost)x from \(small.edges) to \(large.edges) edges, allEdgePolylines looks quadratic again (#275)")
     }
 
     /// `allEdgePolylinesIndexed` must carry ORIGINAL edge indices across skips: a sphere
@@ -401,7 +401,7 @@ struct EdgeDiscretizationTests {
 
         // Something must actually be skipped for this fixture to prove anything.
         #expect(indexed.count < sphere.edgeCount,
-                "sphere fixture no longer has a skipped (degenerate) edge — pick a new fixture")
+                "sphere fixture no longer has a skipped (degenerate) edge, pick a new fixture")
 
         // Every returned pair must match the per-index accessor at that exact index…
         for (edgeIndex, points) in indexed {
@@ -811,7 +811,7 @@ struct ShapeProximityTests {
 
 // MARK: - Face Property Tests
 
-@Suite("Face — Outer Wire and ZLevel")
+@Suite("Face, Outer Wire and ZLevel")
 struct FacePropertyTests {
     @Test("Face outer wire exists")
     func faceOuterWire() {
@@ -839,7 +839,7 @@ struct FacePropertyTests {
         if let f = face {
             #expect(abs(f.area() - 100) < 1e-6)
         }
-        // The whole box is a TopoDS_Solid, not a Face — must reject.
+        // The whole box is a TopoDS_Solid, not a Face, must reject.
         #expect(Face(box) == nil)
     }
 
@@ -856,7 +856,7 @@ struct FacePropertyTests {
         if let e = edge {
             #expect(abs(e.length - 10) < 1e-6)
         }
-        // The whole box is a TopoDS_Solid, not an Edge — must reject.
+        // The whole box is a TopoDS_Solid, not an Edge, must reject.
         #expect(Edge(box) == nil)
     }
 
@@ -870,7 +870,7 @@ struct FacePropertyTests {
         }
         let wire = Wire(ws)
         #expect(wire != nil)
-        // The whole box is a TopoDS_Solid, not a Wire — must reject.
+        // The whole box is a TopoDS_Solid, not a Wire, must reject.
         #expect(Wire(box) == nil)
 
         // Round-trip: Wire → Shape → Wire produces a wire that builds the
@@ -1156,7 +1156,7 @@ struct FixSmallFacesTests {
 struct EdgesToFacesTests {
     @Test("Edges to faces from wire shape")
     func edgesToFacesFromWire() {
-        // Create a wire shape — it contains 4 connected edges forming a rectangle
+        // Create a wire shape, it contains 4 connected edges forming a rectangle
         let rect = Wire.rectangle(width: 10, height: 5)!
         let wireShape = Shape.fromWire(rect)!
         let result = Shape.facesFromEdges(wireShape, onlyPlanar: true)
@@ -1184,7 +1184,7 @@ struct EdgesToFacesTests {
     }
 }
 
-// MARK: - v0.34.0 — OCCT Test Suite Audit Round 3
+// MARK: - v0.34.0. OCCT Test Suite Audit Round 3
 
 @Suite("Shape-to-Shape Section")
 struct ShapeSectionTests {
@@ -1306,7 +1306,7 @@ struct DeepShapeCopyTests {
         let box = Shape.box(width: 10, height: 5, depth: 3)!
         let boxCopy = box.copy()
         #expect(boxCopy != nil)
-        // Translate the copy — original should be unaffected
+        // Translate the copy, original should be unaffected
         let translated = boxCopy!.translated(by: SIMD3(100, 0, 0))
         #expect(translated != nil)
         // Both should still have the same volume
@@ -2057,7 +2057,7 @@ struct MakeSolidFromShellTests {
     }
 }
 
-@Suite("BRepLib_MakeWire — Wire From Edges")
+@Suite("BRepLib_MakeWire, Wire From Edges")
 struct WireFromEdgesTests {
     @Test("Create wire from box edges")
     func wireFromEdges() throws {
@@ -2108,7 +2108,7 @@ struct ShapeCSIntersectorTestsV52 {
 
 // MARK: - Issue Fix Tests
 
-@Suite("Wire.edges() — Issue #44") struct WireEdgesTests {
+@Suite("Wire.edges(), Issue #44") struct WireEdgesTests {
     @Test("Wire.edges returns edges for rectangle")
     func rectangleEdges() {
         let wire = Wire.rectangle(width: 10, height: 5)
@@ -2131,7 +2131,7 @@ struct ShapeCSIntersectorTestsV52 {
     }
 }
 
-@Suite("Wire.allEdgePolylines — Issue #46") struct WireAllEdgePolylinesTests {
+@Suite("Wire.allEdgePolylines, Issue #46") struct WireAllEdgePolylinesTests {
     @Test("Wire.allEdgePolylines returns polylines for rectangle")
     func rectanglePolylines() {
         let wire = Wire.rectangle(width: 10, height: 5)
@@ -2155,7 +2155,7 @@ struct ShapeCSIntersectorTestsV52 {
     }
 }
 
-@Suite("Shape.fromEdge — Issue #45") struct ShapeFromEdgeTests {
+@Suite("Shape.fromEdge, Issue #45") struct ShapeFromEdgeTests {
     @Test("Shape.fromEdge converts edge to shape")
     func edgeToShape() {
         let box = Shape.box(width: 10, height: 10, depth: 10)
@@ -2225,7 +2225,7 @@ struct ShapeCSIntersectorTestsV52 {
     }
 }
 
-@Suite("projectWire with Wire — Issue #47") struct ProjectWireWithWireTests {
+@Suite("projectWire with Wire, Issue #47") struct ProjectWireWithWireTests {
     @Test("projectWire accepts Wire directly")
     func projectWireFromWire() {
         let wire = Wire.circle(radius: 5)
@@ -2248,7 +2248,7 @@ struct ShapeCSIntersectorTestsV52 {
     }
 }
 
-@Suite("orderedEdgePoints no truncation — Issue #35") struct OrderedEdgePointsTests {
+@Suite("orderedEdgePoints no truncation, Issue #35") struct OrderedEdgePointsTests {
     @Test("orderedEdgePoints returns all points without truncation")
     func noTruncation() {
         let wire = Wire.circle(radius: 100)
@@ -2717,7 +2717,7 @@ struct BRepClass3dTests {
     }
 
     // #851: the .on boundary case had no coverage on this copy of the classifier, unlike
-    // PointClassificationTests.pointOnBoxFace on Shape.classify(point:) — mirrors that test
+    // PointClassificationTests.pointOnBoxFace on Shape.classify(point:), mirrors that test
     // exactly, proving the two independent bridge call paths agree at a boundary point after
     // being unified onto the same BRepClass3d_SolidClassifier mechanism.
     @Test func pointOnBoxFace() {
@@ -2732,7 +2732,7 @@ struct BRepClass3dTests {
 struct BRepClassFClassifierTests {
 
     @Test func classifyPoint2DInside() {
-        // Box face UV bounds depend on which face — use a broad test
+        // Box face UV bounds depend on which face, use a broad test
         guard let box = Shape.box(origin: SIMD3(0, 0, 0), width: 10, height: 10, depth: 10) else { return }
         // Point far outside UV bounds should definitely be OUT
         let stateOut = box.classifyPoint2D(faceIndex: 0, u: 1000, v: 1000)
@@ -3776,7 +3776,7 @@ struct ShapeContentsExtendedTests {
     // #855: `Shape.contents` and `Shape.contentsExtended()` each run their own independent
     // `ShapeAnalysis_ShapeContents::Perform()` walk (two bridge calls, two C structs), but their
     // first 9 fields are meant to report identical values for the same shape. Nothing asserted
-    // that before this test — a future divergence (e.g. a `ModifyXMode()` call added to only one
+    // that before this test, a future divergence (e.g. a `ModifyXMode()` call added to only one
     // bridge call site) would otherwise land silently.
     @Test func contentsAgreesWithContentsExtended() throws {
         func assertParity(_ shape: Shape) {
@@ -3799,7 +3799,7 @@ struct ShapeContentsExtendedTests {
     }
 
     // #855 review: `contentsAgreesWithContentsExtended()` above only proves the two bridge calls
-    // agree on a watertight box/cylinder, where every free-element count is 0 on both sides — a
+    // agree on a watertight box/cylinder, where every free-element count is 0 on both sides, a
     // transposed field (e.g. `ShapeContentsCore` reading `nbFreeWires` into `freeEdges`) would
     // pass that test by coincidence, since swapping two zeros is still 0 == 0. This test instead
     // builds both bridge C structs directly, with 9 mutually distinct values and no OCCT call at
@@ -3925,7 +3925,7 @@ struct BRepLibUtilitiesTests {
 
     /// A box's edges all have 3D curves already, so this is the early-return path: OCCT returns
     /// true without computing anything, and the tolerance is never read. Asserting that (rather
-    /// than just `ok`) is the difference between testing the contract and testing nothing — the
+    /// than just `ok`) is the difference between testing the contract and testing nothing, the
     /// absurd tolerance below used to be `1e-7` and passed for the same reason 42 does. #498.
     @Test("Building 3D curves on a shape that already has them changes nothing")
     func buildCurves3dOnFullyBuiltShapeIsANoOp() {
@@ -4331,7 +4331,7 @@ struct IntegrationConcurrentShapeOperationsTests {
 
 // MARK: - v0.122.0: WireFixer extended, ShapeFix_Edge, BRepTools/BRepLib statics, History extended, Sewing extended
 
-@Suite("v0.122.0 — WireFixer Extended")
+@Suite("v0.122.0, WireFixer Extended")
 struct WireFixerExtendedTests {
     // Helper: get a face and its wire from a box
     private func faceAndWire() -> (face: Shape, wire: Shape)? {
@@ -4416,7 +4416,7 @@ struct WireFixerExtendedTests {
     }
 }
 
-@Suite("v0.122.0 — BRepTools Statics")
+@Suite("v0.122.0, BRepTools Statics")
 struct BRepToolsStaticsTests {
     @Test("Clean triangulation")
     func cleanTriangulation() {
@@ -4529,7 +4529,7 @@ struct BRepToolsStaticsTests {
             let faces = c.subShapes(ofType: .face)
             let edges = c.subShapes(ofType: .edge)
             if faces.count > 0, edges.count > 0 {
-                // Check some edge/face pair — result depends on geometry
+                // Check some edge/face pair, result depends on geometry
                 let _ = Shape.isReallyClosed(edge: edges[0], face: faces[0])
                 #expect(true) // Just verify no crash
             }
@@ -4546,7 +4546,7 @@ struct BRepToolsStaticsTests {
     }
 }
 
-@Suite("v0.122.0 — BRepLib Extended Statics")
+@Suite("v0.122.0, BRepLib Extended Statics")
 struct BRepLibExtendedTests {
     @Test("Ensure normal consistency")
     func ensureNormalConsistency() {
@@ -4577,7 +4577,7 @@ struct BRepLibExtendedTests {
             let edges = b.subShapes(ofType: .edge)
             if faces.count >= 2, edges.count > 0 {
                 // Try to find a shared edge between two faces. Whatever comes back must be a
-                // class the vocabulary actually has — the old `>= -1` was true of every Int
+                // class the vocabulary actually has, the old `>= -1` was true of every Int
                 // (#495); Issue495FaceContinuityTests pins the values per geometry.
                 let cont = Shape.continuityClassOfFaces(edge: edges[0],
                                                         face1: faces[0], face2: faces[1])
@@ -4596,7 +4596,7 @@ struct BRepLibExtendedTests {
     }
 }
 
-@Suite("v0.123.0 — Shape queries")
+@Suite("v0.123.0, Shape queries")
 struct ShapeQueriesV123Tests {
 
     @Test("Shape typeName")
@@ -4819,7 +4819,7 @@ struct WireAnalyzerV124Tests {
 
 // MARK: - v0.126.0 Tests
 
-@Suite("v0.126.0 — BRep_Tool completions")
+@Suite("v0.126.0, BRep_Tool completions")
 struct BRepToolCompletionsTests {
     @Test("CurveOnSurface returns pcurve of edge on face")
     func curveOnSurface() {
@@ -4975,7 +4975,7 @@ struct BRepToolCompletionsTests {
     }
 }
 
-@Suite("v0.127.0 — BRep_Tool Polygon Queries")
+@Suite("v0.127.0, BRep_Tool Polygon Queries")
 struct BRepToolPolygonTests {
 
     @Test("Polygon3D from meshed edge")
@@ -5023,14 +5023,14 @@ struct BRepToolPolygonTests {
         guard !edges.isEmpty else { return }
         // Create a plane surface in XY
         if let surf = Surface.plane(origin: SIMD3(0, 0, 0), normal: SIMD3(0, 0, 1)) {
-            // Try each edge — some lie on this plane, some don't
+            // Try each edge, some lie on this plane, some don't
             for edge in edges {
                 if let result = Shape.curveOnPlane(edge: edge, surface: surf) {
                     #expect(result.first < result.last)
                     break
                 }
             }
-            // May return nil for all edges if none lie on the XY plane — that's ok
+            // May return nil for all edges if none lie on the XY plane, that's ok
         }
     }
 }

@@ -1055,7 +1055,7 @@ struct Curve3DPlaneProjectionTests {
     @Test("Project onto plane with near-parallel direction returns nil or valid curve")
     func projectNearParallelDirection() {
         let seg = Curve3D.segment(from: SIMD3(0, 0, 0), to: SIMD3(10, 0, 0))!
-        // Direction nearly in the plane — this may fail gracefully
+        // Direction nearly in the plane, this may fail gracefully
         // Just ensure no crash
         let _ = seg.projectedOnPlane(
             origin: SIMD3(0, 0, 0),
@@ -1194,7 +1194,7 @@ struct CurvePlanarityTests {
     func lineIsPlanar() {
         let segment = Curve3D.segment(from: .zero, to: SIMD3(10, 5, 0))!
         let normal = segment.planeNormal()
-        // Lines are degenerate planes — implementation may or may not return a normal
+        // Lines are degenerate planes, implementation may or may not return a normal
         // Just verify it doesn't crash
         _ = normal
     }
@@ -1352,7 +1352,7 @@ struct QuasiUniformDeflectionTests {
     }
 }
 
-// MARK: - v0.36.0 — OCCT Test Suite Audit Round 5
+// MARK: - v0.36.0. OCCT Test Suite Audit Round 5
 
 @Suite("Conical Projection")
 struct ConicalProjectionTests {
@@ -1422,7 +1422,7 @@ struct BSplineKnotSplittingTests {
             let bspline = curve.toBSpline()
             #expect(bspline != nil)
             if let bspline {
-                // C0 breaks — should at least have first and last
+                // C0 breaks, should at least have first and last
                 let c0Breaks = bspline.continuityBreaks(minContinuity: ParametricContinuity.c0)
                 #expect(c0Breaks != nil)
                 if let c0Breaks {
@@ -2644,7 +2644,7 @@ struct BSplineCurve3DManipulationTests {
             if knots.count >= 2 {
                 let mid = (knots.first! + knots.last!) / 2.0
                 _ = bsp.bspline.insertKnot(u: mid)
-                // Try removing — may or may not succeed depending on geometry
+                // Try removing, may or may not succeed depending on geometry
                 let _ = bsp.bspline.removeKnot(at: 2, multiplicity: 0, tolerance: 1.0)
             }
         }
@@ -3541,13 +3541,13 @@ struct BSplineCurve3DCompletionsV121Tests {
             let tangent = SIMD3<Double>(1, 0, 0)
             let r = curve.bsplineMovePointAndTangent(u: 0.5, point: target, tangent: tangent,
                                                       tolerance: 1e-6, poleRange: 1...4)
-            // MovePointAndTangent may fail if constraints are incompatible — just check it doesn't crash
+            // MovePointAndTangent may fail if constraints are incompatible, just check it doesn't crash
             _ = r
         }
     }
 }
 
-@Suite("v0.123.0 — Curve3D queries")
+@Suite("v0.123.0, Curve3D queries")
 struct Curve3DQueriesV123Tests {
 
     @Test("Period of circle")
@@ -3691,7 +3691,7 @@ struct BezierCurve3DCompletionTests {
     }
 }
 
-@Suite("v0.126.0 — Curve3D Bezier completions")
+@Suite("v0.126.0, Curve3D Bezier completions")
 struct Curve3DBezierCompletionsTests {
     @Test("InsertPoleBefore increases pole count")
     func insertPoleBefore() {
@@ -3729,7 +3729,7 @@ struct Curve3DBezierCompletionsTests {
     }
 }
 
-@Suite("v0.127.0 — BSpline Curve Completions")
+@Suite("v0.127.0, BSpline Curve Completions")
 struct BSplineCurveCompletionsTests {
 
     @Test("BSpline periodic normalization")
@@ -3852,7 +3852,7 @@ struct BSplineCurve3DLocalDTests {
 
 // MARK: - v0.131.0: BSplineApproxInterp, TBezier/AHTBezier, TransformedCurve
 
-@Suite("BSplineApproxInterp — Constrained Least-Squares Fitting")
+@Suite("BSplineApproxInterp, Constrained Least-Squares Fitting")
 struct BSplineApproxInterpTests {
 
     @Test func basicApproximation() {
@@ -4090,13 +4090,13 @@ struct EditorViewV162Tests {
             if let graph, graph.coedgeCount > 0, graph.edgeCount > 0, graph.faceCount > 1 {
                 graph.setCoEdgeUVBox(0, u1: 0, v1: 0, u2: 1, v2: 1)
                 // OCCT 8.0.0 GA replaced per-coedge SetContinuity / SetSeamContinuity /
-                // SetSeamPairId with EdgeOps::SetRegularity — continuity now lives on
+                // SetSeamPairId with EdgeOps:SetRegularity, continuity now lives on
                 // (edge, face1, face2). face1 == face2 expresses seam continuity.
                 //
                 // That write path does not exist in 8.0.0p1: BRepGraph_LayerRegularity does not
                 // compile and is absent from libOCCT, so the bridge function is a stub that
                 // reports failure and never reads the continuity argument. Assert that, rather
-                // than discarding the result — this test had shipped since the GA upgrade with
+                // than discarding the result, this test had shipped since the GA upgrade with
                 // `_ =` on both calls and no expectation, so nothing noticed. #490/#513.
                 #expect(graph.setEdgeRegularity(0, face1: 0, face2: 1, continuity: 1) == false)
                 #expect(graph.setEdgeRegularity(0, face1: 0, face2: 0, continuity: 0) == false)

@@ -4,11 +4,11 @@ import simd
 
 /// Issue #225: building a smooth worm/screw from a custom radial profile.
 ///
-/// The boolean route the issue tried — `helicalSweep` a profile, then `union`/`subtract` with a
-/// coaxial cylinder — is invalid (union) / collapses to zero (subtract) and is *not* the supported
+/// The boolean route the issue tried, `helicalSweep` a profile, then `union`/`subtract` with a
+/// coaxial cylinder, is invalid (union) / collapses to zero (subtract) and is *not* the supported
 /// path. `Shape.threadedRod(customProfile:)` composes the helicoid with the core directly (no
 /// boolean), yielding a valid, analytic solid. These tests lock that in.
-@Suite("Issue225 — threadedRod from a custom profile")
+@Suite("Issue225, threadedRod from a custom profile")
 struct Issue225ThreadedRodTests {
 
     /// A custom symmetric trapezoidal worm tooth: root radius 3, crest radius 6, pitch 4.

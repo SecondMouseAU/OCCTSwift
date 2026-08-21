@@ -11,7 +11,7 @@
 # Prerequisites:
 #   - Xcode 15+ with Command Line Tools
 #   - CMake 3.20+ (brew install cmake)
-#   - rapidjson (brew install rapidjson) — the one third-party product this build enables;
+#   - rapidjson (brew install rapidjson), the one third-party product this build enables;
 #     every other USE_* is OFF, so it is the only one cmake will look for
 #   - ~10GB free disk space
 #
@@ -38,7 +38,7 @@ LIBRARIES_DIR="$PROJECT_DIR/Libraries"
 JOBS=$(sysctl -n hw.ncpu)
 
 # Slice selection. The shipped xcframework defaults to the core slices the ecosystem actually
-# builds against — macOS, iOS device, iOS simulator. visionOS / tvOS slices are NOT built by
+# builds against, macOS, iOS device, iOS simulator. visionOS / tvOS slices are NOT built by
 # default (they ~doubled the artifact and nobody ships against them yet). Set BUILD_ALL_PLATFORMS=1
 # to build the full 7-slice set if you need to target those platforms.
 BUILD_ALL_PLATFORMS="${BUILD_ALL_PLATFORMS:-0}"
@@ -83,7 +83,7 @@ if [ ! -d "$RAPIDJSON_DIR" ]; then
     exit 1
 fi
 
-# Libraries/ is gitignored in its entirety, so a clean checkout — CI, or anyone's first build —
+# Libraries/ is gitignored in its entirety, so a clean checkout. CI, or anyone's first build,
 # does not have it. Create it rather than `cd` into nothing (#585).
 mkdir -p "$LIBRARIES_DIR"
 cd "$LIBRARIES_DIR"
@@ -298,7 +298,7 @@ cmake --install . || true
 cd ..
 
 # --------------------
-# visionOS / tvOS slices — only when BUILD_ALL_PLATFORMS=1 (see top of script).
+# visionOS / tvOS slices, only when BUILD_ALL_PLATFORMS=1 (see top of script).
 # --------------------
 if [ "$BUILD_ALL_PLATFORMS" = "1" ]; then
 
@@ -502,7 +502,7 @@ echo ">>> Creating XCFramework..."
 
 rm -rf OCCT.xcframework
 
-# Conditionally include each platform slice — visionOS / tvOS may have failed to build
+# Conditionally include each platform slice, visionOS / tvOS may have failed to build
 # (e.g. missing OCCT patches for new SDKs); xcframework will skip absent / empty libs.
 XCFW_ARGS=(
     -library libOCCT-ios.a -headers occt-headers

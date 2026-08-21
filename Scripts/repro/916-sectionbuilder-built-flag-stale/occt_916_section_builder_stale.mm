@@ -1,15 +1,15 @@
 // Drives the REAL OCCTSectionBuilder* bridge functions, compiled straight from
 // Sources/OCCTBridge/src/OCCTBridge_Modeling.mm with no modifications, to prove #916 live at the
 // bridge boundary: a builder that already built successfully once keeps built==true through a
-// later, cleanly-failed rebuild (BRepAlgoAPI_Section::Build() reporting !IsDone(), no exception) —
+// later, cleanly-failed rebuild (BRepAlgoAPI_Section:Build() reporting !IsDone(), no exception),
 // and the unfixed code doesn't just answer with stale data, it SIGSEGVs.
 //
 // The failure trigger is a hand-constructed OCCTShape wrapping a genuinely NULL TopoDS_Shape,
 // verified separately (see section_repro_scenarios.mm / README.md) to be the one input that makes
 // BRepAlgoAPI_Section::Build() cleanly report IsDone()==false with no exception on a REUSED
-// builder — BOPAlgo_PaveFiller::Init()'s own `if (aIt.Value().IsNull()) { AddError(new
+// builder. BOPAlgo_PaveFiller::Init()'s own `if (aIt.Value().IsNull()) { AddError(new
 // BOPAlgo_AlertNullInputShapes); return; }` check. This exact null-shape trigger is not reachable
-// through OCCTSwift's public Swift API (Shape never wraps a null TopoDS_Shape — see the README's
+// through OCCTSwift's public Swift API (Shape never wraps a null TopoDS_Shape, see the README's
 // 13-scenario sweep), so this probe drives the bridge's own C functions directly, mirroring the
 // OCCTShape struct exactly as Sources/OCCTBridge/src/OCCTBridge_Internal.h defines it.
 #include <iostream>

@@ -6,11 +6,11 @@ import simd
 // #197: mesh deflection was hardcoded to 0.1 in several auto-meshing utility functions
 // (STL writers, coherent-triangulation builder, proximity, self-intersection). Each now
 // exposes a `deflection:` parameter (default 0.1, non-breaking) so callers can trade
-// triangulation fidelity for speed/size — the same class of knob exposed for poly HLR in #196.
+// triangulation fidelity for speed/size, the same class of knob exposed for poly HLR in #196.
 //
 // NB: BRepMesh_IncrementalMesh is incremental (refines, never coarsens), so each deflection
 // must be exercised on its OWN fresh shape, or a prior finer mesh would mask the parameter.
-@Suite("Issue #197 — mesh deflection is a caller-tunable parameter")
+@Suite("Issue #197, mesh deflection is a caller-tunable parameter")
 struct Issue197MeshDeflectionTests {
 
     private func sphere() -> Shape? { Shape.sphere(radius: 10) }

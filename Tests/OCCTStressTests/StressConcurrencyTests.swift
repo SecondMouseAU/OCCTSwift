@@ -1,5 +1,5 @@
 // StressConcurrencyTests.swift
-// Category 7: Concurrent safety audit — parallel reads, eval, determinism, Sendable.
+// Category 7: Concurrent safety audit, parallel reads, eval, determinism, Sendable.
 //
 // The three "Stress: Concurrent ..." suites below were `.disabled()` for a long time (some since
 // ~v0.51.0) citing an "OCCT NCollection race condition" / "OCCT is not thread-safe" that was never
@@ -177,7 +177,7 @@ struct StressConcurrentCreationTests {
 // Document.create()/loadOBJ/etc. all funnel through the process-wide
 // XCAFApp_Application::GetApplication() singleton and its one CDF_Directory. #344 was an
 // uncatchable SIGSEGV surfacing right after two concurrent OBJ imports, surviving the #341
-// theAutoNaming fix — root-caused to two independent, unsynchronized races in GetApplication()'s
+// theAutoNaming fix, root-caused to two independent, unsynchronized races in GetApplication()'s
 // lazy singleton init and CDF_Directory::Add, fixed in the v1.15.6 kernel patch (0012). This
 // regression test exercises the same singleton from many concurrent tasks.
 @Suite("Stress: Concurrent Document Creation (#344)")

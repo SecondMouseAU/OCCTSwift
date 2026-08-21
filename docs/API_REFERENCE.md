@@ -14,14 +14,14 @@ reference (signatures, parameters, examples), see [API Reference](reference/).
 
 An operation is any `public func` / `static func`, `public init`, `public var` **with an accessor
 block** (a computed property), or `public subscript` in the `OCCTSwift` module. Overloads count
-separately — `cylinder(radius:height:)` and `cylinder(at:direction:radius:height:)` are two entry
+separately, `cylinder(radius:height:)` and `cylinder(at:direction:radius:height:)` are two entry
 points a caller can reach, so they are two operations. Stored properties (`public let`, `public var x = …`)
 are data, not entry points, and are not counted; nor are types or enum cases, which are documented
 but not called.
 
 **The `Total` below is derived, not hand-maintained.** Run `Scripts/count-operations.py` (`--fix`
 rewrites both this Total and the README headline; exit 1 if they disagree). Hand-maintained totals in
-two files desynced by 882 across 11 releases before this rule existed — see
+two files desynced by 882 across 11 releases before this rule existed, see
 [#289](https://github.com/SecondMouseAU/OCCTSwift/issues/289).
 
 **The category rows below do not sum to the Total, and are not meant to.** They are an illustrative
@@ -88,7 +88,7 @@ a map of the major areas, and the `Total` as the count.
 | **Shape History** | 1 | History (create, addModified, addGenerated, remove, isRemoved, hasModified, hasGenerated, hasRemoved, modifiedCount, generatedCount) |
 | **Contour Analysis** | 3 | contourSphereDir, contourCylinderDir, contourSphereEye |
 | **IntCurvesFace** | 1 | intersectLine (line-face intersection) |
-| **BOPAlgo Utilities** | 17 | split (splitter), CellsBuilder (create, addAll, removeAll, removeInternalBoundaries, result), analyzeBoolean, removeFeatures (deprecated — `defeature(faces:)` one OCCT layer down, #536), section(instance), section(static), buildFaces, buildSolids, splitShell, edgesToWires, wiresToFaces, makeWire |
+| **BOPAlgo Utilities** | 17 | split (splitter), CellsBuilder (create, addAll, removeAll, removeInternalBoundaries, result), analyzeBoolean, removeFeatures (deprecated, `defeature(faces:)` one OCCT layer down, #536), section(instance), section(static), buildFaces, buildSolids, splitShell, edgesToWires, wiresToFaces, makeWire |
 | **IntTools** | 6 | edgeEdgeIntersection, edgeFaceIntersection, faceFaceIntersection, classifyPoint2d, isHole, beanFaceIntersect |
 | **BOPTools** | 4 | normalOnEdge, pointInFace, isEmpty, isOpenShell |
 | **PCurve / BRepAdaptor** | 3 | pcurveParams, pcurveValue, approxCurveOnSurface |
@@ -360,8 +360,8 @@ a map of the major areas, and the `Total` as the count.
 | **GCPnts_UniformAbscissa** | 4 | uniform arc-length points by count/distance, full/subrange |
 | **GeomConvert_CompCurveToBSpline** | 1 | concatenate bounded 3D curves into BSpline |
 | **Geom2dConvert_CompCurveToBSpline** | 1 | concatenate bounded 2D curves into BSpline |
-| **GeomConvert_BSplineSurfaceKnotSplitting** | 3 | *deprecated (#562)* — surface knot splits U/V count and values; forwards to `Surface.knotSplitting`, which wraps the same analyzer |
-| **Geom2dConvert_BSplineCurveKnotSplitting** | 2 | *deprecated (#562)* — 2D curve knot split count and values; forwards to `Curve2D.splitIndicesAtDiscontinuities`, which wraps the same analyzer |
+| **GeomConvert_BSplineSurfaceKnotSplitting** | 3 | *deprecated (#562)*, surface knot splits U/V count and values; forwards to `Surface.knotSplitting`, which wraps the same analyzer |
+| **Geom2dConvert_BSplineCurveKnotSplitting** | 2 | *deprecated (#562)*, 2D curve knot split count and values; forwards to `Curve2D.splitIndicesAtDiscontinuities`, which wraps the same analyzer |
 | **BndLib Extras** | 6 | ellipse, cone, circleArc, ellipseArc, parabolaArc, hyperbolaArc bounds |
 | **GProp Torus** | 2 | torus surface area, torus volume |
 | **BRepTools_ReShape** | 8 | create, release, clear, remove, replace, isRecorded, apply, value |
@@ -465,13 +465,13 @@ a map of the major areas, and the `Total` as the count.
 | **MathPoly rc4** | 4 | linearRoots, quadraticRoots, cubicRoots, quarticRoots |
 | **MathInteg rc4** | 5 | integGauss, integGaussAdaptive, integKronrod, integKronrodAdaptive, integTanhSinh |
 | **UnitsMethods** | 3 | lengthFactor, lengthUnitScale, dumpLengthUnit |
-| **LProp3d Curve** | 4 | localTangent, localNormal, localCentreOfCurvature; localCurvature *deprecated (#595)* — it forwards to `Curve3D.curvature(at:)`, the same call since #494 gave the two one resolution |
+| **LProp3d Curve** | 4 | localTangent, localNormal, localCentreOfCurvature; localCurvature *deprecated (#595)*, it forwards to `Curve3D.curvature(at:)`, the same call since #494 gave the two one resolution |
 | **LProp3d Surface** | 2 | localCurvatures, localCurvatureDirections |
 | **ProjLib Projectors** | 3 | projectLineOnPlane, projectLineOnCylinder, projectCircleOnPlane |
 | **BRepBndLib** | 3 | boundingBox, boundingBoxOptimal, orientedBoundingBoxDetailed |
 | **ShapeAnalysis Tolerance** | 3 | toleranceValue, toleranceOverCount, toleranceInRangeCount |
 | **Boolean Validation** | 2 | isBooleanValid, isBooleanValidWith |
-| **Defeaturing** | 2 | defeature(faces:) (also the target of the deprecated removeFeatures, #536; a face this shape does not have fails the whole request, #578), defeature(faces:tolerance:) (deprecated — the tolerance was never read, #497) |
+| **Defeaturing** | 2 | defeature(faces:) (also the target of the deprecated removeFeatures, #536; a face this shape does not have fails the whole request, #578), defeature(faces:tolerance:) (deprecated, the tolerance was never read, #497) |
 | **Polynomial Conversion** | 1 | polynomialToPoles |
 | **Transform Extras** | 4 | transformed(byMatrix:), isTransformNegative, displacement, transformation |
 | **TopExp Extras** | 1 | commonVertex |
@@ -573,7 +573,7 @@ OCCTSwift wraps a **subset** of OCCT's functionality. The bridge layer (`OCCTBri
 | `Curve2D.ellipse(...)` | `Geom2d_Ellipse` |
 | `Curve2D.bspline(...)` | `Geom2d_BSplineCurve` |
 | `Curve2D.interpolate(through:)` | `Geom2dAPI_Interpolate` |
-| `curve.curvature(at:)` — `Double?`, `nil` where no tangent is defined (#595) | `Geom2dLProp_CLProps2d` |
+| `curve.curvature(at:)`: `Double?`, `nil` where no tangent is defined (#595) | `Geom2dLProp_CLProps2d` |
 | `curve.intersections(with:)` | `Geom2dAPI_InterCurveCurve` |
 | `curve.drawAdaptive()` | `GCPnts_TangentialDeflection` |
 | `Curve2DGcc.circlesTangentWithCenter(...)` | `Geom2dGcc_Circ2dTanCen` |
@@ -590,7 +590,7 @@ OCCTSwift wraps a **subset** of OCCT's functionality. The bridge layer (`OCCTBri
 | `Curve3D.bspline(...)` | `Geom_BSplineCurve` |
 | `Curve3D.interpolate(points:...)` | `GeomAPI_Interpolate` |
 | `curve.drawAdaptive()` | `GCPnts_TangentialDeflection` |
-| `curve.curvature(at:)` / `curve.torsion(at:)` — both `Double?` since #595 | `GeomLProp_CLProps` |
+| `curve.curvature(at:)` / `curve.torsion(at:)`, both `Double?` since #595 | `GeomLProp_CLProps` |
 | `Curve3D.join(_:)` | `GeomConvert::ConcatG1` |
 
 #### Parametric Surfaces (v0.20.0)
@@ -605,7 +605,7 @@ OCCTSwift wraps a **subset** of OCCT's functionality. The bridge layer (`OCCTBri
 | `Surface.pipe(path:radius:)` | `GeomFill_Pipe` |
 | `surface.uIso(at:)` / `surface.vIso(at:)` | `Geom_Surface::UIso/VIso` |
 | `surface.drawGrid(...)` / `surface.drawMesh(...)` | Grid/mesh discretization |
-| `surface.gaussianCurvature(atU:v:)` / `meanCurvature(atU:v:)` / `curvatures(u:v:)` — all optional since #595 | `GeomLProp_SLProps` |
+| `surface.gaussianCurvature(atU:v:)` / `meanCurvature(atU:v:)` / `curvatures(u:v:)`, all optional since #595 | `GeomLProp_SLProps` |
 
 #### Face Surface Analysis (v0.18.0)
 | Swift API | OCCT Class |
@@ -624,8 +624,8 @@ OCCTSwift wraps a **subset** of OCCT's functionality. The bridge layer (`OCCTBri
 | `edge.parameterBounds` / `edge.curveType` | `BRep_Tool` / `GeomAdaptor_Curve` |
 | `edge.point(at:)` / `edge.tangent(at:)` / `edge.normal(at:)` | `GeomLProp_CLProps` |
 | `edge.curvature(at:)` / `edge.centerOfCurvature(at:)` / `edge.torsion(at:)` | `GeomLProp_CLProps` |
-| `edge.project(point:)` / `edge.distance(to:)` — and `curve3d.projectPoint(_:precision:)` / `curve3d.distance(to:precision:)` / `curve3d.nearestParameter(to:)`, one shared implementation since #539/#615 | `ShapeAnalysis_Curve::Project` + `GeomAPI_ProjectPointOnCurve`, minimised together with the range's ends |
-| `curve2d.project(point:)` / `curve2d.project(_:)` / `curve2d.nearestParameter(to:)` / `point2d.distance(to:)` — the 2D twin, one shared implementation since #615 | `Geom2dAPI_ProjectPointOnCurve`, minimised together with the range's ends (no 2D `ShapeAnalysis_Curve` exists) |
+| `edge.project(point:)` / `edge.distance(to:)`, and `curve3d.projectPoint(_:precision:)` / `curve3d.distance(to:precision:)` / `curve3d.nearestParameter(to:)`, one shared implementation since #539/#615 | `ShapeAnalysis_Curve::Project` + `GeomAPI_ProjectPointOnCurve`, minimised together with the range's ends |
+| `curve2d.project(point:)` / `curve2d.project(_:)` / `curve2d.nearestParameter(to:)` / `point2d.distance(to:)`, the 2D twin, one shared implementation since #615 | `Geom2dAPI_ProjectPointOnCurve`, minimised together with the range's ends (no 2D `ShapeAnalysis_Curve` exists) |
 
 #### Shape Proximity (v0.18.0)
 | Swift API | OCCT Class |
@@ -963,9 +963,9 @@ ordinal in-band, so `faces()[k].index == k` holds by construction; a `Shape` fro
 | `shape.faceCount` / `shape.face(at:)` | `TopExp::MapShapes(TopAbs_FACE)` |
 | `shape.edgeCount` / `shape.edge(at:)` / `shape.edges()` | `TopExp::MapShapes(TopAbs_EDGE)` |
 | `shape.vertexCount` / `shape.vertices()` | `TopExp::MapShapes(TopAbs_VERTEX)` |
-| `shape.faces()` | `TopExp::MapShapes(TopAbs_FACE)` — the same distinct enumeration as `faceCount` (#541) |
+| `shape.faces()` | `TopExp::MapShapes(TopAbs_FACE)`, the same distinct enumeration as `faceCount` (#541) |
 | `shape.orientedFaces()` | `TopExp_Explorer(TopAbs_FACE)`: one entry per **occurrence**, parent-relative orientation preserved (#614) |
-| `face.orientation` | `TopoDS_Shape::Orientation()` — the flag `normal(atU:v:)` reverses on (#614) |
+| `face.orientation` | `TopoDS_Shape::Orientation()`, the flag `normal(atU:v:)` reverses on (#614) |
 
 Two face enumerations, because a face can occur in one shape with both orientations and an index
 cannot carry both. This is the split the kernel itself draws: `TopExp::MapShapes` publishes no
@@ -979,9 +979,9 @@ addressable. (#614)
 #### Shell Decomposition (outer body vs. cavities)
 | Swift API | OCCT Class |
 |-----------|------------|
-| `shape.outerShell` | `BRepClass3d::OuterShell` — `nil` unless the shape denotes exactly one solid |
-| `shape.outerShells` | `BRepClass3d::OuterShell` per solid — the multi-body counterpart |
-| `shape.innerShells` | `BRepClass3d::OuterShell` + `TopExp_Explorer(TopAbs_SHELL)` — every shell but the outer |
+| `shape.outerShell` | `BRepClass3d::OuterShell`, `nil` unless the shape denotes exactly one solid |
+| `shape.outerShells` | `BRepClass3d::OuterShell` per solid, the multi-body counterpart |
+| `shape.innerShells` | `BRepClass3d::OuterShell` + `TopExp_Explorer(TopAbs_SHELL)`, every shell but the outer |
 
 #### Fuse and Blend (v0.38.0)
 | Swift API | OCCT Class |
@@ -1175,13 +1175,13 @@ Every `Add()`-based pipe sweep is one bridge function, `OCCTShapeCreatePipeShell
 
 Some OCCT classes cannot be wrapped through a C bridge because they rely on **C++ inheritance patterns** that have no equivalent in C or Swift:
 
-- **ChFi3d_FilBuilder / ChFi3d_ChBuilder** — These fillet/chamfer builder classes inherit from `ChFi3d_Builder`, which is a complex stateful base class with protected virtual methods. The public API is deeply coupled to internal OCCT data structures (`ChFiDS_SurfData`, `ChFiDS_Stripe`, etc.) that would require wrapping an entire tree of internal types. **You don't need these directly** — the higher-level `BRepFilletAPI_MakeFillet` (exposed as `Shape.filleted()`, `Shape.filletEvolving()`, etc.) uses `ChFi3d_FilBuilder` internally, so all the functionality is already available through the cleaner public API.
+- **ChFi3d_FilBuilder / ChFi3d_ChBuilder**: These fillet/chamfer builder classes inherit from `ChFi3d_Builder`, which is a complex stateful base class with protected virtual methods. The public API is deeply coupled to internal OCCT data structures (`ChFiDS_SurfData`, `ChFiDS_Stripe`, etc.) that would require wrapping an entire tree of internal types. **You don't need these directly**, the higher-level `BRepFilletAPI_MakeFillet` (exposed as `Shape.filleted()`, `Shape.filletEvolving()`, etc.) uses `ChFi3d_FilBuilder` internally, so all the functionality is already available through the cleaner public API.
 
-- **Approx_FitAndDivide / Approx_FitAndDivide2d** — Require implementing the abstract `AppCont_Function` interface in C++, which means providing callback functions for evaluation. Cannot be driven from Swift without a C++ subclass.
+- **Approx_FitAndDivide / Approx_FitAndDivide2d**: Require implementing the abstract `AppCont_Function` interface in C++, which means providing callback functions for evaluation. Cannot be driven from Swift without a C++ subclass.
 
-- **BRepBlend_AppSurface** — Requires implementing the abstract `Approx_SweepFunction` interface. Same pattern — needs a C++ subclass providing evaluation callbacks.
+- **BRepBlend_AppSurface**: Requires implementing the abstract `Approx_SweepFunction` interface. Same pattern, needs a C++ subclass providing evaluation callbacks.
 
-- **BRepBlend_\*, BlendFunc_\*, ChFiKPart_\*, ChFiDS_\*** — Internal implementation classes used by the fillet/chamfer algorithms. Not intended for direct use; their functionality is exposed through the `BRepFilletAPI_*` public APIs.
+- **BRepBlend_\*, BlendFunc_\*, ChFiKPart_\*, ChFiDS_\***. Internal implementation classes used by the fillet/chamfer algorithms. Not intended for direct use; their functionality is exposed through the `BRepFilletAPI_*` public APIs.
 
 In general, OCCT classes that require **subclassing with virtual method overrides** or that serve as **internal implementation details** of higher-level algorithms are not wrappable through a C function bridge. The wrapped APIs always provide equivalent or better functionality through OCCT's public algorithm classes.
 
@@ -1192,35 +1192,35 @@ OCCT has thousands of classes. Some notable ones not yet exposed:
 - **Pockets with Islands**: Multi-contour pocket features
 
 > **Note:** Many previously missing features have been added in recent versions:
-> - v0.51.0: **2D curve completions** — `Curve2D.parameterAtLength` (GCPnts_AbscissaPoint arc-length parameter query), `Curve2D.interpolate(tangents:)` (interior tangent constraints via Geom2dAPI_Interpolate.Load), `Wire.fromCurve2D(on:)` (lift 2D parametric curve to 3D wire on a geometric plane via BRepBuilderAPI_MakeEdge + BRepLib::BuildCurves3d)
-> - v0.46.0: **Edge concavity, curve approximation, local prism, volume/surface inertia** — BRepOffset_Analyse edge classification, Approx_Curve3d BSpline approximation, LocOpe_Prism with shape tracking, full inertia tensor with principal axes
-> - v0.45.0: **N-side filling, self-intersection, face GProp, wire ordering** — BRepFill_Filling with edge/point constraints, BRepExtrema_SelfIntersection via BVH, BRepGProp_Face natural bounds + unnormalized normals, ShapeAnalysis_WireOrder edge chain analysis
-> - v0.38.0: **OCCT test suite audit, round 7** — oriented bounding box, deep shape copy, sub-shape extraction (solids/shells/wires), fuse-and-blend, cut-and-blend, evolving fillet, per-face variable offset
-> - v0.37.0: **OCCT test suite audit, round 6** — thick/hollow solids, wire topology analysis, surface singularity detection, shell from parametric surface, multi-tool common
-> - v0.36.0: **OCCT test suite audit, round 5** — conical projection, encode regularity, update tolerances, face division, surface-to-Bezier, boolean history
-> - v0.35.0: **OCCT test suite audit, round 4** — multi-offset wire, surface-surface intersection, curve-surface intersection, cylindrical projection, same-parameter enforcement
-> - v0.34.0: **OCCT test suite audit, round 3** — shape-to-shape section, boolean pre-validation, wire imprinting, angle splitting, small edge removal, multi-tool fuse
-> - v0.33.0: **OCCT test suite audit, round 2** — evolved shapes with full parameter control, pipe shell transition modes, face creation from parametric surfaces, edge-to-face reconstruction
-> - v0.32.0: **OCCT test suite audit** — asymmetric chamfer (two-distance + distance-angle), ruled loft with vertex endpoints, offset by join with join type control, revolution form, draft prism, revolved feature
-> - v0.31.0: **Medium/low priority audit wrap** — quasi-uniform curve sampling (arc-length & deflection), Bezier surface fill, quilt faces, fix small faces, remove locations, revolution from curve, document layers/materials, linear rib feature
-> - v0.30.0: **Deep audit wrap** — non-uniform scale, shell/vertex creation, simple offset, middle path, edge fusion, make volume, make connected, curve-curve/curve-surface/surface-surface distance & intersection, analytical recognition, shape contents census, canonical form recognition, edge analysis, find surface, wireframe fixing, internal wire removal, document length unit
-> - v0.29.0: **Comprehensive audit wrap** — wedge primitives, NURBS conversion, fast sewing, normal projection, half-space, shape editing, draft extrusion, wire explorer, batch 3D curve/surface evaluation, polynomial solver, hatch patterns, planarity analysis
-> - v0.28.0: **New rc4 APIs** — helix curves, KD-tree spatial queries, STEP optimization, batch curve evaluation
-> - v0.27.0: **OCCT 8.0.0-rc4 upgrade** — 111 internal improvements, performance gains, deprecation fixes
-> - v0.26.0: Annotations & measurements — length/radius/angle/diameter dimensions, text labels, point clouds
-> - v0.25.0: Topological naming — record/trace naming history, persistent named selections
-> - v0.131.0: Final RC5 wrapping — Approx_BSplineApproxInterp (constrained least-squares BSpline fitting), GeomEval TBezier/AHTBezier curves (3D/2D) and surfaces, GeomAdaptor_TransformedCurve, upgrade documentation (3408 ops, 1553 tests)
-> - v0.130.0: RC5 analytical geometry — GeomEval 3D curves (CircularHelix, SineWave), GeomEval surfaces (Ellipsoid, Hyperboloid, Paraboloid, CircularHelicoid, HypParaboloid), Geom2dEval 2D curves (ArchimedeanSpiral, LogarithmicSpiral, CircleInvolute, SineWave2D), GeomFill_Gordon transfinite interpolation surface, PointSetLib point cloud analysis (centroid/inertia/PCA), ExtremaPC point-curve distance (3386 ops, 1538 tests)
+> - v0.51.0: **2D curve completions**, `Curve2D.parameterAtLength` (GCPnts_AbscissaPoint arc-length parameter query), `Curve2D.interpolate(tangents:)` (interior tangent constraints via Geom2dAPI_Interpolate.Load), `Wire.fromCurve2D(on:)` (lift 2D parametric curve to 3D wire on a geometric plane via BRepBuilderAPI_MakeEdge + BRepLib::BuildCurves3d)
+> - v0.46.0: **Edge concavity, curve approximation, local prism, volume/surface inertia**. BRepOffset_Analyse edge classification, Approx_Curve3d BSpline approximation, LocOpe_Prism with shape tracking, full inertia tensor with principal axes
+> - v0.45.0: **N-side filling, self-intersection, face GProp, wire ordering**. BRepFill_Filling with edge/point constraints, BRepExtrema_SelfIntersection via BVH, BRepGProp_Face natural bounds + unnormalized normals, ShapeAnalysis_WireOrder edge chain analysis
+> - v0.38.0: **OCCT test suite audit, round 7**, oriented bounding box, deep shape copy, sub-shape extraction (solids/shells/wires), fuse-and-blend, cut-and-blend, evolving fillet, per-face variable offset
+> - v0.37.0: **OCCT test suite audit, round 6**, thick/hollow solids, wire topology analysis, surface singularity detection, shell from parametric surface, multi-tool common
+> - v0.36.0: **OCCT test suite audit, round 5**, conical projection, encode regularity, update tolerances, face division, surface-to-Bezier, boolean history
+> - v0.35.0: **OCCT test suite audit, round 4**, multi-offset wire, surface-surface intersection, curve-surface intersection, cylindrical projection, same-parameter enforcement
+> - v0.34.0: **OCCT test suite audit, round 3**, shape-to-shape section, boolean pre-validation, wire imprinting, angle splitting, small edge removal, multi-tool fuse
+> - v0.33.0: **OCCT test suite audit, round 2**, evolved shapes with full parameter control, pipe shell transition modes, face creation from parametric surfaces, edge-to-face reconstruction
+> - v0.32.0: **OCCT test suite audit**, asymmetric chamfer (two-distance + distance-angle), ruled loft with vertex endpoints, offset by join with join type control, revolution form, draft prism, revolved feature
+> - v0.31.0: **Medium/low priority audit wrap**, quasi-uniform curve sampling (arc-length & deflection), Bezier surface fill, quilt faces, fix small faces, remove locations, revolution from curve, document layers/materials, linear rib feature
+> - v0.30.0: **Deep audit wrap**, non-uniform scale, shell/vertex creation, simple offset, middle path, edge fusion, make volume, make connected, curve-curve/curve-surface/surface-surface distance & intersection, analytical recognition, shape contents census, canonical form recognition, edge analysis, find surface, wireframe fixing, internal wire removal, document length unit
+> - v0.29.0: **Comprehensive audit wrap**, wedge primitives, NURBS conversion, fast sewing, normal projection, half-space, shape editing, draft extrusion, wire explorer, batch 3D curve/surface evaluation, polynomial solver, hatch patterns, planarity analysis
+> - v0.28.0: **New rc4 APIs**, helix curves, KD-tree spatial queries, STEP optimization, batch curve evaluation
+> - v0.27.0: **OCCT 8.0.0-rc4 upgrade**, 111 internal improvements, performance gains, deprecation fixes
+> - v0.26.0: Annotations & measurements, length/radius/angle/diameter dimensions, text labels, point clouds
+> - v0.25.0: Topological naming, record/trace naming history, persistent named selections
+> - v0.131.0: Final RC5 wrapping. Approx_BSplineApproxInterp (constrained least-squares BSpline fitting), GeomEval TBezier/AHTBezier curves (3D/2D) and surfaces, GeomAdaptor_TransformedCurve, upgrade documentation (3408 ops, 1553 tests)
+> - v0.130.0: RC5 analytical geometry. GeomEval 3D curves (CircularHelix, SineWave), GeomEval surfaces (Ellipsoid, Hyperboloid, Paraboloid, CircularHelicoid, HypParaboloid), Geom2dEval 2D curves (ArchimedeanSpiral, LogarithmicSpiral, CircleInvolute, SineWave2D), GeomFill_Gordon transfinite interpolation surface, PointSetLib point cloud analysis (centroid/inertia/PCA), ExtremaPC point-curve distance (3386 ops, 1538 tests)
 > - v0.129.0: BSplineCurve3D local derivatives (LocalD0/D1/D2/D3/DN on knot span), BSplineSurface completions (SetWeightCol/Row, IncrementU/VMultiplicity range, First/LastU/VKnotIndex, CheckAndSegment), BezierSurface completions (InsertPoleCol/RowBefore, SetPoleCol/Row, SetWeightCol/Row) (3353 ops, 2920 tests)
 > - v0.128.0: ChamferBuilder history (Generated/Modified/IsDeleted/SetMode/Simulate/NbSurf), SectionBuilder full builder pattern, BRep_Tool extras (IsClosedOnFace/PolygonOnSurface/SetUVPoints), Curve3D/Curve2D/Surface in-place transforms (3333 ops, 2907 tests)
-> - v0.127.0: Priority class gaps closure — BRepAlgoAPI_Section with plane/surface, BSplineCurve PeriodicNormalization/IsG1, BRep_Tool CurveOnPlane/Polygon3D/PolygonOnTriangulation, BezierSurface SetPoleCol/RowWeights, ColorTool GetAllColors, FilletBuilder history (GetBounds/GetLaw/SetLaw/Generated/Modified/IsDeleted) (3293 ops, 2878 tests)
-> - v0.126.0: Final completeness release — BRep_Tool completions (CurveOnSurface, HasContinuity, Continuity, MaxContinuity, Degenerated, NaturalRestriction, RangeOnFace, ParameterOnFace, ParametersOnFace, UVPoints, MaxTolerance), XCAFDoc_ColorTool completions (AddColor, RemoveColor, GetColorCount, UnSetColor, IsVisible, SetVisibility, IsColorByLayer, SetColorByLayer, FindColor, SetInstanceColor, GetInstanceColor), Geom2d_BezierCurve completions (InsertPoleAfter, RemovePole, Segment, IncreaseDegree, StartPoint, EndPoint, GetPoles, Reverse), BSplineSurface completions (GetUMultiplicities, GetVMultiplicities, UReverse, VReverse, PeriodicNormalization), BezierSurface completions (InsertPoleCol/Row, RemovePoleCol/Row, IncreaseDegree, UReverse, VReverse), FilletBuilder completions (SetParams, SetContinuity, SetFilletShape, GetFilletShape, ResetContour, Simulate), XCAFDoc_ShapeTool completions (IsFree, IsSimpleShape, IsComponent, IsCompound, IsSubShape, IsExternRef, GetUsers, ComputeShapes, NbComponents), Bezier3D completions (InsertPoleBefore, Reverse, SetPoleWithWeight) (3277 ops, 3277 tests)
-> - v0.125.0: BSpline/Bezier deep method completion — BSplineSurface local evaluation (LocalD0/D1/D2/D3/DN/Value), isoparametric curves (UIso/VIso), knot location (LocateU/V), individual knot/multiplicity queries, knot distribution, bulk poles, bounds, closure. Curve2D BSpline local evaluation (LocalD0/D1/D2/D3/DN/Value), knot span location, knot indices, distribution, multiplicities, start/end points, poles, closure/periodicity/continuity. BezierCurve3D start/end points, bulk poles/weights, closure/periodicity/continuity. BezierSurface iso curves, closure/periodicity/continuity, bulk poles/weights, bounds (3215 ops, 3250 tests)
+> - v0.127.0: Priority class gaps closure. BRepAlgoAPI_Section with plane/surface, BSplineCurve PeriodicNormalization/IsG1, BRep_Tool CurveOnPlane/Polygon3D/PolygonOnTriangulation, BezierSurface SetPoleCol/RowWeights, ColorTool GetAllColors, FilletBuilder history (GetBounds/GetLaw/SetLaw/Generated/Modified/IsDeleted) (3293 ops, 2878 tests)
+> - v0.126.0: Final completeness release. BRep_Tool completions (CurveOnSurface, HasContinuity, Continuity, MaxContinuity, Degenerated, NaturalRestriction, RangeOnFace, ParameterOnFace, ParametersOnFace, UVPoints, MaxTolerance), XCAFDoc_ColorTool completions (AddColor, RemoveColor, GetColorCount, UnSetColor, IsVisible, SetVisibility, IsColorByLayer, SetColorByLayer, FindColor, SetInstanceColor, GetInstanceColor), Geom2d_BezierCurve completions (InsertPoleAfter, RemovePole, Segment, IncreaseDegree, StartPoint, EndPoint, GetPoles, Reverse), BSplineSurface completions (GetUMultiplicities, GetVMultiplicities, UReverse, VReverse, PeriodicNormalization), BezierSurface completions (InsertPoleCol/Row, RemovePoleCol/Row, IncreaseDegree, UReverse, VReverse), FilletBuilder completions (SetParams, SetContinuity, SetFilletShape, GetFilletShape, ResetContour, Simulate), XCAFDoc_ShapeTool completions (IsFree, IsSimpleShape, IsComponent, IsCompound, IsSubShape, IsExternRef, GetUsers, ComputeShapes, NbComponents), Bezier3D completions (InsertPoleBefore, Reverse, SetPoleWithWeight) (3277 ops, 3277 tests)
+> - v0.125.0: BSpline/Bezier deep method completion. BSplineSurface local evaluation (LocalD0/D1/D2/D3/DN/Value), isoparametric curves (UIso/VIso), knot location (LocateU/V), individual knot/multiplicity queries, knot distribution, bulk poles, bounds, closure. Curve2D BSpline local evaluation (LocalD0/D1/D2/D3/DN/Value), knot span location, knot indices, distribution, multiplicities, start/end points, poles, closure/periodicity/continuity. BezierCurve3D start/end points, bulk poles/weights, closure/periodicity/continuity. BezierSurface iso curves, closure/periodicity/continuity, bulk poles/weights, bounds (3215 ops, 3250 tests)
 > - v0.124.0: ChamferBuilder completions (distance get/set, contour navigation, vertex/edge queries, abscissa, closed/tangent, symmetric/two-dist/dist-angle mode queries), FilletBuilder completions (SetRadius on edge/vertex, two-radii evolving, contour navigation, surface counts, stripe status, faulty queries), WireAnalyzer (ShapeAnalysis_Wire: order, connected, small, degenerated, gap, seam, lacking, self-intersection, closed, distances) (3159 ops, 3203 tests)
 > - v0.123.0: ThruSections extensions (CheckCompatibility, SetParType, SetCriteriumWeight, GeneratedFace), CellsBuilder extensions (AddToResult selective, RemoveFromResult, GetAllParts, MakeContainers), PipeShell extensions (GetStatus, Simulate), UnifySameDomain builder (AllowInternalEdges, KeepShape, SafeInputMode, linear/angular tolerance), BRepAlgoAPI_Section extended (approximation, pcurves, ancestor faces), Curve3D queries (period, firstParameter, lastParameter), Surface queries (uPeriod, vPeriod), Shape queries (typeName, isNotEqual, nullified, emptied, moved, orientationValue, nbEdges/nbFaces/nbVertices) (3105 ops, 3182 tests)
 > - v0.122.0: WireFixer extended (FixGaps2d, FixSeam, FixShifted, FixNotchedEdges, FixTails, tail config), ShapeFix_Edge (AddCurve3d, AddPCurve, RemoveCurve3d, RemovePCurve, FixReversed2d), BRepTools statics (Clean, RemoveInternals, DetectClosedness, EvalAndUpdateTol, Map3DEdges, UpdateFaceUVPoints, CompareVertices/Edges, IsReallyClosed), BRepLib extended (EnsureNormalConsistency, UpdateDeflection, ContinuityOfFaces, BuildCurves3dAll, SameParameterAll), History extended (Merge, ReplaceGenerated/Modified, GetModified/GeneratedShapes), Sewing extended (DeletedFaces, IsModified/Modified, IsDegenerated, IsSectionBound, WhichFace, Load, modes) (3068 ops, 3151 tests)
 > - v0.121.0: GLTF/GLB import+export (RWGltf_CafReader/CafWriter with RapidJSON), FilletBuilder (BRepFilletAPI_MakeFillet builder pattern with edge control, contour queries, error diagnosis), ChamferBuilder (BRepFilletAPI_MakeChamfer with symmetric/two-dist/dist-angle modes), BSpline completions (Surface: SetNotPeriodic, SetOrigin, IncreaseMultiplicity, InsertKnots batch, MovePoint, SetPoleCol/Row; Curve3D/2D: SetNotPeriodic, SetOrigin, IncreaseMultiplicity, IncrementMultiplicity, SetKnots, Reverse, MovePointAndTangent) (3024 ops, 3119 tests)
-> - v0.120.0: Final cleanup — IsCN continuity checks (Curve3D/2D, Surface U/V), ReversedParameter (Curve3D/2D), ParametricTransformation, continuity order wrappers, Surface UReversed/VReversed copies and reversed parameters, BSpline RemoveVKnot, gp_Vec CrossMagnitude/CrossSquareMagnitude, gp_Dir IsOpposite/IsNormal, Bezier Resolution (Curve3D/Surface), MaxDegree statics (Bezier Curve3D/2D/Surface, BSpline Surface/Curve2D) (2970 ops, 3046 tests)
+> - v0.120.0: Final cleanup. IsCN continuity checks (Curve3D/2D, Surface U/V), ReversedParameter (Curve3D/2D), ParametricTransformation, continuity order wrappers, Surface UReversed/VReversed copies and reversed parameters, BSpline RemoveVKnot, gp_Vec CrossMagnitude/CrossSquareMagnitude, gp_Dir IsOpposite/IsNormal, Bezier Resolution (Curve3D/Surface), MaxDegree statics (Bezier Curve3D/2D/Surface, BSpline Surface/Curve2D) (2970 ops, 3046 tests)
 > - v0.119.0: BREP string serialization, gp_Pln/gp_Lin distance/contains, Geom_BezierSurface queries/mutations, Curve2D Bezier properties, Curve2D BSpline extras, BSplineSurface resolution/periodicity/weight (2945 ops, 3015 tests)
 > - v0.118.0: BRepBndLib shape bounding boxes (AABB, optimal, OBB detailed), ShapeAnalysis_ShapeTolerance (min/max/avg/over/inRange), BRepAlgoAPI_Check boolean validation, BRepAlgoAPI_Defeaturing feature removal, Convert_CompPolynomialToPoles, gp_Trsf matrix transform/displacement/transformation, TopExp common vertex, BRep_Tool edge/face flags (SameParameter/SameRange/NaturalRestriction/IsGeometric), Sewing multiple edges (2912 ops, 2982 tests)
 > - v0.117.0: MathPoly rc4 polynomial solvers (Linear/Quadratic/Cubic/Quartic), MathInteg rc4 numerical integration (Gauss/Kronrod/TanhSinh adaptive), UnitsMethods length unit conversion, LProp3d curve/surface local properties (curvature/tangent/normal/directions via adaptor), ProjLib surface projectors (line/circle on plane/cylinder) (2890 ops, 2943 tests)
@@ -1229,17 +1229,17 @@ OCCT has thousands of classes. Some notable ones not yet exposed:
 > - v0.114.0: TopoDS_Builder low-level topology, ShapeContentsExtended analysis, FreeBoundsProperties handle-based, WireBuilder incremental, Boolean tolerance/glue modes, Offset wire/face, ThickSolid options, BRepLib utilities, mass properties (inertia/principal axes/radius of gyration), Curve/Surface DN arbitrary derivatives, BRep_Tool queries, unique sub-shape counts, type names (2748 ops, 2811 tests)
 > - v0.113.0: MakeEdge completions (ellipse/hyperbola/parabola/curve), ProjectionOnCurve/Surface multi-result, DistShapeShape full results, WireFixer/FaceFixer individual fixes, MakeFace from surface/plane/cylinder, IntCS full results, BSplineCurve/Surface mutations (2682 ops, 2758 tests)
 > - v0.112.0: RWMesh face/vertex iterators, Intf_Tool line-box clipping, BRepAlgo_AsDes tracker, BiTgte_CurveOnEdge, shape location/orientation/type, wire/shell construction, BRepCheck extended tolerance analysis, curve/surface type queries, Extrema point-on-curve/surface (2599 ops, 2244 tests)
-> - v0.111.0: Advanced math solvers & local properties — PSO, GlobOptMin, FunctionRoots, GaussIntegration, NewtonFunctionSetRoot, GeomGridEval (3D/2D/Surface), BRepLProp (CLProps/SLProps), MathPoly_Laguerre polynomial solver
-> - v0.110.0: Constraint solver infrastructure — C callback adapters for math solvers, EvalD0/D1/D2/D3 curve evaluation, batch evaluation, surface differential evaluation
-> - v0.24.0: Medial axis transform — Voronoi skeleton, arc/node graph, bisector curves, wall thickness
-> - v0.23.0: NLPlate — advanced plate surfaces, non-linear G0/G1 surface deformation
-> - v0.22.0: Curve projection onto surfaces — 2D UV projection, composite segments, 3D-on-surface, plane projection
+> - v0.111.0: Advanced math solvers & local properties. PSO, GlobOptMin, FunctionRoots, GaussIntegration, NewtonFunctionSetRoot, GeomGridEval (3D/2D/Surface), BRepLProp (CLProps/SLProps), MathPoly_Laguerre polynomial solver
+> - v0.110.0: Constraint solver infrastructure. C callback adapters for math solvers, EvalD0/D1/D2/D3 curve evaluation, batch evaluation, surface differential evaluation
+> - v0.24.0: Medial axis transform. Voronoi skeleton, arc/node graph, bisector curves, wall thickness
+> - v0.23.0: NLPlate, advanced plate surfaces, non-linear G0/G1 surface deformation
+> - v0.22.0: Curve projection onto surfaces, 2D UV projection, composite segments, 3D-on-surface, plane projection
 > - v0.21.0: Law functions, variable-section sweeps, XDE GD&T (dimensions, tolerances, datums)
-> - v0.20.0: Full parametric surface wrapping — analytic, swept, freeform, pipe, draw methods, curvature
-> - v0.19.0: Full 3D parametric curve wrapping — primitives, BSplines, operations, conversion, draw methods
-> - v0.18.0: 3D geometry analysis — face surface properties, edge curve queries, point projection, proximity
+> - v0.20.0: Full parametric surface wrapping, analytic, swept, freeform, pipe, draw methods, curvature
+> - v0.19.0: Full 3D parametric curve wrapping, primitives, BSplines, operations, conversion, draw methods
+> - v0.18.0: 3D geometry analysis, face surface properties, edge curve queries, point projection, proximity
 > - v0.17.0: STL/OBJ import, OBJ/PLY export, advanced shape healing, point classification
-> - v0.16.0: Full Geom2d wrapping — 2D parametric curves with evaluation, operations, analysis, Gcc solver, hatching, bisectors
+> - v0.16.0: Full Geom2d wrapping, 2D parametric curves with evaluation, operations, analysis, Gcc solver, hatching, bisectors
 > - v0.14.0: Variable radius fillets, multi-edge blends, 2D fillet/chamfer, surface filling, plate surfaces
 > - v0.13.0: Shape analysis, fixing, unification, simplification
 > - v0.12.0: Boss, pocket, drilling, shape splitting, gluing, evolved surfaces, pattern operations

@@ -96,7 +96,7 @@ struct IntegrationMountingBracketTests {
         #expect(bracket.isValid)
         if let vUnion = bracket.volume { #expect(vUnion > 0) }
 
-        // Step 4: Fillet edges (may fail on complex boolean result — proceed without if needed)
+        // Step 4: Fillet edges (may fail on complex boolean result, proceed without if needed)
         var current = bracket
         if let filleted = bracket.filleted(radius: 1.0) {
             #expect(filleted.isValid)
@@ -387,7 +387,7 @@ struct IntegrationPocketClearingTests {
                     #expect(oLen > 0)
                 }
             }
-            // Offset may fail for complex sections — that is acceptable
+            // Offset may fail for complex sections, that is acceptable
         }
     }
 }
@@ -625,7 +625,7 @@ struct IntegrationFormatFidelityBREPTests {
         }
         #expect(reconstructed.isValid)
 
-        // Compare — BREP is exact, so results should match within floating point
+        // Compare. BREP is exact, so results should match within floating point
         if let rVol = reconstructed.volume {
             #expect(abs(rVol - origVolume) < 1e-6,
                     "Volume mismatch: \(rVol) vs \(origVolume)")
