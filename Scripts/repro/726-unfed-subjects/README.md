@@ -132,8 +132,28 @@ Baseline: **54/54 cases, 46 candidates in 18 functions, 0 echoes**.
 | I. echo: parameter must contribute nothing else | 53/54 | E2 count that also bounds the loop | 46 in 18, **3 echoes** |
 | J. lowercase-initial OCCT type names | 53/54 | M2 the `gp_Pnt` out-param case | 42 in 17 |
 | K. `Handle(T)` declaration binding | 53/54 | M5 Handle-typed throwaway | 44 in 16 |
+| L. the `return` publication branch | 50/54 | M1, M3, M5, E1 | 32 in 4 |
+| M. the out-parameter publication branch | 53/54 | M2 the `gp_Pnt` out-param case | 46 in 18 |
+| N. the result-field publication branch | 53/54 | M4 published through a struct field | 18 in 15 |
 
-Nine of the eleven rows flip exactly one case that no other row flips.
+Nine of the first eleven rows flip exactly one case that no other row flips. Rows L, M and N remove
+a detection branch rather than a precision guard, which is what gives every MISSED case an owning
+row: without them the eleven guard rows can only ever produce MORE flags, so nothing in them could
+prove the detector fires at all.
+
+**Three rows no removal flips, and what each is for.** Per the policy, a green row is kept when it
+is labelled as green rather than counted as coverage.
+
+- **C1** (the subject is fed through its constructor) and **C2** (the #999 shape, fed through a
+  method call) are double-covered: a constructor declaration is also seen as a call by
+  `qualified_calls`, so removing the assignment rule leaves the call rule holding them and removing
+  the call rule leaves the assignment rule. As guard tests they add nothing. They are kept as
+  regression tests for two statements this PR makes: that #1000's sixth member is not an instance,
+  and that #999's shape is out of reach from bridge text. If a future widening made either fire,
+  these fail.
+- **E3** (a function returning only literals) is the echo detector's control. No guard removal can
+  flip it, because a function with no bare-parameter return has nothing to echo. It exists so that
+  "0 echoes on this tree" means the detector looked, not that it cannot fire.
 
 **E and F flip the same pair and are not disjoint, deliberately.** The receiver walk exists to widen
 the group the call-group rule builds, so every case E flips, F flips too, and no fixture can
@@ -147,6 +167,11 @@ already kept clean on its own, so removing A changed nothing on the self-test or
 fixture now reads `axis.Location()` and `axis.Direction()` inside the `new` expression, which
 satisfies B and leaves A as the only guard holding it. That is the "something else is standing in
 front of it" case the policy names, caught by running the matrix rather than by reading it.
+
+Row M does not move the tree count either, for a different reason from A, C and I: this tree
+currently has no candidate published through an out-parameter at all, since the one that was
+(`OCCTFontMgrFontName`) is kept out by the control-dependence rule. Its fixture is what proves the
+branch works.
 
 Rows A, C and I do not move the tree count, and that is a fact about this tree rather than about
 the guards: there is no live site here that constructs a new object out of an unfed local's
