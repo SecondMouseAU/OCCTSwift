@@ -20,8 +20,8 @@ available on this machine, so nothing below is a claim about any other one.
 swiftc upstream-repro.swift -o /tmp/r && /tmp/r   # the smallest form, on its own
 
 # from the repo root: every `arguments:` site under Tests/, and which of them are at risk
-python3 Scripts/repro/1057-tuple-arguments-crash/census-arguments-sites.py
-python3 Scripts/repro/1057-tuple-arguments-crash/census-arguments-sites.py --self-test
+python3 Scripts/census-arguments-tuple-shapes.py
+python3 Scripts/census-arguments-tuple-shapes.py --self-test
 ```
 
 `standalone/` is a self-contained SwiftPM package. It does **not** depend on OCCTSwift and is not

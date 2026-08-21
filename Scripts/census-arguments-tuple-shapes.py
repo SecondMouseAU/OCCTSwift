@@ -21,8 +21,8 @@ prove-the-test-fails policy exists to catch. The README adjudicates all 9.
 
 Its job is to make the site list re-derivable instead of re-grepped.
 
-    python3 Scripts/repro/1057-tuple-arguments-crash/census-arguments-sites.py
-    python3 Scripts/repro/1057-tuple-arguments-crash/census-arguments-sites.py --self-test
+    python3 Scripts/census-arguments-tuple-shapes.py
+    python3 Scripts/census-arguments-tuple-shapes.py --self-test
 
 Run from the repo root.
 """
