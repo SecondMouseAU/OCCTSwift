@@ -51,7 +51,7 @@ extension Shape {
 
         // Build a compound of 2D edges as a Shape, then hand it to Drawing via
         // the standard projection path. We sidestep OCCT's HLR here because the
-        // contour is already 2D — we just need a Drawing whose `visibleEdges`
+        // contour is already 2D, we just need a Drawing whose `visibleEdges`
         // carries our polylines.
         //
         // Strategy: project along `planeNormal` starting from a shape compound
@@ -99,7 +99,7 @@ extension Shape {
         } else {
             // perpendicularBasis(to:)'s own `up` is already `normalize(cross(v, right))` with
             // `v == n` and `right == u` here, i.e. bit-for-bit `simd_normalize(simd_cross(n, u))`
-            // — so the explicit-`u` branch's cross product is redundant in this branch and would
+            //, so the explicit-`u` branch's cross product is redundant in this branch and would
             // just recompute the same answer a second time (#914 review, second round).
             (u, v) = perpendicularBasis(to: n)
         }
@@ -122,7 +122,7 @@ extension Shape {
     }
 }
 
-/// A section view spec — contour + optional hatch + optional label — bundled
+/// A section view spec, contour + optional hatch + optional label, bundled
 /// for convenient composition onto a sheet. `Shape.section2DView(...)` wraps
 /// `section2D` with automatic hatching and an "A-A" label, matching ISO 128-40.
 extension Shape {
@@ -149,7 +149,7 @@ extension Shape {
                 planeNormal: planeNormal,
                 deflection: deflection)
         else { return nil }
-        // Hatch the outer boundary (best-effort — uses the drawing's own bounds
+        // Hatch the outer boundary (best-effort, uses the drawing's own bounds
         // as the boundary polygon for now; full contour-based hatching comes
         // when we have polygon identification of section interiors).
         if let bounds = drawing.bounds() {

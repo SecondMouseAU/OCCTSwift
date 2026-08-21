@@ -30,7 +30,7 @@ public final class Selector: @unchecked Sendable {
     /// The type of sub-shape that was picked.
     ///
     /// Maps to OCCT's `TopAbs_ShapeEnum` values. Cases 0...7 mirror ``ShapeType``'s ordinals and
-    /// casing exactly (`compSolid`, matching `ShapeType.compSolid` — renamed from `compsolid` for
+    /// casing exactly (`compSolid`, matching `ShapeType.compSolid`, renamed from `compsolid` for
     /// #844, which found the two had drifted); `.shape` (`TopAbs_SHAPE` = 8, "the whole shape
     /// selected") has no `ShapeType` counterpart, since `ShapeType` only ever names a concrete
     /// sub-shape kind a shape's own root topology can be, so this stays its own type rather than
@@ -250,7 +250,7 @@ public final class Selector: @unchecked Sendable {
     /// (`OCCTBridge_Visualization.mm`, the shared helper behind all three `OCCTSelectorPick*`
     /// bridge calls) writes `out[count]` inside a loop gated `count < maxResults` and starts
     /// `count` at 0, so it is provably always in `[0, maxResults]` on every path, including the
-    /// early `return 0` for a null selector/camera/buffer or `maxResults <= 0` — this was
+    /// early `return 0` for a null selector/camera/buffer or `maxResults <= 0`, this was
     /// measured against the bridge source, not assumed. `0..<Int(count)` unconditionally
     /// consolidated three copies of that range into one place without adding a guard consolidation
     /// makes free; an unconditional `assert` here documents and enforces the invariant (a debug

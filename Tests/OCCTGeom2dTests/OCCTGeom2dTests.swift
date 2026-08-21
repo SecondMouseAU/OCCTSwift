@@ -909,7 +909,7 @@ struct Curve2DBisectorTests {
     @Test("Bisector between point and line")
     func bisectorPointCurve() {
         let line = Curve2D.segment(from: SIMD2(-10, 0), to: SIMD2(10, 0))!
-        let bis = line.bisector(withPoint: SIMD2(0, 5), origin: SIMD2(0, 0), side: true)
+        let bis = line.bisector(withPoint: SIMD2(0, 5), side: true)
         // Bisector of a point and a line = parabola
         if let bis = bis {
             let pts = bis.drawAdaptive()
@@ -1156,7 +1156,7 @@ struct Curve2DParameterAtLengthTests {
         let seg = Curve2D.segment(from: SIMD2(0, 0), to: SIMD2(10, 0))!
         // Asking for more than the total arc length should fail
         let result = seg.parameterAtLength(1000)
-        // result may be nil or may extrapolate — either is acceptable; just ensure no crash
+        // result may be nil or may extrapolate, either is acceptable; just ensure no crash
         _ = result
     }
 
@@ -1251,7 +1251,7 @@ struct Curve2DInteriorTangentTests {
         ]
         let tangents: [Int: SIMD2<Double>] = [1: SIMD2(1, 0)]
         let curve = Curve2D.interpolate(through: pts, tangents: tangents, closed: true)
-        // Closed curve with interior constraint — may or may not succeed depending on geometry
+        // Closed curve with interior constraint, may or may not succeed depending on geometry
         if let c = curve {
             #expect(c.isClosed || c.isPeriodic)
         }
@@ -1445,7 +1445,7 @@ struct Curve2DSimplifyBSplineTests {
         if let curve = Curve2D.interpolate(through: pts) {
             // Just verify it doesn't crash
             let simplified = curve.simplifyBSpline(tolerance: 0.2)
-            // Result depends on curve complexity — either way is valid
+            // Result depends on curve complexity, either way is valid
             _ = simplified
         }
     }
@@ -1490,7 +1490,7 @@ struct Curve2DApproximatedOverloadParityTests {
     }
 
     /// A curve complex enough that `Geom2dConvert_ApproxCurve`/`Approx_Curve2d` can't trivially
-    /// satisfy an arbitrarily tight tolerance with a handful of low-degree spans — so the actual
+    /// satisfy an arbitrarily tight tolerance with a handful of low-degree spans, so the actual
     /// requested tolerance genuinely constrains the fit, rather than every tolerance in the
     /// 1e-2...1e-8 band converging to the same near-machine-precision result. Found empirically:
     /// a two-frequency sine zigzag through 60 points. Below ~1e-5 the fit saturates at ~1e-14
@@ -1524,7 +1524,7 @@ struct Curve2DApproximatedOverloadParityTests {
 
     @Test("Whole-domain overload's implicit default tolerance produces a real, non-trivial fit error")
     func wholeDomainDefaultToleranceProducesMeasurableError() {
-        // Calls with NO explicit `tolerance:` — exercising Curve2D.swift's actual `1e-3` default,
+        // Calls with NO explicit `tolerance:`, exercising Curve2D.swift's actual `1e-3` default,
         // not a copy of the literal. Measured on `toleranceSensitiveCurve()`: the default gives
         // ~5.5e-4 max deviation, comfortably inside (1e-5, 5e-3). If the real default were
         // mistakenly tightened toward `1e-6` (matching the other overload), deviation collapses
@@ -1543,7 +1543,7 @@ struct Curve2DApproximatedOverloadParityTests {
 
     @Test("Ranged overload's implicit default tolerance produces a near-exact fit")
     func rangedDefaultToleranceProducesNearExactFit() {
-        // Calls with NO explicit `toleranceU`/`toleranceV` — exercising the actual `1e-6`
+        // Calls with NO explicit `toleranceU`/`toleranceV`, exercising the actual `1e-6`
         // defaults. Measured on the same curve: ~1.8e-14 max deviation, i.e. this tolerance is
         // tight enough that the fit is essentially exact. If the real default were mistakenly
         // loosened toward `1e-3` (matching the other overload), deviation jumps to ~7e-4 and
@@ -1565,8 +1565,8 @@ struct Curve2DApproximatedOverloadParityTests {
         // and compared results. Checked empirically before writing this test (pole/degree counts
         // across a circle, an off-center circle, an ellipse, and a wiggly interpolated curve, at
         // both matching and default tolerances): `Geom2dConvert_ApproxCurve` (whole-domain) and
-        // `Approx_Curve2d` (ranged) frequently produce IDENTICAL pole/degree counts — a circle at
-        // `tol=1e-6` gives 27 poles/degree 8 on both, for instance — and only sometimes diverge
+        // `Approx_Curve2d` (ranged) frequently produce IDENTICAL pole/degree counts, a circle at
+        // `tol=1e-6` gives 27 poles/degree 8 on both, for instance, and only sometimes diverge
         // (the wiggly curve at `tol=1e-3`: 268 poles/degree 7 vs. 315 poles/degree 8). So
         // structural agreement or disagreement isn't a reliable, input-independent property of
         // either API and isn't asserted here. What both overloads *do* promise is independently
@@ -1589,7 +1589,7 @@ struct Curve2DApproximatedOverloadParityTests {
     @Test("Whole-domain overload's continuity is a live knob; ranged overload has none")
     func continuityIsConfigurableOnlyOnWholeDomainOverload() {
         // `approximated(tolerance:continuity:...)` threads `continuity` into
-        // `Geom2dConvert_ApproxCurve`. `approximatedInRange` has no such parameter at all —
+        // `Geom2dConvert_ApproxCurve`. `approximatedInRange` has no such parameter at all,
         // the bridge hardcodes GeomAbs_C2. Both continuity settings below must still succeed
         // on the whole-domain overload, confirming the knob is live, not vestigial.
         let circle = Curve2D.circle(center: .zero, radius: 10)!
@@ -1959,7 +1959,7 @@ struct MakeEdge2dTests {
     func edge2dFromPoints() {
         let edge = Shape.edge2d(from: SIMD2(0, 0), to: SIMD2(10, 5))
         #expect(edge != nil)
-        // 2D edges lack a 3D curve, so BRepCheck_Analyzer reports them invalid — just check creation
+        // 2D edges lack a 3D curve, so BRepCheck_Analyzer reports them invalid, just check creation
         if let edge = edge { #expect(edge.shapeType == .edge) }
     }
 
@@ -2507,7 +2507,7 @@ struct BisectorIntersectionTests {
     func perpendicularBisectors() {
         // Bisector of (0,0)-(10,0) = vertical line x=5
         // Bisector of (0,0)-(0,10) = horizontal line y=5
-        // They should intersect at (5,5) — circumcenter of right triangle
+        // They should intersect at (5,5), circumcenter of right triangle
         let results = bisectorIntersections(
             a: (0, 0), b: (10, 0),
             c: (0, 0), d: (0, 10))
@@ -3648,7 +3648,7 @@ struct Curve2DBSplineExtrasTests {
     @Test func setPeriodic() {
         // Create a closed BSpline to make periodic meaningful
         if let c = Curve2D.interpolate(through: [SIMD2(0, 0), SIMD2(5, 5), SIMD2(10, 0), SIMD2(5, -5), SIMD2(0, 0)]) {
-            // Try setting periodic — may succeed or fail depending on curve structure
+            // Try setting periodic, may succeed or fail depending on curve structure
             let _ = c.bsplineSetPeriodic(true)
             // Just ensure no crash
             #expect(true)
@@ -3976,7 +3976,7 @@ struct Curve2DBSplineKnotQueryTests {
     }
 }
 
-@Suite("v0.126.0 — Curve2D Bezier completions")
+@Suite("v0.126.0, Curve2D Bezier completions")
 struct Curve2DBezierCompletionsTests {
     @Test("InsertPoleAfter increases pole count")
     func insertPoleAfter() {
@@ -4119,7 +4119,7 @@ struct Curve2DTransformTests {
     }
 }
 
-@Suite("Geom2dEval — Archimedean Spiral")
+@Suite("Geom2dEval, Archimedean Spiral")
 struct Geom2dEvalArchimedeanSpiralTests {
 
     @Test func spiralD0AtZero() {
@@ -4150,7 +4150,7 @@ struct Geom2dEvalArchimedeanSpiralTests {
     }
 }
 
-@Suite("Geom2dEval — Logarithmic Spiral")
+@Suite("Geom2dEval, Logarithmic Spiral")
 struct Geom2dEvalLogSpiralTests {
 
     @Test func logSpiralD0AtZero() {
@@ -4175,7 +4175,7 @@ struct Geom2dEvalLogSpiralTests {
     }
 }
 
-@Suite("Geom2dEval — Circle Involute")
+@Suite("Geom2dEval, Circle Involute")
 struct Geom2dEvalCircleInvoluteTests {
 
     @Test func involuteD0AtZero() {
@@ -4200,7 +4200,7 @@ struct Geom2dEvalCircleInvoluteTests {
     }
 }
 
-@Suite("Geom2dEval — 2D Sine Wave")
+@Suite("Geom2dEval, 2D Sine Wave")
 struct Geom2dEvalSineWaveTests {
 
     @Test func sineWave2DD0AtZero() {
@@ -4301,7 +4301,7 @@ struct Section2DTests {
 
 /// `Curve2D.circle(center:radius:)` builds a `Geom2d_Circle` directly;
 /// `Curve2D.circleFromCenterRadius(center:radius:)` routes through OCCT's `gce_MakeCirc2d`.
-/// Same purpose, same signature, same resulting circle — but `gce_MakeCirc2d` accepts
+/// Same purpose, same signature, same resulting circle, but `gce_MakeCirc2d` accepts
 /// `Radius >= 0`, so the gce factory used to return a live degenerate zero-radius curve where
 /// the direct factory returned `nil`. Both now share one radius precondition.
 @Suite("Curve2D circle factories agree (#411)")
@@ -4510,7 +4510,7 @@ struct Curve2DInterpolatePeriodicParityTests {
     }
 
     /// The point-count floor the two had drifted apart on. OCCT accepts a 2-point periodic
-    /// interpolation — it produces a valid out-and-back loop — and the general entry point always
+    /// interpolation, it produces a valid out-and-back loop, and the general entry point always
     /// let it through; only the periodic wrapper rejected it at the bridge boundary.
     @Test("A 2-point periodic interpolation is accepted by both entry points")
     func twoPointFloorMatches() {
@@ -4582,8 +4582,8 @@ struct Curve2DProjectionParityTests {
         }
     }
 
-    /// A point with no *perpendicular foot* — one beyond the ends of a bounded curve, or a circle's
-    /// centre (equidistant everywhere, so no local minimum) — still has a nearest point, and since
+    /// A point with no *perpendicular foot*, one beyond the ends of a bounded curve, or a circle's
+    /// centre (equidistant everywhere, so no local minimum), still has a nearest point, and since
     /// #615 the four nearest-point spellings all report it rather than reporting nothing.
     ///
     /// `allProjections(of:)` is the one that still reports nothing, and correctly: it asks for the

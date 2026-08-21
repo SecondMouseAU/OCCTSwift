@@ -7,7 +7,7 @@ import simd
 // dimensions a reader expects on any engineering view: overall width/height of
 // the in-view bounding box plus a diameter on every visible circular edge.
 //
-// The goal isn't to replace a drafter's judgement — it's to get an agent-driven
+// The goal isn't to replace a drafter's judgement, it's to get an agent-driven
 // drawing from "unannotated projection" to "readable" in one call. Callers that
 // want finer control still reach for `addLinearDimension` / `addDiameterDimension`
 // directly.
@@ -15,7 +15,7 @@ import simd
 extension Drawing {
     public struct AutoDimensionResult: Sendable {
         public let added: [DrawingDimension]
-        /// Human-readable reasons for edges/features that were skipped —
+        /// Human-readable reasons for edges/features that were skipped,
         /// useful for debugging why a hole didn't get dimensioned.
         public let skipped: [String]
     }
@@ -113,7 +113,7 @@ extension Drawing {
             }
             // Edge-on test: if the circle's plane normal is perpendicular to
             // the view direction (dot ≈ 0), the circle projects to a line
-            // segment, not a circle — skip. Mirrors addAutoCentermarks.
+            // segment, not a circle, skip. Mirrors addAutoCentermarks.
             let normal = simd_cross(props.xAxis.direction, props.yAxis.direction)
             let dotAxis = abs(simd_dot(simd_normalize(normal), viewZ))
             if dotAxis < 0.1 {

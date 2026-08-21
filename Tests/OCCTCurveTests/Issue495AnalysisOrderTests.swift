@@ -5,7 +5,7 @@ import Testing
 //
 // The analyser runs one branch of a switch on the order it was constructed with, and only that
 // branch's quantities are computed. Every other predicate then compares a member still at its 0.0
-// initialiser against a tolerance and returns true whatever the geometry does — so before this
+// initialiser against a tolerance and returns true whatever the geometry does, so before this
 // fix a sharp 90-degree corner analysed at order C0 reported isC2 == true, with c2Angle == 0.0 (a
 // perfect match) to go with it. No order covers all five classes: not even the .c2 default, which
 // never looks at G1 or G2, which is why `smoothJunctionIsG1` used to pass without measuring
@@ -86,7 +86,7 @@ struct Issue495CurveAnalysisOrderTests {
         let atDefault = try #require(analyse(pair, .c2))
         #expect(atDefault.measured == [.c0, .c1, .c2])
         #expect(atDefault.holds(.g1) == nil,
-                "the .c2 default computes C0/C1/C2 only — G1 has to be asked for")
+                "the .c2 default computes C0/C1/C2 only. G1 has to be asked for")
 
         // Ask for it and the same junction answers properly.
         let atG1 = try #require(analyse(pair, .g1))
@@ -134,7 +134,7 @@ struct Issue495CurveAnalysisOrderTests {
             #expect(a.order == order, "\(order) is inside the analyser's vocabulary")
         }
 
-        // C2 is the strictest question LocalAnalysis_* can answer, so .c3/.cN saturate to it —
+        // C2 is the strictest question LocalAnalysis_* can answer, so .c3/.cN saturate to it,
         // and `order` is how a caller finds out that happened.
         for beyond in [ContinuityClass.c3, .cN] {
             let a = try #require(analyse(pair, beyond))

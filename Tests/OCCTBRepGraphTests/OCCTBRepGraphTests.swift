@@ -232,7 +232,7 @@ struct BRepGraphExplorerTests {
         if let box {
             let graph = BRepGraph(shape: box)
             if let graph {
-                // OCCT 8.0 reshaped root iteration to Products only — wrap the
+                // OCCT 8.0 reshaped root iteration to Products only, wrap the
                 // box's solid root in a Product to expose it as a graph root.
                 _ = graph.linkProductToTopology(shapeRootKind: 0 /* Solid */, shapeRootIndex: 0)
                 let roots = graph.rootNodes
@@ -347,7 +347,7 @@ struct BRepGraphRootNodeTests {
         if let box {
             let graph = BRepGraph(shape: box)
             if let graph {
-                // OCCT 8.0 reshaped root iteration to Products only — wrap the
+                // OCCT 8.0 reshaped root iteration to Products only, wrap the
                 // box's solid root in a Product to expose it as a graph root.
                 _ = graph.linkProductToTopology(shapeRootKind: 0 /* Solid */, shapeRootIndex: 0)
                 let roots = graph.rootNodes
@@ -1810,7 +1810,7 @@ struct UnpackSIMD3Tests {
     @Test("Only reads the first `count` triples, never buffer entries past it")
     func stopsAtActualCountNotBufferLength() {
         // The whole point of #419: the caller passes the ACTUAL written count, and the
-        // helper must never read past it even though the backing buffer is larger —
+        // helper must never read past it even though the backing buffer is larger,
         // this is exactly the divergence that made sampleFaceUVGrid unsafe.
         let flat: [Double] = [1, 2, 3, 999, 999, 999]
         let points: [SIMD3<Double>] = unpackSIMD3(flat, count: 1)
@@ -1914,7 +1914,7 @@ struct BRepGraphHistoryReadbackTests {
 
         let derived = Set(graph.findDerived(of: orig))
         // Transitively, orig should reach b and c (and possibly a depending on OCCT's
-        // definition of "leaves" — we accept either but require at least b, c).
+        // definition of "leaves", we accept either but require at least b, c).
         #expect(derived.isSuperset(of: [b, c]))
     }
 
@@ -2284,7 +2284,7 @@ struct ConstructionPlaneTests {
         // A radius-5 cylinder's lateral face is periodic in U; its seam runs
         // through both circle vertices at u=0 (local +X, radial normal (1,0,0)).
         // The face's own UV midpoint sits at u=π (local -X, radial normal
-        // (-1,0,0)) — the far side of the cylinder. Before #879, tangentToFace
+        // (-1,0,0)), the far side of the cylinder. Before #879, tangentToFace
         // returned that antiparallel UV-midpoint normal instead of the normal at
         // the requested vertex.
         guard let cyl = Shape.cylinder(radius: 5, height: 10),
@@ -2294,9 +2294,9 @@ struct ConstructionPlaneTests {
         let faceRef = TopologyRef.literal(.init(kind: .face, index: 0))
         let vertexRef = TopologyRef.literal(.init(kind: .vertex, index: 1))
         // The lateral face's seam runs through TWO structurally symmetric vertices at u=0
-        // (top z=10, bottom z=0) — read the actual z of vertex 1 rather than assuming which
+        // (top z=10, bottom z=0), read the actual z of vertex 1 rather than assuming which
         // one it is: vertex enumeration order isn't guaranteed stable across an OCCT kernel
-        // rebuild or platform (CLAUDE.md Test Conventions; #897 review, third pass) — the
+        // rebuild or platform (CLAUDE.md Test Conventions; #897 review, third pass), the
         // property under test (local normal follows the vertex, not the UV midpoint) holds
         // at either seam vertex.
         let expectedZ = graph.vertexPoint(1).z
@@ -2513,7 +2513,7 @@ struct ConstructionAxisTests {
             Issue.record("cylinder/graph nil"); return
         }
         // A rim is a full circle: start == end, so the old secant-of-endpoints computation
-        // was always the zero vector here — this is failure mode 1 from #883.
+        // was always the zero vector here, this is failure mode 1 from #883.
         guard let rim = cyl.edges().first(where: { $0.curveType == .circle }),
               let rimBounds = rim.parameterBounds,
               let rimPoint = rim.point(at: rimBounds.first),
@@ -2526,7 +2526,7 @@ struct ConstructionAxisTests {
         case .success(let ax):
             #expect(abs(abs(ax.direction.z) - 1.0) < 1e-6)
             // #894 finding 2: the origin must stay edge-local (on the axis, at the rim's own
-            // height), not teleport to the cylinder surface's own placement origin — which would
+            // height), not teleport to the cylinder surface's own placement origin, which would
             // report (0, 0, 0) regardless of which rim (top or bottom) this is.
             #expect(abs(ax.origin.x) < 1e-6)
             #expect(abs(ax.origin.y) < 1e-6)
@@ -2542,7 +2542,7 @@ struct ConstructionAxisTests {
               let graph = BRepGraph(shape: cyl) else {
             Issue.record("partial cylinder/graph nil"); return
         }
-        // A 90-degree arc's own endpoint chord lies in the XY plane (z ~ 0) — this is failure
+        // A 90-degree arc's own endpoint chord lies in the XY plane (z ~ 0), this is failure
         // mode 2 from #883: a plausible-looking but wrong direction. The true rotation axis is
         // parallel to Z.
         guard let arc = cyl.edges().first(where: { $0.curveType == .circle && !$0.isClosed3D }),
@@ -2571,7 +2571,7 @@ struct ConstructionAxisTests {
     func alongEdgeStandaloneCircleNoAdjacentFaceDegenerate() {
         // A full circle with no adjacent face at all: revolutionAxis(ofEdgeAt:) finds nothing
         // to redirect to (faces(of:) is empty), so this falls through to the endpoint-secant
-        // path, where start == end for a closed curve — the zero-length branch that #887 found
+        // path, where start == end for a closed curve, the zero-length branch that #887 found
         // had no coverage at all.
         guard let wire = Wire.circle(radius: 5),
               let wireShape = Shape.fromWire(wire),
@@ -2595,7 +2595,7 @@ struct ConstructionAxisTests {
     )
     func alongEdgeBranchWithDisagreeingAxesFallsBackToChord() {
         // Two non-coaxial cylinders fused at a T-junction: the intersection curve is adjacent to
-        // both cylindrical walls, and the two candidate axes do not agree — exactly the branch
+        // both cylindrical walls, and the two candidate axes do not agree, exactly the branch
         // case finding 1 covers. Pre-fix, `revolutionAxis(ofEdgeAt:)` returned whichever face's
         // axis happened to sort first in `faces(of:)`, with no check that a second, disagreeing
         // candidate existed.
@@ -2612,12 +2612,12 @@ struct ConstructionAxisTests {
         }
 
         // Find a branch edge: adjacent to >= 2 cylindrical/conical faces whose axes disagree, with
-        // a non-degenerate chord that also isn't itself nearly parallel to EITHER candidate axis —
+        // a non-degenerate chord that also isn't itself nearly parallel to EITHER candidate axis,
         // so the pre-fix "first match wins" answer and the post-fix chord-fallback answer are
         // provably different regardless of which face BRepGraph happens to enumerate first.
         //
         // Gathering `candidates` here (via the already-public `faces(of:)`/`Face.primaryAxis`) is
-        // direct data access, not a reimplementation of production logic — there's no production
+        // direct data access, not a reimplementation of production logic, there's no production
         // API that returns the raw candidate list, only the final decision. What used to be
         // reimplemented was the "must disagree" *test*, via a hand-rolled, hardcoded `1e-3` copy
         // of `axesAgree`'s own comparison; that copy is gone below, replaced by a direct call to
@@ -2666,14 +2666,14 @@ struct ConstructionAxisTests {
 
         // Exercise the real production decision directly, not just its downstream effect: the
         // disagreeing candidates found above must make `revolutionAxis(ofEdgeAt:)` itself decline
-        // (#894 finding 5, second pass) — the assertions below on `resolve(.alongEdge(...))` then
+        // (#894 finding 5, second pass), the assertions below on `resolve(.alongEdge(...))` then
         // confirm the caller-visible consequence of that decision.
         #expect(graph.revolutionAxis(ofEdgeAt: target.edgeIndex) == nil)
 
         let edgeRef = TopologyRef.literal(.init(kind: .edge, index: target.edgeIndex))
         switch graph.resolve(ConstructionAxis.alongEdge(edgeRef)) {
         case .success(let ax):
-            // Must NOT silently match either candidate face's axis (the pre-fix bug) — must fall
+            // Must NOT silently match either candidate face's axis (the pre-fix bug), must fall
             // back to the edge's own chord instead.
             #expect(abs(simd_dot(ax.direction, simd_normalize(target.axisA.direction))) < 0.9)
             #expect(abs(simd_dot(ax.direction, simd_normalize(target.axisB.direction))) < 0.9)
@@ -2686,7 +2686,7 @@ struct ConstructionAxisTests {
         "alongEdge keeps the origin edge-local, not the adjacent surface's own placement origin (#894 finding 2)"
     )
     func alongEdgeCylindricalRimOriginStaysNearRimNotSurfaceBase() {
-        // A rim near the TOP of a tall cylinder whose base sits at z=0 — the review's own example
+        // A rim near the TOP of a tall cylinder whose base sits at z=0, the review's own example
         // of a ~500mm teleport. axis.origin for the wall face is the surface's own placement
         // origin (0, 0, 0); if that leaked through as the resolved origin, a materialized axis
         // marker or a sketch plane built `throughAxis` would land ~500mm from the rim the caller
@@ -2785,10 +2785,10 @@ struct ConstructionAxisTests {
         let edgeRef = TopologyRef.literal(.init(kind: .edge, index: seamNodeIndex))
         switch graph.resolve(ConstructionAxis.alongEdge(edgeRef)) {
         case .success(let ax):
-            // Direction along the seam (Z) — true either way, since axis and chord happen to
+            // Direction along the seam (Z), true either way, since axis and chord happen to
             // agree here. The origin is what distinguishes "kept the chord" from "redirected to
             // the axis": redirecting would project onto the cylinder's own axis line (x=y=0),
-            // which for this seam happens to yield (0, 0, 0) too — so the discriminating check is
+            // which for this seam happens to yield (0, 0, 0) too, so the discriminating check is
             // that the origin stays at the edge's own (x, y) position, not on the centerline.
             #expect(abs(abs(ax.direction.z) - 1.0) < 1e-6)
             #expect(simd_distance(ax.origin, p0bot) < 1e-6)
@@ -2805,13 +2805,13 @@ struct ConstructionAxisTests {
         // becomes an oblique cutting plane through the cylinder's mid-height, producing a closed
         // elliptical rim (curveType == .ellipse) adjacent to the cylindrical wall. Every point of
         // that rim sits on the wall (radius == cylinder radius everywhere, same as a true circular
-        // rim), but its height along the axis varies as you go around it — exactly the case
+        // rim), but its height along the axis varies as you go around it, exactly the case
         // `curveType != .line` alone can't distinguish from a genuine cross-section.
         let radius = 5.0
         let height = 20.0
         let theta = 25.0 * Double.pi / 180
         // Box spans z in [-1000, z0] before rotation; z0 is chosen so the rotated top face
-        // passes through (0, 0, 10) — the cylinder's own mid-height on its axis — with normal
+        // passes through (0, 0, 10), the cylinder's own mid-height on its axis, with normal
         // (sin(theta), 0, cos(theta)).
         let z0 = 10.0 * cos(theta)
 
@@ -2831,7 +2831,7 @@ struct ConstructionAxisTests {
             Issue.record("no elliptical rim edge found in oblique-cut fixture"); return
         }
         // Confirm the fixture matches finding 1's premise: exactly one adjacent face contributes
-        // a cylinder/cone axis candidate (the trimmed wall) — same as a genuine circular rim, so
+        // a cylinder/cone axis candidate (the trimmed wall), same as a genuine circular rim, so
         // `revolutionAxis` has nothing to disagree with and would return it unconditionally
         // without the geometric cross-section check this finding adds.
         let cylConeFaceCount = graph.faces(of: node.index).filter { faceIndex in
@@ -2847,7 +2847,7 @@ struct ConstructionAxisTests {
         switch graph.resolve(ConstructionAxis.alongEdge(edgeRef)) {
         case .success(let ax):
             // Must not be the cylinder's centerline (direction parallel to Z AND origin on the
-            // x=y=0 axis) — a fallback to the (near-zero, closed-curve) chord landing anywhere
+            // x=y=0 axis), a fallback to the (near-zero, closed-curve) chord landing anywhere
             // else is fine; only silently matching the centerline is the bug.
             let onCenterlineDirection = abs(abs(ax.direction.z) - 1.0) < 1e-6
             let onCenterlineOrigin = abs(ax.origin.x) < 1e-6 && abs(ax.origin.y) < 1e-6
@@ -2865,10 +2865,10 @@ struct ConstructionAxisTests {
     )
     func alongEdgeGenuinelyDegenerateEdgeNextToCleanCylinderStillDegenerate() {
         // A partial cylinder with an astronomically tiny angular extent (1e-10 rad): its two rim
-        // arcs (curveType == .circle, non-linear — so the OLD `curveType != .line` gate alone
+        // arcs (curveType == .circle, non-linear, so the OLD `curveType != .line` gate alone
         // would have let this reach `revolutionAxis`) measure a true length of 5e-10, genuinely
         // near-zero and below this file's degeneracy epsilon, while still bounding one clean
-        // cylindrical wall face — the shape finding 2 needs: `revolutionAxis` finds an
+        // cylindrical wall face, the shape finding 2 needs: `revolutionAxis` finds an
         // unambiguous candidate axis for an edge that is itself malformed, which used to let it
         // skip the degeneracy check entirely.
         guard let cyl = Shape.cylinder(radius: 5, height: 10, angle: 1e-10),
@@ -2893,7 +2893,7 @@ struct ConstructionAxisTests {
             Issue.record("no near-zero-length non-line edge found in sliver fixture"); return
         }
         // Confirm the fixture matches finding 2's premise: exactly one adjacent face contributes
-        // a cylinder/cone axis candidate, same as a legitimate rim — `revolutionAxis` has nothing
+        // a cylinder/cone axis candidate, same as a legitimate rim, `revolutionAxis` has nothing
         // to disagree with and would return it unconditionally without the fix.
         let cylConeFaceCount = graph.faces(of: tinyNodeIndex).filter { faceIndex in
             guard
@@ -2915,7 +2915,7 @@ struct ConstructionAxisTests {
     )
     func alongEdgeConeStraightSeamReparameterizedAsBSplineKeepsChord() {
         // A cone's lateral generatrix meets its axis at the cone's own nonzero half-angle, never
-        // parallel to it — the old chord-parallel-to-axis check (removed by the third pass's
+        // parallel to it, the old chord-parallel-to-axis check (removed by the third pass's
         // `coaxialCrossSection` rewrite) could never catch a straight seam on a CONE the way it
         // caught one on a cylinder (`alongEdgeStraightSeamReparameterizedAsBSplineKeepsChord`
         // above). `coaxialCrossSection`'s radius/height-constancy test has no such blind spot: a
@@ -2994,7 +2994,7 @@ struct ConstructionAxisTests {
         let edgeRef = TopologyRef.literal(.init(kind: .edge, index: seamNodeIndex))
         switch graph.resolve(ConstructionAxis.alongEdge(edgeRef)) {
         case .success(let ax):
-            // The chord and the cone's axis are NOT parallel (nonzero half-angle) — unlike the
+            // The chord and the cone's axis are NOT parallel (nonzero half-angle), unlike the
             // cylinder case, direction alone distinguishes "kept the chord" from "redirected to
             // the axis" here too, so both direction and origin are asserted directly against the
             // seam's own geometry.
@@ -3023,7 +3023,7 @@ struct ConstructionAxisTests {
         // `Wire.wireFromEdges`, decides whether the fit succeeds or falls back to a crude
         // point-projected polygon (many tiny BSpline fragments instead of one clean arc). Both
         // constructions below were confirmed (by direct inspection) to build a clean 4-edge wire
-        // with the top arc still `curveType == .circle`, not a fragmented approximation — an
+        // with the top arc still `curveType == .circle`, not a fragmented approximation, an
         // arbitrary reshuffle of either one is not guaranteed to stay that way.
         let radius = 5.0
         let height = 10.0
@@ -3085,7 +3085,7 @@ struct ConstructionAxisTests {
             Issue.record("forward-order fixture build/resolve failed"); return
         }
 
-        // Top arc parameterized pB -> pA (bounds.first == pB) — the physically identical rim,
+        // Top arc parameterized pB -> pA (bounds.first == pB), the physically identical rim,
         // opposite parameter order. Every other edge is rebuilt to match (see the wire-fitting
         // sensitivity noted above); this specific combination was confirmed by direct inspection
         // to also build a clean 4-edge wire.
@@ -3123,10 +3123,10 @@ struct ConstructionAxisTests {
     )
     func alongEdgeHelicalEdgeDoesNotSilentlyReturnCenterline() {
         // A helix's two-point secant can land nearly parallel to the cylinder's axis purely from
-        // the sweep angle — the old chord-parallel-to-axis check (removed by the third pass's
+        // the sweep angle, the old chord-parallel-to-axis check (removed by the third pass's
         // `coaxialCrossSection` rewrite) could misfire on this. A full single turn (parameter
         // range 0...2*pi) puts start and end at the SAME angular position, `pitch` apart in
-        // height — the secant is then EXACTLY axis-parallel, the strongest form of the old false
+        // height, the secant is then EXACTLY axis-parallel, the strongest form of the old false
         // positive. `coaxialCrossSection`'s height-constancy check has no such blind spot:
         // sampling interior points along a genuine helix shows height varying continuously across
         // the whole span, unlike a true perpendicular cross-section.
@@ -3162,7 +3162,7 @@ struct ConstructionAxisTests {
             Issue.record("no non-line edge found in helical fixture"); return
         }
         // Confirm the fixture matches the premise: adjacent to exactly one cylinder-kind face,
-        // same as a genuine rim — `revolutionAxis` has nothing to disagree with, so only
+        // same as a genuine rim, `revolutionAxis` has nothing to disagree with, so only
         // `coaxialCrossSection`'s own height check can decline the redirect.
         let cylFaceCount = graph.faces(of: helixNodeIndex).filter { faceIndex in
             guard
@@ -3177,7 +3177,7 @@ struct ConstructionAxisTests {
         switch graph.resolve(ConstructionAxis.alongEdge(edgeRef)) {
         case .success(let ax):
             // Must not teleport to the centerline (x = y = 0): the fallback secant's origin is
-            // the helix's own start point, still on the cylinder wall — the same discriminator
+            // the helix's own start point, still on the cylinder wall, the same discriminator
             // the straight-seam test above uses, since the secant's DIRECTION happens to coincide
             // with the axis direction here too (chosen deliberately, matching the old false
             // positive's strongest form).
@@ -3310,7 +3310,7 @@ struct ConstructionAxisTests {
     @Test("normalToFace on a planar face still returns the face normal")
     func normalToFacePlaneFallback() {
         // Planes have no primary axis, so normalToFace must fall back to the
-        // UV-midpoint surface normal — the pre-#882 behavior, still correct here.
+        // UV-midpoint surface normal, the pre-#882 behavior, still correct here.
         guard let box = Shape.box(width: 10, height: 10, depth: 10),
               let graph = BRepGraph(shape: box) else {
             Issue.record("graph nil"); return
@@ -3327,7 +3327,7 @@ struct ConstructionAxisTests {
     @Test("normalToFace on an extrusion-surface face falls back to the UV-midpoint normal, not the sweep direction (PR #897 review)")
     func normalToFaceExtrusionFallsBackToNormal() {
         // Geom_SurfaceOfLinearExtrusion's primaryAxis.direction is the SWEEP direction
-        // (tangent to the surface), not a normal — unlike cylinder/cone/sphere/torus/
+        // (tangent to the surface), not a normal, unlike cylinder/cone/sphere/torus/
         // revolution, where primaryAxis.direction genuinely is a rotation axis. A
         // straight-line profile (along X) extruded along Z produces a planar surface
         // whose true normal (Y) is perpendicular to both the profile and the sweep
@@ -3549,16 +3549,16 @@ struct ConstructionAxisTests {
         "alongEdge fails loudly, not silently, when the edge's tangent is undefined at its own start point (#894 finding 1, fifth pass)"
     )
     func alongEdgeUndefinedStartTangentFailsLoudNotSilent() {
-        // A quarter-turn "top arc" on a cylindrical wall — geometrically a genuine circular
+        // A quarter-turn "top arc" on a cylindrical wall, geometrically a genuine circular
         // cross-section, constant height/radius across all 5 of `coaxialCrossSection`'s own
-        // sampled fractions — built as a degree-1 BSpline whose first two poles are IDENTICAL: a
+        // sampled fractions, built as a degree-1 BSpline whose first two poles are IDENTICAL: a
         // textbook cusp (the segment [0, 0.05] has zero length, so the right-derivative at u=0 is
-        // the zero vector). `GeomLProp_CLProps::IsTangentDefined()` — and so `Edge.tangent(at:)`
-        // — correctly reports undefined there, while `Edge.point(at:)` at the same parameter
+        // the zero vector). `GeomLProp_CLProps::IsTangentDefined()`, and so `Edge.tangent(at:)`
+        //, correctly reports undefined there, while `Edge.point(at:)` at the same parameter
         // still succeeds (plain D0 evaluation, unaffected by a degenerate derivative).
         //
         // Knots are placed at exactly the 5 fractions `coaxialCrossSection` samples (0, 0.25,
-        // 0.5, 0.75, 1.0), with the extra cusp pole tucked into [0, 0.05] — so every sample lands
+        // 0.5, 0.75, 1.0), with the extra cusp pole tucked into [0, 0.05], so every sample lands
         // exactly on a pole (an exact circle point), not on a chord between two knots, the same
         // "poles are the samples" trick `coaxialCrossSectionAcceptsMeasuredEdgeToleranceNoise`
         // above uses to avoid a chord's corner-cutting error.
@@ -3606,8 +3606,8 @@ struct ConstructionAxisTests {
             Issue.record("cusp-top-arc fixture build failed"); return
         }
 
-        // Confirm the fixture matches the intended scenario — the cusp edge really is
-        // BSpline-typed and really does have an undefined start tangent — before asserting on
+        // Confirm the fixture matches the intended scenario, the cusp edge really is
+        // BSpline-typed and really does have an undefined start tangent, before asserting on
         // the fix, rather than assuming the construction above behaved as designed.
         var cuspNodeIndex: Int?
         for edgeIndex in 0..<graph.edgeCount {
@@ -3637,16 +3637,16 @@ struct ConstructionAxisTests {
         "coaxialCrossSection accepts sampled height/radius noise within the edge's own measured BRep tolerance, not just the machine-precision floor (#894 finding 2, fifth pass)"
     )
     func coaxialCrossSectionAcceptsMeasuredEdgeToleranceNoise() {
-        // A degree-1 (piecewise-linear) 5-pole BSpline with a CLAMPED knot vector — [0, 0.25,
-        // 0.5, 0.75, 1] with multiplicities [2, 1, 1, 1, 2] — is the defining shape of a
+        // A degree-1 (piecewise-linear) 5-pole BSpline with a CLAMPED knot vector, [0, 0.25,
+        // 0.5, 0.75, 1] with multiplicities [2, 1, 1, 1, 2], is the defining shape of a
         // degree-1 B-spline with simple interior knots: it interpolates every pole exactly at
         // its corresponding knot parameter. That gives exact, reproducible control over what
-        // `coaxialCrossSection` samples at its own fractions (0, 0.25, 0.5, 0.75, 1.0) — no
+        // `coaxialCrossSection` samples at its own fractions (0, 0.25, 0.5, 0.75, 1.0), no
         // interpolation-parameterization guesswork the way `Curve3D.interpolate` would need.
         let radius = 5.0
         let height = 10.0
-        // Per-point noise, ~3e-5 in magnitude — comfortably above the old flat 1e-7 floor, and
-        // well inside the review's own cited 1e-4-1e-3 post-Boolean/fillet BRep tolerance range —
+        // Per-point noise, ~3e-5 in magnitude, comfortably above the old flat 1e-7 floor, and
+        // well inside the review's own cited 1e-4-1e-3 post-Boolean/fillet BRep tolerance range,
         // simulating a genuine circular rim that has accumulated real numerical noise.
         let angles = [0.0, Double.pi / 2, Double.pi, 3 * Double.pi / 2, 2 * Double.pi]
         let radiusNoise = [2e-5, -3e-5, 1e-5, -4e-5, 3e-5]
@@ -3672,7 +3672,7 @@ struct ConstructionAxisTests {
         }
 
         // The measured height/radius spread of this fixture's 5 samples (~7e-5, by construction)
-        // must exceed the old flat floor for this test to prove anything — confirmed directly
+        // must exceed the old flat floor for this test to prove anything, confirmed directly
         // below rather than assumed, per okf/policies/prove-the-test-fails.md.
         let axis = ShapeAxis(origin: .zero, direction: SIMD3(0, 0, 1), kind: .cylinder)
         #expect(
@@ -3681,7 +3681,7 @@ struct ConstructionAxisTests {
             "fixture noise must exceed the machine-precision floor, or this test proves nothing")
 
         // A realistic measured BRep_Tool::Tolerance for this rim (1e-4, well within the review's
-        // own cited range) widens the comparison enough to accept the same noisy points — this is
+        // own cited range) widens the comparison enough to accept the same noisy points, this is
         // the fix: pre-fix, `coaxialCrossSection` had no `edgeTolerance` parameter at all and
         // always compared against the machine-precision floor alone, so this call would have
         // returned `false` regardless of what tolerance the caller measured.
@@ -3756,7 +3756,7 @@ struct ConstructionPointTests {
     @Test("centroidOfFace on a cylinder matches the real area centroid, not the UV midpoint (#884)")
     func centroidOfFaceCylinderSurfaceInertia() {
         // A radius-5, height-10 cylinder's lateral face has its true area centroid
-        // on the cylinder's own axis (x=y=0, z=5) — the UV-midpoint approximation
+        // on the cylinder's own axis (x=y=0, z=5), the UV-midpoint approximation
         // instead sits a full radius off-axis, on the surface itself.
         guard let cyl = Shape.cylinder(radius: 5, height: 10),
               let graph = BRepGraph(shape: cyl) else {
@@ -3774,7 +3774,7 @@ struct ConstructionPointTests {
 
     @Test("centroidOfFace on a genuinely zero-area face fails with .degenerate, not a fabricated point (PR #897 review)")
     func centroidOfFaceZeroAreaDegenerate() {
-        // A 2-vertex "polygon" wire is a degenerate zero-area loop — the same fixture
+        // A 2-vertex "polygon" wire is a degenerate zero-area loop, the same fixture
         // Issue234DegenerateHoleTests uses for a degenerate hole, here used as the base
         // face itself. Its surfaceInertia.centerOfMass is nil because BRepGProp_Sinert
         // measures its area as exactly 0. The old UV-midpoint-based centroidOfFace always
@@ -3810,7 +3810,7 @@ struct ConstructionPointTests {
             Issue.record("graph nil"); return
         }
         // Edge enumeration order isn't guaranteed stable across an OCCT kernel rebuild
-        // or platform — iterate every edge rather than hardcoding index 0 (CLAUDE.md
+        // or platform, iterate every edge rather than hardcoding index 0 (CLAUDE.md
         // Test Conventions; PR #897 review, finding 12).
         #expect(graph.edgeCount > 0)
         for edgeIndex in 0..<graph.edgeCount {
@@ -3877,7 +3877,7 @@ struct ContainedInTests {
     }
 }
 
-// MARK: - Durable Identity (UID / RefUID / ItemUID) — OCCT 8.0.0p1
+// MARK: - Durable Identity (UID / RefUID / ItemUID), OCCT 8.0.0p1
 
 @Suite("BRepGraph Durable UID")
 struct BRepGraphDurableUIDTests {
@@ -3906,7 +3906,7 @@ struct BRepGraphDurableUIDTests {
         }
     }
 
-    /// A UID minted by a *different* graph must not resolve — the case that matters, and the one
+    /// A UID minted by a *different* graph must not resolve, the case that matters, and the one
     /// that silently returned a wrong node before #295. Its counter is in range for the foreign
     /// graph (counters restart at 1 per graph), so nothing but provenance can reject it.
     @Test func uidFromAnotherGraphDoesNotResolve() {
@@ -3940,7 +3940,7 @@ struct BRepGraphDurableUIDTests {
         #expect(!b.contains(uid: uid))
     }
 
-    /// Mean sampled position + normal — a signature that actually distinguishes a box's faces.
+    /// Mean sampled position + normal, a signature that actually distinguishes a box's faces.
     /// (A single grid corner does not: adjacent faces share corners.)
     private func faceSignature(_ g: BRepGraph, _ i: Int,
                                shift: SIMD3<Double> = .zero) -> String? {
@@ -3955,7 +3955,7 @@ struct BRepGraphDurableUIDTests {
         return String(format: "c(%.3f,%.3f,%.3f) n(%.3f,%.3f,%.3f)", c.x, c.y, c.z, n.x, n.y, n.z)
     }
 
-    /// A full `copy()` INHERITS the source's identity, so every source UID still resolves — and
+    /// A full `copy()` INHERITS the source's identity, so every source UID still resolves, and
     /// resolves to the geometrically same face. This is the kernel's own contract, not an
     /// accident: `BRepGraph_Copy::Perform` transplants the UID counter space, the Generation and
     /// the GraphGUID into the target. Guards the #295 provenance check against over-rejecting.
@@ -3980,7 +3980,7 @@ struct BRepGraphDurableUIDTests {
     }
 
     /// `translated()` copies the graph wholesale too, so identity and UID correspondence carry
-    /// across exactly as with `copy()` — the faces are merely moved.
+    /// across exactly as with `copy()`, the faces are merely moved.
     @Test func uidSurvivesATranslationAndNamesTheSameFace() {
         let d = SIMD3<Double>(100, 200, 300)
         guard let box = Shape.box(width: 10, height: 20, depth: 30),
@@ -3997,7 +3997,7 @@ struct BRepGraphDurableUIDTests {
     }
 
     /// `copyFace()` is the opposite case: it lifts ONE face into an empty graph without
-    /// transplanting the counter space, so the extracted face restarts at counter 1 — the
+    /// transplanting the counter space, so the extracted face restarts at counter 1, the
     /// source's face-0 counter. Before #295 a source UID resolved here and returned the wrong
     /// face. The extracted graph gets a fresh identity, so it now returns nil.
     @Test func uidDoesNotCrossACopiedOutFace() {
@@ -4032,7 +4032,7 @@ struct BRepGraphDurableUIDTests {
         #expect(!graph.contains(uid: invalid))
     }
 
-    /// A UID with no provenance — hand-built, or decoded from a pre-#295 payload — resolves nowhere,
+    /// A UID with no provenance, hand-built, or decoded from a pre-#295 payload, resolves nowhere,
     /// even when its counter names a real node in the graph asked.
     @Test func unstampedUIDResolvesNowhere() {
         guard let box = Shape.box(width: 10, height: 10, depth: 10) else { return }

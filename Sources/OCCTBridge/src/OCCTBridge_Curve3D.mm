@@ -2,7 +2,7 @@
 //  OCCTBridge_Curve3D.mm
 //  OCCTSwift
 //
-//  Extracted from OCCTBridge.mm — issue #99.
+//  Extracted from OCCTBridge.mm, issue #99.
 //
 //  3D parametric curve cluster (v0.19):
 //
@@ -19,7 +19,7 @@
 //  Defines `struct OCCTCurve3D` locally; the matching definition in
 //  OCCTBridge.mm has identical layout (ODR-safe across TUs).
 //
-//  Public C surface unchanged. No symbol changes — pure file move.
+//  Public C surface unchanged. No symbol changes: a pure file move.
 //
 
 #import "../include/OCCTBridge.h"
@@ -69,8 +69,8 @@
 #include <GeomEval_AHTBezierCurve.hxx>
 #include <GeomAdaptor_TransformedCurve.hxx>
 // Approx_BSplineApproxInterp was removed in OCCT 8.0.0p1 (it backed the old Gordon
-// prototype). The wrapper below is reimplemented on GeomAPI_PointsToBSpline — the
-// documented replacement — keeping the same C ABI; see that section's comment for the
+// prototype). The wrapper below is reimplemented on GeomAPI_PointsToBSpline, the
+// documented replacement, keeping the same C ABI; see that section's comment for the
 // resulting semantic changes (nbControlPoints/interpolation kinks become advisory).
 #include <GeomAPI_PointsToBSpline.hxx>
 #include <GeomAPI_ProjectPointOnCurve.hxx>
@@ -176,7 +176,7 @@ void OCCTCurve3DRelease(OCCTCurve3DRef c)
 
 OCCTCurve3DRef OCCTEdgeGetCurve3D(OCCTEdgeRef edge)
 {
-  if (!edge)
+  if (!occtShapeIsPresent(edge))
     return nullptr;
   try
   {
@@ -726,18 +726,9 @@ int32_t OCCTCurve3DGetDegree(OCCTCurve3DRef c)
 
 // Operations
 
-// Shared gp_Trsf builder (defined below, near OCCTCurve3DTransform); forward-declared here so
-// the immutable translate/rotate/scale/mirror* family can reuse the same transform-construction
-// logic as the in-place OCCTCurve3DTransform dispatcher instead of duplicating it.
-static bool buildTrsf3D(gp_Trsf& trsf,
-                        int32_t  type,
-                        double   p1,
-                        double   p2,
-                        double   p3,
-                        double   p4,
-                        double   p5,
-                        double   p6,
-                        double   p7);
+// #995: the discriminated gp_Trsf builder both this file's transform families used to define for
+// themselves is occtBuildTrsf3D in OCCTBridge_Internal.h, shared with OCCTBridge_Surface.mm, which
+// carried a byte-identical copy.
 
 OCCTCurve3DRef OCCTCurve3DTrim(OCCTCurve3DRef c, double u1, double u2)
 {
@@ -779,7 +770,7 @@ OCCTCurve3DRef OCCTCurve3DTranslate(OCCTCurve3DRef c, double dx, double dy, doub
   {
     Handle(Geom_Curve) copy = Handle(Geom_Curve)::DownCast(c->curve->Copy());
     gp_Trsf            t;
-    if (!buildTrsf3D(t, 0, dx, dy, dz, 0, 0, 0, 0))
+    if (!occtBuildTrsf3D(t, 0, dx, dy, dz, 0, 0, 0, 0))
       return nullptr;
     copy->Transform(t);
     return new OCCTCurve3D(copy);
@@ -805,7 +796,7 @@ OCCTCurve3DRef OCCTCurve3DRotate(OCCTCurve3DRef c,
   {
     Handle(Geom_Curve) copy = Handle(Geom_Curve)::DownCast(c->curve->Copy());
     gp_Trsf            t;
-    if (!buildTrsf3D(t, 1, axisOx, axisOy, axisOz, axisDx, axisDy, axisDz, angle))
+    if (!occtBuildTrsf3D(t, 1, axisOx, axisOy, axisOz, axisDx, axisDy, axisDz, angle))
       return nullptr;
     copy->Transform(t);
     return new OCCTCurve3D(copy);
@@ -824,7 +815,7 @@ OCCTCurve3DRef OCCTCurve3DScale(OCCTCurve3DRef c, double cx, double cy, double c
   {
     Handle(Geom_Curve) copy = Handle(Geom_Curve)::DownCast(c->curve->Copy());
     gp_Trsf            t;
-    if (!buildTrsf3D(t, 2, cx, cy, cz, factor, 0, 0, 0))
+    if (!occtBuildTrsf3D(t, 2, cx, cy, cz, factor, 0, 0, 0))
       return nullptr;
     copy->Transform(t);
     return new OCCTCurve3D(copy);
@@ -843,7 +834,7 @@ OCCTCurve3DRef OCCTCurve3DMirrorPoint(OCCTCurve3DRef c, double px, double py, do
   {
     Handle(Geom_Curve) copy = Handle(Geom_Curve)::DownCast(c->curve->Copy());
     gp_Trsf            t;
-    if (!buildTrsf3D(t, 3, px, py, pz, 0, 0, 0, 0))
+    if (!occtBuildTrsf3D(t, 3, px, py, pz, 0, 0, 0, 0))
       return nullptr;
     copy->Transform(t);
     return new OCCTCurve3D(copy);
@@ -868,7 +859,7 @@ OCCTCurve3DRef OCCTCurve3DMirrorAxis(OCCTCurve3DRef c,
   {
     Handle(Geom_Curve) copy = Handle(Geom_Curve)::DownCast(c->curve->Copy());
     gp_Trsf            t;
-    if (!buildTrsf3D(t, 4, px, py, pz, dx, dy, dz, 0))
+    if (!occtBuildTrsf3D(t, 4, px, py, pz, dx, dy, dz, 0))
       return nullptr;
     copy->Transform(t);
     return new OCCTCurve3D(copy);
@@ -893,7 +884,7 @@ OCCTCurve3DRef OCCTCurve3DMirrorPlane(OCCTCurve3DRef c,
   {
     Handle(Geom_Curve) copy = Handle(Geom_Curve)::DownCast(c->curve->Copy());
     gp_Trsf            t;
-    if (!buildTrsf3D(t, 5, px, py, pz, nx, ny, nz, 0))
+    if (!occtBuildTrsf3D(t, 5, px, py, pz, nx, ny, nz, 0))
       return nullptr;
     copy->Transform(t);
     return new OCCTCurve3D(copy);
@@ -1043,15 +1034,15 @@ OCCTCurve3DRef OCCTCurve3DJoinToBSpline(const OCCTCurve3DRef* curves,
 // OCCTCurve3DApproximate (Curve3D.approximated) and OCCTGeomConvertApproxCurve
 // (Curve3D.approxWithDetails) are two views of the same approximation: the first returns the
 // fitted BSpline, the second returns it alongside the diagnostics OCCT already computed for it.
-// They were written independently and drifted on which completion accessor decides success —
-// IsDone() here, HasResult() there — so they run through this one helper instead.
+// They were written independently and drifted on which completion accessor decides success
+// (IsDone() here, HasResult() there), so they run through this one helper instead.
 //
 // The shared gate is HasResult(). The header documents the two as different questions: IsDone() is
 // "the approximation has been done within required tolerance", HasResult() is "did come out with a
 // result that is not NECESSARILY within the required tolerance". In this kernel they cannot
 // actually disagree: GeomConvert_ApproxCurve copies both flags off AdvApprox_ApproxAFunction, whose
 // only HasResult-without-IsDone path is the ErrorCode = -1 assignment at
-// AdvApprox_ApproxAFunction.cxx:550 — commented out upstream ("// for now ErrorCode=-1;"). With
+// AdvApprox_ApproxAFunction.cxx:550, commented out upstream ("// for now ErrorCode=-1;"). With
 // that line dead, ErrorCode is only ever 0 (both flags set) or 1 (neither), which is why gating on
 // IsDone() never actually rejected an over-tolerance fit: a circle fitted with one segment at
 // degree 3 against a 1e-9 tolerance reports maxError 5.1 and still reports IsDone.
@@ -1059,7 +1050,7 @@ OCCTCurve3DRef OCCTCurve3DJoinToBSpline(const OCCTCurve3DRef* curves,
 // HasResult() is the right one to standardise on regardless. It is what OCCT's own curve conversion
 // entry points use (GeomConvert.cxx:345/441, GeomToIGES_GeomCurve.cxx:632,
 // GeomFill_Profiler.cxx:136), it is what both surface entry points already used, and it is the only
-// gate under which approxWithDetails' isDone/maxError diagnostics mean anything — reporting
+// gate under which approxWithDetails' isDone/maxError diagnostics mean anything: reporting
 // isDone: false is the point of that API, so it cannot also be the reason to return nothing.
 //
 // Continuity decodes through the #490 shared occtGeomAbsFromParametricContinuity rather than a
@@ -1670,7 +1661,7 @@ OCCTCurve3DRef OCCTEdgeApproxCurve(OCCTEdgeRef edge,
                                    int32_t     maxSegments,
                                    int32_t     maxDegree)
 {
-  if (!edge)
+  if (!occtShapeIsPresent(edge))
     return nullptr;
   try
   {
@@ -1701,7 +1692,7 @@ bool OCCTEdgeApproxCurveInfo(OCCTEdgeRef edge,
                              int32_t*    outDegree,
                              int32_t*    outNbPoles)
 {
-  if (!edge || !outMaxError || !outDegree || !outNbPoles)
+  if (!occtShapeIsPresent(edge) || !outMaxError || !outDegree || !outNbPoles)
     return false;
   try
   {
@@ -2127,14 +2118,13 @@ OCCTShapeRef OCCTApproxCurveOnSurface(OCCTShapeRef edge,
                                       int32_t      maxSegments,
                                       int32_t      maxDegree)
 {
-  if (!edge || !face)
+  // #1026: occtShapeIsType (OCCTBridge_Internal.h) folds the pointer test into the null-shape test
+  // TopoDS_Shape::ShapeType() needs; without the second this refused a wrong-typed shape and
+  // crashed on a null one.
+  if (!occtShapeIsType(edge, TopAbs_EDGE) || !occtShapeIsType(face, TopAbs_FACE))
     return nullptr;
   try
   {
-    if (edge->shape.ShapeType() != TopAbs_EDGE)
-      return nullptr;
-    if (face->shape.ShapeType() != TopAbs_FACE)
-      return nullptr;
     TopoDS_Edge e = TopoDS::Edge(edge->shape);
     TopoDS_Face f = TopoDS::Face(face->shape);
 
@@ -2337,7 +2327,7 @@ OCCTShapeRef _Nullable OCCTApproxCurvilinearParameter(OCCTShapeRef edgeShape,
 // pair in OCCTBridge_Surface.mm.
 //
 // Only the requested order's own branch is computed, so every output is gated on
-// occtAnalysisMeasuredMask as well as on the predicate itself — an unmeasured predicate answers
+// occtAnalysisMeasuredMask as well as on the predicate itself: an unmeasured predicate answers
 // true from a zero-initialised member, and its angle/ratio answers 0.0 to match. #495.
 
 bool OCCTLocalAnalysisCurveContinuity(OCCTCurve3DRef _Nonnull curve1,
@@ -2369,7 +2359,7 @@ bool OCCTLocalAnalysisCurveContinuity(OCCTCurve3DRef _Nonnull curve1,
     if (!cc.IsDone())
       return false;
 
-    // ContinuityStatus() returns the order the analyser was constructed with, verbatim — it
+    // ContinuityStatus() returns the order the analyser was constructed with, verbatim: it
     // is the request echoed back, not a measurement. Reported as the *effective* order so a
     // caller can see where a saturated request landed.
     *outEffectiveOrder       = occtAnalysisOrderFromGeomAbs(cc.ContinuityStatus());
@@ -2435,7 +2425,7 @@ int32_t OCCTLocalAnalysisCurveContinuityFlags(OCCTCurve3DRef _Nonnull curve1,
 // --- GeomConvert_ApproxCurve ---
 
 // Both curve approximation entry points share occtApproxCurve, declared next to
-// OCCTCurve3DApproximate above — see the #491 note there for why the gate is HasResult().
+// OCCTCurve3DApproximate above; see the #491 note there for why the gate is HasResult().
 OCCTApproxCurveResult OCCTGeomConvertApproxCurve(OCCTCurve3DRef _Nonnull curve,
                                                  double  tolerance,
                                                  int32_t continuity,
@@ -2453,7 +2443,7 @@ int32_t OCCTGCPntsQuasiUniform(OCCTEdgeRef _Nonnull edge,
                                double* _Nonnull params,
                                int32_t maxParams)
 {
-  if (!edge || !occtValidSampleCount(nbPoints))
+  if (!occtShapeIsPresent(edge) || !occtValidSampleCount(nbPoints))
     return 0;
   try
   {
@@ -2493,7 +2483,7 @@ int32_t OCCTGCPntsTangentialDeflection(OCCTEdgeRef _Nonnull edge,
                                        double* _Nullable coords,
                                        int32_t maxPoints)
 {
-  if (!edge)
+  if (!occtShapeIsPresent(edge))
     return 0;
   try
   {
@@ -4689,7 +4679,7 @@ OCCTCurve3DRef OCCTGCMakeHyperbola3Points(double x1,
 // here: without them nbPoints == 0 reported IsDone() with five parameters (#501).
 int32_t OCCTUniformAbscissaByCount(OCCTShapeRef edge, int32_t nbPoints, double* params)
 {
-  if (!edge || !occtValidSampleCount(nbPoints))
+  if (!occtShapeIsPresent(edge) || !occtValidSampleCount(nbPoints))
     return 0;
   try
   {
@@ -4715,7 +4705,7 @@ int32_t OCCTUniformAbscissaByCount(OCCTShapeRef edge, int32_t nbPoints, double* 
 
 int32_t OCCTUniformAbscissaByDistance(OCCTShapeRef edge, double abscissa, double* params)
 {
-  if (!edge)
+  if (!occtShapeIsPresent(edge))
     return 0;
   try
   {
@@ -4745,7 +4735,7 @@ int32_t OCCTUniformAbscissaByCountRange(OCCTShapeRef edge,
                                         double       u2,
                                         double*      params)
 {
-  if (!edge || !occtValidSampleCount(nbPoints))
+  if (!occtShapeIsPresent(edge) || !occtValidSampleCount(nbPoints))
     return 0;
   try
   {
@@ -4775,7 +4765,7 @@ int32_t OCCTUniformAbscissaByDistanceRange(OCCTShapeRef edge,
                                            double       u2,
                                            double*      params)
 {
-  if (!edge)
+  if (!occtShapeIsPresent(edge))
     return 0;
   try
   {
@@ -4811,7 +4801,7 @@ OCCTCurve3DRef OCCTConcatenateCurves3D(OCCTCurve3DRef* curves, int32_t count, do
     return nullptr;
   try
   {
-    // First curve must be bounded — try to cast
+    // First curve must be bounded, so try to cast
     if (!curves[0] || curves[0]->curve.IsNull())
       return nullptr;
     Handle(Geom_BoundedCurve) first = Handle(Geom_BoundedCurve)::DownCast(curves[0]->curve);
@@ -6314,7 +6304,6 @@ int32_t OCCTExtremaElCLinElips(double               lpx,
                                double               xdz,
                                double               majorRadius,
                                double               minorRadius,
-                               double               tolerance,
                                OCCTExtremaElResult* out,
                                int32_t              max)
 {
@@ -6534,9 +6523,15 @@ int32_t OCCTExtremaExtPElCLin(double               px,
 {
   try
   {
-    gp_Pnt          p(px, py, pz);
-    gp_Lin          l(gp_Pnt(lx, ly, lz), gp_Dir(ldx, ldy, ldz));
-    Extrema_ExtPElC ext(p, l, tolerance, -1e10, 1e10);
+    gp_Pnt p(px, py, pz);
+    gp_Lin l(gp_Pnt(lx, ly, lz), gp_Dir(ldx, ldy, ldz));
+    // A gp_Lin is unbounded, and Extrema_ExtPElC's Uinf/Usup only range-check the foot of the
+    // perpendicular it has already computed, so the bound is a pure post-filter. The old -1e10
+    // refused a correct answer for any point projecting further than that from the line's own
+    // location. RealFirst()/RealLast() admits every representable parameter, and is what OCCT's
+    // own unbounded-conic call sites use (Extrema_ExtElC2d.cxx:422, :462). Matched by the
+    // parabola below, whose Uinf/Usup filter the cubic's roots the same way (#1020).
+    Extrema_ExtPElC ext(p, l, tolerance, RealFirst(), RealLast());
     if (!ext.IsDone())
       return -1;
     int n     = ext.NbExt();
@@ -6678,10 +6673,11 @@ int32_t OCCTExtremaExtPElCParab(double               px,
   {
     if (!occtValidParabolaFocal(focal))
       return -1;
-    gp_Pnt          p(px, py, pz);
-    gp_Ax2          ax(gp_Pnt(cx, cy, cz), gp_Dir(nx, ny, nz), gp_Dir(xdx, xdy, xdz));
-    gp_Parab        parab(ax, focal);
-    Extrema_ExtPElC ext(p, parab, tolerance, -1e6, 1e6);
+    gp_Pnt   p(px, py, pz);
+    gp_Ax2   ax(gp_Pnt(cx, cy, cz), gp_Dir(nx, ny, nz), gp_Dir(xdx, xdy, xdz));
+    gp_Parab parab(ax, focal);
+    // Unbounded, filtered after the fact, same as the line above (#1020).
+    Extrema_ExtPElC ext(p, parab, tolerance, RealFirst(), RealLast());
     if (!ext.IsDone())
       return -1;
     int n     = ext.NbExt();
@@ -7028,12 +7024,15 @@ bool OCCTCurve3DNearestParameter(OCCTCurve3DRef _Nonnull curve,
 // true nearest point; and on a segment trimmed to [3, 8] queried at (100, 0, 0) it answered nil for
 // every guess, because no window and no full-range search contains a perpendicular foot. Both now
 // answer through the shared helper: 0 at 7.81, and 8 at 92.
+// #999: the `tol` this used to take reached nothing. GeomAPI_ProjectPointOnCurve's windowed
+// constructor has no tolerance, and the fallback below fixes Precision::Confusion() for the same
+// reason its two converted siblings do. Extrema_LocateExtPC, which this function's name echoes,
+// does take a TolU, but #615 moved this off that path on purpose.
 bool OCCTExtremaLocateOnCurve(OCCTCurve3DRef curve,
                               double         px,
                               double         py,
                               double         pz,
                               double         initParam,
-                              double         tol,
                               double*        param,
                               double*        distance)
 {
@@ -7716,7 +7715,7 @@ int32_t OCCTCurve3DSplitAtContinuity(OCCTCurve3DRef  curve,
   }
 }
 
-// TColGeom/TColGeom2d deprecated — use NCollection_HArray1 directly
+// TColGeom/TColGeom2d deprecated: use NCollection_HArray1 directly
 
 OCCTCurve3DRef OCCTCurve3DConcatenateG1(const OCCTCurve3DRef* curves, int32_t count, double tol)
 {
@@ -8194,20 +8193,10 @@ double OCCTCurve3DParametricTransformation(OCCTCurve3DRef _Nonnull curve,
     auto c = *(occ::handle<Geom_Curve>*)curve;
     if (c.IsNull())
       return 1.0;
-    gp_Trsf t;
-    t.SetValues(trsf12[0],
-                trsf12[1],
-                trsf12[2],
-                trsf12[9],
-                trsf12[3],
-                trsf12[4],
-                trsf12[5],
-                trsf12[10],
-                trsf12[6],
-                trsf12[7],
-                trsf12[8],
-                trsf12[11]);
-    return c->ParametricTransformation(t);
+    // #1009: GROUPED layout, nine rotation values then three translations. The reader is shared
+    // with OCCTShapeTransformed and OCCTDocumentAddComponentMatrix; the layout is in its name
+    // because the INTERLEAVED sibling accepts the same array and builds a different transform.
+    return c->ParametricTransformation(occtTrsfFromMatrix12Grouped(trsf12));
   }
   catch (...)
   {
@@ -8668,41 +8657,6 @@ bool OCCTCurve3DBezierSetPoleWithWeight(OCCTCurve3DRef curve,
 
 // --- Geometry Transform (in-place) ---
 
-static bool buildTrsf3D(gp_Trsf& trsf,
-                        int32_t  type,
-                        double   p1,
-                        double   p2,
-                        double   p3,
-                        double   p4,
-                        double   p5,
-                        double   p6,
-                        double   p7)
-{
-  switch (type)
-  {
-    case 0: // translation (dx, dy, dz)
-      trsf.SetTranslation(gp_Vec(p1, p2, p3));
-      return true;
-    case 1: // rotation (ox, oy, oz, dx, dy, dz, angle)
-      trsf.SetRotation(gp_Ax1(gp_Pnt(p1, p2, p3), gp_Dir(p4, p5, p6)), p7);
-      return true;
-    case 2: // scale (cx, cy, cz, factor)
-      trsf.SetScale(gp_Pnt(p1, p2, p3), p4);
-      return true;
-    case 3: // mirror point (px, py, pz)
-      trsf.SetMirror(gp_Pnt(p1, p2, p3));
-      return true;
-    case 4: // mirror axis (ox, oy, oz, dx, dy, dz)
-      trsf.SetMirror(gp_Ax1(gp_Pnt(p1, p2, p3), gp_Dir(p4, p5, p6)));
-      return true;
-    case 5: // mirror plane (ox, oy, oz, nx, ny, nz)
-      trsf.SetMirror(gp_Ax2(gp_Pnt(p1, p2, p3), gp_Dir(p4, p5, p6)));
-      return true;
-    default:
-      return false;
-  }
-}
-
 bool OCCTCurve3DTransform(OCCTCurve3DRef curve,
                           int32_t        transformType,
                           double         p1,
@@ -8718,7 +8672,7 @@ bool OCCTCurve3DTransform(OCCTCurve3DRef curve,
   try
   {
     gp_Trsf trsf;
-    if (!buildTrsf3D(trsf, transformType, p1, p2, p3, p4, p5, p6, p7))
+    if (!occtBuildTrsf3D(trsf, transformType, p1, p2, p3, p4, p5, p6, p7))
       return false;
     curve->curve->Transform(trsf);
     return true;
@@ -9273,7 +9227,7 @@ double OCCTExtremaPCMinDistance(OCCTCurve3DRef curve, double px, double py, doub
 // fit is now produced by GeomAPI_PointsToBSpline (least-squares B-spline approximation),
 // the migration target named in the p1 release notes. Semantic differences vs the old
 // solver, kept so callers compile & run unchanged:
-//   * nbControlPoints is ADVISORY — PointsToBSpline picks the pole count needed to meet
+//   * nbControlPoints is ADVISORY: PointsToBSpline picks the pole count needed to meet
 //     the tolerance within [DegMin, DegMax]; it is no longer an exact constraint.
 //   * InterpolatePoint()/kink markers are no-ops (PointsToBSpline has no per-point exact
 //     interpolation or C0-break control). The approximation still passes near the points.
@@ -9334,7 +9288,7 @@ OCCTBSplineApproxInterpRef OCCTBSplineApproxInterpCreate(const double* points,
   if (!points || count < 2)
     return nullptr;
   (void)nbControlPts;
-  (void)continuousIfClosed; // advisory only — see section comment
+  (void)continuousIfClosed; // advisory only, see section comment
   try
   {
     auto ref = new OCCTBSplineApproxInterp(count);
@@ -9364,7 +9318,7 @@ void OCCTBSplineApproxInterpInterpolatePoint(OCCTBSplineApproxInterpRef ref,
 {
   (void)ref;
   (void)pointIndex;
-  (void)withKink; // no-op — PointsToBSpline has no exact-point control
+  (void)withKink; // no-op: PointsToBSpline has no exact-point control
 }
 
 void OCCTBSplineApproxInterpPerform(OCCTBSplineApproxInterpRef ref)
@@ -9568,7 +9522,7 @@ OCCTCurve3DRef OCCTGeomEvalAHTBezierCurveCreateRational(const double* poles,
 // BRepAdaptor_CompCurve (multi-edge wire) and BRepAdaptor_Curve (single edge) both derive from
 // Adaptor3d_Curve, so the entire arc-length API (length, native-parameter access, arc-length
 // lookup, uniform sampling) can be written once here and reused by both OCCTCompCurve* and
-// OCCTEdgeCurve* below — mirroring the pre-existing sampleAdaptorUniform() precedent, which this
+// OCCTEdgeCurve* below, mirroring the pre-existing sampleAdaptorUniform() precedent, which this
 // unifies the other 5 operations to match. Callers keep their own try/catch + null-ref check
 // (matching sampleAdaptorUniform's own call sites) so a thrown Standard_Failure/StdFail_NotDone
 // can never cross the extern "C" boundary.

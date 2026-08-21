@@ -1,9 +1,9 @@
 ---
-title: Curve3D — Construction
+title: Curve3D. Construction
 parent: API Reference
 ---
 
-# Curve3D — Construction
+# Curve3D. Construction
 
 This page documents higher-level `Curve3D` construction APIs: arcs of conics (hyperbola, parabola), three-point ellipse and hyperbola factories, periodic conversion, parameter-splitting, expanded interpolation variants, and arc-length utilities. For the core type overview, primitives, BSpline/Bezier construction, operations, and transforms, see the main [Curve3D](Curve3D.md) page.
 
@@ -33,7 +33,7 @@ public static func arcOfHyperbola(
 
 The hyperbola lies in the plane whose normal is `direction`. `alpha1` and `alpha2` are the start and end hyperbolic parameters (not angles). `sense: true` preserves the natural parameterization direction.
 
-- **Parameters:** `center` — hyperbola centre; `direction` — plane normal; `majorRadius` — real semi-axis (a); `minorRadius` — imaginary semi-axis (b); `alpha1` — start parameter; `alpha2` — end parameter; `sense` — parameterization direction (`true` = natural).
+- **Parameters:** `center`, hyperbola centre; `direction`, plane normal; `majorRadius`, real semi-axis (a); `minorRadius`, imaginary semi-axis (b); `alpha1`, start parameter; `alpha2`, end parameter; `sense`, parameterization direction (`true` = natural).
 - **Returns:** Trimmed hyperbolic arc, or `nil` on failure.
 - **OCCT:** `GC_MakeArcOfHyperbola(gp_Hypr, alpha1, alpha2, sense)` → `Geom_TrimmedCurve`.
 - **Example:**
@@ -65,7 +65,7 @@ public static func arcOfParabola(
 
 The parabola vertex is at `center` and the focal distance determines its opening width. `alpha1` and `alpha2` are the parabolic parameters bounding the arc.
 
-- **Parameters:** `center` — parabola vertex; `direction` — plane normal; `focalDistance` — focal distance (must be > 0); `alpha1` — start parameter; `alpha2` — end parameter; `sense` — parameterization direction.
+- **Parameters:** `center`, parabola vertex; `direction`, plane normal; `focalDistance`, focal distance (must be > 0); `alpha1`, start parameter; `alpha2`, end parameter; `sense`, parameterization direction.
 - **Returns:** Trimmed parabolic arc, or `nil` on failure.
 - **OCCT:** `GC_MakeArcOfParabola(gp_Parab, alpha1, alpha2, sense)` → `Geom_TrimmedCurve`.
 - **Example:**
@@ -134,7 +134,7 @@ public func splitAt(parameter: Double) -> SplitResult?
 
 The split parameter must lie strictly inside the curve's domain (`domain.lowerBound < parameter < domain.upperBound`). Returns two curves whose domains cover `[first, parameter]` and `[parameter, last]` respectively.
 
-- **Parameters:** `parameter` — split position within the open interior of `domain`.
+- **Parameters:** `parameter`, split position within the open interior of `domain`.
 - **Returns:** `SplitResult` with `first` and `second` segments, or `nil` if `parameter` is outside the open interior or splitting fails.
 - **OCCT:** `ShapeUpgrade_SplitCurve3d::Perform` → `TColGeom_HArray1OfCurve`.
 - **Example:**
@@ -161,7 +161,7 @@ public static func ellipseThreePoints(
 
 `s1` is the end of the major axis (determines major radius and axis direction); `s2` defines the extent of the minor axis. The plane is determined by the three points. This form is convenient when the three geometric points are known but the radii and normal must be derived.
 
-- **Parameters:** `s1` — major axis endpoint; `s2` — minor axis extent point; `center` — ellipse centre.
+- **Parameters:** `s1`, major axis endpoint; `s2`, minor axis extent point; `center`, ellipse centre.
 - **Returns:** Full ellipse curve, or `nil` if the three points are degenerate or `GC_MakeEllipse` fails.
 - **OCCT:** `GC_MakeEllipse(gp_Pnt s1, gp_Pnt s2, gp_Pnt center)`.
 - **Example:**
@@ -187,7 +187,7 @@ public static func hyperbolaThreePoints(
 
 `s1` is the end of the real (transverse) axis; `s2` defines the extent of the imaginary (conjugate) axis. Analogous to `ellipseThreePoints` for hyperbolas.
 
-- **Parameters:** `s1` — transverse axis endpoint; `s2` — conjugate axis extent point; `center` — hyperbola centre.
+- **Parameters:** `s1`, transverse axis endpoint; `s2`, conjugate axis extent point; `center`, hyperbola centre.
 - **Returns:** Full hyperbola curve, or `nil` on failure.
 - **OCCT:** `GC_MakeHyperbola(gp_Pnt s1, gp_Pnt s2, gp_Pnt center)`.
 - **Example:**
@@ -207,7 +207,7 @@ public static func hyperbolaThreePoints(
 
 Interpolates a BSpline through points with constrained endpoint tangents. Fully documented on the
 main [Curve3D](Curve3D.md#curve3dinterpolatepointsstarttangentendtangenttolerance) page under
-"BSpline & Bezier", alongside the sibling `interpolate(points:closed:tolerance:)` — see that entry
+"BSpline & Bezier", alongside the sibling `interpolate(points:closed:tolerance:)`, see that entry
 for the signature, parameters, OCCT mapping, and an example.
 
 ---
@@ -226,7 +226,7 @@ public static func interpolate(
 
 Each point can independently opt in or out of its tangent constraint via `tangentFlags`. All three arrays must have the same length.
 
-- **Parameters:** `points` — interpolation points; `tangents` — desired tangent at each point; `tangentFlags` — `true` to enforce the corresponding tangent, `false` to ignore it.
+- **Parameters:** `points`, interpolation points; `tangents`, desired tangent at each point; `tangentFlags`, `true` to enforce the corresponding tangent, `false` to ignore it.
 - **Returns:** Interpolated BSpline, or `nil` if array lengths differ or interpolation fails.
 - **OCCT:** `GeomAPI_Interpolate::Load(tangents, tangentFlags)` + `Perform()`.
 - **Example:**
@@ -253,9 +253,9 @@ public static func interpolate(
 ) -> Curve3D?
 ```
 
-Controls the parameterization explicitly — each point is placed at the corresponding parameter value. `points` and `parameters` must have the same length. Parameters must be strictly increasing.
+Controls the parameterization explicitly, each point is placed at the corresponding parameter value. `points` and `parameters` must have the same length. Parameters must be strictly increasing.
 
-- **Parameters:** `points` — interpolation points; `parameters` — parameter value for each point (same count, strictly increasing).
+- **Parameters:** `points`, interpolation points; `parameters`, parameter value for each point (same count, strictly increasing).
 - **Returns:** Interpolated BSpline, or `nil` if counts differ or construction fails.
 - **OCCT:** `GeomAPI_Interpolate(pts, params, Standard_False, tol)` + `Perform()`.
 - **Example:**
@@ -316,9 +316,9 @@ public static func approximate(
 ) -> Curve3D?
 ```
 
-Unlike `interpolate`, the curve does not pass exactly through every point; it minimises deviation within `tolerance`. `continuity` is a `ParametricContinuity` raw value: 0=C0, 1=C1, 2=C2, 3=C3. (It was documented here as `0=C0, 1=G1, 2=C1` — the analysis-order vocabulary, which this call has never used; corrected in #490.) `GeomAPI_PointsToBSpline` treats the value as an upper bound and accepts the whole range without failing.
+Unlike `interpolate`, the curve does not pass exactly through every point; it minimises deviation within `tolerance`. `continuity` is a `ParametricContinuity` raw value: 0=C0, 1=C1, 2=C2, 3=C3. (It was documented here as `0=C0, 1=G1, 2=C1`, the analysis-order vocabulary, which this call has never used; corrected in #490.) `GeomAPI_PointsToBSpline` treats the value as an upper bound and accepts the whole range without failing.
 
-- **Parameters:** `points` — data points (minimum 2); `degMin` — minimum polynomial degree; `degMax` — maximum polynomial degree; `continuity` — minimum continuity order (0=C0, 1=C1, 2=C2, 3=C3); `tolerance` — maximum allowed deviation.
+- **Parameters:** `points`, data points (minimum 2); `degMin`, minimum polynomial degree; `degMax`, maximum polynomial degree; `continuity`, minimum continuity order (0=C0, 1=C1, 2=C2, 3=C3); `tolerance`, maximum allowed deviation.
 - **Returns:** Approximating BSpline, or `nil` on failure.
 - **OCCT:** `GeomAPI_PointsToBSpline(pts, degMin, degMax, continuity, tolerance)`.
 - **Example:**
@@ -349,9 +349,9 @@ public static func approximate(
 ) -> Curve3D?
 ```
 
-Combines approximation with explicit parameterization — useful when the data comes with known parameter stamps (e.g. timestamps or arc-length fractions).
+Combines approximation with explicit parameterization, useful when the data comes with known parameter stamps (e.g. timestamps or arc-length fractions).
 
-- **Parameters:** `points` — data points; `parameters` — parameter for each point (same count, strictly increasing); `degMin`/`degMax` — degree bounds; `continuity` — minimum continuity; `tolerance` — maximum deviation.
+- **Parameters:** `points`, data points; `parameters`, parameter for each point (same count, strictly increasing); `degMin`/`degMax`, degree bounds; `continuity`, minimum continuity; `tolerance`, maximum deviation.
 - **Returns:** Approximating BSpline, or `nil` if counts differ or construction fails.
 - **OCCT:** `GeomAPI_PointsToBSpline(pts, params, degMin, degMax, continuity, tolerance)`.
 - **Example:**
@@ -379,7 +379,7 @@ fails. Arc length is otherwise always non-negative, so `-1.0` is unambiguous and
 with a genuine zero-length result (e.g. `u1 == u2`). Use `length(from:to:)` directly if you need
 an optional.
 
-- **Parameters:** `u1` — start parameter; `u2` — end parameter. Either order; both must be finite.
+- **Parameters:** `u1`, start parameter; `u2`, end parameter. Either order; both must be finite.
 - **Returns:** Arc length in model units, or `-1.0` on failure.
 - **OCCT:** `GCPnts_AbscissaPoint::Length(adaptor, u1, u2)` (via `length(from:to:)`).
 - **Note:** `.nan` and `±.infinity` return `-1.0` on every curve type. See
@@ -411,11 +411,11 @@ Positive `arcLength` advances forward; negative reverses. Returns `0` on interna
 
 The travel is measured with the same subdivided quadratures `length` uses, so this and the length
 it inverts always agree: `curve.parameterAtLength(curve.length!)` lands on `domain.upperBound`.
-That mattered from #603 onwards — OCCT's own root finder inverts a *single* Gauss quadrature over
+That mattered from #603 onwards. OCCT's own root finder inverts a *single* Gauss quadrature over
 `[startParam, u]`, the very integral `length` stopped using, and fed the accurate total length of
 an 8 × 3 ellipse it answered 6.2438 for a domain ending at 6.2832.
 
-- **Parameters:** `arcLength` — distance to advance along the curve; `startParam` — starting parameter (defaults to `domain.lowerBound`).
+- **Parameters:** `arcLength`, distance to advance along the curve; `startParam`, starting parameter (defaults to `domain.lowerBound`).
 - **Returns:** The parameter value at the specified arc-length distance from `startParam`.
 - **OCCT:** the accumulated `GeomAbs_CN` sub-piece lengths, with the final narrow piece handed to
   `GCPnts_AbscissaPoint(adaptor, remainder, pieceStart)::Parameter`.
@@ -467,7 +467,7 @@ Like `arcLength(from:to:)` but with unlabelled parameters. Delegates to `length(
 returns `-1.0` on failure, never `0.0` (which would collide with a genuine zero-length interval,
 e.g. `param1 == param2`).
 
-- **Parameters:** `param1` — first parameter; `param2` — second parameter. Both must be finite.
+- **Parameters:** `param1`, first parameter; `param2`, second parameter. Both must be finite.
 - **Returns:** Arc length between the two parameters, or `-1.0` on failure.
 - **OCCT:** `GCPnts_AbscissaPoint::Length(adaptor, param1, param2)` (via `length(from:to:)`).
 - **Note:** `.nan` and `±.infinity` return `-1.0` on every curve type (#548).
@@ -489,10 +489,10 @@ Finds the parameter of the nearest point on this curve to a given 3D point.
 public func nearestParameter(to point: SIMD3<Double>) -> Double?
 ```
 
-- **Parameters:** `point` — the query point in 3D space.
+- **Parameters:** `point`, the query point in 3D space.
 - **Returns:** Parameter `u` such that `self.point(at: u)` is the nearest point on the curve to
   `point`, always inside the curve's own domain, or `nil` if there is no curve to answer about.
-- **OCCT:** `occtNearestPointOnCurveRange` — the minimum over `ShapeAnalysis_Curve::Project`, every
+- **OCCT:** `occtNearestPointOnCurveRange`, the minimum over `ShapeAnalysis_Curve::Project`, every
   `GeomAPI_ProjectPointOnCurve` extremum in range, and both curve ends.
 - **Example:**
   ```swift
@@ -521,7 +521,7 @@ point has no foot, the nearest point is an end, and that is the answer.
 Until #615 the two disagreed, because this one reported `GeomAPI_ProjectPointOnCurve`'s extremum:
 for the half arc above it answered π/2, the far side, 11 away, and for the trimmed segment it
 answered `nil` where `projectPoint` answered `8` at distance `92`. `Optional` remains because no
-`Double` can carry a failure signal — every value is a legitimate parameter on some curve — not
+`Double` can carry a failure signal, every value is a legitimate parameter on some curve, not
 because a point can fail to have a nearest one.
 
 `closestParameter(to:)` was the deprecated spelling of this method, returning `.nan` where this
@@ -544,8 +544,8 @@ public func splitAtContinuity(
 
 The curve is first converted to BSpline form, then split at C1 (or higher) discontinuities. For `continuity > 1` the implementation returns the single converted BSpline unchanged (higher-order splitting not yet implemented). Returns an empty array on failure.
 
-- **Parameters:** `continuity` — continuity level to split at (0=C0, 1=C1); `tolerance` —
-  discontinuity detection tolerance; `maxSegments` — output *capacity* (default 32), clamped into
+- **Parameters:** `continuity`, continuity level to split at (0=C0, 1=C1); `tolerance`,
+  discontinuity detection tolerance; `maxSegments`, output *capacity* (default 32), clamped into
   `0...Sampling.maximumSampleCount` (10,000,000); 0 or less returns empty (#622).
 - **Returns:** Array of BSpline curve segments (at least one on success).
 - **OCCT:** `GeomConvert::C0BSplineToArrayOfC1BSplineCurve` (for `continuity ≤ 1`).
@@ -569,7 +569,7 @@ public static func concatenateG1(curves: [Curve3D], tolerance: Double = 1e-6) ->
 
 Each input curve is converted to BSpline form before joining. Curves must connect end-to-end within `tolerance`.
 
-- **Parameters:** `curves` — ordered array of curves to join; `tolerance` — endpoint gap tolerance.
+- **Parameters:** `curves`, ordered array of curves to join; `tolerance`, endpoint gap tolerance.
 - **Returns:** Joined BSpline curve, or `nil` if the array is empty or conversion fails.
 - **OCCT:** `GeomConvert_CompCurveToBSplineCurve::Add` + `BSplineCurve()`.
 - **Example:**

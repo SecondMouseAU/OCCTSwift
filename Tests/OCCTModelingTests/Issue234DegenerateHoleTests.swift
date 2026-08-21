@@ -3,10 +3,10 @@ import simd
 @testable import OCCTSwift
 
 /// Issue #234: `faceAddHole` accepted a degenerate (2-vertex / zero-area) hole wire, producing an
-/// invalid prism that then SIGSEGV'd OCCT's `ShapeFix` (`healed()`) — an uncatchable OS signal.
+/// invalid prism that then SIGSEGV'd OCCT's `ShapeFix` (`healed()`), an uncatchable OS signal.
 /// Fix: `faceAddHole` rejects degenerate hole wires (returns nil), breaking the crash chain at the
 /// source. These tests guard that (and that valid holes still work).
-@Suite("Issue #234 — faceAddHole rejects degenerate hole wires")
+@Suite("Issue #234, faceAddHole rejects degenerate hole wires")
 struct Issue234DegenerateHoleTests {
 
     /// The exact reproducer from the issue: a 2-vertex outer loop + a 2-vertex (zero-area) hole.
@@ -35,7 +35,7 @@ struct Issue234DegenerateHoleTests {
         #expect(Shape.faceAddHole(face: face, wire: hs) == nil)
     }
 
-    /// A valid (non-degenerate) hole still works and heals without crashing — regression guard.
+    /// A valid (non-degenerate) hole still works and heals without crashing, regression guard.
     @Test("Valid hole still produces a healable solid")
     func validHoleStillWorks() {
         guard let outer = Wire.polygon3D([SIMD3(0,0,0), SIMD3(10,0,0), SIMD3(10,10,0), SIMD3(0,10,0)], closed: true),

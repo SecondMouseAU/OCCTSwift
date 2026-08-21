@@ -1,9 +1,9 @@
 ---
-title: Document — Shape Analysis, OSD & Geometry Builders
+title: Document. Shape Analysis, OSD & Geometry Builders
 parent: API Reference
 ---
 
-# Document — Shape Analysis, OSD & Geometry Builders
+# Document. Shape Analysis, OSD & Geometry Builders
 
 This page covers the shape analysis, file I/O helpers, analytic bounding, geometry property computation, transformation factories, and conic curve builders introduced across v0.99–v0.105 in `Document.swift`. For the core document lifecycle and STEP/IGES I/O see the main [Document](Document.md) page.
 
@@ -25,7 +25,7 @@ Create a file object for the given file-system path.
 public init(path: String)
 ```
 
-- **Parameters:** `path` — absolute or relative path to the file.
+- **Parameters:** `path`, absolute or relative path to the file.
 - **OCCT:** `OSD_File` constructor via `OCCTFileCreate`.
 - **Example:**
   ```swift
@@ -42,7 +42,7 @@ Create a file object for a URL's file path.
 public init(url: URL)
 ```
 
-- **Parameters:** `url` — a `file://` URL; `.path` is extracted and forwarded.
+- **Parameters:** `url`, a `file://` URL; `.path` is extracted and forwarded.
 - **OCCT:** `OSD_File` constructor via `OCCTFileCreate`.
 - **Example:**
   ```swift
@@ -109,7 +109,7 @@ Write a string to the file.
 public func write(_ string: String) -> Bool
 ```
 
-- **Parameters:** `string` — UTF-8 text to write.
+- **Parameters:** `string`, UTF-8 text to write.
 - **Returns:** `true` on success.
 - **OCCT:** `OSD_File::Write` via `OCCTFileWrite`.
 
@@ -124,7 +124,7 @@ Write raw bytes to the file.
 public func write(_ bytes: [UInt8]) -> Bool
 ```
 
-- **Parameters:** `bytes` — raw byte buffer to write.
+- **Parameters:** `bytes`, raw byte buffer to write.
 - **Returns:** `true` on success.
 - **OCCT:** `OSD_File::Write` via `OCCTFileWrite`.
 
@@ -138,7 +138,7 @@ Read one line from the file.
 public func readLine(bufSize: Int = 4096) -> String?
 ```
 
-- **Parameters:** `bufSize` — maximum line length to read (default 4096).
+- **Parameters:** `bufSize`, maximum line length to read (default 4096).
 - **Returns:** The line string, or `nil` at EOF or on error.
 - **OCCT:** `OSD_File::ReadLine` via `OCCTFileReadLine`.
 
@@ -237,7 +237,7 @@ Fix only wire gaps in the shape (no small-edge removal).
 public func fixWireGaps(tolerance: Double = 1e-7) -> Shape?
 ```
 
-- **Parameters:** `tolerance` — precision for gap detection (default `1e-7`).
+- **Parameters:** `tolerance`, precision for gap detection (default `1e-7`).
 - **Returns:** Fixed shape, or `nil` on failure.
 - **OCCT:** `ShapeFix_Wireframe::FixWireGaps` via `OCCTShapeFixWireGaps`.
 - **Example:**
@@ -260,13 +260,13 @@ public func fixSmallEdges(tolerance: Double = 1e-7,
 ```
 
 - **Parameters:**
-  - `tolerance` — precision for small-edge detection (default `1e-7`).
-  - `dropSmall` — if `true`, remove small edges; if `false`, merge them with neighbours.
-  - `limitAngle` — maximum tangent angle for merging in radians; pass `-1` for no limit.
+  - `tolerance`: precision for small-edge detection (default `1e-7`).
+  - `dropSmall`: if `true`, remove small edges; if `false`, merge them with neighbours.
+  - `limitAngle`: maximum tangent angle for merging in radians; pass `-1` for no limit.
 - **Returns:** Fixed shape, or `nil` on failure.
 - **OCCT:** `ShapeFix_Wireframe::FixSmallEdges` via `OCCTShapeFixSmallEdges`.
 - **Note:** `fixSmallEdges(tolerance:dropSmall: true)` is equivalent to `Shape.droppingSmallEdges
-  (tolerance:)` (see "Shape-Healing") — same `ShapeFix_Wireframe` precision/drop-mode/perform
+  (tolerance:)` (see "Shape-Healing"), same `ShapeFix_Wireframe` precision/drop-mode/perform
   sequence. The two used to default to different tolerances (`1e-7` here, `1e-6` there) for the
   identical call; `droppingSmallEdges` was aligned to this method's `1e-7` default in #839.
 
@@ -283,8 +283,8 @@ public func writeSTLBinary(to filePath: String, deflection: Double = 0.1) -> Boo
 ```
 
 - **Parameters:**
-  - `filePath` — output file path.
-  - `deflection` — linear mesh deflection in mm for auto-triangulation (default `0.1`).
+  - `filePath`: output file path.
+  - `deflection`: linear mesh deflection in mm for auto-triangulation (default `0.1`).
 - **Returns:** `true` on success.
 - **OCCT:** `RWStl::WriteBinary` via `OCCTShapeWriteSTLBinary`.
 
@@ -299,8 +299,8 @@ public func writeSTLAscii(to filePath: String, deflection: Double = 0.1) -> Bool
 ```
 
 - **Parameters:**
-  - `filePath` — output file path.
-  - `deflection` — linear mesh deflection in mm for auto-triangulation (default `0.1`).
+  - `filePath`: output file path.
+  - `deflection`: linear mesh deflection in mm for auto-triangulation (default `0.1`).
 - **Returns:** `true` on success.
 - **OCCT:** `RWStl::WriteAscii` via `OCCTShapeWriteSTLAscii`.
 
@@ -314,7 +314,7 @@ Read an STL file and return as a triangulated shape.
 public static func readSTL(from filePath: String) -> Shape?
 ```
 
-- **Parameters:** `filePath` — input STL file path.
+- **Parameters:** `filePath`, input STL file path.
 - **Returns:** Shape with triangulation, or `nil` on failure.
 - **OCCT:** `RWStl::ReadFile` via `OCCTShapeReadSTL`.
 - **Example:**
@@ -334,7 +334,7 @@ Check if this curve is closed within the given precision.
 public func isClosedWithPrecision(_ precision: Double) -> Bool
 ```
 
-- **Parameters:** `precision` — tolerance for closure check.
+- **Parameters:** `precision`, tolerance for closure check.
 - **Returns:** `true` if the curve endpoints coincide within `precision`.
 - **OCCT:** `ShapeAnalysis_Curve::IsClosed` (static) via `OCCTCurve3DIsClosedWithPreci`.
 
@@ -383,9 +383,9 @@ public func selfIntersectionPairs(tolerance: Double = 0.0,
 ```
 
 - **Parameters:**
-  - `tolerance` — overlap tolerance (default `0.0`).
-  - `maxPairs` — output *capacity* (default `100`), clamped into `0...Sampling.maximumSampleCount` (10,000,000); 0 or less returns empty (#622).
-  - `deflection` — linear mesh deflection in mm for detection triangulation (default `0.1`).
+  - `tolerance`: overlap tolerance (default `0.0`).
+  - `maxPairs`: output *capacity* (default `100`), clamped into `0...Sampling.maximumSampleCount` (10,000,000); 0 or less returns empty (#622).
+  - `deflection`: linear mesh deflection in mm for detection triangulation (default `0.1`).
 - **Returns:** Array of overlapping face index pairs; empty if none found.
 - **OCCT:** `BRepExtrema_SelfIntersection` via `OCCTShapeSelfIntersectionPairs`.
 - **Example:**
@@ -429,7 +429,7 @@ Create a STEP header with the given filename.
 public init?(filename: String)
 ```
 
-- **Parameters:** `filename` — the STEP file name field value.
+- **Parameters:** `filename`, the STEP file name field value.
 - **Returns:** `nil` if creation fails.
 - **OCCT:** `APIHeaderSection_MakeHeader` via `OCCTStepHeaderCreate`.
 
@@ -536,7 +536,7 @@ public func freeBoundsClosedCount(tolerance: Double = 1e-6) -> Int
 ```
 
 - **Note:** Unaffected by OCCT 8.0.1's `ConnectEdgesToWires` INTERNAL/EXTERNAL skip (OCCT#1408); see [`freeBounds(sewingTolerance:)`](Shape-Measurement.md#freeboundssewingtolerance) for why. See [#655](https://github.com/SecondMouseAU/OCCTSwift/issues/655).
-- **Parameters:** `tolerance` — sewing tolerance for boundary detection (default `1e-6`).
+- **Parameters:** `tolerance`, sewing tolerance for boundary detection (default `1e-6`).
 - **Returns:** Number of closed free-boundary wires.
 - **OCCT:** `ShapeAnalysis_FreeBounds` via `OCCTShapeFreeBoundsClosedCount`.
 
@@ -551,7 +551,7 @@ public func freeBoundsClosedWires(tolerance: Double = 1e-6) -> Shape?
 ```
 
 - **Note:** Unaffected by OCCT 8.0.1's `ConnectEdgesToWires` INTERNAL/EXTERNAL skip (OCCT#1408); see [`freeBounds(sewingTolerance:)`](Shape-Measurement.md#freeboundssewingtolerance) for why. See [#655](https://github.com/SecondMouseAU/OCCTSwift/issues/655).
-- **Parameters:** `tolerance` — sewing tolerance for boundary detection (default `1e-6`).
+- **Parameters:** `tolerance`, sewing tolerance for boundary detection (default `1e-6`).
 - **Returns:** Compound shape of closed wires, or `nil` if none.
 - **OCCT:** `ShapeAnalysis_FreeBounds` via `OCCTShapeFreeBoundsClosed`.
 
@@ -566,7 +566,7 @@ public func freeBoundsOpenWires(tolerance: Double = 1e-6) -> Shape?
 ```
 
 - **Note:** Unaffected by OCCT 8.0.1's `ConnectEdgesToWires` INTERNAL/EXTERNAL skip (OCCT#1408); see [`freeBounds(sewingTolerance:)`](Shape-Measurement.md#freeboundssewingtolerance) for why. See [#655](https://github.com/SecondMouseAU/OCCTSwift/issues/655).
-- **Parameters:** `tolerance` — sewing tolerance for boundary detection (default `1e-6`).
+- **Parameters:** `tolerance`, sewing tolerance for boundary detection (default `1e-6`).
 - **Returns:** Compound shape of open wires, or `nil` if none.
 - **OCCT:** `ShapeAnalysis_FreeBounds` via `OCCTShapeFreeBoundsOpen`.
 
@@ -584,7 +584,7 @@ Create a trimmed curve from this curve between parameters `u1` and `u2`.
 public func trimmed(u1: Double, u2: Double) -> Curve3D?
 ```
 
-- **Parameters:** `u1`, `u2` — parametric start and end values.
+- **Parameters:** `u1`, `u2`, parametric start and end values.
 - **Returns:** Trimmed curve, or `nil` on failure.
 - **OCCT:** `Geom_TrimmedCurve` constructor via `OCCTCurve3DTrimmed`.
 - **Example:**
@@ -618,7 +618,7 @@ Change the trim parameters on a trimmed curve.
 public func setTrim(u1: Double, u2: Double) -> Bool
 ```
 
-- **Parameters:** `u1`, `u2` — new parametric start and end values.
+- **Parameters:** `u1`, `u2`, new parametric start and end values.
 - **Returns:** `true` on success.
 - **OCCT:** `Geom_TrimmedCurve::SetTrim` via `OCCTCurve3DSetTrim`.
 
@@ -637,8 +637,8 @@ public func findSurface(tolerance: Double = -1, onlyPlane: Bool = false) -> Surf
 ```
 
 - **Parameters:**
-  - `tolerance` — search tolerance; pass `-1` to use the shape's own tolerance.
-  - `onlyPlane` — if `true`, only a plane is accepted.
+  - `tolerance`: search tolerance; pass `-1` to use the shape's own tolerance.
+  - `onlyPlane`: if `true`, only a plane is accepted.
 - **Returns:** Best-fit surface, or `nil` if none found.
 - **OCCT:** `BRepLib_FindSurface` via `OCCTFindSurface`.
 - **Example:**
@@ -688,8 +688,8 @@ public func projectPointUV(_ point: SIMD3<Double>, precision: Double = 1e-6) -> 
 ```
 
 - **Parameters:**
-  - `point` — 3D point to project.
-  - `precision` — projection precision (default `1e-6`).
+  - `point`: 3D point to project.
+  - `precision`: projection precision (default `1e-6`).
 - **Returns:** Tuple `(u, v, gap)` where `gap` is the distance from `point` to the projected surface point.
 - **OCCT:** `ShapeAnalysis_Surface::ValueOfUV` via `OCCTSurfaceProjectPointUV`.
 - **Example:**
@@ -707,7 +707,7 @@ Check if the surface has singularities using `ShapeAnalysis_Surface`.
 public func hasSingularitiesSA(precision: Double = 1e-6) -> Bool
 ```
 
-- **Parameters:** `precision` — detection precision (default `1e-6`).
+- **Parameters:** `precision`, detection precision (default `1e-6`).
 - **OCCT:** `ShapeAnalysis_Surface::HasSingularities` via `OCCTSurfaceHasSingularities`.
 
 ---
@@ -720,7 +720,7 @@ Number of singularities using `ShapeAnalysis_Surface`.
 public func singularityCountSA(precision: Double = 1e-6) -> Int
 ```
 
-- **Parameters:** `precision` — detection precision (default `1e-6`).
+- **Parameters:** `precision`, detection precision (default `1e-6`).
 - **Returns:** Count of detected singularities.
 - **OCCT:** `ShapeAnalysis_Surface::NbSingularities` via `OCCTSurfaceNbSingularities`.
 
@@ -734,7 +734,7 @@ Check if the surface is spatially U-closed using `ShapeAnalysis_Surface`.
 public func isUClosedSA(precision: Double = -1) -> Bool
 ```
 
-- **Parameters:** `precision` — closure precision; pass `-1` to use default.
+- **Parameters:** `precision`, closure precision; pass `-1` to use default.
 - **OCCT:** `ShapeAnalysis_Surface::IsUClosed` via `OCCTSurfaceIsUClosedSA`.
 
 ---
@@ -747,7 +747,7 @@ Check if the surface is spatially V-closed using `ShapeAnalysis_Surface`.
 public func isVClosedSA(precision: Double = -1) -> Bool
 ```
 
-- **Parameters:** `precision` — closure precision; pass `-1` to use default.
+- **Parameters:** `precision`, closure precision; pass `-1` to use default.
 - **OCCT:** `ShapeAnalysis_Surface::IsVClosed` via `OCCTSurfaceIsVClosedSA`.
 
 ---
@@ -926,7 +926,7 @@ Find common vertex between two edge shapes.
 public func commonVertex(with other: Shape) -> SIMD3<Double>?
 ```
 
-- **Parameters:** `other` — the second edge shape to compare.
+- **Parameters:** `other`, the second edge shape to compare.
 - **Returns:** Shared vertex position, or `nil` if no shared vertex.
 - **OCCT:** `TopExp::CommonVertex` via `OCCTEdgeCommonVertex`.
 
@@ -970,7 +970,7 @@ Get the 0-based indices of the faces adjacent to a specific edge within this sha
 public func adjacentFaces(forEdge edge: Shape) -> [Int]
 ```
 
-- **Parameters:** `edge` — the edge shape to query adjacency for.
+- **Parameters:** `edge`, the edge shape to query adjacency for.
 - **Returns:** Array of 0-based face indices (up to 64), addressable with `face(at:)`.
 - **Example:**
   ```swift
@@ -994,7 +994,7 @@ Get the 0-based indices of the edges meeting a specific vertex within this shape
 public func adjacentEdges(forVertex vertex: Shape) -> [Int]
 ```
 
-- **Parameters:** `vertex` — the vertex shape to query adjacency for.
+- **Parameters:** `vertex`, the vertex shape to query adjacency for.
 - **Returns:** Array of 0-based edge indices (up to 64), addressable with
   `subShape(type: .edge, index:)`. These were 1-based until #541.
 - **OCCT:** `TopExp` adjacency map via `OCCTVertexAdjacentEdges`.
@@ -1020,8 +1020,8 @@ public func meshTriangleAdjacency(faceIndex: Int, triangleIndex: Int) -> (Int, I
 ```
 
 - **Parameters:**
-  - `faceIndex` — 0-based face index, as `Face.index` and `face(at:)` use (#541).
-  - `triangleIndex` — 1-based triangle index within the face, as `Poly_Triangulation` numbers
+  - `faceIndex`: 0-based face index, as `Face.index` and `face(at:)` use (#541).
+  - `triangleIndex`: 1-based triangle index within the face, as `Poly_Triangulation` numbers
     them. The returned neighbour indices are 1-based for the same reason.
 - **Returns:** Tuple `(adj1, adj2, adj3)` of adjacent triangle indices, or `nil` if not found.
 - **OCCT:** `Poly_Connect` via `OCCTMeshTriangleAdjacency`.
@@ -1037,8 +1037,8 @@ public func meshNodeTriangle(faceIndex: Int, nodeIndex: Int) -> Int?
 ```
 
 - **Parameters:**
-  - `faceIndex` — 0-based face index (#541).
-  - `nodeIndex` — 1-based node index, as `Poly_Triangulation` numbers them.
+  - `faceIndex`: 0-based face index (#541).
+  - `nodeIndex`: 1-based node index, as `Poly_Triangulation` numbers them.
 - **Returns:** 1-based triangle index, or `nil` if not found.
 - **OCCT:** `Poly_Connect` via `OCCTMeshNodeTriangle`.
 
@@ -1053,8 +1053,8 @@ public func meshNodeTriangleCount(faceIndex: Int, nodeIndex: Int) -> Int
 ```
 
 - **Parameters:**
-  - `faceIndex` — 0-based face index (#541).
-  - `nodeIndex` — 1-based node index, as `Poly_Triangulation` numbers them.
+  - `faceIndex`: 0-based face index (#541).
+  - `nodeIndex`: 1-based node index, as `Poly_Triangulation` numbers them.
 - **Returns:** Number of triangles in the fan around this node.
 - **OCCT:** `Poly_Connect` via `OCCTMeshNodeTriangleCount`.
 
@@ -1098,7 +1098,7 @@ Analyze edge concavity for all edges in the shape.
 public func analyseEdgeConcavity(angle: Double = .pi / 6.0) -> [ConcavityType]
 ```
 
-- **Parameters:** `angle` — tangency threshold in radians (default `π/6`).
+- **Parameters:** `angle`, tangency threshold in radians (default `π/6`).
 - **Returns:** Array of `ConcavityType` per edge in exploration order.
 - **OCCT:** `BRepOffset_Analyse` via `OCCTAnalyseEdgeConcavity`.
 - **Example:**
@@ -1118,8 +1118,8 @@ public func analyseExplode(angle: Double = .pi / 6.0, type: ConcavityType) -> Sh
 ```
 
 - **Parameters:**
-  - `angle` — tangency threshold in radians.
-  - `type` — concavity type to group by.
+  - `angle`: tangency threshold in radians.
+  - `type`: concavity type to group by.
 - **Returns:** Compound shape of face groups, or `nil` on failure.
 - **OCCT:** `BRepOffset_Analyse::Explode` via `OCCTAnalyseExplode`.
 
@@ -1134,9 +1134,9 @@ public func analyseEdgesOnFace(_ face: Shape, angle: Double = .pi / 6.0, type: C
 ```
 
 - **Parameters:**
-  - `face` — the face shape to analyse.
-  - `angle` — tangency threshold in radians.
-  - `type` — concavity type to count.
+  - `face`: the face shape to analyse.
+  - `angle`: tangency threshold in radians.
+  - `type`: concavity type to count.
 - **Returns:** Edge count of the given type on this face.
 - **OCCT:** `BRepOffset_Analyse` via `OCCTAnalyseEdgesOnFace`.
 
@@ -1151,8 +1151,8 @@ public func analyseAncestorCount(edge: Shape, angle: Double = .pi / 6.0) -> Int
 ```
 
 - **Parameters:**
-  - `edge` — edge shape to query.
-  - `angle` — tangency threshold in radians.
+  - `edge`: edge shape to query.
+  - `angle`: tangency threshold in radians.
 - **Returns:** Number of ancestor faces.
 - **OCCT:** `BRepOffset_Analyse::Ancestors` via `OCCTAnalyseAncestorCount`.
 
@@ -1167,9 +1167,9 @@ public func analyseTangentEdgeCount(edge: Shape, vertex: Shape, angle: Double = 
 ```
 
 - **Parameters:**
-  - `edge` — the edge to query tangency along.
-  - `vertex` — the vertex at which to count tangent edges.
-  - `angle` — tangency threshold in radians.
+  - `edge`: the edge to query tangency along.
+  - `vertex`: the vertex at which to count tangent edges.
+  - `angle`: tangency threshold in radians.
 - **Returns:** Number of tangent edges at the vertex.
 - **OCCT:** `BRepOffset_Analyse` via `OCCTAnalyseTangentEdgeCount`.
 
@@ -1212,7 +1212,7 @@ Get edge orientations within a wire, optionally with face context.
 public func wireEdgeOrientations(face: Shape? = nil) -> [EdgeOrientation]
 ```
 
-- **Parameters:** `face` — optional face context to resolve orientation ambiguity.
+- **Parameters:** `face`, optional face context to resolve orientation ambiguity.
 - **Returns:** Array of `EdgeOrientation` per edge in wire traversal order.
 - **OCCT:** `BRepTools_WireExplorer` via `OCCTWireExplorerOrientations`.
 - **Example:**
@@ -1230,7 +1230,7 @@ Get connecting vertex positions from wire explorer (vertex between consecutive e
 public func wireExplorerVertices(face: Shape? = nil) -> [SIMD3<Double>]
 ```
 
-- **Parameters:** `face` — optional face context.
+- **Parameters:** `face`, optional face context.
 - **Returns:** Array of 3D positions for the connecting vertices in traversal order.
 - **OCCT:** `BRepTools_WireExplorer::CurrentVertex` via `OCCTWireExplorerVertices`.
 
@@ -1272,7 +1272,7 @@ public static func line(origin: SIMD3<Double>, direction: SIMD3<Double>,
                          p1: Double, p2: Double, tolerance: Double = 0) -> AnalyticBounds
 ```
 
-- **Parameters:** `origin`, `direction` — line definition; `p1`, `p2` — parametric extents; `tolerance` — inflation.
+- **Parameters:** `origin`, `direction`, line definition; `p1`, `p2`, parametric extents; `tolerance`, inflation.
 - **OCCT:** `BndLib_Add3dCurve` / `BndLib` line via `OCCTBndLibLine`.
 
 ---
@@ -1311,7 +1311,7 @@ public static func cylinder(center: SIMD3<Double>, axis: SIMD3<Double>,
                              radius: Double, vmin: Double, vmax: Double, tolerance: Double = 0) -> AnalyticBounds
 ```
 
-- **Parameters:** `vmin`, `vmax` — height extent along `axis`.
+- **Parameters:** `vmin`, `vmax`, height extent along `axis`.
 - **OCCT:** `BndLib` cylinder via `OCCTBndLibCylinder`.
 
 ---
@@ -1333,11 +1333,15 @@ public static func torus(center: SIMD3<Double>, axis: SIMD3<Double>,
 
 Bounding box of a 3D edge curve.
 
+A null shape (from `Shape.nullified`) used to crash the process in the `BRepAdaptor_Curve`
+constructor this builds. It is refused now and the bounds come back all zeroes, which is what
+the existing failure path already wrote (#1035, measured in `Scripts/repro/1035-unwrap-guard/`).
+
 ```swift
 public static func edge(_ edge: Shape, tolerance: Double = 0) -> AnalyticBounds
 ```
 
-- **Parameters:** `edge` — edge shape whose underlying curve is used.
+- **Parameters:** `edge`, edge shape whose underlying curve is used.
 - **OCCT:** `BndLib_Add3dCurve::Add` via `OCCTBndLibEdge`.
 
 ---
@@ -1350,7 +1354,7 @@ Bounding box of a face surface.
 public static func face(_ face: Shape, tolerance: Double = 0) -> AnalyticBounds
 ```
 
-- **Parameters:** `face` — face shape whose underlying surface is used.
+- **Parameters:** `face`, face shape whose underlying surface is used.
 - **OCCT:** `BndLib_AddSurface::Add` via `OCCTBndLibFace`.
 - **Example:**
   ```swift
@@ -1412,7 +1416,7 @@ Create a named performance measurement timer.
 public init(name: String)
 ```
 
-- **Parameters:** `name` — identifier for the meter.
+- **Parameters:** `name`, identifier for the meter.
 - **OCCT:** `OSD_PerfMeter` constructor via `OCCTPerfMeterCreate`.
 
 ---
@@ -1497,7 +1501,7 @@ Cone lateral surface area.
 public static func coneSurfaceArea(semiAngle: Double, refRadius: Double, height: Double) -> Double
 ```
 
-- **Parameters:** `semiAngle` — cone half-angle in radians; `refRadius` — radius at reference plane; `height` — cone height.
+- **Parameters:** `semiAngle`, cone half-angle in radians; `refRadius`, radius at reference plane; `height`, cone height.
 - **OCCT:** `GProp_PGProps` cone surface via `OCCTGPropConeSurface`.
 
 ---
@@ -1534,10 +1538,10 @@ public static func cylinderSphere(cylinderRadius: Double,
 ```
 
 - **Parameters:**
-  - `cylinderRadius` — radius of the Z-axis cylinder.
-  - `sphereCenter` — center of the sphere.
-  - `sphereRadius` — radius of the sphere.
-  - `tolerance` — intersection tolerance (default `1e-6`).
+  - `cylinderRadius`: radius of the Z-axis cylinder.
+  - `sphereCenter`: center of the sphere.
+  - `sphereRadius`: radius of the sphere.
+  - `tolerance`: intersection tolerance (default `1e-6`).
 - **Returns:** Number of intersection curves, or `nil` on failure.
 - **OCCT:** `IntAna_IntQuadQuad` via `OCCTIntAnaCylinderSphere`.
 
@@ -1589,7 +1593,7 @@ Get the shape at a 0-based index from the document explorer.
 public func explorerShape(at index: Int) -> Shape?
 ```
 
-- **Parameters:** `index` — 0-based node index.
+- **Parameters:** `index`, 0-based node index.
 - **Returns:** Shape at the given index, or `nil` if out of range.
 - **OCCT:** `XCAFPrs_DocumentExplorer` via `OCCTDocumentExplorerShape`.
 
@@ -1603,7 +1607,7 @@ Get the path ID string at a 0-based index from the document explorer.
 public func explorerPathId(at index: Int) -> String?
 ```
 
-- **Parameters:** `index` — 0-based node index.
+- **Parameters:** `index`, 0-based node index.
 - **Returns:** Path ID string, or `nil` if out of range.
 - **OCCT:** `XCAFPrs_DocumentExplorer` via `OCCTDocumentExplorerPathId`.
 
@@ -1617,7 +1621,7 @@ Find a shape from a path ID string.
 public func explorerFindShape(pathId: String) -> Shape?
 ```
 
-- **Parameters:** `pathId` — path ID string previously returned by `explorerPathId(at:)`.
+- **Parameters:** `pathId`, path ID string previously returned by `explorerPathId(at:)`.
 - **Returns:** Matching shape, or `nil` if not found.
 - **OCCT:** `XCAFPrs_DocumentExplorer` via `OCCTDocumentExplorerFindShape`.
 - **Example:**
@@ -1639,12 +1643,12 @@ Transformation matrix types and factory namespaces backed by the `gce_Make*` fam
 ### `TransformMatrix3D`
 
 3D transformation matrix (row-major 3×4), in **INTERLEAVED** layout: each row is stored
-together, with that row's translation component folded in as its 4th entry —
+together, with that row's translation component folded in as its 4th entry,
 `[r00,r01,r02,tx, r10,r11,r12,ty, r20,r21,r22,tz]`. Positionally, this is
 `gp_Trsf::SetValues(a11...a34)`'s own parameter order. Returned by `TransformFactory3D`'s
 builders below, and accepted by `Shape.transformed(byMatrix:)` and `Shape.gTransformed(matrix:)`.
 **Not interchangeable** with `Matrix12Grouped` (below), which `Shape.transformed(matrix:)` uses
-instead — the two were a single ambiguous `[Double]` parameter before #835; convert between them
+instead, the two were a single ambiguous `[Double]` parameter before #835; convert between them
 with `.grouped` / `Matrix12Grouped.interleaved`.
 
 ```swift
@@ -1674,7 +1678,7 @@ Apply this transform to a 3D point.
 public func apply(to point: SIMD3<Double>) -> SIMD3<Double>
 ```
 
-- **Parameters:** `point` — input point.
+- **Parameters:** `point`, input point.
 - **Returns:** Transformed point.
 
 ---
@@ -1682,10 +1686,10 @@ public func apply(to point: SIMD3<Double>) -> SIMD3<Double>
 ### `Matrix12Grouped`
 
 Rigid transformation matrix (3x3 rotation + translation) in **GROUPED** layout: all nine
-rotation entries first, then the three translation entries last —
+rotation entries first, then the three translation entries last,
 `[r00,r01,r02, r10,r11,r12, r20,r21,r22, tx,ty,tz]`. Accepted by `Shape.transformed(matrix:)`,
 which re-shuffles these into `gp_Trsf::SetValues`'s own INTERLEAVED order internally. **Not
-interchangeable** with `TransformMatrix3D`'s INTERLEAVED layout — see that type's entry above.
+interchangeable** with `TransformMatrix3D`'s INTERLEAVED layout, see that type's entry above.
 Added in #835 (PR #864 review) to replace the plain `[Double]` parameter `transformed(matrix:)`,
 `transformed(byMatrix:)`, and `gTransformed(matrix:)` used to share indistinguishably; the old
 `[Double]`-taking overloads are kept as `@available(*, deprecated)` forwarders.
@@ -1739,7 +1743,7 @@ Apply this transform to a 2D point.
 public func apply(to point: SIMD2<Double>) -> SIMD2<Double>
 ```
 
-- **Parameters:** `point` — input 2D point.
+- **Parameters:** `point`, input 2D point.
 - **Returns:** Transformed 2D point.
 
 ---
@@ -1957,7 +1961,7 @@ public static func circularArc(center: SIMD3<Double>, normal: SIMD3<Double>,
                                 radius: Double, u1: Double, u2: Double) -> (arcLength: Double, center: SIMD3<Double>)?
 ```
 
-- **Parameters:** `u1`, `u2` — parametric start and end angles in radians.
+- **Parameters:** `u1`, `u2`, parametric start and end angles in radians.
 - **Returns:** `nil` for a zero normal vector, which gives no plane to build a circle in. A valid arc
   with `u1 == u2` is **not** a rejection: it answers with an arc length of 0 and the correct centre,
   because `GProp_CelGProps` computes the centroid analytically rather than by accumulating mass
@@ -1974,7 +1978,7 @@ Compute the centroid of a point set. Returns `(pointCount, centroid)`.
 public static func pointSetCentroid(_ points: [SIMD3<Double>]) -> (count: Double, centroid: SIMD3<Double>?)
 ```
 
-- **Parameters:** `points` — array of 3D points.
+- **Parameters:** `points`, array of 3D points.
 - **Returns:** The point count (as `Double`) and the centroid, which is `nil` for an empty set. An
   empty set has no centroid, and the (0,0,0) reported before #609 was indistinguishable from the
   centroid of a set centred on the origin.
@@ -2024,7 +2028,7 @@ Load a plane constraint at a UV point.
 public func loadPlaneConstraint(u: Double, v: Double, planePoint: SIMD3<Double>, planeNormal: SIMD3<Double>) -> Bool
 ```
 
-- **Parameters:** `u`, `v` — parametric constraint location; `planePoint`, `planeNormal` — plane definition.
+- **Parameters:** `u`, `v`, parametric constraint location; `planePoint`, `planeNormal`, plane definition.
 - **Returns:** `true` on success.
 - **OCCT:** `Plate_PlaneConstraint` via `OCCTPlateLoadPlaneConstraint`.
 
@@ -2039,7 +2043,7 @@ Load a line constraint at a UV point.
 public func loadLineConstraint(u: Double, v: Double, linePoint: SIMD3<Double>, lineDirection: SIMD3<Double>) -> Bool
 ```
 
-- **Parameters:** `u`, `v` — parametric constraint location; `linePoint`, `lineDirection` — line definition.
+- **Parameters:** `u`, `v`, parametric constraint location; `linePoint`, `lineDirection`, line definition.
 - **Returns:** `true` on success.
 - **OCCT:** `Plate_LineConstraint` via `OCCTPlateLoadLineConstraint`.
 
@@ -2054,7 +2058,7 @@ Load a free G1 continuity constraint at a UV point.
 public func loadFreeG1Constraint(u: Double, v: Double, du: SIMD3<Double>, dv: SIMD3<Double>) -> Bool
 ```
 
-- **Parameters:** `u`, `v` — parametric constraint location; `du`, `dv` — partial derivatives defining the tangent frame.
+- **Parameters:** `u`, `v`, parametric constraint location; `du`, `dv`, partial derivatives defining the tangent frame.
 - **Returns:** `true` on success.
 - **OCCT:** `Plate_FreeGthenCConstraint` (G1) via `OCCTPlateLoadFreeG1Constraint`.
 
@@ -2073,9 +2077,9 @@ public static func interpolated(values: [Double], parameters: [Double]? = nil, p
 ```
 
 - **Parameters:**
-  - `values` — array of function values to interpolate.
-  - `parameters` — optional parameter array; must match `values.count` if provided. If `nil`, uniform spacing is used.
-  - `periodic` — if `true`, the interpolation is periodic.
+  - `values`: array of function values to interpolate.
+  - `parameters`: optional parameter array; must match `values.count` if provided. If `nil`, uniform spacing is used.
+  - `periodic`: if `true`, the interpolation is periodic.
 - **Returns:** Interpolated `LawFunction`, or `nil` on failure.
 - **OCCT:** `Law_Interpolate` via `OCCTLawInterpolate`.
 - **Example:**
@@ -2229,7 +2233,7 @@ public static func gcCircleParallel(center: SIMD3<Double>, normal: SIMD3<Double>
                                      radius: Double, distance: Double) -> Curve3D?
 ```
 
-- **Parameters:** `distance` — signed offset distance from the reference circle.
+- **Parameters:** `distance`, signed offset distance from the reference circle.
 - **OCCT:** `GC_MakeCircle` (parallel) via `OCCTGCMakeCircleParallel`.
 - **Example:**
   ```swift
@@ -2265,7 +2269,7 @@ Create a 3D ellipse from 3 points (S1, S2, center).
 public static func gcEllipse(s1: SIMD3<Double>, s2: SIMD3<Double>, center: SIMD3<Double>) -> Curve3D?
 ```
 
-- **Parameters:** `s1`, `s2` — points on the ellipse; `center` — ellipse center.
+- **Parameters:** `s1`, `s2`, points on the ellipse; `center`, ellipse center.
 - **OCCT:** `GC_MakeEllipse` (3 points) via `OCCTGCMakeEllipse3Points`.
 
 ---
@@ -2279,7 +2283,7 @@ public static func gcEllipse(center: SIMD3<Double>, normal: SIMD3<Double>, xDire
                               majorRadius: Double, minorRadius: Double) -> Curve3D?
 ```
 
-- **Parameters:** `xDirection` — explicit X-axis direction for the ellipse frame.
+- **Parameters:** `xDirection`, explicit X-axis direction for the ellipse frame.
 - **OCCT:** `GC_MakeEllipse` (Ax2) via `OCCTGCMakeEllipseFromElips`.
 
 ---
@@ -2309,7 +2313,7 @@ Create a 3D hyperbola from 3 points (S1, S2, center).
 public static func gcHyperbola(s1: SIMD3<Double>, s2: SIMD3<Double>, center: SIMD3<Double>) -> Curve3D?
 ```
 
-- **Parameters:** `s1`, `s2` — points on the hyperbola; `center` — hyperbola center.
+- **Parameters:** `s1`, `s2`, points on the hyperbola; `center`, hyperbola center.
 - **OCCT:** `GC_MakeHyperbola` (3 points) via `OCCTGCMakeHyperbola3Points`.
 
 ---
@@ -2433,7 +2437,7 @@ public static func gceEllipse(center: SIMD2<Double>, xDirection: SIMD2<Double>,
                                majorRadius: Double, minorRadius: Double) -> Curve2D?
 ```
 
-- **Parameters:** `yDirection` — explicit Y-axis direction for the ellipse frame.
+- **Parameters:** `yDirection`, explicit Y-axis direction for the ellipse frame.
 - **OCCT:** `GC_MakeEllipse2d` (Ax22d) via `OCCTCurve2DMakeEllipseAxis22d`.
 
 ---
@@ -2463,7 +2467,7 @@ Create a 2D hyperbola from 3 points (S1, S2, center).
 public static func gceHyperbola(s1: SIMD2<Double>, s2: SIMD2<Double>, center: SIMD2<Double>) -> Curve2D?
 ```
 
-- **Parameters:** `s1`, `s2` — points on the hyperbola; `center` — hyperbola center.
+- **Parameters:** `s1`, `s2`, points on the hyperbola; `center`, hyperbola center.
 - **OCCT:** `GC_MakeHyperbola2d` (3 points) via `OCCTCurve2DMakeHyperbola3Points`.
 - **Example:**
   ```swift

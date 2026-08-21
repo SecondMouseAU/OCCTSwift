@@ -2,7 +2,7 @@
      just-the-docs-default.css (light); here we additionally load the dark scheme,
      gated to `prefers-color-scheme: dark`. This include renders *after* the theme's
      stylesheet <link>, so in dark mode the dark rules win by source order. The browser
-     applies/removes it natively as the OS appearance changes — no flash, no script. -->
+     applies/removes it natively as the OS appearance changes, no flash, no script. -->
 <link rel="stylesheet"
       href="{{ '/assets/css/just-the-docs-dark.css' | relative_url }}"
       media="(prefers-color-scheme: dark)">

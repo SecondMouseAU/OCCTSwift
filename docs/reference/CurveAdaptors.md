@@ -52,9 +52,9 @@ Builds an arc-length adaptor over a wire. Returns `nil` if the wire is empty or 
 public init?(_ wire: Wire)
 ```
 
-- **Parameters:** `wire` — the wire to adapt.
+- **Parameters:** `wire`, the wire to adapt.
 - **Returns:** A `WireCurve` instance, or `nil` if the wire is empty/invalid.
-- **OCCT:** `BRepAdaptor_CompCurve(const TopoDS_Wire&)` — constructs the composite-curve adaptor over the wire's edge sequence.
+- **OCCT:** `BRepAdaptor_CompCurve(const TopoDS_Wire&)`, constructs the composite-curve adaptor over the wire's edge sequence.
 - **Example:**
   ```swift
   let rect = Wire.rectangle(width: 40, height: 20)!
@@ -91,7 +91,7 @@ The native parameter range `[first, last]` of the composite curve.
 public var parameterRange: (first: Double, last: Double) { get }
 ```
 
-Use this range when calling `point(atParameter:)` or `tangent(atParameter:)`. The native parameter is not arc length — use `parameter(atAbscissa:)` to convert.
+Use this range when calling `point(atParameter:)` or `tangent(atParameter:)`. The native parameter is not arc length, use `parameter(atAbscissa:)` to convert.
 
 - **Returns:** Tuple of the adaptor's first and last native parameters.
 - **OCCT:** `BRepAdaptor_CompCurve::FirstParameter()` / `LastParameter()`.
@@ -113,7 +113,7 @@ Use this range when calling `point(atParameter:)` or `tangent(atParameter:)`. Th
 public func point(atParameter u: Double) -> SIMD3<Double>?
 ```
 
-- **Parameters:** `u` — native parameter within `parameterRange`.
+- **Parameters:** `u`, native parameter within `parameterRange`.
 - **Returns:** 3D point, or `nil` on error (e.g. `u` out of range).
 - **OCCT:** `BRepAdaptor_CompCurve::Value(u)`.
 - **Example:**
@@ -135,7 +135,7 @@ Unit tangent (first derivative, normalized) at a native parameter `u`.
 public func tangent(atParameter u: Double) -> SIMD3<Double>?
 ```
 
-- **Parameters:** `u` — native parameter within `parameterRange`.
+- **Parameters:** `u`, native parameter within `parameterRange`.
 - **Returns:** Unit tangent vector, or `nil` at a degenerate point where the derivative magnitude is below 1e-12.
 - **OCCT:** `BRepAdaptor_CompCurve::D1(u, point, d1)` then normalized via `gp_Dir`.
 - **Example:**
@@ -156,7 +156,7 @@ Native parameter at arc length `s` measured from the start of the wire.
 public func parameter(atAbscissa s: Double) -> Double?
 ```
 
-- **Parameters:** `s` — arc length from the wire start (0...`length`).
+- **Parameters:** `s`, arc length from the wire start (0...`length`).
 - **Returns:** Native parameter `u`, or `nil` if `GCPnts_AbscissaPoint` does not converge.
 - **OCCT:** the accumulated `GeomAbs_CN` sub-piece lengths, with the final narrow piece handed
   to `GCPnts_AbscissaPoint(BRepAdaptor_CompCurve&, remainder, pieceStart)` (#603), so
@@ -181,7 +181,7 @@ public func point(atAbscissa s: Double) -> SIMD3<Double>?
 
 Pure-Swift: calls `parameter(atAbscissa:)` then `point(atParameter:)`.
 
-- **Parameters:** `s` — arc length offset (0...`length`).
+- **Parameters:** `s`, arc length offset (0...`length`).
 - **Returns:** 3D point, or `nil` if the abscissa conversion or point evaluation fails.
 - **Example:**
   ```swift
@@ -201,7 +201,7 @@ public func tangent(atAbscissa s: Double) -> SIMD3<Double>?
 
 Pure-Swift: calls `parameter(atAbscissa:)` then `tangent(atParameter:)`.
 
-- **Parameters:** `s` — arc length offset (0...`length`).
+- **Parameters:** `s`, arc length offset (0...`length`).
 - **Returns:** Unit tangent vector, or `nil` if conversion or evaluation fails.
 - **Example:**
   ```swift
@@ -219,9 +219,9 @@ Pure-Swift: calls `parameter(atAbscissa:)` then `tangent(atParameter:)`.
 public func points(count: Int) -> [SIMD3<Double>]
 ```
 
-One bridge call — cheaper than calling `point(atAbscissa:)` in a loop.
+One bridge call, cheaper than calling `point(atAbscissa:)` in a loop.
 
-- **Parameters:** `count` — number of sample points, honoured within `2...maximumSampleCount`; outside that range the result is `[]` (#479).
+- **Parameters:** `count`, number of sample points, honoured within `2...maximumSampleCount`; outside that range the result is `[]` (#479).
 - **Returns:** Array of `count` evenly-spaced 3D points; fewer if the bridge yields fewer results.
 - **OCCT:** `GCPnts_UniformAbscissa(BRepAdaptor_CompCurve&, count)`.
 - **Example:**
@@ -242,7 +242,7 @@ public func points(spacing: Double) -> [SIMD3<Double>]
 
 Pure-Swift: derives the sample count from `length / spacing` and delegates to `points(count:)`. The exact step is adjusted so samples divide the wire evenly end-to-end.
 
-- **Parameters:** `spacing` — target arc-length step in model units.
+- **Parameters:** `spacing`, target arc-length step in model units.
 - **Returns:** Evenly-spaced points; empty array if `spacing <= 0`, if `spacing` is NaN, if `length == 0`, or if the spacing implies more than `maximumSampleCount` points (#479).
 - **Example:**
   ```swift
@@ -278,7 +278,7 @@ The ceiling is a bound on the allocation, not on what is useful. One sample cost
 
 ## EdgeCurve
 
-A single `Edge` as an arc-length-parameterized curve (`BRepAdaptor_Curve`). Mirrors `WireCurve`'s API for a single edge — adds arc-length sampling (`length`, `point(atAbscissa:)`, `points(count:)`) on top of the edge's native parameter space.
+A single `Edge` as an arc-length-parameterized curve (`BRepAdaptor_Curve`). Mirrors `WireCurve`'s API for a single edge, adds arc-length sampling (`length`, `point(atAbscissa:)`, `points(count:)`) on top of the edge's native parameter space.
 
 ```swift
 public final class EdgeCurve: @unchecked Sendable
@@ -294,9 +294,9 @@ Builds an arc-length adaptor over an edge. Returns `nil` if the edge has no 3D c
 public init?(_ edge: Edge)
 ```
 
-- **Parameters:** `edge` — the edge to adapt.
+- **Parameters:** `edge`, the edge to adapt.
 - **Returns:** An `EdgeCurve` instance, or `nil` if the edge is invalid.
-- **OCCT:** `BRepAdaptor_Curve(const TopoDS_Edge&)` — initializes the curve adaptor from the edge's 3D geometry.
+- **OCCT:** `BRepAdaptor_Curve(const TopoDS_Edge&)`, initializes the curve adaptor from the edge's 3D geometry.
 - **Example:**
   ```swift
   let box = Shape.box(width: 10, height: 10, depth: 10)!
@@ -353,7 +353,7 @@ public var parameterRange: (first: Double, last: Double) { get }
 public func point(atParameter u: Double) -> SIMD3<Double>?
 ```
 
-- **Parameters:** `u` — native parameter within `parameterRange`.
+- **Parameters:** `u`, native parameter within `parameterRange`.
 - **Returns:** 3D point, or `nil` on error.
 - **OCCT:** `BRepAdaptor_Curve::Value(u)` → `gp_Pnt`.
 - **Example:**
@@ -374,7 +374,7 @@ Unit tangent at a native parameter `u`. Returns `nil` at a degenerate point.
 public func tangent(atParameter u: Double) -> SIMD3<Double>?
 ```
 
-- **Parameters:** `u` — native parameter within `parameterRange`.
+- **Parameters:** `u`, native parameter within `parameterRange`.
 - **Returns:** Unit tangent vector, or `nil` if the derivative magnitude is below 1e-12.
 - **OCCT:** `BRepAdaptor_Curve::D1(u, point, d1)` then normalized via `gp_Dir`.
 - **Example:**
@@ -395,7 +395,7 @@ Native parameter at arc length `s` from the start of the edge.
 public func parameter(atAbscissa s: Double) -> Double?
 ```
 
-- **Parameters:** `s` — arc length offset (0...`length`).
+- **Parameters:** `s`, arc length offset (0...`length`).
 - **Returns:** Native parameter `u`, or `nil` if the solver does not converge.
 - **OCCT:** the accumulated `GeomAbs_CN` sub-piece lengths, with the final narrow piece handed
   to `GCPnts_AbscissaPoint(BRepAdaptor_Curve&, remainder, pieceStart)` (#603), so
@@ -420,7 +420,7 @@ public func point(atAbscissa s: Double) -> SIMD3<Double>?
 
 Pure-Swift: calls `parameter(atAbscissa:)` then `point(atParameter:)`.
 
-- **Parameters:** `s` — arc length offset (0...`length`).
+- **Parameters:** `s`, arc length offset (0...`length`).
 - **Returns:** 3D point, or `nil` if conversion or evaluation fails.
 - **Example:**
   ```swift
@@ -440,7 +440,7 @@ public func tangent(atAbscissa s: Double) -> SIMD3<Double>?
 
 Pure-Swift: calls `parameter(atAbscissa:)` then `tangent(atParameter:)`.
 
-- **Parameters:** `s` — arc length offset (0...`length`).
+- **Parameters:** `s`, arc length offset (0...`length`).
 - **Returns:** Unit tangent vector, or `nil` on failure.
 - **Example:**
   ```swift
@@ -458,9 +458,9 @@ Pure-Swift: calls `parameter(atAbscissa:)` then `tangent(atParameter:)`.
 public func points(count: Int) -> [SIMD3<Double>]
 ```
 
-One bridge call — cheaper than calling `point(atAbscissa:)` in a loop.
+One bridge call, cheaper than calling `point(atAbscissa:)` in a loop.
 
-- **Parameters:** `count` — number of sample points, honoured within `2...maximumSampleCount`; outside that range the result is `[]` (#479).
+- **Parameters:** `count`, number of sample points, honoured within `2...maximumSampleCount`; outside that range the result is `[]` (#479).
 - **Returns:** Array of up to `count` evenly-spaced 3D points.
 - **OCCT:** `GCPnts_UniformAbscissa(BRepAdaptor_Curve&, count)`.
 - **Example:**
@@ -484,7 +484,7 @@ public func points(spacing: Double) -> [SIMD3<Double>]
 
 Pure-Swift: derives the sample count from `length / spacing` and delegates to `points(count:)`.
 
-- **Parameters:** `spacing` — target arc-length step in model units.
+- **Parameters:** `spacing`, target arc-length step in model units.
 - **Returns:** Evenly-spaced points; empty array if `spacing <= 0`, if `spacing` is NaN, if `length == 0`, or if the spacing implies more than `maximumSampleCount` points (#479).
 - **Example:**
   ```swift
@@ -513,7 +513,7 @@ public static var maximumSampleCount: Int  // 10_000_000
 
 ## WireOrder
 
-Analyzes a set of edges — defined by their endpoint 3D coordinates — and determines the order and orientation in which they should be chained to form a continuous wire. Wraps `ShapeAnalysis_WireOrder`.
+Analyzes a set of edges, defined by their endpoint 3D coordinates, and determines the order and orientation in which they should be chained to form a continuous wire. Wraps `ShapeAnalysis_WireOrder`.
 
 ```swift
 public struct WireOrder: Sendable
@@ -534,10 +534,10 @@ public enum Status: Sendable {
 }
 ```
 
-- `.closed` — the edges form a closed loop (all endpoints connected, OCCT status 0).
-- `.open` — the edges form an open chain (status 1).
-- `.gaps` — at least one gap remains between edges after ordering (status 2).
-- `.failed` — analysis could not complete (OCCT status < 0).
+- `.closed`: the edges form a closed loop (all endpoints connected, OCCT status 0).
+- `.open`: the edges form an open chain (status 1).
+- `.gaps`: at least one gap remains between edges after ordering (status 2).
+- `.failed`: analysis could not complete (OCCT status < 0).
 
 ---
 
@@ -566,8 +566,8 @@ public struct OrderedEdge: Sendable {
 }
 ```
 
-- `originalIndex` — 0-based index into the input `edges` array.
-- `isReversed` — `true` if the edge must be traversed in the opposite direction to maintain continuity.
+- `originalIndex`: 0-based index into the input `edges` array.
+- `isReversed`: `true` if the edge must be traversed in the opposite direction to maintain continuity.
 
 ---
 
@@ -624,13 +624,13 @@ public static func analyze(edges: [(start: SIMD3<Double>, end: SIMD3<Double>)],
                             tolerance: Double = 1e-3) -> WireOrder?
 ```
 
-Passes endpoint coordinates to the bridge, which populates a `ShapeAnalysis_WireOrder` instance and reads back the ordered edge list (OCCT returns 1-based, signed indices — negative means reversed; the Swift layer converts to 0-based).
+Passes endpoint coordinates to the bridge, which populates a `ShapeAnalysis_WireOrder` instance and reads back the ordered edge list (OCCT returns 1-based, signed indices, negative means reversed; the Swift layer converts to 0-based).
 
 - **Parameters:**
-  - `edges` — array of `(start, end)` point pairs defining each edge.
-  - `tolerance` — connection tolerance in model units (default 1e-3); endpoints within this distance are considered connected.
+  - `edges`: array of `(start, end)` point pairs defining each edge.
+  - `tolerance`: connection tolerance in model units (default 1e-3); endpoints within this distance are considered connected.
 - **Returns:** A `WireOrder` value, or `nil` if `edges` is empty or the bridge fails entirely.
-- **OCCT:** `ShapeAnalysis_WireOrder(true, tolerance)` — analycts the point sequence, then reads ordered indices via `IOrder(i)`.
+- **OCCT:** `ShapeAnalysis_WireOrder(true, tolerance)`, analycts the point sequence, then reads ordered indices via `IOrder(i)`.
 - **Example:**
   ```swift
   let edges: [(start: SIMD3<Double>, end: SIMD3<Double>)] = [
@@ -658,10 +658,10 @@ public static func analyze(wire: Wire, tolerance: Double = 1e-3) -> WireOrder?
 Extracts edge endpoint coordinates from the wire via the bridge (up to 1000 edges) and performs the same ordering analysis as `analyze(edges:tolerance:)`.
 
 - **Parameters:**
-  - `wire` — the wire whose edge ordering to analyze.
-  - `tolerance` — connection tolerance in model units (default 1e-3).
+  - `wire`: the wire whose edge ordering to analyze.
+  - `tolerance`: connection tolerance in model units (default 1e-3).
 - **Returns:** A `WireOrder` value, or `nil` if the bridge fails.
-- **OCCT:** `ShapeAnalysis_WireOrder(true, tolerance)` — bridge extracts endpoints from each `TopoDS_Edge` in the wire before analysis.
+- **OCCT:** `ShapeAnalysis_WireOrder(true, tolerance)`, bridge extracts endpoints from each `TopoDS_Edge` in the wire before analysis.
 - **Example:**
   ```swift
   let wire = Wire.polygon(points: [
@@ -676,7 +676,7 @@ Extracts edge endpoint coordinates from the wire via the bridge (up to 1000 edge
 
 ## Sampling
 
-The one ceiling every sampling entry point in the package measures a caller-supplied count against. Not a curve-adaptor type — it lives on this page because this is where the ceiling's rationale is written down, and `WireCurve`/`EdgeCurve` were the first two types to get it (#479) before the other 26 followed (#558).
+The one ceiling every sampling entry point in the package measures a caller-supplied count against. Not a curve-adaptor type, it lives on this page because this is where the ceiling's rationale is written down, and `WireCurve`/`EdgeCurve` were the first two types to get it (#479) before the other 26 followed (#558).
 
 ```swift
 public enum Sampling
@@ -700,9 +700,9 @@ The number is measured, not round: sampling costs about 4.5 µs per point, and o
 
 | kind | parameter | behaviour |
 |---|---|---|
-| **request** | `count`, `pointCount`, `sampleCount` | Rejected outside `2...maximumSampleCount` (empty / `nil`). Never clamped — the caller asked for exactly this many, and returning fewer is the silent-coarsening defect [#501](https://github.com/SecondMouseAU/OCCTSwift/issues/501) found. |
+| **request** | `count`, `pointCount`, `sampleCount` | Rejected outside `2...maximumSampleCount` (empty / `nil`). Never clamped, the caller asked for exactly this many, and returning fewer is the silent-coarsening defect [#501](https://github.com/SecondMouseAU/OCCTSwift/issues/501) found. |
 | **capacity** | `maxPoints` on an adaptive sampler | Clamped into `0...maximumSampleCount`. The deflection criterion decides the point count and the capacity only truncates, so clamping returns the *same* points. A capacity of 0 or less yields the entry point's own empty value. |
-| **grid** | `uCount`×`vCount`, `evalU`×`evalV`, `(uLineCount + vLineCount)`×`pointsPerLine` | The **product** is bounded, and each factor checked on its own — two negatives multiply to a plausible positive total, which is why `drawMesh(uCount: -1, vCount: -1)` looked well-behaved while `drawMesh(uCount: -1, vCount: 3)` aborted the process. Multiplications are overflow-checked. |
+| **grid** | `uCount`×`vCount`, `evalU`×`evalV`, `(uLineCount + vLineCount)`×`pointsPerLine` | The **product** is bounded, and each factor checked on its own, two negatives multiply to a plausible positive total, which is why `drawMesh(uCount: -1, vCount: -1)` looked well-behaved while `drawMesh(uCount: -1, vCount: 3)` aborted the process. Multiplications are overflow-checked. |
 
 The parameter's *name* does not settle which it is: `MedialAxis.drawArc(at:maxPoints:)` says capacity but fills its buffer exactly, so it is a request.
 

@@ -11,9 +11,9 @@ import simd
 /// forwarding, and cross-entry-point equivalence at matching parameters.
 ///
 /// Fixtures deliberately avoid the existing box-face-wire fixture (`BRepLibFindSurfaceTests`,
-/// `FindSurfaceTests`) because a plane is found there regardless of `onlyPlane` — it cannot
+/// `FindSurfaceTests`) because a plane is found there regardless of `onlyPlane`, it cannot
 /// distinguish "onlyPlane forwarded correctly" from "onlyPlane silently ignored".
-@Suite("Issue #838 — findSurface bridge consolidation")
+@Suite("Issue #838, findSurface bridge consolidation")
 struct Issue838FindSurfaceConsolidationTests {
 
     /// A wire around a cylinder's lateral face: its edges carry an *existing* attached surface

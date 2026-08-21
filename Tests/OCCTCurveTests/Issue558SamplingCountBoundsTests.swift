@@ -31,14 +31,14 @@ import simd
 // The emptiness assertions below compare `.count == 0` rather than reading `.isEmpty`. Swift
 // Testing prints the captured sub-expression on failure, and the sub-expression here is a sampling
 // call: a regression that returns 10 million points would print all 10 million of them. Measured
-// while injecting a deliberate bug to check these tests catch it — the run wrote over 5 GB before
+// while injecting a deliberate bug to check these tests catch it, the run wrote over 5 GB before
 // it was killed. Comparing the count keeps a future failure to one integer. (#479 hit the same
 // hazard at 880 MB.)
 @Suite("Issue #558: every sampling entry point bounds the count a caller can supply", .serialized)
 struct Issue558SamplingCountBounds {
 
     // `Int32.max + 1`, the first count provably past the bridge's own count type. Not the
-    // interesting threshold — anything above ~1e8 is unallocatable — just the cheapest to prove.
+    // interesting threshold, anything above ~1e8 is unallocatable, just the cheapest to prove.
     private static let pastInt32 = Int(Int32.max) + 1
     private static let pastCeiling = Sampling.maximumSampleCount + 1
 
@@ -264,7 +264,7 @@ struct Issue558SamplingCountBounds {
     func drawMeshGrid() {
         let s = plane()
         #expect(!s.drawMesh(uCount: 20, vCount: 20).isEmpty)
-        // Exactly the ceiling is refused only past it, not at it — but 1e7 points is 45 s of
+        // Exactly the ceiling is refused only past it, not at it, but 1e7 points is 45 s of
         // sampling, so the boundary itself is checked on `Sampling.gridTotal` above, not here.
         #expect(s.drawMesh(uCount: 5000, vCount: 2001).uCount == 0)     // 10,005,000: past the ceiling
         // The measured hole: two negatives used to multiply to a plausible positive total, so

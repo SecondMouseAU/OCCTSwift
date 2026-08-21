@@ -49,37 +49,37 @@ Every OCCT toolkit used for modeling, analysis, and data exchange:
 
 These require implementing C++ abstract classes, which the bridge architecture doesn't support:
 
-- `ChFi3d_FilBuilder`, `ChFi3d_ChBuilder` — complex stateful builders with protected virtuals
-- `Approx_FitAndDivide`, `Approx_FitAndDivide2d` — need `AppCont_Function` abstract impl
-- `BRepBlend_AppSurface` — needs `Approx_SweepFunction` abstract impl
+- `ChFi3d_FilBuilder`, `ChFi3d_ChBuilder`, complex stateful builders with protected virtuals
+- `Approx_FitAndDivide`, `Approx_FitAndDivide2d`, need `AppCont_Function` abstract impl
+- `BRepBlend_AppSurface`: needs `Approx_SweepFunction` abstract impl
 
 ### Classes Not Wrapped Directly (reached only through another wrapper)
 
-- `ShapeFix_Shell` — no bridge function constructs one. Shell repair is reached through
+- `ShapeFix_Shell`: no bridge function constructs one. Shell repair is reached through
   `ShapeFix_Shape`, which drives `ShapeFix_Shell` internally; the header is `#include`d by the
   bridge's umbrella translation unit but never used. The cross-reference index in `OCCTBridge.h`
   claimed an `OCCTShapeFixShell` wrapper until #510 measured it and removed the entry. Wrapping it
   directly would mean exposing per-shell orientation/mode control (`FixFaceOrientation`,
   `SetNonManifoldFlag`) that `ShapeFix_Shape` currently chooses for the caller.
-- `ShapeUpgrade_ConvertCurve3dToBezier`, `ShapeUpgrade_ConvertSurfaceToBezierBasis` — reached
+- `ShapeUpgrade_ConvertCurve3dToBezier`, `ShapeUpgrade_ConvertSurfaceToBezierBasis`, reached
   through `ShapeUpgrade_ShapeConvertToBezier`, the shape-level driver that owns both. The index
   entries carry a `(via …)` aside naming that driver.
-- `BOPAlgo_RemoveFeatures` — reached through `BRepAlgoAPI_Defeaturing`, a forwarder to it. #536
+- `BOPAlgo_RemoveFeatures`: reached through `BRepAlgoAPI_Defeaturing`, a forwarder to it. #536
   deleted the direct wrap that duplicated the forwarder.
-- `LProp_AnalyticCurInf` — `OCCTLPropAnalyticCurInf` fills a `LProp_CurAndInf` from an inline scan
+- `LProp_AnalyticCurInf`: `OCCTLPropAnalyticCurInf` fills a `LProp_CurAndInf` from an inline scan
   of the analytic curve types rather than constructing the OCCT class.
 - `BRepExtrema_ElementFilter`, `BRepExtrema_ProximityDistTool`, `BRepExtrema_ProximityValueTool`,
-  `BRepExtrema_TriangleSet`, `BRepExtrema_OverlapTool` — internal building blocks of
+  `BRepExtrema_TriangleSet`, `BRepExtrema_OverlapTool`, internal building blocks of
   `BRepExtrema_ShapeProximity` (the wrapped, documented entry point for mesh-level overlap/proximity
   detection). `OverlapTool` and `TriangleSet` are the raw BVH primitive-set/traversal classes
   `ShapeProximity` builds internally from a triangulated shape; `ElementFilter` is an abstract
   customization hook for that traversal; `ProximityDistTool`/`ProximityValueTool` are
   `ShapeProximity`'s own internal distance-accumulation helpers. `OverlapTool`'s header is
-  `#include`d in `OCCTBridge_Properties.mm` but never instantiated — same shape as
+  `#include`d in `OCCTBridge_Properties.mm` but never instantiated, same shape as
   `Geom2d_Direction` below. (#809)
 - `BRepClass_Edge`, `BRepClass_FaceExplorer`, `BRepClass_FacePassiveClassifier`,
   `BRepClass_FClass2dOfFClassifier`, `BRepClass_Intersector`, `BRepClass3d_BndBoxTree`,
-  `BRepClass3d_Intersector3d`, `BRepClass3d_SolidExplorer`, `BRepClass3d_SolidPassiveClassifier` —
+  `BRepClass3d_Intersector3d`, `BRepClass3d_SolidExplorer`, `BRepClass3d_SolidPassiveClassifier`,
   internal plumbing of the point-classification algorithms `BRepClass_FaceClassifier`/
   `BRepClass_FClassifier` (2D, point-in-face) and `BRepClass3d_SolidClassifier`/`BRepClass3d`
   (3D, point-in-solid) already wrap: edge/face wrappers the classifier walks, the ray/segment
@@ -89,19 +89,19 @@ These require implementing C++ abstract classes, which the bridge architecture d
   `BRepClass3d_SolidClassifier` is (its own required constructor argument) but never named as a
   standalone capability. (#809)
 - `GC_MakeRotation`, `GC_MakeRotation2d`, `GC_MakeMirror2d`, `GC_MakeScale2d`,
-  `GC_MakeTranslation2d` — the rotation/mirror/scale/translation-transform capability each provides
+  `GC_MakeTranslation2d`: the rotation/mirror/scale/translation-transform capability each provides
   is already wrapped via the corresponding `gce_Make*`/`gce_Make*2d` class (`TransformFactory3D`/
   `TransformFactory2D`, `docs/reference/Document-Analysis-Builders.md`'s "gce Transform Factories"
-  section) — a different OCCT package (`gce_*`, outside this lane's `GC_*`/`GCE2d_*` prefixes)
+  section), a different OCCT package (`gce_*`, outside this lane's `GC_*`/`GCE2d_*` prefixes)
   building the same `gp_Trsf`/`gp_Trsf2d` result. None of the five is `#include`d or referenced
   anywhere in the bridge. (The 3D mirror/scale/translation siblings, `GC_MakeMirror`/`GC_MakeScale`/
-  `GC_MakeTranslation`, ARE wrapped directly — `Shape.mirror`/`Shape.scale`/`Shape.translate` via
+  `GC_MakeTranslation`, ARE wrapped directly, `Shape.mirror`/`Shape.scale`/`Shape.translate` via
   `OCCTShapeMirrorAboutAxis`/`OCCTShapeMirrorAboutPoint`/`OCCTShapeScaleAboutPoint`/
-  `OCCTShapeTranslateByPoints` — so only the 2D forms and 3D rotation follow this "covered by a
+  `OCCTShapeTranslateByPoints`: so only the 2D forms and 3D rotation follow this "covered by a
   sibling package" reasoning.) (#809)
-- `GC_Root` — the common `Status()`/`IsDone()`/`Value()` base class every already-wrapped
+- `GC_Root`: the common `Status()`/`IsDone()`/`Value()` base class every already-wrapped
   `GC_Make*` subclass inherits; never separately constructed.
-- `BRepExtrema_SolutionElem` — OCCT's own internal per-solution representation for a
+- `BRepExtrema_SolutionElem`: OCCT's own internal per-solution representation for a
   `BRepExtrema_DistShapeShape` result. The data (nearest point + support type) is exposed through
   `DistShapeShape`'s own accessor methods (`PointOnShape1`/`SupportTypeShape1`/…) without the
   bridge ever constructing or naming this class; its header is `#include`d in
@@ -271,32 +271,32 @@ These require implementing C++ abstract classes, which the bridge architecture d
 
 ### Classes Not Wrapped At All
 
-- `Geom2d_Direction`, `Geom2d_VectorWithMagnitude` — the headers are `#include`d but never used.
+- `Geom2d_Direction`, `Geom2d_VectorWithMagnitude`, the headers are `#include`d but never used.
   `OCCTDirection2D*` and `OCCTVector2D*` are `gp_Dir2d`/`gp_Vec2d` arithmetic on bare doubles, not
   wrappers for the `Geom2d_` handle types; the cross-reference index claimed otherwise until #565
   measured it. Wrapping them would mean exposing a reference-counted handle for what is currently
   a value-type calculation.
 - `gp_TrsfNLerp`, `GC_MakeLine`, `GC_MakeArcOfEllipse2d`, `GC_MakeArcOfHyperbola2d`,
-  `GC_MakeArcOfParabola2d` — the headers are `#include`d (`OCCTBridge_Spatial.mm`,
+  `GC_MakeArcOfParabola2d`: the headers are `#include`d (`OCCTBridge_Spatial.mm`,
   `OCCTBridge.mm`, `OCCTBridge_Geom2d.mm`) but never constructed, the same shape as
   `Geom2d_Direction` above. `gp_TrsfNLerp`'s sibling rotation-only interpolators,
   `gp_QuaternionNLerp`/`gp_QuaternionSLerp`, ARE wrapped (`OCCTQuaternionNLerp`/
-  `OCCTQuaternionSLerp`, `MathSolver.swift`) — full-transform (translation + scale + rotation)
+  `OCCTQuaternionSLerp`, `MathSolver.swift`), full-transform (translation + scale + rotation)
   interpolation is not. `GC_MakeLine`'s segment-with-validation sibling `GC_MakeSegment` is wrapped
   and documented; the raw infinite-line constructor is not. The angle-bounded 2D elliptical/
-  hyperbolic/parabolic arc CAPABILITY the other three provide is still available —
+  hyperbolic/parabolic arc CAPABILITY the other three provide is still available,
   `OCCTCurve2DCreateArcOfEllipse`/`CreateArcOfHyperbola`/`CreateArcOfParabola` build the trimmed
   arc directly from `Geom2d_Ellipse`/`Geom2d_Hyperbola`/`Geom2d_Parabola` + `Geom2d_TrimmedCurve`
   instead of going through these Make helpers (`docs/reference/Curve2D.md`'s `arcOfEllipse`/
-  `arcOfHyperbola`/`arcOfParabola` entries name the correct backing classes as of #809) — only the
+  `arcOfHyperbola`/`arcOfParabola` entries name the correct backing classes as of #809), only the
   specific Make-helper *class* goes unused, not the underlying arc construction. (#809)
 - `gp_Vec2f`, `gp_Vec3f`, `BRepExtrema_MapOfIntegerPackedMapOfInteger`, `BRepExtrema_SeqOfSolution`,
-  `BRepClass3d_MapOfInter` — deprecated since OCCT 8.0.0, each a `using`/`typedef` alias for a
+  `BRepClass3d_MapOfInter`: deprecated since OCCT 8.0.0, each a `using`/`typedef` alias for a
   single-precision `NCollection_Vec{2,3}<float>` or an `NCollection_DataMap`/`NCollection_Sequence`
   instantiation, not a distinct constructible type. Same "NCollection containers" and (for the two
   `Vec` aliases) single-precision-vs-this-project's-double-precision rationale the summary table
   above already gives; none has any live use in the bridge. (#809)
-- `gp_VectorWithNullMagnitude`, `BRepExtrema_UnCompatibleShape` — `Standard_DomainError` exception
+- `gp_VectorWithNullMagnitude`, `BRepExtrema_UnCompatibleShape`, `Standard_DomainError` exception
   types (`DEFINE_STANDARD_EXCEPTION`), not constructible geometry. `gp_VectorWithNullMagnitude` is
   what `gp_Vec`/`gp_Dir`'s own constructor throws for a zero-length input, already absorbed by the
   bridge-wide `catch (...)` sweep the #345 entry in `CLAUDE.md`'s Known OCCT Bugs describes;
@@ -306,7 +306,7 @@ These require implementing C++ abstract classes, which the bridge architecture d
   `GCE2d_MakeArcOfHyperbola`, `GCE2d_MakeArcOfParabola`, `GCE2d_MakeCircle`, `GCE2d_MakeEllipse`,
   `GCE2d_MakeHyperbola`, `GCE2d_MakeLine`, `GCE2d_MakeMirror`, `GCE2d_MakeParabola`,
   `GCE2d_MakeRotation`, `GCE2d_MakeScale`, `GCE2d_MakeSegment`, `GCE2d_MakeTranslation`, and
-  `GCE2d_Root`) —
+  `GCE2d_Root`),
   every header in the package has been a `using GCE2d_X = GC_X2d` (or `= GC_Root`) deprecated
   compatibility alias since OCCT 8.0.0, not a distinct class; the refman generates no page for any
   of them (queried via the `context` MCP's `occt-refman@8.0.0-p1`, #809). v0.156.0 already migrated
@@ -315,11 +315,11 @@ These require implementing C++ abstract classes, which the bridge architecture d
   `GCE2d_Make*` class as the backing implementation for a Swift method that, per direct inspection
   of the bridge, either used the canonical `GC_*2d` name already (`arcThrough`) or never used any
   `GC_`/`GCE2d_` Make helper at all, constructing the `Geom2d_*` primitive directly (`arcOfCircle`,
-  `arcOfEllipse`, `arcOfHyperbola`, `arcOfParabola`, the `Point2D`-taking `segment` overload) — the
+  `arcOfEllipse`, `arcOfHyperbola`, `arcOfParabola`, the `Point2D`-taking `segment` overload), the
   exact `GCE2d_*`/`GC_*` prefix confusion #508 warned future audits to watch for; all six corrected
-  here. #809's sweep also found one site that regressed back to the deprecated spelling —
+  here. #809's sweep also found one site that regressed back to the deprecated spelling,
   `OCCTBridge_Modeling.mm`'s `OCCTShapeCreateFaceFromSurfaceUVPolygon` still calls
-  `GCE2d_MakeSegment` — but **left it unrenamed**: that file is grandfathered on
+  `GCE2d_MakeSegment`: but **left it unrenamed**: that file is grandfathered on
   `Scripts/style-manifest-bridge.txt`, and `check-style-manifest.py` mechanically requires bringing
   the *whole* file into `clang-format` compliance (a ~24,000-line diff) the moment any line in it
   changes, the same situation #917 already tracks (deferred from PR #912). The rename is
@@ -408,19 +408,23 @@ These require implementing C++ abstract classes, which the bridge architecture d
   `XCAFDoc_VisMaterial` (`IsDoubleSided`/`SetDoubleSided`, superseded by `FaceCulling`). Filing any
   of those as a deprecated alias would have been wrong in the most misleading direction, since each
   is something a caller uses today. (#810)
-- Twenty-one enums nothing in the tree reads. Thirteen are GD&T qualifiers and modifiers,
-  `XCAFDimTolObjects_AngularQualifier`, `XCAFDimTolObjects_DatumModifWithValue`,
-  `XCAFDimTolObjects_DatumSingleModif`, `XCAFDimTolObjects_DatumTargetType`,
-  `XCAFDimTolObjects_DimensionFormVariance`, `XCAFDimTolObjects_DimensionGrade`,
-  `XCAFDimTolObjects_DimensionModif`, `XCAFDimTolObjects_DimensionQualifier`,
-  `XCAFDimTolObjects_GeomToleranceMatReqModif`, `XCAFDimTolObjects_GeomToleranceModif`,
-  `XCAFDimTolObjects_GeomToleranceTypeValue`, `XCAFDimTolObjects_GeomToleranceZoneModif` and
-  `XCAFDimTolObjects_ToleranceZoneAffectedPlane`: `Document.dimension(at:)`,
-  `geomTolerance(at:)` and `datum(at:)` read a dimension's type, primary value and tolerance
-  bounds off the `XCAFDimTolObjects_*Object` and stop there, so a STEP file's ISO 286 grade,
-  material requirement or datum modifiers survive a round trip but cannot be read. Widening
-  `DimensionInfo`/`GeomToleranceInfo`/`DatumInfo` is a public API change rather than a wrap, which
-  is why it is recorded here. Four more are `CDF_Store`'s own statuses,
+- Nine enums nothing in the tree reads. Exactly one is a GD&T enum,
+  `XCAFDimTolObjects_ToleranceZoneAffectedPlane`, which is the type of a geometric tolerance's
+  affected plane; it stays unbound because `GetAffectedPlaneType` and `GetAffectedPlane` are not
+  wrapped, and the type on its own would be half an answer (see the two #1004 sections below).
+  Twelve of the thirteen this bullet used to name are now bound and gated against the pinned
+  headers by `Scripts/derive-gdt-enums.py`: `XCAFDimTolObjects_DimensionFormVariance` and
+  `XCAFDimTolObjects_DimensionGrade` as `Document.DimensionFormVariance` and
+  `Document.DimensionGrade` (#996); `XCAFDimTolObjects_DimensionQualifier`,
+  `XCAFDimTolObjects_AngularQualifier` and `XCAFDimTolObjects_DimensionModif` as
+  `Document.DimensionQualifier`, `Document.AngularQualifier` and `Document.DimensionModifier`;
+  and `XCAFDimTolObjects_GeomToleranceTypeValue`, `XCAFDimTolObjects_GeomToleranceMatReqModif`,
+  `XCAFDimTolObjects_GeomToleranceZoneModif`, `XCAFDimTolObjects_GeomToleranceModif`,
+  `XCAFDimTolObjects_DatumSingleModif`, `XCAFDimTolObjects_DatumModifWithValue` and
+  `XCAFDimTolObjects_DatumTargetType` as `Document.GeomToleranceValueType`,
+  `Document.MaterialRequirement`, `Document.GeomToleranceZoneModifier`,
+  `Document.GeomToleranceModifier`, `Document.DatumModifier`, `Document.DatumModifierWithValue`
+  and `Document.DatumTargetType` (#1004). Four more are `CDF_Store`'s own statuses,
   `CDF_StoreSetNameStatus`, `CDF_SubComponentStatus`, `CDF_TryStoreStatus` and
   `CDF_TypeOfActivation`: the bridge saves through `TDocStd_Application::SaveAs`, which reports
   `PCDM_StoreStatus`, and that **is** wrapped as `StoreStatus`, so these are reachable only by
@@ -432,6 +436,105 @@ These require implementing C++ abstract classes, which the bridge architecture d
   `TDataStd_RealEnum` is the unit tag on a `TDataStd_Real`, which the attribute is wrapped without.
   `TNaming_NameType` is the naming resolver's rule kind: `TNaming_Naming` is wrapped as an opaque
   attribute, so which rule resolved a name is not surfaced. (#810)
+
+### GD&T dimension accessors left unwrapped (#1004)
+
+#1004 measured `XCAFDimTolObjects_DimensionObject`'s 42 public accessors against what
+`Document.Dimension` exposes. The first PR wrapped the five that change what a dimension's number
+means (`GetQualifier`/`HasQualifier`, `GetAngularQualifier`/`HasAngularQualifier`, `GetModifiers`,
+`GetNbOfDecimalPlaces`, plus the two static `IsDimensionalLocation`/`IsDimensionalSize`
+classifiers). The rest are listed here with the reason each was left, so the question is not
+re-asked from scratch.
+
+Every accessor below was measured against the pinned kernel in
+[`Scripts/repro/1004-gdt-accessors/`](https://github.com/SecondMouseAU/OCCTSwift/tree/main/Scripts/repro/1004-gdt-accessors),
+not read off a header comment.
+
+| Accessor | Why it is not wrapped |
+|---|---|
+| `GetSemanticName` / `SetSemanticName` | **Absence is not representable, and the value is a marker string.** The semantic name is stored in the dimension label's own `TDataStd_Name`, which `XCAFDoc_DimTolTool::AddDimension()` initialises to the literal `"DGT:Dimension"`. `GetObject` reads that attribute back, so a dimension that never had a semantic name reports `"DGT:Dimension"` rather than nothing. `SetObject`'s `setString` helper returns early on a null handle, so the name also cannot be cleared once set. Wrapping it would surface OCCT's own table marker as if it were the caller's text. The same applies to `XCAFDoc_GeomTolerance` (`"DGT:Tolerance"`) and `XCAFDoc_Datum` (`"DGT:Datum"`). |
+| `GetDirection` | **No presence predicate, and a fabricated vector.** `GetDirection(gp_Dir&)` returns `true` unconditionally (`XCAFDimTolObjects_DimensionObject.cxx:419-423`) and writes `myDir`, which the constructor never initialises; measured, an object that never had a direction reports `(1,0,0)`, the default-constructed `gp_Dir`. `XCAFDoc_Dimension::SetObject` stores the direction only for `DimensionType_Location_Oriented`, so even the round trip is type-conditional. Surfacing this would be exactly the fabricated-magnitude shape #609 exists to catch. |
+| `GetPath` / `SetPath` | Returns a `TopoDS_Edge`, so it needs an `OCCTEdgeRef` on the read side and an edge argument on the write side. Worth wrapping, and it is the one omission here with real interpretive value, since `.locationWithPath` and `.sizeWithPath` cannot be read without it. Deferred rather than declined: it is a handle-lifetime change to the read struct, not a field. |
+| `GetPlane` / `HasPlane`, `GetPointTextAttach` / `HasTextPoint` | The annotation plane and the text anchor are presentation placement, and both need `gp_Ax2` / `gp_Pnt` plumbing into a `Hashable` read struct. Both carry a real predicate, so they are wrappable correctly; deferred on proportion, not on correctness. |
+| `GetPoint` / `HasPoint` / `IsPointConnection` / `GetConnectionAxis` / `GetConnectionName` and the five `*2` siblings | Ten accessors describing where a location dimension's two ends attach. They only mean anything together (the `IsPointConnection` flag decides whether the stored `gp_Ax2` is a bare point or a frame), so they want one modelled `Connection` type rather than ten fields. Deferred as a unit. |
+| `GetPresentation` / `GetPresentationName` | The annotation's graphical presentation shape. Only STEP/XCAF readers populate it, and this package has no write path for one, so a wrapped read could only ever be tested against an imported fixture this repo does not carry. |
+| `HasDescriptions` / `NbDescriptions` / `GetDescription` / `GetDescriptionName` | A parallel pair of string arrays, zero-indexed (measured: `GetDescription(0)` is the first entry, and an out-of-range index answers an empty string rather than throwing). Needs a count-plus-index bridge pair per array plus an `AddDescription` write path. Deferred on proportion. |
+| `GetValues` / `SetValues` | The raw values array. `Dimension.Bounds` already mirrors it through OCCT's own predicates (#996), and exposing the array as well would give two spellings of one fact, which is the duplication #996 removed. |
+| `SetType`, `SetValue`, `SetUpperBound`, `SetLowerBound`, `SetUpperTolValue`, `SetLowerTolValue`, `SetClassOfTolerance`, `AddModifier`, `RemoveDescription`, `SetPoint`, `SetPoint2`, `SetConnectionAxis`, `SetConnectionAxis2`, `SetConnectionName`, `SetConnectionName2`, `SetPresentation`, `AddDescription`, `SetPointTextAttach`, `SetPlane`, `SetDirection` | Mutators for the reads above. Each ships with its own read accessor when that one lands, per the rule in `GDTWrite.swift`: a read this package cannot author has no way to be tested against a document of our own. |
+| `DumpJson` | OCCT's debug dump, not an API surface this wrapper exposes for any class. |
+
+`XCAFDimTolObjects_GeomToleranceObject` (22 accessors, 2 exposed) and
+`XCAFDimTolObjects_DatumObject` (21 accessors, 1 exposed) are #1004's second PR and are not
+adjudicated here yet.
+
+**One accessor is blocked by a kernel defect rather than by scope.** `XCAFDoc_Datum::GetObject`
+builds the datum's point from the annotation plane's location array, and dereferences a null handle
+when the datum has a point and no plane. That is an uncatchable SIGSEGV already reachable from
+`Document.datums` today, before any of this surface is wrapped; it is #1022, with a reproducer in
+the same directory.
+
+### GD&T tolerance and datum accessors left unwrapped (#1004)
+
+The sibling of the dimension section above, for `XCAFDimTolObjects_GeomToleranceObject` (22 public
+accessors, 2 exposed before #1004) and `XCAFDimTolObjects_DatumObject` (21, 1 exposed). #1004's
+second PR wrapped the semantics on both and left the geometry and presentation, each measured
+against the pinned kernel in
+[`Scripts/repro/1004-gdt-accessors/`](https://github.com/SecondMouseAU/OCCTSwift/tree/main/Scripts/repro/1004-gdt-accessors).
+
+**Wrapped on `GeomTolerance`:** `GetTypeOfValue`, `GetMaterialRequirementModifier`,
+`GetZoneModifier` with `GetValueOfZoneModifier`, `GetMaxValueModifier`, `GetModifiers`.
+**Wrapped on `Datum`:** `GetPosition`, `GetModifiers`, `GetModifierWithValue`, `IsDatumTarget`,
+`GetDatumTargetType`, `GetDatumTargetNumber`, `GetDatumTargetLength`, `GetDatumTargetWidth`,
+`HasDatumTargetParams`.
+
+| Accessor | Why it is not wrapped |
+|---|---|
+| `GetSemanticName` / `SetSemanticName` on both classes | Same defect as the dimension case above. `XCAFDoc_DimTolTool::AddGeomTolerance()` and `AddDatum()` initialise the new label's `TDataStd_Name` to `"DGT:Tolerance"` and `"DGT:Datum"`, and `GetObject` reads that same attribute back, so an unnamed entry reports the GD&T table's own marker string. Measured: `transcript.txt`'s part 2 rows. |
+| `GetAffectedPlane` / `GetAffectedPlaneType` / `HasAffectedPlane` | `HasAffectedPlane()` is a real predicate and the type enum has only three members, so this one is wrappable correctly. It needs `gp_Pln` plumbing into a `Hashable` read struct, and the type without the plane would say which kind of plane the zone is qualified against while withholding the plane. Deferred as a unit rather than half-wrapped; this is the one `XCAFDimTolObjects` enum still unbound. |
+| `GetAxis` / `HasAxis` on the tolerance, `GetDatumTargetAxis` on the datum | Both are `gp_Ax2` placements. The datum one has a write path here already (`setDatumTargetPlacement(at:location:normal:reference:length:width:)` sets it, because OCCT's three target setters share one presence flag and writing any of them alone reports the other two as present), but no read: reading it back wants the same `gp_Ax2` plumbing as the annotation planes, and is deferred with them. |
+| `GetPlane` / `HasPlane`, `GetPoint` / `HasPoint`, `GetPointTextAttach` / `HasPointText` on both classes | Annotation placement, six accessors per class. Each carries a real predicate, so all are wrappable correctly; deferred on proportion, alongside the dimension class's identical group. |
+| `GetPresentation` / `GetPresentationName` on both classes | The annotation's graphical presentation shape. Only STEP/XCAF readers populate it, and this package has no write path for one, so a wrapped read could only be tested against an imported fixture this repo does not carry. |
+| `GetDatumTarget` / `SetDatumTarget(TopoDS_Shape)` | The `.area` target's own shape. `XCAFDoc_Datum::SetObject` stores it only for `DatumTargetType_Area` and takes the placement branch otherwise, so a wrapped read would answer `nil` for four of the five target types. It needs an `OCCTShapeRef` on the read side, the same handle-lifetime change `GetPath` needs on the dimension. Deferred with it. |
+| `SetType`, `SetValue`, `SetName`, `AddModifier`, `SetAffectedPlane`, `SetAxis`, `SetPlane`, `SetPoint`, `SetPointTextAttach`, `SetPresentation`, `SetDatumTargetAxis` alone | Mutators for the reads above, or (for `AddModifier` and the lone axis setter) narrower spellings of a mutator that already ships. Each arrives with its own read accessor. |
+| `DumpJson` on both | OCCT's debug dump, not an API surface this wrapper exposes for any class. |
+
+### DimTolTool coverage: the linkage half is a real gap (#1021)
+
+[#1021](https://github.com/SecondMouseAU/OCCTSwift/issues/1021) measured `XCAFDoc_DimTolTool` at 9 of 39
+public methods reached, and asked for a decision rather than a wrap. Measured directly rather than
+inherited from the sample: the bridge calls `Set`, `AddDimension`, `AddGeomTolerance`, `AddDatum`,
+`SetDimension`, `SetGeomTolerance`, `GetDimensionLabels`, `GetGeomToleranceLabels` and
+`GetDatumLabels`, and nothing else. Split three ways.
+
+**A real gap: the reverse lookups and the datum-to-tolerance association.** `GetRefDimensionLabels`,
+`GetRefGeomToleranceLabels`, `GetRefDatumLabel`, `GetRefShapeLabel`, `GetDatumOfTolerLabels`,
+`GetDatumWithObjectOfTolerLabels`, `GetTolerOfDatumLabels`, `SetDatumToGeomTol`, the two `SetDatum`
+overloads and `FindDatum`. These are what answer "which dimensions apply to this face" and "which
+datums does this positional tolerance reference, in what order", and the second is what turns a
+tolerance plus three datums into an `A|B|C` frame. `Document.dimensions` / `geomTolerances` /
+`datums` are three flat sequences today with no edge between them and no edge to the geometry, so
+this is the largest missing piece of the GD&T surface, larger than anything #1004 wrapped. Not
+scheduled here.
+
+**A deliberate omission: the legacy `XCAFDoc_DimTol` API.** `IsDimTol`, `GetDimTolLabels`, the two
+`FindDimTol` overloads, the two `AddDimTol` overloads, `SetDimTol` and `GetDimTol` drive the
+pre-AP242 kind/values/name/description model. That model *is* wrapped, through `XCAFDoc_DimTol`
+directly (`OCCTDocumentSetDimTol`, `OCCTDocumentGetDimTolKind`, `OCCTDocumentGetDimTolName`,
+`OCCTDocumentGetDimTolDescription`, `OCCTDocumentGetDimTolValues`), so routing it through the tool
+as well would be a second spelling of one capability, which is what #377 exists to remove.
+
+**Not a gap at all: the classifiers, the lock and the plumbing.** `IsDimension`,
+`IsGeomTolerance` and `IsDatum` classify an arbitrary label; the bridge addresses entries by
+position in the tool's own label sequence and never holds a label whose kind it does not already
+know. `IsLocked` / `Lock` / `Unlock` are a GUI editing lock with no counterpart in a Swift value
+API. `GetGDTPresentations` / `SetGDTPresentations` are the bulk form of the per-object presentation
+shapes the table above already declines. `BaseLabel`, `ShapeTool`, `GetID`, `ID`, `DumpJson` and the
+constructor are plumbing every wrapped OCAF attribute has and none exposes.
+
+**On the metric itself.** #1021's own caveat holds here: the denominator counts `Set*` and
+`DumpJson`, and 8 of the 30 unreached methods are the legacy model plus the plumbing, which no
+coverage figure should have counted against this class. The row is worth acting on for the linkage
+methods and for nothing else, which is the answer #1021 asked for.
 
 ### Constraint Solver Infrastructure (Complete)
 

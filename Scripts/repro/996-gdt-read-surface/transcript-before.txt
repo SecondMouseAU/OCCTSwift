@@ -1,0 +1,68 @@
+== part 1: XCAFDimTolObjects_DimensionObject directly ==
+
+simple 20              values=[20]  len=1  IsRange=0 IsPlusMinus=0 IsClassOfTol=0
+                       GetValue=20  GetLowerBound=0 GetUpperBound=0  GetLowerTolValue=0 GetUpperTolValue=0
+                       bridge before #996 -> value=20 lowerTol=0 upperTol=0
+range 10..12           values=[10,12]  len=2  IsRange=1 IsPlusMinus=0 IsClassOfTol=0
+                       GetValue=11  GetLowerBound=10 GetUpperBound=12  GetLowerTolValue=0 GetUpperTolValue=0
+                       bridge before #996 -> value=10 lowerTol=0 upperTol=0
+plusMinus 20 -0.3+0.7  values=[20,-0.3,0.7]  len=3  IsRange=0 IsPlusMinus=1 IsClassOfTol=0
+                       GetValue=20  GetLowerBound=0 GetUpperBound=0  GetLowerTolValue=-0.3 GetUpperTolValue=0.7
+                       bridge before #996 -> value=20 lowerTol=-0.3 upperTol=0.7
+classOfTol H7 hole     values=[20]  len=1  IsRange=0 IsPlusMinus=0 IsClassOfTol=1
+                       GetValue=20  GetLowerBound=0 GetUpperBound=0  GetLowerTolValue=0 GetUpperTolValue=0
+                       bridge before #996 -> value=20 lowerTol=0 upperTol=0
+                       GetClassOfTolerance -> ok=1 hole=1 formVariance=11 grade=8
+
+-- which array slot does each tolerance accessor read --
+raw [100,200,300] -> GetValue=100 GetLowerTolValue=200 GetUpperTolValue=300
+so slot 2 is the LOWER tolerance and slot 3 the UPPER, matching what the pm case above
+shows SetLowerTolValue/SetUpperTolValue write. The header's doc comments on
+GetUpperTolValue/GetLowerTolValue are swapped; the functions themselves are not.
+
+== part 2: the same objects on a real document, read the way the bridge reads ==
+
+dimension labels: 4
+
+simple                 values=[20]  len=1  IsRange=0 IsPlusMinus=0 IsClassOfTol=0
+                       GetValue=20  GetLowerBound=0 GetUpperBound=0  GetLowerTolValue=0 GetUpperTolValue=0
+                       bridge before #996 -> value=20 lowerTol=0 upperTol=0
+range                  values=[10,12]  len=2  IsRange=1 IsPlusMinus=0 IsClassOfTol=0
+                       GetValue=11  GetLowerBound=10 GetUpperBound=12  GetLowerTolValue=0 GetUpperTolValue=0
+                       bridge before #996 -> value=10 lowerTol=0 upperTol=0
+plusMinus              values=[20,-0.3,0.7]  len=3  IsRange=0 IsPlusMinus=1 IsClassOfTol=0
+                       GetValue=20  GetLowerBound=0 GetUpperBound=0  GetLowerTolValue=-0.3 GetUpperTolValue=0.7
+                       bridge before #996 -> value=20 lowerTol=-0.3 upperTol=0.7
+classOfTol             values=[20]  len=1  IsRange=0 IsPlusMinus=0 IsClassOfTol=1
+                       GetValue=20  GetLowerBound=0 GetUpperBound=0  GetLowerTolValue=0 GetUpperTolValue=0
+                       bridge before #996 -> value=20 lowerTol=0 upperTol=0
+
+== part 3: what the mutators do, which is what the bridge write path may report ==
+
+-- SetLowerBound / SetUpperBound converge from either order --
+  simple 20, SetLowerBound(10)  -> values=[10,10]
+  then SetUpperBound(12)        -> values=[10,12]  GetValue=11
+  simple 20, SetUpperBound(12)  -> values=[12,12]
+  then SetLowerBound(10)        -> values=[10,12]  GetValue=11
+  Each setter resets a non-range dimension to a degenerate range holding its own
+  argument twice, so either order ends at [10,12]. The bridge does not depend on one.
+
+-- SetLowerTolValue / SetUpperTolValue refuse a range dimension --
+  on a simple dimension: SetLowerTolValue=1 SetUpperTolValue=1  values=[20,-0.3,0.7]
+  on a range dimension:  SetLowerTolValue=0 SetUpperTolValue=0  values=[10,12]
+  So a bridge that discards these two return values reports success for a call that
+  changed nothing. OCCTDocumentSetDimensionTolerance now returns their conjunction.
+
+-- SetValue overwrites the whole values array --
+  plusMinus            -> values=[20,-0.3,0.7]
+  after SetValue(30)   -> values=[30]  IsPlusMinus=0
+
+-- a class of tolerance is independent of the values array --
+  range 10..12 + H7    -> values=[10,12]  IsRange=1 IsClassOfTol=1
+  This is why the Swift model carries `classOfTolerance` alongside `bounds` rather
+  than as a fourth Bounds case: the two are orthogonal in OCCT.
+
+-- a dimension with no values array at all --
+  default-constructed  -> values=[]  GetValues().IsNull()=1 GetValue=0
+  GetValue() answers 0 for a dimension that has no value. That 0 is the reason
+  Dimension.value is Double? and .unset is a Bounds case rather than a synonym for 0.

@@ -30,27 +30,53 @@ Obtain a `Drawing` by calling one of the static factory methods (`project(_:dire
 
 ### `Drawing.ProjectionType`
 
-Projection algorithm applied during HLR computation.
+Projection algorithm applied during HLR computation. The perspective case carries the focal
+distance, because `HLRAlgo_Projector`'s perspective constructor requires one and there is no
+defensible default for it; an enum case with an associated value also means the focal distance
+cannot be supplied for, and silently ignored by, an orthographic projection.
 
 ```swift
-public enum ProjectionType: UInt32 {
-    case orthographic = 0
-    case perspective  = 1
+public enum ProjectionType: Sendable, Equatable {
+    case orthographic
+    case perspective(focus: Double)
 }
 ```
 
 | Case | Meaning |
 |---|---|
 | `orthographic` | Parallel-line projection (engineering drawings) |
-| `perspective` | Converging-line projection |
+| `perspective(focus:)` | Converging-line projection from an eye point at `focus * direction` from the world origin |
 
 ---
 
-#### `Drawing.ProjectionType.perspective`
+#### `Drawing.ProjectionType.perspective(focus:)`
 
 Converging-line projection.
 
-- **OCCT:** Passed as `OCCTProjectionType` to `HLRAlgo_Projector` construction inside `OCCTDrawingCreate`.
+**The eye is anchored at the world origin, not at the shape.** `OCCTDrawingCreate` builds its
+projection frame as `gp_Ax2(gp_Pnt(0, 0, 0), viewDir)` unconditionally, so the eye sits at
+`focus * direction` and the picture plane passes through the origin perpendicular to `direction`.
+There is no parameter that moves it. A point sitting at coordinate `z` along `direction`, again
+measured from the origin, is scaled by `focus / (focus - z)`, so a longer focal distance converges
+on the orthographic projection.
+
+Two consequences follow, and neither is what an eye anchored on the shape would give:
+
+- **The scale depends on where the shape sits in world space.** Take a 10-unit cube and put the eye
+  40 units from its near face in both cases. Spanning `z` 0 to 10 with `focus` 50, it projects at
+  half-width 6.25; spanning `z` 1000 to 1010 with `focus` 1050, at 131.25. The foreshortening
+  *ratio* is identical (1.25 in both cases), so no perspective information changes; only the
+  uniform scale does, by the same factor of 21 as the two focal distances. Translate the shape to
+  the origin first if you want the drawing's scale to be independent of its modelled position.
+- **`focus` must exceed the shape's reach along `direction`,** measured from the origin. A shape at
+  or beyond the eye has `focus - z <= 0` and would be drawn mirrored through the origin, so
+  `Drawing.project` returns `nil` for it instead. The check uses the shape's axis-aligned bounding
+  box, which bounds the true reach from above, so a rotated or curved shape can be refused slightly
+  before it strictly needs to be. A focal distance that is not strictly positive returns `nil` too.
+
+- **OCCT:** `HLRAlgo_Projector(const gp_Ax2& CS, const double Focus)`, selected inside
+  `OCCTDrawingCreate` on the `OCCTProjectionType` value. The divide is
+  `HLRAlgo_Projector::Project`'s `R = 1 - Z/focus`.
 
 ---
 
@@ -66,9 +92,9 @@ public enum EdgeType: UInt32 {
 }
 ```
 
-- `.visible` — sharp and smooth edges not obscured by other geometry (`VCompound` + `Rg1LineVCompound`).
-- `.hidden` — edges behind other geometry (`HCompound` + `Rg1LineHCompound`).
-- `.outline` — silhouette / outline edges (`OutLineVCompound` / `OutLineHCompound`).
+- `.visible`: sharp and smooth edges not obscured by other geometry (`VCompound` + `Rg1LineVCompound`).
+- `.hidden`: edges behind other geometry (`HCompound` + `Rg1LineHCompound`).
+- `.outline`: silhouette / outline edges (`OutLineVCompound` / `OutLineHCompound`).
 - **OCCT:** `HLRBRep_HLRToShape` / `HLRBRep_PolyHLRToShape` compound accessors, selected via `OCCTEdgeType` in `OCCTDrawingGetEdges`.
 
 ---
@@ -140,12 +166,12 @@ public func addLinearDimension(from: SIMD2<Double>, to: SIMD2<Double>,
 ```
 
 - **Parameters:**
-  - `from` — start point in drawing coordinates (mm).
-  - `to` — end point in drawing coordinates (mm).
-  - `offset` — perpendicular distance of the dimension line from the measured line (default 10 mm).
-  - `label` — optional override text; `nil` auto-formats the measured distance.
-  - `style` — line style for extension and dimension lines (default `.solid`).
-  - `id` — optional stable identifier for downstream DXF/SVG export.
+  - `from`: start point in drawing coordinates (mm).
+  - `to`: end point in drawing coordinates (mm).
+  - `offset`: perpendicular distance of the dimension line from the measured line (default 10 mm).
+  - `label`: optional override text; `nil` auto-formats the measured distance.
+  - `style`: line style for extension and dimension lines (default `.solid`).
+  - `id`: optional stable identifier for downstream DXF/SVG export.
 - **Returns:** The appended `DrawingDimension.linear(...)` value.
 - **Example:**
   ```swift
@@ -169,12 +195,12 @@ public func addRadialDimension(centre: SIMD2<Double>, radius: Double,
 ```
 
 - **Parameters:**
-  - `centre` — centre point of the arc/circle in drawing coordinates.
-  - `radius` — radius value in drawing units (mm).
-  - `leaderAngle` — angle of the leader line from the positive X axis (default π/4 = 45°).
-  - `label` — optional override; `nil` auto-formats as "R\<value\>".
-  - `style` — line style (default `.solid`).
-  - `id` — optional stable identifier.
+  - `centre`: centre point of the arc/circle in drawing coordinates.
+  - `radius`: radius value in drawing units (mm).
+  - `leaderAngle`: angle of the leader line from the positive X axis (default π/4 = 45°).
+  - `label`: optional override; `nil` auto-formats as "R\<value\>".
+  - `style`: line style (default `.solid`).
+  - `id`: optional stable identifier.
 - **Returns:** The appended `DrawingDimension.radial(...)` value.
 - **Example:**
   ```swift
@@ -197,12 +223,12 @@ public func addDiameterDimension(centre: SIMD2<Double>, radius: Double,
 ```
 
 - **Parameters:**
-  - `centre` — centre of the circle in drawing coordinates.
-  - `radius` — radius value (the label shows the diameter, 2 × radius).
-  - `leaderAngle` — leader line angle (default π/4).
-  - `label` — optional override; `nil` auto-formats as "⌀\<diameter\>".
-  - `style` — line style (default `.solid`).
-  - `id` — optional stable identifier.
+  - `centre`: centre of the circle in drawing coordinates.
+  - `radius`: radius value (the label shows the diameter, 2 × radius).
+  - `leaderAngle`: leader line angle (default π/4).
+  - `label`: optional override; `nil` auto-formats as "⌀\<diameter\>".
+  - `style`: line style (default `.solid`).
+  - `id`: optional stable identifier.
 - **Returns:** The appended `DrawingDimension.diameter(...)` value.
 - **Example:**
   ```swift
@@ -227,13 +253,13 @@ public func addAngularDimension(vertex: SIMD2<Double>,
 ```
 
 - **Parameters:**
-  - `vertex` — vertex point of the angle.
-  - `ray1` — direction of the first ray (as a 2D point from `vertex`).
-  - `ray2` — direction of the second ray.
-  - `arcRadius` — radius of the dimension arc drawn between the rays (default 20 mm).
-  - `label` — optional override; `nil` auto-formats the angle in degrees.
-  - `style` — line style (default `.solid`).
-  - `id` — optional stable identifier.
+  - `vertex`: vertex point of the angle.
+  - `ray1`: direction of the first ray (as a 2D point from `vertex`).
+  - `ray2`: direction of the second ray.
+  - `arcRadius`: radius of the dimension arc drawn between the rays (default 20 mm).
+  - `label`: optional override; `nil` auto-formats the angle in degrees.
+  - `style`: line style (default `.solid`).
+  - `id`: optional stable identifier.
 - **Returns:** The appended `DrawingDimension.angular(...)` value.
 - **Example:**
   ```swift
@@ -258,10 +284,10 @@ public func addOrdinateDimensions(origin: SIMD2<Double>,
 ```
 
 - **Parameters:**
-  - `origin` — the datum origin from which all offsets are measured.
-  - `features` — array of `(position, optional label)` tuples; `nil` labels are auto-formatted as the offset value.
-  - `tolerance` — optional tolerance to apply to each offset value (default `.none`).
-  - `id` — optional stable identifier.
+  - `origin`: the datum origin from which all offsets are measured.
+  - `features`: array of `(position, optional label)` tuples; `nil` labels are auto-formatted as the offset value.
+  - `tolerance`: optional tolerance to apply to each offset value (default `.none`).
+  - `id`: optional stable identifier.
 - **Returns:** The appended `DrawingDimension.ordinate(...)` value.
 - **Example:**
   ```swift
@@ -289,10 +315,10 @@ public func addCentreLine(from: SIMD2<Double>, to: SIMD2<Double>,
 ```
 
 - **Parameters:**
-  - `from` — start point.
-  - `to` — end point.
-  - `style` — line style (default `.chain`, per ISO 128-24 for axes and centre lines).
-  - `id` — optional stable identifier.
+  - `from`: start point.
+  - `to`: end point.
+  - `style`: line style (default `.chain`, per ISO 128-24 for axes and centre lines).
+  - `id`: optional stable identifier.
 - **Returns:** The appended `DrawingAnnotation.centreline(...)` value.
 - **Example:**
   ```swift
@@ -313,10 +339,10 @@ public func addCentermark(centre: SIMD2<Double>, extent: Double = 8,
 ```
 
 - **Parameters:**
-  - `centre` — centre of the mark.
-  - `extent` — half-length of each arm of the cross (default 8 mm).
-  - `style` — line style (default `.chain`).
-  - `id` — optional stable identifier.
+  - `centre`: centre of the mark.
+  - `extent`: half-length of each arm of the cross (default 8 mm).
+  - `style`: line style (default `.chain`).
+  - `id`: optional stable identifier.
 - **Returns:** The appended `DrawingAnnotation.centermark(...)` value.
 - **Example:**
   ```swift
@@ -337,11 +363,11 @@ public func addTextLabel(_ text: String, at position: SIMD2<Double>,
 ```
 
 - **Parameters:**
-  - `text` — the string to display.
-  - `position` — insertion point in drawing coordinates.
-  - `height` — text height in mm (default 3.5 mm, the ISO 3098 standard body height).
-  - `rotation` — rotation angle in radians counter-clockwise (default 0).
-  - `id` — optional stable identifier.
+  - `text`: the string to display.
+  - `position`: insertion point in drawing coordinates.
+  - `height`: text height in mm (default 3.5 mm, the ISO 3098 standard body height).
+  - `rotation`: rotation angle in radians counter-clockwise (default 0).
+  - `id`: optional stable identifier.
 - **Returns:** The appended `DrawingAnnotation.textLabel(...)` value.
 - **Example:**
   ```swift
@@ -364,11 +390,11 @@ public func addBalloon(itemNumber: Int,
 ```
 
 - **Parameters:**
-  - `itemNumber` — BOM item number displayed inside the balloon circle.
-  - `position` — centre of the balloon circle in drawing coordinates.
-  - `target` — optional leader-line endpoint pointing at the referenced part; `nil` draws no leader.
-  - `radius` — balloon circle radius in mm (default 5 mm).
-  - `id` — optional stable identifier.
+  - `itemNumber`: BOM item number displayed inside the balloon circle.
+  - `position`: centre of the balloon circle in drawing coordinates.
+  - `target`: optional leader-line endpoint pointing at the referenced part; `nil` draws no leader.
+  - `radius`: balloon circle radius in mm (default 5 mm).
+  - `id`: optional stable identifier.
 - **Returns:** The appended `DrawingAnnotation.balloon(...)` value.
 - **Example:**
   ```swift
@@ -393,12 +419,12 @@ public func addCuttingPlaneLine(label: String,
 ```
 
 - **Parameters:**
-  - `label` — identifier letter(s) shown at the arrow tips (e.g. `"A"`).
-  - `cuttingPlaneOrigin` — a 3D point on the cutting plane.
-  - `cuttingPlaneNormal` — normal of the cutting plane in 3D.
-  - `sectionViewDirection` — the direction in which the section view is projected (controls arrow orientation).
-  - `viewDirection` — the projection direction of this parent drawing (used to project the trace into 2D).
-  - `traceLength` — length of the trace line in drawing units (default 60 mm).
+  - `label`: identifier letter(s) shown at the arrow tips (e.g. `"A"`).
+  - `cuttingPlaneOrigin`: a 3D point on the cutting plane.
+  - `cuttingPlaneNormal`: normal of the cutting plane in 3D.
+  - `sectionViewDirection`: the direction in which the section view is projected (controls arrow orientation).
+  - `viewDirection`: the projection direction of this parent drawing (used to project the trace into 2D).
+  - `traceLength`: length of the trace line in drawing units (default 60 mm).
 - **Returns:** The appended annotation, or `nil` if the cutting plane is parallel to the view plane (trace degenerates to a point).
 - **Note:** Pure-Swift: computes the 2D trace via `simd_cross(cuttingPlaneNormal, viewDirection)` and projects both trace and arrow direction into the drawing plane.
 - **Example:**
@@ -430,12 +456,12 @@ public func addHatch(boundary: [SIMD2<Double>],
 ```
 
 - **Parameters:**
-  - `boundary` — ordered polygon vertices of the hatch region.
-  - `angle` — hatch line angle in radians (default π/4 = 45°, the ISO 128-50 convention for metals).
-  - `spacing` — distance between hatch lines in mm (default 3 mm per ISO).
-  - `islands` — optional inner boundary polygons excluded from the fill (holes).
-  - `layer` — DXF layer name for the hatch (default `"HATCH"`).
-  - `id` — optional stable identifier.
+  - `boundary`: ordered polygon vertices of the hatch region.
+  - `angle`: hatch line angle in radians (default π/4 = 45°, the ISO 128-50 convention for metals).
+  - `spacing`: distance between hatch lines in mm (default 3 mm per ISO).
+  - `islands`: optional inner boundary polygons excluded from the fill (holes).
+  - `layer`: DXF layer name for the hatch (default `"HATCH"`).
+  - `id`: optional stable identifier.
 - **Returns:** The appended `DrawingAnnotation.hatch(...)` value.
 - **Example:**
   ```swift
@@ -465,7 +491,7 @@ public func clearAnnotations()
 
 ### Uniform append API (v0.148, #83, #84)
 
-### `append(_:) — DrawingAnnotation`
+### `append(_:), DrawingAnnotation`
 
 Appends a pre-built annotation to this drawing.
 
@@ -475,7 +501,7 @@ public func append(_ annotation: DrawingAnnotation)
 
 Use to install the result of a static factory (e.g. `DrawingAnnotation.surfaceFinish(...)`, `DrawingAnnotation.featureControlFrame(...)`).
 
-- **Parameters:** `annotation` — any `DrawingAnnotation` case.
+- **Parameters:** `annotation`, any `DrawingAnnotation` case.
 - **Example:**
   ```swift
   let sf = DrawingAnnotation.surfaceFinish(...)
@@ -484,7 +510,7 @@ Use to install the result of a static factory (e.g. `DrawingAnnotation.surfaceFi
 
 ---
 
-### `append(contentsOf:) — [DrawingAnnotation]`
+### `append(contentsOf:), [DrawingAnnotation]`
 
 Appends a batch of pre-built annotations.
 
@@ -492,7 +518,7 @@ Appends a batch of pre-built annotations.
 public func append(contentsOf annotations: [DrawingAnnotation])
 ```
 
-- **Parameters:** `annotations` — array of `DrawingAnnotation` values.
+- **Parameters:** `annotations`, array of `DrawingAnnotation` values.
 - **Example:**
   ```swift
   let cosmetics = DrawingAnnotation.cosmeticThreadSideView(...)
@@ -501,7 +527,7 @@ public func append(contentsOf annotations: [DrawingAnnotation])
 
 ---
 
-### `append(_:) — DrawingDimension`
+### `append(_:), DrawingDimension`
 
 Appends a pre-built dimension.
 
@@ -509,7 +535,7 @@ Appends a pre-built dimension.
 public func append(_ dimension: DrawingDimension)
 ```
 
-- **Parameters:** `dimension` — any `DrawingDimension` case.
+- **Parameters:** `dimension`, any `DrawingDimension` case.
 - **Example:**
   ```swift
   let dim = DrawingDimension.linear(.init(from: .zero, to: SIMD2(80, 0), offset: 12))
@@ -518,7 +544,7 @@ public func append(_ dimension: DrawingDimension)
 
 ---
 
-### `append(contentsOf:) — [DrawingDimension]`
+### `append(contentsOf:), [DrawingDimension]`
 
 Appends a batch of pre-built dimensions.
 
@@ -526,7 +552,7 @@ Appends a batch of pre-built dimensions.
 public func append(contentsOf dimensions: [DrawingDimension])
 ```
 
-- **Parameters:** `dimensions` — array of `DrawingDimension` values.
+- **Parameters:** `dimensions`, array of `DrawingDimension` values.
 - **Example:**
   ```swift
   drawing.append(contentsOf: autoDimensions)
@@ -548,13 +574,14 @@ public static func project(
 ) -> Drawing?
 ```
 
-The underlying algorithm uses `HLRBRep_Algo` for exact edge-geometry HLR — slower but produces precise curves.
+The underlying algorithm uses `HLRBRep_Algo` for exact edge-geometry HLR, slower but produces precise curves.
 
 - **Parameters:**
-  - `shape` — the 3D shape to project.
-  - `direction` — view direction vector (need not be normalised).
-  - `type` — projection type (default `.orthographic`).
-- **Returns:** `Drawing` containing the projected edge compounds, or `nil` if the shape is null or HLR fails.
+  - `shape`: the 3D shape to project.
+  - `direction`: view direction vector (need not be normalised).
+  - `type`: projection type (default `.orthographic`), carrying the focal distance in the
+    perspective case.
+- **Returns:** `Drawing` containing the projected edge compounds, or `nil` if the shape is null, HLR fails, or a perspective focal distance is not strictly positive.
 - **OCCT:** `HLRBRep_Algo` + `HLRAlgo_Projector` + `HLRBRep_HLRToShape`.
 - **Example:**
   ```swift
@@ -562,6 +589,9 @@ The underlying algorithm uses `HLRBRep_Algo` for exact edge-geometry HLR — slo
   if let view = Drawing.project(box, direction: SIMD3(0, 0, 1)) {
       let edges = view.visibleEdges
   }
+  // The same box seen from 50 units away: the near face, 15 units towards the eye,
+  // projects 50/(50-15) = 1.4286x larger than it does orthographically.
+  let near = Drawing.project(box, direction: SIMD3(0, 0, 1), type: .perspective(focus: 50))
   ```
 
 ---
@@ -570,7 +600,7 @@ The underlying algorithm uses `HLRBRep_Algo` for exact edge-geometry HLR — slo
 
 ### `Drawing.topView(of:)`
 
-Creates a top (plan) view — looking down the −Z axis.
+Creates a top (plan) view, looking down the −Z axis.
 
 ```swift
 public static func topView(of shape: Shape) -> Drawing?
@@ -588,7 +618,7 @@ Shorthand for `project(shape, direction: SIMD3(0, 0, 1))`.
 
 ### `Drawing.frontView(of:)`
 
-Creates a front view — looking down the −Y axis.
+Creates a front view, looking down the −Y axis.
 
 ```swift
 public static func frontView(of shape: Shape) -> Drawing?
@@ -606,7 +636,7 @@ Shorthand for `project(shape, direction: SIMD3(0, 1, 0))`.
 
 ### `Drawing.sideView(of:)`
 
-Creates a right side view — looking down the −X axis.
+Creates a right side view, looking down the −X axis.
 
 ```swift
 public static func sideView(of shape: Shape) -> Drawing?
@@ -624,7 +654,7 @@ Shorthand for `project(shape, direction: SIMD3(1, 0, 0))`.
 
 ### `Drawing.isometricView(of:)`
 
-Creates an isometric view — looking from direction (1, 1, 1) / √3.
+Creates an isometric view, looking from direction (1, 1, 1) / √3.
 
 ```swift
 public static func isometricView(of shape: Shape) -> Drawing?
@@ -652,12 +682,17 @@ public static func projectFast(
 ) -> Drawing?
 ```
 
-Uses `BRepMesh_IncrementalMesh` + `HLRBRep_PolyAlgo` — significantly faster than exact HLR but the edges follow the tessellation facets rather than the true curves. Suitable for interactive previews.
+Uses `BRepMesh_IncrementalMesh` + `HLRBRep_PolyAlgo`, significantly faster than exact HLR but the edges follow the tessellation facets rather than the true curves. Suitable for interactive previews.
+
+Orthographic only, and deliberately without a `type:` parameter: `HLRBRep_PolyAlgo` stores a
+projector's perspective flag but never acts on it, so its output is identical for
+`HLRAlgo_Projector(cs)` and `HLRAlgo_Projector(cs, focus)` at every focal distance. Use
+[`Drawing.project(_:direction:type:)`](#drawingproject_directiontype) for a perspective view.
 
 - **Parameters:**
-  - `shape` — the 3D shape to project.
-  - `direction` — view direction vector.
-  - `deflection` — triangulation chord deflection (default 0.01); smaller = more accurate, slower.
+  - `shape`: the 3D shape to project.
+  - `direction`: view direction vector.
+  - `deflection`: triangulation chord deflection (default 0.01); smaller = more accurate, slower.
 - **Returns:** `Drawing?`, `nil` on failure.
 - **OCCT:** `BRepMesh_IncrementalMesh` + `HLRBRep_PolyAlgo` + `HLRBRep_PolyHLRToShape`.
 - **Example:**
@@ -713,9 +748,9 @@ Returns the projected edges of the given type as a compound `Shape`.
 public func edges(ofType type: EdgeType) -> Shape?
 ```
 
-- **Parameters:** `type` — `.visible`, `.hidden`, or `.outline`.
+- **Parameters:** `type`, `.visible`, `.hidden`, or `.outline`.
 - **Returns:** A `Shape` wrapping the compound of matching edges, or `nil` if none are present.
-- **OCCT:** `OCCTDrawingGetEdges` — selects the appropriate `HLRBRep_HLRToShape` compounds.
+- **OCCT:** `OCCTDrawingGetEdges`, selects the appropriate `HLRBRep_HLRToShape` compounds.
 - **Example:**
   ```swift
   if let visible = drawing.edges(ofType: .visible) {
@@ -842,7 +877,7 @@ Returns the sheet dimensions for the given orientation.
 public func size(in orientation: Orientation) -> SIMD2<Double>
 ```
 
-- **Parameters:** `orientation` — `.landscape` or `.portrait`; portrait swaps X and Y.
+- **Parameters:** `orientation`, `.landscape` or `.portrait`; portrait swaps X and Y.
 - **Returns:** Width × Height in mm.
 - **Example:**
   ```swift
@@ -927,7 +962,7 @@ public init(title: String,
 
 All fields except `title` are optional. `dateOfIssue` should follow ISO 8601. `scale` overrides the sheet-level scale in the title-block cell.
 
-- **Parameters:** ISO 7200 mandatory and optional fields — see inline comments in source.
+- **Parameters:** ISO 7200 mandatory and optional fields, see inline comments in source.
 - **Example:**
   ```swift
   let tb = TitleBlock(
@@ -989,11 +1024,11 @@ public init(size: PaperSize,
 ```
 
 - **Parameters:**
-  - `size` — ISO 5457 paper size.
-  - `orientation` — landscape (default) or portrait.
-  - `projection` — first-angle (ISO/Europe) or third-angle (ANSI/USA) convention.
-  - `title` — optional ISO 7200 title block data; pass `nil` to omit the title block.
-  - `scale` — drawing scale string displayed in the title block (default `"1:1"`).
+  - `size`: ISO 5457 paper size.
+  - `orientation`: landscape (default) or portrait.
+  - `projection`: first-angle (ISO/Europe) or third-angle (ANSI/USA) convention.
+  - `title`: optional ISO 7200 title block data; pass `nil` to omit the title block.
+  - `scale`: drawing scale string displayed in the title block (default `"1:1"`).
 - **Example:**
   ```swift
   let sheet = Sheet(size: .A3, orientation: .landscape,
@@ -1115,7 +1150,7 @@ public func render(into writer: DXFWriter)
 
 Writes to layers `"BORDER"`, `"CENTER"`, `"TITLE"`, and `"TEXT"`. Outer sheet edge and inner frame are polylines; centring marks are short lines at midpoints of each frame edge; the title block is a 170 × 55 mm rectangle in the bottom-right with ISO 7200 fields; the projection symbol is rendered by `ProjectionSymbol.render(_:at:into:)` above the title block.
 
-- **Parameters:** `writer` — a `DXFWriter` that accumulates geometry for eventual file output.
+- **Parameters:** `writer`, a `DXFWriter` that accumulates geometry for eventual file output.
 - **Note:** Pure-Swift; no OCCT bridge call.
 - **Example:**
   ```swift
@@ -1151,9 +1186,9 @@ public static func render(_ angle: ProjectionAngle,
 The symbol is approximately 30 × 15 mm. First-angle: truncated-cone view on the left, circle on the right. Third-angle: circle on the left, truncated-cone on the right.
 
 - **Parameters:**
-  - `angle` — `.first` (ISO) or `.third` (ANSI).
-  - `origin` — bottom-left origin of the symbol bounding box in drawing coordinates.
-  - `writer` — the `DXFWriter` to emit lines and circles into (layer `"TEXT"`).
+  - `angle`: `.first` (ISO) or `.third` (ANSI).
+  - `origin`: bottom-left origin of the symbol bounding box in drawing coordinates.
+  - `writer`: the `DXFWriter` to emit lines and circles into (layer `"TEXT"`).
 - **Note:** Pure-Swift; no OCCT bridge call. Called automatically by `Sheet.render(into:)`.
 - **Example:**
   ```swift
@@ -1229,7 +1264,7 @@ public static let thin: DrawingLineWidth = .w025
 
 ### `DrawingLineWidth.thick`
 
-ISO-standard thick weight — 2× thin (0.50 mm).
+ISO-standard thick weight, 2× thin (0.50 mm).
 
 ```swift
 public static let thick: DrawingLineWidth = .w050
@@ -1323,7 +1358,7 @@ Returns the recommended dimension-text height for a given ISO 5457 paper size.
 public static func recommended(forPaper paper: String) -> DrawingTextHeight
 ```
 
-- **Parameters:** `paper` — paper size string, e.g. `"A3"` (case-insensitive).
+- **Parameters:** `paper`, paper size string, e.g. `"A3"` (case-insensitive).
 - **Returns:** `.h50` for A0/A1; `.h35` for A2, A3, A4, and any unrecognised size.
 - **Example:**
   ```swift
@@ -1340,7 +1375,7 @@ Snaps an arbitrary height in mm to the nearest ISO 3098 tier.
 public static func snap(_ mm: Double) -> DrawingTextHeight
 ```
 
-- **Parameters:** `mm` — desired text height in mm.
+- **Parameters:** `mm`, desired text height in mm.
 - **Returns:** The `DrawingTextHeight` case whose `rawValue` is closest to `mm`; falls back to `.h35` if the cases are empty.
 - **Example:**
   ```swift
@@ -1355,7 +1390,7 @@ ISO 128-21 arrow-head conventions.
 
 ```swift
 public enum DrawingArrowStyle: String, Sendable, Hashable, Codable {
-    case filledClosed       // solid triangle — ISO default
+    case filledClosed       // solid triangle. ISO default
     case openClosed90       // stroked triangle, 90° included angle
     case openClosed30       // stroked triangle, 30° included angle (narrow)
     case tick               // 45° tick (architectural; not ISO default)
@@ -1386,9 +1421,9 @@ Recommended arrow length in mm for a given dimension line width.
 public func length(forLineWidth width: DrawingLineWidth) -> Double
 ```
 
-Returns `width.rawValue * 6` — approximately 1.5 mm at the standard thin width of 0.25 mm, within the ISO 129 recommendation of 3–5× thin width.
+Returns `width.rawValue * 6`, approximately 1.5 mm at the standard thin width of 0.25 mm, within the ISO 129 recommendation of 3–5× thin width.
 
-- **Parameters:** `width` — the dimension line's `DrawingLineWidth`.
+- **Parameters:** `width`, the dimension line's `DrawingLineWidth`.
 - **Returns:** Arrow length in mm.
 - **Example:**
   ```swift
@@ -1493,8 +1528,8 @@ public enum DeflectionType: Int32, Sendable {
 }
 ```
 
-- `.relative` — chordal deviation is expressed as a fraction of the bounding-box diagonal.
-- `.absolute` — chordal deviation is a fixed distance in model units.
+- `.relative`: chordal deviation is expressed as a fraction of the bounding-box diagonal.
+- `.absolute`: chordal deviation is a fixed distance in model units.
 
 ---
 
@@ -1502,7 +1537,7 @@ public enum DeflectionType: Int32, Sendable {
 
 Chordal deviation is expressed as a fraction of the bounding-box diagonal.
 
-- `.absolute` — chordal deviation is a fixed distance in model units.
+- `.absolute`: chordal deviation is a fixed distance in model units.
 
 ---
 

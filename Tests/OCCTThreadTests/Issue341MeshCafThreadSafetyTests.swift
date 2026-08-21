@@ -31,7 +31,7 @@ import Foundation
 // reproducer is the ThreadSanitizer harness at Scripts/repro/341-meshcaf/,
 // matching the #319 precedent of using a sanitizer-backed C++ repro rather than
 // a Swift test as the primary verification tool for a race this narrow.
-@Suite("Issue #341 — concurrent OBJ import/export is thread-safe (meshCafMutex)")
+@Suite("Issue #341, concurrent OBJ import/export is thread-safe (meshCafMutex)")
 struct Issue341MeshCafThreadSafetyTests {
 
     @Test("Concurrent OBJ round-trips all succeed with a non-empty shape")
@@ -77,7 +77,7 @@ struct Issue341MeshCafThreadSafetyTests {
 
         #expect(agg.writeFailed == 0, "concurrent OBJ writes failed (expected 0 of 120)")
         #expect(agg.readFailed == 0,
-                "concurrent OBJ reads failed (expected 0 of 120) — the #341 AutoNaming race")
+                "concurrent OBJ reads failed (expected 0 of 120), the #341 AutoNaming race")
         #expect(agg.emptyDocument == 0,
                 "concurrent OBJ reads produced an empty document (expected 0 of 120)")
     }

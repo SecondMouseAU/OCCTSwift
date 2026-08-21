@@ -240,6 +240,65 @@ ROUND-2 REVIEW, THE REMAINING FINDINGS - all mechanical, none changing what gets
     while responding to feedback, a near-miss in a throwaway verification script) well past this
     project's `docs/` length norms and its own cited `556-null-handle-guard-sweep` precedent.
 
+#1026 (THIRD WALK): A NULL TopoDS_Shape, WHICH IS NOT A HANDLE AND NEEDS ITS OWN RULE. Both walks
+above are about an OCCT `Handle`, where the rule is simple because it is total: a null handle is
+unsafe to hand to OCCT at all, so every use is a hazard and `IsNull()` before the first one is the
+whole test. A `TopoDS_Shape` inside `OCCTShape`/`OCCTWire`/`OCCTEdge`/`OCCTFace` is not like that.
+It is safe to copy, to compare, to explore with `TopExp`, and to cast with `TopoDS::Edge`, all of
+which this bridge does constantly; PR #1027 measured 345 cast sites and found none of them
+defective. It is unsafe on exactly the members that dereference `myTShape` without a null test of
+their own, and `TopoDS_Shape.hxx` says which those are: `ShapeType()`, the eight flag accessors
+(`Free`, `Locked`, `Modified`, `Checked`, `Orientable`, `Closed`, `Infinite`, `Convex`, each with a
+getter and a setter) and `EmptyCopy()`. `NbChildren()` is `myTShape.IsNull() ? 0 : ...`, guarded by
+OCCT itself, and is deliberately absent from the list.
+
+So `SHAPE_HAZARDS` is the walk's definition of a use, and it is the reason a `WRAPPERS`-style entry
+would have been the wrong shape: mapping `OCCTShapeRef -> shape` into `WRAPPERS` reports every one
+of those 345 casts and every explorer walk, which is noise, not a gate. Reported instead is the
+narrow thing #1026 measured: a hazard member reached, directly or through a `TopoDS_Shape` alias,
+with no `IsNull()` dominating it. The crash it catches is not a catchable failure: `ShapeType()`
+resolves to a plain member read of `TopoDS_TShape`'s packed state word (`TopoDS_TShape.hxx:144`),
+so a null shape faults at address 0x38, an OS signal no `catch (...)` can absorb.
+
+Two supporting pieces, both mirroring what the handle walks already do:
+
+  * `shape_guarding_helpers()` is `guarding_helpers()` for this wrapper family, and runs to a
+    FIXPOINT rather than in one pass, because the guard is two helpers deep: `occtShapeIsPresent`
+    spells the `IsNull()` test itself and `occtShapeIsType` only delegates to it. The fixpoint
+    matters exactly when the delegating helper is READ FIRST, and today it is not, so one pass is
+    currently equivalent: measured, not assumed, by running a one-pass variant against the whole
+    tree and getting the same clean result. Fixture `SI` inverts the definition order, which is the
+    only thing that separates the two, and is what makes the removal matrix's fixpoint row drop.
+    The cost of being wrong here is a false positive on the delegating helper, not a miss, so this
+    is insurance against a reorder of `OCCTBridge_Internal.h` rather than a live requirement.
+  * `SHAPE_ALLOWED` is separate from `ALLOWED` on purpose. `ALLOWED` is keyed `(file, function)`
+    with no argument index, and #666 already recorded the cost of that coarseness: one entry added
+    for one walk silently exempts the others. Sharing it here would let a handle exemption written
+    years ago quietly cover a shape finding nobody looked at. It is empty today.
+
+A FOURTH SPELLING, TAUGHT AFTER THE FIRST THREE MISSED IT. `BRep_Builder::Add(compound,
+shapes[i]->shape)` crashes without the shape being touched at all: `TopoDS_Builder::Add`
+dereferences the component in its FIRST statement, `aComponent.TShape()->Free(false)`. No cast, no
+`ShapeType()`, no flag accessor, so #1008's `TopoDS::` sweep, #1026's `ShapeType()` census and this
+walk's own first version each reported clean on all four sites. `SHAPE_BUILDER_TYPES` closes it,
+keyed on the RECEIVER's declared type rather than the method name, because `Add` is one of OCCT's
+most overloaded names: `unwrap_sweep.py --by-callee` counts 39 sites whose callee is `Add` and only
+four are a builder, so a name-keyed rule reports the other 35 (fixture `SK`).
+
+WHAT THIS WALK CANNOT SEE, same standard as the two above: a hazard reached inside a helper this
+bridge writes (only a helper that GUARDS is recognised, not one that USES); a hazard on a
+`TopoDS_Shape` obtained from somewhere other than a wrapper argument, which is the #656 shape
+transposed to shapes and has no known instance; a guard that does not dominate its use; the
+`OCCTShapeRef` spelled as a bare `OCCTShape*`, which no bridge signature uses today; a builder
+reached other than as a local declaration (a member, a parameter, a reference), also none today; and
+**any other OCCT entry point that dereferences a null shape for its caller**. That last one is the
+open class, not a corner case: `Scripts/repro/1026-null-shape-type-guard/unwrap_sweep.py` counts
+1104 unguarded unwraps across 865 functions, of which this walk reports the subset reaching a
+measured-unsafe consumer. Three more were found by probing rather than by any census
+(`PrsDim_RadiusDimension`, `PrsDim_DiameterDimension`, `ShapeFix_Shape`). Enumerating the rest is
+the shape-side equivalent of #556's 57-entry-point sweep for handles. Measure before assuming any of
+these stayed at zero.
+
 Usage (from the repo root):
 
     python3 Scripts/check-null-handle-guards.py             # report unguarded sites
@@ -272,6 +331,85 @@ WRAPPERS = {
     'OCCTCurve2DRef': 'curve',
     'OCCTSurfaceRef': 'surface',
 }
+
+# #1026: wrapper parameter type -> the TopoDS_Shape-derived field it carries. These four are the
+# whole topology wrapper family in OCCTBridge_Internal.h; TopoDS_Wire/Edge/Face add no members over
+# TopoDS_Shape, so each carries the same unguarded accessors.
+SHAPE_WRAPPERS = {
+    'OCCTShapeRef': 'shape',
+    'OCCTWireRef': 'wire',
+    'OCCTEdgeRef': 'edge',
+    'OCCTFaceRef': 'face',
+}
+
+# #1026: the TopoDS_Shape members that dereference myTShape with NO null test of their own, read
+# off the pinned TopoDS_Shape.hxx (lines 140-188 and 292) rather than assumed. Setters are the same
+# names as their getters, so one entry covers both. NbChildren() is absent deliberately: OCCT
+# writes `myTShape.IsNull() ? 0 : myTShape->NbChildren()` for it, which is the guard this walk is
+# looking for.
+SHAPE_HAZARDS = ('ShapeType', 'Free', 'Locked', 'Modified', 'Checked', 'Orientable',
+                 'Closed', 'Infinite', 'Convex', 'EmptyCopy')
+
+SHAPE_HAZARD_CALL = re.compile(r'\s*\.\s*(' + '|'.join(SHAPE_HAZARDS) + r')\s*\(')
+SHAPE_ISNULL = re.compile(r'\s*\.\s*IsNull\s*\(')
+
+# #1026 round 2: a hazard the shape never touches itself. TopoDS_Builder::Add dereferences the
+# component's TShape in its FIRST statement, `aComponent.TShape()->Free(false)`, and Remove walks
+# the parent's children the same way, so handing either one a caller's shape is the same crash by a
+# different route. Four sites reached it (`OCCTShapeCompounded`, `OCCTShapeCreateCompound`,
+# `OCCTBuilderAdd`, `OCCTBuilderRemove`), all measured, and none of the three earlier censuses could
+# see them: no cast, no ShapeType(), no flag accessor.
+#
+# #1035 generalised this into one table. A builder is not a special case, it is the first measured
+# member of the class "an OCCT entry point that dereferences the caller's shape for you", and
+# Scripts/repro/1035-unwrap-guard/repro_1035.mm measured the rest of it: 17 of 61 entry points the
+# bridge hands a caller-supplied shape to crash uncatchably on a null one. An entry below is a
+# MEASUREMENT from that sweep, never a guess, exactly as ALLOWED's entries are.
+#
+# Three spellings, because that is what the bridge writes:
+#   receivers   `builder.Add(x->shape)`      keyed on the local's DECLARED TYPE, never the method
+#                                            name: `Add` is one of OCCT's most overloaded names,
+#                                            and BRepBuilderAPI_Sewing::Add, BRepFilletAPI_
+#                                            MakeFillet::Add and Bnd_Box::Add all take a null
+#                                            shape safely (measured).
+#   qualified   `BRep_Tool::Curve(x->shape)` a free function, keyed on qualifier and name.
+#   ctors       `BRepAdaptor_Curve a(e->edge)` keyed on the constructed type.
+SHAPE_DEREF_RECEIVERS = {
+    'BRep_Builder': ('Add', 'Remove'),
+    'TopoDS_Builder': ('Add', 'Remove'),
+    'BRepBuilderAPI_MakeWire': ('Add',),
+    'BRepBuilderAPI_MakeSolid': ('Add',),
+    'ShapeFix_Shape': ('Perform',),
+}
+SHAPE_DEREF_QUALIFIED = {
+    'BRep_Tool': ('Curve', 'Surface', 'Tolerance', 'CurveOnSurface', 'Degenerated', 'Range',
+                  'IsClosed', 'Polygon3D'),
+}
+SHAPE_DEREF_CTORS = ('BRepAdaptor_Curve', 'BRepAdaptor_Curve2d', 'BRepGProp_Face',
+                     'BRepPrimAPI_MakePrism')
+
+# A receiver reached any other way (a member, a parameter, a reference) is invisible here, and
+# there are none taking a caller's shape today. `ShapeFix_Shape::Perform` is the near miss worth
+# naming: OCCTShapeFixerCreate reaches it through a Handle stored on a bridge-owned struct, which
+# no walk here follows, so that one is guarded by hand and this entry only covers the plain
+# `ShapeFix_Shape fixer(...); fixer.Perform();` local form.
+
+# TopoDS::Edge and its siblings are written `theShape.IsNull() ? false : theShape.ShapeType() !=
+# TopAbs_EDGE` (TopoDS.hxx:94), so a null shape is deliberately NOT a type mismatch: the cast
+# returns a null TopoDS_Edge and the crash happens one frame further out, at whatever the cast
+# result is handed to. That is why #1008's census of 345 cast sites came back clean and #1035's
+# tests still crashed. The walk therefore treats these as transparent and keeps looking outward.
+SHAPE_TRANSPARENT_CASTS = ('Edge', 'Face', 'Wire', 'Vertex', 'Shell', 'Solid', 'CompSolid',
+                           'Compound')
+
+DEREF_DECL = re.compile(r'\b(' + '|'.join(SHAPE_DEREF_RECEIVERS) + r')\s+(\w+)\s*[;=(]')
+
+# #1026 sites deliberately left unguarded, with the reason. Separate from ALLOWED above rather than
+# folded into it: ALLOWED is keyed (file, function) with no argument index, so sharing it would let
+# an exemption written for a Handle argument silently cover a TopoDS_Shape finding on the same
+# function, which is the coarseness #666 already recorded the cost of. Empty today, and an entry
+# here needs the same thing every ALLOWED entry needs: a measurement, not an argument.
+SHAPE_ALLOWED = {}
 
 # Sites deliberately left unguarded, with the reason. An entry is a promise: either every caller
 # checks both the pointer and the handle, or the OCCT entry point was measured to cope with a null
@@ -622,6 +760,62 @@ def enclosing_call(body, pos):
     return None
 
 
+def enclosing_calls(body, pos, limit=4):
+    """Every call whose argument list encloses `pos`, innermost first (#1035).
+
+    `enclosing_call` stops at the innermost, which is the wrong answer whenever the bridge writes
+    `BRep_Tool::Curve(TopoDS::Edge(shape->shape), f, l)`: the innermost call is the cast, and the
+    cast is not what dereferences. Each entry is (qualifier, name, argument index, name offset),
+    with `qualifier` the `X` of an `X::name(...)` call and None otherwise."""
+    out = []
+    while len(out) < limit:
+        depth, i, commas = 0, pos - 1, 0
+        found = None
+        while i >= 0:
+            ch = body[i]
+            if ch == ')':
+                depth += 1
+            elif ch == '(':
+                if depth == 0:
+                    m = re.search(r'(?:(\w+)\s*::\s*)?(\w+)\s*$', body[:i])
+                    if m:
+                        found = (m.group(1), m.group(2), commas, m.start())
+                    break
+                depth -= 1
+            elif ch == ',' and depth == 0:
+                commas += 1
+            i -= 1
+        if not found:
+            return out
+        out.append(found)
+        pos = found[3]
+    return out
+
+
+def deref_call(body, pos, decls):
+    """The measured-dereferencing OCCT entry point `pos` is an argument of, else None (#1035).
+
+    Walks outward through SHAPE_TRANSPARENT_CASTS, which return a null of the narrower type rather
+    than raising, so the cast is never the thing that dereferences."""
+    for qualifier, name, _, namestart in enclosing_calls(body, pos):
+        if qualifier == 'TopoDS' and name in SHAPE_TRANSPARENT_CASTS:
+            continue                          # transparent: keep looking outward
+        if qualifier and name in SHAPE_DEREF_QUALIFIED.get(qualifier, ()):
+            return f'{qualifier}::{name}'
+        if name in SHAPE_DEREF_CTORS:
+            return name                       # `BRepAdaptor_Curve(...)`, a temporary
+        # `Type local(...)`: the word before the callee is the declared type
+        before = re.search(r'(\w+)\s+$', body[:namestart])
+        if before and before.group(1) in SHAPE_DEREF_CTORS:
+            return before.group(1)
+        # `local.Method(...)` where `local` is one of the measured receiver types
+        recv = re.search(r'(\w+)\s*(?:\.|->)\s*$', body[:namestart])
+        if recv and name in SHAPE_DEREF_RECEIVERS.get(decls.get(recv.group(1), ''), ()):
+            return f'{decls[recv.group(1)]}::{name}'
+        return None                           # an ordinary call: not a measured dereferencer
+    return None
+
+
 def aliases(body, param, field):
     """Local names standing in for the wrapper pointer, and for the handle it carries."""
     ptr, handle, spans = {param: -1}, {}, []
@@ -775,13 +969,148 @@ def local_handle_sites(parsed, helpers):
     return found
 
 
+def shape_wrapper_params(params):
+    """(name, TopoDS_Shape-derived field, is_array) for each topology-wrapper parameter (#1026).
+
+    The SHAPE_WRAPPERS sibling of wrapper_params(), and deliberately a separate function rather
+    than the same one parameterised by a dict: the two walks want different things from the same
+    parameter list, and a wrapper carrying BOTH a handle and a shape would need both answers."""
+    out = []
+    for p in split_params(params):
+        p = p.strip()
+        for wrapper, field in SHAPE_WRAPPERS.items():
+            if not re.search(r'\b' + wrapper + r'\b', p):
+                continue
+            m = re.search(r'(\w+)\s*(\[\s*\])?\s*$', p)
+            if m and m.group(1) not in SHAPE_WRAPPERS:
+                tail = p[p.index(wrapper) + len(wrapper):]
+                out.append((m.group(1), field, '*' in tail or bool(m.group(2))))
+            break
+    return out
+
+
+def shape_events(body, param, field, shape_helpers):
+    """Ordered (position, 'guard'|'use', member) for one topology-wrapper parameter (#1026).
+
+    A GUARD is `x->field.IsNull()`, `alias.IsNull()`, or handing `x` to a function
+    shape_guarding_helpers() has already recognised. A USE is one of SHAPE_HAZARDS reached on the
+    shape, or the shape handed to one of the OCCT entry points measured to dereference it for you
+    (see SHAPE_DEREF_RECEIVERS and its two siblings). Everything else the bridge does with a
+    TopoDS_Shape (copying it, comparing it, casting it with TopoDS::Edge, walking it with TopExp)
+    is neither, which is the whole difference between this walk and the handle walks above, and
+    each of those three was measured rather than assumed."""
+    ptr, alias, _ = aliases(body, param, field)
+    decls = {var: ty for ty, var in DEREF_DECL.findall(body)}
+
+
+    ev = []
+    for a, bound in ptr.items():
+        for m in re.finditer(r'\b' + re.escape(a) + r'\b', body):
+            if m.start() < bound:
+                continue
+            tail = body[m.end():m.end() + 80]
+            fm = re.match(r'\s*(?:\[[^\]]*\])?\s*->\s*' + field + r'\b', tail)
+            if fm:
+                rest = tail[fm.end():]
+                if SHAPE_ISNULL.match(rest):
+                    ev.append((m.start(), 'guard', 'IsNull'))
+                    continue
+                hm = SHAPE_HAZARD_CALL.match(rest)
+                if hm:
+                    ev.append((m.start(), 'use', hm.group(1)))
+                else:
+                    deref = deref_call(body, m.start(), decls)
+                    if deref:
+                        ev.append((m.start(), 'use', deref))
+                continue
+            call = enclosing_call(body, m.start())
+            if call in shape_helpers:
+                ev.append((m.start(), 'guard', call[0]))
+    for h, bound in alias.items():
+        for m in re.finditer(r'(?<![\w>.])' + re.escape(h) + r'\b', body):
+            if m.start() < bound:
+                continue
+            rest = body[m.end():m.end() + 80]
+            if SHAPE_ISNULL.match(rest):
+                ev.append((m.start(), 'guard', 'IsNull'))
+                continue
+            hm = SHAPE_HAZARD_CALL.match(rest)
+            if hm:
+                ev.append((m.start(), 'use', hm.group(1)))
+            else:
+                deref = deref_call(body, m.start(), decls)
+                if deref:
+                    ev.append((m.start(), 'use', deref))
+    ev.sort()
+    return ev
+
+
+def shape_guarding_helpers(parsed):
+    """(function, argument index) for every bridge function that rejects a null TopoDS_Shape on
+    that topology-wrapper parameter before reading anything hazardous off it (#1026).
+
+    A FIXPOINT, not one pass, because the guard is two helpers deep: occtShapeIsPresent spells the
+    IsNull() test itself and occtShapeIsType only delegates to it. One pass is enough whenever the
+    delegate is READ FIRST, which is the case in this tree today (both helpers sit in
+    OCCTBridge_Internal.h in that order), and a one-pass variant run against the whole tree returns
+    the same clean result. Fixture SI inverts the order, which is the only thing that separates
+    them. Getting it wrong costs a false positive on the delegating helper rather than a missed
+    site, so the fixpoint is insurance against a reorder, not a live requirement. It loops until
+    nothing new is found rather than a fixed two rounds, so a third helper layered on either is
+    picked up without editing this."""
+    guards = set()
+    while True:
+        grew = False
+        for path, raw, text, ctext, lines, funcs in parsed:
+            for name, params, bs, be in funcs:
+                body = ctext[bs:be + 1]
+                for i, p in enumerate(split_params(params)):
+                    if (name, i) in guards:
+                        continue
+                    got = shape_wrapper_params(p)
+                    if not got:
+                        continue
+                    ev = shape_events(body, got[0][0], got[0][1], guards)
+                    if ev and ev[0][1] == 'guard':
+                        guards.add((name, i))
+                        grew = True
+        if not grew:
+            return guards
+
+
+def shape_hazard_sites(parsed, shape_helpers):
+    """#1026: every (file, line, function, parameter) whose TopoDS_Shape reaches one of
+    SHAPE_HAZARDS with no IsNull() test dominating it. Tagged 'shape' in the last field so main()'s
+    report can tell it from the two handle origins."""
+    found = []
+    for path, raw, text, ctext, lines, funcs in parsed:
+        for name, params, bs, be in funcs:
+            body = ctext[bs:be + 1]
+            if (os.path.basename(path), name) in SHAPE_ALLOWED:
+                continue
+            for param, field, is_array in shape_wrapper_params(params):
+                ev = shape_events(body, param, field, shape_helpers)
+                first = next((p for p, k, _ in ev if k == 'use'), None)
+                if first is None or any(k == 'guard' and p < first for p, k, _ in ev):
+                    continue
+                member = next(m for p, k, m in ev if p == first and k == 'use')
+                line = text.count('\n', 0, bs + first) + 1
+                found.append(Site(os.path.basename(path), line, name, param,
+                                  f'{field}.{member}',
+                                  lines[line - 1].strip() if line <= len(lines) else '', is_array,
+                                  'shape'))
+    return found
+
+
 def all_sites(sources):
-    """The full report: both handle origins, one combined list. Parses every file once
-    (`parse_sources`) and shares that parse across `guarding_helpers()` and both site walks,
-    rather than each redoing it (#666 round-2 review, item 8)."""
+    """The full report: both handle origins plus #1026's TopoDS_Shape walk, one combined list.
+    Parses every file once (`parse_sources`) and shares that parse across `guarding_helpers()` and
+    all three site walks, rather than each redoing it (#666 round-2 review, item 8)."""
     parsed = parse_sources(sources)
     helpers = guarding_helpers(parsed)
-    return unguarded_sites(parsed, helpers) + local_handle_sites(parsed, helpers)
+    shape_helpers = shape_guarding_helpers(parsed)
+    return (unguarded_sites(parsed, helpers) + local_handle_sites(parsed, helpers)
+            + shape_hazard_sites(parsed, shape_helpers))
 
 
 def bridge_sources():
@@ -917,11 +1246,97 @@ double OCCTFixtureW(OCCTShapeRef edgeRef, OCCTShapeRef otherEdgeRef) {
         return BRepTools::EvalAndUpdateTol(edgeRef->shape, c2d, first, last);
     } catch (...) { return 0.0; }
 }''', 'local'),
+
+    # #1026's four shapes. Every one of these was a real, measured SIGSEGV in this tree before the
+    # guards landed; SA and SB are the two halves of the defect (ShapeType() and the flag
+    # accessors), SC is the alias route, SD proves the walk is not keyed on the field name 'shape'.
+    ('a pointer test only, then ShapeType() on the shape it says nothing about', '''
+int OCCTFixtureSA(OCCTShapeRef shape) {
+    if (!shape) return -1;
+    return static_cast<int>(shape->shape.ShapeType());
+}''', 'shape'),
+    ('a flag accessor, the half of the class a ShapeType()-keyed census misses', '''
+bool OCCTFixtureSB(OCCTShapeRef shape) {
+    if (!shape) return false;
+    return shape->shape.Closed();
+}''', 'shape'),
+    ('the hazard reached through a TopoDS_Shape alias rather than the field directly', '''
+int OCCTFixtureSC(OCCTShapeRef shape) {
+    if (!shape) return -1;
+    TopoDS_Shape s = shape->shape;
+    return static_cast<int>(s.ShapeType());
+}''', 'shape'),
+    ('a wrapper other than OCCTShapeRef: TopoDS_Wire carries the same unguarded accessors', '''
+bool OCCTFixtureSD(OCCTWireRef wire) {
+    if (!wire) return false;
+    return wire->wire.Closed();
+}''', 'shape'),
+    # The shape touches no hazardous member of its own here. TopoDS_Builder::Add dereferences it.
+    ('handed to a local BRep_Builder\'s Add, which dereferences it for you', '''
+OCCTShapeRef OCCTFixtureSJ(const OCCTShapeRef* shapes, int32_t count) {
+    try {
+        BRep_Builder builder;
+        TopoDS_Compound compound;
+        builder.MakeCompound(compound);
+        for (int32_t i = 0; i < count; i++) {
+            if (shapes[i])
+                builder.Add(compound, shapes[i]->shape);
+        }
+        return new OCCTShape(compound);
+    } catch (...) { return nullptr; }
+}''', 'shape'),
+    # #1035: the entry point is named directly, no cast in the way. The simplest of the three
+    # spellings SHAPE_DEREF_QUALIFIED covers.
+    ('handed straight to BRep_Tool::Surface, measured to dereference a null shape', '''
+double OCCTFixtureSL(OCCTShapeRef face) {
+    if (!face) return 0;
+    Handle(Geom_Surface) s = BRep_Tool::Surface(TopoDS::Face(face->shape));
+    return s.IsNull() ? 0 : 1;
+}''', 'shape'),
+    # #1035, the shape that made this walk necessary: the dereferencing call is the OUTER one and
+    # the inner TopoDS:: cast is transparent, so a detector that stops at the innermost call sees
+    # only `Edge` and reports nothing. Thirty real sites in this tree had exactly this form and
+    # were invisible to every census before the outward walk.
+    ('reached through a transparent TopoDS:: cast, so the innermost call is not the hazard', '''
+double OCCTFixtureSM(OCCTShapeRef edge) {
+    if (!edge) return 0;
+    BRepAdaptor_Curve adaptor(TopoDS::Edge(edge->shape));
+    return adaptor.FirstParameter();
+}''', 'shape'),
 ]
 
 # The other failure mode, and the one #624/#630 was: a detector taught indirection can start
 # reporting correct code. Each of these guards its handle in a way the tree really uses.
 CLEAN = [
+    ('the same cast and the same entry point, with the shape guard added', '''
+double OCCTFixtureSN(OCCTShapeRef edge) {
+    if (!edge || edge->shape.IsNull()) return 0;
+    BRepAdaptor_Curve adaptor(TopoDS::Edge(edge->shape));
+    return adaptor.FirstParameter();
+}''', 'shape'),
+    # #1035's own SH: this is what stops the outward walk being noise. The cast is transparent
+    # here too, but BRepBndLib::Add and TopExp::MapShapes were both MEASURED to cope with a null
+    # shape, so neither is in the table and neither is a finding. A walk that reported this would
+    # report most of the 1098-site population unwrap_sweep.py counts.
+    # #1035: `Tolerance` is in the table under BRep_Tool and NOT under anything else, and this is
+    # the real ShapeAnalysis_ShapeTolerance::Tolerance call OCCTShapeMaxTolerance makes, measured
+    # to return normally on a null shape. Without the qualifier test this reads as a finding, which
+    # is the false-positive direction row R12 of the removal matrix exercises.
+    ('a method with a table name but a different owner: ShapeAnalysis_ShapeTolerance::Tolerance', '''
+double OCCTFixtureSP(OCCTShapeRef shape) {
+    if (!shape) return 0;
+    ShapeAnalysis_ShapeTolerance sat;
+    return sat.Tolerance(shape->shape, 1, TopAbs_SHAPE);
+}''', 'shape'),
+    ('through the same transparent cast into an entry point measured to cope', '''
+double OCCTFixtureSO(OCCTShapeRef shape) {
+    if (!shape) return 0;
+    Bnd_Box box;
+    BRepBndLib::Add(TopoDS::Edge(shape->shape), box);
+    TopTools_IndexedMapOfShape m;
+    TopExp::MapShapes(shape->shape, TopAbs_FACE, m);
+    return box.IsVoid() ? 0 : 1;
+}''', 'shape'),
     ('plain two-condition opener', '''
 int OCCTFixtureG(OCCTCurve3DRef curve) {
     if (!curve || curve->curve.IsNull()) return 0;
@@ -978,6 +1393,7 @@ int OCCTFixtureL(OCCTCurve3DRef curveRef) {
     # #666: local handle from BRep_Tool::, guarded before use - the actual #656 fix, reduced.
     ('local handle from BRep_Tool::, guarded before use', '''
 double OCCTFixtureP(OCCTShapeRef edgeRef, OCCTShapeRef faceRef) {
+    if (edgeRef->shape.IsNull() || faceRef->shape.IsNull()) return 0.0;
     try {
         double first, last;
         Handle(Geom2d_Curve) c2d = BRep_Tool::CurveOnSurface(edgeRef->shape, faceRef->shape, first, last);
@@ -989,6 +1405,7 @@ double OCCTFixtureP(OCCTShapeRef edgeRef, OCCTShapeRef faceRef) {
     # exclusion as a wrapper-derived one - this is the bridge's real Copy()+DownCast clone idiom.
     ('local handle from BRep_Tool:: consumed only by DownCast', '''
 bool OCCTFixtureQ(OCCTShapeRef faceRef) {
+    if (faceRef->shape.IsNull()) return false;
     try {
         Handle(Geom_Surface) surf = BRep_Tool::Surface(faceRef->shape);
         Handle(Geom_Plane) plane = Handle(Geom_Plane)::DownCast(surf);
@@ -1003,6 +1420,7 @@ inline bool occtFixtureCurveGuard(const occ::handle<Geom_Curve>& curve, double t
     return true;
 }
 bool OCCTFixtureR(OCCTShapeRef edgeRef) {
+    if (edgeRef->shape.IsNull()) return false;
     double first, last;
     Handle(Geom_Curve) curve = BRep_Tool::Curve(edgeRef->shape, first, last);
     return occtFixtureCurveGuard(curve, 1e-7);
@@ -1013,6 +1431,7 @@ bool OCCTFixtureR(OCCTShapeRef edgeRef) {
     # covering the FIRST case's (also-guarded, but via DownCast) `surf`.
     ('two sibling scopes reuse the same local name, each independently guarded via DownCast', '''
 bool OCCTFixtureS(OCCTShapeRef faceRef, int mode) {
+    if (faceRef->shape.IsNull()) return false;
     try {
         if (mode == 0) {
             Handle(Geom_Surface) surf = BRep_Tool::Surface(faceRef->shape);
@@ -1033,6 +1452,7 @@ bool OCCTFixtureS(OCCTShapeRef faceRef, int mode) {
     # before this fixture was written: the reassignment line itself was reported as unguarded.
     ('a plain reassignment of the tracked name is a rebind, not a read, even mid-window', '''
 double OCCTFixtureX(OCCTShapeRef edgeRef, OCCTShapeRef otherEdgeRef) {
+    if (edgeRef->shape.IsNull() || otherEdgeRef->shape.IsNull()) return 0.0;
     try {
         double first, last;
         Handle(Geom_Curve) c = BRep_Tool::Curve(edgeRef->shape, first, last);
@@ -1041,11 +1461,94 @@ double OCCTFixtureX(OCCTShapeRef edgeRef, OCCTShapeRef otherEdgeRef) {
         return c->FirstParameter();
     } catch (...) { return 0.0; }
 }''', 'local'),
+
+    # #1026's clean side. SH is the one that decides whether this walk is a gate or noise: casting,
+    # comparing and exploring a null TopoDS_Shape are all safe, and PR #1027 measured 345 cast
+    # sites in this tree. A walk that reported SH would report all of them.
+    ('the two-condition opener, spelled out', '''
+int OCCTFixtureSE(OCCTShapeRef shape) {
+    if (!shape || shape->shape.IsNull()) return -1;
+    return static_cast<int>(shape->shape.ShapeType());
+}''', 'shape'),
+    ('guarded by occtShapeIsPresent, which spells the IsNull() test itself', '''
+inline bool occtShapeIsPresent(OCCTShapeRef shape) {
+    return shape && !shape->shape.IsNull();
+}
+int OCCTFixtureSF(OCCTShapeRef shape) {
+    if (!occtShapeIsPresent(shape)) return -1;
+    return static_cast<int>(shape->shape.ShapeType());
+}''', 'shape'),
+    ('guarded by occtShapeIsType, which only DELEGATES to the IsNull() test one frame further', '''
+inline bool occtShapeIsPresent(OCCTShapeRef shape) {
+    return shape && !shape->shape.IsNull();
+}
+inline bool occtShapeIsType(OCCTShapeRef shape, TopAbs_ShapeEnum type) {
+    return occtShapeIsPresent(shape) && shape->shape.ShapeType() == type;
+}
+bool OCCTFixtureSG(OCCTShapeRef edge) {
+    if (!occtShapeIsType(edge, TopAbs_EDGE)) return false;
+    try { return Analyzer().HasCurve3d(TopoDS::Edge(edge->shape)); }
+    catch (...) { return false; }
+}''', 'shape'),
+    # SG proves nothing about the FIXPOINT on its own: its two helpers are in definition order, so
+    # one pass already has occtShapeIsPresent in `guards` by the time it reaches occtShapeIsType.
+    # Measured, not assumed: with the fixpoint replaced by a single pass, SG stays green and the
+    # matrix row reads 32/32, and the same one-pass variant is ALSO clean against the whole real
+    # tree. This fixture inverts the definition order, which is the only thing that separates the
+    # two. So the fixpoint is not load-bearing today; it is insurance against someone reordering
+    # OCCTBridge_Internal.h, and the failure it prevents is a false positive on the delegating
+    # helper rather than a missed site.
+    ('a delegating guard helper DEFINED BEFORE the one it delegates to; only a fixpoint sees it', '''
+inline bool occtShapeIsTypeEarly(OCCTShapeRef shape, TopAbs_ShapeEnum type) {
+    return occtShapeIsPresentLate(shape) && shape->shape.ShapeType() == type;
+}
+inline bool occtShapeIsPresentLate(OCCTShapeRef shape) {
+    return shape && !shape->shape.IsNull();
+}
+bool OCCTFixtureSI(OCCTShapeRef edge) {
+    if (!occtShapeIsTypeEarly(edge, TopAbs_EDGE)) return false;
+    return edge->shape.ShapeType() == TopAbs_EDGE;
+}''', 'shape'),
+    # The false-positive direction for the builder rule, and the one that decides whether it is a
+    # gate or noise: `Add` is one of OCCT's most overloaded names. The sweep counts 39 sites whose
+    # callee is `Add`, and only four of them are a TopoDS_Builder. A rule keyed on the method name
+    # alone reports the other 35.
+    ('handed to a BRepBuilderAPI_Sewing Add, a different class with the same method name', '''
+OCCTShapeRef OCCTFixtureSK(OCCTShapeRef shape) {
+    if (!shape) return nullptr;
+    try {
+        BRepBuilderAPI_Sewing sewing(1e-6);
+        sewing.Add(shape->shape);
+        sewing.Perform();
+        return new OCCTShape(sewing.SewedShape());
+    } catch (...) { return nullptr; }
+}''', 'shape'),
+    ('unguarded, but every use is safe on a null shape: a cast, a compare and an explorer walk', '''
+int OCCTFixtureSH(OCCTShapeRef shape, OCCTShapeRef other) {
+    try {
+        if (shape->shape.IsEqual(other->shape)) return -1;
+        TopoDS_Edge e = TopoDS::Edge(shape->shape);
+        int n = 0;
+        for (TopExp_Explorer exp(shape->shape, TopAbs_VERTEX); exp.More(); exp.Next()) n++;
+        return n;
+    } catch (...) { return 0; }
+}''', 'shape'),
 ]
 
 
+def direct_walk(kind, parsed):
+    """The one walk a fixture is FOR, run on its own. Keeping this separate from all_sites() is
+    #666 round-2 review item 5: a regression confined to one walk that happens to leave the union's
+    answer unchanged would otherwise pass silently."""
+    if kind == 'wrapper':
+        return unguarded_sites(parsed, guarding_helpers(parsed))
+    if kind == 'local':
+        return local_handle_sites(parsed, guarding_helpers(parsed))
+    return shape_hazard_sites(parsed, shape_guarding_helpers(parsed))
+
+
 def self_test():
-    """Prove both failure modes: an unguarded site is reported, a guarded one is not.
+    """Prove all three failure modes: an unguarded site is reported, a guarded one is not.
 
     Every fixture is tagged 'wrapper' or 'local' for the mechanism it exercises, and is checked
     TWICE: once through that mechanism directly (unguarded_sites()/local_handle_sites(), with a
@@ -1064,9 +1567,7 @@ def self_test():
     for name, src, walk in MISSED:
         sources = [('fixture.mm', src)]
         parsed = parse_sources(sources)
-        helpers = guarding_helpers(parsed)
-        direct = unguarded_sites(parsed, helpers) if walk == 'wrapper' \
-            else local_handle_sites(parsed, helpers)
+        direct = direct_walk(walk, parsed)
         hit = all_sites(sources)
         ok = bool(direct) and bool(hit)
         failed += not ok
@@ -1075,9 +1576,7 @@ def self_test():
     for name, src, walk in CLEAN:
         sources = [('fixture.mm', src)]
         parsed = parse_sources(sources)
-        helpers = guarding_helpers(parsed)
-        direct = unguarded_sites(parsed, helpers) if walk == 'wrapper' \
-            else local_handle_sites(parsed, helpers)
+        direct = direct_walk(walk, parsed)
         hit = all_sites(sources)
         ok = not direct and not hit
         failed += not ok
@@ -1099,15 +1598,34 @@ def main():
     sites = all_sites(sources)
     if not sites:
         if not quiet:
-            print('All bridge functions guard the geometry handle as well as the wrapper pointer.')
-            print(f'({len(ALLOWED)} site(s) exempt by name in ALLOWED, each with its reason.)')
+            print('All bridge functions guard the geometry handle as well as the wrapper pointer,')
+            print('and the shape as well as the wrapper pointer.')
+            print(f'({len(ALLOWED)} handle site(s) exempt in ALLOWED, '
+                  f'{len(SHAPE_ALLOWED)} shape site(s) in SHAPE_ALLOWED, each with its reason.)')
         return 0
     if not quiet:
-        print(f'{len(sites)} site(s) reach OCCT with an unchecked handle:\n')
+        print(f'{len(sites)} site(s) reach OCCT with an unchecked handle or shape:\n')
         for s in sites:
             print(f'  {s.file}:{s.line}  {s.func}({s.name})')
             print(f'      {s.src}')
-            if s.kind == 'local':
+            if s.kind == 'shape':
+                # `s.detail` is `<field>.<member>`: the wrapper field the shape lives in, and what
+                # dereferences it. A bare name is a TopoDS_Shape member that reads myTShape with no
+                # null test of its own; a qualified one is an OCCT entry point measured to
+                # dereference the shape for its caller (#1035).
+                field, member = s.detail.split('.', 1)
+                if member in SHAPE_HAZARDS:
+                    print(f'      reaches TopoDS_Shape::{member}(), '
+                          f'an unguarded myTShape dereference')
+                else:
+                    print(f'      hands the shape to {member}, measured to dereference a null '
+                          f'one (Scripts/repro/1035-unwrap-guard)')
+                if s.is_array:
+                    print(f'      want, per element of {s.name}:  '
+                          f'if (!e || e->{field}.IsNull()) return <fallback>;')
+                else:
+                    print(f'      want: if (!occtShapeIsPresent({s.name})) return <fallback>;')
+            elif s.kind == 'local':
                 # `s.name` is a local, not a wrapper argument: there is no pointer to null-check
                 # alongside it, just the handle itself, obtained from `s.detail` (the BRep_Tool::
                 # call that produced it).

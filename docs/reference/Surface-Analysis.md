@@ -1,9 +1,9 @@
 ---
-title: Surface — Analysis
+title: Surface. Analysis
 parent: API Reference
 ---
 
-# Surface — Analysis
+# Surface. Analysis
 
 This page covers the analysis and query members of `Surface`: curvature/normal analysis at a point, singularity detection, surface-to-surface and curve-to-surface extrema, point/curve projection onto a surface, surface–surface and curve–surface intersection, and batch UV evaluation. For factory methods, B-spline/Bezier construction, and operations see the main `Surface` page.
 
@@ -29,17 +29,17 @@ public func gaussianCurvature(atU u: Double, v: Double) -> Double?
 
 The Gaussian curvature is the product of the two principal curvatures (`kMin × kMax`). Positive on a convex surface, negative in a saddle region, zero on a developable surface.
 
-- **Parameters:** `u` — U parameter; `v` — V parameter.
-- **Returns:** Gaussian curvature value (signed); `nil` if `GeomLProp_SLProps::IsCurvatureDefined()` is false at that point (a cone apex, a sphere pole). This was `0` until #595 — which is also the Gaussian curvature of **every point of every plane, cylinder and cone**, since those are developable, so whole surfaces read as "no answer". `Face.gaussianCurvature(atU:v:)` reads the same quantity through the face and has always returned an optional; the two now agree.
+- **Parameters:** `u`, U parameter; `v`, V parameter.
+- **Returns:** Gaussian curvature value (signed); `nil` if `GeomLProp_SLProps::IsCurvatureDefined()` is false at that point (a cone apex, a sphere pole). This was `0` until #595, which is also the Gaussian curvature of **every point of every plane, cylinder and cone**, since those are developable, so whole surfaces read as "no answer". `Face.gaussianCurvature(atU:v:)` reads the same quantity through the face and has always returned an optional; the two now agree.
 - **OCCT:** `GeomLProp_SLProps::GaussianCurvature` (order 2, `Precision::Confusion()`).
-- **See also:** [`curvatures(u:v:)`](Surface.md) returns this and `meanCurvature(atU:v:)` together from a single evaluation. All three share one `GeomLProp_SLProps` construction, so they agree exactly — including on whether curvature is defined at all (#405).
+- **See also:** [`curvatures(u:v:)`](Surface.md) returns this and `meanCurvature(atU:v:)` together from a single evaluation. All three share one `GeomLProp_SLProps` construction, so they agree exactly, including on whether curvature is defined at all (#405).
 - **Example:**
   ```swift
   if let sphere = Surface.sphere(radius: 5) {
       let k = sphere.gaussianCurvature(atU: 0, v: 0)  // ≈ 0.04 (1/R²)
       let flat = Surface.plane(origin: .zero, normal: SIMD3(0, 0, 1))!
-      flat.gaussianCurvature(atU: 3, v: 4)             // 0 — flat, and that is the answer
-      sphere.gaussianCurvature(atU: 0, v: .pi / 2)     // nil — the pole has no curvature
+      flat.gaussianCurvature(atU: 3, v: 4)             // 0, flat, and that is the answer
+      sphere.gaussianCurvature(atU: 0, v: .pi / 2)     // nil, the pole has no curvature
   }
   ```
 
@@ -55,7 +55,7 @@ public func meanCurvature(atU u: Double, v: Double) -> Double?
 
 The mean curvature is the arithmetic mean of the two principal curvatures: `(kMin + kMax) / 2`. Zero on a minimal surface (e.g., a flat plane in its own parameter domain).
 
-- **Parameters:** `u` — U parameter; `v` — V parameter.
+- **Parameters:** `u`, U parameter; `v`, V parameter.
 - **Returns:** Mean curvature value (signed); `nil` if `GeomLProp_SLProps::IsCurvatureDefined()` is false at that point. Was `0` until #595, which is also a plane's real mean curvature, and disagreed with `Face.meanCurvature(atU:v:)` (already optional).
 - **OCCT:** `GeomLProp_SLProps::MeanCurvature` (order 2, `Precision::Confusion()`).
 - **See also:** [`curvatures(u:v:)`](Surface.md) returns this and `gaussianCurvature(atU:v:)` together from a single evaluation, sharing one `GeomLProp_SLProps` construction (#405).
@@ -113,7 +113,7 @@ public func principalCurvatures(atU u: Double, v: Double) -> PrincipalCurvatures
 
 Uses `GeomLProp_SLProps` to extract both principal curvature values and the orthogonal surface directions along which they act. Returns `nil` if the point is singular or derivatives cannot be computed.
 
-- **Parameters:** `u` — U parameter; `v` — V parameter.
+- **Parameters:** `u`, U parameter; `v`, V parameter.
 - **Returns:** `PrincipalCurvatures` struct, or `nil` at a singular or degenerate point.
 - **OCCT:** `GeomLProp_SLProps::CurvatureDirections` + `MinCurvature` + `MaxCurvature`.
 - **Example:**
@@ -154,15 +154,15 @@ public struct ContinuityAnalysis: Sendable {
 }
 ```
 
-- `order` — the class the junction was analysed at, i.e. the request after saturation. `LocalAnalysis_SurfaceContinuity::ContinuityStatus()` echoes its constructor argument, so this is never a finding; it exists to tell you where a saturated request landed.
-- `measured` — the classes this `order` actually evaluated. Each order runs one branch: `.c0` measures C0; `.g1` measures C0 and G1; `.c1` measures C0 and C1; `.g2` measures C0, G1 and G2; `.c2` measures C0, C1 and C2. **No order measures all five.**
-- `c0Value` — positional gap distance at the junction.
-- `g1Angle` — angle between surface normals at the junction (radians), or `-1` if G1 was not measured or does not hold.
-- `c1UAngle` / `c1VAngle` — angles between first derivatives in U and V directions, or `-1`.
-- `flags` — bitmask: bit 0 = C0, bit 1 = G1, bit 2 = C1, bit 3 = G2, bit 4 = C2, masked to `measured`.
+- `order`: the class the junction was analysed at, i.e. the request after saturation. `LocalAnalysis_SurfaceContinuity::ContinuityStatus()` echoes its constructor argument, so this is never a finding; it exists to tell you where a saturated request landed.
+- `measured`: the classes this `order` actually evaluated. Each order runs one branch: `.c0` measures C0; `.g1` measures C0 and G1; `.c1` measures C0 and C1; `.g2` measures C0, G1 and G2; `.c2` measures C0, C1 and C2. **No order measures all five.**
+- `c0Value`: positional gap distance at the junction.
+- `g1Angle`: angle between surface normals at the junction (radians), or `-1` if G1 was not measured or does not hold.
+- `c1UAngle` / `c1VAngle`, angles between first derivatives in U and V directions, or `-1`.
+- `flags`: bitmask: bit 0 = C0, bit 1 = G1, bit 2 = C1, bit 3 = G2, bit 4 = C2, masked to `measured`.
 - `holds(_:)` returns `nil` for a class outside `measured`, which is what separates "does not hold" from "never asked". Prefer it to `flags`.
 
-> Before #495 the `is*` helpers were non-optional and read straight off the bitmask, so a class the order never computed answered `true` from an uninitialised member — a 90° crease analysed at `.c0` reported `isC2 == true`, with `c2Angle == 0.0` alongside it.
+> Before #495 the `is*` helpers were non-optional and read straight off the bitmask, so a class the order never computed answered `true` from an uninitialised member, a 90° crease analysed at `.c0` reported `isC2 == true`, with `c2Angle == 0.0` alongside it.
 
 ---
 
@@ -192,18 +192,18 @@ public func continuityWith(
 ) -> ContinuityAnalysis?
 ```
 
-`order` **selects** the analysis rather than capping it — see `measured` above. `.c2` is the strictest class `LocalAnalysis_SurfaceContinuity` implements, so `.c3` and `.cN` saturate to it.
+`order` **selects** the analysis rather than capping it, see `measured` above. `.c2` is the strictest class `LocalAnalysis_SurfaceContinuity` implements, so `.c3` and `.cN` saturate to it.
 
-- **Parameters:** `other` — the second surface; `u1`/`v1` — parameters on this surface; `u2`/`v2` — parameters on `other`; `order` — the class to measure (default `.c2`).
+- **Parameters:** `other`, the second surface; `u1`/`v1`, parameters on this surface; `u2`/`v2`, parameters on `other`; `order`, the class to measure (default `.c2`).
 - **Returns:** `ContinuityAnalysis`, or `nil` if `LocalAnalysis_SurfaceContinuity` fails.
 - **OCCT:** `LocalAnalysis_SurfaceContinuity`.
-- **Note:** the `.c2` branch needs a non-zero second derivative in both U and V on both surfaces. A plane has none in either direction and a cylinder has none along its axis, so the default order returns `nil` for both — ask for `.c1` or `.g1` on planar or ruled geometry.
+- **Note:** the `.c2` branch needs a non-zero second derivative in both U and V on both surfaces. A plane has none in either direction and a cylinder has none along its axis, so the default order returns `nil` for both, ask for `.c1` or `.g1` on planar or ruled geometry.
 - **Example:**
   ```swift
   // Tangency is its own question: the .c2 default never computes G1.
   if let a = s1.continuityWith(s2, u1: 0, v1: 0, u2: 0, v2: 0, order: .g1) {
       print(a.holds(.g1), a.g1Angle)   // Optional(true), 0.0
-      print(a.holds(.c1))              // nil — .g1 does not measure C1
+      print(a.holds(.c1))              // nil, .g1 does not measure C1
   }
   ```
 
@@ -225,13 +225,13 @@ public func singularityCount(tolerance: Double = 1e-6) -> Int
 
 A singularity is a parameter value at which the surface normal vanishes (e.g., the poles of a sphere or the apex of a cone). Returns 0 when the surface has no degenerate regions within the given tolerance.
 
-- **Parameters:** `tolerance` — detection precision (default `1e-6`).
+- **Parameters:** `tolerance`, detection precision (default `1e-6`).
 - **Returns:** Count of singularities; 0 if none found.
 - **OCCT:** `ShapeAnalysis_Surface` singularity methods.
 - **Example:**
   ```swift
   if let sphere = Surface.sphere(radius: 5) {
-      let n = sphere.singularityCount()  // 2 — north and south poles
+      let n = sphere.singularityCount()  // 2, north and south poles
   }
   ```
 
@@ -245,7 +245,7 @@ Returns `true` if the given 3D point lies at a degenerate region of the surface.
 public func isDegenerated(at point: SIMD3<Double>, tolerance: Double = 1e-6) -> Bool
 ```
 
-- **Parameters:** `point` — 3D point to test; `tolerance` — degeneration precision.
+- **Parameters:** `point`, 3D point to test; `tolerance`, degeneration precision.
 - **Returns:** `true` if the point is within `tolerance` of a degenerate region.
 - **OCCT:** `ShapeAnalysis_Surface` degeneration check.
 - **Example:**
@@ -267,13 +267,13 @@ public func hasSingularities(tolerance: Double = 1e-6) -> Bool
 
 Convenience wrapper over `singularityCount(tolerance:)`.
 
-- **Parameters:** `tolerance` — detection precision (default `1e-6`).
+- **Parameters:** `tolerance`, detection precision (default `1e-6`).
 - **Returns:** `true` when `singularityCount(tolerance:) > 0`.
 - **OCCT:** Delegates to `ShapeAnalysis_Surface` via `singularityCount`.
 - **Example:**
   ```swift
   if let cone = Surface.cone(radius: 5, height: 10, halfAngle: .pi / 6) {
-      print(cone.hasSingularities())  // true — apex is singular
+      print(cone.hasSingularities())  // true, apex is singular
   }
   ```
 
@@ -299,9 +299,9 @@ public struct SurfaceExtremaResult {
 }
 ```
 
-- `distance` — minimum distance between the two surfaces.
-- `point1` / `point2` — nearest points on the first and second surface respectively.
-- `uv1` / `uv2` — UV parameters on each surface at the nearest point.
+- `distance`: minimum distance between the two surfaces.
+- `point1` / `point2`, nearest points on the first and second surface respectively.
+- `uv1` / `uv2`, UV parameters on each surface at the nearest point.
 
 *(Per-field anchors below, for cross-reference; the list above has the actual meaning of each.)*
 
@@ -321,9 +321,9 @@ public func extrema(
 ) -> SurfaceExtremaResult?
 ```
 
-When `uvBounds1` or `uvBounds2` is `nil`, the bridge substitutes `(0, 1, 0, 1)` — valid for surfaces already in the unit parameter domain; supply explicit bounds for surfaces with other parameter ranges. Returns `nil` when no extrema are found.
+When `uvBounds1` or `uvBounds2` is `nil`, the bridge substitutes `(0, 1, 0, 1)`, valid for surfaces already in the unit parameter domain; supply explicit bounds for surfaces with other parameter ranges. Returns `nil` when no extrema are found.
 
-- **Parameters:** `other` — the second surface; `uvBounds1` — optional UV bounds restricting the search on this surface; `uvBounds2` — optional UV bounds on `other`.
+- **Parameters:** `other`, the second surface; `uvBounds1`, optional UV bounds restricting the search on this surface; `uvBounds2`, optional UV bounds on `other`.
 - **Returns:** `SurfaceExtremaResult`, or `nil` if `GeomAPI_ExtremaSurfaceSurface` finds no solution.
 - **OCCT:** `GeomAPI_ExtremaSurfaceSurface`.
 - **Example:**
@@ -382,8 +382,8 @@ public struct UVProjection: Sendable {
 }
 ```
 
-- `uv` — surface UV parameters at the closest surface point.
-- `gap` — distance between the input 3D point and the surface evaluated at `uv`. A nonzero gap means the input point was not exactly on the surface.
+- `uv`: surface UV parameters at the closest surface point.
+- `gap`: distance between the input 3D point and the surface evaluated at `uv`. A nonzero gap means the input point was not exactly on the surface.
 
 *(Per-field anchors below, for cross-reference; the list above has the actual meaning of each.)*
 
@@ -401,7 +401,7 @@ public func valueOfUV(point: SIMD3<Double>, precision: Double = 1e-6) -> UVProje
 
 Suitable for a one-off query when no hint is available. For sequential queries along a path, `nextValueOfUV(previousUV:point:precision:)` is faster.
 
-- **Parameters:** `point` — 3D point to project; `precision` — projection precision (default `1e-6`).
+- **Parameters:** `point`, 3D point to project; `precision`, projection precision (default `1e-6`).
 - **Returns:** `UVProjection` (never `nil`; a non-zero `gap` indicates the point was off-surface).
 - **OCCT:** `ShapeAnalysis_Surface::ValueOfUV`.
 - **Example:**
@@ -428,7 +428,7 @@ public func nextValueOfUV(
 
 More efficient than `valueOfUV(point:precision:)` when projecting a sequence of closely-spaced points (e.g. sampling along a curve on the surface). The previous result is used as the initial guess, reducing solver iterations.
 
-- **Parameters:** `previousUV` — UV result from the prior point; `point` — new 3D point to project; `precision` — projection precision (default `1e-6`).
+- **Parameters:** `previousUV`, UV result from the prior point; `point`, new 3D point to project; `precision`, projection precision (default `1e-6`).
 - **Returns:** `UVProjection` for `point`.
 - **OCCT:** `ShapeAnalysis_Surface::NextValueOfUV`.
 - **Example:**
@@ -446,7 +446,7 @@ More efficient than `valueOfUV(point:precision:)` when projecting a sequence of 
 
 ### `uvFromIso(_:precision:)` (#266)
 
-Refine a `(u, v)` for a 3D point by projecting it onto the surface's iso-lines — more robust near
+Refine a `(u, v)` for a 3D point by projecting it onto the surface's iso-lines, more robust near
 degeneracies than plain `projectPoint(_:)`. Returns the parameters and the 3D gap (a very large gap
 means the projection effectively failed).
 
@@ -494,7 +494,7 @@ The precision at which the singularity was detected.
 
 ### `singularity(_:precision:)` (#266)
 
-Full detail of singularity `index` (**0-based**, `0..<singularityCount(...)`) — the pole point, the
+Full detail of singularity `index` (**0-based**, `0..<singularityCount(...)`), the pole point, the
 degenerate iso-line's 2D endpoints + parameters, and its direction. Complements
 `singularityCount(tolerance:)` (count only).
 
@@ -533,7 +533,7 @@ public func projectDegenerated(_ point: SIMD3<Double>, neighbour: SIMD2<Double>,
 
 ### `projectPoint(_:uDomain:vDomain:precision:)` (#266)
 
-Project a 3D point onto the surface **restricted to a U/V domain** (`SetDomain`) — disambiguates
+Project a 3D point onto the surface **restricted to a U/V domain** (`SetDomain`), disambiguates
 projection on periodic or self-overlapping surfaces. Returns the `(u, v)` and the 3D gap.
 
 ```swift
@@ -564,8 +564,8 @@ public struct SurfaceProjection: Sendable {
 }
 ```
 
-- `u` / `v` — surface UV parameters at the closest point.
-- `distance` — 3D distance from the input point to the surface.
+- `u` / `v`, surface UV parameters at the closest point.
+- `distance`: 3D distance from the input point to the surface.
 
 ---
 
@@ -589,7 +589,7 @@ public func projectCurve(_ curve: Curve3D, tolerance: Double = 1e-4) -> Curve2D?
 
 Uses `GeomProjLib::Curve2d` for analytic (normal) projection. The resulting `Curve2D` is in the surface's UV parameter space and is suitable for defining pcurves or trimming boundaries.
 
-- **Parameters:** `curve` — the 3D curve to project; `tolerance` — projection tolerance (default `1e-4`).
+- **Parameters:** `curve`, the 3D curve to project; `tolerance`, projection tolerance (default `1e-4`).
 - **Returns:** 2D UV-space curve, or `nil` if the projection fails (e.g. curve not projectable onto the surface within tolerance).
 - **OCCT:** `GeomProjLib::Curve2d`.
 - **Example:**
@@ -613,7 +613,7 @@ public func projectCurveSegments(_ curve: Curve3D, tolerance: Double = 1e-4) -> 
 
 Uses `ProjLib_CompProjectedCurve`, which handles cases where the curve projection crosses surface seams or boundaries and maps to disconnected UV segments. Returns an empty array on failure.
 
-- **Parameters:** `curve` — the 3D curve to project; `tolerance` — projection tolerance (default `1e-4`).
+- **Parameters:** `curve`, the 3D curve to project; `tolerance`, projection tolerance (default `1e-4`).
 - **Returns:** Array of 2D UV curves (may be empty if projection fails or the curve does not intersect the surface domain).
 - **OCCT:** `ProjLib_CompProjectedCurve`.
 - **Example:**
@@ -635,9 +635,9 @@ Projects a 3D curve onto this surface, returning a 3D curve that lies on the sur
 public func projectCurve3D(_ curve: Curve3D) -> Curve3D?
 ```
 
-Uses `GeomProjLib::Project` for normal projection. The result is a 3D curve — unlike `projectCurve(_:tolerance:)`, it is not in UV space.
+Uses `GeomProjLib::Project` for normal projection. The result is a 3D curve, unlike `projectCurve(_:tolerance:)`, it is not in UV space.
 
-- **Parameters:** `curve` — the 3D curve to project.
+- **Parameters:** `curve`, the 3D curve to project.
 - **Returns:** 3D curve lying on the surface, or `nil` on failure.
 - **OCCT:** `GeomProjLib::Project`.
 - **Example:**
@@ -661,7 +661,7 @@ public func projectPoint(_ point: SIMD3<Double>) -> SurfaceProjection?
 
 Uses `GeomAPI_ProjectPointOnSurf` to find the nearest surface point. Returns `nil` if the projection fails (e.g. the surface is degenerate).
 
-- **Parameters:** `point` — 3D point to project.
+- **Parameters:** `point`, 3D point to project.
 - **Returns:** `SurfaceProjection` with `u`, `v`, and `distance`, or `nil` on failure.
 - **OCCT:** `GeomAPI_ProjectPointOnSurf`.
 - **Example:**
@@ -688,8 +688,8 @@ public func intersections(with other: Surface, tolerance: Double = 1e-6, maxCurv
 
 Returns an empty array when the surfaces do not intersect. This is the earlier (v0.30.0) intersection method; see also `intersectionCurves(with:tolerance:)` added in v0.35.0.
 
-- **Parameters:** `other` — the second surface; `tolerance` — intersection tolerance (default
-  `1e-6`); `maxCurves` — output *capacity* (default 50), clamped into `0...Sampling.maximumSampleCount` (10,000,000); 0 or less returns empty (#622).
+- **Parameters:** `other`, the second surface; `tolerance`, intersection tolerance (default
+  `1e-6`); `maxCurves`, output *capacity* (default 50), clamped into `0...Sampling.maximumSampleCount` (10,000,000); 0 or less returns empty (#622).
 - **Returns:** Array of 3D intersection curves (may be empty).
 - **OCCT:** `GeomAPI_IntSS`.
 - **Example:**
@@ -713,7 +713,7 @@ public func toAnalytical(tolerance: Double = 1e-4) -> Surface?
 
 Recognises planes, cylinders, cones, spheres, and tori within the given tolerance. Returns the analytic surface type. Useful after fitting operations that produce a B-spline approximation of a canonical shape.
 
-- **Parameters:** `tolerance` — recognition tolerance (default `1e-4`).
+- **Parameters:** `tolerance`, recognition tolerance (default `1e-4`).
 - **Returns:** The equivalent analytic `Surface`, or `nil` if the surface is not recognisable as a standard type.
 - **OCCT:** `GeomConvert_ApproxSurface` recognition path (canonical-surface detection).
 - **Example:**
@@ -739,7 +739,7 @@ public func intersectionCurves(with other: Surface, tolerance: Double = 1e-6) ->
 
 Uses `GeomAPI_IntSS` with a fixed internal cap of 64 curves. This is the v0.35.0 counterpart to `intersections(with:tolerance:maxCurves:)`; both call the same underlying algorithm but with different buffer sizes and naming.
 
-- **Parameters:** `other` — the surface to intersect with; `tolerance` — intersection tolerance (default `1e-6`).
+- **Parameters:** `other`, the surface to intersect with; `tolerance`, intersection tolerance (default `1e-6`).
 - **Returns:** Array of 3D intersection curves (empty if no intersection).
 - **OCCT:** `GeomAPI_IntSS`.
 - **Example:**
@@ -793,7 +793,7 @@ public func intersections(with surface: Surface) -> [CurveSurfaceIntersection]
 
 Returns all intersection points (tangent and transverse) up to an internal cap of 64. Returns an empty array when the curve does not pierce the surface.
 
-- **Parameters:** `surface` — the surface to intersect with.
+- **Parameters:** `surface`, the surface to intersect with.
 - **Returns:** Array of `CurveSurfaceIntersection` values (may be empty).
 - **OCCT:** `GeomAPI_IntCS`.
 - **Example:**
@@ -822,13 +822,13 @@ Evaluates the surface at a grid of UV parameters in a single call.
 public func evaluateGrid(uParameters: [Double], vParameters: [Double]) -> SurfaceGrid
 ```
 
-Returns a `SurfaceGrid` (see [Surface.md](Surface.md#surfacegrid)) indexed `.at(u:v:)` — the same
+Returns a `SurfaceGrid` (see [Surface.md](Surface.md#surfacegrid)) indexed `.at(u:v:)`, the same
 type `drawMesh(uCount:vCount:)` returns, so the two can never disagree on index order the way
 their old raw `[[SIMD3<Double>]]` returns could ([#404](https://github.com/SecondMouseAU/OCCTSwift/issues/404)).
 This is significantly faster than individual `point(atU:v:)` calls when building a dense mesh or
 sampling a parameter grid.
 
-- **Parameters:** `uParameters` — array of U parameter values; `vParameters` — array of V parameter values.
+- **Parameters:** `uParameters`, array of U parameter values; `vParameters`, array of V parameter values.
 - **Returns:** A `SurfaceGrid` of size `uParameters.count × vParameters.count`, or an empty grid if
   either input is empty or the evaluated count mismatches.
 - **OCCT:** `GeomGridEval_Surface::EvaluateGrid` via `OCCTSurfaceEvaluateGrid`.

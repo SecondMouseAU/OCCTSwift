@@ -10,32 +10,32 @@
 #ifndef OCCTBridge_Healing_h
 #define OCCTBridge_Healing_h
 
-
 // MARK: - Validation
 
-bool OCCTShapeIsValid(OCCTShapeRef shape);
+bool         OCCTShapeIsValid(OCCTShapeRef shape);
 OCCTShapeRef OCCTShapeHeal(OCCTShapeRef shape);
 
 // MARK: - Shape Healing & Analysis (v0.13.0)
 
 /// Shape analysis result structure
-typedef struct {
-    int32_t smallEdgeCount;        // Number of edges smaller than tolerance
-    int32_t smallFaceCount;        // Number of faces smaller than tolerance
-    int32_t gapCount;              // Number of gaps between edges/faces
-    // selfIntersectionCount REMOVED (#726/#763): it was always 0, never computed ("would require
-    // more expensive computation", the field's own former comment) -- see OCCTShapeSelfIntersects /
-    // OCCTShapeSelfIntersectsBounded for the real answer (#702 documented the field as honest about
-    // never being computed; #763 removed it, since a field that can never carry information has no
-    // reason to exist).
-    int32_t freeEdgeCount;         // Number of free (unconnected) edges, summed across every
-                                    // shell of `shape`, via ShapeAnalysis_Shell::CheckOrientedShells
-                                    // (#702: this was hardcoded 0 before, since LoadShells() alone
-                                    // runs no edge analysis)
-    int32_t freeFaceCount;         // Number of shells found to have at least one free edge above
-                                    // (i.e. not fully closed); same #702 fix
-    bool hasInvalidTopology;       // Whether topology is invalid
-    bool isValid;                  // Whether analysis succeeded
+typedef struct
+{
+  int32_t smallEdgeCount; // Number of edges smaller than tolerance
+  int32_t smallFaceCount; // Number of faces smaller than tolerance
+  int32_t gapCount;       // Number of gaps between edges/faces
+  // selfIntersectionCount REMOVED (#726/#763): it was always 0, never computed ("would require
+  // more expensive computation", the field's own former comment) -- see OCCTShapeSelfIntersects /
+  // OCCTShapeSelfIntersectsBounded for the real answer (#702 documented the field as honest about
+  // never being computed; #763 removed it, since a field that can never carry information has no
+  // reason to exist).
+  int32_t freeEdgeCount;   // Number of free (unconnected) edges, summed across every
+                           // shell of `shape`, via ShapeAnalysis_Shell::CheckOrientedShells
+                           // (#702: this was hardcoded 0 before, since LoadShells() alone
+                           // runs no edge analysis)
+  int32_t freeFaceCount;   // Number of shells found to have at least one free edge above
+                           // (i.e. not fully closed); same #702 fix
+  bool hasInvalidTopology; // Whether topology is invalid
+  bool isValid;            // Whether analysis succeeded
 } OCCTShapeAnalysisResult;
 
 /// Analyze a shape for problems
@@ -60,13 +60,19 @@ OCCTShapeRef OCCTFaceFix(OCCTFaceRef face, double tolerance);
 /// @param shape The shape to fix
 /// @param tolerance Tolerance for fixing operations
 /// @param fixSolid Whether to fix solid orientation (ShapeFix_Shape::FixSolidMode)
-/// @param fixShell Whether to fix FREE shells -- not attached to a solid (ShapeFix_Shape::FixFreeShellMode)
-/// @param fixFace Whether to fix FREE faces -- not attached to a shell (ShapeFix_Shape::FixFreeFaceMode)
-/// @param fixWire Whether to fix FREE wires -- not attached to a face (ShapeFix_Shape::FixFreeWireMode)
+/// @param fixShell Whether to fix FREE shells -- not attached to a solid
+/// (ShapeFix_Shape::FixFreeShellMode)
+/// @param fixFace Whether to fix FREE faces -- not attached to a shell
+/// (ShapeFix_Shape::FixFreeFaceMode)
+/// @param fixWire Whether to fix FREE wires -- not attached to a face
+/// (ShapeFix_Shape::FixFreeWireMode)
 /// @return Fixed shape, or NULL on failure
-OCCTShapeRef OCCTShapeFixDetailed(OCCTShapeRef shape, double tolerance,
-                                   bool fixSolid, bool fixShell,
-                                   bool fixFace, bool fixWire);
+OCCTShapeRef OCCTShapeFixDetailed(OCCTShapeRef shape,
+                                  double       tolerance,
+                                  bool         fixSolid,
+                                  bool         fixShell,
+                                  bool         fixFace,
+                                  bool         fixWire);
 
 /// Unify faces and edges lying on the same geometry
 /// @param shape The shape to simplify
@@ -75,8 +81,9 @@ OCCTShapeRef OCCTShapeFixDetailed(OCCTShapeRef shape, double tolerance,
 /// @param concatBSplines Whether to concatenate adjacent B-splines
 /// @return Unified shape, or NULL on failure
 OCCTShapeRef OCCTShapeUnifySameDomain(OCCTShapeRef shape,
-                                       bool unifyEdges, bool unifyFaces,
-                                       bool concatBSplines);
+                                      bool         unifyEdges,
+                                      bool         unifyFaces,
+                                      bool         concatBSplines);
 
 /// Remove faces smaller than an area threshold, by defeaturing (BRepAlgoAPI_Defeaturing).
 /// Picks the faces itself rather than taking a list, but is otherwise the same operation as
@@ -84,7 +91,7 @@ OCCTShapeRef OCCTShapeUnifySameDomain(OCCTShapeRef shape,
 /// as this comment claimed before #497.)
 /// @param shape The shape to clean
 /// @param minArea Minimum face area to keep
-/// @return Cleaned shape — the input unchanged when no face is below the threshold — or NULL on
+/// @return Cleaned shape, the input unchanged when no face is below the threshold, or NULL on
 ///         failure
 OCCTShapeRef OCCTShapeRemoveSmallFaces(OCCTShapeRef shape, double minArea);
 
@@ -109,8 +116,11 @@ OCCTShapeRef OCCTShapeSimplify(OCCTShapeRef shape, double tolerance);
 ///   they must strictly increase
 /// @param count Number of radius/parameter pairs; at least 2
 /// @return Filleted shape, or NULL on failure
-OCCTShapeRef OCCTShapeFilletVariable(OCCTShapeRef shape, int32_t edgeIndex,
-                                      const double* radii, const double* params, int32_t count);
+OCCTShapeRef OCCTShapeFilletVariable(OCCTShapeRef  shape,
+                                     int32_t       edgeIndex,
+                                     const double* radii,
+                                     const double* params,
+                                     int32_t       count);
 
 /// Apply 2D fillet to a wire at a specific vertex
 /// @param wire The wire to fillet
@@ -163,9 +173,12 @@ OCCTWireRef OCCTWireChamferAll2D(OCCTWireRef wire, double distance);
 ///   Same contract as OCCTShapeFilletEdges.
 /// @param outDeclinedCount Optional (may be NULL): same contract as OCCTShapeFilletEdges.
 /// @return Blended shape, or NULL on failure
-OCCTShapeRef OCCTShapeBlendEdges(OCCTShapeRef shape,
-                                  const int32_t* edgeIndices, const double* radii, int32_t count,
-                                  int32_t* declinedEdgeIndices, int32_t* outDeclinedCount);
+OCCTShapeRef OCCTShapeBlendEdges(OCCTShapeRef   shape,
+                                 const int32_t* edgeIndices,
+                                 const double*  radii,
+                                 int32_t        count,
+                                 int32_t*       declinedEdgeIndices,
+                                 int32_t*       outDeclinedCount);
 
 /// Parameters for surface filling operation
 ///
@@ -173,14 +186,15 @@ OCCTShapeRef OCCTShapeBlendEdges(OCCTShapeRef shape,
 /// 0 = position only, 1 = position + tangency, 2 = position + tangency + curvature.
 /// BRepFill_Filling passes the GeomAbs_Shape value straight through to
 /// GeomPlate_CurveConstraint/BRepFill_CurveConstraint as that integer order, and both
-/// reject anything outside [-1, 2] — so curvature continuity is GeomAbs_C1 (ordinal 2),
+/// reject anything outside [-1, 2], so curvature continuity is GeomAbs_C1 (ordinal 2),
 /// and GeomAbs_G2 (ordinal 3) always throws despite what the OCCT header docs claim.
 /// See OCCTFillingContinuityToGeomAbs in OCCTBridge_Healing.mm. (#430)
-typedef struct {
-    int32_t continuity;   // 0=position, 1=tangency, 2=curvature
-    double tolerance;     // Surface tolerance
-    int32_t maxDegree;    // Maximum surface degree (default 8)
-    int32_t maxSegments;  // Maximum segments (default 9)
+typedef struct
+{
+  int32_t continuity;  // 0=position, 1=tangency, 2=curvature
+  double  tolerance;   // Surface tolerance
+  int32_t maxDegree;   // Maximum surface degree (default 8)
+  int32_t maxSegments; // Maximum segments (default 9)
 } OCCTFillingParams;
 
 /// Fill an N-sided boundary with a surface
@@ -196,13 +210,14 @@ typedef struct {
 /// @param wireCount Number of boundary wires
 /// @param params Filling parameters
 /// @return Filled face, or NULL on failure
-OCCTShapeRef OCCTShapeFill(const OCCTWireRef* boundaries, int32_t wireCount,
-                            OCCTFillingParams params);
+OCCTShapeRef OCCTShapeFill(const OCCTWireRef* boundaries,
+                           int32_t            wireCount,
+                           OCCTFillingParams  params);
 
 /// Fill an N-sided boundary, taking tangency/curvature from a surrounding shape
 ///
 /// For each boundary edge, the support face is the edge's own ancestor face in
-/// `support` — the "cap this opening, continuous with the walls around it" case. A
+/// `support`, the "cap this opening, continuous with the walls around it" case. A
 /// boundary edge with no ancestor face in `support` falls back to its own pcurve
 /// surface, and failing that is added with position-only continuity.
 ///
@@ -211,15 +226,18 @@ OCCTShapeRef OCCTShapeFill(const OCCTWireRef* boundaries, int32_t wireCount,
 /// @param support Shape whose faces supply the tangency/curvature reference
 /// @param params Filling parameters
 /// @return Filled face, or NULL on failure
-OCCTShapeRef OCCTShapeFillWithSupport(const OCCTWireRef* boundaries, int32_t wireCount,
-                                       OCCTShapeRef support, OCCTFillingParams params);
+OCCTShapeRef OCCTShapeFillWithSupport(const OCCTWireRef* boundaries,
+                                      int32_t            wireCount,
+                                      OCCTShapeRef       support,
+                                      OCCTFillingParams  params);
 
 /// One edge constraint for OCCTShapeFillConstraints
-typedef struct {
-    OCCTEdgeRef edge;      // Constrained edge (required)
-    OCCTFaceRef support;   // Face to be continuous with, or NULL to derive one
-    int32_t continuity;    // 0=position, 1=tangency, 2=curvature
-    int32_t isBound;       // 1 = bounds the resulting face, 0 = internal constraint
+typedef struct
+{
+  OCCTEdgeRef edge;       // Constrained edge (required)
+  OCCTFaceRef support;    // Face to be continuous with, or NULL to derive one
+  int32_t     continuity; // 0=position, 1=tangency, 2=curvature
+  int32_t     isBound;    // 1 = bounds the resulting face, 0 = internal constraint
 } OCCTFillConstraint;
 
 /// Fill a surface from explicit per-edge constraints
@@ -231,8 +249,9 @@ typedef struct {
 /// @param count Number of constraints
 /// @param params Filling parameters (continuity field unused)
 /// @return Filled face, or NULL on failure
-OCCTShapeRef OCCTShapeFillConstraints(const OCCTFillConstraint* constraints, int32_t count,
-                                       OCCTFillingParams params);
+OCCTShapeRef OCCTShapeFillConstraints(const OCCTFillConstraint* constraints,
+                                      int32_t                   count,
+                                      OCCTFillingParams         params);
 
 /// Create a surface constrained to pass through points
 /// @param points Array of points [x,y,z triplets]
@@ -247,8 +266,10 @@ OCCTShapeRef OCCTShapePlatePoints(const double* points, int32_t pointCount, doub
 /// @param continuity Desired continuity (0=C0, 1=G1, 2=G2)
 /// @param tolerance Surface tolerance
 /// @return Surface face, or NULL on failure
-OCCTShapeRef OCCTShapePlateCurves(const OCCTWireRef* curves, int32_t curveCount,
-                                   int32_t continuity, double tolerance);
+OCCTShapeRef OCCTShapePlateCurves(const OCCTWireRef* curves,
+                                  int32_t            curveCount,
+                                  int32_t            continuity,
+                                  double             tolerance);
 
 // MARK: - Advanced Healing (v0.17.0)
 
@@ -272,8 +293,10 @@ OCCTShapeRef OCCTShapeScaleGeometry(OCCTShapeRef shape, double factor);
 /// Convert BSpline surfaces to their closest analytical form
 /// (planes, cylinders, cones, spheres, tori)
 OCCTShapeRef OCCTShapeBSplineRestriction(OCCTShapeRef shape,
-                                          double surfaceTol, double curveTol,
-                                          int32_t maxDegree, int32_t maxSegments);
+                                         double       surfaceTol,
+                                         double       curveTol,
+                                         int32_t      maxDegree,
+                                         int32_t      maxSegments);
 
 /// Convert swept surfaces to elementary (canonical) surfaces
 OCCTShapeRef OCCTShapeSweptToElementary(OCCTShapeRef shape);
@@ -395,8 +418,10 @@ OCCTShapeRef OCCTShapeDivideByNumber(OCCTShapeRef shape, int32_t nbU, int32_t nb
 /// @param outClosedCount Number of closed free boundary wires (output)
 /// @param outOpenCount Number of open free boundary wires (output)
 /// @return Compound of free boundary wires, or NULL if none found
-OCCTShapeRef OCCTShapeFreeBounds(OCCTShapeRef shape, double sewingTolerance,
-                                  int32_t* outClosedCount, int32_t* outOpenCount);
+OCCTShapeRef OCCTShapeFreeBounds(OCCTShapeRef shape,
+                                 double       sewingTolerance,
+                                 int32_t*     outClosedCount,
+                                 int32_t*     outOpenCount);
 
 /// Fix free boundary wires by closing gaps.
 /// @param shape The shape whose free boundaries to fix
@@ -404,8 +429,10 @@ OCCTShapeRef OCCTShapeFreeBounds(OCCTShapeRef shape, double sewingTolerance,
 /// @param closingTolerance Maximum distance to close a gap
 /// @param outFixedCount Number of wires that were fixed (output)
 /// @return Fixed shape, or NULL on failure
-OCCTShapeRef OCCTShapeFixFreeBounds(OCCTShapeRef shape, double sewingTolerance,
-                                     double closingTolerance, int32_t* outFixedCount);
+OCCTShapeRef OCCTShapeFixFreeBounds(OCCTShapeRef shape,
+                                    double       sewingTolerance,
+                                    double       closingTolerance,
+                                    int32_t*     outFixedCount);
 
 /// Split closed (periodic) edges in a shape
 /// @param shape Shape containing closed edges
@@ -421,8 +448,10 @@ OCCTShapeRef OCCTShapeDivideClosedEdges(OCCTShapeRef shape, int32_t nbSplitPoint
 /// @param plane Convert planar surfaces
 /// @return Converted shape, or NULL on failure
 OCCTShapeRef OCCTShapeCustomConvertToBSpline(OCCTShapeRef shape,
-                                              bool extrusion, bool revolution,
-                                              bool offset, bool plane);
+                                             bool         extrusion,
+                                             bool         revolution,
+                                             bool         offset,
+                                             bool         plane);
 
 /// Convert surfaces in a shape to revolution form
 /// @param shape Shape to convert
@@ -436,9 +465,11 @@ OCCTShapeRef OCCTShapeCustomConvertToRevolution(OCCTShapeRef shape);
 /// @param outFaces Pre-allocated array for result faces
 /// @param maxFaces Maximum faces to return
 /// @return Number of faces created, or -1 on failure
-int32_t OCCTShapeFaceRestrict(OCCTShapeRef faceShape,
-                               OCCTWireRef* wires, int32_t wireCount,
-                               OCCTShapeRef* outFaces, int32_t maxFaces);
+int32_t OCCTShapeFaceRestrict(OCCTShapeRef  faceShape,
+                              OCCTWireRef*  wires,
+                              int32_t       wireCount,
+                              OCCTShapeRef* outFaces,
+                              int32_t       maxFaces);
 
 // MARK: - v0.43.0: Face Subdivision, Small Face Detection, BSpline Fill, Location Purge
 
@@ -455,11 +486,12 @@ OCCTShapeRef OCCTShapeDivideByArea(OCCTShapeRef shape, double maxArea);
 OCCTShapeRef OCCTShapeDivideByParts(OCCTShapeRef shape, int32_t nbParts);
 
 /// Small face analysis result for a single face
-typedef struct {
-    bool isSpotFace;      // Face collapsed to a point
-    bool isStripFace;     // Face has negligible width
-    bool isTwisted;       // Face is twisted
-    double spotX, spotY, spotZ;   // Spot face location (if isSpotFace)
+typedef struct
+{
+  bool   isSpotFace;          // Face collapsed to a point
+  bool   isStripFace;         // Face has negligible width
+  bool   isTwisted;           // Face is twisted
+  double spotX, spotY, spotZ; // Spot face location (if isSpotFace)
 } OCCTSmallFaceResult;
 
 /// Check a shape's faces for small/degenerate conditions
@@ -468,8 +500,10 @@ typedef struct {
 /// @param outResults Array to receive per-face results
 /// @param maxResults Maximum number of results
 /// @return Number of degenerate faces found (results written to outResults)
-int32_t OCCTShapeCheckSmallFaces(OCCTShapeRef shape, double tolerance,
-                                  OCCTSmallFaceResult* outResults, int32_t maxResults);
+int32_t OCCTShapeCheckSmallFaces(OCCTShapeRef         shape,
+                                 double               tolerance,
+                                 OCCTSmallFaceResult* outResults,
+                                 int32_t              maxResults);
 
 /// Purge problematic location datums from a shape
 /// Removes negative-scale and non-unit-scale transforms from sub-shapes
@@ -490,14 +524,16 @@ OCCTShapeRef OCCTShapeConvertToBezier(OCCTShapeRef shape);
 // --- ShapeAnalysis_WireOrder ---
 
 /// Wire ordering result entry
-typedef struct {
-    int32_t originalIndex;  ///< Original edge index (1-based, negative if reversed)
+typedef struct
+{
+  int32_t originalIndex; ///< Original edge index (1-based, negative if reversed)
 } OCCTWireOrderEntry;
 
 /// Result of wire ordering analysis
-typedef struct {
-    int32_t status;         ///< 0=closed, 1=open, 2=gaps, -1=failed
-    int32_t nbEdges;        ///< Number of edges in the order
+typedef struct
+{
+  int32_t status;  ///< 0=closed, 1=open, 2=gaps, -1=failed
+  int32_t nbEdges; ///< Number of edges in the order
 } OCCTWireOrderResult;
 
 /// Analyze the ordering of edges to form connected chains.
@@ -508,9 +544,11 @@ typedef struct {
 /// @param tolerance Connection tolerance
 /// @param outOrder Output array for ordered edge indices (must hold nbEdges entries)
 /// @return Wire order result (status and count)
-OCCTWireOrderResult OCCTWireOrderAnalyze(const double* starts, const double* ends,
-                                          int32_t nbEdges, double tolerance,
-                                          OCCTWireOrderEntry* outOrder);
+OCCTWireOrderResult OCCTWireOrderAnalyze(const double*       starts,
+                                         const double*       ends,
+                                         int32_t             nbEdges,
+                                         double              tolerance,
+                                         OCCTWireOrderEntry* outOrder);
 
 /// Analyze the ordering of edges from a wire shape.
 /// @param wire Wire to analyze
@@ -518,57 +556,61 @@ OCCTWireOrderResult OCCTWireOrderAnalyze(const double* starts, const double* end
 /// @param outOrder Output array for ordered edge indices (must hold enough entries)
 /// @param maxEntries Maximum entries in outOrder
 /// @return Wire order result
-OCCTWireOrderResult OCCTWireOrderAnalyzeWire(OCCTWireRef wire, double tolerance,
-                                              OCCTWireOrderEntry* outOrder, int32_t maxEntries);
+OCCTWireOrderResult OCCTWireOrderAnalyzeWire(OCCTWireRef         wire,
+                                             double              tolerance,
+                                             OCCTWireOrderEntry* outOrder,
+                                             int32_t             maxEntries);
 
 // --- BRepCheck: Shape validity checking ---
 
 /// Shape validity status codes (maps to BRepCheck_Status)
-typedef enum {
-    OCCTCheckNoError = 0,
-    OCCTCheckInvalidPointOnCurve = 1,
-    OCCTCheckInvalidPointOnCurveOnSurface = 2,
-    OCCTCheckInvalidPointOnSurface = 3,
-    OCCTCheckNo3DCurve = 4,
-    OCCTCheckMultiple3DCurve = 5,
-    OCCTCheckInvalid3DCurve = 6,
-    OCCTCheckNoCurveOnSurface = 7,
-    OCCTCheckInvalidCurveOnSurface = 8,
-    OCCTCheckInvalidCurveOnClosedSurface = 9,
-    OCCTCheckInvalidSameRangeFlag = 10,
-    OCCTCheckInvalidSameParameterFlag = 11,
-    OCCTCheckInvalidDegeneratedFlag = 12,
-    OCCTCheckFreeEdge = 13,
-    OCCTCheckInvalidMultiConnexity = 14,
-    OCCTCheckInvalidRange = 15,
-    OCCTCheckEmptyWire = 16,
-    OCCTCheckRedundantEdge = 17,
-    OCCTCheckSelfIntersectingWire = 18,
-    OCCTCheckNoSurface = 19,
-    OCCTCheckInvalidWire = 20,
-    OCCTCheckRedundantWire = 21,
-    OCCTCheckIntersectingWires = 22,
-    OCCTCheckInvalidImbricationOfWires = 23,
-    OCCTCheckEmptyShell = 24,
-    OCCTCheckRedundantFace = 25,
-    OCCTCheckInvalidImbricationOfShells = 26,
-    OCCTCheckUnorientableShape = 27,
-    OCCTCheckNotClosed = 28,
-    OCCTCheckNotConnected = 29,
-    OCCTCheckSubshapeNotInShape = 30,
-    OCCTCheckBadOrientation = 31,
-    OCCTCheckBadOrientationOfSubshape = 32,
-    OCCTCheckInvalidPolygonOnTriangulation = 33,
-    OCCTCheckInvalidToleranceValue = 34,
-    OCCTCheckEnclosedRegion = 35,
-    OCCTCheckCheckFail = 36
+typedef enum
+{
+  OCCTCheckNoError                       = 0,
+  OCCTCheckInvalidPointOnCurve           = 1,
+  OCCTCheckInvalidPointOnCurveOnSurface  = 2,
+  OCCTCheckInvalidPointOnSurface         = 3,
+  OCCTCheckNo3DCurve                     = 4,
+  OCCTCheckMultiple3DCurve               = 5,
+  OCCTCheckInvalid3DCurve                = 6,
+  OCCTCheckNoCurveOnSurface              = 7,
+  OCCTCheckInvalidCurveOnSurface         = 8,
+  OCCTCheckInvalidCurveOnClosedSurface   = 9,
+  OCCTCheckInvalidSameRangeFlag          = 10,
+  OCCTCheckInvalidSameParameterFlag      = 11,
+  OCCTCheckInvalidDegeneratedFlag        = 12,
+  OCCTCheckFreeEdge                      = 13,
+  OCCTCheckInvalidMultiConnexity         = 14,
+  OCCTCheckInvalidRange                  = 15,
+  OCCTCheckEmptyWire                     = 16,
+  OCCTCheckRedundantEdge                 = 17,
+  OCCTCheckSelfIntersectingWire          = 18,
+  OCCTCheckNoSurface                     = 19,
+  OCCTCheckInvalidWire                   = 20,
+  OCCTCheckRedundantWire                 = 21,
+  OCCTCheckIntersectingWires             = 22,
+  OCCTCheckInvalidImbricationOfWires     = 23,
+  OCCTCheckEmptyShell                    = 24,
+  OCCTCheckRedundantFace                 = 25,
+  OCCTCheckInvalidImbricationOfShells    = 26,
+  OCCTCheckUnorientableShape             = 27,
+  OCCTCheckNotClosed                     = 28,
+  OCCTCheckNotConnected                  = 29,
+  OCCTCheckSubshapeNotInShape            = 30,
+  OCCTCheckBadOrientation                = 31,
+  OCCTCheckBadOrientationOfSubshape      = 32,
+  OCCTCheckInvalidPolygonOnTriangulation = 33,
+  OCCTCheckInvalidToleranceValue         = 34,
+  OCCTCheckEnclosedRegion                = 35,
+  OCCTCheckCheckFail                     = 36
 } OCCTCheckStatus;
 
 /// Result of shape validity check
-typedef struct {
-    bool isValid;           ///< True if no errors found
-    int32_t errorCount;     ///< Number of errors
-    OCCTCheckStatus firstError;  ///< First error code (if any)
+typedef struct
+{
+  bool            isValid;    ///< True if no errors found
+  int32_t         errorCount; ///< Number of errors
+  OCCTCheckStatus firstError; ///< First error code (if any)
 } OCCTShapeCheckResult;
 
 /// Check validity of a face.
@@ -576,7 +618,7 @@ typedef struct {
 /// @return Check result
 OCCTShapeCheckResult OCCTCheckFace(OCCTFaceRef face);
 
-/// BRepCheck_Face per-check diagnostics — the specific BRepCheck_Status for one wire-topology check
+/// BRepCheck_Face per-check diagnostics, the specific BRepCheck_Status for one wire-topology check
 /// of a face. `geometricControls` toggles the (more expensive) geometric intersection checks.
 /// Returns OCCTCheckCheckFail if `face` is not a face. #266 follow-up.
 OCCTCheckStatus OCCTBRepCheckFaceIntersectWires(OCCTShapeRef face, bool geometricControls);
@@ -599,7 +641,9 @@ OCCTShapeCheckResult OCCTCheckShape(OCCTShapeRef shape);
 /// @param outStatuses Output array of status codes
 /// @param maxStatuses Max entries in output
 /// @return Number of status entries written
-int32_t OCCTCheckShapeDetailed(OCCTShapeRef shape, OCCTCheckStatus* outStatuses, int32_t maxStatuses);
+int32_t OCCTCheckShapeDetailed(OCCTShapeRef     shape,
+                               OCCTCheckStatus* outStatuses,
+                               int32_t          maxStatuses);
 
 // --- BRepCheck_Analyzer ---
 
@@ -611,10 +655,13 @@ bool OCCTBRepCheckAnalyzerIsValid(OCCTShapeRef shape, bool geometryChecks);
 
 /// Check if a specific sub-shape is valid within its parent shape context.
 /// @param parentShape Parent shape for context
-/// @param subShapeType TopAbs_ShapeEnum type to check (0=COMPOUND, 1=COMPSOLID, 2=SOLID, 3=SHELL, 4=FACE, 5=WIRE, 6=EDGE, 7=VERTEX)
+/// @param subShapeType TopAbs_ShapeEnum type to check (0=COMPOUND, 1=COMPSOLID, 2=SOLID, 3=SHELL,
+/// 4=FACE, 5=WIRE, 6=EDGE, 7=VERTEX)
 /// @param subShapeIndex 0-based index of sub-shape of that type
 /// @return true if the sub-shape is valid
-bool OCCTBRepCheckSubShapeValid(OCCTShapeRef parentShape, int32_t subShapeType, int32_t subShapeIndex);
+bool OCCTBRepCheckSubShapeValid(OCCTShapeRef parentShape,
+                                int32_t      subShapeType,
+                                int32_t      subShapeIndex);
 
 // --- BRepCheck_Edge / Wire / Shell / Vertex ---
 
@@ -716,7 +763,8 @@ OCCTShapeRef _Nullable OCCTShapeFixRemoveSmallSolids(OCCTShapeRef shape, double 
 /// @param shape Shape containing solids
 /// @param widthFactorThreshold Width factor below which solids are merged
 /// @return Shape with small solids merged, or NULL on failure
-OCCTShapeRef _Nullable OCCTShapeFixMergeSmallSolids(OCCTShapeRef shape, double widthFactorThreshold);
+OCCTShapeRef _Nullable OCCTShapeFixMergeSmallSolids(OCCTShapeRef shape,
+                                                    double       widthFactorThreshold);
 
 // --- ShapeCustom ---
 
@@ -737,13 +785,20 @@ OCCTShapeRef _Nullable OCCTShapeCustomDirectFaces(OCCTShapeRef shape);
 /// @param rational If true, allow rational BSplines
 /// @return Simplified shape, or NULL on failure
 OCCTShapeRef _Nullable OCCTShapeCustomBSplineRestriction(OCCTShapeRef shape,
-    double tol3d, double tol2d, int32_t maxDegree, int32_t maxSegments,
-    int32_t continuity3d, int32_t continuity2d, bool degreePriority, bool rational);
+                                                         double       tol3d,
+                                                         double       tol2d,
+                                                         int32_t      maxDegree,
+                                                         int32_t      maxSegments,
+                                                         int32_t      continuity3d,
+                                                         int32_t      continuity2d,
+                                                         bool         degreePriority,
+                                                         bool         rational);
 
 /// Result of wire vertex analysis.
-typedef struct {
-    int32_t nbEdges;    // Number of edges analyzed
-    bool isDone;        // True if analysis completed
+typedef struct
+{
+  int32_t nbEdges; // Number of edges analyzed
+  bool    isDone;  // True if analysis completed
 } OCCTWireVertexResult;
 
 /// Analyze wire vertex connections.
@@ -759,11 +814,12 @@ OCCTWireVertexResult OCCTShapeWireVertexAnalysis(OCCTShapeRef wire, double preci
 int32_t OCCTShapeWireVertexStatus(OCCTShapeRef wire, double precision, int32_t vertexIndex);
 
 /// Result of nearest plane fitting.
-typedef struct {
-    double normalX, normalY, normalZ;  // Plane normal direction
-    double originX, originY, originZ;  // Point on the plane
-    double maxDeviation;  // Maximum distance from points to plane
-    bool success;
+typedef struct
+{
+  double normalX, normalY, normalZ; // Plane normal direction
+  double originX, originY, originZ; // Point on the plane
+  double maxDeviation;              // Maximum distance from points to plane
+  bool   success;
 } OCCTNearestPlaneResult;
 
 /// Fit the nearest plane to a set of 3D points.
@@ -779,7 +835,8 @@ OCCTNearestPlaneResult OCCTShapeNearestPlane(const double* points, int32_t nPoin
 /// @param newSubShape The replacement sub-shape
 /// @return Modified shape, or NULL on failure
 OCCTShapeRef _Nullable OCCTBRepToolsSubstitute(OCCTShapeRef parentShape,
-    OCCTShapeRef oldSubShape, OCCTShapeRef newSubShape);
+                                               OCCTShapeRef oldSubShape,
+                                               OCCTShapeRef newSubShape);
 
 // --- ShapeUpgrade_ShellSewing ---
 
@@ -798,10 +855,13 @@ OCCTShapeRef _Nullable OCCTShapeUpgradeShellSewing(OCCTShapeRef shape, double to
 /// @param outEdge1 Output: first half of split edge
 /// @param outEdge2 Output: second half of split edge
 /// @return true if split succeeded
-bool OCCTShapeFixSplitEdge(OCCTEdgeRef edge, double param,
-    double vertexX, double vertexY, double vertexZ,
-    OCCTEdgeRef _Nullable * _Nonnull outEdge1,
-    OCCTEdgeRef _Nullable * _Nonnull outEdge2);
+bool OCCTShapeFixSplitEdge(OCCTEdgeRef edge,
+                           double      param,
+                           double      vertexX,
+                           double      vertexY,
+                           double      vertexZ,
+                           OCCTEdgeRef _Nullable* _Nonnull outEdge1,
+                           OCCTEdgeRef _Nullable* _Nonnull outEdge2);
 
 // --- ShapeCustom_DirectModification ---
 
@@ -831,7 +891,8 @@ OCCTShapeRef _Nullable OCCTShapeUpgradeClosedFaceDivide(OCCTShapeRef shape, int3
 /// @param shape The shape to process
 /// @param maxAngleDegrees Maximum angle per segment in degrees
 /// @return The modified shape, or NULL on failure
-OCCTShapeRef _Nullable OCCTShapeUpgradeSplitSurfaceAngle(OCCTShapeRef shape, double maxAngleDegrees);
+OCCTShapeRef _Nullable OCCTShapeUpgradeSplitSurfaceAngle(OCCTShapeRef shape,
+                                                         double       maxAngleDegrees);
 
 // --- ShapeUpgrade_SplitSurfaceArea ---
 
@@ -843,8 +904,10 @@ OCCTShapeRef _Nullable OCCTShapeUpgradeSplitSurfaceArea(OCCTShapeRef shape, int3
 
 // --- ShapeAnalysis_TransferParametersProj ---
 // Transfer a parameter from edge 3D curve to face 2D representation
-double OCCTShapeAnalysisTransferParam(OCCTShapeRef edgeShape, OCCTShapeRef faceShape,
-    double param, bool toFace);
+double OCCTShapeAnalysisTransferParam(OCCTShapeRef edgeShape,
+                                      OCCTShapeRef faceShape,
+                                      double       param,
+                                      bool         toFace);
 
 // --- ShapeBuild_Edge ---
 /// Copy an edge, optionally sharing PCurves.
@@ -852,7 +915,8 @@ OCCTShapeRef _Nullable OCCTShapeBuildEdgeCopy(OCCTShapeRef edgeShape, bool share
 
 /// Copy an edge replacing its vertices.
 OCCTShapeRef _Nullable OCCTShapeBuildEdgeCopyReplaceVertices(OCCTShapeRef edgeShape,
-    OCCTShapeRef vertex1Shape, OCCTShapeRef vertex2Shape);
+                                                             OCCTShapeRef vertex1Shape,
+                                                             OCCTShapeRef vertex2Shape);
 
 /// Set the 3D parameter range on an edge.
 void OCCTShapeBuildEdgeSetRange3d(OCCTShapeRef edgeShape, double first, double last);
@@ -875,28 +939,36 @@ void OCCTShapeBuildEdgeRemovePCurve(OCCTShapeRef edgeShape, OCCTShapeRef faceSha
 
 /// Reassign a PCurve from one face to another.
 /// @return true if successful
-bool OCCTShapeBuildEdgeReassignPCurve(OCCTShapeRef edgeShape, OCCTShapeRef oldFaceShape,
-    OCCTShapeRef newFaceShape);
+bool OCCTShapeBuildEdgeReassignPCurve(OCCTShapeRef edgeShape,
+                                      OCCTShapeRef oldFaceShape,
+                                      OCCTShapeRef newFaceShape);
 
 // --- ShapeBuild_Vertex ---
 /// Combine two vertices into one at the average position.
 /// @param tolFactor Tolerance factor (default 1.0001)
-OCCTShapeRef _Nullable OCCTShapeBuildVertexCombine(OCCTShapeRef v1Shape, OCCTShapeRef v2Shape,
-    double tolFactor);
+OCCTShapeRef _Nullable OCCTShapeBuildVertexCombine(OCCTShapeRef v1Shape,
+                                                   OCCTShapeRef v2Shape,
+                                                   double       tolFactor);
 
 /// Combine two points into a vertex.
-OCCTShapeRef _Nullable OCCTShapeBuildVertexCombineFromPoints(
-    double x1, double y1, double z1, double tol1,
-    double x2, double y2, double z2, double tol2,
-    double tolFactor);
+OCCTShapeRef _Nullable OCCTShapeBuildVertexCombineFromPoints(double x1,
+                                                             double y1,
+                                                             double z1,
+                                                             double tol1,
+                                                             double x2,
+                                                             double y2,
+                                                             double z2,
+                                                             double tol2,
+                                                             double tolFactor);
 
 // --- ShapeExtend_Explorer ---
 /// Filter a compound shape, extracting only sub-shapes of the specified type.
 /// @param shapeType TopAbs_ShapeEnum value (0=COMPOUND..7=SHAPE)
 /// @param explore If true, explore sub-compounds recursively
 /// @return Compound containing only shapes of the specified type, or NULL on failure
-OCCTShapeRef _Nullable OCCTShapeExtendSortedCompound(OCCTShapeRef shape, int32_t shapeType,
-    bool explore);
+OCCTShapeRef _Nullable OCCTShapeExtendSortedCompound(OCCTShapeRef shape,
+                                                     int32_t      shapeType,
+                                                     bool         explore);
 
 /// Get the predominant shape type in a compound.
 /// @param compound If true, look inside compounds
@@ -915,7 +987,8 @@ OCCTShapeRef _Nullable OCCTShapeUpgradeFaceDivide(OCCTShapeRef faceShape);
 /// @param wireShape Input wire shape
 /// @param faceShape Face the wire lies on
 /// @return Divided wire as shape, or NULL on failure
-OCCTShapeRef _Nullable OCCTShapeUpgradeWireDivideOnFace(OCCTShapeRef wireShape, OCCTShapeRef faceShape);
+OCCTShapeRef _Nullable OCCTShapeUpgradeWireDivideOnFace(OCCTShapeRef wireShape,
+                                                        OCCTShapeRef faceShape);
 
 // --- ShapeUpgrade_EdgeDivide ---
 /// Analyze an edge for potential division on a face.
@@ -924,8 +997,10 @@ OCCTShapeRef _Nullable OCCTShapeUpgradeWireDivideOnFace(OCCTShapeRef wireShape, 
 /// @param outHasCurve2d Output: whether edge has 2D curve on face
 /// @param outHasCurve3d Output: whether edge has 3D curve
 /// @return true if computation succeeded
-bool OCCTShapeUpgradeEdgeDivideCompute(OCCTShapeRef edgeShape, OCCTShapeRef faceShape,
-    bool* outHasCurve2d, bool* outHasCurve3d);
+bool OCCTShapeUpgradeEdgeDivideCompute(OCCTShapeRef edgeShape,
+                                       OCCTShapeRef faceShape,
+                                       bool*        outHasCurve2d,
+                                       bool*        outHasCurve3d);
 
 // --- ShapeUpgrade_ClosedEdgeDivide ---
 /// Analyze a closed (seam) edge for division on a face.
@@ -954,7 +1029,9 @@ OCCTShapeRef _Nullable OCCTShapeUpgradeFixSmallBezierCurves(OCCTShapeRef shape, 
 /// @param conicMode Convert conics to Bezier
 /// @return Shape with Bezier curves, or NULL on failure
 OCCTShapeRef _Nullable OCCTShapeUpgradeConvertCurves3dToBezier(OCCTShapeRef shape,
-    bool lineMode, bool circleMode, bool conicMode);
+                                                               bool         lineMode,
+                                                               bool         circleMode,
+                                                               bool         conicMode);
 
 // --- ShapeUpgrade_ConvertSurfaceToBezierBasis ---
 /// Convert surfaces in a shape to Bezier patches.
@@ -965,68 +1042,89 @@ OCCTShapeRef _Nullable OCCTShapeUpgradeConvertCurves3dToBezier(OCCTShapeRef shap
 /// @param bsplineMode Convert BSpline surfaces
 /// @return Shape with Bezier surfaces, or NULL on failure
 OCCTShapeRef _Nullable OCCTShapeUpgradeConvertSurfaceToBezier(OCCTShapeRef shape,
-    bool planeMode, bool revolutionMode, bool extrusionMode, bool bsplineMode);
+                                                              bool         planeMode,
+                                                              bool         revolutionMode,
+                                                              bool         extrusionMode,
+                                                              bool         bsplineMode);
 
 // MARK: - BRepLib_ValidateEdge
 
 /// Validate edge geometry (3D curve vs curve-on-surface consistency).
-typedef struct {
-    bool isDone;
-    bool isWithinTolerance;  // at default tolerance
-    double maxDistance;
-    double tolerance;        // tolerance used for check
+typedef struct
+{
+  bool   isDone;
+  bool   isWithinTolerance; // at default tolerance
+  double maxDistance;
+  double tolerance; // tolerance used for check
 } OCCTValidateEdgeResult;
 
 /// Validate an edge on a face. Returns validation metrics.
-OCCTValidateEdgeResult OCCTValidateEdge(OCCTEdgeRef _Nonnull edge, OCCTFaceRef _Nonnull face, double tolerance);
+OCCTValidateEdgeResult OCCTValidateEdge(OCCTEdgeRef _Nonnull edge,
+                                        OCCTFaceRef _Nonnull face,
+                                        double tolerance);
 
 // MARK: - ShapeCustom_BSplineRestriction (advanced)
 
 /// Restrict BSpline degree and segments with full control over parameters.
-/// continuity3d/continuity2d: parametric continuity, same as OCCTShapeCustomBSplineRestriction —
+/// continuity3d/continuity2d: parametric continuity, same as OCCTShapeCustomBSplineRestriction,
 /// both drive a ShapeCustom_BSplineRestriction through BRepTools_Modifier, and before #490 this
 /// one read the value as a GeomAbs_Shape ordinal instead. See "Continuity vocabularies" at the
 /// top of this header. Above C2 the operation yields a null shape.
 /// Returns modified shape, or NULL on failure.
 OCCTShapeRef _Nullable OCCTShapeBSplineRestrictionAdvanced(OCCTShapeRef _Nonnull shapeRef,
-                                                             bool approxSurface, bool approxCurve3d, bool approxCurve2d,
-                                                             double tol3d, double tol2d,
-                                                             int continuity3d, int continuity2d,
-                                                             int maxDegree, int maxSegments,
-                                                             bool priorityDegree, bool convertRational);
+                                                           bool   approxSurface,
+                                                           bool   approxCurve3d,
+                                                           bool   approxCurve2d,
+                                                           double tol3d,
+                                                           double tol2d,
+                                                           int    continuity3d,
+                                                           int    continuity2d,
+                                                           int    maxDegree,
+                                                           int    maxSegments,
+                                                           bool   priorityDegree,
+                                                           bool   convertRational);
 
 // MARK: - ShapeCustom_ConvertToBSpline (advanced)
 
 /// Convert surfaces of a shape to BSpline with per-type control.
 /// Returns modified shape, or NULL on failure.
 OCCTShapeRef _Nullable OCCTShapeConvertToBSplineAdvanced(OCCTShapeRef _Nonnull shapeRef,
-                                                           bool extrusionMode, bool revolutionMode,
-                                                           bool offsetMode, bool planeMode);
+                                                         bool extrusionMode,
+                                                         bool revolutionMode,
+                                                         bool offsetMode,
+                                                         bool planeMode);
 
 // MARK: - ShapeUpgrade_SplitSurfaceContinuity
 
 /// Split a surface by continuity criterion.
-/// criterion: parametric continuity, same as OCCTSurfaceSplitByContinuity — both wrap
+/// criterion: parametric continuity, same as OCCTSurfaceSplitByContinuity, both wrap
 /// ShapeUpgrade_SplitSurfaceContinuity, and before #490 this one read the value as a
 /// GeomAbs_Shape ordinal instead. See "Continuity vocabularies" at the top of this header.
 /// Returns number of U split values (0 on failure).
 int OCCTSplitSurfaceContinuity(OCCTSurfaceRef _Nonnull surfaceRef,
-                                 int criterion, double tolerance,
-                                 int* _Nullable outUSplitCount, int* _Nullable outVSplitCount);
+                               int    criterion,
+                               double tolerance,
+                               int* _Nullable outUSplitCount,
+                               int* _Nullable outVSplitCount);
 
 // MARK: - ShapeUpgrade_SplitSurfaceAngle
 
 /// Split a surface by maximum angle (radians).
 /// Returns number of U split values (0 on failure).
-int OCCTSplitSurfaceAngle(OCCTSurfaceRef _Nonnull surfaceRef, double maxAngle,
-                            int* _Nullable outUSplitCount, int* _Nullable outVSplitCount);
+int OCCTSplitSurfaceAngle(OCCTSurfaceRef _Nonnull surfaceRef,
+                          double maxAngle,
+                          int* _Nullable outUSplitCount,
+                          int* _Nullable outVSplitCount);
 
 // MARK: - ShapeUpgrade_SplitSurfaceArea
 
 /// Split a surface into approximately equal-area parts.
 /// Returns number of U split values (0 on failure).
-int OCCTSplitSurfaceArea(OCCTSurfaceRef _Nonnull surfaceRef, int nbParts, bool intoSquares,
-                           int* _Nullable outUSplitCount, int* _Nullable outVSplitCount);
+int OCCTSplitSurfaceArea(OCCTSurfaceRef _Nonnull surfaceRef,
+                         int  nbParts,
+                         bool intoSquares,
+                         int* _Nullable outUSplitCount,
+                         int* _Nullable outVSplitCount);
 
 // --- ShapeFix_ComposeShell ---
 /// Perform compose shell on a face with composite surface grid
@@ -1038,12 +1136,12 @@ OCCTShapeRef _Nullable OCCTShapeFixComposeShell(OCCTShapeRef _Nonnull faceRef, d
 /// Fix a solid shape (topology and orientation). Heals EVERY solid in the input, not
 /// just the first (#442): a single body comes back as a solid, several as a compound of
 /// one result per input body. No body is ever dropped, so a result is not always a solid
-/// — ShapeFix_Solid returns a SHELL it could not close, and a solid it fails to heal
+///. ShapeFix_Solid returns a SHELL it could not close, and a solid it fails to heal
 /// comes back unhealed. Returns NULL only when the input holds no solid.
 OCCTShapeRef _Nullable OCCTShapeFixSolid(OCCTShapeRef _Nonnull shape);
 
 /// Create a solid from a shell using ShapeFix_Solid. One solid per body-bounding shell
-/// (#442) — within each solid, every shell an even number of the others enclose, plus
+/// (#442), within each solid, every shell an even number of the others enclose, plus
 /// every free shell; a solid's cavity shells are skipped. A single body comes back as a
 /// solid, several as a compound.
 OCCTShapeRef _Nullable OCCTShapeSolidFromShell(OCCTShapeRef _Nonnull shellShape);
@@ -1056,12 +1154,13 @@ OCCTShapeRef _Nullable OCCTShapeFixEdgeConnect(OCCTShapeRef _Nonnull shape);
 // MARK: - ShapeAnalysis_Shell
 
 /// Result struct for shell analysis
-typedef struct {
-    bool hasOrientationProblems;
-    bool hasFreeEdges;
-    bool hasBadEdges;
-    bool hasConnectedEdges;
-    int freeEdgeCount;
+typedef struct
+{
+  bool hasOrientationProblems;
+  bool hasFreeEdges;
+  bool hasBadEdges;
+  bool hasConnectedEdges;
+  int  freeEdgeCount;
 } OCCTShellAnalysisResult;
 
 /// Analyze shell orientation and edge connectivity
@@ -1070,31 +1169,35 @@ OCCTShellAnalysisResult OCCTShapeAnalyzeShell(OCCTShapeRef _Nonnull shape);
 // MARK: - ShapeAnalysis_CanonicalRecognition (detailed)
 
 /// Canonical geometry types for detailed recognition
-typedef enum {
-    OCCTCanonicalTypeNone = 0,
-    OCCTCanonicalTypePlane = 1,
-    OCCTCanonicalTypeCylinder = 2,
-    OCCTCanonicalTypeCone = 3,
-    OCCTCanonicalTypeSphere = 4,
-    OCCTCanonicalTypeLine = 5,
-    OCCTCanonicalTypeCircle = 6,
-    OCCTCanonicalTypeEllipse = 7
+typedef enum
+{
+  OCCTCanonicalTypeNone     = 0,
+  OCCTCanonicalTypePlane    = 1,
+  OCCTCanonicalTypeCylinder = 2,
+  OCCTCanonicalTypeCone     = 3,
+  OCCTCanonicalTypeSphere   = 4,
+  OCCTCanonicalTypeLine     = 5,
+  OCCTCanonicalTypeCircle   = 6,
+  OCCTCanonicalTypeEllipse  = 7
 } OCCTCanonicalType;
 
 /// Result struct for detailed canonical recognition with geometry parameters
-typedef struct {
-    OCCTCanonicalType type;
-    double gap;
-    double originX, originY, originZ;
-    double dirX, dirY, dirZ;
-    double param1, param2;
+typedef struct
+{
+  OCCTCanonicalType type;
+  double            gap;
+  double            originX, originY, originZ;
+  double            dirX, dirY, dirZ;
+  double            param1, param2;
 } OCCTCanonicalResult;
 
 /// Recognize canonical surface geometry with detailed parameters (plane/cylinder/cone/sphere)
-OCCTCanonicalResult OCCTShapeRecognizeCanonicalSurface(OCCTShapeRef _Nonnull faceShape, double tolerance);
+OCCTCanonicalResult OCCTShapeRecognizeCanonicalSurface(OCCTShapeRef _Nonnull faceShape,
+                                                       double tolerance);
 
 /// Recognize canonical curve geometry with detailed parameters (line/circle/ellipse)
-OCCTCanonicalResult OCCTShapeRecognizeCanonicalCurve(OCCTShapeRef _Nonnull edgeShape, double tolerance);
+OCCTCanonicalResult OCCTShapeRecognizeCanonicalCurve(OCCTShapeRef _Nonnull edgeShape,
+                                                     double tolerance);
 
 // MARK: - ShapeFix_EdgeProjAux (v0.93.0)
 
@@ -1102,22 +1205,29 @@ OCCTCanonicalResult OCCTShapeRecognizeCanonicalCurve(OCCTShapeRef _Nonnull edgeS
 /// @param outFirst Output first parameter
 /// @param outLast Output last parameter
 /// @return true if both projections done
-bool OCCTShapeFixEdgeProjAux(OCCTShapeRef _Nonnull shape, int32_t faceIndex, int32_t edgeIndex,
-                              double precision,
-                              double* _Nonnull outFirst, double* _Nonnull outLast);
+bool OCCTShapeFixEdgeProjAux(OCCTShapeRef _Nonnull shape,
+                             int32_t faceIndex,
+                             int32_t edgeIndex,
+                             double  precision,
+                             double* _Nonnull outFirst,
+                             double* _Nonnull outLast);
 
 // MARK: - BRepAlgo_FaceRestrictor (v0.93.0)
 
 /// Restrict a face to its wires using BRepAlgo_FaceRestrictor and return result face count.
 /// @return Number of result faces, or -1 on error
-int32_t OCCTShapeFaceRestrictAlgo(OCCTShapeRef _Nonnull shape, int32_t faceIndex,
-                                    OCCTShapeRef _Nullable * _Nullable outFaces, int32_t maxFaces);
+int32_t OCCTShapeFaceRestrictAlgo(OCCTShapeRef _Nonnull shape,
+                                  int32_t faceIndex,
+                                  OCCTShapeRef _Nullable* _Nullable outFaces,
+                                  int32_t maxFaces);
 
 // MARK: - ShapeFix_IntersectionTool (v0.95.0)
 
 /// Fix intersecting wires on a face of a shape.
 /// @return true if any fixes were applied
-bool OCCTShapeFixIntersectingWires(OCCTShapeRef _Nonnull shape, int32_t faceIndex, double precision);
+bool OCCTShapeFixIntersectingWires(OCCTShapeRef _Nonnull shape,
+                                   int32_t faceIndex,
+                                   double  precision);
 
 // MARK: - ShapeFix_Wireframe Extensions (v0.99.0)
 
@@ -1133,8 +1243,10 @@ OCCTShapeRef _Nullable OCCTShapeFixWireGaps(OCCTShapeRef _Nonnull shape, double 
 /// @param dropSmall If true, drop small edges; if false, merge them
 /// @param limitAngle Maximum angle between tangents for merging (radians); use -1 for no limit
 /// @return Fixed shape, or NULL on failure
-OCCTShapeRef _Nullable OCCTShapeFixSmallEdges(OCCTShapeRef _Nonnull shape, double tolerance,
-                                               bool dropSmall, double limitAngle);
+OCCTShapeRef _Nullable OCCTShapeFixSmallEdges(OCCTShapeRef _Nonnull shape,
+                                              double tolerance,
+                                              bool   dropSmall,
+                                              double limitAngle);
 
 // --- ShapeAnalysis_FreeBounds simplified API ---
 
@@ -1165,7 +1277,9 @@ bool OCCTWireCheckDegenerated(OCCTShapeRef _Nonnull wire, OCCTShapeRef _Nonnull 
 bool OCCTWireCheckClosed(OCCTShapeRef _Nonnull wire, OCCTShapeRef _Nonnull face, double prec);
 
 /// Check for self-intersection. Returns true if problem found.
-bool OCCTWireCheckSelfIntersection(OCCTShapeRef _Nonnull wire, OCCTShapeRef _Nonnull face, double prec);
+bool OCCTWireCheckSelfIntersection(OCCTShapeRef _Nonnull wire,
+                                   OCCTShapeRef _Nonnull face,
+                                   double prec);
 
 /// Check for 3D gaps. Returns true if problem found.
 bool OCCTWireCheckGaps3d(OCCTShapeRef _Nonnull wire, OCCTShapeRef _Nonnull face, double prec);
@@ -1195,19 +1309,41 @@ double OCCTWireMinDistance2d(OCCTShapeRef _Nonnull wire, OCCTShapeRef _Nonnull f
 double OCCTWireMaxDistance2d(OCCTShapeRef _Nonnull wire, OCCTShapeRef _Nonnull face, double prec);
 
 /// Check connectivity of a specific edge by index (1-based).
-bool OCCTWireCheckConnectedEdge(OCCTShapeRef _Nonnull wire, OCCTShapeRef _Nonnull face, double prec, int32_t edgeIndex);
+bool OCCTWireCheckConnectedEdge(OCCTShapeRef _Nonnull wire,
+                                OCCTShapeRef _Nonnull face,
+                                double  prec,
+                                int32_t edgeIndex);
 
 /// Check if a specific edge is small (1-based).
-bool OCCTWireCheckSmallEdge(OCCTShapeRef _Nonnull wire, OCCTShapeRef _Nonnull face, double prec, int32_t edgeIndex);
+bool OCCTWireCheckSmallEdge(OCCTShapeRef _Nonnull wire,
+                            OCCTShapeRef _Nonnull face,
+                            double  prec,
+                            int32_t edgeIndex);
 
 /// Check if a specific edge is degenerated (1-based).
-bool OCCTWireCheckDegeneratedEdge(OCCTShapeRef _Nonnull wire, OCCTShapeRef _Nonnull face, double prec, int32_t edgeIndex);
+bool OCCTWireCheckDegeneratedEdge(OCCTShapeRef _Nonnull wire,
+                                  OCCTShapeRef _Nonnull face,
+                                  double  prec,
+                                  int32_t edgeIndex);
 
 /// Check 3D gap at a specific edge (1-based).
-bool OCCTWireCheckGap3dEdge(OCCTShapeRef _Nonnull wire, OCCTShapeRef _Nonnull face, double prec, int32_t edgeIndex);
+bool OCCTWireCheckGap3dEdge(OCCTShapeRef _Nonnull wire,
+                            OCCTShapeRef _Nonnull face,
+                            double  prec,
+                            int32_t edgeIndex);
 
-/// Check if a face has an outer bound wire.
-bool OCCTWireCheckOuterBound(OCCTShapeRef _Nonnull face, double prec);
+/// Check whether a wire fails to define an outer bound on a face. Returns true if a problem is
+/// found, matching every sibling above.
+/// No precision, unlike those siblings (#999): ShapeAnalysis_Wire::CheckOuterBound(APIMake) is the
+/// one Public-level check in that class that consults neither myPrecision nor anything derived
+/// from it. It rebuilds the wire onto an empty copy of the face and asks
+/// ShapeAnalysis::IsOuterBound. Measured over precisions from 1e-12 to 100 on three fixtures, the
+/// verdict never moves; it does move with the wire, which is the point.
+/// APIMake is likewise not exposed and is left at OCCT's own default of true: it selects
+/// ShapeExtend_WireData::WireAPIMake over ::Wire, and produced the same verdict on all three
+/// fixtures, including one assembled with BRep_Builder from edges with unshared vertices, which is
+/// the case its own documentation distinguishes.
+bool OCCTWireCheckOuterBound(OCCTShapeRef _Nonnull wire, OCCTShapeRef _Nonnull face);
 
 // MARK: - ShapeAnalysis_Edge (v0.106.0)
 
@@ -1230,38 +1366,58 @@ bool OCCTEdgeCheckSameParameter(OCCTShapeRef _Nonnull edge, double* _Nonnull max
 bool OCCTEdgeCheckVerticesWithCurve3d(OCCTShapeRef _Nonnull edge, double prec);
 
 /// Check vertices with PCurve positions on a face.
-bool OCCTEdgeCheckVerticesWithPCurve(OCCTShapeRef _Nonnull edge, OCCTShapeRef _Nonnull face, double prec);
+bool OCCTEdgeCheckVerticesWithPCurve(OCCTShapeRef _Nonnull edge,
+                                     OCCTShapeRef _Nonnull face,
+                                     double prec);
 
 /// Check 3D curve vs PCurve consistency on a face.
 bool OCCTEdgeCheckCurve3dWithPCurve(OCCTShapeRef _Nonnull edge, OCCTShapeRef _Nonnull face);
 
 /// Get the first vertex position of an edge.
-void OCCTEdgeFirstVertexSA(OCCTShapeRef _Nonnull edge, double* _Nonnull x, double* _Nonnull y, double* _Nonnull z);
+void OCCTEdgeFirstVertexSA(OCCTShapeRef _Nonnull edge,
+                           double* _Nonnull x,
+                           double* _Nonnull y,
+                           double* _Nonnull z);
 
 /// Get the last vertex position of an edge.
-void OCCTEdgeLastVertexSA(OCCTShapeRef _Nonnull edge, double* _Nonnull x, double* _Nonnull y, double* _Nonnull z);
+void OCCTEdgeLastVertexSA(OCCTShapeRef _Nonnull edge,
+                          double* _Nonnull x,
+                          double* _Nonnull y,
+                          double* _Nonnull z);
 
 /// Check vertex tolerances on a face edge. Returns true if tolerance is OK.
-bool OCCTEdgeCheckVertexTolerance(OCCTShapeRef _Nonnull edge, OCCTShapeRef _Nonnull face,
-                                   double* _Nonnull toler1, double* _Nonnull toler2);
+bool OCCTEdgeCheckVertexTolerance(OCCTShapeRef _Nonnull edge,
+                                  OCCTShapeRef _Nonnull face,
+                                  double* _Nonnull toler1,
+                                  double* _Nonnull toler2);
 
 /// Check if two edges overlap. Returns true if overlapping.
-bool OCCTEdgeCheckOverlapping(OCCTShapeRef _Nonnull edge1, OCCTShapeRef _Nonnull edge2,
-                                double* _Nonnull tolOverlap);
+bool OCCTEdgeCheckOverlapping(OCCTShapeRef _Nonnull edge1,
+                              OCCTShapeRef _Nonnull edge2,
+                              double* _Nonnull tolOverlap);
 
 /// Get UV bounds of an edge on a face.
-bool OCCTEdgeBoundUV(OCCTShapeRef _Nonnull edge, OCCTShapeRef _Nonnull face,
-                      double* _Nonnull uFirst, double* _Nonnull vFirst,
-                      double* _Nonnull uLast, double* _Nonnull vLast);
+bool OCCTEdgeBoundUV(OCCTShapeRef _Nonnull edge,
+                     OCCTShapeRef _Nonnull face,
+                     double* _Nonnull uFirst,
+                     double* _Nonnull vFirst,
+                     double* _Nonnull uLast,
+                     double* _Nonnull vLast);
 
 /// Get end tangent in 2D for an edge on a face. atEnd=true for last vertex.
-bool OCCTEdgeGetEndTangent2d(OCCTShapeRef _Nonnull edge, OCCTShapeRef _Nonnull face,
-                              bool atEnd, double* _Nonnull px, double* _Nonnull py,
-                              double* _Nonnull tx, double* _Nonnull ty);
+bool OCCTEdgeGetEndTangent2d(OCCTShapeRef _Nonnull edge,
+                             OCCTShapeRef _Nonnull face,
+                             bool atEnd,
+                             double* _Nonnull px,
+                             double* _Nonnull py,
+                             double* _Nonnull tx,
+                             double* _Nonnull ty);
 
 /// Check PCurve range on a face.
-bool OCCTEdgeCheckPCurveRange(OCCTShapeRef _Nonnull edge, OCCTShapeRef _Nonnull face,
-                               double first, double last);
+bool OCCTEdgeCheckPCurveRange(OCCTShapeRef _Nonnull edge,
+                              OCCTShapeRef _Nonnull face,
+                              double first,
+                              double last);
 
 // --- BRepCheck extended ---
 
@@ -1288,7 +1444,7 @@ double OCCTShapeAvgTolerance(OCCTShapeRef _Nonnull shape, int32_t type);
 /// `type` parameter with no remapping. The additive, canonically-typed siblings of
 /// OCCTShapeMaxTolerance/MinTolerance/AvgTolerance's compressed 0/1/2 encoding above, which only
 /// ever covered vertex/edge/face and used a different integer per sub-shape kind than
-/// OCCTBRepToolMaxTolerance (BRep_Tool::MaxTolerance's own straight-cast convention) — see #833.
+/// OCCTBRepToolMaxTolerance (BRep_Tool:MaxTolerance's own straight-cast convention), see #833.
 double OCCTShapeMaxToleranceOfType(OCCTShapeRef _Nonnull shape, int32_t shapeType);
 double OCCTShapeMinToleranceOfType(OCCTShapeRef _Nonnull shape, int32_t shapeType);
 double OCCTShapeAvgToleranceOfType(OCCTShapeRef _Nonnull shape, int32_t shapeType);
@@ -1301,8 +1457,8 @@ bool OCCTShapeLimitMaxTolerance(OCCTShapeRef _Nonnull shape, double maxTol);
 
 /// Create a wire fixer from a wire shape on a face with given precision.
 OCCTWireFixerRef _Nullable OCCTWireFixerCreate(OCCTShapeRef _Nonnull wire,
-                                                 OCCTShapeRef _Nonnull face,
-                                                 double precision);
+                                               OCCTShapeRef _Nonnull face,
+                                               double precision);
 
 /// Release a wire fixer.
 void OCCTWireFixerRelease(OCCTWireFixerRef _Nonnull fixer);
@@ -1381,7 +1537,7 @@ bool OCCTFaceFixerFixWiresTwoCoincEdges(OCCTFaceFixerRef _Nonnull fixer);
 /// Split a wire that loops back on itself (result wires are discarded; returns whether it fixed).
 bool OCCTFaceFixerFixLoopWire(OCCTFaceFixerRef _Nonnull fixer);
 
-/// The result of the fix — a Face, or a Shell when FixMissingSeam split the face. May differ from
+/// The result of the fix, a Face, or a Shell when FixMissingSeam split the face. May differ from
 /// OCCTFaceFixerFace (which always returns a Face).
 OCCTShapeRef _Nullable OCCTFaceFixerResult(OCCTFaceFixerRef _Nonnull fixer);
 
@@ -1389,75 +1545,80 @@ OCCTShapeRef _Nullable OCCTFaceFixerResult(OCCTFaceFixerRef _Nonnull fixer);
 /// 9..16 = FAIL1..FAIL8, 17 = DONE (any), 18 = FAIL (any).
 bool OCCTFaceFixerStatus(OCCTFaceFixerRef _Nonnull fixer, int32_t status);
 
-/// Clamp the max / min tolerance the fixer may set on the healed face (ShapeFix_Root). Call before Perform().
+/// Clamp the max / min tolerance the fixer may set on the healed face (ShapeFix_Root). Call before
+/// Perform().
 void OCCTFaceFixerSetMaxTolerance(OCCTFaceFixerRef _Nonnull fixer, double maxTolerance);
 void OCCTFaceFixerSetMinTolerance(OCCTFaceFixerRef _Nonnull fixer, double minTolerance);
 
 // --- ShapeAnalysis_ShapeContents expanded ---
 
 /// Extended shape contents structure with additional detail counts.
-typedef struct {
-    int32_t nbSolids;
-    int32_t nbShells;
-    int32_t nbFaces;
-    int32_t nbWires;
-    int32_t nbEdges;
-    int32_t nbVertices;
-    int32_t nbFreeEdges;
-    int32_t nbFreeWires;
-    int32_t nbFreeFaces;
-    int32_t nbSolidsWithVoids;
-    int32_t nbBigSplines;
-    int32_t nbC0Surfaces;
-    int32_t nbC0Curves;
-    int32_t nbOffsetSurf;
-    int32_t nbIndirectSurf;
-    int32_t nbOffsetCurves;
-    int32_t nbTrimmedCurve2d;
-    int32_t nbTrimmedCurve3d;
-    int32_t nbBSplineSurf;
-    int32_t nbBezierSurf;
-    int32_t nbTrimSurf;
-    int32_t nbWireWithSeam;
-    int32_t nbWireWithSevSeams;
-    int32_t nbFaceWithSevWires;
-    int32_t nbNoPCurve;
-    int32_t nbSharedSolids;
-    int32_t nbSharedShells;
-    int32_t nbSharedFaces;
-    int32_t nbSharedWires;
-    int32_t nbSharedEdges;
-    int32_t nbSharedVertices;
+typedef struct
+{
+  int32_t nbSolids;
+  int32_t nbShells;
+  int32_t nbFaces;
+  int32_t nbWires;
+  int32_t nbEdges;
+  int32_t nbVertices;
+  int32_t nbFreeEdges;
+  int32_t nbFreeWires;
+  int32_t nbFreeFaces;
+  int32_t nbSolidsWithVoids;
+  int32_t nbBigSplines;
+  int32_t nbC0Surfaces;
+  int32_t nbC0Curves;
+  int32_t nbOffsetSurf;
+  int32_t nbIndirectSurf;
+  int32_t nbOffsetCurves;
+  int32_t nbTrimmedCurve2d;
+  int32_t nbTrimmedCurve3d;
+  int32_t nbBSplineSurf;
+  int32_t nbBezierSurf;
+  int32_t nbTrimSurf;
+  int32_t nbWireWithSeam;
+  int32_t nbWireWithSevSeams;
+  int32_t nbFaceWithSevWires;
+  int32_t nbNoPCurve;
+  int32_t nbSharedSolids;
+  int32_t nbSharedShells;
+  int32_t nbSharedFaces;
+  int32_t nbSharedWires;
+  int32_t nbSharedEdges;
+  int32_t nbSharedVertices;
 } OCCTShapeContentsExtended;
 
 /// Get extended shape contents analysis.
 OCCTShapeContentsExtended OCCTShapeGetContentsExtended(OCCTShapeRef _Nonnull shape);
 
 /// Which of an analysis' two result sequences an accessor addresses.
-typedef enum {
-    OCCTFreeBoundClosed = 0,
-    OCCTFreeBoundOpen = 1
+typedef enum
+{
+  OCCTFreeBoundClosed = 0,
+  OCCTFreeBoundOpen   = 1
 } OCCTFreeBoundKind;
 
 /// Free bounds analysis result (summary)
-typedef struct {
-    int32_t totalFreeBounds;    // closedFreeBounds + openFreeBounds, per OCCT's own NbFreeBounds()
-    int32_t closedFreeBounds;
-    int32_t openFreeBounds;
+typedef struct
+{
+  int32_t totalFreeBounds; // closedFreeBounds + openFreeBounds, per OCCT's own NbFreeBounds()
+  int32_t closedFreeBounds;
+  int32_t openFreeBounds;
 } OCCTFreeBoundsResult;
 
 /// Individual free bound properties
-typedef struct {
-    double area;
-    double perimeter;
-    // Aspect ratio: contour length divided by contour width, so 1 for a square-ish bound and 10
-    // for a 100x10 one. NOT area/perimeter^2, which is what this field claimed before #504.
-    // OCCT solves it from area and perimeter and leaves BOTH this and width at 0 when that solve
-    // has no real root, which an exactly square bound hits by one ulp, since it sits precisely on
-    // the boundary of the two branches. 0 here means "not solvable", not "degenerate contour".
-    double ratio;
-    double width;       // Average width, on the same 0-means-unsolved contract as ratio
-    int32_t notchCount; // Narrow 'V'-like sub-contours found on this bound
+typedef struct
+{
+  double area;
+  double perimeter;
+  // Aspect ratio: contour length divided by contour width, so 1 for a square-ish bound and 10
+  // for a 100x10 one, NOT area/perimeter^2, which is what this field claimed before #504.
+  // OCCT solves it from area and perimeter and leaves BOTH this and width at 0 when that solve
+  // has no real root, which an exactly square bound hits by one ulp, since it sits precisely on
+  // the boundary of the two branches. 0 here means "not solvable", not "degenerate contour".
+  double  ratio;
+  double  width;      // Average width, on the same 0-means-unsolved contract as ratio
+  int32_t notchCount; // Narrow 'V'-like sub-contours found on this bound
 } OCCTFreeBoundInfo;
 
 /// Create a free bounds analyzer over a shape. The shape should be a compound or shell of faces;
@@ -1465,7 +1626,8 @@ typedef struct {
 /// @param tolerance Sewing tolerance used to chain free edges into contours. A tolerance of 0 (or
 ///        below) selects a different algorithm inside OCCT: the free edges are taken from the
 ///        shape's already-shared topology instead of from a sewing pass.
-OCCTFreeBoundsPropsRef _Nullable OCCTFreeBoundsPropsCreate(OCCTShapeRef _Nonnull shape, double tolerance);
+OCCTFreeBoundsPropsRef _Nullable OCCTFreeBoundsPropsCreate(OCCTShapeRef _Nonnull shape,
+                                                           double tolerance);
 
 /// Release a free bounds analyzer.
 void OCCTFreeBoundsPropsRelease(OCCTFreeBoundsPropsRef _Nonnull props);
@@ -1484,15 +1646,18 @@ OCCTFreeBoundsResult OCCTFreeBoundsPropsCounts(OCCTFreeBoundsPropsRef _Nonnull p
 /// @param kind Which sequence to index
 /// @param index 0-based index within that sequence
 /// @return true on success; false, with *outInfo untouched, when index is out of range
-bool OCCTFreeBoundsPropsInfo(OCCTFreeBoundsPropsRef _Nonnull props, OCCTFreeBoundKind kind,
-                             int32_t index, OCCTFreeBoundInfo* _Nonnull outInfo);
+bool OCCTFreeBoundsPropsInfo(OCCTFreeBoundsPropsRef _Nonnull props,
+                             OCCTFreeBoundKind kind,
+                             int32_t           index,
+                             OCCTFreeBoundInfo* _Nonnull outInfo);
 
 /// Get the contour wire of one free bound, as a shape.
 /// @param kind Which sequence to index
 /// @param index 0-based index within that sequence
 /// @return Wire shape, or NULL when index is out of range
 OCCTShapeRef _Nullable OCCTFreeBoundsPropsWire(OCCTFreeBoundsPropsRef _Nonnull props,
-                                               OCCTFreeBoundKind kind, int32_t index);
+                                               OCCTFreeBoundKind kind,
+                                               int32_t           index);
 
 /// Create a ShapeFix_Shape fixer for the given shape.
 OCCTShapeFixerRef _Nonnull OCCTShapeFixerCreate(OCCTShapeRef _Nonnull shape);
@@ -1516,7 +1681,7 @@ bool OCCTShapeFixerPerform(OCCTShapeFixerRef _Nonnull fixer);
 OCCTShapeRef _Nullable OCCTShapeFixerShape(OCCTShapeFixerRef _Nonnull fixer);
 
 /// Query status. statusType: 1=ShapeFixOk, 2=ShapeFixDone, 3=ShapeFixFail.
-/// Legacy — see OCCTShapeFixerStatusFlag for the full ShapeExtend_Status flag space (#849).
+/// Legacy, see OCCTShapeFixerStatusFlag for the full ShapeExtend_Status flag space (#849).
 bool OCCTShapeFixerStatus(OCCTShapeFixerRef _Nonnull fixer, int32_t statusType);
 
 /// Query a specific ShapeExtend_Status flag directly (#849), mirroring OCCTFaceFixerStatus.
@@ -1534,21 +1699,29 @@ double OCCTShapeToleranceValue(OCCTShapeRef _Nonnull shape, int32_t mode, int32_
 int32_t OCCTShapeToleranceOverCount(OCCTShapeRef _Nonnull shape, double value, int32_t shapeType);
 
 /// Count shapes with tolerance in given interval.
-int32_t OCCTShapeToleranceInRangeCount(OCCTShapeRef _Nonnull shape, double valmin, double valmax, int32_t shapeType);
+int32_t OCCTShapeToleranceInRangeCount(OCCTShapeRef _Nonnull shape,
+                                       double  valmin,
+                                       double  valmax,
+                                       int32_t shapeType);
 
 // MARK: - BRepAlgoAPI_Check (v0.118.0)
 
 /// Check validity of a single shape for boolean operations. Returns true if valid.
-bool OCCTShapeBooleanCheckSingle(OCCTShapeRef _Nonnull shape, bool testSmallEdges, bool testSelfInterference);
+bool OCCTShapeBooleanCheckSingle(OCCTShapeRef _Nonnull shape,
+                                 bool testSmallEdges,
+                                 bool testSelfInterference);
 
 /// Check validity of two shapes for boolean operation. Returns true if valid.
-bool OCCTShapeBooleanCheckPair(OCCTShapeRef _Nonnull shape1, OCCTShapeRef _Nonnull shape2,
-                                int32_t operation, bool testSmallEdges, bool testSelfInterference);
+bool OCCTShapeBooleanCheckPair(OCCTShapeRef _Nonnull shape1,
+                               OCCTShapeRef _Nonnull shape2,
+                               int32_t operation,
+                               bool    testSmallEdges,
+                               bool    testSelfInterference);
 
 /// Create a wire analyzer from a wire, face, and precision.
 OCCTWireAnalyzerRef _Nullable OCCTWireAnalyzerCreate(OCCTShapeRef _Nonnull wire,
-                                                       OCCTShapeRef _Nonnull face,
-                                                       double precision);
+                                                     OCCTShapeRef _Nonnull face,
+                                                     double precision);
 
 /// Release a wire analyzer.
 void OCCTWireAnalyzerRelease(OCCTWireAnalyzerRef _Nonnull analyzer);
@@ -1601,7 +1774,8 @@ bool OCCTWireAnalyzerIsLoaded(OCCTWireAnalyzerRef _Nonnull analyzer);
 /// Whether the analyzer is ready (wire + face loaded).
 bool OCCTWireAnalyzerIsReady(OCCTWireAnalyzerRef _Nonnull analyzer);
 
-// MARK: - v0.122.0: WireFixer extended, ShapeFix_Edge, BRepTools/BRepLib statics, History extended, Sewing extended
+// MARK: - v0.122.0: WireFixer extended, ShapeFix_Edge, BRepTools/BRepLib statics, History extended,
+// Sewing extended
 
 // --- WireFixer extended (ShapeFix_Wire) ---
 

@@ -6,24 +6,24 @@ nav_order: 2
 
 # Threads
 
-OCCT ships no "thread feature" — a screw thread is a *composite* feature with no single kernel op.
+OCCT ships no "thread feature", a screw thread is a *composite* feature with no single kernel op.
 OCCTSwift provides one on `Shape`: **`threadedShaft`** (external) and **`threadedHole`** (internal),
 producing real helical ISO-68 / Unified V-form geometry (60° included flank angle, truncated crest
 and root per the standard).
 
-For the common case — a plain cylinder coaxial with the axis — `threadedShaft` **builds the threaded
+For the common case, a plain cylinder coaxial with the axis, `threadedShaft` **builds the threaded
 rod directly, with no boolean** ([#213](https://github.com/gsdali/OCCTSwift/issues/213)): the thread
 cross-section (a "cam": root arc → flank → crest arc → flank) is lofted along the helix with
 `ruled=false`, giving a **smooth, BRepCheck-valid** solid of a handful of BSpline faces (not hundreds
 of facets), with any unthreaded margin closed by sewing. Because the kernel's boolean is never
 invoked, the result is orientation-robust where a cut-the-cutter approach is faceted or fails.
 
-OCCT C++ reference: the [bottle tutorial — "Building the Threading"](https://dev.opencascade.org/doc/overview/html/occt__tutorial.html)
+OCCT C++ reference: the [bottle tutorial, "Building the Threading"](https://dev.opencascade.org/doc/overview/html/occt__tutorial.html)
 (`/open-cascade-sas/occt` on context7).
 
 ## A threaded shaft
 
-Cut an M12×1.75 external thread into a Ø12 shank — 18 mm of thread on a 24 mm rod:
+Cut an M12×1.75 external thread into a Ø12 shank, 18 mm of thread on a 24 mm rod:
 
 ```swift
 guard let shank = Shape.cylinder(radius: 6, height: 24) else { return }
@@ -37,26 +37,26 @@ guard let threaded = shank.threadedShaft(axisOrigin: .zero, axisDirection: SIMD3
 
 <table>
 <tr>
-<td align="center"><model-viewer src="models/threads-shaft.glb" poster="images/threads-shaft.png" camera-controls auto-rotate environment-image="neutral" exposure="1.1" shadow-intensity="1" style="width:300px;height:380px;background:#eef1f5;border-radius:6px"></model-viewer><br><code>threadedShaft</code> — M12×1.75</td>
+<td align="center"><model-viewer src="models/threads-shaft.glb" poster="images/threads-shaft.png" camera-controls auto-rotate environment-image="neutral" exposure="1.1" shadow-intensity="1" style="width:300px;height:380px;background:#eef1f5;border-radius:6px"></model-viewer><br><code>threadedShaft</code>. M12×1.75</td>
 </tr>
 </table>
 
 <sub>🖱️ Drag to orbit · scroll to zoom · auto-rotating. The static render shows until the 3D model loads. (Model exported straight from the snippet above via `Exporter.writeGLTF`.)</sub>
 
-### Measuring the envelope — use the *optimal* box
+### Measuring the envelope, use the *optimal* box
 
 The smooth thread is a BSpline solid, so its default axis-aligned `bounds` is the **control-pole
-hull** and overshoots the real surface by ~13% — a pole artifact, *not* a bulge. For the true extent
+hull** and overshoots the real surface by ~13%, a pole artifact, *not* a bulge. For the true extent
 (the crest sits exactly at the nominal radius), use `boundingBoxOptimal()`:
 
 ```swift
-threaded.bounds?.max.x              // ~6.8 — pole hull, misleading
-threaded.boundingBoxOptimal()?.max.x // ~6.0 — the real crest radius (= nominal/2)
+threaded.bounds?.max.x              // ~6.8, pole hull, misleading
+threaded.boundingBoxOptimal()?.max.x // ~6.0, the real crest radius (= nominal/2)
 ```
 
 ## Specs from a string
 
-`ThreadSpec.parse` reads the usual designations — metric `M…x…` and Unified `…-… UNC/UNF` (with the
+`ThreadSpec.parse` reads the usual designations, metric `M…x…` and Unified `…-… UNC/UNF` (with the
 coarse-pitch table for a bare metric diameter):
 
 ```swift
@@ -71,14 +71,14 @@ Key derived dimensions (all per ISO-68) are available on the spec:
 ```swift
 let m12 = ThreadSpec(form: .iso68, nominalDiameter: 12, pitch: 1.75)
 m12.theoreticalDepth   // H  = pitch·√3/2
-m12.cutDepth           // 5H/8 — practical truncated depth
+m12.cutDepth           // 5H/8, practical truncated depth
 m12.minorDiameter      // nominal − 2·cutDepth
 m12.halfFlankAngle     // π/6 (30° → 60° included)
 ```
 
 ## Thread forms
 
-`ThreadForm` covers the common standards — set it on the `ThreadSpec`:
+`ThreadForm` covers the common standards, set it on the `ThreadSpec`:
 
 | Form | `ThreadForm` | Angle / shape |
 |---|---|---|
@@ -127,7 +127,7 @@ ThreadSpec.parse("1/2-14 NPT")  // .nptTapered
 ## Threading with a custom shape
 
 Beyond the standard forms, thread a cylinder with **any** cross-section by supplying a
-`ThreadProfile` — a normalized tooth outline over one pitch (`axial` 0…1 along the pitch, `depth` 0
+`ThreadProfile`: a normalized tooth outline over one pitch (`axial` 0…1 along the pitch, `depth` 0
 at the crest/major radius … 1 at the root/minor radius). It builds via the same smooth direct path.
 
 ```swift
@@ -147,7 +147,7 @@ custom form round-trips through JSON.
 
 ## A threaded hole
 
-`threadedHole` taps the wall of an existing bore. It's cut with the boolean path — but because an
+`threadedHole` taps the wall of an existing bore. It's cut with the boolean path, but because an
 interior helix is cut into a *thick wall* (not a thin shaft), OCCT's boolean handles a **smooth**
 helical cutter robustly, so the internal thread comes out smooth and BRepCheck-valid. Pass the
 *solid with the bore already in it*:
@@ -162,10 +162,10 @@ let tapped = block.threadedHole(axisOrigin: .zero, axisDirection: SIMD3(0, 0, 1)
 // tapped?.isValid == true; tapping only adds material toward the axis (outer Ø unchanged)
 ```
 
-Because the body is just *any solid with a bore*, you can tap nuts of any shape — a hex prism
+Because the body is just *any solid with a bore*, you can tap nuts of any shape, a hex prism
 (extruded hexagon), a wing nut (body + wings), or a lead-screw nut. The pieces below are built from
 the snippets on this page (`Wire.polygon` → `Shape.extrude` for the hex, `union` for the wings,
-`.square` thread for the lead screw, and a `pipeShell` coil — see [Helices & Springs](helices.md) —
+`.square` thread for the lead screw, and a `pipeShell` coil, see [Helices & Springs](helices.md),
 for the anti-backlash spring):
 
 <table>
@@ -176,8 +176,8 @@ for the anti-backlash spring):
 </tr>
 </table>
 
-<sub>🖱️ The nut and wing nut are interactive (drag to orbit). The lead-screw assembly — a square-thread
-screw, a hex half-nut, and a compression spring that pushes the split nut apart to take up backlash —
+<sub>🖱️ The nut and wing nut are interactive (drag to orbit). The lead-screw assembly, a square-thread
+screw, a hex half-nut, and a compression spring that pushes the split nut apart to take up backlash,
 is a static render of a 4-part assembly.</sub>
 
 ## Multi-start and handedness
@@ -196,7 +196,7 @@ let shaft = rod.threadedShaft(axisOrigin: .zero, axisDirection: SIMD3(0, 0, 1),
 How the thread terminates where it meets the unthreaded shank:
 
 ```swift
-// .none (default) — hard stop; .filleted — blend the last turns; .tapered — fade depth to zero.
+// .none (default), hard stop; .filleted, blend the last turns; .tapered, fade depth to zero.
 rod.threadedShaft(axisOrigin: .zero, axisDirection: SIMD3(0, 0, 1), spec: spec,
                   length: 18, runout: .filleted(radius: 0.4))
 ```

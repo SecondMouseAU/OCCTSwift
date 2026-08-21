@@ -15,7 +15,7 @@ import simd
 //   ShapeCustom_ConvertToBSpline::NewSurface         calls the first, forcing GeomAbs_C0 for any
 //                                                    offset surface (a 1999 hang workaround)
 //
-// Measured: two of them returned a materially wrong surface, and the third — the forced C0 — is
+// Measured: two of them returned a materially wrong surface, and the third, the forced C0, is
 // what routed offset surfaces into the collapse in the first place. Requesting the offset surface's
 // own continuity was never affected, before or after.
 //
@@ -70,8 +70,8 @@ struct Issue570HealingApproxTests {
 
         let convertedFace: Shape = try #require(converted.subShapes(ofType: .face).first)
         let fitted = try #require(convertedFace.faceSurfaceGeom())
-        // Was degree 1 with 2 poles across the full 2*pi of longitude — a straight chord through
-        // the surface — accepted because the interior error it was tested against was always zero.
+        // Was degree 1 with 2 poles across the full 2*pi of longitude, a straight chord through
+        // the surface, accepted because the interior error it was tested against was always zero.
         #expect(fitted.uDegree > 1)
         #expect(fitted.uPoleCount > 2)
 
@@ -129,7 +129,7 @@ struct Issue570HealingApproxTests {
                                                              degreePriority: true, rational: true))
         // With degreePriority the outer loop degrades continuity to C0 whenever the requested one
         // cannot meet the tolerance within maxDegree, so all three requests land on the collapsing
-        // continuity for this fixture — the wrong answer was identical for C0, C1 and C2.
+        // continuity for this fixture, the wrong answer was identical for C0, C1 and C2.
         let deviation = try Self.maxDeviation(of: restricted, from: offset)
         #expect(deviation <= tolerance,
                 "\(continuity) restricted to \(deviation), tolerance was \(tolerance)")

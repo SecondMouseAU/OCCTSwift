@@ -3,7 +3,7 @@ import simd
 @testable import OCCTSwift
 
 /// Issue #484: `Face.fixed(tolerance:)` was the fourth `ShapeFix_Face` construction in the bridge
-/// and the only one the #317 pass missed — it built a bare `ShapeFix_Face` with no
+/// and the only one the #317 pass missed, it built a bare `ShapeFix_Face` with no
 /// `SetContext(new ShapeBuild_ReShape)`, leaving it exposed to the #317 mechanism
 /// (`FixPeriodicDegenerated` null-dereferencing `Context()`) on any unpatched kernel, and silently
 /// skipping the context-dependent fixes on a patched one. The only #317 regression test
@@ -12,10 +12,10 @@ import simd
 ///
 /// These tests pin both halves: the #317 crash shape now goes through `Face.fixed(tolerance:)`, and
 /// ordinary faces must be unaffected by the added context (the real risk of the change).
-@Suite("Issue #484 — Face.fixed(tolerance:) gets a ReShape context")
+@Suite("Issue #484, Face.fixed(tolerance:) gets a ReShape context")
 struct Issue484FaceFixContextTests {
 
-    /// The #317 shape — a single closed periodic curve belting a cone's full period — driven through
+    /// The #317 shape, a single closed periodic curve belting a cone's full period, driven through
     /// the `Face.fixed(tolerance:)` call site rather than `Shape.face(from:boundary:)`.
     @Test("Face.fixed on a periodic conical single-wire face survives and stays valid")
     func periodicConicalFaceSurvivesFaceFix() {
@@ -53,7 +53,7 @@ struct Issue484FaceFixContextTests {
     }
 
     /// A conical face whose sole wire belts the full period, built through
-    /// `Surface.toFace(uvBoundary:)` — the one face factory that applies no healing at all, so the
+    /// `Surface.toFace(uvBoundary:)`, the one face factory that applies no healing at all, so the
     /// face reaches `Face.fixed(tolerance:)` in its raw state.
     @Test("Face.fixed on an unhealed full-period conical UV face returns a face")
     func unhealedPeriodicConicalUVFaceSurvivesFaceFix() {

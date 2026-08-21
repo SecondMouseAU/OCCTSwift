@@ -8,14 +8,14 @@
 # Why this exists (#339): OCCTBridge is 16 .mm files / ~62K lines of
 # Objective-C++, each including the OCCT header tree. SwiftPM recompiles all
 # 16 from source on every consumer that depends on OCCTSwift by path (the
-# ecosystem's shared-xcframework setup, see Scripts/build-occt.sh) — measured
+# ecosystem's shared-xcframework setup, see Scripts/build-occt.sh), measured
 # at 51.6s wall / 186.5s CPU per rebuild in one consumer worktree. This script
 # compiles the bridge once per platform slice and packages it exactly like
 # OCCT.xcframework, so Package.swift can offer a prebuilt OCCTBridge binaryTarget
 # as an opt-in alternative to compiling from source.
 #
 # Prerequisites:
-#   - Libraries/OCCT.xcframework already built (Scripts/build-occt.sh) — this
+#   - Libraries/OCCT.xcframework already built (Scripts/build-occt.sh), this
 #     script links against its headers, it does not build OCCT itself.
 #   - Xcode 15+ with Command Line Tools
 #
@@ -30,7 +30,7 @@ BRIDGE_INCLUDE_DIR="$PROJECT_DIR/Sources/OCCTBridge/include"
 OCCT_XCFRAMEWORK="$LIBRARIES_DIR/OCCT.xcframework"
 
 if [ ! -d "$OCCT_XCFRAMEWORK" ]; then
-    echo "ERROR: $OCCT_XCFRAMEWORK not found — run Scripts/build-occt.sh first." >&2
+    echo "ERROR: $OCCT_XCFRAMEWORK not found, run Scripts/build-occt.sh first." >&2
     exit 1
 fi
 
@@ -98,7 +98,7 @@ for entry in "${SLICES[@]}"; do
     # `swift build -c release --target OCCTBridge -v`): ARC on, C++17, the same
     # header search paths and OCCT_AVAILABLE / OCCT_NO_DEPRECATED defines as
     # Package.swift's cxxSettings.
-    # 16 source files — small enough to launch all at once (no need for a job cap;
+    # 16 source files, small enough to launch all at once (no need for a job cap;
     # the macOS default /bin/bash is 3.2 and has no `wait -n`, so exit codes are
     # collected per-PID instead of via `wait` with no args, which would swallow
     # a failed compile under `set -e`).
@@ -136,7 +136,7 @@ if [ ${#BUILT_LIBS[@]} -eq 0 ]; then
 fi
 
 # --------------------
-# Headers (platform-agnostic — same public header for every slice)
+# Headers (platform-agnostic, same public header for every slice)
 # --------------------
 rm -rf bridge-headers
 mkdir -p bridge-headers

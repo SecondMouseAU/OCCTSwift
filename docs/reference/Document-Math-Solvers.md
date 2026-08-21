@@ -1,9 +1,9 @@
 ---
-title: Document — Math Solvers & Local Properties
+title: Document. Math Solvers & Local Properties
 parent: API Reference
 ---
 
-# Document — Math Solvers & Local Properties
+# Document. Math Solvers & Local Properties
 
 This page covers `Document.swift`'s Math Solvers & Local Properties additions: 2D conic utilities, normal projection, disk/shared-library/message system helpers, `PlateSolver` constraint extensions, extra methods on `Shape`, `Curve3D`, `Curve2D`, and `Surface`, the full `MathSolver` numerical toolkit, `PolynomialSolver` Laguerre extensions, `BRepLProp` edge/face local properties, the deprecated `GeomGridEval` batch-evaluation spellings (#486), single-parameter curve/surface evaluators, and the Newton-Hessian minimizer.
 
@@ -11,11 +11,11 @@ This page covers `Document.swift`'s Math Solvers & Local Properties additions: 2
 
 ## Topics
 
-- [IntAna2d\_Conic — 2D Conics](#intana2d_conic--2d-conics) · [BRepAlgo\_NormalProjection](#brepalgo_normalprojection) · [OSD\_Disk](#osd_disk) · [OSD\_SharedLibrary](#osd_sharedlibrary) · [Message\_Msg](#message_msg) · [Plate Constraint Extensions](#plate-constraint-extensions) · [Shape Topology Extras](#shape-topology-extras) · [Curve3D Extras](#curve3d-extras) · [Curve2D Extras](#curve2d-extras) · [Surface Extras](#surface-extras) · [Math Solvers](#math-solvers) · [PolynomialSolver Laguerre Extensions](#polynomialsolver-laguerre-extensions) · [BRepLProp Edge Extensions](#breplprop-edge-extensions) · [BRepLProp Face Extensions](#breplprop-face-extensions) · [GridEval Extensions, deprecated](#grideval-extensions-deprecated-486) · [Curve3D Evaluation](#curve3d-evaluation) · [Curve2D Evaluation](#curve2d-evaluation) · [Surface Evaluation](#surface-evaluation) · [math\_NewtonMinimum](#math_newtonminimum)
+- [IntAna2d\_Conic, 2D Conics](#intana2d_conic--2d-conics) · [BRepAlgo\_NormalProjection](#brepalgo_normalprojection) · [OSD\_Disk](#osd_disk) · [OSD\_SharedLibrary](#osd_sharedlibrary) · [Message\_Msg](#message_msg) · [Plate Constraint Extensions](#plate-constraint-extensions) · [Shape Topology Extras](#shape-topology-extras) · [Curve3D Extras](#curve3d-extras) · [Curve2D Extras](#curve2d-extras) · [Surface Extras](#surface-extras) · [Math Solvers](#math-solvers) · [PolynomialSolver Laguerre Extensions](#polynomialsolver-laguerre-extensions) · [BRepLProp Edge Extensions](#breplprop-edge-extensions) · [BRepLProp Face Extensions](#breplprop-face-extensions) · [GridEval Extensions, deprecated](#grideval-extensions-deprecated-486) · [Curve3D Evaluation](#curve3d-evaluation) · [Curve2D Evaluation](#curve2d-evaluation) · [Surface Evaluation](#surface-evaluation) · [math\_NewtonMinimum](#math_newtonminimum)
 
 ---
 
-## IntAna2d\_Conic — 2D Conics
+## IntAna2d\_Conic, 2D Conics
 
 `Conic2D` is a value type holding the six implicit coefficients of a 2D conic
 `a·x² + b·y² + 2c·x·y + 2d·x + 2e·y + f = 0`, plus static factories and a line-circle
@@ -180,7 +180,7 @@ Create a normal-projection builder targeting the given shape.
 public init?(target: Shape)
 ```
 
-- **Parameters:** `target` — the shape that wires/edges will be projected onto.
+- **Parameters:** `target`, the shape that wires/edges will be projected onto.
 - **Returns:** `nil` if the internal object could not be created.
 - **OCCT:** `BRepAlgo_NormalProjection` constructor via `OCCTNormalProjectionCreate`.
 - **Example:**
@@ -198,7 +198,7 @@ Add a wire or edge shape to be projected.
 public func add(_ shape: Shape)
 ```
 
-- **Parameters:** `shape` — a wire or edge to project.
+- **Parameters:** `shape`, a wire or edge to project.
 - **OCCT:** `BRepAlgo_NormalProjection::Add` via `OCCTNormalProjectionAdd`.
 - **Example:**
   ```swift
@@ -258,7 +258,7 @@ Get the total disk size in kilobytes for the given path.
 public static func size(path: String = "/") -> Int64
 ```
 
-- **Parameters:** `path` — filesystem path; defaults to root `/`.
+- **Parameters:** `path`, filesystem path; defaults to root `/`.
 - **Returns:** Total disk capacity in KB.
 - **OCCT:** `OSD_Disk::DiskSize` via `OCCTDiskSize`.
 - **Example:**
@@ -331,7 +331,7 @@ Create a shared-library handle for the given name or path.
 public init?(name: String)
 ```
 
-- **Parameters:** `name` — library filename or full path (e.g. `"libFoo.dylib"`).
+- **Parameters:** `name`, library filename or full path (e.g. `"libFoo.dylib"`).
 - **Returns:** `nil` if the handle cannot be created.
 - **OCCT:** `OSD_SharedLibrary` constructor via `OCCTSharedLibCreate`.
 - **Example:**
@@ -454,14 +454,14 @@ Extension on `PlateSolver` adding advanced constraint types. See the main `Plate
 
 ### `PlateSolver.loadGlobalTranslation(uvPoints:)`
 
-Load a global translation constraint — all sample UV points are constrained to shift by the same unknown rigid displacement.
+Load a global translation constraint, all sample UV points are constrained to shift by the same unknown rigid displacement.
 
 ```swift
 @discardableResult
 public func loadGlobalTranslation(uvPoints: [SIMD2<Double>]) -> Bool
 ```
 
-- **Parameters:** `uvPoints` — UV parameter points where the constraint is sampled.
+- **Parameters:** `uvPoints`, UV parameter points where the constraint is sampled.
 - **Returns:** `true` if the constraint was accepted.
 - **OCCT:** `Plate_GlobalTranslationConstraint` via `OCCTPlateLoadGlobalTranslation`.
 - **Example:**
@@ -474,7 +474,7 @@ public func loadGlobalTranslation(uvPoints: [SIMD2<Double>]) -> Bool
 
 ### `PlateSolver.loadLinearXYZ(uvPoints:targets:coefficients:)`
 
-Load a linear XYZ constraint — a weighted linear combination of UV-sample positions must match the target.
+Load a linear XYZ constraint, a weighted linear combination of UV-sample positions must match the target.
 
 ```swift
 @discardableResult
@@ -485,7 +485,7 @@ public func loadLinearXYZ(
 ) -> Bool
 ```
 
-- **Parameters:** `uvPoints` — UV parameter points; `targets` — target XYZ positions; `coefficients` — scalar weights.
+- **Parameters:** `uvPoints`, UV parameter points; `targets`, target XYZ positions; `coefficients`, scalar weights.
 - **Returns:** `true` if the constraint was accepted.
 - **OCCT:** `Plate_LinearXYZConstraint` via `OCCTPlateLoadLinearXYZ`.
 
@@ -612,7 +612,7 @@ public var parameterBounds: (uMin: Double, uMax: Double, vMin: Double, vMax: Dou
 
 ### `Surface.surfaceContinuityOrder`
 
-**Unavailable** (#619) — use `Surface.continuityClass`, or `Surface.continuity` for a raw ordinal.
+**Unavailable** (#619), use `Surface.continuityClass`, or `Surface.continuity` for a raw ordinal.
 Any use is a compile error.
 
 ```swift
@@ -627,7 +627,7 @@ Because the type and name were unchanged, `surfaceContinuityOrder >= 2` kept com
 meaning "at least C2" to meaning "at least C1". #619 retires the spelling so that becomes an error.
 
 ```swift
-// A continuity floor — takes the request vocabulary by type, so the wrong
+// A continuity floor, takes the request vocabulary by type, so the wrong
 // constant cannot be written at all.
 if surface.continuityClass.satisfies(.c2) { offsetSafely() }
 
@@ -672,7 +672,7 @@ public static func findRoot(
 ) -> Double?
 ```
 
-- **Parameters:** `guess` — starting estimate; `tolerance` — convergence criterion; `function` — closure returning `(f(x), f'(x))`.
+- **Parameters:** `guess`, starting estimate; `tolerance`, convergence criterion; `function`, closure returning `(f(x), f'(x))`.
 - **Returns:** Root value, or `nil` if the solver did not converge within `maxIterations`.
 - **OCCT:** `math_FunctionRoot` via `OCCTMathFunctionRoot`.
 - **Example:**
@@ -701,7 +701,7 @@ public static func findRoot(
 ) -> Double?
 ```
 
-- **Parameters:** `range` — hard bounds for the search; other parameters as above.
+- **Parameters:** `range`, hard bounds for the search; other parameters as above.
 - **Returns:** Root within `range`, or `nil` if not converged.
 - **OCCT:** `math_FunctionRoots` (bounded) via `OCCTMathFunctionRootBounded`.
 - **Example:**
@@ -751,11 +751,11 @@ public static func solveSystem(
 ```
 
 - **Parameters:**
-  - `variables` — number of unknowns.
-  - `equations` — number of equations (may differ from `variables` for over/under-determined systems).
-  - `startPoint` — initial guess array of length `variables`.
-  - `values` — closure returning equation values `F(x)`, length `equations`.
-  - `jacobian` — closure returning the row-major Jacobian `J(x)`, length `equations × variables`.
+  - `variables`: number of unknowns.
+  - `equations`: number of equations (may differ from `variables` for over/under-determined systems).
+  - `startPoint`: initial guess array of length `variables`.
+  - `values`: closure returning equation values `F(x)`, length `equations`.
+  - `jacobian`: closure returning the row-major Jacobian `J(x)`, length `equations × variables`.
 - **Returns:** Solution point array of length `variables`, or `nil` if not converged.
 - **Bounds:** `variables` and `equations` must both be positive, and `startPoint.count` must
   equal `variables`, or this returns `nil` (#640). None of this was checked before: a negative
@@ -794,7 +794,7 @@ public static func minimize(
 ) -> (point: [Double], minimum: Double)?
 ```
 
-- **Parameters:** `function` — closure returning `(f(x), ∇f(x))`.
+- **Parameters:** `function`, closure returning `(f(x), ∇f(x))`.
 - **Returns:** `(minimizer, f(minimizer))`, or `nil` if not converged.
 - **Bounds:** `variables` must be positive and equal `startPoint.count`, or this returns `nil`
   (#640): a mismatched positive `variables` used to reach the bridge's unconditional
@@ -832,7 +832,7 @@ public static func minimizePowell(
 ) -> (point: [Double], minimum: Double)?
 ```
 
-- **Parameters:** `function` — closure returning a scalar value `f(x)`.
+- **Parameters:** `function`, closure returning a scalar value `f(x)`.
 - **Returns:** `(minimizer, f(minimizer))`, or `nil` if not converged.
 - **Bounds:** Same as `minimize`: `variables` must be positive and equal `startPoint.count`
   (#640).
@@ -856,7 +856,7 @@ public static func minimizeBrent(
 ) -> (location: Double, minimum: Double)?
 ```
 
-- **Parameters:** `ax`, `bx`, `cx` — bracket triplet with `ax < bx < cx` and `f(bx) < f(ax)`, `f(bx) < f(cx)`; `function` — closure returning `(f(x), f'(x))`.
+- **Parameters:** `ax`, `bx`, `cx`, bracket triplet with `ax < bx < cx` and `f(bx) < f(ax)`, `f(bx) < f(cx)`; `function`, closure returning `(f(x), f'(x))`.
 - **Returns:** `(x_min, f(x_min))`, or `nil` if not converged.
 - **OCCT:** `math_BrentMinimum` via `OCCTMathBrentMinimum`.
 - **Example:**
@@ -889,7 +889,7 @@ public static func particleSwarm(
 ) -> (point: [Double], minimum: Double)?
 ```
 
-- **Parameters:** `lower` / `upper` — per-variable bounds; `steps` — initial step sizes; `particles` — swarm size; `iterations` — number of swarm iterations.
+- **Parameters:** `lower` / `upper`, per-variable bounds; `steps`, initial step sizes; `particles`, swarm size; `iterations`, number of swarm iterations.
 - **Returns:** `(minimizer, f(minimizer))`, or `nil` on failure.
 - **Bounds:** `variables` must be positive, and `lower`/`upper`/`steps` must each have
   `variables` elements, or this returns `nil` (#640): none of this was checked before, so the
@@ -914,7 +914,7 @@ public static func globalMinimize(
 ) -> (point: [Double], minimum: Double)?
 ```
 
-- **Parameters:** `lower` / `upper` — search domain bounds per variable; `function` — objective.
+- **Parameters:** `lower` / `upper`, search domain bounds per variable; `function`, objective.
 - **Returns:** `(global minimizer, f(minimizer))`, or `nil` on failure.
 - **Bounds:** `variables` must be positive, and `lower`/`upper` must each have `variables`
   elements, or this returns `nil` (#640), for the same reason as `particleSwarm`.
@@ -944,7 +944,7 @@ public static func findAllRoots(
 ) -> [Double]
 ```
 
-- **Parameters:** `samples` — number of sub-intervals for sign-change detection (more samples finds more roots but is slower).
+- **Parameters:** `samples`, number of sub-intervals for sign-change detection (more samples finds more roots but is slower).
 - **Returns:** Array of root values (may be empty). Up to 100 roots are returned.
 - **Bounds:** `samples` is a sampler by name and by role, not a problem dimension, so it is
   bounded through `Sampling.requested` like every other subdivision count in this library:
@@ -976,7 +976,7 @@ public static func integrate(
 ) -> Double
 ```
 
-- **Parameters:** `order` — number of Gauss quadrature points (higher = more accurate for smooth functions).
+- **Parameters:** `order`, number of Gauss quadrature points (higher = more accurate for smooth functions).
 - **Returns:** Numerical integral value.
 - **OCCT:** `math_GaussSingleIntegration` via `OCCTMathGaussIntegrate`.
 - **Example:**
@@ -1027,7 +1027,7 @@ Find all real roots of a polynomial using Laguerre's method.
 public static func laguerreRoots(coefficients: [Double]) -> [Double]
 ```
 
-- **Parameters:** `coefficients` — polynomial coefficients in ascending power order: `[a0, a1, …, an]` for `a0 + a1·x + … + an·xⁿ`.
+- **Parameters:** `coefficients`, polynomial coefficients in ascending power order: `[a0, a1, …, an]` for `a0 + a1·x + … + an·xⁿ`.
 - **Returns:** Sorted array of real roots (up to 20).
 - **OCCT:** `math_Laguerre` / `math_DirectPolynomialRoots` via `OCCTPolyLaguerreRoots`.
 - **Example:**
@@ -1085,6 +1085,10 @@ resolution (`Precision::Confusion()`), so the two spellings agree about definedn
 parameter of every edge. The values themselves can still differ in the last bits, because the
 adaptor evaluates a Bezier or B-spline through a cache the raw handle does not use.
 
+All six read the edge through a `BRepAdaptor_Curve` whose constructor dereferences a null
+shape, so a null shape (from `Shape.nullified`) used to crash the process rather than answer.
+Each answers `nil` now (#1035, measured in `Scripts/repro/1035-unwrap-guard/`).
+
 ### `Shape.edgeLPropValue(at:)`
 
 Evaluate the 3D point on an edge at the given parameter.
@@ -1121,7 +1125,7 @@ public func edgeCurvatureLP(at param: Double) -> Double?
 ```
 
 - **Returns:** Curvature magnitude: `0` for a straight edge, which is a real answer, and `nil` where
-  there is none — this `Shape` is not an edge, the parameter cannot be evaluated, or the tangent is
+  there is none, this `Shape` is not an edge, the parameter cannot be evaluated, or the tangent is
   undefined there. Those were the same `0` until #595, and the degeneracy is not exotic: a sphere
   carries a **degenerate edge at each pole**, with no 3D curve at all, and edge traversal does not
   skip them. `Double.greatestFiniteMagnitude` (OCCT's `RealLast()`, meaning infinite curvature) is
@@ -1139,7 +1143,7 @@ public func edgeNormalLP(at param: Double) -> SIMD3<Double>?
 ```
 
 - **Returns:** Unit normal in the osculating plane, or `nil` where the curvature cannot be inverted
-  into a direction — a straight stretch has no normal, and neither does a cusp. Before #529 both
+  into a direction, a straight stretch has no normal, and neither does a cusp. Before #529 both
   cases returned `(0, 0, 0)`, which is not a direction (#529, source-breaking).
 - **OCCT:** `BRepLProp_CLProps::Normal` via `OCCTEdgeLPropNormal`.
 
@@ -1311,7 +1315,7 @@ public func faceLPropGaussianCurvature(u: Double, v: Double) -> Double?
 
 ### `Shape.faceLPropIsUmbilic(u:v:)`
 
-Test whether a face is umbilic at `(u, v)` — both principal curvatures are equal.
+Test whether a face is umbilic at `(u, v)`, both principal curvatures are equal.
 
 ```swift
 public func faceLPropIsUmbilic(u: Double, v: Double) -> Bool?
@@ -1541,7 +1545,7 @@ Extension on `MathSolver` adding Newton's Hessian-based minimizer. Introduced v0
 
 ### `MathSolver.minimizeNewton(variables:startPoint:tolerance:maxIterations:function:)`
 
-Minimize a multivariate function using Newton's method with analytical Hessian — the most precise local minimizer when second derivatives are available.
+Minimize a multivariate function using Newton's method with analytical Hessian, the most precise local minimizer when second derivatives are available.
 
 ```swift
 public static func minimizeNewton(
@@ -1554,9 +1558,9 @@ public static func minimizeNewton(
 ```
 
 - **Parameters:**
-  - `n` — number of variables.
-  - `startPoint` — initial guess, length `n`.
-  - `function` — closure returning `(f(x), ∇f(x)[n], H(x)[n×n] row-major)`.
+  - `n`: number of variables.
+  - `startPoint`: initial guess, length `n`.
+  - `function`: closure returning `(f(x), ∇f(x)[n], H(x)[n×n] row-major)`.
 - **Returns:** `(minimizer, f(minimizer))`, or `nil` if not converged.
 - **Bounds:** `n` must be positive and equal `startPoint.count`, or this returns `nil` (#640),
   for the same reason as `minimize`. `function`'s own returned `gradient` and `hessian` are
@@ -1564,7 +1568,7 @@ public static func minimizeNewton(
   components, or fewer than `n * n` Hessian components, now fails the call (`nil`) instead of
   trapping.
 - **OCCT:** `math_NewtonMinimum` via `OCCTMathNewtonMinimum`.
-- **Note:** Quadratic convergence near the minimum; requires a positive-definite Hessian. Falls back gracefully but may not converge if the Hessian is indefinite away from the minimum — in that case, prefer `minimize` (BFGS).
+- **Note:** Quadratic convergence near the minimum; requires a positive-definite Hessian. Falls back gracefully but may not converge if the Hessian is indefinite away from the minimum, in that case, prefer `minimize` (BFGS).
 - **Example:**
   ```swift
   // Minimize f(x,y) = x² + y²  (minimum at origin)

@@ -6,8 +6,8 @@ with a `NaN` or infinite bound, per curve type and per bridge spelling.
 #548 was filed out of #506's measurements, which found `Curve3D.length(from:to:)` reporting `0` for
 a NaN upper bound and the curve's whole length for a NaN lower one on a BSpline, where a segment,
 a line and a circle all propagate NaN and report `nil`. That makes the "`nil` means the computation
-failed" guarantee — the guarantee #408 built the `-1.0` sentinel of `arcLength(from:to:)` /
-`arcLengthBetween(_:_:)` on top of — hold only for some curves. This probe asks:
+failed" guarantee, the guarantee #408 built the `-1.0` sentinel of `arcLength(from:to:)` /
+`arcLengthBetween(_:_:)` on top of, hold only for some curves. This probe asks:
 
 1. **Does it reproduce, and is the BSpline really the exception?** The issue measured two rows on
    one curve. Both a Bezier (single span, not length-parametrized) and a multi-span BSpline are
@@ -46,7 +46,7 @@ the bridge's own `l >= 0 ? l : nil` guard.
 | `(f, +inf)` | **`+inf`** | **`+inf`** | **`+inf`** | `nan` → `nil` | `528.75` |
 | `(-inf, +inf)` | **`+inf`** | **`+inf`** | **`+inf`** | `nan` → `nil` | `528.75` |
 
-- **The issue reproduces, and "BSpline" is not the discriminator — "composite" is.** The 4-pole
+- **The issue reproduces, and "BSpline" is not the discriminator, "composite" is.** The 4-pole
   Bezier is a spline and propagates NaN like the analytic types. What separates the BSpline is
   `NbIntervals(GeomAbs_CN) == 4`.
 - **An infinite bound is the worse case, and it is not confined to composite curves.** A segment,
@@ -73,13 +73,13 @@ confirms: `std::min(3.0, nan) == std::max(3.0, nan) == 3.0`, while `std::min(nan
 `std::max(nan, 3.0)` are both `nan`. So
 
 - a **NaN upper** bound gives `aUU1 == aUU2 == theU1`, an interval collapsed onto the start
-  parameter — hence `0`, the encoding of a genuine zero-width interval;
+  parameter, hence `0`, the encoding of a genuine zero-width interval;
 - a **NaN lower** bound gives `aUU1 == aUU2 == nan`, which makes both per-span skip tests false and
-  both per-span intersections identities, so every span is integrated in full — hence the whole
+  both per-span intersections identities, so every span is integrated in full, hence the whole
   length, indistinguishable from a valid measurement.
 
 The other two branches (`GCPnts_LengthParametrized`, `|u2 - u1| * ratio`, and `GCPnts_Parametrized`,
-a Gauss quadrature over `[u1, u2]`) have no such reduction, which is why they propagate NaN — and
+a Gauss quadrature over `[u1, u2]`) have no such reduction, which is why they propagate NaN, and
 why `|inf - u1| * ratio` returns `+inf` on the length-parametrized types.
 
 **The sibling spellings, measured for the first time:**
@@ -101,7 +101,7 @@ pre-bounded one goes with the function.)
 **A finite out-of-domain range is a separate, still-open divergence.** The same probe shows the
 documented "parameters outside the curve's domain are clamped to it" holds only for composite
 curves: measuring `[f, l + span]` gives `528.75` (clamped) on the BSpline, `20` on a 10-long segment,
-two turns on a circle, and `1002.29` on a Bezier 122.14 long — that last one the polynomial
+two turns on a circle, and `1002.29` on a Bezier 122.14 long, that last one the polynomial
 extrapolation #477 removed from the pre-bounded form. Not touched here, filed as #600: for a
 periodic curve, measuring past the domain is meaningful, so this needs a contract decision rather
 than a guard.

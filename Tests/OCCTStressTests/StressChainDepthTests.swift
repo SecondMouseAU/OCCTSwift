@@ -111,7 +111,7 @@ struct StressFeatureChainTests {
         #expect(shape.isValid)
         // Shell
         if let s = shape.shelled(thickness: -1.0) { shape = s }
-        // Shell may fail on complex geometry — that's OK
+        // Shell may fail on complex geometry, that's OK
         #expect(shape.isValid)
     }
 
@@ -123,7 +123,7 @@ struct StressFeatureChainTests {
                 shape = f
                 #expect(shape.isValid)
             } else {
-                break // Fillet failed — expected for complex shapes
+                break // Fillet failed, expected for complex shapes
             }
         }
     }
@@ -228,7 +228,7 @@ struct StressWireConstructionTests {
         let builder = WireBuilder()
         let box = Shape.box(width: 100, height: 100, depth: 100)!
         let edges = box.subShapes(ofType: .edge)
-        // Add many edges (some may be duplicates — that's fine)
+        // Add many edges (some may be duplicates, that's fine)
         for i in 0..<min(100, edges.count * 10) {
             builder.addEdge(edges[i % edges.count])
         }

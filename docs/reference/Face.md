@@ -5,11 +5,11 @@ parent: API Reference
 
 # Face
 
-A `Face` represents a bounded surface region within a 3D solid — the Swift analog of OCCT's `TopoDS_Face`. Faces carry a reference to an underlying geometric surface (plane, cylinder, B-spline, etc.) trimmed by a boundary wire. Obtain faces by calling `Shape.faces()`, by constructing `Face(_ shape:)` from a face-typed `Shape`, or via the filtering helpers `Shape.upwardFaces()` and `Shape.horizontalFaces()`.
+A `Face` represents a bounded surface region within a 3D solid, the Swift analog of OCCT's `TopoDS_Face`. Faces carry a reference to an underlying geometric surface (plane, cylinder, B-spline, etc.) trimmed by a boundary wire. Obtain faces by calling `Shape.faces()`, by constructing `Face(_ shape:)` from a face-typed `Shape`, or via the filtering helpers `Shape.upwardFaces()` and `Shape.horizontalFaces()`.
 
 ## Topics
 
-- [Initializers](#initializers) · [Properties](#properties) · [Surface Properties (v0.18.0)](#surface-properties-v0180) · [Shape Extension — Face Analysis](#shape-extension--face-analysis) · [BRepGProp\_Face Evaluation (v0.45.0)](#brepgprop_face-evaluation-v0450)
+- [Initializers](#initializers) · [Properties](#properties) · [Surface Properties (v0.18.0)](#surface-properties-v0180) · [Shape Extension, Face Analysis](#shape-extension--face-analysis) · [BRepGProp\_Face Evaluation (v0.45.0)](#brepgprop_face-evaluation-v0450)
 
 ---
 
@@ -25,9 +25,9 @@ public convenience init?(_ shape: Shape)
 
 Inverse of `Shape.fromFace(_:)`. Use when you have a face-typed `Shape` (e.g. from `Shape.subShapes(ofType: .face)`) and need the typed `Face` object.
 
-- **Parameters:** `shape` — a `Shape` wrapping a `TopoDS_Face`.
+- **Parameters:** `shape`, a `Shape` wrapping a `TopoDS_Face`.
 - **Returns:** `nil` if `shape` is null or `shape.shapeType != .face`.
-- **OCCT:** `TopoDS::Face` — checks `ShapeType() == TopAbs_FACE`, then casts the underlying `TopoDS_Shape`.
+- **OCCT:** `TopoDS::Face`, checks `ShapeType() == TopAbs_FACE`, then casts the underlying `TopoDS_Shape`.
 - **Example:**
   ```swift
   let box = Shape.box(width: 10, height: 10, depth: 10)!
@@ -50,7 +50,7 @@ public let index: Int
 Set automatically when a `Face` is created via `Shape.faces()` or `Shape.face(at:)`; faces
 constructed via `Face(_ shape:)` get index `-1`.
 
-This is the addressing token every face-index-taking method on `Shape` expects — `face(at:)`,
+This is the addressing token every face-index-taking method on `Shape` expects, `face(at:)`,
 `drafted(faces:…)`, `shelled(thickness:openFaces:)`, `withoutFeatures(faces:)`,
 `edgesInFace(at:)` and the rest. It is only meaningful against the shape it came from: an index
 taken from one shape and used on another names an unrelated face, or nothing at all. (#541)
@@ -78,7 +78,7 @@ public var normal: SIMD3<Double>? { get }
 Evaluates the surface normal at the midpoint of the face's UV parameter range. Respects face orientation (`TopAbs_REVERSED` flips the result).
 
 - **Returns:** Unit normal vector, or `nil` if the normal is undefined at the centre (e.g. degenerate face or singular parametric point).
-- **OCCT:** `BRepAdaptor_Surface` + `BRepLProp_SLProps::Normal` — adapts the face, evaluates at `(uMid, vMid)`, at the same `Precision::Confusion()` resolution as [`normal(atU:v:)`](#normalatuv) since #529.
+- **OCCT:** `BRepAdaptor_Surface` + `BRepLProp_SLProps::Normal`, adapts the face, evaluates at `(uMid, vMid)`, at the same `Precision::Confusion()` resolution as [`normal(atU:v:)`](#normalatuv) since #529.
 - **Note:** that resolution reaches `CSLib::Normal` as a *sine* tolerance on the angle between the
   two parametric directions, not as a length. A surface whose derivatives merely shrink (a cone at
   its apex, a sphere at its pole) therefore keeps a defined normal; only a nearly *singular
@@ -106,7 +106,7 @@ public var orientation: Shape.Orientation { get }
 The flag that decides which side of the surface [`normal`](#normal) and
 [`normal(atU:v:)`](#normalatuv) report: both reverse the surface normal exactly when this is
 `.reversed`. OCCT's own definition is that a face's orientation names which side of it is
-*material* — for a space bounded by a face, the default region lies on the negative side of the
+*material*, for a space bounded by a face, the default region lies on the negative side of the
 surface normal.
 
 A face can appear in one shape twice with opposite orientations, the ordinary result of a split
@@ -142,7 +142,7 @@ public var outerWire: Wire? { get }
 Returns the outermost wire (the single outer boundary loop); inner wires (holes) are not returned here.
 
 - **Returns:** The outer `Wire`, or `nil` if the face has no outer wire or retrieval fails.
-- **OCCT:** `BRepTools::OuterWire` — returns the outermost `TopoDS_Wire` of the face.
+- **OCCT:** `BRepTools::OuterWire`, returns the outermost `TopoDS_Wire` of the face.
 - **Example:**
   ```swift
   if let face = Shape.box(width: 5, height: 5, depth: 5)!.faces().first,
@@ -207,7 +207,7 @@ public func isHorizontal(tolerance: Double = 0.01) -> Bool
 
 Pure-Swift: computes `abs(normal.z) > cos(tolerance)`.
 
-- **Parameters:** `tolerance` — angle tolerance in radians (default ~0.57°).
+- **Parameters:** `tolerance`, angle tolerance in radians (default ~0.57°).
 - **Returns:** `true` if the face's centre normal is within `tolerance` of the ±Z axis; `false` if `normal` is `nil`.
 - **Example:**
   ```swift
@@ -228,7 +228,7 @@ public func isUpwardFacing(tolerance: Double = 0.01) -> Bool
 
 Pure-Swift: computes `normal.z > cos(tolerance)`.
 
-- **Parameters:** `tolerance` — angle tolerance in radians (default ~0.57°).
+- **Parameters:** `tolerance`, angle tolerance in radians (default ~0.57°).
 - **Returns:** `true` if the face is horizontal and upward-facing; `false` if `normal` is `nil`.
 - **Example:**
   ```swift
@@ -249,7 +249,7 @@ public func isDownwardFacing(tolerance: Double = 0.01) -> Bool
 
 Pure-Swift: computes `normal.z < -cos(tolerance)`.
 
-- **Parameters:** `tolerance` — angle tolerance in radians (default ~0.57°).
+- **Parameters:** `tolerance`, angle tolerance in radians (default ~0.57°).
 - **Returns:** `true` if the face is horizontal and downward-facing; `false` if `normal` is `nil`.
 - **Example:**
   ```swift
@@ -270,7 +270,7 @@ public func isVertical(tolerance: Double = 0.01) -> Bool
 
 Pure-Swift: computes `abs(normal.z) < sin(tolerance)`.
 
-- **Parameters:** `tolerance` — angle tolerance in radians (default ~0.57°).
+- **Parameters:** `tolerance`, angle tolerance in radians (default ~0.57°).
 - **Returns:** `true` if the face's normal lies in the XY plane within `tolerance`; `false` if `normal` is `nil`.
 - **Example:**
   ```swift
@@ -354,8 +354,8 @@ public struct PrincipalCurvatures: Sendable {
 }
 ```
 
-- `kMin` / `kMax` — minimum and maximum principal curvatures (reciprocals of principal radii).
-- `dirMin` / `dirMax` — unit direction vectors of the principal curvature lines on the surface.
+- `kMin` / `kMax`, minimum and maximum principal curvatures (reciprocals of principal radii).
+- `dirMin` / `dirMax`, unit direction vectors of the principal curvature lines on the surface.
 
 ---
 
@@ -390,9 +390,9 @@ public struct SurfaceProjection: Sendable {
 }
 ```
 
-- `point` — closest 3D point on the surface.
-- `u`, `v` — UV parameters of that point.
-- `distance` — Euclidean distance from the query point to `point`.
+- `point`: closest 3D point on the surface.
+- `u`, `v`, UV parameters of that point.
+- `distance`: Euclidean distance from the query point to `point`.
 
 ---
 
@@ -437,7 +437,7 @@ The geometric surface type of this face.
 public var surfaceType: SurfaceType { get }
 ```
 
-Never fails — returns `.other` if the type cannot be determined.
+Never fails, returns `.other` if the type cannot be determined.
 
 - **OCCT:** `BRepAdaptor_Surface::GetType()` mapped to `SurfaceType`.
 - **Example:**
@@ -456,7 +456,7 @@ The surface area of the face.
 public func area(tolerance: Double = 1e-6) -> Double
 ```
 
-- **Parameters:** `tolerance` — numerical integration tolerance (default 1e-6).
+- **Parameters:** `tolerance`, numerical integration tolerance (default 1e-6).
 - **Returns:** Area in squared model units; returns `-1.0` on error.
 - **OCCT:** `BRepGProp::SurfaceProperties` + `GProp_GProps::Mass`.
 - **Example:**
@@ -476,7 +476,7 @@ Evaluates the 3D point on the surface at UV parameters.
 public func point(atU u: Double, v: Double) -> SIMD3<Double>?
 ```
 
-- **Parameters:** `u` — U surface parameter; `v` — V surface parameter.
+- **Parameters:** `u`, U surface parameter; `v`, V surface parameter.
 - **Returns:** 3D point, or `nil` if the surface is null or evaluation fails.
 - **OCCT:** `BRep_Tool::Surface` + `Geom_Surface::D0(u, v, pnt)`.
 - **Example:**
@@ -499,7 +499,7 @@ public func normal(atU u: Double, v: Double) -> SIMD3<Double>?
 
 Respects face orientation (`TopAbs_REVERSED` flips the result). Uses order-1 surface properties.
 
-- **Parameters:** `u` — U parameter; `v` — V parameter.
+- **Parameters:** `u`, U parameter; `v`, V parameter.
 - **Returns:** Unit normal vector, or `nil` if the normal is undefined at `(u, v)`.
 - **OCCT:** `BRep_Tool::Surface` + `GeomLProp_SLProps::Normal` (order 1, `Precision::Confusion()` tolerance).
 - **Example:**
@@ -521,7 +521,7 @@ public func gaussianCurvature(atU u: Double, v: Double) -> Double?
 
 Gaussian curvature = k₁ × k₂ (product of principal curvatures). Positive on convex/concave surfaces; negative on saddle surfaces; zero on developable surfaces.
 
-- **Parameters:** `u` — U parameter; `v` — V parameter.
+- **Parameters:** `u`, U parameter; `v`, V parameter.
 - **Returns:** Gaussian curvature value, or `nil` if curvature is undefined at `(u, v)`.
 - **OCCT:** `GeomLProp_SLProps::GaussianCurvature` (order 2).
 - **Example:**
@@ -546,7 +546,7 @@ public func meanCurvature(atU u: Double, v: Double) -> Double?
 
 Mean curvature = (k₁ + k₂) / 2. Zero on minimal surfaces; equal to 1/R on a sphere of radius R.
 
-- **Parameters:** `u` — U parameter; `v` — V parameter.
+- **Parameters:** `u`, U parameter; `v`, V parameter.
 - **Returns:** Mean curvature value, or `nil` if curvature is undefined at `(u, v)`.
 - **OCCT:** `GeomLProp_SLProps::MeanCurvature` (order 2).
 - **Example:**
@@ -572,7 +572,7 @@ public func principalCurvatures(atU u: Double, v: Double) -> PrincipalCurvatures
 
 Returns both principal curvature values (kMin, kMax) and their surface directions. Requires order-2 surface property evaluation.
 
-- **Parameters:** `u` — U parameter; `v` — V parameter.
+- **Parameters:** `u`, U parameter; `v`, V parameter.
 - **Returns:** `PrincipalCurvatures` struct, or `nil` if curvature is undefined at `(u, v)`.
 - **OCCT:** `GeomLProp_SLProps::MinCurvature`, `MaxCurvature`, `CurvatureDirections` (order 2).
 - **Example:**
@@ -596,7 +596,7 @@ public func project(point: SIMD3<Double>) -> SurfaceProjection?
 
 Restricts the projection to the face's UV parameter range (as returned by `BRepTools::UVBounds`).
 
-- **Parameters:** `point` — 3D query point.
+- **Parameters:** `point`, 3D query point.
 - **Returns:** `SurfaceProjection` with the closest 3D point, its UV parameters, and the distance; `nil` if no projection exists or the face is null.
 - **OCCT:** `GeomAPI_ProjectPointOnSurf::NearestPoint` / `LowerDistanceParameters` / `LowerDistance`.
 - **Example:**
@@ -619,7 +619,7 @@ public func allProjections(of point: SIMD3<Double>) -> [SurfaceProjection]
 
 Uses a fixed buffer of up to 32 results. For most surfaces there is only one projection; multiple results arise on periodic or multiply-connected surfaces.
 
-- **Parameters:** `point` — 3D query point.
+- **Parameters:** `point`, 3D query point.
 - **Returns:** Array of `SurfaceProjection` values (may be empty if no projections are found).
 - **OCCT:** `GeomAPI_ProjectPointOnSurf::NbPoints` / `Point(i)` / `Parameters(i)` / `Distance(i)`.
 - **Example:**
@@ -642,9 +642,9 @@ public func intersection(with other: Face, tolerance: Double = 1e-6) -> Shape?
 
 The result is a `Shape` containing intersection edges (or a compound thereof). Returns `nil` if the faces do not intersect or construction fails.
 
-- **Parameters:** `other` — the second face; `tolerance` — fuzzy intersection tolerance (default 1e-6).
+- **Parameters:** `other`, the second face; `tolerance`, fuzzy intersection tolerance (default 1e-6).
 - **Returns:** A `Shape` containing the intersection curves, or `nil` if there is no intersection.
-- **OCCT:** `BRepAlgoAPI_Section` — `Approximation(true)`, `ComputePCurveOn1(true)`, `ComputePCurveOn2(true)`, `SetFuzzyValue(tolerance)`.
+- **OCCT:** `BRepAlgoAPI_Section`, `Approximation(true)`, `ComputePCurveOn1(true)`, `ComputePCurveOn2(true)`, `SetFuzzyValue(tolerance)`.
 - **Example:**
   ```swift
   let box = Shape.box(width: 10, height: 10, depth: 10)!
@@ -657,7 +657,7 @@ The result is a `Shape` containing intersection edges (or a compound thereof). R
 
 ---
 
-## Shape Extension — Face Analysis
+## Shape Extension. Face Analysis
 
 These methods are declared as extensions on `Shape` and operate on the face sub-shapes of a solid.
 
@@ -673,8 +673,8 @@ public func faces() -> [Face]
 
 Each returned `Face` carries its position as ``Face.index``. This is the same enumeration
 `Shape.faceCount` counts and `Shape.face(at:)` indexes: one entry per **distinct** face, in
-`TopExp_Explorer` order. A face reachable from two parents — the wall shared by both halves of a
-split solid, say — appears once. Returns an empty array if the shape has no faces.
+`TopExp_Explorer` order. A face reachable from two parents, the wall shared by both halves of a
+split solid, say, appears once. Returns an empty array if the shape has no faces.
 
 The array position **is** the ordinal, so `faces()[k].index == k`. The array is returned complete or
 empty and never short: a face that could not be built would shift every later ordinal down one, and
@@ -683,7 +683,7 @@ each would then answer for its neighbour with no error and no diagnostic (#979).
 This is the **indexing** enumeration. Faces are distinguished the way OCCT distinguishes them for
 an index: by `TopoDS_Shape::IsSame`, which compares surface and placement and **ignores
 orientation**. A face occurring in the shape with both orientations therefore collapses to one
-entry carrying whichever was reached first — so its ``Face.normal(atU:v:)`` points out of one
+entry carrying whichever was reached first, so its ``Face.normal(atU:v:)`` points out of one
 owning solid and *into* the other. Use `Shape.orientedFaces()` when the normal's direction
 matters. (#614)
 
@@ -724,7 +724,7 @@ matters: rendering, CAM, per-face area or flux accumulation, anything asking "wh
 face shared by two solids appears **twice**, once per owner, each time with the orientation that
 makes `Face.normal(atU:v:)` point *out* of that owner.
 
-An entry's array position is an **occurrence number, not a face index** — two positions can name
+An entry's array position is an **occurrence number, not a face index**, two positions can name
 the same face. Each returned `Face` still carries the correct ``Face.index`` into `faces()`, so an
 occurrence remains addressable by every face-index-taking method on `Shape`; entries sharing an
 `index` are the several sides of one shared face. On a shape whose faces are not shared this
@@ -735,7 +735,7 @@ or empty and never short, so an occurrence number stays a whole occurrence numbe
   same `TopExp::MapShapes` map `faces()` is built from. This mirrors the kernel's own split:
   `TopExp::MapShapes` publishes no orientation-sensitive overload (`TopExp.hxx:57-60`) and BREP
   persistence indexes sub-shapes through the `IsSame` map (`TopTools_ShapeSet.hxx:192`), while
-  `BRepGProp::VolumeProperties` — where orientation sets the sign of the volume integral — reads
+  `BRepGProp::VolumeProperties`: where orientation sets the sign of the volume integral, reads
   it off `ex.Current()` and keeps one `IsSame` map *per orientation* so a shared wall's two sides
   both survive (`BRepGProp.cxx:318-338`).
 - **Example:**
@@ -772,11 +772,11 @@ public func horizontalFaces(tolerance: Double = 0.01) -> [Face]
 
 Pure-Swift filter over **`orientedFaces()`** using `Face.isHorizontal(tolerance:)`. "Horizontal" is
 a statement about the face *normal*, so this selects over occurrences: a wall shared by two bodies
-is horizontal from **both** sides and contributes one entry per side. Filtering `faces()` — which
-cannot carry a shared face's second orientation — returned 3 on the fixture below where the
+is horizontal from **both** sides and contributes one entry per side. Filtering `faces()`, which
+cannot carry a shared face's second orientation, returned 3 on the fixture below where the
 geometry has 4. (#614)
 
-- **Parameters:** `tolerance` — angle tolerance in radians (default ~0.57°).
+- **Parameters:** `tolerance`, angle tolerance in radians (default ~0.57°).
 - **Returns:** Faces with normals within `tolerance` of the ±Z axis, one per occurrence.
 - **Note:** Because a shared face contributes one entry per side, the result can contain two `Face`
   values with the same `Face.index`. On a shape whose faces are not shared it is identical to
@@ -806,18 +806,18 @@ public func upwardFaces(tolerance: Double = 0.01) -> [Face]
 
 Pure-Swift filter over **`orientedFaces()`** using `Face.isUpwardFacing(tolerance:)`. Useful for
 identifying pocket floors and platform surfaces in CAM. Selects over occurrences for the same
-reason `horizontalFaces()` does — "upward-facing" is a statement about the normal. (#614)
+reason `horizontalFaces()` does, "upward-facing" is a statement about the normal. (#614)
 
-- **Parameters:** `tolerance` — angle tolerance in radians (default ~0.57°).
+- **Parameters:** `tolerance`, angle tolerance in radians (default ~0.57°).
 - **Returns:** Upward-facing horizontal faces, one per occurrence.
 - **Note:** Like `horizontalFaces()`, this selects over *occurrences* and so **can** repeat a
   `Face.index`. Dedupe on `index` (or use `faces()`) if you need one entry per distinct face. It is
-  only for the shared-wall case — two solids whose parents impose *opposite* orientations — that at
+  only for the shared-wall case, two solids whose parents impose *opposite* orientations, that at
   most one side can face up, and that follows from the normals being opposed rather than from any
   guarantee here. When a face is reached twice through parents imposing the *same* orientation both
   entries qualify: `Shape.compound([box, box]).upwardFaces()` returns indices `[5, 5]`.
 - **Note:** `isUpwardFacing` tests `n.z > cos(tolerance)`, so a `tolerance` of π/2 or more makes the
-  threshold non-positive and admits faces that do not point up at all — including both sides of a
+  threshold non-positive and admits faces that do not point up at all, including both sides of a
   *vertical* shared wall, whose normals have `n.z == 0`. On a two-solid split,
   `upwardFaces(tolerance: 1.6)` returns 10 entries over 9 distinct indices.
 - **Example:**
@@ -840,10 +840,10 @@ public func facesByZLevel(tolerance: Double = 0.01) -> [Double: [Face]]
 
 Calls `horizontalFaces()`, then groups faces whose `zLevel` values are within `tolerance` of each other. Designed for CAM pocket detection and layer-by-layer machining analysis.
 
-- **Parameters:** `tolerance` — Z grouping tolerance; faces within this Z distance are placed in the same group.
+- **Parameters:** `tolerance`, Z grouping tolerance; faces within this Z distance are placed in the same group.
 - **Returns:** Dictionary mapping representative Z values to arrays of horizontal faces at that level.
 - **Note:** Only planar horizontal faces (those with a non-nil `zLevel`) are included; non-planar horizontal faces are silently dropped.
-- **Note:** Inherits `horizontalFaces()`'s occurrence semantics — a wall shared by two bodies lands
+- **Note:** Inherits `horizontalFaces()`'s occurrence semantics, a wall shared by two bodies lands
   in its Z group **twice**, once per side, where filtering `faces()` reported it once and only from
   whichever side happened to be stored. (#614)
 - **Example:**
@@ -876,8 +876,8 @@ public struct GPropEvaluation: Sendable {
 }
 ```
 
-- `point` — 3D point on the surface at `(u, v)`.
-- `normal` — unnormalized surface normal (`dS/du × dS/dv`). The magnitude equals the local area element (Jacobian determinant), making it suitable for numerical surface integration.
+- `point`: 3D point on the surface at `(u, v)`.
+- `normal`: unnormalized surface normal (`dS/du × dS/dv`). The magnitude equals the local area element (Jacobian determinant), making it suitable for numerical surface integration.
 
 ---
 
@@ -913,7 +913,7 @@ public func evaluateGProp(u: Double, v: Double) -> GPropEvaluation?
 
 The returned `normal` is the cross product `dS/du × dS/dv` whose magnitude equals the local surface area element. Use this for surface integration (e.g. computing area, flux integrals) rather than for visual normal shading (use `normal(atU:v:)` for unit normals).
 
-- **Parameters:** `u` — U parameter; `v` — V parameter.
+- **Parameters:** `u`, U parameter; `v`, V parameter.
 - **Returns:** `GPropEvaluation` with point and unnormalized normal, or `nil` on error.
 - **OCCT:** `BRepGProp_Face::Normal(u, v, point, normal)`.
 - **Example:**
@@ -925,4 +925,4 @@ The returned `normal` is the cross product `dS/du × dS/dv` whose magnitude equa
       print(eval.point, eval.normal, areaElement)
   }
   ```
-- **Note:** The `normal` field is NOT a unit vector — its magnitude carries the area element. Call `.normalized` on it only if you need the direction without the scaling factor.
+- **Note:** The `normal` field is NOT a unit vector, its magnitude carries the area element. Call `.normalized` on it only if you need the direction without the scaling factor.

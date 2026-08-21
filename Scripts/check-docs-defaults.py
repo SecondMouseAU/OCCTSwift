@@ -27,10 +27,10 @@ default of each parameter the two have in common.
 All three are reported and all three fail the run, because a gate that reports a defect while
 exiting 0 is not a gate:
 
-  - `changed`      — both sides state a default and the literals differ (the #626 shape);
-  - `docs-only`    — docs state a default the source does not have, so a caller believes an
+  - `changed`: both sides state a default and the literals differ (the #626 shape);
+  - `docs-only`: docs state a default the source does not have, so a caller believes an
     argument is optional when it is required;
-  - `source-only`  — the source states a default the docs omit, so a caller believes an argument
+  - `source-only`: the source states a default the docs omit, so a caller believes an argument
     is required when it is optional. This is also how a *source-side* addition hides: the source
     gains `= 8` and the unchanged page keeps reading `maxDegree: Int`.
 
@@ -46,26 +46,26 @@ literal excepted.
 
 ## Picking the right declaration to compare against
 
-Several declarations can share one name and parameter-label list — `writeOBJ(to:deflection:)` is
+Several declarations can share one name and parameter-label list, `writeOBJ(to:deflection:)` is
 both `Document.writeOBJ` (deflection 1.0) and `Shape.writeOBJ` (0.1), and `approximated` exists on
 `Curve3D`, `Curve2D` and `Surface`. Comparing against the wrong one is how the first version of
-this script let a page state `Shape.writeOBJ`'s default for `Document.writeOBJ` and still exit 0 —
+this script let a page state `Shape.writeOBJ`'s default for `Document.writeOBJ` and still exit 0,
 the #626 defect shape passing through the gate built to catch it.
 
 So the owning type is resolved most specific first:
 
-  1. the nearest heading's qualifier — ``### `Surface.approxWithDetails(...)` ``;
-  2. then outward through the enclosing section headings — `CurveAdaptors.md` holds
+  1. the nearest heading's qualifier, ``### `Surface.approxWithDetails(...)` ``;
+  2. then outward through the enclosing section headings, `CurveAdaptors.md` holds
      `## WireCurve` and `## EdgeCurve`, each with an identically titled `### points(count:)`,
      which the nearest heading alone cannot tell apart;
-  3. then the page filename — `Document-Persistence-IO.md` -> `Document`;
+  3. then the page filename, `Document-Persistence-IO.md` -> `Document`;
   4. failing all of that, every candidate.
 
 Each hint narrows only when it selects a non-empty set, because a page documents types other than
 its title: `Shape-HLR-Geom.md` carries `Surface.approxWithDetails`.
 
 Narrowing to a type is not the end of it. A type can hold two overloads, and deprecating a method
-by keeping its old signature verbatim — defaults included — is the ordinary way to deprecate, so a
+by keeping its old signature verbatim, defaults included, is the ordinary way to deprecate, so a
 stale page goes on matching the retained twin. Wherever a pool still holds candidates that
 *disagree* about a default, the restatement is reported as `unverified` and fails, instead of being
 decided by whichever candidate happened to match cleanly. A twin that merely *lacks* a default is
@@ -86,7 +86,7 @@ Usage (from the repo root):
     python3 Scripts/check-docs-defaults.py --quiet          # exit status only
 
 Exit status is 1 when a default disagrees, when a restatement cannot be adjudicated, or when the
-`unmatched` bucket grows — so this can gate a commit. CI runs it, and its `--self-test`, in
+`unmatched` bucket grows, so this can gate a commit. CI runs it, and its `--self-test`, in
 `ci.yml`'s `gate-scripts` job (#625).
 """
 import argparse
@@ -99,7 +99,7 @@ SRC_GLOB = 'Sources/OCCTSwift/*.swift'
 DOCS_GLOB = 'docs/reference/*.md'
 
 # Restatements whose name and label list match no declaration in `Sources/OCCTSwift`. These are
-# genuinely uncomparable — helper functions defined inside example snippets, and signatures whose
+# genuinely uncomparable, helper functions defined inside example snippets, and signatures whose
 # labels the page spells differently from the declaration. The count is pinned because a
 # restatement stops being compared the moment its labels stop matching: renaming or reordering a
 # parameter on one side moves it here, and an unpinned bucket would absorb that silently. Raise it
@@ -188,7 +188,7 @@ def parse_params(param_text):
         if not names:
             continue
         label = names[0]
-        # `_ q1: Type` — the internal name is what tells three `_` positions apart in a report.
+        # `_ q1: Type`, the internal name is what tells three `_` positions apart in a report.
         internal = names[1] if len(names) > 1 else names[0]
         default = None
         m = re.search(r'(?<![=!<>])=(?![=])', tail)
@@ -868,7 +868,7 @@ def main():
     if not args.quiet:
         print_report(rep, args.lenient)
         if unmatched_grew or args.list_unmatched:
-            print(f'\nUNMATCHED — no declaration in Sources/OCCTSwift with this name and label '
+            print(f'\nUNMATCHED, no declaration in Sources/OCCTSwift with this name and label '
                   f'list (baseline {EXPECTED_UNMATCHED}, now {len(rep.unmatched)}):')
             for d, path in rep.unmatched:
                 print(f'  {path}:{d["line"]}  {d["name"]}({",".join(d["labels"])})')

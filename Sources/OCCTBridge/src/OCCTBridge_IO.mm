@@ -2,14 +2,14 @@
 //  OCCTBridge_IO.mm
 //  OCCTSwift
 //
-//  Extracted from OCCTBridge.mm — issue #99.
+//  Extracted from OCCTBridge.mm, issue #99.
 //
 //  File I/O surface: STEP / IGES / STL / BREP / OBJ writers and the matching
 //  importers. Plus the import-progress + cancellation channel from v0.168.0
 //  / v0.169.0 (issue #98), since those entry points share readers/writers
 //  with the synchronous variants.
 //
-//  Public C surface unchanged. No symbol changes — pure file move.
+//  Public C surface unchanged. No symbol changes: a pure file move.
 //
 
 #import "../include/OCCTBridge.h"
@@ -989,23 +989,28 @@ OCCTShapeRef OCCTImportSTEP(const char* path)
 
 // MARK: - Robust STEP Import
 
+// #1026: a null TopoDS_Shape has no type, so -1 is the answer rather than a fallback standing in
+// for one. Swift maps it to ShapeType.unknown, which is what a null POINTER has always answered
+// here; this extends the same answer to a wrapper carrying a null shape, which Shape.nullified
+// hands out and which used to reach TopoDS_Shape::ShapeType()'s unguarded myTShape dereference.
 int OCCTShapeGetType(OCCTShapeRef shape)
 {
-  if (!shape)
+  if (!occtShapeIsPresent(shape))
     return -1;
   return static_cast<int>(shape->shape.ShapeType());
 }
 
+// #1026: folded the pointer test into occtShapeIsType, which additionally rejects a null shape.
+// A null shape is not a valid closed solid, so false is this predicate's own answer for it, the
+// same one it already gave every non-solid input.
 bool OCCTShapeIsValidSolid(OCCTShapeRef shape)
 {
-  if (!shape)
+  if (!occtShapeIsType(shape, TopAbs_SOLID))
     return false;
   occtEnsureSignals();
   try
   {
     OCC_CATCH_SIGNALS
-    if (shape->shape.ShapeType() != TopAbs_SOLID)
-      return false;
     BRepCheck_Analyzer analyzer(shape->shape);
     return analyzer.IsValid();
   }
@@ -1363,7 +1368,7 @@ bool OCCTExportOBJ(OCCTShapeRef shape, const char* path, double deflection)
 
 #include <RWPly_CafWriter.hxx>
 
-// MARK: - STEP Full Coverage — STEPControl_Writer (v0.58.0)
+// MARK: - STEP Full Coverage: STEPControl_Writer (v0.58.0)
 
 bool OCCTExportSTEPWithMode(OCCTShapeRef shape, const char* path, int32_t modelType)
 {
@@ -1439,7 +1444,7 @@ bool OCCTExportSTEPCleanDuplicates(OCCTShapeRef shape, const char* path, int32_t
   }
 }
 
-// MARK: - STEP Full Coverage — STEPControl_Reader (v0.58.0)
+// MARK: - STEP Full Coverage: STEPControl_Reader (v0.58.0)
 
 int32_t OCCTSTEPReaderNbRoots(const char* path)
 {
@@ -1535,7 +1540,7 @@ int32_t OCCTSTEPReaderNbShapes(const char* path)
   }
 }
 
-// MARK: - STEP Full Coverage — STEPCAFControl Modes (v0.58.0)
+// MARK: - STEP Full Coverage: STEPCAFControl Modes (v0.58.0)
 
 OCCTDocumentRef OCCTDocumentLoadSTEPWithModes(const char* path,
                                               bool        colorMode,
@@ -1628,7 +1633,7 @@ bool OCCTDocumentWriteSTEPWithModes(OCCTDocumentRef doc,
   }
 }
 
-// MARK: - IGES Full Coverage — Reader (v0.59.0)
+// MARK: - IGES Full Coverage: Reader (v0.59.0)
 
 int32_t OCCTIGESReaderNbRoots(const char* path)
 {
@@ -1720,7 +1725,7 @@ OCCTShapeRef OCCTImportIGESVisible(const char* path)
   }
 }
 
-// MARK: - IGES Full Coverage — Writer (v0.59.0)
+// MARK: - IGES Full Coverage: Writer (v0.59.0)
 
 bool OCCTExportIGESWithUnit(OCCTShapeRef shape, const char* path, const char* unit)
 {
@@ -2608,7 +2613,7 @@ void OCCTMessengerRemoveAllPrinters(OCCTMessengerRef messenger)
   try
   {
     auto* m = static_cast<Message_Messenger*>(messenger);
-    // Remove by type — remove all Standard_Transient printers
+    // Remove by type: remove all Standard_Transient printers
     Handle(Standard_Type) printerType = STANDARD_TYPE(Message_Printer);
     m->RemovePrinters(printerType);
   }
@@ -4597,7 +4602,8 @@ bool OCCTExportIGES(OCCTShapeRef shape, const char* path)
   std::lock_guard<std::mutex> igesLock(igesMutex());
   try
   {
-    // Validate shape before IGES export — OCCT translator can segfault on invalid geometry
+    // Validate shape before IGES export, since the OCCT translator can segfault on
+    // invalid geometry
     BRepCheck_Analyzer analyzer(shape->shape);
     if (!analyzer.IsValid())
       return false;

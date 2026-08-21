@@ -64,7 +64,7 @@ struct MeshFromArraysTests {
         #expect(n.count == 4)
         for normal in n {
             let len = sqrt(normal.x * normal.x + normal.y * normal.y + normal.z * normal.z)
-            // Either unit length (vertex touched a triangle) or zero (orphan — shouldn't
+            // Either unit length (vertex touched a triangle) or zero (orphan, shouldn't
             // happen for a closed tetrahedron, but tolerate the fallback).
             #expect(abs(len - 1.0) < 1e-5 || len < 1e-9)
         }
@@ -211,7 +211,7 @@ struct MeshTests {
         #expect(mesh.toShape(weldTolerance: 0) == nil)
         #expect(mesh.toShape(weldTolerance: -1) == nil)
 
-        // Two coplanar triangles whose facing edges (y=0 and y=gap) are 0.5 apart — as
+        // Two coplanar triangles whose facing edges (y=0 and y=gap) are 0.5 apart, as
         // happens when shared vertices in an imported mesh are stored as independent,
         // slightly-differing floats. At the default 1e-6 they stay two free edges; at a
         // scale-appropriate tolerance they weld into one, dropping the edge count.
@@ -518,7 +518,7 @@ struct MeshPropsTests {
         let faces = box.faces()
         if let face = faces.first {
             let result = face.meshProps(type: .volume)
-            // Volume contribution from single face may be zero or small — just don't crash
+            // Volume contribution from single face may be zero or small, just don't crash
             let _ = result.mass
         }
     }
@@ -554,7 +554,7 @@ struct MeshShapeToolTests {
             let edges = box.edges()
             if let edge = edges.first {
                 let uv = face.uvPoints(edge: edge)
-                // Some edges may not be on this face — just verify no crash
+                // Some edges may not be on this face, just verify no crash
                 let _ = uv
             }
         }
@@ -962,7 +962,7 @@ struct MeshViewCountsTests {
     }
 }
 
-// MARK: - Poly copy / mutators — OCCT 8.0.0p1
+// MARK: - Poly copy / mutators. OCCT 8.0.0p1
 
 @Suite("Poly Copy & Mutators")
 struct PolyCopyMutatorTests {

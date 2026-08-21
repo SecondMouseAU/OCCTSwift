@@ -1,9 +1,9 @@
 ---
-title: Shape — Advanced Sweeps & API Completions
+title: Shape. Advanced Sweeps & API Completions
 parent: API Reference
 ---
 
-# Shape — Advanced Sweeps & API Completions
+# Shape. Advanced Sweeps & API Completions
 
 This page documents the advanced sweep, fill, proximity, and B-Rep query members of `Shape`
 from the v0.79.0–v0.128.0 range. For the primary `Shape` type overview, constructors, and
@@ -44,7 +44,7 @@ Creates a coherent triangulation from the triangulation of the first face of a m
 public static func createFromMesh(_ shape: Shape, deflection: Double = 0.1) -> CoherentTriangulation?
 ```
 
-- **Parameters:** `shape` — a `Shape` that has already been meshed. `deflection` — linear deflection used for auto-triangulation if the shape is not yet meshed; default `0.1`.
+- **Parameters:** `shape`, a `Shape` that has already been meshed. `deflection`, linear deflection used for auto-triangulation if the shape is not yet meshed; default `0.1`.
 - **Returns:** A `CoherentTriangulation` populated from the face's triangulation, or `nil` if the shape has no triangulation.
 - **OCCT:** `Poly_CoherentTriangulation`, `BRep_Tool::Triangulation`.
 - **Example:**
@@ -223,11 +223,11 @@ public static func evolved(spineFace: Shape, profileWire: Shape,
 ```
 
 - **Parameters:**
-  - `spineFace` — planar face whose boundary edges define the sweep path.
-  - `profileWire` — 2D wire cross-section to sweep.
-  - `axisOrigin`, `axisNormal`, `axisXDir` — coordinate system of the profile plane; defaults to the XY plane at the origin.
-  - `joinType` — join strategy between adjacent sweep segments: `0`=Arc (round), `1`=Tangent, `2`=Intersection.
-  - `makeSolid` — `true` to cap the result into a solid.
+  - `spineFace`: planar face whose boundary edges define the sweep path.
+  - `profileWire`: 2D wire cross-section to sweep.
+  - `axisOrigin`, `axisNormal`, `axisXDir`, coordinate system of the profile plane; defaults to the XY plane at the origin.
+  - `joinType`: join strategy between adjacent sweep segments: `0`=Arc (round), `1`=Tangent, `2`=Intersection.
+  - `makeSolid`: `true` to cap the result into a solid.
 - **Returns:** The evolved `Shape`, or `nil` if the operation fails.
 - **OCCT:** `BRepFill_Evolved`.
 - **Example:**
@@ -258,9 +258,9 @@ public static func create(face: Shape, offset: Double, joinType: Int = 0) -> Off
 ```
 
 - **Parameters:**
-  - `face` — the source face.
-  - `offset` — signed offset distance.
-  - `joinType` — `0`=Arc, `1`=Tangent, `2`=Intersection.
+  - `face`: the source face.
+  - `offset`: signed offset distance.
+  - `joinType`: `0`=Arc, `1`=Tangent, `2`=Intersection.
 - **Returns:** An `OffsetAncestors` instance, or `nil` if the operation fails.
 - **OCCT:** `BRepFill_OffsetAncestors`.
 
@@ -322,8 +322,8 @@ public func distanceSS(to other: Shape, deflection: Double = 100.0) -> DistanceS
 ```
 
 - **Parameters:**
-  - `other` — the second shape.
-  - `deflection` — sampling deflection; smaller values give finer sampling at a performance cost; default `100.0`.
+  - `other`: the second shape.
+  - `deflection`: sampling deflection; smaller values give finer sampling at a performance cost; default `100.0`.
 - **Returns:** A `DistanceSSResult` containing `.distance`, `.point1`, `.point2`, `.solutionCount`, and `.isDone`.
 - **OCCT:** `BRepExtrema_DistanceSS`.
 - **Example:**
@@ -364,9 +364,9 @@ public func vinertGK(location: SIMD3<Double> = SIMD3(0, 0, 0),
 ```
 
 - **Parameters:**
-  - `location` — the reference point for inertia computation; defaults to the origin.
-  - `tolerance` — relative integration error bound; default `0.001`.
-  - `computeCG` — whether to compute the centre of gravity; default `true`.
+  - `location`: the reference point for inertia computation; defaults to the origin.
+  - `tolerance`: relative integration error bound; default `0.001`.
+  - `computeCG`: whether to compute the centre of gravity; default `true`.
 - **Returns:** A `VinertGKResult` with `.mass`, `.errorReached`, and an optional `.center`.
 - **OCCT:** `BRepGProp_VinertGK`.
 - **Note:** This method operates on a face shape. The `.mass` field is the signed volume
@@ -521,7 +521,7 @@ Returns the poles for a specific curve (1-based index) after `perform()`.
 public func poles(curveIndex: Int) -> [SIMD3<Double>]
 ```
 
-- **Parameters:** `curveIndex` — 1-based index of the curve.
+- **Parameters:** `curveIndex`, 1-based index of the curve.
 - **Returns:** An array of 3D pole positions, or empty if not computed or index is out of range.
 - **OCCT:** `GeomFill_Profiler::Poles`.
 
@@ -561,7 +561,7 @@ public static func stretchFill(p1: [SIMD3<Double>], p2: [SIMD3<Double>],
                                 p3: [SIMD3<Double>], p4: [SIMD3<Double>]) -> StretchFillResult?
 ```
 
-- **Parameters:** `p1`–`p4` — four boundary polylines, all of equal length ≥ 2. The order is: bottom, right, top, left (or equivalent opposing boundary pairs).
+- **Parameters:** `p1`–`p4`, four boundary polylines, all of equal length ≥ 2. The order is: bottom, right, top, left (or equivalent opposing boundary pairs).
 - **Returns:** A `StretchFillResult` containing pole grid dimensions and the flat pole array, or `nil` if the arrays have mismatched lengths, are too short, or the algorithm fails.
 - **OCCT:** `GeomFill_Stretch`.
 - **Example:**
@@ -606,7 +606,7 @@ Creates a draft location law with a draft direction and angle.
 public static func create(direction: SIMD3<Double>, angle: Double) -> LocationDraft
 ```
 
-- **Parameters:** `direction` — the draft direction vector. `angle` — draft angle in radians.
+- **Parameters:** `direction`, the draft direction vector. `angle`, draft angle in radians.
 - **OCCT:** `GeomFill_LocationDraft`.
 
 ---
@@ -682,7 +682,7 @@ Creates a guide trihedron law using an arc-length correction guide.
 public static func create(guideCurve: Curve3D) -> GuideTrihedronAC
 ```
 
-- **Parameters:** `guideCurve` — the guide curve that influences the trihedron orientation.
+- **Parameters:** `guideCurve`, the guide curve that influences the trihedron orientation.
 - **OCCT:** `GeomFill_GuideTrihedronAC`.
 
 ---
@@ -785,10 +785,10 @@ public func sectionPlacement(section: Curve3D,
 Called on the path curve (`self`).
 
 - **Parameters:**
-  - `section` — the profile curve to place.
-  - `direction` — draft direction; defaults to +Z.
-  - `draftAngle` — taper angle in radians; default `0`.
-  - `tolerance` — positional tolerance; default `1e-3`.
+  - `section`: the profile curve to place.
+  - `direction`: draft direction; defaults to +Z.
+  - `draftAngle`: taper angle in radians; default `0`.
+  - `tolerance`: positional tolerance; default `1e-3`.
 - **Returns:** A `SectionPlacementResult` (always returned; check `.isDone`).
 - **OCCT:** `GeomFill_SectionPlacement`.
 - **Example:**
@@ -839,7 +839,7 @@ Creates an N-section law from an array of wire shapes.
 public static func create(wires: [Shape]) -> NSections?
 ```
 
-- **Parameters:** `wires` — two or more wire shapes representing the cross-section sequence.
+- **Parameters:** `wires`, two or more wire shapes representing the cross-section sequence.
 - **Returns:** An `NSections` instance, or `nil` on failure.
 - **OCCT:** `BRepFill_NSections`.
 
@@ -902,8 +902,8 @@ public static func appSurf(curves: [Curve3D], degMin: Int = 3, degMax: Int = 8,
   - `curves`: ordered section curves to interpolate/approximate. **Requires at least 2** (#644);
     fewer returns `nil` instead of crashing the underlying `GeomFill_AppSurf` solver, which is
     never driven with fewer than 2 sections anywhere in the kernel.
-  - `degMin`, `degMax` — minimum and maximum allowed BSpline degree.
-  - `tol3d`, `tol2d` — 3D and 2D fitting tolerances.
+  - `degMin`, `degMax`, minimum and maximum allowed BSpline degree.
+  - `tol3d`, `tol2d`, 3D and 2D fitting tolerances.
 - **Returns:** An `AppSurfResult` on success, or `nil` if the algorithm fails or fewer than 2 curves are given.
 - **OCCT:** `GeomFill_AppSurf`.
 - **Example:**
@@ -959,7 +959,7 @@ public func composeShell(precision: Double = 1e-6) -> Shape?
 ### `transformed(matrix:)`
 
 Applies a rigid transformation (rotation + translation) described by a `Matrix12Grouped` matrix
-(GROUPED layout — see `Matrix12Grouped` in [Document-Analysis-Builders.md](Document-Analysis-Builders.md#gce-transform-factories)).
+(GROUPED layout, see `Matrix12Grouped` in [Document-Analysis-Builders.md](Document-Analysis-Builders.md#gce-transform-factories)).
 
 ```swift
 public func transformed(matrix: Matrix12Grouped) -> Shape?
@@ -974,7 +974,7 @@ public func transformed(matrix: Matrix12Grouped) -> Shape?
      let moved = box.transformed(matrix: m) { print(moved.isValid) }
   ```
 - **Deprecated overload:** `transformed(matrix: [Double]) -> Shape?` still exists
-  (`@available(*, deprecated)`) for source compatibility — `nil` if `matrix.count != 12`. #835
+  (`@available(*, deprecated)`) for source compatibility, `nil` if `matrix.count != 12`. #835
   (PR #864 review): before this, `transformed(matrix:)`, `transformed(byMatrix:)`, and
   `gTransformed(matrix:)` all took a plain `[Double]` distinguished only by which method you
   called, so a caller could silently garble a transform by feeding one method's array shape to
@@ -985,7 +985,7 @@ public func transformed(matrix: Matrix12Grouped) -> Shape?
 ### `gTransformed(matrix:)`
 
 Applies a general affine transformation (supports non-uniform scaling/shear) described by a
-`TransformMatrix3D` matrix (INTERLEAVED layout — see `TransformMatrix3D` in
+`TransformMatrix3D` matrix (INTERLEAVED layout, see `TransformMatrix3D` in
 [Document-Analysis-Builders.md](Document-Analysis-Builders.md#gce-transform-factories)).
 
 ```swift
@@ -994,11 +994,11 @@ public func gTransformed(matrix: TransformMatrix3D) -> Shape?
 
 - **Returns:** The transformed `Shape`, or `nil` if the operation fails.
 - **OCCT:** `BRepBuilderAPI_GTransform`, `gp_GTrsf`.
-- **Note:** The layout convention differs from `transformed(matrix:)`'s `Matrix12Grouped` — this
+- **Note:** The layout convention differs from `transformed(matrix:)`'s `Matrix12Grouped`, this
   method takes the same INTERLEAVED layout as `transformed(byMatrix:)` instead: each row is
   `[r_i0, r_i1, r_i2, t_i]`.
 - **Deprecated overload:** `gTransformed(matrix: [Double]) -> Shape?` still exists
-  (`@available(*, deprecated)`) for source compatibility — `nil` if `matrix.count != 12`. See #835 above.
+  (`@available(*, deprecated)`) for source compatibility, `nil` if `matrix.count != 12`. See #835 above.
 
 ---
 
@@ -1010,7 +1010,7 @@ Computes a boolean section with a fuzzy tolerance.
 public func section(with other: Shape, tolerance: Double) -> Shape?
 ```
 
-- **Parameters:** `other` — the tool shape. `tolerance` — fuzzy coincidence tolerance.
+- **Parameters:** `other`, the tool shape. `tolerance`, fuzzy coincidence tolerance.
 - **Returns:** A `Shape` containing the intersection edges/wires, or `nil` on failure.
 - **OCCT:** `BRepAlgoAPI_Section` with fuzzy value.
 
@@ -1024,7 +1024,7 @@ Splits this shape by multiple tool shapes simultaneously.
 public func split(tools: [Shape], tolerance: Double = 0) -> Shape?
 ```
 
-- **Parameters:** `tools` — array of splitting shapes. `tolerance` — fuzzy tolerance; default `0`.
+- **Parameters:** `tools`, array of splitting shapes. `tolerance`, fuzzy tolerance; default `0`.
 - **Returns:** The split compound `Shape`, or `nil` on failure.
 - **OCCT:** `BRepAlgoAPI_Splitter`.
 
@@ -1200,7 +1200,9 @@ public func edgeParameterAtArcLength(_ arcLength: Double, from startParam: Doubl
 ```
 
 - **OCCT:** the accumulated `GeomAbs_CN` sub-piece lengths, with the final narrow piece handed to
-  `GCPnts_AbscissaPoint`.
+  `GCPnts_AbscissaPoint`. The edge is read through a `BRepAdaptor_Curve`, whose constructor
+  dereferences a null shape, so a null shape (from `Shape.nullified`) used to crash the process
+  here; it answers `0` now (#1035).
 - **Note:** Shares the subdivided measurement with `edgeArcLength`, so the two agree on the same
   edge. OCCT's own root finder inverts one Gauss quadrature over `[startParam, u]`, which on an
   elliptical edge disagreed with an accurate length by up to 1% in arc (#603).
@@ -1215,12 +1217,16 @@ The total arc length of this edge.
 public var edgeArcLength: Double { get }
 ```
 
+A null shape (from `Shape.nullified`) used to crash the process in the `BRepAdaptor_Curve`
+constructor behind this measurement; it answers the `-1.0` failure sentinel now (#1035,
+measured in `Scripts/repro/1035-unwrap-guard/`).
+
 - **Returns:** Arc length in model units, or `-1.0` on failure. Arc length is otherwise always
   non-negative, so this is an unambiguous sentinel; it used to be `0`, which a genuinely
   zero-length edge also measures (#548).
 - **OCCT:** `BRepAdaptor_Curve` + `GCPnts_AbscissaPoint::Length` per `GeomAbs_CN` interval,
   subdivided until two successive levels agree to 1e-9 relative (#603).
-- **Note:** An elliptical edge measured 1.485% long before #603 — one Gauss quadrature over the
+- **Note:** An elliptical edge measured 1.485% long before #603, one Gauss quadrature over the
   edge's whole domain. A straight or circular edge is unaffected (closed form).
 
 ---
@@ -1233,19 +1239,21 @@ Computes the arc length of this edge between two parameter values.
 public func edgeArcLength(from u1: Double, to u2: Double) -> Double
 ```
 
-- **Parameters:** `u1`/`u2` — parameter range, either order. Both must be finite.
+- **Parameters:** `u1`/`u2`, parameter range, either order. Both must be finite.
 - **Returns:** Arc length in model units, or `-1.0` if a bound is not finite or the computation
   fails.
-- **OCCT:** `GCPnts_AbscissaPoint::Length` per `GeomAbs_CN` interval, subdivided to convergence —
+- **OCCT:** `GCPnts_AbscissaPoint::Length` per `GeomAbs_CN` interval, subdivided to convergence,
   the same measurement as `edgeArcLength` (#603).
 - **Note:** `.nan` and `±.infinity` are rejected before OCCT sees them. This entry point used to
   hand a NaN bound's result straight back: on a straight edge that was NaN itself, and on a
-  multi-span edge `0` (a NaN upper bound) or the edge's whole length (a NaN lower one) — see
+  multi-span edge `0` (a NaN upper bound) or the edge's whole length (a NaN lower one), see
   [`Curve3D.length(from:to:)`](Curve3D.md#lengthfromto) for the mechanism (#548).
 - **Note:** A range reaching outside the edge's parameter domain measures the part of it that lies
   on the edge (a range wholly outside measures `0`); a closed periodic edge covers a whole period
   and so measures the whole range, winding. Shared with the `Curve3D`/`Curve2D` spellings, so an
   edge and the curve it was built from answer identically (#600).
+- **Note:** A null shape (from `Shape.nullified`) used to crash the process in the
+  `BRepAdaptor_Curve` constructor behind the measurement; it answers `-1.0` now (#1035).
 - **Example:**
   ```swift
   let edge = Shape.edgeFromPoints(SIMD3(0, 0, 0), SIMD3(10, 0, 0))!
@@ -1265,6 +1273,8 @@ public func edgeParameterAtFraction(_ fraction: Double) -> Double
 ```
 
 - **OCCT:** `edgeArcLength`'s subdivided total, then the same walk `edgeParameterAtArcLength` makes.
+  A null shape (from `Shape.nullified`) used to crash the process in the `BRepAdaptor_Curve`
+  constructor behind both halves; it answers `0` now (#1035).
 - **Note:** Both halves were biased by the same single quadrature before #603, and the two errors
   cancelled; both are accurate now, so `edgeParameterAtFraction(1.0)` still lands on the edge's last
   parameter and `0.5` genuinely halves the arc (it split an elliptical edge 0.74% off centre).
@@ -1279,7 +1289,9 @@ The parameter domain `[first, last]` of the edge curve via `BRepAdaptor_Curve`.
 public var edgeAdaptorDomain: ClosedRange<Double> { get }
 ```
 
-- **OCCT:** `BRepAdaptor_Curve::FirstParameter`, `LastParameter`.
+- **OCCT:** `BRepAdaptor_Curve::FirstParameter`, `LastParameter`. A null shape (from
+  `Shape.nullified`) used to crash the process in that constructor; it answers `0...0` now
+  (#1035).
 
 ---
 
@@ -1291,7 +1303,8 @@ Evaluates the edge curve at a parameter, returning the 3D point.
 public func edgeAdaptorValue(at param: Double) -> SIMD3<Double>
 ```
 
-- **OCCT:** `BRepAdaptor_Curve::Value`.
+- **OCCT:** `BRepAdaptor_Curve::Value`. A null shape (from `Shape.nullified`) used to crash the
+  process in the `BRepAdaptor_Curve` constructor; it answers `SIMD3(0, 0, 0)` now (#1035).
 
 ---
 
@@ -1303,7 +1316,9 @@ The curve type of the edge as a `GeomAbs_CurveType` integer (`0`=Line, `1`=Circl
 public var edgeAdaptorCurveType: Int32 { get }
 ```
 
-- **OCCT:** `BRepAdaptor_Curve::GetType`.
+- **OCCT:** `BRepAdaptor_Curve::GetType`. A null shape (from `Shape.nullified`) used to crash
+  the process in the `BRepAdaptor_Curve` constructor; it answers `-1` now, the value this
+  already returned when the type could not be read (#1035).
 
 ---
 
@@ -1491,9 +1506,9 @@ public init(isSolid: Bool = true, isRuled: Bool = false, precision: Double = 1e-
 ```
 
 - **Parameters:**
-  - `isSolid` — `true` (default) caps the ends to produce a solid; `false` gives a shell.
-  - `isRuled` — `true` uses ruled (linear) surfaces between sections; `false` (default) uses BSpline.
-  - `precision` — 3D tolerance; default `1e-6`.
+  - `isSolid`: `true` (default) caps the ends to produce a solid; `false` gives a shell.
+  - `isRuled`: `true` uses ruled (linear) surfaces between sections; `false` (default) uses BSpline.
+  - `precision`: 3D tolerance; default `1e-6`.
 - **OCCT:** `BRepOffsetAPI_ThruSections`.
 - **Note:** Mixing closed and open profiles causes a SIGSEGV inside OCCT (`BRepFill_CompatibleWires`). A source patch shipped with this xcframework guards the iterator; still, ensure all profiles have the same open/closed status.
 
@@ -1555,7 +1570,7 @@ Sets the desired continuity of the lofted surface.
 public func setContinuity(_ continuity: Int)
 ```
 
-- **Parameters:** `continuity` — `0`=C0, `1`=C1, `2`=C2.
+- **Parameters:** `continuity`, `0`=C0, `1`=C1, `2`=C2.
 - **OCCT:** `BRepOffsetAPI_ThruSections::SetContinuity`.
 
 ---
@@ -1585,7 +1600,7 @@ public var shape: Shape? { get }
 - **Returns:** The lofted `Shape`, or `nil` unless a `build()` call has succeeded *since* the most
   recent change to this builder's sections (`addWire(_:)`/`addVertex(_:)`) or settings
   (`setSmoothing(_:)`, `setMaxDegree(_:)`, `setContinuity(_:)`, `checkCompatibility(_:)`,
-  `setParType(_:)`, `setCriteriumWeight(w1:w2:w3:)`) — every one of those invalidates a prior
+  `setParType(_:)`, `setCriteriumWeight(w1:w2:w3:)`), every one of those invalidates a prior
   successful build's result, including on a builder reused across multiple `build()` calls.
 - **OCCT:** `BRepOffsetAPI_ThruSections::Shape`.
 - **Example:**
@@ -1613,7 +1628,12 @@ Creates a fixer for the given shape.
 public init(shape: Shape)
 ```
 
-- **OCCT:** `ShapeFix_Shape`.
+- **OCCT:** `ShapeFix_Shape`. The `ShapeFix_Shape` constructor accepts a null shape and
+  returns; `Perform()` is the half that dereferences it, so a fixer built on a null shape (from
+  `Shape.nullified`) used to crash the process on the later `perform()` call. The fixer is now
+  built empty for a null shape: the three setters become no-ops, `perform()` answers `false`,
+  `shape` answers `nil`, and both `status` overloads answer `false` (#1035, measured in
+  `Scripts/repro/1035-unwrap-guard/`).
 
 ---
 
@@ -1663,7 +1683,8 @@ public func perform() -> Bool
 ```
 
 - **Returns:** `true` if any fix was applied.
-- **OCCT:** `ShapeFix_Shape::Perform`.
+- **OCCT:** `ShapeFix_Shape::Perform`. Answers `false` without calling OCCT when the fixer was
+  built on a null shape, which used to crash the process here (#1035).
 
 ---
 
@@ -1676,13 +1697,14 @@ public var shape: Shape? { get }
 ```
 
 - **Returns:** The fixed `Shape`, or `nil` if `perform()` has not been called or produced nothing.
-- **OCCT:** `ShapeFix_Shape::Shape`.
+- **OCCT:** `ShapeFix_Shape::Shape`. Answers `nil` when the fixer was built on a null shape
+  (#1035).
 
 ---
 
 ### `status(_:)` (ShapeFixStatus overload)
 
-Queries whether a specific `ShapeExtend_Status` flag is set after `perform()` — the full
+Queries whether a specific `ShapeExtend_Status` flag is set after `perform()`, the full
 granularity `ShapeFix_Shape::Status` actually reports, not just the three combined flags the
 legacy `Int` overload below exposes (#849).
 
@@ -1690,7 +1712,7 @@ legacy `Int` overload below exposes (#849).
 public func status(_ status: ShapeFixStatus) -> Bool
 ```
 
-- **Parameters:** `status` — see [`ShapeFixStatus`](#shapefixstatus) below for the flag space and
+- **Parameters:** `status`, see [`ShapeFixStatus`](#shapefixstatus) below for the flag space and
   the `ShapeFix_Shape` meaning table.
 - **Returns:** `true` if the queried status flag is set.
 - **OCCT:** `ShapeFix_Shape::Status`.
@@ -1712,8 +1734,8 @@ Queries the fix result status via an undocumented `1`/`2`/`3` remap.
 public func status(_ type: Int) -> Bool
 ```
 
-- **Parameters:** `type` — `1`=OK (no fix needed), `2`=DONE (fix applied), `3`=FAIL (fix attempted but failed).
-- **Returns:** `true` if the queried status flag is set; `false` for any `type` outside `1...3` —
+- **Parameters:** `type`, `1`=OK (no fix needed), `2`=DONE (fix applied), `3`=FAIL (fix attempted but failed).
+- **Returns:** `true` if the queried status flag is set; `false` for any `type` outside `1...3`,
   there is no way to ask through this overload whether a specific `DONE`i/`FAIL`i sub-flag fired.
 - **OCCT:** `ShapeFix_Shape::Status`.
 - **Note:** Legacy. Prefer the `ShapeFixStatus` overload above (#849). Kept unchanged for source
@@ -1730,7 +1752,7 @@ public func status(_ type: Int) -> Bool
 
 ### `ShapeFixStatus`
 
-A status flag from OCCT's `ShapeExtend_Status` enum — the flag space every `ShapeFix_Root`
+A status flag from OCCT's `ShapeExtend_Status` enum, the flag space every `ShapeFix_Root`
 subclass (`ShapeFix_Shape`, `ShapeFix_Face`, `ShapeFix_Wire`, ...) reports its fix result through.
 `DONE1`...`DONE8` and `FAIL1`...`FAIL8` are per-class: each subclass assigns its own meaning to the
 numbered slots, and a slot it does not use is simply never set. Shared by `ShapeFixer.status(_:)`
@@ -1763,7 +1785,7 @@ Raw values mirror the real OCCT ordinals exactly (`ShapeExtend_Status.hxx`, pinn
 | `.fail1`...`.fail8` | 10...17 | Not assigned by `ShapeFix_Shape`. |
 | `.fail` | 18 | Any `.fail1`...`.fail8` flag is set: some pass failed. |
 
-- **Note:** #849 — this replaces a previous pair of independently-wrong encodings: `ShapeFixer`'s
+- **Note:** #849, this replaces a previous pair of independently-wrong encodings: `ShapeFixer`'s
   own `status(Int)` exposed only 3 of the 19 ordinals, and `FaceFixer`'s previous local `Status`
   enum shifted everything from `.fail1` through `.done` by one ordinal. `FaceFixer.Status` is now a
   typealias for this type.
@@ -1921,12 +1943,12 @@ Returns the maximum tolerance of all sub-shapes of the specified type within thi
 public func maxTolerance(subShapeType: Int) -> Double
 ```
 
-- **Parameters:** `subShapeType` — OCCT `TopAbs_ShapeEnum` integer: `4`=FACE, `6`=EDGE, `7`=VERTEX.
+- **Parameters:** `subShapeType`, OCCT `TopAbs_ShapeEnum` integer: `4`=FACE, `6`=EDGE, `7`=VERTEX.
 - **OCCT:** `BRep_Tool::MaxTolerance(shape, TopAbs_ShapeEnum)` (via `OCCTBRepToolMaxTolerance`).
   Not `ShapeAnalysis_ShapeTolerance`, which this entry also used to name and which is not in this
   chain; that one backs [`maxEdgeTolerance`](#maxedgetolerance) instead. The same wrong pairing
   appeared on both entries with the two classes the wrong way round; #808 corrected both.
-- **Note:** This is the real `TopAbs_ShapeEnum` ordinal — the same convention `ShapeType`'s raw
+- **Note:** This is the real `TopAbs_ShapeEnum` ordinal, the same convention `ShapeType`'s raw
   values use, and the one `Shape.maxTolerance(type:)`'s `ShapeType` overload (see
   "Document-Mesh-Fixing") passes through unchanged. It is NOT the same as that method's legacy
   `Int` overload, which uses a different, compressed `0`/`1`/`2` encoding for the same idea (#833).
@@ -1943,7 +1965,7 @@ Computes the section (intersection edges) of this shape with a plane.
 public func sectionWithPlane(normal: SIMD3<Double>, origin: SIMD3<Double>) -> Shape?
 ```
 
-- **Parameters:** `normal` — outward normal of the cutting plane. `origin` — any point on the plane.
+- **Parameters:** `normal`, outward normal of the cutting plane. `origin`, any point on the plane.
 - **Returns:** A `Shape` containing the section edges/wires, or `nil` on failure.
 - **OCCT:** `BRepAlgoAPI_Section` with an internal `gp_Pln`.
 - **Example:**

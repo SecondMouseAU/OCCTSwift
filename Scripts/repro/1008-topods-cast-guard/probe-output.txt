@@ -1,0 +1,40 @@
+=== #1008: TopoDS::Edge on a non-edge, pinned kernel ===
+
+Compile-time macro state in THIS translation unit:
+  No_Exception                not defined
+  No_Standard_TypeMismatch    not defined
+  => Standard_TypeMismatch_Raise_if is live: TopoDS::Edge throws on a non-edge.
+
+--- the unfixed loop body: mw.Add(TopoDS::Edge(shape)) ---
+  edge (the supported input)
+      ACCEPTED, wire with 1 edge(s)
+  wire (4 edges)
+      REFUSED by Standard_Failure: TopoDS::Edge
+  face
+      REFUSED by Standard_Failure: TopoDS::Edge
+  solid (box)
+      REFUSED by Standard_Failure: TopoDS::Edge
+  vertex
+      REFUSED by Standard_Failure: TopoDS::Edge
+  compound holding one edge
+      REFUSED by Standard_Failure: TopoDS::Edge
+  null shape
+      CRASHED on signal 11 (Segmentation fault: 11)
+
+--- the fixed loop body: guard on ShapeType() first ---
+  edge (the supported input)
+      ACCEPTED, wire with 1 edge(s)
+  wire (4 edges)
+      REFUSED by the guard, bridge returns nullptr
+  face
+      REFUSED by the guard, bridge returns nullptr
+  solid (box)
+      REFUSED by the guard, bridge returns nullptr
+  vertex
+      REFUSED by the guard, bridge returns nullptr
+  compound holding one edge
+      REFUSED by the guard, bridge returns nullptr
+  null shape
+      REFUSED by the guard, bridge returns nullptr
+
+crashing cases: 1

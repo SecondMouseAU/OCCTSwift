@@ -1,19 +1,19 @@
 ---
-title: Shape — HLR, Intervals, Mesh Props & Geom Primitives
+title: Shape. HLR, Intervals, Mesh Props & Geom Primitives
 parent: API Reference
 ---
 
-# Shape — HLR, Intervals, Mesh Props & Geom Primitives
+# Shape. HLR, Intervals, Mesh Props & Geom Primitives
 
 This page documents the v0.73 / v0.76 batch of `Shape`-adjacent APIs covering hidden-line removal, interval arithmetic, curve/surface/ray intersection, mesh properties, geometric inertia, and the standalone `Geom_*` entity wrappers. See the main **Shape** type page for the primary `Shape` class (constructors, transforms, booleans, etc.).
 
 ## Topics
 
-- [v0.73.0: TKHlr — Extended HLR, ReflectLines, TopCnx, Intrv](#v0730-tkhlr--extended-hlr-reflectlines-topcnx-intrv) · [Intrv_Interval (Interval with Tolerances)](#intrv_interval-interval-with-tolerances) · [Intrv_Intervals (Sorted Non-Overlapping Interval Sequence)](#intrv_intervals-sorted-non-overlapping-interval-sequence) · [ShapeRayIntersection (BRepIntCurveSurface_Inter)](#shaperayintersection-brepintcurvesurface_inter) · [ShapeConstruct (Triangulation)](#shapeconstruct-triangulation) · [Surface Extensions (ShapeCustom_Surface periodic + gap)](#surface-extensions-shapecustom_surface-periodic--gap) · [MeshCinert (Linear Mass Properties from Mesh)](#meshcinert-linear-mass-properties-from-mesh) · [MeshProps (Surface/Volume Properties from Mesh)](#meshprops-surfacevolume-properties-from-mesh) · [MeshShapeTool (Static Mesh Utilities)](#meshshapetool-static-mesh-utilities) · [ValidateEdge (BRepLib_ValidateEdge)](#validateedge-breplib_validateedge) · [BiTgte_Blend (Rolling-Ball Blend)](#bitgte_blend-rolling-ball-blend) · [GeomConvert_ApproxCurve/Surface](#geomconvert_approxcurvesurface) · [GCPnts_QuasiUniformAbscissa](#gcpnts_quasiuniformabscissa) · [GCPnts_TangentialDeflection](#gcpnts_tangentialdeflection) · [BRepGProp_Cinert (Curve Inertia per Edge)](#brepgprop_cinert-curve-inertia-per-edge) · [BRepGProp_Sinert (Surface Inertia per Face)](#brepgprop_sinert-surface-inertia-per-face) · [BRepGProp_Vinert (Volume Inertia per Face)](#brepgprop_vinert-volume-inertia-per-face) · [ShapeConstruct_ProjectCurveOnSurface](#shapeconstruct_projectcurveonsurface) · [BRepPreviewAPI_MakeBox](#breppreviewapi_makebox) · [GeomPoint3D (Geom_CartesianPoint)](#geompoint3d-geom_cartesianpoint) · [GeomDirection (Geom_Direction)](#geomdirection-geom_direction) · [GeomVector3D (Geom_VectorWithMagnitude)](#geomvector3d-geom_vectorwithmagnitude) · [Axis1Placement (Geom_Axis1Placement)](#axis1placement-geom_axis1placement)
+- [v0.73.0: TKHlr, Extended HLR, ReflectLines, TopCnx, Intrv](#v0730-tkhlr--extended-hlr-reflectlines-topcnx-intrv) · [Intrv_Interval (Interval with Tolerances)](#intrv_interval-interval-with-tolerances) · [Intrv_Intervals (Sorted Non-Overlapping Interval Sequence)](#intrv_intervals-sorted-non-overlapping-interval-sequence) · [ShapeRayIntersection (BRepIntCurveSurface_Inter)](#shaperayintersection-brepintcurvesurface_inter) · [ShapeConstruct (Triangulation)](#shapeconstruct-triangulation) · [Surface Extensions (ShapeCustom_Surface periodic + gap)](#surface-extensions-shapecustom_surface-periodic--gap) · [MeshCinert (Linear Mass Properties from Mesh)](#meshcinert-linear-mass-properties-from-mesh) · [MeshProps (Surface/Volume Properties from Mesh)](#meshprops-surfacevolume-properties-from-mesh) · [MeshShapeTool (Static Mesh Utilities)](#meshshapetool-static-mesh-utilities) · [ValidateEdge (BRepLib_ValidateEdge)](#validateedge-breplib_validateedge) · [BiTgte_Blend (Rolling-Ball Blend)](#bitgte_blend-rolling-ball-blend) · [GeomConvert_ApproxCurve/Surface](#geomconvert_approxcurvesurface) · [GCPnts_QuasiUniformAbscissa](#gcpnts_quasiuniformabscissa) · [GCPnts_TangentialDeflection](#gcpnts_tangentialdeflection) · [BRepGProp_Cinert (Curve Inertia per Edge)](#brepgprop_cinert-curve-inertia-per-edge) · [BRepGProp_Sinert (Surface Inertia per Face)](#brepgprop_sinert-surface-inertia-per-face) · [BRepGProp_Vinert (Volume Inertia per Face)](#brepgprop_vinert-volume-inertia-per-face) · [ShapeConstruct_ProjectCurveOnSurface](#shapeconstruct_projectcurveonsurface) · [BRepPreviewAPI_MakeBox](#breppreviewapi_makebox) · [GeomPoint3D (Geom_CartesianPoint)](#geompoint3d-geom_cartesianpoint) · [GeomDirection (Geom_Direction)](#geomdirection-geom_direction) · [GeomVector3D (Geom_VectorWithMagnitude)](#geomvector3d-geom_vectorwithmagnitude) · [Axis1Placement (Geom_Axis1Placement)](#axis1placement-geom_axis1placement)
 
 ---
 
-## v0.73.0: TKHlr — Extended HLR, ReflectLines, TopCnx, Intrv
+## v0.73.0: TKHlr. Extended HLR, ReflectLines, TopCnx, Intrv
 
 ### `HLREdgeCategory`
 
@@ -104,7 +104,7 @@ Extracts edges by fine-grained category using exact HLR (hidden line removal).
 public func hlrEdges(direction: SIMD3<Double>, category: HLREdgeCategory) -> Shape?
 ```
 
-- **Parameters:** `direction` — view direction vector; `category` — which class of edges to extract.
+- **Parameters:** `direction`, view direction vector; `category`, which class of edges to extract.
 - **Returns:** Compound of extracted edges, or `nil` if none exist for that category.
 - **OCCT:** `HLRBRep_Algo` / `HLRBRep_HLRToShape` via `OCCTHLRGetEdgesByCategory`.
 - **Example:**
@@ -128,9 +128,9 @@ public func hlrPolyEdges(direction: SIMD3<Double>, category: HLREdgeCategory,
 Poly HLR projects the shape's triangulation rather than its exact geometry, making it dramatically faster on curved solids (e.g. ~48× on an analytic helicoid). Prefer this for 2D drawings of threaded or curved parts. `.visibleIso`, `.hiddenIso`, and `.visibleOutline3d` are not available for poly HLR.
 
 - **Parameters:**
-  - `direction` — view direction vector.
-  - `category` — edge class to extract.
-  - `deflection` — linear mesh deflection (mm) for the internal triangulation. Smaller = finer drawing; larger = coarser and faster. Default `0.1`. Meshing is incremental: existing finer triangulations are not coarsened.
+  - `direction`: view direction vector.
+  - `category`: edge class to extract.
+  - `deflection`: linear mesh deflection (mm) for the internal triangulation. Smaller = finer drawing; larger = coarser and faster. Default `0.1`. Meshing is incremental: existing finer triangulations are not coarsened.
 - **Returns:** Compound of extracted edges, or `nil` if none exist.
 - **OCCT:** `HLRBRep_PolyAlgo` / `HLRBRep_PolyHLRToShape` via `OCCTHLRPolyGetEdgesByCategory`.
 - **Example:**
@@ -153,10 +153,10 @@ public func hlrCompoundOfEdges(direction: SIMD3<Double>, edgeType: HLREdgeType,
 ```
 
 - **Parameters:**
-  - `direction` — view direction vector.
-  - `edgeType` — edge type filter (`HLREdgeType`).
-  - `visible` — `true` for visible edges, `false` for hidden.
-  - `in3d` — `true` to return 3D edges; `false` for projected 2D edges.
+  - `direction`: view direction vector.
+  - `edgeType`: edge type filter (`HLREdgeType`).
+  - `visible`: `true` for visible edges, `false` for hidden.
+  - `in3d`: `true` to return 3D edges; `false` for projected 2D edges.
 - **Returns:** Compound of matching edges, or `nil` on failure.
 - **OCCT:** `HLRBRep_HLRToShape::CompoundOfEdges` via `OCCTHLRCompoundOfEdges`.
 - **Example:**
@@ -179,9 +179,9 @@ public func reflectLines(normal: SIMD3<Double>, viewPoint: SIMD3<Double>,
 ```
 
 - **Parameters:**
-  - `normal` — view plane normal direction.
-  - `viewPoint` — eye/target position.
-  - `up` — up direction for the view frame.
+  - `normal`: view plane normal direction.
+  - `viewPoint`: eye/target position.
+  - `up`: up direction for the view frame.
 - **Returns:** Compound of reflect line edges in 3D, or `nil` on failure.
 - **OCCT:** `HLRAppli_ReflectLines` via `OCCTHLRReflectLines`.
 - **Example:**
@@ -206,12 +206,12 @@ public func reflectLinesFiltered(normal: SIMD3<Double>, viewPoint: SIMD3<Double>
 ```
 
 - **Parameters:**
-  - `normal` — view plane normal direction.
-  - `viewPoint` — eye/target position.
-  - `up` — up direction.
-  - `edgeType` — edge type to extract.
-  - `visible` — `true` for visible, `false` for hidden.
-  - `in3d` — `true` for 3D edges, `false` for projected.
+  - `normal`: view plane normal direction.
+  - `viewPoint`: eye/target position.
+  - `up`: up direction.
+  - `edgeType`: edge type to extract.
+  - `visible`: `true` for visible, `false` for hidden.
+  - `in3d`: `true` for 3D edges, `false` for projected.
 - **Returns:** Filtered compound of reflect line edges, or `nil` on failure.
 - **OCCT:** `HLRAppli_ReflectLines` / `CompoundOfEdges` via `OCCTHLRReflectLinesFiltered`.
 
@@ -279,10 +279,10 @@ public static func edgeFaceTransition(edgeTangent: SIMD3<Double>,
 ```
 
 - **Parameters:**
-  - `edgeTangent` — edge tangent direction.
-  - `edgeNormal` — edge normal direction (use `.zero` for linear edges).
-  - `edgeCurvature` — edge curvature (0 for linear edges).
-  - `faces` — array of `FaceInterference` descriptors.
+  - `edgeTangent`: edge tangent direction.
+  - `edgeNormal`: edge normal direction (use `.zero` for linear edges).
+  - `edgeCurvature`: edge curvature (0 for linear edges).
+  - `faces`: array of `FaceInterference` descriptors.
 - **Returns:** `EdgeFaceTransitionResult` with cumulated `transition` and `boundaryTransition` orientations.
 - **OCCT:** `TopCnx_EdgeFaceTransition` via `OCCTTopCnxEdgeFaceTransition`.
 
@@ -308,7 +308,7 @@ Creates an interval with bounds and optional tolerances.
 public init(start: Double, end: Double, tolStart: Float = 0, tolEnd: Float = 0)
 ```
 
-- **Parameters:** `start` — lower bound; `end` — upper bound; `tolStart` — tolerance at start; `tolEnd` — tolerance at end.
+- **Parameters:** `start`, lower bound; `end`, upper bound; `tolStart`, tolerance at start; `tolEnd`, tolerance at end.
 - **OCCT:** `Intrv_Interval(start, end, tolStart, tolEnd)` via `OCCTIntrvIntervalCreate`.
 - **Example:**
   ```swift
@@ -380,7 +380,7 @@ Position of this interval relative to another.
 public func position(relativeTo other: Interval) -> Int
 ```
 
-- **Parameters:** `other` — the reference interval.
+- **Parameters:** `other`, the reference interval.
 - **Returns:** `Intrv_Position` enum raw value (0 = Before … 12 = After).
 - **OCCT:** `Intrv_Interval::Position` via `OCCTIntrvIntervalPosition`.
 
@@ -454,7 +454,7 @@ Sets the start bound.
 public func setStart(_ start: Double, tolerance: Float = 0)
 ```
 
-- **Parameters:** `start` — new start value; `tolerance` — new start tolerance.
+- **Parameters:** `start`, new start value; `tolerance`, new start tolerance.
 - **OCCT:** `Intrv_Interval::SetStart` via `OCCTIntrvIntervalSetStart`.
 
 ---
@@ -467,7 +467,7 @@ Sets the end bound.
 public func setEnd(_ end: Double, tolerance: Float = 0)
 ```
 
-- **Parameters:** `end` — new end value; `tolerance` — new end tolerance.
+- **Parameters:** `end`, new end value; `tolerance`, new end tolerance.
 - **OCCT:** `Intrv_Interval::SetEnd` via `OCCTIntrvIntervalSetEnd`.
 
 ---
@@ -480,7 +480,7 @@ Extends the start bound outward (union at start).
 public func fuseAtStart(_ start: Double, tolerance: Float = 0)
 ```
 
-- **Parameters:** `start` — new start bound (must be ≤ current start to extend); `tolerance` — new tolerance.
+- **Parameters:** `start`, new start bound (must be ≤ current start to extend); `tolerance`, new tolerance.
 - **OCCT:** `Intrv_Interval::FuseAtStart` via `OCCTIntrvIntervalFuseAtStart`.
 
 ---
@@ -587,7 +587,7 @@ Gets the bounds of the interval at a zero-based index.
 public func bounds(at index: Int) -> Interval.Bounds
 ```
 
-- **Parameters:** `index` — zero-based interval index (internally maps to 1-based OCCT indexing).
+- **Parameters:** `index`, zero-based interval index (internally maps to 1-based OCCT indexing).
 - **Returns:** `Interval.Bounds` for that interval.
 - **OCCT:** `Intrv_Intervals::Value` via `OCCTIntrvIntervalsValue`.
 
@@ -658,7 +658,7 @@ public final class ShapeRayIntersection: @unchecked Sendable
 ```
 
 - **Note:** A separate, richer sibling of `Shape.curveShapeIntersect(origin:direction:)`
-  (`LocOpe_CurveShapeIntersector`, parameters only) — added independently, twelve releases later,
+  (`LocOpe_CurveShapeIntersector`, parameters only), added independently, twelve releases later,
   without either being made aware of the other. Use this type for the 3D hit point, the face
   struck, or curve (not just line) input; use `curveShapeIntersect` for a one-shot line query that
   only needs parameters, or for the `gp_Circ`-axis input `LocOpe_CurveShapeIntersector` supports
@@ -697,7 +697,7 @@ public init?(shape: Shape, originX: Double, originY: Double, originZ: Double,
              dirX: Double, dirY: Double, dirZ: Double, tolerance: Double = 1e-6)
 ```
 
-- **Parameters:** `shape` — target B-Rep shape; `originX/Y/Z` — ray origin; `dirX/Y/Z` — ray direction; `tolerance` — intersection tolerance.
+- **Parameters:** `shape`, target B-Rep shape; `originX/Y/Z`, ray origin; `dirX/Y/Z`, ray direction; `tolerance`, intersection tolerance.
 - **Returns:** `nil` if initialisation fails.
 - **OCCT:** `BRepIntCurveSurface_Inter::Init(shape, gp_Lin)` via `OCCTCurveSurfaceInterCreateLine`.
 - **Example:**
@@ -719,7 +719,7 @@ Creates an intersection of a `Curve3D` with a shape.
 public init?(shape: Shape, curve: Curve3D, tolerance: Double = 1e-6)
 ```
 
-- **Parameters:** `shape` — target shape; `curve` — 3D curve; `tolerance` — intersection tolerance.
+- **Parameters:** `shape`, target shape; `curve`, 3D curve; `tolerance`, intersection tolerance.
 - **Returns:** `nil` if initialisation fails.
 - **OCCT:** `BRepIntCurveSurface_Inter::Init(shape, curve)` via `OCCTCurveSurfaceInterCreateCurve`.
 
@@ -784,7 +784,7 @@ public func allHits() -> [Hit]
 ```
 
 - **Returns:** Array of all `Hit` values (may be empty if no intersections).
-- **Note:** Calling this exhausts the iterator — `hasMore` will be `false` afterward.
+- **Note:** Calling this exhausts the iterator, `hasMore` will be `false` afterward.
 - **Example:**
   ```swift
   if let inter = ShapeRayIntersection(shape: shape,
@@ -808,7 +808,7 @@ Creates a triangulated face from a flat list of 3D points.
 public static func triangulationFromPoints(_ points: [(Double, Double, Double)]) -> Shape?
 ```
 
-- **Parameters:** `points` — ordered list of 3D coordinate triples.
+- **Parameters:** `points`, ordered list of 3D coordinate triples.
 - **Returns:** A triangulated `Shape` (face), or `nil` on failure.
 - **OCCT:** `ShapeConstruct_MakeTriangulation` via `OCCTShapeConstructTriangulationFromPoints`.
 - **Example:**
@@ -829,7 +829,7 @@ Creates a triangulated face from a planar wire.
 public static func triangulationFromWire(_ wire: Wire) -> Shape?
 ```
 
-- **Parameters:** `wire` — a closed planar wire to triangulate.
+- **Parameters:** `wire`, a closed planar wire to triangulate.
 - **Returns:** A triangulated `Shape`, or `nil` on failure.
 - **OCCT:** `ShapeConstruct_MakeTriangulation` via `OCCTShapeConstructTriangulationFromWire`.
 - **Example:**
@@ -923,7 +923,7 @@ public func meshCinertCompute(points: [(Double, Double, Double)]) -> MeshCinertR
 
 This is a free function (not a method). Feed it the output of `Edge.meshPolygonPoints()`.
 
-- **Parameters:** `points` — array of 3D coordinate triples.
+- **Parameters:** `points`, array of 3D coordinate triples.
 - **Returns:** `MeshCinertResult` with `mass` (total arc length) and centre coordinates.
 - **OCCT:** `BRepGProp_MeshCinert::Perform` via `OCCTMeshCinertCompute`.
 
@@ -971,7 +971,7 @@ Computes mesh surface or volume properties for a triangulated face.
 public func meshProps(type: MeshPropsType) -> MeshPropsResult
 ```
 
-- **Parameters:** `type` — `.surface` for area and centroid, `.volume` for enclosed volume and centroid.
+- **Parameters:** `type`, `.surface` for area and centroid, `.volume` for enclosed volume and centroid.
 - **Returns:** `MeshPropsResult` with mass and centre of mass.
 - **OCCT:** `BRepGProp_MeshProps` (Sinert/Vinert path) via `OCCTMeshPropsCompute`.
 - **Example:**
@@ -1005,7 +1005,7 @@ Gets the UV parameter points of an edge on this face.
 public func uvPoints(edge: Edge) -> (u1: Double, v1: Double, u2: Double, v2: Double)?
 ```
 
-- **Parameters:** `edge` — an edge that lies on this face.
+- **Parameters:** `edge`, an edge that lies on this face.
 - **Returns:** Tuple of UV parameters at each end of the edge, or `nil` if the edge is not on this face.
 - **OCCT:** `BRepMesh_ShapeTool::UVPoints` via `OCCTMeshShapeToolUVPoints`.
 - **Example:**
@@ -1063,7 +1063,7 @@ Validates edge geometry against a face (3D curve vs curve-on-surface consistency
 public func validate(on face: Face, tolerance: Double = 1e-3) -> ValidateEdgeResult
 ```
 
-- **Parameters:** `face` — the face containing this edge's pcurve; `tolerance` — acceptable maximum deviation.
+- **Parameters:** `face`, the face containing this edge's pcurve; `tolerance`, acceptable maximum deviation.
 - **Returns:** `ValidateEdgeResult` with `isDone`, `isWithinTolerance`, `maxDistance`, and the tested `tolerance`.
 - **OCCT:** `BRepLib_ValidateEdge` via `OCCTValidateEdge`.
 - **Example:**
@@ -1090,12 +1090,12 @@ public func biTgteBlend(edgeIndices: [Int], radius: Double, tolerance: Double = 
 `BiTgte_Blend` is an alternative blend algorithm that can handle configurations where `BRepFilletAPI_MakeFillet` fails.
 
 - **Parameters:**
-  - `edgeIndices` — zero-based indices into `edges()`, the same enumeration `edge(at:)` and
+  - `edgeIndices`: zero-based indices into `edges()`, the same enumeration `edge(at:)` and
     `Edge.index` use, so a geometrically selected edge feeds straight in.
-  - `radius` — blend radius.
-  - `tolerance` — geometric tolerance.
-  - `nubs` — if `true`, outputs NUBS (Non-Uniform B-Spline) surfaces; if `false`, outputs NURBS.
-- **Returns:** Blended shape, or `nil` if blending fails — including when any index names no edge,
+  - `radius`: blend radius.
+  - `tolerance`: geometric tolerance.
+  - `nubs`: if `true`, outputs NUBS (Non-Uniform B-Spline) surfaces; if `false`, outputs NURBS.
+- **Returns:** Blended shape, or `nil` if blending fails, including when any index names no edge,
   which refuses the whole request rather than blending the rest (#568).
 - **OCCT:** `BiTgte_Blend::Perform` via `OCCTBiTgteBlend`.
 - **Changed in #613:** the indices addressed a `TopExp_Explorer` walk, one entry per topology
@@ -1146,10 +1146,10 @@ public func approxWithDetails(tolerance: Double, continuity: ParametricContinuit
 ```
 
 - **Parameters:**
-  - `tolerance` — maximum approximation deviation.
-  - `continuity` — desired continuity of the output BSpline.
-  - `maxSegments` — maximum number of BSpline segments.
-  - `maxDegree` — maximum polynomial degree.
+  - `tolerance`: maximum approximation deviation.
+  - `continuity`: desired continuity of the output BSpline.
+  - `maxSegments`: maximum number of BSpline segments.
+  - `maxDegree`: maximum polynomial degree.
 - **Returns:** `ApproxCurveResult` with the output `Curve3D` (or `nil`), `maxError`, and status flags.
 - **OCCT:** `GeomConvert_ApproxCurve` via `OCCTGeomConvertApproxCurve`.
 - **Example:**
@@ -1188,11 +1188,11 @@ public func approxWithDetails(tolerance: Double, uContinuity: ParametricContinui
 ```
 
 - **Parameters:**
-  - `tolerance` — maximum approximation deviation.
-  - `uContinuity` — desired continuity in U direction.
-  - `vContinuity` — desired continuity in V direction.
-  - `maxDegree` — maximum polynomial degree.
-  - `maxSegments` — maximum number of BSpline segments.
+  - `tolerance`: maximum approximation deviation.
+  - `uContinuity`: desired continuity in U direction.
+  - `vContinuity`: desired continuity in V direction.
+  - `maxDegree`: maximum polynomial degree.
+  - `maxSegments`: maximum number of BSpline segments.
 - **Returns:** `ApproxSurfaceResult` with the output `Surface` (or `nil`), `maxError`, and status flags.
 - **OCCT:** `GeomConvert_ApproxSurface` via `OCCTGeomConvertApproxSurface`.
 - **Note:** Prefer `Surface.approximated(tolerance:continuity:maxSegments:maxDegree:)` for simpler use; use this variant when you need the error and status separately. Both continuity defaults are C2, matching `Surface.approximated`; before #491 they were C1 here, so the two no-continuity-argument calls fitted to different smoothness and returned different surfaces.
@@ -1258,9 +1258,9 @@ public func tangentialDeflectionPoints(angularDeflection: Double = 0.1,
 This is the standard adaptive sampling algorithm used by OCCT's meshing pipeline; it produces denser samples where curvature is high.
 
 - **Parameters:**
-  - `angularDeflection` — maximum angular deviation between consecutive tangents (radians).
-  - `curvatureDeflection` — maximum chordal deviation (model units).
-  - `minPoints` — minimum number of sample points (must be ≥ 2).
+  - `angularDeflection`: maximum angular deviation between consecutive tangents (radians).
+  - `curvatureDeflection`: maximum chordal deviation (model units).
+  - `minPoints`: minimum number of sample points (must be ≥ 2).
 - **Returns:** Array of `TangentialDeflectionPoint` values (up to 10000).
 - **OCCT:** `GCPnts_TangentialDeflection` via `OCCTGCPntsTangentialDeflection`.
 - **Example:**
@@ -1354,7 +1354,7 @@ Computes surface inertia using adaptive numerical integration to the given error
 public func surfaceInertia(epsilon: Double) -> FaceSurfaceInertia
 ```
 
-- **Parameters:** `epsilon` — target integration error bound.
+- **Parameters:** `epsilon`, target integration error bound.
 - **Returns:** `FaceSurfaceInertia` with `area`, an optional centre of mass, and the actual
   `epsilon` achieved.
 - **OCCT:** `BRepGProp_Sinert` adaptive overload via `OCCTBRepGPropSinertAdaptive`.
@@ -1409,8 +1409,8 @@ public func volumeInertia(planeNormal: SIMD3<Double>, planeDistance: Double = 0)
 ```
 
 - **Parameters:**
-  - `planeNormal` — normal of the reference plane.
-  - `planeDistance` — signed distance from origin to the plane along `planeNormal`.
+  - `planeNormal`: normal of the reference plane.
+  - `planeDistance`: signed distance from origin to the plane along `planeNormal`.
 - **Returns:** `FaceVolumeInertia` measured relative to the given plane.
 - **OCCT:** `BRepGProp_Vinert(face, gp_Pln)` via `OCCTBRepGPropVinertPlane`.
 
@@ -1428,10 +1428,10 @@ public func projectOnSurface(_ surface: Surface, firstParam: Double? = nil,
 ```
 
 - **Parameters:**
-  - `surface` — target surface.
-  - `firstParam` — start of the curve parameter range (default: `domain.lowerBound`).
-  - `lastParam` — end of the curve parameter range (default: `domain.upperBound`).
-  - `precision` — projection tolerance.
+  - `surface`: target surface.
+  - `firstParam`: start of the curve parameter range (default: `domain.lowerBound`).
+  - `lastParam`: end of the curve parameter range (default: `domain.upperBound`).
+  - `precision`: projection tolerance.
 - **Returns:** A `Curve2D` in UV parameter space of the surface, or `nil` if projection fails.
 - **OCCT:** `ShapeConstruct_ProjectCurveOnSurface::Perform` via `OCCTProjectCurveOnSurface`.
 - **Example:**
@@ -1455,7 +1455,7 @@ public static func previewBox(width: Double, height: Double, depth: Double) -> S
 
 Unlike `Shape.box(width:height:depth:)`, this factory accepts degenerate inputs and returns the appropriate lower-dimensional shape: a box for fully 3D dimensions, a face for one zero dimension, an edge for two zero dimensions, or a vertex for all-zero dimensions.
 
-- **Parameters:** `width` — X dimension; `height` — Y dimension; `depth` — Z dimension.
+- **Parameters:** `width`, X dimension; `height`, Y dimension; `depth`, Z dimension.
 - **Returns:** A `Shape` (solid, face, edge, or vertex), or `nil` on failure.
 - **OCCT:** `BRepPreviewAPI_MakeBox` via `OCCTPreviewBox`.
 - **Example:**
@@ -1847,7 +1847,7 @@ Creates an axis placement from an origin point and a direction vector.
 public init(origin: SIMD3<Double>, direction: SIMD3<Double>)
 ```
 
-- **Parameters:** `origin` — the axis origin point; `direction` — the axis direction (normalised internally).
+- **Parameters:** `origin`, the axis origin point; `direction`, the axis direction (normalised internally).
 - **OCCT:** `Geom_Axis1Placement(gp_Pnt, gp_Dir)` via `OCCTAxis1PlacementCreate`.
 - **Example:**
   ```swift

@@ -57,7 +57,7 @@ python3 Scripts/repro/cluster-d-continuity/classify_continuity_sites.py --self-t
   statically-classified count is **41** (33 request-side + 8 result-side), one fewer than the 42
   above; the alias-inclusive total is 44, not 45. Left as originally measured rather than edited in
   place, since the point of the count was #513's own audit coverage at the time, not a live gauge
-  this file re-derives on every subsequent fix — `python3 classify_continuity_sites.py` always
+  this file re-derives on every subsequent fix, `python3 classify_continuity_sites.py` always
   reports the current tree's true count.
 
 ## The four encodings, as measured (today: five families, one is not really a fourth "encoding")

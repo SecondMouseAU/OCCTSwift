@@ -1,4 +1,4 @@
-# OCCTSwift#491 measurements — the two `GeomConvert_Approx*` wrappers per type
+# OCCTSwift#491 measurements, the two `GeomConvert_Approx*` wrappers per type
 
 The evidence behind #491's two decisions. Not crash reproducers: both programs exit cleanly and print
 a table. They exist because the audit finding for #491 described one divergence that turns out to be
@@ -16,12 +16,12 @@ clang++ -std=c++17 -ObjC++ -w \
 /tmp/occt_491_precis
 ```
 
-## 1. `occt_491_isdone_vs_hasresult.mm` — the divergence that does not reproduce
+## 1. `occt_491_isdone_vs_hasresult.mm`, the divergence that does not reproduce
 
 `GeomConvert_ApproxCurve.hxx` documents its two completion accessors as different questions:
 
-- `IsDone()` — "true if the approximation has been done **within required tolerance**"
-- `HasResult()` — "true if the approximation did come out with a result that is **not NECESSARILY**
+- `IsDone()`: "true if the approximation has been done **within required tolerance**"
+- `HasResult()`: "true if the approximation did come out with a result that is **not NECESSARILY**
   within the required tolerance"
 
 `OCCTCurve3DApproximate` gated on the first and `OCCTGeomConvertApproxCurve` on the second, so on
@@ -49,7 +49,7 @@ NumCurves++;
 ```
 
 With that line dead, `ErrorCode` is only ever `0` (both flags set) or `1` (early return, neither set),
-so `IsDone() == HasResult()` for every input. This program confirms it empirically over 10 requests —
+so `IsDone() == HasResult()` for every input. This program confirms it empirically over 10 requests,
 including deliberately starved fits, where OCCT reports success against a tolerance it missed by nine
 orders of magnitude:
 
@@ -59,7 +59,7 @@ orders of magnitude:
   offset(ellipse 50x1) tol 1e-12    tol=1e-12  seg=100 deg=8  IsDone=1 HasResult=1 maxError=6.96736
 ```
 
-So gating on `IsDone()` never rejected an over-tolerance curve — the practical consequence is that
+So gating on `IsDone()` never rejected an over-tolerance curve, the practical consequence is that
 `Curve3D.approximated`'s behaviour is unchanged by #491's move to `HasResult()`. The gate was unified
 anyway, on `HasResult()`, because that is what OCCT's own curve-conversion sites use
 (`GeomConvert.cxx:345/441`, `GeomToIGES_GeomCurve.cxx:632`, `GeomFill_Profiler.cxx:136`), what both
@@ -69,7 +69,7 @@ diagnostic means anything.
 Re-run this if that upstream line is ever re-enabled: the parity tests
 (`Tests/OCCTCurveTests/Issue491Curve3DApproxParityTests.swift`) are the guard for that day.
 
-## 2. `occt_491_precis_code_sweep.mm` — choosing the shared `PrecisCode`
+## 2. `occt_491_precis_code_sweep.mm`, choosing the shared `PrecisCode`
 
 `GeomConvert_ApproxSurface`'s eighth constructor argument is `PrecisCode`, "the index of precision".
 `OCCTSurfaceApproximate` passed `0`, `OCCTGeomConvertApproxSurface` passed `1`, neither with a
@@ -88,10 +88,10 @@ if (icodeo > 0) {
 ```
 
 So the two wrappers seeded a different parameterisation for identical
-tolerance/continuity/degree/segment inputs. This program runs both codes over 72 bounded cases — 8
+tolerance/continuity/degree/segment inputs. This program runs both codes over 72 bounded cases, 8
 surface families (sphere, torus, trimmed cylinder, trimmed cone, revolved ellipse, offset sphere,
 offset torus, bicubic Bezier) x 6 tolerances from `1e-1` to `1e-9`, plus C0/C1 and `maxDegree` 10
-variants — and tallies the differences:
+variants, and tallies the differences:
 
 ```
 == tally over 72 cases ==
@@ -148,7 +148,7 @@ has no `PrecisCode` to census: it drives `AdvApp2Var_ApproxAFunc2Var` directly r
 that infinite OCCT surfaces must be trimmed before BSpline conversion. Passing an untrimmed
 `Geom_CylindricalSurface` straight in (as `occt_491_isdone_vs_hasresult.mm` deliberately does, to show
 what it looks like) yields `maxError` around `1e+84` and a wildly different pole count per
-`PrecisCode` — both meaningless. Do not read anything into those rows.
+`PrecisCode`: both meaningless. Do not read anything into those rows.
 
 ## Sibling finding
 

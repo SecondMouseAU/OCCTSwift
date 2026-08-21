@@ -56,9 +56,9 @@ SUBS = re.compile(r'^\s*public\s+(?:static\s+)?subscript\s*\(')
 # Bare (no explicit `public`) forms of the same four, used only when the innermost enclosing
 # scope is a `public extension` body: Swift raises a member's default access level to match an
 # extension's own stated modifier, so `public extension Foo { func bar() {} }` makes `bar()`
-# genuinely public with no `public` keyword on its own line — invisible to FUNC/INIT/CVAR/SUBS
+# genuinely public with no `public` keyword on its own line, invisible to FUNC/INIT/CVAR/SUBS
 # above, which all anchor on a literal `public`. 64 such members across 22 blocks in 6 files were
-# undercounted this way before this fix (#914 review, finding 8 — corrected from an earlier draft
+# undercounted this way before this fix (#914 review, finding 8, corrected from an earlier draft
 # of this comment, which said 86: the derived count only moved 4275 -> 4339, i.e. +64, and a
 # second round of review caught the arithmetic didn't match the comment; #899/#902's own count
 # moving 4267 -> 4275 on a pure `public extension` -> `extension` + per-member `public` reformat in
@@ -136,7 +136,7 @@ def _enclosing_type(stack):
     """Innermost *named* type name on the brace stack, or None at file scope.
 
     Skips shield frames (`name is None`, pushed for a member body/closure/if/for opening
-    directly inside a `public extension` — see `_in_public_extension`'s doc) rather than
+    directly inside a `public extension`, see `_in_public_extension`'s doc) rather than
     reading `stack[-1]` directly: those frames carry no type identity of their own, and a
     counted operation still wants its enclosing type's name, not the frame closest to it.
     """
@@ -151,7 +151,7 @@ def _in_public_extension(stack):
 
     Per-frame, not inherited past the innermost one: a plain (non-`public`) type nested inside a
     `public extension` reverts to Swift's ordinary internal default for its own members, same as
-    it would outside one. A member body (or any other non-type brace — closure, `if`, `for`...)
+    it would outside one. A member body (or any other non-type brace, closure, `if`, `for`...)
     opening directly inside a `public extension` gets an explicit shield frame pushed for it (see
     the main loop below) for the identical reason: a local function nested inside a public
     extension's member is not itself public just because the enclosing extension is.
@@ -209,7 +209,7 @@ def count_entry_points():
                 # prose, not attribute-argument-list syntax. Uncorrected, that leaves
                 # avail_paren_depth stuck above 0 and in_avail_attr true for the rest of the
                 # file, silently routing every later declaration away from the FUNC/INIT/CVAR
-                # matchers (#914 review, finding 7 — the mechanism was present, though no
+                # matchers (#914 review, finding 7, the mechanism was present, though no
                 # `message:` string in this tree currently contains an unbalanced paren, so it
                 # had not yet miscounted anything).
                 header_parens = re.sub(r'"(?:[^"\\]|\\.)*"', '""', header)
@@ -240,7 +240,7 @@ def count_entry_points():
                     in_avail_attr = True
             else:
                 # Inside a `public extension` body, a member with no access modifier of its own
-                # is implicitly public too (see FUNC_BARE et al above) — but one that explicitly
+                # is implicitly public too (see FUNC_BARE et al above), but one that explicitly
                 # narrows (`private`/`fileprivate`/`internal`) is not.
                 implicit_public = _in_public_extension(stack) and not NARROWER_ACCESS.match(line)
                 m = FUNC.match(line) or (implicit_public and FUNC_BARE.match(line))
@@ -279,9 +279,9 @@ def count_entry_points():
                     # `enum Toggle { case a, b }` (opens == closes) encloses nothing.
                     stack.append((td.group(1), depth, bool(PUBLIC_EXTENSION_DECL.match(line))))
                 elif opens > closes and _in_public_extension(stack):
-                    # A non-type body — a member's own `{` (whichever line it lands on: same
+                    # A non-type body, a member's own `{` (whichever line it lands on: same
                     # line as `func`/`var` for the common case, or a later line for a wrapped
-                    # multi-line signature), a closure, an `if`/`for`/`switch`... — opening
+                    # multi-line signature), a closure, an `if`/`for`/`switch`... opening
                     # directly inside a `public extension` scope shields everything below it
                     # from the extension's implicit-public default (#914 review, second round:
                     # a local `func` nested inside a public extension's member was being counted
@@ -290,7 +290,7 @@ def count_entry_points():
                     # just member declarations, is deliberately over-broad but harmless: once one
                     # shield frame is on top, `_in_public_extension` is already False, so this
                     # branch never re-fires for a construct nested inside an already-shielded
-                    # body — there is no need to special-case which shape of brace this is.
+                    # body, there is no need to special-case which shape of brace this is.
                     stack.append((None, depth, False))
                 else:
                     while stack and depth < stack[-1][1]:

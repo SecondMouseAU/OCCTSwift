@@ -3,7 +3,7 @@ import Testing
 
 // #490, the two builder-held continuity arguments.
 //
-// FilletBuilder.setContinuity was the one continuity argument the bridge did not decode at all — it
+// FilletBuilder.setContinuity was the one continuity argument the bridge did not decode at all, it
 // cast the integer straight to GeomAbs_Shape, so `1` asked for G1 and `2` for C1 while the Swift
 // entry point documented 0=C0, 1=C1, 2=C2 (and any value >= 7 was outside the enum's own range
 // entirely). It now decodes as ParametricContinuity, matching both its own documentation and
@@ -11,7 +11,7 @@ import Testing
 //
 // Both suites below pin a *domain* claim rather than an observable difference, deliberately:
 // measured on the pinned kernel, neither builder's continuity argument changes the resulting
-// solid's volume at all — it is a surface-quality/parameterisation property these APIs do not
+// solid's volume at all, it is a surface-quality/parameterisation property these APIs do not
 // surface. So what is worth asserting is which values the operation accepts, which is exactly what
 // the shared decoder's saturation changes.
 
@@ -37,10 +37,10 @@ struct Issue490FilletContinuityTests {
         #expect(volume > 7900.0)
     }
 
-    @Test("past the documented domain the fillet still builds — it does not crash or fail",
+    @Test("past the documented domain the fillet still builds, it does not crash or fail",
           arguments: [3, 4, 99, -1])
     func beyondDocumentedDomainStillBuilds(continuity: Int) throws {
-        // The shared decoder saturates, so 3 asks for C3 and anything above asks for CN — values
+        // The shared decoder saturates, so 3 asks for C3 and anything above asks for CN, values
         // BRepFilletAPI_MakeFillet does not document and ChFi3d_Builder::SetContinuity stores
         // without validating, which makes them reachable here for the first time (the old raw cast
         // shifted them, and >= 7 was not a GeomAbs_Shape value at all). Measured, not inferred:
@@ -76,7 +76,7 @@ struct Issue490ThruSectionsContinuityTests {
         // ThruSectionsBuilder.setContinuity's doc comment makes exactly this claim, so it gets a
         // test: unlike the Approx* family, which throws above C2, this consumer accepts the whole
         // ladder including the CN that out-of-range input now saturates to. Before #490 only 0 and
-        // 1 were read here at all — everything else meant C2, so nothing above 1 was distinct.
+        // 1 were read here at all, everything else meant C2, so nothing above 1 was distinct.
         let volume = try #require(loftedVolume(continuity: continuity),
                                   "continuity \(continuity) should still loft")
         #expect(volume > 0)

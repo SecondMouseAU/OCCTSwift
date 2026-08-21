@@ -5,9 +5,9 @@ parent: API Reference
 
 # Shape
 
-`Shape` is OCCTSwift's central B-Rep type, wrapping OCCT's `TopoDS_Shape` hierarchy. It represents any B-Rep entity — solid, shell, face, wire, edge, vertex, or compound — and provides construction, boolean, modification, transformation, meshing, and format-import operations. Obtain a `Shape` via a static factory (e.g. `Shape.box()`, `Shape.loft()`), a sweep or boolean operation on an existing `Shape`, or by importing a STEP/IGES/BREP/STL/OBJ file.
+`Shape` is OCCTSwift's central B-Rep type, wrapping OCCT's `TopoDS_Shape` hierarchy. It represents any B-Rep entity, solid, shell, face, wire, edge, vertex, or compound, and provides construction, boolean, modification, transformation, meshing, and format-import operations. Obtain a `Shape` via a static factory (e.g. `Shape.box()`, `Shape.loft()`), a sweep or boolean operation on an existing `Shape`, or by importing a STEP/IGES/BREP/STL/OBJ file.
 
-> **Note:** `Shape` is large — documented across several pages. This is the core (construction, booleans, modifications, meshing, import); see also the other **Shape — …** pages for features, healing, measurement, local operations, and the low-level OCCT builder wrappers.
+> **Note:** `Shape` is large, documented across several pages. This is the core (construction, booleans, modifications, meshing, import); see also the other **Shape, …** pages for features, healing, measurement, local operations, and the low-level OCCT builder wrappers.
 
 ## Topics
 
@@ -25,7 +25,7 @@ Internal designated initialiser; takes ownership of a bridge handle.
 internal init(handle: OCCTShapeRef)
 ```
 
-Not part of the public API — all public entry points return `Shape?` optionals and manage memory internally.
+Not part of the public API, all public entry points return `Shape?` optionals and manage memory internally.
 
 ---
 
@@ -51,7 +51,7 @@ Create a box centered at the origin.
 public static func box(width: Double, height: Double, depth: Double) -> Shape?
 ```
 
-- **Parameters:** `width`, `height`, `depth` — extents along X, Y, Z respectively.
+- **Parameters:** `width`, `height`, `depth`, extents along X, Y, Z respectively.
 - **Returns:** A solid box, or `nil` if any dimension is non-positive.
 - **OCCT:** `BRepPrimAPI_MakeBox`.
 - **Example:**
@@ -76,7 +76,7 @@ public static func box(
 ) -> Shape?
 ```
 
-- **Parameters:** `origin` — corner point of the box; `width`, `height`, `depth` — extents along X, Y, Z.
+- **Parameters:** `origin`, corner point of the box; `width`, `height`, `depth`, extents along X, Y, Z.
 - **Returns:** A solid box at the given position, or `nil` on failure.
 - **OCCT:** `BRepPrimAPI_MakeBox`.
 - **Example:**
@@ -103,11 +103,11 @@ public static func box(
 ```
 
 - **Parameters:**
-  - `origin` — corner point of the box.
-  - `direction` — axis direction for the box height (will be normalised).
-  - `width` — X extent in local frame.
-  - `height` — Y extent in local frame.
-  - `depth` — extent along `direction`.
+  - `origin`: corner point of the box.
+  - `direction`: axis direction for the box height (will be normalised).
+  - `width`: X extent in local frame.
+  - `height`: Y extent in local frame.
+  - `depth`: extent along `direction`.
 - **Returns:** Oriented solid box, or `nil` on failure.
 - **OCCT:** `BRepPrimAPI_MakeBox` (via `OCCTShapeCreateBoxOriented`).
 - **Example:**
@@ -127,7 +127,7 @@ Create a cylinder along the Z axis with base at the origin.
 public static func cylinder(radius: Double, height: Double) -> Shape?
 ```
 
-- **Parameters:** `radius` — base circle radius; `height` — height along Z.
+- **Parameters:** `radius`, base circle radius; `height`, height along Z.
 - **Returns:** A solid cylinder, or `nil` on failure.
 - **OCCT:** `BRepPrimAPI_MakeCylinder`.
 - **Example:**
@@ -152,7 +152,7 @@ public static func cylinder(
 ) -> Shape?
 ```
 
-- **Parameters:** `position` — XY centre of base circle; `bottomZ` — Z coordinate of base; `radius`, `height`.
+- **Parameters:** `position`, XY centre of base circle; `bottomZ`, Z coordinate of base; `radius`, `height`.
 - **Returns:** Positioned cylinder, or `nil` on failure.
 - **OCCT:** `BRepPrimAPI_MakeCylinder` (via `OCCTShapeCreateCylinderAt`).
 - **Example:**
@@ -176,10 +176,10 @@ public static func cylinder(
 ```
 
 - **Parameters:**
-  - `origin` — centre of the base circle.
-  - `direction` — axis direction (will be normalised).
-  - `radius` — cylinder radius.
-  - `height` — height along `direction`.
+  - `origin`: centre of the base circle.
+  - `direction`: axis direction (will be normalised).
+  - `radius`: cylinder radius.
+  - `height`: height along `direction`.
 - **Returns:** Oriented cylinder, or `nil` on failure.
 - **OCCT:** `BRepPrimAPI_MakeCylinder` (via `OCCTShapeCreateCylinderOriented`).
 - **Example:**
@@ -199,7 +199,7 @@ Create a partial cylinder (angular segment) along the Z axis.
 public static func cylinder(radius: Double, height: Double, angle: Double) -> Shape?
 ```
 
-- **Parameters:** `radius`, `height`; `angle` — angular extent in radians (`0 < angle <= 2*pi`).
+- **Parameters:** `radius`, `height`; `angle`, angular extent in radians (`0 < angle <= 2*pi`).
 - **Returns:** Partial cylinder sector, or `nil` on failure.
 - **OCCT:** `BRepPrimAPI_MakeCylinder` (via `OCCTShapeCreateCylinderPartial`).
 - **Example:**
@@ -223,7 +223,7 @@ public static func cylinder(
 ) -> Shape?
 ```
 
-- **Parameters:** `origin`, `direction`, `radius`, `height`, `angle` — angular extent in radians (`0 < angle <= 2*pi`).
+- **Parameters:** `origin`, `direction`, `radius`, `height`, `angle`, angular extent in radians (`0 < angle <= 2*pi`).
 - **Returns:** Oriented partial cylinder, or `nil` on failure.
 - **OCCT:** `BRepPrimAPI_MakeCylinder` (via `OCCTShapeCreateCylinderOrientedPartial`).
 
@@ -231,7 +231,7 @@ public static func cylinder(
 
 ### `Shape.toolSweep(radius:height:from:to:)`
 
-Create a tool-sweep solid — the volume swept by a cylindrical tool moving between two points.
+Create a tool-sweep solid, the volume swept by a cylindrical tool moving between two points.
 
 ```swift
 public static func toolSweep(
@@ -244,7 +244,7 @@ public static func toolSweep(
 
 Used for CAM simulation to compute material removal volumes.
 
-- **Parameters:** `radius`, `height` — tool dimensions; `start`, `end` — tool centre path.
+- **Parameters:** `radius`, `height`, tool dimensions; `start`, `end`, tool centre path.
 - **Returns:** Swept solid volume, or `nil` on failure.
 - **OCCT:** `OCCTShapeCreateToolSweep`.
 - **Example:**
@@ -263,7 +263,7 @@ Create a sphere centred at the origin.
 public static func sphere(radius: Double) -> Shape?
 ```
 
-- **Parameters:** `radius` — sphere radius.
+- **Parameters:** `radius`, sphere radius.
 - **Returns:** Solid sphere, or `nil` on failure.
 - **OCCT:** `BRepPrimAPI_MakeSphere`.
 - **Example:**
@@ -283,7 +283,7 @@ Create a sphere at a specific centre point.
 public static func sphere(center: SIMD3<Double>, radius: Double) -> Shape?
 ```
 
-- **Parameters:** `center` — centre of the sphere; `radius`.
+- **Parameters:** `center`, centre of the sphere; `radius`.
 - **Returns:** Positioned sphere, or `nil` on failure.
 - **OCCT:** `BRepPrimAPI_MakeSphere` (via `OCCTShapeCreateSphereAtCenter`).
 - **Example:**
@@ -305,7 +305,7 @@ public static func sphere(
 ) -> Shape?
 ```
 
-- **Parameters:** `origin` — centre; `direction` — axis direction (affects parameterisation); `radius`.
+- **Parameters:** `origin`, centre; `direction`, axis direction (affects parameterisation); `radius`.
 - **Returns:** Oriented sphere, or `nil` on failure.
 - **OCCT:** `BRepPrimAPI_MakeSphere` (via `OCCTShapeCreateSphereOriented`).
 
@@ -319,7 +319,7 @@ Create a partial sphere (angular segment).
 public static func sphere(radius: Double, angle: Double) -> Shape?
 ```
 
-- **Parameters:** `radius`; `angle` — angular extent in radians (`0 < angle <= 2*pi`).
+- **Parameters:** `radius`; `angle`, angular extent in radians (`0 < angle <= 2*pi`).
 - **Returns:** Sphere sector, or `nil` on failure.
 - **OCCT:** `BRepPrimAPI_MakeSphere` (via `OCCTShapeCreateSpherePartial`).
 
@@ -338,7 +338,7 @@ public static func sphere(
 ) -> Shape?
 ```
 
-- **Parameters:** `origin`, `direction`, `radius`, `angle` — angular extent in radians.
+- **Parameters:** `origin`, `direction`, `radius`, `angle`, angular extent in radians.
 - **Returns:** Oriented sphere sector, or `nil` on failure.
 - **OCCT:** `BRepPrimAPI_MakeSphere` (via `OCCTShapeCreateSphereOrientedPartial`).
 
@@ -359,11 +359,11 @@ public static func sphere(
 ```
 
 - **Parameters:**
-  - `origin` — centre of the sphere.
-  - `direction` — axis direction (affects parameterisation).
-  - `radius` — sphere radius.
-  - `angle1` — lower latitude bound in radians (−π/2 to π/2).
-  - `angle2` — upper latitude bound in radians (−π/2 to π/2).
+  - `origin`: centre of the sphere.
+  - `direction`: axis direction (affects parameterisation).
+  - `radius`: sphere radius.
+  - `angle1`: lower latitude bound in radians (−π/2 to π/2).
+  - `angle2`: upper latitude bound in radians (−π/2 to π/2).
 - **Returns:** Latitude-band sphere segment, or `nil` on failure.
 - **OCCT:** `BRepPrimAPI_MakeSphere` (via `OCCTShapeCreateSphereOrientedSegment`).
 
@@ -377,7 +377,7 @@ Create a cone along the Z axis.
 public static func cone(bottomRadius: Double, topRadius: Double, height: Double) -> Shape?
 ```
 
-- **Parameters:** `bottomRadius` — radius at the base; `topRadius` — radius at the top (0 = true cone); `height`.
+- **Parameters:** `bottomRadius`, radius at the base; `topRadius`, radius at the top (0 = true cone); `height`.
 - **Returns:** Solid cone or frustum, or `nil` on failure.
 - **OCCT:** `BRepPrimAPI_MakeCone`.
 - **Example:**
@@ -402,7 +402,7 @@ public static func cone(
 ) -> Shape?
 ```
 
-- **Parameters:** `origin` — centre of the base circle; `direction` — axis (will be normalised); `bottomRadius`, `topRadius`, `height`.
+- **Parameters:** `origin`, centre of the base circle; `direction`, axis (will be normalised); `bottomRadius`, `topRadius`, `height`.
 - **Returns:** Oriented cone/frustum, or `nil` on failure.
 - **OCCT:** `BRepPrimAPI_MakeCone` (via `OCCTShapeCreateConeOriented`).
 
@@ -423,7 +423,7 @@ public static func cone(
 ) -> Shape?
 ```
 
-- **Parameters:** `origin`, `direction`, `bottomRadius`, `topRadius`, `height`; `angle` — angular extent in radians (`0 < angle <= 2*pi`).
+- **Parameters:** `origin`, `direction`, `bottomRadius`, `topRadius`, `height`; `angle`, angular extent in radians (`0 < angle <= 2*pi`).
 - **Returns:** Oriented cone sector, or `nil` on failure.
 - **OCCT:** `BRepPrimAPI_MakeCone` (via `OCCTShapeCreateConeOrientedPartial`).
 
@@ -437,7 +437,7 @@ Create a torus in the XY plane.
 public static func torus(majorRadius: Double, minorRadius: Double) -> Shape?
 ```
 
-- **Parameters:** `majorRadius` — distance from torus centre to tube centre; `minorRadius` — tube radius.
+- **Parameters:** `majorRadius`, distance from torus centre to tube centre; `minorRadius`, tube radius.
 - **Returns:** Solid torus, or `nil` on failure.
 - **OCCT:** `BRepPrimAPI_MakeTorus`.
 - **Example:**
@@ -460,7 +460,7 @@ public static func torus(
 ) -> Shape?
 ```
 
-- **Parameters:** `origin` — centre of the torus; `direction` — normal to the torus plane; `majorRadius`, `minorRadius`.
+- **Parameters:** `origin`, centre of the torus; `direction`, normal to the torus plane; `majorRadius`, `minorRadius`.
 - **Returns:** Oriented torus, or `nil` on failure.
 - **OCCT:** `BRepPrimAPI_MakeTorus` (via `OCCTShapeCreateTorusOriented`).
 
@@ -480,7 +480,7 @@ public static func torus(
 ) -> Shape?
 ```
 
-- **Parameters:** `origin`, `direction`, `majorRadius`, `minorRadius`; `angle` — angular extent in radians (`0 < angle <= 2*pi`).
+- **Parameters:** `origin`, `direction`, `majorRadius`, `minorRadius`; `angle`, angular extent in radians (`0 < angle <= 2*pi`).
 - **Returns:** Oriented torus sector, or `nil` on failure.
 - **OCCT:** `BRepPrimAPI_MakeTorus` (via `OCCTShapeCreateTorusOrientedPartial`).
 
@@ -502,11 +502,11 @@ public static func torus(
 ```
 
 - **Parameters:**
-  - `origin` — centre of the torus.
-  - `direction` — axis direction (normal to torus plane).
+  - `origin`: centre of the torus.
+  - `direction`: axis direction (normal to torus plane).
   - `majorRadius`, `minorRadius`.
-  - `angle1` — start angle of the tube section in radians.
-  - `angle2` — end angle of the tube section in radians.
+  - `angle1`: start angle of the tube section in radians.
+  - `angle2`: end angle of the tube section in radians.
 - **Returns:** Tube-segment torus, or `nil` on failure.
 - **OCCT:** `BRepPrimAPI_MakeTorus` (via `OCCTShapeCreateTorusOrientedSegment`).
 
@@ -524,7 +524,7 @@ public static func sweep(profile: Wire, along path: Wire) -> Shape?
 
 The result is orientation-normalised so its faces always point outward (positive volume), regardless of how the profile's normal relates to the path tangent. You do not need to manually orient the section against the tangent.
 
-- **Parameters:** `profile` — closed cross-section wire placed at the path's start; `path` — spine wire.
+- **Parameters:** `profile`, closed cross-section wire placed at the path's start; `path`, spine wire.
 - **Returns:** Swept solid, or `nil` on failure.
 - **OCCT:** `BRepOffsetAPI_MakePipe`.
 - **Example:**
@@ -547,7 +547,7 @@ Extrude a 2D profile wire in a direction to create a prism.
 public static func extrude(profile: Wire, direction: SIMD3<Double>, length: Double) -> Shape?
 ```
 
-- **Parameters:** `profile` — closed profile wire; `direction` — extrusion direction (need not be unit length); `length` — extrusion distance.
+- **Parameters:** `profile`, closed profile wire; `direction`, extrusion direction (need not be unit length); `length`, extrusion distance.
 - **Returns:** Solid prism, or `nil` on failure.
 - **OCCT:** `BRepPrimAPI_MakePrism`.
 - **Example:**
@@ -574,10 +574,10 @@ public static func revolve(
 ```
 
 - **Parameters:**
-  - `profile` — meridian wire in a plane containing the axis.
-  - `axisOrigin` — a point on the revolution axis.
-  - `axisDirection` — axis direction vector.
-  - `angle` — sweep angle in radians (default full 2π).
+  - `profile`: meridian wire in a plane containing the axis.
+  - `axisOrigin`: a point on the revolution axis.
+  - `axisDirection`: axis direction vector.
+  - `angle`: sweep angle in radians (default full 2π).
 - **Returns:** Revolution solid, or `nil` on failure.
 - **OCCT:** `BRepPrimAPI_MakeRevol`.
 - **Example:**
@@ -601,13 +601,17 @@ Extrude an existing shape (any topology) along a vector.
 public func extruded(by vector: SIMD3<Double>) -> Shape?
 ```
 
-- **Parameters:** `vector` — translation vector; its magnitude determines the extrusion distance.
+- **Parameters:** `vector`, translation vector; its magnitude determines the extrusion distance.
 - **Returns:** Extruded shape, or `nil` on failure.
 - **OCCT:** `BRepPrimAPI_MakePrism` (via `OCCTShapeCreateExtrusionShape`).
 - **Example:**
   ```swift
   if let solid = face.extruded(by: SIMD3(0, 0, 5)) { }
   ```
+
+`BRepPrimAPI_MakePrism` dereferences the profile shape, so a null shape (from
+`Shape.nullified`) used to crash the process here. It is refused now and answers `nil`
+(#1035, measured in `Scripts/repro/1035-unwrap-guard/`).
 
 ---
 
@@ -621,7 +625,7 @@ public func extrudedInfinite(direction: SIMD3<Double>, infinite: Bool = true) ->
 
 Useful for half-space cutters in booleans (e.g. slice a solid).
 
-- **Parameters:** `direction` — extrusion direction; `infinite` — if `true`, both directions; if `false`, semi-infinite.
+- **Parameters:** `direction`, extrusion direction; `infinite`, if `true`, both directions; if `false`, semi-infinite.
 - **Returns:** Infinite-extent shape (shell), or `nil` on failure.
 - **OCCT:** `BRepPrimAPI_MakePrism` (via `OCCTShapeCreateExtrusionInfinite`).
 - **Example:**
@@ -631,6 +635,9 @@ Useful for half-space cutters in booleans (e.g. slice a solid).
         let halfSpace = plane.extrudedInfinite(direction: SIMD3(0, 0, 1)),
         let trimmed = solid.subtracting(halfSpace) else { return }
   ```
+
+A null shape (from `Shape.nullified`) used to crash the process inside
+`BRepPrimAPI_MakePrism`. It is refused now and answers `nil` (#1035).
 
 ---
 
@@ -645,7 +652,7 @@ public func revolved(
 ) -> Shape?
 ```
 
-- **Parameters:** `axisOrigin` — point on revolution axis; `axisDirection` — axis direction.
+- **Parameters:** `axisOrigin`, point on revolution axis; `axisDirection`, axis direction.
 - **Returns:** Revolution solid, or `nil` on failure.
 - **OCCT:** `BRepPrimAPI_MakeRevol` (via `OCCTShapeCreateRevolutionFull`).
 
@@ -663,7 +670,7 @@ public func revolved(
 ) -> Shape?
 ```
 
-- **Parameters:** `axisOrigin`, `axisDirection`; `angle` — sweep angle in radians.
+- **Parameters:** `axisOrigin`, `axisDirection`; `angle`, sweep angle in radians.
 - **Returns:** Partial revolution solid, or `nil` on failure.
 - **OCCT:** `BRepPrimAPI_MakeRevol` (via `OCCTShapeCreateRevolutionPartial`).
 
@@ -677,10 +684,10 @@ Loft through multiple profile wires.
 public static func loft(profiles: [Wire], solid: Bool = true) -> Shape?
 ```
 
-- **Parameters:** `profiles` — ordered array of profile wires; `solid` — `true` (default) creates a closed solid, `false` creates an open shell.
+- **Parameters:** `profiles`, ordered array of profile wires; `solid`, `true` (default) creates a closed solid, `false` creates an open shell.
 - **Returns:** Lofted shape, or `nil` on failure.
 - **OCCT:** `BRepOffsetAPI_ThruSections`.
-- **Note:** Mismatched closed/open profiles can trigger a SIGSEGV in `BRepFill_CompatibleWires` when using smooth (non-ruled) lofts — see the CLAUDE.md note on this known upstream bug and the patch in `Scripts/patches/`.
+- **Note:** Mismatched closed/open profiles can trigger a SIGSEGV in `BRepFill_CompatibleWires` when using smooth (non-ruled) lofts, see the CLAUDE.md note on this known upstream bug and the patch in `Scripts/patches/`.
 - **Example:**
   ```swift
   guard let base = Wire.circle(radius: 5),
@@ -701,11 +708,11 @@ public static func loft(profiles: [Wire], solid: Bool = true, ruled: Bool,
 ```
 
 - **Parameters:**
-  - `profiles` — ordered profile wires.
-  - `solid` — solid vs shell.
-  - `ruled` — `true` = ruled (flat/faceted) surfaces between profiles; `false` = smooth B-spline blend.
-  - `firstVertex` — optional starting tip point for cone/taper shapes.
-  - `lastVertex` — optional ending tip point for cone/taper shapes.
+  - `profiles`: ordered profile wires.
+  - `solid`: solid vs shell.
+  - `ruled`: `true` = ruled (flat/faceted) surfaces between profiles; `false` = smooth B-spline blend.
+  - `firstVertex`: optional starting tip point for cone/taper shapes.
+  - `lastVertex`: optional ending tip point for cone/taper shapes.
 - **Returns:** Lofted shape, or `nil` on failure.
 - **OCCT:** `BRepOffsetAPI_ThruSections` (via `OCCTShapeCreateLoftAdvanced`).
 - **Example:**
@@ -731,13 +738,13 @@ Glue mode enum for boolean operations (`BOPAlgo_GlueEnum`).
 
 ```swift
 public enum BooleanGlue: Int32, Sendable {
-    case off   = 0  // No gluing — full intersection (default)
-    case shift = 1  // BOPAlgo_GlueShift — coincident but otherwise disjoint faces
-    case full  = 2  // BOPAlgo_GlueFull  — all faces coincident (fastest, strictest)
+    case off   = 0  // No gluing, full intersection (default)
+    case shift = 1  // BOPAlgo_GlueShift, coincident but otherwise disjoint faces
+    case full  = 2  // BOPAlgo_GlueFull, all faces coincident (fastest, strictest)
 }
 ```
 
-Gluing speeds up booleans when arguments share coincident faces. Only use when faces truly coincide — gluing genuinely interpenetrating solids produces a wrong result.
+Gluing speeds up booleans when arguments share coincident faces. Only use when faces truly coincide, gluing genuinely interpenetrating solids produces a wrong result.
 
 ---
 
@@ -773,10 +780,10 @@ public func union(_ other: Shape, fuzzyValue: Double = 0, glue: BooleanGlue = .o
 Also available as the `+` operator.
 
 - **Parameters:**
-  - `other` — the shape to fuse with `self`.
-  - `fuzzyValue` — tolerance (`SetFuzzyValue`). `0` = OCCT default; a small positive value (e.g. `1e-4`) helps near-tangent/coincident faces fuse cleanly. Negative = ignored.
-  - `glue` — glue mode for coincident-face arguments.
-  - `timeout` — wall-clock bound in seconds; `nil` result if elapsed.
+  - `other`: the shape to fuse with `self`.
+  - `fuzzyValue`: tolerance (`SetFuzzyValue`). `0` = OCCT default; a small positive value (e.g. `1e-4`) helps near-tangent/coincident faces fuse cleanly. Negative = ignored.
+  - `glue`: glue mode for coincident-face arguments.
+  - `timeout`: wall-clock bound in seconds; `nil` result if elapsed.
 - **Returns:** Fused solid, or `nil` on failure or timeout.
 - **OCCT:** `BRepAlgoAPI_Fuse` (via `OCCTShapeUnionEx`).
 - **Example:**
@@ -806,10 +813,10 @@ public func subtracting(_ other: Shape, fuzzyValue: Double = 0, glue: BooleanGlu
 Also available as the `-` operator.
 
 - **Parameters:**
-  - `other` — the tool shape to remove from `self`.
-  - `fuzzyValue` — tolerance. Raise slightly when a thin-wall cut under-subtracts.
-  - `glue` — glue mode.
-  - `timeout` — wall-clock bound in seconds.
+  - `other`: the tool shape to remove from `self`.
+  - `fuzzyValue`: tolerance. Raise slightly when a thin-wall cut under-subtracts.
+  - `glue`: glue mode.
+  - `timeout`: wall-clock bound in seconds.
 - **Returns:** Result of `self − other`, or `nil` on failure or timeout.
 - **OCCT:** `BRepAlgoAPI_Cut` (via `OCCTShapeSubtractEx`).
 - **Example:**
@@ -834,10 +841,10 @@ public func intersection(_ other: Shape, fuzzyValue: Double = 0, glue: BooleanGl
 Also available as the `&` operator.
 
 - **Parameters:**
-  - `other` — the shape to intersect with `self`.
-  - `fuzzyValue` — tolerance.
-  - `glue` — glue mode.
-  - `timeout` — wall-clock bound in seconds.
+  - `other`: the shape to intersect with `self`.
+  - `fuzzyValue`: tolerance.
+  - `glue`: glue mode.
+  - `timeout`: wall-clock bound in seconds.
 - **Returns:** The volume common to both shapes, or `nil` on failure or timeout.
 - **OCCT:** `BRepAlgoAPI_Common` (via `OCCTShapeIntersectEx`).
 - **Example:**
@@ -858,7 +865,7 @@ Fillet (round) all edges with a given radius.
 public func filleted(radius: Double) -> Shape?
 ```
 
-- **Parameters:** `radius` — fillet radius.
+- **Parameters:** `radius`, fillet radius.
 - **Returns:** Shape with all edges rounded, or `nil` on failure.
 - **OCCT:** `BRepFilletAPI_MakeFillet`.
 - **Example:**
@@ -876,7 +883,7 @@ Chamfer all edges with a given distance.
 public func chamfered(distance: Double) -> Shape?
 ```
 
-- **Parameters:** `distance` — chamfer distance (equal on both sides).
+- **Parameters:** `distance`, chamfer distance (equal on both sides).
 - **Returns:** Shape with all edges chamfered, or `nil` on failure.
 - **OCCT:** `BRepFilletAPI_MakeChamfer`.
 - **Example:**
@@ -896,7 +903,7 @@ public func chamferedTwoDistances(_ edges: [(edgeIndex: Int, faceIndex: Int, dis
 
 Each entry specifies an edge, a reference face adjacent to that edge, and two distances. `dist1` is measured on the reference face side, `dist2` on the opposite side.
 
-- **Parameters:** `edges` — array of `(edgeIndex, faceIndex, dist1, dist2)` tuples.
+- **Parameters:** `edges`, array of `(edgeIndex, faceIndex, dist1, dist2)` tuples.
 - **Returns:** Chamfered shape, or `nil` on failure.
 - **OCCT:** `BRepFilletAPI_MakeChamfer` (via `OCCTShapeChamferTwoDistances`).
 - **Example:**
@@ -916,7 +923,7 @@ public func chamferedDistAngle(_ edges: [(edgeIndex: Int, faceIndex: Int, distan
 
 Each entry specifies an edge, a reference face adjacent to that edge, a distance measured on the reference face, and a chamfer angle in degrees (must be between 0 and 90, exclusive).
 
-- **Parameters:** `edges` — array of `(edgeIndex, faceIndex, distance, angleDegrees)` tuples.
+- **Parameters:** `edges`, array of `(edgeIndex, faceIndex, distance, angleDegrees)` tuples.
 - **Returns:** Chamfered shape, or `nil` on failure.
 - **OCCT:** `BRepFilletAPI_MakeChamfer` (via `OCCTShapeChamferDistAngle`).
 
@@ -930,10 +937,10 @@ Create a hollow shell by removing material from the inside.
 public func shelled(thickness: Double) -> Shape?
 ```
 
-- **Parameters:** `thickness` — wall thickness (positive = shell walls of this thickness).
+- **Parameters:** `thickness`, wall thickness (positive = shell walls of this thickness).
 - **Returns:** Hollow shell, or `nil` on failure.
 - **OCCT:** `BRepOffsetAPI_MakeThickSolid`.
-- **Warning:** The offset surfaces this produces (`Geom_OffsetSurface`) can hang the mesher unboundedly on pathological input — see the warning on [`mesh(linearDeflection:angularDeflection:)`](#meshlineardeflectionangulardeflection) ([#286](https://github.com/SecondMouseAU/OCCTSwift/issues/286)).
+- **Warning:** The offset surfaces this produces (`Geom_OffsetSurface`) can hang the mesher unboundedly on pathological input, see the warning on [`mesh(linearDeflection:angularDeflection:)`](#meshlineardeflectionangulardeflection) ([#286](https://github.com/SecondMouseAU/OCCTSwift/issues/286)).
 - **Example:**
   ```swift
   if let shell = Shape.box(width: 10, height: 10, depth: 10)?.shelled(thickness: 1) { }
@@ -943,7 +950,7 @@ public func shelled(thickness: Double) -> Shape?
 
 ### `hollowed(removingFaces:thickness:tolerance:joinType:)`
 
-Remove the specified faces and shell the rest to a uniform wall thickness — the removed faces become the openings.
+Remove the specified faces and shell the rest to a uniform wall thickness, the removed faces become the openings.
 
 ```swift
 public func hollowed(removingFaces faceIndices: [Int],
@@ -955,10 +962,10 @@ public func hollowed(removingFaces faceIndices: [Int],
 Where `shelled(thickness:)` closes the solid entirely, this is the open-box case: pass the 0-based indices of the faces to remove. Returns `nil` if `faceIndices` is empty.
 
 - **Parameters:**
-  - `faceIndices` — 0-based indices of the faces to remove (they become openings).
-  - `thickness` — wall thickness (positive = offset inward).
-  - `tolerance` — tolerance for the operation (default `1e-3`).
-  - `joinType` — how to join offset edges (default `.arc`).
+  - `faceIndices`: 0-based indices of the faces to remove (they become openings).
+  - `thickness`: wall thickness (positive = offset inward).
+  - `tolerance`: tolerance for the operation (default `1e-3`).
+  - `joinType`: how to join offset edges (default `.arc`).
 - **Returns:** Hollowed solid, or `nil` on failure.
 - **OCCT:** `BRepOffsetAPI_MakeThickSolid` (via `OCCTShapeMakeThickSolid`).
 - **Warning:** As with `shelled(thickness:)`, the resulting offset surfaces can hang the mesher on pathological input ([#286](https://github.com/SecondMouseAU/OCCTSwift/issues/286)).
@@ -979,7 +986,7 @@ Offset all faces by a distance.
 public func offset(by distance: Double) -> Shape?
 ```
 
-- **Parameters:** `distance` — offset distance (positive = outward, negative = inward).
+- **Parameters:** `distance`, offset distance (positive = outward, negative = inward).
 - **Returns:** Offset shape, or `nil` on failure.
 - **OCCT:** `BRepOffsetAPI_MakeOffsetShape` (via `OCCTShapeOffset`).
 - **Example:**
@@ -1002,10 +1009,10 @@ public func offset(by distance: Double, tolerance: Double = 1e-7,
 More robust than the simple `offset(by:)` overload; handles gap-filling between parallel faces.
 
 - **Parameters:**
-  - `distance` — offset distance (positive = outward, negative = inward).
-  - `tolerance` — coincidence tolerance (default `1e-7`).
-  - `joinType` — how to fill gaps between offset faces: `.arc` (smooth), `.tangent`, or `.intersection` (sharp).
-  - `removeInternalEdges` — whether to clean up internal edges.
+  - `distance`: offset distance (positive = outward, negative = inward).
+  - `tolerance`: coincidence tolerance (default `1e-7`).
+  - `joinType`: how to fill gaps between offset faces: `.arc` (smooth), `.tangent`, or `.intersection` (sharp).
+  - `removeInternalEdges`: whether to clean up internal edges.
 - **Returns:** Offset shape, or `nil` on failure.
 - **OCCT:** `BRepOffsetAPI_MakeOffsetShape::PerformByJoin` (via `OCCTShapeOffsetByJoin`).
 - **Example:**
@@ -1025,7 +1032,7 @@ Translate the shape.
 public func translated(by offset: SIMD3<Double>) -> Shape?
 ```
 
-- **Parameters:** `offset` — translation vector.
+- **Parameters:** `offset`, translation vector.
 - **Returns:** Translated shape, or `nil` on failure.
 - **OCCT:** `BRepBuilderAPI_Transform` (via `OCCTShapeTranslate`).
 - **Example:**
@@ -1043,7 +1050,7 @@ Rotate the shape around an axis through the origin.
 public func rotated(axis: SIMD3<Double>, angle: Double) -> Shape?
 ```
 
-- **Parameters:** `axis` — rotation axis vector (need not be unit length); `angle` — angle in radians.
+- **Parameters:** `axis`, rotation axis vector (need not be unit length); `angle`, angle in radians.
 - **Returns:** Rotated shape, or `nil` on failure.
 - **OCCT:** `BRepBuilderAPI_Transform` / `gp_Trsf` (via `OCCTShapeRotate`).
 - **Example:**
@@ -1061,7 +1068,7 @@ Scale the shape uniformly from the origin.
 public func scaled(by factor: Double) -> Shape?
 ```
 
-- **Parameters:** `factor` — uniform scale factor.
+- **Parameters:** `factor`, uniform scale factor.
 - **Returns:** Scaled shape, or `nil` on failure.
 - **OCCT:** `BRepBuilderAPI_Transform` / `gp_Trsf` (via `OCCTShapeScale`).
 - **Example:**
@@ -1079,7 +1086,7 @@ Mirror the shape across a plane.
 public func mirrored(planeNormal: SIMD3<Double>, planeOrigin: SIMD3<Double> = .zero) -> Shape?
 ```
 
-- **Parameters:** `planeNormal` — normal of the mirror plane; `planeOrigin` — point on the mirror plane (default origin).
+- **Parameters:** `planeNormal`, normal of the mirror plane; `planeOrigin`, point on the mirror plane (default origin).
 - **Returns:** Mirrored shape, or `nil` on failure.
 - **OCCT:** `BRepBuilderAPI_Transform` / `gp_Trsf` (via `OCCTShapeMirror`).
 - **Example:**
@@ -1094,15 +1101,20 @@ public func mirrored(planeNormal: SIMD3<Double>, planeOrigin: SIMD3<Double> = .z
 
 ### `Shape.compound(_:)`
 
-Combine multiple shapes into a compound (grouping only — no boolean merge).
+Combine multiple shapes into a compound (grouping only, no boolean merge).
 
 ```swift
 public static func compound(_ shapes: [Shape]) -> Shape?
 ```
 
-- **Parameters:** `shapes` — array of shapes to group.
-- **Returns:** A `TopoDS_Compound` holding all shapes, or `nil` if the array is empty or creation fails.
+- **Parameters:** `shapes`, array of shapes to group.
+- **Returns:** A `TopoDS_Compound` holding all shapes, or `nil` if the array is empty, if any
+  element is null, or if creation fails.
 - **OCCT:** `BRep_Builder::MakeCompound` / `BRep_Builder::Add` (via `OCCTShapeCreateCompound`).
+  `TopoDS_Builder::Add` dereferences the component's `TShape` in its first statement, so a null
+  element (from `Shape.nullified`) used to crash the process here. It is refused now, and the whole
+  call is refused rather than the element skipped: a silently dropped member is one the caller asked
+  for and did not get (#1026).
 - **Example:**
   ```swift
   guard let box = Shape.box(width: 10, height: 5, depth: 3),
@@ -1126,7 +1138,7 @@ public static func fromWire(_ wire: Wire) -> Shape?
 
 Since `TopoDS_Wire` inherits from `TopoDS_Shape` in OCCT, this is a lightweight conversion that enables using Shape methods (e.g. `allEdgePolylines()`) on wire geometry without creating solid geometry.
 
-- **Parameters:** `wire` — the wire to wrap.
+- **Parameters:** `wire`, the wire to wrap.
 - **Returns:** A `Shape` wrapping the wire, or `nil` on failure.
 - **OCCT:** `TopoDS` shape-type promotion (via `OCCTShapeFromWire`).
 - **Example:**
@@ -1148,7 +1160,7 @@ public static func fromEdge(_ edge: Edge) -> Shape?
 
 Since `TopoDS_Edge` inherits from `TopoDS_Shape` in OCCT, this is a lightweight conversion.
 
-- **Parameters:** `edge` — the edge to wrap.
+- **Parameters:** `edge`, the edge to wrap.
 - **Returns:** A `Shape` wrapping the edge, or `nil` on failure.
 - **OCCT:** `TopoDS` shape-type promotion (via `OCCTShapeFromEdge`).
 
@@ -1164,7 +1176,7 @@ public static func fromFace(_ face: Face) -> Shape?
 
 Since `TopoDS_Face` inherits from `TopoDS_Shape` in OCCT, this is a lightweight conversion.
 
-- **Parameters:** `face` — the face to wrap.
+- **Parameters:** `face`, the face to wrap.
 - **Returns:** A `Shape` wrapping the face, or `nil` on failure.
 - **OCCT:** `TopoDS` shape-type promotion (via `OCCTShapeFromFace`).
 
@@ -1222,8 +1234,8 @@ public func mesh(
 ```
 
 - **Parameters:**
-  - `linearDeflection` — maximum chord deviation from curved faces (smaller = finer mesh, default `0.1`).
-  - `angularDeflection` — maximum angular deviation in radians (default `0.5`).
+  - `linearDeflection`: maximum chord deviation from curved faces (smaller = finer mesh, default `0.1`).
+  - `angularDeflection`: maximum angular deviation in radians (default `0.5`).
 - **Returns:** A `Mesh` containing triangles and normals, or `nil` on failure.
 - **OCCT:** `BRepMesh_IncrementalMesh`.
 - **Example:**
@@ -1232,19 +1244,19 @@ public func mesh(
       // use mesh.triangles, mesh.normals, etc.
   }
   ```
-- **⚠️ Can take minutes on a degenerate offset surface.** The geometry `shelled(thickness:)` / `offset(by:)` produce (`Geom_OffsetSurface`) can be enormously expensive to mesh. It is **not** a hang: measured on the fitted-then-offset B-spline panel from [#286](https://github.com/SecondMouseAU/OCCTSwift/issues/286), one face took **249 s** and produced **1.4 M triangles** at a *coarse* deflection (1/638 of the bbox diagonal). It terminates — earlier reports of an unbounded hang were timeouts set below 249 s.
+- **⚠️ Can take minutes on a degenerate offset surface.** The geometry `shelled(thickness:)` / `offset(by:)` produce (`Geom_OffsetSurface`) can be enormously expensive to mesh. It is **not** a hang: measured on the fitted-then-offset B-spline panel from [#286](https://github.com/SecondMouseAU/OCCTSwift/issues/286), one face took **249 s** and produced **1.4 M triangles** at a *coarse* deflection (1/638 of the bbox diagonal). It terminates, earlier reports of an unbounded hang were timeouts set below 249 s.
 
-  **Cause** — the offset surface is *self-intersecting*, and the mesher's angular criterion cannot converge on it. Offsetting by more than the local radius of curvature produces cusps: on the #286 panel the basis fit's minimum principal curvature radius is `2.6e-05` against an offset of `1.27`, so **23.8 %** of the domain is cusped and the normal swings by up to `π` across one. `BRepMesh` splits any triangle link whose end normals differ by more than `AngleInterior` (= `2 × angularDeflection`), but at a normal *discontinuity* splitting never helps — halving a link that straddles a cusp just moves the cusp into one half. `BRepMesh_DelaunayDeflectionControlMeshAlgo::optimizeMesh` therefore runs all 11 passes demanding ~80 k splits each, long after linear deflection is met (1.82 against a 2.48 target by pass 6); `MinSize` (= `linearDeflection / 10`) is the only backstop.
+  **Cause**: the offset surface is *self-intersecting*, and the mesher's angular criterion cannot converge on it. Offsetting by more than the local radius of curvature produces cusps: on the #286 panel the basis fit's minimum principal curvature radius is `2.6e-05` against an offset of `1.27`, so **23.8 %** of the domain is cusped and the normal swings by up to `π` across one. `BRepMesh` splits any triangle link whose end normals differ by more than `AngleInterior` (= `2 × angularDeflection`), but at a normal *discontinuity* splitting never helps, halving a link that straddles a cusp just moves the cusp into one half. `BRepMesh_DelaunayDeflectionControlMeshAlgo::optimizeMesh` therefore runs all 11 passes demanding ~80 k splits each, long after linear deflection is met (1.82 against a 2.48 target by pass 6); `MinSize` (= `linearDeflection / 10`) is the only backstop.
 
-  This is invalid input, not an OCCT defect — a well-formed offset surface meshes normally. Note `isValid` will **not** catch it (the offending solid reports `isValid == true`): a self-intersecting offset surface is still a topologically valid face.
+  This is invalid input, not an OCCT defect, a well-formed offset surface meshes normally. Note `isValid` will **not** catch it (the offending solid reports `isValid == true`): a self-intersecting offset surface is still a topologically valid face.
 
   Mitigations, best first:
-  1. **Sanity-check before meshing.** `bounds` is a cheap `Bnd_Box` query (no tessellation) — comparing a thickened solid's bbox against its source's rejects the ballooned offsets that trigger this.
-  2. **Bound it with a deadline.** [`meshWithProgress`](#meshwithprogresslineardeflectionangulardeflectionprogress) interrupts this reliably — a 10 s deadline returns in 10.1 s on the #286 face.
+  1. **Sanity-check before meshing.** `bounds` is a cheap `Bnd_Box` query (no tessellation), comparing a thickened solid's bbox against its source's rejects the ballooned offsets that trigger this.
+  2. **Bound it with a deadline.** [`meshWithProgress`](#meshwithprogresslineardeflectionangulardeflectionprogress) interrupts this reliably, a 10 s deadline returns in 10.1 s on the #286 face.
   3. **Raise `angularDeflection`** (it sets the `AngleInterior` threshold doing all the splitting), or raise `MinSize` via `mesh(parameters:)` so the backstop bites sooner.
   4. `withSurfacesAsBSpline(offset: true)` approximates the offset surface with a plain B-spline, smoothing the cusps the angular check chokes on: 125 s / 526 k verts on the #286 solid. It resamples the geometry, so it is a rescue path, not a default.
 
-- **Winding always reflects true topological orientation, not a naive transform read** ([#375](https://github.com/SecondMouseAU/OCCTSwift/issues/375)). This reads each face's `TopoDS_Face::Orientation()` faithfully — but for a **valid, closed solid**, that orientation is always consistently outward, even after a mirror (negative-determinant transform): `mirrored(planeNormal:planeOrigin:)` doesn't naively re-tessellate flipped geometry — OCCT's `BRepBuilderAPI_Transform` compensates by flipping each face's orientation flag. Confirmed empirically: a box and its mirror both mesh 12/12 triangles outward, with the identical FORWARD/REVERSED face split before and after. There is no way, via a valid `Shape`, to get caller-controlled ("wrong-way") winding — use `Mesh(vertices:normals:indices:)` directly for that.
+- **Winding always reflects true topological orientation, not a naive transform read** ([#375](https://github.com/SecondMouseAU/OCCTSwift/issues/375)). This reads each face's `TopoDS_Face::Orientation()` faithfully, but for a **valid, closed solid**, that orientation is always consistently outward, even after a mirror (negative-determinant transform): `mirrored(planeNormal:planeOrigin:)` doesn't naively re-tessellate flipped geometry, OCCT's `BRepBuilderAPI_Transform` compensates by flipping each face's orientation flag. Confirmed empirically: a box and its mirror both mesh 12/12 triangles outward, with the identical FORWARD/REVERSED face split before and after. There is no way, via a valid `Shape`, to get caller-controlled ("wrong-way") winding, use `Mesh(vertices:normals:indices:)` directly for that.
 
 ---
 
@@ -1263,15 +1275,15 @@ public func meshWithProgress(
 
 Wraps `BRepMesh_IncrementalMesh(shape, IMeshTools_Parameters, Message_ProgressRange)` so callers can observe meshing progress on large assemblies and cooperatively cancel.
 
-This is the supported way to **bound meshing of untrusted geometry**. OCCT polls the range densely — before each face (`BRepMesh_FaceDiscret`), at each deflection-control pass, and per vertex in `BRepMesh_Delaun` — so a wall-clock deadline in `shouldCancel()` interrupts even the pathological offset surfaces of [#286](https://github.com/SecondMouseAU/OCCTSwift/issues/286). Measured on the #286 face, which needs 249 s to mesh in full: a 10 s deadline throws `ImportError.cancelled` after 10.1 s, having polled 154,898 times.
+This is the supported way to **bound meshing of untrusted geometry**. OCCT polls the range densely, before each face (`BRepMesh_FaceDiscret`), at each deflection-control pass, and per vertex in `BRepMesh_Delaun`, so a wall-clock deadline in `shouldCancel()` interrupts even the pathological offset surfaces of [#286](https://github.com/SecondMouseAU/OCCTSwift/issues/286). Measured on the #286 face, which needs 249 s to mesh in full: a 10 s deadline throws `ImportError.cancelled` after 10.1 s, having polled 154,898 times.
 
 - **Parameters:**
-  - `linearDeflection`, `angularDeflection` — same as `mesh()`.
-  - `progress` — optional `ImportProgress` object; call `shouldCancel()` to abort cooperatively.
+  - `linearDeflection`, `angularDeflection`, same as `mesh()`.
+  - `progress`: optional `ImportProgress` object; call `shouldCancel()` to abort cooperatively.
 - **Returns:** `self` (with triangulations attached) on success.
 - **Throws:** `ImportError.cancelled` if the meshing was cancelled cooperatively.
 - **OCCT:** `BRepMesh_IncrementalMesh` with `Message_ProgressRange` (via `OCCTShapeIncrementalMeshProgress`).
-- **Example** — bound an untrusted mesh to 10 seconds:
+- **Example**: bound an untrusted mesh to 10 seconds:
   ```swift
   final class Deadline: ImportProgress, @unchecked Sendable {
       private let start = Date()
@@ -1283,7 +1295,7 @@ This is the supported way to **bound meshing of untrusted geometry**. OCCT polls
       try shape.meshWithProgress(linearDeflection: 0.02, progress: Deadline())
       let mesh = shape.mesh()  // triangulations are now attached
   } catch ImportError.cancelled {
-      // Gave up after 10s — the geometry is probably degenerate.
+      // Gave up after 10s, the geometry is probably degenerate.
   }
   ```
 - **Fixed in v1.11.1:** cancellation previously did not work at all. The bridge used the `BRepMesh_IncrementalMesh(shape, linDefl, isRelative, angDefl)` constructor, which calls `Perform()` internally with a *null* progress range: the whole mesh was built uninterruptibly before the range was polled, and the shape was then meshed a second time. Cancellation still *threw* (`UserBreak()` was checked afterwards), which is why v1.10.2 documented this as an OCCT limitation.
@@ -1300,7 +1312,7 @@ public func mesh(parameters: MeshParameters) -> Mesh?
 
 Provides fine-grained control over tessellation quality, useful for CAM toolpath generation or high-quality visualisation.
 
-- **Parameters:** `parameters` — a `MeshParameters` struct with deflection, parallelism, and other options.
+- **Parameters:** `parameters`, a `MeshParameters` struct with deflection, parallelism, and other options.
 - **Returns:** A `Mesh` with the specified quality settings, or `nil` on failure.
 - **OCCT:** `BRepMesh_IncrementalMesh` (via `OCCTShapeCreateMeshWithParams`).
 - **Example:**
@@ -1331,19 +1343,19 @@ public func edgePolyline(
 Adaptively samples points along a B-Rep edge using curvature-based deflection control. Useful for contour toolpath generation, edge visualisation, and G-code generation.
 
 - **Parameters:**
-  - `index` — edge index (0-based).
-  - `deflection` — maximum chord deviation.
-  - `maxPoints` — output *capacity*, clamped into `0...Sampling.maximumSampleCount` (10,000,000), so an unservable capacity returns the same points rather than a coarser sampling; 0 or less returns `nil` (#558). The deflection decides the actual point count.
+  - `index`: edge index (0-based).
+  - `deflection`: maximum chord deviation.
+  - `maxPoints`: output *capacity*, clamped into `0...Sampling.maximumSampleCount` (10,000,000), so an unservable capacity returns the same points rather than a coarser sampling; 0 or less returns `nil` (#558). The deflection decides the actual point count.
 - **Returns:** Array of 3D points along the edge, or `nil` if the edge is not found.
 - **OCCT:** `GCPnts_TangentialDeflection` / `BRep_Tool::Curve` (via `OCCTShapeGetEdgePolyline`).
 - **Example:**
   ```swift
   if let pts = shape.edgePolyline(at: 0, deflection: 0.01) {
-      // pts is [SIMD3<Double>] — contour points
+      // pts is [SIMD3<Double>], contour points
   }
   ```
 - **Note:** Edge indices may vary between runs for complex shapes; iterate to find a working index.
-- **Performance:** This rebuilds the shape's edge map on every call. Use it for one-off lookups; to walk every edge use [`allEdgePolylines(deflection:maxPointsPerEdge:)`](#alledgepolylinesdeflectionmaxpointsperedge), which builds the map once — looping this instead is O(edges²) ([#275](https://github.com/SecondMouseAU/OCCTSwift/issues/275)).
+- **Performance:** This rebuilds the shape's edge map on every call. Use it for one-off lookups; to walk every edge use [`allEdgePolylines(deflection:maxPointsPerEdge:)`](#alledgepolylinesdeflectionmaxpointsperedge), which builds the map once, looping this instead is O(edges²) ([#275](https://github.com/SecondMouseAU/OCCTSwift/issues/275)).
 
 ---
 
@@ -1361,11 +1373,11 @@ public func allEdgePolylines(
 Discretises every edge in a single bridge pass, building the shape's edge map once. Also calls [`buildCurves3d(tolerance:)`](Document-Mesh-Fixing.md#shapebuildcurves3dtolerance) at `1e-5` beforehand to ensure lofted/swept shapes (which may have only pcurves) have explicit 3D curves before discretisation.
 
 - **Parameters:**
-  - `deflection` — maximum chord deviation per edge.
-  - `maxPointsPerEdge` — per-edge capacity, honoured within `2...Sampling.maximumSampleCount` (10,000,000); outside that range the result is `[]` (#558).
-- **Returns:** Array of polylines, one per edge. Edges that fail discretisation (including degenerate ones) are skipped — the result is **dense**, so a polyline's position does not reliably equal its edge index; use [`allEdgePolylinesIndexed`](#alledgepolylinesindexeddeflectionmaxpointsperedge) when that mapping matters.
+  - `deflection`: maximum chord deviation per edge.
+  - `maxPointsPerEdge`: per-edge capacity, honoured within `2...Sampling.maximumSampleCount` (10,000,000); outside that range the result is `[]` (#558).
+- **Returns:** Array of polylines, one per edge. Edges that fail discretisation (including degenerate ones) are skipped, the result is **dense**, so a polyline's position does not reliably equal its edge index; use [`allEdgePolylinesIndexed`](#alledgepolylinesindexeddeflectionmaxpointsperedge) when that mapping matters.
 - **OCCT:** `BRepLib::BuildCurves3d` + `GCPnts_TangentialDeflection` (via `OCCTBRepLibBuildCurves3dForShape` and `OCCTShapeComputeAllEdgePolylines`).
-- **Performance:** Prefer this over a `for i in 0..<shape.edgeCount { shape.edgePolyline(at: i) }` loop. `edgePolyline(at:)` rebuilds the edge map on every call, so that loop is O(edges²) — 15 s for a 12k-edge shape, versus 0.02 s here ([#275](https://github.com/SecondMouseAU/OCCTSwift/issues/275)).
+- **Performance:** Prefer this over a `for i in 0..<shape.edgeCount { shape.edgePolyline(at: i) }` loop. `edgePolyline(at:)` rebuilds the edge map on every call, so that loop is O(edges²), 15 s for a 12k-edge shape, versus 0.02 s here ([#275](https://github.com/SecondMouseAU/OCCTSwift/issues/275)).
 - **Example:**
   ```swift
   let wireframe = shape.allEdgePolylines(deflection: 0.05)
@@ -1387,11 +1399,11 @@ public func allEdgePolylinesIndexed(
 ) -> [(edgeIndex: Int, points: [SIMD3<Double>])]
 ```
 
-Same single bulk bridge pass as `allEdgePolylines` (O(edges), [#275](https://github.com/SecondMouseAU/OCCTSwift/issues/275)), but the skip of a degenerate/failed edge (e.g. a sphere's pole seams) no longer shifts later polylines out of the `edgePolyline(at:)` / `edge(at:)` index space — each pair records which edge it came from.
+Same single bulk bridge pass as `allEdgePolylines` (O(edges), [#275](https://github.com/SecondMouseAU/OCCTSwift/issues/275)), but the skip of a degenerate/failed edge (e.g. a sphere's pole seams) no longer shifts later polylines out of the `edgePolyline(at:)` / `edge(at:)` index space, each pair records which edge it came from.
 
 - **Parameters:** as `allEdgePolylines`.
 - **Returns:** `(edgeIndex, points)` pairs, ascending by `edgeIndex`, one per successfully discretised edge.
-- **Use when:** mapping wireframe polylines back to topology — per-segment edge pick indices, polyline → `TopoDS_Edge` round-trips. Use the plain variant when only the geometry matters.
+- **Use when:** mapping wireframe polylines back to topology, per-segment edge pick indices, polyline → `TopoDS_Edge` round-trips. Use the plain variant when only the geometry matters.
 - **Example:**
   ```swift
   for (edgeIndex, points) in shape.allEdgePolylinesIndexed(deflection: 0.05) {
@@ -1413,7 +1425,7 @@ public static func load(from url: URL, progress: ImportProgress? = nil) throws -
 
 Convenience alias for `loadSTEP(fromPath:progress:)`.
 
-- **Parameters:** `url` — URL to the STEP file; `progress` — optional progress/cancellation channel.
+- **Parameters:** `url`, URL to the STEP file; `progress`, optional progress/cancellation channel.
 - **Returns:** Imported shape.
 - **Throws:** `ImportError.cancelled` if cancelled; `ImportError.importFailed` on other failure.
 - **OCCT:** `STEPControl_Reader` (via `OCCTImportSTEPProgress`).
@@ -1433,7 +1445,7 @@ Load a shape from a STEP file path.
 public static func load(fromPath path: String, progress: ImportProgress? = nil) throws -> Shape
 ```
 
-- **Parameters:** `path` — file system path to the STEP file; `progress` — optional progress/cancellation.
+- **Parameters:** `path`, file system path to the STEP file; `progress`, optional progress/cancellation.
 - **Throws:** `ImportError.cancelled` if cancelled; `ImportError.importFailed` on failure.
 - **OCCT:** `STEPControl_Reader` (via `OCCTImportSTEPProgress`).
 
@@ -1478,7 +1490,7 @@ public static func stepRootCount(url: URL) -> Int
 
 Use this to inspect a STEP file before importing specific roots with `loadSTEPRoot(from:rootIndex:)`.
 
-- **Parameters:** `url` — URL to the STEP file.
+- **Parameters:** `url`, URL to the STEP file.
 - **Returns:** Number of roots (0 if the file cannot be read).
 - **OCCT:** `STEPControl_Reader::TransferRoots` (via `OCCTSTEPReaderNbRoots`).
 - **Example:**
@@ -1511,7 +1523,7 @@ Import a specific root from a STEP file (1-based index).
 public static func loadSTEPRoot(from url: URL, rootIndex: Int) throws -> Shape
 ```
 
-- **Parameters:** `url` — URL to the STEP file; `rootIndex` — 1-based root index.
+- **Parameters:** `url`, URL to the STEP file; `rootIndex`, 1-based root index.
 - **Returns:** The imported shape for that root.
 - **Throws:** `ImportError.importFailed` on failure.
 - **OCCT:** `STEPControl_Reader::Transfer` (via `OCCTImportSTEPRoot`).
@@ -1539,9 +1551,9 @@ public static func loadSTEP(from url: URL, unitInMeters: Double, progress: Impor
 ```
 
 - **Parameters:**
-  - `url` — URL to the STEP file.
-  - `unitInMeters` — system length unit in metres (e.g. `0.001` for mm, `0.0254` for inch).
-  - `progress` — optional progress/cancellation channel.
+  - `url`: URL to the STEP file.
+  - `unitInMeters`: system length unit in metres (e.g. `0.001` for mm, `0.0254` for inch).
+  - `progress`: optional progress/cancellation channel.
 - **Returns:** The imported shape in the specified unit system.
 - **Throws:** `ImportError.cancelled` if cancelled; `ImportError.importFailed` on failure.
 - **OCCT:** `STEPControl_Reader` with `Interface_Static` unit setting (via `OCCTImportSTEPWithUnitProgress`).
@@ -1597,10 +1609,10 @@ public static func loadRobust(from url: URL, progress: ImportProgress? = nil) th
 
 Recommended for STEP files that may contain disconnected faces needing sewing, shells needing conversion to solids, or geometry issues requiring healing.
 
-Every phase is bounded by `progress`: the transfer spans `fraction` 0…0.5 and the repair (sewing, then healing) 0.5…1.0, matching their measured cost — repair is ~50% of the work on a solid. A wall-clock deadline in `shouldCancel()` therefore bounds the whole call, and cancelling mid-repair throws rather than returning the partially-repaired shape.
+Every phase is bounded by `progress`: the transfer spans `fraction` 0…0.5 and the repair (sewing, then healing) 0.5…1.0, matching their measured cost, repair is ~50% of the work on a solid. A wall-clock deadline in `shouldCancel()` therefore bounds the whole call, and cancelling mid-repair throws rather than returning the partially-repaired shape.
 
-- **Parameters:** `url` — URL to the STEP file; `progress` — optional progress/cancellation channel.
-- **Returns:** Processed shape — a plain **solid** for a single-body file, a **compound of solids** when the file holds several bodies.
+- **Parameters:** `url`, URL to the STEP file; `progress`, optional progress/cancellation channel.
+- **Returns:** Processed shape, a plain **solid** for a single-body file, a **compound of solids** when the file holds several bodies.
 - **Throws:** `ImportError.cancelled` if cancelled; `ImportError.importFailed` on failure.
 - **OCCT:** `STEPControl_Reader` + `BRepBuilderAPI_Sewing` + `BRepBuilderAPI_MakeSolid` + `ShapeFix_Shape` (via `OCCTImportSTEPRobustProgress`).
 - **Example:**
@@ -1608,7 +1620,7 @@ Every phase is bounded by `progress`: the transfer spans `fraction` 0…0.5 and 
   let shape = try Shape.loadRobust(from: stepURL)
   print(shape.isValid)   // typically true
   ```
-- **Example — bounding an untrusted import with a deadline:**
+- **Example, bounding an untrusted import with a deadline:**
   ```swift
   final class Deadline: ImportProgress, @unchecked Sendable {
       private let start = Date()
@@ -1620,18 +1632,18 @@ Every phase is bounded by `progress`: the transfer spans `fraction` 0…0.5 and 
       let shape = try Shape.loadRobust(from: stepURL, progress: Deadline())
       print(shape.isValid)
   } catch ImportError.cancelled {
-      // Gave up after 10s — repairing untrusted geometry can be pathological.
+      // Gave up after 10s, repairing untrusted geometry can be pathological.
   }
   ```
-- **Limitation — parsing is not covered:** OCCT's `STEPControl_Reader::ReadFile` takes no `Message_ProgressRange`, so the file is parsed *before* the progress indicator exists. Reading a large STEP file reports nothing and cannot be cancelled; `fraction` and the deadline bound only the transfer and repair that follow.
-- **Multibody (v1.11.3):** every body is sewn and solidified. Don't assume `.solid` — check `shapeType` or iterate `subShapes(ofType: .solid)`:
+- **Limitation, parsing is not covered:** OCCT's `STEPControl_Reader::ReadFile` takes no `Message_ProgressRange`, so the file is parsed *before* the progress indicator exists. Reading a large STEP file reports nothing and cannot be cancelled; `fraction` and the deadline bound only the transfer and repair that follow.
+- **Multibody (v1.11.3):** every body is sewn and solidified. Don't assume `.solid`, check `shapeType` or iterate `subShapes(ofType: .solid)`:
   ```swift
   let shape = try Shape.loadRobust(from: stepURL)
   let bodies = shape.shapeType == .solid ? [shape] : shape.subShapes(ofType: .solid)
   print("\(bodies.count) bodies")
   ```
-- **Fixed in v1.11.3:** every body after the first was silently discarded — a 10-body STEP returned 1 body as a valid solid, with no error ([#302](https://github.com/SecondMouseAU/OCCTSwift/issues/302)).
-- **New in v1.11.2:** `progress:`. The progress-capable bridge function existed but no Swift API reached it, so a robust STEP import could not be observed or cancelled at all ([#300](https://github.com/SecondMouseAU/OCCTSwift/issues/300)). Existing `loadRobust(from:)` call sites are unaffected — the parameter defaults to `nil`.
+- **Fixed in v1.11.3:** every body after the first was silently discarded, a 10-body STEP returned 1 body as a valid solid, with no error ([#302](https://github.com/SecondMouseAU/OCCTSwift/issues/302)).
+- **New in v1.11.2:** `progress:`. The progress-capable bridge function existed but no Swift API reached it, so a robust STEP import could not be observed or cancelled at all ([#300](https://github.com/SecondMouseAU/OCCTSwift/issues/300)). Existing `loadRobust(from:)` call sites are unaffected, the parameter defaults to `nil`.
 
 ---
 
@@ -1661,7 +1673,7 @@ public static func loadWithDiagnostics(from url: URL) throws -> ImportResult
 
 Returns an `ImportResult` struct containing the shape and information about what processing (sewing, solid creation, healing) was applied.
 
-- **Parameters:** `url` — URL to the STEP file.
+- **Parameters:** `url`, URL to the STEP file.
 - **Returns:** `ImportResult` with `shape`, `originalType`, `resultType`, `sewingApplied`, `solidCreated`, `solidsCreated`, and `healingApplied`.
 - **Throws:** `ImportError.importFailed` on failure.
 - **OCCT:** `STEPControl_Reader` + `OCCTImportSTEPWithDiagnostics`.
@@ -1671,14 +1683,14 @@ Returns an `ImportResult` struct containing the shape and information about what
   print(result.summary)   // e.g. "Shell → Solid (processing: sewing, solid creation, healing)"
   let shape = result.shape
   ```
-- **Example — how many bodies did the file hold?**
+- **Example, how many bodies did the file hold?**
   ```swift
   let result = try Shape.loadWithDiagnostics(from: stepFile)
   if result.solidsCreated > 1 {
-      print("\(result.solidsCreated) bodies — result.shape is a compound of solids")
+      print("\(result.solidsCreated) bodies, result.shape is a compound of solids")
   }
   ```
-- **`solidsCreated` (new in v1.11.3):** how many shells became solids. `> 1` means a multibody file and `shape` is a compound of that many solids. Before v1.11.3 every body after the first was silently discarded, so this count is the fact that was quietly wrong — a truncated import still returned a valid solid ([#302](https://github.com/SecondMouseAU/OCCTSwift/issues/302)).
+- **`solidsCreated` (new in v1.11.3):** how many shells became solids. `> 1` means a multibody file and `shape` is a compound of that many solids. Before v1.11.3 every body after the first was silently discarded, so this count is the fact that was quietly wrong, a truncated import still returned a valid solid ([#302](https://github.com/SecondMouseAU/OCCTSwift/issues/302)).
 
 ---
 
@@ -1694,7 +1706,7 @@ public static func loadIGES(from url: URL, progress: ImportProgress? = nil) thro
 
 IGES is a legacy CAD format still commonly used in manufacturing and older CAD systems.
 
-- **Parameters:** `url` — URL to the `.igs` or `.iges` file; `progress` — optional progress/cancellation.
+- **Parameters:** `url`, URL to the `.igs` or `.iges` file; `progress`, optional progress/cancellation.
 - **Returns:** Imported shape.
 - **Throws:** `ImportError.cancelled` if cancelled; `ImportError.importFailed` on failure.
 - **OCCT:** `IGESControl_Reader` (via `OCCTImportIGESProgress`).
@@ -1725,11 +1737,11 @@ Load an IGES file, healing the transferred geometry.
 public static func loadIGESRobust(from url: URL, progress: ImportProgress? = nil) throws -> Shape
 ```
 
-Recommended for IGES files whose geometry needs repair before use. This heals but does **not** sew — unlike [`loadRobust(from:)`](#shapeloadrobustfrom), which sews STEP shells into solids. (Documented as "sewing and healing" before v1.11.2; the IGES path has never called `BRepBuilderAPI_Sewing`.)
+Recommended for IGES files whose geometry needs repair before use. This heals but does **not** sew, unlike [`loadRobust(from:)`](#shapeloadrobustfrom), which sews STEP shells into solids. (Documented as "sewing and healing" before v1.11.2; the IGES path has never called `BRepBuilderAPI_Sewing`.)
 
-Both phases are bounded by `progress`: transfer spans `fraction` 0…0.5 and healing 0.5…1.0, matching their measured cost — healing is **38–50%** of the work (measured across box/sphere/cylinder/torus compounds), not a coda to the transfer. A wall-clock deadline in `shouldCancel()` therefore bounds the whole call, and cancelling mid-heal throws rather than returning the partially-healed shape.
+Both phases are bounded by `progress`: transfer spans `fraction` 0…0.5 and healing 0.5…1.0, matching their measured cost, healing is **38–50%** of the work (measured across box/sphere/cylinder/torus compounds), not a coda to the transfer. A wall-clock deadline in `shouldCancel()` therefore bounds the whole call, and cancelling mid-heal throws rather than returning the partially-healed shape.
 
-- **Parameters:** `url` — URL to the IGES file; `progress` — optional progress/cancellation channel.
+- **Parameters:** `url`, URL to the IGES file; `progress`, optional progress/cancellation channel.
 - **Returns:** Transferred shape with healing applied.
 - **Throws:** `ImportError.cancelled` if cancelled; `ImportError.importFailed` on failure.
 - **OCCT:** `IGESControl_Reader` + `ShapeFix_Shape` (via `OCCTImportIGESRobustProgress`).
@@ -1745,11 +1757,11 @@ Both phases are bounded by `progress`: transfer spans `fraction` 0…0.5 and hea
       let shape = try Shape.loadIGESRobust(from: igesURL, progress: Deadline())
       print(shape.isValid)
   } catch ImportError.cancelled {
-      // Gave up after 10s — healing untrusted geometry can be pathological.
+      // Gave up after 10s, healing untrusted geometry can be pathological.
   }
   ```
-- **Limitation — parsing is not covered:** OCCT's `IGESControl_Reader::ReadFile` takes no `Message_ProgressRange`, so the file is parsed *before* the progress indicator exists. Reading a large IGES file reports nothing and cannot be cancelled; `fraction` and the deadline bound only the transfer and healing that follow.
-- **Fixed in v1.11.2:** healing previously ran outside the caller's progress range entirely (`ShapeFix_Shape::Perform()` was called with no range), so `shouldCancel()` during healing was ignored — the heal ran to completion and the call returned a *shape* rather than reporting cancellation. Same family as the [#286](https://github.com/SecondMouseAU/OCCTSwift/issues/286) defect fixed in v1.11.1 ([#300](https://github.com/SecondMouseAU/OCCTSwift/issues/300)).
+- **Limitation, parsing is not covered:** OCCT's `IGESControl_Reader::ReadFile` takes no `Message_ProgressRange`, so the file is parsed *before* the progress indicator exists. Reading a large IGES file reports nothing and cannot be cancelled; `fraction` and the deadline bound only the transfer and healing that follow.
+- **Fixed in v1.11.2:** healing previously ran outside the caller's progress range entirely (`ShapeFix_Shape::Perform()` was called with no range), so `shouldCancel()` during healing was ignored, the heal ran to completion and the call returned a *shape* rather than reporting cancellation. Same family as the [#286](https://github.com/SecondMouseAU/OCCTSwift/issues/286) defect fixed in v1.11.1 ([#300](https://github.com/SecondMouseAU/OCCTSwift/issues/300)).
 
 ---
 
@@ -1804,7 +1816,7 @@ Import a specific root from an IGES file (1-based index).
 public static func loadIGESRoot(from url: URL, rootIndex: Int) throws -> Shape
 ```
 
-- **Parameters:** `url` — URL to the IGES file; `rootIndex` — 1-based root index.
+- **Parameters:** `url`, URL to the IGES file; `rootIndex`, 1-based root index.
 - **Throws:** `ImportError.importFailed` on failure.
 - **OCCT:** `IGESControl_Reader::Transfer` (via `OCCTImportIGESRoot`).
 
@@ -1854,7 +1866,7 @@ Import only visible entities from an IGES file.
 public static func loadIGESVisible(from url: URL) throws -> Shape
 ```
 
-- **Parameters:** `url` — URL to the IGES file.
+- **Parameters:** `url`, URL to the IGES file.
 - **Throws:** `ImportError.importFailed` on failure.
 - **OCCT:** `IGESControl_Reader` with visibility filtering (via `OCCTImportIGESVisible`).
 
@@ -1884,7 +1896,7 @@ public static func loadBREP(from url: URL) throws -> Shape
 
 BREP is OCCT's native exact B-Rep format. It preserves full precision and is useful for fast caching of intermediate results, debugging geometry, and archiving exact geometry.
 
-- **Parameters:** `url` — URL to the `.brep` file.
+- **Parameters:** `url`, URL to the `.brep` file.
 - **Returns:** Imported shape.
 - **Throws:** `ImportError.importFailed` on failure.
 - **OCCT:** `BRep_Builder` / `BRepTools::Read` (via `OCCTImportBREP`).
@@ -1917,11 +1929,11 @@ Load a shape from an STL file.
 public static func loadSTL(from url: URL) throws -> Shape
 ```
 
-- **Parameters:** `url` — URL to the `.stl` file.
+- **Parameters:** `url`, URL to the `.stl` file.
 - **Returns:** Imported shape (a shell of triangulated faces).
 - **Throws:** `ImportError.importFailed` on failure.
-- **OCCT:** `StlAPI_Reader` (via `OCCTImportSTL`). Builds one planar `TopoDS_Face` per STL facet (`BRepBuilderAPI_MakeShapeOnMesh`); faces are unsewn — call `sewn(tolerance:)` or use `loadSTLRobust(from:sewingTolerance:)` if you need a connected shell/solid.
-- **Winding is preserved exactly, including a global reversal** ([#375](https://github.com/SecondMouseAU/OCCTSwift/issues/375)). Each facet's vertex order is preserved exactly — confirmed empirically by round-tripping a uniformly reversed-winding box and finding all triangles consistently inward, with zero shared-edge orientation conflicts. If a round-tripped mesh comes back with *locally* inconsistent winding (some faces inward, some outward), the input STL itself is locally inconsistent — this method doesn't introduce that defect, it faithfully reproduces one already in the file.
+- **OCCT:** `StlAPI_Reader` (via `OCCTImportSTL`). Builds one planar `TopoDS_Face` per STL facet (`BRepBuilderAPI_MakeShapeOnMesh`); faces are unsewn, call `sewn(tolerance:)` or use `loadSTLRobust(from:sewingTolerance:)` if you need a connected shell/solid.
+- **Winding is preserved exactly, including a global reversal** ([#375](https://github.com/SecondMouseAU/OCCTSwift/issues/375)). Each facet's vertex order is preserved exactly, confirmed empirically by round-tripping a uniformly reversed-winding box and finding all triangles consistently inward, with zero shared-edge orientation conflicts. If a round-tripped mesh comes back with *locally* inconsistent winding (some faces inward, some outward), the input STL itself is locally inconsistent, this method doesn't introduce that defect, it faithfully reproduces one already in the file.
 - **Example:**
   ```swift
   let mesh = try Shape.loadSTL(from: stlURL)
@@ -1951,9 +1963,9 @@ public static func loadSTLRobust(from url: URL, sewingTolerance: Double = 1e-6) 
 ```
 
 - **Parameters:**
-  - `url` — URL to the STL file.
-  - `sewingTolerance` — tolerance for sewing disconnected faces (default `1e-6`).
-- **Returns:** Processed shape — a plain **solid** for a single-body file, a **compound of solids** when the mesh holds several disconnected bodies.
+  - `url`: URL to the STL file.
+  - `sewingTolerance`: tolerance for sewing disconnected faces (default `1e-6`).
+- **Returns:** Processed shape, a plain **solid** for a single-body file, a **compound of solids** when the mesh holds several disconnected bodies.
 - **Throws:** `ImportError.importFailed` on failure.
 - **OCCT:** `StlAPI_Reader` + `BRepBuilderAPI_Sewing` + `BRepBuilderAPI_MakeSolid` + `ShapeFix_Shape` (via `OCCTImportSTLRobust`).
 - **Example:**
@@ -1961,13 +1973,13 @@ public static func loadSTLRobust(from url: URL, sewingTolerance: Double = 1e-6) 
   let solid = try Shape.loadSTLRobust(from: stlURL, sewingTolerance: 1e-5)
   print(solid.isValid)
   ```
-- **Multibody:** every disconnected body is sewn and solidified. Don't assume `.solid` — check `shapeType` or iterate `subShapes(ofType: .solid)`:
+- **Multibody:** every disconnected body is sewn and solidified. Don't assume `.solid`, check `shapeType` or iterate `subShapes(ofType: .solid)`:
   ```swift
   let shape = try Shape.loadSTLRobust(from: stlURL)
   let bodies = shape.shapeType == .solid ? [shape] : shape.subShapes(ofType: .solid)
   print("\(bodies.count) bodies")
   ```
-- **Fixed in v1.11.3:** every body after the first was silently discarded — a 10-body STL returned 1 body as a valid solid, with no error ([#302](https://github.com/SecondMouseAU/OCCTSwift/issues/302)).
+- **Fixed in v1.11.3:** every body after the first was silently discarded, a 10-body STL returned 1 body as a valid solid, with no error ([#302](https://github.com/SecondMouseAU/OCCTSwift/issues/302)).
 
 ---
 
@@ -1993,7 +2005,7 @@ Load a shape from an OBJ file.
 public static func loadOBJ(from url: URL) throws -> Shape
 ```
 
-- **Parameters:** `url` — URL to the `.obj` file.
+- **Parameters:** `url`, URL to the `.obj` file.
 - **Returns:** Imported shape.
 - **Throws:** `ImportError.importFailed` on failure.
 - **OCCT:** `RWObj_CafReader` (via `OCCTImportOBJ`).

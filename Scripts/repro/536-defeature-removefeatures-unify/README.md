@@ -1,4 +1,4 @@
-# OCCTSwift#536 probe — are `BRepAlgoAPI_Defeaturing` and `BOPAlgo_RemoveFeatures` one operation?
+# OCCTSwift#536 probe, are `BRepAlgoAPI_Defeaturing` and `BOPAlgo_RemoveFeatures` one operation?
 
 Ground truth for collapsing the bridge's two shape-addressed "remove these faces" wrappers onto one,
 against the pinned OCCT 8.0.0p1 kernel.
@@ -6,8 +6,8 @@ against the pinned OCCT 8.0.0p1 kernel.
 `Shape.defeature(faces:)` reached `OCCTShapeDefeature` → `BRepAlgoAPI_Defeaturing`, and
 `Shape.removeFeatures(faces:)` reached `OCCTBOPAlgoRemoveFeatures` → `BOPAlgo_RemoveFeatures`. Same
 argument types, same return type, different names, no cross-reference between them. Reading
-`BRepAlgoAPI_Defeaturing.cxx` says they should be the same operation — its `Build()` is a forwarder
-to a `BOPAlgo_RemoveFeatures` member — but the question a deprecation has to answer is not "do they
+`BRepAlgoAPI_Defeaturing.cxx` says they should be the same operation, its `Build()` is a forwarder
+to a `BOPAlgo_RemoveFeatures` member, but the question a deprecation has to answer is not "do they
 agree on a box", it is "is there **any** input on which they can differ".
 
 They cannot. Every case agrees, BREP byte for byte, including the ones where the algorithm refuses.
@@ -30,8 +30,8 @@ Exit status is 1 if any case diverges.
 
 ## What it does
 
-Each path is driven exactly the way its bridge wrapper drove it, down to the completion test — the
-`BRepAlgoAPI` wrapper checked `IsDone()`, the `BOPAlgo` one checked `HasErrors()` — and the results
+Each path is driven exactly the way its bridge wrapper drove it, down to the completion test, the
+`BRepAlgoAPI` wrapper checked `IsDone()`, the `BOPAlgo` one checked `HasErrors()`, and the results
 are compared as full BREP serialisations rather than as volumes, so a difference in
 parameterisation that leaves the volume alone still counts.
 
@@ -102,11 +102,11 @@ myShape = myFeatureRemovalTool.Shape();
 `HasModified`, `HasGenerated`, `HasDeleted` and `History` are all one-line delegations to it. Both
 forwarded flags default the same way on both classes (`myFillHistory(true)` in each constructor,
 `myRunParallel(false)` inherited from `BOPAlgo_Options`), which is what the first section of the
-probe checks — so an unconfigured `BRepAlgoAPI_Defeaturing` and an unconfigured
+probe checks, so an unconfigured `BRepAlgoAPI_Defeaturing` and an unconfigured
 `BOPAlgo_RemoveFeatures` are the same object with the same settings.
 
 There is no defect here and nothing to file: the outer class is doing what an API-level wrapper is
-for. The duplication was ours — the bridge wrapped both layers of one algorithm and gave each its
+for. The duplication was ours, the bridge wrapped both layers of one algorithm and gave each its
 own Swift name.
 
 ## What else this measured
@@ -138,6 +138,6 @@ This is why #536 did not go on to give the shape-addressed form the index-addres
 membership rule. Enforcing "every requested face must belong to this shape" means first deciding
 what to do with the compounds, shells and whole solids the kernel accepts as face carriers, which is
 its own design question with its own measurement matrix, not a line of validation. Filed as #578 and
-settled there — see `Scripts/repro/578-defeature-face-membership/` for that matrix and the rule
+settled there, see `Scripts/repro/578-defeature-face-membership/` for that matrix and the rule
 chosen. A face this shape does not have now fails the whole request, whichever way the request
 addresses its faces; carriers stay legal, and every face a carrier names must belong.

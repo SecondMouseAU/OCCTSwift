@@ -2,7 +2,7 @@
 """Issue #809 (Pass 2b of #807): refman coverage census for the Selection/Construction lane.
 
 Lane, per #809: every OCCT class under the `BRepExtrema_*`, `BRepClass*`, `gp_*` (construction
-helpers), and `GC_*`/`GCE2d_*` prefixes — the OCCT surface `Selector.swift`, `Selection.swift`,
+helpers), and `GC_*`/`GCE2d_*` prefixes, the OCCT surface `Selector.swift`, `Selection.swift`,
 `ConstructionEntity.swift`, `ConstructionContext.swift`, `ConstructionLayer.swift`,
 `ShapeAxis.swift`, and `ShapeMeasurements.swift` sit on top of, plus every other bridge use of the
 same four prefixes (per #809's own instruction: sweep `Sources/OCCTBridge` broadly, not just what
@@ -17,13 +17,13 @@ TWO QUESTIONS, per #809:
 
   UNDER-COVERAGE: an OCCT class in the lane we neither wrap (construct it anywhere in
   `Sources/OCCTBridge/src/*.mm` or declare it in `Sources/OCCTBridge/include/*.h`, beyond a dead
-  `#include`) nor document (name it anywhere under `docs/`, excluding `docs/CHANGELOG.md` — a
+  `#include`) nor document (name it anywhere under `docs/`, excluding `docs/CHANGELOG.md`, a
   historical record of what a past release changed, not a claim about the current tree), with no
   reason recorded in `docs/occtswift-wrapping-gaps.md`.
 
   OVER-COVERAGE: something current docs assert that the pinned refman does not support. This
   script's mechanical wrapped/documented scan cannot detect a WRONG attribution (a doc citing a
-  real, wrapped class that isn't actually the one backing a given method) — that needs reading each
+  real, wrapped class that isn't actually the one backing a given method), that needs reading each
   call site, which is what #809's own investigation did. The confirmed findings are recorded below
   as `KNOWN_OVER_FINDINGS`, each fixed in the same PR that adds this script, and this script
   regression-checks them: it fails loudly if a fixed claim's bad wording ever reappears in current
@@ -33,18 +33,18 @@ CLASSIFICATION RULES (mechanical unless a class is in one of the CURATED_* table
 established against the actual header/refman/bridge content during #809's investigation, not
 guessed):
 
-  - EXCEPTION_TYPES: a `DEFINE_STANDARD_EXCEPTION` class — not a constructible value; whatever OCCT
+  - EXCEPTION_TYPES: a `DEFINE_STANDARD_EXCEPTION` class, not a constructible value; whatever OCCT
     call throws it is already inside the bridge's blanket `catch (...)`.
   - DEPRECATED_ALIASES: a header whose own doc comment says "Deprecated ... since OCCT 8.0.0" and
-    which is a `typedef`/`using` for an `NCollection_*` instantiation — not a distinct type.
+    which is a `typedef`/`using` for an `NCollection_*` instantiation, not a distinct type.
   - INTERNAL_HELPERS: a class that exists only to support one of this lane's own genuinely
     user-facing, already-wrapped entry points (`BRepExtrema_ShapeProximity`,
     `BRepClass_FaceClassifier`/`BRepClass_FClassifier`, `BRepClass3d_SolidClassifier`/`BRepClass3d`)
-    — an edge/face wrapper, a ray/segment intersector, a bounding-box tree, an abstract
+, an edge/face wrapper, a ray/segment intersector, a bounding-box tree, an abstract
     customization hook, or a "passive" (single-shot) strategy variant OCCT itself doesn't recommend
     over the wrapped one.
   - COVERED_BY_SIBLING: the capability is already wrapped via a *different* OCCT class providing
-    the same result (documented as such) — `GC_MakeRotation`'s rotation-transform capability is
+    the same result (documented as such), `GC_MakeRotation`'s rotation-transform capability is
     `gce_MakeRotation`'s (`TransformFactory3D.rotation`), a package outside this lane's 4 prefixes.
   - Everything else: a class counts as WRAPPED if it appears in `Sources/OCCTBridge/src/*.mm` or
     `Sources/OCCTBridge/include/*.h` on a line that is not a bare `#include` (a dead include, same
@@ -53,7 +53,7 @@ guessed):
     `docs/CHANGELOG.md`.
 
 Run: `python3 Scripts/repro/809-refman-selection-construction/refman_census.py` from the repo root
-(or anywhere — paths are derived from this file's own location, not the cwd). Exits 1 if a
+(or anywhere, paths are derived from this file's own location, not the cwd). Exits 1 if a
 KNOWN_OVER_FINDINGS regression is detected or an uncategorized `under` class has no
 `docs/occtswift-wrapping-gaps.md` line; exits 0 otherwise. `--verbose` also prints each class's
 matching files.
@@ -78,7 +78,7 @@ GAPS_FILE = os.path.join(DOCS_DIR, "occtswift-wrapping-gaps.md")
 # (V8_0_1 + carried patches, `v2.0.0-kernel.3`, per Package.swift) on 2026-08-16. Re-derive with:
 #   ls Libraries/OCCT.xcframework/macos-arm64/Headers | grep -E '^gp_' | sed 's/\.hxx$//'
 # (swap the prefix for BRepExtrema_/BRepClass/GC_/GCE2d_) if the OCCT pin ever changes and this
-# list needs re-checking — a header add/remove would need re-auditing the affected class by hand,
+# list needs re-checking, a header add/remove would need re-auditing the affected class by hand,
 # not just re-running this script, since wrapped/documented status for a genuinely new class is
 # not yet known.
 # ---------------------------------------------------------------------------------------------
@@ -116,7 +116,7 @@ LANE_CLASSES: dict[str, list[str]] = {
 
 # ---------------------------------------------------------------------------------------------
 # Curated classifications, each verified during #809's investigation (header text, occt-refman
-# via the `context` MCP, and/or direct reads of the actual bridge call sites) — see this class's
+# via the `context` MCP, and/or direct reads of the actual bridge call sites), see this class's
 # entry in docs/occtswift-wrapping-gaps.md ("Classes Not Wrapped ..." sections, "(#809)") for the
 # reasoning. `note` here is the short form; the doc has the full one.
 # ---------------------------------------------------------------------------------------------
@@ -201,19 +201,19 @@ INTERNAL_HELPERS = {
 
 COVERED_BY_SIBLING = {
     "GC_MakeRotation": "rotation-transform capability already wrapped via gce_MakeRotation "
-        "(TransformFactory3D.rotation) — a different OCCT package, outside this lane's 4 prefixes.",
+        "(TransformFactory3D.rotation), a different OCCT package, outside this lane's 4 prefixes.",
     "GC_MakeRotation2d": "2D rotation-transform capability already wrapped via gce_MakeRotation2d "
-        "(TransformFactory2D.rotation) — outside this lane's 4 prefixes.",
+        "(TransformFactory2D.rotation), outside this lane's 4 prefixes.",
     "GC_MakeMirror2d": "2D mirror-transform capability already wrapped via gce_MakeMirror2d "
-        "(TransformFactory2D.mirrorPoint/mirrorAxis) — outside this lane's 4 prefixes.",
+        "(TransformFactory2D.mirrorPoint/mirrorAxis), outside this lane's 4 prefixes.",
     "GC_MakeScale2d": "2D scale-transform capability already wrapped via gce_MakeScale2d "
-        "(TransformFactory2D.scale) — outside this lane's 4 prefixes.",
+        "(TransformFactory2D.scale), outside this lane's 4 prefixes.",
     "GC_MakeTranslation2d": "2D translation-transform capability already wrapped via "
-        "gce_MakeTranslation2d (TransformFactory2D.translation) — outside this lane's 4 prefixes.",
+        "gce_MakeTranslation2d (TransformFactory2D.translation), outside this lane's 4 prefixes.",
 }
 
 DEAD_INCLUDE_NOTE = (
-    "#include'd but never constructed (grep matches only the #include line) — see "
+    "#include'd but never constructed (grep matches only the #include line), see "
     "docs/occtswift-wrapping-gaps.md's 'Classes Not Wrapped At All' section (#809)."
 )
 
@@ -297,8 +297,8 @@ KNOWN_OVER_FINDINGS = [
         "lane": "gp_*",
         "swift_method": "Surface.torusAxis",
         "doc_file": "docs/reference/Geometry2D.md",
-        "bad_phrase": "**OCCT:** `OCCTSurfaceTorusAxis` — reads `gp_Torus::Axis()` from the underlying `Geom_ToroidalSurface`.",
-        "correct": "`OCCTSurfaceTorusAxis` — reads `Geom_ToroidalSurface::Axis()` (inherited from `Geom_ElementarySurface`, returns `gp_Ax1` from `gp_Ax3`); no `gp_Torus` is constructed.",
+        "bad_phrase": "**OCCT:** `OCCTSurfaceTorusAxis`, reads `gp_Torus::Axis()` from the underlying `Geom_ToroidalSurface`.",
+        "correct": "`OCCTSurfaceTorusAxis`, reads `Geom_ToroidalSurface::Axis()` (inherited from `Geom_ElementarySurface`, returns `gp_Ax1` from `gp_Ax3`); no `gp_Torus` is constructed.",
     },
     {
         "lane": "GC_*",
@@ -465,7 +465,7 @@ def main() -> int:
     if regressions:
         print("REGRESSION: the following fixed over-coverage findings have reappeared:")
         for f in regressions:
-            print(f"  {f['doc_file']}: {f['swift_method']} — {f['bad_phrase']!r}")
+            print(f"  {f['doc_file']}: {f['swift_method']}, {f['bad_phrase']!r}")
         exit_code = 1
     else:
         print("All known over-coverage findings remain fixed (bad attribution not found in current docs).")

@@ -39,7 +39,7 @@ two real bugs on rollout day: two doc comments separated from their declarations
 `// MARK:`, one of them documenting a function (`Surface.toBezierPatches()`) that currently has no
 doc comment of its own. Tracked as [#877](https://github.com/SecondMouseAU/OCCTSwift/issues/877)
 rather than fixed inline, since fixing either one would have obligated a full-file
-`swift-format` sweep under this policy's own manifest rule (below) — disproportionate for a
+`swift-format` sweep under this policy's own manifest rule (below), disproportionate for a
 CI-infrastructure PR. Both files are named in `.swiftlint.yml`'s `excluded:` list until #877
 lands.
 
@@ -71,7 +71,7 @@ on `ShapeAxis.swift`'s `unwrapAxisComponents(_:)`.
 Unlike the ecosystem's pilot repo (`OCCTSwiftScripts`, small enough to sweep into full compliance
 in one PR), this repo measured ~11,700 pre-existing `swift-format` diagnostics across
 `Sources/OCCTSwift` and multi-thousand-line-per-file `clang-format` diffs across every one of
-`Sources/OCCTBridge`'s 33 files on rollout day — a whole-tree gate would fail every PR against
+`Sources/OCCTBridge`'s 33 files on rollout day, a whole-tree gate would fail every PR against
 work nobody has touched. Instead:
 
 - `Scripts/style-manifest-swift.txt` and `Scripts/style-manifest-bridge.txt` list every file that

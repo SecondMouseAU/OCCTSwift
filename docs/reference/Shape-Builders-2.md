@@ -1,11 +1,11 @@
 ---
-title: Shape — Builders & Boolean Internals II
+title: Shape. Builders & Boolean Internals II
 parent: API Reference
 ---
 
-# Shape — Builders & Boolean Internals II
+# Shape. Builders & Boolean Internals II
 
-Continuation of the low-level builder and algorithm wrappers on `Shape` — covering GeomFill sweep/evolved-section, projection, offset, iso-curve evaluation, parameter transfer, boolean section/feature removal, shape build/extend/upgrade utilities, 2D vector math, topological transition analysis, GeomFill trihedrons, 2D polygon interference, analytical 2D circle construction, IntTools intersection, BOPAlgo builders, BRepFeat split/hole/glue, LocOpe split/glue, and 2D chamfer/fillet APIs.
+Continuation of the low-level builder and algorithm wrappers on `Shape`, covering GeomFill sweep/evolved-section, projection, offset, iso-curve evaluation, parameter transfer, boolean section/feature removal, shape build/extend/upgrade utilities, 2D vector math, topological transition analysis, GeomFill trihedrons, 2D polygon interference, analytical 2D circle construction, IntTools intersection, BOPAlgo builders, BRepFeat split/hole/glue, LocOpe split/glue, and 2D chamfer/fillet APIs.
 
 See also: **[Shape](Shape.md)** (index).
 
@@ -25,7 +25,7 @@ Sweep a section edge along a path edge to create a surface face.
 public static func geomFillSweep(path: Shape, section: Shape) -> Shape?
 ```
 
-- **Parameters:** `path` — edge defining the sweep path. `section` — edge defining the cross-section profile.
+- **Parameters:** `path`, edge defining the sweep path. `section`, edge defining the cross-section profile.
 - **Returns:** A `Shape` wrapping the swept face, or `nil` on failure, including when `GeomFill_Sweep`
   fits the surface but misses its own 1e-4 tolerance (`ErrorOnSurface()`); a surface reported `IsDone()`
   is not necessarily within the tolerance it was built at, so this is checked rather than assumed (#597).
@@ -79,7 +79,7 @@ Project this edge's 3D curve onto a face's surface, returning an edge-on-surface
 public func projectOntoSurface(_ face: Shape, tolerance: Double = 1e-3) -> Shape?
 ```
 
-- **Parameters:** `face` — target face. `tolerance` — approximation tolerance.
+- **Parameters:** `face`, target face. `tolerance`, approximation tolerance.
 - **Returns:** Projected edge as shape, or `nil` on failure.
 - **OCCT:** `ProjLib_ComputeApprox`
 - **Example:**
@@ -97,7 +97,7 @@ Project this edge's 3D curve onto a polar surface (sphere, torus).
 public func projectOntoPolarSurface(_ face: Shape, tolerance: Double = 1e-3) -> Shape?
 ```
 
-- **Parameters:** `face` — polar face. `tolerance` — approximation tolerance.
+- **Parameters:** `face`, polar face. `tolerance`, approximation tolerance.
 - **Returns:** Projected edge as shape, or `nil` on failure.
 - **OCCT:** `ProjLib_ComputeApproxOnPolarSurface`
 - **Example:**
@@ -117,7 +117,7 @@ Offset a face by a distance, creating a new offset face.
 public func offsetFace(distance: Double) -> Shape?
 ```
 
-- **Parameters:** `distance` — signed offset amount; positive moves along the face normal.
+- **Parameters:** `distance`, signed offset amount; positive moves along the face normal.
 - **Returns:** Offset face, or `nil` on failure.
 - **OCCT:** `BRepOffset_Offset`
 - **Example:**
@@ -137,7 +137,7 @@ Evaluate sample points along a U-iso curve on a face.
 public func uIsoCurvePoints(u: Double, count: Int = 20) -> [SIMD3<Double>]
 ```
 
-- **Parameters:** `u` — U parameter value. `count` — number of sample points, a *request* honoured within `1...Sampling.maximumSampleCount` (10,000,000); outside that range the result is empty (#558).
+- **Parameters:** `u`, U parameter value. `count`, number of sample points, a *request* honoured within `1...Sampling.maximumSampleCount` (10,000,000); outside that range the result is empty (#558).
 - **Returns:** Array of 3D points along the iso curve.
 - **OCCT:** `Adaptor3d_IsoCurve` (iso kind 0 = U)
 - **Example:**
@@ -155,7 +155,7 @@ Evaluate sample points along a V-iso curve on a face.
 public func vIsoCurvePoints(v: Double, count: Int = 20) -> [SIMD3<Double>]
 ```
 
-- **Parameters:** `v` — V parameter value. `count` — number of sample points, a *request* honoured within `1...Sampling.maximumSampleCount` (10,000,000); outside that range the result is empty (#558).
+- **Parameters:** `v`, V parameter value. `count`, number of sample points, a *request* honoured within `1...Sampling.maximumSampleCount` (10,000,000); outside that range the result is empty (#558).
 - **Returns:** Array of 3D points along the iso curve.
 - **OCCT:** `Adaptor3d_IsoCurve` (iso kind 1 = V)
 - **Example:**
@@ -173,7 +173,7 @@ Extract a U-iso curve from a face as an edge.
 public func uIsoCurveEdge(u: Double, vMin: Double, vMax: Double) -> Shape?
 ```
 
-- **Parameters:** `u` — U parameter. `vMin`/`vMax` — V parameter range for the edge.
+- **Parameters:** `u`, U parameter. `vMin`/`vMax`, V parameter range for the edge.
 - **Returns:** Edge shape representing the iso curve, or `nil` on failure.
 - **OCCT:** `Adaptor3d_IsoCurve`
 - **Example:**
@@ -191,7 +191,7 @@ Extract a V-iso curve from a face as an edge.
 public func vIsoCurveEdge(v: Double, uMin: Double, uMax: Double) -> Shape?
 ```
 
-- **Parameters:** `v` — V parameter. `uMin`/`uMax` — U parameter range for the edge.
+- **Parameters:** `v`, V parameter. `uMin`/`uMax`, U parameter range for the edge.
 - **Returns:** Edge shape representing the iso curve, or `nil` on failure.
 - **OCCT:** `Adaptor3d_IsoCurve`
 - **Example:**
@@ -211,7 +211,7 @@ Transfer a parameter from edge to face coordinate system via projection.
 public func transferParameterToFace(_ param: Double, face: Shape) -> Double
 ```
 
-- **Parameters:** `param` — edge parameter. `face` — face to transfer into.
+- **Parameters:** `param`, edge parameter. `face`, face to transfer into.
 - **Returns:** Corresponding parameter in the face's coordinate system.
 - **OCCT:** `ShapeAnalysis_TransferParametersProj` (toFace = true)
 - **Example:**
@@ -229,7 +229,7 @@ Transfer a parameter from face to edge coordinate system via projection.
 public func transferParameterFromFace(_ param: Double, face: Shape) -> Double
 ```
 
-- **Parameters:** `param` — face parameter. `face` — face to transfer from.
+- **Parameters:** `param`, face parameter. `face`, face to transfer from.
 - **Returns:** Corresponding parameter in the edge's coordinate system.
 - **OCCT:** `ShapeAnalysis_TransferParametersProj` (toFace = false)
 - **Example:**
@@ -266,7 +266,7 @@ Compute section (intersection curves/vertices) between this shape and tools.
 public func section(with tools: [Shape]) -> Shape?
 ```
 
-- **Parameters:** `tools` — tool shapes to intersect with this shape.
+- **Parameters:** `tools`, tool shapes to intersect with this shape.
 - **Returns:** Compound of intersection edges and vertices, or `nil` on failure.
 - **OCCT:** `BOPAlgo_Section`
 - **Example:**
@@ -284,7 +284,7 @@ Compute section between multiple shapes (static variant).
 public static func section(shapes: [Shape]) -> Shape?
 ```
 
-- **Parameters:** `shapes` — at least 2 shapes; all are treated as equal arguments.
+- **Parameters:** `shapes`, at least 2 shapes; all are treated as equal arguments.
 - **Returns:** Compound of intersection edges and vertices, or `nil` on failure (requires ≥ 2 shapes).
 - **OCCT:** `BOPAlgo_Section`
 - **Example:**
@@ -304,7 +304,7 @@ Copy an edge, optionally sharing its PCurves with the original.
 public func copyEdge(sharePCurves: Bool = true) -> Shape?
 ```
 
-- **Parameters:** `sharePCurves` — if `true`, the copy shares PCurves with the original edge.
+- **Parameters:** `sharePCurves`, if `true`, the copy shares PCurves with the original edge.
 - **Returns:** Copied edge as shape, or `nil` on failure.
 - **OCCT:** `ShapeBuild_Edge::Copy`
 - **Example:**
@@ -322,7 +322,7 @@ Copy an edge, replacing its start and/or end vertices.
 public func copyEdgeReplacingVertices(startVertex: Shape?, endVertex: Shape?) -> Shape?
 ```
 
-- **Parameters:** `startVertex` — new start vertex, or `nil` to keep original. `endVertex` — new end vertex, or `nil` to keep original.
+- **Parameters:** `startVertex`, new start vertex, or `nil` to keep original. `endVertex`, new end vertex, or `nil` to keep original.
 - **Returns:** Edge with replaced vertices, or `nil` on failure.
 - **OCCT:** `ShapeBuild_Edge::CopyReplaceVertices`
 - **Example:**
@@ -340,7 +340,7 @@ Set the 3D parameter range on this edge shape.
 public func setEdgeRange3d(first: Double, last: Double)
 ```
 
-- **Parameters:** `first` — start parameter. `last` — end parameter.
+- **Parameters:** `first`, start parameter. `last`, end parameter.
 - **OCCT:** `ShapeBuild_Edge::SetRange3d`
 - **Example:**
   ```swift
@@ -391,7 +391,7 @@ Copy parameter ranges from another edge to this edge.
 public func copyEdgeRanges(from source: Shape)
 ```
 
-- **Parameters:** `source` — edge from which to copy ranges.
+- **Parameters:** `source`, edge from which to copy ranges.
 - **OCCT:** `ShapeBuild_Edge::CopyRanges`
 - **Example:**
   ```swift
@@ -408,7 +408,7 @@ Copy PCurves from another edge to this edge.
 public func copyEdgePCurves(from source: Shape)
 ```
 
-- **Parameters:** `source` — edge from which to copy PCurves.
+- **Parameters:** `source`, edge from which to copy PCurves.
 - **OCCT:** `ShapeBuild_Edge::CopyPCurves`
 - **Example:**
   ```swift
@@ -425,7 +425,7 @@ Remove the PCurve from this edge for a given face.
 public func removeEdgePCurve(onFace face: Shape)
 ```
 
-- **Parameters:** `face` — the face whose PCurve should be removed from this edge.
+- **Parameters:** `face`, the face whose PCurve should be removed from this edge.
 - **OCCT:** `ShapeBuild_Edge::RemovePCurve`
 - **Example:**
   ```swift
@@ -443,7 +443,7 @@ Reassign a PCurve from one face to another.
 public func reassignEdgePCurve(from oldFace: Shape, to newFace: Shape) -> Bool
 ```
 
-- **Parameters:** `oldFace` — face that currently holds the PCurve. `newFace` — destination face.
+- **Parameters:** `oldFace`, face that currently holds the PCurve. `newFace`, destination face.
 - **Returns:** `true` if reassignment succeeded.
 - **OCCT:** `ShapeBuild_Edge::ReassignPCurve`
 - **Example:**
@@ -463,7 +463,7 @@ Combine this vertex shape with another at their average position.
 public func combineVertex(with other: Shape, tolFactor: Double = 1.0001) -> Shape?
 ```
 
-- **Parameters:** `other` — vertex to combine with. `tolFactor` — tolerance scale factor.
+- **Parameters:** `other`, vertex to combine with. `tolFactor`, tolerance scale factor.
 - **Returns:** Combined vertex as shape, or `nil` on failure.
 - **OCCT:** `ShapeBuild_Vertex::CombineVertex`
 - **Example:**
@@ -485,7 +485,7 @@ public static func combineVertices(
 ) -> Shape?
 ```
 
-- **Parameters:** `point1`/`tol1` — first point and its tolerance. `point2`/`tol2` — second point and its tolerance. `tolFactor` — scale factor applied to the combined tolerance.
+- **Parameters:** `point1`/`tol1`, first point and its tolerance. `point2`/`tol2`, second point and its tolerance. `tolFactor`, scale factor applied to the combined tolerance.
 - **Returns:** Combined vertex, or `nil` on failure.
 - **OCCT:** `ShapeBuild_Vertex::CombineVertex` (from points)
 - **Example:**
@@ -505,7 +505,7 @@ Shape type enum for filtering compounds.
 public typealias ShapeFilterType = ShapeType
 ```
 
-A typealias for the canonical `ShapeType` (see "Shape-Features") — this used to be an independent
+A typealias for the canonical `ShapeType` (see "Shape-Features"), this used to be an independent
 local mirror of the same `TopAbs_ShapeEnum` ordinals, with its own, differently-cased `compsolid`
 case (`ShapeType` spells it `compSolid`). `ShapeExtend_Explorer` uses the identical ordinal
 convention every other sub-shape-type API in this package does, so there was no reason for a
@@ -521,7 +521,7 @@ Filter this compound, extracting only sub-shapes of the specified type.
 public func sortedCompound(type: ShapeFilterType, explore: Bool = true) -> Shape?
 ```
 
-- **Parameters:** `type` — target shape type. `explore` — if `true`, recurse into sub-compounds.
+- **Parameters:** `type`, target shape type. `explore`, if `true`, recurse into sub-compounds.
 - **Returns:** Compound of matching sub-shapes, or `nil` on failure.
 - **OCCT:** `ShapeExtend_Explorer::SortedCompound`
 - **Example:**
@@ -539,9 +539,9 @@ Get the predominant shape type in this compound.
 public func predominantShapeType(lookInsideCompounds: Bool = true) -> ShapeFilterType
 ```
 
-- **Parameters:** `lookInsideCompounds` — if `true`, inspect sub-compounds.
+- **Parameters:** `lookInsideCompounds`, if `true`, inspect sub-compounds.
 - **Returns:** The most-common `ShapeFilterType` found, or `.unknown` if the underlying OCCT walk
-  throws (PR #870 aggregate review — this used to decode as `.vertex`, a real, legitimate case,
+  throws (PR #870 aggregate review, this used to decode as `.vertex`, a real, legitimate case,
   indistinguishable from an actual vertex-dominated shape).
 - **OCCT:** `ShapeExtend_Explorer::ShapeType`
 - **Example:**
@@ -580,7 +580,7 @@ Divide a wire on a face.
 public func divideWire(onFace face: Shape) -> Shape?
 ```
 
-- **Parameters:** `face` — face the wire lies on.
+- **Parameters:** `face`, face the wire lies on.
 - **Returns:** Divided wire as shape, or `nil` on failure.
 - **OCCT:** `ShapeUpgrade_WireDivide`
 - **Example:**
@@ -620,7 +620,7 @@ Analyze an edge for potential division on a face.
 public func analyzeEdgeDivide(onFace face: Shape) -> EdgeDivideResult?
 ```
 
-- **Parameters:** `face` — face context for the edge.
+- **Parameters:** `face`, face context for the edge.
 - **Returns:** Analysis result indicating 2D/3D curve presence, or `nil` on failure.
 - **OCCT:** `ShapeUpgrade_EdgeDivide::Compute`
 - **Example:**
@@ -642,7 +642,7 @@ Check if a closed (seam) edge can be divided on a face.
 public func canDivideClosedEdge(onFace face: Shape) -> Bool
 ```
 
-- **Parameters:** `face` — face context.
+- **Parameters:** `face`, face context.
 - **Returns:** `true` if the edge is closed and divisible.
 - **OCCT:** `ShapeUpgrade_ClosedEdgeDivide::Compute`
 - **Example:**
@@ -662,7 +662,7 @@ Fix small curves in this shape.
 public func fixSmallCurves(tolerance: Double = 1e-6) -> Shape?
 ```
 
-- **Parameters:** `tolerance` — threshold below which curves are considered small.
+- **Parameters:** `tolerance`, threshold below which curves are considered small.
 - **Returns:** Fixed shape, or `nil` on failure.
 - **OCCT:** `ShapeUpgrade_FixSmallCurves`
 - **Example:**
@@ -682,7 +682,7 @@ Fix small Bezier curves in this shape.
 public func fixSmallBezierCurves(tolerance: Double = 1e-6) -> Shape?
 ```
 
-- **Parameters:** `tolerance` — detection threshold.
+- **Parameters:** `tolerance`, detection threshold.
 - **Returns:** Fixed shape, or `nil` on failure.
 - **OCCT:** `ShapeUpgrade_FixSmallBezierCurves`
 - **Example:**
@@ -703,7 +703,7 @@ public func convertCurves3dToBezier(lineMode: Bool = true, circleMode: Bool = tr
                                      conicMode: Bool = true) -> Shape?
 ```
 
-- **Parameters:** `lineMode` — convert line segments. `circleMode` — convert circles. `conicMode` — convert other conics.
+- **Parameters:** `lineMode`, convert line segments. `circleMode`, convert circles. `conicMode`, convert other conics.
 - **Returns:** Shape with Bezier curves, or `nil` on failure.
 - **OCCT:** `ShapeUpgrade_ConvertCurve3dToBezier`
 - **Example:**
@@ -724,7 +724,7 @@ public func convertSurfacesToBezier(planeMode: Bool = true, revolutionMode: Bool
                                      extrusionMode: Bool = true, bsplineMode: Bool = true) -> Shape?
 ```
 
-- **Parameters:** `planeMode` — convert planes. `revolutionMode` — convert revolution surfaces. `extrusionMode` — convert extrusions. `bsplineMode` — convert BSpline surfaces.
+- **Parameters:** `planeMode`, convert planes. `revolutionMode`, convert revolution surfaces. `extrusionMode`, convert extrusions. `bsplineMode`, convert BSpline surfaces.
 - **Returns:** Shape with Bezier surfaces, or `nil` on failure.
 - **OCCT:** `ShapeUpgrade_ConvertSurfaceToBezierBasis`
 - **Example:**
@@ -910,7 +910,7 @@ public static func analyticCurvaturePoints(curveType: Int32, first: Double,
                                             last: Double) -> [CurvatureSpecialPoint]
 ```
 
-- **Parameters:** `curveType` — 0=Line, 1=Circle, 2=Ellipse, 3=Hyperbola, 4=Parabola. `first`/`last` — parameter domain.
+- **Parameters:** `curveType`, 0=Line, 1=Circle, 2=Ellipse, 3=Hyperbola, 4=Parabola. `first`/`last`, parameter domain.
 - **Returns:** Array of special points; empty if none found.
 - **OCCT:** `LProp_AnalyticCurInf`
 - **Example:**
@@ -1003,7 +1003,7 @@ public static func surfaceTransition(
 ) -> SurfaceTransitionResult
 ```
 
-- **Parameters:** `tangent` — curve tangent at crossing. `normal` — boundary normal. `surfaceNormal` — normal of the crossed surface. `tolerance` — angular tolerance. `surfaceOrientation`/`boundaryOrientation` — 0=FORWARD, 1=REVERSED.
+- **Parameters:** `tangent`, curve tangent at crossing. `normal`, boundary normal. `surfaceNormal`, normal of the crossed surface. `tolerance`, angular tolerance. `surfaceOrientation`/`boundaryOrientation`, 0=FORWARD, 1=REVERSED.
 - **Returns:** States before and after the surface crossing.
 - **OCCT:** `TopTrans_SurfaceTransition`
 - **Example:**
@@ -1061,7 +1061,7 @@ public static func curveTransition(
 ) -> SurfaceTransitionResult
 ```
 
-- **Parameters:** `tangent` — curve tangent. `boundaryTangent`/`boundaryNormal` — boundary element geometry. `curvature` — boundary curvature (0 for straight boundary).
+- **Parameters:** `tangent`, curve tangent. `boundaryTangent`/`boundaryNormal`, boundary element geometry. `curvature`, boundary curvature (0 for straight boundary).
 - **Returns:** `SurfaceTransitionResult` with before/after states.
 - **OCCT:** `TopTrans_CurveTransition`
 - **Example:**
@@ -1106,7 +1106,7 @@ Evaluate a Frenet trihedron on an edge at a parameter.
 public func frenetTrihedron(at param: Double) -> (tangent: SIMD3<Double>, normal: SIMD3<Double>, binormal: SIMD3<Double>)?
 ```
 
-- **Parameters:** `param` — curve parameter.
+- **Parameters:** `param`, curve parameter.
 - **Returns:** Tuple of tangent, normal, binormal, or `nil` if the trihedron cannot be computed (e.g. inflection point).
 - **OCCT:** `GeomFill_Frenet`
 - **Example:**
@@ -1126,7 +1126,7 @@ Evaluate a constant-binormal trihedron on an edge at a parameter.
 public func constantBiNormalTrihedron(at param: Double, biNormal: SIMD3<Double>) -> (tangent: SIMD3<Double>, normal: SIMD3<Double>, binormal: SIMD3<Double>)?
 ```
 
-- **Parameters:** `param` — curve parameter. `biNormal` — fixed binormal direction.
+- **Parameters:** `param`, curve parameter. `biNormal`, fixed binormal direction.
 - **Returns:** Trihedron tuple, or `nil` on failure.
 - **OCCT:** `GeomFill_ConstantBiNormal`
 - **Example:**
@@ -1144,7 +1144,7 @@ Evaluate a fixed (constant) trihedron at any parameter.
 public static func fixedTrihedron(tangent: SIMD3<Double>, normal: SIMD3<Double>, at param: Double = 0) -> (tangent: SIMD3<Double>, normal: SIMD3<Double>, binormal: SIMD3<Double>)
 ```
 
-- **Parameters:** `tangent`/`normal` — fixed trihedron directions. `param` — parameter (unused geometrically; for API consistency).
+- **Parameters:** `tangent`/`normal`, fixed trihedron directions. `param`, parameter (unused geometrically; for API consistency).
 - **Returns:** Trihedron tuple (binormal = tangent × normal).
 - **OCCT:** `GeomFill_Fixed`
 - **Example:**
@@ -1162,7 +1162,7 @@ Evaluate a Darboux trihedron on an edge lying on a face.
 public func darbouxTrihedron(onFace face: Shape, at param: Double) -> (tangent: SIMD3<Double>, normal: SIMD3<Double>, binormal: SIMD3<Double>)?
 ```
 
-- **Parameters:** `face` — the supporting face. `param` — curve parameter.
+- **Parameters:** `face`, the supporting face. `param`, curve parameter.
 - **Returns:** Darboux frame (tangent, surface normal, binormal), or `nil` on failure.
 - **OCCT:** `GeomFill_Darboux`
 - **Example:**
@@ -1196,7 +1196,7 @@ public static func polygonInterference(
 ) -> PolygonIntersection
 ```
 
-- **Parameters:** `poly1`/`poly2` — ordered arrays of 2D vertices defining each polyline.
+- **Parameters:** `poly1`/`poly2`, ordered arrays of 2D vertices defining each polyline.
 - **Returns:** `PolygonIntersection` with intersection points (may be empty).
 - **OCCT:** `Intf_InterferencePolygon2d`
 - **Example:**
@@ -1216,7 +1216,7 @@ public static func polygonSelfInterference(
 ) -> PolygonIntersection
 ```
 
-- **Parameters:** `polygon` — ordered 2D vertices.
+- **Parameters:** `polygon`, ordered 2D vertices.
 - **Returns:** Self-intersection points.
 - **OCCT:** `Intf_InterferencePolygon2d` (self-interference mode)
 - **Example:**
@@ -1464,7 +1464,7 @@ Intersect two edges to find common vertices and edge overlaps.
 public func edgeEdgeIntersection(with other: Shape) -> [CommonPart]?
 ```
 
-- **Parameters:** `other` — second edge.
+- **Parameters:** `other`, second edge.
 - **Returns:** Array of common parts, or `nil` if intersection failed.
 - **OCCT:** `IntTools_EdgeEdge`
 - **Example:**
@@ -1484,7 +1484,7 @@ Intersect an edge with a face to find common vertices and edge overlaps.
 public func edgeFaceIntersection(with face: Shape) -> [CommonPart]?
 ```
 
-- **Parameters:** `face` — face to intersect with.
+- **Parameters:** `face`, face to intersect with.
 - **Returns:** Array of common parts, or `nil` on failure.
 - **OCCT:** `IntTools_EdgeFace`
 - **Example:**
@@ -1585,7 +1585,7 @@ Intersect two faces to find intersection curves and points.
 public func faceFaceIntersection(with other: Shape, tolerance: Double = 1e-7) -> FaceFaceResult?
 ```
 
-- **Parameters:** `other` — second face. `tolerance` — approximation tolerance.
+- **Parameters:** `other`, second face. `tolerance`, approximation tolerance.
 - **Returns:** `FaceFaceResult`, or `nil` on failure.
 - **OCCT:** `IntTools_FaceFace`
 - **Example:**
@@ -1610,9 +1610,9 @@ Answers the same "in/on/out of the face boundary" question as `Face.classify(u:v
 "Document-Math-Bounds"), both backed by `BRepClass_FaceClassifier`/`BRepClass_FClassifier`. This
 method's default used to be `1e-7`, an order of magnitude tighter than the other two's `1e-6`;
 aligned to `1e-6` (#840). `isHole(tolerance:)` below, this method's own `IntTools_FClass2d`
-file-neighbor, keeps its `1e-7` default deliberately — it answers a different question.
+file-neighbor, keeps its `1e-7` default deliberately, it answers a different question.
 
-- **Parameters:** `u`/`v` — UV coordinates. `tolerance` — classification tolerance (default 1e-6).
+- **Parameters:** `u`/`v`, UV coordinates. `tolerance`, classification tolerance (default 1e-6).
 - **Returns:** `.inside`, `.onBoundary`, `.outside`, or `.unknown`.
 - **OCCT:** `IntTools_FClass2d::Perform`
 - **Example:**
@@ -1649,7 +1649,7 @@ Build faces from edges that lie on this face's surface.
 public func buildFaces(from edges: [Shape]) -> [Shape]?
 ```
 
-- **Parameters:** `edges` — edge shapes on this face's surface.
+- **Parameters:** `edges`, edge shapes on this face's surface.
 - **Returns:** Array of result face shapes, or `nil` on failure.
 - **OCCT:** `BOPAlgo_BuilderFace`
 - **Example:**
@@ -1667,7 +1667,7 @@ Build solids from a closed set of faces.
 public static func buildSolids(from faces: [Shape]) -> [Shape]?
 ```
 
-- **Parameters:** `faces` — face shapes forming closed volumes.
+- **Parameters:** `faces`, face shapes forming closed volumes.
 - **Returns:** Array of result solid shapes, or `nil` on failure.
 - **OCCT:** `BOPAlgo_BuilderSolid`
 - **Example:**
@@ -1702,7 +1702,7 @@ Connect a compound of edges into wires.
 public func edgesToWires(tolerance: Double = 1e-7) -> Shape?
 ```
 
-- **Parameters:** `tolerance` — edge connection tolerance.
+- **Parameters:** `tolerance`, edge connection tolerance.
 - **Returns:** Compound of wires, or `nil` on failure.
 - **OCCT:** `BOPAlgo_Tools::EdgesToWires`
 - **Example:**
@@ -1720,7 +1720,7 @@ Build planar faces from a compound of wires.
 public func wiresToFaces(tolerance: Double = 1e-7) -> Shape?
 ```
 
-- **Parameters:** `tolerance` — face building tolerance.
+- **Parameters:** `tolerance`, face building tolerance.
 - **Returns:** Compound of faces, or `nil` on failure.
 - **OCCT:** `BOPAlgo_Tools::WiresToFaces`
 - **Example:**
@@ -1740,7 +1740,7 @@ Get the normal to a face at an edge location.
 public static func normalOnEdge(edge: Shape, face: Shape) -> SIMD3<Double>?
 ```
 
-- **Parameters:** `edge` — edge on the face. `face` — containing face.
+- **Parameters:** `edge`, edge on the face. `face`, containing face.
 - **Returns:** Unit normal direction, or `nil` on failure.
 - **OCCT:** `BOPTools_AlgoTools3D::GetNormalToFaceOnEdge`
 - **Example:**
@@ -1831,7 +1831,7 @@ Find coincident parameter ranges where an edge lies on a face surface.
 public static func beanFaceIntersect(edge: Shape, face: Shape) -> BeanFaceIntersection?
 ```
 
-- **Parameters:** `edge` — edge curve to test. `face` — face surface to test against.
+- **Parameters:** `edge`, edge curve to test. `face`, face surface to test against.
 - **Returns:** Ranges of coincidence and minimum squared distance, or `nil` on failure.
 - **OCCT:** `IntTools_BeanFaceIntersector`
 - **Example:**
@@ -1853,7 +1853,7 @@ Assemble edges into a connected wire using BOPAlgo_WireSplitter.
 public static func makeWire(from edges: [Shape]) -> Shape?
 ```
 
-- **Parameters:** `edges` — array of edge shapes to connect.
+- **Parameters:** `edges`, array of edge shapes to connect.
 - **Returns:** Result wire as shape, or `nil` on failure.
 - **OCCT:** `BOPAlgo_WireSplitter::MakeWire`
 - **Example:**
@@ -1873,7 +1873,7 @@ Split this shape by adding an edge to a face.
 public func splitByEdge(_ edge: Shape, onFace face: Shape) -> Shape?
 ```
 
-- **Parameters:** `edge` — edge to add as a split line. `face` — face the edge lies on.
+- **Parameters:** `edge`, edge to add as a split line. `face`, face the edge lies on.
 - **Returns:** Result shape with the split face, or `nil` on failure.
 - **OCCT:** `BRepFeat_SplitShape`
 - **Example:**
@@ -1891,7 +1891,7 @@ Split this shape by adding a wire to a face.
 public func splitByWire(_ wire: Shape, onFace face: Shape) -> Shape?
 ```
 
-- **Parameters:** `wire` — wire to split along. `face` — face the wire lies on.
+- **Parameters:** `wire`, wire to split along. `face`, face the wire lies on.
 - **Returns:** Result shape with split face, or `nil` on failure.
 - **OCCT:** `BRepFeat_SplitShape`
 - **Example:**
@@ -1949,7 +1949,7 @@ Split this shape with multiple edge-on-face pairs, returning left/right face cla
 public func splitWithSides(edgesOnFaces: [(edge: Shape, face: Shape)]) -> SplitShapeResult?
 ```
 
-- **Parameters:** `edgesOnFaces` — array of `(edge, face)` pairs; each edge is added to the corresponding face.
+- **Parameters:** `edgesOnFaces`, array of `(edge, face)` pairs; each edge is added to the corresponding face.
 - **Returns:** Split result with the resulting shape and left/right face arrays, or `nil` on failure.
 - **OCCT:** `BRepFeat_SplitShape` with `Left()`/`Right()` queries
 - **Example:**
@@ -1968,7 +1968,7 @@ reports `.invalidPlacement` for a shell or a face.
 
 This is a different contract from
 [`drilled(at:direction:radius:depth:)`](Shape-Features.md#drilledatdirectionradiusdepth), not a
-better one — #496 measured six requests where the two disagree. Reach for this family when the
+better one, #496 measured six requests where the two disagree. Reach for this family when the
 solid's own faces should bound the hole, or when you need a diagnosis of *why* a drill is impossible;
 reach for `drilled` when the hole starts where you say it starts, when the input is not a solid, or
 when an over-long depth should simply drill through. Full measurements:
@@ -1993,7 +1993,7 @@ public enum CylindricalHoleExtent: Sendable, Equatable {
 
 | case | OCCT | bounded by |
 |---|---|---|
-| `.throughAll` | `Perform(R)` | nothing — an **infinite** cylinder, **both ways** along the axis. The origin anchors the axis; it is not where the hole starts. The only extent that tolerates a non-solid input. |
+| `.throughAll` | `Perform(R)` | nothing, an **infinite** cylinder, **both ways** along the axis. The origin anchors the axis; it is not where the hole starts. The only extent that tolerates a non-solid input. |
 | `.untilEnd` | `PerformUntilEnd(R)` | the stock's own first and last faces along the axis. The forward-bounded through hole most callers reach for `.throughAll` expecting. |
 | `.thruNext` | `PerformThruNext(R)` | the next face after the origin. |
 | `.blind(depth:)` | `PerformBlind(R, depth)` | `depth`, measured from the axis origin. The **only** extent that can report `.holeTooLong`: a depth that would leave the far side of the stock is refused rather than drilled through. |
@@ -2002,11 +2002,11 @@ public enum CylindricalHoleExtent: Sendable, Equatable {
 `.range` is the subtle one: the window **chooses a face pair, it does not trim the cut**. A window
 lying strictly inside one body still drills all the way through that body; a window naming no face
 pair (the gap between two plates) is `.invalidPlacement`. Its use is picking *which* body to drill in
-a stack — a window over one plate drills that plate, one spanning several drills all of them.
+a stack, a window over one plate drills that plate, one spanning several drills all of them.
 
 On a stack, every extent that bounds the hole by the stock's own faces drills every body the axis
 crosses: `.untilEnd`, a spanning `.range`, `.throughAll` and `drilled(at:…)` all agree. Until the
-kernel patch carried for [#532](https://github.com/SecondMouseAU/OCCTSwift/issues/532) they did not —
+kernel patch carried for [#532](https://github.com/SecondMouseAU/OCCTSwift/issues/532) they did not,
 `.untilEnd`, `.range` and `.blind(depth:)` reported `.noError` while removing **no material at all**,
 because OCCT selected which piece of its drilling tool to keep from the *cut result* rather than from
 the split tool.
@@ -2028,7 +2028,7 @@ public func cylindricalHole(axisOrigin: SIMD3<Double>, axisDirection: SIMD3<Doub
                             radius: Double, extent: CylindricalHoleExtent) -> Shape?
 ```
 
-- **Parameters:** `axisOrigin` — hole axis origin. `axisDirection` — hole axis direction, any non-zero vector. `radius` — hole radius, above `Precision::Confusion`. `extent` — where the hole stops.
+- **Parameters:** `axisOrigin`, hole axis origin. `axisDirection`, hole axis direction, any non-zero vector. `radius`, hole radius, above `Precision::Confusion`. `extent`, where the hole stops.
 - **Returns:** Shape with hole, or `nil` on failure. Ask `cylindricalHoleStatus(…extent:)` when you need to know *why*; `nil` collapses every reason into one.
 - **OCCT:** `BRepFeat_MakeCylindricalHole::Perform` / `PerformUntilEnd` / `PerformThruNext` / `PerformBlind`, per `extent`
 - **Example:**
@@ -2041,7 +2041,7 @@ public func cylindricalHole(axisOrigin: SIMD3<Double>, axisDirection: SIMD3<Doub
   let through = plate.cylindricalHole(axisOrigin: origin, axisDirection: axis,
                                       radius: 5, extent: .untilEnd)
 
-  // A 6mm-deep blind hole, measured from the origin — so 1mm into the plate:
+  // A 6mm-deep blind hole, measured from the origin, so 1mm into the plate:
   let blind = plate.cylindricalHole(axisOrigin: origin, axisDirection: axis,
                                     radius: 5, extent: .blind(depth: 6))
   ```
@@ -2069,7 +2069,7 @@ exists only under `.blind(depth:)`.
   let origin = SIMD3<Double>(0, 0, 11), axis = SIMD3<Double>(0, 0, -1)
   if plate.cylindricalHoleStatus(axisOrigin: origin, axisDirection: axis,
                                  radius: 5, extent: .blind(depth: 100)) == .holeTooLong {
-      // too deep for this stock — drill it through instead
+      // too deep for this stock, drill it through instead
   }
   ```
 
@@ -2135,9 +2135,9 @@ Drill a through cylindrical hole in this shape. Convenience for `extent: .throug
 public func cylindricalHole(axisOrigin: SIMD3<Double>, axisDirection: SIMD3<Double>, radius: Double) -> Shape?
 ```
 
-- **Parameters:** `axisOrigin` — hole axis origin. `axisDirection` — hole axis direction. `radius` — hole radius.
+- **Parameters:** `axisOrigin`, hole axis origin. `axisDirection`, hole axis direction. `radius`, hole radius.
 - **Returns:** Shape with hole, or `nil` on failure.
-- **OCCT:** `BRepFeat_MakeCylindricalHole::Perform` — an **infinite** cylinder both ways along the axis. For a hole bounded by the stock's own faces, use `extent: .untilEnd`.
+- **OCCT:** `BRepFeat_MakeCylindricalHole::Perform`, an **infinite** cylinder both ways along the axis. For a hole bounded by the stock's own faces, use `extent: .untilEnd`.
 - **Example:**
   ```swift
   if let holed = solid.cylindricalHole(axisOrigin: .zero, axisDirection: SIMD3(0,0,1), radius: 5) { }
@@ -2153,8 +2153,8 @@ Drill a blind cylindrical hole to a specified depth. Convenience for `extent: .b
 public func cylindricalHoleBlind(axisOrigin: SIMD3<Double>, axisDirection: SIMD3<Double>, radius: Double, depth: Double) -> Shape?
 ```
 
-- **Parameters:** `depth` — hole depth, measured **from the axis origin**.
-- **Returns:** Shape with blind hole, or `nil` on failure — including a `depth` that would leave the far side of the stock, which is refused rather than drilled through (`.holeTooLong`).
+- **Parameters:** `depth`, hole depth, measured **from the axis origin**.
+- **Returns:** Shape with blind hole, or `nil` on failure, including a `depth` that would leave the far side of the stock, which is refused rather than drilled through (`.holeTooLong`).
 - **OCCT:** `BRepFeat_MakeCylindricalHole::PerformBlind`
 - **Example:**
   ```swift
@@ -2189,7 +2189,7 @@ public func cylindricalHoleStatus(axisOrigin: SIMD3<Double>, axisDirection: SIMD
 ```
 
 Answers for `.throughAll` only. Pass the extent you are actually about to drill to
-`cylindricalHoleStatus(…extent:)` — this spelling reports `.noError` for requests that
+`cylindricalHoleStatus(…extent:)`: this spelling reports `.noError` for requests that
 `cylindricalHoleThruNext` and `cylindricalHoleBlind` then refuse.
 
 - **Returns:** A `CylindricalHoleStatus` indicating through-all feasibility.
@@ -2212,7 +2212,7 @@ Glue another shape onto this shape by binding matching face pairs.
 public func glue(_ gluedShape: Shape, facePairs: [(base: Shape, glued: Shape)]) -> Shape?
 ```
 
-- **Parameters:** `gluedShape` — shape to merge onto this one. `facePairs` — matching face pairs: `base` from this shape, `glued` from `gluedShape`.
+- **Parameters:** `gluedShape`, shape to merge onto this one. `facePairs`, matching face pairs: `base` from this shape, `glued` from `gluedShape`.
 - **Returns:** Glued result shape, or `nil` on failure.
 - **OCCT:** `BRepFeat_Gluer`
 - **Example:**
@@ -2263,7 +2263,7 @@ Split this shape by projecting wires onto specific faces using `LocOpe_Spliter`.
 public func locOpeSplit(wiresOnFaces: [(wire: Shape, face: Shape)]) -> LocOpeSplitResult?
 ```
 
-- **Parameters:** `wiresOnFaces` — pairs binding each wire to the face it lies on.
+- **Parameters:** `wiresOnFaces`, pairs binding each wire to the face it lies on.
 - **Returns:** Split result with direct-left faces, or `nil` on failure.
 - **OCCT:** `LocOpe_WiresOnShape` + `LocOpe_Spliter`
 - **Note:** Each pair contributes only the **first** wire of its `wire` shape. A pair whose
@@ -2286,7 +2286,7 @@ Split this shape by automatically projecting wires onto faces.
 public func locOpeSplitAuto(wires: [Shape]) -> Shape?
 ```
 
-- **Parameters:** `wires` — wires to project and split by; faces are determined automatically.
+- **Parameters:** `wires`, wires to project and split by; faces are determined automatically.
 - **Returns:** Result shape, or `nil` on failure.
 - **OCCT:** `LocOpe_WiresOnShape::BindAll` + `LocOpe_Spliter`
 - **Example:**
@@ -2308,7 +2308,7 @@ public func locOpeGlue(_ gluedShape: Shape,
                        edgePairs: [(base: Shape, glued: Shape)] = []) -> Shape?
 ```
 
-- **Parameters:** `gluedShape` — shape to glue. `facePairs` — at least one required matching face pair. `edgePairs` — optional edge pairs for precise alignment.
+- **Parameters:** `gluedShape`, shape to glue. `facePairs`, at least one required matching face pair. `edgePairs`, optional edge pairs for precise alignment.
 - **Returns:** Result shape, or `nil` on failure (including empty `facePairs`).
 - **OCCT:** `LocOpe_Gluer`
 - **Example:**
@@ -2330,7 +2330,7 @@ Add a 2D fillet at a vertex on a planar face.
 public func addFillet2d(vertexIndex: Int, radius: Double) -> Shape?
 ```
 
-- **Parameters:** `vertexIndex` — 0-based vertex index. `radius` — fillet radius.
+- **Parameters:** `vertexIndex`, 0-based vertex index. `radius`, fillet radius.
 - **Returns:** Result face with fillet, or `nil` if the shape is not a planar face.
 - **OCCT:** `ChFi2d_Builder::AddFillet`
 - **Example:**
@@ -2349,7 +2349,7 @@ Add a 2D chamfer between two edges on a planar face.
 public func addChamfer2d(edge1Index: Int, edge2Index: Int, d1: Double, d2: Double) -> Shape?
 ```
 
-- **Parameters:** `edge1Index`/`edge2Index` — 0-based edge indices. `d1`/`d2` — chamfer distances on each edge.
+- **Parameters:** `edge1Index`/`edge2Index`, 0-based edge indices. `d1`/`d2`, chamfer distances on each edge.
 - **Returns:** Result face with chamfer, or `nil` on failure.
 - **OCCT:** `ChFi2d_Builder::AddChamfer`
 - **Example:**
@@ -2367,7 +2367,7 @@ Add a 2D chamfer defined by distance and angle on a planar face.
 public func addChamfer2dAngle(edgeIndex: Int, vertexIndex: Int, distance: Double, angle: Double) -> Shape?
 ```
 
-- **Parameters:** `edgeIndex` — reference edge. `vertexIndex` — vertex to chamfer. `distance` — distance on the edge. `angle` — chamfer angle in radians.
+- **Parameters:** `edgeIndex`, reference edge. `vertexIndex`, vertex to chamfer. `distance`, distance on the edge. `angle`, chamfer angle in radians.
 - **Returns:** Result face with chamfer, or `nil` on failure.
 - **OCCT:** `ChFi2d_Builder::AddChamfer` (distance + angle)
 - **Example:**
@@ -2385,7 +2385,7 @@ Modify an existing fillet radius on a face.
 public func modifyFillet2d(originalFace: Shape, filletEdgeIndex: Int, newRadius: Double) -> Shape?
 ```
 
-- **Parameters:** `originalFace` — face before the fillet was added. `filletEdgeIndex` — 0-based index of the fillet edge in `self`. `newRadius` — new fillet radius.
+- **Parameters:** `originalFace`, face before the fillet was added. `filletEdgeIndex`, 0-based index of the fillet edge in `self`. `newRadius`, new fillet radius.
 - **Returns:** Result face with modified fillet, or `nil` on failure.
 - **OCCT:** `ChFi2d_Builder::ModifyFillet`
 - **Example:**
@@ -2403,7 +2403,7 @@ Remove a fillet from a face, restoring the original corner.
 public func removeFillet2d(originalFace: Shape, filletEdgeIndex: Int) -> Shape?
 ```
 
-- **Parameters:** `originalFace` — face before the fillet. `filletEdgeIndex` — 0-based fillet edge index in `self`.
+- **Parameters:** `originalFace`, face before the fillet. `filletEdgeIndex`, 0-based fillet edge index in `self`.
 - **Returns:** Face with fillet removed, or `nil` on failure.
 - **OCCT:** `ChFi2d_Builder::RemoveFillet`
 - **Example:**
@@ -2421,7 +2421,7 @@ Remove a chamfer from a face.
 public func removeChamfer2d(originalFace: Shape, chamferEdgeIndex: Int) -> Shape?
 ```
 
-- **Parameters:** `originalFace` — face before the chamfer. `chamferEdgeIndex` — 0-based chamfer edge index in `self`.
+- **Parameters:** `originalFace`, face before the chamfer. `chamferEdgeIndex`, 0-based chamfer edge index in `self`.
 - **Returns:** Face with chamfer removed, or `nil` on failure.
 - **OCCT:** `ChFi2d_Builder::RemoveChamfer`
 - **Example:**
@@ -2481,7 +2481,7 @@ Create a chamfer between two linear edges using `ChFi2d_ChamferAPI`.
 public static func chamfer2dEdges(edge1: Shape, edge2: Shape, d1: Double, d2: Double) -> Chamfer2DEdgeResult?
 ```
 
-- **Parameters:** `edge1`/`edge2` — linear edges sharing a vertex. `d1`/`d2` — chamfer distances on each edge.
+- **Parameters:** `edge1`/`edge2`, linear edges sharing a vertex. `d1`/`d2`, chamfer distances on each edge.
 - **Returns:** `Chamfer2DEdgeResult` with chamfer edge and trimmed originals, or `nil` on failure.
 - **OCCT:** `ChFi2d_ChamferAPI`
 - **Example:**
@@ -2529,7 +2529,7 @@ public static func fillet2dEdges(edge1: Shape, edge2: Shape,
                                  nearPoint: SIMD3<Double>) -> Fillet2DEdgeResult?
 ```
 
-- **Parameters:** `edge1`/`edge2` — edges to fillet. `planeNormal` — normal of the plane containing the edges. `radius` — fillet radius. `nearPoint` — point near the desired fillet location, used to select among multiple solutions.
+- **Parameters:** `edge1`/`edge2`, edges to fillet. `planeNormal`, normal of the plane containing the edges. `radius`, fillet radius. `nearPoint`, point near the desired fillet location, used to select among multiple solutions.
 - **Returns:** `Fillet2DEdgeResult` with the fillet arc, trimmed edges, and solution count, or `nil` on failure.
 - **OCCT:** `ChFi2d_FilletAPI` (selects analytical or iterative algorithm automatically)
 - **Example:**
@@ -2603,7 +2603,7 @@ Compute fillet surface geometry on this shape without modifying its topology.
 public func filletSurfaces(edges: [Shape], radius: Double) -> FilletSurfaceResult?
 ```
 
-- **Parameters:** `edges` — edges to fillet. `radius` — fillet radius.
+- **Parameters:** `edges`, edges to fillet. `radius`, fillet radius.
 - **Returns:** `FilletSurfaceResult` with NURBS fillet surfaces and support faces, or `nil` on total failure. `status == 1` with an empty `surfaces` array also maps to `nil`.
 - **OCCT:** `FilletSurf_Builder`
 - **Note:** Returns raw surface geometry only; does not produce a new solid. Use `Shape.filleted(edges:radius:)` to produce a filleted solid.

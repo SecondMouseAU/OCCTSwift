@@ -3,12 +3,12 @@
 # Opt-in pre-commit hook: runs the same static gate scripts and censuses CI's `gate-scripts` job
 # runs, flag for flag.
 #
-# NOT installed by cloning. A repo cannot install its own hooks — `.git/hooks` is not versioned —
+# NOT installed by cloning. A repo cannot install its own hooks, `.git/hooks` is not versioned,
 # and that is the right default here: a hook that appears in a contributor's workflow without them
 # asking is a surprise, and this one adds a few seconds to every single commit. Enable it with one
 # of the two commands below, from the repo root.
 #
-#   In a MAIN checkout — surgical, leaves any other hook you already have in place:
+#   In a MAIN checkout, surgical, leaves any other hook you already have in place:
 #
 #       ln -s ../../Scripts/git-hooks/pre-commit .git/hooks/pre-commit
 #
@@ -24,7 +24,7 @@
 #   have in `.git/hooks` stops firing while it is set. Prefer the symlink where you can use one.
 #   Undo either with `rm .git/hooks/pre-commit` or `git config --unset core.hooksPath`.
 #
-#   The hook body itself is worktree-correct either way — it `cd`s to `git rev-parse --show-toplevel`,
+#   The hook body itself is worktree-correct either way, it `cd`s to `git rev-parse --show-toplevel`,
 #   which resolves to the worktree you are committing in, not the main checkout.
 #
 # Skip it for one commit with `git commit --no-verify`. CI is the authority either way: this hook is
@@ -54,7 +54,7 @@ fi
 failed=()
 
 # Run every gate even after one fails, so a commit reports all its problems at once rather than one
-# per attempt — same reason CI's steps carry `if: !cancelled()`.
+# per attempt, same reason CI's steps carry `if: !cancelled()`.
 run() {
     local label="$1"; shift
     if ! "$PY" "$@" >/tmp/occtswift-gate-$$.log 2>&1; then
@@ -67,7 +67,7 @@ run() {
 }
 
 # Deliberately NOT --quiet, even though run() only prints on failure. --quiet is exit-status-only,
-# so the hook would name the failing gate and then print nothing about WHERE — a fabricated index
+# so the hook would name the failing gate and then print nothing about WHERE, a fabricated index
 # entry gets you "FAIL: check-bridge-index.py" instead of the file and line CI names. These are the
 # same invocations CI runs, which is the point: the two must not be able to disagree.
 run "check-bridge-index.py --self-test"       Scripts/check-bridge-index.py --self-test
@@ -85,6 +85,10 @@ run "check-borrowed-handles.py --self-test"   Scripts/check-borrowed-handles.py 
 run "check-borrowed-handles.py"               Scripts/check-borrowed-handles.py
 run "derive-bridge-header-split.py --self-test" Scripts/derive-bridge-header-split.py --self-test
 run "derive-bridge-header-split.py --verify"    Scripts/derive-bridge-header-split.py --verify
+# #996. Only --verify, matching CI: --reverify-headers needs Libraries/OCCT.xcframework and reports
+# SKIPPED without it, so putting it here would add a step that usually does nothing.
+run "derive-gdt-enums.py --self-test"         Scripts/derive-gdt-enums.py --self-test
+run "derive-gdt-enums.py --verify"            Scripts/derive-gdt-enums.py --verify
 run "count-operations.py"                     Scripts/count-operations.py
 
 # Not a Python gate, so it does not go through run(). merge.conflictStyle is diff3 in this repo, and

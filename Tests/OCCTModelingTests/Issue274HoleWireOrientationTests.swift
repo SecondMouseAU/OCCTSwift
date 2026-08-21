@@ -14,7 +14,7 @@ import simd
 /// Both tests below use the SAME geometry (a 10×10 outer CCW square with a 4×4 centred hole); the
 /// only difference is the hole's authored winding, so the winding is the sole discriminator. A
 /// regression to unconditional-reverse breaks the "already opposite" case and this suite fails loudly.
-@Suite("Issue #274 — hole wire orientation is corrected conditionally")
+@Suite("Issue #274, hole wire orientation is corrected conditionally")
 struct Issue274HoleWireOrientationTests {
 
     // 10×10 outer square, authored COUNTER-CLOCKWISE (right, up, left, down). Area = 100.
@@ -24,14 +24,14 @@ struct Issue274HoleWireOrientationTests {
         ], closed: true)
     }
 
-    // 4×4 centred hole authored CLOCKWISE — i.e. OPPOSITE the CCW outer (the correct hole sense).
+    // 4×4 centred hole authored CLOCKWISE, i.e. OPPOSITE the CCW outer (the correct hole sense).
     private func holeCW() -> Wire? {
         Wire.polygon3D([
             SIMD3(3, 3, 0), SIMD3(3, 7, 0), SIMD3(7, 7, 0), SIMD3(7, 3, 0)
         ], closed: true)
     }
 
-    // 4×4 centred hole authored COUNTER-CLOCKWISE — i.e. the SAME sense as the outer.
+    // 4×4 centred hole authored COUNTER-CLOCKWISE, i.e. the SAME sense as the outer.
     private func holeCCW() -> Wire? {
         Wire.polygon3D([
             SIMD3(3, 3, 0), SIMD3(7, 3, 0), SIMD3(7, 7, 0), SIMD3(3, 7, 0)
@@ -40,7 +40,7 @@ struct Issue274HoleWireOrientationTests {
 
     private let expectedArea = 100.0 - 16.0  // outer 100 − hole 16 = 84
 
-    /// Hole passed ALREADY OPPOSITE the outer (CW vs CCW) — the correct winding a caller may already
+    /// Hole passed ALREADY OPPOSITE the outer (CW vs CCW), the correct winding a caller may already
     /// have. This is the case the old unconditional reverse BROKE. Must produce a valid, subtracted face.
     @Test("hole wound opposite the outer (CW) → valid face, hole subtracted")
     func holeAlreadyOppositeIsKept() {
@@ -54,7 +54,7 @@ struct Issue274HoleWireOrientationTests {
         #expect(abs(area - expectedArea) < 1e-6)
     }
 
-    /// Hole passed the SAME way as the outer (CCW) — the function must still correct it. Must produce
+    /// Hole passed the SAME way as the outer (CCW), the function must still correct it. Must produce
     /// the identical valid, subtracted face.
     @Test("hole wound same as the outer (CCW) → still corrected, hole subtracted")
     func holeSameSenseIsReversed() {

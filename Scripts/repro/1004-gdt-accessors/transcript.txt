@@ -1,0 +1,101 @@
+== part 1: default-constructed objects, on deliberately poisoned heap storage ==
+
+The three constructors set only these members:
+  DimensionObject:     myHasPlane, myHasPntText, myHasConnection1, myHasConnection2
+  GeomToleranceObject: myHasAxis, myHasPlane, myHasPnt, myHasPntText, myAffectedPlaneType
+  DatumObject:         myIsDTarget, myIsValidDT, myHasPlane, myHasPnt, myHasPntText
+Everything else below reads storage nobody wrote. Against this kernel and this allocator
+every such member happens to read back as 0, which is why the defect is invisible in
+ordinary use; it is still storage no constructor assigned, so the bridge's create path
+sets the neutral values explicitly rather than relying on it.
+
+  fresh dim      qualifier=0 (Has=false)  angularQualifier=0 (Has=false)
+                 decimalPlaces=(0,0)  modifiers=0  descriptions=0 (Has=false)
+                 path.IsNull=true  direction=(1,0,0) returned=true
+                 HasPlane=false HasTextPoint=false HasPoint=false HasPoint2=false IsPointConnection=false
+                 presentation.IsNull=true  presentationName.IsNull=true  semanticName=(null)
+
+  fresh tol      typeOfValue=0  matReq=0  zoneModifier=0  valueOfZoneModifier=0
+                 maxValueModifier=0  modifiers=0
+                 HasAxis=false HasPlane=false HasPoint=false HasPointText=false HasAffectedPlane=false affectedPlaneType=0
+                 presentation.IsNull=true  semanticName=(null)
+
+  fresh datum    position=0  modifiers=0  modifierWithValue=0/0
+                 IsDatumTarget=false HasDatumTargetParams=false targetType=0 targetNumber=0
+                 targetLength=0 targetWidth=0 target.IsNull=true
+                 HasPlane=false HasPoint=false HasPointText=false  presentation.IsNull=true semanticName=(null)
+
+== part 2: the bridge's own create path, read back off the document ==
+
+OCCTDocumentCreateDimension / CreateGeomTolerance / CreateDatum construct the object,
+set only type and value (or name), and call SetObject. Whatever part 1 reports is what
+SetObject reads out of those objects and stores.
+
+  readback dim   qualifier=0 (Has=false)  angularQualifier=0 (Has=false)
+                 decimalPlaces=(0,0)  modifiers=0  descriptions=0 (Has=false)
+                 path.IsNull=true  direction=(1,0,0) returned=true
+                 HasPlane=false HasTextPoint=false HasPoint=false HasPoint2=false IsPointConnection=false
+                 presentation.IsNull=true  presentationName.IsNull=true  semanticName=DGT:Dimension
+
+  readback tol   typeOfValue=0  matReq=0  zoneModifier=0  valueOfZoneModifier=0
+                 maxValueModifier=0  modifiers=0
+                 HasAxis=false HasPlane=false HasPoint=false HasPointText=false HasAffectedPlane=false affectedPlaneType=0
+                 presentation.IsNull=true  semanticName=DGT:Tolerance
+
+  readback datum position=0  modifiers=0  modifierWithValue=0/0
+                 IsDatumTarget=false HasDatumTargetParams=false targetType=0 targetNumber=0
+                 targetLength=0 targetWidth=0 target.IsNull=true
+                 HasPlane=false HasPoint=false HasPointText=false  presentation.IsNull=true semanticName=DGT:Datum
+
+== part 3: every accessor set, then read back off the document ==
+
+  full dim       qualifier=2 (Has=true)  angularQualifier=2 (Has=true)
+                 decimalPlaces=(2,3)  modifiers=2  descriptions=2 (Has=true)
+                 path.IsNull=false  direction=(0,1,0) returned=true
+                 HasPlane=true HasTextPoint=true HasPoint=true HasPoint2=true IsPointConnection=true
+                 presentation.IsNull=false  presentationName.IsNull=false  semanticName=dim-semantic
+                 direction=(0,1,0)  plane loc=(1,2,3)  textPoint=(4,5,6)
+                 point=(7,8,9) connectionName=start  point2=(10,11,12) isPointConnection2=false connectionName2=end
+                 semanticName=dim-semantic presentationName=dim-presentation
+                 description[0]=d0 name=n0
+                 description[1]=d1 name=n1
+                 modifier[1]=1
+                 modifier[2]=19
+
+  full tol       typeOfValue=1  matReq=1  zoneModifier=1  valueOfZoneModifier=15
+                 maxValueModifier=0.25  modifiers=2
+                 HasAxis=true HasPlane=true HasPoint=true HasPointText=true HasAffectedPlane=true affectedPlaneType=2
+                 presentation.IsNull=false  semanticName=tol-semantic
+                 axis loc=(1,1,1) plane loc=(2,2,2) point=(3,3,3) textPoint=(4,4,4)
+                 affectedPlane loc=(5,5,5) axis=(0,1,0)
+                 semanticName=tol-semantic presentationName=tol-presentation
+                 modifier[1]=3
+                 modifier[2]=15
+
+  full datum     position=2  modifiers=2  modifierWithValue=3/12.5
+                 IsDatumTarget=true HasDatumTargetParams=true targetType=2 targetNumber=4
+                 targetLength=30 targetWidth=18 target.IsNull=true
+                 HasPlane=true HasPoint=true HasPointText=true  presentation.IsNull=false semanticName=datum-semantic
+                 name=B  targetAxis loc=(1,2,3)
+                 plane loc=(6,6,6) point=(6,7,7) textPoint=(8,8,8)
+                 semanticName=datum-semantic presentationName=datum-presentation
+                 modifier[1]=2
+                 modifier[2]=21
+
+== part 4: the three shapes no header states ==
+
+  NbDescriptions=1  GetDescription(0)=first  GetDescription(1)=
+  index base is 0: GetDescription(0) is the first entry and GetDescription(1) falls
+  outside the array, where the accessor answers an empty string rather than throwing.
+
+  GetDirection on an object that never had one: returned=true dir=(1,0,0)
+  The bool is a constant true (XCAFDimTolObjects_DimensionObject.cxx:419-423 returns
+  true unconditionally), so it cannot report absence and the vector it writes is the
+  default-constructed gp_Dir rather than a stored one.
+
+  Part 2's readback rows print the semantic name of a dimension, tolerance and datum
+  nobody ever named. Each reports the GD&T table's own marker string, because
+  XCAFDoc_DimTolTool::AddDimension/AddGeomTolerance/AddDatum set the label's TDataStd_Name
+  to "DGT:Dimension" / "DGT:Tolerance" / "DGT:Datum", and that is the same attribute
+  GetSemanticName reads. XCAFDoc_Dimension.cxx's setString helper also returns early on a
+  null handle, so the name cannot be cleared once set.

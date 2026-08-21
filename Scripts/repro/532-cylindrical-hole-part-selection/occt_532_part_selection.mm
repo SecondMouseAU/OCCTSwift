@@ -11,7 +11,7 @@
 //     ... KeepPart(chosen) ...
 //
 // but PartsOfTool() is only meaningful after the COMMON pass. BRepFeat_Form (:806) and
-// BRepFeat_RibSlot (:224) — the kernel's other two users of the same builder — both call the
+// BRepFeat_RibSlot (:224), the kernel's other two users of the same builder, both call the
 // two-argument SetOperation(myFuse, bFlag) with bFlag true so that myShape holds the tool split
 // by the object. BRepFeat_MakeCylindricalHole calls the one-argument overload at all five sites.
 //
@@ -142,7 +142,7 @@ static TopoDS_Shape threePlateStack() {   // 5..25, 45..65, 85..105
 }
 
 // ONE solid, two spans of material on the axis: a channel whose web is cut away, so the drill
-// passes through the top flange, the void, then the bottom flange. Not a compound — this is the
+// passes through the top flange, the void, then the bottom flange. Not a compound, this is the
 // case where "more than one body on the axis" and "one solid" are both true.
 static TopoDS_Shape channelOneSolid() {
   TopoDS_Shape outer = BRepPrimAPI_MakeBox(gp_Pnt(-25,-25,-50), 50, 50, 60).Shape();  // z[-50,10]
@@ -261,7 +261,7 @@ static void section(const TopoDS_Shape& stock, const char* name,
 }
 
 int main() {
-  printf("OCCTSwift#532 — BRepFeat_MakeCylindricalHole part selection\n");
+  printf("OCCTSwift#532, BRepFeat_MakeCylindricalHole part selection\n");
   printf("drill r=5 from (0,0,15) along -Z unless noted; one 20mm bore removes 1570.7963\n");
 
   const gp_Pnt org(0, 0, 15);

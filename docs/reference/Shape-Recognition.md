@@ -1,21 +1,21 @@
 ---
-title: Shape — Geometry Recognition & Polygon/Triangulation Data
+title: Shape. Geometry Recognition & Polygon/Triangulation Data
 parent: API Reference
 ---
 
-# Shape — Geometry Recognition & Polygon/Triangulation Data
+# Shape. Geometry Recognition & Polygon/Triangulation Data
 
 This page documents the geometry-utility and polygon/triangulation public API from `Sources/OCCTSwift/Shape.swift`. It covers coordinate-system helpers, curve/surface construction utilities, 2D constraint solvers, shape modification tools, and the full polygon and triangulation layer. See the main [Shape](Shape.md) page for the core B-Rep API.
 
 ## Topics
 
-- [Axis2Placement](#axis2placement) · [ShapeConstruct_Curve extensions](#shapeconstruct_curve-extensions) · [Bisector utilities](#bisector-utilities) · [GeomLib_Tool — Parameter Finding](#geomlib_tool--parameter-finding) · [GeomLib_IsPlanarSurface](#geomlib_isplanarsurface) · [GeomLib_CheckBSplineCurve / Check2dBSplineCurve](#geomlib_checkbsplinecurve--check2dbsplinecurve) · [GeomLib_Interpolate](#geomlib_interpolate) · [GccAna_Circ2d2TanRad](#gccana_circ2d2tanrad) · [GccAna_Circ2dTanCen](#gccana_circ2dtancen) · [GccAna_Lin2d2Tan](#gccana_lin2d2tan) · [Approx_SameParameter](#approx_sameparameter) · [ShapeUpgrade Curve Splitting](#shapeupgrade-curve-splitting) · [Shape Modifications](#shape-modifications) · [Surface Splitting](#surface-splitting) · [Curve/Surface Recognition](#curvesurface-recognition) · [Polygon2D](#polygon2d) · [Triangulation](#triangulation) · [Polygon3D](#polygon3d) · [PolygonOnTriangulation](#polygonontriangulation) · [Mesh Node Merging](#mesh-node-merging)
+- [Axis2Placement](#axis2placement) · [ShapeConstruct_Curve extensions](#shapeconstruct_curve-extensions) · [Bisector utilities](#bisector-utilities) · [GeomLib_Tool, Parameter Finding](#geomlib_tool--parameter-finding) · [GeomLib_IsPlanarSurface](#geomlib_isplanarsurface) · [GeomLib_CheckBSplineCurve / Check2dBSplineCurve](#geomlib_checkbsplinecurve--check2dbsplinecurve) · [GeomLib_Interpolate](#geomlib_interpolate) · [GccAna_Circ2d2TanRad](#gccana_circ2d2tanrad) · [GccAna_Circ2dTanCen](#gccana_circ2dtancen) · [GccAna_Lin2d2Tan](#gccana_lin2d2tan) · [Approx_SameParameter](#approx_sameparameter) · [ShapeUpgrade Curve Splitting](#shapeupgrade-curve-splitting) · [Shape Modifications](#shape-modifications) · [Surface Splitting](#surface-splitting) · [Curve/Surface Recognition](#curvesurface-recognition) · [Polygon2D](#polygon2d) · [Triangulation](#triangulation) · [Polygon3D](#polygon3d) · [PolygonOnTriangulation](#polygonontriangulation) · [Mesh Node Merging](#mesh-node-merging)
 
 ---
 
 ## Axis2Placement
 
-A standalone Swift class wrapping `Geom_Axis2Placement` — a right-handed 3D coordinate system with an origin, a main (Z) direction, and an X direction. Used to define placement frames for geometry factories.
+A standalone Swift class wrapping `Geom_Axis2Placement`, a right-handed 3D coordinate system with an origin, a main (Z) direction, and an X direction. Used to define placement frames for geometry factories.
 
 ### `Axis2Placement.init(origin:normal:xDirection:)`
 
@@ -25,7 +25,7 @@ Creates a right-handed 3D axis placement.
 public init(origin: SIMD3<Double>, normal: SIMD3<Double>, xDirection: SIMD3<Double>)
 ```
 
-- **Parameters:** `origin` — origin point; `normal` — main (Z) direction; `xDirection` — X direction (must not be parallel to `normal`).
+- **Parameters:** `origin`, origin point; `normal`, main (Z) direction; `xDirection`, X direction (must not be parallel to `normal`).
 - **OCCT:** `Geom_Axis2Placement(gp_Pnt, gp_Dir main, gp_Dir xDir)` via `OCCTAxis2PlacementCreate`.
 - **Example:**
   ```swift
@@ -96,7 +96,7 @@ Sets the main (Z) direction in place.
 public func setDirection(_ dir: SIMD3<Double>)
 ```
 
-- **Parameters:** `dir` — new main direction.
+- **Parameters:** `dir`, new main direction.
 - **OCCT:** `Geom_Axis2Placement::SetDirection` via `OCCTAxis2PlacementSetDirection`.
 
 ---
@@ -109,7 +109,7 @@ Sets the X direction in place.
 public func setXDirection(_ dir: SIMD3<Double>)
 ```
 
-- **Parameters:** `dir` — new X direction (must not be parallel to the main direction).
+- **Parameters:** `dir`, new X direction (must not be parallel to the main direction).
 - **OCCT:** `Geom_Axis2Placement::SetXDirection` via `OCCTAxis2PlacementSetXDirection`.
 
 ---
@@ -127,7 +127,7 @@ public func convertSegmentToBSpline(first: Double, last: Double,
                                      precision: Double = 1e-6) -> Curve3D?
 ```
 
-- **Parameters:** `first` — start parameter; `last` — end parameter; `precision` — geometric tolerance.
+- **Parameters:** `first`, start parameter; `last`, end parameter; `precision`, geometric tolerance.
 - **Returns:** New `Curve3D` as a BSpline, or `nil` on failure.
 - **OCCT:** `ShapeConstruct_Curve::ConvertToBSpline` via `OCCTShapeConstructConvertToBSpline3D`.
 - **Example:**
@@ -147,7 +147,7 @@ Adjusts the 3D curve endpoints to match given 3D points.
 public func adjustEndpoints(start: SIMD3<Double>, end: SIMD3<Double>) -> Bool
 ```
 
-- **Parameters:** `start` — desired start point; `end` — desired end point.
+- **Parameters:** `start`, desired start point; `end`, desired end point.
 - **Returns:** `true` on success.
 - **OCCT:** `ShapeConstruct_Curve::AdjustCurve` via `OCCTShapeConstructAdjustCurve3D`.
 
@@ -162,7 +162,7 @@ public func convertSegmentToBSpline(first: Double, last: Double,
                                      precision: Double = 1e-6) -> Curve2D?
 ```
 
-- **Parameters:** `first` — start parameter; `last` — end parameter; `precision` — geometric tolerance.
+- **Parameters:** `first`, start parameter; `last`, end parameter; `precision`, geometric tolerance.
 - **Returns:** New `Curve2D` as a BSpline, or `nil` on failure.
 - **OCCT:** `ShapeConstruct_Curve::ConvertToBSpline` via `OCCTShapeConstructConvertToBSpline2D`.
 
@@ -176,7 +176,7 @@ Adjusts the 2D curve endpoints to match given 2D points.
 public func adjustEndpoints(start: (Double, Double), end: (Double, Double)) -> Bool
 ```
 
-- **Parameters:** `start` — desired start point as `(x, y)`; `end` — desired end point as `(x, y)`.
+- **Parameters:** `start`, desired start point as `(x, y)`; `end`, desired end point as `(x, y)`.
 - **Returns:** `true` on success.
 - **OCCT:** `ShapeConstruct_Curve::AdjustCurve2d` via `OCCTShapeConstructAdjustCurve2D`.
 
@@ -248,7 +248,7 @@ public func bisectorIntersections(
 
 The bisector of `(a, b)` is intersected with the bisector of `(c, d)`. The result is the circumcenter when the two pairs form a triangle.
 
-- **Parameters:** `a`, `b` — first point pair; `c`, `d` — second point pair, all as `(x, y)`.
+- **Parameters:** `a`, `b`, first point pair; `c`, `d`, second point pair, all as `(x, y)`.
 - **Returns:** Array of intersection points (zero, one, or two).
 - **OCCT:** `Bisector_BisecCC` / `Bisector_Inter` via `OCCTBisectorInterPointPoint`.
 - **Example:**
@@ -260,7 +260,7 @@ The bisector of `(a, b)` is intersected with the bisector of `(c, d)`. The resul
 
 ---
 
-## GeomLib_Tool — Parameter Finding
+## GeomLib_Tool. Parameter Finding
 
 Extensions on `Curve3D`, `Surface`, and `Curve2D` for locating parameter values corresponding to 3D/2D points.
 
@@ -272,7 +272,7 @@ Finds the parameter of a 3D point on this curve.
 public func parameterOf(point: SIMD3<Double>, maxDistance: Double = 1.0) -> Double?
 ```
 
-- **Parameters:** `point` — 3D point to locate; `maxDistance` — maximum allowed distance from the curve.
+- **Parameters:** `point`, 3D point to locate; `maxDistance`, maximum allowed distance from the curve.
 - **Returns:** Parameter value, or `nil` if the point lies farther than `maxDistance` from the curve.
 - **OCCT:** `GeomLib_Tool::Parameter` via `OCCTGeomLibToolParameter3D`.
 - **Example:**
@@ -292,7 +292,7 @@ Finds the UV parameters of a 3D point on this surface.
 public func parametersOf(point: SIMD3<Double>, maxDistance: Double = 1.0) -> (u: Double, v: Double)?
 ```
 
-- **Parameters:** `point` — 3D point to locate; `maxDistance` — maximum allowed distance from the surface.
+- **Parameters:** `point`, 3D point to locate; `maxDistance`, maximum allowed distance from the surface.
 - **Returns:** `(u, v)` parameter tuple, or `nil` if the point lies farther than `maxDistance`.
 - **OCCT:** `GeomLib_Tool::Parameters` via `OCCTGeomLibToolParametersSurface`.
 - **Example:**
@@ -313,7 +313,7 @@ Finds the parameter of a 2D point on this curve.
 public func parameterOf(point: SIMD2<Double>, maxDistance: Double = 1.0) -> Double?
 ```
 
-- **Parameters:** `point` — 2D point to locate; `maxDistance` — maximum allowed distance from the curve.
+- **Parameters:** `point`, 2D point to locate; `maxDistance`, maximum allowed distance from the curve.
 - **Returns:** Parameter value, or `nil` if the point is too far from the curve.
 - **OCCT:** `GeomLib_Tool::Parameter` via `OCCTGeomLibToolParameter2D`.
 
@@ -331,7 +331,7 @@ Checks if this surface is planar within a given tolerance.
 public func isPlanar(tolerance: Double = 1e-7) -> Bool
 ```
 
-- **Parameters:** `tolerance` — planarity tolerance.
+- **Parameters:** `tolerance`, planarity tolerance.
 - **Returns:** `true` if the surface is planar within `tolerance`.
 - **OCCT:** `GeomLib_IsPlanarSurface::IsPlanar` via `OCCTGeomLibIsPlanarSurface`.
 - **Example:**
@@ -350,7 +350,7 @@ Returns the underlying plane parameters if this surface is planar.
 public func planarPlane(tolerance: Double = 1e-7) -> (origin: SIMD3<Double>, normal: SIMD3<Double>, xDirection: SIMD3<Double>)?
 ```
 
-- **Parameters:** `tolerance` — planarity tolerance.
+- **Parameters:** `tolerance`, planarity tolerance.
 - **Returns:** Tuple of `(origin, normal, xDirection)` if planar, `nil` otherwise.
 - **OCCT:** `GeomLib_IsPlanarSurface::Plane` via `OCCTGeomLibPlanarSurfacePlane`.
 - **Example:**
@@ -375,7 +375,7 @@ public func checkBSplineTangents(tolerance: Double = 0.01,
                                   angularTolerance: Double = 0.1) -> (fixFirst: Bool, fixLast: Bool)?
 ```
 
-- **Parameters:** `tolerance` — positional tolerance; `angularTolerance` — angular tolerance in radians.
+- **Parameters:** `tolerance`, positional tolerance; `angularTolerance`, angular tolerance in radians.
 - **Returns:** `(fixFirst, fixLast)` indicating which ends need fixing, or `nil` if not a BSpline or check failed.
 - **OCCT:** `GeomLib_CheckBSplineCurve` via `OCCTGeomLibCheckBSpline3D`.
 
@@ -391,7 +391,7 @@ public func fixBSplineTangents(fixFirst: Bool, fixLast: Bool,
                                 angularTolerance: Double = 0.1) -> Curve3D?
 ```
 
-- **Parameters:** `fixFirst` — fix the start tangent; `fixLast` — fix the end tangent; `tolerance` — positional tolerance; `angularTolerance` — angular tolerance.
+- **Parameters:** `fixFirst`, fix the start tangent; `fixLast`, fix the end tangent; `tolerance`, positional tolerance; `angularTolerance`, angular tolerance.
 - **Returns:** New `Curve3D` with corrected tangents, or `nil` on failure.
 - **OCCT:** `GeomLib_CheckBSplineCurve::FixTangent` via `OCCTGeomLibFixBSpline3D`.
 - **Example:**
@@ -413,7 +413,7 @@ public func checkBSplineTangents(tolerance: Double = 0.01,
                                   angularTolerance: Double = 0.1) -> (fixFirst: Bool, fixLast: Bool)?
 ```
 
-- **Parameters:** `tolerance` — positional tolerance; `angularTolerance` — angular tolerance.
+- **Parameters:** `tolerance`, positional tolerance; `angularTolerance`, angular tolerance.
 - **Returns:** `(fixFirst, fixLast)` flags, or `nil` if not a BSpline or check failed.
 - **OCCT:** `GeomLib_Check2dBSplineCurve` via `OCCTGeomLibCheckBSpline2D`.
 
@@ -429,7 +429,7 @@ public func fixBSplineTangents(fixFirst: Bool, fixLast: Bool,
                                 angularTolerance: Double = 0.1) -> Curve2D?
 ```
 
-- **Parameters:** `fixFirst` — fix the start tangent; `fixLast` — fix the end tangent; `tolerance` — positional tolerance; `angularTolerance` — angular tolerance.
+- **Parameters:** `fixFirst`, fix the start tangent; `fixLast`, fix the end tangent; `tolerance`, positional tolerance; `angularTolerance`, angular tolerance.
 - **Returns:** Fixed `Curve2D`, or `nil` on failure.
 - **OCCT:** `GeomLib_Check2dBSplineCurve::FixTangent` via `OCCTGeomLibFixBSpline2D`.
 
@@ -448,7 +448,7 @@ public static func polynomialInterpolation(degree: Int, points: [SIMD3<Double>],
 
 `points` and `parameters` must have equal counts (≥ 2). The parameter values define how the polynomial fits progress along the curve.
 
-- **Parameters:** `degree` — polynomial degree; `points` — interpolation points; `parameters` — parameter values corresponding to each point.
+- **Parameters:** `degree`, polynomial degree; `points`, interpolation points; `parameters`, parameter values corresponding to each point.
 - **Returns:** Interpolated BSpline `Curve3D`, or `nil` if counts mismatch or interpolation fails.
 - **OCCT:** `GeomLib_Interpolate` via `OCCTGeomLibInterpolate`.
 - **Example:**
@@ -489,7 +489,7 @@ public func circlesTangentToLines(_ l1Origin: SIMD2<Double>, _ l1Direction: SIMD
                                    radius: Double, tolerance: Double = 1e-6) -> [Circle2DSolution]
 ```
 
-- **Parameters:** `l1Origin`, `l1Direction` — first line (point + direction); `l2Origin`, `l2Direction` — second line; `radius` — required circle radius; `tolerance` — geometric tolerance.
+- **Parameters:** `l1Origin`, `l1Direction`, first line (point + direction); `l2Origin`, `l2Direction`, second line; `radius`, required circle radius; `tolerance`, geometric tolerance.
 - **Returns:** Array of up to four `Circle2DSolution` values (may be empty if no solution exists).
 - **OCCT:** `GccAna_Circ2d2TanRad` (Lin+Lin variant) via `OCCTGccAnaCirc2d2TanRadLineLin`.
 - **Note:** `radius` is the radius of the circles to find, and it must be positive (#553). Asked
@@ -514,7 +514,7 @@ public func circlesThroughPointsWithRadius(_ p1: SIMD2<Double>, _ p2: SIMD2<Doub
                                             tolerance: Double = 1e-6) -> [Circle2DSolution]
 ```
 
-- **Parameters:** `p1`, `p2` — two points to pass through; `radius` — required circle radius; `tolerance` — geometric tolerance.
+- **Parameters:** `p1`, `p2`, two points to pass through; `radius`, required circle radius; `tolerance`, geometric tolerance.
 - **Returns:** Array of up to two `Circle2DSolution` values.
 - **OCCT:** `GccAna_Circ2d2TanRad` (Pnt+Pnt variant) via `OCCTGccAnaCirc2d2TanRadPntPnt`.
 - **Note:** `radius` is the radius of the circles to find, and it must be positive; zero would ask
@@ -540,7 +540,7 @@ public func circleThroughPointCentered(point: SIMD2<Double>,
                                         center: SIMD2<Double>) -> Circle2DSolution?
 ```
 
-- **Parameters:** `point` — a point on the circle; `center` — the required circle centre.
+- **Parameters:** `point`, a point on the circle; `center`, the required circle centre.
 - **Returns:** A `Circle2DSolution`, or `nil` if no solution exists.
 - **OCCT:** `GccAna_Circ2dTanCen` (Pnt+Pnt variant) via `OCCTGccAnaCirc2dTanCenPntPnt`.
 - **Example:**
@@ -562,7 +562,7 @@ public func circleTangentToLineCentered(lineOrigin: SIMD2<Double>,
                                          center: SIMD2<Double>) -> Circle2DSolution?
 ```
 
-- **Parameters:** `lineOrigin` — a point on the line; `lineDirection` — line direction; `center` — required circle centre.
+- **Parameters:** `lineOrigin`, a point on the line; `lineDirection`, line direction; `center`, required circle centre.
 - **Returns:** A `Circle2DSolution`, or `nil` if no solution exists.
 - **OCCT:** `GccAna_Circ2dTanCen` (Lin+Pnt variant) via `OCCTGccAnaCirc2dTanCenLinPnt`.
 - **Example:**
@@ -602,7 +602,7 @@ public func lineThroughPoints(_ p1: SIMD2<Double>, _ p2: SIMD2<Double>,
                                tolerance: Double = 1e-6) -> Line2DSolution?
 ```
 
-- **Parameters:** `p1`, `p2` — two points; `tolerance` — geometric tolerance.
+- **Parameters:** `p1`, `p2`, two points; `tolerance`, geometric tolerance.
 - **Returns:** A `Line2DSolution`, or `nil` if the points coincide within tolerance.
 - **OCCT:** `GccAna_Lin2d2Tan` (Pnt+Pnt variant) via `OCCTGccAnaLin2d2TanPntPnt`.
 - **Example:**
@@ -625,7 +625,7 @@ public func linesTangentToCircleThroughPoint(circleCenter: SIMD2<Double>,
                                               tolerance: Double = 1e-6) -> [Line2DSolution]
 ```
 
-- **Parameters:** `circleCenter`, `circleRadius` — the circle; `point` — point the line must pass through; `tolerance` — geometric tolerance.
+- **Parameters:** `circleCenter`, `circleRadius`, the circle; `point`, point the line must pass through; `tolerance`, geometric tolerance.
 - **Returns:** Array of up to two `Line2DSolution` values (one if the point lies on the circle).
 - **OCCT:** `GccAna_Lin2d2Tan` (Circ+Pnt variant) via `OCCTGccAnaLin2d2TanCircPnt`.
 - **Note:** `circleRadius` must be positive (#553). With a radius of zero the solver returns the
@@ -674,7 +674,7 @@ public func checkSameParameter(curve2D: Curve2D, surface: Surface,
                                 tolerance: Double = 1e-6) -> SameParameterResult?
 ```
 
-- **Parameters:** `curve2D` — the 2D curve; `surface` — the surface; `tolerance` — parameterisation tolerance.
+- **Parameters:** `curve2D`, the 2D curve; `surface`, the surface; `tolerance`, parameterisation tolerance.
 - **Returns:** `SameParameterResult`, or `nil` if the check fails.
 - **OCCT:** `Approx_SameParameter` via `OCCTApproxSameParameter`.
 - **Example:**
@@ -698,7 +698,7 @@ Splits this 3D curve at continuity breaks.
 public func splitByContinuity(criterion: Int = 2, tolerance: Double = 1e-6) -> [Curve3D]
 ```
 
-- **Parameters:** `criterion` — a `ParametricContinuity` raw value: 0=C0, 1=C1, 2=C2, 3=C3, and anything above asks for CN (split at every break); `tolerance` — geometric tolerance.
+- **Parameters:** `criterion`, a `ParametricContinuity` raw value: 0=C0, 1=C1, 2=C2, 3=C3, and anything above asks for CN (split at every break); `tolerance`, geometric tolerance.
 - **Returns:** Array of `Curve3D` segments; may be a single-element array if no breaks are found.
 - **OCCT:** `ShapeUpgrade_SplitCurve3dContinuity` via `OCCTSplitCurve3dContinuity`.
 - **Example:**
@@ -716,7 +716,7 @@ Splits this 2D curve at continuity breaks.
 public func splitByContinuity(criterion: Int = 2, tolerance: Double = 1e-6) -> [Curve2D]
 ```
 
-- **Parameters:** `criterion` — a `ParametricContinuity` raw value: 0=C0, 1=C1, 2=C2, 3=C3, and anything above asks for CN (split at every break); `tolerance` — geometric tolerance.
+- **Parameters:** `criterion`, a `ParametricContinuity` raw value: 0=C0, 1=C1, 2=C2, 3=C3, and anything above asks for CN (split at every break); `tolerance`, geometric tolerance.
 - **Returns:** Array of `Curve2D` segments.
 - **OCCT:** `ShapeUpgrade_SplitCurve2dContinuity` via `OCCTSplitCurve2dContinuity`.
 
@@ -743,7 +743,7 @@ Approximates this 2D curve as a sequence of arcs and line segments.
 public func approxArcsAndSegments(tolerance: Double, angleTolerance: Double) -> [Curve2D]
 ```
 
-- **Parameters:** `tolerance` — positional approximation tolerance; `angleTolerance` — angular tolerance in radians.
+- **Parameters:** `tolerance`, positional approximation tolerance; `angleTolerance`, angular tolerance in radians.
 - **Returns:** Array of `Curve2D` arcs and segments. Returns an empty array on failure.
 - **OCCT:** `Geom2dConvert_ApproxArcsSegments` via `OCCTGeom2dConvertApproxArcsSegments`.
 
@@ -766,7 +766,7 @@ public static func trsfModification(_ shape: Shape,
 
 The matrix is specified row-major. Supports uniform scaling and rotation but not non-uniform scaling; use `gtrsfModification` for general affine transforms.
 
-- **Parameters:** `shape` — input shape; `a11`…`a34` — row-major 3×4 transformation matrix coefficients.
+- **Parameters:** `shape`, input shape; `a11`…`a34`, row-major 3×4 transformation matrix coefficients.
 - **Returns:** Transformed shape, or `nil` on failure.
 - **OCCT:** `BRepTools_TrsfModification` via `OCCTShapeTrsfModification`.
 - **Example:**
@@ -795,7 +795,7 @@ public static func gtrsfModification(_ shape: Shape,
 
 Supports non-uniform scaling. Convert the shape to NURBS first for non-affine transforms to ensure geometry validity.
 
-- **Parameters:** `shape` — input shape; `a11`…`a34` — row-major 3×4 matrix.
+- **Parameters:** `shape`, input shape; `a11`…`a34`, row-major 3×4 matrix.
 - **Returns:** Transformed shape, or `nil` on failure.
 - **OCCT:** `BRepTools_GTrsfModification` via `OCCTShapeGTrsfModification`.
 
@@ -811,7 +811,7 @@ public static func deepCopy(_ shape: Shape,
                               copyMesh: Bool = true) -> Shape?
 ```
 
-- **Parameters:** `shape` — shape to copy; `copyGeometry` — whether to copy underlying geometry; `copyMesh` — whether to copy cached triangulations.
+- **Parameters:** `shape`, shape to copy; `copyGeometry`, whether to copy underlying geometry; `copyMesh`, whether to copy cached triangulations.
 - **Returns:** Independent deep copy, or `nil` on failure.
 - **OCCT:** `BRepTools_CopyModification` via `OCCTShapeCopyModification`.
 - **Example:**
@@ -842,9 +842,9 @@ public static func bsplineRestrictionAdvanced(_ shape: Shape,
                                                 convertRational: Bool = false) -> Shape?
 ```
 
-- **Parameters:** `approxSurface`/`approxCurve3d`/`approxCurve2d` — which geometry types to process; `tol3d`/`tol2d` — tolerances; `continuity3d`/`continuity2d` — required continuity, `.c2` being the practical maximum (`.c3` fails the whole call); `maxDegree` — maximum polynomial degree; `maxSegments` — maximum segment count; `priorityDegree` — `true` = reduce degree first, `false` = reduce segments first; `convertRational` — convert rational BSplines to non-rational.
+- **Parameters:** `approxSurface`/`approxCurve3d`/`approxCurve2d`, which geometry types to process; `tol3d`/`tol2d`, tolerances; `continuity3d`/`continuity2d`, required continuity, `.c2` being the practical maximum (`.c3` fails the whole call); `maxDegree`, maximum polynomial degree; `maxSegments`, maximum segment count; `priorityDegree`, `true` = reduce degree first, `false` = reduce segments first; `convertRational`, convert rational BSplines to non-rational.
 - **Returns:** Restricted shape, or `nil` on failure.
-- **OCCT:** `ShapeCustom_BSplineRestriction` driven through `BRepTools_Modifier` via `OCCTShapeBSplineRestrictionAdvanced` — the same mechanism `Shape.bsplineRestriction(...)` reaches through the static `ShapeCustom::BSplineRestriction` helper, and since #490 both read the continuity the same way. The continuity is a ceiling, not a guarantee, through either: OCCT silently reduces what it delivers when the requested one cannot meet `tol3d` within `maxDegree` (#570). This entry point used to read it as a `GeomAbs_Shape` ordinal (`1`=G1, `2`=C1), so the same integer asked for a different continuity through each, and four of the seven values that reading offered failed the whole call. A deprecated `Int` overload remains for source compatibility; it now decodes as `ParametricContinuity` too.
+- **OCCT:** `ShapeCustom_BSplineRestriction` driven through `BRepTools_Modifier` via `OCCTShapeBSplineRestrictionAdvanced`, the same mechanism `Shape.bsplineRestriction(...)` reaches through the static `ShapeCustom::BSplineRestriction` helper, and since #490 both read the continuity the same way. The continuity is a ceiling, not a guarantee, through either: OCCT silently reduces what it delivers when the requested one cannot meet `tol3d` within `maxDegree` (#570). This entry point used to read it as a `GeomAbs_Shape` ordinal (`1`=G1, `2`=C1), so the same integer asked for a different continuity through each, and four of the seven values that reading offered failed the whole call. A deprecated `Int` overload remains for source compatibility; it now decodes as `ParametricContinuity` too.
 
 ---
 
@@ -860,7 +860,7 @@ public static func convertToBSplineAdvanced(_ shape: Shape,
                                               planeMode: Bool = false) -> Shape?
 ```
 
-- **Parameters:** `extrusionMode` — convert extrusion surfaces; `revolutionMode` — convert revolution surfaces; `offsetMode` — convert offset surfaces; `planeMode` — convert planes.
+- **Parameters:** `extrusionMode`, convert extrusion surfaces; `revolutionMode`, convert revolution surfaces; `offsetMode`, convert offset surfaces; `planeMode`, convert planes.
 - **Returns:** Shape with BSpline surfaces, or `nil` on failure.
 - **OCCT:** `ShapeUpgrade_ConvertSurfaceToBSplineSurface` via `OCCTShapeConvertToBSplineAdvanced`.
 
@@ -909,9 +909,9 @@ Splits this surface at continuity breaks.
 public func splitSurfaceByContinuity(criterion: Int, tolerance: Double) -> SplitResult?
 ```
 
-- **Parameters:** `criterion` — a `ParametricContinuity` raw value: 0=C0, 1=C1, 2=C2, 3=C3, above asks for CN; `tolerance` — geometric tolerance.
+- **Parameters:** `criterion`, a `ParametricContinuity` raw value: 0=C0, 1=C1, 2=C2, 3=C3, above asks for CN; `tolerance`, geometric tolerance.
 - **Returns:** `SplitResult` with U and V split counts, or `nil` if no splits are found.
-- **OCCT:** `ShapeUpgrade_SplitSurfaceContinuity` via `OCCTSplitSurfaceContinuity` — the same class `Surface.splitByContinuity(criterion:tolerance:)` wraps. Before #490 this entry point read `criterion` as a `GeomAbs_Shape` ordinal while its sibling read it as a parametric continuity, so `criterion: 2` asked for C1 through one and C2 through the other.
+- **OCCT:** `ShapeUpgrade_SplitSurfaceContinuity` via `OCCTSplitSurfaceContinuity`, the same class `Surface.splitByContinuity(criterion:tolerance:)` wraps. Before #490 this entry point read `criterion` as a `GeomAbs_Shape` ordinal while its sibling read it as a parametric continuity, so `criterion: 2` asked for C1 through one and C2 through the other.
 
 ---
 
@@ -923,7 +923,7 @@ Splits this surface where the normal varies by more than a maximum angle.
 public func splitByAngle(_ maxAngle: Double) -> SplitResult?
 ```
 
-- **Parameters:** `maxAngle` — maximum allowed normal deviation in radians.
+- **Parameters:** `maxAngle`, maximum allowed normal deviation in radians.
 - **Returns:** `SplitResult`, or `nil` if no splits are needed.
 - **OCCT:** `ShapeUpgrade_SplitSurfaceAngle` via `OCCTSplitSurfaceAngle`.
 
@@ -937,7 +937,7 @@ Splits this surface into approximately equal-area parts.
 public func splitByArea(parts: Int, intoSquares: Bool = false) -> SplitResult?
 ```
 
-- **Parameters:** `parts` — desired number of parts; `intoSquares` — if `true`, target square patches.
+- **Parameters:** `parts`, desired number of parts; `intoSquares`, if `true`, target square patches.
 - **Returns:** `SplitResult`, or `nil` on failure.
 - **OCCT:** `ShapeUpgrade_SplitSurfaceArea` via `OCCTSplitSurfaceArea`.
 
@@ -988,7 +988,7 @@ Attempts to convert this curve to an analytical form over its whole domain.
 public func toAnalytical(tolerance: Double = 1e-4) -> Curve3D?
 ```
 
-- **Parameters:** `tolerance` — recognition tolerance.
+- **Parameters:** `tolerance`, recognition tolerance.
 - **Returns:** The recognised curve, or `nil` if no analytical form is recognised.
 - **OCCT:** `GeomConvert_CurveToAnaCurve` via `OCCTGeomConvertCurveToAnalytical`.
 - **Example:**
@@ -1011,7 +1011,7 @@ The full-range spelling of `toAnalytical(tolerance:first:last:)`, and the curve 
 public func toAnalyticalWithGap(tolerance: Double = 1e-4) -> CurveToAnalyticalResult?
 ```
 
-- **Parameters:** `tolerance` — recognition tolerance.
+- **Parameters:** `tolerance`, recognition tolerance.
 - **Returns:** `CurveToAnalyticalResult` with the recognised curve, its range and the gap, or `nil`.
 - **OCCT:** `GeomConvert_CurveToAnaCurve` via `OCCTGeomConvertCurveToAnalytical`.
 - **Example:**
@@ -1034,7 +1034,7 @@ when the whole domain is not.
 public func toAnalytical(tolerance: Double, first: Double, last: Double) -> CurveToAnalyticalResult?
 ```
 
-- **Parameters:** `tolerance` — recognition tolerance; `first`, `last` — parameter range to examine.
+- **Parameters:** `tolerance`, recognition tolerance; `first`, `last`, parameter range to examine.
 - **Returns:** `CurveToAnalyticalResult` with the simplified curve and gap, or `nil` if no analytical form is recognised.
 - **OCCT:** `GeomConvert_CurveToAnaCurve` via `OCCTGeomConvertCurveToAnalytical`.
 - **Example:**
@@ -1055,8 +1055,8 @@ public static func arePointsLinear(_ points: [SIMD3<Double>],
                                     tolerance: Double) -> (isLinear: Bool, deviation: Double)
 ```
 
-- **Parameters:** `points` — array of 3D points; `tolerance` — collinearity tolerance.
-- **Returns:** `(isLinear, deviation)` — `isLinear` indicates collinearity; `deviation` is the maximum perpendicular distance from the best-fit line.
+- **Parameters:** `points`, array of 3D points; `tolerance`, collinearity tolerance.
+- **Returns:** `(isLinear, deviation)`, `isLinear` indicates collinearity; `deviation` is the maximum perpendicular distance from the best-fit line.
 - **OCCT:** `GeomConvert_ConvType::IsLinear` via `OCCTGeomConvertIsLinear`.
 - **Example:**
   ```swift
@@ -1088,7 +1088,7 @@ Attempts to convert this surface to an analytical form.
 public func toAnalyticalWithGap(tolerance: Double) -> SurfaceToAnalyticalResult?
 ```
 
-- **Parameters:** `tolerance` — recognition tolerance.
+- **Parameters:** `tolerance`, recognition tolerance.
 - **Returns:** `SurfaceToAnalyticalResult` with the simplified surface and deviation, or `nil` if no analytical form is recognised.
 - **OCCT:** `GeomConvert_SurfToAnaSurf` via `OCCTGeomConvertSurfToAnalytical`.
 - **Example:**
@@ -1110,7 +1110,7 @@ public func toAnalyticalWithGap(tolerance: Double,
                                   vMin: Double, vMax: Double) -> SurfaceToAnalyticalResult?
 ```
 
-- **Parameters:** `tolerance` — recognition tolerance; `uMin`, `uMax`, `vMin`, `vMax` — UV parameter bounds to consider.
+- **Parameters:** `tolerance`, recognition tolerance; `uMin`, `uMax`, `vMin`, `vMax`, UV parameter bounds to consider.
 - **Returns:** `SurfaceToAnalyticalResult`, or `nil` on failure. Inverted bounds (`uMin > uMax`) are rejected rather than normalised.
 - **OCCT:** `GeomConvert_SurfToAnaSurf` (bounded variant) via `OCCTGeomConvertSurfToAnalyticalBounded`.
 - **Example:**
@@ -1140,7 +1140,7 @@ public var isCanonical: Bool { get }
 
 ## Polygon2D
 
-`Polygon2D` is a standalone Swift class wrapping `Poly_Polygon2D` — a sequence of 2D points used to represent a parametric-space polygon on a face.
+`Polygon2D` is a standalone Swift class wrapping `Poly_Polygon2D`, a sequence of 2D points used to represent a parametric-space polygon on a face.
 
 ### `Polygon2D.create(points:)`
 
@@ -1150,7 +1150,7 @@ Creates a 2D polygon from an array of 2D points.
 public static func create(points: [SIMD2<Double>]) -> Polygon2D?
 ```
 
-- **Parameters:** `points` — ordered sequence of 2D points.
+- **Parameters:** `points`, ordered sequence of 2D points.
 - **Returns:** `Polygon2D`, or `nil` on failure.
 - **OCCT:** `Poly_Polygon2D` via `OCCTPolyPolygon2DCreate`.
 - **Example:**
@@ -1182,7 +1182,7 @@ Returns the 2D point at a given 0-based index.
 public func node(at index: Int) -> SIMD2<Double>?
 ```
 
-- **Parameters:** `index` — 0-based node index.
+- **Parameters:** `index`, 0-based node index.
 - **Returns:** `SIMD2<Double>` position, or `nil` if the index is out of range.
 - **OCCT:** `Poly_Polygon2D::Nodes` via `OCCTPolyPolygon2DNode`.
 
@@ -1227,7 +1227,7 @@ public func copy() -> Polygon2D?
 
 ## Triangulation
 
-`Triangulation` wraps `Poly_Triangulation` — a 3D mesh defined by node positions and triangle vertex indices. Used as input to `BRepGraph.createTriangulationRep(_:)` for populating the cached mesh tier of a graph. Triangle indices are 0-based on the Swift boundary; the bridge converts to OCCT's 1-based representation internally.
+`Triangulation` wraps `Poly_Triangulation`, a 3D mesh defined by node positions and triangle vertex indices. Used as input to `BRepGraph.createTriangulationRep(_:)` for populating the cached mesh tier of a graph. Triangle indices are 0-based on the Swift boundary; the bridge converts to OCCT's 1-based representation internally.
 
 ### `Triangulation.create(nodes:triangles:)`
 
@@ -1237,7 +1237,7 @@ Creates a triangulation from node positions and triangle vertex indices.
 public static func create(nodes: [SIMD3<Double>], triangles: [Int]) -> Triangulation?
 ```
 
-- **Parameters:** `nodes` — 3D node positions; `triangles` — triangle vertex indices, 0-based, three per triangle (`triangles.count` must be a multiple of 3).
+- **Parameters:** `nodes`, 3D node positions; `triangles`, triangle vertex indices, 0-based, three per triangle (`triangles.count` must be a multiple of 3).
 - **Returns:** `Triangulation`, or `nil` if inputs are empty, `triangles.count` is not a multiple of 3, or any index is out of range.
 - **OCCT:** `Poly_Triangulation(nbNodes, nbTriangles)` via `OCCTPolyTriangulationCreate`.
 - **Example:**
@@ -1282,7 +1282,7 @@ Returns the 3D position of a node at a given 0-based index.
 public func node(at index: Int) -> SIMD3<Double>?
 ```
 
-- **Parameters:** `index` — 0-based node index.
+- **Parameters:** `index`, 0-based node index.
 - **Returns:** Node position, or `nil` if out of range.
 - **OCCT:** `Poly_Triangulation::Node` via `OCCTPolyTriangulationNode`.
 
@@ -1296,7 +1296,7 @@ Returns the three 0-based vertex indices for a triangle.
 public func triangle(at index: Int) -> (Int, Int, Int)?
 ```
 
-- **Parameters:** `index` — 0-based triangle index.
+- **Parameters:** `index`, 0-based triangle index.
 - **Returns:** Tuple of three 0-based node indices, or `nil` if out of range.
 - **OCCT:** `Poly_Triangulation::Triangle` via `OCCTPolyTriangulationTriangle`.
 - **Example:**
@@ -1322,7 +1322,7 @@ public var deflection: Double { get set }
 
 ## Polygon3D
 
-`Polygon3D` wraps `Poly_Polygon3D` — a sequence of 3D points with optional curve parameters, used to represent an edge approximation in 3D space.
+`Polygon3D` wraps `Poly_Polygon3D`, a sequence of 3D points with optional curve parameters, used to represent an edge approximation in 3D space.
 
 ### `Polygon3D.create(points:)`
 
@@ -1332,7 +1332,7 @@ Creates a 3D polygon from an array of 3D points.
 public static func create(points: [SIMD3<Double>]) -> Polygon3D?
 ```
 
-- **Parameters:** `points` — ordered sequence of 3D points.
+- **Parameters:** `points`, ordered sequence of 3D points.
 - **Returns:** `Polygon3D`, or `nil` on failure.
 - **OCCT:** `Poly_Polygon3D` via `OCCTPolyPolygon3DCreate`.
 
@@ -1346,7 +1346,7 @@ Creates a 3D polygon with curve parameters.
 public static func create(points: [SIMD3<Double>], parameters: [Double]) -> Polygon3D?
 ```
 
-- **Parameters:** `points` — ordered 3D points; `parameters` — corresponding curve parameter values (must have the same count as `points`).
+- **Parameters:** `points`, ordered 3D points; `parameters`, corresponding curve parameter values (must have the same count as `points`).
 - **Returns:** `Polygon3D` with parameters, or `nil` on failure.
 - **OCCT:** `Poly_Polygon3D` (parameterised overload) via `OCCTPolyPolygon3DCreateWithParams`.
 - **Example:**
@@ -1380,7 +1380,7 @@ Returns the 3D position at a given 0-based node index.
 public func node(at index: Int) -> SIMD3<Double>?
 ```
 
-- **Parameters:** `index` — 0-based node index.
+- **Parameters:** `index`, 0-based node index.
 - **Returns:** Node position, or `nil` if out of range.
 - **OCCT:** `Poly_Polygon3D::Nodes` via `OCCTPolyPolygon3DNode`.
 
@@ -1418,7 +1418,7 @@ Returns the curve parameter at a given 0-based index.
 public func parameter(at index: Int) -> Double
 ```
 
-- **Parameters:** `index` — 0-based index.
+- **Parameters:** `index`, 0-based index.
 - **Returns:** The curve parameter value. Returns 0 if `hasParameters` is `false`.
 - **OCCT:** `Poly_Polygon3D::Parameter` via `OCCTPolyPolygon3DParameter`.
 
@@ -1438,7 +1438,7 @@ public var deflection: Double { get set }
 
 ## PolygonOnTriangulation
 
-`PolygonOnTriangulation` wraps `Poly_PolygonOnTriangulation` — a polygon defined as a sequence of indices into a shared `Triangulation`, with optional curve parameters. Used to associate an edge's 2D approximation with a face triangulation.
+`PolygonOnTriangulation` wraps `Poly_PolygonOnTriangulation`, a polygon defined as a sequence of indices into a shared `Triangulation`, with optional curve parameters. Used to associate an edge's 2D approximation with a face triangulation.
 
 ### `PolygonOnTriangulation.create(nodeIndices:)`
 
@@ -1448,7 +1448,7 @@ Creates a polygon from node indices into a triangulation.
 public static func create(nodeIndices: [Int32]) -> PolygonOnTriangulation?
 ```
 
-- **Parameters:** `nodeIndices` — array of 0-based node indices into the associated triangulation.
+- **Parameters:** `nodeIndices`, array of 0-based node indices into the associated triangulation.
 - **Returns:** `PolygonOnTriangulation`, or `nil` on failure.
 - **OCCT:** `Poly_PolygonOnTriangulation` via `OCCTPolyPolygonOnTriCreate`.
 
@@ -1462,7 +1462,7 @@ Creates a polygon from node indices with curve parameters.
 public static func create(nodeIndices: [Int32], parameters: [Double]) -> PolygonOnTriangulation?
 ```
 
-- **Parameters:** `nodeIndices` — 0-based node indices; `parameters` — corresponding curve parameter values.
+- **Parameters:** `nodeIndices`, 0-based node indices; `parameters`, corresponding curve parameter values.
 - **Returns:** `PolygonOnTriangulation` with parameters, or `nil` on failure.
 - **OCCT:** `Poly_PolygonOnTriangulation` (parameterised overload) via `OCCTPolyPolygonOnTriCreateWithParams`.
 - **Example:**
@@ -1495,7 +1495,7 @@ Returns the triangulation node index at a given 0-based position.
 public func nodeIndex(at position: Int) -> Int
 ```
 
-- **Parameters:** `position` — 0-based position in the polygon's node sequence.
+- **Parameters:** `position`, 0-based position in the polygon's node sequence.
 - **Returns:** 0-based index into the associated triangulation's node array.
 - **OCCT:** `Poly_PolygonOnTriangulation::Node` via `OCCTPolyPolygonOnTriNode`.
 
@@ -1521,7 +1521,7 @@ Returns the curve parameter at a given 0-based index.
 public func parameter(at index: Int) -> Double
 ```
 
-- **Parameters:** `index` — 0-based index.
+- **Parameters:** `index`, 0-based index.
 - **Returns:** The curve parameter value. Returns 0 if `hasParameters` is `false`.
 - **OCCT:** `Poly_PolygonOnTriangulation::Parameter` via `OCCTPolyPolygonOnTriParameter`.
 
@@ -1563,7 +1563,7 @@ public func setNodes(_ nodeIndices: [Int32]) -> Bool
 
 The supplied array must have the same length as `nodeCount`.
 
-- **Parameters:** `nodeIndices` — replacement node index array (same count as `nodeCount`).
+- **Parameters:** `nodeIndices`, replacement node index array (same count as `nodeCount`).
 - **Returns:** `true` on success, `false` on size mismatch.
 - **OCCT:** `Poly_PolygonOnTriangulation::ChangeNodeArray` via `OCCTPolyPolygonOnTriSetNodes`.
 
@@ -1580,7 +1580,7 @@ public func setParameters(_ params: [Double]) -> Bool
 
 Requires `hasParameters == true` and the array length must equal `nodeCount`.
 
-- **Parameters:** `params` — replacement parameter array.
+- **Parameters:** `params`, replacement parameter array.
 - **Returns:** `true` on success, `false` if `hasParameters` is `false` or lengths mismatch.
 - **OCCT:** `Poly_PolygonOnTriangulation::ChangeParameterArray` via `OCCTPolyPolygonOnTriSetParameters`.
 

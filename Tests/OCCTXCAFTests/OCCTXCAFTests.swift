@@ -98,7 +98,7 @@ struct GDTDocumentTests {
 
 // MARK: - TNaming: Topological Naming (v0.25.0)
 
-@Suite("TNaming — Basic Record and Retrieve")
+@Suite("TNaming, Basic Record and Retrieve")
 struct TNamingBasicTests {
 
     @Test("Create label on document")
@@ -247,7 +247,7 @@ struct TNamingBasicTests {
     }
 }
 
-@Suite("TNaming — Forward and Backward Tracing")
+@Suite("TNaming, Forward and Backward Tracing")
 struct TNamingTracingTests {
 
     @Test("Trace forward finds generated shape")
@@ -326,7 +326,7 @@ struct TNamingTracingTests {
     }
 }
 
-@Suite("TNaming — Select and Resolve")
+@Suite("TNaming, Select and Resolve")
 struct TNamingSelectResolveTests {
 
     @Test("Select a shape within context")
@@ -360,7 +360,7 @@ struct TNamingSelectResolveTests {
 
         let resolved = doc.resolveShape(on: selectLabel)
         // Resolve may or may not return a shape depending on TNaming_Selector behavior
-        // with simple test shapes — just verify the API doesn't crash
+        // with simple test shapes, just verify the API doesn't crash
         if resolved != nil {
             #expect(Bool(true), "Resolve returned a shape")
         }
@@ -519,7 +519,7 @@ struct XCAFComponentMatrixTests {
         // Rigid: 90° about Z + translation (10,20,30), row-major [r00..r22, tx,ty,tz].
         let rigid: [Double] = [0, -1, 0, 1, 0, 0, 0, 0, 1, 10, 20, 30]
         #expect(doc.addComponent(assemblyLabelId: asm, shapeLabelId: part, matrix: rigid) >= 0)
-        // Reflection (det −1, mirror X) — gp_Trsf accepts it as a negative-scale location, so a
+        // Reflection (det −1, mirror X), gp_Trsf accepts it as a negative-scale location, so a
         // mirrored occurrence can be placed directly without baking a separate mirrored product.
         let reflect: [Double] = [-1, 0, 0, 0, 1, 0, 0, 0, 1, 5, 0, 0]
         #expect(doc.addComponent(assemblyLabelId: asm, shapeLabelId: part, matrix: reflect) >= 0)
@@ -575,7 +575,7 @@ struct AssemblyNodeIdentityTests {
 
         try box.writeSTEP(to: tempURL)
 
-        // Freshly-loaded document — do NOT touch `rootNodes` before the lookup.
+        // Freshly-loaded document, do NOT touch `rootNodes` before the lookup.
         let doc = try Document.load(from: tempURL)
 
         // Pre-fix this returned nil because the labelId registry was empty
@@ -2373,7 +2373,7 @@ struct XDEColorToolByShapeTests {
         }
     }
 
-    // #763: `shapeColor` used to hardcode `a = 1.0` regardless of what was actually stored —
+    // #763: `shapeColor` used to hardcode `a = 1.0` regardless of what was actually stored,
     // `XCAFDoc_ColorTool::GetColor(shape, type, Quantity_Color&)` fetches the real RGBA value
     // internally and then discards alpha, and the bridge was reading it through that overload.
     // A shape colored with a translucent color must read back its real alpha, not a fabricated
@@ -3419,7 +3419,7 @@ struct TNamingExtensionTests {
     @Test func namingIsEmpty() {
         guard let doc = Document.create() else { return }
         guard let node = doc.createLabel() else { return }
-        // No naming recorded yet — should be empty
+        // No naming recorded yet, should be empty
         #expect(doc.namingIsEmpty(on: node))
     }
 
@@ -3445,7 +3445,7 @@ struct TNamingExtensionTests {
         guard let doc = Document.create() else { return }
         guard let node = doc.createLabel() else { return }
         guard let box = Shape.box(width: 10, height: 20, depth: 30) else { return }
-        // Primitive has no old shape — original should be nil
+        // Primitive has no old shape, original should be nil
         doc.recordNaming(on: node, evolution: .primitive, newShape: box)
         let original = doc.namingOriginalShape(on: node)
         #expect(original == nil)
@@ -3549,7 +3549,7 @@ struct ChildNodeIteratorTests {
 
     @Test func noTreeNode() {
         guard let doc = Document.create() else { return }
-        // No tree node set — count should be 0
+        // No tree node set, count should be 0
         #expect(doc.childNodeCount(tag: 400) == 0)
     }
 }
@@ -3652,7 +3652,7 @@ struct TDocStdXLinkToolTests {
         src.setInteger(88)
         let ok = doc.xlinkCopyWithLink(targetLabelId: tgt.labelId, sourceLabelId: src.labelId)
         doc.commitTransaction()
-        // CopyWithLink may fail if labels are in same document — just check no crash
+        // CopyWithLink may fail if labels are in same document, just check no crash
         _ = ok
     }
 }
@@ -3988,7 +3988,7 @@ struct XCAFDocAssemblyIteratorTests {
     }
 
     /// #964: a document small enough to walk completely reports a count, never `nil`. Before the
-    /// fix this could not be asserted at all — the method returned `Int`, so "counted 100,001" and
+    /// fix this could not be asserted at all, the method returned `Int`, so "counted 100,001" and
     /// "gave up at 100,001" were the same value.
     @Test func smallAssemblyCountIsComplete() {
         guard let doc = Document.create() else { return }
@@ -4276,7 +4276,7 @@ struct DocumentExplorerExtensionTests {
     }
 }
 
-@Suite("v0.126.0 — XCAFDoc_ColorTool completions")
+@Suite("v0.126.0, XCAFDoc_ColorTool completions")
 struct ColorToolCompletionsTests {
     @Test("AddColor and FindColor")
     func addAndFindColor() {
@@ -4341,7 +4341,7 @@ struct ColorToolCompletionsTests {
     }
 }
 
-@Suite("v0.126.0 — XCAFDoc_ShapeTool completions")
+@Suite("v0.126.0, XCAFDoc_ShapeTool completions")
 struct ShapeToolCompletionsTests {
     @Test("IsFree returns true for top-level shape")
     func isFree() {
@@ -4457,8 +4457,52 @@ struct ShapeToolCompletionsTests {
 
 // MARK: - v0.140: XCAFDoc GD&T write path
 
-@Suite("v0.140 Document GD&T write + typed enums")
+@Suite("v0.140 Document GD&T write path")
 struct DocumentGDTTests {
+
+    /// Review finding: `setDimensionBounds` returned `true` on a plus/minus dimension.
+    ///
+    /// `SetLowerBound`/`SetUpperBound` branch on `myVal->Length() > 1`. From a length-3
+    /// plus/minus array they write in place, so the requested upper bound landed in the
+    /// lower tolerance slot, the stale upper tolerance survived, the dimension stayed
+    /// plus/minus, and the call reported success. The sibling `setDimensionTolerance`
+    /// had a readback check for the opposite conversion and this one did not.
+    @Test("setDimensionBounds refuses a plus/minus dimension instead of corrupting it")
+    func setDimensionBoundsRefusesPlusMinus() throws {
+        guard let doc = Document.create() else { Issue.record("doc nil"); return }
+        guard let box = Shape.box(width: 10, height: 10, depth: 10) else {
+            Issue.record("box nil"); return
+        }
+        let labelId = doc.addShape(box, makeAssembly: false)
+        guard let idx = doc.createDimension(on: labelId, type: .sizeDiameter, value: 20.0,
+                                           lowerTolerance: -0.3, upperTolerance: 0.7)
+        else {
+            Issue.record("createDimension nil"); return
+        }
+        #expect(doc.setDimensionBounds(at: idx, lower: 10.0, upper: 12.0) == false)
+        if let dim = doc.dimension(at: idx) {
+            #expect(dim.bounds == .plusMinus(lowerTolerance: -0.3, upperTolerance: 0.7))
+            #expect(dim.value == 20.0)
+        }
+    }
+
+    /// The simple-to-range conversion the mutator is for still works.
+    @Test("setDimensionBounds still converts a simple dimension to a range")
+    func setDimensionBoundsConvertsSimple() throws {
+        guard let doc = Document.create() else { Issue.record("doc nil"); return }
+        guard let box = Shape.box(width: 10, height: 10, depth: 10) else {
+            Issue.record("box nil"); return
+        }
+        let labelId = doc.addShape(box, makeAssembly: false)
+        guard let idx = doc.createDimension(on: labelId, type: .sizeDiameter, value: 20.0)
+        else {
+            Issue.record("createDimension nil"); return
+        }
+        #expect(doc.setDimensionBounds(at: idx, lower: 10.0, upper: 12.0) == true)
+        if let dim = doc.dimension(at: idx) {
+            #expect(dim.bounds == .range(lower: 10.0, upper: 12.0))
+        }
+    }
     @Test("Create dimension on a box shape and read it back")
     func createAndReadDimension() throws {
         guard let doc = Document.create() else { Issue.record("doc nil"); return }
@@ -4476,13 +4520,14 @@ struct DocumentGDTTests {
         #expect(idx == 0)
         #expect(doc.dimensionCount == 1)
 
-        if let dim = doc.typedDimension(at: 0) {
+        if let dim = doc.dimension(at: 0) {
             #expect(dim.type == .sizeRadius)
-            #expect(abs(dim.value - 25.0) < 1e-9)
-            #expect(abs(dim.lowerTolerance - (-0.1)) < 1e-9)
-            #expect(abs(dim.upperTolerance - 0.1) < 1e-9)
+            #expect(dim.value.map { abs($0 - 25.0) < 1e-9 } == true)
+            #expect(dim.bounds == .plusMinus(lowerTolerance: -0.1, upperTolerance: 0.1))
+            #expect(dim.lowerTolerance.map { abs($0 - (-0.1)) < 1e-9 } == true)
+            #expect(dim.upperTolerance.map { abs($0 - 0.1) < 1e-9 } == true)
         } else {
-            Issue.record("typedDimension nil")
+            Issue.record("dimension nil")
         }
     }
 
@@ -4495,11 +4540,11 @@ struct DocumentGDTTests {
         let labelId = doc.addShape(box, makeAssembly: false)
         let idx = doc.createGeomTolerance(on: labelId, type: .flatness, value: 0.01)
         #expect(idx == 0)
-        if let tol = doc.typedGeomTolerance(at: 0) {
+        if let tol = doc.geomTolerance(at: 0) {
             #expect(tol.type == .flatness)
             #expect(abs(tol.value - 0.01) < 1e-9)
         } else {
-            Issue.record("typedGeomTolerance nil")
+            Issue.record("geomTolerance nil")
         }
     }
 
@@ -4508,10 +4553,10 @@ struct DocumentGDTTests {
         guard let doc = Document.create() else { Issue.record("doc nil"); return }
         let idx = doc.createDatum(name: "A")
         #expect(idx == 0)
-        if let datum = doc.typedDatum(at: 0) {
+        if let datum = doc.datum(at: 0) {
             #expect(datum.name == "A")
         } else {
-            Issue.record("typedDatum nil")
+            Issue.record("datum nil")
         }
     }
 
@@ -4533,10 +4578,10 @@ struct DocumentGDTTests {
         #expect(doc.dimensionCount == 3)
         #expect(doc.geomToleranceCount == 2)
         #expect(doc.datumCount == 2)
-        #expect(doc.typedDimensions.count == 3)
-        #expect(doc.typedDimensions.map(\.type).contains(.sizeDiameter))
-        #expect(doc.typedGeomTolerances.map(\.type).contains(.perpendicularity))
-        #expect(doc.typedDatums.map(\.name).sorted() == ["A", "B"])
+        #expect(doc.dimensions.count == 3)
+        #expect(doc.dimensions.map(\.type).contains(.sizeDiameter))
+        #expect(doc.geomTolerances.map(\.type).contains(.perpendicularity))
+        #expect(doc.datums.map(\.name).sorted() == ["A", "B"])
     }
 
     @Test("DimensionType enum covers all 32 cases")
@@ -4547,6 +4592,288 @@ struct DocumentGDTTests {
     @Test("GeomToleranceType enum covers all 16 cases")
     func geomToleranceTypeEnumComplete() {
         #expect(Document.GeomToleranceType.allCases.count == 16)
+    }
+}
+
+// MARK: - #996: one GD&T read surface, and OCCT's dimension kinds
+
+@Suite("GD&T unified read surface (#996)")
+struct GDTUnifiedReadTests {
+    /// Author a box with a dimension, a tolerance and a datum, then read the SAME populated
+    /// document through every accessor of the one read family. Before #996 there were two families
+    /// whose coverage was exactly complementary: `GDTDocumentTests` tested the untyped one only
+    /// where it returned nothing, `DocumentGDTTests` the typed one only where it returned
+    /// something, so nothing would have caught them diverging.
+    @Test("A populated document reads back through counts, singulars and plurals alike")
+    func populatedDocumentReadsThroughOneFamily() {
+        guard let doc = Document.create() else {
+            Issue.record("doc nil")
+            return
+        }
+        guard let box = Shape.box(width: 100, height: 50, depth: 25) else {
+            Issue.record("box nil")
+            return
+        }
+        let shapeId = doc.addShape(box, makeAssembly: false)
+        doc.createDimension(
+            on: shapeId, type: .sizeDiameter, value: 20.0,
+            lowerTolerance: -0.3, upperTolerance: 0.7)
+        doc.createGeomTolerance(on: shapeId, type: .perpendicularity, value: 0.05)
+        doc.createDatum(name: "A")
+
+        #expect(doc.dimensionCount == 1)
+        #expect(doc.geomToleranceCount == 1)
+        #expect(doc.datumCount == 1)
+        #expect(doc.dimensions.count == doc.dimensionCount)
+        #expect(doc.geomTolerances.count == doc.geomToleranceCount)
+        #expect(doc.datums.count == doc.datumCount)
+
+        // The plural accessor and the singular one describe the same entry, which is the property
+        // two separate families could not be held to.
+        if let single = doc.dimension(at: 0), let first = doc.dimensions.first {
+            #expect(single == first)
+            #expect(single.index == 0)
+            #expect(single.type == .sizeDiameter)
+        } else {
+            Issue.record("dimension nil")
+        }
+        if let single = doc.geomTolerance(at: 0), let first = doc.geomTolerances.first {
+            #expect(single == first)
+            #expect(single.index == 0)
+            #expect(single.type == .perpendicularity)
+        } else {
+            Issue.record("geomTolerance nil")
+        }
+        if let single = doc.datum(at: 0), let first = doc.datums.first {
+            #expect(single == first)
+            #expect(single.index == 0)
+            #expect(single.name == "A")
+        } else {
+            Issue.record("datum nil")
+        }
+    }
+
+    /// A range dimension (`IsDimWithRange()`, values array of length 2) used to read back as its
+    /// lower bound mislabelled as the value, with both tolerances a fabricated 0, so it was
+    /// indistinguishable from a plain 10 with no tolerance. Measured against the pinned kernel in
+    /// `Scripts/repro/996-gdt-read-surface/`.
+    @Test("A 10..12 range dimension reads back as a range, not as a plain 10")
+    func rangeDimensionKeepsItsBounds() {
+        guard let doc = Document.create() else {
+            Issue.record("doc nil")
+            return
+        }
+        guard let box = Shape.box(width: 100, height: 50, depth: 25) else {
+            Issue.record("box nil")
+            return
+        }
+        let shapeId = doc.addShape(box, makeAssembly: false)
+        guard let idx = doc.createDimension(on: shapeId, type: .sizeDiameter, value: 10.0) else {
+            Issue.record("createDimension nil")
+            return
+        }
+        #expect(doc.setDimensionBounds(at: idx, lower: 10.0, upper: 12.0))
+
+        guard let dim = doc.dimension(at: idx) else {
+            Issue.record("dimension nil")
+            return
+        }
+        #expect(dim.bounds == .range(lower: 10.0, upper: 12.0))
+        #expect(dim.lowerBound == 10.0)
+        #expect(dim.upperBound == 12.0)
+        // OCCT's own GetValue() is the midpoint for a range, not the first array slot. This is the
+        // assertion the pre-#996 bridge failed: it reported 10.
+        #expect(dim.value.map { abs($0 - 11.0) < 1e-9 } == true)
+        // The two tolerance accessors do not apply to a range, and now say so instead of returning
+        // a 0 a caller cannot tell from a real zero tolerance.
+        #expect(dim.lowerTolerance == nil)
+        #expect(dim.upperTolerance == nil)
+    }
+
+    /// The tolerance pair is asymmetric on purpose. A symmetric -0.1/+0.1 cannot tell a correct
+    /// accessor from a swapped one, and the pinned header's doc comments on
+    /// `GetLowerTolValue`/`GetUpperTolValue` are swapped upstream. The functions are not; measured
+    /// two ways in `Scripts/repro/996-gdt-read-surface/`.
+    @Test("A plus/minus dimension keeps lower and upper tolerance the right way round")
+    func plusMinusDimensionKeepsToleranceOrder() {
+        guard let doc = Document.create() else {
+            Issue.record("doc nil")
+            return
+        }
+        guard let box = Shape.box(width: 10, height: 10, depth: 10) else {
+            Issue.record("box nil")
+            return
+        }
+        let shapeId = doc.addShape(box, makeAssembly: false)
+        guard
+            let idx = doc.createDimension(
+                on: shapeId, type: .sizeRadius, value: 20.0,
+                lowerTolerance: -0.3, upperTolerance: 0.7)
+        else {
+            Issue.record("createDimension nil")
+            return
+        }
+
+        guard let dim = doc.dimension(at: idx) else {
+            Issue.record("dimension nil")
+            return
+        }
+        #expect(dim.bounds == .plusMinus(lowerTolerance: -0.3, upperTolerance: 0.7))
+        #expect(dim.lowerTolerance == -0.3)
+        #expect(dim.upperTolerance == 0.7)
+        #expect(dim.value.map { abs($0 - 20.0) < 1e-9 } == true)
+        // A plus/minus dimension is not a range, and the bound accessors say so.
+        #expect(dim.lowerBound == nil)
+        #expect(dim.upperBound == nil)
+    }
+
+    /// A dimension with no tolerance of any kind: one values slot, and every inapplicable accessor
+    /// nil rather than 0.
+    @Test("A simple dimension reports .simple and no bounds or tolerances")
+    func simpleDimensionHasNoBoundsOrTolerances() {
+        guard let doc = Document.create() else {
+            Issue.record("doc nil")
+            return
+        }
+        guard let box = Shape.box(width: 10, height: 10, depth: 10) else {
+            Issue.record("box nil")
+            return
+        }
+        let shapeId = doc.addShape(box, makeAssembly: false)
+        guard let idx = doc.createDimension(on: shapeId, type: .sizeThickness, value: 3.5) else {
+            Issue.record("createDimension nil")
+            return
+        }
+
+        guard let dim = doc.dimension(at: idx) else {
+            Issue.record("dimension nil")
+            return
+        }
+        #expect(dim.bounds == .simple)
+        #expect(dim.value.map { abs($0 - 3.5) < 1e-9 } == true)
+        #expect(dim.lowerBound == nil)
+        #expect(dim.upperBound == nil)
+        #expect(dim.lowerTolerance == nil)
+        #expect(dim.upperTolerance == nil)
+        #expect(dim.classOfTolerance == nil)
+    }
+
+    /// The third kind, an ISO 286 class of tolerance, set independently of the values array
+    /// (`IsDimWithClassOfTolerance()` reads the form variance, not the array length).
+    @Test("An H7 hole dimension reports its ISO 286 class of tolerance")
+    func classOfToleranceIsReadBack() {
+        guard let doc = Document.create() else {
+            Issue.record("doc nil")
+            return
+        }
+        guard let box = Shape.box(width: 10, height: 10, depth: 10) else {
+            Issue.record("box nil")
+            return
+        }
+        let shapeId = doc.addShape(box, makeAssembly: false)
+        guard let idx = doc.createDimension(on: shapeId, type: .sizeDiameter, value: 20.0) else {
+            Issue.record("createDimension nil")
+            return
+        }
+        #expect(
+            doc.setDimensionClassOfTolerance(at: idx, isHole: true, formVariance: .h, grade: .it7))
+
+        guard let dim = doc.dimension(at: idx) else {
+            Issue.record("dimension nil")
+            return
+        }
+        guard let cls = dim.classOfTolerance else {
+            Issue.record("classOfTolerance nil")
+            return
+        }
+        #expect(cls.isHole)
+        #expect(cls.formVariance == .h)
+        #expect(cls.grade == .it7)
+        // A class of tolerance leaves the values array alone, so this is still a simple value.
+        #expect(dim.bounds == .simple)
+    }
+
+    /// A class of tolerance is orthogonal to the values array, so a range dimension can carry one.
+    /// This is the second construction for `classOfToleranceIsReadBack`: same class, different
+    /// bounds, which is what proves the two are independent rather than the class implying
+    /// `.simple`.
+    @Test("A range dimension can also carry a class of tolerance")
+    func rangeDimensionCanCarryAClassOfTolerance() {
+        guard let doc = Document.create() else {
+            Issue.record("doc nil")
+            return
+        }
+        guard let box = Shape.box(width: 10, height: 10, depth: 10) else {
+            Issue.record("box nil")
+            return
+        }
+        let shapeId = doc.addShape(box, makeAssembly: false)
+        guard let idx = doc.createDimension(on: shapeId, type: .sizeDiameter, value: 10.0) else {
+            Issue.record("createDimension nil")
+            return
+        }
+        #expect(doc.setDimensionBounds(at: idx, lower: 10.0, upper: 12.0))
+        #expect(
+            doc.setDimensionClassOfTolerance(at: idx, isHole: false, formVariance: .js, grade: .it9)
+        )
+
+        guard let dim = doc.dimension(at: idx) else {
+            Issue.record("dimension nil")
+            return
+        }
+        #expect(dim.bounds == .range(lower: 10.0, upper: 12.0))
+        #expect(dim.classOfTolerance?.isHole == false)
+        #expect(dim.classOfTolerance?.formVariance == .js)
+        #expect(dim.classOfTolerance?.grade == .it9)
+    }
+
+    /// OCCT refuses to convert a range dimension to a plus/minus one, returning false from both
+    /// setters and leaving the dimension untouched. The bridge used to discard those returns and
+    /// report success for a call that changed nothing.
+    @Test("Setting a tolerance on a range dimension is refused, not silently ignored")
+    func toleranceOnARangeDimensionIsRefused() {
+        guard let doc = Document.create() else {
+            Issue.record("doc nil")
+            return
+        }
+        guard let box = Shape.box(width: 10, height: 10, depth: 10) else {
+            Issue.record("box nil")
+            return
+        }
+        let shapeId = doc.addShape(box, makeAssembly: false)
+        guard let idx = doc.createDimension(on: shapeId, type: .sizeDiameter, value: 10.0) else {
+            Issue.record("createDimension nil")
+            return
+        }
+        #expect(doc.setDimensionBounds(at: idx, lower: 10.0, upper: 12.0))
+        #expect(doc.setDimensionTolerance(at: idx, lower: -0.3, upper: 0.7) == false)
+        // Refused means unchanged, not partly applied.
+        #expect(doc.dimension(at: idx)?.bounds == .range(lower: 10.0, upper: 12.0))
+    }
+
+    /// Every mutator declines an index no dimension occupies, rather than reporting success.
+    @Test("The dimension mutators reject an out-of-range index")
+    func mutatorsRejectAnOutOfRangeIndex() {
+        guard let doc = Document.create() else {
+            Issue.record("doc nil")
+            return
+        }
+        #expect(doc.setDimensionTolerance(at: 0, lower: -0.1, upper: 0.1) == false)
+        #expect(doc.setDimensionBounds(at: 0, lower: 1.0, upper: 2.0) == false)
+        #expect(
+            doc.setDimensionClassOfTolerance(
+                at: 0, isHole: true, formVariance: .h, grade: .it7) == false)
+        #expect(doc.setDimensionBounds(at: -1, lower: 1.0, upper: 2.0) == false)
+    }
+
+    @Test("DimensionFormVariance enum covers all 29 cases")
+    func formVarianceEnumComplete() {
+        #expect(Document.DimensionFormVariance.allCases.count == 29)
+    }
+
+    @Test("DimensionGrade enum covers all 20 cases")
+    func gradeEnumComplete() {
+        #expect(Document.DimensionGrade.allCases.count == 20)
     }
 }
 
@@ -4622,7 +4949,7 @@ struct BRepGraphAttributeTests {
         #expect(restored.attributes == graph.attributes)
     }
 
-    /// With the canonical (`.sortedKeys`) encoder the store is byte-stable across encodes —
+    /// With the canonical (`.sortedKeys`) encoder the store is byte-stable across encodes,
     /// the contract for diffable, versionable snapshots.
     @Test func encodingIsDeterministic() throws {
         guard let box = Shape.box(width: 3, height: 3, depth: 3),
@@ -4636,7 +4963,7 @@ struct BRepGraphAttributeTests {
         #expect(a == b)
     }
 
-    /// NodeRef indexing is deterministic across rebuilds of the same BREP — the property the
+    /// NodeRef indexing is deterministic across rebuilds of the same BREP, the property the
     /// snapshot round-trip relies on. Verify a node index resolves to the same geometry.
     @Test func nodeIndexingDeterministicAcrossRebuild() {
         guard let box = Shape.box(width: 10, height: 20, depth: 30),
@@ -4679,3 +5006,516 @@ struct BRepGraphAttributeTests {
     }
 }
 
+
+@Suite("GD&T dimension accessors (#1004)")
+struct GDTDimensionAccessorTests {
+    /// A box with one dimension on it, which is the smallest document that can carry an accessor.
+    private func documentWithDimension(
+        type: Document.DimensionType = .sizeDiameter,
+        value: Double = 20.0
+    ) -> (Document, Int)? {
+        guard let doc = Document.create(), let box = Shape.box(width: 100, height: 50, depth: 25)
+        else { return nil }
+        let shapeId = doc.addShape(box, makeAssembly: false)
+        guard let index = doc.createDimension(on: shapeId, type: type, value: value) else {
+            return nil
+        }
+        return (doc, index)
+    }
+
+    /// The qualifier changes what the number means: 20 nominal and 20 maximum are different
+    /// dimensions, and before #1004 both read back identically because the accessor was unwrapped.
+    @Test("A qualifier written on a dimension reads back, and an unqualified one reads .none")
+    func qualifierRoundTrips() {
+        guard let (doc, index) = documentWithDimension() else {
+            Issue.record("document nil")
+            return
+        }
+
+        // A dimension nobody qualified is nominal. This is also the assertion that holds
+        // OCCTDocumentCreateDimension to handing OCCT a neutral qualifier rather than whatever
+        // its uninitialised member happened to hold.
+        if let fresh = doc.dimension(at: index) {
+            #expect(fresh.qualifier == .none)
+        } else {
+            Issue.record("dimension nil before qualifier")
+        }
+
+        #expect(doc.setDimensionQualifier(at: index, .max))
+        if let qualified = doc.dimension(at: index) {
+            #expect(qualified.qualifier == .max)
+            // The qualifier is independent of the magnitude, so nothing else may move with it.
+            #expect(qualified.value == 20.0)
+            #expect(qualified.bounds == .simple)
+        } else {
+            Issue.record("dimension nil after qualifier")
+        }
+
+        #expect(doc.setDimensionQualifier(at: index, .none))
+        // Spelled out rather than as `?.qualifier == .none`: through an optional chain that `.none`
+        // resolves to `Optional.none`, so the comparison would pass for a nil dimension too.
+        #expect(doc.dimension(at: index)?.qualifier == Document.DimensionQualifier.none)
+    }
+
+    @Test("An angular qualifier round-trips independently of the dimension qualifier")
+    func angularQualifierRoundTrips() {
+        guard let (doc, index) = documentWithDimension(type: .sizeAngular, value: 45.0) else {
+            Issue.record("document nil")
+            return
+        }
+        #expect(doc.dimension(at: index)?.angularQualifier == Document.AngularQualifier.none)
+
+        #expect(doc.setDimensionQualifier(at: index, .min))
+        #expect(doc.setDimensionAngularQualifier(at: index, .large))
+        if let both = doc.dimension(at: index) {
+            // Two separate OCCT members, so the pair proves neither accessor is reading the other.
+            #expect(both.qualifier == .min)
+            #expect(both.angularQualifier == .large)
+        } else {
+            Issue.record("dimension nil")
+        }
+    }
+
+    /// OCCT answers a flat (0, 0) from GetNbOfDecimalPlaces for a dimension that never had a pair,
+    /// which is indistinguishable from a real (0, 0) request. The stored/not-stored condition is
+    /// the only thing that separates them, so `decimalPlaces` is nil rather than a fabricated zero.
+    @Test("Decimal places read back as written, and as nil when never written")
+    func decimalPlacesDistinguishAbsenceFromZero() {
+        guard let (doc, index) = documentWithDimension() else {
+            Issue.record("document nil")
+            return
+        }
+        #expect(doc.dimension(at: index)?.decimalPlaces == nil)
+
+        #expect(doc.setDimensionDecimalPlaces(at: index, left: 2, right: 3))
+        if let places = doc.dimension(at: index)?.decimalPlaces {
+            // Asymmetric on purpose: 2 and 3 tell a correct pair from a swapped one.
+            #expect(places.left == 2)
+            #expect(places.right == 3)
+        } else {
+            Issue.record("decimalPlaces nil after writing (2, 3)")
+        }
+
+        // A zero on one side only is still a stored pair, since OCCT keeps it when either is
+        // positive. This is the case a "nil when either is zero" rule would get wrong.
+        #expect(doc.setDimensionDecimalPlaces(at: index, left: 0, right: 4))
+        if let places = doc.dimension(at: index)?.decimalPlaces {
+            #expect(places.left == 0)
+            #expect(places.right == 4)
+        } else {
+            Issue.record("decimalPlaces nil after writing (0, 4)")
+        }
+
+        #expect(doc.setDimensionDecimalPlaces(at: index, left: 0, right: 0))
+        #expect(doc.dimension(at: index)?.decimalPlaces == nil)
+    }
+
+    @Test("A modifier sequence round-trips in order, and clears")
+    func modifiersRoundTripInOrder() {
+        guard let (doc, index) = documentWithDimension() else {
+            Issue.record("document nil")
+            return
+        }
+        #expect(doc.dimension(at: index)?.modifiers.isEmpty == true)
+
+        // Three, in an order that is not the enum's own, so a sequence rebuilt by sorting or by
+        // raw value rather than by position reads back differently from what was written.
+        let written: [Document.DimensionModifier] = [
+            .anyCrossSection, .square, .statisticalTolerance,
+        ]
+        #expect(doc.setDimensionModifiers(at: index, written))
+        #expect(doc.dimension(at: index)?.modifiers == written)
+
+        #expect(doc.setDimensionModifiers(at: index, []))
+        #expect(doc.dimension(at: index)?.modifiers.isEmpty == true)
+    }
+
+    /// The two static classifiers partition most of DimensionType, and neither holds for the two
+    /// presentation types. Asked of OCCT rather than of a hand-written case list.
+    @Test("The dimension type classifiers agree with OCCT for a location, a size and neither")
+    func typeClassifiersMatchOCCT() {
+        #expect(Document.DimensionType.locationLinearDistance.isDimensionalLocation)
+        #expect(!Document.DimensionType.locationLinearDistance.isDimensionalSize)
+
+        #expect(Document.DimensionType.sizeDiameter.isDimensionalSize)
+        #expect(!Document.DimensionType.sizeDiameter.isDimensionalLocation)
+
+        // commonLabel is neither, which is the reading a two-way partition would get wrong.
+        #expect(!Document.DimensionType.commonLabel.isDimensionalLocation)
+        #expect(!Document.DimensionType.commonLabel.isDimensionalSize)
+
+        // Every case answers something, and no case answers both.
+        for type in Document.DimensionType.allCases {
+            #expect(!(type.isDimensionalLocation && type.isDimensionalSize))
+        }
+    }
+
+    /// The accessors are per-dimension, so a document with two of them must not report one's
+    /// answers for the other.
+    @Test("Two dimensions on one document keep their own accessor values")
+    func accessorsAreNotSharedBetweenDimensions() {
+        guard let doc = Document.create(), let box = Shape.box(width: 10, height: 10, depth: 10)
+        else {
+            Issue.record("document nil")
+            return
+        }
+        let shapeId = doc.addShape(box, makeAssembly: false)
+        guard let first = doc.createDimension(on: shapeId, type: .sizeDiameter, value: 20.0),
+            let second = doc.createDimension(on: shapeId, type: .sizeRadius, value: 5.0)
+        else {
+            Issue.record("createDimension nil")
+            return
+        }
+
+        #expect(doc.setDimensionQualifier(at: first, .max))
+        #expect(doc.setDimensionModifiers(at: first, [.square]))
+        #expect(doc.setDimensionDecimalPlaces(at: second, left: 1, right: 1))
+
+        if let a = doc.dimension(at: first), let b = doc.dimension(at: second) {
+            #expect(a.qualifier == .max)
+            #expect(a.modifiers == [.square])
+            #expect(a.decimalPlaces == nil)
+
+            #expect(b.qualifier == .none)
+            #expect(b.modifiers.isEmpty)
+            #expect(b.decimalPlaces?.left == 1)
+            #expect(b.decimalPlaces?.right == 1)
+        } else {
+            Issue.record("dimension nil")
+        }
+    }
+
+    /// An out-of-range index answers nothing rather than reading a neighbouring dimension, and the
+    /// mutators refuse rather than reporting a write nobody made.
+    @Test("Out-of-range indices are refused by both the accessors and the mutators")
+    func outOfRangeIndicesAreRefused() {
+        guard let (doc, _) = documentWithDimension() else {
+            Issue.record("document nil")
+            return
+        }
+        #expect(doc.dimension(at: 5) == nil)
+        #expect(!doc.setDimensionQualifier(at: 5, .max))
+        #expect(!doc.setDimensionAngularQualifier(at: 5, .large))
+        #expect(!doc.setDimensionDecimalPlaces(at: 5, left: 1, right: 1))
+        #expect(!doc.setDimensionModifiers(at: 5, [.square]))
+
+        // A negative count cannot be expressed through the Swift API, but a negative place count
+        // can, and OCCT would otherwise store it.
+        #expect(!doc.setDimensionDecimalPlaces(at: 0, left: -1, right: 0))
+    }
+}
+
+@Suite("GD&T tolerance and datum accessors (#1004)")
+struct GDTToleranceDatumAccessorTests {
+    /// A box with one geometric tolerance on it.
+    private func documentWithTolerance() -> (Document, Int)? {
+        guard let doc = Document.create(), let box = Shape.box(width: 100, height: 50, depth: 25)
+        else { return nil }
+        let shapeId = doc.addShape(box, makeAssembly: false)
+        guard let index = doc.createGeomTolerance(on: shapeId, type: .position, value: 0.1) else {
+            return nil
+        }
+        return (doc, index)
+    }
+
+    private func documentWithDatum(name: String = "A") -> (Document, Int)? {
+        guard let doc = Document.create() else { return nil }
+        guard let index = doc.createDatum(name: name) else { return nil }
+        return (doc, index)
+    }
+
+    // MARK: - Geometric tolerance
+
+    /// The value type is what makes 0.1 a zone width or a zone diameter, so a tolerance read
+    /// without it is read at half or twice its meaning.
+    @Test("A tolerance's value type, material requirement and zone modifier round-trip")
+    func toleranceSemanticsRoundTrip() {
+        guard let (doc, index) = documentWithTolerance() else {
+            Issue.record("document nil")
+            return
+        }
+
+        // A tolerance nobody qualified. This also holds OCCTDocumentCreateGeomTolerance to handing
+        // OCCT neutral values rather than whatever its uninitialised members happened to hold.
+        if let fresh = doc.geomTolerance(at: index) {
+            #expect(fresh.valueType == Document.GeomToleranceValueType.none)
+            #expect(fresh.materialRequirement == Document.MaterialRequirement.none)
+            #expect(fresh.zoneModifier == Document.GeomToleranceZoneModifier.none)
+            #expect(fresh.zoneModifierValue == nil)
+            #expect(fresh.maxValueModifier == nil)
+            #expect(fresh.modifiers.isEmpty)
+        } else {
+            Issue.record("tolerance nil before writes")
+        }
+
+        #expect(doc.setGeomToleranceValueType(at: index, .diameter))
+        #expect(doc.setGeomToleranceMaterialRequirement(at: index, .m))
+        #expect(doc.setGeomToleranceZoneModifier(at: index, .projected, value: 15.0))
+        #expect(doc.setGeomToleranceMaxValueModifier(at: index, 0.25))
+
+        if let tol = doc.geomTolerance(at: index) {
+            // Three separate OCCT members, all read in one call, so the trio proves none of the
+            // three accessors is reading another's storage.
+            #expect(tol.valueType == .diameter)
+            #expect(tol.materialRequirement == .m)
+            #expect(tol.zoneModifier == .projected)
+            #expect(tol.zoneModifierValue == 15.0)
+            #expect(tol.maxValueModifier == 0.25)
+            // The tolerance's own value is untouched by any of them.
+            #expect(tol.value == 0.1)
+            #expect(tol.type == .position)
+        } else {
+            Issue.record("tolerance nil after writes")
+        }
+    }
+
+    /// OCCT stores a zone value and a max value only when positive, so a zero is what an unstored
+    /// one reads back as. Reporting either as 0.0 would be the defect #996 existed to fix.
+    @Test("A zero zone value and a zero max value read back as nil, not as a measured zero")
+    func toleranceZeroValuesAreAbsence() {
+        guard let (doc, index) = documentWithTolerance() else {
+            Issue.record("document nil")
+            return
+        }
+        #expect(doc.setGeomToleranceZoneModifier(at: index, .projected, value: 15.0))
+        #expect(doc.setGeomToleranceMaxValueModifier(at: index, 0.25))
+        #expect(doc.geomTolerance(at: index)?.zoneModifierValue == 15.0)
+
+        #expect(doc.setGeomToleranceZoneModifier(at: index, .projected, value: 0))
+        #expect(doc.setGeomToleranceMaxValueModifier(at: index, 0))
+        if let tol = doc.geomTolerance(at: index) {
+            #expect(tol.zoneModifierValue == nil)
+            #expect(tol.maxValueModifier == nil)
+            // The modifier itself is gated separately, on its own `_None` member, and survives.
+            #expect(tol.zoneModifier == .projected)
+        } else {
+            Issue.record("tolerance nil")
+        }
+    }
+
+    @Test("A tolerance modifier sequence round-trips in order, and clears")
+    func toleranceModifiersRoundTripInOrder() {
+        guard let (doc, index) = documentWithTolerance() else {
+            Issue.record("document nil")
+            return
+        }
+        #expect(doc.geomTolerance(at: index)?.modifiers.isEmpty == true)
+
+        // Deliberately not in the enum's own order, so a sequence rebuilt by sorting reads back
+        // differently from what was written.
+        let written: [Document.GeomToleranceModifier] = [.allAround, .commonZone, .freeState]
+        #expect(doc.setGeomToleranceModifiers(at: index, written))
+        #expect(doc.geomTolerance(at: index)?.modifiers == written)
+
+        #expect(doc.setGeomToleranceModifiers(at: index, []))
+        #expect(doc.geomTolerance(at: index)?.modifiers.isEmpty == true)
+    }
+
+    // MARK: - Datum
+
+    /// A datum's position is what makes A|B|C an ordered frame rather than a set. It is 1-based,
+    /// so 0 is absence rather than a first place.
+    @Test("A datum position round-trips, and reads nil when it has no place in a frame")
+    func datumPositionRoundTrips() {
+        guard let (doc, index) = documentWithDatum() else {
+            Issue.record("document nil")
+            return
+        }
+        #expect(doc.datum(at: index)?.position == nil)
+
+        #expect(doc.setDatumPosition(at: index, 2))
+        #expect(doc.datum(at: index)?.position == 2)
+
+        #expect(doc.setDatumPosition(at: index, 0))
+        #expect(doc.datum(at: index)?.position == nil)
+    }
+
+    @Test("A datum modifier sequence round-trips in order, and the valued modifier is separate")
+    func datumModifiersRoundTrip() {
+        guard let (doc, index) = documentWithDatum() else {
+            Issue.record("document nil")
+            return
+        }
+        if let fresh = doc.datum(at: index) {
+            #expect(fresh.modifiers.isEmpty)
+            #expect(fresh.modifierWithValue == nil)
+        } else {
+            Issue.record("datum nil")
+        }
+
+        let written: [Document.DatumModifier] = [.translation, .basic, .contactingFeature]
+        #expect(doc.setDatumModifiers(at: index, written))
+        #expect(doc.setDatumModifierWithValue(at: index, .projected, value: 12.5))
+
+        if let datum = doc.datum(at: index) {
+            #expect(datum.modifiers == written)
+            #expect(datum.modifierWithValue?.modifier == .projected)
+            #expect(datum.modifierWithValue?.value == 12.5)
+        } else {
+            Issue.record("datum nil")
+        }
+
+        // Clearing the valued modifier leaves the sequence alone: two separate OCCT members.
+        #expect(doc.setDatumModifierWithValue(at: index, .none))
+        if let datum = doc.datum(at: index) {
+            #expect(datum.modifierWithValue == nil)
+            #expect(datum.modifiers == written)
+        } else {
+            Issue.record("datum nil")
+        }
+
+        #expect(doc.setDatumModifiers(at: index, []))
+        #expect(doc.datum(at: index)?.modifiers.isEmpty == true)
+    }
+
+    /// A rectangle target keeps both dimensions, a line keeps only the length, and a point keeps
+    /// neither, matching OCCT's own nesting. Reporting length and width unconditionally would
+    /// surface the object's unassigned members as measurements.
+    @Test("A datum target's length and width follow the target type, not the write")
+    func datumTargetDimensionsFollowTheType() {
+        guard let (doc, index) = documentWithDatum(name: "B") else {
+            Issue.record("document nil")
+            return
+        }
+        #expect(doc.datum(at: index)?.target == nil)
+
+        // Asymmetric length and width on purpose, so one reported as the other is visible.
+        func placeTarget(_ type: Document.DatumTargetType) {
+            #expect(doc.setDatumTarget(at: index, type: type, number: 4))
+            #expect(
+                doc.setDatumTargetPlacement(
+                    at: index,
+                    location: SIMD3(1, 2, 3),
+                    normal: SIMD3(0, 0, 1),
+                    reference: SIMD3(1, 0, 0),
+                    length: 30,
+                    width: 18))
+        }
+
+        placeTarget(.rectangle)
+        if let target = doc.datum(at: index)?.target {
+            #expect(target.type == .rectangle)
+            #expect(target.number == 4)
+            #expect(target.length == 30)
+            #expect(target.width == 18)
+        } else {
+            Issue.record("rectangle target nil")
+        }
+
+        placeTarget(.line)
+        if let target = doc.datum(at: index)?.target {
+            #expect(target.type == .line)
+            #expect(target.length == 30)
+            #expect(target.width == nil)
+        } else {
+            Issue.record("line target nil")
+        }
+
+        placeTarget(.point)
+        if let target = doc.datum(at: index)?.target {
+            #expect(target.type == .point)
+            #expect(target.length == nil)
+            #expect(target.width == nil)
+        } else {
+            Issue.record("point target nil")
+        }
+
+        #expect(doc.clearDatumTarget(at: index))
+        #expect(doc.datum(at: index)?.target == nil)
+    }
+
+    /// The placement is one call because each of OCCT's three setters raises the same
+    /// HasDatumTargetParams flag. A degenerate axis is refused rather than crossing into OCCT.
+    @Test("A degenerate datum target placement axis is refused")
+    func degenerateDatumTargetAxisIsRefused() {
+        guard let (doc, index) = documentWithDatum(name: "C") else {
+            Issue.record("document nil")
+            return
+        }
+        #expect(doc.setDatumTarget(at: index, type: .line, number: 1))
+        #expect(
+            !doc.setDatumTargetPlacement(
+                at: index,
+                location: SIMD3(0, 0, 0),
+                normal: SIMD3(0, 0, 0),
+                reference: SIMD3(1, 0, 0),
+                length: 10,
+                width: 0))
+        // Refused, so nothing was stored and the target reports no length.
+        #expect(doc.datum(at: index)?.target?.length == nil)
+    }
+
+    // MARK: - Isolation and bounds
+
+    @Test("Two tolerances and two datums on one document keep their own accessor values")
+    func accessorsAreNotSharedBetweenEntries() {
+        guard let doc = Document.create(), let box = Shape.box(width: 10, height: 10, depth: 10)
+        else {
+            Issue.record("document nil")
+            return
+        }
+        let shapeId = doc.addShape(box, makeAssembly: false)
+        guard let tolA = doc.createGeomTolerance(on: shapeId, type: .position, value: 0.1),
+            let tolB = doc.createGeomTolerance(on: shapeId, type: .flatness, value: 0.05),
+            let datumA = doc.createDatum(name: "A"),
+            let datumB = doc.createDatum(name: "B")
+        else {
+            Issue.record("create nil")
+            return
+        }
+
+        #expect(doc.setGeomToleranceValueType(at: tolA, .diameter))
+        #expect(doc.setGeomToleranceModifiers(at: tolB, [.allOver]))
+        #expect(doc.setDatumPosition(at: datumA, 1))
+        #expect(doc.setDatumTarget(at: datumB, type: .circle, number: 7))
+
+        if let a = doc.geomTolerance(at: tolA), let b = doc.geomTolerance(at: tolB) {
+            #expect(a.valueType == .diameter)
+            #expect(a.modifiers.isEmpty)
+            #expect(b.valueType == Document.GeomToleranceValueType.none)
+            #expect(b.modifiers == [.allOver])
+        } else {
+            Issue.record("tolerance nil")
+        }
+        if let a = doc.datum(at: datumA), let b = doc.datum(at: datumB) {
+            #expect(a.name == "A")
+            #expect(a.position == 1)
+            #expect(a.target == nil)
+            #expect(b.name == "B")
+            #expect(b.position == nil)
+            #expect(b.target?.type == .circle)
+            #expect(b.target?.number == 7)
+        } else {
+            Issue.record("datum nil")
+        }
+    }
+
+    @Test("Out-of-range tolerance and datum indices are refused")
+    func outOfRangeIndicesAreRefused() {
+        guard let (doc, _) = documentWithTolerance() else {
+            Issue.record("document nil")
+            return
+        }
+        #expect(doc.geomTolerance(at: 5) == nil)
+        #expect(!doc.setGeomToleranceValueType(at: 5, .diameter))
+        #expect(!doc.setGeomToleranceMaterialRequirement(at: 5, .m))
+        #expect(!doc.setGeomToleranceZoneModifier(at: 5, .projected, value: 1))
+        #expect(!doc.setGeomToleranceMaxValueModifier(at: 5, 1))
+        #expect(!doc.setGeomToleranceModifiers(at: 5, [.allOver]))
+
+        #expect(doc.datum(at: 0) == nil)
+        #expect(!doc.setDatumPosition(at: 0, 1))
+        #expect(!doc.setDatumModifiers(at: 0, [.basic]))
+        #expect(!doc.setDatumModifierWithValue(at: 0, .projected, value: 1))
+        #expect(!doc.setDatumTarget(at: 0, type: .point, number: 0))
+        #expect(!doc.clearDatumTarget(at: 0))
+        #expect(
+            !doc.setDatumTargetPlacement(
+                at: 0,
+                location: SIMD3(0, 0, 0),
+                normal: SIMD3(0, 0, 1),
+                reference: SIMD3(1, 0, 0),
+                length: 1,
+                width: 1))
+    }
+}

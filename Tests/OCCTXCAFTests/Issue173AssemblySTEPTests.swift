@@ -2,9 +2,9 @@ import Testing
 import Foundation
 @testable import OCCTSwift
 
-// #173: Exporter.writeSTEPAssembly writes a product-structured (instanced) STEP —
+// #173: Exporter.writeSTEPAssembly writes a product-structured (instanced) STEP,
 // one part product referenced by N located occurrences, not N geometry copies.
-@Suite("Issue #173 — instanced assembly STEP writer")
+@Suite("Issue #173, instanced assembly STEP writer")
 struct Issue173AssemblySTEP {
 
     /// Build a document with one unique part placed at `n` distinct X offsets.

@@ -22,7 +22,7 @@ struct Issue619Curve2DContinuityEncodingTests {
                                degree: 3)
     }
 
-    @Test("An analytic 2D curve reports CN as ordinal 6 — the old encoding's 99 is unreachable")
+    @Test("An analytic 2D curve reports CN as ordinal 6, the old encoding's 99 is unreachable")
     func analyticCurveReportsCN() {
         guard let segment = Curve2D.segment(from: SIMD2(0, 0), to: SIMD2(10, 0)) else {
             Issue.record("could not build the segment fixture")

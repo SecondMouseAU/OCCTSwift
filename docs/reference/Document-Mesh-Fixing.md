@@ -1,9 +1,9 @@
 ---
-title: Document — Mesh I/O, Projection & Shape Fixing
+title: Document. Mesh I/O, Projection & Shape Fixing
 parent: API Reference
 ---
 
-# Document — Mesh I/O, Projection & Shape Fixing
+# Document. Mesh I/O, Projection & Shape Fixing
 
 This page covers the low-level mesh-iteration types, interference and ancestry helpers, shape-manipulation extensions, curve/surface extras, full projection and distance classes, shape-fixing wrappers, `BSpline` mutation methods, the low-level `TopoDS_Builder` extensions, free-bounds analysis, incremental wire building, tolerance-aware booleans, offset and thick-solid operations, mass-property expansions, and the `Helix` geometry namespace. All are declared in `Sources/OCCTSwift/Document.swift` across four consecutive `// MARK:` sections.
 
@@ -42,7 +42,7 @@ Create a face iterator over a meshed shape.
 public init?(shape: Shape)
 ```
 
-- **Parameters:** `shape` — a `Shape` with an existing `Poly_Triangulation` on its faces.
+- **Parameters:** `shape`, a `Shape` with an existing `Poly_Triangulation` on its faces.
 - **Returns:** An iterator positioned before the first face, or `nil` on failure.
 - **OCCT:** `OCCTMeshFaceIterCreate` → `RWMesh_FaceIterator`.
 - **Example:**
@@ -115,7 +115,7 @@ Get the 3D position of the node at a 1-based index.
 public func node(at index: Int) -> SIMD3<Double>
 ```
 
-- **Parameters:** `index` — 1-based node index (1 … `nodeCount`).
+- **Parameters:** `index`, 1-based node index (1 … `nodeCount`).
 - **Returns:** Node position in model space.
 - **OCCT:** `Poly_Triangulation::Node`.
 
@@ -141,7 +141,7 @@ Get the surface normal at a 1-based node index.
 public func normal(at index: Int) -> SIMD3<Double>
 ```
 
-- **Parameters:** `index` — 1-based node index.
+- **Parameters:** `index`, 1-based node index.
 - **Returns:** Normal vector (not guaranteed to be unit length if the mesh was built without normals).
 - **OCCT:** `Poly_Triangulation::Normal`.
 
@@ -155,7 +155,7 @@ Get the three node indices of a triangle at a 1-based triangle index.
 public func triangle(at index: Int) -> (n1: Int, n2: Int, n3: Int)
 ```
 
-- **Parameters:** `index` — 1-based triangle index (1 … `triangleCount`).
+- **Parameters:** `index`, 1-based triangle index (1 … `triangleCount`).
 - **Returns:** A tuple of three 1-based node indices.
 - **OCCT:** `Poly_Triangulation::Triangle`.
 - **Example:**
@@ -196,7 +196,7 @@ Create a vertex iterator over a shape.
 public init?(shape: Shape)
 ```
 
-- **Parameters:** `shape` — the shape to iterate.
+- **Parameters:** `shape`, the shape to iterate.
 - **Returns:** An iterator, or `nil` on failure.
 - **OCCT:** `OCCTMeshVertexIterCreate` → `RWMesh_VertexIterator`.
 - **Example:**
@@ -280,9 +280,9 @@ public func clipLineToBox(
 ```
 
 - **Parameters:**
-  - `lineOrigin` — any point on the line.
-  - `lineDirection` — direction vector of the line (need not be normalised).
-  - `boxMin`, `boxMax` — corner extremes of the axis-aligned bounding box.
+  - `lineOrigin`: any point on the line.
+  - `lineDirection`: direction vector of the line (need not be normalised).
+  - `boxMin`, `boxMax`, corner extremes of the axis-aligned bounding box.
 - **Returns:** Number of intersection segments (0, 1, or 2).
 - **OCCT:** `Intf_Tool::LinBox`.
 - **Example:**
@@ -307,7 +307,7 @@ Get the entry parameter of a clipped segment.
 public func beginParam(segment: Int) -> Double
 ```
 
-- **Parameters:** `segment` — 1-based segment index.
+- **Parameters:** `segment`, 1-based segment index.
 - **OCCT:** `Intf_Tool::BeginParam`.
 
 ---
@@ -320,7 +320,7 @@ Get the exit parameter of a clipped segment.
 public func endParam(segment: Int) -> Double
 ```
 
-- **Parameters:** `segment` — 1-based segment index.
+- **Parameters:** `segment`, 1-based segment index.
 - **OCCT:** `Intf_Tool::EndParam`.
 
 ---
@@ -414,7 +414,7 @@ Create a curve-on-edge from two edge shapes.
 public init?(edgeOnFace: Shape, edge: Shape)
 ```
 
-- **Parameters:** `edgeOnFace` — the edge lying on a face; `edge` — the reference edge.
+- **Parameters:** `edgeOnFace`, the edge lying on a face; `edge`, the reference edge.
 - **Returns:** The curve-on-edge, or `nil` on failure.
 - **OCCT:** `BiTgte_CurveOnEdge`.
 
@@ -440,7 +440,7 @@ Evaluate the curve position at parameter `u`.
 public func point(at u: Double) -> SIMD3<Double>
 ```
 
-- **Parameters:** `u` — curve parameter within `domain`.
+- **Parameters:** `u`, curve parameter within `domain`.
 - **OCCT:** `BiTgte_CurveOnEdge::Value`.
 - **Example:**
   ```swift
@@ -460,7 +460,7 @@ Get a direct child sub-shape at a 0-based index.
 public func child(at index: Int) -> Shape?
 ```
 
-- **Parameters:** `index` — zero-based child index.
+- **Parameters:** `index`, zero-based child index.
 - **Returns:** The child shape, or `nil` if `index` is out of range.
 - **OCCT:** `TopoDS_Iterator` (via `OCCTShapeChild`).
 
@@ -498,7 +498,7 @@ Create a copy of this shape with a new location transform applied.
 public func located(matrix: [Double]) -> Shape?
 ```
 
-- **Parameters:** `matrix` — at least 12 elements encoding a 4×3 row-major transform matrix (rows: x-axis, y-axis, z-axis, translation).
+- **Parameters:** `matrix`, at least 12 elements encoding a 4×3 row-major transform matrix (rows: x-axis, y-axis, z-axis, translation).
 - **Returns:** A new located shape, or `nil` if `matrix.count < 12` or the operation fails.
 - **OCCT:** `TopLoc_Location` + `TopoDS_Shape::Located` (via `OCCTShapeLocated`).
 
@@ -525,7 +525,7 @@ Set the location transform in-place (4×3 row-major matrix).
 public func setLocation(matrix: [Double])
 ```
 
-- **Parameters:** `matrix` — at least 12 elements. Silently ignored if `matrix.count < 12`.
+- **Parameters:** `matrix`, at least 12 elements. Silently ignored if `matrix.count < 12`.
 - **OCCT:** `TopLoc_Location` + `TopoDS_Shape::Location` (via `OCCTShapeSetLocation`).
 
 ---
@@ -538,7 +538,7 @@ Create a copy with a specific orientation.
 public func oriented(_ orientation: Int) -> Shape?
 ```
 
-- **Parameters:** `orientation` — `0` = Forward, `1` = Reversed, `2` = Internal, `3` = External.
+- **Parameters:** `orientation`, `0` = Forward, `1` = Reversed, `2` = Internal, `3` = External.
 - **Returns:** Oriented copy, or `nil` on failure.
 - **OCCT:** `TopoDS_Shape::Oriented` (via `OCCTShapeOriented`).
 
@@ -552,7 +552,7 @@ Create an empty shape of the given topology type.
 public static func empty(type: Int) -> Shape?
 ```
 
-- **Parameters:** `type` — `0` = Compound, `2` = Solid, `3` = Shell, `5` = Wire.
+- **Parameters:** `type`, `0` = Compound, `2` = Solid, `3` = Shell, `5` = Wire.
 - **Returns:** An empty shape of that type, or `nil` on failure.
 - **OCCT:** `TopoDS_Shape` with `TopAbs_ShapeEnum` (via `OCCTShapeEmpty`).
 
@@ -620,7 +620,7 @@ Create a wire from an array of edge shapes.
 public static func wireFromEdges(_ edges: [Shape]) -> Shape?
 ```
 
-- **Parameters:** `edges` — array of edge shapes to connect.
+- **Parameters:** `edges`, array of edge shapes to connect.
 - **Returns:** A connected wire, or `nil` if the edges cannot be connected.
 - **OCCT:** `BRepBuilderAPI_MakeWire` (via `OCCTMakeWireFromEdges`).
 - **Example:**
@@ -642,7 +642,7 @@ Create a shell from an array of face shapes.
 public static func shellFromFaces(_ faces: [Shape]) -> Shape?
 ```
 
-- **Parameters:** `faces` — face shapes to assemble into a shell.
+- **Parameters:** `faces`, face shapes to assemble into a shell.
 - **Returns:** A shell, or `nil` on failure.
 - **OCCT:** `BRep_Builder::MakeShell` then `Add` per face (via `OCCTMakeShell`); `BRep_Builder`
   derives from `TopoDS_Builder`, so the second class this entry named holds. The first,
@@ -694,14 +694,14 @@ public func checkVertexStatus(vertex: Shape) -> Int
 
 Get the maximum tolerance of sub-shapes of the given type. Passes `type`'s raw value straight
 through as the real `TopAbs_ShapeEnum` ordinal, agreeing with `maxTolerance(subShapeType:)` (see
-"Shape-Completions") — unlike the legacy `Int` overload below, which uses a different, compressed
+"Shape-Completions"), unlike the legacy `Int` overload below, which uses a different, compressed
 encoding for the same idea (#833).
 
 ```swift
 public func maxTolerance(type: ShapeType) -> Double
 ```
 
-- **Parameters:** `type` — sub-shape type to measure.
+- **Parameters:** `type`, sub-shape type to measure.
 - **OCCT:** `ShapeAnalysis_ShapeTolerance::Tolerance` with mode `1` (max).
 - **Example:**
   ```swift
@@ -717,10 +717,10 @@ public func maxTolerance(type: ShapeType) -> Double
 public func maxTolerance(type: Int) -> Double
 ```
 
-- **Parameters:** `type` — `0` = vertex, `1` = edge, `2` = face.
+- **Parameters:** `type`, `0` = vertex, `1` = edge, `2` = face.
 - **OCCT:** `ShapeAnalysis_ShapeTolerance::Tolerance` with mode `1` (max).
 - **Note:** Legacy. This compressed encoding disagrees with `maxTolerance(subShapeType:)`'s own
-  `Int` convention for the same value — `2` means FACE here but `TopAbs_SOLID` there (#833). Prefer
+  `Int` convention for the same value, `2` means FACE here but `TopAbs_SOLID` there (#833). Prefer
   the `ShapeType` overload above. Kept unchanged for source compatibility.
 
 ---
@@ -744,7 +744,7 @@ public func minTolerance(type: ShapeType) -> Double
 public func minTolerance(type: Int) -> Double
 ```
 
-- **Parameters:** `type` — `0` = vertex, `1` = edge, `2` = face.
+- **Parameters:** `type`, `0` = vertex, `1` = edge, `2` = face.
 - **OCCT:** `ShapeAnalysis_ShapeTolerance::Tolerance` with mode `-1` (min).
 - **Note:** Legacy, same caveat as `maxTolerance(type:)`'s `Int` overload above (#833).
 
@@ -769,7 +769,7 @@ public func avgTolerance(type: ShapeType) -> Double
 public func avgTolerance(type: Int) -> Double
 ```
 
-- **Parameters:** `type` — `0` = vertex, `1` = edge, `2` = face.
+- **Parameters:** `type`, `0` = vertex, `1` = edge, `2` = face.
 - **OCCT:** `ShapeAnalysis_ShapeTolerance::Tolerance` with mode `0` (average).
 - **Note:** Legacy, same caveat as `maxTolerance(type:)`'s `Int` overload above (#833).
 
@@ -784,7 +784,7 @@ Fix the tolerance on all sub-shapes of this shape to a specific value.
 public func fixTolerance(_ tolerance: Double) -> Bool
 ```
 
-- **Parameters:** `tolerance` — target tolerance value.
+- **Parameters:** `tolerance`, target tolerance value.
 - **Returns:** `true` if the operation succeeded.
 - **OCCT:** `ShapeFix_ShapeTolerance::SetTolerance` (via `OCCTShapeFixTolerance`).
 
@@ -799,7 +799,7 @@ Limit the maximum tolerance on all sub-shapes to the given value.
 public func limitMaxTolerance(_ maxTol: Double) -> Bool
 ```
 
-- **Parameters:** `maxTol` — maximum allowed tolerance.
+- **Parameters:** `maxTol`, maximum allowed tolerance.
 - **Returns:** `true` if the limit was applied.
 - **OCCT:** `ShapeFix_ShapeTolerance::LimitTolerance` (via `OCCTShapeLimitMaxTolerance`).
 - **Example:**
@@ -834,10 +834,10 @@ Find the curve parameter nearest to a 3D point.
 public func nearestParameter(to point: SIMD3<Double>) -> Double?
 ```
 
-- **Parameters:** `point` — the 3D query point.
+- **Parameters:** `point`, the 3D query point.
 - **Returns:** The nearest parameter `u` on the curve, always inside its own domain, or `nil` if
   there is no curve to answer about.
-- **OCCT:** `occtNearestPointOnCurveRange` (via `OCCTCurve3DNearestParameter`) — the minimum over
+- **OCCT:** `occtNearestPointOnCurveRange` (via `OCCTCurve3DNearestParameter`), the minimum over
   `ShapeAnalysis_Curve`, every `GeomAPI_ProjectPointOnCurve` extremum in range, and both ends.
 
 The true nearest point, not the nearest perpendicular foot: a point past the end of a bounded curve
@@ -876,12 +876,12 @@ public func nearestParameter(to point: SIMD2<Double>) -> Double?
 - **Returns:** The nearest parameter, always inside the curve's own domain, or `nil` if there is no
   curve to answer about. Agrees exactly with `Curve2D.project(point:)`, `Curve2D.project(_:)` and
   `Point2D.distance(to:)`, which share its bridge path (#413, #500, #615).
-- **OCCT:** `occtNearestPointOnCurve2dRange` (via `OCCTCurve2DNearestParameter`) — the minimum over
+- **OCCT:** `occtNearestPointOnCurve2dRange` (via `OCCTCurve2DNearestParameter`), the minimum over
   every `Geom2dAPI_ProjectPointOnCurve` extremum in range and both ends. There is no third source:
   `ShapeAnalysis_Curve` has no 2D projection.
 
 `Curve2D.allProjections(of:)` is **not** in that agreement, by design. It asks for the extrema, so
-it reports none where these four answer with an end — a point past the end of a bounded curve has a
+it reports none where these four answer with an end, a point past the end of a bounded curve has a
 nearest point but no perpendicular foot. Before #615 all five agreed only because the other four
 were asking the extrema question too, and so were wrong.
 
@@ -904,28 +904,28 @@ Returns: `0` = Plane, `1` = Cylinder, `2` = Cone, `3` = Sphere, `4` = Torus, …
 
 ---
 
-### `Curve3D.locateNearestPoint(_:initParam:tolerance:)`
+### `Curve3D.locateNearestPoint(_:initParam:)`
 
 Local point-on-curve search from an initial parameter guess.
 
 ```swift
 public func locateNearestPoint(
     _ point: SIMD3<Double>,
-    initParam: Double,
-    tolerance: Double = 1e-6
+    initParam: Double
 ) -> (parameter: Double, distance: Double)?
 ```
 
+There is no tolerance. Both halves of this search reach OCCT through `GeomAPI_ProjectPointOnCurve`, whose windowed constructor takes none, and the fallback fixes `Precision::Confusion()` for the same reason its two converted siblings do. `Extrema_LocateExtPC`, which the name echoes, does take a `TolU`, but #615 deliberately moved this off that path so the local and global answers could not disagree. The surface sibling below keeps its `tolerance` because `Extrema_GenLocateExtPS` genuinely takes one.
+
 - **Parameters:**
-  - `point` — the 3D query point.
-  - `initParam` — starting parameter for the local search.
-  - `tolerance` — convergence tolerance.
+  - `point`: the 3D query point.
+  - `initParam`: starting parameter for the local search.
 - **Returns:** `(parameter, distance)` tuple, or `nil` only if there is no curve to answer about.
 - **OCCT:** `GeomAPI_ProjectPointOnCurve` over a ±10% window around `initParam`, falling back to
   `occtNearestPointOnCurveRange` over the whole curve (via `OCCTExtremaLocateOnCurve`).
 
 Two searches with two different contracts. The **primary** one reports the **lowest-distance extremum
-inside that window** — `initParam` bounds the window, it does not rank what is found in it, so the
+inside that window**, `initParam` bounds the window, it does not rank what is found in it, so the
 extremum returned is not necessarily the one nearest the guess; where a window holds several, the one
 closest to the *query point* wins. The window is what makes the answer local, and a windowed minimum
 can still be a global *maximum*. On a half circle of radius 5 queried from `(0, -6, 0)` with a guess
@@ -935,7 +935,7 @@ of `.pi / 2` it reports `11`, where the nearest point on the curve is `7.81` awa
 answer.
 
 The **fallback** fires only when the window holds no extremum, at which point the search has already
-abandoned locality — so since #615 it reports the whole curve's true nearest point, agreeing with
+abandoned locality, so since #615 it reports the whole curve's true nearest point, agreeing with
 those two. Before #615 it reported an extremum instead, so a guess sitting *on* the nearest point
 returned the point diametrically opposite it, and a bounded segment queried from past its own end
 returned `nil` for every guess.
@@ -954,8 +954,8 @@ public func projectPointAll(
 ```
 
 - **Parameters:**
-  - `point` — the 3D query point.
-  - `maxResults` — output *capacity* (default 10), clamped into `0...Sampling.maximumSampleCount` (10,000,000); 0 or less returns empty (#622).
+  - `point`: the 3D query point.
+  - `maxResults`: output *capacity* (default 10), clamped into `0...Sampling.maximumSampleCount` (10,000,000); 0 or less returns empty (#622).
 - **Returns:** Array of `(parameter, distance)` pairs for every extremum found.
 - **OCCT:** `GeomAPI_ExtremaCurveCurve` / `Extrema_ExtPC` (via `OCCTExtremaPointCurve`).
 - **Example:**
@@ -982,9 +982,9 @@ public func locateNearestPoint(
 ```
 
 - **Parameters:**
-  - `point` — the 3D query point.
-  - `initU`, `initV` — starting UV parameters.
-  - `tolerance` — convergence tolerance.
+  - `point`: the 3D query point.
+  - `initU`, `initV`, starting UV parameters.
+  - `tolerance`: convergence tolerance.
 - **Returns:** `(u, v, distance)` or `nil` on failure.
 - **OCCT:** `Extrema_ExtPS` local mode (via `OCCTExtremaLocateOnSurface`).
 
@@ -1001,7 +1001,7 @@ public func projectPointAll(
 ) -> [(u: Double, v: Double, distance: Double)]
 ```
 
-- **Parameters:** `point` — 3D query point; `maxResults` — output *capacity* (default 10),
+- **Parameters:** `point`, 3D query point; `maxResults`, output *capacity* (default 10),
   clamped into `0...Sampling.maximumSampleCount` (10,000,000); 0 or less returns empty (#622).
 - **Returns:** Array of `(u, v, distance)` tuples for every extremum.
 - **OCCT:** `GeomAPI_ProjectPointOnSurf` (via `OCCTExtremaPointSurface`).
@@ -1023,7 +1023,7 @@ public static func edgeFromEllipse(
 ) -> Shape?
 ```
 
-- **Parameters:** `center` — ellipse centre; `normal` — plane normal; `majorRadius`, `minorRadius` — semi-axes.
+- **Parameters:** `center`, ellipse centre; `normal`, plane normal; `majorRadius`, `minorRadius`, semi-axes.
 - **Returns:** A closed ellipse edge, or `nil` on failure.
 - **OCCT:** `BRepBuilderAPI_MakeEdge(gp_Elips)` (via `OCCTMakeEdgeFromEllipse`).
 - **Example:**
@@ -1050,7 +1050,7 @@ public static func edgeFromEllipseArc(
 ) -> Shape?
 ```
 
-- **Parameters:** `u1`, `u2` — start and end parameter angles (radians).
+- **Parameters:** `u1`, `u2`, start and end parameter angles (radians).
 - **OCCT:** `BRepBuilderAPI_MakeEdge(gp_Elips, u1, u2)` (via `OCCTMakeEdgeFromEllipseArc`).
 
 ---
@@ -1088,7 +1088,7 @@ public static func edgeFromParabolaArc(
 ) -> Shape?
 ```
 
-- **Parameters:** `focalLength` — focal parameter of the parabola.
+- **Parameters:** `focalLength`, focal parameter of the parabola.
 - **OCCT:** `BRepBuilderAPI_MakeEdge(gp_Parab, u1, u2)` (via `OCCTMakeEdgeFromParabolaArc`).
 
 ---
@@ -1207,7 +1207,7 @@ public static func face(
 ) -> Shape?
 ```
 
-- **Parameters:** `surface` — the underlying surface; `uBounds`, `vBounds` — parameter ranges; `tolerance` — construction tolerance.
+- **Parameters:** `surface`, the underlying surface; `uBounds`, `vBounds`, parameter ranges; `tolerance`, construction tolerance.
 - **OCCT:** `BRepBuilderAPI_MakeFace(surface, u1, u2, v1, v2, tol)` (via `OCCTMakeFaceFromSurfaceUV`).
 
 ---
@@ -1227,12 +1227,12 @@ public static func faceFromPlane(
 ```
 
 Delegates to `Shape.faceFromPlane(origin:normal:uRange:vRange:tolerance:)` (see "BRepLib_MakeFace"
-above) — the two overloads independently wrapped the same `BRepLib_MakeFace` engine (#841); this
+above), the two overloads independently wrapped the same `BRepLib_MakeFace` engine (#841); this
 one now forwards `uBounds`/`vBounds` as `uRange`/`vRange` instead of duplicating the bridge call.
 `tolerance` defaults to `Precision::Confusion()` (`1e-7`), the value this overload silently
 hardcoded before #841 by going through `BRepBuilderAPI_MakeFace`'s tolerance-less constructor.
 
-- **Parameters:** `tolerance` — degeneracy tolerance forwarded to `BRepLib_MakeFace`.
+- **Parameters:** `tolerance`, degeneracy tolerance forwarded to `BRepLib_MakeFace`.
 - **OCCT:** `BRepLib_MakeFace(Geom_Plane, u1, u2, v1, v2, tol)` (via `OCCTBRepLibMakeFaceFromPlane`).
 - **Example:**
   ```swift
@@ -1259,10 +1259,10 @@ public static func faceFromCylinder(
 ```
 
 Delegates to `Shape.faceFromCylinder(origin:axis:radius:uRange:vRange:tolerance:)` (see
-"BRepLib_MakeFace" above) — see the sibling `faceFromPlane` entry above for why (#841).
+"BRepLib_MakeFace" above), see the sibling `faceFromPlane` entry above for why (#841).
 
-- **Parameters:** `radius` — cylinder radius; `uBounds` — angular range (radians); `vBounds` —
-  axial height range; `tolerance` — degeneracy tolerance forwarded to `BRepLib_MakeFace`.
+- **Parameters:** `radius`, cylinder radius; `uBounds`, angular range (radians); `vBounds`,
+  axial height range; `tolerance`, degeneracy tolerance forwarded to `BRepLib_MakeFace`.
 - **OCCT:** `BRepLib_MakeFace(Geom_CylindricalSurface, u1, u2, v1, v2, tol)` (via
   `OCCTBRepLibMakeFaceFromCylinder`).
 
@@ -1286,7 +1286,7 @@ Compute projections of a point onto a curve.
 public init?(curve: Curve3D, point: SIMD3<Double>)
 ```
 
-- **Parameters:** `curve` — the target curve; `point` — the 3D point to project.
+- **Parameters:** `curve`, the target curve; `point`, the 3D point to project.
 - **Returns:** The projection object, or `nil` on failure.
 - **OCCT:** `GeomAPI_ProjectPointOnCurve` (via `OCCTProjOnCurveCreate`).
 
@@ -1627,7 +1627,7 @@ Create a wire fixer for a wire on a face with the given precision.
 public init?(wire: Shape, face: Shape, precision: Double = 1e-6)
 ```
 
-- **Parameters:** `wire` — the wire to fix; `face` — the supporting face; `precision` — working precision.
+- **Parameters:** `wire`, the wire to fix; `face`, the supporting face; `precision`, working precision.
 - **Returns:** The fixer, or `nil` on failure.
 - **OCCT:** `ShapeFix_Wire` (via `OCCTWireFixerCreate`).
 
@@ -1865,7 +1865,7 @@ public var face: Shape? { get }
 
 ---
 
-### `FaceFixer.setMode(_:_:)` — per-pass control (#266)
+### `FaceFixer.setMode(_:_:)`, per-pass control (#266)
 
 Enable / disable an individual `ShapeFix_Face` healing pass before `perform()`. Previously
 `perform()` ran with hardcoded defaults; this exposes each pass so callers can, e.g., turn off the
@@ -1907,7 +1907,7 @@ public func setMode(_ pass: Pass, _ toggle: Toggle)
 
 ---
 
-### `FaceFixer` — individual fix passes (#266)
+### `FaceFixer`, individual fix passes (#266)
 
 Run a single fix pass directly.
 
@@ -1958,7 +1958,7 @@ Runs `ShapeFix_Face::FixLoopWire` alone: splits a wire that loops back on itself
 
 ### `FaceFixer.result` / `FaceFixer.status(_:)` (#266)
 
-`result` returns the true fix output — a **face**, or a **shell** when `fixMissingSeam()` split the
+`result` returns the true fix output, a **face**, or a **shell** when `fixMissingSeam()` split the
 face into several (unlike `face`, which is always a face). `status(_:)` queries which passes fired /
 failed after `perform()`.
 
@@ -1973,8 +1973,8 @@ public func status(_ status: Status) -> Bool
 only assigns meaning to some of the 19 ordinals; the rest exist because the same enum is shared
 across every `ShapeFix_Root` subclass, each using a different subset. (Prior to #849, `Status` was
 a `FaceFixer`-local enum whose raw values shifted everything from `.fail1` through `.done` by one
-ordinal — there was no slot for OCCT's combined `DONE` flag, which sits between `DONE8` and
-`FAIL1` — so e.g. `.done` actually queried `ShapeExtend_FAIL8`. The table below states the
+ordinal, there was no slot for OCCT's combined `DONE` flag, which sits between `DONE8` and
+`FAIL1`: so e.g. `.done` actually queried `ShapeExtend_FAIL8`. The table below states the
 now-correct behavior.)
 
 | Case | Meaning for `ShapeFix_Face` |
@@ -2158,7 +2158,7 @@ public func bsplineInsertKnots(
 ) -> Bool
 ```
 
-- **Parameters:** `knots` — new knot values; `multiplicities` — insertion multiplicities; `tolerance` — parametric tolerance.
+- **Parameters:** `knots`, new knot values; `multiplicities`, insertion multiplicities; `tolerance`, parametric tolerance.
 - **OCCT:** `Geom_BSplineCurve::InsertKnots` (via `OCCTCurve3DBSplineInsertKnots`).
 
 ---
@@ -2175,7 +2175,7 @@ public func bsplineMovePoint(
 ) -> Bool
 ```
 
-- **Parameters:** `poleRange` — 1-based inclusive range of poles allowed to move.
+- **Parameters:** `poleRange`, 1-based inclusive range of poles allowed to move.
 - **OCCT:** `Geom_BSplineCurve::MovePoint` (via `OCCTCurve3DBSplineMovePoint`).
 
 ---
@@ -2188,7 +2188,7 @@ Evaluate the curve locally within a knot span.
 public func bsplineLocalValue(u: Double, fromKnot: Int, toKnot: Int) -> SIMD3<Double>
 ```
 
-- **Parameters:** `fromKnot`, `toKnot` — 1-based knot span indices.
+- **Parameters:** `fromKnot`, `toKnot`, 1-based knot span indices.
 - **OCCT:** `Geom_BSplineCurve::LocalValue` (via `OCCTCurve3DBSplineLocalValue`).
 
 ---
@@ -2376,7 +2376,7 @@ public func bsplineRemoveUKnot(
 ) -> Bool
 ```
 
-- **Parameters:** `multiplicity` — target multiplicity after removal (0 to remove completely); `tolerance` — geometric tolerance.
+- **Parameters:** `multiplicity`, target multiplicity after removal (0 to remove completely); `tolerance`, geometric tolerance.
 - **Returns:** `true` if the knot was removed within tolerance.
 - **OCCT:** `Geom_BSplineSurface::RemoveUKnot`.
 
@@ -2453,8 +2453,10 @@ Add a child shape into this shape using `TopoDS_Builder`.
 public func builderAdd(_ child: Shape) -> Bool
 ```
 
-- **Returns:** `true` if the child was added.
-- **OCCT:** `TopoDS_Builder::Add`.
+- **Returns:** `true` if the child was added, `false` if either shape is null.
+- **OCCT:** `TopoDS_Builder::Add`, which dereferences the component's `TShape` in its first
+  statement. A null shape (from `Shape.nullified`) used to crash the process here rather than
+  returning `false` (#1026).
 - **Example:**
   ```swift
   let compound = Shape.builderMakeCompound()!
@@ -2474,8 +2476,10 @@ Remove a child shape from this shape using `TopoDS_Builder`.
 public func builderRemove(_ child: Shape) -> Bool
 ```
 
-- **Returns:** `true` if the child was removed.
-- **OCCT:** `TopoDS_Builder::Remove`.
+- **Returns:** `true` if the child was removed, `false` if either shape is null.
+- **OCCT:** `TopoDS_Builder::Remove`. A null *parent* used to crash here; a null child did not,
+  because `Remove` walks the parent's children rather than dereferencing the one it is handed.
+  Both are refused now (#1026).
 
 ---
 
@@ -2835,7 +2839,7 @@ public func openWire(at index: Int) -> Shape?
 
 - **Example:**
   ```swift
-  let shell = Shape.box(width: 10, height: 10, depth: 10)!  // closed — 0 free bounds
+  let shell = Shape.box(width: 10, height: 10, depth: 10)!  // closed, 0 free bounds
   if let fp = FreeBoundsProperties(shape: shell) {
       print("closed:", fp.closedCount, "open:", fp.openCount)   // closed: 0 open: 0
   }
@@ -2975,13 +2979,13 @@ public func fused(with other: Shape, tolerance: Double,
                    timeout: Double = Shape.defaultBooleanTimeout) -> Shape?
 ```
 
-- **Parameters:** `tolerance` — fuzzy tolerance for coincident geometry detection. `timeout` —
+- **Parameters:** `tolerance`, fuzzy tolerance for coincident geometry detection. `timeout`,
   wall-clock bound in seconds (default `Shape.defaultBooleanTimeout`, 120s); `0`/negative disables
   the bound. Delegates to `union(_:fuzzyValue:glue:timeout:)` (#832), so it inherits the same
-  `defaultBooleanTimeout` watchdog (#206) — pass `timeout:` explicitly if this operation
+  `defaultBooleanTimeout` watchdog (#206), pass `timeout:` explicitly if this operation
   legitimately needs longer.
 - **OCCT:** `BRepAlgoAPI_Fuse` with `SetFuzzyValue`, via `union(_:fuzzyValue:glue:timeout:)`'s
-  `OCCTShapeUnionEx` (not `OCCTBooleanFuseWithTolerance` — that bridge function is no longer on
+  `OCCTShapeUnionEx` (not `OCCTBooleanFuseWithTolerance`, that bridge function is no longer on
   this call path; see the "Delegates to" note above).
 
 ---
@@ -2995,10 +2999,10 @@ public func subtracted(_ other: Shape, tolerance: Double,
                         timeout: Double = Shape.defaultBooleanTimeout) -> Shape?
 ```
 
-- **Parameters:** `timeout` — wall-clock bound in seconds (default `Shape.defaultBooleanTimeout`,
+- **Parameters:** `timeout`, wall-clock bound in seconds (default `Shape.defaultBooleanTimeout`,
   120s); `0`/negative disables the bound.
 - **OCCT:** `BRepAlgoAPI_Cut` with `SetFuzzyValue`, via `subtracting(_:fuzzyValue:glue:timeout:)`'s
-  `OCCTShapeSubtractEx` (not `OCCTBooleanCutWithTolerance` — that bridge function is no longer on
+  `OCCTShapeSubtractEx` (not `OCCTBooleanCutWithTolerance`, that bridge function is no longer on
   this call path).
 
 ---
@@ -3012,10 +3016,10 @@ public func intersected(with other: Shape, tolerance: Double,
                          timeout: Double = Shape.defaultBooleanTimeout) -> Shape?
 ```
 
-- **Parameters:** `timeout` — wall-clock bound in seconds (default `Shape.defaultBooleanTimeout`,
+- **Parameters:** `timeout`, wall-clock bound in seconds (default `Shape.defaultBooleanTimeout`,
   120s); `0`/negative disables the bound.
 - **OCCT:** `BRepAlgoAPI_Common` with `SetFuzzyValue`, via `intersection(_:fuzzyValue:glue:timeout:)`'s
-  `OCCTShapeIntersectEx` (not `OCCTBooleanCommonWithTolerance` — that bridge function is no longer
+  `OCCTShapeIntersectEx` (not `OCCTBooleanCommonWithTolerance`, that bridge function is no longer
   on this call path).
 
 ---
@@ -3026,8 +3030,8 @@ Glue hint for Boolean operations on nearly-coincident faces.
 
 ```swift
 public enum GlueMode: Int32, Sendable {
-    case shift = 0   // Shift glue — one-face difference
-    case full  = 1   // Full glue — all faces coincident
+    case shift = 0   // Shift glue, one-face difference
+    case full  = 1   // Full glue, all faces coincident
     case off   = 2   // No glue
 }
 ```
@@ -3055,10 +3059,10 @@ public func fused(with other: Shape, glue: GlueMode,
                    timeout: Double = Shape.defaultBooleanTimeout) -> Shape?
 ```
 
-- **Parameters:** `timeout` — wall-clock bound in seconds (default `Shape.defaultBooleanTimeout`,
+- **Parameters:** `timeout`, wall-clock bound in seconds (default `Shape.defaultBooleanTimeout`,
   120s); `0`/negative disables the bound.
 - **OCCT:** `BRepAlgoAPI_Fuse` with `SetGlue`, via `union(_:fuzzyValue:glue:timeout:)`'s
-  `OCCTShapeUnionEx` (not `OCCTBooleanFuseGlue` — that bridge function is no longer on this call
+  `OCCTShapeUnionEx` (not `OCCTBooleanFuseGlue`, that bridge function is no longer on this call
   path).
 
 ---
@@ -3072,10 +3076,10 @@ public func subtracted(_ other: Shape, glue: GlueMode,
                         timeout: Double = Shape.defaultBooleanTimeout) -> Shape?
 ```
 
-- **Parameters:** `timeout` — wall-clock bound in seconds (default `Shape.defaultBooleanTimeout`,
+- **Parameters:** `timeout`, wall-clock bound in seconds (default `Shape.defaultBooleanTimeout`,
   120s); `0`/negative disables the bound.
 - **OCCT:** `BRepAlgoAPI_Cut` with `SetGlue`, via `subtracting(_:fuzzyValue:glue:timeout:)`'s
-  `OCCTShapeSubtractEx` (not `OCCTBooleanCutGlue` — that bridge function is no longer on this call
+  `OCCTShapeSubtractEx` (not `OCCTBooleanCutGlue`, that bridge function is no longer on this call
   path).
 
 ---
@@ -3089,10 +3093,10 @@ public func intersected(with other: Shape, glue: GlueMode,
                          timeout: Double = Shape.defaultBooleanTimeout) -> Shape?
 ```
 
-- **Parameters:** `timeout` — wall-clock bound in seconds (default `Shape.defaultBooleanTimeout`,
+- **Parameters:** `timeout`, wall-clock bound in seconds (default `Shape.defaultBooleanTimeout`,
   120s); `0`/negative disables the bound.
 - **OCCT:** `BRepAlgoAPI_Common` with `SetGlue`, via `intersection(_:fuzzyValue:glue:timeout:)`'s
-  `OCCTShapeIntersectEx` (not `OCCTBooleanCommonGlue` — that bridge function is no longer on this
+  `OCCTShapeIntersectEx` (not `OCCTBooleanCommonGlue`, that bridge function is no longer on this
   call path).
 - **Example:**
   ```swift
@@ -3130,7 +3134,7 @@ public func offsetWireOnPlane(
 ) -> Shape?
 ```
 
-- **Parameters:** `distance` — signed offset distance (positive = outward); `joinType` — corner handling.
+- **Parameters:** `distance`, signed offset distance (positive = outward); `joinType`, corner handling.
 - **OCCT:** `BRepOffsetAPI_MakeOffset` (via `OCCTOffsetWireOnPlane`).
 - **Example:**
   ```swift
@@ -3171,10 +3175,10 @@ public func thickSolid(
 ```
 
 - **Parameters:**
-  - `facesToRemove` — faces to open (remove from the shell before offsetting).
-  - `offset` — wall thickness (signed; positive = outward).
-  - `tolerance` — Boolean tolerance.
-  - `joinType` — corner type.
+  - `facesToRemove`: faces to open (remove from the shell before offsetting).
+  - `offset`: wall thickness (signed; positive = outward).
+  - `tolerance`: Boolean tolerance.
+  - `joinType`: corner type.
 - **OCCT:** `BRepOffsetAPI_MakeThickSolid` (via `OCCTThickSolidWithOptions`).
 - **Example:**
   ```swift
@@ -3213,12 +3217,12 @@ second call costs nothing.
 public func buildCurves3d(tolerance: Double = 1e-5) -> Bool
 ```
 
-- **Parameters:** `tolerance` — approximation tolerance, and also the rebuilt edge's tolerance
+- **Parameters:** `tolerance`, approximation tolerance, and also the rebuilt edge's tolerance
   floor: OCCT sets the edge tolerance to this value rather than to the deviation it achieved. The
   default is OCCT's own default for the operation. A tighter value buys a closer curve for a pole
   or two more (measured on a helix: `1e-5` deviates by 2.6e-6, `1e-7` by 9.0e-8) but claims an
   accuracy the approximation may not reach on hard geometry. Ignored when the pcurve lies on a
-  plane — that branch is analytic and exact.
+  plane, that branch is analytic and exact.
 - **Returns:** `false` if any single edge could not be given a 3D curve (a degenerate edge with no
   planar pcurve, or one stripped of every representation). The edges that did succeed are still
   modified, so `false` means "partially built", not "nothing happened".
@@ -3232,8 +3236,8 @@ public func buildCurves3d(tolerance: Double = 1e-5) -> Bool
 
   print(edge.extractEdgeCurve3D() == nil)   // true
   print(edge.buildCurves3d())               // true
-  print(edge.extractEdgeCurve3D() != nil)   // true — a BSpline approximating the helix
-  print(edge.edgeTolerance)                 // 1e-05 — the tolerance lands on the edge
+  print(edge.extractEdgeCurve3D() != nil)   // true, a BSpline approximating the helix
+  print(edge.edgeTolerance)                 // 1e-05, the tolerance lands on the edge
   ```
 - **Note:** the default was `1e-7` until #498. It moved to `1e-5` when this method absorbed
   `buildCurves3dAll`, whose separate C entry point had a byte-identical body and whose default was
@@ -3383,7 +3387,7 @@ public func radiusOfGyration(
 ) -> Double?
 ```
 
-- **Parameters:** `axisOrigin` — a point on the axis; `direction` — axis direction vector.
+- **Parameters:** `axisOrigin`, a point on the axis; `direction`, axis direction vector.
 - **Returns:** The radius, or `nil` for a shape with no closed volume. OCCT computes this as
   `sqrt(momentOfInertia / mass)` with no guard, so it used to return **NaN** there, which propagates
   silently through any arithmetic that consumes it. Its `GProp_PrincipalProps` sibling *is* guarded,
@@ -3435,7 +3439,9 @@ public func edgeCurveWithParams() -> (curve: Curve3D, first: Double, last: Doubl
 ```
 
 - **Returns:** A tuple `(curve, first, last)`, or `nil` if this shape is not an edge or has no 3D curve.
-- **OCCT:** `BRep_Tool::Curve` (via `OCCTShapeEdgeCurve`).
+- **OCCT:** `BRep_Tool::Curve` (via `OCCTShapeEdgeCurve`). A null shape (from
+  `Shape.nullified`) survives the `TopoDS::Edge` cast and used to crash the process inside
+  `BRep_Tool::Curve`; it answers `nil` now, with `first` and `last` left at `0` (#1035).
 - **Example:**
   ```swift
   for edge in box.edges() {
@@ -3457,7 +3463,8 @@ public func faceSurfaceGeom() -> Surface?
 ```
 
 - **Returns:** The `Surface`, or `nil` if this shape is not a face.
-- **OCCT:** `BRep_Tool::Surface` (via `OCCTShapeFaceSurface`).
+- **OCCT:** `BRep_Tool::Surface` (via `OCCTShapeFaceSurface`). A null shape (from
+  `Shape.nullified`) used to crash the process here; it answers `nil` now (#1035).
 
 ---
 
@@ -3521,7 +3528,7 @@ Count unique sub-shapes of a specific topology type.
 public func uniqueSubShapeCount(ofType type: ShapeType) -> Int
 ```
 
-- **Parameters:** `type` — the `ShapeType` to count.
+- **Parameters:** `type`, the `ShapeType` to count.
 - **OCCT:** `TopExp::MapShapes(shape, type, map)` into a `TopTools_IndexedMapOfShape`, then
   `map.Extent()` (via `OCCTShapeUniqueSubShapeCount`). Not `TopExp_Explorer`, which this entry used
   to name and which counts one entry per occurrence rather than per distinct sub-shape. (#808)
@@ -3549,7 +3556,7 @@ Evaluate the N-th derivative at parameter `u`.
 public func dn(at u: Double, order n: Int) -> SIMD3<Double>
 ```
 
-- **Parameters:** `n` — derivative order (1 = tangent, 2 = curvature vector, …).
+- **Parameters:** `n`, derivative order (1 = tangent, 2 = curvature vector, …).
 - **OCCT:** `Geom_Curve::DN` (via `OCCTCurve3DDN`).
 
 ---
@@ -3598,7 +3605,7 @@ Evaluate the (Nu, Nv) mixed partial derivative at `(u, v)`.
 public func dn(u: Double, v: Double, nu: Int, nv: Int) -> SIMD3<Double>
 ```
 
-- **Parameters:** `nu`, `nv` — partial derivative orders with respect to U and V.
+- **Parameters:** `nu`, `nv`, partial derivative orders with respect to U and V.
 - **OCCT:** `Geom_Surface::DN` (via `OCCTSurfaceDN`).
 
 ---
@@ -3625,7 +3632,7 @@ Namespace (enum) for helix curve construction using OCCT's `HelixGeom` classes.
 public enum Helix
 ```
 
-All members are static — `Helix` has no instances.
+All members are static, `Helix` has no instances.
 
 ---
 
@@ -3640,8 +3647,8 @@ public struct BuildResult: Sendable {
 }
 ```
 
-- `curve` — the resulting BSpline approximation of the helix.
-- `toleranceReached` — the actual approximation error achieved.
+- `curve`: the resulting BSpline approximation of the helix.
+- `toleranceReached`: the actual approximation error achieved.
 
 ---
 
@@ -3668,15 +3675,15 @@ public static func build(
 ```
 
 - **Parameters:**
-  - `origin` — centre point of the helix base.
-  - `direction` — helix axis direction.
-  - `xDirection` — X direction defining the angular starting position.
-  - `parameterRange` — parameter domain `t1...t2` (one revolution ≈ 2π for circular cross-section).
-  - `pitch` — axial advance per revolution.
-  - `radius` — helix radius at the start.
-  - `taperAngle` — cone half-angle in radians (`0` = constant radius).
-  - `isClockwise` — `true` for left-hand helix winding.
-  - `tolerance` — maximum approximation error.
+  - `origin`: centre point of the helix base.
+  - `direction`: helix axis direction.
+  - `xDirection`: X direction defining the angular starting position.
+  - `parameterRange`: parameter domain `t1...t2` (one revolution ≈ 2π for circular cross-section).
+  - `pitch`: axial advance per revolution.
+  - `radius`: helix radius at the start.
+  - `taperAngle`: cone half-angle in radians (`0` = constant radius).
+  - `isClockwise`: `true` for left-hand helix winding.
+  - `tolerance`: maximum approximation error.
 - **Returns:** `BuildResult` with the BSpline curve and the achieved error, or `nil` on failure.
 - **OCCT:** `HelixGeom_Helix` + `GeomAPI_PointsToBSpline` (via `OCCTHelixBuild`).
 - **Example:**
@@ -3696,7 +3703,7 @@ public static func build(
 
 ### `Helix.buildCoil(parameterRange:pitch:radius:taperAngle:isClockwise:tolerance:)`
 
-Build a helix coil (no explicit position or orientation — uses default axis).
+Build a helix coil (no explicit position or orientation, uses default axis).
 
 ```swift
 public static func buildCoil(
@@ -3730,7 +3737,7 @@ public static func evaluate(
 ) -> SIMD3<Double>
 ```
 
-- **Parameters:** `u` — the parameter value to evaluate.
+- **Parameters:** `u`, the parameter value to evaluate.
 - **Returns:** The 3D point on the helix at `u`.
 - **OCCT:** `HelixGeom_Helix::Value` (via `OCCTHelixCurveEval`).
 

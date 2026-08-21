@@ -1,9 +1,9 @@
 ---
-title: Surface — BSpline & Bezier
+title: Surface. BSpline & Bezier
 parent: API Reference
 ---
 
-# Surface — BSpline & Bezier
+# Surface. BSpline & Bezier
 
 This page documents the freeform B-spline and Bézier pole, knot, weight, and degree accessors/mutators on `Surface`, as well as the utility methods for local evaluation, iso-curve extraction, and patch decomposition. See the main [Surface](Surface.md) page for construction, evaluation, and all other sections.
 
@@ -62,7 +62,7 @@ public var poles: [[SIMD3<Double>]] { get }
 ```
 
 - **Returns:** `[[SIMD3<Double>]]` of size `uPoleCount × vPoleCount`, or `[]` if not BSpline/Bezier or if the internal buffer read fails.
-- **OCCT:** `Geom_BSplineSurface::Poles` / `Geom_BezierSurface::Poles` — row/column iteration over the internal `TColgp_Array2OfPnt`.
+- **OCCT:** `Geom_BSplineSurface::Poles` / `Geom_BezierSurface::Poles`, row/column iteration over the internal `TColgp_Array2OfPnt`.
 - **Example:**
   ```swift
   for (i, row) in surface.poles.enumerated() {
@@ -123,7 +123,7 @@ public func bsplineLocalD0(u: Double, v: Double, fromUK1: Int, toUK2: Int,
                             fromVK1: Int, toVK2: Int) -> SIMD3<Double>
 ```
 
-- **Parameters:** `u`, `v` — parameter values; `fromUK1`/`toUK2` — U knot span indices (1-based); `fromVK1`/`toVK2` — V knot span indices (1-based).
+- **Parameters:** `u`, `v`, parameter values; `fromUK1`/`toUK2`, U knot span indices (1-based); `fromVK1`/`toVK2`, V knot span indices (1-based).
 - **Returns:** Point on the surface at `(u, v)`. Returns `SIMD3.zero` if the surface is not BSpline or evaluation fails.
 - **OCCT:** `Geom_BSplineSurface::LocalD0`.
 - **Example:**
@@ -214,7 +214,7 @@ public func bsplineLocalDN(u: Double, v: Double, fromUK1: Int, toUK2: Int,
                             fromVK1: Int, toVK2: Int, nu: Int, nv: Int) -> SIMD3<Double>
 ```
 
-- **Parameters:** `nu` — U derivative order; `nv` — V derivative order.
+- **Parameters:** `nu`, U derivative order; `nv`, V derivative order.
 - **Returns:** The `(nu, nv)` partial derivative vector. Zero on failure.
 - **OCCT:** `Geom_BSplineSurface::LocalDN`.
 - **Example:**
@@ -254,7 +254,7 @@ Extracts the U isoparametric curve at parameter `u` from a BSpline surface.
 public func bsplineUIso(u: Double) -> Curve3D?
 ```
 
-- **Parameters:** `u` — U parameter value within the surface's U domain.
+- **Parameters:** `u`, U parameter value within the surface's U domain.
 - **Returns:** The iso-curve as a `Curve3D`, or `nil` if the surface is not BSpline or extraction fails.
 - **OCCT:** `Geom_BSplineSurface::UIso`.
 - **Example:**
@@ -274,7 +274,7 @@ Extracts the V isoparametric curve at parameter `v` from a BSpline surface.
 public func bsplineVIso(v: Double) -> Curve3D?
 ```
 
-- **Parameters:** `v` — V parameter value within the surface's V domain.
+- **Parameters:** `v`, V parameter value within the surface's V domain.
 - **Returns:** The iso-curve as a `Curve3D`, or `nil` on failure.
 - **OCCT:** `Geom_BSplineSurface::VIso`.
 - **Example:**
@@ -294,8 +294,8 @@ Finds the knot span indices bracketing U parameter `u`.
 public func bsplineLocateU(u: Double, paramTol: Double) -> (i1: Int, i2: Int)
 ```
 
-- **Parameters:** `u` — parameter value; `paramTol` — tolerance for knot coincidence.
-- **Returns:** `(i1, i2)` — 1-based knot indices such that `UKnot(i1) ≤ u ≤ UKnot(i2)`. Both are 0 on failure.
+- **Parameters:** `u`, parameter value; `paramTol`, tolerance for knot coincidence.
+- **Returns:** `(i1, i2)`, 1-based knot indices such that `UKnot(i1) ≤ u ≤ UKnot(i2)`. Both are 0 on failure.
 - **OCCT:** `Geom_BSplineSurface::LocateU`.
 - **Example:**
   ```swift
@@ -312,7 +312,7 @@ Finds the knot span indices bracketing V parameter `v`.
 public func bsplineLocateV(v: Double, paramTol: Double) -> (i1: Int, i2: Int)
 ```
 
-- **Parameters:** `v` — parameter value; `paramTol` — tolerance for knot coincidence.
+- **Parameters:** `v`, parameter value; `paramTol`, tolerance for knot coincidence.
 - **Returns:** `(i1, i2)` 1-based knot indices. Both 0 on failure.
 - **OCCT:** `Geom_BSplineSurface::LocateV`.
 - **Example:**
@@ -330,7 +330,7 @@ Returns the U knot value at the given 1-based index.
 public func bsplineUKnot(index: Int) -> Double
 ```
 
-- **Parameters:** `index` — 1-based knot index.
+- **Parameters:** `index`, 1-based knot index.
 - **Returns:** Knot value, or 0.0 on failure.
 - **OCCT:** `Geom_BSplineSurface::UKnot`.
 - **Example:**
@@ -348,7 +348,7 @@ Returns the V knot value at the given 1-based index.
 public func bsplineVKnot(index: Int) -> Double
 ```
 
-- **Parameters:** `index` — 1-based knot index.
+- **Parameters:** `index`, 1-based knot index.
 - **Returns:** Knot value, or 0.0 on failure.
 - **OCCT:** `Geom_BSplineSurface::VKnot`.
 - **Example:**
@@ -366,7 +366,7 @@ Returns the U knot multiplicity at the given 1-based index.
 public func bsplineUMultiplicity(index: Int) -> Int
 ```
 
-- **Parameters:** `index` — 1-based knot index.
+- **Parameters:** `index`, 1-based knot index.
 - **Returns:** Multiplicity (≥ 1), or 0 on failure.
 - **OCCT:** `Geom_BSplineSurface::UMultiplicity`.
 - **Example:**
@@ -384,7 +384,7 @@ Returns the V knot multiplicity at the given 1-based index.
 public func bsplineVMultiplicity(index: Int) -> Int
 ```
 
-- **Parameters:** `index` — 1-based knot index.
+- **Parameters:** `index`, 1-based knot index.
 - **Returns:** Multiplicity (≥ 1), or 0 on failure.
 - **OCCT:** `Geom_BSplineSurface::VMultiplicity`.
 - **Example:**
@@ -403,7 +403,7 @@ public var bsplineUKnotDistribution: Int { get }
 ```
 
 - **Returns:** Integer code: 0 = NonUniform, 1 = Uniform, 2 = QuasiUniform, 3 = PiecewiseBezier. 0 also on failure.
-- **OCCT:** `Geom_BSplineSurface::UKnotDistribution` — returns a `GeomAbs_BSplKnotDistribution` enum cast to `Int32`.
+- **OCCT:** `Geom_BSplineSurface::UKnotDistribution`, returns a `GeomAbs_BSplKnotDistribution` enum cast to `Int32`.
 - **Example:**
   ```swift
   let dist = surface.bsplineUKnotDistribution  // 3 = PiecewiseBezier
@@ -509,7 +509,7 @@ Extracts the U isoparametric curve at `u` from a Bezier surface.
 public func bezierUIso(u: Double) -> Curve3D?
 ```
 
-- **Parameters:** `u` — U parameter (domain `[0, 1]` for Bezier surfaces).
+- **Parameters:** `u`, U parameter (domain `[0, 1]` for Bezier surfaces).
 - **Returns:** Iso-curve as `Curve3D`, or `nil` on failure.
 - **OCCT:** `Geom_BezierSurface::UIso`.
 - **Example:**
@@ -527,7 +527,7 @@ Extracts the V isoparametric curve at `v` from a Bezier surface.
 public func bezierVIso(v: Double) -> Curve3D?
 ```
 
-- **Parameters:** `v` — V parameter (domain `[0, 1]`).
+- **Parameters:** `v`, V parameter (domain `[0, 1]`).
 - **Returns:** Iso-curve as `Curve3D`, or `nil` on failure.
 - **OCCT:** `Geom_BezierSurface::VIso`.
 - **Example:**
@@ -626,7 +626,7 @@ Whether the Bezier surface is at least CN-continuous in U.
 public func bezierIsCNu(_ n: Int) -> Bool
 ```
 
-- **Parameters:** `n` — desired continuity order.
+- **Parameters:** `n`, desired continuity order.
 - **Returns:** `true` for any `n` (Bezier surfaces are infinitely differentiable).
 - **OCCT:** `Geom_BezierSurface::IsCNu`.
 - **Example:**
@@ -644,7 +644,7 @@ Whether the Bezier surface is at least CN-continuous in V.
 public func bezierIsCNv(_ n: Int) -> Bool
 ```
 
-- **Parameters:** `n` — desired continuity order.
+- **Parameters:** `n`, desired continuity order.
 - **Returns:** `true` for any `n`.
 - **OCCT:** `Geom_BezierSurface::IsCNv`.
 - **Example:**
@@ -853,7 +853,7 @@ Normalises U, V parameters for a periodic BSpline surface (maps them into the fu
 public func bsplinePeriodicNormalization(u: inout Double, v: inout Double) -> Bool
 ```
 
-- **Parameters:** `u`, `v` — parameter values; modified in place.
+- **Parameters:** `u`, `v`, parameter values; modified in place.
 - **Returns:** `true` on success, `false` if the surface is not BSpline or the call throws.
 - **OCCT:** `Geom_BSplineSurface::PeriodicNormalization`.
 - **Example:**
@@ -877,7 +877,7 @@ Inserts a new column of poles after the given column index in a Bezier surface.
 public func bezierInsertPoleColAfter(_ colIndex: Int, poles: [SIMD3<Double>]) -> Bool
 ```
 
-- **Parameters:** `colIndex` — 1-based column index after which to insert; `poles` — new pole column (`poles.count` must equal `bezierNbUPoles`).
+- **Parameters:** `colIndex`, 1-based column index after which to insert; `poles`, new pole column (`poles.count` must equal `bezierNbUPoles`).
 - **Returns:** `true` on success.
 - **OCCT:** `Geom_BezierSurface::InsertPoleColAfter`.
 - **Example:**
@@ -897,7 +897,7 @@ Inserts a new row of poles after the given row index in a Bezier surface.
 public func bezierInsertPoleRowAfter(_ rowIndex: Int, poles: [SIMD3<Double>]) -> Bool
 ```
 
-- **Parameters:** `rowIndex` — 1-based row index; `poles` — new pole row (`poles.count` must equal `bezierNbVPoles`).
+- **Parameters:** `rowIndex`, 1-based row index; `poles`, new pole row (`poles.count` must equal `bezierNbVPoles`).
 - **Returns:** `true` on success.
 - **OCCT:** `Geom_BezierSurface::InsertPoleRowAfter`.
 - **Example:**
@@ -917,7 +917,7 @@ Removes a column of poles from a Bezier surface (1-based index).
 public func bezierRemovePoleCol(_ colIndex: Int) -> Bool
 ```
 
-- **Parameters:** `colIndex` — 1-based column index to remove.
+- **Parameters:** `colIndex`, 1-based column index to remove.
 - **Returns:** `true` on success. The surface must have at least 2 columns.
 - **OCCT:** `Geom_BezierSurface::RemovePoleCol`.
 - **Example:**
@@ -936,7 +936,7 @@ Removes a row of poles from a Bezier surface (1-based index).
 public func bezierRemovePoleRow(_ rowIndex: Int) -> Bool
 ```
 
-- **Parameters:** `rowIndex` — 1-based row index to remove. The surface must have at least 2 rows.
+- **Parameters:** `rowIndex`, 1-based row index to remove. The surface must have at least 2 rows.
 - **Returns:** `true` on success.
 - **OCCT:** `Geom_BezierSurface::RemovePoleRow`.
 - **Example:**
@@ -955,7 +955,7 @@ Increases the degree of a Bezier surface in U and/or V.
 public func bezierIncreaseDegree(uDeg: Int, vDeg: Int) -> Bool
 ```
 
-- **Parameters:** `uDeg` — new U degree (must be ≥ current U degree); `vDeg` — new V degree.
+- **Parameters:** `uDeg`, new U degree (must be ≥ current U degree); `vDeg`, new V degree.
 - **Returns:** `true` on success.
 - **OCCT:** `Geom_BezierSurface::Increase`.
 - **Note:** Degree can only increase, never decrease.
@@ -1015,7 +1015,7 @@ Sets a full column of poles with associated weights on a Bezier surface.
 public func bezierSetPoleColWeights(vIndex: Int, poles: [SIMD3<Double>], weights: [Double]) -> Bool
 ```
 
-- **Parameters:** `vIndex` — 1-based V (column) index; `poles` — new pole positions (`count == bezierNbUPoles`); `weights` — corresponding weights (same count).
+- **Parameters:** `vIndex`, 1-based V (column) index; `poles`, new pole positions (`count == bezierNbUPoles`); `weights`, corresponding weights (same count).
 - **Returns:** `true` on success. Returns `false` if `poles.count != weights.count`.
 - **OCCT:** `Geom_BezierSurface::SetPoleCol(vIndex, poles, weights)`.
 - **Example:**
@@ -1036,7 +1036,7 @@ Sets a full row of poles with associated weights on a Bezier surface.
 public func bezierSetPoleRowWeights(uIndex: Int, poles: [SIMD3<Double>], weights: [Double]) -> Bool
 ```
 
-- **Parameters:** `uIndex` — 1-based U (row) index; `poles` — new pole positions (`count == bezierNbVPoles`); `weights` — corresponding weights.
+- **Parameters:** `uIndex`, 1-based U (row) index; `poles`, new pole positions (`count == bezierNbVPoles`); `weights`, corresponding weights.
 - **Returns:** `true` on success. Returns `false` if counts mismatch.
 - **OCCT:** `Geom_BezierSurface::SetPoleRow(uIndex, poles, weights)`.
 - **Example:**
@@ -1061,7 +1061,7 @@ Inserts a new column of poles before the given column index in a Bezier surface.
 public func bezierInsertPoleColBefore(_ colIndex: Int, poles: [SIMD3<Double>]) -> Bool
 ```
 
-- **Parameters:** `colIndex` — 1-based column index before which to insert; `poles` — new pole column (`poles.count` must equal `bezierNbUPoles`).
+- **Parameters:** `colIndex`, 1-based column index before which to insert; `poles`, new pole column (`poles.count` must equal `bezierNbUPoles`).
 - **Returns:** `true` on success.
 - **OCCT:** `Geom_BezierSurface::InsertPoleColBefore`.
 - **Example:**
@@ -1081,7 +1081,7 @@ Inserts a new row of poles before the given row index in a Bezier surface.
 public func bezierInsertPoleRowBefore(_ rowIndex: Int, poles: [SIMD3<Double>]) -> Bool
 ```
 
-- **Parameters:** `rowIndex` — 1-based row index before which to insert; `poles.count` must equal `bezierNbVPoles`.
+- **Parameters:** `rowIndex`, 1-based row index before which to insert; `poles.count` must equal `bezierNbVPoles`.
 - **Returns:** `true` on success.
 - **OCCT:** `Geom_BezierSurface::InsertPoleRowBefore`.
 - **Example:**
@@ -1101,7 +1101,7 @@ Sets a column of poles (without changing weights) on a Bezier surface.
 public func bezierSetPoleCol(vIndex: Int, poles: [SIMD3<Double>]) -> Bool
 ```
 
-- **Parameters:** `vIndex` — 1-based V (column) index; `poles` — new positions (count must equal `bezierNbUPoles`).
+- **Parameters:** `vIndex`, 1-based V (column) index; `poles`, new positions (count must equal `bezierNbUPoles`).
 - **Returns:** `true` on success.
 - **OCCT:** `Geom_BezierSurface::SetPoleCol(vIndex, poles)`.
 - **Example:**
@@ -1121,7 +1121,7 @@ Sets a row of poles (without changing weights) on a Bezier surface.
 public func bezierSetPoleRow(uIndex: Int, poles: [SIMD3<Double>]) -> Bool
 ```
 
-- **Parameters:** `uIndex` — 1-based U (row) index; `poles` — new positions (count must equal `bezierNbVPoles`).
+- **Parameters:** `uIndex`, 1-based U (row) index; `poles`, new positions (count must equal `bezierNbVPoles`).
 - **Returns:** `true` on success.
 - **OCCT:** `Geom_BezierSurface::SetPoleRow(uIndex, poles)`.
 - **Example:**
@@ -1141,7 +1141,7 @@ Sets a column of weights on a Bezier surface.
 public func bezierSetWeightCol(vIndex: Int, weights: [Double]) -> Bool
 ```
 
-- **Parameters:** `vIndex` — 1-based V (column) index; `weights` — new weight values (count must equal `bezierNbUPoles`).
+- **Parameters:** `vIndex`, 1-based V (column) index; `weights`, new weight values (count must equal `bezierNbUPoles`).
 - **Returns:** `true` on success.
 - **OCCT:** `Geom_BezierSurface::SetWeightCol`.
 - **Example:**
@@ -1161,7 +1161,7 @@ Sets a row of weights on a Bezier surface.
 public func bezierSetWeightRow(uIndex: Int, weights: [Double]) -> Bool
 ```
 
-- **Parameters:** `uIndex` — 1-based U (row) index; `weights` — new weight values (count must equal `bezierNbVPoles`).
+- **Parameters:** `uIndex`, 1-based U (row) index; `weights`, new weight values (count must equal `bezierNbVPoles`).
 - **Returns:** `true` on success.
 - **OCCT:** `Geom_BezierSurface::SetWeightRow`.
 - **Example:**

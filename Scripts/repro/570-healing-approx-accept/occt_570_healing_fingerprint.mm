@@ -1,4 +1,4 @@
-// OCCTSwift#570 — the healing paths that accept an approximation on MaxError() <= tol.
+// OCCTSwift#570, the healing paths that accept an approximation on MaxError() <= tol.
 //
 // #522 fixed AdvApp2Var_ApproxF2var::mma2ce1_ writing the U Jacobi maxima into the V workspace slot,
 // which made every patch's interior truncation error evaluate to exactly zero. Three kernel healing
@@ -209,7 +209,7 @@ static std::vector<Fixture> fixtures()
                  0.0, 2 * M_PI, 0.0, 2 * M_PI});
     f.push_back({"bicubic bspline", bicubicBSpline(), 0.0, 1.0, 0.0, 1.0});
     // Elementary surfaces short-circuit ConvertSurfaceToBSpline entirely (GeomConvert exact
-    // conversion, no approximation) — carried as the control.
+    // conversion, no approximation), carried as the control.
     f.push_back({"sphere r=10 (elementary)",
                  new Geom_RectangularTrimmedSurface(new Geom_SphericalSurface(ax3, 10.0), 0.0,
                                                     2 * M_PI, -M_PI / 2, M_PI / 2),
@@ -263,7 +263,7 @@ int main()
     // -----------------------------------------------------------------------------------------
     printf("=========================================================================\n");
     printf(" 1. ShapeConstruct::ConvertSurfaceToBSpline (tol=Precision::Approximation(),\n");
-    printf("    MaxSegments=10000, MaxDegree=15 — exactly what ShapeCustom_ConvertToBSpline passes)\n");
+    printf("    MaxSegments=10000, MaxDegree=15, exactly what ShapeCustom_ConvertToBSpline passes)\n");
     printf("=========================================================================\n");
     for (const Fixture& f : all)
     {
@@ -290,7 +290,7 @@ int main()
     }
 
     // -----------------------------------------------------------------------------------------
-    // 2. What GeomConvert_ApproxSurface itself reports for the same request — the number the
+    // 2. What GeomConvert_ApproxSurface itself reports for the same request, the number the
     //    accept/reject test is made against.
     // -----------------------------------------------------------------------------------------
     printf("=========================================================================\n");
@@ -328,7 +328,7 @@ int main()
     }
 
     // -----------------------------------------------------------------------------------------
-    // 3. ShapeCustom::ConvertToBSpline — the bridge's OCCTShapeConvertToBSpline /
+    // 3. ShapeCustom:ConvertToBSpline, the bridge's OCCTShapeConvertToBSpline /
     //    OCCTShapeCustomConvertToBSpline / OCCTShapeConvertToBSplineAdvanced.
     //    offset=true takes the forced-GeomAbs_C0 branch; offset=false converts the basis instead.
     // -----------------------------------------------------------------------------------------
@@ -361,7 +361,7 @@ int main()
     }
 
     // -----------------------------------------------------------------------------------------
-    // 4. ShapeCustom::BSplineRestriction — the bridge's OCCTShapeBSplineRestriction (hardcoded C1),
+    // 4. ShapeCustom:BSplineRestriction, the bridge's OCCTShapeBSplineRestriction (hardcoded C1),
     //    OCCTShapeCustomBSplineRestriction and OCCTShapeBSplineRestrictionAdvanced (caller's).
     // -----------------------------------------------------------------------------------------
     printf("=========================================================================\n");

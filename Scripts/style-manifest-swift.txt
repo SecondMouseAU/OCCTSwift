@@ -38,8 +38,6 @@ Sources/OCCTSwift/DirectoryUtils.swift
 Sources/OCCTSwift/DiskInfo.swift
 Sources/OCCTSwift/DisplayDrawer.swift
 Sources/OCCTSwift/DistanceResult.swift
-Sources/OCCTSwift/DraftInfo.swift
-Sources/OCCTSwift/Drawing.swift
 Sources/OCCTSwift/DrawingAnnotation.swift
 Sources/OCCTSwift/DrawingComposition.swift
 Sources/OCCTSwift/DrawingDispatch.swift
@@ -56,8 +54,6 @@ Sources/OCCTSwift/Environment.swift
 Sources/OCCTSwift/EvolvedSectionInfo.swift
 Sources/OCCTSwift/EvolvingFilletEdge.swift
 Sources/OCCTSwift/Exporter.swift
-Sources/OCCTSwift/ExtremaTypes.swift
-Sources/OCCTSwift/FeatureReconstructor.swift
 Sources/OCCTSwift/FillConstraint.swift
 Sources/OCCTSwift/FilletBuilder.swift
 Sources/OCCTSwift/FillingPoleGrid.swift
@@ -93,7 +89,6 @@ Sources/OCCTSwift/MathDimension.swift
 Sources/OCCTSwift/MathLibrary.swift
 Sources/OCCTSwift/MathSolver.swift
 Sources/OCCTSwift/Matrix2D.swift
-Sources/OCCTSwift/MedialAxis.swift
 Sources/OCCTSwift/MemInfo.swift
 Sources/OCCTSwift/Mesh.swift
 Sources/OCCTSwift/MeshCoordinateSystem.swift
@@ -136,7 +131,6 @@ Sources/OCCTSwift/ReShapeContext.swift
 Sources/OCCTSwift/ResourceManager.swift
 Sources/OCCTSwift/SameParameterResult.swift
 Sources/OCCTSwift/Sampling.swift
-Sources/OCCTSwift/SAWireAnalysis.swift
 Sources/OCCTSwift/Selection.swift
 Sources/OCCTSwift/SewingBuilder.swift
 Sources/OCCTSwift/Shape+Curve.swift
@@ -159,8 +153,6 @@ Sources/OCCTSwift/ShapeRayIntersection.swift
 Sources/OCCTSwift/ShapeType.swift
 Sources/OCCTSwift/SharedLibrary.swift
 Sources/OCCTSwift/SheetLayout.swift
-Sources/OCCTSwift/SheetMetal.swift
-Sources/OCCTSwift/Sketch.swift
 Sources/OCCTSwift/StepHeader.swift
 Sources/OCCTSwift/STEPOptions.swift
 Sources/OCCTSwift/SurfaceIntersectionResult.swift

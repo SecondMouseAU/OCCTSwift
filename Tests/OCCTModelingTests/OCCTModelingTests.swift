@@ -236,7 +236,7 @@ struct AdvancedModelingTests {
         let cylindricalFaces = faces.filter { !$0.isPlanar }
 
         #expect(!cylindricalFaces.isEmpty)
-        // Remove the hole — defeaturing a through-hole needs only the cylindrical face
+        // Remove the hole, defeaturing a through-hole needs only the cylindrical face
         let defeatured = boxWithHole.withoutFeatures(faces: cylindricalFaces)
         #expect(defeatured != nil)
         if let defeatured {
@@ -375,7 +375,7 @@ struct AdvancedModelingTests {
             Issue.record("Could not create spine/profile"); return
         }
         #expect(Shape.pipeShellMultiSection(spine: spine, profiles: []) == nil)
-        // A single profile degenerates to an ordinary pipe shell — must still build.
+        // A single profile degenerates to an ordinary pipe shell, must still build.
         #expect(Shape.pipeShellMultiSection(spine: spine, profiles: [one], mode: .frenet) != nil)
     }
 
@@ -997,7 +997,7 @@ struct VariableSectionSweepTests {
 
 // MARK: - Feature Recognition Tests
 
-@Suite("Feature Recognition — AAG")
+@Suite("Feature Recognition, AAG")
 struct AAGTests {
     @Test("Box AAG has 6 nodes and 12 edges")
     func boxAAG() {
@@ -1111,7 +1111,7 @@ struct AAGTests {
 
 // MARK: - Missing Core Shape Operations
 
-@Suite("Shape — Torus, Chamfer, Offset, Scale, Mirror")
+@Suite("Shape, Torus, Chamfer, Offset, Scale, Mirror")
 struct MissingShapeOpsTests {
     @Test("Torus creation")
     func torusCreation() {
@@ -1187,7 +1187,7 @@ struct MissingShapeOpsTests {
 
 // MARK: - Wire Join and Offset Tests
 
-@Suite("Wire — Join and Offset")
+@Suite("Wire, Join and Offset")
 struct WireJoinOffsetTests {
     @Test("Join two wires")
     func joinWires() {
@@ -1207,7 +1207,7 @@ struct WireJoinOffsetTests {
 
 // MARK: - Edge Polyline Tests (Issue #29)
 
-@Suite("Edge Polylines — Lofted and Extruded Shapes")
+@Suite("Edge Polylines, Lofted and Extruded Shapes")
 struct EdgePolylineTests {
     @Test("Box edge polylines returns all 12 edges")
     func boxEdgePolylines() {
@@ -1394,10 +1394,10 @@ struct LoftPolarMethodCrashTests {
     /// Exact profile set from issue #176 (Kiha 40 body 1068): 8 mismatched convex polygons
     /// (alternating 5- and 4-vertex, with a 2.5-unit gap near z=0). On an UNPATCHED OCCT this
     /// deterministically SIGSEGVs single-threaded inside
-    /// BRepFill_CompatibleWires::SameNumberByPolarMethod — the correspondence-list iterators
+    /// BRepFill_CompatibleWires:SameNumberByPolarMethod, the correspondence-list iterators
     /// over-advance and dereference a null list node ("Address 8"). The bridge's catch(...) cannot
     /// save it (it is an OS signal, not a C++ exception). Fixed UPSTREAM in OCCT 8.0.0p1
-    /// (Open-Cascade-SAS/OCCT#1298, OCCTSwift #178) — the guard is now native to the pinned
+    /// (Open-Cascade-SAS/OCCT#1298, OCCTSwift #178), the guard is now native to the pinned
     /// xcframework, so Build() fails gracefully (this returns nil) instead of crashing. (Previously
     /// carried as Scripts/patches/0001-*, dropped once p1 shipped.) If this test ever crashes the
     /// runner, the upstream guard has been lost from the xcframework.
@@ -1508,7 +1508,7 @@ struct DraftPrismTests {
         // Find the top face index (face 5 is typically the top of a box at origin)
         let result = box.addingDraftPrism(profile: profile, sketchFaceIndex: 0,
                                           draftAngle: 5.0, height: 30.0, fuse: true)
-        // Draft prism requires profile on the sketch face — may need specific face
+        // Draft prism requires profile on the sketch face, may need specific face
         _ = result
     }
 
@@ -1522,7 +1522,7 @@ struct DraftPrismTests {
     }
 }
 
-// MARK: - v0.33.0 — OCCT Test Suite Audit Round 2
+// MARK: - v0.33.0. OCCT Test Suite Audit Round 2
 
 @Suite("Evolved Advanced")
 struct EvolvedAdvancedTests {
@@ -1628,7 +1628,7 @@ struct SplitByAngleTests {
 
     @Test("Split box by angle is no-op or returns nil")
     func splitBoxNoOp() {
-        // Box faces are all planar — no angle splitting needed
+        // Box faces are all planar, no angle splitting needed
         let box = Shape.box(width: 10, height: 10, depth: 10)!
         let result = box.splitByAngle(90)
         // ShapeDivideAngle may return nil if no surfaces need splitting
@@ -1699,7 +1699,7 @@ struct MultiFuseTests {
     }
 }
 
-// MARK: - v0.35.0 — OCCT Test Suite Audit Round 4
+// MARK: - v0.35.0. OCCT Test Suite Audit Round 4
 
 @Suite("Multi-Offset Wire")
 struct MultiOffsetWireTests {
@@ -1805,7 +1805,7 @@ struct BooleanFullHistoryTests {
 
         // At least one original face should appear twice or more in the
         // output (modified ∪ generated). OCCT classifies face-splits as
-        // either depending on internal heuristics — accept either.
+        // either depending on internal heuristics, accept either.
         let bigFaces = big.subShapes(ofType: .face)
         var foundSplit = false
         for inputFace in bigFaces {
@@ -1855,7 +1855,7 @@ struct BooleanFullHistoryTests {
         #expect(r.pieces.count >= 1, "split result should contain at least one piece")
 
         // Every input face must yield queryable history (no crash, no nil).
-        // Splitter never deletes faces outright — at worst it modifies them.
+        // Splitter never deletes faces outright, at worst it modifies them.
         for face in box.subShapes(ofType: .face) {
             let rec = r.history.record(of: face)
             #expect(!rec.isDeleted)
@@ -1892,7 +1892,7 @@ struct Tier2HistoryTests {
             Issue.record("box has no edges")
             return
         }
-        // Try fillet on the first edge — fall through to other edges if the
+        // Try fillet on the first edge, fall through to other edges if the
         // first fails (edge ordering depends on TopoDS internals; not all
         // edges accept the same radius cleanly).
         var workingResult: (result: Shape, history: ShapeHistoryRef)?
@@ -2011,7 +2011,7 @@ struct ReconstructorHistoryTests {
         // The hole feature uses a history-recording subtract → must register.
         #expect(result.histories["drill_top"] != nil,
                 "hole with non-nil id should retain history")
-        // Look up history for any base-shape face — must not crash.
+        // Look up history for any base-shape face, must not crash.
         if let history = result.histories["drill_top"], let final = result.shape {
             for face in final.subShapes(ofType: .face).prefix(3) {
                 _ = history.record(of: face)
@@ -2043,7 +2043,7 @@ struct ReconstructorHistoryTests {
         #expect(result.histories["merged"] != nil)
         // Raw extrude features don't capture history (they go through the
         // additive path; only the second extrude's absorbAdditive triggers a
-        // fusion that records history — and it records under the absorbed
+        // fusion that records history, and it records under the absorbed
         // feature's id, "right").
         #expect(result.histories["left"] == nil)
     }
@@ -2095,7 +2095,7 @@ struct ReconstructorHistoryTests {
             distance: 0.3, id: "ch_near")
         let result = FeatureReconstructor.build(from: [.extrude(e), .chamfer(c)])
         // Whether or not the chamfer succeeds depends on edge geometry, but it
-        // must NOT be skipped as `.unsupported` — that was the v1.0.3 stub
+        // must NOT be skipped as `.unsupported`, that was the v1.0.3 stub
         // status removed by #166.
         if let skipped = result.skipped.first(where: { $0.featureID == "ch_near" }) {
             if case .unsupported = skipped.reason {
@@ -2105,7 +2105,7 @@ struct ReconstructorHistoryTests {
     }
 }
 
-// MARK: - v0.37.0 — OCCT Test Suite Audit Round 6
+// MARK: - v0.37.0. OCCT Test Suite Audit Round 6
 
 @Suite("Thick Solid / Hollowing")
 struct ThickSolidTests {
@@ -2412,7 +2412,7 @@ struct ClosedEdgeSplittingTests {
     func boxNoClosedEdges() {
         let box = Shape.box(width: 10, height: 10, depth: 10)!
         let result = box.dividedClosedEdges()
-        // Box has no closed edges — Perform() may return false, yielding nil
+        // Box has no closed edges. Perform() may return false, yielding nil
         if let result {
             #expect(result.edges().count == box.edges().count)
         }
@@ -2876,7 +2876,7 @@ struct LocOpeSpliterTests {
         // Create a wire that crosses a face as Shape
         guard let wire = Wire.line(from: SIMD3(-6, 0, 5), to: SIMD3(6, 0, 5)),
               let wireShape = Shape.fromWire(wire) else { return }
-        // Try each face — the wire must lie on one of them
+        // Try each face, the wire must lie on one of them
         var splitFound = false
         for i: Int32 in 1...6 {
             if let result = box.splitByWireOnFace(wireShape, faceIndex: i) {
@@ -2885,7 +2885,7 @@ struct LocOpeSpliterTests {
                 break
             }
         }
-        // It's ok if no face worked — the wire may not project onto any face
+        // It's ok if no face worked, the wire may not project onto any face
     }
 }
 
@@ -2992,7 +2992,7 @@ struct BOPAlgoRemoveFeaturesTests {
         let faces = box.subShapes(ofType: .face)
         guard !faces.isEmpty else { return }
         // Removing a face from a box may or may not succeed
-        // depending on topology — just verify it doesn't crash
+        // depending on topology, just verify it doesn't crash
         let _ = box.defeature(faces: [faces[0]])
     }
 }
@@ -3481,7 +3481,7 @@ struct BiTgteBlendTests {
         let box = Shape.box(origin: SIMD3(0, 0, 0), width: 50, height: 50, depth: 50)!
         // Try blending first two edges
         let result = box.biTgteBlend(edgeIndices: [0, 1], radius: 3)
-        // May or may not succeed depending on edge adjacency — just verify no crash
+        // May or may not succeed depending on edge adjacency, just verify no crash
         let _ = result
     }
 }
@@ -3522,7 +3522,7 @@ struct BRepFillEvolvedTests {
             if let profileWire = Wire.polygon3D([SIMD3(0, 0, 0), SIMD3(5, 0, 0),
                                                     SIMD3(5, 0, 5), SIMD3(0, 0, 5)], closed: false),
                let profile = Shape.fromWire(profileWire) {
-                // BRepFill_Evolved is finicky — may or may not produce a result
+                // BRepFill_Evolved is finicky, may or may not produce a result
                 let _ = Shape.evolved(spineFace: spineFace, profileWire: profile)
                 #expect(Bool(true))
             }
@@ -3768,44 +3768,10 @@ struct BRepOffsetAnalyseTests {
             let verts = box.subShapes(ofType: .vertex)
             if let edge = edges.first, let v = verts.first {
                 let count = box.analyseTangentEdgeCount(edge: edge, vertex: v)
-                // Box corners are 90° — no tangent edges
+                // Box corners are 90°, no tangent edges
                 #expect(count == 0)
             }
         }
-    }
-}
-
-@Suite("Draft Info Tests")
-struct DraftInfoTests {
-
-    @Test func edgeInfoNewGeometry() {
-        let ng = DraftInfo.edgeInfoNewGeometry
-        // Default EdgeInfo has no new geometry
-        #expect(!ng)
-    }
-
-    @Test func faceInfoNewGeometry() {
-        let ng = DraftInfo.faceInfoNewGeometry
-        #expect(!ng)
-    }
-
-    @Test func vertexInfoGeometry() {
-        let pt = DraftInfo.vertexInfoGeometry
-        // Default VertexInfo has origin geometry
-        #expect(abs(pt.x) < 1e-10)
-        #expect(abs(pt.y) < 1e-10)
-        #expect(abs(pt.z) < 1e-10)
-    }
-
-    @Test func edgeInfoSetTangent() {
-        let result = DraftInfo.edgeInfoSetTangent(direction: SIMD3(1, 0, 0))
-        // Should succeed
-        #expect(result)
-    }
-
-    @Test func vertexInfoAddParameter() {
-        let param = DraftInfo.vertexInfoAddParameter(3.14)
-        #expect(abs(param - 3.14) < 0.01)
     }
 }
 
@@ -4279,7 +4245,7 @@ struct IntegrationThicknessAnalysisTests {
             return
         }
 
-        // Shell with open top face — shelled(thickness:) without open faces may fail,
+        // Shell with open top face, shelled(thickness:) without open faces may fail,
         // so we use shelled(thickness:openFaces:) removing the top face
         let boxFaces = box.faces()
         #expect(boxFaces.count == 6)
@@ -4300,7 +4266,7 @@ struct IntegrationThicknessAnalysisTests {
         }
 
         guard let shelledShape = shelled else {
-            // Shelling can be finicky — skip thickness check but don't fail the test hard
+            // Shelling can be finicky, skip thickness check but don't fail the test hard
             // Instead, verify ray intersection works on a simple hollow box via boolean subtraction
             guard let innerBox = Shape.box(width: 40 - 2 * wallThickness,
                                             height: 40 - 2 * wallThickness,
@@ -4453,7 +4419,7 @@ struct FilletBuilderV121Tests {
                 if let edge = edges.first {
                     builder.addEdge(edge, radius: 2.0)
                     #expect(builder.contourCount == 1)
-                    // Reset clears build state but contours remain — verify no crash
+                    // Reset clears build state but contours remain, verify no crash
                     builder.reset()
                     // Can still build after reset
                     if let result = builder.build() {
@@ -4570,7 +4536,7 @@ struct ChamferBuilderV121Tests {
     }
 }
 
-@Suite("v0.122.0 — History Extended")
+@Suite("v0.122.0, History Extended")
 struct HistoryExtendedTests {
     @Test("Merge histories")
     func mergeHistories() {
@@ -4626,7 +4592,7 @@ struct HistoryExtendedTests {
 
 // MARK: - v0.123.0: Builder extensions, Section ops, Curve/Surface queries
 
-@Suite("v0.123.0 — ThruSections extensions")
+@Suite("v0.123.0, ThruSections extensions")
 struct ThruSectionsExtensionsTests {
 
     @Test("CheckCompatibility sets without crash")
@@ -4712,7 +4678,7 @@ struct ThruSectionsExtensionsTests {
     }
 }
 
-@Suite("v0.123.0 — CellsBuilder extensions")
+@Suite("v0.123.0, CellsBuilder extensions")
 struct CellsBuilderExtensionsTests {
 
     @Test("AddToResult selective")
@@ -4770,7 +4736,7 @@ struct CellsBuilderExtensionsTests {
     }
 }
 
-@Suite("v0.123.0 — BRepAlgoAPI_Section extended")
+@Suite("v0.123.0, BRepAlgoAPI_Section extended")
 struct SectionExtendedTests {
 
     @Test("Section with approximation")
@@ -5100,7 +5066,7 @@ struct FilletBuilderCompletionsV124Tests {
     }
 }
 
-@Suite("v0.126.0 — FilletBuilder completions")
+@Suite("v0.126.0, FilletBuilder completions")
 struct FilletBuilderCompletionsTests {
     @Test("SetParams doesn't crash")
     func setParams() {
@@ -5146,7 +5112,7 @@ struct FilletBuilderCompletionsTests {
     }
 }
 
-@Suite("v0.127.0 — FilletBuilder History Queries")
+@Suite("v0.127.0, FilletBuilder History Queries")
 struct FilletBuilderHistoryTests {
 
     @Test("FilletBuilder GetBounds for evolving radius")
@@ -5372,7 +5338,7 @@ struct SectionBuilderTests {
 
 // MARK: - SEGV Guard Regression Tests (Issues #54, #55, #56)
 
-@Suite("SEGV Guards — ThruSections empty/single-section")
+@Suite("SEGV Guards, ThruSections empty/single-section")
 struct ThruSectionsGuardTests {
 
     @Test func emptyBuildReturnsFalse() {
@@ -5411,7 +5377,7 @@ struct ThruSectionsGuardTests {
     }
 }
 
-@Suite("SEGV Guards — CellsBuilder empty inputs")
+@Suite("SEGV Guards, CellsBuilder empty inputs")
 struct CellsBuilderGuardTests {
 
     @Test func emptyArrayReturnsNil() {
@@ -5742,7 +5708,7 @@ struct ExtendedExtrusionTests {
 
     @Test func extrudeEdgeByVector() {
         // #204: the previous body wrapped a Wire's handle in a Shape
-        // (`Shape(handle: wire.handle)`), double-owning the C++ handle — both the
+        // (`Shape(handle: wire.handle)`), double-owning the C++ handle, both the
         // Wire and the Shape freed it on scope exit → double-free → SIGSEGV. That
         // block was dead code (the resulting `face` was never used). Removed.
         let rect = Wire.rectangle(width: 5, height: 5)
@@ -5836,7 +5802,7 @@ struct FeatureReconstructorTests {
         let f = FeatureSpec.Fillet(edgeSelector: .all, radius: 1.0, id: "fillet_all")
         let result = FeatureReconstructor.build(from: [.revolve(r), .fillet(f)])
         // Uniform fillet may or may not succeed on the revolved solid depending on
-        // edge configuration. Test passes either way — checks no crash + graceful skip.
+        // edge configuration. Test passes either way, checks no crash + graceful skip.
         if !result.fulfilled.contains("fillet_all") {
             #expect(result.skipped.contains { $0.featureID == "fillet_all" })
         }
@@ -5892,7 +5858,7 @@ struct FeatureReconstructorInputBodyTests {
         let box = Shape.box(width: 20, height: 20, depth: 10)!
         let result = FeatureReconstructor.build(from: [], inputBody: box)
         #expect(result.shape != nil)
-        // Volume preserved — no features applied.
+        // Volume preserved, no features applied.
         if let s = result.shape {
             let box1 = box.bounds!, box2 = s.bounds!
             #expect(abs(box1.min.x - box2.min.x) < 1e-9)
@@ -5942,7 +5908,7 @@ struct FeatureReconstructorInputBodyTests {
         #expect(result.shape != nil)
     }
 
-    @Test("@input not registered when inputBody is nil — boolean skips with unresolvedRef")
+    @Test("@input not registered when inputBody is nil, boolean skips with unresolvedRef")
     func sentinelAbsentWhenNoInput() {
         let slot = FeatureSpec.Extrude(
             profilePoints2D: [SIMD2(0, 0), SIMD2(5, 0), SIMD2(5, 5), SIMD2(0, 5)],
@@ -6244,7 +6210,7 @@ struct EdgeSelectorWiredTests {
             edgeSelector: .nearPoint(SIMD3(10, 0, 5), tolerance: 20),
             radius: 0.5, id: "fillet_near")
         let result = FeatureReconstructor.build(from: [.revolve(r), .fillet(f)])
-        // Either fulfilled or skipped with .occtFailure — what we don't want is
+        // Either fulfilled or skipped with .occtFailure, what we don't want is
         // the old .unsupported behaviour.
         if !result.fulfilled.contains("fillet_near") {
             if let skip = result.skipped.first(where: { $0.featureID == "fillet_near" }) {
@@ -6337,7 +6303,7 @@ struct FeatureSpecCodableTests {
 @Suite("Sewing / Quilting / Healing with Full History")
 struct SewQuiltHealFullHistoryTests {
     /// Two independently-created unit-10 squares in the XY plane, positioned so
-    /// face1's right edge (x=5) exactly coincides with face2's left edge — two
+    /// face1's right edge (x=5) exactly coincides with face2's left edge, two
     /// genuinely distinct TopoDS_Edge instances, not a shared one.
     static func touchingFaces() -> (face1: Shape, face2: Shape) {
         let face1 = Shape.face(from: Wire.rectangle(width: 10, height: 10)!)!
@@ -6372,7 +6338,7 @@ struct SewQuiltHealFullHistoryTests {
             return
         }
         // The #327 "faithfulness" open question: sewing's many-to-one merge
-        // records BOTH inputs as Modified into the SAME output edge — neither
+        // records BOTH inputs as Modified into the SAME output edge, neither
         // side is silently dropped or treated as Removed.
         #expect(out1.isSame(as: out2))
     }

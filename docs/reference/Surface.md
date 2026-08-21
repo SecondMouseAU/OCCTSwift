@@ -5,9 +5,9 @@ parent: API Reference
 
 # Surface
 
-A `Surface` is a parametric 2D manifold in 3D space — the Swift analog of OCCT's `Geom_Surface` class hierarchy. It wraps analytic surfaces (plane, cylinder, cone, sphere, torus), swept surfaces (extrusion, revolution), and freeform surfaces (Bezier, BSpline) polymorphically behind a single opaque handle. Obtain a surface via one of the static factory methods, by extracting it from a `Face` (`face.surface`), or by converting a `Shape` to its underlying geometry.
+A `Surface` is a parametric 2D manifold in 3D space, the Swift analog of OCCT's `Geom_Surface` class hierarchy. It wraps analytic surfaces (plane, cylinder, cone, sphere, torus), swept surfaces (extrusion, revolution), and freeform surfaces (Bezier, BSpline) polymorphically behind a single opaque handle. Obtain a surface via one of the static factory methods, by extracting it from a `Face` (`face.surface`), or by converting a `Shape` to its underlying geometry.
 
-> **Note:** `Surface` is documented across several pages — see also **Surface — Analytic Types**, **Surface — BSpline & Bezier**, **Surface — Analysis**, and **Surface — Advanced Construction**.
+> **Note:** `Surface` is documented across several pages, see also **Surface, Analytic Types**, **Surface, BSpline & Bezier**, **Surface, Analysis**, and **Surface, Advanced Construction**.
 
 ## Topics
 
@@ -176,7 +176,7 @@ public var continuityClass: ContinuityClass { get }
 
 - **Returns:** A `ContinuityClass` describing positional through CN continuity. Raw values are
   `GeomAbs_Shape`'s own ordinals (`c0=0, g1=1, c1=2, g2=3, c2=4, c3=5, cN=6`), which are not a
-  0/1/2 order — use `satisfies(_:)` rather than comparing raw values against a
+  0/1/2 order, use `satisfies(_:)` rather than comparing raw values against a
   `ParametricContinuity`.
 - **OCCT:** `Geom_Surface::Continuity` (via `OCCTSurfaceGetContinuity`).
 - **Example:**
@@ -190,14 +190,14 @@ public var continuityClass: ContinuityClass { get }
   two measured classes by their place in `GeomAbs_Shape`'s ladder. Because that ladder interleaves
   the geometric classes with the parametric ones, outranking a class is not the same as entailing
   it: `.g2` sorts above `.c1` but does not satisfy `.c1`, since curvature continuity says nothing
-  about first-derivative vectors. They agree on every other pair, `.c0` included — a geometric
+  about first-derivative vectors. They agree on every other pair, `.c0` included, a geometric
   class does meet the positional floor, because G1 entails G0 entails position, and position is
   what C0 is (#623).
   ```swift
-  ContinuityClass.g1.satisfies(.c0)   // true  — tangent-continuous implies connected
-  ContinuityClass.g1.satisfies(.c1)   // false — but says nothing about derivative vectors
-  ContinuityClass.g2 >= .c1           // true  — the ladder ranks G2 above C1 ...
-  ContinuityClass.g2.satisfies(.c1)   // false — ... without G2 entailing C1
+  ContinuityClass.g1.satisfies(.c0)   // true, tangent-continuous implies connected
+  ContinuityClass.g1.satisfies(.c1)   // false, but says nothing about derivative vectors
+  ContinuityClass.g2 >= .c1           // true, the ladder ranks G2 above C1 ...
+  ContinuityClass.g2.satisfies(.c1)   // false, ... without G2 entailing C1
   ```
 
 ---
@@ -377,7 +377,7 @@ Evaluate the surface point at (u, v).
 public func point(atU u: Double, v: Double) -> SIMD3<Double>
 ```
 
-- **Parameters:** `u` — U parameter; `v` — V parameter. Both must lie within `domain`.
+- **Parameters:** `u`, U parameter; `v`, V parameter. Both must lie within `domain`.
 - **Returns:** 3D point on the surface.
 - **OCCT:** `Geom_Surface::D0`.
 - **Example:**
@@ -398,7 +398,7 @@ public func d1(atU u: Double, v: Double) -> (point: SIMD3<Double>, du: SIMD3<Dou
 
 Returns the point together with the first partial derivatives in U and V in a single call.
 
-- **Parameters:** `u` — U parameter; `v` — V parameter.
+- **Parameters:** `u`, U parameter; `v`, V parameter.
 - **Returns:** Tuple of position, dS/dU, and dS/dV.
 - **OCCT:** `Geom_Surface::D1`.
 - **Example:**
@@ -423,7 +423,7 @@ public func d2(atU u: Double, v: Double) -> (
 
 Returns position, first partials, and second partials (including the mixed partial d²S/dUdV) in a single call.
 
-- **Parameters:** `u` — U parameter; `v` — V parameter.
+- **Parameters:** `u`, U parameter; `v`, V parameter.
 - **Returns:** Tuple of point, ∂S/∂U, ∂S/∂V, ∂²S/∂U², ∂²S/∂V², ∂²S/∂U∂V.
 - **OCCT:** `Geom_Surface::D2`.
 - **Example:**
@@ -441,10 +441,10 @@ Surface normal at (u, v).
 public func normal(atU u: Double, v: Double) -> SIMD3<Double>?
 ```
 
-- **Parameters:** `u` — U parameter; `v` — V parameter.
+- **Parameters:** `u`, U parameter; `v`, V parameter.
 - **Returns:** Unit normal vector, or `nil` at singular points where the tangent plane is degenerate.
 - **OCCT:** `GeomLProp_SLProps::Normal` (order 1, `Precision::Confusion()`), gated on `IsNormalDefined()`.
-- **See also:** [`normal(u:v:)`](#normaluv) — same computation and same degeneracy test, but returns the zero vector instead of `nil` where the normal is undefined (#401).
+- **See also:** [`normal(u:v:)`](#normaluv), same computation and same degeneracy test, but returns the zero vector instead of `nil` where the normal is undefined (#401).
 - **Example:**
   ```swift
   if let n = Surface.plane(origin: .zero, normal: SIMD3(0, 0, 1))!.normal(atU: 0, v: 0) {
@@ -466,9 +466,9 @@ public static func plane(origin: SIMD3<Double>, normal: SIMD3<Double>) -> Surfac
 
 The surface is infinite in both U and V. Trim it with `trimmed(u1:u2:v1:v2:)` or convert to a face with `toFace(uRange:vRange:)` before use in B-Rep operations.
 
-An unlabeled-positional spelling of [`planeFromPointNormal(point:normal:)`](Surface-Advanced.md) and delegates to it (#421) — the two cannot produce different planes for the same input.
+An unlabeled-positional spelling of [`planeFromPointNormal(point:normal:)`](Surface-Advanced.md) and delegates to it (#421), the two cannot produce different planes for the same input.
 
-- **Parameters:** `origin` — a point on the plane; `normal` — outward normal direction.
+- **Parameters:** `origin`, a point on the plane; `normal`, outward normal direction.
 - **Returns:** `Geom_Plane` surface, or `nil` if `normal` has zero (or near-zero) length.
 - **OCCT:** `GC_MakePlane(gp_Pnt, gp_Dir)`.
 - **Example:**
@@ -489,7 +489,7 @@ public static func cylinder(origin: SIMD3<Double>, axis: SIMD3<Double>,
 
 The cylinder is infinite along `axis`. U is the angular parameter (0 to 2π), V is the axial parameter.
 
-- **Parameters:** `origin` — base point on the axis; `axis` — axis direction; `radius` — cylinder radius (must be > 0).
+- **Parameters:** `origin`, base point on the axis; `axis`, axis direction; `radius`, cylinder radius (must be > 0).
 - **Returns:** `Geom_CylindricalSurface`, or `nil` on failure.
 - **OCCT:** `Geom_CylindricalSurface(gp_Ax3, radius)`.
 - **Example:**
@@ -510,7 +510,7 @@ public static func cone(origin: SIMD3<Double>, axis: SIMD3<Double>,
 
 The cone apex is located along `axis` from `origin`. `semiAngle` is in radians and must be in (0, π/2).
 
-- **Parameters:** `origin` — axis base point; `axis` — cone axis direction; `radius` — base radius; `semiAngle` — half-angle in radians.
+- **Parameters:** `origin`, axis base point; `axis`, cone axis direction; `radius`, base radius; `semiAngle`, half-angle in radians.
 - **Returns:** `Geom_ConicalSurface`, or `nil` on failure.
 - **OCCT:** `Geom_ConicalSurface(gp_Ax3, semiAngle, radius)`.
 - **Example:**
@@ -531,7 +531,7 @@ public static func sphere(center: SIMD3<Double>, radius: Double) -> Surface?
 
 U is the longitude parameter (0 to 2π), V is the latitude parameter (−π/2 to π/2). The surface is closed in U and has singular poles at V = ±π/2.
 
-- **Parameters:** `center` — sphere centre; `radius` — sphere radius (must be > 0).
+- **Parameters:** `center`, sphere centre; `radius`, sphere radius (must be > 0).
 - **Returns:** `Geom_SphericalSurface`, or `nil` on failure.
 - **OCCT:** `Geom_SphericalSurface(gp_Ax3, radius)`.
 - **Example:**
@@ -552,7 +552,7 @@ public static func torus(origin: SIMD3<Double>, axis: SIMD3<Double>,
 
 Both U and V are angular parameters (0 to 2π). The surface is closed and periodic in both directions.
 
-- **Parameters:** `origin` — torus centre; `axis` — torus symmetry axis; `majorRadius` — distance from centre to tube centre; `minorRadius` — tube radius. Both radii must be > 0 and `minorRadius < majorRadius`.
+- **Parameters:** `origin`, torus centre; `axis`, torus symmetry axis; `majorRadius`, distance from centre to tube centre; `minorRadius`, tube radius. Both radii must be > 0 and `minorRadius < majorRadius`.
 - **Returns:** `Geom_ToroidalSurface`, or `nil` on failure.
 - **OCCT:** `Geom_ToroidalSurface(gp_Ax3, majorRadius, minorRadius)`.
 - **Example:**
@@ -575,7 +575,7 @@ public static func extrusion(profile: Curve3D, direction: SIMD3<Double>) -> Surf
 
 Produces a `Geom_SurfaceOfLinearExtrusion`. The U parameter follows the profile curve; the V parameter measures distance along the extrusion direction. The surface is infinite in V.
 
-- **Parameters:** `profile` — the generator curve; `direction` — extrusion direction vector.
+- **Parameters:** `profile`, the generator curve; `direction`, extrusion direction vector.
 - **Returns:** Extrusion surface, or `nil` if `direction` is zero or construction fails.
 - **OCCT:** `Geom_SurfaceOfLinearExtrusion(profile, direction)`.
 - **Example:**
@@ -600,7 +600,7 @@ public static func revolution(meridian: Curve3D,
 
 The U parameter is the angle of revolution (0 to 2π); V follows the meridian curve parameter. Pass a `trimmed(u1:u2:v1:v2:)` result to limit the angular sweep.
 
-- **Parameters:** `meridian` — the profile curve to revolve; `axisOrigin` — origin of the revolution axis; `axisDirection` — direction of the revolution axis.
+- **Parameters:** `meridian`, the profile curve to revolve; `axisOrigin`, origin of the revolution axis; `axisDirection`, direction of the revolution axis.
 - **Returns:** `Geom_SurfaceOfRevolution`, or `nil` on failure.
 - **OCCT:** `Geom_SurfaceOfRevolution(meridian, gp_Ax1)`.
 - **Example:**
@@ -629,8 +629,8 @@ public static func bezier(poles: [[SIMD3<Double>]],
 `poles` is a 2D array indexed `[uRow][vCol]`, both dimensions must be ≥ 2. The surface degree in U is `poles.count − 1` and in V is `poles[0].count − 1`. When `weights` is `nil` the surface is non-rational.
 
 - **Parameters:**
-  - `poles` — 2D grid of control points (minimum 2×2).
-  - `weights` — optional 2D grid of per-pole weights (same dimensions as `poles`); `nil` = uniform 1.0.
+  - `poles`: 2D grid of control points (minimum 2×2).
+  - `weights`: optional 2D grid of per-pole weights (same dimensions as `poles`); `nil` = uniform 1.0.
 - **Returns:** `Geom_BezierSurface`, or `nil` if dimensions are invalid or construction fails.
 - **OCCT:** `Geom_BezierSurface(TColgp_Array2OfPnt)` or the weighted overload.
 - **Example:**
@@ -661,16 +661,16 @@ public static func bspline(poles: [[SIMD3<Double>]],
 `poles` is indexed `[uRow][vCol]`. Knot vectors and multiplicities must satisfy standard BSpline constraints (sum of multiplicities = number of poles + degree + 1 in each direction). When `weights` is `nil` the surface is non-rational.
 
 - **Parameters:**
-  - `poles` — 2D control point grid (minimum 2×2).
-  - `weights` — optional 2D weight grid; `nil` = non-rational.
-  - `knotsU`, `knotsV` — distinct knot values in U and V.
-  - `multiplicitiesU`, `multiplicitiesV` — per-knot multiplicities.
-  - `degreeU`, `degreeV` — polynomial degrees in U and V (≥ 1).
+  - `poles`: 2D control point grid (minimum 2×2).
+  - `weights`: optional 2D weight grid; `nil` = non-rational.
+  - `knotsU`, `knotsV`, distinct knot values in U and V.
+  - `multiplicitiesU`, `multiplicitiesV`, per-knot multiplicities.
+  - `degreeU`, `degreeV`, polynomial degrees in U and V (≥ 1).
 - **Returns:** `Geom_BSplineSurface`, or `nil` if parameters are invalid.
 - **OCCT:** `Geom_BSplineSurface(poles, knotsU, knotsV, multsU, multsV, degU, degV)`.
 - **Example:**
   ```swift
-  // Bilinear (degree 1×1) BSpline — a flat quad patch
+  // Bilinear (degree 1×1) BSpline, a flat quad patch
   let poles: [[SIMD3<Double>]] = [
       [SIMD3(0, 0, 0), SIMD3(0, 10, 0)],
       [SIMD3(10, 0, 0), SIMD3(10, 10, 2)]
@@ -697,7 +697,7 @@ public func trimmed(u1: Double, u2: Double, v1: Double, v2: Double) -> Surface?
 
 The trim bounds must be within the surface `domain`. Use this to bound infinite analytic surfaces (planes, cylinders) before face creation.
 
-- **Parameters:** `u1`, `u2` — U parameter bounds; `v1`, `v2` — V parameter bounds.
+- **Parameters:** `u1`, `u2`, U parameter bounds; `v1`, `v2`, V parameter bounds.
 - **Returns:** `Geom_RectangularTrimmedSurface`, or `nil` on failure.
 - **OCCT:** `Geom_RectangularTrimmedSurface(surface, u1, u2, v1, v2)`.
 - **Example:**
@@ -718,7 +718,7 @@ public func offset(distance: Double) -> Surface?
 
 Positive distance offsets in the direction of the surface normal. Complex surfaces may produce self-intersections; use `ShapeHealing` tools to fix them before B-Rep operations.
 
-- **Parameters:** `distance` — offset distance in model units.
+- **Parameters:** `distance`, offset distance in model units.
 - **Returns:** `Geom_OffsetSurface`, or `nil` on failure.
 - **OCCT:** `Geom_OffsetSurface(surface, distance)`.
 - **Example:**
@@ -737,7 +737,7 @@ Returns a translated copy of this surface.
 public func translated(by delta: SIMD3<Double>) -> Surface?
 ```
 
-- **Parameters:** `delta` — translation vector.
+- **Parameters:** `delta`, translation vector.
 - **Returns:** New surface shifted by `delta`, or `nil` on failure.
 - **OCCT:** `Geom_Surface::Translated(gp_Vec)`.
 - **Example:**
@@ -756,7 +756,7 @@ public func rotated(axisOrigin: SIMD3<Double>, axisDirection: SIMD3<Double>,
                      angle: Double) -> Surface?
 ```
 
-- **Parameters:** `axisOrigin` — a point on the rotation axis; `axisDirection` — axis direction; `angle` — angle in radians.
+- **Parameters:** `axisOrigin`, a point on the rotation axis; `axisDirection`, axis direction; `angle`, angle in radians.
 - **Returns:** Rotated surface copy, or `nil` on failure.
 - **OCCT:** `Geom_Surface::Rotated(gp_Ax1, angle)`.
 - **Example:**
@@ -774,7 +774,7 @@ Returns a scaled copy of this surface.
 public func scaled(center: SIMD3<Double>, factor: Double) -> Surface?
 ```
 
-- **Parameters:** `center` — scaling centre point; `factor` — scale factor (negative mirrors through centre).
+- **Parameters:** `center`, scaling centre point; `factor`, scale factor (negative mirrors through centre).
 - **Returns:** Scaled surface copy, or `nil` on failure.
 - **OCCT:** `Geom_Surface::Scaled(gp_Pnt, factor)`.
 - **Example:**
@@ -792,7 +792,7 @@ Returns a mirrored copy of this surface across a plane.
 public func mirrored(planeOrigin: SIMD3<Double>, planeNormal: SIMD3<Double>) -> Surface?
 ```
 
-- **Parameters:** `planeOrigin` — a point on the mirror plane; `planeNormal` — plane normal direction.
+- **Parameters:** `planeOrigin`, a point on the mirror plane; `planeNormal`, plane normal direction.
 - **Returns:** Mirrored surface copy, or `nil` on failure.
 - **OCCT:** `Geom_Surface::Mirrored(gp_Ax2)`.
 - **Example:**
@@ -810,7 +810,7 @@ Returns a mirrored copy of this surface across a point.
 public func mirrored(acrossPoint point: SIMD3<Double>) -> Surface?
 ```
 
-- **Parameters:** `point` — the mirror point.
+- **Parameters:** `point`, the mirror point.
 - **Returns:** Mirrored surface copy, or `nil` on failure.
 - **OCCT:** `Geom_Surface::Mirrored(gp_Pnt)`.
 - **Example:**
@@ -829,7 +829,7 @@ Returns a mirrored copy of this surface across an axis (line).
 public func mirrored(acrossAxis point: SIMD3<Double>, direction: SIMD3<Double>) -> Surface?
 ```
 
-- **Parameters:** `point` — a point on the mirror axis; `direction` — axis direction.
+- **Parameters:** `point`, a point on the mirror axis; `direction`, axis direction.
 - **Returns:** Mirrored surface copy, or `nil` on failure.
 - **OCCT:** `Geom_Surface::Mirrored(gp_Ax1)`.
 - **Example:**
@@ -854,7 +854,7 @@ Uses OCCT's exact conversion where one exists, and approximates where it does no
 
 - **Returns:** BSpline surface, or `nil` if conversion fails (e.g. surface is already a non-convertible type).
 - **OCCT:** `GeomConvert::SurfaceToBSplineSurface`.
-- **Note:** Infinite surfaces (planes, full cylinders) will cause conversion to fail — trim the domain first with `trimmed(u1:u2:v1:v2:)`.
+- **Note:** Infinite surfaces (planes, full cylinders) will cause conversion to fail, trim the domain first with `trimmed(u1:u2:v1:v2:)`.
 - **Note:** **This is not an exactness guarantee, and it takes no tolerance.** Analytic families
   (plane, cylinder, cone, sphere, torus, surface of revolution) plus Bezier and BSpline surfaces
   convert exactly. Everything else, including an offset surface with no analytic equivalent, is
@@ -886,15 +886,15 @@ public func approximated(tolerance: Double = 1e-3, continuity: Int = 2,
 Useful when exact `toBSpline()` conversion is unavailable (e.g. offset or composite surfaces).
 
 - **Parameters:**
-  - `tolerance` — maximum approximation deviation.
-  - `continuity` — desired continuity order, applied to **both** parametric directions, a
+  - `tolerance`: maximum approximation deviation.
+  - `continuity`: desired continuity order, applied to **both** parametric directions, a
     `ParametricContinuity` raw value (0=C0, 1=C1, 2=C2). C2 is the ceiling: `AdvApprox` throws for
     C3 and above, which surfaces as `nil`.
-  - `maxSegments` — maximum number of BSpline segments.
-  - `maxDegree` — maximum polynomial degree.
+  - `maxSegments`: maximum number of BSpline segments.
+  - `maxDegree`: maximum polynomial degree.
 - **Returns:** Approximated BSpline surface, or `nil` when OCCT produced no fit at all.
 - **OCCT:** `GeomConvert_ApproxSurface`, gated on `HasResult()`, with `PrecisCode = 0`.
-- **Note:** Defaults match `Curve3D.approximated`/`Curve2D.approximated` (#406) — all three wrap
+- **Note:** Defaults match `Curve3D.approximated`/`Curve2D.approximated` (#406), all three wrap
   the same `GeomConvert_Approx*`/`Geom2dConvert_ApproxCurve` family applied to a different OCCT
   geometry hierarchy, not independent algorithms whose numeric defaults should diverge. (Before
   #406 this defaulted to `tolerance: 0.01, maxDegree: 10`, a 10x looser tolerance with no
@@ -902,7 +902,7 @@ Useful when exact `toBSpline()` conversion is unavailable (e.g. offset or compos
   with no meaningful cost difference.)
 - **Note:** A non-`nil` result is **not** a promise that `tolerance` was met. This gates on OCCT's
   `HasResult()`, documented as true for a fit that is "not NECESSARILY within the required
-  tolerance" — on a surface `maxDegree` cannot fit (a torus at `1e-9`) OCCT returns a usable best
+  tolerance", on a surface `maxDegree` cannot fit (a torus at `1e-9`) OCCT returns a usable best
   effort anyway. [`approxWithDetails`](#approxwithdetailstoleranceucontinuityvcontinuitymaxdegreemaxsegments)
   runs the identical approximation and reports the actual `maxError`.
 - **Example:**
@@ -926,17 +926,17 @@ public func approxWithDetails(tolerance: Double, uContinuity: ParametricContinui
 ```
 
 One shared `GeomConvert_ApproxSurface` run backs both entry points (#491), so for identical
-arguments they return the same surface — this one just also carries the diagnostics OCCT already
+arguments they return the same surface, this one just also carries the diagnostics OCCT already
 computed. Note `maxDegree` precedes `maxSegments` here, the reverse of `approximated`'s order.
 
 - **Returns:** `ApproxSurfaceResult(surface:maxError:isDone:hasResult:)`. `surface` is populated
   exactly when `hasResult`; `isDone` is whether the fit reached `tolerance`; `maxError` is the
   greatest distance between the source surface and the fit.
-- **OCCT:** `GeomConvert_ApproxSurface` — `Surface()`, `MaxError()`, `IsDone()`, `HasResult()`.
+- **OCCT:** `GeomConvert_ApproxSurface`, `Surface()`, `MaxError()`, `IsDone()`, `HasResult()`.
 - **Note:** Before #491 the continuity defaults here were C1, and this entry point passed
   `PrecisCode = 1` to `GeomConvert_ApproxSurface` where `approximated` passed `0`, so the two
   returned measurably different surfaces for the same request. Both now default to C2 and pass `0`.
-- **Note:** `maxError` is not trustworthy for a `.c0` request — see
+- **Note:** `maxError` is not trustworthy for a `.c0` request, see
   [#522](https://github.com/SecondMouseAU/OCCTSwift/issues/522), an upstream defect where a C0 fit
   can collapse a direction to degree 1 and still report an error five orders of magnitude too small.
 - **Example:**
@@ -960,7 +960,7 @@ Extracts a U-iso curve (constant U, varying V).
 public func uIso(at u: Double) -> Curve3D?
 ```
 
-- **Parameters:** `u` — the fixed U parameter value.
+- **Parameters:** `u`, the fixed U parameter value.
 - **Returns:** A `Curve3D` at the given U value, or `nil` on failure.
 - **OCCT:** `Geom_Surface::UIso(u)`.
 - **Example:**
@@ -979,7 +979,7 @@ Extracts a V-iso curve (constant V, varying U).
 public func vIso(at v: Double) -> Curve3D?
 ```
 
-- **Parameters:** `v` — the fixed V parameter value.
+- **Parameters:** `v`, the fixed V parameter value.
 - **Returns:** A `Curve3D` at the given V value, or `nil` on failure.
 - **OCCT:** `Geom_Surface::VIso(v)`.
 - **Example:**
@@ -1002,7 +1002,7 @@ public static func pipe(path: Curve3D, radius: Double) -> Surface?
 
 The cross-section is a circle of the given radius. Orientation is determined by the Frenet frame of the path.
 
-- **Parameters:** `path` — sweep path curve; `radius` — pipe radius (must be > 0).
+- **Parameters:** `path`, sweep path curve; `radius`, pipe radius (must be > 0).
 - **Returns:** Pipe surface, or `nil` if construction fails (e.g. path is too tightly curved for the radius).
 - **OCCT:** `GeomFill_Pipe(path, radius)::Perform`.
 - **Example:**
@@ -1025,7 +1025,7 @@ public static func pipe(path: Curve3D, section: Curve3D) -> Surface?
 
 The section curve defines the cross-sectional shape at each point along `path`.
 
-- **Parameters:** `path` — sweep path curve; `section` — cross-section curve.
+- **Parameters:** `path`, sweep path curve; `section`, cross-section curve.
 - **Returns:** Pipe surface, or `nil` on failure.
 - **OCCT:** `GeomFill_Pipe(path, section)::Perform`.
 - **Example:**
@@ -1053,7 +1053,7 @@ public func drawGrid(uLineCount: Int = 10, vLineCount: Int = 10,
 
 Samples `uLineCount` U-iso lines and `vLineCount` V-iso lines, each discretised to `pointsPerLine` 3D points. Infinite surfaces are clamped to ±100 before sampling.
 
-- **Parameters:** `uLineCount` — number of U iso-lines, at least 0; `vLineCount` — number of V iso-lines, at least 0; `pointsPerLine` — points per iso-line, at least 1.
+- **Parameters:** `uLineCount`, number of U iso-lines, at least 0; `vLineCount`, number of V iso-lines, at least 0; `pointsPerLine`, points per iso-line, at least 1.
 - **Returns:** Array of polylines (one per iso-line), empty if the surface is null or the grid cannot be served. The bound is on the total: `(uLineCount + vLineCount) * pointsPerLine` must not exceed `Sampling.maximumSampleCount` (10,000,000), and each factor is checked on its own, since a negative line count used to abort the process unless the other count happened to outweigh it (#558).
 - **OCCT:** `Geom_Surface::Bounds` + `Geom_Surface::D0` via `OCCTSurfaceDrawGrid`.
 - **Example:**
@@ -1068,7 +1068,7 @@ Samples `uLineCount` U-iso lines and `vLineCount` V-iso lines, each discretised 
 
 A 2D grid of points sampled over a surface's UV parameter space, returned by `drawMesh(uCount:vCount:)`
 and `evaluateGrid(uParameters:vParameters:)` (see [Surface-Analysis.md](Surface-Analysis.md)). Both
-methods share this one type specifically so indexing is unambiguous — access is always
+methods share this one type specifically so indexing is unambiguous, access is always
 `.at(u:v:)`, regardless of how each method lays out its own bridge buffer internally. Before
 [#404](https://github.com/SecondMouseAU/OCCTSwift/issues/404), the two returned raw
 `[[SIMD3<Double>]]` with opposite nesting order (`[uIndex][vIndex]` vs `[vIndex][uIndex]`) and
@@ -1158,10 +1158,10 @@ Samples a uniform grid of points over the surface's parametric bounds.
 public func drawMesh(uCount: Int = 20, vCount: Int = 20) -> SurfaceGrid
 ```
 
-- **Parameters:** `uCount` — number of U sample points, at least 1; `vCount` — number of V sample points, at least 1.
-- **Returns:** A `SurfaceGrid` indexed `.at(u:v:)`, or an empty grid if sampling fails or the grid cannot be served. The bound is on the **product**: `uCount * vCount` must not exceed `Sampling.maximumSampleCount` (10,000,000). Each factor is also checked on its own, which is not redundant — two negative counts multiply to a plausible positive total, so `drawMesh(uCount: -1, vCount: -1)` used to look well-behaved while `drawMesh(uCount: -1, vCount: 3)` aborted the process (#558).
-- **Sampled range:** the surface's parametric domain with infinite bounds clamped to ±100. For a bounded surface that is `domain`; for an unbounded one it is not, and the difference is extreme rather than marginal — a plane's `domain.uMin` is about -2e100 while its first sample sits at -100.
-- **One sample in a direction is a request, not a degenerate case.** Despite the name nothing here triangulates, so `uCount: 1` is the single iso-row at the low end of the sampled U range and a 1×1 grid is one point. The bridge used to demand 2 per direction — its own interpolation divisor, not an OCCT rule — so a request this page called in-range came back as an empty grid indistinguishable from a failed sample (#620). Counts below 1 are still rejected, and rejection is still an empty grid.
+- **Parameters:** `uCount`, number of U sample points, at least 1; `vCount`, number of V sample points, at least 1.
+- **Returns:** A `SurfaceGrid` indexed `.at(u:v:)`, or an empty grid if sampling fails or the grid cannot be served. The bound is on the **product**: `uCount * vCount` must not exceed `Sampling.maximumSampleCount` (10,000,000). Each factor is also checked on its own, which is not redundant, two negative counts multiply to a plausible positive total, so `drawMesh(uCount: -1, vCount: -1)` used to look well-behaved while `drawMesh(uCount: -1, vCount: 3)` aborted the process (#558).
+- **Sampled range:** the surface's parametric domain with infinite bounds clamped to ±100. For a bounded surface that is `domain`; for an unbounded one it is not, and the difference is extreme rather than marginal, a plane's `domain.uMin` is about -2e100 while its first sample sits at -100.
+- **One sample in a direction is a request, not a degenerate case.** Despite the name nothing here triangulates, so `uCount: 1` is the single iso-row at the low end of the sampled U range and a 1×1 grid is one point. The bridge used to demand 2 per direction, its own interpolation divisor, not an OCCT rule, so a request this page called in-range came back as an empty grid indistinguishable from a failed sample (#620). Counts below 1 are still rejected, and rejection is still an empty grid.
 - **OCCT:** `Geom_Surface::D0` sampled on a uniform UV grid.
 - **Example:**
   ```swift
@@ -1218,7 +1218,7 @@ Translates the surface in place.
 public func translate(dx: Double, dy: Double, dz: Double) -> Bool
 ```
 
-- **Parameters:** `dx`, `dy`, `dz` — translation components.
+- **Parameters:** `dx`, `dy`, `dz`, translation components.
 - **Returns:** `true` if successful.
 - **OCCT:** `Geom_Surface::Translate(gp_Vec)` applied in-place via `OCCTSurfaceTransform`.
 
@@ -1233,7 +1233,7 @@ Rotates the surface in place around an axis.
 public func rotate(axisOrigin: SIMD3<Double>, axisDirection: SIMD3<Double>, angle: Double) -> Bool
 ```
 
-- **Parameters:** `axisOrigin` — point on the rotation axis; `axisDirection` — axis direction; `angle` — angle in radians.
+- **Parameters:** `axisOrigin`, point on the rotation axis; `axisDirection`, axis direction; `angle`, angle in radians.
 - **Returns:** `true` if successful.
 - **OCCT:** `Geom_Surface::Rotate(gp_Ax1, angle)` in-place.
 
@@ -1248,7 +1248,7 @@ Scales the surface in place from a centre point.
 public func scale(center: SIMD3<Double>, factor: Double) -> Bool
 ```
 
-- **Parameters:** `center` — scaling origin; `factor` — scale factor.
+- **Parameters:** `center`, scaling origin; `factor`, scale factor.
 - **Returns:** `true` if successful.
 - **OCCT:** `Geom_Surface::Scale(gp_Pnt, factor)` in-place.
 
@@ -1263,7 +1263,7 @@ Mirrors the surface in place through a point.
 public func mirrorPoint(_ point: SIMD3<Double>) -> Bool
 ```
 
-- **Parameters:** `point` — the mirror centre.
+- **Parameters:** `point`, the mirror centre.
 - **Returns:** `true` if successful.
 - **OCCT:** `Geom_Surface::Mirror(gp_Pnt)` in-place.
 
@@ -1278,7 +1278,7 @@ Mirrors the surface in place through an axis.
 public func mirrorAxis(origin: SIMD3<Double>, direction: SIMD3<Double>) -> Bool
 ```
 
-- **Parameters:** `origin` — a point on the mirror axis; `direction` — axis direction.
+- **Parameters:** `origin`, a point on the mirror axis; `direction`, axis direction.
 - **Returns:** `true` if successful.
 - **OCCT:** `Geom_Surface::Mirror(gp_Ax1)` in-place.
 
@@ -1293,7 +1293,7 @@ Mirrors the surface in place through a plane.
 public func mirrorPlane(origin: SIMD3<Double>, normal: SIMD3<Double>) -> Bool
 ```
 
-- **Parameters:** `origin` — a point on the mirror plane; `normal` — plane normal direction.
+- **Parameters:** `origin`, a point on the mirror plane; `normal`, plane normal direction.
 - **Returns:** `true` if successful.
 - **OCCT:** `Geom_Surface::Mirror(gp_Ax2)` in-place.
 
@@ -1315,9 +1315,9 @@ public static func ellipsoid(a: Double, b: Double, c: Double) -> Surface?
 
 Parametrisation: `P(u,v) = a·cos(v)·cos(u)·X + b·cos(v)·sin(u)·Y + c·sin(v)·Z`.
 
-- **Parameters:** `a` — semi-axis along X (> 0); `b` — semi-axis along Y (> 0); `c` — semi-axis along Z (> 0).
+- **Parameters:** `a`, semi-axis along X (> 0); `b`, semi-axis along Y (> 0); `c`, semi-axis along Z (> 0).
 - **Returns:** Ellipsoid surface, or `nil` if any semi-axis ≤ 0.
-- **OCCT:** `OCCTGeomEvalEllipsoidCreate` — custom `Geom_Surface` evaluator.
+- **OCCT:** `OCCTGeomEvalEllipsoidCreate`, custom `Geom_Surface` evaluator.
 - **Example:**
   ```swift
   let ellipsoid = Surface.ellipsoid(a: 10, b: 6, c: 4)
@@ -1333,7 +1333,7 @@ Creates a hyperboloid of revolution surface.
 public static func hyperboloid(r1: Double, r2: Double, twoSheets: Bool = false) -> Surface?
 ```
 
-- **Parameters:** `r1` — first semi-axis radius (> 0); `r2` — second semi-axis radius (> 0); `twoSheets` — if `true`, creates a two-sheet hyperboloid.
+- **Parameters:** `r1`, first semi-axis radius (> 0); `r2`, second semi-axis radius (> 0); `twoSheets`, if `true`, creates a two-sheet hyperboloid.
 - **Returns:** Hyperboloid surface, or `nil` on failure.
 - **OCCT:** `OCCTGeomEvalHyperboloidCreate`.
 
@@ -1347,7 +1347,7 @@ Creates a circular paraboloid of revolution surface.
 public static func paraboloid(focal: Double) -> Surface?
 ```
 
-- **Parameters:** `focal` — focal distance (must be > 0).
+- **Parameters:** `focal`, focal distance (must be > 0).
 - **Returns:** Paraboloid surface, or `nil` if `focal ≤ 0`.
 - **OCCT:** `OCCTGeomEvalParaboloidCreate`.
 - **Example:**
@@ -1367,7 +1367,7 @@ public static func circularHelicoid(pitch: Double) -> Surface?
 
 Parametrisation: `S(u,v) = v·cos(u)·X + v·sin(u)·Y + (P·u / 2π)·Z`.
 
-- **Parameters:** `pitch` — axial advance per 2π turn (must be ≠ 0).
+- **Parameters:** `pitch`, axial advance per 2π turn (must be ≠ 0).
 - **Returns:** Helicoid surface, or `nil` on failure.
 - **OCCT:** `OCCTGeomEvalCircularHelicoidCreate`.
 - **Example:**
@@ -1387,7 +1387,7 @@ public static func hyperbolicParaboloid(a: Double, b: Double) -> Surface?
 
 Parametrisation: `P(u,v) = u·X + v·Y + (u²/a² − v²/b²)·Z`.
 
-- **Parameters:** `a` — first semi-axis length (> 0); `b` — second semi-axis length (> 0).
+- **Parameters:** `a`, first semi-axis length (> 0); `b`, second semi-axis length (> 0).
 - **Returns:** Saddle surface, or `nil` on failure.
 - **OCCT:** `OCCTGeomEvalHypParaboloidCreate`.
 
@@ -1403,7 +1403,7 @@ public static func gordon(profiles: [Curve3D], guides: [Curve3D], tolerance: Dou
 
 Requires at least 2 profile curves (V-direction) and 2 guide curves (U-direction) that form a complete grid: every profile must intersect every guide within `tolerance`.
 
-- **Parameters:** `profiles` — profile curves (V-direction, ≥ 2); `guides` — guide curves (U-direction, ≥ 2); `tolerance` — geometric tolerance for intersection detection.
+- **Parameters:** `profiles`, profile curves (V-direction, ≥ 2); `guides`, guide curves (U-direction, ≥ 2); `tolerance`, geometric tolerance for intersection detection.
 - **Returns:** Gordon BSpline surface, or `nil` if construction fails.
 - **OCCT:** `OCCTGeomFillGordon` / `GeomFill_Gordon`.
 - **Note:** Use `gordonReport(profiles:guides:tolerance:allowApproximateFallback:)` to get detailed failure diagnostics.
@@ -1493,7 +1493,7 @@ public static func gordonReport(profiles: [Curve3D], guides: [Curve3D],
                                  allowApproximateFallback: Bool = false) -> GordonResult
 ```
 
-- **Parameters:** `profiles` — profile curves (≥ 2); `guides` — guide curves (≥ 2); `tolerance` — intersection tolerance; `allowApproximateFallback` — permit sampled B-spline fallback when exact construction fails.
+- **Parameters:** `profiles`, profile curves (≥ 2); `guides`, guide curves (≥ 2); `tolerance`, intersection tolerance; `allowApproximateFallback`, permit sampled B-spline fallback when exact construction fails.
 - **Returns:** `GordonResult` with the surface (or `nil`), status code, and approximate flag.
 - **OCCT:** `OCCTGeomFillGordonReport`.
 
@@ -1556,7 +1556,7 @@ profile/guide/reference skins to one knot basis (#689). This is a lower-level al
 derive rational contact weights (every contact point is weighted 1.0), so a network `gordon` can
 complete can still decline here.
 
-- **Parameters:** `profiles` — profile curves in U, at least 2; `guides` — guide curves in V, at least 2; `tolerance` — geometric tolerance for closed-seam checks.
+- **Parameters:** `profiles`, profile curves in U, at least 2; `guides`, guide curves in V, at least 2; `tolerance`, geometric tolerance for closed-seam checks.
 - **Returns:** Tuple of the surface (or `nil`) and a status code.
 - **OCCT:** `OCCTGeomFillNetworkSurface` / `GeomFill_NetworkSurface`.
 
@@ -1612,11 +1612,11 @@ public static func tBezier(poles: [SIMD3<Double>], uCount: Int, vCount: Int,
 A tensor-product surface using trigonometric Bernstein-like bases in both U and V. Parameter domain is U ∈ `[0, π/alphaU]`, V ∈ `[0, π/alphaV]`.
 
 - **Parameters:**
-  - `poles` — control points in row-major order (must have exactly `uCount * vCount` elements).
-  - `uCount` — number of poles in U (must be odd, ≥ 3).
-  - `vCount` — number of poles in V (must be odd, ≥ 3).
-  - `alphaU` — frequency parameter in U (> 0).
-  - `alphaV` — frequency parameter in V (> 0).
+  - `poles`: control points in row-major order (must have exactly `uCount * vCount` elements).
+  - `uCount`: number of poles in U (must be odd, ≥ 3).
+  - `vCount`: number of poles in V (must be odd, ≥ 3).
+  - `alphaU`: frequency parameter in U (> 0).
+  - `alphaV`: frequency parameter in V (> 0).
 - **Returns:** TBezier surface, or `nil` if counts are invalid or even.
 - **OCCT:** `OCCTGeomEvalTBezierSurfaceCreate`.
 - **Example:**
@@ -1642,11 +1642,11 @@ public static func ahtBezier(poles: [SIMD3<Double>], uCount: Int, vCount: Int,
 A tensor-product surface using mixed AHT bases in both U and V. Parameter domain is U, V ∈ `[0, 1]`. Combines algebraic (polynomial), hyperbolic, and trigonometric basis functions.
 
 - **Parameters:**
-  - `poles` — control points in row-major order (`uCount * vCount` elements).
-  - `uCount`, `vCount` — grid dimensions (≥ 1).
-  - `algDegreeU`, `algDegreeV` — algebraic degree in U and V (≥ 0).
-  - `alphaU`, `alphaV` — hyperbolic frequency in U and V (≥ 0).
-  - `betaU`, `betaV` — trigonometric frequency in U and V (≥ 0).
+  - `poles`: control points in row-major order (`uCount * vCount` elements).
+  - `uCount`, `vCount`, grid dimensions (≥ 1).
+  - `algDegreeU`, `algDegreeV`, algebraic degree in U and V (≥ 0).
+  - `alphaU`, `alphaV`, hyperbolic frequency in U and V (≥ 0).
+  - `betaU`, `betaV`, trigonometric frequency in U and V (≥ 0).
 - **Returns:** AHT Bezier surface, or `nil` on invalid parameters.
 - **OCCT:** `OCCTGeomEvalAHTBezierSurfaceCreate`.
 
@@ -1667,13 +1667,13 @@ public static func fromPointGrid(points: [SIMD3<Double>], uCount: Int, vCount: I
 Points must be in row-major order: `point[v * uCount + u]`. Uses `GeomAPI_PointsToBSplineSurface` for the fit.
 
 - **Parameters:**
-  - `points` — flat array of 3D points in row-major order (must have exactly `uCount * vCount` elements).
-  - `uCount` — number of points in U direction.
-  - `vCount` — number of points in V direction.
-  - `degMin` — minimum BSpline degree (default 3).
-  - `degMax` — maximum BSpline degree (default 8).
-  - `continuity` — desired continuity, a `ParametricContinuity` raw value (0=C0, 1=C1, 2=C2, 3=C3; default 2). Unlike `approximated(...)`, the point fitter accepts the whole range without failing.
-  - `tolerance` — approximation tolerance.
+  - `points`: flat array of 3D points in row-major order (must have exactly `uCount * vCount` elements).
+  - `uCount`: number of points in U direction.
+  - `vCount`: number of points in V direction.
+  - `degMin`: minimum BSpline degree (default 3).
+  - `degMax`: maximum BSpline degree (default 8).
+  - `continuity`: desired continuity, a `ParametricContinuity` raw value (0=C0, 1=C1, 2=C2, 3=C3; default 2). Unlike `approximated(...)`, the point fitter accepts the whole range without failing.
+  - `tolerance`: approximation tolerance.
 - **Returns:** Fitted BSpline surface, or `nil` if `points.count ≠ uCount * vCount` or fitting fails.
 - **OCCT:** `GeomAPI_PointsToBSplineSurface`.
 - **Example:**
@@ -1700,11 +1700,11 @@ public func normal(u: Double, v: Double) -> SIMD3<Double>
 
 Always returns a vector; where the normal is undefined the result is the zero vector. Prefer the optional-returning `normal(atU:v:)` (from the Evaluation section) when you need to tell "undefined" apart from a genuine result.
 
-Both entry points evaluate the same `GeomLProp_SLProps` normal and gate on the same `IsNormalDefined()` test, so they always agree on *where* the normal exists — they differ only in how the absence is reported (`nil` vs. the zero vector). Before #401 this method hand-rolled `Geom_Surface::D1` plus a cross product against a literal `1e-15` magnitude epsilon, which classified degeneracy differently: arbitrarily close to a cone apex it returned a spurious zero vector for a normal OCCT resolves perfectly well.
+Both entry points evaluate the same `GeomLProp_SLProps` normal and gate on the same `IsNormalDefined()` test, so they always agree on *where* the normal exists, they differ only in how the absence is reported (`nil` vs. the zero vector). Before #401 this method hand-rolled `Geom_Surface::D1` plus a cross product against a literal `1e-15` magnitude epsilon, which classified degeneracy differently: arbitrarily close to a cone apex it returned a spurious zero vector for a normal OCCT resolves perfectly well.
 
-A cone apex is a genuine singularity for this test; a sphere pole (`v = ±π/2`) is not — OCCT still resolves the tangent plane there.
+A cone apex is a genuine singularity for this test; a sphere pole (`v = ±π/2`) is not. OCCT still resolves the tangent plane there.
 
-- **Parameters:** `u` — U parameter; `v` — V parameter.
+- **Parameters:** `u`, U parameter; `v`, V parameter.
 - **Returns:** Unit surface normal at (u, v), or `SIMD3(0, 0, 0)` where the normal is undefined.
 - **OCCT:** `GeomLProp_SLProps::Normal` (via the shared `OCCTSurfaceGetNormal` bridge path).
 - **Example:**
@@ -1724,10 +1724,10 @@ Computes Gaussian and mean curvature at (u, v).
 public func curvatures(u: Double, v: Double) -> (gaussian: Double, mean: Double)?
 ```
 
-Equivalent to calling `gaussianCurvature(atU:v:)` and `meanCurvature(atU:v:)` at the same point, for one `GeomLProp_SLProps` evaluation instead of two. All three share that single construction — and therefore its resolution argument, `Precision::Confusion()`, which is what `IsCurvatureDefined()` tests tangent vectors against for nullity. Before #405 this method built its own `GeomLProp_SLProps` with a hardcoded `1e-6`, ten times looser, and could report `(0, 0)` at a point where its two siblings returned a real curvature.
+Equivalent to calling `gaussianCurvature(atU:v:)` and `meanCurvature(atU:v:)` at the same point, for one `GeomLProp_SLProps` evaluation instead of two. All three share that single construction, and therefore its resolution argument, `Precision::Confusion()`, which is what `IsCurvatureDefined()` tests tangent vectors against for nullity. Before #405 this method built its own `GeomLProp_SLProps` with a hardcoded `1e-6`, ten times looser, and could report `(0, 0)` at a point where its two siblings returned a real curvature.
 
-- **Parameters:** `u` — U parameter; `v` — V parameter.
-- **Returns:** Tuple of Gaussian curvature (K = k_min × k_max) and mean curvature (H = (k_min + k_max) / 2), or `nil` where curvature is undefined. It returned `(0, 0)` there until #595 — which is also a plane's real answer, so the agreement on definedness this method's own contract claims was not one it could express.
+- **Parameters:** `u`, U parameter; `v`, V parameter.
+- **Returns:** Tuple of Gaussian curvature (K = k_min × k_max) and mean curvature (H = (k_min + k_max) / 2), or `nil` where curvature is undefined. It returned `(0, 0)` there until #595, which is also a plane's real answer, so the agreement on definedness this method's own contract claims was not one it could express.
 - **OCCT:** `GeomLProp_SLProps::GaussianCurvature` and `MeanCurvature` (order 2, `Precision::Confusion()`).
 - **Example:**
   ```swift
@@ -1735,5 +1735,5 @@ Equivalent to calling `gaussianCurvature(atU:v:)` and `meanCurvature(atU:v:)` at
   if let (K, H) = sphere.curvatures(u: 0, v: 0) {
       // K ≈ 0.04 (= 1/25), H ≈ 0.2 (= 1/5)
   }
-  sphere.curvatures(u: 0, v: .pi / 2)   // nil — the pole has no curvature
+  sphere.curvatures(u: 0, v: .pi / 2)   // nil, the pole has no curvature
   ```

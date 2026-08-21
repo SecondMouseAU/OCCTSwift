@@ -39,7 +39,7 @@ struct Issue490ContinuityDecoderTests {
         let cyl = try #require(Shape.cylinder(radius: 5, height: 10))
 
         // ShapeCustom::BSplineRestriction is itself a ShapeCustom_BSplineRestriction driven
-        // through BRepTools_Modifier — exactly what the advanced entry point builds by hand — so
+        // through BRepTools_Modifier, exactly what the advanced entry point builds by hand, so
         // matching arguments must produce identical geometry.
         let plain = cyl.bsplineRestriction(tol3d: 0.01, tol2d: 0.01,
                                            maxDegree: 6, maxSegments: 20,
@@ -56,7 +56,7 @@ struct Issue490ContinuityDecoderTests {
         let plainVolume = try #require(plain?.volume)
         let advancedVolume = try #require(advanced?.volume)
         // Before #490 the advanced entry point read this same integer as a GeomAbs_Shape ordinal,
-        // so .c1 (1) asked for G1 and .c2 (2) asked for C1 — a different result, or none at all.
+        // so .c1 (1) asked for G1 and .c2 (2) asked for C1, a different result, or none at all.
         #expect(abs(plainVolume - advancedVolume) < 1e-9)
     }
 
@@ -66,7 +66,7 @@ struct Issue490ContinuityDecoderTests {
 
         // Measured against the pinned kernel: ShapeCustom_BSplineRestriction yields a null shape
         // for anything above C2, whichever entry point asks. Documented on both, not silently
-        // downgraded — the decoder passes the request through rather than substituting C2.
+        // downgraded, the decoder passes the request through rather than substituting C2.
         #expect(cyl.bsplineRestriction(continuity3d: .c3, continuity2d: .c3) == nil)
         #expect(Shape.bsplineRestrictionAdvanced(cyl, continuity3d: .c3, continuity2d: .c3) == nil)
     }
@@ -124,8 +124,8 @@ struct Issue490ContinuityDecoderTests {
         let surface = try #require(c0InUSurface())
 
         // One rule now, in one place: values above the vocabulary ask for CN, the top of the same
-        // ladder. Previously the copies disagreed — GeomAbs_CN here, GeomAbs_C2 there,
-        // GeomAbs_C1 elsewhere — so the same invalid integer meant different things depending
+        // ladder. Previously the copies disagreed. GeomAbs_CN here, GeomAbs_C2 there,
+        // GeomAbs_C1 elsewhere, so the same invalid integer meant different things depending
         // only on which entry point received it. Never *weaker* than the largest valid value.
         let atC3 = surface.splitByContinuity(criterion: 3, tolerance: 1e-6)
         let outOfRange = surface.splitByContinuity(criterion: 99, tolerance: 1e-6)

@@ -4,17 +4,17 @@ import simd
 @testable import OCCTSwift
 
 /// Issue #446: `ShapeUpgrade_UnifySameDomain` rewrites sub-shapes of the shape it is handed, and
-/// those rewrites reach the `TShape`s the caller's `Shape` still shares — so the caller's solid came
+/// those rewrites reach the `TShape`s the caller's `Shape` still shares, so the caller's solid came
 /// back different even when the merge result was discarded (reported downstream as a clean manifold
 /// turning self-intersecting on a declined merge). Every unify entry point now works on a private
 /// copy: `Shape.unified()`, `Shape.simplified()` and `UnifySameDomainBuilder`.
 ///
 /// The fixture is two stacked coaxial cylinders. Their two cylindrical faces are same-domain but
-/// differently parameterised, which drives the algorithm's `TransformPCurves` path — the one that
+/// differently parameterised, which drives the algorithm's `TransformPCurves` path, the one that
 /// writes temporary pcurves onto the *input's* edges against a scratch reference face and only ever
 /// removes them again if that face is later replaced. Before the fix the input's serialized BREP
 /// grew from 1676 to 1778 bytes across the call.
-@Suite("Issue #446 — unify does not mutate its input")
+@Suite("Issue #446, unify does not mutate its input")
 struct Issue446UnifyInputMutationTests {
 
     /// Two coaxial cylinders fused end to end: 4 faces, of which two cylindrical ones merge.
@@ -26,7 +26,7 @@ struct Issue446UnifyInputMutationTests {
         return lower.union(upper)
     }
 
-    /// The serialized shape, which carries tolerances, pcurves and surfaces — so any rewrite of the
+    /// The serialized shape, which carries tolerances, pcurves and surfaces, so any rewrite of the
     /// input's sub-shapes shows up as a byte difference.
     private func serialized(_ shape: Shape) -> Data? {
         try? Exporter.brepData(shape: shape, withTriangles: false)
@@ -40,7 +40,7 @@ struct Issue446UnifyInputMutationTests {
         let volumeBefore = body.volume
         let merged = body.unified()
         #expect(serialized(body) == before)
-        // The merge still happens — the copy is not a no-op path.
+        // The merge still happens, the copy is not a no-op path.
         #expect(merged?.subShapeCount(ofType: .face) == 3)
         #expect(body.subShapeCount(ofType: .face) == 4)
         if let v0 = volumeBefore, let v1 = body.volume { #expect(abs(v1 - v0) < 1e-9) }
@@ -85,8 +85,8 @@ struct Issue446UnifyInputMutationTests {
     /// declines the merge and keeps its own shape, which must be the shape it started with.
     ///
     /// These are the caller-visible properties the reporter watched flip (a clean manifold turning
-    /// self-intersecting on a *declined* merge). On a fixture this small they hold either way — it
-    /// took a 735-face solid to move them — so the byte-identity tests above are what discriminates;
+    /// self-intersecting on a *declined* merge). On a fixture this small they hold either way, it
+    /// took a 735-face solid to move them, so the byte-identity tests above are what discriminates;
     /// this one pins the contract in the terms the issue was written in.
     @Test("A declined merge leaves the caller's shape usable")
     func declinedMergeLeavesInputIntact() {
@@ -114,7 +114,7 @@ struct Issue446UnifyInputMutationTests {
 
     /// `keepShape` names a sub-shape of the CALLER's shape, so working on a copy means it has to be
     /// mapped onto its counterpart there. Without that mapping every `keepShape` would silently keep
-    /// nothing — and every case below would collapse to the 3-face plain merge.
+    /// nothing, and every case below would collapse to the 3-face plain merge.
     ///
     /// Which edge is kept decides the answer, so the assertion is per-edge rather than a count:
     /// keeping the junction circle (the seam the two cylindrical faces meet on, at z = 10) blocks

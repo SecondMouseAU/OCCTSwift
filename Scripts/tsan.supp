@@ -22,6 +22,6 @@ race:Message_PrinterOStream
 
 # --- 2. Open kernel findings, filed and tracked -----------------------------
 #
-# (none currently — #353's CDM_Application::myMetaDataLookUpTable suppression
+# (none currently, #353's CDM_Application:myMetaDataLookUpTable suppression
 # was removed in v1.15.11 once Scripts/patches/0015 carried the kernel fix;
 # see Scripts/repro/353-cdm-metadata-lookup-table/README.md.)

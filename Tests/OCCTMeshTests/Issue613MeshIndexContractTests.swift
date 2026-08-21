@@ -2,19 +2,19 @@ import Testing
 import Foundation
 @testable import OCCTSwift
 
-// #613, site 5 — the one of the six where converting to the deduplicated enumeration would have
+// #613, site 5, the one of the six where converting to the deduplicated enumeration would have
 // introduced a second bug rather than only fixing the first.
 //
 // Both mesh entry points walked a bare `TopExp_Explorer` over faces and stamped the walk's counter
 // onto every triangle as `faceIndex`. That counter is an OCCURRENCE number, while `Shape.faces()`,
 // `faceCount` and `face(at:)` have all read the deduplicated `TopExp::MapShapes` enumeration since
-// #541 — so a triangle's `faceIndex` named a different face than `faces()` did, and could exceed
+// #541, so a triangle's `faceIndex` named a different face than `faces()` did, and could exceed
 // `faceCount` outright.
 //
 // But the same walk also decides triangle WINDING: `if (face.Orientation() == TopAbs_REVERSED)
 // std::swap(n2, n3)`, which sets the sign of every emitted triangle normal. Meshing off the map
 // instead would have kept only the orientation a shared face was first seen with (the map keys on
-// `TopoDS_Shape::IsSame`, orientation ignored) — #614's defect, one level down, inverting the shared
+// `TopoDS_Shape::IsSame`, orientation ignored), #614's defect, one level down, inverting the shared
 // wall's normal for one of the two owners and losing its facet entirely.
 //
 // Measured on the pinned kernel, one `BRepAlgoAPI_Splitter` cut of a 20×10×10 block at x = 10:
@@ -29,7 +29,7 @@ import Foundation
 // from the map. `occtForEachOrientedFace` (OCCTBridge_Internal.h) hands out both from one traversal.
 //
 // Also here: the unlisted sibling `OCCTPolyMergeNodes`, which carries the same winding hazard and
-// must NOT be converted — it emits no index at all, so the only correct action was to pin its
+// must NOT be converted, it emits no index at all, so the only correct action was to pin its
 // winding against a future sweep.
 
 @Suite("Mesh face indices address faces(), and winding survives a shared wall (#613)")
@@ -40,7 +40,7 @@ struct Issue613MeshIndexContractTests {
     /// Two solids sharing one cut face, from one ordinary modelling operation.
     ///
     /// Returns nil on any construction failure; every caller `#require`s it, so a kernel that
-    /// stopped sharing the wall fails these tests rather than skipping them silently — which is
+    /// stopped sharing the wall fails these tests rather than skipping them silently, which is
     /// what we want, since the shared wall IS the fixture.
     static func splitBoxCompound() -> Shape? {
         guard let block = Shape.box(origin: .zero, width: 20, height: 10, depth: 10),
@@ -59,7 +59,7 @@ struct Issue613MeshIndexContractTests {
         a.x * b.x + a.y * b.y + a.z * b.z
     }
 
-    /// The geometric normal of a triangle, from its winding — deliberately recomputed from the
+    /// The geometric normal of a triangle, from its winding, deliberately recomputed from the
     /// vertex order rather than read from `Triangle.normal`, so the assertion lands on the winding
     /// itself and would survive the normal being computed some other way.
     static func windingNormal(_ a: SIMD3<Float>, _ b: SIMD3<Float>, _ c: SIMD3<Float>) -> SIMD3<Double> {
@@ -91,7 +91,7 @@ struct Issue613MeshIndexContractTests {
 
     // MARK: - Site 5: the index
 
-    /// A triangle's `faceIndex` must be an index into `faces()` — one a caller can hand to
+    /// A triangle's `faceIndex` must be an index into `faces()`, one a caller can hand to
     /// `face(at:)`. Before the fix it was the explorer's occurrence counter, so it ran to 11 on an
     /// 11-face shape and, from index 5 on, named a different face than `faces()` did.
     @Test("no triangle claims a face index faces() cannot address")
@@ -142,7 +142,7 @@ struct Issue613MeshIndexContractTests {
         #expect(checked > 20, "only \(checked) triangles checked")
     }
 
-    /// The shared wall's two sides carry the SAME index — they are two occurrences of one face —
+    /// The shared wall's two sides carry the SAME index, they are two occurrences of one face,
     /// and that index is the one `faces()` gives it.
     @Test("both sides of the shared wall are stamped with the one index that names it")
     func sharedWallSidesShareOneIndex() throws {
@@ -162,7 +162,7 @@ struct Issue613MeshIndexContractTests {
         }
         #expect(wallIndices.count == 1,
                 "the shared wall's triangles carry \(wallIndices.count) different indices: \(wallIndices.sorted())")
-        // And both sides are still meshed — the map walk would have dropped one.
+        // And both sides are still meshed, the map walk would have dropped one.
         #expect(plusX > 0 && minusX > 0,
                 "expected both sides of the shared wall, got +x=\(plusX) −x=\(minusX)")
         #expect(plusX == minusX, "the two sides should mesh identically: +x=\(plusX) −x=\(minusX)")
@@ -170,7 +170,7 @@ struct Issue613MeshIndexContractTests {
 
     // MARK: - Site 5: the winding
 
-    /// A **control**, not a detector — stated plainly because the inject-the-bug pass showed it
+    /// A **control**, not a detector, stated plainly because the inject-the-bug pass showed it
     /// does not fail under either mesh injection. Losing the shared wall's second occurrence
     /// removes a facet rather than inverting one, and the copy that survives on this fixture is
     /// stored FORWARD, which is outward for its own owner. So this guards against a future change
@@ -261,7 +261,7 @@ struct Issue613MeshIndexContractTests {
 
     // MARK: - The unlisted sibling: Poly_MergeNodesTool
 
-    /// `OCCTPolyMergeNodes` emits no index, so there was nothing to converge — but it derives a
+    /// `OCCTPolyMergeNodes` emits no index, so there was nothing to converge, but it derives a
     /// `reversed` flag per occurrence and hands it to `Poly_MergeNodesTool::AddTriangulation`, which
     /// winds that face's triangles by it. Deduplicating the walk would add the shared wall once, in
     /// whichever orientation was seen first, and the other solid would lose its wall.

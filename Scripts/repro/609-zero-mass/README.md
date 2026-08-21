@@ -1,4 +1,4 @@
-# #609 — zero-mass `BRepGProp` results returned as successful answers
+# #609, zero-mass `BRepGProp` results returned as successful answers
 
 Ground truth for [#609](https://github.com/SecondMouseAU/OCCTSwift/issues/609). `BRepGProp` and
 `GProp` only, no bridge and no Swift, so the answers here are OCCT's rather than ours. Sibling of

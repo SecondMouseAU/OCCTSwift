@@ -2,7 +2,7 @@
 //  OCCTBridge_BRepGraph.mm
 //  OCCTSwift
 //
-//  Extracted from OCCTBridge.mm — issue #99 phase 1.
+//  Extracted from OCCTBridge.mm, issue #99 phase 1.
 //
 //  Wraps OCCT 8.0.0 BRepGraph + EditorView + MeshView + ML export surface.
 //  Originally implemented across v0.129.0 → v0.164.0; lifted into its own
@@ -10,13 +10,13 @@
 //  here don't trigger a rebuild of unrelated bridge areas.
 //
 //  Public C surface (OCCTBRepGraph*, OCCTPolyTriangulation*, etc.) lives in
-//  ../include/OCCTBridge.h. No symbol changes — this is a pure file move.
+//  ../include/OCCTBridge.h. No symbol changes, this is a pure file move.
 //
 
 #import "../include/OCCTBridge.h"
 #import "OCCTBridge_Internal.h"
 
-// Area-specific OCCT headers — the foundation set + handle wrappers come from
+// Area-specific OCCT headers, the foundation set + handle wrappers come from
 // OCCTBridge_Internal.h, this block is just the BRepGraph-block extras.
 
 #include <atomic>
@@ -52,7 +52,7 @@
 #include <BRepGraph_TopoView.hxx>
 #include <BRepGraph_Tool.hxx>
 #include <BRepGraph_LayerRegistry.hxx>
-// NOTE: BRepGraph_LayerRegularity.hxx is NOT included — it is an upstream p1 bug: it marks
+// NOTE: BRepGraph_LayerRegularity.hxx is NOT included, it is an upstream p1 bug: it marks
 // `override` on OnNodeRemoved(node,replacement)/OnCompact() which do not exist as virtuals in
 // BRepGraph_Layer, so the header does not compile (AppleClang) and the .cxx is absent from libOCCT
 // (0 symbols). Edge regularity/continuity via the graph layer is therefore unavailable in 8.0.0p1;
@@ -73,7 +73,7 @@
 #include <BRepGraphInc_RepId.hxx>
 // OCCT 8.0.0p1 removed BRepGraph_Builder; shape ingestion is now BRepGraph::ShapesView::Add().
 #include <BRepGraph_ShapesView.hxx>
-// TopoSupplement runtime layer (vertex-supplement attachments) — issue: un-stub vertex ops.
+// TopoSupplement runtime layer (vertex-supplement attachments), issue: un-stub vertex ops.
 #include <BRepGraph_SupplementEditor.hxx>
 #include <BRepGraph_SupplementIterator.hxx>
 #include <BRepGraph_LayerTopoSupplement.hxx>
@@ -95,7 +95,7 @@
 // ------------------------------------------------------------
 // The pre-p1 mesh/geometry write API allocated integer "rep ids": you created a
 // representation handle, got back an int id, then bound that id to an entity. p1
-// removed rep ids entirely — handles are attached directly to topology defs / the
+// removed rep ids entirely, handles are attached directly to topology defs / the
 // mesh cache. To keep the int-rep-id C ABI (consumed by Swift) we keep parallel
 // vectors here: Create*Rep() pushes the input handle and returns its index; the
 // Set*RepId / RepSet* / append-cached entry points look the index back up and call
@@ -113,20 +113,20 @@
 // The sequence starts at a random point rather than at 1. Within a process a plain
 // counter would do, but GraphUID is Codable: a UID persisted by one process could be
 // resolved by another, and two processes both counting from 1 would hand out the same
-// ids — re-introducing the very aliasing this id exists to prevent, across the
+// ids, re-introducing the very aliasing this id exists to prevent, across the
 // persistence boundary. Seeding randomly makes that collision ~2^-64 while keeping
 // in-process uniqueness exact (the counter only ever increments).
 //
-// This id mirrors OCCT's own graph identity, BRepGraph::UIDs().GraphGUID() — same concept,
+// This id mirrors OCCT's own graph identity, BRepGraph:UIDs().GraphGUID(), same concept,
 // same lifecycle rules (fresh per build; inherited by a full copy; preserved by compaction).
 // Upstream intends the GUID for exactly this job ("Generation + GraphGUID protect against
 // stale UID aliasing", BRepGraphInc_Storage.hxx:1597). Since #303 our construction paths call
 // BRepGraph::Clear() (Clear() is upstream's declared rebuild boundary, PR #1237), so the GUID
-// is now populated and its lifecycle matches this id one-for-one — measured against the pinned
+// is now populated and its lifecycle matches this id one-for-one, measured against the pinned
 // 8.0.0p1 kernel, not assumed: Create/CopyFace mint a fresh GUID, Copy/Transform inherit the
 // source's via Perform. We still do not surface it as the UID's graphID, on two counts:
 //   1. It would not fix this bug. BRepGraph_UID is (Kind, Counter) and carries no GUID, so
-//      UIDsView::NodeIdFrom cannot consult one — two Clear()ed graphs with distinct GUIDs
+//      UIDsView:NodeIdFrom cannot consult one, two Clear()ed graphs with distinct GUIDs
 //      still cross-resolve each other's UIDs. The provenance check has to live where the UID
 //      does, which is above the kernel. For the same reason UIDsView::IsStale accepts a
 //      foreign VersionStamp: a stamp carries Generation (equal across graphs), not the GUID.
@@ -136,7 +136,7 @@
 //      upstream). The counter is exact in-process and needs no such guarantee.
 // A caveat worth pinning for whoever wraps GraphGUID/StampOf/IsStale/ToGUID next: pre-#303 the
 // GUID was the all-zero default (ctor + Shapes().Add() skips Clear()), which made ToGUID's
-// documented "globally unique across different graph instances" false — it hashed in the zero
+// documented "globally unique across different graph instances" false, it hashed in the zero
 // GUID and returned identical GUIDs for different graphs. Clear() is what fixes that, so any
 // such wrapper must not regress the Clear()-then-build lifecycle these entry points now follow.
 static uint64_t nextGraphInstanceID()
@@ -159,7 +159,7 @@ struct OCCTBRepGraph
   BRepGraph graph;
   // Identifies this graph instance. Fresh by default; the copy/transform entry points
   // overwrite it to inherit the source's, mirroring what the kernel does with its own
-  // identity — see nextGraphInstanceID() and OCCTBRepGraphCopy().
+  // identity, see nextGraphInstanceID() and OCCTBRepGraphCopy().
   uint64_t instanceID = nextGraphInstanceID();
   // Parallel side-registries: index == the legacy "rep id".
   std::vector<occ::handle<Poly_Triangulation>>          triReps;
@@ -228,8 +228,8 @@ OCCTBRepGraphRef OCCTBRepGraphCreate(OCCTShapeRef shape, bool parallel)
   {
     auto ref = new OCCTBRepGraph();
     // Clear() before the first Add() is upstream's declared rebuild boundary (PR #1237):
-    // it is the only call that stamps the graph's identity — IncrementGeneration() +
-    // SetGraphGUID(random) — so skipping it left every graph at generation 0 / all-zero
+    // it is the only call that stamps the graph's identity. IncrementGeneration() +
+    // SetGraphGUID(random), so skipping it left every graph at generation 0 / all-zero
     // GUID (#303). On a freshly-constructed graph Clear() only stamps identity and empties
     // already-empty storage; the BRepGraph_LayerHistory layer the ctor registers survives
     // it (LayerRegistry::ClearAll is documented "without unregistering services", and
@@ -535,7 +535,7 @@ bool OCCTBRepGraphEdgeIsManifold(OCCTBRepGraphRef g, int32_t edgeIndex)
   }
 }
 
-// OCCT 8.0.0p1: derived from vertex->edges incidence (VertexOps::Edges) — two edges are adjacent
+// OCCT 8.0.0p1: derived from vertex->edges incidence (VertexOps:Edges), two edges are adjacent
 // iff they share a vertex.
 static std::set<int32_t> bgAdjacentEdges(OCCTBRepGraphRef g, int32_t edgeIndex)
 {
@@ -1119,7 +1119,7 @@ bool OCCTBRepGraphEdgeHasPolygon3D(OCCTBRepGraphRef g, int32_t edgeIndex)
 }
 
 // OCCT 8.0.0p1: edge continuity is conceptually the BRepGraph_LayerRegularity layer, but that class
-// is broken in p1 (uncompilable header / absent from libOCCT — see the include note above), so the
+// is broken in p1 (uncompilable header / absent from libOCCT, see the include note above), so the
 // graph path is unavailable. Use the shape-based Shape.maxContinuity (BRep_Tool::MaxContinuity)
 // instead.
 int32_t OCCTBRepGraphEdgeMaxContinuity(OCCTBRepGraphRef, int32_t)
@@ -1729,7 +1729,7 @@ int32_t OCCTBRepGraphHistoryDeletedNodes(OCCTBRepGraphRef g,
 // Add an algorithm result and absorb its BRepTools_History (issue #290).
 //
 // The input roots and the result share one graph, so ShapesView::AddWithHistory
-// records NodeId-keyed history against nodes that remain valid — no generation
+// records NodeId-keyed history against nodes that remain valid, no generation
 // boundary, no cross-graph UID resolution. AddWithHistory internally collects the
 // input map via CollectHistoryInputs and the output map via Options::TrackAddedNodes,
 // then hands both to BRepGraph_LayerHistory::Absorb.
@@ -2135,7 +2135,7 @@ int32_t OCCTBRepGraphNbActiveCurves2D(OCCTBRepGraphRef g)
 
 // --- SameDomain ---
 // OCCT 8.0.0p1: TopoView::FaceOps no longer exposes a SameDomain() query, but the relation is
-// derivable: face G is "same-domain" with face F when they are adjacent (share an edge — via the
+// derivable: face G is "same-domain" with face F when they are adjacent (share an edge, via the
 // bgAdjacentFaces helper) AND lie on the geometrically-equal surface. We compare the two face
 // surfaces by DynamicType, then by defining geometry for the common analytic cases; any other
 // surface type is treated as not-equal (conservative).
@@ -2260,7 +2260,7 @@ OCCTBRepGraphRef OCCTBRepGraphCopy(OCCTBRepGraphRef g, bool copyGeom)
   {
     auto ref = new OCCTBRepGraph();
     // No Clear() here (unlike Create/CopyFace): Perform transplants the source's whole
-    // identity — generation and GraphGUID included — into the fresh target, so a pre-Clear
+    // identity, generation and GraphGUID included, into the fresh target, so a pre-Clear
     // would just be overwritten. That inheritance is exactly what we want (see below).
     // OCCT 8.0.0p1: Perform now copies source INTO a target graph and returns bool.
     auto geomPolicy =
@@ -2270,7 +2270,7 @@ OCCTBRepGraphRef OCCTBRepGraphCopy(OCCTBRepGraphRef g, bool copyGeom)
       delete ref;
       return nullptr;
     }
-    // A full copy INHERITS the source's identity — the kernel says so itself: Perform
+    // A full copy INHERITS the source's identity, the kernel says so itself: Perform
     // transplants every per-kind UID counter, the Generation, and the GraphGUID from source
     // to target (BRepGraph_Copy.cxx). Nodes land 1:1, so every source UID resolves in the
     // copy to the very same node; measured on a box, all 6 face UIDs map to the
@@ -2294,7 +2294,7 @@ OCCTBRepGraphRef OCCTBRepGraphCopyFace(OCCTBRepGraphRef g, int32_t faceIndex, bo
     auto ref = new OCCTBRepGraph();
     // copyFace is a fresh build, not a copy: CopyNode lifts one node into an empty graph with
     // counters restarting at 1 (that is #295's whole point). So it gets a fresh identity like
-    // Create — Clear() stamps a new generation + GUID. CopyNode does NOT transplant the source
+    // Create. Clear() stamps a new generation + GUID. CopyNode does NOT transplant the source
     // GUID (measured on 8.0.0p1: a no-Clear CopyNode target stays generation 0 / all-zero;
     // only Copy/Transform's Perform transplants), so the fresh GUID survives the CopyNode below
     // and matches this graph's fresh, non-inherited instanceID (#303).
@@ -2315,7 +2315,7 @@ OCCTBRepGraphRef OCCTBRepGraphCopyFace(OCCTBRepGraphRef g, int32_t faceIndex, bo
     // Deliberately NOT inheriting the source's id, unlike Copy() above: CopyNode lifts one
     // face into an empty graph and does not transplant the counter space, so the extracted
     // face restarts at counter 1. That counter belongs to the source's face 0, so a source
-    // UID would resolve here to whichever face was extracted — a wrong node, which is
+    // UID would resolve here to whichever face was extracted, a wrong node, which is
     // exactly #295. Verified: on a box, face 0's UID resolved inside copyFace(3) and
     // returned face 3. A fresh id makes those lookups return nil instead.
     return ref;
@@ -3638,14 +3638,14 @@ void OCCTBRepGraphSetEdgeParamRange(OCCTBRepGraphRef g,
 }
 
 // OCCT 8.0.0p1: SameParameter / SameRange are now derived per-CoEdge properties (computed from the
-// pcurve vs 3D curve), not settable edge flags — the Edges editor no longer exposes setters. These
+// pcurve vs 3D curve), not settable edge flags, the Edges editor no longer exposes setters. These
 // are kept as no-ops for ABI compatibility; the getters report the derived value.
 void OCCTBRepGraphSetEdgeSameParameter(OCCTBRepGraphRef, int32_t, bool) {}
 
 void OCCTBRepGraphSetEdgeSameRange(OCCTBRepGraphRef, int32_t, bool) {}
 
 // OCCT 8.0.0p1: edge degeneracy and closure are derived from geometry/topology, no longer
-// settable EdgeDef flags — the Edges editor exposes no setters. Kept as no-ops for ABI compat.
+// settable EdgeDef flags, the Edges editor exposes no setters. Kept as no-ops for ABI compat.
 void OCCTBRepGraphSetEdgeDegenerate(OCCTBRepGraphRef, int32_t, bool) {}
 
 void OCCTBRepGraphSetEdgeIsClosed(OCCTBRepGraphRef, int32_t, bool) {}
@@ -3722,7 +3722,7 @@ void OCCTBRepGraphSetShellIsClosed(OCCTBRepGraphRef, int32_t, bool) {}
 // OCCT 8.0.0p1: edges no longer carry internal/supplemental vertex usages in the core; they are
 // now runtime supplement attachments (BRepGraph_LayerTopoSupplement, EdgeInternalVertex). Attach a
 // TopoDS_Vertex built from the graph vertex's point and return the layer-local attachment uid.
-// `orientation` is unused by the supplement layer — kept for source-compat, ignored.
+// `orientation` is unused by the supplement layer, kept for source-compat, ignored.
 int64_t OCCTBRepGraphEdgeAddInternalVertex(OCCTBRepGraphRef g,
                                            int32_t          edgeIndex,
                                            int32_t          vertexIndex,
@@ -3750,7 +3750,7 @@ int64_t OCCTBRepGraphEdgeAddInternalVertex(OCCTBRepGraphRef g,
 // OCCT 8.0.0p1: faces no longer carry direct vertex usages in the core (FaceRelations has only
 // wires). Face-direct vertices are now runtime supplement attachments. Attach a TopoDS_Vertex
 // built from the graph vertex's point and return the layer-local attachment uid.
-// `orientation` is unused by the supplement layer — kept for source-compat, ignored.
+// `orientation` is unused by the supplement layer, kept for source-compat, ignored.
 int64_t OCCTBRepGraphFaceAddVertex(OCCTBRepGraphRef g,
                                    int32_t          faceIndex,
                                    int32_t          vertexIndex,
@@ -3922,7 +3922,7 @@ bool OCCTBRepGraphWireRemoveCoEdge(OCCTBRepGraphRef g, int32_t wireIndex, int32_
 
 // OCCT 8.0.0p1: faces no longer own direct vertex refs in the core. The face-direct vertex is now a
 // runtime supplement attachment, removed by its layer-local uid (the value returned by
-// faceAddVertex, NOT a core ref index). The faceIndex param is unused — the uid is globally unique
+// faceAddVertex, NOT a core ref index). The faceIndex param is unused, the uid is globally unique
 // within the layer.
 bool OCCTBRepGraphFaceRemoveVertex(OCCTBRepGraphRef g, int32_t /*faceIndex*/, int64_t attachmentUID)
 {
@@ -3968,7 +3968,7 @@ bool OCCTBRepGraphShellRemoveFace(OCCTBRepGraphRef g, int32_t shellIndex, int32_
   }
 }
 
-// OCCT 8.0.0p1: ShellOps::RemoveChild removed — shells own only faces, so the legacy "child ref"
+// OCCT 8.0.0p1: ShellOps:RemoveChild removed, shells own only faces, so the legacy "child ref"
 // is a face ref. Map onto ShellOps::RemoveFace(shellId, faceRefId).
 bool OCCTBRepGraphShellRemoveChild(OCCTBRepGraphRef g, int32_t shellIndex, int32_t childRefIndex)
 {
@@ -4000,7 +4000,7 @@ bool OCCTBRepGraphSolidRemoveShell(OCCTBRepGraphRef g, int32_t solidIndex, int32
   }
 }
 
-// OCCT 8.0.0p1: SolidOps::RemoveChild removed — solids own only shells, so the legacy "child ref"
+// OCCT 8.0.0p1: SolidOps:RemoveChild removed, solids own only shells, so the legacy "child ref"
 // is a shell ref. Map onto SolidOps::RemoveShell(solidId, shellRefId).
 bool OCCTBRepGraphSolidRemoveChild(OCCTBRepGraphRef g, int32_t solidIndex, int32_t childRefIndex)
 {
@@ -4051,7 +4051,7 @@ bool OCCTBRepGraphCompSolidRemoveSolid(OCCTBRepGraphRef g,
   }
 }
 
-// OCCT 8.0.0p1: GenOps::RemoveRep removed — representations are owned by their topology defs and
+// OCCT 8.0.0p1: GenOps:RemoveRep removed, representations are owned by their topology defs and
 // cleared through the per-kind editors. For the side-registry rep ids we expose, "removing" a rep
 // nullifies its registry slot so a later Set*RepId() resolving the same id becomes a safe no-op.
 // repKind follows BRepGraphInc_RepId::Kind ordering (0=FaceSurface, 1=FaceTriangulation,
@@ -4521,7 +4521,7 @@ void OCCTBRepGraphSetChildRefChildDefId(OCCTBRepGraphRef g,
   }
 }
 
-// MARK: - BRepGraph EditorView v0.162.0 — geometric setters, location setters, PCurve API
+// MARK: - BRepGraph EditorView v0.162.0, geometric setters, location setters, PCurve API
 
 // CoEdge geometric setters
 
@@ -4530,11 +4530,11 @@ void OCCTBRepGraphSetChildRefChildDefId(OCCTBRepGraphRef g,
 void OCCTBRepGraphSetCoEdgeUVBox(OCCTBRepGraphRef, int32_t, double, double, double, double) {}
 
 // OCCT 8.0.0p1: edge regularity would live in BRepGraph_LayerRegularity, but that class is broken
-// in p1 (uncompilable header / absent from libOCCT — see the include note near the top of this
+// in p1 (uncompilable header / absent from libOCCT, see the include note near the top of this
 // file), so there is no working write path. Every call reports failure and the continuity argument
 // is not read at all. #490 deleted the local int -> GeomAbs_Shape copy that used to sit at the top
 // of this file purely so this body could take its address to silence an unused-static warning; the
-// comment claiming it was "kept for the cut-path wrappers" was false — nothing else ever called it.
+// comment claiming it was "kept for the cut-path wrappers" was false, nothing else ever called it.
 int32_t OCCTBRepGraphSetEdgeRegularity(OCCTBRepGraphRef, int32_t, int32_t, int32_t, int32_t)
 {
   return 0;
@@ -4627,18 +4627,16 @@ void OCCTBRepGraphCoEdgeAddPCurve(OCCTBRepGraphRef g,
 }
 
 // Location setters (12-double 3x4 matrix, gp_Trsf::SetValues convention)
-
-static TopLoc_Location locationFromMatrix(const double m[12])
-{
-  gp_Trsf trsf;
-  trsf.SetValues(m[0], m[1], m[2], m[3], m[4], m[5], m[6], m[7], m[8], m[9], m[10], m[11]);
-  return TopLoc_Location(trsf);
-}
+//
+// #994: the conversion is occtLocationFromMatrix12Interleaved in OCCTBridge_Internal.h, shared
+// with OCCTBridge_Topology.mm's shape-location entry points, which built the same transform from
+// the same twelve doubles. The layout is in the name: see that header for why a Matrix12Grouped
+// array must not be handed to it.
 
 // OCCT 8.0.0p1: only occurrence and child references carry a local location; the per-topology
 // references (vertex/coedge/wire/face/shell/solid) no longer store a location, so their editors
 // expose no SetRefLocalLocation. These are no-ops for ABI compatibility. (CoEdge refs were removed
-// entirely — coedges are not reference-counted.)
+// entirely, coedges are not reference-counted.)
 void OCCTBRepGraphSetVertexRefLocalLocation(OCCTBRepGraphRef, int32_t, const double*) {}
 
 void OCCTBRepGraphSetCoEdgeRefLocalLocation(OCCTBRepGraphRef, int32_t, const double*) {}
@@ -4661,7 +4659,7 @@ void OCCTBRepGraphSetOccurrenceRefLocalLocation(OCCTBRepGraphRef g,
   {
     g->graph.Editor().Occurrences().SetRefLocalLocation(
       BRepGraph_OccurrenceRefId(occurrenceRefIndex),
-      locationFromMatrix(matrix));
+      occtLocationFromMatrix12Interleaved(matrix));
   }
   catch (...)
   {
@@ -4677,14 +4675,14 @@ void OCCTBRepGraphSetChildRefLocalLocation(OCCTBRepGraphRef g,
   try
   {
     g->graph.Editor().Gen().SetChildRefLocalLocation(BRepGraph_ChildRefId(childRefIndex),
-                                                     locationFromMatrix(matrix));
+                                                     occtLocationFromMatrix12Interleaved(matrix));
   }
   catch (...)
   {
   }
 }
 
-// MARK: - BRepGraph EditorView v0.163.0 — ProductOps assembly building
+// MARK: - BRepGraph EditorView v0.163.0. ProductOps assembly building
 
 int32_t OCCTBRepGraphLinkProductToTopology(OCCTBRepGraphRef g,
                                            int32_t          shapeRootKind,
@@ -4695,7 +4693,8 @@ int32_t OCCTBRepGraphLinkProductToTopology(OCCTBRepGraphRef g,
     return -1;
   try
   {
-    TopLoc_Location loc = placementMatrix ? locationFromMatrix(placementMatrix) : TopLoc_Location();
+    TopLoc_Location loc =
+      placementMatrix ? occtLocationFromMatrix12Interleaved(placementMatrix) : TopLoc_Location();
     BRepGraph_NodeId root(kindFromInt(shapeRootKind), shapeRootIndex);
     // OCCT 8.0.0p1: LinkProductToTopology folded into ProductOps::Add(root, placement). Add() does
     // NOT register the product as a graph root, so call AppendDocumentRoot() to expose it via
@@ -4739,7 +4738,7 @@ int32_t OCCTBRepGraphLinkProducts(OCCTBRepGraphRef g,
     return -1;
   try
   {
-    TopLoc_Location           loc       = locationFromMatrix(placementMatrix);
+    TopLoc_Location           loc       = occtLocationFromMatrix12Interleaved(placementMatrix);
     BRepGraph_OccurrenceId    parentOcc = (parentOccurrenceIndex >= 0)
                                             ? BRepGraph_OccurrenceId(parentOccurrenceIndex)
                                             : BRepGraph_OccurrenceId();
@@ -4794,7 +4793,7 @@ bool OCCTBRepGraphProductRemoveShapeRoot(OCCTBRepGraphRef g, int32_t productInde
   }
 }
 
-// MARK: - BRepGraph EditorView v0.164.0 — RepOps non-guard setters
+// MARK: - BRepGraph EditorView v0.164.0. RepOps non-guard setters
 
 #include <Geom_Surface.hxx>
 #include <Geom_Curve.hxx>
@@ -4872,7 +4871,7 @@ void OCCTBRepGraphRepSetPolygonOnTri(OCCTBRepGraphRef        g,
 // There is no slot to rebind by id; no-op for ABI compatibility.
 void OCCTBRepGraphRepSetPolygonOnTriTriangulationId(OCCTBRepGraphRef, int32_t, int32_t) {}
 
-// MARK: - BRepGraph MeshView v0.164.0 — cache entry inspection
+// MARK: - BRepGraph MeshView v0.164.0, cache entry inspection
 
 // OCCT 8.0.0p1 restructured the mesh cache into Cache()/Persistent()/Effective() sub-views. Each
 // cache entry now holds a SINGLE handle (no rep-id list, no per-face active index): see
@@ -4942,7 +4941,7 @@ uint32_t OCCTBRepGraphCachedFaceMeshStoredOwnGen(OCCTBRepGraphRef g, int32_t fac
   }
 }
 
-// OCCT 8.0.0p1: a present-sentinel — the cache holds one triangulation handle, no rep ids.
+// OCCT 8.0.0p1: a present-sentinel, the cache holds one triangulation handle, no rep ids.
 int32_t OCCTBRepGraphCachedFaceMeshTriRepId(OCCTBRepGraphRef g, int32_t faceIndex, int32_t repIndex)
 {
   if (!g || repIndex != 0)
@@ -4971,7 +4970,7 @@ bool OCCTBRepGraphCachedEdgeMeshIsPresent(OCCTBRepGraphRef g, int32_t edgeIndex)
   }
 }
 
-// OCCT 8.0.0p1: a present-sentinel — the cache holds one Polygon3D handle, no rep id.
+// OCCT 8.0.0p1: a present-sentinel, the cache holds one Polygon3D handle, no rep id.
 int32_t OCCTBRepGraphCachedEdgeMeshPolygon3DRepId(OCCTBRepGraphRef g, int32_t edgeIndex)
 {
   if (!g)
@@ -5050,7 +5049,7 @@ int32_t OCCTBRepGraphCachedCoEdgeMeshPolygonOnTriRepCount(OCCTBRepGraphRef g, in
   }
 }
 
-// OCCT 8.0.0p1: present-sentinel — 0 when the requested list slot exists, -1 otherwise (no rep
+// OCCT 8.0.0p1: present-sentinel, 0 when the requested list slot exists, -1 otherwise (no rep
 // ids).
 int32_t OCCTBRepGraphCachedCoEdgeMeshPolygonOnTriRepId(OCCTBRepGraphRef g,
                                                        int32_t          coedgeIndex,
@@ -5126,7 +5125,7 @@ int32_t OCCTBRepGraphSampleFaceUVGrid(OCCTBRepGraphRef g,
     double  vStep = (vSamples > 1) ? (vMax - vMin) / (vSamples - 1) : 0.0;
 
     // #617: U-major, via the one shared index (occtSurfaceGridIndex, #486) rather than a
-    // hand-spelled formula. This buffer used to be written `iv * uSamples + iu` — the exact
+    // hand-spelled formula. This buffer used to be written `iv * uSamples + iu`, the exact
     // opposite of what #486 declared THE surface-grid layout, and the only guidance a caller
     // of BRepGraph.FaceGridSample had. Loop order follows the index so writes stay sequential.
     for (int32_t iu = 0; iu < uSamples; ++iu)
@@ -5473,7 +5472,7 @@ double OCCTEdgeGetDihedralAngle(OCCTEdgeRef edge,
                                 OCCTFaceRef face2,
                                 double      parameter)
 {
-  if (!edge || !face1 || !face2)
+  if (!occtShapeIsPresent(edge) || !occtShapeIsPresent(face1) || !occtShapeIsPresent(face2))
     return -1;
 
   try
@@ -5542,7 +5541,7 @@ double OCCTEdgeGetDihedralAngle(OCCTEdgeRef edge,
   }
 }
 
-// MARK: - Durable identity (BRepGraph::UIDsView) — OCCT 8.0.0p1
+// MARK: - Durable identity (BRepGraph:UIDsView), OCCT 8.0.0p1
 
 #include <BRepGraph_UID.hxx>
 #include <BRepGraph_RefUID.hxx>

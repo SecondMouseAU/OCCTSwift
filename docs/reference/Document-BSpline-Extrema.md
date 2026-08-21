@@ -1,9 +1,9 @@
 ---
-title: Document — BSpline/Bezier Methods & Extrema
+title: Document. BSpline/Bezier Methods & Extrema
 parent: API Reference
 ---
 
-# Document — BSpline/Bezier Methods & Extrema
+# Document. BSpline/Bezier Methods & Extrema
 
 This page covers `Sources/OCCTSwift/Document.swift`'s v0.106–v0.109 additions: topology-flag extensions on `Shape`, continuity properties on `Curve3D`/`Curve2D`/`Surface`, the BSpline and Bezier nested namespaces on those types, `BRepTools`/`BRepLib` utilities, `MakeFace` convenience factories, `SewingBuilder`, `HatchBuilder`, edge/face/vertex extraction, the full `Extrema` family (`ExtremaElC`, `ExtremaElCS`, `ExtremaElSS`, `ExtremaPointCurve`, `ExtremaPointSurface`), and the `TrigRoots` solver.
 
@@ -74,7 +74,7 @@ Mutate the orientation flag of the shape in-place.
 public func setOrientation(_ orient: Orientation)
 ```
 
-- **Parameters:** `orient` — new orientation.
+- **Parameters:** `orient`, new orientation.
 - **OCCT:** `TopoDS_Shape::Orientation(TopAbs_Orientation)`.
 
 ---
@@ -120,7 +120,7 @@ Return a copy of the shape with orientation composed with the given value.
 public func composed(with orient: Orientation) -> Shape?
 ```
 
-- **Parameters:** `orient` — orientation to compose with.
+- **Parameters:** `orient`, orientation to compose with.
 - **Returns:** A new composed `Shape`, or `nil` on failure.
 - **OCCT:** `TopoDS_Shape::Composed`.
 
@@ -198,15 +198,23 @@ public var isConvex: Bool
 
 ---
 
-### `isEmptyShape`
+### `isNull`
 
 Whether the shape has a null underlying `TShape`.
 
 ```swift
-public var isEmptyShape: Bool
+public var isNull: Bool
 ```
 
 - **OCCT:** `TopoDS_Shape::IsNull`.
+- **Note:** this is the test for a shape produced by `Shape.nullified`, and the only query that
+  separates "this shape is null" from a real negative: every type and flag query answers `false`,
+  `.unknown` or `nil` for a null shape, the same way it answers for a real shape of another type
+  (#1026).
+- **Renamed in #1034.** It was `isEmptyShape`, which read as "has no sub-shapes" and did not mean
+  that: `Shape.emptied` (`TopoDS_Shape::EmptyCopied`) drops the sub-shapes while keeping the type,
+  so `isNull` is `false` for its result even though it has no content. The old name survives as a
+  deprecated alias until the next major.
 
 ---
 
@@ -218,7 +226,7 @@ Test whether two shapes share the same underlying `TShape` (same geometry, poten
 public func isPartner(with other: Shape) -> Bool
 ```
 
-- **Parameters:** `other` — shape to compare.
+- **Parameters:** `other`, shape to compare.
 - **OCCT:** `TopoDS_Shape::IsPartner`.
 
 ---
@@ -231,7 +239,7 @@ Test full topological equality: same `TShape`, same location, same orientation.
 public func isEqual(to other: Shape) -> Bool
 ```
 
-- **Parameters:** `other` — shape to compare.
+- **Parameters:** `other`, shape to compare.
 - **OCCT:** `TopoDS_Shape::IsEqual`.
 
 ---
@@ -273,7 +281,7 @@ classes with the parametric ones:
 | class | C0 | G1 | C1 | G2 | C2 | C3 | CN |
 
 > This page previously documented the encoding as `0 = C0, 1 = C1, 2 = C2, 3 = C3, 4 = CN, 5 = G1,
-> 6 = G2`. That was never what a `static_cast` of `GeomAbs_Shape` produces — it was a copy of the
+> 6 = G2`. That was never what a `static_cast` of `GeomAbs_Shape` produces, it was a copy of the
 > incorrect doc comment that let `continuity` and the retired `continuityOrder` disagree unnoticed
 > until #485. Prefer `continuityClass`, which names the cases, and `continuityClass.satisfies(_:)`
 > for a continuity floor; a raw ordinal compared against a hand-written constant is the defect
@@ -291,7 +299,7 @@ public var continuity: Int
 - **Example:**
   ```swift
   if let c = Curve3D.circle(center: .zero, normal: SIMD3(0, 0, 1), radius: 5) {
-      print(c.continuity)        // 6 — CN, infinitely differentiable
+      print(c.continuity)        // 6. CN, infinitely differentiable
       print(c.continuityClass)   // .cN
   }
   ```
@@ -421,7 +429,7 @@ Get the 3D position of a control point (1-based index).
 public func pole(at index: Int) -> SIMD3<Double>
 ```
 
-- **Parameters:** `index` — 1-based pole index (1 … `poleCount`).
+- **Parameters:** `index`, 1-based pole index (1 … `poleCount`).
 - **Returns:** The control point coordinates; returns the zero vector if out-of-range.
 - **OCCT:** `Geom_BSplineCurve::Pole`.
 - **Example:**
@@ -440,7 +448,7 @@ Reposition a control point.
 public func setPole(at index: Int, to point: SIMD3<Double>) -> Bool
 ```
 
-- **Parameters:** `index` — 1-based index; `point` — new position.
+- **Parameters:** `index`, 1-based index; `point`, new position.
 - **Returns:** `true` on success.
 - **OCCT:** `Geom_BSplineCurve::SetPole`.
 
@@ -454,7 +462,7 @@ Get the rational weight at a control point (1-based index).
 public func weight(at index: Int) -> Double
 ```
 
-- **Parameters:** `index` — 1-based index.
+- **Parameters:** `index`, 1-based index.
 - **Returns:** Weight value; 1.0 for non-rational curves or out-of-range index.
 - **OCCT:** `Geom_BSplineCurve::Weight`.
 
@@ -469,7 +477,7 @@ Set the rational weight at a control point.
 public func setWeight(at index: Int, to weight: Double) -> Bool
 ```
 
-- **Parameters:** `index` — 1-based index; `weight` — new weight (must be positive).
+- **Parameters:** `index`, 1-based index; `weight`, new weight (must be positive).
 - **OCCT:** `Geom_BSplineCurve::SetWeight`.
 
 ---
@@ -483,7 +491,7 @@ Insert a knot at parameter `u` with given multiplicity, blending the existing cu
 public func insertKnot(u: Double, multiplicity: Int = 1, tolerance: Double = 1e-6) -> Bool
 ```
 
-- **Parameters:** `u` — parameter value; `multiplicity` — desired multiplicity (default 1); `tolerance` — knot merging tolerance.
+- **Parameters:** `u`, parameter value; `multiplicity`, desired multiplicity (default 1); `tolerance`, knot merging tolerance.
 - **Returns:** `true` on success.
 - **OCCT:** `Geom_BSplineCurve::InsertKnot`.
 
@@ -498,7 +506,7 @@ Reduce or remove a knot at a 1-based index down to `multiplicity` (0 to remove e
 public func removeKnot(at index: Int, multiplicity: Int, tolerance: Double) -> Bool
 ```
 
-- **Parameters:** `index` — 1-based knot index; `multiplicity` — target multiplicity; `tolerance` — geometric tolerance for the removal.
+- **Parameters:** `index`, 1-based knot index; `multiplicity`, target multiplicity; `tolerance`, geometric tolerance for the removal.
 - **Returns:** `true` if removal was geometrically within tolerance.
 - **OCCT:** `Geom_BSplineCurve::RemoveKnot`.
 
@@ -513,7 +521,7 @@ Restrict the BSpline to the sub-interval `[u1, u2]` in-place.
 public func segment(u1: Double, u2: Double) -> Bool
 ```
 
-- **Parameters:** `u1`, `u2` — parameter bounds (must be within the current domain).
+- **Parameters:** `u1`, `u2`, parameter bounds (must be within the current domain).
 - **Returns:** `true` on success.
 - **OCCT:** `Geom_BSplineCurve::Segment`.
 
@@ -528,7 +536,7 @@ Elevate the polynomial degree to at least `degree` without changing the curve sh
 public func increaseDegree(to degree: Int) -> Bool
 ```
 
-- **Parameters:** `degree` — target degree (no-op if already ≥ current degree).
+- **Parameters:** `degree`, target degree (no-op if already ≥ current degree).
 - **Returns:** `true` on success.
 - **OCCT:** `Geom_BSplineCurve::IncreaseDegree`.
 
@@ -542,7 +550,7 @@ Compute the parametric resolution corresponding to a 3D Euclidean tolerance.
 public func resolution(tolerance3d: Double) -> Double
 ```
 
-- **Parameters:** `tolerance3d` — 3D distance tolerance.
+- **Parameters:** `tolerance3d`, 3D distance tolerance.
 - **Returns:** Equivalent parametric tolerance.
 - **OCCT:** `Geom_BSplineCurve::Resolution`.
 
@@ -557,7 +565,7 @@ Make the BSpline periodic or non-periodic.
 public func setPeriodic(_ periodic: Bool) -> Bool
 ```
 
-- **Parameters:** `periodic` — `true` to make periodic, `false` to make non-periodic.
+- **Parameters:** `periodic`, `true` to make periodic, `false` to make non-periodic.
 - **Returns:** `true` on success.
 - **OCCT:** `Geom_BSplineCurve::SetPeriodic` / `SetNotPeriodic`.
 
@@ -683,7 +691,7 @@ Get the 3D position of a control point at the given (U, V) grid indices (1-based
 public func pole(uIndex: Int, vIndex: Int) -> SIMD3<Double>
 ```
 
-- **Parameters:** `uIndex`, `vIndex` — 1-based indices into the pole grid.
+- **Parameters:** `uIndex`, `vIndex`, 1-based indices into the pole grid.
 - **Returns:** Control point position; returns zero vector for out-of-range indices.
 - **OCCT:** `Geom_BSplineSurface::Pole`.
 
@@ -1005,7 +1013,7 @@ Insert a new control point after the given 1-based index, raising the degree by 
 public func insertPoleAfter(index: Int, point: SIMD3<Double>) -> Bool
 ```
 
-- **Parameters:** `index` — insert position (1-based); `point` — position of the new pole.
+- **Parameters:** `index`, insert position (1-based); `point`, position of the new pole.
 - **OCCT:** `Geom_BezierCurve::InsertPoleAfter`.
 
 ---
@@ -1160,7 +1168,7 @@ Return `true` if the edge has consistent same-range parametrisation across all i
 public static func checkSameRange(edge: Shape) -> Bool
 ```
 
-- **Parameters:** `edge` — a shape of type edge.
+- **Parameters:** `edge`, a shape of type edge.
 - **OCCT:** `BRepLib::CheckSameRange`.
 
 ---
@@ -1174,7 +1182,7 @@ Ensure same-range parametrisation, adjusting PCurves if needed.
 public static func sameRange(edge: Shape, tolerance: Double = 1e-6) -> Bool
 ```
 
-- **Parameters:** `edge` — edge shape; `tolerance` — merge tolerance.
+- **Parameters:** `edge`, edge shape; `tolerance`, merge tolerance.
 - **Returns:** `true` if the operation succeeded.
 - **OCCT:** `BRepLib::SameRange`.
 
@@ -1246,7 +1254,7 @@ public static func faceFromSphere(
 ) -> Shape?
 ```
 
-- **Parameters:** `center` — sphere centre (default origin); `radius` — sphere radius; `uMin`/`uMax` — longitude bounds [0, 2π]; `vMin`/`vMax` — latitude bounds [-π/2, π/2].
+- **Parameters:** `center`, sphere centre (default origin); `radius`, sphere radius; `uMin`/`uMax`, longitude bounds [0, 2π]; `vMin`/`vMax`, latitude bounds [-π/2, π/2].
 - **Returns:** A face shape, or `nil` on failure.
 - **OCCT:** `BRepBuilderAPI_MakeFace(gp_Sphere, ...)`.
 - **Example:**
@@ -1286,7 +1294,7 @@ public static func faceFromCone(
 ) -> Shape?
 ```
 
-- **Parameters:** `semiAngle` — half-angle of the cone in radians; `radius` — reference radius at the apex plane.
+- **Parameters:** `semiAngle`, half-angle of the cone in radians; `radius`, reference radius at the apex plane.
 - **OCCT:** `BRepBuilderAPI_MakeFace(gp_Cone, ...)`.
 
 ---
@@ -1299,7 +1307,7 @@ Create a face from a surface trimmed by a wire boundary.
 public static func faceFromSurface(_ surface: Surface, wire: Shape, inside: Bool = true) -> Shape?
 ```
 
-- **Parameters:** `surface` — the carrier surface; `wire` — outer boundary wire; `inside` — if `true` the face is on the interior side of the wire.
+- **Parameters:** `surface`, the carrier surface; `wire`, outer boundary wire; `inside`, if `true` the face is on the interior side of the wire.
 - **OCCT:** `BRepBuilderAPI_MakeFace(surface, wire, inside)`.
 
 ---
@@ -1312,8 +1320,8 @@ Add an inner wire (hole) to an existing face.
 public static func faceAddHole(face: Shape, wire: Shape) -> Shape?
 ```
 
-- **Parameters:** `face` — the existing face; `wire` — hole boundary wire (must lie on the face surface). Polygonal or curved (a `Wire.circle`, an arc, joined arcs), wound either way.
-- **Returns:** New face with the hole added, or `nil` if the wire cannot serve as a hole for this face — it encloses no area (#234), or it does not lie inside the face's boundary, so neither winding yields a valid face. A degenerate or unusable hole is declined rather than returned as an invalid face, which is what breaks callers downstream.
+- **Parameters:** `face`, the existing face; `wire`, hole boundary wire (must lie on the face surface). Polygonal or curved (a `Wire.circle`, an arc, joined arcs), wound either way.
+- **Returns:** New face with the hole added, or `nil` if the wire cannot serve as a hole for this face, it encloses no area (#234), or it does not lie inside the face's boundary, so neither winding yields a valid face. A degenerate or unusable hole is declined rather than returned as an invalid face, which is what breaks callers downstream.
 - **OCCT:** `BRepBuilderAPI_MakeFace::Add`.
 - **Winding:** the hole always *removes* area. `MakeFace::Add` does no reorienting of its own, so a wire wound the same way as the face's outer boundary would be added as a second outer loop; the wrapper compares windings in the face's plane and reverses the wire when needed (#397).
 
@@ -1354,7 +1362,7 @@ Create a new sewing builder.
 public init?(tolerance: Double = 1e-6)
 ```
 
-- **Parameters:** `tolerance` — maximum gap between edges that will be merged.
+- **Parameters:** `tolerance`, maximum gap between edges that will be merged.
 - **Returns:** `nil` on allocation failure.
 - **OCCT:** `BRepBuilderAPI_Sewing(tolerance)`.
 
@@ -1546,7 +1554,7 @@ Number of trimmed intervals on a given hatch line (1-based).
 public func nbIntervals(lineIndex: Int) -> Int
 ```
 
-- **Parameters:** `lineIndex` — 1-based line index.
+- **Parameters:** `lineIndex`, 1-based line index.
 - **OCCT:** `Hatch_Hatcher::NbIntervals`.
 
 ---
@@ -1564,7 +1572,11 @@ public func extractEdgeCurve3D() -> (curve: Curve3D, first: Double, last: Double
 ```
 
 - **Returns:** A tuple of the curve handle and parameter bounds, or `nil` if the edge has no 3D curve.
-- **OCCT:** `BRep_Tool::Curve`.
+- **OCCT:** `BRep_Tool::Curve`. `TopoDS::Edge` deliberately passes a null shape through rather
+  than rejecting it (`TopoDS.hxx:94`), and `BRep_Tool::Curve` dereferences what it hands back,
+  so a null shape (from `Shape.nullified`) used to crash the process here. It is refused now and
+  answers `nil`, the same answer an edge with no 3D curve already gave (#1035, measured in
+  `Scripts/repro/1035-unwrap-guard/`).
 - **Example:**
   ```swift
   for edge in shape.edges() {
@@ -1584,9 +1596,14 @@ Extract the PCurve (2D curve on surface) of an edge relative to a face.
 public func extractEdgePCurve(onFace face: Shape) -> (curve: Curve2D, first: Double, last: Double)?
 ```
 
-- **Parameters:** `face` — the face on whose surface the PCurve lives.
+- **Parameters:** `face`, the face on whose surface the PCurve lives.
 - **Returns:** 2D curve and parameter bounds, or `nil` if none exists.
 - **OCCT:** `BRep_Tool::CurveOnSurface`.
+
+A null shape (from `Shape.nullified`) in either argument used to crash the process here: the
+`TopoDS::Edge` and `TopoDS::Face` casts pass a null through and `BRep_Tool::CurveOnSurface`
+dereferences it, so a real edge with a nullified `face` was enough on its own. Both arguments
+are guarded now and the call answers `nil` (#1035).
 
 ---
 
@@ -1598,7 +1615,9 @@ Geometric tolerance stored on an edge shape.
 public var edgeTolerance: Double
 ```
 
-- **OCCT:** `BRep_Tool::Tolerance` (edge overload).
+- **OCCT:** `BRep_Tool::Tolerance` (edge overload). A null shape (from `Shape.nullified`) used
+  to crash the process here; it answers `0` now, which is what a null pointer already answered
+  (#1035).
 
 ---
 
@@ -1610,7 +1629,8 @@ Whether the edge is degenerated (collapsed to a single point).
 public var isEdgeDegenerated: Bool
 ```
 
-- **OCCT:** `BRep_Tool::Degenerated`.
+- **OCCT:** `BRep_Tool::Degenerated`. A null shape (from `Shape.nullified`) used to crash the
+  process here; it answers `false` now (#1035).
 
 ---
 
@@ -1623,7 +1643,9 @@ public func extractFaceSurface() -> Surface?
 ```
 
 - **Returns:** The face's `Geom_Surface`, or `nil` if the shape is not a face.
-- **OCCT:** `BRep_Tool::Surface`.
+- **OCCT:** `BRep_Tool::Surface`. A null shape (from `Shape.nullified`) survives the
+  `TopoDS::Face` cast and used to crash the process inside `BRep_Tool::Surface`; it answers
+  `nil` now (#1035).
 
 ---
 
@@ -1635,7 +1657,8 @@ Geometric tolerance stored on a face shape.
 public var faceTolerance: Double
 ```
 
-- **OCCT:** `BRep_Tool::Tolerance` (face overload).
+- **OCCT:** `BRep_Tool::Tolerance` (face overload). A null shape (from `Shape.nullified`) used
+  to crash the process here; it answers `0` now (#1035).
 
 ---
 
@@ -1661,7 +1684,8 @@ Geometric tolerance stored on a vertex shape.
 public var vertexTolerance: Double
 ```
 
-- **OCCT:** `BRep_Tool::Tolerance` (vertex overload).
+- **OCCT:** `BRep_Tool::Tolerance` (vertex overload). A null shape (from `Shape.nullified`)
+  used to crash the process here; it answers `0` now (#1035).
 
 ---
 
@@ -1693,9 +1717,9 @@ public struct ExtremaResult: Sendable {
 }
 ```
 
-- `squareDistance` — squared Euclidean distance at this extremum.
-- `point1` — closest/farthest point on the first geometric element.
-- `point2` — closest/farthest point on the second geometric element.
+- `squareDistance`: squared Euclidean distance at this extremum.
+- `point1`: closest/farthest point on the first geometric element.
+- `point2`: closest/farthest point on the second geometric element.
 
 ---
 
@@ -1715,7 +1739,7 @@ public static func lineToLine(
 ) -> (isParallel: Bool, results: [ExtremaResult])
 ```
 
-- **Returns:** `isParallel` is `true` when the lines are parallel (infinitely many solutions — check this before using `results`); otherwise `results` holds 1–2 extrema.
+- **Returns:** `isParallel` is `true` when the lines are parallel (infinitely many solutions, check this before using `results`); otherwise `results` holds 1–2 extrema.
 - **OCCT:** `Extrema_ExtElC` (line–line).
 - **Example:**
   ```swift
@@ -1761,7 +1785,7 @@ public static func circleToCircle(
 
 ---
 
-### `ExtremaElC.lineToEllipse(linePoint:lineDir:center:normal:xDir:majorRadius:minorRadius:tolerance:)`
+### `ExtremaElC.lineToEllipse(linePoint:lineDir:center:normal:xDir:majorRadius:minorRadius:)`
 
 Closed-form extrema between a 3D line and an ellipse.
 
@@ -1769,10 +1793,11 @@ Closed-form extrema between a 3D line and an ellipse.
 public static func lineToEllipse(
     linePoint: SIMD3<Double>, lineDir: SIMD3<Double>,
     center: SIMD3<Double>, normal: SIMD3<Double>, xDir: SIMD3<Double>,
-    majorRadius: Double, minorRadius: Double,
-    tolerance: Double = 1e-6
+    majorRadius: Double, minorRadius: Double
 ) -> [ExtremaResult]
 ```
+
+There is no tolerance. Of `Extrema_ExtElC`'s six constructors only the line/line and line/circle ones take one (`AngTol` and `Tol` respectively); `Extrema_ExtElC(gp_Lin, gp_Elips)` takes none.
 
 - **OCCT:** `Extrema_ExtElC` (line–ellipse).
 
@@ -1941,7 +1966,7 @@ public static func pointToParabola(
 ) -> [ExtremaResult]
 ```
 
-- **Parameters:** `focal` — focal parameter of the parabola.
+- **Parameters:** `focal`, focal parameter of the parabola.
 - **OCCT:** `Extrema_ExtPElC` (point–parabola).
 
 ---
@@ -2007,7 +2032,7 @@ public static func pointToCone(
 ) -> [ExtremaResult]
 ```
 
-- **Parameters:** `semiAngle` — cone half-angle in radians; `refRadius` — reference radius at the apex plane.
+- **Parameters:** `semiAngle`, cone half-angle in radians; `refRadius`, reference radius at the apex plane.
 - **OCCT:** `Extrema_ExtPElS` (point–cone).
 
 ---
@@ -2044,7 +2069,7 @@ public static func solve(
 ) -> [Double]
 ```
 
-- **Parameters:** `A`–`E` — equation coefficients; `inf`/`sup` — parameter interval.
+- **Parameters:** `A`–`E`, equation coefficients; `inf`/`sup`, parameter interval.
 - **Returns:** Array of root values in `[inf, sup]`, or empty if no roots exist.
 - **OCCT:** `math_TrigonometricFunctionRoots`.
 - **Example:**

@@ -1,0 +1,21 @@
+########## BEFORE: pinned kernel, no override ##########
+=== A. point-only plate, placement-new over a 0x5A-filled buffer ===
+    0x5A repeated reads back as 1.78389e+127. A constructor that writes the three
+    members overwrites the pattern; the pinned kernel's does not.
+  after the constructor, before Perform()        G0=1.78388675173e+127 G1=1.78388675173e+127 G2=1.78388675173e+127
+  after Perform(), point-only                  G0=1.78388675173e+127 G1=1.78388675173e+127 G2=1.78388675173e+127
+
+=== B. point-only plate, ordinary stack construction, three times in one process ===
+  run 0: after Perform(), point-only           G0=3.01056170098e-314 G1=3.01056255473e-314 G2=-1.65835482943e-209
+  run 1: after Perform(), point-only           G0=3.01056170098e-314 G1=3.01056255473e-314 G2=-1.65835482943e-209
+  run 2: after Perform(), point-only           G0=3.01056170098e-314 G1=3.01056255473e-314 G2=-1.65835482943e-209
+
+=== C. what the point-only branch measured and threw away ===
+  point-only plate, order 0                    G0=0 G1=3.01056057452e-314 G2=6.17868146607e-314
+  discarded by VerifPoints: dist max=1.74210553841e-12 last=1.57145571589e-12 | angle max=0 last=0
+  point-only plate, order 1 off a sphere       G0=6.17900845452e-314 G1=6.17877022792e-314 G2=6.17929784656e-314
+  discarded by VerifPoints: dist max=8.00593208497e-16 last=1.66533453694e-16 | angle max=6.0044719032e-16 last=3.05083725475e-16
+
+=== D. control: a curve constraint takes the VerifSurface() branch ===
+  curve-only plate                             G0=2.08788369733e-05 G1=0 G2=0
+  curve + points plate                         G0=0.00104645741524 G1=0 G2=0

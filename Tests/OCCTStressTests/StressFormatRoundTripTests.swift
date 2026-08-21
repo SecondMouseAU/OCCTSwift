@@ -28,7 +28,7 @@ struct StressRoundTripSTEPTests {
         if origArea > 0, let rArea = reimported.surfaceArea {
             #expect(abs(rArea - origArea) / origArea < 0.01, "Area mismatch for \(name)")
         }
-        // STEP may merge/split edges during serialization — check faces match, edges approximate
+        // STEP may merge/split edges during serialization, check faces match, edges approximate
         #expect(reimported.subShapeCount(ofType: .face) == origFaces, "Face count mismatch for \(name)")
         let reimEdges = reimported.subShapeCount(ofType: .edge)
         #expect(abs(reimEdges - origEdges) <= max(4, origEdges / 5), "Edge count too different for \(name): \(reimEdges) vs \(origEdges)")
@@ -124,7 +124,7 @@ struct StressRoundTripSTLTests {
         try Exporter.writeSTL(shape: shape, to: url)
         let reimported = try Shape.loadSTL(from: url)
         #expect(reimported.isValid, "STL round-trip failed for \(name)")
-        // STL loses topology — just verify bounding box roughly matches
+        // STL loses topology, just verify bounding box roughly matches
         let origBounds = shape.bounds!
         let reimBounds = reimported.bounds!
         let origSize = origBounds.max - origBounds.min
@@ -152,7 +152,7 @@ struct StressRoundTripOBJTests {
         let url = tempURL("obj")
         defer { cleanupTemp(url) }
         try Exporter.writeOBJ(shape: shape, to: url)
-        // OBJ is mesh-based — reimported shape is a triangulation, not B-rep
+        // OBJ is mesh-based, reimported shape is a triangulation, not B-rep
         // Just verify export + reimport completes without crash
         let reimported = try Shape.loadOBJ(from: url)
         _ = reimported // may not be "valid" in B-rep sense
@@ -167,7 +167,7 @@ struct StressRoundTripOBJTests {
 // MARK: - IGES Round-Trip
 
 @Suite("Stress: Round-Trip IGES",
-       .disabled("IGES export/import segfaults on certain shapes — OCCT kernel bug"))
+       .disabled("IGES export/import segfaults on certain shapes, OCCT kernel bug"))
 struct StressRoundTripIGESTests {
 
     private func roundTrip(_ shape: Shape, name: String) throws {

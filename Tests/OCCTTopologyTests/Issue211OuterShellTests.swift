@@ -3,9 +3,9 @@ import Foundation
 import simd
 @testable import OCCTSwift
 
-// #211: Shape.outerShell (BRepClass3d::OuterShell) — pick the outer body shell of a solid,
+// #211: Shape.outerShell (BRepClass3d:OuterShell), pick the outer body shell of a solid,
 // distinguishing it from internal void shells.
-@Suite("Issue #211 — outerShell")
+@Suite("Issue #211, outerShell")
 struct Issue211OuterShell {
 
     // A solid with an internal cavity: a 20-cube with a fully-enclosed 8-cube removed.

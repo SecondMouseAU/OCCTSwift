@@ -5,8 +5,8 @@ parent: API Reference
 
 # Mesh
 
-A `Mesh` is a triangulated surface representation — vertices, per-vertex normals, and triangle
-indices — produced by tessellating a `Shape` or built directly from raw arrays. It is the bridge
+A `Mesh` is a triangulated surface representation, vertices, per-vertex normals, and triangle
+indices, produced by tessellating a `Shape` or built directly from raw arrays. It is the bridge
 between OCCT's exact B-Rep geometry and renderers (SceneKit, RealityKit, Metal) and mesh file
 formats (STL, OBJ, PLY). Obtain one by calling `Shape.mesh(linearDeflection:)` or
 `Shape.mesh(parameters:)`, or construct one from your own `vertices`/`indices` arrays with
@@ -38,17 +38,17 @@ shapes, use `Shape.mesh()` instead. When `normals` is `nil`, per-vertex normals 
 by averaging the face normals of adjacent triangles (smooth shading).
 
 - **Parameters:**
-  - `vertices` — per-vertex positions; must not be empty.
-  - `normals` — optional per-vertex normals; if provided must have the same count as `vertices`.
+  - `vertices`: per-vertex positions; must not be empty.
+  - `normals`: optional per-vertex normals; if provided must have the same count as `vertices`.
     Pass `nil` to auto-compute smooth normals from triangle adjacency.
-  - `indices` — triangle index triples; length must be a multiple of 3, every value `< vertices.count`.
+  - `indices`: triangle index triples; length must be a multiple of 3, every value `< vertices.count`.
 - **Returns:** `nil` if any input is empty, `indices.count % 3 != 0`, a normal-count mismatch
   exists, or any index is out of bounds.
 - **OCCT:** Pure-Swift validation; data is stored in the C `OCCTMesh` struct via
   `OCCTMeshCreateFromArrays`.
 - **Example:**
   ```swift
-  // Octahedron — normals auto-computed
+  // Octahedron, normals auto-computed
   let v: [SIMD3<Float>] = [
       SIMD3(0, 0, 1), SIMD3(1, 0, 0), SIMD3(0, 1, 0),
       SIMD3(-1, 0, 0), SIMD3(0, -1, 0), SIMD3(0, 0, -1),
@@ -73,7 +73,7 @@ public var vertexCount: Int { get }
 ```
 
 - **Returns:** Count of distinct vertex positions.
-- **OCCT:** `OCCTMeshGetVertexCount` — returns `vertices.size() / 3` from the internal float buffer.
+- **OCCT:** `OCCTMeshGetVertexCount`, returns `vertices.size() / 3` from the internal float buffer.
 - **Example:**
   ```swift
   let mesh = Shape.box(width: 10, height: 5, depth: 3)!.mesh(linearDeflection: 0.1)!
@@ -91,7 +91,7 @@ public var triangleCount: Int { get }
 ```
 
 - **Returns:** Count of triangles; equals `indices.count / 3`.
-- **OCCT:** `OCCTMeshGetTriangleCount` — returns `indices.size() / 3` from the internal index buffer.
+- **OCCT:** `OCCTMeshGetTriangleCount`, returns `indices.size() / 3` from the internal index buffer.
 - **Example:**
   ```swift
   print(mesh.triangleCount)
@@ -111,7 +111,7 @@ public var vertices: [SIMD3<Float>] { get }
 Each element is the 3D position of one vertex. Array length equals `vertexCount`.
 
 - **Returns:** Position array; `[]` if the mesh is empty.
-- **OCCT:** `OCCTMeshGetVertices` — copies the internal contiguous float buffer, then repackages
+- **OCCT:** `OCCTMeshGetVertices`, copies the internal contiguous float buffer, then repackages
   into `SIMD3`.
 - **Example:**
   ```swift
@@ -135,7 +135,7 @@ Each normal is a unit vector perpendicular to the surface at that vertex. Array 
 from face curvature) or, for array-constructed meshes, by averaging adjacent face normals.
 
 - **Returns:** Normal array; `[]` if the mesh is empty.
-- **OCCT:** `OCCTMeshGetNormals` — copies the internal normal float buffer.
+- **OCCT:** `OCCTMeshGetNormals`, copies the internal normal float buffer.
 - **Example:**
   ```swift
   for n in mesh.normals {
@@ -157,7 +157,7 @@ Every three consecutive values define one triangle referencing vertices at those
 `vertices`. Array length equals `triangleCount * 3`.
 
 - **Returns:** Index array; `[]` if the mesh has no triangles.
-- **OCCT:** `OCCTMeshGetIndices` — copies the internal index buffer.
+- **OCCT:** `OCCTMeshGetIndices`, copies the internal index buffer.
 - **Example:**
   ```swift
   let idx = mesh.indices
@@ -179,7 +179,7 @@ Format: `[x0, y0, z0, x1, y1, z1, …]`. Length is `vertexCount * 3`. Ready for 
 to a GPU buffer without repackaging.
 
 - **Returns:** Flat float array; `[]` if the mesh is empty.
-- **OCCT:** `OCCTMeshGetVertices` — same buffer copy as `vertices`, without `SIMD3` wrapping.
+- **OCCT:** `OCCTMeshGetVertices`, same buffer copy as `vertices`, without `SIMD3` wrapping.
 - **Example:**
   ```swift
   let (positions, normals, indices) = mesh.metalBufferData()
@@ -200,7 +200,7 @@ Format: `[nx0, ny0, nz0, nx1, ny1, nz1, …]`. Length is `vertexCount * 3`. Pair
 `vertexData` and `indices` for zero-copy GPU uploads.
 
 - **Returns:** Flat float array; `[]` if the mesh is empty.
-- **OCCT:** `OCCTMeshGetNormals` — same buffer copy as `normals`, without `SIMD3` wrapping.
+- **OCCT:** `OCCTMeshGetNormals`, same buffer copy as `normals`, without `SIMD3` wrapping.
 - **Example:**
   ```swift
   let posData = Data(bytes: mesh.vertexData, count: mesh.vertexData.count * 4)
@@ -222,7 +222,7 @@ public var boundingBox: (min: SIMD3<Float>, max: SIMD3<Float>) { get }
 Computed by iterating all vertex positions using Swift `min`/`max` component-wise reduction.
 
 - **Returns:** `(min, max)` corner tuple; `(.zero, .zero)` if the mesh is empty.
-- **OCCT:** Pure-Swift — iterates `vertices`.
+- **OCCT:** Pure-Swift, iterates `vertices`.
 - **Example:**
   ```swift
   let (lo, hi) = mesh.boundingBox
@@ -242,7 +242,7 @@ public var size: SIMD3<Float> { get }
 Computed as `boundingBox.max − boundingBox.min`.
 
 - **Returns:** Width, height, depth of the AABB.
-- **OCCT:** Pure-Swift — delegates to `boundingBox`.
+- **OCCT:** Pure-Swift, delegates to `boundingBox`.
 - **Example:**
   ```swift
   let s = mesh.size   // SIMD3(width, height, depth)
@@ -261,7 +261,7 @@ public var center: SIMD3<Float> { get }
 Computed as `(boundingBox.min + boundingBox.max) / 2`.
 
 - **Returns:** Centroid of the AABB.
-- **OCCT:** Pure-Swift — delegates to `boundingBox`.
+- **OCCT:** Pure-Swift, delegates to `boundingBox`.
 - **Example:**
   ```swift
   let c = mesh.center
@@ -286,7 +286,7 @@ B-Rep-face-aware picking, CAM operations that need to reason per face, or custom
 shading.
 
 - **Returns:** Array of `Triangle` structs; `[]` if the mesh has no triangles.
-- **OCCT:** `OCCTMeshGetTrianglesWithFaces` — reads the internal `faceIndices` and
+- **OCCT:** `OCCTMeshGetTrianglesWithFaces`, reads the internal `faceIndices` and
   `triangleNormals` arrays alongside the index buffer.
 - **Example:**
   ```swift
@@ -311,11 +311,11 @@ public func toShape(weldTolerance: Double = 1e-6) -> Shape?
 
 Each triangle becomes a planar B-Rep face; `BRepBuilderAPI_Sewing` merges shared edges within
 `weldTolerance` to produce a connected shell. The resulting shape is a shell (or compound of
-planar faces), not necessarily a valid manifold solid — run shape healing if you need one. The
+planar faces), not necessarily a valid manifold solid, run shape healing if you need one. The
 weld tolerance must scale with the mesh's coordinate magnitude: a value too small for a
 large-coordinate mesh leaves edges unmerged and yields an open shell.
 
-- **Parameters:** `weldTolerance` — vertex-merge tolerance in model units (default `1e-6`; raise
+- **Parameters:** `weldTolerance`, vertex-merge tolerance in model units (default `1e-6`; raise
   for large-coordinate meshes). Must be positive.
 - **Returns:** A `Shape` representing the tessellated geometry, or `nil` if the mesh is empty,
   weldTolerance is ≤ 0, or sewing fails.
@@ -326,7 +326,7 @@ large-coordinate mesh leaves edges unmerged and yields an open shell.
   let shape = mesh.toShape(weldTolerance: 1e-6)   // raise for large-coordinate meshes
   ```
 - **Note:** For an STL file on disk, prefer `Shape.loadSTLRobust(from:sewingTolerance:)` which
-  sews and heals as it loads. The result of `toShape` is a faceted shell — run
+  sews and heals as it loads. The result of `toShape` is a faceted shell, run
   [healing](../guides/cookbook/healing-and-validity.md) if you need a valid solid.
 
 ---
@@ -343,10 +343,10 @@ public func union(with other: Mesh, deflection: Double = 0.1) -> Mesh?
 
 Both meshes are lifted to B-Rep shells (`BRepBuilderAPI_Sewing`), the union is computed
 (`BRepAlgoAPI_Fuse`), and the result is re-tessellated at `deflection`. Because the operation
-works on tessellations — not exact B-Rep — prefer the B-Rep boolean `Shape.union(_:)` when
+works on tessellations, not exact B-Rep, prefer the B-Rep boolean `Shape.union(_:)` when
 exact geometry matters.
 
-- **Parameters:** `other` — mesh to add; `deflection` — linear deflection for re-tessellating
+- **Parameters:** `other`, mesh to add; `deflection`, linear deflection for re-tessellating
   the result (default `0.1`).
 - **Returns:** Union mesh, or `nil` if conversion or the boolean operation fails.
 - **OCCT:** `OCCTMeshUnion` → `BRepBuilderAPI_Sewing` + `BRepAlgoAPI_Fuse` +
@@ -375,7 +375,7 @@ public func subtracting(_ other: Mesh, deflection: Double = 0.1) -> Mesh?
 Both meshes are lifted to B-Rep shells, the subtraction is computed (`BRepAlgoAPI_Cut`), and
 the result is re-tessellated at `deflection`.
 
-- **Parameters:** `other` — mesh to subtract; `deflection` — linear deflection for
+- **Parameters:** `other`, mesh to subtract; `deflection`, linear deflection for
   re-tessellating the result.
 - **Returns:** Difference mesh, or `nil` on failure.
 - **OCCT:** `OCCTMeshSubtract` → `BRepBuilderAPI_Sewing` + `BRepAlgoAPI_Cut` +
@@ -398,7 +398,7 @@ public func intersection(with other: Mesh, deflection: Double = 0.1) -> Mesh?
 Both meshes are lifted to B-Rep shells, the intersection is computed (`BRepAlgoAPI_Common`),
 and the result is re-tessellated at `deflection`.
 
-- **Parameters:** `other` — mesh to intersect with; `deflection` — linear deflection for
+- **Parameters:** `other`, mesh to intersect with; `deflection`, linear deflection for
   re-tessellating the result.
 - **Returns:** Intersection mesh, or `nil` on failure.
 - **OCCT:** `OCCTMeshIntersect` → `BRepBuilderAPI_Sewing` + `BRepAlgoAPI_Common` +
@@ -431,7 +431,7 @@ Apply materials separately before adding to a scene.
 
 - **Returns:** `SCNGeometry` with vertex and normal sources; returns an empty `SCNGeometry` if
   the mesh has no vertices.
-- **OCCT:** Pure-Swift — reads `vertexData`, `normalData`, `indices`.
+- **OCCT:** Pure-Swift, reads `vertexData`, `normalData`, `indices`.
 - **Example:**
   ```swift
   let geometry = mesh.sceneKitGeometry()
@@ -456,9 +456,9 @@ public func sceneKitNode(material: SCNMaterial? = nil) -> SCNNode
 Convenience wrapper: calls `sceneKitGeometry()`, optionally assigns `material`, then wraps in
 an `SCNNode`.
 
-- **Parameters:** `material` — optional material; `nil` leaves the geometry with no applied material.
+- **Parameters:** `material`, optional material; `nil` leaves the geometry with no applied material.
 - **Returns:** `SCNNode` ready to add to a scene.
-- **OCCT:** Pure-Swift — delegates to `sceneKitGeometry()`.
+- **OCCT:** Pure-Swift, delegates to `sceneKitGeometry()`.
 - **Example:**
   ```swift
   let node = mesh.sceneKitNode(material: myMaterial)
@@ -482,7 +482,7 @@ All three `Data` objects are interleaved-float (`Float`, 4 bytes each component)
 (3 × `Float`); index buffer uses `UInt32` (4 bytes each).
 
 - **Returns:** Named tuple of `(positions: Data, normals: Data, indices: Data)`.
-- **OCCT:** Pure-Swift — repackages `vertexData`, `normalData`, `indices` into `Data`.
+- **OCCT:** Pure-Swift, repackages `vertexData`, `normalData`, `indices` into `Data`.
 - **Example:**
   ```swift
   let (positions, normals, indices) = mesh.metalBufferData()
@@ -518,7 +518,7 @@ Builds a `MeshDescriptor` from `vertices` (positions), `normals`, and `indices`,
 
 - **Returns:** A `MeshResource` suitable for a RealityKit `ModelEntity`.
 - **Throws:** RealityKit errors from `MeshResource.generate(from:)` if the descriptor is invalid.
-- **OCCT:** Pure-Swift — reads `vertices`, `normals`, `indices`.
+- **OCCT:** Pure-Swift, reads `vertices`, `normals`, `indices`.
 - **Note:** `@MainActor`-isolated and gated to macOS 15 / iOS 18; call from the main actor inside
   `if #available(macOS 15, iOS 18, *)`.
 - **Example:**
@@ -546,10 +546,10 @@ public func realityKitModelEntity(material: RealityKit.Material) throws -> Model
 
 Calls `realityKitMeshResource()` then constructs `ModelEntity(mesh:materials:)`.
 
-- **Parameters:** `material` — any `RealityKit.Material` to apply.
+- **Parameters:** `material`, any `RealityKit.Material` to apply.
 - **Returns:** `ModelEntity` ready to add to a RealityKit scene.
 - **Throws:** Propagates errors from `realityKitMeshResource()`.
-- **OCCT:** Pure-Swift — delegates to `realityKitMeshResource()`.
+- **OCCT:** Pure-Swift, delegates to `realityKitMeshResource()`.
 - **Note:** `@MainActor`-isolated, macOS 15 / iOS 18 only.
 - **Example:**
   ```swift
@@ -580,7 +580,7 @@ Convenience overload: applies `SimpleMaterial(color: .gray, isMetallic: true)` a
 
 - **Returns:** `ModelEntity` with a gray metallic appearance.
 - **Throws:** Propagates errors from `realityKitMeshResource()`.
-- **OCCT:** Pure-Swift — delegates to `realityKitModelEntity(material:)`.
+- **OCCT:** Pure-Swift, delegates to `realityKitModelEntity(material:)`.
 - **Note:** `@MainActor`-isolated, macOS 15 / iOS 18 only.
 - **Example:**
   ```swift
@@ -685,20 +685,20 @@ public struct Triangle: Sendable {
 
 Returned by `Mesh.trianglesWithFaces()`. The `faceIndex` is the 0-based index of the B-Rep
 face this triangle was tessellated from (−1 for meshes constructed directly from arrays), in the
-`Shape.faces()` enumeration — so `shape.face(at: Int(tri.faceIndex))` always resolves. Use
+`Shape.faces()` enumeration, so `shape.face(at: Int(tri.faceIndex))` always resolves. Use
 `faceIndex` to correlate a picked triangle back to the original solid face for CAM or selection
 operations.
 
-On a shape where one face is shared by two solids, that face is meshed **twice** — once per owner,
-each wound so its normals point out of that owner — and both sets of triangles carry the one index
+On a shape where one face is shared by two solids, that face is meshed **twice**, once per owner,
+each wound so its normals point out of that owner, and both sets of triangles carry the one index
 that names it. `faceIndex` values are therefore not unique per face. Before #613 this was the
 position in a `TopExp_Explorer` walk instead, which on a two-solid split compound ran 0…11 over an
 11-face shape, so a triangle could claim a `faceIndex` that `face(at:)` could not address.
 
 - **Fields:**
-  - `v1`, `v2`, `v3` — vertex indices into `Mesh.vertices`.
-  - `faceIndex` — source B-Rep face index; −1 if unknown.
-  - `normal` — per-triangle surface normal (computed from the cross product of two edges).
+  - `v1`, `v2`, `v3`, vertex indices into `Mesh.vertices`.
+  - `faceIndex`: source B-Rep face index; −1 if unknown.
+  - `normal`: per-triangle surface normal (computed from the cross product of two edges).
 
 ---
 

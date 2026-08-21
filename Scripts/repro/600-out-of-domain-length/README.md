@@ -40,12 +40,12 @@ clang++ ... Scripts/repro/600-out-of-domain-length/occt_600_ellipse_accuracy.mm 
 
 ## Result
 
-Measured over `[f, l + span]` — the domain, extended by one domain width past the end:
+Measured over `[f, l + span]`, the domain, extended by one domain width past the end:
 
 | curve | own length | today | confined | traced | now |
 |---|---|---|---|---|---|
 | segment (trimmed line) | 10 | 20 | 10 | 20 | **10** |
-| unbounded line | 4e308 | 4e308 | 4e308 | — | 4e308 |
+| unbounded line | 4e308 | 4e308 | 4e308 |, | 4e308 |
 | circle r=5 | 31.42 | 62.83 | 31.42 | 62.83 | 62.83 |
 | ellipse 8×3 | 36.49 | 73.98 | 36.49 | 72.73 | 72.98 |
 | arc (half circle) | 15.71 | 31.42 | 15.71 | 31.42 | **15.71** |
@@ -59,12 +59,12 @@ Measured over `[f, l + span]` — the domain, extended by one domain width past 
   wholly outside the domain, where the curve is not present at all), and an arc leaves its trim and
   finishes the basis circle.
 - **A periodic BSpline is the case that decides the design.** It is periodic *and* composite, so
-  GCPnts confined it to its knots and returned one period for a request of two — silently
+  GCPnts confined it to its knots and returned one period for a request of two, silently
   answering half of what was asked, with no failure reported. "Confine unless periodic" would have
   left that untouched, because the confining happens inside GCPnts and not at the call site.
   Winding has to be computed here.
 - **`IsPeriodic()` alone is not the test.** A `Geom_TrimmedCurve` over half a circle reports
-  `IsPeriodic() == true` with `Period() == 2π` — it inherits the basis curve's periodicity — so the
+  `IsPeriodic() == true` with `Period() == 2π`, it inherits the basis curve's periodicity, so the
   domain has to cover a whole period before a range may wind. Otherwise an arc measures round the
   half its caller trimmed away.
 - **The proposal validates on every fixture.** `proposed` matches `traced` on every winding curve
@@ -82,20 +82,20 @@ in `Sources/OCCTBridge/src/OCCTBridge_Internal.h`, shared by all four ranged ent
 (`OCCTCurve3DGetLengthBetween`, `OCCTCurve2DGetLengthBetween`, `OCCTCurve2DLength`,
 `OCCTEdgeArcLengthBetween`), so a curve, its 2D equivalent and an edge built from it answer
 identically. Winding is whole turns × one period's length, plus the remainder wrapped into the
-domain — one period's length, not the whole domain's, so that a curve trimmed to more than a period
+domain, one period's length, not the whole domain's, so that a curve trimmed to more than a period
 does not multiply the wrong number.
 
 Pinned by `Tests/OCCTCurveTests/Issue600OutOfDomainRangeTests.swift`, verified by injection:
 restoring the raw `GCPnts_AbscissaPoint::Length(adaptor, u1, u2)` call at all four sites fails 7 of
-the 10 tests. The 3 that keep passing are the ones asserting *preserved* behaviour — the circle
-still winds, the multi-span BSpline is unchanged, in-domain ranges are untouched — which is what
+the 10 tests. The 3 that keep passing are the ones asserting *preserved* behaviour, the circle
+still winds, the multi-span BSpline is unchanged, in-domain ranges are untouched, which is what
 they are there to check.
 
 ## The accuracy defect this turned up (#603)
 
 The ellipse rows do not match the chord reference, and the fix is not responsible: `proposed`
 equals `today` there. `GCPnts_AbscissaPoint::Length` integrates a single-span conic with one Gauss
-quadrature over the whole domain, which is the integrator #477 removed from multi-span curves — and
+quadrature over the whole domain, which is the integrator #477 removed from multi-span curves, and
 an ellipse has no `GeomAbs_CN` interval boundaries for `GCPnts` to split at.
 
 `occt_600_ellipse_accuracy.mm` measures it against a 2M-point Simpson quadrature of the elliptic

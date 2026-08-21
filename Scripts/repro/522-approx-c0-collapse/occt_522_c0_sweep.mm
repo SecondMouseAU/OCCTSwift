@@ -1,4 +1,4 @@
-// OCCTSwift#522 — how wide is it? GeomConvert_ApproxSurface at GeomAbs_C0 returns a degree-1,
+// OCCTSwift#522, how wide is it? GeomConvert_ApproxSurface at GeomAbs_C0 returns a degree-1,
 // 2-pole-in-U fit of a sphere that deviates by 20 while reporting IsDone and maxError 1e-4.
 // Sweep 7 surface families x all 9 (uCont, vCont) combinations of C0/C1/C2, plus C0/C0 across five
 // tolerances, to see which requests are affected. See this directory's README.md.

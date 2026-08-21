@@ -1,4 +1,4 @@
-// OCCTSwift#529 — the curvature-inversion exposure on the adaptor side.
+// OCCTSwift#529, the curvature-inversion exposure on the adaptor side.
 //
 // #494 found that GeomLProp_CLProps::Curvature() returns RealLast() to mean "infinite curvature" at
 // a cusp, on a path that never assigns the myCurvature field CentreOfCurvature() then divides by --

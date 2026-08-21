@@ -9,7 +9,7 @@ parent: API Reference
 
 ## Topics
 
-- [SheetMetal.Flange](#sheetmetalflange) · [SheetMetal.BendDirection](#sheetmetalblenddirection) · [SheetMetal.Bend](#sheetmetalbend) · [SheetMetal.BuildError](#sheetmetalbuilderror) · [SheetMetal.Builder](#sheetmetalbuilder) · [StandardLayout](#standardlayout) · [StandardLayout.PlacedView](#standardlayoutplacedview) · [Sheet Extension — standardLayout](#sheet-extension--standardlayout)
+- [SheetMetal.Flange](#sheetmetalflange) · [SheetMetal.BendDirection](#sheetmetalblenddirection) · [SheetMetal.Bend](#sheetmetalbend) · [SheetMetal.BuildError](#sheetmetalbuilderror) · [SheetMetal.Builder](#sheetmetalbuilder) · [StandardLayout](#standardlayout) · [StandardLayout.PlacedView](#standardlayoutplacedview) · [Sheet Extension, standardLayout](#sheet-extension--standardlayout)
 
 ---
 
@@ -61,12 +61,12 @@ public init(
 The `normal` is normalised at init time; `vAxis` defaults to `cross(normal, uAxis)` if `nil`.
 
 - **Parameters:**
-  - `id` — unique string identifier referenced by `Bend.fromFlangeID`/`Bend.toFlangeID`.
-  - `profile` — ordered 2D polygon vertices (at least 3 points) in the flange's local `(u, v)` space.
-  - `origin` — world-space origin of the profile plane.
-  - `normal` — extrusion direction; normalised automatically.
-  - `uAxis` — local U axis in world space.
-  - `vAxis` — local V axis; computed from `normal × uAxis` if omitted.
+  - `id`: unique string identifier referenced by `Bend.fromFlangeID`/`Bend.toFlangeID`.
+  - `profile`: ordered 2D polygon vertices (at least 3 points) in the flange's local `(u, v)` space.
+  - `origin`: world-space origin of the profile plane.
+  - `normal`: extrusion direction; normalised automatically.
+  - `uAxis`: local U axis in world space.
+  - `vAxis`: local V axis; computed from `normal × uAxis` if omitted.
 - **Note:** Stepped-seam bends (issue #86, v0.153) require rectangular profiles for split-flange support; non-rectangular profiles still work when no step split is needed.
 - **Example:**
   ```swift
@@ -93,9 +93,9 @@ public enum BendDirection: Sendable, Equatable {
 }
 ```
 
-- `.concave` — the metal folds toward itself (interior dihedral < 180°), as in an L-bracket.
-- `.convex` — the metal folds back on the opposite side (interior dihedral > 180°, reflex), as in the middle bend of a Z-section.
-- `.auto` — direction inferred from flange-body positions: concave when flange B's centroid sits on flange A's `+normal` side.
+- `.concave`: the metal folds toward itself (interior dihedral < 180°), as in an L-bracket.
+- `.convex`: the metal folds back on the opposite side (interior dihedral > 180°, reflex), as in the middle bend of a Z-section.
+- `.auto`: direction inferred from flange-body positions: concave when flange B's centroid sits on flange A's `+normal` side.
 
 ---
 
@@ -121,11 +121,11 @@ public struct Bend: Sendable {
 }
 ```
 
-- `angle` — bend angle in radians; `nil` means infer from flange placements. `0` = flat continuation; `±π` = fully closed. Positive = concave; negative = convex.
-- `insideRadius` — concave (inner) bend radius. `0` for a sharp inside corner.
-- `outsideRadius` — convex (outer) bend radius; defaults to `insideRadius + thickness` when `nil`.
-- `materialThicknessAtBend` — material thickness through the bend zone; defaults to the builder's global `thickness`. Set to a fraction for etched/thinned bend lines.
-- `direction` — explicit override; defaults to `.auto`.
+- `angle`: bend angle in radians; `nil` means infer from flange placements. `0` = flat continuation; `±π` = fully closed. Positive = concave; negative = convex.
+- `insideRadius`: concave (inner) bend radius. `0` for a sharp inside corner.
+- `outsideRadius`: convex (outer) bend radius; defaults to `insideRadius + thickness` when `nil`.
+- `materialThicknessAtBend`: material thickness through the bend zone; defaults to the builder's global `thickness`. Set to a fraction for etched/thinned bend lines.
+- `direction`: explicit override; defaults to `.auto`.
 
 ---
 
@@ -160,9 +160,9 @@ public init(from fromID: String, to toID: String, radius: Double)
 ```
 
 - **Parameters:**
-  - `fromID` — ID of the originating flange.
-  - `toID` — ID of the target flange.
-  - `radius` — inside bend radius. Outside radius defaults to `radius + thickness`.
+  - `fromID`: ID of the originating flange.
+  - `toID`: ID of the target flange.
+  - `radius`: inside bend radius. Outside radius defaults to `radius + thickness`.
 - **Example:**
   ```swift
   let bend = SheetMetal.Bend(from: "base", to: "upright", radius: 2.0)
@@ -187,13 +187,13 @@ public init(
 ```
 
 - **Parameters:**
-  - `fromID` — ID of the originating flange.
-  - `toID` — ID of the target flange.
-  - `angle` — bend angle in radians (`nil` = infer from geometry).
-  - `insideRadius` — concave radius.
-  - `outsideRadius` — convex radius; `nil` = `insideRadius + thickness`.
-  - `materialThicknessAtBend` — local material thickness override; `nil` = global `thickness`.
-  - `direction` — `.auto`, `.concave`, or `.convex`.
+  - `fromID`: ID of the originating flange.
+  - `toID`: ID of the target flange.
+  - `angle`: bend angle in radians (`nil` = infer from geometry).
+  - `insideRadius`: concave radius.
+  - `outsideRadius`: convex radius; `nil` = `insideRadius + thickness`.
+  - `materialThicknessAtBend`: local material thickness override; `nil` = global `thickness`.
+  - `direction`: `.auto`, `.concave`, or `.convex`.
 - **Example:**
   ```swift
   let bend = SheetMetal.Bend(
@@ -341,7 +341,7 @@ Creates a builder for sheet metal of the given uniform thickness.
 public init(thickness: Double)
 ```
 
-- **Parameters:** `thickness` — sheet thickness in model units; must be > 0 or `build` throws `.invalidThickness`.
+- **Parameters:** `thickness`, sheet thickness in model units; must be > 0 or `build` throws `.invalidThickness`.
 - **Example:**
   ```swift
   let builder = SheetMetal.Builder(thickness: 2.0)
@@ -360,15 +360,15 @@ public func build(flanges: [Flange], bends: [Bend] = []) throws -> Shape
 **Build sequence:**
 
 1. Validate `thickness > 0` and `flanges` non-empty; check all `Bend` IDs exist.
-2. For each bend, compute the seam direction (`cross(a.normal, b.normal)`) and the overlap range along the seam. If a flange extends past the intersection (a *stepped* seam), split that flange's profile at the intersection endpoints — the matched-extent middle piece carries the bend; outer pieces remain flat.
+2. For each bend, compute the seam direction (`cross(a.normal, b.normal)`) and the overlap range along the seam. If a flange extends past the intersection (a *stepped* seam), split that flange's profile at the intersection endpoints, the matched-extent middle piece carries the bend; outer pieces remain flat.
 3. Extrude every piece via `Wire.polygon3D` + `Shape.extrude(profile:direction:length:)`.
 4. Fuse all pieces with sequential `Shape.union`.
 5. For each **concave** bend: locate seam edges between the matched-extent pieces and call `Shape.filleted(edges:radius:)`.
    For each **convex** bend: build a curved-triangle prism of bend material (three-point arc cross-section extruded along the seam) and fuse it in.
 
 - **Parameters:**
-  - `flanges` — ordered list of flanges; IDs must be unique; each profile needs ≥ 3 points.
-  - `bends` — list of bend connections; defaults to `[]` (no bends = simple multi-flange union).
+  - `flanges`: ordered list of flanges; IDs must be unique; each profile needs ≥ 3 points.
+  - `bends`: list of bend connections; defaults to `[]` (no bends = simple multi-flange union).
 - **Returns:** Fused and filleted `Shape`.
 - **Throws:** `BuildError` on validation failure, extrusion failure, union failure, or fillet failure.
 - **OCCT:** `BRepPrimAPI_MakePrism` (extrude) · `BRepAlgoAPI_Fuse` (union) · `BRepFilletAPI_MakeFillet` (fillet) · `GC_MakeArcOfCircle` / `BRepBuilderAPI_MakeWire` (convex bend arc) · `GC_MakeSegment` (convex bend lines).
@@ -394,7 +394,7 @@ public func build(flanges: [Flange], bends: [Bend] = []) throws -> Shape
       // bracket is a filleted L-shape
   }
   ```
-- **Note:** Convex bends (`.convex` or auto-inferred) add bend material rather than filleting an existing edge — the inside corner stays sharp at the kiss line. For a fully-rounded inside, position flanges to leave room for the inner cylinder.
+- **Note:** Convex bends (`.convex` or auto-inferred) add bend material rather than filleting an existing edge, the inside corner stays sharp at the kiss line. For a fully-rounded inside, position flanges to leave room for the inner cylinder.
 
 ---
 
@@ -492,7 +492,7 @@ public func render(into writer: DXFWriter)
 
 Calls `writer.collectFromDrawing(_:translate:scale:)` for each view in `placed` order. The writer accumulates all geometry; call its output method after `render` to produce the DXF bytes.
 
-- **Parameters:** `writer` — `DXFWriter` to receive the drawing entities.
+- **Parameters:** `writer`, `DXFWriter` to receive the drawing entities.
 - **Example:**
   ```swift
   let writer = DXFWriter()
@@ -514,9 +514,9 @@ public struct PlacedView: Sendable {
 }
 ```
 
-- `drawing` — the original unannotated `Drawing`. Mutate this (add dimensions, centrelines) before calling `render(into:)`.
-- `offset` — translation applied to the drawing's coordinate system: `apply(p) = scale * p + offset`.
-- `scale` — uniform scale factor. Computed as `min(caller's scale, fit-to-cell scale)` so no view overflows its cell.
+- `drawing`: the original unannotated `Drawing`. Mutate this (add dimensions, centrelines) before calling `render(into:)`.
+- `offset`: translation applied to the drawing's coordinate system: `apply(p) = scale * p + offset`.
+- `scale`: uniform scale factor. Computed as `min(caller's scale, fit-to-cell scale)` so no view overflows its cell.
 
 ---
 
@@ -526,7 +526,7 @@ The original unannotated `Drawing`, mutable before calling `render(into:)`.
 
 ---
 
-## Sheet Extension — standardLayout
+## Sheet Extension, standardLayout
 
 ### `Sheet.standardLayout(of:scale:margin:includeIso:)`
 
@@ -548,12 +548,12 @@ public func standardLayout(of shape: Shape,
 5. Compute each view's `offset` so the view's bounding-box centre aligns with its cell centre.
 
 - **Parameters:**
-  - `shape` — the solid to project.
-  - `scale` — caller's preferred uniform scale (default `.one` = 1:1). Applied only if smaller than the fit-to-cell scale.
-  - `margin` — outer and inter-cell margin in sheet units (default 20).
-  - `includeIso` — when `false`, the isometric cell is left empty; `StandardLayout.iso` is `nil`.
+  - `shape`: the solid to project.
+  - `scale`: caller's preferred uniform scale (default `.one` = 1:1). Applied only if smaller than the fit-to-cell scale.
+  - `margin`: outer and inter-cell margin in sheet units (default 20).
+  - `includeIso`: when `false`, the isometric cell is left empty; `StandardLayout.iso` is `nil`.
 - **Returns:** `StandardLayout` with four placed views, or `nil` if any of the front/top/side projections fail.
-- **Note:** The isometric view failure is non-fatal — if `Drawing.isometricView` returns `nil`, `iso` is simply `nil`.
+- **Note:** The isometric view failure is non-fatal, if `Drawing.isometricView` returns `nil`, `iso` is simply `nil`.
 - **Example:**
   ```swift
   let sheet = Sheet(size: .a3, projection: .first)

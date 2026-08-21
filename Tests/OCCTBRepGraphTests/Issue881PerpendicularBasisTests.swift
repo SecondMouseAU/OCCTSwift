@@ -4,16 +4,16 @@ import simd
 @testable import OCCTSwift
 
 // #881: `Placement.init(origin:normal:)` and the `.throughAxis` case body used to derive their
-// perpendicular-to-a-direction basis two different, mutually-inconsistent ways — a different
+// perpendicular-to-a-direction basis two different, mutually-inconsistent ways, a different
 // worldUp fallback threshold, and reversed cross-product operand order (which flips the sign of
 // the result even when the worldUp choice happens to agree). Both now share `perpendicularBasis(
 // to:)`, which matches OCCT's own `gp_Ax2(gp_Pnt, gp_Dir)` canonical algorithm (smallest-component
-// selection, no threshold, no fallback branch) exactly — verified directly against the pinned
+// selection, no threshold, no fallback branch) exactly, verified directly against the pinned
 // xcframework's `gp_Ax2` for the fixture below.
 //
 // The fixture is deliberately non-axis-aligned in both X and Y (15° off the Z axis, split 0.6/0.8
 // between X and Y) so every one of the old three conventions disagrees with the canonical answer
-// here — the pre-existing test suite only ever passed axis-aligned normals, which is why none of
+// here, the pre-existing test suite only ever passed axis-aligned normals, which is why none of
 // this was caught (#881's own investigation).
 @Suite("perpendicularBasis unification: ConstructionEntity (#881)")
 struct Issue881ConstructionPerpendicularBasisTests {
@@ -58,7 +58,7 @@ struct Issue881ConstructionPerpendicularBasisTests {
     }
 
     /// Axis-aligned normals were NOT covered by the fixture above (15° off Z) or by any other
-    /// test in this suite before this case — a real gap: this PR's own CHANGELOG entry originally
+    /// test in this suite before this case, a real gap: this PR's own CHANGELOG entry originally
     /// (and wrongly) claimed axis-aligned input was unaffected by the #881 unification, and this
     /// exact gap is why nothing caught that the claim was false (#914 review, finding 1).
     ///
@@ -66,10 +66,10 @@ struct Issue881ConstructionPerpendicularBasisTests {
     /// `gp_Ax2(gp_Pnt(0,0,0), gp_Dir(...))` constructor for all six world-axis directions (see
     /// `Scripts/repro/` convention; probe compiled and run against
     /// `Libraries/OCCT.xcframework/macos-arm64`, not derived from this file's own
-    /// `perpendicularBasis(to:)` implementation — an independent ground truth, not a tautology).
+    /// `perpendicularBasis(to:)` implementation, an independent ground truth, not a tautology).
     /// Confirms world ±Z is the only direction where the basis is unchanged from the pre-#881
     /// per-call-site `cross(worldUp, direction)` construction (its own degenerate-cross fallback
-    /// branch already fired there); ±X and ±Y — the most common CAD section-plane normals — both
+    /// branch already fired there); ±X and ±Y, the most common CAD section-plane normals, both
     /// genuinely change.
     @Test(
         "Placement.init(origin:normal:) matches OCCT's gp_Ax2 canonical basis for every world-axis-aligned normal, not just oblique ones",

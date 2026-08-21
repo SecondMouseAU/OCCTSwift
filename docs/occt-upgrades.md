@@ -48,8 +48,10 @@ Nine came back unchanged. `0001` did not: upstream's merged form also guards a *
 per-patch verdicts are in [`Scripts/patches/README.md`](../Scripts/patches/README.md) under
 "Retired patches".
 
-Patch numbers are **not** reused: the carried sequence now reads 0010-0012, 0014-0021, and the
-gaps are the retirements.
+Patch numbers are **not** reused: the carried sequence now reads 0010-0012, 0014-0029, and the
+gaps are the retirements. `Scripts/patches/README.md:11` states the same range in its own words,
+and this copy was seven patches stale until #1018 noticed. That file is canonical; keep this line in
+step with the range it gives, or delete this line rather than let a second copy drift again.
 
 ### Behaviour changes to watch
 
@@ -86,16 +88,16 @@ from the `GeomLib_CheckCurveOnSurface` fast path (#1373), and the periodic-seam 
 
 | Change | Migration |
 |--------|-----------|
-| `PointSetLib_Props` / `PointSetLib_Equation` removed | Module rolled back before GA. Swift `PointSetLib` enum + bridge wrappers deleted. No upstream replacement — port consumers to NumPy/Accelerate. |
+| `PointSetLib_Props` / `PointSetLib_Equation` removed | Module rolled back before GA. Swift `PointSetLib` enum + bridge wrappers deleted. No upstream replacement, port consumers to NumPy/Accelerate. |
 | `BRepGraph::EditorView::CoEdgeOps::SetContinuity` removed | Replaced by `EditorView::EdgeOps::SetRegularity(edge, face1, face2, continuity)`. Continuity now lives on `BRepGraph_LayerRegularity` (per `(edge, face1, face2)`), not per coedge. |
-| `BRepGraph::EditorView::CoEdgeOps::SetSeamContinuity` removed | Use `SetRegularity(edge, face, face, continuity)` — `face1 == face2` expresses seam continuity across a closed-surface seam. |
-| `BRepGraph::EditorView::CoEdgeOps::SetSeamPairId` removed | No setter — seam-pair-id is structural in GA (two coedges on same `(edge, face)` with opposite orientations). Read via `BRepGraph_Tool::CoEdge::SeamPair`. |
+| `BRepGraph::EditorView::CoEdgeOps::SetSeamContinuity` removed | Use `SetRegularity(edge, face, face, continuity)`, `face1 == face2` expresses seam continuity across a closed-surface seam. |
+| `BRepGraph::EditorView::CoEdgeOps::SetSeamPairId` removed | No setter, seam-pair-id is structural in GA (two coedges on same `(edge, face)` with opposite orientations). Read via `BRepGraph_Tool::CoEdge::SeamPair`. |
 | `TopTools_IndexedMapOfShape` deprecated (warning only) | Use `NCollection_IndexedMap<TopoDS_Shape, TopTools_ShapeMapHasher>`. Not yet migrated; warning is non-blocking. |
 | `Standard_True` / `Standard_False` deprecated (warning only) | Use C++ `true` / `false` directly. Bridge call sites flagged but not yet migrated; warnings non-blocking. |
 
 ### New APIs in GA
 
-The headline GA additions (BRepGraph, Gordon Surfaces, TKHelix, ExtremaPC) all landed in earlier RCs/betas and are already wrapped. GA itself was a stabilization release — see [OCCT discussion #1275](https://github.com/Open-Cascade-SAS/OCCT/discussions/1275).
+The headline GA additions (BRepGraph, Gordon Surfaces, TKHelix, ExtremaPC) all landed in earlier RCs/betas and are already wrapped. GA itself was a stabilization release, see [OCCT discussion #1275](https://github.com/Open-Cascade-SAS/OCCT/discussions/1275).
 
 ### Stability
 
@@ -108,9 +110,9 @@ The headline GA additions (BRepGraph, Gordon Surfaces, TKHelix, ExtremaPC) all l
 |---------|--------|
 | `setCoEdgeContinuity(_:continuity:)` | `setEdgeRegularity(_:face1:face2:continuity:) -> Bool` |
 | `setCoEdgeSeamContinuity(_:continuity:)` | `setEdgeRegularity(_:face1:face2:continuity:)` (face1 == face2) |
-| `setCoEdgeSeamPairId(_:seamPairCoedgeIndex:)` | Removed — seam-pair-id is structural; read via `coedgeSeamPair` |
+| `setCoEdgeSeamPairId(_:seamPairCoedgeIndex:)` | Removed, seam-pair-id is structural; read via `coedgeSeamPair` |
 | `occurrenceParentOccurrence(_:)` | `occurrenceParentProduct(_:)` (deprecated since v0.157.0) |
-| `PointSetLib.{properties,inertiaMatrix,barycentre,equation}` | Removed — no OCCT replacement |
+| `PointSetLib.{properties,inertiaMatrix,barycentre,equation}` | Removed, no OCCT replacement |
 
 ---
 

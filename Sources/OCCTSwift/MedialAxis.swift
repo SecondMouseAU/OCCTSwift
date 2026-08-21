@@ -1,6 +1,6 @@
 import Foundation
-import simd
 import OCCTBridge
+import simd
 
 /// A node in the medial axis graph.
 ///
@@ -82,12 +82,15 @@ public final class MedialAxis: @unchecked Sendable {
     ///   several faces returns the same result as that first face on its own; the rest are
     ///   ignored, not merged. Pass one face at a time to compute a medial axis per face.
     ///
-    /// - Parameters:
-    ///   - shape: A shape containing at least one face.
-    ///   - tolerance: Computation tolerance (default 1e-4).
-    /// - Returns: `nil` if the computation fails or the shape has no faces.
-    public init?(of shape: Shape, tolerance: Double = 1e-4) {
-        guard let h = OCCTMedialAxisCompute(shape.handle, tolerance) else {
+    /// - Note: There is no tolerance. Neither `BRepMAT2d_Explorer::Perform` nor
+    ///   `BRepMAT2d_BisectingLocus::Compute` accepts one; `Compute`'s own knobs are the line index,
+    ///   the side, the join type and the open-result flag, all fixed here at OCCT's defaults.
+    ///
+    /// Fails, returning `nil`, if the computation fails or the shape has no faces.
+    ///
+    /// - Parameter shape: A shape containing at least one face.
+    public init?(of shape: Shape) {
+        guard let h = OCCTMedialAxisCompute(shape.handle) else {
             return nil
         }
         handle = h
@@ -192,7 +195,7 @@ public final class MedialAxis: @unchecked Sendable {
     ///     parameter range at exactly `maxPoints` evenly-spaced values rather than letting a
     ///     deflection criterion pick the count, so it always returns exactly this many points
     ///     (and nothing at all below 2). That is why an unservable count is rejected here rather
-    ///     than clamped the way the genuinely adaptive samplers clamp theirs — clamping this one
+    ///     than clamped the way the genuinely adaptive samplers clamp theirs, clamping this one
     ///     would hand back a different, coarser sampling than the caller asked for.
     /// - Returns: Array of 2D points along the arc, or empty on error.
     public func drawArc(at index: Int, maxPoints: Int = 32) -> [SIMD2<Double>] {
@@ -206,7 +209,7 @@ public final class MedialAxis: @unchecked Sendable {
 
     /// Sample points along all bisector arcs.
     ///
-    /// - Parameter maxPointsPerArc: Points requested per arc (default 32), at least 2 — the same
+    /// - Parameter maxPointsPerArc: Points requested per arc (default 32), at least 2, the same
     ///   fill-exactly request ``drawArc(at:maxPoints:)`` takes, not a capacity. The bound is on
     ///   the **total**: `arcCount * maxPointsPerArc` must not exceed
     ///   ``Sampling/maximumSampleCount``, else the result is empty (#558). Checking
@@ -215,14 +218,15 @@ public final class MedialAxis: @unchecked Sendable {
     /// - Returns: Array of polylines, one per arc.
     public func drawAll(maxPointsPerArc: Int = 32) -> [[SIMD2<Double>]] {
         guard maxPointsPerArc >= 2,
-              let totalMax = Sampling.gridTotal(arcCount, maxPointsPerArc, atLeast: 0),
-              totalMax > 0
+            let totalMax = Sampling.gridTotal(arcCount, maxPointsPerArc, atLeast: 0),
+            totalMax > 0
         else { return [] }
         var xy = [Double](repeating: 0, count: totalMax * 2)
         var lineStarts = [Int32](repeating: 0, count: arcCount)
         var lineLengths = [Int32](repeating: 0, count: arcCount)
-        let totalPoints = OCCTMedialAxisDrawAll(handle, &xy, Int32(totalMax),
-                                                 &lineStarts, &lineLengths, Int32(arcCount))
+        let totalPoints = OCCTMedialAxisDrawAll(
+            handle, &xy, Int32(totalMax),
+            &lineStarts, &lineLengths, Int32(arcCount))
         guard totalPoints > 0 else { return [] }
 
         var result = [[SIMD2<Double>]]()

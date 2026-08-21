@@ -2,7 +2,7 @@
 //  OCCTBridge_Properties.mm
 //  OCCTSwift
 //
-//  Extracted from OCCTBridge.mm — issue #99.
+//  Extracted from OCCTBridge.mm, issue #99.
 //
 //  v0.18 properties + projection + proximity cluster:
 //
@@ -17,7 +17,7 @@
 //  - Surface intersection (face / face section curves via
 //    BRepAlgoAPI_Section)
 //
-//  Public C surface unchanged. No symbol changes — pure file move.
+//  Public C surface unchanged. No symbol changes, pure file move.
 //
 
 #import "../include/OCCTBridge.h"
@@ -119,7 +119,7 @@ bool OCCTFaceGetUVBounds(OCCTFaceRef face, double* uMin, double* uMax, double* v
 
 bool OCCTFaceEvaluateAtUV(OCCTFaceRef face, double u, double v, double* px, double* py, double* pz)
 {
-  if (!face || !px || !py || !pz)
+  if (!occtShapeIsPresent(face) || !px || !py || !pz)
     return false;
 
   try
@@ -143,7 +143,7 @@ bool OCCTFaceEvaluateAtUV(OCCTFaceRef face, double u, double v, double* px, doub
 
 bool OCCTFaceGetNormalAtUV(OCCTFaceRef face, double u, double v, double* nx, double* ny, double* nz)
 {
-  if (!face || !nx || !ny || !nz)
+  if (!occtShapeIsPresent(face) || !nx || !ny || !nz)
     return false;
 
   try
@@ -175,7 +175,7 @@ bool OCCTFaceGetNormalAtUV(OCCTFaceRef face, double u, double v, double* nx, dou
 
 bool OCCTFaceGetGaussianCurvature(OCCTFaceRef face, double u, double v, double* curvature)
 {
-  if (!face || !curvature)
+  if (!occtShapeIsPresent(face) || !curvature)
     return false;
 
   try
@@ -199,7 +199,7 @@ bool OCCTFaceGetGaussianCurvature(OCCTFaceRef face, double u, double v, double* 
 
 bool OCCTFaceGetMeanCurvature(OCCTFaceRef face, double u, double v, double* curvature)
 {
-  if (!face || !curvature)
+  if (!occtShapeIsPresent(face) || !curvature)
     return false;
 
   try
@@ -233,7 +233,7 @@ bool OCCTFaceGetPrincipalCurvatures(OCCTFaceRef face,
                                     double*     d2y,
                                     double*     d2z)
 {
-  if (!face || !k1 || !k2 || !d1x || !d1y || !d1z || !d2x || !d2y || !d2z)
+  if (!occtShapeIsPresent(face) || !k1 || !k2 || !d1x || !d1y || !d1z || !d2x || !d2y || !d2z)
     return false;
 
   try
@@ -341,7 +341,7 @@ bool OCCTFaceGetPrimaryAxis(OCCTFaceRef face,
   *dy      = 0;
   *dz      = 1;
   *outKind = 0;
-  if (!face)
+  if (!occtShapeIsPresent(face))
     return false;
   try
   {
@@ -387,7 +387,7 @@ bool OCCTFaceGetPrimaryAxis(OCCTFaceRef face,
         if (ext.IsNull())
           return false;
         gp_Dir dir = ext->Direction();
-        // Extrusion has no canonical origin — use basis curve start.
+        // Extrusion has no canonical origin, use basis curve start.
         Handle(Geom_Curve) basis = ext->BasisCurve();
         gp_Pnt             origin(0, 0, 0);
         if (!basis.IsNull())
@@ -426,7 +426,7 @@ bool OCCTFaceGetPrimaryAxis(OCCTFaceRef face,
 
 bool OCCTEdgeGetParameterBounds(OCCTEdgeRef edge, double* first, double* last)
 {
-  if (!edge || !first || !last)
+  if (!occtShapeIsPresent(edge) || !first || !last)
     return false;
 
   try
@@ -448,7 +448,7 @@ bool OCCTEdgeGetParameterBounds(OCCTEdgeRef edge, double* first, double* last)
 
 bool OCCTEdgeGetCurvature3D(OCCTEdgeRef edge, double param, double* curvature)
 {
-  if (!edge || !curvature)
+  if (!occtShapeIsPresent(edge) || !curvature)
     return false;
 
   try
@@ -473,7 +473,7 @@ bool OCCTEdgeGetCurvature3D(OCCTEdgeRef edge, double param, double* curvature)
 
 bool OCCTEdgeGetTangent3D(OCCTEdgeRef edge, double param, double* tx, double* ty, double* tz)
 {
-  if (!edge || !tx || !ty || !tz)
+  if (!occtShapeIsPresent(edge) || !tx || !ty || !tz)
     return false;
 
   try
@@ -502,7 +502,7 @@ bool OCCTEdgeGetTangent3D(OCCTEdgeRef edge, double param, double* tx, double* ty
 
 bool OCCTEdgeGetNormal3D(OCCTEdgeRef edge, double param, double* nx, double* ny, double* nz)
 {
-  if (!edge || !nx || !ny || !nz)
+  if (!occtShapeIsPresent(edge) || !nx || !ny || !nz)
     return false;
 
   try
@@ -535,7 +535,7 @@ bool OCCTEdgeGetCenterOfCurvature3D(OCCTEdgeRef edge,
                                     double*     cy,
                                     double*     cz)
 {
-  if (!edge || !cx || !cy || !cz)
+  if (!occtShapeIsPresent(edge) || !cx || !cy || !cz)
     return false;
 
   try
@@ -569,7 +569,7 @@ bool OCCTEdgeGetCenterOfCurvature3D(OCCTEdgeRef edge,
 
 bool OCCTEdgeGetTorsion(OCCTEdgeRef edge, double param, double* torsion)
 {
-  if (!edge || !torsion)
+  if (!occtShapeIsPresent(edge) || !torsion)
     return false;
 
   try
@@ -603,7 +603,7 @@ bool OCCTEdgeGetTorsion(OCCTEdgeRef edge, double param, double* torsion)
 
 bool OCCTEdgeGetPointAtParam(OCCTEdgeRef edge, double param, double* px, double* py, double* pz)
 {
-  if (!edge || !px || !py || !pz)
+  if (!occtShapeIsPresent(edge) || !px || !py || !pz)
     return false;
 
   try
@@ -628,7 +628,7 @@ bool OCCTEdgeGetPointAtParam(OCCTEdgeRef edge, double param, double* px, double*
 
 int32_t OCCTEdgeGetCurveType(OCCTEdgeRef edge)
 {
-  if (!edge)
+  if (!occtShapeIsPresent(edge))
     return 8; // Other
 
   try
@@ -671,7 +671,7 @@ OCCTSurfaceProjectionResult OCCTFaceProjectPoint(OCCTFaceRef face, double px, do
 {
   OCCTSurfaceProjectionResult result = {};
   result.isValid                     = false;
-  if (!face)
+  if (!occtShapeIsPresent(face))
     return result;
 
   try
@@ -710,7 +710,7 @@ int32_t OCCTFaceProjectPointAll(OCCTFaceRef                  face,
                                 OCCTSurfaceProjectionResult* results,
                                 int32_t                      maxResults)
 {
-  if (!face || !results || maxResults <= 0)
+  if (!occtShapeIsPresent(face) || !results || maxResults <= 0)
     return 0;
 
   try
@@ -755,7 +755,7 @@ OCCTCurveProjectionResult OCCTEdgeProjectPoint(OCCTEdgeRef edge, double px, doub
 {
   OCCTCurveProjectionResult result = {};
   result.isValid                   = false;
-  if (!edge)
+  if (!occtShapeIsPresent(edge))
     return result;
 
   try
@@ -1229,7 +1229,7 @@ bool OCCTFaceGetNaturalBounds(OCCTFaceRef face,
                               double*     vMin,
                               double*     vMax)
 {
-  if (!face || !uMin || !uMax || !vMin || !vMax)
+  if (!occtShapeIsPresent(face) || !uMin || !uMax || !vMin || !vMax)
     return false;
   try
   {
@@ -1253,7 +1253,7 @@ bool OCCTFaceEvaluateNormalAtUV(OCCTFaceRef face,
                                 double*     ny,
                                 double*     nz)
 {
-  if (!face || !px || !py || !pz || !nx || !ny || !nz)
+  if (!occtShapeIsPresent(face) || !px || !py || !pz || !nx || !ny || !nz)
     return false;
   try
   {
@@ -1295,7 +1295,7 @@ bool OCCTShapeVolumeInertia(OCCTShapeRef shape, OCCTVolumeInertiaResult* result)
 
     // Matrix of inertia about center of mass. This used to recompute the whole framework into a
     // second GProp_GProps before reading it, which cost a second integration for an identical
-    // answer — MatrixOfInertia() is already referenced to the centre of mass.
+    // answer. MatrixOfInertia() is already referenced to the centre of mass.
     gp_Mat mat         = props.MatrixOfInertia();
     result->inertia[0] = mat(1, 1);
     result->inertia[1] = mat(1, 2);
@@ -1334,7 +1334,7 @@ bool OCCTShapeVolumeInertia(OCCTShapeRef shape, OCCTVolumeInertiaResult* result)
                                result->gyrationRadius2,
                                result->gyrationRadius3);
 
-    // Same `principal` object OCCTShapeInertiaProperties reads these from — #848.
+    // Same `principal` object OCCTShapeInertiaProperties reads these from, #848.
     result->hasSymmetryAxis  = principal.HasSymmetryAxis();
     result->hasSymmetryPoint = principal.HasSymmetryPoint();
 
@@ -1381,7 +1381,7 @@ bool OCCTShapeSurfaceInertia(OCCTShapeRef shape, OCCTSurfaceInertiaResult* resul
     result->principalMoment2 = I2;
     result->principalMoment3 = I3;
 
-    // Same `principal` object OCCTShapeSurfaceInertiaProperties reads these from — #848.
+    // Same `principal` object OCCTShapeSurfaceInertiaProperties reads these from, #848.
     result->hasSymmetryAxis  = principal.HasSymmetryAxis();
     result->hasSymmetryPoint = principal.HasSymmetryPoint();
 
@@ -1411,7 +1411,7 @@ OCCTCurveLocalProps OCCTGeomLPropCLProps(OCCTShapeRef edgeShape, double param)
 
     // Was its own 1e-6 resolution, the third value the bridge passed to a GeomLProp_* props
     // (Precision::Confusion() from the canonical Curve3D/Surface entry points, 1e-10 from the
-    // Local* family) and the same one #405 removed from OCCTSurfaceCurvatures — so this
+    // Local* family) and the same one #405 removed from OCCTSurfaceCurvatures, so this
     // reported a different answer than Edge.curvature3D(at:) for the same edge and parameter.
     GeomLProp_CLProps props = occtCurveLocalProps(curve, param, 2);
     gp_Pnt            pt    = props.Value();
@@ -1618,7 +1618,7 @@ OCCTMeshPropsResult OCCTMeshPropsCompute(OCCTFaceRef _Nonnull face, OCCTMeshProp
 OCCTCurveInertiaResult OCCTBRepGPropCinert(OCCTEdgeRef _Nonnull edge)
 {
   OCCTCurveInertiaResult result = {};
-  if (!edge)
+  if (!occtShapeIsPresent(edge))
     return result;
   try
   {
@@ -1641,7 +1641,7 @@ OCCTCurveInertiaResult OCCTBRepGPropCinert(OCCTEdgeRef _Nonnull edge)
 OCCTFaceSurfaceInertia OCCTBRepGPropSinert(OCCTFaceRef _Nonnull face)
 {
   OCCTFaceSurfaceInertia result = {};
-  if (!face)
+  if (!occtShapeIsPresent(face))
     return result;
   try
   {
@@ -1664,7 +1664,7 @@ OCCTFaceSurfaceInertia OCCTBRepGPropSinert(OCCTFaceRef _Nonnull face)
 OCCTFaceSurfaceInertia OCCTBRepGPropSinertAdaptive(OCCTFaceRef _Nonnull face, double epsilon)
 {
   OCCTFaceSurfaceInertia result = {};
-  if (!face)
+  if (!occtShapeIsPresent(face))
     return result;
   try
   {
@@ -1690,7 +1690,7 @@ OCCTFaceSurfaceInertia OCCTBRepGPropSinertAdaptive(OCCTFaceRef _Nonnull face, do
 OCCTFaceVolumeInertia OCCTBRepGPropVinert(OCCTFaceRef _Nonnull face)
 {
   OCCTFaceVolumeInertia result = {};
-  if (!face)
+  if (!occtShapeIsPresent(face))
     return result;
   try
   {
@@ -1717,7 +1717,7 @@ OCCTFaceVolumeInertia OCCTBRepGPropVinertPlane(OCCTFaceRef _Nonnull face,
                                                double planeDist)
 {
   OCCTFaceVolumeInertia result = {};
-  if (!face)
+  if (!occtShapeIsPresent(face))
     return result;
   try
   {
@@ -1817,8 +1817,8 @@ int32_t OCCTShapeFaceDomainEdgeCount(OCCTShapeRef shape, int32_t faceIndex)
 // GProp_GProps framework, so a zero-*length* result is still a correct answer: a curve sampled
 // over an empty parameter range has a mass of 0 and a centre at the point itself. What is NOT an
 // answer is a rejected input. Both of these build a gp_Dir from caller data, and gp_Dir throws
-// Standard_ConstructionError on a zero-length vector — two coincident endpoints here, a zero
-// normal there — which the catch used to turn into mass 0 with a centre of (0,0,0). See #609.
+// Standard_ConstructionError on a zero-length vector, two coincident endpoints here, a zero
+// normal there, which the catch used to turn into mass 0 with a centre of (0,0,0). See #609.
 bool OCCTGPropLineSegment(double  x1,
                           double  y1,
                           double  z1,
@@ -2113,7 +2113,7 @@ bool OCCTEdgeLPropValue(OCCTShapeRef edge, double param, double* x, double* y, d
   *x = 0;
   *y = 0;
   *z = 0;
-  if (!edge)
+  if (!occtShapeIsPresent(edge))
     return false;
   try
   {
@@ -2136,7 +2136,7 @@ bool OCCTEdgeLPropTangent(OCCTShapeRef edge, double param, double* dx, double* d
   *dx = 0;
   *dy = 0;
   *dz = 0;
-  if (!edge)
+  if (!occtShapeIsPresent(edge))
     return false;
   try
   {
@@ -2165,7 +2165,7 @@ bool OCCTEdgeLPropTangent(OCCTShapeRef edge, double param, double* dx, double* d
 bool OCCTEdgeLPropCurvature(OCCTShapeRef edge, double param, double* curvature)
 {
   *curvature = 0;
-  if (!edge)
+  if (!occtShapeIsPresent(edge))
     return false;
   try
   {
@@ -2187,7 +2187,7 @@ bool OCCTEdgeLPropNormal(OCCTShapeRef edge, double param, double* dx, double* dy
   *dx = 0;
   *dy = 0;
   *dz = 0;
-  if (!edge)
+  if (!occtShapeIsPresent(edge))
     return false;
   try
   {
@@ -2222,7 +2222,7 @@ bool OCCTEdgeLPropCentreOfCurvature(OCCTShapeRef edge,
   *x = 0;
   *y = 0;
   *z = 0;
-  if (!edge)
+  if (!occtShapeIsPresent(edge))
     return false;
   try
   {
@@ -2255,7 +2255,7 @@ bool OCCTEdgeLPropD1(OCCTShapeRef edge, double param, double* d1x, double* d1y, 
   *d1x = 0;
   *d1y = 0;
   *d1z = 0;
-  if (!edge)
+  if (!occtShapeIsPresent(edge))
     return false;
   try
   {

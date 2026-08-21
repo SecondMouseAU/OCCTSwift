@@ -18,9 +18,9 @@ surface changed.
 
 ## Topics
 
-- [PDFError](#pdferror) · [Exporter — PDF](#exporter--pdf) · [PDFWriter](#pdfwriter)
-- [SVGError](#svgerror) · [Exporter — SVG](#exporter--svg) · [SVGWriter](#svgwriter)
-- [DXFError](#dxferror) · [Exporter — DXF](#exporter--dxf) · [DXFWriter](#dxfwriter)
+- [PDFError](#pdferror) · [Exporter, PDF](#exporter--pdf) · [PDFWriter](#pdfwriter)
+- [SVGError](#svgerror) · [Exporter, SVG](#exporter--svg) · [SVGWriter](#svgwriter)
+- [DXFError](#dxferror) · [Exporter, DXF](#exporter--dxf) · [DXFWriter](#dxfwriter)
 - [PixMap.Format](#pixmapformat) · [PixMap](#pixmap)
 
 ---
@@ -49,7 +49,7 @@ public enum PDFError: Error, LocalizedError {
 
 ---
 
-## Exporter — PDF
+## Exporter. PDF
 
 Two static methods on `Exporter` (defined as an extension in `PDFExporter.swift`).
 
@@ -63,7 +63,7 @@ public static let pdfA4Landscape = SIMD2<Double>(841, 595)
 
 Pass directly as the `pageSize` argument to `Exporter.writePDF(drawing:to:pageSize:deflection:)`.
 
-- **Note:** Pure-Swift constant — no OCCT mapping.
+- **Note:** Pure-Swift constant, no OCCT mapping.
 
 ---
 
@@ -75,7 +75,7 @@ A3 landscape page size in PDF points (420 × 297 mm).
 public static let pdfA3Landscape = SIMD2<Double>(1191, 842)
 ```
 
-- **Note:** Pure-Swift constant — no OCCT mapping.
+- **Note:** Pure-Swift constant, no OCCT mapping.
 
 ---
 
@@ -96,12 +96,12 @@ Creates a `PDFWriter` internally, calls `collectFromDrawing`, and writes. The de
 is A4 landscape (841 × 595 pts). Content is scaled via a mm→pts CTM so geometry stays in
 drawing-unit millimetres throughout.
 
-- **Parameters:** `drawing` — HLR drawing to export; `url` — output URL (conventionally `.pdf`);
-  `pageSize` — page dimensions in PDF points, default A4 landscape;
-  `deflection` — tessellation quality for edge polylines (default 0.1).
+- **Parameters:** `drawing`, HLR drawing to export; `url`, output URL (conventionally `.pdf`);
+  `pageSize`: page dimensions in PDF points, default A4 landscape;
+  `deflection`: tessellation quality for edge polylines (default 0.1).
 - **Returns:** `Void`.
 - **Throws:** `PDFError.writeFailed` if the file cannot be written.
-- **OCCT:** Pure-Swift PDF serialisation — no bridge call.
+- **OCCT:** Pure-Swift PDF serialisation, no bridge call.
 - **Example:**
   ```swift
   let box = Shape.box(width: 100, height: 60, depth: 40)!
@@ -130,8 +130,8 @@ public static func writePDF(
 Derives the page size from `sheet.dimensions` (mm → pts at 72 dpi), then invokes `body` to let
 the caller stage arbitrary entities before writing.
 
-- **Parameters:** `sheet` — sheet defining page dimensions and orientation; `body` — closure that
-  receives the `PDFWriter` and stages entities; `url` — output URL; `deflection` — tessellation
+- **Parameters:** `sheet`, sheet defining page dimensions and orientation; `body`, closure that
+  receives the `PDFWriter` and stages entities; `url`, output URL; `deflection`, tessellation
   quality (default 0.1).
 - **Returns:** `Void`.
 - **Throws:** `PDFError.writeFailed`.
@@ -169,8 +169,8 @@ Create a writer with an explicit page size (in PDF points) and tessellation defl
 public init(pageSize: SIMD2<Double> = SIMD2(841, 595), deflection: Double = 0.1)
 ```
 
-- **Parameters:** `pageSize` — page width × height in PDF points (default A4 landscape);
-  `deflection` — chord deflection used by `collectFromDrawing` for edge polylines (default 0.1).
+- **Parameters:** `pageSize`, page width × height in PDF points (default A4 landscape);
+  `deflection`: chord deflection used by `collectFromDrawing` for edge polylines (default 0.1).
 
 ---
 
@@ -202,7 +202,7 @@ Stage a straight line segment.
 public func addLine(from a: SIMD2<Double>, to b: SIMD2<Double>, layer: String = "VISIBLE")
 ```
 
-- **Parameters:** `a` — start point in mm; `b` — end point in mm; `layer` — DXF-style layer name
+- **Parameters:** `a`, start point in mm; `b`, end point in mm; `layer`, DXF-style layer name
   (default `"VISIBLE"`).
 - **OCCT:** Pure-Swift.
 - **Example:**
@@ -223,8 +223,8 @@ public func addPolyline(_ points: [SIMD2<Double>], closed: Bool = false, layer: 
 
 Silently ignored if `points.count < 2`.
 
-- **Parameters:** `points` — vertices in mm; `closed` — if `true` a closing segment is appended
-  from the last point back to the first; `layer` — layer name (default `"VISIBLE"`).
+- **Parameters:** `points`, vertices in mm; `closed`, if `true` a closing segment is appended
+  from the last point back to the first; `layer`, layer name (default `"VISIBLE"`).
 - **OCCT:** Pure-Swift.
 
 ---
@@ -239,7 +239,7 @@ public func addCircle(centre: SIMD2<Double>, radius: Double, layer: String = "VI
 
 Rendered as four cubic Bézier curve segments (kappa approximation).
 
-- **Parameters:** `centre` — centre in mm; `radius` — radius in mm; `layer` — layer name.
+- **Parameters:** `centre`, centre in mm; `radius`, radius in mm; `layer`, layer name.
 - **OCCT:** Pure-Swift.
 
 ---
@@ -256,9 +256,9 @@ public func addArc(centre: SIMD2<Double>, radius: Double,
 
 The arc is split into chunks of at most 90° and rendered as cubic Bézier segments.
 
-- **Parameters:** `centre` — centre in mm; `radius` — radius in mm; `startAngleDeg` — start angle
-  in degrees (mathematical, CCW from positive X); `endAngleDeg` — end angle in degrees;
-  `layer` — layer name.
+- **Parameters:** `centre`, centre in mm; `radius`, radius in mm; `startAngleDeg`, start angle
+  in degrees (mathematical, CCW from positive X); `endAngleDeg`, end angle in degrees;
+  `layer`: layer name.
 - **OCCT:** Pure-Swift.
 
 ---
@@ -276,9 +276,9 @@ public func addText(_ text: String, at position: SIMD2<Double>,
 Uses Helvetica (Type1, embedded in the PDF as object 5). Special PDF characters (`(`, `)`, `\`)
 are automatically escaped.
 
-- **Parameters:** `text` — string to render; `position` — baseline origin in mm;
-  `height` — font size in mm (default 3.5); `rotationDeg` — CCW rotation in degrees (default 0);
-  `layer` — layer name (default `"TEXT"`).
+- **Parameters:** `text`, string to render; `position`, baseline origin in mm;
+  `height`: font size in mm (default 3.5); `rotationDeg`, CCW rotation in degrees (default 0);
+  `layer`: layer name (default `"TEXT"`).
 - **OCCT:** Pure-Swift.
 
 ---
@@ -295,7 +295,7 @@ Dispatches to the shared annotation/dimension emitter (`DrawingDispatch.swift`).
 `.linear`, `.radial`, `.diameter`, `.angular`, and `.ordinate` cases including tolerance
 rendering.
 
-- **Parameters:** `d` — dimension to emit.
+- **Parameters:** `d`, dimension to emit.
 - **OCCT:** Pure-Swift.
 - **Example:**
   ```swift
@@ -334,8 +334,8 @@ Walks `drawing.visibleEdges`, `hiddenEdges`, and `outlineEdges` through `Shape.a
 and stages the resulting polylines on the matching layers. Then dispatches all
 `DrawingAnnotation` and `DrawingDimension` values.
 
-- **Parameters:** `drawing` — source drawing; `translate` — 2D offset applied to all coordinates;
-  `scale` — uniform scale applied before the translation.
+- **Parameters:** `drawing`, source drawing; `translate`, 2D offset applied to all coordinates;
+  `scale`: uniform scale applied before the translation.
 - **OCCT:** Pure-Swift (edge tessellation uses the bridge indirectly via `Shape.allEdgePolylines`).
 
 ---
@@ -351,7 +351,7 @@ public func collectFromDrawing(_ transformed: TransformedDrawing)
 Convenience for multi-view sheet composition; equivalent to passing `transformed.translate` and
 `transformed.scale` to the `Drawing` overload.
 
-- **Parameters:** `transformed` — a `TransformedDrawing` value wrapping a `Drawing` with an
+- **Parameters:** `transformed`, a `TransformedDrawing` value wrapping a `Drawing` with an
   offset and scale.
 - **OCCT:** Pure-Swift.
 
@@ -368,7 +368,7 @@ public func write(to url: URL) throws
 Builds the PDF 1.4 binary in memory (catalog, pages, content stream, Helvetica font object, xref
 table) and writes it atomically via `Data.write(to:)`.
 
-- **Parameters:** `url` — output file URL (conventionally `.pdf`).
+- **Parameters:** `url`, output file URL (conventionally `.pdf`).
 - **Returns:** `Void`.
 - **Throws:** `PDFError.writeFailed` if `Data.write(to:)` fails.
 - **OCCT:** Pure-Swift.
@@ -392,7 +392,7 @@ public enum SVGError: Error, LocalizedError {
 }
 ```
 
-- `writeFailed(String)` — `String.write(to:atomically:encoding:)` failed; the associated string
+- `writeFailed(String)`: `String.write(to:atomically:encoding:)` failed; the associated string
   is the underlying error description.
 
 ---
@@ -407,7 +407,7 @@ public enum SVGError: Error, LocalizedError {
 
 ---
 
-## Exporter — SVG
+## Exporter. SVG
 
 Two static methods on `Exporter` (defined as an extension in `SVGExporter.swift`).
 
@@ -423,8 +423,8 @@ public static func writeSVG(drawing: Drawing, to url: URL,
 Creates an `SVGWriter`, collects from the drawing, and writes. The viewBox is computed
 automatically from the bounding box of all staged entities, padded by 5 mm.
 
-- **Parameters:** `drawing` — HLR drawing to export; `url` — output URL (conventionally `.svg`);
-  `deflection` — tessellation quality (default 0.1).
+- **Parameters:** `drawing`, HLR drawing to export; `url`, output URL (conventionally `.svg`);
+  `deflection`: tessellation quality (default 0.1).
 - **Returns:** `Void`.
 - **Throws:** `SVGError.writeFailed`.
 - **OCCT:** Pure-Swift.
@@ -452,8 +452,8 @@ public static func writeSVG(sheet: Sheet, body: (SVGWriter) -> Void,
 Sets the viewBox from `sheet.dimensions` (in mm) and invokes `body` to let the caller stage
 arbitrary entities.
 
-- **Parameters:** `sheet` — sheet defining viewBox dimensions; `body` — staging closure;
-  `url` — output URL; `deflection` — tessellation quality (default 0.1).
+- **Parameters:** `sheet`, sheet defining viewBox dimensions; `body`, staging closure;
+  `url`: output URL; `deflection`, tessellation quality (default 0.1).
 - **Returns:** `Void`.
 - **Throws:** `SVGError.writeFailed`.
 - **OCCT:** Pure-Swift.
@@ -493,7 +493,7 @@ When `viewBox` is `nil` (the default) the writer computes a tight bounding box f
 entities at `write(to:)` time, padded by 5 mm. Pass an explicit value to fix the viewport
 (e.g. when staging an empty sheet frame).
 
-- **Parameters:** `viewBox` — optional explicit viewBox; `deflection` — tessellation quality.
+- **Parameters:** `viewBox`, optional explicit viewBox; `deflection`, tessellation quality.
 
 ---
 
@@ -529,7 +529,7 @@ public func addLine(from a: SIMD2<Double>, to b: SIMD2<Double>, layer: String = 
 
 Emitted as `<line x1="…" y1="…" x2="…" y2="…"/>`.
 
-- **Parameters:** `a` — start point in mm; `b` — end point in mm; `layer` — layer name (default
+- **Parameters:** `a`, start point in mm; `b`, end point in mm; `layer`, layer name (default
   `"VISIBLE"`).
 - **OCCT:** Pure-Swift.
 
@@ -546,8 +546,8 @@ public func addPolyline(_ points: [SIMD2<Double>], closed: Bool = false, layer: 
 Open polylines emit `<polyline>`; closed ones emit `<polygon>`. Silently ignored if
 `points.count < 2`.
 
-- **Parameters:** `points` — vertices in mm; `closed` — if `true` emits `<polygon>` (last vertex
-  connects to first); `layer` — layer name.
+- **Parameters:** `points`, vertices in mm; `closed`, if `true` emits `<polygon>` (last vertex
+  connects to first); `layer`, layer name.
 - **OCCT:** Pure-Swift.
 
 ---
@@ -562,7 +562,7 @@ public func addCircle(centre: SIMD2<Double>, radius: Double, layer: String = "VI
 
 Emitted as `<circle cx="…" cy="…" r="…"/>`.
 
-- **Parameters:** `centre` — centre in mm; `radius` — radius in mm; `layer` — layer name.
+- **Parameters:** `centre`, centre in mm; `radius`, radius in mm; `layer`, layer name.
 - **OCCT:** Pure-Swift.
 
 ---
@@ -580,8 +580,8 @@ public func addArc(centre: SIMD2<Double>, radius: Double,
 Emitted as an SVG `<path d="M … A …"/>` with correct large-arc and sweep flags accounting for
 the group's Y-flip.
 
-- **Parameters:** `centre` — centre in mm; `radius` — radius in mm; `startAngleDeg` / `endAngleDeg`
-  — angles in degrees, mathematical CCW convention; `layer` — layer name.
+- **Parameters:** `centre`, centre in mm; `radius`, radius in mm; `startAngleDeg` / `endAngleDeg`
+, angles in degrees, mathematical CCW convention; `layer`, layer name.
 - **OCCT:** Pure-Swift.
 
 ---
@@ -599,8 +599,8 @@ public func addText(_ text: String, at position: SIMD2<Double>,
 Uses `font-family="Helvetica"`. XML special characters are escaped. Each element carries a
 counter-transform that undoes the group's Y-flip so glyphs are not mirrored.
 
-- **Parameters:** `text` — string; `position` — baseline origin in mm; `height` — font size in mm
-  (default 3.5); `rotationDeg` — CCW rotation in degrees (default 0); `layer` — layer name.
+- **Parameters:** `text`, string; `position`, baseline origin in mm; `height`, font size in mm
+  (default 3.5); `rotationDeg`, CCW rotation in degrees (default 0); `layer`, layer name.
 - **OCCT:** Pure-Swift.
 
 ---
@@ -616,7 +616,7 @@ public func addDimension(_ d: DrawingDimension)
 Dispatches via the shared `DrawingDispatch` emitter; supports all five dimension types including
 tolerance labels.
 
-- **Parameters:** `d` — dimension to emit.
+- **Parameters:** `d`, dimension to emit.
 - **OCCT:** Pure-Swift.
 
 ---
@@ -645,7 +645,7 @@ public func collectFromDrawing(_ drawing: Drawing,
 
 Identical semantics to `PDFWriter.collectFromDrawing(_:translate:scale:)`.
 
-- **Parameters:** `drawing` — source drawing; `translate` — 2D offset; `scale` — uniform scale.
+- **Parameters:** `drawing`, source drawing; `translate`, 2D offset; `scale`, uniform scale.
 - **OCCT:** Pure-Swift (edge tessellation indirectly uses the bridge via `Shape.allEdgePolylines`).
 
 ---
@@ -658,7 +658,7 @@ Collect a `TransformedDrawing` onto this writer.
 public func collectFromDrawing(_ transformed: TransformedDrawing)
 ```
 
-- **Parameters:** `transformed` — wrapper holding a `Drawing` with a translate and scale.
+- **Parameters:** `transformed`, wrapper holding a `Drawing` with a translate and scale.
 - **OCCT:** Pure-Swift.
 
 ---
@@ -674,7 +674,7 @@ public func write(to url: URL) throws
 Computes or applies the viewBox, emits one `<g>` group per non-empty layer, then writes the
 complete SVG string atomically via `String.write(to:atomically:encoding:)`.
 
-- **Parameters:** `url` — output file URL (conventionally `.svg`).
+- **Parameters:** `url`, output file URL (conventionally `.svg`).
 - **Returns:** `Void`.
 - **Throws:** `SVGError.writeFailed`.
 - **OCCT:** Pure-Swift.
@@ -712,7 +712,7 @@ public enum DXFError: Error, LocalizedError {
 
 ---
 
-## Exporter — DXF
+## Exporter. DXF
 
 Two static methods on `Exporter` (defined as an extension in `DXFExporter.swift`).
 
@@ -728,11 +728,11 @@ public static func writeDXF(drawing: Drawing, to url: URL,
 Creates a `DXFWriter`, collects from the drawing, and writes. Layers, linetypes, and the STYLE
 table are emitted automatically.
 
-- **Parameters:** `drawing` — HLR drawing to export; `url` — output URL (conventionally `.dxf`);
-  `deflection` — tessellation quality for edge polylines (default 0.1).
+- **Parameters:** `drawing`, HLR drawing to export; `url`, output URL (conventionally `.dxf`);
+  `deflection`: tessellation quality for edge polylines (default 0.1).
 - **Returns:** `Void`.
 - **Throws:** `DXFError.writeFailed`.
-- **OCCT:** Pure-Swift (no native OCCT DXF support — confirmed by header audit).
+- **OCCT:** Pure-Swift (no native OCCT DXF support, confirmed by header audit).
 - **Example:**
   ```swift
   let shaft = Shape.cylinder(radius: 15, height: 60)!
@@ -758,9 +758,9 @@ Calls `Drawing.project(shape, direction: viewDirection)` then delegates to
 `writeDXF(drawing:to:deflection:)`. Throws `DXFError.writeFailed("projection failed")` if the
 projection returns `nil`.
 
-- **Parameters:** `shape` — shape to project; `url` — output URL;
-  `viewDirection` — view direction vector (default `(0, 0, 1)` = top-down);
-  `deflection` — tessellation quality (default 0.1).
+- **Parameters:** `shape`, shape to project; `url`, output URL;
+  `viewDirection`: view direction vector (default `(0, 0, 1)` = top-down);
+  `deflection`: tessellation quality (default 0.1).
 - **Returns:** `Void`.
 - **Throws:** `DXFError.writeFailed`.
 - **OCCT:** Pure-Swift (projection via HLR is handled by the `Drawing` type).
@@ -797,7 +797,7 @@ Create a writer with a tessellation deflection value.
 public init(deflection: Double = 0.1)
 ```
 
-- **Parameters:** `deflection` — chord deflection used by `collectFromDrawing` (default 0.1).
+- **Parameters:** `deflection`, chord deflection used by `collectFromDrawing` (default 0.1).
 
 ---
 
@@ -819,7 +819,7 @@ Stage a LINE entity.
 public func addLine(from a: SIMD2<Double>, to b: SIMD2<Double>, layer: String = "VISIBLE")
 ```
 
-- **Parameters:** `a` — start in mm; `b` — end in mm; `layer` — layer name (default `"VISIBLE"`).
+- **Parameters:** `a`, start in mm; `b`, end in mm; `layer`, layer name (default `"VISIBLE"`).
 - **OCCT:** Pure-Swift.
 
 ---
@@ -834,7 +834,7 @@ public func addPolyline(_ points: [SIMD2<Double>], closed: Bool = false, layer: 
 
 Silently ignored if `points.count < 2`. The `closed` flag sets DXF group code 70 to 1.
 
-- **Parameters:** `points` — vertices in mm; `closed` — close the polyline; `layer` — layer name.
+- **Parameters:** `points`, vertices in mm; `closed`, close the polyline; `layer`, layer name.
 - **OCCT:** Pure-Swift.
 
 ---
@@ -847,7 +847,7 @@ Stage a CIRCLE entity.
 public func addCircle(centre: SIMD2<Double>, radius: Double, layer: String = "VISIBLE")
 ```
 
-- **Parameters:** `centre` — centre in mm; `radius` — radius in mm; `layer` — layer name.
+- **Parameters:** `centre`, centre in mm; `radius`, radius in mm; `layer`, layer name.
 - **OCCT:** Pure-Swift.
 
 ---
@@ -864,8 +864,8 @@ public func addArc(centre: SIMD2<Double>, radius: Double,
 
 DXF ARC uses mathematical CCW convention matching the staged angles.
 
-- **Parameters:** `centre` — centre in mm; `radius` — radius in mm; `startAngleDeg` / `endAngleDeg`
-  — arc extent in degrees; `layer` — layer name.
+- **Parameters:** `centre`, centre in mm; `radius`, radius in mm; `startAngleDeg` / `endAngleDeg`
+, arc extent in degrees; `layer`, layer name.
 - **OCCT:** Pure-Swift.
 
 ---
@@ -880,9 +880,9 @@ public func addText(_ text: String, at position: SIMD2<Double>,
                     layer: String = "TEXT")
 ```
 
-- **Parameters:** `text` — string; `position` — insertion point in mm;
-  `height` — text height in mm (default 3.5); `rotationDeg` — CCW rotation in degrees (default 0);
-  `layer` — layer name (default `"TEXT"`).
+- **Parameters:** `text`, string; `position`, insertion point in mm;
+  `height`: text height in mm (default 3.5); `rotationDeg`, CCW rotation in degrees (default 0);
+  `layer`: layer name (default `"TEXT"`).
 - **OCCT:** Pure-Swift.
 
 ---
@@ -901,7 +901,7 @@ and `.fitClass` are folded into the main label; `.bilateral`, `.unilateral`, and
 stacked upper/lower text lines at 55% height. Until v2.0.0 DXF carried its own private copy of this
 dispatcher and its own tolerance formatter, so a fix to the shared one could miss DXF entirely.
 
-- **Parameters:** `d` — dimension to emit.
+- **Parameters:** `d`, dimension to emit.
 - **OCCT:** Pure-Swift.
 - **Example:**
   ```swift
@@ -925,7 +925,7 @@ public func collectFromDrawing(_ drawing: Drawing,
 
 Identical semantics to `PDFWriter.collectFromDrawing(_:translate:scale:)`.
 
-- **Parameters:** `drawing` — source drawing; `translate` — 2D offset; `scale` — uniform scale.
+- **Parameters:** `drawing`, source drawing; `translate`, 2D offset; `scale`, uniform scale.
 - **OCCT:** Pure-Swift (edge tessellation indirectly uses the bridge via `Shape.allEdgePolylines`).
 
 ---
@@ -938,7 +938,7 @@ Collect a `TransformedDrawing` onto this writer.
 public func collectFromDrawing(_ transformed: TransformedDrawing)
 ```
 
-- **Parameters:** `transformed` — wrapper holding a `Drawing` with a translate and scale.
+- **Parameters:** `transformed`, wrapper holding a `Drawing` with a translate and scale.
 - **OCCT:** Pure-Swift.
 
 ---
@@ -977,7 +977,7 @@ Emits HEADER (`$ACADVER = AC1009`, `$INSUNITS = 4` mm), TABLES (LTYPE, LAYER, ST
 (empty, required by R12), and ENTITIES sections, then writes atomically via
 `String.write(to:atomically:encoding:)`.
 
-- **Parameters:** `url` — output file URL (conventionally `.dxf`).
+- **Parameters:** `url`, output file URL (conventionally `.dxf`).
 - **Returns:** `Void`.
 - **Throws:** `DXFError.writeFailed`.
 - **OCCT:** Pure-Swift.
@@ -1039,7 +1039,7 @@ public var bytesPerPixel: Int
 
 ## PixMap
 
-Wraps OCCT `Image_AlienPixMap` — a reference-counted pixel image supporting multiple formats,
+Wraps OCCT `Image_AlienPixMap`, a reference-counted pixel image supporting multiple formats,
 per-pixel colour access, file I/O, and gamma correction. Obtain an instance with `PixMap()`,
 then call `initTrash` or `load` before reading pixel data.
 
@@ -1079,7 +1079,7 @@ Allocate image data of the given format and dimensions (contents uninitialised).
 public func initTrash(format: Format, width: Int, height: Int) -> Bool
 ```
 
-- **Parameters:** `format` — pixel format; `width` — width in pixels; `height` — height in pixels.
+- **Parameters:** `format`, pixel format; `width`, width in pixels; `height`, height in pixels.
 - **Returns:** `true` on success; `false` if allocation failed.
 - **OCCT:** `Image_AlienPixMap::InitTrash(Image_Format, width, height)`.
 - **Example:**
@@ -1103,7 +1103,7 @@ public func initCopy(from source: PixMap) -> Bool
 
 After a successful copy, `self` has the same format, width, and height as `source`.
 
-- **Parameters:** `source` — source pixel map to copy from.
+- **Parameters:** `source`, source pixel map to copy from.
 - **Returns:** `true` on success.
 - **OCCT:** `Image_AlienPixMap::InitCopy(Image_PixMap)`.
 - **Example:**
@@ -1201,7 +1201,7 @@ Return the RGBA colour of the pixel at `(x, y)`.
 public func pixel(at x: Int, y: Int) -> Color
 ```
 
-- **Parameters:** `x` — column index (0-based); `y` — row index (0-based).
+- **Parameters:** `x`, column index (0-based); `y`, row index (0-based).
 - **Returns:** `Color` with red, green, blue, alpha in [0, 1].
 - **OCCT:** `Image_AlienPixMap::PixelColor(x, y)` → `Quantity_ColorRGBA`.
 - **Example:**
@@ -1224,7 +1224,7 @@ Set the colour of the pixel at `(x, y)`.
 public func setPixel(at x: Int, y: Int, color: Color)
 ```
 
-- **Parameters:** `x` — column index; `y` — row index; `color` — RGBA colour to write.
+- **Parameters:** `x`, column index; `y`, row index; `color`, RGBA colour to write.
 - **OCCT:** `Image_AlienPixMap::SetPixelColor(x, y, Quantity_ColorRGBA)`.
 
 ---
@@ -1241,7 +1241,7 @@ public func save(to path: String) -> Bool
 Supported extensions: `.ppm`, `.png`, `.jpg` / `.jpeg`, `.bmp`, `.tga`. PNG and JPEG require
 FreeImage to be linked (available in the pre-built xcframework).
 
-- **Parameters:** `path` — absolute file path including extension.
+- **Parameters:** `path`, absolute file path including extension.
 - **Returns:** `true` on success; `false` if the write fails or the format is unsupported.
 - **OCCT:** `Image_AlienPixMap::Save(TCollection_AsciiString)`.
 - **Example:**
@@ -1270,7 +1270,7 @@ Load an image from a file.
 public func load(from path: String) -> Bool
 ```
 
-- **Parameters:** `path` — absolute file path to an image file.
+- **Parameters:** `path`, absolute file path to an image file.
 - **Returns:** `true` on success; `false` if the file cannot be read or decoded.
 - **OCCT:** `Image_AlienPixMap::Load(TCollection_AsciiString)`.
 - **Example:**
@@ -1296,7 +1296,7 @@ public func adjustGamma(_ gamma: Double) -> Bool
 
 `1.0` leaves the image unchanged. Values less than 1.0 darken; values greater than 1.0 brighten.
 
-- **Parameters:** `gamma` — gamma exponent (1.0 = no change).
+- **Parameters:** `gamma`, gamma exponent (1.0 = no change).
 - **Returns:** `true` on success.
 - **OCCT:** `Image_AlienPixMap::AdjustGamma(gamma)`.
 - **Example:**

@@ -104,7 +104,7 @@ struct ThreadedFeatureTests {
         let lhResult = bored.threadedHole(axisOrigin: SIMD3(15, 15, 0),
                                           axisDirection: SIMD3(0, 0, 1),
                                           spec: lh, depth: 10)
-        // Both should produce valid shapes with equivalent volume — a mirror-image
+        // Both should produce valid shapes with equivalent volume, a mirror-image
         // thread has the same volume as the original up to tessellation artefacts.
         // The absolute tolerance is generous (~1% of a typical V-cut volume) to
         // accommodate BOP/triangulation noise; the point of the test is that both

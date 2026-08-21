@@ -145,7 +145,7 @@ public final class Curve3D: @unchecked Sendable {
 
     /// Circular arc through three points.
     ///
-    /// A spelling of `arcOfCircle(start:interior:end:)` and delegates to it — the two cannot
+    /// A spelling of `arcOfCircle(start:interior:end:)` and delegates to it, the two cannot
     /// produce different curves for the same input (#415).
     ///
     /// - Parameters:
@@ -476,7 +476,7 @@ public final class Curve3D: @unchecked Sendable {
     /// This is the canonical, failure-distinguishing entry point: returns `nil` if the curve
     /// is invalid or the underlying computation fails, rather than collapsing failure into a
     /// numeric result. `totalArcLength` delegates to this and collapses failure back to `-1.0`
-    /// for source compatibility — prefer this property when you need to tell "failed" apart
+    /// for source compatibility, prefer this property when you need to tell "failed" apart
     /// from "genuinely zero".
     ///
     /// Backed by `GCPnts_AbscissaPoint::Length`, applied to each of the curve's `GeomAbs_CN`
@@ -486,7 +486,7 @@ public final class Curve3D: @unchecked Sendable {
     /// `[-100, 100]` 3.1% short and a 5-point interpolation 6.0e-5 out (#603, completing #477's
     /// per-span split). A line, a circle and a 2-pole Bezier/BSpline keep their exact closed form.
     ///
-    /// The measurement costs roughly 5x what a single quadrature did — an 8 x 3 ellipse 0.11 us to
+    /// The measurement costs roughly 5x what a single quadrature did, an 8 x 3 ellipse 0.11 us to
     /// 3.5 us, a 200-span BSpline 89 us to 452 us; a line or circle is unchanged at 0.02 us.
     ///
     /// An unbounded curve reports its parametric extent (an untrimmed line spans ±2e100), so
@@ -510,14 +510,14 @@ public final class Curve3D: @unchecked Sendable {
     /// This is the canonical, failure-distinguishing entry point: returns `nil` if the curve
     /// is invalid or the underlying computation fails, rather than collapsing failure into a
     /// numeric result. `arcLength(from:to:)` and `arcLengthBetween(_:_:)` both delegate to this
-    /// and collapse failure back to `-1.0` for source compatibility — prefer this method when
+    /// and collapse failure back to `-1.0` for source compatibility, prefer this method when
     /// you need to tell "failed" apart from a genuine zero-length interval (e.g. `u1 == u2`).
     ///
     /// Same composite integrator as ``length``. The range may be given in either order; equal
     /// parameters measure `0`.
     ///
     /// Both bounds must be finite: `.nan` and `±.infinity` are rejected and report `nil`. OCCT
-    /// itself does not check, and answered them differently per curve type — on an interpolated
+    /// itself does not check, and answered them differently per curve type, on an interpolated
     /// BSpline a NaN upper bound measured `0` and a NaN lower bound measured the curve's whole
     /// length, neither distinguishable from a real result (#548).
     ///
@@ -587,16 +587,16 @@ public final class Curve3D: @unchecked Sendable {
     /// Approximate the curve with a BSpline of specified continuity.
     ///
     /// Defaults (`tolerance: 1e-3`, `maxDegree: 8`) are shared with `Curve2D.approximated` and
-    /// `Surface.approximated` (#406) — all three wrap the same `GeomConvert_Approx*`/
+    /// `Surface.approximated` (#406), all three wrap the same `GeomConvert_Approx*`/
     /// `Geom2dConvert_ApproxCurve` family applied to a different OCCT geometry hierarchy, not
     /// independent algorithms that would justify independently-tuned numeric defaults.
     ///
-    /// Returns the fitted curve whenever OCCT produced one, which — per `HasResult()`, the
+    /// Returns the fitted curve whenever OCCT produced one, which, per `HasResult()`, the
     /// accessor this shares with ``Curve3D/approxWithDetails(tolerance:continuity:maxSegments:maxDegree:)``
-    /// since #491 — includes a best-effort fit that did *not* reach `tolerance`. A non-nil result
+    /// since #491, includes a best-effort fit that did *not* reach `tolerance`. A non-nil result
     /// is therefore not a promise that `tolerance` was met: `approxWithDetails` reports the actual
     /// `maxError` and an `isDone` flag for that. (Gating on `IsDone()` would not have helped here;
-    /// measured against this kernel it never rejects an over-tolerance fit — a circle fitted with
+    /// measured against this kernel it never rejects an over-tolerance fit, a circle fitted with
     /// one segment at degree 3 against a 1e-9 tolerance reports `maxError` 5.1 and `isDone` true.)
     ///
     /// ```swift
@@ -698,7 +698,7 @@ public final class Curve3D: @unchecked Sendable {
     ///
     /// - Parameter u: Curve parameter.
     /// - Returns: The curvature, or `nil` at a parameter the curve cannot be evaluated at or where
-    ///   `GeomLProp_CLProps::IsTangentDefined()` is false — a point with no significant derivative
+    ///   `GeomLProp_CLProps::IsTangentDefined()` is false, a point with no significant derivative
     ///   of any order, such as a Bezier whose control points all coincide. This used to be `0`,
     ///   which is also every straight curve's real curvature (#595).
     ///
@@ -710,7 +710,7 @@ public final class Curve3D: @unchecked Sendable {
     /// if let k = circle.curvature(at: 0) { print(k) }   // 0.2, i.e. 1/5
     ///
     /// let line = Curve3D.line(origin: .zero, direction: SIMD3(1, 0, 0))!
-    /// line.curvature(at: 3)   // 0 — straight, and that is the answer, not a failure
+    /// line.curvature(at: 3)   // 0, straight, and that is the answer, not a failure
     /// ```
     public func curvature(at u: Double) -> Double? {
         var k = 0.0
@@ -735,21 +735,21 @@ public final class Curve3D: @unchecked Sendable {
         }
     }
 
-    /// Torsion at parameter `u` — the rate the curve twists out of its osculating plane — or `nil`
+    /// Torsion at parameter `u`, the rate the curve twists out of its osculating plane, or `nil`
     /// where there is no osculating plane to twist out of.
     ///
     /// - Parameter u: Curve parameter.
     /// - Returns: The torsion, or `nil` at a parameter the curve cannot be evaluated at or where
     ///   the first two derivatives are parallel (a straight stretch), so no osculating plane is
-    ///   defined. That case used to be `0`, which is also every **planar** curve's real torsion —
+    ///   defined. That case used to be `0`, which is also every **planar** curve's real torsion,
     ///   a circle and a straight line reported the same answer (#595).
     ///
     /// ```swift
     /// let circle = Curve3D.circle(center: .zero, normal: SIMD3(0, 0, 1), radius: 4)!
-    /// circle.torsion(at: 1)   // 0 — planar, and that is the answer
+    /// circle.torsion(at: 1)   // 0, planar, and that is the answer
     ///
     /// let line = Curve3D.line(origin: .zero, direction: SIMD3(1, 0, 0))!
-    /// line.torsion(at: 5)     // nil — no osculating plane at all
+    /// line.torsion(at: 5)     // nil, no osculating plane at all
     /// ```
     public func torsion(at u: Double) -> Double? {
         var t = 0.0
@@ -1215,8 +1215,8 @@ extension Curve3D {
     /// Project a point onto this curve to find the closest point on it.
     ///
     /// The answer is always inside this curve's own ``domain``, and always the true nearest point:
-    /// where the point has no perpendicular foot on the curve — anything past the end of a trimmed
-    /// curve, or off to one side of an arc — the nearest point is an end, and that is what comes
+    /// where the point has no perpendicular foot on the curve, anything past the end of a trimmed
+    /// curve, or off to one side of an arc, the nearest point is an end, and that is what comes
     /// back. ``nearestParameter(to:)`` is the scalar spelling of this and agrees with it exactly
     /// (#615); ``distance(to:precision:)`` is the distance-only one.
     ///
@@ -1234,7 +1234,7 @@ extension Curve3D {
     /// ```
     ///
     /// Before #539 this projected onto the curve's *underlying basis* curve, so the point above came
-    /// back at parameter 100, distance 0 — a `distance < tolerance` proximity test read a point 92
+    /// back at parameter 100, distance 0, a `distance < tolerance` proximity test read a point 92
     /// units away as lying on the curve.
     ///
     /// - Parameters:
@@ -1480,7 +1480,7 @@ extension Curve3D {
         public let order: ContinuityClass
         /// The continuity classes this ``order`` actually measured.
         ///
-        /// Each order computes only its own branch — `.c0` measures C0; `.g1` measures C0 and G1;
+        /// Each order computes only its own branch, `.c0` measures C0; `.g1` measures C0 and G1;
         /// `.c1` measures C0 and C1; `.g2` measures C0, G1 and G2; `.c2` measures C0, C1 and C2.
         /// No order measures all five, not even the `.c2` default, which never looks at G1 or G2.
         public let measured: Set<ContinuityClass>
@@ -1511,12 +1511,12 @@ extension Curve3D {
         ///
         /// ```swift
         /// let a = corner.continuityWith(other, u1: e1, u2: s2, order: .c1)!
-        /// a.holds(.c1)   // false — measured, and the junction is not C1
-        /// a.holds(.g1)   // nil   — order .c1 never computes G1
+        /// a.holds(.c1)   // false, measured, and the junction is not C1
+        /// a.holds(.g1)   // nil, order .c1 never computes G1
         /// ```
         ///
-        /// - Note: This asks *exact-class membership* — "did this analysis report this one
-        ///   class?" — not a floor. It never infers one class from another, so a `true` for
+        /// - Note: This asks *exact-class membership*, "did this analysis report this one
+        ///   class?", not a floor. It never infers one class from another, so a `true` for
         ///   ``ContinuityClass/g2`` implies nothing about ``ContinuityClass/c1``. To test a
         ///   *measured* class against a continuity floor instead, use
         ///   ``ContinuityClass/satisfies(_:)``; to rank two measured classes, compare them with
@@ -1548,7 +1548,7 @@ extension Curve3D {
     /// Analyze continuity between this curve at parameter `u1` and another curve at `u2`.
     ///
     /// ```swift
-    /// // Is this junction tangent-continuous? Ask for G1 — the .c2 default never measures it.
+    /// // Is this junction tangent-continuous? Ask for G1, the .c2 default never measures it.
     /// let a = leftArc.continuityWith(rightArc, u1: leftArc.domain.upperBound,
     ///                                u2: rightArc.domain.lowerBound, order: .g1)
     /// if a?.holds(.g1) == true { print("tangent, angle \(a!.g1Angle)") }
@@ -1561,8 +1561,8 @@ extension Curve3D {
     ///   - order: Which continuity class to measure. This selects the analysis, not just a
     ///     ceiling: `LocalAnalysis_CurveContinuity` computes one branch of a switch, so the
     ///     classes outside it are never measured and ``ContinuityAnalysis/holds(_:)`` reports
-    ///     `nil` for them. `.c2` is the strictest question the class can answer — it implements
-    ///     no predicate above C2/G2 — so `.c3` and `.cN` saturate to `.c2`, which
+    ///     `nil` for them. `.c2` is the strictest question the class can answer, it implements
+    ///     no predicate above C2/G2, so `.c3` and `.cN` saturate to `.c2`, which
     ///     ``ContinuityAnalysis/order`` reports back.
     /// - Returns: Continuity analysis result, or nil on failure
     public func continuityWith(
@@ -1747,8 +1747,8 @@ extension Curve3D {
 
     /// Create a circle from center, normal, and radius (`gce_MakeCirc`).
     ///
-    /// Geometrically identical to `circle(center:normal:radius:)` — `gce_MakeCirc` builds the
-    /// same `gp_Ax2(center, normal)` frame — and, since #399, enforces the same radius contract.
+    /// Geometrically identical to `circle(center:normal:radius:)`, `gce_MakeCirc` builds the
+    /// same `gp_Ax2(center, normal)` frame, and, since #399, enforces the same radius contract.
     ///
     /// - Parameters:
     ///   - center: Circle centre.
@@ -2292,7 +2292,7 @@ extension Curve3D {
     /// Approximate a 3D BSpline through points with degree and continuity control.
     ///
     /// `continuity` is a ``ParametricContinuity`` raw value (0=C0, 1=C1, 2=C2, 3=C3). Unlike the
-    /// `approximated` family, the fitter accepts every value without failing — it treats the
+    /// `approximated` family, the fitter accepts every value without failing, it treats the
     /// request as an upper bound on what it will try to achieve.
     public static func approximate(
         points: [SIMD3<Double>],
@@ -2339,7 +2339,7 @@ extension Curve3D {
     /// Compute the arc length of this curve between parameters u1 and u2 (non-optional).
     ///
     /// Delegates to `length(from:to:)`, the failure-distinguishing entry point. Returns `-1.0`
-    /// if a bound is not finite (`.nan`, `±.infinity`) or the underlying computation fails — arc
+    /// if a bound is not finite (`.nan`, `±.infinity`) or the underlying computation fails, arc
     /// length is otherwise always non-negative, so this is an unambiguous failure sentinel, never
     /// confusable with a genuine zero-length result (e.g. `u1 == u2`). Use `length(from:to:)`
     /// directly if you need an optional rather than a sentinel value.
@@ -2377,7 +2377,7 @@ extension Curve3D {
     /// Total arc length of the curve within its domain.
     ///
     /// Delegates to `length`, the failure-distinguishing entry point. Returns `-1.0` if the
-    /// underlying computation fails — arc length is otherwise always non-negative, so this is
+    /// underlying computation fails, arc length is otherwise always non-negative, so this is
     /// an unambiguous failure sentinel, never confusable with a genuine zero-length curve. Use
     /// `length` directly if you need an optional rather than a sentinel value.
     public var totalArcLength: Double {
@@ -2387,7 +2387,7 @@ extension Curve3D {
     /// Arc length between two parameters.
     ///
     /// Delegates to `length(from:to:)`, the failure-distinguishing entry point. Returns `-1.0`
-    /// if a bound is not finite (`.nan`, `±.infinity`) or the underlying computation fails — arc
+    /// if a bound is not finite (`.nan`, `±.infinity`) or the underlying computation fails, arc
     /// length is otherwise always non-negative, so this is an unambiguous failure sentinel, never
     /// confusable with a genuine zero-length interval (e.g. `param1 == param2`). Use
     /// `length(from:to:)` directly if you need an optional rather than a sentinel value.
@@ -2402,7 +2402,7 @@ extension Curve3D {
     ///     there is no curve to answer about.
     ///
     /// The answer is the true nearest point, not the nearest perpendicular foot. Where the point has
-    /// no foot at all — anything past the end of a trimmed curve, or off to one side of an arc — the
+    /// no foot at all, anything past the end of a trimmed curve, or off to one side of an arc, the
     /// nearest point is an end, and that is what comes back. This is the scalar spelling of
     /// ``projectPoint(_:precision:)`` and agrees with it exactly; it is the 3D counterpart of
     /// `Curve2D.nearestParameter(to:)`, and it replaces both `closestParameter(to:)` and
@@ -2422,8 +2422,8 @@ extension Curve3D {
     ///
     /// Before #615 this reported `GeomAPI_ProjectPointOnCurve`'s extremum instead: the arc above
     /// answered π/2, the far side, 11 away, and the segment answered `nil`. `Optional` remains
-    /// because no `Double` can carry a failure signal — every value is a legitimate parameter on
-    /// some curve — not because a point can fail to have a nearest one.
+    /// because no `Double` can carry a failure signal, every value is a legitimate parameter on
+    /// some curve, not because a point can fail to have a nearest one.
     public func nearestParameter(to point: SIMD3<Double>) -> Double? {
         var parameter = 0.0
         guard OCCTCurve3DNearestParameter(handle, point.x, point.y, point.z, &parameter) else {
@@ -2871,12 +2871,12 @@ extension Curve3D {
     /// Approximate this curve as a BSpline, reporting the fit's error and completion status.
     ///
     /// The same approximation ``Curve3D/approximated(tolerance:continuity:maxSegments:maxDegree:)``
-    /// performs — one shared `GeomConvert_ApproxCurve` run behind both (#491) — with the
+    /// performs, one shared `GeomConvert_ApproxCurve` run behind both (#491), with the
     /// diagnostics OCCT already computed for it. For identical arguments the two return the same
     /// curve; use this one when you need to know how close the fit actually came.
     ///
     /// `hasResult` is what decides whether `curve` is populated, and OCCT documents it as true even
-    /// for a fit that is *not* within `tolerance` — `isDone` and `maxError` are how you find out.
+    /// for a fit that is *not* within `tolerance`, `isDone` and `maxError` are how you find out.
     /// So a non-nil `curve` is not by itself a promise that `tolerance` was met.
     ///
     /// ```swift
@@ -3157,7 +3157,7 @@ extension Curve3D {
     /// Get the offset direction (returns nil if not an offset curve).
     public var offsetDirection: (x: Double, y: Double, z: Double)? {
         // Public return type is a labeled tuple, not SIMD3<Double>, so the shared helper's
-        // result is unpacked into it rather than returned directly — no signature change.
+        // result is unpacked into it rather than returned directly, no signature change.
         guard
             let v = unwrapVectorComponentsIfSuccessful({
                 OCCTCurve3DOffsetDirection(handle, $0, $1, $2)
@@ -3402,8 +3402,8 @@ extension Curve3D {
 extension Curve3D {
     /// Measured global continuity of the 3D curve, as a raw `GeomAbs_Shape` ordinal.
     ///
-    /// The ordinals are `GeomAbs_Shape`'s own declared order — `0=C0, 1=G1, 2=C1, 3=G2,
-    /// 4=C2, 5=C3, 6=CN` — not a 0/1/2 order. Prefer ``continuityClass``, which names them.
+    /// The ordinals are `GeomAbs_Shape`'s own declared order, `0=C0, 1=G1, 2=C1, 3=G2,
+    /// 4=C2, 5=C3, 6=CN`, not a 0/1/2 order. Prefer ``continuityClass``, which names them.
     ///
     /// ```swift
     /// // A cubic BSpline with a doubled interior knot is C1, which is ordinal 2 (not 1).
@@ -3414,7 +3414,7 @@ extension Curve3D {
     /// - Warning: This is the migration target for the retired `continuityOrder`, but it is not a
     ///   drop-in one: `continuityOrder` used to answer a different set of numbers
     ///   (`C0=0, C1=1, C2=2, C3=3, CN=99, G1=-2, G2=-3`). A threshold moved across unchanged
-    ///   reads as one class too low — `>= 2` accepts C1 here and accepted C2 there — and `== 99`
+    ///   reads as one class too low, `>= 2` accepts C1 here and accepted C2 there, and `== 99`
     ///   is now unreachable. Prefer ``continuityClass`` and ``ContinuityClass/satisfies(_:)``,
     ///   which cannot be compared against the wrong constant at all (#619).
     public var continuity: Int {
@@ -3684,7 +3684,7 @@ extension Curve3D {
     /// `initParam` and reports the
     /// **lowest-distance extremum inside that window**. `initParam` bounds the window; it does not
     /// rank what is found in it, so the extremum you get back is not necessarily the one nearest
-    /// your guess — where a window holds several, the one closest to the *query point* wins.
+    /// your guess, where a window holds several, the one closest to the *query point* wins.
     ///
     /// The window is what makes the answer local, and a windowed minimum can still be a global
     /// *maximum*: on a half circle of radius 5 queried from `(0, -6, 0)` with a guess of `.pi / 2`,
@@ -3692,7 +3692,7 @@ extension Curve3D {
     /// curve is 7.81 away. Use ``nearestParameter(to:)`` or ``projectPoint(_:precision:)`` when you
     /// want the global answer.
     ///
-    /// When the window holds no extremum at all, the search falls back to the whole curve — and,
+    /// When the window holds no extremum at all, the search falls back to the whole curve, and,
     /// since #615, to the whole curve's true nearest point, which is what those two report. Before
     /// #615 the fallback reported an extremum instead, so a guess sitting *on* the nearest point
     /// returned the point diametrically opposite it, and a bounded segment queried from past its own
@@ -3710,14 +3710,17 @@ extension Curve3D {
     /// ```
     ///
     /// - Returns: `nil` only when the curve cannot be read.
+    ///
+    /// There is no tolerance: both the windowed search and the whole-curve fallback go through
+    /// `GeomAPI_ProjectPointOnCurve`, which takes none.
     public func locateNearestPoint(
-        _ point: SIMD3<Double>, initParam: Double, tolerance: Double = 1e-6
+        _ point: SIMD3<Double>, initParam: Double
     ) -> (parameter: Double, distance: Double)? {
         var param = 0.0
         var dist = 0.0
         let ok = OCCTExtremaLocateOnCurve(
             handle, point.x, point.y, point.z,
-            initParam, tolerance, &param, &dist)
+            initParam, &param, &dist)
         return ok ? (param, dist) : nil
     }
 
@@ -3929,7 +3932,7 @@ extension Curve3D {
     ///
     /// - Parameter u: Curve parameter.
     /// - Returns: The normal, or `nil` where the curvature is zero (a straight stretch, or an
-    ///   inflection) or infinite (a cusp) — a normal needs a curvature to point away from.
+    ///   inflection) or infinite (a cusp), a normal needs a curvature to point away from.
     ///
     /// ```swift
     /// let circle = Curve3D.circle(center: .zero, normal: SIMD3(0, 0, 1), radius: 5)!
@@ -3976,7 +3979,7 @@ extension Curve3D {
     ///
     /// Use ``continuityClass`` (named cases) or ``continuity`` (raw ordinal).
     ///
-    /// Until #485 this property answered `C0=0, C1=1, C2=2, C3=3, CN=99, G1=-2, G2=-3` — a
+    /// Until #485 this property answered `C0=0, C1=1, C2=2, C3=3, CN=99, G1=-2, G2=-3`, a
     /// scheme of OCCTSwift's own invention that matched neither `GeomAbs_Shape` nor its own doc
     /// comment, and disagreed with ``continuity`` on the same curve for every class except C0.
     /// #485 replaced it with the real `GeomAbs_Shape` ordinal (`C0=0, G1=1, C1=2, G2=3, C2=4,
@@ -3997,7 +4000,7 @@ extension Curve3D {
     /// ```
     ///
     /// ``continuity`` is the same `Int` under an honest name if a raw ordinal is genuinely what
-    /// you want — but it is the *new* ordinal, so re-check any constant compared against it.
+    /// you want, but it is the *new* ordinal, so re-check any constant compared against it.
     ///
     /// - Important: The retired encoding had an eighth value the tables above do not show. It
     ///   signalled failure out of band, returning `-1` from its `default:` branch and for a null

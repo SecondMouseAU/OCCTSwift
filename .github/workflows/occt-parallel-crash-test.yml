@@ -25,7 +25,7 @@ jobs:
       #   - INSTALL_DIR (not CMAKE_INSTALL_PREFIX) is OCCT's own install path variable
       #   - INSTALL_DIR_LAYOUT=Unix gives: include/opencascade/ and lib/ (no platform subdirs)
       #   - RelWithDebInfo appends 'i' to lib dir name: libi/
-      #   - CMake default MSVC runtime is /MD (dynamic CRT) — our test must match
+      #   - CMake default MSVC runtime is /MD (dynamic CRT), our test must match
       - name: Build OCCT from source
         run: |
           git clone --depth 1 --branch V8_0_0_rc5 https://github.com/Open-Cascade-SAS/OCCT.git occt-src

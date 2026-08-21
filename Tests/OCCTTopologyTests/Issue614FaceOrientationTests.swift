@@ -5,8 +5,8 @@ import Foundation
 // #614: `Shape.faces()` dropped a face's second orientation.
 //
 // #541/#502 converged every face accessor onto one enumeration, `TopExp::MapShapes`. That map
-// compares with `TopoDS_Shape::IsSame` — "same TShape with the same Locations. Orientations may
-// differ" (TopoDS_Shape.hxx:265-271) — so a face occurring in one shape both FORWARD and REVERSED
+// compares with `TopoDS_Shape::IsSame`, "same TShape with the same Locations. Orientations may
+// differ" (TopoDS_Shape.hxx:265-271), so a face occurring in one shape both FORWARD and REVERSED
 // collapses to a single entry. `NCollection_IndexedMap::addImpl` returns the existing index and
 // leaves the stored key untouched on a repeat (NCollection_IndexedMap.hxx:684-710), so the entry
 // keeps whichever orientation was reached FIRST.
@@ -16,7 +16,7 @@ import Foundation
 // out of one body and INTO the other.
 //
 // Measured on the pinned kernel (BRepAlgoAPI_Splitter, 10mm box cut by the z=4 plane):
-// 12 face occurrences over 11 distinct faces. The shared wall is stored FORWARD, normal (0,0,1) —
+// 12 face occurrences over 11 distinct faces. The shared wall is stored FORWARD, normal (0,0,1),
 // dot +2.0 against the lower solid (outward) and −3.0 against the upper one (inward).
 //
 // The fix follows the split OCCT itself draws rather than inventing one:
@@ -26,7 +26,7 @@ import Foundation
 //     IsSame map (TopTools_ShapeSet.hxx:192). `faces()` stays on it, so no index moves.
 //   * NORMAL → orientation-sensitive, read off the TRAVERSAL. `BRepGProp::VolumeProperties`, where
 //     a face's orientation sets the sign of the volume integral, takes it from `ex.Current()`
-//     (BRepGProp.cxx:322-325) and — when deduplicating — keeps one IsSame map PER orientation
+//     (BRepGProp.cxx:322-325) and, when deduplicating, keeps one IsSame map PER orientation
 //     (`aFwdFMap`/`aRvsFMap`, BRepGProp.cxx:318-338) so a shared wall's two sides both survive.
 //     `orientedFaces()` is that explorer walk.
 
@@ -57,7 +57,7 @@ struct Issue614FaceOrientationTests {
     /// The point and outward-reported normal at the middle of a face's trimmed UV range.
     ///
     /// `uvBounds` is `BRepTools::UVBounds`, so the midpoint lies on the face rather than at some
-    /// untrimmed surface origin. `normal(atU:v:)` is what reverses on REVERSED — the whole point.
+    /// untrimmed surface origin. `normal(atU:v:)` is what reverses on REVERSED, the whole point.
     static func centreAndNormal(_ face: Face) -> (point: SIMD3<Double>, normal: SIMD3<Double>)? {
         guard let uv = face.uvBounds else { return nil }
         let u = (uv.uMin + uv.uMax) / 2
@@ -102,7 +102,7 @@ struct Issue614FaceOrientationTests {
         #expect(distinct.count == 11)
         #expect(occurrences.count == 12)
 
-        // faces() is still the indexing enumeration faceCount counts — #541 intact.
+        // faces() is still the indexing enumeration faceCount counts, #541 intact.
         #expect(distinct.count == compound.faceCount)
 
         // Every occurrence carries a face index that faces() can address.
@@ -127,7 +127,7 @@ struct Issue614FaceOrientationTests {
         let shared = byIndex.filter { $0.value.count > 1 }
         #expect(shared.count == 1)
         guard let sharedOccurrences = shared.first?.value else {
-            Issue.record("no shared face in the split compound — fixture stopped sharing")
+            Issue.record("no shared face in the split compound, fixture stopped sharing")
             return
         }
         #expect(sharedOccurrences.count == 2)
@@ -161,7 +161,7 @@ struct Issue614FaceOrientationTests {
     ///
     /// The test above detects the collapse through the duplicate disappearing, which is a true
     /// symptom but an indirect one. This one locates the shared wall as the face both solids
-    /// carry — a fact no enumeration choice can erase — and then asserts the thing #614 is
+    /// carry, a fact no enumeration choice can erase, and then asserts the thing #614 is
     /// actually about: that the compound-level walk offers, for each solid, a copy of that wall
     /// whose normal points out of it. Under the deduplicated walk the single surviving entry
     /// points out of one solid and into the other, so this fails on the normal itself.
@@ -184,7 +184,7 @@ struct Issue614FaceOrientationTests {
         guard let wallCentre = centresA.first(where: { a in
             centresB.contains { b in Self.dot(a - b, a - b) < 1e-12 }
         }) else {
-            Issue.record("the two solids share no face centre — fixture stopped sharing")
+            Issue.record("the two solids share no face centre, fixture stopped sharing")
             return
         }
 
@@ -209,7 +209,7 @@ struct Issue614FaceOrientationTests {
         }
     }
 
-    /// The same wall, enumerated from each solid on its own, already pointed outward — which is
+    /// The same wall, enumerated from each solid on its own, already pointed outward, which is
     /// why this went unnoticed. Pins that so the compound-level fix cannot regress it.
     @Test("enumerated per solid, every face already points outward")
     func perSolidEnumerationIsOutward() {
@@ -255,7 +255,7 @@ struct Issue614FaceOrientationTests {
         #expect(occurrences.map(\.orientation) == distinct.map(\.orientation))
     }
 
-    /// A plain box's faces all point outward under both enumerations — the everyday contract the
+    /// A plain box's faces all point outward under both enumerations, the everyday contract the
     /// CAM helpers (`upwardFaces`, `horizontalFaces`) depend on.
     @Test("a plain box faces outward under both enumerations")
     func plainBoxFacesOutward() {
@@ -307,7 +307,7 @@ struct Issue614FaceOrientationTests {
         let counts = Dictionary(grouping: horizontal, by: \.index).mapValues(\.count)
         #expect(counts.values.filter { $0 > 1 }.count == 1)
         guard let sharedIndex = counts.first(where: { $0.value == 2 })?.key else {
-            Issue.record("no horizontal face appears twice — the shared wall was dropped")
+            Issue.record("no horizontal face appears twice, the shared wall was dropped")
             return
         }
         let sides = horizontal.filter { $0.index == sharedIndex }
@@ -347,7 +347,7 @@ struct Issue614FaceOrientationTests {
         #expect(Set(atCut.map(\.orientation)) == Set([.forward, .reversed]))
     }
 
-    /// On a shared *wall* — two solids whose parents impose opposite orientations — at most one
+    /// On a shared *wall*, two solids whose parents impose opposite orientations, at most one
     /// side can face up, because the two normals are opposed.
     ///
     /// This is a property of opposed normals, NOT a guarantee of `upwardFaces()`. The two tests
@@ -401,7 +401,7 @@ struct Issue614FaceOrientationTests {
     }
 
     /// Counterexample 2: `isUpwardFacing` is `n.z > cos(tolerance)`, so a tolerance of π/2 or more
-    /// makes the threshold non-positive and admits faces that do not point up at all — including
+    /// makes the threshold non-positive and admits faces that do not point up at all, including
     /// both sides of a *vertical* shared wall, whose normals have `n.z == 0`.
     @Test("a tolerance past pi/2 admits both sides of a vertical shared wall")
     func upwardFacesRepeatsAtDegenerateTolerance() {

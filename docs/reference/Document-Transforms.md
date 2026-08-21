@@ -1,9 +1,9 @@
 ---
-title: Document — Coordinate Systems, Transforms & Completions
+title: Document. Coordinate Systems, Transforms & Completions
 parent: API Reference
 ---
 
-# Document — Coordinate Systems, Transforms & Completions
+# Document. Coordinate Systems, Transforms & Completions
 
 This page covers the geometry, math, and completion APIs exposed in `Document.swift`: coordinate systems, 2D transforms, matrix math, quaternion interpolation, vector utilities, numeric solvers, unit conversion, local surface/curve properties, projection, bounding boxes, shape analysis, boolean checking, defeaturing, polynomial conversion, transform extras, topology extras, sewing extras, and BREP serialization. See the main [`Document`](Document.md) page for XCAF assembly, attribute, and STEP/OCAF I/O.
 
@@ -27,7 +27,7 @@ public init(origin: SIMD3<Double>, direction: SIMD3<Double>, xDirection: SIMD3<D
 
 OCCT normalises and orthogonalises the input vectors; computed `xDirection`, `yDirection`, and `isDirect` are stored on the value.
 
-- **Parameters:** `origin` — position; `direction` — main (Z) axis; `xDirection` — desired X axis (will be corrected to be orthogonal).
+- **Parameters:** `origin`, position; `direction`, main (Z) axis; `xDirection`, desired X axis (will be corrected to be orthogonal).
 - **OCCT:** `OCCTAx3Create` → `gp_Ax3(gp_Pnt, gp_Dir, gp_Dir)`.
 - **Example:**
   ```swift
@@ -48,7 +48,7 @@ Create from origin and main direction only; X/Y axes are auto-computed.
 public init(origin: SIMD3<Double>, direction: SIMD3<Double>)
 ```
 
-- **Parameters:** `origin` — position; `direction` — main (Z) axis. X and Y are chosen by OCCT.
+- **Parameters:** `origin`, position; `direction`, main (Z) axis. X and Y are chosen by OCCT.
 - **OCCT:** `OCCTAx3CreateFromNormal` → `gp_Ax3(gp_Pnt, gp_Dir)`.
 - **Example:**
   ```swift
@@ -85,7 +85,7 @@ Angle in radians between this and another coordinate system.
 public func angle(to other: CoordinateSystem3D) -> Double
 ```
 
-- **Parameters:** `other` — the reference coordinate system.
+- **Parameters:** `other`, the reference coordinate system.
 - **Returns:** Angle in radians.
 - **OCCT:** `OCCTAx3Angle` → `gp_Ax3::Angle`.
 
@@ -103,7 +103,7 @@ public func isCoplanar(
 ) -> Bool
 ```
 
-- **Parameters:** `other` — second coordinate system; `linearTolerance` — position tolerance; `angularTolerance` — angular tolerance.
+- **Parameters:** `other`, second coordinate system; `linearTolerance`, position tolerance; `angularTolerance`, angular tolerance.
 - **Returns:** `true` when the two XY planes are coincident within tolerances.
 - **OCCT:** `OCCTAx3IsCoplanar` → `gp_Ax3::IsCoplanar`.
 
@@ -117,7 +117,7 @@ Mirror this coordinate system about a point.
 public func mirrored(about point: SIMD3<Double>) -> CoordinateSystem3D
 ```
 
-- **Parameters:** `point` — the mirror point.
+- **Parameters:** `point`, the mirror point.
 - **Returns:** New mirrored coordinate system.
 - **OCCT:** `OCCTAx3MirrorPoint` → `gp_Ax3::Mirror(gp_Pnt)`.
 
@@ -135,7 +135,7 @@ public func rotated(
 ) -> CoordinateSystem3D
 ```
 
-- **Parameters:** `axisOrigin` — axis origin point; `axisDirection` — axis direction; `angle` — angle in radians.
+- **Parameters:** `axisOrigin`, axis origin point; `axisDirection`, axis direction; `angle`, angle in radians.
 - **Returns:** New rotated coordinate system.
 - **OCCT:** `OCCTAx3Rotate` → `gp_Ax3::Rotate`.
 
@@ -149,7 +149,7 @@ Translate by a vector.
 public func translated(by vector: SIMD3<Double>) -> CoordinateSystem3D
 ```
 
-- **Parameters:** `vector` — translation delta.
+- **Parameters:** `vector`, translation delta.
 - **Returns:** New coordinate system with shifted origin; direction and X direction unchanged.
 - **OCCT:** `OCCTAx3Translate` → `gp_Ax3::Translate`.
 
@@ -171,7 +171,7 @@ public static func affinity(
 ) -> GeneralTransform2D
 ```
 
-- **Parameters:** `axisOrigin` — axis pass-through point; `axisDirection` — axis direction; `ratio` — scale factor along the axis.
+- **Parameters:** `axisOrigin`, axis pass-through point; `axisDirection`, axis direction; `ratio`, scale factor along the axis.
 - **Returns:** A new `GeneralTransform2D`.
 - **OCCT:** `OCCTGTrsf2dAffinity` → `gp_GTrsf2d::SetAffinity`.
 
@@ -211,7 +211,7 @@ Apply the transform to a 2D point.
 public func transformPoint(_ point: SIMD2<Double>) -> SIMD2<Double>
 ```
 
-- **Parameters:** `point` — input 2D point.
+- **Parameters:** `point`, input 2D point.
 - **Returns:** Transformed 2D point.
 - **OCCT:** `OCCTGTrsf2dTransformPoint` → `gp_GTrsf2d::Transforms`.
 
@@ -245,7 +245,7 @@ Return a 2×2 rotation matrix for the given angle.
 public static func rotation(angle: Double) -> [Double]
 ```
 
-- **Parameters:** `angle` — angle in radians.
+- **Parameters:** `angle`, angle in radians.
 - **OCCT:** `OCCTMat2dRotation` → `gp_Mat2d` rotation.
 
 ---
@@ -258,7 +258,7 @@ Return a 2×2 uniform scale matrix.
 public static func scale(_ s: Double) -> [Double]
 ```
 
-- **Parameters:** `s` — scale factor.
+- **Parameters:** `s`, scale factor.
 - **OCCT:** `OCCTMat2dScale`.
 
 ---
@@ -271,7 +271,7 @@ Compute the determinant of a 2×2 matrix.
 public static func determinant(_ mat: [Double]) -> Double
 ```
 
-- **Parameters:** `mat` — 4-element row-major matrix.
+- **Parameters:** `mat`, 4-element row-major matrix.
 - **OCCT:** `OCCTMat2dDeterminant` → `gp_Mat2d::Determinant`.
 
 ---
@@ -284,7 +284,7 @@ Invert a 2×2 matrix.
 public static func invert(_ mat: [Double]) -> [Double]?
 ```
 
-- **Parameters:** `mat` — 4-element row-major matrix.
+- **Parameters:** `mat`, 4-element row-major matrix.
 - **Returns:** Inverted matrix, or `nil` if singular.
 - **OCCT:** `OCCTMat2dInvert` → `gp_Mat2d::Invert`.
 
@@ -328,7 +328,7 @@ public static func quaternionSlerp(
 ) -> SIMD4<Double>
 ```
 
-- **Parameters:** `q1` — start quaternion `(x, y, z, w)`; `q2` — end quaternion; `t` — blend parameter in `[0, 1]`.
+- **Parameters:** `q1`, start quaternion `(x, y, z, w)`; `q2`, end quaternion; `t`, blend parameter in `[0, 1]`.
 - **Returns:** Interpolated unit quaternion.
 - **OCCT:** `OCCTQuaternionSLerp` → `gp_QuaternionSLerp`.
 
@@ -344,7 +344,7 @@ public static func quaternionNlerp(
 ) -> SIMD4<Double>
 ```
 
-- **Parameters:** `q1` — start; `q2` — end; `t` — blend `[0, 1]`.
+- **Parameters:** `q1`, start; `q2`, end; `t`, blend `[0, 1]`.
 - **Returns:** Normalized interpolated quaternion. Cheaper than SLERP but less constant-speed.
 - **OCCT:** `OCCTQuaternionNLerp` → `gp_QuaternionNLerp`.
 
@@ -362,7 +362,7 @@ public static func transformInterpolate(
 ) -> (translation: SIMD3<Double>, quaternion: SIMD4<Double>)
 ```
 
-- **Parameters:** `from` / `to` — transforms as (translation, quaternion) pairs; `t` — blend `[0, 1]`.
+- **Parameters:** `from` / `to`, transforms as (translation, quaternion) pairs; `t`, blend `[0, 1]`.
 - **Returns:** Interpolated (translation, quaternion) pair.
 - **OCCT:** `OCCTTrsfInterpolate`.
 
@@ -370,7 +370,7 @@ public static func transformInterpolate(
 
 ## XY/XYZ Utilities
 
-### `Vector2DMath` — 2D vector math (gp_XY)
+### `Vector2DMath`, 2D vector math (gp_XY)
 
 Static enum wrapping `gp_XY` operations.
 
@@ -423,7 +423,7 @@ public static func normalize(_ v: SIMD2<Double>) -> SIMD2<Double>?
 
 ---
 
-### `Vector3DMath` — 3D vector math (gp_XYZ)
+### `Vector3DMath`, 3D vector math (gp_XYZ)
 
 Static enum wrapping `gp_XYZ` operations.
 
@@ -505,7 +505,7 @@ public static func bracketedRoot(
 ) -> (root: Double, iterations: Int)?
 ```
 
-- **Parameters:** `range` — bracket `[lower, upper]`; `tolerance` — convergence threshold; `function` — closure returning value and derivative at x.
+- **Parameters:** `range`, bracket `[lower, upper]`; `tolerance`, convergence threshold; `function`, closure returning value and derivative at x.
 - **Returns:** `(root, iterations)` if converged, `nil` otherwise.
 - **OCCT:** `OCCTMathBracketedRoot` → `math_BracketedRoot`.
 - **Example:**
@@ -530,7 +530,7 @@ public static func bracketMinimum(
 ) -> (a: Double, b: Double, c: Double, fa: Double, fb: Double, fc: Double)?
 ```
 
-- **Parameters:** `a`, `b` — starting interval; `function` — scalar function.
+- **Parameters:** `a`, `b`, starting interval; `function`, scalar function.
 - **Returns:** Three points `(a, b, c)` bracketing a minimum with their function values, or `nil` on failure.
 - **OCCT:** `OCCTMathBracketMinimum` → `math_BracketMinimum`.
 
@@ -549,7 +549,7 @@ public static func minimizeFRPR(
 ) -> (location: [Double], minimum: Double, iterations: Int)?
 ```
 
-- **Parameters:** `startPoint` — initial guess (n-vector); `function` — closure returning scalar value and gradient.
+- **Parameters:** `startPoint`, initial guess (n-vector); `function`, closure returning scalar value and gradient.
 - **Returns:** `(location, minimum, iterations)` at the optimum, or `nil` on failure.
 - **OCCT:** `OCCTMathFRPR` → `math_FRPR`.
 
@@ -570,7 +570,7 @@ public static func findAllRoots(
 ) -> [Double]
 ```
 
-- **Parameters:** `range` — search interval; `samples` — number of sample points; `function` — value + derivative.
+- **Parameters:** `range`, search interval; `samples`, number of sample points; `function`, value + derivative.
 - **Returns:** Array of root locations (may be empty).
 - **Bounds:** `samples` is bounded through `Sampling.requested` like the sibling
   `findAllRoots(in:samples:function:)` overload: outside `1...10,000,000` this returns `[]`
@@ -590,7 +590,7 @@ public static func leastSquares(
 ) -> [Double]?
 ```
 
-- **Parameters:** `matrix` — row-major matrix of size `rows × cols`; `rhs` — right-hand side vector.
+- **Parameters:** `matrix`, row-major matrix of size `rows × cols`; `rhs`, right-hand side vector.
 - **Returns:** Solution vector of length `cols`, or `nil` on failure.
 - **Bounds:** `rows` and `cols` must both be positive, and `matrix.count == rows * cols` /
   `rhs.count == rows` must hold, or this returns `nil` (#640). Before this bound there was no
@@ -616,7 +616,7 @@ public static func newtonRoot(
 ) -> (root: Double, derivative: Double, iterations: Int)?
 ```
 
-- **Parameters:** `guess` — starting x; `function` — value and derivative.
+- **Parameters:** `guess`, starting x; `function`, value and derivative.
 - **Returns:** `(root, derivative at root, iterations)` or `nil` if not converged.
 - **OCCT:** `OCCTMathNewtonFunctionRoot` → `math_NewtonFunctionRoot`.
 
@@ -636,7 +636,7 @@ public static func uzawa(
 ) -> (result: [Double], iterations: Int)?
 ```
 
-- **Parameters:** `constraintMatrix` — row-major `nConstraints × nVars` matrix; `constraintRHS` — RHS vector; `startPoint` — initial guess.
+- **Parameters:** `constraintMatrix`, row-major `nConstraints × nVars` matrix; `constraintRHS`, RHS vector; `startPoint`, initial guess.
 - **Returns:** `(solution, iterations)` or `nil` on failure.
 - **Bounds:** `nConstraints` and `nVars` must both be positive, and `constraintMatrix`/
   `constraintRHS`/`startPoint` must each match them exactly, or this returns `nil` (#640). None
@@ -656,7 +656,7 @@ public static func eigenvalues(
 ) -> [Double]?
 ```
 
-- **Parameters:** `diagonal` — n diagonal entries; `subdiagonal` — n entries (last unused).
+- **Parameters:** `diagonal`, n diagonal entries; `subdiagonal`, n entries (last unused).
 - **Returns:** Array of eigenvalues, or `nil` on failure.
 - **Bounds:** `subdiagonal.count` must equal `diagonal.count` exactly, or this returns `nil`
   (#640). This "must be same length" was documentation only until #640: the bridge reads
@@ -695,7 +695,7 @@ public static func kronrodIntegrate(
 ) -> (value: Double, error: Double)?
 ```
 
-- **Parameters:** `range` — integration interval; `points` — number of Kronrod points; `function` — integrand.
+- **Parameters:** `range`, integration interval; `points`, number of Kronrod points; `function`, integrand.
 - **Returns:** `(value, error estimate)` or `nil` on failure.
 - **OCCT:** `OCCTMathKronrodIntegration` → `math_KronrodSingleIntegration`.
 
@@ -732,7 +732,7 @@ public static func gaussMultipleIntegration(
 ) -> Double?
 ```
 
-- **Parameters:** `lower`/`upper` — integration bounds per dimension; `order` — Gauss point counts per dimension; `function` — n-variate integrand.
+- **Parameters:** `lower`/`upper`, integration bounds per dimension; `order`, Gauss point counts per dimension; `function`, n-variate integrand.
 - **Returns:** Integral value or `nil` on failure.
 - **Bounds:** `upper` and `order` must have the same length as `lower`, or this returns `nil`
   (#640). The bridge derives the dimension count from `lower.count` alone and then reads
@@ -762,7 +762,7 @@ public static func gaussSetIntegration(
 ) -> [Double]?
 ```
 
-- **Parameters:** `nEquations` — number of integrals; `function` — closure mapping input vector to `nEquations`-length output.
+- **Parameters:** `nEquations`, number of integrals; `function`, closure mapping input vector to `nEquations`-length output.
 - **Returns:** Array of integral values (length `nEquations`), or `nil` on failure.
 - **Bounds:** `nEquations` must be positive, and `upper`/`order` must have the same length as
   `lower`, or this returns `nil` (#640): the first was an `Array(repeating:count:)` trap on a
@@ -921,7 +921,7 @@ public static func integKronrodAdaptive(
 
 ### `MathSolver.integTanhSinh(over:tolerance:maxLevels:function:)`
 
-Tanh-Sinh (double exponential) quadrature — excels at endpoint singularities.
+Tanh-Sinh (double exponential) quadrature, excels at endpoint singularities.
 
 ```swift
 public static func integTanhSinh(
@@ -1001,7 +1001,7 @@ Get the length factor (in millimetres) for an IGES unit code.
 public static func lengthFactor(igesUnit: Int) -> Double
 ```
 
-- **Parameters:** `igesUnit` — IGES standard unit code.
+- **Parameters:** `igesUnit`, IGES standard unit code.
 - **OCCT:** `OCCTUnitsGetLengthFactor` → `UnitsMethods::GetLengthFactor`.
 
 ---
@@ -1014,7 +1014,7 @@ Scale factor to convert between two length units.
 public static func lengthUnitScale(from: OCCTLengthUnit, to: OCCTLengthUnit) -> Double
 ```
 
-- **Parameters:** `from` — source unit; `to` — target unit.
+- **Parameters:** `from`, source unit; `to`, target unit.
 - **Returns:** Multiplicative scale factor.
 - **OCCT:** `OCCTUnitsGetLengthUnitScale` → `UnitsMethods`.
 
@@ -1038,7 +1038,7 @@ public static func dumpLengthUnit(_ unit: OCCTLengthUnit) -> String?
 Extensions on `Curve3D` wrapping `LProp3d_CLProps` for local differential properties.
 
 These are alternative spellings of `Curve3D.tangentDirection(at:)`, `normal(at:)` and
-`centerOfCurvature(at:)` — same OCCT computation, same tolerance, differing only in shape. They are
+`centerOfCurvature(at:)`: same OCCT computation, same tolerance, differing only in shape. They are
 guaranteed to agree with their counterparts for the same curve at the same parameter; before #494
 they asked at a hardcoded `1e-10` resolution against the canonical family's `Precision::Confusion()`
 (`1e-7`), and the two disagreed near a degeneracy.
@@ -1100,7 +1100,7 @@ Extensions on `Surface` wrapping `LProp3d_SLProps` for local surface differentia
 
 Both report quantities `Surface.curvatures(u:v:)`, `gaussianCurvature(atU:v:)`,
 `meanCurvature(atU:v:)` and `principalCurvatures(atU:v:)` also report, at the same tolerance since
-#494 and with the same optionality since #595 — they previously asked at a hardcoded `1e-10` against those entry points'
+#494 and with the same optionality since #595, they previously asked at a hardcoded `1e-10` against those entry points'
 `Precision::Confusion()`, so they could report curvature at a point the rest called undefined. The
 one remaining asymmetry is by design: `localCurvatureDirections` also returns `nil` at umbilic
 points, where curvature is perfectly well defined but no principal direction is distinguished.
@@ -1137,8 +1137,8 @@ All principal curvatures at a surface point.
 public func localCurvatures(u: Double, v: Double) -> LocalCurvatures?
 ```
 
-- **Parameters:** `u`, `v` — surface parameters.
-- **Returns:** Gaussian, mean, max and min curvatures, or `nil` where curvature is undefined — a
+- **Parameters:** `u`, `v`, surface parameters.
+- **Returns:** Gaussian, mean, max and min curvatures, or `nil` where curvature is undefined, a
   cone's apex, a sphere's pole, or any point with no defined surface normal.
 - **Agrees with:** `Surface.curvatures(u:v:)`, `gaussianCurvature(atU:v:)`,
   `meanCurvature(atU:v:)`, `principalCurvatures(atU:v:)`.
@@ -1180,7 +1180,7 @@ public func localCurvatureDirections(u: Double, v: Double) -> CurvatureDirection
 - **Returns:** Max and min curvature directions, or `nil` where curvature is undefined **or** the
   point is umbilic. OCCT's umbilic test is one ULP wide (`|maxCurv - minCurv| < Epsilon(maxCurv)`),
   not a geometric tolerance: a plane always qualifies, but an analytically-umbilic sphere qualifies
-  only where the two computed curvatures round to the same `Double` — so a non-`nil` result on a
+  only where the two computed curvatures round to the same `Double`, so a non-`nil` result on a
   sphere is expected, not a defect.
 - **Agrees with:** `Surface.principalCurvatures(atU:v:)`, which returns the same two directions
   alongside their curvatures (and does not reject umbilic points).
@@ -1298,7 +1298,7 @@ Axis-aligned bounding box of the shape.
 public var boundingBox: (min: SIMD3<Double>, max: SIMD3<Double>)?
 ```
 
-- **Returns:** `(min, max)` corner pair, or `nil` if the shape is empty (an explicit `Bnd_Box::IsVoid()` check — a genuinely degenerate/point shape at the world origin returns `(min: .zero, max: .zero)`, not `nil` (#900)).
+- **Returns:** `(min, max)` corner pair, or `nil` if the shape is empty (an explicit `Bnd_Box::IsVoid()` check, a genuinely degenerate/point shape at the world origin returns `(min: .zero, max: .zero)`, not `nil` (#900)).
 - **OCCT:** `OCCTShapeBoundingBox` → `BRepBndLib::Add` / `Bnd_Box`.
 - **Note (#834):** `Shape.bounds` (`Shape-Features.md`) computes the identical `Bnd_Box`/`BRepBndLib::Add`, but is a non-optional tuple that fabricates `(0,0,0)-(0,0,0)` for a void shape instead of signaling it the way `boundingBox` does here. Prefer `boundingBox` when a void shape is possible.
 
@@ -1312,8 +1312,8 @@ Optimal (tight) axis-aligned bounding box using precise geometry evaluation.
 public func boundingBoxOptimal(useShapeTolerance: Bool = false) -> (min: SIMD3<Double>, max: SIMD3<Double>)?
 ```
 
-- **Parameters:** `useShapeTolerance` — include shape tolerances in box inflation.
-- **Returns:** `(min, max)`, or `nil` for a void shape (`Bnd_Box::IsVoid()`) — same distinction as `boundingBox` above; a point-vertex shape at the world origin legitimately returns `(min: .zero, max: .zero)` (#900).
+- **Parameters:** `useShapeTolerance`, include shape tolerances in box inflation.
+- **Returns:** `(min, max)`, or `nil` for a void shape (`Bnd_Box::IsVoid()`), same distinction as `boundingBox` above; a point-vertex shape at the world origin legitimately returns `(min: .zero, max: .zero)` (#900).
 - **OCCT:** `OCCTShapeBoundingBoxOptimal` → `BRepBndLib::AddOptimal`.
 
 ---
@@ -1321,7 +1321,7 @@ public func boundingBoxOptimal(useShapeTolerance: Bool = false) -> (min: SIMD3<D
 ### `Shape.DetailedOBB`
 
 Oriented bounding box with full axis and half-size information. Computes the identical `Bnd_OBB`
-as `OrientedBoundingBox` (#847) — the two never disagree for the same shape and `optimal` value —
+as `OrientedBoundingBox` (#847), the two never disagree for the same shape and `optimal` value,
 with the half-sizes unpacked into three separate `Double`s instead of one `SIMD3<Double>`, and no
 `volume`/`dimensions`/corners equivalent. Prefer `orientedBoundingBox(optimal:)` unless you
 specifically need the half-sizes this way.
@@ -1357,7 +1357,7 @@ Compute the oriented bounding box with full axis information.
 public func orientedBoundingBoxDetailed(optimal: Bool = false) -> DetailedOBB?
 ```
 
-- **Parameters:** `optimal` — use precise geometry when `true`.
+- **Parameters:** `optimal`, use precise geometry when `true`.
 - **Returns:** `DetailedOBB` or `nil` if the shape is void.
 - **OCCT:** `OCCTShapeOrientedBoundingBoxDetailed` delegates to `OCCTShapeOrientedBoundingBox` →
   `BRepBndLib::AddOBB` (#847), rather than computing a second `Bnd_OBB` independently.
@@ -1405,7 +1405,7 @@ how much space the part actually occupies.
 public func orientedBoundingBox(optimal: Bool = false) -> OrientedBoundingBox?
 ```
 
-- **Parameters:** `optimal` — when `true`, compute a tighter box from precise geometry (slower);
+- **Parameters:** `optimal`, when `true`, compute a tighter box from precise geometry (slower);
   when `false` (default), use the triangulation/vertex-based fit.
 - **Returns:** The `OrientedBoundingBox`, or `nil` if the shape is void.
 - **OCCT:** `BRepBndLib::AddOBB` → `Bnd_OBB` (via `OCCTShapeOrientedBoundingBox`).
@@ -1428,7 +1428,7 @@ box or feeding a collision/packing check.
 public func orientedBoundingBoxCorners(optimal: Bool = false) -> [SIMD3<Double>]?
 ```
 
-- **Parameters:** `optimal` — same tight-vs-fast trade-off as `orientedBoundingBox(optimal:)`.
+- **Parameters:** `optimal`, same tight-vs-fast trade-off as `orientedBoundingBox(optimal:)`.
 - **Returns:** An array of exactly 8 corner points in world space, or `nil` if the shape is void.
 - **OCCT:** `Bnd_OBB::GetVertex` over the box built by `BRepBndLib::AddOBB` (via
   `OCCTOrientedBoundingBoxCorners`).
@@ -1471,7 +1471,7 @@ Tolerance value for the shape's sub-shapes.
 public func toleranceValue(mode: ToleranceMode, subShapeType: Int32 = 8) -> Double
 ```
 
-- **Parameters:** `mode` — aggregation mode; `subShapeType` — `8`=all, `7`=vertex, `6`=edge, `4`=face, `3`=shell.
+- **Parameters:** `mode`, aggregation mode; `subShapeType`, `8`=all, `7`=vertex, `6`=edge, `4`=face, `3`=shell.
 - **OCCT:** `OCCTShapeToleranceValue` → `ShapeAnalysis_ShapeTolerance`.
 
 ---
@@ -1536,7 +1536,7 @@ public func isBooleanValidWith(
 ) -> Bool
 ```
 
-- **Parameters:** `other` — second operand; `operation` — `0`=unknown, `1`=common, `2`=fuse, `3`=cut, `4`=section.
+- **Parameters:** `other`, second operand; `operation`, `0`=unknown, `1`=common, `2`=fuse, `3`=cut, `4`=section.
 - **OCCT:** `OCCTShapeBooleanCheckPair` → `BRepAlgoAPI_Check`.
 
 ---
@@ -1551,9 +1551,9 @@ Remove feature faces (fillets, holes, pockets) from a solid shape. The canonical
 public func defeature(faces: [Shape]) -> Shape?
 ```
 
-- **Parameters:** `faces` — each element either a face of this shape, or a shape whose faces all
+- **Parameters:** `faces`, each element either a face of this shape, or a shape whose faces all
   belong to this shape.
-- **Returns:** Defeatured shape, or `nil` on failure — including when `faces` is empty and when the
+- **Returns:** Defeatured shape, or `nil` on failure, including when `faces` is empty and when the
   request names a face this shape does not have.
 - **OCCT:** `OCCTShapeDefeature` → `BRepAlgoAPI_Defeaturing`.
 - **Example:**
@@ -1574,7 +1574,7 @@ So a request mixing this shape's faces with another shape's fails, as does one c
 vertex, which name no face at all. Membership is by identity, not geometry: the same face measured off
 an identically-built shape is foreign, while the same face reversed is not.
 
-Until #578 a foreign face was dropped from the request and the rest proceeded — OCCT's own documented
+Until #578 a foreign face was dropped from the request and the rest proceeded. OCCT's own documented
 rule ("those that do not belong will be ignored"), which answered a silent success on a shape still
 carrying the feature the caller asked to remove. The index-addressed `withoutFeatures(faces:)` has
 failed the whole call on one bad index since #497; both spellings now agree. Measured in
@@ -1592,7 +1592,7 @@ operation, over one shared bridge path (#497, #536):
 | [`removeFeatures(faces:)`](Shape-Builders-2.md#removefeaturesfaces--deprecated-536) | `[Shape]` | deprecated: this call, reached one OCCT layer down |
 
 `defeature(faces:tolerance:)` is deprecated and forwards here: `BRepAlgoAPI_Defeaturing` has no
-fuzzy tolerance to set, and never had — see
+fuzzy tolerance to set, and never had, see
 [`Scripts/repro/497-defeaturing-fuzzy-inert/`](https://github.com/SecondMouseAU/OCCTSwift/tree/main/Scripts/repro/497-defeaturing-fuzzy-inert).
 `removeFeatures(faces:)` is deprecated too, and forwards here as well: it drove
 `BOPAlgo_RemoveFeatures` directly, which is the algorithm `BRepAlgoAPI_Defeaturing::Build` forwards
@@ -1629,7 +1629,7 @@ public static func polynomialToPoles(
 ) -> PolesResult?
 ```
 
-- **Parameters:** `dimension` — spatial dimension (1 for scalar, 3 for 3D); `maxDegree` — max BSpline degree; `degree` — polynomial degree; `coefficients` — polynomial coefficients in ascending order; `polynomialInterval` — source domain; `trueInterval` — target BSpline parameter domain.
+- **Parameters:** `dimension`, spatial dimension (1 for scalar, 3 for 3D); `maxDegree`, max BSpline degree; `degree`, polynomial degree; `coefficients`, polynomial coefficients in ascending order; `polynomialInterval`, source domain; `trueInterval`, target BSpline parameter domain.
 - **Returns:** `PolesResult` or `nil` on failure.
 - **OCCT:** `OCCTConvertPolynomialToPoles` → `Convert_CompPolynomialToPoles`.
 
@@ -1640,21 +1640,21 @@ public static func polynomialToPoles(
 ### `Shape.transformed(byMatrix:)`
 
 Apply a full 3×4 rigid affine matrix to the shape, via a `TransformMatrix3D` (INTERLEAVED layout
-— see `TransformMatrix3D` in [Document-Analysis-Builders.md](Document-Analysis-Builders.md#gce-transform-factories)).
+,  see `TransformMatrix3D` in [Document-Analysis-Builders.md](Document-Analysis-Builders.md#gce-transform-factories)).
 
 ```swift
 public func transformed(byMatrix matrix: TransformMatrix3D) -> Shape?
 ```
 
-- **Parameters:** `matrix` — a `TransformMatrix3D`, row-major `[a11..a14, a21..a24, a31..a34]`.
+- **Parameters:** `matrix`, a `TransformMatrix3D`, row-major `[a11..a14, a21..a24, a31..a34]`.
 - **Returns:** Transformed shape, or `nil` if the operation fails.
 - **OCCT:** `OCCTShapeTransformFromMatrix` → `gp_Trsf` matrix form.
 - **Deprecated overload:** `transformed(byMatrix matrix: [Double]) -> Shape?` still exists
-  (`@available(*, deprecated)`) for source compatibility — `nil` if `matrix.count != 12`. #835
+  (`@available(*, deprecated)`) for source compatibility, `nil` if `matrix.count != 12`. #835
   (PR #864 review): this used to be a plain `[Double]` indistinguishable at the call site from
   `transformed(matrix:)`'s differently-laid-out array, so a caller could silently garble a
   transform. Passing the wrong type (`Matrix12Grouped` instead of `TransformMatrix3D`) is now a
-  compile error — see `Shape.transformed(matrix:)` and `Matrix12Grouped`.
+  compile error, see `Shape.transformed(matrix:)` and `Matrix12Grouped`.
 
 ---
 
@@ -1825,7 +1825,7 @@ Get a multiple edge by index (1-based).
 public func multipleEdge(at index: Int) -> Shape?
 ```
 
-- **Parameters:** `index` — 1-based edge index.
+- **Parameters:** `index`, 1-based edge index.
 - **Returns:** Edge shape, or `nil` if index is out of range.
 - **OCCT:** `OCCTSewingIsMultipleEdge` → `BRepBuilderAPI_Sewing::MultipleEdge`.
 

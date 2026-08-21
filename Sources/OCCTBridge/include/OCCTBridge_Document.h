@@ -163,39 +163,137 @@ int32_t OCCTDocumentGetGeomToleranceCount(OCCTDocumentRef doc);
 /// Get count of datum labels in document
 int32_t OCCTDocumentGetDatumCount(OCCTDocumentRef doc);
 
-/// Dimension info result
+/// How a dimension's values array encodes its magnitude, taken from OCCT's own predicates
+/// (XCAFDimTolObjects_DimensionObject::IsDimWithRange / IsDimWithPlusMinusTolerance). The array is
+/// 0, 1, 2 or 3 long, and which accessors mean anything follows from that (#996).
+typedef enum
+{
+  OCCTDimensionBoundsUnset     = 0, ///< No values array at all
+  OCCTDimensionBoundsSimple    = 1, ///< One element: a nominal value, no tolerance
+  OCCTDimensionBoundsRange     = 2, ///< Two elements: lower and upper bound
+  OCCTDimensionBoundsPlusMinus = 3  ///< Three elements: value, lower tol, upper tol
+} OCCTDimensionBoundsKind;
+
+/// Dimension info result.
+///
+/// boundsKind decides which of value/lowerBound/upperBound/lowerTol/upperTol carry an answer, and
+/// nothing else does: OCCT returns a flat 0 from every accessor that does not apply to the kind at
+/// hand, so a caller reading them unconditionally cannot tell an unset tolerance from a range
+/// dimension. Before #996 this struct had no discriminator and reported a 10..12 range as
+/// value=10 with both tolerances 0.
+///
+/// hasDecimalPlaces is the same shape one level down. GetNbOfDecimalPlaces() has no predicate
+/// beside it, and XCAFDoc_Dimension::SetObject stores the pair only when `theL > 0 || theR > 0`,
+/// so that expression IS the presence test rather than an approximation of one; anything else
+/// would report an unstored pair as a measured (0,0) (#1004).
 typedef struct
 {
-  int32_t type;     // XCAFDimTolObjects_DimensionType enum
-  double  value;    // primary value
-  double  lowerTol; // lower tolerance
-  double  upperTol; // upper tolerance
+  int32_t type;                // XCAFDimTolObjects_DimensionType enum
+  int32_t boundsKind;          // OCCTDimensionBoundsKind
+  double  value;               // GetValue(): the nominal value, or a range's midpoint; 0 when Unset
+  double  lowerBound;          // GetLowerBound(), Range only
+  double  upperBound;          // GetUpperBound(), Range only
+  double  lowerTol;            // GetLowerTolValue(), PlusMinus only
+  double  upperTol;            // GetUpperTolValue(), PlusMinus only
+  bool    hasClassOfTolerance; // IsDimWithClassOfTolerance(), independent of boundsKind
+  bool    classOfToleranceIsHole; // GetClassOfTolerance()'s theHole out-parameter
+  int32_t formVariance;           // XCAFDimTolObjects_DimensionFormVariance enum
+  int32_t grade;                  // XCAFDimTolObjects_DimensionGrade enum
+  int32_t qualifier;              // XCAFDimTolObjects_DimensionQualifier enum, _None when absent
+  int32_t angularQualifier;       // XCAFDimTolObjects_AngularQualifier enum, _None when absent
+  bool    hasDecimalPlaces;       // see below; false leaves the two counts at 0
+  int32_t decimalPlacesLeft;      // GetNbOfDecimalPlaces()'s theL out-parameter
+  int32_t decimalPlacesRight;     // GetNbOfDecimalPlaces()'s theR out-parameter
+  int32_t modifierCount; // GetModifiers().Length(), index with OCCTDocumentGetDimensionModifier
   bool    isValid;
 } OCCTDimensionInfo;
 
 /// Get dimension info at index
 OCCTDimensionInfo OCCTDocumentGetDimensionInfo(OCCTDocumentRef doc, int32_t index);
 
-/// Geometric tolerance info result
+/// One modifier of the dimension at dimensionIndex, as an XCAFDimTolObjects_DimensionModif value.
+/// GetModifiers() returns a sequence rather than a scalar, so it crosses the bridge as this
+/// count-plus-index pair with OCCTDimensionInfo::modifierCount. modifierIndex is zero-based;
+/// returns -1 for either index out of range (#1004).
+int32_t OCCTDocumentGetDimensionModifier(OCCTDocumentRef _Nonnull doc,
+                                         int32_t dimensionIndex,
+                                         int32_t modifierIndex);
+
+/// XCAFDimTolObjects_DimensionObject::IsDimensionalLocation / IsDimensionalSize, which are static
+/// classifiers of the type code and need no dimension object. type is an
+/// XCAFDimTolObjects_DimensionType value; both return false for a value outside that enum.
+bool OCCTDimensionTypeIsDimensionalLocation(int32_t type);
+bool OCCTDimensionTypeIsDimensionalSize(int32_t type);
+
+/// Geometric tolerance info result.
+///
+/// Each of the three modifier enums carries its own _None member at ordinal 0, so those cross the
+/// bridge as-is and absence needs no separate flag. The two doubles have no such member and no
+/// predicate beside them, so they follow XCAFDoc_GeomTolerance::SetObject's own store condition,
+/// `> 0`, which is what separates an unstored value from a measured zero: measured, an unstored one
+/// reads back as the fresh object's unassigned member, which is also 0 (#1004).
 typedef struct
 {
-  int32_t type;  // XCAFDimTolObjects_GeomToleranceType enum
-  double  value; // tolerance value
+  int32_t type;                 // XCAFDimTolObjects_GeomToleranceType enum
+  double  value;                // tolerance value
+  int32_t typeOfValue;          // XCAFDimTolObjects_GeomToleranceTypeValue, _None when absent
+  int32_t materialRequirement;  // XCAFDimTolObjects_GeomToleranceMatReqModif, _None when absent
+  int32_t zoneModifier;         // XCAFDimTolObjects_GeomToleranceZoneModif, _None when absent
+  bool    hasZoneModifierValue; // GetValueOfZoneModifier() > 0
+  double  zoneModifierValue;
+  bool    hasMaxValueModifier; // GetMaxValueModifier() > 0
+  double  maxValueModifier;
+  int32_t modifierCount; // GetModifiers().Length(), with OCCTDocumentGetGeomToleranceModifier
   bool    isValid;
 } OCCTGeomToleranceInfo;
 
 /// Get geometric tolerance info at index
 OCCTGeomToleranceInfo OCCTDocumentGetGeomToleranceInfo(OCCTDocumentRef doc, int32_t index);
 
-/// Datum info result
+/// One modifier of the tolerance at toleranceIndex, as an XCAFDimTolObjects_GeomToleranceModif
+/// value. modifierIndex is zero-based; returns -1 for either index out of range (#1004).
+int32_t OCCTDocumentGetGeomToleranceModifier(OCCTDocumentRef _Nonnull doc,
+                                             int32_t toleranceIndex,
+                                             int32_t modifierIndex);
+
+/// Datum info result.
+///
+/// position is the datum's place in its geometric tolerance's reference frame, which is what makes
+/// A|B|C ordered rather than a set. It is 1-based: STEPCAFControl_Reader's frame counter starts at
+/// 0 and is incremented before each datum is written, so 0 is never assigned by an import and
+/// hasPosition reports `> 0` (#1004).
+///
+/// The datum-target group is gated twice over, matching XCAFDoc_Datum::SetObject's own nesting.
+/// targetType and targetNumber mean something only when isDatumTarget holds; targetLength only when
+/// hasTargetParams holds AND the type is not Point; targetWidth only when hasTargetParams holds AND
+/// the type is Rectangle. Measured per type in Scripts/repro/1004-gdt-accessors/.
 typedef struct
 {
-  char name[64]; // datum identifier (A, B, C, etc.)
-  bool isValid;
+  char    name[64];          // datum identifier (A, B, C, etc.)
+  bool    hasPosition;       // GetPosition() > 0
+  int32_t position;          // place in the related tolerance's reference frame, 1-based
+  int32_t modifierWithValue; // XCAFDimTolObjects_DatumModifWithValue, _None when absent
+  double  modifierValue;     // meaningful only when modifierWithValue is not _None
+  int32_t modifierCount;     // GetModifiers().Length(), with OCCTDocumentGetDatumModifier
+  bool    isDatumTarget;     // IsDatumTarget()
+  int32_t targetType;        // XCAFDimTolObjects_DatumTargetType, isDatumTarget only
+  int32_t targetNumber;      // isDatumTarget only
+  bool    hasTargetParams;   // HasDatumTargetParams()
+  bool    hasTargetLength;   // hasTargetParams and targetType is not _Point
+  double  targetLength;
+  bool    hasTargetWidth; // hasTargetParams and targetType is _Rectangle
+  double  targetWidth;
+  bool    isValid;
 } OCCTDatumInfo;
 
 /// Get datum info at index
 OCCTDatumInfo OCCTDocumentGetDatumInfo(OCCTDocumentRef doc, int32_t index);
+
+/// One modifier of the datum at datumIndex, as an XCAFDimTolObjects_DatumSingleModif value.
+/// modifierIndex is zero-based; returns -1 for either index out of range (#1004).
+int32_t OCCTDocumentGetDatumModifier(OCCTDocumentRef _Nonnull doc,
+                                     int32_t datumIndex,
+                                     int32_t modifierIndex);
 
 // MARK: - GD&T Write Path (v0.140)
 
@@ -221,12 +319,153 @@ int32_t OCCTDocumentCreateGeomTolerance(OCCTDocumentRef _Nonnull doc,
 /// Returns -1 on failure, else the index of the new datum.
 int32_t OCCTDocumentCreateDatum(OCCTDocumentRef _Nonnull doc, const char* _Nonnull name);
 
-/// Set tolerance bounds (lower + upper, relative to the primary value) on an
-/// existing dimension. Returns true on success.
+/// Set tolerance bounds (lower + upper, relative to the primary value) on an existing dimension,
+/// making it OCCTDimensionBoundsPlusMinus. Returns the conjunction of OCCT's two setter results,
+/// both of which are false for a dimension that is already a range and is therefore left unchanged
+/// (#996; before that this returned true regardless).
 bool OCCTDocumentSetDimensionTolerance(OCCTDocumentRef _Nonnull doc,
                                        int32_t dimensionIndex,
                                        double  lowerTol,
                                        double  upperTol);
+
+/// Turn an existing dimension into a range dimension with the given bounds, via
+/// XCAFDimTolObjects_DimensionObject::SetLowerBound / SetUpperBound. Returns true on success. This
+/// is the only way to author the kind OCCTDimensionBoundsRange reports (#996).
+bool OCCTDocumentSetDimensionBounds(OCCTDocumentRef _Nonnull doc,
+                                    int32_t dimensionIndex,
+                                    double  lowerBound,
+                                    double  upperBound);
+
+/// Set the ISO 286 tolerance class of an existing dimension, via
+/// XCAFDimTolObjects_DimensionObject::SetClassOfTolerance. Independent of the values array, so a
+/// range or plus/minus dimension can carry one too. formVariance is
+/// XCAFDimTolObjects_DimensionFormVariance, grade is XCAFDimTolObjects_DimensionGrade. Returns
+/// false if either names no enumerator, since an out-of-range formVariance is stored verbatim and
+/// additionally makes IsDimWithClassOfTolerance() true. Returns true on success (#996, #1037).
+bool OCCTDocumentSetDimensionClassOfTolerance(OCCTDocumentRef _Nonnull doc,
+                                              int32_t dimensionIndex,
+                                              bool    isHole,
+                                              int32_t formVariance,
+                                              int32_t grade);
+
+/// Set the dimension's qualifier (min / max / average), via
+/// XCAFDimTolObjects_DimensionObject::SetQualifier. qualifier is an
+/// XCAFDimTolObjects_DimensionQualifier value; _None clears it. Returns true on success (#1004).
+bool OCCTDocumentSetDimensionQualifier(OCCTDocumentRef _Nonnull doc,
+                                       int32_t dimensionIndex,
+                                       int32_t qualifier);
+
+/// Set the dimension's angular qualifier (small / large / equal), via
+/// XCAFDimTolObjects_DimensionObject::SetAngularQualifier. angularQualifier is an
+/// XCAFDimTolObjects_AngularQualifier value; _None clears it. Returns true on success (#1004).
+bool OCCTDocumentSetDimensionAngularQualifier(OCCTDocumentRef _Nonnull doc,
+                                              int32_t dimensionIndex,
+                                              int32_t angularQualifier);
+
+/// Set the number of decimal places left and right of the point, via
+/// XCAFDimTolObjects_DimensionObject::SetNbOfDecimalPlaces. Both zero clears the pair, matching the
+/// condition XCAFDoc_Dimension::SetObject stores it under. Returns true on success (#1004).
+bool OCCTDocumentSetDimensionDecimalPlaces(OCCTDocumentRef _Nonnull doc,
+                                           int32_t dimensionIndex,
+                                           int32_t left,
+                                           int32_t right);
+
+/// Replace the dimension's modifier sequence with the given XCAFDimTolObjects_DimensionModif
+/// values, via SetModifiers. Passing count 0 clears the sequence. Returns false if the index is out
+/// of range, if count is negative, if modifiers is NULL with a positive count, or if any value
+/// names no enumerator, in which case nothing at all is stored (#1004, #1037).
+bool OCCTDocumentSetDimensionModifiers(OCCTDocumentRef _Nonnull doc,
+                                       int32_t dimensionIndex,
+                                       const int32_t* _Nullable modifiers,
+                                       int32_t count);
+
+/// Set the tolerance's value type (linear, diameter, spherical diameter), via
+/// XCAFDimTolObjects_GeomToleranceObject::SetTypeOfValue. _None clears it. Returns true on success
+/// (#1004).
+bool OCCTDocumentSetGeomToleranceTypeOfValue(OCCTDocumentRef _Nonnull doc,
+                                             int32_t toleranceIndex,
+                                             int32_t typeOfValue);
+
+/// Set the tolerance's material requirement (MMC / LMC), via SetMaterialRequirementModifier. _None
+/// clears it. Returns true on success (#1004).
+bool OCCTDocumentSetGeomToleranceMaterialRequirement(OCCTDocumentRef _Nonnull doc,
+                                                     int32_t toleranceIndex,
+                                                     int32_t materialRequirement);
+
+/// Set the tolerance zone modifier and its associated value together, via SetZoneModifier and
+/// SetValueOfZoneModifier. They are one call because the value only means something under a
+/// modifier, and OCCT stores the value only when it is positive. Returns true on success (#1004).
+bool OCCTDocumentSetGeomToleranceZoneModifier(OCCTDocumentRef _Nonnull doc,
+                                              int32_t toleranceIndex,
+                                              int32_t zoneModifier,
+                                              double  value);
+
+/// Set the maximal upper tolerance value for a tolerance with modifiers, via SetMaxValueModifier.
+/// A value of 0 or less clears it, matching the condition SetObject stores it under. Returns true
+/// on success (#1004).
+bool OCCTDocumentSetGeomToleranceMaxValueModifier(OCCTDocumentRef _Nonnull doc,
+                                                  int32_t toleranceIndex,
+                                                  double  value);
+
+/// Replace the tolerance's modifier sequence with the given XCAFDimTolObjects_GeomToleranceModif
+/// values. Passing count 0 clears the sequence. Returns false if the index is out of range, if
+/// count is negative, if modifiers is NULL with a positive count, or if any value names no
+/// enumerator, in which case nothing at all is stored (#1004, #1037).
+bool OCCTDocumentSetGeomToleranceModifiers(OCCTDocumentRef _Nonnull doc,
+                                           int32_t toleranceIndex,
+                                           const int32_t* _Nullable modifiers,
+                                           int32_t count);
+
+/// Set the datum's place in its geometric tolerance's reference frame, via SetPosition. Positions
+/// are 1-based; 0 or less clears it. Returns true on success (#1004).
+bool OCCTDocumentSetDatumPosition(OCCTDocumentRef _Nonnull doc,
+                                  int32_t datumIndex,
+                                  int32_t position);
+
+/// Replace the datum's modifier sequence with the given XCAFDimTolObjects_DatumSingleModif values.
+/// Passing count 0 clears the sequence. Returns false if the index is out of range, if count is
+/// negative, if modifiers is NULL with a positive count, or if any value names no enumerator, in
+/// which case nothing at all is stored (#1004, #1037).
+bool OCCTDocumentSetDatumModifiers(OCCTDocumentRef _Nonnull doc,
+                                   int32_t datumIndex,
+                                   const int32_t* _Nullable modifiers,
+                                   int32_t count);
+
+/// Set the datum's single valued modifier and its value together, via SetModifierWithValue.
+/// modifier is an XCAFDimTolObjects_DatumModifWithValue value; _None clears the pair. Returns true
+/// on success (#1004).
+bool OCCTDocumentSetDatumModifierWithValue(OCCTDocumentRef _Nonnull doc,
+                                           int32_t datumIndex,
+                                           int32_t modifier,
+                                           double  value);
+
+/// Mark the datum as a datum target and set its type and number, via IsDatumTarget(bool),
+/// SetDatumTargetType and SetDatumTargetNumber. Passing isTarget false clears the flag and leaves
+/// the type and number alone, since neither is readable without it. type is an
+/// XCAFDimTolObjects_DatumTargetType value. Returns true on success (#1004).
+bool OCCTDocumentSetDatumTarget(OCCTDocumentRef _Nonnull doc,
+                                int32_t datumIndex,
+                                bool    isTarget,
+                                int32_t type,
+                                int32_t number);
+
+/// Set the datum target's placement axis, length and width together, via SetDatumTargetAxis,
+/// SetDatumTargetLength and SetDatumTargetWidth. All three are one call because each of the three
+/// setters raises the same HasDatumTargetParams() flag, so writing one alone would report the other
+/// two as present while leaving them unassigned. The axis is a location plus a normal plus a
+/// reference direction, three doubles each. Which of length and width then survives a round trip
+/// depends on the target type; see OCCTDatumInfo. Requires the datum to already be a datum target
+/// of a type other than Area, because XCAFDoc_Datum::SetObject stores the axis only under
+/// IsDatumTarget() and only on its non-Area branch: call OCCTDocumentSetDatumTarget first, or this
+/// returns false rather than reporting success for a call that persisted nothing. Returns true on
+/// success (#1004, #1038).
+bool OCCTDocumentSetDatumTargetPlacement(OCCTDocumentRef _Nonnull doc,
+                                         int32_t datumIndex,
+                                         const double* _Nonnull location,
+                                         const double* _Nonnull normal,
+                                         const double* _Nonnull reference,
+                                         double length,
+                                         double width);
 
 // MARK: - TNaming: Topological Naming History (v0.25.0)
 

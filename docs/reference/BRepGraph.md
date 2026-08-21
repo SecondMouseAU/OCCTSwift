@@ -7,7 +7,7 @@ parent: API Reference
 
 `BRepGraph` is OCCTSwift's graph-based view of B-Rep topology, wrapping OCCT's `BRepGraph` package. It indexes all faces, edges, vertices, wires, shells, solids, coedges, and compounds of a `Shape` as flat integer-indexed entity vectors with O(1) cross-references, enabling cache-friendly traversal, fast adjacency queries, and parallel geometry extraction. Obtain one via `BRepGraph(shape:)`.
 
-> **BRepGraph is large — documented across several pages.** This is the core (construction, counts, topology queries, explorers, validate/compact/deduplicate, statistics, geometry readback); see the other **BRepGraph — …** pages for topology detail/history/mesh, builders & editor mutation, editor geometry/sampling/durable-identity, and attributes/snapshots/references.
+> **BRepGraph is large, documented across several pages.** This is the core (construction, counts, topology queries, explorers, validate/compact/deduplicate, statistics, geometry readback); see the other **BRepGraph, …** pages for topology detail/history/mesh, builders & editor mutation, editor geometry/sampling/durable-identity, and attributes/snapshots/references.
 
 ## Topics
 
@@ -39,7 +39,7 @@ public init?(shape: Shape, parallel: Bool = false)
 
 Ingests the shape's full B-Rep topology into an indexed graph. Pass `parallel: true` to build using multi-threaded traversal (faster for large shapes; not safe to call concurrently with other graph ops).
 
-- **Parameters:** `shape` — the shape to analyze; `parallel` — whether to use parallel construction (default: `false`).
+- **Parameters:** `shape`, the shape to analyze; `parallel`, whether to use parallel construction (default: `false`).
 - **Returns:** A fully built `BRepGraph`, or `nil` if ingestion fails.
 - **OCCT:** `BRepGraph::ShapesView::Add(shape, opts)` with `opts.Parallel` set accordingly.
 - **Example:**
@@ -266,9 +266,9 @@ Indices of faces adjacent to a given face (sharing an edge).
 public func adjacentFaces(of faceIndex: Int) -> [Int]
 ```
 
-- **Parameters:** `faceIndex` — zero-based face index.
+- **Parameters:** `faceIndex`, zero-based face index.
 - **Returns:** Array of face indices that share at least one edge with the given face.
-- **OCCT:** Derived from `BRepGraph_FacesOfEdge` iteration over all edges — two faces are adjacent iff they share an edge.
+- **OCCT:** Derived from `BRepGraph_FacesOfEdge` iteration over all edges, two faces are adjacent iff they share an edge.
 - **Example:**
   ```swift
   if let box = Shape.box(width: 10, height: 10, depth: 10),
@@ -288,7 +288,7 @@ Indices of edges shared between two faces.
 public func sharedEdges(between faceA: Int, and faceB: Int) -> [Int]
 ```
 
-- **Parameters:** `faceA`, `faceB` — zero-based face indices.
+- **Parameters:** `faceA`, `faceB`, zero-based face indices.
 - **Returns:** Edge indices belonging to both faces.
 - **OCCT:** Derived from `BRepGraph_FacesOfEdge` iteration.
 - **Example:**
@@ -306,7 +306,7 @@ Index of the outer wire of a face.
 public func outerWire(of faceIndex: Int) -> Int
 ```
 
-- **Parameters:** `faceIndex` — zero-based face index.
+- **Parameters:** `faceIndex`, zero-based face index.
 - **Returns:** Wire index of the outer (boundary) wire, or `-1` if not found.
 - **OCCT:** `BRepGraph_Tool::Face::OuterWire()`.
 
@@ -322,7 +322,7 @@ Number of faces an edge belongs to.
 public func faceCount(of edgeIndex: Int) -> Int
 ```
 
-- **Parameters:** `edgeIndex` — zero-based edge index.
+- **Parameters:** `edgeIndex`, zero-based edge index.
 - **Returns:** 1 for boundary edges, 2 for manifold edges, ≥3 for non-manifold.
 - **OCCT:** `BRepGraph::TopoView::Edges().NbFaces()`.
 
@@ -336,7 +336,7 @@ Indices of faces an edge belongs to.
 public func faces(of edgeIndex: Int) -> [Int]
 ```
 
-- **Parameters:** `edgeIndex` — zero-based edge index.
+- **Parameters:** `edgeIndex`, zero-based edge index.
 - **Returns:** Array of face indices that own this edge.
 - **OCCT:** `BRepGraph_FacesOfEdge` iterator.
 
@@ -350,7 +350,7 @@ Whether an edge is a boundary edge (belongs to only one face).
 public func isBoundaryEdge(_ edgeIndex: Int) -> Bool
 ```
 
-- **Parameters:** `edgeIndex` — zero-based edge index.
+- **Parameters:** `edgeIndex`, zero-based edge index.
 - **OCCT:** `BRepGraph_Tool::Edge::IsBoundary()`.
 
 ---
@@ -363,7 +363,7 @@ Whether an edge is manifold (belongs to exactly two faces).
 public func isManifoldEdge(_ edgeIndex: Int) -> Bool
 ```
 
-- **Parameters:** `edgeIndex` — zero-based edge index.
+- **Parameters:** `edgeIndex`, zero-based edge index.
 - **OCCT:** `BRepGraph_Tool::Edge::IsManifold()`.
 
 ---
@@ -376,7 +376,7 @@ Indices of edges adjacent to a given edge (sharing a vertex).
 public func adjacentEdges(of edgeIndex: Int) -> [Int]
 ```
 
-- **Parameters:** `edgeIndex` — zero-based edge index.
+- **Parameters:** `edgeIndex`, zero-based edge index.
 - **Returns:** Edge indices that share at least one vertex with the given edge.
 - **OCCT:** Derived from `BRepGraph::TopoView::Vertices().Edges()` incidence.
 
@@ -392,7 +392,7 @@ Indices of edges connected to a vertex.
 public func edges(of vertexIndex: Int) -> [Int]
 ```
 
-- **Parameters:** `vertexIndex` — zero-based vertex index.
+- **Parameters:** `vertexIndex`, zero-based vertex index.
 - **Returns:** Edge indices incident on this vertex.
 - **OCCT:** `BRepGraph::TopoView::Vertices().Edges()`.
 - **Example:**
@@ -457,7 +457,7 @@ public func childCount(rootKind: NodeKind, rootIndex: Int, targetKind: NodeKind)
 
 Traverses the topology hierarchy downward from the specified root node and counts all reachable nodes of `targetKind`.
 
-- **Parameters:** `rootKind` — kind of the starting node; `rootIndex` — its zero-based index; `targetKind` — kind to count.
+- **Parameters:** `rootKind`, kind of the starting node; `rootIndex`, its zero-based index; `targetKind`, kind to count.
 - **Returns:** Number of reachable descendant nodes.
 - **OCCT:** `BRepGraph_ChildExplorer(graph, root, targetKind)`.
 - **Example:**
@@ -478,7 +478,7 @@ public func parentCount(nodeKind: NodeKind, nodeIndex: Int) -> Int
 
 Traverses upward in the topology hierarchy and counts all parent nodes of the given node.
 
-- **Parameters:** `nodeKind` — kind of the node; `nodeIndex` — its zero-based index.
+- **Parameters:** `nodeKind`, kind of the node; `nodeIndex`, its zero-based index.
 - **Returns:** Number of parent nodes.
 - **OCCT:** `BRepGraph_ParentExplorer(graph, node)`.
 
@@ -496,7 +496,7 @@ public func isRemoved(nodeKind: NodeKind, nodeIndex: Int) -> Bool
 
 Soft-removed nodes are logically deleted but remain in the flat index until `compact()` is called. Active counts (`activeFaceCount`, etc.) exclude them.
 
-- **Parameters:** `nodeKind` — kind of the node; `nodeIndex` — its zero-based index.
+- **Parameters:** `nodeKind`, kind of the node; `nodeIndex`, its zero-based index.
 - **OCCT:** `BRepGraph::TopoView::Gen().IsRemoved(nid)`.
 
 ---
@@ -527,7 +527,7 @@ public var rootNodes: [RootNode] { get }
 ```
 
 > **This is empty for a graph built from a `Shape`, and that is expected.** It enumerates
-> `BRepGraph::RootProductIds()` — assembly Products, not topology. `BRepGraph(shape:)` builds with
+> `BRepGraph::RootProductIds()`: assembly Products, not topology. `BRepGraph(shape:)` builds with
 > `CreateAutoProduct: false` (no auto Product/Occurrence wrap), so such a graph has no products and
 > `rootNodes` returns `[]`. It is populated for graphs carrying assembly context.
 >
@@ -565,9 +565,9 @@ public struct ValidationResult: Sendable {
 }
 ```
 
-- `isValid` — `true` if the graph has no structural errors.
-- `errorCount` — number of error-severity issues.
-- `warningCount` — number of warning-severity issues.
+- `isValid`: `true` if the graph has no structural errors.
+- `errorCount`: number of error-severity issues.
+- `warningCount`: number of warning-severity issues.
 
 ---
 
@@ -628,8 +628,8 @@ public struct CompactResult: Sendable {
 }
 ```
 
-- `removedVertices/Edges/Faces` — count of nodes purged per entity type.
-- `nodesAfter` — total node count after compaction.
+- `removedVertices/Edges/Faces`: count of nodes purged per entity type.
+- `nodesAfter`: total node count after compaction.
 
 ---
 
@@ -779,7 +779,7 @@ public var stats: Stats { get }
 
 Reads all topology and geometry counts in a single call.
 
-- **OCCT:** `BRepGraph::TopoView` fields — `Solids/Shells/Faces/Wires/Edges/Vertices/CoEdges/Compounds().Nb()`, `Gen().NbNodes()`, `Geometry().NbFaceSurfaces/NbEdgeCurves3D/NbCoEdgeCurves2D()`.
+- **OCCT:** `BRepGraph::TopoView` fields, `Solids/Shells/Faces/Wires/Edges/Vertices/CoEdges/Compounds().Nb()`, `Gen().NbNodes()`, `Geometry().NbFaceSurfaces/NbEdgeCurves3D/NbCoEdgeCurves2D()`.
 - **Example:**
   ```swift
   if let box = Shape.box(width: 10, height: 10, depth: 10),
@@ -803,7 +803,7 @@ public func shape(nodeKind: NodeKind, nodeIndex: Int) -> Shape?
 
 Returns the `TopoDS_Shape` stored for the specified node, reconstructed as an OCCTSwift `Shape`.
 
-- **Parameters:** `nodeKind` — entity kind; `nodeIndex` — zero-based index.
+- **Parameters:** `nodeKind`, entity kind; `nodeIndex`, zero-based index.
 - **Returns:** Reconstructed `Shape`, or `nil` if the node is invalid or null.
 - **OCCT:** `BRepGraph::ShapesView::Shape(nid)`.
 - **Example:**
@@ -825,7 +825,7 @@ public func findNode(for shape: Shape) -> (kind: NodeKind, index: Int)?
 
 Looks up the graph node that corresponds to the given `Shape`. Useful for round-tripping from a `Shape` to its graph index.
 
-- **Parameters:** `shape` — the shape to look up.
+- **Parameters:** `shape`, the shape to look up.
 - **Returns:** A `(kind, index)` tuple if the shape is known to the graph, `nil` otherwise.
 - **OCCT:** `BRepGraph::ShapesView::FindNode(shape)`.
 
@@ -839,7 +839,7 @@ Check if a shape is known to the graph.
 public func hasNode(for shape: Shape) -> Bool
 ```
 
-- **Parameters:** `shape` — the shape to check.
+- **Parameters:** `shape`, the shape to check.
 - **OCCT:** `BRepGraph::ShapesView::HasNode(shape)`.
 
 ---
@@ -854,7 +854,7 @@ Get the 3D point of a vertex.
 public func vertexPoint(_ vertexIndex: Int) -> (x: Double, y: Double, z: Double)
 ```
 
-- **Parameters:** `vertexIndex` — zero-based vertex index.
+- **Parameters:** `vertexIndex`, zero-based vertex index.
 - **Returns:** The XYZ coordinates of the vertex point.
 - **OCCT:** `BRepGraph_Tool::Vertex::Pnt(graph, BRepGraph_VertexId(index))`.
 - **Example:**
@@ -873,7 +873,7 @@ Get the tolerance of a vertex.
 public func vertexTolerance(_ vertexIndex: Int) -> Double
 ```
 
-- **Parameters:** `vertexIndex` — zero-based vertex index.
+- **Parameters:** `vertexIndex`, zero-based vertex index.
 - **Returns:** The vertex tolerance (modelling precision for this vertex).
 - **OCCT:** `BRepGraph_Tool::Vertex::Tolerance(graph, BRepGraph_VertexId(index))`.
 
@@ -889,7 +889,7 @@ Get the tolerance of an edge.
 public func edgeTolerance(_ edgeIndex: Int) -> Double
 ```
 
-- **Parameters:** `edgeIndex` — zero-based edge index.
+- **Parameters:** `edgeIndex`, zero-based edge index.
 - **OCCT:** `BRepGraph_Tool::Edge::Tolerance(graph, BRepGraph_EdgeId(index))`.
 
 ---
@@ -904,7 +904,7 @@ public func isEdgeDegenerated(_ edgeIndex: Int) -> Bool
 
 Degenerated edges have zero-length 3D curves (e.g. the apex edge of a cone). They carry a pcurve but no meaningful 3D geometry.
 
-- **Parameters:** `edgeIndex` — zero-based edge index.
+- **Parameters:** `edgeIndex`, zero-based edge index.
 - **OCCT:** `BRepGraph_Tool::Edge::Degenerated(graph, BRepGraph_EdgeId(index))`.
 
 ---
@@ -919,7 +919,7 @@ public func isEdgeSameParameter(_ edgeIndex: Int) -> Bool
 
 `SameParameter` means the 3D curve and all pcurves share the same parameter range. Resolved via the first coedge of the edge; returns `true` for free edges with no coedge.
 
-- **Parameters:** `edgeIndex` — zero-based edge index.
+- **Parameters:** `edgeIndex`, zero-based edge index.
 - **OCCT:** `BRepGraph_Tool::CoEdge::SameParameter(graph, coEdgeId)` (p1: per-coedge property).
 
 ---
@@ -934,7 +934,7 @@ public func isEdgeSameRange(_ edgeIndex: Int) -> Bool
 
 `SameRange` means all pcurves of an edge have the same parameter range as the 3D curve. Resolved via the first coedge.
 
-- **Parameters:** `edgeIndex` — zero-based edge index.
+- **Parameters:** `edgeIndex`, zero-based edge index.
 - **OCCT:** `BRepGraph_Tool::CoEdge::SameRange(graph, coEdgeId)` (p1: per-coedge property).
 
 ---
@@ -947,7 +947,7 @@ Get the parameter range of an edge.
 public func edgeRange(_ edgeIndex: Int) -> (first: Double, last: Double)
 ```
 
-- **Parameters:** `edgeIndex` — zero-based edge index.
+- **Parameters:** `edgeIndex`, zero-based edge index.
 - **Returns:** The (first, last) parameter values of the edge's 3D curve.
 - **OCCT:** `BRepGraph_Tool::Edge::Range(graph, BRepGraph_EdgeId(index))`.
 
@@ -963,7 +963,7 @@ public func edgeHasCurve(_ edgeIndex: Int) -> Bool
 
 Degenerated edges may lack a 3D curve. Use before accessing curve geometry.
 
-- **Parameters:** `edgeIndex` — zero-based edge index.
+- **Parameters:** `edgeIndex`, zero-based edge index.
 - **OCCT:** `BRepGraph_Tool::Edge::HasCurve(graph, BRepGraph_EdgeId(index))`.
 
 ---
@@ -978,7 +978,7 @@ public func isEdgeClosedOnFace(edgeIndex: Int, faceIndex: Int) -> Bool
 
 A seam edge appears twice in the wire of a closed face (e.g. the longitudinal seam of a cylinder). In OCCT 8.0.0 p1, this is `IsSeamOnFace`.
 
-- **Parameters:** `edgeIndex` — zero-based edge index; `faceIndex` — zero-based face index.
+- **Parameters:** `edgeIndex`, zero-based edge index; `faceIndex`, zero-based face index.
 - **OCCT:** `BRepGraph_Tool::Edge::IsSeamOnFace(graph, edgeId, faceId)`.
 
 ---
@@ -993,7 +993,7 @@ public func edgeHasPolygon3D(_ edgeIndex: Int) -> Bool
 
 Returns `true` if the edge has a cached or persistent `Poly_Polygon3D` in the graph's mesh layer.
 
-- **Parameters:** `edgeIndex` — zero-based edge index.
+- **Parameters:** `edgeIndex`, zero-based edge index.
 - **OCCT:** `BRepGraph::MeshView::Effective().Edges().Has(BRepGraph_EdgeId(index))`.
 
 ---
@@ -1006,10 +1006,10 @@ Get the maximum continuity order of an edge (as `GeomAbs_Shape` raw int).
 public func edgeMaxContinuity(_ edgeIndex: Int) -> Int
 ```
 
-Returns the `GeomAbs_Shape` continuity enum raw value (`0` = C0, `1` = G1, `2` = C1, `3` = G2, `4` = C2, `5` = C3, `6` = CN). Currently returns `0` always — `BRepGraph_LayerRegularity` is unavailable in OCCT 8.0.0 p1 due to an upstream header bug. Use `Shape.maxContinuity` (`BRep_Tool::MaxContinuity`) as an alternative.
+Returns the `GeomAbs_Shape` continuity enum raw value (`0` = C0, `1` = G1, `2` = C1, `3` = G2, `4` = C2, `5` = C3, `6` = CN). Currently returns `0` always, `BRepGraph_LayerRegularity` is unavailable in OCCT 8.0.0 p1 due to an upstream header bug. Use `Shape.maxContinuity` (`BRep_Tool::MaxContinuity`) as an alternative.
 
-- **Parameters:** `edgeIndex` — zero-based edge index.
-- **Note:** Always returns 0 in OCCT 8.0.0 p1 — `BRepGraph_LayerRegularity` does not compile/link. Use `Shape.maxContinuity` instead.
+- **Parameters:** `edgeIndex`, zero-based edge index.
+- **Note:** Always returns 0 in OCCT 8.0.0 p1, `BRepGraph_LayerRegularity` does not compile/link. Use `Shape.maxContinuity` instead.
 
 ---
 
@@ -1023,7 +1023,7 @@ Get the tolerance of a face.
 public func faceTolerance(_ faceIndex: Int) -> Double
 ```
 
-- **Parameters:** `faceIndex` — zero-based face index.
+- **Parameters:** `faceIndex`, zero-based face index.
 - **OCCT:** `BRepGraph_Tool::Face::Tolerance(graph, BRepGraph_FaceId(index))`.
 
 ---
@@ -1038,7 +1038,7 @@ public func isFaceNaturalRestriction(_ faceIndex: Int) -> Bool
 
 In OCCT p1, this is derived: a face with no bounding wires (`NbWires == 0`) is considered naturally restricted. In practice, p1 always materializes bounding wires, so this typically returns `false` for real graphs.
 
-- **Parameters:** `faceIndex` — zero-based face index.
+- **Parameters:** `faceIndex`, zero-based face index.
 - **OCCT:** `BRepGraph_Tool::Face::NbWires(graph, faceId) == 0`.
 
 ---
@@ -1051,7 +1051,7 @@ Check if a face has a surface.
 public func faceHasSurface(_ faceIndex: Int) -> Bool
 ```
 
-- **Parameters:** `faceIndex` — zero-based face index.
+- **Parameters:** `faceIndex`, zero-based face index.
 - **OCCT:** `BRepGraph_Tool::Face::HasSurface(graph, BRepGraph_FaceId(index))`.
 
 ---
@@ -1066,7 +1066,7 @@ public func faceHasTriangulation(_ faceIndex: Int) -> Bool
 
 Returns `true` if the face has a cached or persistent `Poly_Triangulation` in the graph's mesh layer.
 
-- **Parameters:** `faceIndex` — zero-based face index.
+- **Parameters:** `faceIndex`, zero-based face index.
 - **OCCT:** `BRepGraph::MeshView::Effective().Faces().Has(BRepGraph_FaceId(index))`.
 
 ---
@@ -1081,7 +1081,7 @@ Check if a wire is topologically closed.
 public func isWireClosed(_ wireIndex: Int) -> Bool
 ```
 
-- **Parameters:** `wireIndex` — zero-based wire index.
+- **Parameters:** `wireIndex`, zero-based wire index.
 - **OCCT:** `BRepGraph_Tool::Wire::IsClosed(graph, BRepGraph_WireId(index))`.
 
 ---
@@ -1094,7 +1094,7 @@ Number of coedges in a wire.
 public func wireCoEdgeCount(_ wireIndex: Int) -> Int
 ```
 
-- **Parameters:** `wireIndex` — zero-based wire index.
+- **Parameters:** `wireIndex`, zero-based wire index.
 - **OCCT:** `BRepGraph_Tool::Wire::NbCoEdges(graph, BRepGraph_WireId(index))`.
 
 ---
@@ -1107,7 +1107,7 @@ Number of faces a wire belongs to.
 public func wireFaceCount(_ wireIndex: Int) -> Int
 ```
 
-- **Parameters:** `wireIndex` — zero-based wire index.
+- **Parameters:** `wireIndex`, zero-based wire index.
 - **OCCT:** `BRepGraph_FacesOfWire` iterator over the wire's `ParentWireRefIds` (p1 replacement for `WireOps::Faces()`).
 
 ---
@@ -1120,7 +1120,7 @@ Indices of faces a wire belongs to.
 public func wireFaces(_ wireIndex: Int) -> [Int]
 ```
 
-- **Parameters:** `wireIndex` — zero-based wire index.
+- **Parameters:** `wireIndex`, zero-based wire index.
 - **Returns:** Face indices that own this wire.
 - **OCCT:** `BRepGraph_FacesOfWire` iterator over `BRepGraph::TopoView::Wires().Relations().ParentWireRefIds`.
 - **Example:**

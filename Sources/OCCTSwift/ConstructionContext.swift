@@ -5,17 +5,17 @@ import simd
 //
 // Document-level collection of named construction entities. Each entity gets a
 // typed opaque ID on insertion; the context resolves entities on demand against
-// any given BRepGraph. Entities are stored by value — storage is lightweight
+// any given BRepGraph. Entities are stored by value, storage is lightweight
 // and thread-safe via an internal lock.
 //
 // Persistence: the XCAF `CONSTRUCTION` layer hosts any shapes tagged as
 // construction. Since we deliberately keep construction-entity *recipes* in
 // Swift value storage (not as TopoDS_Shapes on the XDE tree), STEP round-trip
-// preserves only the "this shape is construction" layer tag — the recipe
+// preserves only the "this shape is construction" layer tag, the recipe
 // structure is lost. Documented limitation matching FreeCAD's behaviour.
 //
 // Storage for the three entity kinds (plane/axis/point) is one shared
-// `EntityStore`, not three hand-written copies — see #886.
+// `EntityStore`, not three hand-written copies, see #886.
 
 /// Shape common to `PlaneID`/`AxisID`/`PointID`: an opaque, UUID-backed identity minted fresh
 /// on `init()`.
@@ -33,7 +33,7 @@ internal protocol ConstructionEntityID: Sendable, Hashable {
 /// (#886): the three entity kinds used to be three independently hand-written copies of this
 /// same add/lookup/name/remove/allX shape.
 ///
-/// `@unchecked Sendable` covers the lock-guarded storage itself, not what `Value` is — an
+/// `@unchecked Sendable` covers the lock-guarded storage itself, not what `Value` is, an
 /// unconstrained `Value` would let the compiler wave through a future non-`Sendable` payload
 /// crossing concurrency boundaries through `value(_:)`/`all` with no check at all, since
 /// `@unchecked` disables Sendable checking entirely rather than narrowing it to the mutable
@@ -71,7 +71,7 @@ internal final class EntityStore<ID: ConstructionEntityID, Value: Sendable>: @un
     ///
     /// A removed entry is skipped rather than returned as a gap.
     ///
-    /// - Returns: `(id, name, value)`, unlabeled — an internal function returning a tuple with
+    /// - Returns: `(id, name, value)`, unlabeled, an internal function returning a tuple with
     ///   baked-in labels forces every call site whose own labels differ into a two-step
     ///   bind-then-relabel instead of a direct return (`okf/policies/code-style.md`; #914 review,
     ///   second round). Every consumer of this either passes the array through opaquely or
@@ -134,7 +134,7 @@ public final class ConstructionContext: @unchecked Sendable {
     /// reads and single-store ones alike) rather than a regression: nothing about a single-store
     /// read is made incorrect by another store mutating concurrently, and a caller reading two
     /// different kinds back to back was already two separate, non-atomic lock acquisitions before
-    /// #886 too (#914 review, second round — a doc comment ambiguity, not a behavior bug).
+    /// #886 too (#914 review, second round, a doc comment ambiguity, not a behavior bug).
     ///
     /// Each `EntityStore` keeps its own internal lock (a distinct `NSLock`) for its own
     /// single-store operations (`value`, `name`, `all`); nesting this lock around a call into a
@@ -143,7 +143,7 @@ public final class ConstructionContext: @unchecked Sendable {
     /// or deadlock risk.
     ///
     /// `remove(plane:)`/`remove(axis:)`/`remove(point:)` take this lock too (PR #898 review,
-    /// finding 5) — even though a *single* `remove()` racing a *single* `removeAll()` was, and
+    /// finding 5), even though a *single* `remove()` racing a *single* `removeAll()` was, and
     /// still is, idempotent by itself (the ID ends up absent either way, so that specific pairing
     /// was never the problem the earlier version of this comment reasoned about). The motivating
     /// concern was that an unlocked `remove()` could run its critical section while `removeAll()`'s
@@ -151,7 +151,7 @@ public final class ConstructionContext: @unchecked Sendable {
     /// reason `add()` is locked. **Investigated, not just fixed**: with `removeAll()`/`count()`
     /// already atomic under this lock, that specific interleaving turns out not to be observable
     /// through `count()`/`allBroken(in:)`/`materialize(in:graph:options:)` even without this
-    /// change — `ConstructionContextConcurrencyTests.removeAllStaysAtomicUnderConcurrentRemove`'s
+    /// change, `ConstructionContextConcurrencyTests.removeAllStaysAtomicUnderConcurrentRemove`'s
     /// own doc comment has the measurements (9, then 500, concurrent single removes; a full
     /// single-kind drain). This lock is still the right thing to hold here: it keeps `remove()`
     /// consistent with every other mutator's contract with `removeAll()`/`count()`, and closes the
@@ -163,24 +163,24 @@ public final class ConstructionContext: @unchecked Sendable {
     private let crossStoreLock = NSLock()
 
     /// Atomic snapshot of every plane/axis/point currently registered, taken under one
-    /// `crossStoreLock` critical section — the same cross-store atomicity `count`/`removeAll`
+    /// `crossStoreLock` critical section, the same cross-store atomicity `count`/`removeAll`
     /// already have.
     ///
     /// Used by `allBroken(in:)` below and by `ConstructionLayer.materialize(in:graph:options:)`
     /// (PR #898 review, finding 1) so neither observes a torn cross-store read: some kinds
     /// already reflecting a concurrent `removeAll()`/`remove()` while others don't. Both callers
-    /// take the snapshot once, up front, then do their (potentially slow — graph resolution,
+    /// take the snapshot once, up front, then do their (potentially slow, graph resolution,
     /// OCCT shape building, document mutation) per-entity work against the local copy, entirely
     /// outside this lock. Neither `BRepGraph.resolve` nor `Document.addConstructionShape` nor any
     /// `ConstructionLayer` shape builder calls back into `ConstructionContext`, so there's no
     /// reentrancy or lock-ordering risk from holding the snapshot's result past the critical
     /// section that produced it.
-    /// - Returns: `(planes, axes, points)`, unlabeled — an internal property returning a tuple
+    /// - Returns: `(planes, axes, points)`, unlabeled, an internal property returning a tuple
     ///   with baked-in labels forces every call site whose own labels differ into a two-step
     ///   bind-then-relabel instead of a direct return (`okf/policies/code-style.md`; #914 review,
     ///   second round). The inner per-entity element tuples keep their `(id:, name:, value:)`
-    ///   labels — those genuinely are read by name at both call sites, `broken(_:)`'s parameter
-    ///   type and `ConstructionLayer.materialize`'s `entry.id`/`entry.value` — only the outer
+    ///   labels, those genuinely are read by name at both call sites, `broken(_:)`'s parameter
+    ///   type and `ConstructionLayer.materialize`'s `entry.id`/`entry.value`, only the outer
     ///   `(planes:, axes:, points:)` grouping is unlabeled.
     internal var allEntitiesSnapshot:
         (
@@ -310,11 +310,11 @@ public final class ConstructionContext: @unchecked Sendable {
     }
 
     /// Shared shape for the three `resolve(_:in:)` overloads above: look the entity up by ID,
-    /// resolve it against the graph, or report a not-registered failure — same message format
+    /// resolve it against the graph, or report a not-registered failure, same message format
     /// every kind used before #886 unified them.
     ///
     /// `resolver` captures its `BRepGraph` from the enclosing call site rather than taking one as
-    /// a parameter — every caller already has exactly one `graph` in scope, so re-threading it
+    /// a parameter, every caller already has exactly one `graph` in scope, so re-threading it
     /// through the closure signature was a no-op indirection (PR #898 review).
     private func resolveEntity<ID: ConstructionEntityID, Entity, Resolved>(
         _ id: ID,
@@ -344,8 +344,8 @@ public final class ConstructionContext: @unchecked Sendable {
     ///
     /// Useful for agent workflows to detect broken references after a model edit. Reads all
     /// three stores as one atomic snapshot (`allEntitiesSnapshot`, PR #898 review finding 1) so a
-    /// concurrent `removeAll()`/`remove()` can't be observed mid-flight — some kinds already
-    /// cleared, others not — the same torn-cross-store-read bug class `count()` was fixed for.
+    /// concurrent `removeAll()`/`remove()` can't be observed mid-flight, some kinds already
+    /// cleared, others not, the same torn-cross-store-read bug class `count()` was fixed for.
     public func allBroken(in graph: BRepGraph) -> BrokenEntities {
         let (planes, axes, points) = allEntitiesSnapshot
         return BrokenEntities(
@@ -358,7 +358,7 @@ public final class ConstructionContext: @unchecked Sendable {
     /// Shared shape for the three per-kind scans in `allBroken(in:)`, above.
     ///
     /// `resolver` captures `graph` from the enclosing `allBroken(in:)` call rather than taking
-    /// one as a parameter — same reasoning as `resolveEntity` above (PR #898 review).
+    /// one as a parameter, same reasoning as `resolveEntity` above (PR #898 review).
     private func broken<ID: ConstructionEntityID, Entity, Resolved>(
         _ entries: [(id: ID, name: String?, value: Entity)],
         resolver: (Entity) -> Result<Resolved, ConstructionResolutionError>
@@ -382,11 +382,11 @@ extension Document {
     /// Per-document construction context.
     ///
     /// Lazy-associated; created on first access. Construction entities added to the context live
-    /// alongside the document's shapes but are not part of the XDE shape tree — they're pure
+    /// alongside the document's shapes but are not part of the XDE shape tree, they're pure
     /// Swift-side recipes. For persistence guidance see ConstructionContext doc comments.
     ///
     /// `valueOrInsert(for:make:)` looks up and (on a miss) constructs+inserts under one lock
-    /// acquisition — a separate `value(for:)` then `set(_:for:)` pair would be a check-then-set
+    /// acquisition, a separate `value(for:)` then `set(_:for:)` pair would be a check-then-set
     /// race: two threads' first access could both miss, both construct a `ConstructionContext`,
     /// and the loser's instance would be silently unreachable from this document the moment the
     /// winner's `set` ran, even though it was already handed back to its own caller (#914 review,
@@ -407,7 +407,7 @@ extension Document {
 
     // Associated storage for construction contexts, since Document is a final class we can't
     // extend with stored properties. Strongly keyed on ObjectIdentifier (the instance pointer);
-    // entries are removed in `Document.deinit` via `releaseConstructionContext()` — see #277 for
+    // entries are removed in `Document.deinit` via `releaseConstructionContext()`, see #277 for
     // why that cleanup is load-bearing rather than mere tidiness.
     fileprivate static let constructionContextStorage = DocumentAssociatedStorage<
         ConstructionContext
@@ -419,7 +419,7 @@ extension Document {
 ///
 /// - Important: keys are `ObjectIdentifier`, i.e. the raw instance pointer, which is unique only
 ///   among **live** objects. Owners MUST call ``clear(for:)`` from their `deinit`. An entry that
-///   outlives its owner is not merely a leak — the allocator readily hands the same address to the
+///   outlives its owner is not merely a leak, the allocator readily hands the same address to the
 ///   next instance, which then resolves to the dead owner's value and inherits its state. This is
 ///   not theoretical: it shipped, and in a tight create/destroy loop *every* new instance inherited
 ///   its predecessor's context (#277).
@@ -442,8 +442,8 @@ internal final class DocumentAssociatedStorage<T: AnyObject>: @unchecked Sendabl
     /// Look up an existing value, or construct and insert one, as a single atomic step.
     ///
     /// `value(for:)` immediately followed by `set(_:for:)` on a miss is a check-then-set race:
-    /// two callers can both miss the lookup, both construct, and the loser's instance — handed
-    /// back to its own caller as if it were live — is immediately orphaned by the winner's
+    /// two callers can both miss the lookup, both construct, and the loser's instance, handed
+    /// back to its own caller as if it were live, is immediately orphaned by the winner's
     /// `set(_:for:)` overwriting the table entry. `make()` runs while the lock is held, so no
     /// second caller can observe a miss for the same owner while the first is still constructing
     /// (#914 review, second round, finding on `Document.constructionContext`).

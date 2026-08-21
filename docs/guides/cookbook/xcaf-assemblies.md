@@ -6,7 +6,7 @@ nav_order: 8
 
 # XCAF Assemblies
 
-A single `Shape` is one body. Real CAD data is an **assembly** — a tree of named, colored,
+A single `Shape` is one body. Real CAD data is an **assembly**, a tree of named, colored,
 instanced parts. OCCTSwift models that with a `Document` (OCCT's XCAF/OCAF document), which preserves
 product structure, per-part colors and materials, and instancing across a STEP round-trip.
 
@@ -22,12 +22,12 @@ let boxId    = doc.addShape(box)      // -> Int64 label id (-1 on failure)
 let sphereId = doc.addShape(sphere)
 ```
 
-`addShape` returns an `Int64` **label id** — a handle into the document tree, stable within that
+`addShape` returns an `Int64` **label id**, a handle into the document tree, stable within that
 `Document` instance.
 
 ## Build an assembly tree
 
-An assembly is an empty label with **components** — instances of shape labels, each placed by a
+An assembly is an empty label with **components**, instances of shape labels, each placed by a
 transform. Instancing means a part stored once can appear many times (the file scales with unique
 parts, not total placements):
 
@@ -47,7 +47,7 @@ A component can also take a full rigid transform via `addComponent(assemblyLabel
 
 <table>
 <tr>
-<td align="center"><model-viewer src="models/xcaf-assembly.glb" poster="images/xcaf-assembly.png" camera-controls auto-rotate environment-image="neutral" exposure="1.1" shadow-intensity="1" style="width:340px;height:300px;background:#eef1f5;border-radius:6px"></model-viewer><br>A two-part assembly — each part its own color</td>
+<td align="center"><model-viewer src="models/xcaf-assembly.glb" poster="images/xcaf-assembly.png" camera-controls auto-rotate environment-image="neutral" exposure="1.1" shadow-intensity="1" style="width:340px;height:300px;background:#eef1f5;border-radius:6px"></model-viewer><br>A two-part assembly, each part its own color</td>
 </tr>
 </table>
 
@@ -89,10 +89,10 @@ if let m = node.material { print(m.metallic, m.roughness) }
 ## Load, inspect, export
 
 ```swift
-// load a STEP assembly — structure, names, colors preserved
+// load a STEP assembly, structure, names, colors preserved
 let doc = try Document.load(from: stepURL)
 for root in doc.rootNodes {
-    print(root.name ?? "—", root.color as Any)
+    print(root.name ?? ", ", root.color as Any)
 }
 
 // write it back out, structure intact
@@ -101,12 +101,12 @@ try doc.write(to: outURL)                          // same (STEP)
 doc.writeGLTF(to: glbURL, binary: true)            // GLB for the web (returns Bool)
 ```
 
-`writeSTEPAssembly` preserves the tree, component references, names and colors — and stores each
+`writeSTEPAssembly` preserves the tree, component references, names and colors, and stores each
 instanced part once. To flatten to a single body instead, pull `node.shape` and export that via the
 plain [Exporter](meshing-and-export.md).
 
 ## See also
 
-- [Meshing & Export](meshing-and-export.md) — single-shape export and the file formats.
-- [BRep Graph](brep-graph.md) — structure *within* one shape (faces/edges), vs. the assembly tree across shapes.
+- [Meshing & Export](meshing-and-export.md), single-shape export and the file formats.
+- [BRep Graph](brep-graph.md), structure *within* one shape (faces/edges), vs. the assembly tree across shapes.
 - API mapping: [`../../API_REFERENCE.md`](../../API_REFERENCE.md)

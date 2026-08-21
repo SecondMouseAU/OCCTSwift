@@ -1,7 +1,7 @@
 # Draft upstream issue for `Extrema_ExtCC::Points()` on parallel curves
 
 **Status: drafted, not sent, and not the recommended filing.** `okf/policies/upstream-occt-style.md`
-is explicit: "if we're submitting a fix, open the PR directly — the PR description carries the
+is explicit: "if we're submitting a fix, open the PR directly, the PR description carries the
 repro and root cause, same as an issue would have. Only open a standalone issue when we don't yet
 have a fix ready to attach." A fix is ready (`Scripts/patches/0024-*.patch`, validated in
 `Scripts/repro/636-extrema-parallel/README.md`), so per that policy and the precedent set by
@@ -26,8 +26,8 @@ Extrema_ExtCC::Points() indexes an empty sequence when NbExt() reports a paralle
 container, `mypoints`, but bounds-checks the requested index against `NbExt()` rather than against
 `mypoints.Length()`.
 
-Several branches of `PrepareParallelResult` — reached whenever the two curves are found to be
-parallel — append a distance to `mySqDist` without appending a matching point pair to `mypoints`,
+Several branches of `PrepareParallelResult`, reached whenever the two curves are found to be
+parallel, append a distance to `mySqDist` without appending a matching point pair to `mypoints`,
 because in those branches there is a continuous family of equidistant points and no single unique
 answer to give. Concretely: two unbounded parallel lines, or two finite parallel segments whose
 projected ranges overlap over a genuine interval (not just touch at one point). In both cases
@@ -36,8 +36,8 @@ projected ranges overlap over a genuine interval (not just touch at one point). 
 Calling `Points(1, ...)` in that state indexes `mypoints` past its actual (zero) length.
 `Points()`'s own bounds check does not catch this, since it checks `N > NbExt()`, not
 `2 * N > mypoints.Length()`. Under a Release build with `BUILD_RELEASE_DISABLE_EXCEPTIONS`
-(`-DNo_Exception`), the check that *would* catch it — `NCollection_Sequence::Value()`'s own
-`Standard_OutOfRange_Raise_if` — is compiled to nothing, so the result is an unguarded null-node
+(`-DNo_Exception`), the check that *would* catch it, `NCollection_Sequence::Value()`'s own
+`Standard_OutOfRange_Raise_if`: is compiled to nothing, so the result is an unguarded null-node
 dereference (SIGSEGV), not a C++ exception.
 
 `GeomAPI_ExtremaCurveCurve::Points()`, the public wrapper, has the identical shape (its own bounds
@@ -57,7 +57,7 @@ ext.Points(1, p1, p2);  // SIGSEGV on a Release / No_Exception build
 
 Also reproduces with two unbounded `Geom_Line`s. Does **not** reproduce (correctly returns a real
 point pair) when the two segments' projected ranges are disjoint, or when they touch at exactly one
-point — in both of those cases the library already sets `IsParallel()` back to `false` and
+point, in both of those cases the library already sets `IsParallel()` back to `false` and
 populates `mypoints` correctly.
 
 ## Environment

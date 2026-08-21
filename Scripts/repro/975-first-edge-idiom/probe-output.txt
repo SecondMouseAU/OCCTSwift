@@ -1,0 +1,13 @@
+bare edge                                      idiom=edge(FWD) helper=edge(FWD)  IsSame=yes  sameOrientation=yes
+bare edge, reversed                            idiom=edge(REV) helper=edge(REV)  IsSame=yes  sameOrientation=yes
+closed triangular wire                         idiom=edge(FWD) helper=edge(FWD)  IsSame=yes  sameOrientation=yes
+closed triangular wire, reversed               idiom=edge(REV) helper=edge(REV)  IsSame=yes  sameOrientation=yes
+first face of a box                            idiom=edge(FWD) helper=edge(FWD)  IsSame=yes  sameOrientation=yes
+box solid (24 occurrences, 12 edges)           idiom=edge(FWD) helper=edge(FWD)  IsSame=yes  sameOrientation=yes
+compound of one edge, added twice              idiom=edge(FWD) helper=edge(FWD)  IsSame=yes  sameOrientation=yes
+compound: edge then wire                       idiom=edge(FWD) helper=edge(FWD)  IsSame=yes  sameOrientation=yes
+compound: wire then edge                       idiom=edge(FWD) helper=edge(FWD)  IsSame=yes  sameOrientation=yes
+empty compound (no edges)                      idiom=null(-) helper=null(-)  IsSame=yes  sameOrientation=yes
+a vertex                                       idiom=null(-) helper=null(-)  IsSame=yes  sameOrientation=yes
+
+AGREE: 0 divergence(s)

@@ -22,8 +22,9 @@ public struct SketchElement: Sendable, Hashable {
         case circle(center: SIMD2<Double>, radius: Double)
         case polyline([SIMD2<Double>])
 
-        /// Ordered 2D sample points along this curve. Lines and polylines are exact;
-        /// arcs and circles are tessellated using the given `segmentsPerRadian` density.
+        /// Ordered 2D sample points along this curve.
+        ///
+        /// Lines and polylines are exact; arcs and circles are tessellated using the given `segmentsPerRadian` density.
         public func tessellate2D(segmentsPerRadian: Int = 16) -> [SIMD2<Double>] {
             switch self {
             case .line(let from, let to):
@@ -36,8 +37,10 @@ public struct SketchElement: Sendable, Hashable {
                 pts.reserveCapacity(segments + 1)
                 for i in 0...segments {
                     let t = Double(i) / Double(segments) * 2 * .pi
-                    pts.append(SIMD2(center.x + radius * cos(t),
-                                     center.y + radius * sin(t)))
+                    pts.append(
+                        SIMD2(
+                            center.x + radius * cos(t),
+                            center.y + radius * sin(t)))
                 }
                 return pts
             case .arc(let center, let radius, let start, let end):
@@ -47,8 +50,10 @@ public struct SketchElement: Sendable, Hashable {
                 pts.reserveCapacity(segments + 1)
                 for i in 0...segments {
                     let t = start + sweep * Double(i) / Double(segments)
-                    pts.append(SIMD2(center.x + radius * cos(t),
-                                     center.y + radius * sin(t)))
+                    pts.append(
+                        SIMD2(
+                            center.x + radius * cos(t),
+                            center.y + radius * sin(t)))
                 }
                 return pts
             }
@@ -71,9 +76,11 @@ public struct Sketch: Sendable, Hashable {
     public var elements: [SketchElement]
     public var name: String?
 
-    public init(hostPlane: ConstructionContext.PlaneID,
-                elements: [SketchElement] = [],
-                name: String? = nil) {
+    public init(
+        hostPlane: ConstructionContext.PlaneID,
+        elements: [SketchElement] = [],
+        name: String? = nil
+    ) {
         self.hostPlane = hostPlane
         self.elements = elements
         self.name = name
@@ -83,7 +90,7 @@ public struct Sketch: Sendable, Hashable {
         elements.append(element)
     }
 
-    /// Number of elements excluding construction geometry — i.e. the profile size.
+    /// Number of elements excluding construction geometry, i.e. the profile size.
     public var profileElementCount: Int {
         elements.lazy.filter { !$0.isConstruction }.count
     }
@@ -93,7 +100,7 @@ extension Sketch {
     /// Build a 3D closed profile wire from the sketch's non-construction elements,
     /// placed on the host construction plane.
     ///
-    /// Construction elements are filtered out at this single site — upstream uses
+    /// Construction elements are filtered out at this single site, upstream uses
     /// of the sketch (solver, constraint editor, agent-facing accessors) see the
     /// full element set including construction.
     ///
@@ -102,8 +109,10 @@ extension Sketch {
     ///   - graph: A BRepGraph against which to resolve the host plane's recipe.
     /// - Returns: A closed Wire on the resolved plane, or nil if the host plane
     ///   fails to resolve or no profile elements exist.
-    public func buildProfile(in context: ConstructionContext,
-                             graph: BRepGraph) -> Wire? {
+    public func buildProfile(
+        in context: ConstructionContext,
+        graph: BRepGraph
+    ) -> Wire? {
         let profileElements = elements.filter { !$0.isConstruction }
         guard !profileElements.isEmpty else { return nil }
 
@@ -118,7 +127,7 @@ extension Sketch {
         for element in profileElements {
             let elementPoints = element.curve.tessellate2D(segmentsPerRadian: 16)
             for (i, pt) in elementPoints.enumerated() {
-                let p = lift(pt, with: placement)
+                let p = placement.lift(pt)
                 if i == 0 && !points3D.isEmpty && approxEqual(points3D.last!, p) { continue }
                 points3D.append(p)
             }
@@ -130,11 +139,9 @@ extension Sketch {
         return Wire.polygon3D(points3D, closed: closed)
     }
 
-    private func lift(_ p2: SIMD2<Double>, with placement: Placement) -> SIMD3<Double> {
-        placement.origin + p2.x * placement.xAxis + p2.y * placement.yAxis
-    }
-
-    private func approxEqual(_ a: SIMD3<Double>, _ b: SIMD3<Double>, tolerance: Double = 1e-9) -> Bool {
+    private func approxEqual(_ a: SIMD3<Double>, _ b: SIMD3<Double>, tolerance: Double = 1e-9)
+        -> Bool
+    {
         simd_length_squared(a - b) < tolerance * tolerance
     }
 }

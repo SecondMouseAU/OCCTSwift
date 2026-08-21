@@ -20,7 +20,7 @@ public final class Document: @unchecked Sendable {
     }
 
     deinit {
-        // Must happen before this instance's memory can be recycled — the construction-context
+        // Must happen before this instance's memory can be recycled, the construction-context
         // association is keyed on the instance pointer (#277).
         releaseConstructionContext()
         OCCTDocumentRelease(handle)
@@ -58,7 +58,7 @@ public final class Document: @unchecked Sendable {
     /// Write the document to a STEP file with progress + cancellation.
     ///
     /// `ImportError.importFailed` on other failure (the case name reuses.
-    /// `ImportError` because we share the cancellation channel — see #98).
+    /// `ImportError` because we share the cancellation channel, see #98).
     ///
     /// - Throws: `ImportError.cancelled` if cancelled cooperatively,
     public func writeSTEP(to url: URL, progress: ImportProgress?) throws {
@@ -101,12 +101,12 @@ public final class Document: @unchecked Sendable {
     /// Look up an `AssemblyNode` by its XCAF labelId.
     ///
     /// Returns `nil` if `labelId` does not refer to a label in this document.
-    /// LabelIds are stable within a single `Document` instance — a labelId.
+    /// LabelIds are stable within a single `Document` instance, a labelId.
     /// obtained from `rootNodes` traversal can be passed back here later in.
     /// the same session to recover the corresponding node.
     public func node(at labelId: Int64) -> AssemblyNode? {
         // Warm up the labelId registry. On a freshly-loaded document the
-        // table is empty until something walks the assembly — iterating the
+        // table is empty until something walks the assembly, iterating the
         // roots here registers the top-level labels so callers don't have
         // to know to touch `rootNodes` first. Deep child labelIds are
         // expected to have been registered earlier by an explicit traversal
@@ -184,69 +184,6 @@ public final class Document: @unchecked Sendable {
         if !OCCTDocumentWriteSTEP(handle, url.path) {
             throw DocumentError.writeFailed(url: url)
         }
-    }
-}
-
-// MARK: - GD&T / Dimensions and Tolerances (v0.21.0)
-
-extension Document {
-    /// Number of dimensions defined in this document.
-    public var dimensionCount: Int {
-        Int(OCCTDocumentGetDimensionCount(handle))
-    }
-
-    /// Number of geometric tolerances defined in this document.
-    public var geomToleranceCount: Int {
-        Int(OCCTDocumentGetGeomToleranceCount(handle))
-    }
-
-    /// Number of datums defined in this document.
-    public var datumCount: Int {
-        Int(OCCTDocumentGetDatumCount(handle))
-    }
-
-    /// Get dimension info at the given index.
-    public func dimension(at index: Int) -> DimensionInfo? {
-        let info = OCCTDocumentGetDimensionInfo(handle, Int32(index))
-        guard info.isValid else { return nil }
-        return DimensionInfo(
-            type: info.type, value: info.value,
-            lowerTolerance: info.lowerTol,
-            upperTolerance: info.upperTol)
-    }
-
-    /// Get geometric tolerance info at the given index.
-    public func geomTolerance(at index: Int) -> GeomToleranceInfo? {
-        let info = OCCTDocumentGetGeomToleranceInfo(handle, Int32(index))
-        guard info.isValid else { return nil }
-        return GeomToleranceInfo(type: info.type, value: info.value)
-    }
-
-    /// Get datum info at the given index.
-    public func datum(at index: Int) -> DatumInfo? {
-        var info = OCCTDocumentGetDatumInfo(handle, Int32(index))
-        guard info.isValid else { return nil }
-        let name = withUnsafeBytes(of: &info.name) { rawBuffer in
-            guard let baseAddress = rawBuffer.baseAddress else { return "" }
-            let charPtr = baseAddress.assumingMemoryBound(to: CChar.self)
-            return String(cString: charPtr)
-        }
-        return DatumInfo(name: name)
-    }
-
-    /// All dimensions in this document.
-    public var dimensions: [DimensionInfo] {
-        (0..<dimensionCount).compactMap { dimension(at: $0) }
-    }
-
-    /// All geometric tolerances in this document.
-    public var geomTolerances: [GeomToleranceInfo] {
-        (0..<geomToleranceCount).compactMap { geomTolerance(at: $0) }
-    }
-
-    /// All datums in this document.
-    public var datums: [DatumInfo] {
-        (0..<datumCount).compactMap { datum(at: $0) }
     }
 }
 
@@ -501,7 +438,7 @@ extension Document {
 // MARK: - Document Main Label (v0.54.0)
 
 extension Document {
-    /// The main label (0:1) of the document — the root of the user data tree.
+    /// The main label (0:1) of the document, the root of the user data tree.
     public var mainLabel: AssemblyNode? {
         let labelId = OCCTDocumentGetMainLabel(handle)
         guard labelId >= 0 else { return nil }
@@ -999,14 +936,36 @@ extension Document {
             translation.0, translation.1, translation.2)
     }
 
-    /// Add a component occurrence with a FULL rigid placement, from a 12-element row-major matrix.
+    /// Add a component occurrence with a FULL placement, from a 12-element GROUPED matrix.
     ///
-    /// `[r00 r01 r02 r10 r11 r12 r20 r21 r22 tx ty tz]`.
+    /// `[r00 r01 r02 r10 r11 r12 r20 r21 r22 tx ty tz]`: the nine rotation values, then the three
+    /// translations. This is ``Matrix12Grouped``'s layout, not ``TransformMatrix3D``'s.
     ///
-    /// Returns the component label id, or -1 if the.
-    /// matrix isn't a proper rigid transform (a reflection — bake a mirrored product instead).
+    /// A reflection is accepted and applied, which is the opposite of what this doc comment said
+    /// until #1009 measured it: `gp_Trsf::SetValues` names a null determinant as its only
+    /// precondition, not orthonormality, and it is compiled inside OCCT's Release library where
+    /// that precondition is removed outright. See #174 for the original request.
     ///
-    /// #174.
+    /// ```swift
+    /// // Mirror a part in X, then place the mirrored occurrence in an assembly.
+    /// let doc = Document.create()!
+    /// let part = doc.addShape(Shape.box(width: 10, height: 10, depth: 10)!, makeAssembly: false)
+    /// let assembly = doc.newShapeLabel()
+    /// doc.addComponent(assemblyLabelId: assembly, shapeLabelId: part, matrix: [
+    ///     -1, 0, 0,   // r00 r01 r02, negative determinant: a mirror in X
+    ///      0, 1, 0,   // r10 r11 r12
+    ///      0, 0, 1,   // r20 r21 r22
+    ///      0, 0, 0    // tx  ty  tz
+    /// ])
+    /// doc.updateAssemblies()
+    /// ```
+    ///
+    /// - Parameters:
+    ///   - assemblyLabelId: The parent assembly label.
+    ///   - shapeLabelId: The shape to instantiate.
+    ///   - matrix: Twelve doubles in GROUPED order.
+    /// - Returns: The component label id, or -1 if `matrix` does not hold exactly twelve values or
+    ///   the component could not be created.
     @discardableResult
     public func addComponent(assemblyLabelId: Int64, shapeLabelId: Int64, matrix: [Double]) -> Int64
     {
@@ -1060,11 +1019,11 @@ extension Document {
 extension Document {
     /// Set color on a shape directly (not by label).
     ///
-    /// `color.alpha` is preserved (#763) — previously it was silently dropped, so a subsequent.
+    /// `color.alpha` is preserved (#763), previously it was silently dropped, so a subsequent.
     /// ``shapeColor(_:type:)`` always reported fully opaque regardless of what was set here.
     /// - shape: The shape to color.
     /// - color: The color to set.
-    /// - type: Color type — generic (0), surface (1), or curve (2).
+    /// - type: Color type, generic (0), surface (1), or curve (2).
     /// ```swift.
     /// let doc = Document.create()!.
     /// let box = Shape.box(width: 10, height: 10, depth: 10)!.
@@ -1085,11 +1044,11 @@ extension Document {
 
     /// Get color for a shape (not by label).
     ///
-    /// `alpha` reflects the real stored value (#763) — a shape colored via.
+    /// `alpha` reflects the real stored value (#763), a shape colored via.
     /// ``setShapeColor(_:color:type:)`` or imported from a file with a transparent surface style.
     /// reports its actual alpha, rather than always 1.0.
     /// - shape: The shape to query.
-    /// - type: Color type — generic (0), surface (1), or curve (2).
+    /// - type: Color type, generic (0), surface (1), or curve (2).
     ///
     /// - Parameters:
     /// - Returns: Color if set, nil otherwise

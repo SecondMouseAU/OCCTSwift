@@ -14,7 +14,7 @@ import simd
 /// that `.boolean` matched `.direct` post-fix, and that assertion is gone with the mode, not
 /// ported, since there is nothing left to compare against. The two assertions below, about the
 /// surviving `.auto`/`.direct` modes, are unrelated to that removal and stay.
-@Suite("Issue #254 — single-start threads are smooth helices for every surviving build mode")
+@Suite("Issue #254, single-start threads are smooth helices for every surviving build mode")
 struct Issue254BuildModes {
 
     private func shaft(_ build: ThreadBuild) -> Shape? {

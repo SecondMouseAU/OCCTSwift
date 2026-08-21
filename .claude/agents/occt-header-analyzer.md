@@ -35,11 +35,11 @@ For each class, extract:
 For each class, assign a wrappability rating:
 
 - **Direct**: Simple constructor + methods, no special types needed. Can map directly to C bridge functions.
-- **Struct Result**: Returns complex data — needs a C struct to carry results back to Swift.
-- **Iterator**: Has `Init/More/Next/Value` pattern — needs iteration bridge.
-- **Handle-Based**: Uses `Handle<Geom_*>` etc. — may need existing handle infrastructure.
-- **Abstract**: Cannot be instantiated directly — skip or note for future C++ subclass approach.
-- **Complex**: Requires Law hierarchies, virtual method overrides, or callback functions — defer.
+- **Struct Result**: Returns complex data, needs a C struct to carry results back to Swift.
+- **Iterator**: Has `Init/More/Next/Value` pattern, needs iteration bridge.
+- **Handle-Based**: Uses `Handle<Geom_*>` etc. may need existing handle infrastructure.
+- **Abstract**: Cannot be instantiated directly, skip or note for future C++ subclass approach.
+- **Complex**: Requires Law hierarchies, virtual method overrides, or callback functions, defer.
 
 ### 5. Propose Bridge Signatures
 

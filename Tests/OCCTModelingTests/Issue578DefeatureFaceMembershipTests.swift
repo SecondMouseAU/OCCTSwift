@@ -2,34 +2,34 @@ import Testing
 import Foundation
 @testable import OCCTSwift
 
-/// #578 — what `defeature(faces:)` accepts as a face to remove, and what it does with one that is
+/// #578, what `defeature(faces:)` accepts as a face to remove, and what it does with one that is
 /// not this shape's.
 ///
 /// The kernel's own rule is to ignore what does not belong: `BRepAlgoAPI_Defeaturing.hxx` says "the
 /// faces should belong to the initial shape, and those that do not belong will be ignored", and
 /// measured on the pinned kernel a request mixing one real face with one foreign face succeeds,
 /// removes the real one, and raises no warning of any kind. That is a success indistinguishable from
-/// a real removal on a shape that still carries the feature the caller named — the failure mode #497
+/// a real removal on a shape that still carries the feature the caller named, the failure mode #497
 /// removed from the index-addressed `withoutFeatures(faces:)`, left standing on the entry point #536
 /// made canonical.
 ///
 /// The rule now applied instead, chosen to match the index-addressed spelling:
 ///
 ///   every shape in the request must contribute at least one face, and every face it contributes
-///   must be a face of this shape — otherwise the whole call fails and nothing is removed.
+///   must be a face of this shape, otherwise the whole call fails and nothing is removed.
 ///
 /// "Contribute" rather than "be", because `AddFaceToRemove` takes a `TopoDS_Shape` and its own
 /// documentation calls it "the shape to extract the faces for removal": a compound, a shell or the
 /// whole solid is a legal way to name faces, and passing the faces such a carrier explores to is the
 /// same request BREP for BREP. Membership is `IsSame`, so orientation does not matter and geometry
-/// does not count — an identically-built shape's face is foreign.
+/// does not count, an identically-built shape's face is foreign.
 ///
 /// Ground truth for every claim here, including the kernel behaviour being replaced:
 /// `Scripts/repro/578-defeature-face-membership/`.
 @Suite("Issue 578: which faces defeaturing will accept")
 struct Issue578DefeatureFaceMembershipTests {
 
-    /// A 20mm box with exactly one edge filleted — seven faces, one of them the fillet — plus that
+    /// A 20mm box with exactly one edge filleted, seven faces, one of them the fillet, plus that
     /// fillet's own face and its position in the face enumeration. The fillet face is found by the
     /// removal that restores the plain box, not by its position: which slot it lands in is not a
     /// property worth relying on. This is the probe's fixture.
@@ -171,7 +171,7 @@ struct Issue578DefeatureFaceMembershipTests {
                           "the fillet face, reversed")
     }
 
-    /// A shell or the whole solid names every face it contains — all of which belong — so the rule
+    /// A shell or the whole solid names every face it contains, all of which belong, so the rule
     /// accepts it. What the kernel then does with "remove everything" is its own answer: it returns
     /// the input unchanged. Pinned because a membership rule must not be read as rejecting it.
     @Test("a shell or the whole solid is a valid way to name faces")

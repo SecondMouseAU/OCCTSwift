@@ -6,15 +6,15 @@ import simd
 //
 // Typed construction-plane / axis / point recipes that carry TopologyRefs
 // rather than absolute coordinates. Resolution computes a Placement against
-// the current graph state — so when the underlying model is edited, the
+// the current graph state, so when the underlying model is edited, the
 // construction entity auto-updates through the BRepGraph history machinery
 // introduced in v0.141 Phase 0+1.
 //
 // Design inspired by Fusion 360's `ConstructionPlaneInput.setBy*` discriminators
 // (see #72 research). Each variant carries the *defining inputs* as persistent
-// references, not the computed plane — so if the inputs evolve, the plane does too.
+// references, not the computed plane, so if the inputs evolve, the plane does too.
 
-/// A rigid-body placement in 3D space — origin plus an orthonormal basis.
+/// A rigid-body placement in 3D space, origin plus an orthonormal basis.
 public struct Placement: Sendable, Hashable {
     public let origin: SIMD3<Double>
     public let xAxis: SIMD3<Double>  // unit
@@ -37,6 +37,14 @@ public struct Placement: Sendable, Hashable {
         let z = simd_normalize(normal)
         let (x, y) = perpendicularBasis(to: z)
         self.init(origin: origin, xAxis: x, yAxis: y, zAxis: z)
+    }
+
+    /// Map a 2D point in the placement's local (x, y) plane to 3D world space.
+    ///
+    /// - Parameter p: 2D coordinates where `x` scales `xAxis` and `y` scales `yAxis`.
+    /// - Returns: The corresponding 3D point: `origin + x * xAxis + y * yAxis`.
+    public func lift(_ p: SIMD2<Double>) -> SIMD3<Double> {
+        origin + p.x * xAxis + p.y * yAxis
     }
 }
 
@@ -146,7 +154,7 @@ extension BRepGraph {
                     let avgNormal =
                         simd_length_squared(nA + nB) > 1e-12
                         ? simd_normalize(nA + nB)
-                        : simd_normalize(nA - nB)  // antiparallel faces — use either normal
+                        : simd_normalize(nA - nB)  // antiparallel faces, use either normal
                     return .success(Placement(origin: origin, normal: avgNormal))
                 }
             }
@@ -276,12 +284,12 @@ extension BRepGraph {
 
     /// Degeneracy threshold shared by every `resolve` guard below.
     ///
-    /// The five call sites compare three different kinds of quantity — a raw distance, a cross
-    /// product's area-scale magnitude, and a unit-vector dot/cross — that happen to share this
+    /// The five call sites compare three different kinds of quantity, a raw distance, a cross
+    /// product's area-scale magnitude, and a unit-vector dot/cross, that happen to share this
     /// literal today by coincidence, not because they are numerically comparable (#887).
     /// Per-site tuning isn't supported today: `requireNonDegenerate` takes no per-call epsilon
     /// argument, so every call site shares this one constant. Supporting it would mean adding an
-    /// epsilon parameter to `requireNonDegenerate` — and picking a real per-site value, not
+    /// epsilon parameter to `requireNonDegenerate`, and picking a real per-site value, not
     /// inventing one without measurement (#726) (#894 finding 5).
     private static let degeneracyEpsilon = 1e-9
 
@@ -289,8 +297,8 @@ extension BRepGraph {
     ///
     /// Used by ``axesAgree(_:_:)``: every adjacent cylindrical/conical face's axis must agree
     /// before `revolutionAxis(ofEdgeAt:)` returns a definitive answer (finding 1, first pass).
-    /// `resolveEdgeDirection` originally had a second use — a chord-parallel-to-the-candidate-axis
-    /// check standing in for "is this edge a straight seam" — but that check was never true for a
+    /// `resolveEdgeDirection` originally had a second use, a chord-parallel-to-the-candidate-axis
+    /// check standing in for "is this edge a straight seam", but that check was never true for a
     /// straight seam on a *cone* (a cone's generatrix meets its axis at the cone's own nonzero
     /// half-angle, never 0) and could misfire true for a helical edge whose two-point secant
     /// happens to land near-parallel to the axis by coincidence of the sweep angle (both findings
@@ -303,7 +311,7 @@ extension BRepGraph {
     /// drifting from the canonical one (`docs/reference/Surface-Analysis.md`'s "ten times looser
     /// than `Precision::Confusion()`" note; #494/#529 are whole issues about exactly this).
     /// Verified, not assumed, that the tighter value is safe here: swapped in and re-ran the full
-    /// `OCCTBRepGraphTests` and `OCCTMiscTests` targets (#894 finding 6, second pass) — no
+    /// `OCCTBRepGraphTests` and `OCCTMiscTests` targets (#894 finding 6, second pass), no
     /// behavior changed, since a genuine adjacent-face-axis comparison (either the identical
     /// `TopoDS_Face` read twice, or a BOP-split piece sharing the same analytic `Geom_Surface`
     /// handle) agrees to within floating-point noise far tighter than even 1e-12, while two
@@ -314,12 +322,12 @@ extension BRepGraph {
     /// provenance claim above.** `axesAgree` below compares it against `|dot(a, b)| - 1|`, not
     /// against an angle from `acos`. For unit vectors separated by a small angle θ,
     /// `1 - |cos θ| ≈ θ²/2`, so the guard actually admits any θ up to
-    /// `sqrt(2 × OCCTPrecision.angular) ≈ 1.41e-6` rad — about six orders of magnitude looser than
+    /// `sqrt(2 × OCCTPrecision.angular) ≈ 1.41e-6` rad, about six orders of magnitude looser than
     /// `Precision::Angular()`'s own 1e-12 rad, and looser than a direct `acos(dot(a, b)) <
     /// OCCTPrecision.angular` comparison would be by the same factor (#914 review, second round).
     /// Not a live bug: on a 100mm part that's ~0.14 µm of divergence over the part's length,
     /// harmless in practice and well inside the margin the verification paragraph above already
-    /// measured (floating-point-noise agreement vs. orders-of-magnitude disagreement) — but the
+    /// measured (floating-point-noise agreement vs. orders-of-magnitude disagreement), but the
     /// quantity being compared is `angular²/2`-equivalent, not `angular` itself, and a future
     /// tightening of this constant should account for the squaring.
     private static let axisDirectionAgreementCosineTolerance = OCCTPrecision.angular
@@ -328,7 +336,7 @@ extension BRepGraph {
     ///
     /// - ``axesAgree(_:_:)``: the perpendicular offset between one candidate axis's origin and
     ///   the line through another, so two same-diameter but genuinely distinct bores don't
-    ///   count as one (finding 1, first pass). Used directly, unmodified — the two faces being
+    ///   count as one (finding 1, first pass). Used directly, unmodified, the two faces being
     ///   compared here are either the identical `TopoDS_Face` read twice or a BOP-split piece
     ///   sharing the same analytic `Geom_Surface` handle, so machine precision is the right bar.
     /// - ``coaxialCrossSection(of:bounds:start:end:axis:edgeTolerance:)``: the FLOOR under how
@@ -338,17 +346,17 @@ extension BRepGraph {
     ///   this floor)`, not this constant alone: a real edge that has survived a Boolean/fillet
     ///   commonly measures 1e-4-1e-3, far looser than this machine-precision value, and this
     ///   constant alone rejected genuine circular rims on exactly that kind of edge (#894
-    ///   finding 2, fifth pass). The floor still applies to a pristine, machine-precision edge —
+    ///   finding 2, fifth pass). The floor still applies to a pristine, machine-precision edge,
     ///   `max` never makes the check LOOSER than this value, only ever loosens it upward to match
     ///   what the edge itself already measures.
     ///
     /// A fixed absolute threshold, like ``degeneracyEpsilon`` above, not a fraction of model
-    /// scale. `OCCTPrecision.confusion` (`Precision::Confusion()`, 1e-7) — the canonical "points
+    /// scale. `OCCTPrecision.confusion` (`Precision::Confusion()`, 1e-7), the canonical "points
     /// closer than this are 'same'" distance, not a hand-invented literal, for the same reason as
     /// ``axisDirectionAgreementCosineTolerance`` above (#894 finding 6, second pass); also
     /// verified against the full test sweep described there. This is 10x tighter than the `1e-6`
     /// it replaces and than `Shape.revolutionAxes(tolerance:)`'s own default (`ShapeAxis.swift`)
-    /// and the bridge-side `axesCoincide` it wraps (`OCCTBridge_Topology.mm`) — not because either
+    /// and the bridge-side `axesCoincide` it wraps (`OCCTBridge_Topology.mm`), not because either
     /// is called from here (that dedup runs in the C++ layer over every face of a whole shape;
     /// this code only ever compares the 1-2 faces adjacent to a single edge, so there's no shared
     /// function to actually call across that boundary), but so a future retune of one is at least
@@ -373,11 +381,11 @@ extension BRepGraph {
     /// `extract`, and failing with `.notApplicable`/`.missingGeometry` as appropriate.
     ///
     /// Shared by `resolveFace(_:)` and `resolveEdge(_:)` below, which used to duplicate this
-    /// unwrap→kind-guard→extract→success shape independently — the same
+    /// unwrap→kind-guard→extract→success shape independently, the same
     /// `unwrapTopology(ref)` → kind check → `shape(nodeKind:nodeIndex:)` → first-element →
     /// success-tuple steps, differing only in the `NodeKind` and the extracted type (#897
     /// review, third pass, finding 1). Unlabeled, like `projectedNormal(on:at:)` below, for the
-    /// same reason (`okf/policies/code-style.md`) — every call site of `resolveFace(_:)`/
+    /// same reason (`okf/policies/code-style.md`), every call site of `resolveFace(_:)`/
     /// `resolveEdge(_:)` already destructures positionally, never by label, so the labels those
     /// two used to bake in were pure documentation, costless to drop (#897 review, third pass).
     private func resolveTopologyNode<T>(
@@ -434,8 +442,8 @@ extension BRepGraph {
     /// Face-representative point only, sampled at the face's UV-domain midpoint,
     /// without evaluating the normal.
     ///
-    /// Used by `resolveVertexPoint`'s face-ref fallback, which — unlike
-    /// `resolveFaceOrigin`'s callers — only ever reads the point, so this skips the
+    /// Used by `resolveVertexPoint`'s face-ref fallback, which, unlike
+    /// `resolveFaceOrigin`'s callers, only ever reads the point, so this skips the
     /// unused `normal(atU:v:)` evaluation `resolveFaceOrigin`'s `uvMidpointSample()`
     /// would otherwise pay for on every `.byThreePoints`/`.tangentToFace(at:)`
     /// resolution through this path (#897 review, finding 9).
@@ -455,34 +463,34 @@ extension BRepGraph {
     /// the point actually used.
     ///
     /// That returned point is `point` itself only when `point` already lies on
-    /// `face` (#897 review, finding 2) — closer to the truth than the raw `point`,
+    /// `face` (#897 review, finding 2), closer to the truth than the raw `point`,
     /// not a guaranteed on-face location: `Face.project(point:)` bounds its search to
     /// `face`'s UV bounds (`BRepTools::UVBounds`, a rectangular box in parameter
     /// space), not the exact trimmed boundary, so for a non-convex or holed face the
     /// result can land inside that box but outside the real trimmed region (#914
-    /// review, finding 3 — the specific "point past a face's v-range converges
+    /// review, finding 3, the specific "point past a face's v-range converges
     /// anyway" reproducer that finding proposed was checked directly against the
     /// bridge and does NOT reproduce: `GeomAPI_ProjectPointOnSurf`'s bounded
     /// constructor genuinely constrains convergence to those bounds, confirmed with a
     /// cylindrical face trimmed to `v ∈ [0, 10]`, projecting a point at `v = 25` on
-    /// the same infinite cylinder — `project(point:)` correctly returns `nil`, not a
+    /// the same infinite cylinder, `project(point:)` correctly returns `nil`, not a
     /// point at `v = 25`).
     ///
     /// Falls back to the UV-midpoint sample (point AND normal together, so the two
-    /// stay mutually consistent) when the projection itself fails to converge —
+    /// stay mutually consistent) when the projection itself fails to converge,
     /// `nil`, not just a defensive guard: `GeomAPI_ProjectPointOnSurf`'s gradient
     /// search has no stationary point to find for a point equidistant from an entire
     /// symmetric surface, e.g. a sphere's or torus's own center projected onto its
     /// own lateral face (measured directly, #897 review, second xhigh pass, finding
     /// 1/3). Falls back to the UV-midpoint normal ALONE, keeping the real projected
     /// point as the origin, when the projection succeeds but the local normal at
-    /// that exact location is undefined — a genuine parametric singularity (e.g. a
+    /// that exact location is undefined, a genuine parametric singularity (e.g. a
     /// cone apex) distinct from a projection failure; `projection.point` there is
     /// still within `face`'s UV bounds, with the same box-vs-exact-boundary caveat
     /// as above.
     ///
     /// Shared by `resolveFaceNormal` (`.tangentToFace`) and `resolveFaceAxisDirection`'s
-    /// no-`primaryAxis` fallback (`.normalToFace`) — both used to duplicate this same
+    /// no-`primaryAxis` fallback (`.normalToFace`), both used to duplicate this same
     /// project→normal→fallback shape independently (#897 review, second xhigh pass,
     /// finding 9).
     ///
@@ -509,7 +517,7 @@ extension BRepGraph {
     /// Used by `.tangentToFace` so the plane is tangent at the requested point, not
     /// at the face's unrelated UV midpoint (#879). `face.normal(atU:v:)` reports
     /// `nil` at a genuine parametric singularity (`GeomLProp_SLProps::IsNormalDefined()`
-    /// false — the two tangent directions coincide, not merely shrink; see
+    /// false, the two tangent directions coincide, not merely shrink; see
     /// `docs/reference/Face.md`'s `normal` entry). Before this point-specific
     /// resolution existed, `tangentToFace` always used the UV-midpoint normal and so
     /// always succeeded for any face with valid `uvBounds`; ``projectedNormal(on:at:)``'s
@@ -531,58 +539,58 @@ extension BRepGraph {
     /// doc promises.
     ///
     /// The surface's own axis of revolution (`Face.primaryAxis`) for
-    /// cylindrical/conical/toroidal/revolved faces — an ALLOW-list, not a deny-list,
+    /// cylindrical/conical/toroidal/revolved faces, an ALLOW-list, not a deny-list,
     /// so a future `ShapeAxis.Kind` this file doesn't yet know about defaults to the
     /// safe normal-based fallback below rather than silently being treated as a
-    /// genuine axis (PR #897 review, finding 8). NOT the same allow-list as the
+    /// genuine axis (PR #897 review, finding 8), NOT the same allow-list as the
     /// sibling `revolutionAxis(ofEdgeAt:)` a few dozen lines above, despite an earlier
     /// version of this comment claiming so: that one only accepts `.cylinder`/`.cone`
-    /// (#897 review, third pass) — `.torus`/`.revolution` faces have a genuine
+    /// (#897 review, third pass), `.torus`/`.revolution` faces have a genuine
     /// `primaryAxis` this branch correctly uses, but an edge merely adjacent to one
     /// doesn't get the same recognition from `alongEdge`, a real (if narrow)
     /// inconsistency between the two `Construction*` APIs, not a documentation bug to
-    /// paper over — tracked, not fixed, here.
+    /// paper over, tracked, not fixed, here.
     ///
-    /// The returned point is `point` projected onto the true axis line — `axis.origin
-    /// + ((point - axis.origin) · direction) * direction` — not `point` itself: a
+    /// The returned point is `point` projected onto the true axis line, `axis.origin
+    /// + ((point - axis.origin) · direction) * direction`, not `point` itself: a
     /// true rotation axis's direction is the same everywhere on the surface, but its
     /// LOCATION is not `point` unless `point` already happens to sit on that line,
     /// which it generally doesn't (a vertex `at` names is usually on the surface,
     /// offset from the true centerline by the cylinder's own radius). Pairing the
     /// correct direction with an off-axis point would describe a different line
-    /// entirely — parallel to, but not coincident with, the true axis (#897 review,
+    /// entirely, parallel to, but not coincident with, the true axis (#897 review,
     /// third pass). Kept edge-local rather than snapped to `axis.origin` itself
     /// (which can be far from `point`, e.g. a cylinder's base under a rim near its
     /// top), matching `resolveEdgeDirection`'s identical projection a few dozen lines
     /// below.
     ///
-    /// Falls back to ``projectedNormal(on:at:)`` — the local surface normal at `point`'s
-    /// own projected location, and the point it was actually evaluated at — for planes
+    /// Falls back to ``projectedNormal(on:at:)``, the local surface normal at `point`'s
+    /// own projected location, and the point it was actually evaluated at, for planes
     /// and free-form/BSpline faces, which have no `primaryAxis` at all: the same
     /// point-aware projection `resolveFaceNormal` uses for `tangentToFace`, so the
     /// direction varies with `point`, and its paired origin is never a different point
     /// than the one the direction was measured at (#897 review, finding 4 + second
     /// xhigh pass finding 2).
     ///
-    /// Falls back to the UV-midpoint SAMPLE — point and normal together, not
+    /// Falls back to the UV-midpoint SAMPLE, point and normal together, not
     /// `projectedNormal(on:at:)`'s point-aware resolution above, but also not the raw
-    /// `point` paired with an unrelated normal — for `.extrusion` and `.sphere`,
+    /// `point` paired with an unrelated normal, for `.extrusion` and `.sphere`,
     /// which DO have a `primaryAxis` but not a genuine one: extrusion's `direction`
-    /// is the sweep direction of `Geom_SurfaceOfLinearExtrusion` — tangent to the
+    /// is the sweep direction of `Geom_SurfaceOfLinearExtrusion`, tangent to the
     /// surface, not a normal. Sphere has no intrinsic rotation axis at all (it's
     /// symmetric about every axis through its center), so
-    /// `gp_Sphere::Position().Direction()` — what `primaryAxis` reports for a sphere
-    /// — is just the arbitrary construction-frame pole (`FeatureRecognition.swift`'s
+    /// `gp_Sphere::Position().Direction()`, what `primaryAxis` reports for a sphere
+    ///, is just the arbitrary construction-frame pole (`FeatureRecognition.swift`'s
     /// `isMaterialRadiallyInward` already carries this same exclusion for the
     /// identical reason). These two are deliberately kept off the point-aware path: a
     /// sphere's TRUE local normal at its own pole is parallel to this very (excluded)
-    /// axis — the radial direction from center — so making this branch point-aware
+    /// axis, the radial direction from center, so making this branch point-aware
     /// there would silently reproduce the excluded axis by another route at exactly
     /// the vertex the exclusion exists to guard (see
     /// `normalToFaceSphereFallsBackToNormal`). But pairing the raw, possibly off-face
     /// `point` with a normal sampled at the UNRELATED UV midpoint is its own
-    /// origin/direction mismatch (#897 review, third pass) — the same class of bug
-    /// this whole function exists to fix elsewhere — so both come from the UV
+    /// origin/direction mismatch (#897 review, third pass), the same class of bug
+    /// this whole function exists to fix elsewhere, so both come from the UV
     /// midpoint together instead.
     private func resolveFaceAxisDirection(_ ref: TopologyRef, at point: SIMD3<Double>) -> Result<
         (SIMD3<Double>, SIMD3<Double>), ConstructionResolutionError
@@ -610,13 +618,13 @@ extension BRepGraph {
         }
     }
 
-    /// The face's real area centroid (`Face.surfaceInertia.centerOfMass`) — the
+    /// The face's real area centroid (`Face.surfaceInertia.centerOfMass`), the
     /// same quantity `ShapeMeasurements.measure()` reports for the same face,
     /// not the UV-midpoint approximation `resolveFaceOrigin` uses (#884).
     ///
     /// `centerOfMass` is nil exactly when `area == 0` at the Swift level (see
     /// `MassProperties.swift`), but the bridge function behind it (`OCCTBRepGPropSinert`)
-    /// catches any exception and returns a zero-initialized result on failure too — so a
+    /// catches any exception and returns a zero-initialized result on failure too, so a
     /// self-intersecting or otherwise ill-conditioned face whose `BRepGProp_Sinert`
     /// computation genuinely fails is indistinguishable, at this layer, from one that's
     /// truly zero-area. The failure message says so rather than diagnosing a specific
@@ -636,8 +644,8 @@ extension BRepGraph {
 
     /// The true rotation axis of a cylindrical/conical edge, read off its adjacent face(s).
     ///
-    /// Collects every adjacent face's ``Face/primaryAxis`` that is a cylinder or cone — the two
-    /// surface kinds `ConstructionAxis.alongEdge`'s own doc promises (#883) — and returns a
+    /// Collects every adjacent face's ``Face/primaryAxis`` that is a cylinder or cone, the two
+    /// surface kinds `ConstructionAxis.alongEdge`'s own doc promises (#883), and returns a
     /// definitive axis only when every candidate agrees with the first, per ``axesAgree(_:_:)``.
     /// An edge at a branch (a T-junction between two non-coaxial cylindrical faces, or any
     /// blended transition) has more than one disagreeing candidate; `nil` there tells the caller
@@ -669,7 +677,7 @@ extension BRepGraph {
     ///
     /// Their directions must be parallel or anti-parallel within
     /// ``axisDirectionAgreementCosineTolerance``, and `other`'s origin must lie within
-    /// ``axisOriginAgreementDistanceTolerance`` of the line through `reference` — not merely a
+    /// ``axisOriginAgreementDistanceTolerance`` of the line through `reference`, not merely a
     /// parallel offset line, e.g. two same-diameter but genuinely distinct bores (#894 finding 1).
     ///
     /// `internal`, not `private`, for the same testability reason as ``revolutionAxis(ofEdgeAt:)``
@@ -688,7 +696,7 @@ extension BRepGraph {
         return simd_length(perpendicular) < Self.axisOriginAgreementDistanceTolerance
     }
 
-    /// - Returns: `(origin, direction)`, unlabeled — an internal function returning a tuple with
+    /// - Returns: `(origin, direction)`, unlabeled, an internal function returning a tuple with
     ///   baked-in labels forces every call site whose own labels differ into a two-step
     ///   bind-then-relabel instead of a direct return (`okf/policies/code-style.md`; #914 review,
     ///   second round). The public `resolve(_ axis:)` above returns this directly and its own
@@ -706,17 +714,17 @@ extension BRepGraph {
 
             // Only a curved edge (typically a circular arc) can coincide with a
             // cylindrical/conical face's true rotation axis; a linear edge always resolves to its
-            // own line. Gate on curveType first — cheap, no bridge call — so a straight edge never
+            // own line. Gate on curveType first, cheap, no bridge call, so a straight edge never
             // pays for the face walk in `revolutionAxis` (#894 finding 4, first pass), nor for the
             // arc-length degeneracy check below (#894 finding 3, fifth pass): a line can never be
             // closed with a zero secant the way a full circle can (see the comment below), so the
-            // cheap secant-based check the pre-round-3 code used is still correct for a line —
+            // cheap secant-based check the pre-round-3 code used is still correct for a line,
             // only the non-line path below needs the true arc length.
             if edge.curveType == .line {
                 // `edge.point(at:)` directly against the already-held `bounds` tuple, not a
                 // fraction→point helper that would re-derive `parameterBounds` internally: a
                 // redundant bridge round-trip when `bounds` is already in scope from the guard
-                // above (#897 review, second xhigh pass, finding 8) — this file is otherwise
+                // above (#897 review, second xhigh pass, finding 8), this file is otherwise
                 // deliberate about avoiding exactly this class of extra OCCT call (see the
                 // comments a few lines below).
                 guard let start = edge.point(at: bounds.first),
@@ -732,7 +740,7 @@ extension BRepGraph {
             // The edge's own degeneracy is checked before any axis lookup, and by true arc
             // length rather than the endpoint secant a few lines below: a full-circle rim is
             // legitimately closed (start == end, secant == 0) without being remotely degenerate
-            // — that's exactly why the axis redirect below exists at all — so this can't reuse
+            //, that's exactly why the axis redirect below exists at all, so this can't reuse
             // the secant the way the fallback path does. Unconditional (for every non-line edge)
             // so a genuinely near-zero-length sliver edge (a leftover fillet/boolean artifact)
             // still reports `.degenerate` even when it happens to sit next to one clean
@@ -753,10 +761,10 @@ extension BRepGraph {
             }
 
             // The walk below is also where the answer can still legitimately come back nil (no
-            // adjacent cyl/cone face, or several that disagree — #894 finding 1, first pass). A
+            // adjacent cyl/cone face, or several that disagree, #894 finding 1, first pass). A
             // candidate found there is only actually used once `coaxialCrossSection` confirms the
             // edge is genuinely a circular cross-section of it, not merely non-linear and next to
-            // the right kind of face (#894 finding 1, third pass) — see that function's doc for
+            // the right kind of face (#894 finding 1, third pass), see that function's doc for
             // the elliptical-rim, reparameterized-straight-seam, and helical-edge cases it exists
             // to reject.
             if let axis = revolutionAxis(ofEdgeAt: node.index),
@@ -764,26 +772,26 @@ extension BRepGraph {
                     of: edge, bounds: bounds, start: start, end: end, axis: axis,
                     edgeTolerance: edgeTolerance(node.index))
             {
-                // `axis.direction`'s sign comes from `Face.primaryAxis` — the adjacent surface's
-                // own placement convention — which has nothing to do with which of the edge's two
+                // `axis.direction`'s sign comes from `Face.primaryAxis`, the adjacent surface's
+                // own placement convention, which has nothing to do with which of the edge's two
                 // ends is `bounds.first`. Every other path through this function derives its sign
                 // from the edge's own start->end order (`dir = end - start` below); re-derive it
                 // here the same way so a caller building `throughAxis` off two edges that trace the
                 // "same" physical rim/arc with opposite parameterization gets consistent, sign-aware
                 // results instead of whatever the surface happened to store (#894 finding 2, second
-                // pass). `chord` itself can't do this — `coaxialCrossSection` just confirmed it's
+                // pass). `chord` itself can't do this, `coaxialCrossSection` just confirmed it's
                 // (near-)perpendicular to the axis, so its dot with `axisDirection` is noise, not
                 // signal. Use the tangent at the edge's own start point instead: for a point
                 // parameterized with increasing angle around `axisDirection` in a right-handed
                 // frame, `cross(radial, tangent)` is `radius^2 * axisDirection`, so its sign against
-                // `axisDirection` says whether increasing parameter — start->end — agrees with
+                // `axisDirection` says whether increasing parameter, start->end, agrees with
                 // `axisDirection` or runs opposite it.
                 //
                 // `edge.tangent(at:)` can return nil even where `edge.point(at:)` already
                 // succeeded (e.g. a first-derivative singularity on a reparameterized curve).
                 // Failing loudly here rather than silently keeping the unflipped `Face.primaryAxis`
                 // sign matches this function's own "fail on ambiguity" convention elsewhere (#894
-                // finding 1, fifth pass) — a plausible-looking wrong sign is worse than an explicit
+                // finding 1, fifth pass), a plausible-looking wrong sign is worse than an explicit
                 // `.degenerate`.
                 guard let tangentAtStart = edge.tangent(at: bounds.first) else {
                     return .failure(
@@ -797,7 +805,7 @@ extension BRepGraph {
                 }
                 // Keep the origin edge-local: project the edge's own start point onto the resolved
                 // axis line rather than returning the adjacent surface's own placement origin,
-                // which can be far from the edge itself — e.g. a cylinder's base under a rim near
+                // which can be far from the edge itself, e.g. a cylinder's base under a rim near
                 // its top (#894 finding 2, first pass). Invariant to the sign flip above: negating
                 // both `axisDirection` and the dot product it's multiplied by leaves the product
                 // unchanged.
@@ -812,12 +820,12 @@ extension BRepGraph {
         }
     }
 
-    /// Whether `edge` is genuinely a circular cross-section of `axis` — a closed rim, or an open
-    /// arc bounding one — rather than merely non-linear and adjacent to the right kind of face.
+    /// Whether `edge` is genuinely a circular cross-section of `axis`, a closed rim, or an open
+    /// arc bounding one, rather than merely non-linear and adjacent to the right kind of face.
     ///
     /// Every point of an edge that bounds a cylindrical or conical face already sits at that
     /// surface's own radius from the axis by construction, so radius-from-axis alone can't tell a
-    /// true circular rim from the elliptical edge an OBLIQUE plane cuts from a cylinder — both lie
+    /// true circular rim from the elliptical edge an OBLIQUE plane cuts from a cylinder, both lie
     /// exactly on the wall (#894 finding 1, third pass). What does distinguish them is height
     /// along the axis: a genuine perpendicular cross-section's points all sit at the same signed
     /// distance along `axis.direction`; an oblique-cut ellipse's height varies as you go around
@@ -831,17 +839,17 @@ extension BRepGraph {
     /// line and the most honest available answer for a helix.
     ///
     /// Samples `start`, `end`, and three interior points rather than just the two endpoints,
-    /// since two points on any curve are trivially "coplanar" and "equidistant" — the check needs
+    /// since two points on any curve are trivially "coplanar" and "equidistant", the check needs
     /// enough samples to actually see curvature/tilt across the edge's own span, not just at its
     /// ends.
     ///
     /// The height/radius comparison tolerance is `max(edgeTolerance,
     /// axisOriginAgreementDistanceTolerance)`, not the latter alone: a real edge that has survived
-    /// a Boolean/fillet routinely measures `BRep_Tool::Tolerance` in the 1e-4-1e-3 range —
-    /// looser than the machine-precision `axisOriginAgreementDistanceTolerance` floor — and
+    /// a Boolean/fillet routinely measures `BRep_Tool::Tolerance` in the 1e-4-1e-3 range,
+    /// looser than the machine-precision `axisOriginAgreementDistanceTolerance` floor, and
     /// comparing sampled noise against that floor alone rejected genuine circular rims outright
     /// (#894 finding 2, fifth pass). `edgeTolerance` is the caller's own measured value for this
-    /// edge (`BRepGraph.edgeTolerance(_:)`, wrapping `BRep_Tool::Tolerance`), not invented here —
+    /// edge (`BRepGraph.edgeTolerance(_:)`, wrapping `BRep_Tool::Tolerance`), not invented here,
     /// this function stays a pure geometric test of its arguments, with no lookup of its own.
     /// `internal`, not `private`, so `ConstructionAxisTests` can exercise the tolerance derivation
     /// directly against controlled sample noise, for the same testability reason as
@@ -893,8 +901,8 @@ extension BRepGraph {
         return unwrapTopology(ref).flatMap {
             node -> Result<SIMD3<Double>, ConstructionResolutionError> in
             guard node.kind == .vertex else {
-                // Accept a face ref too — use its UV-midpoint sample, not a true
-                // centroid (see resolveFaceCentroid) — for convenience in byThreePoints etc.
+                // Accept a face ref too, use its UV-midpoint sample, not a true
+                // centroid (see resolveFaceCentroid), for convenience in byThreePoints etc.
                 if node.kind == .face {
                     return resolveFacePoint(ref)
                 }

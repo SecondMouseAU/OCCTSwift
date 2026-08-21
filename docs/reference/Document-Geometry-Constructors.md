@@ -1,15 +1,15 @@
 ---
-title: Document — Geometry Constructors & Pipe Shells
+title: Document. Geometry Constructors & Pipe Shells
 parent: API Reference
 ---
 
-# Document — Geometry Constructors & Pipe Shells
+# Document. Geometry Constructors & Pipe Shells
 
 This page covers geometry construction and analysis utilities added across v0.105.0–v0.106.0 in `Document.swift`: 2D parabola constructors, uniform arc-length sampling, curve/surface concatenation and knot splitting, bounding-box extensions, geometric property helpers, shape reshaping, pipe-shell sweeping, directory/file access, quadric intersections, XCAF explorer queries, Unicode utilities, and shape-analysis diagnostics. For the core document lifecycle, shape tools, and STEP/IGES I/O see the main [Document](Document.md) page.
 
 ## Topics
 
-- [GC_MakeParabola2d](#gc_makeparabola2d) · [GCPnts_UniformAbscissa](#gcpnts_uniformabscissa) · [GeomConvert CompCurveToBSplineCurve](#geomconvert-compculvetobsplinecurve) · [Geom2dConvert CompCurveToBSplineCurve](#geom2dconvert-compcurvetobsplinecurve) · [Knot splitting, the deprecated v0.105.0 spellings](#geomconvert-bsplinesurfaceknotsplitting--geom2dconvert-bsplinecurveknotsplitting) · [BndLib extras](#bndlib-extras) · [GProp Torus](#gprop-torus) · [BRepTools_ReShape](#breptools_reshape) · [BRepTools_Substitution](#breptools_substitution) · [BRepLib_MakeVertex](#breplib_makevertex) · [BRepFill_PipeShell](#brepfill_pipeshell) · [OSD_Directory](#osd_directory) · [IntAna Cone-Sphere extensions](#intana-cone-sphere-extensions) · [XCAFPrs_DocumentExplorer extensions](#xcafprs_documentexplorer-extensions) · [Resource_Unicode](#resource_unicode) · [GProp weighted point sets](#gprop-weighted-point-sets) · [Draft info types](#draft-info-types) · [GeomLib_LogSample](#geomlib_logsample) · [GC_MakeConicalSurface](#gc_makeconicalsurface) · [GC_MakeCylindricalSurface](#gc_makecylindricalsurface) · [GC_MakeTrimmedCone](#gc_maketrimmedcone) · [GC_MakeTrimmedCylinder](#gc_maketrimmedcylinder) · [BRepLib_MakeEdge2d extensions](#breplib_makeedge2d-extensions) · [ShapeAnalysis_Wire](#shapeanalysis_wire) · [ShapeAnalysis_Edge](#shapeanalysis_edge) · [OSD_DirectoryIterator](#osd_directoryiterator) · [OSD_FileIterator](#osd_fileiterator) · [BRepFill_PipeShell extensions](#brepfill_pipeshell-extensions)
+- [GC_MakeParabola2d](#gc_makeparabola2d) · [GCPnts_UniformAbscissa](#gcpnts_uniformabscissa) · [GeomConvert CompCurveToBSplineCurve](#geomconvert-compculvetobsplinecurve) · [Geom2dConvert CompCurveToBSplineCurve](#geom2dconvert-compcurvetobsplinecurve) · [Knot splitting, the deprecated v0.105.0 spellings](#geomconvert-bsplinesurfaceknotsplitting--geom2dconvert-bsplinecurveknotsplitting) · [BndLib extras](#bndlib-extras) · [GProp Torus](#gprop-torus) · [BRepTools_ReShape](#breptools_reshape) · [BRepTools_Substitution](#breptools_substitution) · [BRepLib_MakeVertex](#breplib_makevertex) · [BRepFill_PipeShell](#brepfill_pipeshell) · [OSD_Directory](#osd_directory) · [IntAna Cone-Sphere extensions](#intana-cone-sphere-extensions) · [XCAFPrs_DocumentExplorer extensions](#xcafprs_documentexplorer-extensions) · [Resource_Unicode](#resource_unicode) · [GProp weighted point sets](#gprop-weighted-point-sets) · [GeomLib_LogSample](#geomlib_logsample) · [GC_MakeConicalSurface](#gc_makeconicalsurface) · [GC_MakeCylindricalSurface](#gc_makecylindricalsurface) · [GC_MakeTrimmedCone](#gc_maketrimmedcone) · [GC_MakeTrimmedCylinder](#gc_maketrimmedcylinder) · [BRepLib_MakeEdge2d extensions](#breplib_makeedge2d-extensions) · [ShapeAnalysis_Wire](#shapeanalysis_wire) · [ShapeAnalysis_Edge](#shapeanalysis_edge) · [OSD_DirectoryIterator](#osd_directoryiterator) · [OSD_FileIterator](#osd_fileiterator) · [BRepFill_PipeShell extensions](#brepfill_pipeshell-extensions)
 
 ---
 
@@ -26,7 +26,7 @@ public static func gceParabola(center: SIMD2<Double>, direction: SIMD2<Double>,
                                 focalDistance: Double) -> Curve2D?
 ```
 
-- **Parameters:** `center` — origin of the parabola axis; `direction` — X-direction of the axis; `focalDistance` — distance from vertex to focus.
+- **Parameters:** `center`, origin of the parabola axis; `direction`, X-direction of the axis; `focalDistance`, distance from vertex to focus.
 - **Returns:** A `Curve2D` wrapping a `Geom2d_Parabola`, or `nil` if construction fails.
 - **OCCT:** `GC_MakeParabola2d`
 - **Example:**
@@ -47,7 +47,7 @@ public static func gceParabola(directrixPoint: SIMD2<Double>, directrixDirection
                                 focus: SIMD2<Double>) -> Curve2D?
 ```
 
-- **Parameters:** `directrixPoint` — a point on the directrix; `directrixDirection` — direction of the directrix; `focus` — the focus point.
+- **Parameters:** `directrixPoint`, a point on the directrix; `directrixDirection`, direction of the directrix; `focus`, the focus point.
 - **Returns:** A `Curve2D` wrapping a `Geom2d_Parabola`, or `nil` on failure.
 - **OCCT:** `GC_MakeParabola2d` (directrix-focus constructor)
 - **Example:**
@@ -75,7 +75,10 @@ public func uniformAbscissa(pointCount: Int) -> [Double]?
 
 - **Parameters:** `pointCount`, the number of sample points. Must be at least 2, else `nil`. OCCT documents that precondition but enforces it with a `Raise_if`, which the pinned Release kernel compiles out, so a request for zero used to come back with five parameters (#501).
 - **Returns:** Array of curve parameter values, or `nil` if the edge is invalid or sampling fails.
-- **OCCT:** `GCPnts_UniformAbscissa` (by number of points)
+- **OCCT:** `GCPnts_UniformAbscissa` (by number of points). The edge is read through a
+  `BRepAdaptor_Curve`, whose constructor dereferences a null shape, so a null shape (from
+  `Shape.nullified`) used to crash the process here; it answers `nil` now (#1035, measured in
+  `Scripts/repro/1035-unwrap-guard/`).
 - **Example:**
   ```swift
   if let edge = Shape.makeVertex(at: .zero),
@@ -94,7 +97,7 @@ Uniformly sample an edge by arc distance; returns parameter values.
 public func uniformAbscissa(distance: Double) -> [Double]?
 ```
 
-- **Parameters:** `distance` — arc-length step between consecutive sample points.
+- **Parameters:** `distance`, arc-length step between consecutive sample points.
 - **Returns:** Array of curve parameter values, or `nil` on failure.
 - **OCCT:** `GCPnts_UniformAbscissa` (by chord/arc length)
 - **Example:**
@@ -103,6 +106,9 @@ public func uniformAbscissa(distance: Double) -> [Double]?
       // params spaced 1.0 unit apart along the edge
   }
   ```
+
+A null shape (from `Shape.nullified`) used to crash the process in the `BRepAdaptor_Curve`
+constructor behind this sampler; it answers `nil` now (#1035).
 
 ---
 
@@ -116,7 +122,9 @@ public func uniformAbscissa(pointCount: Int, u1: Double, u2: Double) -> [Double]
 
 - **Parameters:** `pointCount`, the number of points, at least 2 (else `nil`, see above); `u1`, `u2`, the parameter range on the underlying curve.
 - **Returns:** Array of parameter values, or `nil` on failure.
-- **OCCT:** `GCPnts_UniformAbscissa` (range variant, by count)
+- **OCCT:** `GCPnts_UniformAbscissa` (range variant, by count). A null shape (from
+  `Shape.nullified`) used to crash the process in the `BRepAdaptor_Curve` constructor; it
+  answers `nil` now (#1035).
 - **Example:**
   ```swift
   if let params = edge.uniformAbscissa(pointCount: 5, u1: 0.0, u2: .pi) {
@@ -134,7 +142,7 @@ Uniformly sample an edge by arc distance within a parameter range.
 public func uniformAbscissa(distance: Double, u1: Double, u2: Double) -> [Double]?
 ```
 
-- **Parameters:** `distance` — arc-length step; `u1`, `u2` — parameter range.
+- **Parameters:** `distance`, arc-length step; `u1`, `u2`, parameter range.
 - **Returns:** Array of parameter values, or `nil` on failure.
 - **OCCT:** `GCPnts_UniformAbscissa` (range variant, by distance)
 - **Example:**
@@ -143,6 +151,9 @@ public func uniformAbscissa(distance: Double, u1: Double, u2: Double) -> [Double
       // sampling at 0.5-unit intervals from u=0 to u=2
   }
   ```
+
+A null shape (from `Shape.nullified`) used to crash the process in the `BRepAdaptor_Curve`
+constructor behind this sampler; it answers `nil` now (#1035).
 
 ---
 
@@ -156,7 +167,7 @@ Concatenate multiple bounded 3D curves into a single composite BSpline.
 public static func concatenate(_ curves: [Curve3D], tolerance: Double = 1e-4) -> Curve3D?
 ```
 
-- **Parameters:** `curves` — ordered list of bounded `Curve3D` segments; `tolerance` — continuity tolerance at join points.
+- **Parameters:** `curves`, ordered list of bounded `Curve3D` segments; `tolerance`, continuity tolerance at join points.
 - **Returns:** A `Curve3D` wrapping a `Geom_BSplineCurve`, or `nil` if the list is empty or concatenation fails.
 - **OCCT:** `GeomConvert_CompCurveToBSplineCurve`
 - **Example:**
@@ -180,7 +191,7 @@ Concatenate multiple bounded 2D curves into a single composite BSpline.
 public static func concatenate(_ curves: [Curve2D], tolerance: Double = 1e-4) -> Curve2D?
 ```
 
-- **Parameters:** `curves` — ordered list of bounded `Curve2D` segments; `tolerance` — continuity tolerance at join points.
+- **Parameters:** `curves`, ordered list of bounded `Curve2D` segments; `tolerance`, continuity tolerance at join points.
 - **Returns:** A `Curve2D` wrapping a `Geom2d_BSplineCurve`, or `nil` if the list is empty or concatenation fails.
 - **OCCT:** `Geom2dConvert_CompCurveToBSplineCurve`
 - **Example:**
@@ -194,19 +205,19 @@ public static func concatenate(_ curves: [Curve2D], tolerance: Double = 1e-4) ->
 
 ## GeomConvert BSplineSurfaceKnotSplitting / Geom2dConvert BSplineCurveKnotSplitting
 
-Five entry points documented here — `Surface.bsplineKnotSplitsU(continuity:)`,
+Five entry points documented here, `Surface.bsplineKnotSplitsU(continuity:)`,
 `Surface.bsplineKnotSplitsV(continuity:)`, `Surface.bsplineKnotSplitValues(continuity:)`,
-`Curve2D.bsplineKnotSplits(continuity:)` and `Curve2D.bsplineKnotSplitValues(continuity:)` — are
+`Curve2D.bsplineKnotSplits(continuity:)` and `Curve2D.bsplineKnotSplitValues(continuity:)`, are
 **deprecated as of #562**. They were added in v0.105.0 over the same two analyzers that
 [`Surface.knotSplitting(uContinuity:vContinuity:)`](Surface-Advanced.md#knotsplittingucontinuityvcontinuity)
 and [`Curve2D.splitIndicesAtDiscontinuities(continuity:)`](Curve2D.md) had already been wrapping for
 three releases, and each took one continuity for both parametric directions where the surface's
-canonical call takes one per direction — so they could not ask a question the canonical call could
+canonical call takes one per direction, so they could not ask a question the canonical call could
 not, only fewer of them.
 
 Each now forwards to its canonical sibling; their own bridge functions are gone. The one thing they
-carried that the canonical calls did not — the raw 1-based knot-table indices, rather than the
-parameters those indices resolve to — is now `KnotSplitResult.uSplitIndices` / `.vSplitIndices`.
+carried that the canonical calls did not, the raw 1-based knot-table indices, rather than the
+parameters those indices resolve to, is now `KnotSplitResult.uSplitIndices` / `.vSplitIndices`.
 
 | deprecated | use |
 |---|---|
@@ -241,7 +252,7 @@ public static func ellipse(center: SIMD3<Double>, normal: SIMD3<Double>, xDirect
                             majorRadius: Double, minorRadius: Double, tolerance: Double = 0) -> AnalyticBounds
 ```
 
-- **Parameters:** `center` — ellipse center; `normal` — plane normal; `xDirection` — major-axis direction; `majorRadius`, `minorRadius` — semi-axes; `tolerance` — optional inflation.
+- **Parameters:** `center`, ellipse center; `normal`, plane normal; `xDirection`, major-axis direction; `majorRadius`, `minorRadius`, semi-axes; `tolerance`, optional inflation.
 - **Returns:** `AnalyticBounds` with `min` and `max` corners.
 - **OCCT:** `BndLib_Add3dCurve` (ellipse overload)
 - **Example:**
@@ -262,7 +273,7 @@ public static func cone(center: SIMD3<Double>, axis: SIMD3<Double>,
                          vmin: Double, vmax: Double, tolerance: Double = 0) -> AnalyticBounds
 ```
 
-- **Parameters:** `center` — cone apex reference point; `axis` — cone axis direction; `semiAngle` — half-angle in radians; `refRadius` — radius at `center`; `vmin`, `vmax` — axial parameter range; `tolerance` — optional inflation.
+- **Parameters:** `center`, cone apex reference point; `axis`, cone axis direction; `semiAngle`, half-angle in radians; `refRadius`, radius at `center`; `vmin`, `vmax`, axial parameter range; `tolerance`, optional inflation.
 - **Returns:** `AnalyticBounds`.
 - **OCCT:** `BndLib_AddSurface` (cone overload)
 - **Example:**
@@ -282,7 +293,7 @@ public static func circleArc(center: SIMD3<Double>, normal: SIMD3<Double>,
                                radius: Double, u1: Double, u2: Double, tolerance: Double = 0) -> AnalyticBounds
 ```
 
-- **Parameters:** `center` — circle center; `normal` — plane normal; `radius` — circle radius; `u1`, `u2` — parameter range (radians); `tolerance` — optional inflation.
+- **Parameters:** `center`, circle center; `normal`, plane normal; `radius`, circle radius; `u1`, `u2`, parameter range (radians); `tolerance`, optional inflation.
 - **Returns:** `AnalyticBounds`.
 - **OCCT:** `BndLib_Add3dCurve` (circle-arc overload)
 - **Example:**
@@ -303,7 +314,7 @@ public static func ellipseArc(center: SIMD3<Double>, normal: SIMD3<Double>, xDir
                                u1: Double, u2: Double, tolerance: Double = 0) -> AnalyticBounds
 ```
 
-- **Parameters:** `center`, `normal`, `xDirection` — axis placement; `majorRadius`, `minorRadius` — semi-axes; `u1`, `u2` — parameter range (radians); `tolerance` — optional inflation.
+- **Parameters:** `center`, `normal`, `xDirection`, axis placement; `majorRadius`, `minorRadius`, semi-axes; `u1`, `u2`, parameter range (radians); `tolerance`, optional inflation.
 - **Returns:** `AnalyticBounds`.
 - **OCCT:** `BndLib_Add3dCurve` (ellipse-arc overload)
 - **Example:**
@@ -324,7 +335,7 @@ public static func parabolaArc(center: SIMD3<Double>, normal: SIMD3<Double>, xDi
                                 u1: Double, u2: Double, tolerance: Double = 0) -> AnalyticBounds
 ```
 
-- **Parameters:** `center`, `normal`, `xDirection` — axis placement; `focalDistance` — vertex-to-focus distance; `u1`, `u2` — parameter range; `tolerance` — optional inflation.
+- **Parameters:** `center`, `normal`, `xDirection`, axis placement; `focalDistance`, vertex-to-focus distance; `u1`, `u2`, parameter range; `tolerance`, optional inflation.
 - **Returns:** `AnalyticBounds`.
 - **OCCT:** `BndLib_Add3dCurve` (parabola-arc overload)
 - **Example:**
@@ -345,7 +356,7 @@ public static func hyperbolaArc(center: SIMD3<Double>, normal: SIMD3<Double>, xD
                                  u1: Double, u2: Double, tolerance: Double = 0) -> AnalyticBounds
 ```
 
-- **Parameters:** `center`, `normal`, `xDirection` — axis placement; `majorRadius`, `minorRadius` — semi-axes; `u1`, `u2` — parameter range; `tolerance` — optional inflation.
+- **Parameters:** `center`, `normal`, `xDirection`, axis placement; `majorRadius`, `minorRadius`, semi-axes; `u1`, `u2`, parameter range; `tolerance`, optional inflation.
 - **Returns:** `AnalyticBounds`.
 - **OCCT:** `BndLib_Add3dCurve` (hyperbola-arc overload)
 - **Example:**
@@ -368,7 +379,7 @@ Exact surface area of a full torus: 4π² R r.
 public static func torusSurfaceArea(majorRadius: Double, minorRadius: Double) -> Double
 ```
 
-- **Parameters:** `majorRadius` — distance from torus center to tube center; `minorRadius` — tube radius.
+- **Parameters:** `majorRadius`, distance from torus center to tube center; `minorRadius`, tube radius.
 - **Returns:** Surface area in square units.
 - **OCCT:** `GProp_PEquation` / `GProp_GProps` torus formulas
 - **Example:**
@@ -387,7 +398,7 @@ Exact volume of a full torus: 2π² R r².
 public static func torusVolume(majorRadius: Double, minorRadius: Double) -> Double
 ```
 
-- **Parameters:** `majorRadius` — major radius; `minorRadius` — tube radius.
+- **Parameters:** `majorRadius`, major radius; `minorRadius`, tube radius.
 - **Returns:** Volume in cubic units.
 - **OCCT:** `GProp_GProps` torus formulas
 - **Example:**
@@ -442,7 +453,7 @@ Record removal of a shape from the result.
 public func remove(_ shape: Shape)
 ```
 
-- **Parameters:** `shape` — the sub-shape to delete.
+- **Parameters:** `shape`, the sub-shape to delete.
 - **OCCT:** `BRepTools_ReShape::Remove`
 - **Example:**
   ```swift
@@ -459,7 +470,7 @@ Record replacement of one shape with another.
 public func replace(_ oldShape: Shape, with newShape: Shape)
 ```
 
-- **Parameters:** `oldShape` — shape to replace; `newShape` — the replacement.
+- **Parameters:** `oldShape`, shape to replace; `newShape`, the replacement.
 - **OCCT:** `BRepTools_ReShape::Replace`
 - **Example:**
   ```swift
@@ -476,7 +487,7 @@ Check whether a shape has been registered for removal or replacement.
 public func isRecorded(_ shape: Shape) -> Bool
 ```
 
-- **Parameters:** `shape` — the shape to query.
+- **Parameters:** `shape`, the shape to query.
 - **Returns:** `true` if the shape appears in the context.
 - **OCCT:** `BRepTools_ReShape::IsRecorded`
 - **Example:**
@@ -494,7 +505,7 @@ Apply all recorded modifications and return the rebuilt shape.
 public func apply(to shape: Shape) -> Shape?
 ```
 
-- **Parameters:** `shape` — the top-level shape to rebuild.
+- **Parameters:** `shape`, the top-level shape to rebuild.
 - **Returns:** The reshaped result, or `nil` on failure.
 - **OCCT:** `BRepTools_ReShape::Apply`
 - **Example:**
@@ -514,7 +525,7 @@ Retrieve the replacement value recorded for a specific shape.
 public func value(for shape: Shape) -> Shape?
 ```
 
-- **Parameters:** `shape` — the original shape.
+- **Parameters:** `shape`, the original shape.
 - **Returns:** The recorded replacement, or `nil` if none.
 - **OCCT:** `BRepTools_ReShape::Value`
 - **Example:**
@@ -538,7 +549,7 @@ Replace a sub-shape with one or more new shapes. Pass an empty array to remove t
 public func substitute(oldSubShape: Shape, newSubShapes: [Shape]) -> Shape?
 ```
 
-- **Parameters:** `oldSubShape` — the sub-shape to replace; `newSubShapes` — replacement shapes (empty = removal).
+- **Parameters:** `oldSubShape`, the sub-shape to replace; `newSubShapes`, replacement shapes (empty = removal).
 - **Returns:** A new `Shape` with the substitution applied, or `nil` on failure.
 - **OCCT:** `BRepTools_Substitution::Substitute` + `BRepTools_Substitution::Build`
 - **Example:**
@@ -558,7 +569,7 @@ Check whether a sub-shape was copied (not merely referenced) during substitution
 public func substitutionIsCopied(subshape: Shape) -> Bool
 ```
 
-- **Parameters:** `subshape` — the sub-shape to query.
+- **Parameters:** `subshape`, the sub-shape to query.
 - **Returns:** `true` if the sub-shape was copied.
 - **OCCT:** `BRepTools_Substitution::IsCopied`
 - **Example:**
@@ -578,7 +589,7 @@ Create a vertex `Shape` at a given 3D point using `BRepLib_MakeVertex`.
 public static func makeVertex(at point: SIMD3<Double>) -> Shape?
 ```
 
-- **Parameters:** `point` — 3D coordinates of the vertex.
+- **Parameters:** `point`, 3D coordinates of the vertex.
 - **Returns:** A `TopoDS_Vertex` wrapped as `Shape`, or `nil` on failure.
 - **OCCT:** `BRepLib_MakeVertex`
 - **Example:**
@@ -628,7 +639,7 @@ Create a pipe-shell builder from a spine wire.
 public init?(spine: Shape)
 ```
 
-- **Parameters:** `spine` — a wire `Shape` used as the sweep path.
+- **Parameters:** `spine`, a wire `Shape` used as the sweep path.
 - **Returns:** `nil` if `spine` is not a valid wire or construction fails.
 - **OCCT:** `BRepFill_PipeShell::BRepFill_PipeShell`
 - **Example:**
@@ -649,7 +660,7 @@ Use the Frenet trihedron to orient the profile along the spine.
 public func setFrenet(_ frenet: Bool = true)
 ```
 
-- **Parameters:** `frenet` — `true` to enable Frenet mode (default).
+- **Parameters:** `frenet`, `true` to enable Frenet mode (default).
 - **OCCT:** `BRepFill_PipeShell::SetMode(Standard_Boolean)`
 - **Example:**
   ```swift
@@ -682,7 +693,7 @@ Fix the binormal direction of the trihedron.
 public func setFixed(binormal: SIMD3<Double>)
 ```
 
-- **Parameters:** `binormal` — world-space binormal direction.
+- **Parameters:** `binormal`, world-space binormal direction.
 - **OCCT:** `BRepFill_PipeShell::SetMode(gp_Dir)`
 - **Example:**
   ```swift
@@ -699,7 +710,7 @@ Add a profile wire or vertex at the current (default) position on the spine.
 public func add(profile: Shape)
 ```
 
-- **Parameters:** `profile` — the cross-sectional profile (`TopoDS_Wire` or `TopoDS_Vertex`).
+- **Parameters:** `profile`, the cross-sectional profile (`TopoDS_Wire` or `TopoDS_Vertex`).
 - **OCCT:** `BRepFill_PipeShell::Add`
 - **Example:**
   ```swift
@@ -716,7 +727,7 @@ Add a profile at a specific vertex on the spine.
 public func add(profile: Shape, atVertex vertex: Shape)
 ```
 
-- **Parameters:** `profile` — the cross-sectional profile; `vertex` — a `TopoDS_Vertex` on the spine.
+- **Parameters:** `profile`, the cross-sectional profile; `vertex`, a `TopoDS_Vertex` on the spine.
 - **OCCT:** `BRepFill_PipeShell::Add` (vertex-pinned overload)
 - **Example:**
   ```swift
@@ -734,7 +745,7 @@ Attach a scaling law to a profile so the section varies along the spine.
 public func setLaw(profile: Shape, law: LawFunction)
 ```
 
-- **Parameters:** `profile` — the cross-section profile; `law` — a `LawFunction` driving scale or parameter evolution.
+- **Parameters:** `profile`, the cross-section profile; `law`, a `LawFunction` driving scale or parameter evolution.
 - **OCCT:** `BRepFill_PipeShell::SetLaw`
 - **Example:**
   ```swift
@@ -751,7 +762,7 @@ Set approximation tolerances.
 public func setTolerance(tol3d: Double, boundTol: Double, tolAngular: Double)
 ```
 
-- **Parameters:** `tol3d` — 3D approximation tolerance; `boundTol` — boundary tolerance; `tolAngular` — angular tolerance (radians).
+- **Parameters:** `tol3d`, 3D approximation tolerance; `boundTol`, boundary tolerance; `tolAngular`, angular tolerance (radians).
 - **OCCT:** `BRepFill_PipeShell::SetTolerance`
 - **Example:**
   ```swift
@@ -768,7 +779,7 @@ Set the transition mode between consecutive spine segments.
 public func setTransition(_ mode: PipeShellTransition)
 ```
 
-- **Parameters:** `mode` — `.modified`, `.right`, or `.round`.
+- **Parameters:** `mode`, `.modified`, `.right`, or `.round`.
 - **OCCT:** `BRepFill_PipeShell::SetTransition`
 - **Example:**
   ```swift
@@ -879,7 +890,7 @@ Check whether a directory exists at the given path.
 public static func exists(_ path: String) -> Bool
 ```
 
-- **Parameters:** `path` — file-system path.
+- **Parameters:** `path`, file-system path.
 - **OCCT:** `OSD_Directory::Exists`
 - **Example:**
   ```swift
@@ -897,7 +908,7 @@ Create a directory at the given path.
 public static func create(_ path: String) -> Bool
 ```
 
-- **Parameters:** `path` — file-system path to create.
+- **Parameters:** `path`, file-system path to create.
 - **Returns:** `true` on success.
 - **OCCT:** `OSD_Directory::Build`
 - **Example:**
@@ -935,7 +946,7 @@ Remove a directory at the given path.
 public static func remove(_ path: String) -> Bool
 ```
 
-- **Parameters:** `path` — file-system path.
+- **Parameters:** `path`, file-system path.
 - **Returns:** `true` on success.
 - **OCCT:** `OSD_Directory::Remove`
 - **Example:**
@@ -959,7 +970,7 @@ public static func coneSphere(semiAngle: Double, refRadius: Double,
                                tolerance: Double = 1e-6) -> Int?
 ```
 
-- **Parameters:** `semiAngle` — cone half-angle (radians); `refRadius` — cone radius at its reference plane; `sphereCenter`, `sphereRadius` — sphere definition; `tolerance` — intersection tolerance.
+- **Parameters:** `semiAngle`, cone half-angle (radians); `refRadius`, cone radius at its reference plane; `sphereCenter`, `sphereRadius`, sphere definition; `tolerance`, intersection tolerance.
 - **Returns:** Number of intersection curves (0, 1, or 2), or `nil` on error (e.g. identical surfaces).
 - **OCCT:** `IntAna_QuadQuadGeo` (cone-sphere)
 - **Example:**
@@ -983,7 +994,7 @@ public static func coneSpherePoints(semiAngle: Double, refRadius: Double,
                                      curveIndex: Int, sampleCount: Int) -> [SIMD3<Double>]
 ```
 
-- **Parameters:** `curveIndex` — 0-based index of the intersection curve; `sampleCount` — number of points to evaluate; other parameters as in `coneSphere`.
+- **Parameters:** `curveIndex`, 0-based index of the intersection curve; `sampleCount`, number of points to evaluate; other parameters as in `coneSphere`.
 - **Returns:** Array of up to `sampleCount` 3D points on the intersection curve.
 - **OCCT:** `IntAna_Curve::Value`
 - **Example:**
@@ -1005,7 +1016,7 @@ public static func coneSphereIsOpen(semiAngle: Double, refRadius: Double,
                                      tolerance: Double = 1e-6, curveIndex: Int) -> Bool
 ```
 
-- **Parameters:** Same geometry as `coneSphere`; `curveIndex` — 0-based curve index.
+- **Parameters:** Same geometry as `coneSphere`; `curveIndex`, 0-based curve index.
 - **Returns:** `true` if the intersection curve is open.
 - **OCCT:** `IntAna_Curve::IsOpen`
 - **Example:**
@@ -1027,7 +1038,7 @@ public static func coneSphereDomain(semiAngle: Double, refRadius: Double,
                                      tolerance: Double = 1e-6, curveIndex: Int) -> ClosedRange<Double>
 ```
 
-- **Parameters:** Same geometry as `coneSphere`; `curveIndex` — 0-based curve index.
+- **Parameters:** Same geometry as `coneSphere`; `curveIndex`, 0-based curve index.
 - **Returns:** `first...last` parameter range.
 - **OCCT:** `IntAna_Curve::Domain`
 - **Example:**
@@ -1052,7 +1063,7 @@ Nesting depth of an explorer node.
 public func explorerDepth(at index: Int) -> Int
 ```
 
-- **Parameters:** `index` — 0-based node index in the flat explorer list.
+- **Parameters:** `index`, 0-based node index in the flat explorer list.
 - **Returns:** Depth (0 = root).
 - **OCCT:** `XCAFPrs_DocumentExplorer::Current().Depth`
 - **Example:**
@@ -1070,7 +1081,7 @@ Whether an explorer node represents an assembly (has children).
 public func explorerIsAssembly(at index: Int) -> Bool
 ```
 
-- **Parameters:** `index` — 0-based node index.
+- **Parameters:** `index`, 0-based node index.
 - **Returns:** `true` if the node is an assembly.
 - **OCCT:** `XCAFPrs_DocumentExplorer::Current` + `XCAFDoc_ShapeTool::IsAssembly`
 - **Example:**
@@ -1088,7 +1099,7 @@ Location matrix for an explorer node as a flat row-major 3×4 array.
 public func explorerLocation(at index: Int) -> [Double]
 ```
 
-- **Parameters:** `index` — 0-based node index.
+- **Parameters:** `index`, 0-based node index.
 - **Returns:** 12-element array representing the 3×4 affine transformation matrix (columns: 3 rotation columns + 1 translation column, row-major).
 - **OCCT:** `XCAFPrs_DocumentExplorer::Current().Location`
 - **Example:**
@@ -1139,7 +1150,7 @@ Set the global multi-byte encoding format used for `Resource_Unicode` conversion
 public static func setFormat(_ format: UnicodeFormat)
 ```
 
-- **Parameters:** `format` — encoding to use (SJIS, EUC, GB, or ANSI).
+- **Parameters:** `format`, encoding to use (SJIS, EUC, GB, or ANSI).
 - **OCCT:** `Resource_Unicode::SetFormat`
 - **Example:**
   ```swift
@@ -1173,7 +1184,7 @@ Convert a multi-byte string (in the current format) to UTF-8.
 public static func convertToUnicode(_ input: String) -> String?
 ```
 
-- **Parameters:** `input` — string in the current multi-byte encoding.
+- **Parameters:** `input`, string in the current multi-byte encoding.
 - **Returns:** UTF-8 string, or `nil` on conversion failure.
 - **OCCT:** `Resource_Unicode::ConvertUnicodeToSJIS` / `ConvertUnicodeToEUC` / etc.
 - **Example:**
@@ -1191,7 +1202,7 @@ Convert a UTF-8 string to the current multi-byte encoding.
 public static func convertFromUnicode(_ utf8Input: String, maxSize: Int = 4096) -> String?
 ```
 
-- **Parameters:** `utf8Input` — UTF-8 encoded source; `maxSize` — output buffer capacity in bytes,
+- **Parameters:** `utf8Input`, UTF-8 encoded source; `maxSize`, output buffer capacity in bytes,
   clamped into `0...Sampling.maximumSampleCount` (10,000,000); 0 or less returns `nil` (#622).
 - **Returns:** String in the current encoding, or `nil` on failure.
 - **OCCT:** `Resource_Unicode::ConvertSJISToUnicode` / `ConvertEUCToUnicode` / etc. (inverse path)
@@ -1214,7 +1225,7 @@ Compute the weighted centroid of a point set.
 public static func weightedCentroid(points: [SIMD3<Double>], weights: [Double]) -> (mass: Double, centroid: SIMD3<Double>?)
 ```
 
-- **Parameters:** `points` — array of 3D points; `weights` — per-point scalar weights (must be same length as `points`). **Every weight must be strictly positive.**
+- **Parameters:** `points`, array of 3D points; `weights`, per-point scalar weights (must be same length as `points`). **Every weight must be strictly positive.**
 - **Returns:** Tuple of total mass (sum of weights) and the weighted centroid position, which is `nil` when there is none to report.
 - **A non-positive weight rejects the whole set.** `GProp_PGProps::AddPoint` throws `Standard_DomainError` on the first weight that is not strictly positive, and one bad weight discards every point rather than skipping that one. Before #609 that surfaced as mass 0 with a centroid of (0,0,0), which reads as success.
 - **OCCT:** `GProp_PGProps::AddPoint` point-set weighted mass properties
@@ -1236,7 +1247,7 @@ Compute the unweighted barycentre (arithmetic mean) of a point set.
 public static func barycentre(_ points: [SIMD3<Double>]) -> SIMD3<Double>?
 ```
 
-- **Parameters:** `points` — array of 3D points.
+- **Parameters:** `points`, array of 3D points.
 - **Returns:** The average position, or `nil` for an empty set, which has no barycentre. The (0,0,0)
   reported before #609 was indistinguishable from the barycentre of a set centred on the origin.
 - **OCCT:** `GProp_PGProps::Barycentre`
@@ -1245,112 +1256,6 @@ public static func barycentre(_ points: [SIMD3<Double>]) -> SIMD3<Double>?
   let c = GeometryProperties.barycentre([SIMD3(0,0,0), SIMD3(4,0,0)])
   // c == SIMD3(2, 0, 0)
   GeometryProperties.barycentre([])   // nil
-  ```
-
----
-
-## Draft info types
-
-Diagnostic queries on the default-constructed internal OCCT `Draft` info objects (`Draft_EdgeInfo`, `Draft_FaceInfo`, `Draft_VertexInfo`). All members are on the `DraftInfo` enum.
-
-### `DraftInfo.edgeInfoNewGeometry`
-
-Default `Draft_EdgeInfo::NewGeometry` flag value.
-
-```swift
-public static var edgeInfoNewGeometry: Bool { get }
-```
-
-- **OCCT:** `Draft_EdgeInfo::NewGeometry`
-- **Example:**
-  ```swift
-  let flag = DraftInfo.edgeInfoNewGeometry
-  ```
-
----
-
-### `DraftInfo.faceInfoNewGeometry`
-
-Default `Draft_FaceInfo::NewGeometry` flag value.
-
-```swift
-public static var faceInfoNewGeometry: Bool { get }
-```
-
-- **OCCT:** `Draft_FaceInfo::NewGeometry`
-- **Example:**
-  ```swift
-  let flag = DraftInfo.faceInfoNewGeometry
-  ```
-
----
-
-### `DraftInfo.vertexInfoGeometry`
-
-Geometry point of a default `Draft_VertexInfo`.
-
-```swift
-public static var vertexInfoGeometry: SIMD3<Double> { get }
-```
-
-- **OCCT:** `Draft_VertexInfo::Geometry`
-- **Example:**
-  ```swift
-  let pt = DraftInfo.vertexInfoGeometry
-  ```
-
----
-
-### `DraftInfo.edgeInfoSetTangent(direction:)`
-
-Set the tangent on a default `Draft_EdgeInfo` and report success.
-
-```swift
-public static func edgeInfoSetTangent(direction: SIMD3<Double>) -> Bool
-```
-
-- **Parameters:** `direction` — tangent direction vector.
-- **Returns:** `true` if the tangent was accepted.
-- **OCCT:** `Draft_EdgeInfo::SetNewGeometry` / tangent setter
-- **Example:**
-  ```swift
-  _ = DraftInfo.edgeInfoSetTangent(direction: SIMD3(0, 0, 1))
-  ```
-
----
-
-### `DraftInfo.faceInfoFromSurface(_:)`
-
-Populate a `Draft_FaceInfo` from a `Surface` and check the root-face result.
-
-```swift
-public static func faceInfoFromSurface(_ surface: Surface) -> Bool
-```
-
-- **Parameters:** `surface` — the surface to probe.
-- **Returns:** `true` if the RootFace check passes.
-- **OCCT:** `Draft_FaceInfo` + `RootFace`
-- **Example:**
-  ```swift
-  if DraftInfo.faceInfoFromSurface(mySurface) { /* ... */ }
-  ```
-
----
-
-### `DraftInfo.vertexInfoAddParameter(_:)`
-
-Add a parameter to a default `Draft_VertexInfo` and retrieve it back.
-
-```swift
-public static func vertexInfoAddParameter(_ param: Double) -> Double
-```
-
-- **Parameters:** `param` — the parameter value to insert.
-- **Returns:** The parameter retrieved from the info object (round-trip check).
-- **OCCT:** `Draft_VertexInfo::AddParam` / `Parameter`
-- **Example:**
-  ```swift
-  let p = DraftInfo.vertexInfoAddParameter(0.5)
   ```
 
 ---
@@ -1365,11 +1270,11 @@ Compute logarithmically spaced parameter values in [a, b].
 public static func sample(from a: Double, to b: Double, count n: Int) -> [Double]
 ```
 
-- **Parameters:** `a` — start of interval; `b` — end of interval; `n` — a *request* for exactly
+- **Parameters:** `a`, start of interval; `b`, end of interval; `n`, a *request* for exactly
   this many sample points, honoured within `1...Sampling.maximumSampleCount` (10,000,000). The
   bridge fills the buffer exactly, so this is not a capacity and is never clamped (#622).
 - **Returns:** Array of `n` logarithmically spaced values, or empty if `n` is outside
-  `1...10,000,000` — **including above the ceiling**, where it returns empty rather than a
+  `1...10,000,000`: **including above the ceiling**, where it returns empty rather than a
   coarser sampling than was asked for (#622). Before #622 a count past `Int32.max` aborted the
   process.
 - **OCCT:** `GeomLib_LogSample`
@@ -1393,7 +1298,7 @@ public static func gcConicalSurface(center: SIMD3<Double>, normal: SIMD3<Double>
                                      semiAngle: Double, radius: Double) -> Surface?
 ```
 
-- **Parameters:** `center` — origin on the cone axis; `normal` — axis direction; `semiAngle` — half-angle in radians; `radius` — reference radius at `center`.
+- **Parameters:** `center`, origin on the cone axis; `normal`, axis direction; `semiAngle`, half-angle in radians; `radius`, reference radius at `center`.
 - **Returns:** A `Surface` wrapping `Geom_ConicalSurface`, or `nil` on failure.
 - **OCCT:** `GC_MakeConicalSurface`
 - **Example:**
@@ -1415,7 +1320,7 @@ public static func gcConicalSurface2Pts(p1: SIMD3<Double>, p2: SIMD3<Double>,
                                          r1: Double, r2: Double) -> Surface?
 ```
 
-- **Parameters:** `p1`, `p2` — axial positions of the two reference circles; `r1`, `r2` — respective radii.
+- **Parameters:** `p1`, `p2`, axial positions of the two reference circles; `r1`, `r2`, respective radii.
 - **Returns:** A `Surface` wrapping `Geom_ConicalSurface`, or `nil` on failure.
 - **OCCT:** `GC_MakeConicalSurface` (two-point-two-radius constructor)
 - **Example:**
@@ -1435,7 +1340,7 @@ public static func gcConicalSurface4Pts(p1: SIMD3<Double>, p2: SIMD3<Double>,
                                          p3: SIMD3<Double>, p4: SIMD3<Double>) -> Surface?
 ```
 
-- **Parameters:** `p1`, `p2` — two points on the first circle; `p3`, `p4` — two points on the second circle.
+- **Parameters:** `p1`, `p2`, two points on the first circle; `p3`, `p4`, two points on the second circle.
 - **Returns:** A `Surface` wrapping `Geom_ConicalSurface`, or `nil` on failure.
 - **OCCT:** `GC_MakeConicalSurface` (four-point constructor)
 - **Example:**
@@ -1459,7 +1364,7 @@ public static func gcCylindricalSurface(center: SIMD3<Double>, normal: SIMD3<Dou
                                           radius: Double) -> Surface?
 ```
 
-- **Parameters:** `center` — origin on the cylinder axis; `normal` — axis direction; `radius` — cylinder radius.
+- **Parameters:** `center`, origin on the cylinder axis; `normal`, axis direction; `radius`, cylinder radius.
 - **Returns:** A `Surface` wrapping `Geom_CylindricalSurface`, or `nil` on failure.
 - **OCCT:** `GC_MakeCylindricalSurface`
 - **Example:**
@@ -1480,7 +1385,7 @@ public static func gcCylindricalSurface3Pts(p1: SIMD3<Double>, p2: SIMD3<Double>
                                               p3: SIMD3<Double>) -> Surface?
 ```
 
-- **Parameters:** `p1`, `p2`, `p3` — three points on the cylinder.
+- **Parameters:** `p1`, `p2`, `p3`, three points on the cylinder.
 - **Returns:** A `Surface` wrapping `Geom_CylindricalSurface`, or `nil` on failure.
 - **OCCT:** `GC_MakeCylindricalSurface` (three-point constructor)
 - **Example:**
@@ -1501,7 +1406,7 @@ public static func gcCylindricalSurfaceFromCircle(center: SIMD3<Double>, normal:
                                                    radius: Double) -> Surface?
 ```
 
-- **Parameters:** `center`, `normal`, `radius` — circle parameters that define the cylinder's directrix.
+- **Parameters:** `center`, `normal`, `radius`, circle parameters that define the cylinder's directrix.
 - **Returns:** A `Surface` wrapping `Geom_CylindricalSurface`, or `nil` on failure.
 - **OCCT:** `GC_MakeCylindricalSurface` (circle constructor)
 - **Example:**
@@ -1521,7 +1426,7 @@ public static func gcCylindricalSurfaceParallel(center: SIMD3<Double>, normal: S
                                                   radius: Double, distance: Double) -> Surface?
 ```
 
-- **Parameters:** `center`, `normal`, `radius` — reference cylinder; `distance` — radial offset.
+- **Parameters:** `center`, `normal`, `radius`, reference cylinder; `distance`, radial offset.
 - **Returns:** A `Surface` wrapping `Geom_CylindricalSurface`, or `nil` on failure.
 - **OCCT:** `GC_MakeCylindricalSurface` (parallel/offset constructor)
 - **Example:**
@@ -1543,7 +1448,7 @@ public static func gcCylindricalSurfaceAxis(point: SIMD3<Double>, direction: SIM
                                               radius: Double) -> Surface?
 ```
 
-- **Parameters:** `point` — any point on the axis; `direction` — axis direction; `radius` — cylinder radius.
+- **Parameters:** `point`, any point on the axis; `direction`, axis direction; `radius`, cylinder radius.
 - **Returns:** A `Surface` wrapping `Geom_CylindricalSurface`, or `nil` on failure.
 - **OCCT:** `GC_MakeCylindricalSurface` (axis constructor)
 - **Example:**
@@ -1567,7 +1472,7 @@ public static func gcTrimmedCone2Pts(p1: SIMD3<Double>, p2: SIMD3<Double>,
                                       r1: Double, r2: Double) -> Surface?
 ```
 
-- **Parameters:** `p1`, `p2` — positions of the base circles; `r1`, `r2` — respective radii.
+- **Parameters:** `p1`, `p2`, positions of the base circles; `r1`, `r2`, respective radii.
 - **Returns:** A bounded `Surface` wrapping `Geom_ConicalSurface`, or `nil` on failure.
 - **OCCT:** `GC_MakeTrimmedCone`
 - **Example:**
@@ -1586,7 +1491,7 @@ public static func gcTrimmedCone4Pts(p1: SIMD3<Double>, p2: SIMD3<Double>,
                                       p3: SIMD3<Double>, p4: SIMD3<Double>) -> Surface?
 ```
 
-- **Parameters:** `p1`, `p2` — two points on the first circle; `p3`, `p4` — two points on the second circle.
+- **Parameters:** `p1`, `p2`, two points on the first circle; `p3`, `p4`, two points on the second circle.
 - **Returns:** A bounded `Surface` wrapping `Geom_ConicalSurface`, or `nil` on failure.
 - **OCCT:** `GC_MakeTrimmedCone` (four-point constructor)
 - **Example:**
@@ -1610,7 +1515,7 @@ public static func gcTrimmedCylinderCircle(center: SIMD3<Double>, normal: SIMD3<
                                             radius: Double, height: Double) -> Surface?
 ```
 
-- **Parameters:** `center`, `normal`, `radius` — directrix circle; `height` — axial extent.
+- **Parameters:** `center`, `normal`, `radius`, directrix circle; `height`, axial extent.
 - **Returns:** A bounded `Surface` wrapping `Geom_CylindricalSurface`, or `nil` on failure.
 - **OCCT:** `GC_MakeTrimmedCylinder`
 - **Example:**
@@ -1630,7 +1535,7 @@ public static func gcTrimmedCylinderAxis(point: SIMD3<Double>, direction: SIMD3<
                                           radius: Double, height: Double) -> Surface?
 ```
 
-- **Parameters:** `point` — origin on the axis; `direction` — axis direction; `radius` — cylinder radius; `height` — axial extent.
+- **Parameters:** `point`, origin on the axis; `direction`, axis direction; `radius`, cylinder radius; `height`, axial extent.
 - **Returns:** A bounded `Surface` wrapping `Geom_CylindricalSurface`, or `nil` on failure.
 - **OCCT:** `GC_MakeTrimmedCylinder` (axis constructor)
 - **Example:**
@@ -1650,7 +1555,7 @@ public static func gcTrimmedCylinder3Pts(p1: SIMD3<Double>, p2: SIMD3<Double>,
                                           p3: SIMD3<Double>) -> Surface?
 ```
 
-- **Parameters:** `p1`, `p2`, `p3` — three points on the cylinder surface.
+- **Parameters:** `p1`, `p2`, `p3`, three points on the cylinder surface.
 - **Returns:** A bounded `Surface` wrapping `Geom_CylindricalSurface`, or `nil` on failure.
 - **OCCT:** `GC_MakeTrimmedCylinder` (three-point constructor)
 - **Example:**
@@ -1735,7 +1640,7 @@ Create a 2D edge spanning the full domain of a `Curve2D`.
 public static func edge2dFromCurve(_ curve: Curve2D) -> Shape?
 ```
 
-- **Parameters:** `curve` — a bounded `Curve2D`.
+- **Parameters:** `curve`, a bounded `Curve2D`.
 - **Returns:** A `Shape` wrapping a 2D `TopoDS_Edge`, or `nil` on failure.
 - **OCCT:** `BRepLib_MakeEdge2d` (curve overload)
 - **Example:**
@@ -1753,7 +1658,7 @@ Create a 2D edge from a `Curve2D` with an explicit parameter range.
 public static func edge2dFromCurve(_ curve: Curve2D, u1: Double, u2: Double) -> Shape?
 ```
 
-- **Parameters:** `curve` — a `Curve2D`; `u1`, `u2` — parameter range to trim to.
+- **Parameters:** `curve`, a `Curve2D`; `u1`, `u2`, parameter range to trim to.
 - **Returns:** A 2D edge, or `nil` on failure.
 - **OCCT:** `BRepLib_MakeEdge2d` (curve + range overload)
 - **Example:**
@@ -1775,7 +1680,7 @@ Check whether wire edges are correctly ordered on a face.
 public static func checkOrder(wire: Shape, face: Shape, precision: Double = 1e-6) -> Bool
 ```
 
-- **Parameters:** `wire` — the wire to analyse; `face` — the supporting face; `precision` — tolerance.
+- **Parameters:** `wire`, the wire to analyse; `face`, the supporting face; `precision`, tolerance.
 - **Returns:** `true` if the edge order is incorrect.
 - **OCCT:** `ShapeAnalysis_Wire::CheckOrder`
 - **Example:**
@@ -1967,7 +1872,7 @@ public static func checkConnectedEdge(wire: Shape, face: Shape, precision: Doubl
                                        edgeIndex: Int) -> Bool
 ```
 
-- **Parameters:** `edgeIndex` — 1-based edge index.
+- **Parameters:** `edgeIndex`, 1-based edge index.
 - **Returns:** `true` if that edge has a connectivity problem.
 - **OCCT:** `ShapeAnalysis_Wire::CheckConnected` (per-edge)
 
@@ -2012,20 +1917,28 @@ public static func checkGap3dEdge(wire: Shape, face: Shape, precision: Double = 
 
 ---
 
-### `SAWireAnalysis.checkOuterBound(face:precision:)`
+### `SAWireAnalysis.checkOuterBound(wire:face:)`
 
-Check whether the face has a correctly oriented outer-bound wire.
+Check whether a wire fails to define an outer bound on a face.
 
 ```swift
-public static func checkOuterBound(face: Shape, precision: Double = 1e-6) -> Bool
+public static func checkOuterBound(wire: Shape, face: Shape) -> Bool
 ```
 
-- **Parameters:** `face` — the face to check (wire argument is the face's outer wire).
-- **Returns:** `true` if the outer-bound check fails.
+Takes the wire, like every sibling above, and takes no precision, unlike any of them: `ShapeAnalysis_Wire::CheckOuterBound(APIMake)` rebuilds the wire onto an empty copy of the face and asks `ShapeAnalysis::IsOuterBound`, consulting neither `myPrecision` nor anything derived from it. Measured across precisions from 1e-12 to 100 on three fixtures, the verdict never moved.
+
+`APIMake` is likewise not exposed and stays at OCCT's own default of `true`. It selects `ShapeExtend_WireData::WireAPIMake` over `::Wire`, and gave the same verdict on all three fixtures, including one assembled with `BRep_Builder` from edges with unshared vertices, which is the case its own documentation distinguishes.
+
+- **Parameters:** `wire`, the wire to test; `face`, the face it should bound.
+- **Returns:** `true` if a problem is found, matching every sibling. A face's own outer wire returns `false`; a hole wire on the same face returns `true`.
 - **OCCT:** `ShapeAnalysis_Wire::CheckOuterBound`
 - **Example:**
   ```swift
-  if SAWireAnalysis.checkOuterBound(face: myFace) { print("outer bound problem") }
+  for wire in panel.subShapes(ofType: .wire) {
+      if SAWireAnalysis.checkOuterBound(wire: wire, face: panel) {
+          print("not the outer bound")
+      }
+  }
   ```
 
 ---
@@ -2070,7 +1983,7 @@ Check whether an edge has a parametric curve (PCurve) on a given face.
 public static func hasPCurve(_ edge: Shape, face: Shape) -> Bool
 ```
 
-- **Parameters:** `edge` — the edge; `face` — the supporting face.
+- **Parameters:** `edge`, the edge; `face`, the supporting face.
 - **OCCT:** `ShapeAnalysis_Edge::HasPCurve`
 
 ---
@@ -2182,7 +2095,7 @@ Verify vertex tolerances on a face edge and return tolerance values.
 public static func checkVertexTolerance(_ edge: Shape, face: Shape) -> (ok: Bool, toler1: Double, toler2: Double)
 ```
 
-- **Returns:** `ok` when within tolerance; `toler1`, `toler2` — first and last vertex tolerance values.
+- **Returns:** `ok` when within tolerance; `toler1`, `toler2`, first and last vertex tolerance values.
 - **OCCT:** `ShapeAnalysis_Edge::CheckVertexTolerance`
 - **Example:**
   ```swift
@@ -2236,7 +2149,7 @@ public static func endTangent2d(_ edge: Shape, face: Shape,
                                  atEnd: Bool) -> (point: SIMD2<Double>, tangent: SIMD2<Double>)?
 ```
 
-- **Parameters:** `atEnd` — `false` for the start, `true` for the end.
+- **Parameters:** `atEnd`, `false` for the start, `true` for the end.
 - **Returns:** Tuple of 2D position and tangent, or `nil` if unavailable.
 - **OCCT:** `ShapeAnalysis_Edge::GetEndTangent2d`
 - **Example:**
@@ -2257,7 +2170,7 @@ public static func checkPCurveRange(_ edge: Shape, face: Shape,
                                      first: Double, last: Double) -> Bool
 ```
 
-- **Parameters:** `first`, `last` — the parameter range to check against the face's natural bounds.
+- **Parameters:** `first`, `last`, the parameter range to check against the face's natural bounds.
 - **Returns:** `true` if the range is valid.
 - **OCCT:** `ShapeAnalysis_Edge::CheckPCurveRange`
 - **Example:**
@@ -2279,7 +2192,7 @@ Count the directories matching `mask` inside `path`.
 public static func count(path: String, mask: String = "*") -> Int
 ```
 
-- **Parameters:** `path` — directory to search; `mask` — glob-style name filter.
+- **Parameters:** `path`, directory to search; `mask`, glob-style name filter.
 - **Returns:** Number of matching sub-directories.
 - **OCCT:** `OSD_DirectoryIterator`
 - **Example:**
@@ -2297,7 +2210,7 @@ Name of the directory at a specific index in the filtered listing.
 public static func name(path: String, mask: String = "*", index: Int) -> String?
 ```
 
-- **Parameters:** `path`, `mask` — as for `count`; `index` — 0-based index.
+- **Parameters:** `path`, `mask`, as for `count`; `index`, 0-based index.
 - **Returns:** Directory name, or `nil` if the index is out of range.
 - **OCCT:** `OSD_DirectoryIterator::Values`
 - **Example:**
@@ -2317,7 +2230,7 @@ List all directory names matching a mask (up to `maxCount`).
 public static func list(path: String, mask: String = "*", maxCount: Int = 1000) -> [String]
 ```
 
-- **Parameters:** `path`, `mask` — search location and filter; `maxCount` — output *capacity*
+- **Parameters:** `path`, `mask`, search location and filter; `maxCount`, output *capacity*
   (default 1000), clamped into `0...Sampling.maximumSampleCount` (10,000,000); 0 or less returns empty (#622).
 - **Returns:** Array of directory name strings.
 - **OCCT:** `OSD_DirectoryIterator`
@@ -2340,7 +2253,7 @@ Count files matching `mask` inside `path`.
 public static func count(path: String, mask: String = "*") -> Int
 ```
 
-- **Parameters:** `path` — directory to search; `mask` — glob-style name filter.
+- **Parameters:** `path`, directory to search; `mask`, glob-style name filter.
 - **Returns:** Number of matching files.
 - **OCCT:** `OSD_FileIterator`
 - **Example:**
@@ -2358,7 +2271,7 @@ Name of the file at a specific index in the filtered listing.
 public static func name(path: String, mask: String = "*", index: Int) -> String?
 ```
 
-- **Parameters:** `path`, `mask` — location and filter; `index` — 0-based index.
+- **Parameters:** `path`, `mask`, location and filter; `index`, 0-based index.
 - **Returns:** File name, or `nil` if out of range.
 - **OCCT:** `OSD_FileIterator::Values`
 - **Example:**
@@ -2378,7 +2291,7 @@ List all file names matching a mask (up to `maxCount`).
 public static func list(path: String, mask: String = "*", maxCount: Int = 1000) -> [String]
 ```
 
-- **Parameters:** `path`, `mask` — search location and filter; `maxCount` — output *capacity*
+- **Parameters:** `path`, `mask`, search location and filter; `maxCount`, output *capacity*
   (default 1000), clamped into `0...Sampling.maximumSampleCount` (10,000,000); 0 or less returns empty (#622).
 - **Returns:** Array of file name strings.
 - **OCCT:** `OSD_FileIterator`
@@ -2401,7 +2314,7 @@ Set the maximum polynomial degree for the BSpline approximation of the swept sur
 public func setMaxDegree(_ maxDeg: Int)
 ```
 
-- **Parameters:** `maxDeg` — maximum BSpline degree (OCCT default is 11).
+- **Parameters:** `maxDeg`, maximum BSpline degree (OCCT default is 11).
 - **OCCT:** `BRepFill_PipeShell::SetMaxDegree`
 - **Example:**
   ```swift
@@ -2418,7 +2331,7 @@ Set the maximum number of BSpline segments in the swept surface approximation.
 public func setMaxSegments(_ maxSeg: Int)
 ```
 
-- **Parameters:** `maxSeg` — maximum segment count.
+- **Parameters:** `maxSeg`, maximum segment count.
 - **OCCT:** `BRepFill_PipeShell::SetMaxSegments`
 - **Example:**
   ```swift
@@ -2435,7 +2348,7 @@ Force C1 continuity in the BSpline approximation.
 public func setForceApproxC1(_ force: Bool)
 ```
 
-- **Parameters:** `force` — `true` to enforce C1 even at the cost of additional segments.
+- **Parameters:** `force`, `true` to enforce C1 even at the cost of additional segments.
 - **OCCT:** `BRepFill_PipeShell::SetForceApproxC1`
 - **Example:**
   ```swift
@@ -2454,9 +2367,9 @@ public func setBuildHistory(_ enabled: Bool)
 
 History is **disabled by default** to avoid a segfault in `BRepFill_PipeShell::BuildHistory` when using closed spine+profile combinations (OCCT bug). Enable only when `generated`/`modified`/`isDeleted` queries on the result are required.
 
-- **Parameters:** `enabled` — `true` to enable history.
+- **Parameters:** `enabled`, `true` to enable history.
 - **OCCT:** `BRepFill_PipeShell::SetBuildHistory`
-- **Note:** Enabling history on closed spine/profile geometries can trigger an OCCT segfault — use with caution.
+- **Note:** Enabling history on closed spine/profile geometries can trigger an OCCT segfault, use with caution.
 - **Example:**
   ```swift
   pipe.setBuildHistory(false) // safe default

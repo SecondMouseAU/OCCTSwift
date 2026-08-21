@@ -8,11 +8,11 @@ import simd
 ///
 /// Root cause was one line in `AdvApp2Var_ApproxF2var::mma2ce1_`, which partitions a single scratch
 /// allocation into seven buffers and then filled *both* Jacobi-maxima slots from the V slot's
-/// offset — so `XMAXJU` (the maxima of the U Jacobi polynomials) was never written and stayed zero.
+/// offset, so `XMAXJU` (the maxima of the U Jacobi polynomials) was never written and stayed zero.
 /// Every truncation error in `mma2er1_`/`mma2er2_` is `|coefficient| * XMAXJU(i) * XMAXJV(j)`, so a
 /// zero `XMAXJU` made the interior approximation error of every patch evaluate to exactly 0. Two
 /// things followed: the degree-reduction search always answered with its floor (collapsing the fit
-/// wherever that floor was low — which is what C0 produces), and the reported `MaxError` only ever
+/// wherever that floor was low, which is what C0 produces), and the reported `MaxError` only ever
 /// described the boundary iso-curves. Fixed in kernel patch
 /// `0019-AdvApp2Var-jacobi-max-wrong-workspace-slot-522.patch`.
 ///
@@ -35,8 +35,8 @@ struct Issue522ApproxC0Collapse {
     }
 
     /// The headline case. A radius-10 sphere at C0 came back as 2 poles at degree 1 across the full
-    /// `[0, 2*pi]` of longitude — a straight line through the sphere, deviating by its own diameter
-    /// of 19.9999 — while reporting `maxError` 1.07e-4.
+    /// `[0, 2*pi]` of longitude, a straight line through the sphere, deviating by its own diameter
+    /// of 19.9999, while reporting `maxError` 1.07e-4.
     @Test("A full sphere at C0 is not collapsed to a line across its longitude")
     func fullSphereAtC0KeepsItsLongitude() {
         guard let sphere = Surface.sphere(center: .zero, radius: 10) else {
@@ -130,7 +130,7 @@ struct Issue522ApproxC0Collapse {
         #expect(deviation(of: fit, from: bezier) < 1e-9)
     }
 
-    /// A cylinder trimmed in V legitimately fits at degree 1 in V — it *is* linear there — and
+    /// A cylinder trimmed in V legitimately fits at degree 1 in V, it *is* linear there, and
     /// always reported correctly. Degree collapse per se was never the defect, so the fix must not
     /// push this one up.
     @Test("A V-linear cylinder still fits at degree 1 in V")

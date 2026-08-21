@@ -1,6 +1,6 @@
 === OCCTSwift #572: GeomConvert_ApproxSurface consumers, fingerprinted ===
 
-### row 1 — GeomFill_Sweep.cxx:296 (pipe shell / sweep)
+### row 1. GeomFill_Sweep.cxx:296 (pipe shell / sweep)
 sweep/MakePipe                     vol=75.3982236862 area=163.011356951 nF=2 nE=5 nV=3 bsplineF=0 maxDeg=0x0 maxPoles=0x0 faces=d8c89be882ad0032
 pipeShell/force=0/mode=0           vol=75.3982236862 area=163.011356951 nF=2 nE=5 nV=3 bsplineF=0 maxDeg=0x0 maxPoles=0x0 faces=d8c89be882ad0032
 pipeShell/force=0/mode=1           vol=75.3982236862 area=163.011356951 nF=2 nE=5 nV=3 bsplineF=0 maxDeg=0x0 maxPoles=0x0 faces=d8c89be882ad0032
@@ -13,7 +13,7 @@ pipeShell/multiSection/force=1     vol=163.598694107 area=212.456552544 nF=2 nE=
 pipeShell/arc/force=0              vol=-227.395685401 area=378.992809002 nF=1 nE=2 nV=1 bsplineF=0 maxDeg=0x0 maxPoles=0x0 faces=de11ef4e8311ef8b
 pipeShell/arc/force=1              vol=-227.395685401 area=378.992809002 nF=1 nE=2 nV=1 bsplineF=0 maxDeg=0x0 maxPoles=0x0 faces=de11ef4e8311ef8b
 
-### row 2 — BRepOffset_Offset.cxx:1626 (offset / thick solid)
+### row 2. BRepOffset_Offset.cxx:1626 (offset / thick solid)
 offsetByJoin/join=0                vol=1020.83773385 area=549.592894688 nF=26 nE=48 nV=24 bsplineF=0 maxDeg=0x0 maxPoles=0x0 faces=38b8ff4d3aadb20b
 offsetByJoin/join=1                shape=NULL
 offsetByJoin/join=2                vol=1120 area=664 nF=6 nE=12 nV=8 bsplineF=0 maxDeg=0x0 maxPoles=0x0 faces=68d4d1f17af6c6c7
@@ -21,7 +21,7 @@ offsetByJoin/cylinder              vol=674.518008177 area=399.844112315 nF=5 nE=
 thickSolid/box                     vol=273.218284916 area=571.672557571 nF=23 nE=48 nV=28 bsplineF=0 maxDeg=0x0 maxPoles=0x0 faces=ad3b6a27164174ae
 thickSolid/cylinder                vol=169.888729908 area=443.15250167 nF=6 nE=8 nV=5 bsplineF=0 maxDeg=0x0 maxPoles=0x0 faces=23fc594f9e7e8361
 
-### row 3 — ShapeUpgrade_UnifySameDomain.cxx:3629 (unify same domain)
+### row 3. ShapeUpgrade_UnifySameDomain.cxx:3629 (unify same domain)
 unify/cylinderHalves/input         vol=226.194671058 area=207.345115137 nF=6 nE=8 nV=4 bsplineF=0 maxDeg=0x0 maxPoles=0x0 faces=a7fdc8924e9ff93f
 unify/cylinderHalves/concat=0      vol=226.194671058 area=207.345115137 nF=3 nE=3 nV=2 bsplineF=0 maxDeg=0x0 maxPoles=0x0 faces=b8b2856a81204369
 unify/cylinderHalves/concat=1      vol=226.194671058 area=207.345115137 nF=3 nE=3 nV=2 bsplineF=0 maxDeg=0x0 maxPoles=0x0 faces=b8b2856a81204369
@@ -33,7 +33,7 @@ unify/closedExtrusion/base         uClosed=1 uPeriodic=0
 unify/closedExtrusion/input        vol=177.520767663 area=129.664771896 nF=2 nE=6 nV=4 bsplineF=0 maxDeg=0x0 maxPoles=0x0 faces=e4e09cee876c3d11
 unify/closedExtrusion/concat=1     vol=177.520767663 area=129.664771896 nF=2 nE=6 nV=4 bsplineF=0 maxDeg=0x0 maxPoles=0x0 faces=e4e09cee876c3d11
 
-### row 4 — GeomLib.cxx:1517 (ExtendSurfByLength)
+### row 4. GeomLib.cxx:1517 (ExtendSurfByLength)
 geomLib/revolutionC2/inU=0         type=Geom_BSplineSurface                uDeg=12 vDeg=3 uPoles=13 vPoles=6 uKnots=2 vKnots=3 uPer=0 vPer=0 U[0 4] V[0 1.05324] pts=56fa89ba068acdb2
 geomLib/revolutionC2/inU=1         type=Geom_BSplineSurface                uDeg=12 vDeg=3 uPoles=24 vPoles=4 uKnots=3 vKnots=2 uPer=0 vPer=0 U[0 4.125] V[0 1] pts=5a2c0db2b3dcc079
 geomLib/revolutionC0/inU=0         type=Geom_BSplineSurface                uDeg=12 vDeg=3 uPoles=13 vPoles=8 uKnots=2 vKnots=4 uPer=0 vPer=0 U[0 4] V[0 1.07986] pts=f9e13b9383a80985
@@ -45,7 +45,7 @@ geomLib/offsetSphere/inU=1         type=Geom_BSplineSurface                uDeg=
 fillet/boxAllEdges                 vol=224.171087355 area=212.530964915 nF=26 nE=56 nV=24 bsplineF=0 maxDeg=0x0 maxPoles=0x0 faces=f54349e8573eb09f
 fillet/cylinderAllEdges            vol=221.325293938 area=193.83125947 nF=5 nE=7 nV=4 bsplineF=0 maxDeg=0x0 maxPoles=0x0 faces=2cdde2c40cc821c5
 
-### row 5 — GeomConvert_1.cxx:786/:960 (Surface.toBSpline)
+### row 5. GeomConvert_1.cxx:786/:960 (Surface.toBSpline)
 toBSpline/revolutionC2             type=Geom_BSplineSurface                uDeg=2 vDeg=3 uPoles=6 vPoles=5 uKnots=4 vKnots=3 uPer=1 vPer=0 U[0 6.28319] V[0 1] pts=b27220d92373484f
 toBSpline/revolutionC0             type=Geom_BSplineSurface                uDeg=2 vDeg=2 uPoles=6 vPoles=5 uKnots=4 vKnots=3 uPer=1 vPer=0 U[0 6.28319] V[0 1] pts=e9238edaca6b08bf
 toBSpline/trimRevolutionC2         type=Geom_BSplineSurface                uDeg=2 vDeg=3 uPoles=5 vPoles=5 uKnots=3 vKnots=3 uPer=0 vPer=0 U[0 4] V[0 1] pts=2fad9e45f705c5a0
@@ -65,7 +65,7 @@ toBSpline/sphere                   type=Geom_BSplineSurface                uDeg=
 toBSpline/torus                    type=Geom_BSplineSurface                uDeg=2 vDeg=2 uPoles=6 vPoles=6 uKnots=4 vKnots=4 uPer=1 vPer=1 U[0 6.28319] V[0 6.28319] pts=c8513263ce25ebb7
 toBSpline/trimCylinder             type=Geom_BSplineSurface                uDeg=2 vDeg=1 uPoles=7 vPoles=2 uKnots=4 vKnots=2 uPer=0 vPer=0 U[0 6] V[0 4] pts=58309131b9feaad5
 
-### direction — each reached site's own request, reported error vs real deviation
+### direction, each reached site's own request, reported error vs real deviation
 dir/sweptSurface(C1,1e-4,nmax16)   isDone=1 tol=0.0001 maxError=1.27652e-05 paramDev=1.76189 projDev=0.876114 ratio=6.863e+04 deg=13x4 poles=14x8 worstAt=(0,0.35) srcU[0 6.28319]V[0 1] fitU[0 6.28319]V[0 1]
 dir/revolutionC0(C1,1e-7,nmax16)   isDone=1 tol=1e-07 maxError=9.04293e-09 paramDev=1.176 projDev=0.625679 ratio=6.919e+07 deg=12x3 poles=13x6 worstAt=(0.4,0.35) srcU[0 4]V[0 1] fitU[0 4]V[0 1]
 dir/revolutionC2(C1,1e-7,nmax16)   isDone=1 tol=1e-07 maxError=6.7822e-09 paramDev=4.46916e-09 projDev=4.40276e-09 ratio=0.6492 deg=12x3 poles=13x4 worstAt=(3.8,0.5) srcU[0 4]V[0 1] fitU[0 4]V[0 1]
@@ -73,7 +73,7 @@ dir/offsetC1InU(C0/C2,1e-4,nmax24) isDone=1 tol=0.0001 maxError=2.70438e-05 para
 dir/trimOffsetC1InU(C1,1e-4,nmax24) isDone=1 tol=0.0001 maxError=2.09092e-05 paramDev=0.522636 projDev=0.103785 ratio=4964 deg=12x9 poles=35x18 worstAt=(0.38,0.1) srcU[0.1 0.9]V[0.1 0.9] fitU[0.1 0.9]V[0.1 0.9]
 dir/closedExtrusion(C1,1e-4,nmax16) isDone=1 tol=0.0001 maxError=1.07012e-14 paramDev=1.98603e-15 projDev=1.78415e-15 ratio=0.1667 deg=3x3 poles=10x4 worstAt=(0.8,4.75) srcU[0 1]V[0 5] fitU[0 1]V[0 5]
 
-### end to end — the forced-C1 pipe shell against the un-forced one
+### end to end, the forced-C1 pipe shell against the un-forced one
 e2e/pipeShellForceApproxC1         devPlainToForced=0.876114 devForcedToPlain=0.91589 volPlain=43.8442279 volForced=42.6769973
 
 === done ===

@@ -13,7 +13,7 @@
 //  - Geom2dGridEval (vectorized 2D curve sampling)
 //  - gp_*2d primitives
 //
-//  Public C surface unchanged. No symbol changes — pure file move.
+//  Public C surface unchanged. No symbol changes: a pure file move.
 //
 
 #import "../include/OCCTBridge.h"
@@ -530,11 +530,16 @@ OCCTCurve2DRef OCCTCurve2DBisectorCC(OCCTCurve2DRef c1,
   }
 }
 
+// #999: this took an originX/originY copied from OCCTCurve2DBisectorCC above, where the origin is
+// real (Bisector_BisecCC::Perform takes one and this bridge passes it). Bisector_BisecPC::Perform
+// is (Cu, P, Side, DistMax) and has no origin. DistMax is the parameter it does have, and it is
+// live: measured on a point 4 above a line, DistMax 1 gives an empty bisector, and 10, 100, 500
+// and 5000 give parameter ranges [-8, 8], [-28, 28], [-63.12, 63.12] and [-199.96, 199.96].
+// See Scripts/repro/999-geom2d-curve3d-healing/parameterisation_and_bisector.mm.
 OCCTCurve2DRef OCCTCurve2DBisectorPC(double         px,
                                      double         py,
                                      OCCTCurve2DRef curve,
-                                     double         originX,
-                                     double         originY,
+                                     double         maxDistance,
                                      bool           side)
 {
   if (!curve || curve->curve.IsNull())
@@ -543,7 +548,7 @@ OCCTCurve2DRef OCCTCurve2DBisectorPC(double         px,
   {
     Handle(Bisector_BisecPC) bisector = new Bisector_BisecPC();
     gp_Pnt2d                 point(px, py);
-    bisector->Perform(curve->curve, point, side ? 1.0 : -1.0);
+    bisector->Perform(curve->curve, point, side ? 1.0 : -1.0, maxDistance);
     if (bisector->IsEmpty())
       return nullptr;
     Handle(Geom2d_Curve) result = bisector;
@@ -609,7 +614,10 @@ struct OCCTMedialAxis
 // holds one graph, so widening this would mean a different return shape; documented on
 // MedialAxis.init(of:) rather than changed. Measured: a two-face compound returns the same
 // arcs as its first face alone.
-OCCTMedialAxisRef OCCTMedialAxisCompute(OCCTShapeRef shape, double tolerance)
+// #999: this took a tolerance neither BRepMAT2d_Explorer::Perform nor
+// BRepMAT2d_BisectingLocus::Compute accepts. Compute's real knobs are LineIndex, aSide, aJoinType
+// and IsOpenResult, all left at the OCCT defaults spelled out in the call below.
+OCCTMedialAxisRef OCCTMedialAxisCompute(OCCTShapeRef shape)
 {
   if (!shape)
     return nullptr;
@@ -2368,9 +2376,13 @@ int32_t OCCTExtremaExtPElC2dLin(double               px,
 {
   try
   {
-    gp_Pnt2d          pt(px, py);
-    gp_Lin2d          line(gp_Pnt2d(lpx, lpy), gp_Dir2d(ldx, ldy));
-    Extrema_ExtPElC2d ext(pt, line, tolerance, -1e10, 1e10);
+    gp_Pnt2d pt(px, py);
+    gp_Lin2d line(gp_Pnt2d(lpx, lpy), gp_Dir2d(ldx, ldy));
+    // The 2D sibling of the Extrema_ExtPElC sites in OCCTBridge_Curve3D.mm (#1020). A line is
+    // unbounded and Uinf/Usup post-filter an answer Extrema has already computed, so a finite
+    // bound can only discard a correct result. RealFirst()/RealLast() admits every
+    // representable parameter, matching OCCT's own unbounded-conic call sites.
+    Extrema_ExtPElC2d ext(pt, line, tolerance, RealFirst(), RealLast());
     if (!ext.IsDone())
       return -1;
     int32_t nb = std::min((int32_t)ext.NbExt(), max);
@@ -2545,16 +2557,17 @@ OCCTCurve2DRef _Nullable OCCTBisectorBisecAnaPointPoint(double pt1x,
 // MARK: - BRepAdaptor_Curve2d Edge PCurves (v0.61)
 // MARK: - BRepAdaptor_Curve2d (v0.61.0)
 
+// #1026: both refuse a null shape the way they already refused a wrong-typed one, leaving the out
+// parameters untouched. occtShapeIsType (OCCTBridge_Internal.h) is the pointer test and the
+// null-shape test in one, and TopoDS_Shape::ShapeType() needs the second: it is an unguarded
+// myTShape dereference, so a null shape was a SIGSEGV rather than a refusal.
 bool OCCTEdgePCurveParams(OCCTShapeRef edge, OCCTShapeRef face, double* outFirst, double* outLast)
 {
-  if (!edge || !face || !outFirst || !outLast)
+  if (!occtShapeIsType(edge, TopAbs_EDGE) || !occtShapeIsType(face, TopAbs_FACE) || !outFirst
+      || !outLast)
     return false;
   try
   {
-    if (edge->shape.ShapeType() != TopAbs_EDGE)
-      return false;
-    if (face->shape.ShapeType() != TopAbs_FACE)
-      return false;
     TopoDS_Edge         e = TopoDS::Edge(edge->shape);
     TopoDS_Face         f = TopoDS::Face(face->shape);
     BRepAdaptor_Curve2d adaptor(e, f);
@@ -2570,14 +2583,10 @@ bool OCCTEdgePCurveParams(OCCTShapeRef edge, OCCTShapeRef face, double* outFirst
 
 bool OCCTEdgePCurveValue(OCCTShapeRef edge, OCCTShapeRef face, double t, double* outU, double* outV)
 {
-  if (!edge || !face || !outU || !outV)
+  if (!occtShapeIsType(edge, TopAbs_EDGE) || !occtShapeIsType(face, TopAbs_FACE) || !outU || !outV)
     return false;
   try
   {
-    if (edge->shape.ShapeType() != TopAbs_EDGE)
-      return false;
-    if (face->shape.ShapeType() != TopAbs_FACE)
-      return false;
     TopoDS_Edge         e = TopoDS::Edge(edge->shape);
     TopoDS_Face         f = TopoDS::Face(face->shape);
     BRepAdaptor_Curve2d adaptor(e, f);
@@ -3309,7 +3318,7 @@ OCCTCurve2DRef _Nullable OCCTCurve2DSegmentFromPoints(OCCTPoint2DRef _Nonnull p1
 }
 
 // Failure contract: *outDistance < 0, and NaN returned. The parameter cannot carry the failure
-// signal — 0 is a legitimate result (projecting a segment's own start point onto it returns
+// signal: 0 is a legitimate result (projecting a segment's own start point onto it returns
 // exactly 0), which is what the old "returns 0 on failure" contract conflated (#413).
 double OCCTCurve2DProjectPoint2D(OCCTCurve2DRef _Nonnull curve,
                                  OCCTPoint2DRef _Nonnull point,
@@ -3833,7 +3842,7 @@ int OCCTBisectorInterPointPoint(double                         ax,
     if (b2.Value().IsNull())
       return 0;
 
-    // Set up domains — use large parameter range
+    // Set up domains, using a large parameter range
     IntRes2d_Domain d1(gp_Pnt2d(b1.Value()->Value(-100)),
                        -100.0,
                        1e-6,
@@ -7661,11 +7670,11 @@ bool OCCTCurve2DBezierReverse(OCCTCurve2DRef curve)
 // OCCTCurve2DTranslate/Rotate/Scale/MirrorAxis/MirrorPoint family that returns a transformed
 // copy. Both build the same five transformations; each family built them its own way, so the
 // two could drift, and had already drifted on the null guard below. They share this builder now,
-// mirroring buildTrsf3D in OCCTBridge_Curve3D.mm / OCCTBridge_Surface.mm.
+// mirroring occtBuildTrsf3D, which the two 3D families share from OCCTBridge_Internal.h (#995).
 //
 // The scale case is the only one whose construction changes. The dispatcher used to compose it
 // by hand as SetScaleFactor(S) + SetTranslationPart(C * (1 - S)); gp_Trsf2d::SetScale(C, S) is
-// what the immutable family reached through Geom2d_Geometry::Scale, and what buildTrsf3D uses.
+// what the immutable family reached through Geom2d_Geometry::Scale, and what occtBuildTrsf3D uses.
 // Verified equivalent before switching, over factors {2.5, 0.25, 1, -1, -3, 0, 1e-9, 1e9} x three
 // centres including (1e6, 1e-6): identical ScaleFactor(), identical TranslationPart(), identical
 // transformed coordinates, to the bit. The two disagree only on the internal gp_TrsfForm tag at
@@ -7695,13 +7704,14 @@ static bool buildTrsf2D(gp_Trsf2d& trsf, int32_t type, double p1, double p2, dou
   }
 }
 
+// #999: this declared a p5 that buildTrsf2D never reads and no gp_Trsf2d setter it reaches takes.
+// Every Swift call site passed a literal 0 for it.
 bool OCCTCurve2DTransform(OCCTCurve2DRef curve,
                           int32_t        transformType,
                           double         p1,
                           double         p2,
                           double         p3,
-                          double         p4,
-                          double         p5)
+                          double         p4)
 {
   // #478: the handle as well as the wrapper. Geom2d_Curve::Transform is a kernel virtual, so
   // its Standard_NullObject precondition is compiled out of this No_Exception build and a null
@@ -7899,7 +7909,7 @@ OCCTCurve2DRef OCCTGeom2dEvalAHTBezierCurveCreate(const double* poles,
 }
 
 // end of v0.131.0 implementations
-// MARK: - 2D Curve (Geom2d) — v0.16.0
+// MARK: - 2D Curve (Geom2d), v0.16.0
 
 #include <Geom2d_Curve.hxx>
 #include <Geom2d_Line.hxx>
@@ -8925,13 +8935,21 @@ int32_t OCCTCurve2DAllExtrema(OCCTCurve2DRef      c1,
 
 // Conversion
 
-OCCTCurve2DRef OCCTCurve2DToBSpline(OCCTCurve2DRef c, double tolerance)
+// #999: this took a tolerance Geom2dConvert::CurveToBSplineCurve does not have. Its one parameter
+// is the Convert_ParameterisationType, and it is live: measured on a full circle of radius 5, the
+// eight types give degree 2/2/2/6/4/7 and 6/8/6/12/7 poles, and Polynomial is the only
+// non-rational and the only inexact one (6.5e-06 relative radial error against ~1e-16). Two of
+// them, TgtThetaOver2_1 and _2, throw for a full circle: their own documentation caps the opening
+// angle at 0.9999*pi and 1.9999*pi. Every type throws for an unbounded curve.
+// See Scripts/repro/999-geom2d-curve3d-healing/parameterisation_and_bisector.mm.
+OCCTCurve2DRef OCCTCurve2DToBSpline(OCCTCurve2DRef c, OCCTParameterisationType parameterisation)
 {
   if (!c || c->curve.IsNull())
     return nullptr;
   try
   {
-    Handle(Geom2d_BSplineCurve) bsp = Geom2dConvert::CurveToBSplineCurve(c->curve);
+    Handle(Geom2d_BSplineCurve) bsp =
+      Geom2dConvert::CurveToBSplineCurve(c->curve, (Convert_ParameterisationType)parameterisation);
     if (bsp.IsNull())
       return nullptr;
     return new OCCTCurve2D(bsp);
@@ -9037,7 +9055,7 @@ bool OCCTCurve2DGetCurvature(OCCTCurve2DRef c, double u, double* curvature)
   {
     GeomLProp_CLProps2d props = occtCurve2dLocalProps(c->curve, u, 2);
     // Curvature() is only meaningful once the tangent is established. It does raise otherwise,
-    // but through LProp_NotDefined_Raise_if, which compiles out under No_Exception — defined
+    // but through LProp_NotDefined_Raise_if, which compiles out under No_Exception, defined
     // for the OCCT build, not for this one. Matches OCCTCurve3DGetCurvature (#494).
     if (!props.IsTangentDefined())
       return false;

@@ -74,9 +74,9 @@ public init(source: Drawing, translate: SIMD2<Double> = .zero, scale: Double = 1
 ```
 
 - **Parameters:**
-  - `source` — the `Drawing` to wrap.
-  - `translate` — 2D offset applied after scaling (default `.zero`).
-  - `scale` — uniform scale factor (default `1.0`).
+  - `source`: the `Drawing` to wrap.
+  - `translate`: 2D offset applied after scaling (default `.zero`).
+  - `scale`: uniform scale factor (default `1.0`).
 - **Example:**
   ```swift
   let placed = TransformedDrawing(source: sideView,
@@ -96,7 +96,7 @@ public func apply(_ p: SIMD2<Double>) -> SIMD2<Double>
 
 Computes `scale * p + translate`. Pure-Swift; used internally by `DXFWriter.collectFromDrawing`.
 
-- **Parameters:** `p` — input 2D point in drawing-local coordinates.
+- **Parameters:** `p`, input 2D point in drawing-local coordinates.
 - **Returns:** Transformed point in sheet coordinates.
 - **Example:**
   ```swift
@@ -121,8 +121,8 @@ public func transformed(translate: SIMD2<Double>, scale: Double = 1.0) -> Transf
 Sugar for `TransformedDrawing(source: self, translate: translate, scale: scale)`. Pass the result to `DXFWriter.collectFromDrawing` to emit all edges and annotations with the transform applied.
 
 - **Parameters:**
-  - `translate` — 2D offset in sheet coordinates.
-  - `scale` — uniform scale factor (default `1.0`).
+  - `translate`: 2D offset in sheet coordinates.
+  - `scale`: uniform scale factor (default `1.0`).
 - **Returns:** A `TransformedDrawing` ready to pass to `DXFWriter.collectFromDrawing`.
 - **Example:**
   ```swift
@@ -146,8 +146,8 @@ public func bounds(deflection: Double = 0.1,
 Iterates all edge polylines (tessellated at `deflection`) and, when `includeAnnotations` is true, also expands the box to include the key points of all dimensions and annotations.
 
 - **Parameters:**
-  - `deflection` — tessellation deflection for edge polyline sampling (default `0.1`).
-  - `includeAnnotations` — when `true`, annotation extents are included in the bounding box (default `true`).
+  - `deflection`: tessellation deflection for edge polyline sampling (default `0.1`).
+  - `includeAnnotations`: when `true`, annotation extents are included in the bounding box (default `true`).
 - **Returns:** Tuple of min and max 2D corners, or `nil` if the drawing contains no geometry.
 - **Example:**
   ```swift
@@ -175,8 +175,8 @@ public struct AutoCentrelineResult: Sendable {
 }
 ```
 
-- `added` — the `.centreline` annotations appended to the drawing.
-- `skipped` — axes that projected to a point in the view (i.e. the axis is parallel to the view direction) and were therefore omitted.
+- `added`: the `.centreline` annotations appended to the drawing.
+- `skipped`: axes that projected to a point in the view (i.e. the axis is parallel to the view direction) and were therefore omitted.
 
 *(Per-field anchor below, for cross-reference; the list above has the actual meaning of each.)*
 
@@ -200,11 +200,11 @@ public func addAutoCentrelines(from shape: Shape,
 Calls `Shape.revolutionAxes(tolerance:)` on `shape`, then projects and clips each axis to the drawing's 2D bounding box, extending each end by `overshoot`. Axes whose direction is parallel to the view direction are recorded in `AutoCentrelineResult.skipped`.
 
 - **Parameters:**
-  - `shape` — the source 3D shape (typically the one this drawing was projected from).
-  - `viewDirection` — the projection direction used when creating the drawing; assumed unit-length.
-  - `overshoot` — extra length (drawing units) added past the bounding box at both ends of each projected axis (default `5`).
-  - `tolerance` — axis-deduplication tolerance passed to `Shape.revolutionAxes` (default `1e-6`).
-  - `bounds` — optional 2D clipping rectangle; when `nil` falls back to `±1000` centred at the origin. Pass `Drawing.bounds()` for best accuracy.
+  - `shape`: the source 3D shape (typically the one this drawing was projected from).
+  - `viewDirection`: the projection direction used when creating the drawing; assumed unit-length.
+  - `overshoot`: extra length (drawing units) added past the bounding box at both ends of each projected axis (default `5`).
+  - `tolerance`: axis-deduplication tolerance passed to `Shape.revolutionAxes` (default `1e-6`).
+  - `bounds`: optional 2D clipping rectangle; when `nil` falls back to `±1000` centred at the origin. Pass `Drawing.bounds()` for best accuracy.
 - **Returns:** `AutoCentrelineResult` listing added annotations and skipped axes.
 - **Example:**
   ```swift
@@ -235,8 +235,8 @@ public struct AutoCentermarkResult: Sendable {
 }
 ```
 
-- `added` — the `.centermark` annotations appended to the drawing.
-- `skipped` — circular edges that project edge-on (circle plane parallel to view direction) and were therefore omitted.
+- `added`: the `.centermark` annotations appended to the drawing.
+- `skipped`: circular edges that project edge-on (circle plane parallel to view direction) and were therefore omitted.
 
 ---
 
@@ -262,11 +262,11 @@ public func addAutoCentermarks(from shape: Shape,
 A circle is considered edge-on (and is skipped) when `abs(dot(circleNormal, viewDirection)) < 0.1`. This complements `addAutoCentrelines`, which handles revolution axes.
 
 - **Parameters:**
-  - `shape` — the 3D shape whose circular edges are inspected.
-  - `viewDirection` — the projection direction; assumed unit-length.
-  - `extent` — full arm length of the centermark cross in drawing units (default `8`).
-  - `minRadius` — circles with radius smaller than this value are skipped (default `0`).
-  - `bounds` — optional 2D clipping rectangle; circles whose projected centre falls outside are skipped.
+  - `shape`: the 3D shape whose circular edges are inspected.
+  - `viewDirection`: the projection direction; assumed unit-length.
+  - `extent`: full arm length of the centermark cross in drawing units (default `8`).
+  - `minRadius`: circles with radius smaller than this value are skipped (default `0`).
+  - `bounds`: optional 2D clipping rectangle; circles whose projected centre falls outside are skipped.
 - **Returns:** `AutoCentermarkResult` listing added annotations and skipped edges.
 - **Example:**
   ```swift
@@ -332,11 +332,11 @@ public static func cosmeticThreadSideView(
 Generates two parallel solid centrelines at the minor diameter (computed as `max(majorDiameter - 1.0825 × pitch, majorDiameter × 0.8)`) on each side of the thread axis, plus an optional text label positioned at the thread midline. Returns an empty array if `axisStart == axisEnd`.
 
 - **Parameters:**
-  - `axisStart` — projected 2D start of the thread axis.
-  - `axisEnd` — projected 2D end of the thread axis.
-  - `majorDiameter` — nominal (major) thread diameter.
-  - `pitch` — thread pitch; used to compute minor diameter per ISO 68.
-  - `callout` — optional thread callout string (e.g. `"M10×1.5"`); placed with a leader 10 units past the minor radius.
+  - `axisStart`: projected 2D start of the thread axis.
+  - `axisEnd`: projected 2D end of the thread axis.
+  - `majorDiameter`: nominal (major) thread diameter.
+  - `pitch`: thread pitch; used to compute minor diameter per ISO 68.
+  - `callout`: optional thread callout string (e.g. `"M10×1.5"`); placed with a leader 10 units past the minor radius.
 - **Returns:** Array of `DrawingAnnotation` values (`.centreline` lines, and optionally `.textLabel`).
 - **Example:**
   ```swift
@@ -366,9 +366,9 @@ public static func cosmeticThreadEndView(
 Returns a 3/4 broken arc at the minor diameter: three arcs covering 0–90°, 90–180°, and 180–315°, leaving a 45° gap in the last quadrant per the ISO convention.
 
 - **Parameters:**
-  - `centre` — projected 2D centre of the threaded hole or shaft.
-  - `majorDiameter` — nominal (major) thread diameter.
-  - `pitch` — thread pitch; used to compute minor diameter.
+  - `centre`: projected 2D centre of the threaded hole or shaft.
+  - `majorDiameter`: nominal (major) thread diameter.
+  - `pitch`: thread pitch; used to compute minor diameter.
 - **Returns:** Array of three `ArcSegment` values ready to pass to `DXFWriter.addArc`.
 - **Example:**
   ```swift
@@ -434,9 +434,9 @@ public func addCosmeticThreadEndView(centre: SIMD2<Double>,
 Delegates to `DrawingAnnotation.cosmeticThreadEndView` and writes each arc via `DXFWriter.addArc`.
 
 - **Parameters:**
-  - `centre` — 2D centre of the threaded hole or shaft in drawing coordinates.
-  - `majorDiameter` — nominal (major) thread diameter.
-  - `pitch` — thread pitch.
+  - `centre`: 2D centre of the threaded hole or shaft in drawing coordinates.
+  - `majorDiameter`: nominal (major) thread diameter.
+  - `pitch`: thread pitch.
 - **Example:**
   ```swift
   writer.addCosmeticThreadEndView(centre: SIMD2(50, 50),
@@ -458,9 +458,9 @@ public enum SurfaceFinishSymbol: String, Sendable, Hashable, Codable {
 }
 ```
 
-- `any` — any manufacturing method permitted; renders as a basic check-mark V.
-- `machiningRequired` — machining required; V with a horizontal bar across the top.
-- `machiningProhibited` — machining prohibited; V with a circle in the apex.
+- `any`: any manufacturing method permitted; renders as a basic check-mark V.
+- `machiningRequired`: machining required; V with a horizontal bar across the top.
+- `machiningProhibited`: machining prohibited; V with a circle in the apex.
 
 ---
 
@@ -593,11 +593,11 @@ public static func surfaceFinish(
 Generates the check-mark geometry (two lines at `position`), the appropriate symbol modifier (horizontal bar or apex circle), an Ra text label, an optional production-method text, and a leader line to `target`. The symbol is 8×10 drawing-units with the apex at `position`.
 
 - **Parameters:**
-  - `position` — apex position of the check-mark symbol.
-  - `target` — feature point the leader line points to.
-  - `ra` — roughness value (Ra); formatted as `"Ra X.XX"`.
-  - `symbol` — ISO 1302 symbol type (default `.machiningRequired`).
-  - `method` — optional production method text placed below the Ra label.
+  - `position`: apex position of the check-mark symbol.
+  - `target`: feature point the leader line points to.
+  - `ra`: roughness value (Ra); formatted as `"Ra X.XX"`.
+  - `symbol`: ISO 1302 symbol type (default `.machiningRequired`).
+  - `method`: optional production method text placed below the Ra label.
 - **Returns:** Array of `DrawingAnnotation` values (`.centreline` lines and `.textLabel` entries).
 - **Example:**
   ```swift
@@ -614,7 +614,7 @@ Generates the check-mark geometry (two lines at `position`), the appropriate sym
 
 ### `DrawingAnnotation.featureControlFrame(at:symbol:tolerance:datums:leaderTo:)`
 
-Produces an ISO 1101 feature control frame — the classic rectangular box divided into symbol, tolerance, and datum-reference cells.
+Produces an ISO 1101 feature control frame, the classic rectangular box divided into symbol, tolerance, and datum-reference cells.
 
 ```swift
 public static func featureControlFrame(
@@ -629,11 +629,11 @@ public static func featureControlFrame(
 Generates the outer rectangle, vertical cell dividers, the symbol glyph, tolerance text, one cell per datum, and an optional leader from the left edge of the frame to `target`.
 
 - **Parameters:**
-  - `position` — bottom-left corner of the frame.
-  - `symbol` — GD&T characteristic symbol.
-  - `tolerance` — tolerance string, e.g. `"0.1"` or `"0.1 M"` for MMC modifier.
-  - `datums` — ordered datum reference letters, e.g. `["A", "B", "C"]` (default empty).
-  - `leaderTo` — optional feature point for the leader line (default `nil`).
+  - `position`: bottom-left corner of the frame.
+  - `symbol`: GD&T characteristic symbol.
+  - `tolerance`: tolerance string, e.g. `"0.1"` or `"0.1 M"` for MMC modifier.
+  - `datums`: ordered datum reference letters, e.g. `["A", "B", "C"]` (default empty).
+  - `leaderTo`: optional feature point for the leader line (default `nil`).
 - **Returns:** Array of `DrawingAnnotation` values.
 - **Example:**
   ```swift
@@ -650,7 +650,7 @@ Generates the outer rectangle, vertical cell dividers, the symbol glyph, toleran
 
 ### `DrawingAnnotation.datumFeature(label:at:pointingTo:)`
 
-Produces an ISO 1101 datum feature symbol — a letter in a square box with a filled-triangle pointer.
+Produces an ISO 1101 datum feature symbol, a letter in a square box with a filled-triangle pointer.
 
 ```swift
 public static func datumFeature(
@@ -663,9 +663,9 @@ public static func datumFeature(
 Generates a 8×8 box with the label text centred, then a filled triangle (rendered as three lines) pointing from the box edge toward `target`, connected by a leader line.
 
 - **Parameters:**
-  - `label` — single-letter datum identifier, e.g. `"A"`.
-  - `position` — bottom-left corner of the datum box.
-  - `target` — the feature surface point the triangle points to.
+  - `label`: single-letter datum identifier, e.g. `"A"`.
+  - `position`: bottom-left corner of the datum box.
+  - `target`: the feature surface point the triangle points to.
 - **Returns:** Array of `DrawingAnnotation` values.
 - **Example:**
   ```swift
@@ -691,8 +691,8 @@ public func detailView(at placement: SIMD2<Double>, scale: Double) -> Transforme
 Returns a `TransformedDrawing` with the given placement and scale. Pass the result to `DXFWriter.collectFromDrawing`. The caller is responsible for adding a bubble label on the parent view and a scale label on the detail placement.
 
 - **Parameters:**
-  - `placement` — 2D position of the detail view's origin on the sheet.
-  - `scale` — magnification factor (e.g. `2.0` for 2:1).
+  - `placement`: 2D position of the detail view's origin on the sheet.
+  - `scale`: magnification factor (e.g. `2.0` for 2:1).
 - **Returns:** A `TransformedDrawing` ready for `DXFWriter.collectFromDrawing`.
 - **Example:**
   ```swift
@@ -719,9 +719,9 @@ public static func breakLine(from: SIMD2<Double>, to: SIMD2<Double>,
 Renders as five line segments forming a zigzag at the midpoint of `from`–`to`: straight run to the midpoint, then a Z-shaped kink of the given amplitude, then a straight run to the end.
 
 - **Parameters:**
-  - `from` — start point of the break line.
-  - `to` — end point of the break line.
-  - `amplitude` — lateral displacement of the zigzag peak (default `2.0`).
+  - `from`: start point of the break line.
+  - `to`: end point of the break line.
+  - `amplitude`: lateral displacement of the zigzag peak (default `2.0`).
 - **Returns:** Five `.centreline` annotations forming the break-line geometry.
 - **Example:**
   ```swift
@@ -748,8 +748,8 @@ public struct AutoDimensionResult: Sendable {
 }
 ```
 
-- `added` — the `DrawingDimension` values appended to the drawing.
-- `skipped` — human-readable reasons for features that were not dimensioned; useful for debugging missing hole dimensions.
+- `added`: the `DrawingDimension` values appended to the drawing.
+- `skipped`: human-readable reasons for features that were not dimensioned; useful for debugging missing hole dimensions.
 
 ---
 
@@ -775,11 +775,11 @@ public func addAutoDimensions(from shape: Shape,
 Projects all eight corners of the shape's 3D bounding box into the view plane to derive overall X and Y extents, then places `addLinearDimension` calls for each non-zero extent. Then iterates circular edges: skips edge-on circles (`abs(dot(circleNormal, viewDirection)) < 0.1`), skips circles with radius below `minRadius`, and places `addDiameterDimension` for each remaining circle.
 
 - **Parameters:**
-  - `shape` — the 3D source shape.
-  - `viewDirection` — the projection direction; assumed unit-length.
-  - `minRadius` — minimum circle radius to dimension (default `0.1`).
-  - `dimensionOffset` — distance in drawing units between the view boundary and the dimension line for overall extents (default `10`).
-  - `bounds` — optional 2D clipping rectangle; circles outside are skipped.
+  - `shape`: the 3D source shape.
+  - `viewDirection`: the projection direction; assumed unit-length.
+  - `minRadius`: minimum circle radius to dimension (default `0.1`).
+  - `dimensionOffset`: distance in drawing units between the view boundary and the dimension line for overall extents (default `10`).
+  - `bounds`: optional 2D clipping rectangle; circles outside are skipped.
 - **Returns:** `AutoDimensionResult` with all added dimensions and skip reasons.
 - **Example:**
   ```swift
@@ -805,8 +805,8 @@ public struct HatchSegment: Sendable {
 }
 ```
 
-- `start` — start point of the hatch line segment.
-- `end` — end point of the hatch line segment.
+- `start`: start point of the hatch line segment.
+- `end`: end point of the hatch line segment.
 
 ---
 
@@ -831,13 +831,13 @@ public static func generate(
 Clips an infinite family of parallel lines at the given `spacing` against the boundary polygon using `Hatch_Hatcher`. Returns an empty array if `boundary.count < 3`, `spacing <= 0`, or `maxSegments <= 0`.
 
 - **Parameters:**
-  - `boundary` — ordered polygon vertices defining the closed fill region.
-  - `direction` — direction of the hatch lines (need not be unit-length).
-  - `spacing` — perpendicular distance between consecutive hatch lines.
-  - `offset` — offset of the first hatch line from the origin along the perpendicular axis (default `0`).
-  - `maxSegments` — output *capacity* (default `10000`), clamped into `0...Sampling.maximumSampleCount` (10,000,000); 0 or less returns empty (#622).
+  - `boundary`: ordered polygon vertices defining the closed fill region.
+  - `direction`: direction of the hatch lines (need not be unit-length).
+  - `spacing`: perpendicular distance between consecutive hatch lines.
+  - `offset`: offset of the first hatch line from the origin along the perpendicular axis (default `0`).
+  - `maxSegments`: output *capacity* (default `10000`), clamped into `0...Sampling.maximumSampleCount` (10,000,000); 0 or less returns empty (#622).
 - **Returns:** Array of `HatchSegment` values clipped inside `boundary`.
-- **OCCT:** `Hatch_Hatcher::AddLine` + `Hatch_Hatcher::Trim` — adds one directed line per spacing interval, then trims against each boundary edge.
+- **OCCT:** `Hatch_Hatcher::AddLine` + `Hatch_Hatcher::Trim`, adds one directed line per spacing interval, then trims against each boundary edge.
 - **Example:**
   ```swift
   // Cross-hatch a rectangle at 45° with 2mm spacing

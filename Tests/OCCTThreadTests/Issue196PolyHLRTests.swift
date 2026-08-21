@@ -3,7 +3,7 @@ import Foundation
 import simd
 @testable import OCCTSwift
 
-// #196: the v1.4.1 smooth analytic thread helicoid is HLR-hostile — projecting its BSpline
+// #196: the v1.4.1 smooth analytic thread helicoid is HLR-hostile, projecting its BSpline
 // faces with OCCT's *exact* HLR (`hlrEdges` / HLRBRep_Algo) computes analytic helical
 // silhouettes and blows up (~19× slower 2D drawing pipeline vs the v1.4.0 faceted thread).
 // The fix is NOT to change the solid: polyhedral HLR (`hlrPolyEdges` / HLRBRep_PolyAlgo)
@@ -11,7 +11,7 @@ import simd
 // than exact HLR on this thread) while the one analytic solid stays smooth for STEP. The mesh
 // `deflection` is now caller-tunable so drawing pipelines can trade fidelity for speed.
 // Separate file, cf. #183.
-@Suite("Issue #196 — polyhedral HLR for threaded solids (fast 2D drawings)")
+@Suite("Issue #196, polyhedral HLR for threaded solids (fast 2D drawings)")
 struct Issue196PolyHLRTests {
 
     private func analyticThread() -> Shape? {
@@ -30,9 +30,9 @@ struct Issue196PolyHLRTests {
     }
 
     // NB: each deflection is exercised on its OWN fresh thread. BRepMesh_IncrementalMesh is
-    // incremental — it refines an existing triangulation but never coarsens it — so calling
+    // incremental, it refines an existing triangulation but never coarsens it, so calling
     // fine-then-coarse on the *same* shape would reuse the fine mesh and mask the parameter.
-    @Test("deflection is honoured — coarser mesh yields fewer drawing edges")
+    @Test("deflection is honoured, coarser mesh yields fewer drawing edges")
     func deflectionControlsDetail() {
         guard let tFine = analyticThread(), let tCoarse = analyticThread() else {
             Issue.record("no thread"); return
@@ -46,7 +46,7 @@ struct Issue196PolyHLRTests {
         if let fine, let coarse {
             #expect(fine > 0); #expect(coarse > 0)
             // Deflection is honoured (it changes the projected edge set). With the v1.5+ smooth
-            // cam-loft thread (#213) the count is NOT strictly monotonic in deflection — a coarse
+            // cam-loft thread (#213) the count is NOT strictly monotonic in deflection, a coarse
             // triangulation of the helicoidal flanks can yield MORE silhouette segments, not fewer
             // (unlike the old v1.4.1 helicoid). What matters is that the parameter takes effect.
             #expect(coarse != fine)

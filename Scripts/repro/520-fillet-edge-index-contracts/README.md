@@ -62,29 +62,29 @@ edge's curve range is `[0, side]`, so `[(0, 1.0), (1, 3.0)]` truncated to contou
 
 | call on a 20mm box with 1 contour | measured |
 |---|---|
-| `SetRadius(2.0, IC=0, IinC=1)` | volume 7982.831853 — same as `IC=1`, i.e. it took effect |
+| `SetRadius(2.0, IC=0, IinC=1)` | volume 7982.831853, same as `IC=1`, i.e. it took effect |
 | `SetRadius(2.0, IC=1, IinC=1)` | volume 7982.831853 |
 | `SetRadius(2.0, IC=20, IinC=1)` | dropped, then **SIGSEGV** in `Build()` |
 
 `ChFi3d_FilBuilder::SetRadius` guards only `IC <= NbElements()`, with no lower bound (the same
 one-sided check #505 found). `IC=0` passes it and reaches `Value(0)` on a 1-based sequence, which on
-this build happened to read contour 1 — so the first profile point landed as a constant radius. A
+this build happened to read contour 1, so the first profile point landed as a constant radius. A
 large `IC` fails the check and is dropped silently, which is what made the last point a no-op.
 
 ## `occt_520_radius_law_crash.mm`: the contour that never gets a radius, and the profile contract
 
 | case | measured |
 |---|---|
-| `no-radius` — `Add(edge)`, no `SetRadius` at all | **SIGSEGV** (exit 139) |
-| `radius-dropped` — the one `SetRadius` dropped by `IC <= NbElements()` | **SIGSEGV** (exit 139) |
-| `zero-radius` — profile `[(0, 1.0), (1, 0.0)]` | `IsDone=1`, volume 7998.480894, valid |
-| `negative-radius` — profile `[(0, 1.0), (1, -3.0)]` | `IsDone=1`, volume 7999.471533, **`BRepCheck_Analyzer` invalid** |
+| `no-radius`: `Add(edge)`, no `SetRadius` at all | **SIGSEGV** (exit 139) |
+| `radius-dropped`: the one `SetRadius` dropped by `IC <= NbElements()` | **SIGSEGV** (exit 139) |
+| `zero-radius`: profile `[(0, 1.0), (1, 0.0)]` | `IsDone=1`, volume 7998.480894, valid |
+| `negative-radius`: profile `[(0, 1.0), (1, -3.0)]` | `IsDone=1`, volume 7999.471533, **`BRepCheck_Analyzer` invalid** |
 | `all-radii-zero` | `IsDone=0` |
-| `params-out-of-range-2pt` — X of 99 and -3 | volume 7981.047467, identical to X of 0 and 1 |
-| `params-out-of-range-3pt` — X of -5, 0, 7 | volume 7963.730821 |
-| `params-equivalent-3pt` — X of 0, 0.4166…, 1 | volume 7963.730821, identical to the row above |
-| `params-degenerate-3pt` — X all 0.5 | `IsDone=0` (the renormalisation divides by zero) |
-| `params-descending-3pt` — X of 1, 0.5, 0 | volume 7960.426609, a different shape from the ascending profile |
+| `params-out-of-range-2pt`: X of 99 and -3 | volume 7981.047467, identical to X of 0 and 1 |
+| `params-out-of-range-3pt`: X of -5, 0, 7 | volume 7963.730821 |
+| `params-equivalent-3pt`: X of 0, 0.4166…, 1 | volume 7963.730821, identical to the row above |
+| `params-degenerate-3pt`: X all 0.5 | `IsDone=0` (the renormalisation divides by zero) |
+| `params-descending-3pt`: X of 1, 0.5, 0 | volume 7960.426609, a different shape from the ascending profile |
 | `single-point` | volume 7982.831853, i.e. a constant radius |
 
 Three things follow, and they are what `occtFilletSetRadiusProfile` enforces:
@@ -98,7 +98,7 @@ Three things follow, and they are what `occtFilletSetRadiusProfile` enforces:
    between that shape and a caller.
 3. **`[0, 1]` is a caller-facing contract, not an OCCT-enforced one.** OCCT ignores the parameters
    entirely for 1 or 2 points and renormalises 3 or more, so an out-of-range profile is silently
-   *reinterpreted* rather than rejected — `[(-5, 1), (0, 4), (7, 1)]` puts its peak at 41.7% of the
+   *reinterpreted* rather than rejected, `[(-5, 1), (0, 4), (7, 1)]` puts its peak at 41.7% of the
    contour instead of at the start. Equal parameters divide by zero and descending ones reverse the
    law. All three are rejected rather than reinterpreted.
 

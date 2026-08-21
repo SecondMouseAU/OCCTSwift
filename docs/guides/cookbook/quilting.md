@@ -6,7 +6,7 @@ parent: Cookbook
 
 # Quilting Faces
 
-Quilting is the process of **joining faces that already share exact edges** into a single connected shell. Unlike sewing, quilting does **not** use a tolerance — it only merges edges that are already topologically identical (coincident vertices, coincident edges).
+Quilting is the process of **joining faces that already share exact edges** into a single connected shell. Unlike sewing, quilting does **not** use a tolerance, it only merges edges that are already topologically identical (coincident vertices, coincident edges).
 
 Use quilting when:
 - You have faces from a CAD operation that should form a closed shell but are currently separate
@@ -37,7 +37,7 @@ let front  = Face.makePlane(width: 10, height: 10, origin: .zero, normal: SIMD3(
 let back   = Face.makePlane(width: 10, height: 10, origin: SIMD3(0, 10, 0), normal: SIMD3(0, 1, 0))
 
 guard let shell = Shape.quilt([top, bottom, left, right, front, back]) else {
-    fatalError("Quilting failed — faces don't share edges perfectly")
+    fatalError("Quilting failed, faces don't share edges perfectly")
 }
 
 // Verify we got a closed shell
@@ -162,6 +162,6 @@ for face in faces {
 
 ## Related
 
-- [Sewing (sewn(tolerance:))](../reference/Shape-Healing.md#sewntolerance) — for near-coincident faces
-- [Healing with History](healing-and-validity.md) — `healedWithFullHistory()`, `sewnWithFullHistory(tolerance:)`
-- [API Reference: Shape.quilt](https://github.com/SecondMouseAU/OCCTSwift/blob/main/docs/API_REFERENCE.md) — Swift→OCCT mapping table
+- [Sewing (sewn(tolerance:))](../reference/Shape-Healing.md#sewntolerance), for near-coincident faces
+- [Healing with History](healing-and-validity.md), `healedWithFullHistory()`, `sewnWithFullHistory(tolerance:)`
+- [API Reference: Shape.quilt](https://github.com/SecondMouseAU/OCCTSwift/blob/main/docs/API_REFERENCE.md), Swift→OCCT mapping table

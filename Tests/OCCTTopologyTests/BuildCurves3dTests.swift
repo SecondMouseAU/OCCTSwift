@@ -6,7 +6,7 @@ import simd
 /// `BRepLib::BuildCurves3d` contract tests (#498).
 ///
 /// The two pre-existing tests for this operation both call it on a box, where every edge already
-/// carries a 3D curve — so `BRepLib::BuildCurve3d` returns `true` at its first line and computes
+/// carries a 3D curve, so `BRepLib::BuildCurve3d` returns `true` at its first line and computes
 /// nothing. A tolerance of 42 is indistinguishable from 1e-7 there. These tests use an edge that
 /// has *only* a pcurve, on a curved support surface, which is the one configuration where the
 /// operation does work and the tolerance is observable.

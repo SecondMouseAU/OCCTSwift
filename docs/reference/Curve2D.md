@@ -5,9 +5,9 @@ parent: API Reference
 
 # Curve2D
 
-A `Curve2D` is a parametric 2D curve — the Swift analog of OCCT's `Geom2d_Curve` class hierarchy. It wraps lines, segments, circles, arcs, ellipses, parabolas, hyperbolas, BSplines, and Bezier curves polymorphically behind a single opaque handle. `Curve2D` instances are used as pcurves (parameter-space curves on surfaces), 2D profiles, and constraint inputs. Obtain one via the static factory methods on `Curve2D`, `Curve2DGcc`, or by evaluating an existing curve at a point.
+A `Curve2D` is a parametric 2D curve, the Swift analog of OCCT's `Geom2d_Curve` class hierarchy. It wraps lines, segments, circles, arcs, ellipses, parabolas, hyperbolas, BSplines, and Bezier curves polymorphically behind a single opaque handle. `Curve2D` instances are used as pcurves (parameter-space curves on surfaces), 2D profiles, and constraint inputs. Obtain one via the static factory methods on `Curve2D`, `Curve2DGcc`, or by evaluating an existing curve at a point.
 
-> **Note:** `Curve2D` is documented across several pages — see also **Curve2D — Analytic Types**, **Curve2D — Analysis**, and **Curve2D — Constraint Solvers**.
+> **Note:** `Curve2D` is documented across several pages, see also **Curve2D, Analytic Types**, **Curve2D, Analysis**, and **Curve2D, Constraint Solvers**.
 
 ## Topics
 
@@ -138,7 +138,7 @@ Evaluates the 2D curve position at a parameter.
 public func point(at u: Double) -> SIMD2<Double>
 ```
 
-- **Parameters:** `u` — parameter value within `domain`.
+- **Parameters:** `u`, parameter value within `domain`.
 - **Returns:** 2D point on the curve.
 - **OCCT:** `Geom2d_Curve::Value(u)`.
 - **Example:**
@@ -158,9 +158,9 @@ Evaluates the position and first derivative (tangent) at a parameter.
 public func d1(at u: Double) -> (point: SIMD2<Double>, tangent: SIMD2<Double>)
 ```
 
-The tangent vector is not normalised — its magnitude depends on the parameterisation.
+The tangent vector is not normalised, its magnitude depends on the parameterisation.
 
-- **Parameters:** `u` — parameter value within `domain`.
+- **Parameters:** `u`, parameter value within `domain`.
 - **Returns:** Tuple of position and first-derivative vector.
 - **OCCT:** `Geom2d_Curve::D1(u, P, V1)`.
 - **Example:**
@@ -179,14 +179,14 @@ Evaluates position, first derivative, and second derivative at a parameter.
 public func d2(at u: Double) -> (point: SIMD2<Double>, d1: SIMD2<Double>, d2: SIMD2<Double>)
 ```
 
-- **Parameters:** `u` — parameter value within `domain`.
+- **Parameters:** `u`, parameter value within `domain`.
 - **Returns:** Tuple of position, first derivative, and second derivative.
 - **OCCT:** `Geom2d_Curve::D2(u, P, V1, V2)`.
 - **Example:**
   ```swift
   let seg = Curve2D.segment(from: .zero, to: SIMD2(10, 0))!
   let (pt, v1, v2) = seg.d2(at: 0)
-  // v2 ≈ SIMD2(0, 0) — zero second derivative for a line
+  // v2 ≈ SIMD2(0, 0), zero second derivative for a line
   ```
 
 ---
@@ -203,7 +203,7 @@ public static func line(through point: SIMD2<Double>, direction: SIMD2<Double>) 
 
 The curve is unbounded; its domain is `(-∞, +∞)`. Use `segment(from:to:)` for a bounded segment.
 
-- **Parameters:** `point` — a point on the line; `direction` — line direction (need not be normalised).
+- **Parameters:** `point`, a point on the line; `direction`, line direction (need not be normalised).
 - **Returns:** Infinite line curve, or `nil` if `direction` is zero.
 - **OCCT:** `Geom2d_Line(gp_Lin2d(point, direction))`.
 - **Example:**
@@ -221,7 +221,7 @@ Creates a bounded line segment between two points.
 public static func segment(from p1: SIMD2<Double>, to p2: SIMD2<Double>) -> Curve2D?
 ```
 
-- **Parameters:** `p1` — start point; `p2` — end point.
+- **Parameters:** `p1`, start point; `p2`, end point.
 - **Returns:** Segment curve, or `nil` if the points coincide.
 - **OCCT:** `Geom2d_TrimmedCurve` wrapping a `Geom2d_Line`.
 - **Example:**
@@ -242,7 +242,7 @@ public static func circle(center: SIMD2<Double>, radius: Double) -> Curve2D?
 
 The circle is periodic with period `2π`. U=0 starts on the positive X axis of the local frame.
 
-- **Parameters:** `center` — circle centre; `radius` — circle radius (must be > 0).
+- **Parameters:** `center`, circle centre; `radius`, circle radius (must be > 0).
 - **Returns:** Full circle curve, or `nil` if `radius ≤ 0`.
 - **OCCT:** `Geom2d_Circle(gp_Circ2d(...))`.
 - **See also:** [`circleFromCenterRadius(center:radius:)`](Curve2D-Analysis.md) builds the identical circle through OCCT's `gce_MakeCirc2d` algorithm and enforces the same `radius > 0` contract (#411).
@@ -263,9 +263,9 @@ public static func arcOfCircle(center: SIMD2<Double>, radius: Double,
                                startAngle: Double, endAngle: Double) -> Curve2D?
 ```
 
-- **Parameters:** `center` — circle centre; `radius` — radius (> 0); `startAngle` — start angle in radians; `endAngle` — end angle in radians.
+- **Parameters:** `center`, circle centre; `radius`, radius (> 0); `startAngle`, start angle in radians; `endAngle`, end angle in radians.
 - **Returns:** Circular arc, or `nil` on failure.
-- **OCCT:** `Geom2d_Circle` + `Geom2d_TrimmedCurve` (direct construction — no `GC_`/`GCE2d_` `Make`
+- **OCCT:** `Geom2d_Circle` + `Geom2d_TrimmedCurve` (direct construction, no `GC_`/`GCE2d_` `Make`
   helper is used; corrected from a stale `GCE2d_MakeArcOfCircle` attribution by #809).
 - **Example:**
   ```swift
@@ -286,10 +286,10 @@ public static func arcThrough(_ p1: SIMD2<Double>, _ p2: SIMD2<Double>,
 
 OCCT derives the centre and radius from the three points. The arc sweeps from `p1` through `p2` to `p3`.
 
-- **Parameters:** `p1` — start point; `p2` — interior point; `p3` — end point.
+- **Parameters:** `p1`, start point; `p2`, interior point; `p3`, end point.
 - **Returns:** Arc curve, or `nil` if points are collinear or coincident.
 - **OCCT:** `GC_MakeArcOfCircle2d(p1, p2, p3)` → `Geom2d_TrimmedCurve` (corrected from the deprecated
-  `GCE2d_MakeArcOfCircle` spelling by #809 — `GCE2d_MakeArcOfCircle` has been a `using` alias for
+  `GCE2d_MakeArcOfCircle` spelling by #809, `GCE2d_MakeArcOfCircle` has been a `using` alias for
   `GC_MakeArcOfCircle2d` since OCCT 8.0.0, and the implementation calls the latter directly).
 - **Example:**
   ```swift
@@ -307,7 +307,7 @@ public static func ellipse(center: SIMD2<Double>, majorRadius: Double,
                            minorRadius: Double, rotation: Double = 0) -> Curve2D?
 ```
 
-- **Parameters:** `center` — ellipse centre; `majorRadius` — semi-major axis (must be > 0 and ≥ `minorRadius`); `minorRadius` — semi-minor axis (must be > 0); `rotation` — rotation of the major axis from the X axis in radians (default 0).
+- **Parameters:** `center`, ellipse centre; `majorRadius`, semi-major axis (must be > 0 and ≥ `minorRadius`); `minorRadius`, semi-minor axis (must be > 0); `rotation`, rotation of the major axis from the X axis in radians (default 0).
 - **Returns:** Full ellipse curve, or `nil` if either radius is ≤ 0 or `minorRadius` exceeds `majorRadius`. Equal radii are valid.
 - **OCCT:** `Geom2d_Ellipse(gp_Elips2d(...))`.
 - **See also:** [`ellipseFromCenterDir(center:direction:majorRadius:minorRadius:)`](Curve2D-Analysis.md) builds the identical ellipse through OCCT's `gce_MakeElips2d` algorithm and enforces the same radius contract (#487).
@@ -329,9 +329,9 @@ public static func arcOfEllipse(center: SIMD2<Double>, majorRadius: Double,
                                 startAngle: Double, endAngle: Double) -> Curve2D?
 ```
 
-- **Parameters:** `center` — centre; `majorRadius` — semi-major axis; `minorRadius` — semi-minor axis; `rotation` — major-axis rotation in radians (default 0); `startAngle`/`endAngle` — arc bounds in radians.
+- **Parameters:** `center`, centre; `majorRadius`, semi-major axis; `minorRadius`, semi-minor axis; `rotation`, major-axis rotation in radians (default 0); `startAngle`/`endAngle`, arc bounds in radians.
 - **Returns:** Elliptical arc, or `nil` on failure.
-- **OCCT:** `Geom2d_Ellipse` + `Geom2d_TrimmedCurve` (direct construction — no `GC_`/`GCE2d_` `Make`
+- **OCCT:** `Geom2d_Ellipse` + `Geom2d_TrimmedCurve` (direct construction, no `GC_`/`GCE2d_` `Make`
   helper is used; corrected from a stale `GCE2d_MakeArcOfEllipse` attribution by #809).
 - **Example:**
   ```swift
@@ -350,7 +350,7 @@ public static func parabola(focus: SIMD2<Double>, direction: SIMD2<Double>,
                             focalLength: Double) -> Curve2D?
 ```
 
-- **Parameters:** `focus` — focus point; `direction` — axis direction from vertex toward focus; `focalLength` — distance from vertex to focus (must be > 0).
+- **Parameters:** `focus`, focus point; `direction`, axis direction from vertex toward focus; `focalLength`, distance from vertex to focus (must be > 0).
 - **Returns:** Parabola curve, or `nil` if `focalLength ≤ 0`.
 - **OCCT:** `Geom2d_Parabola(gp_Parab2d(...))`.
 - **See also:** [`parabolaFromCenterDir(center:direction:focal:)`](Curve2D-Analysis.md) places the same curve through OCCT's `gce_MakeParab2d` algorithm, taking the vertex rather than the focus, and enforces the same focal-length contract (#487).
@@ -371,7 +371,7 @@ public static func hyperbola(center: SIMD2<Double>, majorRadius: Double,
                              minorRadius: Double, rotation: Double = 0) -> Curve2D?
 ```
 
-- **Parameters:** `center` — hyperbola centre; `majorRadius` — real semi-axis; `minorRadius` — imaginary semi-axis (both must be > 0, in either order); `rotation` — major-axis rotation in radians (default 0).
+- **Parameters:** `center`, hyperbola centre; `majorRadius`, real semi-axis; `minorRadius`, imaginary semi-axis (both must be > 0, in either order); `rotation`, major-axis rotation in radians (default 0).
 - **Returns:** Hyperbola curve, or `nil` if either radius is ≤ 0. Unlike an ellipse, a minor radius larger than the major is valid.
 - **OCCT:** `Geom2d_Hyperbola(gp_Hypr2d(...))`.
 - **See also:** [`hyperbolaFromCenterDir(center:direction:majorRadius:minorRadius:)`](Curve2D-Analysis.md) builds the identical hyperbola through OCCT's `gce_MakeHypr2d` algorithm and enforces the same radius contract (#487).
@@ -397,7 +397,7 @@ public func drawAdaptive(angularDeflection: Double = 0.1,
 
 Concentrates sample points where curvature is high and fewer where the curve is straight, producing an efficient polyline for Metal rendering.
 
-- **Parameters:** `angularDeflection` — maximum angle between consecutive tangents (radians); `chordalDeflection` — maximum chord-to-curve deviation; `maxPoints` — output *capacity*, clamped into `0...Sampling.maximumSampleCount` (10,000,000), so an unservable capacity returns the same points rather than a coarser sampling; 0 or less returns empty (#558). The deflection criteria decide the actual point count.
+- **Parameters:** `angularDeflection`, maximum angle between consecutive tangents (radians); `chordalDeflection`, maximum chord-to-curve deviation; `maxPoints`, output *capacity*, clamped into `0...Sampling.maximumSampleCount` (10,000,000), so an unservable capacity returns the same points rather than a coarser sampling; 0 or less returns empty (#558). The deflection criteria decide the actual point count.
 - **Returns:** Array of 2D points along the curve; empty on failure.
 - **OCCT:** `GCPnts_TangentialDeflection` (via `OCCTCurve2DDrawAdaptive`).
 - **Example:**
@@ -417,7 +417,7 @@ Discretizes the curve at up to `pointCount` uniformly-spaced arc-length points. 
 public func drawUniform(pointCount: Int) -> [SIMD2<Double>]
 ```
 
-- **Parameters:** `pointCount`, the desired number of output points — a *request*, honoured within `2...Sampling.maximumSampleCount` (10,000,000); outside that range the result is empty (#501, #558). Not clamped: a count past the ceiling fails visibly rather than coming back coarser than what was asked for. Before #558 a negative aborted the process rather than returning empty.
+- **Parameters:** `pointCount`, the desired number of output points, a *request*, honoured within `2...Sampling.maximumSampleCount` (10,000,000); outside that range the result is empty (#501, #558). Not clamped: a count past the ceiling fails visibly rather than coming back coarser than what was asked for. Before #558 a negative aborted the process rather than returning empty.
 - **Returns:** Array of 2D points, never more than `pointCount`; empty on failure.
 - **OCCT:** `GCPnts_UniformAbscissa` (via `OCCTCurve2DDrawUniform`). It sizes its own array at `pointCount + 5` and can report more points than requested on a poorly-conditioned curve; the surplus is dropped and the curve's end point kept (#501).
 - **Example:**
@@ -438,7 +438,7 @@ public func drawDeflection(deflection: Double = 0.01,
                            maxPoints: Int = 4096) -> [SIMD2<Double>]
 ```
 
-- **Parameters:** `deflection` — maximum chord-to-curve deviation; `maxPoints` — output *capacity*, clamped into `0...Sampling.maximumSampleCount` (10,000,000), so an unservable capacity returns the same points rather than a coarser sampling; 0 or less returns empty (#558).
+- **Parameters:** `deflection`, maximum chord-to-curve deviation; `maxPoints`, output *capacity*, clamped into `0...Sampling.maximumSampleCount` (10,000,000), so an unservable capacity returns the same points rather than a coarser sampling; 0 or less returns empty (#558).
 - **Returns:** Array of 2D points; empty on failure.
 - **OCCT:** `GCPnts_UniformDeflection` (via `OCCTCurve2DDrawDeflection`).
 - **Example:**
@@ -464,11 +464,11 @@ public static func bspline(poles: [SIMD2<Double>], weights: [Double]? = nil,
 When `weights` is `nil` all pole weights default to 1.0 (non-rational BSpline).
 
 - **Parameters:**
-  - `poles` — control points (minimum 2).
-  - `weights` — per-pole weights (`nil` = uniform 1.0).
-  - `knots` — distinct knot values.
-  - `multiplicities` — per-knot multiplicity.
-  - `degree` — curve degree (≥ 1).
+  - `poles`: control points (minimum 2).
+  - `weights`: per-pole weights (`nil` = uniform 1.0).
+  - `knots`: distinct knot values.
+  - `multiplicities`: per-knot multiplicity.
+  - `degree`: curve degree (≥ 1).
 - **Returns:** BSpline/NURBS curve, or `nil` if parameters are invalid.
 - **OCCT:** `Geom2d_BSplineCurve(poles, knots, multiplicities, degree)`.
 - **Example:**
@@ -491,7 +491,7 @@ public static func bezier(poles: [SIMD2<Double>], weights: [Double]? = nil) -> C
 
 The curve passes through the first and last pole. The degree equals `poles.count − 1`.
 
-- **Parameters:** `poles` — control points (minimum 2); `weights` — per-pole rational weights (`nil` = uniform 1.0).
+- **Parameters:** `poles`, control points (minimum 2); `weights`, per-pole rational weights (`nil` = uniform 1.0).
 - **Returns:** Bezier curve, or `nil` if fewer than 2 poles or construction fails.
 - **OCCT:** `Geom2d_BezierCurve(poles)` or the weighted overload.
 - **Example:**
@@ -511,9 +511,9 @@ public static func interpolate(through points: [SIMD2<Double>], closed: Bool = f
                                tolerance: Double = 1e-6) -> Curve2D?
 ```
 
-The curve passes exactly through every point. Use `closed: true` for a periodic loop — [`interpolatePeriodic(points:tolerance:)`](Curve2D-Analysis.md) is a spelling of exactly that case and delegates here (#412).
+The curve passes exactly through every point. Use `closed: true` for a periodic loop, [`interpolatePeriodic(points:tolerance:)`](Curve2D-Analysis.md) is a spelling of exactly that case and delegates here (#412).
 
-- **Parameters:** `points` — interpolation points (minimum 2); `closed` — closed/periodic curve; `tolerance` — point coincidence tolerance.
+- **Parameters:** `points`, interpolation points (minimum 2); `closed`, closed/periodic curve; `tolerance`, point coincidence tolerance.
 - **Returns:** Interpolated BSpline, or `nil` on failure.
 - **OCCT:** `Geom2dAPI_Interpolate` + `Perform()`.
 - **Example:**
@@ -540,7 +540,7 @@ public static func interpolate(through points: [SIMD2<Double>],
 [`interpolate(points:startTangent:endTangent:tolerance:)`](Curve2D-Analysis.md#interpolatepointsstarttangentendtangenttolerance)
 is a spelling of this with the `points:` argument label, and delegates here.
 
-- **Parameters:** `points` — interpolation points; `startTangent` — tangent at the first point; `endTangent` — tangent at the last point; `tolerance` — precision.
+- **Parameters:** `points`, interpolation points; `startTangent`, tangent at the first point; `endTangent`, tangent at the last point; `tolerance`, precision.
 - **Returns:** Interpolated BSpline, or `nil` on failure.
 - **OCCT:** `Geom2dAPI_Interpolate::Load(startTangent, endTangent)` + `Perform()`.
 - **Example:**
@@ -564,9 +564,9 @@ public static func interpolate(through points: [SIMD2<Double>],
                                tolerance: Double = 1e-6) -> Curve2D?
 ```
 
-Use this when you need tangent continuity at specific interior transition points — for example where a straight section meets a circular arc.
+Use this when you need tangent continuity at specific interior transition points, for example where a straight section meets a circular arc.
 
-- **Parameters:** `points` — interpolation points (≥ 2); `tangents` — dictionary mapping point index to unit tangent direction (unconstrained indices use C2); `closed` — closed/periodic curve; `tolerance` — coincidence tolerance.
+- **Parameters:** `points`, interpolation points (≥ 2); `tangents`, dictionary mapping point index to unit tangent direction (unconstrained indices use C2); `closed`, closed/periodic curve; `tolerance`, coincidence tolerance.
 - **Returns:** Interpolated BSpline, or `nil` on failure.
 - **OCCT:** `OCCTCurve2DInterpolateWithInteriorTangents`.
 - **Example:**
@@ -586,9 +586,9 @@ public static func fit(through points: [SIMD2<Double>], minDegree: Int = 3,
                        maxDegree: Int = 8, tolerance: Double = 1e-3) -> Curve2D?
 ```
 
-Unlike `interpolate`, the fitted curve minimises squared error — it does not necessarily pass exactly through every point. Good for noisy data.
+Unlike `interpolate`, the fitted curve minimises squared error, it does not necessarily pass exactly through every point. Good for noisy data.
 
-- **Parameters:** `points` — data points; `minDegree`/`maxDegree` — degree range; `tolerance` — approximation error.
+- **Parameters:** `points`, data points; `minDegree`/`maxDegree`, degree range; `tolerance`, approximation error.
 - **Returns:** Approximating BSpline, or `nil` on failure.
 - **OCCT:** `Geom2dAPI_PointsToBSpline` (via `OCCTCurve2DFitPoints`).
 - **Example:**
@@ -664,7 +664,7 @@ Creates a trimmed copy of this curve between two parameters.
 public func trimmed(from u1: Double, to u2: Double) -> Curve2D?
 ```
 
-- **Parameters:** `u1` — lower trim parameter; `u2` — upper trim parameter (must satisfy `u1 < u2`).
+- **Parameters:** `u1`, lower trim parameter; `u2`, upper trim parameter (must satisfy `u1 < u2`).
 - **Returns:** Trimmed curve, or `nil` on failure.
 - **OCCT:** `Geom2d_TrimmedCurve(curve, u1, u2)`.
 - **Example:**
@@ -685,7 +685,7 @@ public func offset(by distance: Double) -> Curve2D?
 
 Positive distance offsets to the left of the curve direction.
 
-- **Parameters:** `distance` — signed offset distance.
+- **Parameters:** `distance`, signed offset distance.
 - **Returns:** Offset curve, or `nil` on failure.
 - **OCCT:** `Geom2d_OffsetCurve(curve, distance)`.
 - **Example:**
@@ -725,7 +725,7 @@ Creates a translated copy of this curve.
 public func translated(by delta: SIMD2<Double>) -> Curve2D?
 ```
 
-- **Parameters:** `delta` — translation vector.
+- **Parameters:** `delta`, translation vector.
 - **Returns:** Translated curve, or `nil` on failure.
 - **OCCT:** `Geom2d_Curve::Translated(gp_Vec2d)`.
 - **Example:**
@@ -745,7 +745,7 @@ Creates a rotated copy of this curve.
 public func rotated(around center: SIMD2<Double>, angle: Double) -> Curve2D?
 ```
 
-- **Parameters:** `center` — rotation centre point; `angle` — rotation angle in radians.
+- **Parameters:** `center`, rotation centre point; `angle`, rotation angle in radians.
 - **Returns:** Rotated curve, or `nil` on failure.
 - **OCCT:** `Geom2d_Curve::Rotated(gp_Pnt2d, angle)`.
 - **Example:**
@@ -764,7 +764,7 @@ Creates a scaled copy of this curve.
 public func scaled(from center: SIMD2<Double>, factor: Double) -> Curve2D?
 ```
 
-- **Parameters:** `center` — fixed point of scaling; `factor` — scale factor.
+- **Parameters:** `center`, fixed point of scaling; `factor`, scale factor.
 - **Returns:** Scaled curve, or `nil` on failure.
 - **OCCT:** `Geom2d_Curve::Scaled(gp_Pnt2d, factor)`.
 - **Example:**
@@ -784,7 +784,7 @@ Creates a copy mirrored across an axis line.
 public func mirrored(acrossLine point: SIMD2<Double>, direction: SIMD2<Double>) -> Curve2D?
 ```
 
-- **Parameters:** `point` — a point on the mirror axis; `direction` — axis direction.
+- **Parameters:** `point`, a point on the mirror axis; `direction`, axis direction.
 - **Returns:** Mirrored curve, or `nil` on failure.
 - **OCCT:** `Geom2d_Curve::Mirror(gp_Ax2d)`.
 - **Example:**
@@ -803,7 +803,7 @@ Creates a copy mirrored through a point.
 public func mirrored(acrossPoint point: SIMD2<Double>) -> Curve2D?
 ```
 
-- **Parameters:** `point` — the point of symmetry.
+- **Parameters:** `point`, the point of symmetry.
 - **Returns:** Mirrored curve, or `nil` on failure.
 - **OCCT:** `Geom2d_Curve::Mirror(gp_Pnt2d)`.
 - **Example:**
@@ -826,7 +826,7 @@ public var length: Double? { get }
 - **OCCT:** `GCPnts_AbscissaPoint::Length` per `GeomAbs_CN` interval, subdivided until two
   successive levels agree to 1e-9 relative (#603). A line, a circle and a 2-pole
   Bezier/BSpline keep their exact closed form.
-- **Note:** A whole ellipse used to measure up to 1.7% long — one Gauss quadrature over the
+- **Note:** A whole ellipse used to measure up to 1.7% long, one Gauss quadrature over the
   whole domain, the same defect and the same numbers as the 3D spelling, because both reach
   one `GCPnts_AbscissaPoint::length` template (#603).
 - **Example:**
@@ -847,15 +847,15 @@ compatibility (#549).
 public func length(from u1: Double, to u2: Double) -> Double?
 ```
 
-- **Parameters:** `u1` — start parameter, must be finite; `u2` — end parameter, must be finite
+- **Parameters:** `u1`, start parameter, must be finite; `u2`, end parameter, must be finite
   (either order).
-- **Returns:** Arc length, or `nil` on failure — never a sentinel value.
+- **Returns:** Arc length, or `nil` on failure, never a sentinel value.
 - **OCCT:** `GCPnts_AbscissaPoint::Length(adaptor, u1, u2)`, subdivided per `GeomAbs_CN`
   interval, the same measurement as `length` (#603).
 - **Note:** The range may be given in either order, and equal parameters measure `0`.
 - **Note:** `.nan` and `±.infinity` also report `nil`, on every curve type. They are rejected in
   the bridge, because OCCT's integrator does not check them: on a multi-span BSpline a NaN upper
-  bound measured `0` and a NaN lower bound the curve's whole length — see
+  bound measured `0` and a NaN lower bound the curve's whole length, see
   [Curve3D](Curve3D.md#lengthfromto) for the mechanism (#548).
 - **Note:** A range reaching outside the curve's domain measures the part of it that lies on the
   curve (a range wholly outside measures `0`); a curve whose domain covers a whole period measures
@@ -883,7 +883,7 @@ public func parameterAtLength(_ arcLength: Double, from fromParameter: Double? =
 
 Use this to trim a curve to a specific arc length, or to place features at measured positions along a composite curve.
 
-- **Parameters:** `arcLength` — desired arc-length distance; may be negative to travel in reverse; `fromParameter` — starting parameter (defaults to `domain.lowerBound`).
+- **Parameters:** `arcLength`, desired arc-length distance; may be negative to travel in reverse; `fromParameter`, starting parameter (defaults to `domain.lowerBound`).
 - **Returns:** Parameter value at the given arc-length offset, or `nil` if the computation fails.
 - **OCCT:** the accumulated `GeomAbs_CN` sub-piece lengths, with the final narrow piece handed
   to `GCPnts_AbscissaPoint` (via `OCCTCurve2DParameterAtLength`).
@@ -912,9 +912,9 @@ public static func arcOfHyperbola(center: SIMD2<Double>, majorRadius: Double,
                                   startAngle: Double, endAngle: Double) -> Curve2D?
 ```
 
-- **Parameters:** `center` — hyperbola centre; `majorRadius` — real semi-axis; `minorRadius` — imaginary semi-axis; `rotation` — major-axis rotation in radians (default 0); `startAngle`/`endAngle` — arc bounds in radians.
+- **Parameters:** `center`, hyperbola centre; `majorRadius`, real semi-axis; `minorRadius`, imaginary semi-axis; `rotation`, major-axis rotation in radians (default 0); `startAngle`/`endAngle`, arc bounds in radians.
 - **Returns:** Hyperbolic arc, or `nil` on failure.
-- **OCCT:** `Geom2d_Hyperbola` + `Geom2d_TrimmedCurve` (direct construction — no `GC_`/`GCE2d_`
+- **OCCT:** `Geom2d_Hyperbola` + `Geom2d_TrimmedCurve` (direct construction, no `GC_`/`GCE2d_`
   `Make` helper is used; corrected from a stale `GCE2d_MakeArcOfHyperbola` attribution by #809).
 - **Example:**
   ```swift
@@ -934,9 +934,9 @@ public static func arcOfParabola(focus: SIMD2<Double>, direction: SIMD2<Double>,
                                  startParam: Double, endParam: Double) -> Curve2D?
 ```
 
-- **Parameters:** `focus` — focus point; `direction` — axis direction; `focalLength` — focal distance (> 0); `startParam`/`endParam` — parameter range of the arc.
+- **Parameters:** `focus`, focus point; `direction`, axis direction; `focalLength`, focal distance (> 0); `startParam`/`endParam`, parameter range of the arc.
 - **Returns:** Parabolic arc, or `nil` on failure.
-- **OCCT:** `Geom2d_Parabola` + `Geom2d_TrimmedCurve` (direct construction — no `GC_`/`GCE2d_`
+- **OCCT:** `Geom2d_Parabola` + `Geom2d_TrimmedCurve` (direct construction, no `GC_`/`GCE2d_`
   `Make` helper is used; corrected from a stale `GCE2d_MakeArcOfParabola` attribution by #809).
 - **Example:**
   ```swift
@@ -961,12 +961,12 @@ public func approximated(tolerance: Double = 1e-3, continuity: Int = 2,
 `continuity` maps to `GeomAbs_Shape`: 0=C0, 1=C1, 2=C2, 3=C3.
 
 **Distinct from** [`approximatedInRange(first:last:toleranceU:toleranceV:maxDegree:maxSegments:)`](Curve2D-Analysis.md#approximatedinrangefirstlasttoleranceutolerancevmaxdegreemaxsegments)
-— a different OCCT algorithm, not a whole-domain shorthand for it. See #407.
+,  a different OCCT algorithm, not a whole-domain shorthand for it. See #407.
 
-- **Parameters:** `tolerance` — maximum approximation error, applied over the whole curve; `continuity` — desired continuity order; `maxSegments` — maximum number of BSpline segments; `maxDegree` — maximum polynomial degree.
+- **Parameters:** `tolerance`, maximum approximation error, applied over the whole curve; `continuity`, desired continuity order; `maxSegments`, maximum number of BSpline segments; `maxDegree`, maximum polynomial degree.
 - **Returns:** Approximated BSpline, or `nil` on failure.
 - **OCCT:** `Geom2dConvert_ApproxCurve` (via `OCCTCurve2DApproximate`).
-- **Note:** Defaults are shared with `Curve3D.approximated` and `Surface.approximated` (#406) —
+- **Note:** Defaults are shared with `Curve3D.approximated` and `Surface.approximated` (#406),
   all three wrap the same `GeomConvert_Approx*`/`Geom2dConvert_ApproxCurve` family applied to a
   different OCCT geometry hierarchy, not independent algorithms that would justify
   independently-tuned numeric defaults.
@@ -992,7 +992,7 @@ a parameter. The first and last knots are always included, so a curve that never
 
 - **Parameters:** `continuity`: minimum continuity to require of each arc.
 - **Returns:** Array of knot indices where continuity drops below the requested level, or `nil` if not a BSpline or no discontinuities found.
-- **OCCT:** `Geom2dConvert_BSplineCurveKnotSplitting` (via `OCCTCurve2DSplitAtDiscontinuities`) —
+- **OCCT:** `Geom2dConvert_BSplineCurveKnotSplitting` (via `OCCTCurve2DSplitAtDiscontinuities`),
   the sole wrapper of it, since #562 deleted the second pair (`bsplineKnotSplits`,
   `bsplineKnotSplitValues`) that also drove it.
 - **Continuity range (#480):** the continuity is a *derivative order*, and a knot splits only when
@@ -1023,7 +1023,7 @@ public func toArcsAndSegments(tolerance: Double = 0.01,
 
 Useful for CNC G-code generation where only arcs and lines are supported.
 
-- **Parameters:** `tolerance` — maximum approximation error; `angleTolerance` — maximum angular deviation for arc fitting.
+- **Parameters:** `tolerance`, maximum approximation error; `angleTolerance`, maximum angular deviation for arc fitting.
 - **Returns:** Array of arc/segment `Curve2D` objects, or `nil` on failure.
 - **OCCT:** `Geom2dConvert_ApproxCurve` arc-and-segment decomposition.
 - **Example:**
@@ -1038,26 +1038,63 @@ Useful for CNC G-code generation where only arcs and lines are supported.
 
 ## Conversion
 
-### `toBSpline(tolerance:)`
+### `toBSpline(_:)`
 
 Converts this curve to an equivalent BSpline representation.
 
 ```swift
-public func toBSpline(tolerance: Double = 1e-6) -> Curve2D?
+public func toBSpline(_ parameterisation: Parameterisation = .tangentHalfAngle) -> Curve2D?
 ```
 
-Any analytic curve (line, circle, ellipse, arc) can be represented exactly as a rational BSpline. Required before using BSpline-specific query APIs.
+A bounded analytic curve (circle, ellipse, arc) can be represented exactly as a rational BSpline. Required before using BSpline-specific query APIs.
 
-- **Parameters:** `tolerance` — conversion precision.
-- **Returns:** BSpline curve, or `nil` if conversion fails.
-- **OCCT:** `Geom2dConvert::CurveToBSplineCurve(curve)`.
+There is no tolerance, and never was one that did anything: `Geom2dConvert::CurveToBSplineCurve` takes no tolerance, only a `Convert_ParameterisationType`, and every parameterisation but `.polynomial` is exact.
+
+- **Parameters:** `parameterisation`, how a conic's angular parameter is rewritten; see [`Curve2D.Parameterisation`](#curve2dparameterisation).
+- **Returns:** BSpline curve, or `nil` when OCCT rejects the pairing. That includes `.tangentHalfAngle1` and `.tangentHalfAngle2` on an arc wider than their documented limits, and every parameterisation on an unbounded curve such as a `Curve2D.line`.
+- **OCCT:** `Geom2dConvert::CurveToBSplineCurve(curve, parameterisation)`.
 - **Example:**
   ```swift
   let circle = Curve2D.circle(center: .zero, radius: 5)!
   if let bsp = circle.toBSpline() {
-      print(bsp.poleCount!)  // NURBS representation of the circle
+      print(bsp.degree!, bsp.poleCount!)     // 2, 6
+  }
+  if let bsp = circle.toBSpline(.quasiAngular) {
+      print(bsp.degree!, bsp.poleCount!)     // 6, 6
   }
   ```
+
+---
+
+### `Curve2D.Parameterisation`
+
+How a conic's angular parameter is rewritten when it becomes a B-spline.
+
+```swift
+public enum Parameterisation: UInt32, Sendable {
+    case tangentHalfAngle  = 0
+    case tangentHalfAngle1 = 1
+    case tangentHalfAngle2 = 2
+    case tangentHalfAngle3 = 3
+    case tangentHalfAngle4 = 4
+    case quasiAngular      = 5
+    case rationalC1        = 6
+    case polynomial        = 7
+}
+```
+
+| Case | Meaning | On a full circle of radius 5 |
+|---|---|---|
+| `tangentHalfAngle` | `t = tan(theta / 2)`, span count derived from the opening angle | degree 2, 6 poles, rational, exact |
+| `tangentHalfAngle1` | forced to one span, opening angle up to 0.9999 pi | rejected (`nil`) |
+| `tangentHalfAngle2` | forced to two spans, opening angle up to 1.9999 pi | rejected (`nil`) |
+| `tangentHalfAngle3` | forced to three spans | degree 2, 6 poles, rational, exact |
+| `tangentHalfAngle4` | forced to four spans | degree 2, 8 poles, rational, exact |
+| `quasiAngular` | parameter close to the conic's own angular parameter | degree 6, 6 poles, rational, exact |
+| `rationalC1` | C1-continuous denominator across spans | degree 4, 12 poles, rational, exact |
+| `polynomial` | non-rational, and the only approximate option | degree 7, 7 poles, 6.5e-06 relative radial error |
+
+- **OCCT:** `Convert_ParameterisationType`.
 
 ---
 
@@ -1091,7 +1128,7 @@ public static func join(_ curves: [Curve2D], tolerance: Double = 1e-6) -> Curve2
 
 Each input curve is converted to BSpline form before concatenation. Curves must meet end-to-end within `tolerance`.
 
-- **Parameters:** `curves` — curves to join in order; `tolerance` — endpoint gap tolerance.
+- **Parameters:** `curves`, curves to join in order; `tolerance`, endpoint gap tolerance.
 - **Returns:** Joined BSpline, or `nil` if the array is empty or joining fails.
 - **OCCT:** `Geom2dConvert_CompCurveToBSplineCurve` (via `OCCTCurve2DJoinToBSpline`).
 - **Example:**
@@ -1122,7 +1159,7 @@ public static func circlesTangentTo(
 ) -> [Curve2DCircleSolution]
 ```
 
-- **Parameters:** `c1`/`c2`/`c3` — input curves; `q1`/`q2`/`q3` — qualifiers (`.unqualified`, `.enclosing`, `.enclosed`, `.outside`); `tolerance` — geometric tolerance.
+- **Parameters:** `c1`/`c2`/`c3`, input curves; `q1`/`q2`/`q3`, qualifiers (`.unqualified`, `.enclosing`, `.enclosed`, `.outside`); `tolerance`, geometric tolerance.
 - **Returns:** Array of `Curve2DCircleSolution` values (each with `center` and `radius`); may be empty.
 - **OCCT:** `Geom2dGcc_Circ2d3Tan`.
 - **Example:**
@@ -1148,7 +1185,7 @@ public static func circlesTangentToTwoCurvesAndPoint(
 ) -> [Curve2DCircleSolution]
 ```
 
-- **Parameters:** `c1`/`c2` — input curves; `q1`/`q2` — qualifiers; `point` — required pass-through point; `tolerance` — tolerance.
+- **Parameters:** `c1`/`c2`, input curves; `q1`/`q2`, qualifiers; `point`, required pass-through point; `tolerance`, tolerance.
 - **Returns:** Array of solutions.
 - **OCCT:** `Geom2dGcc_Circ2d2TanPt`.
 - **Example:**
@@ -1171,7 +1208,7 @@ public static func circlesTangentWithCenter(
 ) -> [Curve2DCircleSolution]
 ```
 
-- **Parameters:** `curve` — input curve; `qualifier` — qualifier; `center` — desired circle centre; `tolerance` — tolerance.
+- **Parameters:** `curve`, input curve; `qualifier`, qualifier; `center`, desired circle centre; `tolerance`, tolerance.
 - **Returns:** Array of solutions.
 - **OCCT:** `Geom2dGcc_Circ2dTanCen`.
 - **Example:**
@@ -1194,7 +1231,7 @@ public static func circlesTangentToTwoCurves(
 ) -> [Curve2DCircleSolution]
 ```
 
-- **Parameters:** `c1`/`c2` — input curves; `q1`/`q2` — qualifiers; `radius` — required radius; `tolerance` — tolerance.
+- **Parameters:** `c1`/`c2`, input curves; `q1`/`q2`, qualifiers; `radius`, required radius; `tolerance`, tolerance.
 - **Returns:** Array of solutions.
 - **OCCT:** `Geom2dGcc_Circ2d2TanRad`.
 - **Example:**
@@ -1216,7 +1253,7 @@ public static func circlesTangentToPointWithRadius(
 ) -> [Curve2DCircleSolution]
 ```
 
-- **Parameters:** `curve` — input curve; `qualifier` — qualifier; `point` — pass-through point; `radius` — required radius; `tolerance` — tolerance.
+- **Parameters:** `curve`, input curve; `qualifier`, qualifier; `point`, pass-through point; `radius`, required radius; `tolerance`, tolerance.
 - **Returns:** Array of solutions.
 - **OCCT:** `Geom2dGcc_Circ2dTanPtRad`.
 - **Example:**
@@ -1239,7 +1276,7 @@ public static func circlesThroughTwoPoints(
 ) -> [Curve2DCircleSolution]
 ```
 
-- **Parameters:** `p1`/`p2` — required pass-through points; `radius` — required radius; `tolerance` — tolerance.
+- **Parameters:** `p1`/`p2`, required pass-through points; `radius`, required radius; `tolerance`, tolerance.
 - **Returns:** Array of solutions (0, 1, or 2).
 - **OCCT:** `Geom2dGcc_Circ2d2PtRad`.
 - **Example:**
@@ -1260,7 +1297,7 @@ public static func circleThroughThreePoints(
 ) -> [Curve2DCircleSolution]
 ```
 
-- **Parameters:** `p1`/`p2`/`p3` — three points; `tolerance` — coincidence tolerance.
+- **Parameters:** `p1`/`p2`/`p3`, three points; `tolerance`, coincidence tolerance.
 - **Returns:** Array with one solution, or empty if collinear.
 - **OCCT:** `Geom2dGcc_Circ2d3Pt`.
 - **Example:**
@@ -1287,7 +1324,7 @@ public static func linesTangentTo(
 ) -> [Curve2DLineSolution]
 ```
 
-- **Parameters:** `c1`/`c2` — input curves; `q1`/`q2` — qualifiers; `tolerance` — tolerance.
+- **Parameters:** `c1`/`c2`, input curves; `q1`/`q2`, qualifiers; `tolerance`, tolerance.
 - **Returns:** Array of `Curve2DLineSolution` values (each with a `point` on the line and `direction`).
 - **OCCT:** `Geom2dGcc_Lin2d2Tan`.
 - **Example:**
@@ -1311,7 +1348,7 @@ public static func linesTangentToPoint(
 ) -> [Curve2DLineSolution]
 ```
 
-- **Parameters:** `curve` — input curve; `qualifier` — qualifier; `point` — pass-through point; `tolerance` — tolerance.
+- **Parameters:** `curve`, input curve; `qualifier`, qualifier; `point`, pass-through point; `tolerance`, tolerance.
 - **Returns:** Array of line solutions.
 - **OCCT:** `Geom2dGcc_Lin2dTanPt`.
 - **Example:**
@@ -1353,7 +1390,7 @@ Translates the curve in place by `(dx, dy)`.
 public func translate(dx: Double, dy: Double) -> Bool
 ```
 
-- **Parameters:** `dx`, `dy` — displacement components.
+- **Parameters:** `dx`, `dy`, displacement components.
 - **Returns:** `true` on success.
 - **OCCT:** `Geom2d_Curve::Translate(gp_Vec2d)` (in-place, via `OCCTCurve2DTransform`).
 - **Example:**
@@ -1374,7 +1411,7 @@ Rotates the curve in place around a centre point.
 public func rotate(center: SIMD2<Double>, angle: Double) -> Bool
 ```
 
-- **Parameters:** `center` — rotation centre; `angle` — rotation angle in radians.
+- **Parameters:** `center`, rotation centre; `angle`, rotation angle in radians.
 - **Returns:** `true` on success.
 - **OCCT:** `Geom2d_Curve::Rotate(gp_Pnt2d, angle)` (in-place).
 - **Example:**
@@ -1394,7 +1431,7 @@ Scales the curve in place from a centre point.
 public func scale(center: SIMD2<Double>, factor: Double) -> Bool
 ```
 
-- **Parameters:** `center` — fixed point of scaling; `factor` — scale factor.
+- **Parameters:** `center`, fixed point of scaling; `factor`, scale factor.
 - **Returns:** `true` on success.
 - **OCCT:** `Geom2d_Curve::Scale(gp_Pnt2d, factor)` (in-place).
 - **Example:**
@@ -1415,7 +1452,7 @@ Mirrors the curve in place through a point.
 public func mirrorPoint(_ point: SIMD2<Double>) -> Bool
 ```
 
-- **Parameters:** `point` — point of symmetry.
+- **Parameters:** `point`, point of symmetry.
 - **Returns:** `true` on success.
 - **OCCT:** `Geom2d_Curve::Mirror(gp_Pnt2d)` (in-place).
 - **Example:**
@@ -1435,7 +1472,7 @@ Mirrors the curve in place through an axis.
 public func mirrorAxis(origin: SIMD2<Double>, direction: SIMD2<Double>) -> Bool
 ```
 
-- **Parameters:** `origin` — a point on the mirror axis; `direction` — axis direction.
+- **Parameters:** `origin`, a point on the mirror axis; `direction`, axis direction.
 - **Returns:** `true` on success.
 - **OCCT:** `Geom2d_Curve::Mirror(gp_Ax2d)` (in-place).
 - **Example:**
@@ -1458,7 +1495,7 @@ public static func tBezier(poles: [SIMD2<Double>], alpha: Double) -> Curve2D?
 
 Uses a trigonometric Bernstein-like basis `{1, sin(α·t), cos(α·t), …}`. Parameter domain is `[0, π/α]`. Can represent circular arcs exactly without rational weights.
 
-- **Parameters:** `poles` — 2D control points (count must be odd and ≥ 3); `alpha` — frequency parameter (must be > 0).
+- **Parameters:** `poles`, 2D control points (count must be odd and ≥ 3); `alpha`, frequency parameter (must be > 0).
 - **Returns:** TBezier curve, or `nil` if `poles.count < 3`, count is even, or `alpha ≤ 0`.
 - **OCCT:** `OCCTGeom2dEvalTBezierCurveCreate`.
 - **Example:**
@@ -1481,7 +1518,7 @@ public static func ahtBezier(poles: [SIMD2<Double>], algDegree: Int, alpha: Doub
 
 Uses a mixed basis: `{1, t, …, t^k, sinh(α·t), cosh(α·t), sin(β·t), cos(β·t)}`. The number of poles must equal `algDegree + 1 + 2*(alpha>0) + 2*(beta>0)`. Parameter range is `[0, 1]`.
 
-- **Parameters:** `poles` — 2D control points; `algDegree` — algebraic polynomial degree (≥ 0); `alpha` — hyperbolic frequency (≥ 0; 0 omits hyperbolic terms); `beta` — trigonometric frequency (≥ 0; 0 omits trig terms).
+- **Parameters:** `poles`, 2D control points; `algDegree`, algebraic polynomial degree (≥ 0); `alpha`, hyperbolic frequency (≥ 0; 0 omits hyperbolic terms); `beta`, trigonometric frequency (≥ 0; 0 omits trig terms).
 - **Returns:** AHT Bezier curve, or `nil` if the pole count is wrong or construction fails.
 - **OCCT:** `OCCTGeom2dEvalAHTBezierCurveCreate`.
 - **Example:**
@@ -1508,7 +1545,7 @@ public static func lineThroughPoints(_ p1: SIMD2<Double>, _ p2: SIMD2<Double>) -
 
 Unlike `segment(from:to:)` which creates a finite segment, this creates an infinite line through the two points.
 
-- **Parameters:** `p1` — first point on the line; `p2` — second point on the line.
+- **Parameters:** `p1`, first point on the line; `p2`, second point on the line.
 - **Returns:** 2D infinite line, or `nil` if points coincide.
 - **OCCT:** `GC_MakeLine2d(p1, p2)` (via `OCCTCurve2DMakeLineThroughPoints`).
 - **Example:**
@@ -1530,7 +1567,7 @@ public static func lineParallel(
 
 Positive `distance` offsets to the left of the direction.
 
-- **Parameters:** `point` — a point on the reference line; `direction` — reference line direction; `distance` — signed offset distance.
+- **Parameters:** `point`, a point on the reference line; `direction`, reference line direction; `distance`, signed offset distance.
 - **Returns:** 2D infinite line, or `nil` on failure.
 - **OCCT:** `GC_MakeLine2d` parallel variant (via `OCCTCurve2DMakeLineParallel`).
 - **Example:**

@@ -6,8 +6,8 @@ import simd
 // `ruled:false` smooth loft self-intersects in a degenerate band around ~14 sections/turn, coming
 // back as a no-op boolean. The cut path now escalates the section density past that band, so the
 // smooth helical cutter subtracts cleanly. A smooth thread is a handful of BSpline faces; the
-// faceted fallback is hundreds — so face count is a robust smooth/faceted discriminator.
-@Suite("Issue #219 — smooth fine-pitch internal thread")
+// faceted fallback is hundreds, so face count is a robust smooth/faceted discriminator.
+@Suite("Issue #219, smooth fine-pitch internal thread")
 struct Issue219SmoothInternal {
 
     /// The wing-nut body: a cylinder with a coaxial bore, tapped 3/8-16 UNC (fine enough to have
@@ -27,7 +27,7 @@ struct Issue219SmoothInternal {
         #expect(t.isValid)
         let faces = t.subShapes(ofType: .face).count
         // Smooth helicoid is ~15 faces here; the pre-fix faceted fallback was ~247. 40 cleanly splits them.
-        #expect(faces < 40, "internal thread came out faceted (\(faces) faces) — smooth path not taken (#219)")
+        #expect(faces < 40, "internal thread came out faceted (\(faces) faces), smooth path not taken (#219)")
     }
 
     @Test("the smooth internal cut still removes a thread's worth of material")

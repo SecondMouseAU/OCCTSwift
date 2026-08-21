@@ -1,6 +1,6 @@
 ---
 type: policy
-title: Writing style — no em-dashes, banned words
+title: Writing style, no em-dashes, banned words
 description: No em-dashes anywhere; specific hedge/filler/sycophancy words and phrases (honest/honestly, "you're right") banned outright, in code, docs, commit messages, PR bodies, and third-party messages.
 tags: [policy, style, writing, agents]
 timestamp: 2026-07-24
@@ -8,7 +8,7 @@ timestamp: 2026-07-24
 
 # Writing style (all prose and comments)
 
-**No em-dashes.** The em-dash (`—`), and `--` used as a sentence dash, are banned in every code
+**No em-dashes.** The em-dash (`, `), and `--` used as a sentence dash, are banned in every code
 comment, doc comment, markdown doc, changelog, commit message, and PR body across the ecosystem.
 Use ordinary punctuation instead: a comma, colon, semicolon, parentheses, or two separate sentences.
 This is a total ban going forward. A dedicated pass to strip existing ones is not required, but

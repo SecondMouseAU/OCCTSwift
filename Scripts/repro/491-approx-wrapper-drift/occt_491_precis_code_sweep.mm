@@ -1,4 +1,4 @@
-// OCCTSwift#491 — PrecisCode 0 vs 1 across BOUNDED surfaces and tolerances; the evidence for
+// OCCTSwift#491. PrecisCode 0 vs 1 across BOUNDED surfaces and tolerances; the evidence for
 // standardising both surface approximation entry points on 0. See this directory's README.md.
 // Which value should the one shared GeomConvert_ApproxSurface wrapper pass? Decide on measured
 // evidence: does either reach the requested tolerance where the other does not, and which

@@ -3,8 +3,8 @@ import simd
 @testable import OCCTSwift
 
 /// Issue #266: build a single trimmed face from a surface with an **outer** boundary and **interior
-/// hole** wires (windows / cutouts) — `Shape.face(from:outer:innerWires:)`.
-@Suite("Issue #266 — face from surface with holes")
+/// hole** wires (windows / cutouts), `Shape.face(from:outer:innerWires:)`.
+@Suite("Issue #266, face from surface with holes")
 struct Issue266FaceWithHolesTests {
 
     /// A 10×10 outer square and a 4×4 centred hole, both in the z = 0 plane (so they lie exactly on
@@ -30,7 +30,7 @@ struct Issue266FaceWithHolesTests {
         #expect(face.isValid)
         // Two wires: the outer boundary + the one hole.
         #expect(face.subShapeCount(ofType: .wire) == 2)
-        // Area ≈ outer (100) − hole (16) = 84 — the window is a real opening, not spanned.
+        // Area ≈ outer (100) − hole (16) = 84, the window is a real opening, not spanned.
         if let area = face.surfaceArea {
             #expect(abs(area - 84) < 1e-6)
         }
@@ -74,7 +74,7 @@ struct Issue266FaceWithHolesTests {
               let outer = Wire.polygon3D([
                   SIMD3(0, 0, 0), SIMD3(10, 0, 0), SIMD3(10, 10, 0), SIMD3(0, 10, 0)
               ], closed: true),
-              // hole lifted to z = 5 — not on the z = 0 plane
+              // hole lifted to z = 5, not on the z = 0 plane
               let hole = Wire.polygon3D([
                   SIMD3(3, 3, 5), SIMD3(7, 3, 5), SIMD3(7, 7, 5), SIMD3(3, 7, 5)
               ], closed: true)

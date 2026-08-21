@@ -87,7 +87,7 @@ struct CameraTests {
         cam.aspect = 1.5
         let proj = cam.projectionMatrix
 
-        // Check it's not identity — at least one off-diagonal or non-1 diagonal
+        // Check it's not identity, at least one off-diagonal or non-1 diagonal
         let isIdentity = proj.columns.0.x == 1 && proj.columns.1.y == 1 &&
                          proj.columns.2.z == 1 && proj.columns.3.w == 1 &&
                          proj.columns.0.y == 0 && proj.columns.0.z == 0
@@ -168,7 +168,7 @@ struct CameraTests {
         let bboxMax = SIMD3<Double>(5, 5, 5)
         cam.fit(boundingBox: (min: bboxMin, max: bboxMax))
 
-        // Project the center of the bounding box — should be near screen origin
+        // Project the center of the bounding box, should be near screen origin
         let boxCenter = SIMD3<Double>(0, 0, 0)
         let projected = cam.project(boxCenter)
         #expect(abs(projected.x) < 0.5)
@@ -221,7 +221,7 @@ struct SelectorTests {
         let selector = Selector()
         selector.add(shape: box, id: 1)
 
-        // Pick at far corner — should miss the small box
+        // Pick at far corner, should miss the small box
         let results = selector.pick(
             at: SIMD2(0, 0),
             camera: cam,
@@ -871,7 +871,7 @@ struct LengthDimensionTests {
         }
         // Get the edge as a Shape for the dimension
         let dim = LengthDimension(edge: edgeShape)
-        // Edge-based dimension may not work on wire shapes — test API doesn't crash
+        // Edge-based dimension may not work on wire shapes, test API doesn't crash
         if let dim = dim {
             #expect(dim.value > 0)
         }
@@ -880,7 +880,7 @@ struct LengthDimensionTests {
     @Test("Face-to-face distance equals box dimension")
     func faceToFaceDistance() {
         let box = Shape.box(width: 10, height: 20, depth: 30)!
-        // Get faces from the box — we need Shape-typed faces
+        // Get faces from the box, we need Shape-typed faces
         // Use slicing approach: box has 6 faces, opposing pairs are separated by width/height/depth
         // Create two parallel face shapes
         let face1 = Shape.face(from: Wire.rectangle(width: 20, height: 30)!)!
@@ -1061,7 +1061,7 @@ struct NormalProjectionTests {
     func projectOnSphere() {
         let sphere = Shape.sphere(radius: 10)!
         // Line near the sphere surface (x=8, within radius 10)
-        // Normal projection projects along surface normals — works when
+        // Normal projection projects along surface normals, works when
         // the wire is near or outside the surface, not deep inside
         let line = Shape.fromWire(Wire.line(from: SIMD3(8, -2, 0), to: SIMD3(8, 2, 0))!)
         #expect(line != nil)
@@ -1106,7 +1106,7 @@ struct CylindricalProjectionTests {
     }
 }
 
-// MARK: - v0.39.0 — OCCT Test Suite Audit Round 8
+// MARK: - v0.39.0. OCCT Test Suite Audit Round 8
 
 @Suite("Polygon-Based HLR")
 struct PolyHLRTests {
@@ -1144,7 +1144,7 @@ struct PolyHLRTests {
 
     @Test("Fast projection has hidden edges")
     func fastHiddenEdges() {
-        // Two overlapping boxes — should produce hidden edges
+        // Two overlapping boxes, should produce hidden edges
         let box1 = Shape.box(width: 10, height: 10, depth: 10)!
         let box2 = Shape.box(width: 5, height: 5, depth: 20)!
         let fused = box1.union(box2)!
@@ -1405,7 +1405,7 @@ struct EditorViewSettersTests {
                 #expect(abs(r.last - 7.5) < 1e-9)
 
                 // OCCT 8.0.0p1: SameParameter / SameRange / Degenerated are now derived per-CoEdge
-                // properties (computed from pcurve vs 3D curve), not settable edge flags — the setters
+                // properties (computed from pcurve vs 3D curve), not settable edge flags, the setters
                 // are no-ops and the getters report the derived value. (The setEdgeParamRange above made
                 // edge 0's range mismatch its 3D curve, so SameParameter/SameRange are legitimately
                 // false here.) Confirm the now-derived getters don't crash; a real box edge is never
@@ -1726,17 +1726,17 @@ struct AutoCentermarksTests {
 //
 // perpendicularBasis(to:) now backs both `addAutoCentermarks`/`addAutoCentrelines` (via
 // `projectPointToPlane`/`projectAxisToPlane`) AND, independently, `Drawing.project`'s own 2D
-// frame — `OCCTDrawingCreate` (`OCCTBridge_Modeling.mm`) builds a `gp_Ax2(gp_Pnt(0,0,0),
+// frame, `OCCTDrawingCreate` (`OCCTBridge_Modeling.mm`) builds a `gp_Ax2(gp_Pnt(0,0,0),
 // viewDir)`-based `HLRAlgo_Projector`, which is exactly the basis `perpendicularBasis(to:)`
 // computes. The existing `Issue881PerpendicularBasisTests` suites pin the helper against
 // hard-coded `gp_Ax2` constants, which proves the helper matches `gp_Ax2` but not that
-// `addAutoCentermarks`'s *output* lands in the same frame `Drawing.project` actually built — a
+// `addAutoCentermarks`'s *output* lands in the same frame `Drawing.project` actually built, a
 // future change to only one of the two would go untested (#914 review, third pass, finding 2).
 //
 // This closes that gap directly: build an off-axis cylinder (base circle centred away from the
 // world origin, so a coordinate mixup can't hide behind a degenerate all-zero case), project it,
 // and compare `addAutoCentermarks`'s computed centre against the *actual* OCCT-projected circle's
-// centre — read from `drawing.visibleEdges`'s own bounding box, not recomputed via
+// centre, read from `drawing.visibleEdges`'s own bounding box, not recomputed via
 // `perpendicularBasis(to:)` a second time (recomputing the expected value with the same function
 // under test would just be `Issue881PerpendicularBasisTests` again, one call removed). The
 // cylinder's axis is set to the view direction, so both its circular faces are viewed face-on
@@ -1744,15 +1744,15 @@ struct AutoCentermarksTests {
 // their true 2D center.
 //
 // Proven per okf/policies/prove-the-test-fails.md: temporarily reverted `perpendicularBasis(to:)`
-// to the pre-#881 `cross(worldUp, direction)` construction and re-ran — `addAutoCentermarks`
+// to the pre-#881 `cross(worldUp, direction)` construction and re-ran, `addAutoCentermarks`
 // computed `(10.0, 5.0)`, while `visibleEdges`'s bounding-box center (real OCCT output, untouched
-// by the revert) stayed at `(5.0, -10.0)` — a live mismatch, exactly the CHANGELOG's #881 entry's
+// by the revert) stayed at `(5.0, -10.0)`, a live mismatch, exactly the CHANGELOG's #881 entry's
 // worked example. Restored, both agree.
 @Suite("#914 review, third pass: auto-centermark position matches the drawing's own projected frame")
 struct AutoCentermarkFrameAgreementTests {
     @Test("centermark for an off-axis cylinder matches the projected circle's own bounding-box center")
     func centermarkMatchesProjectedGeometry() {
-        // Base circle centred at (0, 10, 5), axis along the view direction (1, 0, 0) — so the
+        // Base circle centred at (0, 10, 5), axis along the view direction (1, 0, 0), so the
         // circular face is viewed face-on, and the circle's world-space offset from the origin
         // means a right/up or sign transposition can't coincidentally still land on the mark.
         guard

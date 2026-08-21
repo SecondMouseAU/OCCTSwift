@@ -1,4 +1,4 @@
-# OCCTSwift#498 probe — what `BRepLib::BuildCurves3d`'s two overloads actually do
+# OCCTSwift#498 probe, what `BRepLib::BuildCurves3d`'s two overloads actually do
 
 Ground truth for the operation behind three separate bridge C entry points, against the pinned
 OCCT 8.0.0p1 kernel. It exists because #498's framing needed checking before anything was merged
@@ -6,7 +6,7 @@ together: the issue describes "one legitimate two-way split (tolerance vs. no-to
 plus one accidental byte-identical copy, and says the two Swift wrappers' defaults having drifted
 100x apart is a real cost.
 
-The split is not legitimate — it is a forwarder — and the drift cost is real and measurable.
+The split is not legitimate, it is a forwarder, and the drift cost is real and measurable.
 
 No fixture files needed: every case builds its geometry from scratch.
 
@@ -51,7 +51,7 @@ hard-codes.
 Two things the tolerance does, only one of which is obvious:
 
 - it bounds the approximation (the measured deviations sit just inside each request), and
-- it becomes the rebuilt edge's tolerance **floor** — `BRepLib.cxx:428` reads
+- it becomes the rebuilt edge's tolerance **floor**, `BRepLib.cxx:428` reads
   `max_deviation = std::max(tolerance, Tolerance);` and feeds that to `B.UpdateEdge`, with the line
   that would have used the deviation the approximator actually achieved commented out just above
   it. A tolerance of 1e-7 therefore claims an accuracy the approximation is only asked, not
@@ -70,7 +70,7 @@ Both tests that covered this operation called it on a `BRepPrimAPI_MakeBox`:
 
 Every box edge already has a 3D curve, so `BuildCurve3d` returns true at its first line
 (`BRepLib.cxx:320-324`) and computes nothing. A tolerance of 42 is indistinguishable from 1e-7,
-and both tests asserted only `true` — so neither could have caught the defaults drifting, or
+and both tests asserted only `true`, so neither could have caught the defaults drifting, or
 either implementation changing.
 
 (24, not 12: `TopExp_Explorer` reaches each box edge twice, once per adjoining face. The
@@ -78,8 +78,8 @@ either implementation changing.
 
 ### 3. The tolerance stops mattering entirely on a plane
 
-A pcurve on a `Geom_Plane` takes the analytic branch — `GeomLib::To3d`, then
-`B.UpdateEdge(AnEdge, C3d, LocalLoc, 0.0e0)` — which never sees `Tolerance`:
+A pcurve on a `Geom_Plane` takes the analytic branch, `GeomLib::To3d`, then
+`B.UpdateEdge(AnEdge, C3d, LocalLoc, 0.0e0)`: which never sees `Tolerance`:
 
 | Call | curve | edge tolerance | max deviation |
 |---|---|---|---|
@@ -88,8 +88,8 @@ A pcurve on a `Geom_Plane` takes the analytic branch — `GeomLib::To3d`, then
 | plane, tol 1e-01 | `Geom_Line` | 1.000e-07 | 0.000e+00 |
 
 Exact, and identical for every request (1e-7 is `Precision::Confusion()`, the floor a fresh edge
-gets anyway). So the 100x default drift was unobservable for planar pcurves — which is most of
-what the bridge's other, internal `BuildCurves3d` call sites deal with — and bit only on curved
+gets anyway). So the 100x default drift was unobservable for planar pcurves, which is most of
+what the bridge's other, internal `BuildCurves3d` call sites deal with, and bit only on curved
 support surfaces.
 
 ### 4. What the `void` entry point discarded
@@ -100,7 +100,7 @@ support surfaces.
 ```
 
 `false` means "at least one edge failed", and the edges that succeeded are still modified. The
-oldest of the three entry points, `void OCCTShapeBuildCurves3d`, threw that away — and it was the
+oldest of the three entry points, `void OCCTShapeBuildCurves3d`, threw that away, and it was the
 one backing `Shape.allEdgePolylinesIndexed`, i.e. the bulk path over arbitrary imported shapes,
 which is exactly where a partial failure is likeliest.
 
@@ -115,7 +115,7 @@ Reaching it with an edge that has no 3D curve, no pcurve, and no degenerate flag
 ```
 
 The null pcurve handle is dereferenced before the uninitialised `first[0]` is used for anything, so
-this is a catchable `Standard_Failure`, not a signal — no new upstream crash to file, but the
+this is a catchable `Standard_Failure`, not a signal, no new upstream crash to file, but the
 bridge's `catch (...)` is what turns it into `false`, and the deleted `void` entry point's `catch`
 swallowed it into silence. Reachable from the Swift API (`removeEdgeCurve3d` + `removeEdgePCurve`
 on each adjoining face), so it is covered by a test rather than left as a note.

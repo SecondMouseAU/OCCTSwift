@@ -3,8 +3,8 @@ import Foundation
 import simd
 @testable import OCCTSwift
 
-// #622: the tail of #558's bound sweep. The same footgun — a caller-supplied number sizes a Swift
-// allocation and is then cast to the `int32_t` the bridge takes its capacity in — on 21 entry
+// #622: the tail of #558's bound sweep. The same footgun, a caller-supplied number sizes a Swift
+// allocation and is then cast to the `int32_t` the bridge takes its capacity in, on 21 entry
 // points the sweep's stopping criterion never reached, because it scoped itself to *samplers* and
 // these are result-buffer capacities on picking, searching, projection, intersection and listing.
 //
@@ -16,7 +16,7 @@ import simd
 //
 // Measured before the fix, one case per process (a trap takes the whole harness down, so each
 // absurd input needs its own run) against `refactor/381-pass1b`. 18 of the 21 are cheap to drive
-// from a standalone binary; all 18 failed at `Int32.max + 1` — 2 aborted immediately with "Fatal
+// from a standalone binary; all 18 failed at `Int32.max + 1`, 2 aborted immediately with "Fatal
 // error: Not enough memory" and 16 ground past a 40-second timeout on an allocation nothing can
 // serve. 12 of the 18 also aborted on `-1`, in `Array(repeating:count:)`, before any bound could
 // be consulted. The remaining 3 (`Selector.pick`'s overloads) need a live selector and were
@@ -27,7 +27,7 @@ import simd
 //
 // Contract, unchanged from #558 rather than a fifth behaviour: all 21 of these are *capacities*
 // (the algorithm decides how many results exist and the number only truncates), so they clamp into
-// `0...Sampling.maximumSampleCount` — the caller gets the real answer, not an empty one. The one
+// `0...Sampling.maximumSampleCount`, the caller gets the real answer, not an empty one. The one
 // exception is `LogSample.sample(count:)`, whose bridge fills the buffer exactly; that is a
 // *request*, so it rejects rather than silently returning a coarser sampling. Same split #558 drew
 // between `Curve3D.drawAdaptive` and `MedialAxis.drawArc`.
@@ -78,7 +78,7 @@ struct Issue622AllocationBounds {
     func curve3DCapacities() {
         let a = segment3D()
         // Deliberately skew rather than parallel. `GeomAPI_ExtremaCurveCurve` SIGSEGVs
-        // (uncatchable) on two parallel lines at *any* capacity — measured here at maxCount 2, 20,
+        // (uncatchable) on two parallel lines at *any* capacity, measured here at maxCount 2, 20,
         // 100, 1e4, 1e6, 1e7 and Int32.max + 1, all EXIT -11, including the method's own default
         // of 20. That is the documented `BRepExtrema_ExtCC` parallel hazard on the
         // `GeomAPI_ExtremaCurveCurve` path, entirely independent of the count bound this suite is
@@ -147,7 +147,7 @@ struct Issue622AllocationBounds {
                 == b.allDistanceSolutions(to: s)?.count)
         // Behaviour change, asserted deliberately rather than incidentally: no capacity now yields
         // an empty array, where before #622 the bridge's -1 for `maxSolutions <= 0` came back
-        // through `guard count >= 0` as `nil` — "the measurement failed" for what is really "no
+        // through `guard count >= 0` as `nil`, "the measurement failed" for what is really "no
         // room was offered". `nil` is now reserved for an actual failure.
         #expect(b.allDistanceSolutions(to: s, maxSolutions: 0) != nil)
         #expect(b.allDistanceSolutions(to: s, maxSolutions: 0)?.count == 0)
@@ -247,7 +247,7 @@ struct Issue622AllocationBounds {
         // A directory this test does not own cannot be assumed to hold a fixed number of entries,
         // so the clamp is asserted against a baseline taken in the same call sequence rather than
         // against a literal. An earlier version compared only `>= aSmallCapacityCount`, which both
-        // sides satisfy when the directory is empty — that asserted the absence of a trap and
+        // sides satisfy when the directory is empty, that asserted the absence of a trap and
         // nothing about the clamp.
         let dir = FileManager.default.temporaryDirectory
             .appendingPathComponent("occt622-listing-\(UUID().uuidString)")

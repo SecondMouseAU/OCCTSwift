@@ -5,18 +5,11 @@
 # listed file without removing it fails Scripts/check-style-manifest.py. See
 # okf/policies/code-style.md.
 Sources/OCCTBridge/include/OCCTBridge_AIS.h
-Sources/OCCTBridge/include/OCCTBridge_Curve3D.h
-Sources/OCCTBridge/include/OCCTBridge_Geom2d.h
-Sources/OCCTBridge/include/OCCTBridge_Healing.h
 Sources/OCCTBridge/include/OCCTBridge_IO.h
 Sources/OCCTBridge/include/OCCTBridge_Mesh.h
-Sources/OCCTBridge/include/OCCTBridge_ProjLib_NLPlate.h
 Sources/OCCTBridge/include/OCCTBridge_Spatial.h
 Sources/OCCTBridge/include/OCCTBridge_Surface.h
 Sources/OCCTBridge/include/OCCTBridge_Visualization.h
 Sources/OCCTBridge/include/OCCTBridge.h
-Sources/OCCTBridge/src/OCCTBridge_AIS.mm
-Sources/OCCTBridge/src/OCCTBridge_Healing.mm
-Sources/OCCTBridge/src/OCCTBridge_ProjLib_NLPlate.mm
 Sources/OCCTBridge/src/OCCTBridge_Visualization.mm
 Sources/OCCTBridge/src/OCCTBridge.mm

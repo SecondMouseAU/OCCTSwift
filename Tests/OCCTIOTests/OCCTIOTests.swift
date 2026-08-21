@@ -110,7 +110,7 @@ struct BREPTests {
     @Test("writeBREP(allowInvalid:) persists an invalid shape that the default gate rejects")
     func writeBREPAllowInvalid() throws {
         // A bowtie (self-intersecting) polygon face is deterministically invalid
-        // — BRepCheck flags the self-intersection — standing in for the "loose /
+        //, BRepCheck flags the self-intersection, standing in for the "loose /
         // invalid but dimensionally real" reconstruction the gate must let through.
         let bowtie = Wire.polygon([SIMD2(0, 0), SIMD2(1, 1), SIMD2(1, 0), SIMD2(0, 1)], closed: true)!
         let invalid = Shape.face(from: bowtie)!
@@ -296,13 +296,13 @@ struct STLImportTests {
 // MARK: - Issue #375: loadSTL winding fidelity
 
 // #375: reported that `Shape.loadSTL()` might not reliably preserve a globally-reversed (but
-// self-consistent) STL's winding — that a round trip could come back locally inconsistent
+// self-consistent) STL's winding, that a round trip could come back locally inconsistent
 // instead of cleanly globally inverted. Empirically confirmed NOT to be a bug (ground-truth
 // C++ test against `StlAPI_Reader` + `BRepMesh_IncrementalMesh` directly): winding is preserved
 // exactly, including a full uniform reversal. The "locally inconsistent" observation that
 // prompted the issue traced to a defect in the *reporting* test fixture's own STL-generation
 // helper (a copy-pasted, unmirrored top-face vertex order), not to OCCTSwift.
-@Suite("Issue #375 — Shape.loadSTL() preserves facet winding, including a global reversal")
+@Suite("Issue #375, Shape.loadSTL() preserves facet winding, including a global reversal")
 struct Issue375STLWindingTests {
 
     /// A hand-written, watertight, unit-half-extent box STL: 6 quads (2 triangles each), every
@@ -474,7 +474,7 @@ struct PLYExportTests {
 
 // MARK: - Camera Aspect Getter Test
 
-@Suite("Camera — Aspect Round-Trip")
+@Suite("Camera, Aspect Round-Trip")
 struct CameraAspectTests {
     @Test("Camera aspect getter returns set value")
     func aspectRoundTrip() {
@@ -1134,7 +1134,7 @@ struct RWStlDirectTests {
         let path = "/tmp/occt_rwstl_read_\(Int.random(in: 0..<1_000_000)).stl"
         guard box.writeSTLBinary(to: path) else { return }
         if let shape = Shape.readSTL(from: path) {
-            // readSTL returns a face with triangulation — not necessarily "valid" by BRep standards
+            // readSTL returns a face with triangulation, not necessarily "valid" by BRep standards
             // Just check it's not nil
             _ = shape
         }
@@ -1549,7 +1549,7 @@ struct GLTFTests {
             let url = URL(fileURLWithPath: tmpPath)
             try Exporter.writeGLTF(shape: b, to: url, binary: true, deflection: 0.1)
 
-            // Reimport — GLTF is mesh-based, produces triangulation faces not B-Rep
+            // Reimport. GLTF is mesh-based, produces triangulation faces not B-Rep
             let reimported = Shape.loadGLTF(from: url)
             // loadGLTF returns non-nil if file was successfully read
             #expect(reimported != nil)
@@ -1564,7 +1564,7 @@ struct GLTFTests {
             let url = URL(fileURLWithPath: tmpPath)
             try Exporter.writeGLTF(shape: b, to: url, binary: true, deflection: 0.5)
 
-            // Load as document — GLTF documents contain mesh data
+            // Load as document. GLTF documents contain mesh data
             let doc = Document.loadGLTF(from: url)
             #expect(doc != nil)
             try? FileManager.default.removeItem(at: url)
@@ -1572,7 +1572,7 @@ struct GLTFTests {
     }
 }
 
-@Suite("SEGV Guards — IGES export validation")
+@Suite("SEGV Guards, IGES export validation")
 struct IGESExportGuardTests {
 
     @Test func validShapeExportsSuccessfully() throws {
@@ -1656,8 +1656,8 @@ struct MeshAndExportProgressTests {
     /// The bridge used to call `BRepMesh_IncrementalMesh(shape, linDefl, isRelative, angDefl)`,
     /// whose constructor runs `Perform()` internally with a null progress range. The whole mesh
     /// was therefore built uninterruptibly before the range was ever polled, and the following
-    /// `Perform(range)` meshed the shape a second time. Cancellation still *threw* — `UserBreak()`
-    /// was checked afterwards — which is why `meshCancellation` above passed the entire time and
+    /// `Perform(range)` meshed the shape a second time. Cancellation still *threw*, `UserBreak()`
+    /// was checked afterwards, which is why `meshCancellation` above passed the entire time and
     /// the defect reached users as "no in-process timeout can bound this". Assert on elapsed time,
     /// which is the part that was actually broken.
     ///
@@ -1690,9 +1690,9 @@ struct MeshAndExportProgressTests {
             Issue.record("Unexpected error: \(error)"); return
         }
         let elapsed = Date().timeIntervalSince(t1)
-        #expect(deadline.polls > 0, "cancellation was never polled — the progress range was not consumed")
+        #expect(deadline.polls > 0, "cancellation was never polled, the progress range was not consumed")
         #expect(elapsed < full * 0.7,
-                "cancelled after \(elapsed)s against a \(full)s uncancelled mesh — meshing ran to completion before the range was polled (#286)")
+                "cancelled after \(elapsed)s against a \(full)s uncancelled mesh, meshing ran to completion before the range was polled (#286)")
     }
 
     @Test("Exporter.writeSTEP with progress: nil round-trips a file")
@@ -1993,7 +1993,7 @@ struct PDFWriterTests {
         // that can round-trip every byte.
         let content = String(data: data, encoding: .isoLatin1) ?? ""
         // Our escape function passes ± through as UTF-8 bytes (0xC2 0xB1).
-        // In isoLatin1 decoding those map to "Â±" — check for that instead.
+        // In isoLatin1 decoding those map to "Â±", check for that instead.
         #expect(content.contains("0.050"))
         // ± is a UTF-8 2-byte sequence; its isoLatin1 decoding is "Â±".
         #expect(content.contains("\u{00C2}\u{00B1}"))
@@ -2123,8 +2123,8 @@ struct STEPWriterCAFCorruptionTests {
 
     /// Regression guard for #280.
     ///
-    /// Merely constructing a `STEPCAFControl_Reader` — i.e. any XDE STEP read, such as
-    /// `Document.loadSTEP` — used to permanently corrupt every later shape-level STEP write in the
+    /// Merely constructing a `STEPCAFControl_Reader`, i.e. any XDE STEP read, such as
+    /// `Document.loadSTEP`, used to permanently corrupt every later shape-level STEP write in the
     /// process: the frustum's lateral conical face was silently dropped from the written file,
     /// leaving a 2-face solid missing 63% of its volume that still reported `isValid == true`.
     ///
@@ -2132,7 +2132,7 @@ struct STEPWriterCAFCorruptionTests {
     /// its base class configured, without re-applying `SetShapeProcessFlags`, and then
     /// `AutoRecord()`s itself under the same "STEP" name the plain writer resolves by. The actor's
     /// OperationsFlags end up empty, so `DirectFaces` never runs and faces on indirect
-    /// (left-handed) surfaces — a frustum's cone — are dropped. Worked around in the bridge by
+    /// (left-handed) surfaces, a frustum's cone, are dropped. Worked around in the bridge by
     /// installing a freshly-constructed plain controller on each shape-level write.
     ///
     /// This is also the cause of the long-standing `cone()` failure in OCCTStressTests, which
@@ -2144,7 +2144,7 @@ struct STEPWriterCAFCorruptionTests {
 
         // Do the CAF read ourselves so the test is self-contained. Note we deliberately do NOT
         // assert a clean "before" baseline: the poison is process-wide and permanent, and in a
-        // full run another suite's CAF read has usually already tripped it before we get here —
+        // full run another suite's CAF read has usually already tripped it before we get here,
         // a baseline assertion would make this test order-dependent (and fail for the wrong
         // reason). The invariant below holds regardless of what ran earlier.
         let box = Shape.box(width: 10, height: 20, depth: 30)!
@@ -2175,7 +2175,7 @@ struct STEPWriterOversizedNameTests {
     /// this check forever: no amount of flushing ever makes room for text that can't fit in a
     /// full, empty line either. Fixed upstream by splitting the token across as many lines as
     /// needed instead of looping on a flush check that can never succeed. No #expect needed for
-    /// the hang itself — a regression would wedge the whole test process; reaching the assertions
+    /// the hang itself, a regression would wedge the whole test process; reaching the assertions
     /// below is the real assertion.
     @Test("A STEP export with a >72-char unbroken name completes and preserves the name")
     func oversizedUnbrokenNameDoesNotHang() throws {
@@ -2201,13 +2201,13 @@ struct STEPWriterOversizedNameTests {
 
 /// `.serialized` because each test measures a baseline import and then compares a cancelled one
 /// against it. The comparison is a poll count, not a duration, so it no longer competes for CPU
-/// the way the wall-clock deadlines these tests used to carry did (#525) — but the baseline import
+/// the way the wall-clock deadlines these tests used to carry did (#525), but the baseline import
 /// itself is the most expensive thing in the file, and running the two side by side buys nothing.
 @Suite("v1.11.2 Robust import progress (issue #300)", .serialized)
 struct RobustImportProgressTests {
 
     /// Cancels once the import reports itself past the halfway mark, which by the bridge's own
-    /// split — transfer 0...0.5, repair 0.5...1.0 — is inside the repair.
+    /// split, transfer 0...0.5, repair 0.5...1.0, is inside the repair.
     ///
     /// Triggered on reported progress, not on the clock. These tests used to set a deadline at
     /// `0.75 ×` a wall-clock measurement of a preceding uncancelled import, so machine load, not
@@ -2225,7 +2225,7 @@ struct RobustImportProgressTests {
         private var _cancel = false
         private var _fractionAtCancel: Double?
 
-        /// Progress polls seen — the work-count proxy the assertions compare against a baseline.
+        /// Progress polls seen, the work-count proxy the assertions compare against a baseline.
         var polls: Int { lock.lock(); defer { lock.unlock() }; return _polls }
         /// The fraction that first crossed into the repair half, or nil if none ever did.
         var fractionAtCancel: Double? { lock.lock(); defer { lock.unlock() }; return _fractionAtCancel }
@@ -2245,7 +2245,7 @@ struct RobustImportProgressTests {
 
     /// The uncancelled baseline: counts polls, and times how long the call kept running after its
     /// last progress report. That trailing silence is what the #300 defect looked like from
-    /// outside — the transfer consumed the whole range, reported 1.0, and then the healing ran on
+    /// outside, the transfer consumed the whole range, reported 1.0, and then the healing ran on
     /// for another 40-50% of the call with nothing left to report and no way to be cancelled.
     /// Measured at 1.3% (STEP) and 3.4% (IGES) of the call with the repair inside the range.
     ///
@@ -2279,7 +2279,7 @@ struct RobustImportProgressTests {
         let tail = end.timeIntervalSince(last)
         #expect(tail / total < 0.25, """
             \(label): the call ran on for \(tail)s of a \(total)s import after its last progress \
-            report — that silent tail is work outside the caller's progress range, which can be \
+            report, that silent tail is work outside the caller's progress range, which can be \
             neither observed nor cancelled (#300)
             """)
     }
@@ -2288,15 +2288,15 @@ struct RobustImportProgressTests {
     /// not merely the transfer that precedes it.
     ///
     /// `OCCTImportIGESRobustProgress` handed `TransferRoots` the entire `Message_ProgressRange`
-    /// and then ran `ShapeFix_Shape::Perform()` with no range at all. Healing is not a coda —
-    /// it is 38-50% of a robust import (measured across box/sphere/cylinder/torus compounds) —
+    /// and then ran `ShapeFix_Shape::Perform()` with no range at all. Healing is not a coda,
+    /// it is 38-50% of a robust import (measured across box/sphere/cylinder/torus compounds),
     /// so a caller's deadline could not bound the call: `shouldCancel()` returning `true` during
     /// healing was ignored entirely, the heal ran to completion, and the import returned a
     /// *shape* rather than reporting cancellation. Same family as #286.
     ///
     /// Two halves, because the defect had two faces. That healing is inside the range at all is
     /// checked on the uncancelled baseline, by the silence that would follow the last progress
-    /// report if it were not (see ``BaselineProgress``) — a fraction-triggered cancellation alone
+    /// report if it were not (see ``BaselineProgress``), a fraction-triggered cancellation alone
     /// could not catch it, since the old bridge let the transfer span 0...1 and any fraction
     /// therefore fired while the transfer was still running and cancelled correctly even with the
     /// bug present. That a cancellation in that half then *stops* the healing rather than letting
@@ -2320,7 +2320,7 @@ struct RobustImportProgressTests {
 
         // Baseline: an uncancelled import, both as the "is the range covering the whole call"
         // check and as the yardstick for "the cancelled run stopped early". The yardstick is a
-        // count of work items, not a duration — identical on a loaded and an idle machine.
+        // count of work items, not a duration, identical on a loaded and an idle machine.
         let baseline = BaselineProgress()
         let t0 = Date()
         _ = try Shape.loadIGESRobust(fromPath: url.path, progress: baseline)
@@ -2331,7 +2331,7 @@ struct RobustImportProgressTests {
             _ = try Shape.loadIGESRobust(fromPath: url.path, progress: canceller)
             let at = canceller.fractionAtCancel.map { "fraction \($0)" } ?? "no fraction >= 0.6 was ever reported"
             Issue.record("""
-                loadIGESRobust returned a shape instead of cancelling — a break requested at \
+                loadIGESRobust returned a shape instead of cancelling, a break requested at \
                 \(at) did not stop the healing (#300)
                 """)
             return
@@ -2340,19 +2340,19 @@ struct RobustImportProgressTests {
         } catch {
             Issue.record("Unexpected error: \(error)"); return
         }
-        #expect(canceller.polls > 0, "cancellation was never polled — the range was not consumed")
+        #expect(canceller.polls > 0, "cancellation was never polled, the range was not consumed")
         #expect(canceller.polls < baseline.polls,
-                "cancelled after \(canceller.polls) polls against \(baseline.polls) uncancelled — healing ran to completion before the break could bite (#300)")
+                "cancelled after \(canceller.polls) polls against \(baseline.polls) uncancelled, healing ran to completion before the break could bite (#300)")
     }
 
     /// Regression for #300 (STEP side): `loadRobust`'s repair phase must honour the deadline too.
     ///
-    /// `OCCTImportSTEPRobustProgress` had the identical defect but no Swift caller could reach it —
-    /// `loadRobust` called the non-progress bridge variant — so it was unreachable and untestable.
+    /// `OCCTImportSTEPRobustProgress` had the identical defect but no Swift caller could reach it,
+    /// `loadRobust` called the non-progress bridge variant, so it was unreachable and untestable.
     /// v1.11.2 exposes `progress:` on `loadRobust`, which is what makes this test possible.
     ///
     /// The fixture is a convex N-gon prism: one many-faced **solid**, so the import takes the robust
-    /// path's SOLID branch (transfer, then heal — no sewing), where healing measures ~50% of the
+    /// path's SOLID branch (transfer, then heal, no sewing), where healing measures ~50% of the
     /// work. That share is what makes an interrupted repair observable at all: on a *compound* the
     /// same import spends only ~6% there, too thin to distinguish from the transfer. Convex also
     /// keeps clear of #263 (ShapeFix heap-corrupts healing a self-intersecting-wire prism).
@@ -2383,14 +2383,14 @@ struct RobustImportProgressTests {
         // Guards the premise: a compound here would mean the sewing branch and a ~6% repair
         // share, and the repair phase would be too thin to observe being interrupted.
         #expect(baseline.shapeType == .solid,
-                "fixture is no longer a solid — the cancellation would land in the transfer, not the repair (#300)")
+                "fixture is no longer a solid, the cancellation would land in the transfer, not the repair (#300)")
 
         let canceller = RepairPhaseCanceller()
         do {
             _ = try Shape.loadRobust(fromPath: url.path, progress: canceller)
             let at = canceller.fractionAtCancel.map { "fraction \($0)" } ?? "no fraction >= 0.6 was ever reported"
             Issue.record("""
-                loadRobust returned a shape instead of cancelling — a break requested at \
+                loadRobust returned a shape instead of cancelling, a break requested at \
                 \(at) did not stop the repair (#300)
                 """)
             return
@@ -2399,12 +2399,12 @@ struct RobustImportProgressTests {
         } catch {
             Issue.record("Unexpected error: \(error)"); return
         }
-        #expect(canceller.polls > 0, "cancellation was never polled — the range was not consumed")
+        #expect(canceller.polls > 0, "cancellation was never polled, the range was not consumed")
         #expect(canceller.polls < baselineProgress.polls,
-                "cancelled after \(canceller.polls) polls against \(baselineProgress.polls) uncancelled — repair ran to completion before the break could bite (#300)")
+                "cancelled after \(canceller.polls) polls against \(baselineProgress.polls) uncancelled, repair ran to completion before the break could bite (#300)")
     }
 
-    /// `progress: nil` must still import normally — the default path now routes through the
+    /// `progress: nil` must still import normally, the default path now routes through the
     /// progress-capable bridge function, so this guards the re-route rather than the cancellation.
     @Test("Shape.loadRobust with progress: nil round-trips a file (#300)")
     func stepRobustNilProgress() throws {
@@ -2428,14 +2428,14 @@ struct RobustImportProgressTests {
 /// The bridge set `*outCancelled` only at its own explicit `UserBreak()` checkpoints, so which
 /// error a caller saw depended on where the break happened to fall. A break during the transfer
 /// leaves `TransferRoots` reporting zero roots, and that path returned "failed" with the flag
-/// still false — `ImportError.importFailed`, for an import the caller had explicitly cancelled.
+/// still false, `ImportError.importFailed`, for an import the caller had explicitly cancelled.
 /// It surfaced as a flaky test (#300's, whose deadline was a fraction of a wall-clock measurement
 /// and so landed in the transfer about 1 run in 9), but it is reachable by any caller whose
 /// deadline expires early.
 ///
 /// Separately, `UserBreak()` re-asked the caller at every checkpoint and took the latest answer,
-/// so a caller that answers `true` **once** — a one-shot flag, an already-consumed
-/// `Task.isCancelled` — had that answer overwritten: OCCT aborted the phase, the next poll said
+/// so a caller that answers `true` **once**, a one-shot flag, an already-consumed
+/// `Task.isCancelled`, had that answer overwritten: OCCT aborted the phase, the next poll said
 /// "no break", and the half-repaired shape came back as a success. `ImportProgress.shouldCancel`
 /// documents the opposite: one `true` stops the call.
 @Suite("Cancellation is reported as cancellation (issue #525)", .serialized)
@@ -2450,8 +2450,8 @@ struct CancellationReportingTests {
         func shouldCancel() -> Bool { lock.lock(); _polls += 1; lock.unlock(); return true }
     }
 
-    /// Answers `true` exactly once — once the import is past halfway, so the single `true` lands
-    /// in the repair phase — then `false` forever after.
+    /// Answers `true` exactly once, once the import is past halfway, so the single `true` lands
+    /// in the repair phase, then `false` forever after.
     final class OneShotCanceller: ImportProgress, @unchecked Sendable {
         private let lock = NSLock()
         private var _fired = false
@@ -2501,7 +2501,7 @@ struct CancellationReportingTests {
         }
     }
 
-    /// The IGES sibling of the same bridge path — identical `TransferRoots(...) == 0` exit.
+    /// The IGES sibling of the same bridge path, identical `TransferRoots(...) == 0` exit.
     @Test("Shape.loadIGESRobust cancelled during the transfer throws .cancelled (#525)")
     func igesRobustTransferPhaseCancellationIsCancelled() throws {
         let boxes = (0..<50).compactMap { i in
@@ -2553,7 +2553,7 @@ struct CancellationReportingTests {
         do {
             _ = try Shape.loadRobust(fromPath: url.path, progress: canceller)
             Issue.record("""
-                loadRobust returned a shape after the caller cancelled — a single shouldCancel() \
+                loadRobust returned a shape after the caller cancelled, a single shouldCancel() \
                 true was overwritten by the polls after it (fired: \(canceller.fired)) (#525)
                 """)
         } catch ImportError.cancelled {
@@ -2565,11 +2565,11 @@ struct CancellationReportingTests {
 }
 
 /// Regressions for #302: the robust importers sewed, then kept only the **first** shell, silently
-/// discarding every body after it — 10 boxes in, 1 box out, no error and no diagnostic.
+/// discarding every body after it, 10 boxes in, 1 box out, no error and no diagnostic.
 ///
 /// These assert on **body count**, not validity. That distinction is the whole point: a truncated
 /// import returned a perfectly well-formed solid, which is exactly why the defect shipped
-/// unnoticed. `isValid` was true the entire time. Same lesson as #286/#300 — assert the property
+/// unnoticed. `isValid` was true the entire time. Same lesson as #286/#300, assert the property
 /// that was actually broken, not the one that happens to be easy to check.
 @Suite("v1.11.3 Multibody robust import (issue #302)")
 struct MultibodyRobustImportTests {
@@ -2594,7 +2594,7 @@ struct MultibodyRobustImportTests {
 
         let shape = try Shape.loadRobust(fromPath: url.path)
         #expect(shape.solidCount == 10,
-                "loadRobust returned \(shape.solidCount) of 10 bodies — the rest were silently dropped (#302)")
+                "loadRobust returned \(shape.solidCount) of 10 bodies, the rest were silently dropped (#302)")
         #expect(shape.faceCount == 60, "expected 60 faces, got \(shape.faceCount) (#302)")
         #expect(shape.shapeType == .compound, "multibody input should come back a compound, got \(shape.shapeType)")
         #expect(shape.isValid)
@@ -2611,7 +2611,7 @@ struct MultibodyRobustImportTests {
         let shape = try Shape.loadSTLRobust(fromPath: url.path, sewingTolerance: 1e-6)
         // Tessellated: each box is 12 triangles, so bodies are what matters, not face count.
         #expect(shape.solidCount == 10,
-                "loadSTLRobust returned \(shape.solidCount) of 10 bodies — the rest were silently dropped (#302)")
+                "loadSTLRobust returned \(shape.solidCount) of 10 bodies, the rest were silently dropped (#302)")
         #expect(shape.isValid)
     }
 
@@ -2627,12 +2627,12 @@ struct MultibodyRobustImportTests {
         #expect(result.shape.solidCount == 10,
                 "loadWithDiagnostics returned \(result.shape.solidCount) of 10 bodies (#302)")
         #expect(result.solidsCreated == 10,
-                "expected solidsCreated == 10, got \(result.solidsCreated) — the count is what made the loss visible (#302)")
+                "expected solidsCreated == 10, got \(result.solidsCreated), the count is what made the loss visible (#302)")
         #expect(result.solidCreated)
     }
 
     /// Guards the hazard the fix was designed around: a hollow body owns an **outer shell plus one
-    /// shell per void**. "Solidify every shell" naively — via `TopExp_Explorer(_, TopAbs_SHELL)` —
+    /// shell per void**. "Solidify every shell" naively, via `TopExp_Explorer(_, TopAbs_SHELL)`,
     /// descends *into* solids and would turn one hollow body into two, trading data loss for
     /// corruption. `occtSolidifyShells` walks a compound's immediate children instead, so a void
     /// stays a void. Asserted on volume, which is what a lost void would change.
@@ -2653,11 +2653,11 @@ struct MultibodyRobustImportTests {
 
         let shape = try Shape.loadRobust(fromPath: url.path)
         #expect(shape.solidCount == 1,
-                "hollow body split into \(shape.solidCount) solids — the void shell was solidified separately (#302)")
+                "hollow body split into \(shape.solidCount) solids, the void shell was solidified separately (#302)")
         #expect(shape.shellCount == 2, "lost the void shell: \(shape.shellCount) shells (#302)")
         if let volume = shape.volume {
             #expect(abs(volume - expected) / expected < 0.001,
-                    "volume \(volume) vs expected \(expected) — the void was filled in (#302)")
+                    "volume \(volume) vs expected \(expected), the void was filled in (#302)")
         }
         #expect(shape.isValid)
     }
@@ -2676,7 +2676,7 @@ struct MultibodyRobustImportTests {
 
         let shape = try Shape.loadRobust(fromPath: url.path)
         #expect(shape.shapeType == .solid,
-                "single-body import should stay a plain solid, got \(shape.shapeType) — existing callers depend on this (#302)")
+                "single-body import should stay a plain solid, got \(shape.shapeType), existing callers depend on this (#302)")
         #expect(shape.solidCount == 1)
         #expect(shape.faceCount == 6)
         #expect(shape.isValid)
