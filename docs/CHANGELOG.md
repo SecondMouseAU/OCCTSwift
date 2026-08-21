@@ -22,6 +22,40 @@ bounding-box accessors becoming Optional so a void shape stops fabricating `(0,0
 ## Unreleased
 
 
+### README and a new guide say what a consumer's own target has to set, and why an Objective-C file including an OCCT header fails (#967)
+
+An external user reported that v3.0.0 would not compile in their project, with
+`'type_traits' file not found` at `Standard_Std.hxx`'s `#include <type_traits>`. Reproduced from
+the outside, on both SwiftPM and Xcode: `OCCT.xcframework` ships roughly 7,000 C++ headers and
+declares a `HeadersPath`, so both build systems put them on the include path of anything that links
+the package. `#include <STEPControl_Reader.hxx>` therefore resolves from a file in the consumer's
+own target, and if that file is Objective-C (`.m`) or C rather than Objective-C++ (`.mm`) or C++,
+the C++ standard library is not on its include path and `Standard_Std.hxx:19` stops the build.
+Renaming it `.mm` is the fix, provided the target is at C++17 or later; below that the build clears
+`<type_traits>` and then fails on `std::is_trivially_copyable_v` in `NCollection_LinearVector.hxx`,
+which is a separate wall and easy to mistake for the same one.
+
+Nothing in the package changes. Ten Swift-only consumer shapes were built across SwiftPM and Xcode,
+on macOS, iOS device and iOS simulator, with and without `.interoperabilityMode(.Cxx)` on the
+consumer's target, and every one is green, so a Swift consumer needs no `cxxLanguageStandard`, no
+C++ interop mode and no extra build settings. `README.md` now says that in a short
+"What your own target has to set" section, the detail lives in the new
+[`docs/guides/consuming-from-objective-c.md`](https://github.com/SecondMouseAU/OCCTSwift/blob/main/docs/guides/consuming-from-objective-c.md),
+and
+[`Scripts/repro/967-consumer-compile/`](https://github.com/SecondMouseAU/OCCTSwift/tree/main/Scripts/repro/967-consumer-compile)
+carries the full grid, a `run.sh` that rebuilds nine consumer shapes and checks each against its
+expected outcome, and captured output for every remaining row.
+
+Three unrelated findings from the same sweep, all in files this change already touches. There is no
+Mac Catalyst slice in the xcframework, so that destination fails at build planning with
+`no library for this platform was found in OCCT.xcframework`, and unlike visionOS and tvOS there is
+no local-rebuild route because `Scripts/build-occt.sh` has no Catalyst target; README's platform
+table now has a row for it, where it previously said nothing at all. README's install snippet said
+`from: "1.0.0"`, which resolves to the 1.x line and never reaches 3.0.0. And `docs/index.md` said
+4,339 wrapped operations against a derived 4,355, because `count-operations.py` read only README
+and `docs/API_REFERENCE.md`; it now reads `docs/index.md` too, so the figure that drifted is no
+longer the one nothing was watching.
+
 ### `Datum.name` no longer truncates, and two GD&T write paths no longer report success for a request the document did not take (#1055, #1056)
 
 `Datum.name` came back cut at 63 characters while `createDatum(name:)` stored the whole string, with
