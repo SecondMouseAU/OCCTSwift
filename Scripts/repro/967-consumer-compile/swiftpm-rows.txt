@@ -1,18 +1,27 @@
 
 ########## row 1: Objective-C (.m), the reported failure ##########
 /Users/elb/Projects/OCCTSwift/.claude/worktrees/agent-a0bcfe4cb957c2dd4/Libraries/OCCT.xcframework/macos-arm64/Headers/Standard_Std.hxx:19:10: fatal error: 'type_traits' file not found
-[244/245] Compiling ConsumerObjC Repro967.m
+  -> expected type_traits, got type_traits: OK
 
-########## row 2: Objective-C++ (.mm), consumer manifest declares no C++ standard ##########
+########## row 2: C (.c), the same missing C++ standard library ##########
+/Users/elb/Projects/OCCTSwift/.claude/worktrees/agent-a0bcfe4cb957c2dd4/Libraries/OCCT.xcframework/macos-arm64/Headers/Standard_Std.hxx:19:10: fatal error: 'type_traits' file not found
+  -> expected type_traits, got type_traits: OK
+
+########## row 3: Objective-C++ (.mm), manifest declares no C++ standard ##########
 /Users/elb/Projects/OCCTSwift/.claude/worktrees/agent-a0bcfe4cb957c2dd4/Libraries/OCCT.xcframework/macos-arm64/Headers/NCollection_LinearVector.hxx:95:26: error: no template named 'is_trivially_copyable_v' in namespace 'std'; did you mean 'is_trivially_copyable'?
 /Users/elb/Projects/OCCTSwift/.claude/worktrees/agent-a0bcfe4cb957c2dd4/Libraries/OCCT.xcframework/macos-arm64/Headers/NCollection_LinearVector.hxx:95:62: error: expected unqualified-id
 /Users/elb/Projects/OCCTSwift/.claude/worktrees/agent-a0bcfe4cb957c2dd4/Libraries/OCCT.xcframework/macos-arm64/Headers/NCollection_LinearVector.hxx:135:26: error: no template named 'is_trivially_copyable_v' in namespace 'std'; did you mean 'is_trivially_copyable'?
 /Users/elb/Projects/OCCTSwift/.claude/worktrees/agent-a0bcfe4cb957c2dd4/Libraries/OCCT.xcframework/macos-arm64/Headers/NCollection_LinearVector.hxx:135:62: error: expected unqualified-id
-/Users/elb/Projects/OCCTSwift/.claude/worktrees/agent-a0bcfe4cb957c2dd4/Libraries/OCCT.xcframework/macos-arm64/Headers/NCollection_LinearVector.hxx:531:24: error: no template named 'is_trivially_copyable_v' in namespace 'std'; did you mean 'is_trivially_copyable'?
-/Users/elb/Projects/OCCTSwift/.claude/worktrees/agent-a0bcfe4cb957c2dd4/Libraries/OCCT.xcframework/macos-arm64/Headers/NCollection_LinearVector.hxx:531:60: error: expected unqualified-id
+  -> expected cxx17, got cxx17: OK
 
-########## row 3: Objective-C++ (.mm), consumer manifest declares cxxLanguageStandard: .cxx17 ##########
-[1/2] Compiling ConsumerObjC Repro967.mm
-Build of target: 'ConsumerObjC' complete! (7.43s)
+########## row 4: Objective-C++ (.mm), manifest declares cxxLanguageStandard ##########
+Build of target: 'ConsumerLang' complete! (1.07s)
+  -> expected pass, got pass: OK
 
-Workdir kept at /private/tmp/claude-501/-Users-elb-Projects-OCCTSwift/78bd6be9-ea7e-4eb6-915d-15d59201c18e/scratchpad/runsh-work-a0bcfe4cb957c2dd4
+########## row 5: C++ (.cpp), manifest declares cxxLanguageStandard ##########
+Build of target: 'ConsumerLang' complete! (1.78s)
+  -> expected pass, got pass: OK
+
+all 5 rows matched their expected outcome
+Workdir kept at /var/folders/qg/vl7hjxld1dj2z8lvcrjp_klm0000gn/T//occtswift-967-consumer
+RUNSH EXIT=0

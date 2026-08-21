@@ -48,6 +48,7 @@ figure (interactive 3D where it helps). The **[Cookbook index](guides/cookbook/)
 ## Guides & concepts
 
 - [OCCT Concepts](guides/occt-concepts.md), B-Rep topology, handles, shapes primer.
+- [Consuming the package](guides/consuming-from-objective-c.md), what your own target has to set, and the two requirements on any file of yours that includes an OCCT header (#967).
 - [Architecture](architecture/overview.md), the three-layer design and memory model.
 - [Adding Features](guides/adding-features.md), bridge header → impl → Swift → test.
 - [Building OCCT](guides/building-occt.md), rebuild the `OCCT.xcframework` from source.

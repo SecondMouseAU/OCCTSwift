@@ -1,14 +1,17 @@
-=== control: unmodified OCCTBridge.h ===
-[0/7] Write swift-version--58304C5D6DBC2206.txt
-Build complete! (1.55s)
-18:#include <Standard_Std.hxx>
-=== injected: OCCTBridge.h includes <Standard_Std.hxx> ===
-error: emit-module command failed with exit code 1 (use -v to see invocation)
+=== leg 1, control: unmodified OCCTBridge.h, touched to force a full recompile ===
+[15/24] Compiling OCCTBridge_Document.mm
+[16/24] Compiling OCCTBridge_Curve3D.mm
+Build complete! (35.22s)
+=== leg 2, injected: OCCTBridge.h line 18 includes <Standard_Std.hxx> ===
 /Users/elb/Projects/OCCTSwift/.claude/worktrees/agent-a0bcfe4cb957c2dd4/Libraries/OCCT.xcframework/macos-arm64/Headers/Standard_Std.hxx:19:10: error: 'type_traits' file not found
    |          `- error: 'type_traits' file not found
 /Users/elb/Projects/OCCTSwift/.claude/worktrees/agent-a0bcfe4cb957c2dd4/Sources/OCCTSwift/AnalyticGeometry.swift:3:8: error: could not build Objective-C module 'OCCTBridge'
    |        `- error: could not build Objective-C module 'OCCTBridge'
 /Users/elb/Projects/OCCTSwift/.claude/worktrees/agent-a0bcfe4cb957c2dd4/Libraries/OCCT.xcframework/macos-arm64/Headers/Standard_Std.hxx:19:10: error: 'type_traits' file not found
-=== restored ===
-[250/251] Applying Harnesses
-Build complete! (67.30s)
+=== leg 3, restored, touched to force a full recompile ===
+[15/24] Compiling OCCTBridge_Surface.mm
+[16/24] Compiling OCCTBridge_Modeling.mm
+Build complete! (26.96s)
+=== header restored to:
+17:#import <Foundation/Foundation.h>
+18-
