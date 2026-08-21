@@ -710,6 +710,33 @@ extension Document {
             index: index)
     }
 
+    /// The datum's identifier, whole, however long it is.
+    ///
+    /// The bridge reports the length it needs rather than truncating to a fixed buffer, so this
+    /// sizes a buffer from that report instead of guessing. The first call uses a 64-element buffer
+    /// that covers every conventional identifier (`A`, `B`, `A1`); only a longer one pays for a
+    /// second call (#1055).
+    ///
+    /// The cost of correctness here is one more walk of `GetDatumLabels()` per datum than the
+    /// removed `OCCTDatumInfo.name` field needed, and two more for a name of 64 bytes or longer.
+    /// `datum(at:)` already pays one such walk per modifier, so this is the same order of work
+    /// rather than a new one, and it is what buys a name that is never silently a prefix.
+    private func datumName(at index: Int) -> String? {
+        var short = [CChar](repeating: 0, count: 64)
+        let length = OCCTDocumentGetDatumName(handle, Int32(index), &short, Int32(short.count))
+        guard length >= 0 else { return nil }
+        if Int(length) < short.count { return Self.string(fromCString: short) }
+
+        var exact = [CChar](repeating: 0, count: Int(length) + 1)
+        let again = OCCTDocumentGetDatumName(handle, Int32(index), &exact, Int32(exact.count))
+        // The second length is checked as well as the first. A name that grew between the two calls
+        // would put this back where #1055 started, handing back a prefix and calling it the name,
+        // at the one site the whole contract rests on. Nothing can grow one today, since there is no
+        // rename and no removal on this surface, so this is hardening rather than a live path.
+        guard again >= 0, Int(again) < exact.count else { return nil }
+        return Self.string(fromCString: exact)
+    }
+
     /// The datum at the given index.
     ///
     /// ```swift
@@ -723,13 +750,9 @@ extension Document {
     ///   annotation point with no annotation plane, which OCCT cannot read without crashing
     ///   (#1030); see `docs/reference/Annotation.md`.
     public func datum(at index: Int) -> Datum? {
-        var info = OCCTDocumentGetDatumInfo(handle, Int32(index))
+        let info = OCCTDocumentGetDatumInfo(handle, Int32(index))
         guard info.isValid else { return nil }
-        let name = withUnsafeBytes(of: &info.name) { rawBuffer in
-            guard let baseAddress = rawBuffer.baseAddress else { return "" }
-            let charPtr = baseAddress.assumingMemoryBound(to: CChar.self)
-            return String(cString: charPtr)
-        }
+        guard let name = datumName(at: index) else { return nil }
         var modifierWithValue: Datum.ModifierWithValue?
         if let modifier = DatumModifierWithValue(rawValue: info.modifierWithValue),
             modifier != .none

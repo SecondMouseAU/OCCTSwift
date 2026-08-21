@@ -25,7 +25,9 @@ extension Document {
     /// doc.createDimension(on: label, type: .sizeDiameter, value: 20.0)
     /// ```
     ///
-    /// - Returns: The new dimension's index, or `nil` on failure.
+    /// - Returns: The new dimension's index, or `nil` on failure. A tolerance pair the document
+    ///   will not store, a `Double.nan` bound for instance, fails the whole call, and it is refused
+    ///   before the dimension is created rather than after (#1056).
     @discardableResult
     public func createDimension(
         on shapeLabel: Int64,
@@ -34,12 +36,14 @@ extension Document {
         lowerTolerance: Double = 0,
         upperTolerance: Double = 0
     ) -> Int? {
-        let idx = OCCTDocumentCreateDimension(handle, shapeLabel, type.rawValue, value)
-        guard idx >= 0 else { return nil }
+        let idx: Int32
         if lowerTolerance != 0 || upperTolerance != 0 {
-            _ = OCCTDocumentSetDimensionTolerance(handle, idx, lowerTolerance, upperTolerance)
+            idx = OCCTDocumentCreateDimensionWithTolerance(
+                handle, shapeLabel, type.rawValue, value, lowerTolerance, upperTolerance)
+        } else {
+            idx = OCCTDocumentCreateDimension(handle, shapeLabel, type.rawValue, value)
         }
-        return Int(idx)
+        return idx >= 0 ? Int(idx) : nil
     }
 
     /// Create a new geometric tolerance on the document, attached to the shape at `shapeLabel`.
@@ -65,6 +69,8 @@ extension Document {
     /// doc.createDatum(name: "A")
     /// ```
     ///
+    /// - Parameter name: The datum identifier, stored whole and of any length. `datum(at:)` reads
+    ///   back exactly what was written (#1055).
     /// - Returns: The new datum's index, or `nil` on failure.
     @discardableResult
     public func createDatum(name: String) -> Int? {
@@ -239,9 +245,10 @@ extension Document {
     ///
     /// - Parameters:
     ///   - index: Zero-based index into the document's geometric tolerance sequence.
-    ///   - modifier: Pass `.none` to clear the modifier.
+    ///   - modifier: Pass `.none` to clear the modifier, which clears `value` with it.
     ///   - value: The associated value, for example a projected zone's length. Zero or less clears
-    ///     it, so `geomTolerance(at:)` reports `zoneModifierValue` as `nil`.
+    ///     it, so `geomTolerance(at:)` reports `zoneModifierValue` as `nil`. Ignored when
+    ///     `modifier` is `.none`, since the value only means something under a modifier (#1056).
     /// - Returns: `false` if the index is out of range.
     @discardableResult
     public func setGeomToleranceZoneModifier(

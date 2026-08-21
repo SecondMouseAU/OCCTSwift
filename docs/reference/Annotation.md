@@ -1447,7 +1447,7 @@ public struct Datum: Sendable, Hashable {
 }
 ```
 
-- `name`: the datum identifier, for example `"A"`.
+- `name`: the datum identifier, for example `"A"`. Whole, with no length bound.
 - `position`: the datum's place in its geometric tolerance's reference frame, 1-based, or `nil`.
 - `modifiers`: the modifiers on this datum, in OCCT's own order. Empty when it carries none.
 - `modifierWithValue`: the single valued modifier, or `nil`.
@@ -1458,6 +1458,16 @@ public struct Datum: Sendable, Hashable {
 is absence rather than a first place: `STEPCAFControl_Reader`'s frame counter starts at 0 and is
 incremented before each datum is written, so an import never assigns 0. `nil` for `<= 0` follows
 from that rather than from a convention chosen here (#1004).
+
+**`name` has no length bound, and used to have one nobody documented (#1055).** `OCCTDatumInfo`
+carried the identifier back through a `char name[64]`, so a name longer than 63 bytes came back cut
+while `createDatum(name:)` wrote the whole string, and nothing in the chain said so: no flag, no
+length, no `nil`. The struct field is gone. `OCCTDocumentGetDatumName` fills a buffer the caller
+sizes and returns the length of the whole identifier, so a C caller that hands it a short buffer
+gets a prefix **and** the number that says it is one, and can size a buffer exactly (`NULL` with
+`maxLen` `0` asks for the length alone). `datum(at:)` uses that report, so it never truncates.
+Conventional identifiers are short (`A`, `B`, `A1`), which is presumably why 64 looked generous, but
+a datum arriving from a STEP import is read through the same accessor and nothing bounds its name.
 
 **Reading the frame itself is not possible yet.** `Datum.position` gives the order, but nothing in
 this package answers which geometric tolerance a datum belongs to: `XCAFDoc_DimTolTool`'s
@@ -1629,7 +1639,7 @@ public func datum(at index: Int) -> Datum?
 
 - **Parameters:** `index`, zero-based index within the document's datum label sequence.
 - **Returns:** `Datum` wrapping the datum name and index; `nil` if the label does not exist, or if the datum carries an annotation point with no annotation plane (see below).
-- **OCCT:** `XCAFDoc_DimTolTool::GetDatumLabels` → `XCAFDoc_Datum::GetObject()` → `XCAFDimTolObjects_DatumObject::GetName()`.
+- **OCCT:** `XCAFDoc_DimTolTool::GetDatumLabels` → `XCAFDoc_Datum::GetObject()` → `XCAFDimTolObjects_DatumObject::GetName()` (through `OCCTDocumentGetDatumName`, which sizes the identifier rather than truncating it; see `Document.Datum` above).
 
 **A datum with a point and no plane is refused, not read (#1030).** `XCAFDoc_Datum::GetObject`
 builds the datum point's X out of the annotation plane's array instead of the point's own, so on a
@@ -1737,8 +1747,8 @@ public func createDimension(on shapeLabel: Int64,
   - `value`: nominal measured value in model units.
   - `lowerTolerance`: lower tolerance; omit or pass `0` to leave unset.
   - `upperTolerance`: upper tolerance; omit or pass `0` to leave unset.
-- **Returns:** Zero-based index of the new dimension in the document's sequence, or `nil` on failure.
-- **OCCT:** `XCAFDoc_DimTolTool::AddDimension` → `XCAFDoc_DimTolTool::SetDimension` → `XCAFDimTolObjects_DimensionObject::SetType` / `SetValues` + optionally `SetLowerTolValue` / `SetUpperTolValue` via `setDimensionTolerance(at:lower:upper:)`.
+- **Returns:** Zero-based index of the new dimension in the document's sequence, or `nil` on failure. A tolerance pair the document will not store makes the whole call fail, and nothing is created; see below.
+- **OCCT:** `XCAFDimTolObjects_DimensionObject::SetType` / `SetValues`, plus `SetLowerTolValue` / `SetUpperTolValue` when either bound is non-zero, then `XCAFDoc_DimTolTool::AddDimension` → `XCAFDoc_DimTolTool::SetDimension` → `XCAFDoc_Dimension::SetObject`. The object is finished before the label exists, which is the ordering the paragraph below is about.
 - **Example:**
   ```swift
   if let shapeLabel = doc.labelForShape(shaft),
@@ -1750,6 +1760,23 @@ public func createDimension(on shapeLabel: Int64,
       print("Created dimension at index \(idx)")
   }
   ```
+
+**A refused tolerance is refused before the dimension is created (#1056).** This used to create the
+dimension, call `OCCTDocumentSetDimensionTolerance` and throw away its `Bool`, so a pair the document
+refused still returned an index for a `.simple` dimension whose requested tolerance had been dropped.
+`OCCTDocumentCreateDimensionWithTolerance` now builds and checks the whole object first and only then
+creates a label, which is the only way a tolerance refusal can leave the document alone: nothing in
+this bridge can undo an `AddDimension()`. `Double.nan` is the cheapest pair to refuse, because the
+bridge's readback is an exact `==` against both stored values, but anything OCCT does not store bit
+for bit takes the same path.
+`setDimensionTolerance(at:lower:upper:)` always reported this correctly and is unchanged; the two
+spellings of the operation now share one helper and agree by construction.
+
+Two other `nil` returns still come from after the label exists, and they are not the tolerance case:
+a missing `XCAFDoc_Dimension` attribute on the label OCCT just created, and any exception the
+surrounding `catch (...)` absorbs. Neither is reachable from a well-formed call, and neither is a
+refusal of something the caller asked for, but `nil` is therefore "the call failed" and not "the
+document is untouched".
 
 ---
 
@@ -1791,7 +1818,7 @@ Creates a new datum reference on the document.
 public func createDatum(name: String) -> Int?
 ```
 
-- **Parameters:** `name`, datum identifier string (typically a single letter, e.g. `"A"`).
+- **Parameters:** `name`, datum identifier string (typically a single letter, e.g. `"A"`). Stored whole, of any length, and read back whole by `datum(at:)`; see `Document.Datum` for why that is worth saying (#1055).
 - **Returns:** Zero-based index of the new datum in the document's datum sequence, or `nil` on failure.
 - **OCCT:** `XCAFDoc_DimTolTool::AddDatum` → `XCAFDimTolObjects_DatumObject::SetName(TCollection_HAsciiString)`.
 - **Example:**
@@ -2061,8 +2088,8 @@ public func setGeomToleranceZoneModifier(at index: Int,
 
 - **Parameters:**
   - `index`: zero-based geometric tolerance index.
-  - `modifier`: pass `.none` to clear the modifier.
-  - `value`: the associated value, for example a projected zone's length. Zero or less clears it.
+  - `modifier`: pass `.none` to clear the modifier, which clears the value with it.
+  - `value`: the associated value, for example a projected zone's length. Zero or less clears it, and it is ignored entirely when `modifier` is `.none`.
 - **Returns:** `true` if the update succeeded; `false` if the index is out of range, the attribute is missing, or `modifier` is outside the enum.
 - **OCCT:** `XCAFDimTolObjects_GeomToleranceObject::SetZoneModifier` and `SetValueOfZoneModifier` -> `XCAFDoc_GeomTolerance::SetObject`.
 - **Example:**
@@ -2072,9 +2099,17 @@ public func setGeomToleranceZoneModifier(at index: Int,
   #expect(doc.geomTolerance(at: idx)?.zoneModifierValue == 15.0)
   ```
 
-The two are one call because the value only means something under a modifier. They remain
+The two are one call because the value only means something under a modifier. They stay
 independently gated on the way out: the modifier on its own `.none` member, the value on `> 0`, so
 clearing the value leaves the modifier standing.
+
+**Clearing the modifier clears the value too (#1056).** The reader gates `zoneModifierValue` on
+`> 0` and never on the modifier, so a number that survived a `.none` came back as a projected-zone
+length on a tolerance with no projected zone: `setGeomToleranceZoneModifier(at: 0, .none, value: 15)`
+returned `true` and `geomTolerance(at: 0)` then reported `zoneModifier` `.none` alongside
+`zoneModifierValue` `15.0`. The setter now zeroes the value under `.none`, which is what
+`setDatumModifierWithValue(at:_:value:)` already did for the identical call shape. Clearing the
+value alone still leaves the modifier standing; that direction is unchanged.
 
 ---
 
