@@ -1,0 +1,47 @@
+
+=== cylinder, radius 10 ===
+input          : Geom_CylindricalSurface
+input bounds   : u [0, 6.28319]  v [-2e+100, 2e+100]
+input periodic : u yes, v no
+output         : Geom_BSplineSurface
+output bounds  : u [0, 6.28319]  v [-10, 10]
+sample (u=1.5708, v=0) inside the output's own domain: yes
+input  at sample: (0.000000, 10.000000, 0.000000)
+output at sample: (4.000241, 10.000004, -0.000000)
+distance        : 4.000241
+output degrees : u 8, v 3
+output poles   : u 10, v 4
+output periodic: u no, v no
+
+=== plane through the origin ===
+input          : Geom_Plane
+input bounds   : u [-2e+100, 2e+100]  v [-2e+100, 2e+100]
+input periodic : u no, v no
+output         : Geom_BSplineSurface
+output bounds  : u [-10, 10]  v [-10, 10]
+sample (u=3, v=4) inside the output's own domain: yes
+input  at sample: (3.000000, 4.000000, 0.000000)
+output at sample: (17.000000, 4.000000, 0.000000)
+distance        : 14.000000
+output degrees : u 3, v 3
+output poles   : u 4, v 4
+output periodic: u no, v no
+
+=== the #1049 double-add, both affected entry points, on and off the origin ===
+  the working domain is the constraint point padded by 10 in each direction, so a
+  correct result would span 20 by 20 about that point.
+  G0, plane at x = 100               asked (100.0, 0.0, 5.0) at uv (0, 0), input there (100.0, 0.0, 0.0)
+                                     centre (100.0000, 0.0000, 5.0000), corners (90.0, -10.0) .. (110.0, 10.0)
+  G0, plane through the origin       asked (0.0, 0.0, 5.0) at uv (0, 0), input there (0.0, 0.0, 0.0)
+                                     centre (0.0000, 0.0000, 5.0000), corners (-10.0, -10.0) .. (10.0, 10.0)
+  G1, plane at x = 100               asked (100.0, 0.0, 5.0) at uv (0, 0), input there (100.0, 0.0, 0.0)
+                                     centre (100.0000, 0.0000, 5.0000), corners (90.0, -10.0) .. (110.0, 10.0)
+  G1, plane through the origin       asked (0.0, 0.0, 5.0) at uv (0, 0), input there (0.0, 0.0, 0.0)
+                                     centre (0.0000, 0.0000, 5.0000), corners (-10.0, -10.0) .. (10.0, 10.0)
+
+=== output domain of each of the five deformers, plane through the origin ===
+  nlPlateDeformed              u [-10, 10]  v [-10, 10]   periodic u no
+  nlPlateDeformedG1            u [-10, 10]  v [-10, 10]   periodic u no
+  nlPlateDeformedG2            u [-10, 10]  v [-10, 10]   periodic u no
+  nlPlateDeformedG3            u [-10, 10]  v [-10, 10]   periodic u no
+  nlPlateDeformedIncremental   u [-10, 10]  v [-10, 10]   periodic u no

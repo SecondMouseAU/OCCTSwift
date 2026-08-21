@@ -1901,7 +1901,7 @@ Parallel-ray projection (like an orthographic shadow), each point on `wire` is p
   - `target`: target shape to project onto.
   - `direction`: projection direction (rays are parallel).
 - **Returns:** Compound of projected wires, or nil on failure.
-- **OCCT:** `BRepOffsetAPI_NormalProjection` with direction (via `OCCTShapeProjectWire`).
+- **OCCT:** `BRepProj_Projection` with direction (via `OCCTShapeProjectWire`).
 - **Example:**
   ```swift
   if let projected = Shape.projectWire(logoShape, onto: cylinder,
@@ -1923,7 +1923,7 @@ Convenience overload accepting a `Wire` directly; internally converts it to a `S
 
 - **Parameters:** Same as the `Shape` overload but `wire` is a `Wire`.
 - **Returns:** Compound of projected wires, or nil on failure.
-- **OCCT:** `BRepOffsetAPI_NormalProjection` (via `OCCTShapeProjectWire`).
+- **OCCT:** `BRepProj_Projection` (via `OCCTShapeProjectWire`).
 - **Example:**
   ```swift
   if let projected = Shape.projectWire(logoWire, onto: surface, direction: SIMD3(0, 0, -1)) { }
@@ -1971,7 +1971,7 @@ Unlike cylindrical projection (parallel rays), conical projection fans rays out 
   - `target`: target shape to project onto.
   - `eye`: point source of the projection rays.
 - **Returns:** Compound of projected wires, or nil on failure.
-- **OCCT:** `BRepOffsetAPI_NormalProjection` with point source (via `OCCTShapeProjectWireConical`).
+- **OCCT:** `BRepProj_Projection` with point source (via `OCCTShapeProjectWireConical`).
 - **Example:**
   ```swift
   if let shadow = Shape.projectWireConical(outlineShape, onto: ground,
@@ -1993,7 +1993,7 @@ Convenience overload accepting a `Wire` directly.
 
 - **Parameters:** Same as the `Shape` overload but `wire` is a `Wire`.
 - **Returns:** Compound of projected wires, or nil on failure.
-- **OCCT:** `BRepOffsetAPI_NormalProjection` (via `OCCTShapeProjectWireConical`).
+- **OCCT:** `BRepProj_Projection` (via `OCCTShapeProjectWireConical`).
 - **Example:**
   ```swift
   if let shadow = Shape.projectWireConical(outline, onto: floor, eye: lightPos) { }

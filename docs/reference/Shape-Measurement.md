@@ -374,7 +374,7 @@ public func offsetPerFace(defaultOffset: Double,
   - `tolerance`: Offset tolerance.
   - `joinType`: Join strategy for offset gaps (`.arc` or `.intersection`).
 - **Returns:** Offset shape, or `nil` on failure.
-- **OCCT:** `BRepOffsetAPI_MakeThickSolid` (via `OCCTShapeOffsetPerFace`).
+- **OCCT:** `BRepOffset_MakeOffset` (via `OCCTShapeOffsetPerFace`).
 - **Example:**
   ```swift
   if let result = solid.offsetPerFace(defaultOffset: 1.0,

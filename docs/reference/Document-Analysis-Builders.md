@@ -2060,7 +2060,7 @@ public func loadFreeG1Constraint(u: Double, v: Double, du: SIMD3<Double>, dv: SI
 
 - **Parameters:** `u`, `v`, parametric constraint location; `du`, `dv`, partial derivatives defining the tangent frame.
 - **Returns:** `true` on success.
-- **OCCT:** `Plate_FreeGthenCConstraint` (G1) via `OCCTPlateLoadFreeG1Constraint`.
+- **OCCT:** `Plate_FreeGtoCConstraint` (G1) via `OCCTPlateLoadFreeG1Constraint`.
 
 ---
 

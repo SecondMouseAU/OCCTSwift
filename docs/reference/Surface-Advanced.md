@@ -90,9 +90,11 @@ public func nlPlateDeformed(
 ) -> Surface?
 ```
 
-Each constraint pins the surface at a (u, v) parameter to a desired 3D location. The solver
-computes a displacement field on the existing surface; the result preserves the original shape
-except where pulled by the constraints.
+Each constraint pins the surface at a (u, v) parameter to a desired 3D location. The result
+preserves the original shape except where pulled by the constraints. Not a displacement field:
+`NLPlate_NLPlate::Evaluate` seeds its accumulator with the input surface's own value before
+summing the plates, so it returns the deformed point rather than an offset from the input, which
+is what the `nlPlateDerivative` entry below spells out. (#811)
 
 - **Parameters:** `constraints`, array of `(uv, target)` pairs (non-empty); `resolutionOrder`, the plate's resolution order, 2 through 9; `tolerance`, approximation tolerance.
 - **Returns:** New deformed surface, or `nil` if the array is empty, `resolutionOrder` is outside `2...9`, or the solver fails.
@@ -1033,7 +1035,8 @@ standard `nlPlateDeformed` may not converge well.
 
 ### `nlPlateDerivative(constraints:u:v:iu:iv:)`
 
-Evaluates the partial derivative of the NLPlate G0 displacement field at a UV point.
+Evaluates a partial derivative of the NLPlate G0 solution at a UV point. Not of a displacement
+field: see the `NLPlate_NLPlate::EvaluateDerivative` paragraph in this same entry. (#811)
 
 ```swift
 public func nlPlateDerivative(

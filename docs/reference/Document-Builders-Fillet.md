@@ -1161,7 +1161,7 @@ Whether a contour uses distance-angle mode (1-based index).
 public func isDistanceAngle(contour: Int) -> Bool
 ```
 
-- **OCCT:** `BRepFilletAPI_MakeChamfer::IsDistAngle` (via `OCCTChamferBuilderIsDistAngle`).
+- **OCCT:** `BRepFilletAPI_MakeChamfer::IsDistanceAngle` (via `OCCTChamferBuilderIsDistAngle`).
 
 ---
 
@@ -1203,7 +1203,7 @@ public func getDistances(contour: Int) -> (d1: Double, d2: Double)
 ```
 
 - **Returns:** Tuple of `(d1, d2)`; both `-1.0` if not set.
-- **OCCT:** `BRepFilletAPI_MakeChamfer::GetDists` (via `OCCTChamferBuilderGetDists`).
+- **OCCT:** `BRepFilletAPI_MakeChamfer::Dists` (via `OCCTChamferBuilderGetDists`).
 
 ---
 
@@ -1328,7 +1328,7 @@ Whether a contour (1-based) uses a symmetric (single-distance) chamfer.
 public func isSymmetric(contour: Int) -> Bool
 ```
 
-- **OCCT:** `BRepFilletAPI_MakeChamfer::IsSymmetric` (via `OCCTChamferBuilderIsSymmetric`).
+- **OCCT:** `BRepFilletAPI_MakeChamfer::IsSymetric` (via `OCCTChamferBuilderIsSymmetric`).
 
 ---
 
@@ -1340,7 +1340,7 @@ Whether a contour (1-based) uses the two-distance mode.
 public func isTwoDistances(contour: Int) -> Bool
 ```
 
-- **OCCT:** `BRepFilletAPI_MakeChamfer::IsTwoDists` (via `OCCTChamferBuilderIsTwoDists`).
+- **OCCT:** `BRepFilletAPI_MakeChamfer::IsTwoDistances` (via `OCCTChamferBuilderIsTwoDists`).
 
 ---
 
@@ -1928,7 +1928,7 @@ Get the number of simulated surfaces for a contour (1-based) after `simulate(con
 public func simulatedSurfaceCount(contour: Int) -> Int
 ```
 
-- **OCCT:** `BRepFilletAPI_MakeFillet::NbSimulatedSurf` (via `OCCTFilletBuilderNbSimulatedSurf`).
+- **OCCT:** `BRepFilletAPI_MakeFillet::NbSurf` (via `OCCTFilletBuilderNbSimulatedSurf`).
 - **Example:**
   ```swift
   guard let box = Shape.box(width: 30, height: 30, depth: 30),

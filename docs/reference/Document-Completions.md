@@ -1031,7 +1031,7 @@ public var status: PipeShellStatus
 ```
 
 - **Returns:** A `PipeShellStatus` value.
-- **OCCT:** `BRepOffsetAPI_MakePipeShell::GetStatus`.
+- **OCCT:** `BRepFill_PipeShell::GetStatus`.
 - **Example:**
   ```swift
   if pipe.status == .ok { print("success") }
@@ -1049,7 +1049,7 @@ public func simulate(numberOfSections: Int) -> [Shape]
 
 - **Parameters:** `numberOfSections`, number of cross-section samples to generate.
 - **Returns:** An array of wire-shaped cross-sections along the spine; empty on failure.
-- **OCCT:** `BRepOffsetAPI_MakePipeShell::Simulate`.
+- **OCCT:** `BRepFill_PipeShell::Simulate`.
 - **Example:**
   ```swift
   let sections = pipe.simulate(numberOfSections: 10)
