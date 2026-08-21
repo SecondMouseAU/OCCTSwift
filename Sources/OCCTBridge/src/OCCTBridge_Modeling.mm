@@ -2129,7 +2129,7 @@ OCCTShapeRef OCCTShapeFuseMulti(const OCCTShapeRef* shapes, int32_t count)
     builder.SetArguments(arguments);
     // #367: SetRunParallel(true) here caused silent data corruption (100%
     // wrong results, 237 TSan races) whenever two concurrent top-level
-    // callers both requested internal parallelism -- their work items
+    // callers both requested internal parallelism, their work items
     // cross-contaminated on the shared OSD_ThreadPool::DefaultPool. Left
     // at the safe serial default.
     builder.Build();
@@ -6550,7 +6550,7 @@ OCCTShapeRef OCCTLocOpeSplitShapeByVertex(OCCTShapeRef shape, int32_t edgeIndex,
     LocOpe_SplitShape splitter(shape->shape);
 
     // #613: this counted TopExp_Explorer occurrences while OCCTLocOpeSplitShapeByWire directly
-    // above already read the shared enumeration -- so faceIndex and edgeIndex meant different
+    // above already read the shared enumeration, so faceIndex and edgeIndex meant different
     // things in two adjacent functions driving the same LocOpe_SplitShape. Measured on a 10mm
     // box: splitEdge(at:) matches edges() up to index 8 and splits a DIFFERENT edge from 9 on
     // (index 9 split edges()[4], index 11 split edges()[0]), and indices 12 and 13 split
@@ -6664,7 +6664,7 @@ OCCTShapeRef OCCTLocOpeSplitDrafts(OCCTShapeRef shape,
 // #613: a finder returns a SELECTION, so the position of an entry in outEdges is a result slot, not
 // an index into anything. Swift wrote that slot number into Edge.index all the same. Measured on a
 // 10mm box (identically for the origin-centred and origin-at-zero spellings), edgesInFace(at: 3)
-// handed back 0,1,2,3 for the four edges of face 3, whose real indices are 2, 6, 10 and 11 -- so
+// handed back 0,1,2,3 for the four edges of face 3, whose real indices are 2, 6, 10 and 11, so
 // ALL FOUR named a different edge, their arc-length midpoints 10.00, 12.25, 7.07 and 12.25 mm from
 // the edges those slot numbers address. An Edge from either finder therefore could not be fed to
 // filleted(edges:), chamfered(...) or any other index-taking entry point, which is the whole
@@ -8345,7 +8345,7 @@ int32_t OCCTLawBSplineKnotSplitting(OCCTLawFunctionRef law,
 }
 
 // #403: same analyzer as above, but converts each split's knot-table index to an actual
-// parameter value via Law_BSpline::Knot() -- raw indices are otherwise uninterpretable
+// parameter value via Law_BSpline::Knot(), raw indices are otherwise uninterpretable
 // since the public API exposes no way to read the law's own knot vector.
 int32_t OCCTLawBSplineKnotSplitParams(OCCTLawFunctionRef law,
                                       int32_t            continuityOrder,
@@ -9976,7 +9976,7 @@ OCCTShapeRef _Nullable OCCTBiTgteBlend(OCCTShapeRef _Nonnull shape,
   {
     BiTgte_Blend blend(shape->shape, radius, tolerance, nubs);
 
-    // #613: this filled a std::vector from a bare TopExp_Explorer -- one entry per OCCURRENCE --
+    // #613: this filled a std::vector from a bare TopExp_Explorer, one entry per OCCURRENCE,
     // and subscripted it with the caller's edgeIndices, which come from edges() / Edge.index and
     // so are positions in the deduplicated enumeration. A 10mm box has 24 edge occurrences over
     // 12 edges, so from index 9 on this blended a different edge than the caller selected, and
@@ -9990,7 +9990,7 @@ OCCTShapeRef _Nullable OCCTBiTgteBlend(OCCTShapeRef _Nonnull shape,
     //
     // Safe on the map: BiTgte_Blend keys the edge into its own myEdges, an
     // NCollection_IndexedMap<TopoDS_Shape, TopTools_ShapeMapHasher> (BiTgte_Blend.hxx:202),
-    // whose equality is TopoDS_Shape::IsSame -- orientation cannot select a different entry.
+    // whose equality is TopoDS_Shape::IsSame, orientation cannot select a different entry.
     if (!occtUseSubShapesByIndex(
           shape->shape,
           TopAbs_EDGE,
@@ -10032,7 +10032,7 @@ OCCTBiTgteBlendInfo OCCTBiTgteBlendInfo_(OCCTShapeRef _Nonnull shape,
     BiTgte_Blend blend(shape->shape, radius, tolerance, false);
 
     // #613: the same explorer-indexed walk as OCCTBiTgteBlend above, written out a second time.
-    // Both are converted together -- fixing one alone would have left the two entry points
+    // Both are converted together, fixing one alone would have left the two entry points
     // disagreeing about what edgeIndices means for the identical operation.
     if (!occtUseSubShapesByIndex(
           shape->shape,
@@ -12104,7 +12104,7 @@ OCCTShapeRef OCCTMakeFaceFromSurfaceUV(OCCTSurfaceRef surface,
   }
 }
 
-// OCCTMakeFaceFromGpPlane / OCCTMakeFaceFromGpCylinder removed (#841) -- see the note in
+// OCCTMakeFaceFromGpPlane / OCCTMakeFaceFromGpCylinder removed (#841), see the note in
 // OCCTBridge_Modeling.h where they used to be declared.
 
 // MARK: - v0.114: BRepBuilderAPI_MakeWire incremental + Boolean ops with tolerance +

@@ -344,10 +344,12 @@ artifact, and it is the same shape of gap #319 was about.
 
 ## The one guard with no test behind it
 
-`otherFault` outranking `selfIntersects` (the pre-PR review's f1) is the one part of this change
+`otherFault` outranking `selfIntersects` (a pre-PR review finding) is the one part of this change
 **no test covers**, and the injection matrix says so rather than hiding it. Injecting the opposite
-ordering, watchdog still first and statuses still typed, leaves all fifteen tests in the four
-self-intersection suites green.
+ordering, watchdog still first and statuses still typed, leaves all **sixteen** tests in the four
+self-intersection suites green (`Issue1054SelfIntersectFaultKind` 5, `Issue208SelfIntersection` 3,
+`Issue319HardBoundedSelfIntersection` 3, `Issue772SelfIntersectionAnalysis` 5), re-run after the
+null-shape test was added rather than carried over from the earlier count.
 
 The reason is that reaching a result list holding both a genuine `BOPAlgo_SelfIntersect` and a
 `BOPAlgo_OperationAborted` needs the analysis to have recorded real interferences and *then* failed
@@ -371,7 +373,8 @@ up, it belongs here as a fixture and the injection above becomes a real row.
 in `OCCTBridge_Properties.mm`) is a different, older function that returns
 `BOPAlgo_CheckerSI::HasErrors()` directly. That is "the checker failed", not "the shape
 self-intersects", and it never looks at `BOPDS_DS::Interferences()` at all. It is a separate
-defect in a file this change does not own and wants its own issue.
+defect in a file this change does not own, filed as
+[#1088](https://github.com/SecondMouseAU/OCCTSwift/issues/1088).
 
 `OCCTBOPAlgoAnalyzeArguments` (`OCCTBridge_Modeling.mm`) also reads `HasFaulty()`, and that is
 **correct** there and deliberately untouched: it is asked "are these arguments usable for a

@@ -110,13 +110,13 @@ struct Issue598PipeShellFrenetModeTests {
     }
 
     /// Review of #715 (this fix's own PR): the tests above only measured a spine with ordinary
-    /// curvature/torsion, never one at or near a genuine curvature *inflection* -- exactly where
+    /// curvature/torsion, never one at or near a genuine curvature *inflection*, exactly where
     /// `.correctedFrenet`'s own doc comment says it matters ("avoids twisting at inflection
     /// points"), and exactly where a caller could previously get a valid solid from the
     /// (accidentally) safer algorithm by taking the `.frenet` default.
     ///
     /// Measured on `inflectionSpine()` (a genuine curvature-zero crossing, confirmed above):
-    /// `.frenet` -- now the default on every `Shape.pipeShell*` entry point -- self-intersects;
+    /// `.frenet` (now the default on every `Shape.pipeShell*` entry point) self-intersects;
     /// `.correctedFrenet` does not. This is the regression class the review flagged: a caller who
     /// never named a mode and happens to sweep a spine through an inflection now gets an invalid
     /// solid where the pre-#598 (wrongly-wired) default happened to build the safer sweep instead.
@@ -150,26 +150,23 @@ struct Issue598PipeShellFrenetModeTests {
             Issue.record("Could not build the fixtures"); return
         }
 
-        // Unbounded (timeout: 0) rather than a wall-clock bound, since #1054: an analysis the
-        // watchdog aborts now answers nil, where it used to answer true off the abort's own
-        // BOPAlgo_OperationAborted. A bound would make a slow machine fail these two assertions
-        // instead of passing them by accident. The whole test measures 0.175s here (0.196s on a
-        // second machine), so there is nothing for a bound to protect against today. The trade
-        // is deliberate and worth stating: if this fixture ever grows enough to matter, the
-        // failure mode becomes a hung job rather than a red test. A cooperative bound would not
-        // reliably prevent that either, since it is polled at OCCT's checkpoints and this call
-        // has a long checkpoint-free stretch (#293), which is why the bound was dropped rather
-        // than raised.
-        #expect(frenet.isSelfIntersecting(timeout: 0) == true,
+        // hardTimeout:, not timeout:, since #1054. A cooperative timeout: bound can no longer
+        // be relied on for a `== true` assertion, because an analysis it aborts now answers nil
+        // where it used to answer true off the abort's own BOPAlgo_OperationAborted. hardTimeout:
+        // passes 0 to the same bridge function, so no watchdog can take a conclusive answer away
+        // from it, and it still returns at the caller's own deadline, so a machine slow enough to
+        // matter turns these red rather than hanging the job. The whole test measures 0.175s here
+        // (0.196s on a second machine), so 30s is three orders of magnitude of headroom.
+        #expect(frenet.isSelfIntersecting(hardTimeout: 30) == true,
                 ".frenet is expected to self-intersect at this spine's curvature inflection")
-        #expect(corrected.isSelfIntersecting(timeout: 0) == false,
+        #expect(corrected.isSelfIntersecting(hardTimeout: 30) == false,
                 ".correctedFrenet must stay valid at the same inflection")
     }
 
     /// Review of #715: the CHANGELOG claimed a circular profile makes `.frenet` and
     /// `.correctedFrenet` produce "the identical swept volume" on
     /// `docs/guides/cookbook/helices.md`'s spring recipe, so the page needed no update. This test
-    /// used to measure the opposite (`.correctedFrenet` ~12% larger than textbook) -- but #721
+    /// used to measure the opposite (`.correctedFrenet` ~12% larger than textbook), but #721
     /// found that measurement's own construction was wrong, not `.correctedFrenet`.
     ///
     /// The recipe placed the profile at `SIMD3(r, 0, 0)` with tangent
@@ -187,7 +184,7 @@ struct Issue598PipeShellFrenetModeTests {
     /// right volume under `.frenet`. `.correctedFrenet` is not insensitive to it: its per-edge
     /// twist-angle law is referenced to the input frame, and the mismatch propagates into a real,
     /// large error. With the profile at its *actual* measured position and tangent, both modes
-    /// agree with each other and with the textbook volume to 1e-6 relative -- see
+    /// agree with each other and with the textbook volume to 1e-6 relative, see
     /// `Issue721CorrectedFrenetPlacementTests` for the full sweep across pitch and turn count that
     /// established this. There is no `.correctedFrenet` defect on this fixture family.
     @Test("the cookbook spring recipe, correctly placed: .frenet and .correctedFrenet both match the textbook tube volume")
@@ -235,7 +232,7 @@ struct Issue598PipeShellFrenetModeTests {
     ///
     /// Injection check (the "prove the test fails" policy, `okf/policies/prove-the-test-fails.md`):
     /// replacing the mis-signed tangent below with the correctly-measured one from the test above
-    /// collapses `corrRatio` to 1.0 and fails the `!isApproximatelyEqual` assertion -- confirmed
+    /// collapses `corrRatio` to 1.0 and fails the `!isApproximatelyEqual` assertion, confirmed
     /// by hand while writing this test, not left as an assumption.
     @Test("a profile placed at the mirror point with a mirror tangent reproduces #721's reported divergence")
     func misplacedProfileReproducesIssue721Divergence() {
@@ -245,8 +242,8 @@ struct Issue598PipeShellFrenetModeTests {
             guard let spine = Wire.helix(radius: r, pitch: pitch, turns: turns) else {
                 Issue.record("Could not build spine at pitch \(pitch)"); continue
             }
-            // The ORIGINAL (wrong) recipe: origin at (r, 0, 0) -- the antipode of the wire's real
-            // start (-r, 0, 0) -- with a tangent sign that matches an ascending helix, not the
+            // The ORIGINAL (wrong) recipe: origin at (r, 0, 0), the antipode of the wire's real
+            // start (-r, 0, 0), with a tangent sign that matches an ascending helix, not the
             // descending one `clockwise: false` actually builds.
             let mismatchedTangent = simd_normalize(SIMD3<Double>(0, r, pitch / (2 * .pi)))
             guard let profile = Wire.circle(origin: SIMD3(r, 0, 0), normal: mismatchedTangent, radius: wireRadius),

@@ -133,7 +133,11 @@ struct Issue1054SelfIntersectFaultKind {
         var interrupted = 0
         var completed = 0
         var span = runtime * 1.2
+        // The span the last completed round actually measured at, which is what the failure
+        // message must name: `span` has already moved on to the round that was never run.
+        var measuredAt = span
         for _ in 0..<12 {
+            measuredAt = span
             wrong = 0
             interrupted = 0
             completed = 0
@@ -157,11 +161,11 @@ struct Issue1054SelfIntersectFaultKind {
 
         #expect(
             wrong == 0,
-            "a clean box reported self-intersection at \(wrong) of \(steps) timeouts spanning \(span)s"
+            "a clean box reported self-intersection at \(wrong) of \(steps) timeouts spanning \(measuredAt)s"
         )
         #expect(
             interrupted >= flank && completed >= flank,
-            "the \(steps)-timeout sweep over \(span)s put only \(interrupted) interrupted and \(completed) completed either side of the transition, fewer than \(flank) on a side, so it never sampled the tail this test exists for (box runtime \(runtime)s)"
+            "the \(steps)-timeout sweep over \(measuredAt)s put only \(interrupted) interrupted and \(completed) completed either side of the transition, fewer than \(flank) on a side, so it never sampled the tail this test exists for (box runtime \(runtime)s)"
         )
     }
 }
