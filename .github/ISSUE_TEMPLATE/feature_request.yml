@@ -1,6 +1,6 @@
 name: Feature Request
 description: Request a new OCCT operation, API improvement, or integration
-labels: ["type:feature"]
+labels: ["type:feature", "status:triage"]
 body:
   - type: markdown
     attributes:
