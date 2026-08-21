@@ -22,6 +22,18 @@ bounding-box accessors becoming Optional so a void shape stops fabricating `(0,0
 ## Unreleased
 
 
+### Features lane audited against the pinned refman, in both directions (#811)
+
+Pass 4a of #807. Ten OCCT packages, 129 classes, compared against `occt-refman@8.0.1` and the pinned headers.
+
+**Under-coverage.** 47 of the 129 were neither wrapped nor documented and none carried a recorded reason. `docs/occtswift-wrapping-gaps.md` gains a features-lane section covering all 47, grouped by measured reason: 24 collection aliases deprecated at file scope since OCCT 8.0.0, five abstract bases, four enums, one typedef covered by its sibling, one header that declares no class, seven internal helpers, and five classes needing a real decision, of which four are genuine gaps. `Plate_SampledCurveConstraint` is the one `Plate_Plate::Load` overload of nine that no bridge function reaches by any route.
+
+**Over-coverage.** 42 findings, corrected here except the eight #1069 fixed independently while this branch was in review. The largest groups: four `docs/reference/Surface-Advanced.md` entries naming the "(no G0)" `NLPlate_HPGnConstraint` classes where the bridge builds the `HPG0Gn` form; five `BRepFilletAPI_MakeChamfer`/`MakeFillet` members that do not exist in OCCT 8.0.1 (`IsDistAngle` for `IsDistanceAngle`, `GetDists` for `Dists`, `IsSymmetric` for `IsSymetric`, `IsTwoDists` for `IsTwoDistances`, `NbSimulatedSurf` for `NbSurf`), each spelled from the bridge function's own name rather than read from the header; four `BRepOffsetAPI_NormalProjection` attributions where `OCCTShapeProjectWire` runs `BRepProj_Projection`; and `Shape.withPrism`/`withBoss`/`withPocket` attributed to `BRepFeat_MakePrism` where the bridge runs `BRepPrimAPI_MakePrism` plus a boolean.
+
+**Artifact.** `Scripts/repro/811-refman-coverage-features/`: the by-call lane derivation, the census with a self-test and a `--verify-pins` mode that asserts every pinned correction was real at the base revision, a removal matrix that proves each detector shape load-bearing, and a probe.
+
+**Filed, not fixed here:** #1044 (65 method-attribution findings outside this lane), #1045 (fifteen packages below the lane, 337 headers, that belong to no pass), #1046 and #1049 (two NLPlate behaviour defects, both since fixed by #1069), #1047 (`Shape.withPrism` is named after a feature prism it does not run). #1021's seven class rows are adjudicated in comments there.
+
 ### A nullified shape refuses the edge, face and vertex accessors instead of crashing (#1035)
 
 Twelve public APIs took the process down with an uncatchable SIGSEGV when handed a `Shape` from
