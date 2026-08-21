@@ -362,6 +362,24 @@ func v46(_ a: (String, SIMD16<Float>)) async throws {
 
 @inline(never) func opaqueIsolation() -> (any Actor)? { nil }
 
+// V51 and V52 are the word-sized controls in V26's own shape. The swift-testing grid already had
+// them (cells D and P) but under a different shape, and a table that mixes the two is a table
+// nobody can check.
+
+func v51(_ a: (String, Int)) async throws {
+    @Sendable func local(_ a: (String, Int), _: isolated (any Actor)? = Iso.shared) async throws {
+        precondition(!a.0.isEmpty)
+    }
+    try await local(a)
+}
+
+func v52(_ a: (String, Double)) async throws {
+    @Sendable func local(
+        _ a: (String, Double), _: isolated (any Actor)? = Iso.shared
+    ) async throws { precondition(!a.0.isEmpty) }
+    try await local(a)
+}
+
 func v48(_ a: Mixed) async throws {
     @Sendable func local(
         _ a: Mixed, _: isolated (any Actor)? = opaqueIsolation()
@@ -464,5 +482,8 @@ await variant(47, "V26 with a three-element tuple") {
 await variant(48, "V26 with an opaque nil isolation as the default") { try await v48(mixed) }
 await variant(49, "V26 with an opaque nil isolation passed explicitly") { try await v49(mixed) }
 await variant(50, "V26 with a literal nil isolation passed explicitly") { try await v50(mixed) }
+
+await variant(51, "V26 with (String, Int)") { try await v51(("+X", 1)) }
+await variant(52, "V26 with (String, Double)") { try await v52(("+X", 1.0)) }
 
 print("all requested variants finished")

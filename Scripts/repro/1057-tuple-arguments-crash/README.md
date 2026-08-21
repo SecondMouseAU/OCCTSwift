@@ -13,7 +13,7 @@ available on this machine, so nothing below is a claim about any other one.
 ```bash
 ./run-grid.sh 3        # the swift-testing grid, 22 cells, 3 processes each
 ./run-stages.sh        # the same crash reached with no swift-testing, 22 stages
-./run-variants.sh 50   # the narrowing, 50 one-change-at-a-time variants
+./run-variants.sh      # the narrowing, 52 one-change-at-a-time variants
 ./backtrace.sh A1StringSIMD3   # the crash frame
 ./dump-expansion.sh    # the @Test macro expansions the compiler is handed
 
@@ -154,8 +154,8 @@ writes, not the *signature* it calls.
 
 ## Stage 4: the narrowing
 
-`standalone/Sources/Smallest`, run by `./run-variants.sh 50`. It imports nothing at all: no
-Testing, no Foundation, no `simd` module. `SIMD3<Double>` is a standard-library type.
+`standalone/Sources/Smallest`, run by `./run-variants.sh`. It imports nothing at all: no Testing,
+no Foundation, no `simd` module. `SIMD3<Double>` is a standard-library type.
 
 The smallest crashing program:
 
@@ -191,9 +191,14 @@ An earlier draft of this file said a non-nil actor was required, on the strength
 bytes or more.** V27 with an all-POD tuple is clean; V35 with the vector alone is clean; V34 with
 the two members as separate parameters is clean; V31 (`SIMD2<Double>`, 16 bytes) and V42
 (`SIMD4<Float>`, 16 bytes) are clean; V32 (a 32-byte, 16-aligned struct with no vector member) is
-clean. V33 (a nominal struct), V40 (`SIMD4<Double>`), V41 (`SIMD8<Float>`), V45 (members swapped),
-V46 (`SIMD16<Float>`, 64 bytes) and V47 (a three-element tuple) all crash. V43 (a class) and V44
-(an `Array`) crash as a bare SIGSEGV rather than reaching the allocator's check.
+clean; V51 (`(String, Int)`) and V52 (`(String, Double)`) are clean. V33 (a nominal struct), V40
+(`SIMD4<Double>`), V41 (`SIMD8<Float>`), V45 (members swapped), V46 (`SIMD16<Float>`, 64 bytes) and
+V47 (a three-element tuple) all crash. V43 (a class) and V44 (an `Array`) crash as a bare SIGSEGV
+rather than reaching the allocator's check.
+
+V51 and V52 exist because the grid's own `(String, Int)` and `(String, Double)` cells were measured
+under the swift-testing shape rather than this one, and a table that silently mixes two shapes is
+a table nobody can check.
 
 `@Sendable` on the local function is not part of it: V37 without it crashes.
 
@@ -218,6 +223,13 @@ is a duplicate-argument crash and a different trigger.
 swiftlang/swift [#88993](https://github.com/swiftlang/swift/issues/88993) is about an `isolated`
 parameter but reports the wrong isolation on resume rather than memory corruption, and is closed.
 None of them is this.
+
+## Reported
+
+[swiftlang/swift#91639](https://github.com/swiftlang/swift/issues/91639), filed 2026-08-21 against
+Swift 6.3.3, carrying `upstream-repro.swift` inline and the table above. Filed there rather than
+against swift-testing because the reproducer has no swift-testing in it and the failing frame is in
+the test module's own compiler-generated code, with `Testing` as the caller.
 
 ## What it means for this repo
 

@@ -2,11 +2,11 @@
 # #1057: run each Smallest variant in its own process. Smallest imports nothing: no swift-testing,
 # no Foundation, no simd module.
 #
-#   ./run-variants.sh [last-variant]     (default 14)
+#   ./run-variants.sh [last-variant]     (default 52)
 
 set -u
 cd "$(dirname "$0")/standalone" || exit 2
-LAST="${1:-14}"
+LAST="${1:-52}"
 
 swift build --product Smallest >/dev/null 2>&1 || { echo "build failed"; exit 2; }
 BIN="$(swift build --product Smallest --show-bin-path)/Smallest"

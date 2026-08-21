@@ -107,8 +107,8 @@ struct Issue990ThreadAxisBasisTests {
     /// allocator's own stack-discipline check; the SIGSEGV that produced the OCCT reading came
     /// from OCCT's process-wide signal handler reporting a fault it did not raise. Narrowed to a
     /// nested `async throws` function with an `isolated (any Actor)?` parameter, which is what
-    /// the `@Test` macro expands to, and reported upstream. Swift 6.3.3, Xcode 26.6, macOS
-    /// 26.6.1, arm64; `-O` is clean, and `swift test` builds debug.
+    /// the `@Test` macro expands to, and reported upstream as swiftlang/swift#91639. Swift 6.3.3,
+    /// Xcode 26.6, macOS 26.6.1, arm64; `-O` is clean, and `swift test` builds debug.
     ///
     /// The constraint that leaves, until the toolchain is fixed: no `@Test(arguments:)` here may
     /// take an element pairing a `String`, class or `Array` with a `SIMD3<Double>`,
