@@ -11,9 +11,15 @@
 //
 //   PART 2  The first cause of an empty result was documented as "the pair is too close to have a
 //           direction", citing a separation of 1e-300 and implying gp_Vec2d::Normalize() refuses.
-//           Measured, refusal starts at a separation of 1e-10 and comes from GccAna_NoSolution
-//           inside Bisector_Bisec::Perform. Normalize() itself does not refuse until 1e-300, where
-//           the square underflows, which is 290 orders of magnitude later and not the mechanism.
+//           Measured, refusal starts at a separation of about 1e-10 and comes from
+//           GccAna_NoSolution inside Bisector_Bisec::Perform. Normalize() itself does not refuse
+//           until about 1e-162, where sep*sep underflows to zero, which is 152 orders of magnitude
+//           later and is not the mechanism a caller meets.
+//
+//           A draft of that correction said Normalize() copes "all the way down to 1e-300", off by
+//           138 orders of magnitude, because this probe's own grid jumped 1e-160 to 1e-300 and
+//           never bracketed the transition. Correcting a wrong figure with an unbracketed grid is
+//           the same mistake wearing a measurement, so the grid now steps through it.
 //
 // PART 1 also records a fixture mistake worth keeping. Its first version held the second pair's
 // half-width at a fixed 5 while walking u out to 1e150. At u = 1e50 that half-width is below the
@@ -102,7 +108,11 @@ int main()
   printf("\n\nPART 2  where does a near-coincident FIRST pair start being refused, and by what?\n\n");
   printf("  The doc says \"too close to have a direction\" with 1e-300 as the example. Bracketed:\n\n");
   printf("  %-14s %-44s %-24s\n", "|b - a|", "result", "closed-form crossing y");
-  const double SEPS[] = {1e0, 1e-6, 1e-8, 1e-9, 1e-10, 1e-11, 1e-20, 1e-100, 1e-154, 1e-160, 1e-300};
+  // The grid has to BRACKET both transitions, not straddle them. A draft jumped 1e-160 to 1e-300
+  // and so never saw where Normalize() actually starts refusing, which was then published as
+  // "copes all the way down to 1e-300". It does not: sep*sep underflows to zero around 1e-162.
+  const double SEPS[] = {1e0,    1e-6,   1e-8,   1e-9,   1e-10,  1e-11,  1e-20, 1e-100,
+                         1e-154, 1e-160, 1e-161, 1e-162, 1e-163, 1e-200, 1e-300};
   for (double sep : SEPS)
   {
     R r = go(0, 0, 0, sep, -55, 0, -45, 0);

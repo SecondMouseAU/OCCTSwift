@@ -69,9 +69,11 @@ struct Issue1050BisectorDomainTests {
     /// Two parallel bisectors have no solution at all, and must report none.
     ///
     /// Both pairs are vertical, so both bisectors are horizontal lines, y=5 and y=50, and the
-    /// closed-form solve is singular. Insensitive to the bound by measurement: all six injections
-    /// leave it green, and a symmetric `[-LastParameter, LastParameter]` domain still yields zero
-    /// points. It keeps "found nothing" meaningful, which is what the issue turns on.
+    /// closed-form solve is singular. Insensitive to the bound: all six injections in
+    /// `Scripts/repro/1050-bisector-domain/matrix.sh` leave it green, which is the measured part.
+    /// A symmetric `[-LastParameter, LastParameter]` domain also yields zero, but no committed
+    /// probe builds one, so treat that as corroboration rather than evidence. It keeps
+    /// "found nothing" meaningful, which is what the issue turns on.
     @Test("Parallel bisectors still report no intersection")
     func parallelBisectorsReportNothing() {
         let hits = bisectorIntersections(
@@ -88,7 +90,8 @@ struct Issue1050BisectorDomainTests {
     /// (10000, 5), and it is still correct to report nothing, because the first bisector's
     /// half-line runs the other way from its midpoint. A bound wide enough to reach parameter
     /// 10000 must not start inventing an answer on the dead side of the ray. Insensitive to the
-    /// bound by the same measurement as the parallel guard above.
+    /// bound on the same evidence as the parallel guard above, and with the same caveat about the
+    /// symmetric-domain half of it.
     @Test("A crossing on the dead side of the half-line reports no intersection")
     func crossingOnDeadSideReportsNothing() {
         let hits = bisectorIntersections(

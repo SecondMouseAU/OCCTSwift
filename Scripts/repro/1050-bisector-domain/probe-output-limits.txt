@@ -27,6 +27,10 @@ PART 2  where does a near-coincident FIRST pair start being refused, and by what
   1e-100         THREW GccAna_NoSolution                      5e-101                  
   1e-154         THREW GccAna_NoSolution                      5e-155                  
   1e-160         THREW GccAna_NoSolution                      5e-161                  
+  1e-161         THREW GccAna_NoSolution                      5e-162                  
+  1e-162         THREW Standard_ConstructionError             5e-163                  
+  1e-163         THREW Standard_ConstructionError             5e-164                  
+  1e-200         THREW Standard_ConstructionError             5e-201                  
   1e-300         THREW Standard_ConstructionError             5e-301                  
 
   Does gp_Vec2d::Normalize() itself refuse at these separations?
@@ -40,4 +44,8 @@ PART 2  where does a near-coincident FIRST pair start being refused, and by what
     Normalize(perp of |b-a| = 1e-100    ) ok
     Normalize(perp of |b-a| = 1e-154    ) ok
     Normalize(perp of |b-a| = 1e-160    ) ok
+    Normalize(perp of |b-a| = 1e-161    ) ok
+    Normalize(perp of |b-a| = 1e-162    ) THREW
+    Normalize(perp of |b-a| = 1e-163    ) THREW
+    Normalize(perp of |b-a| = 1e-200    ) THREW
     Normalize(perp of |b-a| = 1e-300    ) THREW

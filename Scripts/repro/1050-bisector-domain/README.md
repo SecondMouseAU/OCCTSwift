@@ -95,10 +95,12 @@ Every median sits between 0.48 and 0.62. The **within**-bound run-to-run spread 
 (`2 * input span + 1`, 0.47 to 2.56) and dwarfs every **between**-bound difference, so the
 between-bound numbers are scheduler noise and not a cost signal. In this sample the widest bound is
 not the slowest, which is the point: if width cost anything the ordering would be stable, and it is
-not. Re-running the committed probe on a quieter machine reorders them and puts every bound below
-this table's lowest per-bound minimum, which makes the same point from the other side. No figures
-from that run are quoted: its transcript is not committed, and this file has already deleted one
-number for exactly that reason. Re-run `occt_1050_bisector_domain.mm` and read PART 2 for your own.
+not, and the paragraph's own 5.4x within-bound spread is the reason to expect the ordering to keep
+moving. Re-run `occt_1050_bisector_domain.mm` and read PART 2 on your own machine; a run here on a
+quieter machine came out differently, but no figure from it is quoted because its transcript is not
+committed, and this file has already deleted one number for exactly that reason. A draft of this
+sentence kept the comparison ("puts every bound below this table's lowest per-bound minimum") after
+deleting the digits, which is still a figure from an uncommitted run, one abstraction removed.
 
 A draft of this paragraph read the sample the other way, as "the fix has the lowest median of the
 six, and the shipped narrow window the highest". That is true of these nine runs and is exactly the
@@ -427,12 +429,22 @@ magnitude.** It said the pair is "too close to have a direction", citing `1e-300
 | 1e-9 | `(-50, 5e-10)`, found |
 | **1e-10** | **THREW `GccAna_NoSolution`** |
 | 1e-100 | THREW `GccAna_NoSolution` |
+| 1e-161 | `Normalize()` still copes |
+| **1e-162** | **`Normalize()` refuses**, `sep*sep` underflows to zero |
 | 1e-300 | THREW `Standard_ConstructionError` |
 
-Refusal starts at `1e-10`, from `GccAna_NoSolution` inside `Bisector_Bisec::Perform`.
-`Normalize()` copes all the way down to `1e-300`, where the square underflows, which is 290 orders
-of magnitude later and is not the mechanism a caller meets. The doc now gives the measured threshold
-and the real thrower.
+Refusal starts at about `1e-10`, from `GccAna_NoSolution` inside `Bisector_Bisec::Perform`.
+`Normalize()` copes down to about `1e-162`, 152 orders of magnitude later, and is not the mechanism
+a caller meets. The doc now gives the measured threshold and the real thrower.
+
+**The first version of that correction was itself off by 138 orders of magnitude**, saying
+`Normalize()` copes "all the way down to `1e-300`". The probe's grid ran `1e-160` then `1e-300`, so
+it never bracketed the transition, and the two endpoints were read as though nothing happened
+between them. A correction carrying an unbracketed grid is the original mistake wearing a
+measurement. The grid now steps `1e-161`, `1e-162`, `1e-163`.
+
+The `1e-10` figure is also fixture-specific rather than scale-free, which the doc now says: measured
+at origins from `(1,1)` to `(1e9,1e9)` the threshold moves between about `1e-11` and `1e-8`.
 
 One thing this probe found that is **not** fixed and is pre-existing: at a pair separation of `1e-6`
 the crossing comes back as `(-50, 0)` where the true value is `(-50, 5e-7)`, a 100% relative error in
