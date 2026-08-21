@@ -360,8 +360,6 @@ SHAPE_ISNULL = re.compile(r'\s*\.\s*IsNull\s*\(')
 # `OCCTBuilderAdd`, `OCCTBuilderRemove`), all measured, and none of the three earlier censuses could
 # see them: no cast, no ShapeType(), no flag accessor.
 #
-# A receiver reached any other way (a member, a parameter, a reference) is invisible here; there
-# are none today.
 # #1035 generalised this into one table. A builder is not a special case, it is the first measured
 # member of the class "an OCCT entry point that dereferences the caller's shape for you", and
 # Scripts/repro/1035-unwrap-guard/repro_1035.mm measured the rest of it: 17 of 61 entry points the
@@ -389,6 +387,12 @@ SHAPE_DEREF_QUALIFIED = {
 }
 SHAPE_DEREF_CTORS = ('BRepAdaptor_Curve', 'BRepAdaptor_Curve2d', 'BRepGProp_Face',
                      'BRepPrimAPI_MakePrism')
+
+# A receiver reached any other way (a member, a parameter, a reference) is invisible here, and
+# there are none taking a caller's shape today. `ShapeFix_Shape::Perform` is the near miss worth
+# naming: OCCTShapeFixerCreate reaches it through a Handle stored on a bridge-owned struct, which
+# no walk here follows, so that one is guarded by hand and this entry only covers the plain
+# `ShapeFix_Shape fixer(...); fixer.Perform();` local form.
 
 # TopoDS::Edge and its siblings are written `theShape.IsNull() ? false : theShape.ShapeType() !=
 # TopAbs_EDGE` (TopoDS.hxx:94), so a null shape is deliberately NOT a type mismatch: the cast
