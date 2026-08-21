@@ -16300,7 +16300,8 @@ OCCTShapeRef OCCTShapeIntersectEx(OCCTShapeRef shape1,
 //   returns:  1 = self-intersects,  0 = clean,  -1 = indeterminate (timed out / errored)
 // The watchdog is read before the results and the results are read by status rather
 // than through HasFaulty(), both because HasFaulty() answers a wider question than the
-// one asked here; see docs/reference/Shape-Features.md for the measurements (#1054).
+// one asked here; the measurements are in Scripts/repro/1054-selfintersect-fault-kinds/
+// and summarised in docs/reference/Shape-Features.md (#1054).
 int32_t OCCTShapeSelfIntersectsBounded(OCCTShapeRef shape, double timeoutSeconds)
 {
   if (!shape)

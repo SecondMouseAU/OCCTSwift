@@ -27,6 +27,46 @@ Truth C++ Test" section. Neither needs the Swift layer.
 
 ## #1054, measured
 
+### The spurious `1` the issue could not observe, on a real timeout
+
+#1054 closed with "Not proven: I did not directly observe the spurious `1`", because
+`GetCheckResult` is not reachable from Swift. It is reachable from here, and the #319 artifact
+at the default-ish 30 s bound produces it every time on an idle machine:
+
+```
+$ probe_fault_kinds Scripts/repro/319-selfintersection/dualskin_lateral.15.brep 1 30 30 30 30 30 30
+timeout=30.0000 elapsed=30.038 firstTrip=30.026 polls=118 HasFaulty=1 statuses=[OperationAborted] before=1 after=-1
+timeout=30.0000 elapsed=30.206 firstTrip=30.195 polls=130 HasFaulty=1 statuses=[OperationAborted] before=1 after=-1
+timeout=30.0000 elapsed=30.069 firstTrip=30.043 polls=113 HasFaulty=1 statuses=[OperationAborted] before=1 after=-1
+timeout=30.0000 elapsed=30.311 firstTrip=30.303 polls=142 HasFaulty=1 statuses=[OperationAborted] before=1 after=-1
+timeout=30.0000 elapsed=30.329 firstTrip=30.315 polls=139 HasFaulty=1 statuses=[OperationAborted] before=1 after=-1
+timeout=30.0000 elapsed=30.282 firstTrip=30.275 polls=159 HasFaulty=1 statuses=[OperationAborted] before=1 after=-1
+```
+
+6 of 6 idle, and 7 of 8 counting two earlier runs taken while a full `swift test` was using the
+machine (the miss recorded nothing at all and answered `-1` either way, which is the same
+`statuses=[]` those shorter timeouts give below). The whole result list is one
+`BOPAlgo_OperationAborted`, with no `BOPAlgo_SelfIntersect` anywhere in it, and the pre-fix bridge
+reports "self-intersects".
+
+**This is also #772's row 4.** `Scripts/repro/772-analyze-self-intersection/README.md` records
+`timeout: 30` on this artifact as returning "a conclusive `self-intersects` around 30.05-30.15s"
+and builds an argument for `analyze()` preferring `timeout:` over `hardTimeout:` on it. That was
+this abort. The correction is at the top of that file, and the choice of `timeout:` stands on its
+other reasons.
+
+Shorter bounds on the same artifact record nothing at all, which is worth knowing before trying to
+hunt this with a clock:
+
+```
+$ probe_fault_kinds Scripts/repro/319-selfintersection/dualskin_lateral.15.brep 1 0.5 2 5
+timeout=0.5000 elapsed=3.488 polls=5  trips=3 HasFaulty=0 statuses=[] before=-1 after=-1
+timeout=2.0000 elapsed=4.488 polls=5  trips=3 HasFaulty=0 statuses=[] before=-1 after=-1
+timeout=5.0000 elapsed=5.938 polls=77 trips=3 HasFaulty=0 statuses=[] before=-1 after=-1
+```
+
+An abort does not always leave a fault behind. Which is why the next section stops using a clock.
+
 ### A clean box, every abort point visited once
 
 ```
@@ -180,20 +220,12 @@ returning: a deadline that cannot fire cannot produce an aborted result either. 
 abort prompt, which is the whole point of it, and promptness is what turns a latent wrong answer
 into one a caller meets.
 
-Which abort points record a fault is a separate question from how promptly they arrive, and it
-is worth stating only as far as it was measured. #319's own artifact answers correctly at every
-timeout tried, with nothing recorded at all:
-
-```
-$ probe_fault_kinds Scripts/repro/319-selfintersection/dualskin_lateral.15.brep 1 0.5 2 5
-timeout=0.5000 elapsed=3.488 polls=5  trips=3 HasFaulty=0 statuses=[] before=-1 after=-1
-timeout=2.0000 elapsed=4.488 polls=5  trips=3 HasFaulty=0 statuses=[] before=-1 after=-1
-timeout=5.0000 elapsed=5.938 polls=77 trips=3 HasFaulty=0 statuses=[] before=-1 after=-1
-```
-
-So an abort does not always leave a fault behind, and hunting for a shape where it does by
-running the clock is unpromising. The break-point sweep is what found the window, on the
-simplest shape in the repository.
+Which abort points record a fault is a separate question from how promptly they arrive, and the
+first section above is that question measured: on #319's own artifact a 30 s bound records
+`BOPAlgo_OperationAborted` every time, and a 0.5 s, 2 s or 5 s bound records nothing at all. So an
+abort does not always leave a fault behind, and which bound you pick decides whether you meet the
+defect. That is not a good property to leave a caller holding, and it is why the break-point sweep
+exists: it answers the question without a clock in it.
 
 ## Not fixed here
 

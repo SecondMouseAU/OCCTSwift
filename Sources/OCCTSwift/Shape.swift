@@ -2412,12 +2412,13 @@ public final class Shape: @unchecked Sendable {
     ///   deadline if a true wall-clock guarantee matters).
     ///
     /// - Important: `true` is reported **only** for a completed analysis that recorded a
-    ///   `BOPAlgo_SelfIntersect` result (#1054). An analysis the `timeout` aborted is `nil`
-    ///   even when it recorded results first, because the pass that discards the adjacency
-    ///   interferences every valid solid has runs last: a clean box interrupted just before it
-    ///   reports up to three self-interferences of its own. A shape `BOPAlgo_ArgumentAnalyzer`
-    ///   rejects outright, such as an empty compound, is `nil` for the same reason, the fault it
-    ///   records is `BOPAlgo_BadType` and says nothing about self-intersection.
+    ///   `BOPAlgo_SelfIntersect` result (#1054). Two other outcomes used to read as `true` and
+    ///   are now `nil`. An analysis the `timeout` aborted is `nil` even when it recorded results
+    ///   first, because the pass that discards the adjacency interferences every valid solid has
+    ///   runs last: a clean box interrupted just before it reports up to three self-interferences
+    ///   of its own. Separately, a shape `BOPAlgo_ArgumentAnalyzer` rejects outright, such as
+    ///   `emptied`'s result, records `BOPAlgo_BadType`, which says nothing about
+    ///   self-intersection and involves no timeout at all.
     ///
     /// - Parameter timeout: Seconds before the check *asks* OCCT to give up (default 30), the
     ///   actual return can be much later if an un-polled phase is reached. `0`/negative = unbounded.
