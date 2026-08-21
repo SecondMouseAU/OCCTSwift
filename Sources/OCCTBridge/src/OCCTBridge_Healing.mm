@@ -3345,7 +3345,7 @@ bool OCCTShapeFixSplitEdge(OCCTEdgeRef edge,
                            OCCTEdgeRef _Nullable* _Nonnull outEdge1,
                            OCCTEdgeRef _Nullable* _Nonnull outEdge2)
 {
-  if (!edge || !outEdge1 || !outEdge2)
+  if (!occtShapeIsPresent(edge) || !outEdge1 || !outEdge2)
     return false;
   try
   {
@@ -6791,8 +6791,13 @@ struct OCCTShapeFixer
 
 OCCTShapeFixerRef OCCTShapeFixerCreate(OCCTShapeRef shape)
 {
-  auto f   = new OCCTShapeFixer();
-  f->fixer = new ShapeFix_Shape(shape->shape);
+  // #1035: ShapeFix_Shape's constructor accepts a null shape and returns; Perform() is where it
+  // dereferences, so the refusal has to be recorded here and read by every accessor below. The
+  // declared return is _Nonnull, so a null wrapper is not available as the refusal: an empty
+  // handle is, and it is what the seven accessors already test for.
+  auto f = new OCCTShapeFixer();
+  if (occtShapeIsPresent(shape))
+    f->fixer = new ShapeFix_Shape(shape->shape);
   return (OCCTShapeFixerRef)f;
 }
 
@@ -6805,28 +6810,28 @@ void OCCTShapeFixerRelease(OCCTShapeFixerRef ref)
 void OCCTShapeFixerSetPrecision(OCCTShapeFixerRef ref, double precision)
 {
   auto f = (OCCTShapeFixer*)ref;
-  if (f)
+  if (f && !f->fixer.IsNull())
     f->fixer->SetPrecision(precision);
 }
 
 void OCCTShapeFixerSetMaxTolerance(OCCTShapeFixerRef ref, double maxTol)
 {
   auto f = (OCCTShapeFixer*)ref;
-  if (f)
+  if (f && !f->fixer.IsNull())
     f->fixer->SetMaxTolerance(maxTol);
 }
 
 void OCCTShapeFixerSetMinTolerance(OCCTShapeFixerRef ref, double minTol)
 {
   auto f = (OCCTShapeFixer*)ref;
-  if (f)
+  if (f && !f->fixer.IsNull())
     f->fixer->SetMinTolerance(minTol);
 }
 
 bool OCCTShapeFixerPerform(OCCTShapeFixerRef ref)
 {
   auto f = (OCCTShapeFixer*)ref;
-  if (!f)
+  if (!f || f->fixer.IsNull())
     return false;
   try
   {
@@ -6841,7 +6846,7 @@ bool OCCTShapeFixerPerform(OCCTShapeFixerRef ref)
 OCCTShapeRef OCCTShapeFixerShape(OCCTShapeFixerRef ref)
 {
   auto f = (OCCTShapeFixer*)ref;
-  if (!f)
+  if (!f || f->fixer.IsNull())
     return nullptr;
   try
   {
@@ -6859,7 +6864,7 @@ OCCTShapeRef OCCTShapeFixerShape(OCCTShapeFixerRef ref)
 bool OCCTShapeFixerStatus(OCCTShapeFixerRef ref, int32_t statusType)
 {
   auto f = (OCCTShapeFixer*)ref;
-  if (!f)
+  if (!f || f->fixer.IsNull())
     return false;
   try
   {
@@ -6890,7 +6895,7 @@ bool OCCTShapeFixerStatus(OCCTShapeFixerRef ref, int32_t statusType)
 bool OCCTShapeFixerStatusFlag(OCCTShapeFixerRef ref, int32_t flag)
 {
   auto f = (OCCTShapeFixer*)ref;
-  if (!f)
+  if (!f || f->fixer.IsNull())
     return false;
   try
   {

@@ -3640,7 +3640,7 @@ OCCTShapeRef OCCTShapeExtrudeSemiInfinite(OCCTShapeRef profile,
                                           double       dirZ,
                                           bool         semiInfinite)
 {
-  if (!profile)
+  if (!occtShapeIsPresent(profile))
     return nullptr;
   try
   {
@@ -5495,7 +5495,7 @@ OCCTWireRef OCCTWireCreateCubicBSpline(const double* poles, int32_t poleCount)
 
 OCCTWireRef OCCTWireJoin(const OCCTWireRef* wires, int32_t count)
 {
-  if (!wires || count < 1)
+  if (!occtShapeIsPresent(wires) || count < 1)
     return nullptr;
 
   try
@@ -15931,7 +15931,7 @@ OCCTShapeRef OCCTShapeCreateExtrusionInfinite(OCCTShapeRef shape,
                                               double       dirZ,
                                               bool         infinite)
 {
-  if (!shape)
+  if (!occtShapeIsPresent(shape))
     return nullptr;
   try
   {
@@ -15950,7 +15950,7 @@ OCCTShapeRef OCCTShapeCreateExtrusionInfinite(OCCTShapeRef shape,
 
 OCCTShapeRef OCCTShapeCreateExtrusionShape(OCCTShapeRef shape, double dx, double dy, double dz)
 {
-  if (!shape)
+  if (!occtShapeIsPresent(shape))
     return nullptr;
   occtEnsureSignals();
   try

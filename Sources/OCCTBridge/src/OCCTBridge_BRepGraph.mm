@@ -5472,7 +5472,7 @@ double OCCTEdgeGetDihedralAngle(OCCTEdgeRef edge,
                                 OCCTFaceRef face2,
                                 double      parameter)
 {
-  if (!edge || !face1 || !face2)
+  if (!occtShapeIsPresent(edge) || !occtShapeIsPresent(face1) || !occtShapeIsPresent(face2))
     return -1;
 
   try

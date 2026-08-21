@@ -1401,6 +1401,12 @@ void OCCTBndLibEdge(OCCTShapeRef shape,
                     double*      ymax,
                     double*      zmax)
 {
+  if (!occtShapeIsPresent(shape))
+  {
+    // The same zeroed outputs the catch below already writes; nothing invented here.
+    *xmin = *ymin = *zmin = *xmax = *ymax = *zmax = 0;
+    return;
+  }
   try
   {
     Bnd_Box           box;

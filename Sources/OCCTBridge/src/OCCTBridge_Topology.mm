@@ -3859,7 +3859,7 @@ OCCTCurve3DRef OCCTEdgeExtractCurve3D(OCCTShapeRef edge, double* first, double* 
 {
   *first = 0;
   *last  = 0;
-  if (!edge)
+  if (!occtShapeIsPresent(edge))
     return nullptr;
   try
   {
@@ -3885,7 +3885,7 @@ OCCTCurve2DRef OCCTEdgeExtractPCurve(OCCTShapeRef edge,
 {
   *first = 0;
   *last  = 0;
-  if (!edge || !face)
+  if (!occtShapeIsPresent(edge) || !occtShapeIsPresent(face))
     return nullptr;
   try
   {
@@ -3907,7 +3907,7 @@ OCCTCurve2DRef OCCTEdgeExtractPCurve(OCCTShapeRef edge,
 
 double OCCTEdgeGetTolerance(OCCTShapeRef edge)
 {
-  if (!edge)
+  if (!occtShapeIsPresent(edge))
     return 0;
   try
   {
@@ -3921,7 +3921,7 @@ double OCCTEdgeGetTolerance(OCCTShapeRef edge)
 
 bool OCCTEdgeIsDegenerated(OCCTShapeRef edge)
 {
-  if (!edge)
+  if (!occtShapeIsPresent(edge))
     return false;
   try
   {
@@ -3935,7 +3935,7 @@ bool OCCTEdgeIsDegenerated(OCCTShapeRef edge)
 
 OCCTSurfaceRef OCCTFaceExtractSurface(OCCTShapeRef face)
 {
-  if (!face)
+  if (!occtShapeIsPresent(face))
     return nullptr;
   try
   {
@@ -3952,7 +3952,7 @@ OCCTSurfaceRef OCCTFaceExtractSurface(OCCTShapeRef face)
 
 double OCCTFaceGetTolerance(OCCTShapeRef face)
 {
-  if (!face)
+  if (!occtShapeIsPresent(face))
     return 0;
   try
   {
@@ -3983,7 +3983,7 @@ int32_t OCCTFaceWireCount(OCCTShapeRef face)
 
 double OCCTVertexGetTolerance(OCCTShapeRef vertex)
 {
-  if (!vertex)
+  if (!occtShapeIsPresent(vertex))
     return 0;
   try
   {
@@ -4801,7 +4801,7 @@ OCCTShapeRef OCCTBRepLibReverseSortFaces(OCCTShapeRef shape)
 
 double OCCTShapeEdgeTolerance(OCCTShapeRef shape)
 {
-  if (!shape)
+  if (!occtShapeIsPresent(shape))
     return 0;
   try
   {
@@ -4815,7 +4815,7 @@ double OCCTShapeEdgeTolerance(OCCTShapeRef shape)
 
 double OCCTShapeFaceTolerance(OCCTShapeRef shape)
 {
-  if (!shape)
+  if (!occtShapeIsPresent(shape))
     return 0;
   try
   {
@@ -4829,7 +4829,7 @@ double OCCTShapeFaceTolerance(OCCTShapeRef shape)
 
 double OCCTShapeVertexTolerance(OCCTShapeRef shape)
 {
-  if (!shape)
+  if (!occtShapeIsPresent(shape))
     return 0;
   try
   {
@@ -4863,7 +4863,7 @@ void OCCTShapeVertexPoint(OCCTShapeRef shape, double* x, double* y, double* z)
 
 OCCTCurve3DRef OCCTShapeEdgeCurve(OCCTShapeRef shape, double* first, double* last)
 {
-  if (!shape)
+  if (!occtShapeIsPresent(shape))
   {
     *first = *last = 0;
     return nullptr;
@@ -4892,7 +4892,7 @@ OCCTCurve3DRef OCCTShapeEdgeCurve(OCCTShapeRef shape, double* first, double* las
 
 OCCTSurfaceRef OCCTShapeFaceSurface(OCCTShapeRef shape)
 {
-  if (!shape)
+  if (!occtShapeIsPresent(shape))
     return nullptr;
   try
   {
@@ -4971,7 +4971,7 @@ OCCTShapeRef OCCTShapeEmptyCopied(OCCTShapeRef shape)
 // length OCCTEdgeArcLength reports are built from the same subdivided quadratures. #603.
 double OCCTEdgeParameterAtArcLength(OCCTShapeRef edge, double arcLength, double startParam)
 {
-  if (!edge)
+  if (!occtShapeIsPresent(edge))
     return 0;
   try
   {
@@ -4993,7 +4993,7 @@ double OCCTEdgeParameterAtArcLength(OCCTShapeRef edge, double arcLength, double 
 // return is exactly what a genuine zero-width interval measures. #548.
 double OCCTEdgeArcLength(OCCTShapeRef edge)
 {
-  if (!edge)
+  if (!occtShapeIsPresent(edge))
     return -1.0;
   try
   {
@@ -5014,7 +5014,7 @@ double OCCTEdgeArcLength(OCCTShapeRef edge)
 // occtValidParameterRange (OCCTBridge_Internal.h).
 double OCCTEdgeArcLengthBetween(OCCTShapeRef edge, double u1, double u2)
 {
-  if (!edge)
+  if (!occtShapeIsPresent(edge))
     return -1.0;
   if (!occtValidParameterRange(u1, u2))
     return -1.0;
@@ -5042,7 +5042,7 @@ double OCCTEdgeArcLengthBetween(OCCTShapeRef edge, double u1, double u2)
 // paying for the extra convergence loop too). #862.
 double OCCTEdgeArcLengthQuickEstimate(OCCTShapeRef edge, double u1, double u2)
 {
-  if (!edge)
+  if (!occtShapeIsPresent(edge))
     return -1.0;
   if (!occtValidParameterRange(u1, u2))
     return -1.0;
@@ -5062,7 +5062,7 @@ double OCCTEdgeArcLengthQuickEstimate(OCCTShapeRef edge, double u1, double u2)
 // pair those two errors cancelled; on a mixed pair they would not.
 double OCCTEdgeParameterAtFraction(OCCTShapeRef edge, double fraction)
 {
-  if (!edge)
+  if (!occtShapeIsPresent(edge))
     return 0;
   try
   {
@@ -5086,7 +5086,7 @@ double OCCTEdgeParameterAtFraction(OCCTShapeRef edge, double fraction)
 void OCCTEdgeAdaptorDomain(OCCTShapeRef edge, double* first, double* last)
 {
   *first = *last = 0;
-  if (!edge)
+  if (!occtShapeIsPresent(edge))
     return;
   try
   {
@@ -5102,7 +5102,7 @@ void OCCTEdgeAdaptorDomain(OCCTShapeRef edge, double* first, double* last)
 void OCCTEdgeAdaptorValue(OCCTShapeRef edge, double param, double* x, double* y, double* z)
 {
   *x = *y = *z = 0;
-  if (!edge)
+  if (!occtShapeIsPresent(edge))
     return;
   try
   {
@@ -5119,7 +5119,7 @@ void OCCTEdgeAdaptorValue(OCCTShapeRef edge, double param, double* x, double* y,
 
 int32_t OCCTEdgeAdaptorCurveType(OCCTShapeRef edge)
 {
-  if (!edge)
+  if (!occtShapeIsPresent(edge))
     return -1;
   try
   {
@@ -6865,7 +6865,7 @@ bool OCCTEdgeGetBounds(OCCTEdgeRef edge,
 
 int32_t OCCTEdgeGetPoints(OCCTEdgeRef edge, int32_t count, double* outPoints)
 {
-  if (!edge || count <= 0 || !outPoints)
+  if (!occtShapeIsPresent(edge) || count <= 0 || !outPoints)
     return 0;
 
   try
@@ -6893,7 +6893,7 @@ int32_t OCCTEdgeGetPoints(OCCTEdgeRef edge, int32_t count, double* outPoints)
 
 bool OCCTEdgeIsLine(OCCTEdgeRef edge)
 {
-  if (!edge)
+  if (!occtShapeIsPresent(edge))
     return false;
 
   try
@@ -6909,7 +6909,7 @@ bool OCCTEdgeIsLine(OCCTEdgeRef edge)
 
 bool OCCTEdgeIsCircle(OCCTEdgeRef edge)
 {
-  if (!edge)
+  if (!occtShapeIsPresent(edge))
     return false;
 
   try
