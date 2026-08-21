@@ -1,6 +1,6 @@
 name: Bug Report
 description: Report a crash, incorrect result, or unexpected behavior
-labels: ["type:bug"]
+labels: ["type:bug", "status:triage"]
 body:
   - type: markdown
     attributes:
