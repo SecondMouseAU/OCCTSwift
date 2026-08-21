@@ -15,12 +15,25 @@ public final class Drawing: @unchecked Sendable {
 
     /// Projection type for creating 2D views.
     ///
+    /// `Hashable` (which refines `Equatable`), so this keys a dictionary or joins a set. It carries
+    /// no raw type, so there is no `.rawValue`: an enum cannot declare one alongside an associated
+    /// value, and `.perspective` carries a focal distance (#1059).
+    ///
+    /// - Warning: `.perspective(focus: .nan)` is not equal to itself, so it breaks the set and
+    ///   dictionary contract the way any `Double`-keyed type does. ``Drawing/project(_:direction:type:)``
+    ///   refuses a focal distance that is not strictly positive, so such a case never becomes a
+    ///   drawing, but nothing stops one being used as a key.
+    ///
     /// ```swift
-    /// let ortho = Drawing.project(box, direction: SIMD3(0, 0, 1))
-    /// let persp = Drawing.project(box, direction: SIMD3(0, 0, 1),
-    ///                             type: .perspective(focus: 50))
+    /// let wanted: [Drawing.ProjectionType] = [.orthographic, .perspective(focus: 50)]
+    /// var cache: [Drawing.ProjectionType: Drawing] = [:]
+    /// for type in wanted {
+    ///     if let d = Drawing.project(box, direction: SIMD3(0, 0, 1), type: type) {
+    ///         cache[type] = d
+    ///     }
+    /// }
     /// ```
-    public enum ProjectionType: Sendable, Equatable {
+    public enum ProjectionType: Sendable, Hashable {
         /// Orthographic projection (parallel lines).
         case orthographic
         /// Perspective projection (converging lines) from an eye point at `focus * direction`,

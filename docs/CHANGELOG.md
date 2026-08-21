@@ -447,6 +447,24 @@ let near = Drawing.project(box, direction: SIMD3(0, 0, 1), type: .perspective(fo
 distance that is not strictly positive returns `nil` rather than a projection: OCCT raises nothing
 for one, returning either an empty result (zero) or a differently scaled projection (negative).
 
+Giving `.perspective` an associated value costs more than the raw value, and it is worth naming each
+piece, because the mechanism is not the one it looks like. Measured with `swiftc` rather than
+recalled: a payload-free enum is `Equatable` and `Hashable` whether or not it says so, in its own
+module and across a boundary, and one with an associated value is neither until it declares them.
+`Sendable` follows a different rule again, on publicness rather than on the payload. So the raw type
+was only ever supplying `RawRepresentable`; the payload is what removed the other two, and the
+replacement declaration named `Sendable, Equatable`.
+
+| Conformance | What this change did to it |
+|---|---|
+| `RawRepresentable`, so `.rawValue` and `init(rawValue:)` | **Removed, permanently.** A Swift enum cannot carry both a raw type and an associated value |
+| `Equatable` | Removed with the payload and re-declared, so `==` still exists. A comparison against the bare case (`type == .perspective`) still stops compiling, because that case now takes an argument |
+| `Hashable`, so `Set<ProjectionType>` and `[ProjectionType: T]` | Removed with the payload and not re-declared here. Restored before release, in its own entry in this section |
+| `Sendable` | **Added.** A **public** enum is not implicitly `Sendable`, whatever its cases carry, so the `UInt32`-backed form did not have it either, in its own module or outside it |
+
+A caller who was round-tripping through `.rawValue` switches over the cases instead, see
+[`docs/reference/Drawing.md`](reference/Drawing.md#drawingprojectiontype).
+
 `Drawing.projectFast(_:direction:deflection:)` is unchanged and remains orthographic. It never
 exposed a projection type, and `HLRBRep_PolyAlgo` ignores a projector's perspective flag entirely,
 so there was nothing to expose.
