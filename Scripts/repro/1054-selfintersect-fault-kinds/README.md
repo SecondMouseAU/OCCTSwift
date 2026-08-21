@@ -8,7 +8,7 @@ Two issues about one bridge function, `OCCTShapeSelfIntersectsBounded`
   including the one OCCT records when the caller's own timeout aborts the analysis. Fixed.
 - **#1068**: `isSelfIntersecting(timeout:)` returned `nil` for a bevel gear solid at every
   timeout from 1 ms to 20 s. Measured, not fixed: the check terminates and reports the shape
-  clean, it just needs **462 s** on this hardware.
+  clean, it just needs **339 s to 463 s** on this hardware.
 
 ## The two probes
 
@@ -29,7 +29,7 @@ Truth C++ Test" section. Neither needs the Swift layer.
 
 ### The spurious `1` the issue could not observe, on a real timeout
 
-#1054 closed with "Not proven: I did not directly observe the spurious `1`", because
+#1054's own report says "Not proven: I did not directly observe the spurious `1`", because
 `GetCheckResult` is not reachable from Swift. It is reachable from here, and the #319 artifact
 at the default-ish 30 s bound produces it every time on an idle machine:
 
