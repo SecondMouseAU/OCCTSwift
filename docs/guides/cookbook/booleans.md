@@ -98,6 +98,44 @@ let heavy = assembly.union(part, timeout: 0)
 
 The parameters compose: `a.subtracting(b, fuzzyValue: 1e-4, glue: .shift, timeout: 30)`.
 
+## Tell a timeout apart from a failure
+
+That `nil` is the same `nil` a failed boolean returns, and the two mean opposite things: a failure is
+a property of the geometry, a timeout is a property of the deadline and of whatever else the machine
+was doing. Reporting the second as the first sends whoever reads the error to inspect a shape that is
+fine. Each boolean has an `*Outcome` sibling that separates them
+([#1067](https://github.com/SecondMouseAU/OCCTSwift/issues/1067)):
+
+```swift
+switch blank.subtractionOutcome(tools) {
+case .success(let cut):
+    print("volume \(cut.volume as Any)")
+case .timedOut:
+    // Not the geometry. Give it longer, or run it somewhere less busy.
+    print(blank.subtractionOutcome(tools, timeout: 600).shape as Any)
+case .failed:
+    // The geometry. A larger timeout will not help; screen the operands instead.
+    print("the boolean declined these operands")
+}
+```
+
+`unionOutcome` and `intersectionOutcome` are the same for `+` and `&`. Each takes exactly the
+parameters its named sibling takes, and `union` / `subtracting` / `intersection` are now thin
+wrappers returning `BooleanOutcome.shape`, so nothing changes for a caller who does not want the
+distinction:
+
+```swift
+// These two lines are the same call.
+let a = blank.subtracting(tools, timeout: 30)
+let b = blank.subtractionOutcome(tools, timeout: 30).shape
+```
+
+`.timedOut` is **indeterminate**, not a negative result: the boolean might well have succeeded given
+longer. This is the same contract `isSelfIntersecting(timeout:)` gives its `nil`, and it inherits the
+same caveat, that `timeout:` is cooperative rather than a hard deadline
+([#293](https://github.com/SecondMouseAU/OCCTSwift/issues/293)). With `timeout: 0` there is no
+watchdog at all, so `.timedOut` cannot occur.
+
 ## Validate an operand before a boolean
 
 `isValidSolid` is a **topology** check, it does **not** catch global self-intersection (overlapping

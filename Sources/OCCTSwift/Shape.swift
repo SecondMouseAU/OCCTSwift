@@ -582,6 +582,139 @@ public final class Shape: @unchecked Sendable {
     /// disable. (#206)
     public static let defaultBooleanTimeout: Double = 120
 
+    /// What a boolean did, separating a genuine failure from the `timeout:` watchdog firing.
+    ///
+    /// ``union(_:fuzzyValue:glue:timeout:)``, ``subtracting(_:fuzzyValue:glue:timeout:)`` and
+    /// ``intersection(_:fuzzyValue:glue:timeout:)`` collapse ``failed`` and ``timedOut`` into one
+    /// `nil`, so a caller cannot tell a bad operand from a busy machine (#1067). Returned by
+    /// ``unionOutcome(_:fuzzyValue:glue:timeout:)``,
+    /// ``subtractionOutcome(_:fuzzyValue:glue:timeout:)`` and
+    /// ``intersectionOutcome(_:fuzzyValue:glue:timeout:)``.
+    public enum BooleanOutcome: Sendable {
+        /// The operation completed and produced this shape.
+        case success(Shape)
+        /// The operation ran to a conclusion and declined, for example on an invalid operand.
+        /// Raising `timeout:` will not change this.
+        case failed
+        /// The wall-clock watchdog interrupted the build, so no result was produced. This is a
+        /// property of the deadline and the machine, not of the geometry (**indeterminate**,
+        /// treat as "unknown", not "cannot be built"). Retrying with a larger `timeout:` may
+        /// succeed.
+        case timedOut
+
+        /// The result shape, or `nil` for either non-success case.
+        ///
+        /// The three named boolean methods return exactly this, which is why they cannot tell
+        /// ``failed`` from ``timedOut``.
+        public var shape: Shape? {
+            if case .success(let shape) = self { return shape }
+            return nil
+        }
+    }
+
+    /// Decode one bridge boolean call into a ``BooleanOutcome``.
+    ///
+    /// The three public outcome methods differ only in which bridge function they hand over, so
+    /// the pointer handling and the `nil`-plus-flag decode live here once rather than three times.
+    private func booleanOutcome(
+        _ run: (UnsafeMutablePointer<Int32>) -> OCCTShapeRef?
+    ) -> BooleanOutcome {
+        var timedOut: Int32 = 0
+        let handle = withUnsafeMutablePointer(to: &timedOut) { run($0) }
+        guard let handle else { return timedOut != 0 ? .timedOut : .failed }
+        return .success(Shape(handle: handle))
+    }
+
+    /// ``union(_:fuzzyValue:glue:timeout:)``, reporting **why** it produced no shape.
+    ///
+    /// Same operation, same options and same watchdog; `union` is a thin wrapper over this that
+    /// returns ``BooleanOutcome/shape``. The difference is that `union` answers `nil` for both a
+    /// failed boolean and an expired `timeout:`, and only this separates them (#1067).
+    ///
+    /// - Important: `timeout` is **cooperative, not a hard deadline** (#293), exactly as on
+    ///   `union`. It is a `Message_ProgressIndicator` OCCT polls at its own internal checkpoints,
+    ///   so the call returns at the first checkpoint after `timeout`, not at `timeout` itself.
+    ///   ``BooleanOutcome/timedOut`` therefore means "the watchdog fired", the same
+    ///   indeterminate-not-negative contract ``isSelfIntersecting(timeout:)`` already uses.
+    ///
+    /// - Parameters:
+    ///   - other: The shape to fuse with `self`.
+    ///   - fuzzyValue: As ``union(_:fuzzyValue:glue:timeout:)``.
+    ///   - glue: As ``union(_:fuzzyValue:glue:timeout:)``.
+    ///   - timeout: As ``union(_:fuzzyValue:glue:timeout:)``. `0`/negative = unbounded, which
+    ///     makes ``BooleanOutcome/timedOut`` unreachable.
+    /// - Returns: The outcome, carrying the fused shape on success.
+    ///
+    /// ```swift
+    /// switch box.unionOutcome(cyl) {
+    /// case .success(let merged): print(merged.volume as Any)
+    /// case .timedOut:            print("the machine, not the geometry: try a larger timeout")
+    /// case .failed:              print("the boolean declined these operands")
+    /// }
+    /// ```
+    public func unionOutcome(
+        _ other: Shape, fuzzyValue: Double = 0, glue: BooleanGlue = .off,
+        timeout: Double = Shape.defaultBooleanTimeout
+    ) -> BooleanOutcome {
+        booleanOutcome {
+            OCCTShapeUnionEx(self.handle, other.handle, fuzzyValue, glue.rawValue, timeout, $0)
+        }
+    }
+
+    /// ``subtracting(_:fuzzyValue:glue:timeout:)``, reporting **why** it produced no shape.
+    ///
+    /// See ``unionOutcome(_:fuzzyValue:glue:timeout:)`` for the contract, which is identical
+    /// apart from the operation (#1067).
+    ///
+    /// - Parameters:
+    ///   - other: The tool shape to remove from `self`.
+    ///   - fuzzyValue: As ``subtracting(_:fuzzyValue:glue:timeout:)``.
+    ///   - glue: As ``subtracting(_:fuzzyValue:glue:timeout:)``.
+    ///   - timeout: As ``subtracting(_:fuzzyValue:glue:timeout:)``. `0`/negative = unbounded.
+    /// - Returns: The outcome, carrying the cut shape on success.
+    ///
+    /// ```swift
+    /// // A 36-tooth gear whose cut is legitimately long: retry the deadline, not the geometry.
+    /// var outcome = blank.subtractionOutcome(tools)
+    /// if case .timedOut = outcome {
+    ///     outcome = blank.subtractionOutcome(tools, timeout: 600)
+    /// }
+    /// guard let gear = outcome.shape else { return }
+    /// ```
+    public func subtractionOutcome(
+        _ other: Shape, fuzzyValue: Double = 0, glue: BooleanGlue = .off,
+        timeout: Double = Shape.defaultBooleanTimeout
+    ) -> BooleanOutcome {
+        booleanOutcome {
+            OCCTShapeSubtractEx(self.handle, other.handle, fuzzyValue, glue.rawValue, timeout, $0)
+        }
+    }
+
+    /// ``intersection(_:fuzzyValue:glue:timeout:)``, reporting **why** it produced no shape.
+    ///
+    /// See ``unionOutcome(_:fuzzyValue:glue:timeout:)`` for the contract, which is identical
+    /// apart from the operation (#1067).
+    ///
+    /// - Parameters:
+    ///   - other: The shape to intersect with `self`.
+    ///   - fuzzyValue: As ``intersection(_:fuzzyValue:glue:timeout:)``.
+    ///   - glue: As ``intersection(_:fuzzyValue:glue:timeout:)``.
+    ///   - timeout: As ``intersection(_:fuzzyValue:glue:timeout:)``. `0`/negative = unbounded.
+    /// - Returns: The outcome, carrying the common shape on success.
+    ///
+    /// ```swift
+    /// let outcome = box.intersectionOutcome(cyl)
+    /// print(outcome.shape?.volume as Any)   // nil for both failed and timedOut
+    /// ```
+    public func intersectionOutcome(
+        _ other: Shape, fuzzyValue: Double = 0, glue: BooleanGlue = .off,
+        timeout: Double = Shape.defaultBooleanTimeout
+    ) -> BooleanOutcome {
+        booleanOutcome {
+            OCCTShapeIntersectEx(self.handle, other.handle, fuzzyValue, glue.rawValue, timeout, $0)
+        }
+    }
+
     /// Union (add) two shapes together.
     ///
     /// - Parameters:
@@ -597,16 +730,13 @@ public final class Shape: @unchecked Sendable {
     /// let merged = box.union(cyl)                      // or: box + cyl
     /// let clean  = outer.union(inner, fuzzyValue: 1e-4) // near-tangent walls fuse cleanly
     /// ```
-    /// - Returns: The fused shape, or nil if the boolean failed.
+    /// - Returns: The fused shape, or nil if the boolean failed **or** `timeout` elapsed.
+    ///   ``unionOutcome(_:fuzzyValue:glue:timeout:)`` tells those two apart (#1067).
     public func union(
         _ other: Shape, fuzzyValue: Double = 0, glue: BooleanGlue = .off,
         timeout: Double = Shape.defaultBooleanTimeout
     ) -> Shape? {
-        guard
-            let handle = OCCTShapeUnionEx(
-                self.handle, other.handle, fuzzyValue, glue.rawValue, timeout)
-        else { return nil }
-        return Shape(handle: handle)
+        unionOutcome(other, fuzzyValue: fuzzyValue, glue: glue, timeout: timeout).shape
     }
 
     /// Subtract another shape from this one.
@@ -623,16 +753,13 @@ public final class Shape: @unchecked Sendable {
     /// ```swift
     /// let drilled = box.subtracting(cyl)   // or: box - cyl, a box with a through-hole
     /// ```
-    /// - Returns: The cut shape, or nil if the boolean failed.
+    /// - Returns: The cut shape, or nil if the boolean failed **or** `timeout` elapsed.
+    ///   ``subtractionOutcome(_:fuzzyValue:glue:timeout:)`` tells those two apart (#1067).
     public func subtracting(
         _ other: Shape, fuzzyValue: Double = 0, glue: BooleanGlue = .off,
         timeout: Double = Shape.defaultBooleanTimeout
     ) -> Shape? {
-        guard
-            let handle = OCCTShapeSubtractEx(
-                self.handle, other.handle, fuzzyValue, glue.rawValue, timeout)
-        else { return nil }
-        return Shape(handle: handle)
+        subtractionOutcome(other, fuzzyValue: fuzzyValue, glue: glue, timeout: timeout).shape
     }
 
     /// Intersection of two shapes.
@@ -648,16 +775,13 @@ public final class Shape: @unchecked Sendable {
     /// ```swift
     /// let common = box.intersection(cyl)   // or: box & cyl, the overlapping volume
     /// ```
-    /// - Returns: The common shape, or nil if the boolean failed.
+    /// - Returns: The common shape, or nil if the boolean failed **or** `timeout` elapsed.
+    ///   ``intersectionOutcome(_:fuzzyValue:glue:timeout:)`` tells those two apart (#1067).
     public func intersection(
         _ other: Shape, fuzzyValue: Double = 0, glue: BooleanGlue = .off,
         timeout: Double = Shape.defaultBooleanTimeout
     ) -> Shape? {
-        guard
-            let handle = OCCTShapeIntersectEx(
-                self.handle, other.handle, fuzzyValue, glue.rawValue, timeout)
-        else { return nil }
-        return Shape(handle: handle)
+        intersectionOutcome(other, fuzzyValue: fuzzyValue, glue: glue, timeout: timeout).shape
     }
 
     // MARK: - Modifications
@@ -2120,7 +2244,7 @@ public final class Shape: @unchecked Sendable {
     /// overlapping copies of that solid, the holes get filled by neighbouring
     /// copies, not replicated. For the bolt-circle use case ("drill one hole, then
     /// repeat it around the axis") pattern the *tool* shape and subtract it, or use
-    /// ``circularPatternCut(tool:axisPoint:axisDirection:count:angle:)`` which does
+    /// ``circularPatternCut(tool:axisPoint:axisDirection:count:angle:timeout:)`` which does
     /// exactly that in one call.
     ///
     /// - Parameters:
@@ -2175,7 +2299,25 @@ public final class Shape: @unchecked Sendable {
     ///   - axisDirection: Direction of the rotation axis
     ///   - count: Number of tool copies (including the original `tool`)
     ///   - angle: Total angle to span in radians (0 for a full circle)
+    ///   - timeout: Wall-clock bound in seconds for the subtraction this ends with (default
+    ///     ``defaultBooleanTimeout``, 120s). `0`/negative = unbounded. Before #1067 the bound
+    ///     applied but was not reachable from this signature, so a caller who knew their cut was
+    ///     legitimately long had no way to raise it.
     /// - Returns: This body with all `count` features cut out, or nil on failure
+    ///
+    /// - Note: The three `nil` returns here are not distinguishable from each other:
+    ///   `count <= 0`, the pattern failing, and the subtraction failing or exceeding `timeout`.
+    ///   A caller who needs to tell them apart runs the two steps directly, which is all this
+    ///   method does:
+    ///   ```swift
+    ///   guard let tools = tool.circularPattern(
+    ///       axisPoint: .zero, axisDirection: SIMD3(0, 0, 1), count: 36) else { /* pattern */ }
+    ///   switch blank.subtractionOutcome(tools, timeout: 600) {
+    ///   case .success(let cut): /* use cut */ break
+    ///   case .timedOut:         /* the machine, not the geometry */ break
+    ///   case .failed:           /* the geometry */ break
+    ///   }
+    ///   ```
     ///
     /// ## Example
     ///
@@ -2190,10 +2332,15 @@ public final class Shape: @unchecked Sendable {
     ///     axisDirection: SIMD3(0, 0, 1),
     ///     count: 8
     /// )
+    ///
+    /// // A legitimately long cut: raise the bound rather than getting nil at 120s
+    /// let gear = blank.circularPatternCut(
+    ///     tool: toothSpace, axisPoint: .zero, axisDirection: SIMD3(0, 0, 1),
+    ///     count: 36, timeout: 600)
     /// ```
     public func circularPatternCut(
         tool: Shape, axisPoint: SIMD3<Double>, axisDirection: SIMD3<Double>, count: Int,
-        angle: Double = 0
+        angle: Double = 0, timeout: Double = Shape.defaultBooleanTimeout
     ) -> Shape? {
         guard count > 0 else { return nil }
         guard
@@ -2204,7 +2351,7 @@ public final class Shape: @unchecked Sendable {
         else {
             return nil
         }
-        return subtracting(tools)
+        return subtracting(tools, timeout: timeout)
     }
 
     // MARK: - Shape Type

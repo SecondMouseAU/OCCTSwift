@@ -25,7 +25,7 @@ two files desynced by 882 across 11 releases before this rule existed, see
 [#289](https://github.com/SecondMouseAU/OCCTSwift/issues/289).
 
 **The category rows below do not sum to the Total, and are not meant to.** They are an illustrative
-categorisation covering **3,324** of the entry points (~76% of the `Total` below); the rest are real, callable,
+categorisation covering **3,327** of the entry points (~76% of the `Total` below); the rest are real, callable,
 and documented in [reference/](reference/) but not yet slotted into a category row. Treat the rows as
 a map of the major areas, and the `Total` as the count.
 
@@ -35,7 +35,7 @@ a map of the major areas, and the `Total` as the count.
 |----------|-------|----------|
 | **Primitives** | 13 | box, cylinder, cylinder(at:), sphere, cone, torus, surface, wedge, halfSpace, vertex, shell(from surface), shell(from Surface), nonUniformScale |
 | **Sweeps** | 24 | pipe sweep, pipeShell, pipeShellMultiSection, pipeShellWithTransition (deprecated, #503), pipeShellWithLaw, extrude, revolve, loft, loft(ruled+vertex), ruled, revolutionFromCurve, ruledShell, advancedEvolved, pipeSweep, compatibleWires, thruSectionsCreate, thruSectionsAddWire, thruSectionsAddVertex, thruSectionsSetSmoothing, thruSectionsSetMaxDegree, thruSectionsSetContinuity, thruSectionsBuild, thruSectionsShape, thruSectionsRelease |
-| **Booleans** | 12 | union (+), subtract (-), intersect (&), section, booleanCheck, fuseAll, commonAll, fusedAndBlended, cutAndBlended, sectionWithTolerance, splitMulti, cutWithHistory |
+| **Booleans** | 15 | union (+), subtract (-), intersect (&), unionOutcome, subtractionOutcome, intersectionOutcome, section, booleanCheck, fuseAll, commonAll, fusedAndBlended, cutAndBlended, sectionWithTolerance, splitMulti, cutWithHistory |
 | **Modifications** | 37 | fillet, selective fillet, variable fillet, multi-edge blend, chamfer, chamferTwoDistances, chamferDistAngle, shell, offset, offsetByJoin, draft, defeature, convertToNURBS, makeDraft, hollowed, filletEvolving, filletedWithReport, filletedWithReport(startRadius:endRadius:), filletEvolvingWithReport, blendedEdgesWithReport, offsetPerFace, fillet2DFace, chamfer2DFace, anaFillet, anaFillet(edge/wire), filletAlgo, filletAlgo(edge/wire), offsetWire, draftFromWire, addFillet2d, addChamfer2d, addChamfer2dAngle, modifyFillet2d, removeFillet2d, removeChamfer2d |
 | **Transforms** | 10 | translate, rotate, scale, mirror, mirrorAboutPoint, mirrorAboutAxis, scaleAboutPoint, translated(from:to:), transformed(matrix:), gTransformed(matrix:) |
 | **Wires** | 31 | rectangle, circle, polygon, polygon3D, line, arc, bspline, nurbs, path, join, offset, offset3D, interpolate, fillet2D, filletAll2D, chamfer2D, chamferAll2D, helix, helixTapered, orderedEdgeCount, orderedEdgePoints, orderedEdgePointCount, analyze, wireFromEdges, edges, allEdgePolylines, allEdgePolylinesIndexed, edgePolyline, bounds |
@@ -503,7 +503,7 @@ a map of the major areas, and the `Total` as the count.
 | **GeomEval TBezier/AHTBezier Curves** | 4 | tBezier (3D), tBezierRational (3D), ahtBezier (3D), ahtBezierRational (3D) |
 | **GeomEval TBezier/AHTBezier Surfaces** | 2 | tBezier surface, ahtBezier surface |
 | **Geom2dEval TBezier/AHTBezier** | 2 | tBezier (2D), ahtBezier (2D) |
-| **Total** | **4,351** | |
+| **Total** | **4,355** | |
 
 > **Note:** OCCTSwift wraps a curated subset of OCCT. To add new functions, see [docs/EXTENDING.md](docs/EXTENDING.md).
 
@@ -537,6 +537,13 @@ OCCTSwift wraps a **subset** of OCCT's functionality. The bridge layer (`OCCTBri
 | `shape1 + shape2` / `shape1.union(with:)` | `BRepAlgoAPI_Fuse` |
 | `shape1 - shape2` / `shape1.subtracting(_:)` | `BRepAlgoAPI_Cut` |
 | `shape1 & shape2` / `shape1.intersection(with:)` | `BRepAlgoAPI_Common` |
+| `shape1.unionOutcome(_:)` → `BooleanOutcome` | `BRepAlgoAPI_Fuse` + `Message_ProgressIndicator::UserBreak` |
+| `shape1.subtractionOutcome(_:)` → `BooleanOutcome` | `BRepAlgoAPI_Cut` + `Message_ProgressIndicator::UserBreak` |
+| `shape1.intersectionOutcome(_:)` → `BooleanOutcome` | `BRepAlgoAPI_Common` + `Message_ProgressIndicator::UserBreak` |
+
+The three `*Outcome` methods are the same operation as the three above; they differ only in
+separating a genuine failure from the `timeout:` watchdog firing, which the plain methods collapse
+into one `nil` ([#1067](https://github.com/SecondMouseAU/OCCTSwift/issues/1067)).
 
 #### Modifications
 | Swift API | OCCT Class |

@@ -766,6 +766,70 @@ public static let defaultBooleanTimeout: Double = 120
 
 A self-intersecting or inside-out operand (e.g. from `loft(ruled: false)`) can make `BRepAlgoAPI_Cut` spin indefinitely; boolean operations abort and return `nil` once this elapses. Pass `0` or negative to disable. Override per call via the `timeout:` parameter.
 
+That `nil` is the same `nil` a failed boolean returns, so `union` / `subtracting` / `intersection` cannot tell "this geometry is bad" from "this machine was busy". The `*Outcome` siblings below separate the two ([#1067](https://github.com/SecondMouseAU/OCCTSwift/issues/1067)).
+
+---
+
+### `BooleanOutcome`
+
+What a boolean did, separating a genuine failure from the watchdog firing.
+
+```swift
+public enum BooleanOutcome: Sendable {
+    case success(Shape)
+    case failed
+    case timedOut
+
+    public var shape: Shape? { get }
+}
+```
+
+| Case | Meaning | Does a larger `timeout:` help? |
+|---|---|---|
+| `.success(Shape)` | The operation completed and produced this shape. | n/a |
+| `.failed` | The operation ran to a conclusion and declined, for example on an invalid operand. | No. |
+| `.timedOut` | The wall-clock watchdog interrupted the build. A property of the deadline and the machine, not of the geometry: **indeterminate**, not "cannot be built". | Possibly. |
+
+`shape` is the result on `.success` and `nil` for both other cases, which is exactly what `union` / `subtracting` / `intersection` return, and why they cannot tell the two apart.
+
+Returned by `unionOutcome`, `subtractionOutcome` and `intersectionOutcome`. Deliberately not `Equatable`: it carries a `Shape`, which is a reference type with no value equality.
+
+---
+
+### `unionOutcome(_:fuzzyValue:glue:timeout:)` / `subtractionOutcome(_:fuzzyValue:glue:timeout:)` / `intersectionOutcome(_:fuzzyValue:glue:timeout:)`
+
+The three booleans below, reporting **why** they produced no shape.
+
+```swift
+public func unionOutcome(_ other: Shape, fuzzyValue: Double = 0, glue: BooleanGlue = .off,
+                         timeout: Double = Shape.defaultBooleanTimeout) -> BooleanOutcome
+public func subtractionOutcome(_ other: Shape, fuzzyValue: Double = 0, glue: BooleanGlue = .off,
+                               timeout: Double = Shape.defaultBooleanTimeout) -> BooleanOutcome
+public func intersectionOutcome(_ other: Shape, fuzzyValue: Double = 0, glue: BooleanGlue = .off,
+                                timeout: Double = Shape.defaultBooleanTimeout) -> BooleanOutcome
+```
+
+Same operation, same options and the same watchdog as `union` / `subtracting` / `intersection`, which are now thin wrappers returning `BooleanOutcome.shape`. Only the return type differs.
+
+- **Parameters:** identical to the matching named method.
+- **Returns:** `.success(Shape)`, `.failed`, or `.timedOut`.
+- **OCCT:** `BRepAlgoAPI_Fuse` / `_Cut` / `_Common`, each via its existing `OCCTShape*Ex` bridge function, which now also reports whether its `Message_ProgressIndicator` watchdog was the thing that stopped the build.
+- **⚠️ `timeout` is cooperative, not a hard deadline** ([#293](https://github.com/SecondMouseAU/OCCTSwift/issues/293)), exactly as on the named methods. OCCT polls it at its own internal checkpoints, so the call returns at the first checkpoint after `timeout`, not at `timeout` itself. `.timedOut` means "the watchdog fired", the same indeterminate-not-negative contract `isSelfIntersecting(timeout:)` uses for its `nil`.
+- **`timeout: 0` (or negative) makes `.timedOut` unreachable**, since no watchdog is constructed at all.
+- **Example:**
+  ```swift
+  // Retry the deadline, not the geometry.
+  var outcome = blank.subtractionOutcome(tools)
+  if case .timedOut = outcome {
+      outcome = blank.subtractionOutcome(tools, timeout: 600)
+  }
+  switch outcome {
+  case .success(let gear): print(gear.volume as Any)
+  case .timedOut:          print("still no answer, the bound is the limit, not the shape")
+  case .failed:            print("the boolean declined these operands")
+  }
+  ```
+
 ---
 
 ### `union(_:fuzzyValue:glue:timeout:)`
@@ -784,7 +848,7 @@ Also available as the `+` operator.
   - `fuzzyValue`: tolerance (`SetFuzzyValue`). `0` = OCCT default; a small positive value (e.g. `1e-4`) helps near-tangent/coincident faces fuse cleanly. Negative = ignored.
   - `glue`: glue mode for coincident-face arguments.
   - `timeout`: wall-clock bound in seconds; `nil` result if elapsed.
-- **Returns:** Fused solid, or `nil` on failure or timeout.
+- **Returns:** Fused solid, or `nil` on failure **or** timeout. Call `unionOutcome` to tell those two apart.
 - **OCCT:** `BRepAlgoAPI_Fuse` (via `OCCTShapeUnionEx`).
 - **Example:**
   ```swift
@@ -817,7 +881,7 @@ Also available as the `-` operator.
   - `fuzzyValue`: tolerance. Raise slightly when a thin-wall cut under-subtracts.
   - `glue`: glue mode.
   - `timeout`: wall-clock bound in seconds.
-- **Returns:** Result of `self − other`, or `nil` on failure or timeout.
+- **Returns:** Result of `self − other`, or `nil` on failure **or** timeout. Call `subtractionOutcome` to tell those two apart.
 - **OCCT:** `BRepAlgoAPI_Cut` (via `OCCTShapeSubtractEx`).
 - **Example:**
   ```swift
@@ -845,7 +909,7 @@ Also available as the `&` operator.
   - `fuzzyValue`: tolerance.
   - `glue`: glue mode.
   - `timeout`: wall-clock bound in seconds.
-- **Returns:** The volume common to both shapes, or `nil` on failure or timeout.
+- **Returns:** The volume common to both shapes, or `nil` on failure **or** timeout. Call `intersectionOutcome` to tell those two apart.
 - **OCCT:** `BRepAlgoAPI_Common` (via `OCCTShapeIntersectEx`).
 - **Example:**
   ```swift

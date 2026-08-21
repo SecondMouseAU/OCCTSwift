@@ -379,27 +379,44 @@ Duplicates the **entire body** `count` times around `axisPoint`/`axisDirection` 
 
 ---
 
-### `circularPatternCut(tool:axisPoint:axisDirection:count:angle:)`
+### `circularPatternCut(tool:axisPoint:axisDirection:count:angle:timeout:)`
 
 Replicates a cut feature around an axis and subtracts all copies from this body.
 
 ```swift
 public func circularPatternCut(tool: Shape, axisPoint: SIMD3<Double>,
                                 axisDirection: SIMD3<Double>, count: Int,
-                                angle: Double = 0) -> Shape?
+                                angle: Double = 0,
+                                timeout: Double = Shape.defaultBooleanTimeout) -> Shape?
 ```
 
 Combines `circularPattern` of `tool` with `subtracting` in a single call. The natural primitive for bolt circles.
 
-- **Parameters:** `tool`, the cutting feature (e.g. a cylinder at the first hole position); `axisPoint`, rotation axis point; `axisDirection`, axis direction; `count`, number of tool copies (including original); `angle`, arc span in radians (`0` = full circle).
+- **Parameters:** `tool`, the cutting feature (e.g. a cylinder at the first hole position); `axisPoint`, rotation axis point; `axisDirection`, axis direction; `count`, number of tool copies (including original); `angle`, arc span in radians (`0` = full circle); `timeout`, wall-clock bound in seconds for the closing subtraction (`0`/negative = unbounded).
 - **Returns:** This body with all `count` features cut out, or `nil` on failure.
 - **OCCT:** `circularPattern` + `BRepAlgoAPI_Cut`.
+- **⚠️ Three indistinguishable `nil`s.** `count <= 0`, the pattern failing, and the subtraction failing or exceeding `timeout` all return the same `nil`. Before [#1067](https://github.com/SecondMouseAU/OCCTSwift/issues/1067) the 120s bound applied here but was not reachable from this signature at all, so a caller whose cut was legitimately long could not raise it. A caller who needs to tell the three apart runs the two steps directly, which is all this method does.
 - **Example:**
   ```swift
   let hole = Shape.cylinder(radius: 3, height: 20).translated(by: SIMD3(40, 0, 0))
   let flangeWithHoles = blank.circularPatternCut(
       tool: hole, axisPoint: .zero, axisDirection: SIMD3(0, 0, 1), count: 8
   )
+
+  // A legitimately long cut: raise the bound rather than getting nil at 120s.
+  let gear = blank.circularPatternCut(
+      tool: toothSpace, axisPoint: .zero, axisDirection: SIMD3(0, 0, 1),
+      count: 36, timeout: 600
+  )
+
+  // Decomposed, when the three nils have to be told apart:
+  guard let tools = toothSpace.circularPattern(
+      axisPoint: .zero, axisDirection: SIMD3(0, 0, 1), count: 36) else { return }
+  switch blank.subtractionOutcome(tools, timeout: 600) {
+  case .success(let cut): print(cut.volume as Any)
+  case .timedOut:         print("the machine, not the geometry")
+  case .failed:           print("the geometry")
+  }
   ```
 
 ---

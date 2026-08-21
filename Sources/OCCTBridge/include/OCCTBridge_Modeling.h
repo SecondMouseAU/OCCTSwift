@@ -197,21 +197,30 @@ OCCTShapeRef OCCTShapeIntersect(OCCTShapeRef shape1, OCCTShapeRef shape2);
 // glue helps when arguments share coincident faces). #202
 // timeoutSeconds bounds the build via a wall-clock UserBreak watchdog; <= 0 means no
 // bound. On timeout (or failure) the op returns NULL instead of hanging. #206
+//
+// outTimedOut is the one fact the NULL return does not carry, and may be NULL if the caller
+// does not want it. When it is not NULL it is written on every path: 1 only when the watchdog
+// interrupted the build, 0 for a completed op and for every other failure. So NULL with
+// *outTimedOut == 0 is a genuine failure, NULL with 1 is the deadline, and a non-NULL return
+// always writes 0. #1067
 OCCTShapeRef OCCTShapeUnionEx(OCCTShapeRef shape1,
                               OCCTShapeRef shape2,
                               double       fuzzyValue,
                               int32_t      glue,
-                              double       timeoutSeconds);
+                              double       timeoutSeconds,
+                              int32_t* _Nullable outTimedOut);
 OCCTShapeRef OCCTShapeSubtractEx(OCCTShapeRef shape1,
                                  OCCTShapeRef shape2,
                                  double       fuzzyValue,
                                  int32_t      glue,
-                                 double       timeoutSeconds);
+                                 double       timeoutSeconds,
+                                 int32_t* _Nullable outTimedOut);
 OCCTShapeRef OCCTShapeIntersectEx(OCCTShapeRef shape1,
                                   OCCTShapeRef shape2,
                                   double       fuzzyValue,
                                   int32_t      glue,
-                                  double       timeoutSeconds);
+                                  double       timeoutSeconds,
+                                  int32_t* _Nullable outTimedOut);
 
 // Self-interference check (BOPAlgo_ArgumentAnalyzer), watchdog-bounded by timeoutSeconds
 // (<= 0 = unbounded). Detects the self-intersection that BRepCheck misses and that hangs
