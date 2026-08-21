@@ -92,14 +92,29 @@ struct Issue990ThreadAxisBasisTests {
     /// the band itself is wide enough to absorb the half-bin quantisation of a 72-point ring (the
     /// measured offset is under 2 degrees).
     ///
-    /// The six axes are one test walking a list rather than six `arguments:` cases on purpose.
-    /// Swift Testing runs `arguments:` cases concurrently, and six concurrent
-    /// build-then-classify runs on six different axes reproduced a SIGSEGV inside OCCT 2 times
-    /// out of 2 while this suite was being written. It is not this fix's doing (the same six
-    /// concurrent builds without the classification pass are clean, as are six concurrent
-    /// build-and-classify runs that all use the +Z axis), and it is the same shape as the
-    /// long-standing uncharacterised parallel-run crashes #344/#345. Serially the identical work
-    /// is clean.
+    /// The six axes are one test walking a list rather than six `arguments:` cases because a
+    /// `@Test(arguments:)` over this element type cannot be written at all. That is a toolchain
+    /// defect, not anything OCCT does. An earlier version of this comment read the crash as a
+    /// SIGSEGV inside OCCT and tied it to #344/#345; #1057 overturned that.
+    ///
+    /// Measured in `Scripts/repro/1057-tuple-arguments-crash/`: a `@Test(arguments:)` whose
+    /// element is one aggregate holding both a reference-counted member and a builtin vector of
+    /// 32 bytes or more corrupts the Swift task allocator, whatever the body does. It crashes
+    /// with an empty body, with a single case, under `.serialized`, and in a package with no
+    /// OCCTSwift dependency at all, while `(SIMD3<Double>, SIMD3<Double>)` is clean. So the
+    /// trigger is the element type, not the geometry, the classification pass or the concurrency
+    /// between cases. The process prints `freed pointer was not the last allocation`, the task
+    /// allocator's own stack-discipline check; the SIGSEGV that produced the OCCT reading came
+    /// from OCCT's process-wide signal handler reporting a fault it did not raise. Narrowed to a
+    /// nested `async throws` function with an `isolated (any Actor)?` parameter, which is what
+    /// the `@Test` macro expands to, and reported upstream. Swift 6.3.3, Xcode 26.6, macOS
+    /// 26.6.1, arm64; `-O` is clean, and `swift test` builds debug.
+    ///
+    /// The constraint that leaves, until the toolchain is fixed: no `@Test(arguments:)` here may
+    /// take an element pairing a `String`, class or `Array` with a `SIMD3<Double>`,
+    /// `SIMD4<Double>` or wider vector, in a tuple or in a struct. Walking the list in one test,
+    /// as below, is the workaround. `census-arguments-sites.py` in that directory enumerates all
+    /// 33 `arguments:` sites under `Tests/`; none is at risk today.
     @Test("the groove sits on gp_Ax2's own perpendicular for every world axis")
     func grooveSitsOnTheCanonicalDatum() {
         for (name, axis, datum) in Self.axes {

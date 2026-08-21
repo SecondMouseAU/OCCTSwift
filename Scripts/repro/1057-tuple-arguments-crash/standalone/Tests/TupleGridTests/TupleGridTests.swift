@@ -1,0 +1,285 @@
+import Testing
+
+// #1057. Each suite below is one cell of the grid: a `@Test(arguments:)` whose element type is the
+// only thing that varies. Every body is trivial and touches nothing but its own argument, so any
+// crash is attributable to how the argument is carried, not to what the test does with it.
+//
+// Run one cell per process, because a crash takes the whole process with it:
+//
+//     swift test --filter <SuiteStructName>
+//
+// `run-grid.sh` in the parent directory does that for every cell, N times each.
+
+// MARK: - Element types
+
+/// A plain final class: reference-counted, pointer-sized, 8-byte aligned. Lets the grid ask
+/// whether it is `String` specifically or any reference-counted element.
+final class Ref: Sendable, CustomStringConvertible {
+    let n: Int
+    init(_ n: Int) { self.n = n }
+    var description: String { "Ref(\(n))" }
+}
+
+/// Size 32, alignment 16. Same size as `SIMD3<Double>` but not over-aligned, which separates
+/// "large" from "over-aligned".
+struct Size32Align16: Sendable {
+    var a: SIMD2<Double>
+    var b: SIMD2<Double>
+    init(_ x: Double) { a = SIMD2(x, x); b = SIMD2(x, x) }
+}
+
+/// A nominal struct whose only member is a `SIMD3<Double>`, so it inherits alignment 32 without
+/// itself being one of the stdlib SIMD types. Separates "over-aligned" from "is a SIMD type".
+///
+/// Reaching 32 any other way is not possible in Swift source: `@_alignment(32)` is rejected with
+/// "cannot increase alignment above maximum alignment of 16", and 16 is exactly the runtime's
+/// `MaxAlignment`. A builtin vector type is the only way a Swift value gets past it.
+struct Align32Wrapper: Sendable {
+    var v: SIMD3<Double>
+    init(_ x: Double) { v = SIMD3(x, x, x) }
+}
+
+/// A nominal struct with the same two stored properties as the crashing tuple, to ask whether the
+/// tuple-ness matters or only the combination of members.
+struct NamedPair: Sendable {
+    var name: String
+    var v: SIMD3<Double>
+    init(_ name: String, _ v: SIMD3<Double>) {
+        self.name = name
+        self.v = v
+    }
+}
+
+// MARK: - Layout, printed rather than asserted
+
+@Suite("layout") struct L0Layout {
+    @Test("print the layout of every element type in the grid")
+    func layout() {
+        func row<T>(_ label: String, _ t: T.Type) {
+            print("\(label): size=\(MemoryLayout<T>.size) stride=\(MemoryLayout<T>.stride) align=\(MemoryLayout<T>.alignment)")
+        }
+        row("String", String.self)
+        row("Ref", Ref.self)
+        row("[Int]", [Int].self)
+        row("Int", Int.self)
+        row("Double", Double.self)
+        row("SIMD2<Double>", SIMD2<Double>.self)
+        row("SIMD3<Double>", SIMD3<Double>.self)
+        row("SIMD4<Double>", SIMD4<Double>.self)
+        row("SIMD4<Float>", SIMD4<Float>.self)
+        row("SIMD8<Float>", SIMD8<Float>.self)
+        row("Size32Align16", Size32Align16.self)
+        row("Align32Wrapper", Align32Wrapper.self)
+        row("NamedPair", NamedPair.self)
+        row("(String, SIMD3<Double>)", (String, SIMD3<Double>).self)
+        row("(SIMD3<Double>, SIMD3<Double>)", (SIMD3<Double>, SIMD3<Double>).self)
+        // The `@Test` macro gives its local function `_: isolated (any Actor)? =
+        // Testing.__defaultSynchronousIsolationContext`. The standalone narrowing (Smallest, V39)
+        // shows a `nil` isolation does not crash, so print what this actually is rather than
+        // inferring it from the fact that the crash happens.
+        print("__defaultSynchronousIsolationContext: \(String(describing: __defaultSynchronousIsolationContext))")
+        #expect(MemoryLayout<SIMD3<Double>>.alignment > 0)
+    }
+}
+
+// MARK: - The two shapes #1057 reports as crashing
+
+@Suite("A: (String, SIMD3<Double>)") struct A1StringSIMD3 {
+    static let cases: [(String, SIMD3<Double>)] = [
+        ("+X", SIMD3(1, 0, 0)), ("-X", SIMD3(-1, 0, 0)),
+        ("+Y", SIMD3(0, 1, 0)), ("-Y", SIMD3(0, -1, 0)),
+        ("+Z", SIMD3(0, 0, 1)), ("-Z", SIMD3(0, 0, -1)),
+    ]
+    @Test("trivial body", arguments: cases)
+    func run(_ f: (String, SIMD3<Double>)) { #expect(!f.0.isEmpty) }
+}
+
+@Suite("B: (String, SIMD3<Double>, SIMD3<Double>)") struct B1StringSIMD3SIMD3 {
+    static let cases: [(String, SIMD3<Double>, SIMD3<Double>)] = [
+        ("+X", SIMD3(1, 0, 0), SIMD3(0, -1, 0)), ("-X", SIMD3(-1, 0, 0), SIMD3(0, -1, 0)),
+        ("+Y", SIMD3(0, 1, 0), SIMD3(1, 0, 0)), ("-Y", SIMD3(0, -1, 0), SIMD3(1, 0, 0)),
+        ("+Z", SIMD3(0, 0, 1), SIMD3(0, 1, 0)), ("-Z", SIMD3(0, 0, -1), SIMD3(0, 1, 0)),
+    ]
+    @Test("trivial body", arguments: cases)
+    func run(_ f: (String, SIMD3<Double>, SIMD3<Double>)) { #expect(!f.0.isEmpty) }
+}
+
+// MARK: - The controls #1057 reports as clean
+
+@Suite("C: (SIMD3<Double>, SIMD3<Double>)") struct C1SIMD3SIMD3 {
+    static let cases: [(SIMD3<Double>, SIMD3<Double>)] = [
+        (SIMD3(1, 0, 0), SIMD3(0, -1, 0)), (SIMD3(-1, 0, 0), SIMD3(0, -1, 0)),
+        (SIMD3(0, 1, 0), SIMD3(1, 0, 0)), (SIMD3(0, -1, 0), SIMD3(1, 0, 0)),
+        (SIMD3(0, 0, 1), SIMD3(0, 1, 0)), (SIMD3(0, 0, -1), SIMD3(0, 1, 0)),
+    ]
+    @Test("trivial body", arguments: cases)
+    func run(_ f: (SIMD3<Double>, SIMD3<Double>)) { #expect(f.0 != f.1) }
+}
+
+@Suite("D: (String, Int)") struct D1StringInt {
+    static let cases: [(String, Int)] = [
+        ("+X", 1), ("-X", 2), ("+Y", 3), ("-Y", 4), ("+Z", 5), ("-Z", 6),
+    ]
+    @Test("trivial body", arguments: cases)
+    func run(_ f: (String, Int)) { #expect(!f.0.isEmpty) }
+}
+
+@Suite("E: bare SIMD3<Double>") struct E1BareSIMD3 {
+    static let cases: [SIMD3<Double>] = [
+        SIMD3(1, 0, 0), SIMD3(-1, 0, 0), SIMD3(0, 1, 0),
+        SIMD3(0, -1, 0), SIMD3(0, 0, 1), SIMD3(0, 0, -1),
+    ]
+    @Test("trivial body", arguments: cases)
+    func run(_ v: SIMD3<Double>) { #expect(v != SIMD3(0, 0, 0)) }
+}
+
+@Suite("F: bare String") struct F1BareString {
+    static let cases: [String] = ["+X", "-X", "+Y", "-Y", "+Z", "-Z"]
+    @Test("trivial body", arguments: cases)
+    func run(_ s: String) { #expect(!s.isEmpty) }
+}
+
+// MARK: - Which member is the refcounted one, and does order matter
+
+@Suite("G: (SIMD3<Double>, String), order swapped") struct G1SIMD3String {
+    static let cases: [(SIMD3<Double>, String)] = [
+        (SIMD3(1, 0, 0), "+X"), (SIMD3(-1, 0, 0), "-X"),
+        (SIMD3(0, 1, 0), "+Y"), (SIMD3(0, -1, 0), "-Y"),
+        (SIMD3(0, 0, 1), "+Z"), (SIMD3(0, 0, -1), "-Z"),
+    ]
+    @Test("trivial body", arguments: cases)
+    func run(_ f: (SIMD3<Double>, String)) { #expect(!f.1.isEmpty) }
+}
+
+@Suite("H: (Ref, SIMD3<Double>), a class not a String") struct H1RefSIMD3 {
+    static let cases: [(Ref, SIMD3<Double>)] = [
+        (Ref(1), SIMD3(1, 0, 0)), (Ref(2), SIMD3(-1, 0, 0)),
+        (Ref(3), SIMD3(0, 1, 0)), (Ref(4), SIMD3(0, -1, 0)),
+        (Ref(5), SIMD3(0, 0, 1)), (Ref(6), SIMD3(0, 0, -1)),
+    ]
+    @Test("trivial body", arguments: cases)
+    func run(_ f: (Ref, SIMD3<Double>)) { #expect(f.0.n > 0) }
+}
+
+@Suite("I: ([Int], SIMD3<Double>), an Array not a String") struct I1ArraySIMD3 {
+    static let cases: [([Int], SIMD3<Double>)] = [
+        ([1], SIMD3(1, 0, 0)), ([2], SIMD3(-1, 0, 0)),
+        ([3], SIMD3(0, 1, 0)), ([4], SIMD3(0, -1, 0)),
+        ([5], SIMD3(0, 0, 1)), ([6], SIMD3(0, 0, -1)),
+    ]
+    @Test("trivial body", arguments: cases)
+    func run(_ f: ([Int], SIMD3<Double>)) { #expect(!f.0.isEmpty) }
+}
+
+// MARK: - Alignment against size
+
+@Suite("J: (String, SIMD2<Double>), align 16") struct J1StringSIMD2 {
+    static let cases: [(String, SIMD2<Double>)] = [
+        ("+X", SIMD2(1, 0)), ("-X", SIMD2(-1, 0)), ("+Y", SIMD2(0, 1)),
+        ("-Y", SIMD2(0, -1)), ("+Z", SIMD2(1, 1)), ("-Z", SIMD2(-1, -1)),
+    ]
+    @Test("trivial body", arguments: cases)
+    func run(_ f: (String, SIMD2<Double>)) { #expect(!f.0.isEmpty) }
+}
+
+@Suite("K: (String, SIMD4<Double>), align 32") struct K1StringSIMD4D {
+    static let cases: [(String, SIMD4<Double>)] = [
+        ("+X", SIMD4(1, 0, 0, 0)), ("-X", SIMD4(-1, 0, 0, 0)), ("+Y", SIMD4(0, 1, 0, 0)),
+        ("-Y", SIMD4(0, -1, 0, 0)), ("+Z", SIMD4(0, 0, 1, 0)), ("-Z", SIMD4(0, 0, -1, 0)),
+    ]
+    @Test("trivial body", arguments: cases)
+    func run(_ f: (String, SIMD4<Double>)) { #expect(!f.0.isEmpty) }
+}
+
+@Suite("L: (String, SIMD4<Float>), align 16") struct L1StringSIMD4F {
+    static let cases: [(String, SIMD4<Float>)] = [
+        ("+X", SIMD4(1, 0, 0, 0)), ("-X", SIMD4(-1, 0, 0, 0)), ("+Y", SIMD4(0, 1, 0, 0)),
+        ("-Y", SIMD4(0, -1, 0, 0)), ("+Z", SIMD4(0, 0, 1, 0)), ("-Z", SIMD4(0, 0, -1, 0)),
+    ]
+    @Test("trivial body", arguments: cases)
+    func run(_ f: (String, SIMD4<Float>)) { #expect(!f.0.isEmpty) }
+}
+
+@Suite("M: (String, SIMD8<Float>), align 32") struct M1StringSIMD8F {
+    static let cases: [(String, SIMD8<Float>)] = [
+        ("+X", SIMD8(repeating: 1)), ("-X", SIMD8(repeating: -1)), ("+Y", SIMD8(repeating: 2)),
+        ("-Y", SIMD8(repeating: -2)), ("+Z", SIMD8(repeating: 3)), ("-Z", SIMD8(repeating: -3)),
+    ]
+    @Test("trivial body", arguments: cases)
+    func run(_ f: (String, SIMD8<Float>)) { #expect(!f.0.isEmpty) }
+}
+
+@Suite("N: (String, Size32Align16), 32 bytes but not over-aligned") struct N1StringSize32 {
+    static let cases: [(String, Size32Align16)] = [
+        ("+X", Size32Align16(1)), ("-X", Size32Align16(2)), ("+Y", Size32Align16(3)),
+        ("-Y", Size32Align16(4)), ("+Z", Size32Align16(5)), ("-Z", Size32Align16(6)),
+    ]
+    @Test("trivial body", arguments: cases)
+    func run(_ f: (String, Size32Align16)) { #expect(!f.0.isEmpty) }
+}
+
+@Suite("O: (String, Align32Wrapper), over-aligned but not a SIMD type") struct O1StringAlign32 {
+    static let cases: [(String, Align32Wrapper)] = [
+        ("+X", Align32Wrapper(1)), ("-X", Align32Wrapper(2)), ("+Y", Align32Wrapper(3)),
+        ("-Y", Align32Wrapper(4)), ("+Z", Align32Wrapper(5)), ("-Z", Align32Wrapper(6)),
+    ]
+    @Test("trivial body", arguments: cases)
+    func run(_ f: (String, Align32Wrapper)) { #expect(!f.0.isEmpty) }
+}
+
+@Suite("P: (String, Double), the word-sized POD control") struct P1StringDouble {
+    static let cases: [(String, Double)] = [
+        ("+X", 1), ("-X", 2), ("+Y", 3), ("-Y", 4), ("+Z", 5), ("-Z", 6),
+    ]
+    @Test("trivial body", arguments: cases)
+    func run(_ f: (String, Double)) { #expect(!f.0.isEmpty) }
+}
+
+// MARK: - Is it the tuple, or the combination of members
+
+@Suite("Q: NamedPair struct, same members as A") struct Q1NamedPair {
+    static let cases: [NamedPair] = [
+        NamedPair("+X", SIMD3(1, 0, 0)), NamedPair("-X", SIMD3(-1, 0, 0)),
+        NamedPair("+Y", SIMD3(0, 1, 0)), NamedPair("-Y", SIMD3(0, -1, 0)),
+        NamedPair("+Z", SIMD3(0, 0, 1)), NamedPair("-Z", SIMD3(0, 0, -1)),
+    ]
+    @Test("trivial body", arguments: cases)
+    func run(_ f: NamedPair) { #expect(!f.name.isEmpty) }
+}
+
+// MARK: - Case count, the two-sequence form, and the serialized trait
+
+@Suite("R: (String, SIMD3<Double>) with exactly one case") struct R1SingleCase {
+    static let cases: [(String, SIMD3<Double>)] = [("+X", SIMD3(1, 0, 0))]
+    @Test("trivial body", arguments: cases)
+    func run(_ f: (String, SIMD3<Double>)) { #expect(!f.0.isEmpty) }
+}
+
+@Suite("S: two-sequence arguments:, String x SIMD3<Double>") struct S1TwoSequence {
+    @Test("trivial body", arguments: ["+X", "-X", "+Y"], [SIMD3<Double>(1, 0, 0), SIMD3<Double>(0, 1, 0)])
+    func run(_ s: String, _ v: SIMD3<Double>) { #expect(!s.isEmpty && v != SIMD3(0, 0, 0)) }
+}
+
+@Suite("T: (String, SIMD3<Double>) with .serialized", .serialized) struct T1Serialized {
+    static let cases: [(String, SIMD3<Double>)] = [
+        ("+X", SIMD3(1, 0, 0)), ("-X", SIMD3(-1, 0, 0)),
+        ("+Y", SIMD3(0, 1, 0)), ("-Y", SIMD3(0, -1, 0)),
+        ("+Z", SIMD3(0, 0, 1)), ("-Z", SIMD3(0, 0, -1)),
+    ]
+    @Test("trivial body", arguments: cases)
+    func run(_ f: (String, SIMD3<Double>)) { #expect(!f.0.isEmpty) }
+}
+
+// MARK: - The workaround the repo uses
+
+@Suite("U: one test walking the list, no arguments: at all") struct U1SerialLoop {
+    static let cases: [(String, SIMD3<Double>)] = [
+        ("+X", SIMD3(1, 0, 0)), ("-X", SIMD3(-1, 0, 0)),
+        ("+Y", SIMD3(0, 1, 0)), ("-Y", SIMD3(0, -1, 0)),
+        ("+Z", SIMD3(0, 0, 1)), ("-Z", SIMD3(0, 0, -1)),
+    ]
+    @Test("trivial body")
+    func run() {
+        for f in Self.cases { #expect(!f.0.isEmpty) }
+    }
+}
