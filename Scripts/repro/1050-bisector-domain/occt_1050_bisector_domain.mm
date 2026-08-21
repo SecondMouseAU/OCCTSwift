@@ -8,7 +8,7 @@
 //   PART 3  Which candidate bound answers correctly on every fixture, including the degenerate
 //           inputs (coincident points, parallel bisectors, a meeting point far outside the four
 //           points' own extent).
-//   PART 4  Why three of PART 3's rows are missed by every bound, unbounded ones included, which
+//   PART 4  Why two of PART 3's rows are missed by every bound, unbounded ones included, which
 //           turns out to be the ray Bisector_Bisec keeps rather than anything about the domain.
 //
 //   clang++ -std=c++17 -ObjC++ -w \
@@ -436,8 +436,10 @@ int main()
     printf("    %-24s %d\n", boundName(BOUNDS[bi]), dropped[bi]);
 
   // ---------------------------------------------------------------- PART 4
-  // One row of PART 3 is missed by EVERY bound, including the unbounded ones, so something other
-  // than the domain drops it. This sweep walks the meeting point out along the same half-line while
+  // Two rows of PART 3 are missed by EVERY bound, including the unbounded ones, so something other
+  // than the domain drops them. (Both `near-parallel` rows. Drafts of this comment said "One row"
+  // while the file header said "three", which is the same count stated twice with two wrong
+  // values.) This sweep walks the meeting point out along the same half-line while
   // holding the four points inside a small box, and the answer is the u2 column: every miss has the
   // kept ray pointing away, which is a choice Bisector_Bisec makes and not a limit of anything.
   //

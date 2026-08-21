@@ -29,6 +29,15 @@
 //     -lOCCT-macos -framework Foundation -framework AppKit -lz -lc++ \
 //     Scripts/repro/1050-bisector-domain/occt_1050_regression_sweep.mm -o /tmp/occt_1050_sweep
 //   /tmp/occt_1050_sweep
+//
+// PROVING THE `bogus` CHECK FIRES. A validator nobody has watched fail is worth nothing, so the
+// nudge that breaks every gained crossing is a committed switch rather than a local edit somebody
+// has to reconstruct from a README:
+//
+//   OCCT_1050_NUDGE_GAINED=1 /tmp/occt_1050_sweep
+//
+// It displaces each gained crossing by 1e-3 * scale before validating, which must drive `bogus`
+// above zero and the exit code to 1.
 
 #include <Bisector_Bisec.hxx>
 #include <Bisector_Inter.hxx>
@@ -40,6 +49,7 @@
 #include <gp_Vec2d.hxx>
 
 #include <cmath>
+#include <cstdlib>
 #include <cstdio>
 #include <random>
 
@@ -161,6 +171,11 @@ int main()
   // time somebody checks the claim.
   std::mt19937_64 rng(20260821);
 
+  const bool nudgeGained = std::getenv("OCCT_1050_NUDGE_GAINED") != nullptr;
+  if (nudgeGained)
+    printf("OCCT_1050_NUDGE_GAINED set: every gained crossing is displaced before validation, so\n"
+           "`bogus` must be non-zero and the exit code 1. This is the check proving itself.\n\n");
+
   printf("no-regression sweep, shipped [-100, 100] against the curve's own range\n\n");
   printf("  %-10s %-8s %-8s %-8s %-8s %-7s %-7s %-7s %-12s\n",
          "scale",
@@ -197,6 +212,8 @@ int main()
       else if (!s.found && f.found)
       {
         ++gained;
+        if (nudgeGained)
+          f.x += 1e-3 * std::max(1.0, scale); // see OCCT_1050_NUDGE_GAINED above
         if (!validate(p, f, worstRel))
         {
           ++bogus;

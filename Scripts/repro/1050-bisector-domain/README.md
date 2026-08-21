@@ -130,7 +130,9 @@ point happens to sit inside it. It fails the fixture built to separate it:
 The reason is geometric and not a corner case. For two bisectors crossing at angle `t`, with
 midpoints `d` apart, the crossing sits about `d / sin(t)` from a midpoint, and `d` is bounded by the
 input's span while `sin(t)` is not bounded below by anything. A crossing angle of 10.9 degrees, a
-long way from parallel, already puts the answer at 1.8x the span. `build-discriminating-fixture.py`
+long way from parallel, already puts the answer at 3.69x the span (u 150.0042 against span
+40.7108). An earlier draft said 1.8x, which is u divided by the `2*span+1` **bound**, 82.4217, and
+so is the adjacent number rather than the one the sentence names. `build-discriminating-fixture.py`
 solves for C and D from the wanted meeting point and asserts both conditions (`2*span+1 < u`, and
 the crossing angle well away from parallel) so the fixture cannot quietly stop meaning its name.
 
@@ -144,13 +146,23 @@ Each domain is built from its own bisector's `FirstParameter()`/`LastParameter()
 number chosen by anybody: it is the curve's own range, which `Bisector_Inter::Perform` clips the
 domain against regardless, so the bridge simply stops narrowing OCCT's search. `RealFirst()`/
 `RealLast()` and `+-Precision::Infinite()` measure identically on every fixture here, and the
-curve's range is preferred because building the domain's (unused) endpoint at `RealLast()` means
-evaluating the curve at 1.8e308 and overflowing to infinite coordinates, where the curve's own
-endpoints are real points on it.
+curve's range is preferred because it is not a chosen number at all: you ask the curve what it
+covers, and nothing has to be justified.
+
+An earlier draft justified it differently and was wrong. It claimed `RealLast()` "means evaluating
+the curve at 1.8e308 and overflowing to infinite coordinates". Measured against the pinned kernel,
+it does not: the direction is a unit vector, so `Value(RealLast())` is `(-1.7976931348623157e+308, 5)`
+for the axis-aligned bisector and `(1.51664e+308, -9.65137e+307)` for an oblique one, both finite.
+The choice between the three wide bounds is genuinely free, PART 3 shows them answering identically,
+and the reason to take the curve's own is that it needs no argument, not that the alternatives break.
 
 ## PART 4, the rows every bound misses, and why they are not the bound's fault
 
-Three fixtures in PART 3 have a closed-form crossing that no bound finds. PART 4 walks the crossing
+Two fixtures in PART 3 have a closed-form crossing that no bound finds, both `near-parallel` rows.
+(Drafts of this line said three, and the probe's own header and body said "three" and "One row", so
+the same count was stated three times with three values. Counted off PART 3's ten rows: the two
+parallel rows and the two collinear/coincident pairs have no closed-form crossing to miss, and the
+10.9-degree row is found by three of the six bounds.) PART 4 walks the crossing
 out along the same half-line while holding the four points inside a box about 41 across, and reports
 the crossing's parameter on each bisector **measured from the built curve** rather than derived from
 the construction:
@@ -234,18 +246,33 @@ fresh sample each time:
 is not 0, so it is a check rather than a printout. The scale column is why the shipped window looked
 adequate for so long: at scale 1 it drops 4 crossings in 4000, and at 1e3 it drops 980.
 
+**The three zeros do not all rest on 16000, and the headline reads as though they do.** `gained` and
+`bogus` are over all 16000. But `lost` and `moved` can only fire where the **shipped** body found a
+crossing, which is the `both` column plus `lost`, so **2005** cases, and **none of the 4000 at scale
+1e6**, where the old window found nothing at all. So "never loses one, never moves one" is
+established over 2005 opportunities concentrated at the small scales, not over the whole sweep. That
+is still the entire population where the two could possibly differ, which is why the sweep is worth
+running, but the denominator is 2005 and quoting 16000 next to it borrows a bigger number than the
+claim earns.
+
 `bogus` is the "never invents one" half, and the first draft of this probe claimed that while
 counting only lost/moved/gained, which checks no gained crossing at all. Every gained crossing is
 now validated on its own terms, with no reference to what either body computed: equidistant from
 both point pairs, and at non-negative parameter on both kept rays. Worst relative equidistance error
 over all 1953: **3.69e-15**.
 
-The check was proved to fire rather than trusted: nudging each gained crossing by `1e-3 * scale`
-before validating flags **1951 of 1953** and exits 1, per scale 0/0, 4/4, 980/980, 967/969. The two
-it still passes are both in the 1e6 row, and the reason is not established here; at that scale a
-crossing can sit far enough away that a nudge of 1000 stays inside the relative equidistance
-tolerance. Two unexplained passes out of 1953 do not weaken the check enough to chase further, and
-the number is recorded rather than rounded to "all of them".
+The check was proved to fire rather than trusted, and the proof is a committed switch rather than a
+quoted number nobody can reproduce:
+
+```bash
+OCCT_1050_NUDGE_GAINED=1 /tmp/occt_1050_sweep     # displaces every gained crossing before validating
+```
+
+It flags **1951 of 1953** and exits 1, per scale 0/0, 4/4, 980/980, 967/969. The two it still passes
+are both in the 1e6 row, and the reason is not established here; at that scale a crossing can sit
+far enough away that a nudge of 1000 stays inside the relative equidistance tolerance. Two
+unexplained passes out of 1953 do not weaken the check enough to chase further, and the number is
+recorded rather than rounded to "all of them".
 
 This also corrected the probe itself. An earlier draft computed reachability from the four input
 points, assuming the ray ran along `perp(B - A)` normalised because that is what the bridge passes

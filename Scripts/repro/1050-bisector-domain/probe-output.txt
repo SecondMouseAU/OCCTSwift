@@ -29,12 +29,12 @@ PART 2  is the domain an input to the intersection or a filter on its output?
   spelled IntRes2d_Domain(). The timing below is the cost question that follows.
 
   bound                    us / Perform   answer                            
-  shipped +-100            0.45           no intersection                   
+  shipped +-100            0.55           no intersection                   
   infinite domain          n/a            THREW Standard_DomainError        
-  RealFirst/RealLast       0.70           (-150, 5) u=150                   
-  +-Precision::Infinite    0.56           (-150, 5) u=150                   
-  curve own range          0.52           (-150, 5) u=150                   
-  2 * input span + 1       0.52           (-150, 5) u=150                   
+  RealFirst/RealLast       0.62           (-150, 5) u=150                   
+  +-Precision::Infinite    0.42           (-150, 5) u=150                   
+  curve own range          0.62           (-150, 5) u=150                   
+  2 * input span + 1       0.62           (-150, 5) u=150                   
 
 
 PART 3  every candidate bound against every fixture
@@ -60,7 +60,7 @@ PART 3  every candidate bound against every fixture
     2 * input span + 1       1
 
 
-PART 4  where the kernel itself stops, with the bound taken out of the question
+PART 4  why some rows are missed by every bound, which is the ray and not the domain
 
   Same construction as build-discriminating-fixture.py, m2 fixed at (-20, 30) so the
   four points stay inside a box about 41 across while the meeting point walks out.

@@ -10,10 +10,10 @@
 //       added this one item to the old list rather than re-deriving the set, which is the same
 //       mistake one layer up. Tracked as #1070, this probe only establishes the behaviour.
 //
-//   f2  Accuracy at large parameter. PART 4 of the main probe is titled "where the kernel itself
-//       stops" but five of its eight rows have the kept ray pointing away, so it never produced a
-//       live crossing past u=300 and could not support the "no kernel accuracy limit" it was cited
-//       for. Here C and D are swapped when the ray points the wrong way, so every row is live.
+//   f2  Accuracy at large parameter. PART 4 of the main probe was titled "where the kernel itself
+//       stops" (it is now titled for what it measures) but five of its eight rows have the kept ray
+//       pointing away, so it never produced a live crossing past u=300 and could not support the
+//       "no kernel accuracy limit" it was cited for. Here C and D are swapped when the ray points the wrong way, so every row is live.
 //       The result is that there is NO meaningful kernel error: against a closed-form solve of the
 //       C and D actually passed, the crossing is right to about 1e-16 relative at every u out to
 //       1e10. A draft of this header reported 0.073 at u=1e8 and 614 at 1e10 as a kernel accuracy

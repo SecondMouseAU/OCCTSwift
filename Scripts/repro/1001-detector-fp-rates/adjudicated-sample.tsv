@@ -9,8 +9,15 @@
 #
 # Batches are never pooled. Each answers a question about one detector on one tree.
 
-# [batch: hardcoded-main-23 | detector: detect-hardcoded-arguments.py | tree: working]
+# [batch: hardcoded-main-23 | detector: detect-hardcoded-arguments.py | tree: d2caff02]
 # A CENSUS, not a sample: every finding on the branch point of #1001, all 23 adjudicated.
+#
+# Pinned to d2caff02, the #1001 merge, rather than left at `tree: working`. It was scored against
+# the working tree while the two IntRes2d_Domain rows below were still defects. #1050 fixed them, so
+# on any later tree the scorer reported FALSE-POSITIVE RATE 20/20 = 100.0% and RECALL LOST for both
+# rows, which by this script's own docstring means the detector regressed. It did not: the code did.
+# A batch keyed `working` silently stops being a measurement of anything the moment the tree moves,
+# and the sibling batch below was already pinned to a commit for exactly this reason.
 OCCTBridge_Curve3D.mm:3310	Extrema_ExtCS	FALSE	TolU/TolV are iteration stop conditions (Extrema_ExtPS.hxx:52-55), not domain bounds; bit-identical across the measured plateau 1e-8 to 1e-5
 OCCTBridge_Curve3D.mm:3338	Extrema_ExtCS	FALSE	TolU/TolV are iteration stop conditions (Extrema_ExtPS.hxx:52-55), not domain bounds; bit-identical across the measured plateau 1e-8 to 1e-5
 OCCTBridge_Geom2d.mm:3846	IntRes2d_Domain	TRUE	the hardcoded +-100 parameter domain drops a real bisector intersection at parameter 150; a bound derived from the input finds it, occt_1001_bisector_domain.mm
