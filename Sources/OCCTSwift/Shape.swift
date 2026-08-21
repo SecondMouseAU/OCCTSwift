@@ -2414,8 +2414,9 @@ public final class Shape: @unchecked Sendable {
     ///   is process-level isolation (run this in a subprocess/worker you can kill on your own
     ///   deadline if a true wall-clock guarantee matters).
     ///
-    /// - Important: `true` is reported **only** for a completed analysis whose every recorded
-    ///   result is `BOPAlgo_SelfIntersect` (#1054). Everything else the analyzer can record used
+    /// - Important: `true` is reported **only** for a completed analysis that recorded at least
+    ///   one `BOPAlgo_SelfIntersect` result and no other status (#1054). An empty result list is
+    ///   `false`, not `true`: that is the clean case. Everything else the analyzer can record used
     ///   to read as `true` and is now `nil`: an aborted analysis, an argument it refuses, and an
     ///   analysis that failed (`BOPAlgo_CheckUnknown`, or a `BOPAlgo_OperationAborted` recorded
     ///   for a `BOPAlgo_CheckerSI` error that was not a watchdog break, which is why `timeout: 0`
@@ -2504,6 +2505,11 @@ public final class Shape: @unchecked Sendable {
         }
         let probe = deepCopy() ?? self
         let box = SelfIntersectResultBox()
+        // The `0` below is load-bearing beyond "the caller's deadline is the only bound", and a
+        // test depends on it: passing 0 means no watchdog exists, so this call can never lose a
+        // conclusive answer to an aborted analysis the way a cooperative `timeout:` can (#1054).
+        // Issue598PipeShellFrenetModeTests uses this entry point for exactly that property.
+        // Threading a cooperative bound in here would reintroduce that fragility silently.
         let semaphore = DispatchSemaphore(value: 0)
         DispatchQueue.global(qos: .userInitiated).async {
             box.rawResult = OCCTShapeSelfIntersectsBounded(probe.handle, 0)

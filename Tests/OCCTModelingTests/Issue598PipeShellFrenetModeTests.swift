@@ -184,7 +184,7 @@ struct Issue598PipeShellFrenetModeTests {
     /// right volume under `.frenet`. `.correctedFrenet` is not insensitive to it: its per-edge
     /// twist-angle law is referenced to the input frame, and the mismatch propagates into a real,
     /// large error. With the profile at its *actual* measured position and tangent, both modes
-    /// agree with each other and with the textbook volume to 1e-6 relative, see
+    /// agree with each other and with the textbook volume to 1e-6 relative; see
     /// `Issue721CorrectedFrenetPlacementTests` for the full sweep across pitch and turn count that
     /// established this. There is no `.correctedFrenet` defect on this fixture family.
     @Test("the cookbook spring recipe, correctly placed: .frenet and .correctedFrenet both match the textbook tube volume")

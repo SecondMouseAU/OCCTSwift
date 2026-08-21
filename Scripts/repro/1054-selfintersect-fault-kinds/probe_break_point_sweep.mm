@@ -201,10 +201,12 @@ int main(int argc, char** argv)
     }
   }
 
+  // aMaxPoll + 1: the loop runs 0 (never break) through aMaxPoll inclusive, and the histogram
+  // below sums to that, so printing aMaxPoll would disagree with the probe's own output.
   std::printf("shape=%s  polls in an uninterrupted run=%ld  break points swept=%ld\n",
               aKind.c_str(),
               aTotalPolls,
-              aMaxPoll);
+              aMaxPoll + 1);
   for (const auto& anEntry : aHistogram)
   {
     std::printf("  %-56s x%ld\n", anEntry.first.c_str(), anEntry.second);

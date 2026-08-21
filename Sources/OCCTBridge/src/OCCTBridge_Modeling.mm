@@ -8345,7 +8345,7 @@ int32_t OCCTLawBSplineKnotSplitting(OCCTLawFunctionRef law,
 }
 
 // #403: same analyzer as above, but converts each split's knot-table index to an actual
-// parameter value via Law_BSpline::Knot(), raw indices are otherwise uninterpretable
+// parameter value via Law_BSpline::Knot(); raw indices are otherwise uninterpretable
 // since the public API exposes no way to read the law's own knot vector.
 int32_t OCCTLawBSplineKnotSplitParams(OCCTLawFunctionRef law,
                                       int32_t            continuityOrder,
@@ -9990,7 +9990,7 @@ OCCTShapeRef _Nullable OCCTBiTgteBlend(OCCTShapeRef _Nonnull shape,
     //
     // Safe on the map: BiTgte_Blend keys the edge into its own myEdges, an
     // NCollection_IndexedMap<TopoDS_Shape, TopTools_ShapeMapHasher> (BiTgte_Blend.hxx:202),
-    // whose equality is TopoDS_Shape::IsSame, orientation cannot select a different entry.
+    // whose equality is TopoDS_Shape::IsSame, so orientation cannot select a different entry.
     if (!occtUseSubShapesByIndex(
           shape->shape,
           TopAbs_EDGE,
@@ -10032,7 +10032,7 @@ OCCTBiTgteBlendInfo OCCTBiTgteBlendInfo_(OCCTShapeRef _Nonnull shape,
     BiTgte_Blend blend(shape->shape, radius, tolerance, false);
 
     // #613: the same explorer-indexed walk as OCCTBiTgteBlend above, written out a second time.
-    // Both are converted together, fixing one alone would have left the two entry points
+    // Both are converted together, since fixing one alone would have left the two entry points
     // disagreeing about what edgeIndices means for the identical operation.
     if (!occtUseSubShapesByIndex(
           shape->shape,
@@ -12104,7 +12104,7 @@ OCCTShapeRef OCCTMakeFaceFromSurfaceUV(OCCTSurfaceRef surface,
   }
 }
 
-// OCCTMakeFaceFromGpPlane / OCCTMakeFaceFromGpCylinder removed (#841), see the note in
+// OCCTMakeFaceFromGpPlane / OCCTMakeFaceFromGpCylinder removed (#841); see the note in
 // OCCTBridge_Modeling.h where they used to be declared.
 
 // MARK: - v0.114: BRepBuilderAPI_MakeWire incremental + Boolean ops with tolerance +

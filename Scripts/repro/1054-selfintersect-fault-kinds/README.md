@@ -85,12 +85,12 @@ section stops using one.
 
 ```
 $ probe_break_point_sweep BOX 400
-shape=BOX  polls in an uninterrupted run=381  break points swept=400
-  (none)                                                     x332
-  OperationAborted                                           x1
-  SelfIntersect                                              x2
-  SelfIntersect,SelfIntersect                                x7
-  SelfIntersect,SelfIntersect,SelfIntersect                  x58
+shape=BOX  polls in an uninterrupted run=381  break points swept=401
+  (none)                                                   x332
+  OperationAborted                                         x1
+  SelfIntersect                                            x2
+  SelfIntersect,SelfIntersect                              x7
+  SelfIntersect,SelfIntersect,SelfIntersect                x58
   SelfIntersect,SelfIntersect,SelfIntersect,OperationAborted x1
   first break point yielding OperationAborted: 379
   first break point yielding SelfIntersect:    312
@@ -167,7 +167,7 @@ because the run ends before that many polls are reached.
 
 ```
 $ probe_break_point_sweep OVERLAP 1500
-shape=OVERLAP  polls in an uninterrupted run=1402  break points swept=1500
+shape=OVERLAP  polls in an uninterrupted run=1402  break points swept=1501
   ...
   first break point yielding OperationAborted: 1353
   first break point yielding SelfIntersect:    0
