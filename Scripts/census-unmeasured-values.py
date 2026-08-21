@@ -2035,7 +2035,7 @@ OCCTFixtureInfo OCCTFixtureDraftInfoStruct(void)
   result.x = vi.Geometry().X();
   return result;
 }'''),
-    ('a Handle-typed throwaway subject (Handle(Draft_FixtureInfo) h;), which the plain '
+    ('a Handle-typed throwaway subject (Handle(Draft_FixtureInfo) info;), which the plain '
      '`Type name;` declaration regex cannot see because the type name sits inside parentheses', '''
 bool OCCTFixtureHandleSubject(void)
 {
