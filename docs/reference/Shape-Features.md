@@ -504,9 +504,11 @@ public func isSelfIntersecting(timeout: Double = 30) -> Bool?
 Backed by `BOPAlgo_ArgumentAnalyzer`'s self-interference test. Expensive (seconds on B-spline solids).
 
 - **Important:** `timeout` is **cooperative, not a hard deadline** (#293), it's checked only when OCCT polls its progress indicator, and the self-interference phase has at least one long checkpoint-free stretch that can overrun `timeout` arbitrarily (observed 20+ minutes past a 30s bound on pathological B-spline solids). The calling thread blocks inside the call the whole time. For a true wall-clock guarantee, run it in a subprocess/worker you can kill yourself.
+- **Important:** `true` means a **completed** analysis recorded a `BOPAlgo_SelfIntersect` result, and nothing else (#1054). An aborted analysis is `nil` even when it recorded results first: `BOPAlgo_CheckerSI::PostTreat` is what discards the adjacency interferences every valid solid has, and it runs last, so a clean shape interrupted between the face-face pass and `PostTreat` reports self-interferences of its own. Measured on a plain 10x10x10 box by breaking at each of its 381 progress polls in turn: 68 of them yield one to three `BOPAlgo_SelfIntersect` results and one yields `BOPAlgo_OperationAborted`, against zero faults for the uninterrupted run. A shape the analyzer rejects outright is `nil` too, for the separate reason below.
+- **Important:** the analyzer runs with `ArgumentTypeMode` as well as `SelfInterMode`, so it can record `BOPAlgo_BadType` for an argument Boolean Operations cannot use (an empty compound is the reachable case: `BOPTools_AlgoTools3D::IsEmptyShape` is true for it). That is `nil`, not `true`. Reading `HasFaulty()` instead of the statuses is what used to make it `true`.
 - **Parameters:** `timeout`, seconds before the check *asks* OCCT to give up (default 30); the actual return can be later. `0` or negative = unbounded.
-- **Returns:** `true` = self-interference found; `false` = shape is clean; `nil` = indeterminate (timed out / errored, treat as "unknown", not "clean").
-- **OCCT:** `BOPAlgo_ArgumentAnalyzer` (via `OCCTShapeSelfIntersectsBounded`).
+- **Returns:** `true` = self-interference found; `false` = shape is clean; `nil` = indeterminate (timed out, rejected, or errored, treat as "unknown", not "clean").
+- **OCCT:** `BOPAlgo_ArgumentAnalyzer` (via `OCCTShapeSelfIntersectsBounded`), reading `GetCheckResult()` rather than `HasFaulty()`.
 - **Example:**
   ```swift
   guard let solid = Shape.loft(profiles: ps, ruled: false)?.orientedForward(),
@@ -526,7 +528,7 @@ public func isSelfIntersecting(hardTimeout: Double) -> Bool?
 Runs the check on a detached background thread against a `deepCopy()` of this shape (independent geometry) and waits on the calling thread with a real deadline. If the deadline passes first, this returns `nil` immediately and the background computation is abandoned, not cancelled: it keeps running orphaned on its own thread until it eventually completes. That is a deliberate trade (burned CPU for a caller-side wall-clock guarantee).
 
 - **Parameters:** `hardTimeout`: seconds to wait before giving up and returning `nil`.
-- **Returns:** `true`/`false` if the check completed in time; `nil` if the deadline passed first (indeterminate, the background check may still be running).
+- **Returns:** `true`/`false` if the check completed in time; `nil` if the deadline passed first (indeterminate, the background check may still be running) or if the analysis could not answer the question, per `isSelfIntersecting(timeout:)`. Its inner call passes `0` (unbounded), so the aborted-analysis case above cannot arise here, but the `BOPAlgo_BadType` one can.
 - **OCCT:** `BOPAlgo_ArgumentAnalyzer` (via `OCCTShapeSelfIntersectsBounded`), on a background `DispatchQueue`.
 - **Example:**
   ```swift

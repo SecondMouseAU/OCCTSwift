@@ -2411,11 +2411,19 @@ public final class Shape: @unchecked Sendable {
     ///   is process-level isolation (run this in a subprocess/worker you can kill on your own
     ///   deadline if a true wall-clock guarantee matters).
     ///
+    /// - Important: `true` is reported **only** for a completed analysis that recorded a
+    ///   `BOPAlgo_SelfIntersect` result (#1054). An analysis the `timeout` aborted is `nil`
+    ///   even when it recorded results first, because the pass that discards the adjacency
+    ///   interferences every valid solid has runs last: a clean box interrupted just before it
+    ///   reports up to three self-interferences of its own. A shape `BOPAlgo_ArgumentAnalyzer`
+    ///   rejects outright, such as an empty compound, is `nil` for the same reason, the fault it
+    ///   records is `BOPAlgo_BadType` and says nothing about self-intersection.
+    ///
     /// - Parameter timeout: Seconds before the check *asks* OCCT to give up (default 30), the
     ///   actual return can be much later if an un-polled phase is reached. `0`/negative = unbounded.
     /// - Returns: `true` if a self-interference was found, `false` if the shape is clean, or
-    ///   `nil` if the check could not complete within `timeout` (**indeterminate**, treat as
-    ///   "unknown", not "clean").
+    ///   `nil` if the check could not complete within `timeout`, or could not answer the question
+    ///   at all (**indeterminate**, treat as "unknown", not "clean").
     ///
     /// Validate-at-the-source recipe for a loft result before using it in a boolean:
     /// ```swift
@@ -2466,7 +2474,8 @@ public final class Shape: @unchecked Sendable {
     ///
     /// - Parameter hardTimeout: Seconds to wait before giving up and returning `nil`.
     /// - Returns: `true`/`false` if the check completed in time, `nil` if the deadline passed
-    ///   first (indeterminate, the background check may still be running).
+    ///   first (indeterminate, the background check may still be running) or if the analysis
+    ///   could not answer the question, per ``isSelfIntersecting(timeout:)``.
     ///
     /// ```swift
     /// // Bound total wall-clock time even on a pathological B-spline solid with no

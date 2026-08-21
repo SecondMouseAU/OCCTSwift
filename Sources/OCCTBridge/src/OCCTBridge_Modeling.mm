@@ -16289,6 +16289,8 @@ OCCTShapeRef OCCTShapeIntersectEx(OCCTShapeRef shape1,
 
 // --- Self-intersection check (#208) ---
 #include <BOPAlgo_ArgumentAnalyzer.hxx>
+#include <BOPAlgo_CheckResult.hxx>
+#include <BOPAlgo_CheckStatus.hxx>
 
 // Reports whether a shape self-intersects (overlapping/interfering sub-faces), the
 // defect that BRepCheck_Analyzer misses but that poisons downstream booleans (#206).
@@ -16296,6 +16298,9 @@ OCCTShapeRef OCCTShapeIntersectEx(OCCTShapeRef shape1,
 // (>10s on the #206 B-spline operands) or unbounded, so it runs with StopOnFirstFaulty
 // and the same wall-clock watchdog as the booleans.
 //   returns:  1 = self-intersects,  0 = clean,  -1 = indeterminate (timed out / errored)
+// The watchdog is read before the results and the results are read by status rather
+// than through HasFaulty(), both because HasFaulty() answers a wider question than the
+// one asked here; see docs/reference/Shape-Features.md for the measurements (#1054).
 int32_t OCCTShapeSelfIntersectsBounded(OCCTShapeRef shape, double timeoutSeconds)
 {
   if (!shape)
@@ -16321,15 +16326,36 @@ int32_t OCCTShapeSelfIntersectsBounded(OCCTShapeRef shape, double timeoutSeconds
     {
       aa.Perform();
     }
-    if (aa.HasFaulty())
-      return 1; // conclusive
+    // An aborted analysis answers nothing, whatever it recorded on the way out.
+    // BOPAlgo_CheckerSI::PostTreat is what discards the adjacency interferences every
+    // valid solid has, so a clean box interrupted after the face-face pass but before
+    // PostTreat reports up to three BOPAlgo_SelfIntersect results of its own.
     if (!breaker.IsNull() && breaker->tripped())
-      return -1; // analysis may be incomplete
+      return -1;
+    // HasFaulty() is "did any enabled mode record something", and ArgumentTypeMode is
+    // enabled too, so read the statuses instead. BOPAlgo_BadType (an argument BOP cannot
+    // use, e.g. an empty compound) and BOPAlgo_OperationAborted (the self-interference
+    // pass gave up) are recorded the same way a real interference is, and neither is an
+    // answer to "does this shape self-intersect".
+    bool selfIntersects = false;
+    bool otherFault     = false;
+    for (NCollection_List<BOPAlgo_CheckResult>::Iterator it(aa.GetCheckResult()); it.More();
+         it.Next())
+    {
+      if (it.Value().GetCheckStatus() == BOPAlgo_SelfIntersect)
+        selfIntersects = true;
+      else
+        otherFault = true;
+    }
+    if (selfIntersects)
+      return 1; // conclusive
+    if (otherFault)
+      return -1; // analysed something, but not the question asked
     return 0;    // completed clean
   }
   catch (...)
   {
-    return -1; // interrupted by the watchdog, or analyzer error → indeterminate
+    return -1; // interrupted by the watchdog, or analyzer error, either way indeterminate
   }
 }
 

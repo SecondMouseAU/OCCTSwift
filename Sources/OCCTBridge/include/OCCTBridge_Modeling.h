@@ -225,6 +225,8 @@ OCCTShapeRef OCCTShapeIntersectEx(OCCTShapeRef shape1,
 // Self-interference check (BOPAlgo_ArgumentAnalyzer), watchdog-bounded by timeoutSeconds
 // (<= 0 = unbounded). Detects the self-intersection that BRepCheck misses and that hangs
 // booleans (#206/#208). Returns 1 = self-intersects, 0 = clean, -1 = indeterminate.
+// Only a BOPAlgo_SelfIntersect result returns 1: an aborted analysis, and any other fault
+// the analyzer records, are indeterminate (#1054).
 // (Distinct from the older unbounded bool OCCTShapeSelfIntersects via BOPAlgo_CheckerSI.)
 int32_t OCCTShapeSelfIntersectsBounded(OCCTShapeRef shape, double timeoutSeconds);
 
