@@ -5,7 +5,7 @@ import simd
 /// #619: `Curve3D.continuityOrder`, `Curve2D.continuityOrder` and `Surface.surfaceContinuityOrder`
 /// changed what their numbers *mean* without changing their type or their name.
 ///
-/// #485 was right to make them report the real `GeomAbs_Shape` ordinal — the hand-invented
+/// #485 was right to make them report the real `GeomAbs_Shape` ordinal, the hand-invented
 /// `{C0=0, C1=1, C2=2, C3=3, CN=99, G1=-2, G2=-3}` scheme matched nothing, not even its own doc
 /// comment. What it left behind was a caller-visible hazard with only a *warning* attached: every
 /// `continuityOrder >= n` threshold and every `== 99` analytic fast path kept compiling and
@@ -14,7 +14,7 @@ import simd
 ///
 /// This suite pins the half a test can reach: the encoding itself against known geometry, and the
 /// two idioms that changed answer. The source break is pinned by the `@available(*, unavailable)`
-/// attribute on the three properties — a test cannot call them, which is the point.
+/// attribute on the three properties, a test cannot call them, which is the point.
 @Suite("Measured continuity encoding after the retirement (#619)")
 struct Issue619ContinuityEncodingTests {
 
@@ -33,7 +33,7 @@ struct Issue619ContinuityEncodingTests {
 
     // MARK: - The encoding, against geometry whose class is known by construction
 
-    @Test("An analytic curve reports CN as ordinal 6 — the old encoding's 99 is unreachable")
+    @Test("An analytic curve reports CN as ordinal 6, the old encoding's 99 is unreachable")
     func analyticCurveReportsCN() {
         // The `continuityOrder == 99` fast path was the issue's second failure: not a wrong
         // answer but silently dead code, because nothing can produce 99 any more.
@@ -52,7 +52,7 @@ struct Issue619ContinuityEncodingTests {
     @Test("The sibling raw-ordinal accessors use the same encoding, so CN is 6 there too")
     func siblingAccessorsUseTheSameOrdinal() {
         // `bezierContinuity` is a separate `(int32_t)Continuity()` cast on a different OCCT
-        // class, and several reference pages documented it as `4 = CN` — the same wrong table
+        // class, and several reference pages documented it as `4 = CN`, the same wrong table
         // that let `continuity` and `continuityOrder` disagree. A Bezier is CN by construction.
         guard let bezier = Curve3D.bezier(poles: [SIMD3(0, 0, 0), SIMD3(1, 1, 0), SIMD3(2, 0, 0)])
         else {
@@ -94,7 +94,7 @@ struct Issue619ContinuityEncodingTests {
             return
         }
 
-        // `if curve.continuityOrder >= 2 { useAsC2Spline() }` — the issue's exact line. Under the
+        // `if curve.continuityOrder >= 2 { useAsC2Spline() }`, the issue's exact line. Under the
         // old encoding this was false for a C1 curve (it answered 1). Under the new one the same
         // comparison is true, and the C1 curve is fed to a path that assumes C2. Asserting the
         // trap is *live* is what makes this a regression test rather than a restatement.

@@ -5,13 +5,13 @@
 // scratch state (myRelocTable, myPAtt, myTypesMap, myEmptyLabels, myMapUnsupported,
 // mySizesToWrite, myFileName, myDrivers lazy-init) with no synchronization.
 //
-// Every thread builds its own tiny TDocStd_Document (own file, own label tree — deliberately
+// Every thread builds its own tiny TDocStd_Document (own file, own label tree, deliberately
 // NOT a file-path collision, to isolate the driver-reentrancy defect from unrelated I/O races)
 // and spin-waits at a barrier before each round's SaveAs(), maximizing genuine simultaneous
 // contention on the shared BinLDrivers_DocumentStorageDriver instance instead of relying on OS
 // scheduling luck (same technique as Scripts/repro/344-cdf-directory/occt_344_barrier.cpp).
 //
-// This bypasses OCCTSwift's own ocafStoreMutex() bridge mitigation on purpose — that mutex isn't
+// This bypasses OCCTSwift's own ocafStoreMutex() bridge mitigation on purpose, that mutex isn't
 // present in the kernel itself, and this repro targets the kernel defect.
 //
 // Usage: occt_349_barrier <threads> <rounds> <scratchDir>

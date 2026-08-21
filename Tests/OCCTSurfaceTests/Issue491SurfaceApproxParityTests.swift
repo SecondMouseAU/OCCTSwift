@@ -7,7 +7,7 @@ import simd
 /// returns the fitted BSpline surface, and ``Surface/approxWithDetails(tolerance:uContinuity:vContinuity:maxDegree:maxSegments:)``
 /// returns the same fit alongside the diagnostics OCCT already computed for it. Both go through
 /// one shared bridge helper as of #491, so for identical inputs they must produce the same
-/// surface — the second differing from the first only by carrying `maxError`/`isDone`/`hasResult`.
+/// surface, the second differing from the first only by carrying `maxError`/`isDone`/`hasResult`.
 ///
 /// Before #491 they produced *different* surfaces, for two independent reasons:
 ///
@@ -17,7 +17,7 @@ import simd
 ///     `lesparam` (`AdvApp2Var_Context.cxx:22`) turns into the Jacobi degree and the initial
 ///     per-axis sample-point count seeding the iterative fit. Measured over 72 bounded cases
 ///     (8 surface families x 6 tolerances, plus C0/C1 and maxDegree 10 variants), the two codes
-///     never disagreed on `IsDone` and produced the same knot/pole layout in 71 of 72 — but a
+///     never disagreed on `IsDone` and produced the same knot/pole layout in 71 of 72, but a
 ///     different `maxError` in all 72, and in the one layout-differing case (an offset sphere at
 ///     tolerance 1e-5) `0` met the tolerance with 27x15 poles where `1` used 27x23.
 ///  2. The two Swift entry points defaulted to different continuity: `.approximated` to C2,
@@ -85,8 +85,8 @@ struct Issue491SurfaceApproxParityTests {
             // maxSegments and maxDegree far apart and not interchangeable. The two entry points
             // declare them in opposite orders (`maxSegments:maxDegree:` on .approximated,
             // `maxDegree:maxSegments:` on .approxWithDetails) and the bridge has to re-order them
-            // for the shared helper, so a request where the two values are equal — as every other
-            // one here is — would not notice a swap.
+            // for the shared helper, so a request where the two values are equal, as every other
+            // one here is, would not notice a swap.
             result.append(Request(label: "trimmed cone, degree 4 in 20 segments", surface: cone,
                                   tolerance: 1e-3, continuity: .c2, maxSegments: 20, maxDegree: 4))
         }
@@ -109,7 +109,7 @@ struct Issue491SurfaceApproxParityTests {
     @Test("Both entry points succeed, or neither does, on the same request")
     func successAgrees() {
         let all = requests()
-        #expect(!all.isEmpty, "no request could be constructed — the fixtures themselves failed")
+        #expect(!all.isEmpty, "no request could be constructed, the fixtures themselves failed")
 
         for request in all {
             let plain = request.surface.approximated(tolerance: request.tolerance,
@@ -183,7 +183,7 @@ struct Issue491SurfaceApproxParityTests {
         #expect(plain.vPoleCount == withDetails.vPoleCount,
                 "default-continuity call: vPoleCount \(plain.vPoleCount) vs \(withDetails.vPoleCount)")
 
-        // And the explicit C2 call — the shared default — must reproduce it exactly.
+        // And the explicit C2 call, the shared default, must reproduce it exactly.
         let explicit = sphere.approxWithDetails(tolerance: 1e-3, uContinuity: .c2, vContinuity: .c2)
         if let explicitSurface = explicit.surface {
             #expect(explicitSurface.uPoleCount == withDetails.uPoleCount)
@@ -196,7 +196,7 @@ struct Issue491SurfaceApproxParityTests {
     /// collapse a direction to degree 1 and still report a `maxError` five orders of magnitude
     /// below the surface it returned (a full sphere at C0 came back as a straight line across its
     /// own longitude, deviating by 19.9999, reported as 1.07e-4 with `isDone` true). That was an
-    /// upstream defect, #522 — it predated #491, both entry points hit it identically, and unifying
+    /// upstream defect, #522, it predated #491, both entry points hit it identically, and unifying
     /// them neither caused nor fixed it. Fixed in kernel patch `0019`: `mma2ce1_` wrote the U
     /// Jacobi maxima to the V workspace slot, leaving the U ones zero, which made every U
     /// truncation error evaluate to 0. The exclusion is gone and every request is checked.
@@ -256,7 +256,7 @@ struct Issue491SurfaceApproxParityTests {
     /// silent swap in either path is the obvious way for this refactor to go wrong.
     ///
     /// `geometryMatches` above covers it for the `degree 4 in 20 segments` request, but only if the
-    /// two values are actually distinguishable — swapping interchangeable arguments proves nothing.
+    /// two values are actually distinguishable, swapping interchangeable arguments proves nothing.
     /// So this asserts the pair is order-sensitive first, then that both entry points landed on the
     /// same side of it.
     ///
@@ -270,7 +270,7 @@ struct Issue491SurfaceApproxParityTests {
             Issue.record("cone fixture failed")
             return
         }
-        // Exchanging the two must change the result — otherwise the parity check below is vacuous.
+        // Exchanging the two must change the result, otherwise the parity check below is vacuous.
         let asRequested = cone.approximated(tolerance: 1e-3, continuity: 2,
                                             maxSegments: 20, maxDegree: 4)
         let swapped = cone.approximated(tolerance: 1e-3, continuity: 2,

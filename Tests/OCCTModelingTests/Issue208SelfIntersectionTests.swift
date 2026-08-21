@@ -4,9 +4,9 @@ import simd
 @testable import OCCTSwift
 
 // #208: a watchdog-bounded self-intersection check. isValidSolid (topology) misses global
-// self-intersection (overlapping faces) — the defect that hung booleans in #206. This check
+// self-intersection (overlapping faces), the defect that hung booleans in #206. This check
 // (BOPAlgo_ArgumentAnalyzer self-interference) catches it, bounded so it cannot hang.
-@Suite("Issue #208 — self-intersection check")
+@Suite("Issue #208, self-intersection check")
 struct Issue208SelfIntersection {
 
     @Test("a clean solid reports not self-intersecting")
@@ -41,7 +41,7 @@ struct Issue208SelfIntersection {
 // #319: a genuinely hard-bounded variant, following up on #293 (which documented that
 // isSelfIntersecting(timeout:) is cooperative-only). Runs the check on a detached worker
 // thread against a deepCopy(), with the calling thread enforcing the real deadline.
-@Suite("Issue #319 — hard-bounded self-intersection check")
+@Suite("Issue #319, hard-bounded self-intersection check")
 struct Issue319HardBoundedSelfIntersection {
 
     @Test("a clean solid reports not self-intersecting")
@@ -58,7 +58,7 @@ struct Issue319HardBoundedSelfIntersection {
         #expect(compound.isSelfIntersecting(hardTimeout: 30) == true)
     }
 
-    @Test("a near-zero deadline returns near that deadline, not after the full check — the property timeout: cannot offer")
+    @Test("a near-zero deadline returns near that deadline, not after the full check, the property timeout: cannot offer")
     func deadlineIsActuallyHard() {
         guard let a = Shape.box(origin: SIMD3(0, 0, 0), width: 10, height: 10, depth: 10),
               let b = Shape.box(origin: SIMD3(5, 0, 0), width: 10, height: 10, depth: 10),
@@ -66,7 +66,7 @@ struct Issue319HardBoundedSelfIntersection {
         let start = Date()
         let r = compound.isSelfIntersecting(hardTimeout: 0.001)
         let elapsed = Date().timeIntervalSince(start)
-        // Either it found a fault before the deadline (true) or the deadline won (nil) —
+        // Either it found a fault before the deadline (true) or the deadline won (nil),
         // both are acceptable outcomes. What matters is the CALLER'S wall-clock time, which
         // must track the deadline rather than the check's full (potentially unbounded) duration.
         #expect(r == nil || r == true)

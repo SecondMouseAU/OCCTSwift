@@ -1,4 +1,4 @@
-# OCCTSwift#497 probe — does `BRepAlgoAPI_Defeaturing` honour a fuzzy tolerance?
+# OCCTSwift#497 probe, does `BRepAlgoAPI_Defeaturing` honour a fuzzy tolerance?
 
 Ground truth for the one behavioural difference between the bridge's two shape-addressed
 defeaturing wrappers, against the pinned OCCT 8.0.0p1 kernel.
@@ -32,7 +32,7 @@ values from `1e-7` to `100`, and the full BREP serialisation of each result is c
 first. A serialisation comparison rather than a volume comparison, so that a geometric difference
 too small to move the volume still counts as a difference.
 
-A null result means nothing on its own — the tolerances might simply be too small to bite. So the
+A null result means nothing on its own, the tolerances might simply be too small to bite. So the
 same magnitudes are also run through `BRepAlgoAPI_Cut`, a BOP that does honour the fuzzy value, as
 a control.
 
@@ -60,7 +60,7 @@ control (BRepAlgoAPI_Cut, an honouring BOP):
 Cut: fuzzy value changed the result (control valid)
 ```
 
-`FuzzyValue()` echoes back whatever was set, so the value really is reaching the object — it is the
+`FuzzyValue()` echoes back whatever was set, so the value really is reaching the object, it is the
 algorithm that never consults it. The control confirms the magnitudes bite: at `fuzzy=10` the same
 box cut by the same cylinder collapses to an empty shape.
 
@@ -78,7 +78,7 @@ myFeatureRemovalTool.SetRunParallel(myRunParallel);
 ```
 
 `myFuzzyValue` is not among them, and `BOPAlgo_RemoveFeatures.cxx` contains no reference to a fuzzy
-value at all — the general-fuse, trimming and volume-maker sub-algorithms it drives are each given
+value at all, the general-fuse, trimming and volume-maker sub-algorithms it drives are each given
 `SetRunParallel` and nothing else. `SetFuzzyValue` writes a field on the `BOPAlgo_Options` base
 class that this algorithm's `Build()` never reads.
 
@@ -96,5 +96,5 @@ is deprecated and forwards.
 
 #497's framing was that consolidating the wrappers required care because one of them carried a
 feature the other lacked. Measured, the two are interchangeable, so the consolidation is unconditional
-— and the finding inverts: the duplication's real cost was not a hidden feature but an advertised
+,  and the finding inverts: the duplication's real cost was not a hidden feature but an advertised
 parameter that never worked, kept alive by the copy that had one.

@@ -1,5 +1,5 @@
 // Portable C++17 reproducer for OCCT parallel crashes (NO IGES)
-// Version 2: Grouped tests — each operation type tested in isolation first,
+// Version 2: Grouped tests, each operation type tested in isolation first,
 // then combined. Reports crash/pass per group.
 //
 // Windows (MSVC):
@@ -86,7 +86,7 @@ private:
 };
 
 // ============================================================
-// Individual task functions — each creates independent objects
+// Individual task functions, each creates independent objects
 // ============================================================
 
 // Group 1: Extrema (line-cylinder, line-sphere, line-cone)

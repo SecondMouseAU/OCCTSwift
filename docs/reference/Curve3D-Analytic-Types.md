@@ -1,11 +1,11 @@
 ---
-title: Curve3D — Analytic Types
+title: Curve3D. Analytic Types
 parent: API Reference
 ---
 
-# Curve3D — Analytic Types
+# Curve3D. Analytic Types
 
-These members expose type-specific properties of analytic curves (circle, ellipse, hyperbola, parabola, line) plus B-spline/Bézier pole/knot/weight accessors. They are valid only when the underlying curve is of the matching kind — accessing them on a mismatched curve type returns zero/nil silently. See the main [Curve3D](Curve3D.md) page for construction methods, evaluation, and operations.
+These members expose type-specific properties of analytic curves (circle, ellipse, hyperbola, parabola, line) plus B-spline/Bézier pole/knot/weight accessors. They are valid only when the underlying curve is of the matching kind, accessing them on a mismatched curve type returns zero/nil silently. See the main [Curve3D](Curve3D.md) page for construction methods, evaluation, and operations.
 
 ## Topics
 
@@ -106,7 +106,7 @@ public func continuityBreaks(minContinuity: ParametricContinuity = .c1) -> [Doub
 
 Only works on `Geom_BSplineCurve`. The result is a set of *split* parameters, not a set of defects: the curve's own first and last knots are always included, so a curve that never drops below `minContinuity` returns exactly those two rather than an empty array. Any further entries are interior knots where the curve really is less continuous than asked. Useful for splitting a composite B-spline into smooth segments.
 
-- **Parameters:** `minContinuity` — minimum continuity to require of each resulting arc (default `.c1`).
+- **Parameters:** `minContinuity`, minimum continuity to require of each resulting arc (default `.c1`).
 - **Returns:** Split parameters in ascending order, bounded by the curve's end knots, or `nil` if the curve is not a B-spline.
 - **OCCT:** `GeomConvert_BSplineCurveKnotSplitting::NbSplits` / `SplitValue`, resolved via `Geom_BSplineCurve::Knot`.
 - **Example:**
@@ -132,7 +132,7 @@ public var circleProperties: CircleProperties { get }
 Meaningful only when the curve wraps a `Geom_Circle`. Accessing members on a non-circle returns zero.
 
 - **Returns:** A `CircleProperties` value backed by the same internal handle.
-- **OCCT:** `Geom_Circle` — accessed via `Handle(Geom_Circle)::DownCast`.
+- **OCCT:** `Geom_Circle`, accessed via `Handle(Geom_Circle)::DownCast`.
 - **Example:**
   ```swift
   if let curve = Curve3D.circle(center: .zero, normal: SIMD3(0, 0, 1), radius: 5) {
@@ -279,7 +279,7 @@ public var ellipseProperties: EllipseProperties { get }
 Meaningful only when the curve wraps a `Geom_Ellipse`. Accessing members on a non-ellipse returns zero.
 
 - **Returns:** An `EllipseProperties` value backed by the same internal handle.
-- **OCCT:** `Geom_Ellipse` — accessed via `Handle(Geom_Ellipse)::DownCast`.
+- **OCCT:** `Geom_Ellipse`, accessed via `Handle(Geom_Ellipse)::DownCast`.
 - **Example:**
   ```swift
   if let curve = Curve3D.ellipse(center: .zero, normal: SIMD3(0, 0, 1),
@@ -517,7 +517,7 @@ public var hyperbolaProperties: HyperbolaProperties { get }
 Meaningful only when the curve wraps a `Geom_Hyperbola`. Accessing members on a non-hyperbola returns zero.
 
 - **Returns:** A `HyperbolaProperties` value backed by the same internal handle.
-- **OCCT:** `Geom_Hyperbola` — accessed via `Handle(Geom_Hyperbola)::DownCast`.
+- **OCCT:** `Geom_Hyperbola`, accessed via `Handle(Geom_Hyperbola)::DownCast`.
 - **Example:**
   ```swift
   if let curve = Curve3D.hyperbola(center: .zero, normal: SIMD3(0, 0, 1),
@@ -716,7 +716,7 @@ public var parabolaProperties: ParabolaProperties { get }
 Meaningful only when the curve wraps a `Geom_Parabola`. Accessing members on a non-parabola returns zero.
 
 - **Returns:** A `ParabolaProperties` value backed by the same internal handle.
-- **OCCT:** `Geom_Parabola` — accessed via `Handle(Geom_Parabola)::DownCast`.
+- **OCCT:** `Geom_Parabola`, accessed via `Handle(Geom_Parabola)::DownCast`.
 - **Example:**
   ```swift
   if let curve = Curve3D.parabola(vertex: .zero, normal: SIMD3(0, 0, 1), focal: 3) {
@@ -863,7 +863,7 @@ public var lineProperties: LineProperties { get }
 Meaningful only when the curve wraps a `Geom_Line`. Accessing members on a non-line returns zero.
 
 - **Returns:** A `LineProperties` value backed by the same internal handle.
-- **OCCT:** `Geom_Line` — accessed via `Handle(Geom_Line)::DownCast`.
+- **OCCT:** `Geom_Line`, accessed via `Handle(Geom_Line)::DownCast`.
 - **Example:**
   ```swift
   if let curve = Curve3D.line(origin: .zero, direction: SIMD3(1, 0, 0)) {
@@ -920,7 +920,7 @@ Mutates the line's direction in place.
 public func setDirection(_ d: SIMD3<Double>) -> Bool
 ```
 
-- **Parameters:** `d` — new direction (will be normalised by OCCT via `gp_Dir`; must be non-zero).
+- **Parameters:** `d`, new direction (will be normalised by OCCT via `gp_Dir`; must be non-zero).
 - **Returns:** `true` on success, `false` if the curve is not a line or `d` is degenerate.
 - **OCCT:** `Geom_Line::SetDirection`.
 - **Example:**
@@ -941,7 +941,7 @@ Mutates the line's origin point in place.
 public func setLocation(_ p: SIMD3<Double>) -> Bool
 ```
 
-- **Parameters:** `p` — new origin point.
+- **Parameters:** `p`, new origin point.
 - **Returns:** `true` on success, `false` if the curve is not a line.
 - **OCCT:** `Geom_Line::SetLocation`.
 - **Example:**
@@ -1066,7 +1066,7 @@ public var bezierWeights: [Double]? { get }
 ```
 
 - **Returns:** Array of weights (one per pole), or `nil` if the curve is non-rational or not a Bézier.
-- **OCCT:** `Geom_BezierCurve::Weight` (iterated) — returns `nil` when the curve is non-rational.
+- **OCCT:** `Geom_BezierCurve::Weight` (iterated), returns `nil` when the curve is non-rational.
 - **Example:**
   ```swift
   if let curve = Curve3D.bezier(poles: [SIMD3(0,0,0), SIMD3(1,1,0), SIMD3(2,0,0)],
@@ -1145,7 +1145,7 @@ Whether the Bézier curve is at least C`n` continuous.
 public func bezierIsCN(_ n: Int) -> Bool
 ```
 
-- **Parameters:** `n` — required continuity order.
+- **Parameters:** `n`, required continuity order.
 - **Returns:** `true` if the curve is at least C`n`; `false` for non-Bézier curves.
 - **OCCT:** `Geom_BezierCurve::IsCN`.
 - **Example:**
@@ -1171,8 +1171,8 @@ public func bezierInsertPoleBefore(_ index: Int, point: SIMD3<Double>) -> Bool
 Modifies the underlying `Geom_BezierCurve` in place, increasing the pole count by one and raising the degree by one.
 
 - **Parameters:**
-  - `index` — 1-based insertion position (the new pole is placed before this index).
-  - `point` — new control point position.
+  - `index`: 1-based insertion position (the new pole is placed before this index).
+  - `point`: new control point position.
 - **Returns:** `true` on success, `false` if the curve is not a Bézier or the index is out of range.
 - **OCCT:** `Geom_BezierCurve::InsertPoleAfter` (called with `index − 1` to implement before semantics).
 - **Example:**
@@ -1218,9 +1218,9 @@ public func bezierSetPoleWithWeight(index: Int, point: SIMD3<Double>, weight: Do
 ```
 
 - **Parameters:**
-  - `index` — 1-based pole index.
-  - `point` — new control point position.
-  - `weight` — new weight for the pole (must be > 0).
+  - `index`: 1-based pole index.
+  - `point`: new control point position.
+  - `weight`: new weight for the pole (must be > 0).
 - **Returns:** `true` on success, `false` if the curve is not a Bézier, the index is out of range, or the weight is non-positive.
 - **OCCT:** `Geom_BezierCurve::SetPole` + `Geom_BezierCurve::SetWeight`.
 - **Example:**
@@ -1245,7 +1245,7 @@ public func bsplinePeriodicNormalization(_ u: Double) -> Double?
 
 Maps an arbitrary parameter value into the curve's fundamental period `[first, first + period)`.
 
-- **Parameters:** `u` — raw parameter value.
+- **Parameters:** `u`, raw parameter value.
 - **Returns:** Normalized parameter in the fundamental period, or `nil` if the curve is not a periodic B-spline.
 - **OCCT:** `Geom_BSplineCurve::PeriodicNormalization`.
 - **Example:**
@@ -1269,9 +1269,9 @@ public func bsplineIsG1(tFirst: Double, tLast: Double, angularTolerance: Double 
 Uses OCCT's `Geom_BSplineCurve::IsG1` to verify that the curve's tangent direction changes by at most `angularTolerance` radians everywhere in `[tFirst, tLast]`.
 
 - **Parameters:**
-  - `tFirst` — start of parameter range.
-  - `tLast` — end of parameter range.
-  - `angularTolerance` — angular tolerance in radians (default `0.01`).
+  - `tFirst`: start of parameter range.
+  - `tLast`: end of parameter range.
+  - `angularTolerance`: angular tolerance in radians (default `0.01`).
 - **Returns:** `true` if G1 continuous on the range; `false` otherwise or if the curve is not a B-spline.
 - **OCCT:** `Geom_BSplineCurve::IsG1`.
 - **Example:**

@@ -1,4 +1,4 @@
-# OCCTSwift#570 — the healing paths that accept an approximation on `MaxError() <= tol`
+# OCCTSwift#570, the healing paths that accept an approximation on `MaxError() <= tol`
 
 Follow-up to [#522](https://github.com/SecondMouseAU/OCCTSwift/issues/522), which fixed
 `AdvApp2Var_ApproxF2var::mma2ce1_` filling the U Jacobi-maxima buffer from the V slot
@@ -10,8 +10,8 @@ wrong diagnostic.
 
 **Answer: yes, two of them returned a materially wrong surface, and the third is what put the other
 two on the collapsing continuity in the first place.** A face on an offset sphere came back from
-`ShapeCustom::ConvertToBSpline` as a degree-1, 2-pole fit deviating by **24** — the offset sphere's
-own diameter — and from `ShapeCustom::BSplineRestriction` as a **single-pole** periodic surface
+`ShapeCustom::ConvertToBSpline` as a degree-1, 2-pole fit deviating by **24**, the offset sphere's
+own diameter, and from `ShapeCustom::BSplineRestriction` as a **single-pole** periodic surface
 deviating by **23.9999 against a 0.01 tolerance**. Both were accepted as meeting tolerance. Both are
 reachable from six public Swift entry points. No kernel or bridge change is needed: `0019` already
 fixes all of it, and this issue's deliverable is the measurement plus the regression tests that pin
@@ -36,7 +36,7 @@ if (surf->IsKind(STANDARD_TYPE(Geom_OffsetSurface)))
 }
 ```
 
-So that path did not *degrade into* the collapsing continuity — it **started there**.
+So that path did not *degrade into* the collapsing continuity, it **started there**.
 
 ## Running it
 
@@ -70,7 +70,7 @@ clang++ -std=c++17 -ObjC++ -w -I... -L... \
   -lOCCT-macos -framework Foundation -framework AppKit -lz -lc++ -o /tmp/occt_570_stock
 ```
 
-`-DNo_Exception` matters — the production kernel is built with it
+`-DNo_Exception` matters, the production kernel is built with it
 (`BUILD_RELEASE_DISABLE_EXCEPTIONS=ON`), and an override TU compiled without it reintroduces
 `*_Raise_if` preconditions the shipped kernel does not have.
 
@@ -102,7 +102,7 @@ tolerance. The fit was a straight chord across the full 2π of longitude.
 | every other fixture, every continuity | unchanged | unchanged |
 
 One pole in a periodic direction: the whole U direction collapsed to a point. Identical at C0, C1 and
-C2 — with `degreePriority` the outer loop degrades continuity toward 0 whenever the requested one
+C2, with `degreePriority` the outer loop degrades continuity toward 0 whenever the requested one
 cannot meet the tolerance within `maxDegree`, and the full sphere cannot at degree 9. So requesting
 C2 was not protection.
 
@@ -114,11 +114,11 @@ kernels, including:
 - **Elementary surfaces never reach the approximator.** `ConvertSurfaceToBSpline` short-circuits
   `Geom_ElementarySurface` to `GeomConvert::SurfaceToBSplineSurface` (exact, rational) before the
   loop. Probed directly (section 2 of the transcript), a plain sphere collapses at C0 exactly like
-  its offset does — deg 1x10, dev 20 — so the short-circuit, not the input, is what kept planes,
+  its offset does, deg 1x10, dev 20, so the short-circuit, not the input, is what kept planes,
   cylinders, cones, spheres and tori out of this.
 - **The offset sphere trimmed clear of its poles** (V ∈ [-1, 1]) is unaffected, matching #522: the
   collapse needs the degenerate V-boundary isos that trimming removes. This is the whole reason the
-  existing tests missed it — every pre-existing test of these entry points uses a box or a cylinder.
+  existing tests missed it, every pre-existing test of these entry points uses a box or a cylinder.
 - C1 and C2 requests to `ConvertSurfaceToBSpline`, on every fixture. The reported `MaxError()` is
   uniformly a little larger after the fix (the interior contribution is counted for the first time),
   but no result changed.
@@ -138,17 +138,17 @@ Six public Swift entry points, all confirmed against the released `v1.15.18` ker
 
 `Issue570HealingApproxTests` covers all six. Run against the released kernel
 (`OCCTSWIFT_REMOTE=1 swift test --filter Issue570HealingApproxTests`) six of its seven tests fail
-with those figures, and the seventh — the pole-trimmed control — passes.
+with those figures, and the seventh, the pole-trimmed control, passes.
 
 ## The 1999 workaround: keep it
 
 The issue asked whether `cnt = GeomAbs_C0` is still needed now that the approximator's degree search
-works. Section 5 of the harness times the request it suppresses — `ConvertSurfaceToBSpline` at
-`surf->Continuity()` — on both kernels.
+works. Section 5 of the harness times the request it suppresses, `ConvertSurfaceToBSpline` at
+`surf->Continuity()`: on both kernels.
 
 All seven offset fixtures report `Continuity() == GeomAbs_CN`, which
 `ConvertSurfaceToBSpline` clamps to `GeomAbs_C3`. On both kernels that request completes in **under
-5 ms**, and its results are **identical before and after `0019`** — the collapse never reaches C2/C3,
+5 ms**, and its results are **identical before and after `0019`**, the collapse never reaches C2/C3,
 so the suppressed request was never affected by #522 at all.
 
 That is an argument for leaving the workaround alone, not for removing it:
@@ -157,7 +157,7 @@ That is an argument for leaving the workaround alone, not for removing it:
   for these inputs. The comment blames a hang; #522 is not a hang; retiring a hang guard needs a
   reproduction of the hang, and there is none. Seven fixtures that do not hang either way is not that.
 - Post-`0019` the workaround now **costs nothing measurable**. Forced C0 returns deg 13x10 where the
-  own-continuity request returns 15x12 — a slightly coarser fit, 1.21e-7 against 1.37e-8, both
+  own-continuity request returns 15x12, a slightly coarser fit, 1.21e-7 against 1.37e-8, both
   comfortably inside the 1e-6 tolerance.
 
 What the measurement *does* establish is worth recording: the forced C0 is exactly what routed every
@@ -167,5 +167,5 @@ defect, found in 2026, reachable from this wrapper. It is correct today and it s
 ## Not filed upstream
 
 `0019` is already filed as [OCCT#1418](https://github.com/Open-Cascade-SAS/OCCT/pull/1418) and fixes
-every row above. Nothing here is a separate kernel defect — the three healing sites are behaving
+every row above. Nothing here is a separate kernel defect, the three healing sites are behaving
 correctly given a correct `MaxError()`.

@@ -12,7 +12,7 @@ struct StressNilPropagationTests {
 
     @Test func failedFilletFedToBoolean() {
         let box = standardBox()
-        let badFillet = box.filleted(radius: 999.0) // nil — radius too large
+        let badFillet = box.filleted(radius: 999.0) // nil, radius too large
         #expect(badFillet == nil)
     }
 
@@ -22,7 +22,7 @@ struct StressNilPropagationTests {
         // Normal subtract works
         if let result = box.subtracting(sphere) {
             #expect(result.isValid)
-            // Now try to fillet the result — should succeed or return nil, not crash
+            // Now try to fillet the result, should succeed or return nil, not crash
             let filleted = result.filleted(radius: 0.5)
             if let f = filleted { #expect(f.isValid) }
         }
@@ -30,7 +30,7 @@ struct StressNilPropagationTests {
 
     @Test func drillAfterFailedShell() {
         let box = standardBox()
-        // Shell with thickness larger than half the box — may fail
+        // Shell with thickness larger than half the box, may fail
         let badShell = box.shelled(thickness: -6.0)
         if let s = badShell {
             // If it succeeded, try to drill it
@@ -73,7 +73,7 @@ struct StressNilPropagationTests {
         let b1 = Shape.box(width: 10, height: 10, depth: 10)!
         let b2 = Shape.box(origin: SIMD3(100, 100, 100), width: 10, height: 10, depth: 10)!
         let result = b1.intersection(b2)
-        // Disjoint shapes — should produce empty or nil
+        // Disjoint shapes, should produce empty or nil
         if let r = result {
             if let vol = r.volume { #expect(vol < 0.001) }
         }
@@ -153,7 +153,7 @@ struct StressEmptyContainerTests {
     @Test func thruSectionsNoSections() {
         let loft = ThruSectionsBuilder(isSolid: true, isRuled: false)
         let ok = loft.build()
-        // Guard prevents OCCT segfault — returns false for < 2 sections
+        // Guard prevents OCCT segfault, returns false for < 2 sections
         #expect(!ok)
         #expect(loft.shape == nil)
     }
@@ -170,13 +170,13 @@ struct StressEmptyContainerTests {
     }
 
     @Test func cellsBuilderEmpty() {
-        // Empty array returns nil — guard prevents OCCT segfault
+        // Empty array returns nil, guard prevents OCCT segfault
         let builder = CellsBuilder(shapes: [])
         #expect(builder == nil)
     }
 
     @Test func emptyWireRectangle() {
-        // Very tiny rectangle — approaches empty
+        // Very tiny rectangle, approaches empty
         let wire = Wire.rectangle(width: 1e-15, height: 1e-15)
         if let w = wire { _ = w.length }
     }
@@ -245,7 +245,7 @@ struct StressInvalidParameterTests {
         let domain = curve.domain
         // Evaluate slightly outside
         let pt = curve.point(at: domain.upperBound + 10.0)
-        // Should return something or NaN — not crash
+        // Should return something or NaN, not crash
         _ = pt
     }
 
@@ -263,13 +263,13 @@ struct StressInvalidParameterTests {
     @Test func booleanIdenticalPosition() {
         let b1 = Shape.box(width: 10, height: 10, depth: 10)!
         let b2 = Shape.box(width: 10, height: 10, depth: 10)!
-        // Same position — union should produce roughly same volume
+        // Same position, union should produce roughly same volume
         let result = b1.union(b2)
         if let r = result { #expect(r.isValid) }
     }
 
     // #345: a zero-length direction/normal vector reaching gp_Dir's constructor throws
-    // Standard_ConstructionError with no OCCT-side catch — an uncaught C++ exception
+    // Standard_ConstructionError with no OCCT-side catch, an uncaught C++ exception
     // crossing the bridge boundary is a guaranteed std::terminate()/abort() (SIGABRT).
     // These exercise bridge entry points that used to construct gp_Dir directly from
     // caller doubles with no try/catch.
@@ -360,7 +360,7 @@ struct StressUnusualInputTests {
               let w2 = Wire.rectangle(width: 5, height: 5),
               let s1 = Shape.fromWire(w1), let s2 = Shape.fromWire(w2) else { return }
         let result = s1.union(s2)
-        // May fail for non-solid inputs — should not crash
+        // May fail for non-solid inputs, should not crash
         if let r = result { _ = r.isValid }
     }
 
@@ -375,7 +375,7 @@ struct StressUnusualInputTests {
         guard let wire = Wire.rectangle(width: 10, height: 10),
               let shape = Shape.fromWire(wire) else { return }
         let vol = shape.volume
-        // Wire has no volume — should be nil or 0
+        // Wire has no volume, should be nil or 0
         if let v = vol { #expect(v <= 0.001) }
     }
 
@@ -383,7 +383,7 @@ struct StressUnusualInputTests {
         guard let wire = Wire.rectangle(width: 10, height: 10),
               let shape = Shape.fromWire(wire) else { return }
         let mesh = shape.mesh(linearDeflection: 0.5)
-        // Wire can't be meshed — should return nil
+        // Wire can't be meshed, should return nil
         _ = mesh
     }
 
@@ -391,7 +391,7 @@ struct StressUnusualInputTests {
         let box = standardBox()
         guard let section = SectionBuilder(shape1: box, shape2: box) else { return }
         let result = section.build()
-        // Section of shape with itself — edge case
+        // Section of shape with itself, edge case
         if let r = result { _ = r.isValid }
     }
 
@@ -441,7 +441,7 @@ struct StressUnifySameDomainNullPCurveTests {
 
     // #348: ShapeUpgrade_UnifySameDomain::IntUnifyFaces (and its SplitWire helper) called
     // BRep_Tool::CurveOnSurface(...)->D1()/->Value() to disambiguate between multiple
-    // candidate next-edges without checking whether the returned pcurve handle was null —
+    // candidate next-edges without checking whether the returned pcurve handle was null,
     // an edge with no pcurve on the current reference face (the common case for a raw
     // mesh-sewn solid) SIGSEGVs deterministically. Fixed in the kernel: carried as patch 0013,
     // retired at the OCCT 8.0.1 re-pin once it shipped upstream as OCCT#1392.

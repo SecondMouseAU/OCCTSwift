@@ -1,9 +1,9 @@
 ---
-title: Surface — Advanced Construction
+title: Surface. Advanced Construction
 parent: API Reference
 ---
 
-# Surface — Advanced Construction
+# Surface. Advanced Construction
 
 This page covers the higher-level surface construction APIs: energy-minimising plate and NLPlate
 surfaces, Bezier and BSpline fills, face-from-surface conversions, constrained geometry factories,
@@ -30,11 +30,11 @@ public static func plateThrough(
 ) -> Surface?
 ```
 
-Unlike the grid-based `fromPointGrid`, the points need no ordering or row/column counts — suitable
+Unlike the grid-based `fromPointGrid`, the points need no ordering or row/column counts, suitable
 for scattered probe data, feature points, or any unstructured point set. See also the
 [Surfaces from Points](../guides/cookbook/surfaces-from-points.md) cookbook page.
 
-- **Parameters:** `points` — 3D point cloud (minimum 3); `degree` — maximum polynomial degree; `tolerance` — approximation tolerance.
+- **Parameters:** `points`, 3D point cloud (minimum 3); `degree`, maximum polynomial degree; `tolerance`, approximation tolerance.
 - **Returns:** BSpline surface, or `nil` if fewer than 3 points or `GeomPlate_MakeApprox` fails.
 - **OCCT:** `GeomPlate_BuildPlateSurface` + `GeomPlate_PointConstraint` + `GeomPlate_MakeApprox`.
 - **Example:**
@@ -57,7 +57,7 @@ patch, which is the one value that stops `AdvApp2Var_ApproxAFunc2Var` from actin
 criterion, so a violated tolerance and a satisfied one produced the same surface. A 25-point wavy
 plate asked for `tolerance: 0.01` came back deviating `0.072`.
 
-Verify it rather than assume it — the fit is a least-squares approximation, not an interpolation,
+Verify it rather than assume it, the fit is a least-squares approximation, not an interpolation,
 and a plate that genuinely cannot be fitted still returns its best effort:
 
 ```swift
@@ -69,8 +69,8 @@ let points: [SIMD3<Double>] = (0..<5).flatMap { i in
 }
 if let plate = Surface.plateThrough(points, degree: 3, tolerance: 0.01) {
     let worst = points.compactMap { plate.projectPoint($0)?.distance }.max() ?? 0
-    print(worst)                // 0.0032 — inside tolerance
-    print(plate.uPoleCount)     // 16 — more than one degree-8 patch, so it did subdivide
+    print(worst)                // 0.0032, inside tolerance
+    print(plate.uPoleCount)     // 16, more than one degree-8 patch, so it did subdivide
 }
 ```
 
@@ -80,7 +80,7 @@ if let plate = Surface.plateThrough(points, degree: 3, tolerance: 0.01) {
 
 ### `nlPlateDeformed(constraints:resolutionOrder:tolerance:)`
 
-Deforms this surface to pass through target positions using the non-linear plate solver (NLPlate G0 — position-only constraints).
+Deforms this surface to pass through target positions using the non-linear plate solver (NLPlate G0, position-only constraints).
 
 ```swift
 public func nlPlateDeformed(
@@ -107,7 +107,7 @@ except where pulled by the constraints.
       let face = bumped.toFace()
   }
   ```
-- **Note:** Distinct from fitting a fresh surface to a point set — the existing parametrisation is preserved.
+- **Note:** Distinct from fitting a fresh surface to a point set, the existing parametrisation is preserved.
 
 ---
 
@@ -193,7 +193,7 @@ public static func bezierFill(
 
 The four curves must be Bezier curves forming a closed boundary (connected end-to-end in order).
 
-- **Parameters:** `c1`–`c4` — four Bezier boundary curves in order; `style` — fill style.
+- **Parameters:** `c1`–`c4`, four Bezier boundary curves in order; `style`, fill style.
 - **Returns:** Bezier surface, or `nil` if any curve is not Bezier or the fill fails.
 - **OCCT:** `GeomFill_BezierCurves` (4-curve constructor).
 - **Example:**
@@ -217,7 +217,7 @@ public static func bezierFill(
 ) -> Surface?
 ```
 
-- **Parameters:** `c1`, `c2` — two opposing Bezier boundary curves; `style` — fill style.
+- **Parameters:** `c1`, `c2`, two opposing Bezier boundary curves; `style`, fill style.
 - **Returns:** Bezier surface, or `nil` on failure.
 - **OCCT:** `GeomFill_BezierCurves` (2-curve constructor).
 - **Example:**
@@ -272,7 +272,7 @@ spans from `curve1` to `curve2` in the V direction. See also the
 [Gordon Surfaces](../guides/cookbook/gordon-surfaces.md) cookbook for the full fill-vs-Gordon
 decision guide.
 
-- **Parameters:** `curve1`, `curve2` — BSpline boundary curves; `style` — fill style.
+- **Parameters:** `curve1`, `curve2`, BSpline boundary curves; `style`, fill style.
 - **Returns:** BSpline surface, or `nil` if either curve is not BSpline or fill fails.
 - **OCCT:** `GeomFill_BSplineCurves` (2-curve constructor).
 - **Example:**
@@ -300,7 +300,7 @@ public static func bsplineFill(
 
 The four curves must be BSpline and connected end-to-end in order (bottom, right, top, left).
 
-- **Parameters:** `curves` — four BSpline boundary curves in order; `style` — fill style.
+- **Parameters:** `curves`, four BSpline boundary curves in order; `style`, fill style.
 - **Returns:** BSpline surface, or `nil` on failure.
 - **OCCT:** `GeomFill_BSplineCurves` (4-curve constructor).
 - **Example:**
@@ -327,7 +327,7 @@ Delegates to `Shape.face(from:uRange:vRange:tolerance:)` with the full `domain.u
 `domain.vMin...vMax` ranges. The standard way to convert a parametric `Surface` to a renderable
 or sewable `Shape`.
 
-- **Parameters:** `tolerance` — face creation tolerance.
+- **Parameters:** `tolerance`, face creation tolerance.
 - **Returns:** Face shape covering the surface's full UV domain, or `nil` on failure.
 - **OCCT:** `BRepBuilderAPI_MakeFace` (via `Shape.face`).
 - **Example:**
@@ -354,7 +354,7 @@ public func toFace(
 Use to cut out a rectangular UV sub-patch of the surface. For a non-rectangular region, use
 `toFace(uvBoundary:)`.
 
-- **Parameters:** `uRange` — U parameter range; `vRange` — V parameter range; `tolerance` — tolerance.
+- **Parameters:** `uRange`, U parameter range; `vRange`, V parameter range; `tolerance`, tolerance.
 - **Returns:** Face shape, or `nil` on failure.
 - **OCCT:** `BRepBuilderAPI_MakeFace` (via `Shape.face`).
 - **Example:**
@@ -375,11 +375,11 @@ public func toFace(uvBoundary: [SIMD2<Double>]) -> Shape?
 ```
 
 Each segment of the polygon becomes a 2D edge carrying a pcurve on the surface, so the face
-footprint follows the polygon exactly — unlike `toFace(uRange:vRange:)`, which only makes
+footprint follows the polygon exactly, unlike `toFace(uRange:vRange:)`, which only makes
 rectangular UV patches. Ideal for reconstructing a fitted analytic surface trimmed to the
 real boundary of a region.
 
-- **Parameters:** `uvBoundary` — closed polygon of (u, v) points (minimum 3; the closing segment is implicit).
+- **Parameters:** `uvBoundary`, closed polygon of (u, v) points (minimum 3; the closing segment is implicit).
 - **Returns:** The trimmed face, or `nil` if fewer than 3 points or construction fails.
 - **OCCT:** `OCCTShapeCreateFaceFromSurfaceUVPolygon` → `BRepBuilderAPI_MakeFace` with pcurve-backed edges.
 - **Example:**
@@ -408,7 +408,7 @@ public static func conicalSurface(
 ) -> Surface?
 ```
 
-- **Parameters:** `origin` — apex axis origin; `direction` — axis direction; `semiAngle` — half-angle in radians (must be in (0, π/2)); `radius` — base radius at the origin.
+- **Parameters:** `origin`, apex axis origin; `direction`, axis direction; `semiAngle`, half-angle in radians (must be in (0, π/2)); `radius`, base radius at the origin.
 - **Returns:** Conical surface, or `nil` if `semiAngle` is out of range or construction fails.
 - **OCCT:** `Geom_ConicalSurface` with `gp_Ax3`.
 - **Example:**
@@ -436,7 +436,7 @@ public static func conicalSurface(
 The axis runs from `point1` to `point2`. The cone is defined by radius `r1` at `point1` and `r2`
 at `point2`.
 
-- **Parameters:** `point1` — first axis point; `point2` — second axis point; `r1` — radius at `point1`; `r2` — radius at `point2`.
+- **Parameters:** `point1`, first axis point; `point2`, second axis point; `r1`, radius at `point1`; `r2`, radius at `point2`.
 - **Returns:** Conical surface, or `nil` on failure.
 - **OCCT:** `Geom_ConicalSurface` derived from the two-point-radii geometry.
 - **Example:**
@@ -463,7 +463,7 @@ public static func cylindricalSurface(
 ) -> Surface?
 ```
 
-- **Parameters:** `origin` — axis base point; `direction` — axis direction; `radius` — cylinder radius.
+- **Parameters:** `origin`, axis base point; `direction`, axis direction; `radius`, cylinder radius.
 - **Returns:** Cylindrical surface, or `nil` on failure.
 - **OCCT:** `Geom_CylindricalSurface` with `gp_Ax3`.
 - **Example:**
@@ -490,7 +490,7 @@ public static func cylindricalSurface(
 The axis passes through `point1` and `point2`; the radius is the distance from `point3` to
 the axis.
 
-- **Parameters:** `point1` — first axis point; `point2` — second axis point; `point3` — point defining the radius.
+- **Parameters:** `point1`, first axis point; `point2`, second axis point; `point3`, point defining the radius.
 - **Returns:** Cylindrical surface, or `nil` on failure.
 - **OCCT:** `Geom_CylindricalSurface` from the three-point geometry.
 - **Example:**
@@ -509,7 +509,7 @@ the axis.
 ### `Surface.planeFromPoints(_:_:_:)`
 
 Creates a plane surface through three points. Canonical implementation for the 3-point
-constructor pair — `planeFrom3Points(p1:p2:p3:)` (below) is a labeled-argument spelling and
+constructor pair, `planeFrom3Points(p1:p2:p3:)` (below) is a labeled-argument spelling and
 delegates here (#421); a ground-truth check against the pinned OCCT headers confirmed
 `GC_MakePlane` and `gce_MakePln`'s 3-point overloads agree on every case tried (well-separated,
 collinear, and coincident points).
@@ -522,7 +522,7 @@ public static func planeFromPoints(
 ) -> Surface?
 ```
 
-- **Parameters:** `point1`, `point2`, `point3` — three non-collinear points.
+- **Parameters:** `point1`, `point2`, `point3`, three non-collinear points.
 - **Returns:** Plane surface, or `nil` if points are collinear (including coincident).
 - **OCCT:** `GC_MakePlane(gp_Pnt, gp_Pnt, gp_Pnt)`.
 - **Example:**
@@ -539,7 +539,7 @@ public static func planeFromPoints(
 ### `Surface.planeFromPointNormal(point:normal:)`
 
 Creates a plane surface from a point and normal direction. Canonical implementation for the
-point+normal constructor pair — [`Surface.plane(origin:normal:)`](Surface.md) is an
+point+normal constructor pair, [`Surface.plane(origin:normal:)`](Surface.md) is an
 unlabeled-positional spelling and delegates here (#421).
 
 ```swift
@@ -549,7 +549,7 @@ public static func planeFromPointNormal(
 ) -> Surface?
 ```
 
-- **Parameters:** `point` — a point on the plane; `normal` — plane normal direction.
+- **Parameters:** `point`, a point on the plane; `normal`, plane normal direction.
 - **Returns:** Plane surface, or `nil` if `normal` has zero (or near-zero) length.
 - **OCCT:** `GC_MakePlane(gp_Pnt, gp_Dir)`.
 - **Example:**
@@ -579,7 +579,7 @@ public static func trimmedCone(
 Unlike `conicalSurface`, the result is a `Geom_RectangularTrimmedSurface` already bounded to the
 axial extent between `point1` and `point2`.
 
-- **Parameters:** `point1` — base centre (with radius `r1`); `point2` — top centre (with radius `r2`); `r1`, `r2` — respective radii.
+- **Parameters:** `point1`, base centre (with radius `r1`); `point2`, top centre (with radius `r2`); `r1`, `r2`, respective radii.
 - **Returns:** Bounded trimmed conical surface, or `nil` on failure.
 - **OCCT:** `GC_MakeTrimmedCone`.
 - **Example:**
@@ -607,7 +607,7 @@ public static func trimmedCylinder(
 ) -> Surface?
 ```
 
-- **Parameters:** `origin` — base centre; `direction` — axis direction; `radius` — cylinder radius; `height` — axial height (negative = downward).
+- **Parameters:** `origin`, base centre; `direction`, axis direction; `radius`, cylinder radius; `height`, axial height (negative = downward).
 - **Returns:** Bounded trimmed cylindrical surface, or `nil` on failure.
 - **OCCT:** `GC_MakeTrimmedCylinder`.
 - **Example:**
@@ -641,7 +641,7 @@ the requested continuity reports exactly those two rather than nothing.
   (ascending, bounded by the surface's own U/V domain) and `uSplitIndices`/`vSplitIndices`
   (1-based into the surface's own knot tables, so
   `uSplitParams[i] == bsplineUKnot(index: uSplitIndices[i])`).
-- **OCCT:** `GeomConvert_BSplineSurfaceKnotSplitting` — the sole wrapper of it, since #562 deleted
+- **OCCT:** `GeomConvert_BSplineSurfaceKnotSplitting`, the sole wrapper of it, since #562 deleted
   the second family (`bsplineKnotSplitsU`/`bsplineKnotSplitsV`/`bsplineKnotSplitValues`) that also
   drove it. The indices are what that family carried and this call previously discarded.
 - **Continuity range (#480):** the continuity is a *derivative order*, and a knot splits only when
@@ -687,7 +687,7 @@ project's Release kernel, so without this check it would silently join the *poly
 through a rational patch's control net (dropping its weights) and report success (#725). Weights are
 never clamped or dropped: a rational patch is refused outright, not silently approximated.
 
-- **Parameters:** `patches` — 2D array of Bezier surfaces (row-major order; must equal `rows * cols`); `rows` — patch row count; `cols` — patch column count.
+- **Parameters:** `patches`, 2D array of Bezier surfaces (row-major order; must equal `rows * cols`); `rows`, patch row count; `cols`, patch column count.
 - **Returns:** Combined BSpline surface, or `nil` if the count doesn't match `rows * cols`, any patch is rational in either direction, or joining fails.
 - **OCCT:** `GeomConvert_CompBezierSurfacesToBSplineSurface`.
 - **Example:**
@@ -730,7 +730,7 @@ Tries to recognise this BSpline or Bezier surface as a plane, cylinder, cone, sp
 public func convertToAnalytical(tolerance: Double = 1e-4) -> AnalyticalConversion?
 ```
 
-- **Parameters:** `tolerance` — recognition tolerance.
+- **Parameters:** `tolerance`, recognition tolerance.
 - **Returns:** `AnalyticalConversion` with the recognised surface and its `gap` (max deviation), or `nil` if not recognisable.
 - **OCCT:** `ShapeCustom_Surface::ConvertToAnalytical`.
 - **Example:**
@@ -764,7 +764,7 @@ Analyses and splits a BSpline surface at continuity breaks.
 public func splitByContinuity(criterion: Int = 2, tolerance: Double = 1e-6) -> ContinuitySplitResult
 ```
 
-- **Parameters:** `criterion` — continuity level (0=C0, 1=C1, 2=C2, 3=C3); `tolerance` — tolerance for continuity checking.
+- **Parameters:** `criterion`, continuity level (0=C0, 1=C1, 2=C2, 3=C3); `tolerance`, tolerance for continuity checking.
 - **Returns:** `ContinuitySplitResult` with `wasSplit`, `alreadyMeetsCriterion`, `uSplitCount`, and `vSplitCount`.
 - **OCCT:** `BSplSLib::SplitByContinuity`.
 - **Example:**
@@ -806,7 +806,7 @@ Number of split values found along U.
 
 Number of split values found along V.
 
-- **Parameters:** `criterion` — continuity level (0=C0, 1=C1, 2=C2, 3=C3); `tolerance` — tolerance for continuity checking.
+- **Parameters:** `criterion`, continuity level (0=C0, 1=C1, 2=C2, 3=C3); `tolerance`, tolerance for continuity checking.
 - **Returns:** `ContinuitySplitResult` with `wasSplit`, `alreadyMeetsCriterion`, `uSplitCount`, and `vSplitCount`.
 - **OCCT:** `BSplSLib::SplitByContinuity`.
 - **Example:**
@@ -836,12 +836,12 @@ public func continuityWith(
 ) -> ContinuityAnalysis?
 ```
 
-`order` selects which classes are measured, not just a ceiling — one branch of
+`order` selects which classes are measured, not just a ceiling, one branch of
 `LocalAnalysis_SurfaceContinuity` runs per call, and `ContinuityAnalysis.holds(_:)` reports `nil`
 for anything outside it. See [Surface-Analysis](Surface-Analysis.md#continuityanalysis) for the
 per-order measured sets and the `.c2`/second-derivative caveat.
 
-- **Parameters:** `other` — second surface; `u1`, `v1` — UV parameters on this surface; `u2`, `v2` — UV parameters on `other`; `order` — the class to measure (default `.c2`).
+- **Parameters:** `other`, second surface; `u1`, `v1`, UV parameters on this surface; `u2`, `v2`, UV parameters on `other`; `order`, the class to measure (default `.c2`).
 - **Returns:** `ContinuityAnalysis`, or `nil` if analysis fails.
 - **OCCT:** `LocalAnalysis_SurfaceContinuity`.
 - **Example:**
@@ -870,7 +870,7 @@ public static func nSections(curves: [Curve3D], params: [Double]) -> Surface?
 `curves` and `params` must have the same length (minimum 2). The `params` array assigns a V
 parameter to each section, typically in `0...1` order.
 
-- **Parameters:** `curves` — section curves (minimum 2); `params` — V parameter for each section (same count as `curves`).
+- **Parameters:** `curves`, section curves (minimum 2); `params`, V parameter for each section (same count as `curves`).
 - **Returns:** BSpline surface, or `nil` if counts don't match or `GeomFill_NSections` fails.
 - **OCCT:** `GeomFill_NSections`.
 - **Example:**
@@ -897,7 +897,7 @@ public static func nSectionsInfo(
 ) -> (poleCount: Int, knotCount: Int, degree: Int)?
 ```
 
-- **Parameters:** `curves` — section curves (minimum 2); `params` — V parameters (same count).
+- **Parameters:** `curves`, section curves (minimum 2); `params`, V parameters (same count).
 - **Returns:** Tuple of `(poleCount, knotCount, degree)`, or `nil` on failure.
 - **OCCT:** `GeomFill_NSections` (introspection without surface extraction).
 - **Example:**
@@ -932,7 +932,7 @@ neither does `Solve()`. `IncrementalSolve` does, but it is a different solver ra
 on this one, and it is wrapped separately as
 [`nlPlateDeformedIncremental(constraints:maxOrder:initConstraintOrder:nbIncrements:)`](#nlplatedeformedincrementalconstraintsmaxorderinitconstraintordernbincrements).
 
-- **Parameters:** `constraints` — array of constraint tuples (non-empty); `tolerance` — approximation tolerance.
+- **Parameters:** `constraints`, array of constraint tuples (non-empty); `tolerance`, approximation tolerance.
 - **Returns:** New deformed surface, or `nil` on failure.
 - **OCCT:** `NLPlate_NLPlate` + `NLPlate_HPG2Constraint` + `GeomPlate_MakeApprox`.
 - **Example:**
@@ -967,7 +967,7 @@ derivatives + 3 second derivatives + 4 third derivatives). Achieves G3-continuou
 
 There is no iteration count, for the same reason as `nlPlateDeformedG2(constraints:tolerance:)`.
 
-- **Parameters:** `constraints` — G0+G1+G2+G3 constraint tuples (non-empty); `tolerance` — approximation tolerance.
+- **Parameters:** `constraints`, G0+G1+G2+G3 constraint tuples (non-empty); `tolerance`, approximation tolerance.
 - **Returns:** New deformed surface, or `nil` on failure.
 - **OCCT:** `NLPlate_NLPlate` + `NLPlate_HPG3Constraint` + `GeomPlate_MakeApprox`.
 - **Example:**
@@ -1001,7 +1001,7 @@ public func nlPlateDeformedIncremental(
 Progressively adds constraints for better convergence on challenging constraint sets where the
 standard `nlPlateDeformed` may not converge well.
 
-- **Parameters:** `constraints` — G0 constraint pairs (non-empty); `maxOrder` — maximum polynomial order; `initConstraintOrder` — initial constraint order; `nbIncrements` — number of increments.
+- **Parameters:** `constraints`, G0 constraint pairs (non-empty); `maxOrder`, maximum polynomial order; `initConstraintOrder`, initial constraint order; `nbIncrements`, number of increments.
 - **Returns:** New deformed surface, or `nil` on failure.
 - **OCCT:** `NLPlate_NLPlate::IncrementalSolve` + `GeomPlate_MakeApprox`.
 - **Example:**
@@ -1031,7 +1031,7 @@ public func nlPlateDerivative(
 Solves the NLPlate problem with the given G0 constraints and returns the (iu, iv)-th partial
 derivative at (u, v) without approximating the surface.
 
-- **Parameters:** `constraints` — G0 constraint pairs; `u`, `v` — evaluation parameters; `iu`, `iv` — derivative orders in U and V.
+- **Parameters:** `constraints`, G0 constraint pairs; `u`, `v`, evaluation parameters; `iu`, `iv`, derivative orders in U and V.
 - **Returns:** Derivative vector, or `nil` on failure.
 - **OCCT:** `NLPlate_NLPlate::Evaluate`.
 - **Example:**
@@ -1058,9 +1058,9 @@ public static func generatedFromSections(
 ```
 
 Uses `GeomFill_Generator` (linear V-direction interpolation), which is simpler and faster than
-`nSections` but less flexible — the V blending is always linear between consecutive sections.
+`nSections` but less flexible, the V blending is always linear between consecutive sections.
 
-- **Parameters:** `curves` — section curves (minimum 2); `tolerance` — parametric tolerance.
+- **Parameters:** `curves`, section curves (minimum 2); `tolerance`, parametric tolerance.
 - **Returns:** Generated surface, or `nil` if fewer than 2 curves or `GeomFill_Generator` fails.
 - **OCCT:** `GeomFill_Generator`.
 - **Example:**
@@ -1088,10 +1088,10 @@ public static func degeneratedBoundaryValue(
 ) -> SIMD3<Double>
 ```
 
-Returns `point` regardless of `parameter` — models the apex of a cone or any other degenerate
+Returns `point` regardless of `parameter`, models the apex of a cone or any other degenerate
 pole boundary.
 
-- **Parameters:** `point` — the degenerate point; `first`, `last` — parameter range; `parameter` — evaluation parameter.
+- **Parameters:** `point`, the degenerate point; `first`, `last`, parameter range; `parameter`, evaluation parameter.
 - **Returns:** The degenerate point (always equal to `point`).
 - **OCCT:** `GeomFill_DegeneratedBound::Value`.
 - **Example:**
@@ -1106,7 +1106,7 @@ pole boundary.
 
 ### `Surface.isDegeneratedBoundary(point:first:last:)`
 
-Returns `true` — always, for degenerated boundaries defined by a single point.
+Returns `true`, always, for degenerated boundaries defined by a single point.
 
 ```swift
 public static func isDegeneratedBoundary(
@@ -1116,7 +1116,7 @@ public static func isDegeneratedBoundary(
 ) -> Bool
 ```
 
-- **Parameters:** `point` — the degenerate point; `first`, `last` — parameter range.
+- **Parameters:** `point`, the degenerate point; `first`, `last`, parameter range.
 - **Returns:** Always `true`.
 - **OCCT:** `GeomFill_DegeneratedBound::IsDegenerated`.
 - **Note:** Provided for API completeness when working with `GeomFill` boundary objects.
@@ -1136,7 +1136,7 @@ public func boundaryWithSurfaceEvaluate(
 ) -> (point: SIMD3<Double>, normal: SIMD3<Double>)?
 ```
 
-- **Parameters:** `curve2d` — a 2D curve lying on this surface; `first`, `last` — parameter range of the 2D curve; `parameter` — evaluation parameter.
+- **Parameters:** `curve2d`, a 2D curve lying on this surface; `first`, `last`, parameter range of the 2D curve; `parameter`, evaluation parameter.
 - **Returns:** Tuple of `(point, normal)` at the boundary parameter, or `nil` on failure.
 - **OCCT:** `GeomFill_BoundWithSurf::Value` + normal from the host surface.
 - **Example:**
@@ -1164,7 +1164,7 @@ public static func averagePlane(
 Returns the plane normal, origin, and UV bounding box. Also handles the collinear case, returning
 `isLine == true` with a line origin and direction.
 
-- **Parameters:** `points` — 3D points (minimum 3); `boundaryPointCount` — number of boundary points used for orientation (defaults to all points); `tolerance` — planarity check tolerance.
+- **Parameters:** `points`, 3D points (minimum 3); `boundaryPointCount`, number of boundary points used for orientation (defaults to all points); `tolerance`, planarity check tolerance.
 - **Returns:** `AveragePlaneResult`, or `nil` if the point set is degenerate.
 - **OCCT:** `GeomPlate_BuildAveragePlane`.
 - **Example:**
@@ -1185,7 +1185,7 @@ A point on the fitted line; meaningful only when `isLine` is `true` (the input p
 
 Unit direction of the fitted line; meaningful only when `isLine` is `true`.
 
-- **Parameters:** `points` — 3D points (minimum 3); `boundaryPointCount` — number of boundary points used for orientation (defaults to all points); `tolerance` — planarity check tolerance.
+- **Parameters:** `points`, 3D points (minimum 3); `boundaryPointCount`, number of boundary points used for orientation (defaults to all points); `tolerance`, planarity check tolerance.
 - **Returns:** `AveragePlaneResult`, or `nil` if the point set is degenerate.
 - **OCCT:** `GeomPlate_BuildAveragePlane`.
 - **Example:**
@@ -1208,7 +1208,7 @@ Computes point-to-surface extrema (nearest/farthest points).
 public func extremaPS(point: SIMD3<Double>) -> PointSurfaceExtrema
 ```
 
-- **Parameters:** `point` — the query point.
+- **Parameters:** `point`, the query point.
 - **Returns:** `PointSurfaceExtrema` with `isDone` and `count` (number of extremum solutions).
 - **OCCT:** `Extrema_ExtPS`.
 - **Example:**
@@ -1232,7 +1232,7 @@ Returns the Nth extremum from a point-surface extrema computation (1-based).
 public func extremaPSPoint(point: SIMD3<Double>, index: Int) -> ExtremaPointOnSurface
 ```
 
-- **Parameters:** `point` — the query point; `index` — 1-based extremum index.
+- **Parameters:** `point`, the query point; `index`, 1-based extremum index.
 - **Returns:** `ExtremaPointOnSurface` with `squareDistance`, `point`, `u`, and `v`.
 - **OCCT:** `Extrema_ExtPS::Point` / `SquareDistance`.
 - **Note:** Call `extremaPS(point:)` first to confirm `isDone` and obtain the valid `count`.
@@ -1247,7 +1247,7 @@ Computes surface-to-surface extrema.
 public func extremaSS(other: Surface) -> SurfaceSurfaceExtrema
 ```
 
-- **Parameters:** `other` — the second surface.
+- **Parameters:** `other`, the second surface.
 - **Returns:** `SurfaceSurfaceExtrema` with `isDone`, `isParallel`, and `count`.
 - **OCCT:** `Extrema_ExtSS`.
 - **Example:**
@@ -1271,7 +1271,7 @@ Returns the Nth extremum pair from a surface-surface extrema computation.
 public func extremaSSPoint(other: Surface, index: Int) -> Curve3D.ExtremaPointPair
 ```
 
-- **Parameters:** `other` — the second surface; `index` — 1-based extremum index.
+- **Parameters:** `other`, the second surface; `index`, 1-based extremum index.
 - **Returns:** `Curve3D.ExtremaPointPair` with `squareDistance`, `point1`, `param1`, `point2`, `param2`.
 - **OCCT:** `Extrema_ExtSS::Points` / `SquareDistance`.
 
@@ -1280,7 +1280,7 @@ public func extremaSSPoint(other: Surface, index: Int) -> Curve3D.ExtremaPointPa
 ### `Surface.coneFrom2PointsRadii(p1:p2:radius1:radius2:)`
 
 Creates a conical surface from 2 axis points and 2 radii. Equivalent to
-`conicalSurface(point1:point2:r1:r2:)` — as of #420 both call the same
+`conicalSurface(point1:point2:r1:r2:)`: as of #420 both call the same
 `GC_MakeConicalSurface` construction, kept as a separate `gce_Make`-style
 entry point.
 
@@ -1293,7 +1293,7 @@ public static func coneFrom2PointsRadii(
 ) -> Surface?
 ```
 
-- **Parameters:** `p1`, `p2` — axis points; `radius1` — radius at `p1`; `radius2` — radius at `p2`.
+- **Parameters:** `p1`, `p2`, axis points; `radius1`, radius at `p1`; `radius2`, radius at `p2`.
 - **Returns:** Conical surface, or `nil` on failure.
 - **OCCT:** `GC_MakeConicalSurface(gp_Pnt, gp_Pnt, Standard_Real, Standard_Real)`.
 - **Example:**
@@ -1310,7 +1310,7 @@ public static func coneFrom2PointsRadii(
 ### `Surface.cylinderFrom3Points(p1:p2:p3:)`
 
 Creates a cylindrical surface from 3 points. Equivalent to
-`cylindricalSurface(point1:point2:point3:)` — as of #420 both call the same
+`cylindricalSurface(point1:point2:point3:)`: as of #420 both call the same
 `GC_MakeCylindricalSurface` construction, kept as a separate `gce_Make`-style
 entry point.
 
@@ -1324,7 +1324,7 @@ public static func cylinderFrom3Points(
 
 The axis passes through `p1` and `p2`; `p3` defines the radius (its distance to the axis).
 
-- **Parameters:** `p1`, `p2` — axis points; `p3` — radius-defining point.
+- **Parameters:** `p1`, `p2`, axis points; `p3`, radius-defining point.
 - **Returns:** Cylindrical surface, or `nil` on failure.
 - **OCCT:** `GC_MakeCylindricalSurface(gp_Pnt, gp_Pnt, gp_Pnt)`.
 - **Example:**
@@ -1348,7 +1348,7 @@ public static func planeFromEquation(
 ) -> Surface?
 ```
 
-- **Parameters:** `a`, `b`, `c` — normal direction coefficients; `d` — plane offset.
+- **Parameters:** `a`, `b`, `c`, normal direction coefficients; `d`, plane offset.
 - **Returns:** Plane surface, or `nil` on failure.
 - **OCCT:** `gce_MakePln(Standard_Real, Standard_Real, Standard_Real, Standard_Real)`.
 - **Example:**
@@ -1374,7 +1374,7 @@ public static func planeFrom3Points(
 ) -> Surface?
 ```
 
-- **Parameters:** `p1`, `p2`, `p3` — three non-collinear points.
+- **Parameters:** `p1`, `p2`, `p3`, three non-collinear points.
 - **Returns:** Plane surface, or `nil` if points are collinear (including coincident).
 - **OCCT:** `GC_MakePlane(gp_Pnt, gp_Pnt, gp_Pnt)` (via `planeFromPoints`).
 - **Example:**
@@ -1399,7 +1399,7 @@ public static func serializeSurfaces(_ surfaces: [Surface]) -> String?
 The produced string can be stored and later restored with `deserializeSurfaces(_:)`. Uses OCCT's
 native binary-text stream format.
 
-- **Parameters:** `surfaces` — array of surfaces to serialise.
+- **Parameters:** `surfaces`, array of surfaces to serialise.
 - **Returns:** Serialised string, or `nil` on failure.
 - **OCCT:** `GeomTools_SurfaceSet::Write`.
 - **Example:**
@@ -1422,7 +1422,7 @@ Deserialises surfaces from a string produced by `serializeSurfaces(_:)`.
 public static func deserializeSurfaces(_ data: String) -> [Surface]?
 ```
 
-- **Parameters:** `data` — string produced by `serializeSurfaces(_:)`.
+- **Parameters:** `data`, string produced by `serializeSurfaces(_:)`.
 - **Returns:** Array of restored surfaces, or `nil` if parsing fails or the string is empty.
 - **OCCT:** `GeomTools_SurfaceSet::Read`.
 - **Example:**

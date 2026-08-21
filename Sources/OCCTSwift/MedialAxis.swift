@@ -195,7 +195,7 @@ public final class MedialAxis: @unchecked Sendable {
     ///     parameter range at exactly `maxPoints` evenly-spaced values rather than letting a
     ///     deflection criterion pick the count, so it always returns exactly this many points
     ///     (and nothing at all below 2). That is why an unservable count is rejected here rather
-    ///     than clamped the way the genuinely adaptive samplers clamp theirs — clamping this one
+    ///     than clamped the way the genuinely adaptive samplers clamp theirs, clamping this one
     ///     would hand back a different, coarser sampling than the caller asked for.
     /// - Returns: Array of 2D points along the arc, or empty on error.
     public func drawArc(at index: Int, maxPoints: Int = 32) -> [SIMD2<Double>] {
@@ -209,7 +209,7 @@ public final class MedialAxis: @unchecked Sendable {
 
     /// Sample points along all bisector arcs.
     ///
-    /// - Parameter maxPointsPerArc: Points requested per arc (default 32), at least 2 — the same
+    /// - Parameter maxPointsPerArc: Points requested per arc (default 32), at least 2, the same
     ///   fill-exactly request ``drawArc(at:maxPoints:)`` takes, not a capacity. The bound is on
     ///   the **total**: `arcCount * maxPointsPerArc` must not exceed
     ///   ``Sampling/maximumSampleCount``, else the result is empty (#558). Checking

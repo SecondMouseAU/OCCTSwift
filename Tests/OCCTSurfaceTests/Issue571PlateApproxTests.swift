@@ -2,22 +2,22 @@ import Testing
 import Foundation
 @testable import OCCTSwift
 
-/// #571 — the six plate entry points drive `GeomPlate_MakeApprox` directly rather than through
+/// #571, the six plate entry points drive `GeomPlate_MakeApprox` directly rather than through
 /// `GeomConvert_ApproxSurface`, and five of them passed `Nbmax = 1` with `dmax = tolerance * 10`.
 ///
 /// `Nbmax = 1` is the one value that disarms the algorithm: `AdvApp2Var_ApproxAFunc2Var` derives
 /// its cut decision from the patch cap, and at 1 it decides "keep this patch" whether or not the
-/// G0 criterion was satisfied — so the criterion is evaluated, violated, and ignored. `dmax` then
+/// G0 criterion was satisfied, so the criterion is evaluated, violated, and ignored. `dmax` then
 /// set the criterion's own threshold to `max(Tol3d, 10 * dmax)` = 100x the requested tolerance.
 /// Together they made `tolerance` unenforceable: measured at 7.2x the value asked for.
 ///
 /// These tests pin the contract at the public API, so a regression shows up as a surface that
 /// misses its tolerance rather than as an argument that looks plausible at the call site.
-@Suite("Issue 571 — plate approximation honours its tolerance")
+@Suite("Issue 571, plate approximation honours its tolerance")
 struct Issue571PlateApproxTests {
 
     /// A surface no single Bezier patch can fit: two full periods of a product of sines across a
-    /// 16x16 span. A gentler fixture is reproduced exactly by one patch, which hides the defect —
+    /// 16x16 span. A gentler fixture is reproduced exactly by one patch, which hides the defect,
     /// the previously-shipped plate tests all used 4-to-9-point near-planar sets for that reason.
     static var wavyPoints: [SIMD3<Double>] {
         var points: [SIMD3<Double>] = []
@@ -49,7 +49,7 @@ struct Issue571PlateApproxTests {
             Issue.record("plate build failed")
             return
         }
-        // Pre-#571 this measured 0.0724 — 7.2x the tolerance, reported as a success.
+        // Pre-#571 this measured 0.0724, 7.2x the tolerance, reported as a success.
         let deviation = Self.worstDeviation(of: surface, from: points)
         #expect(deviation <= tolerance,
                 "worst deviation \(deviation) exceeds requested tolerance \(tolerance)")
@@ -62,7 +62,7 @@ struct Issue571PlateApproxTests {
             return
         }
         // One patch of degree d has exactly d+1 poles per direction, so <= 9 at the degree cap of
-        // 8 means the fit never subdivided — which is what Nbmax = 1 forced regardless of error.
+        // 8 means the fit never subdivided, which is what Nbmax = 1 forced regardless of error.
         #expect(surface.uPoleCount > 9,
                 "uPoleCount \(surface.uPoleCount) means the fit stayed on a single Bezier patch")
     }
@@ -106,7 +106,7 @@ struct Issue571PlateApproxTests {
     func bothEntryPointsAgree() {
         let points = Self.wavyPoints
         // Shape.plateSurface(through:) and Shape.plateSurface(points:) are overloads of one name
-        // doing one job, but they reached GeomPlate_MakeApprox with different Nbmax and dmax —
+        // doing one job, but they reached GeomPlate_MakeApprox with different Nbmax and dmax,
         // 22x apart on accuracy for the same request until #571 gave them one contract.
         guard let through = Shape.plateSurface(through: points, tolerance: 0.01),
               let named = Shape.plateSurface(points: points, tolerance: 0.01) else {
@@ -124,7 +124,7 @@ struct Issue571PlateApproxTests {
     func curveConstrainedPlateHonoursTolerance() {
         // OCCTShapePlateCurves shared the same defective arguments; it is exercised through its
         // own entry point so the shared helper cannot regress for one caller only. The boundary
-        // is a warped octagon — a four-corner ring is reproduced by one patch and proves nothing.
+        // is a warped octagon, a four-corner ring is reproduced by one patch and proves nothing.
         var corners: [SIMD3<Double>] = []
         for i in 0..<8 {
             let angle = Double(i) * .pi / 4

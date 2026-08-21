@@ -2,7 +2,7 @@
 //  OCCTBridge_Properties.mm
 //  OCCTSwift
 //
-//  Extracted from OCCTBridge.mm — issue #99.
+//  Extracted from OCCTBridge.mm, issue #99.
 //
 //  v0.18 properties + projection + proximity cluster:
 //
@@ -17,7 +17,7 @@
 //  - Surface intersection (face / face section curves via
 //    BRepAlgoAPI_Section)
 //
-//  Public C surface unchanged. No symbol changes — pure file move.
+//  Public C surface unchanged. No symbol changes, pure file move.
 //
 
 #import "../include/OCCTBridge.h"
@@ -387,7 +387,7 @@ bool OCCTFaceGetPrimaryAxis(OCCTFaceRef face,
         if (ext.IsNull())
           return false;
         gp_Dir dir = ext->Direction();
-        // Extrusion has no canonical origin — use basis curve start.
+        // Extrusion has no canonical origin, use basis curve start.
         Handle(Geom_Curve) basis = ext->BasisCurve();
         gp_Pnt             origin(0, 0, 0);
         if (!basis.IsNull())
@@ -1295,7 +1295,7 @@ bool OCCTShapeVolumeInertia(OCCTShapeRef shape, OCCTVolumeInertiaResult* result)
 
     // Matrix of inertia about center of mass. This used to recompute the whole framework into a
     // second GProp_GProps before reading it, which cost a second integration for an identical
-    // answer — MatrixOfInertia() is already referenced to the centre of mass.
+    // answer. MatrixOfInertia() is already referenced to the centre of mass.
     gp_Mat mat         = props.MatrixOfInertia();
     result->inertia[0] = mat(1, 1);
     result->inertia[1] = mat(1, 2);
@@ -1334,7 +1334,7 @@ bool OCCTShapeVolumeInertia(OCCTShapeRef shape, OCCTVolumeInertiaResult* result)
                                result->gyrationRadius2,
                                result->gyrationRadius3);
 
-    // Same `principal` object OCCTShapeInertiaProperties reads these from — #848.
+    // Same `principal` object OCCTShapeInertiaProperties reads these from, #848.
     result->hasSymmetryAxis  = principal.HasSymmetryAxis();
     result->hasSymmetryPoint = principal.HasSymmetryPoint();
 
@@ -1381,7 +1381,7 @@ bool OCCTShapeSurfaceInertia(OCCTShapeRef shape, OCCTSurfaceInertiaResult* resul
     result->principalMoment2 = I2;
     result->principalMoment3 = I3;
 
-    // Same `principal` object OCCTShapeSurfaceInertiaProperties reads these from — #848.
+    // Same `principal` object OCCTShapeSurfaceInertiaProperties reads these from, #848.
     result->hasSymmetryAxis  = principal.HasSymmetryAxis();
     result->hasSymmetryPoint = principal.HasSymmetryPoint();
 
@@ -1411,7 +1411,7 @@ OCCTCurveLocalProps OCCTGeomLPropCLProps(OCCTShapeRef edgeShape, double param)
 
     // Was its own 1e-6 resolution, the third value the bridge passed to a GeomLProp_* props
     // (Precision::Confusion() from the canonical Curve3D/Surface entry points, 1e-10 from the
-    // Local* family) and the same one #405 removed from OCCTSurfaceCurvatures — so this
+    // Local* family) and the same one #405 removed from OCCTSurfaceCurvatures, so this
     // reported a different answer than Edge.curvature3D(at:) for the same edge and parameter.
     GeomLProp_CLProps props = occtCurveLocalProps(curve, param, 2);
     gp_Pnt            pt    = props.Value();
@@ -1817,8 +1817,8 @@ int32_t OCCTShapeFaceDomainEdgeCount(OCCTShapeRef shape, int32_t faceIndex)
 // GProp_GProps framework, so a zero-*length* result is still a correct answer: a curve sampled
 // over an empty parameter range has a mass of 0 and a centre at the point itself. What is NOT an
 // answer is a rejected input. Both of these build a gp_Dir from caller data, and gp_Dir throws
-// Standard_ConstructionError on a zero-length vector — two coincident endpoints here, a zero
-// normal there — which the catch used to turn into mass 0 with a centre of (0,0,0). See #609.
+// Standard_ConstructionError on a zero-length vector, two coincident endpoints here, a zero
+// normal there, which the catch used to turn into mass 0 with a centre of (0,0,0). See #609.
 bool OCCTGPropLineSegment(double  x1,
                           double  y1,
                           double  z1,

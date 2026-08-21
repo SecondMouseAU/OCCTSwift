@@ -48,10 +48,10 @@ public final class Face: @unchecked Sendable {
     /// This is the flag that decides which side of the surface ``normal`` and
     /// ``normal(atU:v:)`` report: both reverse the surface normal exactly when this is
     /// ``Shape/Orientation/reversed``. OCCT's own definition is that a face's orientation names
-    /// which side of it is *material* — for a space bounded by a face, the default region is on
+    /// which side of it is *material*, for a space bounded by a face, the default region is on
     /// the negative side of the surface normal.
     ///
-    /// #614: a face can appear in one shape twice with opposite orientations — the ordinary
+    /// #614: a face can appear in one shape twice with opposite orientations, the ordinary
     /// result of a split leaving two solids that share a wall. ``Shape/faces()`` keeps one entry
     /// per distinct face and so can only carry one of them; ``Shape/orientedFaces()`` keeps both.
     /// Two entries of `orientedFaces()` with the same ``index`` and different `orientation` are
@@ -148,8 +148,8 @@ public final class Face: @unchecked Sendable {
     ///
     /// Logically `isUpwardFacing(tolerance:) || isDownwardFacing(tolerance:)` (#843), but not
     /// implemented by calling them: `||` only short-circuits the second operand when the first is
-    /// true, so delegating to both public methods fetches `normal` twice — a fresh
-    /// `BRepLProp_SLProps` construction/solve through the bridge each time, not a cached read — for
+    /// true, so delegating to both public methods fetches `normal` twice, a fresh
+    /// `BRepLProp_SLProps` construction/solve through the bridge each time, not a cached read, for
     /// every non-upward-facing face. That is most faces in a per-face scan
     /// (`Shape.horizontalFaces()`, `facesByZLevel()`, `AAG.buildGraph()`), so this inlines
     /// `normalZTest`'s "fetch once, test the one value" shape directly against both thresholds
@@ -197,7 +197,7 @@ public final class Face: @unchecked Sendable {
 
     /// Surface type classification (matches `GeomAbs_SurfaceType`).
     ///
-    /// The same 11-case classification as ``Surface/SurfaceType`` — this is a typealias for it,
+    /// The same 11-case classification as ``Surface/SurfaceType``, this is a typealias for it,
     /// not a separate declaration, so a face's ``surfaceType`` and its geometry's own
     /// `Surface.surfaceKind` can never disagree about what case means what ordinal (#850).
     public typealias SurfaceType = Surface.SurfaceType
@@ -351,7 +351,7 @@ public final class Face: @unchecked Sendable {
 // MARK: - Shape Extension for Face Analysis
 
 extension Shape {
-    /// Every **distinct** face of this shape, in enumeration order — the *indexing* enumeration.
+    /// Every **distinct** face of this shape, in enumeration order, the *indexing* enumeration.
     ///
     /// Each returned ``Face`` carries its own ``Face/index``, which is its position here and the
     /// token ``Shape/face(at:)``, ``Shape/drafted(faces:direction:angle:neutralPlane:)``,
@@ -366,7 +366,7 @@ extension Shape {
     /// Faces are distinguished here the way OCCT distinguishes them for an index: by
     /// `TopoDS_Shape::IsSame`, which compares the underlying surface and placement and
     /// **ignores orientation**. A face that occurs in this shape twice with opposite orientations
-    /// — the ordinary result of a split leaving two solids that share a wall — is therefore *one*
+    ///, the ordinary result of a split leaving two solids that share a wall, is therefore *one*
     /// entry here, carrying whichever orientation was reached first.
     ///
     /// That matters because ``Face/normal(atU:v:)`` and ``Face/normal`` derive which *side* they
@@ -387,7 +387,7 @@ extension Shape {
     /// if let halves = box.split(atPlane: SIMD3(0, 0, 4), normal: SIMD3(0, 0, 1)),
     ///    let compound = Shape.compound(halves) {
     ///     print(compound.faces().count)          // 11 distinct faces
-    ///     print(compound.orientedFaces().count)  // 12 occurrences — the wall, twice
+    ///     print(compound.orientedFaces().count)  // 12 occurrences, the wall, twice
     /// }
     /// ```
     ///
@@ -409,7 +409,7 @@ extension Shape {
     }
 
     /// Every face **occurrence** in this shape, each carrying the orientation it has in its
-    /// parent — the *geometry* enumeration.
+    /// parent, the *geometry* enumeration.
     ///
     /// Walk this, not ``faces()``, whenever the direction of a face normal matters: rendering,
     /// CAM, per-face area or flux accumulation, anything that asks "which way is out". A face
@@ -418,10 +418,10 @@ extension Shape {
     ///
     /// This mirrors how OCCT itself handles orientation-sensitive face work: `BRepGProp`, whose
     /// volume integral needs each face's outward side, walks a `TopExp_Explorer` and reads the
-    /// orientation off the traversal rather than out of an index map — and where it deduplicates,
+    /// orientation off the traversal rather than out of an index map, and where it deduplicates,
     /// it keeps one map *per orientation* so a shared wall's two sides both survive.
     ///
-    /// - Note: An entry's position in this array is an **occurrence number, not a face index** —
+    /// - Note: An entry's position in this array is an **occurrence number, not a face index**,
     ///   two positions can name the same face. Each returned ``Face`` still carries the correct
     ///   ``Face/index`` into ``faces()``, so an occurrence remains addressable by every
     ///   face-index-taking method on `Shape`. Entries sharing an `index` are the several sides of
@@ -444,7 +444,7 @@ extension Shape {
     ///     }
     /// }
     /// // The cut face appears twice under one index: once .forward, once .reversed,
-    /// // with opposite normals — one outward per solid.
+    /// // with opposite normals, one outward per solid.
     /// ```
     ///
     /// - Returns: Every face occurrence, or an empty array if any could not be built. Never a
@@ -471,22 +471,22 @@ extension Shape {
             release: OCCTFaceRelease)
     }
 
-    /// Every horizontal face occurrence — normals pointing up or down.
+    /// Every horizontal face occurrence, normals pointing up or down.
     ///
     /// Reads ``orientedFaces()``, not ``faces()``. "Horizontal" is a statement about the face
     /// *normal*, and `faces()` cannot carry a shared face's second orientation: on a solid split
     /// into two bodies the shared wall is horizontal from **both** sides, and filtering `faces()`
-    /// found only the side that happened to be stored — silently losing the other body's floor.
+    /// found only the side that happened to be stored, silently losing the other body's floor.
     /// Measured on an origin-centred 10mm box cut at z=4, this returned **3** where the geometry
     /// has **4** horizontal occurrences. (#614)
     ///
     /// - Note: Because a shared face contributes one entry per side, this array can contain two
-    ///   `Face` values with the same ``Face/index``. On a shape whose faces are not shared — the
-    ///   common case — the result is identical to filtering `faces()`.
+    ///   `Face` values with the same ``Face/index``. On a shape whose faces are not shared, the
+    ///   common case, the result is identical to filtering `faces()`.
     ///
     /// ```swift
     /// let box = Shape.box(width: 10, height: 10, depth: 10)!
-    /// print(box.horizontalFaces().count)   // 2 — top and bottom, nothing shared
+    /// print(box.horizontalFaces().count)   // 2, top and bottom, nothing shared
     ///
     /// let halves = box.split(atPlane: SIMD3(0, 0, 4), normal: SIMD3(0, 0, 1))!
     /// let compound = Shape.compound(halves)!
@@ -502,19 +502,19 @@ extension Shape {
 
     /// Upward-facing horizontal face occurrences (potential pocket floors).
     ///
-    /// Reads ``orientedFaces()`` for the same reason ``horizontalFaces()`` does — "upward-facing"
+    /// Reads ``orientedFaces()`` for the same reason ``horizontalFaces()`` does, "upward-facing"
     /// is a statement about the normal, which `faces()` cannot carry for a shared face. (#614)
     ///
     /// - Note: Like ``horizontalFaces()``, this selects over *occurrences* and so **can** return
     ///   two entries with the same ``Face/index``. Dedupe on `index` (or use ``faces()``) if you
-    ///   need one entry per distinct face. It is only for the shared-wall case — two solids whose
-    ///   parents impose *opposite* orientations — that at most one side can face up, because the
+    ///   need one entry per distinct face. It is only for the shared-wall case, two solids whose
+    ///   parents impose *opposite* orientations, that at most one side can face up, because the
     ///   two normals are opposed. That is a property of opposed normals, not a guarantee of this
     ///   method: when a face is reached twice through parents imposing the *same* orientation, both
     ///   entries qualify. `Shape.compound([box, box]).upwardFaces()` returns indices `[5, 5]`.
     ///
     /// - Note: `isUpwardFacing` tests `n.z > cos(tolerance)`, so a `tolerance` of π/2 or more makes
-    ///   the threshold non-positive and admits faces that do not point up at all — including both
+    ///   the threshold non-positive and admits faces that do not point up at all, including both
     ///   sides of a *vertical* shared wall, whose normals have `n.z == 0`. On a two-solid split,
     ///   `upwardFaces(tolerance: 1.6)` returns 10 entries over 9 distinct indices.
     ///
@@ -523,11 +523,11 @@ extension Shape {
     /// let halves = box.split(atPlane: SIMD3(0, 0, 4), normal: SIMD3(0, 0, 1))!
     /// let compound = Shape.compound(halves)!
     /// // The outer top, plus the shared wall as seen from the lower solid (its ceiling).
-    /// print(compound.upwardFaces().count)   // 2 — opposed normals, so only one side faces up
+    /// print(compound.upwardFaces().count)   // 2, opposed normals, so only one side faces up
     ///
     /// // But a shape compounded with itself reaches each face twice at the SAME orientation:
     /// let doubled = Shape.compound([box, box])!
-    /// print(doubled.upwardFaces().map(\.index))   // [5, 5] — the same face, twice
+    /// print(doubled.upwardFaces().map(\.index))   // [5, 5], the same face, twice
     /// ```
     ///
     /// - Parameter tolerance: Angle tolerance in radians (default ~0.5 degrees).
@@ -644,8 +644,8 @@ extension Face {
     /// Fix face problems such as incorrect wire orientation, missing seams, and surface parameters.
     ///
     /// The underlying `ShapeFix_Face` is given a `ShapeBuild_ReShape` context up front (#484), so
-    /// the fixes that record replacements — a missing seam, or the degenerate apex edge a wire
-    /// belting a cone's full period needs — actually apply. Without one they silently no-op and the
+    /// the fixes that record replacements, a missing seam, or the degenerate apex edge a wire
+    /// belting a cone's full period needs, actually apply. Without one they silently no-op and the
     /// face comes back unhealed.
     ///
     /// - Parameter tolerance: Tolerance for fixing operations

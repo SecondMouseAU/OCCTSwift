@@ -10,25 +10,25 @@ import Foundation
 /// corner-anchored like raw OCCT's `BRepPrimAPI_MakeBox(w,h,d)`. That made the
 /// first "corner" tool land fully *inside* the box and the second "opposite
 /// corner" tool land entirely *outside* it (bounding boxes don't even
-/// overlap) — so the second cut was a genuine geometric no-op, and zero
+/// overlap), so the second cut was a genuine geometric no-op, and zero
 /// absorbed records was the correct answer.
 ///
 /// Verified two ways: (1) probing the raw `ShapeHistoryRef` directly against
-/// `out1.faces()` — bypassing the graph entirely — showed the same zero
+/// `out1.faces()`, bypassing the graph entirely, showed the same zero
 /// modified/generated/deleted records, so the boolean's own history
 /// construction was never in question. (2) `out1.volume == out2.volume`
 /// confirms the second cut changed nothing geometrically.
 ///
 /// What WAS missing: no existing test chained two `*WithFullHistory` ops
 /// end-to-end (second op fed from the first op's live, Compound-wrapped
-/// output) or passed a non-root node as `inputRoots` — every
+/// output) or passed a non-root node as `inputRoots`, every
 /// `GraphHistoryAbsorbTests` case only does a single hop rooted at the
 /// graph's own top-level node. These tests close that gap.
 @Suite("Chained WithFullHistory absorb (#336)")
 struct Issue336ChainedHistoryTests {
 
     /// Same shape and box-centering as the issue, but with tool placements
-    /// that actually clip real corners — proving the chain absorbs correctly
+    /// that actually clip real corners, proving the chain absorbs correctly
     /// once the geometry genuinely intersects.
     @Test("two chained WithFullHistory cuts both absorb real records")
     func chainedCutsAbsorbAcrossTwoHops() {
@@ -51,7 +51,7 @@ struct Issue336ChainedHistoryTests {
         let added1 = graph.add(out1, absorbing: hist1, inputRoots: [root0], operationName: "hop1")
         #expect(added1 != nil, "hop1 add should return the result's topology root")
         #expect(graph.historyRecordCount > before1,
-                "hop1 should absorb real records — tool1 genuinely clips a corner of the box")
+                "hop1 should absorb real records, tool1 genuinely clips a corner of the box")
 
         guard let out1Solid = out1.subShapes(ofType: .solid).first,
               let root1Raw = graph.findNode(for: out1Solid) else {
@@ -60,7 +60,7 @@ struct Issue336ChainedHistoryTests {
         let root1 = BRepGraph.NodeRef(kind: root1Raw.kind, index: root1Raw.index)
 
         // Corner-anchored tool clipping the OPPOSITE (-5, -10, -15) corner of
-        // the ORIGINAL box — which remains a real corner of out1, since hop1
+        // the ORIGINAL box, which remains a real corner of out1, since hop1
         // only touched the (5, 10, 15) corner.
         guard let tool2 = Shape.box(origin: SIMD3(-6, -11, -16), width: 3, height: 3, depth: 3),
               let (out2, hist2) = out1.subtractedWithFullHistory(tool2) else {
@@ -72,7 +72,7 @@ struct Issue336ChainedHistoryTests {
             Issue.record("volume() failed for out1/out2")
         }
 
-        // This is the exact call the issue reported as broken — chaining a
+        // This is the exact call the issue reported as broken, chaining a
         // second *WithFullHistory op onto the first op's live output, using a
         // non-root NodeId (root1) as inputRoots.
         let before2 = graph.historyRecordCount
@@ -108,7 +108,7 @@ struct Issue336ChainedHistoryTests {
         }
         let root0 = BRepGraph.NodeRef(kind: root0Raw.kind, index: root0Raw.index)
 
-        // Fully INSIDE the centered box — an interior cavity cut, not a
+        // Fully INSIDE the centered box, an interior cavity cut, not a
         // corner clip, but still a real geometric change.
         guard let tool1 = Shape.box(width: 3, height: 3, depth: 3)?.translated(by: SIMD3(-1, -1, -1)),
               let (out1, hist1) = loaded.subtractedWithFullHistory(tool1) else {
@@ -131,7 +131,7 @@ struct Issue336ChainedHistoryTests {
 
         let before2 = graph.historyRecordCount
         let added2 = graph.add(out2, absorbing: hist2, inputRoots: [root1], operationName: "hop2")
-        #expect(added2 != nil, "add() itself still succeeds — there is simply nothing to absorb")
+        #expect(added2 != nil, "add() itself still succeeds, there is simply nothing to absorb")
         #expect(graph.historyRecordCount == before2,
                 "no geometry changed, so no records should be absorbed")
         #expect(!graph.hasHistoryRecord(for: root1))

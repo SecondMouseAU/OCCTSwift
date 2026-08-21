@@ -1,6 +1,6 @@
 // StressTestFixtures.swift
 // Shared fixtures and helpers for OCCTSwift stress tests.
-// No @Suite or @Test — only factory functions and assertion helpers.
+// No @Suite or @Test, only factory functions and assertion helpers.
 
 import Foundation
 import Testing

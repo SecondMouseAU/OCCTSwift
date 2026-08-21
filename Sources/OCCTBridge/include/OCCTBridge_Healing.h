@@ -91,7 +91,7 @@ OCCTShapeRef OCCTShapeUnifySameDomain(OCCTShapeRef shape,
 /// as this comment claimed before #497.)
 /// @param shape The shape to clean
 /// @param minArea Minimum face area to keep
-/// @return Cleaned shape — the input unchanged when no face is below the threshold — or NULL on
+/// @return Cleaned shape, the input unchanged when no face is below the threshold, or NULL on
 ///         failure
 OCCTShapeRef OCCTShapeRemoveSmallFaces(OCCTShapeRef shape, double minArea);
 
@@ -186,7 +186,7 @@ OCCTShapeRef OCCTShapeBlendEdges(OCCTShapeRef   shape,
 /// 0 = position only, 1 = position + tangency, 2 = position + tangency + curvature.
 /// BRepFill_Filling passes the GeomAbs_Shape value straight through to
 /// GeomPlate_CurveConstraint/BRepFill_CurveConstraint as that integer order, and both
-/// reject anything outside [-1, 2] — so curvature continuity is GeomAbs_C1 (ordinal 2),
+/// reject anything outside [-1, 2], so curvature continuity is GeomAbs_C1 (ordinal 2),
 /// and GeomAbs_G2 (ordinal 3) always throws despite what the OCCT header docs claim.
 /// See OCCTFillingContinuityToGeomAbs in OCCTBridge_Healing.mm. (#430)
 typedef struct
@@ -217,7 +217,7 @@ OCCTShapeRef OCCTShapeFill(const OCCTWireRef* boundaries,
 /// Fill an N-sided boundary, taking tangency/curvature from a surrounding shape
 ///
 /// For each boundary edge, the support face is the edge's own ancestor face in
-/// `support` — the "cap this opening, continuous with the walls around it" case. A
+/// `support`, the "cap this opening, continuous with the walls around it" case. A
 /// boundary edge with no ancestor face in `support` falls back to its own pcurve
 /// surface, and failing that is added with position-only continuity.
 ///
@@ -618,7 +618,7 @@ typedef struct
 /// @return Check result
 OCCTShapeCheckResult OCCTCheckFace(OCCTFaceRef face);
 
-/// BRepCheck_Face per-check diagnostics — the specific BRepCheck_Status for one wire-topology check
+/// BRepCheck_Face per-check diagnostics, the specific BRepCheck_Status for one wire-topology check
 /// of a face. `geometricControls` toggles the (more expensive) geometric intersection checks.
 /// Returns OCCTCheckCheckFail if `face` is not a face. #266 follow-up.
 OCCTCheckStatus OCCTBRepCheckFaceIntersectWires(OCCTShapeRef face, bool geometricControls);
@@ -1066,7 +1066,7 @@ OCCTValidateEdgeResult OCCTValidateEdge(OCCTEdgeRef _Nonnull edge,
 // MARK: - ShapeCustom_BSplineRestriction (advanced)
 
 /// Restrict BSpline degree and segments with full control over parameters.
-/// continuity3d/continuity2d: parametric continuity, same as OCCTShapeCustomBSplineRestriction —
+/// continuity3d/continuity2d: parametric continuity, same as OCCTShapeCustomBSplineRestriction,
 /// both drive a ShapeCustom_BSplineRestriction through BRepTools_Modifier, and before #490 this
 /// one read the value as a GeomAbs_Shape ordinal instead. See "Continuity vocabularies" at the
 /// top of this header. Above C2 the operation yields a null shape.
@@ -1097,7 +1097,7 @@ OCCTShapeRef _Nullable OCCTShapeConvertToBSplineAdvanced(OCCTShapeRef _Nonnull s
 // MARK: - ShapeUpgrade_SplitSurfaceContinuity
 
 /// Split a surface by continuity criterion.
-/// criterion: parametric continuity, same as OCCTSurfaceSplitByContinuity — both wrap
+/// criterion: parametric continuity, same as OCCTSurfaceSplitByContinuity, both wrap
 /// ShapeUpgrade_SplitSurfaceContinuity, and before #490 this one read the value as a
 /// GeomAbs_Shape ordinal instead. See "Continuity vocabularies" at the top of this header.
 /// Returns number of U split values (0 on failure).
@@ -1136,12 +1136,12 @@ OCCTShapeRef _Nullable OCCTShapeFixComposeShell(OCCTShapeRef _Nonnull faceRef, d
 /// Fix a solid shape (topology and orientation). Heals EVERY solid in the input, not
 /// just the first (#442): a single body comes back as a solid, several as a compound of
 /// one result per input body. No body is ever dropped, so a result is not always a solid
-/// — ShapeFix_Solid returns a SHELL it could not close, and a solid it fails to heal
+///. ShapeFix_Solid returns a SHELL it could not close, and a solid it fails to heal
 /// comes back unhealed. Returns NULL only when the input holds no solid.
 OCCTShapeRef _Nullable OCCTShapeFixSolid(OCCTShapeRef _Nonnull shape);
 
 /// Create a solid from a shell using ShapeFix_Solid. One solid per body-bounding shell
-/// (#442) — within each solid, every shell an even number of the others enclose, plus
+/// (#442), within each solid, every shell an even number of the others enclose, plus
 /// every free shell; a solid's cavity shells are skipped. A single body comes back as a
 /// solid, several as a compound.
 OCCTShapeRef _Nullable OCCTShapeSolidFromShell(OCCTShapeRef _Nonnull shellShape);
@@ -1444,7 +1444,7 @@ double OCCTShapeAvgTolerance(OCCTShapeRef _Nonnull shape, int32_t type);
 /// `type` parameter with no remapping. The additive, canonically-typed siblings of
 /// OCCTShapeMaxTolerance/MinTolerance/AvgTolerance's compressed 0/1/2 encoding above, which only
 /// ever covered vertex/edge/face and used a different integer per sub-shape kind than
-/// OCCTBRepToolMaxTolerance (BRep_Tool::MaxTolerance's own straight-cast convention) — see #833.
+/// OCCTBRepToolMaxTolerance (BRep_Tool:MaxTolerance's own straight-cast convention), see #833.
 double OCCTShapeMaxToleranceOfType(OCCTShapeRef _Nonnull shape, int32_t shapeType);
 double OCCTShapeMinToleranceOfType(OCCTShapeRef _Nonnull shape, int32_t shapeType);
 double OCCTShapeAvgToleranceOfType(OCCTShapeRef _Nonnull shape, int32_t shapeType);
@@ -1537,7 +1537,7 @@ bool OCCTFaceFixerFixWiresTwoCoincEdges(OCCTFaceFixerRef _Nonnull fixer);
 /// Split a wire that loops back on itself (result wires are discarded; returns whether it fixed).
 bool OCCTFaceFixerFixLoopWire(OCCTFaceFixerRef _Nonnull fixer);
 
-/// The result of the fix — a Face, or a Shell when FixMissingSeam split the face. May differ from
+/// The result of the fix, a Face, or a Shell when FixMissingSeam split the face. May differ from
 /// OCCTFaceFixerFace (which always returns a Face).
 OCCTShapeRef _Nullable OCCTFaceFixerResult(OCCTFaceFixerRef _Nonnull fixer);
 
@@ -1612,7 +1612,7 @@ typedef struct
   double area;
   double perimeter;
   // Aspect ratio: contour length divided by contour width, so 1 for a square-ish bound and 10
-  // for a 100x10 one. NOT area/perimeter^2, which is what this field claimed before #504.
+  // for a 100x10 one, NOT area/perimeter^2, which is what this field claimed before #504.
   // OCCT solves it from area and perimeter and leaves BOTH this and width at 0 when that solve
   // has no real root, which an exactly square bound hits by one ulp, since it sits precisely on
   // the boundary of the two branches. 0 here means "not solvable", not "degenerate contour".
@@ -1681,7 +1681,7 @@ bool OCCTShapeFixerPerform(OCCTShapeFixerRef _Nonnull fixer);
 OCCTShapeRef _Nullable OCCTShapeFixerShape(OCCTShapeFixerRef _Nonnull fixer);
 
 /// Query status. statusType: 1=ShapeFixOk, 2=ShapeFixDone, 3=ShapeFixFail.
-/// Legacy — see OCCTShapeFixerStatusFlag for the full ShapeExtend_Status flag space (#849).
+/// Legacy, see OCCTShapeFixerStatusFlag for the full ShapeExtend_Status flag space (#849).
 bool OCCTShapeFixerStatus(OCCTShapeFixerRef _Nonnull fixer, int32_t statusType);
 
 /// Query a specific ShapeExtend_Status flag directly (#849), mirroring OCCTFaceFixerStatus.

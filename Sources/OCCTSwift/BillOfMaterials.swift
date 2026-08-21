@@ -3,13 +3,13 @@ import simd
 
 // MARK: - Bill of materials + balloon callouts (#87, v0.150)
 //
-// A `BillOfMaterials` is a pure-Swift value type — the caller populates the
+// A `BillOfMaterials` is a pure-Swift value type, the caller populates the
 // item rows (manually or from a parts catalog) and the writer renders a table
 // onto the drawing. XCAF-backed auto-derivation from an assembly is a future
 // follow-up, not scoped into this release.
 //
 // Balloons (the numbered circles that point at parts and key into BOM rows)
-// live in `DrawingAnnotation.balloon` — see the typed `.balloon` case added
+// live in `DrawingAnnotation.balloon`, see the typed `.balloon` case added
 // in the same v0.150 arc.
 
 public struct BillOfMaterials: Sendable, Hashable, Codable {

@@ -98,7 +98,7 @@ struct ConstructionContextTests {
         }
         let ctx = ConstructionContext()
         // Add a plane referencing a face by TopologyRef.createdBy for an op
-        // that was never recorded — resolution will fail with .operationNotFound.
+        // that was never recorded, resolution will fail with .operationNotFound.
         let brokenFace = TopologyRef.createdBy(operationName: "NeverHappened", kind: .face)
         ctx.add(ConstructionPlane.offsetFromFace(face: brokenFace, distance: 5))
 
@@ -117,7 +117,7 @@ struct ConstructionContextTests {
         #expect(ctx.plane(pID) == nil)
     }
 
-    // #886: `remove(axis:)`/`remove(point:)` had no coverage at all — only `remove(plane:)`
+    // #886: `remove(axis:)`/`remove(point:)` had no coverage at all, only `remove(plane:)`
     // (above) was exercised.
     @Test("Remove an axis and a point")
     func removeAxisAndPoint() {
@@ -212,7 +212,7 @@ struct ConstructionContextTests {
 // mutated and others not. Fixed by `ConstructionContext.crossStoreLock`, which `add`, `removeAll`
 // and `count` now share. Both tests below detect a torn observation the same way: pre-populate a
 // large, equal population per kind, then hammer `count` from many threads while a single
-// `removeAll()` races them — a torn snapshot shows up as some kinds already at (or near) zero while
+// `removeAll()` races them, a torn snapshot shows up as some kinds already at (or near) zero while
 // others are still at (or near) the full pre-populated count, which is impossible once `count` and
 // `removeAll()` share one lock. `entitiesPerKind` and the read-loop iteration counts were picked by
 // running the pre-fix code below and confirming a torn read reliably shows up within a handful of
@@ -223,7 +223,7 @@ struct ConstructionContextTests {
 // a blocking `DispatchGroup.wait()`. The first version used the latter and, on the real `swift
 // test` full-suite run (~5500 tests, all launched together by Swift Testing's own parallel
 // scheduler within milliseconds of each other), hung CI's `swift build + test (macOS)` job twice
-// in a row (#880/#886 PR #898, 30-minute timeout, zero tests completing in either attempt — not
+// in a row (#880/#886 PR #898, 30-minute timeout, zero tests completing in either attempt, not
 // just this suite, the *entire* run). Every other concurrency test in this repo
 // (`Tests/OCCTThreadTests/`, `Tests/OCCTStressTests/StressConcurrencyTests.swift`) already uses
 // `withTaskGroup`/structured concurrency for exactly this reason: a suspended `await` gives its
@@ -231,19 +231,19 @@ struct ConstructionContextTests {
 // test`'s own task scheduling and `DispatchQueue.global()` share the same underlying thread pool.
 // This suite's original ~8-18 blocking dispatches per test (two tests, so up to ~34 total) was a
 // much larger, and architecturally different, demand on that shared pool than the one existing
-// precedent in the repo (`OCCTFoundationTests.serializedConcurrentAccess`, 4 tasks) — and CI's
+// precedent in the repo (`OCCTFoundationTests.serializedConcurrentAccess`, 4 tasks), and CI's
 // `macos-15` runner has only 3 vCPUs, a far smaller pool than a developer machine, which is
 // consistent with why this didn't reproduce casually in local testing. See the investigation
 // writeup in this PR for the CI log evidence (both attempts: every suite starts within the same
 // ~100ms window, as expected for Swift Testing's eager parallel scheduling; then zero `passed`/
-// `failed` lines anywhere in either log, ever — a process-wide stall, not a narrow deadlock in
+// `failed` lines anywhere in either log, ever, a process-wide stall, not a narrow deadlock in
 // `ConstructionContext` itself, which was audited lock-by-lock and has no reentrant or
 // conflicting-order acquisition of `crossStoreLock`).
 @Suite("PR #898 review: ConstructionContext cross-store atomicity")
 struct ConstructionContextConcurrencyTests {
 
     /// Shared bucketing for every "torn cross-store snapshot" detector in this suite: `true` if
-    /// the three counts don't all agree on being above or below `threshold` — the signature of a
+    /// the three counts don't all agree on being above or below `threshold`, the signature of a
     /// concurrent `removeAll()`/`remove()` caught mid-flight (some kinds already reflecting it,
     /// others not).
     private func isTornSnapshot(_ counts: (Int, Int, Int), threshold: Int) -> Bool {
@@ -277,7 +277,7 @@ struct ConstructionContextConcurrencyTests {
         // Each task returns its own torn observations rather than appending to a shared array
         // under a lock: `NSLock.lock()`/`unlock()` are `noasync` (unavailable from an
         // asynchronous context), and collecting results through the task group's own
-        // `for await` sequence needs no lock at all — the parent task is the only one that ever
+        // `for await` sequence needs no lock at all, the parent task is the only one that ever
         // touches `torn`.
         await withTaskGroup(of: [(planes: Int, axes: Int, points: Int)].self) { group in
             for _ in 0..<readerCount {
@@ -330,13 +330,13 @@ struct ConstructionContextConcurrencyTests {
     // points.removeAll()` as three separate lock acquisitions, so a concurrent `add()` (the
     // review's own repro: "thread A calls removeAll() while thread B concurrently calls add()")
     // could land in the gap between two of those steps. This reuses the same torn-`count()`
-    // detector as the test above with a swarm of concurrent `add()` calls mixed into the race — the
-    // review's literal scenario — and asserts the same invariant still holds: "removeAll() followed
+    // detector as the test above with a swarm of concurrent `add()` calls mixed into the race, the
+    // review's literal scenario, and asserts the same invariant still holds: "removeAll() followed
     // by a synchronized count check is genuinely empty [or reflects the full population] unless a
     // racing add landed cleanly after", never a torn mix of the two.
     //
     // The concurrent `add()` traffic here (9 calls) is negligible next to `entitiesPerKind` (4000),
-    // so it can never itself flip a `count` reading from one bucket to the other — any torn
+    // so it can never itself flip a `count` reading from one bucket to the other, any torn
     // observation is still attributable to `removeAll()`/`count()` racing, not to the adds.
     @Test("removeAll() stays all-or-nothing under concurrent add()")
     func removeAllStaysAtomicUnderConcurrentAdd() async {
@@ -367,16 +367,16 @@ struct ConstructionContextConcurrencyTests {
     // and the honest result is recorded here instead of a fabricated "reintroduced the bug, watched
     // it fail" story, per okf/policies/prove-the-test-fails.md. Reverting the lock on `remove()`
     // and re-running this exact test (9 concurrent single removes racing `removeAll()`+`count()`,
-    // same shape as `removeAllStaysAtomicUnderConcurrentAdd` above) produced zero torn snapshots —
+    // same shape as `removeAllStaysAtomicUnderConcurrentAdd` above) produced zero torn snapshots,
     // and escalating the removers to 500 concurrent single-entity removes, and separately to a
     // full single-kind drain (`ctx.allAxes.forEach { ctx.remove(axis: $0.id) }`, the review's own
     // literal repro), didn't discriminate either: the 500-remover case stayed clean with the lock
     // removed exactly as with it, and the full-drain case was torn *both* with and without it (the
     // gradual single-kind drain a caller's own loop performs is visible to a concurrent `count()`
-    // regardless of whether each individual call in that loop is locked — locking one call cannot
-    // make a caller's multi-call loop atomic as a whole). The mechanism is real in principle — an
+    // regardless of whether each individual call in that loop is locked, locking one call cannot
+    // make a caller's multi-call loop atomic as a whole). The mechanism is real in principle, an
     // unlocked `remove()` COULD interleave with `removeAll()`'s critical section, memory-safety
-    // aside — but with `removeAll()` already atomic under the same lock (finding 1), that
+    // aside, but with `removeAll()` already atomic under the same lock (finding 1), that
     // interleaving is not externally observable through `count()`/`allBroken`/`materialize`: none
     // of them can catch `removeAll()` "in progress" regardless of `remove()`'s own locking, and a
     // single `remove()` only ever touches one store, so it can't manufacture a cross-store tear on
@@ -426,7 +426,7 @@ struct ConstructionContextConcurrencyTests {
 
     /// Populates `entitiesPerKind` per kind with entities that always fail resolution (broken
     /// `TopologyRef` references), races `removeAll()` against `readerCount` tasks hammering
-    /// `allBroken(in:)`, and returns every torn per-kind broken-count observation — same
+    /// `allBroken(in:)`, and returns every torn per-kind broken-count observation, same
     /// all-or-nothing bucketing as `tornCountObservations`, applied to `allBroken`'s result
     /// instead of `count`.
     private func tornAllBrokenObservations(
@@ -489,7 +489,7 @@ struct ConstructionContextConcurrencyTests {
     }
 
     /// Races `removeAll()` against `readerCount` tasks, each calling `materialize(in:graph:)`
-    /// once per `iterations` pass on its own private `Document`/`BRepGraph` — independent per
+    /// once per `iterations` pass on its own private `Document`/`BRepGraph`, independent per
     /// task, since concurrent mutation of *one* shared `Document` from multiple threads isn't a
     /// documented-safe pattern here (see docs/thread-safety.md); every task here does get its own
     /// private `Document`, matching the pattern #371 validated. Real OCCT geometry work per entity
@@ -556,7 +556,7 @@ struct ConstructionContextConcurrencyTests {
 //
 // `constructionContext` used to be a check-then-set: `value(for:)` miss, construct a
 // `ConstructionContext`, `set(_:for:)`. Two threads' first access to the same fresh `Document`
-// could both miss the lookup and both construct — the loser's instance is returned to its own
+// could both miss the lookup and both construct, the loser's instance is returned to its own
 // caller exactly as if it were live, but is immediately unreachable from the document the moment
 // the winner's `set` overwrites the table entry. Anything the loser's caller then adds through it
 // silently disappears: it's in a `ConstructionContext` nothing else can ever reach again. Fixed
@@ -566,10 +566,10 @@ struct ConstructionContextConcurrencyTests {
 // Same `withTaskGroup` shape as `ConstructionContextConcurrencyTests` above, for the same reason
 // documented there (a blocking `DispatchGroup.wait()` hung CI's full-suite run twice under #898).
 // A single race window is not reliably hit by one run, so this repeats the race `roundCount` times
-// against a fresh `Document` each round rather than relying on one large `taskCount` — matches how
+// against a fresh `Document` each round rather than relying on one large `taskCount`, matches how
 // `Issue341MeshCafThreadSafetyTests`/`Issue344CDFDirectoryThreadSafetyTests` size their own
 // first-access races. Proven per okf/policies/prove-the-test-fails.md: run against the pre-fix
-// check-then-set implementation, this failed on the first attempt — 2 of 200 rounds torn, one of
+// check-then-set implementation, this failed on the first attempt, 2 of 200 rounds torn, one of
 // them all 8 tasks each constructing their own instance; against the fixed
 // `valueOrInsert(for:make:)`, 5 repeated full runs (200 rounds x 8 tasks each = 1000 first-access
 // races per run, 5000 total) produced zero divergent observations.
@@ -679,7 +679,7 @@ struct AngleHelperTests {
         }
         let edges = box.edges()
         // A box has 12 edges; find two that are perpendicular (adjacent on a face).
-        // First try: edges[0] and edges[1] — typically perpendicular for a box.
+        // First try: edges[0] and edges[1], typically perpendicular for a box.
         if edges.count >= 2 {
             let angle = edges[0].angle(to: edges[1])
             // Box edges are all either parallel (angle 0/π) or perpendicular (π/2).
@@ -775,7 +775,7 @@ struct EdgeFractionParameterTests {
             Issue.record("box nil"); return
         }
         // Edge enumeration order isn't guaranteed stable across an OCCT kernel rebuild
-        // or platform — iterate to find a working edge rather than trusting `.first`
+        // or platform, iterate to find a working edge rather than trusting `.first`
         // (CLAUDE.md Test Conventions; #897 review, second xhigh pass, finding 5).
         for edge in box.edges() {
             guard let bounds = edge.parameterBounds else { continue }
@@ -1040,7 +1040,7 @@ struct ConstructionLayerTests {
         #expect(doc.constructionShapeLabels.count >= 3)
     }
 
-    // #886: no test asserted on a `MaterializationFailure` case by name anywhere in `Tests/` —
+    // #886: no test asserted on a `MaterializationFailure` case by name anywhere in `Tests/`,
     // `materializeAll` above only ever exercised the success path.
     @Test("materialize reports a resolve failure for each entity kind")
     func materializeReportsResolveFailuresByKind() {
@@ -1078,7 +1078,7 @@ struct ConstructionLayerTests {
     }
 
     // #880: `axisShape` always materializes as a bare wire (its wire is never closed, so the
-    // face attempt above it can never succeed) — the *only* way it can still fail is the same
+    // face attempt above it can never succeed), the *only* way it can still fail is the same
     // way `Wire.line` itself already guards against: a degenerate direction. This is a
     // regression guard that #880's dead-code removal (deleting the never-succeeding
     // `Shape.face(from: wire) ??` attempt) didn't change that outcome.
@@ -1102,10 +1102,10 @@ struct ConstructionLayerTests {
         }
     }
 
-    // #880: `planeShape` has no bare-wire fallback, unlike `axisShape` — deliberately. This is
+    // #880: `planeShape` has no bare-wire fallback, unlike `axisShape`, deliberately. This is
     // the case that motivated keeping it that way: `planeHalfSize` this small collapses the
     // rectangle's corners closer together than OCCT's confusion tolerance (~1e-7), so
-    // `BRepBuilderAPI_MakePolygon` can't even close a valid wire — `Wire.polygon3D` itself
+    // `BRepBuilderAPI_MakePolygon` can't even close a valid wire, `Wire.polygon3D` itself
     // returns `nil`, before any face/fallback logic would run either way.
     @Test("materialize reports planeShapeFailed when the plane's wire itself can't be built (#880)")
     func materializeReportsPlaneShapeFailedForUnbuildableWire() {
@@ -1128,11 +1128,11 @@ struct ConstructionLayerTests {
     }
 
     // #880: the *only* input measured to reach planeShape's face-build failure with a non-nil
-    // wire is a zero-length plane normal — `Placement`'s `simd_normalize` turns that into NaN,
+    // wire is a zero-length plane normal, `Placement`'s `simd_normalize` turns that into NaN,
     // and `BRepBuilderAPI_MakePolygon` reports "done" on the resulting NaN-vertexed wire anyway.
     // `BRepBuilderAPI_MakeFace` then correctly declines it. Giving `planeShape` the same
     // `?? Shape.shape(from: wire)` fallback `axisShape` has would turn this case into a silent
-    // "success" that adds non-finite geometry to the document instead of reporting failure —
+    // "success" that adds non-finite geometry to the document instead of reporting failure,
     // measured directly, not assumed: this is the fixture that would regress if that fallback
     // were ever added. `planeShape` deliberately does not have it.
     @Test("materialize reports planeShapeFailed, not non-finite geometry, for a zero-length normal (#880)")
@@ -1163,10 +1163,10 @@ struct ConstructionLayerTests {
     // No input reachable through the public `materialize(in:graph:options:)` API can make
     // `addConstructionShape` itself fail on a *successfully built* shape: every one of the three
     // representative-shape builders above already refuses to hand back a `Shape` unless the
-    // underlying OCCT build genuinely succeeded (checked directly — `Wire.line`, `Wire.polygon3D`
+    // underlying OCCT build genuinely succeeded (checked directly, `Wire.line`, `Wire.polygon3D`
     // and `Shape.vertex(at:)`'s bridge calls all check `IsDone()`/`IsNull()` before returning), and
     // a healthy `Document`'s `shapeTool` is never null. So this tests `materializeOne` itself
-    // (`internal`, not `private`, specifically for this — see its doc comment) with an injected
+    // (`internal`, not `private`, specifically for this, see its doc comment) with an injected
     // `addShape` closure that fails deterministically, instead of hunting for a fragile
     // OCCT-level trigger. `buildShape`/`addShape` are the two collaborators the fix's guard clause
     // actually reads; injecting them directly tests that guard clause without needing a real
@@ -1202,7 +1202,7 @@ struct ConstructionLayerTests {
     }
 
     // Companion to the failure test above: the same `materializeOne` call, with `addShape`
-    // returning a non-negative label, still reports success — confirms the new `labelId >= 0`
+    // returning a non-negative label, still reports success, confirms the new `labelId >= 0`
     // guard doesn't reject a genuinely successful add.
     @Test("materializeOne still reports success for a non-negative label ID")
     func materializeOneReportsSuccessForValidLabel() {
@@ -1233,7 +1233,7 @@ struct ConstructionLayerTests {
     /// Regression guard for #277.
     ///
     /// `Document.constructionContext` is associated via a table keyed on
-    /// `ObjectIdentifier(document)` — i.e. the instance pointer, which is only unique among
+    /// `ObjectIdentifier(document)`, i.e. the instance pointer, which is only unique among
     /// *live* objects. The entry used to never be removed, so once a Document died its context
     /// stayed in the table; a later Document allocated at the recycled address would then
     /// inherit the dead one's entities. That surfaced as intermittent failures in
@@ -1343,13 +1343,13 @@ struct SheetRenderingTests {
 
 // MARK: - v0.151 SheetMetal composition API (issue #85)
 
-@Suite("v0.151 SheetMetal — flange + bend composition")
+@Suite("v0.151 SheetMetal, flange + bend composition")
 struct SheetMetalTests {
 
     /// L-bracket: horizontal base flange + vertical upright, one bend between them.
     ///
     /// The upright spans the full base width so the seam edge runs cleanly
-    /// across both flanges without a step — a step would require a
+    /// across both flanges without a step, a step would require a
     /// variable-radius fillet to close off, which is beyond this first cut.
     @Test("L-bracket: two orthogonal flanges with one bend")
     func lBracket() throws {
@@ -1418,7 +1418,7 @@ struct SheetMetalTests {
         if let v = shape.volume { #expect(v > 0) }
     }
 
-    /// Bendless composition — builder should still fuse flanges if no bends are given.
+    /// Bendless composition, builder should still fuse flanges if no bends are given.
     @Test("Flanges-only (no bends) still produces a fused solid")
     func flangesOnlyNoBends() throws {
         let a = SheetMetal.Flange(
@@ -1650,7 +1650,7 @@ struct SheetMetalTests {
     }
 
     /// U-channel with narrower flanges (issue #86): 100×25 spine,
-    /// 100×15 sides — the sides are NARROWER than the spine in the seam-
+    /// 100×15 sides, the sides are NARROWER than the spine in the seam-
     /// direction (along Y), making them stepped.
     ///
     /// Concretely: spine along Y has 100 long edge; left/right side flanges
@@ -1691,7 +1691,7 @@ struct SheetMetalTests {
 
     @Test("Parallel flanges cannot form a bend")
     func parallelFlangesRejected() {
-        // Two coplanar flanges stacked in Z — same normal, so no seam direction.
+        // Two coplanar flanges stacked in Z, same normal, so no seam direction.
         let a = SheetMetal.Flange(
             id: "a", profile: [SIMD2(0, 0), SIMD2(10, 0), SIMD2(10, 10), SIMD2(0, 10)],
             origin: SIMD3<Double>(0, 0, 0),
@@ -1800,7 +1800,7 @@ struct ConvexBendIssue89 {
 
     /// Mixed concave + convex chain. Spine 100×40, two walls 30×40 fold up
     /// (concave from spine), tab 20×40 folds back convex from one wall.
-    @Test("Channel with flange — mixed concave + convex bends")
+    @Test("Channel with flange, mixed concave + convex bends")
     func channelWithFlange() throws {
         let spine = SheetMetal.Flange(
             id: "spine",

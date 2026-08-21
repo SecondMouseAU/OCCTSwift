@@ -2,12 +2,12 @@ import Testing
 import Foundation
 @testable import OCCTSwift
 
-/// #497 — the BRepAlgoAPI_Defeaturing family, after the four bridge copies were folded onto one
+/// #497, the BRepAlgoAPI_Defeaturing family, after the four bridge copies were folded onto one
 /// skeleton and the fifth (`OCCTDefeatureWithTolerance`) was deleted.
 ///
 /// What these pin down:
 ///  - the two Swift spellings of "remove these faces" agree, geometrically and exactly;
-///  - the fuzzy tolerance the deleted wrapper offered never did anything, at any magnitude —
+///  - the fuzzy tolerance the deleted wrapper offered never did anything, at any magnitude,
 ///    measured upstream in Scripts/repro/497-defeaturing-fuzzy-inert/ and asserted here so the
 ///    day OCCT starts honouring it is the day this suite fails;
 ///  - an out-of-range face index fails the call instead of being quietly dropped.
@@ -97,7 +97,7 @@ struct Issue497DefeaturingTests {
         #expect(stray.index >= realFaces.count)
 
         #expect(box.withoutFeatures(faces: [stray]) == nil)
-        // Mixing a valid index with an invalid one fails too — a partial removal is not a result.
+        // Mixing a valid index with an invalid one fails too, a partial removal is not a result.
         #expect(box.withoutFeatures(faces: [realFaces[0], stray]) == nil)
         // The history-carrying spelling has always failed here; it still does.
         #expect(box.defeaturedWithFullHistory(faces: [stray.index]) == nil)

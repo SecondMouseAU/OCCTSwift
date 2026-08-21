@@ -61,7 +61,7 @@ struct Issue485SurfaceContinuityTests {
 
     @Test("satisfies() answers a parametric floor without raw-value comparison")
     func satisfiesAnswersParametricFloor() {
-        // The idiom this replaces — `continuityOrder >= ParametricContinuity.c2.rawValue` —
+        // The idiom this replaces, `continuityOrder >= ParametricContinuity.c2.rawValue`,
         // compared two different encodings. c2 is 4 here and 2 there.
         #expect(ContinuityClass.c2.satisfies(.c2))
         #expect(ContinuityClass.c2.satisfies(.c1))
@@ -71,7 +71,7 @@ struct Issue485SurfaceContinuityTests {
 
         // A geometric class is not a parametric guarantee *above* order zero, however smooth it
         // looks: G1 constrains tangent direction, not the derivative vector. The old encoding
-        // made these negative, so `>= 1` threshold checks read them as "worse than C1" —
+        // made these negative, so `>= 1` threshold checks read them as "worse than C1",
         // accidentally the right answer, by the wrong mechanism, and wrong for `>= -2`.
         //
         // At order zero it *is* a guarantee: G1 entails G0 entails positional continuity, which

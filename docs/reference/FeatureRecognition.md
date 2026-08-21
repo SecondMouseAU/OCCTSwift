@@ -5,11 +5,11 @@ parent: API Reference
 
 # Feature Recognition & Medial Axis
 
-`FeatureRecognition.swift` provides an Attributed Adjacency Graph (AAG) for B-Rep feature recognition — classifying faces and their shared-edge convexity to detect pockets and holes. `MedialAxis.swift` computes the Voronoi skeleton (medial axis transform) of a planar face, producing a graph of bisector arcs annotated with inscribed-circle radii for thin-wall detection and tool-path planning.
+`FeatureRecognition.swift` provides an Attributed Adjacency Graph (AAG) for B-Rep feature recognition, classifying faces and their shared-edge convexity to detect pockets and holes. `MedialAxis.swift` computes the Voronoi skeleton (medial axis transform) of a planar face, producing a graph of bisector arcs annotated with inscribed-circle radii for thin-wall detection and tool-path planning.
 
 ## Topics
 
-- [EdgeConvexity](#edgeconvexity) · [AAGNode](#aagnode) · [AAGEdge](#aagedge) · [AAG](#aag) · [PocketFeature](#pocketfeature) · [Feature Recognition Extensions (AAG)](#feature-recognition-extensions-aag) · [Shape Extension — Feature Recognition](#shape-extension--feature-recognition) · [MedialAxisNode](#medialaxisnode) · [MedialAxisArc](#medialaxisarc) · [MedialAxis](#medialaxis)
+- [EdgeConvexity](#edgeconvexity) · [AAGNode](#aagnode) · [AAGEdge](#aagedge) · [AAG](#aag) · [PocketFeature](#pocketfeature) · [Feature Recognition Extensions (AAG)](#feature-recognition-extensions-aag) · [Shape Extension, Feature Recognition](#shape-extension--feature-recognition) · [MedialAxisNode](#medialaxisnode) · [MedialAxisArc](#medialaxisarc) · [MedialAxis](#medialaxis)
 
 ---
 
@@ -31,9 +31,9 @@ Before #723 this used each face's own GLOBAL area centroid (`BRepGProp::SurfaceP
 
 `OCCTEdgeGetConvexity` (like `OCCTFaceGetSharedEdgeSummary`) has no notion of which solid `face1`/`face2` belong to; it is `AAG.buildGraph()` that restricts which pairs reach it to occurrences sharing a solid (#699). Called directly on two faces from different solids the result is not meaningful for either, see `AAG`, below.
 
-- `concave` — the two face normals "open inward"; typical of pocket walls meeting a floor.
-- `smooth` — faces are tangent (within ~0.5°); typical of filleted edges.
-- `convex` — the two face normals "open outward"; typical of external edges.
+- `concave`: the two face normals "open inward"; typical of pocket walls meeting a floor.
+- `smooth`: faces are tangent (within ~0.5°); typical of filleted edges.
+- `convex`: the two face normals "open outward"; typical of external edges.
 
 ---
 
@@ -142,7 +142,7 @@ public init(shape: Shape)
 
 Calls `buildGraph()` which reads `shape.orientedFaces()`, iterates all `(i, j)` occurrence pairs (skipping any pair that is the two sides of one shared face, and any pair `AAG` can establish belongs to two different solids, #699), asks `OCCTFaceGetSharedEdgeSummary` for the pair's true shared-edge count and its first shared edge in one walk (backed by `TopExp::MapShapes` + `TopoDS_Edge::IsSame`; a non-zero count *is* adjacency, [#783](https://github.com/SecondMouseAU/OCCTSwift/issues/783)), and classifies each shared edge via `OCCTEdgeGetConvexity` (`ChFi3d::DefineConnectType`, #723). Unlike the #703/#720 centroid formula this replaced, `ChFi3d::DefineConnectType` needs no per-face integration, since it samples the local dihedral directly, so there is nothing to precompute or cache before the pairwise loop.
 
-- **Parameters:** `shape` — the solid to analyse. Works best on closed solids.
+- **Parameters:** `shape`, the solid to analyse. Works best on closed solids.
 - **OCCT:** `TopExp::MapShapes` / `TopoDS_Edge::IsSame` (adjacency); `ChFi3d::DefineConnectType` (convexity).
 - **Example:**
   ```swift
@@ -202,7 +202,7 @@ Returns the face indices of all faces adjacent to the given face.
 public func neighbors(of faceIndex: Int) -> [Int]
 ```
 
-- **Parameters:** `faceIndex` — 0-based index into `nodes`.
+- **Parameters:** `faceIndex`, 0-based index into `nodes`.
 - **Returns:** Array of neighbor face indices; empty if `faceIndex` is out of range.
 - **Example:**
   ```swift
@@ -221,7 +221,7 @@ Returns the `AAGEdge` between two faces, if they are adjacent.
 public func edge(between face1: Int, and face2: Int) -> AAGEdge?
 ```
 
-- **Parameters:** `face1` — first face index; `face2` — second face index.
+- **Parameters:** `face1`, first face index; `face2`, second face index.
 - **Returns:** The `AAGEdge` describing their shared boundary, or `nil` if they are not adjacent or the index is out of range.
 - **Example:**
   ```swift
@@ -242,7 +242,7 @@ public func concaveNeighbors(of faceIndex: Int) -> [Int]
 
 Pocket floors are typically surrounded by concave-edge neighbors (vertical walls). Returns empty if `faceIndex` is out of range.
 
-- **Parameters:** `faceIndex` — 0-based face index.
+- **Parameters:** `faceIndex`, 0-based face index.
 - **Returns:** Indices of neighbor faces where the shared edge is classified `.concave`.
 - **Example:**
   ```swift
@@ -260,7 +260,7 @@ Returns the face indices of all neighbors connected to this face via convex edge
 public func convexNeighbors(of faceIndex: Int) -> [Int]
 ```
 
-- **Parameters:** `faceIndex` — 0-based face index.
+- **Parameters:** `faceIndex`, 0-based face index.
 - **Returns:** Indices of neighbor faces where the shared edge is classified `.convex`.
 
 ---
@@ -522,7 +522,7 @@ hole bored on any axis, or a pipe's bore (material lies radially outside its inn
 
 ---
 
-## Shape Extension — Feature Recognition
+## Shape Extension. Feature Recognition
 
 ### `Shape.buildAAG()`
 
@@ -580,11 +580,11 @@ public struct MedialAxisNode: Sendable {
 }
 ```
 
-- `index` — 1-based index within the `MAT_Graph`.
-- `position` — 2D coordinates of the node in the plane of the face.
-- `distance` — distance to the nearest boundary curve (inscribed-circle radius at this node). Half of local wall thickness.
-- `isPending` — `true` if the node has only one linked arc (a skeleton endpoint). Wraps `MAT_Node::PendingNode`.
-- `isOnBoundary` — `true` if the node lies on the shape boundary. Wraps `MAT_Node::OnBasicElt`.
+- `index`: 1-based index within the `MAT_Graph`.
+- `position`: 2D coordinates of the node in the plane of the face.
+- `distance`: distance to the nearest boundary curve (inscribed-circle radius at this node). Half of local wall thickness.
+- `isPending`: `true` if the node has only one linked arc (a skeleton endpoint). Wraps `MAT_Node::PendingNode`.
+- `isOnBoundary`: `true` if the node lies on the shape boundary. Wraps `MAT_Node::OnBasicElt`.
 
 ---
 
@@ -613,10 +613,10 @@ public struct MedialAxisArc: Sendable {
 }
 ```
 
-- `index` — 1-based index within the `MAT_Graph`.
-- `geomIndex` — geometry index referencing the bisector curve in the `BRepMAT2d_BisectingLocus`.
-- `firstNodeIndex` / `secondNodeIndex` — 1-based indices of the endpoint nodes.
-- `firstElementIndex` / `secondElementIndex` — 1-based indices of the boundary elements (input edges) the arc bisects.
+- `index`: 1-based index within the `MAT_Graph`.
+- `geomIndex`: geometry index referencing the bisector curve in the `BRepMAT2d_BisectingLocus`.
+- `firstNodeIndex` / `secondNodeIndex`, 1-based indices of the endpoint nodes.
+- `firstElementIndex` / `secondElementIndex`, 1-based indices of the boundary elements (input edges) the arc bisects.
 
 ---
 
@@ -640,7 +640,7 @@ Extracts the first face via `TopExp_Explorer`, runs `BRepMAT2d_Explorer::Perform
 
 There is no tolerance: neither `BRepMAT2d_Explorer::Perform` nor `BRepMAT2d_BisectingLocus::Compute` accepts one. `Compute`'s own knobs are `LineIndex`, `aSide`, `aJoinType` and `IsOpenResult`, all fixed here at OCCT's defaults; exposing any of them would be a new capability.
 
-- **Parameters:** `shape` — a shape containing at least one face.
+- **Parameters:** `shape`, a shape containing at least one face.
 - **Returns:** `nil` if computation fails or the shape has no faces.
 - **OCCT:** `BRepMAT2d_Explorer::Perform` + `BRepMAT2d_BisectingLocus::Compute` + `MAT_Graph`.
 - **Example:**
@@ -706,7 +706,7 @@ Returns a node by its 1-based index.
 public func node(at index: Int) -> MedialAxisNode?
 ```
 
-- **Parameters:** `index` — 1-based node index (1…`nodeCount`).
+- **Parameters:** `index`, 1-based node index (1…`nodeCount`).
 - **Returns:** `MedialAxisNode`, or `nil` if the index is out of range or the graph is null.
 - **OCCT:** `MAT_Graph::Node` + `BRepMAT2d_BisectingLocus::GeomElt(node)`.
 - **Example:**
@@ -749,7 +749,7 @@ Returns an arc by its 1-based index.
 public func arc(at index: Int) -> MedialAxisArc?
 ```
 
-- **Parameters:** `index` — 1-based arc index (1…`arcCount`).
+- **Parameters:** `index`, 1-based arc index (1…`arcCount`).
 - **Returns:** `MedialAxisArc`, or `nil` if the index is out of range or the graph is null.
 - **OCCT:** `MAT_Graph::Arc`.
 - **Example:**
@@ -786,7 +786,7 @@ public var minThickness: Double { get }
 ```
 
 - **Returns:** Minimum `distance` value across all nodes, or `-1` if the computation fails.
-- **OCCT:** `OCCTMedialAxisMinThickness` — iterates all `MAT_Node` positions, computes distance to nearest boundary curve via `Geom2dAPI_ProjectPointOnCurve`, returns the minimum.
+- **OCCT:** `OCCTMedialAxisMinThickness`, iterates all `MAT_Node` positions, computes distance to nearest boundary curve via `Geom2dAPI_ProjectPointOnCurve`, returns the minimum.
 - **Example:**
   ```swift
   if let ma = MedialAxis(of: thinWallPart) {
@@ -807,7 +807,7 @@ public func distanceToBoundary(arcIndex: Int, parameter t: Double) -> Double
 
 Samples a point on the arc's bisector curve at parameter `t` and computes the distance to the nearest boundary element via `Geom2dAPI_ProjectPointOnCurve`.
 
-- **Parameters:** `arcIndex` — 1-based arc index; `t` — parameter in [0, 1] (0 = first node, 1 = second node).
+- **Parameters:** `arcIndex`, 1-based arc index; `t`, parameter in [0, 1] (0 = first node, 1 = second node).
 - **Returns:** Inscribed circle radius at the sampled point, or `-1` on error.
 - **OCCT:** `BRepMAT2d_BisectingLocus::GeomBis` + `Geom2d_TrimmedCurve::Value` + `Geom2dAPI_ProjectPointOnCurve`.
 - **Example:**
@@ -831,7 +831,7 @@ public func drawArc(at index: Int, maxPoints: Int = 32) -> [SIMD2<Double>]
 
 Evaluates the arc's bisector curve (`BRepMAT2d_BisectingLocus::GeomBis`) at uniformly spaced parameters. Infinite curve parameters are clamped to ±1000.
 
-- **Parameters:** `index` — 1-based arc index; `maxPoints` — sample points *requested* (default 32), honoured within `2...Sampling.maximumSampleCount` (10,000,000); outside that range the result is empty (#558). The name says capacity but the contract is a request: the bridge samples the arc at exactly `maxPoints` evenly-spaced parameters and always returns that many, so an unservable count is rejected rather than clamped — clamping would hand back a coarser sampling than asked for.
+- **Parameters:** `index`, 1-based arc index; `maxPoints`, sample points *requested* (default 32), honoured within `2...Sampling.maximumSampleCount` (10,000,000); outside that range the result is empty (#558). The name says capacity but the contract is a request: the bridge samples the arc at exactly `maxPoints` evenly-spaced parameters and always returns that many, so an unservable count is rejected rather than clamped, clamping would hand back a coarser sampling than asked for.
 - **Returns:** Array of 2D points along the arc; empty on error.
 - **OCCT:** `MAT_Graph::Arc` + `BRepMAT2d_BisectingLocus::GeomBis` + `Geom2d_TrimmedCurve::Value`.
 - **Example:**
@@ -854,7 +854,7 @@ public func drawAll(maxPointsPerArc: Int = 32) -> [[SIMD2<Double>]]
 
 Calls `OCCTMedialAxisDrawAll` which fills a flat XY buffer and per-arc start/length arrays in one pass. More efficient than calling `drawArc(at:)` in a loop.
 
-- **Parameters:** `maxPointsPerArc` — sample points *requested* per arc (default 32), at least 2. The bound is on the total: `arcCount * maxPointsPerArc` must not exceed `Sampling.maximumSampleCount` (10,000,000), else the result is empty; `maxPointsPerArc` is checked on its own too, since a negative count on a graph with no arcs multiplies to a plausible total (#558).
+- **Parameters:** `maxPointsPerArc`, sample points *requested* per arc (default 32), at least 2. The bound is on the total: `arcCount * maxPointsPerArc` must not exceed `Sampling.maximumSampleCount` (10,000,000), else the result is empty; `maxPointsPerArc` is checked on its own too, since a negative count on a graph with no arcs multiplies to a plausible total (#558).
 - **Returns:** Array of polylines, one per arc; empty if `arcCount == 0`.
 - **OCCT:** `BRepMAT2d_BisectingLocus::GeomBis` (per arc) + `Geom2d_TrimmedCurve::Value`.
 - **Example:**

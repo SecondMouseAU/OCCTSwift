@@ -15,7 +15,7 @@ handle null on this kernel, and all three XCAFDoc_DocumentTool fetches succeed.
 
 So the six IO.mm sites that omitted the IsNull() check were NOT sitting on a
 latent crash: the branch they lacked a guard for is not reachable here. The
-guard the shared helper now applies to all fourteen sites is DEFENSIVE — it
+guard the shared helper now applies to all fourteen sites is DEFENSIVE, it
 costs nothing, it makes the fourteen consistent, and it protects against a
 future kernel or format for which the answer differs.
 

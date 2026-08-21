@@ -29,10 +29,10 @@ import Foundation
 // verification for a lock-coverage bug. The isolation test IS authoritative for its specific
 // claim (two documents' naming scopes don't share state), since that's a deterministic,
 // single-threaded correctness property, not a race.
-@Suite("Issue #361/#363 — shared singletons (TNaming_Scope, Font_FontMgr) are thread-safe")
+@Suite("Issue #361/#363, shared singletons (TNaming_Scope, Font_FontMgr) are thread-safe")
 struct Issue361SharedSingletonThreadSafetyTests {
 
-    @Test("Two documents' naming scopes are isolated (#363 — not just race-free, but not shared)")
+    @Test("Two documents' naming scopes are isolated (#363, not just race-free, but not shared)")
     func namingScopesAreIsolatedAcrossDocuments() throws {
         let docA = try #require(Document.create())
         let docB = try #require(Document.create())

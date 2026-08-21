@@ -36,7 +36,7 @@ tracking `Extrema_ExtCC::IsParallel()` in every branch this file has. `Points(1)
 indexes an empty `NCollection_Sequence`.
 
 **Why this is a genuine SIGSEGV, not a caught exception.** `Points()`'s own bounds check is a raw
-`throw Standard_OutOfRange()` — that line is not wrapped in the `Standard_OutOfRange_Raise_if`
+`throw Standard_OutOfRange()`: that line is not wrapped in the `Standard_OutOfRange_Raise_if`
 macro and is not compiled out under `No_Exception` (this project's kernel is built with
 `BUILD_RELEASE_DISABLE_EXCEPTIONS=ON`, i.e. `-DNo_Exception`). It simply checks the wrong bound:
 `NbExt()` says 1, so `N=1` passes. The check that *would* catch the real problem is one level down,
@@ -50,20 +50,20 @@ const TheItemType& Value(const size_t theIndex) const {
 ```
 
 That check *is* built from the macro, and *is* compiled to nothing under `No_Exception`. With no
-guard left standing, `Find(1)` on a zero-length sequence walks a null node and dereferences it —
+guard left standing, `Find(1)` on a zero-length sequence walks a null node and dereferences it,
 the genuine SIGSEGV. Confirmed with a standalone binary linked directly against the pinned
 `libOCCT-macos.a` (below), not assumed from reading the two headers.
 
 `GeomAPI_ExtremaCurveCurve::Points()` (the wrapper `OCCTCurve3DExtrema` actually calls) has the
-identical shape one layer up — its own bounds check also uses the `_Raise_if` macro and is also a
-no-op under `No_Exception` — so before this fix, nothing between the bridge and the null-node
+identical shape one layer up, its own bounds check also uses the `_Raise_if` macro and is also a
+no-op under `No_Exception`, so before this fix, nothing between the bridge and the null-node
 dereference does anything.
 
 ## The four fixtures, and why each one is in the set
 
 All four run through `GeomAPI_ExtremaCurveCurve` (what the bridge calls) and directly through
 `Extrema_ExtCC` (what it wraps), so the probe also answers "does fixing the low-level class's own
-`throw` survive being reached through a wrapper whose own guard is a no-op" — it does, since the
+`throw` survive being reached through a wrapper whose own guard is a no-op", it does, since the
 `throw` inside `Extrema_ExtCC::Points()` is a real language-level throw with no macro over it.
 
 | # | Fixture | `IsParallel()` | `NbExtrema()` | `Points(1)` before | `Points(1)` after |
@@ -80,7 +80,7 @@ leave `IsParallel()==true` with a real point pair populated (which would have me
 on `IsParallel()`" is not a generally safe kernel-level fix, only safe for the specific narrower
 bridge guard PR #730 already ships). **Measuring it disproved that reading**: the finite line-line
 branch resets `myIsParallel = false` on entry and only sets it back to `true` when the projected
-ranges' overlap is wider than `Precision::Confusion()` — the touching-at-one-point case never
+ranges' overlap is wider than `Precision::Confusion()`, the touching-at-one-point case never
 re-sets it, so `IsParallel()` correctly reports `false` here too, and a real point pair is (and
 always was) returned. Reported as a finding in the PR rather than assumed from the first reading.
 See "Caller survey" below for what this means for the choice of fix.
@@ -179,7 +179,7 @@ After the patch:
 ```
 
 `LowerDistance()`/`Distance(1)` report the identical values (`1.000000`, `10.049876`) before and
-after in every case — unsurprising, since the fix touches only `Points()`'s own bounds check and
+after in every case, unsurprising, since the fix touches only `Points()`'s own bounds check and
 never touches `mySqDist` or `NbExt()`, but measured rather than assumed, since this is exactly the
 value the bridge's `Curve3D.minDistance(to:)` depends on (see "Caller survey").
 
@@ -190,11 +190,11 @@ run is the fix, showing green on the crash cases and byte-identical on the two t
 
 `clang-format --dry-run --Werror` against OCCT's own `.clang-format` reports zero violations on all
 three changed files (`Extrema_ExtCC.cxx`, `Extrema_ExtCC.hxx`,
-`Geom2dAPI_ExtremaCurveCurve.hxx` — see "Companion fix" below); the added lines needed no
+`Geom2dAPI_ExtremaCurveCurve.hxx`: see "Companion fix" below); the added lines needed no
 reformatting.
 
 **Patch confirmed to apply cleanly** (`git apply --check`) both to the pinned `V8_0_1` tag and to
-current upstream `master` (`b8f597c6`, "Coding - Bump version to 8.0.1 (#1412)") — `master` and
+current upstream `master` (`b8f597c6`, "Coding - Bump version to 8.0.1 (#1412)"), `master` and
 `V8_0_1` are byte-identical for all three touched files, so there is no rebase to do before filing.
 
 ## Fix
@@ -228,25 +228,25 @@ tracing who reads `NbExt()`: `GeomAPI_ExtremaCurveCurve::LowerDistance()` calls
 `myExtCC.SquareDistance(myIndex)`, and `SquareDistance()` bounds-checks against `NbExt()` too
 (`if ((N < 1) || (N > NbExt())) throw ...`). Redefining `NbExt()` to mean "how many point pairs
 exist" (e.g. `mypoints.Length() / 2`) would make it `0` in every case that currently returns `1`
-with a distance-only result — and then `SquareDistance(1)`, and therefore
+with a distance-only result, and then `SquareDistance(1)`, and therefore
 `LowerDistance()`/`Distance()`, would also start refusing on exactly the parallel-distance-only
 case that legitimately wants an answer (`LowerDistance()` genuinely has a well-defined value even
-when there is no unique closest point — the perpendicular distance between two parallel lines is
+when there is no unique closest point, the perpendicular distance between two parallel lines is
 still just a number). Measured, not assumed: case 1's `LowerDistance()` returns `1.000000` both
 before and after this fix, and that call path is entirely through `SquareDistance()`/`NbExt()`,
 neither of which this patch touches. Unifying the two counts would have broken that caller.
 
 **"Enforce the `IsParallel()` precondition on `Points()`."** This is what the bridge does, one layer
 up, for its own narrower purpose (return empty and stop, PR #730). At the kernel level it turns out
-to be *equivalent* to the fix actually made — case-by-case tracing of every branch in
+to be *equivalent* to the fix actually made, case-by-case tracing of every branch in
 `PrepareParallelResult` (general non-analytic types, line-circle mismatch, line-line both
 sub-cases, circle-circle's three sub-cases) shows `IsParallel()` is true in precisely the branches
 that leave `mypoints` empty, and false in precisely the branches that populate it, no exceptions
 found across the whole function. Case 4 above was where this got checked hardest, since a first
 read suggested a counter-example; measurement did not confirm it. Given the two are equivalent
 *today*, the choice was: gate on `IsParallel()` (documents the semantic reason), or bound against
-`mypoints.Length()` directly (self-defending against the *shape* of the actual bug — an index into
-a container that does not have as many entries as claimed — regardless of whether some future
+`mypoints.Length()` directly (self-defending against the *shape* of the actual bug, an index into
+a container that does not have as many entries as claimed, regardless of whether some future
 change to `PrepareParallelResult` ever breaks the `IsParallel()`/`mypoints` correspondence this
 patch measured but does not enforce anywhere). Chose the latter: `NbExt()`'s own sibling accessor,
 `SquareDistance()`, already bounds against the container it reads (`mySqDist`); `Points()` doing
@@ -255,33 +255,33 @@ existing pattern in the same file rather than adding a new one.
 
 **Who else reads these two methods**, so the fix's blast radius is explicit rather than assumed:
 
-- `GeomAPI_ExtremaCurveCurve::NbExtrema()`/`Points()`/`Parameters()`/`Distance()` — thin forwarders,
+- `GeomAPI_ExtremaCurveCurve::NbExtrema()`/`Points()`/`Parameters()`/`Distance()`, thin forwarders,
   all now benefit from the corrected bound (the wrapper's own bounds check is a `Raise_if`
   no-op under `No_Exception`, so before this fix nothing stood between it and the crash).
-- `GeomAPI_ExtremaCurveCurve::NearestPoints()` — calls `Points(myIndex, ...)` unconditionally
+- `GeomAPI_ExtremaCurveCurve::NearestPoints()`: calls `Points(myIndex, ...)` unconditionally
   whenever `myIsDone` is true, with **no** `IsParallel()` check of its own. This is a second,
   independent path to the same crash that PR #730's bridge guard does not sit in front of.
   Confirmed by grep that `GeomAPI_ExtremaCurveCurve` (the 3D, curve-curve class this patch touches)
   is constructed in exactly two places in the whole bridge, both in
   `Sources/OCCTBridge/src/OCCTBridge_Curve3D.mm` (`OCCTCurve3DExtrema`, `OCCTCurve3DMinDistanceToCurve`
-  — matching PR #730's own audit), and neither calls `NearestPoints()`. So this path is not
+, matching PR #730's own audit), and neither calls `NearestPoints()`. So this path is not
   reachable through OCCTSwift today, but it is reachable from any other OCCT consumer of this
   class, which is exactly who this patch is for. (Its 2D sibling,
-  `Geom2dAPI_ExtremaCurveCurve::NearestPoints()`, *is* called by this bridge —
-  `OCCTCurve2DMinDistance`, `OCCTBridge_Geom2d.mm` — but is already safe there, not because of a
+  `Geom2dAPI_ExtremaCurveCurve::NearestPoints()`, *is* called by this bridge,
+  `OCCTCurve2DMinDistance`, `OCCTBridge_Geom2d.mm`, but is already safe there, not because of a
   guard, but because `Geom2dAPI_ExtremaCurveCurve::NbExtrema()` genuinely reports `0` in the
   parallel case, per this file's own "Companion fix" measurement; the call site's existing
   `if (ext.NbExtrema() == 0) return result;` check is what keeps it from ever calling
   `NearestPoints()` when parallel, and it works because the count is honest, not despite it not
   being. A different class entirely, `GeomAPI_ExtremaSurfaceSurface`
   (`OCCTBridge_Surface.mm`'s `OCCTSurfaceExtrema`), has the same `NbExtrema()`-then-`NearestPoints()`
-  shape for surface-surface extrema; not investigated here — a different underlying algorithm
+  shape for surface-surface extrema; not investigated here, a different underlying algorithm
   (`Extrema_ExtSS`), out of this issue's scope, and not shown to share this defect.)
 - `GeomAPI_ExtremaCurveCurve::TotalPerform()` (backs `TotalNearestPoints`/
-  `TotalLowerDistanceParameters`/`TotalLowerDistance`) — already guards its own `Points()` call with
+  `TotalLowerDistanceParameters`/`TotalLowerDistance`), already guards its own `Points()` call with
   `if (myIsDone && !myExtCC.IsParallel())`, so it was never exposed to this defect. Also not called
   by this bridge.
-- `LowerDistance()`/`LowerDistanceParameters()`/`Distance()`/`SquareDistance()` — read `mySqDist`
+- `LowerDistance()`/`LowerDistanceParameters()`/`Distance()`/`SquareDistance()`, read `mySqDist`
   only, unaffected by this patch in every branch (measured across all four fixtures above).
 
 ## Companion fix: `Geom2dAPI_ExtremaCurveCurve::IsParallel()`
@@ -297,7 +297,7 @@ bool IsParallel() const { return myExtCC.IsParallel(); }
 One correction to the issue's own framing: it is not quite true that "a caller holding only the 2D
 wrapper cannot write PR #730's guard." `Geom2dAPI_ExtremaCurveCurve` already exposes
 `const Extrema_ExtCC2d& Extrema() const`, and `Extrema_ExtCC2d::IsParallel()` is public, so
-`geom2dExt.Extrema().IsParallel()` already compiles and works today — confirmed by compiling and
+`geom2dExt.Extrema().IsParallel()` already compiles and works today, confirmed by compiling and
 running exactly that call against the pinned kernel (below). The gap is ergonomic, not a hard
 block: the 3D API gets a one-line `IsParallel()` convenience the 2D API does not, for no reason
 tied to either class's actual capability. This patch closes that asymmetry; it changes nothing
@@ -307,7 +307,7 @@ touched).
 Confirmed the 2D path needs no crash-side fix, matching the issue's own measurement: the identical
 overlapping-range fixture (`GCE2d_MakeSegment`, `(0,0)`-`(10,0)` and `(3,1)`-`(13,1)`) through
 `Geom2dAPI_ExtremaCurveCurve` reports `IsParallel()=1` and `NbExtrema()=0`, so the `1..NbExtrema()`
-loop any caller writes around `Points()` never executes on this path — `Points()` is genuinely
+loop any caller writes around `Points()` never executes on this path, `Points()` is genuinely
 unreachable when parallel, in 2D, today. `Extrema_ExtCC2d.cxx`'s own `PrepareParallelResult`
 equivalent evidently never has the asymmetry `Extrema_ExtCC.cxx`'s does, but that was not traced
 line-by-line the way the 3D file was above, since it is not the file this issue's crash is in and
@@ -318,13 +318,13 @@ the only question this PR needs answered: is `Points()` reachable when parallel 
 `OCCTBridge_Geom2d.mm`'s `OCCTCurve2DAllExtrema` "has the identical unguarded `.Points()` call and
 is very likely the 2D sibling of this same defect." Measured here, it is not: `OCCTCurve2DAllExtrema`
 loops `for (i = 0; i < min(ext.NbExtrema(), max); i++) ext.Points(i + 1, ...)`, and since
-`NbExtrema()` is `0` in every case this issue's fixtures make parallel, the loop body — the only
-place this function calls `Points()` — never runs. `OCCTCurve2DMinDistance`
+`NbExtrema()` is `0` in every case this issue's fixtures make parallel, the loop body, the only
+place this function calls `Points()`, never runs. `OCCTCurve2DMinDistance`
 (same file, `Geom2dAPI_ExtremaCurveCurve::NearestPoints()`, see "who else reads" above) is protected
 the same way, by the same measured fact about the count. Neither needed a change.
 
 ## Upstream
 
-Not yet filed — this PR only prepares the filing (see `draft-issue.md` / `draft-pr.md` in this
+Not yet filed, this PR only prepares the filing (see `draft-issue.md` / `draft-pr.md` in this
 directory). Per this repo's hard constraint on this task, no push, comment, edit, or PR/issue
 creation was made against `Open-Cascade-SAS/OCCT` or any fork of it.

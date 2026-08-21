@@ -8,22 +8,22 @@ import simd
 ///
 /// `GCPnts_AbscissaPoint::Length(adaptor, u1, u2)` does not validate its bounds. Curves with more
 /// than one `GeomAbs_CN` interval take its `GCPnts_AbsComposite` branch, which reduces the range
-/// with `std::min`/`std::max` — and those return their *first* argument when the comparison is
+/// with `std::min`/`std::max`, and those return their *first* argument when the comparison is
 /// false. Measured against the pinned kernel on a 5-point interpolated BSpline
 /// (`Scripts/repro/548-nonfinite-length-bounds/`):
 ///
 /// | bounds | line / segment / circle | Bezier | multi-span BSpline |
 /// |---|---|---|---|
-/// | `(f, .nan)` | `nan` → `nil` | `nan` → `nil` | `0` — a genuine zero-width interval |
+/// | `(f, .nan)` | `nan` → `nil` | `nan` → `nil` | `0`, a genuine zero-width interval |
 /// | `(.nan, l)` | `nan` → `nil` | `nan` → `nil` | the curve's whole length |
-/// | `(f, .infinity)` | `+inf` — passes `l >= 0` | `nan` → `nil` | the whole length |
+/// | `(f, .infinity)` | `+inf`, passes `l >= 0` | `nan` → `nil` | the whole length |
 ///
 /// So the "`nil` means the computation failed" guarantee `Curve3D.length(from:to:)` documents (and
 /// on which #408 built the `-1.0` sentinel of `arcLength(from:to:)` / `arcLengthBetween(_:_:)`)
 /// held on exactly the curve types the existing parity suite happened to use. The multi-span
 /// BSpline fixture below is the shape those tests could not detect: a segment cannot fail this way.
 ///
-/// `Shape.edgeArcLength(from:to:)` was worse still — it has no optional and no sentinel, so a NaN
+/// `Shape.edgeArcLength(from:to:)` was worse still, it has no optional and no sentinel, so a NaN
 /// bound on a straight edge returned NaN straight through into caller arithmetic.
 ///
 /// The bounds are now checked in the bridge (`occtValidParameterRange`), before any adaptor is
@@ -83,7 +83,7 @@ struct Issue548NonFiniteLengthBoundTests {
         let d = c.domain
 
         // Was the whole length: both reduced bounds became NaN, every per-span skip test went
-        // false, and each span was integrated in full — indistinguishable from a real measurement.
+        // false, and each span was integrated in full, indistinguishable from a real measurement.
         #expect(c.length(from: .nan, to: d.upperBound) == nil)
         #expect(c.arcLength(from: .nan, to: d.upperBound) == -1.0)
         #expect(c.arcLengthBetween(.nan, d.upperBound) == -1.0)
@@ -147,7 +147,7 @@ struct Issue548NonFiniteLengthBoundTests {
     @Test("Curve2D.length(from:to:) reports nil for a non-finite bound too")
     func curve2DLengthRejectsNonFiniteBounds() {
         // Measured before the fix on the 2D interpolated BSpline: 0 for a NaN upper bound and
-        // 457.26 (its whole length) for a NaN lower one — the 3D figures exactly, since both
+        // 457.26 (its whole length) for a NaN lower one, the 3D figures exactly, since both
         // adaptors instantiate the same GCPnts_AbscissaPoint::length template.
         let fixtures: [(String, Curve2D?)] = [
             ("segment", Curve2D.segment(from: SIMD2(0, 0), to: SIMD2(10, 0))),
@@ -171,7 +171,7 @@ struct Issue548NonFiniteLengthBoundTests {
     @Test("Curve2D.arcLength(from:to:) reports -1.0 for a non-finite bound")
     func curve2DArcLengthRejectsNonFiniteBounds() {
         // This spelling measures through a *pre-bounded* Geom2dAdaptor_Curve, which never reaches
-        // the composite branch and so propagated NaN on its own — but returned +infinity for an
+        // the composite branch and so propagated NaN on its own, but returned +infinity for an
         // infinite bound on the length-parametrized types, and +infinity passes the bridge's
         // `l >= 0` guard. Hence both fixtures: the segment is the one that used to leak a value.
         let fixtures: [(String, Curve2D?)] = [

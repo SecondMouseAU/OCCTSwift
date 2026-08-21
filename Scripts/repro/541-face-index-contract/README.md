@@ -72,13 +72,13 @@ Fifteen fixtures, five divergent:
   vs 12), because each half got its own copy of the wall. Sharing comes from one operation producing
   both parents, not from the assembly.
 
-- **On the split box the schemes name different faces from index 10 onwards** — the trailing
+- **On the split box the schemes name different faces from index 10 onwards**: the trailing
   duplicate is not at the end of the explorer's walk, so every index after it is shifted. A caller
   holding `Face.index == 10` from `faces()` and passing it to `drafted(faces:)`,
   `withoutFeatures(faces:)` or `shelled(openFaces:)` (all map-backed) drafts, deletes or opens **a
   different face than the one it selected**, with no error. On the four hand-built fixtures the
   duplicate *is* last, so there A merely runs longer and the surplus indices are the ones
-  `face(at:)` answers nil for — #541's reported symptom, which turns out to be the milder half of
+  `face(at:)` answers nil for, #541's reported symptom, which turns out to be the milder half of
   the defect.
 
 - **Order is preserved on all ten agreeing fixtures**, face-by-face and not merely by count. So
@@ -94,8 +94,8 @@ Fifteen fixtures, five divergent:
   named**, and can never name the last face at all.
 
 - **`ShapeAnalysis_ShapeContents` is a fourth answer, and a fifth.** `Shape.contents`'s `NbFaces`
-  tracks the explorer exactly (occurrences). Its `NbSharedFaces` sibling — surfaced through
-  `Shape.contentsExtended()` — is a *third* dedup rule: it strips the location before adding to its
+  tracks the explorer exactly (occurrences). Its `NbSharedFaces` sibling, surfaced through
+  `Shape.contentsExtended()`: is a *third* dedup rule: it strips the location before adding to its
   map (`ShapeAnalysis_ShapeContents.cxx:167`, `face.Location(TopLoc_Location())`), so unlike
   `IsSame` it also collapses two placements of one face. On `compound(box, box.Moved())` the three
   read 12 / 12 / **6**. Neither column is `faceCount`'s answer on every fixture, which is why
@@ -109,5 +109,5 @@ explorer-backed consumers read it, and the 1-based entry points and index output
 0-based to match `Face.index`. Cross-checks live in
 `Tests/OCCTTopologyTests/Issue502SubShapeTraversalTests.swift`, alongside #502's.
 
-Not an upstream defect — both OCCT primitives behave exactly as documented, and the kernel is not
+Not an upstream defect, both OCCT primitives behave exactly as documented, and the kernel is not
 involved in the base convention at all. Nothing to file or patch upstream.

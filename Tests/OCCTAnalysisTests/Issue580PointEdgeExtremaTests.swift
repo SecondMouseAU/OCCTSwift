@@ -11,7 +11,7 @@ import simd
 /// - It reported the minimum over `BRepExtrema_ExtPC`'s extrema, which is not the minimum over the
 ///   edge. Extrema are perpendicular feet, so they exclude the edge's own two ends, and the only
 ///   one in range can be a *maximum*: a point below a half circle of radius 5 read as 11 away when
-///   it is 7.81 away. When no foot exists at all — an ordinary point past the end of a segment —
+///   it is 7.81 away. When no foot exists at all, an ordinary point past the end of a segment,
 ///   `IsDone()` is false and the whole call answered `nil`. Over 189 edge/point combinations it was
 ///   right 101 times, wrong 34 and silent 54.
 ///
@@ -20,8 +20,8 @@ import simd
 ///   than `Shape.edges()` and `Shape.edge(at:)` name (#541's contract).
 ///
 /// Both now route through what everything else uses: `occtNearestPointOnCurveRange` for the
-/// geometry and `occtEdgeAt` for the index. `solutionCount` keeps its own meaning — how many
-/// perpendicular feet the point has — and stops doubling as a success flag.
+/// geometry and `occtEdgeAt` for the index. `solutionCount` keeps its own meaning, how many
+/// perpendicular feet the point has, and stops doubling as a success flag.
 @Suite("The nearest point on an edge of a shape (#580)")
 struct Issue580PointEdgeExtremaTests {
 
@@ -41,7 +41,7 @@ struct Issue580PointEdgeExtremaTests {
 
     /// A point below the arc has no perpendicular foot on it, so the nearest point is an end at
     /// (±5, 0, 0), sqrt(25 + 36) = 7.81025 away. The sole extremum `BRepExtrema_ExtPC` finds is the
-    /// top of the arc — a maximum — and it was reported as the answer.
+    /// top of the arc, a maximum, and it was reported as the answer.
     @Test("A point below a half arc gets the nearer end, not the far side")
     func belowTheArcGetsTheEnd() throws {
         let arc = try Self.halfArc()
@@ -51,7 +51,7 @@ struct Issue580PointEdgeExtremaTests {
         #expect(abs(result.pointOnEdge.y) < 1e-6)
         #expect(abs(abs(result.pointOnEdge.x) - 5) < 1e-6)
 
-        // There is exactly one extremum, and it is the maximum at the top of the arc — the answer
+        // There is exactly one extremum, and it is the maximum at the top of the arc, the answer
         // this used to give. So a non-zero solutionCount does not mean the nearest point is one of
         // the extrema, only that the point has that many perpendicular feet on the edge.
         #expect(result.solutionCount == 1)
@@ -70,7 +70,7 @@ struct Issue580PointEdgeExtremaTests {
     }
 
     /// Past the end of a straight edge there is no foot at all, so `IsDone()` was false and the
-    /// method answered `nil` — for a point 92 units from the edge.
+    /// method answered `nil`, for a point 92 units from the edge.
     @Test("A point past the end of a segment is answered, not refused")
     func pastTheEndIsAnswered() throws {
         let segment = try Self.segment()
@@ -120,7 +120,7 @@ struct Issue580PointEdgeExtremaTests {
 
     /// The index is a position in the enumeration `Shape.edges()` reads. The bare explorer this
     /// used to walk counts a box's 12 edges as 24 occurrences, so from index 9 the two named
-    /// different edges — measured on the pinned kernel, edge 9 was (10, 0, 5) here against
+    /// different edges, measured on the pinned kernel, edge 9 was (10, 0, 5) here against
     /// (5, 0, 10) everywhere else.
     @Test("edgeIndex names the edge Shape.edges() names")
     func edgeIndexMatchesEdgesEnumeration() throws {

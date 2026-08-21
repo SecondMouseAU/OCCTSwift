@@ -344,7 +344,7 @@ struct ShapeTranslateByPointsTests {
     }
 }
 
-@Suite("GC_MakeEllipse — 3 Points")
+@Suite("GC_MakeEllipse, 3 Points")
 struct EllipseThreePointsTests {
     @Test("Create ellipse through three points")
     func ellipseFromThreePoints() throws {
@@ -362,12 +362,12 @@ struct EllipseThreePointsTests {
     }
 }
 
-@Suite("GC_MakeHyperbola — 3 Points")
+@Suite("GC_MakeHyperbola, 3 Points")
 struct HyperbolaThreePointsTests {
     @Test("Create hyperbola through three points")
     func hyperbolaFromThreePoints() throws {
         // S1 sets the major axis/radius (Center→S1); S2's distance off that axis sets the minor
-        // radius. S2 must be OFF the major axis — OCCT 8.0.0p1 rejects a zero minor radius (a
+        // radius. S2 must be OFF the major axis. OCCT 8.0.0p1 rejects a zero minor radius (a
         // collinear S2, as the old test used, is a degenerate hyperbola).
         let curve = Curve3D.hyperbolaThreePoints(
             s1: SIMD3(5, 0, 0),
@@ -781,7 +781,7 @@ struct GeomLibCheckBSplineTests {
     func check3D() {
         if let bsp = Curve3D.bspline(poles: [SIMD3(0,0,0), SIMD3(1,2,0), SIMD3(3,1,0), SIMD3(4,0,0)], knots: [0.0, 1.0], multiplicities: [4, 4], degree: 3) {
             let result = bsp.checkBSplineTangents()
-            // May be nil for simple Bezier-like BSplines — just verify no crash
+            // May be nil for simple Bezier-like BSplines, just verify no crash
             let _ = result
         }
     }
@@ -918,7 +918,7 @@ struct GceMakeConeTests {
     }
 
     // #420: coneFrom2PointsRadii and conicalSurface(point1:point2:r1:r2:) now
-    // share one implementation (GC_MakeConicalSurface) — assert they still
+    // share one implementation (GC_MakeConicalSurface), assert they still
     // produce geometrically equivalent cones for the same inputs.
     @Test func parityWithConicalSurface() throws {
         let p1 = SIMD3(0.0, 0.0, 0.0)
@@ -947,7 +947,7 @@ struct GceMakeCylinderTests {
     }
 
     // #420: cylinderFrom3Points and cylindricalSurface(point1:point2:point3:) now
-    // share one implementation (GC_MakeCylindricalSurface) — assert they still
+    // share one implementation (GC_MakeCylindricalSurface), assert they still
     // produce geometrically equivalent cylinders for the same inputs.
     @Test func parityWithCylindricalSurface() throws {
         let p1 = SIMD3(0.0, 0.0, 0.0)
@@ -2252,13 +2252,13 @@ struct TransformExpansionTests {
     }
 
     /// #835 regression: `transformed(matrix:)` uses a GROUPED layout
-    /// (`[r00,r01,r02, r10,r11,r12, r20,r21,r22, tx,ty,tz]`) — all nine rotation entries first,
+    /// (`[r00,r01,r02, r10,r11,r12, r20,r21,r22, tx,ty,tz]`), all nine rotation entries first,
     /// the three translation entries last. Locks in the documented convention against real
     /// bounding-box geometry, not just `result != nil`, so a future edit that accidentally
     /// aligns this method's array shape with `transformed(byMatrix:)`'s INTERLEAVED layout is
     /// caught here. Since #835's PR #864 review, `transformed(matrix:)` takes a
     /// ``Matrix12Grouped`` rather than a raw `[Double]`, so the layouts can no longer be
-    /// swapped at a call site at all — this test is now about the GROUPED index mapping inside
+    /// swapped at a call site at all, this test is now about the GROUPED index mapping inside
     /// that type, not about which method you called.
     @Test func generalTransformGroupedLayoutTranslatesAsDocumented() {
         if let box = Shape.box(origin: SIMD3(0, 0, 0), width: 10, height: 10, depth: 10) {
@@ -2314,7 +2314,7 @@ struct TransformExpansionTests {
     /// `[Double]` distinguished only by which method you called, so a caller could silently
     /// garble a transform by feeding one method's array shape to another. `Matrix12Grouped` /
     /// `TransformMatrix3D` now make that a compile error. Locks in the *conversion* between the
-    /// two layouts — `Matrix12Grouped.interleaved` / `TransformMatrix3D.grouped` — round-trips a
+    /// two layouts, `Matrix12Grouped.interleaved` / `TransformMatrix3D.grouped`, round-trips a
     /// transform correctly, so a caller who has one layout can still reach the method that wants
     /// the other without hand-shuffling indices.
     @Test func groupedInterleavedConversionRoundTripsTheSameTransform() {
@@ -2349,11 +2349,11 @@ struct TransformExpansionTests {
 
     /// #835 PR #864 review finding 1, the deprecated-overload half: the old `[Double]`-taking
     /// signatures are kept (marked `@available(*, deprecated)`) so existing external source still
-    /// compiles, and still perform the exact same runtime validation they always did — `nil` on
+    /// compiles, and still perform the exact same runtime validation they always did, `nil` on
     /// the wrong element count, not a trap. Since the PR #870 aggregate-review fix below
     /// (`typedInitializersReturnNilRatherThanTrapOnWrongCount`), `Matrix12Grouped`/
     /// `TransformMatrix3D`'s own raw-array initializers are `nil`-returning too, so these
-    /// deprecated overloads are no longer the *only* path to graceful failure — but they stay,
+    /// deprecated overloads are no longer the *only* path to graceful failure, but they stay,
     /// unchanged, for source compatibility with existing `[Double]` call sites.
     @Test func deprecatedArrayOverloadsStillWork() {
         guard let box = Shape.box(origin: SIMD3(0, 0, 0), width: 10, height: 10, depth: 10) else {
@@ -2383,20 +2383,20 @@ struct TransformExpansionTests {
 
     /// PR #870 aggregate review, correctness finding 1 (`TransformFactory.swift`):
     /// `Matrix12Grouped.init(_:)`/`TransformMatrix3D.init(_:)` used `precondition(values.count
-    /// == 12, ...)`, which traps the whole process — debug *and* release, uncatchable
-    /// in-process — on a wrong-count array, instead of returning `nil` the way the three
+    /// == 12, ...)`, which traps the whole process, debug *and* release, uncatchable
+    /// in-process, on a wrong-count array, instead of returning `nil` the way the three
     /// `Shape` transform methods these types replaced always did for any `[Double]` input. A
     /// caller migrating off the deprecated `[Double]`-taking overloads (`deprecatedArrayOverloadsStillWork`
-    /// above) onto these typed constructors directly — exactly what the deprecation message
-    /// tells them to do — got a crash instead of the graceful `nil` they'd get either from the
+    /// above) onto these typed constructors directly, exactly what the deprecation message
+    /// tells them to do, got a crash instead of the graceful `nil` they'd get either from the
     /// pre-#835 `Shape` methods or from the still-deprecated overloads.
     ///
     /// This test cannot literally "prove the crash used to happen and now doesn't": a passing
-    /// test process can't also have crashed. What it proves instead is the fix — both
+    /// test process can't also have crashed. What it proves instead is the fix, both
     /// initializers are now `init?`, returning `nil` for 11 and 13 elements (one short, one
     /// long) rather than trapping. Before this fix, `Matrix12Grouped(elevenElements)` and
-    /// `TransformMatrix3D(thirteenElements)` would not even type-check as an `Optional` — the
-    /// old signature was `init(_ values: [Double])`, non-failable — so this test's very shape
+    /// `TransformMatrix3D(thirteenElements)` would not even type-check as an `Optional`, the
+    /// old signature was `init(_ values: [Double])`, non-failable, so this test's very shape
     /// (binding the result as `T?` and expecting `nil`) is itself evidence the initializer
     /// changed; on the pre-fix code this test does not compile, rather than compiling and
     /// failing, which is a stronger signal than a runtime-only check could give here since the
@@ -2406,10 +2406,10 @@ struct TransformExpansionTests {
     /// Injection actually run (`okf/policies/prove-the-test-fails.md`): reverted
     /// `TransformFactory.swift` to its exact pre-fix content (`git show HEAD:...`, non-failable
     /// `init`s with `precondition`), left this test as written, and ran `swift build --target
-    /// OCCTMathTests`. Result: build failure before reaching this test at all — `Shape+Math.swift`
+    /// OCCTMathTests`. Result: build failure before reaching this test at all, `Shape+Math.swift`
     /// (which this same PR updated to `guard let grouped = Matrix12Grouped(matrix) else {...}`)
     /// fails with "initializer for conditional binding must have Optional type, not
-    /// 'Matrix12Grouped'" — confirming the whole change (this test included) is genuinely coupled
+    /// 'Matrix12Grouped'", confirming the whole change (this test included) is genuinely coupled
     /// to the failable initializer, not accidentally passing regardless. Restored the fix
     /// afterwards; `swift test --filter TransformExpansionTests` then passed 7/7, this test
     /// included.
@@ -2875,7 +2875,7 @@ struct TrsfExtrasTests {
     }
 
     /// Exercises the deprecated `[Double]`-taking overload directly (an array literal here
-    /// infers `[Double]`, not `TransformMatrix3D`) — see
+    /// infers `[Double]`, not `TransformMatrix3D`), see
     /// `TransformExpansionTests.deprecatedArrayOverloadsStillWork` for the same coverage across
     /// all three methods.
     @Test func invalidMatrixSize() {
@@ -3268,14 +3268,14 @@ struct SurfaceTransformTests {
     }
 }
 
-@Suite("TransformedCurve — Curve with Translation")
+@Suite("TransformedCurve, Curve with Translation")
 struct TransformedCurveTests {
 
     @Test func translateCircle() {
         guard let circ = Curve3D.circle(center: SIMD3(0,0,0), normal: SIMD3(0,0,1), radius: 5.0) else { return }
         guard let translated = circ.translated(tx: 10, ty: 0, tz: 0) else { return }
         let domain = translated.domain
-        // Evaluate at start — circle starts at (5,0,0), translated to (15,0,0)
+        // Evaluate at start, circle starts at (5,0,0), translated to (15,0,0)
         let pt = translated.point(at: domain.lowerBound)
         #expect(abs(pt.x - 15.0) < 0.1)
     }
@@ -3331,8 +3331,8 @@ struct DrawingCompositionTests {
 /// `planeFromPoints`/`planeFrom3Points` (3-point) and `plane(origin:normal:)`/
 /// `planeFromPointNormal` (point+normal). A ground-truth C++ test against the pinned OCCT headers
 /// (`GC_MakePlane`, `gce_MakePln`) confirmed the two 3-point algorithm classes agree on every case
-/// tried — well-separated points, collinear-but-distinct points (both evenly and unevenly
-/// spaced), one coincident pair, and all three points coincident — and that `GC_MakePlane`'s
+/// tried, well-separated points, collinear-but-distinct points (both evenly and unevenly
+/// spaced), one coincident pair, and all three points coincident, and that `GC_MakePlane`'s
 /// point+normal overload adds no check beyond `gp_Dir`'s own zero-length guard, matching the raw
 /// `Geom_Plane` constructor exactly. `planeFrom3Points`/`plane(origin:normal:)` now delegate to
 /// `planeFromPoints`/`planeFromPointNormal` instead of calling `gce_MakePln`/`new Geom_Plane`

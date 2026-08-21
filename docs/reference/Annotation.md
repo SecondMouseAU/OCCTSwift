@@ -11,7 +11,7 @@ This page is the single reference for the whole GD&T surface. `docs/reference/Do
 
 ## Topics
 
-- [DimensionGeometry](#dimensiongeometry) · [LengthDimension](#lengthdimension) · [RadiusDimension](#radiusdimension) · [AngleDimension](#angledimension) · [DiameterDimension](#diameterdimension) · [TextLabel](#textlabel) · [PointCloud](#pointcloud) · [Document Extensions — GD&T Enums & Structs](#document-extensions--gdt-enums--structs) · [Document Extensions — Read Path](#document-extensions--read-path) · [Document Extensions — Write Path](#document-extensions--write-path)
+- [DimensionGeometry](#dimensiongeometry) · [LengthDimension](#lengthdimension) · [RadiusDimension](#radiusdimension) · [AngleDimension](#angledimension) · [DiameterDimension](#diameterdimension) · [TextLabel](#textlabel) · [PointCloud](#pointcloud) · [Document Extensions, GD&T Enums & Structs](#document-extensions--gdt-enums--structs) · [Document Extensions, Read Path](#document-extensions--read-path) · [Document Extensions, Write Path](#document-extensions--write-path)
 
 ---
 
@@ -34,14 +34,14 @@ public struct DimensionGeometry: Sendable {
 
 Returned by the `geometry` property on all four dimension types. Fields:
 
-- `firstPoint` — first attachment point on the measured geometry.
-- `secondPoint` — second attachment point on the measured geometry.
-- `centerPoint` — angle vertex, or circle center for radius / diameter dimensions.
-- `textPosition` — suggested 3D location for placing the dimension label.
-- `circleNormal` — axis direction of the measured circle (radius / diameter only).
-- `circleRadius` — radius of the measured circle (radius / diameter only; `0` for linear / angle dims).
-- `value` — measured value: distance in model units for length/radius/diameter, radians for angle.
-- `isValid` — whether the extraction succeeded; check before using the other fields.
+- `firstPoint`: first attachment point on the measured geometry.
+- `secondPoint`: second attachment point on the measured geometry.
+- `centerPoint`: angle vertex, or circle center for radius / diameter dimensions.
+- `textPosition`: suggested 3D location for placing the dimension label.
+- `circleNormal`: axis direction of the measured circle (radius / diameter only).
+- `circleRadius`: radius of the measured circle (radius / diameter only; `0` for linear / angle dims).
+- `value`: measured value: distance in model units for length/radius/diameter, radians for angle.
+- `isValid`: whether the extraction succeeded; check before using the other fields.
 
 ---
 
@@ -61,9 +61,9 @@ Creates a length dimension between two 3D points.
 public init?(from p1: SIMD3<Double>, to p2: SIMD3<Double>)
 ```
 
-- **Parameters:** `p1`, `p2` — endpoints of the measured span.
+- **Parameters:** `p1`, `p2`, endpoints of the measured span.
 - **Returns:** `nil` if `PrsDim_LengthDimension` construction fails (e.g. coincident points).
-- **OCCT:** `PrsDim_LengthDimension(gp_Pnt, gp_Pnt, gp_Pln)` — plane is chosen automatically perpendicular to the connecting vector.
+- **OCCT:** `PrsDim_LengthDimension(gp_Pnt, gp_Pnt, gp_Pln)`, plane is chosen automatically perpendicular to the connecting vector.
 - **Example:**
   ```swift
   if let dim = LengthDimension(from: SIMD3(0, 0, 0), to: SIMD3(10, 0, 0)) {
@@ -81,7 +81,7 @@ Creates a length dimension measuring a single linear edge.
 public init?(edge: Shape)
 ```
 
-- **Parameters:** `edge` — a `Shape` wrapping a `TopoDS_Edge` that is straight (line segment).
+- **Parameters:** `edge`, a `Shape` wrapping a `TopoDS_Edge` that is straight (line segment).
 - **Returns:** `nil` if `edge` is not a valid linear edge or dimension construction fails.
 - **OCCT:** `PrsDim_LengthDimension(TopoDS_Edge, gp_Pln)`.
 - **Example:**
@@ -105,7 +105,7 @@ Creates a length dimension between two parallel planar faces.
 public init?(face1: Shape, face2: Shape)
 ```
 
-- **Parameters:** `face1`, `face2` — `Shape` values each wrapping a `TopoDS_Face`; the faces must be parallel planes.
+- **Parameters:** `face1`, `face2`, `Shape` values each wrapping a `TopoDS_Face`; the faces must be parallel planes.
 - **Returns:** `nil` if the faces are not parallel or dimension construction fails.
 - **OCCT:** `PrsDim_LengthDimension(TopoDS_Face, TopoDS_Face)`.
 - **Example:**
@@ -158,7 +158,7 @@ Overrides the measured value with a display value for annotation purposes.
 public func setCustomValue(_ value: Double)
 ```
 
-- **Parameters:** `value` — custom display value in model units.
+- **Parameters:** `value`, custom display value in model units.
 - **OCCT:** `PrsDim_Dimension::SetCustomValue(Standard_Real)`.
 - **Note:** Affects rendered label text only; `value` continues to return the originally measured distance.
 
@@ -166,7 +166,7 @@ public func setCustomValue(_ value: Double)
 
 ### `geometry`
 
-Geometry data for Metal rendering — attachment points, text position, and the measured value.
+Geometry data for Metal rendering, attachment points, text position, and the measured value.
 
 ```swift
 public var geometry: DimensionGeometry? { get }
@@ -196,7 +196,7 @@ Creates a radius dimension from a shape with circular geometry.
 public init?(shape: Shape)
 ```
 
-- **Parameters:** `shape` — a `Shape` wrapping circular geometry (edge or face).
+- **Parameters:** `shape`, a `Shape` wrapping circular geometry (edge or face).
 - **Returns:** `nil` if the shape does not contain circular geometry or construction fails.
 - **OCCT:** `PrsDim_RadiusDimension(TopoDS_Shape)`.
 - **Example:**
@@ -270,7 +270,7 @@ Creates an angle dimension between two edges.
 public init?(edge1: Shape, edge2: Shape)
 ```
 
-- **Parameters:** `edge1`, `edge2` — `Shape` values wrapping linear or planar edges.
+- **Parameters:** `edge1`, `edge2`, `Shape` values wrapping linear or planar edges.
 - **Returns:** `nil` if the edges are parallel or dimension construction fails.
 - **OCCT:** `PrsDim_AngleDimension(TopoDS_Edge, TopoDS_Edge)`.
 - **Example:**
@@ -293,7 +293,7 @@ Creates an angle dimension from three points: first, vertex, second.
 public init?(first: SIMD3<Double>, vertex: SIMD3<Double>, second: SIMD3<Double>)
 ```
 
-- **Parameters:** `first` — first arm point; `vertex` — the angle's apex; `second` — second arm point.
+- **Parameters:** `first`, first arm point; `vertex`, the angle's apex; `second`, second arm point.
 - **Returns:** `nil` if the points are collinear or construction fails.
 - **OCCT:** `PrsDim_AngleDimension(gp_Pnt p1, gp_Pnt center, gp_Pnt p2)`.
 - **Example:**
@@ -315,7 +315,7 @@ Creates an angle dimension between two planar faces.
 public init?(face1: Shape, face2: Shape)
 ```
 
-- **Parameters:** `face1`, `face2` — `Shape` values wrapping planar `TopoDS_Face` sub-shapes.
+- **Parameters:** `face1`, `face2`, `Shape` values wrapping planar `TopoDS_Face` sub-shapes.
 - **Returns:** `nil` if either face is non-planar or construction fails.
 - **OCCT:** `PrsDim_AngleDimension(TopoDS_Face, TopoDS_Face)`.
 
@@ -371,7 +371,7 @@ Overrides the displayed angle (in radians).
 public func setCustomValue(_ value: Double)
 ```
 
-- **Parameters:** `value` — custom angle in radians.
+- **Parameters:** `value`, custom angle in radians.
 - **OCCT:** `PrsDim_Dimension::SetCustomValue(Standard_Real)`.
 
 ---
@@ -405,7 +405,7 @@ Creates a diameter dimension from a shape with circular geometry.
 public init?(shape: Shape)
 ```
 
-- **Parameters:** `shape` — a `Shape` wrapping circular geometry.
+- **Parameters:** `shape`, a `Shape` wrapping circular geometry.
 - **Returns:** `nil` if the shape does not contain circular geometry or construction fails.
 - **OCCT:** `PrsDim_DiameterDimension(TopoDS_Shape)`.
 - **Example:**
@@ -469,7 +469,7 @@ public var geometry: DimensionGeometry? { get }
 
 ## TextLabel
 
-A positioned 3D text annotation — a label with a location, string content, and optional character height.
+A positioned 3D text annotation, a label with a location, string content, and optional character height.
 
 ### `TextLabel.init?(text:position:)`
 
@@ -479,9 +479,9 @@ Creates a text label at a 3D position.
 public init?(text: String, position: SIMD3<Double>)
 ```
 
-- **Parameters:** `text` — label string; `position` — 3D anchor point in model space.
+- **Parameters:** `text`, label string; `position`, 3D anchor point in model space.
 - **Returns:** `nil` if construction fails (e.g. empty string or bridge allocation error).
-- **OCCT:** Internal `OCCTTextLabel` struct — stores string + `gp_Pnt` position.
+- **OCCT:** Internal `OCCTTextLabel` struct, stores string + `gp_Pnt` position.
 - **Example:**
   ```swift
   if let label = TextLabel(text: "Datum A", position: SIMD3(0, 0, 10)) {
@@ -528,7 +528,7 @@ Sets the character height for rendering the label text.
 public func setHeight(_ height: Double)
 ```
 
-- **Parameters:** `height` — character height in model units.
+- **Parameters:** `height`, character height in model units.
 - **OCCT:** `OCCTTextLabelSetHeight`.
 - **Example:**
   ```swift
@@ -549,9 +549,9 @@ Creates a point cloud from an array of 3D positions without per-point colors.
 public init?(points: [SIMD3<Double>])
 ```
 
-- **Parameters:** `points` — array of 3D positions.
+- **Parameters:** `points`, array of 3D positions.
 - **Returns:** `nil` if `points` is empty or allocation fails.
-- **OCCT:** `OCCTPointCloudCreate(const double*, int32_t)` — packs XYZ into a flat `Double` buffer.
+- **OCCT:** `OCCTPointCloudCreate(const double*, int32_t)`, packs XYZ into a flat `Double` buffer.
 - **Example:**
   ```swift
   let pts: [SIMD3<Double>] = [SIMD3(0,0,0), SIMD3(1,0,0), SIMD3(0,1,0)]
@@ -570,7 +570,7 @@ Creates a colored point cloud with per-point RGB values.
 public init?(points: [SIMD3<Double>], colors: [SIMD3<Float>])
 ```
 
-- **Parameters:** `points` — 3D positions; `colors` — per-point RGB values with components in [0, 1]. Must have the same count as `points`.
+- **Parameters:** `points`, 3D positions; `colors`, per-point RGB values with components in [0, 1]. Must have the same count as `points`.
 - **Returns:** `nil` if `points.count != colors.count` or allocation fails.
 - **OCCT:** `OCCTPointCloudCreateColored(const double*, const float*, int32_t)`.
 - **Example:**
@@ -605,7 +605,7 @@ public var bounds: (min: SIMD3<Double>, max: SIMD3<Double>)? { get }
 ```
 
 - **Returns:** Tuple of min/max corners, or `nil` if the cloud is empty or bounds computation fails.
-- **OCCT:** `OCCTPointCloudGetBounds` — iterates stored points to compute AABB.
+- **OCCT:** `OCCTPointCloudGetBounds`, iterates stored points to compute AABB.
 - **Example:**
   ```swift
   if let cloud = PointCloud(points: [SIMD3(0,0,0), SIMD3(5,5,5)]),
@@ -625,7 +625,7 @@ public var points: [SIMD3<Double>] { get }
 ```
 
 - **Returns:** Array of 3D positions in insertion order. Returns `[]` if the cloud is empty.
-- **OCCT:** `OCCTPointCloudGetPoints(cloud, buffer, count)` — copies the packed buffer into the returned array.
+- **OCCT:** `OCCTPointCloudGetPoints(cloud, buffer, count)`, copies the packed buffer into the returned array.
 
 ---
 
@@ -638,11 +638,11 @@ public var colors: [SIMD3<Float>] { get }
 ```
 
 - **Returns:** Array of RGB colors matching each point; `[]` if the cloud was created without colors.
-- **OCCT:** `OCCTPointCloudGetColors(cloud, buffer, count)` — copies the packed Float buffer; returns empty if no color data is stored.
+- **OCCT:** `OCCTPointCloudGetColors(cloud, buffer, count)`, copies the packed Float buffer; returns empty if no color data is stored.
 
 ---
 
-## Document Extensions — GD&T Enums & Structs
+## Document Extensions. GD&T Enums & Structs
 
 These types are declared as extensions on `Document` in `GDTRead.swift` and encode the STEP AP242 GD&T vocabulary.
 
@@ -660,7 +660,7 @@ return them (#1004), leaving exactly one `XCAFDimTolObjects` enum unbound,
 
 ### `Document.DimensionType`
 
-Maps OCCT's `XCAFDimTolObjects_DimensionType` — the 32 dimension sub-types that STEP AP242 dimensions can carry.
+Maps OCCT's `XCAFDimTolObjects_DimensionType`, the 32 dimension sub-types that STEP AP242 dimensions can carry.
 
 ```swift
 public enum DimensionType: Int32, Sendable, CaseIterable {
@@ -784,7 +784,7 @@ case is both.
 
 ### `Document.GeomToleranceType`
 
-Maps OCCT's `XCAFDimTolObjects_GeomToleranceType` — the 16 ASME / ISO geometric tolerance classes.
+Maps OCCT's `XCAFDimTolObjects_GeomToleranceType`, the 16 ASME / ISO geometric tolerance classes.
 
 ```swift
 public enum GeomToleranceType: Int32, Sendable, CaseIterable {
@@ -837,7 +837,7 @@ location, and runout controls.
 
 ### `Document.DimensionFormVariance`
 
-Maps OCCT's `XCAFDimTolObjects_DimensionFormVariance` — the 29 ISO 286 fundamental deviations, the "position letter" half of a tolerance class such as `H7`.
+Maps OCCT's `XCAFDimTolObjects_DimensionFormVariance`, the 29 ISO 286 fundamental deviations, the "position letter" half of a tolerance class such as `H7`.
 
 ```swift
 public enum DimensionFormVariance: Int32, Sendable, CaseIterable {
@@ -883,7 +883,7 @@ Note the declaration order: `.js` (12) precedes `.j` (13), matching OCCT's own h
 
 ### `Document.DimensionGrade`
 
-Maps OCCT's `XCAFDimTolObjects_DimensionGrade` — the 20 ISO 286 accuracy grades, the numeric half of a tolerance class such as `H7`.
+Maps OCCT's `XCAFDimTolObjects_DimensionGrade`, the 20 ISO 286 accuracy grades, the numeric half of a tolerance class such as `H7`.
 
 ```swift
 public enum DimensionGrade: Int32, Sendable, CaseIterable {
@@ -1053,15 +1053,15 @@ public struct Dimension: Sendable, Hashable {
 }
 ```
 
-- `type` — the STEP AP242 dimension sub-type.
-- `value` — the nominal value as OCCT's `GetValue()` reports it: a range's midpoint, the single value otherwise, `nil` when `bounds` is `.unset`.
-- `bounds` — which of OCCT's dimension kinds this is, and its data.
-- `classOfTolerance` — the ISO 286 class, or `nil` if the dimension carries none. Independent of `bounds`.
+- `type`: the STEP AP242 dimension sub-type.
+- `value`: the nominal value as OCCT's `GetValue()` reports it: a range's midpoint, the single value otherwise, `nil` when `bounds` is `.unset`.
+- `bounds`: which of OCCT's dimension kinds this is, and its data.
+- `classOfTolerance`: the ISO 286 class, or `nil` if the dimension carries none. Independent of `bounds`.
 - `qualifier`: whether `value` is a minimum, a maximum, an average, or (`.none`) a nominal.
 - `angularQualifier`: which of the two angles an angular dimension names.
 - `decimalPlaces`: the drawn decimal-place pair, or `nil` when the dimension carries none.
 - `modifiers`: the GD&T modifiers, in OCCT's own order. Empty when the dimension carries none.
-- `index` — position in the document's dimension sequence, for use with `setDimensionTolerance(at:lower:upper:)` and its siblings.
+- `index`: position in the document's dimension sequence, for use with `setDimensionTolerance(at:lower:upper:)` and its siblings.
 
 `qualifier` and `angularQualifier` are not optional, unlike `classOfTolerance` and `decimalPlaces`.
 OCCT's own enums carry a `_None` member for those two, so absence is already in the vocabulary and
@@ -1123,9 +1123,9 @@ public struct ClassOfTolerance: Sendable, Hashable {
 }
 ```
 
-- `isHole` — `true` when the class applies to an internal feature.
-- `formVariance` — the fundamental deviation, the letter in `H7`.
-- `grade` — the accuracy grade, the number in `H7`.
+- `isHole`: `true` when the class applies to an internal feature.
+- `formVariance`: the fundamental deviation, the letter in `H7`.
+- `grade`: the accuracy grade, the number in `H7`.
 
 Independent of `bounds`: OCCT keeps the class outside the values array, so a `.range` or `.plusMinus` dimension can carry one too. Measured both ways in `Scripts/repro/996-gdt-read-surface/`.
 
@@ -1424,9 +1424,9 @@ is positive, so a stored zero is not representable and an unstored one reads bac
 object's unassigned member, which is also zero. Reporting either as `0.0` would be the defect #996
 existed to fix; measured in `Scripts/repro/1004-gdt-accessors/transcript-gates.txt` (#1004).
 
-- `type` — ASME / ISO tolerance class.
-- `value` — tolerance zone value in model units.
-- `index` — position in the document's geom-tolerance sequence.
+- `type`: ASME / ISO tolerance class.
+- `value`: tolerance zone value in model units.
+- `index`: position in the document's geom-tolerance sequence.
 
 `XCAFDimTolObjects_GeomToleranceObject` has no kind predicate of `Bounds`'s sort: `GetValue()` is a single stored number with nothing to discriminate. Its other 20 accessors (material requirement, zone modifier, modifier sequence, affected plane) are not wrapped; see #1004.
 
@@ -1520,14 +1520,14 @@ params flag stays false. The shape itself is not wrapped; see
 
 ---
 
-- `name` — datum label string (e.g. `"A"`, `"B"`).
-- `index` — position in the document's datum sequence.
+- `name`: datum label string (e.g. `"A"`, `"B"`).
+- `index`: position in the document's datum sequence.
 
 `XCAFDimTolObjects_DatumObject`'s other 20 accessors (datum target shape, type, axis, length, width, number, modifiers, position) are not wrapped; see #1004.
 
 ---
 
-## Document Extensions — Read Path
+## Document Extensions. Read Path
 
 These methods read GD&T objects off a `Document`. There is one family: until #996 the same three
 bridge calls were read twice, by an untyped family on `Document` returning raw `Int32` type codes
@@ -1580,7 +1580,7 @@ The dimension at a given index.
 public func dimension(at index: Int) -> Dimension?
 ```
 
-- **Parameters:** `index` — zero-based index within the document's dimension label sequence.
+- **Parameters:** `index`, zero-based index within the document's dimension label sequence.
 - **Returns:** `Dimension` if the label exists and its `XCAFDimTolObjects_DimensionType` maps to a known `DimensionType` case; `nil` otherwise.
 - **OCCT:** `XCAFDoc_DimTolTool::GetDimensionLabels` → `XCAFDoc_Dimension::GetObject()` → `XCAFDimTolObjects_DimensionObject::GetType()` / `GetValue()` / `GetValues()` / `IsDimWithRange()` / `GetLowerBound()` / `GetUpperBound()` / `IsDimWithPlusMinusTolerance()` / `GetLowerTolValue()` / `GetUpperTolValue()` / `IsDimWithClassOfTolerance()` / `GetClassOfTolerance()`.
 - **Example:**
@@ -1604,7 +1604,7 @@ The geometric tolerance at a given index.
 public func geomTolerance(at index: Int) -> GeomTolerance?
 ```
 
-- **Parameters:** `index` — zero-based index within the document's geom-tolerance label sequence.
+- **Parameters:** `index`, zero-based index within the document's geom-tolerance label sequence.
 - **Returns:** `GeomTolerance` if the label exists and its type maps to a known `GeomToleranceType` case; `nil` otherwise.
 - **OCCT:** `XCAFDoc_DimTolTool::GetGeomToleranceLabels` → `XCAFDoc_GeomTolerance::GetObject()` → `XCAFDimTolObjects_GeomToleranceObject::GetType()` / `GetValue()`.
 - **Example:**
@@ -1626,7 +1626,7 @@ The datum at a given index.
 public func datum(at index: Int) -> Datum?
 ```
 
-- **Parameters:** `index` — zero-based index within the document's datum label sequence.
+- **Parameters:** `index`, zero-based index within the document's datum label sequence.
 - **Returns:** `Datum` wrapping the datum name and index; `nil` if the label does not exist.
 - **OCCT:** `XCAFDoc_DimTolTool::GetDatumLabels` → `XCAFDoc_Datum::GetObject()` → `XCAFDimTolObjects_DatumObject::GetName()`.
 
@@ -1679,7 +1679,7 @@ public var datums: [Datum] { get }
 
 ---
 
-## Document Extensions — Write Path
+## Document Extensions. Write Path
 
 Methods that author new GD&T objects on the document for round-trip through STEP AP242.
 
@@ -1700,10 +1700,10 @@ public func createDimension(on shapeLabel: Int64,
 
 - **Parameters:**
   - `shapeLabel`: label ID of the shape to annotate (from `Document.namingFindLabel(shape:)?.labelId`, or from wherever the shape's label ID was captured when it was imported or added).
-  - `type` — the dimension sub-type (e.g. `.sizeDiameter`, `.locationLinearDistance`).
-  - `value` — nominal measured value in model units.
-  - `lowerTolerance` — lower tolerance; omit or pass `0` to leave unset.
-  - `upperTolerance` — upper tolerance; omit or pass `0` to leave unset.
+  - `type`: the dimension sub-type (e.g. `.sizeDiameter`, `.locationLinearDistance`).
+  - `value`: nominal measured value in model units.
+  - `lowerTolerance`: lower tolerance; omit or pass `0` to leave unset.
+  - `upperTolerance`: upper tolerance; omit or pass `0` to leave unset.
 - **Returns:** Zero-based index of the new dimension in the document's sequence, or `nil` on failure.
 - **OCCT:** `XCAFDoc_DimTolTool::AddDimension` → `XCAFDoc_DimTolTool::SetDimension` → `XCAFDimTolObjects_DimensionObject::SetType` / `SetValues` + optionally `SetLowerTolValue` / `SetUpperTolValue` via `setDimensionTolerance(at:lower:upper:)`.
 - **Example:**
@@ -1732,9 +1732,9 @@ public func createGeomTolerance(on shapeLabel: Int64,
 ```
 
 - **Parameters:**
-  - `shapeLabel` — label ID of the shape to annotate.
-  - `type` — the ASME / ISO tolerance class (e.g. `.flatness`, `.perpendicularity`).
-  - `value` — tolerance zone size in model units.
+  - `shapeLabel`: label ID of the shape to annotate.
+  - `type`: the ASME / ISO tolerance class (e.g. `.flatness`, `.perpendicularity`).
+  - `value`: tolerance zone size in model units.
 - **Returns:** Zero-based index of the new tolerance in the document's geom-tolerance sequence, or `nil` on failure.
 - **OCCT:** `XCAFDoc_DimTolTool::AddGeomTolerance` → `XCAFDoc_DimTolTool::SetGeomTolerance` → `XCAFDimTolObjects_GeomToleranceObject::SetType` / `SetValue`.
 - **Example:**
@@ -1758,7 +1758,7 @@ Creates a new datum reference on the document.
 public func createDatum(name: String) -> Int?
 ```
 
-- **Parameters:** `name` — datum identifier string (typically a single letter, e.g. `"A"`).
+- **Parameters:** `name`, datum identifier string (typically a single letter, e.g. `"A"`).
 - **Returns:** Zero-based index of the new datum in the document's datum sequence, or `nil` on failure.
 - **OCCT:** `XCAFDoc_DimTolTool::AddDatum` → `XCAFDimTolObjects_DatumObject::SetName(TCollection_HAsciiString)`.
 - **Example:**
@@ -1782,9 +1782,9 @@ public func setDimensionTolerance(at index: Int,
 ```
 
 - **Parameters:**
-  - `index` — zero-based dimension index (as returned by `createDimension` or used in `dimension(at:)`).
-  - `lower` — lower tolerance value in model units.
-  - `upper` — upper tolerance value in model units.
+  - `index`: zero-based dimension index (as returned by `createDimension` or used in `dimension(at:)`).
+  - `lower`: lower tolerance value in model units.
+  - `upper`: upper tolerance value in model units.
 - **Returns:** `true` if the update succeeded; `false` if the index is out of range, the attribute is missing, or the dimension is already `.range`.
 - **OCCT:** `XCAFDoc_DimTolTool::GetDimensionLabels` → `XCAFDoc_Dimension::GetObject()` → `XCAFDimTolObjects_DimensionObject::SetLowerTolValue` / `SetUpperTolValue` → `XCAFDoc_Dimension::SetObject`.
 - **Example:**
@@ -1812,9 +1812,9 @@ public func setDimensionBounds(at index: Int,
 ```
 
 - **Parameters:**
-  - `index` — zero-based dimension index.
-  - `lower` — lower bound in model units.
-  - `upper` — upper bound in model units.
+  - `index`: zero-based dimension index.
+  - `lower`: lower bound in model units.
+  - `upper`: upper bound in model units.
 - **Returns:** `true` if the update succeeded; `false` if the index is out of range or the attribute is missing.
 - **OCCT:** `XCAFDimTolObjects_DimensionObject::SetLowerBound` / `SetUpperBound` → `XCAFDoc_Dimension::SetObject`.
 - **Example:**
@@ -1847,10 +1847,10 @@ public func setDimensionClassOfTolerance(at index: Int,
 ```
 
 - **Parameters:**
-  - `index` — zero-based dimension index.
-  - `isHole` — `true` when the class applies to an internal feature.
-  - `formVariance` — the fundamental deviation, the letter in `H7`.
-  - `grade` — the accuracy grade, the number in `H7`.
+  - `index`: zero-based dimension index.
+  - `isHole`: `true` when the class applies to an internal feature.
+  - `formVariance`: the fundamental deviation, the letter in `H7`.
+  - `grade`: the accuracy grade, the number in `H7`.
 - **Returns:** `true` if the update succeeded; `false` if the index is out of range or the attribute is missing.
 - **OCCT:** `XCAFDimTolObjects_DimensionObject::SetClassOfTolerance` → `XCAFDoc_Dimension::SetObject`.
 - **Example:**

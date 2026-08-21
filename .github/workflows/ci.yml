@@ -63,7 +63,7 @@ jobs:
   # Deliberately NO `name:` key. The check-run name GitHub publishes is a job's `name:` when it has
   # one and the job id otherwise, and that string is what a required-status-check rule matches. A
   # prose name reads like a comment, so rewording it for clarity would silently stop satisfying the
-  # rule — the check would drop out of "required" and the PR UI would look identical to a working
+  # rule, the check would drop out of "required" and the PR UI would look identical to a working
   # gate. Falling back to the job id makes the required context a stable identifier nobody edits for
   # readability. This job is required on refactor/** (#649); see CLAUDE.md before renaming it.
   gate-scripts:
@@ -72,7 +72,7 @@ jobs:
     steps:
       # Every action pin across .github/workflows/ now targets a Node 24 major (#648). The target
       # for each was established by reading that action's own action.yml at the pinned ref and
-      # checking `using:`, not by assuming a version number implies a runtime — actions/github-script
+      # checking `using:`, not by assuming a version number implies a runtime, actions/github-script
       # is node20 at v7 and only reaches node24 at v8, so a "match the v7 the other pins use" rule
       # would have left require-issue-labels.yml deprecated while looking consistent.
       #
@@ -83,8 +83,8 @@ jobs:
 
       # Pinned rather than the image default: these gates parse Swift and C++ with regexes, and a
       # runner-image Python bump silently changing a verdict is exactly the failure mode the gates
-      # exist to prevent. Nothing here needs a third-party package — stdlib only (re, sys, os,
-      # glob, argparse, collections) — so there is no install step.
+      # exist to prevent. Nothing here needs a third-party package, stdlib only (re, sys, os,
+      # glob, argparse, collections), so there is no install step.
       - uses: actions/setup-python@v7
         with:
           python-version: '3.12'
@@ -114,7 +114,7 @@ jobs:
 
       # #802: checks that a symbol docs/ documents as current API still exists in
       # Sources/OCCTSwift. Sibling of check-docs-defaults.py above (which checks a documented
-      # *default*, not existence) — a symbol check-docs-defaults never sees because it was already
+      # *default*, not existence), a symbol check-docs-defaults never sees because it was already
       # resolved to a live declaration is exactly the gap this closes.
       - name: check-docs-existence.py --self-test
         if: '!cancelled()'

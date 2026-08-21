@@ -83,7 +83,7 @@ public final class AssemblyNode: @unchecked Sendable {
     ///
     /// - Parameters:
     ///   - color: The color to assign
-    ///   - type: Color type — generic (0), surface (1), or curve (2)
+    ///   - type: Color type, generic (0), surface (1), or curve (2)
     public func setColor(_ color: Color, type: OCCTColorType) {
         OCCTDocumentSetLabelColor(
             document.handle, labelId, type,

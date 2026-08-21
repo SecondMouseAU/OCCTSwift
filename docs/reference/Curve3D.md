@@ -5,9 +5,9 @@ parent: API Reference
 
 # Curve3D
 
-A `Curve3D` is a parametric 3D curve — the Swift analog of OCCT's `Geom_Curve` class hierarchy. It wraps lines, segments, circles, ellipses, arcs, parabolas, hyperbolas, BSplines, Bezier curves, and specialty curves (helix, sine wave, TBezier, AHT Bezier) polymorphically behind a single opaque handle. Obtain a `Curve3D` via one of the static factory methods on `Curve3D`, by extracting it from an `Edge`, or by converting a `Wire` edge's underlying geometry.
+A `Curve3D` is a parametric 3D curve, the Swift analog of OCCT's `Geom_Curve` class hierarchy. It wraps lines, segments, circles, ellipses, arcs, parabolas, hyperbolas, BSplines, Bezier curves, and specialty curves (helix, sine wave, TBezier, AHT Bezier) polymorphically behind a single opaque handle. Obtain a `Curve3D` via one of the static factory methods on `Curve3D`, by extracting it from an `Edge`, or by converting a `Wire` edge's underlying geometry.
 
-> **Note:** `Curve3D` is documented across several pages — see also **Curve3D — Analytic Types**, **Curve3D — Analysis**, and **Curve3D — Construction**.
+> **Note:** `Curve3D` is documented across several pages, see also **Curve3D, Analytic Types**, **Curve3D, Analysis**, and **Curve3D, Construction**.
 
 ## Topics
 
@@ -155,7 +155,7 @@ Evaluates the 3D point on the curve at a given parameter.
 public func point(at u: Double) -> SIMD3<Double>
 ```
 
-- **Parameters:** `u` — parameter value within `domain`.
+- **Parameters:** `u`, parameter value within `domain`.
 - **Returns:** 3D position on the curve.
 - **OCCT:** `Geom_Curve::Value(u)`.
 - **Example:**
@@ -175,9 +175,9 @@ Evaluates the position and first derivative (tangent) at a parameter.
 public func d1(at u: Double) -> (point: SIMD3<Double>, tangent: SIMD3<Double>)
 ```
 
-The tangent vector is not normalised — its magnitude depends on the parameterization. For a unit tangent, normalise the result.
+The tangent vector is not normalised, its magnitude depends on the parameterization. For a unit tangent, normalise the result.
 
-- **Parameters:** `u` — parameter value within `domain`.
+- **Parameters:** `u`, parameter value within `domain`.
 - **Returns:** Tuple of position and first-derivative vector.
 - **OCCT:** `Geom_Curve::D1(u, P, V1)`.
 - **Example:**
@@ -198,14 +198,14 @@ public func d2(at u: Double) -> (point: SIMD3<Double>, d1: SIMD3<Double>, d2: SI
 
 The second derivative is needed for curvature and osculating-circle calculations.
 
-- **Parameters:** `u` — parameter value within `domain`.
+- **Parameters:** `u`, parameter value within `domain`.
 - **Returns:** Tuple of position, first derivative, and second derivative.
 - **OCCT:** `Geom_Curve::D2(u, P, V1, V2)`.
 - **Example:**
   ```swift
   let seg = Curve3D.segment(from: .zero, to: SIMD3(10, 0, 0))!
   let (pt, v1, v2) = seg.d2(at: 0)
-  // v2 ≈ SIMD3(0, 0, 0) — zero second derivative for a line
+  // v2 ≈ SIMD3(0, 0, 0), zero second derivative for a line
   ```
 
 ---
@@ -222,7 +222,7 @@ public static func line(through point: SIMD3<Double>, direction: SIMD3<Double>) 
 
 The curve is not bounded; its domain is `(-∞, +∞)`. Use `trimmed(from:to:)` or `segment(from:to:)` if a bounded segment is required.
 
-- **Parameters:** `point` — a point on the line; `direction` — line direction (need not be normalised).
+- **Parameters:** `point`, a point on the line; `direction`, line direction (need not be normalised).
 - **Returns:** Line curve, or `nil` if `direction` is zero.
 - **OCCT:** `Geom_Line(gp_Lin(point, direction))`.
 - **Example:**
@@ -242,7 +242,7 @@ public static func segment(from p1: SIMD3<Double>, to p2: SIMD3<Double>) -> Curv
 
 Equivalent to an infinite line trimmed to the arc-length interval `[0, distance(p1, p2)]`.
 
-- **Parameters:** `p1` — start point; `p2` — end point.
+- **Parameters:** `p1`, start point; `p2`, end point.
 - **Returns:** Segment curve, or `nil` if `p1` and `p2` coincide.
 - **OCCT:** `GC_MakeSegment(p1, p2)` → `Geom_TrimmedCurve`.
 - **Example:**
@@ -263,7 +263,7 @@ public static func circle(center: SIMD3<Double>, normal: SIMD3<Double>, radius: 
 
 The circle is periodic with period `2π`. The X axis of the local frame is determined by OCCT's `gp_Ax2` construction from `normal`.
 
-- **Parameters:** `center` — circle centre; `normal` — plane normal; `radius` — circle radius (must be > 0).
+- **Parameters:** `center`, circle centre; `normal`, plane normal; `radius`, circle radius (must be > 0).
 - **Returns:** Full circle curve, or `nil` if `radius ≤ 0` or `normal` is zero.
 - **OCCT:** `Geom_Circle(gp_Ax2(...), radius)`.
 - **See also:** [`circleFromCenterNormal(center:normal:radius:)`](Curve3D-Analysis.md) builds the identical circle through OCCT's `gce_MakeCirc` algorithm and enforces the same `radius > 0` contract (#399). The same pairing exists for `ellipse`/`ellipseFromCenterNormal`, `hyperbola`/`hyperbolaFromCenterNormal` and `parabola`/`parabolaFromCenterNormal`.
@@ -285,7 +285,7 @@ public static func arcOfCircle(start: SIMD3<Double>, interior: SIMD3<Double>, en
 
 OCCT derives the centre and radius from the three points. The arc sweeps from `start` through `interior` to `end`.
 
-- **Parameters:** `start` — first endpoint; `interior` — a point on the arc; `end` — second endpoint.
+- **Parameters:** `start`, first endpoint; `interior`, a point on the arc; `end`, second endpoint.
 - **Returns:** Arc curve, or `nil` if the three points are collinear or coincident.
 - **OCCT:** `GC_MakeArcOfCircle(start, interior, end)` → `Geom_TrimmedCurve`.
 - **Example:**
@@ -298,13 +298,13 @@ OCCT derives the centre and radius from the three points. The arc sweeps from `s
 
 ### `Curve3D.arc(through:_:_:)`
 
-A spelling of [`arcOfCircle(start:interior:end:)`](#curve3darcofcirclestartinteriorend) and delegates to it — the two cannot produce different curves for the same input (#415).
+A spelling of [`arcOfCircle(start:interior:end:)`](#curve3darcofcirclestartinteriorend) and delegates to it, the two cannot produce different curves for the same input (#415).
 
 ```swift
 public static func arc(through p1: SIMD3<Double>, _ pm: SIMD3<Double>, _ p2: SIMD3<Double>) -> Curve3D?
 ```
 
-- **Parameters:** `p1` — first endpoint (maps to `arcOfCircle`'s `start`); `pm` — a point on the arc (maps to `interior`); `p2` — second endpoint (maps to `end`).
+- **Parameters:** `p1`, first endpoint (maps to `arcOfCircle`'s `start`); `pm`, a point on the arc (maps to `interior`); `p2`, second endpoint (maps to `end`).
 - **Returns:** Arc curve, or `nil` if points are collinear or coincident.
 - **OCCT:** `GC_MakeArcOfCircle` → `Geom_TrimmedCurve`, via `arcOfCircle(start:interior:end:)`.
 - **Example:**
@@ -326,7 +326,7 @@ public static func ellipse(center: SIMD3<Double>, normal: SIMD3<Double>,
 
 The major axis direction is determined automatically by `gp_Ax2`. Use `arcOfEllipse` to create a bounded arc.
 
-- **Parameters:** `center` — ellipse centre; `normal` — plane normal; `majorRadius` — semi-major axis (must be > `minorRadius`); `minorRadius` — semi-minor axis (must be > 0).
+- **Parameters:** `center`, ellipse centre; `normal`, plane normal; `majorRadius`, semi-major axis (must be > `minorRadius`); `minorRadius`, semi-minor axis (must be > 0).
 - **Returns:** Full ellipse curve, or `nil` on failure.
 - **OCCT:** `Geom_Ellipse(gp_Ax2(...), majorRadius, minorRadius)`.
 - **Example:**
@@ -345,7 +345,7 @@ Creates a parabola with the given focal distance in a plane.
 public static func parabola(center: SIMD3<Double>, normal: SIMD3<Double>, focal: Double) -> Curve3D?
 ```
 
-- **Parameters:** `center` — vertex of the parabola; `normal` — plane normal; `focal` — focal distance (must be > 0).
+- **Parameters:** `center`, vertex of the parabola; `normal`, plane normal; `focal`, focal distance (must be > 0).
 - **Returns:** Parabola curve, or `nil` if `focal ≤ 0`.
 - **OCCT:** `Geom_Parabola(gp_Ax2(...), focal)`.
 - **Example:**
@@ -364,7 +364,7 @@ public static func hyperbola(center: SIMD3<Double>, normal: SIMD3<Double>,
                              majorRadius: Double, minorRadius: Double) -> Curve3D?
 ```
 
-- **Parameters:** `center` — hyperbola centre; `normal` — plane normal; `majorRadius` — real semi-axis; `minorRadius` — imaginary semi-axis (both must be > 0).
+- **Parameters:** `center`, hyperbola centre; `normal`, plane normal; `majorRadius`, real semi-axis; `minorRadius`, imaginary semi-axis (both must be > 0).
 - **Returns:** Hyperbola curve, or `nil` on failure.
 - **OCCT:** `Geom_Hyperbola(gp_Ax2(...), majorRadius, minorRadius)`.
 - **Example:**
@@ -390,11 +390,11 @@ public static func bspline(poles: [SIMD3<Double>], weights: [Double]? = nil,
 When `weights` is `nil`, all pole weights default to 1.0 (non-rational B-spline). Provides complete control over knot structure for CAD data exchange use cases.
 
 - **Parameters:**
-  - `poles` — control points (minimum 2).
-  - `weights` — per-pole weights (`nil` = uniform 1.0).
-  - `knots` — distinct knot values.
-  - `multiplicities` — per-knot multiplicity.
-  - `degree` — curve degree (≥ 1).
+  - `poles`: control points (minimum 2).
+  - `weights`: per-pole weights (`nil` = uniform 1.0).
+  - `knots`: distinct knot values.
+  - `multiplicities`: per-knot multiplicity.
+  - `degree`: curve degree (≥ 1).
 - **Returns:** BSpline/NURBS curve, or `nil` if parameters are invalid.
 - **OCCT:** `Geom_BSplineCurve(poles, knots, multiplicities, degree)`.
 - **Example:**
@@ -417,7 +417,7 @@ public static func bezier(poles: [SIMD3<Double>], weights: [Double]? = nil) -> C
 
 The curve passes through the first and last pole. Interior poles act as attractors. The degree equals `poles.count - 1`.
 
-- **Parameters:** `poles` — control points (minimum 2); `weights` — per-pole rational weights (`nil` = uniform 1.0).
+- **Parameters:** `poles`, control points (minimum 2); `weights`, per-pole rational weights (`nil` = uniform 1.0).
 - **Returns:** Bezier curve, or `nil` if fewer than 2 poles or construction fails.
 - **OCCT:** `Geom_BezierCurve(poles)` or `Geom_BezierCurve(poles, weights)`.
 - **Example:**
@@ -439,7 +439,7 @@ public static func interpolate(points: [SIMD3<Double>], closed: Bool = false,
 
 Unlike `bspline(poles:…)`, the curve passes exactly through every point. Use `closed: true` for a periodic loop: [`interpolatePeriodic(points:tolerance:)`](Curve3D-Construction.md) is a spelling of exactly that case and delegates here (#493).
 
-- **Parameters:** `points` — points the curve must pass through (minimum 2); `closed` — closed/periodic curve; `tolerance` — interpolation precision.
+- **Parameters:** `points`, points the curve must pass through (minimum 2); `closed`, closed/periodic curve; `tolerance`, interpolation precision.
 - **Returns:** Interpolated BSpline curve, or `nil` on failure.
 - **OCCT:** `GeomAPI_Interpolate` + `Perform()`.
 - **Example:**
@@ -465,7 +465,7 @@ public static func interpolate(points: [SIMD3<Double>],
                                tolerance: Double = 1e-6) -> Curve3D?
 ```
 
-- **Parameters:** `points` — interpolation points; `startTangent` — tangent at the first point; `endTangent` — tangent at the last point; `tolerance` — precision.
+- **Parameters:** `points`, interpolation points; `startTangent`, tangent at the first point; `endTangent`, tangent at the last point; `tolerance`, precision.
 - **Returns:** Interpolated BSpline, or `nil` on failure.
 - **OCCT:** `GeomAPI_Interpolate::Load(startTangent, endTangent)` + `Perform()`.
 - **Example:**
@@ -488,9 +488,9 @@ public static func fit(points: [SIMD3<Double>], minDegree: Int = 3, maxDegree: I
                        tolerance: Double = 1e-3) -> Curve3D?
 ```
 
-Unlike `interpolate`, the fitted curve does not necessarily pass through every point — it minimises squared error, which produces smoother results from noisy data.
+Unlike `interpolate`, the fitted curve does not necessarily pass through every point, it minimises squared error, which produces smoother results from noisy data.
 
-- **Parameters:** `points` — data points; `minDegree`/`maxDegree` — degree range; `tolerance` — approximation error.
+- **Parameters:** `points`, data points; `minDegree`/`maxDegree`, degree range; `tolerance`, approximation error.
 - **Returns:** Approximating BSpline, or `nil` on failure.
 - **OCCT:** `GeomAPI_PointsToBSpline` (via `OCCTCurve3DFitPoints`).
 - **Example:**
@@ -571,7 +571,7 @@ Trims the curve to a sub-interval `[u1, u2]` of its parameter domain.
 public func trimmed(from u1: Double, to u2: Double) -> Curve3D?
 ```
 
-- **Parameters:** `u1` — lower trim parameter; `u2` — upper trim parameter (must satisfy `u1 < u2`).
+- **Parameters:** `u1`, lower trim parameter; `u2`, upper trim parameter (must satisfy `u1 < u2`).
 - **Returns:** Trimmed curve, or `nil` if trimming fails.
 - **OCCT:** `Geom_TrimmedCurve(curve, u1, u2)`.
 - **Example:**
@@ -611,7 +611,7 @@ Returns a copy of the curve translated by a displacement vector.
 public func translated(by delta: SIMD3<Double>) -> Curve3D?
 ```
 
-- **Parameters:** `delta` — translation vector.
+- **Parameters:** `delta`, translation vector.
 - **Returns:** Translated curve, or `nil` on failure.
 - **OCCT:** `Geom_Curve::Translate(gp_Vec)`.
 - **Example:**
@@ -632,7 +632,7 @@ public func rotated(around axisOrigin: SIMD3<Double>, direction: SIMD3<Double>,
                     angle: Double) -> Curve3D?
 ```
 
-- **Parameters:** `axisOrigin` — a point on the rotation axis; `direction` — axis direction; `angle` — rotation angle in radians.
+- **Parameters:** `axisOrigin`, a point on the rotation axis; `direction`, axis direction; `angle`, rotation angle in radians.
 - **Returns:** Rotated curve, or `nil` on failure.
 - **OCCT:** `Geom_Curve::Rotate(gp_Ax1, angle)`.
 - **Example:**
@@ -651,7 +651,7 @@ Returns a copy of the curve scaled from a centre point.
 public func scaled(from center: SIMD3<Double>, factor: Double) -> Curve3D?
 ```
 
-- **Parameters:** `center` — fixed point of the scaling; `factor` — scale factor.
+- **Parameters:** `center`, fixed point of the scaling; `factor`, scale factor.
 - **Returns:** Scaled curve, or `nil` on failure.
 - **OCCT:** `Geom_Curve::Scale(gp_Pnt, factor)`.
 - **Example:**
@@ -671,7 +671,7 @@ Returns a copy of the curve mirrored through a point.
 public func mirrored(acrossPoint point: SIMD3<Double>) -> Curve3D?
 ```
 
-- **Parameters:** `point` — the point of symmetry.
+- **Parameters:** `point`, the point of symmetry.
 - **Returns:** Mirrored curve, or `nil` on failure.
 - **OCCT:** `Geom_Curve::Mirror(gp_Pnt)`.
 - **Example:**
@@ -690,7 +690,7 @@ Returns a copy of the curve mirrored across an axis (line).
 public func mirrored(acrossAxis point: SIMD3<Double>, direction: SIMD3<Double>) -> Curve3D?
 ```
 
-- **Parameters:** `point` — a point on the axis; `direction` — axis direction.
+- **Parameters:** `point`, a point on the axis; `direction`, axis direction.
 - **Returns:** Mirrored curve, or `nil` on failure.
 - **OCCT:** `Geom_Curve::Mirror(gp_Ax1)`.
 - **Example:**
@@ -709,7 +709,7 @@ Returns a copy of the curve mirrored across a plane.
 public func mirrored(acrossPlane point: SIMD3<Double>, normal: SIMD3<Double>) -> Curve3D?
 ```
 
-- **Parameters:** `point` — a point on the plane; `normal` — plane normal.
+- **Parameters:** `point`, a point on the plane; `normal`, plane normal.
 - **Returns:** Mirrored curve, or `nil` on failure.
 - **OCCT:** `Geom_Curve::Mirror(gp_Ax2)`.
 - **Example:**
@@ -737,10 +737,10 @@ collapses `nil` to a `-1.0` sentinel for source compatibility.
   and then to that interval halved, quartered, ... until two successive levels agree to 1e-9
   relative. A line, a circle and a 2-pole Bezier/BSpline keep their closed form, which is exact and
   has nothing to converge. (Through v1.16.1 this was `CPnts_AbscissaPoint::Length`, one quadrature
-  across the whole domain, which read up to several percent low on an interpolated curve — #477.
+  across the whole domain, which read up to several percent low on an interpolated curve, #477.
   Through v1.17.0 it was one quadrature *per span*, which is the same defect wherever a span is
   wide: a full ellipse measured up to 1.7% long, a parabola over `[-100, 100]` 3.1% short, and a
-  5-point interpolation 6.0e-5 out — #603.)
+  5-point interpolation 6.0e-5 out, #603.)
 - **Note:** The measurement costs roughly 5× what a single quadrature did (an 8 × 3 ellipse 0.11 µs
   → 3.5 µs, a 200-span BSpline 89 µs → 452 µs); a line or circle is unchanged at 0.02 µs.
 - **Note:** An unbounded curve reports its parametric extent rather than failing: an untrimmed
@@ -766,7 +766,7 @@ This is the canonical, failure-distinguishing entry point for a bounded-interval
 [Curve3D-Construction](Curve3D-Construction.md)) both delegate to this and collapse `nil` to a
 `-1.0` sentinel for source compatibility.
 
-- **Parameters:** `u1` — start parameter, must be finite; `u2` — end parameter, must be finite.
+- **Parameters:** `u1`, start parameter, must be finite; `u2`, end parameter, must be finite.
 - **Returns:** Arc length, or `nil` if a bound is not finite or the computation fails.
 - **OCCT:** `GCPnts_AbscissaPoint::Length(adaptor, u1, u2)`, subdivided per `GeomAbs_CN` interval,
   the same measurement as `length` (#603).
@@ -779,7 +779,7 @@ This is the canonical, failure-distinguishing entry point for a bounded-interval
 - **Note:** A *finite* range reaching outside the curve's domain is not rejected. It measures the
   part of the range that lies on the curve, so a range wholly outside measures `0` and one
   overhanging an end measures up to that end. A curve whose parameter domain covers a whole period
-  exists at every parameter, so a periodic curve measures the whole range and winds — a circle over
+  exists at every parameter, so a periodic curve measures the whole range and winds, a circle over
   `[0, 4π]` travels two circumferences. An arc trimmed from a circle covers half a period, so it
   stops at its own trim. Before #600 this held only for multi-span BSplines: a 10-long segment
   measured 20 over `[0, 20]`, a Bezier 122.14 long measured 1002.29 one domain width past its end,
@@ -791,12 +791,12 @@ This is the canonical, failure-distinguishing entry point for a bounded-interval
   let halfLen = circle.length(from: d.lowerBound, to: d.lowerBound + .pi)
   // halfLen ≈ π
   let two = circle.length(from: 0, to: 4 * .pi)
-  // two ≈ 4π — two turns, because a circle is periodic
+  // two ≈ 4π, two turns, because a circle is periodic
   let bad = circle.length(from: d.lowerBound, to: .nan)
   // bad == nil
 
   let seg = Curve3D.segment(from: .zero, to: SIMD3(10, 0, 0))!
-  let clipped = seg.length(from: 0, to: 20)   // 10 — the segment, not the line it lies on
+  let clipped = seg.length(from: 0, to: 20)   // 10, the segment, not the line it lies on
   let outside = seg.length(from: 20, to: 30)  // 0
   ```
 
@@ -860,7 +860,7 @@ public static func join(_ curves: [Curve3D], tolerance: Double = 1e-6) -> Curve3
 
 Each input curve is converted to BSpline form before joining. Curves must meet end-to-end within `tolerance`. Prefer `joined(curves:tolerance:)` (v0.49.0) which uses `GeomConvert_CompCurveToBSplineCurve` directly.
 
-- **Parameters:** `curves` — curves to join in order; `tolerance` — gap tolerance for endpoint matching.
+- **Parameters:** `curves`, curves to join in order; `tolerance`, gap tolerance for endpoint matching.
 - **Returns:** Joined BSpline curve, or `nil` if the array is empty or joining fails.
 - **OCCT:** `GeomConvert::CurveToBSplineCurve` + `GeomConvert_CompCurveToBSplineCurve`.
 - **Example:**
@@ -884,24 +884,24 @@ public func approximated(tolerance: Double = 1e-3, continuity: Int = 2,
 ```
 
 Useful for converting an analytical curve to a polynomial BSpline with controlled accuracy.
-`continuity` is a **request order** counting `0=C0, 1=C1, 2=C2, 3=C3` — not a raw `GeomAbs_Shape`
+`continuity` is a **request order** counting `0=C0, 1=C1, 2=C2, 3=C3`, not a raw `GeomAbs_Shape`
 ordinal (that enum interleaves the geometric classes: `C0=0, G1=1, C1=2, G2=3, C2=4`). Values
 outside `0...3` fall back to C2.
 
-- **Parameters:** `tolerance` — approximation error; `continuity` — minimum continuity order; `maxSegments` — maximum number of BSpline spans; `maxDegree` — maximum polynomial degree.
+- **Parameters:** `tolerance`, approximation error; `continuity`, minimum continuity order; `maxSegments`, maximum number of BSpline spans; `maxDegree`, maximum polynomial degree.
 - **Returns:** Approximating BSpline, or `nil` when OCCT produced no fit at all.
 - **OCCT:** `GeomConvert_ApproxCurve(curve, tolerance, continuity, maxSegments, maxDegree)`, gated on `HasResult()`.
-- **Note:** Defaults are shared with `Curve2D.approximated` and `Surface.approximated` (#406) —
+- **Note:** Defaults are shared with `Curve2D.approximated` and `Surface.approximated` (#406),
   all three wrap the same `GeomConvert_Approx*`/`Geom2dConvert_ApproxCurve` family applied to a
   different OCCT geometry hierarchy, not independent algorithms that would justify
   independently-tuned numeric defaults.
 - **Note:** A non-`nil` result is **not** a promise that `tolerance` was met. This gates on OCCT's
   `HasResult()`, which is documented as true for a fit that is "not NECESSARILY within the required
-  tolerance" — the same accessor
+  tolerance", the same accessor
   [`approxWithDetails`](#approxwithdetailstolerancecontinuitymaxsegmentsmaxdegree) uses, since #491
   put one shared implementation behind both. Use `approxWithDetails` when you need the actual
   `maxError`. (Gating on `IsDone()` instead, as this used to, would not have helped: measured
-  against this kernel it never rejects an over-tolerance fit — a circle fitted with one segment at
+  against this kernel it never rejects an over-tolerance fit, a circle fitted with one segment at
   degree 3 against a `1e-9` tolerance reports `maxError` 5.1 and `isDone` true.)
 - **Example:**
   ```swift
@@ -922,12 +922,12 @@ public func approxWithDetails(tolerance: Double, continuity: ParametricContinuit
 ```
 
 One shared `GeomConvert_ApproxCurve` run backs both entry points (#491), so for identical arguments
-they return the same curve — this one just also carries the diagnostics OCCT already computed.
+they return the same curve, this one just also carries the diagnostics OCCT already computed.
 
 - **Returns:** `ApproxCurveResult(curve:maxError:isDone:hasResult:)`. `curve` is populated exactly
   when `hasResult`; `isDone` is whether the fit reached `tolerance`; `maxError` is the greatest
   distance between the source curve and the fit.
-- **OCCT:** `GeomConvert_ApproxCurve` — `Curve()`, `MaxError()`, `IsDone()`, `HasResult()`.
+- **OCCT:** `GeomConvert_ApproxCurve`, `Curve()`, `MaxError()`, `IsDone()`, `HasResult()`.
 - **Note:** `isDone` and `hasResult` are always equal in the pinned kernel. `GeomConvert_ApproxCurve`
   copies both off `AdvApprox_ApproxAFunction`, whose only `HasResult`-without-`IsDone` path is an
   `ErrorCode = -1` assignment that upstream has commented out
@@ -958,7 +958,7 @@ public func drawAdaptive(angularDeflection: Double = 0.1,
 
 Concentrates sample points where the curve bends sharply, producing an efficient polyline for Metal rendering. Returns an empty array if the curve cannot be discretized.
 
-- **Parameters:** `angularDeflection` — maximum angle between consecutive tangents (radians); `chordalDeflection` — maximum chord-to-curve deviation; `maxPoints` — output *capacity*, clamped into `0...Sampling.maximumSampleCount` (10,000,000), so an unservable capacity returns the same points rather than a coarser sampling; 0 or less returns empty (#558). The deflection criteria decide the actual point count.
+- **Parameters:** `angularDeflection`, maximum angle between consecutive tangents (radians); `chordalDeflection`, maximum chord-to-curve deviation; `maxPoints`, output *capacity*, clamped into `0...Sampling.maximumSampleCount` (10,000,000), so an unservable capacity returns the same points rather than a coarser sampling; 0 or less returns empty (#558). The deflection criteria decide the actual point count.
 - **Returns:** Array of 3D points along the curve; never force-unwrap.
 - **OCCT:** `GCPnts_TangentialDeflection(adaptor, angularDefl, chordalDefl)`.
 - **Example:**
@@ -980,7 +980,7 @@ public func drawUniform(pointCount: Int) -> [SIMD3<Double>]
 
 All consecutive point pairs are separated by the same arc-length. Good for even distribution of sample points regardless of curvature. The first point is always the start of the curve and the last is always its end.
 
-- **Parameters:** `pointCount`, the desired number of output points — a *request*, honoured within `2...Sampling.maximumSampleCount` (10,000,000); outside that range the result is empty (#501, #558). Not clamped: a count past the ceiling fails visibly rather than coming back coarser than what was asked for. Before #558 a negative aborted the process rather than returning empty.
+- **Parameters:** `pointCount`, the desired number of output points, a *request*, honoured within `2...Sampling.maximumSampleCount` (10,000,000); outside that range the result is empty (#501, #558). Not clamped: a count past the ceiling fails visibly rather than coming back coarser than what was asked for. Before #558 a negative aborted the process rather than returning empty.
 - **Returns:** Array of 3D points, never more than `pointCount`, or empty array on failure.
 - **OCCT:** `GCPnts_UniformAbscissa(adaptor, pointCount)`. It sizes its own array at `pointCount + 5` and can report more points than requested on a poorly-conditioned curve; the surplus is dropped and the curve's end point kept (#501).
 - **Example:**
@@ -1001,7 +1001,7 @@ public func drawDeflection(deflection: Double = 0.01,
                            maxPoints: Int = 4096) -> [SIMD3<Double>]
 ```
 
-- **Parameters:** `deflection` — maximum chord-to-curve deviation; `maxPoints` — output *capacity*, clamped into `0...Sampling.maximumSampleCount` (10,000,000), so an unservable capacity returns the same points rather than a coarser sampling; 0 or less returns empty (#558).
+- **Parameters:** `deflection`, maximum chord-to-curve deviation; `maxPoints`, output *capacity*, clamped into `0...Sampling.maximumSampleCount` (10,000,000), so an unservable capacity returns the same points rather than a coarser sampling; 0 or less returns empty (#558).
 - **Returns:** Array of 3D points; empty on failure.
 - **OCCT:** `GCPnts_UniformDeflection(adaptor, deflection)`.
 - **Example:**
@@ -1093,7 +1093,7 @@ Both `from` and `to` must lie on the ellipse (within tolerance). Use this form w
   ```
 
 The radius check matters more in this form than in the angular one. Converting each endpoint back to
-a parameter divides by the minor radius, so at zero both bounds come back `NaN` — and OCCT reports
+a parameter divides by the minor radius, so at zero both bounds come back `NaN`, and OCCT reports
 that construction as *done*. Before #554 this returned a live curve whose parameter range and every
 evaluation were `NaN`:
 
@@ -1118,7 +1118,7 @@ public static func joined(curves: [Curve3D], tolerance: Double = 1e-6) -> Curve3
 
 Uses `GeomConvert_CompCurveToBSplineCurve` to concatenate curves in order. Curves must meet end-to-end within `tolerance`. This is the preferred join method for v0.49.0+ (compared to the older `Curve3D.join(_:tolerance:)` which uses a different internal code path).
 
-- **Parameters:** `curves` — ordered array of curves to concatenate; `tolerance` — endpoint gap tolerance.
+- **Parameters:** `curves`, ordered array of curves to concatenate; `tolerance`, endpoint gap tolerance.
 - **Returns:** Joined BSpline curve, or `nil` if the array is empty or any gap exceeds `tolerance`.
 - **OCCT:** `GeomConvert_CompCurveToBSplineCurve::Add` + `BSplineCurve()`.
 - **Example:**
@@ -1164,7 +1164,7 @@ Translates the curve in place by `(dx, dy, dz)`.
 public func translate(dx: Double, dy: Double, dz: Double) -> Bool
 ```
 
-- **Parameters:** `dx`, `dy`, `dz` — displacement components.
+- **Parameters:** `dx`, `dy`, `dz`, displacement components.
 - **Returns:** `true` on success.
 - **OCCT:** `Geom_Curve::Translate(gp_Vec)` (in-place, via `OCCTCurve3DTransform`).
 - **Example:**
@@ -1185,7 +1185,7 @@ Rotates the curve in place around an axis.
 public func rotate(axisOrigin: SIMD3<Double>, axisDirection: SIMD3<Double>, angle: Double) -> Bool
 ```
 
-- **Parameters:** `axisOrigin` — point on the rotation axis; `axisDirection` — axis direction; `angle` — rotation angle in radians.
+- **Parameters:** `axisOrigin`, point on the rotation axis; `axisDirection`, axis direction; `angle`, rotation angle in radians.
 - **Returns:** `true` on success.
 - **OCCT:** `Geom_Curve::Rotate(gp_Ax1, angle)` (in-place).
 - **Example:**
@@ -1205,7 +1205,7 @@ Scales the curve in place from a centre point.
 public func scale(center: SIMD3<Double>, factor: Double) -> Bool
 ```
 
-- **Parameters:** `center` — fixed point of scaling; `factor` — scale factor.
+- **Parameters:** `center`, fixed point of scaling; `factor`, scale factor.
 - **Returns:** `true` on success.
 - **OCCT:** `Geom_Curve::Scale(gp_Pnt, factor)` (in-place).
 - **Example:**
@@ -1226,7 +1226,7 @@ Mirrors the curve in place through a point.
 public func mirrorPoint(_ point: SIMD3<Double>) -> Bool
 ```
 
-- **Parameters:** `point` — point of symmetry.
+- **Parameters:** `point`, point of symmetry.
 - **Returns:** `true` on success.
 - **OCCT:** `Geom_Curve::Mirror(gp_Pnt)` (in-place).
 - **Example:**
@@ -1246,7 +1246,7 @@ Mirrors the curve in place through an axis (line).
 public func mirrorAxis(origin: SIMD3<Double>, direction: SIMD3<Double>) -> Bool
 ```
 
-- **Parameters:** `origin` — a point on the mirror axis; `direction` — axis direction.
+- **Parameters:** `origin`, a point on the mirror axis; `direction`, axis direction.
 - **Returns:** `true` on success.
 - **OCCT:** `Geom_Curve::Mirror(gp_Ax1)` (in-place).
 - **Example:**
@@ -1266,7 +1266,7 @@ Mirrors the curve in place through a plane.
 public func mirrorPlane(origin: SIMD3<Double>, normal: SIMD3<Double>) -> Bool
 ```
 
-- **Parameters:** `origin` — a point on the mirror plane; `normal` — plane normal.
+- **Parameters:** `origin`, a point on the mirror plane; `normal`, plane normal.
 - **Returns:** `true` on success.
 - **OCCT:** `Geom_Curve::Mirror(gp_Ax2)` (in-place).
 - **Example:**
@@ -1289,7 +1289,7 @@ public static func circularHelix(radius: Double, pitch: Double) -> Curve3D?
 
 The helix is parameterized as `C(t) = R·cos(t)·X + R·sin(t)·Y + (P·t / 2π)·Z`, where R is the radius and P is the pitch. Negative `pitch` produces a left-handed helix.
 
-- **Parameters:** `radius` — helix radius (must be > 0); `pitch` — axial advance per full 2π turn (may be negative for left-hand winding).
+- **Parameters:** `radius`, helix radius (must be > 0); `pitch`, axial advance per full 2π turn (may be negative for left-hand winding).
 - **Returns:** Helix curve, or `nil` if `radius ≤ 0`.
 - **OCCT:** `GeomEval_CircularHelixCurve(ax, radius, pitch)`.
 - **Example:**
@@ -1313,7 +1313,7 @@ public static func sineWave(amplitude: Double, omega: Double, phase: Double = 0.
 
 Parameterized as `C(t) = t·X + A·sin(ω·t + φ)·Y`. The curve extends infinitely along X; trim it for practical use.
 
-- **Parameters:** `amplitude` — wave amplitude (must be > 0); `omega` — angular frequency (must be > 0); `phase` — phase offset in radians (default 0).
+- **Parameters:** `amplitude`, wave amplitude (must be > 0); `omega`, angular frequency (must be > 0); `phase`, phase offset in radians (default 0).
 - **Returns:** Sine wave curve, or `nil` if `amplitude ≤ 0` or `omega ≤ 0`.
 - **OCCT:** `GeomEval_SineWaveCurve(ax, amplitude, omega, phase)`.
 - **Example:**
@@ -1336,9 +1336,9 @@ Creates a translated copy of this curve via `GeomAdaptor_TransformedCurve`.
 public func translated(tx: Double, ty: Double, tz: Double) -> Curve3D?
 ```
 
-This overload differs from `translated(by:)` — it uses `GeomAdaptor_TransformedCurve` internally, which may preserve the adaptor wrapper rather than modifying the underlying `Geom_Curve` handle.
+This overload differs from `translated(by:)`, it uses `GeomAdaptor_TransformedCurve` internally, which may preserve the adaptor wrapper rather than modifying the underlying `Geom_Curve` handle.
 
-- **Parameters:** `tx`, `ty`, `tz` — translation components.
+- **Parameters:** `tx`, `ty`, `tz`, translation components.
 - **Returns:** Translated curve, or `nil` on error.
 - **OCCT:** `GeomAdaptor_TransformedCurve` (via `OCCTGeomAdaptorTransformedCurveCreate`).
 - **Example:**
@@ -1361,7 +1361,7 @@ public static func tBezier(poles: [SIMD3<Double>], alpha: Double) -> Curve3D?
 
 Uses a trigonometric Bernstein-like basis `{1, sin(α·t), cos(α·t), …}`. The parameter domain is `[0, π/α]`. Can represent circular arcs exactly without rational weights.
 
-- **Parameters:** `poles` — control points (count must be odd and ≥ 3); `alpha` — frequency parameter (must be > 0).
+- **Parameters:** `poles`, control points (count must be odd and ≥ 3); `alpha`, frequency parameter (must be > 0).
 - **Returns:** TBezier curve, or `nil` if `poles.count < 3`, `poles.count` is even, or `alpha ≤ 0`.
 - **OCCT:** `GeomEval_TBezierCurve(poles, alpha)`.
 - **Example:**
@@ -1384,7 +1384,7 @@ public static func tBezierRational(poles: [SIMD3<Double>], weights: [Double], al
 
 Extends `tBezier` with per-pole rational weights (all must be > 0). Requires `poles.count == weights.count`.
 
-- **Parameters:** `poles` — control points (odd count ≥ 3); `weights` — positive per-pole weights (same count as `poles`); `alpha` — frequency parameter (> 0).
+- **Parameters:** `poles`, control points (odd count ≥ 3); `weights`, positive per-pole weights (same count as `poles`); `alpha`, frequency parameter (> 0).
 - **Returns:** Rational TBezier curve, or `nil` if count constraints are violated or construction fails.
 - **OCCT:** `GeomEval_TBezierCurve(poles, weights, alpha)`.
 - **Example:**
@@ -1406,7 +1406,7 @@ public static func ahtBezier(poles: [SIMD3<Double>], algDegree: Int, alpha: Doub
 
 Uses a mixed basis: `{1, t, …, t^k, sinh(α·t), cosh(α·t), sin(β·t), cos(β·t)}`. The number of poles must equal `algDegree + 1 + 2*(alpha>0) + 2*(beta>0)`. Parameter range is `[0, 1]`.
 
-- **Parameters:** `poles` — control points; `algDegree` — algebraic polynomial degree (≥ 0); `alpha` — hyperbolic frequency (≥ 0; 0 omits hyperbolic terms); `beta` — trigonometric frequency (≥ 0; 0 omits trig terms).
+- **Parameters:** `poles`, control points; `algDegree`, algebraic polynomial degree (≥ 0); `alpha`, hyperbolic frequency (≥ 0; 0 omits hyperbolic terms); `beta`, trigonometric frequency (≥ 0; 0 omits trig terms).
 - **Returns:** AHT Bezier curve, or `nil` if the pole count is wrong or construction fails.
 - **OCCT:** `GeomEval_AHTBezierCurve(poles, algDegree, alpha, beta)`.
 - **Example:**
@@ -1432,7 +1432,7 @@ public static func ahtBezierRational(poles: [SIMD3<Double>], weights: [Double],
 
 Rational extension of `ahtBezier`. Requires `poles.count == weights.count` and all weights > 0.
 
-- **Parameters:** `poles` — control points; `weights` — positive per-pole weights; `algDegree` — algebraic degree; `alpha` — hyperbolic frequency; `beta` — trigonometric frequency.
+- **Parameters:** `poles`, control points; `weights`, positive per-pole weights; `algDegree`, algebraic degree; `alpha`, hyperbolic frequency; `beta`, trigonometric frequency.
 - **Returns:** Rational AHT Bezier curve, or `nil` if constraints are violated.
 - **OCCT:** `GeomEval_AHTBezierCurve(poles, weights, algDegree, alpha, beta)`.
 - **Example:**

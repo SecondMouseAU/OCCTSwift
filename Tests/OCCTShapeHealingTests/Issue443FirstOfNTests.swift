@@ -127,7 +127,7 @@ struct Issue443FirstOfN {
     /// occt-src rather than assumed (see the bridge comment on `OCCTShapeCreateSolidFromShell`):
     /// `BRepLib_MakeSolid`'s single-shell constructor unconditionally succeeds, even wrapping a
     /// wide-open shell, so that specific failure cannot occur. The bridge keeps a push-not-drop
-    /// fallback anyway, matching `OCCTShapeSolidFromShell`'s identical defensive contract — this
+    /// fallback anyway, matching `OCCTShapeSolidFromShell`'s identical defensive contract, this
     /// pins the guarantee that actually matters either way: an unclosable body-bounding shell is
     /// never silently missing from the result.
     @Test("solid(from:) keeps an open body rather than dropping it")
@@ -140,7 +140,7 @@ struct Issue443FirstOfN {
             Issue.record("solid(from:) returned nil for a closed+open two-shell compound")
             return
         }
-        // Both bodies present — the open one is not dropped for failing to close.
+        // Both bodies present, the open one is not dropped for failing to close.
         #expect(solid.solids.count == 2)
         #expect(solid.subShapeCount(ofType: .face) == 11)
     }
@@ -322,8 +322,8 @@ struct Issue443FirstOfN {
     /// against a context that already holds the earlier bodies' replacements, stated to be
     /// harmless for the disjoint bodies sewing produces. Genuinely sharing a sub-shape between
     /// two bodies (the case that same comment flags as unsafe) cannot be constructed through
-    /// this public API — two independently-built, disjoint solids never reference the same
-    /// underlying `TopoDS_Face` — so this pins the safe side of that trade-off instead: every
+    /// this public API, two independently-built, disjoint solids never reference the same
+    /// underlying `TopoDS_Face`, so this pins the safe side of that trade-off instead: every
     /// input face of BOTH bodies must resolve through the single returned history, not just
     /// the body built last.
     ///
@@ -347,7 +347,7 @@ struct Issue443FirstOfN {
         }
         #expect(result.solids.count == 2)
 
-        // Every original face of BOTH bodies, queried against the ONE returned history — not
+        // Every original face of BOTH bodies, queried against the ONE returned history, not
         // just body B, whose ShapeFix_Solid ran last against the shared context.
         for (label, box) in [("A", a), ("B", b)] {
             for face in box.subShapes(ofType: .face) {
@@ -374,7 +374,7 @@ struct Issue443FirstOfN {
     }
 
     /// Same review finding as `solidFromKeepsOpenBody`, for the history variant's own
-    /// `MakeSolid` check — a body that cannot close is kept, not dropped.
+    /// `MakeSolid` check, a body that cannot close is kept, not dropped.
     @Test("solidWithFullHistory(from:) keeps an open body rather than dropping it")
     func solidWithHistoryKeepsOpenBody() {
         guard let compound = closedAndOpenShellCompound() else {
@@ -507,10 +507,10 @@ struct Issue443FirstOfN {
     ///
     /// Unlike `solidFromKeepsOpenBody`, this cannot assert `solids.count == 2`: `upgraded()`
     /// runs `ShapeFix_Shape` (Step 3) after the solid step, and that healing pass no longer
-    /// classifies the unclosable body as a `TopAbs_SOLID` once kept — measured directly by
+    /// classifies the unclosable body as a `TopAbs_SOLID` once kept, measured directly by
     /// feeding `solid(from: sewn)`'s 2-solid result (one valid, one wrapping the open shell)
     /// into `Shape.fixed(tolerance:)`: `.solids.count` drops to 1 even though all 11 faces
-    /// survive. So the guarantee this test pins is on the faces, not the solid count — the
+    /// survive. So the guarantee this test pins is on the faces, not the solid count, the
     /// one that actually matters, since it is what "silently missing from the result" means.
     @Test("upgraded() keeps an unclosable shell's faces rather than dropping them")
     func upgradedKeepsOpenBody() {

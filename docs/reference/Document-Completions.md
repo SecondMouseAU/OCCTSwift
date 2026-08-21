@@ -1,9 +1,9 @@
 ---
-title: Document — XCAF & API Completions
+title: Document. XCAF & API Completions
 parent: API Reference
 ---
 
-# Document — XCAF & API Completions
+# Document. XCAF & API Completions
 
 This page covers the last group of public members declared in `Sources/OCCTSwift/Document.swift`: a collection of extension completions added across versions 0.122.0–0.130.0, spanning `WireFixer`, `ShapeFix_Edge`, `BRepTools`/`BRepLib` statics, shape history, sewing, builder extensions, section operations, curve/surface queries, XCAF color/shape-tool completions, fillet/chamfer history queries, a standalone `SectionBuilder`, and the `GeomEval`/`Geom2dEval` analytical evaluators. See the main [`Document`](Document.md) page for core load/save and assembly operations.
 
@@ -43,7 +43,7 @@ Fix the seam edge at the given 1-based index within the wire.
 @discardableResult public func fixSeam(edgeIndex: Int) -> Bool
 ```
 
-- **Parameters:** `edgeIndex` — 1-based index of the seam edge in the wire.
+- **Parameters:** `edgeIndex`, 1-based index of the seam edge in the wire.
 - **Returns:** `true` if the seam was fixed.
 - **OCCT:** `ShapeFix_Wire::FixSeam`.
 - **Example:**
@@ -112,7 +112,7 @@ Set the angular threshold (radians) below which an edge is considered a tail.
 public func setMaxTailAngle(_ angle: Double)
 ```
 
-- **Parameters:** `angle` — maximum angle in radians.
+- **Parameters:** `angle`, maximum angle in radians.
 - **OCCT:** `ShapeFix_Wire::SetMaxTailAngle`.
 - **Example:**
   ```swift
@@ -129,7 +129,7 @@ Set the width threshold below which an edge is considered a tail.
 public func setMaxTailWidth(_ width: Double)
 ```
 
-- **Parameters:** `width` — maximum width.
+- **Parameters:** `width`, maximum width.
 - **OCCT:** `ShapeFix_Wire::SetMaxTailWidth`.
 - **Example:**
   ```swift
@@ -150,7 +150,7 @@ Add a missing 3D curve to an edge.
 public static func fixEdgeAddCurve3d(_ edge: Shape) -> Bool
 ```
 
-- **Parameters:** `edge` — an edge shape missing its 3D curve.
+- **Parameters:** `edge`, an edge shape missing its 3D curve.
 - **Returns:** `true` if the 3D curve was successfully added.
 - **OCCT:** `ShapeFix_Edge::AddCurve3d`.
 - **Example:**
@@ -170,7 +170,7 @@ Add a missing PCurve (2D parametric curve) to an edge on a face.
 public static func fixEdgeAddPCurve(_ edge: Shape, face: Shape, isSeam: Bool = false) -> Bool
 ```
 
-- **Parameters:** `edge` — the edge; `face` — the face to add the PCurve on; `isSeam` — whether the edge is a seam.
+- **Parameters:** `edge`, the edge; `face`, the face to add the PCurve on; `isSeam`, whether the edge is a seam.
 - **Returns:** `true` if the PCurve was added.
 - **OCCT:** `ShapeFix_Edge::AddPCurve`.
 - **Example:**
@@ -188,7 +188,7 @@ Remove the 3D curve from an edge.
 public static func fixEdgeRemoveCurve3d(_ edge: Shape) -> Bool
 ```
 
-- **Parameters:** `edge` — edge whose 3D curve should be removed.
+- **Parameters:** `edge`, edge whose 3D curve should be removed.
 - **Returns:** `true` on success.
 - **OCCT:** `ShapeFix_Edge::RemoveCurve3d`.
 - **Example:**
@@ -206,7 +206,7 @@ Remove the PCurve from an edge on a face.
 public static func fixEdgeRemovePCurve(_ edge: Shape, face: Shape) -> Bool
 ```
 
-- **Parameters:** `edge` — the edge; `face` — the face carrying the PCurve to remove.
+- **Parameters:** `edge`, the edge; `face`, the face carrying the PCurve to remove.
 - **Returns:** `true` on success.
 - **OCCT:** `ShapeFix_Edge::RemovePCurve`.
 - **Example:**
@@ -224,7 +224,7 @@ Fix a reversed 2D parametric curve on an edge/face pair.
 public static func fixEdgeReversed2d(_ edge: Shape, face: Shape) -> Bool
 ```
 
-- **Parameters:** `edge` — the edge with the reversed PCurve; `face` — the owning face.
+- **Parameters:** `edge`, the edge with the reversed PCurve; `face`, the owning face.
 - **Returns:** `true` if the reversal was fixed.
 - **OCCT:** `ShapeFix_Edge::FixReversed2d`.
 - **Example:**
@@ -278,7 +278,7 @@ Detect whether a face is closed in U and/or V.
 public func detectClosedness() -> (isClosedU: Bool, isClosedV: Bool)
 ```
 
-- **Returns:** A tuple `(isClosedU, isClosedV)` — `true` where the face wraps around.
+- **Returns:** A tuple `(isClosedU, isClosedV)`, `true` where the face wraps around.
 - **OCCT:** `BRepTools::DetectClosedness`.
 - **Example:**
   ```swift
@@ -296,7 +296,7 @@ Evaluate and update the tolerance of an edge on a face. Returns the new toleranc
 public static func evalAndUpdateTolerance(edge: Shape, face: Shape) -> Double
 ```
 
-- **Parameters:** `edge` — the edge; `face` — the face it lies on.
+- **Parameters:** `edge`, the edge; `face`, the face it lies on.
 - **Returns:** The updated tolerance value.
 - **OCCT:** `BRepTools::EvalAndUpdateTol`.
 - **Example:**
@@ -418,7 +418,7 @@ Ensure normal consistency of a triangulated shape, optionally clamping to `maxAn
 public func ensureNormalConsistency(maxAngle: Double = 0.001) -> Bool
 ```
 
-- **Parameters:** `maxAngle` — maximum deviation angle in radians; defaults to 0.001.
+- **Parameters:** `maxAngle`, maximum deviation angle in radians; defaults to 0.001.
 - **Returns:** `true` if normals were corrected.
 - **OCCT:** `BRepLib::EnsureNormalConsistency`.
 - **Example:**
@@ -453,10 +453,10 @@ public static func continuityClassOfFaces(edge: Shape, face1: Shape, face2: Shap
                                           tolerance: Double = 1e-6) -> ContinuityClass?
 ```
 
-- **Parameters:** `edge` — the shared edge; `face1`, `face2` — the two faces; `tolerance` — comparison tolerance.
+- **Parameters:** `edge`, the shared edge; `face1`, `face2`, the two faces; `tolerance`, comparison tolerance.
 - **Returns:** the measured `ContinuityClass`, or `nil` on failure (null handle, or OCCT throwing).
 - **OCCT:** `BRepLib::ContinuityOfFaces`.
-- **Domain:** six of the seven classes are reachable — `.c0` for a sharp join, `.g1` for a fillet's tangent join, and `.cN` for a seam on an elementary surface (or any elementary pair measuring C2, which OCCT promotes). `.c3` is never returned.
+- **Domain:** six of the seven classes are reachable, `.c0` for a sharp join, `.g1` for a fillet's tangent join, and `.cN` for a seam on an elementary surface (or any elementary pair measuring C2, which OCCT promotes). `.c3` is never returned.
 - **Example:**
   ```swift
   let box = Shape.box(width: 10, height: 10, depth: 10)!
@@ -480,7 +480,7 @@ Apply same-parameter correction to all edges in the shape.
 public func sameParameterAll(tolerance: Double = 1e-5, forced: Bool = false)
 ```
 
-- **Parameters:** `tolerance` — target tolerance; `forced` — if `true`, forces reparametrization even when already same-parameter.
+- **Parameters:** `tolerance`, target tolerance; `forced`, if `true`, forces reparametrization even when already same-parameter.
 - **OCCT:** `BRepLib::SameParameter` (shape overload).
 - **Example:**
   ```swift
@@ -501,7 +501,7 @@ Merge another history into this one, combining all modified and generated mappin
 public func merge(_ other: Shape.History)
 ```
 
-- **Parameters:** `other` — the history to absorb.
+- **Parameters:** `other`, the history to absorb.
 - **OCCT:** `BRepTools_History::Merge`.
 - **Example:**
   ```swift
@@ -520,7 +520,7 @@ Replace an existing generated-shape entry.
 public func replaceGenerated(initial: Shape, generated: Shape)
 ```
 
-- **Parameters:** `initial` — the original shape; `generated` — the replacement generated shape.
+- **Parameters:** `initial`, the original shape; `generated`, the replacement generated shape.
 - **OCCT:** `BRepTools_History::ReplaceGenerated`.
 - **Example:**
   ```swift
@@ -537,7 +537,7 @@ Replace an existing modified-shape entry.
 public func replaceModified(initial: Shape, modified: Shape)
 ```
 
-- **Parameters:** `initial` — the original shape; `modified` — the replacement modified shape.
+- **Parameters:** `initial`, the original shape; `modified`, the replacement modified shape.
 - **OCCT:** `BRepTools_History::ReplaceModified`.
 - **Example:**
   ```swift
@@ -554,7 +554,7 @@ Get all shapes that the given initial shape was modified into.
 public func modifiedShapes(of initial: Shape) -> [Shape]
 ```
 
-- **Parameters:** `initial` — the input shape to query.
+- **Parameters:** `initial`, the input shape to query.
 - **Returns:** Array of modified shapes (up to 64 results).
 - **OCCT:** `BRepTools_History::Modified`.
 - **Example:**
@@ -572,7 +572,7 @@ Get all shapes generated from the given initial shape.
 public func generatedShapes(of initial: Shape) -> [Shape]
 ```
 
-- **Parameters:** `initial` — the input shape to query.
+- **Parameters:** `initial`, the input shape to query.
 - **Returns:** Array of generated shapes (up to 64 results).
 - **OCCT:** `BRepTools_History::Generated`.
 - **Example:**
@@ -635,7 +635,7 @@ Get a deleted face by 1-based index.
 public func deletedFace(at index: Int) -> Shape?
 ```
 
-- **Parameters:** `index` — 1-based index.
+- **Parameters:** `index`, 1-based index.
 - **Returns:** The deleted face shape, or `nil` if the index is out of range.
 - **OCCT:** `BRepBuilderAPI_Sewing::DeletedFace`.
 - **Example:**
@@ -655,7 +655,7 @@ Check if a sub-shape was modified by the sewing operation.
 public func isModified(_ shape: Shape) -> Bool
 ```
 
-- **Parameters:** `shape` — the sub-shape to query.
+- **Parameters:** `shape`, the sub-shape to query.
 - **Returns:** `true` if the shape was changed.
 - **OCCT:** `BRepBuilderAPI_Sewing::IsModified`.
 - **Example:**
@@ -673,7 +673,7 @@ Get the sewed version of a shape.
 public func modified(_ shape: Shape) -> Shape?
 ```
 
-- **Parameters:** `shape` — the original sub-shape.
+- **Parameters:** `shape`, the original sub-shape.
 - **Returns:** The sewed replacement, or `nil` if unmodified.
 - **OCCT:** `BRepBuilderAPI_Sewing::Modified`.
 - **Example:**
@@ -725,7 +725,7 @@ Get the face that contains the given edge after sewing.
 public func whichFace(_ edge: Shape) -> Shape?
 ```
 
-- **Parameters:** `edge` — an edge in the sewed result.
+- **Parameters:** `edge`, an edge in the sewed result.
 - **Returns:** The enclosing face, or `nil`.
 - **OCCT:** `BRepBuilderAPI_Sewing::WhichFace`.
 - **Example:**
@@ -743,7 +743,7 @@ Load a base shape as additional context for sewing (multi-part scenarios).
 public func load(_ shape: Shape)
 ```
 
-- **Parameters:** `shape` — the shape to load as base context.
+- **Parameters:** `shape`, the shape to load as base context.
 - **OCCT:** `BRepBuilderAPI_Sewing::Load`.
 - **Example:**
   ```swift
@@ -760,7 +760,7 @@ Enable or disable non-manifold sewing mode.
 public func setNonManifoldMode(_ enabled: Bool)
 ```
 
-- **Parameters:** `enabled` — `true` to allow non-manifold results.
+- **Parameters:** `enabled`, `true` to allow non-manifold results.
 - **OCCT:** `BRepBuilderAPI_Sewing::SetNonManifoldMode`.
 - **Example:**
   ```swift
@@ -777,7 +777,7 @@ Enable or disable face analysis mode.
 public func setFaceMode(_ enabled: Bool)
 ```
 
-- **Parameters:** `enabled` — `true` to analyse free faces.
+- **Parameters:** `enabled`, `true` to analyse free faces.
 - **OCCT:** `BRepBuilderAPI_Sewing::SetFaceMode`.
 - **Example:**
   ```swift
@@ -794,7 +794,7 @@ Enable or disable floating-edges mode.
 public func setFloatingEdgesMode(_ enabled: Bool)
 ```
 
-- **Parameters:** `enabled` — `true` to include floating edges in the result.
+- **Parameters:** `enabled`, `true` to include floating edges in the result.
 - **OCCT:** `BRepBuilderAPI_Sewing::SetFloatingEdgesMode`.
 - **Example:**
   ```swift
@@ -811,7 +811,7 @@ Set the minimum tolerance for sewing.
 public func setMinTolerance(_ tolerance: Double)
 ```
 
-- **Parameters:** `tolerance` — minimum sewing tolerance.
+- **Parameters:** `tolerance`, minimum sewing tolerance.
 - **OCCT:** `BRepBuilderAPI_Sewing::SetMinTolerance`.
 - **Example:**
   ```swift
@@ -828,7 +828,7 @@ Set the maximum tolerance for sewing.
 public func setMaxTolerance(_ tolerance: Double)
 ```
 
-- **Parameters:** `tolerance` — maximum sewing tolerance.
+- **Parameters:** `tolerance`, maximum sewing tolerance.
 - **OCCT:** `BRepBuilderAPI_Sewing::SetMaxTolerance`.
 - **Example:**
   ```swift
@@ -849,7 +849,7 @@ Enable or disable wire compatibility checking (reorders wires to avoid twists be
 public func checkCompatibility(_ check: Bool = true)
 ```
 
-- **Parameters:** `check` — `true` to enable compatibility checking (default).
+- **Parameters:** `check`, `true` to enable compatibility checking (default).
 - **OCCT:** `BRepOffsetAPI_ThruSections::CheckCompatibility`.
 - **Example:**
   ```swift
@@ -867,7 +867,7 @@ Set the parameterization type for the loft approximation.
 public func setParType(_ type: Int)
 ```
 
-- **Parameters:** `type` — 0 = ChordLength, 1 = Centripetal, 2 = IsoParametric.
+- **Parameters:** `type`, 0 = ChordLength, 1 = Centripetal, 2 = IsoParametric.
 - **OCCT:** `BRepOffsetAPI_ThruSections::SetParType`.
 - **Example:**
   ```swift
@@ -884,7 +884,7 @@ Set the approximation criterion weights for the loft.
 public func setCriteriumWeight(w1: Double, w2: Double, w3: Double) -> Bool
 ```
 
-- **Parameters:** `w1`, `w2`, `w3` — weights for the three approximation criteria.
+- **Parameters:** `w1`, `w2`, `w3`, weights for the three approximation criteria.
 - **Returns:** `true` if all weights are non-negative; `false` if any weight is negative (OCCT silently ignores negative weights and `Build()` erases the failure status).
 - **OCCT:** `BRepOffsetAPI_ThruSections::SetCriteriumWeight`.
 - **Example:**
@@ -902,12 +902,12 @@ Get the face generated from a profile edge after the loft is built.
 public func generatedFace(from edge: Shape) -> Shape?
 ```
 
-- **Parameters:** `edge` — a profile edge from one of the input wires.
+- **Parameters:** `edge`, a profile edge from one of the input wires.
 - **Returns:** The generated face shape, or `nil` if `edge` isn't a profile edge of the current
   build, or if no successful `build()` has happened *since* the most recent change to this
   builder's sections (`addWire(_:)`/`addVertex(_:)`) or settings (`setSmoothing(_:)`,
   `setMaxDegree(_:)`, `setContinuity(_:)`, `checkCompatibility(_:)`, `setParType(_:)`,
-  `setCriteriumWeight(w1:w2:w3:)`) — every one of those invalidates the previous build's result,
+  `setCriteriumWeight(w1:w2:w3:)`), every one of those invalidates the previous build's result,
   including on a builder reused across a success → failure → success sequence, where OCCT's own
   internal edge→face map can otherwise hand back an earlier, now-stale build's face.
 - **OCCT:** `BRepOffsetAPI_ThruSections::GeneratedFace`.
@@ -930,7 +930,7 @@ Add cells to the result: cells present in all `take` shapes but absent from all 
 public func addToResult(take: [Shape], avoid: [Shape] = [], material: Int32 = 0, update: Bool = false)
 ```
 
-- **Parameters:** `take` — shapes whose cells to include; `avoid` — shapes whose cells to exclude; `material` — material tag; `update` — rebuild result immediately.
+- **Parameters:** `take`, shapes whose cells to include; `avoid`, shapes whose cells to exclude; `material`, material tag; `update`, rebuild result immediately.
 - **OCCT:** `BOPAlgo_CellsBuilder::AddToResult`.
 - **Example:**
   ```swift
@@ -947,7 +947,7 @@ Remove cells from the result: cells present in all `take` shapes but absent from
 public func removeFromResult(take: [Shape], avoid: [Shape] = [])
 ```
 
-- **Parameters:** `take` — shapes identifying cells to remove; `avoid` — shapes to exclude from removal.
+- **Parameters:** `take`, shapes identifying cells to remove; `avoid`, shapes to exclude from removal.
 - **OCCT:** `BOPAlgo_CellsBuilder::RemoveFromResult`.
 - **Example:**
   ```swift
@@ -1047,7 +1047,7 @@ Simulate the pipe shell, generating intermediate cross-section wire shapes along
 public func simulate(numberOfSections: Int) -> [Shape]
 ```
 
-- **Parameters:** `numberOfSections` — number of cross-section samples to generate.
+- **Parameters:** `numberOfSections`, number of cross-section samples to generate.
 - **Returns:** An array of wire-shaped cross-sections along the spine; empty on failure.
 - **OCCT:** `BRepOffsetAPI_MakePipeShell::Simulate`.
 - **Example:**
@@ -1069,9 +1069,9 @@ Create a `UnifySameDomainBuilder` for the given shape.
 public init(shape: Shape, unifyEdges: Bool = true, unifyFaces: Bool = true, concatBSplines: Bool = false)
 ```
 
-- **Parameters:** `shape` — the input shape, left unchanged; `unifyEdges` — merge same-domain edges; `unifyFaces` — merge same-domain faces; `concatBSplines` — concatenate adjacent BSplines (note `Shape.unified(...)` defaults this to `true`, this initialiser to `false`).
+- **Parameters:** `shape`, the input shape, left unchanged; `unifyEdges`, merge same-domain edges; `unifyFaces`, merge same-domain faces; `concatBSplines`, concatenate adjacent BSplines (note `Shape.unified(...)` defaults this to `true`, this initialiser to `false`).
 - **OCCT:** `ShapeUpgrade_UnifySameDomain`.
-- **Input is not modified:** the builder works on a private copy. `ShapeUpgrade_UnifySameDomain` rewrites sub-shapes of the shape it is given, and those rewrites reached the caller's own shape — so discarding the result was not enough to keep it (#446).
+- **Input is not modified:** the builder works on a private copy. `ShapeUpgrade_UnifySameDomain` rewrites sub-shapes of the shape it is given, and those rewrites reached the caller's own shape, so discarding the result was not enough to keep it (#446).
 - **Example:**
   ```swift
   let unifier = UnifySameDomainBuilder(shape: body)
@@ -1091,7 +1091,7 @@ Allow or disallow internal edges in the unified result.
 public func allowInternalEdges(_ allow: Bool)
 ```
 
-- **Parameters:** `allow` — `true` to keep internal edges.
+- **Parameters:** `allow`, `true` to keep internal edges.
 - **OCCT:** `ShapeUpgrade_UnifySameDomain::AllowInternalEdges`.
 - **Example:**
   ```swift
@@ -1108,7 +1108,7 @@ Prevent a specific sub-shape from being unified.
 public func keepShape(_ shape: Shape)
 ```
 
-- **Parameters:** `shape` — the sub-shape to preserve unchanged. Pass a sub-shape of the shape the builder was created with; it is matched to its counterpart in the builder's private copy for you (#446).
+- **Parameters:** `shape`, the sub-shape to preserve unchanged. Pass a sub-shape of the shape the builder was created with; it is matched to its counterpart in the builder's private copy for you (#446).
 - **OCCT:** `ShapeUpgrade_UnifySameDomain::KeepShape`.
 - **Example:**
   ```swift
@@ -1125,9 +1125,9 @@ Set OCCT's safe-input mode, which governs how freely the algorithm may rewrite t
 public func setSafeInputMode(_ safe: Bool)
 ```
 
-- **Parameters:** `safe` — OCCT's own default is `true`.
+- **Parameters:** `safe`, OCCT's own default is `true`.
 - **OCCT:** `ShapeUpgrade_UnifySameDomain::SetSafeInputMode`.
-- **This says nothing about your shape:** the builder always works on a private copy, so the shape passed to the initialiser is untouched either way. Safe mode does not fully protect the algorithm's own input in any case — `TransformPCurves` writes temporary pcurves onto it regardless (#446).
+- **This says nothing about your shape:** the builder always works on a private copy, so the shape passed to the initialiser is untouched either way. Safe mode does not fully protect the algorithm's own input in any case, `TransformPCurves` writes temporary pcurves onto it regardless (#446).
 - **Example:**
   ```swift
   unifier.setSafeInputMode(true)
@@ -1143,7 +1143,7 @@ Set the linear tolerance for unification.
 public func setLinearTolerance(_ tol: Double)
 ```
 
-- **Parameters:** `tol` — linear tolerance.
+- **Parameters:** `tol`, linear tolerance.
 - **OCCT:** `ShapeUpgrade_UnifySameDomain::SetLinearTolerance`.
 - **Example:**
   ```swift
@@ -1160,7 +1160,7 @@ Set the angular tolerance for unification.
 public func setAngularTolerance(_ tol: Double)
 ```
 
-- **Parameters:** `tol` — angular tolerance in radians.
+- **Parameters:** `tol`, angular tolerance in radians.
 - **OCCT:** `ShapeUpgrade_UnifySameDomain::SetAngularTolerance`.
 - **Example:**
   ```swift
@@ -1218,7 +1218,7 @@ public static func sectionWithOptions(_ shape1: Shape, _ shape2: Shape,
                                        computePCurve2: Bool = false) -> Shape?
 ```
 
-- **Parameters:** `shape1`, `shape2` — the two shapes to intersect; `approximation` — approximate result curves as BSplines; `computePCurve1` — compute PCurves on `shape1`; `computePCurve2` — compute PCurves on `shape2`.
+- **Parameters:** `shape1`, `shape2`, the two shapes to intersect; `approximation`, approximate result curves as BSplines; `computePCurve1`, compute PCurves on `shape1`; `computePCurve2`, compute PCurves on `shape2`.
 - **Returns:** A compound of intersection edges, or `nil` on failure.
 - **OCCT:** `BRepAlgoAPI_Section`.
 - **Example:**
@@ -1241,7 +1241,7 @@ public static func sectionAncestorFaceOn1(_ shape1: Shape, _ shape2: Shape, edge
                                            computePCurve2: Bool = false) -> Shape?
 ```
 
-- **Parameters:** `shape1`, `shape2` — the two intersection inputs; `edge` — a section result edge; remaining flags as in `sectionWithOptions`.
+- **Parameters:** `shape1`, `shape2`, the two intersection inputs; `edge`, a section result edge; remaining flags as in `sectionWithOptions`.
 - **Returns:** The face on `shape1` that generated the edge, or `nil`.
 - **OCCT:** `BRepAlgoAPI_Section::HasAncestorFaceOn1` / `AncestorFaceOn1`.
 - **Example:**
@@ -1262,7 +1262,7 @@ public static func sectionAncestorFaceOn2(_ shape1: Shape, _ shape2: Shape, edge
                                            computePCurve2: Bool = false) -> Shape?
 ```
 
-- **Parameters:** `shape1`, `shape2` — the two intersection inputs; `edge` — a section result edge.
+- **Parameters:** `shape1`, `shape2`, the two intersection inputs; `edge`, a section result edge.
 - **Returns:** The face on `shape2` that generated the edge, or `nil`.
 - **OCCT:** `BRepAlgoAPI_Section::HasAncestorFaceOn2` / `AncestorFaceOn2`.
 - **Example:**
@@ -1397,7 +1397,7 @@ Translate this shape by the given vector and return a new shape.
 public func moved(dx: Double, dy: Double, dz: Double) -> Shape?
 ```
 
-- **Parameters:** `dx`, `dy`, `dz` — translation components.
+- **Parameters:** `dx`, `dy`, `dz`, translation components.
 - **Returns:** The translated shape, or `nil` on failure.
 - **OCCT:** `gp_Trsf::SetTranslation` fed to `TopoDS_Shape::Moved(TopLoc_Location(trsf))` (via
   `OCCTShapeMoved`). Not `BRepBuilderAPI_Transform`, which this entry used to name: `Moved` attaches
@@ -1448,7 +1448,7 @@ Add an RGB color to the document color table.
 public func colorToolAddColor(r: Double, g: Double, b: Double) -> Int64
 ```
 
-- **Parameters:** `r`, `g`, `b` — red, green, blue components in [0, 1].
+- **Parameters:** `r`, `g`, `b`, red, green, blue components in [0, 1].
 - **Returns:** The label tag of the new color entry, or -1 on failure.
 - **OCCT:** `XCAFDoc_ColorTool::AddColor`.
 - **Example:**
@@ -1467,7 +1467,7 @@ Remove a color from the document color table by label ID.
 public func colorToolRemoveColor(labelId: Int64) -> Bool
 ```
 
-- **Parameters:** `labelId` — the label tag of the color to remove.
+- **Parameters:** `labelId`, the label tag of the color to remove.
 - **Returns:** `true` if removed.
 - **OCCT:** `XCAFDoc_ColorTool::RemoveColor`.
 - **Example:**
@@ -1502,7 +1502,7 @@ Remove the color of a specific type from a label.
 public func colorToolUnSetColor(labelId: Int64, colorType: Int) -> Bool
 ```
 
-- **Parameters:** `labelId` — the shape label; `colorType` — 0 = generic, 1 = surface, 2 = curve.
+- **Parameters:** `labelId`, the shape label; `colorType`, 0 = generic, 1 = surface, 2 = curve.
 - **Returns:** `true` on success.
 - **OCCT:** `XCAFDoc_ColorTool::UnSetColor`.
 - **Example:**
@@ -1538,7 +1538,7 @@ Set the visibility of a label.
 public func colorToolSetVisibility(labelId: Int64, visible: Bool) -> Bool
 ```
 
-- **Parameters:** `labelId` — the label; `visible` — `true` to show, `false` to hide.
+- **Parameters:** `labelId`, the label; `visible`, `true` to show, `false` to hide.
 - **Returns:** `true` on success.
 - **OCCT:** `XCAFDoc_ColorTool::SetVisibility`.
 - **Example:**
@@ -1574,7 +1574,7 @@ Set or unset the color-by-layer flag on a label.
 public func colorToolSetColorByLayer(labelId: Int64, isByLayer: Bool) -> Bool
 ```
 
-- **Parameters:** `labelId` — the label; `isByLayer` — `true` to inherit color from layer.
+- **Parameters:** `labelId`, the label; `isByLayer`, `true` to inherit color from layer.
 - **Returns:** `true` on success.
 - **OCCT:** `XCAFDoc_ColorTool::SetColorByLayer`.
 - **Example:**
@@ -1592,7 +1592,7 @@ Search for a color in the color table by RGB value.
 public func colorToolFindColor(r: Double, g: Double, b: Double) -> Int64
 ```
 
-- **Parameters:** `r`, `g`, `b` — red, green, blue components in [0, 1].
+- **Parameters:** `r`, `g`, `b`, red, green, blue components in [0, 1].
 - **Returns:** The label tag if found, or -1.
 - **OCCT:** `XCAFDoc_ColorTool::FindColor`.
 - **Example:**
@@ -1611,7 +1611,7 @@ Set the instance color of a shape component (overrides the referenced shape's co
 public func colorToolSetInstanceColor(shape: Shape, colorType: Int, r: Double, g: Double, b: Double) -> Bool
 ```
 
-- **Parameters:** `shape` — the component shape; `colorType` — 0/1/2; `r`, `g`, `b` — RGB.
+- **Parameters:** `shape`, the component shape; `colorType`, 0/1/2; `r`, `g`, `b`, RGB.
 - **Returns:** `true` on success.
 - **OCCT:** `XCAFDoc_ColorTool::SetInstanceColor`.
 - **Example:**
@@ -1629,7 +1629,7 @@ Get the instance color of a shape component.
 public func colorToolGetInstanceColor(shape: Shape, colorType: Int) -> (r: Double, g: Double, b: Double)?
 ```
 
-- **Parameters:** `shape` — the component; `colorType` — 0/1/2.
+- **Parameters:** `shape`, the component; `colorType`, 0/1/2.
 - **Returns:** An `(r, g, b)` tuple in [0, 1], or `nil` if no instance color is set.
 - **OCCT:** `XCAFDoc_ColorTool::GetInstanceColor`.
 - **Example:**
@@ -1782,7 +1782,7 @@ Get the number of direct components of an assembly label.
 public func shapeToolNbComponents(labelId: Int64, getSubChildren: Bool = false) -> Int
 ```
 
-- **Parameters:** `labelId` — the assembly label; `getSubChildren` — if `true`, recurse into sub-assemblies.
+- **Parameters:** `labelId`, the assembly label; `getSubChildren`, if `true`, recurse into sub-assemblies.
 - **Returns:** Component count.
 - **OCCT:** `XCAFDoc_ShapeTool::NbComponents`.
 - **Example:**
@@ -1917,7 +1917,7 @@ Get the shapes generated from an input shape by the fillet operation (call after
 public func generated(from shape: Shape) -> [Shape]
 ```
 
-- **Parameters:** `shape` — an input shape (typically an edge).
+- **Parameters:** `shape`, an input shape (typically an edge).
 - **Returns:** Array of generated shapes (fillet faces, etc.).
 - **OCCT:** `BRepFilletAPI_MakeFillet::Generated`.
 - **Example:**
@@ -1935,7 +1935,7 @@ Get the shapes modified from an input shape by the fillet operation (call after 
 public func modified(from shape: Shape) -> [Shape]
 ```
 
-- **Parameters:** `shape` — an input shape (typically a face).
+- **Parameters:** `shape`, an input shape (typically a face).
 - **Returns:** Array of modified shapes.
 - **OCCT:** `BRepFilletAPI_MakeFillet::Modified`.
 - **Example:**
@@ -1974,7 +1974,7 @@ Get the shapes generated from an input shape by the chamfer operation.
 public func generated(from shape: Shape) -> [Shape]
 ```
 
-- **Parameters:** `shape` — an input edge or face.
+- **Parameters:** `shape`, an input edge or face.
 - **Returns:** Array of generated shapes.
 - **OCCT:** `BRepFilletAPI_MakeChamfer::Generated`.
 - **Example:**
@@ -1992,7 +1992,7 @@ Get the shapes modified from an input shape by the chamfer operation.
 public func modified(from shape: Shape) -> [Shape]
 ```
 
-- **Parameters:** `shape` — an input face.
+- **Parameters:** `shape`, an input face.
 - **Returns:** Array of modified shapes.
 - **OCCT:** `BRepFilletAPI_MakeChamfer::Modified`.
 - **Example:**
@@ -2057,7 +2057,7 @@ Set the chamfer construction mode.
 public func setMode(_ mode: ChamferMode)
 ```
 
-- **Parameters:** `mode` — the desired `ChamferMode`.
+- **Parameters:** `mode`, the desired `ChamferMode`.
 - **OCCT:** `BRepFilletAPI_MakeChamfer::SetMode`.
 - **Example:**
   ```swift
@@ -2075,7 +2075,7 @@ Simulate the chamfer on a contour (1-based) without building; populates surface 
 public func simulate(contour: Int) -> Bool
 ```
 
-- **Parameters:** `contour` — 1-based contour index.
+- **Parameters:** `contour`, 1-based contour index.
 - **Returns:** `true` if simulation succeeded.
 - **OCCT:** `BRepFilletAPI_MakeChamfer::Simulate`.
 - **Example:**
@@ -2095,7 +2095,7 @@ Get the number of simulated chamfer surfaces on a contour (after calling `simula
 public func simulatedSurfaceCount(contour: Int) -> Int
 ```
 
-- **Parameters:** `contour` — 1-based contour index.
+- **Parameters:** `contour`, 1-based contour index.
 - **Returns:** Number of surfaces that would be generated.
 - **OCCT:** `BRepFilletAPI_MakeChamfer::NbSurf`.
 - **Example:**
@@ -2137,7 +2137,7 @@ Create a section builder pre-loaded with two shapes.
 public init?(shape1: Shape, shape2: Shape)
 ```
 
-- **Parameters:** `shape1`, `shape2` — the two shapes to section.
+- **Parameters:** `shape1`, `shape2`, the two shapes to section.
 - **Returns:** `nil` on failure.
 - **OCCT:** `BRepAlgoAPI_Section(s1, s2)`.
 - **Example:**
@@ -2173,7 +2173,7 @@ Set the first argument as a plane defined by the equation `ax + by + cz + d = 0`
 public func init1(plane a: Double, _ b: Double, _ c: Double, _ d: Double)
 ```
 
-- **Parameters:** `a`, `b`, `c`, `d` — plane equation coefficients.
+- **Parameters:** `a`, `b`, `c`, `d`, plane equation coefficients.
 - **OCCT:** `BRepAlgoAPI_Section::Init1(gp_Pln)`.
 - **Example:**
   ```swift
@@ -2321,7 +2321,7 @@ Get the ancestor face from the first argument for a section result edge.
 public func ancestorFaceOn1(edge: Shape) -> Shape?
 ```
 
-- **Parameters:** `edge` — a section result edge.
+- **Parameters:** `edge`, a section result edge.
 - **Returns:** The face on the first argument that produced the edge, or `nil` if not found, or if
   the builder's most recent `build()` call did not succeed (including on a reused builder, after a
   later failed rebuild, or after `init1`/`init2` was called again without a following `build()`).
@@ -2341,7 +2341,7 @@ Get the ancestor face from the second argument for a section result edge.
 public func ancestorFaceOn2(edge: Shape) -> Shape?
 ```
 
-- **Parameters:** `edge` — a section result edge.
+- **Parameters:** `edge`, a section result edge.
 - **Returns:** The face on the second argument that produced the edge, or `nil` if not found, or if
   the builder's most recent `build()` call did not succeed (including on a reused builder, after a
   later failed rebuild, or after `init1`/`init2` was called again without a following `build()`).
@@ -2367,9 +2367,9 @@ Evaluate a circular helix at parameter `u`: `C(t) = R·cos(t)·X + R·sin(t)·Y 
 public static func circularHelixD0(radius: Double, pitch: Double, u: Double) -> SIMD3<Double>
 ```
 
-- **Parameters:** `radius` — helix radius; `pitch` — axial advance per full turn; `u` — parameter.
+- **Parameters:** `radius`, helix radius; `pitch`, axial advance per full turn; `u`, parameter.
 - **Returns:** 3D point on the helix.
-- **OCCT:** Custom bridge (`OCCTGeomEvalCircularHelixD0`) — analytical evaluation.
+- **OCCT:** Custom bridge (`OCCTGeomEvalCircularHelixD0`), analytical evaluation.
 - **Example:**
   ```swift
   let pt = GeomEval.circularHelixD0(radius: 5, pitch: 2, u: .pi)
@@ -2385,7 +2385,7 @@ Evaluate a circular helix point and first derivative at `u`.
 public static func circularHelixD1(radius: Double, pitch: Double, u: Double) -> (point: SIMD3<Double>, d1: SIMD3<Double>)
 ```
 
-- **Returns:** Tuple of `(point, d1)` — position and tangent vector.
+- **Returns:** Tuple of `(point, d1)`, position and tangent vector.
 - **OCCT:** `OCCTGeomEvalCircularHelixD1`.
 - **Example:**
   ```swift
@@ -2419,7 +2419,7 @@ Evaluate a 3D sine wave at parameter `u`: `C(t) = t·X + A·sin(ω·t + φ)·Y`.
 public static func sineWaveD0(amplitude: Double, omega: Double, phase: Double, u: Double) -> SIMD3<Double>
 ```
 
-- **Parameters:** `amplitude` — wave amplitude; `omega` — angular frequency; `phase` — phase offset; `u` — parameter.
+- **Parameters:** `amplitude`, wave amplitude; `omega`, angular frequency; `phase`, phase offset; `u`, parameter.
 - **Returns:** 3D point on the wave.
 - **OCCT:** `OCCTGeomEvalSineWaveD0`.
 - **Example:**
@@ -2456,7 +2456,7 @@ Evaluate an ellipsoid at `(u, v)`: `P(u,v) = A·cos(v)·cos(u)·X + B·cos(v)·s
 public static func ellipsoidD0(a: Double, b: Double, c: Double, u: Double, v: Double) -> SIMD3<Double>
 ```
 
-- **Parameters:** `a`, `b`, `c` — semi-axes along X, Y, Z; `u`, `v` — longitude, latitude parameters.
+- **Parameters:** `a`, `b`, `c`, semi-axes along X, Y, Z; `u`, `v`, longitude, latitude parameters.
 - **Returns:** 3D point on the ellipsoid.
 - **OCCT:** `OCCTGeomEvalEllipsoidD0`.
 - **Example:**
@@ -2474,7 +2474,7 @@ Evaluate a hyperboloid at `(u, v)`.
 public static func hyperboloidD0(r1: Double, r2: Double, twoSheets: Bool, u: Double, v: Double) -> SIMD3<Double>
 ```
 
-- **Parameters:** `r1`, `r2` — radii; `twoSheets` — `false` = one-sheet, `true` = two-sheet hyperboloid; `u`, `v` — parameters.
+- **Parameters:** `r1`, `r2`, radii; `twoSheets`, `false` = one-sheet, `true` = two-sheet hyperboloid; `u`, `v`, parameters.
 - **Returns:** 3D point on the hyperboloid.
 - **OCCT:** `OCCTGeomEvalHyperboloidD0`.
 - **Example:**
@@ -2492,7 +2492,7 @@ Evaluate a paraboloid at `(u, v)`.
 public static func paraboloidD0(focal: Double, u: Double, v: Double) -> SIMD3<Double>
 ```
 
-- **Parameters:** `focal` — focal distance; `u`, `v` — surface parameters.
+- **Parameters:** `focal`, focal distance; `u`, `v`, surface parameters.
 - **Returns:** 3D point on the paraboloid.
 - **OCCT:** `OCCTGeomEvalParaboloidD0`.
 - **Example:**
@@ -2510,7 +2510,7 @@ Evaluate a circular helicoid (screw surface) at `(u, v)`.
 public static func circularHelicoidD0(pitch: Double, u: Double, v: Double) -> SIMD3<Double>
 ```
 
-- **Parameters:** `pitch` — axial advance per 2π radians; `u` — angular parameter; `v` — radial parameter.
+- **Parameters:** `pitch`, axial advance per 2π radians; `u`, angular parameter; `v`, radial parameter.
 - **Returns:** 3D point on the helicoid.
 - **OCCT:** `OCCTGeomEvalCircularHelicoidD0`.
 - **Example:**
@@ -2528,7 +2528,7 @@ Evaluate a hyperbolic paraboloid (saddle surface) at `(u, v)`.
 public static func hyperbolicParaboloidD0(a: Double, b: Double, u: Double, v: Double) -> SIMD3<Double>
 ```
 
-- **Parameters:** `a`, `b` — shape parameters; `u`, `v` — surface parameters.
+- **Parameters:** `a`, `b`, shape parameters; `u`, `v`, surface parameters.
 - **Returns:** 3D point on the saddle surface.
 - **OCCT:** `OCCTGeomEvalHypParaboloidD0`.
 - **Example:**
@@ -2550,7 +2550,7 @@ Evaluate an Archimedean spiral at `u`: `C(t) = (a + b·t)·cos(t)·X + (a + b·t
 public static func archimedeanSpiralD0(initialRadius: Double, growthRate: Double, u: Double) -> SIMD2<Double>
 ```
 
-- **Parameters:** `initialRadius` — `a`, the starting radius; `growthRate` — `b`, expansion per radian; `u` — parameter.
+- **Parameters:** `initialRadius`, `a`, the starting radius; `growthRate`, `b`, expansion per radian; `u`, parameter.
 - **Returns:** 2D point on the spiral.
 - **OCCT:** `OCCTGeom2dEvalArchimedeanSpiralD0`.
 - **Example:**
@@ -2585,7 +2585,7 @@ Evaluate a logarithmic (equiangular) spiral at `u`: `C(t) = a·exp(b·t)·cos(t)
 public static func logarithmicSpiralD0(scale: Double, growthExponent: Double, u: Double) -> SIMD2<Double>
 ```
 
-- **Parameters:** `scale` — `a`, initial scale; `growthExponent` — `b`, exponential growth rate; `u` — parameter.
+- **Parameters:** `scale`, `a`, initial scale; `growthExponent`, `b`, exponential growth rate; `u`, parameter.
 - **Returns:** 2D point on the spiral.
 - **OCCT:** `OCCTGeom2dEvalLogSpiralD0`.
 - **Example:**
@@ -2620,10 +2620,10 @@ Evaluate a circle involute at `u`: `C(t) = R·(cos(t) + t·sin(t))·X + R·(sin(
 public static func circleInvoluteD0(radius: Double, u: Double) -> SIMD2<Double>
 ```
 
-- **Parameters:** `radius` — base circle radius `R`; `u` — involute parameter.
+- **Parameters:** `radius`, base circle radius `R`; `u`, involute parameter.
 - **Returns:** 2D point on the involute.
 - **OCCT:** `OCCTGeom2dEvalCircleInvoluteD0`.
-- **Note:** The circle involute is the curve traced by the endpoint of a taut string unwinding from a circle — widely used for gear tooth profiles.
+- **Note:** The circle involute is the curve traced by the endpoint of a taut string unwinding from a circle, widely used for gear tooth profiles.
 - **Example:**
   ```swift
   let pt = Geom2dEval.circleInvoluteD0(radius: 10, u: 0.5)
@@ -2656,7 +2656,7 @@ Evaluate a 2D sine wave at `u`: `C(t) = t·X + A·sin(ω·t + φ)·Y`.
 public static func sineWaveD0(amplitude: Double, omega: Double, phase: Double, u: Double) -> SIMD2<Double>
 ```
 
-- **Parameters:** `amplitude` — wave amplitude; `omega` — angular frequency; `phase` — phase shift; `u` — parameter.
+- **Parameters:** `amplitude`, wave amplitude; `omega`, angular frequency; `phase`, phase shift; `u`, parameter.
 - **Returns:** 2D point on the wave.
 - **OCCT:** `OCCTGeom2dEvalSineWaveD0`.
 - **Example:**

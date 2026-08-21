@@ -2,7 +2,7 @@
 //  OCCTBridge_Document.mm
 //  OCCTSwift
 //
-//  Extracted from OCCTBridge.mm — issue #99.
+//  Extracted from OCCTBridge.mm, issue #99.
 //
 //  XDE / XCAF document support: document creation + lifecycle, assembly
 //  traversal, transforms, colors, PBR + common visual materials, plus the
@@ -10,7 +10,7 @@
 //  defined here because every label-name getter that allocates a heap
 //  string is in this block).
 //
-//  Public C surface unchanged. No symbol changes — pure file move.
+//  Public C surface unchanged. No symbol changes, pure file move.
 //
 
 #import "../include/OCCTBridge.h"
@@ -4729,7 +4729,7 @@ void OCCTDocumentDefineFormatXmlXCAF(OCCTDocumentRef doc)
   }
 }
 
-// #349/#371: interim serialization for OCAF Save/Load/DefineFormat — see OCCTBridge_Internal.h.
+// #349/#371: interim serialization for OCAF Save/Load/DefineFormat, see OCCTBridge_Internal.h.
 std::mutex& ocafStoreMutex()
 {
   static std::mutex mutex;
@@ -9678,7 +9678,7 @@ int64_t OCCTNamingFindLabel(OCCTDocumentRef doc, OCCTShapeRef shape)
       if (doc->labels[i].IsEqual(label))
         return i;
     }
-    // Label exists but not in our array — register it
+    // Label exists but not in our array, register it
     return doc->registerLabel(label);
   }
   catch (...)

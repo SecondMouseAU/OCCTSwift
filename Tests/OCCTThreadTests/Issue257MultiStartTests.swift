@@ -2,12 +2,12 @@ import Testing
 import simd
 @testable import OCCTSwift
 
-/// Issue #257 — `threadedShaft(starts: N)` for N > 1 now builds the smooth, boolean-free direct rod
+/// Issue #257, `threadedShaft(starts: N)` for N > 1 now builds the smooth, boolean-free direct rod
 /// (generalising the single-start cam-slice loft to N teeth tiling the turn, lead = N·pitch) instead
 /// of falling to the faceted cut path (#254). The cut path produced disconnected notches; the direct
 /// build is a continuous interleaved multi-helix: a low-face-count, BRepCheck-valid solid with the
 /// crest exactly at the nominal major radius.
-@Suite("Issue #257 — smooth multi-start direct thread build")
+@Suite("Issue #257, smooth multi-start direct thread build")
 struct Issue257MultiStartTests {
 
     private func rod(_ form: ThreadForm, nominal: Double, pitch: Double, rodH: Double,

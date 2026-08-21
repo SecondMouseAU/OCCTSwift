@@ -471,7 +471,7 @@ struct FreeBoundsTests {
     }
 
     // #310 regression: ShapeAnalysis_FreeBounds crashed (uncatchable SIGSEGV) analyzing a compound
-    // of two or more DISJOINT closed faces — not adjacent/touching ones like
+    // of two or more DISJOINT closed faces, not adjacent/touching ones like
     // compoundFacesHasFreeBounds above, which forms a single combined loop and never hit the bug.
     // Each disjoint face's boundary is entirely consumed by its own closed-loop detection with
     // nothing left over, which is exactly what tripped the kernel's uninitialized-handle bug (fixed
@@ -487,7 +487,7 @@ struct FreeBoundsTests {
         let closedWires = compound.freeBoundsClosedWires(tolerance: 0.01)
         #expect(compound.freeBoundsClosedCount(tolerance: 0.01) == 2)
         #expect(closedWires?.subShapeCount(ofType: .wire) == 2)
-        // A valid, empty compound (0 wires) is the correct result here, not nil — both faces
+        // A valid, empty compound (0 wires) is the correct result here, not nil, both faces
         // are entirely closed, so there's nothing to report as an open free boundary.
         #expect((compound.freeBoundsOpenWires(tolerance: 0.01)?.subShapeCount(ofType: .wire) ?? 0) == 0)
     }
@@ -878,7 +878,7 @@ struct FreeBoundsPropertiesTests {
         #expect(analysis.closedCount > 0)
     }
 
-    @Test("Closed free bound info — area and perimeter")
+    @Test("Closed free bound info, area and perimeter")
     func closedBoundInfo() throws {
         let face = Shape.face(from:
             Wire.polygon3D([
@@ -1005,7 +1005,7 @@ struct FreeBoundsPropertiesTests {
 
 @Suite("ShapeAnalysis Surface ValueOfUV Tests")
 struct SurfaceValueOfUVTests {
-    @Test("Project point onto plane — UV and gap")
+    @Test("Project point onto plane, UV and gap")
     func projectOntoPlane() throws {
         let plane = Surface.plane(origin: .zero, normal: SIMD3(0, 0, 1))!
         let proj = plane.valueOfUV(point: SIMD3(5, 3, 2))
@@ -1022,7 +1022,7 @@ struct SurfaceValueOfUVTests {
         #expect(abs(proj.gap - 5.0) < 0.5)
     }
 
-    @Test("Next value of UV — iterative projection")
+    @Test("Next value of UV, iterative projection")
     func nextValueOfUV() throws {
         let plane = Surface.plane(origin: .zero, normal: SIMD3(0, 0, 1))!
         let proj1 = plane.valueOfUV(point: SIMD3(5, 3, 0))
@@ -1046,7 +1046,7 @@ struct CurveProjectTests {
     @Test("Project point onto circle")
     func projectOntoCircle() throws {
         let circle = Curve3D.circle(center: .zero, normal: SIMD3(0, 0, 1), radius: 5)!
-        // Point at (10, 0, 0) — closest circle point at (5, 0, 0), distance 5
+        // Point at (10, 0, 0), closest circle point at (5, 0, 0), distance 5
         let proj = circle.projectPoint(SIMD3(10, 0, 0))
         #expect(abs(proj.distance - 5.0) < 0.1)
         #expect(simd_distance(proj.point, SIMD3(5, 0, 0)) < 0.5)
@@ -1059,7 +1059,7 @@ struct CurveValidateRangeTests {
     func validateInBounds() throws {
         let seg = Curve3D.segment(from: SIMD3(0, 0, 0), to: SIMD3(10, 0, 0))!
         let result = seg.validateRange(first: 2, last: 8)
-        // Range [2,8] is within [0,10] — may or may not be adjusted
+        // Range [2,8] is within [0,10], may or may not be adjusted
         #expect(result.first >= 0)
         #expect(result.last <= 10)
     }
@@ -1516,7 +1516,7 @@ struct ShapeUpgradeClosedEdgeDivideTests {
         let edges = cyl.subShapes(ofType: .edge)
         let faces = cyl.subShapes(ofType: .face)
         guard !edges.isEmpty, !faces.isEmpty else { return }
-        // Some edges on a cylinder are seam edges — just verify no crash
+        // Some edges on a cylinder are seam edges, just verify no crash
         for edge in edges {
             if edge.canDivideClosedEdge(onFace: faces[0]) {
                 break
@@ -1645,7 +1645,7 @@ struct ShapeCustomSurfacePeriodicTests {
     @Test("convert to periodic")
     func convertToPeriodic() {
         if let surf = Surface.cylinder(origin: SIMD3(0, 0, 0), axis: SIMD3(0, 0, 1), radius: 5) {
-            // Cylinder surface is already periodic — result may be nil
+            // Cylinder surface is already periodic, result may be nil
             let _ = surf.convertToPeriodic()
             // Just verify no crash
         }
@@ -1764,7 +1764,7 @@ struct SplitSurfaceTests {
         if let surf = Surface.cylinder(origin: SIMD3(0, 0, 0), axis: SIMD3(0, 0, 1), radius: 10) {
             if let bsp = surf.toBSpline() {
                 // criterion is a ParametricContinuity raw value: 2 = C2. It used to be read
-                // here as a GeomAbs_Shape ordinal, where 4 meant C2 and 2 meant C1 — see
+                // here as a GeomAbs_Shape ordinal, where 4 meant C2 and 2 meant C1, see
                 // Issue490ContinuityDecoderTests for the cross-check against the sibling entry
                 // point that always read it the other way. #490.
                 let result = bsp.splitSurfaceByContinuity(criterion: 2, tolerance: 1e-6)
@@ -1945,7 +1945,7 @@ struct ShapeAnalysisCurveStaticTests {
     @Test func lineIsPlanar() {
         // A line is planar (any direction perpendicular to it is a valid normal)
         if let line = Curve3D.line(through: SIMD3(0, 0, 0), direction: SIMD3(1, 0, 0)) {
-            // Lines are degenerate for IsPlanar — any plane contains them
+            // Lines are degenerate for IsPlanar, any plane contains them
             // The result may be nil or a normal; just check it doesn't crash
             _ = line.planeNormal(tolerance: 1e-6)
         }
@@ -1974,7 +1974,7 @@ struct FreeBoundsSimplifiedTests {
     }
 
     @Test func freeBoundsOnOpenShell() {
-        // Create a single face (open shell) — should have free boundaries
+        // Create a single face (open shell), should have free boundaries
         guard let face = Shape.box(width: 10, height: 10, depth: 10) else { return }
         let faces = face.subShapes(ofType: .face)
         if let singleFace = faces.first {
@@ -2375,7 +2375,7 @@ struct ShapeFixerBuilderTests {
     }
 }
 
-// MARK: - #849: ShapeFixStatus — the real ShapeExtend_Status ordinals, shared by ShapeFixer/FaceFixer
+// MARK: - #849: ShapeFixStatus, the real ShapeExtend_Status ordinals, shared by ShapeFixer/FaceFixer
 
 /// `ShapeFixer.status(Int)` used to expose only 3 of `ShapeExtend_Status`'s 19 ordinals, and
 /// `FaceFixer`'s own local `Status` enum (independently) shifted everything from `.fail1` through
@@ -2400,7 +2400,7 @@ struct Issue849ShapeFixStatusTests {
         #expect(ShapeFixStatus.done6.rawValue == 6)
         #expect(ShapeFixStatus.done7.rawValue == 7)
         #expect(ShapeFixStatus.done8.rawValue == 8)
-        #expect(ShapeFixStatus.done.rawValue == 9)     // combined DONE — sits BEFORE fail1, not after fail8
+        #expect(ShapeFixStatus.done.rawValue == 9)     // combined DONE, sits BEFORE fail1, not after fail8
         #expect(ShapeFixStatus.fail1.rawValue == 10)
         #expect(ShapeFixStatus.fail2.rawValue == 11)
         #expect(ShapeFixStatus.fail3.rawValue == 12)
@@ -2409,10 +2409,10 @@ struct Issue849ShapeFixStatusTests {
         #expect(ShapeFixStatus.fail6.rawValue == 15)
         #expect(ShapeFixStatus.fail7.rawValue == 16)
         #expect(ShapeFixStatus.fail8.rawValue == 17)
-        #expect(ShapeFixStatus.fail.rawValue == 18)    // combined FAIL — last ordinal
+        #expect(ShapeFixStatus.fail.rawValue == 18)    // combined FAIL, last ordinal
     }
 
-    /// `FaceFixer.Status` is a typealias for `ShapeFixStatus` (#849) — same cases, same raw
+    /// `FaceFixer.Status` is a typealias for `ShapeFixStatus` (#849), same cases, same raw
     /// values, unlike before, when it was an independent enum with its own (wrong) raw values.
     @Test func faceFixerStatusIsTheSharedType() {
         #expect(FaceFixer.Status.self == ShapeFixStatus.self)
@@ -2422,14 +2422,14 @@ struct Issue849ShapeFixStatusTests {
     }
 
     /// `ShapeFixer`'s legacy `status(Int)` overload already mapped its 3 supported values to the
-    /// CORRECT OCCT constants (`ShapeExtend_OK`/`DONE`/`FAIL`) — only its exposed granularity was
-    /// the bug, not those three answers — so it doubles as a live oracle for the new
+    /// CORRECT OCCT constants (`ShapeExtend_OK`/`DONE`/`FAIL`), only its exposed granularity was
+    /// the bug, not those three answers, so it doubles as a live oracle for the new
     /// `status(ShapeFixStatus)` overload on the same three cases, end to end through the real,
     /// new `OCCTShapeFixerStatusFlag` bridge call (wiring, not just the Swift-side constant).
     /// Measured, not assumed: `ShapeFix_Shape::Perform()` on a plain box already sets the combined
     /// `DONE` flag (there is always some tolerance-level bookkeeping to do), so this genuinely
     /// discriminates the old off-by-one `.done` (which read `ShapeExtend_FAIL8`, false here) from
-    /// the fix — proven directly: reverting `ShapeFixStatus` to the pre-#849 encoding fails this
+    /// the fix, proven directly: reverting `ShapeFixStatus` to the pre-#849 encoding fails this
     /// test's `.done` comparison (`fixer.status(2) → true` vs `fixer.status(.done) → false`), not
     /// just the raw-value test above.
     @Test func legacyAndTypeSafeOverloadsAgree() {
@@ -2569,7 +2569,7 @@ struct SewingExtrasTests {
     }
 }
 
-@Suite("v0.122.0 — ShapeFix_Edge Extended")
+@Suite("v0.122.0, ShapeFix_Edge Extended")
 struct ShapeFixEdgeExtendedTests {
     @Test("Add and remove 3D curve")
     func addRemoveCurve3d() {
@@ -2631,7 +2631,7 @@ struct ShapeFixEdgeExtendedTests {
     }
 }
 
-@Suite("v0.122.0 — Sewing Extended")
+@Suite("v0.122.0, Sewing Extended")
 struct SewingExtendedTests {
     @Test("Sewing deleted faces and queries")
     func sewingDeletedFacesAndQueries() {
@@ -2729,7 +2729,7 @@ struct SewingExtendedTests {
     }
 }
 
-@Suite("v0.123.0 — UnifySameDomain builder")
+@Suite("v0.123.0, UnifySameDomain builder")
 struct UnifySameDomainBuilderTests {
 
     @Test("Basic unification with builder")
@@ -2800,15 +2800,15 @@ struct UnifySameDomainBuilderTests {
 
 /// A self-intersecting ("bowtie") outline, extruded into a prism and then healed by OCCT's
 /// `ShapeFix_Shape`, corrupts the heap and aborts the process with an uncatchable OS signal
-/// (#263 — upstream OCCT; backtrace `ShapeFix_Face::FixOrientation` → `BRep_Tool::Curve` →
+/// (#263, upstream OCCT; backtrace `ShapeFix_Face::FixOrientation` → `BRep_Tool::Curve` →
 /// `BRep_TEdge::EmptyCopy`). Since `OCC_CATCH_SIGNALS` is inert in this build, the bridge cannot
-/// recover from the signal — so the prism/heal wrappers detect the `BRepCheck_SelfIntersectingWire`
+/// recover from the signal, so the prism/heal wrappers detect the `BRepCheck_SelfIntersectingWire`
 /// status and refuse the input, returning `nil` instead of crashing. A self-intersecting profile can
 /// never form a valid extruded solid, so refusing it loses nothing. These tests would abort the
 /// whole test process (not just fail) prior to the guard.
 @Suite("Self-Intersecting Profile Crash Guard (#263)")
 struct SelfIntersectingProfileGuard263 {
-    /// Bowtie quad: (0,0)→(1,1)→(1,0)→(0,1)→close — the two diagonals cross, so the wire
+    /// Bowtie quad: (0,0)→(1,1)→(1,0)→(0,1)→close, the two diagonals cross, so the wire
     /// self-intersects. `BRepCheck` flags it `SelfIntersectingWire` / `UnorientableShape`.
     static func bowtieWire() -> Wire? {
         Wire.polygon3D([
@@ -2846,7 +2846,7 @@ struct SelfIntersectingProfileGuard263 {
 
 // MARK: - #266 follow-up: ShapeFix_Face control + BRepCheck_Face diagnostics
 
-@Suite("Issue #266 follow-up — face healing control & checks")
+@Suite("Issue #266 follow-up, face healing control & checks")
 struct Issue266FaceHealingControlTests {
 
     /// A 10×10 planar face on the z=0 plane.

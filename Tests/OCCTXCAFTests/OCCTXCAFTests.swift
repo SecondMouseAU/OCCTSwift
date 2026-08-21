@@ -98,7 +98,7 @@ struct GDTDocumentTests {
 
 // MARK: - TNaming: Topological Naming (v0.25.0)
 
-@Suite("TNaming — Basic Record and Retrieve")
+@Suite("TNaming, Basic Record and Retrieve")
 struct TNamingBasicTests {
 
     @Test("Create label on document")
@@ -247,7 +247,7 @@ struct TNamingBasicTests {
     }
 }
 
-@Suite("TNaming — Forward and Backward Tracing")
+@Suite("TNaming, Forward and Backward Tracing")
 struct TNamingTracingTests {
 
     @Test("Trace forward finds generated shape")
@@ -326,7 +326,7 @@ struct TNamingTracingTests {
     }
 }
 
-@Suite("TNaming — Select and Resolve")
+@Suite("TNaming, Select and Resolve")
 struct TNamingSelectResolveTests {
 
     @Test("Select a shape within context")
@@ -360,7 +360,7 @@ struct TNamingSelectResolveTests {
 
         let resolved = doc.resolveShape(on: selectLabel)
         // Resolve may or may not return a shape depending on TNaming_Selector behavior
-        // with simple test shapes — just verify the API doesn't crash
+        // with simple test shapes, just verify the API doesn't crash
         if resolved != nil {
             #expect(Bool(true), "Resolve returned a shape")
         }
@@ -519,7 +519,7 @@ struct XCAFComponentMatrixTests {
         // Rigid: 90° about Z + translation (10,20,30), row-major [r00..r22, tx,ty,tz].
         let rigid: [Double] = [0, -1, 0, 1, 0, 0, 0, 0, 1, 10, 20, 30]
         #expect(doc.addComponent(assemblyLabelId: asm, shapeLabelId: part, matrix: rigid) >= 0)
-        // Reflection (det −1, mirror X) — gp_Trsf accepts it as a negative-scale location, so a
+        // Reflection (det −1, mirror X), gp_Trsf accepts it as a negative-scale location, so a
         // mirrored occurrence can be placed directly without baking a separate mirrored product.
         let reflect: [Double] = [-1, 0, 0, 0, 1, 0, 0, 0, 1, 5, 0, 0]
         #expect(doc.addComponent(assemblyLabelId: asm, shapeLabelId: part, matrix: reflect) >= 0)
@@ -575,7 +575,7 @@ struct AssemblyNodeIdentityTests {
 
         try box.writeSTEP(to: tempURL)
 
-        // Freshly-loaded document — do NOT touch `rootNodes` before the lookup.
+        // Freshly-loaded document, do NOT touch `rootNodes` before the lookup.
         let doc = try Document.load(from: tempURL)
 
         // Pre-fix this returned nil because the labelId registry was empty
@@ -2373,7 +2373,7 @@ struct XDEColorToolByShapeTests {
         }
     }
 
-    // #763: `shapeColor` used to hardcode `a = 1.0` regardless of what was actually stored —
+    // #763: `shapeColor` used to hardcode `a = 1.0` regardless of what was actually stored,
     // `XCAFDoc_ColorTool::GetColor(shape, type, Quantity_Color&)` fetches the real RGBA value
     // internally and then discards alpha, and the bridge was reading it through that overload.
     // A shape colored with a translucent color must read back its real alpha, not a fabricated
@@ -3419,7 +3419,7 @@ struct TNamingExtensionTests {
     @Test func namingIsEmpty() {
         guard let doc = Document.create() else { return }
         guard let node = doc.createLabel() else { return }
-        // No naming recorded yet — should be empty
+        // No naming recorded yet, should be empty
         #expect(doc.namingIsEmpty(on: node))
     }
 
@@ -3445,7 +3445,7 @@ struct TNamingExtensionTests {
         guard let doc = Document.create() else { return }
         guard let node = doc.createLabel() else { return }
         guard let box = Shape.box(width: 10, height: 20, depth: 30) else { return }
-        // Primitive has no old shape — original should be nil
+        // Primitive has no old shape, original should be nil
         doc.recordNaming(on: node, evolution: .primitive, newShape: box)
         let original = doc.namingOriginalShape(on: node)
         #expect(original == nil)
@@ -3549,7 +3549,7 @@ struct ChildNodeIteratorTests {
 
     @Test func noTreeNode() {
         guard let doc = Document.create() else { return }
-        // No tree node set — count should be 0
+        // No tree node set, count should be 0
         #expect(doc.childNodeCount(tag: 400) == 0)
     }
 }
@@ -3652,7 +3652,7 @@ struct TDocStdXLinkToolTests {
         src.setInteger(88)
         let ok = doc.xlinkCopyWithLink(targetLabelId: tgt.labelId, sourceLabelId: src.labelId)
         doc.commitTransaction()
-        // CopyWithLink may fail if labels are in same document — just check no crash
+        // CopyWithLink may fail if labels are in same document, just check no crash
         _ = ok
     }
 }
@@ -3988,7 +3988,7 @@ struct XCAFDocAssemblyIteratorTests {
     }
 
     /// #964: a document small enough to walk completely reports a count, never `nil`. Before the
-    /// fix this could not be asserted at all — the method returned `Int`, so "counted 100,001" and
+    /// fix this could not be asserted at all, the method returned `Int`, so "counted 100,001" and
     /// "gave up at 100,001" were the same value.
     @Test func smallAssemblyCountIsComplete() {
         guard let doc = Document.create() else { return }
@@ -4276,7 +4276,7 @@ struct DocumentExplorerExtensionTests {
     }
 }
 
-@Suite("v0.126.0 — XCAFDoc_ColorTool completions")
+@Suite("v0.126.0, XCAFDoc_ColorTool completions")
 struct ColorToolCompletionsTests {
     @Test("AddColor and FindColor")
     func addAndFindColor() {
@@ -4341,7 +4341,7 @@ struct ColorToolCompletionsTests {
     }
 }
 
-@Suite("v0.126.0 — XCAFDoc_ShapeTool completions")
+@Suite("v0.126.0, XCAFDoc_ShapeTool completions")
 struct ShapeToolCompletionsTests {
     @Test("IsFree returns true for top-level shape")
     func isFree() {
@@ -4949,7 +4949,7 @@ struct BRepGraphAttributeTests {
         #expect(restored.attributes == graph.attributes)
     }
 
-    /// With the canonical (`.sortedKeys`) encoder the store is byte-stable across encodes —
+    /// With the canonical (`.sortedKeys`) encoder the store is byte-stable across encodes,
     /// the contract for diffable, versionable snapshots.
     @Test func encodingIsDeterministic() throws {
         guard let box = Shape.box(width: 3, height: 3, depth: 3),
@@ -4963,7 +4963,7 @@ struct BRepGraphAttributeTests {
         #expect(a == b)
     }
 
-    /// NodeRef indexing is deterministic across rebuilds of the same BREP — the property the
+    /// NodeRef indexing is deterministic across rebuilds of the same BREP, the property the
     /// snapshot round-trip relies on. Verify a node index resolves to the same geometry.
     @Test func nodeIndexingDeterministicAcrossRebuild() {
         guard let box = Shape.box(width: 10, height: 20, depth: 30),

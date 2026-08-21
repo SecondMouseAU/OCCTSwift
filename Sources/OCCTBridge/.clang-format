@@ -2,7 +2,7 @@
 #
 # A checked-in copy of OCCT's own .clang-format (normally vendored at
 # Libraries/occt-src/.clang-format, which is gitignored and only present after
-# a local OCCT build — see Package.swift). CI needs this file committed to
+# a local OCCT build, see Package.swift). CI needs this file committed to
 # format-check the bridge layer without requiring a full OCCT source checkout.
 # If OCCT's own .clang-format changes upstream, re-sync this copy by hand;
 # Scripts/build-occt.sh doesn't currently diff the two.

@@ -30,7 +30,7 @@ public struct ShapeMeasurements: Sendable {
     ///
     /// **Caveat**: this is the *outer-boundary* length, not a parametric arc
     /// length. For trimmed faces (a face with internal holes), this excludes
-    /// the inner-wire perimeters — usually what dimension widgets want, but
+    /// the inner-wire perimeters, usually what dimension widgets want, but
     /// worth knowing.
     public let facePerimeters: [Double?]
 
@@ -69,7 +69,7 @@ extension Shape {
     /// ``ShapeMeasurements/totalFaceArea``, never ``Shape/surfaceArea`` and its two siblings; see
     /// ``Shape/surfaceArea`` for why (#885).
     /// - Parameter linearTolerance: tolerance forwarded to `Face.area(tolerance:)`.
-    ///   Defaults to OCCT's `1e-6` — tighten only if you hit precision issues.
+    ///   Defaults to OCCT's `1e-6`, tighten only if you hit precision issues.
     /// - Returns: A `ShapeMeasurements` snapshot with all four arrays populated and indexed
     ///   parallel to the shape's face/edge enumeration.
     public func measure(linearTolerance: Double = 1e-6) -> ShapeMeasurements {

@@ -1,11 +1,11 @@
 ---
-title: Surface — Analytic Types
+title: Surface. Analytic Types
 parent: API Reference
 ---
 
-# Surface — Analytic Types
+# Surface. Analytic Types
 
-These members expose the type-specific properties of the six analytic surface kinds: plane, sphere, torus, cylinder, cone, and swept surface. They are accessed via typed nested structs (e.g. `surface.planeProperties`) and are meaningful only when the underlying `Surface` wraps an OCCT object of that kind — calling them on a mismatched type returns zero/nil silently. See the main `Surface` page for construction methods, evaluation, and operations.
+These members expose the type-specific properties of the six analytic surface kinds: plane, sphere, torus, cylinder, cone, and swept surface. They are accessed via typed nested structs (e.g. `surface.planeProperties`) and are meaningful only when the underlying `Surface` wraps an OCCT object of that kind, calling them on a mismatched type returns zero/nil silently. See the main `Surface` page for construction methods, evaluation, and operations.
 
 ## Topics
 
@@ -26,7 +26,7 @@ public var planeProperties: PlaneProperties { get }
 Meaningful only when the surface wraps a `Geom_Plane`. Accessing members on a non-plane surface returns zeroed values or `nil`.
 
 - **Returns:** A `PlaneProperties` value backed by the same internal handle.
-- **OCCT:** `Geom_Plane` — accessed via `Handle(Geom_Plane)::DownCast`.
+- **OCCT:** `Geom_Plane`, accessed via `Handle(Geom_Plane)::DownCast`.
 - **Example:**
   ```swift
   if let surf = Surface.plane(origin: .zero, normal: SIMD3(0, 0, 1)) {
@@ -68,7 +68,7 @@ public func uIso(_ u: Double) -> Curve3D?
 
 On a `Geom_Plane`, a U iso-curve is a line running in the V direction at the specified U coordinate.
 
-- **Parameters:** `u` — U parameter value.
+- **Parameters:** `u`, U parameter value.
 - **Returns:** The iso-curve as a `Curve3D`, or `nil` if the surface is not a plane or the call fails.
 - **OCCT:** `Geom_Plane::UIso`.
 - **Example:**
@@ -92,7 +92,7 @@ public func vIso(_ v: Double) -> Curve3D?
 
 On a `Geom_Plane`, a V iso-curve is a line running in the U direction at the specified V coordinate.
 
-- **Parameters:** `v` — V parameter value.
+- **Parameters:** `v`, V parameter value.
 - **Returns:** The iso-curve as a `Curve3D`, or `nil` if the surface is not a plane or the call fails.
 - **OCCT:** `Geom_Plane::VIso`.
 - **Example:**
@@ -142,7 +142,7 @@ public var sphereProperties: SphereProperties { get }
 Meaningful only when the surface wraps a `Geom_SphericalSurface`. Members return zero/nil for other surface kinds.
 
 - **Returns:** A `SphereProperties` value backed by the same internal handle.
-- **OCCT:** `Geom_SphericalSurface` — accessed via `Handle(Geom_SphericalSurface)::DownCast`.
+- **OCCT:** `Geom_SphericalSurface`, accessed via `Handle(Geom_SphericalSurface)::DownCast`.
 - **Example:**
   ```swift
   if let surf = Surface.sphere(center: .zero, radius: 10) {
@@ -182,7 +182,7 @@ public func setRadius(_ r: Double) -> Bool
 
 Modifies the underlying `Geom_SphericalSurface` handle. The change is reflected in all `Surface` values that share this handle.
 
-- **Parameters:** `r` — new radius (must be > 0 per OCCT conventions).
+- **Parameters:** `r`, new radius (must be > 0 per OCCT conventions).
 - **Returns:** `true` on success, `false` if the surface is not a sphere or `r` is invalid.
 - **OCCT:** `Geom_SphericalSurface::SetRadius`.
 - **Example:**
@@ -261,7 +261,7 @@ public func uIso(_ u: Double) -> Curve3D?
 
 On `Geom_SphericalSurface`, U is the longitude angle; a U iso-curve is a meridian circle.
 
-- **Parameters:** `u` — U parameter (longitude angle in radians, range [0, 2π]).
+- **Parameters:** `u`, U parameter (longitude angle in radians, range [0, 2π]).
 - **Returns:** The iso-curve as a `Curve3D`, or `nil` if the surface is not a sphere or the call fails.
 - **OCCT:** `Geom_SphericalSurface::UIso`.
 - **Example:**
@@ -285,7 +285,7 @@ public func vIso(_ v: Double) -> Curve3D?
 
 On `Geom_SphericalSurface`, V is the latitude angle; a V iso-curve is a parallel circle.
 
-- **Parameters:** `v` — V parameter (latitude angle in radians, range [-π/2, π/2]).
+- **Parameters:** `v`, V parameter (latitude angle in radians, range [-π/2, π/2]).
 - **Returns:** The iso-curve as a `Curve3D`, or `nil` if the surface is not a sphere or the call fails.
 - **OCCT:** `Geom_SphericalSurface::VIso`.
 - **Example:**
@@ -334,7 +334,7 @@ public var torusProperties: TorusProperties { get }
 Meaningful only when the surface wraps a `Geom_ToroidalSurface`. Members return zero or `false` for other surface kinds.
 
 - **Returns:** A `TorusProperties` value backed by the same internal handle.
-- **OCCT:** `Geom_ToroidalSurface` — accessed via `Handle(Geom_ToroidalSurface)::DownCast`.
+- **OCCT:** `Geom_ToroidalSurface`, accessed via `Handle(Geom_ToroidalSurface)::DownCast`.
 - **Example:**
   ```swift
   if let surf = Surface.torus(majorRadius: 10, minorRadius: 2) {
@@ -394,7 +394,7 @@ Mutates the torus major radius in place.
 public func setMajorRadius(_ r: Double) -> Bool
 ```
 
-- **Parameters:** `r` — new major radius (must be > 0 and > minor radius per OCCT).
+- **Parameters:** `r`, new major radius (must be > 0 and > minor radius per OCCT).
 - **Returns:** `true` on success, `false` if the surface is not a torus or the value is invalid.
 - **OCCT:** `Geom_ToroidalSurface::SetMajorRadius`.
 - **Example:**
@@ -415,7 +415,7 @@ Mutates the torus minor radius in place.
 public func setMinorRadius(_ r: Double) -> Bool
 ```
 
-- **Parameters:** `r` — new minor radius (must be > 0 and < major radius per OCCT).
+- **Parameters:** `r`, new minor radius (must be > 0 and < major radius per OCCT).
 - **Returns:** `true` on success, `false` if the surface is not a torus or the value is invalid.
 - **OCCT:** `Geom_ToroidalSurface::SetMinorRadius`.
 - **Example:**
@@ -478,7 +478,7 @@ public var cylinderProperties: CylinderProperties { get }
 Meaningful only when the surface wraps a `Geom_CylindricalSurface`. Members return zero/nil for other surface kinds.
 
 - **Returns:** A `CylinderProperties` value backed by the same internal handle.
-- **OCCT:** `Geom_CylindricalSurface` — accessed via `Handle(Geom_CylindricalSurface)::DownCast`.
+- **OCCT:** `Geom_CylindricalSurface`, accessed via `Handle(Geom_CylindricalSurface)::DownCast`.
 - **Example:**
   ```swift
   if let surf = Surface.cylinder(radius: 5, height: 20) {
@@ -516,7 +516,7 @@ Mutates the cylinder's radius in place.
 public func setRadius(_ r: Double) -> Bool
 ```
 
-- **Parameters:** `r` — new radius (must be > 0).
+- **Parameters:** `r`, new radius (must be > 0).
 - **Returns:** `true` on success, `false` if the surface is not a cylinder or the value is invalid.
 - **OCCT:** `Geom_CylindricalSurface::SetRadius`.
 - **Example:**
@@ -560,7 +560,7 @@ public func uIso(_ u: Double) -> Curve3D?
 
 On `Geom_CylindricalSurface`, U is the angular parameter; a U iso-curve is a line (generator) running parallel to the cylinder axis.
 
-- **Parameters:** `u` — U parameter (angle in radians, range [0, 2π]).
+- **Parameters:** `u`, U parameter (angle in radians, range [0, 2π]).
 - **Returns:** The iso-curve (a line) as a `Curve3D`, or `nil` if the surface is not a cylinder or the call fails.
 - **OCCT:** `Geom_CylindricalSurface::UIso`.
 - **Example:**
@@ -588,7 +588,7 @@ public var coneProperties: ConeProperties { get }
 Meaningful only when the surface wraps a `Geom_ConicalSurface`. Members return zero for other surface kinds.
 
 - **Returns:** A `ConeProperties` value backed by the same internal handle.
-- **OCCT:** `Geom_ConicalSurface` — accessed via `Handle(Geom_ConicalSurface)::DownCast`.
+- **OCCT:** `Geom_ConicalSurface`, accessed via `Handle(Geom_ConicalSurface)::DownCast`.
 - **Example:**
   ```swift
   if let surf = Surface.cone(semiAngle: .pi / 6, refRadius: 5) {
@@ -697,7 +697,7 @@ public var sweptProperties: SweptProperties { get }
 `Geom_SweptSurface` is the abstract base of `Geom_SurfaceOfLinearExtrusion` and `Geom_SurfaceOfRevolution`. These properties are valid for both subclasses. Members return zero/nil for non-swept surface kinds.
 
 - **Returns:** A `SweptProperties` value backed by the same internal handle.
-- **OCCT:** `Geom_SweptSurface` — accessed via `Handle(Geom_SweptSurface)::DownCast`.
+- **OCCT:** `Geom_SweptSurface`, accessed via `Handle(Geom_SweptSurface)::DownCast`.
 - **Example:**
   ```swift
   if let surf = Surface.extrusion(profile: Wire.circle(radius: 3)!, direction: SIMD3(0, 0, 1)) {

@@ -4,19 +4,19 @@ import simd
 @testable import OCCTSwift
 
 // #193: a long full-length thread (tens of turns) used to come back from `threadedShaft`
-// either `isValid == false` (v1.4.0 faceted screw-loft — a benign facet self-intersection
-// trips BRepCheck) or — once v1.4.1 gated soundness on `isValid` — as `nil`, breaking
+// either `isValid == false` (v1.4.0 faceted screw-loft, a benign facet self-intersection
+// trips BRepCheck) or, once v1.4.1 gated soundness on `isValid`, as `nil`, breaking
 // full-length bolt shanks. Fix: the cut's soundness is judged on geometry (tight/optimal
 // envelope + volume delta), NOT BRepCheck validity. The smooth analytic helicoid stays valid
 // where it applies (short/medium threads); the faceted fallback is allowed to be
 // invalid-but-usable (dimensionally correct, STEP-exportable) for long threads. Separate
 // file, cf. #183.
-@Suite("Issue #193 — long full-length threads return a usable solid (not nil)")
+@Suite("Issue #193, long full-length threads return a usable solid (not nil)")
 struct Issue193LongThreadTests {
 
     // ISO 4017 M10 full-thread shank: thread runs almost the whole 50 mm shank at pitch 1.0,
     // i.e. ~26 → ~49 turns. Every length must return an in-envelope solid that actually
-    // removed material — never nil, regardless of BRepCheck validity.
+    // removed material, never nil, regardless of BRepCheck validity.
     @Test("M10x1.0 long threads stay in-envelope and remove material (never nil)",
           arguments: [26.0, 40.0, 49.0])
     func longThreadUsable(length: Double) {
@@ -28,7 +28,7 @@ struct Issue193LongThreadTests {
                                     spec: spec, length: length, runout: .none)
         #expect(t != nil)
         guard let t else { return }
-        // In-envelope on the tight (optimal) box — a cut never escapes the blank.
+        // In-envelope on the tight (optimal) box, a cut never escapes the blank.
         if let b = shank.boundingBoxOptimal(), let c = t.boundingBoxOptimal() {
             let tol = 0.05
             #expect(c.max.x <= b.max.x + tol)
@@ -36,7 +36,7 @@ struct Issue193LongThreadTests {
             #expect(c.max.z <= b.max.z + tol)
             #expect(c.min.z >= b.min.z - tol)
         }
-        // A real thread removes a shallow helical groove — some material, not most.
+        // A real thread removes a shallow helical groove, some material, not most.
         if let vb = shank.volume, let vt = t.volume {
             #expect(vt < vb)
             #expect(vt > vb * 0.7)

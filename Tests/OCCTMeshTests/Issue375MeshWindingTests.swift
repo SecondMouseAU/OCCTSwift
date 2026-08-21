@@ -7,14 +7,14 @@ import simd
 // closed solid, even after a mirror transform (determinant -1). Empirically confirmed to be
 // intentional/correct OCCT behavior, not a bridge bug: `BRepBuilderAPI_Transform` compensates a
 // negative-determinant transform by flipping each face's `TopoDS_Face::Orientation()` flag, so a
-// valid solid's faces always classify consistently outward — the bridge's extraction (which
+// valid solid's faces always classify consistently outward, the bridge's extraction (which
 // reads that flag faithfully) has nothing left to get "wrong". See `Shape.mesh()`'s doc comment
 // for the caller-controlled-winding workaround (`Mesh(vertices:normals:indices:)`).
-@Suite("Issue #375 — mesh() winding reflects true topological orientation, not a naive transform read")
+@Suite("Issue #375, mesh() winding reflects true topological orientation, not a naive transform read")
 struct Issue375MeshWindingTests {
 
     /// Returns the fraction of `mesh`'s triangles whose (v1,v2,v3) winding faces away from
-    /// `center` — i.e. cross(v2-v1, v3-v1) points away from the center, the expected convention
+    /// `center`, i.e. cross(v2-v1, v3-v1) points away from the center, the expected convention
     /// for a convex solid's outward-facing mesh.
     private func outwardFraction(of mesh: Mesh, center: SIMD3<Float>) -> Double {
         let verts = mesh.vertices

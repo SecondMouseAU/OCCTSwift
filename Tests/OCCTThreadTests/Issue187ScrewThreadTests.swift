@@ -5,10 +5,10 @@ import simd
 
 // #187: threadedShaft/threadedHole rebuild their cutter with a SCREW-MOTION sweep
 // (ruled loft through screw-transformed axial sections) instead of a pipe-shell. The
-// result is a true in-envelope helicoid — no lead bulge — so the thread crest sits at
+// result is a true in-envelope helicoid, no lead bulge, so the thread crest sits at
 // the nominal radius (vs the old ~1.25x-cutDepth directional bulge) and even coarse
 // worm pitches now build correctly. Separate file, cf. #183.
-@Suite("Issue #187 — screw-motion thread cutter (tight envelope)")
+@Suite("Issue #187, screw-motion thread cutter (tight envelope)")
 struct Issue187ScrewThreadTests {
 
     // (nominalDiameter, pitch). Includes a coarse worm pitch that used to nil / balloon.
@@ -33,7 +33,7 @@ struct Issue187ScrewThreadTests {
         #expect(threaded.isValid)
         // TIGHT envelope: the crest sits at the nominal radius. Use the OPTIMAL (tight) box,
         // not the default AABB: the smooth analytic thread (#213) is a BSpline solid whose
-        // default Bnd_Box is its control-pole hull, overshooting the real surface by ~13% — a
+        // default Bnd_Box is its control-pole hull, overshooting the real surface by ~13%, a
         // pole artifact, not a bulge (the surface crest is exactly at the nominal radius). The
         // optimal box returns the true extent (cf. the same rationale in `isSoundCut`).
         guard let b = shank.boundingBoxOptimal(), let c = threaded.boundingBoxOptimal() else {
@@ -64,7 +64,7 @@ struct Issue187ScrewThreadTests {
         if let a, let b { #expect(abs(a - b) < 1e-4) }
     }
 
-    @Test("Thread surface is SMOOTH (analytic helicoid) — few faces, not hundreds of facets")
+    @Test("Thread surface is SMOOTH (analytic helicoid), few faces, not hundreds of facets")
     func smoothFewFaces() {
         guard let shank = Shape.cylinder(radius: 6, height: 16) else { Issue.record("no shank"); return }
         let spec = ThreadSpec(form: .iso68, nominalDiameter: 12, pitch: 1.75)

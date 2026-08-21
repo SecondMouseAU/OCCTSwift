@@ -41,7 +41,7 @@ way `check-docs-defaults.py` resolves one: never on the member name alone.
    stale). So a bare heading's existence is asked **globally**: does *any* live type (or the
    free-function namespace) have this exact member name, with the guessed type and a same-heading
    a same-heading dash-separated `Type[, Type...]` disambiguator suffix
-   (`### \`distance(to:deflection:)\` — Wire, Edge, Face`)
+   (`### \`distance(to:deflection:)\`, Wire, Edge, Face`)
    tried first, as a nicety, not a requirement. This cannot resurrect "the trap": a dotted mention
    is never downgraded to the global check.
    - `## H2` prose headings are *not* separately existence-checked, for the reason above: a
@@ -493,9 +493,9 @@ BARE_BACKTICK_RE = re.compile(r'`\.?([a-z_][A-Za-z0-9_]*(?:\([^`]*\))?)`')
 
 
 def strip_disambiguation(text):
-    """`contains(uid:) — GraphUID` -> ('contains(uid:)', 'GraphUID'). Split on the FIRST em/en
+    """`contains(uid:), GraphUID` -> ('contains(uid:)', 'GraphUID'). Split on the FIRST em/en
     dash or ` - ` only, since a symbol itself never contains one."""
-    for sep in (' — ', ' – ', ' - '):
+    for sep in (', ', ' – ', ' - '):
         if sep in text:
             head, _, tail = text.partition(sep)
             return head.strip(), tail.strip()
@@ -657,12 +657,12 @@ def scan_doc_file(path, text, live_types, live_members, live_free, rep):
             raw, suffix = hb.group(2), hb.group(3)
             context_stack = {k: v for k, v in context_stack.items() if k < level}
             # The disambiguating suffix appears BOTH ways in the real pages: inside the backtick
-            # span (`` `contains(uid:) — GraphUID` ``) and outside it
-            # (`` `distance(to:deflection:)` — Wire, Edge, Face ``). Both must be tried.
+            # span (`` `contains(uid:), GraphUID` ``) and outside it
+            # (`` `distance(to:deflection:)`, Wire, Edge, Face ``). Both must be tried.
             body, inner_dash_suffix = strip_disambiguation(raw)
             outer_dash_suffix = ''
             s = suffix.strip()
-            for sep in ('—', '–', '-'):
+            for sep in (', ', '–', '-'):
                 if s.startswith(sep):
                     outer_dash_suffix = s[len(sep):].strip()
                     break
@@ -961,7 +961,7 @@ SELF_TEST_CASES = [
                                       'extension Edge {\n'
                                       '    public func distance(to other: Int) -> Double { 0 }\n}\n'},
         {'docs/reference/ZZ-Features.md':
-            '### `distance(to:)` — Wire, Edge\n\n```swift\n'
+            '### `distance(to:)`, Wire, Edge\n\n```swift\n'
             'public func distance(to other: Int) -> Double\n```\n'},
         'clean', 0,
     ),

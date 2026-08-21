@@ -86,14 +86,14 @@ struct MaterialTests {
 @Suite("OCCT signal handling (#175)")
 struct OCCTSignalHandlingTests {
     /// Degenerate / incompatible loft profiles must FAIL GRACEFULLY (return nil) rather than
-    /// SIGSEGV the process. NOTE: the SIGSEGV class here is NOT caught by OCC_CATCH_SIGNALS — that
+    /// SIGSEGV the process. NOTE: the SIGSEGV class here is NOT caught by OCC_CATCH_SIGNALS, that
     /// macro is inert unless OCCT is compiled with OCC_CONVERT_SIGNALS (it is not, by design: the
     /// setjmp/longjmp path corrupts allocator state). The crash is instead prevented at source by
     /// the BRepFill_CompatibleWires polar-iterator guard carried in Scripts/patches/ (issue #176).
     /// If that patch is dropped from the xcframework, this test crashes the runner.
     @Test("Degenerate loft returns nil, does not crash")
     func degenerateLoftIsCaught() {
-        // A valid square, a wildly different many-gon, and a near-degenerate (collinear) wire —
+        // A valid square, a wildly different many-gon, and a near-degenerate (collinear) wire,
         // the kind of mismatched profile set that ThruSections can crash on.
         let square = Wire.polygon3D([SIMD3(0,0,0), SIMD3(10,0,0), SIMD3(10,10,0), SIMD3(0,10,0)], closed: true)
         let collinear = Wire.polygon3D([SIMD3(0,0,5), SIMD3(1,0,5), SIMD3(2,0,5)], closed: true)
@@ -107,7 +107,7 @@ struct OCCTSignalHandlingTests {
     }
 }
 
-// MARK: - v0.81.0: Visualization — Quantity_Color, Quantity_ColorRGBA, Graphic3d_MaterialAspect, Graphic3d_PBRMaterial
+// MARK: - v0.81.0: Visualization. Quantity_Color, Quantity_ColorRGBA, Graphic3d_MaterialAspect, Graphic3d_PBRMaterial
 
 @Suite("Color OCCT Operations Tests")
 struct ColorOCCTTests {
@@ -1452,7 +1452,7 @@ struct UnitsConversionTests {
     }
 }
 
-@Suite("v0.127.0 — ColorTool GetAllColors")
+@Suite("v0.127.0, ColorTool GetAllColors")
 struct ColorToolGetAllColorsTests {
 
     @Test("GetAllColors returns added colors")

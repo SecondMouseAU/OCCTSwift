@@ -1,4 +1,4 @@
-# GitHub Pages (Jekyll) config for the OCCTSwift docs site — served from /docs on main.
+# GitHub Pages (Jekyll) config for the OCCTSwift docs site, served from /docs on main.
 #
 # Theme: just-the-docs (left sidebar nav + search). Pinned to v0.3.3, the last release
 # compatible with GitHub Pages' native (no-Actions) build, which pins Jekyll 3.9.
@@ -6,7 +6,7 @@
 # `nav_exclude: true` hides internal pages. GitHub Pages' default plugins still apply
 # (optional-front-matter, readme-index, relative-links).
 title: OCCTSwift
-description: A comprehensive Swift wrapper for OpenCASCADE Technology (OCCT 8.0.0) — B-Rep solid modeling for macOS / iOS / visionOS / tvOS.
+description: A comprehensive Swift wrapper for OpenCASCADE Technology (OCCT 8.0.0), B-Rep solid modeling for macOS / iOS / visionOS / tvOS.
 remote_theme: just-the-docs/just-the-docs@v0.3.3
 
 # just-the-docs options

@@ -3,16 +3,16 @@ import simd
 @testable import OCCTSwift
 
 /// Issue #397: `Shape.faceAddHole(face:wire:)` returned nil for *every* hole wire built from
-/// circular geometry — `Wire.circle(origin:normal:radius:)` (one closed circular edge, one vertex)
-/// and a hand-joined two-arc circle (two vertices) alike — while a polygonal hole on the same face
+/// circular geometry, `Wire.circle(origin:normal:radius:)` (one closed circular edge, one vertex)
+/// and a hand-joined two-arc circle (two vertices) alike, while a polygonal hole on the same face
 /// worked. The cause was the #234 degenerate-wire guard, which counted the wire's *vertices*: a
 /// circle has 1 or 2 of them, so it tripped the "fewer than 3 distinct vertices" rejection meant
 /// for zero-area wires. The guard now samples points along the wire's curves, so curved holes pass
 /// while genuinely zero-area wires (the #234 crash chain) are still rejected.
-@Suite("Issue #397 — faceAddHole accepts circular hole wires")
+@Suite("Issue #397, faceAddHole accepts circular hole wires")
 struct Issue397CircularHoleTests {
 
-    /// A 20x20 rectangle face in the XY plane — the issue's own fixture.
+    /// A 20x20 rectangle face in the XY plane, the issue's own fixture.
     private func rectFace() -> Shape? {
         guard let w = Wire.polygon3D([SIMD3(0, 0, 0), SIMD3(20, 0, 0), SIMD3(20, 20, 0), SIMD3(0, 20, 0)],
                                      closed: true) else { return nil }
@@ -75,7 +75,7 @@ struct Issue397CircularHoleTests {
     }
 
     /// The other half of the fix: `MakeFace::Add` does no reorienting, so a hole wire wound the same
-    /// way as the face's outer boundary used to be added as a second OUTER loop — the face's area
+    /// way as the face's outer boundary used to be added as a second OUTER loop, the face's area
     /// grew by the hole's and the prism was not a valid solid. Either winding must now cut.
     @Test("A same-winding polygon hole cuts instead of adding area")
     func polygonHoleWindingIndependent() {
@@ -93,7 +93,7 @@ struct Issue397CircularHoleTests {
     }
 
     /// The winding retry arbitrates between two orientations by validity, so when NEITHER validates
-    /// the wire is not a usable hole for this face at all — no winding makes a boundary-crossing loop
+    /// the wire is not a usable hole for this face at all, no winding makes a boundary-crossing loop
     /// into a hole. That is declined rather than returned as an invalid face, which is the same call
     /// the degenerate guard makes and what #234 established.
     @Test("A hole wire crossing the face boundary is declined, not returned invalid")
@@ -106,7 +106,7 @@ struct Issue397CircularHoleTests {
     }
 
     /// #234 regression guard: a curved wire that encloses no area (an arc traversed out and back)
-    /// must still be rejected — sampling the curve is not a licence to accept zero-area holes.
+    /// must still be rejected, sampling the curve is not a licence to accept zero-area holes.
     @Test("Zero-area curved hole wire is still rejected")
     func outAndBackArcRejected() {
         let c = SIMD2<Double>(10, 10), r = 3.0

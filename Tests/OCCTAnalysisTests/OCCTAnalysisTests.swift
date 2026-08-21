@@ -935,7 +935,7 @@ struct SurfaceBoundingBoxTests {
 
 // MARK: - Medial Axis Tests (v0.24.0)
 
-@Suite("Medial Axis — Rectangle", .disabled("MedialAxis causes segfault in OCCT — pre-existing issue"))
+@Suite("Medial Axis, Rectangle", .disabled("MedialAxis causes segfault in OCCT, pre-existing issue"))
 struct MedialAxisRectangleTests {
 
     @Test("Rectangle produces non-nil medial axis")
@@ -1073,14 +1073,14 @@ struct MedialAxisRectangleTests {
         let d = ma.distanceToBoundary(arcIndex: 1, parameter: 0.5)
         #expect(d >= 0, "Distance should be non-negative")
         if !foundArc {
-            // All arcs touch the boundary — still valid, just verify non-negative
+            // All arcs touch the boundary, still valid, just verify non-negative
             #expect(d >= 0)
         }
     }
 }
 
 
-@Suite("Medial Axis — Various Shapes", .disabled("MedialAxis causes segfault in OCCT — pre-existing issue"))
+@Suite("Medial Axis, Various Shapes", .disabled("MedialAxis causes segfault in OCCT, pre-existing issue"))
 struct MedialAxisVariousShapesTests {
 
     @Test("Square medial axis has symmetric structure")
@@ -1120,7 +1120,7 @@ struct MedialAxisVariousShapesTests {
         let wire = Wire.circle(radius: 5)!
         let face = Shape.face(from: wire)!
         let ma = MedialAxis(of: face)
-        // Circle medial axis is a single point (center) — may compute as degenerate
+        // Circle medial axis is a single point (center), may compute as degenerate
         if let ma = ma {
             #expect(ma.nodeCount >= 1)
             let minT = ma.minThickness
@@ -1220,7 +1220,7 @@ struct MedialAxisVariousShapesTests {
 
 // MARK: - Selection / Raycasting Tests
 
-@Suite("Selection — Raycasting")
+@Suite("Selection, Raycasting")
 struct RaycastTests {
     @Test("Raycast hits box")
     func raycastBox() {
@@ -1277,7 +1277,7 @@ struct RaycastTests {
 
 // MARK: - Edge Property Tests
 
-@Suite("Edge — Properties")
+@Suite("Edge, Properties")
 struct EdgePropertyTests {
     @Test("Edge isLine for box edge")
     func edgeIsLine() {
@@ -1567,7 +1567,7 @@ struct CanonicalRecognitionTests {
         // cylinder, etc). On already-canonical primitive shapes it may return nil.
         let box = Shape.box(width: 10, height: 10, depth: 10)!
         let form = box.recognizeCanonical()
-        // May be nil for primitive shapes — just verify no crash
+        // May be nil for primitive shapes, just verify no crash
         if let form {
             #expect(form.type == .plane)
         }
@@ -1577,11 +1577,11 @@ struct CanonicalRecognitionTests {
     func recognizeCallableOnCylinder() {
         let cyl = Shape.cylinder(radius: 5, height: 10)!
         _ = cyl.recognizeCanonical()
-        // Just verify no crash — whole-shape recognition often returns nil
+        // Just verify no crash, whole-shape recognition often returns nil
     }
 }
 
-// MARK: - v0.32.0 Tests — OCCT Test Suite Audit
+// MARK: - v0.32.0 Tests. OCCT Test Suite Audit
 
 @Suite("Asymmetric Chamfer (Two Distances)")
 struct AsymmetricChamferTests {
@@ -1746,7 +1746,7 @@ struct OrientedBoundingBoxTests {
 
     @Test("OBB of rotated box is tighter than AABB")
     func obbTighterThanAABB() {
-        // Rotate a box 45 degrees around Z — AABB will be larger, OBB should stay tight
+        // Rotate a box 45 degrees around Z. AABB will be larger, OBB should stay tight
         let box = Shape.box(width: 10, height: 2, depth: 2)!.rotated(axis: SIMD3(0, 0, 1), angle: .pi / 4)!
         let obb = box.orientedBoundingBox()
         #expect(obb != nil)
@@ -1886,7 +1886,7 @@ struct ExtendedDistanceTests {
         }
     }
 
-    @Test("Inner distance detection — non-overlapping shapes")
+    @Test("Inner distance detection, non-overlapping shapes")
     func notInner() {
         let box1 = Shape.box(width: 10, height: 10, depth: 10)!
         let box2 = Shape.box(width: 10, height: 10, depth: 10)!.translated(by: SIMD3(20, 0, 0))!
@@ -1906,7 +1906,7 @@ struct PlaneDetectionTests {
         let plane = wireShape.findPlane()
         #expect(plane != nil)
         if let plane {
-            // Rectangle in XY plane — normal should be along Z
+            // Rectangle in XY plane, normal should be along Z
             #expect(abs(abs(plane.normal.z) - 1.0) < 0.01)
         }
     }
@@ -1929,7 +1929,7 @@ struct PlaneDetectionTests {
 
     @Test("Face shape is planar")
     func faceShapePlanar() {
-        // Create a face from a rectangle wire — the face shape should be planar
+        // Create a face from a rectangle wire, the face shape should be planar
         let face = Shape.face(from: Wire.rectangle(width: 10, height: 10)!)!
         let plane = face.findPlane()
         #expect(plane != nil)
@@ -2052,7 +2052,7 @@ struct PointCloudAnalysisTests {
         ])
         #expect(result != nil)
         if case .space = result {
-            // Good — points in 3D space
+            // Good, points in 3D space
         } else {
             #expect(Bool(false), "Expected .space")
         }
@@ -2110,7 +2110,7 @@ struct SurfaceExtremaTests {
 
     @Test("Extrema returns nearest points and UV")
     func nearestPointsAndUV() {
-        // Two spheres along X — known nearest points
+        // Two spheres along X, known nearest points
         let sphere1 = Surface.sphere(center: SIMD3(0, 0, 0), radius: 4)
         let sphere2 = Surface.sphere(center: SIMD3(30, 0, 0), radius: 6)
         #expect(sphere1 != nil)
@@ -2356,7 +2356,7 @@ struct VolumeInertiaTests {
         }
     }
 
-    // The two generations read the symmetry flags off the same GProp_PrincipalProps object —
+    // The two generations read the symmetry flags off the same GProp_PrincipalProps object,
     // this is the first test in the tree able to cross-check that, since surfaceInertia/
     // volumeInertia had no symmetry fields to compare before #848.
     @Test("Volume inertia symmetry agrees with legacy inertiaProperties")
@@ -2509,7 +2509,7 @@ struct BRepExtremaExtFFTests {
 struct BRepExtremaExtPCTests {
     /// Every edge answers. This used to loop "until we find one that gives a valid extremum", a
     /// workaround for how often a point with no perpendicular foot came back nil, and asserted
-    /// `solutionCount > 0` — which the guard it was testing made unfalsifiable. See #580.
+    /// `solutionCount > 0`, which the guard it was testing made unfalsifiable. See #580.
     @Test("Point to edge distance on box")
     func pointToEdge() throws {
         let box = Shape.box(width: 10, height: 10, depth: 10)!
@@ -2532,12 +2532,12 @@ struct BRepExtremaExtPCTests {
         #expect(abs(try #require(nearest) - 10) < 1e-9)
     }
 
-    @Test("Point to wire edge — known distance")
+    @Test("Point to wire edge, known distance")
     func pointToWireEdge() throws {
-        // Use a wire from (0,0,0) to (10,0,0) — single edge
+        // Use a wire from (0,0,0) to (10,0,0), single edge
         let wire = Wire.polygon3D([SIMD3(0.0, 0.0, 0.0), SIMD3(10.0, 0.0, 0.0)], closed: false)!
         let shape = Shape.fromWire(wire)!
-        // Point at (5, 3, 0) — distance should be 3.0
+        // Point at (5, 3, 0), distance should be 3.0
         if let result = shape.pointEdgeExtrema(point: SIMD3(5.0, 3.0, 0.0), edgeIndex: 0) {
             #expect(abs(result.distance - 3.0) < 0.1)
             #expect(abs(result.pointOnEdge.x - 5.0) < 0.5)
@@ -2878,13 +2878,13 @@ struct LPropAnalyticCurInfTests {
     }
 
     @Test func lineHasNoSpecialPoints() {
-        // Line (type 0) has constant zero curvature — no special points
+        // Line (type 0) has constant zero curvature, no special points
         let points = Shape.analyticCurvaturePoints(curveType: 0, first: 0, last: 10)
         #expect(points.count == 0)
     }
 
     @Test func circleHasNoSpecialPoints() {
-        // Circle (type 1) has constant curvature — no inflection or extrema
+        // Circle (type 1) has constant curvature, no inflection or extrema
         let points = Shape.analyticCurvaturePoints(curveType: 1, first: 0, last: 2 * .pi)
         #expect(points.count == 0)
     }
@@ -3130,12 +3130,12 @@ struct BRepGPropSinertTests {
     @Test("adaptive surface inertia on sphere")
     func adaptiveSurfaceInertia() {
         // Adaptive Sinert only works meaningfully on curved faces
-        // For planar faces it returns 0 — this is expected OCCT behavior
+        // For planar faces it returns 0, this is expected OCCT behavior
         let sphere = Shape.sphere(radius: 10)!
         let faces = sphere.faces()
         if let face = faces.first {
             let inertia = face.surfaceInertia(epsilon: 1e-6)
-            // Adaptive variant may return 0 in OCCT 8.0 — just verify no crash
+            // Adaptive variant may return 0 in OCCT 8.0, just verify no crash
             let _ = inertia
         }
     }
@@ -3149,7 +3149,7 @@ struct BRepGPropVinertTests {
         let faces = box.faces()
         if let face = faces.first {
             let inertia = face.volumeInertia
-            // Just verify no crash — volume contribution from single face may be small
+            // Just verify no crash, volume contribution from single face may be small
             let _ = inertia.volume
         }
     }
@@ -3448,10 +3448,10 @@ struct CanonicalRecognitionDetailedTests {
     }
 
     @Test func recognizeCylinder() {
-        // Use the whole cylinder shape — the recognizer iterates faces internally
+        // Use the whole cylinder shape, the recognizer iterates faces internally
         if let cyl = Shape.cylinder(radius: 5, height: 20) {
             let result = cyl.recognizeCanonicalSurface()
-            // May or may not recognize — depends on which face is checked first
+            // May or may not recognize, depends on which face is checked first
             #expect(result.type == .plane || result.type == .cylinder || result.type == .none)
         }
     }
@@ -5053,7 +5053,7 @@ struct BRepLPropFaceTests {
     }
 
     @Test func faceIsUmbilic() {
-        // Sphere should be umbilic everywhere — curvatures are equal
+        // Sphere should be umbilic everywhere, curvatures are equal
         // Use curvature equality as a softer check since IsUmbilic has strict tolerance
         if let sphere = Shape.sphere(radius: 5) {
             let faces = sphere.subShapes(ofType: .face)
@@ -5540,7 +5540,7 @@ struct LProp3dSurfaceTests {
 /// several scalars per call, and an optional rather than a zero fallback.
 ///
 /// They used to construct their props with a hardcoded `1e-10` resolution where the canonical family
-/// passes `Precision::Confusion()` (`1e-7`) — three decades apart, and *more* permissive, since the
+/// passes `Precision::Confusion()` (`1e-7`), three decades apart, and *more* permissive, since the
 /// null-derivative test is `SquareMagnitude() > resolution * resolution`. #405/PR #425 converged
 /// three Surface entry points onto the shared value but never inventoried this family, nor the
 /// Curve3D side at all. So for any point whose derivative magnitude landed between the two values
@@ -5610,12 +5610,12 @@ struct LocalPropsParityTests {
         // between the two families that is by design rather than drift.
         //
         // Asserted on a plane, not a sphere. OCCT's IsUmbilic() is
-        // `|maxCurv - minCurv| < Epsilon(maxCurv)` — a one-ULP test, not a geometric tolerance. A
+        // `|maxCurv - minCurv| < Epsilon(maxCurv)`, a one-ULP test, not a geometric tolerance. A
         // plane's two principal curvatures are both exactly 0, so it always passes; an
         // analytically-umbilic sphere passes only where the two values happen to round to the same
         // double, which depends on the radius and the (u, v). Measured on a sphere of radius 3:
         // umbilic at v = 0, 0.3, 0.5 and -0.7, but not at v = 1, where they differ by exactly one
-        // ULP (5.55e-17). Nothing in #494 changed this — IsUmbilic() takes no resolution — but it
+        // ULP (5.55e-17). Nothing in #494 changed this, IsUmbilic() takes no resolution, but it
         // is why no test here asserts a sphere is detected as umbilic.
         let plane = Surface.plane(origin: .zero, normal: SIMD3(0, 0, 1))!
         #expect(plane.localCurvatures(u: 1, v: 2) != nil)
@@ -5701,7 +5701,7 @@ struct LocalPropsParityTests {
     /// `spacing = 1e-8`, all four pairs disagreed on the same curve at the same parameter:
     ///
     ///   - `localCurvature(at: 0)` returned about 6.7e15, `curvature(at: 0)` returned `RealLast()`
-    ///     (`Double.greatestFiniteMagnitude`) — 293 orders of magnitude apart.
+    ///     (`Double.greatestFiniteMagnitude`), 293 orders of magnitude apart.
     ///   - `localTangent(at: 0)` returned `(1, 0, 0)`, `tangentDirection(at: 0)` returned
     ///     `(0.707, 0.707, 0)`. Not a precision difference: the two resolutions disagree about
     ///     which derivative is the first significant one, and OCCT derives the tangent from that
@@ -5720,7 +5720,7 @@ struct LocalPropsParityTests {
     // MARK: The 1e-6 pair
 
     /// `Shape.curveLocalProps(at:)` and `surfaceLocalProps(u:v:)` were the third tolerance in play,
-    /// on `1e-6` — the same value #405 removed from `OCCTSurfaceCurvatures`. They report the same
+    /// on `1e-6`, the same value #405 removed from `OCCTSurfaceCurvatures`. They report the same
     /// quantities as `Edge`'s and `Face`'s per-scalar entry points, so they have to agree with them.
     ///
     /// `curveLocalProps` also carried a Swift-side copy of the old bridge threshold
@@ -5764,7 +5764,7 @@ struct LocalPropsParityTests {
     }
 
     /// The discriminating half of the previous test: a cusped edge, where `curveLocalProps`'
-    /// `1e-6` resolution put it three decades away from `Edge`'s `Precision::Confusion()` — and
+    /// `1e-6` resolution put it three decades away from `Edge`'s `Precision::Confusion()`, and
     /// where the `RealLast()` sentinel reached `CentreOfCurvature()` through both.
     @Test("Shape.curveLocalProps agrees with Edge on a cusped edge")
     func curveLocalPropsAgreesOnCusp() throws {
@@ -5782,7 +5782,7 @@ struct LocalPropsParityTests {
 
             // Where the curvature is OCCT's infinite sentinel there is no centre to report. Not
             // every spacing here reaches that: from 1e-7 up the first derivative clears
-            // Precision::Confusion(), so the curvature is finite and a centre does exist — which
+            // Precision:Confusion(), so the curvature is finite and a centre does exist, which
             // is why this is keyed off the reported curvature rather than asserted for all.
             if props.curvature == .greatestFiniteMagnitude {
                 #expect(props.centerOfCurvature == nil, label)
@@ -5844,7 +5844,7 @@ struct LocalPropsParityTests {
 
     /// A cusp makes OCCT's `Curvature()` return `RealLast()`, meaning infinite curvature. Every
     /// bridge gate that inverted a curvature only asked whether it was *big enough*, which the
-    /// sentinel trivially passes — and `LProp_CurveUtils::Curvature()` returns it without assigning
+    /// sentinel trivially passes, and `LProp_CurveUtils::Curvature()` returns it without assigning
     /// the curvature field `CentreOfCurvature()` then divides by, so the caller got
     /// `(nan, inf, nan)` reported as a successfully computed point. Both halves of the pair did it.
     @Test("A cusp's infinite curvature yields no centre of curvature, not a NaN one")
@@ -5853,7 +5853,7 @@ struct LocalPropsParityTests {
             let curve = Self.cuspBezier(spacing: spacing)
             let label: Comment = "cusp bezier spacing=\(spacing)"
 
-            // The sentinel really is what OCCT reports here — otherwise this test proves nothing.
+            // The sentinel really is what OCCT reports here, otherwise this test proves nothing.
             #expect(curve.curvature(at: 0) == .greatestFiniteMagnitude, label)
 
             #expect(curve.centerOfCurvature(at: 0) == nil, label)
@@ -5966,7 +5966,7 @@ struct BRepBndLibTests {
         }
     }
 
-    // #847: orientedBoundingBoxDetailed shares its Bnd_OBB computation with orientedBoundingBox —
+    // #847: orientedBoundingBoxDetailed shares its Bnd_OBB computation with orientedBoundingBox,
     // this was previously unenforced by any test, so the two could have silently diverged.
     @Test func orientedBoundingBoxDetailedMatchesPacked() {
         let box = Shape.box(width: 10, height: 20, depth: 30)!
@@ -6021,11 +6021,11 @@ struct BRepBndLibTests {
     // #900: a point-vertex shape at the world origin legitimately measures to all-zero
     // coordinates, which used to be indistinguishable from bridge/void failure (both call sites
     // inferred failure from "all six coordinates are exactly zero"). `boundingBoxOptimal` has a
-    // live repro — `BRepBndLib::AddOptimal` on a vertex at .zero measures exactly
+    // live repro, `BRepBndLib::AddOptimal` on a vertex at .zero measures exactly
     // (0,0,0)-(0,0,0), so this used to return `nil` instead of the correct all-zero box.
-    // `boundingBox` (`BRepBndLib::Add`) is not concretely reachable through this same fixture —
+    // `boundingBox` (`BRepBndLib::Add`) is not concretely reachable through this same fixture,
     // `BRep_Builder::MakeVertex` floors the vertex tolerance at `Precision::Confusion()`, so
-    // `Add`'s enlargement never lands on exact zero — but it shares the same fixed bridge
+    // `Add`'s enlargement never lands on exact zero, but it shares the same fixed bridge
     // contract, so this test still pins the non-regression on the ordinary path.
     @Test func pointVertexAtOriginBoundingBoxIsNotNil() {
         let origin = Shape.vertex(at: .zero)!
@@ -6225,9 +6225,9 @@ struct IntegrationProfileContouringTests {
     }
 }
 
-// PointSetLib suites removed in v1.0.0 — module dropped from OCCT 8.0.0 GA.
+// PointSetLib suites removed in v1.0.0, module dropped from OCCT 8.0.0 GA.
 
-@Suite("ExtremaPC — Point to Curve Distance")
+@Suite("ExtremaPC, Point to Curve Distance")
 struct ExtremaPCTests {
 
     @Test func pointToCircle() {
@@ -6258,7 +6258,7 @@ struct ExtremaPCTests {
 
     @Test func pointToHelix() {
         guard let helix = Curve3D.circularHelix(radius: 5.0, pitch: 10.0) else { return }
-        // Point at center of helix — all points on helix are equidistant at radius 5
+        // Point at center of helix, all points on helix are equidistant at radius 5
         // (in the XY plane). This is an infinite solutions case but the API may
         // return some extrema or handle it gracefully.
         let d = helix.minimumDistance(from: SIMD3(0, 0, 0))
@@ -6445,8 +6445,8 @@ struct ShapeMeasurementsTests {
 /// `Shape.faceLProp*` / `Shape.edge*LP` read a face or an edge through a `BRepAdaptor_Surface` /
 /// `BRepAdaptor_Curve`; `Face.meanCurvature(atU:v:)` / `Edge.curvature(at:)` and their siblings read
 /// the surface or curve underneath directly. In OCCT 8.0 both go through the *same* header-only
-/// templates — `BRepLProp_SLProps` is a nine-line `using` alias for the template
-/// `GeomLProp_SLProps` also aliases — so the `Resolution` they pass means the same thing, and two
+/// templates, `BRepLProp_SLProps` is a nine-line `using` alias for the template
+/// `GeomLProp_SLProps` also aliases, so the `Resolution` they pass means the same thing, and two
 /// entry points passing different values disagree about whether a quantity exists at all.
 ///
 /// #494 converged all 28 `GeomLProp_*` constructions onto `Precision::Confusion()` and left the 18
@@ -6459,7 +6459,7 @@ struct ShapeMeasurementsTests {
 @Suite("BRepLProp/GeomLProp local-properties parity (#529)")
 struct AdaptorLocalPropsParityTests {
 
-    /// A cone with `radius: 0` — the apex sits at `v = 0`, and |dS/du| falls off linearly with `v`,
+    /// A cone with `radius: 0`, the apex sits at `v = 0`, and |dS/du| falls off linearly with `v`,
     /// so sweeping `v` walks smoothly through both resolutions' thresholds. The face keeps the apex
     /// out of its own `v` range so the sampled points are all interior.
     private static func apexConeFace() -> (Shape, Face)? {
@@ -6560,7 +6560,7 @@ struct AdaptorLocalPropsParityTests {
                     expectAgree(faceShape.faceLPropGaussianCurvature(u: u, v: v),
                                 face.gaussianCurvature(atU: u, v: v), label)
                     // The normal is reported by both, but only the Geom_ spelling applies the
-                    // face's orientation, so they agree up to sign — a contract difference, not
+                    // face's orientation, so they agree up to sign, a contract difference, not
                     // drift, and worth pinning so it is not mistaken for one later.
                     let adaptorNormal = faceShape.faceLPropNormal(u: u, v: v)
                     let orientedNormal = face.normal(atU: u, v: v)
@@ -6612,7 +6612,7 @@ struct AdaptorLocalPropsParityTests {
 
     /// The `RealLast()` defect, on the adaptor side this time. `CentreOfCurvature()` tests only
     /// `|Curvature()| <= resolution`, which the infinite-curvature sentinel passes, and then divides
-    /// by the `myCurvature` field the sentinel path never assigned — so a near-cusp came back as a
+    /// by the `myCurvature` field the sentinel path never assigned, so a near-cusp came back as a
     /// point of `(nan, inf, nan)`, reported as a success.
     @Test("A cusp has no centre of curvature and no normal, and does not fake one")
     func cuspHasNoCentreOfCurvature() {
@@ -6863,7 +6863,7 @@ struct AdaptorNormalDecisionTests {
     }
 
     /// The raycast regression. `tolerance` is documented as the intersection tolerance and it used
-    /// to double as the props resolution, where it is a dimensionless sine tolerance — so any value
+    /// to double as the props resolution, where it is a dimensionless sine tolerance, so any value
     /// at or above 1 rejected every normal there is, and `RayHit.normal` fell back to `(0, 0, 1)`
     /// for every hit on every shape.
     @Test("Raising the intersection tolerance does not erase the hit normals")
@@ -6928,7 +6928,7 @@ struct AdaptorNormalDecisionTests {
 struct Issue595CurvatureDefinednessTests {
 
     /// Four coincident poles: no derivative of any order is significant, so `IsTangentDefined()` is
-    /// false and there is no curvature at all. Two coincident poles is *not* enough — the tangent
+    /// false and there is no curvature at all. Two coincident poles is *not* enough, the tangent
     /// search falls through to D2 and OCCT answers with the cusp sentinel instead.
     private static func deadCurve() -> Curve3D? {
         Curve3D.bezier(poles: [SIMD3(0, 0, 0), SIMD3(0, 0, 0), SIMD3(0, 0, 0), SIMD3(0, 0, 0)])
@@ -7040,7 +7040,7 @@ struct Issue595CurvatureDefinednessTests {
     }
 
     /// The pair-returning form shares one `GeomLProp_SLProps` with the two single-scalar ones and
-    /// its doc has always claimed they agree "including on whether curvature is defined at all" —
+    /// its doc has always claimed they agree "including on whether curvature is defined at all",
     /// which it could not express while it returned a bare `(0, 0)`.
     @Test("The pair form agrees with the singles on definedness, not just on value")
     func surfaceCurvaturesPairAgreesOnDefinedness() throws {

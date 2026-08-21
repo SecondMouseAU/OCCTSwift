@@ -27,7 +27,7 @@ extension Drawing {
     ///     both ends of the projected axis. Default 5.
     ///   - tolerance: Axis-deduplication tolerance passed to `Shape.revolutionAxes`.
     ///   - bounds: Optional override for the 2D bounding box used for clipping. When nil,
-    ///     falls back to a sensible default (±1000 square centred at origin) — the caller
+    ///     falls back to a sensible default (±1000 square centred at origin), the caller
     ///     should pass the drawing's actual bbox when it's known.
     /// - Returns: The added centrelines plus any axes skipped because they projected to a point.
     @discardableResult
@@ -116,12 +116,12 @@ extension Drawing {
     }
 }
 
-// perpendicularBasis(to:) moved to PerpendicularBasis.swift (#914 review, second round) —
+// perpendicularBasis(to:) moved to PerpendicularBasis.swift (#914 review, second round),
 // module-wide, not drawing-specific: 3 of its 5 call sites are geometry/construction code, the
 // same misplacement finding 11 fixed for the bridge-unwrap helpers this file never had.
 
 /// Project a 3D point onto the 2D plane perpendicular to `viewDirection`, using
-/// `perpendicularBasis(to:)` — the same perpendicular-axis algorithm `gp_Ax2` uses
+/// `perpendicularBasis(to:)`, the same perpendicular-axis algorithm `gp_Ax2` uses
 /// to build the `HLRAlgo_Projector` `OCCTDrawingCreate` projects this drawing's own
 /// edges with.
 internal func projectPointToPlane(

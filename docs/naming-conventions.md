@@ -36,15 +36,15 @@ if (builder.IsDone()) {
 }
 ```
 
-OCCTSwift returns optionals — `nil` replaces the `IsDone()` check:
+OCCTSwift returns optionals, `nil` replaces the `IsDone()` check:
 
 ```swift
 let box = Shape.box(width: 10, height: 20, depth: 30)  // Shape?
 ```
 
-## Verb Tense — Past Participle for Transformations
+## Verb Tense. Past Participle for Transformations
 
-OCCT uses imperative verbs (`Build()`, `Perform()`, `Transform()`). OCCTSwift follows Swift API Design Guidelines — methods that return a new value use the **-ed/-ing** suffix:
+OCCT uses imperative verbs (`Build()`, `Perform()`, `Transform()`). OCCTSwift follows Swift API Design Guidelines, methods that return a new value use the **-ed/-ing** suffix:
 
 | OCCT | OCCTSwift |
 |---|---|
@@ -57,7 +57,7 @@ OCCT uses imperative verbs (`Build()`, `Perform()`, `Transform()`). OCCTSwift fo
 | `ShapeFix_Shape` | `shape.healed()` |
 | `BRepBuilderAPI_Copy` | `shape.copy(copyGeometry:copyMesh:)` |
 | `BRepTools_CopyModification` | `Shape.deepCopy(_:copyGeometry:copyMesh:)` (static) |
-| `TNaming_CopyShape::CopyTool` | `shape.deepCopy()` (instance, no parameters — topology-only; see `docs/thread-safety.md`) |
+| `TNaming_CopyShape::CopyTool` | `shape.deepCopy()` (instance, no parameters, topology-only; see `docs/thread-safety.md`) |
 
 ## Named Parameters
 
@@ -86,7 +86,7 @@ BRepAlgoAPI_Cut      → shape.subtracting(_:)
 BRepAlgoAPI_Section  → shape.section(with:)
 ```
 
-## Enums — No Prefix Repetition
+## Enums. No Prefix Repetition
 
 OCCT repeats the namespace in every enum value:
 
@@ -124,7 +124,7 @@ shape.bounds           // (min: SIMD3<Double>, max: SIMD3<Double>)?
 shape.isValid          // Bool
 ```
 
-## Geometric Types — simd Instead of gp_*
+## Geometric Types, simd Instead of gp_*
 
 OCCT has its own geometric primitives:
 
@@ -173,8 +173,8 @@ try {
 ```
 
 OCCTSwift maps errors to:
-- **`nil`** — geometry operations that can fail cleanly (boolean ops, fillets, etc.)
-- **`throws`** — I/O operations (`Shape.load(from:)`, `Exporter.writeSTEP(shape:to:)`)
+- **`nil`**: geometry operations that can fail cleanly (boolean ops, fillets, etc.)
+- **`throws`**: I/O operations (`Shape.load(from:)`, `Exporter.writeSTEP(shape:to:)`)
 
 ## Bridge Layer Naming
 

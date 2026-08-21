@@ -13,7 +13,7 @@ import simd
 //   → annotation (thread)
 //
 // The EdgeSelector carried by fillet / chamfer uses TopologyRef (from #72
-// Phase 1) — so "the edge created by extrude op #3" is a stable reference that
+// Phase 1), so "the edge created by extrude op #3" is a stable reference that
 // survives subsequent mutations, rather than an index-based heuristic.
 //
 // This is the v1 implementation. It:
@@ -23,7 +23,7 @@ import simd
 //     against the final graph).
 //   - Supports partial reconstruction: failures accumulate in skipped[] rather
 //     than aborting the whole build.
-//   - Emits threads as annotations (metadata) rather than geometry — the
+//   - Emits threads as annotations (metadata) rather than geometry, the
 //     Shape.threadedHole / threadedShaft path from v0.139 can be invoked by
 //     the caller if real thread geometry is wanted.
 
@@ -184,7 +184,7 @@ public struct FeatureReconstructor: Sendable {
         /// builders (booleans + the Tier-2 modification ops, when used).
         ///
         /// Keyed by the feature id passed in `FeatureSpec.*.id`. Features
-        /// without an id are not retained here — their history can't be
+        /// without an id are not retained here, their history can't be
         /// remapped without a key.
         ///
         /// Use this to walk selection IDs across chained features:
@@ -638,7 +638,7 @@ public struct FeatureReconstructor: Sendable {
 
     /// Edge indices in `shape` whose midpoint lies within `tolerance` of `point`.
     ///
-    /// Index space matches `shape.subShapes(ofType: .edge)` / `shape.edges()` —
+    /// Index space matches `shape.subShapes(ofType: .edge)` / `shape.edges()`,
     /// both are TopExp_MapShapes traversals in canonical order.
     private static func edgeIndicesNearPoint(
         _ shape: Shape,
@@ -657,7 +657,7 @@ public struct FeatureReconstructor: Sendable {
         return matching.isEmpty ? nil : matching
     }
 
-    /// Edge indices of `target` that were "contributed by" `source` — heuristic.
+    /// Edge indices of `target` that were "contributed by" `source`, heuristic.
     ///
     /// edges of target whose midpoint lies within a small tolerance of any edge
     /// midpoint of source. Useful for "fillet the edges the extrude created"

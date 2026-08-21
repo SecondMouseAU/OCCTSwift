@@ -464,7 +464,7 @@ typedef struct
   // Whether nx/ny/nz and cx/cy/cz hold anything: the curvature has to be invertible into a
   // radius, which rules out both zero (a straight stretch, or an inflection) and OCCT's
   // RealLast() infinite-curvature sentinel at a cusp. Added in #494 so callers stop re-deriving
-  // it from `curvature` against a magic number of their own — the Swift wrapper used to test
+  // it from `curvature` against a magic number of their own, the Swift wrapper used to test
   // `curvature > 1e-10`, which was a copy of a bridge-side literal that no longer exists.
   bool curvatureInvertible;
 } OCCTCurveLocalProps;
@@ -812,7 +812,7 @@ bool OCCTFaceLPropTangentU(OCCTShapeRef _Nonnull face,
                            double* _Nonnull dy,
                            double* _Nonnull dz);
 
-/// Get tangent in V direction on face at (u, v) — the other axis of the tangent plane. #266
+/// Get tangent in V direction on face at (u, v), the other axis of the tangent plane. #266
 /// follow-up.
 bool OCCTFaceLPropTangentV(OCCTShapeRef _Nonnull face,
                            double u,

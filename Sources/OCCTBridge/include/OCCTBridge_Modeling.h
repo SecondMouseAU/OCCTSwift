@@ -488,12 +488,12 @@ OCCTShapeRef OCCTShapeDraft(OCCTShapeRef   shape,
 
 /// Remove features (faces) from shape using defeaturing (BRepAlgoAPI_Defeaturing).
 /// The shape-addressed form is OCCTShapeDefeature; for the same operation with history see
-/// OCCTShapeHistoryFromDefeature. All of them share one skeleton — see the defeaturing block in
+/// OCCTShapeHistoryFromDefeature. All of them share one skeleton, see the defeaturing block in
 /// OCCTBridge_Internal.h. #497
 /// @param shape The shape to modify
 /// @param faceIndices Array of face indices to remove (0-based, into the shape's own face map)
 /// @param faceCount Number of faces to remove
-/// @return Shape with features removed, or NULL on failure — including when faceCount is 0 or an
+/// @return Shape with features removed, or NULL on failure, including when faceCount is 0 or an
 ///         index is out of range, which since #497 fails the call rather than being skipped
 OCCTShapeRef OCCTShapeRemoveFeatures(OCCTShapeRef   shape,
                                      const int32_t* faceIndices,
@@ -707,7 +707,7 @@ OCCTShapeRef OCCTShapePrism(OCCTShapeRef shape,
 /// Drill a cylindrical hole into a shape, by cutting a cylinder out of it.
 ///
 /// The tool is a FINITE cylinder based at (posX, posY, posZ), running along the normalized
-/// direction for `depth` — or, when `depth <= 0`, for twice the shape's bounding-box diagonal,
+/// direction for `depth`, or, when `depth <= 0`, for twice the shape's bounding-box diagonal,
 /// which is long enough to leave the far side of any shape it started outside of. Everything is
 /// subtracted with BRepAlgoAPI_Cut, so this works on solids, shells and faces alike, and a `depth`
 /// that overshoots the stock costs nothing.
@@ -808,7 +808,7 @@ OCCTShapeRef OCCTShapeCircularPattern(OCCTShapeRef shape,
                                       int32_t      count,
                                       double       angle);
 
-// Issue #39 — lift a 2D curve onto a 3D plane to produce a Wire
+// Issue #39, lift a 2D curve onto a 3D plane to produce a Wire
 /// Creates a 3D wire by embedding the 2D curve into a gp_Pln.
 /// The plane is defined by its origin (ox,oy,oz), normal (nx,ny,nz) and x-axis (xx,xy,xz).
 /// Returns NULL on failure.
@@ -1481,7 +1481,7 @@ bool OCCTBooleanHistoryIsDeleted(OCCTBooleanHistoryRef _Nonnull history,
 ///
 /// Works for every *WithHistory op, including fillet / chamfer / thick-solid,
 /// which have no native History(). Only VERTEX / EDGE / FACE / SOLID are carried
-/// (BRepTools_History::IsSupportedType) — wires, shells and compounds are not.
+/// (BRepTools_History:IsSupportedType), wires, shells and compounds are not.
 ///
 /// @return An OCCTHistoryRef the caller owns (free with OCCTHistoryDestroy), or
 ///         NULL on failure. Feed it to OCCTBRepGraphAddWithHistory to record the
@@ -1557,14 +1557,14 @@ OCCTBooleanHistoryRef _Nullable OCCTShapeHistoryFromDefeature(
 // Same OCCTBooleanHistoryRef handle as booleans/Tier 2 above, so the Swift
 // ShapeHistoryRef/record(of:)/OCCTBRepGraphAddWithHistory surface is shared
 // unchanged. These algorithms don't derive from BRepBuilderAPI_MakeShape, so
-// the history isn't synthesized from a retained builder — each function below
+// the history isn't synthesized from a retained builder, each function below
 // builds a BRepTools_History directly (via BRepTools_ReShape::History() for
 // sewing/healing, or a manual per-subshape walk for quilting) and wraps it.
 
 /// Sew multiple shapes into a connected shell/solid, with full per-input-subshape
 /// history (vertex/edge merges, small-face removal).
 // Note: `shapes` intentionally has no nullability annotation on the pointer
-// itself (matches OCCTShapeSew) — Swift's UnsafeMutableBufferPointer.baseAddress
+// itself (matches OCCTShapeSew), Swift's UnsafeMutableBufferPointer.baseAddress
 // is always Optional, and an unannotated C pointer imports leniently enough to
 // accept it directly without unwrapping at the call site.
 OCCTBooleanHistoryRef _Nullable OCCTShapeSewWithHistory(
@@ -1604,7 +1604,7 @@ OCCTBooleanHistoryRef _Nullable OCCTShapeCreateSolidFromShellWithHistory(
 // Same OCCTBooleanHistoryRef handle as above. translate/rotate/scale/mirror
 // derive their history from a retained BRepBuilderAPI_Transform (same op/args
 // synthesis path as fillet/chamfer/defeature). Patterns (linear/circular) are
-// N:1 — history maps each source sub-shape to all N pattern-instance sub-shapes.
+// N:1, history maps each source sub-shape to all N pattern-instance sub-shapes.
 
 /// Translate by (dx, dy, dz), with retained history.
 OCCTBooleanHistoryRef _Nullable OCCTShapeHistoryFromTranslate(
@@ -1735,8 +1735,8 @@ typedef struct
 ///
 /// Each edge's law is written to that edge's own slot in that edge's own contour, resolved with
 /// Contour(E) and NbEdges(IC)/Edge(IC, J). It used to be written to (NbContours(), 1): the first is
-/// the edge's contour only when every Add(edge) creates one — a tangent-continuous edge extends an
-/// existing contour instead — and the second collapsed every edge of a contour onto one slot, so
+/// the edge's contour only when every Add(edge) creates one, a tangent-continuous edge extends an
+/// existing contour instead, and the second collapsed every edge of a contour onto one slot, so
 /// only the last law of a tangent chain survived. #612
 /// @param shape The shape
 /// @param edgeIndices Array of edge indices (0-based since #520; an index naming no edge of
@@ -1784,7 +1784,7 @@ OCCTShapeRef OCCTShapeOffsetPerFace(OCCTShapeRef   shape,
 // MARK: - v0.39.0: Poly HLR, Free Bounds, Pipe Feature, Semi-Infinite Extrusion
 
 /// Create a fast polygon-based HLR (hidden-line removal) drawing.
-/// Uses the triangulation mesh rather than exact geometry — much faster but approximate.
+/// Uses the triangulation mesh rather than exact geometry, much faster but approximate.
 /// The shape must have a triangulation (mesh); if not, it will be meshed at the given deflection.
 /// Orthographic only, and there is no projectionType parameter because HLRBRep_PolyAlgo ignores
 /// the projector's perspective flag: measured against the pinned 8.0.1 kernel, its output is
@@ -2491,7 +2491,7 @@ OCCTChFi2dFilletResult OCCTChFi2dFilletAlgo(OCCTShapeRef edge1,
 /// @return Built shape, or NULL on failure
 OCCTShapeRef _Nullable OCCTLocOpeBuildShape(OCCTShapeRef shape);
 
-// MARK: - BOPAlgo — Splitter (v0.61.0)
+// MARK: - BOPAlgo. Splitter (v0.61.0)
 
 /// Split shapes by tools. Returns the result shape.
 /// @param objects Array of object shapes
@@ -2525,7 +2525,7 @@ void OCCTCellsBuilderRemoveInternalBoundaries(OCCTCellsBuilderRef builder);
 /// Get the current result shape.
 OCCTShapeRef OCCTCellsBuilderGetResult(OCCTCellsBuilderRef builder);
 
-// MARK: - BOPAlgo — ArgumentAnalyzer (v0.61.0)
+// MARK: - BOPAlgo. ArgumentAnalyzer (v0.61.0)
 
 /// Analyze two shapes for Boolean operation validity.
 /// @param shape1 First shape (object)
@@ -2634,7 +2634,7 @@ OCCTShapeRef _Nullable OCCTBRepToolsModifierNurbsConvert(OCCTShapeRef shape);
 /// Build wires from loose edges of a shape.
 /// @param shape The shape whose edges to build into wires
 /// @param faceIndex 0-based face index to get edges from (negative = every edge of the shape)
-/// @param outWires Output array of wire shapes — caller must release each
+/// @param outWires Output array of wire shapes, caller must release each
 /// @param outCount Number of wires built
 /// @return true on success
 bool OCCTLocOpeBuildWires(OCCTShapeRef shape,
@@ -2659,7 +2659,7 @@ OCCTShapeRef _Nullable OCCTLocOpeSplitByWireOnFace(OCCTShapeRef shape,
 /// @param shape The shape to intersect
 /// @param ox,oy,oz Origin of the line
 /// @param dx,dy,dz Direction of the line
-/// @param outParams Output array of parameter values — caller must free with free()
+/// @param outParams Output array of parameter values, caller must free with free()
 /// @param outCount Number of intersection points
 /// @return true if intersections found
 bool OCCTLocOpeCurveShapeIntersectLine(OCCTShapeRef shape,
@@ -2689,7 +2689,7 @@ OCCTShapeRef _Nullable OCCTBRepOffsetOffsetFace(OCCTShapeRef faceShape, double o
 // MARK: - v0.65.0: Shape Processing Completions + Boolean Completions
 
 // OCCTBOPAlgoRemoveFeatures was declared here. It drove BOPAlgo_RemoveFeatures directly, which is
-// the algorithm BRepAlgoAPI_Defeaturing forwards to — so it was OCCTShapeDefeature one OCCT layer
+// the algorithm BRepAlgoAPI_Defeaturing forwards to, so it was OCCTShapeDefeature one OCCT layer
 // down, with the same forwarded option defaults. #536
 
 // --- BOPAlgo_Section ---
@@ -2962,7 +2962,7 @@ OCCTShapeRef _Nullable OCCTBRepFeatSplitShapeWire(OCCTShapeRef _Nonnull shape,
 
 /// Split a shape by adding edges/wires to faces, with left/right face outputs.
 /// @param shape Input shape to split
-/// @param edgesOnFaces Array of (edge, face) pairs — alternating edge, face shapes
+/// @param edgesOnFaces Array of (edge, face) pairs, alternating edge, face shapes
 /// @param pairCount Number of (edge, face) pairs (array has 2*pairCount elements)
 /// @param outLeft Pointer to receive allocated array of left-side face shapes (caller must free
 /// each + array)
@@ -3007,7 +3007,7 @@ typedef enum
 /// Drill a cylindrical hole with BRepFeat_MakeCylindricalHole, OCCT's local-operation feature
 /// drill.
 ///
-/// Wants a solid — a shell or a face is InvalidPlacement for every mode but ThroughAll. See
+/// Wants a solid, a shell or a face is InvalidPlacement for every mode but ThroughAll. See
 /// OCCTShapeDrillHole above for the boolean-subtraction drill, which is a different contract rather
 /// than a lesser one (#496).
 ///
@@ -3069,7 +3069,7 @@ OCCTShapeRef _Nullable OCCTBRepFeatGluer(OCCTShapeRef _Nonnull baseShape,
 
 /// Split a shape by projecting wires onto faces using LocOpe_WiresOnShape + LocOpe_Spliter.
 /// @param shape Input shape
-/// @param wiresOnFaces Array of (wire, face) pairs — alternating wire, face shapes
+/// @param wiresOnFaces Array of (wire, face) pairs, alternating wire, face shapes
 /// @param pairCount Number of (wire, face) pairs
 /// @param outDirectLeft Pointer to receive allocated array of directly-left face shapes
 /// @param outDirectLeftCount Number of directly-left faces
@@ -3264,7 +3264,7 @@ int32_t OCCTFilletSurfError(OCCTShapeRef _Nonnull shape,
                             int32_t edgeCount,
                             double  radius);
 
-// MARK: - v0.73.0: TKHlr — Extended HLR, ReflectLines, TopCnx, Intrv
+// MARK: - v0.73.0: TKHlr. Extended HLR, ReflectLines, TopCnx, Intrv
 
 /// Extended HLR edge category type for fine-grained edge extraction
 typedef enum
@@ -3298,7 +3298,7 @@ OCCTShapeRef _Nullable OCCTHLRGetEdgesByCategory(OCCTShapeRef _Nonnull shape,
 /// @param shape Input shape (meshed internally for the polyhedral projection)
 /// @param dirX,dirY,dirZ View direction
 /// @param category Edge category to extract
-/// @param deflection Linear mesh deflection (mm) for the internal triangulation —
+/// @param deflection Linear mesh deflection (mm) for the internal triangulation,
 ///        smaller = finer drawing (more, shorter edges), larger = coarser/faster
 /// @return Shape containing edges, or NULL if none
 OCCTShapeRef _Nullable OCCTHLRPolyGetEdgesByCategory(OCCTShapeRef _Nonnull shape,
@@ -4071,25 +4071,25 @@ void OCCTThruSectionsAddWire(OCCTThruSectionsRef _Nonnull ts, OCCTShapeRef _Nonn
 void OCCTThruSectionsAddVertex(OCCTThruSectionsRef _Nonnull ts, OCCTShapeRef _Nonnull vertex);
 
 /// Enable/disable smoothing (default: true for non-ruled). Invalidates the cached "built"
-/// result until the next successful OCCTThruSectionsBuild — see its own doc comment.
+/// result until the next successful OCCTThruSectionsBuild, see its own doc comment.
 void OCCTThruSectionsSetSmoothing(OCCTThruSectionsRef _Nonnull ts, bool smoothing);
 
-/// Set maximum BSpline degree. Invalidates the cached "built" result — see OCCTThruSectionsBuild.
+/// Set maximum BSpline degree. Invalidates the cached "built" result, see OCCTThruSectionsBuild.
 void OCCTThruSectionsSetMaxDegree(OCCTThruSectionsRef _Nonnull ts, int32_t maxDeg);
 
-/// Set continuity: parametric continuity — see "Continuity vocabularies" at the top of this
+/// Set continuity: parametric continuity, see "Continuity vocabularies" at the top of this
 /// header. Before #490 only 0 and 1 were read; everything else meant C2. Invalidates the cached
-/// "built" result — see OCCTThruSectionsBuild.
+/// "built" result, see OCCTThruSectionsBuild.
 void OCCTThruSectionsSetContinuity(OCCTThruSectionsRef _Nonnull ts, int32_t continuity);
 
 /// Build the ThruSections shape. Returns true if successful. OCCTThruSectionsShape and
 /// OCCTThruSectionsGeneratedFace both answer nil unless this has succeeded since the most recent
-/// AddWire/AddVertex/Set*/CheckCompatibility call on this instance — every one of those
+/// AddWire/AddVertex/Set*/CheckCompatibility call on this instance, every one of those
 /// invalidates the previous build's result, since none of OCCT's own internal state resets
 /// itself on a reused builder (#910).
 bool OCCTThruSectionsBuild(OCCTThruSectionsRef _Nonnull ts);
 
-/// Get the result shape from the ThruSections builder — see OCCTThruSectionsBuild's doc comment
+/// Get the result shape from the ThruSections builder, see OCCTThruSectionsBuild's doc comment
 /// for when this is nil.
 OCCTShapeRef _Nullable OCCTThruSectionsShape(OCCTThruSectionsRef _Nonnull ts);
 
@@ -4098,7 +4098,7 @@ OCCTShapeRef _Nullable OCCTThruSectionsShape(OCCTThruSectionsRef _Nonnull ts);
 /// Remove faces (features) from a solid shape, addressing the faces as shapes.
 /// Fails (NULL) on an empty request or a null face, rather than removing a subset of what was
 /// asked for. The index-addressed form is OCCTShapeRemoveFeatures; for the same operation with
-/// history see OCCTShapeHistoryFromDefeature. All of them share one skeleton — see the
+/// history see OCCTShapeHistoryFromDefeature. All of them share one skeleton, see the
 /// defeaturing block in OCCTBridge_Internal.h. #497
 OCCTShapeRef _Nullable OCCTShapeDefeature(OCCTShapeRef _Nonnull shape,
                                           const OCCTShapeRef _Nonnull* _Nonnull faces,
@@ -4438,15 +4438,15 @@ void OCCTSewingSetMaxTolerance(OCCTSewingRef _Nonnull sewing, double maxTol);
 
 // --- ThruSections extensions ---
 
-/// Enable/disable wire compatibility checking. Invalidates the cached "built" result — see
+/// Enable/disable wire compatibility checking. Invalidates the cached "built" result, see
 /// OCCTThruSectionsBuild.
 void OCCTThruSectionsCheckCompatibility(OCCTThruSectionsRef _Nonnull ts, bool check);
 
 /// Set parameterization type (0=ChordLength, 1=Centripetal, 2=IsoParametric). Invalidates the
-/// cached "built" result — see OCCTThruSectionsBuild.
+/// cached "built" result, see OCCTThruSectionsBuild.
 void OCCTThruSectionsSetParType(OCCTThruSectionsRef _Nonnull ts, int32_t parType);
 
-/// Set criterium weights for the approximation. Invalidates the cached "built" result — see
+/// Set criterium weights for the approximation. Invalidates the cached "built" result, see
 /// OCCTThruSectionsBuild. Returns true if all weights are non-negative (valid); returns false
 /// and does not call OCCT if any weight is negative (OCCT silently ignores negative weights
 /// and Build() erases the failure status, making it unobservable otherwise).
@@ -4457,7 +4457,7 @@ bool OCCTThruSectionsSetCriteriumWeight(OCCTThruSectionsRef _Nonnull ts,
 
 /// Get the face generated from a profile edge. Null if not found, if the last build did not
 /// succeed (see OCCTThruSectionsBuild), or if the found face is not part of the current build's
-/// own Shape() — a stale binding from an earlier build that a later reconciliation never
+/// own Shape(), a stale binding from an earlier build that a later reconciliation never
 /// overwrote in OCCT's own edge->face map (#910 review round 2).
 OCCTShapeRef _Nullable OCCTThruSectionsGeneratedFace(OCCTThruSectionsRef _Nonnull ts,
                                                      OCCTShapeRef _Nonnull edge);
@@ -4507,11 +4507,11 @@ void OCCTPipeShellSetBuildHistory(OCCTPipeShellRef _Nonnull ps, bool enabled);
 
 /// Create a UnifySameDomain builder.
 ///
-/// The builder unifies a private COPY of `shape` — the algorithm rewrites its input, and those
+/// The builder unifies a private COPY of `shape`, the algorithm rewrites its input, and those
 /// rewrites used to reach the caller's shape (#446). `OCCTUnifySameDomainKeepShape` takes the
 /// CALLER's sub-shapes and maps them onto the copy.
 ///
-/// NOTE: despite the `_Nonnull` annotation this can return null — on a construction failure (which
+/// NOTE: despite the `_Nonnull` annotation this can return null, on a construction failure (which
 /// predates #446) and now also if the input cannot be copied. Every accessor below tolerates a null
 /// builder, and `OCCTUnifySameDomainRelease` accepts one, so a null degrades to "does nothing,
 /// answers null" rather than crashing. The annotation is kept for source compatibility: correcting

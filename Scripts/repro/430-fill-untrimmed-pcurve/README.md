@@ -1,4 +1,4 @@
-# OCCTSwift#430/#432 reproducer — `BRepFill_Filling` untrimmed-pcurve SIGSEGV
+# OCCTSwift#430/#432 reproducer, `BRepFill_Filling` untrimmed-pcurve SIGSEGV
 
 Standalone, deterministic reproducers for the uncatchable SIGSEGV that `Shape.fill` hit on its own
 default parameters (#430, fixed by PR #435) and that `FillingSurface` still hits through its own
@@ -62,7 +62,7 @@ clang++ -std=c++17 -w -g -O0 \
 /tmp/<file>
 ```
 
-### 1. [`occt_430_planar_throw.cpp`](./occt_430_planar_throw.cpp) — the non-fatal face
+### 1. [`occt_430_planar_throw.cpp`](./occt_430_planar_throw.cpp), the non-fatal face
 
 Face-less `Add(edge, GeomAbs_G1)` on a box face's four planar edges.
 
@@ -75,7 +75,7 @@ That message is defect 1 surfacing non-fatally: the ±2e100 span is out of the t
 range. The caller sees `nil` and no tangency, with no indication anything went wrong. This is the
 geometry the documented `FillingSurface` recipe in `docs/reference/GeometrySolvers.md` uses.
 
-### 2. [`occt_432_curved_sigsegv.cpp`](./occt_432_curved_sigsegv.cpp) — the crash
+### 2. [`occt_432_curved_sigsegv.cpp`](./occt_432_curved_sigsegv.cpp), the crash
 
 The same face-less `Add(edge, GeomAbs_G1)`, on the open rim of a truncated sphere (same fixture as
 `FillingSupportFaceTests.bowl()`). Exits with signal 11:
@@ -97,7 +97,7 @@ This is the exact call the bridge still makes from `OCCTFillingAddEdge` /
 `FillingSurface.add(edge:continuity:)` and `add(freeEdge:continuity:)`. PR #435 removed this call
 from `Shape.fill`'s path only, so it remains reachable from public API. That is #432.
 
-### 3. [`occt_430_derived_face_fix.cpp`](./occt_430_derived_face_fix.cpp) — the fix and its equivalence check
+### 3. [`occt_430_derived_face_fix.cpp`](./occt_430_derived_face_fix.cpp), the fix and its equivalence check
 
 The same sphere rim, routed through a support face derived from the edge's own pcurve and added
 with `Add(edge, face, order)`. `supportFaceFromPCurve()` is a verbatim port of
@@ -133,7 +133,7 @@ the kernel patched, and the helper already exists in the tree. It is file-`stati
 | #431 | `BRepOffsetAPI_MakeFilling` ctor args misbound | fixed in PR #435 |
 | #432 | `FillingSurface` reaches the same defect | fixed in PR #435 (same commit, reproducer 2 above) |
 | #433 | `FillingSurface` `.c1`/`.c2` mismapped | fixed, folded into #434's convergence |
-| #434 | The two entry points should converge | fixed — `FillingSurface` now shares `BRepOffsetAPI_MakeFilling` with `Shape.fill` |
+| #434 | The two entry points should converge | fixed, `FillingSurface` now shares `BRepOffsetAPI_MakeFilling` with `Shape.fill` |
 
 The kernel patch for defects 1 and 2, and the upstream filing, are not yet done. Defect 1 is a
 one-line fix (`new Geom2dAdaptor_Curve(C2d, f, l)`); defect 2 wants a guard on the `!Ok` branch,

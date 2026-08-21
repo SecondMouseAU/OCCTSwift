@@ -2,7 +2,7 @@
 //  OCCTBridge_ProjLib_NLPlate.mm
 //  OCCTSwift
 //
-//  Extracted from OCCTBridge.mm — issue #99.
+//  Extracted from OCCTBridge.mm, issue #99.
 //
 //  Two adjacent v0.22 / v0.23 areas that both project / fit curves onto
 //  surfaces:
@@ -10,11 +10,11 @@
 //  - ProjLib (v0.22): curve projection onto planes + general surfaces
 //    (ProjLib_CompProjectedCurve / ProjectedCurve / ProjectOnPlane,
 //    GeomProjLib helpers)
-//  - NLPlate (v0.23): non-linear plate surfaces — point + curve
+//  - NLPlate (v0.23): non-linear plate surfaces, point + curve
 //    constraints fitted into a smooth surface (NLPlate_NLPlate +
 //    GeomPlate_*)
 //
-//  Public C surface unchanged. No symbol changes — pure file move.
+//  Public C surface unchanged. No symbol changes, pure file move.
 //
 
 #import "../include/OCCTBridge.h"

@@ -13,7 +13,7 @@ builder:
       swift_version: "6.1"
     - platform: macos-spm
       swift_version: "6.0"
-    # iOS coverage on the latest Swift only — the xcframework is shared across iOS
+    # iOS coverage on the latest Swift only, the xcframework is shared across iOS
     # device + simulator + macOS, so the toolchain matrix above is the meaningful one.
     - platform: ios
       swift_version: "6.3"

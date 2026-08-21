@@ -219,7 +219,7 @@ extension Shape {
 
 ### Step 5: Add Tests
 
-Create the suite in the matching per-domain target — chamfer is a modeling op, so `Tests/OCCTModelingTests/ChamferTests.swift`:
+Create the suite in the matching per-domain target, chamfer is a modeling op, so `Tests/OCCTModelingTests/ChamferTests.swift`:
 
 ```swift
 import XCTest

@@ -3,7 +3,7 @@
 
 The index at the top of `Sources/OCCTBridge/include/OCCTBridge.h` maps each wrapped
 OCCT class to the bridge symbols that wrap it. It is hand-maintained, so a rename
-leaves it pointing at a symbol that no longer exists — and since the index is the
+leaves it pointing at a symbol that no longer exists, and since the index is the
 map people use to find every call site of an OCCT class, a stale entry hides real
 work. That is exactly how #484's unpatched fourth `ShapeFix_Face` call site was
 missed: the index named `OCCTShapeFixFace`, which exists nowhere, so a re-audit of
@@ -11,7 +11,7 @@ missed: the index named `OCCTShapeFixFace`, which exists nowhere, so a re-audit 
 
 Two independent checks run over every entry.
 
-**Existence** (#510) — does the named symbol exist at all?
+**Existence** (#510), does the named symbol exist at all?
 
 A trailing `*` in an index entry means "family prefix": at least one real symbol
 must start with it.
@@ -21,16 +21,16 @@ parenthetical aside. The first version of this script split the entry on commas
 and slashes and required each piece to be a bare symbol, which meant an annotated
 name (`OCCTShapeFill* (Shape.fill)`), a wrapped continuation line, and a heading
 naming several classes at once (`RWObj_CafReader/Writer`) were all dropped without
-a word — that is how two fabricated entries survived until #510 went looking for
+a word, that is how two fabricated entries survived until #510 went looking for
 them, and how #508's `OCCTGCE2dMakeLine*` survived #510's own first pass. A
 validator that skips what it cannot parse reports zero for two different reasons.
 
-**Direction** (#565) — does the named symbol wrap the class it is filed under?
+**Direction** (#565), does the named symbol wrap the class it is filed under?
 
 An entry naming a real symbol from a neighbouring class passes the existence check
 and misleads exactly the way a fabricated one does: you look up a class, get sent
 to a function that has nothing to do with it, and conclude the class is wrapped
-there. #501 hit this — `GCPnts_UniformAbscissa → OCCTCPntsUniformDeflection*` named
+there. #501 hit this, `GCPnts_UniformAbscissa → OCCTCPntsUniformDeflection*` named
 a symbol that exists and wraps `CPnts_UniformDeflection`, a different class. #565
 found 15 more, including `BOPAlgo_CellsBuilder → OCCTBOPAlgoSplit` (that symbol
 drives `BOPAlgo_Splitter`) and `ShapeFix_Wire → OCCTShapeFixWire*` (that prefix is
@@ -42,25 +42,25 @@ body, so four forms of indirection are resolved before anything is reported. Eac
 had to be handled first: a check that cannot tell "wrong class" from "reached
 indirectly" fails on correct entries and gets switched off.
 
-1. **Wrapper-type fields** — `XCAFDoc_ShapeTool` is held as `OCCTDocument::shapeTool`,
+1. **Wrapper-type fields**: `XCAFDoc_ShapeTool` is held as `OCCTDocument::shapeTool`,
    so 66 call sites reach it without naming the type. A function that names a bridge
    wrapper struct reaches the OCCT classes that struct holds.
-2. **Helper indirection** — `TDataStd_NamedData` is reached only through two lowercase
+2. **Helper indirection**: `TDataStd_NamedData` is reached only through two lowercase
    `static` helpers, so no `OCCT`-prefixed function body names it. A function reaches
    what its file-local helpers (and the shared `OCCTBridge_Internal.h` ones) reach.
    This is the near-miss that almost got the entry wrongly deleted in #510. The helper
    may be a `template <class T>` one, which has to be parsed as a function and not as a
-   definition of a class called `T` — see `without_template_head` (#624).
-3. **Static facades** — `ShapeCustom::SweptToElementary` is how the bridge reaches
+   definition of a class called `T`, see `without_template_head` (#624).
+3. **Static facades**: `ShapeCustom::SweptToElementary` is how the bridge reaches
    `ShapeCustom_SweptToElementary`; the worker class is never named. A `Foo::Bar` call
    counts as naming `Foo_Bar`. (Facades with no worker class of their own, such as
    `GeomConvert::` and `BRepGProp::`, are matched by their bare name already.)
-4. **Multi-class headings** — `RWObj_CafReader/Writer` covers `RWObj_CafReader` and
+4. **Multi-class headings**: `RWObj_CafReader/Writer` covers `RWObj_CafReader` and
    `RWObj_CafWriter`, not `RWObj_Writer`: an alternative replaces a trailing run of
    CamelCase words, not everything after the `_`.
 
 Where a class is genuinely reached only through *another OCCT class*, the entry says
-so with a `(via OtherClass)` aside — `BOPAlgo_RemoveFeatures` through
+so with a `(via OtherClass)` aside, `BOPAlgo_RemoveFeatures` through
 `BRepAlgoAPI_Defeaturing`, `ShapeUpgrade_ConvertCurve3dToBezier` through
 `ShapeUpgrade_ShapeConvertToBezier`. That aside is the exemption, and it is checked:
 the named symbols must reach the class named in it. An entry naming no symbol at all
@@ -101,9 +101,9 @@ def without_asides(text):
 
     An aside is commentary, not an attribution: `(OCCTWireOffset drives
     BRepOffsetAPI_MakeOffset, not this)` names a symbol precisely to say it does *not*
-    wrap the class. The existence check still reads asides — a fabricated name is a
+    wrap the class. The existence check still reads asides, a fabricated name is a
     fabrication wherever it is written, which is how #508's `OCCTGCE2dMakeLine*` was
-    caught — but the direction check must not attribute one.
+    caught, but the direction check must not attribute one.
     """
     out, depth = [], 0
     for ch in text:
@@ -196,7 +196,7 @@ def without_template_head(sig):
 
     The `class` in a template head otherwise satisfies AGGREGATE below, so every one of
     the bridge's `template <class TheAdaptor>` helpers was filed as a *type* named
-    `TheAdaptor` rather than as the function it is — and a type is only ever reached by a
+    `TheAdaptor` rather than as the function it is, and a type is only ever reached by a
     function that names it, which none do. That silently cut the helper-indirection chain
     at its first template link: `OCCTCurve3DGetLength` reaches `GCPnts_AbscissaPoint`
     through `occtAdaptorArcLength -> occtArcConvergedLength -> occtArcQuadrature`, all
@@ -325,8 +325,8 @@ def expand_heading(heading):
 def misfiled_entries(entries, reach):
     """(line, class, symbol, hint) for every listed symbol that never reaches its class.
 
-    Per symbol, not per entry. An entry-level rule — "at least one of these reaches the
-    class" — lets one wrong symbol hide behind its correct neighbours, which is the whole
+    Per symbol, not per entry. An entry-level rule, "at least one of these reaches the
+    class", lets one wrong symbol hide behind its correct neighbours, which is the whole
     shape of the defect: `GCPnts_UniformAbscissa → OCCTCPntsUniformDeflection*` was only
     caught in #501 because it happened to be the entry's sole symbol.
 
@@ -377,7 +377,7 @@ SELF_TEST = [
         '// GCPnts_AbscissaPoint                → OCCTCurve2DLength'], 'OCCTCurve2DLength'),
 ]
 
-# Each case is an entry filed under the wrong class — the four shapes #565 found. Every
+# Each case is an entry filed under the wrong class, the four shapes #565 found. Every
 # one names a symbol that exists, so the existence check above calls them all clean.
 #
 # The last case is the one that makes this per-SYMBOL rather than per-entry, and it is not
@@ -401,7 +401,7 @@ DIRECTION_TEST = [
 
 # The four indirection forms, plus the two shapes carrying an explicit exemption. A
 # direction check that reports any of these is reporting a correct entry, and would be
-# switched off rather than fixed — so each is asserted clean, not just left untested.
+# switched off rather than fixed, so each is asserted clean, not just left untested.
 INDIRECTION_TEST = [
     ('wrapper-type field', [
         '// XCAFDoc_ShapeTool                   → OCCTDocumentAddShape']),
@@ -410,7 +410,7 @@ INDIRECTION_TEST = [
     # The helper case above is a plain `inline`; this one is reached only through a chain of
     # `template <class TheAdaptor>` helpers, which is a different parse. All seven symbols on
     # this line were reported misfiled until #624 stopped a template head from being read as a
-    # `class` definition — the entry was correct the whole time.
+    # `class` definition, the entry was correct the whole time.
     ('template static helper', [
         '// GCPnts_AbscissaPoint                → OCCTCurve3DGetLength*, OCCTEdgeParameterAt*,',
         '//                                       OCCTWireGetLength']),
@@ -455,7 +455,7 @@ def self_test(known, reach):
 def main():
     quiet = '--quiet' in sys.argv
     if not os.path.exists(HEADER):
-        print(f'{HEADER} not found — run from the repo root', file=sys.stderr)
+        print(f'{HEADER} not found, run from the repo root', file=sys.stderr)
         return 2
 
     with open(HEADER, errors='replace') as f:

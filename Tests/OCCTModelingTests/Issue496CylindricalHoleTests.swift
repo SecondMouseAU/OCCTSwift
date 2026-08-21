@@ -2,7 +2,7 @@ import Testing
 import Foundation
 @testable import OCCTSwift
 
-/// #496 — the two hole-drilling families and where their contracts actually part.
+/// #496, the two hole-drilling families and where their contracts actually part.
 ///
 /// The audit read `Shape.drilled(at:direction:radius:depth:)` (a `BRepAlgoAPI_Cut` against a
 /// `BRepPrimAPI_MakeCylinder` tool) as a cruder reimplementation of the `BRepFeat_MakeCylindricalHole`
@@ -45,7 +45,7 @@ struct Issue496CylindricalHoleTests {
                                          radius: 5, depth: 100) == nil)
     }
 
-    /// `Perform` cuts an *infinite* cylinder — the axis origin is an anchor, not a starting point.
+    /// `Perform` cuts an *infinite* cylinder, the axis origin is an anchor, not a starting point.
     /// The boolean path's cylinder starts at the position it was given. With the entry point inside
     /// the stock the two disagree by exactly the material behind the origin.
     @Test("Through-all ignores the axis origin; the boolean drill starts there")
@@ -93,11 +93,11 @@ struct Issue496CylindricalHoleTests {
     /// the stock and the result is empty.
     ///
     /// This used to be the #496 divergence "through-all status is a false green for the thru-next
-    /// drill" — `Perform` tolerated the request while `PerformThruNext` called it
+    /// drill", `Perform` tolerated the request while `PerformThruNext` called it
     /// `InvalidPlacement`. That refusal was an artefact of the #532 defect, not a contract:
     /// under `BOPAlgo_CUT` an oversized tool emptied the builder's shape, so `nbparts` was 0 and the
     /// "the tool meets nothing" guard fired. Driving the builder correctly (carried patch `0020`)
-    /// makes `nbparts` 1 — the tool meets the whole solid — and the two extents now return the empty
+    /// makes `nbparts` 1, the tool meets the whole solid, and the two extents now return the empty
     /// result `.throughAll` and ``Shape/drilled(at:direction:radius:depth:)`` always returned.
     @Test("A radius that swallows the solid empties it, for every spelling")
     func oversizedRadiusEmptiesTheSolid() {
@@ -127,7 +127,7 @@ struct Issue496CylindricalHoleTests {
     /// `BRepFeat_HoleTooLong` is written in exactly two places in the kernel
     /// (`BRepFeat_MakeCylindricalHole.cxx:526` and `:667`), both reachable only through
     /// `PerformBlind`. The status query wraps `Perform`, so `.holeTooLong` could not be observed
-    /// through any public spelling — the case existed in the Swift enum and nothing could produce it.
+    /// through any public spelling, the case existed in the Swift enum and nothing could produce it.
     @Test("The blind-hole extent is the only way to observe .holeTooLong")
     func holeTooLongIsReachable() {
         guard let box = plate() else { #expect(Bool(false), "box"); return }
@@ -174,19 +174,19 @@ struct Issue496CylindricalHoleTests {
     }
 
     /// `statusAgreesWithItsOwnDrill` above only checks "comfortably fits" and "comfortably too
-    /// long" `.blind` depths. The two `HoleTooLong` checks are independent computations —
+    /// long" `.blind` depths. The two `HoleTooLong` checks are independent computations,
     /// `PerformBlind`'s own a priori check (`BRepFeat_MakeCylindricalHole.cxx:526`) compares
     /// `LocOpe_CurveShapeIntersector`'s parametric intersection distance against the requested
     /// depth, *before* any cut is made; `Validate()`'s post-hoc check (`:667`) inspects whether the
     /// tool's own top face survives as a face of the actual `BOPAlgo_BOP`-produced result,
     /// *after* the cut. The status query (`occtBRepFeatCylindricalHole` with `outShape == nullptr`)
-    /// returns before `Build()` ever runs, so it can only ever observe the first of the two — if
+    /// returns before `Build()` ever runs, so it can only ever observe the first of the two, if
     /// they disagreed right at the exit face, `cylindricalHoleStatus` could report `.noError` for a
     /// depth that `cylindricalHole(...)` then refuses, breaking the "if and only if" its own doc
     /// comment promises.
     ///
     /// The plate's exit face along this axis sits at exactly `depth == 21` (origin z=11, bottom
-    /// face z=-10), so this sweeps depths tight around that single point — the only place such a
+    /// face z=-10), so this sweeps depths tight around that single point, the only place such a
     /// disagreement could show up.
     @Test("Status and drill agree at the exact HoleTooLong boundary")
     func statusAgreesWithDrillAtTheHoleTooLongBoundary() {
@@ -240,7 +240,7 @@ struct Issue496CylindricalHoleTests {
     ///
     /// The sub-`Precision::Confusion` cases are the ones that used to escape. `radius > 0` let them
     /// through, and every `BRepFeat_MakeCylindricalHole` mode then returned `BRepFeat_NoError` and a
-    /// shape identical to the input — same volume, same six faces, no material removed. A drill that
+    /// shape identical to the input, same volume, same six faces, no material removed. A drill that
     /// reports success and removes nothing is worse than one that fails.
     @Test("A radius at or below Precision.Confusion is rejected by every drilling spelling")
     func degenerateRadiusRejectedEverywhere() {
@@ -274,7 +274,7 @@ struct Issue496CylindricalHoleTests {
 
     // MARK: - The two newly wrapped extents
 
-    /// `PerformUntilEnd` was the mode the audit assumed `Perform` was — bounded by the stock rather
+    /// `PerformUntilEnd` was the mode the audit assumed `Perform` was, bounded by the stock rather
     /// than infinite. It was not wrapped, so the family had no forward-bounded through spelling.
     @Test("untilEnd drills the stock, bounded by the entry and exit faces")
     func untilEndDrillsTheStock() {
@@ -322,7 +322,7 @@ struct Issue496CylindricalHoleTests {
         if let r = removed(from: 0, to: 30) { #expect(abs(r - Self.holeVolume) < 1.0) }
         else { #expect(Bool(false), "range over plate A failed") }
 
-        // A window over the second plate drills exactly that plate — the same bore, elsewhere.
+        // A window over the second plate drills exactly that plate, the same bore, elsewhere.
         if let r = removed(from: 30, to: 70) { #expect(abs(r - Self.holeVolume) < 1.0) }
         else { #expect(Bool(false), "range over plate B failed") }
 

@@ -1,4 +1,4 @@
-// OCCTSwift#529 — does the Resolution argument change what the *adaptor-based* local-property
+// OCCTSwift#529, does the Resolution argument change what the *adaptor-based* local-property
 // classes report, and do they agree with their Geom_* counterparts once the value matches?
 //
 // BRepLProp_SLProps / BRepLProp_CLProps are, in OCCT 8.0, plain aliases for the same header-only

@@ -1,4 +1,4 @@
-// OCCTSwift#529 — what the resolution change does to a *decision*, not to a reported value.
+// OCCTSwift#529, what the resolution change does to a *decision*, not to a reported value.
 //
 // OCCTFaceGetNormal evaluates the surface normal at the parametric midpoint of a face and reports
 // it (Face.normal), and Face.isHorizontal / isUpwardFacing / isDownwardFacing / isVertical are all

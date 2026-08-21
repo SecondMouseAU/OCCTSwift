@@ -13,7 +13,7 @@ headers (`Sources/OCCTBridge/include/OCCTBridge*.h`) and produce a categorized g
 
 3. **Classify each unwrapped header** into one of these tiers:
 
-   **Tier 1 — High Priority (commonly used in CAD/CAM):**
+   **Tier 1. High Priority (commonly used in CAD/CAM):**
    - `BRepPrimAPI_*`, `BRepAlgoAPI_*`, `BRepFilletAPI_*`, `BRepOffsetAPI_*` (shape creation/modification)
    - `BRepBuilderAPI_*` (topology construction)
    - `BRepExtrema_*` (distance/measurement)
@@ -24,7 +24,7 @@ headers (`Sources/OCCTBridge/include/OCCTBridge*.h`) and produce a categorized g
    - `GCPnts_*` (curve discretization)
    - `GeomConvert_*`, `Geom2dConvert_*` (geometry conversion)
 
-   **Tier 2 — Medium Priority (useful but less common):**
+   **Tier 2. Medium Priority (useful but less common):**
    - `GeomFill_*` (surface filling)
    - `LocOpe_*` (local operations)
    - `BRepCheck_*` (validation)
@@ -32,14 +32,14 @@ headers (`Sources/OCCTBridge/include/OCCTBridge*.h`) and produce a categorized g
    - `GeomLProp_*`, `BRepLProp_*` (local properties)
    - `Approx_*`, `AppDef_*`, `AppParCurves_*` (approximation)
 
-   **Tier 3 — Low Priority (internal/specialized):**
-   - `NCollection_*`, `TCollection_*` (containers — internal OCCT use)
-   - `Standard_*` (runtime — internal)
+   **Tier 3. Low Priority (internal/specialized):**
+   - `NCollection_*`, `TCollection_*` (containers, internal OCCT use)
+   - `Standard_*` (runtime, internal)
    - `IntCurve*`, `IntPatch*`, `IntSurf*` (intersection internals)
    - `math_*` (linear algebra internals)
    - Data exchange (`IGESData_*`, `StepData_*`, `XSControl_*`)
 
-   **Skip — Not wrappable:**
+   **Skip. Not wrappable:**
    - `.lxx` files (inline implementations)
    - `*_0.hxx` (deprecated OCCT stubs)
    - Pure enum/typedef headers with no classes
@@ -57,16 +57,16 @@ headers (`Sources/OCCTBridge/include/OCCTBridge*.h`) and produce a categorized g
 
    **Current coverage:** {N} wrapped classes out of ~{M} wrappable classes ({percent}%)
 
-   ### Tier 1 — High Priority ({count} unwrapped)
+   ### Tier 1. High Priority ({count} unwrapped)
    | Module | Class | Key Operations | Complexity |
    |--------|-------|----------------|------------|
    | BRepBuilderAPI | MakePolygon | Add points to polygon wire | Low |
    | ... | ... | ... | ... |
 
-   ### Tier 2 — Medium Priority ({count} unwrapped)
+   ### Tier 2. Medium Priority ({count} unwrapped)
    ...
 
-   ### Tier 3 — Low Priority ({count} unwrapped)
+   ### Tier 3. Low Priority ({count} unwrapped)
    ...
 
    ### Recommended Next Release (v0.XX.0)
@@ -81,7 +81,7 @@ headers (`Sources/OCCTBridge/include/OCCTBridge*.h`) and produce a categorized g
    - **Medium**: Multiple constructors, struct results, requires topology extraction
    - **High**: Requires Handle<> hierarchies, abstract base classes, iterators, or Law/Section types
 
-7. For the "Recommended Next Release" section, propose a concrete list of ~100 operations that would make a good release. Group them by module for clarity. Prioritize breadth over depth — cover many classes with a few operations each rather than exhaustively wrapping one class.
+7. For the "Recommended Next Release" section, propose a concrete list of ~100 operations that would make a good release. Group them by module for clarity. Prioritize breadth over depth, cover many classes with a few operations each rather than exhaustively wrapping one class.
 
 ## Output
 Print the full gap report to the conversation. Do NOT write it to a file unless asked.

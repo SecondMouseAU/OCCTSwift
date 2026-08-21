@@ -3,7 +3,7 @@
 `OCCT.xcframework` is ~1.3 GB. On a machine where you develop several ecosystem
 repos at once (OCCTSwiftTools, OCCTSwiftViewport, OCCTReconstruct, OCCTMCP, …),
 the default setup makes **each repo download and extract its own copy** into
-`.build/artifacts/` — easily 25–35 GB of duplicates. This guide explains how the
+`.build/artifacts/`: easily 25–35 GB of duplicates. This guide explains how the
 ecosystem shares a single copy, and the one **`Package.resolved` footgun** that
 sharing introduces (issue #260).
 
@@ -11,14 +11,14 @@ sharing introduces (issue #260).
 
 OCCTSwift's `Package.swift` auto-detects its binary target:
 
-- **Local path** — `.binaryTarget(path: "Libraries/OCCT.xcframework")` when the
+- **Local path**: `.binaryTarget(path: "Libraries/OCCT.xcframework")` when the
   in-place framework is found.
-- **Remote URL** — `.binaryTarget(url:checksum:)` otherwise (CI / SPI / remote SPM).
+- **Remote URL**: `.binaryTarget(url:checksum:)` otherwise (CI / SPI / remote SPM).
 
 Detection resolves against the **manifest's own directory** (`#filePath`), not the
 process CWD. That's the key: when OCCTSwift is consumed as a **local path
 dependency**, its manifest finds its in-place (gitignored) `Libraries/OCCT.xcframework`
-and the consumer references that single copy — **no per-repo extraction**.
+and the consumer references that single copy, **no per-repo extraction**.
 
 Consumers opt in with a small helper that prefers a local sibling, else the URL pin:
 
@@ -45,13 +45,13 @@ binary sharing without editing `Package.swift`, and has the **same** footgun bel
 ## ⚠️ The `Package.resolved` footgun (#260)
 
 SPM **never pins local packages**. So the moment a consumer reaches OCCTSwift via a
-path dependency (or a local-path mirror), the `occtswift` pin — **and every
-transitive OCCT-family pin it brought** (occtswifttools, occtswiftio, …) — is
+path dependency (or a local-path mirror), the `occtswift` pin, **and every
+transitive OCCT-family pin it brought** (occtswifttools, occtswiftio, …), is
 **silently removed** from that consumer's `Package.resolved`, and rewritten on every
 `swift build` / `swift package resolve`.
 
 ```text
-# OCCTMCP, before sharing — pins present:
+# OCCTMCP, before sharing, pins present:
 "identity": "occtswift",     "version": "1.8.0"
 "identity": "occtswiftais",  "version": "1.0.3"   …
 
@@ -60,7 +60,7 @@ Package.resolved: 1 file changed, 1 insertion(+), 64 deletions(-)   ← all OCCT
 ```
 
 If that pin-stripped `Package.resolved` is committed, **CI and other machines get a
-non-reproducible (or broken) resolve** — the one file that exists to guarantee
+non-reproducible (or broken) resolve**, the one file that exists to guarantee
 reproducibility is the one sharing quietly breaks.
 
 ### Why there's no "pinned AND shared" option in stock SPM
@@ -76,15 +76,15 @@ shared ⇒ unpinned.** Pick per consumer.
 
 - **Library packages** (their product is a library others depend on, e.g.
   OCCTSwiftTools/IO/Mesh/AIS/CADKit): per SPM best practice, **don't commit
-  `Package.resolved`** at all — add it to `.gitignore`. No footgun.
+  `Package.resolved`** at all, add it to `.gitignore`. No footgun.
 - **Apps / executables** that commit `Package.resolved` for reproducibility
   (OCCTReconstruct, OCCTMCP, OCCTStudio, swiftGCS, …): **let CI own
   `Package.resolved`.** The committed file must be the **URL-pinned** version, which
   the `occtDep` helper produces automatically when **no local sibling is present**
-  (CI / a fresh clone). Locally, **do not stage the path-dep churn** — `git checkout
+  (CI / a fresh clone). Locally, **do not stage the path-dep churn**, `git checkout
   -- Package.resolved` before committing, or regenerate it in a sibling-free checkout.
 - If you don't need the disk savings in a given repo, just keep the plain URL dep
-  there — it stays pinned (at the cost of its own 1.3 GB extraction).
+  there, it stays pinned (at the cost of its own 1.3 GB extraction).
 
 ## Reclaiming duplicate copies
 

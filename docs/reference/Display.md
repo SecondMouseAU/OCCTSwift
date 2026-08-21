@@ -15,7 +15,7 @@ These five types provide the rendering infrastructure for OCCTSwift: camera cont
 
 ## ZLayerSettings
 
-`ZLayerSettings` configures a named rendering Z-layer — controlling depth testing, depth writing, polygon offset (depth bias), ray-tracing participation, culling thresholds, and the layer coordinate origin. Wraps OCCT's `Graphic3d_ZLayerSettings`.
+`ZLayerSettings` configures a named rendering Z-layer, controlling depth testing, depth writing, polygon offset (depth bias), ray-tracing participation, culling thresholds, and the layer coordinate origin. Wraps OCCT's `Graphic3d_ZLayerSettings`.
 
 In a Metal renderer these properties map to: `MTLDepthStencilDescriptor` (depth test/write), depth attachment `loadAction` (clear depth), `setDepthBias()` on `MTLRenderCommandEncoder` (polygon offset), and render-pass ordering.
 
@@ -26,11 +26,11 @@ In a Metal renderer these properties map to: `MTLDepthStencilDescriptor` (depth 
 Five `static let` constants identify the built-in layer slots. Pass these to a renderer or selector when associating objects with a layer.
 
 ```swift
-public static let bottomOSD: Int32   // -5 — 2D underlay, drawn behind everything
-public static let `default`: Int32   // 0  — main 3D scene layer
-public static let top: Int32         // -2 — 3D overlay, inherits depth from default
-public static let topmost: Int32     // -3 — 3D overlay, independent depth buffer
-public static let topOSD: Int32      // -4 — 2D overlay for annotations and UI
+public static let bottomOSD: Int32   // -5, 2D underlay, drawn behind everything
+public static let `default`: Int32   // 0, main 3D scene layer
+public static let top: Int32         // -2, 3D overlay, inherits depth from default
+public static let topmost: Int32     // -3, 3D overlay, independent depth buffer
+public static let topOSD: Int32      // -4, 2D overlay for annotations and UI
 ```
 
 - **OCCT:** `Graphic3d_ZLayerId` enumeration values (`Graphic3d_ZLayerId_BotOSD`, `Graphic3d_ZLayerId_Default`, `Graphic3d_ZLayerId_Top`, `Graphic3d_ZLayerId_Topmost`, `Graphic3d_ZLayerId_TopOSD`).
@@ -234,7 +234,7 @@ Sets a minimal negative depth offset (factor=1, units=-1, mode=fill).
 public func setDepthOffsetNegative()
 ```
 
-Pulls geometry slightly toward the camera — typical use is a wireframe overlay that should render on top of a co-planar shaded surface.
+Pulls geometry slightly toward the camera, typical use is a wireframe overlay that should render on top of a co-planar shaded surface.
 
 - **OCCT:** `Graphic3d_ZLayerSettings::SetDepthOffsetNegative`.
 - **Example:**
@@ -386,8 +386,8 @@ Result of probing a point or bounding box against a clip plane (or chain).
 
 ```swift
 public enum ClipState: Int32, Sendable {
-    case out = 0   // fully outside — should be discarded
-    case `in` = 1  // fully inside — not clipped
+    case out = 0   // fully outside, should be discarded
+    case `in` = 1  // fully inside, not clipped
     case on  = 2   // on the boundary or partially clipped
 }
 ```
@@ -485,7 +485,7 @@ Creates a clip plane from the four equation coefficients.
 public init(equation: SIMD4<Double>)
 ```
 
-- **Parameters:** `equation` — `(A, B, C, D)` such that `Ax + By + Cz + D = 0`.
+- **Parameters:** `equation`, `(A, B, C, D)` such that `Ax + By + Cz + D = 0`.
 - **OCCT:** `Graphic3d_ClipPlane(Graphic3d_Vec4d(A, B, C, D))`.
 - **Example:**
   ```swift
@@ -505,7 +505,7 @@ public init(normal: SIMD3<Double>, distance: Double)
 
 The stored equation is `normal.x·x + normal.y·y + normal.z·z + distance = 0`.
 
-- **Parameters:** `normal` — plane normal (used as-is, should be normalized); `distance` — signed distance from origin along the normal.
+- **Parameters:** `normal`, plane normal (used as-is, should be normalized); `distance`, signed distance from origin along the normal.
 - **OCCT:** `Graphic3d_ClipPlane(Graphic3d_Vec4d(nx, ny, nz, distance))`.
 - **Example:**
   ```swift
@@ -650,7 +650,7 @@ public func probe(point: SIMD3<Double>) -> ClipState
 
 Iterates the full chain; returns `.out` immediately if any plane discards the point, `.on` if at least one plane is on the boundary, `.in` if all planes accept it.
 
-- **Parameters:** `point` — 3D world-space point to test.
+- **Parameters:** `point`, 3D world-space point to test.
 - **Returns:** The aggregate `ClipState` across the chain.
 - **OCCT:** `Graphic3d_ClipPlane::ProbePointHalfspace` per plane in the chain.
 - **Example:**
@@ -669,7 +669,7 @@ Tests an axis-aligned bounding box against the clip plane (or chain of planes).
 public func probe(box: (min: SIMD3<Double>, max: SIMD3<Double>)) -> ClipState
 ```
 
-- **Parameters:** `box` — AABB defined by `(min, max)` corners.
+- **Parameters:** `box`, AABB defined by `(min, max)` corners.
 - **Returns:** `.out` if fully clipped, `.in` if fully inside, `.on` if partially intersected.
 - **OCCT:** `Graphic3d_ClipPlane::ProbeBoxHalfspace` (using `Graphic3d_BndBox3d`) per plane in the chain.
 - **Example:**
@@ -693,7 +693,7 @@ public func chainNext(_ plane: ClipPlane?)
 
 When planes are chained, a point or box must satisfy **all** planes in the chain to be considered visible. Pass `nil` to clear the chain.
 
-- **Parameters:** `plane` — the next `ClipPlane` in the chain, or `nil` to detach.
+- **Parameters:** `plane`, the next `ClipPlane` in the chain, or `nil` to detach.
 - **OCCT:** `Graphic3d_ClipPlane::SetChainNextPlane`.
 - **Example:**
   ```swift
@@ -961,7 +961,7 @@ public func project(_ point: SIMD3<Double>) -> SIMD3<Double>
 
 Returns zero on error (null camera or projection exception).
 
-- **Parameters:** `point` — world-space 3D point.
+- **Parameters:** `point`, world-space 3D point.
 - **Returns:** Normalized device coordinates `(x, y, z)`.
 - **OCCT:** `Graphic3d_Camera::Project(gp_Pnt)`.
 - **Example:**
@@ -981,7 +981,7 @@ public func unproject(_ point: SIMD3<Double>) -> SIMD3<Double>
 
 Inverse of `project(_:)`. Returns zero on error.
 
-- **Parameters:** `point` — normalized device coordinates.
+- **Parameters:** `point`, normalized device coordinates.
 - **Returns:** World-space 3D point.
 - **OCCT:** `Graphic3d_Camera::UnProject(gp_Pnt)`.
 - **Example:**
@@ -1003,7 +1003,7 @@ public func fit(boundingBox: (min: SIMD3<Double>, max: SIMD3<Double>))
 
 Calls `FitMinMax` with a 1% margin (`0.01`). After calling this, `eye`, `center`, and the z-range are updated.
 
-- **Parameters:** `boundingBox` — AABB to fit, as `(min, max)` corners.
+- **Parameters:** `boundingBox`, AABB to fit, as `(min, max)` corners.
 - **OCCT:** `Graphic3d_Camera::FitMinMax(Bnd_Box, margin, adjustZPlanes)`.
 - **Example:**
   ```swift
@@ -1068,7 +1068,7 @@ Extracts a triangulated shaded mesh from the shape.
 func shadedMesh(deflection: Double = 0.1) -> ShadedMeshData?
 ```
 
-- **Parameters:** `deflection` — chord deviation tolerance. Smaller values produce finer meshes (default 0.1).
+- **Parameters:** `deflection`, chord deviation tolerance. Smaller values produce finer meshes (default 0.1).
 - **Returns:** `ShadedMeshData`, or `nil` if tessellation fails or produces no triangles.
 - **OCCT:** `BRepMesh_IncrementalMesh::Perform` + `TopExp_Explorer(TopAbs_FACE)` + `BRep_Tool::Triangulation` + `Poly_Triangulation`.
 - **Example:**
@@ -1090,7 +1090,7 @@ Extracts wireframe edge polylines from the shape.
 func edgeMesh(deflection: Double = 0.1) -> EdgeMeshData?
 ```
 
-- **Parameters:** `deflection` — chord deviation tolerance (default 0.1).
+- **Parameters:** `deflection`, chord deviation tolerance (default 0.1).
 - **Returns:** `EdgeMeshData`, or `nil` if extraction fails or produces no vertices.
 - **OCCT:** `BRepMesh_IncrementalMesh::Perform` + `TopTools_IndexedMapOfShape` + `BRep_Tool::PolygonOnTriangulation` / `Polygon3D` / `GCPnts_TangentialDeflection` (fallback).
 - **Example:**
@@ -1112,7 +1112,7 @@ func shadedMesh(drawer: DisplayDrawer) -> ShadedMeshData?
 
 Uses the drawer's deflection type (relative or absolute), deviation coefficient/angle, giving fine-grained tessellation quality per-object rather than a fixed global deflection.
 
-- **Parameters:** `drawer` — a configured `DisplayDrawer` whose properties drive `BRepMesh_IncrementalMesh`.
+- **Parameters:** `drawer`, a configured `DisplayDrawer` whose properties drive `BRepMesh_IncrementalMesh`.
 - **Returns:** `ShadedMeshData`, or `nil` on failure.
 - **OCCT:** `BRepMesh_IncrementalMesh(shape, deflection, Standard_False, angle)` with deflection/angle read from `Prs3d_Drawer`.
 - **Example:**
@@ -1134,7 +1134,7 @@ Extracts wireframe edge polylines using a `DisplayDrawer` for tessellation contr
 func edgeMesh(drawer: DisplayDrawer) -> EdgeMeshData?
 ```
 
-- **Parameters:** `drawer` — a configured `DisplayDrawer`.
+- **Parameters:** `drawer`, a configured `DisplayDrawer`.
 - **Returns:** `EdgeMeshData`, or `nil` on failure.
 - **OCCT:** `BRepMesh_IncrementalMesh(shape, deflection, Standard_False, angle)` + `BRep_Tool::PolygonOnTriangulation`.
 - **Example:**
@@ -1250,7 +1250,7 @@ Returns the font family name at the given 0-based index.
 public static func fontName(at index: Int) -> String?
 ```
 
-- **Parameters:** `index` — 0-based position in the font list (must be less than `fontCount`).
+- **Parameters:** `index`, 0-based position in the font list (must be less than `fontCount`).
 - **Returns:** Font family name string, or `nil` if `index` is out of range.
 - **OCCT:** `Font_SystemFont::FontName()` → `TCollection_AsciiString`.
 - **Example:**
@@ -1273,7 +1273,7 @@ Returns the file system path to the font file for the given index and style.
 public static func fontPath(at index: Int, aspect: FontAspect = .regular) -> String?
 ```
 
-- **Parameters:** `index` — 0-based font index; `aspect` — the desired style (default `.regular`).
+- **Parameters:** `index`, 0-based font index; `aspect`, the desired style (default `.regular`).
 - **Returns:** Absolute file path string, or `nil` if the font has no file for that aspect or the index is out of range.
 - **OCCT:** `Font_SystemFont::FontPath(Font_FontAspect)` → `TCollection_AsciiString`.
 - **Example:**
@@ -1293,7 +1293,7 @@ Tests whether the font at the given index has a specific style variant available
 public static func fontHasAspect(at index: Int, aspect: FontAspect) -> Bool
 ```
 
-- **Parameters:** `index` — 0-based font index; `aspect` — the style to check.
+- **Parameters:** `index`, 0-based font index; `aspect`, the style to check.
 - **Returns:** `true` if a file exists for that aspect.
 - **OCCT:** `Font_SystemFont::HasFontAspect(Font_FontAspect)`.
 - **Example:**

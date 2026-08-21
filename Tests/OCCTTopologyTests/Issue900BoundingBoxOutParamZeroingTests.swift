@@ -5,12 +5,12 @@ import OCCTBridge
 
 /// PR #901 review, finding 1: `OCCTShapeBoundingBox`/`OCCTShapeBoundingBoxOptimal` (the bridge
 /// functions #900 changed from `void`- to `bool`-returning, backed by `Bnd_Box::IsVoid()`) have
-/// three failure paths — null shape, void box, and a caught OCCT exception — that all return
+/// three failure paths, null shape, void box, and a caught OCCT exception, that all return
 /// `false` before ever calling `Bnd_Box::Get(...)`. `OCCTBridge_Topology.h` still declares all six
 /// out-parameters `_Nonnull`, so a caller that reads them without gating on the `bool` return would
 /// see whatever was already on the stack, not a deterministic value. This suite calls the C bridge
-/// functions directly — bypassing `Shape.boundingBox`/`boundingBoxOptimal(useShapeTolerance:)`,
-/// which already gate correctly on the `bool` and would never observe this either way — with the
+/// functions directly, bypassing `Shape.boundingBox`/`boundingBoxOptimal(useShapeTolerance:)`,
+/// which already gate correctly on the `bool` and would never observe this either way, with the
 /// six out-locals pre-poisoned to a value the fix could never produce by chance, and confirms they
 /// come back exactly zero.
 ///
@@ -18,7 +18,7 @@ import OCCTBridge
 /// covered: the fix that added this suite zeroed inside `occtComputeBoundingBox`, but both public
 /// functions' own `if (!shape || !xmin || ...) return false;` guard short-circuited before ever
 /// reaching it, so a null `shape` with valid out-pointers still returned untouched garbage.
-/// `OCCTBridge_Topology.h` declares `shape` `_Nonnull`, so Swift refuses to pass `nil` directly —
+/// `OCCTBridge_Topology.h` declares `shape` `_Nonnull`, so Swift refuses to pass `nil` directly,
 /// `unsafeBitCast` is used below to synthesize a zero-bit-pattern `OCCTShapeRef` that type-checks
 /// as non-optional but is a genuine null pointer at the ABI level, the same thing a non-Swift
 /// caller violating the `_Nonnull` contract would hand across.

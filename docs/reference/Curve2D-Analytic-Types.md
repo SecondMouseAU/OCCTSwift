@@ -1,11 +1,11 @@
 ---
-title: Curve2D — Analytic Types
+title: Curve2D. Analytic Types
 parent: API Reference
 ---
 
-# Curve2D — Analytic Types
+# Curve2D. Analytic Types
 
-These members expose the type-specific properties of the five analytic 2D curve kinds (circle, ellipse, hyperbola, parabola, line) plus an offset-curve accessor, and provide B-spline/Bézier query and mutation methods; they are meaningful only when the underlying `Curve2D` wraps an OCCT object of the matching kind — accessing them on a mismatched type returns zero/nil/false silently. See the main `Curve2D` page for construction, evaluation, and general operations.
+These members expose the type-specific properties of the five analytic 2D curve kinds (circle, ellipse, hyperbola, parabola, line) plus an offset-curve accessor, and provide B-spline/Bézier query and mutation methods; they are meaningful only when the underlying `Curve2D` wraps an OCCT object of the matching kind, accessing them on a mismatched type returns zero/nil/false silently. See the main `Curve2D` page for construction, evaluation, and general operations.
 
 ## Topics
 
@@ -81,7 +81,7 @@ public var circleProperties: CircleProperties { get }
 ```
 
 - **Returns:** A `CircleProperties` accessor backed by the same internal handle. Members return zero/false for non-circle curves.
-- **OCCT:** `Geom2d_Circle` — accessed via `Handle(Geom2d_Circle)::DownCast`.
+- **OCCT:** `Geom2d_Circle`, accessed via `Handle(Geom2d_Circle)::DownCast`.
 - **Example:**
   ```swift
   if let c = Curve2D.circle(center: .zero, radius: 5) {
@@ -119,7 +119,7 @@ Mutates the circle's radius in place.
 public func setRadius(_ r: Double) -> Bool
 ```
 
-- **Parameters:** `r` — new radius (must be > 0).
+- **Parameters:** `r`, new radius (must be > 0).
 - **Returns:** `true` on success, `false` if the curve is not a circle or `r` is invalid.
 - **OCCT:** `Geom2d_Circle::SetRadius`.
 - **Example:**
@@ -200,7 +200,7 @@ public var ellipseProperties: EllipseProperties { get }
 ```
 
 - **Returns:** An `EllipseProperties` accessor backed by the same internal handle.
-- **OCCT:** `Geom2d_Ellipse` — accessed via `Handle(Geom2d_Ellipse)::DownCast`.
+- **OCCT:** `Geom2d_Ellipse`, accessed via `Handle(Geom2d_Ellipse)::DownCast`.
 - **Example:**
   ```swift
   if let c = Curve2D.ellipse(majorRadius: 5, minorRadius: 3) {
@@ -256,7 +256,7 @@ Mutates the ellipse's major radius in place.
 public func setMajorRadius(_ r: Double) -> Bool
 ```
 
-- **Parameters:** `r` — new major radius (must be ≥ minor radius per OCCT).
+- **Parameters:** `r`, new major radius (must be ≥ minor radius per OCCT).
 - **Returns:** `true` on success, `false` if the curve is not an ellipse or the value is invalid.
 - **OCCT:** `Geom2d_Ellipse::SetMajorRadius`.
 - **Example:**
@@ -275,7 +275,7 @@ Mutates the ellipse's minor radius in place.
 public func setMinorRadius(_ r: Double) -> Bool
 ```
 
-- **Parameters:** `r` — new minor radius (must be ≤ major radius per OCCT).
+- **Parameters:** `r`, new minor radius (must be ≤ major radius per OCCT).
 - **Returns:** `true` on success, `false` if the curve is not an ellipse or the value is invalid.
 - **OCCT:** `Geom2d_Ellipse::SetMinorRadius`.
 - **Example:**
@@ -347,7 +347,7 @@ public var hyperbolaProperties: HyperbolaProperties { get }
 ```
 
 - **Returns:** A `HyperbolaProperties` accessor backed by the same internal handle.
-- **OCCT:** `Geom2d_Hyperbola` — accessed via `Handle(Geom2d_Hyperbola)::DownCast`.
+- **OCCT:** `Geom2d_Hyperbola`, accessed via `Handle(Geom2d_Hyperbola)::DownCast`.
 - **Example:**
   ```swift
   if let c = Curve2D.hyperbola(majorRadius: 4, minorRadius: 3) {
@@ -453,7 +453,7 @@ public var parabolaProperties: ParabolaProperties { get }
 ```
 
 - **Returns:** A `ParabolaProperties` accessor backed by the same internal handle.
-- **OCCT:** `Geom2d_Parabola` — accessed via `Handle(Geom2d_Parabola)::DownCast`.
+- **OCCT:** `Geom2d_Parabola`, accessed via `Handle(Geom2d_Parabola)::DownCast`.
 - **Example:**
   ```swift
   if let c = Curve2D.parabola(focal: 2) {
@@ -489,7 +489,7 @@ Mutates the parabola's focal distance in place.
 public func setFocal(_ f: Double) -> Bool
 ```
 
-- **Parameters:** `f` — new focal distance (must be > 0).
+- **Parameters:** `f`, new focal distance (must be > 0).
 - **Returns:** `true` on success, `false` if the curve is not a parabola or `f` is invalid.
 - **OCCT:** `Geom2d_Parabola::SetFocal`.
 - **Example:**
@@ -561,7 +561,7 @@ public var lineProperties: LineProperties { get }
 ```
 
 - **Returns:** A `LineProperties` accessor backed by the same internal handle.
-- **OCCT:** `Geom2d_Line` — accessed via `Handle(Geom2d_Line)::DownCast`.
+- **OCCT:** `Geom2d_Line`, accessed via `Handle(Geom2d_Line)::DownCast`.
 - **Example:**
   ```swift
   if let c = Curve2D.line(from: .zero, to: SIMD2(1, 0)) {
@@ -617,7 +617,7 @@ Mutates the line's direction in place.
 public func setDirection(_ d: SIMD2<Double>) -> Bool
 ```
 
-- **Parameters:** `d` — new direction (need not be unit; OCCT normalises it).
+- **Parameters:** `d`, new direction (need not be unit; OCCT normalises it).
 - **Returns:** `true` on success, `false` if the curve is not a line.
 - **OCCT:** `Geom2d_Line::SetDirection`.
 - **Example:**
@@ -636,7 +636,7 @@ Mutates the line's origin point in place.
 public func setLocation(_ p: SIMD2<Double>) -> Bool
 ```
 
-- **Parameters:** `p` — new location point.
+- **Parameters:** `p`, new location point.
 - **Returns:** `true` on success, `false` if the curve is not a line.
 - **OCCT:** `Geom2d_Line::SetLocation`.
 - **Example:**
@@ -654,7 +654,7 @@ The perpendicular distance from the line to a 2D point.
 public func distance(to point: SIMD2<Double>) -> Double
 ```
 
-- **Parameters:** `point` — the query point in model space.
+- **Parameters:** `point`, the query point in model space.
 - **Returns:** Perpendicular distance; `0` if the curve is not a line.
 - **OCCT:** `Geom2d_Line::Distance` (via `gp_Lin2d::Distance`).
 - **Example:**
@@ -695,7 +695,7 @@ public var offsetProperties: OffsetProperties { get }
 ```
 
 - **Returns:** An `OffsetProperties` accessor backed by the same internal handle.
-- **OCCT:** `Geom2d_OffsetCurve` — accessed via `Handle(Geom2d_OffsetCurve)::DownCast`.
+- **OCCT:** `Geom2d_OffsetCurve`, accessed via `Handle(Geom2d_OffsetCurve)::DownCast`.
 - **Example:**
   ```swift
   if let base = Curve2D.circle(center: .zero, radius: 5),
@@ -734,7 +734,7 @@ Mutates the offset value in place.
 public func setOffset(_ v: Double) -> Bool
 ```
 
-- **Parameters:** `v` — new offset distance.
+- **Parameters:** `v`, new offset distance.
 - **Returns:** `true` on success, `false` if the curve is not an offset curve.
 - **OCCT:** `Geom2d_OffsetCurve::SetOffsetValue`.
 - **Example:**
@@ -773,7 +773,7 @@ Evaluates the curve position within a specific knot span.
 public func bsplineLocalD0(u: Double, fromK1: Int, toK2: Int) -> SIMD2<Double>
 ```
 
-- **Parameters:** `u` — parameter value; `fromK1`, `toK2` — knot span indices (1-based, obtained from `bsplineLocateU`).
+- **Parameters:** `u`, parameter value; `fromK1`, `toK2`, knot span indices (1-based, obtained from `bsplineLocateU`).
 - **Returns:** Point on the curve at `u` within the span. Returns `.zero` if not a BSpline.
 - **OCCT:** `Geom2d_BSplineCurve::LocalD0`.
 - **Example:**
@@ -793,7 +793,7 @@ public func bsplineLocalD1(u: Double, fromK1: Int, toK2: Int)
     -> (point: SIMD2<Double>, v1: SIMD2<Double>)
 ```
 
-- **Parameters:** `u` — parameter; `fromK1`, `toK2` — knot span indices.
+- **Parameters:** `u`, parameter; `fromK1`, `toK2`, knot span indices.
 - **Returns:** Tuple `(point, v1)` where `v1` is the first derivative vector.
 - **OCCT:** `Geom2d_BSplineCurve::LocalD1`.
 - **Example:**
@@ -814,7 +814,7 @@ public func bsplineLocalD2(u: Double, fromK1: Int, toK2: Int)
     -> (point: SIMD2<Double>, v1: SIMD2<Double>, v2: SIMD2<Double>)
 ```
 
-- **Parameters:** `u` — parameter; `fromK1`, `toK2` — knot span indices.
+- **Parameters:** `u`, parameter; `fromK1`, `toK2`, knot span indices.
 - **Returns:** Tuple `(point, v1, v2)`.
 - **OCCT:** `Geom2d_BSplineCurve::LocalD2`.
 - **Example:**
@@ -833,7 +833,7 @@ public func bsplineLocalD3(u: Double, fromK1: Int, toK2: Int)
     -> (point: SIMD2<Double>, v1: SIMD2<Double>, v2: SIMD2<Double>, v3: SIMD2<Double>)
 ```
 
-- **Parameters:** `u` — parameter; `fromK1`, `toK2` — knot span indices.
+- **Parameters:** `u`, parameter; `fromK1`, `toK2`, knot span indices.
 - **Returns:** Tuple `(point, v1, v2, v3)`.
 - **OCCT:** `Geom2d_BSplineCurve::LocalD3`.
 - **Example:**
@@ -851,7 +851,7 @@ Evaluates the N-th derivative within a knot span.
 public func bsplineLocalDN(u: Double, fromK1: Int, toK2: Int, n: Int) -> SIMD2<Double>
 ```
 
-- **Parameters:** `u` — parameter; `fromK1`, `toK2` — span indices; `n` — derivative order.
+- **Parameters:** `u`, parameter; `fromK1`, `toK2`, span indices; `n`, derivative order.
 - **Returns:** N-th derivative vector at `u` within the span.
 - **OCCT:** `Geom2d_BSplineCurve::LocalDN`.
 - **Example:**
@@ -869,7 +869,7 @@ Evaluates only the curve value (no derivatives) within a knot span.
 public func bsplineLocalValue(u: Double, fromK1: Int, toK2: Int) -> SIMD2<Double>
 ```
 
-- **Parameters:** `u` — parameter; `fromK1`, `toK2` — span indices.
+- **Parameters:** `u`, parameter; `fromK1`, `toK2`, span indices.
 - **Returns:** Point on the curve.
 - **OCCT:** `Geom2d_BSplineCurve::LocalValue`.
 - **Example:**
@@ -887,7 +887,7 @@ Locates the knot span indices enclosing a parameter value.
 public func bsplineLocateU(u: Double, paramTol: Double) -> (i1: Int, i2: Int)
 ```
 
-- **Parameters:** `u` — parameter to locate; `paramTol` — tolerance for coincidence with a knot.
+- **Parameters:** `u`, parameter to locate; `paramTol`, tolerance for coincidence with a knot.
 - **Returns:** Tuple `(i1, i2)` of 1-based knot indices bracketing `u`. Use as `fromK1`/`toK2` in local evaluation methods.
 - **OCCT:** `Geom2d_BSplineCurve::LocateU`.
 - **Example:**
@@ -939,7 +939,7 @@ Returns the knot value at a 1-based index.
 public func bsplineKnot(index: Int) -> Double
 ```
 
-- **Parameters:** `index` — 1-based knot index (valid range: `bsplineFirstUKnotIndex ... bsplineLastUKnotIndex`).
+- **Parameters:** `index`, 1-based knot index (valid range: `bsplineFirstUKnotIndex ... bsplineLastUKnotIndex`).
 - **Returns:** Knot parameter value; `0` if not a BSpline or index is out of range.
 - **OCCT:** `Geom2d_BSplineCurve::Knot`.
 - **Example:**
@@ -974,7 +974,7 @@ The knot multiplicity at a 1-based index.
 public func bsplineMultiplicity(index: Int) -> Int
 ```
 
-- **Parameters:** `index` — 1-based knot index.
+- **Parameters:** `index`, 1-based knot index.
 - **Returns:** Multiplicity at the knot; `0` if not a BSpline or index is out of range.
 - **OCCT:** `Geom2d_BSplineCurve::Multiplicity`.
 - **Example:**
@@ -1113,7 +1113,7 @@ Tests whether the BSpline is at least C*n* continuous.
 public func bsplineIsCN(_ n: Int) -> Bool
 ```
 
-- **Parameters:** `n` — continuity order to test.
+- **Parameters:** `n`, continuity order to test.
 - **Returns:** `true` if the curve is at least C*n*; `false` otherwise or if not a BSpline.
 - **OCCT:** `Geom2d_BSplineCurve::IsCN`.
 - **Example:**
@@ -1134,7 +1134,7 @@ Inserts a new pole after a given 1-based index in a 2D Bézier curve.
 public func bezierInsertPoleAfter(_ index: Int, point: SIMD2<Double>) -> Bool
 ```
 
-- **Parameters:** `index` — 1-based index after which to insert; `point` — new pole coordinates.
+- **Parameters:** `index`, 1-based index after which to insert; `point`, new pole coordinates.
 - **Returns:** `true` on success, `false` if not a Bézier or `index` is out of range.
 - **OCCT:** `Geom2d_BezierCurve::InsertPoleAfter`.
 - **Example:**
@@ -1155,7 +1155,7 @@ public func bezierRemovePole(_ index: Int) -> Bool
 
 Removing a pole lowers the degree by one. A Bézier must have at least 2 poles.
 
-- **Parameters:** `index` — 1-based pole index to remove.
+- **Parameters:** `index`, 1-based pole index to remove.
 - **Returns:** `true` on success, `false` if not a Bézier or the operation would violate constraints.
 - **OCCT:** `Geom2d_BezierCurve::RemovePole`.
 - **Example:**
@@ -1176,7 +1176,7 @@ public func bezierSegment(u1: Double, u2: Double) -> Bool
 
 The curve is reparametrized so the new domain is `[0, 1]`.
 
-- **Parameters:** `u1`, `u2` — start and end parameters within the current domain `[0, 1]`.
+- **Parameters:** `u1`, `u2`, start and end parameters within the current domain `[0, 1]`.
 - **Returns:** `true` on success, `false` if not a Bézier.
 - **OCCT:** `Geom2d_BezierCurve::Segment`.
 - **Example:**
@@ -1195,9 +1195,9 @@ Raises the degree of a 2D Bézier curve (adds poles to preserve shape).
 public func bezierIncreaseDegree(_ degree: Int) -> Bool
 ```
 
-Degree elevation is exact — the curve shape does not change.
+Degree elevation is exact, the curve shape does not change.
 
-- **Parameters:** `degree` — new degree (must be greater than the current degree).
+- **Parameters:** `degree`, new degree (must be greater than the current degree).
 - **Returns:** `true` on success, `false` if not a Bézier or the requested degree is not higher.
 - **OCCT:** `Geom2d_BezierCurve::Increase`.
 - **Example:**

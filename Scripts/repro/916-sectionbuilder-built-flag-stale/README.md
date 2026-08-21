@@ -9,7 +9,7 @@ past a build that no longer applied.
 
 ## Finding a live trigger
 
-Issue #916 was filed with the defect identified by code reading, with **no live repro yet** — a
+Issue #916 was filed with the defect identified by code reading, with **no live repro yet**, a
 quick attempt (two far-apart, non-intersecting boxes) never made `BRepAlgoAPI_Section::Build()`
 report `IsDone() == false`; it just produces an empty, still-`IsDone()` section.
 
@@ -17,15 +17,15 @@ report `IsDone() == false`; it just produces an empty, still-`IsDone()` section.
 (`Libraries/occt-src/src/ModelingAlgorithms/TKBO/{BRepAlgoAPI,BOPAlgo}/*.cxx`) to find the actual
 clean (non-throwing) failure paths. Two exist:
 
-1. `myArguments.IsEmpty() || myTools.IsEmpty()` (`BRepAlgoAPI_BooleanOperation::Build`) — only
+1. `myArguments.IsEmpty() || myTools.IsEmpty()` (`BRepAlgoAPI_BooleanOperation::Build`), only
    reachable before either side has ever been initialized. `Init1`/`Init2` always
    `myArguments.Clear(); myArguments.Append(...)`, so on a builder that already built successfully
-   once, this side is never empty again — unreachable for the "reused builder" scenario.
-2. `aIt.Value().IsNull()` (`BOPAlgo_PaveFiller::Init`, checking each combined argument) —
+   once, this side is never empty again, unreachable for the "reused builder" scenario.
+2. `aIt.Value().IsNull()` (`BOPAlgo_PaveFiller::Init`, checking each combined argument),
    `AddError(new BOPAlgo_AlertNullInputShapes); return;`, cleanly, no exception.
 
 Path 2 requires a literal null `TopoDS_Shape` as one of the arguments. A 13-scenario sweep against
-the real pinned kernel (`section_repro_scenarios` below, not committed — see transcripts in this
+the real pinned kernel (`section_repro_scenarios` below, not committed, see transcripts in this
 README) confirmed this is the *only* clean failure trigger reachable with realistic geometry, and
 that none of the following make `Build()` cleanly fail on an ordinary shape:
 
@@ -35,23 +35,23 @@ that none of the following make `Build()` cleanly fail on an ordinary shape:
 | A shape sectioned against itself (identical object) | `IsDone()=1` |
 | Empty compound as one argument | `IsDone()=1` |
 | Degenerate zero-area (collinear-point) face vs. a plane | `IsDone()=1` |
-| NaN plane coefficients (`gp_Pln(nan,nan,nan,nan)` — does not throw, unlike `gp_Dir`) | `IsDone()=1` |
-| Zero plane coefficients (`gp_Pln(0,0,0,0)` — also does not throw against this pinned kernel, contrary to what the `gp_Dir` zero-norm check alone would suggest) | `IsDone()=1` |
+| NaN plane coefficients (`gp_Pln(nan,nan,nan,nan)`, does not throw, unlike `gp_Dir`) | `IsDone()=1` |
+| Zero plane coefficients (`gp_Pln(0,0,0,0)`, also does not throw against this pinned kernel, contrary to what the `gp_Dir` zero-norm check alone would suggest) | `IsDone()=1` |
 | An invalid, #905-style uncapped closed loft solid (`checkResult.isValid == false`) as an argument | `IsDone()=1` |
 | Two exactly-coincident spheres | `IsDone()=1` |
-| Too few arguments (empty ctor, no init at all) | `IsDone()=0` (correct — but unreachable on a builder that already built once) |
+| Too few arguments (empty ctor, no init at all) | `IsDone()=0` (correct, but unreachable on a builder that already built once) |
 | A literal null `TopoDS_Shape` argument, first build | `IsDone()=0` |
-| A literal null `TopoDS_Shape` argument, **on a builder that already built successfully once** | `IsDone()=0` — **the reused-builder trigger** |
+| A literal null `TopoDS_Shape` argument, **on a builder that already built successfully once** | `IsDone()=0`, **the reused-builder trigger** |
 
 `BRepAlgoAPI_Section`/BOPAlgo is robust against "geometrically weird but structurally valid" input:
 it either succeeds (with a degenerate, empty, or otherwise garbage-but-non-null result) or throws
 deep inside `PerformInternal`, which OCCT's own code catches internally
-(`BOPAlgo_PaveFiller::Perform`) and converts to a clean `HasErrors()` — but none of the 13 realistic
+(`BOPAlgo_PaveFiller::Perform`) and converts to a clean `HasErrors()`, but none of the 13 realistic
 scenarios above actually reached that internal catch either; they all just succeeded.
 
 **Conclusion**: a null-`TopoDS_Shape` argument is the only clean, non-throwing trigger for a
 `!IsDone()` rebuild failure on an already-successful `BRepAlgoAPI_Section`, and it is **not
-reachable from OCCTSwift's public Swift API** — `Shape` never wraps a null `TopoDS_Shape` (matching
+reachable from OCCTSwift's public Swift API**, `Shape` never wraps a null `TopoDS_Shape` (matching
 this project's "fallible operations return optionals" convention), and neither
 `OCCTSectionBuilderInit1Shape`/`Init2Shape` nor any Swift-level shape constructor can produce one.
 
@@ -59,11 +59,11 @@ this project's "fallible operations return optionals" convention), and neither
 
 Rather than stop at "logically true but unproven," `occt_916_section_builder_stale.mm` compiles
 `Sources/OCCTBridge/src/OCCTBridge_Modeling.mm` **unmodified** and drives its real, exported
-`OCCTSectionBuilder*` C functions directly — the exact code Swift calls through, not a
+`OCCTSectionBuilder*` C functions directly, the exact code Swift calls through, not a
 reimplementation. The only hand-crafted piece is the trigger itself: an `OCCTShape` (mirroring
 `OCCTBridge_Internal.h`'s definition exactly) wrapping a default-constructed, genuinely-null
 `TopoDS_Shape`, standing in for "the one input Swift's type system cannot produce." Everything else
-— the box, the sphere, the successful first build — is real, ordinary geometry.
+,  the box, the sphere, the successful first build, is real, ordinary geometry.
 
 This found something worse than the issue anticipated: **an uncatchable SIGSEGV**, not just a stale
 non-nil answer. See `before.txt`. Root cause: the failed rebuild's `BOPAlgo_PaveFiller::Init()`
@@ -109,7 +109,7 @@ the `!IsDone()` path and the `catch (...)` path, mirroring PR #912's `OCCTThruSe
 mirrored #912's own second-review finding (the `AddWire`/`AddVertex` staleness gap): all six
 `OCCTSectionBuilderInit1Shape`/`Init1Plane`/`Init1Surface`/`Init2Shape`/`Init2Plane`/`Init2Surface`
 now reset `built = false` on success too, closing the adjacent "re-init after a successful build,
-without rebuilding" gap — reachable through pure Swift (unlike the null-shape SIGSEGV above) and
+without rebuilding" gap, reachable through pure Swift (unlike the null-shape SIGSEGV above) and
 covered by `Tests/OCCTStressTests/StressBuilderLifecycleTests.swift`'s
 `ancestorFaceNilAfterReinitWithoutRebuild`.
 

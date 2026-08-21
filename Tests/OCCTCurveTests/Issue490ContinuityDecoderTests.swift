@@ -25,7 +25,7 @@ struct Issue490CurveContinuityTests {
 
         // Measured: AdvApprox throws Standard_ConstructionError for anything but C0/C1/C2, which
         // the bridge's catch(...) turns into nil. The decoder does not paper over that by
-        // substituting C2 — asking for more than the operation supports fails the call.
+        // substituting C2, asking for more than the operation supports fails the call.
         #expect(curve.approximated(tolerance: 1e-3, continuity: 0) != nil)
         #expect(curve.approximated(tolerance: 1e-3, continuity: 1) != nil)
         #expect(curve.approximated(tolerance: 1e-3, continuity: 2) != nil)
@@ -36,7 +36,7 @@ struct Issue490CurveContinuityTests {
         #expect(curve.approxWithDetails(tolerance: 1e-3, continuity: .c3).curve == nil)
 
         // The saturating rule is visible here: an out-of-range request asks for CN, which this
-        // operation cannot deliver, so it fails rather than quietly approximating at C2 — which is
+        // operation cannot deliver, so it fails rather than quietly approximating at C2, which is
         // what the retired local copy did, while its neighbours floored the same input to CN or C1.
         #expect(curve.approximated(tolerance: 1e-3, continuity: 99) == nil)
     }
@@ -66,7 +66,7 @@ struct Issue490CurveContinuityTests {
         let atC3 = curve.splitByContinuity(criterion: 3).count
         #expect(atC3 > 1)
 
-        // 4 is CN, the top of the same ladder, which is what criterion 4 has always documented —
+        // 4 is CN, the top of the same ladder, which is what criterion 4 has always documented,
         // and now what every out-of-range value decodes to, in every entry point.
         #expect(curve.splitByContinuity(criterion: 4).count >= atC3)
         #expect(curve.splitByContinuity(criterion: 99).count >= atC3)
@@ -102,7 +102,7 @@ struct Issue490CurveContinuityTests {
         else { return }
 
         // The order is echoed back verbatim, so what makes each one a *different question* is the
-        // set of classes it measures — see Issue495CurveAnalysisOrderTests for that half.
+        // set of classes it measures, see Issue495CurveAnalysisOrderTests for that half.
         for order in [ContinuityClass.c0, .g1, .c1, .g2, .c2] {
             let analysis = try #require(c1.continuityWith(c2, u1: c1.domain.upperBound,
                                                           u2: c2.domain.lowerBound, order: order))
