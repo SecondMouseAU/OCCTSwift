@@ -567,10 +567,11 @@ so the question is not re-asked from scratch.
   a `Handle(GeomPlate_Surface)`, which comes from `GeomPlate_BuildPlateSurface`, not from
   `NLPlate_NLPlate`.
 - **The 20x20 sample grid is fixed, so `tolerance` describes a fit the caller cannot resolve.**
-  Same family as #479 and #558. It shows on a cylinder: the solver hits the constraint target
-  exactly and the fitted surface lands 52.3 away from it, because 20 samples across a full turn of
-  a radius-10 cylinder cannot carry the plate. Exposing the grid size is a public API addition, so
-  it waits for its own issue rather than riding this fix.
+  Same family as #479 and #558. It shows on a cylinder: `NLPlate_NLPlate` hits the constraint
+  target exactly, the fitted surface misses it by 13.5, and the worst deviation between the fit and
+  the solver anywhere on the domain is 52.3. Twenty samples across a full turn of a radius-10
+  cylinder cannot carry a plate whose own excursions reach 128.8. Exposing the grid size is a public
+  API addition, so it waits for its own issue rather than riding this fix.
 
 **The working domain itself is derived, not the input's own domain, whenever the input is
 unbounded.** Each direction is taken from the input surface where the input bounds it, and from

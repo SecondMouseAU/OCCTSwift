@@ -145,8 +145,11 @@ that no test asserted a coordinate, not that the fixture made the defect vanish.
   1.97e23 fit. It is not #1049 and not #1046.
 - **The 20x20 sample grid is still hardcoded**, so the `tolerance` a caller passes is compared
   against a fit whose input resolution they cannot influence. Fixture 5 is where it shows: the
-  solver hits the cylinder's constraint target exactly and the fit lands 52.3 away from it. Same
-  family as #479 and #558, recorded in `docs/occtswift-wrapping-gaps.md` rather than fixed here.
+  solver hits the cylinder's constraint target exactly, the fit misses it by 13.5, and the worst
+  deviation between the fit and the solver anywhere on the domain is 52.3, against a plate whose own
+  excursions reach 128.8. Two different numbers for two different questions, kept apart on purpose.
+  Same family as #479 and #558, recorded in `docs/occtswift-wrapping-gaps.md` rather than fixed
+  here.
 
 Periodicity is also still lost. A linear knot map restores the parametrisation of the returned
 surface but cannot make a fitted open BSpline close on itself, which is the limitation #1046's own
