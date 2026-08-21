@@ -238,12 +238,16 @@ SUB-KIND 4 ALGORITHM (#726's own blind spot, demonstrated by Pass 4a). The first
 all ask a question about an OUTPUT: is this RHS a literal, is this count pinned, does this flag ever
 flip. None of them asks where the value came FROM, so a function that queries a throwaway object it
 built itself, or hands a parameter straight back, satisfies every one of them. Measured against
-#1000's six deleted members: sub-kinds 1, 2 and 3 report none of the six. For every function body
-in `Sources/OCCTBridge/`:
+#1000's six deleted members, reconstructed from PR #1002's own diff: sub-kinds 1 and 3 report none
+of the six, and sub-kind 2 reads `Tests/` rather than the bridge, so it has no opinion on them at
+all. For every function body in `Sources/OCCTBridge/`:
 
   - Seed a taint set with the function's declared PARAMETER names, split on top-level commas so a
     template argument or a function-pointer parameter does not split into pieces.
-  - Grow it to a fixpoint by four routes, each proven necessary by its own removal-matrix row:
+  - Grow it to a fixpoint by four routes, each with its own removal-matrix row in
+    `Scripts/repro/726-unfed-subjects/README.md`, except that the two call routes share their
+    fixtures (the receiver walk exists to widen the group the call rule builds, so no fixture can
+    separate them) and are told apart by the tree count instead:
     an assignment or a constructor argument (`TDF_Label lab = doc->getLabel(id);`); a call that
     hands caller data to an object (`builder.Add(pc);`); the same call edge IN REVERSE, since a
     method call on a caller-fed receiver FILLS its out-arguments
@@ -320,6 +324,11 @@ rather than reasoned about, which is the point of listing them:
     `Draft_FaceInfo` from the caller's surface, checked nothing, and returned `true`. In text it is
     identical to a setter reporting that it ran, and to an RAII scope guard constructed for its
     side effect, so five of the six members are caught here and the sixth is not.
+  - THE SWIFT SIDE IS NOT SWEPT FOR THIS SHAPE. Sub-kind 3 has a Swift half because a gate flag can
+    be a Swift computed property; a throwaway OCCT subject cannot, since `Sources/OCCTSwift` never
+    constructs an OCCT object (it holds opaque bridge handles and calls C functions), and every one
+    of #1000's six members was a one-line forward to the bridge function that built the throwaway. If a Swift-side equivalent ever appears (a local built and
+    queried inside a computed property), it would need its own detector, not a widening of this one.
   - A HELPER CALLED BY THE ENTRY POINT IS ANALYSED SEPARATELY, NOT INLINED. A throwaway subject
     built inside a `static` helper is reported against the helper, and a subject the entry point
     feeds to a helper that ignores it is not reported at all. There is no call graph here, the same
