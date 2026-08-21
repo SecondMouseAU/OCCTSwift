@@ -31,6 +31,23 @@ struct Issue1054SelfIntersectFaultKind {
         #expect(empty.isSelfIntersecting(timeout: 0) == nil)
     }
 
+    /// A null shape is the analyzer's *other* `BOPAlgo_BadType` branch, and it also changed.
+    ///
+    /// `TestTypes` catches `myShape1.IsNull() && myShape2.IsNull()` before it ever consults
+    /// `BOPTools_AlgoTools3D::IsEmptyShape`, so `nullified`'s result reaches `BadType` by a
+    /// different route than `emptied`'s and used to answer `true` for the same wrong reason.
+    /// Pinned separately because one fixture does not cover the other's branch.
+    @Test("a null shape is indeterminate too, by the analyzer's other BadType branch")
+    func nullShapeIsIndeterminate() {
+        guard let box = Shape.box(width: 10, height: 10, depth: 10), let null = box.nullified
+        else {
+            #expect(Bool(false), "a box and its nullified copy should both build")
+            return
+        }
+        #expect(null.isNull)
+        #expect(null.isSelfIntersecting(timeout: 0) == nil)
+    }
+
     /// The rejected fixture keeps meaning its name.
     ///
     /// If `emptied` ever stopped dropping the sub-shapes, the test above would pass for the
@@ -81,32 +98,42 @@ struct Issue1054SelfIntersectFaultKind {
     /// The `wrong` assertion is one-sided: with the watchdog read first, a clean box can only
     /// answer `false` or `nil`, so timing alone can never fail it, and only the defect can.
     ///
-    /// The two witnesses either side of it are what stop a green run from being vacuous. A sweep
-    /// where every step completed proves nothing, and so does one where every step was
-    /// interrupted before the analysis recorded anything, so both outcomes have to appear:
-    /// requiring a `nil` and a `false` brackets the point where the analysis starts completing,
-    /// which is the regime the spurious results live next to. The bound is widened until that
-    /// happens rather than derived from one warm-up timing, because a single first measurement
-    /// (lazy kernel init, a transient) can be far enough off to put every step on one side.
+    /// The assertion beside it is what stops a green run from being vacuous, and "at least one
+    /// `nil` and at least one `false`" is not enough for that. A span far larger than the real
+    /// runtime brackets trivially, with the few `nil`s coming from the shortest timeouts, which
+    /// abort before the analysis has recorded anything at all. The regime this test exists for is
+    /// the *tail*, where the analysis is nearly done and the interference map still holds the
+    /// adjacency pairs a completed run would have cleared. So the sweep converges the span on the
+    /// measured runtime from both directions, and then requires a **tenth of the steps on each
+    /// side**, which can only hold when the transition sits well inside the sweep rather than at
+    /// an edge.
+    ///
+    /// Converging both ways is the load-bearing part. A warm-up `isSelfIntersecting(timeout: 0)`
+    /// can over-measure steady state badly (cold process, loaded runner), and a loop that only
+    /// ever widens drives that error the wrong way, monotonically.
     @Test("a clean solid never reports self-intersection at any timeout")
     func cleanSolidNeverReportsSelfIntersection() {
         guard let box = Shape.box(width: 10, height: 10, depth: 10) else {
             #expect(Bool(false))
             return
         }
-        let started = Date()
-        #expect(box.isSelfIntersecting(timeout: 0) == false)
-        let uninterrupted = max(Date().timeIntervalSince(started), 0.0005)
+        // The minimum of several runs, not one warm-up: the first analysis in a process pays
+        // costs the other 200 will not, and the minimum is the estimator least disturbed by that.
+        var runtime = Double.greatestFiniteMagnitude
+        for _ in 0..<5 {
+            let started = Date()
+            #expect(box.isSelfIntersecting(timeout: 0) == false)
+            runtime = Swift.min(runtime, Date().timeIntervalSince(started))
+        }
+        runtime = max(runtime, 0.0002)
 
         let steps = 200
+        let flank = steps / 10
         var wrong = 0
         var interrupted = 0
         var completed = 0
-        var span = uninterrupted * 1.2
-        // Widen until both outcomes appear. Each attempt doubles the span, so a warm-up that
-        // under-measured the real runtime by any factor is corrected in a few rounds rather
-        // than failing the run.
-        for _ in 0..<8 {
+        var span = runtime * 1.2
+        for _ in 0..<12 {
             wrong = 0
             interrupted = 0
             completed = 0
@@ -118,8 +145,14 @@ struct Issue1054SelfIntersectFaultKind {
                 case .some(false): completed += 1
                 }
             }
-            if wrong > 0 || (interrupted > 0 && completed > 0) { break }
-            span *= 2
+            if wrong > 0 || (interrupted >= flank && completed >= flank) { break }
+            // Every step completed means even the shortest timeout outlasted the analysis, so
+            // the span is too large; every step aborted means the longest did not, so it is too
+            // small. Anything in between is a transition too close to an edge, and halving
+            // brings it inward.
+            let allCompleted = completed >= steps - flank
+            let allInterrupted = interrupted >= steps - flank
+            span = allInterrupted && !allCompleted ? span * 2 : span / 2
         }
 
         #expect(
@@ -127,8 +160,8 @@ struct Issue1054SelfIntersectFaultKind {
             "a clean box reported self-intersection at \(wrong) of \(steps) timeouts spanning \(span)s"
         )
         #expect(
-            interrupted > 0 && completed > 0,
-            "the \(steps)-timeout sweep over \(span)s did not bracket the completion point (\(interrupted) interrupted, \(completed) completed), so it never reached the regime this test exists for"
+            interrupted >= flank && completed >= flank,
+            "the \(steps)-timeout sweep over \(span)s put only \(interrupted) interrupted and \(completed) completed either side of the transition, fewer than \(flank) on a side, so it never sampled the tail this test exists for (box runtime \(runtime)s)"
         )
     }
 }

@@ -153,8 +153,13 @@ struct Issue598PipeShellFrenetModeTests {
         // Unbounded (timeout: 0) rather than a wall-clock bound, since #1054: an analysis the
         // watchdog aborts now answers nil, where it used to answer true off the abort's own
         // BOPAlgo_OperationAborted. A bound would make a slow machine fail these two assertions
-        // instead of passing them by accident. The whole test measures 0.175s here, so there is
-        // nothing for a bound to protect against.
+        // instead of passing them by accident. The whole test measures 0.175s here (0.196s on a
+        // second machine), so there is nothing for a bound to protect against today. The trade
+        // is deliberate and worth stating: if this fixture ever grows enough to matter, the
+        // failure mode becomes a hung job rather than a red test. A cooperative bound would not
+        // reliably prevent that either, since it is polled at OCCT's checkpoints and this call
+        // has a long checkpoint-free stretch (#293), which is why the bound was dropped rather
+        // than raised.
         #expect(frenet.isSelfIntersecting(timeout: 0) == true,
                 ".frenet is expected to self-intersect at this spine's curvature inflection")
         #expect(corrected.isSelfIntersecting(timeout: 0) == false,

@@ -16174,6 +16174,11 @@ DEFINE_STANDARD_HANDLE(OCCTBoolTimeoutBreaker, Message_ProgressIndicator)
 // watchdog interrupting the build, 0 for every other failure (#1067). The breaker is
 // declared outside the try so the catch can read it too, since an abort that unwinds as
 // an exception is still an abort.
+//
+// tripped() is read here only to EXPLAIN a NULL that IsDone() already decided on, never to
+// decide one. OCCTShapeSelfIntersectsBounded below reads the same flag before its results
+// instead, because BOPAlgo_ArgumentAnalyzer has no IsDone() to decide with; see the comment
+// there for why that difference is the same rule and not two (#1054).
 template <typename BoolOpT>
 static OCCTShapeRef runBooleanEx(OCCTShapeRef shape1,
                                  OCCTShapeRef shape2,
@@ -16305,10 +16310,13 @@ OCCTShapeRef OCCTShapeIntersectEx(OCCTShapeRef shape1,
 // and summarised in docs/reference/Shape-Features.md (#1054).
 //
 // runBooleanEx above reads the same OCCTBoolTimeoutBreaker::tripped() flag in the
-// opposite order, deliberately (#1067/#1079). The rule both follow is the same one: ask
-// the watchdog only where the operation cannot say for itself whether it finished. A
-// BRepAlgoAPI_BooleanOperation can, through IsDone(), so a completed build is kept even
-// if a late poll happened to trip. BOPAlgo_ArgumentAnalyzer exposes no equivalent: no done
+// opposite order, deliberately (#1067/#1079). The rule both follow is about which signal
+// decides whether the work COMPLETED, not about whether the watchdog is consulted at all:
+// each asks the operation first if the operation can answer, and the watchdog only to
+// explain an answer already given. A BRepAlgoAPI_BooleanOperation can answer, through
+// IsDone(), so runBooleanEx consults tripped() inside the !IsDone() branch and its catch,
+// to say WHY the build produced nothing, and a completed build is kept even if a late poll
+// happened to trip. BOPAlgo_ArgumentAnalyzer exposes no equivalent: no done
 // flag, a result list populated the same way whether it ran to the end or not, and a
 // progress position that is no substitute, since every scope advances to its own end when
 // it is destroyed (measured: an aborted run still closes "Analyze shapes" at pos=1.000).
@@ -16375,8 +16383,9 @@ int32_t OCCTShapeSelfIntersectsBounded(OCCTShapeRef shape, double timeoutSeconds
     // BOPAlgo_CheckUnknown is the other status that can share the list with a genuine
     // interference, since Perform's own catch appends it after TestSelfInterferences has
     // run. Both mean the analysis did not finish, so both outrank what it managed to
-    // record. BOPAlgo_BadType cannot share the list: TestTypes records it only for a shape
-    // with no geometry, and TestSelfInterferences skips that same shape.
+    // record. BOPAlgo_BadType cannot share the list either, on both of the branches that
+    // record it: a shape with no geometry (BOPTools_AlgoTools3D::IsEmptyShape) and a null
+    // shape, which TestTypes catches first. TestSelfInterferences skips both.
     if (otherFault)
       return -1; // analysed something, but not the question asked
     if (selfIntersects)
