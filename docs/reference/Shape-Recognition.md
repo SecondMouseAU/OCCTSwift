@@ -248,12 +248,20 @@ public func bisectorIntersections(
 
 The bisector of `(a, b)` is intersected with the bisector of `(c, d)`. The result is the circumcenter when the two pairs form a triangle.
 
-Each bisector is a **half-line**, not a full line: it starts at its pair's midpoint and runs along one of the two perpendicular directions, the one OCCT selects from the sector the bridge supplies. So reversing a pair, passing `b, a` where you passed `a, b`, flips which way that half-line points, and a crossing that was found becomes an empty result. An empty result therefore has two causes: the two bisectors do not cross at all, or they cross on the dead side of one of the half-lines.
+Each bisector is a **half-line**, not a full line: it starts at its pair's midpoint and runs along one of the two perpendicular directions, the one OCCT selects from the sector the bridge supplies. So reversing a pair, passing `b, a` where you passed `a, b`, flips which way that half-line points, and a crossing that was found becomes an empty result.
+
+An empty result therefore has **three** causes, and they are not distinguished in the return value:
+
+1. The two bisectors are parallel and never cross.
+2. They cross, but on the dead side of one of the half-lines.
+3. They **coincide**, overlapping along their whole length. OCCT reports an overlap as a segment rather than a point, and this function reports only points, so two bisectors that meet everywhere come back as meeting nowhere. Reversing one pair flips a ray and turns the same input into a single point. Tracked as [#1070](https://github.com/SecondMouseAU/OCCTSwift/issues/1070).
 
 Each bisector is searched over **its own full parameter range**, so a crossing is found however far from the midpoints it falls. Until [#1050](https://github.com/SecondMouseAU/OCCTSwift/issues/1050) the search was clamped to a fixed `[-100, 100]` window unrelated to the caller's points, and a crossing past parameter 100 came back empty, indistinguishable from a genuine miss.
 
+Accuracy degrades with distance, because a crossing far from both midpoints means two nearly parallel bisectors. Measured against the closed-form crossing, the absolute error in the returned point is about 1e-13 at parameter 100, 1e-5 at 1e6, 0.07 at 1e8 and 614 at 1e10. Treat a crossing many orders of magnitude from the input points as a direction rather than a position.
+
 - **Parameters:** `a`, `b`, first point pair; `c`, `d`, second point pair, all as `(x, y)`.
-- **Returns:** Array of intersection points (zero, one, or two).
+- **Returns:** Array of intersection points. Two distinct half-lines meet at most once, so this is empty or holds a single point; see the three causes above for what empty means.
 - **OCCT:** `Bisector_Bisec` (its point-point `Perform`) / `Bisector_Inter` via `OCCTBisectorInterPointPoint`.
 - **Example:**
   ```swift

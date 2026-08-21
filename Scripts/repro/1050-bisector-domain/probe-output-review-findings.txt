@@ -1,0 +1,23 @@
+f1  coincident bisectors: both pairs vertical on the same x, so both bisectors are y=5
+
+  c,d = (0,4),(0,6)  same order      NbPoints=0 NbSegments=1 (bridge returns [] since it reads NbPoints only)
+  c,d = (0,6),(0,4)  reversed        NbPoints=1 NbSegments=0 
+  c,d = (0,-10),(0,20) wider         NbPoints=0 NbSegments=1 (bridge returns [] since it reads NbPoints only)
+  identical pair                     NbPoints=0 NbSegments=1 (bridge returns [] since it reads NbPoints only)
+
+
+f2  accuracy at large u, BOTH rays live
+
+  Construction: bisector 1 of A(0,0) B(0,10) runs -x from (0,5), target (-u,5).
+  C and D are solved so bisector 2 reaches the target, swapped if the ray points away.
+
+  u            u1 reported      x reported         abs error in x   rel error     
+  100          100              -100               1.13687e-13      1.14e-15      
+  1000         1000             -1000              6.0254e-12       6.03e-15      
+  1e+04        10000            -10000             6.91216e-11      6.91e-15      
+  1e+05        100000           -100000            9.84437e-08      9.84e-13      
+  1e+06        1000000          -1000000.00001     1.00052e-05      1e-11         
+  1e+07        9999999.999      -9999999.99932     0.000680139      6.8e-11       
+  1e+08        100000000.1      -100000000.073     0.0730629        7.31e-10      
+  1e+09        999999994.1      -999999994.103     5.89695          5.9e-09       
+  1e+10        1.000000061e+10  -10000000613.7     613.682          6.14e-08      

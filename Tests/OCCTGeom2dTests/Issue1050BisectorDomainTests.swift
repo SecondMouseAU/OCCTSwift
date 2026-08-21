@@ -18,6 +18,15 @@ import simd
 /// no reachable meeting point that must still report none. Every expected point is solved in closed
 /// form from the perpendicular-bisector equations, independent of OCCT. Measurements and the
 /// candidate-bound comparison are in `Scripts/repro/1050-bisector-domain/`.
+///
+/// Three of the six are labelled **regression guards** rather than coverage, because they were
+/// measured to be insensitive to the thing under test and none of the three injections in the
+/// removal matrix turns any of them red. `Bisector_Inter::Perform` re-clips whatever domain it is
+/// given to `max(IntervalFirst, MinDomain)`, so no domain choice can conjure a point where the
+/// half-lines do not meet, and the coincident-points case throws before a domain is built at all.
+/// They earn their place by keeping "reported nothing" meaningful, which is the whole distinction
+/// this issue turns on, and a change that made one of them fail would be a regression rather than a
+/// caught defect. Saying so is the point: an unlabelled test that cannot fail looks like coverage.
 @Suite("Issue1050 bisector intersection domain")
 struct Issue1050BisectorDomainTests {
 
@@ -55,11 +64,12 @@ struct Issue1050BisectorDomainTests {
         }
     }
 
-    /// Two parallel bisectors have no solution at all, and must report none.
+    /// Regression guard. Two parallel bisectors have no solution at all, and must report none.
     ///
-    /// Both pairs are vertical, so both bisectors are horizontal lines, y=5 and y=50. The
-    /// closed-form solve is singular. This is the control that keeps "found nothing" meaningful:
-    /// a domain wide enough to admit every answer must still admit no answer here.
+    /// Both pairs are vertical, so both bisectors are horizontal lines, y=5 and y=50, and the
+    /// closed-form solve is singular. Insensitive to the bound by measurement: all three injections
+    /// leave it green, and a symmetric `[-LastParameter, LastParameter]` domain still yields zero
+    /// points. It keeps "found nothing" meaningful, which is what the issue turns on.
     @Test("Parallel bisectors still report no intersection")
     func parallelBisectorsReportNothing() {
         let hits = bisectorIntersections(
@@ -68,12 +78,13 @@ struct Issue1050BisectorDomainTests {
         #expect(hits.isEmpty)
     }
 
-    /// The two bisector lines cross, but not on the half-lines OCCT keeps.
+    /// Regression guard. The two bisector lines cross, but not on the half-lines OCCT keeps.
     ///
     /// A stronger miss than the parallel one: the closed form has a solution here, at about
     /// (10000, 5), and it is still correct to report nothing, because the first bisector's
     /// half-line runs the other way from its midpoint. A bound wide enough to reach parameter
-    /// 10000 must not start inventing an answer on the dead side of the ray.
+    /// 10000 must not start inventing an answer on the dead side of the ray. Insensitive to the
+    /// bound by the same measurement as the parallel guard above.
     @Test("A crossing on the dead side of the half-line reports no intersection")
     func crossingOnDeadSideReportsNothing() {
         let hits = bisectorIntersections(
@@ -102,11 +113,12 @@ struct Issue1050BisectorDomainTests {
         }
     }
 
-    /// A pair of coincident points has no bisector, and the bridge refuses rather than crashing.
+    /// Regression guard. A pair of coincident points has no bisector, and the bridge refuses
+    /// rather than crashing.
     ///
     /// `gp_Vec2d::Normalize()` raises `Standard_ConstructionError` on the zero-length perpendicular
-    /// before any domain is built, so this is unaffected by the bound and is here to record that
-    /// the refusal survives the change.
+    /// before any domain is built, so the bound is never reached and this cannot fail under any
+    /// injection. It is here to record that the refusal survives the change.
     @Test("Coincident points return no intersection rather than crashing")
     func coincidentPointsReturnNothing() {
         #expect(bisectorIntersections(a: (5, 5), b: (5, 5), c: (-55, 0), d: (-45, 0)).isEmpty)

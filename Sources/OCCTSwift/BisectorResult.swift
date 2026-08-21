@@ -1,6 +1,6 @@
 import Foundation
-import simd
 import OCCTBridge
+import simd
 
 // BisectorPoint was declared here: a Swift struct with no public initializer and no constructor
 // call site anywhere in this module, mirroring the orphaned OCCTBisectorPointOnBis/
@@ -16,22 +16,44 @@ public struct BisectorIntersection {
     public let paramOnSecond: Double
 }
 
-/// Compute intersections between perpendicular bisectors of two point pairs.
-/// The bisector of (a,b) is intersected with the bisector of (c,d).
-/// Returns intersection points (the circumcenter for triangle problems).
+/// Computes where the perpendicular bisector of `(a, b)` crosses that of `(c, d)`.
+///
+/// Each bisector is a half-line from its pair's midpoint, so reversing a pair can turn a crossing
+/// into an empty result, and an empty result has three causes that are not distinguished here. See
+/// `docs/reference/Shape-Recognition.md` for those and for the accuracy of a distant crossing.
+///
+/// - Parameters:
+///   - a: First point of the first pair, as `(x, y)`.
+///   - b: Second point of the first pair.
+///   - c: First point of the second pair.
+///   - d: Second point of the second pair.
+/// - Returns: The crossing, or an empty array. Two distinct half-lines meet at most once.
+///
+/// ```swift
+/// // The circumcentre of the triangle (0,0) (4,0) (2,3).
+/// let hits = bisectorIntersections(a: (0, 0), b: (4, 0), c: (4, 0), d: (2, 3))
+/// // hits[0].x == 2, hits[0].y == 0.8333...
+///
+/// // A crossing far from all four points is found too, since #1050.
+/// let far = bisectorIntersections(a: (0, 0), b: (0, 10), c: (-155, 0), d: (-145, 0))
+/// // far[0].x == -150, far[0].y == 5, far[0].paramOnFirst == 150
+/// ```
 public func bisectorIntersections(
     a: (Double, Double), b: (Double, Double),
     c: (Double, Double), d: (Double, Double)
 ) -> [BisectorIntersection] {
-    var points = [OCCTBisectorIntersectionPoint](repeating: OCCTBisectorIntersectionPoint(), count: 10)
+    var points = [OCCTBisectorIntersectionPoint](
+        repeating: OCCTBisectorIntersectionPoint(), count: 10)
     let count = points.withUnsafeMutableBufferPointer { buf in
-        OCCTBisectorInterPointPoint(a.0, a.1, b.0, b.1,
-                                     c.0, c.1, d.0, d.1,
-                                     buf.baseAddress, Int32(buf.count))
+        OCCTBisectorInterPointPoint(
+            a.0, a.1, b.0, b.1,
+            c.0, c.1, d.0, d.1,
+            buf.baseAddress, Int32(buf.count))
     }
     return (0..<Int(count)).map { i in
-        BisectorIntersection(x: points[i].x, y: points[i].y,
-                             paramOnFirst: points[i].paramOnFirst,
-                             paramOnSecond: points[i].paramOnSecond)
+        BisectorIntersection(
+            x: points[i].x, y: points[i].y,
+            paramOnFirst: points[i].paramOnFirst,
+            paramOnSecond: points[i].paramOnSecond)
     }
 }

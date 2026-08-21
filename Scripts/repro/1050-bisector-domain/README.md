@@ -14,9 +14,11 @@ wrong.
 
 | file | what it is |
 |---|---|
-| `occt_1050_bisector_domain.mm` | the probe, four parts, compile line in its own header |
-| `probe-output.txt` | the transcript this README quotes |
+| `occt_1050_bisector_domain.mm` | the main probe, four parts, compile line in its own header |
+| `probe-output.txt` | its transcript, quoted throughout this README |
 | `build-discriminating-fixture.py` | solves for the fixture that separates the two candidate bounds |
+| `occt_1050_review_findings.mm` | the second probe, which corrected two claims this README got wrong |
+| `probe-output-review-findings.txt` | its transcript |
 
 Build and run:
 
@@ -163,9 +165,34 @@ u          deg      u1 measured  u2 measured  2*span+1   curve own range        
 
 Every miss has a **negative** `u2`: `Bisector_Bisec::Perform` kept the ray pointing away from the
 crossing, so there is nothing there for any bound to find. Once conditioned on that, the curve's own
-range finds every reachable row and the sequence is monotone. There is no kernel accuracy limit
-here, and the apparent non-monotonicity (u=100 missed while u=150 and u=300 are found) is entirely
-that ray choice.
+range finds every reachable row and the sequence is monotone. The apparent non-monotonicity (u=100
+missed while u=150 and u=300 are found) is entirely that ray choice.
+
+**This part does not support "there is no kernel accuracy limit", and a draft of this README said it
+did.** Five of the eight rows have the ray pointing away, so the sweep never produced a live
+crossing past u=300 and could not answer the question its own heading asks. The pre-PR review caught
+it. `occt_1050_review_findings.mm` re-runs the sweep with C and D swapped whenever the ray points the
+wrong way, so every row is live, and there **is** a limit:
+
+| u | reported x | absolute error | relative |
+|---|---|---|---|
+| 1e2 | -100 | 1.1e-13 | 1.1e-15 |
+| 1e4 | -10000 | 6.9e-11 | 6.9e-15 |
+| 1e6 | -1000000.00001 | 1.0e-5 | 1.0e-11 |
+| 1e8 | -100000000.073 | 0.073 | 7.3e-10 |
+| 1e10 | -10000000613.7 | 614 | 6.1e-8 |
+
+That is conditioning, not a defect: a crossing that far from both midpoints means two nearly
+parallel half-lines, and the crossing's position is ill-conditioned in their angle. It is the fix's
+own claim that needed narrowing, not the fix. `docs/reference/Shape-Recognition.md` now carries the
+caveat, where the first draft said a crossing is found "however far" with no qualifier.
+
+`occt_1050_review_findings.mm` also records a second thing the review found, unrelated to the bound:
+two **coincident** bisectors overlap along their whole length, OCCT reports that as a segment rather
+than a point, and this bridge function reads only `NbPoints()`, so the caller gets an empty array
+for two bisectors that meet everywhere. Reversing one pair flips a ray and returns a single point
+instead. Pre-existing, a different mechanism from this issue, and filed as
+[#1070](https://github.com/SecondMouseAU/OCCTSwift/issues/1070) rather than folded in here.
 
 This also corrected the probe itself. An earlier draft computed reachability from the four input
 points, assuming the ray ran along `perp(B - A)` normalised because that is what the bridge passes
@@ -189,6 +216,16 @@ against the real bridge, with disjoint failure sets so each isolates a different
 The second row is the one that matters for the choice of bound: it is wider than 100 and passes the
 issue's own fixture, so only the discriminating test separates it from the fix. The third row fails
 a control the shipped code passes, which is the throw reaching `catch (...)`.
+
+**Three of the six tests fail under no injection at all**, and they are labelled regression guards in
+the suite rather than counted as coverage. `parallelBisectorsReportNothing`,
+`crossingOnDeadSideReportsNothing` and `coincidentPointsReturnNothing` are provably insensitive to
+the bound: `Bisector_Inter::Perform` re-clips any domain to `max(IntervalFirst, MinDomain)`, so no
+domain choice can produce a point where the half-lines do not meet (a symmetric
+`[-LastParameter, LastParameter]` domain still yields zero on both), and the coincident-points case
+throws in `gp_Vec2d::Normalize()` before a domain is built. They keep "reported nothing" meaningful,
+which is the distinction the whole issue turns on, so they are worth having. Labelling them is the
+point: an unlabelled test that cannot fail looks exactly like coverage.
 
 ## Sibling sites
 

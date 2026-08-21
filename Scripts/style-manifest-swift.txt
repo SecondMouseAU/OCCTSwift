@@ -9,7 +9,6 @@ Sources/OCCTSwift/ApproxResult.swift
 Sources/OCCTSwift/ArcLengthCurveAdaptor.swift
 Sources/OCCTSwift/AsDesTracker.swift
 Sources/OCCTSwift/AxisPlacement2D.swift
-Sources/OCCTSwift/BisectorResult.swift
 Sources/OCCTSwift/BiTgteCurveOnEdge.swift
 Sources/OCCTSwift/BndLib.swift
 Sources/OCCTSwift/BooleanResult.swift
