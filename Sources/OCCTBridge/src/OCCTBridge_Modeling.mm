@@ -16297,7 +16297,8 @@ OCCTShapeRef OCCTShapeIntersectEx(OCCTShapeRef shape1,
 // BOPAlgo_ArgumentAnalyzer's self-interference test is authoritative but can be slow
 // (>10s on the #206 B-spline operands) or unbounded, so it runs with StopOnFirstFaulty
 // and the same wall-clock watchdog as the booleans.
-//   returns:  1 = self-intersects,  0 = clean,  -1 = indeterminate (timed out / errored)
+//   returns:  1 = self-intersects,  0 = clean,
+//            -1 = indeterminate (timed out, argument refused, or errored)
 // The watchdog is read before the results and the results are read by status rather
 // than through HasFaulty(), both because HasFaulty() answers a wider question than the
 // one asked here; the measurements are in Scripts/repro/1054-selfintersect-fault-kinds/

@@ -1,16 +1,16 @@
 import Foundation
-import simd
 import OCCTBridge
+import simd
 
 /// Result of shape analysis, containing counts of various problems found.
 public struct ShapeAnalysisResult {
-    /// Number of edges smaller than tolerance
+    /// Number of edges smaller than tolerance.
     public let smallEdgeCount: Int
 
-    /// Number of faces smaller than tolerance
+    /// Number of faces smaller than tolerance.
     public let smallFaceCount: Int
 
-    /// Number of gaps between edges/faces
+    /// Number of gaps between edges/faces.
     public let gapCount: Int
 
     /// Whether the shape self-intersects, or `nil` if ``Shape/analyze(tolerance:selfIntersectionTimeout:)``
@@ -18,7 +18,8 @@ public struct ShapeAnalysisResult {
     ///
     /// `nil` means **unmeasured, not clean**: it covers two distinct cases the type deliberately
     /// does not distinguish, the caller passed `selfIntersectionTimeout: nil` (the default), or
-    /// passed a timeout but the check did not resolve within it (matches
+    /// passed a timeout and the check did not resolve, whether because the timeout elapsed, the
+    /// analyzer refused the argument, or it errored (matches
     /// ``Shape/isSelfIntersecting(timeout:)``'s own `nil` = indeterminate). Either way, treat
     /// `nil` as "unknown", the same rule `isSelfIntersecting` already documents.
     ///
@@ -51,17 +52,19 @@ public struct ShapeAnalysisResult {
     /// ```
     public let hasSelfIntersection: Bool?
 
-    /// Number of free (unconnected) edges across every shell of the analyzed shape, via
-    /// `ShapeAnalysis_Shell`. Before #702 this was hardcoded to 0 for every shape: the bridge
+    /// Number of free (unconnected) edges across every shell of the analyzed shape.
+    ///
+    /// Via `ShapeAnalysis_Shell`. Before #702 this was hardcoded to 0 for every shape: the bridge
     /// called `LoadShells()`, which only registers a shell for bookkeeping and runs no edge
     /// analysis, instead of `CheckOrientedShells()`, which is what actually populates the
     /// free-edge set. A shape with a genuine gap, an open shell, or a solid `healed()`/
     /// `fixSolid()` could not close and returned as a shell instead, read 0 here regardless.
     public let freeEdgeCount: Int
 
-    /// Number of shells, among every shell of the analyzed shape, found to have at least one
-    /// free edge (i.e. not fully closed). Same #702 fix as ``freeEdgeCount``, since both come
-    /// from the same per-shell scan.
+    /// Number of shells found to have at least one free edge.
+    ///
+    /// Counted across every shell of the analyzed shape, where "free edge" means not fully
+    /// closed. Same #702 fix as ``freeEdgeCount``, since both come from the same per-shell scan.
     ///
     /// Not counted in ``totalProblems``: this is a derived summary of the same scan, not an
     /// independent defect. It is never nonzero unless ``freeEdgeCount`` is also nonzero (a shell
@@ -70,7 +73,7 @@ public struct ShapeAnalysisResult {
     /// edge and once more as a flat "+1 shell" (#717 review).
     public let freeFaceCount: Int
 
-    /// Whether the topology is invalid
+    /// Whether the topology is invalid.
     public let hasInvalidTopology: Bool
 
     /// Total number of problems found.

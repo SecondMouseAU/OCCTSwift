@@ -140,7 +140,6 @@ Sources/OCCTSwift/Shape+Math.swift
 Sources/OCCTSwift/Shape+Mesh.swift
 Sources/OCCTSwift/Shape+ShapeHealing.swift
 Sources/OCCTSwift/Shape+Surface.swift
-Sources/OCCTSwift/ShapeAnalysisResult.swift
 Sources/OCCTSwift/ShapeContents.swift
 Sources/OCCTSwift/ShapeContentsExtended.swift
 Sources/OCCTSwift/ShapeDistance.swift

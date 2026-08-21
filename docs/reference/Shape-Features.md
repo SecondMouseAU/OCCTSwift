@@ -1699,8 +1699,9 @@ public struct ShapeAnalysisResult {
   forwards to `isSelfIntersecting(timeout:)` and not `isSelfIntersecting(hardTimeout:)` (measuring
   both, not just the pathological case, found the latter is not a strict improvement here). `nil`
   covers two cases the type deliberately does not distinguish: not requested, or requested but
-  indeterminate (the check did not resolve within the timeout, matching `isSelfIntersecting`'s own
-  `nil` = indeterminate). `nil` is never "clean": only `hasSelfIntersection == false` means that.
+  indeterminate (the check did not resolve, whether because the timeout elapsed, the analyzer
+  refused the argument, or it errored, matching `isSelfIntersecting`'s own `nil` = indeterminate).
+  `nil` is never "clean": only `hasSelfIntersection == false` means that.
   `totalProblems` adds a flat +1 when `hasSelfIntersection == true`, +0 for `false` or `nil`, so
   it never reflects self-intersection unless the analysis actually checked for it.
 - **`freeEdgeCount`/`freeFaceCount` were hardcoded to 0 for every shape before #702**: the bridge
@@ -1799,7 +1800,7 @@ public func analyze(tolerance: Double = 1e-6, selfIntersectionTimeout: Double? =
       switch a.hasSelfIntersection {
       case .some(true):  print("self-intersects")
       case .some(false): print("clean")
-      case nil:          print("indeterminate, timeout elapsed before a checkpoint")
+      case nil:          print("indeterminate: not resolved, never \"clean\"")
       }
   }
   ```

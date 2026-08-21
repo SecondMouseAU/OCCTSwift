@@ -2437,7 +2437,7 @@ public final class Shape: @unchecked Sendable {
         switch OCCTShapeSelfIntersectsBounded(handle, timeout) {
         case 1: return true
         case 0: return false
-        default: return nil  // -1: indeterminate (timed out / errored)
+        default: return nil  // -1: indeterminate (timed out, refused, or errored)
         }
     }
 

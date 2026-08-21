@@ -314,7 +314,7 @@ extension Shape {
     ///     switch analysis.hasSelfIntersection {
     ///     case .some(true):  print("self-intersects")
     ///     case .some(false): print("clean")
-    ///     case nil:          print("indeterminate, timeout elapsed before a checkpoint")
+    ///     case nil:          print("indeterminate: not resolved, never \"clean\"")
     ///     }
     /// }
     /// ```
