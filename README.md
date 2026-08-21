@@ -25,17 +25,10 @@ dependencies: [
 
 The package ships a pre-built `OCCT.xcframework` as a release asset, so no source build of OCCT is required for end users.
 
-### What your own target has to set
-
-Nothing, as long as it is Swift. A target that does `import OCCTSwift` needs no
-`cxxLanguageStandard`, no `.interoperabilityMode(.Cxx)` and no extra build settings.
-
-`OCCT.xcframework` does put OCCT's own ~7,000 C++ headers on your target's include path, so
-`#include <STEPControl_Reader.hxx>` resolves from a file in your project. Such a file must be
-Objective-C++ (`.mm`) or C++ (`.cpp`), never Objective-C (`.m`) or C, and its target must be at
-C++17 or later. A `.m` file fails with `'type_traits' file not found` inside OCCT's own headers
-(#967). See
-[`docs/guides/consuming-from-objective-c.md`](docs/guides/consuming-from-objective-c.md).
+A Swift target that does `import OCCTSwift` needs nothing else: no `cxxLanguageStandard`, no
+`.interoperabilityMode(.Cxx)`, no extra build settings. A file of *yours* that includes an OCCT
+header does have requirements, and a `.m` file fails there with `'type_traits' file not found`
+(#967). See [Consuming the package](docs/guides/consuming-from-objective-c.md).
 
 ### Usage
 

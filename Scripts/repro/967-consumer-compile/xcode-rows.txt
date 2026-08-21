@@ -1,0 +1,66 @@
+Captured xcodebuild output for the Xcode rows of README.md's grid.
+
+Paths are normalised: the agent worktree prefix reads <repo> and the throwaway project and
+derived-data directories read <work>. Nothing else is altered.
+
+########## the consumer package, macOS ##########
+** BUILD SUCCEEDED **
+
+[exited with code 0]
+########## a real Xcode macOS app project with the package dependency, Swift only ##########
+** BUILD SUCCEEDED **
+
+[exited with code 0]
+########## the same app forced to CLANG_CXX_LIBRARY=libstdc++ ##########
+** BUILD SUCCEEDED **
+
+[exited with code 0]
+########## the consumer package: iOS, iOS Simulator, Mac Catalyst, visionOS, tvOS ##########
+########## generic/platform=iOS ##########
+** BUILD SUCCEEDED **
+########## generic/platform=iOS Simulator ##########
+** BUILD SUCCEEDED **
+########## platform=macOS,variant=Mac Catalyst ##########
+** BUILD FAILED **
+<work>/spm-clone-a0bcfe4cb957c2dd4/artifacts/occtswift/OCCT/OCCT.xcframework:1:1: error: While building for Mac Catalyst, no library for this platform was found in '<work>/spm-clone-a0bcfe4cb957c2dd4/artifacts/occtswift/OCCT/OCCT.xcframework'. (in target 'ConsumerLib' from project 'Consumer967')
+<work>/spm-clone-a0bcfe4cb957c2dd4/artifacts/occtswift/OCCT/OCCT.xcframework:1:1: error: While building for Mac Catalyst, no library for this platform was found in '<work>/spm-clone-a0bcfe4cb957c2dd4/artifacts/occtswift/OCCT/OCCT.xcframework'. (in target 'OCCTBridge' from project 'OCCTSwift')
+<work>/spm-clone-a0bcfe4cb957c2dd4/artifacts/occtswift/OCCT/OCCT.xcframework:1:1: error: While building for Mac Catalyst, no library for this platform was found in '<work>/spm-clone-a0bcfe4cb957c2dd4/artifacts/occtswift/OCCT/OCCT.xcframework'. (in target 'OCCTSwift' from project 'OCCTSwift')
+########## generic/platform=visionOS ##########
+		{ platform:tvOS, id:dvtdevice-DVTiOSDevicePlaceholder-appletvos:placeholder, name:Any tvOS Device, error:tvOS 26.5 is not installed. Please download and install the platform from Xcode > Settings > Components. }
+		{ platform:visionOS, id:dvtdevice-DVTiOSDevicePlaceholder-xros:placeholder, name:Any visionOS Device, error:visionOS 26.5 is not installed. Please download and install the platform from Xcode > Settings > Components. }
+		{ platform:watchOS, id:dvtdevice-DVTiOSDevicePlaceholder-watchos:placeholder, name:Any watchOS Device, error:watchOS 26.5 is not installed. Please download and install the platform from Xcode > Settings > Components. }
+xcodebuild: error: Unable to find a destination matching the provided destination specifier:
+########## generic/platform=tvOS ##########
+		{ platform:tvOS, id:dvtdevice-DVTiOSDevicePlaceholder-appletvos:placeholder, name:Any tvOS Device, error:tvOS 26.5 is not installed. Please download and install the platform from Xcode > Settings > Components. }
+		{ platform:visionOS, id:dvtdevice-DVTiOSDevicePlaceholder-xros:placeholder, name:Any visionOS Device, error:visionOS 26.5 is not installed. Please download and install the platform from Xcode > Settings > Components. }
+		{ platform:watchOS, id:dvtdevice-DVTiOSDevicePlaceholder-watchos:placeholder, name:Any watchOS Device, error:watchOS 26.5 is not installed. Please download and install the platform from Xcode > Settings > Components. }
+xcodebuild: error: Unable to find a destination matching the provided destination specifier:
+
+[exited with code 0]
+########## the app with an Objective-C .m file including <STEPControl_Reader.hxx>, then renamed .mm ##########
+########## ROW: app target has OCCTBridge.m (Objective-C) including <STEPControl_Reader.hxx> ##########
+** BUILD FAILED **
+<work>/xcodeapp-objc-967-a0bcfe4cb957c2dd4/dd/Build/Products/Debug/include/Standard_Std.hxx:19:10: error: 'type_traits' file not found (in target 'AppObjC967' from project 'AppObjC967')
+########## ROW: same file renamed OCCTBridge.mm (Objective-C++) ##########
+** BUILD FAILED **
+/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.5.sdk/usr/include/c++/v1/__type_traits/is_trivially_copyable.h:23:35: note: 'is_trivially_copyable' declared here
+/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.5.sdk/usr/include/c++/v1/__type_traits/is_trivially_destructible.h:25:35: note: 'is_trivially_destructible' declared here
+<work>/xcodeapp-objc-967-a0bcfe4cb957c2dd4/dd/Build/Products/Debug/include/NCollection_IndexedDataMap.hxx:115:29: error: no type named 'in_place_t' in namespace 'std'
+<work>/xcodeapp-objc-967-a0bcfe4cb957c2dd4/dd/Build/Products/Debug/include/NCollection_LinearVector.hxx:135:26: error: no template named 'is_trivially_copyable_v' in namespace 'std'; did you mean 'is_trivially_copyable'?
+<work>/xcodeapp-objc-967-a0bcfe4cb957c2dd4/dd/Build/Products/Debug/include/NCollection_LinearVector.hxx:135:62: error: expected unqualified-id
+<work>/xcodeapp-objc-967-a0bcfe4cb957c2dd4/dd/Build/Products/Debug/include/NCollection_LinearVector.hxx:531:24: error: no template named 'is_trivially_copyable_v' in namespace 'std'; did you mean 'is_trivially_copyable'?
+<work>/xcodeapp-objc-967-a0bcfe4cb957c2dd4/dd/Build/Products/Debug/include/NCollection_LinearVector.hxx:531:60: error: expected unqualified-id
+<work>/xcodeapp-objc-967-a0bcfe4cb957c2dd4/dd/Build/Products/Debug/include/NCollection_LinearVector.hxx:555:25: error: no template named 'is_trivially_destructible_v' in namespace 'std'; did you mean 'is_trivially_destructible'?
+<work>/xcodeapp-objc-967-a0bcfe4cb957c2dd4/dd/Build/Products/Debug/include/NCollection_LinearVector.hxx:555:65: error: expected '(' for function-style cast or type construction
+<work>/xcodeapp-objc-967-a0bcfe4cb957c2dd4/dd/Build/Products/Debug/include/NCollection_LinearVector.hxx:568:24: error: no template named 'is_trivially_copyable_v' in namespace 'std'; did you mean 'is_trivially_copyable'?
+<work>/xcodeapp-objc-967-a0bcfe4cb957c2dd4/dd/Build/Products/Debug/include/NCollection_LinearVector.hxx:568:60: error: expected unqualified-id
+
+[exited with code 0]
+########## the .mm row again with CLANG_CXX_LANGUAGE_STANDARD=c++17 ##########
+### effective CLANG_CXX_LANGUAGE_STANDARD for the app target ###
+    CLANG_CXX_LANGUAGE_STANDARD = gnu++14
+    CLANG_CXX_LIBRARY = libc++
+########## ROW: OCCTBridge.mm with CLANG_CXX_LANGUAGE_STANDARD=c++17 ##########
+** BUILD SUCCEEDED **
+
+[exited with code 0]

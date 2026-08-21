@@ -1,6 +1,6 @@
 ---
 title: Consuming the package
-nav_order: 6
+nav_order: 2
 ---
 
 # Consuming the package, and reaching OCCT's C++ API from your own code
@@ -57,6 +57,16 @@ generated Xcode project, and the SwiftPM default with no `cxxLanguageStandard` i
 manifest). Set `CLANG_CXX_LANGUAGE_STANDARD` to `c++17` or later on an Xcode target, or declare
 `cxxLanguageStandard: .cxx17` in your own `Package.swift`.
 
+### Expect OCCT's own deprecation warnings
+
+OCCT 8.0 deprecates its legacy spellings (`Standard_True`, `Standard_Real`, the `TopTools_*` map
+and list typedefs, `TColStd_Array1Of*`) in favour of native C++ types and explicit `NCollection_*`
+templates. Your file inherits those warnings, the same way this package's bridge did before #281:
+roughly 684 of them per build there. `OCCT_NO_DEPRECATED` is OCCT's own opt-out, defined in
+`Standard_Macro.hxx`, and this package sets it on its own bridge target only. Define it on yours as
+well if the noise is drowning your own diagnostics, remembering that it buys quiet rather than
+absolution: the spellings are still deprecated and will eventually be removed upstream.
+
 ## Check the Swift API first
 
 Most reasons to write that file are already wrapped. Reading a STEP file and measuring it is Swift:
@@ -72,6 +82,14 @@ try shape.writeSTL(to: stlURL, deflection: 0.05)
 `Document.loadSTEP(from:)` is the assembly-aware version, when you want the product structure,
 colours and names rather than one merged shape. See
 [`docs/API_REFERENCE.md`](../API_REFERENCE.md) for the full surface.
+
+**That route is Swift only, and this page would otherwise imply otherwise.** `Sources/OCCTSwift`
+carries no `@objc` declarations, and the package vends exactly one library product, `OCCTSwift`, so
+`OCCTBridge` is not something a consumer can import either. An Objective-C file cannot call `Shape`
+or `Document`. If your app is Objective-C, the two options are a small Swift file of your own that
+does the OCCT work and exposes an `@objc` facade to the rest of your app, or the `.mm` route above
+talking to OCCT's C++ directly. The `.mm` route is more code and puts you on OCCT's own API rather
+than this one, which is the trade this page exists to make visible rather than to decide for you.
 
 ## Mac Catalyst
 

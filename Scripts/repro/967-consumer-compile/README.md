@@ -101,8 +101,13 @@ Two things it guards, each proved able to fail rather than assumed:
   requires its own `Compiling ConsumerLang Repro967<ext>` line first, and reports `not_compiled`
   otherwise.
 
-The Xcode rows were run against a generated app project and are not scripted here, since generating
-one needs a tool this repo does not depend on.
+The Xcode rows are not scripted, because generating an app project needs a tool this repo does not
+depend on, and Mac Catalyst, visionOS and tvOS destinations need platforms a given machine may not
+have installed. Their captured `xcodebuild` output is committed as `xcode-rows.txt` instead, so
+those rows are evidenced even though they are not re-runnable from here.
+
+All three transcripts have their absolute paths normalised to `<repo>` and `<work>`, and say so in
+their own first lines, because the originals named an agent worktree that no longer exists.
 
 ## Why no test holds this
 

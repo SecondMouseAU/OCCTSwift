@@ -1,13 +1,18 @@
+Output of the three-leg header injection described in README.md's "Why no test holds this".
+
+Paths are normalised: the checkout prefix reads <repo> and the throwaway consumer
+package directory reads <work>. Nothing else is altered.
+
 === leg 1, control: unmodified OCCTBridge.h, touched to force a full recompile ===
 [15/24] Compiling OCCTBridge_Document.mm
 [16/24] Compiling OCCTBridge_Curve3D.mm
 Build complete! (35.22s)
 === leg 2, injected: OCCTBridge.h line 18 includes <Standard_Std.hxx> ===
-/Users/elb/Projects/OCCTSwift/.claude/worktrees/agent-a0bcfe4cb957c2dd4/Libraries/OCCT.xcframework/macos-arm64/Headers/Standard_Std.hxx:19:10: error: 'type_traits' file not found
+<repo>/Libraries/OCCT.xcframework/macos-arm64/Headers/Standard_Std.hxx:19:10: error: 'type_traits' file not found
    |          `- error: 'type_traits' file not found
-/Users/elb/Projects/OCCTSwift/.claude/worktrees/agent-a0bcfe4cb957c2dd4/Sources/OCCTSwift/AnalyticGeometry.swift:3:8: error: could not build Objective-C module 'OCCTBridge'
+<repo>/Sources/OCCTSwift/AnalyticGeometry.swift:3:8: error: could not build Objective-C module 'OCCTBridge'
    |        `- error: could not build Objective-C module 'OCCTBridge'
-/Users/elb/Projects/OCCTSwift/.claude/worktrees/agent-a0bcfe4cb957c2dd4/Libraries/OCCT.xcframework/macos-arm64/Headers/Standard_Std.hxx:19:10: error: 'type_traits' file not found
+<repo>/Libraries/OCCT.xcframework/macos-arm64/Headers/Standard_Std.hxx:19:10: error: 'type_traits' file not found
 === leg 3, restored, touched to force a full recompile ===
 [15/24] Compiling OCCTBridge_Surface.mm
 [16/24] Compiling OCCTBridge_Modeling.mm

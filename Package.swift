@@ -297,8 +297,12 @@ let package = Package(
         //
         // DO NOT ADD .interoperabilityMode(.Cxx) HERE without replacing what it silently removes.
         // These swiftSettings carry no C++ interop, so `import OCCTBridge` makes the compiler build
-        // that clang module in OBJECTIVE-C mode on every `swift build`, which is the only thing
-        // enforcing that no public bridge header pulls a consumer into C++. A consumer's plain
+        // that clang module in OBJECTIVE-C mode on every source-path `swift build`, which is the
+        // only thing enforcing that no public bridge header pulls a consumer into C++. Source-path,
+        // not every build: under OCCTSWIFT_BRIDGE_PREBUILT=1 the bridge is a binaryTarget and
+        // include/ is not compiled at all, so an edited public header goes unchecked there. That
+        // path is switched off above and CI never takes it, which is what makes the guarantee hold
+        // where it counts, and is also a second reason not to restore it casually. A consumer's plain
         // Swift target imports the same module the same way, so a C++ include reaching
         // Sources/OCCTBridge/include/ breaks every one of them, and #967 is what that looks like
         // from the outside: `'type_traits' file not found` inside OCCT's own headers. Measured, not
