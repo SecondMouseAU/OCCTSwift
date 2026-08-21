@@ -22,6 +22,34 @@ bounding-box accessors becoming Optional so a void shape stops fabricating `(0,0
 ## Unreleased
 
 
+### A nullified shape refuses the edge, face and vertex accessors instead of crashing (#1035)
+
+Twelve public APIs took the process down with an uncatchable SIGSEGV when handed a `Shape` from
+`Shape.nullified`: `extractEdgeCurve3D()`, `edgeCurveWithParams()`, `extractFaceSurface()`,
+`faceSurfaceGeom()`, `edgeTolerance`, `faceTolerance`, `vertexTolerance`,
+`extractEdgePCurve(onFace:)`, `isEdgeDegenerated`, the two infinite extrusions, and `ShapeFixer`.
+Each now returns the refusal it already gave a wrong-typed input (`nil`, `0` or `false`); none
+invents a value.
+
+`TopoDS::Edge` and its siblings are written `theShape.IsNull() ? false : ...`, so a null shape is
+deliberately not a type mismatch: the cast returns a null `TopoDS_Edge` and the crash happens one
+frame further out, at `BRep_Tool::Curve`, a `BRepAdaptor_Curve` constructor or
+`ShapeFix_Shape::Perform`. `Scripts/repro/1035-unwrap-guard/repro_1035.mm` measures 63 OCCT entry
+points the bridge hands a caller-supplied shape to: 17 crash uncatchably, 5 raise a catchable
+`Standard_Failure`, 41 return. 72 bridge sites reaching one of the 17 are guarded, and
+`check-null-handle-guards.py` now holds them, walking outward through the transparent casts so a new
+site of the same shape turns the check red.
+
+`ShapeFixer(shape:)` had no null test of any kind. Its declared return is `_Nonnull`, so its refusal
+is an empty handle: `perform()` returns `false` and `shape` returns `nil` for a null input.
+
+#1035's own proposal, a throwing `occtShapeIn` accessor replacing all 1405 unwraps, is declined and
+the reasoning is recorded in `Scripts/repro/1035-unwrap-guard/README.md`: at thirteen sites a null
+shape is the function's legitimate subject and today's answer is correct, so a uniform throw would
+be a regression there.
+
+
+
 None. No shipped API, behaviour or output changes; the only string literals touched are display text no test reads.
 
 
