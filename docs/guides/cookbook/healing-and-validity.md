@@ -35,8 +35,8 @@ case .none:        print("indeterminate")
 
 `nil` is not only the timeout. The analyzer also refuses a shape it cannot use as a Boolean
 Operations argument, and an aborted analysis is `nil` even when it recorded results first, since
-those results cannot be told from the ordinary face adjacency the completed pass would have
-filtered out (#1054). All of it means "unknown", never "clean".
+those results cannot be told from the ordinary face adjacency a completed pass would have
+discarded (#1054). All of it means "unknown", never "clean".
 
 For a defect inventory rather than a yes/no, `analyze(tolerance:)` returns counts:
 

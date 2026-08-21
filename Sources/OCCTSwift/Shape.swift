@@ -634,8 +634,11 @@ public final class Shape: @unchecked Sendable {
     /// - Important: `timeout` is **cooperative, not a hard deadline** (#293), exactly as on
     ///   `union`. It is a `Message_ProgressIndicator` OCCT polls at its own internal checkpoints,
     ///   so the call returns at the first checkpoint after `timeout`, not at `timeout` itself.
-    ///   ``BooleanOutcome/timedOut`` therefore means "the watchdog fired", the same
-    ///   indeterminate-not-negative contract ``isSelfIntersecting(timeout:)`` already uses.
+    ///   ``BooleanOutcome/timedOut`` therefore means "the watchdog fired", which is
+    ///   indeterminate rather than negative, the reading ``isSelfIntersecting(timeout:)`` gives
+    ///   its `nil`. The two are not the same signal: `.timedOut` is the watchdog and only the
+    ///   watchdog, while that `nil` also covers an argument the analyzer refused and an analysis
+    ///   that errored (#1054).
     ///
     /// - Parameters:
     ///   - other: The shape to fuse with `self`.
@@ -2414,10 +2417,10 @@ public final class Shape: @unchecked Sendable {
     /// - Important: `true` is reported **only** for a completed analysis whose every recorded
     ///   result is `BOPAlgo_SelfIntersect` (#1054). Two other outcomes used to read as `true` and
     ///   are now `nil`. An analysis the `timeout` aborted is `nil` even when it recorded results
-    ///   first: the filter that discards the adjacency interferences every valid solid has works
-    ///   by skipping pairs that involve a shape the intersection pass itself created, so
-    ///   interrupting that pass before it creates them lets ordinary adjacency through, and a
-    ///   clean box reports up to three self-interferences of its own. Separately, a shape
+    ///   first: the interference map a valid solid's face adjacency fills is cleared partway
+    ///   through the check and then selectively refilled, so an analysis interrupted before that
+    ///   point is read against the raw map and a clean box reports up to three
+    ///   self-interferences of its own. Separately, a shape
     ///   `BOPAlgo_ArgumentAnalyzer` rejects outright, such as ``emptied``'s result, records
     ///   `BOPAlgo_BadType`, which says nothing about self-intersection and involves no timeout
     ///   at all.

@@ -131,10 +131,15 @@ let b = blank.subtractionOutcome(tools, timeout: 30).shape
 ```
 
 `.timedOut` is **indeterminate**, not a negative result: the boolean might well have succeeded given
-longer. This is the same contract `isSelfIntersecting(timeout:)` gives its `nil`, and it inherits the
+longer. That is the reading `isSelfIntersecting(timeout:)` gives its `nil`, and it inherits the
 same caveat, that `timeout:` is cooperative rather than a hard deadline
 ([#293](https://github.com/SecondMouseAU/OCCTSwift/issues/293)). With `timeout: 0` there is no
 watchdog at all, so `.timedOut` cannot occur.
+
+The two signals are not interchangeable, though. `.timedOut` is the watchdog and only the watchdog;
+`isSelfIntersecting`'s `nil` is wider, covering a refused argument and an errored analysis as well
+([#1054](https://github.com/SecondMouseAU/OCCTSwift/issues/1054)), which is why it has no `timeout: 0`
+escape.
 
 ## Validate an operand before a boolean
 

@@ -12,7 +12,7 @@
 //     -lOCCT-macos -framework Foundation -framework AppKit -lz -lc++ \
 //     Scripts/repro/1054-selfintersect-fault-kinds/probe_fault_kinds.mm -o /tmp/probe_1054
 //
-// Usage: probe_1054 <BOX|EMPTY_COMPOUND|OVERLAP|path.brep> <argumentTypeMode 0|1> <timeout>...
+// Usage: probe_1054 <BOX|EMPTY_SOLID|EMPTY_COMPOUND|OVERLAP|path.brep> <argumentTypeMode 0|1> <timeout>...
 //   PROBE_VERBOSE=1 additionally traces every progress poll and every scope close, which is
 //   how the checkpoint-free stretches were located.
 #include <BOPAlgo_ArgumentAnalyzer.hxx>

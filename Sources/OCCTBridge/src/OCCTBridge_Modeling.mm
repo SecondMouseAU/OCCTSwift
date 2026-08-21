@@ -16308,14 +16308,16 @@ OCCTShapeRef OCCTShapeIntersectEx(OCCTShapeRef shape1,
 // opposite order, deliberately (#1067/#1079). The rule both follow is the same one: ask
 // the watchdog only where the operation cannot say for itself whether it finished. A
 // BRepAlgoAPI_BooleanOperation can, through IsDone(), so a completed build is kept even
-// if a late poll happened to trip. BOPAlgo_ArgumentAnalyzer cannot: it exposes no
-// done flag, its result list is populated the same way whether it ran to the end or not,
-// and Message_ProgressIndicator::GetPosition() is no help either, since every scope
-// advances to its own end when it is destroyed (measured: an aborted run still closes
-// "Analyze shapes" at pos=1.000). tripped() is the only completion signal there is here,
-// so it is read first and a late trip costs a real answer. That cost is the smaller one:
-// a clean box interrupted anywhere in the last fifth of its analysis reports up to three
-// self-interferences of its own.
+// if a late poll happened to trip. BOPAlgo_ArgumentAnalyzer exposes no equivalent: no done
+// flag, a result list populated the same way whether it ran to the end or not, and a
+// progress position that is no substitute, since every scope advances to its own end when
+// it is destroyed (measured: an aborted run still closes "Analyze shapes" at pos=1.000).
+// It does inherit BOPAlgo_Options::HasErrors(), which its own UserBreak calls set, and
+// that agrees with tripped() at every break point measured, but it says nothing on the
+// unbounded path this function also serves, which is the path isSelfIntersecting
+// (hardTimeout:) takes. So tripped() is read first and a late trip costs a real answer.
+// That cost is the smaller one: a clean box interrupted anywhere in the last fifth of its
+// analysis reports up to three self-interferences of its own.
 int32_t OCCTShapeSelfIntersectsBounded(OCCTShapeRef shape, double timeoutSeconds)
 {
   if (!shape)
@@ -16342,11 +16344,13 @@ int32_t OCCTShapeSelfIntersectsBounded(OCCTShapeRef shape, double timeoutSeconds
       aa.Perform();
     }
     // An aborted analysis answers nothing, whatever it recorded on the way out.
-    // BOPAlgo_CheckerSI::PostTreat fills BOPDS_DS::Interferences() from the pave filler's
-    // raw lists, skipping every pair that involves a shape the filler itself created, and
-    // on a complete run that filter empties the map for a valid solid. Interrupt the
-    // filler before it creates those shapes and the same adjacency pairs survive it, so a
-    // clean box reports up to three BOPAlgo_SelfIntersect results of its own.
+    // BOPAlgo_CheckerSI::CheckFaceSelfIntersection clears BOPDS_DS::Interferences() on
+    // entry, and the PostTreat that follows re-adds only pairs passing its own per-type
+    // gates, which for a valid solid's face adjacency is none. Interrupt the analysis
+    // before that Clear() and TestSelfInterferences reads the pave filler's own raw map
+    // instead, so a clean box reports up to three BOPAlgo_SelfIntersect results of its
+    // own. Measured in Scripts/repro/1054-selfintersect-fault-kinds/, which localises the
+    // transition to one poll with every other observable identical either side.
     if (!breaker.IsNull() && breaker->tripped())
       return -1;
     // HasFaulty() is "did any enabled mode record something", and ArgumentTypeMode is
@@ -16367,10 +16371,12 @@ int32_t OCCTShapeSelfIntersectsBounded(OCCTShapeRef shape, double timeoutSeconds
     // otherFault wins over selfIntersects, deliberately. BOPAlgo_OperationAborted is
     // appended after whatever the aborted pass had already recorded, and it is appended
     // for any BOPAlgo_CheckerSI error, not only a watchdog break, so the tripped() test
-    // above does not cover it: the unbounded entry point never has a breaker at all. The
-    // ordering costs no real answer, since the only other status this configuration can
-    // produce is BOPAlgo_BadType, and TestTypes records that only for a shape with no
-    // geometry, which cannot also self-intersect.
+    // above does not cover it: the unbounded entry point never has a breaker at all.
+    // BOPAlgo_CheckUnknown is the other status that can share the list with a genuine
+    // interference, since Perform's own catch appends it after TestSelfInterferences has
+    // run. Both mean the analysis did not finish, so both outrank what it managed to
+    // record. BOPAlgo_BadType cannot share the list: TestTypes records it only for a shape
+    // with no geometry, and TestSelfInterferences skips that same shape.
     if (otherFault)
       return -1; // analysed something, but not the question asked
     if (selfIntersects)

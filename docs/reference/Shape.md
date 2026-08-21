@@ -814,7 +814,7 @@ Same operation, same options and the same watchdog as `union` / `subtracting` / 
 - **Parameters:** identical to the matching named method.
 - **Returns:** `.success(Shape)`, `.failed`, or `.timedOut`.
 - **OCCT:** `BRepAlgoAPI_Fuse` / `_Cut` / `_Common`, each via its existing `OCCTShape*Ex` bridge function, which now also reports whether its `Message_ProgressIndicator` watchdog was the thing that stopped the build.
-- **⚠️ `timeout` is cooperative, not a hard deadline** ([#293](https://github.com/SecondMouseAU/OCCTSwift/issues/293)), exactly as on the named methods. OCCT polls it at its own internal checkpoints, so the call returns at the first checkpoint after `timeout`, not at `timeout` itself. `.timedOut` means "the watchdog fired", the same indeterminate-not-negative contract `isSelfIntersecting(timeout:)` uses for its `nil`.
+- **⚠️ `timeout` is cooperative, not a hard deadline** ([#293](https://github.com/SecondMouseAU/OCCTSwift/issues/293)), exactly as on the named methods. OCCT polls it at its own internal checkpoints, so the call returns at the first checkpoint after `timeout`, not at `timeout` itself. `.timedOut` means "the watchdog fired", which is indeterminate rather than negative, the reading `isSelfIntersecting(timeout:)` gives its `nil`. The two are not the same signal: `.timedOut` is the watchdog and only the watchdog, while that `nil` also covers a refused argument and an errored analysis (#1054).
 - **`timeout: 0` (or negative) makes `.timedOut` unreachable**, since no watchdog is constructed at all.
 - **Example:**
   ```swift

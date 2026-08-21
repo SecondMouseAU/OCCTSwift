@@ -150,9 +150,14 @@ struct Issue598PipeShellFrenetModeTests {
             Issue.record("Could not build the fixtures"); return
         }
 
-        #expect(frenet.isSelfIntersecting(timeout: 10) == true,
+        // Unbounded (timeout: 0) rather than a wall-clock bound, since #1054: an analysis the
+        // watchdog aborts now answers nil, where it used to answer true off the abort's own
+        // BOPAlgo_OperationAborted. A bound would make a slow machine fail these two assertions
+        // instead of passing them by accident. The whole test measures 0.175s here, so there is
+        // nothing for a bound to protect against.
+        #expect(frenet.isSelfIntersecting(timeout: 0) == true,
                 ".frenet is expected to self-intersect at this spine's curvature inflection")
-        #expect(corrected.isSelfIntersecting(timeout: 10) == false,
+        #expect(corrected.isSelfIntersecting(timeout: 0) == false,
                 ".correctedFrenet must stay valid at the same inflection")
     }
 

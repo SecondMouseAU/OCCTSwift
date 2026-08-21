@@ -72,18 +72,22 @@ struct Issue1054SelfIntersectFaultKind {
 
     /// A clean solid never comes back `true`, whatever the watchdog does to the analysis.
     ///
-    /// `BOPAlgo_CheckerSI::PostTreat` fills `BOPDS_DS::Interferences()` from the pave filler's
-    /// raw lists, skipping every pair that involves a shape the filler itself created, and on a
-    /// complete run that filter empties the map for a valid solid. Interrupt the filler before
-    /// it creates those shapes and the same adjacency pairs survive it, so a clean box has real
-    /// `BOPAlgo_SelfIntersect` results recorded against it.
+    /// `BOPAlgo_CheckerSI::CheckFaceSelfIntersection` clears `BOPDS_DS::Interferences()` on
+    /// entry, and the `PostTreat` that follows re-adds only pairs passing its own per-type
+    /// gates, which for a valid solid's face adjacency is none. An analysis interrupted before
+    /// that `Clear()` is read against the pave filler's own raw map instead, so a clean box has
+    /// real `BOPAlgo_SelfIntersect` results recorded against it.
     ///
-    /// The sweep is scaled to the machine (the box's own uninterrupted runtime), because the
-    /// window it is hunting for is the tail of that runtime. The `wrong` assertion is one-sided:
-    /// with the watchdog read first, a clean box can only answer `false` or `nil`, so timing
-    /// alone can never fail it. The `interrupted` assertion is the witness that the sweep
-    /// actually reached the regime it is testing, without which a sweep whose every step
-    /// completed would pass while proving nothing.
+    /// The `wrong` assertion is one-sided: with the watchdog read first, a clean box can only
+    /// answer `false` or `nil`, so timing alone can never fail it, and only the defect can.
+    ///
+    /// The two witnesses either side of it are what stop a green run from being vacuous. A sweep
+    /// where every step completed proves nothing, and so does one where every step was
+    /// interrupted before the analysis recorded anything, so both outcomes have to appear:
+    /// requiring a `nil` and a `false` brackets the point where the analysis starts completing,
+    /// which is the regime the spurious results live next to. The bound is widened until that
+    /// happens rather than derived from one warm-up timing, because a single first measurement
+    /// (lazy kernel init, a transient) can be far enough off to put every step on one side.
     @Test("a clean solid never reports self-intersection at any timeout")
     func cleanSolidNeverReportsSelfIntersection() {
         guard let box = Shape.box(width: 10, height: 10, depth: 10) else {
@@ -97,21 +101,34 @@ struct Issue1054SelfIntersectFaultKind {
         let steps = 200
         var wrong = 0
         var interrupted = 0
-        for step in 1...steps {
-            let timeout = uninterrupted * 1.2 * Double(step) / Double(steps)
-            switch box.isSelfIntersecting(timeout: timeout) {
-            case .some(true): wrong += 1
-            case .none: interrupted += 1
-            case .some(false): break
+        var completed = 0
+        var span = uninterrupted * 1.2
+        // Widen until both outcomes appear. Each attempt doubles the span, so a warm-up that
+        // under-measured the real runtime by any factor is corrected in a few rounds rather
+        // than failing the run.
+        for _ in 0..<8 {
+            wrong = 0
+            interrupted = 0
+            completed = 0
+            for step in 1...steps {
+                let timeout = span * Double(step) / Double(steps)
+                switch box.isSelfIntersecting(timeout: timeout) {
+                case .some(true): wrong += 1
+                case .none: interrupted += 1
+                case .some(false): completed += 1
+                }
             }
+            if wrong > 0 || (interrupted > 0 && completed > 0) { break }
+            span *= 2
         }
+
         #expect(
             wrong == 0,
-            "a clean box reported self-intersection at \(wrong) of \(steps) timeouts spanning its own \(uninterrupted)s runtime"
+            "a clean box reported self-intersection at \(wrong) of \(steps) timeouts spanning \(span)s"
         )
         #expect(
-            interrupted > 0,
-            "no step of the \(steps)-timeout sweep was interrupted, so it never reached the regime this test exists for (box runtime \(uninterrupted)s)"
+            interrupted > 0 && completed > 0,
+            "the \(steps)-timeout sweep over \(span)s did not bracket the completion point (\(interrupted) interrupted, \(completed) completed), so it never reached the regime this test exists for"
         )
     }
 }
