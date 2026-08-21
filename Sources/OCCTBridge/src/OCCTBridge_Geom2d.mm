@@ -182,16 +182,16 @@
 //
 // CONSEQUENCE, and it is the point rather than a side effect: this no longer returns false for a
 // point with no perpendicular foot. A point beyond the end of a bounded curve is nearest to that
-// end, and a circle's centre is equidistant from every point on it, so both now answer -- with a
+// end, and a circle's centre is equidistant from every point on it, so both now answer, with a
 // real parameter and a true distance. Each caller keeps its own documented sentinel for the case
 // that remains: no curve to answer about. None of them may report failure through the parameter,
 // since 0 is a legitimate parameter on any curve whose domain includes it.
 //
 // OCCTCurve2DProjectPointAll is the multi-solution sibling: it needs every extremum rather than
 // the nearest one, so it constructs its own and is not routed through here. It therefore still
-// reports nothing where these four now answer, and that is correct -- "the extrema" and "the
+// reports nothing where these four now answer, and that is correct: "the extrema" and "the
 // nearest point" have been different questions since #539, and on a bounded curve queried from
-// beyond its end the honest answer to the first one is that there are none.
+// beyond its end the answer to the first one is that there are none.
 static bool occtNearestProjectionOnCurve2d(OCCTCurve2DRef  curve,
                                            const gp_Pnt2d& point,
                                            gp_Pnt2d*       outNearest,
@@ -3842,19 +3842,23 @@ int OCCTBisectorInterPointPoint(double                         ax,
     if (b2.Value().IsNull())
       return 0;
 
-    // Set up domains, using a large parameter range
-    IntRes2d_Domain d1(gp_Pnt2d(b1.Value()->Value(-100)),
-                       -100.0,
-                       1e-6,
-                       gp_Pnt2d(b1.Value()->Value(100)),
-                       100.0,
-                       1e-6);
-    IntRes2d_Domain d2(gp_Pnt2d(b2.Value()->Value(-100)),
-                       -100.0,
-                       1e-6,
-                       gp_Pnt2d(b2.Value()->Value(100)),
-                       100.0,
-                       1e-6);
+    // Search each bisector over its own parameter range rather than a fixed window. Bisector_Bisec
+    // hands back a half-line trimmed to [0, Precision::Infinite()], so the [-100, 100] carried here
+    // until #1050 spent half its width off the curve and capped the live half at 100, silently
+    // dropping any meeting point past it. Bisector_Inter::Perform clips the domain against the
+    // basis curve's own continuity intervals regardless, so passing the curve's range leaves the
+    // extent of the search to OCCT instead of narrowing it here. An unbounded IntRes2d_Domain() is
+    // not the way to spell that: Perform reads FirstTolerance()/LastTolerance(), which raise
+    // Standard_DomainError when the domain has no bounds, and the catch below would turn that into
+    // the same empty result the fixed window produced.
+    const Handle(Geom2d_TrimmedCurve)& c1 = b1.Value();
+    const Handle(Geom2d_TrimmedCurve)& c2 = b2.Value();
+    const double                       f1 = c1->FirstParameter();
+    const double                       l1 = c1->LastParameter();
+    const double                       f2 = c2->FirstParameter();
+    const double                       l2 = c2->LastParameter();
+    IntRes2d_Domain d1(gp_Pnt2d(c1->Value(f1)), f1, 1e-6, gp_Pnt2d(c1->Value(l1)), l1, 1e-6);
+    IntRes2d_Domain d2(gp_Pnt2d(c2->Value(f2)), f2, 1e-6, gp_Pnt2d(c2->Value(l2)), l2, 1e-6);
 
     Bisector_Inter inter;
     inter.Perform(b1, d1, b2, d2, 1e-6, 1e-6, false);
@@ -6492,7 +6496,7 @@ OCCTCurve2DRef OCCTCurve2DTrimmed(OCCTCurve2DRef curve, double u1, double u2)
 // OCCTCurve2DGetLengthBetween (below) carries this PR's (#548) non-finite-bound rejection via
 // occtValidParameterRange, so the guard #602 originally added here now lives on the surviving
 // spelling instead of being re-added to the removed one. Its winding/domain-confinement fix (#600)
-// is on the same surviving spelling -- see OCCTCurve2DGetLengthBetween below.
+// is on the same surviving spelling, see OCCTCurve2DGetLengthBetween below.
 
 // MARK: - v0.116: gp_GTrsf2d + gp_Mat2d
 void OCCTGTrsf2dAffinity(double axPx,
@@ -9322,7 +9326,7 @@ OCCTCurve2DRef OCCTCurve2DApproximate(OCCTCurve2DRef c,
 }
 
 // #562: reports the TRUE split count even when `max` truncated the write, so the Swift caller can
-// retry at the size it was just told -- the #481 contract shared by every other member of this
+// retry at the size it was just told, the #481 contract shared by every other member of this
 // family. It used to return the written count, which capped it silently at its caller's 256-entry
 // first pass and was indistinguishable from a curve with exactly 256 splits.
 int32_t OCCTCurve2DSplitAtDiscontinuities(OCCTCurve2DRef c,

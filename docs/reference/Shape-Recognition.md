@@ -248,14 +248,26 @@ public func bisectorIntersections(
 
 The bisector of `(a, b)` is intersected with the bisector of `(c, d)`. The result is the circumcenter when the two pairs form a triangle.
 
+Each bisector is a **half-line**, not a full line: it starts at its pair's midpoint and runs along one of the two perpendicular directions, the one OCCT selects from the sector the bridge supplies. So reversing a pair, passing `b, a` where you passed `a, b`, flips which way that half-line points, and a crossing that was found becomes an empty result. An empty result therefore has two causes: the two bisectors do not cross at all, or they cross on the dead side of one of the half-lines.
+
+Each bisector is searched over **its own full parameter range**, so a crossing is found however far from the midpoints it falls. Until [#1050](https://github.com/SecondMouseAU/OCCTSwift/issues/1050) the search was clamped to a fixed `[-100, 100]` window unrelated to the caller's points, and a crossing past parameter 100 came back empty, indistinguishable from a genuine miss.
+
 - **Parameters:** `a`, `b`, first point pair; `c`, `d`, second point pair, all as `(x, y)`.
 - **Returns:** Array of intersection points (zero, one, or two).
-- **OCCT:** `Bisector_BisecCC` / `Bisector_Inter` via `OCCTBisectorInterPointPoint`.
+- **OCCT:** `Bisector_Bisec` (its point-point `Perform`) / `Bisector_Inter` via `OCCTBisectorInterPointPoint`.
 - **Example:**
   ```swift
   let hits = bisectorIntersections(a: (0, 0), b: (4, 0),
                                     c: (4, 0), d: (2, 3))
-  // hits[0] is the circumcenter of the triangle
+  // hits[0] is the circumcenter of the triangle, (2, 0.8333...)
+  ```
+- **Example:** a crossing far from the four points, which the pre-#1050 window discarded.
+  ```swift
+  // Bisector of (0,0)-(0,10) runs along -x from (0,5); bisector of
+  // (-155,0)-(-145,0) runs along +y from (-150,0). They meet at (-150, 5).
+  let far = bisectorIntersections(a: (0, 0), b: (0, 10),
+                                   c: (-155, 0), d: (-145, 0))
+  // far[0].x == -150, far[0].y == 5, far[0].paramOnFirst == 150
   ```
 
 ---
