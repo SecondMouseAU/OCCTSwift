@@ -80,7 +80,9 @@ Scripts/tsan-stress.sh all           # ThreadSanitizer gate: REQUIRED for concur
 ### Static Gate Scripts
 
 Eight gates, two censuses and one merge-history audit, all pure Python over the repo's own text. No
-OCCT, no build, no network, ~3s for the lot. **CI runs every gate, plus every `--self-test` including the census's, in `ci.yml`'s
+OCCT, no build, no network, ~3s for the lot, with one exception: a bare
+`census-unmeasured-values.py` run is ~13s since #726's sub-kind 4 walks a taint fixpoint per bridge
+function. Its `--self-test`, which is the only part CI and the hook run, stays under a second. **CI runs every gate, plus every `--self-test` including the census's, in `ci.yml`'s
 `gate-scripts` job**, a separate
 `ubuntu-latest` job, not a step inside the macOS build, so it reports in under a minute and keeps
 its own status check when `build-and-test` is red for an unrelated reason. Each exits 1 on a

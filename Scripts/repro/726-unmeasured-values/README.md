@@ -333,3 +333,12 @@ unconfirmed dedup input).
 - Full self-test transcript, guard-removal matrix, and this table are reproducible by running
   `python3 Scripts/census-unmeasured-values.py --self-test` and
   `python3 Scripts/census-unmeasured-values.py` from the repo root.
+
+## Later pass: sub-kind 4, the blind spot in the three sub-kinds above
+
+Pass 4a (#385) confirmed three instances of this issue's stated subject that the detector reported
+none of, #1000's six `DraftInfo` members among them, and the reason is structural: every sub-kind
+on this page keys on an OUTPUT shape, so a function that queries a throwaway object it built itself
+satisfies all of them. Sub-kind 4 keys on the subject instead. Its measurement, its adjudicated run
+and its own removal matrix are in
+[`Scripts/repro/726-unfed-subjects/`](../726-unfed-subjects/README.md).
