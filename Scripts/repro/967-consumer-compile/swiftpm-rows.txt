@@ -15,11 +15,11 @@
   -> expected cxx17, got cxx17: OK
 
 ########## row 4: Objective-C++ (.mm), manifest declares cxxLanguageStandard ##########
-Build of target: 'ConsumerLang' complete! (1.07s)
+Build of target: 'ConsumerLang' complete! (1.05s)
   -> expected pass, got pass: OK
 
 ########## row 5: C++ (.cpp), manifest declares cxxLanguageStandard ##########
-Build of target: 'ConsumerLang' complete! (1.78s)
+Build of target: 'ConsumerLang' complete! (0.84s)
   -> expected pass, got pass: OK
 
 all 5 rows matched their expected outcome

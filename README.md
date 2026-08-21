@@ -19,7 +19,7 @@ Add to your `Package.swift`:
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/SecondMouseAU/OCCTSwift.git", from: "1.0.0")
+    .package(url: "https://github.com/SecondMouseAU/OCCTSwift.git", from: "3.0.0")
 ]
 ```
 
@@ -177,7 +177,7 @@ Each OCCT object is managed via opaque handle types with release-on-deinit. See 
 | iOS 15+ Simulator | arm64 (Apple Silicon host) | Supported |
 | visionOS 1+ | arm64 device + simulator | **Untested**, declared and buildable, never exercised (see below) |
 | tvOS 15+ | arm64 device + simulator | **Untested**, declared and buildable, never exercised (see below) |
-| Mac Catalyst | arm64 | Not supported, no slice in the xcframework: a Catalyst destination fails with `no library for this platform was found in OCCT.xcframework` (#967) |
+| Mac Catalyst | arm64 | Not supported. A Catalyst destination fails at build planning with `no library for this platform was found in OCCT.xcframework`, and unlike the two rows above there is no local-rebuild route: `Scripts/build-occt.sh` has no Catalyst target even under `BUILD_ALL_PLATFORMS=1` |
 | watchOS |, | Out of scope (OCCT static lib too large for watch memory) |
 | macOS x86_64 (Intel) |, | Out of scope (Apple is winding down Intel macOS support) |
 | Linux / Windows / Android |, | Under review, see [docs/platform-expansion.md](docs/platform-expansion.md) |

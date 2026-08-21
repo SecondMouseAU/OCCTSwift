@@ -17,9 +17,20 @@ WORK="${1:-${TMPDIR:-/tmp}/occtswift-967-consumer}"
 PKG="$(basename "$REPO")"
 FAILURES=0
 
+# Only ever delete a directory this script made, or one that does not exist yet. $WORK is taken
+# verbatim from $1, and an `rm -rf` on a mistyped path is not a mistake worth being able to make.
+case "$WORK" in
+  /*) ;;
+  *) echo "workdir must be an absolute path, got '$WORK'" >&2; exit 2 ;;
+esac
+if [ -e "$WORK" ] && [ ! -f "$WORK/.occtswift-967-workdir" ]; then
+  echo "refusing to delete '$WORK': it exists and this script did not create it" >&2
+  exit 2
+fi
 rm -rf "$WORK"
 # SwiftPM requires a public headers directory for a C-family target, so give it an empty one.
 mkdir -p "$WORK/Sources/ConsumerLang/include"
+: > "$WORK/.occtswift-967-workdir"
 cat > "$WORK/Sources/ConsumerLang/include/ConsumerLang.h" <<'EOF'
 // Deliberately empty: the target's public surface plays no part in #967.
 EOF
@@ -67,7 +78,12 @@ row() {
   echo "$out" | grep -E "error:|Build of target" | head -4
 
   local actual="other"
-  if echo "$out" | grep -q "'type_traits' file not found"; then
+  if ! echo "$out" | grep -q "Compiling ConsumerLang Repro967$2"; then
+    # SwiftPM reports "Build of target ... complete" for a target whose sources it never handled,
+    # so a green build alone is not evidence that the file under test was compiled at all. Every
+    # row here writes a freshly named source, so its compile line is always emitted on a real run.
+    actual="not_compiled"
+  elif echo "$out" | grep -q "'type_traits' file not found"; then
     actual="type_traits"
   elif echo "$out" | grep -qE "is_trivially_copyable_v|is_trivially_destructible_v|in_place_t"; then
     actual="cxx17"

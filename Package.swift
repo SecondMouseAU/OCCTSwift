@@ -294,6 +294,18 @@ let package = Package(
         // Depends on OCCT directly (not just transitively via OCCTBridge) because a binaryTarget
         // (the OCCTSWIFT_BRIDGE_PREBUILT path above) has no "dependencies" of its own to propagate.
         // Without this, the final link would silently drop libOCCT-*.a whenever OCCTBridge is prebuilt.
+        //
+        // DO NOT ADD .interoperabilityMode(.Cxx) HERE without replacing what it silently removes.
+        // These swiftSettings carry no C++ interop, so `import OCCTBridge` makes the compiler build
+        // that clang module in OBJECTIVE-C mode on every `swift build`, which is the only thing
+        // enforcing that no public bridge header pulls a consumer into C++. A consumer's plain
+        // Swift target imports the same module the same way, so a C++ include reaching
+        // Sources/OCCTBridge/include/ breaks every one of them, and #967 is what that looks like
+        // from the outside: `'type_traits' file not found` inside OCCT's own headers. Measured, not
+        // asserted: adding `#include <Standard_Std.hxx>` to OCCTBridge.h fails `swift build` here
+        // with "could not build Objective-C module 'OCCTBridge'". Turning interop on compiles those
+        // headers as C++ instead, so the failure would move from our build to theirs. Transcript
+        // and the reasoning in Scripts/repro/967-consumer-compile/.
         .target(
             name: "OCCTSwift",
             dependencies: ["OCCTBridge", "OCCT"],

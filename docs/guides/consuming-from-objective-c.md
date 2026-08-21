@@ -1,3 +1,8 @@
+---
+title: Consuming the package
+nav_order: 6
+---
+
 # Consuming the package, and reaching OCCT's C++ API from your own code
 
 ## A Swift target needs nothing
@@ -6,11 +11,15 @@ A target that does `import OCCTSwift` needs no `cxxLanguageStandard`, no
 `.interoperabilityMode(.Cxx)` and no extra build settings. The C++ is sealed inside this package's
 own Objective-C++ bridge, and the module you import is a plain Swift one.
 
-Measured on v3.0.0, ten Swift-only consumer shapes, all green: a library target and an executable
-target under `swift build`, by URL and by local path, one of them with
-`.interoperabilityMode(.Cxx)` on the consumer's own target and one touching `Mesh`, `Surface`,
-`Curve3D` and `Document`; the same package built by `xcodebuild`; and a real Xcode macOS app project
-with the package as a dependency, on macOS, generic iOS and iOS Simulator.
+Measured on v3.0.0, ten Swift-only consumer shapes, all green:
+
+- Under `swift build`, a consumer package resolving OCCTSwift by URL and by local path; a library
+  target, a library target with `.interoperabilityMode(.Cxx)`, a library target touching `Mesh`,
+  `Surface`, `Curve3D` and `Document`, and an executable target.
+- Under `xcodebuild`, that consumer package on macOS, generic iOS and iOS Simulator.
+- Under `xcodebuild`, a real Xcode macOS app project with the package as a dependency, both with
+  Xcode's default `CLANG_CXX_LIBRARY` and forced to `libstdc++`, which changes nothing because
+  Xcode does not apply it to package targets.
 
 ## OCCT's own headers are visible, and have two requirements
 
@@ -67,8 +76,11 @@ colours and names rather than one merged shape. See
 ## Mac Catalyst
 
 There is no Mac Catalyst slice in `OCCT.xcframework`, so a Catalyst destination fails at build
-planning with `no library for this platform was found in OCCT.xcframework`. Plain macOS and iOS are
-unaffected. See the platform table in [`README.md`](../../README.md).
+planning with `no library for this platform was found in OCCT.xcframework`. Unlike visionOS and
+tvOS, which the same message describes and which `Scripts/build-occt.sh` can produce under
+`BUILD_ALL_PLATFORMS=1`, there is no local-rebuild route: that script has no Catalyst target at all.
+Plain macOS and iOS are unaffected. See the platform table in
+[README](https://github.com/SecondMouseAU/OCCTSwift#supported-platforms).
 
 ## Reproducer
 
