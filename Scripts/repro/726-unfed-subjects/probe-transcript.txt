@@ -1,0 +1,23 @@
+=== subjects the detector flags, and what a default-constructed one reports ===
+
+OSD_MemInfo heap usage   : before=145248 after 64MiB malloc=67254112  delta=67108864
+OSD_MemInfo MiB (precise): 64.138519
+OSD_MemInfo working set  : 76136448
+OSD_Process ProcessId    : 20094   (getpid() = 20094)
+OSD_Process UserName     : "elb"  (getenv USER = "elb")
+OSD_Process CurrentDir   : "/Users/elb/Projects/OCCTSwift/.claude/worktrees/agent-a34a7b014e97c601a/"
+OSD_Host HostName        : "Mac.localdomain"
+OSD_Host SystemVersion   : "Darwin 25.6.0"
+OSD_Directory temporary  : "/tmp/CSFi0DtR2"
+XCAFDoc_VisMaterialCommon default diffuse : 0.800000 0.800000 0.800000  (header says 0.8 0.8 0.8)
+XCAFDoc_VisMaterialPBR default base color : 1.000000 1.000000 1.000000
+XCAFPrs_Style default     : IsVisible=1 IsEmpty=1
+XCAFPrs_Style + surf color: IsVisible=1 IsEmpty=0  (the flag moves)
+gp_Mat2d after SetIdentity : 1 0 0 1
+
+=== the #1000 subjects, for contrast ===
+
+run 0: Draft_EdgeInfo.NewGeometry=0  Draft_FaceInfo.NewGeometry=0  Draft_VertexInfo.Geometry=(0, 0, 0)
+run 1: Draft_EdgeInfo.NewGeometry=0  Draft_FaceInfo.NewGeometry=0  Draft_VertexInfo.Geometry=(0, 0, 0)
+run 2: Draft_EdgeInfo.NewGeometry=0  Draft_FaceInfo.NewGeometry=0  Draft_VertexInfo.Geometry=(0, 0, 0)
+Draft_EdgeInfo after SetNewGeometry(true): NewGeometry=1  (the setter the deleted OCCTDraftEdgeInfoSetTangent called, with its three direction arguments unread)

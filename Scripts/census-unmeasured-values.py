@@ -2,7 +2,8 @@
 """Census #726, first pass: values that were never computed but are returned through an API whose
 shape says they were measured.
 
-Three sub-kinds, per the issue (the third added for #771):
+Four sub-kinds: three from the issue (the third added for #771), and a fourth added for the
+blind spot Pass 4a (#385) demonstrated in the first three, see sub-kind 4 below.
 
   1. PRODUCTION code assigning a bare literal to one field of an aggregate result while a sibling
      field of the same local variable, reached under the same control-flow condition, is assigned
@@ -30,6 +31,17 @@ Three sub-kinds, per the issue (the third added for #771):
      `OCCTShapeAxis.hasExtent` (`OCCTBridge_Topology.mm`, all 3 call sites `false`, none `true`),
      found by #763 and fixed on the sibling PR #770. #771 is "teach the census this shape, don't
      just trust the one-off grep that found it". See SUB-KIND 3 ALGORITHM below.
+
+  4. A value published through a return, an out-parameter or an aggregate result field, read off a
+     SUBJECT the caller's own input never reached: a local the function default-constructed, or
+     configured from literals, and then queried as though it described the caller's object. Its
+     mirror image is a function that hands a parameter straight back as its answer. The seed
+     instances are #1000's six `DraftInfo` members: five built a `Draft_EdgeInfo`/`Draft_FaceInfo`/
+     `Draft_VertexInfo` out of nothing, read one property off that throwaway and returned it, and
+     the sixth wrote `return param; // echo back`. The first three sub-kinds all key on an OUTPUT
+     shape (a literal RHS, a pinned count, a flag that never flips) and report NONE of the six,
+     which is what Pass 4a found and what this sub-kind exists to close. See SUB-KIND 4 ALGORITHM
+     below.
 
 WHY A SCRIPT, NOT A LIST IN THE ISSUE: this repo's own history of censuses built by grep and
 written into an issue body is a list of wrong numbers. #558 said 14, measured 28; #571 said 3,
@@ -222,6 +234,97 @@ plus what was found reading its own false positives on this tree:
     parens) does not parse, so the Swift detector only checks for bare `return true`/`return false`
     literal presence, without excluding a dead one.
 
+SUB-KIND 4 ALGORITHM (#726's own blind spot, demonstrated by Pass 4a). The first three sub-kinds
+all ask a question about an OUTPUT: is this RHS a literal, is this count pinned, does this flag ever
+flip. None of them asks where the value came FROM, so a function that queries a throwaway object it
+built itself, or hands a parameter straight back, satisfies every one of them. Measured against
+#1000's six deleted members: sub-kinds 1, 2 and 3 report none of the six. For every function body
+in `Sources/OCCTBridge/`:
+
+  - Seed a taint set with the function's declared PARAMETER names, split on top-level commas so a
+    template argument or a function-pointer parameter does not split into pieces.
+  - Grow it to a fixpoint by four routes, each proven necessary by its own removal-matrix row:
+    an assignment or a constructor argument (`TDF_Label lab = doc->getLabel(id);`); a call that
+    hands caller data to an object (`builder.Add(pc);`); the same call edge IN REVERSE, since a
+    method call on a caller-fed receiver FILLS its out-arguments
+    (`doc->shapeTool->GetShapes(shapes);` is how `shapes` becomes caller data); and CONTROL
+    DEPENDENCE, since a block whose own test reads caller data selects what runs inside it
+    (`if (i == index) { ... }` is how `OCCTFontMgrFontName` selects the font it returns, with no
+    assignment carrying `index` anywhere).
+  - The receiver of a call is found by walking LEFT from the callee, stepping over any intermediate
+    call's own parentheses. `logLabel.Root().FindAttribute(id, logbook)` has to yield `logLabel`,
+    not `FindAttribute`. A regex over `.`-separated identifiers stops at the `()` and yields
+    nothing, which reported `OCCTDocumentLogbookIsEmpty` as a finding until this was fixed.
+  - Taint is deliberately OVER-approximated. Over-tainting costs a candidate; under-tainting
+    reports correct code as a finding, and this is a census whose whole value is a list short
+    enough for a human to read.
+  - Collect the UNFED SUBJECTS: locals declared with a class-ish type that the taint set never
+    reached. The type test accepts a lowercase-initial name that contains an underscore, because
+    `gp_Pnt`, `gce_MakeLin` and `math_BFGS` all start lowercase; a rule spelled `[A-Z]` drops the
+    entire `gp_` family in silence, which is the same trap CLAUDE.md documents for the `occt-refman`
+    cache rebuild, and `gp_Pnt p = vi.Geometry();` is the exact statement #1000's
+    `OCCTDraftVertexInfoGeometry` published from. `Handle(T) name;` binds too, since the type name
+    sits inside parentheses where the plain declaration regex cannot see it. A local initialised
+    from a `new` expression is NOT a subject: it is a factory product (`OCCTMessengerCreate`).
+  - Collect the PUBLICATION SITES: every `return`, every write through an out-parameter
+    (`*out = ...`, `out[i] = ...`) and every aggregate result field (`r.f`, `r->f`, `r[i].f`),
+    excluding anything inside a `catch` block, for the same reason sub-kind 1 excludes it.
+  - Flag a publication when its expression READS A MEMBER of an unfed subject (`sub.M()`,
+    `sub->M()`). Reading a member is the whole point: a local handed back whole
+    (`ref->shape = compound;`) is a builder's product, not a measurement taken off it, and a `new`
+    object built from one is a factory. Both are excluded and both have their own clean fixture.
+  - Separately, report an ECHO: a function whose every non-catch `return` yields either a literal
+    or one of its own parameters, where that parameter is read NOWHERE ELSE in the body.
+    #1000's `return param; // echo back` is the seed. The "nowhere else" clause is what keeps the
+    three legitimate ones in this tree out of the list: `OCCTEdgeGetPoints`,
+    `OCCTBRepGraphSampleEdgeCurve` and `occtWriteKnotSplits` each return a `count` that also bounds
+    their write loop, which is a real answer about the call rather than the caller's own number
+    handed back untouched.
+
+WHAT SUB-KIND 4 CANNOT SEE. Three of these were measured against the Pass 4a instances themselves
+rather than reasoned about, which is the point of listing them:
+
+  - A DEFAULT-CONSTRUCTED SUBJECT THAT POPULATES ITSELF IS INDISTINGUISHABLE, IN TEXT, FROM ONE
+    THAT STAYS EMPTY. `OSD_MemInfo info;` and `Draft_EdgeInfo ei;` are the same statement. What
+    separates them is what the constructor does, and every candidate this detector reports on the
+    current tree is on the harmless side of that line: measured through a compiled probe
+    (`Scripts/repro/726-unfed-subjects/`), a fresh `OSD_MemInfo` tracks this process to the byte
+    (a 64 MiB allocation moves its heap reading by exactly 67108864), a fresh `OSD_Process` returns
+    the real `getpid()`, a fresh `XCAFDoc_VisMaterialCommon` carries the 0.8/0.8/0.8 diffuse colour
+    its own header documents, while a fresh `Draft_EdgeInfo` answers the same `false` on every one
+    of three runs. The detector cannot make that call and does not try to; the adjudicator can, in
+    one compile.
+  - `OCCTGeomPlateErrors` (#999, the second Pass 4a instance) IS NOT REPORTED, AND THAT IS
+    MEASURED, NOT ASSUMED. Its subject was fed the caller's own points and tolerance, so no
+    bridge-text rule can call it unfed; what was fabricated was inside the kernel, where
+    `GeomPlate_BuildPlateSurface` leaves `myG0Error`/`myG1Error`/`myG2Error` unwritten on the
+    point-only path and has no initialiser for them. The bridge-visible half of that site, two
+    declared parameters it never read, is what
+    `Scripts/repro/385-coverage-sample/detect-dead-parameters.py` already reports (re-run against
+    the pre-fix file: it names `OCCTGeomPlateErrors` with `maxDegree, maxSegments`), so the census
+    does not duplicate it. The kernel half needs a pass over `Libraries/occt-src`, which is what
+    #726's own comment on kernel-side sites proposes and this pass does not attempt.
+  - THE GD&T RANGE DIMENSION (#996, the third Pass 4a instance) IS NOT REPORTED EITHER, MEASURED
+    THE SAME WAY. `OCCTDocumentGetDimensionInfo` took the caller's document and index, reached the
+    caller's own dimension object, and called three real accessors on it. Every value came from a
+    genuine computation; what was wrong was that `GetLowerTolValue()` answers a flat 0 for a range
+    dimension, meaning "not applicable", and the bridge published it as a tolerance. No shape in
+    the bridge text says so. Catching that class needs the pinned headers and a rule about
+    applicability predicates the bridge never consults (`IsDimWithRange`,
+    `IsDimWithPlusMinusTolerance`), which is a different corpus and a different question from this
+    one. Sub-kind 1 does flag that function, for `info.isValid = false`, which is the "default,
+    then flip on success" shape already documented below as the common legitimate case, so the
+    flag was not evidence of the defect either.
+  - A SUBJECT FED BY THE CALLER AND THEN NEVER READ, WITH A LITERAL RETURNED INSTEAD, IS NOT
+    REPORTED. That is #1000's sixth member, `OCCTDraftFaceInfoFromSurface`: it built a
+    `Draft_FaceInfo` from the caller's surface, checked nothing, and returned `true`. In text it is
+    identical to a setter reporting that it ran, and to an RAII scope guard constructed for its
+    side effect, so five of the six members are caught here and the sixth is not.
+  - A HELPER CALLED BY THE ENTRY POINT IS ANALYSED SEPARATELY, NOT INLINED. A throwaway subject
+    built inside a `static` helper is reported against the helper, and a subject the entry point
+    feeds to a helper that ignores it is not reported at all. There is no call graph here, the same
+    limitation sub-kind 3 documents for its own corpus-wide reachability question.
+
 WHAT THIS STILL CANNOT SEE, measured while adjudicating the first real run against this tree (see
 Scripts/repro/726-unmeasured-values/README.md for the full per-site table). Each of these is a
 real, observed source of noise in the candidate list, not a hypothetical:
@@ -325,6 +428,7 @@ Usage (from the repo root):
     python3 Scripts/census-unmeasured-values.py --production    # sub-kind 1 only
     python3 Scripts/census-unmeasured-values.py --tests         # sub-kind 2 only
     python3 Scripts/census-unmeasured-values.py --gate-flags    # sub-kind 3 only
+    python3 Scripts/census-unmeasured-values.py --subjects      # sub-kind 4 only
     python3 Scripts/census-unmeasured-values.py --quiet         # counts only
     python3 Scripts/census-unmeasured-values.py --self-test     # prove each shape is caught
 
@@ -1006,6 +1110,342 @@ def swift_sources():
 
 
 # ===========================================================================
+# Sub-kind 4 (#726's own blind spot, found by Pass 4a / #385): a value published
+# through an API whose shape says it was measured, read off a subject the
+# caller's input never reached, or handed straight back from a parameter.
+# See SUB-KIND 4 ALGORITHM in the module docstring.
+# ===========================================================================
+
+# Words that can stand where a type name stands in a declaration, and are not one. `return x;`
+# parses as "type `return`, name `x`" without this, and so does `delete p;`.
+NOT_A_TYPE = {
+    'return', 'new', 'delete', 'else', 'case', 'const', 'static', 'inline', 'auto', 'template',
+    'typename', 'struct', 'class', 'union', 'enum', 'using', 'namespace', 'operator', 'throw',
+    'goto', 'sizeof', 'typedef', 'extern', 'volatile', 'mutable', 'explicit', 'friend', 'public',
+    'private', 'protected', 'do', 'try', 'void', 'int', 'char', 'float', 'double', 'bool',
+    'short', 'long', 'signed', 'unsigned', 'int8_t', 'int16_t', 'int32_t', 'int64_t', 'uint8_t',
+    'uint16_t', 'uint32_t', 'uint64_t', 'size_t', 'ptrdiff_t', 'Standard_Real', 'Standard_Integer',
+    'Standard_Boolean', 'Standard_Size', 'Standard_ShortReal', 'Standard_Character',
+} | NOT_A_FUNCTION
+
+IDENT = re.compile(r'\b[A-Za-z_]\w*\b')
+# The callee name alone. Its receiver is found by walking left from here (`receiver_idents`)
+# rather than by widening this regex, because the bridge's own idiom puts an intermediate call in
+# the middle of the chain: `logLabel.Root().FindAttribute(id, logbook)` has to yield `logLabel`,
+# and a regex over `.`-separated identifiers stops dead at the `()`.
+CALLEE_NAME = re.compile(r'\b([A-Za-z_]\w*)\s*\(')
+# `Type name = expr;` / `Type name(args);` / `Type name;`, including a lowercase-initial OCCT type.
+# gp_Pnt, gce_MakeLin and math_BFGS all start lowercase, which is the same trap the refman cache
+# rebuild documents in CLAUDE.md: a rule spelled `[A-Z]` silently drops the whole gp_ family, and
+# `gp_Pnt p = vi.Geometry();` is exactly the statement #1000's OCCTDraftVertexInfoGeometry
+# published from.
+LOCAL_DECL = re.compile(
+    r'(?:\A|[;{}(,])\s*(?:const\s+)?([A-Za-z_][\w:]*)\s*[\*&]?\s+([A-Za-z_]\w*)\s*(?:;|=|\()')
+HANDLE_DECL = re.compile(r'\bHandle\(\s*([\w:]+)\s*\)\s+([A-Za-z_]\w*)\s*(?:;|=|\()')
+ASSIGN_ROOT = re.compile(
+    r'\b([A-Za-z_]\w*)(?:\s*(?:\.|->|\[[^\]]*\])\s*[A-Za-z_]\w*)*\s*=\s*([^=][^;]*);')
+CTOR_DECL = re.compile(r'\b([A-Za-z_][\w:]*)\s*[\*&]?\s+([A-Za-z_]\w*)\s*\(([^;]*)\)\s*;')
+CONTROL_HEAD = re.compile(r'\b(?:if|while|for|switch)\s*\(')
+RETURN_STMT = re.compile(r'\breturn\b([^;]*);')
+STAR_WRITE = re.compile(r'\*\s*([A-Za-z_]\w*)\s*=\s*([^=][^;]*);')
+INDEX_WRITE = re.compile(r'\b([A-Za-z_]\w*)\s*\[[^\]]*\]\s*=\s*([^=][^;]*);')
+
+
+def parameter_names(params):
+    """The declared name of each parameter, splitting on TOP-LEVEL commas only so a template
+    argument or a function-pointer parameter does not split into pieces."""
+    if not params.strip() or params.strip() == 'void':
+        return []
+    parts, depth, cur = [], 0, ''
+    for c in params:
+        if c in '(<[':
+            depth += 1
+        elif c in ')>]':
+            depth -= 1
+        if c == ',' and depth == 0:
+            parts.append(cur)
+            cur = ''
+        else:
+            cur += c
+    parts.append(cur)
+    names = []
+    for part in parts:
+        part = part.replace('_Nonnull', ' ').replace('_Nullable', ' ')
+        part = re.sub(r'\[\s*\]', ' ', part).strip()
+        m = re.search(r'([A-Za-z_]\w*)\s*$', part)
+        if m and m.group(1) not in NOT_A_TYPE:
+            names.append(m.group(1))
+    return names
+
+
+def flat_statements(body):
+    """(start, text) for each `;`/`{`/`}`-delimited chunk of a function body. Deliberately crude:
+    the taint walk below is a fixpoint over the whole body, so a chunk that splits mid-expression
+    can only cost it an edge it would have added on a later pass anyway."""
+    out, start = [], 0
+    for i, c in enumerate(body):
+        if c in ';{}':
+            out.append((start, body[start:i + 1]))
+            start = i + 1
+    out.append((start, body[start:]))
+    return out
+
+
+def receiver_idents(text, pos):
+    """Identifiers of the receiver expression that ends just before `pos`, walking LEFT and
+    stepping over any intermediate call's own parentheses. `doc->shapeTool->GetShapes(shapes)`
+    yields doc and shapeTool; `logLabel.Root().FindAttribute(id, logbook)` yields logLabel and
+    Root, which a regex anchored on `.`-separated identifiers alone cannot reach, because the
+    `()` between `Root` and `FindAttribute` ends the match. That gap was not hypothetical: it left
+    OCCTDocumentLogbookIsEmpty's `logbook` looking like a subject no caller data reaches, when
+    FindAttribute fills it from a label the caller's own document and label id produced."""
+    ids, i = [], pos
+    while True:
+        while i > 0 and text[i - 1] in ' \t\r\n':
+            i -= 1
+        if i >= 2 and text[i - 2:i] == '->':
+            i -= 2
+        elif i >= 1 and text[i - 1] == '.':
+            i -= 1
+        else:
+            break
+        while i > 0 and text[i - 1] in ' \t\r\n':
+            i -= 1
+        if i > 0 and text[i - 1] == ')':
+            depth = 0
+            while i > 0:
+                if text[i - 1] == ')':
+                    depth += 1
+                elif text[i - 1] == '(':
+                    depth -= 1
+                    if depth == 0:
+                        i -= 1
+                        break
+                i -= 1
+            while i > 0 and text[i - 1] in ' \t\r\n':
+                i -= 1
+        j = i
+        while i > 0 and (text[i - 1].isalnum() or text[i - 1] == '_'):
+            i -= 1
+        if i == j:
+            break
+        ids.append(text[i:j])
+    return ids
+
+
+def qualified_calls(text):
+    """(receiver_identifiers, args_text) for every call, both halves paren-depth matched."""
+    out, n = [], len(text)
+    for m in CALLEE_NAME.finditer(text):
+        if m.group(1) in NOT_A_CALL:
+            continue
+        i, depth, start = m.end(), 1, m.end()
+        while i < n and depth > 0:
+            if text[i] == '(':
+                depth += 1
+            elif text[i] == ')':
+                depth -= 1
+            i += 1
+        out.append((receiver_idents(text, m.start(1)) + [m.group(1)], text[start:i - 1]))
+    return out
+
+
+def control_spans(body):
+    """[(body_start, body_end, condition_text), ...] for every braced if/while/for/switch."""
+    out = []
+    for m in CONTROL_HEAD.finditer(body):
+        i, depth = m.end(), 1
+        while i < len(body) and depth > 0:
+            if body[i] == '(':
+                depth += 1
+            elif body[i] == ')':
+                depth -= 1
+            i += 1
+        cond = body[m.end():i - 1]
+        j = i
+        while j < len(body) and body[j] in ' \t\r\n':
+            j += 1
+        if j < len(body) and body[j] == '{':
+            d, k = 0, j
+            while k < len(body):
+                if body[k] == '{':
+                    d += 1
+                elif body[k] == '}':
+                    d -= 1
+                    if d == 0:
+                        break
+                k += 1
+            out.append((j, k, cond))
+    return out
+
+
+def statement_edges(body):
+    """Per statement, the three shapes the taint walk needs, computed ONCE: every identifier in
+    it, one (assigned_root, rhs identifiers) pair per assignment or constructor declaration, and
+    one identifier SET per call, holding that call's receiver and its arguments together. The walk
+    below is a fixpoint, so recomputing these regexes on every pass costs a multiple of the whole
+    corpus for no new information."""
+    out = []
+    for _, s in flat_statements(body):
+        ids = set(IDENT.findall(s))
+        if not ids:
+            continue
+        writes = [(m.group(1), set(IDENT.findall(m.group(2)))) for m in ASSIGN_ROOT.finditer(s)]
+        for m in CTOR_DECL.finditer(s):
+            if m.group(1) not in NOT_A_TYPE:
+                writes.append((m.group(2), set(IDENT.findall(m.group(3)))))
+        groups = []
+        for recv, args in qualified_calls(s):
+            groups.append(set(recv) | set(IDENT.findall(args)))
+        out.append((ids, writes, groups))
+    return out
+
+
+def caller_data_taint(body, params):
+    """Every local identifier the caller's own arguments can reach, by four routes: an assignment
+    or constructor argument; a call that hands caller data to an object; a call that fills an
+    object FROM a caller-fed one, which is the same edge in reverse and is how
+    `doc->shapeTool->GetShapes(shapes)` fills `shapes`; and control dependence, where a block whose
+    own test reads caller data selects what runs inside it, which is how `if (i == index)` selects
+    the font `OCCTFontMgrFontName` returns.
+
+    Deliberately over-approximate in the direction of MORE taint. Over-tainting costs a candidate;
+    under-tainting reports correct code as a finding, and this is a census whose whole value is a
+    list short enough to read."""
+    tainted = set(params)
+    edges = statement_edges(body)
+    changed = True
+    while changed:
+        changed = False
+        for ids, writes, groups in edges:
+            if not (ids & tainted):
+                continue
+            for lhs, rhs in writes:
+                if lhs not in tainted and (rhs & tainted):
+                    tainted.add(lhs)
+                    changed = True
+            for group in groups:
+                if group & tainted:
+                    new = group - tainted
+                    if new:
+                        tainted |= new
+                        changed = True
+    for cs, ce, cond in control_spans(body):
+        if set(IDENT.findall(cond)) & tainted:
+            for m in LOCAL_DECL.finditer(body[cs:ce]):
+                tainted.add(m.group(2))
+            for m in ASSIGN_ROOT.finditer(body[cs:ce]):
+                tainted.add(m.group(1))
+    return tainted
+
+
+def unfed_subjects(body, tainted):
+    """{name: type} for every local declared with a class-ish type that no caller data reaches.
+    A local initialised from a `new` expression is excluded: a freshly constructed object handed
+    straight back is a factory product (OCCTMessengerCreate, OCCTReportCreate), and the value
+    published from it is the object, not a reading taken off it."""
+    out = {}
+    for _, s in flat_statements(body):
+        for m in list(LOCAL_DECL.finditer(s)) + list(HANDLE_DECL.finditer(s)):
+            ty, name = m.group(1), m.group(2)
+            if ty in NOT_A_TYPE or name in NOT_A_TYPE or name in tainted:
+                continue
+            if not (ty[0].isupper() or '_' in ty):
+                continue  # a lowercase word with no underscore is not an OCCT type name
+            if 'new ' in s[m.end():]:
+                continue
+            out.setdefault(name, ty)
+    return out
+
+
+def publication_sites(body, cspans):
+    """(pos, expression, how) for every value this function hands back: a return, a write through
+    an out-parameter (`*out = ...`, `out[i] = ...`), or a field of an aggregate result. A catch
+    block is excluded for the same reason sub-kind 1 excludes it: a fallback on the exception path
+    is recovery, not a fabricated measurement."""
+    out = []
+
+    def live(pos):
+        return not any(s <= pos < e for s, e in cspans)
+
+    for m in RETURN_STMT.finditer(body):
+        if live(m.start()):
+            out.append((m.start(), m.group(1).strip(), 'return'))
+    for m in STAR_WRITE.finditer(body):
+        if live(m.start()):
+            out.append((m.start(), m.group(2).strip(), '*' + m.group(1)))
+    for m in INDEX_WRITE.finditer(body):
+        if live(m.start()):
+            out.append((m.start(), m.group(2).strip(), m.group(1) + '[]'))
+    for m in FIELD_ASSIGN.finditer(body):
+        if live(m.start()):
+            out.append((m.start(), m.group(3).strip(), m.group(1) + '.' + m.group(2)))
+    return out
+
+
+def reads_member_of(expr, name):
+    return bool(re.search(r'\b' + re.escape(name) + r'\s*(?:\.|->)\s*\w+', expr))
+
+
+def unfed_subject_candidates(sources):
+    """(file, line, function, subject, type, how, expr) for every published value read off a local
+    subject no caller data reaches."""
+    found = []
+    for path, raw in sources:
+        text = strip_comments(raw)
+        for name, params, bs, be in c_functions(text):
+            body = text[bs:be + 1]
+            if not LOCAL_DECL.search(body) and not HANDLE_DECL.search(body):
+                continue  # no local at all: the taint fixpoint below has nothing to decide
+            cspans = catch_spans(body)
+            tainted = caller_data_taint(body, parameter_names(params))
+            subjects = unfed_subjects(body, tainted)
+            if not subjects:
+                continue
+            for pos, expr, how in publication_sites(body, cspans):
+                if is_literal(expr) or 'new ' in expr:
+                    # A literal is sub-kind 1's business, and a `new` object is a factory
+                    # product rather than a reading taken off the subject.
+                    continue
+                for sub in sorted(set(IDENT.findall(expr)) & set(subjects)):
+                    if reads_member_of(expr, sub):
+                        line = text.count('\n', 0, bs + pos) + 1
+                        found.append((os.path.basename(path), line, name, sub, subjects[sub],
+                                      how, expr))
+                        break
+    return found
+
+
+def echoed_input_candidates(sources):
+    """(file, line, function, parameter) for every function whose only non-catch answer is a
+    parameter it never otherwise reads. `OCCTDraftVertexInfoAddParameter`'s `return param;` is the
+    seed: a double in, the same double out, and a doc comment saying it checked something."""
+    found = []
+    for path, raw in sources:
+        text = strip_comments(raw)
+        for name, params, bs, be in c_functions(text):
+            body = text[bs:be + 1]
+            cspans = catch_spans(body)
+            pnames = set(parameter_names(params))
+            if not pnames:
+                continue
+            rets = [e for _, e, how in publication_sites(body, cspans) if how == 'return']
+            if not rets or not all(e in pnames or is_literal(e) for e in rets):
+                continue
+            for p in sorted({e for e in rets if e in pnames}):
+                # The parameter has to contribute NOTHING else. A `count` that also bounds the
+                # write loop and is then returned is reporting how many elements were written,
+                # which is a real answer about the call; this tree has three of those
+                # (OCCTEdgeGetPoints, OCCTBRepGraphSampleEdgeCurve, occtWriteKnotSplits) and none
+                # is an instance.
+                if len(re.findall(r'\b' + re.escape(p) + r'\b', body)) != rets.count(p):
+                    continue
+                line = text.count('\n', 0, bs) + 1
+                found.append((os.path.basename(path), line, name, p))
+    return found
+
+
+# ===========================================================================
 # Self-test. Each MISSED fixture must be reported; each CLEAN fixture must
 # not be. Per okf/policies/prove-the-test-fails.md, every fixture below was
 # separately proven to exercise its own guard: the mechanism was deleted from
@@ -1523,6 +1963,291 @@ SWIFT_GATE_CLEAN = [
 ]
 
 
+# Sub-kind 4 fixtures. #1000's six members are the seed and are GONE from the tree, deleted by
+# PR #1002, so these reconstruct them from that commit's own diff rather than pointing at a live
+# site. Each MISSED case names the member it reconstructs.
+
+SUBJECT_MISSED = [
+    ('#1000 OCCTDraftEdgeInfoNewGeometry: no parameters at all, a property read off a '
+     'default-constructed local and returned', '''
+bool OCCTFixtureDraftEdgeInfoNewGeometry(void)
+{
+  try
+  {
+    Draft_EdgeInfo ei;
+    return ei.NewGeometry();
+  }
+  catch (...)
+  {
+    return false;
+  }
+}'''),
+    ('#1000 OCCTDraftVertexInfoGeometry: out-parameters only, published one step removed from the '
+     'throwaway (gp_Pnt p = vi.Geometry()), and the intermediate type is LOWERCASE-initial, which '
+     'is the gp_ family a `[A-Z]` type rule drops in silence', '''
+void OCCTFixtureDraftVertexInfoGeometry(double* x, double* y, double* z)
+{
+  *x = 0;
+  *y = 0;
+  *z = 0;
+  try
+  {
+    Draft_VertexInfo vi;
+    gp_Pnt           p = vi.Geometry();
+    *x                 = p.X();
+    *y                 = p.Y();
+    *z                 = p.Z();
+  }
+  catch (...)
+  {
+  }
+}'''),
+    ('#1000 OCCTDraftEdgeInfoSetTangent: three caller parameters, none of which reaches the '
+     'subject, which is configured with a literal instead', '''
+bool OCCTFixtureDraftEdgeInfoSetTangent(double dx, double dy, double dz)
+{
+  try
+  {
+    Draft_EdgeInfo ei;
+    ei.SetNewGeometry(true);
+    return ei.NewGeometry();
+  }
+  catch (...)
+  {
+    return false;
+  }
+}'''),
+    ('the same shape published through an aggregate result field rather than a return or an '
+     'out-parameter, since a struct field is the third way this bridge hands a value back', '''
+OCCTFixtureInfo OCCTFixtureDraftInfoStruct(void)
+{
+  OCCTFixtureInfo result = {};
+  Draft_VertexInfo vi;
+  result.x = vi.Geometry().X();
+  return result;
+}'''),
+    ('a Handle-typed throwaway subject (Handle(Draft_FixtureInfo) h;), which the plain '
+     '`Type name;` declaration regex cannot see because the type name sits inside parentheses', '''
+bool OCCTFixtureHandleSubject(void)
+{
+  try
+  {
+    Handle(Draft_FixtureInfo) info;
+    return info->NewGeometry();
+  }
+  catch (...)
+  {
+    return false;
+  }
+}'''),
+]
+
+SUBJECT_CLEAN = [
+    ('the caller\'s own object reaches the subject through its constructor: the same Draft class, '
+     'the same accessor, and not an instance (#1000 OCCTDraftFaceInfoFromSurface built its '
+     'subject this way)', '''
+bool OCCTFixtureFaceInfoFromSurface(OCCTSurfaceRef surface)
+{
+  if (!surface || surface->surface.IsNull())
+    return false;
+  try
+  {
+    Draft_FaceInfo fi(surface->surface, false);
+    return fi.NewGeometry();
+  }
+  catch (...)
+  {
+    return false;
+  }
+}'''),
+    ('the caller\'s data reaches the subject through a method call rather than the constructor, '
+     'the #999 OCCTGeomPlateErrors shape: the builder IS fed the caller\'s points, and what was '
+     'wrong there was inside the kernel, not visible here', '''
+bool OCCTFixturePlateErrors(const double* points, int32_t ptCount, double tolerance, double* g0)
+{
+  try
+  {
+    GeomPlate_BuildPlateSurface builder(3, 10, 5, tolerance);
+    for (int i = 0; i < ptCount; i++)
+    {
+      gp_Pnt                            pt(points[i * 3], points[i * 3 + 1], points[i * 3 + 2]);
+      Handle(GeomPlate_PointConstraint) pc = new GeomPlate_PointConstraint(pt, 0, tolerance);
+      builder.Add(pc);
+    }
+    builder.Perform(Message_ProgressRange());
+    *g0 = builder.G0Error();
+    return true;
+  }
+  catch (...)
+  {
+    return false;
+  }
+}'''),
+    ('the subject is filled by a call on a caller-fed receiver reached ACROSS an intermediate '
+     'call\'s parentheses (logLabel.Root().FindAttribute(id, logbook)), which is real in this tree '
+     'as OCCTDocumentLogbookIsEmpty', '''
+bool OCCTFixtureLogbookIsEmpty(OCCTDocumentRef doc, int64_t logbookLabelId)
+{
+  if (!doc || doc->doc.IsNull())
+    return true;
+  try
+  {
+    Handle(TFunction_Logbook) logbook;
+    if (!doc->getLabel(logbookLabelId).Root().FindAttribute(TFunction_Logbook::GetID(), logbook))
+      return true;
+    return logbook->IsEmpty();
+  }
+  catch (...)
+  {
+    return true;
+  }
+}'''),
+    ('the subject is SELECTED by a caller index in a loop\'s own test, with no assignment carrying '
+     'the index anywhere (the real OCCTFontMgrFontName shape): control dependence is caller input '
+     'reaching the answer', '''
+const char* OCCTFixtureFontName(int index)
+{
+  try
+  {
+    int i = 0;
+    for (auto it = g_fontList.cbegin(); it != g_fontList.cend(); ++it, ++i)
+    {
+      if (i == index)
+      {
+        TCollection_AsciiString name = (*it)->FontName();
+        return strdup(name.ToCString());
+      }
+    }
+    return nullptr;
+  }
+  catch (...)
+  {
+    return nullptr;
+  }
+}'''),
+    ('the subject is fed ONLY by a method call taking the caller\'s shape, with no assignment '
+     'anywhere: the case the call-group rule owns and the assignment rule does not', '''
+bool OCCTFixtureSewFreeEdges(OCCTShapeRef shape)
+{
+  if (!shape)
+    return false;
+  BRepBuilderAPI_Sewing sewing(1.0e-4);
+  sewing.Add(shape->shape);
+  sewing.Perform();
+  return sewing.NbFreeEdges() > 0;
+}'''),
+    ('the subject is fed ONLY by an assignment from the caller\'s own handle, with no call '
+     'carrying it: the case the assignment rule owns and the call-group rule does not', '''
+bool OCCTFixtureCurveIsPeriodic(OCCTCurve3DRef curve)
+{
+  if (!curve || curve->curve.IsNull())
+    return false;
+  Handle(Geom_Curve) c = curve->curve;
+  return c->IsPeriodic();
+}'''),
+    ('a factory: the local is built from literals and what leaves the function is a NEW object '
+     'made from properties of it, not a reading taken off it. The member reads are deliberate: '
+     'without them the member-read guard would keep this case clean on its own and the `new` '
+     'guard would prove nothing (it came back green under removal until this fixture read '
+     'axis.Location() and axis.Direction())', '''
+OCCTSurfaceRef OCCTFixturePlaneXY(void)
+{
+  gp_Ax3 axis(gp_Pnt(0, 0, 0), gp_Dir(0, 0, 1));
+  return new OCCTSurface(new Geom_Plane(axis.Location(), axis.Direction()));
+}'''),
+    ('a freshly constructed Handle handed straight back (OCCTMessengerCreate/OCCTReportCreate): '
+     'the value published is the object, and `.get()` is not a reading taken off it', '''
+OCCTMessengerRef OCCTFixtureMessengerCreate(void)
+{
+  try
+  {
+    Handle(Message_Messenger) msg = new Message_Messenger();
+    if (msg.IsNull())
+      return nullptr;
+    msg->IncrementRefCounter();
+    return msg.get();
+  }
+  catch (...)
+  {
+    return nullptr;
+  }
+}'''),
+    ('the local IS the product, handed back whole rather than read off: a builder\'s output shape, '
+     'not a measurement', '''
+OCCTShapeRef OCCTFixtureMakeCompound(void)
+{
+  TopoDS_Compound compound;
+  BRep_Builder    builder;
+  builder.MakeCompound(compound);
+  OCCTShape* ref = new OCCTShape();
+  ref->shape     = compound;
+  return ref;
+}'''),
+    ('the only reading off an unfed local sits inside catch, an error-code fallback on the '
+     'exception path rather than a fabricated measurement on the success path', '''
+int32_t OCCTFixtureCatchOnly(OCCTShapeRef shape)
+{
+  try
+  {
+    return occtRealCount(shape);
+  }
+  catch (Standard_Failure)
+  {
+    OCCTFixtureStatus st;
+    return st.Code();
+  }
+}'''),
+]
+
+ECHO_MISSED = [
+    ('#1000 OCCTDraftVertexInfoAddParameter: a double in, the same double back out, and the '
+     'parameter contributes nothing else anywhere in the body', '''
+double OCCTFixtureVertexInfoAddParameter(double param)
+{
+  try
+  {
+    Draft_VertexInfo vi;
+    gp_Pnt           p = vi.Geometry();
+    return param;
+  }
+  catch (...)
+  {
+    return 0;
+  }
+}'''),
+]
+
+ECHO_CLEAN = [
+    ('a count parameter that also bounds the write loop and is then returned: that is how many '
+     'elements were written, a real answer about the call (OCCTEdgeGetPoints, '
+     'OCCTBRepGraphSampleEdgeCurve and occtWriteKnotSplits are the three real ones)', '''
+int32_t OCCTFixtureEdgeGetPoints(OCCTEdgeRef edge, int32_t count, double* outPoints)
+{
+  if (!edge || count <= 0 || !outPoints)
+    return 0;
+  try
+  {
+    for (int32_t i = 0; i < count; i++)
+    {
+      outPoints[i * 3] = occtSampleX(edge, i);
+    }
+    return count;
+  }
+  catch (...)
+  {
+    return 0;
+  }
+}'''),
+    ('a function that returns only literals: nothing is echoed, so nothing to report', '''
+bool OCCTFixtureLiteralOnly(double tolerance)
+{
+  if (tolerance <= 0)
+    return false;
+  return true;
+}'''),
+]
+
+
 def _run_prod_fixture(src):
     sources = [('fixture.mm', src)]
     return production_candidates(sources)
@@ -1537,6 +2262,14 @@ def _run_swift_gate_fixture(src):
     wrapped = "struct Fixture {\n" + src + "\n}\n"
     sources = [('fixture.swift', wrapped)]
     return swift_gate_candidates(sources)
+
+
+def _run_subject_fixture(src):
+    return unfed_subject_candidates([('fixture.mm', src)])
+
+
+def _run_echo_fixture(src):
+    return echoed_input_candidates([('fixture.mm', src)])
 
 
 def _run_test_fixture(src):
@@ -1593,8 +2326,31 @@ def self_test():
         print(f'  {"ok  " if not hit else "FALSE"} should be clean (Swift), {name}: '
               f'{[h[2] for h in hit] + ["wrongly flagged"] if hit else "not flagged"}')
 
+    print('sub-kind 4 (subjects the caller never fed, and echoed inputs):')
+    for name, src in SUBJECT_MISSED:
+        hit = _run_subject_fixture(src)
+        failed += not hit
+        print(f'  {"ok  " if hit else "MISS"} should flag, {name}: '
+              f'{sorted({(h[2], h[3]) for h in hit}) if hit else "NOT REPORTED"}')
+    for name, src in SUBJECT_CLEAN:
+        hit = _run_subject_fixture(src)
+        failed += bool(hit)
+        print(f'  {"ok  " if not hit else "FALSE"} should be clean, {name}: '
+              f'{sorted({(h[2], h[3]) for h in hit}) if hit else "not flagged"}')
+    for name, src in ECHO_MISSED:
+        hit = _run_echo_fixture(src)
+        failed += not hit
+        print(f'  {"ok  " if hit else "MISS"} should flag (echo), {name}: '
+              f'{[(h[2], h[3]) for h in hit] if hit else "NOT REPORTED"}')
+    for name, src in ECHO_CLEAN:
+        hit = _run_echo_fixture(src)
+        failed += bool(hit)
+        print(f'  {"ok  " if not hit else "FALSE"} should be clean (echo), {name}: '
+              f'{[(h[2], h[3]) for h in hit] if hit else "not flagged"}')
+
     total = (len(PROD_MISSED) + len(PROD_CLEAN) + len(TEST_MISSED) + len(TEST_CLEAN) +
-             len(GATE_MISSED) + len(GATE_CLEAN) + len(SWIFT_GATE_MISSED) + len(SWIFT_GATE_CLEAN))
+             len(GATE_MISSED) + len(GATE_CLEAN) + len(SWIFT_GATE_MISSED) + len(SWIFT_GATE_CLEAN) +
+             len(SUBJECT_MISSED) + len(SUBJECT_CLEAN) + len(ECHO_MISSED) + len(ECHO_CLEAN))
     print(f'{total - failed}/{total} cases correct')
     return 1 if failed else 0
 
@@ -1646,11 +2402,31 @@ def report_gate_flags(quiet):
     return 0
 
 
+def report_subjects(quiet):
+    if not os.path.isdir(BRIDGE_SRC_DIR):
+        print(f'{BRIDGE_SRC_DIR} not found - run from the repo root', file=sys.stderr)
+        return 2
+    sources = bridge_sources()
+    subjects = unfed_subject_candidates(sources)
+    echoes = echoed_input_candidates(sources)
+    funcs = {(f, fn) for f, _, fn, _, _, _, _ in subjects}
+    print(f'sub-kind 4 (unfed subjects): {len(subjects)} candidate(s) in {len(funcs)} function(s), '
+          f'{len(echoes)} echoed input(s)')
+    if not quiet:
+        for f, line, func, sub, ty, how, expr in subjects:
+            print(f'  {f}:{line}  {func}(): {how} <- {sub} ({ty}), which no caller input reaches')
+            print(f'      {expr}')
+        for f, line, func, param in echoes:
+            print(f'  {f}:{line}  {func}() returns its own parameter {param}, unread elsewhere')
+    return 0
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument('--production', action='store_true', help='sub-kind 1 only')
     ap.add_argument('--tests', action='store_true', help='sub-kind 2 only')
     ap.add_argument('--gate-flags', action='store_true', help='sub-kind 3 only')
+    ap.add_argument('--subjects', action='store_true', help='sub-kind 4 only')
     ap.add_argument('--quiet', action='store_true', help='counts only')
     ap.add_argument('--self-test', action='store_true', help='prove each shape is caught')
     args = ap.parse_args()
@@ -1658,7 +2434,8 @@ def main():
     if args.self_test:
         return self_test()
 
-    all_kinds = not args.production and not args.tests and not args.gate_flags
+    all_kinds = (not args.production and not args.tests and not args.gate_flags
+                 and not args.subjects)
     rc = 0
     if args.production or all_kinds:
         rc = report_production(args.quiet) or rc
@@ -1666,6 +2443,8 @@ def main():
         rc = report_tests(args.quiet) or rc
     if args.gate_flags or all_kinds:
         rc = report_gate_flags(args.quiet) or rc
+    if args.subjects or all_kinds:
+        rc = report_subjects(args.quiet) or rc
     return rc
 
 

@@ -1,0 +1,93 @@
+sub-kind 4 (unfed subjects): 46 candidate(s) in 18 function(s), 0 echoed input(s)
+  OCCTBridge_Document.mm:7700  OCCTXCAFPrsStyleCreate(): result.isVisible <- style (XCAFPrs_Style), which no caller input reaches
+      style.IsVisible()
+  OCCTBridge_Document.mm:7701  OCCTXCAFPrsStyleCreate(): result.isEmpty <- style (XCAFPrs_Style), which no caller input reaches
+      style.IsEmpty()
+  OCCTBridge_Document.mm:7792  OCCTVisMaterialCommonDefault(): result.diffuseR <- mat (XCAFDoc_VisMaterialCommon), which no caller input reaches
+      mat.DiffuseColor.Red()
+  OCCTBridge_Document.mm:7793  OCCTVisMaterialCommonDefault(): result.diffuseG <- mat (XCAFDoc_VisMaterialCommon), which no caller input reaches
+      mat.DiffuseColor.Green()
+  OCCTBridge_Document.mm:7794  OCCTVisMaterialCommonDefault(): result.diffuseB <- mat (XCAFDoc_VisMaterialCommon), which no caller input reaches
+      mat.DiffuseColor.Blue()
+  OCCTBridge_Document.mm:7795  OCCTVisMaterialCommonDefault(): result.ambientR <- mat (XCAFDoc_VisMaterialCommon), which no caller input reaches
+      mat.AmbientColor.Red()
+  OCCTBridge_Document.mm:7796  OCCTVisMaterialCommonDefault(): result.ambientG <- mat (XCAFDoc_VisMaterialCommon), which no caller input reaches
+      mat.AmbientColor.Green()
+  OCCTBridge_Document.mm:7797  OCCTVisMaterialCommonDefault(): result.ambientB <- mat (XCAFDoc_VisMaterialCommon), which no caller input reaches
+      mat.AmbientColor.Blue()
+  OCCTBridge_Document.mm:7798  OCCTVisMaterialCommonDefault(): result.specularR <- mat (XCAFDoc_VisMaterialCommon), which no caller input reaches
+      mat.SpecularColor.Red()
+  OCCTBridge_Document.mm:7799  OCCTVisMaterialCommonDefault(): result.specularG <- mat (XCAFDoc_VisMaterialCommon), which no caller input reaches
+      mat.SpecularColor.Green()
+  OCCTBridge_Document.mm:7800  OCCTVisMaterialCommonDefault(): result.specularB <- mat (XCAFDoc_VisMaterialCommon), which no caller input reaches
+      mat.SpecularColor.Blue()
+  OCCTBridge_Document.mm:7801  OCCTVisMaterialCommonDefault(): result.emissiveR <- mat (XCAFDoc_VisMaterialCommon), which no caller input reaches
+      mat.EmissiveColor.Red()
+  OCCTBridge_Document.mm:7802  OCCTVisMaterialCommonDefault(): result.emissiveG <- mat (XCAFDoc_VisMaterialCommon), which no caller input reaches
+      mat.EmissiveColor.Green()
+  OCCTBridge_Document.mm:7803  OCCTVisMaterialCommonDefault(): result.emissiveB <- mat (XCAFDoc_VisMaterialCommon), which no caller input reaches
+      mat.EmissiveColor.Blue()
+  OCCTBridge_Document.mm:7804  OCCTVisMaterialCommonDefault(): result.shininess <- mat (XCAFDoc_VisMaterialCommon), which no caller input reaches
+      mat.Shininess
+  OCCTBridge_Document.mm:7805  OCCTVisMaterialCommonDefault(): result.transparency <- mat (XCAFDoc_VisMaterialCommon), which no caller input reaches
+      mat.Transparency
+  OCCTBridge_Document.mm:7806  OCCTVisMaterialCommonDefault(): result.isDefined <- mat (XCAFDoc_VisMaterialCommon), which no caller input reaches
+      mat.IsDefined
+  OCCTBridge_Document.mm:7845  OCCTVisMaterialPBRDefault(): result.baseColorR <- pbr (XCAFDoc_VisMaterialPBR), which no caller input reaches
+      pbr.BaseColor.GetRGB().Red()
+  OCCTBridge_Document.mm:7846  OCCTVisMaterialPBRDefault(): result.baseColorG <- pbr (XCAFDoc_VisMaterialPBR), which no caller input reaches
+      pbr.BaseColor.GetRGB().Green()
+  OCCTBridge_Document.mm:7847  OCCTVisMaterialPBRDefault(): result.baseColorB <- pbr (XCAFDoc_VisMaterialPBR), which no caller input reaches
+      pbr.BaseColor.GetRGB().Blue()
+  OCCTBridge_Document.mm:7848  OCCTVisMaterialPBRDefault(): result.baseColorAlpha <- pbr (XCAFDoc_VisMaterialPBR), which no caller input reaches
+      pbr.BaseColor.Alpha()
+  OCCTBridge_Document.mm:7849  OCCTVisMaterialPBRDefault(): result.metallic <- pbr (XCAFDoc_VisMaterialPBR), which no caller input reaches
+      pbr.Metallic
+  OCCTBridge_Document.mm:7850  OCCTVisMaterialPBRDefault(): result.roughness <- pbr (XCAFDoc_VisMaterialPBR), which no caller input reaches
+      pbr.Roughness
+  OCCTBridge_Document.mm:7851  OCCTVisMaterialPBRDefault(): result.refractionIndex <- pbr (XCAFDoc_VisMaterialPBR), which no caller input reaches
+      pbr.RefractionIndex
+  OCCTBridge_Document.mm:7852  OCCTVisMaterialPBRDefault(): result.emissionR <- pbr (XCAFDoc_VisMaterialPBR), which no caller input reaches
+      pbr.EmissiveFactor.r()
+  OCCTBridge_Document.mm:7853  OCCTVisMaterialPBRDefault(): result.emissionG <- pbr (XCAFDoc_VisMaterialPBR), which no caller input reaches
+      pbr.EmissiveFactor.g()
+  OCCTBridge_Document.mm:7854  OCCTVisMaterialPBRDefault(): result.emissionB <- pbr (XCAFDoc_VisMaterialPBR), which no caller input reaches
+      pbr.EmissiveFactor.b()
+  OCCTBridge_Document.mm:7855  OCCTVisMaterialPBRDefault(): result.isDefined <- pbr (XCAFDoc_VisMaterialPBR), which no caller input reaches
+      pbr.IsDefined
+  OCCTBridge_Document.mm:8417  OCCTDriverTableExists(): return <- table (TPrsStd_DriverTable), which no caller input reaches
+      !table.IsNull()
+  OCCTBridge_Document.mm:8449  OCCTTObjApplicationGetInstance(): return <- app (TObj_Application), which no caller input reaches
+      app.get()
+  OCCTBridge_Geom2d.mm:6614  OCCTMat2dIdentity(): mat[] <- m (gp_Mat2d), which no caller input reaches
+      m.Value(1, 1)
+  OCCTBridge_Geom2d.mm:6615  OCCTMat2dIdentity(): mat[] <- m (gp_Mat2d), which no caller input reaches
+      m.Value(1, 2)
+  OCCTBridge_Geom2d.mm:6616  OCCTMat2dIdentity(): mat[] <- m (gp_Mat2d), which no caller input reaches
+      m.Value(2, 1)
+  OCCTBridge_Geom2d.mm:6617  OCCTMat2dIdentity(): mat[] <- m (gp_Mat2d), which no caller input reaches
+      m.Value(2, 2)
+  OCCTBridge_IO.mm:2797  OCCTMemInfoHeapUsage(): return <- info (OSD_MemInfo), which no caller input reaches
+      (int64_t)info.Value(OSD_MemInfo::MemHeapUsage)
+  OCCTBridge_IO.mm:2810  OCCTMemInfoWorkingSet(): return <- info (OSD_MemInfo), which no caller input reaches
+      (int64_t)info.Value(OSD_MemInfo::MemWorkingSet)
+  OCCTBridge_IO.mm:2823  OCCTMemInfoHeapUsageMiB(): return <- info (OSD_MemInfo), which no caller input reaches
+      info.ValuePreciseMiB(OSD_MemInfo::MemHeapUsage)
+  OCCTBridge_IO.mm:2836  OCCTMemInfoString(): return <- str (TCollection_AsciiString), which no caller input reaches
+      strdup(str.ToCString())
+  OCCTBridge_IO.mm:3050  OCCTProcessId(): return <- p (OSD_Process), which no caller input reaches
+      p.ProcessId()
+  OCCTBridge_IO.mm:3064  OCCTProcessUserName(): return <- user (TCollection_AsciiString), which no caller input reaches
+      strdup(user.ToCString())
+  OCCTBridge_IO.mm:3079  OCCTProcessExecutablePath(): return <- path (TCollection_AsciiString), which no caller input reaches
+      strdup(path.ToCString())
+  OCCTBridge_IO.mm:3094  OCCTProcessExecutableFolder(): return <- path (TCollection_AsciiString), which no caller input reaches
+      strdup(path.ToCString())
+  OCCTBridge_IO.mm:3693  OCCTHostName(): return <- host (OSD_Host), which no caller input reaches
+      strdup(host.HostName().ToCString())
+  OCCTBridge_IO.mm:3706  OCCTSystemVersion(): return <- host (OSD_Host), which no caller input reaches
+      strdup(host.SystemVersion().ToCString())
+  OCCTBridge_IO.mm:3719  OCCTInternetAddress(): return <- host (OSD_Host), which no caller input reaches
+      strdup(host.InternetAddress().ToCString())
+  OCCTBridge_IO.mm:3813  OCCTDirectoryBuildTemporary(): return <- sysName (TCollection_AsciiString), which no caller input reaches
+      strdup(sysName.ToCString())
