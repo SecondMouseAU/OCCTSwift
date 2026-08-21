@@ -1,23 +1,30 @@
 == compiling against 16 bridge objects
 -- section A
 A: OCCTDocumentDimTolToleranceCount, datum with a point and no plane
-  datum label 0:1:4:2, plane no
+  datum label 0:1:4:2, plane no, linked to the tolerance yes
   OCCTDocumentGetDatumCount (the Main() table) = 0
   calling OCCTDocumentDimTolToleranceCount...
-Scripts/repro/1030-datum-lookup-guard/run.sh: line 35:   774 Segmentation fault: 11     "$BIN" "$1"
+Scripts/repro/1030-datum-lookup-guard/run.sh: line 35: 25311 Segmentation fault: 11     "$BIN" "$1"
    exit 139 (signal 11)
 -- section B
 B: OCCTDocumentEditorRescaleGeometry, datum with a point and no plane
-  datum label 0:1:4:2, plane no
+  datum label 0:1:4:2, plane no, linked to the tolerance yes
   OCCTDocumentGetDatumCount (the Main() table) = 0
   calling OCCTDocumentEditorRescaleGeometry...
-Scripts/repro/1030-datum-lookup-guard/run.sh: line 35:   821 Segmentation fault: 11     "$BIN" "$1"
+Scripts/repro/1030-datum-lookup-guard/run.sh: line 35: 25357 Segmentation fault: 11     "$BIN" "$1"
    exit 139 (signal 11)
 -- section C
 C: control, datum with a plane AND a point, both entry points
-  datum label 0:1:4:2, plane yes
+  datum label 0:1:4:2, plane yes, linked to the tolerance yes
   OCCTDocumentGetDatumCount (the Main() table) = 0
   OCCTDocumentDimTolToleranceCount returned 1
   OCCTDocumentEditorRescaleGeometry returned 1
   section C completed without crashing
+   exit 0
+-- section D
+D: over-refusal control, real tolerance + unreadable datum linked to nothing
+  datum label 0:1:4:2, plane no, linked to the tolerance no
+  OCCTDocumentGetDatumCount (the Main() table) = 0
+  OCCTDocumentDimTolToleranceCount returned 1, expected 1
+  section D completed without crashing
    exit 0

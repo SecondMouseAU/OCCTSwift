@@ -1736,7 +1736,7 @@ public func rescaleGeometry(labelId: Int64, scaleFactor: Double, forceIfNotRoot:
   - `labelId`: label whose geometry to rescale.
   - `scaleFactor`: uniform scale factor (e.g. `0.001` to convert mm → m).
   - `forceIfNotRoot`: if `true`, rescale even when the label is not the document root (default `false`).
-- **Returns:** `true` on success.
+- **Returns:** `true` on success; `false` if the document holds a datum carrying an annotation point with no annotation plane, which the bridge refuses rather than crash OCCT (#1030), in which case nothing is rescaled. See the note under [`datum(at:)`](Annotation.md).
 - **OCCT:** `XCAFDoc_Editor::RescaleGeometry`.
 
 ---

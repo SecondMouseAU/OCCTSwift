@@ -1562,12 +1562,13 @@ public var geomToleranceCount: Int { get }
 
 ### `datumCount`
 
-Number of datums defined in this document.
+Number of datum labels in this document, which can exceed `datums.count`.
 
 ```swift
 public var datumCount: Int { get }
 ```
 
+- **Returns:** the number of datum *labels*. `datums` counts the ones `datum(at:)` can read, and a datum OCCT cannot read without crashing (#1030) is counted here and omitted there, so iterate `datums` rather than indexing `0..<datumCount`.
 - **OCCT:** `XCAFDoc_DimTolTool::GetDatumLabels` (via `OCCTDocumentGetDatumCount`).
 
 ---
@@ -1699,14 +1700,14 @@ All datums in the document.
 public var datums: [Datum] { get }
 ```
 
-- **Returns:** Array of all `Datum` values for which `datum(at:)` succeeds.
+- **Returns:** Array of all `Datum` values for which `datum(at:)` succeeds, so a datum OCCT cannot read (#1030) is omitted rather than crashing the enumeration.
 - **Example:**
   ```swift
-  let doc = try Document.load(from: gdtStepURL)
-  print("Dimensions:", doc.dimensions.count)
-  print("Tolerances:", doc.geomTolerances.count)
+  let doc = Document.create()!
+  doc.createDatum(name: "A")
   for datum in doc.datums { print("Datum:", datum.name) }
   ```
+- **Note:** this reads the GD&T table this package writes, not the `XCAFDoc_DocumentTool` one an importer fills, so datums that arrived with a STEP file are not listed here. See the two-table note under [`datum(at:)`](#datumat).
 
 ---
 

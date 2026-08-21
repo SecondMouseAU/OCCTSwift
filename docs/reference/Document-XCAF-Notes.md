@@ -1839,6 +1839,7 @@ Number of geometric tolerance annotation objects in the document.
 public var dimTolToolToleranceCount: Int { get }
 ```
 
+- **Returns:** the tolerance count, or `0` when any datum attached to a tolerance carries an annotation point with no annotation plane, which the bridge refuses rather than crash OCCT (#1030); `0` is then indistinguishable from a document with no tolerances. See the note under [`datum(at:)`](Annotation.md).
 - **OCCT:** `XCAFDimTolObjects_Tool` tolerance list size
 - **Example:**
   ```swift

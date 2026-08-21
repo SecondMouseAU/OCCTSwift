@@ -36,7 +36,7 @@ has to cover both tables.
 
 | File | What it is |
 |---|---|
-| `occt_1030_tool_table.mm` | The probe. Three sections selected by argv, because two of them take the process down when the guard is absent. |
+| `occt_1030_tool_table.mm` | The probe. Four sections selected by argv, because two of them take the process down when the guard is absent. |
 | `run.sh` | Compiles it against the real bridge objects from `.build/` and runs each section in its own process. |
 | `unguarded.txt` | Transcript with both tool-table guards deleted. |
 | `guarded.txt` | Transcript as the tree stands. |
@@ -56,18 +56,30 @@ the real bridge functions rather than asserting from a reimplementation.
 
 ## Measured
 
-Both sections crash with the guards removed and are refused with them in place. The control is
-byte-identical either way, which is what separates "the guard works" from "the guard refuses
-everything".
+A and B crash with the guards removed and are refused with them in place. C and D are byte-identical
+either way, which is what separates "the guard works" from "the guard refuses everything".
 
 | Section | Unguarded | Guarded |
 |---|---|---|
 | A, tolerance count, point and no plane | `Segmentation fault: 11`, exit 139 | `returned 0`, exit 0 |
 | B, rescale geometry, point and no plane | `Segmentation fault: 11`, exit 139 | `returned 0`, exit 0 |
 | C, control, plane and point | count `1`, rescale `1`, exit 0 | count `1`, rescale `1`, exit 0 |
+| D, over-refusal control | count `1`, exit 0 | count `1`, exit 0 |
 
 Each function returns the value it already returns on failure, rather than a new sentinel: `0` for
 the count and `false` for the rescale, matching #726.
+
+## Each caller gets the set its own walk reaches
+
+Section D exists because the first version of this guard walked `GetDatumLabels`, the whole table,
+for both callers. `XCAFDoc_Editor::RescaleGeometry` does walk every datum, so that is right for it.
+`XCAFDimTolObjects_Tool::GetGeomTolerances` does not: it reaches a datum only through
+`GetDatumOfTolerLabels` on a tolerance it has just found (`XCAFDimTolObjects_Tool.cxx:69-85`). So a
+document with a real tolerance and a stray unreadable datum attached to nothing answered **0
+tolerances**, a wrong answer where there was never a crash, and one a caller cannot tell from a
+document with no tolerances. `occtDocumentToolToleranceDatumsAreReadable` mirrors that walk instead.
+Section D is the row that catches it: it reports `returned 0, expected 1` against the whole-table
+version and `returned 1, expected 1` against the shipped one.
 
 ## Retirement
 

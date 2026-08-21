@@ -42,6 +42,7 @@
 #include <XCAFDimTolObjects_DimensionType.hxx>
 #include <XCAFDimTolObjects_GeomToleranceObject.hxx>
 #include <XCAFDimTolObjects_GeomToleranceType.hxx>
+#include <TDF_ChildIterator.hxx>
 #include <TDF_Data.hxx>
 #include <TDF_Delta.hxx>
 #include <TDF_Tool.hxx>
@@ -1249,12 +1250,23 @@ static bool occtDatumLabelIsReadable(const TDF_Label& datumLabel)
 // go through XCAFDoc_DocumentTool::DimTolTool, which is the table every importer writes, and both
 // call GetObject on every datum they find with nothing between them and the crash. CheckDimTolTool
 // rather than DimTolTool, so asking the question never creates the table (#1030).
-static bool occtDocumentToolDatumsAreReadable(const TDF_Label& access)
+//
+// Each caller gets the set ITS OWN walk reaches, not the union. Refusing on a datum the caller
+// would never have touched is a wrong answer where there was no crash, and both of these report
+// failure as an ordinary value (0, false) that a caller cannot tell from a real one.
+static bool occtDocumentToolDimTolTool(const TDF_Label& access, Handle(XCAFDoc_DimTolTool)& outTool)
 {
   if (access.IsNull() || !XCAFDoc_DocumentTool::CheckDimTolTool(access))
-    return true;
-  Handle(XCAFDoc_DimTolTool) dimTolTool = XCAFDoc_DocumentTool::DimTolTool(access);
-  if (dimTolTool.IsNull())
+    return false;
+  outTool = XCAFDoc_DocumentTool::DimTolTool(access);
+  return !outTool.IsNull();
+}
+
+// XCAFDoc_Editor::RescaleGeometry walks GetDatumLabels, so every datum in the table is reached.
+static bool occtDocumentToolDatumsAreReadable(const TDF_Label& access)
+{
+  Handle(XCAFDoc_DimTolTool) dimTolTool;
+  if (!occtDocumentToolDimTolTool(access, dimTolTool))
     return true;
   TDF_LabelSequence datums;
   dimTolTool->GetDatumLabels(datums);
@@ -1262,6 +1274,32 @@ static bool occtDocumentToolDatumsAreReadable(const TDF_Label& access)
   {
     if (!occtDatumLabelIsReadable(datums.Value(i)))
       return false;
+  }
+  return true;
+}
+
+// XCAFDimTolObjects_Tool::GetGeomTolerances reaches a datum only through the tolerance it is
+// attached to, so this mirrors that walk rather than the whole table: a stray unreadable datum
+// linked to no tolerance is never read there, and refusing on it would report zero tolerances for
+// a document that has them.
+static bool occtDocumentToolToleranceDatumsAreReadable(const TDF_Label& access)
+{
+  Handle(XCAFDoc_DimTolTool) dimTolTool;
+  if (!occtDocumentToolDimTolTool(access, dimTolTool))
+    return true;
+  for (TDF_ChildIterator it(dimTolTool->Label()); it.More(); it.Next())
+  {
+    Handle(XCAFDoc_GeomTolerance) tolerance;
+    if (!it.Value().FindAttribute(XCAFDoc_GeomTolerance::GetID(), tolerance))
+      continue;
+    TDF_LabelSequence datums;
+    if (!dimTolTool->GetDatumOfTolerLabels(tolerance->Label(), datums))
+      continue;
+    for (int i = 1; i <= datums.Length(); ++i)
+    {
+      if (!occtDatumLabelIsReadable(datums.Value(i)))
+        return false;
+    }
   }
   return true;
 }
@@ -5896,8 +5934,9 @@ bool OCCTDocumentEditorRescaleGeometry(OCCTDocumentRef doc,
     TDF_Label label = doc->getLabel(labelId);
     if (label.IsNull())
       return false;
-    // RescaleGeometry walks the document tool's datum labels and calls GetObject on each, so one
-    // unreadable datum takes the whole process down before any geometry is scaled (#1030).
+    // RescaleGeometry walks the document tool's datum labels and calls GetObject on each. That
+    // loop runs AFTER every shape is scaled and the assemblies updated, so one unreadable datum
+    // used to take the process down with the document already half rewritten (#1030).
     if (!occtDocumentToolDatumsAreReadable(label))
       return false;
     return XCAFDoc_Editor::RescaleGeometry(label, scaleFactor, forceIfNotRoot);
@@ -8427,6 +8466,8 @@ const char* OCCTDocumentXLinkGetLabelEntry(OCCTDocumentRef document, int labelTa
 
 int OCCTDocumentDimTolDimensionCount(OCCTDocumentRef document)
 {
+  if (!document || document->doc.IsNull())
+    return 0;
   try
   {
     XCAFDimTolObjects_Tool                                          tool(document->doc);
@@ -8448,7 +8489,7 @@ int OCCTDocumentDimTolToleranceCount(OCCTDocumentRef document)
   {
     // GetGeomTolerances calls GetObject on every datum linked to a tolerance, outside
     // occtDocumentDatumObjectAt and on the document tool's own table (#1030).
-    if (!occtDocumentToolDatumsAreReadable(document->doc->Main()))
+    if (!occtDocumentToolToleranceDatumsAreReadable(document->doc->Main()))
       return 0;
     XCAFDimTolObjects_Tool                                              tool(document->doc);
     NCollection_Sequence<Handle(XCAFDimTolObjects_GeomToleranceObject)> tols;

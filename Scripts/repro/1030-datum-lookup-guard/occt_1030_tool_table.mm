@@ -17,6 +17,9 @@
 //   A  tolerance count, datum with a point and no plane     SIGSEGV unguarded
 //   B  rescale geometry, same datum                         SIGSEGV unguarded
 //   C  control, datum with a plane and a point              never crashed, must still work
+//   D  over-refusal control: a real tolerance plus an unreadable datum linked to nothing.
+//      GetGeomTolerances reaches a datum only through its tolerance, so this one is never
+//      read and the count must still be 1. Guarding the whole table instead answered 0.
 
 // The umbrella first: OCCTBridge_Internal.h uses the public typedefs and declares no
 // includes of its own, exactly as every OCCTBridge_*.mm opens.
@@ -40,7 +43,7 @@
 
 // A datum in the XCAFDoc_DocumentTool table, carrying a point and optionally a plane, linked to a
 // geometric tolerance so GetGeomTolerances reaches it.
-static void buildDatum(OCCTDocumentRef docRef, bool withPlane)
+static void buildDatum(OCCTDocumentRef docRef, bool withPlane, bool linkToTolerance = true)
 {
   Handle(XCAFDoc_DimTolTool) tool = XCAFDoc_DocumentTool::DimTolTool(docRef->doc->Main());
 
@@ -65,11 +68,15 @@ static void buildDatum(OCCTDocumentRef docRef, bool withPlane)
   datumObj->SetPoint(gp_Pnt(7, 7, 7));
   datumAttr->SetObject(datumObj);
 
-  tool->SetDatumToGeomTol(datumLabel, tolLabel);
+  if (linkToTolerance)
+    tool->SetDatumToGeomTol(datumLabel, tolLabel);
 
   TCollection_AsciiString entry;
   TDF_Tool::Entry(datumLabel, entry);
-  std::printf("  datum label %s, plane %s\n", entry.ToCString(), withPlane ? "yes" : "no");
+  std::printf("  datum label %s, plane %s, linked to the tolerance %s\n",
+              entry.ToCString(),
+              withPlane ? "yes" : "no",
+              linkToTolerance ? "yes" : "no");
   // The other table, the one occtDocumentDatumObjectAt reads, cannot see this datum at all.
   std::printf("  OCCTDocumentGetDatumCount (the Main() table) = %d\n",
               OCCTDocumentGetDatumCount(docRef));
@@ -109,6 +116,16 @@ int main(int argc, char** argv)
     const int64_t mainId = doc->registerLabel(doc->doc->Main());
     std::printf("  OCCTDocumentEditorRescaleGeometry returned %d\n",
                 OCCTDocumentEditorRescaleGeometry(doc, mainId, 2.0, true) ? 1 : 0);
+  }
+  else if (std::strcmp(section, "D") == 0)
+  {
+    std::printf("D: over-refusal control, real tolerance + unreadable datum linked to nothing\n");
+    OCCTDocumentRef doc = OCCTDocumentCreate();
+    buildDatum(doc, false, false);
+    // The datum is unreadable but no tolerance points at it, so GetGeomTolerances never calls
+    // GetObject on it and there is nothing to refuse. 1, not 0.
+    std::printf("  OCCTDocumentDimTolToleranceCount returned %d, expected 1\n",
+                OCCTDocumentDimTolToleranceCount(doc));
   }
   else
   {

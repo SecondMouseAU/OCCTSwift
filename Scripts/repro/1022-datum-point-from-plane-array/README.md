@@ -76,16 +76,21 @@ object. Section D shows the shape survives a BinXCAF save and reload, so a docum
 other OCCT-based application reaches it through `Document.loadOCAF` plus any of the seven entry
 points above.
 
-**Nothing in this repo can author it today.** `OCCTDocumentCreateDatum` builds a
+**Nothing on the GD&T write path can author it.** `OCCTDocumentCreateDatum` builds a
 `XCAFDimTolObjects_DatumObject` with a name, a position and a `DatumModifWithValue_None` pair, and
 nothing that reaches either branch. (#1004's own comment beside those two explains why they are
 required by `SetObject` and why the datum-target setters are deliberately left alone.) So the datums
-this package writes take neither branch. That is the only reason the existing suite does not crash,
-and it is a property of the current write surface rather than of the read path.
+this package writes take neither branch, which is the only reason the existing suite did not crash.
+**The label API can author it, which #1030 established and this sentence originally denied**:
+`AssemblyNode.findChild(tag:create:)` plus `initRealArray(lower:upper:)` puts a `TDataStd_RealArray`
+straight on the datum label's own point child, and `Tests/OCCTXCAFTests/Issue1030DatumLookupGuardTests.swift`
+builds the crashing shape that way with no file and no importer involved.
 
-**The STEP writer is a second reader of the same accessor.** `STEPCAFControl_Writer` calls
-`GetObject()` on every datum in three places, so exporting a document that holds such a datum takes
-the same crash as reading it.
+**The STEP writer is a second reader of the same accessor, on a branch nothing here can take.**
+`STEPCAFControl_Writer` calls `GetObject()` on every datum in three places, so exporting a document
+that holds such a datum would take the same crash. All three sit on the AP242 branch, and
+`writeSTEP` pins AP214 and exposes no schema setter, so the bridge cannot reach them. Unguarded and
+unreachable, rather than guarded.
 
 ## The bridge guard, shipped as #1030
 

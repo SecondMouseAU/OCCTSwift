@@ -1,11 +1,11 @@
 #!/bin/bash
-# #1030: build occt_1030_tool_table.mm against the REAL bridge objects and run its three sections.
+# #1030: build occt_1030_tool_table.mm against the REAL bridge objects and run its four sections.
 #
 # The bridge objects come from `swift build`, so this measures the tree as it stands: run it once
 # with the guard in place and once with it removed to see the difference. Each section runs in its
 # own process, because two of them take the process down when the guard is absent.
 #
-#   ./run.sh            all three sections
+#   ./run.sh            all four sections
 #   ./run.sh A          one section
 #
 # Requires a prior `OCCTSWIFT_LOCAL=1 swift build` so .build/ holds current bridge objects, and a
@@ -46,5 +46,5 @@ run_section() {
 if [ $# -ge 1 ]; then
   run_section "$1"
 else
-  for s in A B C; do run_section "$s"; done
+  for s in A B C D; do run_section "$s"; done
 fi

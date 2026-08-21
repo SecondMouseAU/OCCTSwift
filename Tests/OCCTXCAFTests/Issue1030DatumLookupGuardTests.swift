@@ -118,6 +118,14 @@ struct Issue1030DatumLookupGuardTests {
         #expect(!doc.setDatumModifiers(at: index, [.basic]))
         #expect(!doc.setDatumModifierWithValue(at: index, .circularOrCylindrical, value: 1.5))
         #expect(!doc.setDatumTarget(at: index, type: .point, number: 1))
+        // clearDatumTarget reaches the same bridge function as setDatumTarget, so it is refused
+        // for the same reason.
+        #expect(!doc.clearDatumTarget(at: index))
+        // setDatumTargetPlacement is over-determined here and is listed for completeness only: it
+        // also refuses a datum that is not already a datum target of a non-Area type (#1038), and
+        // this datum cannot be made one, because setDatumTarget above is itself refused. So this
+        // line would read false with the guard removed too, and proves nothing on its own. The
+        // four above it are the ones that isolate the guard.
         #expect(
             !doc.setDatumTargetPlacement(
                 at: index,
@@ -126,9 +134,6 @@ struct Issue1030DatumLookupGuardTests {
                 reference: SIMD3(1, 0, 0),
                 length: 30,
                 width: 18))
-        // clearDatumTarget reaches the same bridge function as setDatumTarget, so it is refused
-        // for the same reason.
-        #expect(!doc.clearDatumTarget(at: index))
     }
 
     @Test("A plane location array that cannot supply the point's own index is refused")
