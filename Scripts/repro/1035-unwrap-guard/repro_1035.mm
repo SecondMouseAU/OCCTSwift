@@ -36,6 +36,7 @@
 #include <BRepBuilderAPI_Transform.hxx>
 #include <BRepCheck_Analyzer.hxx>
 #include <BRepExtrema_DistShapeShape.hxx>
+#include <BRepFeat_MakeCylindricalHole.hxx>
 #include <BRepFilletAPI_MakeFillet.hxx>
 #include <BRepGProp.hxx>
 #include <BRepLib_FindSurface.hxx>
@@ -63,6 +64,7 @@
 #include <TopoDS_Iterator.hxx>
 #include <TopoDS_Shape.hxx>
 #include <Standard_Failure.hxx>
+#include <gp_Ax1.hxx>
 #include <gp_Trsf.hxx>
 #include <gp_GTrsf.hxx>
 #include <gp_Vec.hxx>
@@ -327,6 +329,16 @@ int main()
   });
   probe("1", "BRepMesh_IncrementalMesh(nullFace, 0.1)",
         [&] { BRepMesh_IncrementalMesh m(nf, 0.1); (void)m; });
+
+  probe("1", "BRepFeat_MakeCylindricalHole::Init(null, axis)", [&] {
+    BRepFeat_MakeCylindricalHole h;
+    h.Init(ns, gp_Ax1(gp_Pnt(0, 0, 0), gp_Dir(0, 0, 1)));
+  });
+  probe("1", "BRepFeat_MakeCylindricalHole::Perform after a null Init", [&] {
+    BRepFeat_MakeCylindricalHole h;
+    h.Init(ns, gp_Ax1(gp_Pnt(0, 0, 0), gp_Dir(0, 0, 1)));
+    h.Perform(1.0);
+  });
 
   printf("\n%d uncatchable, %d catchable, %d returned\n", uncatchable, catchable, benign);
   return 0;

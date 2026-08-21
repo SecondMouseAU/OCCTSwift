@@ -39,7 +39,13 @@ unwrapping functions with NO catch at all:       39
 ```
 
 The two are `occtBRepFeatCylindricalHole` (`InvalidPlacement` against `Unknown`) and
-`OCCTShapeTypeString` (`"null"` against `"unknown"`). A catch with no `return` of its own is not a
+`OCCTShapeTypeString` (`"null"` against `"unknown"`). Both were checked against the source rather
+than trusted to the detector, and both are real. Only the second is reachable with a null shape
+today: `occtBRepFeatCylindricalHole` still tests the pointer alone, and the sweep says that is
+correct, since `BRepFeat_MakeCylindricalHole::Init` returns for a null shape and `Perform` raises a
+catchable `Standard_Failure` the existing `catch (...)` turns into `Unknown`. So a null shape there
+is a wrong-ish code, not a crash, and guarding it would change an answer nothing measured wants
+changed. A catch with no `return` of its own is not a
 divergence: control leaves the catch and the function's own trailing return runs, which is the same
 value the pointer test gives. Counting those as divergences is what produced a first, wrong answer
 of 78 here, and the corrected detector is in this directory's history rather than left standing.
@@ -84,8 +90,8 @@ clang++ -std=c++17 -ObjC++ -w \
 /tmp/occt_1035
 ```
 
-**61 entry points probed. 17 crash with an uncatchable signal, 4 raise a catchable
-`Standard_Failure`, 40 return.**
+**63 entry points probed. 17 crash with an uncatchable signal, 5 raise a catchable
+`Standard_Failure`, 41 return.**
 
 | crashes on a null shape | copes |
 |---|---|
@@ -147,7 +153,7 @@ one mechanism, so nothing has to decide which is authoritative.
 what makes the 30 visible.
 
 An entry in either table is a **measurement from `repro_1035.mm`**, on the same terms as `ALLOWED`'s
-entries: a probe, not an argument. The tables are as incomplete as the sweep, 61 of roughly 200
+entries: a probe, not an argument. The tables are as incomplete as the sweep, 63 of roughly 200
 distinct entry points, and the remaining tail is the follow-up rather than something this PR
 pretends to have closed.
 
