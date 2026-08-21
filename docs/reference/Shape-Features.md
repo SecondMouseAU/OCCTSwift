@@ -152,7 +152,7 @@ When `fuse` is `true`, material is added (boss); when `false`, material is remov
 
 - **Parameters:** `profile`, wire profile to extrude; `direction`, extrusion direction; `height`, feature height; `fuse`, `true` = add material, `false` = remove material.
 - **Returns:** Modified shape, or `nil` on failure.
-- **OCCT:** `BRepFeat_MakePrism` + `BRepAlgoAPI_Fuse` or `BRepAlgoAPI_Cut`.
+- **OCCT:** `BRepPrimAPI_MakePrism` + `BRepAlgoAPI_Fuse` or `BRepAlgoAPI_Cut`.
 - **Example:**
   ```swift
   let box = Shape.box(width: 50, height: 50, depth: 10)
@@ -172,7 +172,7 @@ public func withBoss(profile: Wire, direction: SIMD3<Double>, height: Double) ->
 
 - **Parameters:** `profile`, profile wire; `direction`, extrusion direction; `height`, boss height.
 - **Returns:** Shape with added boss, or `nil` on failure.
-- **OCCT:** `BRepFeat_MakePrism` (fuse mode).
+- **OCCT:** `BRepPrimAPI_MakePrism` + `BRepAlgoAPI_Fuse`, through `withPrism(..., fuse: true)`.
 
 ---
 
@@ -186,7 +186,7 @@ public func withPocket(profile: Wire, direction: SIMD3<Double>, depth: Double) -
 
 - **Parameters:** `profile`, profile wire defining the pocket boundary; `direction`, pocket direction (into the shape); `depth`, pocket depth.
 - **Returns:** Shape with pocket, or `nil` on failure.
-- **OCCT:** `BRepFeat_MakePrism` (cut mode).
+- **OCCT:** `BRepPrimAPI_MakePrism` + `BRepAlgoAPI_Cut`, through `withPrism(..., fuse: false)`.
 
 ---
 
@@ -1247,8 +1247,8 @@ public func filleted(edges: [Edge], radius: Double) -> Shape?
 
 ### `Shape.FilletResult`
 
-Result of a fillet call that also reports which requested edges OCCT declined (#639), and -- for
-`blendedEdgesWithReport(_:)` -- which duplicate entries were silently overwritten (#633).
+Result of a fillet call that also reports which requested edges OCCT declined (#639) and, for
+`blendedEdgesWithReport(_:)`, which duplicate entries were silently overwritten (#633).
 
 ```swift
 public struct FilletResult: Sendable {
@@ -1271,7 +1271,7 @@ public struct FilletResult: Sendable {
   *which* edges were declined, not *why*. Both lists mirror the caller's request rather than
   deduplicating it: an edge requested three times, and declined, is reported three times in
   `declinedEdgeIndices`; an edge requested three times whose radius is overwritten twice is reported
-  twice in `overwrittenDuplicateIndices` -- the count matches how many entries of the request were
+  twice in `overwrittenDuplicateIndices`: the count matches how many entries of the request were
   refused or discarded, not how many distinct edges were involved. Use `Set(...)` on either field
   for distinct edges.
 
@@ -1285,7 +1285,7 @@ public struct FilletResult: Sendable {
   *which* edges were declined, not *why*. Both lists mirror the caller's request rather than
   deduplicating it: an edge requested three times, and declined, is reported three times in
   `declinedEdgeIndices`; an edge requested three times whose radius is overwritten twice is reported
-  twice in `overwrittenDuplicateIndices` -- the count matches how many entries of the request were
+  twice in `overwrittenDuplicateIndices`: the count matches how many entries of the request were
   refused or discarded, not how many distinct edges were involved. Use `Set(...)` on either field
   for distinct edges.
 
@@ -2071,7 +2071,7 @@ public func blendedEdges(_ edgeRadii: [(edgeIndex: Int, radius: Double)]) -> Sha
   index that does not resolve rejects it too rather than being skipped (#520). The same edge index
   named twice is **not** rejected: `BRepFilletAPI_MakeFillet::Add(radius, edge)` writes to that
   edge's own fillet-contour slot, so the *second* call silently overwrites the first radius (#633).
-  Unchanged, existing behaviour -- see [`blendedEdgesWithReport(_:)`](#blendededgeswithreport_) for
+  Unchanged, existing behaviour; see [`blendedEdgesWithReport(_:)`](#blendededgeswithreport_) for
   the same fillet with a report naming which entries a duplicate overwrote.
 - **Example:**
   ```swift
@@ -2343,7 +2343,7 @@ before any constraint is built, rather than relying on OCCT's own throw.
   - `iterations`: solver iterations (default 2).
   - `tolerance`: approximation tolerance.
 - **Returns:** Face shape, or `nil` on failure.
-- **OCCT:** `GeomPlate_BuildPlateSurface` + `NLPlate_NLPlate` + `GeomPlate_MakeApprox` (via `OCCTShapePlatePointsAdvanced`).
+- **OCCT:** `GeomPlate_BuildPlateSurface` + `GeomPlate_PointConstraint` + `GeomPlate_MakeApprox` (via `OCCTShapePlatePointsAdvanced`).
 
 ---
 

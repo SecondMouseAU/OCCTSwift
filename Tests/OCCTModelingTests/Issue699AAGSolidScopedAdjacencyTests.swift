@@ -3,9 +3,11 @@ import Foundation
 @testable import OCCTSwift
 
 // #699: `AAG.buildGraph()` compared every pair of face occurrences for adjacency and convexity,
-// with no notion of which solid each occurrence belongs to. `OCCTFacesAreAdjacent` and
-// `OCCTEdgeGetConvexity` (`OCCTBridge_BRepGraph.mm`) test two `TopoDS_Face` values purely on their
-// own edge geometry, ignoring the `shape` argument they are handed beyond a null check, so two
+// with no notion of which solid each occurrence belongs to. The bridge calls it made, then
+// `OCCTFacesAreAdjacent` (removed by #784) and now `OCCTFaceGetSharedEdgeSummary` (#783),
+// alongside `OCCTEdgeGetConvexity` (`OCCTBridge_BRepGraph.mm`), test two `TopoDS_Face` values
+// purely on their own edge geometry, ignoring the `shape` argument they are handed beyond a
+// null check, so two
 // faces from DIFFERENT solids in one compound that happen to share a B-Rep edge were reported
 // adjacent, and the convexity of that shared edge was computed with no reference to which solid
 // was asking.
@@ -38,7 +40,7 @@ import Foundation
 // was about order-AGREEMENT, and the horizontal fixture still agrees after #699 (`1` in both
 // orders, was `2` in both orders). What moved is that one of the two "pockets" `detectPockets()`
 // reported before #699 was itself built from a cross-solid comparison between the shared wall and
-// the wrong side of a split face -- exactly the mechanism #699 fixes. See
+// the wrong side of a split face: exactly the mechanism #699 fixes. See
 // `Scripts/repro/cluster-a-subshape-enumeration/README.md`'s "Update following #699's fix" for the
 // full measurement.
 @Suite("AAG restricts adjacency and convexity to one solid (#699)")
@@ -49,7 +51,7 @@ struct Issue699AAGSolidScopedAdjacencyTests {
     /// The issue's own construction: a plain, origin-centred 10mm box split by an X-normal plane
     /// through x=4, recompounded in both member orders. A one-line change to
     /// `Issue642AAGNodeIdentityTests.horizontalSplitBoxCompound(order:)`'s normal and point, per
-    /// #699's own instructions -- the two fixtures are otherwise identical in shape.
+    /// #699's own instructions; the two fixtures are otherwise identical in shape.
     enum Order { case asSplit, reversed }
 
     static func verticalSplitBoxCompound(order: Order) -> Shape? {
@@ -123,9 +125,9 @@ struct Issue699AAGSolidScopedAdjacencyTests {
 
     /// The shared wall's two occurrences (same `distinctFaceIndex`, opposite orientation) are each
     /// adjacent only to faces on their OWN solid's side. Neither wall occurrence is adjacent to the
-    /// other (that guard predates #699, see `Issue642AAGNodeIdentityTests`), and -- the #699 part --
-    /// neither is adjacent to the OTHER solid's half of the split top face either, even though that
-    /// half shares the wall's own top boundary edge.
+    /// other (that guard predates #699, see `Issue642AAGNodeIdentityTests`). The #699 part is
+    /// that neither is adjacent to the OTHER solid's half of the split top face either, even
+    /// though that half shares the wall's own top boundary edge.
     @Test("the shared wall's two occurrences are not adjacent to the other solid's split top-face half")
     func wallOccurrencesDoNotCrossSolidBoundary() {
         guard let compound = Self.verticalSplitBoxCompound(order: .asSplit) else {
@@ -142,7 +144,7 @@ struct Issue699AAGSolidScopedAdjacencyTests {
         }
 
         // Every neighbor of each wall occurrence must be a face that is ALSO a neighbor of, or
-        // equal to, one of the two wall occurrences' own solid-mates -- concretely: no neighbor of
+        // equal to, one of the two wall occurrences' own solid-mates. Concretely: no neighbor of
         // wallSides[0] should be adjacent to wallSides[1] and vice versa, which is what "different
         // solids never touch" implies for a shape where each solid is a single connected box.
         let (indexA, _) = wallSides[0]

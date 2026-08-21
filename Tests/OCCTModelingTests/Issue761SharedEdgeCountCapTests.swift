@@ -3,12 +3,14 @@ import Foundation
 import OCCTBridge
 @testable import OCCTSwift
 
-// #761: investigating whether AAG's hand-rolled pairwise face/edge adjacency
-// (`OCCTFacesAreAdjacent`/`OCCTFaceGetSharedEdges`/`OCCTEdgeGetConvexity`) duplicates
+// #761: investigating whether AAG's hand-rolled pairwise face/edge adjacency (then
+// `OCCTFacesAreAdjacent`, removed by #784, plus `OCCTFaceGetSharedEdges` and
+// `OCCTEdgeGetConvexity`; since #783 one `OCCTFaceGetSharedEdgeSummary` call and
+// `OCCTEdgeGetConvexity`) duplicates
 // `BRepGraph`'s own `adjacentFaces(of:)`/`sharedEdges(between:and:)` found the two are NOT the
 // same question wherever a face is shared across solids: `BRepGraph`'s face-node identity is
 // `IsSame`-deduplicated (the same collapse #642 moved AAG's own node set away from), so a shared
-// face is ONE `BRepGraph` node whose adjacency merges both solids -- measured directly via
+// face is ONE `BRepGraph` node whose adjacency merges both solids, measured directly via
 // `Scripts/repro/761-aag-brepgraph-adjacency/`, which is the census this issue asks for. A naive
 // per-pair swap onto `BRepGraph.sharedEdges(between:and:)` was also measured to be 2-8x slower
 // (and getting worse with model size) than AAG's current direct bridge calls, so `AAG.buildGraph()`
@@ -20,11 +22,14 @@ import OCCTBridge
 // `sharedEdges(between:and:)` has no such cap (an unbounded `std::vector` on the bridge side), and
 // used as the second, independent construction this policy asks for, it disagreed with AAG's own
 // answer on a fixture built specifically to share more than 10 edges between two faces: BRepGraph
-// reported 12, AAG reported 10 (silently truncated). Fixed by sizing the buffer from a new
-// `OCCTFaceGetSharedEdgeCount` bridge call first, in `AAG.buildGraph()` itself -- same O(e1 * e2)
+// reported 12, AAG reported 10 (silently truncated). #761 fixed it by sizing the buffer from a
+// new `OCCTFaceGetSharedEdgeCount` call first, in `AAG.buildGraph()` itself, same O(e1 * e2)
 // cost as before (each face's own small edge set, never the whole shape), not by routing through
-// BRepGraph (which the same census measured to be a real performance regression for this specific
-// call shape).
+// BRepGraph (which the same census measured to be a real performance regression for this
+// specific call shape). #783 then collapsed that pair into one `OCCTFaceGetSharedEdgeSummary`
+// call, which is what `buildGraph()` makes today; the cases below still exercise
+// `OCCTFaceGetSharedEdgeCount` and `OCCTFaceGetSharedEdges` directly, which is now the only
+// coverage either has (#811).
 @Suite("AAG.buildGraph()'s sharedEdgeCount is not capped at 10 (#761)")
 struct Issue761SharedEdgeCountCapTests {
 
@@ -34,7 +39,7 @@ struct Issue761SharedEdgeCountCapTests {
     /// and front face share more than 10 separate boundary-edge segments. Each notch is a small
     /// box straddling both the z=50 (top) and y=-50 (front) planes near x=x0, removing a bite from
     /// both faces and splitting their shared edge there. Matches
-    /// `Scripts/repro/761-aag-brepgraph-adjacency/`'s own `manySharedEdgesFixture()` -- kept as a
+    /// `Scripts/repro/761-aag-brepgraph-adjacency/`'s own `manySharedEdgesFixture()`, kept as a
     /// second, independent construction here (a fresh build in the test target) rather than a
     /// shared helper, since the point is to catch a regression in either copy.
     static func manySharedEdgesFixture() -> Shape? {
@@ -92,7 +97,7 @@ struct Issue761SharedEdgeCountCapTests {
     /// `sharedEdges(between:and:)`, mapped to the same two occurrences via `findNode(for:)`, has
     /// no such cap (an unbounded `std::vector` on the bridge side, `bgSharedEdges` in
     /// `OCCTBridge_BRepGraph.mm`). It must agree with AAG's own count exactly now that AAG is no
-    /// longer capped -- this is precisely the disagreement this issue's census found before the fix.
+    /// longer capped, this is precisely the disagreement this issue's census found before the fix.
     @Test("agrees with BRepGraph's own uncapped sharedEdges count")
     func agreesWithBRepGraphsUncappedCount() {
         guard let shape = Self.manySharedEdgesFixture(),
@@ -125,10 +130,10 @@ struct Issue761SharedEdgeCountCapTests {
     /// (`countOrCollectSharedEdges`, `OCCTBridge_BRepGraph.mm`) instead of two independently
     /// written copies, so they must disagree on a count ONLY because of the `maxEdges` buffer the
     /// collecting call was given, never because the comparison itself differs between the two.
-    /// Calls the bridge functions directly (not through `AAG`, which always sizes its own buffer
-    /// from the true count now, so this specific disagreement is not otherwise observable) with a
-    /// deliberately small `maxEdges: 10` on the same top/front pair that shares 12 edges -- the
-    /// exact shape of the original bug.
+    /// Calls the bridge functions directly, not through `AAG`: since #783 `buildGraph()` makes
+    /// one `OCCTFaceGetSharedEdgeSummary` call and sizes no buffer at all, so this particular
+    /// disagreement is not observable through it. A deliberately small `maxEdges: 10` on the
+    /// same top/front pair that shares 12 edges, the exact shape of the original bug (#811).
     @Test("OCCTFaceGetSharedEdges and OCCTFaceGetSharedEdgeCount agree, differing only by the buffer")
     func bridgeFunctionsShareOneComparison() {
         guard let shape = Self.manySharedEdgesFixture(),
@@ -143,7 +148,7 @@ struct Issue761SharedEdgeCountCapTests {
         let trueCount = OCCTFaceGetSharedEdgeCount(shape.handle, topFace.handle, frontFace.handle)
         #expect(trueCount == 12)
 
-        // The collecting call, handed the old hardcoded buffer size, still truncates -- that is
+        // The collecting call, handed the old hardcoded buffer size, still truncates, that is
         // its documented contract (a fixed, caller-allocated buffer), not a regression. The point
         // is that it truncates at exactly 10, the buffer's own size, and nothing else.
         var cappedBuffer: [OCCTEdgeRef?] = Array(repeating: nil, count: 10)
@@ -153,8 +158,10 @@ struct Issue761SharedEdgeCountCapTests {
             OCCTEdgeRelease(edge)
         }
 
-        // Sized from the true count, the same collecting call now returns everything, with the
-        // buffer fully populated. This is what AAG.buildGraph() does today.
+        // Sized from the true count, the same collecting call returns everything, with the
+        // buffer fully populated. This is what #761 made AAG.buildGraph() do; #783 then replaced
+        // the pair with one OCCTFaceGetSharedEdgeSummary call, so these two functions are now
+        // exercised here and nowhere else (#811).
         var exactBuffer: [OCCTEdgeRef?] = Array(repeating: nil, count: Int(trueCount))
         let exactCount = OCCTFaceGetSharedEdges(shape.handle, topFace.handle, frontFace.handle, &exactBuffer, trueCount)
         #expect(exactCount == trueCount)
@@ -167,7 +174,7 @@ struct Issue761SharedEdgeCountCapTests {
     // MARK: - No regression on the ordinary case
 
     /// A plain box shares no more than one edge between any two adjacent faces. The fix must not
-    /// change this -- it only changes how the buffer is SIZED, not the comparison itself.
+    /// change this, it only changes how the buffer is SIZED, not the comparison itself.
     @Test("a plain box's adjacent faces still share exactly one edge")
     func plainBoxUnaffected() {
         guard let box = Shape.box(width: 10, height: 10, depth: 10) else {
@@ -186,7 +193,7 @@ struct Issue761SharedEdgeCountCapTests {
 
     /// Convexity classification (which reads only the FIRST shared edge, unaffected by how the
     /// count is sized) still resolves. This fixture's top/front pair should classify convex like
-    /// any ordinary box corner -- the notches remove material, they do not add a concave junction
+    /// any ordinary box corner, the notches remove material, they do not add a concave junction
     /// at the corner itself.
     @Test("convexity still resolves for the many-shared-edges pair")
     func convexityStillResolves() {

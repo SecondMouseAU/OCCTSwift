@@ -437,6 +437,128 @@ These require implementing C++ abstract classes, which the bridge architecture d
   `TNaming_NameType` is the naming resolver's rule kind: `TNaming_Naming` is wrapped as an opaque
   attribute, so which rule resolved a name is not surfaced. (#810)
 
+### Features lane, every unwrapped class recorded (#811)
+
+#811 is #807's Pass 4a: the features lane audited against the pinned refman
+(`occt-refman@8.0.1` through the `context` MCP) in both directions. The lane is ten OCCT packages
+and **129 classes**: the six #811's own body names (`BRepFeat_`, `BRepFilletAPI_`,
+`BRepOffsetAPI_`, `ChFi2d_`, `ChFi3d_`, `LocOpe_`) plus four that no pass of #807 names at all,
+each added for its own measured reason rather than as a block:
+
+- `Plate_` is reached by the lane's own calls: 15 of its 60 are `OCCTPlate*`, and those
+  construct `Plate_*` and nothing else.
+- `NLPlate_` and `GeomPlate_` are constructed in `OCCTBridge_ProjLib_NLPlate.mm`, the one bridge
+  file Pass 4a assigns to this lane whole. The lane's nine Swift files do not call the functions
+  that build them (`Surface.swift` and `Shape.swift` do), so this is a file claim rather than a
+  call claim, and it is stated as one.
+- `BRepMAT2d_` is reached by neither. It sits in `OCCTBridge_Geom2d.mm` behind `MedialAxis.swift`.
+  It is here because no pass names it and the medial axis is the nearest subject to this lane,
+  which is a judgement rather than a measurement, and the alternative was leaving five classes
+  unaudited by anyone.
+
+**82 of the 129 are wrapped or documented, and 47 were neither.** Three of the 129 were named in
+this file before this entry, and it is worth being exact about them, because two are genuine
+recorded omissions: `ChFi3d_FilBuilder` and `ChFi3d_ChBuilder` share a bullet under "Classes Not
+Wrapped (require abstract subclass implementations)" with the reason "complex stateful builders
+with protected virtuals", and `BRepOffsetAPI_MakePipe` is named as a wrapped class rather than an
+omission. **Neither ChFi3d builder was ever one of the 47**, because both are documented
+elsewhere under `docs/`. So of the 47 classes that actually needed a reason, none had one, which
+is the largest single result of that pass.
+
+The census is committed and re-runnable at
+[`Scripts/repro/811-refman-coverage-features/`](https://github.com/SecondMouseAU/OCCTSwift/tree/main/Scripts/repro/811-refman-coverage-features);
+it exits 1 if any class below loses its reason here.
+
+**Deprecated collection aliases (24).** Each header carries `Standard_HEADER_DEPRECATED` at file
+scope saying the alias is deprecated since OCCT 8.0.0 and to use the `NCollection_*` template
+directly. Wrapping a deprecated typedef is not a capability, and it is the same "NCollection
+containers" line the summary table above already gives:
+`BRepMAT2d_DataMapOfBasicEltShape`, `BRepMAT2d_DataMapOfShapeSequenceOfBasicElt`,
+`BRepOffsetAPI_SequenceOfSequenceOfReal`, `BRepOffsetAPI_SequenceOfSequenceOfShape`,
+`GeomPlate_Array1OfHCurve`, `GeomPlate_Array1OfSequenceOfReal`, `GeomPlate_HArray1OfHCurve`,
+`GeomPlate_HArray1OfSequenceOfReal`, `GeomPlate_HSequenceOfCurveConstraint`,
+`GeomPlate_HSequenceOfPointConstraint`, `GeomPlate_SequenceOfAij`,
+`GeomPlate_SequenceOfCurveConstraint`, `GeomPlate_SequenceOfPointConstraint`,
+`LocOpe_DataMapOfShapePnt`, `LocOpe_SequenceOfCirc`, `LocOpe_SequenceOfLin`,
+`LocOpe_SequenceOfPntFace`, `NLPlate_SequenceOfHGPPConstraint`, `NLPlate_StackOfPlate`,
+`Plate_Array1OfPinpointConstraint`, `Plate_HArray1OfPinpointConstraint`,
+`Plate_SequenceOfLinearScalarConstraint`, `Plate_SequenceOfLinearXYZConstraint`,
+`Plate_SequenceOfPinpointConstraint`.
+
+**Abstract bases (5).** Not constructible, so the bridge wraps the concrete subclasses instead,
+the same rule the "require abstract subclass implementations" section above states.
+`BRepFeat_Form` (pure virtual, the base the `BRepFeat_Make*` forms share),
+`BRepFilletAPI_LocalOperation` (pure virtual, the base `MakeFillet` and `MakeChamfer` share),
+`LocOpe_GeneratedShape` and `NLPlate_HGPPConstraint` (both pure virtual with a protected
+constructor), and `BRepFeat_RibSlot`, which a pure-virtual test alone misses: it declares none, and
+its only constructor sits at `BRepFeat_RibSlot.hxx:113`, two lines after `protected:`.
+
+**Enums (4).** `ChFi2d_ConstructionError` is read, by value rather than by type name:
+`builder.Status() != ChFi2d_IsDone` at ten sites, six in `OCCTBridge_Modeling.mm` and four in
+`OCCTBridge_Healing.mm`. It is listed here because a name-based coverage test cannot see that,
+not because it is a gap. The other three are unread, and two of them are
+**unsurfaced rather than unreachable**, which a first draft of this paragraph got wrong in both
+cases by reasoning from the class name instead of the header:
+
+- `BRepFeat_StatusError` is what `BRepFeat_Form::CurrentStatusError()` returns, and that method is
+  **public** (`BRepFeat_Form.hxx:134`, two lines before `protected:`), inherited by
+  `BRepFeat_MakePrism`, `BRepFeat_MakeRevol` and `BRepFeat_MakeDPrism`, all three of which the
+  bridge constructs. A caller wanting the error code for a failed `withPrism` cannot get it, and
+  that is a small real gap rather than nothing to wrap.
+- `LocOpe_Operation` is the return type of `LocOpe_Gluer::OpeType()` and
+  `BRepFeat_Gluer::OpeType()`, both public getters on classes the bridge constructs. It is not a
+  mode a caller sets, which is what an earlier draft said; it is a verdict the bridge does not
+  pass on.
+- `BRepFeat_PerfSelection` is the one that really is unreachable: it appears only on protected
+  members of `BRepFeat_Form` and `BRepFeat_RibSlot`, with no public accessor anywhere.
+
+**Covered by a sibling (1).** `BRepOffsetAPI_Sewing` is a one-line
+`typedef BRepBuilderAPI_Sewing`, and the sibling is wrapped.
+
+**Not a class (1).** `ChFi3d_Builder_0.hxx` declares no class of its own name. It is free helper
+functions for `ChFi3d_Builder.cxx`, so there is nothing to wrap.
+
+**Internal helpers (7).** Each serves one already-wrapped entry point and has no independent use:
+`BRepMAT2d_LinkTopoBilo` (maps `BRepMAT2d_Explorer` input back to `MAT_BasicElt`),
+`ChFi3d_SearchSing` (a `math_FunctionWithDerivative` `ChFi3d_Builder` solves internally),
+`GeomPlate_Aij` (two normal indexes and their cross product, `GeomPlate_BuildAveragePlane`'s own
+record), `GeomPlate_PlateG0Criterion` and `GeomPlate_PlateG1Criterion` (`AdvApp2Var_Criterion`
+subclasses `GeomPlate_MakeApprox` constructs for itself), and `LocOpe_Generator` and
+`LocOpe_GluedShape` (the generator and its generated-shape subclass that `BRepFeat_Gluer` drives).
+
+**Real capability gaps, recorded as such (5 classes, 4 of them gaps).** The heading counts
+classes, like every heading above it, so the seven category counts still sum to 47. Four of
+the five are things a CAD consumer could reasonably want and this package does not offer. The
+fifth, the second bullet, sat here as a gap until this pass's fifth review round measured it
+and found it reached; it is kept, marked, because it is the reason the other number is four:
+
+- `Plate_SampledCurveConstraint` is the one `Plate_Plate::Load` overload of nine that no bridge
+  function reaches by any route. The count wants care, and a first draft of this bullet got it
+  wrong by reading the header instead of the call sites. Four overloads are invoked directly
+  (`Plate_PinpointConstraint`, `Plate_LinearXYZConstraint`, `Plate_LinearScalarConstraint`,
+  `Plate_GtoCConstraint`) and four more are reached by decomposition, because
+  `Plate_PlaneConstraint`, `Plate_LineConstraint` and `Plate_FreeGtoCConstraint` each hand back
+  a `Plate_LinearScalarConstraint` from `LSC()` and `Plate_GlobalTranslationConstraint` hands
+  back a `Plate_LinearXYZConstraint` from `LXYZC()`, and the bridge loads those (four
+  `p->Load(...LSC())` and `pp->Load(...LXYZC())` sites in `OCCTBridge_ProjLib_NLPlate.mm`;
+  `grep -n 'Load(' ` rather than a line number, because #1069 moved all four by fifty lines
+  while this audit was in review). So the sampled-curve constraint,
+  which fits a plate through a curve rather than through points, is the gap. Folded into
+  #1021's `Plate_Plate` row rather than filed separately.
+- `Plate_LinearScalarConstraint` is the opposite case and is listed for the same reason
+  `ChFi2d_ConstructionError` is: it is constructed and loaded three times over, and its name
+  never appears in the bridge, so a coverage test that greps for the class reports it missing.
+  Nothing is unwrapped here.
+- `NLPlate_HPG1Constraint`, `NLPlate_HPG2Constraint` and `NLPlate_HPG3Constraint` are the "(no G0)"
+  constraints: the pinned refman describes `NLPlate_HPG1Constraint` as a "PinPoint (no G0) G1
+  Constraint" and its constructor takes `(gp_XY UV, Plate_D1 D1T)` with no position at all, while
+  `NLPlate_HPG0G1Constraint` is "PinPoint G0+G1" and takes `(gp_XY UV, gp_XYZ Value, Plate_D1
+  D1T)`. `Surface.nlPlateDeformedG1`/`G2`/`G3` take a target point, so the bridge builds the
+  `HPG0Gn` form, and that is correct. Constraining a tangent, curvature or third derivative
+  *without* pinning the point is a different capability and is not offered. Until #811 the docs
+  named the no-G0 classes as the ones backing those three methods, which was wrong in the opposite
+  direction and is corrected in the same PR.
+
 ### GD&T dimension accessors left unwrapped (#1004)
 
 #1004 measured `XCAFDimTolObjects_DimensionObject`'s 42 public accessors against what

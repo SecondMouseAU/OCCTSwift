@@ -98,7 +98,7 @@ public struct AAGEdge: Sendable {
 }
 ```
 
-`convexity` is taken from the first shared edge between the two faces. `sharedEdgeCount` is the total number of B-Rep edges shared by the pair, uncapped: before v2.0.0 (#761) it silently capped at 10 (`OCCTFaceGetSharedEdges`'s buffer was sized by a hardcoded caller argument, not the true count, confirmed wrong on a synthetic fixture at 12 real shared edges, reported as 10); a new `OCCTFaceGetSharedEdgeCount` now sizes the buffer exactly before it is filled.
+`convexity` is taken from the first shared edge between the two faces. `sharedEdgeCount` is the total number of B-Rep edges shared by the pair, uncapped: before v2.0.0 (#761) it silently capped at 10 (`OCCTFaceGetSharedEdges`'s buffer was sized by a hardcoded caller argument, not the true count, confirmed wrong on a synthetic fixture at 12 real shared edges, reported as 10); #783 then replaced the count-then-fetch pair with a single `OCCTFaceGetSharedEdgeSummary` call, which returns the true total and the first shared edge from one walk of the pair. Neither `OCCTFaceGetSharedEdgeCount` nor `OCCTFaceGetSharedEdges` is on `AAG`'s call path today; both are still declared and are exercised directly by `Issue761SharedEdgeCountCapTests` (#811).
 
 - `face1Index` / `face2Index`: occurrence indices (into `Shape.orientedFaces()`) of the two adjacent faces.
 - `convexity`: convexity classification of the (first) shared edge.

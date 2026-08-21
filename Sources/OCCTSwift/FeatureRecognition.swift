@@ -157,24 +157,24 @@ public struct AAGEdge: Sendable {
 ///    `Shape.faces()` uses and #642's own fix moved AAG's node set away from
 ///    (`BRepGraph::ShapesView::FindNode` hashes on `TopTools_ShapeMapHasher`, which is `IsSame`:
 ///    same underlying face, either orientation, one node). A face shared by two solids has ONE
-///    `BRepGraph` node, not two occurrence nodes -- confirmed by mapping every occurrence of
+///    `BRepGraph` node, not two occurrence nodes, confirmed by mapping every occurrence of
 ///    `orientedFaces()` to its `BRepGraph` node via `findNode(for:)` on both split fixtures: the
 ///    wall's two occurrences always resolve to the identical node index. Querying that one node's
 ///    `adjacentFaces(of:)` returns neighbors from BOTH solids merged (measured: 8 faces spanning
 ///    both solid groups on the vertical- and horizontal-cut fixtures), because `BRepGraph` has no
 ///    concept of "this face as seen from solid A" versus "from solid B" to keep them apart. That
 ///    is exactly the cross-solid contamination #699 fixed by restricting `buildGraph()`'s own
-///    pairwise loop to same-solid pairs -- a fix that is possible here because `AAG` keeps a
+///    pairwise loop to same-solid pairs, a fix that is possible here because `AAG` keeps a
 ///    separate node per occurrence, and would not be expressible against a graph that has already
 ///    thrown that distinction away.
 /// 2. **A per-pair swap is measurably slower, and the gap widens with model size.** `BRepGraph`'s
 ///    own `adjacentFaces(of:)`/`sharedEdges(between:and:)` (`bgAdjacentFaces`/`bgSharedEdges`,
 ///    `OCCTBridge_BRepGraph.mm`) each linearly scan every edge in the WHOLE graph, because OCCT
 ///    8.0.0p1 dropped `TopoView::FaceOps`'s direct face-face helpers and there is no indexed
-///    face-to-face incidence to query instead. `OCCTFaceGetSharedEdges` compares only the two
+///    face-to-face incidence to query instead. The direct call compares only the two
 ///    faces' own (small, typically 4-6) edge sets. Measured on a plate with a grid of drilled
 ///    holes: replacing the inner call, same O(n^2) outer loop, cost 2.4x more wall time at 22
-///    face occurrences and 8x more at 70 -- growing, not constant, because the graph's own edge
+///    face occurrences and 8x more at 70, growing, not constant, because the graph's own edge
 ///    count grows with the model while each face's own edge count does not. Restricting the swap
 ///    to only the pairs already confirmed adjacent (a much smaller, roughly-linear subset) still
 ///    roughly doubled the total cost of `buildGraph()`, because `BRepGraph`'s per-call scan cost is
@@ -184,11 +184,14 @@ public struct AAGEdge: Sendable {
 /// What #761 fixed instead: the one genuine correctness gap the comparison surfaced,
 /// `AAGEdge.sharedEdgeCount` silently capping at 10 (`OCCTFaceGetSharedEdges`'s buffer, sized by a
 /// hardcoded caller argument, not the true count) even though `BRepGraph.sharedEdges(between:and:)`
-/// has no such cap -- confirmed on a synthetic fixture at 12 real shared edges, reported as 10.
-/// Fixed at the root, in the SAME direct call this type already makes: a new
-/// `OCCTFaceGetSharedEdgeCount` sizes the buffer exactly before `OCCTFaceGetSharedEdges` fills it,
-/// same O(e1 * e2) cost as before (run twice on each face's own small edge set, never the whole
-/// shape), with none of the scaling cost a `BRepGraph`-routed fix would have carried.
+/// has no such cap, confirmed on a synthetic fixture at 12 real shared edges, reported as 10.
+/// Fixed at the root, in the SAME direct call this type already makes, with none of the scaling
+/// cost a `BRepGraph`-routed fix would have carried. #761 did that with an
+/// `OCCTFaceGetSharedEdgeCount` call sizing the buffer before `OCCTFaceGetSharedEdges` filled
+/// it; #783 then replaced both with
+/// the single `OCCTFaceGetSharedEdgeSummary` call `buildGraph()` makes today, which returns the
+/// true total and the first shared edge from one walk of the pair. Neither of the two earlier
+/// functions is called from this file any more (#811).
 public final class AAG: @unchecked Sendable {
     /// The shape this graph represents.
     public let shape: Shape
@@ -275,8 +278,8 @@ public final class AAG: @unchecked Sendable {
         // #699: which solid each occurrence belongs to, so the pairwise loop below never asks
         // OCCTFaceGetSharedEdgeSummary/OCCTEdgeGetConvexity about two faces from different solids.
         // Neither
-        // bridge function has any notion of solid membership -- both compare face1/face2 purely on
-        // their own edge geometry, ignoring the `shape` argument beyond a null check -- so on a
+        // bridge function has any notion of solid membership, both compare face1/face2 purely on
+        // their own edge geometry, ignoring the `shape` argument beyond a null check, so on a
         // vertical cut, the two top-face halves (which border each other along the cut line) and
         // each half's own side of the shared wall were being compared cross-solid as well as
         // within their own solid, on top of the correct same-solid adjacencies.
@@ -304,14 +307,14 @@ public final class AAG: @unchecked Sendable {
                 // #783: ONE bridge call per pair, not three. This used to ask
                 // OCCTFacesAreAdjacent (is there a shared edge), then
                 // OCCTFaceGetSharedEdgeCount (how many), then OCCTFaceGetSharedEdges(maxEdges: 1)
-                // (give me one, for convexity) -- each rebuilding both faces' TopExp edge maps,
+                // (give me one, for convexity), each rebuilding both faces' TopExp edge maps,
                 // and the first and third literally redundant since the third always re-finds the
                 // edge the first proved exists. A non-zero count IS adjacency.
                 //
                 // #761: the count is the TRUE count. The old code sized a fixed 10-slot buffer and
                 // reported whatever fit, so a pair sharing more than ten edges silently
-                // under-reported -- measured directly, a synthetic 11-notch fixture shares 12 and
-                // the old code said 10.
+                // under-reported. Measured directly: a synthetic 11-notch fixture shares 12
+                // and the old code said 10.
                 var firstShared: OCCTEdgeRef?
                 let trueCount = Int(
                     OCCTFaceGetSharedEdgeSummary(
@@ -598,8 +601,8 @@ extension AAG {
     /// itself still had a real gap. It was also capped at the time: `OCCTFaceGetSharedEdges`'s
     /// fixed buffer silently truncated past its slot count, so a floor/wall pair sharing more
     /// edges than that (plausible after healing splits a boundary into segments, and confirmed on
-    /// a synthetic fixture by #761) would undercount regardless of wire scope -- `buildGraph()`
-    /// now sizes that buffer from `OCCTFaceGetSharedEdgeCount` instead of a fixed 10, so
+    /// a synthetic fixture by #761) would undercount regardless of wire scope. `buildGraph()`
+    /// now reads the true total from `OCCTFaceGetSharedEdgeSummary` (#783) instead, so
     /// `AAGEdge.sharedEdgeCount` itself is no longer capped, but the per-edge test below still
     /// does not depend on it being accurate, which is the point: it does not read
     /// `sharedEdgeCount` at all. Testing membership per edge instead of comparing sums removes both failure modes
@@ -1170,33 +1173,33 @@ extension AAG {
     ///
     /// ## What "is a hole" means, under `ChFi3d::DefineConnectType` (#747)
     ///
-    /// The original criterion -- every neighbor connects via a concave edge -- was written
+    /// The original criterion, every neighbor connects via a concave edge, was written
     /// against a convexity formula (pre-#723) that sometimes misclassified a curved rim as
     /// concave when it geometrically should not be. Under the correct classifier that
     /// criterion is unsatisfiable for either ordinary hole shape: a through-hole's wall has
-    /// **zero** concave neighbors (both rims are convex -- the solid occupies 90 degrees
+    /// **zero** concave neighbors (both rims are convex, the solid occupies 90 degrees
     /// there, not the 270 that makes an edge concave), and a blind hole's wall has exactly
     /// **one** out of two (the floor, not the rim where it opens). "All neighbors concave"
     /// can never hold for either, which is why #747 measured zero holes for both.
     ///
-    /// A hole is not defined by its neighbors' convexity at all -- that only ever describes
+    /// A hole is not defined by its neighbors' convexity at all: that only ever describes
     /// the rims where the hole *meets other geometry*, and a through-hole has no such junction
     /// that is concave. What every hole's lateral wall shares, independent of depth, is the
     /// wall's own intrinsic shape:
     ///
-    /// 1. **Cylindrical or conical** -- the two developable surface types a drilled or bored
+    /// 1. **Cylindrical or conical**, the two developable surface types a drilled or bored
     ///    feature produces (a conical wall covers a countersink/counterbore transition).
     /// 2. **Closed in U by its own seam.** The wall wraps all the way around its axis, bounded
-    ///    only by rim(s) in V, not by additional edges along U. A partial revolve -- an edge
-    ///    fillet is the common example -- is bounded by two more edges along U as well, and is
+    ///    only by rim(s) in V, not by additional edges along U. A partial revolve (an edge
+    ///    fillet is the common example) is bounded by two more edges along U as well, and is
     ///    not a hole.
     /// 3. **Material lies radially outside the wall, not inside it.** A hole is a void: the
     ///    solid occupies the space between the bore and the surrounding stock, so the face's
     ///    own outward normal (already corrected for ``Face/orientation``, see
     ///    ``Face/normal(atU:v:)``) points *back toward the axis*. A boss or a standalone solid
-    ///    cylinder is the mirror image of the same topology -- same surface type, same closed-
+    ///    cylinder is the mirror image of the same topology, same surface type, same closed-
     ///    in-U shape, sometimes even the same neighbor-convexity signature (a standalone
-    ///    cylinder's wall has zero concave neighbors too) -- but its material fills the inside,
+    ///    cylinder's wall has zero concave neighbors too), but its material fills the inside,
     ///    so its normal points *away* from the axis. Nothing about neighbor convexity
     ///    distinguishes the two; this does, directly, from the wall's own geometry.
     ///
@@ -1204,7 +1207,7 @@ extension AAG {
     /// (``Face/primaryAxis``) rather than inferring one from a Z-aligned bounding box, which
     /// the previous aspect-ratio heuristic did implicitly. A pipe's bore is correctly reported
     /// as a hole by this same rule (material lies radially outside its inner wall), and a
-    /// pipe's outer wall is correctly excluded (material lies radially inside it) -- a case the
+    /// pipe's outer wall is correctly excluded (material lies radially inside it), a case the
     /// old formula, keyed off a fixed Z axis and a bounding-box aspect ratio, could not
     /// distinguish from a first-principles derivation.
     ///

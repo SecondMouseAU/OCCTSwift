@@ -50,8 +50,8 @@ struct Issue642AAGNodeIdentityTests {
     /// (to have an index to check at all). The cut at x=8 stays clear of the pocket's own
     /// footprint (x -5...5), so it neither destroys the pocket nor complicates the shared wall.
     /// The pieces are compounded pocket-piece-last: measured directly, that is what pushes at
-    /// least one pocket index past `faces().count` (the natural split order does not -- the
-    /// pocket's own piece is first, so none of its indices shift).
+    /// least one pocket index past `faces().count` (the natural split order does not, because
+    /// the pocket's own piece is first, so none of its indices shift).
     static func pocketedSplitBoxCompound() -> Shape? {
         guard let box = Shape.box(width: 20, height: 20, depth: 20),
               let pocketTool = Shape.box(origin: SIMD3(-5, -5, 0), width: 10, height: 10, depth: 15),
@@ -162,7 +162,8 @@ struct Issue642AAGNodeIdentityTests {
     }
 
     /// `AAG` does not link the two nodes of a shared face to each other: they are the same face,
-    /// not neighbors of it. Without the identity guard in `buildGraph()`, `OCCTFacesAreAdjacent`
+    /// not neighbors of it. Without the identity guard in `buildGraph()`, the adjacency call
+    /// (`OCCTFacesAreAdjacent` when #642 was written, `OCCTFaceGetSharedEdgeSummary` since #783)
     /// reports every one of a face's own boundary edges as "shared" with itself.
     @Test("the shared wall's two nodes are not adjacent to each other")
     func sharedWallNodesAreNotMutualNeighbors() {

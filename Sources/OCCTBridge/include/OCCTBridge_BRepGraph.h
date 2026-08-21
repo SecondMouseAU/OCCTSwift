@@ -58,7 +58,7 @@ OCCTEdgeConvexity OCCTEdgeGetConvexity(OCCTShapeRef shape,
 ///
 /// Shares its face-pair edge-identity comparison with OCCTFaceGetSharedEdgeCount through one
 /// internal helper (`countOrCollectSharedEdges`, OCCTBridge_BRepGraph.mm) rather than two
-/// independent copies of the same loop -- #761's review: two copies is the shape of bug that let
+/// independent copies of the same loop, #761's review: two copies is the shape of bug that let
 /// the original 10-cap survive unnoticed in the first place, since nothing forced them to agree.
 /// @param shape The shape containing the faces
 /// @param face1 First face
@@ -67,6 +67,10 @@ OCCTEdgeConvexity OCCTEdgeGetConvexity(OCCTShapeRef shape,
 /// @param maxEdges Maximum number of edges to return
 /// @return Number of shared edges found, truncated at maxEdges if the true count is larger. Call
 ///   OCCTFaceGetSharedEdgeCount first to size outEdges exactly and avoid truncation (#761).
+///   For the common case, the true count plus the first shared edge, prefer
+///   OCCTFaceGetSharedEdgeSummary: it answers both from ONE walk of the pair, and it is what
+///   AAG.buildGraph() has used since #783. This pair remains for a caller that needs every
+///   shared edge rather than the first (#811).
 int32_t OCCTFaceGetSharedEdges(OCCTShapeRef shape,
                                OCCTFaceRef  face1,
                                OCCTFaceRef  face2,
@@ -77,20 +81,22 @@ int32_t OCCTFaceGetSharedEdges(OCCTShapeRef shape,
 ///
 /// `AAG.buildGraph()` (`FeatureRecognition.swift`) used to call `OCCTFaceGetSharedEdges` directly
 /// with a hardcoded `maxEdges: 10`, so `AAGEdge.sharedEdgeCount` silently truncated at 10 on any
-/// face pair sharing more edges -- plausible after healing splits a boundary into segments, and
+/// face pair sharing more edges, plausible after healing splits a boundary into segments, and
 /// reproduced directly: an 11-notch synthetic fixture measured 12 shared edges between two faces,
 /// reported as 10 (`Scripts/repro/761-aag-brepgraph-adjacency/`). This is the same count-then-fetch
 /// idiom `BRepGraph.swift`'s own `fetchIndices` helper already uses for every `...Count`/
 /// `...Indices` bridge pair: call this first to size the buffer exactly, then call
-/// OCCTFaceGetSharedEdges with that exact count.
+/// OCCTFaceGetSharedEdges with that exact count. If all you need is the count and the first
+/// shared edge, OCCTFaceGetSharedEdgeSummary does both in one walk and is what
+/// AAG.buildGraph() calls today (#783, #811).
 ///
 /// Reads the identical comparison OCCTFaceGetSharedEdges does, through the shared
-/// `countOrCollectSharedEdges` helper both call -- not a second, independently-written copy of the
+/// `countOrCollectSharedEdges` helper both call, not a second, independently-written copy of the
 /// loop (#761 review). Same O(e1 * e2) cost as OCCTFaceGetSharedEdges itself (each face's own edge
 /// count, never the whole shape), so sizing correctly costs nothing beyond running that one
 /// comparison twice (once per call), which #761's own measurement found negligible next to the
 /// alternative of routing through BRepGraph.sharedEdges(between:and:) instead (a real, measured
-/// performance regression at model scale -- see that repro directory's README for the numbers).
+/// performance regression at model scale, see that repro directory's README for the numbers).
 /// @param shape The shape containing the faces
 /// @param face1 First face
 /// @param face2 Second face
