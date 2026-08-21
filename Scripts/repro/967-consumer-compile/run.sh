@@ -3,10 +3,10 @@
 # #967: what a CONSUMER of this package inherits, and the shapes that do not compile.
 #
 # Builds a throwaway consumer package against this checkout and checks each row against the outcome
-# it is supposed to have. Rows 1 to 4 are Swift-only consumers, which are the ones the guide's
-# headline claim ("a Swift target needs nothing") rests on. Rows 5 to 9 put an OCCT include in the
-# consumer's own C-family file: row 5 is the reporter's failure and rows 6 to 9 are the wall behind
-# it and the two ways through.
+# it is supposed to have. Rows 1 to 5 are Swift-only consumers, four library targets and an
+# executable, which are the shapes the guide's headline claim ("a Swift target needs nothing")
+# rests on. Rows 6 to 10 put an OCCT include in the consumer's own C-family file: row 6 is the
+# reporter's failure and rows 7 to 10 are the wall behind it and the two ways through.
 #
 # Usage:  bash Scripts/repro/967-consumer-compile/run.sh [workdir]
 # Exit:   0 if every row matched its expected outcome, 1 otherwise.
@@ -34,10 +34,15 @@ if [ -e "$WORK" ] && [ ! -f "$WORK/.occtswift-967-workdir" ]; then
 fi
 rm -rf "$WORK"
 # SwiftPM requires a public headers directory for a C-family target, so give it an empty one.
-mkdir -p "$WORK/Sources/ConsumerLang/include" "$WORK/Sources/ConsumerSwift"
+mkdir -p "$WORK/Sources/ConsumerLang/include" "$WORK/Sources/ConsumerSwift" "$WORK/Sources/ConsumerExe"
 : > "$WORK/.occtswift-967-workdir"
 cat > "$WORK/Sources/ConsumerLang/include/ConsumerLang.h" <<'EOF'
 // Deliberately empty: the target's public surface plays no part in #967.
+EOF
+cat > "$WORK/Sources/ConsumerExe/main.swift" <<'EOF'
+import OCCTSwift
+
+print(Shape.box(width: 10, height: 10, depth: 10) != nil)
 EOF
 
 # $1 = "" or a trailing cxxLanguageStandard clause, $2 = the ConsumerSwift target's swiftSettings.
@@ -61,6 +66,9 @@ let package = Package(
         .target(name: "ConsumerSwift",
                 dependencies: [.product(name: "OCCTSwift", package: "$PKG")],
                 path: "Sources/ConsumerSwift"$2),
+        .executableTarget(name: "ConsumerExe",
+                dependencies: [.product(name: "OCCTSwift", package: "$PKG")],
+                path: "Sources/ConsumerExe"),
     ]$1
 )
 EOF
@@ -130,6 +138,19 @@ swift_row() {
   verdict "$4" "$(classify "$out" "Compiling ConsumerSwift Consumer_row$ROW.swift")"
 }
 
+# $1 = label, $2 = expected. The executable's source is fixed, so this row differs from the
+# library rows only in the product kind, which is the thing it is here to cover.
+exe_row() {
+  ROW=$((ROW + 1))
+  echo
+  echo "########## row $ROW: $1 ##########"
+  write_manifest "" ""
+  local out
+  out="$( cd "$WORK" && swift build --target ConsumerExe 2>&1 )"
+  echo "$out" | grep -E "error:|Build of target" | head -4
+  verdict "$2" "$(classify "$out" "Compiling ConsumerExe main.swift")"
+}
+
 # $1 = label, $2 = extension, $3 = manifest cxxLanguageStandard clause, $4 = expected
 lang_row() {
   ROW=$((ROW + 1))
@@ -160,6 +181,7 @@ swift_row "Swift target, import only, no settings"                      "    ret
 swift_row "Swift target calling the API"                                "$BOX"             ""         pass
 swift_row "Swift target with .interoperabilityMode(.Cxx)"               "$BOX"             "$INTEROP" pass
 swift_row "Swift target touching Mesh, Surface, Curve3D and Document"   "$TYPES"           ""         pass
+exe_row  "Swift executable target"                                                                pass
 
 lang_row "Objective-C (.m), the reported failure"                       ".m"   ""       type_traits
 lang_row "C (.c), the same missing C++ standard library"                ".c"   ""       type_traits

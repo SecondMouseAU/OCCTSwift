@@ -633,6 +633,10 @@ docs/
 ├── guides/
 │   ├── adding-features.md    # Step-by-step: bridge header → impl → Swift → test
 │   ├── building-occt.md      # Rebuild OCCT.xcframework from source
+│   ├── consuming-from-objective-c.md  # What a CONSUMER's own target must set (#967)
+│   ├── cookbook/             # Task-oriented, example-rich guides
+│   ├── prebuilt-bridge.md    # Opt-in prebuilt bridge binary (#339)
+│   ├── sharing-the-xcframework.md     # One local xcframework across repos (#260)
 │   └── occt-concepts.md      # B-Rep topology, handles, shapes primer
 ├── integration-tests.md      # Design, CAM, stress, and regression test plans
 ├── naming-conventions.md     # Bridge and Swift naming patterns

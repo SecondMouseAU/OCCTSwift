@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-count-operations.py: derive OCCTSwift's canonical operation count and keep the two
+count-operations.py: derive OCCTSwift's canonical operation count and keep the three
 headline figures from drifting apart.
 
 CANONICAL COUNTING RULE (decided on issue #289):
@@ -29,11 +29,11 @@ both written in the same commit, so at most one was ever right (#289).
 
 Usage:
     ./Scripts/count-operations.py           # report; exit 1 if the docs disagree
-    ./Scripts/count-operations.py --fix     # rewrite README + API_REFERENCE Total
+    ./Scripts/count-operations.py --fix     # rewrite README + API_REFERENCE Total + docs/index.md
     ./Scripts/count-operations.py --audit   # list counted entry points with no reference doc
 
-Exit status is 1 when README's headline or API_REFERENCE's Total disagrees with the derived
-count, so this can gate a commit: it always could; it was the one gate script whose docstring
+Exit status is 1 when README's headline, API_REFERENCE's Total or docs/index.md's headline
+disagrees with the derived count, so this can gate a commit: it always could; it was the one gate script whose docstring
 never said so, which is why it read as a release-time reporting tool. Exit status is 2 for an
 unrecognised option: this script has no `--self-test`, its three sibling gates do, and CI pairs
 each of theirs with its real run, so `count-operations.py --self-test` is the natural thing to
@@ -362,7 +362,10 @@ def read_stated():
     index = os.path.join(ROOT, "docs/index.md")
     r = re.search(r'\*\*([\d,]+) wrapped operations\*\*', open(readme, encoding="utf-8").read())
     a = re.search(r'^\|\s*\*\*Total\*\*\s*\|\s*\*\*([\d,]+)\*\*\s*\|', open(apiref, encoding="utf-8").read(), re.M)
-    i = re.search(r'\*\*([\d,]+) wrapped operations\.\*\*', open(index, encoding="utf-8").read())
+    # The period is optional deliberately: docs/index.md writes it inside the bold and README
+    # outside, and a regex that insisted on one spelling would turn a punctuation edit into a
+    # crash rather than a check (found by a pre-PR review, which did exactly that edit).
+    i = re.search(r'\*\*([\d,]+) wrapped operations\.?\*\*', open(index, encoding="utf-8").read())
     return (int(r.group(1).replace(',', '')) if r else None,
             int(a.group(1).replace(',', '')) if a else None,
             int(i.group(1).replace(',', '')) if i else None)
@@ -411,7 +414,21 @@ def fix(derived):
         sys.exit("API_REFERENCE: could not find the 'covering **N** of the entry points (~P%)' "
                  "note: refusing to guess")
     open(apiref, "w", encoding="utf-8").write(new_s)
-    print(f"  rewrote README + API_REFERENCE Total -> {derived:,}")
+
+    # docs/index.md carries the same headline and is checked by the same gate, so --fix has to
+    # rewrite it too. It did not until #967, and the failure was silent in the worst way: --fix
+    # repaired two of three files, printed a success line and exited 0, while a plain run on the
+    # same tree still exited 1. A repair route that under-repairs and reports success is worse
+    # than no repair route, because the release engineer it exists for stops looking.
+    index = os.path.join(ROOT, "docs/index.md")
+    s = open(index, encoding="utf-8").read()
+    new_s, n = re.subn(r'\*\*[\d,]+( wrapped operations\.?\*\*)',
+                       rf'**{derived:,}\g<1>', s, count=1)
+    if n != 1:
+        sys.exit("docs/index.md: could not find the 'N wrapped operations' headline: refusing to guess")
+    open(index, "w", encoding="utf-8").write(new_s)
+
+    print(f"  rewrote README + API_REFERENCE Total + docs/index.md -> {derived:,}")
     print(f"  rewrote the categorisation note -> {rowsum:,} (~{pct}%)")
 
 

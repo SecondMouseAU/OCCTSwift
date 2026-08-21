@@ -1,6 +1,6 @@
 ---
 title: Consuming the package
-nav_order: 3
+nav_order: 14
 ---
 
 # Consuming the package, and reaching OCCT's C++ API from your own code
@@ -18,8 +18,10 @@ Measured on v3.0.0, ten Swift-only consumer shapes, all green:
   `Surface`, `Curve3D` and `Document`, and an executable target.
 - Under `xcodebuild`, that consumer package on macOS, generic iOS and iOS Simulator.
 - Under `xcodebuild`, a real Xcode macOS app project with the package as a dependency, both with
-  Xcode's default `CLANG_CXX_LIBRARY` and forced to `libstdc++`, which changes nothing because
-  Xcode does not apply it to package targets.
+  Xcode's default `CLANG_CXX_LIBRARY` and forced to `libstdc++`. Both are green. That the override
+  does not reach this package's own bridge target is the likeliest reading and is not measured
+  here: what is measured is that the build succeeds, and `-stdlib=libstdc++` on this toolchain
+  fails `#include <type_traits>` outright, so it cannot have reached the bridge's `.mm` files.
 
 ## OCCT's own headers are visible, and have two requirements
 
@@ -61,13 +63,16 @@ manifest). Set `CLANG_CXX_LANGUAGE_STANDARD` to `c++17` or later on an Xcode tar
 
 OCCT 8.0 deprecates its legacy spellings (`Standard_True`, `Standard_Real`, the `TopTools_*` map
 and list typedefs, `TColStd_Array1Of*`) in favour of native C++ types and explicit `NCollection_*`
-templates, and the warnings follow whoever writes them rather than whoever includes the header.
-Measured on a `.mm` compiled with `-Wdeprecated-declarations` against the pinned headers: including
-`<STEPControl_Reader.hxx>` and using nothing gives **0** warnings, and naming four legacy spellings
-gives **5**. So expect them in proportion to your own code, not to OCCT's header tree.
+templates. Two different warnings come out of that, and only one of them tracks your own code.
+Measured on a `.mm` compiled against the pinned headers: including `<STEPControl_Reader.hxx>` and
+using nothing gives **0** `-Wdeprecated-declarations`, and naming four legacy spellings gives
+**5**, so that kind is in proportion to what you write. But some of OCCT's legacy convenience
+headers are deprecated as *headers*, and those warn on the include alone: `<TopTools_ListOfShape.hxx>`
+and `<TColStd_Array1OfReal.hxx>` each emit
+`is deprecated since OCCT 8.0.0 [-W#pragma-messages]` with no code of yours at all.
 
-`OCCT_NO_DEPRECATED` is OCCT's own opt-out, defined in `Standard_Macro.hxx`, and it takes that same
-file to 0. This package sets it on its own bridge target, which is 16 `.mm` files written in the
+`OCCT_NO_DEPRECATED` is OCCT's own opt-out, defined in `Standard_Macro.hxx`, and it takes both kinds
+to 0. This package sets it on its own bridge target, which is 16 `.mm` files written in the
 legacy idiom and was measuring roughly 684 warnings per consumer build before it did (#281). Define
 it on yours if the noise is drowning your own diagnostics, remembering that it buys quiet rather
 than absolution: the spellings are still deprecated and will be removed upstream eventually.
@@ -108,5 +113,5 @@ Plain macOS and iOS are unaffected. See the platform table in
 ## Reproducer
 
 [`Scripts/repro/967-consumer-compile/`](https://github.com/SecondMouseAU/OCCTSwift/tree/main/Scripts/repro/967-consumer-compile)
-carries the full measured grid and a `run.sh` that builds a throwaway consumer package five ways and
+carries the full measured grid and a `run.sh` that builds a throwaway consumer package ten ways and
 checks each against its expected outcome.

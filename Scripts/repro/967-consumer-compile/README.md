@@ -39,10 +39,12 @@ nowhere.
 
 ## The grid
 
-Everything below was built, not reasoned about, and every row has a transcript in this directory:
-`run.sh` re-runs the nine `swift build` rows and writes `swiftpm-rows.txt`, the `xcodebuild` rows are
-captured in `xcode-rows.txt`, and the one row needing the network is in `url-consumer.txt`.
-`pass` means the build completed.
+Everything below was built, not reasoned about, and every row has a transcript in this directory.
+`swiftpm-rows.txt` is a captured, path-normalised copy of `run.sh`'s stdout for the ten
+`swift build` rows; `run.sh` itself writes nothing outside its workdir, so re-running it and seeing
+that file unchanged is not evidence it is current, and the way to check is to compare its output.
+`xcode-rows.txt` holds the `xcodebuild` rows and `url-consumer.txt` the one row that needs the
+network. `pass` means the build completed.
 
 ### A consumer whose own code is Swift only
 
@@ -53,10 +55,10 @@ captured in `xcode-rows.txt`, and the one row needing the network is in `url-con
 | Swift library target calling the API | `swift build` | pass, `run.sh` row 2 |
 | Swift library target with `.interoperabilityMode(.Cxx)` | `swift build` | pass, `run.sh` row 3 |
 | Swift target touching `Mesh`, `Surface`, `Curve3D`, `Document` | `swift build` | pass, `run.sh` row 4 |
-| Executable target | `swift build` | pass |
+| Swift executable target | `swift build` | pass, `run.sh` row 5 |
 | The consumer package built by Xcode, macOS | `xcodebuild` | pass |
 | A real Xcode macOS **app project** with the package dependency | `xcodebuild` | pass |
-| The same app forced to `CLANG_CXX_LIBRARY=libstdc++` | `xcodebuild` | pass, the setting does not reach package targets |
+| The same app forced to `CLANG_CXX_LIBRARY=libstdc++` | `xcodebuild` | pass. Why it is harmless is not measured here; what is, is that `-stdlib=libstdc++` fails `#include <type_traits>` on this toolchain, so it cannot have reached the bridge |
 | The consumer package, generic iOS | `xcodebuild` | pass |
 | The consumer package, iOS Simulator | `xcodebuild` | pass |
 | The consumer package, Mac Catalyst | `xcodebuild` | fail, and unrelated: `no library for this platform was found in OCCT.xcframework`, which is self-explaining and is not #967 |
@@ -74,11 +76,11 @@ only in that file's language and the target's C++ standard.
 | Xcode app, `.m` (Objective-C) | `xcodebuild` | **fail: `Standard_Std.hxx:19:10: error: 'type_traits' file not found`** |
 | The same file renamed `.mm`, target setting no standard (resolves to `gnu++14`) | `xcodebuild` | fail: `no template named 'is_trivially_copyable_v'`, and six more, all C++17 |
 | The same, `CLANG_CXX_LANGUAGE_STANDARD=c++17` | `xcodebuild` | pass |
-| SwiftPM consumer package, `.m` (Objective-C) | `swift build` | **fail: the identical `type_traits` error**, `run.sh` row 5 |
-| SwiftPM consumer package, `.c` (C) | `swift build` | fail: the same `type_traits` error, `run.sh` row 6 |
-| The same renamed `.mm`, consumer manifest declaring no C++ standard | `swift build` | fail: the same C++17 errors, `run.sh` row 7 |
-| The same, consumer manifest declaring `cxxLanguageStandard: .cxx17` | `swift build` | pass, `run.sh` row 8 |
-| A `.cpp` (C++) file, consumer manifest declaring `cxxLanguageStandard: .cxx17` | `swift build` | pass, `run.sh` row 9 |
+| SwiftPM consumer package, `.m` (Objective-C) | `swift build` | **fail: the identical `type_traits` error**, `run.sh` row 6 |
+| SwiftPM consumer package, `.c` (C) | `swift build` | fail: the same `type_traits` error, `run.sh` row 7 |
+| The same renamed `.mm`, consumer manifest declaring no C++ standard | `swift build` | fail: the same C++17 errors, `run.sh` row 8 |
+| The same, consumer manifest declaring `cxxLanguageStandard: .cxx17` | `swift build` | pass, `run.sh` row 9 |
+| A `.cpp` (C++) file, consumer manifest declaring `cxxLanguageStandard: .cxx17` | `swift build` | pass, `run.sh` row 10 |
 
 Three scenarios are covered on both build systems, `.m`, `.mm` below C++17 and `.mm` at C++17, and
 the two agree on each. That is the second construction, and it is what makes this a property of the
@@ -90,7 +92,7 @@ package's header exposure rather than of Xcode. `.c` and `.cpp` were measured on
 bash Scripts/repro/967-consumer-compile/run.sh
 ```
 
-That covers the nine SwiftPM rows, which need no Xcode project and no network. It checks each row against the
+That covers the ten SwiftPM rows, which need no Xcode project and no network. It checks each row against the
 outcome it is supposed to have and **exits 1 on any mismatch**, so a finding that has changed, or a
 diagnostic whose wording has drifted, reports as a failure rather than as a transcript nobody reads.
 Captured output is in `swiftpm-rows.txt`.
@@ -98,14 +100,17 @@ Captured output is in `swiftpm-rows.txt`.
 Two things it guards, each proved able to fail rather than assumed:
 
 - **The comparator.** With the `.m` row's expectation flipped from `type_traits` to `pass` the run
-  reports `-> expected pass, got type_traits: MISMATCH`, exactly one row of nine, and exits 1.
-  Restored, it reports all nine matched and exits 0.
+  reports `-> expected pass, got type_traits: MISMATCH`, exactly one row of ten, and exits 1.
+  Restored, it reports all ten matched and exits 0.
 - **That the file under test was compiled at all.** A green `swift build` is not evidence of that:
-  deleting the row's source from a kept workdir and rebuilding still prints
+  deleting a row's source from a kept workdir and rebuilding still prints
   `Build of target: 'ConsumerLang' complete! (1.05s)` with no compile line, so a verdict resting on
   that string alone would report `pass` for a row whose subject never existed. Each row therefore
-  requires its own compile line first and reports `not_compiled` otherwise. Every row writes a
-  uniquely named source (`Repro967_row<N>`, `Consumer_row<N>.swift`), so that requirement never
+  requires its own compile line first and reports `not_compiled` otherwise. The guard was watched
+  firing rather than inferred from that experiment: with `write_lang_source` made a no-op and
+  nothing else changed, all five C-family rows report
+  `-> expected <x>, got not_compiled: MISMATCH` and the run exits 1. Every row also writes a
+  uniquely named source (`Repro967_row<N>`, `Consumer_row<N>.swift`), so the requirement never
   depends on a neighbouring row having failed and left nothing cached.
 
 The Xcode rows are not scripted, because generating an app project needs a tool this repo does not

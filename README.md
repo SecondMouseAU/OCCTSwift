@@ -210,6 +210,7 @@ See [docs/guides/prebuilt-bridge.md](docs/guides/prebuilt-bridge.md).
 | [Ecosystem](docs/ecosystem.md) | Map of the package family, dependency layering, when to use which |
 | [SemVer Policy](docs/SEMVER.md) | Versioning rules for the cohort, what triggers MAJOR / MINOR / PATCH |
 | [Architecture Overview](docs/architecture/overview.md) | Three-layer design, memory management, conventions |
+| [Consuming the package](docs/guides/consuming-from-objective-c.md) | What your own target has to set, and the two requirements on a file of yours that includes an OCCT header (#967) |
 | [Adding Features](docs/guides/adding-features.md) | How to wrap new OCCT operations |
 | [OCCT Concepts](docs/guides/occt-concepts.md) | B-Rep topology, handles, shapes primer |
 | [Sharing the xcframework](docs/guides/sharing-the-xcframework.md) | Share one local copy across ecosystem repos + the `Package.resolved` pin footgun (#260) |
