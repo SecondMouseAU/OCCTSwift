@@ -370,7 +370,34 @@ The 9 `unknown` rows, adjudicated by opening each type:
 
 **At-risk sites: 0.** Nothing was changed for its own sake.
 
-### Nothing runs this census
+### Promoted, and proved live against the real tree
+
+Done as a follow-on commit, all four edits together. The four are recorded below as they were
+written before the promotion, because the reasoning for keeping them together is the point and
+survives the change.
+
+Two things were proved rather than assumed, since `run()` in the pre-commit hook prints only on
+failure, which makes a silent pass and a blind pass identical from outside:
+
+- **The wiring is live.** Injecting `failures += 1` into the census `--self-test` makes the hook
+  print `--- FAIL: census-arguments-tuple-shapes.py --self-test` and exit 1; restoring returns exit
+  0. Without this, adding an invocation that never runs would look exactly like adding one that
+  passes.
+- **The detector is not blind on real code.** The self-test's 30 cases are fixtures, and a fixture
+  battery can pass while the detector misses the real thing, which is what round 3 of this PR's own
+  review caught. So a genuine at-risk suite was dropped into `Tests/OCCTMiscTests/`, written the way
+  this tree actually writes vectors, with `SIMD3(1.0, 0.0, 0.0)` inferred rather than
+  `SIMD3<Double>` spelled out:
+
+  ```
+  33 `arguments:` sites under Tests/, 0 at risk, 9 needing a human to open the named type   # before
+  AT RISK  Tests/OCCTMiscTests/ZZCensusProbeTests.swift:5  (a 32-byte vector and a reference-counted member in one literal)
+  34 `arguments:` sites under Tests/, 1 at risk, 9 needing a human to open the named type   # with the probe
+  ```
+
+  The probe was removed and the count returned to 33 and 0.
+
+### Why it was four edits and not one
 
 `ci.yml`'s `gate-scripts` job invokes `Scripts/*.py`, and `Scripts/git-hooks/pre-commit` mirrors it,
 so a script under `Scripts/repro/` is run by nobody. The repo's precedent for a non-gating census is
@@ -380,10 +407,12 @@ signal. Promoting this one means four coordinated edits: move it to
 invocation to the pre-commit hook, and extend `CLAUDE.md`'s "Static Gate Scripts" list and its
 "two censuses" count to three.
 
-It is deliberately not done in the PR that created this directory, because the fourth edit is to
+It was deliberately not done in the PR that created this directory, because the fourth edit is to
 `CLAUDE.md` and the agent that wrote this is not permitted to change that file. Left as one
 follow-on decision rather than three-quarters of a change, so the list and the reality do not
 disagree silently, which is the failure `CLAUDE.md`'s own release section spends a paragraph on.
+The follow-on commit made all four, and additionally checked that the hook/CI gap is still exactly
+one invocation and still the same one, `check-changelog-transcription.py`'s real run.
 
 ## Deliberately not answered here
 
