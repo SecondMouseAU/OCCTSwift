@@ -22,6 +22,7 @@ wrong.
 | `occt_1050_regression_sweep.mm` | 16000 randomised configurations, shipped bound against the fix |
 | `probe-output-regression-sweep.txt` | its transcript |
 | `matrix.sh` | generates the removal matrix below, injection by injection |
+| `probe-output-matrix.txt` | its transcript, which is where the matrix table comes from |
 
 Build and run:
 
