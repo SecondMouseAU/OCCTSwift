@@ -187,8 +187,10 @@ try await outer(("+X", SIMD3(1, 0, 0)))
 print("clean")
 ```
 
-`Smallest`'s own variants use `@globalActor actor Iso { static let shared = Iso() }` instead, which
-makes no difference: V38 passes a plain actor instance explicitly and crashes the same way.
+`Smallest`'s own variants declare the actor as `@globalActor actor Iso { static let shared = Iso() }`
+rather than a plain `actor` plus a global `let`. That difference does not matter: both programs
+crash, measured directly, and V38 shows the argument can be passed explicitly instead of defaulted
+without changing anything.
 
 Three conditions, each proved necessary by a variant that removes exactly one of them.
 
