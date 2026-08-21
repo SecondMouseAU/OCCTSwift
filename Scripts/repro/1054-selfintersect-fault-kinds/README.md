@@ -130,18 +130,27 @@ timeout=10.0000 elapsed=10.086   polls=521107 trips=97110 HasFaulty=0 statuses=[
 timeout=20.0000 elapsed=20.166   polls=521107 trips=94830 HasFaulty=0 statuses=[] after=-1
 ```
 
-Same shape, unbounded:
+Same shape, unbounded, and then again through the bounded path with a budget larger than it
+needs, so the answer does not rest on one run or on one code path:
 
 ```
 $ probe_fault_kinds bevel_gear_1068.brep 1 0
-timeout=0.0000  elapsed=462.504  polls=0 trips=0 threw=0 HasFaulty=0 statuses=[] after=0
+timeout=0.0000   elapsed=462.504 polls=0      trips=0 threw=0 HasFaulty=0 statuses=[] after=0
+
+$ probe_fault_kinds bevel_gear_1068.brep 1 600
+timeout=600.0000 elapsed=339.086 polls=883232 trips=0 threw=0 HasFaulty=0 statuses=[] after=0
 ```
 
-**It finishes, and the answer is "clean".** 462 s, single-threaded, on an idle 10-core M-series
-machine. So the shape is not one the check can never answer for; 20 s is 4% of what it needs.
-Nothing here is stuck, and there is no bridge defect to fix: the ~0.38 s floor the issue
-noticed is the stretch before the first progress poll, and past that the elapsed time tracks
-the requested timeout exactly, which is the cooperative watchdog working as documented (#293).
+**It finishes, and the answer is "clean", both ways.** The unbounded run installs no progress
+indicator at all, so patch `0010`'s breaker never polls; the 600 s run installs one, polls it
+883232 times, and never trips. The two runtimes differ (462 s and 339 s) because the machine was
+doing other work during the first, not because the answers differ: every reported field but the
+elapsed time and the poll count is identical.
+
+So the shape is not one the check can never answer for. 20 s is 4% to 6% of what it needs, and
+there is no bridge defect here to fix: the ~0.38 s floor the issue noticed is the stretch before
+the first progress poll, and past that the elapsed time tracks the requested timeout, which is
+the cooperative watchdog working as documented (#293).
 
 Two things the numbers say that are worth keeping:
 
