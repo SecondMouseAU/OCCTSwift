@@ -1262,6 +1262,22 @@ static bool occtDocumentToolDimTolTool(const TDF_Label& access, Handle(XCAFDoc_D
   return !outTool.IsNull();
 }
 
+// A label carrying no XCAFDoc_Datum attribute is skipped by both kernel walks before they reach
+// GetObject (XCAFDimTolObjects_Tool.cxx:83, XCAFDoc_Editor.cxx:1014), so it is skipped here too:
+// refusing on one would be the same over-refusal the tolerance scoping above exists to avoid.
+static bool occtDatumSequenceIsReadable(const TDF_LabelSequence& datums)
+{
+  for (int i = 1; i <= datums.Length(); ++i)
+  {
+    Handle(XCAFDoc_Datum) datum;
+    if (!datums.Value(i).FindAttribute(XCAFDoc_Datum::GetID(), datum))
+      continue;
+    if (!occtDatumLabelIsReadable(datums.Value(i)))
+      return false;
+  }
+  return true;
+}
+
 // XCAFDoc_Editor::RescaleGeometry walks GetDatumLabels, so every datum in the table is reached.
 static bool occtDocumentToolDatumsAreReadable(const TDF_Label& access)
 {
@@ -1270,12 +1286,7 @@ static bool occtDocumentToolDatumsAreReadable(const TDF_Label& access)
     return true;
   TDF_LabelSequence datums;
   dimTolTool->GetDatumLabels(datums);
-  for (int i = 1; i <= datums.Length(); ++i)
-  {
-    if (!occtDatumLabelIsReadable(datums.Value(i)))
-      return false;
-  }
-  return true;
+  return occtDatumSequenceIsReadable(datums);
 }
 
 // XCAFDimTolObjects_Tool::GetGeomTolerances reaches a datum only through the tolerance it is
@@ -1295,11 +1306,8 @@ static bool occtDocumentToolToleranceDatumsAreReadable(const TDF_Label& access)
     TDF_LabelSequence datums;
     if (!dimTolTool->GetDatumOfTolerLabels(tolerance->Label(), datums))
       continue;
-    for (int i = 1; i <= datums.Length(); ++i)
-    {
-      if (!occtDatumLabelIsReadable(datums.Value(i)))
-        return false;
-    }
+    if (!occtDatumSequenceIsReadable(datums))
+      return false;
   }
   return true;
 }

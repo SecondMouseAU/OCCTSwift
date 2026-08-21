@@ -88,8 +88,9 @@ builds the crashing shape that way with no file and no importer involved.
 
 **The STEP writer is a second reader of the same accessor, on a branch nothing here can take.**
 `STEPCAFControl_Writer` calls `GetObject()` on every datum in three places, so exporting a document
-that holds such a datum would take the same crash. All three sit on the AP242 branch, and
-`writeSTEP` pins AP214 and exposes no schema setter, so the bridge cannot reach them. Unguarded and
+that holds such a datum would take the same crash. All three sit on the AP242 branch, which is
+taken only when `write.step.schema` is AP242; no bridge site that constructs a `STEPCAFControl_Writer`
+sets it, and OCCT's own default is `AP214IS`, so the branch is never taken. Unguarded and
 unreachable, rather than guarded.
 
 ## The bridge guard, shipped as #1030

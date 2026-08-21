@@ -178,6 +178,48 @@ struct Issue1030DatumLookupGuardTests {
         #expect(doc.datums.count == 1)
     }
 
+    @Test("A point array of the wrong length is not the kernel's point block, so it still reads")
+    func pointArrayOfTheWrongLengthStillReads() {
+        guard let doc = Document.create() else {
+            Issue.record("document nil")
+            return
+        }
+        let name = "Datum1030"
+        guard let index = doc.createDatum(name: name), let label = datumLabel(doc, named: name)
+        else {
+            Issue.record("fixture nil")
+            return
+        }
+        // The kernel enters its point block only on `aPnt->Length() == 3`, so a two-element array
+        // never reaches the bad read and must not be refused. This is the control for the length
+        // arm of the guard specifically: drop that arm and this datum stops reading.
+        guard let point = label.findChild(tag: Self.pointTag, create: true) else {
+            Issue.record("point child nil")
+            return
+        }
+        #expect(point.initRealArray(lower: 1, upper: 2))
+        #expect(point.realArrayBounds?.upper == 2)
+        #expect(label.findChild(tag: Self.planeLocationTag)?.realArrayBounds == nil)
+        #expect(doc.datum(at: index)?.name == "Datum1030")
+    }
+
+    @Test("Rescaling a document whose datums are all readable still succeeds")
+    func rescaleGeometryStillSucceeds() {
+        guard let doc = Document.create() else {
+            Issue.record("document nil")
+            return
+        }
+        guard let main = doc.mainLabel else {
+            Issue.record("main label nil")
+            return
+        }
+        // rescaleGeometry gained a guard of its own, on the OTHER GD&T table, and returns false
+        // when it fires. Without a positive control an over-refusing guard would ship green: the
+        // pre-existing coverage discards this call's result entirely.
+        #expect(doc.createDatum(name: "Datum1030") != nil)
+        #expect(doc.rescaleGeometry(labelId: main.labelId, scaleFactor: 2.0, forceIfNotRoot: true))
+    }
+
     @Test("A datum with no point child is untouched by the guard")
     func plainDatumStillReads() {
         guard let doc = Document.create() else {

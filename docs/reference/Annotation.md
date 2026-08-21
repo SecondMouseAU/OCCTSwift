@@ -1647,11 +1647,12 @@ on the `XCAFDoc_DocumentTool` table that every importer writes, so they are guar
 refuse with `0` and `false` respectively. Measured in
 `Scripts/repro/1030-datum-lookup-guard/`: both took the process down before that guard, and a datum
 in one table is invisible to the other, so `datumCount` reports `0` for a datum an importer wrote.
-That divergence is a separate defect from this crash and is tracked on its own.
+That divergence is a separate defect from this crash and is tracked as #1051.
 
 One reader is still unguarded and is unreachable rather than fixed: `STEPCAFControl_Writer` calls
-`GetObject()` on every datum on its AP242 branch, and `writeSTEP` pins AP214 and exposes no schema
-setter, so nothing here can take it.
+`GetObject()` on every datum on its AP242 branch. None of the three bridge sites that construct one
+sets `write.step.schema`, and OCCT's own default for it is `AP214IS`, so the AP242 branch is never
+taken and nothing here can reach those calls.
 
 Two ways to hold such a datum. The label API authors it directly, by putting a `TDataStd_RealArray`
 on the datum label's own point child, and that is the route this behaviour is tested through.

@@ -29,8 +29,8 @@ The probe prints both facts in one line each. Its datum lands at `0:1:4:2`, and
 `OCCTDocumentGetDatumCount`, which reads the `Main()` table, answers **0** for that same document.
 So the two tables do not see each other, and a datum written by any other XCAF application is
 invisible to `Document.datums` while still being read by these two functions. That divergence is a
-separate defect from the crash and is filed on its own; this directory only records that the guard
-has to cover both tables.
+separate defect from the crash and is filed as #1051; this directory only records that the guard has
+to cover both tables.
 
 ## Files
 
@@ -80,6 +80,14 @@ tolerances**, a wrong answer where there was never a crash, and one a caller can
 document with no tolerances. `occtDocumentToolToleranceDatumsAreReadable` mirrors that walk instead.
 Section D is the row that catches it: it reports `returned 0, expected 1` against the whole-table
 version and `returned 1, expected 1` against the shipped one.
+
+## What has no automated coverage
+
+The Swift suite covers the shared lookup and, since round 4, `rescaleGeometry`'s positive control.
+Neither tool-table refusal is reachable from `swift test`, so **only this probe holds them**, and
+nothing in CI runs it. Deleting either guard call leaves every check on the branch green. That is
+the same standing as patch `0027`'s `OCCTSWIFT_LOCAL=1`-gated test, and it is written down here for
+the same reason: a green CI run is not evidence for these two.
 
 ## Retirement
 
