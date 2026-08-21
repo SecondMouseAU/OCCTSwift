@@ -10,14 +10,37 @@ f2  accuracy at large u, BOTH rays live
 
   Construction: bisector 1 of A(0,0) B(0,10) runs -x from (0,5), target (-u,5).
   C and D are solved so bisector 2 reaches the target, swapped if the ray points away.
+  The error column is against a CLOSED-FORM solve of the C and D actually passed, not
+  against the intended target: the two differ by the fixture's own representation error,
+  and quoting the second while calling it the first is how the adjacent number gets
+  published. Both are printed so the gap between them is visible.
 
-  u            u1 reported      x reported         abs error in x   rel error     
-  100          100              -100               1.13687e-13      1.14e-15      
-  1000         1000             -1000              6.0254e-12       6.03e-15      
-  1e+04        10000            -10000             6.91216e-11      6.91e-15      
-  1e+05        100000           -100000            9.84437e-08      9.84e-13      
-  1e+06        1000000          -1000000.00001     1.00052e-05      1e-11         
-  1e+07        9999999.999      -9999999.99932     0.000680139      6.8e-11       
-  1e+08        100000000.1      -100000000.073     0.0730629        7.31e-10      
-  1e+09        999999994.1      -999999994.103     5.89695          5.9e-09       
-  1e+10        1.000000061e+10  -10000000613.7     613.682          6.14e-08      
+  u          x reported         x closed form      abs error      rel error    fixture repr. 
+  100        -100               -100               1.42109e-14    1.42e-16     1.279e-13     
+  1000       -1000              -1000              1.13687e-13    1.14e-16     5.912e-12     
+  1e+04      -10000             -10000             1.81899e-12    1.82e-16     7.094e-11     
+  1e+05      -100000            -100000            1.45519e-11    1.46e-16     9.846e-08     
+  1e+06      -1000000.00001     -1000000.00001     1.16415e-10    1.16e-16     1.001e-05     
+  1e+07      -9999999.99932     -9999999.99932     3.72529e-09    3.73e-16     0.0006801     
+  1e+08      -100000000.073     -100000000.073     0              0            0.07306       
+  1e+09      -999999994.103     -999999994.103     0              0            5.897         
+  1e+10      -10000000613.7     -10000000613.7     1.90735e-06    1.91e-16     613.7         
+
+
+f3  every way an empty result arises, derived rather than enumerated by hand
+
+  The reference doc has undercounted this list twice. Each row below is a distinct
+  branch that ends in an empty array, with the mechanism that produced it.
+
+  input                                    NbPoints   NbSegs     threw     mechanism
+  first pair coincident (a == b)           0          0          yes       no bisector exists, Normalize() refuses
+  second pair coincident (c == d)          0          0          yes       no bisector exists, Normalize() refuses
+  bisectors parallel and distinct          0          0          no        no crossing exists
+  bisectors cross off the kept ray         0          0          no        crossing is behind a midpoint
+  bisectors coincide                       0          1          no        overlap reported as a segment, #1070
+  a real crossing, for contrast            1          0          no        found, not empty
+
+  Four causes, and the partition is closed by construction rather than by inspection:
+  either a bisector does not exist (a coincident pair, rows 1 and 2), or both do, and
+  then the two underlying lines are parallel-distinct (row 3), identical (row 5), or
+  cross at exactly one point, which is on both kept rays or is not (row 4).

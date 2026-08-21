@@ -2501,29 +2501,53 @@ struct ChFi2dFilletAPITests {
     }
 }
 
+/// Both tests here asserted nothing (`let _ = results`) under a comment blaming "domain coverage",
+/// until #1050 made the real answer knowable and measurable. The cause was never the domain: each
+/// bisector is a half-line, and in the ordering these were written with, the second ray points away
+/// from the crossing. Reversing that pair returns it exactly. Both orderings are now asserted, so
+/// the pair pins the half-line behaviour instead of documenting a guess about it.
 @Suite("Bisector Intersection Tests")
 struct BisectorIntersectionTests {
-    @Test("perpendicular bisectors of right angle")
+    @Test("perpendicular bisectors of a right angle, as originally ordered")
     func perpendicularBisectors() {
-        // Bisector of (0,0)-(10,0) = vertical line x=5
-        // Bisector of (0,0)-(0,10) = horizontal line y=5
-        // They should intersect at (5,5), circumcenter of right triangle
+        // Bisector of (0,0)-(10,0) is the half-line from (5,0) along +y.
+        // Bisector of (0,0)-(0,10) is the half-line from (0,5) along -x.
+        // The lines cross at (5,5) but the second ray runs away from it, so there is no crossing
+        // on both rays and reporting none is correct.
         let results = bisectorIntersections(
             a: (0, 0), b: (10, 0),
             c: (0, 0), d: (0, 10))
-        // May or may not find intersection depending on domain coverage
-        // Just verify no crash and valid computation
-        let _ = results
+        #expect(results.isEmpty)
     }
 
-    @Test("collinear point bisectors")
-    func collinearBisectors() {
-        // Bisector of (0,0)-(4,0) = x=2 vertical
-        // Bisector of (0,0)-(0,4) = y=2 horizontal
+    @Test("perpendicular bisectors of a right angle, second pair reversed")
+    func perpendicularBisectorsReversed() {
+        // Reversing (c, d) flips the second ray to +x, so it now reaches (5,5), the circumcentre
+        // of the right triangle (0,0) (10,0) (0,10).
         let results = bisectorIntersections(
+            a: (0, 0), b: (10, 0),
+            c: (0, 10), d: (0, 0))
+        #expect(results.count == 1)
+        if let r = results.first {
+            #expect(abs(r.x - 5) < 1e-9)
+            #expect(abs(r.y - 5) < 1e-9)
+        }
+    }
+
+    @Test("point bisectors at a smaller scale, both orderings")
+    func collinearBisectors() {
+        // Same shape at scale 4, so the outcome is a property of the ray choice and not of the
+        // magnitudes: as written the second ray points away, reversed it reaches (2,2).
+        #expect(bisectorIntersections(a: (0, 0), b: (4, 0), c: (0, 0), d: (0, 4)).isEmpty)
+
+        let reversed = bisectorIntersections(
             a: (0, 0), b: (4, 0),
-            c: (0, 0), d: (0, 4))
-        let _ = results
+            c: (0, 4), d: (0, 0))
+        #expect(reversed.count == 1)
+        if let r = reversed.first {
+            #expect(abs(r.x - 2) < 1e-9)
+            #expect(abs(r.y - 2) < 1e-9)
+        }
     }
 }
 

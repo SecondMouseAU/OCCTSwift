@@ -19,8 +19,10 @@ public struct BisectorIntersection {
 /// Computes where the perpendicular bisector of `(a, b)` crosses that of `(c, d)`.
 ///
 /// Each bisector is a half-line from its pair's midpoint, so reversing a pair can turn a crossing
-/// into an empty result, and an empty result has three causes that are not distinguished here. See
-/// `docs/reference/Shape-Recognition.md` for those and for the accuracy of a distant crossing.
+/// into an empty result. An empty result has four causes that are not distinguished here: a
+/// coincident pair has no bisector, the bisectors are parallel, they cross off a kept ray, or they
+/// coincide and the overlap is not a point. See `docs/reference/Shape-Recognition.md` for those and
+/// for why a distant crossing is accurate but ill-conditioned in the input.
 ///
 /// - Parameters:
 ///   - a: First point of the first pair, as `(x, y)`.

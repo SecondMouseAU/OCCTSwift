@@ -1,0 +1,12 @@
+no-regression sweep, shipped [-100, 100] against the curve's own range
+
+  scale      cases     both      neither   gained    lost      moved         
+  1e-03      4000      1006      2994      0         0         0             
+  1e+00      4000      985       3011      4         0         0             
+  1e+03      4000      14        3006      980       0         0             
+  1e+06      4000      0         3031      969       0         0             
+
+  16000 cases across 4 scales: 1953 gained, 0 lost, 0 moved
+
+  lost and moved must both be 0. gained is the fix doing its job: every one of those is
+  a crossing the shipped window discarded and returned as an empty array.

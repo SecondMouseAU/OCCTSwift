@@ -1429,6 +1429,10 @@ typedef struct
 
 /// Compute intersections between two point-bisectors. Returns number of intersection points.
 /// Bisector of (ax,ay)-(bx,by) is intersected with bisector of (cx,cy)-(dx,dy).
+/// Each bisector is a half-line from its pair's midpoint, so the count is 0 or 1, and 0 has four
+/// causes: a coincident pair (no bisector), parallel bisectors, a crossing behind a midpoint, or
+/// coincident bisectors whose overlap OCCT reports as a segment (#1070). Searched over each
+/// bisector's own parameter range since #1050, not a fixed window.
 int OCCTBisectorInterPointPoint(double ax,
                                 double ay,
                                 double bx,

@@ -17,8 +17,10 @@ wrong.
 | `occt_1050_bisector_domain.mm` | the main probe, four parts, compile line in its own header |
 | `probe-output.txt` | its transcript, quoted throughout this README |
 | `build-discriminating-fixture.py` | solves for the fixture that separates the two candidate bounds |
-| `occt_1050_review_findings.mm` | the second probe, which corrected two claims this README got wrong |
+| `occt_1050_review_findings.mm` | the second probe, which corrected three claims this README got wrong |
 | `probe-output-review-findings.txt` | its transcript |
+| `occt_1050_regression_sweep.mm` | 16000 randomised configurations, shipped bound against the fix |
+| `probe-output-regression-sweep.txt` | its transcript |
 
 Build and run:
 
@@ -171,28 +173,64 @@ missed while u=150 and u=300 are found) is entirely that ray choice.
 **This part does not support "there is no kernel accuracy limit", and a draft of this README said it
 did.** Five of the eight rows have the ray pointing away, so the sweep never produced a live
 crossing past u=300 and could not answer the question its own heading asks. The pre-PR review caught
-it. `occt_1050_review_findings.mm` re-runs the sweep with C and D swapped whenever the ray points the
-wrong way, so every row is live, and there **is** a limit:
+it, `occt_1050_review_findings.mm` re-runs the sweep with C and D swapped whenever the ray points
+the wrong way, so every row is live.
 
-| u | reported x | absolute error | relative |
-|---|---|---|---|
-| 1e2 | -100 | 1.1e-13 | 1.1e-15 |
-| 1e4 | -10000 | 6.9e-11 | 6.9e-15 |
-| 1e6 | -1000000.00001 | 1.0e-5 | 1.0e-11 |
-| 1e8 | -100000000.073 | 0.073 | 7.3e-10 |
-| 1e10 | -10000000613.7 | 614 | 6.1e-8 |
+**The replacement claim was then wrong too, in the opposite direction, and it is worth reading how.**
+The corrected sweep printed errors of 0.073 at u=1e8 and 614 at 1e10 and this README published them
+as a kernel accuracy limit. They are not. The error was taken against the construction's *intended*
+target, `-u`, and the fixture actually passes C and D rounded to a representable double, which puts
+the true crossing somewhere else entirely. Measured against a closed-form solve of **the C and D
+actually handed in**, the kernel is right to about 1e-16 relative at every u out to 1e10:
 
-That is conditioning, not a defect: a crossing that far from both midpoints means two nearly
-parallel half-lines, and the crossing's position is ill-conditioned in their angle. It is the fix's
-own claim that needed narrowing, not the fix. `docs/reference/Shape-Recognition.md` now carries the
-caveat, where the first draft said a crossing is found "however far" with no qualifier.
+| u | reported x | closed form of the same input | error vs closed form | intended target, for contrast |
+|---|---|---|---|---|
+| 1e2 | -100 | -100 | 1.4e-14 (1.4e-16 rel) | 1.3e-13 |
+| 1e6 | -1000000.00001 | -1000000.00001 | 1.2e-10 (1.2e-16 rel) | 1.0e-5 |
+| 1e8 | -100000000.073 | -100000000.073 | 0 | 0.073 |
+| 1e10 | -10000000613.7 | -10000000613.7 | 1.9e-06 (1.9e-16 rel) | 614 |
 
-`occt_1050_review_findings.mm` also records a second thing the review found, unrelated to the bound:
-two **coincident** bisectors overlap along their whole length, OCCT reports that as a segment rather
-than a point, and this bridge function reads only `NbPoints()`, so the caller gets an empty array
-for two bisectors that meet everywhere. Reversing one pair flips a ray and returns a single point
-instead. Pre-existing, a different mechanism from this issue, and filed as
+The last column is the whole of the "limit" the previous draft reported. So the caveat that belongs
+in the reference doc is not "the kernel loses accuracy far away" but "a distant crossing is
+ill-conditioned **in the input**": nearly parallel bisectors mean a one-ulp change in a coordinate
+moves the crossing by hundreds of units, which is a fact about the caller's data rather than about
+the computation. The two read similarly and imply opposite advice, and this is the third time on
+this issue that a number measured of the thing next to the subject was published as a number
+measured of the subject.
+
+`occt_1050_review_findings.mm` carries two more things, neither about the bound.
+
+**Coincident bisectors.** Two bisectors that overlap along their whole length are reported by OCCT
+as a segment rather than a point, and this bridge function reads only `NbPoints()`, so the caller
+gets an empty array for two bisectors that meet everywhere. Reversing one pair flips a ray and
+returns a single point instead. Pre-existing, a different mechanism from this issue, filed as
 [#1070](https://github.com/SecondMouseAU/OCCTSwift/issues/1070) rather than folded in here.
+
+**The complete set of empty results, derived rather than listed.** The reference doc enumerated
+these by hand and undercounted twice, first at two and then at three; the second correction added
+the item the review named instead of re-deriving the set, which is why it was still short. Part f3
+walks one case per branch and prints the mechanism, and the partition closes by construction: either
+a bisector does not exist (a coincident pair), or both do, and then the two underlying lines are
+parallel-distinct, identical, or cross at one point that is on both kept rays or is not. Four.
+
+## The no-regression sweep
+
+Ten hand-picked fixtures can show the fix finds something the old window dropped. They cannot show
+it never **loses** one, never **moves** one, and never invents one, because those are claims about
+the whole input space. `occt_1050_regression_sweep.mm` runs both bodies over randomised four-point
+configurations at four scales, fixed seed so the numbers are re-derivable rather than a fresh sample
+each time:
+
+| scale | cases | both found | neither | gained | lost | moved |
+|---|---|---|---|---|---|---|
+| 1e-3 | 4000 | 1006 | 2994 | 0 | 0 | 0 |
+| 1 | 4000 | 985 | 3011 | 4 | 0 | 0 |
+| 1e3 | 4000 | 14 | 3006 | 980 | 0 | 0 |
+| 1e6 | 4000 | 0 | 3031 | 969 | 0 | 0 |
+
+**16000 cases: 1953 gained, 0 lost, 0 moved.** It exits non-zero if either of the last two is not 0,
+so it is a check rather than a printout. The scale column is why the shipped window looked adequate
+for so long: at scale 1 it drops 4 crossings in 4000, and at 1e3 it drops 980.
 
 This also corrected the probe itself. An earlier draft computed reachability from the four input
 points, assuming the ray ran along `perp(B - A)` normalised because that is what the bridge passes
@@ -203,19 +241,34 @@ The crossing point itself stays closed-form.
 
 ## Test coverage and the removal matrix
 
-`Tests/OCCTGeom2dTests/Issue1050BisectorDomainTests.swift`, six tests. Three injections, each run
-against the real bridge, with disjoint failure sets so each isolates a different mechanism:
+`Tests/OCCTGeom2dTests/Issue1050BisectorDomainTests.swift`, six tests, plus the three in the
+pre-existing `BisectorIntersectionTests` this PR gave real assertions to. Four injections, each
+compiled and run against the real bridge, with disjoint failure sets so each isolates a different
+mechanism:
 
-| injection | tests failing (of 6) | which |
+| injection | tests failing (of 9) | which |
 |---|---|---|
 | the shipped `[-100, 100]` | 2 | past-old-window, past-input-extent |
 | `2 * span + 1` | 1 | past-input-extent |
 | unbounded `IntRes2d_Domain()` | 3 | past-old-window, **inside**-old-window, past-input-extent |
+| swap `pC`/`pD` into `b2.Perform` | 5 | all three ray tests, both directions, plus two window tests |
 | the fix, curve's own range | 0 | |
 
-The second row is the one that matters for the choice of bound: it is wider than 100 and passes the
-issue's own fixture, so only the discriminating test separates it from the fix. The third row fails
-a control the shipped code passes, which is the throw reaching `catch (...)`.
+Row 2 is the one that matters for the choice of bound: it is wider than 100 and passes the issue's
+own fixture, so only the discriminating test separates it from the fix. Row 3 fails a control rows 1
+and 2 pass, which is the throw reaching `catch (...)`. Row 4 covers the three ray tests, which the
+first three rows cannot touch, and it fails them in **both** directions: the as-written ordering
+starts finding `(5, 5)` where it must find nothing, and the reversed ordering stops finding it.
+
+**Row 4 took three attempts, and the two failures are the useful part.** Flipping `Sense` from `1.0`
+to `-1.0`, and negating `perpCD`, both left every test green. Neither is a load-bearing input on
+this path: `Bisector_BisecAna::Perform`'s point-point overload takes the ray's direction from
+`GccAna_Pnt2dBisec(afirstpoint, asecondpoint)`, whose line follows the **point** order, and the
+bridge passes `v3` and `v4` as exact opposites, which makes the sector test `Distance()` performs
+degenerate so `adirection` cannot discriminate. So the bridge hands OCCT a `Sense` and a vector pair
+that do not affect the result, and only the order of `pC` and `pD` does. An injection that leaves
+the suite green is not proof the tests are weak; here it was proof the injected value was inert, and
+the difference is only visible by reading why.
 
 **Three of the six tests fail under no injection at all**, and they are labelled regression guards in
 the suite rather than counted as coverage. `parallelBisectorsReportNothing`,
