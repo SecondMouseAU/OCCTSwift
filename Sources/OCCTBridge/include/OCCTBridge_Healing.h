@@ -1261,37 +1261,41 @@ OCCTShapeRef _Nullable OCCTShapeFreeBoundsOpen(OCCTShapeRef _Nonnull shape, doub
 
 // MARK: - ShapeAnalysis_Wire (v0.106.0)
 
-/// Check wire edge ordering. Returns true if problem found.
-bool OCCTWireCheckOrder(OCCTShapeRef _Nonnull wire, OCCTShapeRef _Nonnull face, double prec);
+/// Check wire edge ordering. Returns 1 if problem found, 0 if none, -1 if check could not run.
+int32_t OCCTWireCheckOrder(OCCTShapeRef _Nonnull wire, OCCTShapeRef _Nonnull face, double prec);
 
-/// Check wire connectivity. Returns true if problem found.
-bool OCCTWireCheckConnected(OCCTShapeRef _Nonnull wire, OCCTShapeRef _Nonnull face, double prec);
+/// Check wire connectivity. Returns 1 if problem found, 0 if none, -1 if check could not run.
+int32_t OCCTWireCheckConnected(OCCTShapeRef _Nonnull wire, OCCTShapeRef _Nonnull face, double prec);
 
-/// Check for small edges. Returns true if problem found.
-bool OCCTWireCheckSmall(OCCTShapeRef _Nonnull wire, OCCTShapeRef _Nonnull face, double prec);
+/// Check for small edges. Returns 1 if problem found, 0 if none, -1 if check could not run.
+int32_t OCCTWireCheckSmall(OCCTShapeRef _Nonnull wire, OCCTShapeRef _Nonnull face, double prec);
 
-/// Check for degenerated edges. Returns true if problem found.
-bool OCCTWireCheckDegenerated(OCCTShapeRef _Nonnull wire, OCCTShapeRef _Nonnull face, double prec);
+/// Check for degenerated edges. Returns 1 if problem found, 0 if none, -1 if check could not run.
+int32_t OCCTWireCheckDegenerated(OCCTShapeRef _Nonnull wire,
+                                 OCCTShapeRef _Nonnull face,
+                                 double prec);
 
-/// Check wire closure. Returns true if problem found.
-bool OCCTWireCheckClosed(OCCTShapeRef _Nonnull wire, OCCTShapeRef _Nonnull face, double prec);
+/// Check wire closure. Returns 1 if problem found, 0 if none, -1 if check could not run.
+int32_t OCCTWireCheckClosed(OCCTShapeRef _Nonnull wire, OCCTShapeRef _Nonnull face, double prec);
 
-/// Check for self-intersection. Returns true if problem found.
-bool OCCTWireCheckSelfIntersection(OCCTShapeRef _Nonnull wire,
-                                   OCCTShapeRef _Nonnull face,
-                                   double prec);
+/// Check for self-intersection. Returns 1 if problem found, 0 if none, -1 if check could not run.
+int32_t OCCTWireCheckSelfIntersection(OCCTShapeRef _Nonnull wire,
+                                      OCCTShapeRef _Nonnull face,
+                                      double prec);
 
-/// Check for 3D gaps. Returns true if problem found.
-bool OCCTWireCheckGaps3d(OCCTShapeRef _Nonnull wire, OCCTShapeRef _Nonnull face, double prec);
+/// Check for 3D gaps. Returns 1 if problem found, 0 if none, -1 if check could not run.
+int32_t OCCTWireCheckGaps3d(OCCTShapeRef _Nonnull wire, OCCTShapeRef _Nonnull face, double prec);
 
-/// Check for 2D gaps. Returns true if problem found.
-bool OCCTWireCheckGaps2d(OCCTShapeRef _Nonnull wire, OCCTShapeRef _Nonnull face, double prec);
+/// Check for 2D gaps. Returns 1 if problem found, 0 if none, -1 if check could not run.
+int32_t OCCTWireCheckGaps2d(OCCTShapeRef _Nonnull wire, OCCTShapeRef _Nonnull face, double prec);
 
-/// Check edge curves consistency. Returns true if problem found.
-bool OCCTWireCheckEdgeCurves(OCCTShapeRef _Nonnull wire, OCCTShapeRef _Nonnull face, double prec);
+/// Check edge curves consistency. Returns 1 if problem found, 0 if none, -1 if check could not run.
+int32_t OCCTWireCheckEdgeCurves(OCCTShapeRef _Nonnull wire,
+                                OCCTShapeRef _Nonnull face,
+                                double prec);
 
-/// Check for lacking edges. Returns true if problem found.
-bool OCCTWireCheckLacking(OCCTShapeRef _Nonnull wire, OCCTShapeRef _Nonnull face, double prec);
+/// Check for lacking edges. Returns 1 if problem found, 0 if none, -1 if check could not run.
+int32_t OCCTWireCheckLacking(OCCTShapeRef _Nonnull wire, OCCTShapeRef _Nonnull face, double prec);
 
 /// Get the number of edges in a wire on a face.
 int32_t OCCTWireEdgeCount(OCCTShapeRef _Nonnull wire, OCCTShapeRef _Nonnull face, double prec);

@@ -2028,13 +2028,14 @@ struct SAWireAnalysisTests {
             if let face = faces.first {
                 let wires = face.subShapes(ofType: .wire)
                 if let wire = wires.first {
-                    // These return true if problems found; for a good box, expect no problems
-                    let _ = SAWireAnalysis.checkOrder(wire: wire, face: face)
-                    let _ = SAWireAnalysis.checkConnected(wire: wire, face: face)
-                    let _ = SAWireAnalysis.checkSmall(wire: wire, face: face)
-                    let _ = SAWireAnalysis.checkDegenerated(wire: wire, face: face)
-                    let _ = SAWireAnalysis.checkClosed(wire: wire, face: face)
-                    let _ = SAWireAnalysis.checkGaps3d(wire: wire, face: face)
+                    // These return true if problems found, false if none, nil if check could not run.
+                    // For a valid box face wire, the check should run (non-nil).
+                    #expect(SAWireAnalysis.checkOrder(wire: wire, face: face) != nil)
+                    #expect(SAWireAnalysis.checkConnected(wire: wire, face: face) != nil)
+                    #expect(SAWireAnalysis.checkSmall(wire: wire, face: face) != nil)
+                    #expect(SAWireAnalysis.checkDegenerated(wire: wire, face: face) != nil)
+                    #expect(SAWireAnalysis.checkClosed(wire: wire, face: face) != nil)
+                    #expect(SAWireAnalysis.checkGaps3d(wire: wire, face: face) != nil)
                 }
             }
         }
@@ -2089,8 +2090,7 @@ struct SAWireAnalysisTests {
             if let face = faces.first {
                 let wires = face.subShapes(ofType: .wire)
                 if let wire = wires.first {
-                    let selfInt = SAWireAnalysis.checkSelfIntersection(wire: wire, face: face)
-                    #expect(!selfInt)
+                    #expect(SAWireAnalysis.checkSelfIntersection(wire: wire, face: face) != nil)
                 }
             }
         }
@@ -2102,8 +2102,8 @@ struct SAWireAnalysisTests {
             if let face = faces.first {
                 let wires = face.subShapes(ofType: .wire)
                 if let wire = wires.first {
-                    let _ = SAWireAnalysis.checkEdgeCurves(wire: wire, face: face)
-                    let _ = SAWireAnalysis.checkLacking(wire: wire, face: face)
+                    #expect(SAWireAnalysis.checkEdgeCurves(wire: wire, face: face) != nil)
+                    #expect(SAWireAnalysis.checkLacking(wire: wire, face: face) != nil)
                 }
             }
         }
@@ -2130,7 +2130,7 @@ struct SAWireAnalysisTests {
             if let face = faces.first {
                 let wires = face.subShapes(ofType: .wire)
                 if let wire = wires.first {
-                    let _ = SAWireAnalysis.checkGaps2d(wire: wire, face: face)
+                    #expect(SAWireAnalysis.checkGaps2d(wire: wire, face: face) != nil)
                 }
             }
         }
@@ -2140,9 +2140,9 @@ struct SAWireAnalysisTests {
         if let box = Shape.box(width: 10, height: 10, depth: 10) {
             let faces = box.subShapes(ofType: .face)
             if let face = faces.first, let wire = face.subShapes(ofType: .wire).first {
-                // True means "problem found", matching every sibling. A box face's own wire is
-                // its outer bound, so there is no problem to report (#999). False rather than
-                // nil, since nil is now reserved for a check that could not run (#1058).
+                // True means "problem found". A box face's own wire is its outer bound, so there
+                // is no problem to report (#999). False rather than nil, since nil is reserved for
+                // a check that could not run (#1058).
                 #expect(SAWireAnalysis.checkOuterBound(wire: wire, face: face) == false)
             }
         }

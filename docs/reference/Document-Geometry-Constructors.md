@@ -1670,22 +1670,22 @@ public static func edge2dFromCurve(_ curve: Curve2D, u1: Double, u2: Double) -> 
 
 ## ShapeAnalysis_Wire
 
-Wire quality checks using `ShapeAnalysis_Wire`. All members are static on the `SAWireAnalysis` enum. Each check returns `true` when a problem is detected. `checkOuterBound(wire:face:)` returns `Bool?` rather than `Bool`, so its refusal is not the same value as its clean verdict; see its own entry for what `nil` covers and why the other fourteen check members do not have it (#1058, tracked as [#1074](https://github.com/SecondMouseAU/OCCTSwift/issues/1074)).
+Wire quality checks using `ShapeAnalysis_Wire`. All members are static on the `SAWireAnalysis` enum. The ten whole-wire checks and `checkOuterBound` return `Bool?` — `true` if a problem is detected, `false` if none, `nil` if the check could not be run (invalid wire/face, wire with no edges, wire whose edges do not assemble). The four per-edge checks return `Bool`; see #1074. `checkOuterBound(wire:face:)` has an additional refusal case for a wire with no pcurve on the face (#1058).
 
 ### `SAWireAnalysis.checkOrder(wire:face:precision:)`
 
 Check whether wire edges are correctly ordered on a face.
 
 ```swift
-public static func checkOrder(wire: Shape, face: Shape, precision: Double = 1e-6) -> Bool
+public static func checkOrder(wire: Shape, face: Shape, precision: Double = 1e-6) -> Bool?
 ```
 
 - **Parameters:** `wire`, the wire to analyse; `face`, the supporting face; `precision`, tolerance.
-- **Returns:** `true` if the edge order is incorrect.
+- **Returns:** `true` if the edge order is incorrect, `false` if correct, `nil` if the check could not be run.
 - **OCCT:** `ShapeAnalysis_Wire::CheckOrder`
 - **Example:**
   ```swift
-  if SAWireAnalysis.checkOrder(wire: w, face: f) { print("order problem") }
+  if let r = SAWireAnalysis.checkOrder(wire: w, face: f), r { print("order problem") }
   ```
 
 ---
@@ -1695,10 +1695,11 @@ public static func checkOrder(wire: Shape, face: Shape, precision: Double = 1e-6
 Check whether wire edges are topologically connected.
 
 ```swift
-public static func checkConnected(wire: Shape, face: Shape, precision: Double = 1e-6) -> Bool
+public static func checkConnected(wire: Shape, face: Shape, precision: Double = 1e-6) -> Bool?
 ```
 
 - **OCCT:** `ShapeAnalysis_Wire::CheckConnected`
+- **Returns:** `true` if disconnected, `false` if connected, `nil` if the check could not be run.
 
 ---
 
@@ -1707,10 +1708,11 @@ public static func checkConnected(wire: Shape, face: Shape, precision: Double = 
 Check for edges shorter than `precision` (small/degenerate geometry).
 
 ```swift
-public static func checkSmall(wire: Shape, face: Shape, precision: Double = 1e-6) -> Bool
+public static func checkSmall(wire: Shape, face: Shape, precision: Double = 1e-6) -> Bool?
 ```
 
 - **OCCT:** `ShapeAnalysis_Wire::CheckSmall`
+- **Returns:** `true` if small edges found, `false` if none, `nil` if the check could not be run.
 
 ---
 
@@ -1719,10 +1721,11 @@ public static func checkSmall(wire: Shape, face: Shape, precision: Double = 1e-6
 Check for degenerate edges in the wire.
 
 ```swift
-public static func checkDegenerated(wire: Shape, face: Shape, precision: Double = 1e-6) -> Bool
+public static func checkDegenerated(wire: Shape, face: Shape, precision: Double = 1e-6) -> Bool?
 ```
 
 - **OCCT:** `ShapeAnalysis_Wire::CheckDegenerated`
+- **Returns:** `true` if degenerate edges found, `false` if none, `nil` if the check could not be run.
 
 ---
 
@@ -1731,10 +1734,11 @@ public static func checkDegenerated(wire: Shape, face: Shape, precision: Double 
 Check whether the wire is properly closed.
 
 ```swift
-public static func checkClosed(wire: Shape, face: Shape, precision: Double = 1e-6) -> Bool
+public static func checkClosed(wire: Shape, face: Shape, precision: Double = 1e-6) -> Bool?
 ```
 
 - **OCCT:** `ShapeAnalysis_Wire::CheckClosed`
+- **Returns:** `true` if not closed, `false` if closed, `nil` if the check could not be run.
 
 ---
 
@@ -1743,10 +1747,11 @@ public static func checkClosed(wire: Shape, face: Shape, precision: Double = 1e-
 Check for self-intersecting edges or edge pairs.
 
 ```swift
-public static func checkSelfIntersection(wire: Shape, face: Shape, precision: Double = 1e-6) -> Bool
+public static func checkSelfIntersection(wire: Shape, face: Shape, precision: Double = 1e-6) -> Bool?
 ```
 
 - **OCCT:** `ShapeAnalysis_Wire::CheckSelfIntersection`
+- **Returns:** `true` if self-intersection found, `false` if none, `nil` if the check could not be run.
 
 ---
 
@@ -1755,10 +1760,11 @@ public static func checkSelfIntersection(wire: Shape, face: Shape, precision: Do
 Check for gaps between consecutive edge endpoints in 3D.
 
 ```swift
-public static func checkGaps3d(wire: Shape, face: Shape, precision: Double = 1e-6) -> Bool
+public static func checkGaps3d(wire: Shape, face: Shape, precision: Double = 1e-6) -> Bool?
 ```
 
 - **OCCT:** `ShapeAnalysis_Wire::CheckGaps3d`
+- **Returns:** `true` if 3D gaps found, `false` if none, `nil` if the check could not be run.
 
 ---
 
@@ -1767,10 +1773,11 @@ public static func checkGaps3d(wire: Shape, face: Shape, precision: Double = 1e-
 Check for gaps between consecutive edge endpoints in 2D (parametric space).
 
 ```swift
-public static func checkGaps2d(wire: Shape, face: Shape, precision: Double = 1e-6) -> Bool
+public static func checkGaps2d(wire: Shape, face: Shape, precision: Double = 1e-6) -> Bool?
 ```
 
 - **OCCT:** `ShapeAnalysis_Wire::CheckGaps2d`
+- **Returns:** `true` if 2D gaps found, `false` if none, `nil` if the check could not be run.
 
 ---
 
@@ -1779,10 +1786,11 @@ public static func checkGaps2d(wire: Shape, face: Shape, precision: Double = 1e-
 Check consistency between 3D curves and parametric curves for all edges.
 
 ```swift
-public static func checkEdgeCurves(wire: Shape, face: Shape, precision: Double = 1e-6) -> Bool
+public static func checkEdgeCurves(wire: Shape, face: Shape, precision: Double = 1e-6) -> Bool?
 ```
 
 - **OCCT:** `ShapeAnalysis_Wire::CheckEdgeCurves`
+- **Returns:** `true` if inconsistency found, `false` if consistent, `nil` if the check could not be run.
 
 ---
 
@@ -1791,10 +1799,11 @@ public static func checkEdgeCurves(wire: Shape, face: Shape, precision: Double =
 Check for missing (lacking) edges that would be needed to close the wire.
 
 ```swift
-public static func checkLacking(wire: Shape, face: Shape, precision: Double = 1e-6) -> Bool
+public static func checkLacking(wire: Shape, face: Shape, precision: Double = 1e-6) -> Bool?
 ```
 
 - **OCCT:** `ShapeAnalysis_Wire::CheckLacking`
+- **Returns:** `true` if lacking edges found, `false` if none, `nil` if the check could not be run.
 
 ---
 

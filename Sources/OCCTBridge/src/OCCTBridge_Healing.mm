@@ -5088,183 +5088,183 @@ OCCTShapeRef OCCTShapeFreeBoundsOpen(OCCTShapeRef shape, double tolerance)
 #include <ShapeExtend_WireData.hxx>
 #include <BRep_Tool.hxx>
 
-bool OCCTWireCheckOrder(OCCTShapeRef wire, OCCTShapeRef face, double prec)
+int32_t OCCTWireCheckOrder(OCCTShapeRef wire, OCCTShapeRef face, double prec)
 {
   if (!wire || !face)
-    return false;
+    return -1;
   try
   {
     ShapeAnalysis_Wire saw;
     saw.Init(TopoDS::Wire(wire->shape), TopoDS::Face(face->shape), prec);
     if (!saw.IsReady())
-      return false;
-    return saw.CheckOrder();
+      return -1;
+    return saw.CheckOrder() ? 1 : 0;
   }
   catch (...)
   {
-    return false;
+    return -1;
   }
 }
 
-bool OCCTWireCheckConnected(OCCTShapeRef wire, OCCTShapeRef face, double prec)
+int32_t OCCTWireCheckConnected(OCCTShapeRef wire, OCCTShapeRef face, double prec)
 {
   if (!wire || !face)
-    return false;
+    return -1;
   try
   {
     ShapeAnalysis_Wire saw;
     saw.Init(TopoDS::Wire(wire->shape), TopoDS::Face(face->shape), prec);
     if (!saw.IsReady())
-      return false;
-    return saw.CheckConnected();
+      return -1;
+    return saw.CheckConnected() ? 1 : 0;
   }
   catch (...)
   {
-    return false;
+    return -1;
   }
 }
 
-bool OCCTWireCheckSmall(OCCTShapeRef wire, OCCTShapeRef face, double prec)
+int32_t OCCTWireCheckSmall(OCCTShapeRef wire, OCCTShapeRef face, double prec)
 {
   if (!wire || !face)
-    return false;
+    return -1;
   try
   {
     ShapeAnalysis_Wire saw;
     saw.Init(TopoDS::Wire(wire->shape), TopoDS::Face(face->shape), prec);
     if (!saw.IsReady())
-      return false;
-    return saw.CheckSmall();
+      return -1;
+    return saw.CheckSmall() ? 1 : 0;
   }
   catch (...)
   {
-    return false;
+    return -1;
   }
 }
 
-bool OCCTWireCheckDegenerated(OCCTShapeRef wire, OCCTShapeRef face, double prec)
+int32_t OCCTWireCheckDegenerated(OCCTShapeRef wire, OCCTShapeRef face, double prec)
 {
   if (!wire || !face)
-    return false;
+    return -1;
   try
   {
     ShapeAnalysis_Wire saw;
     saw.Init(TopoDS::Wire(wire->shape), TopoDS::Face(face->shape), prec);
     if (!saw.IsReady())
-      return false;
-    return saw.CheckDegenerated();
+      return -1;
+    return saw.CheckDegenerated() ? 1 : 0;
   }
   catch (...)
   {
-    return false;
+    return -1;
   }
 }
 
-bool OCCTWireCheckClosed(OCCTShapeRef wire, OCCTShapeRef face, double prec)
+int32_t OCCTWireCheckClosed(OCCTShapeRef wire, OCCTShapeRef face, double prec)
 {
   if (!wire || !face)
-    return false;
+    return -1;
   try
   {
     ShapeAnalysis_Wire saw;
     saw.Init(TopoDS::Wire(wire->shape), TopoDS::Face(face->shape), prec);
     if (!saw.IsReady())
-      return false;
-    return saw.CheckClosed();
+      return -1;
+    return saw.CheckClosed() ? 1 : 0;
   }
   catch (...)
   {
-    return false;
+    return -1;
   }
 }
 
-bool OCCTWireCheckSelfIntersection(OCCTShapeRef wire, OCCTShapeRef face, double prec)
+int32_t OCCTWireCheckSelfIntersection(OCCTShapeRef wire, OCCTShapeRef face, double prec)
 {
   if (!wire || !face)
-    return false;
+    return -1;
   try
   {
     ShapeAnalysis_Wire saw;
     saw.Init(TopoDS::Wire(wire->shape), TopoDS::Face(face->shape), prec);
     if (!saw.IsReady())
-      return false;
-    return saw.CheckSelfIntersection();
+      return -1;
+    return saw.CheckSelfIntersection() ? 1 : 0;
   }
   catch (...)
   {
-    return false;
+    return -1;
   }
 }
 
-bool OCCTWireCheckGaps3d(OCCTShapeRef wire, OCCTShapeRef face, double prec)
+int32_t OCCTWireCheckGaps3d(OCCTShapeRef wire, OCCTShapeRef face, double prec)
 {
   if (!wire || !face)
-    return false;
+    return -1;
   try
   {
     ShapeAnalysis_Wire saw;
     saw.Init(TopoDS::Wire(wire->shape), TopoDS::Face(face->shape), prec);
     if (!saw.IsReady())
-      return false;
-    return saw.CheckGaps3d();
+      return -1;
+    return saw.CheckGaps3d() ? 1 : 0;
   }
   catch (...)
   {
-    return false;
+    return -1;
   }
 }
 
-bool OCCTWireCheckGaps2d(OCCTShapeRef wire, OCCTShapeRef face, double prec)
+int32_t OCCTWireCheckGaps2d(OCCTShapeRef wire, OCCTShapeRef face, double prec)
 {
   if (!wire || !face)
-    return false;
+    return -1;
   try
   {
     ShapeAnalysis_Wire saw;
     saw.Init(TopoDS::Wire(wire->shape), TopoDS::Face(face->shape), prec);
     if (!saw.IsReady())
-      return false;
-    return saw.CheckGaps2d();
+      return -1;
+    return saw.CheckGaps2d() ? 1 : 0;
   }
   catch (...)
   {
-    return false;
+    return -1;
   }
 }
 
-bool OCCTWireCheckEdgeCurves(OCCTShapeRef wire, OCCTShapeRef face, double prec)
+int32_t OCCTWireCheckEdgeCurves(OCCTShapeRef wire, OCCTShapeRef face, double prec)
 {
   if (!wire || !face)
-    return false;
+    return -1;
   try
   {
     ShapeAnalysis_Wire saw;
     saw.Init(TopoDS::Wire(wire->shape), TopoDS::Face(face->shape), prec);
     if (!saw.IsReady())
-      return false;
-    return saw.CheckEdgeCurves();
+      return -1;
+    return saw.CheckEdgeCurves() ? 1 : 0;
   }
   catch (...)
   {
-    return false;
+    return -1;
   }
 }
 
-bool OCCTWireCheckLacking(OCCTShapeRef wire, OCCTShapeRef face, double prec)
+int32_t OCCTWireCheckLacking(OCCTShapeRef wire, OCCTShapeRef face, double prec)
 {
   if (!wire || !face)
-    return false;
+    return -1;
   try
   {
     ShapeAnalysis_Wire saw;
     saw.Init(TopoDS::Wire(wire->shape), TopoDS::Face(face->shape), prec);
     if (!saw.IsReady())
-      return false;
-    return saw.CheckLacking();
+      return -1;
+    return saw.CheckLacking() ? 1 : 0;
   }
   catch (...)
   {
-    return false;
+    return -1;
   }
 }
 

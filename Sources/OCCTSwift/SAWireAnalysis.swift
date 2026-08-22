@@ -6,75 +6,141 @@ import simd
 public enum SAWireAnalysis {
     /// Check wire edge ordering.
     ///
-    /// Returns true if a problem is found.
-    public static func checkOrder(wire: Shape, face: Shape, precision: Double = 1e-6) -> Bool {
-        OCCTWireCheckOrder(wire.handle, face.handle, precision)
+    /// Returns `true` if a problem is found, `false` if none is, and `nil` if the check could not
+    /// be run (invalid wire/face, wire with no edges, wire whose edges do not assemble).
+    public static func checkOrder(
+        wire: Shape, face: Shape, precision: Double = 1e-6
+    ) -> Bool? {
+        switch OCCTWireCheckOrder(wire.handle, face.handle, precision) {
+        case 1: return true
+        case 0: return false
+        default: return nil
+        }
     }
 
     /// Check wire connectivity.
     ///
-    /// Returns true if a problem is found.
-    public static func checkConnected(wire: Shape, face: Shape, precision: Double = 1e-6) -> Bool {
-        OCCTWireCheckConnected(wire.handle, face.handle, precision)
+    /// Returns `true` if a problem is found, `false` if none is, and `nil` if the check could not
+    /// be run (invalid wire/face, wire with no edges, wire whose edges do not assemble).
+    public static func checkConnected(
+        wire: Shape, face: Shape, precision: Double = 1e-6
+    ) -> Bool? {
+        switch OCCTWireCheckConnected(wire.handle, face.handle, precision) {
+        case 1: return true
+        case 0: return false
+        default: return nil
+        }
     }
 
     /// Check for small edges.
     ///
-    /// Returns true if a problem is found.
-    public static func checkSmall(wire: Shape, face: Shape, precision: Double = 1e-6) -> Bool {
-        OCCTWireCheckSmall(wire.handle, face.handle, precision)
+    /// Returns `true` if a problem is found, `false` if none is, and `nil` if the check could not
+    /// be run (invalid wire/face, wire with no edges, wire whose edges do not assemble).
+    public static func checkSmall(
+        wire: Shape, face: Shape, precision: Double = 1e-6
+    ) -> Bool? {
+        switch OCCTWireCheckSmall(wire.handle, face.handle, precision) {
+        case 1: return true
+        case 0: return false
+        default: return nil
+        }
     }
 
     /// Check for degenerated edges.
     ///
-    /// Returns true if a problem is found.
-    public static func checkDegenerated(wire: Shape, face: Shape, precision: Double = 1e-6) -> Bool
+    /// Returns `true` if a problem is found, `false` if none is, and `nil` if the check could not
+    /// be run (invalid wire/face, wire with no edges, wire whose edges do not assemble).
+    public static func checkDegenerated(wire: Shape, face: Shape, precision: Double = 1e-6) -> Bool?
     {
-        OCCTWireCheckDegenerated(wire.handle, face.handle, precision)
+        switch OCCTWireCheckDegenerated(wire.handle, face.handle, precision) {
+        case 1: return true
+        case 0: return false
+        default: return nil
+        }
     }
 
     /// Check wire closure.
     ///
-    /// Returns true if a problem is found.
-    public static func checkClosed(wire: Shape, face: Shape, precision: Double = 1e-6) -> Bool {
-        OCCTWireCheckClosed(wire.handle, face.handle, precision)
+    /// Returns `true` if a problem is found, `false` if none is, and `nil` if the check could not
+    /// be run (invalid wire/face, wire with no edges, wire whose edges do not assemble).
+    public static func checkClosed(
+        wire: Shape, face: Shape, precision: Double = 1e-6
+    ) -> Bool? {
+        switch OCCTWireCheckClosed(wire.handle, face.handle, precision) {
+        case 1: return true
+        case 0: return false
+        default: return nil
+        }
     }
 
     /// Check for self-intersection.
     ///
-    /// Returns true if a problem is found.
+    /// Returns `true` if a problem is found, `false` if none is, and `nil` if the check could not
+    /// be run (invalid wire/face, wire with no edges, wire whose edges do not assemble).
     public static func checkSelfIntersection(wire: Shape, face: Shape, precision: Double = 1e-6)
-        -> Bool
+        -> Bool?
     {
-        OCCTWireCheckSelfIntersection(wire.handle, face.handle, precision)
+        switch OCCTWireCheckSelfIntersection(wire.handle, face.handle, precision) {
+        case 1: return true
+        case 0: return false
+        default: return nil
+        }
     }
 
     /// Check for 3D gaps.
     ///
-    /// Returns true if a problem is found.
-    public static func checkGaps3d(wire: Shape, face: Shape, precision: Double = 1e-6) -> Bool {
-        OCCTWireCheckGaps3d(wire.handle, face.handle, precision)
+    /// Returns `true` if a problem is found, `false` if none is, and `nil` if the check could not
+    /// be run (invalid wire/face, wire with no edges, wire whose edges do not assemble).
+    public static func checkGaps3d(
+        wire: Shape, face: Shape, precision: Double = 1e-6
+    ) -> Bool? {
+        switch OCCTWireCheckGaps3d(wire.handle, face.handle, precision) {
+        case 1: return true
+        case 0: return false
+        default: return nil
+        }
     }
 
     /// Check for 2D gaps.
     ///
-    /// Returns true if a problem is found.
-    public static func checkGaps2d(wire: Shape, face: Shape, precision: Double = 1e-6) -> Bool {
-        OCCTWireCheckGaps2d(wire.handle, face.handle, precision)
+    /// Returns `true` if a problem is found, `false` if none is, and `nil` if the check could not
+    /// be run (invalid wire/face, wire with no edges, wire whose edges do not assemble).
+    public static func checkGaps2d(
+        wire: Shape, face: Shape, precision: Double = 1e-6
+    ) -> Bool? {
+        switch OCCTWireCheckGaps2d(wire.handle, face.handle, precision) {
+        case 1: return true
+        case 0: return false
+        default: return nil
+        }
     }
 
     /// Check edge curves consistency.
     ///
-    /// Returns true if a problem is found.
-    public static func checkEdgeCurves(wire: Shape, face: Shape, precision: Double = 1e-6) -> Bool {
-        OCCTWireCheckEdgeCurves(wire.handle, face.handle, precision)
+    /// Returns `true` if a problem is found, `false` if none is, and `nil` if the check could not
+    /// be run (invalid wire/face, wire with no edges, wire whose edges do not assemble).
+    public static func checkEdgeCurves(
+        wire: Shape, face: Shape, precision: Double = 1e-6
+    ) -> Bool? {
+        switch OCCTWireCheckEdgeCurves(wire.handle, face.handle, precision) {
+        case 1: return true
+        case 0: return false
+        default: return nil
+        }
     }
 
     /// Check for lacking edges.
     ///
-    /// Returns true if a problem is found.
-    public static func checkLacking(wire: Shape, face: Shape, precision: Double = 1e-6) -> Bool {
-        OCCTWireCheckLacking(wire.handle, face.handle, precision)
+    /// Returns `true` if a problem is found, `false` if none is, and `nil` if the check could not
+    /// be run (invalid wire/face, wire with no edges, wire whose edges do not assemble).
+    public static func checkLacking(
+        wire: Shape, face: Shape, precision: Double = 1e-6
+    ) -> Bool? {
+        switch OCCTWireCheckLacking(wire.handle, face.handle, precision) {
+        case 1: return true
+        case 0: return false
+        default: return nil
+        }
     }
 
     /// Get the number of edges in a wire on a face.
@@ -140,9 +206,10 @@ public enum SAWireAnalysis {
     /// Returns true if a problem is found, false if none is, and `nil` for four inputs the check
     /// cannot evaluate: a `Shape` that is not a wire or not a face, **a null shape included**; a
     /// wire with no edges; a wire whose edges do not assemble; and a wire with no pcurve on the
-    /// face (#1058). The other fourteen **check** members of this enum answer a plain `Bool`, so a
-    /// refused call and a clean verdict are the same value for them; `edgeCount` and the four
-    /// distance members return `Int`/`Double` and have their own version of that collision.
+    /// face (#1058). The ten whole-wire **check** siblings above now return `Bool?` as well, so
+    /// their refusal is also distinguishable from a clean verdict (#1074). The four per-edge
+    /// check members and `edgeCount` and the four distance members return `Bool`/`Int`/`Double`
+    /// and have their own version of that collision.
     /// Unlike every sibling above, this takes no precision, because
     /// `ShapeAnalysis_Wire::CheckOuterBound` consults none.
     ///
