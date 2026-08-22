@@ -7842,8 +7842,11 @@ void OCCTGeom2dEvalCircleInvoluteD0WithPlacement(double originX, double originY,
                                                   double radius, double u,
                                                   double* px, double* py)
 {
-  if (radius <= 0.0)
+  if (radius <= 0.0) {
+    *px = 0.0;
+    *py = 0.0;
     return;
+  }
   gp_Ax2d                        ax(gp_Pnt2d(originX, originY), gp_Dir2d(dirX, dirY));
   Geom2dEval_CircleInvoluteCurve inv(ax, radius);
   gp_Pnt2d                       p = inv.EvalD0(u);
@@ -7857,8 +7860,13 @@ void OCCTGeom2dEvalCircleInvoluteD1WithPlacement(double originX, double originY,
                                                   double* px, double* py,
                                                   double* vx, double* vy)
 {
-  if (radius <= 0.0)
+  if (radius <= 0.0) {
+    *px = 0.0;
+    *py = 0.0;
+    *vx = 0.0;
+    *vy = 0.0;
     return;
+  }
   gp_Ax2d                        ax(gp_Pnt2d(originX, originY), gp_Dir2d(dirX, dirY));
   Geom2dEval_CircleInvoluteCurve inv(ax, radius);
   auto                           res = inv.EvalD1(u);

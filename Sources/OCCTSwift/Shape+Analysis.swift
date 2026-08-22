@@ -716,12 +716,12 @@ extension Shape {
             case intersects
             /// The shape is clean (no self-intersection, conclusive).
             case clean
-            /// The check timed out but the analysis was making progress (breaker was tripped).
+            /// The check timed out and the OCCT progress breaker was tripped (analysis was running).
             /// A longer timeout may yield a conclusive result.
-            case indeterminatePartial
-            /// The check timed out and the analysis made no measurable progress (breaker was NOT tripped).
+            case indeterminateBreakerTripped
+            /// The check timed out and the OCCT progress breaker was NOT tripped (analysis made no progress).
             /// The shape may be too complex for this check to complete in reasonable time.
-            case indeterminateNoProgress
+            case indeterminateBreakerNotTripped
             /// An error occurred during analysis.
             case error
         }
@@ -729,6 +729,7 @@ extension Shape {
         /// The status of the check.
         public let status: Status
         /// Number of face pairs checked before completion/timeout.
+        /// NOTE: BOPAlgo_ArgumentAnalyzer does not expose a progress counter; this is always 0.
         public let facesChecked: Int
         /// Estimated total face pairs to check.
         public let totalFacePairs: Int
@@ -742,8 +743,8 @@ extension Shape {
             switch code {
             case 1:  self.status = .intersects
             case 0:  self.status = .clean
-            case -1: self.status = .indeterminatePartial
-            case -2: self.status = .indeterminateNoProgress
+            case -1: self.status = .indeterminateBreakerTripped
+            case -2: self.status = .indeterminateBreakerNotTripped
             default: self.status = .error
             }
         }

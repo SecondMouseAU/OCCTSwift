@@ -16365,7 +16365,9 @@ int32_t OCCTShapeSelfIntersectsBounded(OCCTShapeRef shape, double timeoutSeconds
 //  -3  = error (exception occurred)
 //
 // Output parameters (optional, can pass nullptr):
-//   - outNumFacesChecked: number of face pairs checked before timeout/error
+//   - outNumFacesChecked: number of face pairs checked before timeout/error.
+//     NOTE: BOPAlgo_ArgumentAnalyzer does not expose a progress counter for face pairs
+//     checked. This output will be 0 in the current implementation.
 //   - outTotalFacePairs: estimated total face pairs to check
 //   - outTimeSpent: actual time spent in seconds
 int32_t OCCTShapeSelfIntersectsDetailed(OCCTShapeRef shape, double timeoutSeconds,
@@ -16375,7 +16377,7 @@ int32_t OCCTShapeSelfIntersectsDetailed(OCCTShapeRef shape, double timeoutSecond
 {
   if (!shape)
     return -3;
-  if (outNumFacesChecked) *outNumFacesChecked = 0;
+  if (outNumFacesChecked) *outNumFacesChecked = 0; // Not available from BOPAlgo_ArgumentAnalyzer
   if (outTotalFacePairs) *outTotalFacePairs = 0;
   if (outTimeSpent) *outTimeSpent = 0.0;
 

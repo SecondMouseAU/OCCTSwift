@@ -2355,9 +2355,9 @@ public final class Shape: @unchecked Sendable {
     ///
     /// Unlike ``isSelfIntersecting(timeout:)``, this returns a ``SelfIntersectionDetailedResult``
     /// that distinguishes between different reasons for an indeterminate result:
-    /// - ``SelfIntersectionDetailedResult/indeterminateNoProgress``: the analysis made no measurable
+    /// - ``SelfIntersectionDetailedResult/indeterminateBreakerNotTripped``: the analysis made no measurable
     ///   progress before the timeout (the OCCT progress breaker was never tripped)
-    /// - ``SelfIntersectionDetailedResult/indeterminatePartial``: the analysis was running but didn't
+    /// - ``SelfIntersectionDetailedResult/indeterminateBreakerTripped``: the analysis was running but didn't
     ///   complete before the timeout (the breaker was tripped)
     /// - ``SelfIntersectionDetailedResult/error``: an exception occurred during analysis
     ///
@@ -2372,13 +2372,13 @@ public final class Shape: @unchecked Sendable {
     /// ```swift
     /// let result = solid.isSelfIntersectingDetailed(timeout: 10)
     /// switch result.status {
-    /// case .intersects:     print("Self-intersects - reject")
-    /// case .clean:          print("Clean - safe to use")
-    /// case .indeterminatePartial:
-    ///     print("Partial progress - try longer timeout")
-    /// case .indeterminateNoProgress:
-    ///     print("No progress - shape may be too complex for this check")
-    /// case .error:          print("Analysis error - treat as unknown")
+    /// case .intersects:                  print("Self-intersects - reject")
+    /// case .clean:                       print("Clean - safe to use")
+    /// case .indeterminateBreakerTripped:
+    ///     print("Breaker tripped - try longer timeout")
+    /// case .indeterminateBreakerNotTripped:
+    ///     print("Breaker not tripped - shape may be too complex for this check")
+    /// case .error:                       print("Analysis error - treat as unknown")
     /// }
     /// ```
     public func isSelfIntersectingDetailed(timeout: Double = 30) -> SelfIntersectionDetailedResult {
