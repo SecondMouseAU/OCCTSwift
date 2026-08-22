@@ -3865,9 +3865,11 @@ int OCCTBisectorInterPointPoint(double                         ax,
 
     if (!inter.IsDone())
       return 0;
-    int count   = inter.NbPoints();
     int written = 0;
-    for (int i = 1; i <= count && written < maxPoints; ++i)
+
+    // First, add intersection points
+    int pointCount = inter.NbPoints();
+    for (int i = 1; i <= pointCount && written < maxPoints; ++i)
     {
       const IntRes2d_IntersectionPoint& ip = inter.Point(i);
       if (outPoints)
@@ -3879,6 +3881,58 @@ int OCCTBisectorInterPointPoint(double                         ax,
       }
       written++;
     }
+
+    // If no points but there are segments (coincident bisectors), add segment endpoints
+    if (written == 0)
+    {
+      int segmentCount = inter.NbSegments();
+      for (int i = 1; i <= segmentCount && written < maxPoints; ++i)
+      {
+        const IntRes2d_IntersectionSegment& seg = inter.Segment(i);
+
+        // Add first point of segment if it exists
+        if (seg.HasFirstPoint() && written < maxPoints)
+        {
+          const IntRes2d_IntersectionPoint& fp = seg.FirstPoint();
+          if (outPoints)
+          {
+            outPoints[written].x             = fp.Value().X();
+            outPoints[written].y             = fp.Value().Y();
+            outPoints[written].paramOnFirst  = fp.ParamOnFirst();
+            outPoints[written].paramOnSecond = fp.ParamOnSecond();
+          }
+          written++;
+        }
+
+        // Add last point of segment if it exists and is different from first
+        if (seg.HasLastPoint() && written < maxPoints)
+        {
+          const IntRes2d_IntersectionPoint& lp = seg.LastPoint();
+          // Check if last point is different from first point
+          bool isDifferent = true;
+          if (seg.HasFirstPoint())
+          {
+            const IntRes2d_IntersectionPoint& fp = seg.FirstPoint();
+            isDifferent = (fabs(lp.Value().X() - fp.Value().X()) > 1e-12)
+                          || (fabs(lp.Value().Y() - fp.Value().Y()) > 1e-12)
+                          || (fabs(lp.ParamOnFirst() - fp.ParamOnFirst()) > 1e-12)
+                          || (fabs(lp.ParamOnSecond() - fp.ParamOnSecond()) > 1e-12);
+          }
+          if (isDifferent)
+          {
+            if (outPoints)
+            {
+              outPoints[written].x             = lp.Value().X();
+              outPoints[written].y             = lp.Value().Y();
+              outPoints[written].paramOnFirst  = lp.ParamOnFirst();
+              outPoints[written].paramOnSecond = lp.ParamOnSecond();
+            }
+            written++;
+          }
+        }
+      }
+    }
+
     return written;
   }
   catch (...)
