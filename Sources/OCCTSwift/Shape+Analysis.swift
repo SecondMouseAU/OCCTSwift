@@ -756,6 +756,7 @@ extension Shape {
         /// Number of planar faces (cheapest to check).
         public let numPlaneFaces: Int
         /// Relative cost estimate (higher = more expensive).
+        ///
         /// Cost model: B-spline = 10x, other analytical = 3x, plane = 1x.
         public let estimatedCost: Double
     }

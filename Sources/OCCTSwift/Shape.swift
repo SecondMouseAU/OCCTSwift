@@ -2536,8 +2536,7 @@ public final class Shape: @unchecked Sendable {
     ///   complete before the timeout (the breaker was tripped). A longer timeout may yield a conclusive result.
     /// - ``SelfIntersectionDetailedResult/error``: an exception occurred during analysis.
     ///
-    /// - Parameters:
-    ///   - timeout: Maximum time in seconds to wait for the check to complete.
+    /// - Parameter timeout: Maximum time in seconds to wait for the check to complete.
     /// - Returns: ``SelfIntersectionDetailedResult`` with status and progress information.
     ///
     /// ```swift
