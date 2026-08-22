@@ -36,9 +36,43 @@ defensible default for it; an enum case with an associated value also means the 
 cannot be supplied for, and silently ignored by, an orthographic projection.
 
 ```swift
-public enum ProjectionType: Sendable, Equatable {
+public enum ProjectionType: Sendable, Hashable {
     case orthographic
     case perspective(focus: Double)
+}
+```
+
+`Hashable` refines `Equatable`, so this keys a dictionary or joins a set and compares with `==`.
+
+**One payload value breaks that contract, and `Double` is why.** `.perspective(focus: .nan)` is not
+equal to itself, so it can be inserted into a `Set` twice, `contains` answers `false` for it
+immediately after `insert`, and a dictionary read returns `nil` immediately after the matching
+write. `Drawing.project` refuses any focal distance that is not strictly positive, so a `.nan` case
+never becomes a drawing, but nothing stops one being constructed and used as a key. The
+`UInt32`-backed form had no such value.
+
+It carries no **raw type**, and cannot: an enum cannot declare one alongside an associated value,
+and the associated value is what the perspective constructor needs. That is narrower than "cannot be
+`RawRepresentable`", which is not quite true, since a hand-written conformance with some other
+`RawValue` compiles. It is not offered, because it could not round-trip the old `UInt32` and so
+would look like the old API while meaning something else.
+
+Before #999 this was `UInt32`-backed with two payload-free cases, which is three conformances from
+two different sources: the raw type supplied `RawRepresentable`, and `Equatable` and `Hashable` came
+free because no case carried anything, in its own module and across a boundary alike. It was **not**
+`Sendable`, and that is a rule about **publicness** rather than about the payload: a public enum
+never gets `Sendable` implicitly, so the old form did not have it inside its own module either. That
+is the fourth delta and the only one that is a gain. Adding `focus:` removed the free pair as well
+as the raw type, so the new form had to declare what it wanted, and it declared `Sendable,
+Equatable`. `Hashable` came back in #1059; the raw type cannot. A caller who was round-tripping
+through `.rawValue` switches over the cases instead:
+
+```swift
+// Was: UInt32(type.rawValue)
+let code: UInt32
+switch type {
+case .orthographic: code = 0
+case .perspective: code = 1
 }
 ```
 
