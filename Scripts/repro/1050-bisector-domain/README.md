@@ -443,8 +443,15 @@ it never bracketed the transition, and the two endpoints were read as though not
 between them. A correction carrying an unbracketed grid is the original mistake wearing a
 measurement. The grid now steps `1e-161`, `1e-162`, `1e-163`.
 
-The `1e-10` figure is also fixture-specific rather than scale-free, which the doc now says: measured
-at origins from `(1,1)` to `(1e9,1e9)` the threshold moves between about `1e-11` and `1e-8`.
+Both figures come from this probe's fixture, which builds its pair at the origin, and the doc says
+so rather than presenting them as constants. A draft went further and claimed the `1e-10` threshold
+"moves between about 1e-11 and 1e-8" across origins from `(1,1)` to `(1e9,1e9)`. Those numbers are
+right, but the sentence attributed the movement to `GccAna_NoSolution` and that is wrong: measured,
+the `GccAna_NoSolution` threshold does not move at all from origin `1` to `1e6`. What moves is the
+origin's ulp, and at `1e9` a separation of `1e-8` collapses the pair to a single point, so the
+refusal there is `Normalize()` and not the mechanism the sentence named. It was also labelled
+"measured" while no probe here sweeps origins. Both halves are the failures this section exists to
+record, so the claim is gone rather than patched; sweeping origins would be a new probe.
 
 One thing this probe found that is **not** fixed and is pre-existing: at a pair separation of `1e-6`
 the crossing comes back as `(-50, 0)` where the true value is `(-50, 5e-7)`, a 100% relative error in
