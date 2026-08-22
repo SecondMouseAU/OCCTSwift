@@ -50,7 +50,6 @@ Sources/OCCTSwift/EdgeAnalysis.swift
 Sources/OCCTSwift/EdgeCurve.swift
 Sources/OCCTSwift/ElLib.swift
 Sources/OCCTSwift/Environment.swift
-Sources/OCCTSwift/ExtremaTypes.swift
 Sources/OCCTSwift/EvolvedSectionInfo.swift
 Sources/OCCTSwift/EvolvingFilletEdge.swift
 Sources/OCCTSwift/Exporter.swift
@@ -62,7 +61,6 @@ Sources/OCCTSwift/FontManager.swift
 Sources/OCCTSwift/FreeBoundsProperties.swift
 Sources/OCCTSwift/GeneralTransform2D.swift
 Sources/OCCTSwift/GeometryProperties.swift
-Sources/OCCTSwift/GeomEval.swift
 Sources/OCCTSwift/GeomPrimitives.swift
 Sources/OCCTSwift/GeomTransformation.swift
 Sources/OCCTSwift/HatchBuilder.swift

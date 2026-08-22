@@ -21,6 +21,14 @@ bounding-box accessors becoming Optional so a void shape stops fabricating `(0,0
 
 ## Unreleased
 
+### Circle involute with explicit placement (#1023)
+
+Added `Geom2dEval.circleInvoluteD0(origin:direction:radius:u:)` and `Geom2dEval.circleInvoluteD1(origin:direction:radius:u:)` to evaluate a circle involute at a parameter with an explicit placement (origin + X direction). Previously the involute was fixed to the canonical coordinate system (origin at 0,0; XDir along +X). The underlying bridge functions `OCCTGeom2dEvalCircleInvoluteD0WithPlacement` and `OCCTGeom2dEvalCircleInvoluteD1WithPlacement` were added, along with `OCCTGeom2dEvalCircleInvoluteCurveCreate` for creating a persistent `Geom2dEval_CircleInvoluteCurve`.
+
+### Self-intersection check with detailed status and cost estimate (#1068)
+
+Added `Shape.selfIntersectsDetailed(timeout:facesChecked:totalFacePairs:timeSpent:)` returning granular status codes (1 = self-intersects, 0 = clean, -1 = timed out with progress, -2 = timed out no progress, -3 = error). Added `Shape.estimateSelfIntersectCost(faces:bsplineFaces:planeFaces:estimatedCost:)` for pre-screening check complexity. The original `Shape.isSelfIntersecting(timeout:)` remains for backward compatibility.
+
 
 ### `PocketFeature.isOpen` stops rebuilding a whole-shape edge map per boundary edge (#777)
 
