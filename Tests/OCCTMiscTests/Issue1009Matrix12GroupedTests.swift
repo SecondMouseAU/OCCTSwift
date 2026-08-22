@@ -6,17 +6,20 @@ import simd
 
 /// #1009: the GROUPED 12-double reader was three byte-identical copies of the same permuted
 /// `gp_Trsf::SetValues`, in `OCCTBridge_Curve3D.mm`, `OCCTBridge_Document.mm` and
-/// `OCCTBridge_Modeling.mm`. All three now call `occtTrsfFromMatrix12Grouped` in
-/// `OCCTBridge_Internal.h`, next to #994's INTERLEAVED sibling.
+/// `OCCTBridge_Modeling.mm`.
 ///
-/// The two layouts must never share a reader, and every case below is chosen so that reading the
-/// same array with the INTERLEAVED one gives a different, wrong, silently accepted answer:
-/// translation `(0, 0, 7)` instead of `(5, 6, 7)`, and a parametric factor of `0` instead of `2`.
-/// This suite spans three domains, so it sits in `OCCTMiscTests` rather than picking one of them.
+/// All three now call `occtTrsfFromMatrix12Grouped` in `OCCTBridge_Internal.h`, next to #994's
+/// INTERLEAVED sibling. The two layouts must never share a reader, and every case below is chosen
+/// so that reading the same array with the INTERLEAVED one gives a different, wrong, silently
+/// accepted answer: translation `(0, 0, 7)` instead of `(5, 6, 7)`, and a parametric factor of `0`
+/// instead of `2`. This suite spans three domains, so it sits in `OCCTMiscTests` rather than
+/// picking one of them.
 @Suite("One GROUPED 12-double reader, shared by all three call sites (#1009)")
 struct Issue1009Matrix12Grouped {
 
-    /// Identity rotation, translate by (5, 6, 7). Read INTERLEAVED this is translation (0, 0, 7).
+    /// Identity rotation, translate by (5, 6, 7).
+    ///
+    /// Read INTERLEAVED this is translation (0, 0, 7).
     private static let translate567: [Double] = [
         1, 0, 0,
         0, 1, 0,
