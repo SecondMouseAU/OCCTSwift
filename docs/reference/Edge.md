@@ -673,6 +673,10 @@ public func adjacentFaces(in shape: Shape) -> (Face, Face?)?
 
 Most interior edges have exactly two adjacent faces (manifold solid). Boundary edges (on open shells) have only one. The shape must be the same solid from which this edge was extracted.
 
+**This reports at most two faces even where more bound the edge** (#777). An edge can bound three or more faces in a compound whose solids share a face, and the call returns whichever two the underlying `MapShapesAndAncestors` list holds first, with no signal that it truncated. Measured on two solids sharing one cut face: each of the four shared edges is bounded by four face occurrences, three distinct under `IsSame`, and the call hands back two `Face` values.
+
+`Shape.adjacentFaces(forEdge:)` sees more of them and is not a complete answer either: it walks `MapShapesAndUniqueAncestors` through an `IsSame`-keyed map, so it reports the three **distinct** faces rather than the four occurrences, and it caps at 64 with no signal when it truncates. Neither entry point can currently report an occurrence set. Tracked as [#1087](https://github.com/SecondMouseAU/OCCTSwift/issues/1087).
+
 - **Parameters:** `shape`, the parent shape containing this edge.
 - **Returns:** Tuple `(face1, face2)` where `face2` is `nil` for boundary edges; or `nil` if the edge has no adjacent faces in `shape`.
 - **OCCT:** `TopExp::MapShapesAndAncestors(shape, TopAbs_EDGE, TopAbs_FACE, map)`.
