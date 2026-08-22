@@ -22,6 +22,34 @@ bounding-box accessors becoming Optional so a void shape stops fabricating `(0,0
 ## Unreleased
 
 
+### `PocketFeature.isOpen` stops rebuilding a whole-shape edge map per boundary edge (#777)
+
+`AAG.detectPockets(tolerance:)`'s enclosure test reached `Edge.adjacentFaces(in:)` once per floor
+boundary edge, and `OCCTEdgeGetAdjacentFaces` rebuilds a whole-shape
+`TopExp::MapShapesAndAncestors` edge-to-face map on every call, so the cost of deciding whether one
+pocket is closed grew with the whole model. It now indexes the covering faces' own edges once per
+pocket and tests each boundary edge for membership, which is the same predicate read from the other
+end and answers with the same identity rule (`TopoDS_Shape::IsSame`).
+
+Measured (`Scripts/repro/777-pocket-isopen/`, 25 runs interleaved in one process, medians):
+**1.1x on a one-edge cylindrical pocket, 5.9x on a 24-sided pocket, 10.6x on a 48-sided one, 18.2x
+on a plate carrying a 5x5 grid of pockets, and 5.3x on a plate of open slots**, which is the one
+arrangement that favoured the old code, since its `contains { !covered }` short-circuited on the
+first uncovered edge. End to end, 18% to 40% comes off the whole `detectPocketsAAG()` call.
+
+No verdict changes. Over every edge of five fixtures (a box, a cylinder's seam, a cone's degenerate
+apex, a sphere's poles, and two solids sharing a cut face) the face set the old construction saw is
+a **subset** of the new one's on all 41 edges and never the reverse, which is structural rather than
+observed: `OCCTEdgeGetAdjacentFaces` truncates the `MapShapesAndAncestors` list at two, and that map
+is the inverse of the per-face `MapShapes` the new code reads. So the replacement can only ever move
+a verdict from open to enclosed, and no pocket fixture reachable through `detectPockets()` does even
+that.
+
+The route #777 itself proposed, `BRepGraph`'s indexed edge-to-face incidence, was measured and
+rejected: building a graph costs more than the whole test it accelerates on five of the seven
+fixtures, and on the shared-face compound it answers 3 faces where the true occurrence count is 4,
+because `ShapesView::FindNode` collapses a face shared between two solids to one node (#642/#699).
+
 ### `bisectorIntersections(a:b:c:d:)` no longer discards a crossing past parameter 100 (#1050)
 
 `OCCTBisectorInterPointPoint` clamped both bisectors' `IntRes2d_Domain` to a hardcoded
