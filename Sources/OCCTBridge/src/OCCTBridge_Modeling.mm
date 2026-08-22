@@ -16476,14 +16476,14 @@ int32_t OCCTShapeSelfIntersectsDetailed(OCCTShapeRef shape,
       *outTimeSpent = std::chrono::duration<double>(endTime - startTime).count();
     }
 
-    if (aa.HasFaulty())
-      return 1; // conclusive
-
+    // Check breaker first: if the analysis was interrupted, its results are unreliable.
+    // This matches the logic in OCCTShapeSelfIntersectsBounded.
     bool breakerTripped = (!breaker.IsNull() && breaker->tripped());
     if (breakerTripped)
       return -1; // timed out but breaker was tripped (analysis was running)
-    else if (timeoutSeconds > 0.0)
-      return -2; // timed out but breaker was NOT tripped (made no progress)
+
+    if (aa.HasFaulty())
+      return 1; // conclusive
 
     return 0; // completed clean
   }
