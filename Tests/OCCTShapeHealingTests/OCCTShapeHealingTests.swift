@@ -1,18 +1,16 @@
-import Testing
 import Foundation
+import Testing
 import simd
-@testable import OCCTSwift
 
+@testable import OCCTSwift
 
 extension SIMD3 where Scalar == Double {
     var normalized: SIMD3<Double> {
-        let len = sqrt(x*x + y*y + z*z)
+        let len = sqrt(x * x + y * y + z * z)
         guard len > 0 else { return self }
-        return SIMD3(x/len, y/len, z/len)
+        return SIMD3(x / len, y / len, z / len)
     }
 }
-
-
 
 @Suite("Sewing Tests")
 struct SewingTests {
@@ -38,7 +36,7 @@ struct SewingTests {
         let faces = [
             Shape.face(from: Wire.rectangle(width: 10, height: 10)!)!,
             Shape.face(from: Wire.circle(radius: 5)!)!,
-            Shape.face(from: Wire.rectangle(width: 8, height: 8)!)!
+            Shape.face(from: Wire.rectangle(width: 8, height: 8)!)!,
         ]
 
         let sewn = Shape.sew(shapes: faces, tolerance: 1e-6)
@@ -58,7 +56,6 @@ struct SewingTests {
         #expect(sewn!.isValid)
     }
 }
-
 
 // MARK: - v0.13.0 Shape Healing & Analysis Tests
 
@@ -103,11 +100,10 @@ struct ShapeAnalysisTests {
         // hasSelfIntersection is nil here (selfIntersectionTimeout defaults to nil, #772), so it
         // contributes 0, same as the pre-#772 formula, but is included explicitly so this test
         // stays a true mirror of totalProblems's implementation rather than a numeric coincidence.
-        let expectedTotal = analysis.smallEdgeCount + analysis.smallFaceCount +
-                           analysis.gapCount +
-                           analysis.freeEdgeCount +
-                           (analysis.hasInvalidTopology ? 1 : 0) +
-                           (analysis.hasSelfIntersection == true ? 1 : 0)
+        let expectedTotal =
+            analysis.smallEdgeCount + analysis.smallFaceCount + analysis.gapCount
+            + analysis.freeEdgeCount + (analysis.hasInvalidTopology ? 1 : 0)
+            + (analysis.hasSelfIntersection == true ? 1 : 0)
         #expect(analysis.totalProblems == expectedTotal)
         #expect(analysis.hasSelfIntersection == nil)
     }
@@ -131,7 +127,8 @@ struct ShapeFixingTests {
         let box = Shape.box(width: 10, height: 10, depth: 10)!
 
         // Fix only wires and faces, not solids
-        let fixed = box.fixed(tolerance: 0.001, fixSolid: false, fixShell: true, fixFace: true, fixWire: true)
+        let fixed = box.fixed(
+            tolerance: 0.001, fixSolid: false, fixShell: true, fixFace: true, fixWire: true)
 
         #expect(fixed != nil)
         #expect(fixed!.isValid)
@@ -481,7 +478,8 @@ struct FreeBoundsTests {
     @Test("Disjoint faces in a compound don't crash free-bounds analysis")
     func issue310DisjointFacesFreeBounds() {
         let face1 = Shape.face(from: Wire.rectangle(width: 1, height: 1)!)!
-        let face2 = Shape.face(from: Wire.rectangle(width: 1, height: 1)!)!.translated(by: SIMD3(5, 5, 0))!
+        let face2 = Shape.face(from: Wire.rectangle(width: 1, height: 1)!)!.translated(
+            by: SIMD3(5, 5, 0))!
         let compound = Shape.compound([face1, face2])!
 
         let closedWires = compound.freeBoundsClosedWires(tolerance: 0.01)
@@ -489,7 +487,8 @@ struct FreeBoundsTests {
         #expect(closedWires?.subShapeCount(ofType: .wire) == 2)
         // A valid, empty compound (0 wires) is the correct result here, not nil, both faces
         // are entirely closed, so there's nothing to report as an open free boundary.
-        #expect((compound.freeBoundsOpenWires(tolerance: 0.01)?.subShapeCount(ofType: .wire) ?? 0) == 0)
+        #expect(
+            (compound.freeBoundsOpenWires(tolerance: 0.01)?.subShapeCount(ofType: .wire) ?? 0) == 0)
     }
 }
 
@@ -533,27 +532,35 @@ struct Issue655FreeBoundsInternalOrientationTests {
     /// correctly excluded by orientation -- exactly the gap `freeBoundsUnaffectedByInternalOrientation`
     /// needs to not have.
     static func fixture(loopOrientation: Shape.Orientation) -> Shape? {
-        guard let outerWire1 = Wire.polygon3D(
-            [SIMD3(0, 0, 0), SIMD3(10, 0, 0), SIMD3(10, 10, 0), SIMD3(0, 10, 0)], closed: true
-        ), let face1 = Shape.face(from: outerWire1) else { return nil }
+        guard
+            let outerWire1 = Wire.polygon3D(
+                [SIMD3(0, 0, 0), SIMD3(10, 0, 0), SIMD3(10, 10, 0), SIMD3(0, 10, 0)], closed: true
+            ), let face1 = Shape.face(from: outerWire1)
+        else { return nil }
 
         let loopPoints: [SIMD3<Double>] = [
-            SIMD3(2, 2, 0), SIMD3(8, 2, 0), SIMD3(8, 8, 0), SIMD3(2, 8, 0)
+            SIMD3(2, 2, 0), SIMD3(8, 2, 0), SIMD3(8, 8, 0), SIMD3(2, 8, 0),
         ]
         guard let loopWireShape = Shape.builderMakeWire() else { return nil }
         for i in 0..<loopPoints.count {
-            guard let edgeWire = Wire.line(from: loopPoints[i], to: loopPoints[(i + 1) % loopPoints.count]),
-                  let edge = edgeWire.edges().first,
-                  let edgeShape = Shape.fromEdge(edge) else { return nil }
+            guard
+                let edgeWire = Wire.line(
+                    from: loopPoints[i], to: loopPoints[(i + 1) % loopPoints.count]),
+                let edge = edgeWire.edges().first,
+                let edgeShape = Shape.fromEdge(edge)
+            else { return nil }
             edgeShape.setOrientation(loopOrientation)
             guard loopWireShape.builderAdd(edgeShape) else { return nil }
         }
         loopWireShape.setOrientation(loopOrientation)
         guard face1.builderAdd(loopWireShape) else { return nil }
 
-        guard let outerWire2 = Wire.polygon3D(
-            [SIMD3(50, 50, 0), SIMD3(60, 50, 0), SIMD3(60, 60, 0), SIMD3(50, 60, 0)], closed: true
-        ), let face2 = Shape.face(from: outerWire2) else { return nil }
+        guard
+            let outerWire2 = Wire.polygon3D(
+                [SIMD3(50, 50, 0), SIMD3(60, 50, 0), SIMD3(60, 60, 0), SIMD3(50, 60, 0)],
+                closed: true
+            ), let face2 = Shape.face(from: outerWire2)
+        else { return nil }
 
         return Shape.compound([face1, face2])
     }
@@ -569,16 +576,20 @@ struct Issue655FreeBoundsInternalOrientationTests {
         // look identical downstream. This confirms the input actually carries all 12 edges (the
         // two faces' 8 outer edges plus the embedded loop's 4) before asserting anything about
         // what comes back out.
-        #expect(shape.subShapeCount(ofType: .edge) == 12,
-                "fixture must carry the embedded loop's 4 edges")
+        #expect(
+            shape.subShapeCount(ofType: .edge) == 12,
+            "fixture must carry the embedded loop's 4 edges")
         // Only the two faces' own 4-edge outer boundaries come back; the embedded INTERNAL loop
         // never becomes a free-bound candidate in the first place (see doc comment above).
-        #expect(shape.freeBoundsClosedCount(tolerance: 1e-6) == 2,
-                "expected 2 closed wires (the two faces' outer boundaries only)")
-        #expect(shape.freeBoundsClosedWires(tolerance: 1e-6)?.subShapeCount(ofType: .edge) == 8,
-                "expected 8 edges total (4 per face); the INTERNAL loop's 4 must not be counted")
-        #expect((shape.freeBoundsOpenWires(tolerance: 1e-6)?.subShapeCount(ofType: .wire) ?? 0) == 0,
-                "the INTERNAL loop must not surface as an open free bound either")
+        #expect(
+            shape.freeBoundsClosedCount(tolerance: 1e-6) == 2,
+            "expected 2 closed wires (the two faces' outer boundaries only)")
+        #expect(
+            shape.freeBoundsClosedWires(tolerance: 1e-6)?.subShapeCount(ofType: .edge) == 8,
+            "expected 8 edges total (4 per face); the INTERNAL loop's 4 must not be counted")
+        #expect(
+            (shape.freeBoundsOpenWires(tolerance: 1e-6)?.subShapeCount(ofType: .wire) ?? 0) == 0,
+            "the INTERNAL loop must not surface as an open free bound either")
 
         if let result = shape.freeBounds(sewingTolerance: 1e-6) {
             #expect(result.closedCount == 2, "freeBounds() must agree with freeBoundsClosedCount")
@@ -600,8 +611,9 @@ struct Issue655FreeBoundsInternalOrientationTests {
             Issue.record("fixture build failed")
             return
         }
-        #expect(shape.freeBoundsClosedCount(tolerance: 1e-6) == 3,
-                "expected 3 closed wires (2 outer boundaries + the now-visible loop)")
+        #expect(
+            shape.freeBoundsClosedCount(tolerance: 1e-6) == 3,
+            "expected 3 closed wires (2 outer boundaries + the now-visible loop)")
     }
 
     /// `freeBoundsAnalysis(tolerance:)` (and every sibling built on `FreeBoundsProperties`) takes a
@@ -645,17 +657,22 @@ struct Issue655FreeBoundsInternalOrientationTests {
         ]
     )
     func sharedTopologyBranchMeasuredDirectly(
-        loopOrientation: Shape.Orientation, tolerance: Double, expectedClosed: Int, expectedOpen: Int
+        loopOrientation: Shape.Orientation, tolerance: Double, expectedClosed: Int,
+        expectedOpen: Int
     ) {
         guard let shape = Self.fixture(loopOrientation: loopOrientation) else {
             Issue.record("fixture build failed")
             return
         }
         let analysis = shape.freeBoundsAnalysis(tolerance: tolerance)
-        #expect(analysis.closedCount == expectedClosed,
-                "orientation \(loopOrientation), tolerance \(tolerance): expected \(expectedClosed) closed wires, got \(analysis.closedCount)")
-        #expect(analysis.openCount == expectedOpen,
-                "orientation \(loopOrientation), tolerance \(tolerance): expected \(expectedOpen) open wires, got \(analysis.openCount)")
+        #expect(
+            analysis.closedCount == expectedClosed,
+            "orientation \(loopOrientation), tolerance \(tolerance): expected \(expectedClosed) closed wires, got \(analysis.closedCount)"
+        )
+        #expect(
+            analysis.openCount == expectedOpen,
+            "orientation \(loopOrientation), tolerance \(tolerance): expected \(expectedOpen) open wires, got \(analysis.openCount)"
+        )
     }
 }
 
@@ -861,16 +878,18 @@ struct FreeBoundsPropertiesTests {
     @Test("Free bounds analysis on face compound")
     func freeBoundsOnFaces() throws {
         // Two separate faces form a compound with free bounds
-        let face1 = Shape.face(from:
-            Wire.polygon3D([
-                SIMD3(0, 0, 0), SIMD3(10, 0, 0),
-                SIMD3(10, 10, 0), SIMD3(0, 10, 0)
-            ])!)!
-        let face2 = Shape.face(from:
-            Wire.polygon3D([
-                SIMD3(0, 0, 5), SIMD3(10, 0, 5),
-                SIMD3(10, 10, 5), SIMD3(0, 10, 5)
-            ])!)!
+        let face1 = Shape.face(
+            from:
+                Wire.polygon3D([
+                    SIMD3(0, 0, 0), SIMD3(10, 0, 0),
+                    SIMD3(10, 10, 0), SIMD3(0, 10, 0),
+                ])!)!
+        let face2 = Shape.face(
+            from:
+                Wire.polygon3D([
+                    SIMD3(0, 0, 5), SIMD3(10, 0, 5),
+                    SIMD3(10, 10, 5), SIMD3(0, 10, 5),
+                ])!)!
         let compound = Shape.compound([face1, face2])!
 
         let analysis = compound.freeBoundsAnalysis(tolerance: 0.01)
@@ -880,16 +899,18 @@ struct FreeBoundsPropertiesTests {
 
     @Test("Closed free bound info, area and perimeter")
     func closedBoundInfo() throws {
-        let face = Shape.face(from:
-            Wire.polygon3D([
-                SIMD3(0, 0, 0), SIMD3(10, 0, 0),
-                SIMD3(10, 10, 0), SIMD3(0, 10, 0)
-            ])!)!
-        let face2 = Shape.face(from:
-            Wire.polygon3D([
-                SIMD3(0, 0, 5), SIMD3(10, 0, 5),
-                SIMD3(10, 10, 5), SIMD3(0, 10, 5)
-            ])!)!
+        let face = Shape.face(
+            from:
+                Wire.polygon3D([
+                    SIMD3(0, 0, 0), SIMD3(10, 0, 0),
+                    SIMD3(10, 10, 0), SIMD3(0, 10, 0),
+                ])!)!
+        let face2 = Shape.face(
+            from:
+                Wire.polygon3D([
+                    SIMD3(0, 0, 5), SIMD3(10, 0, 5),
+                    SIMD3(10, 10, 5), SIMD3(0, 10, 5),
+                ])!)!
         let compound = Shape.compound([face, face2])!
 
         let analysis = compound.freeBoundsAnalysis(tolerance: 0.01)
@@ -897,7 +918,7 @@ struct FreeBoundsPropertiesTests {
             if let info = compound.closedFreeBoundInfo(tolerance: 0.01, index: 0) {
                 #expect(info.area > 0)
                 #expect(info.perimeter > 0)
-                #expect(abs(info.area - 100.0) < 5.0) // 10x10 face
+                #expect(abs(info.area - 100.0) < 5.0)  // 10x10 face
                 #expect(abs(info.perimeter - 40.0) < 2.0)
             }
         }
@@ -905,16 +926,18 @@ struct FreeBoundsPropertiesTests {
 
     @Test("Free bound wire extraction")
     func freeBoundWire() throws {
-        let face = Shape.face(from:
-            Wire.polygon3D([
-                SIMD3(0, 0, 0), SIMD3(10, 0, 0),
-                SIMD3(10, 10, 0), SIMD3(0, 10, 0)
-            ])!)!
-        let face2 = Shape.face(from:
-            Wire.polygon3D([
-                SIMD3(0, 0, 5), SIMD3(10, 0, 5),
-                SIMD3(10, 10, 5), SIMD3(0, 10, 5)
-            ])!)!
+        let face = Shape.face(
+            from:
+                Wire.polygon3D([
+                    SIMD3(0, 0, 0), SIMD3(10, 0, 0),
+                    SIMD3(10, 10, 0), SIMD3(0, 10, 0),
+                ])!)!
+        let face2 = Shape.face(
+            from:
+                Wire.polygon3D([
+                    SIMD3(0, 0, 5), SIMD3(10, 0, 5),
+                    SIMD3(10, 10, 5), SIMD3(0, 10, 5),
+                ])!)!
         let compound = Shape.compound([face, face2])!
 
         let analysis = compound.freeBoundsAnalysis(tolerance: 0.01)
@@ -928,12 +951,14 @@ struct FreeBoundsPropertiesTests {
 
     // Two stacked 10x10 faces: two disjoint closed free bounds, no open ones.
     private func twoFaces() -> Shape {
-        let lower = Shape.face(from: Wire.polygon3D([
-            SIMD3(0, 0, 0), SIMD3(10, 0, 0), SIMD3(10, 10, 0), SIMD3(0, 10, 0)
-        ])!)!
-        let upper = Shape.face(from: Wire.polygon3D([
-            SIMD3(0, 0, 5), SIMD3(10, 0, 5), SIMD3(10, 10, 5), SIMD3(0, 10, 5)
-        ])!)!
+        let lower = Shape.face(
+            from: Wire.polygon3D([
+                SIMD3(0, 0, 0), SIMD3(10, 0, 0), SIMD3(10, 10, 0), SIMD3(0, 10, 0),
+            ])!)!
+        let upper = Shape.face(
+            from: Wire.polygon3D([
+                SIMD3(0, 0, 5), SIMD3(10, 0, 5), SIMD3(10, 10, 5), SIMD3(0, 10, 5),
+            ])!)!
         return Shape.compound([lower, upper])!
     }
 
@@ -972,9 +997,10 @@ struct FreeBoundsPropertiesTests {
     // not itself, and finds nothing. Every fixture in this suite is a compound for that reason.
     @Test("A lone face has no free bounds")
     func loneFaceHasNoFreeBounds() throws {
-        let face = Shape.face(from: Wire.polygon3D([
-            SIMD3(0, 0, 0), SIMD3(10, 0, 0), SIMD3(10, 10, 0), SIMD3(0, 10, 0)
-        ])!)!
+        let face = Shape.face(
+            from: Wire.polygon3D([
+                SIMD3(0, 0, 0), SIMD3(10, 0, 0), SIMD3(10, 10, 0), SIMD3(0, 10, 0),
+            ])!)!
         let analysis = face.freeBoundsAnalysis(tolerance: 0.01)
         #expect(analysis.totalCount == 0)
         #expect(analysis.closedCount == 0)
@@ -1069,7 +1095,7 @@ struct CurveValidateRangeTests {
         let seg = Curve3D.segment(from: SIMD3(0, 0, 0), to: SIMD3(10, 0, 0))!
         let result = seg.validateRange(first: -5, last: 15)
         // Should be adjusted to valid range
-        #expect(result.first >= -0.1) // within tolerance
+        #expect(result.first >= -0.1)  // within tolerance
         #expect(result.last <= 10.1)
     }
 }
@@ -1102,9 +1128,11 @@ struct CurveSamplePointsTests {
 struct WireVertexAnalysisTests {
     @Test("Analyze wire vertices")
     func wireVertex() throws {
-        let wire = try #require(Wire.polygon3D([
-            SIMD3(0, 0, 0), SIMD3(10, 0, 0), SIMD3(10, 10, 0)
-        ], closed: false))
+        let wire = try #require(
+            Wire.polygon3D(
+                [
+                    SIMD3(0, 0, 0), SIMD3(10, 0, 0), SIMD3(10, 10, 0),
+                ], closed: false))
         let shape = try #require(Shape.fromWire(wire))
         let analysis = shape.wireVertexAnalysis(precision: 0.01)
         #expect(analysis.isDone)
@@ -1122,7 +1150,7 @@ struct NearestPlaneTests {
             SIMD3(0, 0, 0),
             SIMD3(10, 0, 0.1),
             SIMD3(10, 10, -0.1),
-            SIMD3(0, 10, 0.05)
+            SIMD3(0, 10, 0.05),
         ]
         let result = try #require(Shape.nearestPlane(to: points))
         #expect(result.maxDeviation < 0.2)
@@ -1147,11 +1175,12 @@ struct SurfaceConvertToAnalyticalTests {
 struct CurveConvertToPeriodicTests {
     @Test("Convert closed BSpline to periodic")
     func convertToPeriodic() throws {
-        let curve = try #require(Curve3D.interpolate(points: [
-            SIMD3(10, 0, 0), SIMD3(0, 10, 0),
-            SIMD3(-10, 0, 0), SIMD3(0, -10, 0),
-            SIMD3(10, 0, 0)
-        ]))
+        let curve = try #require(
+            Curve3D.interpolate(points: [
+                SIMD3(10, 0, 0), SIMD3(0, 10, 0),
+                SIMD3(-10, 0, 0), SIMD3(0, -10, 0),
+                SIMD3(10, 0, 0),
+            ]))
         if let periodic = curve.convertToPeriodic() {
             #expect(periodic.handle != nil)
         }
@@ -1162,11 +1191,12 @@ struct CurveConvertToPeriodicTests {
 struct CurveSplitTests {
     @Test("Split curve at midpoint")
     func splitCurve() throws {
-        let curve = try #require(Curve3D.interpolate(points: [
-            SIMD3(0, 0, 0), SIMD3(2, 5, 0),
-            SIMD3(5, 3, 0), SIMD3(8, 7, 0),
-            SIMD3(10, 0, 0)
-        ]))
+        let curve = try #require(
+            Curve3D.interpolate(points: [
+                SIMD3(0, 0, 0), SIMD3(2, 5, 0),
+                SIMD3(5, 3, 0), SIMD3(8, 7, 0),
+                SIMD3(10, 0, 0),
+            ]))
         let dom = curve.domain
         let mid = (dom.lowerBound + dom.upperBound) / 2.0
         let result = try #require(curve.splitAt(parameter: mid))
@@ -1285,7 +1315,8 @@ struct ShapeBuildEdgeTests {
         let vertices = box.subShapes(ofType: .vertex)
         guard edges.count >= 1, vertices.count >= 2 else { return }
         if let result = edges[0].copyEdgeReplacingVertices(
-            startVertex: vertices[0], endVertex: vertices[1]) {
+            startVertex: vertices[0], endVertex: vertices[1])
+        {
             #expect(result.shapeType == .edge)
         }
     }
@@ -1375,8 +1406,10 @@ struct ShapeBuildVertexTests {
     func combineFromPoints() {
         let p1 = SIMD3<Double>(0, 0, 0)
         let p2 = SIMD3<Double>(0.01, 0, 0)
-        if let combined = Shape.combineVertices(point1: p1, tol1: 0.01,
-                                                 point2: p2, tol2: 0.01) {
+        if let combined = Shape.combineVertices(
+            point1: p1, tol1: 0.01,
+            point2: p2, tol2: 0.01)
+        {
             #expect(combined.shapeType == .vertex)
         }
     }
@@ -1399,8 +1432,9 @@ struct ShapeExtendExplorerTests {
     @Test("Sorted compound - extract solids")
     func sortedCompoundSolids() {
         guard let box1 = Shape.box(width: 5, height: 5, depth: 5),
-              let box2 = Shape.box(width: 3, height: 3, depth: 3),
-              let compound = Shape.compound([box1, box2]) else { return }
+            let box2 = Shape.box(width: 3, height: 3, depth: 3),
+            let compound = Shape.compound([box1, box2])
+        else { return }
         if let solids = compound.sortedCompound(type: .solid) {
             let solidList = solids.subShapes(ofType: .solid)
             #expect(solidList.count == 2)
@@ -1410,8 +1444,9 @@ struct ShapeExtendExplorerTests {
     @Test("Sorted compound - extract faces")
     func sortedCompoundFaces() {
         guard let box1 = Shape.box(width: 5, height: 5, depth: 5),
-              let box2 = Shape.box(width: 3, height: 3, depth: 3),
-              let compound = Shape.compound([box1, box2]) else { return }
+            let box2 = Shape.box(width: 3, height: 3, depth: 3),
+            let compound = Shape.compound([box1, box2])
+        else { return }
         if let faces = compound.sortedCompound(type: .face) {
             let faceList = faces.subShapes(ofType: .face)
             #expect(faceList.count == 12)
@@ -1421,7 +1456,8 @@ struct ShapeExtendExplorerTests {
     @Test("Sorted compound - extract edges")
     func sortedCompoundEdges() {
         guard let box = Shape.box(width: 10, height: 10, depth: 10),
-              let compound = Shape.compound([box]) else { return }
+            let compound = Shape.compound([box])
+        else { return }
         if let edges = compound.sortedCompound(type: .edge) {
             let edgeList = edges.subShapes(ofType: .edge)
             #expect(edgeList.count > 0)
@@ -1431,8 +1467,9 @@ struct ShapeExtendExplorerTests {
     @Test("Predominant shape type")
     func predominantType() {
         guard let box1 = Shape.box(width: 5, height: 5, depth: 5),
-              let box2 = Shape.box(width: 3, height: 3, depth: 3),
-              let compound = Shape.compound([box1, box2]) else { return }
+            let box2 = Shape.box(width: 3, height: 3, depth: 3),
+            let compound = Shape.compound([box1, box2])
+        else { return }
         let type = compound.predominantShapeType()
         #expect(type == .solid)
     }
@@ -1575,7 +1612,9 @@ struct ShapeUpgradeConvertCurves3dToBezierTests {
     @Test("Convert cylinder curves to bezier")
     func convertCylinderCurves() {
         guard let cyl = Shape.cylinder(radius: 5, height: 10) else { return }
-        if let result = cyl.convertCurves3dToBezier(lineMode: true, circleMode: true, conicMode: true) {
+        if let result = cyl.convertCurves3dToBezier(
+            lineMode: true, circleMode: true, conicMode: true)
+        {
             #expect(result.shapeType == .solid || result.shapeType == .compound)
         }
     }
@@ -1583,7 +1622,9 @@ struct ShapeUpgradeConvertCurves3dToBezierTests {
     @Test("Convert with selective modes")
     func convertSelectiveModes() {
         guard let cyl = Shape.cylinder(radius: 5, height: 10) else { return }
-        if let result = cyl.convertCurves3dToBezier(lineMode: false, circleMode: true, conicMode: false) {
+        if let result = cyl.convertCurves3dToBezier(
+            lineMode: false, circleMode: true, conicMode: false)
+        {
             #expect(result.shapeType == .solid || result.shapeType == .compound)
         }
     }
@@ -1604,8 +1645,10 @@ struct ShapeUpgradeConvertSurfacesToBezierTests {
     @Test("Convert with selective modes")
     func convertSelectiveModes() {
         guard let cyl = Shape.cylinder(radius: 5, height: 10) else { return }
-        if let result = cyl.convertSurfacesToBezier(planeMode: false, revolutionMode: true,
-                                                     extrusionMode: false, bsplineMode: false) {
+        if let result = cyl.convertSurfacesToBezier(
+            planeMode: false, revolutionMode: true,
+            extrusionMode: false, bsplineMode: false)
+        {
             #expect(result.shapeType == .solid || result.shapeType == .compound)
         }
     }
@@ -1613,8 +1656,10 @@ struct ShapeUpgradeConvertSurfacesToBezierTests {
     @Test("Convert box surfaces to bezier")
     func convertBoxSurfaces() {
         guard let box = Shape.box(width: 10, height: 10, depth: 10) else { return }
-        if let result = box.convertSurfacesToBezier(planeMode: true, revolutionMode: false,
-                                                     extrusionMode: false, bsplineMode: false) {
+        if let result = box.convertSurfacesToBezier(
+            planeMode: true, revolutionMode: false,
+            extrusionMode: false, bsplineMode: false)
+        {
             #expect(result.shapeType == .solid || result.shapeType == .compound)
         }
     }
@@ -1625,7 +1670,7 @@ struct ShapeConstructTriangulationTests {
     @Test("triangulation from points")
     func fromPoints() {
         let points: [(Double, Double, Double)] = [
-            (0, 0, 0), (10, 0, 0), (10, 10, 0), (0, 10, 0)
+            (0, 0, 0), (10, 0, 0), (10, 10, 0), (0, 10, 0),
         ]
         let shape = Shape.triangulationFromPoints(points)
         #expect(shape != nil)
@@ -1633,7 +1678,8 @@ struct ShapeConstructTriangulationTests {
 
     @Test("triangulation from wire")
     func fromWire() {
-        if let w = Wire.polygon3D([SIMD3(0, 0, 0), SIMD3(10, 0, 0), SIMD3(5, 10, 0)], closed: true) {
+        if let w = Wire.polygon3D([SIMD3(0, 0, 0), SIMD3(10, 0, 0), SIMD3(5, 10, 0)], closed: true)
+        {
             let shape = Shape.triangulationFromWire(w)
             #expect(shape != nil)
         }
@@ -1699,8 +1745,10 @@ struct ShapeConstructCurveTests {
 struct ShapeUpgradeSplitCurveTests {
     @Test("split smooth 3D curve")
     func splitSmooth3D() {
-        if let bsp = Curve3D.bspline(poles: [SIMD3(0,0,0), SIMD3(1,2,0), SIMD3(3,1,0), SIMD3(4,0,0)],
-                                      knots: [0.0, 1.0], multiplicities: [4, 4], degree: 3) {
+        if let bsp = Curve3D.bspline(
+            poles: [SIMD3(0, 0, 0), SIMD3(1, 2, 0), SIMD3(3, 1, 0), SIMD3(4, 0, 0)],
+            knots: [0.0, 1.0], multiplicities: [4, 4], degree: 3)
+        {
             let segments = bsp.splitByContinuity(criterion: 2)
             #expect(segments.count >= 1)
         }
@@ -1708,8 +1756,10 @@ struct ShapeUpgradeSplitCurveTests {
 
     @Test("split smooth 2D curve")
     func splitSmooth2D() {
-        if let bsp = Curve2D.bspline(poles: [SIMD2(0,0), SIMD2(1,2), SIMD2(3,1), SIMD2(4,0)],
-                                      knots: [0.0, 1.0], multiplicities: [4, 4], degree: 3) {
+        if let bsp = Curve2D.bspline(
+            poles: [SIMD2(0, 0), SIMD2(1, 2), SIMD2(3, 1), SIMD2(4, 0)],
+            knots: [0.0, 1.0], multiplicities: [4, 4], degree: 3)
+        {
             let segments = bsp.splitByContinuity(criterion: 2)
             #expect(segments.count >= 1)
         }
@@ -1717,8 +1767,10 @@ struct ShapeUpgradeSplitCurveTests {
 
     @Test("convert 2D curve to Bezier")
     func convertToBezier() {
-        if let bsp = Curve2D.bspline(poles: [SIMD2(0,0), SIMD2(1,2), SIMD2(3,1), SIMD2(4,0)],
-                                      knots: [0.0, 1.0], multiplicities: [4, 4], degree: 3) {
+        if let bsp = Curve2D.bspline(
+            poles: [SIMD2(0, 0), SIMD2(1, 2), SIMD2(3, 1), SIMD2(4, 0)],
+            knots: [0.0, 1.0], multiplicities: [4, 4], degree: 3)
+        {
             let segments = bsp.convertToBezierSegments()
             #expect(segments.count >= 1)
         }
@@ -1730,9 +1782,10 @@ struct BSplineRestrictionAdvancedTests {
     @Test("restrict box BSpline")
     func restrictBox() {
         if let box = Shape.box(width: 10, height: 20, depth: 30) {
-            let result = Shape.bsplineRestrictionAdvanced(box,
-                                                            tol3d: 0.1, tol2d: 0.1,
-                                                            maxDegree: 5, maxSegments: 20)
+            let result = Shape.bsplineRestrictionAdvanced(
+                box,
+                tol3d: 0.1, tol2d: 0.1,
+                maxDegree: 5, maxSegments: 20)
             // May return nil if no BSpline geometry to restrict; just verify no crash
             if let r = result {
                 #expect(r.size!.x > 0)
@@ -1746,11 +1799,13 @@ struct ConvertToBSplineAdvancedTests {
     @Test("convert cylinder surfaces to BSpline")
     func convertCylinder() {
         if let cyl = Shape.cylinder(radius: 10, height: 50) {
-            if let result = Shape.convertToBSplineAdvanced(cyl,
-                                                             extrusionMode: true,
-                                                             revolutionMode: true,
-                                                             offsetMode: true,
-                                                             planeMode: false) {
+            if let result = Shape.convertToBSplineAdvanced(
+                cyl,
+                extrusionMode: true,
+                revolutionMode: true,
+                offsetMode: true,
+                planeMode: false)
+            {
                 #expect(result.isValid)
             }
         }
@@ -1780,7 +1835,7 @@ struct SplitSurfaceTests {
     func splitByAngle() {
         if let surf = Surface.cylinder(origin: SIMD3(0, 0, 0), axis: SIMD3(0, 0, 1), radius: 10) {
             if let result = surf.splitByAngle(.pi / 2) {
-                #expect(result.uSplitCount >= 3) // Full circle / 90° = 4 segments, 5 split values
+                #expect(result.uSplitCount >= 3)  // Full circle / 90° = 4 segments, 5 split values
             }
         }
     }
@@ -1803,7 +1858,8 @@ struct ShapeFixComposeShellTests {
     @Test("compose shell on planar face")
     func composeShellPlanar() {
         if let rect = Wire.rectangle(width: 10, height: 10),
-           let face = Shape.face(from: rect) {
+            let face = Shape.face(from: rect)
+        {
             if let result = face.composeShell() {
                 #expect(result.isValid)
             }
@@ -1884,21 +1940,27 @@ struct ShapeFixIntersectionToolTests {
 struct ShapeFixWireframeExtTests {
 
     @Test func fixWireGapsReturnsShape() {
-        guard let box = Shape.box(origin: SIMD3(0, 0, 0), width: 10, height: 10, depth: 10) else { return }
+        guard let box = Shape.box(origin: SIMD3(0, 0, 0), width: 10, height: 10, depth: 10) else {
+            return
+        }
         if let fixed = box.fixWireGaps(tolerance: 1e-7) {
             #expect(fixed.isValid)
         }
     }
 
     @Test func fixSmallEdgesDropMode() {
-        guard let box = Shape.box(origin: SIMD3(0, 0, 0), width: 10, height: 10, depth: 10) else { return }
+        guard let box = Shape.box(origin: SIMD3(0, 0, 0), width: 10, height: 10, depth: 10) else {
+            return
+        }
         if let fixed = box.fixSmallEdges(tolerance: 1e-7, dropSmall: true, limitAngle: -1) {
             #expect(fixed.isValid)
         }
     }
 
     @Test func fixSmallEdgesMergeMode() {
-        guard let box = Shape.box(origin: SIMD3(0, 0, 0), width: 10, height: 10, depth: 10) else { return }
+        guard let box = Shape.box(origin: SIMD3(0, 0, 0), width: 10, height: 10, depth: 10) else {
+            return
+        }
         if let fixed = box.fixSmallEdges(tolerance: 1e-7, dropSmall: false, limitAngle: 0.01) {
             #expect(fixed.isValid)
         }
@@ -1980,7 +2042,7 @@ struct FreeBoundsSimplifiedTests {
         if let singleFace = faces.first {
             let count = singleFace.freeBoundsClosedCount(tolerance: 1e-6)
             // A single face should have at least one closed free boundary (its outer wire)
-            #expect(count >= 0) // just check it doesn't crash
+            #expect(count >= 0)  // just check it doesn't crash
         }
     }
 }
@@ -2117,7 +2179,8 @@ struct SAWireAnalysisTests {
                 if let wire = wires.first {
                     let _ = SAWireAnalysis.checkConnectedEdge(wire: wire, face: face, edgeIndex: 1)
                     let _ = SAWireAnalysis.checkSmallEdge(wire: wire, face: face, edgeIndex: 1)
-                    let _ = SAWireAnalysis.checkDegeneratedEdge(wire: wire, face: face, edgeIndex: 1)
+                    let _ = SAWireAnalysis.checkDegeneratedEdge(
+                        wire: wire, face: face, edgeIndex: 1)
                     let _ = SAWireAnalysis.checkGap3dEdge(wire: wire, face: face, edgeIndex: 1)
                 }
             }
@@ -2187,7 +2250,7 @@ struct SAEdgeAnalysisTests {
             let edges = box.subShapes(ofType: .edge)
             if let face = faces.first, let edge = edges.first {
                 let seam = EdgeAnalysis.isSeam(edge, face: face)
-                #expect(!seam) // box edges are not seam edges
+                #expect(!seam)  // box edges are not seam edges
             }
         }
     }
@@ -2368,7 +2431,7 @@ struct ShapeFixerBuilderTests {
             let fixer = ShapeFixer(shape: box)
             let _ = fixer.perform()
             // After performing on a valid box, should not be in FAIL state
-            let hasFailed = fixer.status(3) // 3=FAIL
+            let hasFailed = fixer.status(3)  // 3=FAIL
             #expect(!hasFailed)
             let result = fixer.shape
             #expect(result != nil)
@@ -2401,7 +2464,7 @@ struct Issue849ShapeFixStatusTests {
         #expect(ShapeFixStatus.done6.rawValue == 6)
         #expect(ShapeFixStatus.done7.rawValue == 7)
         #expect(ShapeFixStatus.done8.rawValue == 8)
-        #expect(ShapeFixStatus.done.rawValue == 9)     // combined DONE, sits BEFORE fail1, not after fail8
+        #expect(ShapeFixStatus.done.rawValue == 9)  // combined DONE, sits BEFORE fail1, not after fail8
         #expect(ShapeFixStatus.fail1.rawValue == 10)
         #expect(ShapeFixStatus.fail2.rawValue == 11)
         #expect(ShapeFixStatus.fail3.rawValue == 12)
@@ -2410,7 +2473,7 @@ struct Issue849ShapeFixStatusTests {
         #expect(ShapeFixStatus.fail6.rawValue == 15)
         #expect(ShapeFixStatus.fail7.rawValue == 16)
         #expect(ShapeFixStatus.fail8.rawValue == 17)
-        #expect(ShapeFixStatus.fail.rawValue == 18)    // combined FAIL, last ordinal
+        #expect(ShapeFixStatus.fail.rawValue == 18)  // combined FAIL, last ordinal
     }
 
     /// `FaceFixer.Status` is a typealias for `ShapeFixStatus` (#849), same cases, same raw
@@ -2515,14 +2578,14 @@ struct ShapeToleranceTests {
         let box = Shape.box(width: 10, height: 20, depth: 30)
         if let b = box {
             let count = b.toleranceInRangeCount(min: 0, max: 1e-3)
-            #expect(count > 0) // All sub-shapes should be within this range
+            #expect(count > 0)  // All sub-shapes should be within this range
         }
     }
 
     @Test func vertexTolerance() {
         let box = Shape.box(width: 10, height: 20, depth: 30)
         if let b = box {
-            let tol = b.toleranceValue(mode: .average, subShapeType: 7) // VERTEX
+            let tol = b.toleranceValue(mode: .average, subShapeType: 7)  // VERTEX
             #expect(tol > 0)
         }
     }
@@ -2530,7 +2593,7 @@ struct ShapeToleranceTests {
     @Test func edgeTolerance() {
         let box = Shape.box(width: 10, height: 20, depth: 30)
         if let b = box {
-            let tol = b.toleranceValue(mode: .average, subShapeType: 6) // EDGE
+            let tol = b.toleranceValue(mode: .average, subShapeType: 6)  // EDGE
             #expect(tol > 0)
         }
     }
@@ -2672,7 +2735,7 @@ struct SewingExtendedTests {
                         let mod = s.modified(faces[0])
                         #expect(mod != nil)
                     }
-                    #expect(true) // No crash
+                    #expect(true)  // No crash
                 }
             }
         }
@@ -2812,9 +2875,10 @@ struct SelfIntersectingProfileGuard263 {
     /// Bowtie quad: (0,0)→(1,1)→(1,0)→(0,1)→close, the two diagonals cross, so the wire
     /// self-intersects. `BRepCheck` flags it `SelfIntersectingWire` / `UnorientableShape`.
     static func bowtieWire() -> Wire? {
-        Wire.polygon3D([
-            SIMD3(0, 0, 0), SIMD3(1, 1, 0), SIMD3(1, 0, 0), SIMD3(0, 1, 0),
-        ], closed: true)
+        Wire.polygon3D(
+            [
+                SIMD3(0, 0, 0), SIMD3(1, 1, 0), SIMD3(1, 0, 0), SIMD3(0, 1, 0),
+            ], closed: true)
     }
 
     @Test("extrude refuses a self-intersecting profile (returns nil, never crashes)")
@@ -2826,21 +2890,26 @@ struct SelfIntersectingProfileGuard263 {
 
     @Test("heal refuses a self-intersecting shape (returns nil, never crashes)")
     func healRefusesSelfIntersecting() {
-        guard let wire = Self.bowtieWire(), let face = Shape.face(from: wire, planar: true) else { return }
+        guard let wire = Self.bowtieWire(), let face = Shape.face(from: wire, planar: true) else {
+            return
+        }
         let healed = face.healed()
         #expect(healed == nil)
     }
 
     @Test("a clean convex profile still extrudes and heals")
     func cleanProfileStillWorks() {
-        guard let wire = Wire.polygon3D([
-            SIMD3(0, 0, 0), SIMD3(1, 0, 0), SIMD3(1, 1, 0), SIMD3(0, 1, 0),
-        ], closed: true) else { return }
+        guard
+            let wire = Wire.polygon3D(
+                [
+                    SIMD3(0, 0, 0), SIMD3(1, 0, 0), SIMD3(1, 1, 0), SIMD3(0, 1, 0),
+                ], closed: true)
+        else { return }
         let solid = Shape.extrude(profile: wire, direction: SIMD3(0, 0, 1), length: 1)
         #expect(solid != nil)
         if let s = solid {
             #expect(s.isValidSolid)
-            #expect(s.healed() != nil)   // healing a valid solid is unaffected by the guard
+            #expect(s.healed() != nil)  // healing a valid solid is unaffected by the guard
         }
     }
 }
@@ -2853,15 +2922,20 @@ struct Issue266FaceHealingControlTests {
     /// A 10×10 planar face on the z=0 plane.
     private func planarFace() -> Shape? {
         guard let plane = Surface.plane(origin: SIMD3(0, 0, 0), normal: SIMD3(0, 0, 1)),
-              let outer = Wire.polygon3D([
-                  SIMD3(0, 0, 0), SIMD3(10, 0, 0), SIMD3(10, 10, 0), SIMD3(0, 10, 0)
-              ], closed: true) else { return nil }
+            let outer = Wire.polygon3D(
+                [
+                    SIMD3(0, 0, 0), SIMD3(10, 0, 0), SIMD3(10, 10, 0), SIMD3(0, 10, 0),
+                ], closed: true)
+        else { return nil }
         return Shape.face(from: plane, outer: outer, innerWires: [])
     }
 
     @Test("FaceFixer per-pass control: set modes, perform, read result/status")
     func faceFixerControl() {
-        guard let face = planarFace(), let fixer = FaceFixer(face: face) else { Issue.record("setup"); return }
+        guard let face = planarFace(), let fixer = FaceFixer(face: face) else {
+            Issue.record("setup")
+            return
+        }
         // Toggle individual passes (the natural-bound pass is the one that ballooned a face earlier).
         fixer.setMode(.addNaturalBound, .off)
         fixer.setMode(.orientation, .on)
@@ -2875,7 +2949,10 @@ struct Issue266FaceHealingControlTests {
 
     @Test("FaceFixer individual fix passes run without crashing")
     func faceFixerIndividualPasses() {
-        guard let face = planarFace(), let fixer = FaceFixer(face: face) else { Issue.record("setup"); return }
+        guard let face = planarFace(), let fixer = FaceFixer(face: face) else {
+            Issue.record("setup")
+            return
+        }
         // These must execute and return a Bool (no crash) on a clean face.
         _ = fixer.fixIntersectingWires()
         _ = fixer.fixWiresTwoCoincEdges()
@@ -2886,7 +2963,10 @@ struct Issue266FaceHealingControlTests {
 
     @Test("BRepCheck_Face diagnostics: a clean face passes all three")
     func checkCleanFace() {
-        guard let face = planarFace() else { Issue.record("setup"); return }
+        guard let face = planarFace() else {
+            Issue.record("setup")
+            return
+        }
         #expect(face.checkFaceIntersectingWires() == .noError)
         #expect(face.checkFaceWireImbrication() == .noError)
         #expect(face.checkFaceWireOrientation() == .noError)
@@ -2894,7 +2974,10 @@ struct Issue266FaceHealingControlTests {
 
     @Test("BRepCheck_Face diagnostics: a non-face yields checkFail")
     func checkNonFace() {
-        guard let box = Shape.box(width: 1, height: 1, depth: 1) else { Issue.record("setup"); return }
+        guard let box = Shape.box(width: 1, height: 1, depth: 1) else {
+            Issue.record("setup")
+            return
+        }
         #expect(box.checkFaceIntersectingWires() == .checkFail)
         #expect(box.checkFaceWireOrientation() == .checkFail)
     }
