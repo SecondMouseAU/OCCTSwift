@@ -38,23 +38,30 @@
 #include <XCAFDimTolObjects_DatumObject.hxx>
 
 // Forward declarations for helper functions used in count functions below
-static bool occtDocumentToolDimTolTool(const TDF_Label& access, Handle(XCAFDoc_DimTolTool)& outTool);
+static bool occtDocumentToolDimTolTool(const TDF_Label&            access,
+                                       Handle(XCAFDoc_DimTolTool)& outTool);
 static bool occtDocumentGetDatumLabelsNewTable(OCCTDocumentRef doc, TDF_LabelSequence& outLabels);
 static bool occtDocumentGetDatumLabelsOldTable(OCCTDocumentRef doc, TDF_LabelSequence& outLabels);
 
 // Forward declarations for dimension/geomTolerance helper functions
-static bool occtDocumentGetDimensionLabelsNewTable(OCCTDocumentRef doc, TDF_LabelSequence& outLabels);
-static bool occtDocumentGetDimensionLabelsOldTable(OCCTDocumentRef doc, TDF_LabelSequence& outLabels);
-static bool occtDocumentGetGeomToleranceLabelsNewTable(OCCTDocumentRef doc, TDF_LabelSequence& outLabels);
-static bool occtDocumentGetGeomToleranceLabelsOldTable(OCCTDocumentRef doc, TDF_LabelSequence& outLabels);
-static bool occtDocumentDimensionObjectAtFromTool(Handle(XCAFDoc_DimTolTool) dimTolTool,
-                                                  int32_t                                    dimensionIndex,
-                                                  Handle(XCAFDoc_Dimension)&                 outAttr,
-                                                  Handle(XCAFDimTolObjects_DimensionObject)& outObj);
-static bool occtDocumentGeomToleranceObjectAtFromTool(Handle(XCAFDoc_DimTolTool) dimTolTool,
-                                                      int32_t                                    toleranceIndex,
-                                                      Handle(XCAFDoc_GeomTolerance)&           outAttr,
-                                                      Handle(XCAFDimTolObjects_GeomToleranceObject)& outObj);
+static bool occtDocumentGetDimensionLabelsNewTable(OCCTDocumentRef    doc,
+                                                   TDF_LabelSequence& outLabels);
+static bool occtDocumentGetDimensionLabelsOldTable(OCCTDocumentRef    doc,
+                                                   TDF_LabelSequence& outLabels);
+static bool occtDocumentGetGeomToleranceLabelsNewTable(OCCTDocumentRef    doc,
+                                                       TDF_LabelSequence& outLabels);
+static bool occtDocumentGetGeomToleranceLabelsOldTable(OCCTDocumentRef    doc,
+                                                       TDF_LabelSequence& outLabels);
+static bool occtDocumentDimensionObjectAtFromTool(
+  Handle(XCAFDoc_DimTolTool)                 dimTolTool,
+  int32_t                                    dimensionIndex,
+  Handle(XCAFDoc_Dimension)&                 outAttr,
+  Handle(XCAFDimTolObjects_DimensionObject)& outObj);
+static bool occtDocumentGeomToleranceObjectAtFromTool(
+  Handle(XCAFDoc_DimTolTool)                     dimTolTool,
+  int32_t                                        toleranceIndex,
+  Handle(XCAFDoc_GeomTolerance)&                 outAttr,
+  Handle(XCAFDimTolObjects_GeomToleranceObject)& outObj);
 #include <XCAFDimTolObjects_DimensionFormVariance.hxx>
 #include <XCAFDimTolObjects_DimensionGrade.hxx>
 #include <XCAFDimTolObjects_DimensionObject.hxx>
@@ -955,7 +962,7 @@ int32_t OCCTDocumentGetDimensionCount(OCCTDocumentRef doc)
     // Count from OLD table (0:1) - for backward compatibility with documents
     // created before the table unification (#1051)
     Handle(XCAFDoc_DimTolTool) oldTool = XCAFDoc_DimTolTool::Set(doc->doc->Main());
-    TDF_LabelSequence oldLabels;
+    TDF_LabelSequence          oldLabels;
     oldTool->GetDimensionLabels(oldLabels);
     total += (int32_t)oldLabels.Length();
 
@@ -987,7 +994,7 @@ int32_t OCCTDocumentGetGeomToleranceCount(OCCTDocumentRef doc)
     // Count from OLD table (0:1) - for backward compatibility with documents
     // created before the table unification (#1051)
     Handle(XCAFDoc_DimTolTool) oldTool = XCAFDoc_DimTolTool::Set(doc->doc->Main());
-    TDF_LabelSequence oldLabels;
+    TDF_LabelSequence          oldLabels;
     oldTool->GetGeomToleranceLabels(oldLabels);
     total += (int32_t)oldLabels.Length();
 
@@ -1019,7 +1026,7 @@ int32_t OCCTDocumentGetDatumCount(OCCTDocumentRef doc)
     // Count from OLD table (0:1) - for backward compatibility with documents
     // created before the table unification (#1051)
     Handle(XCAFDoc_DimTolTool) oldTool = XCAFDoc_DimTolTool::Set(doc->doc->Main());
-    TDF_LabelSequence oldLabels;
+    TDF_LabelSequence          oldLabels;
     oldTool->GetDatumLabels(oldLabels);
     total += (int32_t)oldLabels.Length();
 
@@ -1061,8 +1068,8 @@ static bool occtDocumentDimensionObjectAt(OCCTDocumentRef                       
     // Index not in new table, try old table with adjusted index
     if (dimensionIndex >= newCount)
     {
-      Handle(XCAFDoc_DimTolTool) oldTool = XCAFDoc_DimTolTool::Set(doc->doc->Main());
-      int32_t oldIndex = dimensionIndex - newCount;
+      Handle(XCAFDoc_DimTolTool) oldTool  = XCAFDoc_DimTolTool::Set(doc->doc->Main());
+      int32_t                    oldIndex = dimensionIndex - newCount;
       if (occtDocumentDimensionObjectAtFromTool(oldTool, oldIndex, outAttr, outObj))
         return true;
     }
@@ -1236,8 +1243,8 @@ static bool occtDocumentGeomToleranceObjectAt(OCCTDocumentRef                doc
     // Index not in new table, try old table with adjusted index
     if (toleranceIndex >= newCount)
     {
-      Handle(XCAFDoc_DimTolTool) oldTool = XCAFDoc_DimTolTool::Set(doc->doc->Main());
-      int32_t oldIndex = toleranceIndex - newCount;
+      Handle(XCAFDoc_DimTolTool) oldTool  = XCAFDoc_DimTolTool::Set(doc->doc->Main());
+      int32_t                    oldIndex = toleranceIndex - newCount;
       if (occtDocumentGeomToleranceObjectAtFromTool(oldTool, oldIndex, outAttr, outObj))
         return true;
     }
@@ -1445,7 +1452,7 @@ static bool occtDocumentGetDatumLabelsOldTable(OCCTDocumentRef doc, TDF_LabelSeq
 }
 
 // Helper: Try to get datum at index from a specific tool. Returns true if found.
-static bool occtDocumentDatumObjectAtFromTool(Handle(XCAFDoc_DimTolTool) dimTolTool,
+static bool occtDocumentDatumObjectAtFromTool(Handle(XCAFDoc_DimTolTool)             dimTolTool,
                                               int32_t                                datumIndex,
                                               Handle(XCAFDoc_Datum)&                 outAttr,
                                               Handle(XCAFDimTolObjects_DatumObject)& outObj)
@@ -1494,8 +1501,8 @@ static bool occtDocumentDatumObjectAt(OCCTDocumentRef                        doc
     // Index not in new table, try old table with adjusted index
     if (datumIndex >= newCount)
     {
-      Handle(XCAFDoc_DimTolTool) oldTool = XCAFDoc_DimTolTool::Set(doc->doc->Main());
-      int32_t oldIndex = datumIndex - newCount;
+      Handle(XCAFDoc_DimTolTool) oldTool  = XCAFDoc_DimTolTool::Set(doc->doc->Main());
+      int32_t                    oldIndex = datumIndex - newCount;
       if (occtDocumentDatumObjectAtFromTool(oldTool, oldIndex, outAttr, outObj))
         return true;
     }
@@ -1511,9 +1518,9 @@ static bool occtDocumentDatumObjectAt(OCCTDocumentRef                        doc
   return false;
 }
 
-
 // Helper: Get dimension labels from the NEW table (0:1:4)
-static bool occtDocumentGetDimensionLabelsNewTable(OCCTDocumentRef doc, TDF_LabelSequence& outLabels)
+static bool occtDocumentGetDimensionLabelsNewTable(OCCTDocumentRef    doc,
+                                                   TDF_LabelSequence& outLabels)
 {
   if (!doc || doc->doc.IsNull())
     return false;
@@ -1525,7 +1532,8 @@ static bool occtDocumentGetDimensionLabelsNewTable(OCCTDocumentRef doc, TDF_Labe
 }
 
 // Helper: Get dimension labels from the OLD table (0:1)
-static bool occtDocumentGetDimensionLabelsOldTable(OCCTDocumentRef doc, TDF_LabelSequence& outLabels)
+static bool occtDocumentGetDimensionLabelsOldTable(OCCTDocumentRef    doc,
+                                                   TDF_LabelSequence& outLabels)
 {
   if (!doc || doc->doc.IsNull())
     return false;
@@ -1535,7 +1543,8 @@ static bool occtDocumentGetDimensionLabelsOldTable(OCCTDocumentRef doc, TDF_Labe
 }
 
 // Helper: Get geomTolerance labels from the NEW table (0:1:4)
-static bool occtDocumentGetGeomToleranceLabelsNewTable(OCCTDocumentRef doc, TDF_LabelSequence& outLabels)
+static bool occtDocumentGetGeomToleranceLabelsNewTable(OCCTDocumentRef    doc,
+                                                       TDF_LabelSequence& outLabels)
 {
   if (!doc || doc->doc.IsNull())
     return false;
@@ -1547,7 +1556,8 @@ static bool occtDocumentGetGeomToleranceLabelsNewTable(OCCTDocumentRef doc, TDF_
 }
 
 // Helper: Get geomTolerance labels from the OLD table (0:1)
-static bool occtDocumentGetGeomToleranceLabelsOldTable(OCCTDocumentRef doc, TDF_LabelSequence& outLabels)
+static bool occtDocumentGetGeomToleranceLabelsOldTable(OCCTDocumentRef    doc,
+                                                       TDF_LabelSequence& outLabels)
 {
   if (!doc || doc->doc.IsNull())
     return false;
@@ -1558,8 +1568,8 @@ static bool occtDocumentGetGeomToleranceLabelsOldTable(OCCTDocumentRef doc, TDF_
 
 // Helper: Try to get dimension at index from a specific tool
 static bool occtDocumentDimensionObjectAtFromTool(Handle(XCAFDoc_DimTolTool) dimTolTool,
-                                                  int32_t                                    dimensionIndex,
-                                                  Handle(XCAFDoc_Dimension)&                 outAttr,
+                                                  int32_t                    dimensionIndex,
+                                                  Handle(XCAFDoc_Dimension)& outAttr,
                                                   Handle(XCAFDimTolObjects_DimensionObject)& outObj)
 {
   TDF_LabelSequence labels;
@@ -1576,10 +1586,11 @@ static bool occtDocumentDimensionObjectAtFromTool(Handle(XCAFDoc_DimTolTool) dim
 }
 
 // Helper: Try to get geomTolerance at index from a specific tool
-static bool occtDocumentGeomToleranceObjectAtFromTool(Handle(XCAFDoc_DimTolTool) dimTolTool,
-                                                      int32_t                                    toleranceIndex,
-                                                      Handle(XCAFDoc_GeomTolerance)&           outAttr,
-                                                      Handle(XCAFDimTolObjects_GeomToleranceObject)& outObj)
+static bool occtDocumentGeomToleranceObjectAtFromTool(
+  Handle(XCAFDoc_DimTolTool)                     dimTolTool,
+  int32_t                                        toleranceIndex,
+  Handle(XCAFDoc_GeomTolerance)&                 outAttr,
+  Handle(XCAFDimTolObjects_GeomToleranceObject)& outObj)
 {
   TDF_LabelSequence labels;
   dimTolTool->GetGeomToleranceLabels(labels);
@@ -1593,7 +1604,6 @@ static bool occtDocumentGeomToleranceObjectAtFromTool(Handle(XCAFDoc_DimTolTool)
   outObj = outAttr->GetObject();
   return !outObj.IsNull();
 }
-
 
 OCCTDatumInfo OCCTDocumentGetDatumInfo(OCCTDocumentRef doc, int32_t index)
 {

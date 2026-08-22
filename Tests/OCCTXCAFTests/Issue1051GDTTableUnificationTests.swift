@@ -1,6 +1,6 @@
 import Foundation
-import Testing
 import OCCTSwift
+import Testing
 
 @Suite("Issue #1051: GD&T Table Unification")
 struct Issue1051GDTTableUnificationTests {
@@ -55,7 +55,9 @@ struct Issue1051GDTTableUnificationTests {
     @Test("Datum name round-trips through unified lookup")
     func datumNameRoundTrip() {
         let doc = Document.create()!
-        let idx = doc.createDatum(name: "VeryLongDatumNameThatExceedsTheOld64ByteBufferLimit1234567890")!
+        let idx = doc.createDatum(
+            name:
+                "VeryLongDatumNameThatExceedsTheOld64ByteBufferLimit1234567890")!
         let datum = doc.datum(at: idx)!
         #expect(datum.name == "VeryLongDatumNameThatExceedsTheOld64ByteBufferLimit1234567890")
     }
@@ -65,13 +67,14 @@ struct Issue1051GDTTableUnificationTests {
         let doc = Document.create()!
         let idx = doc.createDatum(name: "DatumTarget")!
         #expect(doc.setDatumTarget(at: idx, type: .point, number: 1))
-        #expect(doc.setDatumTargetPlacement(
-            at: idx,
-            location: SIMD3(1, 2, 3),
-            normal: SIMD3(0, 0, 1),
-            reference: SIMD3(1, 0, 0),
-            length: 30,
-            width: 18))
+        #expect(
+            doc.setDatumTargetPlacement(
+                at: idx,
+                location: SIMD3(1, 2, 3),
+                normal: SIMD3(0, 0, 1),
+                reference: SIMD3(1, 0, 0),
+                length: 30,
+                width: 18))
         let datum = doc.datum(at: idx)!
         #expect(datum.target != nil)
         #expect(datum.target?.type == .point)

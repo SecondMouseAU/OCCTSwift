@@ -2542,8 +2542,7 @@ public final class Shape: @unchecked Sendable {
     /// which is especially valuable for B-spline solids where the self-interference phase
     /// may not reach checkpoints frequently enough.
     ///
-    /// - Parameters:
-    ///   - timeout: Maximum time in seconds to wait for the check to complete.
+    /// - Parameter timeout: Maximum time in seconds to wait for the check to complete.
     /// - Returns: ``SelfIntersectionDetailedResult`` with status and progress information.
     ///
     /// ```swift
