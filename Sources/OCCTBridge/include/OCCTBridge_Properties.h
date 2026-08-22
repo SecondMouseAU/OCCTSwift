@@ -184,7 +184,7 @@ bool OCCTWireGetTangentAt(OCCTWireRef wire, double param, double* tx, double* ty
 /// @param curvature Output: curvature value (1/radius)
 /// @return true if the curvature exists there. False for a null wire, a parameter the wire cannot
 ///   be evaluated at, and a point whose first derivative is null (a cusp), where the hand-rolled
-///   formula has no answer -- that last case used to return 0, a straight wire's answer (#595).
+///   formula has no answer. That last case used to return 0, a straight wire's answer (#595).
 bool OCCTWireGetCurvatureAt(OCCTWireRef wire, double param, double* _Nonnull curvature);
 
 /// Get full curve point with position, tangent, and curvature
@@ -332,7 +332,12 @@ int32_t OCCTShapeProximity(OCCTShapeRef           shape1,
                            int32_t                maxPairs,
                            double                 deflection);
 
-/// Check if a shape self-intersects
+/// Whether `shape` self-intersects, from BOPAlgo_CheckerSI's interference map.
+///
+/// Unbounded: there is no timeout, and the check has been measured at minutes on an ordinary
+/// solid. Returns false both for a clean shape and for a check that could not run, which is why
+/// the Swift property over it is deprecated in favour of the bounded, tri-state
+/// OCCTShapeSelfIntersectsBounded (#1088).
 bool OCCTShapeSelfIntersects(OCCTShapeRef shape);
 
 // MARK: - v0.40.0: Mass Properties, Geometry Conversion, Distance Analysis
@@ -716,7 +721,7 @@ bool OCCTEdgeLPropTangent(OCCTShapeRef _Nonnull edge,
 
 /// Get curvature on edge at parameter. Returns true if the curvature exists there, and false for a
 /// null handle, a Shape that is not an edge, and an edge whose tangent is undefined at that
-/// parameter -- a degenerate edge, which every sphere carries at its poles, and which used to
+/// parameter: a degenerate edge, which every sphere carries at its poles, and which used to
 /// report 0, a straight edge's real answer (#595). A cusp reports true with OCCT's RealLast()
 /// infinity sentinel, matching OCCTEdgeGetCurvature3D.
 bool OCCTEdgeLPropCurvature(OCCTShapeRef _Nonnull edge, double param, double* _Nonnull curvature);

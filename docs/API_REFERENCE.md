@@ -639,7 +639,7 @@ into one `nil` ([#1067](https://github.com/SecondMouseAU/OCCTSwift/issues/1067))
 | Swift API | OCCT Class |
 |-----------|------------|
 | `shape.proximityFaces(with:tolerance:)` | `BRepExtrema_ShapeProximity` |
-| `shape.selfIntersects` | `BOPAlgo_CheckerSI` |
+| `shape.selfIntersects` (deprecated, #1088: use `isSelfIntersecting(timeout:)`) | `BOPAlgo_CheckerSI` |
 
 #### Law Functions (v0.21.0)
 | Swift API | OCCT Class |

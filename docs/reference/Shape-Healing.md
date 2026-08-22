@@ -450,18 +450,33 @@ Triangulates both shapes and tests proximity using `BRepExtrema_ShapeProximity`.
 
 ### `selfIntersects`
 
-Check if this shape self-intersects.
+**Deprecated** ([#1088](https://github.com/SecondMouseAU/OCCTSwift/issues/1088)). Use
+[`isSelfIntersecting(timeout:)`](Shape.md) instead.
 
 ```swift
+@available(*, deprecated)
 public var selfIntersects: Bool { get }
 ```
 
 - **Returns:** `true` if the shape has self-intersecting faces.
 - **OCCT:** `BOPAlgo_CheckerSI` (via `OCCTShapeSelfIntersects`).
+- **Why it is deprecated:** it is unbounded, and its `Bool` has no way to say "could not answer".
+  A check that fails returns `false`, the same value a clean shape returns.
+  `isSelfIntersecting(timeout:)` bounds the work and returns `nil` for indeterminate, which is the
+  contract the rest of this family uses.
+- **It used to answer the wrong question.** Until #1088 it returned `BOPAlgo_CheckerSI::HasErrors()`,
+  which is "did this algorithm fail", not "did it find an interference". Every shape that genuinely
+  self-intersects came back `false`, measured on three independent constructions, and a shape the
+  checker merely errored on came back `true`. It now reads `BOPDS_DS::Interferences()`, the map
+  `BOPAlgo_ArgumentAnalyzer::TestSelfInterferences` reads, skipping pairs that involve a shape the
+  pave filler created.
 - **Example:**
   ```swift
-  if shape.selfIntersects {
-      // apply healing before booleans
+  // Prefer this:
+  switch shape.isSelfIntersecting(timeout: 30) {
+  case .some(true):  break  // apply healing before booleans
+  case .some(false): break  // clean
+  case .none:        break  // unknown, not clean
   }
   ```
 

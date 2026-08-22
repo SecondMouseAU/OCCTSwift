@@ -802,6 +802,9 @@ struct ShapeProximityTests {
         #expect(pairs.isEmpty)
     }
 
+    // Deliberately exercises the deprecated `selfIntersects` (#1088); the annotation silences the
+    // warning that would otherwise fire on every build.
+    @available(*, deprecated)
     @Test("Box does not self-intersect")
     func boxNoSelfIntersection() {
         let box = Shape.box(width: 10, height: 10, depth: 10)!
@@ -5172,7 +5175,7 @@ struct ShapeSymmetryAxesTests {
     }
 
     // #726/#763: same defect as `Shape.revolutionAxes`' extent (see the sibling test in
-    // OCCTSurfaceTests.swift) -- extentMin/extentMax/hasExtent were hardcoded 0/0/false on every
+    // OCCTSurfaceTests.swift): extentMin/extentMax/hasExtent were hardcoded 0/0/false on every
     // call here too. The symmetry axis's own extent is measured over the WHOLE SHAPE's bounding
     // box (not one face), from the axis origin (the shape's centre of mass, per
     // `GProp_GProps::CentreOfMass`). A cylinder's centroid sits at half its height, so its axial
