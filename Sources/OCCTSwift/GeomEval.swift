@@ -134,6 +134,26 @@ public enum Geom2dEval {
         return (SIMD2(px, py), SIMD2(vx, vy))
     }
 
+    /// Evaluate a circle involute at parameter u with explicit placement.
+    /// C(t) = O + R*(cos(t) + t*sin(t))*XDir + R*(sin(t) - t*cos(t))*YDir
+    /// - Parameters:
+    ///   - origin: The origin point O of the involute's coordinate system.
+    ///   - direction: The X direction vector (YDir is computed as perpendicular).
+    ///   - radius: The base circle radius (must be > 0).
+    ///   - u: The parameter value.
+    public static func circleInvoluteD0(origin: SIMD2<Double>, direction: SIMD2<Double>, radius: Double, u: Double) -> SIMD2<Double> {
+        var px = 0.0, py = 0.0
+        OCCTGeom2dEvalCircleInvoluteD0WithPlacement(origin.x, origin.y, direction.x, direction.y, radius, u, &px, &py)
+        return SIMD2(px, py)
+    }
+
+    /// Evaluate circle involute point and first derivative with explicit placement.
+    public static func circleInvoluteD1(origin: SIMD2<Double>, direction: SIMD2<Double>, radius: Double, u: Double) -> (point: SIMD2<Double>, d1: SIMD2<Double>) {
+        var px = 0.0, py = 0.0, vx = 0.0, vy = 0.0
+        OCCTGeom2dEvalCircleInvoluteD1WithPlacement(origin.x, origin.y, direction.x, direction.y, radius, u, &px, &py, &vx, &vy)
+        return (SIMD2(px, py), SIMD2(vx, vy))
+    }
+
     /// Evaluate a 2D sine wave at parameter u.
     /// C(t) = t*X + A*sin(omega*t + phi)*Y
     public static func sineWaveD0(amplitude: Double, omega: Double, phase: Double, u: Double) -> SIMD2<Double> {

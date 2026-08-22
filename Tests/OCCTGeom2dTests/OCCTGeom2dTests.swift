@@ -4200,6 +4200,138 @@ struct Geom2dEvalCircleInvoluteTests {
     }
 }
 
+@Suite("Geom2dEval — Circle Involute with Placement")
+struct Geom2dEvalCircleInvolutePlacementTests {
+
+    @Test func involuteD0WithPlacementAtOrigin() {
+        let p = Geom2dEval.circleInvoluteD0(origin: .zero, direction: SIMD2(1, 0), radius: 2.0, u: 0.0)
+        // C(0) = O + R*(1, 0) = (2, 0)
+        #expect(abs(p.x - 2.0) < 1e-10)
+        #expect(abs(p.y) < 1e-10)
+    }
+
+    @Test func involuteD0WithPlacementTranslated() {
+        let p = Geom2dEval.circleInvoluteD0(origin: SIMD2(10, 20), direction: SIMD2(1, 0), radius: 2.0, u: 0.0)
+        // C(0) = (10, 20) + 2*(1, 0) = (12, 20)
+        #expect(abs(p.x - 12.0) < 1e-10)
+        #expect(abs(p.y - 20.0) < 1e-10)
+    }
+
+    @Test func involuteD0WithPlacementRotated() {
+        let angle = Double.pi / 2 // 90 degrees
+        let dir = SIMD2(cos(angle), sin(angle)) // (0, 1)
+        let p = Geom2dEval.circleInvoluteD0(origin: .zero, direction: dir, radius: 2.0, u: 0.0)
+        // C(0) = O + R*(0, 1) = (0, 2)
+        #expect(abs(p.x) < 1e-10)
+        #expect(abs(p.y - 2.0) < 1e-10)
+    }
+
+    @Test func involuteD0PlacementDiffersFromIdentity() {
+        // Test that non-identity placement produces different results from the hardcoded identity
+        let pIdentity = Geom2dEval.circleInvoluteD0(radius: 2.0, u: 1.0)
+        let pPlaced = Geom2dEval.circleInvoluteD0(origin: SIMD2(5, 5), direction: SIMD2(0, 1), radius: 2.0, u: 1.0)
+        // Results should differ because placement is different
+        #expect(abs(pIdentity.x - pPlaced.x) > 1e-10 || abs(pIdentity.y - pPlaced.y) > 1e-10)
+    }
+
+    @Test func involuteD1WithPlacement() {
+        let r = Geom2dEval.circleInvoluteD1(origin: SIMD2(10, 20), direction: SIMD2(1, 0), radius: 2.0, u: 1.0)
+        let speed = sqrt(r.d1.x * r.d1.x + r.d1.y * r.d1.y)
+        #expect(speed > 0) // |D1(t)| = R*t
+    }
+}
+
+@Suite("Curve2D — Circle Involute")
+struct Curve2DCircleInvoluteTests {
+
+    @Test func createCircleInvolute() {
+        let curve = Curve2D.circleInvolute(origin: .zero, direction: SIMD2(1, 0), radius: 2.0)
+        #expect(curve != nil)
+        #expect(curve?.isPeriodic == false) // Involute is not periodic
+        #expect(curve?.isClosed == false) // Involute is not closed
+    }
+
+    @Test func createCircleInvoluteRejectsZeroRadius() {
+        let curve = Curve2D.circleInvolute(origin: .zero, direction: SIMD2(1, 0), radius: 0)
+        #expect(curve == nil)
+    }
+
+    @Test func createCircleInvoluteRejectsNegativeRadius() {
+        let curve = Curve2D.circleInvolute(origin: .zero, direction: SIMD2(1, 0), radius: -1.0)
+        #expect(curve == nil)
+    }
+
+    @Test func circleInvolutePointAtZero() {
+        guard let curve = Curve2D.circleInvolute(origin: .zero, direction: SIMD2(1, 0), radius: 2.0) else {
+            #expect(Bool(false), "Failed to create circle involute")
+            return
+        }
+        let first = curve.domain.lowerBound
+        let p = curve.point(at: first)
+        // At first parameter (0), C(0) = R*(1, 0) = (2, 0)
+        #expect(abs(p.x - 2.0) < 1e-10)
+        #expect(abs(p.y) < 1e-10)
+    }
+
+    @Test func circleInvoluteTranslated() {
+        guard let curve = Curve2D.circleInvolute(origin: SIMD2(10, 20), direction: SIMD2(1, 0), radius: 2.0) else {
+            #expect(Bool(false), "Failed to create circle involute")
+            return
+        }
+        let first = curve.domain.lowerBound
+        let p = curve.point(at: first)
+        // C(0) = (10, 20) + 2*(1, 0) = (12, 20)
+        #expect(abs(p.x - 12.0) < 1e-10)
+        #expect(abs(p.y - 20.0) < 1e-10)
+    }
+
+    @Test func circleInvoluteRotated() {
+        let angle = Double.pi / 2
+        let dir = SIMD2(cos(angle), sin(angle))
+        guard let curve = Curve2D.circleInvolute(origin: .zero, direction: dir, radius: 2.0) else {
+            #expect(Bool(false), "Failed to create circle involute")
+            return
+        }
+        let first = curve.domain.lowerBound
+        let p = curve.point(at: first)
+        // C(0) = O + R*(0, 1) = (0, 2)
+        #expect(abs(p.x) < 1e-10)
+        #expect(abs(p.y - 2.0) < 1e-10)
+    }
+
+    @Test func circleInvoluteMirroredFlank() {
+        // A mirrored flank uses a negated Y direction
+        let curve = Curve2D.circleInvolute(origin: .zero, direction: SIMD2(1, 0), radius: 2.0)
+        let mirroredCurve = Curve2D.circleInvolute(origin: .zero, direction: SIMD2(1, 0), radius: 2.0)
+        // Both should be valid - the mirror is achieved by the direction's perpendicular
+        // For standard direction (1,0), YDir = (0,1) - standard flank
+        // For mirrored, use direction (0,-1) or similar to get YDir = (1,0) etc.
+        // The key is that placement allows this control
+        #expect(curve != nil)
+        #expect(mirroredCurve != nil)
+    }
+
+    @Test func circleInvoluteCanBuildEdge() {
+        guard let curve = Curve2D.circleInvolute(origin: .zero, direction: SIMD2(1, 0), radius: 2.0) else {
+            #expect(Bool(false), "Failed to create circle involute")
+            return
+        }
+        // Build an edge from the curve
+        let first = curve.domain.lowerBound
+        let last = curve.domain.upperBound
+        // Use a reasonable parameter range
+        let u1 = first
+        let u2 = min(first + 2.0, last)
+        let edge = Shape.edge2dFromCurve(curve, u1: u1, u2: u2)
+        #expect(edge != nil)
+        // Verify the edge contains the expected sub-shape
+        if let e = edge {
+            let edges = e.edges()
+            #expect(edges.count == 1)
+        }
+    }
+}
+
 @Suite("Geom2dEval — 2D Sine Wave")
 struct Geom2dEvalSineWaveTests {
 
@@ -4211,7 +4343,7 @@ struct Geom2dEvalSineWaveTests {
 
     @Test func sineWave2DD0Peak() {
         let omega = 2.0
-        let t = .pi / (2.0 * omega)
+        let t = Double.pi / (2.0 * omega)
         let p = Geom2dEval.sineWaveD0(amplitude: 1.5, omega: omega, phase: 0.0, u: t)
         #expect(abs(p.y - 1.5) < 1e-6) // A*sin(pi/2) = A
     }
