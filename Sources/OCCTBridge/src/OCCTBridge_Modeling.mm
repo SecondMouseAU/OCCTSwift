@@ -16159,8 +16159,6 @@ public:
 
   bool tripped() const { return myTripped; } // deadline was hit at least once
 
-  bool deadlinePassed() const { return std::chrono::steady_clock::now() >= myDeadline; }
-
   DEFINE_STANDARD_RTTI_INLINE(OCCTBoolTimeoutBreaker, Message_ProgressIndicator)
 private:
   std::chrono::steady_clock::time_point myDeadline;
@@ -16411,15 +16409,21 @@ int32_t OCCTShapeSelfIntersectsBounded(OCCTShapeRef shape, double timeoutSeconds
 //  -3  = error (exception occurred)
 //
 // Output parameters (optional, can pass nullptr):
+//   - outNumFacesChecked: number of face pairs checked before timeout/error.
+//     NOTE: BOPAlgo_ArgumentAnalyzer does not expose a progress counter for face pairs
+//     checked. This output will be 0 in the current implementation.
 //   - outTotalFacePairs: estimated total face pairs to check
 //   - outTimeSpent: actual time spent in seconds
 int32_t OCCTShapeSelfIntersectsDetailed(OCCTShapeRef shape,
                                         double       timeoutSeconds,
-                                        int32_t* _Nullable outTotalFacePairs,
-                                        double* _Nullable outTimeSpent)
+                                        int32_t*     outNumFacesChecked,
+                                        int32_t*     outTotalFacePairs,
+                                        double*      outTimeSpent)
 {
   if (!shape)
     return -3;
+  if (outNumFacesChecked)
+    *outNumFacesChecked = 0; // Not available from BOPAlgo_ArgumentAnalyzer
   if (outTotalFacePairs)
     *outTotalFacePairs = 0;
   if (outTimeSpent)
@@ -16472,32 +16476,16 @@ int32_t OCCTShapeSelfIntersectsDetailed(OCCTShapeRef shape,
       *outTimeSpent = std::chrono::duration<double>(endTime - startTime).count();
     }
 
-    // Check for faults FIRST - a completed analysis that found a fault is conclusive
-    // regardless of whether the deadline passed during execution
     if (aa.HasFaulty())
-      return 1; // self-intersects (conclusive)
+      return 1; // conclusive
 
-    // With timeout: check if breaker tripped
-    // If the analysis was interrupted, its result cannot be trusted (aborted analysis answers
-    // nothing)
     bool breakerTripped = (!breaker.IsNull() && breaker->tripped());
-    bool deadlinePassed = (!breaker.IsNull() && breaker->deadlinePassed());
-
     if (breakerTripped)
-      return -1; // timed out, breaker was tripped (analysis was running)
+      return -1; // timed out but breaker was tripped (analysis was running)
+    else if (timeoutSeconds > 0.0)
+      return -2; // timed out but breaker was NOT tripped (made no progress)
 
-    // Timeout set, deadline passed, but breaker not tripped AND no fault found:
-    // analysis made no progress (completed but took longer than timeout without breaker being
-    // polled)
-    if (timeoutSeconds > 0.0 && deadlinePassed && !breakerTripped)
-      return -2; // timed out, breaker NOT tripped (analysis made no progress)
-
-    // No timeout - completed successfully
-    if (timeoutSeconds <= 0.0)
-      return 0;
-
-    // Completed before timeout with no faults
-    return 0;
+    return 0; // completed clean
   }
   catch (...)
   {
