@@ -1,6 +1,6 @@
 import Foundation
-import simd
 import OCCTBridge
+import simd
 
 /// Curve local properties at a parameter point
 public struct CurveLocalProperties: Sendable {

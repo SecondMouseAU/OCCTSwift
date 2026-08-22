@@ -1,6 +1,6 @@
 import Foundation
-import simd
 import OCCTBridge
+import simd
 
 /// Builder for creating fillets on edges of a shape, wrapping BRepFilletAPI_MakeFillet.
 ///
@@ -133,7 +133,9 @@ extension FilletBuilder {
 
     /// Get edge J in contour I (both 1-based).
     public func edge(contour: Int, index: Int) -> Shape? {
-        guard let ref = OCCTFilletBuilderEdge(handle, Int32(contour), Int32(index)) else { return nil }
+        guard let ref = OCCTFilletBuilderEdge(handle, Int32(contour), Int32(index)) else {
+            return nil
+        }
         return Shape(handle: ref)
     }
 
@@ -196,8 +198,10 @@ extension FilletBuilder {
     // MARK: - FilletBuilder completions (v0.126.0)
 
     /// Set fillet tolerances.
-    public func setParams(tang: Double, tesp: Double, t2d: Double,
-                          tApp3d: Double, tApp2d: Double, fleche: Double) {
+    public func setParams(
+        tang: Double, tesp: Double, t2d: Double,
+        tApp3d: Double, tApp2d: Double, fleche: Double
+    ) {
         OCCTFilletBuilderSetParams(handle, tang, tesp, t2d, tApp3d, tApp2d, fleche)
     }
 
@@ -270,8 +274,11 @@ extension FilletBuilder {
     /// }
     /// ```
     public func getBounds(contour: Int, edge: Edge) -> (first: Double, last: Double)? {
-        var first = 0.0, last = 0.0
-        guard OCCTFilletBuilderGetBounds(handle, Int32(contour), edge.handle, &first, &last) else { return nil }
+        var first = 0.0
+        var last = 0.0
+        guard OCCTFilletBuilderGetBounds(handle, Int32(contour), edge.handle, &first, &last) else {
+            return nil
+        }
         return (first, last)
     }
 
@@ -292,7 +299,9 @@ extension FilletBuilder {
     /// }
     /// ```
     public func getLaw(contour: Int, edge: Edge) -> LawFunction? {
-        guard let ref = OCCTFilletBuilderGetLaw(handle, Int32(contour), edge.handle) else { return nil }
+        guard let ref = OCCTFilletBuilderGetLaw(handle, Int32(contour), edge.handle) else {
+            return nil
+        }
         return LawFunction(handle: ref)
     }
 

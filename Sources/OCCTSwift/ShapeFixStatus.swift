@@ -38,10 +38,12 @@
 public enum ShapeFixStatus: Int32, Sendable, CaseIterable {
     /// Nothing needed fixing.
     case ok = 0
-    case done1 = 1, done2, done3, done4, done5, done6, done7, done8
+    case done1 = 1
+    case done2, done3, done4, done5, done6, done7, done8
     /// Any `DONE1`...`DONE8` flag is set: something was fixed.
     case done = 9
-    case fail1 = 10, fail2, fail3, fail4, fail5, fail6, fail7, fail8
+    case fail1 = 10
+    case fail2, fail3, fail4, fail5, fail6, fail7, fail8
     /// Any `FAIL1`...`FAIL8` flag is set: some pass failed.
     case fail = 18
 }

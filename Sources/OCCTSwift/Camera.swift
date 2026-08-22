@@ -1,6 +1,6 @@
 import Foundation
-import simd
 import OCCTBridge
+import simd
 
 /// A 3D camera backed by OpenCASCADE Graphic3d_Camera.
 ///
@@ -31,7 +31,9 @@ public final class Camera: @unchecked Sendable {
     /// Camera eye (observer) position in world coordinates.
     public var eye: SIMD3<Double> {
         get {
-            var x = 0.0, y = 0.0, z = 0.0
+            var x = 0.0
+            var y = 0.0
+            var z = 0.0
             OCCTCameraGetEye(handle, &x, &y, &z)
             return SIMD3(x, y, z)
         }
@@ -43,7 +45,9 @@ public final class Camera: @unchecked Sendable {
     /// Camera look-at target in world coordinates.
     public var center: SIMD3<Double> {
         get {
-            var x = 0.0, y = 0.0, z = 0.0
+            var x = 0.0
+            var y = 0.0
+            var z = 0.0
             OCCTCameraGetCenter(handle, &x, &y, &z)
             return SIMD3(x, y, z)
         }
@@ -55,7 +59,9 @@ public final class Camera: @unchecked Sendable {
     /// Camera up direction vector.
     public var up: SIMD3<Double> {
         get {
-            var x = 0.0, y = 0.0, z = 0.0
+            var x = 0.0
+            var y = 0.0
+            var z = 0.0
             OCCTCameraGetUp(handle, &x, &y, &z)
             return SIMD3(x, y, z)
         }
@@ -91,7 +97,8 @@ public final class Camera: @unchecked Sendable {
     /// Near and far clipping plane distances.
     public var zRange: (near: Double, far: Double) {
         get {
-            var zNear = 0.0, zFar = 0.0
+            var zNear = 0.0
+            var zFar = 0.0
             OCCTCameraGetZRange(handle, &zNear, &zFar)
             return (zNear, zFar)
         }
@@ -136,14 +143,18 @@ public final class Camera: @unchecked Sendable {
 
     /// Project a world-space point to normalized screen coordinates.
     public func project(_ point: SIMD3<Double>) -> SIMD3<Double> {
-        var sX = 0.0, sY = 0.0, sZ = 0.0
+        var sX = 0.0
+        var sY = 0.0
+        var sZ = 0.0
         OCCTCameraProject(handle, point.x, point.y, point.z, &sX, &sY, &sZ)
         return SIMD3(sX, sY, sZ)
     }
 
     /// Unproject a screen-space point to world coordinates.
     public func unproject(_ point: SIMD3<Double>) -> SIMD3<Double> {
-        var wX = 0.0, wY = 0.0, wZ = 0.0
+        var wX = 0.0
+        var wY = 0.0
+        var wZ = 0.0
         OCCTCameraUnproject(handle, point.x, point.y, point.z, &wX, &wY, &wZ)
         return SIMD3(wX, wY, wZ)
     }
@@ -152,8 +163,9 @@ public final class Camera: @unchecked Sendable {
 
     /// Adjust camera to fit the given axis-aligned bounding box in view.
     public func fit(boundingBox: (min: SIMD3<Double>, max: SIMD3<Double>)) {
-        OCCTCameraFitBBox(handle,
-                          boundingBox.min.x, boundingBox.min.y, boundingBox.min.z,
-                          boundingBox.max.x, boundingBox.max.y, boundingBox.max.z)
+        OCCTCameraFitBBox(
+            handle,
+            boundingBox.min.x, boundingBox.min.y, boundingBox.min.z,
+            boundingBox.max.x, boundingBox.max.y, boundingBox.max.z)
     }
 }

@@ -1,6 +1,6 @@
 import Foundation
-import simd
 import OCCTBridge
+import simd
 
 /// Transition mode for pipe shell construction.
 public enum PipeShellTransition: Int32, Sendable {
@@ -151,7 +151,9 @@ extension PipeShellBuilder {
     /// Returns an array of simulated section shapes (wire cross-sections along the spine).
     public func simulate(numberOfSections: Int) -> [Shape] {
         var count: Int32 = 0
-        guard let shapes = OCCTPipeShellSimulate(ref, Int32(numberOfSections), &count) else { return [] }
+        guard let shapes = OCCTPipeShellSimulate(ref, Int32(numberOfSections), &count) else {
+            return []
+        }
         // Transfer ownership of each shape to Swift Shape objects, then free only the array
         var result: [Shape] = []
         for i in 0..<Int(count) {
@@ -159,7 +161,7 @@ extension PipeShellBuilder {
                 result.append(Shape(handle: s))
             }
         }
-        free(shapes) // Free only the pointer array, not the shapes themselves
+        free(shapes)  // Free only the pointer array, not the shapes themselves
         return result
     }
 }

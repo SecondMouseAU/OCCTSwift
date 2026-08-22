@@ -1,6 +1,6 @@
 import Foundation
-import simd
 import OCCTBridge
+import simd
 
 /// Linear mass properties computed from mesh polygon points.
 ///
@@ -15,11 +15,14 @@ public struct MeshCinertResult {
 public func meshCinertCompute(points: [(Double, Double, Double)]) -> MeshCinertResult {
     var coords: [Double] = []
     for p in points {
-        coords.append(p.0); coords.append(p.1); coords.append(p.2)
+        coords.append(p.0)
+        coords.append(p.1)
+        coords.append(p.2)
     }
     let r = OCCTMeshCinertCompute(coords, Int32(points.count))
-    return MeshCinertResult(mass: r.mass,
-                            centerOfMass: r.mass == 0 ? nil : SIMD3(r.centerX, r.centerY, r.centerZ))
+    return MeshCinertResult(
+        mass: r.mass,
+        centerOfMass: r.mass == 0 ? nil : SIMD3(r.centerX, r.centerY, r.centerZ))
 }
 
 /// Mesh property type.

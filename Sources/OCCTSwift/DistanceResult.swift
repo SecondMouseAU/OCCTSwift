@@ -1,6 +1,6 @@
 import Foundation
-import simd
 import OCCTBridge
+import simd
 
 /// Result of distance measurement between two shapes
 public struct DistanceResult: Sendable, Equatable {

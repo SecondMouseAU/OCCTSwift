@@ -1,6 +1,6 @@
 import Foundation
-import simd
 import OCCTBridge
+import simd
 
 /// Result of wire edge ordering analysis using ShapeAnalysis_WireOrder.
 ///
@@ -49,8 +49,10 @@ public struct WireOrder: Sendable {
     ///   - edges: Array of (start, end) point pairs defining each edge
     ///   - tolerance: Connection tolerance (default 1e-3)
     /// - Returns: Wire ordering result, or nil if analysis failed
-    public static func analyze(edges: [(start: SIMD3<Double>, end: SIMD3<Double>)],
-                                tolerance: Double = 1e-3) -> WireOrder? {
+    public static func analyze(
+        edges: [(start: SIMD3<Double>, end: SIMD3<Double>)],
+        tolerance: Double = 1e-3
+    ) -> WireOrder? {
         guard !edges.isEmpty else { return nil }
 
         let nbEdges = Int32(edges.count)
@@ -66,8 +68,9 @@ public struct WireOrder: Sendable {
             ends[i * 3 + 2] = edge.end.z
         }
 
-        var outOrder = [OCCTWireOrderEntry](repeating: OCCTWireOrderEntry(originalIndex: 0),
-                                             count: edges.count)
+        var outOrder = [OCCTWireOrderEntry](
+            repeating: OCCTWireOrderEntry(originalIndex: 0),
+            count: edges.count)
 
         let result = OCCTWireOrderAnalyze(&starts, &ends, nbEdges, tolerance, &outOrder)
 
@@ -82,8 +85,9 @@ public struct WireOrder: Sendable {
     /// - Returns: Wire ordering result, or nil if analysis failed
     public static func analyze(wire: Wire, tolerance: Double = 1e-3) -> WireOrder? {
         let maxEntries: Int32 = 1000
-        var outOrder = [OCCTWireOrderEntry](repeating: OCCTWireOrderEntry(originalIndex: 0),
-                                             count: Int(maxEntries))
+        var outOrder = [OCCTWireOrderEntry](
+            repeating: OCCTWireOrderEntry(originalIndex: 0),
+            count: Int(maxEntries))
 
         let result = OCCTWireOrderAnalyzeWire(wire.handle, tolerance, &outOrder, maxEntries)
 
@@ -94,7 +98,9 @@ public struct WireOrder: Sendable {
     /// `WireOrder`. Shared by both `analyze(edges:)` and `analyze(wire:)`, which differ only in
     /// how they build the C-side inputs (caller-supplied points vs. a wire's own edges), not in
     /// how the result is interpreted.
-    private static func decode(_ result: OCCTWireOrderResult, outOrder: [OCCTWireOrderEntry]) -> WireOrder? {
+    private static func decode(_ result: OCCTWireOrderResult, outOrder: [OCCTWireOrderEntry])
+        -> WireOrder?
+    {
         let status: Status
         switch result.status {
         case 0: status = .closed
@@ -109,10 +115,11 @@ public struct WireOrder: Sendable {
         orderedEdges.reserveCapacity(Int(result.nbEdges))
         for i in 0..<Int(result.nbEdges) {
             let idx = outOrder[i].originalIndex
-            orderedEdges.append(OrderedEdge(
-                originalIndex: abs(Int(idx)) - 1, // Convert from 1-based to 0-based
-                isReversed: idx < 0
-            ))
+            orderedEdges.append(
+                OrderedEdge(
+                    originalIndex: abs(Int(idx)) - 1,  // Convert from 1-based to 0-based
+                    isReversed: idx < 0
+                ))
         }
 
         return WireOrder(status: status, orderedEdges: orderedEdges)

@@ -1,6 +1,6 @@
 import Foundation
-import simd
 import OCCTBridge
+import simd
 
 /// Attribute ID filter for OCAF document operations.
 public final class IDFilter: @unchecked Sendable {

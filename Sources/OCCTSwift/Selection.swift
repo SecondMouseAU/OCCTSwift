@@ -1,6 +1,6 @@
 import Foundation
-import simd
 import OCCTBridge
+import simd
 
 // MARK: - Ray Hit Result
 
@@ -75,31 +75,32 @@ extension Shape {
             &hitBuffer,
             Int32(capacity)
         )
-        
+
         guard hitCount > 0 else { return [] }
-        
+
         // Convert to Swift structs
         var results = [RayHit]()
         results.reserveCapacity(Int(hitCount))
-        
+
         for i in 0..<Int(hitCount) {
             let hit = hitBuffer[i]
-            results.append(RayHit(
-                point: SIMD3(hit.point.0, hit.point.1, hit.point.2),
-                normal: SIMD3(hit.normal.0, hit.normal.1, hit.normal.2),
-                faceIndex: Int(hit.faceIndex),
-                distance: hit.distance,
-                uv: SIMD2(hit.uv.0, hit.uv.1),
-                normalDefined: hit.normalDefined
-            ))
+            results.append(
+                RayHit(
+                    point: SIMD3(hit.point.0, hit.point.1, hit.point.2),
+                    normal: SIMD3(hit.normal.0, hit.normal.1, hit.normal.2),
+                    faceIndex: Int(hit.faceIndex),
+                    distance: hit.distance,
+                    uv: SIMD2(hit.uv.0, hit.uv.1),
+                    normalDefined: hit.normalDefined
+                ))
         }
-        
+
         // Sort by distance (nearest first)
         results.sort { $0.distance < $1.distance }
-        
+
         return results
     }
-    
+
     /// Cast a ray and return only the nearest hit
     /// - Parameters:
     ///   - origin: Starting point of the ray

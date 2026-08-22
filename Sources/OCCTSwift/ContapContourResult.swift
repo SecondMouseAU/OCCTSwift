@@ -1,6 +1,6 @@
 import Foundation
-import simd
 import OCCTBridge
+import simd
 
 /// Contour line type
 public enum ContourLineType: Int32, Sendable {
@@ -34,7 +34,9 @@ public class ContapContourResult {
 
     /// Get a point on a contour line (1-based indices)
     public func point(line: Int, index: Int) -> SIMD3<Double> {
-        var x: Double = 0, y: Double = 0, z: Double = 0
+        var x: Double = 0
+        var y: Double = 0
+        var z: Double = 0
         OCCTContapContourLinePoint(ref, Int32(line), Int32(index), &x, &y, &z)
         return SIMD3(x, y, z)
     }

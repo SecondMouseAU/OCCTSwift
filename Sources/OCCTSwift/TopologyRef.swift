@@ -30,10 +30,11 @@ public indirect enum TopologyRef: Sendable, Hashable {
     /// (the first leaf in deterministic order). Use `leafOccurrence: nil` to
     /// disable forward-walk entirely and get the node as originally created —
     /// rarely what you want, but useful for history inspection.
-    case createdBy(operationName: String,
-                   kind: BRepGraph.NodeKind,
-                   occurrence: Int = 0,
-                   leafOccurrence: Int? = 0)
+    case createdBy(
+        operationName: String,
+        kind: BRepGraph.NodeKind,
+        occurrence: Int = 0,
+        leafOccurrence: Int? = 0)
 
     /// The Nth descendant of `kind` contained within `parent`.
     ///
@@ -41,9 +42,10 @@ public indirect enum TopologyRef: Sendable, Hashable {
     /// (via the graph's child iteration). Order is stable across mutations for
     /// unmodified parents; for mutated parents the order is whatever the graph
     /// reports post-mutation.
-    case containedIn(parent: TopologyRef,
-                     kind: BRepGraph.NodeKind,
-                     occurrence: Int = 0)
+    case containedIn(
+        parent: TopologyRef,
+        kind: BRepGraph.NodeKind,
+        occurrence: Int = 0)
 
     /// The Nth replacement produced by the operation that split `original` into
     /// multiple nodes. Typical use: picking one of two halves after an edge split.
@@ -79,14 +81,16 @@ extension BRepGraph {
                 : .failure(.invalid(ref))
 
         case .createdBy(let opName, let kind, let occurrence, let leafOccurrence):
-            return resolveCreatedBy(opName: opName, kind: kind,
-                                    occurrence: occurrence,
-                                    leafOccurrence: leafOccurrence,
-                                    ref: ref)
+            return resolveCreatedBy(
+                opName: opName, kind: kind,
+                occurrence: occurrence,
+                leafOccurrence: leafOccurrence,
+                ref: ref)
 
         case .containedIn(let parent, let kind, let occurrence):
-            return resolveContainedIn(parent: parent, kind: kind,
-                                      occurrence: occurrence, ref: ref)
+            return resolveContainedIn(
+                parent: parent, kind: kind,
+                occurrence: occurrence, ref: ref)
 
         case .splitOf(let original, let occurrence):
             return resolveSplitOf(original: original, occurrence: occurrence, ref: ref)
@@ -99,11 +103,14 @@ extension BRepGraph {
     /// valid index into `available`, or resolution fails with `.occurrenceOutOfRange`.
     /// Returns the validated element itself on success, so call sites don't need their
     /// own follow-up bounds check or subscript.
-    private func element<T>(at occurrence: Int,
-                            in available: [T],
-                            ref: TopologyRef) -> Result<T, TopologyResolutionError> {
+    private func element<T>(
+        at occurrence: Int,
+        in available: [T],
+        ref: TopologyRef
+    ) -> Result<T, TopologyResolutionError> {
         guard occurrence >= 0, occurrence < available.count else {
-            return .failure(.occurrenceOutOfRange(ref, available: available.count, requested: occurrence))
+            return .failure(
+                .occurrenceOutOfRange(ref, available: available.count, requested: occurrence))
         }
         return .success(available[occurrence])
     }
@@ -113,15 +120,19 @@ extension BRepGraph {
     /// `resolveSplitOf` each perform before doing their own kind-specific lookup. The
     /// underlying failure reason (e.g. `.operationNotFound`, a nested `.ancestorMissing`)
     /// is intentionally discarded, same as both call sites did before consolidation.
-    private func resolveAncestor(_ ancestor: TopologyRef) -> Result<NodeRef, TopologyResolutionError> {
+    private func resolveAncestor(_ ancestor: TopologyRef) -> Result<
+        NodeRef, TopologyResolutionError
+    > {
         resolve(ancestor).mapError { _ in .ancestorMissing(ancestor) }
     }
 
-    private func resolveCreatedBy(opName: String,
-                                  kind: NodeKind,
-                                  occurrence: Int,
-                                  leafOccurrence: Int? = 0,
-                                  ref: TopologyRef) -> Result<NodeRef, TopologyResolutionError> {
+    private func resolveCreatedBy(
+        opName: String,
+        kind: NodeKind,
+        occurrence: Int,
+        leafOccurrence: Int? = 0,
+        ref: TopologyRef
+    ) -> Result<NodeRef, TopologyResolutionError> {
         // Collect all replacement nodes of the target kind across matching records,
         // in deterministic order.
         let records = historyRecords
@@ -129,7 +140,12 @@ extension BRepGraph {
         if matching.isEmpty {
             return .failure(.operationNotFound(opName))
         }
-        struct Candidate { let seq: Int; let origKey: NodeRef; let posInRepls: Int; let node: NodeRef }
+        struct Candidate {
+            let seq: Int
+            let origKey: NodeRef
+            let posInRepls: Int
+            let node: NodeRef
+        }
         var candidates: [Candidate] = []
         for (_, record) in matching {
             // Stable key order over the mapping (otherwise dictionary iteration is nondeterministic).
@@ -140,16 +156,20 @@ extension BRepGraph {
             for origKey in sortedOrigs {
                 let repls = record.mapping[origKey] ?? []
                 for (i, node) in repls.enumerated() where node.kind == kind {
-                    candidates.append(Candidate(seq: record.sequenceNumber,
-                                                origKey: origKey,
-                                                posInRepls: i,
-                                                node: node))
+                    candidates.append(
+                        Candidate(
+                            seq: record.sequenceNumber,
+                            origKey: origKey,
+                            posInRepls: i,
+                            node: node))
                 }
             }
         }
         candidates.sort { a, b in
             if a.seq != b.seq { return a.seq < b.seq }
-            if a.origKey.kind != b.origKey.kind { return a.origKey.kind.rawValue < b.origKey.kind.rawValue }
+            if a.origKey.kind != b.origKey.kind {
+                return a.origKey.kind.rawValue < b.origKey.kind.rawValue
+            }
             if a.origKey.index != b.origKey.index { return a.origKey.index < b.origKey.index }
             return a.posInRepls < b.posInRepls
         }
@@ -171,25 +191,34 @@ extension BRepGraph {
         }
     }
 
-    private func resolveContainedIn(parent: TopologyRef,
-                                    kind: NodeKind,
-                                    occurrence: Int,
-                                    ref: TopologyRef) -> Result<NodeRef, TopologyResolutionError> {
+    private func resolveContainedIn(
+        parent: TopologyRef,
+        kind: NodeKind,
+        occurrence: Int,
+        ref: TopologyRef
+    ) -> Result<NodeRef, TopologyResolutionError> {
         resolveAncestor(parent).flatMap { resolvedParent in
-            let indices = childIndices(rootKind: resolvedParent.kind,
-                                        rootIndex: resolvedParent.index,
-                                        targetKind: kind)
-            return element(at: occurrence, in: indices, ref: ref).map { NodeRef(kind: kind, index: $0) }
+            let indices = childIndices(
+                rootKind: resolvedParent.kind,
+                rootIndex: resolvedParent.index,
+                targetKind: kind)
+            return element(at: occurrence, in: indices, ref: ref).map {
+                NodeRef(kind: kind, index: $0)
+            }
         }
     }
 
-    private func resolveSplitOf(original: TopologyRef,
-                                occurrence: Int,
-                                ref: TopologyRef) -> Result<NodeRef, TopologyResolutionError> {
+    private func resolveSplitOf(
+        original: TopologyRef,
+        occurrence: Int,
+        ref: TopologyRef
+    ) -> Result<NodeRef, TopologyResolutionError> {
         resolveAncestor(original).flatMap { resolvedOriginal in
             // Find the record where resolvedOriginal appears as an original with >1 replacements.
             for record in historyRecords {
-                guard let repls = record.mapping[resolvedOriginal], repls.count > 1 else { continue }
+                guard let repls = record.mapping[resolvedOriginal], repls.count > 1 else {
+                    continue
+                }
                 return element(at: occurrence, in: repls, ref: ref).map { currentForm(of: $0) }
             }
             return .failure(.noCurrentDescendant(ref))
