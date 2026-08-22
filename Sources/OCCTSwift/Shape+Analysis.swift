@@ -734,6 +734,7 @@ extension Shape {
         /// The status of the check.
         public let status: Status
         /// Number of face pairs checked before completion/timeout.
+        ///
         /// NOTE: BOPAlgo_ArgumentAnalyzer does not expose a progress counter; this is always 0.
         public let facesChecked: Int
         /// Estimated total face pairs to check.
@@ -764,6 +765,7 @@ extension Shape {
         /// Number of planar faces (cheapest to check).
         public let numPlaneFaces: Int
         /// Relative cost estimate (higher = more expensive).
+        ///
         /// Cost model: B-spline = 10x, other analytical = 3x, plane = 1x.
         public let estimatedCost: Double
     }

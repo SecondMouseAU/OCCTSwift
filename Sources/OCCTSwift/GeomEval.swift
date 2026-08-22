@@ -3,6 +3,7 @@ import OCCTBridge
 import simd
 
 /// Standalone evaluators for analytical curves and surfaces.
+///
 /// These evaluate mathematical functions without creating persistent Curve3D/Surface objects.
 public enum GeomEval {
 
@@ -208,6 +209,7 @@ public enum Geom2dEval {
     ///   - direction: The X direction vector (YDir is computed as perpendicular).
     ///   - radius: The base circle radius (must be > 0).
     ///   - u: The parameter value.
+    /// - Returns: The point on the involute at parameter u.
     public static func circleInvoluteD0(
         origin: SIMD2<Double>, direction: SIMD2<Double>, radius: Double, u: Double
     ) -> SIMD2<Double> {
