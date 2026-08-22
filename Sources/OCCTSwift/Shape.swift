@@ -2562,11 +2562,13 @@ public final class Shape: @unchecked Sendable {
         var facesChecked: Int32 = 0
         var totalPairs: Int32 = 0
         var timeSpent: Double = 0.0
-        let code = OCCTShapeSelfIntersectsDetailed(handle, timeout, &facesChecked, &totalPairs, &timeSpent)
-        return SelfIntersectionDetailedResult(code: code,
-                                      facesChecked: Int(facesChecked),
-                                      totalFacePairs: Int(totalPairs),
-                                      timeSpent: timeSpent)
+        let code = OCCTShapeSelfIntersectsDetailed(
+            handle, timeout, &facesChecked, &totalPairs, &timeSpent)
+        return SelfIntersectionDetailedResult(
+            code: code,
+            facesChecked: Int(facesChecked),
+            totalFacePairs: Int(totalPairs),
+            timeSpent: timeSpent)
     }
 
     /// Quick pre-screen to estimate self-intersection check complexity (BOPAlgo-based).
@@ -2594,12 +2596,14 @@ public final class Shape: @unchecked Sendable {
         var numBSplineFaces: Int32 = 0
         var numPlaneFaces: Int32 = 0
         var estimatedCost: Double = 0.0
-        let code = OCCTShapeSelfIntersectEstimateCost(handle, &numFaces, &numBSplineFaces, &numPlaneFaces, &estimatedCost)
+        let code = OCCTShapeSelfIntersectEstimateCost(
+            handle, &numFaces, &numBSplineFaces, &numPlaneFaces, &estimatedCost)
         guard code == 0 else { return nil }
-        return SelfIntersectionCostEstimate(numFaces: Int(numFaces),
-                                            numBSplineFaces: Int(numBSplineFaces),
-                                            numPlaneFaces: Int(numPlaneFaces),
-                                            estimatedCost: estimatedCost)
+        return SelfIntersectionCostEstimate(
+            numFaces: Int(numFaces),
+            numBSplineFaces: Int(numBSplineFaces),
+            numPlaneFaces: Int(numPlaneFaces),
+            estimatedCost: estimatedCost)
     }
 
     // MARK: - Sub-Shape Extraction

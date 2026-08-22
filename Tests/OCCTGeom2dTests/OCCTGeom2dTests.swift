@@ -909,7 +909,7 @@ struct Curve2DBisectorTests {
     @Test("Bisector between point and line")
     func bisectorPointCurve() {
         let line = Curve2D.segment(from: SIMD2(-10, 0), to: SIMD2(10, 0))!
-        let bis = line.bisector(withPoint: SIMD2(0, 5), origin: SIMD2(0, 0), side: true)
+        let bis = line.bisector(withPoint: SIMD2(0, 5), maxDistance: 100, side: true)
         // Bisector of a point and a line = parabola
         if let bis = bis {
             let pts = bis.drawAdaptive()
