@@ -46,6 +46,11 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Trust Homebrew taps
+        run: |
+          brew tap --force homebrew/core
+          brew tap --force homebrew/cask
+
       - name: Install swift-format, SwiftLint, clang-format
         run: brew install swift-format swiftlint clang-format
 
