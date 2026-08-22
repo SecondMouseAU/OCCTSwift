@@ -7862,6 +7862,8 @@ void OCCTGeom2dEvalCircleInvoluteD0WithPlacement(double  originX,
                                                  double* px,
                                                  double* py)
 {
+  if (!px || !py)
+    return;
   if (radius <= 0.0)
   {
     *px = 0.0;
@@ -7886,6 +7888,8 @@ void OCCTGeom2dEvalCircleInvoluteD1WithPlacement(double  originX,
                                                  double* vx,
                                                  double* vy)
 {
+  if (!px || !py || !vx || !vy)
+    return;
   if (radius <= 0.0)
   {
     *px = 0.0;
