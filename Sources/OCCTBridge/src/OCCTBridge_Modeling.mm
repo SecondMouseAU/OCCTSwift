@@ -16473,7 +16473,8 @@ int32_t OCCTShapeSelfIntersectsDetailed(OCCTShapeRef shape,
     }
 
     // With timeout: check if breaker tripped FIRST
-    // If the analysis was interrupted, its result cannot be trusted (aborted analysis answers nothing)
+    // If the analysis was interrupted, its result cannot be trusted (aborted analysis answers
+    // nothing)
     bool breakerTripped = (!breaker.IsNull() && breaker->tripped());
 
     if (breakerTripped)

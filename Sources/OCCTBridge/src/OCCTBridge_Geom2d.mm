@@ -7843,8 +7843,8 @@ OCCTCurve2DRef OCCTGeom2dEvalCircleInvoluteCurveCreate(double originX,
     return nullptr;
   try
   {
-    gp_Ax2d                   ax(gp_Pnt2d(originX, originY), gp_Dir2d(dirX / dirLen, dirY / dirLen));
-    auto                      inv = new Geom2dEval_CircleInvoluteCurve(ax, radius);
+    gp_Ax2d ax(gp_Pnt2d(originX, originY), gp_Dir2d(dirX / dirLen, dirY / dirLen));
+    auto    inv = new Geom2dEval_CircleInvoluteCurve(ax, radius);
     occ::handle<Geom2d_Curve> hCurve(inv);
     auto                      ref = new OCCTCurve2D();
     ref->curve                    = hCurve;
@@ -7880,7 +7880,7 @@ void OCCTGeom2dEvalCircleInvoluteD0WithPlacement(double  originX,
     *py = 0.0;
     return;
   }
-  gp_Ax2d                        ax(gp_Pnt2d(originX, originY), gp_Dir2d(dirX / dirLen, dirY / dirLen));
+  gp_Ax2d ax(gp_Pnt2d(originX, originY), gp_Dir2d(dirX / dirLen, dirY / dirLen));
   Geom2dEval_CircleInvoluteCurve inv(ax, radius);
   gp_Pnt2d                       p = inv.EvalD0(u);
   *px                              = p.X();
@@ -7917,7 +7917,7 @@ void OCCTGeom2dEvalCircleInvoluteD1WithPlacement(double  originX,
     *vy = 0.0;
     return;
   }
-  gp_Ax2d                        ax(gp_Pnt2d(originX, originY), gp_Dir2d(dirX / dirLen, dirY / dirLen));
+  gp_Ax2d ax(gp_Pnt2d(originX, originY), gp_Dir2d(dirX / dirLen, dirY / dirLen));
   Geom2dEval_CircleInvoluteCurve inv(ax, radius);
   auto                           res = inv.EvalD1(u);
   *px                                = res.Point.X();
