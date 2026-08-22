@@ -4,6 +4,7 @@ import simd
 
 /// Standalone evaluators for analytical curves and surfaces.
 /// These evaluate mathematical functions without creating persistent Curve3D/Surface objects.
+
 public enum GeomEval {
 
     // MARK: 3D Curves
@@ -182,6 +183,7 @@ public enum Geom2dEval {
 
     /// Evaluate a circle involute at parameter u.
     /// C(t) = R*(cos(t) + t*sin(t))*X + R*(sin(t) - t*cos(t))*Y
+    /// - Returns: The evaluated point on the circle involute.
     public static func circleInvoluteD0(radius: Double, u: Double) -> SIMD2<Double> {
         var px = 0.0
         var py = 0.0
@@ -208,6 +210,7 @@ public enum Geom2dEval {
     ///   - direction: The X direction vector (YDir is computed as perpendicular).
     ///   - radius: The base circle radius (must be > 0).
     ///   - u: The parameter value.
+    /// - Returns: The evaluated point on the circle involute.
     public static func circleInvoluteD0(
         origin: SIMD2<Double>, direction: SIMD2<Double>, radius: Double, u: Double
     ) -> SIMD2<Double> {
