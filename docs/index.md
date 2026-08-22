@@ -7,7 +7,7 @@ nav_order: 1
 
 A comprehensive Swift wrapper for [OpenCASCADE Technology](https://dev.opencascade.org) (OCCT 8.0.1),
 B-Rep solid modeling, CAD data exchange, meshing and geometry for **macOS and iOS**. visionOS and tvOS are declared and buildable but untested, and need a local kernel rebuild (#978).
-Three-layer architecture: Swift public API → Objective-C++ bridge → OCCT C++. **4,360 wrapped operations.**
+Three-layer architecture: Swift public API → Objective-C++ bridge → OCCT C++. **4,359 wrapped operations.**
 
 ```swift
 import OCCTSwift
