@@ -16398,6 +16398,164 @@ int32_t OCCTShapeSelfIntersectsBounded(OCCTShapeRef shape, double timeoutSeconds
   }
 }
 
+// --- Detailed self-intersection check with progress info (#1068) ---
+//
+// Reports self-intersection status with granular progress information.
+// Status codes:
+//   1  = self-intersects (conclusive)
+//   0  = clean (conclusive)
+//  -1  = indeterminate (timed out, breaker tripped - analysis was running)
+//  -2  = indeterminate (timed out, breaker NOT tripped - analysis made no progress)
+//  -3  = error (exception occurred)
+//
+// Output parameters (optional, can pass nullptr):
+//   - outNumFacesChecked: number of face pairs checked before timeout/error.
+//     NOTE: BOPAlgo_ArgumentAnalyzer does not expose a progress counter for face pairs
+//     checked. This output will be 0 in the current implementation.
+//   - outTotalFacePairs: estimated total face pairs to check
+//   - outTimeSpent: actual time spent in seconds
+int32_t OCCTShapeSelfIntersectsDetailed(OCCTShapeRef shape, double timeoutSeconds,
+                                         int32_t* outNumFacesChecked,
+                                         int32_t* outTotalFacePairs,
+                                         double* outTimeSpent)
+{
+  if (!shape)
+    return -3;
+  if (outNumFacesChecked) *outNumFacesChecked = 0; // Not available from BOPAlgo_ArgumentAnalyzer
+  if (outTotalFacePairs) *outTotalFacePairs = 0;
+  if (outTimeSpent) *outTimeSpent = 0.0;
+
+  auto startTime = std::chrono::steady_clock::now();
+  occtEnsureSignals();
+  try
+  {
+    OCC_CATCH_SIGNALS
+    BOPAlgo_ArgumentAnalyzer aa;
+    aa.SetShape1(shape->shape);
+    aa.ArgumentTypeMode()  = Standard_True;
+    aa.SelfInterMode()     = Standard_True;
+    aa.StopOnFirstFaulty() = Standard_True;
+    aa.SetRunParallel(Standard_False);
+
+    // Estimate total face pairs for progress reporting
+    int32_t estimatedTotalPairs = 0;
+    if (outTotalFacePairs) {
+      TopExp_Explorer exp(shape->shape, TopAbs_FACE);
+      int32_t numFaces = 0;
+      while (exp.More()) { numFaces++; exp.Next(); }
+      // Upper bound: n*(n-1)/2 pairs, but self-intersection checks adjacent faces too
+      // A more realistic estimate for self-intersection is ~n^2 / 4
+      estimatedTotalPairs = (numFaces * numFaces) / 4;
+      *outTotalFacePairs = estimatedTotalPairs;
+    }
+
+    Handle(OCCTBoolTimeoutBreaker) breaker;
+    if (timeoutSeconds > 0.0)
+    {
+      breaker = new OCCTBoolTimeoutBreaker(timeoutSeconds);
+      Message_ProgressRange range = breaker->Start();
+      aa.Perform(range);
+    }
+    else
+    {
+      aa.Perform();
+    }
+
+    auto endTime = std::chrono::steady_clock::now();
+    if (outTimeSpent) {
+      *outTimeSpent = std::chrono::duration<double>(endTime - startTime).count();
+    }
+
+    if (aa.HasFaulty())
+      return 1; // conclusive
+
+    bool breakerTripped = (!breaker.IsNull() && breaker->tripped());
+    if (breakerTripped)
+      return -1; // timed out but breaker was tripped (analysis was running)
+    else if (timeoutSeconds > 0.0)
+      return -2; // timed out but breaker was NOT tripped (made no progress)
+
+    return 0; // completed clean
+  }
+  catch (...)
+  {
+    auto endTime = std::chrono::steady_clock::now();
+    if (outTimeSpent) {
+      *outTimeSpent = std::chrono::duration<double>(endTime - startTime).count();
+    }
+    return -3; // exception occurred
+  }
+}
+
+// --- Quick pre-screen for self-intersection check complexity (#1068) ---
+//
+// Returns an estimate of the computational cost based on face count and surface types.
+// outNumFaces: total number of faces
+// outNumBSplineFaces: number of B-spline faces (most expensive to check)
+// outNumPlaneFaces: number of planar faces (cheap to check)
+// outEstimatedCost: relative cost estimate (higher = more expensive)
+// Returns 0 on success, -1 on error
+int32_t OCCTShapeSelfIntersectEstimateCost(OCCTShapeRef shape,
+                                            int32_t* outNumFaces,
+                                            int32_t* outNumBSplineFaces,
+                                            int32_t* outNumPlaneFaces,
+                                            double* outEstimatedCost)
+{
+  if (!shape)
+    return -1;
+  if (outNumFaces) *outNumFaces = 0;
+  if (outNumBSplineFaces) *outNumBSplineFaces = 0;
+  if (outNumPlaneFaces) *outNumPlaneFaces = 0;
+  if (outEstimatedCost) *outEstimatedCost = 0.0;
+
+  try
+  {
+    TopExp_Explorer exp(shape->shape, TopAbs_FACE);
+    int32_t numFaces = 0;
+    int32_t numBSplineFaces = 0;
+    int32_t numPlaneFaces = 0;
+
+    while (exp.More())
+    {
+      TopoDS_Face face = TopoDS::Face(exp.Current());
+      Handle(Geom_Surface) surf = BRep_Tool::Surface(face);
+      numFaces++;
+      if (!surf.IsNull())
+      {
+        // Check surface type
+        if (surf->DynamicType()->IsKind(STANDARD_TYPE(Geom_BSplineSurface)))
+        {
+          numBSplineFaces++;
+        }
+        else if (surf->DynamicType()->IsKind(STANDARD_TYPE(Geom_Plane)))
+        {
+          numPlaneFaces++;
+        }
+        // Other surface types (cylinder, cone, sphere, torus, etc.) are intermediate cost
+      }
+      exp.Next();
+    }
+
+    if (outNumFaces) *outNumFaces = numFaces;
+    if (outNumBSplineFaces) *outNumBSplineFaces = numBSplineFaces;
+    if (outNumPlaneFaces) *outNumPlaneFaces = numPlaneFaces;
+
+    // Cost model: BSpline faces are ~10x more expensive than analytical surfaces
+    // Plane faces are ~1x (baseline)
+    // Other analytical surfaces (cylinder, cone, sphere) are ~3x
+    int32_t otherFaces = numFaces - numBSplineFaces - numPlaneFaces;
+    double cost = numBSplineFaces * 10.0 + otherFaces * 3.0 + numPlaneFaces * 1.0;
+
+    if (outEstimatedCost) *outEstimatedCost = cost;
+
+    return 0;
+  }
+  catch (...)
+  {
+    return -1;
+  }
+}
+
 // MARK: - Modifications
 
 OCCTShapeRef OCCTShapeFillet(OCCTShapeRef shape, double radius)
