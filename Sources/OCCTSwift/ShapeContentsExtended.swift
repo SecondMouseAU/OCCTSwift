@@ -1,6 +1,6 @@
 import Foundation
-import simd
 import OCCTBridge
+import simd
 
 /// Extended shape contents analysis result.
 public struct ShapeContentsExtended: Sendable {

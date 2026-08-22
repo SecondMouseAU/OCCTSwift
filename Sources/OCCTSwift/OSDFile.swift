@@ -1,6 +1,6 @@
 import Foundation
-import simd
 import OCCTBridge
+import simd
 
 /// A wrapper around OCCT's OSD_File for platform-independent file I/O.
 public final class OSDFile {

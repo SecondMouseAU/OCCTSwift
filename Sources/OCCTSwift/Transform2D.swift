@@ -1,6 +1,6 @@
 import Foundation
-import simd
 import OCCTBridge
+import simd
 
 /// A 2D geometric transformation backed by `Geom2d_Transformation`.
 ///
@@ -50,8 +50,11 @@ public final class Transform2D: @unchecked Sendable {
 
     /// Create a mirror about an axis (origin + direction).
     public static func mirrorAxis(origin: SIMD2<Double>, direction: SIMD2<Double>) -> Transform2D? {
-        guard let h = OCCTTransform2DCreateMirrorAxis(origin.x, origin.y,
-                                                       direction.x, direction.y) else { return nil }
+        guard
+            let h = OCCTTransform2DCreateMirrorAxis(
+                origin.x, origin.y,
+                direction.x, direction.y)
+        else { return nil }
         return Transform2D(handle: h)
     }
 
@@ -68,10 +71,18 @@ public final class Transform2D: @unchecked Sendable {
     }
 
     /// The 2×3 matrix values `[a11, a12, a13, a21, a22, a23]`.
-    public var matrixValues: (a11: Double, a12: Double, a13: Double,
-                              a21: Double, a22: Double, a23: Double) {
-        var a11: Double = 0, a12: Double = 0, a13: Double = 0
-        var a21: Double = 0, a22: Double = 0, a23: Double = 0
+    public var matrixValues:
+        (
+            a11: Double, a12: Double, a13: Double,
+            a21: Double, a22: Double, a23: Double
+        )
+    {
+        var a11: Double = 0
+        var a12: Double = 0
+        var a13: Double = 0
+        var a21: Double = 0
+        var a22: Double = 0
+        var a23: Double = 0
         OCCTTransform2DGetValues(handle, &a11, &a12, &a13, &a21, &a22, &a23)
         return (a11, a12, a13, a21, a22, a23)
     }

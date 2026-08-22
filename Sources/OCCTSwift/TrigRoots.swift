@@ -1,6 +1,6 @@
 import Foundation
-import simd
 import OCCTBridge
+import simd
 
 /// Trigonometric equation solver: A*cos(x) + B*sin(x) + C*cos(2x) + D*sin(2x) + E = 0.
 public enum TrigRoots {

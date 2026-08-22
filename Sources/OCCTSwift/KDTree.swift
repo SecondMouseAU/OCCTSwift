@@ -1,6 +1,6 @@
 import Foundation
-import simd
 import OCCTBridge
+import simd
 
 /// A KD-tree for fast spatial queries on 3D point sets.
 ///
@@ -63,13 +63,16 @@ public final class KDTree: @unchecked Sendable {
     ///   - k: Output *capacity*, clamped into `0...` ``Sampling/maximumSampleCount``; 0 or less
     ///     returns empty (#622). Fewer than `k` come back when the tree holds fewer points.
     /// - Returns: Array of (0-based index, squared distance) tuples, sorted by distance
-    public func kNearest(to point: SIMD3<Double>, k: Int) -> [(index: Int, squaredDistance: Double)] {
+    public func kNearest(to point: SIMD3<Double>, k: Int) -> [(index: Int, squaredDistance: Double)]
+    {
         let k = Sampling.capacity(k)
         guard k > 0 else { return [] }
         var indices = [Int32](repeating: 0, count: k)
         var sqDists = [Double](repeating: 0, count: k)
-        let n = Int(OCCTKDTreeKNearest(handle, point.x, point.y, point.z,
-                                        Int32(k), &indices, &sqDists))
+        let n = Int(
+            OCCTKDTreeKNearest(
+                handle, point.x, point.y, point.z,
+                Int32(k), &indices, &sqDists))
         return (0..<n).map { (Int(indices[$0]), sqDists[$0]) }
     }
 
@@ -81,12 +84,15 @@ public final class KDTree: @unchecked Sendable {
     ///   - maxResults: Output *capacity* (default: 1000), clamped into `0...`
     ///     ``Sampling/maximumSampleCount``; 0 or less returns empty (#622).
     /// - Returns: Array of 0-based indices of points within the sphere
-    public func rangeSearch(center: SIMD3<Double>, radius: Double, maxResults: Int = 1000) -> [Int] {
+    public func rangeSearch(center: SIMD3<Double>, radius: Double, maxResults: Int = 1000) -> [Int]
+    {
         let maxResults = Sampling.capacity(maxResults)
         guard radius > 0, maxResults > 0 else { return [] }
         var indices = [Int32](repeating: 0, count: maxResults)
-        let n = Int(OCCTKDTreeRangeSearch(handle, center.x, center.y, center.z,
-                                           radius, &indices, Int32(maxResults)))
+        let n = Int(
+            OCCTKDTreeRangeSearch(
+                handle, center.x, center.y, center.z,
+                radius, &indices, Int32(maxResults)))
         return (0..<n).map { Int(indices[$0]) }
     }
 
@@ -102,9 +108,11 @@ public final class KDTree: @unchecked Sendable {
         let maxResults = Sampling.capacity(maxResults)
         guard maxResults > 0 else { return [] }
         var indices = [Int32](repeating: 0, count: maxResults)
-        let n = Int(OCCTKDTreeBoxSearch(handle, min.x, min.y, min.z,
-                                         max.x, max.y, max.z,
-                                         &indices, Int32(maxResults)))
+        let n = Int(
+            OCCTKDTreeBoxSearch(
+                handle, min.x, min.y, min.z,
+                max.x, max.y, max.z,
+                &indices, Int32(maxResults)))
         return (0..<n).map { Int(indices[$0]) }
     }
 }

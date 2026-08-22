@@ -1,6 +1,6 @@
 import Foundation
-import simd
 import OCCTBridge
+import simd
 
 /// STEP representation type for controlling how shapes are written.
 public enum StepModelType: Int32, Sendable {
@@ -35,8 +35,10 @@ public struct STEPReaderModes: Sendable {
     /// Import material data (default: true)
     public var material: Bool
 
-    public init(color: Bool = true, name: Bool = true, layer: Bool = true,
-                props: Bool = true, gdt: Bool = false, material: Bool = true) {
+    public init(
+        color: Bool = true, name: Bool = true, layer: Bool = true,
+        props: Bool = true, gdt: Bool = false, material: Bool = true
+    ) {
         self.color = color
         self.name = name
         self.layer = layer
@@ -59,8 +61,10 @@ public struct STEPWriterModes: Sendable {
     /// Export material data (default: true)
     public var material: Bool
 
-    public init(color: Bool = true, name: Bool = true, layer: Bool = true,
-                dimTol: Bool = false, material: Bool = true) {
+    public init(
+        color: Bool = true, name: Bool = true, layer: Bool = true,
+        dimTol: Bool = false, material: Bool = true
+    ) {
         self.color = color
         self.name = name
         self.layer = layer

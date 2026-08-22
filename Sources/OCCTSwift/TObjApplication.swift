@@ -1,6 +1,6 @@
 import Foundation
-import simd
 import OCCTBridge
+import simd
 
 /// TObj application singleton for OCAF-based document management.
 public final class TObjApplication: @unchecked Sendable {

@@ -202,7 +202,9 @@ public final class BRepGraph: @unchecked Sendable {
 
     /// Count descendant nodes of a given kind from a root node.
     public func childCount(rootKind: NodeKind, rootIndex: Int, targetKind: NodeKind) -> Int {
-        Int(OCCTBRepGraphChildCount(handle, rootKind.rawValue, Int32(rootIndex), targetKind.rawValue))
+        Int(
+            OCCTBRepGraphChildCount(
+                handle, rootKind.rawValue, Int32(rootIndex), targetKind.rawValue))
     }
 
     /// Count parent nodes of a given node.
@@ -254,9 +256,10 @@ public final class BRepGraph: @unchecked Sendable {
     /// Validate the graph structure.
     public func validate() -> ValidationResult {
         let r = OCCTBRepGraphValidateDetailed(handle)
-        return ValidationResult(isValid: r.isValid,
-                                errorCount: Int(r.errorCount),
-                                warningCount: Int(r.warningCount))
+        return ValidationResult(
+            isValid: r.isValid,
+            errorCount: Int(r.errorCount),
+            warningCount: Int(r.warningCount))
     }
 
     /// Whether the graph is structurally valid.
@@ -276,10 +279,11 @@ public final class BRepGraph: @unchecked Sendable {
     @discardableResult
     public func compact() -> CompactResult {
         let r = OCCTBRepGraphCompact(handle)
-        return CompactResult(removedVertices: Int(r.removedVertices),
-                             removedEdges: Int(r.removedEdges),
-                             removedFaces: Int(r.removedFaces),
-                             nodesAfter: Int(r.nodesAfter))
+        return CompactResult(
+            removedVertices: Int(r.removedVertices),
+            removedEdges: Int(r.removedEdges),
+            removedFaces: Int(r.removedFaces),
+            nodesAfter: Int(r.nodesAfter))
     }
 
     // MARK: - Deduplicate
@@ -296,10 +300,11 @@ public final class BRepGraph: @unchecked Sendable {
     @discardableResult
     public func deduplicate() -> DeduplicateResult {
         let r = OCCTBRepGraphDeduplicate(handle)
-        return DeduplicateResult(canonicalSurfaces: Int(r.canonicalSurfaces),
-                                 canonicalCurves: Int(r.canonicalCurves),
-                                 surfaceRewrites: Int(r.surfaceRewrites),
-                                 curveRewrites: Int(r.curveRewrites))
+        return DeduplicateResult(
+            canonicalSurfaces: Int(r.canonicalSurfaces),
+            canonicalCurves: Int(r.canonicalCurves),
+            surfaceRewrites: Int(r.surfaceRewrites),
+            curveRewrites: Int(r.curveRewrites))
     }
 
     // MARK: - Statistics
@@ -320,27 +325,29 @@ public final class BRepGraph: @unchecked Sendable {
         public let curves2D: Int
 
         public var description: String {
-            "BRepGraph.Stats(solids: \(solids), shells: \(shells), faces: \(faces), " +
-            "wires: \(wires), edges: \(edges), vertices: \(vertices), coedges: \(coedges), " +
-            "nodes: \(totalNodes), surfaces: \(surfaces), curves3D: \(curves3D), curves2D: \(curves2D))"
+            "BRepGraph.Stats(solids: \(solids), shells: \(shells), faces: \(faces), "
+                + "wires: \(wires), edges: \(edges), vertices: \(vertices), coedges: \(coedges), "
+                + "nodes: \(totalNodes), surfaces: \(surfaces), curves3D: \(curves3D), curves2D: \(curves2D))"
         }
     }
 
     /// Get comprehensive graph statistics.
     public var stats: Stats {
         let s = OCCTBRepGraphGetStats(handle)
-        return Stats(solids: Int(s.solids), shells: Int(s.shells), faces: Int(s.faces),
-                     wires: Int(s.wires), edges: Int(s.edges), vertices: Int(s.vertices),
-                     coedges: Int(s.coedges), compounds: Int(s.compounds),
-                     totalNodes: Int(s.totalNodes), surfaces: Int(s.surfaces),
-                     curves3D: Int(s.curves3d), curves2D: Int(s.curves2d))
+        return Stats(
+            solids: Int(s.solids), shells: Int(s.shells), faces: Int(s.faces),
+            wires: Int(s.wires), edges: Int(s.edges), vertices: Int(s.vertices),
+            coedges: Int(s.coedges), compounds: Int(s.compounds),
+            totalNodes: Int(s.totalNodes), surfaces: Int(s.surfaces),
+            curves3D: Int(s.curves3d), curves2D: Int(s.curves2d))
     }
 
     // MARK: - Shape Reconstruction (v0.133.0)
 
     /// Reconstruct a TopoDS_Shape from a graph node.
     public func shape(nodeKind: NodeKind, nodeIndex: Int) -> Shape? {
-        guard let ref = OCCTBRepGraphShapeFromNode(handle, nodeKind.rawValue, Int32(nodeIndex)) else {
+        guard let ref = OCCTBRepGraphShapeFromNode(handle, nodeKind.rawValue, Int32(nodeIndex))
+        else {
             return nil
         }
         return Shape(handle: ref)
@@ -365,7 +372,9 @@ public final class BRepGraph: @unchecked Sendable {
 
     /// Get the 3D point of a vertex.
     public func vertexPoint(_ vertexIndex: Int) -> (x: Double, y: Double, z: Double) {
-        var x = 0.0, y = 0.0, z = 0.0
+        var x = 0.0
+        var y = 0.0
+        var z = 0.0
         OCCTBRepGraphVertexPoint(handle, Int32(vertexIndex), &x, &y, &z)
         return (x, y, z)
     }
@@ -399,7 +408,8 @@ public final class BRepGraph: @unchecked Sendable {
 
     /// Get the parameter range of an edge.
     public func edgeRange(_ edgeIndex: Int) -> (first: Double, last: Double) {
-        var first = 0.0, last = 0.0
+        var first = 0.0
+        var last = 0.0
         OCCTBRepGraphEdgeRange(handle, Int32(edgeIndex), &first, &last)
         return (first, last)
     }
@@ -495,7 +505,8 @@ public final class BRepGraph: @unchecked Sendable {
 
     /// Get the PCurve parameter range of a coedge.
     public func coedgeRange(_ coedgeIndex: Int) -> (first: Double, last: Double) {
-        var first = 0.0, last = 0.0
+        var first = 0.0
+        var last = 0.0
         OCCTBRepGraphCoEdgeRange(handle, Int32(coedgeIndex), &first, &last)
         return (first, last)
     }
@@ -579,16 +590,18 @@ public final class BRepGraph: @unchecked Sendable {
         var opNameBuffer = [CChar](repeating: 0, count: 128)
         var sequence: Int32 = 0
         let ok = opNameBuffer.withUnsafeMutableBufferPointer { buf in
-            OCCTBRepGraphHistoryGetRecordInfo(handle, Int32(index),
-                                              buf.baseAddress!, Int32(buf.count),
-                                              &sequence)
+            OCCTBRepGraphHistoryGetRecordInfo(
+                handle, Int32(index),
+                buf.baseAddress!, Int32(buf.count),
+                &sequence)
         }
         guard ok else { return nil }
         // The bridge fills a fixed 128-byte buffer and NUL-terminates it. Decode only up to that
         // terminator — String(decoding:as:) over the whole buffer would carry the NUL padding into
         // the string.
-        let opName = String(decoding: opNameBuffer.prefix { $0 != 0 }.map { UInt8(bitPattern: $0) },
-                            as: UTF8.self)
+        let opName = String(
+            decoding: opNameBuffer.prefix { $0 != 0 }.map { UInt8(bitPattern: $0) },
+            as: UTF8.self)
 
         // Collect originals.
         let count = Int(OCCTBRepGraphHistoryGetRecordOriginalsCount(handle, Int32(index)))
@@ -599,10 +612,11 @@ public final class BRepGraph: @unchecked Sendable {
         var origIndices = [Int32](repeating: 0, count: count)
         _ = origKinds.withUnsafeMutableBufferPointer { kindsBuf in
             origIndices.withUnsafeMutableBufferPointer { indicesBuf in
-                OCCTBRepGraphHistoryGetRecordOriginals(handle, Int32(index),
-                                                       kindsBuf.baseAddress!,
-                                                       indicesBuf.baseAddress!,
-                                                       Int32(count))
+                OCCTBRepGraphHistoryGetRecordOriginals(
+                    handle, Int32(index),
+                    kindsBuf.baseAddress!,
+                    indicesBuf.baseAddress!,
+                    Int32(count))
             }
         }
 
@@ -619,23 +633,25 @@ public final class BRepGraph: @unchecked Sendable {
             var total: Int32 = 0
             total = replKinds.withUnsafeMutableBufferPointer { kb in
                 replIndices.withUnsafeMutableBufferPointer { ib in
-                    OCCTBRepGraphHistoryGetRecordMapping(handle, Int32(index),
-                                                          origKind.rawValue, Int32(orig.index),
-                                                          kb.baseAddress!, ib.baseAddress!,
-                                                          Int32(replCap))
+                    OCCTBRepGraphHistoryGetRecordMapping(
+                        handle, Int32(index),
+                        origKind.rawValue, Int32(orig.index),
+                        kb.baseAddress!, ib.baseAddress!,
+                        Int32(replCap))
                 }
             }
-            if total < 0 { continue }   // original not bound — skip
+            if total < 0 { continue }  // original not bound — skip
             if Int(total) > replCap {
                 replCap = Int(total)
                 replKinds = [Int32](repeating: 0, count: replCap)
                 replIndices = [Int32](repeating: 0, count: replCap)
                 _ = replKinds.withUnsafeMutableBufferPointer { kb in
                     replIndices.withUnsafeMutableBufferPointer { ib in
-                        OCCTBRepGraphHistoryGetRecordMapping(handle, Int32(index),
-                                                              origKind.rawValue, Int32(orig.index),
-                                                              kb.baseAddress!, ib.baseAddress!,
-                                                              Int32(replCap))
+                        OCCTBRepGraphHistoryGetRecordMapping(
+                            handle, Int32(index),
+                            origKind.rawValue, Int32(orig.index),
+                            kb.baseAddress!, ib.baseAddress!,
+                            Int32(replCap))
                     }
                 }
             }
@@ -646,9 +662,10 @@ public final class BRepGraph: @unchecked Sendable {
             }
             mapping[orig] = replacements
         }
-        return HistoryRecord(operationName: opName,
-                             sequenceNumber: Int(sequence),
-                             mapping: mapping)
+        return HistoryRecord(
+            operationName: opName,
+            sequenceNumber: Int(sequence),
+            mapping: mapping)
     }
 
     /// All history records, in order.
@@ -661,10 +678,13 @@ public final class BRepGraph: @unchecked Sendable {
     public func findOriginal(of derived: NodeRef) -> NodeRef {
         var outKind: Int32 = 0
         var outIndex: Int32 = 0
-        guard OCCTBRepGraphHistoryFindOriginal(handle,
-                                                derived.kind.rawValue, Int32(derived.index),
-                                                &outKind, &outIndex),
-              let kind = NodeKind(rawValue: outKind) else {
+        guard
+            OCCTBRepGraphHistoryFindOriginal(
+                handle,
+                derived.kind.rawValue, Int32(derived.index),
+                &outKind, &outIndex),
+            let kind = NodeKind(rawValue: outKind)
+        else {
             return derived
         }
         return NodeRef(kind: kind, index: Int(outIndex))
@@ -720,10 +740,11 @@ public final class BRepGraph: @unchecked Sendable {
         var indices = [Int32](repeating: 0, count: cap)
         var total = kinds.withUnsafeMutableBufferPointer { kb in
             indices.withUnsafeMutableBufferPointer { ib in
-                OCCTBRepGraphHistoryFindDerived(handle,
-                                                 original.kind.rawValue, Int32(original.index),
-                                                 kb.baseAddress!, ib.baseAddress!,
-                                                 Int32(cap))
+                OCCTBRepGraphHistoryFindDerived(
+                    handle,
+                    original.kind.rawValue, Int32(original.index),
+                    kb.baseAddress!, ib.baseAddress!,
+                    Int32(cap))
             }
         }
         if Int(total) > cap {
@@ -732,10 +753,11 @@ public final class BRepGraph: @unchecked Sendable {
             indices = [Int32](repeating: 0, count: cap)
             total = kinds.withUnsafeMutableBufferPointer { kb in
                 indices.withUnsafeMutableBufferPointer { ib in
-                    OCCTBRepGraphHistoryFindDerived(handle,
-                                                     original.kind.rawValue, Int32(original.index),
-                                                     kb.baseAddress!, ib.baseAddress!,
-                                                     Int32(cap))
+                    OCCTBRepGraphHistoryFindDerived(
+                        handle,
+                        original.kind.rawValue, Int32(original.index),
+                        kb.baseAddress!, ib.baseAddress!,
+                        Int32(cap))
                 }
             }
         }
@@ -756,19 +778,22 @@ public final class BRepGraph: @unchecked Sendable {
     ///   - operationName: Human-readable operation label.
     ///   - original: The node that was modified.
     ///   - replacements: The node(s) that replace it. Empty array = node was deleted.
-    public func recordHistory(operationName: String,
-                              original: NodeRef,
-                              replacements: [NodeRef]) {
+    public func recordHistory(
+        operationName: String,
+        original: NodeRef,
+        replacements: [NodeRef]
+    ) {
         let replKinds = replacements.map { $0.kind.rawValue }
         let replIndices = replacements.map { Int32($0.index) }
         operationName.withCString { namePtr in
             replKinds.withUnsafeBufferPointer { kindsBuf in
                 replIndices.withUnsafeBufferPointer { indicesBuf in
-                    OCCTBRepGraphHistoryRecord(handle, namePtr,
-                                                original.kind.rawValue, Int32(original.index),
-                                                kindsBuf.baseAddress,
-                                                indicesBuf.baseAddress,
-                                                Int32(replacements.count))
+                    OCCTBRepGraphHistoryRecord(
+                        handle, namePtr,
+                        original.kind.rawValue, Int32(original.index),
+                        kindsBuf.baseAddress,
+                        indicesBuf.baseAddress,
+                        Int32(replacements.count))
                 }
             }
         }
@@ -868,10 +893,12 @@ public final class BRepGraph: @unchecked Sendable {
     /// - Returns: The added result's topology-root node, or nil if the add or the
     ///   absorb failed.
     @discardableResult
-    public func add(_ result: Shape,
-                    absorbing history: ShapeHistoryRef,
-                    inputRoots: [NodeRef],
-                    operationName: String) -> NodeRef? {
+    public func add(
+        _ result: Shape,
+        absorbing history: ShapeHistoryRef,
+        inputRoots: [NodeRef],
+        operationName: String
+    ) -> NodeRef? {
         guard !inputRoots.isEmpty else { return nil }
         // Synthesize a BRepTools_History from the retained builder. Owned here and
         // released once absorbed — the graph copies what it needs into its log.
@@ -888,12 +915,13 @@ public final class BRepGraph: @unchecked Sendable {
         let ok = operationName.withCString { namePtr in
             rootKinds.withUnsafeBufferPointer { kindsBuf in
                 rootIndices.withUnsafeBufferPointer { indicesBuf in
-                    OCCTBRepGraphAddWithHistory(handle, result.handle, btHistory,
-                                                 kindsBuf.baseAddress!,
-                                                 indicesBuf.baseAddress!,
-                                                 Int32(inputRoots.count),
-                                                 namePtr,
-                                                 &outKind, &outIndex)
+                    OCCTBRepGraphAddWithHistory(
+                        handle, result.handle, btHistory,
+                        kindsBuf.baseAddress!,
+                        indicesBuf.baseAddress!,
+                        Int32(inputRoots.count),
+                        namePtr,
+                        &outKind, &outIndex)
                 }
             }
         }
@@ -918,7 +946,9 @@ public final class BRepGraph: @unchecked Sendable {
     public var polygonOnTriCount: Int { Int(OCCTBRepGraphMeshNbPolygonsOnTri(handle)) }
 
     /// Number of active (non-removed) triangulations.
-    public var activeTriangulationCount: Int { Int(OCCTBRepGraphMeshNbActiveTriangulations(handle)) }
+    public var activeTriangulationCount: Int {
+        Int(OCCTBRepGraphMeshNbActiveTriangulations(handle))
+    }
 
     /// Number of active 3D polygons.
     public var activePolygon3DCount: Int { Int(OCCTBRepGraphMeshNbActivePolygons3D(handle)) }
@@ -966,7 +996,8 @@ public final class BRepGraph: @unchecked Sendable {
 
     /// Create a polygon-on-triangulation rep linked to an existing triangulation rep. Returns the rep id, or nil.
     public func createPolygonOnTriRep(_ polygon: PolygonOnTriangulation, triRepId: Int) -> Int? {
-        let id = Int(OCCTBRepGraphMeshCreatePolygonOnTriRep(handle, polygon.handle, Int32(triRepId)))
+        let id = Int(
+            OCCTBRepGraphMeshCreatePolygonOnTriRep(handle, polygon.handle, Int32(triRepId)))
         return id >= 0 ? id : nil
     }
 
@@ -1033,7 +1064,9 @@ public final class BRepGraph: @unchecked Sendable {
     }
 
     /// Transform the graph by a translation.
-    public func translated(dx: Double, dy: Double, dz: Double, copyGeometry: Bool = true) -> BRepGraph? {
+    public func translated(dx: Double, dy: Double, dz: Double, copyGeometry: Bool = true)
+        -> BRepGraph?
+    {
         guard let ref = OCCTBRepGraphTransformTranslation(handle, dx, dy, dz, copyGeometry) else {
             return nil
         }
@@ -1315,7 +1348,9 @@ public final class BRepGraph: @unchecked Sendable {
     ///   - orientation: TopAbs_Orientation value (0=FORWARD, 1=REVERSED, 2=INTERNAL, 3=EXTERNAL).
     /// - Returns: Face reference index, or nil on failure.
     public func addFaceToShell(shellIndex: Int, faceIndex: Int, orientation: Int = 0) -> Int? {
-        let idx = Int(OCCTBRepGraphBuilderAddFaceToShell(handle, Int32(shellIndex), Int32(faceIndex), Int32(orientation)))
+        let idx = Int(
+            OCCTBRepGraphBuilderAddFaceToShell(
+                handle, Int32(shellIndex), Int32(faceIndex), Int32(orientation)))
         return idx >= 0 ? idx : nil
     }
 
@@ -1326,7 +1361,9 @@ public final class BRepGraph: @unchecked Sendable {
     ///   - orientation: TopAbs_Orientation value (0=FORWARD, 1=REVERSED, 2=INTERNAL, 3=EXTERNAL).
     /// - Returns: Shell reference index, or nil on failure.
     public func addShellToSolid(solidIndex: Int, shellIndex: Int, orientation: Int = 0) -> Int? {
-        let idx = Int(OCCTBRepGraphBuilderAddShellToSolid(handle, Int32(solidIndex), Int32(shellIndex), Int32(orientation)))
+        let idx = Int(
+            OCCTBRepGraphBuilderAddShellToSolid(
+                handle, Int32(solidIndex), Int32(shellIndex), Int32(orientation)))
         return idx >= 0 ? idx : nil
     }
 
@@ -1337,11 +1374,13 @@ public final class BRepGraph: @unchecked Sendable {
         if children.isEmpty { return nil }
         var kinds = children.map { $0.kind.rawValue }
         var indices = children.map { Int32($0.index) }
-        let idx = Int(kinds.withUnsafeMutableBufferPointer { kBuf in
-            indices.withUnsafeMutableBufferPointer { iBuf in
-                OCCTBRepGraphBuilderAddCompound(handle, kBuf.baseAddress!, iBuf.baseAddress!, Int32(children.count))
-            }
-        })
+        let idx = Int(
+            kinds.withUnsafeMutableBufferPointer { kBuf in
+                indices.withUnsafeMutableBufferPointer { iBuf in
+                    OCCTBRepGraphBuilderAddCompound(
+                        handle, kBuf.baseAddress!, iBuf.baseAddress!, Int32(children.count))
+                }
+            })
         return idx >= 0 ? idx : nil
     }
 
@@ -1351,9 +1390,11 @@ public final class BRepGraph: @unchecked Sendable {
     public func addCompSolid(solidIndices: [Int]) -> Int? {
         if solidIndices.isEmpty { return nil }
         var indices = solidIndices.map { Int32($0) }
-        let idx = Int(indices.withUnsafeMutableBufferPointer { buf in
-            OCCTBRepGraphBuilderAddCompSolid(handle, buf.baseAddress!, Int32(solidIndices.count))
-        })
+        let idx = Int(
+            indices.withUnsafeMutableBufferPointer { buf in
+                OCCTBRepGraphBuilderAddCompSolid(
+                    handle, buf.baseAddress!, Int32(solidIndices.count))
+            })
         return idx >= 0 ? idx : nil
     }
 
@@ -1411,10 +1452,13 @@ public final class BRepGraph: @unchecked Sendable {
     ///   - vertexIndex: Vertex definition index at the split point.
     ///   - param: Parameter on the 3D curve at the split point.
     /// - Returns: Tuple of (subA, subB) edge indices, or nil on failure.
-    public func splitEdge(edgeIndex: Int, vertexIndex: Int, param: Double) -> (subA: Int, subB: Int)? {
+    public func splitEdge(edgeIndex: Int, vertexIndex: Int, param: Double) -> (
+        subA: Int, subB: Int
+    )? {
         var subA: Int32 = -1
         var subB: Int32 = -1
-        OCCTBRepGraphBuilderSplitEdge(handle, Int32(edgeIndex), Int32(vertexIndex), param, &subA, &subB)
+        OCCTBRepGraphBuilderSplitEdge(
+            handle, Int32(edgeIndex), Int32(vertexIndex), param, &subA, &subB)
         if subA >= 0 && subB >= 0 {
             return (subA: Int(subA), subB: Int(subB))
         }
@@ -1429,8 +1473,11 @@ public final class BRepGraph: @unchecked Sendable {
     ///   - oldEdgeIndex: Edge to replace.
     ///   - newEdgeIndex: Replacement edge.
     ///   - reversed: Whether to reverse the orientation of the replacement.
-    public func replaceEdgeInWire(wireIndex: Int, oldEdgeIndex: Int, newEdgeIndex: Int, reversed: Bool = false) {
-        OCCTBRepGraphBuilderReplaceEdgeInWire(handle, Int32(wireIndex), Int32(oldEdgeIndex), Int32(newEdgeIndex), reversed)
+    public func replaceEdgeInWire(
+        wireIndex: Int, oldEdgeIndex: Int, newEdgeIndex: Int, reversed: Bool = false
+    ) {
+        OCCTBRepGraphBuilderReplaceEdgeInWire(
+            handle, Int32(wireIndex), Int32(oldEdgeIndex), Int32(newEdgeIndex), reversed)
     }
 
     // MARK: - Builder: Remove Ref (v0.135.0)
@@ -1545,8 +1592,12 @@ public final class BRepGraph: @unchecked Sendable {
     /// - Note: Edge-internal vertices are a supplemental, runtime concept in OCCT 8.0.0p1
     ///   (`BRepGraph_LayerTopoSupplement`); a clean shape has none until one is added here.
     /// - Parameter orientation: accepted for source-compat but ignored by the supplement layer.
-    public func edgeAddInternalVertex(_ edgeIndex: Int, vertexIndex: Int, orientation: Int = 2) -> Int? {
-        let id = Int(OCCTBRepGraphEdgeAddInternalVertex(handle, Int32(edgeIndex), Int32(vertexIndex), Int32(orientation)))
+    public func edgeAddInternalVertex(_ edgeIndex: Int, vertexIndex: Int, orientation: Int = 2)
+        -> Int?
+    {
+        let id = Int(
+            OCCTBRepGraphEdgeAddInternalVertex(
+                handle, Int32(edgeIndex), Int32(vertexIndex), Int32(orientation)))
         return id >= 0 ? id : nil
     }
 
@@ -1556,31 +1607,50 @@ public final class BRepGraph: @unchecked Sendable {
     ///   (`BRepGraph_LayerTopoSupplement`); a clean box has none until one is added here.
     /// - Parameter orientation: accepted for source-compat but ignored by the supplement layer.
     public func faceAddVertex(_ faceIndex: Int, vertexIndex: Int, orientation: Int = 0) -> Int? {
-        let id = Int(OCCTBRepGraphFaceAddVertex(handle, Int32(faceIndex), Int32(vertexIndex), Int32(orientation)))
+        let id = Int(
+            OCCTBRepGraphFaceAddVertex(
+                handle, Int32(faceIndex), Int32(vertexIndex), Int32(orientation)))
         return id >= 0 ? id : nil
     }
 
     /// Link an auxiliary non-face child (Wire or Edge) to a shell. Returns child-ref id or nil.
-    public func shellAddChild(_ shellIndex: Int, childKind: Int, childIndex: Int, orientation: Int = 0) -> Int? {
-        let id = Int(OCCTBRepGraphShellAddChild(handle, Int32(shellIndex), Int32(childKind), Int32(childIndex), Int32(orientation)))
+    public func shellAddChild(
+        _ shellIndex: Int, childKind: Int, childIndex: Int, orientation: Int = 0
+    ) -> Int? {
+        let id = Int(
+            OCCTBRepGraphShellAddChild(
+                handle, Int32(shellIndex), Int32(childKind), Int32(childIndex), Int32(orientation)))
         return id >= 0 ? id : nil
     }
 
     /// Link an auxiliary non-shell child (Edge or Vertex) to a solid. Returns child-ref id or nil.
-    public func solidAddChild(_ solidIndex: Int, childKind: Int, childIndex: Int, orientation: Int = 0) -> Int? {
-        let id = Int(OCCTBRepGraphSolidAddChild(handle, Int32(solidIndex), Int32(childKind), Int32(childIndex), Int32(orientation)))
+    public func solidAddChild(
+        _ solidIndex: Int, childKind: Int, childIndex: Int, orientation: Int = 0
+    ) -> Int? {
+        let id = Int(
+            OCCTBRepGraphSolidAddChild(
+                handle, Int32(solidIndex), Int32(childKind), Int32(childIndex), Int32(orientation)))
         return id >= 0 ? id : nil
     }
 
     /// Append a single child to an existing compound definition. Returns child-ref id or nil.
-    public func compoundAddChild(_ compoundIndex: Int, childKind: Int, childIndex: Int, orientation: Int = 0) -> Int? {
-        let id = Int(OCCTBRepGraphCompoundAddChild(handle, Int32(compoundIndex), Int32(childKind), Int32(childIndex), Int32(orientation)))
+    public func compoundAddChild(
+        _ compoundIndex: Int, childKind: Int, childIndex: Int, orientation: Int = 0
+    ) -> Int? {
+        let id = Int(
+            OCCTBRepGraphCompoundAddChild(
+                handle, Int32(compoundIndex), Int32(childKind), Int32(childIndex),
+                Int32(orientation)))
         return id >= 0 ? id : nil
     }
 
     /// Append a single solid to an existing compsolid definition. Returns solid-ref id or nil.
-    public func compSolidAddSolid(_ compSolidIndex: Int, solidIndex: Int, orientation: Int = 0) -> Int? {
-        let id = Int(OCCTBRepGraphCompSolidAddSolid(handle, Int32(compSolidIndex), Int32(solidIndex), Int32(orientation)))
+    public func compSolidAddSolid(_ compSolidIndex: Int, solidIndex: Int, orientation: Int = 0)
+        -> Int?
+    {
+        let id = Int(
+            OCCTBRepGraphCompSolidAddSolid(
+                handle, Int32(compSolidIndex), Int32(solidIndex), Int32(orientation)))
         return id >= 0 ? id : nil
     }
 
@@ -1592,8 +1662,12 @@ public final class BRepGraph: @unchecked Sendable {
     }
 
     /// Remap an edge-owned vertex reference to a different vertex definition. Returns the new vertex-ref id, or nil.
-    public func edgeReplaceVertex(_ edgeIndex: Int, oldVertexRefIndex: Int, newVertexIndex: Int) -> Int? {
-        let id = Int(OCCTBRepGraphEdgeReplaceVertex(handle, Int32(edgeIndex), Int32(oldVertexRefIndex), Int32(newVertexIndex)))
+    public func edgeReplaceVertex(_ edgeIndex: Int, oldVertexRefIndex: Int, newVertexIndex: Int)
+        -> Int?
+    {
+        let id = Int(
+            OCCTBRepGraphEdgeReplaceVertex(
+                handle, Int32(edgeIndex), Int32(oldVertexRefIndex), Int32(newVertexIndex)))
         return id >= 0 ? id : nil
     }
 
@@ -1684,7 +1758,8 @@ public final class BRepGraph: @unchecked Sendable {
         OCCTBRepGraphSetCoEdgePolygon2DRepId(handle, Int32(coedgeIndex), Int32(polygon2DRepId))
     }
     public func setCoEdgePolygonOnTriRepId(_ coedgeIndex: Int, polygonOnTriRepId: Int) {
-        OCCTBRepGraphSetCoEdgePolygonOnTriRepId(handle, Int32(coedgeIndex), Int32(polygonOnTriRepId))
+        OCCTBRepGraphSetCoEdgePolygonOnTriRepId(
+            handle, Int32(coedgeIndex), Int32(polygonOnTriRepId))
     }
     public func clearCoEdgePCurveBinding(_ coedgeIndex: Int) {
         OCCTBRepGraphClearCoEdgePCurveBinding(handle, Int32(coedgeIndex))
@@ -1720,16 +1795,19 @@ public final class BRepGraph: @unchecked Sendable {
         OCCTBRepGraphSetSolidRefSolidDefId(handle, Int32(solidRefIndex), Int32(solidIndex))
     }
     public func setOccurrenceChildDefId(_ occurrenceIndex: Int, childKind: Int, childIndex: Int) {
-        OCCTBRepGraphSetOccurrenceChildDefId(handle, Int32(occurrenceIndex), Int32(childKind), Int32(childIndex))
+        OCCTBRepGraphSetOccurrenceChildDefId(
+            handle, Int32(occurrenceIndex), Int32(childKind), Int32(childIndex))
     }
     public func setOccurrenceRefOccurrenceDefId(_ occurrenceRefIndex: Int, occurrenceIndex: Int) {
-        OCCTBRepGraphSetOccurrenceRefOccurrenceDefId(handle, Int32(occurrenceRefIndex), Int32(occurrenceIndex))
+        OCCTBRepGraphSetOccurrenceRefOccurrenceDefId(
+            handle, Int32(occurrenceRefIndex), Int32(occurrenceIndex))
     }
     public func setChildRefOrientation(_ childRefIndex: Int, orientation: Int) {
         OCCTBRepGraphSetChildRefOrientation(handle, Int32(childRefIndex), Int32(orientation))
     }
     public func setChildRefChildDefId(_ childRefIndex: Int, childKind: Int, childIndex: Int) {
-        OCCTBRepGraphSetChildRefChildDefId(handle, Int32(childRefIndex), Int32(childKind), Int32(childIndex))
+        OCCTBRepGraphSetChildRefChildDefId(
+            handle, Int32(childRefIndex), Int32(childKind), Int32(childIndex))
     }
 
     // MARK: - EditorView geometric setters & PCurve API (v0.162.0)
@@ -1761,8 +1839,10 @@ public final class BRepGraph: @unchecked Sendable {
     /// - Parameter continuity: Ignored (see above). Was documented as a GeomAbs_Shape value.
     /// - Returns: Always `false` on OCCT 8.0.0p1.
     @discardableResult
-    public func setEdgeRegularity(_ edgeIndex: Int, face1: Int, face2: Int, continuity: Int) -> Bool {
-        OCCTBRepGraphSetEdgeRegularity(handle, Int32(edgeIndex), Int32(face1), Int32(face2), Int32(continuity)) != 0
+    public func setEdgeRegularity(_ edgeIndex: Int, face1: Int, face2: Int, continuity: Int) -> Bool
+    {
+        OCCTBRepGraphSetEdgeRegularity(
+            handle, Int32(edgeIndex), Int32(face1), Int32(face2), Int32(continuity)) != 0
     }
 
     /// Set the active triangulation rep on a face (used to bind a fresh triangulation
@@ -1784,10 +1864,13 @@ public final class BRepGraph: @unchecked Sendable {
     }
 
     /// Attach a PCurve to an edge for a given face context (creates a new CoEdge entry).
-    public func coEdgeAddPCurve(edgeIndex: Int, faceIndex: Int, curve2D: Curve2D,
-                                 first: Double, last: Double, orientation: Int = 0) {
-        OCCTBRepGraphCoEdgeAddPCurve(handle, Int32(edgeIndex), Int32(faceIndex),
-                                       curve2D.handle, first, last, Int32(orientation))
+    public func coEdgeAddPCurve(
+        edgeIndex: Int, faceIndex: Int, curve2D: Curve2D,
+        first: Double, last: Double, orientation: Int = 0
+    ) {
+        OCCTBRepGraphCoEdgeAddPCurve(
+            handle, Int32(edgeIndex), Int32(faceIndex),
+            curve2D.handle, first, last, Int32(orientation))
     }
 
     // Location setters via 12-double 3x4 matrix (gp_Trsf::SetValues convention, row-major).
@@ -1798,10 +1881,14 @@ public final class BRepGraph: @unchecked Sendable {
     }
 
     public func setVertexRefLocalLocation(_ vertexRefIndex: Int, matrix: [Double]) {
-        passLoc(matrix) { OCCTBRepGraphSetVertexRefLocalLocation(handle, Int32(vertexRefIndex), $0) }
+        passLoc(matrix) {
+            OCCTBRepGraphSetVertexRefLocalLocation(handle, Int32(vertexRefIndex), $0)
+        }
     }
     public func setCoEdgeRefLocalLocation(_ coedgeRefIndex: Int, matrix: [Double]) {
-        passLoc(matrix) { OCCTBRepGraphSetCoEdgeRefLocalLocation(handle, Int32(coedgeRefIndex), $0) }
+        passLoc(matrix) {
+            OCCTBRepGraphSetCoEdgeRefLocalLocation(handle, Int32(coedgeRefIndex), $0)
+        }
     }
     public func setWireRefLocalLocation(_ wireRefIndex: Int, matrix: [Double]) {
         passLoc(matrix) { OCCTBRepGraphSetWireRefLocalLocation(handle, Int32(wireRefIndex), $0) }
@@ -1816,7 +1903,9 @@ public final class BRepGraph: @unchecked Sendable {
         passLoc(matrix) { OCCTBRepGraphSetSolidRefLocalLocation(handle, Int32(solidRefIndex), $0) }
     }
     public func setOccurrenceRefLocalLocation(_ occurrenceRefIndex: Int, matrix: [Double]) {
-        passLoc(matrix) { OCCTBRepGraphSetOccurrenceRefLocalLocation(handle, Int32(occurrenceRefIndex), $0) }
+        passLoc(matrix) {
+            OCCTBRepGraphSetOccurrenceRefLocalLocation(handle, Int32(occurrenceRefIndex), $0)
+        }
     }
     public func setChildRefLocalLocation(_ childRefIndex: Int, matrix: [Double]) {
         passLoc(matrix) { OCCTBRepGraphSetChildRefLocalLocation(handle, Int32(childRefIndex), $0) }
@@ -1824,25 +1913,33 @@ public final class BRepGraph: @unchecked Sendable {
 
     /// Identity matrix (3x4) usable with the location setters.
     public static var identityLocationMatrix: [Double] {
-        [1, 0, 0, 0,
-         0, 1, 0, 0,
-         0, 0, 1, 0]
+        [
+            1, 0, 0, 0,
+            0, 1, 0, 0,
+            0, 0, 1, 0,
+        ]
     }
 
     // MARK: - EditorView ProductOps assembly building (v0.163.0)
 
     /// Wrap an existing topology root in a Product. Pass nil for an identity placement.
     /// Returns the new product id, or nil on failure.
-    public func linkProductToTopology(shapeRootKind: Int, shapeRootIndex: Int,
-                                       placement: [Double]? = nil) -> Int? {
+    public func linkProductToTopology(
+        shapeRootKind: Int, shapeRootIndex: Int,
+        placement: [Double]? = nil
+    ) -> Int? {
         let id: Int
         if let placement {
             precondition(placement.count == 12, "placement must be a 3x4 matrix (12 doubles)")
             id = placement.withUnsafeBufferPointer { buf in
-                Int(OCCTBRepGraphLinkProductToTopology(handle, Int32(shapeRootKind), Int32(shapeRootIndex), buf.baseAddress))
+                Int(
+                    OCCTBRepGraphLinkProductToTopology(
+                        handle, Int32(shapeRootKind), Int32(shapeRootIndex), buf.baseAddress))
             }
         } else {
-            id = Int(OCCTBRepGraphLinkProductToTopology(handle, Int32(shapeRootKind), Int32(shapeRootIndex), nil))
+            id = Int(
+                OCCTBRepGraphLinkProductToTopology(
+                    handle, Int32(shapeRootKind), Int32(shapeRootIndex), nil))
         }
         return id >= 0 ? id : nil
     }
@@ -1856,19 +1953,23 @@ public final class BRepGraph: @unchecked Sendable {
     /// Link two products via a fresh occurrence. Returns the new occurrence id and the new
     /// occurrence-ref id, or nil on failure.
     /// - Parameter parentOccurrenceIndex: pass nil for an unparented occurrence.
-    public func linkProducts(parentProductIndex: Int, referencedProductIndex: Int,
-                              placement: [Double], parentOccurrenceIndex: Int? = nil)
+    public func linkProducts(
+        parentProductIndex: Int, referencedProductIndex: Int,
+        placement: [Double], parentOccurrenceIndex: Int? = nil
+    )
         -> (occurrenceIndex: Int, occurrenceRefIndex: Int)?
     {
         precondition(placement.count == 12, "placement must be a 3x4 matrix (12 doubles)")
         var outRef: Int32 = -1
         let oid = placement.withUnsafeBufferPointer { buf -> Int in
-            Int(OCCTBRepGraphLinkProducts(handle,
-                                            Int32(parentProductIndex),
-                                            Int32(referencedProductIndex),
-                                            buf.baseAddress!,
-                                            Int32(parentOccurrenceIndex ?? -1),
-                                            &outRef))
+            Int(
+                OCCTBRepGraphLinkProducts(
+                    handle,
+                    Int32(parentProductIndex),
+                    Int32(referencedProductIndex),
+                    buf.baseAddress!,
+                    Int32(parentOccurrenceIndex ?? -1),
+                    &outRef))
         }
         guard oid >= 0, outRef >= 0 else { return nil }
         return (occurrenceIndex: oid, occurrenceRefIndex: Int(outRef))
@@ -1909,7 +2010,8 @@ public final class BRepGraph: @unchecked Sendable {
         OCCTBRepGraphRepSetPolygonOnTri(handle, Int32(polyRepId), polygon.handle)
     }
     public func repSetPolygonOnTriTriangulationId(_ polyOnTriRepId: Int, triRepId: Int) {
-        OCCTBRepGraphRepSetPolygonOnTriTriangulationId(handle, Int32(polyOnTriRepId), Int32(triRepId))
+        OCCTBRepGraphRepSetPolygonOnTriTriangulationId(
+            handle, Int32(polyOnTriRepId), Int32(triRepId))
     }
 
     // MARK: - MeshView cache entry inspection (v0.164.0)
@@ -1956,7 +2058,9 @@ public final class BRepGraph: @unchecked Sendable {
         Int(OCCTBRepGraphCachedCoEdgeMeshPolygonOnTriRepCount(handle, Int32(coedgeIndex)))
     }
     public func cachedCoEdgeMeshPolygonOnTriRepId(_ coedgeIndex: Int, repIndex: Int) -> Int? {
-        let id = Int(OCCTBRepGraphCachedCoEdgeMeshPolygonOnTriRepId(handle, Int32(coedgeIndex), Int32(repIndex)))
+        let id = Int(
+            OCCTBRepGraphCachedCoEdgeMeshPolygonOnTriRepId(
+                handle, Int32(coedgeIndex), Int32(repIndex)))
         return id >= 0 ? id : nil
     }
     public func cachedCoEdgeMeshStoredOwnGen(_ coedgeIndex: Int) -> UInt32 {
@@ -2028,20 +2132,26 @@ public final class BRepGraph: @unchecked Sendable {
         /// - Parameters:
         ///   - u: U grid index, `0..<uSamples`.
         ///   - v: V grid index, `0..<vSamples`.
-        public func at(u: Int, v: Int) -> (position: SIMD3<Double>, normal: SIMD3<Double>,
-                                           gaussianCurvature: Double, meanCurvature: Double) {
-            precondition(u >= 0 && u < uSamples && v >= 0 && v < vSamples,
-                         "FaceGridSample.at(u: \(u), v: \(v)) out of range "
-                         + "(uSamples: \(uSamples), vSamples: \(vSamples))")
+        public func at(u: Int, v: Int) -> (
+            position: SIMD3<Double>, normal: SIMD3<Double>,
+            gaussianCurvature: Double, meanCurvature: Double
+        ) {
+            precondition(
+                u >= 0 && u < uSamples && v >= 0 && v < vSamples,
+                "FaceGridSample.at(u: \(u), v: \(v)) out of range "
+                    + "(uSamples: \(uSamples), vSamples: \(vSamples))")
             let i = surfaceGridIndex(u: u, v: v, vCount: vSamples)
             // The buffers carry the count the bridge actually wrote, which #419 deliberately does
             // not assume equals uSamples * vSamples — so the grid bounds above are necessary but
             // not sufficient.
-            precondition(i < positions.count,
-                         "FaceGridSample.at(u: \(u), v: \(v)) names index \(i), but only "
-                         + "\(positions.count) samples were written")
-            return (position: positions[i], normal: normals[i],
-                    gaussianCurvature: gaussianCurvatures[i], meanCurvature: meanCurvatures[i])
+            precondition(
+                i < positions.count,
+                "FaceGridSample.at(u: \(u), v: \(v)) names index \(i), but only "
+                    + "\(positions.count) samples were written")
+            return (
+                position: positions[i], normal: normals[i],
+                gaussianCurvature: gaussianCurvatures[i], meanCurvature: meanCurvatures[i]
+            )
         }
     }
 
@@ -2279,7 +2389,9 @@ public final class BRepGraph: @unchecked Sendable {
     public func uid(ofNodeKind kind: Int, index: Int) -> GraphUID? {
         var uidKind: Int32 = 0
         var counter: UInt32 = 0
-        guard OCCTBRepGraphNodeUID(handle, Int32(kind), Int32(index), &uidKind, &counter) else { return nil }
+        guard OCCTBRepGraphNodeUID(handle, Int32(kind), Int32(index), &uidKind, &counter) else {
+            return nil
+        }
         return GraphUID(kind: Int(uidKind), counter: counter, graphID: instanceID)
     }
 
@@ -2292,7 +2404,8 @@ public final class BRepGraph: @unchecked Sendable {
         guard uid.graphID == instanceID else { return nil }
         var nodeKind: Int32 = 0
         var nodeIndex: Int32 = 0
-        guard OCCTBRepGraphNodeFromUID(handle, Int32(uid.kind), uid.counter, &nodeKind, &nodeIndex) else { return nil }
+        guard OCCTBRepGraphNodeFromUID(handle, Int32(uid.kind), uid.counter, &nodeKind, &nodeIndex)
+        else { return nil }
         return (Int(nodeKind), Int(nodeIndex))
     }
 
@@ -2309,7 +2422,9 @@ public final class BRepGraph: @unchecked Sendable {
     public func uid(ofRefKind kind: Int, index: Int) -> GraphRefUID? {
         var uidKind: Int32 = 0
         var counter: UInt32 = 0
-        guard OCCTBRepGraphRefUID(handle, Int32(kind), Int32(index), &uidKind, &counter) else { return nil }
+        guard OCCTBRepGraphRefUID(handle, Int32(kind), Int32(index), &uidKind, &counter) else {
+            return nil
+        }
         return GraphRefUID(kind: Int(uidKind), counter: counter, graphID: instanceID)
     }
 
@@ -2319,7 +2434,8 @@ public final class BRepGraph: @unchecked Sendable {
         guard uid.graphID == instanceID else { return nil }
         var refKind: Int32 = 0
         var refIndex: Int32 = 0
-        guard OCCTBRepGraphRefFromUID(handle, Int32(uid.kind), uid.counter, &refKind, &refIndex) else { return nil }
+        guard OCCTBRepGraphRefFromUID(handle, Int32(uid.kind), uid.counter, &refKind, &refIndex)
+        else { return nil }
         return (Int(refKind), Int(refIndex))
     }
 
@@ -2334,8 +2450,12 @@ public final class BRepGraph: @unchecked Sendable {
         var domain: Int32 = 0
         var itemKind: Int32 = 0
         var counter: UInt32 = 0
-        guard OCCTBRepGraphItemUIDOfNode(handle, Int32(kind), Int32(index), &domain, &itemKind, &counter) else { return nil }
-        return GraphItemUID(domain: Int(domain), kind: Int(itemKind), counter: counter, graphID: instanceID)
+        guard
+            OCCTBRepGraphItemUIDOfNode(
+                handle, Int32(kind), Int32(index), &domain, &itemKind, &counter)
+        else { return nil }
+        return GraphItemUID(
+            domain: Int(domain), kind: Int(itemKind), counter: counter, graphID: instanceID)
     }
 
     /// Resolve an ItemUID back to its `(domain, kind, index)`, or `nil` if this graph did not
@@ -2345,7 +2465,10 @@ public final class BRepGraph: @unchecked Sendable {
         var domain: Int32 = 0
         var itemKind: Int32 = 0
         var index: Int32 = 0
-        guard OCCTBRepGraphItemFromUID(handle, Int32(uid.domain), Int32(uid.kind), uid.counter, &domain, &itemKind, &index) else { return nil }
+        guard
+            OCCTBRepGraphItemFromUID(
+                handle, Int32(uid.domain), Int32(uid.kind), uid.counter, &domain, &itemKind, &index)
+        else { return nil }
         return (Int(domain), Int(itemKind), Int(index))
     }
 
