@@ -1,0 +1,14 @@
+Output of measure-bridge-reach.sh with no argument. Paths are normalised to <work>;
+nothing else is altered, and the two 'Output of' lines above are this header.
+
+
+########## SwiftReach ##########
+swift import OCCTBridge volume: 23.999999999999996
+  -> reached the bridge: OK
+
+########## ObjCReach ##########
+objc #import OCCTBridge.h volume: 23.999999999999996
+  -> reached the bridge: OK
+
+both routes reach the C bridge from a consumer package
+Workdir kept at <work>/occtswift-967-bridge-reach

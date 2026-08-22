@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-count-operations.py: derive OCCTSwift's canonical operation count and keep the two
+count-operations.py: derive OCCTSwift's canonical operation count and keep the three
 headline figures from drifting apart.
 
 CANONICAL COUNTING RULE (decided on issue #289):
@@ -29,12 +29,13 @@ both written in the same commit, so at most one was ever right (#289).
 
 Usage:
     ./Scripts/count-operations.py           # report; exit 1 if the docs disagree
-    ./Scripts/count-operations.py --fix     # rewrite README + API_REFERENCE Total
+    ./Scripts/count-operations.py --fix     # rewrite README + API_REFERENCE Total + docs/index.md
     ./Scripts/count-operations.py --audit   # list counted entry points with no reference doc
 
-Exit status is 1 when README's headline or API_REFERENCE's Total disagrees with the derived
-count, so this can gate a commit: it always could; it was the one gate script whose docstring
-never said so, which is why it read as a release-time reporting tool. Exit status is 2 for an
+Exit status is 1 when README's headline, API_REFERENCE's Total or
+docs/index.md's headline disagrees with the derived count, so this can gate a commit:
+it always could; it was the one gate script whose docstring never said so, which is
+why it read as a release-time reporting tool. Exit status is 2 for an
 unrecognised option: this script has no `--self-test`, its three sibling gates do, and CI pairs
 each of theirs with its real run, so `count-operations.py --self-test` is the natural thing to
 write when extending that list: it used to be accepted silently and run the ordinary report,
@@ -102,16 +103,16 @@ TYPEISH = re.compile(r'^[A-Z][A-Za-z0-9_]*(?:\.[A-Za-z_][A-Za-z0-9_]*)*$')
 
 def _strip_trailing_comment(line):
     '''Strip a `//...` line comment, but only a `//` that starts outside any double-quoted
-    string literal on this line -- a `//` inside a string (a URL in an @available message is
+    string literal on this line, a `//` inside a string (a URL in an @available message is
     the obvious case) is string content, not a comment marker.
 
     The blind regex this replaces truncated a message containing a URL at the first `//`,
-    losing the string's own closing quote and the attribute's closing paren -- which then pins
+    losing the string's own closing quote and the attribute's closing paren, which then pins
     the @available scanner's paren depth above zero and silently stops counting the rest of the
-    *file* (#914 review, third pass -- the same "gate that cannot fail" failure mode finding 7
+    *file* (#914 review, third pass, the same "gate that cannot fail" failure mode finding 7
     fixed, reached through a different door finding 7's fix didn't close). Naive about a
     triple-quoted string opening mid-line (three double-quote characters in a row toggle
-    in_string an odd number of times, ending up "in a string" rather than genuinely closed) --
+    in_string an odd number of times, ending up "in a string" rather than genuinely closed),
     harmless here: the only caller that reads text past where a triple-quote begins on this same
     line discards everything from that point on regardless of what this function decided about
     text after it.
@@ -351,13 +352,24 @@ def documented_index():
 
 
 def read_stated():
-    """The two headline figures currently in the docs."""
+    """The three headline figures currently in the docs.
+
+    docs/index.md is the third because it drifted while nothing was reading it: it sat at 4,339
+    against a derived 4,355 until #967 noticed by hand. A figure this script does not read is a
+    figure that goes stale, which is the whole argument for deriving the other two.
+    """
     readme = os.path.join(ROOT, "README.md")
     apiref = os.path.join(ROOT, "docs/API_REFERENCE.md")
-    r = re.search(r'\*\*([\d,]+) wrapped operations\*\*', open(readme, encoding="utf-8").read())
+    index = os.path.join(ROOT, "docs/index.md")
+    r = re.search(r'\*\*([\d,]+) wrapped operations\.?\*\*', open(readme, encoding="utf-8").read())
     a = re.search(r'^\|\s*\*\*Total\*\*\s*\|\s*\*\*([\d,]+)\*\*\s*\|', open(apiref, encoding="utf-8").read(), re.M)
+    # The period is optional deliberately: docs/index.md writes it inside the bold and README
+    # outside, and a regex that insisted on one spelling would turn a punctuation edit into a
+    # crash rather than a check (found by a pre-PR review, which did exactly that edit).
+    i = re.search(r'\*\*([\d,]+) wrapped operations\.?\*\*', open(index, encoding="utf-8").read())
     return (int(r.group(1).replace(',', '')) if r else None,
-            int(a.group(1).replace(',', '')) if a else None)
+            int(a.group(1).replace(',', '')) if a else None,
+            int(i.group(1).replace(',', '')) if i else None)
 
 
 def category_row_sum_text(s):
@@ -380,7 +392,9 @@ def category_row_sum():
 def fix(derived):
     readme = os.path.join(ROOT, "README.md")
     s = open(readme, encoding="utf-8").read()
-    new_s, n = re.subn(r'\*\*[\d,]+ wrapped operations\*\*', f'**{derived:,} wrapped operations**', s, count=1)
+    # Optional period, matching read_stated(): the two must accept the same spellings or --fix
+    # refuses where the plain run reports, which is the shape of the under-repair #967 already had.
+    new_s, n = re.subn(r'\*\*[\d,]+( wrapped operations\.?)\*\*', rf'**{derived:,}\g<1>**', s, count=1)
     if n != 1:
         sys.exit("README: could not find the 'N wrapped operations' headline: refusing to guess")
     open(readme, "w", encoding="utf-8").write(new_s)
@@ -403,7 +417,22 @@ def fix(derived):
         sys.exit("API_REFERENCE: could not find the 'covering **N** of the entry points (~P%)' "
                  "note: refusing to guess")
     open(apiref, "w", encoding="utf-8").write(new_s)
-    print(f"  rewrote README + API_REFERENCE Total -> {derived:,}")
+
+    # docs/index.md carries the same headline and is checked by the same gate, so --fix has to
+    # rewrite it too. It did not until #967, and the failure was silent in the worst way: --fix
+    # repaired two of three files, printed a success line and exited 0, while a plain run on the
+    # same tree still exited 1. A repair route that under-repairs and reports success is worse
+    # than no repair route, because the release engineer it exists for stops looking.
+    index = os.path.join(ROOT, "docs/index.md")
+    s = open(index, encoding="utf-8").read()
+    new_s, n = re.subn(r'\*\*[\d,]+( wrapped operations\.?\*\*)',
+                       rf'**{derived:,}\g<1>', s, count=1)
+    if n != 1:
+        sys.exit("docs/index.md: could not find the 'N wrapped operations' headline: "
+                 "refusing to guess")
+    open(index, "w", encoding="utf-8").write(new_s)
+
+    print(f"  rewrote README + API_REFERENCE Total + docs/index.md -> {derived:,}")
     print(f"  rewrote the categorisation note -> {rowsum:,} (~{pct}%)")
 
 
@@ -448,16 +477,30 @@ def main():
         print(f"  {k:<15} {v:>5}")
     print(f"  {'DERIVED':<15} {derived:>5}\n")
 
-    readme_n, apiref_n = read_stated()
+    readme_n, apiref_n, index_n = read_stated()
     rowsum, rowcount = category_row_sum()
-    print(f"  README headline        {readme_n:>5}" + ("  ✓" if readme_n == derived else f"  ✗ (should be {derived})"))
-    print(f"  API_REFERENCE Total    {apiref_n:>5}" + ("  ✓" if apiref_n == derived else f"  ✗ (should be {derived})"))
+    def stated(label, n):
+        # A reworded headline makes the regex miss, and `n` is then None. Formatting None raises
+        # TypeError, which reports a crash where the script has found something worth
+        # saying, so say it.
+        shown = "  n/a" if n is None else f"{n:>5}"
+        if n is None:
+            verdict = f"  ✗ (headline not found: refusing to guess, expected {derived})"
+        elif n == derived:
+            verdict = "  ✓"
+        else:
+            verdict = f"  ✗ (should be {derived})"
+        print(f"  {label:<22}{shown}{verdict}")
+
+    stated("README headline", readme_n)
+    stated("API_REFERENCE Total", apiref_n)
+    stated("docs/index.md headline", index_n)
     print(f"  sum of {rowcount} category rows  {rowsum:>5}   (illustrative categorisation; see the note in API_REFERENCE)")
 
     if mode == "--fix":
         fix(derived)
         return 0
-    return 0 if (readme_n == derived and apiref_n == derived) else 1
+    return 0 if (readme_n == derived and apiref_n == derived and index_n == derived) else 1
 
 
 if __name__ == "__main__":

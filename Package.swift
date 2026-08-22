@@ -294,6 +294,35 @@ let package = Package(
         // Depends on OCCT directly (not just transitively via OCCTBridge) because a binaryTarget
         // (the OCCTSWIFT_BRIDGE_PREBUILT path above) has no "dependencies" of its own to propagate.
         // Without this, the final link would silently drop libOCCT-*.a whenever OCCTBridge is prebuilt.
+        //
+        // DO NOT ADD .interoperabilityMode(.Cxx) HERE without replacing what it silently removes.
+        // These swiftSettings carry no C++ interop, so `import OCCTBridge` makes the compiler build
+        // that clang module in OBJECTIVE-C mode on every source-path `swift build`, which is the
+        // only thing enforcing that no public bridge header pulls a consumer into C++. Source-path,
+        // not every build: under OCCTSWIFT_BRIDGE_PREBUILT=1 the bridge is a binaryTarget and
+        // include/ is not compiled at all, so an edited public header goes unchecked there. That
+        // path is switched off above and CI never takes it, which is what makes the guarantee hold
+        // where it counts, and is a second reason not to restore it casually.
+        //
+        // It protects consumers, and NOT because the bridge is unreachable to them. OCCTBridge is
+        // a target rather than a product, which reads like a wall and is not one: #967 measured a
+        // consumer Swift target writing `import OCCTBridge` and a consumer .m writing
+        // `#import "OCCTBridge.h"`, and both compile, link and run
+        // (Scripts/repro/967-consumer-compile/bridge-reach.txt). Two earlier drafts of this comment
+        // asserted the opposite, each time narrower and each time still wrong, which is the reason
+        // it is spelled out here rather than summarised.
+        //
+        // What actually does the work is that SwiftPM recompiles THIS target from source in every
+        // consumer, so the module is built there too, on their toolchain, in Objective-C mode. A
+        // C++ include reaching Sources/OCCTBridge/include/ therefore breaks their build as well as
+        // ours, and #967 is what that looks like from the outside: `'type_traits' file not found`
+        // inside OCCT's own headers. Note the reach cuts both ways: a consumer that turns on C++
+        // interop and imports OCCTBridge is a second route into these headers as C++.
+        //
+        // Measured, not asserted: adding `#include <Standard_Std.hxx>` to OCCTBridge.h fails
+        // `swift build` here with "could not build Objective-C module 'OCCTBridge'". Turning
+        // interop on compiles those headers as C++ instead, so the failure would move out of our
+        // build and into theirs. Transcript and reasoning in Scripts/repro/967-consumer-compile/.
         .target(
             name: "OCCTSwift",
             dependencies: ["OCCTBridge", "OCCT"],

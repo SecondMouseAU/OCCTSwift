@@ -139,7 +139,7 @@ python3 Scripts/check-docs-existence.py          # every symbol docs/ documents 
 python3 Scripts/check-borrowed-handles.py        # no struct/enum stores an OCCT*Ref it has no deinit to release (#965)
 python3 Scripts/derive-bridge-header-split.py --verify  # every declaration sits in the header its .mm owns (#673)
 python3 Scripts/derive-gdt-enums.py --verify      # the GD&T enums still match the pinned XCAFDimTolObjects headers (#996)
-python3 Scripts/count-operations.py              # README + API_REFERENCE totals match the derived count
+python3 Scripts/count-operations.py              # README + API_REFERENCE + docs/index.md totals match the derived count
 python3 Scripts/census-unmeasured-values.py      # CENSUS, not a gate: values returned as measurements that were never computed (#726)
 python3 Scripts/census-doc-occt-attribution.py   # CENSUS, not a gate: docs attributing a method to an OCCT class its bridge fn never reaches (#928)
 python3 Scripts/census-arguments-tuple-shapes.py # CENSUS, not a gate: @Test(arguments:) elements whose layout trips the toolchain defect (#1057)
@@ -585,8 +585,15 @@ not chosen: `python3 Scripts/count-operations.py`.
    ever exercised.
 5. **Verify.** Full `swift test`, the five gate scripts with their `--self-test`s, and
    `Scripts/tsan-stress.sh all` if anything touched concurrency.
-6. **Counts.** `python3 Scripts/count-operations.py` must agree with README.md and
-   `docs/API_REFERENCE.md`. It is a gate; never hand-edit a total to match.
+6. **Counts.** `python3 Scripts/count-operations.py` must agree with README.md,
+   `docs/API_REFERENCE.md` and `docs/index.md`. It is a gate; never hand-edit a total to match.
+   `docs/index.md` was added to it by #967, after sitting at 4,339 against a derived 4,355 for
+   want of anything reading it, which is the same failure the gate exists to prevent in the other
+   two files. **Two headlines are still outside the gate**, both at 4,256 against the same
+   4,355: `docs/occtswift-wrapping-gaps.md`, which says so about itself, and
+   `docs/integration-tests.md`, which does not. Three of five is not the class closed, and the
+   count in this sentence is exactly the kind of figure that goes stale, so re-derive it with
+   `grep -rn 'operations' docs/ README.md` rather than trusting it.
 7. `git tag vX.Y.Z`, `gh release create`.
 
 ### Adding a wrapped operation
@@ -624,18 +631,28 @@ OCCT class first with `/ground-truth`, and put the probe under `Scripts/repro/<i
 
 ```
 docs/
+├── index.md                  # Docs-site home; carries an operation count the gate checks (#967)
 ├── API_REFERENCE.md          # Full operation-by-OCCT-class mapping (generated from README)
 ├── CHANGELOG.md              # Release history (every version, concise)
+├── SEMVER.md                 # Version-impact ledger, assembled at release
+├── ecosystem.md              # Package family map and layering
+├── reference/                # Per-type API reference pages
 ├── architecture/overview.md  # Three-layer design, memory model, file layout
 ├── guides/
 │   ├── adding-features.md    # Step-by-step: bridge header → impl → Swift → test
 │   ├── building-occt.md      # Rebuild OCCT.xcframework from source
+│   ├── consuming-from-objective-c.md  # What a CONSUMER's own target must set (#967)
+│   ├── cookbook/             # Task-oriented, example-rich guides
+│   ├── prebuilt-bridge.md    # Opt-in prebuilt bridge binary (#339)
+│   ├── sharing-the-xcframework.md     # One local xcframework across repos (#260)
 │   └── occt-concepts.md      # B-Rep topology, handles, shapes primer
 ├── integration-tests.md      # Design, CAM, stress, and regression test plans
 ├── naming-conventions.md     # Bridge and Swift naming patterns
 ├── occt-upgrades.md          # Breaking changes per OCCT version (rc3→rc4→rc5→8.0.0 GA)
 ├── occtswift-wrapping-gaps.md # What's wrapped, what's not, and why
-└── thread-safety.md          # OCCTSerial mutex, parallel execution
+├── thread-safety.md          # OCCTSerial mutex, parallel execution
+└── (also platform-expansion.md, v2.0.0-plan.md, visualization-research.md and
+     wasm-feasibility.md: this is a map, not an inventory)
 ```
 
 ### Rules

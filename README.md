@@ -19,11 +19,16 @@ Add to your `Package.swift`:
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/SecondMouseAU/OCCTSwift.git", from: "1.0.0")
+    .package(url: "https://github.com/SecondMouseAU/OCCTSwift.git", from: "3.0.0")
 ]
 ```
 
 The package ships a pre-built `OCCT.xcframework` as a release asset, so no source build of OCCT is required for end users.
+
+A Swift target that does `import OCCTSwift` needs nothing else: no `cxxLanguageStandard`, no
+`.interoperabilityMode(.Cxx)`, no extra build settings. A file of *yours* that includes an OCCT
+header does have requirements, and a `.m` file fails there with `'type_traits' file not found`
+(#967). See [Consuming the package](docs/guides/consuming-from-objective-c.md).
 
 ### Usage
 
@@ -165,6 +170,7 @@ Each OCCT object is managed via opaque handle types with release-on-deinit. See 
 | iOS 15+ Simulator | arm64 (Apple Silicon host) | Supported |
 | visionOS 1+ | arm64 device + simulator | **Untested**, declared and buildable, never exercised (see below) |
 | tvOS 15+ | arm64 device + simulator | **Untested**, declared and buildable, never exercised (see below) |
+| Mac Catalyst | arm64 | Not supported, and unlike the two rows above there is no local-rebuild route, see [Consuming the package](docs/guides/consuming-from-objective-c.md#mac-catalyst) |
 | watchOS |, | Out of scope (OCCT static lib too large for watch memory) |
 | macOS x86_64 (Intel) |, | Out of scope (Apple is winding down Intel macOS support) |
 | Linux / Windows / Android |, | Under review, see [docs/platform-expansion.md](docs/platform-expansion.md) |
@@ -204,6 +210,7 @@ See [docs/guides/prebuilt-bridge.md](docs/guides/prebuilt-bridge.md).
 | [Ecosystem](docs/ecosystem.md) | Map of the package family, dependency layering, when to use which |
 | [SemVer Policy](docs/SEMVER.md) | Versioning rules for the cohort, what triggers MAJOR / MINOR / PATCH |
 | [Architecture Overview](docs/architecture/overview.md) | Three-layer design, memory management, conventions |
+| [Consuming the package](docs/guides/consuming-from-objective-c.md) | What your own target has to set, and the two requirements on a file of yours that includes an OCCT header (#967) |
 | [Adding Features](docs/guides/adding-features.md) | How to wrap new OCCT operations |
 | [OCCT Concepts](docs/guides/occt-concepts.md) | B-Rep topology, handles, shapes primer |
 | [Sharing the xcframework](docs/guides/sharing-the-xcframework.md) | Share one local copy across ecosystem repos + the `Package.resolved` pin footgun (#260) |

@@ -7,7 +7,7 @@ nav_order: 1
 
 A comprehensive Swift wrapper for [OpenCASCADE Technology](https://dev.opencascade.org) (OCCT 8.0.1),
 B-Rep solid modeling, CAD data exchange, meshing and geometry for **macOS and iOS**. visionOS and tvOS are declared and buildable but untested, and need a local kernel rebuild (#978).
-Three-layer architecture: Swift public API → Objective-C++ bridge → OCCT C++. **4,339 wrapped operations.**
+Three-layer architecture: Swift public API → Objective-C++ bridge → OCCT C++. **4,355 wrapped operations.**
 
 ```swift
 import OCCTSwift
@@ -48,6 +48,7 @@ figure (interactive 3D where it helps). The **[Cookbook index](guides/cookbook/)
 ## Guides & concepts
 
 - [OCCT Concepts](guides/occt-concepts.md), B-Rep topology, handles, shapes primer.
+- [Consuming the package](guides/consuming-from-objective-c.md), what your own target has to set, and the two requirements on any file of yours that includes an OCCT header (#967).
 - [Architecture](architecture/overview.md), the three-layer design and memory model.
 - [Adding Features](guides/adding-features.md), bridge header → impl → Swift → test.
 - [Building OCCT](guides/building-occt.md), rebuild the `OCCT.xcframework` from source.
@@ -60,4 +61,4 @@ figure (interactive 3D where it helps). The **[Cookbook index](guides/cookbook/)
 ## Project
 
 - Source & issues: [github.com/gsdali/OCCTSwift](https://github.com/gsdali/OCCTSwift)
-- Install via Swift Package Manager, pin `from: "1.0.0"` (SemVer-stable since v1.0.0).
+- Install via Swift Package Manager, pin `from: "3.0.0"` (SemVer-stable since v1.0.0; `from: "1.0.0"` resolves to the 1.x line and never reaches 3.x).
