@@ -852,8 +852,8 @@ bool OCCTShapeSelfIntersects(OCCTShapeRef shape)
   // BOPAlgo_CheckerSI::Perform dereferences a null TopoDS_Shape. Measured against the pinned
   // kernel, that is a SIGSEGV in a standalone process, for a default-constructed shape and for the
   // Nullify()d copy Shape.nullified hands back alike. Removing this guard takes the test binary
-  // down on 4 runs in 5, and on the fifth returns HasErrors() instead, a wrong answer rather than
-  // a fault. A signal would not reach the catch below, so refuse the shape here.
+  // down on 12 of 15 runs, and on the other 3 returns HasErrors() instead, a wrong answer rather
+  // than a fault. A signal would not reach the catch below, so refuse the shape here.
   if (!occtShapeIsPresent(shape))
     return false;
 

@@ -151,17 +151,18 @@ three injected bodies. Each injection is the real pre-#1088 code or one half of 
 |---|---|---|
 | shipped fix | 5 | 5/5 complete, all 7 tests pass |
 | A, the pre-#1088 body (no guard, `HasErrors()` returned) | 5 | **4/5 SIGSEGV**; the one completing run fails 4 tests |
-| B, null-shape guard removed only | 5 | **4/5 SIGSEGV**; the one completing run passes all 7 |
+| B, null-shape guard removed only | 15 | **12/15 SIGSEGV**; the 3 completing runs pass all 7 |
 | C, map reading reverted only | 3 | 3/3 complete, **3 tests fail** every time |
 | D, `HasErrors()` early return dropped | 3 | 3/3 complete, all 7 pass |
 
 **This table is a correction, and the first version of it was wrong in a way worth recording.** It
 originally reported rows A and B from a single run each, and reported row B as green with the
-conclusion that "no Swift test covers the null-shape guard". Repeating each row five times shows the
-opposite: removing the guard kills the process **4 times in 5**. The single run I generalised from
-was the 1-in-5 case where the unguarded call returns `HasErrors()` instead of faulting, which is
-exactly the state-dependence the guard exists for. One observation of a nondeterministic outcome is
-not a measurement of it.
+conclusion that "no Swift test covers the null-shape guard". Repeating the rows shows the opposite:
+removing the guard kills the process on **12 of 15 runs**. The single run I generalised from was one
+of the 3 where the unguarded call returns `HasErrors()` instead of faulting, which is exactly the
+state-dependence the guard exists for. One observation of a nondeterministic outcome is not a
+measurement of it, and the first figure published here, 4 in 5, was itself only n=5 and is
+superseded by the 15-run aggregate.
 
 So the corrected reading is:
 
@@ -169,7 +170,7 @@ So the corrected reading is:
   failing assertions on the runs that survive.
 - **Row B, the null-shape guard, is covered**, by process death rather than by a failed expectation.
   That means a green run of this file is weaker evidence than it looks: it can mean the guard is
-  present, or it can be the 1-in-5. The deterministic evidence is `probe_checker_answer.mm`'s
+  present, or it can be one of the 3 in 15. The deterministic evidence is `probe_checker_answer.mm`'s
   `NULL_SHAPE` fixture, which faults every time in a standalone process, and which is why that
   fixture is excluded from the committed transcript.
 - **Row D, the `HasErrors()` early return, is the one guard genuinely not covered.** None of the

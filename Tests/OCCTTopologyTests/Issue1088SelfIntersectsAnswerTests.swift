@@ -122,9 +122,9 @@ struct Issue1088SelfIntersectsAnswer {
     /// as the answer.
     ///
     /// It also covers the null-shape guard, though not through this assertion: removing the guard
-    /// takes the whole test process down with a SIGSEGV on 4 runs in 5, and on the fifth this test
-    /// passes. So the guard is held by process death rather than by a failed expectation, and a
-    /// single green run of this file is not by itself evidence the guard is present.
+    /// takes the whole test process down with a SIGSEGV on 12 of 15 runs, and on the other 3 this
+    /// test passes. So the guard is held by process death rather than by a failed expectation, and
+    /// a single green run of this file is not by itself evidence the guard is present.
     @available(*, deprecated)
     @Test("A nullified shape is not reported as self-intersecting")
     func nullifiedShapeIsNotReportedAsSelfIntersecting() {
