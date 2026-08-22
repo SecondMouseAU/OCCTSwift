@@ -39,20 +39,21 @@ rebuild #1068's fixture (see that section below).
 `GetCheckResult` is not reachable from Swift. It is reachable from here, and the #319 artifact
 at the default-ish 30 s bound produces it every time on an idle machine.
 
-**Every `probe_fault_kinds` transcript in this file drops two columns for width**, `trips=` and
-`threw=`, which sit between `polls=` and `HasFaulty=` in the real output (see the `printf` at
-`probe_fault_kinds.mm:182`). Nothing else is edited, no rows are omitted, and the columns that are
-shown are byte for byte what the probe printed. Re-running any command here gives the wider line
-rather than the one quoted, so do not read a mismatch in width as a mismatch in result.
+**Data rows here are literal probe output**, with two deliberate exceptions. Most blocks omit the
+probe's own two header lines (`shape: ...` and `ArgumentTypeMode=...`), which repeat the command
+just above them. And the `EMPTY_SOLID` block under "An argument the analyzer rejects" writes `...`
+where it elides columns, because the point there is the `statuses=` field alone. Every other line
+is what the probe printed, so a width or column mismatch on re-running is a real divergence and
+worth chasing rather than a formatting artifact.
 
 ```
 $ probe_fault_kinds Scripts/repro/319-selfintersection/dualskin_lateral.15.brep 1 30 30 30 30 30 30
-timeout=30.0000 elapsed=30.038 firstTrip=30.026 polls=118 HasFaulty=1 statuses=[OperationAborted] before=1 after=-1
-timeout=30.0000 elapsed=30.206 firstTrip=30.195 polls=130 HasFaulty=1 statuses=[OperationAborted] before=1 after=-1
-timeout=30.0000 elapsed=30.069 firstTrip=30.043 polls=113 HasFaulty=1 statuses=[OperationAborted] before=1 after=-1
-timeout=30.0000 elapsed=30.311 firstTrip=30.303 polls=142 HasFaulty=1 statuses=[OperationAborted] before=1 after=-1
-timeout=30.0000 elapsed=30.329 firstTrip=30.315 polls=139 HasFaulty=1 statuses=[OperationAborted] before=1 after=-1
-timeout=30.0000 elapsed=30.282 firstTrip=30.275 polls=159 HasFaulty=1 statuses=[OperationAborted] before=1 after=-1
+timeout=30.0000  elapsed=30.038   firstTrip=30.026   polls=118      trips=3        threw=0 HasFaulty=1 statuses=[OperationAborted] before=1 after=-1
+timeout=30.0000  elapsed=30.206   firstTrip=30.195   polls=130      trips=3        threw=0 HasFaulty=1 statuses=[OperationAborted] before=1 after=-1
+timeout=30.0000  elapsed=30.069   firstTrip=30.043   polls=113      trips=3        threw=0 HasFaulty=1 statuses=[OperationAborted] before=1 after=-1
+timeout=30.0000  elapsed=30.311   firstTrip=30.303   polls=142      trips=3        threw=0 HasFaulty=1 statuses=[OperationAborted] before=1 after=-1
+timeout=30.0000  elapsed=30.329   firstTrip=30.315   polls=139      trips=3        threw=0 HasFaulty=1 statuses=[OperationAborted] before=1 after=-1
+timeout=30.0000  elapsed=30.282   firstTrip=30.275   polls=159      trips=3        threw=0 HasFaulty=1 statuses=[OperationAborted] before=1 after=-1
 ```
 
 6 of 6 idle, and 7 of 8 counting two earlier runs taken while a full `swift test` was using the
