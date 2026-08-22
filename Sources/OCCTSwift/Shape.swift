@@ -2532,13 +2532,11 @@ public final class Shape: @unchecked Sendable {
     ///
     /// Unlike ``isSelfIntersecting(timeout:)``, this returns a ``SelfIntersectionDetailedResult``
     /// that distinguishes between different reasons for an indeterminate result:
-    /// - ``SelfIntersectionDetailedResult/indeterminateBreakerNotTripped``: the analysis made no measurable
-    ///   progress before the timeout (the OCCT progress breaker was never tripped)
     /// - ``SelfIntersectionDetailedResult/indeterminateBreakerTripped``: the analysis was running but didn't
     ///   complete before the timeout (the breaker was tripped)
     /// - ``SelfIntersectionDetailedResult/error``: an exception occurred during analysis
     ///
-    /// This allows callers to distinguish "needs longer timeout" from "will never finish",
+    /// This allows callers to distinguish "needs longer timeout" from "analysis error",
     /// which is especially valuable for B-spline solids where the self-interference phase
     /// may not reach checkpoints frequently enough.
     ///
@@ -2552,8 +2550,6 @@ public final class Shape: @unchecked Sendable {
     /// case .clean:                       print("Clean - safe to use")
     /// case .indeterminateBreakerTripped:
     ///     print("Breaker tripped - try longer timeout")
-    /// case .indeterminateBreakerNotTripped:
-    ///     print("Breaker not tripped - shape may be too complex for this check")
     /// case .error:                       print("Analysis error - treat as unknown")
     /// }
     /// ```
