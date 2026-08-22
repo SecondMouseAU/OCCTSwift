@@ -1,5 +1,6 @@
 import Foundation
 import Testing
+import simd
 
 @testable import OCCTSwift
 
@@ -26,7 +27,8 @@ struct Issue1009Matrix12Grouped {
     /// A 30-degree rotation about Z with the same translation, so no two of the twelve slots hold
     /// the same number and a permuted read cannot agree by coincidence.
     private static let rotatedAndTranslated: [Double] = {
-        let c = cos(Double.pi / 6), s = sin(Double.pi / 6)
+        let c = cos(Double.pi / 6)
+        let s = sin(Double.pi / 6)
         return [
             c, -s, 0,
             s, c, 0,
@@ -103,6 +105,25 @@ struct Issue1009Matrix12Grouped {
         let translated = line.parametricTransformation(
             rotation: [1, 0, 0, 0, 1, 0, 0, 0, 1], translation: SIMD3(5, 6, 7))
         #expect(abs(translated - 1) < 1e-9)
+
+        // The scale factor 1.0 is also the bridge's error sentinel (null handle, exception, bad
+        // rotation count). A second discriminator: the same translation matrix, applied to a wire
+        // made from the line, must actually move the wire by (5, 6, 7).
+        let wire = try #require(Wire.line(from: SIMD3(0, 0, 0), to: SIMD3(1, 0, 0)))
+        let shape = try #require(Shape.fromWire(wire))
+        let matrix = try #require(
+            Matrix12Grouped([
+                1, 0, 0,
+                0, 1, 0,
+                0, 0, 1,
+                5, 6, 7,
+            ]))
+        let moved = try #require(shape.transformed(matrix: matrix))
+        let beforeBB = try #require(shape.boundingBox)
+        let afterBB = try #require(moved.boundingBox)
+        #expect(abs((afterBB.min.x - beforeBB.min.x) - 5) < 1e-9)
+        #expect(abs((afterBB.min.y - beforeBB.min.y) - 6) < 1e-9)
+        #expect(abs((afterBB.min.z - beforeBB.min.z) - 7) < 1e-9)
     }
 
     // MARK: - OCCTDocumentAddComponentMatrix
