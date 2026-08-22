@@ -1,6 +1,6 @@
 import Foundation
-import simd
 import OCCTBridge
+import simd
 
 /// One edge constraint for ``Shape/fill(constraints:parameters:)``.
 ///

@@ -1,6 +1,6 @@
 import Foundation
-import simd
 import OCCTBridge
+import simd
 
 /// Surface-surface intersection result
 public class SurfaceIntersectionResult {
@@ -32,7 +32,9 @@ public class SurfaceIntersectionResult {
 
     /// Get an intersection point (1-based index)
     public func point(_ index: Int) -> SIMD3<Double> {
-        var x: Double = 0, y: Double = 0, z: Double = 0
+        var x: Double = 0
+        var y: Double = 0
+        var z: Double = 0
         OCCTGeomIntSSPoint(ref, Int32(index), &x, &y, &z)
         return SIMD3(x, y, z)
     }

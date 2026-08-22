@@ -1,6 +1,6 @@
 import Foundation
-import simd
 import OCCTBridge
+import simd
 
 /// Disk/volume information utilities.
 public enum DiskInfo {

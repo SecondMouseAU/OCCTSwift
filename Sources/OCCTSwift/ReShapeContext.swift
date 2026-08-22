@@ -1,6 +1,6 @@
 import Foundation
-import simd
 import OCCTBridge
+import simd
 
 /// A reshape context for recording and applying shape modifications.
 public final class ReShapeContext: @unchecked Sendable {

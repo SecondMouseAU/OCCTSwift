@@ -1,6 +1,6 @@
 import Foundation
-import simd
 import OCCTBridge
+import simd
 
 /// Oriented bounding box in 3D space.
 public final class OBB: @unchecked Sendable {
@@ -11,13 +11,16 @@ public final class OBB: @unchecked Sendable {
     deinit { OCCTOBBRelease(handle) }
 
     /// Create an OBB from center, axes, and half-sizes.
-    public init(center: SIMD3<Double>, xDir: SIMD3<Double>, yDir: SIMD3<Double>, zDir: SIMD3<Double>,
-                hx: Double, hy: Double, hz: Double) {
-        handle = OCCTOBBCreate(center.x, center.y, center.z,
-                               xDir.x, xDir.y, xDir.z,
-                               yDir.x, yDir.y, yDir.z,
-                               zDir.x, zDir.y, zDir.z,
-                               hx, hy, hz)
+    public init(
+        center: SIMD3<Double>, xDir: SIMD3<Double>, yDir: SIMD3<Double>, zDir: SIMD3<Double>,
+        hx: Double, hy: Double, hz: Double
+    ) {
+        handle = OCCTOBBCreate(
+            center.x, center.y, center.z,
+            xDir.x, xDir.y, xDir.z,
+            yDir.x, yDir.y, yDir.z,
+            zDir.x, zDir.y, zDir.z,
+            hx, hy, hz)
     }
 
     /// Create an OBB from a shape's bounding box.
@@ -31,14 +34,18 @@ public final class OBB: @unchecked Sendable {
 
     /// Center of the OBB.
     public var center: SIMD3<Double> {
-        var x = 0.0, y = 0.0, z = 0.0
+        var x = 0.0
+        var y = 0.0
+        var z = 0.0
         OCCTOBBGetCenter(handle, &x, &y, &z)
         return SIMD3(x, y, z)
     }
 
     /// Half-sizes of the OBB along its local axes.
     public var halfSizes: SIMD3<Double> {
-        var hx = 0.0, hy = 0.0, hz = 0.0
+        var hx = 0.0
+        var hy = 0.0
+        var hz = 0.0
         OCCTOBBGetHalfSizes(handle, &hx, &hy, &hz)
         return SIMD3(hx, hy, hz)
     }

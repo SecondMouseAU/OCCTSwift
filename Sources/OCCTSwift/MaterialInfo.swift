@@ -1,6 +1,6 @@
 import Foundation
-import simd
 import OCCTBridge
+import simd
 
 /// Material information from a document.
 public struct MaterialInfo: Sendable {

@@ -1,6 +1,6 @@
 import Foundation
-import simd
 import OCCTBridge
+import simd
 
 /// Phong material properties (diffuse, ambient, specular, emissive, shininess, transparency).
 public struct VisMaterialCommon: Sendable {
@@ -33,10 +33,18 @@ public struct VisMaterialCommon: Sendable {
 
     private func toOCCT() -> OCCTVisMaterialCommon {
         var m = OCCTVisMaterialCommon()
-        m.diffuseR = diffuseColor.red; m.diffuseG = diffuseColor.green; m.diffuseB = diffuseColor.blue
-        m.ambientR = ambientColor.red; m.ambientG = ambientColor.green; m.ambientB = ambientColor.blue
-        m.specularR = specularColor.red; m.specularG = specularColor.green; m.specularB = specularColor.blue
-        m.emissiveR = emissiveColor.red; m.emissiveG = emissiveColor.green; m.emissiveB = emissiveColor.blue
+        m.diffuseR = diffuseColor.red
+        m.diffuseG = diffuseColor.green
+        m.diffuseB = diffuseColor.blue
+        m.ambientR = ambientColor.red
+        m.ambientG = ambientColor.green
+        m.ambientB = ambientColor.blue
+        m.specularR = specularColor.red
+        m.specularG = specularColor.green
+        m.specularB = specularColor.blue
+        m.emissiveR = emissiveColor.red
+        m.emissiveG = emissiveColor.green
+        m.emissiveB = emissiveColor.blue
         m.shininess = shininess
         m.transparency = transparency
         m.isDefined = isDefined
@@ -75,12 +83,16 @@ public struct VisMaterialPBR: Sendable {
 
     private func toOCCT() -> OCCTVisMaterialPBR {
         var m = OCCTVisMaterialPBR()
-        m.baseColorR = baseColor.red; m.baseColorG = baseColor.green; m.baseColorB = baseColor.blue
+        m.baseColorR = baseColor.red
+        m.baseColorG = baseColor.green
+        m.baseColorB = baseColor.blue
         m.baseColorAlpha = baseColorAlpha
         m.metallic = metallic
         m.roughness = roughness
         m.refractionIndex = refractionIndex
-        m.emissionR = emissionColor.red; m.emissionG = emissionColor.green; m.emissionB = emissionColor.blue
+        m.emissionR = emissionColor.red
+        m.emissionG = emissionColor.green
+        m.emissionB = emissionColor.blue
         m.isDefined = isDefined
         return m
     }

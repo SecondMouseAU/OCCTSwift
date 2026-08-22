@@ -29,24 +29,28 @@ public enum DXFError: Error, LocalizedError {
     public var errorDescription: String? {
         switch self {
         case .writeFailed(let msg): return "DXF write failed: \(msg)"
-        case .drawingEmpty:         return "Drawing contains no edges or annotations"
+        case .drawingEmpty: return "Drawing contains no edges or annotations"
         }
     }
 }
 
 extension Exporter {
     /// Export a `Drawing` (HLR projection + optional dimensions/annotations) to DXF R12.
-    public static func writeDXF(drawing: Drawing, to url: URL,
-                                deflection: Double = 0.1) throws {
+    public static func writeDXF(
+        drawing: Drawing, to url: URL,
+        deflection: Double = 0.1
+    ) throws {
         let writer = DXFWriter(deflection: deflection)
         writer.collectFromDrawing(drawing)
         try writer.write(to: url)
     }
 
     /// Convenience: project the shape along `viewDirection` and export the projection as DXF.
-    public static func writeDXF(shape: Shape, to url: URL,
-                                viewDirection: SIMD3<Double> = SIMD3(0, 0, 1),
-                                deflection: Double = 0.1) throws {
+    public static func writeDXF(
+        shape: Shape, to url: URL,
+        viewDirection: SIMD3<Double> = SIMD3(0, 0, 1),
+        deflection: Double = 0.1
+    ) throws {
         guard let drawing = Drawing.project(shape, direction: viewDirection) else {
             throw DXFError.writeFailed("projection failed")
         }
@@ -61,8 +65,16 @@ public final class DXFWriter: @unchecked Sendable, DrawingPrimitiveSink {
     private var lines: [(a: SIMD2<Double>, b: SIMD2<Double>, layer: String)] = []
     private var polylines: [(points: [SIMD2<Double>], closed: Bool, layer: String)] = []
     private var circles: [(centre: SIMD2<Double>, radius: Double, layer: String)] = []
-    private var arcs: [(centre: SIMD2<Double>, radius: Double, startAngleDeg: Double, endAngleDeg: Double, layer: String)] = []
-    private var texts: [(position: SIMD2<Double>, text: String, height: Double, rotationDeg: Double, layer: String)] = []
+    private var arcs:
+        [(
+            centre: SIMD2<Double>, radius: Double, startAngleDeg: Double, endAngleDeg: Double,
+            layer: String
+        )] = []
+    private var texts:
+        [(
+            position: SIMD2<Double>, text: String, height: Double, rotationDeg: Double,
+            layer: String
+        )] = []
     /// `DrawingPrimitiveSink.primitiveOps()`'s cache -- see `DrawingDispatch.swift`. #800.
     internal var cachedPrimitiveOps: DrawingPrimitiveOps?
 
@@ -76,7 +88,9 @@ public final class DXFWriter: @unchecked Sendable, DrawingPrimitiveSink {
         lines.append((a, b, layer))
     }
 
-    public func addPolyline(_ points: [SIMD2<Double>], closed: Bool = false, layer: String = "VISIBLE") {
+    public func addPolyline(
+        _ points: [SIMD2<Double>], closed: Bool = false, layer: String = "VISIBLE"
+    ) {
         guard points.count >= 2 else { return }
         polylines.append((points, closed, layer))
     }
@@ -85,15 +99,19 @@ public final class DXFWriter: @unchecked Sendable, DrawingPrimitiveSink {
         circles.append((centre, radius, layer))
     }
 
-    public func addArc(centre: SIMD2<Double>, radius: Double,
-                       startAngleDeg: Double, endAngleDeg: Double,
-                       layer: String = "VISIBLE") {
+    public func addArc(
+        centre: SIMD2<Double>, radius: Double,
+        startAngleDeg: Double, endAngleDeg: Double,
+        layer: String = "VISIBLE"
+    ) {
         arcs.append((centre, radius, startAngleDeg, endAngleDeg, layer))
     }
 
-    public func addText(_ text: String, at position: SIMD2<Double>,
-                        height: Double = 3.5, rotationDeg: Double = 0,
-                        layer: String = "TEXT") {
+    public func addText(
+        _ text: String, at position: SIMD2<Double>,
+        height: Double = 3.5, rotationDeg: Double = 0,
+        layer: String = "TEXT"
+    ) {
         texts.append((position, text, height, rotationDeg, layer))
     }
 
@@ -125,18 +143,21 @@ public final class DXFWriter: @unchecked Sendable, DrawingPrimitiveSink {
     /// Collect a `Drawing`'s edges, annotations and dimensions onto this writer, optionally
     /// translated and uniformly scaled -- the shared collection pipeline every 2D exporter
     /// (PDF, SVG, DXF) uses.
-    public func collectFromDrawing(_ drawing: Drawing,
-                                   translate: SIMD2<Double> = .zero,
-                                   scale: Double = 1.0) {
+    public func collectFromDrawing(
+        _ drawing: Drawing,
+        translate: SIMD2<Double> = .zero,
+        scale: Double = 1.0
+    ) {
         collectDrawing(drawing, translate: translate, scale: scale, into: self)
     }
 
     /// Collect a `TransformedDrawing` onto this writer -- convenience for multi-view sheet
     /// composition.
     public func collectFromDrawing(_ transformed: TransformedDrawing) {
-        collectFromDrawing(transformed.source,
-                           translate: transformed.translate,
-                           scale: transformed.scale)
+        collectFromDrawing(
+            transformed.source,
+            translate: transformed.translate,
+            scale: transformed.scale)
     }
 
     // MARK: - Serialization
@@ -171,7 +192,7 @@ public final class DXFWriter: @unchecked Sendable, DrawingPrimitiveSink {
     private func header() -> String {
         pair(0, "SECTION") + pair(2, "HEADER")
             + pair(9, "$ACADVER") + pair(1, "AC1009")
-            + pair(9, "$INSUNITS") + pair(70, 4)   // mm
+            + pair(9, "$INSUNITS") + pair(70, 4)  // mm
             + pair(0, "ENDSEC")
     }
 
@@ -180,31 +201,39 @@ public final class DXFWriter: @unchecked Sendable, DrawingPrimitiveSink {
 
         // LTYPE
         s += pair(0, "TABLE") + pair(2, "LTYPE") + pair(70, 4)
-        s += pair(0, "LTYPE") + pair(2, "CONTINUOUS") + pair(70, 0) + pair(3, "Solid line") + pair(72, 65) + pair(73, 0) + pair(40, 0.0)
-        s += pair(0, "LTYPE") + pair(2, "DASHED")     + pair(70, 0) + pair(3, "Dashed ____ ____ ____") + pair(72, 65) + pair(73, 2) + pair(40, 7.5)
+        s +=
+            pair(0, "LTYPE") + pair(2, "CONTINUOUS") + pair(70, 0) + pair(3, "Solid line")
+            + pair(72, 65) + pair(73, 0) + pair(40, 0.0)
+        s +=
+            pair(0, "LTYPE") + pair(2, "DASHED") + pair(70, 0) + pair(3, "Dashed ____ ____ ____")
+            + pair(72, 65) + pair(73, 2) + pair(40, 7.5)
             + pair(49, 5.0) + pair(49, -2.5)
-        s += pair(0, "LTYPE") + pair(2, "CHAIN")      + pair(70, 0) + pair(3, "Chain ____ _ ____ _") + pair(72, 65) + pair(73, 4) + pair(40, 15.0)
+        s +=
+            pair(0, "LTYPE") + pair(2, "CHAIN") + pair(70, 0) + pair(3, "Chain ____ _ ____ _")
+            + pair(72, 65) + pair(73, 4) + pair(40, 15.0)
             + pair(49, 10.0) + pair(49, -2.5) + pair(49, 0.0) + pair(49, -2.5)
         s += pair(0, "ENDTAB")
 
         // LAYER
         s += pair(0, "TABLE") + pair(2, "LAYER") + pair(70, 11)
-        s += layer("0",         colour: 7, linetype: "CONTINUOUS")
-        s += layer("VISIBLE",   colour: 7, linetype: "CONTINUOUS")
-        s += layer("HIDDEN",    colour: 8, linetype: "DASHED")
-        s += layer("OUTLINE",   colour: 7, linetype: "CONTINUOUS")
-        s += layer("CENTER",    colour: 1, linetype: "CHAIN")
+        s += layer("0", colour: 7, linetype: "CONTINUOUS")
+        s += layer("VISIBLE", colour: 7, linetype: "CONTINUOUS")
+        s += layer("HIDDEN", colour: 8, linetype: "DASHED")
+        s += layer("OUTLINE", colour: 7, linetype: "CONTINUOUS")
+        s += layer("CENTER", colour: 1, linetype: "CHAIN")
         s += layer("DIMENSION", colour: 5, linetype: "CONTINUOUS")
-        s += layer("TEXT",      colour: 3, linetype: "CONTINUOUS")
-        s += layer("HATCH",     colour: 9, linetype: "CONTINUOUS")
-        s += layer("SECTION",   colour: 7, linetype: "CONTINUOUS")
-        s += layer("BORDER",    colour: 7, linetype: "CONTINUOUS")
-        s += layer("TITLE",     colour: 7, linetype: "CONTINUOUS")
+        s += layer("TEXT", colour: 3, linetype: "CONTINUOUS")
+        s += layer("HATCH", colour: 9, linetype: "CONTINUOUS")
+        s += layer("SECTION", colour: 7, linetype: "CONTINUOUS")
+        s += layer("BORDER", colour: 7, linetype: "CONTINUOUS")
+        s += layer("TITLE", colour: 7, linetype: "CONTINUOUS")
         s += pair(0, "ENDTAB")
 
         // Required STYLE table (one default style)
         s += pair(0, "TABLE") + pair(2, "STYLE") + pair(70, 1)
-        s += pair(0, "STYLE") + pair(2, "STANDARD") + pair(70, 0) + pair(40, 0.0) + pair(41, 1.0) + pair(50, 0.0) + pair(71, 0) + pair(42, 2.5) + pair(3, "txt") + pair(4, "")
+        s +=
+            pair(0, "STYLE") + pair(2, "STANDARD") + pair(70, 0) + pair(40, 0.0) + pair(41, 1.0)
+            + pair(50, 0.0) + pair(71, 0) + pair(42, 2.5) + pair(3, "txt") + pair(4, "")
         s += pair(0, "ENDTAB")
 
         s += pair(0, "ENDSEC")
@@ -223,30 +252,35 @@ public final class DXFWriter: @unchecked Sendable, DrawingPrimitiveSink {
     private func entities() -> String {
         var s = pair(0, "SECTION") + pair(2, "ENTITIES")
         for l in lines {
-            s += pair(0, "LINE") + pair(8, l.layer)
+            s +=
+                pair(0, "LINE") + pair(8, l.layer)
                 + pair(10, l.a.x) + pair(20, l.a.y) + pair(30, 0.0)
                 + pair(11, l.b.x) + pair(21, l.b.y) + pair(31, 0.0)
         }
         for p in polylines {
-            s += pair(0, "LWPOLYLINE") + pair(8, p.layer)
+            s +=
+                pair(0, "LWPOLYLINE") + pair(8, p.layer)
                 + pair(90, p.points.count) + pair(70, p.closed ? 1 : 0)
             for pt in p.points {
                 s += pair(10, pt.x) + pair(20, pt.y)
             }
         }
         for c in circles {
-            s += pair(0, "CIRCLE") + pair(8, c.layer)
+            s +=
+                pair(0, "CIRCLE") + pair(8, c.layer)
                 + pair(10, c.centre.x) + pair(20, c.centre.y) + pair(30, 0.0)
                 + pair(40, c.radius)
         }
         for a in arcs {
-            s += pair(0, "ARC") + pair(8, a.layer)
+            s +=
+                pair(0, "ARC") + pair(8, a.layer)
                 + pair(10, a.centre.x) + pair(20, a.centre.y) + pair(30, 0.0)
                 + pair(40, a.radius)
                 + pair(50, a.startAngleDeg) + pair(51, a.endAngleDeg)
         }
         for t in texts {
-            s += pair(0, "TEXT") + pair(8, t.layer)
+            s +=
+                pair(0, "TEXT") + pair(8, t.layer)
                 + pair(10, t.position.x) + pair(20, t.position.y) + pair(30, 0.0)
                 + pair(40, t.height)
                 + pair(1, t.text)

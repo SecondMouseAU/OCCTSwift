@@ -1,6 +1,6 @@
 import Foundation
-import simd
 import OCCTBridge
+import simd
 
 /// File path parsing and manipulation utilities, wrapping OCCT's `OSD_Path`.
 ///
@@ -94,7 +94,10 @@ public enum OSDPath {
         var filePtr: UnsafePointer<CChar>?
         OCCTOSDPathFolderAndFile(path, &folderPtr, &filePtr)
         guard let fp = folderPtr, let flp = filePtr else { return nil }
-        defer { OCCTOSDPathFreeString(fp); OCCTOSDPathFreeString(flp) }
+        defer {
+            OCCTOSDPathFreeString(fp)
+            OCCTOSDPathFreeString(flp)
+        }
         return (String(cString: fp), String(cString: flp))
     }
 

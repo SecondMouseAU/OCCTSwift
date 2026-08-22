@@ -1,6 +1,6 @@
 import Foundation
-import simd
 import OCCTBridge
+import simd
 
 /// Evolution type for topological naming history
 public enum NamingEvolution: Int32, Sendable {

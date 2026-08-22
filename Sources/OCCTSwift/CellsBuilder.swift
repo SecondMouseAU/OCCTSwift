@@ -1,6 +1,6 @@
 import Foundation
-import simd
 import OCCTBridge
+import simd
 
 /// Builder for Boolean cell operations on shapes.
 ///
@@ -18,9 +18,11 @@ public final class CellsBuilder: @unchecked Sendable {
     /// - Returns: CellsBuilder, or nil on failure
     public init?(shapes: [Shape]) {
         let ptrs = shapes.map { $0.handle as OCCTShapeRef? }
-        guard let h = ptrs.withUnsafeBufferPointer({ buf in
-            OCCTCellsBuilderCreate(buf.baseAddress, Int32(buf.count))
-        }) else { return nil }
+        guard
+            let h = ptrs.withUnsafeBufferPointer({ buf in
+                OCCTCellsBuilderCreate(buf.baseAddress, Int32(buf.count))
+            })
+        else { return nil }
         self.handle = h
     }
 
@@ -58,12 +60,15 @@ public final class CellsBuilder: @unchecked Sendable {
 
 extension CellsBuilder {
     /// Add cells to result selectively: cells present in all take shapes but none of avoid shapes.
-    public func addToResult(take: [Shape], avoid: [Shape] = [], material: Int32 = 0, update: Bool = false) {
+    public func addToResult(
+        take: [Shape], avoid: [Shape] = [], material: Int32 = 0, update: Bool = false
+    ) {
         let takePtrs: [OCCTShapeRef] = take.map { $0.handle }
         let avoidPtrs: [OCCTShapeRef] = avoid.map { $0.handle }
         takePtrs.withUnsafeBufferPointer { takeBuf in
             avoidPtrs.withUnsafeBufferPointer { avoidBuf in
-                OCCTCellsBuilderAddToResultSelective(handle,
+                OCCTCellsBuilderAddToResultSelective(
+                    handle,
                     takeBuf.baseAddress!, Int32(takeBuf.count),
                     avoidBuf.baseAddress ?? UnsafePointer(bitPattern: 1)!, Int32(avoidBuf.count),
                     material, update)
@@ -77,7 +82,8 @@ extension CellsBuilder {
         let avoidPtrs: [OCCTShapeRef] = avoid.map { $0.handle }
         takePtrs.withUnsafeBufferPointer { takeBuf in
             avoidPtrs.withUnsafeBufferPointer { avoidBuf in
-                OCCTCellsBuilderRemoveFromResult(handle,
+                OCCTCellsBuilderRemoveFromResult(
+                    handle,
                     takeBuf.baseAddress!, Int32(takeBuf.count),
                     avoidBuf.baseAddress ?? UnsafePointer(bitPattern: 1)!, Int32(avoidBuf.count))
             }

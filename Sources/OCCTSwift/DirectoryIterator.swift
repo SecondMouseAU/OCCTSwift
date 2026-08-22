@@ -1,6 +1,6 @@
 import Foundation
-import simd
 import OCCTBridge
+import simd
 
 /// Directory iteration utilities using OSD_DirectoryIterator.
 public enum DirectoryIterator {

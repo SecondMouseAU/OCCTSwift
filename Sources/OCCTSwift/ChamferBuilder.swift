@@ -1,6 +1,6 @@
 import Foundation
-import simd
 import OCCTBridge
+import simd
 
 /// Builder for creating chamfers on edges of a shape, wrapping BRepFilletAPI_MakeChamfer.
 public final class ChamferBuilder: @unchecked Sendable {
@@ -132,7 +132,9 @@ extension ChamferBuilder {
 
     /// Get edge J in contour I (both 1-based).
     public func edge(contour: Int, index: Int) -> Shape? {
-        guard let ref = OCCTChamferBuilderEdge(handle, Int32(contour), Int32(index)) else { return nil }
+        guard let ref = OCCTChamferBuilderEdge(handle, Int32(contour), Int32(index)) else {
+            return nil
+        }
         return Shape(handle: ref)
     }
 

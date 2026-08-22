@@ -1,6 +1,6 @@
 import Foundation
-import simd
 import OCCTBridge
+import simd
 
 /// Least-squares B-spline curve approximation through a set of 3D points.
 ///
@@ -47,8 +47,10 @@ public final class BSplineApproxInterp: @unchecked Sendable {
     ///   - degree: B-spline degree (default 3); widens the fit's degree range to
     ///     `[min(3, degree), max(degree, 8)]`
     ///   - continuousIfClosed: **advisory and currently ignored**, see the type note
-    public init?(points: [SIMD3<Double>], nbControlPoints: Int,
-                 degree: Int = 3, continuousIfClosed: Bool = false) {
+    public init?(
+        points: [SIMD3<Double>], nbControlPoints: Int,
+        degree: Int = 3, continuousIfClosed: Bool = false
+    ) {
         guard points.count >= 2 else { return nil }
         var flat = [Double](repeating: 0, count: points.count * 3)
         for (i, p) in points.enumerated() {
@@ -56,10 +58,12 @@ public final class BSplineApproxInterp: @unchecked Sendable {
             flat[i * 3 + 1] = p.y
             flat[i * 3 + 2] = p.z
         }
-        guard let ref = OCCTBSplineApproxInterpCreate(
-            &flat, Int32(points.count),
-            Int32(nbControlPoints), Int32(degree), continuousIfClosed
-        ) else { return nil }
+        guard
+            let ref = OCCTBSplineApproxInterpCreate(
+                &flat, Int32(points.count),
+                Int32(nbControlPoints), Int32(degree), continuousIfClosed
+            )
+        else { return nil }
         self.handle = ref
     }
 

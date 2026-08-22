@@ -1,6 +1,6 @@
 import Foundation
-import simd
 import OCCTBridge
+import simd
 
 /// A 3D geometric point with Handle-based memory management.
 public final class GeomPoint3D: @unchecked Sendable {
@@ -58,7 +58,9 @@ public final class GeomDirection: @unchecked Sendable {
     deinit { OCCTGeomDirectionRelease(handle) }
 
     public var coordinates: SIMD3<Double> {
-        var x: Double = 0, y: Double = 0, z: Double = 0
+        var x: Double = 0
+        var y: Double = 0
+        var z: Double = 0
         OCCTGeomDirectionCoords(handle, &x, &y, &z)
         return SIMD3(x, y, z)
     }
@@ -97,7 +99,9 @@ public final class GeomVector3D: @unchecked Sendable {
     deinit { OCCTGeomVector3DRelease(handle) }
 
     public var coordinates: SIMD3<Double> {
-        var x: Double = 0, y: Double = 0, z: Double = 0
+        var x: Double = 0
+        var y: Double = 0
+        var z: Double = 0
         OCCTGeomVector3DCoords(handle, &x, &y, &z)
         return SIMD3(x, y, z)
     }
@@ -132,8 +136,9 @@ public final class Axis1Placement: @unchecked Sendable {
     public let handle: OCCTAxis1PlacementRef
 
     public init(origin: SIMD3<Double>, direction: SIMD3<Double>) {
-        handle = OCCTAxis1PlacementCreate(origin.x, origin.y, origin.z,
-                                           direction.x, direction.y, direction.z)
+        handle = OCCTAxis1PlacementCreate(
+            origin.x, origin.y, origin.z,
+            direction.x, direction.y, direction.z)
     }
 
     internal init(handle: OCCTAxis1PlacementRef) {
@@ -143,13 +148,17 @@ public final class Axis1Placement: @unchecked Sendable {
     deinit { OCCTAxis1PlacementRelease(handle) }
 
     public var location: SIMD3<Double> {
-        var x: Double = 0, y: Double = 0, z: Double = 0
+        var x: Double = 0
+        var y: Double = 0
+        var z: Double = 0
         OCCTAxis1PlacementLocation(handle, &x, &y, &z)
         return SIMD3(x, y, z)
     }
 
     public var direction: SIMD3<Double> {
-        var x: Double = 0, y: Double = 0, z: Double = 0
+        var x: Double = 0
+        var y: Double = 0
+        var z: Double = 0
         OCCTAxis1PlacementDirection(handle, &x, &y, &z)
         return SIMD3(x, y, z)
     }
@@ -178,33 +187,42 @@ public final class Axis2Placement: @unchecked Sendable {
     public let handle: OCCTAxis2PlacementRef
 
     public init(origin: SIMD3<Double>, normal: SIMD3<Double>, xDirection: SIMD3<Double>) {
-        handle = OCCTAxis2PlacementCreate(origin.x, origin.y, origin.z,
-                                           normal.x, normal.y, normal.z,
-                                           xDirection.x, xDirection.y, xDirection.z)
+        handle = OCCTAxis2PlacementCreate(
+            origin.x, origin.y, origin.z,
+            normal.x, normal.y, normal.z,
+            xDirection.x, xDirection.y, xDirection.z)
     }
 
     deinit { OCCTAxis2PlacementRelease(handle) }
 
     public var location: SIMD3<Double> {
-        var x: Double = 0, y: Double = 0, z: Double = 0
+        var x: Double = 0
+        var y: Double = 0
+        var z: Double = 0
         OCCTAxis2PlacementLocation(handle, &x, &y, &z)
         return SIMD3(x, y, z)
     }
 
     public var mainDirection: SIMD3<Double> {
-        var x: Double = 0, y: Double = 0, z: Double = 0
+        var x: Double = 0
+        var y: Double = 0
+        var z: Double = 0
         OCCTAxis2PlacementDirection(handle, &x, &y, &z)
         return SIMD3(x, y, z)
     }
 
     public var xDirection: SIMD3<Double> {
-        var x: Double = 0, y: Double = 0, z: Double = 0
+        var x: Double = 0
+        var y: Double = 0
+        var z: Double = 0
         OCCTAxis2PlacementXDirection(handle, &x, &y, &z)
         return SIMD3(x, y, z)
     }
 
     public var yDirection: SIMD3<Double> {
-        var x: Double = 0, y: Double = 0, z: Double = 0
+        var x: Double = 0
+        var y: Double = 0
+        var z: Double = 0
         OCCTAxis2PlacementYDirection(handle, &x, &y, &z)
         return SIMD3(x, y, z)
     }
