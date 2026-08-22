@@ -451,7 +451,7 @@ Triangulates both shapes and tests proximity using `BRepExtrema_ShapeProximity`.
 ### `selfIntersects`
 
 **Deprecated** ([#1088](https://github.com/SecondMouseAU/OCCTSwift/issues/1088)). Use
-[`isSelfIntersecting(timeout:)`](Shape.md) instead.
+[`isSelfIntersecting(timeout:)`](Shape-Features.md#isselfintersectingtimeout) instead.
 
 ```swift
 @available(*, deprecated)
