@@ -134,18 +134,30 @@ public enum SAWireAnalysis {
         OCCTWireCheckGap3dEdge(wire.handle, face.handle, precision, Int32(edgeIndex))
     }
 
-    /// Check whether a wire fails to define an outer bound on a face.
+    /// Check whether a wire fails to define an outer bound on a face, or `nil` when the check
+    /// could not be run at all.
     ///
-    /// Returns true if a problem is found.
-    ///
+    /// Returns true if a problem is found, false if none is, and `nil` for four inputs the check
+    /// cannot evaluate: a `Shape` that is not a wire or not a face, **a null shape included**; a
+    /// wire with no edges; a wire whose edges do not assemble; and a wire with no pcurve on the
+    /// face (#1058). The other fourteen **check** members of this enum answer a plain `Bool`, so a
+    /// refused call and a clean verdict are the same value for them; `edgeCount` and the four
+    /// distance members return `Int`/`Double` and have their own version of that collision.
     /// Unlike every sibling above, this takes no precision, because
     /// `ShapeAnalysis_Wire::CheckOuterBound` consults none.
     ///
     /// ```swift
     /// let outer = SAWireAnalysis.checkOuterBound(wire: outerWire, face: face)   // false
     /// let inner = SAWireAnalysis.checkOuterBound(wire: holeWire, face: face)    // true
+    /// let alien = SAWireAnalysis.checkOuterBound(wire: outerWire, face: cylinderFace)  // nil
     /// ```
-    public static func checkOuterBound(wire: Shape, face: Shape) -> Bool {
-        OCCTWireCheckOuterBound(wire.handle, face.handle)
+    public static func checkOuterBound(wire: Shape, face: Shape) -> Bool? {
+        // Third copy of the bridge's 1/0/-1 decoder; #1077 has the census that decides whether it
+        // becomes a shared helper, and which int32_t returns are eligible for one.
+        switch OCCTWireCheckOuterBound(wire.handle, face.handle) {
+        case 1: return true
+        case 0: return false
+        default: return nil
+        }
     }
 }

@@ -3882,6 +3882,8 @@ OCCTShapeRef _Nullable OCCTShapeUpgradeWireDivideOnFace(OCCTShapeRef wireShape,
     // OCCT 8.0.0p1: ShapeUpgrade_WireDivide::Perform() null-derefs (SIGSEGV, Address 0) when a wire
     // edge has no pcurve on the target face (e.g. a wire that doesn't lie on the face), an OS
     // signal catch(...) cannot trap. Guard by requiring every edge to carry a pcurve on the face.
+    // OCCTWireCheckOuterBound below runs the near-sibling of this walk with the opposite
+    // quantifier, for the reason recorded there (#1058).
     for (TopExp_Explorer ex(wire, TopAbs_EDGE); ex.More(); ex.Next())
     {
       double f2 = 0, l2 = 0;
@@ -5442,21 +5444,52 @@ bool OCCTWireCheckGap3dEdge(OCCTShapeRef wire, OCCTShapeRef face, double prec, i
 // neither the check its name promises nor a use of the precision it declared. It is now the real
 // call, and takes the wire its siblings all take. CheckOuterBound consults no precision, so it
 // declares none; see the header for the measurement.
-bool OCCTWireCheckOuterBound(OCCTShapeRef wire, OCCTShapeRef face)
+// #1058: the return is tri-state, because `false` used to be both the verdict for a wire that IS
+// the outer bound and the answer from every path that could not run the check. See the header for
+// the encoding and for what the pcurve guard below is protecting against.
+int32_t OCCTWireCheckOuterBound(OCCTShapeRef wire, OCCTShapeRef face)
 {
-  if (!wire || !face)
-    return false;
+  if (!occtShapeIsType(wire, TopAbs_WIRE) || !occtShapeIsType(face, TopAbs_FACE))
+    return -1;
   try
   {
     ShapeAnalysis_Wire saw;
     saw.Init(TopoDS::Wire(wire->shape), TopoDS::Face(face->shape), Precision::Confusion());
     if (!saw.IsReady())
-      return false;
-    return saw.CheckOuterBound();
+      return -1;
+    // Rebuild what CheckOuterBound hands to ShapeAnalysis::IsOuterBound and refuse if no edge of
+    // it carries a pcurve on the face: TotCross2D would then sign an area nothing contributed to.
+    // OCCTShapeUpgradeWireDivideOnFace above has the near-sibling of this walk, deliberately not
+    // shared with it: that one requires EVERY edge to carry a pcurve, because
+    // ShapeUpgrade_WireDivide null-derefs on the first that does not, while this one requires only
+    // that SOME edge does, because TotCross2D skips the rest rather than crashing on them. Same
+    // call, opposite quantifier, and this one walks the EmptyCopied face and the WireAPIMake wire
+    // rather than the caller's own, so a shared helper would have to take both the quantifier and
+    // the pair. WireAPIMake is null whenever BRepBuilderAPI_MakeWire cannot assemble the loaded
+    // edges, e.g. for two disconnected edges, and BRep_Builder::Add dereferences its component with
+    // no null test, which is a signal the catch below cannot see. CheckOuterBound builds the same
+    // wire, so this refuses one line before OCCT would have crashed on it.
+    TopoDS_Wire aBuilt = saw.WireData()->WireAPIMake();
+    if (aBuilt.IsNull())
+      return -1;
+    TopoDS_Shape anEmpty = TopoDS::Face(face->shape).EmptyCopied();
+    TopoDS_Face  aProbe  = TopoDS::Face(anEmpty);
+    BRep_Builder aBuilder;
+    aBuilder.Add(aProbe, aBuilt);
+    bool hasPCurve = false;
+    for (TopExp_Explorer anIt(aProbe, TopAbs_EDGE); anIt.More() && !hasPCurve; anIt.Next())
+    {
+      double aFirst, aLast;
+      hasPCurve =
+        !BRep_Tool::CurveOnSurface(TopoDS::Edge(anIt.Current()), aProbe, aFirst, aLast).IsNull();
+    }
+    if (!hasPCurve)
+      return -1;
+    return saw.CheckOuterBound() ? 1 : 0;
   }
   catch (...)
   {
-    return false;
+    return -1;
   }
 }
 

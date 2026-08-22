@@ -1332,8 +1332,53 @@ bool OCCTWireCheckGap3dEdge(OCCTShapeRef _Nonnull wire,
                             double  prec,
                             int32_t edgeIndex);
 
-/// Check whether a wire fails to define an outer bound on a face. Returns true if a problem is
-/// found, matching every sibling above.
+/// Check whether a wire fails to define an outer bound on a face. Returns 1 if a problem is found,
+/// 0 if none is, and -1 if the check could not be run at all, which is four inputs:
+///   1. a shape that is not a wire, or not a face, including a live wrapper carrying a null
+///      TopoDS_Shape. TopoDS::Wire is written IsNull() ? false : ..., so it deliberately does NOT
+///      raise for a null shape and the cast alone would let one through to EmptyCopied() (#1035);
+///      occtShapeIsType covers both the wrong type and the null.
+///   2. a wire with no edges, which ShapeAnalysis_Wire::IsReady() rejects.
+///   3. a wire whose edges do not assemble, since ShapeExtend_WireData::WireAPIMake() is null for
+///      those and BRep_Builder::Add dereferences its component with no null test.
+///   4. a wire with no pcurve on the face, which is the OCCT half, below.
+/// Guard 1 is the only one that is backstopped, which is measured rather than assumed (#1058).
+/// Revert it to the pre-#1058 pointer-only test and every input is still refused, because
+/// catch (...) takes the wrong-typed shape and IsReady() takes the null one, so no test moves.
+/// Guards 2, 3 and 4 each isolate: break any one alone and a test fails. Guard 2 returning 0
+/// instead of -1 is a wrong answer for an edgeless wire; guard 3 removed is a SIGSEGV; guard 4
+/// removed is a wrong answer for a foreign wire.
+/// Guard 1 earns its place off that measurement rather than on it. It makes the refusal explicit
+/// instead of a caught exception, and check-null-handle-guards.py's #1026/#1035 walk needs it,
+/// since the code below reaches BRep_Builder::Add and BRep_Tool::CurveOnSurface with a face derived
+/// from a caller's TopoDS_Shape. Its backstops are also thinner than they look: with guard 1
+/// reverted, IsReady() is the only thing between a null shape and EmptyCopied(), and deleting it
+/// there is an immediate SIGSEGV rather than a wrong answer.
+/// The catch (...) is a backstop with no known reachable input once guard 1 is in place: changing
+/// its return to 0 leaves the whole suite green. It returns -1 anyway, because a caught exception
+/// is by definition a check that did not run.
+/// All fourteen plain-bool check members of this family (the ten whole-wire ones above and the four
+/// per-edge ones) still answer a plain bool, so this is the one member whose refusal is
+/// distinguishable from a clean verdict (#1058, siblings tracked in #1074).
+/// The pcurve case is not a bridge refusal but an OCCT one that never announces itself:
+/// ShapeAnalysis::IsOuterBound signs the area ShapeAnalysis::TotCross2D returns, and TotCross2D
+/// skips every edge whose pcurve on the face is null, so with none left its accumulator is never
+/// written and the +0.0 it starts from reads as a positive area. A wire belonging to some other
+/// face then comes back indistinguishable from the outer bound, measured on a rectangle handed a
+/// cylindrical face. Planes do not show that one, because BRep_Tool::CurveOnSurface projects a 3D
+/// curve onto a plane when no pcurve is stored.
+/// The guard is "nothing was consulted", not "the area means something", and the difference is
+/// measured rather than hypothetical (#1058 review, tracked in #1073). Two cases still get a
+/// confident verdict off an area that does not describe the wire: some edges carrying a pcurve and
+/// others not, where TotCross2D sums the subset; and every edge carrying one but the contributions
+/// cancelling, where a cylinder's seam wire projected onto a plane gives -1.7802599672211983e-15
+/// against 100 to 126 for the answerable fixtures, and its sign still decides. Neither is fixed
+/// here, because the fix is a magnitude threshold and nobody has measured what it should be (#726).
+/// The pcurve walk mirrors CheckOuterBound(APIMake = true) exactly, EmptyCopied face and
+/// WireAPIMake wire, so it has to move if that default ever does. It spells the pcurve test inline
+/// rather than calling ShapeAnalysis_Edge::HasPCurve for the same reason: the point is to reproduce
+/// TotCross2D's own skip condition, not an equivalent one. The cost is a second WireAPIMake per
+/// answerable call, since CheckOuterBound builds its own and takes no wire.
 /// No precision, unlike those siblings (#999): ShapeAnalysis_Wire::CheckOuterBound(APIMake) is the
 /// one Public-level check in that class that consults neither myPrecision nor anything derived
 /// from it. It rebuilds the wire onto an empty copy of the face and asks
@@ -1343,7 +1388,7 @@ bool OCCTWireCheckGap3dEdge(OCCTShapeRef _Nonnull wire,
 /// ShapeExtend_WireData::WireAPIMake over ::Wire, and produced the same verdict on all three
 /// fixtures, including one assembled with BRep_Builder from edges with unshared vertices, which is
 /// the case its own documentation distinguishes.
-bool OCCTWireCheckOuterBound(OCCTShapeRef _Nonnull wire, OCCTShapeRef _Nonnull face);
+int32_t OCCTWireCheckOuterBound(OCCTShapeRef _Nonnull wire, OCCTShapeRef _Nonnull face);
 
 // MARK: - ShapeAnalysis_Edge (v0.106.0)
 

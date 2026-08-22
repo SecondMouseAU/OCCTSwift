@@ -2141,8 +2141,9 @@ struct SAWireAnalysisTests {
             let faces = box.subShapes(ofType: .face)
             if let face = faces.first, let wire = face.subShapes(ofType: .wire).first {
                 // True means "problem found", matching every sibling. A box face's own wire is
-                // its outer bound, so there is no problem to report (#999).
-                #expect(!SAWireAnalysis.checkOuterBound(wire: wire, face: face))
+                // its outer bound, so there is no problem to report (#999). False rather than
+                // nil, since nil is now reserved for a check that could not run (#1058).
+                #expect(SAWireAnalysis.checkOuterBound(wire: wire, face: face) == false)
             }
         }
     }
