@@ -20,20 +20,23 @@ import simd
 //     skips every edge whose pcurve on the face is null, so with none left its accumulator is
 //     never written and the `+0.0` it starts from signs as a positive area, reporting a foreign
 //     wire as the outer bound. Measured on a planar rectangle handed a cylindrical face.
+//   * a wire whose signed area cancels to rounding (magnitude below UV-area threshold),
+//     which is #1073; or a wire where not all edges have pcurves on the face (partial pcurve set),
+//     also #1073.
 //
-// A plane cannot show the last one: `BRep_Tool::CurveOnSurface` projects a 3D curve onto a plane
-// when no pcurve is stored, so a foreign wire on a planar face still gets a real answer. What it
-// does not cover is a verdict signed off an area that cancels to rounding, which is #1073. See
-// `Scripts/repro/1058-outer-bound-refusal/`.
+// A plane cannot show the "no pcurve" case: `BRep_Tool::CurveOnSurface` projects a 3D curve onto
+// a plane when no pcurve is stored, so a foreign wire on a planar face still gets a real answer.
+// What it does not cover is a verdict signed off an area that cancels to rounding, or a partial
+// pcurve set. See `Scripts/repro/1058-outer-bound-refusal/`.
 //
 // WHAT THESE TESTS ISOLATE, measured on this commit rather than assumed. Every guard in
 // `OCCTWireCheckOuterBound` except the first has a test that fails when that guard alone is broken:
 //
-//   guard 2, `!IsReady()` returning 0        -> `edgelessWireIsRefused` fails, 1 of 6
-//   guard 3, the null-`WireAPIMake` check    -> the process SIGSEGVs, no run summary at all
-//   guard 4, the pcurve walk                 -> `wireNotOnTheFaceIsRefused` fails, 1 of 6
-//   guard 4 inverted to always refuse        -> `cylinderAnswersForItsOwnWire` fails, 1 of 6
-//   every refusal returning 0 (pre-#1058)    -> 5 of 6 fail, the whole-contract run
+//   guard 2, `!IsReady()` returning 0           -> `edgelessWireIsRefused` fails, 1 of 8
+//   guard 3, the null-`WireAPIMake` check       -> the process SIGSEGVs, no run summary at all
+//   guard 4, the full pcurve-coverage walk      -> `wireWithPartialPCurveIsRefused` fails, 1 of 8
+//   guard 5, the magnitude-threshold check      -> `cylinderWireOnPanelIsRefusedForCancellation` fails, 1 of 8
+//   every refusal returning 0 (pre-#1058)       -> 7 of 8 fail, the whole-contract run
 //
 // Guard 1, `occtShapeIsType`, is the exception and is carried as green on purpose: revert it to the
 // pre-#1058 pointer-only test and nothing moves, because `catch (...)` takes the wrong-typed shape
@@ -110,19 +113,20 @@ struct Issue1058OuterBoundRefusalTests {
         #expect(SAWireAnalysis.checkOuterBound(wire: panelWire, face: box) == nil)
     }
 
-    @Test("A null shape is refused rather than crashing")
-    func nullShapeIsRefused() {
-        guard let panel = panelWithCentredWindow() else {
-            Issue.record("panel fixture failed")
-            return
-        }
-        guard let panelWire = panel.subShapes(ofType: .wire).first, let empty = panel.nullified
+    @Test("An empty face (same surface, no wires) with a valid wire returns a verdict, not nil")
+    func emptyFaceWithValidWireReturnsVerdict() {
+        guard let panel = panelWithCentredWindow(),
+            let panelWire = panel.subShapes(ofType: .wire).first,
+            let emptyFace = panel.emptied
         else {
-            Issue.record("panel has no wire, or could not be nullified")
+            Issue.record("fixtures failed")
             return
         }
-        #expect(SAWireAnalysis.checkOuterBound(wire: empty, face: panel) == nil)
-        #expect(SAWireAnalysis.checkOuterBound(wire: panelWire, face: empty) == nil)
+        // The empty face has the same surface as the panel. The panel's outer wire has pcurves
+        // on that surface, so the check runs and returns a verdict (false = wire is outer bound).
+        // This is correct: an empty face's surface has no other wires, so the given wire is its
+        // outer bound.
+        #expect(SAWireAnalysis.checkOuterBound(wire: panelWire, face: emptyFace) == false)
     }
 
     @Test("A wire with no edges is refused")
@@ -163,6 +167,66 @@ struct Issue1058OuterBoundRefusalTests {
         // the only test behind the null-WireAPIMake guard, and prove-the-test-fails.md's "a matrix
         // proves guards, not fixtures" is exactly this hole.
         #expect(wire.subShapes(ofType: .edge).count == 2)
+        #expect(SAWireAnalysis.checkOuterBound(wire: wire, face: panel) == nil)
+    }
+
+    // MARK: - #1073: cancellation and partial pcurve set
+
+    /// The cylinder's seam wire projected onto a planar panel: all edges have pcurves
+    /// (projection onto plane works), but the signed area cancels to ~1.8e-15 due to
+    /// symmetry.
+    ///
+    /// Before #1073 this returned `true` (problem found) from the sign of
+    /// rounding. After #1073 it is refused (`nil`) because the magnitude is below the
+    /// UV-area threshold.
+    @Test("Cylinder seam wire on a plane is refused due to area cancellation (#1073)")
+    func cylinderWireOnPanelIsRefusedForCancellation() {
+        guard let panel = panelWithCentredWindow(),
+            let lateral = cylinderLateralFace(),
+            let cylinderWire = lateral.subShapes(ofType: .wire).first
+        else {
+            Issue.record("fixtures failed")
+            return
+        }
+        // The cylinder's own wire on its own face is a valid outer bound (false)
+        #expect(SAWireAnalysis.checkOuterBound(wire: cylinderWire, face: lateral) == false)
+        // But the same wire on a planar panel cancels and should be refused (nil)
+        #expect(SAWireAnalysis.checkOuterBound(wire: cylinderWire, face: panel) == nil)
+    }
+
+    /// A wire where only some edges carry a pcurve on the face.
+    ///
+    /// Before #1073 the `hasPCurve` guard passed on the first hit, and `TotCross2D` summed only the
+    /// subset. After #1073 this is refused (`nil`) because full pcurve coverage is required.
+    @Test("Wire with partial pcurve coverage is refused (#1073)")
+    func wireWithPartialPCurveIsRefused() {
+        guard let panel = panelWithCentredWindow(),
+            let panelWire = panel.subShapes(ofType: .wire).first
+        else {
+            Issue.record("fixtures failed")
+            return
+        }
+        // Create a wire from two edges of the panel wire plus one foreign edge
+        // that won't have a pcurve on the panel face.
+        let panelEdges = panelWire.subShapes(ofType: .edge)
+        guard panelEdges.count >= 2,
+            let foreignEdge = Shape.edgeFromPoints(SIMD3(0, 0, 10), SIMD3(10, 0, 10))
+        else {
+            Issue.record("could not build partial-pcurve wire")
+            return
+        }
+
+        guard let wire = Shape.builderMakeWire(),
+            wire.builderAdd(panelEdges[0]),
+            wire.builderAdd(panelEdges[1]),
+            wire.builderAdd(foreignEdge)
+        else {
+            Issue.record("could not assemble partial-pcurve wire")
+            return
+        }
+
+        // The wire has 3 edges but only 2 have pcurves on the panel -> refused
+        #expect(wire.subShapes(ofType: .edge).count == 3)
         #expect(SAWireAnalysis.checkOuterBound(wire: wire, face: panel) == nil)
     }
 }

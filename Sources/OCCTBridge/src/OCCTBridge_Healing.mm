@@ -62,6 +62,7 @@
 #include <ShapeAnalysis_ShapeTolerance.hxx>
 #include <ShapeAnalysis_Shell.hxx>
 #include <ShapeAnalysis_Wire.hxx>
+#include <ShapeAnalysis.hxx>
 #include <ShapeFix_Face.hxx>
 #include <ShapeExtend_Status.hxx>
 #include <NCollection_Sequence.hxx>
@@ -5447,6 +5448,7 @@ bool OCCTWireCheckGap3dEdge(OCCTShapeRef wire, OCCTShapeRef face, double prec, i
 // #1058: the return is tri-state, because `false` used to be both the verdict for a wire that IS
 // the outer bound and the answer from every path that could not run the check. See the header for
 // the encoding and for what the pcurve guard below is protecting against.
+// #1073: added magnitude threshold against face UV scale and full pcurve coverage check.
 int32_t OCCTWireCheckOuterBound(OCCTShapeRef wire, OCCTShapeRef face)
 {
   if (!occtShapeIsType(wire, TopAbs_WIRE) || !occtShapeIsType(face, TopAbs_FACE))
@@ -5457,18 +5459,6 @@ int32_t OCCTWireCheckOuterBound(OCCTShapeRef wire, OCCTShapeRef face)
     saw.Init(TopoDS::Wire(wire->shape), TopoDS::Face(face->shape), Precision::Confusion());
     if (!saw.IsReady())
       return -1;
-    // Rebuild what CheckOuterBound hands to ShapeAnalysis::IsOuterBound and refuse if no edge of
-    // it carries a pcurve on the face: TotCross2D would then sign an area nothing contributed to.
-    // OCCTShapeUpgradeWireDivideOnFace above has the near-sibling of this walk, deliberately not
-    // shared with it: that one requires EVERY edge to carry a pcurve, because
-    // ShapeUpgrade_WireDivide null-derefs on the first that does not, while this one requires only
-    // that SOME edge does, because TotCross2D skips the rest rather than crashing on them. Same
-    // call, opposite quantifier, and this one walks the EmptyCopied face and the WireAPIMake wire
-    // rather than the caller's own, so a shared helper would have to take both the quantifier and
-    // the pair. WireAPIMake is null whenever BRepBuilderAPI_MakeWire cannot assemble the loaded
-    // edges, e.g. for two disconnected edges, and BRep_Builder::Add dereferences its component with
-    // no null test, which is a signal the catch below cannot see. CheckOuterBound builds the same
-    // wire, so this refuses one line before OCCT would have crashed on it.
     TopoDS_Wire aBuilt = saw.WireData()->WireAPIMake();
     if (aBuilt.IsNull())
       return -1;
@@ -5476,15 +5466,43 @@ int32_t OCCTWireCheckOuterBound(OCCTShapeRef wire, OCCTShapeRef face)
     TopoDS_Face  aProbe  = TopoDS::Face(anEmpty);
     BRep_Builder aBuilder;
     aBuilder.Add(aProbe, aBuilt);
-    bool hasPCurve = false;
-    for (TopExp_Explorer anIt(aProbe, TopAbs_EDGE); anIt.More() && !hasPCurve; anIt.Next())
+
+    // Count total edges and edges with pcurves on the face
+    int totalEdges      = 0;
+    int edgesWithPCurve = 0;
+    for (TopExp_Explorer anIt(aProbe, TopAbs_EDGE); anIt.More(); anIt.Next())
     {
+      totalEdges++;
       double aFirst, aLast;
-      hasPCurve =
-        !BRep_Tool::CurveOnSurface(TopoDS::Edge(anIt.Current()), aProbe, aFirst, aLast).IsNull();
+      if (!BRep_Tool::CurveOnSurface(TopoDS::Edge(anIt.Current()), aProbe, aFirst, aLast).IsNull())
+        edgesWithPCurve++;
     }
-    if (!hasPCurve)
+    // Refuse if not all edges have pcurves (partial pcurve set)
+    if (totalEdges == 0 || edgesWithPCurve != totalEdges)
       return -1;
+
+    // Compute signed area via TotCross2D
+    occ::handle<ShapeExtend_WireData> sewd     = new ShapeExtend_WireData(aBuilt);
+    double                            totcross = ShapeAnalysis::TotCross2D(sewd, aProbe);
+
+    // Get face UV bounds for scale reference
+    double umin, umax, vmin, vmax;
+    ShapeAnalysis::GetFaceUVBounds(aProbe, umin, umax, vmin, vmax);
+    double uRange = umax - umin;
+    double vRange = vmax - vmin;
+    double uvArea = uRange * vRange;
+
+    // If UV area is degenerate, refuse
+    if (uvArea <= 0.0)
+      return -1;
+
+    // Threshold: 1e-12 of UV area. The cancellation case measures ~1.8e-15
+    // against a 100 unit^2 panel, so 1e-12 * 100 = 1e-10 comfortably separates.
+    double threshold = 1e-12 * uvArea;
+    if (std::abs(totcross) < threshold)
+      return -1;
+
+    // Use OCCT's CheckOuterBound for the actual verdict (handles orientation correctly)
     return saw.CheckOuterBound() ? 1 : 0;
   }
   catch (...)
