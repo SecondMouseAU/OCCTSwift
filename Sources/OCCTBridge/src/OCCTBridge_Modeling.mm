@@ -16414,16 +16414,20 @@ int32_t OCCTShapeSelfIntersectsBounded(OCCTShapeRef shape, double timeoutSeconds
 //     checked. This output will be 0 in the current implementation.
 //   - outTotalFacePairs: estimated total face pairs to check
 //   - outTimeSpent: actual time spent in seconds
-int32_t OCCTShapeSelfIntersectsDetailed(OCCTShapeRef shape, double timeoutSeconds,
-                                         int32_t* outNumFacesChecked,
-                                         int32_t* outTotalFacePairs,
-                                         double* outTimeSpent)
+int32_t OCCTShapeSelfIntersectsDetailed(OCCTShapeRef shape,
+                                        double       timeoutSeconds,
+                                        int32_t*     outNumFacesChecked,
+                                        int32_t*     outTotalFacePairs,
+                                        double*      outTimeSpent)
 {
   if (!shape)
     return -3;
-  if (outNumFacesChecked) *outNumFacesChecked = 0; // Not available from BOPAlgo_ArgumentAnalyzer
-  if (outTotalFacePairs) *outTotalFacePairs = 0;
-  if (outTimeSpent) *outTimeSpent = 0.0;
+  if (outNumFacesChecked)
+    *outNumFacesChecked = 0; // Not available from BOPAlgo_ArgumentAnalyzer
+  if (outTotalFacePairs)
+    *outTotalFacePairs = 0;
+  if (outTimeSpent)
+    *outTimeSpent = 0.0;
 
   auto startTime = std::chrono::steady_clock::now();
   occtEnsureSignals();
@@ -16439,20 +16443,25 @@ int32_t OCCTShapeSelfIntersectsDetailed(OCCTShapeRef shape, double timeoutSecond
 
     // Estimate total face pairs for progress reporting
     int32_t estimatedTotalPairs = 0;
-    if (outTotalFacePairs) {
+    if (outTotalFacePairs)
+    {
       TopExp_Explorer exp(shape->shape, TopAbs_FACE);
-      int32_t numFaces = 0;
-      while (exp.More()) { numFaces++; exp.Next(); }
+      int32_t         numFaces = 0;
+      while (exp.More())
+      {
+        numFaces++;
+        exp.Next();
+      }
       // Upper bound: n*(n-1)/2 pairs, but self-intersection checks adjacent faces too
       // A more realistic estimate for self-intersection is ~n^2 / 4
       estimatedTotalPairs = (numFaces * numFaces) / 4;
-      *outTotalFacePairs = estimatedTotalPairs;
+      *outTotalFacePairs  = estimatedTotalPairs;
     }
 
     Handle(OCCTBoolTimeoutBreaker) breaker;
     if (timeoutSeconds > 0.0)
     {
-      breaker = new OCCTBoolTimeoutBreaker(timeoutSeconds);
+      breaker                     = new OCCTBoolTimeoutBreaker(timeoutSeconds);
       Message_ProgressRange range = breaker->Start();
       aa.Perform(range);
     }
@@ -16462,7 +16471,8 @@ int32_t OCCTShapeSelfIntersectsDetailed(OCCTShapeRef shape, double timeoutSecond
     }
 
     auto endTime = std::chrono::steady_clock::now();
-    if (outTimeSpent) {
+    if (outTimeSpent)
+    {
       *outTimeSpent = std::chrono::duration<double>(endTime - startTime).count();
     }
 
@@ -16480,7 +16490,8 @@ int32_t OCCTShapeSelfIntersectsDetailed(OCCTShapeRef shape, double timeoutSecond
   catch (...)
   {
     auto endTime = std::chrono::steady_clock::now();
-    if (outTimeSpent) {
+    if (outTimeSpent)
+    {
       *outTimeSpent = std::chrono::duration<double>(endTime - startTime).count();
     }
     return -3; // exception occurred
@@ -16496,28 +16507,32 @@ int32_t OCCTShapeSelfIntersectsDetailed(OCCTShapeRef shape, double timeoutSecond
 // outEstimatedCost: relative cost estimate (higher = more expensive)
 // Returns 0 on success, -1 on error
 int32_t OCCTShapeSelfIntersectEstimateCost(OCCTShapeRef shape,
-                                            int32_t* outNumFaces,
-                                            int32_t* outNumBSplineFaces,
-                                            int32_t* outNumPlaneFaces,
-                                            double* outEstimatedCost)
+                                           int32_t*     outNumFaces,
+                                           int32_t*     outNumBSplineFaces,
+                                           int32_t*     outNumPlaneFaces,
+                                           double*      outEstimatedCost)
 {
   if (!shape)
     return -1;
-  if (outNumFaces) *outNumFaces = 0;
-  if (outNumBSplineFaces) *outNumBSplineFaces = 0;
-  if (outNumPlaneFaces) *outNumPlaneFaces = 0;
-  if (outEstimatedCost) *outEstimatedCost = 0.0;
+  if (outNumFaces)
+    *outNumFaces = 0;
+  if (outNumBSplineFaces)
+    *outNumBSplineFaces = 0;
+  if (outNumPlaneFaces)
+    *outNumPlaneFaces = 0;
+  if (outEstimatedCost)
+    *outEstimatedCost = 0.0;
 
   try
   {
     TopExp_Explorer exp(shape->shape, TopAbs_FACE);
-    int32_t numFaces = 0;
-    int32_t numBSplineFaces = 0;
-    int32_t numPlaneFaces = 0;
+    int32_t         numFaces        = 0;
+    int32_t         numBSplineFaces = 0;
+    int32_t         numPlaneFaces   = 0;
 
     while (exp.More())
     {
-      TopoDS_Face face = TopoDS::Face(exp.Current());
+      TopoDS_Face          face = TopoDS::Face(exp.Current());
       Handle(Geom_Surface) surf = BRep_Tool::Surface(face);
       numFaces++;
       if (!surf.IsNull())
@@ -16536,17 +16551,21 @@ int32_t OCCTShapeSelfIntersectEstimateCost(OCCTShapeRef shape,
       exp.Next();
     }
 
-    if (outNumFaces) *outNumFaces = numFaces;
-    if (outNumBSplineFaces) *outNumBSplineFaces = numBSplineFaces;
-    if (outNumPlaneFaces) *outNumPlaneFaces = numPlaneFaces;
+    if (outNumFaces)
+      *outNumFaces = numFaces;
+    if (outNumBSplineFaces)
+      *outNumBSplineFaces = numBSplineFaces;
+    if (outNumPlaneFaces)
+      *outNumPlaneFaces = numPlaneFaces;
 
     // Cost model: BSpline faces are ~10x more expensive than analytical surfaces
     // Plane faces are ~1x (baseline)
     // Other analytical surfaces (cylinder, cone, sphere) are ~3x
     int32_t otherFaces = numFaces - numBSplineFaces - numPlaneFaces;
-    double cost = numBSplineFaces * 10.0 + otherFaces * 3.0 + numPlaneFaces * 1.0;
+    double  cost       = numBSplineFaces * 10.0 + otherFaces * 3.0 + numPlaneFaces * 1.0;
 
-    if (outEstimatedCost) *outEstimatedCost = cost;
+    if (outEstimatedCost)
+      *outEstimatedCost = cost;
 
     return 0;
   }

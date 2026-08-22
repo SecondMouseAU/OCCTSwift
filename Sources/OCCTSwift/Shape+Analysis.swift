@@ -746,8 +746,8 @@ extension Shape {
             self.totalFacePairs = totalFacePairs
             self.timeSpent = timeSpent
             switch code {
-            case 1:  self.status = .intersects
-            case 0:  self.status = .clean
+            case 1: self.status = .intersects
+            case 0: self.status = .clean
             case -1: self.status = .indeterminateBreakerTripped
             case -2: self.status = .indeterminateBreakerNotTripped
             default: self.status = .error

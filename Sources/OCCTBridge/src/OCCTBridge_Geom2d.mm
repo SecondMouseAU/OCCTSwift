@@ -7830,19 +7830,21 @@ void OCCTGeom2dEvalCircleInvoluteD1(double  radius,
   *vy                                = res.D1.Y();
 }
 
-OCCTCurve2DRef OCCTGeom2dEvalCircleInvoluteCurveCreate(double originX, double originY,
-                                                        double dirX, double dirY,
-                                                        double radius)
+OCCTCurve2DRef OCCTGeom2dEvalCircleInvoluteCurveCreate(double originX,
+                                                       double originY,
+                                                       double dirX,
+                                                       double dirY,
+                                                       double radius)
 {
   if (radius <= 0.0)
     return nullptr;
   try
   {
-    gp_Ax2d ax(gp_Pnt2d(originX, originY), gp_Dir2d(dirX, dirY));
-    auto inv = new Geom2dEval_CircleInvoluteCurve(ax, radius);
+    gp_Ax2d                   ax(gp_Pnt2d(originX, originY), gp_Dir2d(dirX, dirY));
+    auto                      inv = new Geom2dEval_CircleInvoluteCurve(ax, radius);
     occ::handle<Geom2d_Curve> hCurve(inv);
-    auto ref = new OCCTCurve2D();
-    ref->curve = hCurve;
+    auto                      ref = new OCCTCurve2D();
+    ref->curve                    = hCurve;
     return ref;
   }
   catch (...)
@@ -7851,12 +7853,17 @@ OCCTCurve2DRef OCCTGeom2dEvalCircleInvoluteCurveCreate(double originX, double or
   }
 }
 
-void OCCTGeom2dEvalCircleInvoluteD0WithPlacement(double originX, double originY,
-                                                  double dirX, double dirY,
-                                                  double radius, double u,
-                                                  double* px, double* py)
+void OCCTGeom2dEvalCircleInvoluteD0WithPlacement(double  originX,
+                                                 double  originY,
+                                                 double  dirX,
+                                                 double  dirY,
+                                                 double  radius,
+                                                 double  u,
+                                                 double* px,
+                                                 double* py)
 {
-  if (radius <= 0.0) {
+  if (radius <= 0.0)
+  {
     *px = 0.0;
     *py = 0.0;
     return;
@@ -7868,13 +7875,19 @@ void OCCTGeom2dEvalCircleInvoluteD0WithPlacement(double originX, double originY,
   *py                              = p.Y();
 }
 
-void OCCTGeom2dEvalCircleInvoluteD1WithPlacement(double originX, double originY,
-                                                  double dirX, double dirY,
-                                                  double radius, double u,
-                                                  double* px, double* py,
-                                                  double* vx, double* vy)
+void OCCTGeom2dEvalCircleInvoluteD1WithPlacement(double  originX,
+                                                 double  originY,
+                                                 double  dirX,
+                                                 double  dirY,
+                                                 double  radius,
+                                                 double  u,
+                                                 double* px,
+                                                 double* py,
+                                                 double* vx,
+                                                 double* vy)
 {
-  if (radius <= 0.0) {
+  if (radius <= 0.0)
+  {
     *px = 0.0;
     *py = 0.0;
     *vx = 0.0;
