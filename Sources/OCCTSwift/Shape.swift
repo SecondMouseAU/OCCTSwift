@@ -431,7 +431,7 @@ public final class Shape: @unchecked Sendable {
     /// (positive volume) regardless of the profile wire's sense relative to the
     /// path tangent. `BRepOffsetAPI_MakePipe` itself yields an inward-oriented
     /// (negative-volume) solid whenever the section's normal runs against the path
-    /// tangent, a latent hazard for downstream booleans and `volume > 0` checks,
+    /// tangent — a latent hazard for downstream booleans and `volume > 0` checks —
     /// so callers no longer need the "point the section normal against the tangent"
     /// incantation. See ``orientedForward()`` for the same fix applied explicitly.
     public static func sweep(profile: Wire, along path: Wire) -> Shape? {
@@ -563,14 +563,14 @@ public final class Shape: @unchecked Sendable {
     ///
     /// Gluing speeds up and hardens booleans when the arguments share **coincident
     /// faces**, by telling the algorithm those faces touch instead of intersecting them.
-    /// Only use it when the touching faces really are coincident, gluing two solids that
+    /// Only use it when the touching faces really are coincident — gluing two solids that
     /// genuinely interpenetrate produces a wrong result.
     public enum BooleanGlue: Int32, Sendable {
-        /// No gluing (OCCT default, full intersection).
+        /// No gluing (OCCT default — full intersection).
         case off = 0
-        /// `BOPAlgo_GlueShift`, arguments may share coincident faces but are otherwise disjoint.
+        /// `BOPAlgo_GlueShift` — arguments may share coincident faces but are otherwise disjoint.
         case shift = 1
-        /// `BOPAlgo_GlueFull`, all arguments are known to share coincident faces (fastest, strictest).
+        /// `BOPAlgo_GlueFull` — all arguments are known to share coincident faces (fastest, strictest).
         case full = 2
     }
 
@@ -581,142 +581,6 @@ public final class Shape: @unchecked Sendable {
     /// elapses rather than hanging a pipeline. Override per call; pass `0` (or negative) to
     /// disable. (#206)
     public static let defaultBooleanTimeout: Double = 120
-
-    /// What a boolean did, separating a genuine failure from the `timeout:` watchdog firing.
-    ///
-    /// ``union(_:fuzzyValue:glue:timeout:)``, ``subtracting(_:fuzzyValue:glue:timeout:)`` and
-    /// ``intersection(_:fuzzyValue:glue:timeout:)`` collapse ``failed`` and ``timedOut`` into one
-    /// `nil`, so a caller cannot tell a bad operand from a busy machine (#1067). Returned by
-    /// ``unionOutcome(_:fuzzyValue:glue:timeout:)``,
-    /// ``subtractionOutcome(_:fuzzyValue:glue:timeout:)`` and
-    /// ``intersectionOutcome(_:fuzzyValue:glue:timeout:)``.
-    public enum BooleanOutcome: Sendable {
-        /// The operation completed and produced this shape.
-        case success(Shape)
-        /// The operation ran to a conclusion and declined, for example on an invalid operand.
-        /// Raising `timeout:` will not change this.
-        case failed
-        /// The wall-clock watchdog interrupted the build, so no result was produced. This is a
-        /// property of the deadline and the machine, not of the geometry (**indeterminate**,
-        /// treat as "unknown", not "cannot be built"). Retrying with a larger `timeout:` may
-        /// succeed.
-        case timedOut
-
-        /// The result shape, or `nil` for either non-success case.
-        ///
-        /// The three named boolean methods return exactly this, which is why they cannot tell
-        /// ``failed`` from ``timedOut``.
-        public var shape: Shape? {
-            if case .success(let shape) = self { return shape }
-            return nil
-        }
-    }
-
-    /// Decode one bridge boolean call into a ``BooleanOutcome``.
-    ///
-    /// The three public outcome methods differ only in which bridge function they hand over, so
-    /// the pointer handling and the `nil`-plus-flag decode live here once rather than three times.
-    private func booleanOutcome(
-        _ run: (UnsafeMutablePointer<Int32>) -> OCCTShapeRef?
-    ) -> BooleanOutcome {
-        var timedOut: Int32 = 0
-        let handle = withUnsafeMutablePointer(to: &timedOut) { run($0) }
-        guard let handle else { return timedOut != 0 ? .timedOut : .failed }
-        return .success(Shape(handle: handle))
-    }
-
-    /// ``union(_:fuzzyValue:glue:timeout:)``, reporting **why** it produced no shape.
-    ///
-    /// Same operation, same options and same watchdog; `union` is a thin wrapper over this that
-    /// returns ``BooleanOutcome/shape``. The difference is that `union` answers `nil` for both a
-    /// failed boolean and an expired `timeout:`, and only this separates them (#1067).
-    ///
-    /// - Important: `timeout` is **cooperative, not a hard deadline** (#293), exactly as on
-    ///   `union`. It is a `Message_ProgressIndicator` OCCT polls at its own internal checkpoints,
-    ///   so the call returns at the first checkpoint after `timeout`, not at `timeout` itself.
-    ///   ``BooleanOutcome/timedOut`` therefore means "the watchdog fired", which is
-    ///   indeterminate rather than negative, the reading ``isSelfIntersecting(timeout:)`` gives
-    ///   its `nil`. The two are not the same signal: `.timedOut` is the watchdog and only the
-    ///   watchdog, while that `nil` also covers an argument the analyzer refused and an analysis
-    ///   that errored (#1054).
-    ///
-    /// - Parameters:
-    ///   - other: The shape to fuse with `self`.
-    ///   - fuzzyValue: As ``union(_:fuzzyValue:glue:timeout:)``.
-    ///   - glue: As ``union(_:fuzzyValue:glue:timeout:)``.
-    ///   - timeout: As ``union(_:fuzzyValue:glue:timeout:)``. `0`/negative = unbounded, which
-    ///     makes ``BooleanOutcome/timedOut`` unreachable.
-    /// - Returns: The outcome, carrying the fused shape on success.
-    ///
-    /// ```swift
-    /// switch box.unionOutcome(cyl) {
-    /// case .success(let merged): print(merged.volume as Any)
-    /// case .timedOut:            print("the machine, not the geometry: try a larger timeout")
-    /// case .failed:              print("the boolean declined these operands")
-    /// }
-    /// ```
-    public func unionOutcome(
-        _ other: Shape, fuzzyValue: Double = 0, glue: BooleanGlue = .off,
-        timeout: Double = Shape.defaultBooleanTimeout
-    ) -> BooleanOutcome {
-        booleanOutcome {
-            OCCTShapeUnionEx(self.handle, other.handle, fuzzyValue, glue.rawValue, timeout, $0)
-        }
-    }
-
-    /// ``subtracting(_:fuzzyValue:glue:timeout:)``, reporting **why** it produced no shape.
-    ///
-    /// See ``unionOutcome(_:fuzzyValue:glue:timeout:)`` for the contract, which is identical
-    /// apart from the operation (#1067).
-    ///
-    /// - Parameters:
-    ///   - other: The tool shape to remove from `self`.
-    ///   - fuzzyValue: As ``subtracting(_:fuzzyValue:glue:timeout:)``.
-    ///   - glue: As ``subtracting(_:fuzzyValue:glue:timeout:)``.
-    ///   - timeout: As ``subtracting(_:fuzzyValue:glue:timeout:)``. `0`/negative = unbounded.
-    /// - Returns: The outcome, carrying the cut shape on success.
-    ///
-    /// ```swift
-    /// // A 36-tooth gear whose cut is legitimately long: retry the deadline, not the geometry.
-    /// var outcome = blank.subtractionOutcome(tools)
-    /// if case .timedOut = outcome {
-    ///     outcome = blank.subtractionOutcome(tools, timeout: 600)
-    /// }
-    /// guard let gear = outcome.shape else { return }
-    /// ```
-    public func subtractionOutcome(
-        _ other: Shape, fuzzyValue: Double = 0, glue: BooleanGlue = .off,
-        timeout: Double = Shape.defaultBooleanTimeout
-    ) -> BooleanOutcome {
-        booleanOutcome {
-            OCCTShapeSubtractEx(self.handle, other.handle, fuzzyValue, glue.rawValue, timeout, $0)
-        }
-    }
-
-    /// ``intersection(_:fuzzyValue:glue:timeout:)``, reporting **why** it produced no shape.
-    ///
-    /// See ``unionOutcome(_:fuzzyValue:glue:timeout:)`` for the contract, which is identical
-    /// apart from the operation (#1067).
-    ///
-    /// - Parameters:
-    ///   - other: The shape to intersect with `self`.
-    ///   - fuzzyValue: As ``intersection(_:fuzzyValue:glue:timeout:)``.
-    ///   - glue: As ``intersection(_:fuzzyValue:glue:timeout:)``.
-    ///   - timeout: As ``intersection(_:fuzzyValue:glue:timeout:)``. `0`/negative = unbounded.
-    /// - Returns: The outcome, carrying the common shape on success.
-    ///
-    /// ```swift
-    /// let outcome = box.intersectionOutcome(cyl)
-    /// print(outcome.shape?.volume as Any)   // nil for both failed and timedOut
-    /// ```
-    public func intersectionOutcome(
-        _ other: Shape, fuzzyValue: Double = 0, glue: BooleanGlue = .off,
-        timeout: Double = Shape.defaultBooleanTimeout
-    ) -> BooleanOutcome {
-        booleanOutcome {
-            OCCTShapeIntersectEx(self.handle, other.handle, fuzzyValue, glue.rawValue, timeout, $0)
-        }
-    }
 
     /// Union (add) two shapes together.
     ///
@@ -733,13 +597,16 @@ public final class Shape: @unchecked Sendable {
     /// let merged = box.union(cyl)                      // or: box + cyl
     /// let clean  = outer.union(inner, fuzzyValue: 1e-4) // near-tangent walls fuse cleanly
     /// ```
-    /// - Returns: The fused shape, or nil if the boolean failed **or** `timeout` elapsed.
-    ///   ``unionOutcome(_:fuzzyValue:glue:timeout:)`` tells those two apart (#1067).
+    /// - Returns: The fused shape, or nil if the boolean failed.
     public func union(
         _ other: Shape, fuzzyValue: Double = 0, glue: BooleanGlue = .off,
         timeout: Double = Shape.defaultBooleanTimeout
     ) -> Shape? {
-        unionOutcome(other, fuzzyValue: fuzzyValue, glue: glue, timeout: timeout).shape
+        guard
+            let handle = OCCTShapeUnionEx(
+                self.handle, other.handle, fuzzyValue, glue.rawValue, timeout)
+        else { return nil }
+        return Shape(handle: handle)
     }
 
     /// Subtract another shape from this one.
@@ -754,15 +621,18 @@ public final class Shape: @unchecked Sendable {
     ///     `nil` if the operation doesn't finish in time instead of hanging. `0`/negative = unbounded.
     ///
     /// ```swift
-    /// let drilled = box.subtracting(cyl)   // or: box - cyl, a box with a through-hole
+    /// let drilled = box.subtracting(cyl)   // or: box - cyl  — a box with a through-hole
     /// ```
-    /// - Returns: The cut shape, or nil if the boolean failed **or** `timeout` elapsed.
-    ///   ``subtractionOutcome(_:fuzzyValue:glue:timeout:)`` tells those two apart (#1067).
+    /// - Returns: The cut shape, or nil if the boolean failed.
     public func subtracting(
         _ other: Shape, fuzzyValue: Double = 0, glue: BooleanGlue = .off,
         timeout: Double = Shape.defaultBooleanTimeout
     ) -> Shape? {
-        subtractionOutcome(other, fuzzyValue: fuzzyValue, glue: glue, timeout: timeout).shape
+        guard
+            let handle = OCCTShapeSubtractEx(
+                self.handle, other.handle, fuzzyValue, glue.rawValue, timeout)
+        else { return nil }
+        return Shape(handle: handle)
     }
 
     /// Intersection of two shapes.
@@ -776,15 +646,18 @@ public final class Shape: @unchecked Sendable {
     ///     `nil` if the operation doesn't finish in time instead of hanging. `0`/negative = unbounded.
     ///
     /// ```swift
-    /// let common = box.intersection(cyl)   // or: box & cyl, the overlapping volume
+    /// let common = box.intersection(cyl)   // or: box & cyl  — the overlapping volume
     /// ```
-    /// - Returns: The common shape, or nil if the boolean failed **or** `timeout` elapsed.
-    ///   ``intersectionOutcome(_:fuzzyValue:glue:timeout:)`` tells those two apart (#1067).
+    /// - Returns: The common shape, or nil if the boolean failed.
     public func intersection(
         _ other: Shape, fuzzyValue: Double = 0, glue: BooleanGlue = .off,
         timeout: Double = Shape.defaultBooleanTimeout
     ) -> Shape? {
-        intersectionOutcome(other, fuzzyValue: fuzzyValue, glue: glue, timeout: timeout).shape
+        guard
+            let handle = OCCTShapeIntersectEx(
+                self.handle, other.handle, fuzzyValue, glue.rawValue, timeout)
+        else { return nil }
+        return Shape(handle: handle)
     }
 
     // MARK: - Modifications
@@ -1028,20 +901,20 @@ public final class Shape: @unchecked Sendable {
 
     /// Generate a triangulated mesh for visualization.
     ///
-    /// - Warning: **This call can take minutes on a degenerate offset surface**, the geometry
+    /// - Warning: **This call can take minutes on a degenerate offset surface** — the geometry
     ///   `shelled(thickness:)` / `offset(by:)` produce (`Geom_OffsetSurface`). It is not a hang:
     ///   measured on the fitted-then-offset B-spline panel from
     ///   [#286](https://github.com/SecondMouseAU/OCCTSwift/issues/286), one face took **249 s** and
     ///   emitted **1.4 M triangles** at a *coarse* deflection (1/638 of the shape's bbox diagonal).
     ///   It terminates; earlier reports of an unbounded hang were timeouts set below that.
     ///
-    ///   **Cause**, the offset surface is *self-intersecting*, and the mesher's angular criterion
+    ///   **Cause** — the offset surface is *self-intersecting*, and the mesher's angular criterion
     ///   cannot converge on it. Offsetting a surface by more than its local radius of curvature
     ///   produces cusps. On the #286 panel the basis fit's minimum principal curvature radius is
     ///   `2.6e-05` against an offset of `1.27`, so **23.8 %** of the domain is cusped and the
     ///   surface normal swings by up to `π` across one. `BRepMesh` splits any triangle link whose
     ///   end normals differ by more than `AngleInterior` (= `2 × angularDeflection`), but at a
-    ///   normal *discontinuity* splitting never helps, halving a link that straddles a cusp just
+    ///   normal *discontinuity* splitting never helps — halving a link that straddles a cusp just
     ///   moves the cusp into one half. So `BRepMesh_DelaunayDeflectionControlMeshAlgo::optimizeMesh`
     ///   runs all 11 of its passes demanding ~80 k splits each, long after linear deflection is
     ///   satisfied (it reached 1.82 against a 2.48 target by pass 6). `MinSize`
@@ -1050,13 +923,13 @@ public final class Shape: @unchecked Sendable {
     ///
     ///   **Mitigations**, in order of preference:
     ///   1. **Don't mesh geometry you haven't sanity-checked.** `bounds` is a cheap `Bnd_Box`
-    ///      query with no tessellation, comparing a thickened solid's bbox against its source's
+    ///      query with no tessellation — comparing a thickened solid's bbox against its source's
     ///      is enough to reject the ballooned offsets that trigger this, and is what the
     ///      downstream caller in #286 adopted. Note `isValid` will *not* catch it: the measured
     ///      offending solid reports `isValid == true`, because a self-intersecting offset surface
     ///      is still a topologically valid face.
     ///   2. **Bound it with a deadline.** ``meshWithProgress(linearDeflection:angularDeflection:progress:)``
-    ///      interrupts this reliably, a 10 s deadline returns in 10.1 s on the #286 face. (Before
+    ///      interrupts this reliably — a 10 s deadline returns in 10.1 s on the #286 face. (Before
     ///      v1.11.1 the bridge meshed inside a constructor that never polled the progress range, so
     ///      cancellation appeared not to work; that was our bug, now fixed.)
     ///   3. **Raise `angularDeflection`,** which raises the `AngleInterior` threshold that is doing
@@ -1064,20 +937,20 @@ public final class Shape: @unchecked Sendable {
     ///      backstop bite sooner.
     ///   4. ``withSurfacesAsBSpline(extrusion:revolution:offset:plane:)`` with `offset: true`
     ///      approximates the `Geom_OffsetSurface` with a plain B-spline, which smooths the cusps
-    ///      the angular check is choking on. Measured on the #286 solid: 125 s / 526 k vertices,
+    ///      the angular check is choking on. Measured on the #286 solid: 125 s / 526 k vertices —
     ///      faster, but it resamples the geometry, so treat it as a rescue path, not a default.
     ///
     /// - Note: **Triangle winding always reflects the shape's true topological orientation, not
     ///   a naive read of a caller-applied transform.** This method reads each face's
     ///   `TopoDS_Face::Orientation()` faithfully (reversing the triangulation's node order when
-    ///   `REVERSED`), so it's never "wrong", but for a **valid, closed solid**, that orientation
+    ///   `REVERSED`), so it's never "wrong" — but for a **valid, closed solid**, that orientation
     ///   is *always* consistently outward, even after a mirror (negative-determinant transform):
-    ///   ``mirrored(planeNormal:planeOrigin:)`` doesn't naively re-tessellate flipped geometry,
+    ///   ``mirrored(planeNormal:planeOrigin:)`` doesn't naively re-tessellate flipped geometry —
     ///   OCCT's `BRepBuilderAPI_Transform` compensates by flipping each face's orientation flag,
     ///   preserving the invariant that a valid solid's faces classify consistently outward.
     ///   Confirmed empirically (#375): a box and its mirror both mesh 12/12 triangles outward,
     ///   with the identical FORWARD/REVERSED face split before and after. There is currently no
-    ///   way, via a valid `Shape`, to obtain a mesh whose winding reflects an applied mirror, a
+    ///   way, via a valid `Shape`, to obtain a mesh whose winding reflects an applied mirror — a
     ///   caller who needs deliberately caller-controlled (including "wrong-way") winding, e.g. to
     ///   test orientation-sensitive downstream code, should build a ``Mesh`` directly via
     ///   ``Mesh/init(vertices:normals:indices:)`` instead of going through a `Shape`.
@@ -1115,13 +988,13 @@ public final class Shape: @unchecked Sendable {
     /// do {
     ///     _ = try shape.meshWithProgress(linearDeflection: 0.1, progress: Deadline())
     /// } catch ImportError.cancelled {
-    ///     // Gave up after 10s, the geometry is probably degenerate; see `bounds` pre-checks.
+    ///     // Gave up after 10s — the geometry is probably degenerate; see `bounds` pre-checks.
     /// }
     /// ```
     ///
     /// - Note: Before v1.11.1 this could not cancel at all. The bridge used the
     ///   `BRepMesh_IncrementalMesh(shape, linDefl, isRelative, angDefl)` constructor, which calls
-    ///   `Perform()` internally with a *null* progress range, the whole mesh was built
+    ///   `Perform()` internally with a *null* progress range — the whole mesh was built
     ///   uninterruptibly before the range was polled, and the shape was then meshed a second time.
     ///   Cancellation still *threw*, because `UserBreak()` was checked afterwards, which is what
     ///   made the defect look like an OCCT limitation in v1.10.2's docs.
@@ -1164,7 +1037,7 @@ public final class Shape: @unchecked Sendable {
     ///
     /// - Parameter parameters: Enhanced mesh parameters
     /// - Returns: A `Mesh` with the specified quality settings
-    /// - Note: Same orientation guarantee as ``mesh(linearDeflection:angularDeflection:)``, see
+    /// - Note: Same orientation guarantee as ``mesh(linearDeflection:angularDeflection:)`` — see
     ///   its doc for details on why a valid solid's mesh is always consistently outward.
     public func mesh(parameters: MeshParameters) -> Mesh? {
         let bridgeParams = parameters.toBridge()
@@ -1225,7 +1098,7 @@ public final class Shape: @unchecked Sendable {
     /// Discretizes every edge in a single bridge pass. Edges that fail discretization
     /// (including degenerate ones) are skipped.
     ///
-    /// The result is dense, when an edge is skipped, later polylines shift down, so a
+    /// The result is dense — when an edge is skipped, later polylines shift down, so a
     /// polyline's position does NOT reliably equal its edge index. Consumers that map
     /// polylines back to topology (`edge(at:)`, pick identity) should use
     /// ``allEdgePolylinesIndexed(deflection:maxPointsPerEdge:)`` instead.
@@ -1243,14 +1116,14 @@ public final class Shape: @unchecked Sendable {
     }
 
     /// As ``allEdgePolylines(deflection:maxPointsPerEdge:)``, but each polyline carries
-    /// its ORIGINAL edge index, the same index space as ``edgePolyline(at:deflection:maxPoints:)``
+    /// its ORIGINAL edge index — the same index space as ``edgePolyline(at:deflection:maxPoints:)``
     /// and ``edge(at:)``.
     ///
-    /// Edges that fail discretization (including degenerate ones, e.g. sphere pole
+    /// Edges that fail discretization (including degenerate ones — e.g. sphere pole
     /// seams) are skipped, and with the dense variant that skip silently shifts every
     /// later polyline's position. Consumers that need to round-trip a polyline back to
     /// topology (per-segment edge pick indices, wireframe → `TopoDS_Edge` mapping) need
-    /// the explicit index this variant preserves. Same single bulk bridge pass,
+    /// the explicit index this variant preserves. Same single bulk bridge pass —
     /// O(edges), issue #275.
     ///
     /// - Parameters:
@@ -1273,7 +1146,7 @@ public final class Shape: @unchecked Sendable {
         buildCurves3d(tolerance: 1e-5)
 
         // One bulk pass: the bridge builds the edge map once. Looping `edgePolyline(at:)`
-        // instead rebuilds it per call, making this O(edges²), 20 s for a 12k-edge shell,
+        // instead rebuilds it per call, making this O(edges²) — 20 s for a 12k-edge shell,
         // and unusable on mesh-scale shapes (issue #275).
         guard let maxPointsPerEdge = Sampling.requested(maxPointsPerEdge),
             let polys = OCCTShapeComputeAllEdgePolylines(
@@ -1292,7 +1165,7 @@ public final class Shape: @unchecked Sendable {
                     OCCTEdgePolylinesCopyPoints(
                         polys, Int32(i), buffer.baseAddress, Int32(maxPointsPerEdge)))
             }
-            guard written > 0 else { continue }  // degenerate / failed, skipped, as before
+            guard written > 0 else { continue }  // degenerate / failed — skipped, as before
 
             var polyline: [SIMD3<Double>] = []
             polyline.reserveCapacity(written)
@@ -1444,7 +1317,7 @@ public final class Shape: @unchecked Sendable {
     ///
     /// `progress` observes the import and cancels it cooperatively. Every phase is bounded by it:
     /// the transfer takes `fraction` 0…0.5 and the repair (sewing, then healing) 0.5…1.0, matching
-    /// their measured cost, repair is 38–50% of the work, not a coda to the transfer. A wall-clock
+    /// their measured cost — repair is 38–50% of the work, not a coda to the transfer. A wall-clock
     /// deadline in `shouldCancel()` therefore bounds the whole call, and cancelling mid-repair
     /// throws rather than returning the partially-repaired shape.
     ///
@@ -1462,7 +1335,7 @@ public final class Shape: @unchecked Sendable {
     ///     let shape = try Shape.loadRobust(from: stepURL, progress: Deadline())
     ///     print(shape.isValid)
     /// } catch ImportError.cancelled {
-    ///     // Gave up after 10s, repairing untrusted geometry can be pathological.
+    ///     // Gave up after 10s — repairing untrusted geometry can be pathological.
     /// }
     /// ```
     ///
@@ -1572,12 +1445,12 @@ public final class Shape: @unchecked Sendable {
     /// Load an IGES file, healing the transferred geometry (`ShapeFix_Shape`).
     ///
     /// Recommended for IGES files whose geometry needs repair before use. Note this heals but does
-    /// **not** sew, unlike ``loadRobust(from:)``, which sews STEP shells into solids.
+    /// **not** sew — unlike ``loadRobust(from:)``, which sews STEP shells into solids.
     ///
     /// ## Progress and cancellation
     ///
     /// `progress` observes the import and cancels it cooperatively. The two phases each take half
-    /// the reported `fraction`, transfer spans 0…0.5, healing 0.5…1.0, which matches their
+    /// the reported `fraction` — transfer spans 0…0.5, healing 0.5…1.0 — which matches their
     /// measured cost (healing is 38–50% of the work). `shouldCancel()` interrupts **either** phase:
     /// a deadline bounds the whole call, and cancelling mid-heal throws rather than returning the
     /// partially-healed shape.
@@ -1593,7 +1466,7 @@ public final class Shape: @unchecked Sendable {
     ///     let shape = try Shape.loadIGESRobust(from: igesURL, progress: Deadline())
     ///     print(shape.isValid)
     /// } catch ImportError.cancelled {
-    ///     // Gave up after 10s, healing untrusted geometry can be pathological.
+    ///     // Gave up after 10s — healing untrusted geometry can be pathological.
     /// }
     /// ```
     ///
@@ -1723,18 +1596,18 @@ public final class Shape: @unchecked Sendable {
     /// Load a shape from an STL file.
     ///
     /// Builds one planar `TopoDS_Face` per STL facet via OCCT's `StlAPI_Reader`
-    /// (`BRepBuilderAPI_MakeShapeOnMesh`); faces are unsewn, call ``sewn(tolerance:)`` or use
+    /// (`BRepBuilderAPI_MakeShapeOnMesh`); faces are unsewn — call ``sewn(tolerance:)`` or use
     /// ``loadSTLRobust(from:sewingTolerance:)`` if you need a connected shell/solid.
     ///
     /// - Parameter url: URL to the STL file (.stl)
     /// - Returns: Imported shape
     /// - Throws: ImportError if import fails
     /// - Note: Each facet's vertex winding is preserved exactly, including a globally-reversed
-    ///   (but self-consistent) file, confirmed empirically (#375) by round-tripping a uniformly
+    ///   (but self-consistent) file — confirmed empirically (#375) by round-tripping a uniformly
     ///   reversed-winding box through `loadSTL` + ``mesh(linearDeflection:angularDeflection:)``
     ///   and finding all 12 triangles consistently inward, with zero shared-edge orientation
     ///   conflicts. If a round-tripped mesh comes back with *locally* inconsistent winding (some
-    ///   faces inward, some outward), the input STL itself is locally inconsistent, this method
+    ///   faces inward, some outward), the input STL itself is locally inconsistent — this method
     ///   doesn't introduce that defect, it faithfully reproduces one already in the file.
     public static func loadSTL(from url: URL) throws -> Shape {
         guard let handle = OCCTImportSTL(url.path) else {
@@ -1745,7 +1618,7 @@ public final class Shape: @unchecked Sendable {
 
     /// Load a shape from an STL file path.
     ///
-    /// - Note: Same winding-fidelity guarantee as ``loadSTL(from:)``, see its doc for details.
+    /// - Note: Same winding-fidelity guarantee as ``loadSTL(from:)`` — see its doc for details.
     public static func loadSTL(fromPath path: String) throws -> Shape {
         guard let handle = OCCTImportSTL(path) else {
             throw ImportError.importFailed("Failed to import STL file: \(path)")
@@ -1961,10 +1834,17 @@ public final class Shape: @unchecked Sendable {
 
     // MARK: - Feature-Based Modeling (v0.12.0)
 
-    /// Add a prismatic boss or pocket to the shape.
+    /// Add a prismatic boss or pocket to the shape via extrusion + boolean.
+    ///
+    /// This method creates a prism by extruding the profile wire, then fuses
+    /// (for `fuse: true`) or cuts (for `fuse: false`) the result with the base shape.
+    /// It does **not** use OCCT's feature framework (`BRepFeat_MakePrism`) — the
+    /// resulting shape has no feature history and the operation cannot be later
+    /// modified as a feature. For the true feature prism that tracks history and
+    /// requires the profile to lie on a specific face, see ``withFeaturePrism(profile:onFace:direction:height:fuse:)``.
     ///
     /// - Parameters:
-    ///   - profile: Wire profile to extrude (should be on a face of this shape)
+    ///   - profile: Wire profile to extrude (should be positioned on or near a face of this shape)
     ///   - direction: Extrusion direction
     ///   - height: Extrusion height
     ///   - fuse: If true, adds material (boss); if false, removes material (pocket)
@@ -1992,7 +1872,86 @@ public final class Shape: @unchecked Sendable {
         return Shape(handle: handle)
     }
 
+    /// Add a true feature prism (boss/pocket) using `BRepFeat_MakePrism`.
+    ///
+    /// Unlike ``withPrism(profile:direction:height:fuse:)`` (which performs a simple
+    /// extrusion + boolean), this method uses OCCT's feature framework. The profile wire
+    /// **must lie on the specified face** of the base shape (the "sketch face"), and
+    /// the operation tracks feature history — allowing the resulting boss/pocket to be
+    /// modified or removed later through OCCT's feature mechanisms.
+    ///
+    /// - Parameters:
+    ///   - profile: Wire profile to extrude (must lie on `faceIndex`)
+    ///   - faceIndex: 0-based index of the face on this shape where the profile sits
+    ///   - direction: Extrusion direction
+    ///   - height: Feature height
+    ///   - fuse: If true, adds material (boss); if false, removes material (pocket)
+    ///
+    /// - Returns: Modified shape with feature, or nil on failure
+    ///
+    /// ## Example
+    ///
+    /// ```swift
+    /// let box = Shape.box(width: 50, height: 50, depth: 10)
+    /// let topFaceIndex = box.upwardFaces().first!.index
+    /// let bossProfile = Wire.circle(radius: 5, center: SIMD3(25, 25, 10))!
+    /// let withBoss = box.withFeaturePrism(profile: bossProfile, onFace: topFaceIndex, direction: SIMD3(0, 0, 1), height: 5, fuse: true)
+    /// ```
+    public func withFeaturePrism(
+        profile: Wire, onFace faceIndex: Int, direction: SIMD3<Double>, height: Double, fuse: Bool
+    ) -> Shape? {
+        guard faceIndex >= 0 else { return nil }
+        guard
+            let handle = OCCTShapeFeaturePrism(
+                self.handle, profile.handle,
+                Int32(faceIndex),
+                direction.x, direction.y, direction.z,
+                height, fuse)
+        else {
+            return nil
+        }
+        return Shape(handle: handle)
+    }
+
+    /// Add a feature boss (raised feature) using `BRepFeat_MakePrism`.
+    ///
+    /// Convenience wrapper for ``withFeaturePrism(profile:onFace:direction:height:fuse:)`` with `fuse: true`.
+    ///
+    /// - Parameters:
+    ///   - profile: Wire profile to extrude (must lie on `faceIndex`)
+    ///   - faceIndex: 0-based index of the face on this shape where the profile sits
+    ///   - direction: Extrusion direction
+    ///   - height: Boss height
+    ///
+    /// - Returns: Shape with added feature boss, or nil on failure
+    public func withFeatureBoss(
+        profile: Wire, onFace faceIndex: Int, direction: SIMD3<Double>, height: Double
+    ) -> Shape? {
+        withFeaturePrism(
+            profile: profile, onFace: faceIndex, direction: direction, height: height, fuse: true)
+    }
+
+    /// Create a feature pocket (depression) using `BRepFeat_MakePrism`.
+    ///
+    /// Convenience wrapper for ``withFeaturePrism(profile:onFace:direction:height:fuse:)`` with `fuse: false`.
+    ///
+    /// - Parameters:
+    ///   - profile: Wire profile defining the pocket boundary (must lie on `faceIndex`)
+    ///   - faceIndex: 0-based index of the face on this shape where the profile sits
+    ///   - direction: Pocket direction (into the shape)
+    ///   - depth: Pocket depth
+    ///
+    /// - Returns: Shape with feature pocket, or nil on failure
+    public func withFeaturePocket(
+        profile: Wire, onFace faceIndex: Int, direction: SIMD3<Double>, depth: Double
+    ) -> Shape? {
+        withFeaturePrism(
+            profile: profile, onFace: faceIndex, direction: direction, height: depth, fuse: false)
+    }
+
     /// Add a boss (raised feature) to the shape.
+    ///
+    /// Convenience wrapper for ``withPrism(profile:direction:height:fuse:)`` with `fuse: true`.
     ///
     /// - Parameters:
     ///   - profile: Wire profile to extrude
@@ -2006,6 +1965,8 @@ public final class Shape: @unchecked Sendable {
 
     /// Create a pocket (depression) in the shape.
     ///
+    /// Convenience wrapper for ``withPrism(profile:direction:height:fuse:)`` with `fuse: false`.
+    ///
     /// - Parameters:
     ///   - profile: Wire profile defining the pocket boundary
     ///   - direction: Pocket direction (into the shape)
@@ -2018,7 +1979,7 @@ public final class Shape: @unchecked Sendable {
 
     /// Drill a cylindrical hole into the shape, by subtracting a cylinder from it.
     ///
-    /// The bore is cut **along `direction`**, any axis, not just Z. The direction is
+    /// The bore is cut **along `direction`** — any axis, not just Z. The direction is
     /// normalized internally; a zero-length direction returns `nil`.
     ///
     /// The tool is a finite cylinder that **starts at `position`** and runs `depth` along
@@ -2031,7 +1992,7 @@ public final class Shape: @unchecked Sendable {
     ///
     /// ``cylindricalHole(axisOrigin:axisDirection:radius:extent:)`` wraps
     /// `BRepFeat_MakeCylindricalHole`, OCCT's dedicated feature-drilling operator. It is not a
-    /// better version of this method, it answers a different question, and #496 measured six
+    /// better version of this method — it answers a different question, and #496 measured six
     /// requests where the two disagree. Reach for it when you want the **solid's own faces** to
     /// bound the hole (``CylindricalHoleExtent/untilEnd``, ``CylindricalHoleExtent/thruNext``) or a
     /// diagnosis of *why* a drill is impossible (``cylindricalHoleStatus(axisOrigin:axisDirection:radius:extent:)``).
@@ -2055,7 +2016,7 @@ public final class Shape: @unchecked Sendable {
     /// // Through-hole down the Z axis:
     /// let drilled = plate.drilled(at: SIMD3(25, 25, 10), direction: SIMD3(0, 0, -1), radius: 5, depth: 0)
     ///
-    /// // A hole bored across the width (+X), e.g. a bolt hole through a bar:
+    /// // A hole bored across the width (+X) — e.g. a bolt hole through a bar:
     /// let bar = Shape.box(width: 200, height: 60, depth: 16)
     /// let cross = bar?.drilled(at: SIMD3(-101, 0, 0), direction: SIMD3(1, 0, 0), radius: 6.5, depth: 0)
     /// ```
@@ -2244,10 +2205,10 @@ public final class Shape: @unchecked Sendable {
     /// This duplicates **the whole body** `count` times around the axis and returns
     /// a compound of the copies. It does **not** pattern features. If `self` is a
     /// solid that already has a hole/pocket cut into it, the result is `count`
-    /// overlapping copies of that solid, the holes get filled by neighbouring
+    /// overlapping copies of that solid — the holes get filled by neighbouring
     /// copies, not replicated. For the bolt-circle use case ("drill one hole, then
     /// repeat it around the axis") pattern the *tool* shape and subtract it, or use
-    /// ``circularPatternCut(tool:axisPoint:axisDirection:count:angle:timeout:)`` which does
+    /// ``circularPatternCut(tool:axisPoint:axisDirection:count:angle:)`` which does
     /// exactly that in one call.
     ///
     /// - Parameters:
@@ -2302,25 +2263,7 @@ public final class Shape: @unchecked Sendable {
     ///   - axisDirection: Direction of the rotation axis
     ///   - count: Number of tool copies (including the original `tool`)
     ///   - angle: Total angle to span in radians (0 for a full circle)
-    ///   - timeout: Wall-clock bound in seconds for the subtraction this ends with (default
-    ///     ``defaultBooleanTimeout``, 120s). `0`/negative = unbounded. Before #1067 the bound
-    ///     applied but was not reachable from this signature, so a caller who knew their cut was
-    ///     legitimately long had no way to raise it.
     /// - Returns: This body with all `count` features cut out, or nil on failure
-    ///
-    /// - Note: The three `nil` returns here are not distinguishable from each other:
-    ///   `count <= 0`, the pattern failing, and the subtraction failing or exceeding `timeout`.
-    ///   A caller who needs to tell them apart runs the two steps directly, which is all this
-    ///   method does:
-    ///   ```swift
-    ///   guard let tools = tool.circularPattern(
-    ///       axisPoint: .zero, axisDirection: SIMD3(0, 0, 1), count: 36) else { /* pattern */ }
-    ///   switch blank.subtractionOutcome(tools, timeout: 600) {
-    ///   case .success(let cut): /* use cut */ break
-    ///   case .timedOut:         /* the machine, not the geometry */ break
-    ///   case .failed:           /* the geometry */ break
-    ///   }
-    ///   ```
     ///
     /// ## Example
     ///
@@ -2335,15 +2278,10 @@ public final class Shape: @unchecked Sendable {
     ///     axisDirection: SIMD3(0, 0, 1),
     ///     count: 8
     /// )
-    ///
-    /// // A legitimately long cut: raise the bound rather than getting nil at 120s
-    /// let gear = blank.circularPatternCut(
-    ///     tool: toothSpace, axisPoint: .zero, axisDirection: SIMD3(0, 0, 1),
-    ///     count: 36, timeout: 600)
     /// ```
     public func circularPatternCut(
         tool: Shape, axisPoint: SIMD3<Double>, axisDirection: SIMD3<Double>, count: Int,
-        angle: Double = 0, timeout: Double = Shape.defaultBooleanTimeout
+        angle: Double = 0
     ) -> Shape? {
         guard count > 0 else { return nil }
         guard
@@ -2354,7 +2292,7 @@ public final class Shape: @unchecked Sendable {
         else {
             return nil
         }
-        return subtracting(tools, timeout: timeout)
+        return subtracting(tools)
     }
 
     // MARK: - Shape Type
@@ -2368,8 +2306,8 @@ public final class Shape: @unchecked Sendable {
     ///
     /// This is a **topology / per-element** validity check (`BRepCheck_Analyzer`): it does
     /// **not** detect *global self-intersection* (overlapping faces of a single solid). A
-    /// self-intersecting B-spline solid, e.g. from `loft(ruled: false)` on imperfectly
-    /// corresponding profiles, can report `isValidSolid == true` yet poison downstream
+    /// self-intersecting B-spline solid — e.g. from `loft(ruled: false)` on imperfectly
+    /// corresponding profiles — can report `isValidSolid == true` yet poison downstream
     /// booleans (it made `subtracting` hang indefinitely before #206 bounded it). To screen
     /// for that, use ``isSelfIntersecting(timeout:)``. See also ``signedVolume`` /
     /// ``orientedForward()`` for the separate reversed-orientation hazard.
@@ -2397,7 +2335,7 @@ public final class Shape: @unchecked Sendable {
         OCCTShapeIsValidSolid(handle)
     }
 
-    /// Whether this shape **self-intersects**, overlapping or interfering sub-faces, the
+    /// Whether this shape **self-intersects** — overlapping or interfering sub-faces, the
     /// defect that ``isValidSolid`` (a topology check) misses but that can make booleans
     /// hang or return garbage (#206/#208).
     ///
@@ -2405,38 +2343,20 @@ public final class Shape: @unchecked Sendable {
     /// but **expensive** (seconds on B-spline solids) and can otherwise run unbounded.
     ///
     /// - Important: `timeout` is **cooperative, not a hard deadline** (#293). It is implemented
-    ///   as a `Message_ProgressIndicator` that OCCT polls at its own internal checkpoints, the
+    ///   as a `Message_ProgressIndicator` that OCCT polls at its own internal checkpoints — the
     ///   calling thread is blocked inside this call and can only return once the next checkpoint
     ///   after `timeout` is reached, not at `timeout` itself. The self-interference phase has at
     ///   least one long checkpoint-free stretch (inside `Intf_Interference::Insert`); on
     ///   pathological B-spline solids that phase alone has been observed running 20+ minutes past
-    ///   a 30s `timeout`. There is no preemptive or background bound here, the only hard bound
+    ///   a 30s `timeout`. There is no preemptive or background bound here — the only hard bound
     ///   is process-level isolation (run this in a subprocess/worker you can kill on your own
     ///   deadline if a true wall-clock guarantee matters).
     ///
-    /// - Important: `true` is reported **only** for a completed analysis that recorded at least
-    ///   one `BOPAlgo_SelfIntersect` result and no other status (#1054). An empty result list on a
-    ///   **completed** analysis is `false`: that is the clean case. An empty list is not enough on
-    ///   its own, because a watchdog that trips before anything is recorded leaves the list empty
-    ///   too, and that case is `nil`; the watchdog is read first, so it never reaches this test.
-    ///   Everything else the analyzer can record used to read as `true` and is now `nil`: an
-    ///   aborted analysis, an argument it refuses, and an analysis that failed
-    ///   (`BOPAlgo_CheckUnknown`, or a `BOPAlgo_OperationAborted` recorded for a
-    ///   `BOPAlgo_CheckerSI` error that was not a watchdog break, which is why `timeout: 0` does
-    ///   not exempt a caller from this). An analysis the `timeout` aborted is `nil` even when it
-    ///   recorded results first: the interference map a valid solid's face adjacency fills is
-    ///   cleared partway through the check and then selectively refilled, so an analysis
-    ///   interrupted before that point is read against the raw map and a clean box reports up to
-    ///   three self-interferences of its own. Separately, a shape
-    ///   `BOPAlgo_ArgumentAnalyzer` rejects outright, such as ``emptied``'s result, records
-    ///   `BOPAlgo_BadType`, which says nothing about self-intersection and involves no timeout
-    ///   at all.
-    ///
-    /// - Parameter timeout: Seconds before the check *asks* OCCT to give up (default 30), the
+    /// - Parameter timeout: Seconds before the check *asks* OCCT to give up (default 30) — the
     ///   actual return can be much later if an un-polled phase is reached. `0`/negative = unbounded.
     /// - Returns: `true` if a self-interference was found, `false` if the shape is clean, or
-    ///   `nil` if the check could not complete within `timeout`, or could not answer the question
-    ///   at all (**indeterminate**, treat as "unknown", not "clean").
+    ///   `nil` if the check could not complete within `timeout` (**indeterminate** — treat as
+    ///   "unknown", not "clean").
     ///
     /// Validate-at-the-source recipe for a loft result before using it in a boolean:
     /// ```swift
@@ -2447,28 +2367,28 @@ public final class Shape: @unchecked Sendable {
         switch OCCTShapeSelfIntersectsBounded(handle, timeout) {
         case 1: return true
         case 0: return false
-        default: return nil  // -1: indeterminate (timed out, refused, or errored)
+        default: return nil  // -1: indeterminate (timed out / errored)
         }
     }
 
-    /// Whether this shape self-intersects, with a **true hard wall-clock deadline** (#319),
+    /// Whether this shape self-intersects, with a **true hard wall-clock deadline** (#319) —
     /// unlike ``isSelfIntersecting(timeout:)``, this returns at `hardTimeout` even if OCCT never
     /// reaches a checkpoint to poll.
     ///
     /// Runs the check on a detached background thread against a `deepCopy()` of this shape
     /// and waits on the calling thread with a real deadline. If the deadline passes first, this
-    /// returns `nil` immediately and the background computation is **abandoned, not cancelled**,
+    /// returns `nil` immediately and the background computation is **abandoned, not cancelled** —
     /// it keeps running orphaned on its own thread until it eventually completes. That is a
     /// deliberate trade (burned CPU for a caller-side wall-clock guarantee), the same one the
     /// #286 mesher-hang caller accepted.
     ///
     /// - Warning: **Latent thread-safety risk, flagged but not fixed here (#831).** The
-    ///   no-argument instance `deepCopy()` used above gives independent *topology* only, it
+    ///   no-argument instance `deepCopy()` used above gives independent *topology* only — it
     ///   shares `Geom_Surface`/`Geom_Curve` handles (via `TNaming_CopyShape::CopyTool`) with
     ///   `self`, not the independent geometry `docs/thread-safety.md` used to (incorrectly)
     ///   describe it as providing. The orphaned background computation on `probe` and the caller
     ///   continuing to use `self` after a timeout are therefore two `TopoDS_Shape`s with distinct
-    ///   `TShape` identity but the *same* underlying geometry objects, evaluated concurrently,
+    ///   `TShape` identity but the *same* underlying geometry objects, evaluated concurrently —
     ///   exactly the shared-adaptor-cache race `docs/thread-safety.md` item 1 warns about. This
     ///   was verified by reading the OCCT source chain, not reproduced under ThreadSanitizer, so
     ///   treat it as a well-evidenced risk rather than a confirmed race. Fixing it (e.g. switching
@@ -2477,21 +2397,17 @@ public final class Shape: @unchecked Sendable {
     ///
     /// - Important: `BOPAlgo_ArgumentAnalyzer`'s safety when run on a background thread
     ///   concurrently with unrelated OCCT calls on other threads was verified with a
-    ///   ThreadSanitizer stress test (60 bursts × 8 threads, half running self-intersection
+    ///   ThreadSanitizer stress test (60 bursts × 8 threads — half running self-intersection
     ///   checks on independent self-intersecting shapes, half running unrelated fuse+mesh work,
     ///   480 operations total): zero TSan race reports, zero wrong-but-plausible results. That
     ///   covers one stress shape and one access pattern, not an exhaustive audit of every
-    ///   `BOPAlgo_ArgumentAnalyzer`/`Intf_Interference` code path, prefer
+    ///   `BOPAlgo_ArgumentAnalyzer`/`Intf_Interference` code path — prefer
     ///   ``isSelfIntersecting(timeout:)`` unless a caller genuinely needs a hard in-process
     ///   wall-clock guarantee (e.g. no process/subprocess isolation available).
     ///
     /// - Parameter hardTimeout: Seconds to wait before giving up and returning `nil`.
     /// - Returns: `true`/`false` if the check completed in time, `nil` if the deadline passed
-    ///   first (indeterminate, the background check may still be running) or if the analysis
-    ///   could not answer the question, per ``isSelfIntersecting(timeout:)``. The inner call
-    ///   passes `0`, so no watchdog can abort it, but `BOPAlgo_OperationAborted` is recorded for
-    ///   any `BOPAlgo_CheckerSI` error and not only a watchdog break, so that case reaches this
-    ///   entry point too.
+    ///   first (indeterminate — the background check may still be running).
     ///
     /// ```swift
     /// // Bound total wall-clock time even on a pathological B-spline solid with no
@@ -2499,7 +2415,7 @@ public final class Shape: @unchecked Sendable {
     /// switch solid.isSelfIntersecting(hardTimeout: 5) {
     /// case .some(true):  print("self-intersects")
     /// case .some(false): print("clean")
-    /// case .none:        print("deadline hit, treat as unknown, not clean")
+    /// case .none:        print("deadline hit — treat as unknown, not clean")
     /// }
     /// ```
     public func isSelfIntersecting(hardTimeout: Double) -> Bool? {
@@ -2508,11 +2424,6 @@ public final class Shape: @unchecked Sendable {
         }
         let probe = deepCopy() ?? self
         let box = SelfIntersectResultBox()
-        // The `0` below is load-bearing beyond "the caller's deadline is the only bound", and a
-        // test depends on it: passing 0 means no watchdog exists, so this call can never lose a
-        // conclusive answer to an aborted analysis the way a cooperative `timeout:` can (#1054).
-        // Issue598PipeShellFrenetModeTests uses this entry point for exactly that property.
-        // Threading a cooperative bound in here would reintroduce that fragility silently.
         let semaphore = DispatchSemaphore(value: 0)
         DispatchQueue.global(qos: .userInitiated).async {
             box.rawResult = OCCTShapeSelfIntersectsBounded(probe.handle, 0)
@@ -2542,8 +2453,7 @@ public final class Shape: @unchecked Sendable {
     /// which is especially valuable for B-spline solids where the self-interference phase
     /// may not reach checkpoints frequently enough.
     ///
-    /// - Parameters:
-    ///   - timeout: Maximum time in seconds to wait for the check to complete.
+    /// - Parameter timeout: Maximum time in seconds to wait for the check to complete.
     /// - Returns: ``SelfIntersectionDetailedResult`` with status and progress information.
     ///
     /// ```swift
@@ -2704,9 +2614,9 @@ public final class Shape: @unchecked Sendable {
     /// Get the axis-aligned bounding box of the shape.
     ///
     /// - Important: This is OCCT's **default** `Bnd_Box`, which for B-spline / faceted surfaces is
-    ///   the *control-point hull*, it can **over-report** the true extent (e.g. by ~one thread lead
+    ///   the *control-point hull* — it can **over-report** the true extent (e.g. by ~one thread lead
     ///   for a threaded shaft, OCCTSwift #232 / #213). For a tight extent use ``boundingBoxOptimal()``
-    ///   (`Bnd_Box::AddOptimal`), or, the unambiguous ground truth, the min/max of ``mesh(linearDeflection:angularDeflection:)``
+    ///   (`Bnd_Box::AddOptimal`), or — the unambiguous ground truth — the min/max of ``mesh(linearDeflection:angularDeflection:)``
     ///   vertices. A `threadedShaft` / `threadedHole` solid is bounded *exactly* to its `length` / `depth`;
     ///   `bounds` reporting past that is the hull artifact, not real geometry.
     ///
