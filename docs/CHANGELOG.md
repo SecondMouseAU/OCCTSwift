@@ -22,6 +22,55 @@ bounding-box accessors becoming Optional so a void shape stops fabricating `(0,0
 ## Unreleased
 
 
+### `isSelfIntersecting(timeout:)` no longer reports a timed-out or rejected check as a self-intersection (#1054)
+
+`Shape.isSelfIntersecting(timeout:)` and `Shape.isSelfIntersecting(hardTimeout:)` decided from
+`BOPAlgo_ArgumentAnalyzer::HasFaulty()`, which is the union over every mode the analyzer was asked
+to run, read before the watchdog. Every kind of fault that is not a self-intersection therefore
+came back as `true`:
+
+- **An aborted analysis.** `BOPAlgo_CheckerSI::CheckFaceSelfIntersection` clears
+  `BOPDS_DS::Interferences()` on entry, and the `PostTreat` that follows re-adds only pairs passing
+  its own per-type gates, which for a valid solid's face adjacency is none. An analysis stopped
+  before that `Clear()` is read against the pave filler's own raw map instead. Measured by breaking
+  a plain 10x10x10 box at each of its progress polls in turn: **69 of 401 break points answered
+  "self-intersects" for a clean box**, against zero faults for the uninterrupted run, and the
+  transition sits at a single poll with every other observable identical either side.
+- **An argument the analyzer rejects.** `ArgumentTypeMode` is enabled for basic sanity, and it
+  records `BOPAlgo_BadType` on either of two `TestTypes` branches: a shape with no geometry
+  anywhere below it (`emptied`'s result), and a **null** shape (`nullified`'s), which is caught
+  earlier and without `BOPTools_AlgoTools3D::IsEmptyShape` being consulted at all. Both were
+  `true`. `Shape.compound([])` is not a third way in, `OCCTShapeCreateCompound` refuses an empty
+  array. No timeout is involved in either; this was `true` on a stock kernel.
+- **An analysis that failed.** `BOPAlgo_CheckUnknown`, and a `BOPAlgo_OperationAborted` recorded
+  for a `BOPAlgo_CheckerSI` error that was not a watchdog break, which is why passing `timeout: 0`
+  does not exempt a caller from any of this.
+
+All of them are now `nil`, the value the API already documents as "indeterminate, treat as unknown,
+not clean". A completed analysis that finds an interference still returns `true`.
+
+#1054's own report says "Not proven: I did not directly observe the spurious `1`". It is directly
+observed now: the #319 pathological artifact at a 30 s bound records exactly one
+`BOPAlgo_OperationAborted`, with no `BOPAlgo_SelfIntersect` anywhere in the list, on 6 of 6 runs on
+an idle machine. **That is also `Scripts/repro/772-analyze-self-intersection/`'s row 4**, whose
+"conclusive `self-intersects` around 30.05-30.15s" was this abort, so `Shape.analyze`'s "Why
+`timeout:`, not `hardTimeout:`" rationale loses one of its four arguments. The rationale and the
+choice both stand on the other three; the withdrawal is recorded in `Shape+Analysis.swift`, in
+`docs/reference/Shape-Features.md`, in the #772 repro's own README and in the #772 test suite's
+doc comment, rather than quietly deleted. One consequence for a caller:
+`analyze(tolerance:selfIntersectionTimeout:)` on a shape whose check times out now leaves
+`hasSelfIntersection` `nil` instead of `true`, which is the same change as above seen through
+`analyze`.
+
+**One behaviour change beyond the bug.** A genuinely self-intersecting shape whose check times out
+now returns `nil` where it used to return `true`. That is deliberate: the box measurement above
+shows a `BOPAlgo_SelfIntersect` result from an aborted run cannot be told from an artefact of
+stopping early. Callers that want the old behaviour should raise `timeout` until the check
+completes; a caller treating `nil` as "clean" was already outside the documented contract.
+
+Reproducers, transcripts and the `#1068` measurement are in
+[`Scripts/repro/1054-selfintersect-fault-kinds/`](https://github.com/SecondMouseAU/OCCTSwift/tree/main/Scripts/repro/1054-selfintersect-fault-kinds).
+
 ### README and a new guide say what a consumer's own target has to set, and why an Objective-C file including an OCCT header fails (#967)
 
 An external user reported that v3.0.0 would not compile in their project, with
