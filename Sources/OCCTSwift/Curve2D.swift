@@ -193,10 +193,13 @@ public final class Curve2D: @unchecked Sendable {
         radius: Double
     ) -> Curve2D? {
         guard radius > 0 else { return nil }
+        let dirLen = hypot(direction.x, direction.y)
+        guard dirLen > 1e-12 else { return nil }
+        let normDir = SIMD2(direction.x / dirLen, direction.y / dirLen)
         guard
             let ref = OCCTGeom2dEvalCircleInvoluteCurveCreate(
                 origin.x, origin.y,
-                direction.x, direction.y,
+                normDir.x, normDir.y,
                 radius)
         else { return nil }
         return Curve2D(handle: ref)
