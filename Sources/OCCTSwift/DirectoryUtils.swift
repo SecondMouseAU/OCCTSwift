@@ -1,6 +1,6 @@
 import Foundation
-import simd
 import OCCTBridge
+import simd
 
 /// Directory operations using OSD_Directory.
 public enum DirectoryUtils {

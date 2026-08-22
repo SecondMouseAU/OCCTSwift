@@ -1,6 +1,6 @@
 import Foundation
-import simd
 import OCCTBridge
+import simd
 
 /// Length unit information from a document.
 public struct LengthUnit: Sendable {

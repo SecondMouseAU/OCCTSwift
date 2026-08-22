@@ -1,6 +1,6 @@
 import Foundation
-import simd
 import OCCTBridge
+import simd
 
 /// Static utility functions for intersection computations.
 public enum IntTools {
@@ -17,15 +17,19 @@ public enum IntTools {
     }
 
     /// Check if two directions are coincident (parallel or anti-parallel).
-    public static func isDirsCoinside(dx1: Double, dy1: Double, dz1: Double,
-                                       dx2: Double, dy2: Double, dz2: Double) -> Bool {
+    public static func isDirsCoinside(
+        dx1: Double, dy1: Double, dz1: Double,
+        dx2: Double, dy2: Double, dz2: Double
+    ) -> Bool {
         OCCTIntToolsIsDirsCoinside(dx1, dy1, dz1, dx2, dy2, dz2)
     }
 
     /// Check if two directions are coincident within a tolerance.
-    public static func isDirsCoinside(dx1: Double, dy1: Double, dz1: Double,
-                                       dx2: Double, dy2: Double, dz2: Double,
-                                       tolerance: Double) -> Bool {
+    public static func isDirsCoinside(
+        dx1: Double, dy1: Double, dz1: Double,
+        dx2: Double, dy2: Double, dz2: Double,
+        tolerance: Double
+    ) -> Bool {
         OCCTIntToolsIsDirsCoinisdeWithTol(dx1, dy1, dz1, dx2, dy2, dz2, tolerance)
     }
 

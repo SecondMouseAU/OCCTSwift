@@ -1,6 +1,6 @@
 import Foundation
-import simd
 import OCCTBridge
+import simd
 
 /// A 2D axis placement backed by `Geom2d_AxisPlacement`.
 ///
@@ -20,8 +20,11 @@ public final class AxisPlacement2D: @unchecked Sendable {
 
     /// Create a 2D axis placement from origin and direction.
     public init?(origin: SIMD2<Double>, direction: SIMD2<Double>) {
-        guard let h = OCCTAxisPlacement2DCreate(origin.x, origin.y,
-                                                 direction.x, direction.y) else { return nil }
+        guard
+            let h = OCCTAxisPlacement2DCreate(
+                origin.x, origin.y,
+                direction.x, direction.y)
+        else { return nil }
         self.handle = h
     }
 
@@ -29,14 +32,16 @@ public final class AxisPlacement2D: @unchecked Sendable {
 
     /// The origin of the axis.
     public var origin: SIMD2<Double> {
-        var x: Double = 0, y: Double = 0
+        var x: Double = 0
+        var y: Double = 0
         OCCTAxisPlacement2DGetOrigin(handle, &x, &y)
         return SIMD2(x, y)
     }
 
     /// The direction of the axis.
     public var direction: SIMD2<Double> {
-        var x: Double = 0, y: Double = 0
+        var x: Double = 0
+        var y: Double = 0
         OCCTAxisPlacement2DGetDirection(handle, &x, &y)
         return SIMD2(x, y)
     }

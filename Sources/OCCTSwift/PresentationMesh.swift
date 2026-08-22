@@ -1,6 +1,6 @@
 import Foundation
-import simd
 import OCCTBridge
+import simd
 
 /// Interleaved triangle mesh data suitable for Metal vertex buffers.
 ///
@@ -36,13 +36,13 @@ public struct EdgeMeshData: Sendable {
     public var segmentCount: Int { segmentStarts.count }
 }
 
-public extension Shape {
+extension Shape {
     /// Extract a triangulated mesh from the shape for shaded rendering.
     ///
     /// - Parameter deflection: Tessellation chord deviation. Smaller values produce
     ///   finer meshes. Default is 0.1.
     /// - Returns: Shaded mesh data, or `nil` if tessellation fails.
-    func shadedMesh(deflection: Double = 0.1) -> ShadedMeshData? {
+    public func shadedMesh(deflection: Double = 0.1) -> ShadedMeshData? {
         var data = OCCTShadedMeshData()
         guard OCCTShapeGetShadedMesh(handle, deflection, &data) else {
             return nil
@@ -60,12 +60,16 @@ public extension Shape {
 
         for i in 0..<vertCount {
             let base = i * 6
-            positions.append(SIMD3(data.vertices[base],
-                                   data.vertices[base + 1],
-                                   data.vertices[base + 2]))
-            normals.append(SIMD3(data.vertices[base + 3],
-                                  data.vertices[base + 4],
-                                  data.vertices[base + 5]))
+            positions.append(
+                SIMD3(
+                    data.vertices[base],
+                    data.vertices[base + 1],
+                    data.vertices[base + 2]))
+            normals.append(
+                SIMD3(
+                    data.vertices[base + 3],
+                    data.vertices[base + 4],
+                    data.vertices[base + 5]))
         }
 
         // Copy indices
@@ -82,7 +86,7 @@ public extension Shape {
     ///
     /// - Parameter deflection: Tessellation chord deviation. Default is 0.1.
     /// - Returns: Edge mesh data, or `nil` if extraction fails.
-    func edgeMesh(deflection: Double = 0.1) -> EdgeMeshData? {
+    public func edgeMesh(deflection: Double = 0.1) -> EdgeMeshData? {
         var data = OCCTEdgeMeshData()
         guard OCCTShapeGetEdgeMesh(handle, deflection, &data) else {
             return nil
@@ -96,9 +100,11 @@ public extension Shape {
         positions.reserveCapacity(vertCount)
         for i in 0..<vertCount {
             let base = i * 3
-            positions.append(SIMD3(data.vertices[base],
-                                   data.vertices[base + 1],
-                                   data.vertices[base + 2]))
+            positions.append(
+                SIMD3(
+                    data.vertices[base],
+                    data.vertices[base + 1],
+                    data.vertices[base + 2]))
         }
 
         var starts = [Int]()
@@ -117,7 +123,7 @@ public extension Shape {
     ///
     /// - Parameter drawer: The display drawer controlling tessellation quality.
     /// - Returns: Shaded mesh data, or `nil` if tessellation fails.
-    func shadedMesh(drawer: DisplayDrawer) -> ShadedMeshData? {
+    public func shadedMesh(drawer: DisplayDrawer) -> ShadedMeshData? {
         var data = OCCTShadedMeshData()
         guard OCCTShapeGetShadedMeshWithDrawer(handle, drawer.handle, &data) else {
             return nil
@@ -134,12 +140,16 @@ public extension Shape {
 
         for i in 0..<vertCount {
             let base = i * 6
-            positions.append(SIMD3(data.vertices[base],
-                                   data.vertices[base + 1],
-                                   data.vertices[base + 2]))
-            normals.append(SIMD3(data.vertices[base + 3],
-                                  data.vertices[base + 4],
-                                  data.vertices[base + 5]))
+            positions.append(
+                SIMD3(
+                    data.vertices[base],
+                    data.vertices[base + 1],
+                    data.vertices[base + 2]))
+            normals.append(
+                SIMD3(
+                    data.vertices[base + 3],
+                    data.vertices[base + 4],
+                    data.vertices[base + 5]))
         }
 
         var indices = [UInt32]()
@@ -155,7 +165,7 @@ public extension Shape {
     ///
     /// - Parameter drawer: The display drawer controlling tessellation quality.
     /// - Returns: Edge mesh data, or `nil` if extraction fails.
-    func edgeMesh(drawer: DisplayDrawer) -> EdgeMeshData? {
+    public func edgeMesh(drawer: DisplayDrawer) -> EdgeMeshData? {
         var data = OCCTEdgeMeshData()
         guard OCCTShapeGetEdgeMeshWithDrawer(handle, drawer.handle, &data) else {
             return nil
@@ -169,9 +179,11 @@ public extension Shape {
         positions.reserveCapacity(vertCount)
         for i in 0..<vertCount {
             let base = i * 3
-            positions.append(SIMD3(data.vertices[base],
-                                   data.vertices[base + 1],
-                                   data.vertices[base + 2]))
+            positions.append(
+                SIMD3(
+                    data.vertices[base],
+                    data.vertices[base + 1],
+                    data.vertices[base + 2]))
         }
 
         var starts = [Int]()

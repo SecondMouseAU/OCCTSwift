@@ -1,6 +1,6 @@
 import Foundation
-import simd
 import OCCTBridge
+import simd
 
 /// Coordinate system for mesh import/export.
 public enum MeshCoordinateSystem: Int32, Sendable {

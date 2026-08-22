@@ -1,6 +1,6 @@
 import Foundation
-import simd
 import OCCTBridge
+import simd
 
 /// Value-type wrapper for XCAFPrs_Style — visual presentation style.
 public struct PresentationStyle: Sendable {
@@ -22,7 +22,9 @@ public struct PresentationStyle: Sendable {
     }
 
     /// Create a style with a surface color.
-    public init(surfaceRed: Double, surfaceGreen: Double, surfaceBlue: Double, surfaceAlpha: Float = 1.0) {
+    public init(
+        surfaceRed: Double, surfaceGreen: Double, surfaceBlue: Double, surfaceAlpha: Float = 1.0
+    ) {
         self.surfaceColor = (surfaceRed, surfaceGreen, surfaceBlue)
         self.surfaceAlpha = surfaceAlpha
         self.curveColor = nil
@@ -44,8 +46,9 @@ public struct PresentationStyle: Sendable {
 
     private func toOCCT() -> OCCTXCAFPrsStyle {
         if let sc = surfaceColor, let cc = curveColor {
-            return OCCTXCAFPrsStyleCreateFull(sc.red, sc.green, sc.blue, surfaceAlpha,
-                                               cc.red, cc.green, cc.blue, isVisible)
+            return OCCTXCAFPrsStyleCreateFull(
+                sc.red, sc.green, sc.blue, surfaceAlpha,
+                cc.red, cc.green, cc.blue, isVisible)
         } else if let sc = surfaceColor {
             var s = OCCTXCAFPrsStyleCreateWithSurfColor(sc.red, sc.green, sc.blue, surfaceAlpha)
             s.isVisible = isVisible

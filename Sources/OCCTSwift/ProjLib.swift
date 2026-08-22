@@ -1,6 +1,6 @@
 import Foundation
-import simd
 import OCCTBridge
+import simd
 
 /// Projection utilities for projecting 3D curves onto analytic surfaces.
 public enum ProjLib {
@@ -25,15 +25,20 @@ public enum ProjLib {
         planePoint: SIMD3<Double>, planeNormal: SIMD3<Double>,
         linePoint: SIMD3<Double>, lineDirection: SIMD3<Double>
     ) -> Line2DResult? {
-        var rPx = 0.0, rPy = 0.0, rDx = 0.0, rDy = 0.0
+        var rPx = 0.0
+        var rPy = 0.0
+        var rDx = 0.0
+        var rDy = 0.0
         let ok = OCCTProjLibPlaneProjectLine(
             planePoint.x, planePoint.y, planePoint.z,
             planeNormal.x, planeNormal.y, planeNormal.z,
             linePoint.x, linePoint.y, linePoint.z,
             lineDirection.x, lineDirection.y, lineDirection.z,
             &rPx, &rPy, &rDx, &rDy)
-        return ok ? Line2DResult(locationX: rPx, locationY: rPy,
-                                 directionX: rDx, directionY: rDy) : nil
+        return ok
+            ? Line2DResult(
+                locationX: rPx, locationY: rPy,
+                directionX: rDx, directionY: rDy) : nil
     }
 
     /// Project a 3D line onto a cylinder, returning the 2D line in the cylinder's parameter space.
@@ -41,7 +46,10 @@ public enum ProjLib {
         cylinderPoint: SIMD3<Double>, cylinderAxis: SIMD3<Double>, cylinderRadius: Double,
         linePoint: SIMD3<Double>, lineDirection: SIMD3<Double>
     ) -> Line2DResult? {
-        var rPx = 0.0, rPy = 0.0, rDx = 0.0, rDy = 0.0
+        var rPx = 0.0
+        var rPy = 0.0
+        var rDx = 0.0
+        var rDy = 0.0
         let ok = OCCTProjLibCylinderProjectLine(
             cylinderPoint.x, cylinderPoint.y, cylinderPoint.z,
             cylinderAxis.x, cylinderAxis.y, cylinderAxis.z,
@@ -49,8 +57,10 @@ public enum ProjLib {
             linePoint.x, linePoint.y, linePoint.z,
             lineDirection.x, lineDirection.y, lineDirection.z,
             &rPx, &rPy, &rDx, &rDy)
-        return ok ? Line2DResult(locationX: rPx, locationY: rPy,
-                                 directionX: rDx, directionY: rDy) : nil
+        return ok
+            ? Line2DResult(
+                locationX: rPx, locationY: rPy,
+                directionX: rDx, directionY: rDy) : nil
     }
 
     /// Project a 3D circle onto a plane, returning the 2D circle.
@@ -58,7 +68,9 @@ public enum ProjLib {
         planePoint: SIMD3<Double>, planeNormal: SIMD3<Double>,
         circleCenter: SIMD3<Double>, circleNormal: SIMD3<Double>, circleRadius: Double
     ) -> Circle2DResult? {
-        var rCx = 0.0, rCy = 0.0, rR = 0.0
+        var rCx = 0.0
+        var rCy = 0.0
+        var rR = 0.0
         let ok = OCCTProjLibPlaneProjectCircle(
             planePoint.x, planePoint.y, planePoint.z,
             planeNormal.x, planeNormal.y, planeNormal.z,

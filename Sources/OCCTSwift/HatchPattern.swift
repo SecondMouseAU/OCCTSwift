@@ -1,6 +1,6 @@
 import Foundation
-import simd
 import OCCTBridge
+import simd
 
 /// A line segment in a 2D hatch pattern.
 public struct HatchSegment: Sendable {
@@ -51,9 +51,11 @@ public enum HatchPattern {
         guard boundary.count >= 3, spacing > 0, maxSegments > 0 else { return [] }
         let flat = boundary.flatMap { [$0.x, $0.y] }
         var outBuf = [Double](repeating: 0, count: maxSegments * 4)
-        let n = Int(OCCTHatchLines(flat, Int32(boundary.count),
-                                    direction.x, direction.y, spacing, offset,
-                                    &outBuf, Int32(maxSegments)))
+        let n = Int(
+            OCCTHatchLines(
+                flat, Int32(boundary.count),
+                direction.x, direction.y, spacing, offset,
+                &outBuf, Int32(maxSegments)))
         return (0..<n).map { i in
             let base = i * 4
             return HatchSegment(

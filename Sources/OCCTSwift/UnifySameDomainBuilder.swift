@@ -1,6 +1,6 @@
 import Foundation
-import simd
 import OCCTBridge
+import simd
 
 /// Builder for unifying same-domain faces and edges with advanced control.
 public final class UnifySameDomainBuilder: @unchecked Sendable {
@@ -31,7 +31,9 @@ public final class UnifySameDomainBuilder: @unchecked Sendable {
     ///   - unifyFaces: Whether to unify faces (default true)
     ///   - concatBSplines: Whether to concatenate adjacent BSplines (default false — note
     ///     ``Shape/unified(unifyEdges:unifyFaces:concatBSplines:)`` defaults this to `true`)
-    public init(shape: Shape, unifyEdges: Bool = true, unifyFaces: Bool = true, concatBSplines: Bool = false) {
+    public init(
+        shape: Shape, unifyEdges: Bool = true, unifyFaces: Bool = true, concatBSplines: Bool = false
+    ) {
         ref = OCCTUnifySameDomainCreate(shape.handle, unifyEdges, unifyFaces, concatBSplines)
     }
 

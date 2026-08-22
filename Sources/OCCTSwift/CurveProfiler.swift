@@ -1,6 +1,6 @@
 import Foundation
-import simd
 import OCCTBridge
+import simd
 
 /// Homogenizes a set of curves to the same BSpline representation.
 public final class CurveProfiler: @unchecked Sendable {
@@ -65,7 +65,9 @@ public final class CurveProfiler: @unchecked Sendable {
         var xs = [Double](repeating: 0, count: n)
         var ys = [Double](repeating: 0, count: n)
         var zs = [Double](repeating: 0, count: n)
-        guard OCCTGeomFillProfilerPoles(handle, Int32(curveIndex), &xs, &ys, &zs, Int32(n)) else { return [] }
+        guard OCCTGeomFillProfilerPoles(handle, Int32(curveIndex), &xs, &ys, &zs, Int32(n)) else {
+            return []
+        }
         return (0..<n).map { SIMD3(xs[$0], ys[$0], zs[$0]) }
     }
 
@@ -75,7 +77,9 @@ public final class CurveProfiler: @unchecked Sendable {
         guard n > 0 else { return ([], []) }
         var knots = [Double](repeating: 0, count: n)
         var mults = [Int32](repeating: 0, count: n)
-        guard OCCTGeomFillProfilerKnotsAndMults(handle, &knots, &mults, Int32(n)) else { return ([], []) }
+        guard OCCTGeomFillProfilerKnotsAndMults(handle, &knots, &mults, Int32(n)) else {
+            return ([], [])
+        }
         return (knots, mults.map { Int($0) })
     }
 }

@@ -360,8 +360,10 @@ public enum Exporter {
     // MARK: - PLY Export Expansion (v0.59.0)
 
     /// Export a shape to PLY with control over normals, colors, and texture coordinates.
-    public static func writePLY(shape: Shape, to url: URL, deflection: Double,
-                                 normals: Bool = true, colors: Bool = false, texCoords: Bool = false) throws {
+    public static func writePLY(
+        shape: Shape, to url: URL, deflection: Double,
+        normals: Bool = true, colors: Bool = false, texCoords: Bool = false
+    ) throws {
         let path = url.path
         guard !path.isEmpty else { throw ExportError.invalidPath }
         if !OCCTExportPLYWithOptions(shape.handle, path, deflection, normals, colors, texCoords) {
@@ -445,7 +447,8 @@ public enum Exporter {
             try? FileManager.default.removeItem(at: tempURL)
         }
 
-        try writeBREP(shape: shape, to: tempURL, withTriangles: withTriangles, withNormals: withNormals)
+        try writeBREP(
+            shape: shape, to: tempURL, withTriangles: withTriangles, withNormals: withNormals)
         return try Data(contentsOf: tempURL)
     }
 
@@ -538,7 +541,9 @@ public enum Exporter {
     ///   - url: Destination file URL
     ///   - modelType: STEP representation type
     ///   - tolerance: Geometric tolerance for the transfer
-    public static func writeSTEP(shape: Shape, to url: URL, modelType: StepModelType, tolerance: Double) throws {
+    public static func writeSTEP(
+        shape: Shape, to url: URL, modelType: StepModelType, tolerance: Double
+    ) throws {
         let path = url.path
         guard !path.isEmpty else { throw ExportError.invalidPath }
         if !OCCTExportSTEPWithModeAndTolerance(shape.handle, path, modelType.rawValue, tolerance) {
@@ -554,7 +559,9 @@ public enum Exporter {
     ///   - shape: The shape to export
     ///   - url: Destination file URL
     ///   - modelType: STEP representation type (default: .asIs)
-    public static func writeSTEPCleanDuplicates(shape: Shape, to url: URL, modelType: StepModelType = .asIs) throws {
+    public static func writeSTEPCleanDuplicates(
+        shape: Shape, to url: URL, modelType: StepModelType = .asIs
+    ) throws {
         let path = url.path
         guard !path.isEmpty else { throw ExportError.invalidPath }
         if !OCCTExportSTEPCleanDuplicates(shape.handle, path, modelType.rawValue) {
@@ -588,7 +595,8 @@ public enum Exporter {
     public static func writeSTEPAssembly(_ document: Document, to url: URL) throws {
         guard !url.path.isEmpty else { throw ExportError.invalidPath }
         if !document.writeSTEP(to: url) {
-            throw ExportError.exportFailed("STEP assembly export to \(url.lastPathComponent) failed")
+            throw ExportError.exportFailed(
+                "STEP assembly export to \(url.lastPathComponent) failed")
         }
     }
 
@@ -703,10 +711,13 @@ extension Shape {
     // MARK: - PLY Export Expansion (v0.59.0)
 
     /// Export this shape to PLY with options.
-    public func writePLY(to url: URL, deflection: Double,
-                          normals: Bool = true, colors: Bool = false, texCoords: Bool = false) throws {
-        try Exporter.writePLY(shape: self, to: url, deflection: deflection,
-                               normals: normals, colors: colors, texCoords: texCoords)
+    public func writePLY(
+        to url: URL, deflection: Double,
+        normals: Bool = true, colors: Bool = false, texCoords: Bool = false
+    ) throws {
+        try Exporter.writePLY(
+            shape: self, to: url, deflection: deflection,
+            normals: normals, colors: colors, texCoords: texCoords)
     }
 
     // MARK: - BREP Export (v0.10.0)
@@ -724,10 +735,13 @@ extension Shape {
     /// let box = Shape.box(width: 10, height: 20, depth: 30)
     /// try box.writeBREP(to: URL(fileURLWithPath: "/tmp/box.brep"))
     /// ```
-    public func writeBREP(to url: URL, withTriangles: Bool = true, withNormals: Bool = false,
-                          allowInvalid: Bool = false) throws {
-        try Exporter.writeBREP(shape: self, to: url, withTriangles: withTriangles,
-                               withNormals: withNormals, allowInvalid: allowInvalid)
+    public func writeBREP(
+        to url: URL, withTriangles: Bool = true, withNormals: Bool = false,
+        allowInvalid: Bool = false
+    ) throws {
+        try Exporter.writeBREP(
+            shape: self, to: url, withTriangles: withTriangles,
+            withNormals: withNormals, allowInvalid: allowInvalid)
     }
 
     /// Get BREP data for this shape.
@@ -769,8 +783,13 @@ extension Exporter {
     ///   - url: Output file URL (.gltf or .glb).
     ///   - binary: If true, writes binary GLB. If false, writes text GLTF.
     ///   - deflection: Mesh deflection tolerance.
-    public static func writeGLTF(shape: Shape, to url: URL, binary: Bool = true, deflection: Double = 0.1) throws {
+    public static func writeGLTF(
+        shape: Shape, to url: URL, binary: Bool = true, deflection: Double = 0.1
+    ) throws {
         let ok = OCCTExportGLTF(shape.handle, url.path, binary, deflection)
-        if !ok { throw Exporter.ExportError.exportFailed("GLTF export to \(url.lastPathComponent) failed") }
+        if !ok {
+            throw Exporter.ExportError.exportFailed(
+                "GLTF export to \(url.lastPathComponent) failed")
+        }
     }
 }

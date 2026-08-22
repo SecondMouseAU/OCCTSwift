@@ -72,15 +72,19 @@ public final class PixMap: @unchecked Sendable {
 
     /// Get pixel color at coordinates (RGBA)
     public func pixel(at x: Int, y: Int) -> Color {
-        var r: Float = 0, g: Float = 0, b: Float = 0, a: Float = 0
+        var r: Float = 0
+        var g: Float = 0
+        var b: Float = 0
+        var a: Float = 0
         OCCTImageGetPixel(handle, Int32(x), Int32(y), &r, &g, &b, &a)
         return Color(red: Double(r), green: Double(g), blue: Double(b), alpha: Double(a))
     }
 
     /// Set pixel color at coordinates
     public func setPixel(at x: Int, y: Int, color: Color) {
-        OCCTImageSetPixel(handle, Int32(x), Int32(y),
-                          Float(color.red), Float(color.green), Float(color.blue), Float(color.alpha))
+        OCCTImageSetPixel(
+            handle, Int32(x), Int32(y),
+            Float(color.red), Float(color.green), Float(color.blue), Float(color.alpha))
     }
 
     /// Save image to file (format determined by extension: .ppm, .png, .jpg, .bmp, .tga)

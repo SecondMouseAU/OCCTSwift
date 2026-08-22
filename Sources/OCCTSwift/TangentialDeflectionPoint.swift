@@ -1,6 +1,6 @@
 import Foundation
-import simd
 import OCCTBridge
+import simd
 
 /// A sampled point from tangential deflection.
 public struct TangentialDeflectionPoint {
