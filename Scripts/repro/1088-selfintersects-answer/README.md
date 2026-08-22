@@ -102,10 +102,14 @@ read against `BOPAlgo_PaveFiller`'s own raw pairs instead. #1054 measured the sa
 the other side.
 
 **`HasErrors()` does not catch 67 of those 68, and that needed explaining rather than publishing.**
-Only break points 377 and 378 record an alert, and those are the two that land on
-`BOPAlgo_CheckerSI::Perform`'s own `UserBreak(aPS)`, which is `BOPAlgo_Options::UserBreak` and does
-call `AddError`. The other 66 are consumed inside a `BOPAlgo_PaveFiller` phase, whose loops are
-written `for (...; i < n && aPS.More(); ++i)`, and `Message_ProgressScope::More()` is defined as
+Exactly two break points in the whole sweep record an alert, 377 and 378, and they are the two that
+land on `BOPAlgo_CheckerSI::Perform`'s own `UserBreak(aPS)`, which is `BOPAlgo_Options::UserBreak`
+and does call `AddError`. Only one of those two, 377, is among the 68, since 378 lands after
+`CheckFaceSelfIntersection` has cleared the map and so leaves `surviving=0`. That is the arithmetic:
+68 non-empty rows, 1 of them flagged, **67 not**.
+
+Those 67 are consumed inside a `BOPAlgo_PaveFiller` phase, whose loops are written
+`for (...; i < n && aPS.More(); ++i)`, and `Message_ProgressScope::More()` is defined as
 `!UserBreak()`. The loop simply stops early, the phase returns normally, `PerformInternal`'s
 `if (HasErrors()) return;` sees nothing, and the run walks to a "successful" end having done partial
 work. Confirmed by dumping the report: the alert list is empty on those rows.
