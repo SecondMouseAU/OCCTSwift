@@ -173,6 +173,17 @@ The fixture control passes under every row by design: it asserts the two boxes a
 fuse to 1500, so a fixture that silently stopped overlapping would be visible. That is the failure a
 removal matrix structurally cannot see, and without it the two positive tests would pass for the
 wrong reason if the overlap ever went away.
+**The fixture control has its own injection, because a removal matrix cannot produce one.** Moving
+the second box from `origin: (5,0,0)` to `(50,0,0)`, so the fixture silently stops overlapping,
+fails `overlapFixtureActuallyOverlaps` on the fused volume (2000 against the expected 1500) **and**
+`overlappingBoxesReportSelfIntersection` together. That pairing is the point: without the control,
+the only signal would be "overlapping boxes are not reported", which reads as a bridge regression
+rather than a dud fixture. `answerAgreesWithTheBoundedSpelling` stays green under that injection,
+correctly, since both spellings agree on a compound that genuinely does not overlap.
+
+The control reaches into `overlappingBoxes()` rather than rebuilding an equivalent pair, which a
+late self-review corrected: a control that builds its own copy proves a different pair of boxes
+overlaps, not the one under test.
 
 Row A failing the nullified test is worth reading carefully: it fails because the old body answered
 `true` for a shape with no content, which is the false positive #1088 predicted, reachable from

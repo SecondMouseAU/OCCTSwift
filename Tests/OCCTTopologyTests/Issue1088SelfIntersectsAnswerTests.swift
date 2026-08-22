@@ -49,20 +49,25 @@ struct Issue1088SelfIntersectsAnswer {
     /// passing for the wrong reason.
     @Test("The overlap fixture really does overlap")
     func overlapFixtureActuallyOverlaps() {
-        guard let a = Shape.box(origin: SIMD3(0, 0, 0), width: 10, height: 10, depth: 10),
-            let b = Shape.box(origin: SIMD3(5, 0, 0), width: 10, height: 10, depth: 10)
-        else {
-            Issue.record("could not build the overlap fixture's two boxes")
+        // Deliberately reaches into the fixture the other tests use rather than rebuilding an
+        // equivalent pair here. A control that builds its own copy proves a different pair of
+        // boxes overlaps, which is not the claim being made.
+        guard let compound = Self.overlappingBoxes() else {
+            Issue.record("could not build the overlap fixture")
             return
         }
-        if let va = a.volume, let vb = b.volume {
+        let solids = compound.subShapes(ofType: .solid)
+        #expect(solids.count == 2)
+        guard solids.count == 2 else { return }
+
+        if let va = solids[0].volume, let vb = solids[1].volume {
             #expect(abs(va - 1000) < 1e-6)
             #expect(abs(vb - 1000) < 1e-6)
         }
-        if let fused = a.union(b), let vf = fused.volume {
+        if let fused = solids[0].union(solids[1]), let vf = fused.volume {
             #expect(abs(vf - 1500) < 1e-3)
         } else {
-            Issue.record("the two boxes did not fuse, so the overlap is unproven")
+            Issue.record("the fixture's two solids did not fuse, so the overlap is unproven")
         }
     }
 
