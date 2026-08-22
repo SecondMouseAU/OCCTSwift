@@ -22,6 +22,61 @@ bounding-box accessors becoming Optional so a void shape stops fabricating `(0,0
 ## Unreleased
 
 
+### `SAWireAnalysis.checkOuterBound` returns `Bool?`, so a refused check is not the same answer as a clean one (#1058)
+
+`checkOuterBound(wire:face:)` answered `false` both for a wire that **is** the face's outer bound and
+from every path that could not run the check, with no second channel to tell them apart. It now
+returns `Bool?`:
+
+```swift
+switch SAWireAnalysis.checkOuterBound(wire: wire, face: panel) {
+case true?:  print("not the outer bound")
+case false?: print("the outer bound")
+case nil:    print("not checkable against this face")
+}
+```
+
+`nil` covers four inputs:
+
+- a `Shape` that is not a wire or not a face, reachable because the signature takes two plain `Shape`
+  values with no type constraint;
+- a wire with no edges, which `ShapeAnalysis_Wire::IsReady()` rejects;
+- a wire whose edges do not assemble, where `ShapeExtend_WireData::WireAPIMake()` returns a **null**
+  wire and `BRep_Builder::Add` dereferences it with no null test. That one was an uncatchable
+  SIGSEGV rather than a wrong answer, and `CheckOuterBound` builds the same wire, so it crashed
+  before this change too;
+- a wire with no pcurve on the face, which OCCT does not reject: `ShapeAnalysis::TotCross2D` skips
+  every edge whose pcurve on the face is null, so with none left its accumulator is never written
+  and the `+0.0` it starts from signs as a positive area, reporting a foreign wire as the outer
+  bound. This one needs a non-planar support face to observe, because `BRep_Tool::CurveOnSurface`
+  projects a 3D curve onto a plane when no pcurve is stored.
+
+All four measured in
+[`Scripts/repro/1058-outer-bound-refusal/`](https://github.com/SecondMouseAU/OCCTSwift/tree/main/Scripts/repro/1058-outer-bound-refusal).
+
+The ten `SAWireAnalysis` siblings still return `Bool`. They share the first two refusal paths and not
+the third, measured on the same fixtures, and each needs its own adjudication of what `nil` would
+mean for it.
+
+### Amendment for the merger, in the same transcription commit
+
+`docs/CHANGELOG.md`'s **#999** entry, in the same `## Unreleased` section, currently ends its
+`checkOuterBound` paragraph with:
+
+> It now calls `ShapeAnalysis_Wire::CheckOuterBound` and returns `true` when a problem is found,
+> matching every sibling. There is no precision, because that check consults none.
+
+The first sentence stops being true when this merges, and both entries ship in one set of release
+notes. Replace it with:
+
+> It now calls `ShapeAnalysis_Wire::CheckOuterBound`. There is no precision, because that check
+> consults none.
+
+That is all: the return contract is the next entry's subject, so the #999 entry should stop
+describing it rather than describe it twice. `docs/CHANGELOG.md` is deliberately not in this PR's
+diff, per [`changelog-on-merge`](https://github.com/SecondMouseAU/OCCTSwift/blob/main/okf/policies/changelog-on-merge.md);
+this block is finished text for the merger to apply, not a draft.
+
 ### `isSelfIntersecting(timeout:)` no longer reports a timed-out or rejected check as a self-intersection (#1054)
 
 `Shape.isSelfIntersecting(timeout:)` and `Shape.isSelfIntersecting(hardTimeout:)` decided from
