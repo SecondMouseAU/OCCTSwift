@@ -164,6 +164,44 @@ public final class Curve2D: @unchecked Sendable {
         return Curve2D(handle: h)
     }
 
+    /// Create a circle involute curve (gear tooth profile).
+    ///
+    /// The involute is defined by C(t) = O + R*(cos(t) + t*sin(t))*XDir + R*(sin(t) - t*cos(t))*YDir
+    /// where O is the origin, XDir/YDir form the placement coordinate system, and R is the base radius.
+    ///
+    /// - Parameters:
+    ///   - origin: The origin point O of the involute's coordinate system.
+    ///   - direction: The X direction vector (YDir is computed as perpendicular, i.e., rotated 90° CCW).
+    ///   - radius: The base circle radius. Must be `> 0`; zero and negative radii return `nil`.
+    /// - Returns: The circle involute curve, or `nil` if `radius <= 0`.
+    ///
+    /// ```swift
+    /// // Standard involute at origin with X axis
+    /// let involute = Curve2D.circleInvolute(origin: .zero, direction: SIMD2(1, 0), radius: 5)
+    ///
+    /// // Involute at (10, 20) rotated 45 degrees
+    /// let angle = .pi / 4
+    /// let dir = SIMD2(cos(angle), sin(angle))
+    /// let involute = Curve2D.circleInvolute(origin: SIMD2(10, 20), direction: dir, radius: 5)
+    ///
+    /// // Mirror for opposite flank (negate X direction to flip YDir)
+    /// let mirrored = Curve2D.circleInvolute(origin: .zero, direction: SIMD2(-1, 0), radius: 5)
+    /// // YDir becomes (0, -1) - this produces the mirrored flank
+    /// ```
+    public static func circleInvolute(
+        origin: SIMD2<Double>, direction: SIMD2<Double>,
+        radius: Double
+    ) -> Curve2D? {
+        guard radius > 0 else { return nil }
+        guard
+            let ref = OCCTGeom2dEvalCircleInvoluteCurveCreate(
+                origin.x, origin.y,
+                direction.x, direction.y,
+                radius)
+        else { return nil }
+        return Curve2D(handle: ref)
+    }
+
     /// Create a full ellipse.
     ///
     /// - Parameters:

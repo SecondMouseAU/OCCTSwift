@@ -50,6 +50,7 @@ Sources/OCCTSwift/EdgeAnalysis.swift
 Sources/OCCTSwift/EdgeCurve.swift
 Sources/OCCTSwift/ElLib.swift
 Sources/OCCTSwift/Environment.swift
+Sources/OCCTSwift/ExtremaTypes.swift
 Sources/OCCTSwift/EvolvedSectionInfo.swift
 Sources/OCCTSwift/EvolvingFilletEdge.swift
 Sources/OCCTSwift/Exporter.swift

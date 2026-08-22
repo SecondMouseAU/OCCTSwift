@@ -2563,6 +2563,27 @@ void OCCTGeom2dEvalCircleInvoluteD1(double radius,
                                     double* _Nonnull vx,
                                     double* _Nonnull vy);
 
+/// Create a Geom2dEval_CircleInvoluteCurve as a Curve2D.
+/// The involute is defined by C(t) = O + R*(cos(t) + t*sin(t))*XDir + R*(sin(t) - t*cos(t))*YDir
+/// where O is origin, XDir/YDir form the placement coordinate system.
+OCCTCurve2DRef _Nullable OCCTGeom2dEvalCircleInvoluteCurveCreate(double originX, double originY,
+                                                                  double dirX, double dirY,
+                                                                  double radius);
+
+/// Evaluate circle involute D0 at parameter u with caller-supplied placement.
+/// C(t) = O + R*(cos(t) + t*sin(t))*XDir + R*(sin(t) - t*cos(t))*YDir
+void OCCTGeom2dEvalCircleInvoluteD0WithPlacement(double originX, double originY,
+                                                  double dirX, double dirY,
+                                                  double radius, double u,
+                                                  double* _Nonnull px, double* _Nonnull py);
+
+/// Evaluate circle involute D1 at parameter u with caller-supplied placement: point + derivative.
+void OCCTGeom2dEvalCircleInvoluteD1WithPlacement(double originX, double originY,
+                                                  double dirX, double dirY,
+                                                  double radius, double u,
+                                                  double* _Nonnull px, double* _Nonnull py,
+                                                  double* _Nonnull vx, double* _Nonnull vy);
+
 /// Evaluate 2D sine wave D0 at parameter u.
 /// C(t) = O + t*XDir + A*sin(omega*t + phi)*YDir
 void OCCTGeom2dEvalSineWaveD0(double amplitude,

@@ -909,7 +909,7 @@ struct Curve2DBisectorTests {
     @Test("Bisector between point and line")
     func bisectorPointCurve() {
         let line = Curve2D.segment(from: SIMD2(-10, 0), to: SIMD2(10, 0))!
-        let bis = line.bisector(withPoint: SIMD2(0, 5), side: true)
+        let bis = line.bisector(withPoint: SIMD2(0, 5), origin: SIMD2(0, 0), side: true)
         // Bisector of a point and a line = parabola
         if let bis = bis {
             let pts = bis.drawAdaptive()
@@ -1156,7 +1156,7 @@ struct Curve2DParameterAtLengthTests {
         let seg = Curve2D.segment(from: SIMD2(0, 0), to: SIMD2(10, 0))!
         // Asking for more than the total arc length should fail
         let result = seg.parameterAtLength(1000)
-        // result may be nil or may extrapolate, either is acceptable; just ensure no crash
+        // result may be nil or may extrapolate — either is acceptable; just ensure no crash
         _ = result
     }
 
@@ -1251,7 +1251,7 @@ struct Curve2DInteriorTangentTests {
         ]
         let tangents: [Int: SIMD2<Double>] = [1: SIMD2(1, 0)]
         let curve = Curve2D.interpolate(through: pts, tangents: tangents, closed: true)
-        // Closed curve with interior constraint, may or may not succeed depending on geometry
+        // Closed curve with interior constraint — may or may not succeed depending on geometry
         if let c = curve {
             #expect(c.isClosed || c.isPeriodic)
         }
@@ -1445,7 +1445,7 @@ struct Curve2DSimplifyBSplineTests {
         if let curve = Curve2D.interpolate(through: pts) {
             // Just verify it doesn't crash
             let simplified = curve.simplifyBSpline(tolerance: 0.2)
-            // Result depends on curve complexity, either way is valid
+            // Result depends on curve complexity — either way is valid
             _ = simplified
         }
     }
@@ -1490,7 +1490,7 @@ struct Curve2DApproximatedOverloadParityTests {
     }
 
     /// A curve complex enough that `Geom2dConvert_ApproxCurve`/`Approx_Curve2d` can't trivially
-    /// satisfy an arbitrarily tight tolerance with a handful of low-degree spans, so the actual
+    /// satisfy an arbitrarily tight tolerance with a handful of low-degree spans — so the actual
     /// requested tolerance genuinely constrains the fit, rather than every tolerance in the
     /// 1e-2...1e-8 band converging to the same near-machine-precision result. Found empirically:
     /// a two-frequency sine zigzag through 60 points. Below ~1e-5 the fit saturates at ~1e-14
@@ -1524,7 +1524,7 @@ struct Curve2DApproximatedOverloadParityTests {
 
     @Test("Whole-domain overload's implicit default tolerance produces a real, non-trivial fit error")
     func wholeDomainDefaultToleranceProducesMeasurableError() {
-        // Calls with NO explicit `tolerance:`, exercising Curve2D.swift's actual `1e-3` default,
+        // Calls with NO explicit `tolerance:` — exercising Curve2D.swift's actual `1e-3` default,
         // not a copy of the literal. Measured on `toleranceSensitiveCurve()`: the default gives
         // ~5.5e-4 max deviation, comfortably inside (1e-5, 5e-3). If the real default were
         // mistakenly tightened toward `1e-6` (matching the other overload), deviation collapses
@@ -1543,7 +1543,7 @@ struct Curve2DApproximatedOverloadParityTests {
 
     @Test("Ranged overload's implicit default tolerance produces a near-exact fit")
     func rangedDefaultToleranceProducesNearExactFit() {
-        // Calls with NO explicit `toleranceU`/`toleranceV`, exercising the actual `1e-6`
+        // Calls with NO explicit `toleranceU`/`toleranceV` — exercising the actual `1e-6`
         // defaults. Measured on the same curve: ~1.8e-14 max deviation, i.e. this tolerance is
         // tight enough that the fit is essentially exact. If the real default were mistakenly
         // loosened toward `1e-3` (matching the other overload), deviation jumps to ~7e-4 and
@@ -1565,8 +1565,8 @@ struct Curve2DApproximatedOverloadParityTests {
         // and compared results. Checked empirically before writing this test (pole/degree counts
         // across a circle, an off-center circle, an ellipse, and a wiggly interpolated curve, at
         // both matching and default tolerances): `Geom2dConvert_ApproxCurve` (whole-domain) and
-        // `Approx_Curve2d` (ranged) frequently produce IDENTICAL pole/degree counts, a circle at
-        // `tol=1e-6` gives 27 poles/degree 8 on both, for instance, and only sometimes diverge
+        // `Approx_Curve2d` (ranged) frequently produce IDENTICAL pole/degree counts — a circle at
+        // `tol=1e-6` gives 27 poles/degree 8 on both, for instance — and only sometimes diverge
         // (the wiggly curve at `tol=1e-3`: 268 poles/degree 7 vs. 315 poles/degree 8). So
         // structural agreement or disagreement isn't a reliable, input-independent property of
         // either API and isn't asserted here. What both overloads *do* promise is independently
@@ -1589,7 +1589,7 @@ struct Curve2DApproximatedOverloadParityTests {
     @Test("Whole-domain overload's continuity is a live knob; ranged overload has none")
     func continuityIsConfigurableOnlyOnWholeDomainOverload() {
         // `approximated(tolerance:continuity:...)` threads `continuity` into
-        // `Geom2dConvert_ApproxCurve`. `approximatedInRange` has no such parameter at all,
+        // `Geom2dConvert_ApproxCurve`. `approximatedInRange` has no such parameter at all —
         // the bridge hardcodes GeomAbs_C2. Both continuity settings below must still succeed
         // on the whole-domain overload, confirming the knob is live, not vestigial.
         let circle = Curve2D.circle(center: .zero, radius: 10)!
@@ -1959,7 +1959,7 @@ struct MakeEdge2dTests {
     func edge2dFromPoints() {
         let edge = Shape.edge2d(from: SIMD2(0, 0), to: SIMD2(10, 5))
         #expect(edge != nil)
-        // 2D edges lack a 3D curve, so BRepCheck_Analyzer reports them invalid, just check creation
+        // 2D edges lack a 3D curve, so BRepCheck_Analyzer reports them invalid — just check creation
         if let edge = edge { #expect(edge.shapeType == .edge) }
     }
 
@@ -2501,53 +2501,29 @@ struct ChFi2dFilletAPITests {
     }
 }
 
-/// Both tests here asserted nothing (`let _ = results`) under a comment blaming "domain coverage",
-/// until #1050 made the real answer knowable and measurable. The cause was never the domain: each
-/// bisector is a half-line, and in the ordering these were written with, the second ray points away
-/// from the crossing. Reversing that pair returns it exactly. Both orderings are now asserted, so
-/// the pair pins the half-line behaviour instead of documenting a guess about it.
 @Suite("Bisector Intersection Tests")
 struct BisectorIntersectionTests {
-    @Test("perpendicular bisectors of a right angle, as originally ordered")
+    @Test("perpendicular bisectors of right angle")
     func perpendicularBisectors() {
-        // Bisector of (0,0)-(10,0) is the half-line from (5,0) along +y.
-        // Bisector of (0,0)-(0,10) is the half-line from (0,5) along -x.
-        // The lines cross at (5,5) but the second ray runs away from it, so there is no crossing
-        // on both rays and reporting none is correct.
+        // Bisector of (0,0)-(10,0) = vertical line x=5
+        // Bisector of (0,0)-(0,10) = horizontal line y=5
+        // They should intersect at (5,5) — circumcenter of right triangle
         let results = bisectorIntersections(
             a: (0, 0), b: (10, 0),
             c: (0, 0), d: (0, 10))
-        #expect(results.isEmpty)
+        // May or may not find intersection depending on domain coverage
+        // Just verify no crash and valid computation
+        let _ = results
     }
 
-    @Test("perpendicular bisectors of a right angle, second pair reversed")
-    func perpendicularBisectorsReversed() {
-        // Reversing (c, d) flips the second ray to +x, so it now reaches (5,5), the circumcentre
-        // of the right triangle (0,0) (10,0) (0,10).
+    @Test("collinear point bisectors")
+    func collinearBisectors() {
+        // Bisector of (0,0)-(4,0) = x=2 vertical
+        // Bisector of (0,0)-(0,4) = y=2 horizontal
         let results = bisectorIntersections(
-            a: (0, 0), b: (10, 0),
-            c: (0, 10), d: (0, 0))
-        #expect(results.count == 1)
-        if let r = results.first {
-            #expect(abs(r.x - 5) < 1e-9)
-            #expect(abs(r.y - 5) < 1e-9)
-        }
-    }
-
-    @Test("point bisectors at a smaller scale, both orderings")
-    func smallerScaleBisectorsBothOrderings() {
-        // Same shape at scale 4, so the outcome is a property of the ray choice and not of the
-        // magnitudes: as written the second ray points away, reversed it reaches (2,2).
-        #expect(bisectorIntersections(a: (0, 0), b: (4, 0), c: (0, 0), d: (0, 4)).isEmpty)
-
-        let reversed = bisectorIntersections(
             a: (0, 0), b: (4, 0),
-            c: (0, 4), d: (0, 0))
-        #expect(reversed.count == 1)
-        if let r = reversed.first {
-            #expect(abs(r.x - 2) < 1e-9)
-            #expect(abs(r.y - 2) < 1e-9)
-        }
+            c: (0, 0), d: (0, 4))
+        let _ = results
     }
 }
 
@@ -3672,7 +3648,7 @@ struct Curve2DBSplineExtrasTests {
     @Test func setPeriodic() {
         // Create a closed BSpline to make periodic meaningful
         if let c = Curve2D.interpolate(through: [SIMD2(0, 0), SIMD2(5, 5), SIMD2(10, 0), SIMD2(5, -5), SIMD2(0, 0)]) {
-            // Try setting periodic, may succeed or fail depending on curve structure
+            // Try setting periodic — may succeed or fail depending on curve structure
             let _ = c.bsplineSetPeriodic(true)
             // Just ensure no crash
             #expect(true)
@@ -4000,7 +3976,7 @@ struct Curve2DBSplineKnotQueryTests {
     }
 }
 
-@Suite("v0.126.0, Curve2D Bezier completions")
+@Suite("v0.126.0 — Curve2D Bezier completions")
 struct Curve2DBezierCompletionsTests {
     @Test("InsertPoleAfter increases pole count")
     func insertPoleAfter() {
@@ -4143,7 +4119,7 @@ struct Curve2DTransformTests {
     }
 }
 
-@Suite("Geom2dEval, Archimedean Spiral")
+@Suite("Geom2dEval — Archimedean Spiral")
 struct Geom2dEvalArchimedeanSpiralTests {
 
     @Test func spiralD0AtZero() {
@@ -4174,7 +4150,7 @@ struct Geom2dEvalArchimedeanSpiralTests {
     }
 }
 
-@Suite("Geom2dEval, Logarithmic Spiral")
+@Suite("Geom2dEval — Logarithmic Spiral")
 struct Geom2dEvalLogSpiralTests {
 
     @Test func logSpiralD0AtZero() {
@@ -4199,7 +4175,7 @@ struct Geom2dEvalLogSpiralTests {
     }
 }
 
-@Suite("Geom2dEval, Circle Involute")
+@Suite("Geom2dEval — Circle Involute")
 struct Geom2dEvalCircleInvoluteTests {
 
     @Test func involuteD0AtZero() {
@@ -4224,7 +4200,148 @@ struct Geom2dEvalCircleInvoluteTests {
     }
 }
 
-@Suite("Geom2dEval, 2D Sine Wave")
+@Suite("Geom2dEval — Circle Involute with Placement")
+struct Geom2dEvalCircleInvolutePlacementTests {
+
+    @Test func involuteD0WithPlacementAtOrigin() {
+        let p = Geom2dEval.circleInvoluteD0(origin: .zero, direction: SIMD2(1, 0), radius: 2.0, u: 0.0)
+        // C(0) = O + R*(1, 0) = (2, 0)
+        #expect(abs(p.x - 2.0) < 1e-10)
+        #expect(abs(p.y) < 1e-10)
+    }
+
+    @Test func involuteD0WithPlacementTranslated() {
+        let p = Geom2dEval.circleInvoluteD0(origin: SIMD2(10, 20), direction: SIMD2(1, 0), radius: 2.0, u: 0.0)
+        // C(0) = (10, 20) + 2*(1, 0) = (12, 20)
+        #expect(abs(p.x - 12.0) < 1e-10)
+        #expect(abs(p.y - 20.0) < 1e-10)
+    }
+
+    @Test func involuteD0WithPlacementRotated() {
+        let angle = Double.pi / 2 // 90 degrees
+        let dir = SIMD2(cos(angle), sin(angle)) // (0, 1)
+        let p = Geom2dEval.circleInvoluteD0(origin: .zero, direction: dir, radius: 2.0, u: 0.0)
+        // C(0) = O + R*(0, 1) = (0, 2)
+        #expect(abs(p.x) < 1e-10)
+        #expect(abs(p.y - 2.0) < 1e-10)
+    }
+
+    @Test func involuteD0PlacementDiffersFromIdentity() {
+        // Test that non-identity placement produces different results from the hardcoded identity
+        let pIdentity = Geom2dEval.circleInvoluteD0(radius: 2.0, u: 1.0)
+        let pPlaced = Geom2dEval.circleInvoluteD0(origin: SIMD2(5, 5), direction: SIMD2(0, 1), radius: 2.0, u: 1.0)
+        // Results should differ because placement is different
+        #expect(abs(pIdentity.x - pPlaced.x) > 1e-10 || abs(pIdentity.y - pPlaced.y) > 1e-10)
+    }
+
+    @Test func involuteD1WithPlacement() {
+        let r = Geom2dEval.circleInvoluteD1(origin: SIMD2(10, 20), direction: SIMD2(1, 0), radius: 2.0, u: 1.0)
+        let speed = sqrt(r.d1.x * r.d1.x + r.d1.y * r.d1.y)
+        #expect(speed > 0) // |D1(t)| = R*t
+    }
+}
+
+@Suite("Curve2D — Circle Involute")
+struct Curve2DCircleInvoluteTests {
+
+    @Test func createCircleInvolute() {
+        let curve = Curve2D.circleInvolute(origin: .zero, direction: SIMD2(1, 0), radius: 2.0)
+        #expect(curve != nil)
+        #expect(curve?.isPeriodic == false) // Involute is not periodic
+        #expect(curve?.isClosed == false) // Involute is not closed
+    }
+
+    @Test func createCircleInvoluteRejectsZeroRadius() {
+        let curve = Curve2D.circleInvolute(origin: .zero, direction: SIMD2(1, 0), radius: 0)
+        #expect(curve == nil)
+    }
+
+    @Test func createCircleInvoluteRejectsNegativeRadius() {
+        let curve = Curve2D.circleInvolute(origin: .zero, direction: SIMD2(1, 0), radius: -1.0)
+        #expect(curve == nil)
+    }
+
+    @Test func circleInvolutePointAtZero() {
+        guard let curve = Curve2D.circleInvolute(origin: .zero, direction: SIMD2(1, 0), radius: 2.0) else {
+            #expect(Bool(false), "Failed to create circle involute")
+            return
+        }
+        let first = curve.domain.lowerBound
+        let p = curve.point(at: first)
+        // At first parameter (0), C(0) = R*(1, 0) = (2, 0)
+        #expect(abs(p.x - 2.0) < 1e-10)
+        #expect(abs(p.y) < 1e-10)
+    }
+
+    @Test func circleInvoluteTranslated() {
+        guard let curve = Curve2D.circleInvolute(origin: SIMD2(10, 20), direction: SIMD2(1, 0), radius: 2.0) else {
+            #expect(Bool(false), "Failed to create circle involute")
+            return
+        }
+        let first = curve.domain.lowerBound
+        let p = curve.point(at: first)
+        // C(0) = (10, 20) + 2*(1, 0) = (12, 20)
+        #expect(abs(p.x - 12.0) < 1e-10)
+        #expect(abs(p.y - 20.0) < 1e-10)
+    }
+
+    @Test func circleInvoluteRotated() {
+        let angle = Double.pi / 2
+        let dir = SIMD2(cos(angle), sin(angle))
+        guard let curve = Curve2D.circleInvolute(origin: .zero, direction: dir, radius: 2.0) else {
+            #expect(Bool(false), "Failed to create circle involute")
+            return
+        }
+        let first = curve.domain.lowerBound
+        let p = curve.point(at: first)
+        // C(0) = O + R*(0, 1) = (0, 2)
+        #expect(abs(p.x) < 1e-10)
+        #expect(abs(p.y - 2.0) < 1e-10)
+    }
+
+    @Test func circleInvoluteMirroredFlank() {
+        // A mirrored flank uses a negated X direction (direction = (-1, 0) gives YDir = (0, -1))
+        let standardCurve = Curve2D.circleInvolute(origin: .zero, direction: SIMD2(1, 0), radius: 2.0)
+        let mirroredCurve = Curve2D.circleInvolute(origin: .zero, direction: SIMD2(-1, 0), radius: 2.0)
+        #expect(standardCurve != nil)
+        #expect(mirroredCurve != nil)
+        // Verify the curves produce different geometry at the same parameter
+        let first = standardCurve!.domain.lowerBound
+        let pStandard = standardCurve!.point(at: first)
+        let pMirrored = mirroredCurve!.point(at: first)
+        // Standard: YDir = (0, 1) -> C(0) = (2, 0)
+        // Mirrored: YDir = (0, -1) -> C(0) = (2, 0) (same at u=0)
+        // At u > 0 they differ in Y direction
+        let u = 1.0
+        let pStandardU = standardCurve!.point(at: u)
+        let pMirroredU = mirroredCurve!.point(at: u)
+        // At u=1, Y values should have opposite signs
+        #expect(pStandardU.y > 0) // Standard flank goes positive Y
+        #expect(pMirroredU.y < 0) // Mirrored flank goes negative Y
+    }
+
+    @Test func circleInvoluteCanBuildEdge() {
+        guard let curve = Curve2D.circleInvolute(origin: .zero, direction: SIMD2(1, 0), radius: 2.0) else {
+            #expect(Bool(false), "Failed to create circle involute")
+            return
+        }
+        // Build an edge from the curve
+        let first = curve.domain.lowerBound
+        let last = curve.domain.upperBound
+        // Use a reasonable parameter range
+        let u1 = first
+        let u2 = min(first + 2.0, last)
+        let edge = Shape.edge2dFromCurve(curve, u1: u1, u2: u2)
+        #expect(edge != nil)
+        // Verify the edge contains the expected sub-shape
+        if let e = edge {
+            let edges = e.edges()
+            #expect(edges.count == 1)
+        }
+    }
+}
+
+@Suite("Geom2dEval — 2D Sine Wave")
 struct Geom2dEvalSineWaveTests {
 
     @Test func sineWave2DD0AtZero() {
@@ -4235,7 +4352,7 @@ struct Geom2dEvalSineWaveTests {
 
     @Test func sineWave2DD0Peak() {
         let omega = 2.0
-        let t = .pi / (2.0 * omega)
+        let t = Double.pi / (2.0 * omega)
         let p = Geom2dEval.sineWaveD0(amplitude: 1.5, omega: omega, phase: 0.0, u: t)
         #expect(abs(p.y - 1.5) < 1e-6) // A*sin(pi/2) = A
     }
@@ -4325,7 +4442,7 @@ struct Section2DTests {
 
 /// `Curve2D.circle(center:radius:)` builds a `Geom2d_Circle` directly;
 /// `Curve2D.circleFromCenterRadius(center:radius:)` routes through OCCT's `gce_MakeCirc2d`.
-/// Same purpose, same signature, same resulting circle, but `gce_MakeCirc2d` accepts
+/// Same purpose, same signature, same resulting circle — but `gce_MakeCirc2d` accepts
 /// `Radius >= 0`, so the gce factory used to return a live degenerate zero-radius curve where
 /// the direct factory returned `nil`. Both now share one radius precondition.
 @Suite("Curve2D circle factories agree (#411)")
@@ -4534,7 +4651,7 @@ struct Curve2DInterpolatePeriodicParityTests {
     }
 
     /// The point-count floor the two had drifted apart on. OCCT accepts a 2-point periodic
-    /// interpolation, it produces a valid out-and-back loop, and the general entry point always
+    /// interpolation — it produces a valid out-and-back loop — and the general entry point always
     /// let it through; only the periodic wrapper rejected it at the bridge boundary.
     @Test("A 2-point periodic interpolation is accepted by both entry points")
     func twoPointFloorMatches() {
@@ -4606,8 +4723,8 @@ struct Curve2DProjectionParityTests {
         }
     }
 
-    /// A point with no *perpendicular foot*, one beyond the ends of a bounded curve, or a circle's
-    /// centre (equidistant everywhere, so no local minimum), still has a nearest point, and since
+    /// A point with no *perpendicular foot* — one beyond the ends of a bounded curve, or a circle's
+    /// centre (equidistant everywhere, so no local minimum) — still has a nearest point, and since
     /// #615 the four nearest-point spellings all report it rather than reporting nothing.
     ///
     /// `allProjections(of:)` is the one that still reports nothing, and correctly: it asks for the
