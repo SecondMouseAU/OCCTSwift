@@ -1,0 +1,8 @@
+fixture           faces   hasErr  mapSize   surviv involNew tolMoved   bridge   correct    analyzer statuses
+BOX                   6        0        0        0        0       no   false    false      (none)
+DISJOINT_BOXES       12        0        0        0        0       no   false    false      (none)
+OVERLAP_BOXES        12        0       20       20        0       no   false    true       SelfIntersect,SelfIntersect,SelfIntersect,SelfIntersect,SelfIntersect,SelfIntersect,SelfIntersect,SelfIntersect,SelfIntersect,SelfIntersect,SelfIntersect,SelfIntersect,SelfIntersect,SelfIntersect,SelfIntersect,SelfIntersect,SelfIntersect,SelfIntersect,SelfIntersect,SelfIntersect
+OVERLAP_SPHERES       2        0        2        2        0       no   false    true       SelfIntersect,SelfIntersect
+BOWTIE_PRISM          4        0        3        3        0       no   false    true       SelfIntersect,SelfIntersect,SelfIntersect
+EMPTY_SOLID           0        0        0        0        0       no   false    false      (none)
+MULTI_ARG             6        1        0        0        0       no   true     false      (none)

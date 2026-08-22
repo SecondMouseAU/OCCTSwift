@@ -1,0 +1,31 @@
+complete run:  hasErrors=0  surviving=0
+
+ breakAt  hasErrors  surviving
+     310          0          1
+     311          0          1
+     312          0          2
+     377          1          3
+     378          1          0
+     396          0          0
+     397          0          0
+     398          0          0
+     399          0          0
+     400          0          0
+break points swept:                                  400
+  ... leaving a non-empty surviving map:             68  (first at 310)
+  ... answering "self-intersects" WITHOUT the HasErrors test: 68
+  ... answering "self-intersects" WITH the HasErrors test:    67
+
+Every one of those is a clean box, so both counts are wrong answers.
+
+The third number is the finding, and it is not zero: HasErrors() is NOT a proxy for
+"the run finished" once a progress indicator exists. Only the two break points that land
+on BOPAlgo_CheckerSI::Perform's own UserBreak(aPS) record an alert; the rest are consumed
+by a Message_ProgressScope::More() inside a BOPAlgo_PaveFiller phase loop, and More() is
+just !UserBreak(), so the loop stops early and records nothing at all.
+
+None of this is reachable through OCCTShapeSelfIntersects, which passes a default
+Message_ProgressRange. Message_ProgressScope::UserBreak() is `myProgress && ...`, so with
+no indicator installed it is always false and no break can occur. That is what makes the
+HasErrors() test sufficient there, and this sweep is the standing warning that giving
+this call a timeout would take that away.

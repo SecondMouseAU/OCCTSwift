@@ -747,8 +747,8 @@ int32_t OCCTFaceProjectPointAll(OCCTFaceRef                  face,
 // Shares OCCTCurve3DProjectPoint's nearest-point-on-a-range implementation since #539. The defect
 // here was the other half of that one: a bare GeomAPI_ProjectPointOnCurve honours the edge's range
 // but reports extrema rather than minima, so it answered 11 for the point (0, -6, 0) against a
-// half-circle edge whose nearest point is 7.81 away, and declined to answer at all -- isValid
-// false, surfacing as nil -- whenever the nearest point was an end rather than a perpendicular
+// half-circle edge whose nearest point is 7.81 away, and declined to answer at all (isValid
+// false, surfacing as nil) whenever the nearest point was an end rather than a perpendicular
 // foot, which is every point beyond the end of a straight edge. isValid now means what the header
 // says it means: false only for an edge with no 3D curve to project onto.
 OCCTCurveProjectionResult OCCTEdgeProjectPoint(OCCTEdgeRef edge, double px, double py, double pz)
@@ -844,10 +844,17 @@ int32_t OCCTShapeProximity(OCCTShapeRef           shape1,
 
 #include <BOPAlgo_CheckerSI.hxx>
 #include <BOPAlgo_Alerts.hxx>
+#include <BOPDS_DS.hxx>
+#include <BOPDS_Pair.hxx>
 
 bool OCCTShapeSelfIntersects(OCCTShapeRef shape)
 {
-  if (!shape)
+  // BOPAlgo_CheckerSI::Perform dereferences a null TopoDS_Shape. Measured against the pinned
+  // kernel, that is a SIGSEGV in a standalone process, for a default-constructed shape and for the
+  // Nullify()d copy Shape.nullified hands back alike. Removing this guard takes the test binary
+  // down on 12 of 15 runs, and on the other 3 returns HasErrors() instead, a wrong answer rather
+  // than a fault. A signal would not reach the catch below, so refuse the shape here.
+  if (!occtShapeIsPresent(shape))
     return false;
 
   try
@@ -857,7 +864,36 @@ bool OCCTShapeSelfIntersects(OCCTShapeRef shape)
     shapes.Append(shape->shape);
     checker.SetArguments(shapes);
     checker.Perform();
-    return checker.HasErrors();
+
+    // HasErrors() is BOPAlgo_Options' "did this algorithm fail" flag, not "did it find an
+    // interference"; returning it as the answer was #1088. The result lives in
+    // BOPDS_DS::Interferences(), walked below as BOPAlgo_ArgumentAnalyzer::TestSelfInterferences
+    // walks it.
+    //
+    // The error test comes first, and it is what makes the map safe to read. Perform() reaches
+    // PostTreat(), which is what leaves the map holding only genuine interferences, exactly when
+    // HasErrors() is false; its one other error-free exit is a user break, and this function
+    // installs no Message_ProgressIndicator, so that exit is unreachable and HasErrors() == false
+    // means the run completed. Giving this call a timeout would break that: an interrupted run
+    // leaves the pave filler's raw pairs in the map, and a clean box then reports three of them.
+    if (checker.HasErrors())
+      return false;
+
+    const BOPDS_DS* ds = checker.PDS();
+    if (!ds)
+      return false;
+
+    NCollection_Map<BOPDS_Pair>::Iterator it(ds->Interferences());
+    for (; it.More(); it.Next())
+    {
+      int n1 = 0, n2 = 0;
+      it.Value().Indices(n1, n2);
+      // A pair involving a shape the pave filler created is not an interference of the input.
+      if (ds->IsNewShape(n1) || ds->IsNewShape(n2))
+        continue;
+      return true;
+    }
+    return false;
   }
   catch (...)
   {
@@ -994,7 +1030,7 @@ OCCTCurveInfo OCCTWireGetCurveInfo(OCCTWireRef wire)
   {
     BRepAdaptor_CompCurve curve(wire->wire);
 
-    // Get length -- the same subdivided measurement OCCTWireGetLength makes, so the two
+    // Get length: the same subdivided measurement OCCTWireGetLength makes, so the two
     // spellings of a wire's length cannot disagree on an elliptical edge. #603.
     result.length = occtAdaptorArcLength(curve, curve.FirstParameter(), curve.LastParameter());
 
@@ -1033,7 +1069,7 @@ double OCCTWireGetLength(OCCTWireRef wire)
   {
     BRepAdaptor_CompCurve curve(wire->wire);
     // A BRepAdaptor_CompCurve reports one GeomAbs_CN interval per edge span, so a wire made of
-    // lines and circles was already exact -- but one elliptical edge in it measured 1.485%
+    // lines and circles was already exact, but one elliptical edge in it measured 1.485%
     // long, because that edge's span still got a single quadrature. #603.
     return occtAdaptorArcLength(curve, curve.FirstParameter(), curve.LastParameter());
   }
@@ -1105,7 +1141,7 @@ bool OCCTWireGetTangentAt(OCCTWireRef wire, double param, double* tx, double* ty
 }
 
 // #595: the -1.0 error sentinel became a bool, and the degenerate branch below stopped answering 0.
-// This one already reached Swift as an optional, but only through -1.0 -- the null-derivative case
+// This one already reached Swift as an optional, but only through -1.0, the null-derivative case
 // returned 0.0, a straight wire's real curvature, so the optional never fired for the case that
 // actually has no answer.
 bool OCCTWireGetCurvatureAt(OCCTWireRef wire, double param, double* curvature)
@@ -2159,7 +2195,7 @@ bool OCCTEdgeLPropTangent(OCCTShapeRef edge, double param, double* dx, double* d
 
 // #595, the same change the faceLProp* block above took in #583: an undefined tangent used to be
 // spelled 0, which is a straight edge's real curvature. The degeneracy is reachable without
-// constructing anything odd -- a sphere carries a degenerate edge at each pole, with no 3D curve at
+// constructing anything odd: a sphere carries a degenerate edge at each pole, with no 3D curve at
 // all, and every Shape.edge* entry point walks edges without asking. A cusp still reports
 // RealLast(), an answer rather than an absence.
 bool OCCTEdgeLPropCurvature(OCCTShapeRef edge, double param, double* curvature)
@@ -2197,7 +2233,7 @@ bool OCCTEdgeLPropNormal(OCCTShapeRef edge, double param, double* dx, double* dy
       return false;
     // The same gate OCCTEdgeGetNormal3D's neighbour uses. Normal() rejects both a null and a
     // RealLast() curvature itself, by throwing, so this only replaces an exception with a
-    // return -- but it is the predicate that makes the answer reportable rather than absorbed.
+    // return, but it is the predicate that makes the answer reportable rather than absorbed.
     if (!occtCurveCurvatureIsInvertible(props.Curvature()))
       return false;
     gp_Dir n;
@@ -2233,7 +2269,7 @@ bool OCCTEdgeLPropCentreOfCurvature(OCCTShapeRef edge,
     // Unlike Normal(), CentreOfCurvature() does *not* reject the RealLast() sentinel: it tests
     // only |Curvature()| <= resolution, which RealLast() passes, and then divides by the
     // myCurvature field the sentinel path never assigned. So a near-cusp used to come back as a
-    // point of (nan, inf, nan) -- measured, on a Bezier whose first two poles sit 1e-8 apart.
+    // point of (nan, inf, nan). Measured, on a Bezier whose first two poles sit 1e-8 apart.
     // #494 found this on the Geom_ side; it is the same template.
     if (!occtCurveCurvatureIsInvertible(props.Curvature()))
       return false;

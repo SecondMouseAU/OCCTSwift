@@ -78,7 +78,21 @@ extension Shape {
         return pairs
     }
 
-    /// Check if this shape self-intersects.
+    /// Whether this shape self-intersects.
+    ///
+    /// - Warning: Deprecated (#1088). This runs unbounded, and its `Bool` cannot separate a clean
+    ///   shape from a check that could not run: both are `false`. Prefer
+    ///   ``isSelfIntersecting(timeout:)``, which bounds the work and returns `nil` when the answer
+    ///   is indeterminate.
+    ///
+    /// ```swift
+    /// let box = Shape.box(width: 10, height: 10, depth: 10)!
+    /// print(box.isSelfIntersecting(timeout: 30) == false)  // true: clean, and it completed
+    /// ```
+    @available(
+        *, deprecated,
+        message: "Unbounded; false also means unknown. Use isSelfIntersecting(timeout:). #1088"
+    )
     public var selfIntersects: Bool {
         OCCTShapeSelfIntersects(handle)
     }
