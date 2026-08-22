@@ -147,32 +147,42 @@ helper of the same name in OCCTReconstruct and OCCTDesignLoop, unrelated to this
 `Tests/OCCTTopologyTests/Issue1088SelfIntersectsAnswerTests.swift`, run against the shipped fix and
 three injected bodies. Each injection is the real pre-#1088 code or one half of it.
 
-| body | overlap boxes | overlap spheres | agreement | nullified | clean box | disjoint | fixture control |
-|---|---|---|---|---|---|---|---|
-| shipped fix | pass | pass | pass | pass | pass | pass | pass |
-| A, the pre-#1088 body (no guard, `HasErrors()` returned) | **FAIL** | **FAIL** | **FAIL** | **FAIL** | pass | pass | pass |
-| B, null-shape guard removed only | pass | pass | pass | pass | pass | pass | pass |
-| C, map reading reverted only | **FAIL** | **FAIL** | **FAIL** | pass | pass | pass | pass |
-| D, `HasErrors()` early return dropped | pass | pass | pass | pass | pass | pass | pass |
+| body | runs | outcome |
+|---|---|---|
+| shipped fix | 5 | 5/5 complete, all 7 tests pass |
+| A, the pre-#1088 body (no guard, `HasErrors()` returned) | 5 | **4/5 SIGSEGV**; the one completing run fails 4 tests |
+| B, null-shape guard removed only | 5 | **4/5 SIGSEGV**; the one completing run passes all 7 |
+| C, map reading reverted only | 3 | 3/3 complete, **3 tests fail** every time |
+| D, `HasErrors()` early return dropped | 3 | 3/3 complete, all 7 pass |
 
-**Rows B and D are green and are reported as green.** They are the two guards in this change that no
-Swift test covers, and the matrix says so rather than my claiming coverage that does not exist.
+**This table is a correction, and the first version of it was wrong in a way worth recording.** It
+originally reported rows A and B from a single run each, and reported row B as green with the
+conclusion that "no Swift test covers the null-shape guard". Repeating each row five times shows the
+opposite: removing the guard kills the process **4 times in 5**. The single run I generalised from
+was the 1-in-5 case where the unguarded call returns `HasErrors()` instead of faulting, which is
+exactly the state-dependence the guard exists for. One observation of a nondeterministic outcome is
+not a measurement of it.
 
-- **Row B, the null-shape guard.** In a standalone C++ process `BOPAlgo_CheckerSI::Perform`
-  SIGSEGVs on a null `TopoDS_Shape`, measured separately for a default-constructed shape and for the
-  `Nullify()`d copy `Shape.nullified` actually produces, each in its own process. Inside the test
-  binary the same unguarded call did **not** fault; it returned `HasErrors()`, so the nullified
-  shape answered `true` under row A and `false` under row B. The fault is real and the process
-  decides whether you meet it, which is a reason to guard and not a thing a test can pin. Its
-  evidence is `probe_checker_answer.mm`'s `NULL_SHAPE` fixture, which does fault, and which is why
-  that fixture is excluded from the committed transcript.
-- **Row D, the `HasErrors()` early return.** None of the fixtures errors, so nothing distinguishes
-  the two bodies here. Its justification is the structural argument above plus the sweep, not a test.
+So the corrected reading is:
+
+- **Row A** is the real defect, and it is caught twice over: as a crash on most runs, and as four
+  failing assertions on the runs that survive.
+- **Row B, the null-shape guard, is covered**, by process death rather than by a failed expectation.
+  That means a green run of this file is weaker evidence than it looks: it can mean the guard is
+  present, or it can be the 1-in-5. The deterministic evidence is `probe_checker_answer.mm`'s
+  `NULL_SHAPE` fixture, which faults every time in a standalone process, and which is why that
+  fixture is excluded from the committed transcript.
+- **Row D, the `HasErrors()` early return, is the one guard genuinely not covered.** None of the
+  fixtures errors, so nothing distinguishes the two bodies. Its justification is the structural
+  argument above plus the sweep, not a test, and it is reported as uncovered rather than claimed.
+- **Row C** is deterministic: 3/3 runs, the same 3 tests failing (both overlap fixtures and the
+  agreement test).
 
 The fixture control passes under every row by design: it asserts the two boxes are 1000 each and
 fuse to 1500, so a fixture that silently stopped overlapping would be visible. That is the failure a
 removal matrix structurally cannot see, and without it the two positive tests would pass for the
 wrong reason if the overlap ever went away.
+
 **The fixture control has its own injection, because a removal matrix cannot produce one.** Moving
 the second box from `origin: (5,0,0)` to `(50,0,0)`, so the fixture silently stops overlapping,
 fails `overlapFixtureActuallyOverlaps` on the fused volume (2000 against the expected 1500) **and**
@@ -185,9 +195,11 @@ The control reaches into `overlappingBoxes()` rather than rebuilding an equivale
 late self-review corrected: a control that builds its own copy proves a different pair of boxes
 overlaps, not the one under test.
 
-Row A failing the nullified test is worth reading carefully: it fails because the old body answered
-`true` for a shape with no content, which is the false positive #1088 predicted, reachable from
-Swift. It is not evidence about the crash.
+Row A's nullified failure is worth reading carefully. On the runs where the process survives, that
+test fails because the old body answered `true` for a shape with no content, which is the false
+positive #1088 predicted and is reachable from Swift. That assertion failure and the crash on the
+other four runs are two different defects arriving through the same input, and the guard removes
+both.
 
 ## Not fixed here
 

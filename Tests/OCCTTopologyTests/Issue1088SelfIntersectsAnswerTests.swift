@@ -121,11 +121,10 @@ struct Issue1088SelfIntersectsAnswer {
     /// here, because `BOPAlgo_CheckerSI` reports an error for it and the error was being returned
     /// as the answer.
     ///
-    /// This does **not** cover the null-shape guard the same change adds. Removing that guard
-    /// leaves this test passing, because the unguarded call returns `HasErrors()` in this process
-    /// rather than faulting. The guard's evidence is the C++ probe in
-    /// `Scripts/repro/1088-selfintersects-answer/`, which does fault, and it is reported as
-    /// uncovered rather than claimed as covered.
+    /// It also covers the null-shape guard, though not through this assertion: removing the guard
+    /// takes the whole test process down with a SIGSEGV on 4 runs in 5, and on the fifth this test
+    /// passes. So the guard is held by process death rather than by a failed expectation, and a
+    /// single green run of this file is not by itself evidence the guard is present.
     @available(*, deprecated)
     @Test("A nullified shape is not reported as self-intersecting")
     func nullifiedShapeIsNotReportedAsSelfIntersecting() {
