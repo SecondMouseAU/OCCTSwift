@@ -25,8 +25,8 @@ import simd
 /// given to `max(IntervalFirst, MinDomain)`, so no domain choice can conjure a point where the
 /// half-lines do not meet, and the coincident-points case throws before a domain is built at all.
 /// They earn their place by keeping "reported nothing" meaningful, which is the whole distinction
-/// this issue turns on, and a change that made one of them fail would be a regression rather than a
-/// caught defect. Saying so is the point: an unlabelled test that cannot fail looks like coverage.
+/// this issue turns on, and a change that made one of them fail would be a regression rather than
+/// a caught defect. Saying so is the point: an unlabelled test that cannot fail looks like coverage.
 @Suite("Issue1050 bisector intersection domain")
 struct Issue1050BisectorDomainTests {
 
@@ -277,4 +277,37 @@ struct Issue1085BisectorNonFiniteTests {
         // We just verify it returns (doesn't hang)
         _ = hits
     }
+}
+
+/// Test coincident bisectors - two identical pairs in same order
+/// Both bisectors are the same half-line, so they overlap everywhere.
+/// OCCT reports this as a segment; we return its endpoints (start and end at infinity).
+@Test("Coincident bisectors report intersection segment endpoints")
+func coincidentBisectorsReportSegmentEndpoints() {
+    // Both pairs are (0,0) to (4,0) - same bisector (horizontal, midpoint at (2,0))
+    let hits = bisectorIntersections(a: (0, 0), b: (4, 0), c: (0, 0), d: (4, 0))
+    #expect(hits.count == 2)
+    // First point: the shared midpoint
+    #expect(abs(hits[0].x - 2.0) < 1e-9)
+    #expect(abs(hits[0].y - 0.0) < 1e-9)
+    #expect(abs(hits[0].paramOnFirst - 0.0) < 1e-9)
+    #expect(abs(hits[0].paramOnSecond - 0.0) < 1e-9)
+    // Second point: at infinity (Precision::Infinite() ≈ 2e100)
+    #expect(hits[1].paramOnFirst > 1e99)
+    #expect(hits[1].paramOnSecond > 1e99)
+    
+    // Pairs (0,0)-(4,0) and (1,0)-(3,0) - same line, different midpoints
+    // Both bisectors are the same vertical half-line from x=2
+    let hits2 = bisectorIntersections(a: (0, 0), b: (4, 0), c: (1, 0), d: (3, 0))
+    #expect(hits2.count == 2)
+    #expect(abs(hits2[0].x - 2.0) < 1e-9)
+    #expect(abs(hits2[0].y - 0.0) < 1e-9)
+    #expect(hits2[1].paramOnFirst > 1e99)
+    
+    // Pairs (0,0)-(0,4) and (0,1)-(0,3) - same vertical line, horizontal bisector
+    let hits3 = bisectorIntersections(a: (0, 0), b: (0, 4), c: (0, 1), d: (0, 3))
+    #expect(hits3.count == 2)
+    #expect(abs(hits3[0].x - 0.0) < 1e-9)
+    #expect(abs(hits3[0].y - 2.0) < 1e-9)
+    #expect(hits3[1].paramOnFirst > 1e99)
 }
