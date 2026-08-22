@@ -1,14 +1,26 @@
 // Adjudication probe for one row of the detect-hardcoded-arguments.py sample (#1001).
 //
-// OCCTBisectorInterPointPoint (OCCTBridge_Geom2d.mm, behind bisectorIntersections) clamps both
-// IntRes2d_Domain parameter ranges to a hardcoded [-100, 100]. The caller supplies four arbitrary
-// 2D points and the doc comment advertises "the circumcenter for triangle problems", so the
-// question the adjudication turns on is whether a circumcenter further than 100 from a bisector's
-// own midpoint is silently dropped.
+// HISTORICAL, and deliberately not updated in place. At the time this was written,
+// OCCTBisectorInterPointPoint (OCCTBridge_Geom2d.mm, behind bisectorIntersections) clamped both
+// IntRes2d_Domain parameter ranges to a hardcoded [-100, 100], and the Swift doc comment advertised
+// "the circumcenter for triangle problems" with no further qualification. The caller supplies four
+// arbitrary 2D points, so the question the adjudication turned on was whether a circumcenter
+// further than 100 from a bisector's own midpoint is silently dropped. It is.
+//
+// That became #1050 and is FIXED: each domain now comes from its own bisector's parameter range,
+// and the Swift doc comment has been rewritten. Two things this probe asserts are no longer true of
+// the tree, and are worth carrying forward rather than quietly amending:
+//
+//   * The "bound derived from the input points" column below is NOT the fix that shipped. It is
+//     2 * span + 1, which passes all three fixtures here and still drops a crossing at a 10.9
+//     degree angle, because a crossing sits about d / sin(angle) from a midpoint and nothing bounds
+//     sin(angle) below. See Scripts/repro/1050-bisector-domain/build-discriminating-fixture.py.
+//   * A bisector is a HALF-line, so a fixture has to put the meeting point on the live side of both
+//     midpoints. The rows below do; that was established later and is why they work.
 //
 // Rebuilds the bridge function's body twice, identical except for the domain bound: once with the
-// shipped +-100 and once with a bound derived from the input points. Both are run on the same three
-// fixtures, so the only difference between the two columns is the literal under test.
+// then-shipped +-100 and once with a bound derived from the input points. Both are run on the same
+// three fixtures, so the only difference between the two columns is the literal under test.
 //
 //   clang++ -std=c++17 -ObjC++ -w \
 //     -I"Libraries/OCCT.xcframework/macos-arm64/Headers" \

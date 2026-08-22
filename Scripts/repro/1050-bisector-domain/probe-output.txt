@@ -1,0 +1,80 @@
+PART 1  what a point-point bisector actually is
+
+  Value()                    Geom2d_TrimmedCurve
+  Value()->BasisCurve()      Bisector_BisecAna
+  Value()->FirstParameter()  0
+  Value()->LastParameter()   2e+100
+  Precision::Infinite()      2e+100
+  RealLast()                 1.7976931348623157e+308
+  BasisCurve NbIntervals()   1
+  BasisCurve IntervalFirst   0
+  BasisCurve IntervalLast    2e+100
+  Value(0)                   (0, 5)
+  Value(1)                   (-1, 5)
+  Value(-1)                  (1, 5)
+
+  The curve carries its own range, and it is a HALF-line: parameter 0 is the
+  midpoint of the pair and negative parameters run off the curve. So the shipped
+  [-100, 100] spends half its width off the curve and caps the live half at 100,
+  and neither number has any relation to the caller's four points.
+
+
+PART 2  is the domain an input to the intersection or a filter on its output?
+
+  Read first, then measured. Bisector_Inter::Perform clips each of the basis curve's
+  continuity intervals against the domain's parameter range, SKIPS any interval that
+  does not overlap it, and hands the clipped sub-domain to Geom2dInt_GInter. It also
+  reads D.FirstTolerance()/LastTolerance(), which raise Standard_DomainError on a
+  domain with no first/last point. So it is an input, and an unbounded domain is not
+  spelled IntRes2d_Domain(). The timing below is the cost question that follows.
+
+  bound                    us / Perform   answer                            
+  shipped +-100            0.55           no intersection                   
+  infinite domain          n/a            THREW Standard_DomainError        
+  RealFirst/RealLast       0.62           (-150, 5) u=150                   
+  +-Precision::Infinite    0.42           (-150, 5) u=150                   
+  curve own range          0.62           (-150, 5) u=150                   
+  2 * input span + 1       0.62           (-150, 5) u=150                   
+
+
+PART 3  every candidate bound against every fixture
+
+  fixture                                                  shipped +-100                    infinite domain                  RealFirst/RealLast               +-Precision::Infinite            curve own range                  2 * input span + 1               closed form (reachable?)
+  meeting point at parameter 50                            (-50, 5) u=50                    THREW Standard_DomainError       (-50, 5) u=50                    (-50, 5) u=50                    (-50, 5) u=50                    (-50, 5) u=50                    (-50, 5) at u1=50 u2=5
+  meeting point at parameter 90                            (-90, 5) u=90                    THREW Standard_DomainError       (-90, 5) u=90                    (-90, 5) u=90                    (-90, 5) u=90                    (-90, 5) u=90                    (-90, 5) at u1=90 u2=5
+  meeting point at parameter 150                           no intersection                  THREW Standard_DomainError       (-150, 5) u=150                  (-150, 5) u=150                  (-150, 5) u=150                  (-150, 5) u=150                  (-150, 5) at u1=150 u2=5
+  near-parallel, meeting point ~1e4 from a 23-wide input   no intersection                  THREW Standard_DomainError       no intersection                  no intersection                  no intersection                  no intersection                  (-10000, 5) NOT on both half-lines (u1=10000 u2=-9980)
+  near-parallel, meeting point on the dead side            no intersection                  THREW Standard_DomainError       no intersection                  no intersection                  no intersection                  no intersection                  (10000, 5) NOT on both half-lines (u1=-10000 u2=-9980)
+  10.9 degree crossing, u=150 past 2*span+1 (82.42)        no intersection                  THREW Standard_DomainError       (-150.004, 5) u=150.004          (-150.004, 5) u=150.004          (-150.004, 5) u=150.004          no intersection                  (-150.004, 5) at u1=150.004 u2=132.386
+  parallel bisectors, a genuine miss                       no intersection                  THREW Standard_DomainError       no intersection                  no intersection                  no intersection                  no intersection                  parallel, no solution
+  coincident points in the first pair                      THREW Standard_ConstructionError THREW Standard_ConstructionError THREW Standard_ConstructionError THREW Standard_ConstructionError THREW Standard_ConstructionError THREW Standard_ConstructionError parallel, no solution
+  coincident points in both pairs                          THREW Standard_ConstructionError THREW Standard_ConstructionError THREW Standard_ConstructionError THREW Standard_ConstructionError THREW Standard_ConstructionError THREW Standard_ConstructionError parallel, no solution
+  all four points collinear                                no intersection                  THREW Standard_DomainError       no intersection                  no intersection                  no intersection                  no intersection                  parallel, no solution
+
+  fixtures with a reachable meeting point that the bound drops:
+    shipped +-100            2
+    infinite domain          4
+    RealFirst/RealLast       0
+    +-Precision::Infinite    0
+    curve own range          0
+    2 * input span + 1       1
+
+
+PART 4  why some rows are missed by every bound, which is the ray and not the domain
+
+  Same construction as build-discriminating-fixture.py, m2 fixed at (-20, 30) so the
+  four points stay inside a box about 41 across while the meeting point walks out.
+
+  u1 and u2 are the target's parameter on each bisector, MEASURED from the built curve
+  rather than assumed from the construction: a negative one means the half-line points
+  away and there is nothing for any bound to find.
+
+  u          deg      u1 measured  u2 measured  2*span+1   curve own range        2 * input span + 1    
+  50         39.81    50           39.0512      83.06      (-50, 5) u=50          (-50, 5) u=50         
+  100        17.35    100          -83.8153     82.76      no intersection        no intersection       
+  150        10.89    150          132.382      82.42      (-150, 5) u=150        no intersection       
+  300        5.10     300          281.114      82.03      (-300, 5) u=300        no intersection       
+  1000       1.46     1000         -980.319     81.75      no intersection        no intersection       
+  3000       0.48     3000         -2980.1      81.66      no intersection        no intersection       
+  10000      0.14     10000        -9980.03     81.63      no intersection        no intersection       
+  100000     0.01     100000       -99980       81.62      no intersection        no intersection       

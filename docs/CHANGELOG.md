@@ -22,6 +22,45 @@ bounding-box accessors becoming Optional so a void shape stops fabricating `(0,0
 ## Unreleased
 
 
+### `bisectorIntersections(a:b:c:d:)` no longer discards a crossing past parameter 100 (#1050)
+
+`OCCTBisectorInterPointPoint` clamped both bisectors' `IntRes2d_Domain` to a hardcoded
+`[-100, 100]`. A point-point bisector is a half-line trimmed to `[0, Precision::Infinite()]`, so
+that window spent half its width off the curve entirely and capped the live half at 100, and neither
+number had any relation to the caller's four points. A crossing past parameter 100 was silently
+dropped and the Swift face returned `[]`, indistinguishable from "these bisectors do not meet".
+
+Each domain is now built from its own bisector's `FirstParameter()`/`LastParameter()`, which is what
+`Bisector_Inter::Perform` clips the domain against regardless, so the bridge stops narrowing OCCT's
+search rather than narrowing it differently.
+
+```swift
+// Bisector of (0,0)-(0,10) runs along -x from (0,5); bisector of (-155,0)-(-145,0)
+// runs along +y from (-150,0). They meet at (-150, 5), at parameter 150.
+let hits = bisectorIntersections(a: (0, 0), b: (0, 10), c: (-155, 0), d: (-145, 0))
+// before: []            after: [(x: -150, y: 5, paramOnFirst: 150, ...)]
+```
+
+Measured over 16000 randomised four-point configurations at four scales: **1953 crossings gained,
+0 lost, 0 moved, 0 bogus**, with every gained crossing checked to be equidistant from both pairs and
+on the live side of both rays (worst relative error 3.69e-15). At scale 1 the old window dropped 4
+in 4000; at scale 1e3 it dropped 980, which is why it looked adequate. `lost` and `moved` can only
+fire where the old window found a crossing at all, so those two zeros rest on 2005 opportunities
+rather than on all 16000.
+
+Two bounds that look like the fix are not, and both were measured rather than argued
+(`Scripts/repro/1050-bisector-domain/`). An unbounded `IntRes2d_Domain()` raises
+`Standard_DomainError` inside `Bisector_Inter::Perform`, which the bridge's own `catch (...)` turns
+back into the same empty result. A bound derived from the input points' extent (`2 * span + 1`)
+passes the issue's own fixtures and still drops a crossing at a 10.9 degree angle, because a crossing
+sits about `d / sin(angle)` from a midpoint and nothing bounds `sin(angle)` below.
+
+`docs/reference/Shape-Recognition.md` now documents the search range and where it ends, the
+half-line semantics (of the four orderings of its own example, one returns the circumcentre and
+three return `[]`), the four causes of an empty result with the measured threshold for the first,
+and why a distant crossing is accurate but ill-conditioned in the input. It also corrects the OCCT
+attribution from `Bisector_BisecCC`, which this entry point never reaches.
+
 ### `SAWireAnalysis.checkOuterBound` returns `Bool?`, so a refused check is not the same answer as a clean one (#1058)
 
 `checkOuterBound(wire:face:)` answered `false` both for a wire that **is** the face's outer bound and

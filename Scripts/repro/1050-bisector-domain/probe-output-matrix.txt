@@ -1,0 +1,40 @@
+=== A  shipped [-100, 100] ===
+✘ Test "A meeting point past any input-derived bound is found"
+✘ Test "A meeting point past the old window is found"
+  (10 tests ran)
+
+=== B  2 * input span + 1 ===
+✘ Test "A meeting point past any input-derived bound is found"
+  (10 tests ran)
+
+=== C  unbounded IntRes2d_Domain() ===
+✘ Test "A meeting point inside the old window is unchanged"
+✘ Test "A meeting point past any input-derived bound is found"
+✘ Test "A meeting point past the old window is found"
+✘ Test "perpendicular bisectors of a right angle, second pair reversed"
+✘ Test "point bisectors at a smaller scale, both orderings"
+✘ Test "The documented circumcentre example holds, and its three reorderings do not"
+  (10 tests ran)
+
+=== D  swap pC/pD into b2.Perform ===
+✘ Test "A meeting point inside the old window is unchanged"
+✘ Test "A meeting point past the old window is found"
+✘ Test "perpendicular bisectors of a right angle, as originally ordered"
+✘ Test "perpendicular bisectors of a right angle, second pair reversed"
+✘ Test "point bisectors at a smaller scale, both orderings"
+  (10 tests ran)
+
+=== E  Sense flipped to -1.0 ===
+✘ Test "A meeting point past any input-derived bound is found"
+✘ Test "The documented circumcentre example holds, and its three reorderings do not"
+  (10 tests ran)
+
+=== F  perpCD negated ===
+✘ Test "A meeting point past any input-derived bound is found"
+✘ Test "The documented circumcentre example holds, and its three reorderings do not"
+  (10 tests ran)
+
+=== control: no injection ===
+  (10 tests ran)
+
+RESTORE VERIFIED: the bridge file is byte-identical to the pre-matrix state

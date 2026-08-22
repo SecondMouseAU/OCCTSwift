@@ -246,16 +246,46 @@ public func bisectorIntersections(
 ) -> [BisectorIntersection]
 ```
 
-The bisector of `(a, b)` is intersected with the bisector of `(c, d)`. The result is the circumcenter when the two pairs form a triangle.
+The bisector of `(a, b)` is intersected with the bisector of `(c, d)`. Where the two pairs span a triangle **and each pair is ordered so that its half-line points at the circumcentre**, that crossing is the circumcentre. The ordering is a real condition rather than a formality: of the four ways to order the two pairs in the example below, one returns the circumcentre and three return an empty array, for the half-line reason set out next.
+
+Each bisector is a **half-line**, not a full line: it starts at its pair's midpoint and runs along one of the two perpendicular directions, the one OCCT selects from the sector the bridge supplies. So reversing a pair, passing `b, a` where you passed `a, b`, flips which way that half-line points, and a crossing that was found becomes an empty result.
+
+An empty result therefore has **four** causes, and they are not distinguished in the return value:
+
+1. One of the pairs is **too close together** to yield a bisector, and the call is refused. The threshold is not machine epsilon: measured, a separation of `1e-9` still gives a crossing and `1e-10` does not. Two different mechanisms refuse, at very different separations. From about `1e-10` down it is `GccAna_NoSolution`, raised inside `Bisector_Bisec::Perform` because the bisector construction has no solution to return. The perpendicular's own normalisation only refuses from about `1e-162`, where the squared component underflows to zero, and an exactly coincident pair reaches that one first. So a caller meeting this in practice meets `GccAna_NoSolution`, not a zero-length direction. Both figures come from the fixture in `Scripts/repro/1050-bisector-domain/occt_1050_limits.mm`, which builds its pair at the origin; treat them as the order of magnitude to expect rather than as constants.
+2. The two bisectors are parallel and distinct, and never cross.
+3. They cross, but on the dead side of one of the half-lines.
+4. They **coincide**, overlapping along their whole length. OCCT reports an overlap as a segment rather than a point, and this function reports only points, so two bisectors that meet everywhere come back as meeting nowhere. Reversing one pair flips a ray and turns the same input into a single point. Tracked as [#1070](https://github.com/SecondMouseAU/OCCTSwift/issues/1070).
+
+That list is closed **over the geometry**: either a bisector does not exist (1), or both do, and then the two underlying lines are parallel-distinct (2), identical (4), or cross at exactly one point, which either lies on both kept rays or does not (3). It assumes the call returns a result at all, which is a separate condition: a non-finite or near-`1e300` coordinate does not return in bounded time ([#1085](https://github.com/SecondMouseAU/OCCTSwift/issues/1085), pre-existing and not specific to this function's domain).
+
+Each bisector is searched over **its own full parameter range**, which is `[0, Precision::Infinite()]`, so a crossing is found wherever the bisector actually reaches. Until [#1050](https://github.com/SecondMouseAU/OCCTSwift/issues/1050) the search was clamped to a fixed `[-100, 100]` window unrelated to the caller's points, and a crossing past parameter 100 came back empty, indistinguishable from a genuine miss.
+
+That range ends rather than being unbounded, and the ending is worth knowing because it fails the same way: `Precision::Infinite()` is `2e100`, and a crossing past parameter `2e100` still comes back as an empty array with no way to tell it from a genuine miss. Measured, a crossing at `2e100` is found and one at `5e100` is not. The threshold moved from 100 to 2e100; it did not go away. Nothing at CAD scale approaches it, which is why this is a note rather than an open defect.
+
+A distant crossing is computed accurately but is **ill-conditioned in the input**, and the difference matters. Against a closed-form solve of the same four points, the returned crossing is correct to about 1e-16 relative at every distance measured, out to parameter 1e10. What is fragile is the input: a crossing that far away means two nearly parallel bisectors, so perturbing a coordinate by one part in 1e16 moves the crossing by hundreds of units. Feed such a case exact inputs, or treat the answer as a direction rather than a position; re-deriving the points from rounded values will not give you the same crossing back.
 
 - **Parameters:** `a`, `b`, first point pair; `c`, `d`, second point pair, all as `(x, y)`.
-- **Returns:** Array of intersection points (zero, one, or two).
-- **OCCT:** `Bisector_BisecCC` / `Bisector_Inter` via `OCCTBisectorInterPointPoint`.
-- **Example:**
+- **Returns:** Array of intersection points. Two distinct half-lines meet at most once, so this is empty or holds a single point; see the four causes above for what empty means.
+- **OCCT:** `Bisector_Bisec` (its point-point `Perform`) / `Bisector_Inter` via `OCCTBisectorInterPointPoint`.
+- **Example:** the circumcentre of the triangle `(0,0) (4,0) (2,3)`, and the three orderings of the same two pairs that return nothing.
   ```swift
   let hits = bisectorIntersections(a: (0, 0), b: (4, 0),
                                     c: (4, 0), d: (2, 3))
-  // hits[0] is the circumcenter of the triangle
+  // hits[0] is the circumcentre, (2, 0.8333333333)
+
+  // The same two pairs, reordered. Each reversal flips a half-line away from the crossing.
+  bisectorIntersections(a: (4, 0), b: (0, 0), c: (4, 0), d: (2, 3))  // []
+  bisectorIntersections(a: (0, 0), b: (4, 0), c: (2, 3), d: (4, 0))  // []
+  bisectorIntersections(a: (4, 0), b: (0, 0), c: (2, 3), d: (4, 0))  // []
+  ```
+- **Example:** a crossing far from the four points, which the pre-#1050 window discarded.
+  ```swift
+  // Bisector of (0,0)-(0,10) runs along -x from (0,5); bisector of
+  // (-155,0)-(-145,0) runs along +y from (-150,0). They meet at (-150, 5).
+  let far = bisectorIntersections(a: (0, 0), b: (0, 10),
+                                   c: (-155, 0), d: (-145, 0))
+  // far[0].x == -150, far[0].y == 5, far[0].paramOnFirst == 150
   ```
 
 ---

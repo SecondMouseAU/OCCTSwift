@@ -20,8 +20,11 @@ The first version scanned line by line and matched arguments with `\\(([^();]{4,
 
 Measured against `Sources/OCCTBridge/src` at the tip of #1001's branch point, the two together hid
 **10 of 23** call sites, 43% of the population. One of the ten, `IntRes2d_Domain`'s hardcoded
-+-100 parameter range in `OCCTBisectorInterPointPoint`, is a defect measured to drop a real
-intersection: see `Scripts/repro/1001-detector-fp-rates/occt_1001_bisector_domain.mm`.
++-100 parameter range in `OCCTBisectorInterPointPoint`, was a defect measured to drop a real
+intersection: see `Scripts/repro/1001-detector-fp-rates/occt_1001_bisector_domain.mm`. It was filed
+as #1050 and is fixed; each domain now comes from its own bisector's parameter range, and
+`Scripts/repro/1050-bisector-domain/` carries that investigation. The sentence is left here in the
+past tense rather than deleted, because it is what this detector's one true positive bought.
 
 The criterion itself (which literals count as a tuning knob, and 2+ of them in one call) is
 unchanged, so the finding sets before and after differ only by what the parser could reach.
