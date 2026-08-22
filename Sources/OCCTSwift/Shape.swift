@@ -2351,6 +2351,80 @@ public final class Shape: @unchecked Sendable {
         }
     }
 
+    /// Detailed self-intersection check with progress information (BOPAlgo-based).
+    ///
+    /// Unlike ``isSelfIntersecting(timeout:)``, this returns a ``SelfIntersectionDetailedResult``
+    /// that distinguishes between different reasons for an indeterminate result:
+    /// - ``SelfIntersectionDetailedResult/indeterminateNoProgress``: the analysis made no measurable
+    ///   progress before the timeout (the OCCT progress breaker was never tripped)
+    /// - ``SelfIntersectionDetailedResult/indeterminatePartial``: the analysis was running but didn't
+    ///   complete before the timeout (the breaker was tripped)
+    /// - ``SelfIntersectionDetailedResult/error``: an exception occurred during analysis
+    ///
+    /// This allows callers to distinguish "needs longer timeout" from "will never finish",
+    /// which is especially valuable for B-spline solids where the self-interference phase
+    /// may not reach checkpoints frequently enough.
+    ///
+    /// - Parameters:
+    ///   - timeout: Maximum time in seconds to wait for the check to complete.
+    /// - Returns: ``SelfIntersectionDetailedResult`` with status and progress information.
+    ///
+    /// ```swift
+    /// let result = solid.isSelfIntersectingDetailed(timeout: 10)
+    /// switch result.status {
+    /// case .intersects:     print("Self-intersects - reject")
+    /// case .clean:          print("Clean - safe to use")
+    /// case .indeterminatePartial:
+    ///     print("Partial progress - try longer timeout")
+    /// case .indeterminateNoProgress:
+    ///     print("No progress - shape may be too complex for this check")
+    /// case .error:          print("Analysis error - treat as unknown")
+    /// }
+    /// ```
+    public func isSelfIntersectingDetailed(timeout: Double = 30) -> SelfIntersectionDetailedResult {
+        var facesChecked: Int32 = 0
+        var totalPairs: Int32 = 0
+        var timeSpent: Double = 0.0
+        let code = OCCTShapeSelfIntersectsDetailed(handle, timeout, &facesChecked, &totalPairs, &timeSpent)
+        return SelfIntersectionDetailedResult(code: code,
+                                      facesChecked: Int(facesChecked),
+                                      totalFacePairs: Int(totalPairs),
+                                      timeSpent: timeSpent)
+    }
+
+    /// Quick pre-screen to estimate self-intersection check complexity (BOPAlgo-based).
+    ///
+    /// Returns a ``SelfIntersectionCostEstimate`` with face counts by surface type
+    /// and a relative cost estimate. This is fast (no actual intersection analysis)
+    /// and helps callers decide whether to attempt the full check with a given timeout.
+    ///
+    /// Cost model (relative):
+    /// - B-spline faces: 10x (most expensive, require numerical intersection)
+    /// - Other analytical surfaces (cylinder, cone, sphere, torus): 3x
+    /// - Planar faces: 1x (baseline, fast analytical intersection)
+    ///
+    /// - Returns: ``SelfIntersectionCostEstimate`` or `nil` on error.
+    ///
+    /// ```swift
+    /// if let estimate = solid.selfIntersectionCostEstimate() {
+    ///     if estimate.estimatedCost > 1000 {
+    ///         print("High cost (\(estimate.estimatedCost)) - consider skipping or using longer timeout")
+    ///     }
+    /// }
+    /// ```
+    public func selfIntersectionCostEstimate() -> SelfIntersectionCostEstimate? {
+        var numFaces: Int32 = 0
+        var numBSplineFaces: Int32 = 0
+        var numPlaneFaces: Int32 = 0
+        var estimatedCost: Double = 0.0
+        let code = OCCTShapeSelfIntersectEstimateCost(handle, &numFaces, &numBSplineFaces, &numPlaneFaces, &estimatedCost)
+        guard code == 0 else { return nil }
+        return SelfIntersectionCostEstimate(numFaces: Int(numFaces),
+                                            numBSplineFaces: Int(numBSplineFaces),
+                                            numPlaneFaces: Int(numPlaneFaces),
+                                            estimatedCost: estimatedCost)
+    }
+
     // MARK: - Sub-Shape Extraction
 
     /// The number of **distinct** sub-shapes of a given topological type.

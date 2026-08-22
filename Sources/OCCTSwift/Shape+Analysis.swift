@@ -700,12 +700,66 @@ extension Shape {
 
     // MARK: - Self-Intersection Detection (v0.45.0)
 
-    /// Result of a self-intersection check.
+    /// Result of a self-intersection check (mesh-based, using BRepExtrema_SelfIntersection).
     public struct SelfIntersectionResult: Sendable {
         /// Number of overlapping triangle pairs found.
         public let overlapCount: Int
         /// Whether the check completed successfully.
         public let isDone: Bool
+    }
+
+    /// Result of a detailed self-intersection check (BOPAlgo-based, using ArgumentAnalyzer).
+    public struct SelfIntersectionDetailedResult: Sendable {
+        /// Status of the self-intersection check.
+        public enum Status: Sendable, Equatable {
+            /// The shape self-intersects (conclusive).
+            case intersects
+            /// The shape is clean (no self-intersection, conclusive).
+            case clean
+            /// The check timed out but the analysis was making progress (breaker was tripped).
+            /// A longer timeout may yield a conclusive result.
+            case indeterminatePartial
+            /// The check timed out and the analysis made no measurable progress (breaker was NOT tripped).
+            /// The shape may be too complex for this check to complete in reasonable time.
+            case indeterminateNoProgress
+            /// An error occurred during analysis.
+            case error
+        }
+
+        /// The status of the check.
+        public let status: Status
+        /// Number of face pairs checked before completion/timeout.
+        public let facesChecked: Int
+        /// Estimated total face pairs to check.
+        public let totalFacePairs: Int
+        /// Actual time spent in seconds.
+        public let timeSpent: Double
+
+        init(code: Int32, facesChecked: Int, totalFacePairs: Int, timeSpent: Double) {
+            self.facesChecked = facesChecked
+            self.totalFacePairs = totalFacePairs
+            self.timeSpent = timeSpent
+            switch code {
+            case 1:  self.status = .intersects
+            case 0:  self.status = .clean
+            case -1: self.status = .indeterminatePartial
+            case -2: self.status = .indeterminateNoProgress
+            default: self.status = .error
+            }
+        }
+    }
+
+    /// Cost estimate for a BOPAlgo-based self-intersection check.
+    public struct SelfIntersectionCostEstimate: Sendable {
+        /// Total number of faces in the shape.
+        public let numFaces: Int
+        /// Number of B-spline faces (most expensive to check).
+        public let numBSplineFaces: Int
+        /// Number of planar faces (cheapest to check).
+        public let numPlaneFaces: Int
+        /// Relative cost estimate (higher = more expensive).
+        /// Cost model: B-spline = 10x, other analytical = 3x, plane = 1x.
+        public let estimatedCost: Double
     }
 
     /// Check the shape for self-intersection using BVH-accelerated triangle mesh overlap.
