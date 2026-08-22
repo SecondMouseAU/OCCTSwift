@@ -184,8 +184,8 @@ public final class Curve2D: @unchecked Sendable {
     /// let dir = SIMD2(cos(angle), sin(angle))
     /// let involute = Curve2D.circleInvolute(origin: SIMD2(10, 20), direction: dir, radius: 5)
     ///
-    /// // Mirror for opposite flank (negate Y direction)
-    /// let mirrored = Curve2D.circleInvolute(origin: .zero, direction: SIMD2(1, 0), radius: 5)
+    /// // Mirror for opposite flank (negate X direction to flip YDir)
+    /// let mirrored = Curve2D.circleInvolute(origin: .zero, direction: SIMD2(-1, 0), radius: 5)
     /// // YDir becomes (0, -1) - this produces the mirrored flank
     /// ```
     public static func circleInvolute(

@@ -4300,15 +4300,24 @@ struct Curve2DCircleInvoluteTests {
     }
 
     @Test func circleInvoluteMirroredFlank() {
-        // A mirrored flank uses a negated Y direction
-        let curve = Curve2D.circleInvolute(origin: .zero, direction: SIMD2(1, 0), radius: 2.0)
-        let mirroredCurve = Curve2D.circleInvolute(origin: .zero, direction: SIMD2(1, 0), radius: 2.0)
-        // Both should be valid - the mirror is achieved by the direction's perpendicular
-        // For standard direction (1,0), YDir = (0,1) - standard flank
-        // For mirrored, use direction (0,-1) or similar to get YDir = (1,0) etc.
-        // The key is that placement allows this control
-        #expect(curve != nil)
+        // A mirrored flank uses a negated X direction (direction = (-1, 0) gives YDir = (0, -1))
+        let standardCurve = Curve2D.circleInvolute(origin: .zero, direction: SIMD2(1, 0), radius: 2.0)
+        let mirroredCurve = Curve2D.circleInvolute(origin: .zero, direction: SIMD2(-1, 0), radius: 2.0)
+        #expect(standardCurve != nil)
         #expect(mirroredCurve != nil)
+        // Verify the curves produce different geometry at the same parameter
+        let first = standardCurve!.domain.lowerBound
+        let pStandard = standardCurve!.point(at: first)
+        let pMirrored = mirroredCurve!.point(at: first)
+        // Standard: YDir = (0, 1) -> C(0) = (2, 0)
+        // Mirrored: YDir = (0, -1) -> C(0) = (2, 0) (same at u=0)
+        // At u > 0 they differ in Y direction
+        let u = 1.0
+        let pStandardU = standardCurve!.point(at: u)
+        let pMirroredU = mirroredCurve!.point(at: u)
+        // At u=1, Y values should have opposite signs
+        #expect(pStandardU.y > 0) // Standard flank goes positive Y
+        #expect(pMirroredU.y < 0) // Mirrored flank goes negative Y
     }
 
     @Test func circleInvoluteCanBuildEdge() {
