@@ -1,6 +1,6 @@
 import Foundation
-import simd
 import OCCTBridge
+import simd
 
 public enum ImportError: Error, LocalizedError {
     case importFailed(String)
@@ -49,7 +49,8 @@ public struct ImportResult: Sendable {
         var steps: [String] = []
         if sewingApplied { steps.append("sewing") }
         if solidCreated {
-            steps.append(solidsCreated > 1 ? "solid creation (\(solidsCreated) bodies)" : "solid creation")
+            steps.append(
+                solidsCreated > 1 ? "solid creation (\(solidsCreated) bodies)" : "solid creation")
         }
         if healingApplied { steps.append("healing") }
         let processing = steps.isEmpty ? "none" : steps.joined(separator: ", ")

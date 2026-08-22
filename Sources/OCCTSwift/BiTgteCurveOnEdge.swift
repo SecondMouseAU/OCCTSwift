@@ -1,6 +1,6 @@
 import Foundation
-import simd
 import OCCTBridge
+import simd
 
 /// Curve defined by an edge lying on another edge (from blend operations).
 public final class BiTgteCurveOnEdge: @unchecked Sendable {
@@ -8,7 +8,9 @@ public final class BiTgteCurveOnEdge: @unchecked Sendable {
 
     /// Create a curve-on-edge from two edges.
     public init?(edgeOnFace: Shape, edge: Shape) {
-        guard let h = OCCTBiTgteCurveOnEdgeCreate(edgeOnFace.handle, edge.handle) else { return nil }
+        guard let h = OCCTBiTgteCurveOnEdgeCreate(edgeOnFace.handle, edge.handle) else {
+            return nil
+        }
         self.handle = h
     }
 
@@ -16,14 +18,17 @@ public final class BiTgteCurveOnEdge: @unchecked Sendable {
 
     /// Parameter domain of the curve.
     public var domain: ClosedRange<Double> {
-        var first = 0.0, last = 0.0
+        var first = 0.0
+        var last = 0.0
         OCCTBiTgteCurveOnEdgeDomain(handle, &first, &last)
         return first...last
     }
 
     /// Evaluate point at parameter u.
     public func point(at u: Double) -> SIMD3<Double> {
-        var x = 0.0, y = 0.0, z = 0.0
+        var x = 0.0
+        var y = 0.0
+        var z = 0.0
         OCCTBiTgteCurveOnEdgeValue(handle, u, &x, &y, &z)
         return SIMD3(x, y, z)
     }

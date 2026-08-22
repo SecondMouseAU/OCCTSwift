@@ -1,9 +1,8 @@
 import Foundation
-import simd
 import OCCTBridge
+import simd
 
 extension Shape {
-
 
     // MARK: - BRepMesh_Deflection (v0.61.0)
 
@@ -13,7 +12,9 @@ extension Shape {
     ///   - relativeDeflection: Relative deflection value
     ///   - maxShapeSize: Maximum shape dimension
     /// - Returns: Absolute deflection value, or nil on failure
-    public func computeAbsoluteDeflection(relativeDeflection: Double, maxShapeSize: Double) -> Double? {
+    public func computeAbsoluteDeflection(relativeDeflection: Double, maxShapeSize: Double)
+        -> Double?
+    {
         let result = OCCTComputeAbsoluteDeflection(handle, relativeDeflection, maxShapeSize)
         return result >= 0 ? result : nil
     }
@@ -26,9 +27,11 @@ extension Shape {
     ///   - allowDecrease: Whether to allow the mesh to be finer than required
     ///   - ratio: Comparison ratio (0 to 1, default 0.1)
     /// - Returns: true if the current deflection is acceptable
-    public static func deflectionIsConsistent(current: Double, required: Double,
-                                               allowDecrease: Bool = false,
-                                               ratio: Double = 0.1) -> Bool {
+    public static func deflectionIsConsistent(
+        current: Double, required: Double,
+        allowDecrease: Bool = false,
+        ratio: Double = 0.1
+    ) -> Bool {
         return OCCTDeflectionIsConsistent(current, required, allowDecrease, ratio)
     }
 
@@ -42,7 +45,9 @@ extension Shape {
     ///   - points: Array of 3D points (vertices of the mesh)
     ///   - triangles: Array of triangle index triples (1-based indices into points array)
     /// - Returns: Shape built from the mesh, or nil on failure
-    public static func fromMesh(points: [SIMD3<Double>], triangles: [(Int32, Int32, Int32)]) -> Shape? {
+    public static func fromMesh(points: [SIMD3<Double>], triangles: [(Int32, Int32, Int32)])
+        -> Shape?
+    {
         var flatPoints = [Double]()
         flatPoints.reserveCapacity(points.count * 3)
         for pt in points {
@@ -57,8 +62,11 @@ extension Shape {
             flatTriangles.append(tri.1)
             flatTriangles.append(tri.2)
         }
-        guard let h = OCCTShapeFromMesh(flatPoints, Int32(points.count),
-                                         flatTriangles, Int32(triangles.count)) else { return nil }
+        guard
+            let h = OCCTShapeFromMesh(
+                flatPoints, Int32(points.count),
+                flatTriangles, Int32(triangles.count))
+        else { return nil }
         return Shape(handle: h)
     }
     /// Maximum dimension of the shape's bounding box (for mesh sizing).
@@ -85,14 +93,18 @@ extension Shape {
 
     /// Get the 3D coordinates of a triangulation node (1-based index).
     public func triangulationNode(at index: Int32) -> SIMD3<Double> {
-        var x = 0.0, y = 0.0, z = 0.0
+        var x = 0.0
+        var y = 0.0
+        var z = 0.0
         OCCTFaceTriangulationNode(handle, index, &x, &y, &z)
         return SIMD3(x, y, z)
     }
 
     /// Get the node indices of a triangle (1-based index). Returns 1-based node indices.
     public func triangulationTriangle(at index: Int32) -> (Int32, Int32, Int32) {
-        var n1: Int32 = 0, n2: Int32 = 0, n3: Int32 = 0
+        var n1: Int32 = 0
+        var n2: Int32 = 0
+        var n3: Int32 = 0
         OCCTFaceTriangulationTriangle(handle, index, &n1, &n2, &n3)
         return (n1, n2, n3)
     }
@@ -104,7 +116,9 @@ extension Shape {
 
     /// Get the normal at a triangulation node (1-based index).
     public func triangulationNormal(at index: Int32) -> SIMD3<Double> {
-        var nx = 0.0, ny = 0.0, nz = 0.0
+        var nx = 0.0
+        var ny = 0.0
+        var nz = 0.0
         OCCTFaceTriangulationNormal(handle, index, &nx, &ny, &nz)
         return SIMD3(nx, ny, nz)
     }
@@ -116,7 +130,8 @@ extension Shape {
 
     /// Get the UV coordinates of a triangulation node (1-based index).
     public func triangulationUVNode(at index: Int32) -> SIMD2<Double> {
-        var u = 0.0, v = 0.0
+        var u = 0.0
+        var v = 0.0
         OCCTFaceTriangulationUVNode(handle, index, &u, &v)
         return SIMD2(u, v)
     }
@@ -131,10 +146,12 @@ extension Shape {
     ///   - representation: Visual representation mode (default .shaded)
     /// - Returns: true if successful
     @discardableResult
-    public func writeVRML(to url: URL,
-                          version: Int = 2,
-                          deflection: Double = 0.01,
-                          representation: VrmlRepresentation = .shaded) -> Bool {
+    public func writeVRML(
+        to url: URL,
+        version: Int = 2,
+        deflection: Double = 0.01,
+        representation: VrmlRepresentation = .shaded
+    ) -> Bool {
         OCCTVrmlWriteShape(handle, url.path, Int32(version), deflection, representation.rawValue)
     }
 }
@@ -179,8 +196,12 @@ extension Shape {
     /// `triangleIndex` and the returned neighbour indices are `Poly_Triangulation`'s own 1-based
     /// triangle numbers; 0 means no neighbour on that side.
     public func meshTriangleAdjacency(faceIndex: Int, triangleIndex: Int) -> (Int, Int, Int)? {
-        var a1: Int32 = 0, a2: Int32 = 0, a3: Int32 = 0
-        guard OCCTMeshTriangleAdjacency(handle, Int32(faceIndex), Int32(triangleIndex), &a1, &a2, &a3) else {
+        var a1: Int32 = 0
+        var a2: Int32 = 0
+        var a3: Int32 = 0
+        guard
+            OCCTMeshTriangleAdjacency(handle, Int32(faceIndex), Int32(triangleIndex), &a1, &a2, &a3)
+        else {
             return nil
         }
         return (Int(a1), Int(a2), Int(a3))

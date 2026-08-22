@@ -1,6 +1,6 @@
 import Foundation
-import simd
 import OCCTBridge
+import simd
 
 /// Multi-result projection of a point onto a 3D curve.
 public final class ProjectionOnCurve: @unchecked Sendable {
@@ -8,7 +8,9 @@ public final class ProjectionOnCurve: @unchecked Sendable {
 
     /// Create a projection of a point onto a curve.
     public init?(curve: Curve3D, point: SIMD3<Double>) {
-        guard let r = OCCTProjOnCurveCreate(curve.handle, point.x, point.y, point.z) else { return nil }
+        guard let r = OCCTProjOnCurveCreate(curve.handle, point.x, point.y, point.z) else {
+            return nil
+        }
         self.ref = r
     }
 
@@ -19,7 +21,9 @@ public final class ProjectionOnCurve: @unchecked Sendable {
 
     /// Get the i-th projection point (0-based index).
     public func point(at index: Int) -> SIMD3<Double> {
-        var x = 0.0, y = 0.0, z = 0.0
+        var x = 0.0
+        var y = 0.0
+        var z = 0.0
         OCCTProjOnCurvePoint(ref, Int32(index + 1), &x, &y, &z)
         return SIMD3(x, y, z)
     }
@@ -47,7 +51,9 @@ public final class ProjectionOnSurface: @unchecked Sendable {
 
     /// Create a projection of a point onto a surface.
     public init?(surface: Surface, point: SIMD3<Double>) {
-        guard let r = OCCTProjOnSurfCreate(surface.handle, point.x, point.y, point.z) else { return nil }
+        guard let r = OCCTProjOnSurfCreate(surface.handle, point.x, point.y, point.z) else {
+            return nil
+        }
         self.ref = r
     }
 
@@ -58,14 +64,17 @@ public final class ProjectionOnSurface: @unchecked Sendable {
 
     /// Get the i-th projection point (0-based index).
     public func point(at index: Int) -> SIMD3<Double> {
-        var x = 0.0, y = 0.0, z = 0.0
+        var x = 0.0
+        var y = 0.0
+        var z = 0.0
         OCCTProjOnSurfPoint(ref, Int32(index + 1), &x, &y, &z)
         return SIMD3(x, y, z)
     }
 
     /// Get the (u,v) parameters of the i-th projection (0-based).
     public func parameters(at index: Int) -> (u: Double, v: Double) {
-        var u = 0.0, v = 0.0
+        var u = 0.0
+        var v = 0.0
         OCCTProjOnSurfParameters(ref, Int32(index + 1), &u, &v)
         return (u, v)
     }
@@ -80,7 +89,8 @@ public final class ProjectionOnSurface: @unchecked Sendable {
 
     /// (u,v) parameters of the nearest projection.
     public var lowerParameters: (u: Double, v: Double) {
-        var u = 0.0, v = 0.0
+        var u = 0.0
+        var v = 0.0
         OCCTProjOnSurfLowerParams(ref, &u, &v)
         return (u, v)
     }

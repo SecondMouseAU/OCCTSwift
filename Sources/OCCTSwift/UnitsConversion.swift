@@ -1,6 +1,6 @@
 import Foundation
-import simd
 import OCCTBridge
+import simd
 
 /// Length unit types matching OCCT UnitsMethods_LengthUnit enum.
 public enum OCCTLengthUnit: Int32, Sendable {

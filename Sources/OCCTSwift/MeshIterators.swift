@@ -1,6 +1,6 @@
 import Foundation
-import simd
 import OCCTBridge
+import simd
 
 /// Iterator over triangulated faces of a meshed shape.
 public final class MeshFaceIterator: @unchecked Sendable {
@@ -28,7 +28,9 @@ public final class MeshFaceIterator: @unchecked Sendable {
 
     /// Get node position at 1-based index.
     public func node(at index: Int) -> SIMD3<Double> {
-        var x = 0.0, y = 0.0, z = 0.0
+        var x = 0.0
+        var y = 0.0
+        var z = 0.0
         OCCTMeshFaceIterNode(handle, Int32(index), &x, &y, &z)
         return SIMD3(x, y, z)
     }
@@ -38,14 +40,18 @@ public final class MeshFaceIterator: @unchecked Sendable {
 
     /// Get normal at 1-based node index.
     public func normal(at index: Int) -> SIMD3<Double> {
-        var nx = 0.0, ny = 0.0, nz = 0.0
+        var nx = 0.0
+        var ny = 0.0
+        var nz = 0.0
         OCCTMeshFaceIterNormal(handle, Int32(index), &nx, &ny, &nz)
         return SIMD3(nx, ny, nz)
     }
 
     /// Get triangle node indices (1-based) at 1-based triangle index.
     public func triangle(at index: Int) -> (n1: Int, n2: Int, n3: Int) {
-        var n1: Int32 = 0, n2: Int32 = 0, n3: Int32 = 0
+        var n1: Int32 = 0
+        var n2: Int32 = 0
+        var n3: Int32 = 0
         OCCTMeshFaceIterTriangle(handle, Int32(index), &n1, &n2, &n3)
         return (Int(n1), Int(n2), Int(n3))
     }
@@ -71,7 +77,9 @@ public final class MeshVertexIterator: @unchecked Sendable {
 
     /// Get the current vertex point.
     public var point: SIMD3<Double> {
-        var x = 0.0, y = 0.0, z = 0.0
+        var x = 0.0
+        var y = 0.0
+        var z = 0.0
         OCCTMeshVertexIterPoint(handle, &x, &y, &z)
         return SIMD3(x, y, z)
     }

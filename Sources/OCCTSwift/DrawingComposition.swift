@@ -44,10 +44,14 @@ extension Drawing {
     /// 2D axis-aligned bounding box of the drawing's visible / hidden / outline
     /// edges, optionally including annotation extents. Returns nil if the
     /// drawing contains no geometry.
-    public func bounds(deflection: Double = 0.1,
-                       includeAnnotations: Bool = true) -> (min: SIMD2<Double>, max: SIMD2<Double>)? {
-        var minX = Double.infinity, minY = Double.infinity
-        var maxX = -Double.infinity, maxY = -Double.infinity
+    public func bounds(
+        deflection: Double = 0.1,
+        includeAnnotations: Bool = true
+    ) -> (min: SIMD2<Double>, max: SIMD2<Double>)? {
+        var minX = Double.infinity
+        var minY = Double.infinity
+        var maxX = -Double.infinity
+        var maxY = -Double.infinity
 
         func include(_ points: [SIMD2<Double>]) {
             for p in points {
@@ -84,16 +88,23 @@ extension DrawingDimension {
         func t(_ p: SIMD2<Double>) -> SIMD2<Double> { scale * p + translate }
         switch self {
         case .linear(var d):
-            d.from = t(d.from); d.to = t(d.to); d.offset *= scale
+            d.from = t(d.from)
+            d.to = t(d.to)
+            d.offset *= scale
             return .linear(d)
         case .radial(var d):
-            d.centre = t(d.centre); d.radius *= scale
+            d.centre = t(d.centre)
+            d.radius *= scale
             return .radial(d)
         case .diameter(var d):
-            d.centre = t(d.centre); d.radius *= scale
+            d.centre = t(d.centre)
+            d.radius *= scale
             return .diameter(d)
         case .angular(var d):
-            d.vertex = t(d.vertex); d.ray1 = t(d.ray1); d.ray2 = t(d.ray2); d.arcRadius *= scale
+            d.vertex = t(d.vertex)
+            d.ray1 = t(d.ray1)
+            d.ray2 = t(d.ray2)
+            d.arcRadius *= scale
             return .angular(d)
         case .ordinate(var d):
             d.origin = t(d.origin)
@@ -108,15 +119,21 @@ extension DrawingDimension {
 
     internal var keyPoints: [SIMD2<Double>] {
         switch self {
-        case .linear(let d):    return [d.from, d.to]
-        case .radial(let d):    return [d.centre,
-                                        SIMD2(d.centre.x + d.radius, d.centre.y),
-                                        SIMD2(d.centre.x - d.radius, d.centre.y)]
-        case .diameter(let d):  return [d.centre,
-                                        SIMD2(d.centre.x + d.radius, d.centre.y),
-                                        SIMD2(d.centre.x - d.radius, d.centre.y)]
-        case .angular(let d):   return [d.vertex, d.ray1, d.ray2]
-        case .ordinate(let d):  return [d.origin] + d.features.map { $0.position }
+        case .linear(let d): return [d.from, d.to]
+        case .radial(let d):
+            return [
+                d.centre,
+                SIMD2(d.centre.x + d.radius, d.centre.y),
+                SIMD2(d.centre.x - d.radius, d.centre.y),
+            ]
+        case .diameter(let d):
+            return [
+                d.centre,
+                SIMD2(d.centre.x + d.radius, d.centre.y),
+                SIMD2(d.centre.x - d.radius, d.centre.y),
+            ]
+        case .angular(let d): return [d.vertex, d.ray1, d.ray2]
+        case .ordinate(let d): return [d.origin] + d.features.map { $0.position }
         }
     }
 }
@@ -126,13 +143,16 @@ extension DrawingAnnotation {
         func t(_ p: SIMD2<Double>) -> SIMD2<Double> { scale * p + translate }
         switch self {
         case .centreline(var c):
-            c.from = t(c.from); c.to = t(c.to)
+            c.from = t(c.from)
+            c.to = t(c.to)
             return .centreline(c)
         case .centermark(var m):
-            m.centre = t(m.centre); m.extent *= scale
+            m.centre = t(m.centre)
+            m.extent *= scale
             return .centermark(m)
         case .textLabel(var label):
-            label.position = t(label.position); label.height *= scale
+            label.position = t(label.position)
+            label.height *= scale
             return .textLabel(label)
         case .hatch(var h):
             h.boundary = h.boundary.map(t)
@@ -145,7 +165,8 @@ extension DrawingAnnotation {
             // Arrow direction is a unit vector; uniform scale preserves direction.
             return .cuttingPlaneLine(cpl)
         case .balloon(var b):
-            b.centre = t(b.centre); b.radius *= scale
+            b.centre = t(b.centre)
+            b.radius *= scale
             if let leader = b.leaderTo { b.leaderTo = t(leader) }
             return .balloon(b)
         }
@@ -153,11 +174,11 @@ extension DrawingAnnotation {
 
     internal var keyPoints: [SIMD2<Double>] {
         switch self {
-        case .centreline(let c):        return [c.from, c.to]
-        case .centermark(let m):        return [m.centre]
-        case .textLabel(let t):         return [t.position]
-        case .hatch(let h):             return h.boundary
-        case .cuttingPlaneLine(let c):  return [c.traceStart, c.traceEnd]
+        case .centreline(let c): return [c.from, c.to]
+        case .centermark(let m): return [m.centre]
+        case .textLabel(let t): return [t.position]
+        case .hatch(let h): return h.boundary
+        case .cuttingPlaneLine(let c): return [c.traceStart, c.traceEnd]
         case .balloon(let b):
             var pts = [b.centre]
             if let leader = b.leaderTo { pts.append(leader) }

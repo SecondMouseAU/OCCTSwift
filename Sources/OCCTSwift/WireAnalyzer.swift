@@ -1,6 +1,6 @@
 import Foundation
-import simd
 import OCCTBridge
+import simd
 
 /// Analyzer for wire geometry and topology, wrapping ShapeAnalysis_Wire.
 public final class WireAnalyzer: @unchecked Sendable {
@@ -8,7 +8,9 @@ public final class WireAnalyzer: @unchecked Sendable {
 
     /// Create a wire analyzer from a wire shape, a face it lies on, and precision.
     public init?(wire: Wire, face: Shape, precision: Double = 1e-7) {
-        guard let ref = OCCTWireAnalyzerCreate(wire.handle, face.handle, precision) else { return nil }
+        guard let ref = OCCTWireAnalyzerCreate(wire.handle, face.handle, precision) else {
+            return nil
+        }
         self.handle = ref
     }
 

@@ -1,6 +1,6 @@
 import Foundation
-import simd
 import OCCTBridge
+import simd
 
 /// Describes an evolving radius along an edge for filleting.
 ///
@@ -47,10 +47,13 @@ public struct EvolvingFilletEdge: Sendable {
     /// diagnostic, so the spelling was retired rather than reinterpreted. Build the spec from the
     /// `Edge` itself — `EvolvingFilletEdge(edge: shape.edges()[0], radiusPoints: …)` — or, if you
     /// only hold an index, construct from any edge and assign ``edgeIndex`` (0-based).
-    @available(*, unavailable, message: """
-        edgeIndex was 1-based and is now 0-based (#520). Use init(edge:radiusPoints:) with the Edge \
-        itself, or assign the 0-based edgeIndex property, after re-checking the index you pass.
-        """)
+    @available(
+        *, unavailable,
+        message: """
+            edgeIndex was 1-based and is now 0-based (#520). Use init(edge:radiusPoints:) with the Edge \
+            itself, or assign the 0-based edgeIndex property, after re-checking the index you pass.
+            """
+    )
     public init(edgeIndex: Int, radiusPoints: [(parameter: Double, radius: Double)]) {
         self.edgeIndex = edgeIndex
         self.radiusPoints = radiusPoints

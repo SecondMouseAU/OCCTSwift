@@ -1,6 +1,6 @@
 import Foundation
-import simd
 import OCCTBridge
+import simd
 
 /// A real interval [start, end] with optional start/end tolerances.
 public final class Interval: @unchecked Sendable {
@@ -121,7 +121,7 @@ public final class IntervalSet: @unchecked Sendable {
 
     /// Get bounds of interval at index (0-based).
     public func bounds(at index: Int) -> Interval.Bounds {
-        let b = OCCTIntrvIntervalsValue(handle, Int32(index + 1)) // 1-based in OCCT
+        let b = OCCTIntrvIntervalsValue(handle, Int32(index + 1))  // 1-based in OCCT
         return Interval.Bounds(start: b.start, end: b.end, tolStart: b.tolStart, tolEnd: b.tolEnd)
     }
 

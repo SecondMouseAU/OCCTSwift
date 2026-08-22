@@ -1,6 +1,6 @@
 import Foundation
-import simd
 import OCCTBridge
+import simd
 
 /// Result of curve approximation as BSpline.
 public struct ApproxCurveResult {

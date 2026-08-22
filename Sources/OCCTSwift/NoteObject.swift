@@ -1,6 +1,6 @@
 import Foundation
-import simd
 import OCCTBridge
+import simd
 
 /// Wrapper for XCAFNoteObjects_NoteObject — note annotation data.
 public final class NoteObject: @unchecked Sendable {
@@ -32,14 +32,18 @@ public final class NoteObject: @unchecked Sendable {
     }
 
     /// Set the plane (origin + normal).
-    public func setPlane(originX: Double, originY: Double, originZ: Double,
-                          normalX: Double, normalY: Double, normalZ: Double) {
+    public func setPlane(
+        originX: Double, originY: Double, originZ: Double,
+        normalX: Double, normalY: Double, normalZ: Double
+    ) {
         OCCTNoteObjectSetPlane(handle, originX, originY, originZ, normalX, normalY, normalZ)
     }
 
     /// Get the plane origin.
     public var planeOrigin: (x: Double, y: Double, z: Double) {
-        var x: Double = 0, y: Double = 0, z: Double = 0
+        var x: Double = 0
+        var y: Double = 0
+        var z: Double = 0
         OCCTNoteObjectGetPlane(handle, &x, &y, &z)
         return (x, y, z)
     }
@@ -51,7 +55,9 @@ public final class NoteObject: @unchecked Sendable {
 
     /// Get the point.
     public var point: (x: Double, y: Double, z: Double) {
-        var x: Double = 0, y: Double = 0, z: Double = 0
+        var x: Double = 0
+        var y: Double = 0
+        var z: Double = 0
         OCCTNoteObjectGetPoint(handle, &x, &y, &z)
         return (x, y, z)
     }

@@ -1,6 +1,6 @@
 import Foundation
-import simd
 import OCCTBridge
+import simd
 
 /// Dense mathematical matrix with 1-based indexing.
 public final class MathMatrix: @unchecked Sendable {
@@ -58,7 +58,8 @@ public enum MathGauss {
         let ok = matrix.withUnsafeBufferPointer { mBuf in
             rhs.withUnsafeBufferPointer { bBuf in
                 solution.withUnsafeMutableBufferPointer { xBuf in
-                    OCCTMathGaussSolve(mBuf.baseAddress!, Int32(n), bBuf.baseAddress!, xBuf.baseAddress!)
+                    OCCTMathGaussSolve(
+                        mBuf.baseAddress!, Int32(n), bBuf.baseAddress!, xBuf.baseAddress!)
                 }
             }
         }
@@ -116,12 +117,15 @@ public enum MathSVD {
     /// ```
     public static func solve(matrix: [Double], rows: Int, cols: Int, rhs: [Double]) -> [Double]? {
         guard MathDimension.validRectangle(rows: rows, cols: cols, count: matrix.count),
-              rhs.count == rows else { return nil }
+            rhs.count == rows
+        else { return nil }
         var solution = [Double](repeating: 0, count: cols)
         let ok = matrix.withUnsafeBufferPointer { mBuf in
             rhs.withUnsafeBufferPointer { bBuf in
                 solution.withUnsafeMutableBufferPointer { xBuf in
-                    OCCTMathSVDSolve(mBuf.baseAddress!, Int32(rows), Int32(cols), bBuf.baseAddress!, xBuf.baseAddress!)
+                    OCCTMathSVDSolve(
+                        mBuf.baseAddress!, Int32(rows), Int32(cols), bBuf.baseAddress!,
+                        xBuf.baseAddress!)
                 }
             }
         }
@@ -140,7 +144,8 @@ public enum MathPolynomialRoots {
         var roots = [Double](repeating: 0, count: 4)
         let n = coefficients.withUnsafeBufferPointer { cBuf in
             roots.withUnsafeMutableBufferPointer { rBuf in
-                OCCTMathPolynomialRoots(cBuf.baseAddress!, Int32(coefficients.count), rBuf.baseAddress!)
+                OCCTMathPolynomialRoots(
+                    cBuf.baseAddress!, Int32(coefficients.count), rBuf.baseAddress!)
             }
         }
         if n < 0 { return nil }
@@ -194,14 +199,15 @@ public enum MathHouseholder {
     /// ```
     public static func solve(matrix: [Double], rows: Int, cols: Int, rhs: [Double]) -> [Double]? {
         guard MathDimension.validRectangle(rows: rows, cols: cols, count: matrix.count),
-              rhs.count == rows, rows >= cols
+            rhs.count == rows, rows >= cols
         else { return nil }
         var solution = [Double](repeating: 0, count: cols)
         let ok = matrix.withUnsafeBufferPointer { mBuf in
             rhs.withUnsafeBufferPointer { bBuf in
                 solution.withUnsafeMutableBufferPointer { xBuf in
-                    OCCTMathHouseholderSolve(mBuf.baseAddress!, Int32(rows), Int32(cols),
-                                             bBuf.baseAddress!, xBuf.baseAddress!)
+                    OCCTMathHouseholderSolve(
+                        mBuf.baseAddress!, Int32(rows), Int32(cols),
+                        bBuf.baseAddress!, xBuf.baseAddress!)
                 }
             }
         }
@@ -220,7 +226,8 @@ public enum MathCrout {
         let ok = matrix.withUnsafeBufferPointer { mBuf in
             rhs.withUnsafeBufferPointer { bBuf in
                 solution.withUnsafeMutableBufferPointer { xBuf in
-                    OCCTMathCroutSolve(mBuf.baseAddress!, Int32(n), bBuf.baseAddress!, xBuf.baseAddress!)
+                    OCCTMathCroutSolve(
+                        mBuf.baseAddress!, Int32(n), bBuf.baseAddress!, xBuf.baseAddress!)
                 }
             }
         }

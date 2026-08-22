@@ -1,6 +1,6 @@
 import Foundation
-import simd
 import OCCTBridge
+import simd
 
 /// A clipping plane that can be used to cut geometry during rendering.
 ///
@@ -65,7 +65,10 @@ public final class ClipPlane: @unchecked Sendable {
     /// The plane equation coefficients (A, B, C, D) where `Ax + By + Cz + D = 0`.
     public var equation: SIMD4<Double> {
         get {
-            var a = 0.0, b = 0.0, c = 0.0, d = 0.0
+            var a = 0.0
+            var b = 0.0
+            var c = 0.0
+            var d = 0.0
             OCCTClipPlaneGetEquation(handle, &a, &b, &c, &d)
             return SIMD4(a, b, c, d)
         }
@@ -76,7 +79,10 @@ public final class ClipPlane: @unchecked Sendable {
 
     /// The reversed equation (negated coefficients), useful for back-face clipping.
     public var reversedEquation: SIMD4<Double> {
-        var a = 0.0, b = 0.0, c = 0.0, d = 0.0
+        var a = 0.0
+        var b = 0.0
+        var c = 0.0
+        var d = 0.0
         OCCTClipPlaneGetReversedEquation(handle, &a, &b, &c, &d)
         return SIMD4(a, b, c, d)
     }
@@ -106,7 +112,9 @@ public final class ClipPlane: @unchecked Sendable {
     /// The color used for the capping surface (RGB, values in 0...1).
     public var cappingColor: SIMD3<Double> {
         get {
-            var r = 0.0, g = 0.0, b = 0.0
+            var r = 0.0
+            var g = 0.0
+            var b = 0.0
             OCCTClipPlaneGetCappingColor(handle, &r, &g, &b)
             return SIMD3(r, g, b)
         }
@@ -142,9 +150,11 @@ public final class ClipPlane: @unchecked Sendable {
     /// - Parameter box: The bounding box defined by (min, max) corners.
     /// - Returns: The clip state indicating if the box is fully inside, fully outside, or partially clipped.
     public func probe(box: (min: SIMD3<Double>, max: SIMD3<Double>)) -> ClipState {
-        ClipState(rawValue: OCCTClipPlaneProbeBox(handle,
-            box.min.x, box.min.y, box.min.z,
-            box.max.x, box.max.y, box.max.z)) ?? .out
+        ClipState(
+            rawValue: OCCTClipPlaneProbeBox(
+                handle,
+                box.min.x, box.min.y, box.min.z,
+                box.max.x, box.max.y, box.max.z)) ?? .out
     }
 
     // MARK: - Chaining
