@@ -2415,16 +2415,19 @@ public final class Shape: @unchecked Sendable {
     ///   deadline if a true wall-clock guarantee matters).
     ///
     /// - Important: `true` is reported **only** for a completed analysis that recorded at least
-    ///   one `BOPAlgo_SelfIntersect` result and no other status (#1054). An empty result list is
-    ///   `false`, not `true`: that is the clean case. Everything else the analyzer can record used
-    ///   to read as `true` and is now `nil`: an aborted analysis, an argument it refuses, and an
-    ///   analysis that failed (`BOPAlgo_CheckUnknown`, or a `BOPAlgo_OperationAborted` recorded
-    ///   for a `BOPAlgo_CheckerSI` error that was not a watchdog break, which is why `timeout: 0`
-    ///   does not exempt a caller from this). An analysis the `timeout` aborted is `nil` even when
-    ///   it recorded results first: the interference map a valid solid's face adjacency fills is cleared partway
-    ///   through the check and then selectively refilled, so an analysis interrupted before that
-    ///   point is read against the raw map and a clean box reports up to three
-    ///   self-interferences of its own. Separately, a shape
+    ///   one `BOPAlgo_SelfIntersect` result and no other status (#1054). An empty result list on a
+    ///   **completed** analysis is `false`: that is the clean case. An empty list is not enough on
+    ///   its own, because a watchdog that trips before anything is recorded leaves the list empty
+    ///   too, and that case is `nil`; the watchdog is read first, so it never reaches this test.
+    ///   Everything else the analyzer can record used to read as `true` and is now `nil`: an
+    ///   aborted analysis, an argument it refuses, and an analysis that failed
+    ///   (`BOPAlgo_CheckUnknown`, or a `BOPAlgo_OperationAborted` recorded for a
+    ///   `BOPAlgo_CheckerSI` error that was not a watchdog break, which is why `timeout: 0` does
+    ///   not exempt a caller from this). An analysis the `timeout` aborted is `nil` even when it
+    ///   recorded results first: the interference map a valid solid's face adjacency fills is
+    ///   cleared partway through the check and then selectively refilled, so an analysis
+    ///   interrupted before that point is read against the raw map and a clean box reports up to
+    ///   three self-interferences of its own. Separately, a shape
     ///   `BOPAlgo_ArgumentAnalyzer` rejects outright, such as ``emptied``'s result, records
     ///   `BOPAlgo_BadType`, which says nothing about self-intersection and involves no timeout
     ///   at all.

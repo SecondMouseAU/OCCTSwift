@@ -37,7 +37,13 @@ rebuild #1068's fixture (see that section below).
 
 #1054's own report says "Not proven: I did not directly observe the spurious `1`", because
 `GetCheckResult` is not reachable from Swift. It is reachable from here, and the #319 artifact
-at the default-ish 30 s bound produces it every time on an idle machine:
+at the default-ish 30 s bound produces it every time on an idle machine.
+
+**Every `probe_fault_kinds` transcript in this file drops two columns for width**, `trips=` and
+`threw=`, which sit between `polls=` and `HasFaulty=` in the real output (see the `printf` at
+`probe_fault_kinds.mm:182`). Nothing else is edited, no rows are omitted, and the columns that are
+shown are byte for byte what the probe printed. Re-running any command here gives the wider line
+rather than the one quoted, so do not read a mismatch in width as a mismatch in result.
 
 ```
 $ probe_fault_kinds Scripts/repro/319-selfintersection/dualskin_lateral.15.brep 1 30 30 30 30 30 30

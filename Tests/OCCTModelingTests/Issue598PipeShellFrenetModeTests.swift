@@ -156,7 +156,8 @@ struct Issue598PipeShellFrenetModeTests {
         // passes 0 to the same bridge function, so no watchdog can take a conclusive answer away
         // from it, and it still returns at the caller's own deadline, so a machine slow enough to
         // matter turns these red rather than hanging the job. The whole test measures 0.175s here
-        // (0.196s on a second machine), so 30s is three orders of magnitude of headroom.
+        // (0.196s on a second machine), so 30s is 171x that here and 153x there. An earlier
+        // draft called it three orders of magnitude, which overstates it by about an order.
         #expect(frenet.isSelfIntersecting(hardTimeout: 30) == true,
                 ".frenet is expected to self-intersect at this spine's curvature inflection")
         #expect(corrected.isSelfIntersecting(hardTimeout: 30) == false,

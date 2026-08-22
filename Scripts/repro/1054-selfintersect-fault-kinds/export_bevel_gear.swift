@@ -1,8 +1,11 @@
 // #1068's fixture, exported so the C++ probes can load it without rebuilding it each run.
 //
-// Not part of any package target. Drop it into a throwaway SwiftPM executable that depends on
-// SecondMouseAU/OCCTParts (platforms: [.macOS(.v15)], products PartsGears and PartsCore) and run
-// it once. Measured against OCCTParts at the OCCTSwift 3.0.0 pin: 82 s to build, volume
+// Not part of any package target. Drop it into a throwaway SwiftPM executable **renamed to
+// `main.swift`**: this is top-level code, and Swift only allows that in a file with that
+// name, so an executable target holding it as `export_bevel_gear.swift` fails to compile
+// with "expressions are not allowed at the top level". The target depends on
+// SecondMouseAU/OCCTParts (platforms: [.macOS(.v15)], products PartsGears and PartsCore). Run it
+// once. Measured against OCCTParts at the OCCTSwift 3.0.0 pin: 82 s to build, volume
 // 19272.592112059167, 1 solid, 1339 faces, 3938 edges, which matches the volume #1068 quotes.
 //
 //   swift run gearexport /tmp/bevel_gear_1068.brep

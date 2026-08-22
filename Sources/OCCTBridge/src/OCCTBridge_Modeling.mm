@@ -2129,7 +2129,7 @@ OCCTShapeRef OCCTShapeFuseMulti(const OCCTShapeRef* shapes, int32_t count)
     builder.SetArguments(arguments);
     // #367: SetRunParallel(true) here caused silent data corruption (100%
     // wrong results, 237 TSan races) whenever two concurrent top-level
-    // callers both requested internal parallelism, their work items
+    // callers both requested internal parallelism: their work items
     // cross-contaminated on the shared OSD_ThreadPool::DefaultPool. Left
     // at the safe serial default.
     builder.Build();
