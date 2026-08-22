@@ -1,6 +1,6 @@
 import Foundation
-import simd
 import OCCTBridge
+import simd
 
 /// A 2D geometric point backed by `Geom2d_CartesianPoint`.
 public final class Point2D: @unchecked Sendable {
@@ -131,8 +131,11 @@ public final class Point2D: @unchecked Sendable {
 
     /// Mirror across an axis (origin + direction), returns a new point.
     public func mirrored(axisOrigin: SIMD2<Double>, axisDirection: SIMD2<Double>) -> Point2D? {
-        guard let h = OCCTPoint2DMirroredAxis(handle, axisOrigin.x, axisOrigin.y,
-                                               axisDirection.x, axisDirection.y) else { return nil }
+        guard
+            let h = OCCTPoint2DMirroredAxis(
+                handle, axisOrigin.x, axisOrigin.y,
+                axisDirection.x, axisDirection.y)
+        else { return nil }
         return Point2D(handle: h)
     }
 

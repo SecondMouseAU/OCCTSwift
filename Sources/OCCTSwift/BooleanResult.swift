@@ -1,6 +1,6 @@
 import Foundation
-import simd
 import OCCTBridge
+import simd
 
 /// Result of a boolean operation with shape tracking.
 public struct BooleanResult: Sendable {
@@ -81,7 +81,8 @@ public final class ShapeHistoryRef: @unchecked Sendable {
         )
     }
 
-    private func collect(_ fill: (UnsafeMutablePointer<OCCTShapeRef?>?, Int32) -> Int32) -> [Shape] {
+    private func collect(_ fill: (UnsafeMutablePointer<OCCTShapeRef?>?, Int32) -> Int32) -> [Shape]
+    {
         // Probe with a max=0 call to get the count, then size the buffer exactly.
         let count = fill(nil, 0)
         guard count > 0 else { return [] }

@@ -22,16 +22,24 @@ extension BRepGraph {
         case int(Int)
         case double(Double)
         case string(String)
-        case ints([Int])         // e.g. a mesh-region triangle index set
-        case doubles([Double])   // e.g. fitted-surface parameters
+        case ints([Int])  // e.g. a mesh-region triangle index set
+        case doubles([Double])  // e.g. fitted-surface parameters
 
         // Convenience unwrap accessors — return nil on type mismatch.
-        public var boolValue: Bool? { if case let .bool(v) = self { return v } else { return nil } }
-        public var intValue: Int? { if case let .int(v) = self { return v } else { return nil } }
-        public var doubleValue: Double? { if case let .double(v) = self { return v } else { return nil } }
-        public var stringValue: String? { if case let .string(v) = self { return v } else { return nil } }
-        public var intsValue: [Int]? { if case let .ints(v) = self { return v } else { return nil } }
-        public var doublesValue: [Double]? { if case let .doubles(v) = self { return v } else { return nil } }
+        public var boolValue: Bool? { if case .bool(let v) = self { return v } else { return nil } }
+        public var intValue: Int? { if case .int(let v) = self { return v } else { return nil } }
+        public var doubleValue: Double? {
+            if case .double(let v) = self { return v } else { return nil }
+        }
+        public var stringValue: String? {
+            if case .string(let v) = self { return v } else { return nil }
+        }
+        public var intsValue: [Int]? {
+            if case .ints(let v) = self { return v } else { return nil }
+        }
+        public var doublesValue: [Double]? {
+            if case .doubles(let v) = self { return v } else { return nil }
+        }
     }
 }
 
@@ -63,7 +71,9 @@ public struct NodeAttributeStore: Codable, Sendable, Equatable {
     }
 
     /// Set one attribute.
-    public mutating func set(_ key: String, _ value: BRepGraph.AttrValue, for node: BRepGraph.NodeRef) {
+    public mutating func set(
+        _ key: String, _ value: BRepGraph.AttrValue, for node: BRepGraph.NodeRef
+    ) {
         storage[node, default: [:]][key] = value
     }
 
@@ -109,11 +119,13 @@ public struct NodeAttributeStore: Codable, Sendable, Equatable {
     }
 
     public func encode(to encoder: Encoder) throws {
-        let entries = storage
+        let entries =
+            storage
             .map { node, attrs in
-                Entry(node: node,
-                      attrs: attrs.map { KeyValue(key: $0.key, value: $0.value) }
-                                  .sorted { $0.key < $1.key })
+                Entry(
+                    node: node,
+                    attrs: attrs.map { KeyValue(key: $0.key, value: $0.value) }
+                        .sorted { $0.key < $1.key })
             }
             .sorted { lhs, rhs in
                 if lhs.node.kind.rawValue != rhs.node.kind.rawValue {
@@ -144,7 +156,10 @@ public struct GraphSnapshot: Codable, Sendable, Equatable {
     /// Format version this snapshot was written with.
     public var formatVersion: Int
 
-    public init(brep: String, attributes: NodeAttributeStore, formatVersion: Int = GraphSnapshot.currentFormatVersion) {
+    public init(
+        brep: String, attributes: NodeAttributeStore,
+        formatVersion: Int = GraphSnapshot.currentFormatVersion
+    ) {
         self.brep = brep
         self.attributes = attributes
         self.formatVersion = formatVersion

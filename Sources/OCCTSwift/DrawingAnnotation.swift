@@ -14,9 +14,9 @@ import simd
 /// or `DrawingAnnotation` to DXF, PDF, or a viewport.
 public enum DrawingLineStyle: String, Sendable, Hashable, Codable {
     case solid
-    case dashed      // hidden-line pattern
-    case phantom     // long-dash + 2 short-dash
-    case chain       // long-dash + short-dash (centreline)
+    case dashed  // hidden-line pattern
+    case phantom  // long-dash + 2 short-dash
+    case chain  // long-dash + short-dash (centreline)
     case dotted
 }
 
@@ -66,13 +66,18 @@ public enum DrawingDimension: Sendable, Hashable {
         public var id: String?
         public var tolerance: DrawingTolerance
 
-        public init(from: SIMD2<Double>, to: SIMD2<Double>,
-                    offset: Double = 10, label: String? = nil,
-                    style: DrawingLineStyle = .solid, id: String? = nil,
-                    tolerance: DrawingTolerance = .none) {
-            self.from = from; self.to = to
-            self.offset = offset; self.label = label
-            self.style = style; self.id = id
+        public init(
+            from: SIMD2<Double>, to: SIMD2<Double>,
+            offset: Double = 10, label: String? = nil,
+            style: DrawingLineStyle = .solid, id: String? = nil,
+            tolerance: DrawingTolerance = .none
+        ) {
+            self.from = from
+            self.to = to
+            self.offset = offset
+            self.label = label
+            self.style = style
+            self.id = id
             self.tolerance = tolerance
         }
 
@@ -90,14 +95,19 @@ public enum DrawingDimension: Sendable, Hashable {
         public var id: String?
         public var tolerance: DrawingTolerance
 
-        public init(centre: SIMD2<Double>, radius: Double,
-                    leaderAngle: Double = .pi / 4,
-                    label: String? = nil,
-                    style: DrawingLineStyle = .solid, id: String? = nil,
-                    tolerance: DrawingTolerance = .none) {
-            self.centre = centre; self.radius = radius
+        public init(
+            centre: SIMD2<Double>, radius: Double,
+            leaderAngle: Double = .pi / 4,
+            label: String? = nil,
+            style: DrawingLineStyle = .solid, id: String? = nil,
+            tolerance: DrawingTolerance = .none
+        ) {
+            self.centre = centre
+            self.radius = radius
             self.leaderAngle = leaderAngle
-            self.label = label; self.style = style; self.id = id
+            self.label = label
+            self.style = style
+            self.id = id
             self.tolerance = tolerance
         }
 
@@ -113,14 +123,19 @@ public enum DrawingDimension: Sendable, Hashable {
         public var id: String?
         public var tolerance: DrawingTolerance
 
-        public init(centre: SIMD2<Double>, radius: Double,
-                    leaderAngle: Double = .pi / 4,
-                    label: String? = nil,
-                    style: DrawingLineStyle = .solid, id: String? = nil,
-                    tolerance: DrawingTolerance = .none) {
-            self.centre = centre; self.radius = radius
+        public init(
+            centre: SIMD2<Double>, radius: Double,
+            leaderAngle: Double = .pi / 4,
+            label: String? = nil,
+            style: DrawingLineStyle = .solid, id: String? = nil,
+            tolerance: DrawingTolerance = .none
+        ) {
+            self.centre = centre
+            self.radius = radius
             self.leaderAngle = leaderAngle
-            self.label = label; self.style = style; self.id = id
+            self.label = label
+            self.style = style
+            self.id = id
             self.tolerance = tolerance
         }
 
@@ -139,14 +154,20 @@ public enum DrawingDimension: Sendable, Hashable {
         public var id: String?
         public var tolerance: DrawingTolerance
 
-        public init(vertex: SIMD2<Double>, ray1: SIMD2<Double>, ray2: SIMD2<Double>,
-                    arcRadius: Double = 20,
-                    label: String? = nil,
-                    style: DrawingLineStyle = .solid, id: String? = nil,
-                    tolerance: DrawingTolerance = .none) {
-            self.vertex = vertex; self.ray1 = ray1; self.ray2 = ray2
+        public init(
+            vertex: SIMD2<Double>, ray1: SIMD2<Double>, ray2: SIMD2<Double>,
+            arcRadius: Double = 20,
+            label: String? = nil,
+            style: DrawingLineStyle = .solid, id: String? = nil,
+            tolerance: DrawingTolerance = .none
+        ) {
+            self.vertex = vertex
+            self.ray1 = ray1
+            self.ray2 = ray2
             self.arcRadius = arcRadius
-            self.label = label; self.style = style; self.id = id
+            self.label = label
+            self.style = style
+            self.id = id
             self.tolerance = tolerance
         }
 
@@ -176,47 +197,53 @@ public enum DrawingDimension: Sendable, Hashable {
             public var id: String?
 
             public init(position: SIMD2<Double>, label: String? = nil, id: String? = nil) {
-                self.position = position; self.label = label; self.id = id
+                self.position = position
+                self.label = label
+                self.id = id
             }
         }
 
-        public init(origin: SIMD2<Double>, features: [Feature],
-                    tolerance: DrawingTolerance = .none, id: String? = nil) {
-            self.origin = origin; self.features = features
-            self.tolerance = tolerance; self.id = id
+        public init(
+            origin: SIMD2<Double>, features: [Feature],
+            tolerance: DrawingTolerance = .none, id: String? = nil
+        ) {
+            self.origin = origin
+            self.features = features
+            self.tolerance = tolerance
+            self.id = id
         }
     }
 
     public var id: String? {
         switch self {
-        case .linear(let d):    return d.id
-        case .radial(let d):    return d.id
-        case .diameter(let d):  return d.id
-        case .angular(let d):   return d.id
-        case .ordinate(let d):  return d.id
+        case .linear(let d): return d.id
+        case .radial(let d): return d.id
+        case .diameter(let d): return d.id
+        case .angular(let d): return d.id
+        case .ordinate(let d): return d.id
         }
     }
 
     public var label: String? {
         switch self {
-        case .linear(let d):    return d.label
-        case .radial(let d):    return d.label
-        case .diameter(let d):  return d.label
-        case .angular(let d):   return d.label
+        case .linear(let d): return d.label
+        case .radial(let d): return d.label
+        case .diameter(let d): return d.label
+        case .angular(let d): return d.label
         // Ordinate has per-feature labels; no single dimension-level label.
-        case .ordinate:         return nil
+        case .ordinate: return nil
         }
     }
 
     public var value: Double {
         switch self {
-        case .linear(let d):    return d.value
-        case .radial(let d):    return d.value
-        case .diameter(let d):  return d.value
-        case .angular(let d):   return d.value
+        case .linear(let d): return d.value
+        case .radial(let d): return d.value
+        case .diameter(let d): return d.value
+        case .angular(let d): return d.value
         // Ordinate has no single scalar measurement; callers should read
         // `features` instead.
-        case .ordinate:         return 0
+        case .ordinate: return 0
         }
     }
 }
@@ -234,13 +261,18 @@ public enum DrawingAnnotation: Sendable, Hashable {
     public struct Centreline: Sendable, Hashable {
         public var from: SIMD2<Double>
         public var to: SIMD2<Double>
-        public var style: DrawingLineStyle    // typically .chain
+        public var style: DrawingLineStyle  // typically .chain
         public var id: String?
 
-        public init(from: SIMD2<Double>, to: SIMD2<Double>,
-                    style: DrawingLineStyle = .chain,
-                    id: String? = nil) {
-            self.from = from; self.to = to; self.style = style; self.id = id
+        public init(
+            from: SIMD2<Double>, to: SIMD2<Double>,
+            style: DrawingLineStyle = .chain,
+            id: String? = nil
+        ) {
+            self.from = from
+            self.to = to
+            self.style = style
+            self.id = id
         }
     }
 
@@ -248,14 +280,18 @@ public enum DrawingAnnotation: Sendable, Hashable {
         public var centre: SIMD2<Double>
         /// Full length of each of the two crossing line segments (drawing units).
         public var extent: Double
-        public var style: DrawingLineStyle    // typically .chain
+        public var style: DrawingLineStyle  // typically .chain
         public var id: String?
 
-        public init(centre: SIMD2<Double>, extent: Double = 8,
-                    style: DrawingLineStyle = .chain,
-                    id: String? = nil) {
-            self.centre = centre; self.extent = extent
-            self.style = style; self.id = id
+        public init(
+            centre: SIMD2<Double>, extent: Double = 8,
+            style: DrawingLineStyle = .chain,
+            id: String? = nil
+        ) {
+            self.centre = centre
+            self.extent = extent
+            self.style = style
+            self.id = id
         }
     }
 
@@ -263,14 +299,19 @@ public enum DrawingAnnotation: Sendable, Hashable {
         public var position: SIMD2<Double>
         public var text: String
         public var height: Double
-        public var rotation: Double     // radians
+        public var rotation: Double  // radians
         public var id: String?
 
-        public init(position: SIMD2<Double>, text: String,
-                    height: Double = 3.5, rotation: Double = 0,
-                    id: String? = nil) {
-            self.position = position; self.text = text
-            self.height = height; self.rotation = rotation; self.id = id
+        public init(
+            position: SIMD2<Double>, text: String,
+            height: Double = 3.5, rotation: Double = 0,
+            id: String? = nil
+        ) {
+            self.position = position
+            self.text = text
+            self.height = height
+            self.rotation = rotation
+            self.id = id
         }
     }
 
@@ -285,14 +326,16 @@ public enum DrawingAnnotation: Sendable, Hashable {
         public var label: String
         public var traceStart: SIMD2<Double>
         public var traceEnd: SIMD2<Double>
-        public var arrowDirection: SIMD2<Double>   // perpendicular to trace, in view 2D
+        public var arrowDirection: SIMD2<Double>  // perpendicular to trace, in view 2D
         public var id: String?
 
-        public init(label: String,
-                    traceStart: SIMD2<Double>,
-                    traceEnd: SIMD2<Double>,
-                    arrowDirection: SIMD2<Double>,
-                    id: String? = nil) {
+        public init(
+            label: String,
+            traceStart: SIMD2<Double>,
+            traceEnd: SIMD2<Double>,
+            arrowDirection: SIMD2<Double>,
+            id: String? = nil
+        ) {
             self.label = label
             self.traceStart = traceStart
             self.traceEnd = traceEnd
@@ -306,19 +349,21 @@ public enum DrawingAnnotation: Sendable, Hashable {
     /// Optional `islands` are inner boundaries (holes) that are subtracted
     /// from the hatched region.
     public struct Hatch: Sendable, Hashable {
-        public var boundary: [SIMD2<Double>]     // closed polygon (first != last)
-        public var angle: Double                 // radians; ISO default π/4 = 45°
-        public var spacing: Double               // drawing units; ISO typical 2–4 mm
-        public var islands: [[SIMD2<Double>]]    // inner holes (each closed polygon)
-        public var layer: String                 // DXF layer, default "HATCH"
+        public var boundary: [SIMD2<Double>]  // closed polygon (first != last)
+        public var angle: Double  // radians; ISO default π/4 = 45°
+        public var spacing: Double  // drawing units; ISO typical 2–4 mm
+        public var islands: [[SIMD2<Double>]]  // inner holes (each closed polygon)
+        public var layer: String  // DXF layer, default "HATCH"
         public var id: String?
 
-        public init(boundary: [SIMD2<Double>],
-                    angle: Double = .pi / 4,
-                    spacing: Double = 3.0,
-                    islands: [[SIMD2<Double>]] = [],
-                    layer: String = "HATCH",
-                    id: String? = nil) {
+        public init(
+            boundary: [SIMD2<Double>],
+            angle: Double = .pi / 4,
+            spacing: Double = 3.0,
+            islands: [[SIMD2<Double>]] = [],
+            layer: String = "HATCH",
+            id: String? = nil
+        ) {
             self.boundary = boundary
             self.angle = angle
             self.spacing = spacing
@@ -339,11 +384,13 @@ public enum DrawingAnnotation: Sendable, Hashable {
         public var leaderTo: SIMD2<Double>?
         public var id: String?
 
-        public init(itemNumber: Int,
-                    centre: SIMD2<Double>,
-                    radius: Double = 5,
-                    leaderTo: SIMD2<Double>? = nil,
-                    id: String? = nil) {
+        public init(
+            itemNumber: Int,
+            centre: SIMD2<Double>,
+            radius: Double = 5,
+            leaderTo: SIMD2<Double>? = nil,
+            id: String? = nil
+        ) {
             self.itemNumber = itemNumber
             self.centre = centre
             self.radius = radius
@@ -360,26 +407,38 @@ internal final class DrawingAnnotationStore: @unchecked Sendable {
     private var _dimensions: [DrawingDimension] = []
     private var _annotations: [DrawingAnnotation] = []
 
-    var dimensions: [DrawingDimension] { lock.lock(); defer { lock.unlock() }; return _dimensions }
-    var annotations: [DrawingAnnotation] { lock.lock(); defer { lock.unlock() }; return _annotations }
+    var dimensions: [DrawingDimension] {
+        lock.lock()
+        defer { lock.unlock() }
+        return _dimensions
+    }
+    var annotations: [DrawingAnnotation] {
+        lock.lock()
+        defer { lock.unlock() }
+        return _annotations
+    }
 
     func appendDimension(_ d: DrawingDimension) {
-        lock.lock(); defer { lock.unlock() }
+        lock.lock()
+        defer { lock.unlock() }
         _dimensions.append(d)
     }
 
     func appendAnnotation(_ a: DrawingAnnotation) {
-        lock.lock(); defer { lock.unlock() }
+        lock.lock()
+        defer { lock.unlock() }
         _annotations.append(a)
     }
 
     func replaceAnnotations(_ new: [DrawingAnnotation]) {
-        lock.lock(); defer { lock.unlock() }
+        lock.lock()
+        defer { lock.unlock() }
         _annotations = new
     }
 
     func clear() {
-        lock.lock(); defer { lock.unlock() }
+        lock.lock()
+        defer { lock.unlock() }
         _dimensions.removeAll()
         _annotations.removeAll()
     }

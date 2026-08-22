@@ -1,6 +1,6 @@
 import Foundation
-import simd
 import OCCTBridge
+import simd
 
 /// Support type for distance solution points.
 public enum DistanceSupportType: Int32, Sendable {
@@ -32,14 +32,18 @@ public final class ShapeDistance: @unchecked Sendable {
 
     /// Get the i-th point on shape 1 (0-based).
     public func pointOnShape1(at index: Int) -> SIMD3<Double> {
-        var x = 0.0, y = 0.0, z = 0.0
+        var x = 0.0
+        var y = 0.0
+        var z = 0.0
         OCCTDistSSPointOnShape1(ref, Int32(index + 1), &x, &y, &z)
         return SIMD3(x, y, z)
     }
 
     /// Get the i-th point on shape 2 (0-based).
     public func pointOnShape2(at index: Int) -> SIMD3<Double> {
-        var x = 0.0, y = 0.0, z = 0.0
+        var x = 0.0
+        var y = 0.0
+        var z = 0.0
         OCCTDistSSPointOnShape2(ref, Int32(index + 1), &x, &y, &z)
         return SIMD3(x, y, z)
     }

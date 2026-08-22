@@ -1,6 +1,6 @@
 import Foundation
-import simd
 import OCCTBridge
+import simd
 
 /// Unicode format for Resource_Unicode.
 public enum UnicodeFormat: Int32, Sendable {

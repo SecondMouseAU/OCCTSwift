@@ -1,6 +1,6 @@
 import Foundation
-import simd
 import OCCTBridge
+import simd
 
 /// Census of sub-shape counts in a shape.
 ///
@@ -77,7 +77,8 @@ struct ShapeContentsCore {
 /// names, which is what let the 9-argument block drift into 4 duplicated copies (PR #875 review).
 func shapeContentsCore(_ c: some ShapeContentsCFields) -> ShapeContentsCore {
     ShapeContentsCore(
-        solids: Int(c.nbSolids), shells: Int(c.nbShells), faces: Int(c.nbFaces), wires: Int(c.nbWires),
+        solids: Int(c.nbSolids), shells: Int(c.nbShells), faces: Int(c.nbFaces),
+        wires: Int(c.nbWires),
         edges: Int(c.nbEdges), vertices: Int(c.nbVertices), freeEdges: Int(c.nbFreeEdges),
         freeWires: Int(c.nbFreeWires), freeFaces: Int(c.nbFreeFaces)
     )

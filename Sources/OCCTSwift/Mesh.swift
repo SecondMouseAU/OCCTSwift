@@ -1,9 +1,9 @@
 import Foundation
-import simd
 import OCCTBridge
+import simd
 
 #if canImport(SceneKit)
-import SceneKit
+    import SceneKit
 #endif
 
 // MARK: - Mesh Parameters
@@ -288,11 +288,12 @@ public final class Mesh: @unchecked Sendable {
         var result: [SIMD3<Float>] = []
         result.reserveCapacity(count)
         for i in 0..<count {
-            result.append(SIMD3(
-                floats[i * 3],
-                floats[i * 3 + 1],
-                floats[i * 3 + 2]
-            ))
+            result.append(
+                SIMD3(
+                    floats[i * 3],
+                    floats[i * 3 + 1],
+                    floats[i * 3 + 2]
+                ))
         }
         return result
     }
@@ -313,11 +314,12 @@ public final class Mesh: @unchecked Sendable {
         var result: [SIMD3<Float>] = []
         result.reserveCapacity(count)
         for i in 0..<count {
-            result.append(SIMD3(
-                floats[i * 3],
-                floats[i * 3 + 1],
-                floats[i * 3 + 2]
-            ))
+            result.append(
+                SIMD3(
+                    floats[i * 3],
+                    floats[i * 3 + 1],
+                    floats[i * 3 + 2]
+                ))
         }
         return result
     }
@@ -436,13 +438,14 @@ public final class Mesh: @unchecked Sendable {
 
         for i in 0..<Int(written) {
             let t = cTriangles[i]
-            result.append(Triangle(
-                v1: t.v1,
-                v2: t.v2,
-                v3: t.v3,
-                faceIndex: t.faceIndex,
-                normal: SIMD3(t.nx, t.ny, t.nz)
-            ))
+            result.append(
+                Triangle(
+                    v1: t.v1,
+                    v2: t.v2,
+                    v3: t.v3,
+                    faceIndex: t.faceIndex,
+                    normal: SIMD3(t.nx, t.ny, t.nz)
+                ))
         }
 
         return result
@@ -526,80 +529,80 @@ public final class Mesh: @unchecked Sendable {
 // MARK: - SceneKit Integration
 
 #if canImport(SceneKit)
-extension Mesh {
-    /// Create a SceneKit geometry from this mesh.
-    ///
-    /// - Returns: An `SCNGeometry` suitable for use in a SceneKit scene
-    ///
-    /// The geometry includes vertex positions and normals.
-    /// Apply materials separately:
-    ///
-    /// ```swift
-    /// let geometry = mesh.sceneKitGeometry()
-    ///
-    /// let material = SCNMaterial()
-    /// material.diffuse.contents = UIColor.gray
-    /// material.metalness.contents = 0.8
-    /// geometry.materials = [material]
-    ///
-    /// let node = SCNNode(geometry: geometry)
-    /// ```
-    public func sceneKitGeometry() -> SCNGeometry {
-        let vertexData = self.vertexData
-        let normalData = self.normalData
-        let indexData = self.indices
+    extension Mesh {
+        /// Create a SceneKit geometry from this mesh.
+        ///
+        /// - Returns: An `SCNGeometry` suitable for use in a SceneKit scene
+        ///
+        /// The geometry includes vertex positions and normals.
+        /// Apply materials separately:
+        ///
+        /// ```swift
+        /// let geometry = mesh.sceneKitGeometry()
+        ///
+        /// let material = SCNMaterial()
+        /// material.diffuse.contents = UIColor.gray
+        /// material.metalness.contents = 0.8
+        /// geometry.materials = [material]
+        ///
+        /// let node = SCNNode(geometry: geometry)
+        /// ```
+        public func sceneKitGeometry() -> SCNGeometry {
+            let vertexData = self.vertexData
+            let normalData = self.normalData
+            let indexData = self.indices
 
-        guard !vertexData.isEmpty else {
-            // Return empty geometry
-            return SCNGeometry()
+            guard !vertexData.isEmpty else {
+                // Return empty geometry
+                return SCNGeometry()
+            }
+
+            // Create geometry sources
+            let vertexSource = SCNGeometrySource(
+                data: Data(bytes: vertexData, count: vertexData.count * MemoryLayout<Float>.size),
+                semantic: .vertex,
+                vectorCount: vertexCount,
+                usesFloatComponents: true,
+                componentsPerVector: 3,
+                bytesPerComponent: MemoryLayout<Float>.size,
+                dataOffset: 0,
+                dataStride: MemoryLayout<Float>.size * 3
+            )
+
+            let normalSource = SCNGeometrySource(
+                data: Data(bytes: normalData, count: normalData.count * MemoryLayout<Float>.size),
+                semantic: .normal,
+                vectorCount: vertexCount,
+                usesFloatComponents: true,
+                componentsPerVector: 3,
+                bytesPerComponent: MemoryLayout<Float>.size,
+                dataOffset: 0,
+                dataStride: MemoryLayout<Float>.size * 3
+            )
+
+            // Create geometry element (triangle indices)
+            let element = SCNGeometryElement(
+                data: Data(bytes: indexData, count: indexData.count * MemoryLayout<UInt32>.size),
+                primitiveType: .triangles,
+                primitiveCount: triangleCount,
+                bytesPerIndex: MemoryLayout<UInt32>.size
+            )
+
+            return SCNGeometry(sources: [vertexSource, normalSource], elements: [element])
         }
 
-        // Create geometry sources
-        let vertexSource = SCNGeometrySource(
-            data: Data(bytes: vertexData, count: vertexData.count * MemoryLayout<Float>.size),
-            semantic: .vertex,
-            vectorCount: vertexCount,
-            usesFloatComponents: true,
-            componentsPerVector: 3,
-            bytesPerComponent: MemoryLayout<Float>.size,
-            dataOffset: 0,
-            dataStride: MemoryLayout<Float>.size * 3
-        )
-
-        let normalSource = SCNGeometrySource(
-            data: Data(bytes: normalData, count: normalData.count * MemoryLayout<Float>.size),
-            semantic: .normal,
-            vectorCount: vertexCount,
-            usesFloatComponents: true,
-            componentsPerVector: 3,
-            bytesPerComponent: MemoryLayout<Float>.size,
-            dataOffset: 0,
-            dataStride: MemoryLayout<Float>.size * 3
-        )
-
-        // Create geometry element (triangle indices)
-        let element = SCNGeometryElement(
-            data: Data(bytes: indexData, count: indexData.count * MemoryLayout<UInt32>.size),
-            primitiveType: .triangles,
-            primitiveCount: triangleCount,
-            bytesPerIndex: MemoryLayout<UInt32>.size
-        )
-
-        return SCNGeometry(sources: [vertexSource, normalSource], elements: [element])
-    }
-
-    /// Create a SceneKit node with this mesh and optional material.
-    ///
-    /// - Parameter material: Optional material to apply
-    /// - Returns: An `SCNNode` ready to add to a scene
-    public func sceneKitNode(material: SCNMaterial? = nil) -> SCNNode {
-        let geometry = sceneKitGeometry()
-        if let material = material {
-            geometry.materials = [material]
+        /// Create a SceneKit node with this mesh and optional material.
+        ///
+        /// - Parameter material: Optional material to apply
+        /// - Returns: An `SCNNode` ready to add to a scene
+        public func sceneKitNode(material: SCNMaterial? = nil) -> SCNNode {
+            let geometry = sceneKitGeometry()
+            if let material = material {
+                geometry.materials = [material]
+            }
+            return SCNNode(geometry: geometry)
         }
-        return SCNNode(geometry: geometry)
     }
-}
 #endif
 
 // MARK: - Metal Integration
@@ -624,8 +627,10 @@ extension Mesh {
         let normalData = self.normalData
         let indexData = self.indices
 
-        let positionsData = Data(bytes: vertexData, count: vertexData.count * MemoryLayout<Float>.size)
-        let normalsData = Data(bytes: normalData, count: normalData.count * MemoryLayout<Float>.size)
+        let positionsData = Data(
+            bytes: vertexData, count: vertexData.count * MemoryLayout<Float>.size)
+        let normalsData = Data(
+            bytes: normalData, count: normalData.count * MemoryLayout<Float>.size)
         let indicesData = Data(bytes: indexData, count: indexData.count * MemoryLayout<UInt32>.size)
 
         return (positionsData, normalsData, indicesData)
@@ -635,89 +640,89 @@ extension Mesh {
 // MARK: - RealityKit Integration
 
 #if canImport(RealityKit)
-import RealityKit
+    import RealityKit
 
-@available(iOS 18.0, macOS 15.0, *)
-extension Mesh {
-    /// Create a RealityKit MeshResource from this mesh.
-    ///
-    /// Use this method to display OCCT geometry in RealityKit-based viewports.
-    ///
-    /// ## Example
-    ///
-    /// ```swift
-    /// let box = Shape.box(width: 10, height: 5, depth: 3)
-    /// let mesh = box.mesh(linearDeflection: 0.1)
-    /// let meshResource = try mesh.realityKitMeshResource()
-    ///
-    /// let material = SimpleMaterial(color: .gray, isMetallic: true)
-    /// let entity = ModelEntity(mesh: meshResource, materials: [material])
-    /// ```
-    ///
-    /// - Returns: A `MeshResource` suitable for RealityKit
-    /// - Throws: An error if mesh generation fails
-    @MainActor
-    public func realityKitMeshResource() throws -> MeshResource {
-        let verts = vertices
-        let norms = normals
-        let inds = indices
+    @available(iOS 18.0, macOS 15.0, *)
+    extension Mesh {
+        /// Create a RealityKit MeshResource from this mesh.
+        ///
+        /// Use this method to display OCCT geometry in RealityKit-based viewports.
+        ///
+        /// ## Example
+        ///
+        /// ```swift
+        /// let box = Shape.box(width: 10, height: 5, depth: 3)
+        /// let mesh = box.mesh(linearDeflection: 0.1)
+        /// let meshResource = try mesh.realityKitMeshResource()
+        ///
+        /// let material = SimpleMaterial(color: .gray, isMetallic: true)
+        /// let entity = ModelEntity(mesh: meshResource, materials: [material])
+        /// ```
+        ///
+        /// - Returns: A `MeshResource` suitable for RealityKit
+        /// - Throws: An error if mesh generation fails
+        @MainActor
+        public func realityKitMeshResource() throws -> MeshResource {
+            let verts = vertices
+            let norms = normals
+            let inds = indices
 
-        guard !verts.isEmpty else {
-            // Return empty mesh
+            guard !verts.isEmpty else {
+                // Return empty mesh
+                var descriptor = MeshDescriptor()
+                descriptor.positions = MeshBuffers.Positions([])
+                descriptor.primitives = .triangles([])
+                return try MeshResource.generate(from: [descriptor])
+            }
+
             var descriptor = MeshDescriptor()
-            descriptor.positions = MeshBuffers.Positions([])
-            descriptor.primitives = .triangles([])
+
+            // Set positions
+            descriptor.positions = MeshBuffers.Positions(verts)
+
+            // Set normals
+            descriptor.normals = MeshBuffers.Normals(norms)
+
+            // Set triangle indices
+            descriptor.primitives = .triangles(inds)
+
             return try MeshResource.generate(from: [descriptor])
         }
 
-        var descriptor = MeshDescriptor()
+        /// Create a RealityKit ModelEntity from this mesh.
+        ///
+        /// Convenience method that creates both the MeshResource and ModelEntity.
+        ///
+        /// ## Example
+        ///
+        /// ```swift
+        /// let shape = Shape.cylinder(radius: 5, height: 10)
+        /// let mesh = shape.mesh(linearDeflection: 0.05)
+        ///
+        /// let entity = try mesh.realityKitModelEntity(
+        ///     material: SimpleMaterial(color: .blue, isMetallic: true)
+        /// )
+        /// content.add(entity)
+        /// ```
+        ///
+        /// - Parameter material: The material to apply to the entity
+        /// - Returns: A `ModelEntity` ready to add to a RealityKit scene
+        /// - Throws: An error if mesh generation fails
+        @MainActor
+        public func realityKitModelEntity(material: RealityKit.Material) throws -> ModelEntity {
+            let meshResource = try realityKitMeshResource()
+            return ModelEntity(mesh: meshResource, materials: [material])
+        }
 
-        // Set positions
-        descriptor.positions = MeshBuffers.Positions(verts)
-
-        // Set normals
-        descriptor.normals = MeshBuffers.Normals(norms)
-
-        // Set triangle indices
-        descriptor.primitives = .triangles(inds)
-
-        return try MeshResource.generate(from: [descriptor])
+        /// Create a RealityKit ModelEntity with default gray metallic material.
+        ///
+        /// - Returns: A `ModelEntity` ready to add to a RealityKit scene
+        /// - Throws: An error if mesh generation fails
+        @MainActor
+        public func realityKitModelEntity() throws -> ModelEntity {
+            let material = SimpleMaterial(color: .gray, isMetallic: true)
+            return try realityKitModelEntity(material: material)
+        }
     }
-
-    /// Create a RealityKit ModelEntity from this mesh.
-    ///
-    /// Convenience method that creates both the MeshResource and ModelEntity.
-    ///
-    /// ## Example
-    ///
-    /// ```swift
-    /// let shape = Shape.cylinder(radius: 5, height: 10)
-    /// let mesh = shape.mesh(linearDeflection: 0.05)
-    ///
-    /// let entity = try mesh.realityKitModelEntity(
-    ///     material: SimpleMaterial(color: .blue, isMetallic: true)
-    /// )
-    /// content.add(entity)
-    /// ```
-    ///
-    /// - Parameter material: The material to apply to the entity
-    /// - Returns: A `ModelEntity` ready to add to a RealityKit scene
-    /// - Throws: An error if mesh generation fails
-    @MainActor
-    public func realityKitModelEntity(material: RealityKit.Material) throws -> ModelEntity {
-        let meshResource = try realityKitMeshResource()
-        return ModelEntity(mesh: meshResource, materials: [material])
-    }
-
-    /// Create a RealityKit ModelEntity with default gray metallic material.
-    ///
-    /// - Returns: A `ModelEntity` ready to add to a RealityKit scene
-    /// - Throws: An error if mesh generation fails
-    @MainActor
-    public func realityKitModelEntity() throws -> ModelEntity {
-        let material = SimpleMaterial(color: .gray, isMetallic: true)
-        return try realityKitModelEntity(material: material)
-    }
-}
 
 #endif

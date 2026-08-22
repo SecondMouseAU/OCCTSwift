@@ -1,6 +1,6 @@
 import Foundation
-import simd
 import OCCTBridge
+import simd
 
 /// Recognized canonical geometric form.
 public struct CanonicalForm: Sendable {

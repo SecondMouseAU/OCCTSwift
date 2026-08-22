@@ -1,6 +1,6 @@
 import Foundation
-import simd
 import OCCTBridge
+import simd
 
 /// A 2x2 matrix for 2D operations, wrapping gp_Mat2d.
 public enum Matrix2D {
