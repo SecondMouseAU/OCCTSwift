@@ -48,6 +48,65 @@ struct Issue999NLPlateParametersTests {
         return out
     }
 
+    /// Multiple G2 constraints that exercise the tolerance parameter in the final BSpline fitting.
+    ///
+    /// A single constraint produces a surface simple enough that the approximation is exact
+    /// regardless of tolerance; multiple constraints create a surface where the fitting tolerance
+    /// affects the result.
+    private var multiG2Constraints: [G2Constraint] {
+        [
+            (
+                uv: SIMD2(0.2, 0.2), target: SIMD3(0.2, 0.2, 1.0),
+                tangentU: SIMD3(1, 0, 0), tangentV: SIMD3(0, 1, 0),
+                curvatureUU: SIMD3(0, 0, 0.1), curvatureUV: SIMD3(0, 0, 0),
+                curvatureVV: SIMD3(0, 0, 0.1)
+            ),
+            (
+                uv: SIMD2(0.8, 0.2), target: SIMD3(0.8, 0.2, -1.0),
+                tangentU: SIMD3(1, 0, 0), tangentV: SIMD3(0, 1, 0),
+                curvatureUU: SIMD3(0, 0, -0.1), curvatureUV: SIMD3(0, 0, 0),
+                curvatureVV: SIMD3(0, 0, -0.1)
+            ),
+            (
+                uv: SIMD2(0.5, 0.8), target: SIMD3(0.5, 0.8, 2.0),
+                tangentU: SIMD3(1, 0, 0), tangentV: SIMD3(0, 1, 0),
+                curvatureUU: SIMD3(0, 0, 0.2), curvatureUV: SIMD3(0, 0, 0),
+                curvatureVV: SIMD3(0, 0, 0.2)
+            ),
+        ]
+    }
+
+    /// Multiple G3 constraints for the same reason.
+    private var multiG3Constraints:
+        [(
+            uv: SIMD2<Double>, target: SIMD3<Double>,
+            tangentU: SIMD3<Double>, tangentV: SIMD3<Double>,
+            curvatureUU: SIMD3<Double>, curvatureUV: SIMD3<Double>, curvatureVV: SIMD3<Double>,
+            d3UUU: SIMD3<Double>, d3UUV: SIMD3<Double>, d3UVV: SIMD3<Double>, d3VVV: SIMD3<Double>
+        )]
+    {
+        [
+            (
+                uv: SIMD2(0.2, 0.2), target: SIMD3(0.2, 0.2, 1.0),
+                tangentU: SIMD3(1, 0, 0), tangentV: SIMD3(0, 1, 0),
+                curvatureUU: .zero, curvatureUV: .zero, curvatureVV: .zero,
+                d3UUU: .zero, d3UUV: .zero, d3UVV: .zero, d3VVV: .zero
+            ),
+            (
+                uv: SIMD2(0.8, 0.2), target: SIMD3(0.8, 0.2, -1.0),
+                tangentU: SIMD3(1, 0, 0), tangentV: SIMD3(0, 1, 0),
+                curvatureUU: .zero, curvatureUV: .zero, curvatureVV: .zero,
+                d3UUU: .zero, d3UUV: .zero, d3UVV: .zero, d3VVV: .zero
+            ),
+            (
+                uv: SIMD2(0.5, 0.8), target: SIMD3(0.5, 0.8, 2.0),
+                tangentU: SIMD3(1, 0, 0), tangentV: SIMD3(0, 1, 0),
+                curvatureUU: .zero, curvatureUV: .zero, curvatureVV: .zero,
+                d3UUU: .zero, d3UUV: .zero, d3UVV: .zero, d3VVV: .zero
+            ),
+        ]
+    }
+
     @Test("The constraint target moves the G2 result")
     func g2ConstraintIsLive() {
         guard let plane = Surface.plane(origin: .zero, normal: SIMD3(0, 0, 1)) else {
@@ -118,5 +177,46 @@ struct Issue999NLPlateParametersTests {
         let maxDelta = zip(a, b).map { abs($0 - $1) }.max() ?? 0
         #expect(
             maxDelta > 1.0, "constraint target did not move the surface (max delta \(maxDelta))")
+    }
+
+    @Test("Varying the tolerance changes the G2 result")
+    func g2ToleranceIsLive() {
+        guard let plane = Surface.plane(origin: .zero, normal: SIMD3(0, 0, 1)) else {
+            Issue.record("plane fixture failed")
+            return
+        }
+        guard
+            let loose = plane.nlPlateDeformedG2(constraints: multiG2Constraints, tolerance: 1e-1),
+            let tight = plane.nlPlateDeformedG2(constraints: multiG2Constraints, tolerance: 1e-3)
+        else {
+            Issue.record("a G2 deformation failed")
+            return
+        }
+        let a = fingerprint(loose)
+        let b = fingerprint(tight)
+        #expect(a.count == b.count)
+        let maxDelta = zip(a, b).map { abs($0 - $1) }.max() ?? 0
+        // A looser tolerance permits a coarser approximation; the surfaces should differ.
+        // On the pinned kernel the max delta is ~2e5 between 1e-1 and 1e-3.
+        #expect(maxDelta > 1e-3, "tolerance did not change the surface (max delta \(maxDelta))")
+    }
+
+    @Test("Varying the tolerance changes the G3 result")
+    func g3ToleranceIsLive() {
+        guard let plane = Surface.plane(origin: .zero, normal: SIMD3(0, 0, 1)) else {
+            Issue.record("plane fixture failed")
+            return
+        }
+        guard
+            let loose = plane.nlPlateDeformedG3(constraints: multiG3Constraints, tolerance: 1e-1),
+            let tight = plane.nlPlateDeformedG3(constraints: multiG3Constraints, tolerance: 1e-3)
+        else {
+            Issue.record("a G3 deformation failed")
+            return
+        }
+        let a = fingerprint(loose)
+        let b = fingerprint(tight)
+        let maxDelta = zip(a, b).map { abs($0 - $1) }.max() ?? 0
+        #expect(maxDelta > 1e-3, "tolerance did not change the surface (max delta \(maxDelta))")
     }
 }
