@@ -1,6 +1,6 @@
 import Foundation
-import simd
 import OCCTBridge
+import simd
 
 /// Result of converting a curve to its analytical form.
 public struct CurveToAnalyticalResult: Sendable {

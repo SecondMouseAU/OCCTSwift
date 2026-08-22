@@ -1,6 +1,6 @@
 import Foundation
-import simd
 import OCCTBridge
+import simd
 
 // Continuity order for filling constraints is `SurfaceContinuity` (Continuity.swift); the
 // `FillingContinuity` copy this file used to declare is now a deprecated alias of it. See #398.
@@ -60,10 +60,13 @@ public final class FillingSurface: @unchecked Sendable {
     ///   - maxDegree: Maximum polynomial degree (default 8)
     ///   - maxSegments: Maximum number of segments (default 9)
     ///   - tolerance: 3D tolerance (default 1e-4)
-    public init(degree: Int = 3, pointsOnCurve: Int = 15, maxDegree: Int = 8,
-                maxSegments: Int = 9, tolerance: Double = 1e-4) {
-        self.handle = OCCTFillingCreate(Int32(degree), Int32(pointsOnCurve),
-                                         Int32(maxDegree), Int32(maxSegments), tolerance)
+    public init(
+        degree: Int = 3, pointsOnCurve: Int = 15, maxDegree: Int = 8,
+        maxSegments: Int = 9, tolerance: Double = 1e-4
+    ) {
+        self.handle = OCCTFillingCreate(
+            Int32(degree), Int32(pointsOnCurve),
+            Int32(maxDegree), Int32(maxSegments), tolerance)
     }
 
     deinit {

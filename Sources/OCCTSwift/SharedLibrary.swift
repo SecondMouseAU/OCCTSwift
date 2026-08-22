@@ -1,6 +1,6 @@
 import Foundation
-import simd
 import OCCTBridge
+import simd
 
 /// Shared library (dynamic library) handle.
 public final class SharedLibrary: @unchecked Sendable {

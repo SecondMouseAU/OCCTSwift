@@ -1,6 +1,6 @@
 import Foundation
-import simd
 import OCCTBridge
+import simd
 
 /// Edge validation result (3D curve vs curve-on-surface consistency).
 public struct ValidateEdgeResult {

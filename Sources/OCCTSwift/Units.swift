@@ -1,11 +1,12 @@
 import Foundation
-import simd
 import OCCTBridge
+import simd
 
 /// Unit conversion utilities wrapping OCCT UnitsAPI.
 public enum Units: Sendable {
     /// Convert a value between any two units (e.g., "mm" to "m", "deg" to "rad").
-    public static func convert(_ value: Double, from fromUnit: String, to toUnit: String) -> Double {
+    public static func convert(_ value: Double, from fromUnit: String, to toUnit: String) -> Double
+    {
         OCCTUnitsAnyToAny(value, fromUnit, toUnit)
     }
 

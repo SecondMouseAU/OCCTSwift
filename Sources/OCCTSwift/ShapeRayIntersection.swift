@@ -1,6 +1,6 @@
 import Foundation
-import simd
 import OCCTBridge
+import simd
 
 /// Iterator for line/curve–shape intersection results, wrapping `BRepIntCurveSurface_Inter`.
 ///
@@ -21,16 +21,22 @@ public final class ShapeRayIntersection: @unchecked Sendable {
     }
 
     /// Create intersection of a line with a shape.
-    public init?(shape: Shape, originX: Double, originY: Double, originZ: Double,
-                 dirX: Double, dirY: Double, dirZ: Double, tolerance: Double = 1e-6) {
-        guard let h = OCCTCurveSurfaceInterCreateLine(
-            shape.handle, originX, originY, originZ, dirX, dirY, dirZ, tolerance) else { return nil }
+    public init?(
+        shape: Shape, originX: Double, originY: Double, originZ: Double,
+        dirX: Double, dirY: Double, dirZ: Double, tolerance: Double = 1e-6
+    ) {
+        guard
+            let h = OCCTCurveSurfaceInterCreateLine(
+                shape.handle, originX, originY, originZ, dirX, dirY, dirZ, tolerance)
+        else { return nil }
         self.handle = h
     }
 
     /// Create intersection of a curve with a shape.
     public init?(shape: Shape, curve: Curve3D, tolerance: Double = 1e-6) {
-        guard let h = OCCTCurveSurfaceInterCreateCurve(shape.handle, curve.handle, tolerance) else { return nil }
+        guard let h = OCCTCurveSurfaceInterCreateCurve(shape.handle, curve.handle, tolerance) else {
+            return nil
+        }
         self.handle = h
     }
 

@@ -1,6 +1,6 @@
 import Foundation
-import simd
 import OCCTBridge
+import simd
 
 /// Polynomial-to-BSpline conversion utilities.
 public enum PolynomialConvert {
@@ -39,8 +39,12 @@ public enum PolynomialConvert {
                 &outPoles, &outPoleCount, &outKnots, &outKnotCount, &outDegree)
         }
         guard ok, let poles = outPoles, let knots = outKnots else { return nil }
-        defer { free(poles); free(knots) }
-        let polesArray = Array(UnsafeBufferPointer(start: poles, count: Int(outPoleCount) * dimension))
+        defer {
+            free(poles)
+            free(knots)
+        }
+        let polesArray = Array(
+            UnsafeBufferPointer(start: poles, count: Int(outPoleCount) * dimension))
         let knotsArray = Array(UnsafeBufferPointer(start: knots, count: Int(outKnotCount)))
         return PolesResult(poles: polesArray, knots: knotsArray, degree: Int(outDegree))
     }

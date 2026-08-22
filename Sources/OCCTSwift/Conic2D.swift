@@ -1,6 +1,6 @@
 import Foundation
-import simd
 import OCCTBridge
+import simd
 
 /// 2D conic section coefficient representation.
 ///
@@ -35,10 +35,14 @@ public struct Conic2D: Sendable {
         center: SIMD2<Double>, direction: SIMD2<Double>, radius: Double
     ) -> Conic2D? {
         var coeffs = [Double](repeating: 0, count: 6)
-        guard OCCTConic2dFromCircle(center.x, center.y, direction.x, direction.y,
-                                     radius, &coeffs) else { return nil }
-        return Conic2D(a: coeffs[0], b: coeffs[1], c: coeffs[2],
-                        d: coeffs[3], e: coeffs[4], f: coeffs[5])
+        guard
+            OCCTConic2dFromCircle(
+                center.x, center.y, direction.x, direction.y,
+                radius, &coeffs)
+        else { return nil }
+        return Conic2D(
+            a: coeffs[0], b: coeffs[1], c: coeffs[2],
+            d: coeffs[3], e: coeffs[4], f: coeffs[5])
     }
 
     /// The implicit conic of a 2D line, or `nil` if the direction is degenerate.
@@ -57,10 +61,14 @@ public struct Conic2D: Sendable {
         point: SIMD2<Double>, direction: SIMD2<Double>
     ) -> Conic2D? {
         var coeffs = [Double](repeating: 0, count: 6)
-        guard OCCTConic2dFromLine(point.x, point.y, direction.x, direction.y,
-                                   &coeffs) else { return nil }
-        return Conic2D(a: coeffs[0], b: coeffs[1], c: coeffs[2],
-                        d: coeffs[3], e: coeffs[4], f: coeffs[5])
+        guard
+            OCCTConic2dFromLine(
+                point.x, point.y, direction.x, direction.y,
+                &coeffs)
+        else { return nil }
+        return Conic2D(
+            a: coeffs[0], b: coeffs[1], c: coeffs[2],
+            d: coeffs[3], e: coeffs[4], f: coeffs[5])
     }
 
     /// The implicit conic of a 2D ellipse, or `nil` if the ellipse is degenerate.
@@ -84,10 +92,14 @@ public struct Conic2D: Sendable {
         majorRadius: Double, minorRadius: Double
     ) -> Conic2D? {
         var coeffs = [Double](repeating: 0, count: 6)
-        guard OCCTConic2dFromEllipse(center.x, center.y, direction.x, direction.y,
-                                      majorRadius, minorRadius, &coeffs) else { return nil }
-        return Conic2D(a: coeffs[0], b: coeffs[1], c: coeffs[2],
-                        d: coeffs[3], e: coeffs[4], f: coeffs[5])
+        guard
+            OCCTConic2dFromEllipse(
+                center.x, center.y, direction.x, direction.y,
+                majorRadius, minorRadius, &coeffs)
+        else { return nil }
+        return Conic2D(
+            a: coeffs[0], b: coeffs[1], c: coeffs[2],
+            d: coeffs[3], e: coeffs[4], f: coeffs[5])
     }
 
     /// Intersect a 2D line with a 2D circle.

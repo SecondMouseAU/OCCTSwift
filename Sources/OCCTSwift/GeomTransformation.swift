@@ -1,6 +1,6 @@
 import Foundation
-import simd
 import OCCTBridge
+import simd
 
 /// 3D geometric transformation (Handle-wrapped).
 public final class GeomTransformation: @unchecked Sendable {
@@ -26,9 +26,11 @@ public final class GeomTransformation: @unchecked Sendable {
     }
 
     /// Set rotation about an axis.
-    public func setRotation(originX: Double, originY: Double, originZ: Double,
-                            dirX: Double, dirY: Double, dirZ: Double,
-                            angle: Double) {
+    public func setRotation(
+        originX: Double, originY: Double, originZ: Double,
+        dirX: Double, dirY: Double, dirZ: Double,
+        angle: Double
+    ) {
         OCCTGeomTransformSetRotation(ref, originX, originY, originZ, dirX, dirY, dirZ, angle)
     }
 
@@ -43,8 +45,10 @@ public final class GeomTransformation: @unchecked Sendable {
     }
 
     /// Set axis mirror.
-    public func setMirrorAxis(originX: Double, originY: Double, originZ: Double,
-                              dirX: Double, dirY: Double, dirZ: Double) {
+    public func setMirrorAxis(
+        originX: Double, originY: Double, originZ: Double,
+        dirX: Double, dirY: Double, dirZ: Double
+    ) {
         OCCTGeomTransformSetMirrorAxis(ref, originX, originY, originZ, dirX, dirY, dirZ)
     }
 
@@ -60,7 +64,9 @@ public final class GeomTransformation: @unchecked Sendable {
 
     /// Transform a point and return the result.
     public func apply(x: Double, y: Double, z: Double) -> (x: Double, y: Double, z: Double) {
-        var px = x, py = y, pz = z
+        var px = x
+        var py = y
+        var pz = z
         OCCTGeomTransformApply(ref, &px, &py, &pz)
         return (px, py, pz)
     }

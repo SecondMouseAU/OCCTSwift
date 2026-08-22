@@ -40,7 +40,7 @@ public enum PaperSize: String, Sendable, Hashable, CaseIterable {
     public func size(in orientation: Orientation) -> SIMD2<Double> {
         switch orientation {
         case .landscape: return dimensions
-        case .portrait:  return SIMD2(dimensions.y, dimensions.x)
+        case .portrait: return SIMD2(dimensions.y, dimensions.x)
         }
     }
 }
@@ -52,8 +52,8 @@ public enum Orientation: String, Sendable, Hashable {
 
 /// ISO 5456-2 projection-angle convention.
 public enum ProjectionAngle: String, Sendable, Hashable {
-    case first   // ISO / Europe: top view below front view
-    case third   // ANSI / USA: top view above front view
+    case first  // ISO / Europe: top view below front view
+    case third  // ANSI / USA: top view above front view
 }
 
 // MARK: - ISO 7200 title block
@@ -66,7 +66,7 @@ public struct TitleBlock: Sendable, Hashable {
     public var creator: String?
     public var approver: String?
     public var documentType: String?
-    public var dateOfIssue: String?     // ISO 8601 recommended
+    public var dateOfIssue: String?  // ISO 8601 recommended
 
     // ISO 7200 optional fields commonly present
     public var revision: String?
@@ -76,19 +76,21 @@ public struct TitleBlock: Sendable, Hashable {
     public var weight: String?
     public var scale: String?
 
-    public init(title: String,
-                drawingNumber: String? = nil,
-                owner: String? = nil,
-                creator: String? = nil,
-                approver: String? = nil,
-                documentType: String? = nil,
-                dateOfIssue: String? = nil,
-                revision: String? = nil,
-                sheetNumber: String? = nil,
-                language: String? = nil,
-                material: String? = nil,
-                weight: String? = nil,
-                scale: String? = nil) {
+    public init(
+        title: String,
+        drawingNumber: String? = nil,
+        owner: String? = nil,
+        creator: String? = nil,
+        approver: String? = nil,
+        documentType: String? = nil,
+        dateOfIssue: String? = nil,
+        revision: String? = nil,
+        sheetNumber: String? = nil,
+        language: String? = nil,
+        material: String? = nil,
+        weight: String? = nil,
+        scale: String? = nil
+    ) {
         self.title = title
         self.drawingNumber = drawingNumber
         self.owner = owner
@@ -114,11 +116,13 @@ public struct Sheet: Sendable, Hashable {
     public var title: TitleBlock?
     public var scale: String
 
-    public init(size: PaperSize,
-                orientation: Orientation = .landscape,
-                projection: ProjectionAngle = .first,
-                title: TitleBlock? = nil,
-                scale: String = "1:1") {
+    public init(
+        size: PaperSize,
+        orientation: Orientation = .landscape,
+        projection: ProjectionAngle = .first,
+        title: TitleBlock? = nil,
+        scale: String = "1:1"
+    ) {
         self.size = size
         self.orientation = orientation
         self.projection = projection
@@ -145,8 +149,10 @@ public struct Sheet: Sendable, Hashable {
     public var innerFrame: (min: SIMD2<Double>, max: SIMD2<Double>) {
         let d = dimensions
         let ins = inset
-        return (min: SIMD2(ins.left, ins.bottom),
-                max: SIMD2(d.x - ins.right, d.y - ins.top))
+        return (
+            min: SIMD2(ins.left, ins.bottom),
+            max: SIMD2(d.x - ins.right, d.y - ins.top)
+        )
     }
 
     /// Render the border + centring marks + title block + projection symbol
@@ -155,7 +161,7 @@ public struct Sheet: Sendable, Hashable {
         let d = dimensions
         // Outer trimmed sheet edge
         let outer: [SIMD2<Double>] = [
-            SIMD2(0, 0), SIMD2(d.x, 0), SIMD2(d.x, d.y), SIMD2(0, d.y)
+            SIMD2(0, 0), SIMD2(d.x, 0), SIMD2(d.x, d.y), SIMD2(0, d.y),
         ]
         writer.addPolyline(outer, closed: true, layer: "BORDER")
 
@@ -165,7 +171,7 @@ public struct Sheet: Sendable, Hashable {
             SIMD2(frame.min.x, frame.min.y),
             SIMD2(frame.max.x, frame.min.y),
             SIMD2(frame.max.x, frame.max.y),
-            SIMD2(frame.min.x, frame.max.y)
+            SIMD2(frame.min.x, frame.max.y),
         ]
         writer.addPolyline(inner, closed: true, layer: "BORDER")
 
@@ -173,10 +179,10 @@ public struct Sheet: Sendable, Hashable {
         // ticks projecting from the outer edge inward.
         let tickLen = 5.0
         for mark in [
-            SIMD2(frame.min.x + (frame.max.x - frame.min.x) / 2, 0),      // bottom
-            SIMD2(frame.min.x + (frame.max.x - frame.min.x) / 2, d.y),    // top
-            SIMD2(0, frame.min.y + (frame.max.y - frame.min.y) / 2),      // left
-            SIMD2(d.x, frame.min.y + (frame.max.y - frame.min.y) / 2),    // right
+            SIMD2(frame.min.x + (frame.max.x - frame.min.x) / 2, 0),  // bottom
+            SIMD2(frame.min.x + (frame.max.x - frame.min.x) / 2, d.y),  // top
+            SIMD2(0, frame.min.y + (frame.max.y - frame.min.y) / 2),  // left
+            SIMD2(d.x, frame.min.y + (frame.max.y - frame.min.y) / 2),  // right
         ] {
             if mark.x == 0 {
                 writer.addLine(from: mark, to: SIMD2(tickLen, mark.y), layer: "CENTER")
@@ -199,9 +205,11 @@ public struct Sheet: Sendable, Hashable {
         ProjectionSymbol.render(projection, at: symbolOrigin, into: writer)
     }
 
-    private func renderTitleBlock(_ tb: TitleBlock,
-                                  into writer: DXFWriter,
-                                  frame: (min: SIMD2<Double>, max: SIMD2<Double>)) {
+    private func renderTitleBlock(
+        _ tb: TitleBlock,
+        into writer: DXFWriter,
+        frame: (min: SIMD2<Double>, max: SIMD2<Double>)
+    ) {
         // Simplified ISO 7200 title block: a 170x55 mm rectangle in the
         // bottom-right of the drawable frame, divided into fields.
         let tbWidth = 170.0
@@ -211,13 +219,14 @@ public struct Sheet: Sendable, Hashable {
             origin,
             SIMD2(origin.x + tbWidth, origin.y),
             SIMD2(origin.x + tbWidth, origin.y + tbHeight),
-            SIMD2(origin.x, origin.y + tbHeight)
+            SIMD2(origin.x, origin.y + tbHeight),
         ]
         writer.addPolyline(outer, closed: true, layer: "TITLE")
 
         // Field labels and values. Simplified two-column layout: labels left
         // of each row, values on the right of the row.
-        let labelH = 2.5, valueH = 3.5
+        let labelH = 2.5
+        let valueH = 3.5
         let rowH = tbHeight / 4
 
         func addField(row: Int, col: Int, label: String, value: String?) {
@@ -229,14 +238,14 @@ public struct Sheet: Sendable, Hashable {
             }
         }
 
-        addField(row: 0, col: 0, label: "TITLE",   value: tb.title)
-        addField(row: 0, col: 1, label: "DWG NO",  value: tb.drawingNumber)
-        addField(row: 1, col: 0, label: "OWNER",   value: tb.owner)
-        addField(row: 1, col: 1, label: "SCALE",   value: tb.scale ?? self.scale)
+        addField(row: 0, col: 0, label: "TITLE", value: tb.title)
+        addField(row: 0, col: 1, label: "DWG NO", value: tb.drawingNumber)
+        addField(row: 1, col: 0, label: "OWNER", value: tb.owner)
+        addField(row: 1, col: 1, label: "SCALE", value: tb.scale ?? self.scale)
         addField(row: 2, col: 0, label: "CREATED BY", value: tb.creator)
-        addField(row: 2, col: 1, label: "DATE",    value: tb.dateOfIssue)
+        addField(row: 2, col: 1, label: "DATE", value: tb.dateOfIssue)
         addField(row: 3, col: 0, label: "DOC TYPE", value: tb.documentType)
-        addField(row: 3, col: 1, label: "REV",     value: tb.revision)
+        addField(row: 3, col: 1, label: "REV", value: tb.revision)
     }
 }
 
@@ -248,9 +257,11 @@ public enum ProjectionSymbol {
     ///                     view on the right.
     /// Third-angle symbol: circle side view on the left, truncated-cone front
     ///                     view on the right.
-    public static func render(_ angle: ProjectionAngle,
-                              at origin: SIMD2<Double>,
-                              into writer: DXFWriter) {
+    public static func render(
+        _ angle: ProjectionAngle,
+        at origin: SIMD2<Double>,
+        into writer: DXFWriter
+    ) {
         // Symbol is 30mm wide, 15mm tall — two shapes separated by a gap.
         let frontFaceW = 12.0
         let frontFaceH = 10.0
@@ -259,7 +270,8 @@ public enum ProjectionSymbol {
 
         // Truncated-cone front view: rectangle with sloped edges.
         // Front face (the small disc's projection as a rectangle).
-        let coneLeft, coneRight: Double
+        let coneLeft: Double
+        let coneRight: Double
         let circleCentreX: Double
         switch angle {
         case .first:
@@ -275,19 +287,25 @@ public enum ProjectionSymbol {
         let coneBase = origin.y + (frontFaceH / 2 - 2)
         let coneTop = origin.y + (frontFaceH / 2 + 2)
         // Outer "base" circle (truncated-cone base, rendered as a tall rectangle here)
-        writer.addLine(from: SIMD2(coneLeft, coneBase),
-                       to: SIMD2(coneLeft, coneTop), layer: "TEXT")
-        writer.addLine(from: SIMD2(coneLeft, coneBase),
-                       to: SIMD2(coneRight, coneBase - 1), layer: "TEXT")
-        writer.addLine(from: SIMD2(coneLeft, coneTop),
-                       to: SIMD2(coneRight, coneTop + 1), layer: "TEXT")
-        writer.addLine(from: SIMD2(coneRight, coneBase - 1),
-                       to: SIMD2(coneRight, coneTop + 1), layer: "TEXT")
+        writer.addLine(
+            from: SIMD2(coneLeft, coneBase),
+            to: SIMD2(coneLeft, coneTop), layer: "TEXT")
+        writer.addLine(
+            from: SIMD2(coneLeft, coneBase),
+            to: SIMD2(coneRight, coneBase - 1), layer: "TEXT")
+        writer.addLine(
+            from: SIMD2(coneLeft, coneTop),
+            to: SIMD2(coneRight, coneTop + 1), layer: "TEXT")
+        writer.addLine(
+            from: SIMD2(coneRight, coneBase - 1),
+            to: SIMD2(coneRight, coneTop + 1), layer: "TEXT")
 
         // Circle side view
-        writer.addCircle(centre: SIMD2(circleCentreX, origin.y + frontFaceH / 2),
-                          radius: circleR, layer: "TEXT")
-        writer.addCircle(centre: SIMD2(circleCentreX, origin.y + frontFaceH / 2),
-                          radius: circleR * 0.4, layer: "TEXT")
+        writer.addCircle(
+            centre: SIMD2(circleCentreX, origin.y + frontFaceH / 2),
+            radius: circleR, layer: "TEXT")
+        writer.addCircle(
+            centre: SIMD2(circleCentreX, origin.y + frontFaceH / 2),
+            radius: circleR * 0.4, layer: "TEXT")
     }
 }

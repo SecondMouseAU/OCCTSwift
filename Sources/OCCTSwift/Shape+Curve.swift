@@ -1,9 +1,8 @@
 import Foundation
-import simd
 import OCCTBridge
+import simd
 
 extension Shape {
-
 
     // MARK: - Bezier Conversion
 
@@ -41,12 +40,14 @@ extension Shape {
     ) -> [Double]? {
         var outParams: UnsafeMutablePointer<Double>?
         var outCount: Int32 = 0
-        guard OCCTLocOpeCurveShapeIntersectLine(
-            handle,
-            origin.x, origin.y, origin.z,
-            direction.x, direction.y, direction.z,
-            &outParams, &outCount
-        ) else { return nil }
+        guard
+            OCCTLocOpeCurveShapeIntersectLine(
+                handle,
+                origin.x, origin.y, origin.z,
+                direction.x, direction.y, direction.z,
+                &outParams, &outCount
+            )
+        else { return nil }
         guard let params = outParams else { return [] }
         defer { free(params) }
         return Array(UnsafeBufferPointer(start: params, count: Int(outCount)))
@@ -80,11 +81,14 @@ extension Shape {
         outCount: Int32
     ) -> DeflectionResult? {
         guard let params = outParams, let pts = outPoints, outCount > 0 else { return nil }
-        defer { free(params); free(pts) }
+        defer {
+            free(params)
+            free(pts)
+        }
         var points = [SIMD3<Double>]()
         points.reserveCapacity(Int(outCount))
         for i in 0..<Int(outCount) {
-            points.append(SIMD3(pts[i*3], pts[i*3+1], pts[i*3+2]))
+            points.append(SIMD3(pts[i * 3], pts[i * 3 + 1], pts[i * 3 + 2]))
         }
         return DeflectionResult(
             parameters: Array(UnsafeBufferPointer(start: params, count: Int(outCount))),
@@ -99,27 +103,38 @@ extension Shape {
         var outCount: Int32 = 0
         guard OCCTCPntsUniformDeflection(handle, deflection, &outParams, &outPoints, &outCount)
         else { return nil }
-        return unpackDeflectionResult(outParams: outParams, outPoints: outPoints, outCount: outCount)
+        return unpackDeflectionResult(
+            outParams: outParams, outPoints: outPoints, outCount: outCount)
     }
 
     /// Discretize an edge by uniform deflection within a parameter range.
-    public func uniformDeflection(_ deflection: Double, range: ClosedRange<Double>) -> DeflectionResult? {
+    public func uniformDeflection(_ deflection: Double, range: ClosedRange<Double>)
+        -> DeflectionResult?
+    {
         var outParams: UnsafeMutablePointer<Double>?
         var outPoints: UnsafeMutablePointer<Double>?
         var outCount: Int32 = 0
-        guard OCCTCPntsUniformDeflectionRange(
-            handle, deflection,
-            range.lowerBound, range.upperBound,
-            &outParams, &outPoints, &outCount
-        ) else { return nil }
-        return unpackDeflectionResult(outParams: outParams, outPoints: outPoints, outCount: outCount)
+        guard
+            OCCTCPntsUniformDeflectionRange(
+                handle, deflection,
+                range.lowerBound, range.upperBound,
+                &outParams, &outPoints, &outCount
+            )
+        else { return nil }
+        return unpackDeflectionResult(
+            outParams: outParams, outPoints: outPoints, outCount: outCount)
     }
 
     // MARK: - Approx_CurvilinearParameter
 
     /// Reparameterize an edge curve by arc length, returning a BSpline edge
-    public func curvilinearParameter(tolerance: Double = 1e-3, maxDegree: Int = 8, maxSegments: Int = 50) -> Shape? {
-        guard let h = OCCTApproxCurvilinearParameter(handle, tolerance, Int32(maxDegree), Int32(maxSegments)) else { return nil }
+    public func curvilinearParameter(
+        tolerance: Double = 1e-3, maxDegree: Int = 8, maxSegments: Int = 50
+    ) -> Shape? {
+        guard
+            let h = OCCTApproxCurvilinearParameter(
+                handle, tolerance, Int32(maxDegree), Int32(maxSegments))
+        else { return nil }
         return Shape(handle: h)
     }
 
@@ -181,7 +196,8 @@ extension Shape {
         curvature: Double = 0.0, tolerance: Double = 1e-6,
         surfaceOrientation: Int = 0, boundaryOrientation: Int = 0
     ) -> SurfaceTransitionResult {
-        var before: Int32 = 3, after: Int32 = 3
+        var before: Int32 = 3
+        var after: Int32 = 3
         OCCTTopTransCurveTransition(
             tangent.x, tangent.y, tangent.z,
             boundaryTangent.x, boundaryTangent.y, boundaryTangent.z,
@@ -202,7 +218,8 @@ extension Shape {
         surfaceCurvature: Double, tolerance: Double = 1e-6,
         surfaceOrientation: Int = 0, boundaryOrientation: Int = 0
     ) -> SurfaceTransitionResult {
-        var before: Int32 = 3, after: Int32 = 3
+        var before: Int32 = 3
+        var after: Int32 = 3
         OCCTTopTransCurveTransitionWithCurvature(
             tangent.x, tangent.y, tangent.z,
             curveNormal.x, curveNormal.y, curveNormal.z,
@@ -294,7 +311,8 @@ extension Shape {
 
     /// Get the parameter domain of an edge curve.
     public var edgeAdaptorDomain: ClosedRange<Double> {
-        var first = 0.0, last = 0.0
+        var first = 0.0
+        var last = 0.0
         OCCTEdgeAdaptorDomain(handle, &first, &last)
         return first...last
     }
@@ -333,7 +351,9 @@ extension Shape {
     ///   bridge's `int32_t` and used to abort the process past it (#558).
     public func uniformAbscissa(pointCount: Int) -> [Double]? {
         guard let pointCount = Sampling.requested(pointCount) else { return nil }
-        return sizeAndFillUniformAbscissa { OCCTUniformAbscissaByCount(handle, Int32(pointCount), $0) }
+        return sizeAndFillUniformAbscissa {
+            OCCTUniformAbscissaByCount(handle, Int32(pointCount), $0)
+        }
     }
 
     /// Uniformly sample an edge by arc distance. Returns parameter values.

@@ -1,6 +1,6 @@
 import Foundation
-import simd
 import OCCTBridge
+import simd
 
 /// Filling pole grid result from GeomFill_Coons/Curved
 public struct FillingPoleGrid: Sendable {

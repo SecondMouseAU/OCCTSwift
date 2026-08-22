@@ -25,7 +25,8 @@ public final class LawFunction: @unchecked Sendable {
 
     /// Parameter bounds of the law function
     public var bounds: ClosedRange<Double> {
-        var first: Double = 0, last: Double = 0
+        var first: Double = 0
+        var last: Double = 0
         OCCTLawFunctionBounds(handle, &first, &last)
         return first...last
     }
@@ -33,26 +34,36 @@ public final class LawFunction: @unchecked Sendable {
     // MARK: - Factory Methods
 
     /// Create a constant law: the value is uniform over [first, last]
-    public static func constant(_ value: Double, from first: Double = 0,
-                                to last: Double = 1) -> LawFunction? {
+    public static func constant(
+        _ value: Double, from first: Double = 0,
+        to last: Double = 1
+    ) -> LawFunction? {
         guard let h = OCCTLawCreateConstant(value, first, last) else { return nil }
         return LawFunction(handle: h)
     }
 
     /// Create a linear law: value ramps from startValue to endValue
-    public static func linear(from startValue: Double, to endValue: Double,
-                              parameterRange: ClosedRange<Double> = 0...1) -> LawFunction? {
-        guard let h = OCCTLawCreateLinear(parameterRange.lowerBound, startValue,
-                                           parameterRange.upperBound, endValue)
+    public static func linear(
+        from startValue: Double, to endValue: Double,
+        parameterRange: ClosedRange<Double> = 0...1
+    ) -> LawFunction? {
+        guard
+            let h = OCCTLawCreateLinear(
+                parameterRange.lowerBound, startValue,
+                parameterRange.upperBound, endValue)
         else { return nil }
         return LawFunction(handle: h)
     }
 
     /// Create an S-curve law: smooth sigmoid transition between start and end values
-    public static func sCurve(from startValue: Double, to endValue: Double,
-                              parameterRange: ClosedRange<Double> = 0...1) -> LawFunction? {
-        guard let h = OCCTLawCreateS(parameterRange.lowerBound, startValue,
-                                      parameterRange.upperBound, endValue)
+    public static func sCurve(
+        from startValue: Double, to endValue: Double,
+        parameterRange: ClosedRange<Double> = 0...1
+    ) -> LawFunction? {
+        guard
+            let h = OCCTLawCreateS(
+                parameterRange.lowerBound, startValue,
+                parameterRange.upperBound, endValue)
         else { return nil }
         return LawFunction(handle: h)
     }
@@ -61,8 +72,10 @@ public final class LawFunction: @unchecked Sendable {
     /// - Parameters:
     ///   - points: Array of (parameter, value) tuples in ascending parameter order
     ///   - periodic: Whether the law is periodic
-    public static func interpolate(points: [(parameter: Double, value: Double)],
-                                   periodic: Bool = false) -> LawFunction? {
+    public static func interpolate(
+        points: [(parameter: Double, value: Double)],
+        periodic: Bool = false
+    ) -> LawFunction? {
         guard points.count >= 2 else { return nil }
         var flat = [Double]()
         flat.reserveCapacity(points.count * 2)
@@ -83,16 +96,19 @@ public final class LawFunction: @unchecked Sendable {
     ///   - knots: Knot values
     ///   - multiplicities: Knot multiplicities
     ///   - degree: Polynomial degree
-    public static func bspline(poles: [Double], knots: [Double],
-                               multiplicities: [Int32],
-                               degree: Int) -> LawFunction? {
+    public static func bspline(
+        poles: [Double], knots: [Double],
+        multiplicities: [Int32],
+        degree: Int
+    ) -> LawFunction? {
         guard poles.count >= 2, knots.count >= 2 else { return nil }
         let h = poles.withUnsafeBufferPointer { pPtr in
             knots.withUnsafeBufferPointer { kPtr in
                 multiplicities.withUnsafeBufferPointer { mPtr in
-                    OCCTLawCreateBSpline(pPtr.baseAddress, Int32(poles.count),
-                                         kPtr.baseAddress, Int32(knots.count),
-                                         mPtr.baseAddress, Int32(degree))
+                    OCCTLawCreateBSpline(
+                        pPtr.baseAddress, Int32(poles.count),
+                        kPtr.baseAddress, Int32(knots.count),
+                        mPtr.baseAddress, Int32(degree))
                 }
             }
         }
@@ -108,13 +124,18 @@ public final class LawFunction: @unchecked Sendable {
     ///   - laws: Array of sub-law functions in parameter order
     ///   - range: Overall parametric range
     /// - Returns: Composite law function
-    public static func composite(laws: [LawFunction],
-                                 range: ClosedRange<Double> = 0...1) -> LawFunction? {
+    public static func composite(
+        laws: [LawFunction],
+        range: ClosedRange<Double> = 0...1
+    ) -> LawFunction? {
         guard laws.count >= 1 else { return nil }
         let handles = laws.map { $0.handle as OCCTLawFunctionRef }
         return handles.withUnsafeBufferPointer { buf in
-            guard let h = OCCTLawComposite(buf.baseAddress!, Int32(laws.count),
-                range.lowerBound, range.upperBound) else { return nil as LawFunction? }
+            guard
+                let h = OCCTLawComposite(
+                    buf.baseAddress!, Int32(laws.count),
+                    range.lowerBound, range.upperBound)
+            else { return nil as LawFunction? }
             return LawFunction(handle: h)
         }
     }
@@ -147,7 +168,8 @@ public final class LawFunction: @unchecked Sendable {
         // disagreed with its sibling about how many splits the law has.
         func read(capacity: Int32) -> (count: Int32, indices: [Int32]) {
             var indices = [Int32](repeating: 0, count: Int(capacity))
-            let count = OCCTLawBSplineKnotSplitting(handle, continuityOrder.rawValue, &indices, capacity)
+            let count = OCCTLawBSplineKnotSplitting(
+                handle, continuityOrder.rawValue, &indices, capacity)
             return (count, indices)
         }
 
@@ -185,7 +207,8 @@ public final class LawFunction: @unchecked Sendable {
         // that count is always enough.
         func read(capacity: Int32) -> (count: Int32, params: [Double]) {
             var params = [Double](repeating: 0, count: Int(capacity))
-            let count = OCCTLawBSplineKnotSplitParams(handle, continuityOrder.rawValue, &params, capacity)
+            let count = OCCTLawBSplineKnotSplitParams(
+                handle, continuityOrder.rawValue, &params, capacity)
             return (count, params)
         }
 
@@ -201,12 +224,15 @@ public final class LawFunction: @unchecked Sendable {
 
 extension LawFunction {
     /// Create an interpolated law function from values.
-    public static func interpolated(values: [Double], parameters: [Double]? = nil, periodic: Bool = false) -> LawFunction? {
+    public static func interpolated(
+        values: [Double], parameters: [Double]? = nil, periodic: Bool = false
+    ) -> LawFunction? {
         let ref: OCCTLawFunctionRef?
         if let params = parameters {
             ref = params.withUnsafeBufferPointer { paramBuf in
                 values.withUnsafeBufferPointer { valBuf in
-                    OCCTLawInterpolate(valBuf.baseAddress!, Int32(values.count), paramBuf.baseAddress!, periodic)
+                    OCCTLawInterpolate(
+                        valBuf.baseAddress!, Int32(values.count), paramBuf.baseAddress!, periodic)
                 }
             }
         } else {

@@ -38,14 +38,17 @@ public final class WireCurve: ArcLengthCurveAdaptor, @unchecked Sendable {
     /// The native parameter range `[first, last]` (not arc length, use the
     /// `atAbscissa:` methods for arc-length sampling).
     public var parameterRange: (first: Double, last: Double) {
-        var first = 0.0, last = 0.0
+        var first = 0.0
+        var last = 0.0
         OCCTCompCurveParamRange(ref, &first, &last)
         return (first, last)
     }
 
     /// Point at a native curve parameter `u` (within ``parameterRange``).
     public func point(atParameter u: Double) -> SIMD3<Double>? {
-        var x = 0.0, y = 0.0, z = 0.0
+        var x = 0.0
+        var y = 0.0
+        var z = 0.0
         guard OCCTCompCurvePointAtParam(ref, u, &x, &y, &z) else { return nil }
         return SIMD3(x, y, z)
     }
@@ -53,7 +56,9 @@ public final class WireCurve: ArcLengthCurveAdaptor, @unchecked Sendable {
     /// Unit tangent (first derivative, normalized) at a native parameter `u`.
     /// `nil` at a degenerate point (e.g. a cusp where the derivative vanishes).
     public func tangent(atParameter u: Double) -> SIMD3<Double>? {
-        var x = 0.0, y = 0.0, z = 0.0
+        var x = 0.0
+        var y = 0.0
+        var z = 0.0
         guard OCCTCompCurveTangentAtParam(ref, u, &x, &y, &z) else { return nil }
         return SIMD3(x, y, z)
     }

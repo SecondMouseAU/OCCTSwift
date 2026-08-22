@@ -1,6 +1,6 @@
 import Foundation
-import simd
 import OCCTBridge
+import simd
 
 /// Mass and geometric properties of a shape
 public struct ShapeProperties: Sendable, Equatable {

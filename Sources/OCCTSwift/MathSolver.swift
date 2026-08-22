@@ -1,6 +1,6 @@
 import Foundation
-import simd
 import OCCTBridge
+import simd
 
 /// Numerical solver infrastructure using OCCT's math library.
 /// Bridges Swift closures to OCCT's abstract C++ function classes via C callback adapters.
@@ -33,11 +33,15 @@ public enum MathSolver {
     ) -> Double? {
         let box = ClosureBox(function)
         let ptr = Unmanaged.passRetained(box).toOpaque()
-        defer { Unmanaged<ClosureBox<(Double) -> (value: Double, derivative: Double)>>.fromOpaque(ptr).release() }
+        defer {
+            Unmanaged<ClosureBox<(Double) -> (value: Double, derivative: Double)>>.fromOpaque(ptr)
+                .release()
+        }
 
         let callback: OCCTMathFuncDerivCallback = { x, value, derivative, context in
             guard let ctx = context else { return false }
-            let box = Unmanaged<ClosureBox<(Double) -> (value: Double, derivative: Double)>>.fromOpaque(ctx).takeUnretainedValue()
+            let box = Unmanaged<ClosureBox<(Double) -> (value: Double, derivative: Double)>>
+                .fromOpaque(ctx).takeUnretainedValue()
             let result = box.closure(x)
             value.pointee = result.value
             derivative.pointee = result.derivative
@@ -45,7 +49,8 @@ public enum MathSolver {
         }
 
         var isDone = false
-        let result = OCCTMathFunctionRoot(callback, ptr, guess, tolerance, Int32(maxIterations), &isDone)
+        let result = OCCTMathFunctionRoot(
+            callback, ptr, guess, tolerance, Int32(maxIterations), &isDone)
         return isDone ? result : nil
     }
 
@@ -59,11 +64,15 @@ public enum MathSolver {
     ) -> Double? {
         let box = ClosureBox(function)
         let ptr = Unmanaged.passRetained(box).toOpaque()
-        defer { Unmanaged<ClosureBox<(Double) -> (value: Double, derivative: Double)>>.fromOpaque(ptr).release() }
+        defer {
+            Unmanaged<ClosureBox<(Double) -> (value: Double, derivative: Double)>>.fromOpaque(ptr)
+                .release()
+        }
 
         let callback: OCCTMathFuncDerivCallback = { x, value, derivative, context in
             guard let ctx = context else { return false }
-            let box = Unmanaged<ClosureBox<(Double) -> (value: Double, derivative: Double)>>.fromOpaque(ctx).takeUnretainedValue()
+            let box = Unmanaged<ClosureBox<(Double) -> (value: Double, derivative: Double)>>
+                .fromOpaque(ctx).takeUnretainedValue()
             let result = box.closure(x)
             value.pointee = result.value
             derivative.pointee = result.derivative
@@ -71,8 +80,9 @@ public enum MathSolver {
         }
 
         var isDone = false
-        let result = OCCTMathFunctionRootBounded(callback, ptr, guess, tolerance,
-                                                   range.lowerBound, range.upperBound, Int32(maxIterations), &isDone)
+        let result = OCCTMathFunctionRootBounded(
+            callback, ptr, guess, tolerance,
+            range.lowerBound, range.upperBound, Int32(maxIterations), &isDone)
         return isDone ? result : nil
     }
 
@@ -85,11 +95,15 @@ public enum MathSolver {
     ) -> Double? {
         let box = ClosureBox(function)
         let ptr = Unmanaged.passRetained(box).toOpaque()
-        defer { Unmanaged<ClosureBox<(Double) -> (value: Double, derivative: Double)>>.fromOpaque(ptr).release() }
+        defer {
+            Unmanaged<ClosureBox<(Double) -> (value: Double, derivative: Double)>>.fromOpaque(ptr)
+                .release()
+        }
 
         let callback: OCCTMathFuncDerivCallback = { x, value, derivative, context in
             guard let ctx = context else { return false }
-            let box = Unmanaged<ClosureBox<(Double) -> (value: Double, derivative: Double)>>.fromOpaque(ctx).takeUnretainedValue()
+            let box = Unmanaged<ClosureBox<(Double) -> (value: Double, derivative: Double)>>
+                .fromOpaque(ctx).takeUnretainedValue()
             let result = box.closure(x)
             value.pointee = result.value
             derivative.pointee = result.derivative
@@ -97,8 +111,9 @@ public enum MathSolver {
         }
 
         var isDone = false
-        let result = OCCTMathBissecNewton(callback, ptr,
-                                            range.lowerBound, range.upperBound, tolerance, Int32(maxIterations), &isDone)
+        let result = OCCTMathBissecNewton(
+            callback, ptr,
+            range.lowerBound, range.upperBound, tolerance, Int32(maxIterations), &isDone)
         return isDone ? result : nil
     }
 
@@ -145,7 +160,9 @@ public enum MathSolver {
         values: @escaping ([Double]) -> [Double],
         jacobian: @escaping ([Double]) -> [Double]
     ) -> [Double]? {
-        guard MathDimension.valid(variables, matches: startPoint.count), equations > 0 else { return nil }
+        guard MathDimension.valid(variables, matches: startPoint.count), equations > 0 else {
+            return nil
+        }
         typealias ValuesClosure = ([Double]) -> [Double]
         typealias JacobianClosure = ([Double]) -> [Double]
         let valBox = ClosureBox(values)
@@ -153,11 +170,16 @@ public enum MathSolver {
         // Pack both closures into one context
         let pair = ClosureBox((valBox, jacBox))
         let ptr = Unmanaged.passRetained(pair).toOpaque()
-        defer { Unmanaged<ClosureBox<(ClosureBox<ValuesClosure>, ClosureBox<JacobianClosure>)>>.fromOpaque(ptr).release() }
+        defer {
+            Unmanaged<ClosureBox<(ClosureBox<ValuesClosure>, ClosureBox<JacobianClosure>)>>
+                .fromOpaque(ptr).release()
+        }
 
         let valCallback: OCCTMathFuncSetCallback = { x, nVars, vals, nEqs, context in
             guard let ctx = context else { return false }
-            let pair = Unmanaged<ClosureBox<(ClosureBox<ValuesClosure>, ClosureBox<JacobianClosure>)>>.fromOpaque(ctx).takeUnretainedValue()
+            let pair = Unmanaged<
+                ClosureBox<(ClosureBox<ValuesClosure>, ClosureBox<JacobianClosure>)>
+            >.fromOpaque(ctx).takeUnretainedValue()
             let n = Int(nVars)
             var input = [Double](repeating: 0, count: n)
             for i in 0..<n { input[i] = x[i] }
@@ -170,7 +192,9 @@ public enum MathSolver {
 
         let derivCallback: OCCTMathFuncSetDerivCallback = { x, nVars, jac, nEqs, context in
             guard let ctx = context else { return false }
-            let pair = Unmanaged<ClosureBox<(ClosureBox<ValuesClosure>, ClosureBox<JacobianClosure>)>>.fromOpaque(ctx).takeUnretainedValue()
+            let pair = Unmanaged<
+                ClosureBox<(ClosureBox<ValuesClosure>, ClosureBox<JacobianClosure>)>
+            >.fromOpaque(ctx).takeUnretainedValue()
             let n = Int(nVars)
             var input = [Double](repeating: 0, count: n)
             for i in 0..<n { input[i] = x[i] }
@@ -182,9 +206,10 @@ public enum MathSolver {
         }
 
         var result = [Double](repeating: 0, count: variables)
-        let ok = OCCTMathFunctionSetRoot(Int32(variables), Int32(equations),
-                                          valCallback, derivCallback, ptr,
-                                          startPoint, tolerance, Int32(maxIterations), &result)
+        let ok = OCCTMathFunctionSetRoot(
+            Int32(variables), Int32(equations),
+            valCallback, derivCallback, ptr,
+            startPoint, tolerance, Int32(maxIterations), &result)
         return ok ? result : nil
     }
 
@@ -242,8 +267,9 @@ public enum MathSolver {
 
         var result = [Double](repeating: 0, count: variables)
         var minimum = 0.0
-        let ok = OCCTMathBFGS(Int32(variables), callback, ptr,
-                                startPoint, tolerance, Int32(maxIterations), &result, &minimum)
+        let ok = OCCTMathBFGS(
+            Int32(variables), callback, ptr,
+            startPoint, tolerance, Int32(maxIterations), &result, &minimum)
         return ok ? (result, minimum) : nil
     }
 
@@ -291,8 +317,9 @@ public enum MathSolver {
 
         var result = [Double](repeating: 0, count: variables)
         var minimum = 0.0
-        let ok = OCCTMathPowell(Int32(variables), callback, ptr,
-                                  startPoint, tolerance, Int32(maxIterations), &result, &minimum)
+        let ok = OCCTMathPowell(
+            Int32(variables), callback, ptr,
+            startPoint, tolerance, Int32(maxIterations), &result, &minimum)
         return ok ? (result, minimum) : nil
     }
 
@@ -317,19 +344,25 @@ public enum MathSolver {
     ) -> (location: Double, minimum: Double)? {
         let box = ClosureBox(function)
         let ptr = Unmanaged.passRetained(box).toOpaque()
-        defer { Unmanaged<ClosureBox<(Double) -> (value: Double, derivative: Double)>>.fromOpaque(ptr).release() }
+        defer {
+            Unmanaged<ClosureBox<(Double) -> (value: Double, derivative: Double)>>.fromOpaque(ptr)
+                .release()
+        }
 
         let callback: OCCTMathFuncDerivCallback = { x, value, derivative, context in
             guard let ctx = context else { return false }
-            let box = Unmanaged<ClosureBox<(Double) -> (value: Double, derivative: Double)>>.fromOpaque(ctx).takeUnretainedValue()
+            let box = Unmanaged<ClosureBox<(Double) -> (value: Double, derivative: Double)>>
+                .fromOpaque(ctx).takeUnretainedValue()
             let result = box.closure(x)
             value.pointee = result.value
             derivative.pointee = result.derivative
             return true
         }
 
-        var location = 0.0, minimum = 0.0
-        let ok = OCCTMathBrentMinimum(callback, ptr, ax, bx, cx, tolerance, Int32(maxIterations), &location, &minimum)
+        var location = 0.0
+        var minimum = 0.0
+        let ok = OCCTMathBrentMinimum(
+            callback, ptr, ax, bx, cx, tolerance, Int32(maxIterations), &location, &minimum)
         return ok ? (location, minimum) : nil
     }
 
@@ -385,9 +418,10 @@ public enum MathSolver {
 
         var result = [Double](repeating: 0, count: variables)
         var minimum = 0.0
-        let ok = OCCTMathPSO(Int32(variables), callback, ptr,
-                               lower, upper, steps,
-                               Int32(particles), Int32(iterations), &result, &minimum)
+        let ok = OCCTMathPSO(
+            Int32(variables), callback, ptr,
+            lower, upper, steps,
+            Int32(particles), Int32(iterations), &result, &minimum)
         return ok ? (result, minimum) : nil
     }
 
@@ -433,7 +467,8 @@ public enum MathSolver {
 
         var result = [Double](repeating: 0, count: variables)
         var minimum = 0.0
-        let ok = OCCTMathGlobOptMin(Int32(variables), callback, ptr, lower, upper, &result, &minimum)
+        let ok = OCCTMathGlobOptMin(
+            Int32(variables), callback, ptr, lower, upper, &result, &minimum)
         return ok ? (result, minimum) : nil
     }
 
@@ -466,11 +501,15 @@ public enum MathSolver {
         guard let samples = Sampling.requested(samples, atLeast: 1) else { return [] }
         let box = ClosureBox(function)
         let ptr = Unmanaged.passRetained(box).toOpaque()
-        defer { Unmanaged<ClosureBox<(Double) -> (value: Double, derivative: Double)>>.fromOpaque(ptr).release() }
+        defer {
+            Unmanaged<ClosureBox<(Double) -> (value: Double, derivative: Double)>>.fromOpaque(ptr)
+                .release()
+        }
 
         let callback: OCCTMathFuncDerivCallback = { x, value, derivative, context in
             guard let ctx = context else { return false }
-            let box = Unmanaged<ClosureBox<(Double) -> (value: Double, derivative: Double)>>.fromOpaque(ctx).takeUnretainedValue()
+            let box = Unmanaged<ClosureBox<(Double) -> (value: Double, derivative: Double)>>
+                .fromOpaque(ctx).takeUnretainedValue()
             let result = box.closure(x)
             value.pointee = result.value
             derivative.pointee = result.derivative
@@ -478,8 +517,9 @@ public enum MathSolver {
         }
 
         var roots = [Double](repeating: 0, count: 100)
-        let n = OCCTMathFunctionRoots(callback, ptr, range.lowerBound, range.upperBound,
-                                        Int32(samples), &roots, 100)
+        let n = OCCTMathFunctionRoots(
+            callback, ptr, range.lowerBound, range.upperBound,
+            Int32(samples), &roots, 100)
         return Array(roots.prefix(Int(n)))
     }
 
@@ -546,18 +586,25 @@ public enum MathSolver {
         values: @escaping ([Double]) -> [Double],
         jacobian: @escaping ([Double]) -> [Double]
     ) -> [Double]? {
-        guard MathDimension.valid(variables, matches: startPoint.count), equations > 0 else { return nil }
+        guard MathDimension.valid(variables, matches: startPoint.count), equations > 0 else {
+            return nil
+        }
         typealias ValuesClosure = ([Double]) -> [Double]
         typealias JacobianClosure = ([Double]) -> [Double]
         let valBox = ClosureBox(values)
         let jacBox = ClosureBox(jacobian)
         let pair = ClosureBox((valBox, jacBox))
         let ptr = Unmanaged.passRetained(pair).toOpaque()
-        defer { Unmanaged<ClosureBox<(ClosureBox<ValuesClosure>, ClosureBox<JacobianClosure>)>>.fromOpaque(ptr).release() }
+        defer {
+            Unmanaged<ClosureBox<(ClosureBox<ValuesClosure>, ClosureBox<JacobianClosure>)>>
+                .fromOpaque(ptr).release()
+        }
 
         let valCallback: OCCTMathFuncSetCallback = { x, nVars, vals, nEqs, context in
             guard let ctx = context else { return false }
-            let pair = Unmanaged<ClosureBox<(ClosureBox<ValuesClosure>, ClosureBox<JacobianClosure>)>>.fromOpaque(ctx).takeUnretainedValue()
+            let pair = Unmanaged<
+                ClosureBox<(ClosureBox<ValuesClosure>, ClosureBox<JacobianClosure>)>
+            >.fromOpaque(ctx).takeUnretainedValue()
             let n = Int(nVars)
             var input = [Double](repeating: 0, count: n)
             for i in 0..<n { input[i] = x[i] }
@@ -570,7 +617,9 @@ public enum MathSolver {
 
         let derivCallback: OCCTMathFuncSetDerivCallback = { x, nVars, jac, nEqs, context in
             guard let ctx = context else { return false }
-            let pair = Unmanaged<ClosureBox<(ClosureBox<ValuesClosure>, ClosureBox<JacobianClosure>)>>.fromOpaque(ctx).takeUnretainedValue()
+            let pair = Unmanaged<
+                ClosureBox<(ClosureBox<ValuesClosure>, ClosureBox<JacobianClosure>)>
+            >.fromOpaque(ctx).takeUnretainedValue()
             let n = Int(nVars)
             var input = [Double](repeating: 0, count: n)
             for i in 0..<n { input[i] = x[i] }
@@ -582,9 +631,10 @@ public enum MathSolver {
         }
 
         var result = [Double](repeating: 0, count: variables)
-        let ok = OCCTMathNewtonFuncSetRoot(Int32(variables), Int32(equations),
-                                             valCallback, derivCallback, ptr,
-                                             startPoint, tolerance, Int32(maxIterations), &result)
+        let ok = OCCTMathNewtonFuncSetRoot(
+            Int32(variables), Int32(equations),
+            valCallback, derivCallback, ptr,
+            startPoint, tolerance, Int32(maxIterations), &result)
         return ok ? result : nil
     }
 }
@@ -617,7 +667,10 @@ extension MathSolver {
     ) -> (point: [Double], minimum: Double)? {
         guard MathDimension.valid(n, matches: startPoint.count) else { return nil }
         typealias Closure = ([Double]) -> (value: Double, gradient: [Double], hessian: [Double])
-        class Box { let fn: Closure; init(_ f: @escaping Closure) { fn = f } }
+        class Box {
+            let fn: Closure
+            init(_ f: @escaping Closure) { fn = f }
+        }
         let box = Box(function)
         let ptr = Unmanaged.passRetained(box).toOpaque()
         defer { Unmanaged<Box>.fromOpaque(ptr).release() }
@@ -631,15 +684,16 @@ extension MathSolver {
             guard result.gradient.count == n, result.hessian.count == n * n else { return false }
             value.pointee = result.value
             for i in 0..<n { gradient[i] = result.gradient[i] }
-            for i in 0..<(n*n) { hessian[i] = result.hessian[i] }
+            for i in 0..<(n * n) { hessian[i] = result.hessian[i] }
             return true
         }
 
         var result = [Double](repeating: 0, count: n)
         var minimum = 0.0
-        let ok = OCCTMathNewtonMinimum(Int32(n), callback, ptr,
-                                        startPoint, tolerance, Int32(maxIterations),
-                                        &result, &minimum)
+        let ok = OCCTMathNewtonMinimum(
+            Int32(n), callback, ptr,
+            startPoint, tolerance, Int32(maxIterations),
+            &result, &minimum)
         return ok ? (result, minimum) : nil
     }
 }
@@ -650,10 +704,14 @@ extension MathSolver {
     public static func quaternionSlerp(
         from q1: SIMD4<Double>, to q2: SIMD4<Double>, t: Double
     ) -> SIMD4<Double> {
-        var rx = 0.0, ry = 0.0, rz = 0.0, rw = 0.0
-        OCCTQuaternionSLerp(q1.x, q1.y, q1.z, q1.w,
-                            q2.x, q2.y, q2.z, q2.w,
-                            t, &rx, &ry, &rz, &rw)
+        var rx = 0.0
+        var ry = 0.0
+        var rz = 0.0
+        var rw = 0.0
+        OCCTQuaternionSLerp(
+            q1.x, q1.y, q1.z, q1.w,
+            q2.x, q2.y, q2.z, q2.w,
+            t, &rx, &ry, &rz, &rw)
         return SIMD4(rx, ry, rz, rw)
     }
 
@@ -661,10 +719,14 @@ extension MathSolver {
     public static func quaternionNlerp(
         from q1: SIMD4<Double>, to q2: SIMD4<Double>, t: Double
     ) -> SIMD4<Double> {
-        var rx = 0.0, ry = 0.0, rz = 0.0, rw = 0.0
-        OCCTQuaternionNLerp(q1.x, q1.y, q1.z, q1.w,
-                            q2.x, q2.y, q2.z, q2.w,
-                            t, &rx, &ry, &rz, &rw)
+        var rx = 0.0
+        var ry = 0.0
+        var rz = 0.0
+        var rw = 0.0
+        OCCTQuaternionNLerp(
+            q1.x, q1.y, q1.z, q1.w,
+            q2.x, q2.y, q2.z, q2.w,
+            t, &rx, &ry, &rz, &rw)
         return SIMD4(rx, ry, rz, rw)
     }
 
@@ -674,13 +736,19 @@ extension MathSolver {
         to: (translation: SIMD3<Double>, quaternion: SIMD4<Double>),
         t: Double
     ) -> (translation: SIMD3<Double>, quaternion: SIMD4<Double>) {
-        var rtx = 0.0, rty = 0.0, rtz = 0.0
-        var rqx = 0.0, rqy = 0.0, rqz = 0.0, rqw = 0.0
-        OCCTTrsfInterpolate(from.translation.x, from.translation.y, from.translation.z,
-                            from.quaternion.x, from.quaternion.y, from.quaternion.z, from.quaternion.w,
-                            to.translation.x, to.translation.y, to.translation.z,
-                            to.quaternion.x, to.quaternion.y, to.quaternion.z, to.quaternion.w,
-                            t, &rtx, &rty, &rtz, &rqx, &rqy, &rqz, &rqw)
+        var rtx = 0.0
+        var rty = 0.0
+        var rtz = 0.0
+        var rqx = 0.0
+        var rqy = 0.0
+        var rqz = 0.0
+        var rqw = 0.0
+        OCCTTrsfInterpolate(
+            from.translation.x, from.translation.y, from.translation.z,
+            from.quaternion.x, from.quaternion.y, from.quaternion.z, from.quaternion.w,
+            to.translation.x, to.translation.y, to.translation.z,
+            to.quaternion.x, to.quaternion.y, to.quaternion.z, to.quaternion.w,
+            t, &rtx, &rty, &rtz, &rqx, &rqy, &rqz, &rqw)
         return (SIMD3(rtx, rty, rtz), SIMD4(rqx, rqy, rqz, rqw))
     }
 }
@@ -696,11 +764,15 @@ extension MathSolver {
     ) -> (root: Double, iterations: Int)? {
         let box = ClosureBox(function)
         let ptr = Unmanaged.passRetained(box).toOpaque()
-        defer { Unmanaged<ClosureBox<(Double) -> (value: Double, derivative: Double)>>.fromOpaque(ptr).release() }
+        defer {
+            Unmanaged<ClosureBox<(Double) -> (value: Double, derivative: Double)>>.fromOpaque(ptr)
+                .release()
+        }
 
         let callback: OCCTMathFuncDerivCallback = { x, value, derivative, context in
             guard let ctx = context else { return false }
-            let box = Unmanaged<ClosureBox<(Double) -> (value: Double, derivative: Double)>>.fromOpaque(ctx).takeUnretainedValue()
+            let box = Unmanaged<ClosureBox<(Double) -> (value: Double, derivative: Double)>>
+                .fromOpaque(ctx).takeUnretainedValue()
             let result = box.closure(x)
             value.pointee = result.value
             derivative.pointee = result.derivative
@@ -709,8 +781,9 @@ extension MathSolver {
 
         var isDone = false
         var nbIter: Int32 = 0
-        let result = OCCTMathBracketedRoot(callback, ptr, range.lowerBound, range.upperBound,
-                                           tolerance, Int32(maxIterations), &isDone, &nbIter)
+        let result = OCCTMathBracketedRoot(
+            callback, ptr, range.lowerBound, range.upperBound,
+            tolerance, Int32(maxIterations), &isDone, &nbIter)
         return isDone ? (result, Int(nbIter)) : nil
     }
 
@@ -725,14 +798,21 @@ extension MathSolver {
 
         let callback: OCCTMathSimpleFuncCallback = { x, value, context in
             guard let ctx = context else { return false }
-            let box = Unmanaged<ClosureBox<(Double) -> Double>>.fromOpaque(ctx).takeUnretainedValue()
+            let box = Unmanaged<ClosureBox<(Double) -> Double>>.fromOpaque(ctx)
+                .takeUnretainedValue()
             value.pointee = box.closure(x)
             return true
         }
 
-        var ra = 0.0, rb = 0.0, rc = 0.0
-        var fa = 0.0, fb = 0.0, fc = 0.0
-        guard OCCTMathBracketMinimum(callback, ptr, a, b, &ra, &rb, &rc, &fa, &fb, &fc) else { return nil }
+        var ra = 0.0
+        var rb = 0.0
+        var rc = 0.0
+        var fa = 0.0
+        var fb = 0.0
+        var fc = 0.0
+        guard OCCTMathBracketMinimum(callback, ptr, a, b, &ra, &rb, &rc, &fa, &fb, &fc) else {
+            return nil
+        }
         return (ra, rb, rc, fa, fb, fc)
     }
 
@@ -758,11 +838,15 @@ extension MathSolver {
         let nVars = startPoint.count
         let box = ClosureBox(function)
         let ptr = Unmanaged.passRetained(box).toOpaque()
-        defer { Unmanaged<ClosureBox<([Double]) -> (value: Double, gradient: [Double])>>.fromOpaque(ptr).release() }
+        defer {
+            Unmanaged<ClosureBox<([Double]) -> (value: Double, gradient: [Double])>>.fromOpaque(ptr)
+                .release()
+        }
 
         let callback: OCCTMathMultiVarGradCallback = { x, n, value, gradient, context in
             guard let ctx = context else { return false }
-            let box = Unmanaged<ClosureBox<([Double]) -> (value: Double, gradient: [Double])>>.fromOpaque(ctx).takeUnretainedValue()
+            let box = Unmanaged<ClosureBox<([Double]) -> (value: Double, gradient: [Double])>>
+                .fromOpaque(ctx).takeUnretainedValue()
             let input = Array(UnsafeBufferPointer(start: x, count: Int(n)))
             let result = box.closure(input)
             guard result.gradient.count == Int(n) else { return false }
@@ -774,8 +858,11 @@ extension MathSolver {
         var result = [Double](repeating: 0, count: nVars)
         var minimum = 0.0
         var nbIter: Int32 = 0
-        guard OCCTMathFRPR(Int32(nVars), callback, ptr, startPoint, tolerance,
-                           Int32(maxIterations), &result, &minimum, &nbIter) else { return nil }
+        guard
+            OCCTMathFRPR(
+                Int32(nVars), callback, ptr, startPoint, tolerance,
+                Int32(maxIterations), &result, &minimum, &nbIter)
+        else { return nil }
         return (result, minimum, Int(nbIter))
     }
 
@@ -801,11 +888,15 @@ extension MathSolver {
         guard let samples = Sampling.requested(samples, atLeast: 1) else { return [] }
         let box = ClosureBox(function)
         let ptr = Unmanaged.passRetained(box).toOpaque()
-        defer { Unmanaged<ClosureBox<(Double) -> (value: Double, derivative: Double)>>.fromOpaque(ptr).release() }
+        defer {
+            Unmanaged<ClosureBox<(Double) -> (value: Double, derivative: Double)>>.fromOpaque(ptr)
+                .release()
+        }
 
         let callback: OCCTMathFuncDerivCallback = { x, value, derivative, context in
             guard let ctx = context else { return false }
-            let box = Unmanaged<ClosureBox<(Double) -> (value: Double, derivative: Double)>>.fromOpaque(ctx).takeUnretainedValue()
+            let box = Unmanaged<ClosureBox<(Double) -> (value: Double, derivative: Double)>>
+                .fromOpaque(ctx).takeUnretainedValue()
             let result = box.closure(x)
             value.pointee = result.value
             derivative.pointee = result.derivative
@@ -813,8 +904,9 @@ extension MathSolver {
         }
 
         var roots = [Double](repeating: 0, count: 1000)
-        let n = OCCTMathFunctionAllRoots(callback, ptr, range.lowerBound, range.upperBound,
-                                         Int32(samples), epsX, epsF, epsNul, &roots, 1000)
+        let n = OCCTMathFunctionAllRoots(
+            callback, ptr, range.lowerBound, range.upperBound,
+            Int32(samples), epsX, epsF, epsNul, &roots, 1000)
         return Array(roots.prefix(Int(n)))
     }
 
@@ -839,9 +931,12 @@ extension MathSolver {
         rhs: [Double]
     ) -> [Double]? {
         guard MathDimension.validRectangle(rows: rows, cols: cols, count: matrix.count),
-              rhs.count == rows else { return nil }
+            rhs.count == rows
+        else { return nil }
         var x = [Double](repeating: 0, count: cols)
-        guard OCCTMathGaussLeastSquare(matrix, Int32(rows), Int32(cols), rhs, &x) else { return nil }
+        guard OCCTMathGaussLeastSquare(matrix, Int32(rows), Int32(cols), rhs, &x) else {
+            return nil
+        }
         return x
     }
 
@@ -855,11 +950,15 @@ extension MathSolver {
     ) -> (root: Double, derivative: Double, iterations: Int)? {
         let box = ClosureBox(function)
         let ptr = Unmanaged.passRetained(box).toOpaque()
-        defer { Unmanaged<ClosureBox<(Double) -> (value: Double, derivative: Double)>>.fromOpaque(ptr).release() }
+        defer {
+            Unmanaged<ClosureBox<(Double) -> (value: Double, derivative: Double)>>.fromOpaque(ptr)
+                .release()
+        }
 
         let callback: OCCTMathFuncDerivCallback = { x, value, derivative, context in
             guard let ctx = context else { return false }
-            let box = Unmanaged<ClosureBox<(Double) -> (value: Double, derivative: Double)>>.fromOpaque(ctx).takeUnretainedValue()
+            let box = Unmanaged<ClosureBox<(Double) -> (value: Double, derivative: Double)>>
+                .fromOpaque(ctx).takeUnretainedValue()
             let result = box.closure(x)
             value.pointee = result.value
             derivative.pointee = result.derivative
@@ -869,8 +968,9 @@ extension MathSolver {
         var isDone = false
         var deriv = 0.0
         var nbIter: Int32 = 0
-        let root = OCCTMathNewtonFunctionRoot(callback, ptr, guess, epsX, epsF,
-                                              Int32(maxIterations), &isDone, &deriv, &nbIter)
+        let root = OCCTMathNewtonFunctionRoot(
+            callback, ptr, guess, epsX, epsF,
+            Int32(maxIterations), &isDone, &deriv, &nbIter)
         return isDone ? (root, deriv, Int(nbIter)) : nil
     }
 
@@ -896,15 +996,20 @@ extension MathSolver {
         epsLix: Double = 1e-6, epsLic: Double = 1e-6,
         maxIterations: Int = 500
     ) -> (result: [Double], iterations: Int)? {
-        guard MathDimension.validRectangle(rows: nConstraints, cols: nVars, count: constraintMatrix.count),
-              constraintRHS.count == nConstraints,
-              startPoint.count == nVars
+        guard
+            MathDimension.validRectangle(
+                rows: nConstraints, cols: nVars, count: constraintMatrix.count),
+            constraintRHS.count == nConstraints,
+            startPoint.count == nVars
         else { return nil }
         var result = [Double](repeating: 0, count: nVars)
         var nbIter: Int32 = 0
-        guard OCCTMathUzawa(constraintMatrix, Int32(nConstraints), Int32(nVars),
-                            constraintRHS, startPoint, epsLix, epsLic, Int32(maxIterations),
-                            &result, &nbIter) else { return nil }
+        guard
+            OCCTMathUzawa(
+                constraintMatrix, Int32(nConstraints), Int32(nVars),
+                constraintRHS, startPoint, epsLix, epsLic, Int32(maxIterations),
+                &result, &nbIter)
+        else { return nil }
         return (result, Int(nbIter))
     }
 
@@ -924,7 +1029,9 @@ extension MathSolver {
     public static func eigenvalues(
         diagonal: [Double], subdiagonal: [Double]
     ) -> [Double]? {
-        guard MathDimension.consistent(diagonal.count, matches: subdiagonal.count) else { return nil }
+        guard MathDimension.consistent(diagonal.count, matches: subdiagonal.count) else {
+            return nil
+        }
         let n = diagonal.count
         var eigenvalues = [Double](repeating: 0, count: n)
         let count = OCCTMathEigenValues(diagonal, subdiagonal, Int32(n), &eigenvalues)
@@ -942,13 +1049,16 @@ extension MathSolver {
     public static func eigenvaluesAndVectors(
         diagonal: [Double], subdiagonal: [Double]
     ) -> (eigenvalues: [Double], eigenvectors: [[Double]])? {
-        guard MathDimension.consistent(diagonal.count, matches: subdiagonal.count) else { return nil }
+        guard MathDimension.consistent(diagonal.count, matches: subdiagonal.count) else {
+            return nil
+        }
         let n = diagonal.count
         var eigenvalues = [Double](repeating: 0, count: n)
         var eigenvectors = [Double](repeating: 0, count: n * n)
-        let count = OCCTMathEigenValuesAndVectors(diagonal, subdiagonal, Int32(n), &eigenvalues, &eigenvectors)
+        let count = OCCTMathEigenValuesAndVectors(
+            diagonal, subdiagonal, Int32(n), &eigenvalues, &eigenvectors)
         guard count > 0 else { return nil }
-        let evs = (0..<Int(count)).map { i in Array(eigenvectors[(i*n)..<(i*n+n)]) }
+        let evs = (0..<Int(count)).map { i in Array(eigenvectors[(i * n)..<(i * n + n)]) }
         return (Array(eigenvalues.prefix(Int(count))), evs)
     }
 
@@ -964,15 +1074,17 @@ extension MathSolver {
 
         let callback: OCCTMathSimpleFuncCallback = { x, value, context in
             guard let ctx = context else { return false }
-            let box = Unmanaged<ClosureBox<(Double) -> Double>>.fromOpaque(ctx).takeUnretainedValue()
+            let box = Unmanaged<ClosureBox<(Double) -> Double>>.fromOpaque(ctx)
+                .takeUnretainedValue()
             value.pointee = box.closure(x)
             return true
         }
 
         var isDone = false
         var error = 0.0
-        let result = OCCTMathKronrodIntegration(callback, ptr, range.lowerBound, range.upperBound,
-                                                Int32(points), &isDone, &error)
+        let result = OCCTMathKronrodIntegration(
+            callback, ptr, range.lowerBound, range.upperBound,
+            Int32(points), &isDone, &error)
         return isDone ? (result, error) : nil
     }
 
@@ -990,7 +1102,8 @@ extension MathSolver {
 
         let callback: OCCTMathSimpleFuncCallback = { x, value, context in
             guard let ctx = context else { return false }
-            let box = Unmanaged<ClosureBox<(Double) -> Double>>.fromOpaque(ctx).takeUnretainedValue()
+            let box = Unmanaged<ClosureBox<(Double) -> Double>>.fromOpaque(ctx)
+                .takeUnretainedValue()
             value.pointee = box.closure(x)
             return true
         }
@@ -998,9 +1111,10 @@ extension MathSolver {
         var isDone = false
         var error = 0.0
         var nbIter: Int32 = 0
-        let result = OCCTMathKronrodIntegrationAdaptive(callback, ptr, range.lowerBound, range.upperBound,
-                                                        Int32(points), tolerance, Int32(maxIterations),
-                                                        &isDone, &error, &nbIter)
+        let result = OCCTMathKronrodIntegrationAdaptive(
+            callback, ptr, range.lowerBound, range.upperBound,
+            Int32(points), tolerance, Int32(maxIterations),
+            &isDone, &error, &nbIter)
         return isDone ? (result, error, Int(nbIter)) : nil
     }
 
@@ -1024,7 +1138,9 @@ extension MathSolver {
         lower: [Double], upper: [Double], order: [Int],
         function: @escaping ([Double]) -> Double
     ) -> Double? {
-        guard MathDimension.consistent(lower.count, matches: upper.count, order.count) else { return nil }
+        guard MathDimension.consistent(lower.count, matches: upper.count, order.count) else {
+            return nil
+        }
         let nVars = lower.count
         let box = ClosureBox(function)
         let ptr = Unmanaged.passRetained(box).toOpaque()
@@ -1032,7 +1148,8 @@ extension MathSolver {
 
         let callback: OCCTMathMultiVarCallback = { x, n, value, context in
             guard let ctx = context else { return false }
-            let box = Unmanaged<ClosureBox<([Double]) -> Double>>.fromOpaque(ctx).takeUnretainedValue()
+            let box = Unmanaged<ClosureBox<([Double]) -> Double>>.fromOpaque(ctx)
+                .takeUnretainedValue()
             let input = Array(UnsafeBufferPointer(start: x, count: Int(n)))
             value.pointee = box.closure(input)
             return true
@@ -1040,7 +1157,8 @@ extension MathSolver {
 
         var isDone = false
         let ord = order.map { Int32($0) }
-        let result = OCCTMathGaussMultipleIntegration(callback, ptr, Int32(nVars), lower, upper, ord, &isDone)
+        let result = OCCTMathGaussMultipleIntegration(
+            callback, ptr, Int32(nVars), lower, upper, ord, &isDone)
         return isDone ? result : nil
     }
 
@@ -1085,7 +1203,7 @@ extension MathSolver {
         function: @escaping ([Double]) -> [Double]
     ) -> [Double]? {
         guard lower.count == 1, nEquations > 0,
-              MathDimension.consistent(lower.count, matches: upper.count, order.count)
+            MathDimension.consistent(lower.count, matches: upper.count, order.count)
         else { return nil }
         let nVars = lower.count
         let box = ClosureBox(function)
@@ -1094,7 +1212,8 @@ extension MathSolver {
 
         let callback: OCCTMathFuncSetCallback = { x, nv, values, ne, context in
             guard let ctx = context else { return false }
-            let box = Unmanaged<ClosureBox<([Double]) -> [Double]>>.fromOpaque(ctx).takeUnretainedValue()
+            let box = Unmanaged<ClosureBox<([Double]) -> [Double]>>.fromOpaque(ctx)
+                .takeUnretainedValue()
             let input = Array(UnsafeBufferPointer(start: x, count: Int(nv)))
             let result = box.closure(input)
             guard result.count == Int(ne) else { return false }
@@ -1104,8 +1223,11 @@ extension MathSolver {
 
         var result = [Double](repeating: 0, count: nEquations)
         let ord = order.map { Int32($0) }
-        guard OCCTMathGaussSetIntegration(callback, ptr, Int32(nVars), Int32(nEquations),
-                                          lower, upper, ord, &result) else { return nil }
+        guard
+            OCCTMathGaussSetIntegration(
+                callback, ptr, Int32(nVars), Int32(nEquations),
+                lower, upper, ord, &result)
+        else { return nil }
         return result
     }
 }
@@ -1124,15 +1246,17 @@ extension MathSolver {
 
         let callback: OCCTMathSimpleFuncCallback = { x, value, context in
             guard let ctx = context else { return false }
-            let box = Unmanaged<ClosureBox<(Double) -> Double>>.fromOpaque(ctx).takeUnretainedValue()
+            let box = Unmanaged<ClosureBox<(Double) -> Double>>.fromOpaque(ctx)
+                .takeUnretainedValue()
             value.pointee = box.closure(x)
             return true
         }
 
         var isDone = false
         var error = 0.0
-        let result = OCCTMathIntegGauss(callback, ptr, range.lowerBound, range.upperBound,
-                                        Int32(points), &isDone, &error)
+        let result = OCCTMathIntegGauss(
+            callback, ptr, range.lowerBound, range.upperBound,
+            Int32(points), &isDone, &error)
         return isDone ? (result, error) : nil
     }
 
@@ -1149,7 +1273,8 @@ extension MathSolver {
 
         let callback: OCCTMathSimpleFuncCallback = { x, value, context in
             guard let ctx = context else { return false }
-            let box = Unmanaged<ClosureBox<(Double) -> Double>>.fromOpaque(ctx).takeUnretainedValue()
+            let box = Unmanaged<ClosureBox<(Double) -> Double>>.fromOpaque(ctx)
+                .takeUnretainedValue()
             value.pointee = box.closure(x)
             return true
         }
@@ -1157,9 +1282,10 @@ extension MathSolver {
         var isDone = false
         var error = 0.0
         var nbIter: Int32 = 0
-        let result = OCCTMathIntegGaussAdaptive(callback, ptr, range.lowerBound, range.upperBound,
-                                                tolerance, Int32(maxIterations),
-                                                &isDone, &error, &nbIter)
+        let result = OCCTMathIntegGaussAdaptive(
+            callback, ptr, range.lowerBound, range.upperBound,
+            tolerance, Int32(maxIterations),
+            &isDone, &error, &nbIter)
         return isDone ? (result, error, Int(nbIter)) : nil
     }
 
@@ -1175,15 +1301,17 @@ extension MathSolver {
 
         let callback: OCCTMathSimpleFuncCallback = { x, value, context in
             guard let ctx = context else { return false }
-            let box = Unmanaged<ClosureBox<(Double) -> Double>>.fromOpaque(ctx).takeUnretainedValue()
+            let box = Unmanaged<ClosureBox<(Double) -> Double>>.fromOpaque(ctx)
+                .takeUnretainedValue()
             value.pointee = box.closure(x)
             return true
         }
 
         var isDone = false
         var error = 0.0
-        let result = OCCTMathIntegKronrod(callback, ptr, range.lowerBound, range.upperBound,
-                                          Int32(gaussPoints), &isDone, &error)
+        let result = OCCTMathIntegKronrod(
+            callback, ptr, range.lowerBound, range.upperBound,
+            Int32(gaussPoints), &isDone, &error)
         return isDone ? (result, error) : nil
     }
 
@@ -1201,7 +1329,8 @@ extension MathSolver {
 
         let callback: OCCTMathSimpleFuncCallback = { x, value, context in
             guard let ctx = context else { return false }
-            let box = Unmanaged<ClosureBox<(Double) -> Double>>.fromOpaque(ctx).takeUnretainedValue()
+            let box = Unmanaged<ClosureBox<(Double) -> Double>>.fromOpaque(ctx)
+                .takeUnretainedValue()
             value.pointee = box.closure(x)
             return true
         }
@@ -1209,9 +1338,10 @@ extension MathSolver {
         var isDone = false
         var error = 0.0
         var nbIter: Int32 = 0
-        let result = OCCTMathIntegKronrodAdaptive(callback, ptr, range.lowerBound, range.upperBound,
-                                                  Int32(gaussPoints), tolerance, Int32(maxIterations),
-                                                  &isDone, &error, &nbIter)
+        let result = OCCTMathIntegKronrodAdaptive(
+            callback, ptr, range.lowerBound, range.upperBound,
+            Int32(gaussPoints), tolerance, Int32(maxIterations),
+            &isDone, &error, &nbIter)
         return isDone ? (result, error, Int(nbIter)) : nil
     }
 
@@ -1228,7 +1358,8 @@ extension MathSolver {
 
         let callback: OCCTMathSimpleFuncCallback = { x, value, context in
             guard let ctx = context else { return false }
-            let box = Unmanaged<ClosureBox<(Double) -> Double>>.fromOpaque(ctx).takeUnretainedValue()
+            let box = Unmanaged<ClosureBox<(Double) -> Double>>.fromOpaque(ctx)
+                .takeUnretainedValue()
             value.pointee = box.closure(x)
             return true
         }
@@ -1236,9 +1367,10 @@ extension MathSolver {
         var isDone = false
         var error = 0.0
         var nbIter: Int32 = 0
-        let result = OCCTMathIntegTanhSinh(callback, ptr, range.lowerBound, range.upperBound,
-                                           tolerance, Int32(maxLevels),
-                                           &isDone, &error, &nbIter)
+        let result = OCCTMathIntegTanhSinh(
+            callback, ptr, range.lowerBound, range.upperBound,
+            tolerance, Int32(maxLevels),
+            &isDone, &error, &nbIter)
         return isDone ? (result, error, Int(nbIter)) : nil
     }
 }

@@ -1,6 +1,6 @@
 import Foundation
-import simd
 import OCCTBridge
+import simd
 
 /// Logarithmic sampling utilities.
 public enum LogSample {

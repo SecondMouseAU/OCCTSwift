@@ -1,6 +1,6 @@
 import Foundation
-import simd
 import OCCTBridge
+import simd
 
 extension GeometryProperties {
     /// Cylinder lateral surface area.
@@ -14,7 +14,9 @@ extension GeometryProperties {
     }
 
     /// Cone lateral surface area.
-    public static func coneSurfaceArea(semiAngle: Double, refRadius: Double, height: Double) -> Double {
+    public static func coneSurfaceArea(semiAngle: Double, refRadius: Double, height: Double)
+        -> Double
+    {
         OCCTGPropConeSurface(semiAngle, refRadius, height)
     }
 
@@ -50,9 +52,15 @@ public enum GeometryProperties {
     /// GeometryProperties.lineSegment(from: .zero, to: p)?.length   // 7.07
     /// GeometryProperties.lineSegment(from: p, to: p)               // nil
     /// ```
-    public static func lineSegment(from p1: SIMD3<Double>, to p2: SIMD3<Double>) -> (length: Double, center: SIMD3<Double>)? {
-        var length = 0.0, cx = 0.0, cy = 0.0, cz = 0.0
-        guard OCCTGPropLineSegment(p1.x, p1.y, p1.z, p2.x, p2.y, p2.z, &length, &cx, &cy, &cz) else { return nil }
+    public static func lineSegment(from p1: SIMD3<Double>, to p2: SIMD3<Double>) -> (
+        length: Double, center: SIMD3<Double>
+    )? {
+        var length = 0.0
+        var cx = 0.0
+        var cy = 0.0
+        var cz = 0.0
+        guard OCCTGPropLineSegment(p1.x, p1.y, p1.z, p2.x, p2.y, p2.z, &length, &cx, &cy, &cz)
+        else { return nil }
         return (length, SIMD3(cx, cy, cz))
     }
 
@@ -69,12 +77,20 @@ public enum GeometryProperties {
     /// GeometryProperties.circularArc(center: .zero, normal: .zero,
     ///                                radius: 5, u1: 0, u2: .pi)              // nil
     /// ```
-    public static func circularArc(center: SIMD3<Double>, normal: SIMD3<Double>,
-                                    radius: Double, u1: Double, u2: Double) -> (arcLength: Double, center: SIMD3<Double>)? {
-        var length = 0.0, cx = 0.0, cy = 0.0, cz = 0.0
-        guard OCCTGPropCircularArc(center.x, center.y, center.z,
-                                   normal.x, normal.y, normal.z,
-                                   radius, u1, u2, &length, &cx, &cy, &cz) else { return nil }
+    public static func circularArc(
+        center: SIMD3<Double>, normal: SIMD3<Double>,
+        radius: Double, u1: Double, u2: Double
+    ) -> (arcLength: Double, center: SIMD3<Double>)? {
+        var length = 0.0
+        var cx = 0.0
+        var cy = 0.0
+        var cz = 0.0
+        guard
+            OCCTGPropCircularArc(
+                center.x, center.y, center.z,
+                normal.x, normal.y, normal.z,
+                radius, u1, u2, &length, &cx, &cy, &cz)
+        else { return nil }
         return (length, SIMD3(cx, cy, cz))
     }
 
@@ -87,23 +103,31 @@ public enum GeometryProperties {
     /// GeometryProperties.pointSetCentroid([SIMD3(0,0,0), SIMD3(2,0,0)]).centroid  // (1,0,0)
     /// GeometryProperties.pointSetCentroid([]).centroid                            // nil
     /// ```
-    public static func pointSetCentroid(_ points: [SIMD3<Double>]) -> (count: Double, centroid: SIMD3<Double>?) {
+    public static func pointSetCentroid(_ points: [SIMD3<Double>]) -> (
+        count: Double, centroid: SIMD3<Double>?
+    ) {
         var flat = [Double]()
         for p in points { flat.append(contentsOf: [p.x, p.y, p.z]) }
-        var cx = 0.0, cy = 0.0, cz = 0.0
+        var cx = 0.0
+        var cy = 0.0
+        var cz = 0.0
         let mass = OCCTGPropPointSetCentroid(flat, Int32(points.count), &cx, &cy, &cz)
         return (mass, mass == 0 ? nil : SIMD3(cx, cy, cz))
     }
 
     /// Sphere surface area (analytical).
     public static func sphereSurfaceArea(radius: Double) -> Double {
-        var cx = 0.0, cy = 0.0, cz = 0.0
+        var cx = 0.0
+        var cy = 0.0
+        var cz = 0.0
         return OCCTGPropSphereSurface(radius, &cx, &cy, &cz)
     }
 
     /// Sphere volume (analytical).
     public static func sphereVolume(radius: Double) -> Double {
-        var cx = 0.0, cy = 0.0, cz = 0.0
+        var cx = 0.0
+        var cy = 0.0
+        var cz = 0.0
         return OCCTGPropSphereVolume(radius, &cx, &cy, &cz)
     }
 }
@@ -134,11 +158,16 @@ extension GeometryProperties {
     /// GeometryProperties.weightedCentroid(points: pts, weights: [1, 3]).centroid  // (7.5,0,0)
     /// GeometryProperties.weightedCentroid(points: pts, weights: [1, 0]).centroid  // nil, rejected
     /// ```
-    public static func weightedCentroid(points: [SIMD3<Double>], weights: [Double]) -> (mass: Double, centroid: SIMD3<Double>?) {
+    public static func weightedCentroid(points: [SIMD3<Double>], weights: [Double]) -> (
+        mass: Double, centroid: SIMD3<Double>?
+    ) {
         var flat = [Double]()
         for p in points { flat.append(contentsOf: [p.x, p.y, p.z]) }
-        var cx = 0.0, cy = 0.0, cz = 0.0
-        let mass = OCCTGPropPointSetWeightedCentroid(flat, weights, Int32(points.count), &cx, &cy, &cz)
+        var cx = 0.0
+        var cy = 0.0
+        var cz = 0.0
+        let mass = OCCTGPropPointSetWeightedCentroid(
+            flat, weights, Int32(points.count), &cx, &cy, &cz)
         return (mass, mass == 0 ? nil : SIMD3(cx, cy, cz))
     }
 
@@ -151,7 +180,9 @@ extension GeometryProperties {
     public static func barycentre(_ points: [SIMD3<Double>]) -> SIMD3<Double>? {
         var flat = [Double]()
         for p in points { flat.append(contentsOf: [p.x, p.y, p.z]) }
-        var cx = 0.0, cy = 0.0, cz = 0.0
+        var cx = 0.0
+        var cy = 0.0
+        var cz = 0.0
         guard OCCTGPropBarycentre(flat, Int32(points.count), &cx, &cy, &cz) else { return nil }
         return SIMD3(cx, cy, cz)
     }
