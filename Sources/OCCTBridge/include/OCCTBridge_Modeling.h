@@ -225,6 +225,8 @@ OCCTShapeRef OCCTShapeIntersectEx(OCCTShapeRef shape1,
 // Self-interference check (BOPAlgo_ArgumentAnalyzer), watchdog-bounded by timeoutSeconds
 // (<= 0 = unbounded). Detects the self-intersection that BRepCheck misses and that hangs
 // booleans (#206/#208). Returns 1 = self-intersects, 0 = clean, -1 = indeterminate.
+// Only a BOPAlgo_SelfIntersect result returns 1: an aborted analysis, and any other fault
+// the analyzer records, are indeterminate (#1054).
 // (Distinct from the older unbounded bool OCCTShapeSelfIntersects via BOPAlgo_CheckerSI.)
 int32_t OCCTShapeSelfIntersectsBounded(OCCTShapeRef shape, double timeoutSeconds);
 
@@ -428,7 +430,7 @@ OCCTShapeRef OCCTDrawingGetEdges(OCCTDrawingRef drawing, OCCTEdgeType edgeType);
 /// @param edgeCount Number of edges to fillet
 /// @param radius Fillet radius; must be > 0, or the call fails without touching OCCT
 /// @param declinedEdgeIndices Optional (may be NULL): filled with the 0-based indices, from
-///   `edgeIndices`, that OCCT declined to fillet (#639) -- a free-boundary edge, e.g. Must have
+///   `edgeIndices`, that OCCT declined to fillet (#639), a free-boundary edge, e.g. Must have
 ///   capacity >= edgeCount when non-NULL.
 /// @param outDeclinedCount Optional (may be NULL): set to the number of entries written to
 ///   `declinedEdgeIndices`. **Read it only when the returned shape is non-NULL.** It is zeroed on
@@ -2178,7 +2180,7 @@ OCCTShapeRef _Nullable OCCTLocOpeSplitDrafts(OCCTShapeRef shape,
 
 // #613: both finders return a SELECTION of edges, not an enumeration, so the position of an entry
 // in outEdges says nothing about which edge it is. Swift was writing that position into Edge.index
-// anyway, producing indices that address a different edge -- or no edge -- through edges().
+// anyway, producing indices that address a different edge, or no edge, through edges().
 // Both now report each found edge's index in the shape's own deduplicated enumeration alongside it.
 
 /// Find common edges between two shapes.
@@ -2731,7 +2733,7 @@ int32_t OCCTLawBSplineKnotSplitting(OCCTLawFunctionRef _Nonnull law,
                                     int32_t maxIndices);
 
 /// Find PARAMETER values (not knot-table indices) where a BSpline law drops below
-/// given continuity -- the law-function analogue of OCCTCurve3DBSplineKnotSplits. #403.
+/// given continuity, the law-function analogue of OCCTCurve3DBSplineKnotSplits. #403.
 /// @param law BSpline law function handle
 /// @param continuityOrder Continuity level to check, same contract as
 ///   OCCTLawBSplineKnotSplitting above

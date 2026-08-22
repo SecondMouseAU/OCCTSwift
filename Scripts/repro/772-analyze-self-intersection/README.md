@@ -3,6 +3,23 @@
 Measurement backing the design decision in #772 (okf/policies/measure-dont-assume.md: this issue
 is explicitly a "measure before choosing" task, not a "pick the option that sounds right" one).
 
+> **Correction, #1054.** Row 4 of the table below, and the "`hardTimeout:` gives a worse answer
+> than `timeout:`" paragraph that rests on it, are **wrong and withdrawn**. The "conclusive
+> `self-intersects`" recorded there for `timeout: 30` on the #319 pathological artifact was
+> `BOPAlgo_OperationAborted`, the fault OCCT records when the watchdog stops the analysis.
+> `OCCTShapeSelfIntersectsBounded` decided from `BOPAlgo_ArgumentAnalyzer::HasFaulty()`, which is
+> the union over every enabled mode and cannot tell an abort from a self-interference, so this
+> harness was measuring the defect #1054 fixed. Re-measured directly on the same artifact at the
+> same 30 s bound, with the statuses printed rather than `HasFaulty()`, the analyzer's whole
+> result list is `[OperationAborted]`, and after the fix both mechanisms answer `nil`, which is
+> the correct answer for an analysis that did not finish. The measurement is in
+> `Scripts/repro/1054-selfintersect-fault-kinds/`.
+>
+> Nothing else in this document changes. Rows 1 to 3 are unaffected (they either complete or
+> genuinely self-intersect), the cost figures the opt-in decision rests on are unaffected, and
+> `analyze()` still forwards to `timeout:` for the reasons in `Shape+Analysis.swift` that were
+> never about this artifact.
+
 ## Background
 
 `ShapeAnalysisResult.selfIntersectionCount` was always `0` and never computed (#702/#763):
@@ -91,7 +108,7 @@ within a few percent on the informative ones (the mesh-sewn import and the patho
 | 1. Simple box | 6 | 12 | ~0.0005-0.002 s | ~0.00004-0.001 s | ~0.0005-0.007 s, clean | ~0.0004-0.0007 s, clean |
 | 2. Moderately complex fused/filleted solid | 16 | 39 | ~0.001-0.003 s | ~0.00003-0.001 s | ~0.0025-0.003 s, clean | ~0.0025-0.003 s, clean |
 | 3. Mesh-sewn imported solid (kiha10 body5) | 662 | 1072 | ~0.04-0.19 s | ~0.0008-0.001 s | ~0.06-0.10 s, self-intersects | ~0.05-0.10 s, self-intersects |
-| 4. #319 pathological artifact | 1 | 3 | ~0.007-0.017 s | ~0.00001 s | ~30.0-30.15 s, **self-intersects** | ~30.0-30.02 s, **indeterminate** |
+| 4. #319 pathological artifact | 1 | 3 | ~0.007-0.017 s | ~0.00001 s | ~30.0-30.15 s, ~~**self-intersects**~~ **indeterminate**, see the correction above (#1054) | ~30.0-30.02 s, **indeterminate** |
 
 `4b`, the same artifact through `isSelfIntersecting(hardTimeout: 5)`: returns at ~5.0-5.01s,
 confirming the hard deadline holds at a short bound even though its internal call is unbounded.
@@ -105,17 +122,22 @@ one mechanism over the other. This corrects Round 1's framing: the concern was n
 the deep copy too expensive", it was "is the mechanism the code actually calls the one that was
 measured", and once it was, a second and more decisive difference showed up.
 
-**On the #319 pathological artifact, `hardTimeout:` gives a worse answer than `timeout:`, for the
-same wall-clock cost.** `timeout:` reliably returns a conclusive `self-intersects` around 30.05-30.15s;
+~~**On the #319 pathological artifact, `hardTimeout:` gives a worse answer than `timeout:`, for the
+same wall-clock cost.**~~ **Withdrawn, see the correction at the top of this file (#1054).** The
+paragraph read: *`timeout:` reliably returns a conclusive `self-intersects` around 30.05-30.15s;
 `hardTimeout:` reliably returns `nil` (indeterminate) at almost exactly 30.0s, every run. The
 reason is structural, not incidental: `hardTimeout:`'s internal `OCCTShapeSelfIntersectsBounded`
 call passes `0` (unbounded), so the background computation has no cooperative deadline of its own
 to help it find the fault before the caller's semaphore gives up; `timeout:`'s own internal
-checkpoint-based breaker does. The same total time budget buys a real answer through one
-mechanism and a shrug through the other, on exactly the artifact this feature exists to handle.
-`hardTimeout:` also leaves that computation running, abandoned and still unbounded, after
-returning `nil` (documented on `isSelfIntersecting(hardTimeout:)` itself); `timeout:`'s own call is
-the one the caller's thread is already inside, so nothing extra is orphaned.
+checkpoint-based breaker does.* The mechanism described is real, and the timings are real. What is
+wrong is the word "conclusive": what `timeout:`'s breaker found first was its own abort, recorded
+as `BOPAlgo_OperationAborted` and reported as a self-intersection by a `HasFaulty()` that could not
+tell the two apart. Both mechanisms answer `nil` on this artifact now.
+
+The rest of that paragraph stands and is not about the artifact: `hardTimeout:` leaves its
+computation running, abandoned and still unbounded, after returning `nil` (documented on
+`isSelfIntersecting(hardTimeout:)` itself); `timeout:`'s own call is the one the caller's thread is
+already inside, so nothing extra is orphaned.
 
 **On every ordinary shape, including a real 662-face mesh-sewn import that genuinely
 self-intersects, both entry points cost a low single-digit multiple of the existing cheap scan**,

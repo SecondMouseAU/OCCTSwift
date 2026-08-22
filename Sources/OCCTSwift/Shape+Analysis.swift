@@ -280,18 +280,23 @@ extension Shape {
     /// fixture measured, including the 662-face import), but its internal
     /// `OCCTShapeSelfIntersectsBounded` call passes **0 (unbounded)**, so the only bound left is
     /// a `DispatchSemaphore.wait` racing a computation with no cooperative deadline of its own.
-    /// On the #319 pathological artifact this produced a **worse** answer than `timeout:` at the
-    /// same deadline: `timeout:` reliably returned a conclusive `self-intersects` around 30.1s
-    /// (its internal checkpoint found the fault before its own deadline logic gave up), while
-    /// `hardTimeout:` reliably returned `nil` (indeterminate) at exactly 30.0s, the same
-    /// wall-clock budget spent for a strictly less useful answer, on top of leaving an abandoned,
-    /// still-unbounded background computation running (``isSelfIntersecting(hardTimeout:)``'s own
-    /// documented trade). `analyze()` is already a fully synchronous call with no async variant,
-    /// so a caller here has already committed to blocking; `hardTimeout:`'s wall-clock guarantee
-    /// buys nothing over `timeout:` in that context and cost a worse answer on the one artifact
-    /// where it mattered. A caller that genuinely needs the hard guarantee (e.g. no
-    /// process/subprocess isolation available) should call ``isSelfIntersecting(hardTimeout:)``
-    /// directly and accept its documented trade-offs; `analyze()` does not make that call for you.
+    /// `analyze()` is already a fully synchronous call with no async variant, so a caller here has
+    /// already committed to blocking, and `hardTimeout:`'s wall-clock guarantee buys nothing over
+    /// `timeout:` in that context while leaving an abandoned, still-unbounded background
+    /// computation running afterwards (``isSelfIntersecting(hardTimeout:)``'s own documented
+    /// trade). A caller that genuinely needs the hard guarantee (e.g. no process/subprocess
+    /// isolation available) should call ``isSelfIntersecting(hardTimeout:)`` directly and accept
+    /// its documented trade-offs; `analyze()` does not make that call for you.
+    ///
+    /// **#772's fourth argument for `timeout:` is withdrawn (#1054).** It was that on the #319
+    /// pathological artifact `timeout:` returned a conclusive "self-intersects" at ~30.1s where
+    /// `hardTimeout:` returned `nil`, so the same budget bought a real answer through one
+    /// mechanism and a shrug through the other. That "conclusive" answer was
+    /// `BOPAlgo_OperationAborted`, the fault OCCT records when the watchdog stops the analysis,
+    /// which `HasFaulty()` could not tell from a self-interference; #772 was reading the defect
+    /// #1054 fixed. On that artifact both mechanisms now answer `nil` at a 30s bound, which is
+    /// the correct answer for an analysis that did not finish. The choice of `timeout:` stands on
+    /// the reasons above, which were never about the artifact.
     ///
     /// ## Example
     ///
@@ -309,7 +314,7 @@ extension Shape {
     ///     switch analysis.hasSelfIntersection {
     ///     case .some(true):  print("self-intersects")
     ///     case .some(false): print("clean")
-    ///     case nil:          print("indeterminate, timeout elapsed before a checkpoint")
+    ///     case nil:          print("indeterminate: not resolved, never \"clean\"")
     ///     }
     /// }
     /// ```

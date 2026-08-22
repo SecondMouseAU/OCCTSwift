@@ -26,10 +26,14 @@ import simd
 ///
 /// Review round 2 found two more defects, both fixed here rather than merely documented:
 /// (1) the first version forwarded to `isSelfIntersecting(hardTimeout:)`, measured (this suite's
-/// harness, not this file) to be no cheaper on ordinary shapes and to return a **worse** answer
-/// (`nil`/indeterminate instead of a conclusive `true`) than `isSelfIntersecting(timeout:)` on the
-/// #319 pathological artifact, at the same wall-clock cost; `analyze()` now forwards to
-/// `timeout:` instead. (2) the two parameters that gated the check
+/// harness, not this file) to be no cheaper on ordinary shapes; `analyze()` now forwards to
+/// `timeout:` instead. The other half of that finding, that `hardTimeout:` returned a **worse**
+/// answer on the #319 pathological artifact, is **withdrawn (#1054)**: the conclusive `true`
+/// `timeout:` gave there was `BOPAlgo_OperationAborted`, the fault OCCT records when the watchdog
+/// stops the analysis, which `HasFaulty()` could not tell from a self-interference. Both
+/// mechanisms now answer `nil` on that artifact at a 30s bound. See
+/// `Shape+Analysis.swift`'s "Why `timeout:`, not `hardTimeout:`" for what the choice still rests
+/// on. (2) the two parameters that gated the check
 /// (`checkSelfIntersection: Bool`, `hardTimeout: Double`) let a caller supply a timeout while
 /// forgetting the boolean, compiling and silently discarding it; they are now one
 /// `selfIntersectionTimeout: Double?`, where supplying a value *is* opting in, so that mistake is

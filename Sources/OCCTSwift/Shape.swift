@@ -634,8 +634,11 @@ public final class Shape: @unchecked Sendable {
     /// - Important: `timeout` is **cooperative, not a hard deadline** (#293), exactly as on
     ///   `union`. It is a `Message_ProgressIndicator` OCCT polls at its own internal checkpoints,
     ///   so the call returns at the first checkpoint after `timeout`, not at `timeout` itself.
-    ///   ``BooleanOutcome/timedOut`` therefore means "the watchdog fired", the same
-    ///   indeterminate-not-negative contract ``isSelfIntersecting(timeout:)`` already uses.
+    ///   ``BooleanOutcome/timedOut`` therefore means "the watchdog fired", which is
+    ///   indeterminate rather than negative, the reading ``isSelfIntersecting(timeout:)`` gives
+    ///   its `nil`. The two are not the same signal: `.timedOut` is the watchdog and only the
+    ///   watchdog, while that `nil` also covers an argument the analyzer refused and an analysis
+    ///   that errored (#1054).
     ///
     /// - Parameters:
     ///   - other: The shape to fuse with `self`.
@@ -2411,11 +2414,29 @@ public final class Shape: @unchecked Sendable {
     ///   is process-level isolation (run this in a subprocess/worker you can kill on your own
     ///   deadline if a true wall-clock guarantee matters).
     ///
+    /// - Important: `true` is reported **only** for a completed analysis that recorded at least
+    ///   one `BOPAlgo_SelfIntersect` result and no other status (#1054). An empty result list on a
+    ///   **completed** analysis is `false`: that is the clean case. An empty list is not enough on
+    ///   its own, because a watchdog that trips before anything is recorded leaves the list empty
+    ///   too, and that case is `nil`; the watchdog is read first, so it never reaches this test.
+    ///   Everything else the analyzer can record used to read as `true` and is now `nil`: an
+    ///   aborted analysis, an argument it refuses, and an analysis that failed
+    ///   (`BOPAlgo_CheckUnknown`, or a `BOPAlgo_OperationAborted` recorded for a
+    ///   `BOPAlgo_CheckerSI` error that was not a watchdog break, which is why `timeout: 0` does
+    ///   not exempt a caller from this). An analysis the `timeout` aborted is `nil` even when it
+    ///   recorded results first: the interference map a valid solid's face adjacency fills is
+    ///   cleared partway through the check and then selectively refilled, so an analysis
+    ///   interrupted before that point is read against the raw map and a clean box reports up to
+    ///   three self-interferences of its own. Separately, a shape
+    ///   `BOPAlgo_ArgumentAnalyzer` rejects outright, such as ``emptied``'s result, records
+    ///   `BOPAlgo_BadType`, which says nothing about self-intersection and involves no timeout
+    ///   at all.
+    ///
     /// - Parameter timeout: Seconds before the check *asks* OCCT to give up (default 30), the
     ///   actual return can be much later if an un-polled phase is reached. `0`/negative = unbounded.
     /// - Returns: `true` if a self-interference was found, `false` if the shape is clean, or
-    ///   `nil` if the check could not complete within `timeout` (**indeterminate**, treat as
-    ///   "unknown", not "clean").
+    ///   `nil` if the check could not complete within `timeout`, or could not answer the question
+    ///   at all (**indeterminate**, treat as "unknown", not "clean").
     ///
     /// Validate-at-the-source recipe for a loft result before using it in a boolean:
     /// ```swift
@@ -2426,7 +2447,7 @@ public final class Shape: @unchecked Sendable {
         switch OCCTShapeSelfIntersectsBounded(handle, timeout) {
         case 1: return true
         case 0: return false
-        default: return nil  // -1: indeterminate (timed out / errored)
+        default: return nil  // -1: indeterminate (timed out, refused, or errored)
         }
     }
 
@@ -2466,7 +2487,11 @@ public final class Shape: @unchecked Sendable {
     ///
     /// - Parameter hardTimeout: Seconds to wait before giving up and returning `nil`.
     /// - Returns: `true`/`false` if the check completed in time, `nil` if the deadline passed
-    ///   first (indeterminate, the background check may still be running).
+    ///   first (indeterminate, the background check may still be running) or if the analysis
+    ///   could not answer the question, per ``isSelfIntersecting(timeout:)``. The inner call
+    ///   passes `0`, so no watchdog can abort it, but `BOPAlgo_OperationAborted` is recorded for
+    ///   any `BOPAlgo_CheckerSI` error and not only a watchdog break, so that case reaches this
+    ///   entry point too.
     ///
     /// ```swift
     /// // Bound total wall-clock time even on a pathological B-spline solid with no
@@ -2483,6 +2508,11 @@ public final class Shape: @unchecked Sendable {
         }
         let probe = deepCopy() ?? self
         let box = SelfIntersectResultBox()
+        // The `0` below is load-bearing beyond "the caller's deadline is the only bound", and a
+        // test depends on it: passing 0 means no watchdog exists, so this call can never lose a
+        // conclusive answer to an aborted analysis the way a cooperative `timeout:` can (#1054).
+        // Issue598PipeShellFrenetModeTests uses this entry point for exactly that property.
+        // Threading a cooperative bound in here would reintroduce that fragility silently.
         let semaphore = DispatchSemaphore(value: 0)
         DispatchQueue.global(qos: .userInitiated).async {
             box.rawResult = OCCTShapeSelfIntersectsBounded(probe.handle, 0)

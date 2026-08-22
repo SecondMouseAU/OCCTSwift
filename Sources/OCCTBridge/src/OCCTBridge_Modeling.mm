@@ -2129,7 +2129,7 @@ OCCTShapeRef OCCTShapeFuseMulti(const OCCTShapeRef* shapes, int32_t count)
     builder.SetArguments(arguments);
     // #367: SetRunParallel(true) here caused silent data corruption (100%
     // wrong results, 237 TSan races) whenever two concurrent top-level
-    // callers both requested internal parallelism -- their work items
+    // callers both requested internal parallelism: their work items
     // cross-contaminated on the shared OSD_ThreadPool::DefaultPool. Left
     // at the safe serial default.
     builder.Build();
@@ -6550,7 +6550,7 @@ OCCTShapeRef OCCTLocOpeSplitShapeByVertex(OCCTShapeRef shape, int32_t edgeIndex,
     LocOpe_SplitShape splitter(shape->shape);
 
     // #613: this counted TopExp_Explorer occurrences while OCCTLocOpeSplitShapeByWire directly
-    // above already read the shared enumeration -- so faceIndex and edgeIndex meant different
+    // above already read the shared enumeration, so faceIndex and edgeIndex meant different
     // things in two adjacent functions driving the same LocOpe_SplitShape. Measured on a 10mm
     // box: splitEdge(at:) matches edges() up to index 8 and splits a DIFFERENT edge from 9 on
     // (index 9 split edges()[4], index 11 split edges()[0]), and indices 12 and 13 split
@@ -6664,7 +6664,7 @@ OCCTShapeRef OCCTLocOpeSplitDrafts(OCCTShapeRef shape,
 // #613: a finder returns a SELECTION, so the position of an entry in outEdges is a result slot, not
 // an index into anything. Swift wrote that slot number into Edge.index all the same. Measured on a
 // 10mm box (identically for the origin-centred and origin-at-zero spellings), edgesInFace(at: 3)
-// handed back 0,1,2,3 for the four edges of face 3, whose real indices are 2, 6, 10 and 11 -- so
+// handed back 0,1,2,3 for the four edges of face 3, whose real indices are 2, 6, 10 and 11, so
 // ALL FOUR named a different edge, their arc-length midpoints 10.00, 12.25, 7.07 and 12.25 mm from
 // the edges those slot numbers address. An Edge from either finder therefore could not be fed to
 // filleted(edges:), chamfered(...) or any other index-taking entry point, which is the whole
@@ -8345,7 +8345,7 @@ int32_t OCCTLawBSplineKnotSplitting(OCCTLawFunctionRef law,
 }
 
 // #403: same analyzer as above, but converts each split's knot-table index to an actual
-// parameter value via Law_BSpline::Knot() -- raw indices are otherwise uninterpretable
+// parameter value via Law_BSpline::Knot(); raw indices are otherwise uninterpretable
 // since the public API exposes no way to read the law's own knot vector.
 int32_t OCCTLawBSplineKnotSplitParams(OCCTLawFunctionRef law,
                                       int32_t            continuityOrder,
@@ -9976,7 +9976,7 @@ OCCTShapeRef _Nullable OCCTBiTgteBlend(OCCTShapeRef _Nonnull shape,
   {
     BiTgte_Blend blend(shape->shape, radius, tolerance, nubs);
 
-    // #613: this filled a std::vector from a bare TopExp_Explorer -- one entry per OCCURRENCE --
+    // #613: this filled a std::vector from a bare TopExp_Explorer, one entry per OCCURRENCE,
     // and subscripted it with the caller's edgeIndices, which come from edges() / Edge.index and
     // so are positions in the deduplicated enumeration. A 10mm box has 24 edge occurrences over
     // 12 edges, so from index 9 on this blended a different edge than the caller selected, and
@@ -9990,7 +9990,7 @@ OCCTShapeRef _Nullable OCCTBiTgteBlend(OCCTShapeRef _Nonnull shape,
     //
     // Safe on the map: BiTgte_Blend keys the edge into its own myEdges, an
     // NCollection_IndexedMap<TopoDS_Shape, TopTools_ShapeMapHasher> (BiTgte_Blend.hxx:202),
-    // whose equality is TopoDS_Shape::IsSame -- orientation cannot select a different entry.
+    // whose equality is TopoDS_Shape::IsSame, so orientation cannot select a different entry.
     if (!occtUseSubShapesByIndex(
           shape->shape,
           TopAbs_EDGE,
@@ -10032,7 +10032,7 @@ OCCTBiTgteBlendInfo OCCTBiTgteBlendInfo_(OCCTShapeRef _Nonnull shape,
     BiTgte_Blend blend(shape->shape, radius, tolerance, false);
 
     // #613: the same explorer-indexed walk as OCCTBiTgteBlend above, written out a second time.
-    // Both are converted together -- fixing one alone would have left the two entry points
+    // Both are converted together, since fixing one alone would have left the two entry points
     // disagreeing about what edgeIndices means for the identical operation.
     if (!occtUseSubShapesByIndex(
           shape->shape,
@@ -12104,7 +12104,7 @@ OCCTShapeRef OCCTMakeFaceFromSurfaceUV(OCCTSurfaceRef surface,
   }
 }
 
-// OCCTMakeFaceFromGpPlane / OCCTMakeFaceFromGpCylinder removed (#841) -- see the note in
+// OCCTMakeFaceFromGpPlane / OCCTMakeFaceFromGpCylinder removed (#841); see the note in
 // OCCTBridge_Modeling.h where they used to be declared.
 
 // MARK: - v0.114: BRepBuilderAPI_MakeWire incremental + Boolean ops with tolerance +
@@ -16174,6 +16174,11 @@ DEFINE_STANDARD_HANDLE(OCCTBoolTimeoutBreaker, Message_ProgressIndicator)
 // watchdog interrupting the build, 0 for every other failure (#1067). The breaker is
 // declared outside the try so the catch can read it too, since an abort that unwinds as
 // an exception is still an abort.
+//
+// tripped() is read here only to EXPLAIN a NULL that IsDone() already decided on, never to
+// decide one. OCCTShapeSelfIntersectsBounded below reads the same flag before its results
+// instead, because BOPAlgo_ArgumentAnalyzer has no IsDone() to decide with; see the comment
+// there for why that difference is the same rule and not two (#1054).
 template <typename BoolOpT>
 static OCCTShapeRef runBooleanEx(OCCTShapeRef shape1,
                                  OCCTShapeRef shape2,
@@ -16289,13 +16294,38 @@ OCCTShapeRef OCCTShapeIntersectEx(OCCTShapeRef shape1,
 
 // --- Self-intersection check (#208) ---
 #include <BOPAlgo_ArgumentAnalyzer.hxx>
+#include <BOPAlgo_CheckResult.hxx>
+#include <BOPAlgo_CheckStatus.hxx>
 
 // Reports whether a shape self-intersects (overlapping/interfering sub-faces), the
 // defect that BRepCheck_Analyzer misses but that poisons downstream booleans (#206).
 // BOPAlgo_ArgumentAnalyzer's self-interference test is authoritative but can be slow
 // (>10s on the #206 B-spline operands) or unbounded, so it runs with StopOnFirstFaulty
 // and the same wall-clock watchdog as the booleans.
-//   returns:  1 = self-intersects,  0 = clean,  -1 = indeterminate (timed out / errored)
+//   returns:  1 = self-intersects,  0 = clean,
+//            -1 = indeterminate (timed out, argument refused, or errored)
+// The watchdog is read before the results and the results are read by status rather
+// than through HasFaulty(), both because HasFaulty() answers a wider question than the
+// one asked here; the measurements are in Scripts/repro/1054-selfintersect-fault-kinds/
+// and summarised in docs/reference/Shape-Features.md (#1054).
+//
+// runBooleanEx above reads the same OCCTBoolTimeoutBreaker::tripped() flag in the
+// opposite order, deliberately (#1067/#1079). The rule both follow is about which signal
+// decides whether the work COMPLETED, not about whether the watchdog is consulted at all:
+// each asks the operation first if the operation can answer, and the watchdog only to
+// explain an answer already given. A BRepAlgoAPI_BooleanOperation can answer, through
+// IsDone(), so runBooleanEx consults tripped() inside the !IsDone() branch and its catch,
+// to say WHY the build produced nothing, and a completed build is kept even if a late poll
+// happened to trip. BOPAlgo_ArgumentAnalyzer exposes no equivalent: no done
+// flag, a result list populated the same way whether it ran to the end or not, and a
+// progress position that is no substitute, since every scope advances to its own end when
+// it is destroyed (measured: an aborted run still closes "Analyze shapes" at pos=1.000).
+// It does inherit BOPAlgo_Options::HasErrors(), which its own UserBreak calls set, and
+// that agrees with tripped() at every break point measured, but it says nothing on the
+// unbounded path this function also serves, which is the path isSelfIntersecting
+// (hardTimeout:) takes. So tripped() is read first and a late trip costs a real answer.
+// That cost is the smaller one: a clean box interrupted anywhere in the last fifth of its
+// analysis reports up to three self-interferences of its own.
 int32_t OCCTShapeSelfIntersectsBounded(OCCTShapeRef shape, double timeoutSeconds)
 {
   if (!shape)
@@ -16321,15 +16351,50 @@ int32_t OCCTShapeSelfIntersectsBounded(OCCTShapeRef shape, double timeoutSeconds
     {
       aa.Perform();
     }
-    if (aa.HasFaulty())
-      return 1; // conclusive
+    // An aborted analysis answers nothing, whatever it recorded on the way out.
+    // BOPAlgo_CheckerSI::CheckFaceSelfIntersection clears BOPDS_DS::Interferences() on
+    // entry, and the PostTreat that follows re-adds only pairs passing its own per-type
+    // gates, which for a valid solid's face adjacency is none. Interrupt the analysis
+    // before that Clear() and TestSelfInterferences reads the pave filler's own raw map
+    // instead, so a clean box reports up to three BOPAlgo_SelfIntersect results of its
+    // own. Measured in Scripts/repro/1054-selfintersect-fault-kinds/, which localises the
+    // transition to one poll with every other observable identical either side.
     if (!breaker.IsNull() && breaker->tripped())
-      return -1; // analysis may be incomplete
-    return 0;    // completed clean
+      return -1;
+    // HasFaulty() is "did any enabled mode record something", and ArgumentTypeMode is
+    // enabled too, so read the statuses instead. BOPAlgo_BadType (an argument BOP cannot
+    // use, e.g. an emptied solid) and BOPAlgo_OperationAborted (the self-interference pass
+    // gave up) are recorded the same way a real interference is, and neither is an answer
+    // to "does this shape self-intersect".
+    bool selfIntersects = false;
+    bool otherFault     = false;
+    for (NCollection_List<BOPAlgo_CheckResult>::Iterator it(aa.GetCheckResult()); it.More();
+         it.Next())
+    {
+      if (it.Value().GetCheckStatus() == BOPAlgo_SelfIntersect)
+        selfIntersects = true;
+      else
+        otherFault = true;
+    }
+    // otherFault wins over selfIntersects, deliberately. BOPAlgo_OperationAborted is
+    // appended after whatever the aborted pass had already recorded, and it is appended
+    // for any BOPAlgo_CheckerSI error, not only a watchdog break, so the tripped() test
+    // above does not cover it: the unbounded entry point never has a breaker at all.
+    // BOPAlgo_CheckUnknown is the other status that can share the list with a genuine
+    // interference, since Perform's own catch appends it after TestSelfInterferences has
+    // run. Both mean the analysis did not finish, so both outrank what it managed to
+    // record. BOPAlgo_BadType cannot share the list either, on both of the branches that
+    // record it: a shape with no geometry (BOPTools_AlgoTools3D::IsEmptyShape) and a null
+    // shape, which TestTypes catches first. TestSelfInterferences skips both.
+    if (otherFault)
+      return -1; // analysed something, but not the question asked
+    if (selfIntersects)
+      return 1; // conclusive
+    return 0;   // completed clean
   }
   catch (...)
   {
-    return -1; // interrupted by the watchdog, or analyzer error → indeterminate
+    return -1; // interrupted by the watchdog, or analyzer error, either way indeterminate
   }
 }
 
