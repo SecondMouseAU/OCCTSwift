@@ -938,13 +938,13 @@ public final class Curve2D: @unchecked Sendable {
 
     /// Compute the bisector curve between a point and this curve.
     public func bisector(
-        withPoint point: SIMD2<Double>, origin: SIMD2<Double>,
+        withPoint point: SIMD2<Double>, maxDistance: Double = 500,
         side: Bool = true
     ) -> Curve2D? {
         guard
             let h = OCCTCurve2DBisectorPC(
                 point.x, point.y, handle,
-                origin.x, origin.y, side)
+                maxDistance, side)
         else { return nil }
         return Curve2D(handle: h)
     }
@@ -1089,9 +1089,50 @@ public final class Curve2D: @unchecked Sendable {
 
     // MARK: - Conversion
 
+    /// How a conic's angular parameter is rewritten when it becomes a B-spline.
+    ///
+    /// Every case but ``polynomial`` is exact: evaluating the result at any parameter gives a point
+    /// exactly on the original circle or ellipse. They differ in degree, pole count and knot
+    /// structure, not in fidelity. ``polynomial`` is non-rational and approximate.
+    ///
+    /// ```swift
+    /// let circle = Curve2D.circle(center: .zero, radius: 5)!
+    /// circle.toBSpline()?.degree                          // 2, six poles, rational
+    /// circle.toBSpline(.quasiAngular)?.degree             // 6, six poles, rational
+    /// circle.toBSpline(.polynomial)?.degree               // 7, seven poles, not rational
+    /// ```
+    public enum Parameterisation: UInt32, Sendable {
+        /// `t = tan(theta / 2)`, with the span count derived from the opening angle. The default.
+        case tangentHalfAngle = 0
+        /// `tangentHalfAngle` forced to one span. Requires an opening angle up to 0.9999 pi.
+        case tangentHalfAngle1 = 1
+        /// `tangentHalfAngle` forced to two spans. Requires an opening angle up to 1.9999 pi.
+        case tangentHalfAngle2 = 2
+        /// `tangentHalfAngle` forced to three spans.
+        case tangentHalfAngle3 = 3
+        /// `tangentHalfAngle` forced to four spans.
+        case tangentHalfAngle4 = 4
+        /// Parameter close to the conic's own angular parameter.
+        case quasiAngular = 5
+        /// Rational, with a C1-continuous denominator across spans.
+        case rationalC1 = 6
+        /// Non-rational, eight poles, and the only approximate option.
+        case polynomial = 7
+    }
+
     /// Convert this curve to an equivalent B-spline representation.
-    public func toBSpline(tolerance: Double = 1e-6) -> Curve2D? {
-        guard let h = OCCTCurve2DToBSpline(handle, tolerance) else { return nil }
+    ///
+    /// - Parameter parameterisation: How a conic's angular parameter is rewritten. There is no
+    ///   tolerance: `Geom2dConvert::CurveToBSplineCurve` takes none, and every parameterisation
+    ///   but ``Parameterisation/polynomial`` is exact.
+    /// - Returns: `nil` when OCCT rejects the pairing, which includes
+    ///   ``Parameterisation/tangentHalfAngle1`` and ``Parameterisation/tangentHalfAngle2`` on an
+    ///   arc wider than their documented limits, and any parameterisation on an unbounded curve.
+    public func toBSpline(_ parameterisation: Parameterisation = .tangentHalfAngle) -> Curve2D? {
+        guard
+            let h = OCCTCurve2DToBSpline(
+                handle, OCCTParameterisationType(rawValue: parameterisation.rawValue))
+        else { return nil }
         return Curve2D(handle: h)
     }
 
@@ -3391,28 +3432,28 @@ extension Curve2D {
     /// Translate the 2D curve in place by (dx, dy).
     @discardableResult
     public func translate(dx: Double, dy: Double) -> Bool {
-        OCCTCurve2DTransform(handle, TransformType2D.translation.rawValue, dx, dy, 0, 0, 0)
+        OCCTCurve2DTransform(handle, TransformType2D.translation.rawValue, dx, dy, 0, 0)
     }
 
     /// Rotate the 2D curve in place around a center point by the given angle (radians).
     @discardableResult
     public func rotate(center: SIMD2<Double>, angle: Double) -> Bool {
         OCCTCurve2DTransform(
-            handle, TransformType2D.rotation.rawValue, center.x, center.y, angle, 0, 0)
+            handle, TransformType2D.rotation.rawValue, center.x, center.y, angle, 0)
     }
 
     /// Scale the 2D curve in place from a center point by the given factor.
     @discardableResult
     public func scale(center: SIMD2<Double>, factor: Double) -> Bool {
         OCCTCurve2DTransform(
-            handle, TransformType2D.scale.rawValue, center.x, center.y, factor, 0, 0)
+            handle, TransformType2D.scale.rawValue, center.x, center.y, factor, 0)
     }
 
     /// Mirror the 2D curve in place through a point.
     @discardableResult
     public func mirrorPoint(_ point: SIMD2<Double>) -> Bool {
         OCCTCurve2DTransform(
-            handle, TransformType2D.mirrorPoint.rawValue, point.x, point.y, 0, 0, 0)
+            handle, TransformType2D.mirrorPoint.rawValue, point.x, point.y, 0, 0)
     }
 
     /// Mirror the 2D curve in place through an axis.
@@ -3420,7 +3461,7 @@ extension Curve2D {
     public func mirrorAxis(origin: SIMD2<Double>, direction: SIMD2<Double>) -> Bool {
         OCCTCurve2DTransform(
             handle, TransformType2D.mirrorAxis.rawValue,
-            origin.x, origin.y, direction.x, direction.y, 0)
+            origin.x, origin.y, direction.x, direction.y)
     }
 }
 
